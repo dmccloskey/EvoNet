@@ -1,0 +1,3 @@
+docker build -t dmccloskey/docker-openms-vscode .
+docker run --name=vscode --rm -d -p 3000:3000 --security-opt seccomp:unconfined -v //C/Users/domccl/Dropbox (UCSD SBRG)/Project_FastPeak/openMS_MRMworkflow/:/home/user/openMS_MRMworkflow/ -v //C/Users//domccl/GitHub/smartPeak/:/home/user/code/ dmccloskey/docker-openms-vscode
+docker run --name=vscode --rm -d -p 3000:3000 --security-opt seccomp:unconfined -v /home/systemsbiochemistry/Documents/openMS_MRMworkflow/:/home/user/openMS_MRMworkflow/ -v /home/systemsbiochemistry/Documents/GitHub/smartPeak/:/home/user/code/ dmccloskey/docker-openms-vscode
