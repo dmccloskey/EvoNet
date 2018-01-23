@@ -1,5 +1,15 @@
-cmake_minimum_required (VERSION 2.6)
-project (smartPeak)
+# --------------------------------------------------------------------------
+# SmartPeak
+# --------------------------------------------------------------------------
+# TODO: license
+# --------------------------------------------------------------------------
+# $Maintainer: Douglas McCloseky
+# $Author: Douglas McCloseky
+# --------------------------------------------------------------------------
+
+
+cmake_minimum_required(VERSION 3.0.2 FATAL_ERROR)
+project ("smartPeak_host")
 
 # The version number.
 set (smartPeak_VERSION_MAJOR 1)
