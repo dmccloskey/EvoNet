@@ -9,7 +9,7 @@
 
 
 cmake_minimum_required(VERSION 3.0.2 FATAL_ERROR)
-project ("smartPeak_host")
+project ("SmartPeak_host")
 
 # The version number.
 set (smartPeak_VERSION_MAJOR 1)
@@ -209,11 +209,6 @@ add_subdirectory(doc)
 smartpeak_export_targets()
 install_export_targets()
 
-#------------------------------------------------------------------------------
- 
-# add the binary tree to the search path for include files
-# so that we will find TutorialConfig.h
-include_directories("${PROJECT_BINARY_DIR}")
- 
+#------------------------------------------------------------------------------ 
 # add the executable
-add_executable(Tutorial tutorial.cxx)
+add_executable(SmartPeak_host main.cpp)
