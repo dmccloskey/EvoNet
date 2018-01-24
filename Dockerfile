@@ -1,7 +1,7 @@
 ##Dockerfile
 #https://hub.docker.com/r/ducatel/visual-studio-linux-build-box/
 
-FROM dmccloskey/docker-openms:latest
+FROM dmccloskey/docker-openms:AbsoluteQuantitation
 ##gbd port fowarding
 # EXPOSE 3000
 ##connection via sshd
@@ -42,4 +42,4 @@ RUN apt-get update && \
 # USER user
 CMD ["docker-entrypoint.sh"]
 
-#docker run -it --name=cpp_openms_1 -v //C/Users/domccl/GitHub/smartPeak/cpp/:/home/user/code/ --privileged --security-opt seccomp:unconfined dmccloskey/docker-openms-vscode /bin/bash
+#docker run -it --name=cpp_openms_1 -v //C/Users/domccl/GitHub/smartPeak_cpp/:/home/user/code/ --privileged --security-opt seccomp:unconfined dmccloskey/docker-openms-vscode /bin/bash

@@ -1,11 +1,11 @@
 version: "3"
 
 services:
-  openms:
+  smartpeak:
     image: dmccloskey/docker-openms-vscode
     volumes:
       # - //C/Users/domccl/Dropbox (UCSD SBRG)/Project_FastPeak/openMS_MRMworkflow/:/home/user/openMS_MRMworkflow/
-      - //C/Users/domccl/GitHub/smartPeak/cpp/:/home/user/code/
+      - //C/Users/domccl/GitHub/smartPeak_cpp/:/home/user/code/
       # - //C/Users/dmccloskey/Dropbox (UCSD SBRG)/Project_FastPeak/openMS_MRMworkflow/:/home/user/openMS_MRMworkflow/
       # - //C/Users/dmccloskey/Documents/GitHub/smartPeak/cpp/:/home/user/code/
       # - /home/systemsbiochemistry/Documents/openMS_MRMworkflow/:/home/user/openMS_MRMworkflow/
@@ -19,10 +19,10 @@ services:
     #command: python /home/user/code/debug_remote.py
     restart: always
     networks:
-      - openms_network
+      - smartpeak_network
     
 networks:
-  openms_network:
+  smartpeak_network:
     ipam:
       config:
         - subnet: 172.23.0.0/16

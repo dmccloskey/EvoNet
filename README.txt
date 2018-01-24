@@ -1,3 +1,4 @@
 docker build -t dmccloskey/docker-openms-vscode .
-docker run --name=vscode --rm -d -p 3000:3000 --security-opt seccomp:unconfined -v //C/Users/domccl/Dropbox (UCSD SBRG)/Project_FastPeak/openMS_MRMworkflow/:/home/user/openMS_MRMworkflow/ -v //C/Users//domccl/GitHub/smartPeak/:/home/user/code/ dmccloskey/docker-openms-vscode
-docker run --name=vscode --rm -d -p 3000:3000 --security-opt seccomp:unconfined -v /home/systemsbiochemistry/Documents/openMS_MRMworkflow/:/home/user/openMS_MRMworkflow/ -v /home/systemsbiochemistry/Documents/GitHub/smartPeak/:/home/user/code/ dmccloskey/docker-openms-vscode
+docker run -it --name=cpp_openms_1 -v //C/Users/domccl/GitHub/smartPeak_cpp/:/home/user/code/ --privileged --security-opt seccomp:unconfined dmccloskey/docker-openms-vscode /bin/bash
+cd /home/user/code/build
+cmake -DCMAKE_PREFIX_PATH="/usr/local/contrib-build/;/usr/local/contrib/;/usr/;/usr/local" -DBOOST_USE_STATIC=OFF -DHAS_XSERVER=Off ..

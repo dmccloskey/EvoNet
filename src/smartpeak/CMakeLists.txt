@@ -37,7 +37,7 @@ include(${PROJECT_SOURCE_DIR}/configh.cmake)
 include (${PROJECT_SOURCE_DIR}/includes.cmake)
 
 #------------------------------------------------------------------------------
-# all the dependency libraries are linked into libSmartPeak.so, except Qt
+# all the dependency libraries are linked into libSmartPeak.so
 set(SMARTPEAK_DEP_LIBRARIES  ${COIN_LIBRARIES}
                           ${Boost_LIBRARIES}
                           ${WM5_LIBRARIES}
