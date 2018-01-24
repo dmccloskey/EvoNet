@@ -37,6 +37,12 @@ if (NOT CMAKE_SIZEOF_VOID_P)
 endif()
 
 #------------------------------------------------------------------------------
+# Include the standard Dart testing module
+# for Nightly Build log
+enable_testing()
+include(Dart)
+
+#------------------------------------------------------------------------------
 option(MT_ENABLE_TBB "Enable Intel TBB support" OFF)
 option(MT_ENABLE_OPENMP "Enable OpenMP support" ON)
 option(BOOST_USE_STATIC "Use Boost static libraries." ON)
@@ -130,7 +136,6 @@ option(ADDRESS_SANITIZER "[Clang/GCC only] Enable AddressSanitizer mode (quite s
 if(ADDRESS_SANITIZER)
   include(cmake/AddressSanitizer.cmake)
 endif()
-
 
 #------------------------------------------------------------------------------
 # Host directory for referencing from subprojects
