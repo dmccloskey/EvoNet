@@ -11,7 +11,7 @@ configure_file(${PROJECT_SOURCE_DIR}/include/SmartPeak/test_config.h.in ${CONFIG
 
 #------------------------------------------------------------------------------
 # Some tests have a link dependency to boost so we find our own boost here
-find_boost(math_c99)
+find_boost(math_c99 system filesystem unit_test_framework)
 
 if(NOT Boost_FOUND)
   message(FATAL_ERROR "Boost was not found!")
@@ -45,7 +45,7 @@ add_dependencies(CORE_TEST ${core_executables_list})
 # Add the actual tests
 foreach(_class_test ${TEST_executables})
   add_executable(${_class_test} source/${_class_test}.cpp)
-  target_link_libraries(${_class_test} ${SmartPeak_LIBRARIES})
+  target_link_libraries(${_class_test} ${SmartPeak_LIBRARIES} ${Boost_LIBRARIES})
   add_test(${_class_test} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${_class_test})
   # only add OPENMP flags to gcc linker (execpt Mac OS X, due to compiler bug
   # see https://sourceforge.net/apps/trac/open-ms/ticket/280 for details)
@@ -59,12 +59,6 @@ endforeach(_class_test)
 
 # StopWatch_test needs to be run alone to avoid timing errors
 set_tests_properties(StopWatch_test PROPERTIES RUN_SERIAL 1)
-
-#------------------------------------------------------------------------------
-# 2 - add link dependency
-foreach(t ${Boost_dependent_tests})
-  target_link_libraries(${t} ${Boost_LIBRARIES})
-endforeach()
 
 #------------------------------------------------------------------------------
 # restore old compiler flags

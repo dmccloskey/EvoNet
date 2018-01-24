@@ -9,7 +9,7 @@
 //     return 0;
 // }
 
-#include <smartPeak/helloworld.h>
+#include <smartPeak/core/helloworld.h>
 
 int main(int argc, const char** argv)
 {

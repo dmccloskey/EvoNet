@@ -1,16 +1,16 @@
-#include <OpenMS/helloworld.h>
+#include <SmartPeak/core/Helloworld.h>
 
-namespace smartPeak
+namespace SmartPeak
 {
-  helloworld::helloworld()
+  Helloworld::Helloworld()
   {        
   }
 
-  helloworld::~helloworld()
+  Helloworld::~Helloworld()
   {
   }
 
-  double helloworld::addNumbers(const double& x, const double& y)
+  double Helloworld::addNumbers(const double& x, const double& y) const
   {
     return x + y;
   }

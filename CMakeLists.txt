@@ -209,6 +209,6 @@ add_subdirectory(doc)
 smartpeak_export_targets()
 install_export_targets()
 
-#------------------------------------------------------------------------------ 
-# add the executable
-add_executable(SmartPeak_host main.cpp)
+##------------------------------------------------------------------------------ 
+## add the executable
+#add_executable(SmartPeak_host main.cpp)

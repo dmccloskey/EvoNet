@@ -1,20 +1,20 @@
 #ifndef SMARTPEAK_HELLOWORLD_H
 #define SMARTPEAK_HELLOWORLD_H
 
-namespace smartPeak
+namespace SmartPeak
 {
 
-  class helloworld
+  class Helloworld
   {
 public:
     /// Default constructor
-    helloworld();    
+    Helloworld();    
     /// Destructor
-    ~helloworld();
+    ~Helloworld();
 
     double addNumbers(const double& x, const double& y) const;
 
   };
 }
 
-#endif SMARTPEAK_HELLOWORLD_H
+#endif //SMARTPEAK_HELLOWORLD_H
