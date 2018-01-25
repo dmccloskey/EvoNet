@@ -8,7 +8,7 @@ cache:
   - apt
   - ccache
   - directories:
-    - smartPeak_dependencies/
+    - dependencies/
 
 env:
   globale:
