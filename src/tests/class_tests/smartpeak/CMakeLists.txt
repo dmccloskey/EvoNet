@@ -1,6 +1,6 @@
 
 
-cmake_minimum_required(VERSION 2.8.3 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.0.2 FATAL_ERROR)
 project("SmartPeak_class_tests_smartpeak")
 
 #------------------------------------------------------------------------------
@@ -53,12 +53,6 @@ foreach(_class_test ${TEST_executables})
     set_target_properties(${_class_test} PROPERTIES LINK_FLAGS ${OpenMP_CXX_FLAGS})
   endif()
 endforeach(_class_test)
-
-#------------------------------------------------------------------------------
-# some tests need special treatment
-
-# StopWatch_test needs to be run alone to avoid timing errors
-set_tests_properties(StopWatch_test PROPERTIES RUN_SERIAL 1)
 
 #------------------------------------------------------------------------------
 # restore old compiler flags

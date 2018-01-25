@@ -4,5 +4,5 @@ set(core_executables_list
 
 ### collect test executables
 set(TEST_executables
-    ${Helloworld_test}
+    ${core_executables_list}
 )
