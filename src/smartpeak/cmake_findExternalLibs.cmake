@@ -21,8 +21,7 @@ endif()
 
 #------------------------------------------------------------------------------
 # BOOST
-#find_boost(iostreams date_time math_c99 regex)
-find_boost(iostreams date_time math_c99 regex system filesystem unit_test_framework)
+find_boost(iostreams date_time math_c99 regex)
 
 if(Boost_FOUND)
   message(STATUS "Found Boost version ${Boost_MAJOR_VERSION}.${Boost_MINOR_VERSION}.${Boost_SUBMINOR_VERSION}" )

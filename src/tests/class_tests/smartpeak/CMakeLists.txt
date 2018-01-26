@@ -11,7 +11,8 @@ configure_file(${PROJECT_SOURCE_DIR}/include/SmartPeak/test_config.h.in ${CONFIG
 
 #------------------------------------------------------------------------------
 # Some tests have a link dependency to boost so we find our own boost here
-find_boost(math_c99 system filesystem unit_test_framework)
+find_boost(math_c99 unit_test_framework)
+#find_boost(math_c99)
 
 if(NOT Boost_FOUND)
   message(FATAL_ERROR "Boost was not found!")
