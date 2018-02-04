@@ -7,7 +7,7 @@
 using namespace SmartPeak;
 using namespace std;
 
-BOOST_AUTO_TEST_SUITE(EMGModel)
+BOOST_AUTO_TEST_SUITE(emgmodel)
 
 BOOST_AUTO_TEST_CASE(constructor) 
 {

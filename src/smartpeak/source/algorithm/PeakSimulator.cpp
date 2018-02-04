@@ -44,9 +44,9 @@ namespace SmartPeak
 
     // not the most efficient (2 loops)
     // but should increase maintainability
-    std::vector<double> array = linspace(start, stop, n)
+    std::vector<double> array = linspan(start, stop, n);
     // override the existing values
-    for (auto value&: array)
+    for (double& value: array)
     {
       value = d(gen);
     }

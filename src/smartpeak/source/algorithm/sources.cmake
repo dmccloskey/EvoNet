@@ -1,9 +1,10 @@
 ### the directory name
-set(directory source/core)
+set(directory source/algorithm)
 
 ### list all filenames of the directory here
 set(sources_list
-PeakSimulator.cpp
+	PeakSimulator.cpp
+	EMGModel.cpp
 )
 
 ### add path to the filenames
@@ -16,5 +17,5 @@ endforeach(i)
 set(SmartPeak_sources ${SmartPeak_sources} ${sources})
 
 ### source group definition
-source_group("Source Files\\core" FILES ${sources})
+source_group("Source Files\\algorithm" FILES ${sources})
 

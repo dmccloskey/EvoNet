@@ -25,16 +25,16 @@ public:
     EMGModel(); ///< Default constructor
     ~EMGModel(); ///< Default destructor
 
-    void setH(const double& h) const; ///< EMG h setter
+    void setH(const double& h); ///< EMG h setter
     double getH() const; ///< EMG h getter
 
-    void setTau(const double& tau) const; ///< EMG tau setter
+    void setTau(const double& tau); ///< EMG tau setter
     double getTau() const; ///< EMG tau getter
 
-    void setMu(const double& mu) const; ///< EMG mu setter
+    void setMu(const double& mu); ///< EMG mu setter
     double getMu() const; ///< EMG mu getter
 
-    void setSigma(const double& sigma) const; ///< EMG sigma setter
+    void setSigma(const double& sigma); ///< EMG sigma setter
     double getSigma() const; ///< EMG sigma getter
 
 protected: 

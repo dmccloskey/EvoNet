@@ -14,45 +14,45 @@ namespace SmartPeak
   {
   }
 
-  void setH(const double& h) const
+  void EMGModel::setH(const double& h)
   {
     emg_h_ = h;
   }
-  double getH() const
+  double EMGModel::getH() const
   {
     return emg_h_;
   }
 
-  void setTau(const double& tau) const
+  void EMGModel::setTau(const double& tau)
   {
     emg_tau_ = tau;
   }
-  double getTau() const
+  double EMGModel::getTau() const
   {
     return emg_tau_;
   }
 
-  void setMu(const double& mu) const
+  void EMGModel::setMu(const double& mu)
   {
     emg_mu_ = mu;
   }
-  double getMu() const
+  double EMGModel::getMu() const
   {
     return emg_mu_;
   }
 
-  void setSigma(const double& sigma) const
+  void EMGModel::setSigma(const double& sigma)
   {
     emg_sigma_ = sigma;
   }
-  double getSigma() const
+  double EMGModel::getSigma() const
   {
     return emg_sigma_;
   }
 
-  double z_(const double& x_I) const
+  double EMGModel::z_(const double& x_I) const
   {
-    double z = 1/std::sqrt(2)*(emg_sigma_/emg_tau_ - (x_I-emg_mu)/emg_sigma_);
+    double z = 1/std::sqrt(2)*(emg_sigma_/emg_tau_ - (x_I-emg_mu_)/emg_sigma_);
     return z;
   }
 }
