@@ -37,11 +37,20 @@ public:
     void setSigma(const double& sigma); ///< EMG sigma setter
     double getSigma() const; ///< EMG sigma getter
 
+    /**
+      @brief Calculates points from an EMG PDF
+
+      @param[in] x_I X value of the EMG PDF
+
+      @returns Y value of the EMG PDF.
+    */ 
+    double EMGPDF(const double& x_I) const;
+
 protected: 
     /**
       @brief Calculates points from an EMG PDF using method 1
 
-      @param[out] x_I X value of the EMG PDF
+      @param[in] x_I X value of the EMG PDF
 
       @returns Y value of the EMG PDF.
     */ 
@@ -50,7 +59,7 @@ protected:
     /**
       @brief Calculates points from an EMG PDF using method 2
 
-      @param[out] x_I X value of the EMG PDF
+      @param[in] x_I X value of the EMG PDF
 
       @returns Y value of the EMG PDF.
     */ 
@@ -59,7 +68,7 @@ protected:
     /**
       @brief Calculates points from an EMG PDF using method 3
 
-      @param[out] x_I X value of the EMG PDF
+      @param[in] x_I X value of the EMG PDF
 
       @returns Y value of the EMG PDF.
     */ 
@@ -69,12 +78,11 @@ protected:
       @brief Calculates the parameter z, which is used to decide
         which formulation of the EMG PDF to use for calculation.
 
-      @param[out] x_I X value of the EMG PDF
+      @param[in] x_I X value of the EMG PDF
 
       @returns z parameter.
     */ 
     double z_(const double& x_I) const;
-
 
 private:
     double emg_h_; ///< Amplitude of the Gaussian peak
