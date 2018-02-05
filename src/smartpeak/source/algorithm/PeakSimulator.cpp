@@ -15,13 +15,13 @@ namespace SmartPeak
   {
   }
 
-  void PeakSimulator::setNPoints(const double& n_points)
+  void PeakSimulator::setStepSize(const double& step_size)
   {
-    n_points_ = n_points;
+    step_size_ = step_size;
   }
-  double PeakSimulator::getNPoints() const
+  double PeakSimulator::getStepSize() const
   {
-    return n_points_;
+    return step_size_;
   }
 
   void PeakSimulator::setWindowStart(const double& window_start)
@@ -79,22 +79,33 @@ namespace SmartPeak
     return array;
   }
 
-  std::vector<double> PeakSimulator::makeNoise(
-    const double& start, const double& stop, const int& n,
-    const double& mean, const double& std_dev) const
+  std::vector<double> PeakSimulator::addNoise(
+    const std::vector<double>& array_I,
+      const double& mean, const double& std_dev) const
   {
     std::random_device rd{};
     std::mt19937 gen{rd()};
     std::normal_distribution<> d{mean, std_dev};
-
-    // not the most efficient (2 loops)
-    // but should increase maintainability
-    std::vector<double> array = linspan(start, stop, n);
-    // override the existing values
-    for (double& value: array)
+    std::vector<double> array;
+    // add noise to a new array
+    for (auto value: array_I)
     {
-      value = d(gen);
+      array.push_back(value + d(gen));
     }
     return array;
+  }
+
+  std::vector<double> PeakSimulator::addBaseline(
+      const std::vector<double>& array_I,
+      const double& baseline_left, const double& baseline_right) const
+  {
+    std::vector<double> array;
+    // add noise to a new array
+    for (auto value: array_I)
+    {
+      array.push_back(value + baseline_left);
+    }
+    return array;
+
   }
 }

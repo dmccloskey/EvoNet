@@ -66,22 +66,33 @@ public:
     std::vector<double> linspan(const double& start, const double& stop, const int& n) const;
  
     /**
-      @brief Generates a vector of random noise from a normal distribution
+      @brief Add random noise from a normal distribution to a vector of values
 
-      @param[in] start Range start
-      @param[in] step Range step
-      @param[in] n Number of values in the range
+      @param[in] array_I Vector of values to add random noise
       @param[in] mean Mean of the normal distribution
       @param[in] std_dev Standard Deviation of the normal distribution
 
-      @returns A vector of values from range start to end.
+      @returns A vector of values with added random noise.
     */ 
-    std::vector<double> makeNoise(
-      const double& start, const double& stop, const int& n,
+    std::vector<double> addNoise(
+      const std::vector<double>& array_I,
       const double& mean, const double& std_dev) const;
+ 
+    /**
+      @brief Add a y offset (i.e., baseline) to a vector of values
 
-    void setNPoints(const double& n_points); ///< n_points setter
-    double getNPoints() const; ///< n_points getter
+      @param[in] array_I Vector of values to add random noise
+      @param[in] baseline_left Left baseline offset
+      @param[in] baseline_right Right baseline offset
+
+      @returns A vector of values with added random noise.
+    */ 
+    std::vector<double> addBaseline(
+      const std::vector<double>& array_I,
+      const double& baseline_left, const double& baseline_right) const;
+
+    void setStepSize(const double& step_size); ///< step_size setter
+    double getStepSize() const; ///< step_size getter
 
     void setWindowStart(const double& window_start); ///< window_start setter
     double getWindowStart() const; ///< window_start getter
@@ -96,11 +107,13 @@ public:
     double getNoiseSigma() const; ///< noise_sigma getter
 
 private:
-    int n_points_; ///< Number of points
+    int step_size_; ///< The spacing between points
     int window_start_; ///< Peak window start
     int window_end_; ///< Peak window end
-    double noise_mu_;  ///< Mean of random noise generated from a normal distribution
-    double noise_sigma_;  ///< Standard deviation of random noise generated from a normal distribution
+    double noise_mu_; ///< Mean of random noise generated from a normal distribution
+    double noise_sigma_; ///< Standard deviation of random noise generated from a normal distribution
+    double baseline_left_; ///< Height of the left baseline
+    double baseline_right_; ///< Height of the right baseline
 
   };
 }
