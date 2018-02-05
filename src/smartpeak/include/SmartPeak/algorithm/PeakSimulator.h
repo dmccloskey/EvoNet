@@ -3,6 +3,8 @@
 #ifndef SMARTPEAK_PEAKSIMULATOR_H
 #define SMARTPEAK_PEAKSIMULATOR_H
 
+#include <SmartPeak/algorithm/EMGModel.h>
+
 #include <vector>
 #include <random>
 
@@ -19,8 +21,15 @@ namespace SmartPeak
       "Reconstruction of chromatographic peaks using the exponentially modified Gaussian function". 
       Journal of Chemometrics. 25 (7): 352. doi:10.1002/cem.1343
   */
-  class PeakSimulator
+  class PeakSimulator: public EMGModel
   {
+    /**
+    Notes on potential optimizations:
+    1. make a virtual class called DataSimulator
+    2. make a virtual class called simulate
+    3. make a virtual class called addNoise
+    4. setters/getters would be unique to each derived class
+    */
 public:
     PeakSimulator(); ///< Default constructor
     ~PeakSimulator(); ///< Default destructor
@@ -71,16 +80,27 @@ public:
       const double& start, const double& stop, const int& n,
       const double& mean, const double& std_dev) const;
 
+    void setNPoints(const double& n_points); ///< n_points setter
+    double getNPoints() const; ///< n_points getter
+
+    void setWindowStart(const double& window_start); ///< window_start setter
+    double getWindowStart() const; ///< window_start getter
+
+    void setWindowEnd(const double& window_end); ///< window_end setter
+    double getWindowEnd() const; ///< window_end getter
+
+    void setNoiseMu(const double& noise_mu); ///< noise_mu setter
+    double getNoiseMu() const; ///< noise_mu getter
+
+    void setNoiseSimga(const double& noise_sigma); ///< noise_sigma setter
+    double getNoiseSigma() const; ///< noise_sigma getter
+
 private:
     int n_points_; ///< Number of points
     int window_start_; ///< Peak window start
     int window_end_; ///< Peak window end
-    double noise_mean_;  ///< Mean of random noise generated from a normal distribution
-    double noise_std_dev_;  ///< Standard deviation of random noise generated from a normal distribution
-    double emg_h_; ///< Amplitude of the Gaussian peak
-    double emg_tau_; ///< Exponential relaxation time 
-    double emg_mu_; ///< Mean of the EMG
-    double emg_sigma_; ///< Standard deviation of the EGM
+    double noise_mu_;  ///< Mean of random noise generated from a normal distribution
+    double noise_sigma_;  ///< Standard deviation of random noise generated from a normal distribution
 
   };
 }

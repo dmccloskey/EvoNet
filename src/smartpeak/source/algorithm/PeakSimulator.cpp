@@ -15,6 +15,51 @@ namespace SmartPeak
   {
   }
 
+  void PeakSimulator::setNPoints(const double& n_points)
+  {
+    n_points_ = n_points;
+  }
+  double PeakSimulator::getNPoints() const
+  {
+    return n_points_;
+  }
+
+  void PeakSimulator::setWindowStart(const double& window_start)
+  {
+    window_start_ = window_start;
+  }
+  double PeakSimulator::getWindowStart() const
+  {
+    return window_start_;
+  }
+
+  void PeakSimulator::setWindowEnd(const double& window_end)
+  {
+    window_end_ = window_end;
+  }
+  double PeakSimulator::getWindowEnd() const
+  {
+    return window_end_;
+  }
+
+  void PeakSimulator::setNoiseMu(const double& noise_mu)
+  {
+    noise_mu_ = noise_mu;
+  }
+  double PeakSimulator::getNoiseMu() const
+  {
+    return noise_mu_;
+  }
+
+  void PeakSimulator::setNoiseSimga(const double& noise_sigma)
+  {
+    noise_sigma_ = noise_sigma;
+  }
+  double PeakSimulator::getNoiseSigma() const
+  {
+    return noise_sigma_;
+  }
+
   std::vector<double> PeakSimulator::generateRange(const double& start, const double& step, const double& end) const
   {
     std::vector<double> array;

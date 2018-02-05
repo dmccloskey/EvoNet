@@ -4,6 +4,7 @@ set(core_executables_list
 
 set(algorithm_executables_list
   EMGModel_test
+  PeakSimulator_test
 )
 
 ### collect test executables

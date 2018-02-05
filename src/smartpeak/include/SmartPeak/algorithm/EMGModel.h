@@ -21,6 +21,13 @@ namespace SmartPeak
   */
   class EMGModel
   {
+    /**
+    Notes on potential optimizations:
+    1. make a virtual class called StatisticalModel
+    2. make a virtual class called PDF
+    3. make a virtual class called CDF
+    4. setters/getters would be unique to each derived class
+    */
 public:
     EMGModel(); ///< Default constructor
     ~EMGModel(); ///< Default destructor
