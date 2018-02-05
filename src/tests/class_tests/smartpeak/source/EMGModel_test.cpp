@@ -16,6 +16,18 @@ public:
   {
     return EMGModel::z_(x_I);
   }
+  double EMGPDF1_(const double& x_I) const
+  {
+    return EMGModel::EMGPDF1_(x_I);
+  }
+  double EMGPDF2_(const double& x_I) const
+  {
+    return EMGModel::EMGPDF2_(x_I);
+  }
+  double EMGPDF3_(const double& x_I) const
+  {
+    return EMGModel::EMGPDF3_(x_I);
+  }
 };
 
 BOOST_AUTO_TEST_CASE(constructor) 
@@ -63,6 +75,53 @@ BOOST_AUTO_TEST_CASE(z_)
 
   emg.setTau(1e-12);
   BOOST_CHECK_CLOSE(emg.z_(0), 707106781186.54749, 1e-6);
+}
+
+BOOST_AUTO_TEST_CASE(emgpdf1_) 
+{
+  EMGModel_test emg;
+  emg.setH(1.0);
+  emg.setTau(0.1);
+  emg.setMu(0.0);
+  emg.setSigma(1.0);
+
+  BOOST_CHECK_CLOSE(emg.EMGPDF1_(100), 0.0, 1e-6);
+}
+
+BOOST_AUTO_TEST_CASE(emgpdf2_) 
+{
+  EMGModel_test emg;
+  emg.setH(1.0);
+  emg.setTau(0.1);
+  emg.setMu(0.0);
+  emg.setSigma(1.0);
+
+  BOOST_CHECK_CLOSE(emg.EMGPDF2_(0), 0.99028596471732067, 1e-6);
+}
+
+BOOST_AUTO_TEST_CASE(emgpdf3_) 
+{
+  EMGModel_test emg;
+  emg.setH(1.0);
+  emg.setTau(1e-12);
+  emg.setMu(0.0);
+  emg.setSigma(1.0);
+
+  BOOST_CHECK_CLOSE(emg.EMGPDF3_(0), 1.0, 1e-6);
+}
+
+BOOST_AUTO_TEST_CASE(emgpdf) 
+{
+  EMGModel emg;
+  emg.setH(1.0);
+  emg.setTau(0.1);
+  emg.setMu(0.0);
+  emg.setSigma(1.0);
+
+  BOOST_CHECK_CLOSE(emg.EMGPDF(100), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(emg.EMGPDF(0), 0.99028596471732067, 1e-6);
+  emg.setTau(1e-12);
+  BOOST_CHECK_CLOSE(emg.EMGPDF(0), 1.0, 1e-6);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

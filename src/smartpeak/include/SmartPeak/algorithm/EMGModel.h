@@ -85,10 +85,10 @@ protected:
     double z_(const double& x_I) const;
 
 private:
-    double emg_h_; ///< Amplitude of the Gaussian peak
-    double emg_tau_; ///< Exponential relaxation time 
-    double emg_mu_; ///< Mean of the EMG
-    double emg_sigma_; ///< Standard deviation of the EGM
+    double emg_h_ = 1.0; ///< Amplitude of the Gaussian peak
+    double emg_tau_ = 0.1; ///< Exponential relaxation time 
+    double emg_mu_ = 0.0; ///< Mean of the EMG
+    double emg_sigma_ = 1.0; ///< Standard deviation of the EGM
 
   };
 }
