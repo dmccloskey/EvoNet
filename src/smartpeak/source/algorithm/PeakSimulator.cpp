@@ -86,6 +86,22 @@ namespace SmartPeak
     return array;
   }
 
+  std::vector<double> PeakSimulator::addNoise(
+    const std::vector<double>& array_I,
+      const double& mean, const double& std_dev) const
+  {
+    std::random_device rd{};
+    std::mt19937 gen{rd()};
+    std::normal_distribution<> d{mean, std_dev};
+    std::vector<double> array;
+    // add noise to a new array
+    for (auto value: array_I)
+    {
+      array.push_back(value + d(gen));
+    }
+    return array;
+  }
+
   std::vector<double> PeakSimulator::addBaseline(
       const std::vector<double>& array_I,
       const double& baseline_left, const double& baseline_right) const
@@ -111,7 +127,7 @@ namespace SmartPeak
     // make the intensity array
     for (double x: x_O)
     {
-      y_O.push_back(PDF(x));
+      y_O.push_back(x);
     }
     // add noise to the intensity array
     y_O = addNoise(y_O, noise_mu_, noise_sigma_);
