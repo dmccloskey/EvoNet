@@ -70,8 +70,35 @@ namespace SmartPeak
     return noise_sigma_;
   }
 
+  void PeakSimulator::setBaselineLeft(const double& baseline_left)
+  {
+    baseline_left_ = baseline_left;
+  }
+  double PeakSimulator::getBaselineLeft() const
+  {
+    return baseline_left_;
+  }
+
+  void PeakSimulator::setBaselineRight(const double& baseline_right)
+  {
+    baseline_right_ = baseline_right;
+  }
+  double PeakSimulator::getBaselineRight() const
+  {
+    return baseline_right_;
+  }
+
+  void PeakSimulator::setSaturationLimit(const double& saturation_limit)
+  {
+    saturation_limit_ = saturation_limit;
+  }
+  double PeakSimulator::getSaturationLimit() const
+  {
+    return saturation_limit_;
+  }
+
   std::vector<double> PeakSimulator::generateRangeWithNoise(
-    const double& start, const double& step_mu, const double& step_sigma, const double& end) const
+    const double& start, const double& step_mu, const double& step_sigma, const double& end)
   {
     std::random_device rd{};
     std::mt19937 gen{rd()};
@@ -88,7 +115,7 @@ namespace SmartPeak
 
   std::vector<double> PeakSimulator::addNoise(
     const std::vector<double>& array_I,
-      const double& mean, const double& std_dev) const
+      const double& mean, const double& std_dev)
   {
     std::random_device rd{};
     std::mt19937 gen{rd()};
@@ -106,27 +133,42 @@ namespace SmartPeak
       const std::vector<double>& x_I,
       const std::vector<double>& y_I,
       const double& baseline_left, const double& baseline_right,
-      const double& peak_apex) const
+      const double& peak_apex)
   {
     std::vector<double> array;
     for (int i = 0; i < x_I.size(); ++i)
     {
       if (x_I[i] <= peak_apex)
       {
-        // todo:  correct!
-        array.push_back(y_I[i] + baseline_left);
+        const double value = std::max(baseline_left, y_I[i]);
+        array.push_back(value);
       }
       else
       {
-        array.push_back(y_I[i] + baseline_right);
+        const double value = std::max(baseline_right, y_I[i]);
+        array.push_back(value);
       }
     }
     return array;
-
   }
 
-  void  PeakSimulator::simulatePeak(
-    std::vector<double>& x_O, std::vector<double>& y_O) const
+  std::vector<double> flattenPeak(
+      const std::vector<double>& array_I,
+      const double& saturation_limit)
+  {
+    std::vector<double> array;
+    for (auto value: array_I)
+    {
+      double val = (value > saturation_limit) ? saturation_limit: value;
+      array.push_back(val);
+      
+    }
+    return array;
+  }
+
+  void PeakSimulator::simulatePeak(
+    std::vector<double>& x_O, std::vector<double>& y_O, 
+    const EMGModel& emg) const
   {
     x_O.clear();
     y_O.clear();
@@ -136,11 +178,13 @@ namespace SmartPeak
     // make the intensity array
     for (double x: x_O)
     {
-      y_O.push_back(x);
+      y_O.push_back(emg.PDF(x));
     }
+    // add saturation limit
+    y_O = flattenPeak(y_O, saturation_limit_);
+    // add a baseline to the intensity array
+    y_O = addBaseline(x_O, y_O, baseline_left_, baseline_right_, emg.getMu());
     // add noise to the intensity array
     y_O = addNoise(y_O, noise_mu_, noise_sigma_);
-    // add a baseline to the intensity array
-    y_O = addBaseline(y_O, baseline_left_, baseline_right_);
   }
 }

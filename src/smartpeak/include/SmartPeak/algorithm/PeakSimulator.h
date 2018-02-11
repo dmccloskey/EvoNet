@@ -21,7 +21,7 @@ namespace SmartPeak
       "Reconstruction of chromatographic peaks using the exponentially modified Gaussian function". 
       Journal of Chemometrics. 25 (7): 352. doi:10.1002/cem.1343
   */
-  class PeakSimulator: public EMGModel
+  class PeakSimulator
   {
     /**
     Notes on potential optimizations:
@@ -40,8 +40,10 @@ public:
 
       @param[out] x_IO A vector of x values representing time or m/z
       @param[out] y_IO A vector of y values representing the intensity at time t or m/z m
+      @param[in] emg An emg model class
     */ 
-    void simulatePeak(std::vector<double>& x_O, std::vector<double>& y_O) const;
+    void simulatePeak(std::vector<double>& x_O, std::vector<double>& y_O, 
+      const EMGModel& emg) const;
  
     /**
       @brief Generates a range of values with noise sampled from a normal distribution
@@ -53,12 +55,13 @@ public:
 
       @returns A vector of values from range start to end.
     */ 
-    std::vector<double> generateRangeWithNoise(
+    static std::vector<double> generateRangeWithNoise(
       const double& start, const double& step_mu, 
-      const double& step_sigma, const double& end) const;
+      const double& step_sigma, const double& end);
  
     /**
       @brief Add random noise from a normal distribution to a vector of values
+        to simulate detector noise.
 
       @param[in] array_I Vector of values to add random noise
       @param[in] mean Mean of the normal distribution
@@ -66,12 +69,13 @@ public:
 
       @returns A vector of values with added random noise.
     */ 
-    std::vector<double> addNoise(
+    static std::vector<double> addNoise(
       const std::vector<double>& array_I,
-      const double& mean, const double& std_dev) const;
+      const double& mean, const double& std_dev);
  
     /**
       @brief Add a y offset (i.e., baseline) to a vector of values
+        to simulate a rise in the baseline.
 
       @param[in] x_I Vector of time values
       @param[in] y_I Vector of intensity values
@@ -81,11 +85,26 @@ public:
 
       @returns A vector of values with added baselines.
     */ 
-    std::vector<double> addBaseline(
+    static std::vector<double> addBaseline(
       const std::vector<double>& x_I,
       const std::vector<double>& y_I,
       const double& baseline_left, const double& baseline_right,
-      const double& peak_apex) const;
+      const double& peak_apex);
+ 
+    /**
+      @brief Flatten the top of a peak to simulate a saturated peak.
+
+      @param[in] array_I Vector of values to add a saturation point to
+      @param[in] y_I Vector of intensity values
+      @param[in] baseline_left Left baseline offset
+      @param[in] baseline_right Right baseline offse
+      @param[in] peak_apex Time to divide left and right peak sides
+
+      @returns A vector of values with a simulated saturation point.
+    */ 
+    static std::vector<double> flattenPeak(
+      const std::vector<double>& array_I,
+      const double& saturation_limit);
 
     void setStepSizeMu(const double& step_size_mu); ///< step_size_mu setter
     double getStepSizeMu() const; ///< step_size_mu getter
@@ -105,6 +124,15 @@ public:
     void setNoiseSimga(const double& noise_sigma); ///< noise_sigma setter
     double getNoiseSigma() const; ///< noise_sigma getter
 
+    void setBaselineLeft(const double& baseline_left); ///< baseline_left setter
+    double getBaselineLeft() const; ///< baseline_left getter
+
+    void setBaselineRight(const double& baseline_right); ///< baseline_right setter
+    double getBaselineRight() const; ///< baseline_right getter
+    
+    void setSaturationLimit(const double& saturation_limit); ///< saturation_limit setter
+    double getSaturationLimit() const; ///< saturation_limit getter
+
 private:
     int step_size_mu_ = 1.0; ///< The mean spacing between points
     int step_size_sigma_ = 0.001; ///< The standard deviation of spacing between points
@@ -114,6 +142,7 @@ private:
     double noise_sigma_ = 1.0; ///< Standard deviation of random noise generated from a normal distribution
     double baseline_left_ = 0.0; ///< Height of the left baseline
     double baseline_right_ = 0.0; ///< Height of the right baseline
+    double saturation_limit_ = 1e6; ///< Maximum point height before peak saturation
 
   };
 }

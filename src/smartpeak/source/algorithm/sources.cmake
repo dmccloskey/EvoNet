@@ -3,8 +3,8 @@ set(directory source/algorithm)
 
 ### list all filenames of the directory here
 set(sources_list
-	PeakSimulator.cpp
 	EMGModel.cpp
+	PeakSimulator.cpp
 )
 
 ### add path to the filenames
