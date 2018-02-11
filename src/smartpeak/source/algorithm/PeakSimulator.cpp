@@ -103,14 +103,23 @@ namespace SmartPeak
   }
 
   std::vector<double> PeakSimulator::addBaseline(
-      const std::vector<double>& array_I,
-      const double& baseline_left, const double& baseline_right) const
+      const std::vector<double>& x_I,
+      const std::vector<double>& y_I,
+      const double& baseline_left, const double& baseline_right,
+      const double& peak_apex) const
   {
     std::vector<double> array;
-    // add noise to a new array
-    for (auto value: array_I)
+    for (int i = 0; i < x_I.size(); ++i)
     {
-      array.push_back(value + baseline_left);
+      if (x_I[i] <= peak_apex)
+      {
+        // todo:  correct!
+        array.push_back(y_I[i] + baseline_left);
+      }
+      else
+      {
+        array.push_back(y_I[i] + baseline_right);
+      }
     }
     return array;
 

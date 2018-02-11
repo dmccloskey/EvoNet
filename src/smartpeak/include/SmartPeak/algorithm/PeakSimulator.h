@@ -73,15 +73,19 @@ public:
     /**
       @brief Add a y offset (i.e., baseline) to a vector of values
 
-      @param[in] array_I Vector of values to add random noise
+      @param[in] x_I Vector of time values
+      @param[in] y_I Vector of intensity values
       @param[in] baseline_left Left baseline offset
-      @param[in] baseline_right Right baseline offset
+      @param[in] baseline_right Right baseline offse
+      @param[in] peak_apex Time to divide left and right peak sides
 
       @returns A vector of values with added baselines.
     */ 
     std::vector<double> addBaseline(
-      const std::vector<double>& array_I,
-      const double& baseline_left, const double& baseline_right) const;
+      const std::vector<double>& x_I,
+      const std::vector<double>& y_I,
+      const double& baseline_left, const double& baseline_right,
+      const double& peak_apex) const;
 
     void setStepSizeMu(const double& step_size_mu); ///< step_size_mu setter
     double getStepSizeMu() const; ///< step_size_mu getter
