@@ -70,53 +70,18 @@ namespace SmartPeak
     return noise_sigma_;
   }
 
-  std::vector<double> PeakSimulator::generateRange(const double& start, const double& step, const double& end) const
-  {
-    std::vector<double> array;
-    double value = start;
-    while(value <= end)
-    {
-      array.push_back(value);
-      value += step; // could recode to better handle rounding errors
-    }
-    return array;
-  }
-
   std::vector<double> PeakSimulator::generateRangeWithNoise(
     const double& start, const double& step_mu, const double& step_sigma, const double& end) const
   {
     std::random_device rd{};
     std::mt19937 gen{rd()};
-    std::normal_distribution<> d{mean, std_dev};
+    std::normal_distribution<> d{step_mu, step_sigma};
     std::vector<double> array;
     double value = start;
     while(value <= end)
     {
       array.push_back(value);
-      value = value + step + d(gen); // could recode to better handle rounding errors
-    }
-    return array;
-  }
-
-  std::vector<double> PeakSimulator::linspan(const double& start, const double& stop, const int& n) const
-  {
-    const double step = (stop-start) / (n-1);
-    std::vector<double> array = generateRange(start, step, stop);
-    return array;
-  }
-
-  std::vector<double> PeakSimulator::addNoise(
-    const std::vector<double>& array_I,
-      const double& mean, const double& std_dev) const
-  {
-    std::random_device rd{};
-    std::mt19937 gen{rd()};
-    std::normal_distribution<> d{mean, std_dev};
-    std::vector<double> array;
-    // add noise to a new array
-    for (auto value: array_I)
-    {
-      array.push_back(value + d(gen));
+      value += d(gen); // could recode to better handle rounding errors
     }
     return array;
   }
@@ -149,8 +114,8 @@ namespace SmartPeak
       y_O.push_back(x);
     }
     // add noise to the intensity array
-    y_O.addNoise(y_O, noise_mu_, noise_sigma_);
+    y_O = addNoise(y_O, noise_mu_, noise_sigma_);
     // add a baseline to the intensity array
-    y_O.addBaseline(y_O, baseline_left_, baseline_right_);
+    y_O = addBaseline(y_O, baseline_left_, baseline_right_);
   }
 }

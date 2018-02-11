@@ -44,17 +44,6 @@ public:
     void simulatePeak(std::vector<double>& x_O, std::vector<double>& y_O) const;
  
     /**
-      @brief Generates a range of values
-
-      @param[in] start Range start
-      @param[in] step Range step
-      @param[in] end Range end
-
-      @returns A vector of values from range start to end.
-    */ 
-    std::vector<double> generateRange(const double& start, const double& step, const double& end) const;
- 
-    /**
       @brief Generates a range of values with noise sampled from a normal distribution
 
       @param[in] start Range start
@@ -64,18 +53,9 @@ public:
 
       @returns A vector of values from range start to end.
     */ 
-    std::vector<double> generateRangeWithNoise(const double& start, const double& step_mu, const double& step_sigma, const double& end) const;
- 
-    /**
-      @brief Generates a linear span of values
-
-      @param[in] start Range start
-      @param[in] step Range step
-      @param[in] n Number of values in the range
-
-      @returns A vector of values from range start to end.
-    */ 
-    std::vector<double> linspan(const double& start, const double& stop, const int& n) const;
+    std::vector<double> generateRangeWithNoise(
+      const double& start, const double& step_mu, 
+      const double& step_sigma, const double& end) const;
  
     /**
       @brief Add random noise from a normal distribution to a vector of values
@@ -97,7 +77,7 @@ public:
       @param[in] baseline_left Left baseline offset
       @param[in] baseline_right Right baseline offset
 
-      @returns A vector of values with added random noise.
+      @returns A vector of values with added baselines.
     */ 
     std::vector<double> addBaseline(
       const std::vector<double>& array_I,
