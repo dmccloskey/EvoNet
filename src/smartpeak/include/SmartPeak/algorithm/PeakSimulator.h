@@ -55,6 +55,18 @@ public:
     std::vector<double> generateRange(const double& start, const double& step, const double& end) const;
  
     /**
+      @brief Generates a range of values with noise sampled from a normal distribution
+
+      @param[in] start Range start
+      @param[in] step_mu Range mean step
+      @param[in] step_sigma Range step standard deviation
+      @param[in] end Range end
+
+      @returns A vector of values from range start to end.
+    */ 
+    std::vector<double> generateRangeWithNoise(const double& start, const double& step_mu, const double& step_sigma, const double& end) const;
+ 
+    /**
       @brief Generates a linear span of values
 
       @param[in] start Range start
@@ -91,8 +103,11 @@ public:
       const std::vector<double>& array_I,
       const double& baseline_left, const double& baseline_right) const;
 
-    void setStepSize(const double& step_size); ///< step_size setter
-    double getStepSize() const; ///< step_size getter
+    void setStepSizeMu(const double& step_size_mu); ///< step_size_mu setter
+    double getStepSizeMu() const; ///< step_size_mu getter
+
+    void setStepSizeSigma(const double& step_size_mu); ///< step_size_sigma setter
+    double getStepSizeSigma() const; ///< step_size_sigma getter
 
     void setWindowStart(const double& window_start); ///< window_start setter
     double getWindowStart() const; ///< window_start getter
@@ -107,7 +122,8 @@ public:
     double getNoiseSigma() const; ///< noise_sigma getter
 
 private:
-    int step_size_; ///< The spacing between points
+    int step_size_mu_; ///< The mean spacing between points
+    int step_size_sigma_; ///< The standard deviation of spacing between points
     int window_start_; ///< Peak window start
     int window_end_; ///< Peak window end
     double noise_mu_; ///< Mean of random noise generated from a normal distribution

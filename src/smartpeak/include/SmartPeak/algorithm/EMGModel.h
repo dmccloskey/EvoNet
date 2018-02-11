@@ -51,7 +51,7 @@ public:
 
       @returns Y value of the EMG PDF.
     */ 
-    double EMGPDF(const double& x_I) const;
+    double PDF(const double& x_I) const;
 
 protected: 
     /**

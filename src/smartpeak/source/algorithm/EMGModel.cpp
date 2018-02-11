@@ -85,7 +85,7 @@ namespace SmartPeak
     return y;
   }
 
-  double EMGModel::EMGPDF(const double& x_I) const
+  double EMGModel::PDF(const double& x_I) const
   {
     const double z =  z_(x_I);
     double y = 0.0;
