@@ -111,7 +111,7 @@ namespace SmartPeak
     // make the intensity array
     for (double x: x_O)
     {
-      y_O.push_back(x);
+      y_O.push_back(PDF(x));
     }
     // add noise to the intensity array
     y_O = addNoise(y_O, noise_mu_, noise_sigma_);

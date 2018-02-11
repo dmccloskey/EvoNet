@@ -102,14 +102,14 @@ public:
     double getNoiseSigma() const; ///< noise_sigma getter
 
 private:
-    int step_size_mu_; ///< The mean spacing between points
-    int step_size_sigma_; ///< The standard deviation of spacing between points
-    int window_start_; ///< Peak window start
-    int window_end_; ///< Peak window end
-    double noise_mu_; ///< Mean of random noise generated from a normal distribution
-    double noise_sigma_; ///< Standard deviation of random noise generated from a normal distribution
-    double baseline_left_; ///< Height of the left baseline
-    double baseline_right_; ///< Height of the right baseline
+    int step_size_mu_ = 1.0; ///< The mean spacing between points
+    int step_size_sigma_ = 0.001; ///< The standard deviation of spacing between points
+    int window_start_ = 0.0; ///< Peak window start
+    int window_end_ = 100.0; ///< Peak window end
+    double noise_mu_ = 0.0; ///< Mean of random noise generated from a normal distribution
+    double noise_sigma_ = 1.0; ///< Standard deviation of random noise generated from a normal distribution
+    double baseline_left_ = 0.0; ///< Height of the left baseline
+    double baseline_right_ = 0.0; ///< Height of the right baseline
 
   };
 }
