@@ -12,6 +12,27 @@ namespace SmartPeak
   {        
   }
 
+  PeakSimulator::PeakSimulator(const int& step_size_mu,
+    const int& step_size_sigma,
+    const int& window_start,
+    const int& window_end,
+    const double& noise_mu,
+    const double& noise_sigma,
+    const double& baseline_left,
+    const double& baseline_right,
+    const double& saturation_limit)
+  {
+    step_size_mu_ = step_size_mu;
+    step_size_sigma_ = step_size_sigma;
+    window_start_ = window_start;
+    window_end_ = window_end;
+    noise_mu_ = noise_mu;
+    noise_sigma_ = noise_sigma;
+    baseline_left_ = baseline_left;
+    baseline_right_ = baseline_right;
+    saturation_limit_ = saturation_limit;
+  }
+
   PeakSimulator::~PeakSimulator()
   {
   }
@@ -152,7 +173,7 @@ namespace SmartPeak
     return array;
   }
 
-  std::vector<double> flattenPeak(
+  std::vector<double> PeakSimulator::flattenPeak(
       const std::vector<double>& array_I,
       const double& saturation_limit)
   {

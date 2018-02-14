@@ -32,6 +32,16 @@ namespace SmartPeak
     */
 public:
     PeakSimulator(); ///< Default constructor
+    PeakSimulator(const int& step_size_mu,
+      const int& step_size_sigma,
+      const int& window_start,
+      const int& window_end,
+      const double& noise_mu,
+      const double& noise_sigma,
+      const double& baseline_left,
+      const double& baseline_right,
+      const double& saturation_limit); ///< Explicit constructor
+    
     ~PeakSimulator(); ///< Default destructor
  
     /**
