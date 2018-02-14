@@ -5,6 +5,7 @@
 
 #include <vector>
 #include <random>
+#include <iostream>
 
 namespace SmartPeak
 {
@@ -123,13 +124,32 @@ namespace SmartPeak
   {
     std::random_device rd{};
     std::mt19937 gen{rd()};
-    std::normal_distribution<> d{step_mu, step_sigma};
+
+    double step_mu_ = step_mu;
+    double step_sigma_ = step_sigma;
+    // TODO: improve defaults
+    if (step_mu <= 0.0)
+    {
+      std::cout << "Warning: mean of step size will generate negative values.  A default mean of 1.0 and std_dev of 0.0 will be used instead." << std::endl;
+      step_mu_ = 1.0;
+      step_sigma_ = 0.0;
+    }
+    else if (step_mu - 5*step_sigma <= 0.0)
+    {
+      std::cout << "Warning: mean and std_dev of range step size may generate negative values.  Reduce std_dev to at least 1/5 the mean of the step size.  A default std_dev of 0.0 will be used instead." << std::endl;
+      step_sigma_ = 0.0;
+    }
+
+    std::normal_distribution<> d{step_mu_, step_sigma_};
     std::vector<double> array;
     double value = start;
-    while(value <= end)
+
+    int cnt = 0;  // checks to ensure that an infinite loop is not run
+    while(value <= end || cnt > 1e6)
     {
       array.push_back(value);
       value += d(gen); // could recode to better handle rounding errors
+      cnt += 1;
     }
     return array;
   }
