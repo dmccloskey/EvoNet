@@ -4,6 +4,8 @@
 #include <boost/test/unit_test.hpp>
 #include <SmartPeak/algorithm/PeakSimulator.h>
 
+#include <iostream>
+
 using namespace SmartPeak;
 using namespace std;
 
@@ -121,18 +123,109 @@ BOOST_AUTO_TEST_CASE(addBaseline)
   
   // no baseline
   std::vector<double> y_baseline = psim.addBaseline(x, y, 
-    3, 1, 5);
+    0.0, 0.0, 5);
+  std::vector<double> y_test = {0, 0, 1, 3, 7, 10, 7, 3, 1, 0, 0};
+  for (int i=0; i<y_test.size(); ++i)
+  {
+    BOOST_CHECK_EQUAL(y_baseline[i], y_test[i]);
+  }
 
   // no noise
-  std::vector<double> range = psim.generateRangeWithNoise(0.0, 1.0, 0.0, 10.0);
-  BOOST_CHECK_EQUAL(range.size(), 11);
-  BOOST_CHECK_EQUAL(range[0], 0.0);
-  BOOST_CHECK_EQUAL(range[10], 10.0);
-
-  // with noise
-  range = psim.generateRangeWithNoise(0.0, 1.0, 0.1, 10.0);
-  BOOST_CHECK_EQUAL(range[0], 0.0);
-  BOOST_CHECK_NE(range[10], 10.0);
+  y_baseline = psim.addBaseline(x, y, 
+    3, 1, 5);
+  y_test = {3, 3, 3, 3, 7, 10, 7, 3, 1, 1, 1};
+  for (int i=0; i<y_test.size(); ++i)
+  {
+    BOOST_CHECK_EQUAL(y_baseline[i], y_test[i]);
+  }
 }
+
+BOOST_AUTO_TEST_CASE(flattenPeak) 
+{ 
+  PeakSimulator psim;
+
+  // toy peak
+  std::vector<double> y = {0, 0, 1, 3, 7, 10, 7, 3, 1, 0, 0};
+  
+  // no saturation
+  std::vector<double> y_saturation = psim.flattenPeak(y, 10);
+  for (int i=0; i<y.size(); ++i)
+  {
+    BOOST_CHECK_EQUAL(y_saturation[i], y[i]);
+  }
+
+  // saturation
+  y_saturation = psim.flattenPeak(y, 5);
+  std::vector<double> y_test = {0, 0, 1, 3, 5, 5, 5, 3, 1, 0, 0};
+  for (int i=0; i<y_test.size(); ++i)
+  {
+    BOOST_CHECK_EQUAL(y_saturation[i], y_test[i]);
+  }
+}
+
+BOOST_AUTO_TEST_CASE(simulatePeak1) 
+{ 
+
+  // time and intensity arrays
+  std::vector<double> x, y;
+
+  // Gaussian peak, evenly spaced points, no detector noise or saturation
+  PeakSimulator psim(1.0, 0.0, 
+    0.0, 10.0, 
+    0.0, 0.0,
+    0.0, 0.0, 
+    15);
+  EMGModel emg(10.0, 0.0, 5.0, 1.0);
+
+  psim.simulatePeak(x, y, emg);
+  std::vector<double> x_test = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+  std::vector<double> y_test = {3.7266531720786709e-05,
+    0.0033546262790251184, 0.11108996538242306, 
+    1.353352832366127, 6.0653065971263338, 10,
+    6.0653065971263338, 1.353352832366127, 0.11108996538242306,
+    0.0033546262790251184, 3.7266531720786709e-05};
+  for (int i=0; i<x.size(); ++i)
+  {
+    BOOST_CHECK_EQUAL(x[i], x_test[i]);
+    BOOST_CHECK_EQUAL(y[i], y_test[i]);
+  }
+}
+
+// BOOST_AUTO_TEST_CASE(simulatePeak2) 
+// { 
+//   // time and intensity arrays
+//   std::vector<double> x, y;
+
+//   // Gaussian peak, evenly spaced points, no detector noise or saturation
+//   PeakSimulator psim(0.5, 0.0, 
+//     0.0, 10.0, 
+//     0.0, 0.0,
+//     0.0, 0.0, 
+//     15);
+//   EMGModel emg(10.0, 0.5, 5.0, 1.0);
+
+//   psim.simulatePeak(x, y, emg);
+//   std::vector<double> x_test = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+//   std::vector<double> y_test = {3.7266531720786709e-05,
+//     0.0033546262790251184, 0.11108996538242306, 
+//     1.353352832366127, 6.0653065971263338, 10,
+//     6.0653065971263338, 1.353352832366127, 0.11108996538242306,
+//     0.0033546262790251184, 3.7266531720786709e-05};
+//   // for (int i=0; i<x.size(); ++i)
+//   // {
+//   //   BOOST_CHECK_EQUAL(x[i], x_test[i]);
+//   //   BOOST_CHECK_EQUAL(y[i], y_test[i]);
+//   // }
+//   for (int i=0; i<x.size(); ++i)
+//   {
+//     std::cout<< x[i] << ", ";
+//   }
+//   std::cout<< ";" <<std::endl;
+//   for (int i=0; i<y.size(); ++i)
+//   {
+//     std::cout<< y[i] << ", ";
+//   }
+//   std::cout<< ";" <<std::endl;
+// }
 
 BOOST_AUTO_TEST_SUITE_END()

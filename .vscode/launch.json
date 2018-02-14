@@ -275,7 +275,7 @@
             "args": [],
             "stopAtEntry": false,
             "cwd": "/home/user/code",
-            "program":"/home/user/code/a.out",
+            "program":"/home/user/code/build/src/tests/class_tests/bin/PeakSimulator_test",
             "environment": [],
             "externalConsole": true,
             "pipeTransport": {
@@ -291,7 +291,7 @@
                 "debuggerPath": "/usr/bin/gdb"
             },
             "sourceFileMap": {
-                "/home/user/code": "C:/Users/domccl/GitHub/smartPeak/cpp"
+                "/home/user/code": "C:/Users/domccl/GitHub/smartPeak_cpp"
                 // "/home/user/code": "C:/Users/dmccloskey/Documents/GitHub/smartPeak/cpp"
             },
             "linux": {

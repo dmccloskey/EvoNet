@@ -30,6 +30,10 @@ namespace SmartPeak
     */
 public:
     EMGModel(); ///< Default constructor
+    EMGModel(const double& h,
+      const double& tau,
+      const double& mu,
+      const double& sigma); ///< Explicit constructor
     ~EMGModel(); ///< Default destructor
 
     void setH(const double& h); ///< EMG h setter

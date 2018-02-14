@@ -45,6 +45,16 @@ BOOST_AUTO_TEST_CASE(destructor)
   delete ptr;
 }
 
+BOOST_AUTO_TEST_CASE(constructor2) 
+{
+  EMGModel emg(1.0, 2.0, 3.0, 4.0);
+
+  BOOST_CHECK_EQUAL(emg.getH(), 1.0);
+  BOOST_CHECK_EQUAL(emg.getTau(), 2.0);
+  BOOST_CHECK_EQUAL(emg.getMu(), 3.0);
+  BOOST_CHECK_EQUAL(emg.getSigma(), 4.0);
+}
+
 BOOST_AUTO_TEST_CASE(gettersAndSetters) 
 {
   EMGModel emg;
