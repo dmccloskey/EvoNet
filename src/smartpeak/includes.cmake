@@ -1,11 +1,13 @@
 set(SmartPeak_sources  CACHE INTERNAL "This variable should hold all SmartPeak sources at the end of the config step" )
 
 ## ATTENTION: The order of includes should be similar to the inclusion hierarchy
+include(source/algorithm/sources.cmake)
 include(source/core/sources.cmake)
 
 set(SmartPeak_sources_h  CACHE INTERNAL "This variable should hold all SmartPeak sources at the end of the config step" )
 
 ## ATTENTION: The order of includes should be similar to the inclusion hierarchy
+include(include/SmartPeak/algorithm/sources.cmake)
 include(include/SmartPeak/core/sources.cmake)
 
 ## add configured config.h&Co to source group

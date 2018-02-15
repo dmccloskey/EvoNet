@@ -1,3 +1,5 @@
+/**TODO:  Add copyright*/
+
 #define BOOST_TEST_MODULE Helloworld test suite 
 #include <boost/test/unit_test.hpp>
 #include <SmartPeak/core/Helloworld.h>

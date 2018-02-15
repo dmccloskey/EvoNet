@@ -48,22 +48,6 @@ if (GLPK_FOUND)
 endif()
 
 #------------------------------------------------------------------------------
-# zlib
-find_package(ZLIB REQUIRED)
-
-#------------------------------------------------------------------------------
-# bzip2
-find_package(BZip2 REQUIRED)
-
-#------------------------------------------------------------------------------
-# Find geometric tools - wildmagick 5
-set(WM5_FIND_REQUIRED_COMPONENTS WM5_WM5CORE WM5_WM5MATHEMATICS )
-find_package(WM5 REQUIRED)
-if (WM5_FOUND)
-  add_definitions(${WM5_DEFINITIONS})
-endif()
-
-#------------------------------------------------------------------------------
 # SQLITE
 find_package(SQLITE 3.15.0 REQUIRED)
 

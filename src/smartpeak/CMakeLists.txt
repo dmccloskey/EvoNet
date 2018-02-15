@@ -40,9 +40,6 @@ include (${PROJECT_SOURCE_DIR}/includes.cmake)
 # all the dependency libraries are linked into libSmartPeak.so
 set(SMARTPEAK_DEP_LIBRARIES  ${COIN_LIBRARIES}
                           ${Boost_LIBRARIES}
-                          ${WM5_LIBRARIES}
-                          ${BZIP2_LIBRARIES}
-                          ${ZLIB_LIBRARIES}
                           ${SQLITE_LIBRARY}
                           ${GLPK_LIBRARIES})
 
@@ -71,9 +68,6 @@ smartpeak_add_library(TARGET_NAME  SmartPeak
                    EXTERNAL_INCLUDES ${Boost_INCLUDE_DIRS}
                                      ${SQLITE_INCLUDE_DIR}
                                      ${GLPK_INCLUDE_DIRS}
-                                     ${ZLIB_INCLUDE_DIRS}
-                                     ${BZIP2_INCLUDE_DIR}
-                                     ${WM5_INCLUDE_DIRS}
                                      ${COIN_INCLUDE_DIRS}
                    LINK_LIBRARIES ${APPLE_EXTRA_LIBS}
                                   ${SMARTPEAK_DEP_LIBRARIES}

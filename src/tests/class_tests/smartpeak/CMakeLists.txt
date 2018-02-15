@@ -42,6 +42,10 @@ endif()
 add_custom_target(CORE_TEST)
 add_dependencies(CORE_TEST ${core_executables_list})
 
+# algorithm
+add_custom_target(ALGORITHM_TEST)
+add_dependencies(ALGORITHM_TEST ${algorithm_executables_list})
+
 #------------------------------------------------------------------------------
 # Add the actual tests
 foreach(_class_test ${TEST_executables})

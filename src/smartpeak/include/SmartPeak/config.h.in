@@ -89,18 +89,12 @@
 #define SMARTPEAK_GLPK_VERSION_MAJOR @CF_SMARTPEAK_GLPK_VERSION_MAJOR@
 #define SMARTPEAK_GLPK_VERSION_MINOR @CF_SMARTPEAK_GLPK_VERSION_MINOR@
 
-// class & TOPP tests
+// class tests
 
 #ifdef _OPENMP
   #define IF_MASTERTHREAD if (omp_get_thread_num() ==0)
 #else
   #define IF_MASTERTHREAD
 #endif
-
-#cmakedefine WITH_CRAWDAD 1
-
-// NOTE: This is a temporary hack. The aim is that SmartPeak should not care
-//       but currently we need this information for the ToolHandler.
-#cmakedefine WITH_GUI 1
 
 #endif // SMARTPEAK_CONFIG_H
