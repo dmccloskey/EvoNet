@@ -103,22 +103,25 @@ BOOST_AUTO_TEST_CASE(addNoise)
   PeakSimulator psim;
 
   // no noise
-  std::vector<double> range = {0, 1, 2, 3, 4, 5};
-  std::vector<double> noise_range = psim.addNoise(range, 0.0, 0.0);
+  const std::vector<double> range = {0, 1, 2, 3, 4, 5};
+  std::vector<double> noise_range = range;
+  psim.addNoise(noise_range, 0.0, 0.0);
   for (int i=0; i<range.size(); ++i)
   {
     BOOST_CHECK_EQUAL(range[i], noise_range[i]);
   }
 
   // with noise
-  noise_range = psim.addNoise(range, 0.0, 1.0);
+  noise_range = range;
+  psim.addNoise(noise_range, 0.0, 1.0);
   for (int i=0; i<range.size(); ++i)
   {
     BOOST_CHECK_NE(range[i], noise_range[i]);
   }
 
   // with noise
-  noise_range = psim.addNoise(range, 1.0, 0.0);
+  noise_range = range;
+  psim.addNoise(noise_range, 1.0, 0.0);
   for (int i=0; i<range.size(); ++i)
   {
     BOOST_CHECK_EQUAL(range[i] + 1.0, noise_range[i]);
@@ -130,12 +133,12 @@ BOOST_AUTO_TEST_CASE(addBaseline)
   PeakSimulator psim;
 
   // toy peak
-  std::vector<double> x = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-  std::vector<double> y = {0, 0, 1, 3, 7, 10, 7, 3, 1, 0, 0};
+  const std::vector<double> x = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+  const std::vector<double> y = {0, 0, 1, 3, 7, 10, 7, 3, 1, 0, 0};
   
   // no baseline
-  std::vector<double> y_baseline = psim.addBaseline(x, y, 
-    0.0, 0.0, 5);
+  std::vector<double> y_baseline = y;
+  psim.addBaseline(x, y_baseline, 0.0, 0.0, 5);
   std::vector<double> y_test = {0, 0, 1, 3, 7, 10, 7, 3, 1, 0, 0};
   for (int i=0; i<y_test.size(); ++i)
   {
@@ -143,8 +146,8 @@ BOOST_AUTO_TEST_CASE(addBaseline)
   }
 
   // no noise
-  y_baseline = psim.addBaseline(x, y, 
-    3, 1, 5);
+  y_baseline = y;
+  psim.addBaseline(x, y_baseline, 3, 1, 5);
   y_test = {3, 3, 3, 3, 7, 10, 7, 3, 1, 1, 1};
   for (int i=0; i<y_test.size(); ++i)
   {
@@ -157,17 +160,19 @@ BOOST_AUTO_TEST_CASE(flattenPeak)
   PeakSimulator psim;
 
   // toy peak
-  std::vector<double> y = {0, 0, 1, 3, 7, 10, 7, 3, 1, 0, 0};
+  const std::vector<double> y = {0, 0, 1, 3, 7, 10, 7, 3, 1, 0, 0};
   
   // no saturation
-  std::vector<double> y_saturation = psim.flattenPeak(y, 10);
+  std::vector<double> y_saturation = y;
+  psim.flattenPeak(y_saturation, 10);
   for (int i=0; i<y.size(); ++i)
   {
     BOOST_CHECK_EQUAL(y_saturation[i], y[i]);
   }
 
   // saturation
-  y_saturation = psim.flattenPeak(y, 5);
+  y_saturation = y;
+  psim.flattenPeak(y_saturation, 5);
   std::vector<double> y_test = {0, 0, 1, 3, 5, 5, 5, 3, 1, 0, 0};
   for (int i=0; i<y_test.size(); ++i)
   {

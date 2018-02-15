@@ -154,57 +154,47 @@ namespace SmartPeak
     return array;
   }
 
-  std::vector<double> PeakSimulator::addNoise(
-    const std::vector<double>& array_I,
+  void PeakSimulator::addNoise(
+    std::vector<double>& array_IO,
       const double& mean, const double& std_dev)
   {
     std::random_device rd{};
     std::mt19937 gen{rd()};
     std::normal_distribution<> d{mean, std_dev};
-    std::vector<double> array;
     // add noise to a new array
-    for (auto value: array_I)
+    for (double& value: array_IO)
     {
-      array.push_back(value + d(gen));
+      value = value + d(gen);
     }
-    return array;
   }
 
-  std::vector<double> PeakSimulator::addBaseline(
+  void PeakSimulator::addBaseline(
       const std::vector<double>& x_I,
-      const std::vector<double>& y_I,
+      std::vector<double>& y_IO,
       const double& baseline_left, const double& baseline_right,
       const double& peak_apex)
   {
-    std::vector<double> array;
     for (int i = 0; i < x_I.size(); ++i)
     {
       if (x_I[i] <= peak_apex)
       {
-        const double value = std::max(baseline_left, y_I[i]);
-        array.push_back(value);
+        y_IO[i] = std::max(baseline_left, y_IO[i]);
       }
       else
       {
-        const double value = std::max(baseline_right, y_I[i]);
-        array.push_back(value);
+        y_IO[i] = std::max(baseline_right, y_IO[i]);
       }
     }
-    return array;
   }
 
-  std::vector<double> PeakSimulator::flattenPeak(
-      const std::vector<double>& array_I,
+  void PeakSimulator::flattenPeak(
+      std::vector<double>& array_IO,
       const double& saturation_limit)
   {
-    std::vector<double> array;
-    for (auto value: array_I)
+    for (double& value: array_IO)
     {
-      double val = (value > saturation_limit) ? saturation_limit: value;
-      array.push_back(val);
-      
+      value = (value > saturation_limit) ? saturation_limit: value;      
     }
-    return array;
   }
 
   void PeakSimulator::simulatePeak(
@@ -222,10 +212,10 @@ namespace SmartPeak
       y_O.push_back(emg.PDF(x));
     }
     // add saturation limit
-    y_O = flattenPeak(y_O, saturation_limit_);
+    flattenPeak(y_O, saturation_limit_);
     // add a baseline to the intensity array
-    y_O = addBaseline(x_O, y_O, baseline_left_, baseline_right_, emg.getMu());
+    addBaseline(x_O, y_O, baseline_left_, baseline_right_, emg.getMu());
     // add noise to the intensity array
-    y_O = addNoise(y_O, noise_mu_, noise_sigma_);
+    addNoise(y_O, noise_mu_, noise_sigma_);
   }
 }
