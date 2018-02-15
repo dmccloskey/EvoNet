@@ -211,11 +211,11 @@ namespace SmartPeak
     {
       y_O.push_back(emg.PDF(x));
     }
-    // add saturation limit
-    flattenPeak(y_O, saturation_limit_);
     // add a baseline to the intensity array
     addBaseline(x_O, y_O, baseline_left_, baseline_right_, emg.getMu());
     // add noise to the intensity array
     addNoise(y_O, noise_mu_, noise_sigma_);
+    // add saturation limit
+    flattenPeak(y_O, saturation_limit_);
   }
 }

@@ -180,7 +180,7 @@ BOOST_AUTO_TEST_CASE(flattenPeak)
   }
 }
 
-BOOST_AUTO_TEST_CASE(simulatePeak1) 
+BOOST_AUTO_TEST_CASE(simulatePeak) 
 { 
 
   // time and intensity arrays
@@ -206,30 +206,52 @@ BOOST_AUTO_TEST_CASE(simulatePeak1)
     BOOST_CHECK_CLOSE(x[i], x_test[i], 1e-6);
     BOOST_CHECK_CLOSE(y[i], y_test[i], 1e-6);
   }
-}
 
-BOOST_AUTO_TEST_CASE(simulatePeak2) 
-{ 
   // time and intensity arrays
-  std::vector<double> x, y;
+  x.clear();
+  y.clear();
 
   // Tailing peak, evenly spaced points, no detector noise or saturation
-  PeakSimulator psim(1.0, 0.0, 
+  psim = PeakSimulator(1.0, 0.0, 
     0.0, 10.0, 
     0.0, 0.0,
     0.0, 0.0, 
     15);
-  EMGModel emg(10.0, 0.5, 5.0, 1.0);
+  emg = EMGModel(10.0, 0.5, 5.0, 1.0);
 
   psim.simulatePeak(x, y, emg);
-  std::vector<double> x_test = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-  std::vector<double> y_test = {1.04424e-05, 0.0010894327367425214,
+  x_test = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+  y_test = {1.04424e-05, 0.0010894327367425214,
   0.0428381, 0.640548, 3.69487, 8.42738,
   7.95379, 3.39235, 0.772531, 0.1214391, 0.0167949};
   for (int i=0; i<x.size(); ++i)
   {
     BOOST_CHECK_CLOSE(x[i], x_test[i], 1e-4);
     BOOST_CHECK_CLOSE(y[i], y_test[i], 1e-4);
+  }
+
+  // time and intensity arrays
+  x.clear();
+  y.clear();
+
+  // Tailing peak, non-evenly spaced points, detector noise and saturation
+  psim = PeakSimulator(1.0, 0.1, 
+    0.0, 10.0, 
+    0.0, 0.5,
+    1.0, 3.0, 
+    8);
+  emg = EMGModel(10.0, 0.5, 5.0, 1.0);
+
+  psim.simulatePeak(x, y, emg);
+  x_test = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+  y_test = {1.04424e-05, 0.0010894327367425214,
+  0.0428381, 0.640548, 3.69487, 8.42738,
+  7.95379, 3.39235, 0.772531, 0.1214391, 0.0167949};
+  BOOST_CHECK_EQUAL(x.size(), y.size());
+  BOOST_CHECK_EQUAL(x[0], 0);
+  for (int i=0; i<y.size(); ++i)
+  {
+    BOOST_TEST(y[i] <= 8.0, boost::test_tools::tolerance(0.001));
   }
 
   // // UNCOMMENT to print out new test values
