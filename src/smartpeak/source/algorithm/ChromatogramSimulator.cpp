@@ -17,9 +17,41 @@ namespace SmartPeak
   ChromatogramSimulator::~ChromatogramSimulator()
   {
   }
+
+  double ChromatogramSimulator::findPeakOverlap(
+    const PeakSimulator& peak_left, const EMGModel& emg_left,
+    const PeakSimulator& peak_right, const EMGModel& emg_right) const
+  {
+    std::vector<double> x_left, y_left, x_right, y_right;
+    PeakSimulator peak_l = peak_left;
+    PeakSimulator peak_r = peak_right;
+
+    // move windows just to the overlapping region
+    peak_l.setWindowStart(peak_r.getWindowStart());
+    peak_r.setWindowEnd(peak_l.getWindowEnd());
+
+    // simulate the peaks for the overlapping regions
+    peak_l.simulatePeak(x_left, y_left, emg_left);
+    peak_r.simulatePeak(x_right, y_right, emg_right);
+
+    // find where the peaks cross
+    for (int i=x_right.size()-1; i>=0; --i)
+    {  // iterate in reverse order to extend the left peak
+      for (int j=x_left.size()-1; j>=0; --j)
+      {
+        if (x_right[i] <= x_left[j] && y_right[i] <= y_left[j])
+        {
+          return x_left[j];
+        }
+      }
+    }
+    // return default
+    return peak_left.getWindowEnd();
+  }
   
   void ChromatogramSimulator::joinPeakWindows(
-    PeakSimulator& peak_left, PeakSimulator& peak_right) const
+    PeakSimulator& peak_left, EMGModel& emg_left,
+    PeakSimulator& peak_right, EMGModel& emg_right) const
   {
     // Check order of left and right peaks
     if (peak_left.getWindowStart() > peak_right.getWindowStart() &&
@@ -27,6 +59,7 @@ namespace SmartPeak
     {  // peaks are swapped
       std::cout << "Left and right peaks are swapped!" << std::endl;
       std::swap(peak_left, peak_right);
+      std::swap(emg_left, emg_right);
     }
     
     const double x_delta = peak_right.getWindowStart() - peak_left.getWindowEnd();
@@ -52,16 +85,26 @@ namespace SmartPeak
       // Overlapping windows; Left baseline is higher
       // increase the right peak baseline to match the left peak baseline
       peak_right.setBaselineLeft(peak_left.getBaselineRight()); 
-      // shorten the right baseline
-      peak_right.setWindowStart(peak_left.getWindowEnd());
+      // find the overlap
+      const double overlap = findPeakOverlap(
+        peak_left, emg_left,
+        peak_right, emg_right
+      );
+      peak_right.setWindowStart(overlap);
+      peak_left.setWindowEnd(overlap);
     }
     else if (x_delta < 0.0 && y_delta > 0.0)
     {
       // Overlapping windows; Right baseline is higher
       // increase the left peak baseline to match the right peak baseline
       peak_left.setBaselineRight(peak_right.getBaselineLeft());
-      // shorten the right baseline
-      peak_right.setWindowStart(peak_left.getWindowEnd());
+      // find the overlap
+      const double overlap = findPeakOverlap(
+        peak_left, emg_left,
+        peak_right, emg_right
+      );
+      peak_right.setWindowStart(overlap);
+      peak_left.setWindowEnd(overlap);
     }    
   }
 
@@ -93,28 +136,26 @@ namespace SmartPeak
         return lhs.second.getMu() < rhs.second.getMu(); //ascending order
       }
     );
-    // std::vector<PeakSimulator> peaks_sorted;
-    // std::vector<EMGModel> emgs_sorted;
-    // for (int i=0; i<peak_emg_pairs.size(); ++i)
-    // {
-    //   peaks_sorted.push_back(peak_emg_pairs.first);
-    //   emgs_sorted.push_back(peak_emg_pairs.second);
-    // }
 
-    // Add the peaks in order
+    // Join the peaks in order
     for (int i=1; i<peak_emg_pairs.size(); ++i)
     {      
-      // join peaks
-
-      // // make the peak
-      // std::vector<double> x, y;
-      // peak_emg_pairs[i].first.simulatePeak(x, y, peak_emg_pairs[i].second);
-
-      // // extend the chromatogram
-      // v.reserve(v.size() + distance(v_prime.begin(),v_prime.end()));
-      // v.insert(v.end(),v_prime.begin(),v_prime.end());
-
+      joinPeakWindows(peak_emg_pairs[i-1].first, peak_emg_pairs[i-1].second,
+        peak_emg_pairs[i].first, peak_emg_pairs[i].second);
     }
-    
+
+    // Add the peaks in order
+    for (int i=0; i<peak_emg_pairs.size(); ++i)
+    {  
+      // make the first peak
+      std::vector<double> x, y;
+      peak_emg_pairs[i].first.simulatePeak(x, y, peak_emg_pairs[i].second);
+
+      // extend the chromatogram
+      x_O.reserve(x_O.size() + distance(x.begin(), x.end()));
+      x_O.insert(x_O.end(), x.begin(), x.end());
+      y_O.reserve(y_O.size() + distance(y.begin(), y.end()));
+      y_O.insert(y_O.end(), y.begin(), y.end());
+    }    
   }
 }

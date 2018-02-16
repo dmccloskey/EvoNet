@@ -254,6 +254,31 @@ BOOST_AUTO_TEST_CASE(simulatePeak)
     BOOST_TEST(y[i] <= 8.0, boost::test_tools::tolerance(0.001));
   }
 
+  // time and intensity arrays
+  x.clear();
+  y.clear();
+
+  // Negative step size
+  psim = PeakSimulator(-0.2, 0.0, 
+    0.0, 10.0, 
+    0.0, 0.0,
+    0.0, 0.0, 
+    15);
+  emg = EMGModel(10.0, 0.0, 5.0, 1.0);
+
+  psim.simulatePeak(x, y, emg);
+  x_test = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+  y_test = {3.7266531720786709e-05,
+    0.0033546262790251184, 0.11108996538242306, 
+    1.353352832366127, 6.0653065971263338, 10,
+    6.0653065971263338, 1.353352832366127, 0.11108996538242306,
+    0.0033546262790251184, 3.7266531720786709e-05};
+  for (int i=0; i<x.size(); ++i)
+  {
+    BOOST_CHECK_CLOSE(x[i], x_test[i], 1e-6);
+    BOOST_CHECK_CLOSE(y[i], y_test[i], 1e-6);
+  }
+
   // // UNCOMMENT to print out new test values
   // for (int i=0; i<x.size(); ++i)
   // {

@@ -48,27 +48,35 @@ public:
       const std::vector<PeakSimulator>& peaks, const std::vector<EMGModel>& emgs) const;
 
     /**
-      @brief Adds a peak to the chromatogram
-
-      @param[in,out] x_IO A vector of x values representing time or m/z
-      @param[in,out] y_IO A vector of y values representing the intensity at time t or m/z m
-      @param[in] peak PeakSimulator class
-      @param[in] emg EMGModel class
-    */ 
-    double addPeak(std::vector<double>& x_O, std::vector<double>& y_O,
-      const PeakSimulator& peak, const EMGModel& emg) const;
-
-    /**
       @brief Joins peak windows.  
       
       Overlapping or disconnected peak windows will be joined by extending the highest 
         connecting baseline.
 
       @param[in,out] peak_left Left peak
+      @param[in,out] emg_left Left peak EMGModel
       @param[in,out] peak_right Right peak
+      @param[in,out] emg_right Right peak EMGModel
     */ 
-    void joinPeakWindows(PeakSimulator& peak_left, PeakSimulator& peak_right) const;
+    void joinPeakWindows(
+      PeakSimulator& peak_left, EMGModel& emg_left,
+      PeakSimulator& peak_right, EMGModel& emg_right) const;
 
+    /**
+      @brief Find the overlap between two peak windows.  
+      
+      The point of overlap between two peaks will be returned.
+
+      @param[in,out] peak_left Left peak
+      @param[in,out] emg_left Left peak EMGModel
+      @param[in,out] peak_right Right peak
+      @param[in,out] emg_right Right peak EMGModel
+
+      @returns overlap The point at which both peaks overlap
+    */ 
+    double findPeakOverlap(
+      const PeakSimulator& peak_left, const EMGModel& emg_left,
+      const PeakSimulator& peak_right, const EMGModel& emg_right) const;
   };
 }
 
