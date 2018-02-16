@@ -2,9 +2,9 @@
 
 #define BOOST_TEST_MODULE ChromatogramSimulator test suite 
 #include <boost/test/unit_test.hpp>
-#include <SmartPeak/algorithm/ChromatogramSimulator.h>
-#include <SmartPeak/algorithm/PeakSimulator.h>
-#include <SmartPeak/algorithm/EMGModel.h>
+#include <SmartPeak//simulator/ChromatogramSimulator.h>
+#include <SmartPeak//simulator/PeakSimulator.h>
+#include <SmartPeak//simulator/EMGModel.h>
 
 #include <iostream>
 
@@ -233,6 +233,26 @@ BOOST_AUTO_TEST_CASE(simulateChromatogram)
 
   std::vector<PeakSimulator> peaks;
   std::vector<EMGModel> emgs;
+
+  // Perfect gaussian peak
+  peak1 = PeakSimulator(1.0, 0.0, 
+    0.0, 10.0, 
+    0.0, 0.0,
+    1.0, 1.0, //bl, br
+    100);
+  emg1 = EMGModel(10.0, 0.0, 5.0, 1.0);
+  peaks = {peak1};
+  emgs = {emg1};
+
+  chromsimulator.simulateChromatogram(chrom_time, chrom_intensity,
+    peaks, emgs);
+  x_test = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+  y_test = {1, 1, 1, 1.35335, 6.06531, 10, 6.06531, 1.35335, 1, 1, 1};
+  for (int i=0; i<chrom_time.size(); ++i)
+  {
+    BOOST_CHECK_CLOSE(chrom_time[i], x_test[i], 1e-3);
+    BOOST_CHECK_CLOSE(chrom_intensity[i], y_test[i], 1e-3);
+  }
 
   // Perfect gaussian peaks
   peak1 = PeakSimulator(1.0, 0.0, 

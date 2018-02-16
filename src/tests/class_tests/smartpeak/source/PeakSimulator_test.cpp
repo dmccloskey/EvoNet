@@ -2,7 +2,7 @@
 
 #define BOOST_TEST_MODULE PeakSimulator test suite 
 #include <boost/test/unit_test.hpp>
-#include <SmartPeak/algorithm/PeakSimulator.h>
+#include <SmartPeak//simulator/PeakSimulator.h>
 
 #include <iostream>
 

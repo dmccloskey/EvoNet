@@ -1,6 +1,6 @@
 /**TODO:  Add copyright*/
 
-#include <SmartPeak/algorithm/EMGModel.h>
+#include <SmartPeak//simulator/EMGModel.h>
 
 #include <cmath>
 
