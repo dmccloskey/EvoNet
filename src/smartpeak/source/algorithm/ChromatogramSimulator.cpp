@@ -34,19 +34,24 @@ namespace SmartPeak
     peak_l.simulatePeak(x_left, y_left, emg_left);
     peak_r.simulatePeak(x_right, y_right, emg_right);
 
-    // find where the peaks cross
+    // find the highest point where the peaks cross
+    double x_overlap = peak_left.getWindowEnd();
+    double y_overlap = 0.0;
     for (int i=x_right.size()-1; i>=0; --i)
     {  // iterate in reverse order to extend the left peak
       for (int j=x_left.size()-1; j>=0; --j)
       {
         if (x_right[i] <= x_left[j] && y_right[i] <= y_left[j])
         {
-          return x_left[j];
+          if (y_overlap < y_right[i])
+          {
+            y_overlap =  y_right[i];
+            x_overlap =  x_right[i];
+          }
         }
       }
     }
-    // return default
-    return peak_left.getWindowEnd();
+    return x_overlap;
   }
   
   void ChromatogramSimulator::joinPeakWindows(

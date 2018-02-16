@@ -33,6 +33,61 @@ BOOST_AUTO_TEST_CASE(destructor)
   delete ptr;
 }
 
+BOOST_AUTO_TEST_CASE(findPeakOverlap)
+{
+  ChromatogramSimulator chromsimulator;
+  PeakSimulator peak_left, peak_right;
+  EMGModel emg_left, emg_right;  
+
+ // Overlapping windows; left and right baseline are equal;
+  peak_left = PeakSimulator(1.0, 0.0, 
+    0.0, 12.0, 
+    0.0, 0.0,
+    1.0, 5.0, //bl, br
+    15);
+  peak_right = PeakSimulator(1.0, 0.0, 
+    8.0, 20.0, 
+    0.0, 0.0,
+    5.0, 1.0, //bl, br
+    15);
+  emg_left = EMGModel(10.0, 0.0, 5.0, 1.0);
+  emg_right = EMGModel(10.0, 0.0, 15.0, 1.0);
+  chromsimulator.findPeakOverlap(peak_left, emg_left, peak_right, emg_right);
+  BOOST_CHECK_EQUAL(chromsimulator.findPeakOverlap(peak_left, emg_left, peak_right, emg_right), 12.0);
+
+ // Merged peaks: both baselines overlap
+  peak_left = PeakSimulator(1.0, 0.0, 
+    0.0, 15.0, 
+    0.0, 0.0,
+    1.0, 1.0, //bl, br
+    15);
+  peak_right = PeakSimulator(1.0, 0.0, 
+    5.0, 20.0, 
+    0.0, 0.0,
+    1.0, 1.0, //bl, br
+    15);
+  emg_left = EMGModel(10.0, 0.0, 9.0, 1.0);
+  emg_right = EMGModel(10.0, 0.0, 11.0, 1.0);
+  chromsimulator.findPeakOverlap(peak_left, emg_left, peak_right, emg_right);
+  BOOST_CHECK_EQUAL(chromsimulator.findPeakOverlap(peak_left, emg_left, peak_right, emg_right), 10.0);
+
+ // Merged peaks: both baselines do not overlap
+  peak_left = PeakSimulator(1.0, 0.0, 
+    0.0, 13.0, 
+    0.0, 0.0,
+    1.0, 1.0, //bl, br
+    15);
+  peak_right = PeakSimulator(1.0, 0.0, 
+    5.0, 20.0, 
+    0.0, 0.0,
+    1.0, 1.0, //bl, br
+    15);
+  emg_left = EMGModel(10.0, 0.0, 9.0, 1.0);
+  emg_right = EMGModel(10.0, 0.0, 11.0, 1.0);
+  chromsimulator.findPeakOverlap(peak_left, emg_left, peak_right, emg_right);
+  BOOST_CHECK_EQUAL(chromsimulator.findPeakOverlap(peak_left, emg_left, peak_right, emg_right), 10.0);
+}
+
 BOOST_AUTO_TEST_CASE(joinPeakWindows) 
 {
   ChromatogramSimulator chromsimulator;
