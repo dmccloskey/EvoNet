@@ -2,7 +2,7 @@
 
 #define BOOST_TEST_MODULE EMGModel test suite 
 #include <boost/test/unit_test.hpp>
-#include <SmartPeak/algorithm/EMGModel.h>
+#include <SmartPeak//simulator/EMGModel.h>
 
 using namespace SmartPeak;
 using namespace std;

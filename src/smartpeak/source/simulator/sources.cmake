@@ -1,5 +1,5 @@
 ### the directory name
-set(directory source/algorithm)
+set(directory source/simulator)
 
 ### list all filenames of the directory here
 set(sources_list
@@ -18,5 +18,5 @@ endforeach(i)
 set(SmartPeak_sources ${SmartPeak_sources} ${sources})
 
 ### source group definition
-source_group("Source Files\\algorithm" FILES ${sources})
+source_group("Source Files\\simulator" FILES ${sources})
 

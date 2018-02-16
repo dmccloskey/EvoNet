@@ -1,7 +1,7 @@
 /**TODO:  Add copyright*/
 
-#include <SmartPeak/algorithm/PeakSimulator.h>
-#include <SmartPeak/algorithm/EMGModel.h>
+#include <SmartPeak//simulator/PeakSimulator.h>
+#include <SmartPeak//simulator/EMGModel.h>
 
 #include <vector>
 #include <random>

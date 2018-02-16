@@ -1,5 +1,5 @@
 ### the directory name
-set(directory include/SmartPeak/algorithm)
+set(directory include/SmartPeak/simulator)
 
 ### list all header files of the directory here
 set(sources_list_h
@@ -15,7 +15,7 @@ foreach(i ${sources_list_h})
 endforeach(i)
 
 ### source group definition
-source_group("Header Files\\SmartPeak\\algorithm" FILES ${sources_h})
+source_group("Header Files\\SmartPeak\\simulator" FILES ${sources_h})
 
 set(SmartPeak_sources_h ${SmartPeak_sources_h} ${sources_h})
 
