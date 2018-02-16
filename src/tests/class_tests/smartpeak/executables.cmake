@@ -3,6 +3,7 @@ set(core_executables_list
 )
 
 set(algorithm_executables_list
+  ChromatogramSimulator_test
   EMGModel_test
   PeakSimulator_test
 )

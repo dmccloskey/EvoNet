@@ -3,6 +3,7 @@ set(directory include/SmartPeak/algorithm)
 
 ### list all header files of the directory here
 set(sources_list_h
+	ChromatogramSimulator.h
 	PeakSimulator.h
 	EMGModel.h
 )

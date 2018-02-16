@@ -41,11 +41,11 @@ public:
 
       @param[out] x_IO A vector of x values representing time or m/z
       @param[out] y_IO A vector of y values representing the intensity at time t or m/z m
-      @param[in] peak list of PeakSimulator classes that will compose the chromatogram
-      @param[in] emg list of corresponding EMGModel classes that define each peak
+      @param[in] peaks list of PeakSimulator classes that will compose the chromatogram
+      @param[in] emgs list of corresponding EMGModel classes that define each peak
     */ 
     void simulateChromatogram(std::vector<double>& x_O, std::vector<double>& y_O,
-      const std::vector<PeakSimulator>& peak, const std::vector<EMGModel>& emg) const;
+      const std::vector<PeakSimulator>& peaks, const std::vector<EMGModel>& emgs) const;
 
     /**
       @brief Adds a peak to the chromatogram
@@ -59,21 +59,15 @@ public:
       const PeakSimulator& peak, const EMGModel& emg) const;
 
     /**
-      @brief Removes points from overlapping peak windows.  The smallest inensity values from overlapping
-        peaks will be discarded.
+      @brief Joins peak windows.  
+      
+      Overlapping or disconnected peak windows will be joined by extending the highest 
+        connecting baseline.
 
-      @param[in,out] x_IO A vector of x values representing time or m/z
-      @param[in,out] y_IO A vector of y values representing the intensity at time t or m/z m
+      @param[in,out] peak_left Left peak
+      @param[in,out] peak_right Right peak
     */ 
-    double removeOverlappingPoints(std::vector<double>& x_O, std::vector<double>& y_O) const;
-
-    /**
-      @brief Joins disconnected peaks.  Diconnnected peak windows
-
-      @param[in,out] x_IO A vector of x values representing time or m/z
-      @param[in,out] y_IO A vector of y values representing the intensity at time t or m/z m
-    */ 
-    double joinDisconnectedPoints(std::vector<double>& x_O, std::vector<double>& y_O) const;
+    void joinPeakWindows(PeakSimulator& peak_left, PeakSimulator& peak_right) const;
 
   };
 }
