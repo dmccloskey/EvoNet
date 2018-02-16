@@ -32,10 +32,10 @@ namespace SmartPeak
     */
 public:
     PeakSimulator(); ///< Default constructor
-    PeakSimulator(const int& step_size_mu,
-      const int& step_size_sigma,
-      const int& window_start,
-      const int& window_end,
+    PeakSimulator(const double& step_size_mu,
+      const double& step_size_sigma,
+      const double& window_start,
+      const double& window_end,
       const double& noise_mu,
       const double& noise_sigma,
       const double& baseline_left,
@@ -141,10 +141,10 @@ public:
     double getSaturationLimit() const; ///< saturation_limit getter
 
 private:
-    int step_size_mu_ = 1.0; ///< The mean spacing between points
-    int step_size_sigma_ = 0.001; ///< The standard deviation of spacing between points
-    int window_start_ = 0.0; ///< Peak window start
-    int window_end_ = 100.0; ///< Peak window end
+    double step_size_mu_ = 1.0; ///< The mean spacing between points
+    double step_size_sigma_ = 0.001; ///< The standard deviation of spacing between points
+    double window_start_ = 0.0; ///< Peak window start
+    double window_end_ = 100.0; ///< Peak window end
     double noise_mu_ = 0.0; ///< Mean of random noise generated from a normal distribution
     double noise_sigma_ = 1.0; ///< Standard deviation of random noise generated from a normal distribution
     double baseline_left_ = 0.0; ///< Height of the left baseline
