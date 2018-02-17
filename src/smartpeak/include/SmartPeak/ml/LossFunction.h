@@ -3,8 +3,6 @@
 #ifndef SMARTPEAK_LOSSFUNCTION_H
 #define SMARTPEAK_LOSSFUNCTION_H
 
-#include <vector>
-
 namespace SmartPeak
 {
   /**
@@ -12,10 +10,7 @@ namespace SmartPeak
   */
   class LossFunction
   {
-public:
-    LossFunction(); ///< Default constructor    
-    ~LossFunction(); ///< Default destructor
- 
+public: 
     /**
       @brief The loss function
 

@@ -3,9 +3,10 @@ set(directory include/SmartPeak/ml)
 
 ### list all header files of the directory here
 set(sources_list_h
-	ChromatogramSimulator.h
-	PeakSimulator.h
-	EMGModel.h
+	ActivationFunction.h
+	ELU.h
+	LossFunction.h
+	ReLU.h
 )
 
 ### add path to the filenames

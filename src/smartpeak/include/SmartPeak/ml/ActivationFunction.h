@@ -3,8 +3,6 @@
 #ifndef SMARTPEAK_ACTIVATIONFUNCTION_H
 #define SMARTPEAK_ACTIVATIONFUNCTION_H
 
-#include <vector>
-
 namespace SmartPeak
 {
   /**
@@ -12,10 +10,7 @@ namespace SmartPeak
   */
   class ActivationFunction
   {
-public:
-    ActivationFunction(); ///< Default constructor    
-    ~ActivationFunction(); ///< Default destructor
- 
+public: 
     /**
       @brief A function
 
