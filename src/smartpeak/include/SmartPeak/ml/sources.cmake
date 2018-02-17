@@ -5,6 +5,8 @@ set(directory include/SmartPeak/ml)
 set(sources_list_h
 	ActivationFunction.h
 	ELU.h
+	EuclideanDistance.h
+	L2.h
 	LossFunction.h
 	ReLU.h
 )
