@@ -4,11 +4,9 @@ set(directory include/SmartPeak/ml)
 ### list all header files of the directory here
 set(sources_list_h
 	ActivationFunction.h
-	ELU.h
 	EuclideanDistance.h
 	L2.h
 	LossFunction.h
-	ReLU.h
 )
 
 ### add path to the filenames

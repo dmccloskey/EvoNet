@@ -4,11 +4,9 @@ set(core_executables_list
 
 set(ml_executables_list
   ActivationFunction_test
-  ELU_test
   EuclideanDistance_test
   L2_test
   LossFunction_test
-  ReLU_test
 )
 
 set(simulator_executables_list

@@ -3,10 +3,8 @@ set(directory source/ml)
 
 ### list all filenames of the directory here
 set(sources_list
-	ELU.cpp
 	EuclideanDistance.cpp
 	L2.cpp
-	ReLU.cpp
 )
 
 ### add path to the filenames
