@@ -1,6 +1,8 @@
 /**TODO:  Add copyright*/
 
 #include <SmartPeak/ml/ELU.h>
+#include <unsupported/Eigen/CXX11/Tensor>
+#include <Eigen/Dense>
 
 #include <cmath>
 
