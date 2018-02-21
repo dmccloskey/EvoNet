@@ -15,18 +15,26 @@ namespace SmartPeak
   {
 public:
     Link(); ///< Default constructor
-    Link(const int& id, Node& source, Node& sink, double& weight); ///< Explicit constructor  
+    Link(const int& id, SmartPeak::Node& source, SmartPeak::Node& sink, double& weight); ///< Explicit constructor  
     ~Link(); ///< Default destructor
 
     void setId(const double& id); ///< id setter
     double getId() const; ///< id getter
 
+    void setSourceNode(const double& id); ///< id setter
+    double getSourceNode() const; ///< id getter
+
+    void setSinkNode(const double& id); ///< id setter
+    double getSinkNode() const; ///< id getter
+
+    void setWeight(const double& id); ///< id setter
+    double getWeight() const; ///< id getter
 
 private:
     int id_; ///< Link ID
-    Node source_; ///< Link Type
-    Node sink_; ///< Link Output
-    double weight_; ///< Link Error
+    SmartPeak::Node source_node_; ///< Link source node
+    SmartPeak::Node sink_node_; ///< Link sink node
+    double weight_; ///< Link weight
 
   };
 }

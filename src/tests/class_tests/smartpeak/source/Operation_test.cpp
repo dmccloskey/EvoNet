@@ -131,12 +131,12 @@ BOOST_AUTO_TEST_CASE(gettersAndSettersEluGradOp)
 BOOST_AUTO_TEST_CASE(operationfunctionEluGradOp) 
 {
   ELUGradOp<double> operation(1.0); 
-  
-  BOOST_CHECK_CLOSE(operation(0.0), 0.0, 1e-6);
+
+  BOOST_CHECK_CLOSE(operation(0.0), 1.0, 1e-6);
   BOOST_CHECK_CLOSE(operation(1.0), 1.0, 1e-6);
-  BOOST_CHECK_CLOSE(operation(10.0), 10.0, 1e-6);
-  BOOST_CHECK_CLOSE(operation(-1.0), -0.63212055882855767, 1e-6);
-  BOOST_CHECK_CLOSE(operation(-10.0), -0.99995460007023751, 1e-6);
+  BOOST_CHECK_CLOSE(operation(10.0), 1.0, 1e-6);
+  BOOST_CHECK_CLOSE(operation(-1.0), 0.36787944117144233, 1e-6);
+  BOOST_CHECK_CLOSE(operation(-10.0), 4.5399929762490743e-05, 1e-6);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

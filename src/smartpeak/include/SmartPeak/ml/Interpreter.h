@@ -16,7 +16,7 @@ namespace SmartPeak
     @brief Execution graph interpreter for a network model.
 
     The execution graph is modeled as a DAG of tensor layers
-      (as opposed to scalar nodes) with input tensor layers,
+      (composed of multiple scalar nodes) with input tensor layers,
       output tensor layers, and intemediate tensor layers.
       The layers are defined based on the network model structure
       and node types of the model.

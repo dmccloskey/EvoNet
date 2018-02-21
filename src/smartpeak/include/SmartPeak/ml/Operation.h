@@ -38,7 +38,7 @@ public:
 public: 
     ReLUGradOp(){}; 
     ~ReLUGradOp(){};
-    T operator()(const T& x_I) const { (x_I > 0.0) ? 1.0: 0.0; };
+    T operator()(const T& x_I) const { return (x_I > 0.0) ? 1.0: 0.0; };
   };
 
   /**
@@ -75,7 +75,7 @@ private:
   class ELUGradOp
   {
 public: 
-    ELUOp(){}; 
+    ELUGradOp(){}; 
     ELUGradOp(const T& alpha): alpha_(alpha){}; 
     ~ELUGradOp(){};
     T operator()(const T& x_I) const
