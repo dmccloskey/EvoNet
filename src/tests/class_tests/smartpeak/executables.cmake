@@ -3,10 +3,10 @@ set(core_executables_list
 )
 
 set(ml_executables_list
-  ActivationFunction_test
   EuclideanDistance_test
   L2_test
   LossFunction_test
+  Operation_test
 )
 
 set(simulator_executables_list
