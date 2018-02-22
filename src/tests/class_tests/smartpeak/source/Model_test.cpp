@@ -75,8 +75,6 @@ BOOST_AUTO_TEST_CASE(addAndGetNodes)
   nodes_test.push_back(sink2);
   for (int i=0; i<nodes_test.size(); ++i)
   {
-    std::cout << i << std::endl;
-    std::cout << model.getNode(i).getId() << std::endl;
     BOOST_CHECK(model.getNode(i) == nodes_test[i]);
   }
 
@@ -139,12 +137,12 @@ BOOST_AUTO_TEST_CASE(addAndGetLinks)
 
   // remove links from the model
   model.removeLinks({1});
-  links_test = {link2};
+  links_test = {link1};
   for (int i=0; i<links_test.size(); ++i)
   {
     BOOST_CHECK(model.getLink(i) == links_test[i]);
   }
-  nodes_test = {source2, sink2};
+  nodes_test = {source1, sink1};
   for (int i=0; i<nodes_test.size(); ++i)
   {
     BOOST_CHECK(model.getNode(i) == nodes_test[i]);
@@ -163,10 +161,10 @@ BOOST_AUTO_TEST_CASE(comparison)
   Model model2(1);
 
   // Check equal
-  BOOST_CHECK(model1 != model2);
+  BOOST_CHECK(model1 == model2);
   model1.addLinks({link1});
   model2.addLinks({link1});
-  BOOST_CHECK(model1 != model2);
+  BOOST_CHECK(model1 == model2);
 
   // Check not equal
   model2.setId(2);

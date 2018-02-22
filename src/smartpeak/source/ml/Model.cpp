@@ -74,7 +74,7 @@ namespace SmartPeak
     for (int const& node_id: node_ids)
     {
       // check for duplicate nodes (by id)
-      if (nodes_.count(node_id) == 0)
+      if (nodes_.count(node_id) != 0)
       {
         nodes_.erase(node_id);
       }
@@ -105,7 +105,7 @@ namespace SmartPeak
     for (int const& link_id: link_ids)
     {
       // check for duplicate links (by id)
-      if (links_.count(link_id) == 0)
+      if (links_.count(link_id) != 0)
       {
         links_.erase(link_id);
       }
@@ -128,9 +128,11 @@ namespace SmartPeak
   void Model::pruneNodes()
   {
     std::vector<int> node_ids;
+    if (nodes_.empty()) { return; }
     for (auto const& node : nodes_)
     {
       bool found = false;
+      if (links_.empty()) { return; }
       for (auto const& link: links_)
       {
         if (node.second == link.second.getSourceNode() ||
@@ -145,15 +147,17 @@ namespace SmartPeak
         node_ids.push_back(node.first);
       }
     }
-    removeNodes(node_ids);
+    if (node_ids.size() != 0) { removeNodes(node_ids); }    
   }
 
   void Model::pruneLinks()
   {
     std::vector<int> link_ids;
+    if (links_.empty()) { return; }
     for (auto const& link: links_)
     {
       bool found = false;
+      if (nodes_.empty()) { return; }
       for (auto const& node : nodes_)
       {
         if (node.second == link.second.getSourceNode() ||
@@ -168,6 +172,6 @@ namespace SmartPeak
         link_ids.push_back(link.first);
       }
     }
-    removeLinks(link_ids);
+    if (link_ids.size() != 0) { removeLinks(link_ids); }
   }
 }
