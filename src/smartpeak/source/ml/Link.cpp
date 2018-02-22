@@ -21,11 +21,11 @@ namespace SmartPeak
   {
   }
   
-  void Link::setId(const double& id)
+  void Link::setId(const int& id)
   {
     id_ = id;
   }
-  double Link::getId() const
+  int Link::getId() const
   {
     return id_;
   }
@@ -46,5 +46,14 @@ namespace SmartPeak
   SmartPeak::Node Link::getSinkNode() const
   {
     return sink_node_;
+  }
+
+  void Link::setWeight(const double& weight)
+  {
+    weight_ = weight;
+  }
+  double Link::getWeight() const
+  {
+    return weight_;
   }
 }

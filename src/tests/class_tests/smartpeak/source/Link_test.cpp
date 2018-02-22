@@ -4,10 +4,12 @@
 #include <boost/test/unit_test.hpp>
 #include <SmartPeak/ml/Link.h>
 
+#include <SmartPeak/ml/Node.h>
+
 using namespace SmartPeak;
 using namespace std;
 
-BOOST_AUTO_TEST_SUITE(link)
+BOOST_AUTO_TEST_SUITE(link1)
 
 BOOST_AUTO_TEST_CASE(constructor) 
 {
@@ -26,26 +28,50 @@ BOOST_AUTO_TEST_CASE(destructor)
 
 BOOST_AUTO_TEST_CASE(constructor2) 
 {
-  Link link(1.0, 2.0, 3.0, 4.0);
+  Node node_source(1, NodeType::ELU, NodeStatus::initialized);
+  Node node_sink(2, NodeType::ELU, NodeStatus::initialized);
+  Link link(1, node_source, node_sink);
 
-  BOOST_CHECK_EQUAL(link.getH(), 1.0);
-  BOOST_CHECK_EQUAL(link.getTau(), 2.0);
-  BOOST_CHECK_EQUAL(link.getMu(), 3.0);
-  BOOST_CHECK_EQUAL(link.getSigma(), 4.0);
+  BOOST_CHECK_EQUAL(link.getId(), 1);
+  BOOST_CHECK(link.getSourceNode() == node_source);
+  BOOST_CHECK(link.getSinkNode() == node_sink);
+  BOOST_CHECK_EQUAL(link.getWeight(), 1.0);
+}
+
+BOOST_AUTO_TEST_CASE(comparison) 
+{
+  Node source, sink;
+  source = Node(1, NodeType::ReLU, NodeStatus::activated);
+  sink = Node(2, NodeType::ReLU, NodeStatus::initialized);
+  Link link, link_test;
+  link = Link(1, source, sink);
+  link_test = Link(1, source, sink);
+  BOOST_CHECK(link == link_test);
+
+  link = Link(2, source, sink);
+  BOOST_CHECK(link != link_test);
+
+  link = Link(1, source, source);
+  BOOST_CHECK(link != link_test);
+
+  link = Link(1, sink, sink);
+  BOOST_CHECK(link != link_test);
 }
 
 BOOST_AUTO_TEST_CASE(gettersAndSetters) 
 {
+  Node node_source(1, NodeType::ELU, NodeStatus::initialized);
+  Node node_sink(2, NodeType::ELU, NodeStatus::initialized);
   Link link;
-  link.setH(1.0);
-  link.setTau(2.0);
-  link.setMu(3.0);
-  link.setSigma(4.0);
+  link.setId(1);
+  link.setSourceNode(node_source);
+  link.setSinkNode(node_sink);
+  link.setWeight(4.0);
 
-  BOOST_CHECK_EQUAL(link.getH(), 1.0);
-  BOOST_CHECK_EQUAL(link.getTau(), 2.0);
-  BOOST_CHECK_EQUAL(link.getMu(), 3.0);
-  BOOST_CHECK_EQUAL(link.getSigma(), 4.0);
+  BOOST_CHECK_EQUAL(link.getId(), 1.0);
+  BOOST_CHECK(link.getSourceNode() == node_source);
+  BOOST_CHECK(link.getSinkNode() == node_sink);
+  BOOST_CHECK_EQUAL(link.getWeight(), 4.0);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

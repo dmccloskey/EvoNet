@@ -33,8 +33,28 @@ public:
     Node(const int& id, const SmartPeak::NodeType& type, const SmartPeak::NodeStatus& status); ///< Explicit constructor  
     ~Node(); ///< Default destructor
 
-    void setId(const double& id); ///< id setter
-    double getId() const; ///< id getter
+    inline bool operator==(const Node& other) const
+    {
+      return
+        std::tie(
+          id_,
+          type_,
+          status_
+        ) == std::tie(
+          other.id_,
+          other.type_,
+          other.status_
+        )
+      ;
+    }
+
+    inline bool operator!=(const Node& other) const
+    {
+      return !(*this == other);
+    }
+
+    void setId(const int& id); ///< id setter
+    int getId() const; ///< id getter
 
     void setType(const SmartPeak::NodeType& type); ///< type setter
     SmartPeak::NodeType getType() const; ///< type getter

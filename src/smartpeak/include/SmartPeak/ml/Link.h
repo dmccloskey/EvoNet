@@ -19,8 +19,30 @@ public:
       const SmartPeak::Node& sink_node); ///< Explicit constructor  
     ~Link(); ///< Default destructor
 
-    void setId(const double& id); ///< id setter
-    double getId() const; ///< id getter
+    inline bool operator==(const Link& other) const
+    {
+      return
+        std::tie(
+          id_,
+          source_node_,
+          sink_node_,
+          weight_
+        ) == std::tie(
+          other.id_,
+          other.source_node_,
+          other.sink_node_,
+          other.weight_
+        )
+      ;
+    }
+
+    inline bool operator!=(const Link& other) const
+    {
+      return !(*this == other);
+    }
+
+    void setId(const int& id); ///< id setter
+    int getId() const; ///< id getter
 
     void setSourceNode(const SmartPeak::Node& source_node); ///< source_node setter
     SmartPeak::Node getSourceNode() const; ///< source_node getter

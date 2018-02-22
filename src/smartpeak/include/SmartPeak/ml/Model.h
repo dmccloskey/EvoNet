@@ -4,9 +4,11 @@
 #define SMARTPEAK_MODEL_H
 
 #include <SmartPeak/ml/Link.h>
+#include <SmartPeak/ml/Node.h>
 #include <SmartPeak/ml/Layer.h>
 
 #include <vector>
+#include <map>
 
 namespace SmartPeak
 {
@@ -53,8 +55,8 @@ public:
     */ 
     SmartPeak::Layer getNextUncorrectedLayer() const;
 
-    void setId(const double& id); ///< id setter
-    double getId() const; ///< id getter
+    void setId(const int& id); ///< id setter
+    int getId() const; ///< id getter
 
     void setError(const double& error); ///< error setter
     double getError() const; ///< error getter
@@ -65,10 +67,44 @@ public:
       @param[in] links Links to add to the model
     */ 
     void addLinks(const std::vector<Link>& links);
+ 
+    /**
+      @brief Remove existing links from the model.
+
+      @param[in] Link_ids Links to remove from the model
+    */ 
+    void removeLinks(const std::vector<int>& link_ids);
+ 
+    /**
+      @brief Add new nodes to the model.
+
+      @param[in] nodes Nodes to add to the model
+    */ 
+    void addNodes(const std::vector<Node>& Nodes);
+ 
+    /**
+      @brief Remove existing nodes from the model.
+
+      @param[in] node_ids Nodes to remove from the model
+    */ 
+    void removeNodes(const std::vector<int>& node_ids);
+ 
+    /**
+      @brief Removes nodes from the model that no longer
+        have an associated link.
+    */ 
+    void pruneNodes();
+ 
+    /**
+      @brief Removes nodes from the model that no longer
+        have an associated link.
+    */ 
+    void pruneLinks();
 
 private:
     int id_; ///< Model ID
-    std::vector<Link> links_; ///< Model links
+    std::map<Link> links_; ///< Model links
+    std::map<Node> nodes_; ///< Model nodes
     double error_; ///< Model error
 
   };

@@ -21,11 +21,11 @@ namespace SmartPeak
   {
   }
   
-  void Node::setId(const double& id)
+  void Node::setId(const int& id)
   {
     id_ = id;
   }
-  double Node::getId() const
+  int Node::getId() const
   {
     return id_;
   }

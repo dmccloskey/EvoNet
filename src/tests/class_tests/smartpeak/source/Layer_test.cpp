@@ -26,7 +26,14 @@ BOOST_AUTO_TEST_CASE(destructor)
 
 BOOST_AUTO_TEST_CASE(constructor2) 
 {
-  Layer layer(1.0, 2.0, 3.0, 4.0);
+  // setup the nodes and links
+  Node node_source(1, NodeType::ELU, NodeStatus::initialized);
+  Node node_sink(2, NodeType::ELU, NodeStatus::initialized);
+  std::vector<Link>& links;
+  Link link(1, node_source, node_sink);
+  links.push_back(link);
+
+  Layer layer(1, links);
 
   BOOST_CHECK_EQUAL(layer.getH(), 1.0);
   BOOST_CHECK_EQUAL(layer.getTau(), 2.0);

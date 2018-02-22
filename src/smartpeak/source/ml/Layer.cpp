@@ -19,11 +19,11 @@ namespace SmartPeak
   {
   }
   
-  void Layer::setId(const double& id)
+  void Layer::setId(const int& id)
   {
     id_ = id;
   }
-  double Layer::getId() const
+  int Layer::getId() const
   {
     return id_;
   }

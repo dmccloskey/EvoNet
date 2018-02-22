@@ -44,37 +44,61 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   BOOST_CHECK_EQUAL(model.getError(), 2.0);
 }
 
-// BOOST_AUTO_TEST_CASE(addLinks) 
-// {
-//   Model model;
+BOOST_AUTO_TEST_CASE(addLinks) 
+{
+  Model model;
 
-//   // make dummy links
-//   std::vector<Link> links;
+  // make dummy links
+  Node source, sink;
+  source = Node(1, NodeType::ReLU, NodeStatus::activated);
+  sink = Node(2, NodeType::ReLU, NodeStatus::initialized);
+  Link link(1, source, sink);
+  std::vector<Link> links;
 
-//   // add links to the model
-//   model.addLinks(links);
+  // add links to the model
+  model.addLinks(links);
 
-//   // make test links
-//   std::vector<Link> links_test;
+  // make test links
+  std::vector<Link> links_test;
 
-//   for (int i=0; i<links_test.size(); ++i)
-//   {
-//     BOOST_CHECK_EQUAL(link.getId()[i], links_test[i]), 
-//   }
+  for (int i=0; i<links_test.size(); ++i)
+  {
+    BOOST_CHECK_EQUAL(link.getId()[i], links_test[i]), 
+  }
 
-//   // add more links to the model
-//   links2;
+  // add more links to the model
+  links2;
 
-//   // add links to the model
-//   model.addLinks(links);
+  // add links to the model
+  model.addLinks(links);
 
-//   // make test links
-//   links_test;
+  // make test links
+  links_test;
 
-//   for (int i=0; i<links_test.size(); ++i)
-//   {
-//     BOOST_CHECK_EQUAL(link.getId()[i], links_test[i]), 
-//   }
-// }
+  for (int i=0; i<links_test.size(); ++i)
+  {
+    BOOST_CHECK_EQUAL(link.getId()[i], links_test[i]), 
+  }
+}
+
+BOOST_AUTO_TEST_CASE(comparison) 
+{
+  Node source, sink;
+  source = Node(1, NodeType::ReLU, NodeStatus::activated);
+  sink = Node(2, NodeType::ReLU, NodeStatus::initialized);
+  Link link, link_test;
+  link = Link(1, source, sink);
+  link_test = Link(1, source, sink);
+  BOOST_CHECK(link == link_test);
+
+  link = Link(2, source, sink);
+  BOOST_CHECK(link != link_test);
+
+  link = Link(1, source, source);
+  BOOST_CHECK(link != link_test);
+
+  link = Link(1, sink, sink);
+  BOOST_CHECK(link != link_test);
+}
 
 BOOST_AUTO_TEST_SUITE_END()

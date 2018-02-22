@@ -29,8 +29,8 @@ public:
     Layer(const int& id, const std::vector<Link>& links); ///< Explicit constructor  
     ~Layer(); ///< Default destructor
 
-    void setId(const double& id); ///< id setter
-    double getId() const; ///< id getter
+    void setId(const int& id); ///< id setter
+    int getId() const; ///< id getter
 
     void setLinks(const std::vector<Link>& links); ///< links setter
     std::vector<Link> getLinks() const; ///< links getter
