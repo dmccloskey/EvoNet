@@ -3,7 +3,6 @@
 #ifndef SMARTPEAK_MODEL_H
 #define SMARTPEAK_MODEL_H
 
-#include <SmartPeak/ml/Node.h>
 #include <SmartPeak/ml/Link.h>
 #include <SmartPeak/ml/Layer.h>
 
@@ -19,7 +18,7 @@ namespace SmartPeak
   {
 public:
     Model(); ///< Default constructor
-    Model(const int& id, std::vector<Link>& links, double& loss); ///< Explicit constructor  
+    Model(const int& id); ///< Explicit constructor  
     ~Model(); ///< Default destructor
  
     /**
@@ -57,10 +56,20 @@ public:
     void setId(const double& id); ///< id setter
     double getId() const; ///< id getter
 
+    void setError(const double& error); ///< error setter
+    double getError() const; ///< error getter
+ 
+    /**
+      @brief Add new links to the model.
+
+      @param[in] links Links to add to the model
+    */ 
+    void addLinks(const std::vector<Link>& links);
+
 private:
     int id_; ///< Model ID
     std::vector<Link> links_; ///< Model links
-    double loss_; ///< Model loss
+    double error_; ///< Model error
 
   };
 }

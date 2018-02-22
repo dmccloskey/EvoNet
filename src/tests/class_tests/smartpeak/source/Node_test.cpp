@@ -26,26 +26,27 @@ BOOST_AUTO_TEST_CASE(destructor)
 
 BOOST_AUTO_TEST_CASE(constructor2) 
 {
-  Node node(1.0, 2.0, 3.0, 4.0);
+  NodeType type = NodeType::ReLU;
+  NodeStatus status = NodeStatus::initialized;
+  Node node(1, type, status);
 
-  BOOST_CHECK_EQUAL(node.getH(), 1.0);
-  BOOST_CHECK_EQUAL(node.getTau(), 2.0);
-  BOOST_CHECK_EQUAL(node.getMu(), 3.0);
-  BOOST_CHECK_EQUAL(node.getSigma(), 4.0);
+  BOOST_CHECK_EQUAL(node.getId(), 1);
+  BOOST_CHECK(node.getType() == NodeType::ReLU);
+  BOOST_CHECK(node.getStatus() == NodeStatus::initialized);
 }
 
 BOOST_AUTO_TEST_CASE(gettersAndSetters) 
 {
+  NodeType type = NodeType::ReLU;
+  NodeStatus status = NodeStatus::initialized;
   Node node;
-  node.setH(1.0);
-  node.setTau(2.0);
-  node.setMu(3.0);
-  node.setSigma(4.0);
+  node.setId(1);
+  node.setType(type);
+  node.setStatus(status);
 
-  BOOST_CHECK_EQUAL(node.getH(), 1.0);
-  BOOST_CHECK_EQUAL(node.getTau(), 2.0);
-  BOOST_CHECK_EQUAL(node.getMu(), 3.0);
-  BOOST_CHECK_EQUAL(node.getSigma(), 4.0);
+  BOOST_CHECK_EQUAL(node.getId(), 1);
+  BOOST_CHECK(node.getType() == NodeType::ReLU);
+  BOOST_CHECK(node.getStatus() == NodeStatus::initialized);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

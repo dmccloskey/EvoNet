@@ -5,6 +5,10 @@ set(directory source/ml)
 set(sources_list
 	EuclideanDistance.cpp
 	L2.cpp
+	Layer.cpp
+	Link.cpp
+	Model.cpp
+	Node.cpp
 )
 
 ### add path to the filenames

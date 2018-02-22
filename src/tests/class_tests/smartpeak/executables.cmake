@@ -6,6 +6,7 @@ set(ml_executables_list
   EuclideanDistance_test
   L2_test
   LossFunction_test
+  Node_test
   Operation_test
 )
 

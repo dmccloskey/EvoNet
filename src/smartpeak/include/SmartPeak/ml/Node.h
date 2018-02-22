@@ -14,7 +14,7 @@ namespace SmartPeak
     deactivated = 0, // Weights have been updated (optional), ready to be re-initialized.
     initialized = 1, // Memory has been allocated for Tensors
     activated = 2, // Output has been calculated
-    corrected = 3, // Error has been calculated
+    corrected = 3 // Error has been calculated
   };
 
   enum class NodeType
@@ -30,7 +30,7 @@ namespace SmartPeak
   {
 public:
     Node(); ///< Default constructor
-    Node(const int& id, SmartPeak::NodeType& type, SmartPeak::NodeStatus& status); ///< Explicit constructor  
+    Node(const int& id, const SmartPeak::NodeType& type, const SmartPeak::NodeStatus& status); ///< Explicit constructor  
     ~Node(); ///< Default destructor
 
     void setId(const double& id); ///< id setter
@@ -42,6 +42,7 @@ public:
     void setStatus(const SmartPeak::NodeStatus& status); ///< status setter
     SmartPeak::NodeStatus getStatus() const; ///< status getter
 
+    // TODO: will this be needed or can we point to the Tensor value?
     void setOutput(const Eigen::Tensor<float, 1>& output); ///< ouptput setter
     Eigen::Tensor<float, 1> getOutput() const; ///< output getter
 
@@ -52,6 +53,9 @@ private:
     int id_; ///< Node ID
     SmartPeak::NodeType type_; ///< Node Type
     SmartPeak::NodeStatus status_; ///< Node Status
+    
+    // TODO: will this be needed or can we point to the Tensor value?
+    // TODO: or can we use an set an index to the tensor #, and tensor dims?
     Eigen::Tensor<float, 1> output_; ///< Node Output (dim is the # of samples)
     Eigen::Tensor<float, 1> error_; ///< Node Error (dim is the # of samples)
 

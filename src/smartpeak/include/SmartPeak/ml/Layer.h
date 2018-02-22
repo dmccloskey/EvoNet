@@ -26,14 +26,14 @@ namespace SmartPeak
   {
 public:
     Layer(); ///< Default constructor
-    Layer(const int& id, std::vector<Link>& links); ///< Explicit constructor  
+    Layer(const int& id, const std::vector<Link>& links); ///< Explicit constructor  
     ~Layer(); ///< Default destructor
 
     void setId(const double& id); ///< id setter
     double getId() const; ///< id getter
 
-    void setLinks(const double& links); ///< links setter
-    double getLinks() const; ///< links getter
+    void setLinks(const std::vector<Link>& links); ///< links setter
+    std::vector<Link> getLinks() const; ///< links getter
 
 protected:
     int id_; ///< Layer ID
