@@ -4,6 +4,11 @@
 #include <boost/test/unit_test.hpp>
 #include <SmartPeak/ml/Layer.h>
 
+#include <SmartPeak/ml/Link.h>
+#include <SmartPeak/ml/Node.h>
+
+#include <vector>
+
 using namespace SmartPeak;
 using namespace std;
 
@@ -29,30 +34,26 @@ BOOST_AUTO_TEST_CASE(constructor2)
   // setup the nodes and links
   Node node_source(1, NodeType::ELU, NodeStatus::initialized);
   Node node_sink(2, NodeType::ELU, NodeStatus::initialized);
-  std::vector<Link>& links;
   Link link(1, node_source, node_sink);
-  links.push_back(link);
 
-  Layer layer(1, links);
+  Layer layer(1, {link});
 
-  BOOST_CHECK_EQUAL(layer.getH(), 1.0);
-  BOOST_CHECK_EQUAL(layer.getTau(), 2.0);
-  BOOST_CHECK_EQUAL(layer.getMu(), 3.0);
-  BOOST_CHECK_EQUAL(layer.getSigma(), 4.0);
+  BOOST_CHECK_EQUAL(layer.getId(), 1);
+  BOOST_CHECK(layer.getLinks()[0] == link);
 }
 
 BOOST_AUTO_TEST_CASE(gettersAndSetters) 
 {
+  // setup the nodes and links
+  Node node_source(1, NodeType::ELU, NodeStatus::initialized);
+  Node node_sink(2, NodeType::ELU, NodeStatus::initialized);
+  Link link(1, node_source, node_sink);
   Layer layer;
-  layer.setH(1.0);
-  layer.setTau(2.0);
-  layer.setMu(3.0);
-  layer.setSigma(4.0);
+  layer.setId(1);
+  layer.setLinks(2.0);
 
-  BOOST_CHECK_EQUAL(layer.getH(), 1.0);
-  BOOST_CHECK_EQUAL(layer.getTau(), 2.0);
-  BOOST_CHECK_EQUAL(layer.getMu(), 3.0);
-  BOOST_CHECK_EQUAL(layer.getSigma(), 4.0);
+  BOOST_CHECK_EQUAL(layer.getId(), 1);
+  BOOST_CHECK(layer.getLinks()[0] == link);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

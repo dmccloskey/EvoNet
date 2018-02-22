@@ -52,6 +52,7 @@ namespace SmartPeak
       }
       else
       {
+        // TODO: move to debug log
         std::cout << "Node id " << node.getId() << " already exists!" << std::endl;
       }
     }
@@ -65,6 +66,7 @@ namespace SmartPeak
     }
     else
     {
+      // TODO: move to debug log
       std::cout << "Node id " << node_id << " not found!" << std::endl;
     }
   }
@@ -95,6 +97,7 @@ namespace SmartPeak
       }
       else
       {
+        // TODO: move to debug log
         std::cout << "Link id " << link.getId() << " already exists!" << std::endl;
       }
     }
@@ -121,6 +124,7 @@ namespace SmartPeak
     }
     else
     {
+      // TODO: move to debug log
       std::cout << "Link id " << link_id << " not found!" << std::endl;
     }
   }

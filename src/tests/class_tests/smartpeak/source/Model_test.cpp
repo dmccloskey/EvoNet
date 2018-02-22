@@ -6,8 +6,8 @@
 
 #include <SmartPeak/ml/Link.h>
 #include <SmartPeak/ml/Node.h>
+
 #include <vector>
-#include <iostream>
 
 using namespace SmartPeak;
 using namespace std;
@@ -46,7 +46,75 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   BOOST_CHECK_EQUAL(model.getError(), 2.0);
 }
 
-BOOST_AUTO_TEST_CASE(addAndGetNodes) 
+BOOST_AUTO_TEST_CASE(pruneNodes) 
+{
+  Node source1, sink1;
+  Link link1, link2;
+  source1 = Node(0, NodeType::ReLU, NodeStatus::activated);
+  sink1 = Node(1, NodeType::ReLU, NodeStatus::initialized);
+  link1 = Link(0, source1, sink1);
+  Model model;
+  
+  std::vector<Node> nodes_test;
+  nodes_test.push_back(source1);
+  nodes_test.push_back(sink1);
+
+  // should not fail
+  model.pruneNodes();
+
+  model.addNodes({source1, sink1});
+  model.pruneNodes();
+  for (int i=0; i<nodes_test.size(); ++i)
+  {
+    BOOST_CHECK(model.getNode(i) == nodes_test[i]);
+  }  
+
+  model.addLinks({link1});
+  model.pruneNodes();
+  for (int i=0; i<nodes_test.size(); ++i)
+  {
+    BOOST_CHECK(model.getNode(i) == nodes_test[i]);
+  }  
+}
+
+BOOST_AUTO_TEST_CASE(pruneLinks) 
+{
+  Node source1, sink1;
+  Link link1, link2;
+  source1 = Node(0, NodeType::ReLU, NodeStatus::activated);
+  sink1 = Node(1, NodeType::ReLU, NodeStatus::initialized);
+  link1 = Link(0, source1, sink1);
+  Model model;
+  
+  std::vector<Node> nodes_test;
+  nodes_test.push_back(source1);
+  nodes_test.push_back(sink1);
+  std::vector<Link> links_test;
+  links_test.push_back(link1);
+
+  // should not fail
+  model.pruneLinks();
+
+  model.addNodes({source1, sink1});
+  model.pruneLinks();
+  for (int i=0; i<nodes_test.size(); ++i)
+  {
+    BOOST_CHECK(model.getNode(i) == nodes_test[i]);
+  }  
+  
+  model.addLinks({link1});
+  model.pruneLinks();
+  for (int i=0; i<links_test.size(); ++i)
+  {
+    BOOST_CHECK(model.getLink(i) == links_test[i]);
+  }
+  for (int i=0; i<nodes_test.size(); ++i)
+  {
+    BOOST_CHECK(model.getNode(i) == nodes_test[i]);
+  }  
+}
+
+BOOST_AUTO_TEST_CASE(addGetRemoveNodes) 
 {
   Node source1, sink1, source2, sink2;
   source1 = Node(0, NodeType::ReLU, NodeStatus::activated);
@@ -88,7 +156,7 @@ BOOST_AUTO_TEST_CASE(addAndGetNodes)
 
 }
 
-BOOST_AUTO_TEST_CASE(addAndGetLinks) 
+BOOST_AUTO_TEST_CASE(addGetRemoveLinks) 
 {
   Node source1, sink1;
   Link link1, link2;

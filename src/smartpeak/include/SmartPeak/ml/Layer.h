@@ -15,7 +15,7 @@ namespace SmartPeak
     @brief An array of links that represents a layer in the execution graph.
 
     Foward propogation:
-      1. source * weights = sinks
+      1. f(source * weights) = sinks
       2. calculate the derivatives for back propogation
 
     Back propogation:
