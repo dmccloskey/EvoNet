@@ -22,6 +22,28 @@ public:
     Model(); ///< Default constructor
     Model(const int& id); ///< Explicit constructor  
     ~Model(); ///< Default destructor
+
+    inline bool operator==(const Model& other) const
+    {
+      return
+        std::tie(
+          id_,
+          links_,
+          nodes_,
+          error_
+        ) == std::tie(
+          other.id_,
+          other.links_,
+          other.nodes_,
+          other.error_
+        )
+      ;
+    }
+
+    inline bool operator!=(const Model& other) const
+    {
+      return !(*this == other);
+    }
  
     /**
       @brief A forward propogation step. Returns a vector of links where
@@ -67,6 +89,7 @@ public:
       @param[in] links Links to add to the model
     */ 
     void addLinks(const std::vector<Link>& links);
+    Link getLink(const int& link_id) const; ///< link getter
  
     /**
       @brief Remove existing links from the model.
@@ -80,7 +103,8 @@ public:
 
       @param[in] nodes Nodes to add to the model
     */ 
-    void addNodes(const std::vector<Node>& Nodes);
+    void addNodes(const std::vector<Node>& nodes);
+    Node getNode(const int& node_id) const; ///< node getter
  
     /**
       @brief Remove existing nodes from the model.
@@ -96,15 +120,15 @@ public:
     void pruneNodes();
  
     /**
-      @brief Removes nodes from the model that no longer
-        have an associated link.
+      @brief Removes links from the model that no longer
+        have associated nodes.
     */ 
     void pruneLinks();
 
 private:
     int id_; ///< Model ID
-    std::map<Link> links_; ///< Model links
-    std::map<Node> nodes_; ///< Model nodes
+    std::map<int, Link> links_; ///< Model links
+    std::map<int, Node> nodes_; ///< Model nodes
     double error_; ///< Model error
 
   };

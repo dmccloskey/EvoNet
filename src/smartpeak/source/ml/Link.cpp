@@ -4,6 +4,7 @@
 
 #include <vector>
 #include <cmath>
+#include <iostream>
 
 namespace SmartPeak
 {
@@ -13,8 +14,10 @@ namespace SmartPeak
 
   Link::Link(const int& id, const SmartPeak::Node& source_node,
       const SmartPeak::Node& sink_node):
-    id_(id), source_node_(source_node), sink_node_(sink_node)
+    id_(id)
   {
+    setSourceNode(source_node);
+    setSinkNode(sink_node);
   }
 
   Link::~Link()
@@ -32,7 +35,14 @@ namespace SmartPeak
 
   void Link::setSourceNode(const SmartPeak::Node& source_node)
   {
-    source_node_ = source_node;
+    if (sink_node_ == source_node)
+    {
+      std::cout << "Source and Sink nodes are the same!" << std::endl;
+    }
+    else
+    {
+      source_node_ = source_node;
+    }    
   }
   SmartPeak::Node Link::getSourceNode() const
   {
@@ -41,7 +51,14 @@ namespace SmartPeak
 
   void Link::setSinkNode(const SmartPeak::Node& sink_node)
   {
-    sink_node_ = sink_node;
+    if (source_node_ == sink_node)
+    {
+      std::cout << "Source and Sink nodes are the same!" << std::endl;
+    }
+    else
+    {
+      sink_node_ = sink_node;
+    }    
   }
   SmartPeak::Node Link::getSinkNode() const
   {

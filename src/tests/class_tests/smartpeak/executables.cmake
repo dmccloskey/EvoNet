@@ -7,6 +7,7 @@ set(ml_executables_list
   L2_test
   Link_test
   LossFunction_test
+  Model_test
   Node_test
   Operation_test
 )

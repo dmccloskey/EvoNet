@@ -28,13 +28,22 @@ BOOST_AUTO_TEST_CASE(destructor)
 
 BOOST_AUTO_TEST_CASE(constructor2) 
 {
+  Link link;
   Node node_source(1, NodeType::ELU, NodeStatus::initialized);
   Node node_sink(2, NodeType::ELU, NodeStatus::initialized);
-  Link link(1, node_source, node_sink);
+  link = Link(1, node_source, node_sink);
 
   BOOST_CHECK_EQUAL(link.getId(), 1);
   BOOST_CHECK(link.getSourceNode() == node_source);
   BOOST_CHECK(link.getSinkNode() == node_sink);
+  BOOST_CHECK_EQUAL(link.getWeight(), 1.0);
+
+  // test same sink and source nodes
+  link = Link(1, node_source, node_source);
+
+  BOOST_CHECK_EQUAL(link.getId(), 1);
+  BOOST_CHECK(link.getSourceNode() == node_source);
+  BOOST_CHECK(link.getSinkNode() != node_sink);
   BOOST_CHECK_EQUAL(link.getWeight(), 1.0);
 }
 
@@ -72,6 +81,16 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   BOOST_CHECK(link.getSourceNode() == node_source);
   BOOST_CHECK(link.getSinkNode() == node_sink);
   BOOST_CHECK_EQUAL(link.getWeight(), 4.0);
+  
+  // test same sink and source nodes
+  link.setSourceNode(node_sink);
+  BOOST_CHECK(link.getSourceNode() == node_source);
+  BOOST_CHECK(link.getSinkNode() == node_sink);
+  
+  // test same sink and source nodes
+  link.setSinkNode(node_source);
+  BOOST_CHECK(link.getSourceNode() == node_source);
+  BOOST_CHECK(link.getSinkNode() == node_sink);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
