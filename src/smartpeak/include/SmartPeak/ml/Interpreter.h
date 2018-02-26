@@ -15,11 +15,23 @@ namespace SmartPeak
   /**
     @brief Execution graph interpreter for a network model.
 
-    The execution graph is modeled as a DAG of tensor layers
-      (composed of multiple scalar nodes) with input tensor layers,
-      output tensor layers, and intemediate tensor layers.
-      The layers are defined based on the network model structure
+    The execution graph is modeled as a DAG of tensors
+      (composed of multiple scalar nodes and scalar weights) with input tensors,
+      output tensors, and intemediate tensors.
+      The tensors are defined based on the network model structure
       and node types of the model.
+
+    Intended sequence of events:
+      Construct execution graph from the network model
+      Set the input data
+      Set the expected data (if training/validating)
+      Foward propogation:
+        1. f(source * weights) = sinks
+        2. calculate the derivatives for back propogation
+      Back propogation (if training/validating):
+        1. sinks * weights . derivatives = sources
+        2. adjust the weights
+      Update the network model from the execution graph tensors
   */
   class Interpreter
   {
@@ -32,37 +44,33 @@ public:
         Each index is bound check and this modifies the consistent_ flag of the
         interpreter.
 
-      @param[in] input_layers Tensor input indexes
+      @param[in] input_tensors Tensor input indexes
 
       @returns Status True on success, False if not
     */ 
-    bool setInputLayers(std::vector<int> input_layers);
+    bool setInputTensors(std::vector<int> input_tensors);
  
     /**
       @brief Provide a list of tensor indexes that are outputs to the model
         Each index is bound check and this modifies the consistent_ flag of the
         interpreter.
 
-      @param[in] input_layers Tensor output indexes
+      @param[in] input_tensors Tensor output indexes
 
       @returns Status True on success, False if not
     */ 
-    bool setOutputLayers(std::vector<int> output_layers);
+    bool setOutputTensors(std::vector<int> output_tensors);
  
     /**
       @brief Adds intermediate layers.
 
-      @param[in] source_layers Tensor output indexes
-      @param[in] sink_layers Tensor output indexes
+      @param[in] source_tensors Tensor output indexes
+      @param[in] sink_tensors Tensor output indexes
 
       @returns Status True on success, False if not
     */ 
-    bool addIntermediateLayer(const std::vector<int>& source_layers,
-      const std::vector<int>& sink_layers);
-
-    // Adds `tensors_to_add` tensors, preserving pre-existing Tensor entries.
-    // The value pointed to by `first_new_tensor_index` will be set to the
-    // index of the first new tensor if `first_new_tensor_index` is non-null.
+    bool addIntermediateTensor(const std::vector<int>& source_tensors,
+      const std::vector<int>& sink_tensors);
  
     /**
       @brief Adds `tensors_to_add` tensors, preserving pre-existing Tensor entries.
@@ -74,25 +82,17 @@ public:
 
       @returns Status True on success, False if not
     */ 
-    bool addTensors(int& tensors_to_add,
+    bool addTensors(const std::vector<int>& tensors_to_add,
       int& first_new_tensor_index);
+ 
+    /**
+      @brief Removes `tensors_to_remove` tensors.
 
-    // // Prepare the given 'node' for execution.
-    // TfLiteStatus OpPrepare(const TfLiteRegistration& op_reg, TfLiteNode* node) {
-    //   if (op_reg.prepare == nullptr) return kTfLiteOk;
-    //   return op_reg.prepare(&context_, node);
-    // }
+      @param[in] tensors_to_remove Existing tensors to remove
 
-    // // Invoke the operator represented by 'node'.
-    // TfLiteStatus OpInvoke(const TfLiteRegistration& op_reg, TfLiteNode* node) {
-    //   if (op_reg.invoke == nullptr) return kTfLiteError;
-    //   return op_reg.invoke(&context_, node);
-    // }
-
-    // Call OpPrepare() for as many ops as possible, allocating memory for their
-    // tensors. If an op containing dynamic tensors is found, preparation will be
-    // postponed until this function is called again. This allows the interpreter
-    // to wait until Invoke() to resolve the sizes of dynamic tensors.
+      @returns Status True on success, False if not
+    */ 
+    bool removeTensors(const std::vector<int>& tensors_to_remove);
  
     /**
       @brief Allocate tensor dimensions.
@@ -103,7 +103,7 @@ public:
  
     /**
       @brief Check if tensor dimensions are consistent with
-        respect to input and out tensor layers.
+        respect to input and out tensors.
 
       this changes consistent_ to be false if dimensions do not match.
 
@@ -121,22 +121,85 @@ public:
     bool checkTensorIndices();
  
     /**
-      @brief Execute the execution graph layer by layer from
-        input layer to output layer
+      @brief Add an operation involving two tensors to the execution graph.
+
+      @param[in] operation Operation to add
 
       @returns Status True on success, False if not
     */ 
-    bool execute();
+    bool addOperations();
+ 
+    /**
+      @brief Remove an operation involving two tensors in the execution graph.
+
+      @param[in] operation Operation to remove
+
+      @returns Status True on success, False if not
+    */ 
+    bool removeOperations();
+ 
+    /**
+      @brief Map a network model to the execution graph.
+
+      @param[in] model The model to construct the execution graph from
+
+      @returns Status True on success, False if not
+    */ 
+    bool mapModelToTensors();
+ 
+    /**
+      @brief Update a network model parameters from the tensors of the
+        execution graph.
+
+      @param[in, out] model The model update
+
+      @returns Status True on success, False if not
+    */ 
+    bool updateModelFromTensors();
+ 
+    /**
+      @brief Forward propogation
+
+      @param[in] Input data
+
+      @returns Status True on success, False if not
+    */ 
+    bool forwardPropogate();
+ 
+    /**
+      @brief Error calculation
+
+      @param[in] Expected values
+
+      @returns Status True on success, False if not
+    */ 
+    bool errorCalculation();
+ 
+    /**
+      @brief Backward propogation
+
+      @param[in] Error
+
+      @returns Status True on success, False if not
+    */ 
+    bool backwardPropogate();
+ 
+    /**
+      @brief Update the weights
+
+      @returns Status True on success, False if not
+    */ 
+    bool weightUpdate();
 
 private:
 
     // Array of indices representing the tensors that are inputs to the
     // interpreter.
-    std::vector<int> inputs_layers_;
+    std::vector<int> inputs_tensors_;
 
     // Array of indices representing the tensors that are outputs to the
     // interpreter.
-    std::vector<int> output_layers_;
+    std::vector<int> output_tensors_;
 
     // Array of indices representing the order of tensors
     // in the execution graph.
