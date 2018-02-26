@@ -23,15 +23,16 @@ namespace SmartPeak
 
     Intended sequence of events:
       Construct execution graph from the network model
-      Set the input data
-      Set the expected data (if training/validating)
-      Foward propogation:
-        1. f(source * weights) = sinks
-        2. calculate the derivatives for back propogation
-      Back propogation (if training/validating):
-        1. sinks * weights . derivatives = sources
-        2. adjust the weights
-      Update the network model from the execution graph tensors
+      For n epochs:
+        Set the input data
+        Set the expected data (if training/validating)
+        Foward propogation:
+          1. f(source * weights) = sinks
+          2. calculate the derivatives for back propogation
+        Back propogation (if training):
+          1. sinks * weights . derivatives = sources
+          2. adjust the weights
+      Update the network model from the execution graph tensors (if training)
   */
   class Interpreter
   {
@@ -121,22 +122,22 @@ public:
     bool checkTensorIndices();
  
     /**
-      @brief Add an operation involving two tensors to the execution graph.
+      @brief Add an instruction involving two tensors to the execution graph.
 
-      @param[in] operation Operation to add
+      @param[in] instruction Instruction to add
 
       @returns Status True on success, False if not
     */ 
-    bool addOperations();
+    bool addInstructions();
  
     /**
-      @brief Remove an operation involving two tensors in the execution graph.
+      @brief Remove an instruction involving two tensors in the execution graph.
 
-      @param[in] operation Operation to remove
+      @param[in] instruction Instruction to remove
 
       @returns Status True on success, False if not
     */ 
-    bool removeOperations();
+    bool removeInstructions();
  
     /**
       @brief Map a network model to the execution graph.
