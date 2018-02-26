@@ -42,6 +42,10 @@ endif()
 add_custom_target(CORE_TEST)
 add_dependencies(CORE_TEST ${core_executables_list})
 
+# ml
+add_custom_target(ML_TEST)
+add_dependencies(ML_TEST ${ml_executables_list})
+
 # algorithm
 add_custom_target(ALGORITHM_TEST)
 add_dependencies(ALGORITHM_TEST ${simulator_executables_list})
