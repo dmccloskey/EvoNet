@@ -8,6 +8,7 @@
 #include <SmartPeak/ml/Node.h>
 
 #include <vector>
+#include <iostream>
 
 using namespace SmartPeak;
 using namespace std;
@@ -52,7 +53,7 @@ BOOST_AUTO_TEST_CASE(pruneNodes)
   Link link1, link2;
   source1 = Node(0, NodeType::ReLU, NodeStatus::activated);
   sink1 = Node(1, NodeType::ReLU, NodeStatus::initialized);
-  link1 = Link(0, source1, sink1);
+  link1 = Link(0, source1.getId(), sink1.getId());
   Model model;
   
   std::vector<Node> nodes_test;
@@ -83,7 +84,7 @@ BOOST_AUTO_TEST_CASE(pruneLinks)
   Link link1, link2;
   source1 = Node(0, NodeType::ReLU, NodeStatus::activated);
   sink1 = Node(1, NodeType::ReLU, NodeStatus::initialized);
-  link1 = Link(0, source1, sink1);
+  link1 = Link(0, source1.getId(), sink1.getId());
   Model model;
   
   std::vector<Node> nodes_test;
@@ -162,14 +163,12 @@ BOOST_AUTO_TEST_CASE(addGetRemoveLinks)
   Link link1, link2;
   source1 = Node(0, NodeType::ReLU, NodeStatus::activated);
   sink1 = Node(1, NodeType::ReLU, NodeStatus::initialized);
-  link1 = Link(0, source1, sink1);
+  link1 = Link(0, source1.getId(), sink1.getId());
   Model model;
 
-  // add links to the model
-  model.addLinks({link1});
-
-  // make test links
-  std::vector<Link> links_test;
+  // add links (but not nodes) to the model
+  model.addLinks({link1});  
+  std::vector<Link> links_test; // make test links
   links_test.push_back(link1);
   for (int i=0; i<links_test.size(); ++i)
   {
@@ -177,31 +176,40 @@ BOOST_AUTO_TEST_CASE(addGetRemoveLinks)
   }
   std::vector<Node> nodes_test;
   nodes_test.push_back(source1);
-  nodes_test.push_back(sink1);
+  nodes_test.push_back(sink1);  
+  for (int i=0; i<nodes_test.size(); ++i)
+  { // Should not be equal because nodes were not yet added to the model
+    BOOST_CHECK(model.getNode(i) != nodes_test[i]);
+  }
+  
+  // add nodes to the model
+  model.addNodes({source1, sink1});
   for (int i=0; i<nodes_test.size(); ++i)
   {
     BOOST_CHECK(model.getNode(i) == nodes_test[i]);
   }
 
-  // add more links to the model
+  // add more links and nodes to the model
   Node source2, sink2;
   source2 = Node(2, NodeType::ReLU, NodeStatus::activated);
   sink2 = Node(3, NodeType::ReLU, NodeStatus::initialized);
-  link2 = Link(1, source2, sink2);
+  link2 = Link(1, source2.getId(), sink2.getId());
+  // add nodes to the model
+  model.addNodes({source2, sink2});
+  for (int i=0; i<nodes_test.size(); ++i)
+  {
+    BOOST_CHECK(model.getNode(i) == nodes_test[i]); 
+  }
 
   // add links to the model
   model.addLinks({link2});
   links_test.push_back(link2);
   for (int i=0; i<links_test.size(); ++i)
   {
-    BOOST_CHECK(model.getLink(i) == links_test[i]); 
+    BOOST_CHECK(model.getLink(i) == links_test[i]);
   }
   nodes_test.push_back(source2);
   nodes_test.push_back(sink2);
-  for (int i=0; i<nodes_test.size(); ++i)
-  {
-    BOOST_CHECK(model.getNode(i) == nodes_test[i]);
-  }
 
   // remove links from the model
   model.removeLinks({1});
@@ -217,22 +225,31 @@ BOOST_AUTO_TEST_CASE(addGetRemoveLinks)
   }
 }
 
+//TODO: comparison is failing!
 BOOST_AUTO_TEST_CASE(comparison) 
 {
   Node source, sink;
   Link link1, link2;
   source = Node(1, NodeType::ReLU, NodeStatus::activated);
   sink = Node(2, NodeType::ReLU, NodeStatus::initialized);
-  link1 = Link(1, source, sink);
-  link2 = Link(2, source, sink);
+  link1 = Link(1, source.getId(), sink.getId());
+  link2 = Link(2, source.getId(), sink.getId());
   Model model1(1);
   Model model2(1);
 
   // Check equal
-  BOOST_CHECK(model1 == model2);
+  BOOST_CHECK(model1 == model2); //fail
   model1.addLinks({link1});
   model2.addLinks({link1});
-  BOOST_CHECK(model1 == model2);
+  BOOST_CHECK(model1 == model2); //fail
+
+  // Check not equal
+  model1.addNodes({source, sink});
+  BOOST_CHECK(model1 != model2);
+
+  // Check equal
+  model2.addNodes({source, sink});
+  BOOST_CHECK(model1 == model2);  //fail
 
   // Check not equal
   model2.setId(2);

@@ -1,6 +1,7 @@
 /**TODO:  Add copyright*/
 
 #include <SmartPeak/ml/Link.h>
+#include <SmartPeak/ml/Operation.h>
 
 #include <vector>
 #include <cmath>
@@ -15,6 +16,15 @@ namespace SmartPeak
   Link::Link(const int& id, const int& source_node_id,
       const int& sink_node_id):
     id_(id)
+  {
+    setSourceNodeId(source_node_id);
+    setSinkNodeId(sink_node_id);
+  }
+
+  Link::Link(const int& id, const int& source_node_id,
+      const int& sink_node_id,
+      const SmartPeak::WeightInitMethod& weight_init):
+    id_(id), weight_init_(weight_init)
   {
     setSourceNodeId(source_node_id);
     setSinkNodeId(sink_node_id);
@@ -44,7 +54,7 @@ namespace SmartPeak
       source_node_id_ = source_node_id;
     }    
   }
-  int Link::getSourceNode() const
+  int Link::getSourceNodeId() const
   {
     return source_node_id_;
   }
@@ -60,7 +70,7 @@ namespace SmartPeak
       sink_node_id_ = sink_node_id;
     }    
   }
-  int Link::getSinkNode() const
+  int Link::getSinkNodeId() const
   {
     return sink_node_id_;
   }
@@ -73,4 +83,28 @@ namespace SmartPeak
   {
     return weight_;
   }
+
+  void Link::setWeightInitMethod(const SmartPeak::WeightInitMethod& weight_init)
+  {
+    weight_init_ = weight_init;
+  }
+  SmartPeak::WeightInitMethod Link::getWeightInitMethod() const
+  {
+    return weight_init_;
+  }
+
+  // void Link:::initWeight(const double& x_I) const
+  // {
+  //   switch (weight_init_)
+  //   {
+  //     case SmartPeak::WeightInitMethod::RandWeightInit:
+  //       RandWeightInit<double> operation;
+  //       weight_ = operation(x_I);
+  //     case SmartPeak::WeightInitMethod::ConstWeightInit:
+  //       ConstWeightInit<double> operation;
+  //       weight_ = operation(x_I);
+  //     default:
+  //       weight_ = 0.0;
+  //   }
+  // }
 }

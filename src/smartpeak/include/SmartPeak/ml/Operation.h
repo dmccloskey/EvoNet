@@ -4,6 +4,7 @@
 #define SMARTPEAK_OPERATION_H
 
 #include <cmath>
+#include <random>
 
 namespace SmartPeak
 {
@@ -87,6 +88,40 @@ public:
     T getAlpha() const { return alpha_; };
 private:
     T alpha_;
+  };
+
+  /**
+    @brief Random weight initialization based on the method of He, et al 2015
+
+    References:
+    R Hahnloser, R. Sarpeshkar, M A Mahowald, R. J. Douglas, H.S. Seung (2000). 
+      Digital selection and analogue amplification coexist in a cortex-inspired silicon circuit. 
+      Nature. 405. pp. 947–951.
+  */
+  template<typename T>
+  class RandWeightInit
+  {
+public: 
+    RandWeightInit(){}; 
+    ~RandWeightInit(){};
+    T operator()(const T& n_I) const {       
+      std::random_device rd{};
+      std::mt19937 gen{rd()};
+      std::normal_distribution<> d{0.0, 1.0};
+      return d(gen)*std::sqrt(2/n_I); 
+    };
+  };
+
+  /**
+    @brief Constant weight initialization.
+  */
+  template<typename T>
+  class ConstWeightInit
+  {
+public: 
+    ConstWeightInit(){}; 
+    ~ConstWeightInit(){};
+    T operator()(const T& x_I) const { return x_I; };
   };
 }
 

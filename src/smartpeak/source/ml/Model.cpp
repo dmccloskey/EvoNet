@@ -92,8 +92,6 @@ namespace SmartPeak
       if (links_.count(link.getId()) == 0)
       {
         links_[link.getId()] = link;
-        // add in the nodes
-        addNodes({link.getSourceNode(), link.getSinkNode()});
       }
       else
       {
@@ -139,8 +137,8 @@ namespace SmartPeak
       if (links_.empty()) { return; }
       for (auto const& link: links_)
       {
-        if (node.second == link.second.getSourceNode() ||
-          node.second == link.second.getSinkNode())
+        if (node.second.getId() == link.second.getSourceNodeId() ||
+          node.second.getId() == link.second.getSinkNodeId())
         {
           found = true;
           break;
@@ -164,8 +162,8 @@ namespace SmartPeak
       if (nodes_.empty()) { return; }
       for (auto const& node : nodes_)
       {
-        if (node.second == link.second.getSourceNode() ||
-          node.second == link.second.getSinkNode())
+        if (node.second.getId() == link.second.getSourceNodeId() ||
+          node.second.getId() == link.second.getSinkNodeId())
         {
           found = true;
           break;

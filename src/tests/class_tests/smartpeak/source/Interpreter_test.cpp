@@ -4,6 +4,10 @@
 #include <boost/test/unit_test.hpp>
 #include <SmartPeak/ml/Interpreter.h>
 
+#include <SmartPeak/ml/Link.h>
+#include <SmartPeak/ml/Node.h>
+#include <SmartPeak/ml/Model.h>
+
 using namespace SmartPeak;
 using namespace std;
 
@@ -24,28 +28,60 @@ BOOST_AUTO_TEST_CASE(destructor)
   delete ptr;
 }
 
-BOOST_AUTO_TEST_CASE(constructor2) 
+BOOST_AUTO_TEST_CASE(forwardPropogate) 
 {
-  Interpreter interpreter(1.0, 2.0, 3.0, 4.0);
+  // Toy network: 1 hidden layer, fully connected
+  Node i1, i2, h1, h2, o1, o2, b1, b2;
+  Link l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4;
+  i1 = Node(0, NodeType::input, NodeStatus::deactivated);
+  i2 = Node(1, NodeType::input, NodeStatus::deactivated);
+  h1 = Node(2, NodeType::ReLU, NodeStatus::deactivated);
+  h2 = Node(3, NodeType::ReLU, NodeStatus::deactivated);
+  o1 = Node(4, NodeType::ReLU, NodeStatus::deactivated);
+  o2 = Node(5, NodeType::ReLU, NodeStatus::deactivated);
+  b1 = Node(6, NodeType::bias, NodeStatus::deactivated);
+  b2 = Node(7, NodeType::bias, NodeStatus::deactivated);
+  // input layer + bias
+  l1 = Link(0, 0, 2);
+  l2 = Link(1, 0, 3);
+  l3 = Link(2, 1, 2);
+  l4 = Link(3, 1, 3);
+  lb1 = Link(4, 6, 2);
+  lb2 = Link(5, 6, 3);
+  // hidden layer + bias
+  l5 = Link(6, 2, 4);
+  l6 = Link(7, 2, 5);
+  l7 = Link(8, 3, 4);
+  l8 = Link(9, 3, 5);
+  lb3 = Link(10, 7, 4);
+  lb4 = Link(11, 7, 5);
+  Model model1(1);
+  model.addNodes({i1, i2, h1, h2, o1, o2, b1, b2});
+  model.addLinks({l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4});
 
-  BOOST_CHECK_EQUAL(interpreter.getH(), 1.0);
-  BOOST_CHECK_EQUAL(interpreter.getTau(), 2.0);
-  BOOST_CHECK_EQUAL(interpreter.getMu(), 3.0);
-  BOOST_CHECK_EQUAL(interpreter.getSigma(), 4.0);
-}
+  // set the input data
+  int batch_size = 4;
+  int n_epochs = 10;
+  Eigen::array<Eigen::Index> input_dim = {2, batch_size};
+  Eigen::Tensor<float, 2> input(input_dim); 
+  input.setValues({{1, 5}, {2, 6}, {3, 6}, {4, 7}});
+  Eigen::array<Eigen::Index> output_dim = {2, batch_size};
+  Eigen::Tensor<float, 2> expected(output_dim); 
+  expected.setValues({{0, 1}, {0, 1}, {0, 1}, {0, 1}});
 
-BOOST_AUTO_TEST_CASE(gettersAndSetters) 
-{
-  Interpreter interpreter;
-  interpreter.setH(1.0);
-  interpreter.setTau(2.0);
-  interpreter.setMu(3.0);
-  interpreter.setSigma(4.0);
+  // initialize model weights (method of He, et al,)
+  /**
+    References:
+      Kaiming He, Xiangyu Zhang, Shaoqing Ren, Jian Sun (2015)
+        Delving Deep into Rectifiers: Surpassing Human-Level Performance on ImageNet Classification
+        arXiv:1502.01852
+  */
 
-  BOOST_CHECK_EQUAL(interpreter.getH(), 1.0);
-  BOOST_CHECK_EQUAL(interpreter.getTau(), 2.0);
-  BOOST_CHECK_EQUAL(interpreter.getMu(), 3.0);
-  BOOST_CHECK_EQUAL(interpreter.getSigma(), 4.0);
+  // assign input values
+
+  // create the tensors based on the model network
+
+  
 }
 
 BOOST_AUTO_TEST_SUITE_END()

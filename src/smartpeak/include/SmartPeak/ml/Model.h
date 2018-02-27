@@ -6,8 +6,10 @@
 #include <SmartPeak/ml/Link.h>
 #include <SmartPeak/ml/Node.h>
 
+#include <unsupported/Eigen/CXX11/Tensor>
 #include <vector>
 #include <map>
+#include <tuple>
 
 namespace SmartPeak
 {
@@ -43,6 +45,14 @@ public:
     {
       return !(*this == other);
     }
+
+    /**
+      @brief Initialize all link weights
+
+      input and node Link weights will be initialized using the method of He, et al 2015
+      bias Link weight will be initialized as a constant
+    */ 
+    void initLinkWeights() const;
  
     /**
       @brief A forward propogation step. Returns a vector of links where
@@ -59,7 +69,7 @@ public:
 
       @returns layer vector of links
     */ 
-    void getNextInactiveLayer() const;
+    void getNextInactiveLayer(Eigen::Tensor<float, 2> weights, Eigen::Tensor<float, 2> nodes) const;
  
     /**
       @brief A back propogation step.  Returns a vector of links where
@@ -75,7 +85,7 @@ public:
 
       @returns layer vector of links
     */ 
-    void getNextUncorrectedLayer() const;
+    void getNextUncorrectedLayer(Eigen::Tensor<float, 2> weights, Eigen::Tensor<float, 2>, nodes) const;
 
     void setId(const int& id); ///< id setter
     int getId() const; ///< id getter

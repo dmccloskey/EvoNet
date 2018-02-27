@@ -20,7 +20,9 @@ namespace SmartPeak
   enum class NodeType
   {
     ReLU = 0,
-    ELU = 1
+    ELU = 1,
+    input = 2, // No activation function
+    bias = 3 // Zero value
   };
 
   /**
