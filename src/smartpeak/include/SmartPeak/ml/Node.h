@@ -64,18 +64,18 @@ public:
 
     // TODO: will this be needed or can we point to the Tensor value?
     void setOutput(const Eigen::Tensor<float, 1>& output); ///< ouptput setter
-    Eigen::Tensor<float, 1> getOutput() const; ///< output getter
+    Eigen::Tensor<float, 1> getOutput() const; ///< output copy getter
+    float* getOutputPointer() const; ///< output pointer getter
 
     void setError(const Eigen::Tensor<float, 1>& error); ///< error setter
-    Eigen::Tensor<float, 1> getError() const; ///< error getter
+    Eigen::Tensor<float, 1> getError() const; ///< error copy getter
+    float* getErrorPointer() const; ///< error pointer getter
 
 private:
     int id_; ///< Node ID
     SmartPeak::NodeType type_; ///< Node Type
     SmartPeak::NodeStatus status_; ///< Node Status
     
-    // TODO: will this be needed or can we point to the Tensor value?
-    // TODO: or can we use an set an index to the tensor #, and tensor dims?
     Eigen::Tensor<float, 1> output_; ///< Node Output (dim is the # of samples)
     Eigen::Tensor<float, 1> error_; ///< Node Error (dim is the # of samples)
 

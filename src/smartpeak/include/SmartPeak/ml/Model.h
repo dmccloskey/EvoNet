@@ -5,7 +5,6 @@
 
 #include <SmartPeak/ml/Link.h>
 #include <SmartPeak/ml/Node.h>
-#include <SmartPeak/ml/Layer.h>
 
 #include <vector>
 #include <map>
@@ -55,11 +54,12 @@ public:
         be returned.  All others will be returned
         on subsequent calls.
 
-      @param[in] x_I Input value
+      @param[out] weight matrix
+      @param[out] nodes
 
       @returns layer vector of links
     */ 
-    SmartPeak::Layer getNextInactiveLayer() const;
+    void getNextInactiveLayer() const;
  
     /**
       @brief A back propogation step.  Returns a vector of links where
@@ -75,7 +75,7 @@ public:
 
       @returns layer vector of links
     */ 
-    SmartPeak::Layer getNextUncorrectedLayer() const;
+    void getNextUncorrectedLayer() const;
 
     void setId(const int& id); ///< id setter
     int getId() const; ///< id getter

@@ -12,12 +12,12 @@ namespace SmartPeak
   {        
   }
 
-  Link::Link(const int& id, const SmartPeak::Node& source_node,
-      const SmartPeak::Node& sink_node):
+  Link::Link(const int& id, const int& source_node_id,
+      const int& sink_node_id):
     id_(id)
   {
-    setSourceNode(source_node);
-    setSinkNode(sink_node);
+    setSourceNodeId(source_node_id);
+    setSinkNodeId(sink_node_id);
   }
 
   Link::~Link()
@@ -33,36 +33,36 @@ namespace SmartPeak
     return id_;
   }
 
-  void Link::setSourceNode(const SmartPeak::Node& source_node)
+  void Link::setSourceNodeId(const int& source_node_id)
   {
-    if (sink_node_ == source_node)
+    if (sink_node_id_ == source_node_id)
     {
       std::cout << "Source and Sink nodes are the same!" << std::endl;
     }
     else
     {
-      source_node_ = source_node;
+      source_node_id_ = source_node_id;
     }    
   }
-  SmartPeak::Node Link::getSourceNode() const
+  int Link::getSourceNode() const
   {
-    return source_node_;
+    return source_node_id_;
   }
 
-  void Link::setSinkNode(const SmartPeak::Node& sink_node)
+  void Link::setSinkNodeId(const int& sink_node_id)
   {
-    if (source_node_ == sink_node)
+    if (source_node_id_ == sink_node_id)
     {
       std::cout << "Source and Sink nodes are the same!" << std::endl;
     }
     else
     {
-      sink_node_ = sink_node;
+      sink_node_id_ = sink_node_id;
     }    
   }
-  SmartPeak::Node Link::getSinkNode() const
+  int Link::getSinkNode() const
   {
-    return sink_node_;
+    return sink_node_id_;
   }
 
   void Link::setWeight(const double& weight)
