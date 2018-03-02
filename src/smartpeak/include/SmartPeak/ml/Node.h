@@ -73,6 +73,10 @@ public:
     Eigen::Tensor<float, 1> getError() const; ///< error copy getter
     float* getErrorPointer() const; ///< error pointer getter
 
+    void setDerivative(const Eigen::Tensor<float, 1>& derivative); ///< derivative setter
+    Eigen::Tensor<float, 1> getDerivative() const; ///< derivative copy getter
+    float* getDerivativePointer() const; ///< derivative pointer getter
+
 private:
     int id_; ///< Node ID
     SmartPeak::NodeType type_; ///< Node Type
@@ -80,6 +84,7 @@ private:
     
     Eigen::Tensor<float, 1> output_; ///< Node Output (dim is the # of samples)
     Eigen::Tensor<float, 1> error_; ///< Node Error (dim is the # of samples)
+    Eigen::Tensor<float, 1> derivative_; ///< Node Error (dim is the # of samples)
 
   };
 }
