@@ -42,19 +42,19 @@ BOOST_AUTO_TEST_CASE(forwardPropogate)
   b1 = Node(6, NodeType::bias, NodeStatus::deactivated);
   b2 = Node(7, NodeType::bias, NodeStatus::deactivated);
   // input layer + bias
-  l1 = Link(0, 0, 2);
-  l2 = Link(1, 0, 3);
-  l3 = Link(2, 1, 2);
-  l4 = Link(3, 1, 3);
-  lb1 = Link(4, 6, 2);
-  lb2 = Link(5, 6, 3);
+  l1 = Link(0, 0, 2, WeightInitMethod::RandWeightInit);
+  l2 = Link(1, 0, 3, WeightInitMethod::RandWeightInit);
+  l3 = Link(2, 1, 2, WeightInitMethod::RandWeightInit);
+  l4 = Link(3, 1, 3, WeightInitMethod::RandWeightInit);
+  lb1 = Link(4, 6, 2, WeightInitMethod::ConstWeightInit);
+  lb2 = Link(5, 6, 3, WeightInitMethod::ConstWeightInit);
   // hidden layer + bias
-  l5 = Link(6, 2, 4);
-  l6 = Link(7, 2, 5);
-  l7 = Link(8, 3, 4);
-  l8 = Link(9, 3, 5);
-  lb3 = Link(10, 7, 4);
-  lb4 = Link(11, 7, 5);
+  l5 = Link(6, 2, 4, WeightInitMethod::RandWeightInit);
+  l6 = Link(7, 2, 5, WeightInitMethod::RandWeightInit);
+  l7 = Link(8, 3, 4, WeightInitMethod::RandWeightInit);
+  l8 = Link(9, 3, 5, WeightInitMethod::RandWeightInit);
+  lb3 = Link(10, 7, 4, WeightInitMethod::ConstWeightInit);
+  lb4 = Link(11, 7, 5, WeightInitMethod::ConstWeightInit);
   Model model1(1);
   model.addNodes({i1, i2, h1, h2, o1, o2, b1, b2});
   model.addLinks({l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4});
@@ -62,6 +62,7 @@ BOOST_AUTO_TEST_CASE(forwardPropogate)
   // set the input data
   int batch_size = 4;
   int n_epochs = 10;
+
   Eigen::array<Eigen::Index> input_dim = {2, batch_size};
   Eigen::Tensor<float, 2> input(input_dim); 
   input.setValues({{1, 5}, {2, 6}, {3, 6}, {4, 7}});
@@ -76,10 +77,18 @@ BOOST_AUTO_TEST_CASE(forwardPropogate)
         Delving Deep into Rectifiers: Surpassing Human-Level Performance on ImageNet Classification
         arXiv:1502.01852
   */
+  model.initLink();
+  model.initNodes();
 
-  // assign input values
+  // assign input node values
+  std::vector<int> input_nodes = {0, 1};
+  model.setNodeOutput(input, input_nodes);
 
   // create the tensors based on the model network
+
+  // calculate the error
+  std::vector<int> output_nodes = {4, 5};
+  model.setNodeOutput(expected, output_nodes);
 
   
 }

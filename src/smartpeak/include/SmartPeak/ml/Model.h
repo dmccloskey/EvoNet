@@ -52,7 +52,32 @@ public:
       input and node Link weights will be initialized using the method of He, et al 2015
       bias Link weight will be initialized as a constant
     */ 
-    void initLinkWeights() const;
+    void initLinks() const;  //TODO
+
+    /**
+      @brief Initialize all node output to zero
+    */ 
+    void initNodes() const;  //TODO
+
+    /**
+      @brief Assigns output values to the specified nodes.
+        The node statuses are then changed to NoteType::activated
+
+      dimensions of Node x batch size
+
+      @param[in]
+    */ 
+    void setNodeOutput(const std::vector<double>& values, const std::vector<int>& node_ids) const;  //TODO
+
+    /**
+      @brief Assigns error values to the specified nodes.
+        The node statuses are then changed to NoteType::corrected
+
+      dimensions of Node x batch size
+
+      @param[in]
+    */ 
+    void setNodeError(const std::vector<double>& values, const std::vector<int>& node_ids) const;  //TODO
  
     /**
       @brief A forward propogation step. Returns a vector of links where
@@ -115,6 +140,8 @@ public:
     */ 
     void addNodes(const std::vector<Node>& nodes);
     Node getNode(const int& node_id) const; ///< node getter
+    std::vector<int> getNodeIDs(const NodeStatus& node_status) const; ///< node getter (TODO)
+    std::vector<int> getNodeIDs(const NodeType& node_type) const; ///< node getter (TODO)
  
     /**
       @brief Remove existing nodes from the model.
@@ -133,7 +160,7 @@ public:
       @brief Removes links from the model that no longer
         have associated nodes.
     */ 
-    void pruneLinks();
+    void pruneLinks();    
 
 private:
     int id_; ///< Model ID

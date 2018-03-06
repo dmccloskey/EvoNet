@@ -65,7 +65,7 @@ public:
     SmartPeak::NodeStatus getStatus() const; ///< status getter
 
     // TODO: will this be needed or can we point to the Tensor value?
-    void setOutput(const Eigen::Tensor<float, 1>& output); ///< ouptput setter
+    void setOutput(const Eigen::Tensor<float, 1>& output); ///< output setter
     Eigen::Tensor<float, 1> getOutput() const; ///< output copy getter
     float* getOutputPointer() const; ///< output pointer getter
 

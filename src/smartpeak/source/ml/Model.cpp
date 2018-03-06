@@ -176,4 +176,24 @@ namespace SmartPeak
     }
     if (link_ids.size() != 0) { removeLinks(link_ids); }
   }
+
+  
+  void Model::getNextInactiveLayer(Eigen::Tensor<float, 2> weights, Eigen::Tensor<float, 2> nodes) const
+  {
+    // get all links where the source node is active and the sink node is inactive
+    std::vector<Link> links;
+    std::vector<Node> source_nodes, sink_nodes;
+    for (const std::map<int, Link>& link_map : links_)
+    {
+      if (node_[link.second.getSourceNodeId()].getNodeStatus() == NodeStatus::activated && 
+        link.second.getSinkNodeId()].getNodeStatus() == NodeStatus::deactivated)
+      {
+        links.push_back(link.second);
+        source_nodes.push_back(node_[link.second.getSourceNodeId()]);
+        sink_nodes.push_back(node_[link.second.getSinkNodeId()]);
+      }
+    }
+    // construct the source, weight, and output tensors
+    
+  }
 }
