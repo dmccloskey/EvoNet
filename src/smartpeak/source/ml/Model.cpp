@@ -262,7 +262,7 @@ namespace SmartPeak
     {
       for (int j=0; j<node_ids[i].getOutput().size; ++j)
       {
-        node_ids[i].getOutput()[j] = values.data()[i*j + ]
+        node_ids[i].getOutputPointer()[j] = values.data()[i*j + j];
       }
     }
 
@@ -286,7 +286,7 @@ namespace SmartPeak
     {
       for (int j=0; j<batch_size; ++j)
       {
-        source_ptr[i*j + i] = source_nodes[i].getOutputPointer()[j];
+        source_ptr[i*j + j] = source_nodes[i].getOutputPointer()[j];
       }
     }
 
@@ -301,7 +301,7 @@ namespace SmartPeak
           if (link.getSinkNodeId() == sink_nodes[i].getId() &&
           link.getSourceNodeId() == source_nodes[j].getId())
           {
-            weight_ptr[i*j + i] = link.getWeight();
+            weight_ptr[i*j + j] = link.getWeight();
             break;
           }
         }
@@ -312,7 +312,7 @@ namespace SmartPeak
     {
       for (int j=0; j<batch_size; ++j)
       {
-        sink_ptr[i*j + i] = sink_nodes[i].getOutputPointer()[j];
+        sink_ptr[i*j + j] = sink_nodes[i].getOutputPointer()[j];
       }
     }
 
