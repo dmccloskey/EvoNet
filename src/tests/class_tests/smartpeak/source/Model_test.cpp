@@ -258,12 +258,11 @@ BOOST_AUTO_TEST_CASE(comparison)
   BOOST_CHECK(model1 != model2);
 }
 
-BOOST_AUTO_TEST_CASE(getNextInactiveLayer) 
+void makeModel1(Node& i1, Node& i2, Node& h1, Node& h2, Node& o1, Node& o2, Node& b1, Node& b2,
+  Link& l1, Link& l2, Link& l3, Link& l4, Link& lb1, Link& lb2, Link& l5, Link& l6, Link& l7, Link& l8, Link& lb3, Link& lb4,
+  Model& model1)
 {
-
   // Toy network: 1 hidden layer, fully connected, DAG
-  Node i1, i2, h1, h2, o1, o2, b1, b2;
-  Link l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4;
   i1 = Node(0, NodeType::input, NodeStatus::activated);
   i2 = Node(1, NodeType::input, NodeStatus::activated);
   h1 = Node(2, NodeType::ReLU, NodeStatus::deactivated);
@@ -286,9 +285,58 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayer)
   l8 = Link(9, 3, 5, WeightInitMethod::RandWeightInit);
   lb3 = Link(10, 7, 4, WeightInitMethod::ConstWeightInit);
   lb4 = Link(11, 7, 5, WeightInitMethod::ConstWeightInit);
-  Model model1(1);
+  model1.setId(1);
   model1.addNodes({i1, i2, h1, h2, o1, o2, b1, b2});
   model1.addLinks({l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4});
+}
+
+BOOST_AUTO_TEST_CASE(initNodes) 
+{
+  // Toy network: 1 hidden layer, fully connected, DAG
+  Node i1, i2, h1, h2, o1, o2, b1, b2;
+  Link l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4;
+  Model model1;
+  makeModel1(
+    i1, i2, h1, h2, o1, o2, b1, b2,
+    l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4,
+    model1);
+
+  model1.initNodes(2);
+  BOOST_CHECK_EQUAL(model1.getNode(0).getError().size(), 2);
+  BOOST_CHECK_EQUAL(model1.getNode(0).getError()[0], 0.0);
+  BOOST_CHECK_EQUAL(model1.getNode(7).getError().size(), 2);
+  BOOST_CHECK_EQUAL(model1.getNode(7).getError()[0], 0.0);
+}
+
+BOOST_AUTO_TEST_CASE(setNodeOutput) //TODO
+{
+  // Toy network: 1 hidden layer, fully connected, DAG
+  Node i1, i2, h1, h2, o1, o2, b1, b2;
+  Link l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4;
+  Model model1;
+  makeModel1(
+    i1, i2, h1, h2, o1, o2, b1, b2,
+    l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4,
+    model1);
+
+  model1.initNodes(2);
+  model1.setNodeOutput(2);
+  BOOST_CHECK_EQUAL(model1.getNode(0).getError().size(), 2);
+  BOOST_CHECK_EQUAL(model1.getNode(0).getError()[0], 0.0);
+  BOOST_CHECK_EQUAL(model1.getNode(7).getError().size(), 2);
+  BOOST_CHECK_EQUAL(model1.getNode(7).getError()[0], 0.0);
+}
+
+BOOST_AUTO_TEST_CASE(getNextInactiveLayer) 
+{
+  // Toy network: 1 hidden layer, fully connected, DAG
+  Node i1, i2, h1, h2, o1, o2, b1, b2;
+  Link l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4;
+  Model model1;
+  makeModel1(
+    i1, i2, h1, h2, o1, o2, b1, b2,
+    l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4,
+    model1);
 
   std::vector<Link> links;
   std::vector<Node> source_nodes, sink_nodes;
@@ -310,14 +358,62 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayer)
   BOOST_CHECK(sink_nodes[0] == h1);
   BOOST_CHECK(sink_nodes[1] == h2);
 
-  std::cout << "Links" << std::endl;
-  for (const auto& link : links){ std::cout << "link_id: " << link.getId() << std::endl; }
+  // // Uncomment for debugging:
+  // std::cout << "Links" << std::endl;
+  // for (const auto& link : links){ std::cout << "link_id: " << link.getId() << std::endl; }
 
-  std::cout << "Source Nodes" << std::endl;
-  for (const auto& node : source_nodes){ std::cout << "node_id: " << node.getId() << std::endl; }
+  // std::cout << "Source Nodes" << std::endl;
+  // for (const auto& node : source_nodes){ std::cout << "node_id: " << node.getId() << std::endl; }
 
-  std::cout << "Sink Nodes" << std::endl;
-  for (const auto& node : sink_nodes){ std::cout << "node_id: " << node.getId() << std::endl; }
+  // std::cout << "Sink Nodes" << std::endl;
+  // for (const auto& node : sink_nodes){ std::cout << "node_id: " << node.getId() << std::endl; }
+
+}
+
+BOOST_AUTO_TEST_CASE(forwardPropogateLayerNetInput) 
+{
+  // Toy network: 1 hidden layer, fully connected, DAG
+  Node i1, i2, h1, h2, o1, o2, b1, b2;
+  Link l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4;
+  Model model1;
+  makeModel1(
+    i1, i2, h1, h2, o1, o2, b1, b2,
+    l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4,
+    model1);
+
+  // std::vector<Link> links = {l1, l2, l3, l4, lb1, lb2};
+  // std::vector<Node> source_nodes = {i1, i2, b1};
+  // std::vector<Node> sink_nodes = {h1, h2};
+
+  std::vector<Link> links;
+  std::vector<Node> source_nodes, sink_nodes;
+  const int batch_size = 3;
+  model1.initNodes(batch_size);
+  model1.getNextInactiveLayer(links, source_nodes, sink_nodes);
+  model1.forwardPropogateLayerNetInput(links, source_nodes, sink_nodes);
+
+  // control test
+  Eigen::Tensor<float, 1> init_values(batch_size);
+    init_values.setConstant(0.0f);
+  for (int i=0; i<sink_nodes.size(); i++)
+  {
+    BOOST_CHECK_EQUAL(sink_nodes[i].getError().size(), batch_size);
+    BOOST_CHECK(sink_nodes[i].getStatus() == NodeStatus::deactivated);
+    for (int j=0; j<batch_size; j++)
+    {
+      BOOST_CHECK_EQUAL(sink_nodes[i].getError()[j], 0.0);
+    }
+  }
+
+  // // Uncomment for debugging:
+  // std::cout << "Links" << std::endl;
+  // for (const auto& link : links){ std::cout << "link_id: " << link.getId() << std::endl; }
+
+  // std::cout << "Source Nodes" << std::endl;
+  // for (const auto& node : source_nodes){ std::cout << "node_id: " << node.getId() << std::endl; }
+
+  // std::cout << "Sink Nodes" << std::endl;
+  // for (const auto& node : sink_nodes){ std::cout << "node_id: " << node.getId() << std::endl; }
 
 }
 

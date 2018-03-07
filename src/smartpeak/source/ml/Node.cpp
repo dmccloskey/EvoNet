@@ -47,4 +47,43 @@ namespace SmartPeak
   {
     return status_;
   }
+
+  void Node::setOutput(const Eigen::Tensor<float, 1>& output)
+  {
+    output_ = output;
+  }
+  Eigen::Tensor<float, 1> Node::getOutput() const
+  {
+    return output_;
+  }
+  float* Node::getOutputPointer()
+  {
+    return output_.data();
+  }
+
+  void Node::setError(const Eigen::Tensor<float, 1>& error)
+  {
+    error_ = error;
+  }
+  Eigen::Tensor<float, 1> Node::getError() const
+  {
+    return error_;
+  }
+  float* Node::getErrorPointer()
+  {
+    return error_.data();
+  }
+
+  void Node::setDerivative(const Eigen::Tensor<float, 1>& derivative)
+  {
+    derivative_ = derivative;
+  }
+  Eigen::Tensor<float, 1> Node::getDerivative() const
+  {
+    return derivative_;
+  }
+  float* Node::getDerivativePointer()
+  {
+    return derivative_.data();
+  }
 }

@@ -55,29 +55,32 @@ public:
     void initLinks() const;  //TODO
 
     /**
-      @brief Initialize all node output to zero
+      @brief Initialize all node output to zero.
+        The node statuses are then changed to NodeStatus::deactivated
+
+      @param[in] batch_size Size of the output, error, and derivative node vectors
     */ 
-    void initNodes() const;  //TODO
+    void initNodes(const int& batch_size);  //TODO
 
     /**
       @brief Assigns output values to the specified nodes.
-        The node statuses are then changed to NoteType::activated
+        The node statuses are then changed to NodeStatus::activated
 
       dimensions of Node x batch size
 
       @param[in]
     */ 
-    void setNodeOutput(const std::vector<double>& values, const std::vector<int>& node_ids) const;  //TODO
+    void setNodeOutput(const Eigen::Tensor<float, 1>& values, const std::vector<int>& node_ids) const;  //TODO
 
     /**
       @brief Assigns error values to the specified nodes.
-        The node statuses are then changed to NoteType::corrected
+        The node statuses are then changed to NodeStatus::corrected
 
       dimensions of Node x batch size
 
       @param[in]
     */ 
-    void setNodeError(const std::vector<double>& values, const std::vector<int>& node_ids) const;  //TODO
+    void setNodeError(const Eigen::Tensor<float, 1>& values, const std::vector<int>& node_ids) const;  //TODO
  
     /**
       @brief A prelude to a forward propogation step. Returns a vector of links
@@ -103,7 +106,7 @@ public:
         1. all sink output values are unknown (i.e. inactive),
         2. all source node output values are known (i.e. active).
 
-      Note that nodes need not be the same type
+      Note that nodes need not be the same type.
 
       @param[out] Links
       @param[out] source_nodes

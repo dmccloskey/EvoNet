@@ -47,7 +47,7 @@ BOOST_AUTO_TEST_CASE(constructor2)
   BOOST_CHECK(link.getWeightInitMethod() == WeightInitMethod::ConstWeightInit);
 
   // test overload constructor
-  link = Link(1, node_source, node_source, WeightInitMethod::RandWeightInit);
+  link = Link(1, node_source, node_sink, WeightInitMethod::RandWeightInit);
 
   BOOST_CHECK_EQUAL(link.getId(), 1);
   BOOST_CHECK(link.getSourceNodeId() == node_source);

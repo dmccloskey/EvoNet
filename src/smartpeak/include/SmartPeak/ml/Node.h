@@ -67,15 +67,15 @@ public:
     // TODO: will this be needed or can we point to the Tensor value?
     void setOutput(const Eigen::Tensor<float, 1>& output); ///< output setter
     Eigen::Tensor<float, 1> getOutput() const; ///< output copy getter
-    float* getOutputPointer() const; ///< output pointer getter
+    float* getOutputPointer(); ///< output pointer getter
 
     void setError(const Eigen::Tensor<float, 1>& error); ///< error setter
     Eigen::Tensor<float, 1> getError() const; ///< error copy getter
-    float* getErrorPointer() const; ///< error pointer getter
+    float* getErrorPointer(); ///< error pointer getter
 
     void setDerivative(const Eigen::Tensor<float, 1>& derivative); ///< derivative setter
     Eigen::Tensor<float, 1> getDerivative() const; ///< derivative copy getter
-    float* getDerivativePointer() const; ///< derivative pointer getter
+    float* getDerivativePointer(); ///< derivative pointer getter
 
 private:
     int id_; ///< Node ID
