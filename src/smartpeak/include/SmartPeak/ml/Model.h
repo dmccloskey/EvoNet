@@ -80,21 +80,60 @@ public:
     void setNodeError(const std::vector<double>& values, const std::vector<int>& node_ids) const;  //TODO
  
     /**
-      @brief A forward propogation step. Returns a vector of links where
-        all sink output values are unknown (i.e. inactive),
-        but all source node output values are known (i.e. active).
+      @brief A prelude to a forward propogation step. Returns a vector of links
+        and associated nodes that satisfy the following conditions:
+        1. all sink output values are unknown (i.e. inactive),
+        2. all source node output values are known (i.e. active).
+        3. all nodes need not be the same type
 
-      If multiple vectors of links satisfy the above
-        criteria, only the first vector of links will
-        be returned.  All others will be returned
-        on subsequent calls.
-
-      @param[out] weight matrix
-      @param[out] nodes
+      @param[out] Links
+      @param[out] source_nodes
+      @param[out] sink_nodes
 
       @returns layer vector of links
     */ 
-    void getNextInactiveLayer(Eigen::Tensor<float, 2> weights, Eigen::Tensor<float, 2> nodes) const;
+    void getNextInactiveLayer(
+      std::vector<Link>& links,
+      std::vector<Node>& source_nodes,
+      std::vector<Node>& sink_nodes) const;
+ 
+    /**
+      @brief A prelude to a forward propogation step. Computes the net
+        input into all nodes composing the next layer:
+        1. all sink output values are unknown (i.e. inactive),
+        2. all source node output values are known (i.e. active).
+
+      Note that nodes need not be the same type
+
+      @param[out] Links
+      @param[out] source_nodes
+      @param[out] sink_nodes
+
+      @returns layer vector of links
+    */ 
+    void forwardPropogateLayerNetInput(
+      std::vector<Link>& links,
+      std::vector<Node>& source_nodes,
+      std::vector<Node>& sink_nodes) const;
+ 
+    /**
+      @brief Completion of the forward propogation step. Computes the net
+        activation for all nodes in the tensor layer.
+
+      Note before computing the activation, the layer tensor will be split
+        according to the node type, and the corresponding activation
+        function will be applied
+
+      @param[out] Links
+      @param[out] source_nodes
+      @param[out] sink_nodes
+
+      @returns layer vector of links
+    */ 
+    void forwardPropogateLayerActivation(
+      std::vector<Link>& links,
+      std::vector<Node>& source_nodes,
+      std::vector<Node>& sink_nodes) const;
  
     /**
       @brief A back propogation step.  Returns a vector of links where
@@ -110,7 +149,7 @@ public:
 
       @returns layer vector of links
     */ 
-    void getNextUncorrectedLayer(Eigen::Tensor<float, 2> weights, Eigen::Tensor<float, 2>, nodes) const;
+    void getNextUncorrectedLayer() const;
 
     void setId(const int& id); ///< id setter
     int getId() const; ///< id getter

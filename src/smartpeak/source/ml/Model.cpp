@@ -132,11 +132,11 @@ namespace SmartPeak
   {
     std::vector<int> node_ids;
     if (nodes_.empty()) { return; }
-    for (auto const& node : nodes_)
+    for (const auto& node : nodes_)
     {
       bool found = false;
       if (links_.empty()) { return; }
-      for (auto const& link: links_)
+      for (const auto& link: links_)
       {
         if (node.second.getId() == link.second.getSourceNodeId() ||
           node.second.getId() == link.second.getSinkNodeId())
@@ -157,11 +157,11 @@ namespace SmartPeak
   {
     std::vector<int> link_ids;
     if (links_.empty()) { return; }
-    for (auto const& link: links_)
+    for (const auto& link: links_)
     {
       bool found = false;
       if (nodes_.empty()) { return; }
-      for (auto const& node : nodes_)
+      for (const auto& node : nodes_)
       {
         if (node.second.getId() == link.second.getSourceNodeId() ||
           node.second.getId() == link.second.getSinkNodeId())
@@ -189,41 +189,46 @@ namespace SmartPeak
 
     // get all links where the source node is active and the sink node is inactive
     // except for biases
-    for (const std::map<int, Link>& link_map : links_)
+    for (auto& link_map : links_)
     {
-      if (node_[link.second.getSourceNodeId()].getNodeType() != NodeType::bias &&
-        node_[link.second.getSourceNodeId()].getNodeStatus() == NodeStatus::activated && 
-        node_[link.second.getSinkNodeId()].getNodeStatus() == NodeStatus::deactivated)
+      if (nodes_.at(link_map.second.getSourceNodeId()).getType() != NodeType::bias &&
+        nodes_.at(link_map.second.getSourceNodeId()).getStatus() == NodeStatus::activated && 
+        nodes_.at(link_map.second.getSinkNodeId()).getStatus() == NodeStatus::deactivated && 
+        nodes_.at(link_map.second.getSinkNodeId()).getStatus() == NodeStatus::deactivated &&
+        // could use std::set instead to check for duplicates
+        std::find(source_nodes.begin(), source_nodes.end(), nodes_.at(link_map.second.getSourceNodeId())) == source_nodes.end() &&
+        std::find(sink_nodes.begin(), sink_nodes.end(), nodes_.at(link_map.second.getSinkNodeId())) == sink_nodes.end())
       {
-        links.push_back(link.second);
-        source_nodes.push_back(node_[link.second.getSourceNodeId()]);
-        sink_nodes.push_back(node_[link.second.getSinkNodeId()]);
+        links.push_back(link_map.second);
+        if 
+        source_nodes.push_back(nodes_.at(link_map.second.getSourceNodeId()));
+        sink_nodes.push_back(nodes_.at(link_map.second.getSinkNodeId()));
       }
     }
 
     // get all the biases for the sink nodes
-    for (const std::map<int, Link>& link_map : links_)
+    for (auto& link_map : links_)
     {
-      if (node_[link.second.getSourceNodeId()].getNodeType() == NodeType::bias &&
-        node_[link.second.getSourceNodeId()].getNodeStatus() == NodeStatus::activated && 
-        node_[link.second.getSinkNodeId()].getNodeStatus() == NodeStatus::deactivated &&
-        std::find(sink_nodes.begin(), sink_nodes.end(), node_[link.second.getSinkNodeId()]) != sink_nodes.end())
+      if (nodes_.at(link_map.second.getSourceNodeId()).getType() == NodeType::bias &&
+        nodes_.at(link_map.second.getSourceNodeId()).getStatus() == NodeStatus::activated && 
+        nodes_.at(link_map.second.getSinkNodeId()).getStatus() == NodeStatus::deactivated &&
+        std::find(sink_nodes.begin(), sink_nodes.end(), nodes_.at(link_map.second.getSinkNodeId())) != sink_nodes.end())
       {
-        links.push_back(link.second);
-        source_nodes.push_back(node_[link.second.getSourceNodeId()]);
+        links.push_back(link_map.second);
+        source_nodes.push_back(nodes_.at(link_map.second.getSourceNodeId()));
       }
     }
   }
 
-  void Model::forwardPropogate(
-    std::vector<Link>& links,
-    std::vector<Node>& source_nodes,
-    std::vector<Node>& sink_nodes) const
-  {
-    // construct the source, weight, and output tensors
-    const int batch_size = source_nodes.getError().size();
-    Eigen::TensorMap<Tensor<float, 2>> source_tensor(source_nodes.size(), batch_size);
-    Eigen::Tensor<float, 2> weight_tensor(source_nodes.size(), sink_nodes.size());
-    Eigen::Tensor<float, 2> sink_tensor(sink_nodes.size(), batch_size);
-  }
+  // void Model::forwardPropogateLayerNetInput(
+  //   std::vector<Link>& links,
+  //   std::vector<Node>& source_nodes,
+  //   std::vector<Node>& sink_nodes) const
+  // {
+  //   // construct the source, weight, and output tensors
+  //   const int batch_size = source_nodes.getError().size();
+  //   Eigen::TensorMap<Tensor<float, 2>> source_tensor(source_nodes.size(), batch_size);
+  //   Eigen::Tensor<float, 2> weight_tensor(source_nodes.size(), sink_nodes.size());
+  //   Eigen::Tensor<float, 2> sink_tensor(sink_nodes.size(), batch_size);
+  // }
 }
