@@ -239,6 +239,34 @@ namespace SmartPeak
       node_map.second.setStatus(NodeStatus::deactivated);
     }
   }
+  
+  void Model::mapValuesToNodes(
+    const Eigen::Tensor<float, 2>& values,
+    const std::vector<int>& node_ids)
+  {
+    // check dimension mismatches
+    if (node_ids.size() != values.dimension(1))
+    {
+      std::cout << "The number of input features and the number of nodes do not match." << std::endl;
+      return;
+    }
+    // assumes the node exists
+    else if (nodes_.at(node_ids[0].getOutput().size() != values.dimension(0)))
+    {
+      std::cout << "The number of input samples and the node batch size does not match." << std::endl;
+      return;
+    }
+
+    // copy over the input values
+    for (int i=0; i<node_ids; ++i)
+    {
+      for (int j=0; j<node_ids[i].getOutput().size; ++j)
+      {
+        node_ids[i].getOutput()[j] = values.data()[i*j + ]
+      }
+    }
+
+  }
 
   void Model::forwardPropogateLayerNetInput(
     std::vector<Link>& links,
@@ -254,9 +282,9 @@ namespace SmartPeak
 
     // source_ptr
     float source_ptr [source_nodes.size() * batch_size];
-    for (int i=0; i<source_nodes.size(); i++)
+    for (int i=0; i<source_nodes.size(); ++i)
     {
-      for (int j=0; j<batch_size; j++)
+      for (int j=0; j<batch_size; ++j)
       {
         source_ptr[i*j + i] = source_nodes[i].getOutputPointer()[j];
       }
@@ -264,9 +292,9 @@ namespace SmartPeak
 
     // weight_ptr
     float weight_ptr [batch_size * sink_nodes.size()];
-    for (int i=0; i<sink_nodes.size(); i++)
+    for (int i=0; i<sink_nodes.size(); ++i)
     {
-      for (int j=0; j<source_nodes.size(); j++)
+      for (int j=0; j<source_nodes.size(); ++j)
       {
         for (const Link& link : links)
         {
@@ -280,9 +308,9 @@ namespace SmartPeak
       }
     }
     float sink_ptr [sink_nodes.size() * batch_size];
-    for (int i=0; i<sink_nodes.size(); i++)
+    for (int i=0; i<sink_nodes.size(); ++i)
     {
-      for (int j=0; j<batch_size; j++)
+      for (int j=0; j<batch_size; ++j)
       {
         sink_ptr[i*j + i] = sink_nodes[i].getOutputPointer()[j];
       }

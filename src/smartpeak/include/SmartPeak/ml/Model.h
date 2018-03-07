@@ -63,24 +63,14 @@ public:
     void initNodes(const int& batch_size);  //TODO
 
     /**
-      @brief Assigns output values to the specified nodes.
+      @brief Assigns output values to the input nodes.
         The node statuses are then changed to NodeStatus::activated
 
-      dimensions of Node x batch size
+      dimensions of batch size by nodes
 
-      @param[in]
+      @param[in] input
     */ 
-    void setNodeOutput(const Eigen::Tensor<float, 1>& values, const std::vector<int>& node_ids) const;  //TODO
-
-    /**
-      @brief Assigns error values to the specified nodes.
-        The node statuses are then changed to NodeStatus::corrected
-
-      dimensions of Node x batch size
-
-      @param[in]
-    */ 
-    void setNodeError(const Eigen::Tensor<float, 1>& values, const std::vector<int>& node_ids) const;  //TODO
+    void mapValuesToNodes(const Eigen::Tensor<float, 2>& values, const std::vector<int>& node_ids);
  
     /**
       @brief A prelude to a forward propogation step. Returns a vector of links
