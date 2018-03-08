@@ -308,7 +308,7 @@ BOOST_AUTO_TEST_CASE(initNodes)
   BOOST_CHECK_EQUAL(model1.getNode(7).getError()[0], 0.0);
 }
 
-BOOST_AUTO_TEST_CASE(mapValuesToNodes) //TODO
+BOOST_AUTO_TEST_CASE(mapValuesToNodes)
 {
   // Toy network: 1 hidden layer, fully connected, DAG
   Node i1, i2, h1, h2, o1, o2, b1, b2;
@@ -366,29 +366,28 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayer)
 
   const std::vector<int> biases_ids = {6, 7};
   Eigen::Tensor<float, 2> biases(batch_size, biases_ids.size()); 
-  biases.setConstant(0);
+  biases.setConstant(1);
   model1.mapValuesToNodes(biases, biases_ids);  
 
   // get the next hidden layer
-  std::vector<Link> links;
-  std::vector<Node> source_nodes, sink_nodes;
+  std::vector<int> links, source_nodes, sink_nodes;
   model1.getNextInactiveLayer(links, source_nodes, sink_nodes);
 
   // test links and source and sink nodes
   BOOST_CHECK_EQUAL(links.size(), 6);
-  BOOST_CHECK(links[0] == l1);
-  BOOST_CHECK(links[1] == l2);
-  BOOST_CHECK(links[2] == l3);
-  BOOST_CHECK(links[3] == l4);
-  BOOST_CHECK(links[4] == lb1);
-  BOOST_CHECK(links[5] == lb2);
+  BOOST_CHECK(links[0] == l1.getId());
+  BOOST_CHECK(links[1] == l2.getId());
+  BOOST_CHECK(links[2] == l3.getId());
+  BOOST_CHECK(links[3] == l4.getId());
+  BOOST_CHECK(links[4] == lb1.getId());
+  BOOST_CHECK(links[5] == lb2.getId());
   BOOST_CHECK_EQUAL(source_nodes.size(), 3);
-  BOOST_CHECK(source_nodes[0] == i1);
-  BOOST_CHECK(source_nodes[1] == i2);
-  BOOST_CHECK(source_nodes[2] == b1);
+  BOOST_CHECK(source_nodes[0] == i1.getId());
+  BOOST_CHECK(source_nodes[1] == i2.getId());
+  BOOST_CHECK(source_nodes[2] == b1.getId());
   BOOST_CHECK_EQUAL(sink_nodes.size(), 2);
-  BOOST_CHECK(sink_nodes[0] == h1);
-  BOOST_CHECK(sink_nodes[1] == h2);
+  BOOST_CHECK(sink_nodes[0] == h1.getId());
+  BOOST_CHECK(sink_nodes[1] == h2.getId());
 
   // // Uncomment for debugging:
   // std::cout << "Links" << std::endl;
@@ -429,12 +428,11 @@ BOOST_AUTO_TEST_CASE(forwardPropogateLayerNetInput)
 
   const std::vector<int> biases_ids = {6, 7};
   Eigen::Tensor<float, 2> biases(batch_size, biases_ids.size()); 
-  biases.setConstant(0);
+  biases.setConstant(1);
   model1.mapValuesToNodes(biases, biases_ids);  
 
   // get the next hidden layer
-  std::vector<Link> links;
-  std::vector<Node> source_nodes, sink_nodes;
+  std::vector<int> links, source_nodes, sink_nodes;
   model1.getNextInactiveLayer(links, source_nodes, sink_nodes);
 
   // calculate the net input
@@ -442,15 +440,14 @@ BOOST_AUTO_TEST_CASE(forwardPropogateLayerNetInput)
 
   // control test
   Eigen::Tensor<float, 2> net(batch_size, node_ids.size()); 
-  net.setValues({{6, 6}, {8, 8}, {10, 10}, {12, 12}});
+  net.setValues({{7, 7}, {9, 9}, {11, 11}, {13, 13}});
   for (int i=0; i<sink_nodes.size(); i++)
   {
-    BOOST_CHECK_EQUAL(sink_nodes[i].getOutput().size(), batch_size);
-    BOOST_CHECK(sink_nodes[i].getStatus() == NodeStatus::deactivated);
+    BOOST_CHECK_EQUAL(model1.getNode(sink_nodes[i]).getOutput().size(), batch_size);
+    BOOST_CHECK(model1.getNode(sink_nodes[i]).getStatus() == NodeStatus::activated);
     for (int j=0; j<batch_size; j++)
     {
-      BOOST_CHECK_EQUAL(sink_nodes[i].getOutput()[j], 0.0);
-      BOOST_CHECK_EQUAL(model1.getNode(sink_nodes[i].getId()).getOutput()[j], net(j, i));
+      BOOST_CHECK_EQUAL(model1.getNode(sink_nodes[i]).getOutput()[j], net(j, i));
     }
   }
 }

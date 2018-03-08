@@ -86,9 +86,9 @@ public:
       @returns layer vector of links
     */ 
     void getNextInactiveLayer(
-      std::vector<Link>& links,
-      std::vector<Node>& source_nodes,
-      std::vector<Node>& sink_nodes);
+      std::vector<int>& links,
+      std::vector<int>& source_nodes,
+      std::vector<int>& sink_nodes);
  
     /**
       @brief A prelude to a forward propogation step. Computes the net
@@ -109,9 +109,9 @@ public:
       the underlying node values are automatically updated
     */ 
     void forwardPropogateLayerNetInput(
-      std::vector<Link>& links,
-      std::vector<Node>& source_nodes,
-      std::vector<Node>& sink_nodes);
+      const std::vector<int>& links,
+      const std::vector<int>& source_nodes,
+      const std::vector<int>& sink_nodes);
  
     /**
       @brief Completion of the forward propogation step. Computes the net
@@ -121,16 +121,12 @@ public:
         according to the node type, and the corresponding activation
         function will be applied
 
-      @param[out] Links
-      @param[out] source_nodes
-      @param[out] sink_nodes
+      @param[in] sink_nodes
 
       @returns layer vector of links
     */ 
     void forwardPropogateLayerActivation(
-      std::vector<Link>& links,
-      std::vector<Node>& source_nodes,
-      std::vector<Node>& sink_nodes) const;
+      const std::vector<int>& sink_nodes);
  
     /**
       @brief A back propogation step.  Returns a vector of links where

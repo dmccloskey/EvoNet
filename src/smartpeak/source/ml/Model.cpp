@@ -179,9 +179,9 @@ namespace SmartPeak
   }
   
   void Model::getNextInactiveLayer(
-    std::vector<Link>& links,
-    std::vector<Node>& source_nodes,
-    std::vector<Node>& sink_nodes)
+    std::vector<int>& links,
+    std::vector<int>& source_nodes,
+    std::vector<int>& sink_nodes)
   {
     links.clear();
     source_nodes.clear();
@@ -196,15 +196,15 @@ namespace SmartPeak
         nodes_.at(link_map.second.getSinkNodeId()).getStatus() == NodeStatus::deactivated && 
         nodes_.at(link_map.second.getSinkNodeId()).getStatus() == NodeStatus::deactivated)
       {
-        links.push_back(link_map.second);
+        links.push_back(link_map.second.getId());
         // could use std::set instead to check for duplicates
-        if (std::find(source_nodes.begin(), source_nodes.end(), nodes_.at(link_map.second.getSourceNodeId())) == source_nodes.end())
+        if (std::find(source_nodes.begin(), source_nodes.end(), link_map.second.getSourceNodeId()) == source_nodes.end())
         {
-          source_nodes.push_back(nodes_.at(link_map.second.getSourceNodeId()));
+          source_nodes.push_back(link_map.second.getSourceNodeId());
         }
-        if (std::find(sink_nodes.begin(), sink_nodes.end(), nodes_.at(link_map.second.getSinkNodeId())) == sink_nodes.end())
+        if (std::find(sink_nodes.begin(), sink_nodes.end(), link_map.second.getSinkNodeId()) == sink_nodes.end())
         {
-          sink_nodes.push_back(nodes_.at(link_map.second.getSinkNodeId()));
+          sink_nodes.push_back(link_map.second.getSinkNodeId());
         }
       }
     }
@@ -215,13 +215,13 @@ namespace SmartPeak
       if (nodes_.at(link_map.second.getSourceNodeId()).getType() == NodeType::bias &&
         nodes_.at(link_map.second.getSourceNodeId()).getStatus() == NodeStatus::activated && 
         nodes_.at(link_map.second.getSinkNodeId()).getStatus() == NodeStatus::deactivated &&
-        std::find(sink_nodes.begin(), sink_nodes.end(), nodes_.at(link_map.second.getSinkNodeId())) != sink_nodes.end())
+        std::find(sink_nodes.begin(), sink_nodes.end(), link_map.second.getSinkNodeId()) != sink_nodes.end())
       {
-        links.push_back(link_map.second);
+        links.push_back(link_map.second.getId());
         // could use std::set instead to check for duplicates
-        if (std::find(source_nodes.begin(), source_nodes.end(), nodes_.at(link_map.second.getSourceNodeId())) == source_nodes.end())
+        if (std::find(source_nodes.begin(), source_nodes.end(), link_map.second.getSourceNodeId()) == source_nodes.end())
         {
-          source_nodes.push_back(nodes_.at(link_map.second.getSourceNodeId()));
+          source_nodes.push_back(link_map.second.getSourceNodeId());
         }
       }
     }
@@ -271,12 +271,12 @@ namespace SmartPeak
   }
 
   void Model::forwardPropogateLayerNetInput(
-    std::vector<Link>& links,
-    std::vector<Node>& source_nodes,
-    std::vector<Node>& sink_nodes)
+    const std::vector<int>& links,
+    const std::vector<int>& source_nodes,
+    const std::vector<int>& sink_nodes)
   {
     // infer the batch size from the first source node
-    const int batch_size = source_nodes[0].getOutput().size();
+    const int batch_size = nodes_.at(source_nodes[0]).getOutput().size();
 
     // concatenate the source and weight tensors
     // using col-major ordering where rows are the batch vectors
@@ -288,7 +288,7 @@ namespace SmartPeak
     {
       for (int j=0; j<batch_size; ++j)
       {
-        source_ptr[i*batch_size + j] = source_nodes[i].getOutputPointer()[j];
+        source_ptr[i*batch_size + j] = nodes_.at(source_nodes[i]).getOutputPointer()[j];
       }
     }
 
@@ -298,12 +298,12 @@ namespace SmartPeak
     {
       for (int j=0; j<source_nodes.size(); ++j)
       {
-        for (const Link& link : links)
+        for (const int& link : links)
         {
-          if (link.getSinkNodeId() == sink_nodes[i].getId() &&
-          link.getSourceNodeId() == source_nodes[j].getId())
+          if (links_.at(link).getSinkNodeId() == sink_nodes[i] &&
+          links_.at(link).getSourceNodeId() == source_nodes[j])
           {
-            weight_ptr[i*source_nodes.size() + j] = link.getWeight();
+            weight_ptr[i*source_nodes.size() + j] = links_.at(link).getWeight();
             break;
           }
         }
@@ -314,7 +314,7 @@ namespace SmartPeak
     {
       for (int j=0; j<batch_size; ++j)
       {
-        sink_ptr[i*batch_size + j] = sink_nodes[i].getOutputPointer()[j];
+        sink_ptr[i*batch_size + j] = nodes_.at(sink_nodes[i]).getOutputPointer()[j];
       }
     }
 
@@ -328,18 +328,19 @@ namespace SmartPeak
     sink_tensor = source_tensor.contract(weight_tensor, product_dims);
 
     // update the sink nodes
-    // std::vector<int> node_ids;
-    // for (const Node& sink_node : sink_nodes)
-    // {
-    //   node_ids.push_back(sink_node.getId());
-    // }
-    // mapValuesToNodes(sink_tensor, node_ids);
-    // std::cout<<sink_tensor<<std::endl;
-    std::cout<<&sink_ptr[0]<<std::endl;
-    std::cout<<sink_ptr[0]<<std::endl;
-    std::cout<<&sink_nodes[0].getOutputPointer()[0]<<std::endl;
-    std::cout<<sink_nodes[0].getOutputPointer()[0]<<std::endl;
-    std::cout<<&getNode(sink_nodes[0].getId()).getOutputPointer()[0]<<std::endl;
-    std::cout<<getNode(sink_nodes[0].getId()).getOutputPointer()[0]<<std::endl;
+    mapValuesToNodes(sink_tensor, sink_nodes);
+    // std::cout<<&sink_ptr[0]<<std::endl;
+    // std::cout<<sink_ptr[0]<<std::endl;
+    // std::cout<<&nodes_.at(sink_nodes[0]).getOutputPointer()[0]<<std::endl;
+    // std::cout<<nodes_.at(sink_nodes[0]).getOutputPointer()[0]<<std::endl;
+  }
+  
+  void Model::forwardPropogateLayerActivation(
+    const std::vector<int>& sink_nodes)
+  {
+    for (const int& node : sink_nodes)
+    {
+      nodes_.at(node).getOutputPointer();
+    }
   }
 }
