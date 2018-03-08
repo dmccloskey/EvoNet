@@ -88,7 +88,7 @@ public:
     void getNextInactiveLayer(
       std::vector<Link>& links,
       std::vector<Node>& source_nodes,
-      std::vector<Node>& sink_nodes) const;
+      std::vector<Node>& sink_nodes);
  
     /**
       @brief A prelude to a forward propogation step. Computes the net

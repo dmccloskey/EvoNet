@@ -181,7 +181,7 @@ namespace SmartPeak
   void Model::getNextInactiveLayer(
     std::vector<Link>& links,
     std::vector<Node>& source_nodes,
-    std::vector<Node>& sink_nodes) const
+    std::vector<Node>& sink_nodes)
   {
     links.clear();
     source_nodes.clear();
@@ -328,18 +328,18 @@ namespace SmartPeak
     sink_tensor = source_tensor.contract(weight_tensor, product_dims);
 
     // update the sink nodes
-    std::vector<int> node_ids;
-    for (const Node& sink_node : sink_nodes)
-    {
-      node_ids.push_back(sink_node.getId());
-    }
-    mapValuesToNodes(sink_tensor, node_ids);
+    // std::vector<int> node_ids;
+    // for (const Node& sink_node : sink_nodes)
+    // {
+    //   node_ids.push_back(sink_node.getId());
+    // }
+    // mapValuesToNodes(sink_tensor, node_ids);
     // std::cout<<sink_tensor<<std::endl;
-    // std::cout<<&sink_ptr[0]<<std::endl;
-    // std::cout<<sink_ptr[0]<<std::endl;
-    // std::cout<<&sink_nodes[0].getOutputPointer()[0]<<std::endl;
-    // std::cout<<sink_nodes[0].getOutputPointer()[0]<<std::endl;
-    // std::cout<<&getNode(sink_nodes[0].getId()).getOutputPointer()[0]<<std::endl;
-    // std::cout<<getNode(sink_nodes[0].getId()).getOutputPointer()[0]<<std::endl;
+    std::cout<<&sink_ptr[0]<<std::endl;
+    std::cout<<sink_ptr[0]<<std::endl;
+    std::cout<<&sink_nodes[0].getOutputPointer()[0]<<std::endl;
+    std::cout<<sink_nodes[0].getOutputPointer()[0]<<std::endl;
+    std::cout<<&getNode(sink_nodes[0].getId()).getOutputPointer()[0]<<std::endl;
+    std::cout<<getNode(sink_nodes[0].getId()).getOutputPointer()[0]<<std::endl;
   }
 }
