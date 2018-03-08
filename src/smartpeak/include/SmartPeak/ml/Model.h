@@ -103,11 +103,15 @@ public:
       @param[out] sink_nodes
 
       @returns layer vector of links
+
+      OPTIMIZATION:
+      pass memory to tensors so that when the tensors compute the matrices
+      the underlying node values are automatically updated
     */ 
     void forwardPropogateLayerNetInput(
       std::vector<Link>& links,
       std::vector<Node>& source_nodes,
-      std::vector<Node>& sink_nodes) const;
+      std::vector<Node>& sink_nodes);
  
     /**
       @brief Completion of the forward propogation step. Computes the net

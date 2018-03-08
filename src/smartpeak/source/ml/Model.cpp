@@ -251,30 +251,32 @@ namespace SmartPeak
       return;
     }
     // assumes the node exists
-    else if (nodes_.at(node_ids[0].getOutput().size() != values.dimension(0)))
+    else if (nodes_.at(node_ids[0]).getOutput().size() != values.dimension(0))
     {
       std::cout << "The number of input samples and the node batch size does not match." << std::endl;
       return;
     }
 
     // copy over the input values
-    for (int i=0; i<node_ids; ++i)
+    for (int i=0; i<node_ids.size(); ++i)
     {
-      for (int j=0; j<node_ids[i].getOutput().size; ++j)
+      for (int j=0; j<nodes_.at(node_ids[i]).getOutput().size(); ++j)
       {
-        node_ids[i].getOutputPointer()[j] = values.data()[i*j + j];
+        // SANITY CHECK:
+        // std::cout << "i" << i << " j" << j << " values: " << values.data()[i*values.dimension(0) + j] << std::endl;
+        nodes_.at(node_ids[i]).getOutputPointer()[j] = values.data()[i*values.dimension(0) + j];
+        nodes_.at(node_ids[i]).setStatus(NodeStatus::activated);
       }
     }
-
   }
 
   void Model::forwardPropogateLayerNetInput(
     std::vector<Link>& links,
     std::vector<Node>& source_nodes,
-    std::vector<Node>& sink_nodes) const
+    std::vector<Node>& sink_nodes)
   {
     // infer the batch size from the first source node
-    const int batch_size = source_nodes[0].getError().size();
+    const int batch_size = source_nodes[0].getOutput().size();
 
     // concatenate the source and weight tensors
     // using col-major ordering where rows are the batch vectors
@@ -286,7 +288,7 @@ namespace SmartPeak
     {
       for (int j=0; j<batch_size; ++j)
       {
-        source_ptr[i*j + j] = source_nodes[i].getOutputPointer()[j];
+        source_ptr[i*batch_size + j] = source_nodes[i].getOutputPointer()[j];
       }
     }
 
@@ -301,7 +303,7 @@ namespace SmartPeak
           if (link.getSinkNodeId() == sink_nodes[i].getId() &&
           link.getSourceNodeId() == source_nodes[j].getId())
           {
-            weight_ptr[i*j + j] = link.getWeight();
+            weight_ptr[i*source_nodes.size() + j] = link.getWeight();
             break;
           }
         }
@@ -312,7 +314,7 @@ namespace SmartPeak
     {
       for (int j=0; j<batch_size; ++j)
       {
-        sink_ptr[i*j + j] = sink_nodes[i].getOutputPointer()[j];
+        sink_ptr[i*batch_size + j] = sink_nodes[i].getOutputPointer()[j];
       }
     }
 
@@ -324,5 +326,20 @@ namespace SmartPeak
     // compute the output tensor
     Eigen::array<Eigen::IndexPair<int>, 1> product_dims = {Eigen::IndexPair<int>(1, 0)};
     sink_tensor = source_tensor.contract(weight_tensor, product_dims);
+
+    // update the sink nodes
+    std::vector<int> node_ids;
+    for (const Node& sink_node : sink_nodes)
+    {
+      node_ids.push_back(sink_node.getId());
+    }
+    mapValuesToNodes(sink_tensor, node_ids);
+    // std::cout<<sink_tensor<<std::endl;
+    // std::cout<<&sink_ptr[0]<<std::endl;
+    // std::cout<<sink_ptr[0]<<std::endl;
+    // std::cout<<&sink_nodes[0].getOutputPointer()[0]<<std::endl;
+    // std::cout<<sink_nodes[0].getOutputPointer()[0]<<std::endl;
+    // std::cout<<&getNode(sink_nodes[0].getId()).getOutputPointer()[0]<<std::endl;
+    // std::cout<<getNode(sink_nodes[0].getId()).getOutputPointer()[0]<<std::endl;
   }
 }
