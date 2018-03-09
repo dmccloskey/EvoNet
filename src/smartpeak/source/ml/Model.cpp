@@ -329,16 +329,47 @@ namespace SmartPeak
     // std::cout<<nodes_.at(sink_nodes[0]).getOutputPointer()[0]<<std::endl;
   }
   
-  // void Model::forwardPropogateLayerActivation(
-  //   const std::vector<int>& sink_nodes)
-  // {
-  //   // infer the batch size from the first source node
-  //   const int batch_size = nodes_.at(sink_nodes[0]).getOutput().size();
-  //   for (const int& node : sink_nodes)
-  //   {
-  //     Eigen::TensorMap<Eigen::Tensor<float, 1>> sink_tensor(nodes_.at(node).getOutputPointer(), batch_size);
-        // sink_tensor.unaryExpr();
-  //     nodes_.at(node).;
-  //   }
-  // }
+  void Model::forwardPropogateLayerActivation(
+    const std::vector<int>& sink_nodes)
+  {
+    for (const int& node : sink_nodes)
+    {
+      nodes_.at(node).calculateActivation();
+      nodes_.at(node).calculateDerivative();
+    }
+  }
+  
+  void Model::calculateError(
+    const Eigen::Tensor<float, 2>& values, const std::vector<int>& node_ids)
+  {
+    //TODO: encapsulate into a seperate method
+    // check dimension mismatches
+    if (node_ids.size() != values.dimension(1))
+    {
+      std::cout << "The number of output features and the number of nodes do not match." << std::endl;
+      return;
+    }
+    // assumes the node exists
+    else if (nodes_.at(node_ids[0]).getOutput().size() != values.dimension(0))
+    {
+      std::cout << "The number of output samples and the node batch size does not match." << std::endl;
+      return;
+    }
+
+    // make the tensor for the calculated model output
+    float node_ptr [node_ids.size() * batch_size];
+    for (int i=0; i<node_ids.size(); ++i)
+    {
+      for (int j=0; j<batch_size; ++j)
+      {
+        node_ptr[i*batch_size + j] = nodes_.at(node_ids[i]).getOutputPointer()[j];
+      }
+    }
+    Eigen::TensorMap<Eigen::Tensor<float, 2>> node_tensor(node_ptr, batch_size, node_ids.size());
+
+    // calculate the model error wrt the expected model output
+
+    
+    // error_ = ...
+  }
 }

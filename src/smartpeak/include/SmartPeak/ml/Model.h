@@ -129,6 +129,15 @@ public:
       const std::vector<int>& sink_nodes);
  
     /**
+      @brief Calculate the error of the model with respect to
+        expected values
+
+      @param[in] values Expected node output values
+      @param[in] node_ids Output nodes
+    */ 
+    void calculateError(const Eigen::Tensor<float, 2>& values, const std::vector<int>& node_ids);
+ 
+    /**
       @brief A back propogation step.  Returns a vector of links where
         all sink error values are unknown (i.e. active),
         but all source node error values are known (i.e. inactive).
