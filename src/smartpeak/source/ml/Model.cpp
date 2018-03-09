@@ -193,8 +193,7 @@ namespace SmartPeak
     {
       if (nodes_.at(link_map.second.getSourceNodeId()).getType() != NodeType::bias &&
         nodes_.at(link_map.second.getSourceNodeId()).getStatus() == NodeStatus::activated && 
-        nodes_.at(link_map.second.getSinkNodeId()).getStatus() == NodeStatus::deactivated && 
-        nodes_.at(link_map.second.getSinkNodeId()).getStatus() == NodeStatus::deactivated)
+        nodes_.at(link_map.second.getSinkNodeId()).getStatus() == NodeStatus::initialized)
       {
         links.push_back(link_map.second.getId());
         // could use std::set instead to check for duplicates
@@ -214,7 +213,7 @@ namespace SmartPeak
     {
       if (nodes_.at(link_map.second.getSourceNodeId()).getType() == NodeType::bias &&
         nodes_.at(link_map.second.getSourceNodeId()).getStatus() == NodeStatus::activated && 
-        nodes_.at(link_map.second.getSinkNodeId()).getStatus() == NodeStatus::deactivated &&
+        nodes_.at(link_map.second.getSinkNodeId()).getStatus() == NodeStatus::initialized &&
         std::find(sink_nodes.begin(), sink_nodes.end(), link_map.second.getSinkNodeId()) != sink_nodes.end())
       {
         links.push_back(link_map.second.getId());
@@ -229,14 +228,9 @@ namespace SmartPeak
 
   void Model::initNodes(const int& batch_size)
   {
-    Eigen::Tensor<float, 1> init_values(batch_size);
-    init_values.setConstant(0.0f);
     for (auto& node_map : nodes_)
     {
-      node_map.second.setOutput(init_values);
-      node_map.second.setError(init_values);
-      node_map.second.setDerivative(init_values);
-      node_map.second.setStatus(NodeStatus::deactivated);
+      node_map.second.initNode(batch_size);
     }
   }
   

@@ -89,25 +89,69 @@ namespace SmartPeak
     return derivative_.data();
   }
 
+  void Node::initNode(const int& batch_size)
+  {
+    Eigen::Tensor<float, 1> init_values(batch_size);
+    init_values.setConstant(0.0f);
+    setOutput(init_values);
+    setError(init_values);
+    setDerivative(init_values);
+    setStatus(NodeStatus::initialized);
+  }
+
   void Node::calculateActivation()
   {
     switch (type_)
     {
-      case NodeType::bias:
-        break;
-      case NodeType::input:
-        break;
+      case NodeType::bias: {break;} 
+      case NodeType::input: {break;}        
       case NodeType::ReLU:
-        ReLUOp<float> operation;
-        output_.unaryExpr(operation);
+      {
+        output_ = output_.unaryExpr(ReLUOp<float>());
         break;
+      }
       case NodeType::ELU:
-        ELUOp<float> operation(1.0);
-        output_.unaryExpr(operation);
+      {
+        output_ = output_.unaryExpr(ELUOp<float>(1.0));
         break;
+      }
       default:
+      {
         std::cout << "Node type not supported." << std::endl;
         break;
+      }
+    }
+  }
+
+  void Node::calculateDerivative()
+  {
+    switch (type_)
+    {
+      case NodeType::bias:
+      {
+        derivative_.setConstant(0.0);
+        break;
+      } 
+      case NodeType::input:
+      {
+        derivative_.setConstant(0.0);
+        break;
+      }        
+      case NodeType::ReLU:
+      {
+        derivative_ = output_.unaryExpr(ReLUGradOp<float>());
+        break;
+      }
+      case NodeType::ELU:
+      {
+        derivative_ = output_.unaryExpr(ELUGradOp<float>(1.0));
+        break;
+      }
+      default:
+      {
+        std::cout << "Node type not supported." << std::endl;
+        break;
+      }
     }
   }
 }

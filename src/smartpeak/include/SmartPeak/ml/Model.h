@@ -60,7 +60,7 @@ public:
 
       @param[in] batch_size Size of the output, error, and derivative node vectors
     */ 
-    void initNodes(const int& batch_size);  //TODO
+    void initNodes(const int& batch_size);
 
     /**
       @brief Assigns output values to the input nodes.

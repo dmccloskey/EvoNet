@@ -81,4 +81,125 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   BOOST_CHECK_EQUAL(node.getDerivativePointer()[0], derivative_test.data()[0]);
 }
 
+BOOST_AUTO_TEST_CASE(initNode)
+{
+  Node node;
+  node.setId(1);
+  node.initNode(2);
+
+  BOOST_CHECK_EQUAL(node.getOutput()[0], 0.0);
+  BOOST_CHECK_EQUAL(node.getOutput()[1], 0.0);
+  BOOST_CHECK_EQUAL(node.getDerivative()[0], 0.0);
+  BOOST_CHECK_EQUAL(node.getDerivative()[1], 0.0);
+  BOOST_CHECK_EQUAL(node.getError()[0], 0.0);
+  BOOST_CHECK_EQUAL(node.getError()[1], 0.0);
+  BOOST_CHECK(node.getStatus() == NodeStatus::initialized);
+
+}
+
+BOOST_AUTO_TEST_CASE(calculateActivation)
+{
+  Node node;
+  node.setId(1);
+  node.initNode(5);
+  Eigen::Tensor<float, 1> output_test(5);
+  output_test.setValues({0.0, 1.0, 10.0, -1.0, -10.0});
+
+  // test input
+  node.setType(NodeType::input);
+  node.setOutput(output_test);
+  node.calculateActivation();
+
+  BOOST_CHECK_CLOSE(node.getOutput()[0], 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getOutput()[1], 1.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getOutput()[2], 10.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getOutput()[3], -1.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getOutput()[4], -10.0, 1e-6);
+
+  // test bias
+  node.setType(NodeType::bias);
+  node.setOutput(output_test);
+  node.calculateActivation();
+
+  BOOST_CHECK_CLOSE(node.getOutput()[0], 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getOutput()[1], 1.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getOutput()[2], 10.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getOutput()[3], -1.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getOutput()[4], -10.0, 1e-6);
+
+  // test ReLU
+  node.setType(NodeType::ReLU);
+  node.setOutput(output_test);
+  node.calculateActivation();
+
+  BOOST_CHECK_CLOSE(node.getOutput()[0], 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getOutput()[1], 1.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getOutput()[2], 10.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getOutput()[3], 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getOutput()[4], 0.0, 1e-6);
+
+  // test ELU
+  node.setType(NodeType::ELU);
+  node.setOutput(output_test);
+  node.calculateActivation();
+  
+  BOOST_CHECK_CLOSE(node.getOutput()[0], 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getOutput()[1], 1.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getOutput()[2], 10.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getOutput()[3], -0.63212055, 1e-6);
+  BOOST_CHECK_CLOSE(node.getOutput()[4], -0.999954581, 1e-6);
+
+}
+
+BOOST_AUTO_TEST_CASE(calculateDerivative)
+{
+  Node node;
+  node.setId(1);
+  node.initNode(5);
+  Eigen::Tensor<float, 1> output_test(5);
+  output_test.setValues({0.0, 1.0, 10.0, -1.0, -10.0});
+  node.setOutput(output_test);
+
+  // test input
+  node.setType(NodeType::input);
+  node.calculateDerivative();
+
+  BOOST_CHECK_CLOSE(node.getDerivative()[0], 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getDerivative()[1], 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getDerivative()[2], 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getDerivative()[3], 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getDerivative()[4], 0.0, 1e-6);
+
+  // test bias
+  node.setType(NodeType::bias);
+  node.calculateDerivative();
+
+  BOOST_CHECK_CLOSE(node.getDerivative()[0], 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getDerivative()[1], 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getDerivative()[2], 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getDerivative()[3], 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getDerivative()[4], 0.0, 1e-6);
+
+  // test ReLU
+  node.setType(NodeType::ReLU);
+  node.calculateDerivative();
+
+  BOOST_CHECK_CLOSE(node.getDerivative()[0], 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getDerivative()[1], 1.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getDerivative()[2], 1.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getDerivative()[3], 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getDerivative()[4], 0.0, 1e-6);
+
+  // test ELU
+  node.setType(NodeType::ELU);
+  node.calculateDerivative();
+  
+  BOOST_CHECK_CLOSE(node.getDerivative()[0], 1.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getDerivative()[1], 1.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getDerivative()[2], 1.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getDerivative()[3], 0.36787945, 1e-6);
+  BOOST_CHECK_CLOSE(node.getDerivative()[4], 4.54187393e-05, 1e-6);
+
+}
+
 BOOST_AUTO_TEST_SUITE_END()

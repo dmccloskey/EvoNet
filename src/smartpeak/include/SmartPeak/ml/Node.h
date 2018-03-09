@@ -78,13 +78,21 @@ public:
     float* getDerivativePointer(); ///< derivative pointer getter
 
     /**
+      @brief Initialize node output to zero.
+        The node statuses are then changed to NodeStatus::deactivated
+
+      @param[in] batch_size Size of the output, error, and derivative node vectors
+    */ 
+    void initNode(const int& batch_size);
+
+    /**
       @brief The current output is passed through an activation function.
         Contents are updated in place.
     */
     void calculateActivation();
     
     /**
-      @brief The derivative is calculated from the output.
+      @brief Calculate the derivative from the output.
     */
     void calculateDerivative();
 
