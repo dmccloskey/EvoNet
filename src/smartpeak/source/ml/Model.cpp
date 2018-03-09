@@ -335,12 +335,16 @@ namespace SmartPeak
     // std::cout<<nodes_.at(sink_nodes[0]).getOutputPointer()[0]<<std::endl;
   }
   
-  void Model::forwardPropogateLayerActivation(
-    const std::vector<int>& sink_nodes)
-  {
-    for (const int& node : sink_nodes)
-    {
-      nodes_.at(node).getOutputPointer();
-    }
-  }
+  // void Model::forwardPropogateLayerActivation(
+  //   const std::vector<int>& sink_nodes)
+  // {
+  //   // infer the batch size from the first source node
+  //   const int batch_size = nodes_.at(sink_nodes[0]).getOutput().size();
+  //   for (const int& node : sink_nodes)
+  //   {
+  //     Eigen::TensorMap<Eigen::Tensor<float, 1>> sink_tensor(nodes_.at(node).getOutputPointer(), batch_size);
+        // sink_tensor.unaryExpr();
+  //     nodes_.at(node).;
+  //   }
+  // }
 }

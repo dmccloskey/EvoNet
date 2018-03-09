@@ -1,6 +1,7 @@
 /**TODO:  Add copyright*/
 
 #include <SmartPeak/ml/Node.h>
+#include <SmartPeak/ml/Operation.h>
 
 #include <vector>
 #include <cmath>
@@ -85,5 +86,25 @@ namespace SmartPeak
   float* Node::getDerivativePointer()
   {
     return derivative_.data();
+  }
+
+  void Node::calculateActivation()
+  {
+    switch (node_type)
+    {
+      case NodeType::bias:
+        return;
+      case NodeType::input:
+        return;
+      case NodeType::ReLU:
+        ReLUOp<float> operation;
+        output_.unaryExpr(operation);
+      case NodeType::ELU:
+        ELUOp<float> operation;
+        output_.unaryExpr(operation);
+      default:
+        std::cout << "Node type not supported." << std::endl;
+        return;
+    }
   }
 }

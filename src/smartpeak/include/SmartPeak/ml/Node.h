@@ -77,6 +77,17 @@ public:
     Eigen::Tensor<float, 1> getDerivative() const; ///< derivative copy getter
     float* getDerivativePointer(); ///< derivative pointer getter
 
+    /**
+      @brief The current output is passed through an activation function.
+        Contents are updated in place.
+    */
+    void calculateActivation();
+    
+    /**
+      @brief The derivative is calculated from the output.
+    */
+    void calculateDerivative();
+
 private:
     int id_; ///< Node ID
     SmartPeak::NodeType type_; ///< Node Type
