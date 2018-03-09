@@ -5,6 +5,7 @@
 
 #include <vector>
 #include <cmath>
+#include <iostream>
 
 namespace SmartPeak
 {
@@ -90,21 +91,23 @@ namespace SmartPeak
 
   void Node::calculateActivation()
   {
-    switch (node_type)
+    switch (type_)
     {
       case NodeType::bias:
-        return;
+        break;
       case NodeType::input:
-        return;
+        break;
       case NodeType::ReLU:
         ReLUOp<float> operation;
         output_.unaryExpr(operation);
+        break;
       case NodeType::ELU:
-        ELUOp<float> operation;
+        ELUOp<float> operation(1.0);
         output_.unaryExpr(operation);
+        break;
       default:
         std::cout << "Node type not supported." << std::endl;
-        return;
+        break;
     }
   }
 }
