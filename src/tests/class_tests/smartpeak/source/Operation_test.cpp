@@ -139,4 +139,33 @@ BOOST_AUTO_TEST_CASE(operationfunctionEluGradOp)
   BOOST_CHECK_CLOSE(operation(-10.0), 4.5399929762490743e-05, 1e-6);
 }
 
+/**
+  EuclideanDistanceOp Tests
+*/ 
+BOOST_AUTO_TEST_CASE(constructorEuclideanDistanceOp) 
+{
+  EuclideanDistanceOp<double>* ptrReLU = nullptr;
+  EuclideanDistanceOp<double>* nullPointerReLU = nullptr;
+  BOOST_CHECK_EQUAL(ptrReLU, nullPointerReLU);
+}
+
+BOOST_AUTO_TEST_CASE(destructorEuclideanDistanceOp) 
+{
+  EuclideanDistanceOp<double>* ptrReLU = nullptr;
+	ptrReLU = new EuclideanDistanceOp<double>();
+  delete ptrReLU;
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionEuclideanDistanceOp) 
+{
+  EuclideanDistanceOp<float> operation;
+  Eigen::Tensor<float, 1> y_true(4); 
+  y_true.setValues({1, 1, 1, 1}); 
+  Eigen::Tensor<float, 1> y_pred(4); 
+  y_pred.setValues({1, 2, 3, 4}); 
+
+  Eigen::Tensor<float, 0> error = operation(y_pred, y_true);
+  BOOST_CHECK_CLOSE(error(0), 3.7416575, 1e-6);
+}
+
 BOOST_AUTO_TEST_SUITE_END()

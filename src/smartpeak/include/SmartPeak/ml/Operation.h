@@ -3,6 +3,7 @@
 #ifndef SMARTPEAK_OPERATION_H
 #define SMARTPEAK_OPERATION_H
 
+#include <unsupported/Eigen/CXX11/Tensor>
 #include <cmath>
 #include <random>
 
@@ -122,6 +123,46 @@ public:
     ConstWeightInit(){}; 
     ~ConstWeightInit(){};
     T operator()(const T& x_I) const { return x_I; };
+  };  
+
+  /**
+    @brief EuclideanDistance loss function.
+  */
+  template<typename T>
+  class EuclideanDistanceOp
+  {
+public: 
+    EuclideanDistanceOp(){}; 
+    ~EuclideanDistanceOp(){};
+    Eigen::Tensor<T, 0> operator()(
+      const Eigen::Tensor<T, 1>& y_pred, 
+      const Eigen::Tensor<T, 1>& y_true) const 
+    {
+      // auto a = y_true - y_pred;
+      // auto b = a.pow(2);
+      // auto c = b.sum();
+      // auto d = c.sqrt();
+      // Eigen::Tensor<T, 0> e = d;
+      // return e;
+      return (y_true - y_pred).pow(2).sum().sqrt();
+    };
+  };
+
+  /**
+    @brief EuclideanDistance loss function gradient.
+  */
+  template<typename T>
+  class EuclideanDistanceGradOp
+  {
+public: 
+    EuclideanDistanceGradOp(){}; 
+    ~EuclideanDistanceGradOp(){};
+    Eigen::Tensor<T, 0> operator()(
+      const Eigen::Tensor<T, 1>& y_pred, 
+      const Eigen::Tensor<T, 1>& y_true) const 
+    {
+      return (y_true - y_pred)/(y_true - y_pred).pow(2).sum().sqrt();
+    };
   };
 }
 

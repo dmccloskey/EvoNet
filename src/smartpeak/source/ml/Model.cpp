@@ -356,6 +356,9 @@ namespace SmartPeak
       return;
     }
 
+    // infer the batch size from the first source node
+    const int batch_size = nodes_.at(node_ids[0]).getOutput().size();
+
     // make the tensor for the calculated model output
     float node_ptr [node_ids.size() * batch_size];
     for (int i=0; i<node_ids.size(); ++i)
