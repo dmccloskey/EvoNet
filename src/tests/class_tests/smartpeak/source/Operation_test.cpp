@@ -168,4 +168,36 @@ BOOST_AUTO_TEST_CASE(operationfunctionEuclideanDistanceOp)
   BOOST_CHECK_CLOSE(error(0), 3.7416575, 1e-6);
 }
 
+/**
+  EuclideanDistanceGradOp Tests
+*/ 
+BOOST_AUTO_TEST_CASE(constructorEuclideanDistanceGradOp) 
+{
+  EuclideanDistanceGradOp<double>* ptrReLU = nullptr;
+  EuclideanDistanceGradOp<double>* nullPointerReLU = nullptr;
+  BOOST_CHECK_EQUAL(ptrReLU, nullPointerReLU);
+}
+
+BOOST_AUTO_TEST_CASE(destructorEuclideanDistanceGradOp) 
+{
+  EuclideanDistanceGradOp<double>* ptrReLU = nullptr;
+	ptrReLU = new EuclideanDistanceGradOp<double>();
+  delete ptrReLU;
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionEuclideanDistanceGradOp) 
+{
+  EuclideanDistanceGradOp<float> operation;
+  Eigen::Tensor<float, 1> y_true(4); 
+  y_true.setValues({1, 1, 1, 1}); 
+  Eigen::Tensor<float, 1> y_pred(4); 
+  y_pred.setValues({1, 2, 3, 4}); 
+
+  Eigen::Tensor<float, 1> error = operation(y_pred, y_true);
+  // BOOST_CHECK_CLOSE(error(0), 3.7416575, 1e-6);
+  // BOOST_CHECK_CLOSE(error(1), 3.7416575, 1e-6);
+  // BOOST_CHECK_CLOSE(error(2), 3.7416575, 1e-6);
+  // BOOST_CHECK_CLOSE(error(3), 3.7416575, 1e-6);
+}
+
 BOOST_AUTO_TEST_SUITE_END()

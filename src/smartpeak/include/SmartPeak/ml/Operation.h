@@ -6,6 +6,7 @@
 #include <unsupported/Eigen/CXX11/Tensor>
 #include <cmath>
 #include <random>
+#include <iostream>
 
 namespace SmartPeak
 {
@@ -157,11 +158,23 @@ public:
 public: 
     EuclideanDistanceGradOp(){}; 
     ~EuclideanDistanceGradOp(){};
-    Eigen::Tensor<T, 0> operator()(
+    Eigen::Tensor<T, 1> operator()(
       const Eigen::Tensor<T, 1>& y_pred, 
       const Eigen::Tensor<T, 1>& y_true) const 
     {
-      return (y_true - y_pred)/(y_true - y_pred).pow(2).sum().sqrt();
+      Eigen::Tensor<T, 0> a = (y_true - y_pred).pow(2).sum().sqrt();
+      const auto& d = y_pred.dimensions();
+      // const T z = d.size();
+      // std::cout<<d.size()<<std::endl;
+      Eigen::array<int, 1> bcast({2});
+      Eigen::Tensor<T, 1> c = a.broadcast(bcast);
+      // Eigen::array<T, 1> e({2});
+      // Eigen::Tensor<T, 1> c = a.broadcast(e);
+      std::cout << c << std::endl;
+      // Eigen::Tensor<T, 1> b = (y_true - y_pred)/c;
+      Eigen::Tensor<T, 1> b;
+      return b;
+      // return (y_true - y_pred)/((y_true - y_pred).pow(2).sum().sqrt());
     };
   };
 }
