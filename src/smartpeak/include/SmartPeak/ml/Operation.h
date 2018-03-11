@@ -163,18 +163,13 @@ public:
       const Eigen::Tensor<T, 1>& y_true) const 
     {
       Eigen::Tensor<T, 0> a = (y_true - y_pred).pow(2).sum().sqrt();
-      const auto& d = y_pred.dimensions();
-      // const T z = d.size();
-      // std::cout<<d.size()<<std::endl;
-      Eigen::array<int, 1> bcast({2});
-      Eigen::Tensor<T, 1> c = a.broadcast(bcast);
-      // Eigen::array<T, 1> e({2});
-      // Eigen::Tensor<T, 1> c = a.broadcast(e);
-      std::cout << c << std::endl;
-      // Eigen::Tensor<T, 1> b = (y_true - y_pred)/c;
-      Eigen::Tensor<T, 1> b;
+      Eigen::Tensor<T, 1> c(y_pred.dimensions()[0]);
+      c.setConstant(a(0));
+      Eigen::Tensor<T, 1> b = (y_true - y_pred)/c;
       return b;
-      // return (y_true - y_pred)/((y_true - y_pred).pow(2).sum().sqrt());
+      // return (y_true - y_pred)/(
+      //   (y_true - y_pred).pow(2).sum().sqrt().eval()
+      //   .reshape(dims1d).broadcast(dims1d));
     };
   };
 }

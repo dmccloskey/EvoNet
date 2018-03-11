@@ -194,10 +194,10 @@ BOOST_AUTO_TEST_CASE(operationfunctionEuclideanDistanceGradOp)
   y_pred.setValues({1, 2, 3, 4}); 
 
   Eigen::Tensor<float, 1> error = operation(y_pred, y_true);
-  // BOOST_CHECK_CLOSE(error(0), 3.7416575, 1e-6);
-  // BOOST_CHECK_CLOSE(error(1), 3.7416575, 1e-6);
-  // BOOST_CHECK_CLOSE(error(2), 3.7416575, 1e-6);
-  // BOOST_CHECK_CLOSE(error(3), 3.7416575, 1e-6);
+  BOOST_CHECK_CLOSE(error(0), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(error(1), -0.267261237, 1e-6);
+  BOOST_CHECK_CLOSE(error(2), -0.534522474, 1e-6);
+  BOOST_CHECK_CLOSE(error(3), -0.801783681, 1e-6);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
