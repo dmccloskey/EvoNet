@@ -139,12 +139,6 @@ public:
       const Eigen::Tensor<T, 1>& y_pred, 
       const Eigen::Tensor<T, 1>& y_true) const 
     {
-      // auto a = y_true - y_pred;
-      // auto b = a.pow(2);
-      // auto c = b.sum();
-      // auto d = c.sqrt();
-      // Eigen::Tensor<T, 0> e = d;
-      // return e;
       return (y_true - y_pred).pow(2).sum().sqrt();
     };
   };
@@ -170,6 +164,42 @@ public:
       // return (y_true - y_pred)/(
       //   (y_true - y_pred).pow(2).sum().sqrt().eval()
       //   .reshape(dims1d).broadcast(dims1d));
+    };
+  };
+
+  /**
+    @brief L2Norm loss function.
+  */
+  template<typename T>
+  class L2NormOp
+  {
+public: 
+    L2NormOp(){}; 
+    ~L2NormOp(){};
+    Eigen::Tensor<T, 0> operator()(
+      const Eigen::Tensor<T, 1>& y_pred, 
+      const Eigen::Tensor<T, 1>& y_true) const 
+    {
+      Eigen::Tensor<T, 0> c;
+      c.setValues({0.5});
+      return (y_true - y_pred).pow(2).sum() * c; // modified to simplify the derivative
+    };
+  };
+
+  /**
+    @brief L2Norm loss function gradient.
+  */
+  template<typename T>
+  class L2NormGradOp
+  {
+public: 
+    L2NormGradOp(){}; 
+    ~L2NormGradOp(){};
+    Eigen::Tensor<T, 1> operator()(
+      const Eigen::Tensor<T, 1>& y_pred, 
+      const Eigen::Tensor<T, 1>& y_true) const 
+    {
+      return y_true - y_pred; // modified to exclude the 0.5
     };
   };
 }

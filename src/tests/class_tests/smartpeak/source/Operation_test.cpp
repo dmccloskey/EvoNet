@@ -200,4 +200,65 @@ BOOST_AUTO_TEST_CASE(operationfunctionEuclideanDistanceGradOp)
   BOOST_CHECK_CLOSE(error(3), -0.801783681, 1e-6);
 }
 
+/**
+  L2NormOp Tests
+*/ 
+BOOST_AUTO_TEST_CASE(constructorL2NormOp) 
+{
+  L2NormOp<double>* ptrL2Norm = nullptr;
+  L2NormOp<double>* nullPointerL2Norm = nullptr;
+  BOOST_CHECK_EQUAL(ptrL2Norm, nullPointerL2Norm);
+}
+
+BOOST_AUTO_TEST_CASE(destructorL2NormOp) 
+{
+  L2NormOp<double>* ptrL2Norm = nullptr;
+	ptrL2Norm = new L2NormOp<double>();
+  delete ptrL2Norm;
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionL2NormOp) 
+{
+  L2NormOp<float> operation;
+  Eigen::Tensor<float, 1> y_true(4); 
+  y_true.setValues({1, 1, 1, 1}); 
+  Eigen::Tensor<float, 1> y_pred(4); 
+  y_pred.setValues({1, 2, 3, 4}); 
+
+  Eigen::Tensor<float, 0> error = operation(y_pred, y_true);
+  BOOST_CHECK_CLOSE(error(0), 7.0, 1e-6);
+}
+
+/**
+  L2NormGradOp Tests
+*/ 
+BOOST_AUTO_TEST_CASE(constructorL2NormGradOp) 
+{
+  L2NormGradOp<double>* ptrL2Norm = nullptr;
+  L2NormGradOp<double>* nullPointerL2Norm = nullptr;
+  BOOST_CHECK_EQUAL(ptrL2Norm, nullPointerL2Norm);
+}
+
+BOOST_AUTO_TEST_CASE(destructorL2NormGradOp) 
+{
+  L2NormGradOp<double>* ptrL2Norm = nullptr;
+	ptrL2Norm = new L2NormGradOp<double>();
+  delete ptrL2Norm;
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionL2NormGradOp) 
+{
+  L2NormGradOp<float> operation;
+  Eigen::Tensor<float, 1> y_true(4); 
+  y_true.setValues({1, 1, 1, 1}); 
+  Eigen::Tensor<float, 1> y_pred(4); 
+  y_pred.setValues({1, 2, 3, 4}); 
+
+  Eigen::Tensor<float, 1> error = operation(y_pred, y_true);
+  BOOST_CHECK_CLOSE(error(0), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(error(1), -1.0, 1e-6);
+  BOOST_CHECK_CLOSE(error(2), -2.0, 1e-6);
+  BOOST_CHECK_CLOSE(error(3), -3.0, 1e-6);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
