@@ -202,6 +202,130 @@ public:
       return y_true - y_pred; // modified to exclude the 0.5
     };
   };
+
+  /**
+    @brief CrossEntropy loss function.
+  */
+  template<typename T>
+  class CrossEntropyOp
+  {
+public: 
+    CrossEntropyOp(){}; 
+    ~CrossEntropyOp(){};
+    Eigen::Tensor<T, 0> operator()(
+      const Eigen::Tensor<T, 1>& y_pred, 
+      const Eigen::Tensor<T, 1>& y_true) const 
+    {
+      // // traditional
+      // Eigen::Tensor<T, 0> n;
+      // n.setValues({y_pred.dimensions().size[0]});
+      // Eigen::Tensor<T, 0> one;
+      // one.setValues({1.0});
+      // Eigen::Tensor<T, 1> ones(y_pred.dimensions().size[0]);
+      // ones.setConstant(1.0);
+      // return -(y_true * y_pred.log() + (ones - y_true) * (ones - y_pred).log()).sum() * one / n;
+      // simplified
+      Eigen::Tensor<T, 1> ones(y_pred.dimensions().size[0]);
+      ones.setConstant(1.0);
+      return -(y_true * y_pred.log() + (ones - y_true) * (ones - y_pred).log()).sum();
+    };
+  };
+
+  /**
+    @brief CrossEntropy loss function gradient.
+  */
+  template<typename T>
+  class CrossEntropyGradOp
+  {
+public: 
+    CrossEntropyGradOp(){}; 
+    ~CrossEntropyGradOp(){};
+    Eigen::Tensor<T, 1> operator()(
+      const Eigen::Tensor<T, 1>& y_pred, 
+      const Eigen::Tensor<T, 1>& y_true) const 
+    {
+      // simplified
+      Eigen::Tensor<T, 1> ones(y_pred.dimensions().size[0]);
+      ones.setConstant(1.0);
+      return -(y_true / y_pred + (ones - y_true) / (ones - y_pred));
+    };
+  };
+
+  /**
+    @brief NegativeLogLikelihood loss function.
+  */
+  template<typename T>
+  class NegativeLogLikelihoodOp
+  {
+public: 
+    NegativeLogLikelihoodOp(){}; 
+    ~NegativeLogLikelihoodOp(){};
+    Eigen::Tensor<T, 0> operator()(
+      const Eigen::Tensor<T, 1>& y_pred, 
+      const Eigen::Tensor<T, 1>& y_true) const 
+    {
+      return -(y_true * y_pred.log()).sum();
+    };
+  };
+
+  /**
+    @brief NegativeLogLikelihood loss function gradient.
+  */
+  template<typename T>
+  class NegativeLogLikelihoodGradOp
+  {
+public: 
+    NegativeLogLikelihoodGradOp(){}; 
+    ~NegativeLogLikelihoodGradOp(){};
+    Eigen::Tensor<T, 1> operator()(
+      const Eigen::Tensor<T, 1>& y_pred, 
+      const Eigen::Tensor<T, 1>& y_true) const 
+    {
+      return -(y_true / y_pred);
+    };
+  };
+
+  /**
+    @brief MSE Mean Squared Error loss function.
+  */
+  template<typename T>
+  class MSEOp
+  {
+public: 
+    MSEOp(){}; 
+    ~MSEOp(){};
+    Eigen::Tensor<T, 0> operator()(
+      const Eigen::Tensor<T, 1>& y_pred, 
+      const Eigen::Tensor<T, 1>& y_true) const 
+    {
+      Eigen::Tensor<T, 0> n;
+      n.setValues({y_pred.dimensions().size[0]});
+      Eigen::Tensor<T, 0> c;
+      c.setValues({0.5});
+      return (y_true - y_pred).pow(2)).sum() * c / n;
+    };
+  };
+
+  /**
+    @brief MSE Mean Squared Error loss function gradient.
+  */
+  template<typename T>
+  class MSEGradOp
+  {
+public: 
+    MSEGradOp(){}; 
+    ~MSEGradOp(){};
+    Eigen::Tensor<T, 1> operator()(
+      const Eigen::Tensor<T, 1>& y_pred, 
+      const Eigen::Tensor<T, 1>& y_true) const 
+    {
+      Eigen::Tensor<T, 0> n;
+      n.setValues({y_pred.dimensions().size[0]});
+      Eigen::Tensor<T, 0> one;
+      one.setValues({1.0});
+      return (y_true - y_pred) * one / n;
+    };
+  };
 }
 
 #endif //SMARTPEAK_OPERATION_H
