@@ -14,6 +14,15 @@
 namespace SmartPeak
 {
 
+  enum class ModelLossFunction
+  {
+    MSE = 0,
+    L2Norm = 1,
+    EuclideanDistance = 2,
+    CrossEntropy = 3,
+    NegativeLogLikelihood = 4
+  };
+
   /**
     @brief Directed Network Model
   */
@@ -51,6 +60,9 @@ public:
 
       input and node Link weights will be initialized using the method of He, et al 2015
       bias Link weight will be initialized as a constant
+
+      TODO: make a new class called Weights.  Replace weight with weight_id in Link.  
+        change initLinks() to initWeights()
     */ 
     void initLinks() const;  //TODO
 
@@ -158,6 +170,9 @@ public:
 
     void setError(const double& error); ///< error setter
     double getError() const; ///< error getter
+
+    void setLossFunction(const SmartPeak::ModelLossFunction& loss_function); ///< loss_function setter
+    SmartPeak::ModelLossFunction getLossFunction() const; ///< loss_function getter
  
     /**
       @brief Add new links to the model.
@@ -208,6 +223,7 @@ private:
     std::map<int, Link> links_; ///< Model links
     std::map<int, Node> nodes_; ///< Model nodes
     double error_; ///< Model error
+    SmartPeak::ModelLossFunction loss_function_; ///< Model loss function
 
   };
 }

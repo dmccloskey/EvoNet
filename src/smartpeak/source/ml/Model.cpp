@@ -41,6 +41,15 @@ namespace SmartPeak
   {
     return error_;
   }
+  
+  void Model::setLossFunction(const SmartPeak::ModelLossFunction& loss_function)
+  {
+    loss_function_ = loss_function;
+  }
+  SmartPeak::ModelLossFunction Model::getLossFunction() const
+  {
+    return loss_function_;
+  }
 
   void Model::addNodes(const std::vector<Node>& nodes)
   { 
@@ -343,6 +352,10 @@ namespace SmartPeak
     const Eigen::Tensor<float, 2>& values, const std::vector<int>& node_ids)
   {
     //TODO: encapsulate into a seperate method
+    // infer the batch size from the first source node
+    const int batch_size = nodes_.at(node_ids[0]).getOutput().size();
+
+    //TODO: encapsulate into a seperate method
     // check dimension mismatches
     if (node_ids.size() != values.dimension(1))
     {
@@ -350,14 +363,11 @@ namespace SmartPeak
       return;
     }
     // assumes the node exists
-    else if (nodes_.at(node_ids[0]).getOutput().size() != values.dimension(0))
+    else if (batch_size != values.dimension(0))
     {
       std::cout << "The number of output samples and the node batch size does not match." << std::endl;
       return;
     }
-
-    // infer the batch size from the first source node
-    const int batch_size = nodes_.at(node_ids[0]).getOutput().size();
 
     // make the tensor for the calculated model output
     float node_ptr [node_ids.size() * batch_size];
@@ -373,6 +383,6 @@ namespace SmartPeak
     // calculate the model error wrt the expected model output
 
     
-    // error_ = ...
+    // error_ = [...].sum();
   }
 }
