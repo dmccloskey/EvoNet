@@ -261,4 +261,187 @@ BOOST_AUTO_TEST_CASE(operationfunctionL2NormGradOp)
   BOOST_CHECK_CLOSE(error(3), -3.0, 1e-6);
 }
 
+/**
+  CrossEntropyOp Tests
+*/ 
+BOOST_AUTO_TEST_CASE(constructorCrossEntropyOp) 
+{
+  CrossEntropyOp<double>* ptrCrossEntropy = nullptr;
+  CrossEntropyOp<double>* nullPointerCrossEntropy = nullptr;
+  BOOST_CHECK_EQUAL(ptrCrossEntropy, nullPointerCrossEntropy);
+}
+
+BOOST_AUTO_TEST_CASE(destructorCrossEntropyOp) 
+{
+  CrossEntropyOp<double>* ptrCrossEntropy = nullptr;
+	ptrCrossEntropy = new CrossEntropyOp<double>();
+  delete ptrCrossEntropy;
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionCrossEntropyOp) 
+{
+  CrossEntropyOp<float> operation;
+  Eigen::Tensor<float, 1> y_true(4);  
+  y_true.setValues({.1, .1, .6, .2}); 
+  Eigen::Tensor<float, 1> y_pred(4); 
+  y_pred.setValues({1, 0, 0, 0}); 
+
+  Eigen::Tensor<float, 0> error = operation(y_pred, y_true);
+  BOOST_CHECK_CLOSE(error(0), 7.0, 1e-6);
+}
+
+/**
+  CrossEntropyGradOp Tests
+*/ 
+BOOST_AUTO_TEST_CASE(constructorCrossEntropyGradOp) 
+{
+  CrossEntropyGradOp<double>* ptrCrossEntropy = nullptr;
+  CrossEntropyGradOp<double>* nullPointerCrossEntropy = nullptr;
+  BOOST_CHECK_EQUAL(ptrCrossEntropy, nullPointerCrossEntropy);
+}
+
+BOOST_AUTO_TEST_CASE(destructorCrossEntropyGradOp) 
+{
+  CrossEntropyGradOp<double>* ptrCrossEntropy = nullptr;
+	ptrCrossEntropy = new CrossEntropyGradOp<double>();
+  delete ptrCrossEntropy;
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionCrossEntropyGradOp) 
+{
+  CrossEntropyGradOp<float> operation;
+  Eigen::Tensor<float, 1> y_true(4);  
+  y_true.setValues({.1, .1, .6, .2}); 
+  Eigen::Tensor<float, 1> y_pred(4); 
+  y_pred.setValues({1, 0, 0, 0}); 
+
+  Eigen::Tensor<float, 1> error = operation(y_pred, y_true);
+  BOOST_CHECK_CLOSE(error(0), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(error(1), -1.0, 1e-6);
+  BOOST_CHECK_CLOSE(error(2), -2.0, 1e-6);
+  BOOST_CHECK_CLOSE(error(3), -3.0, 1e-6);
+}
+
+/**
+  NegativeLogLikelihoodOp Tests
+*/ 
+BOOST_AUTO_TEST_CASE(constructorNegativeLogLikelihoodOp) 
+{
+  NegativeLogLikelihoodOp<double>* ptrNegativeLogLikelihood = nullptr;
+  NegativeLogLikelihoodOp<double>* nullPointerNegativeLogLikelihood = nullptr;
+  BOOST_CHECK_EQUAL(ptrNegativeLogLikelihood, nullPointerNegativeLogLikelihood);
+}
+
+BOOST_AUTO_TEST_CASE(destructorNegativeLogLikelihoodOp) 
+{
+  NegativeLogLikelihoodOp<double>* ptrNegativeLogLikelihood = nullptr;
+	ptrNegativeLogLikelihood = new NegativeLogLikelihoodOp<double>();
+  delete ptrNegativeLogLikelihood;
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionNegativeLogLikelihoodOp) 
+{
+  NegativeLogLikelihoodOp<float> operation;
+  Eigen::Tensor<float, 1> y_true(4); 
+  y_true.setValues({1, 1, 1, 1}); 
+  Eigen::Tensor<float, 1> y_pred(4); 
+  y_pred.setValues({1, 2, 3, 4}); 
+
+  Eigen::Tensor<float, 0> error = operation(y_pred, y_true);
+  BOOST_CHECK_CLOSE(error(0), -3.17805386, 1e-6);
+}
+
+/**
+  NegativeLogLikelihoodGradOp Tests
+*/ 
+BOOST_AUTO_TEST_CASE(constructorNegativeLogLikelihoodGradOp) 
+{
+  NegativeLogLikelihoodGradOp<double>* ptrNegativeLogLikelihood = nullptr;
+  NegativeLogLikelihoodGradOp<double>* nullPointerNegativeLogLikelihood = nullptr;
+  BOOST_CHECK_EQUAL(ptrNegativeLogLikelihood, nullPointerNegativeLogLikelihood);
+}
+
+BOOST_AUTO_TEST_CASE(destructorNegativeLogLikelihoodGradOp) 
+{
+  NegativeLogLikelihoodGradOp<double>* ptrNegativeLogLikelihood = nullptr;
+	ptrNegativeLogLikelihood = new NegativeLogLikelihoodGradOp<double>();
+  delete ptrNegativeLogLikelihood;
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionNegativeLogLikelihoodGradOp) 
+{
+  NegativeLogLikelihoodGradOp<float> operation;
+  Eigen::Tensor<float, 1> y_true(4); 
+  y_true.setValues({1, 1, 1, 1}); 
+  Eigen::Tensor<float, 1> y_pred(4); 
+  y_pred.setValues({1, 2, 3, 4}); 
+
+  Eigen::Tensor<float, 1> error = operation(y_pred, y_true);
+  BOOST_CHECK_CLOSE(error(0), -1.0, 1e-6);
+  BOOST_CHECK_CLOSE(error(1), -0.5, 1e-6);
+  BOOST_CHECK_CLOSE(error(2), -0.333333343, 1e-6);
+  BOOST_CHECK_CLOSE(error(3), -0.25, 1e-6);
+}
+
+/**
+  MSEOp Tests
+*/ 
+BOOST_AUTO_TEST_CASE(constructorMSEOp) 
+{
+  MSEOp<double>* ptrMSE = nullptr;
+  MSEOp<double>* nullPointerMSE = nullptr;
+  BOOST_CHECK_EQUAL(ptrMSE, nullPointerMSE);
+}
+
+BOOST_AUTO_TEST_CASE(destructorMSEOp) 
+{
+  MSEOp<double>* ptrMSE = nullptr;
+	ptrMSE = new MSEOp<double>();
+  delete ptrMSE;
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionMSEOp) 
+{
+  MSEOp<float> operation;
+  Eigen::Tensor<float, 1> y_true(4); 
+  y_true.setValues({1, 1, 1, 1}); 
+  Eigen::Tensor<float, 1> y_pred(4); 
+  y_pred.setValues({1, 2, 3, 4}); 
+
+  Eigen::Tensor<float, 0> error = operation(y_pred, y_true);
+  BOOST_CHECK_CLOSE(error(0), 1.75, 1e-6);
+}
+
+/**
+  MSEGradOp Tests
+*/ 
+BOOST_AUTO_TEST_CASE(constructorMSEGradOp) 
+{
+  MSEGradOp<double>* ptrMSE = nullptr;
+  MSEGradOp<double>* nullPointerMSE = nullptr;
+  BOOST_CHECK_EQUAL(ptrMSE, nullPointerMSE);
+}
+
+BOOST_AUTO_TEST_CASE(destructorMSEGradOp) 
+{
+  MSEGradOp<double>* ptrMSE = nullptr;
+	ptrMSE = new MSEGradOp<double>();
+  delete ptrMSE;
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionMSEGradOp) 
+{
+  MSEGradOp<float> operation;
+  Eigen::Tensor<float, 1> y_true(4); 
+  y_true.setValues({1, 1, 1, 1}); 
+  Eigen::Tensor<float, 1> y_pred(4); 
+  y_pred.setValues({1, 2, 3, 4}); 
+
+  Eigen::Tensor<float, 1> error = operation(y_pred, y_true);
+  BOOST_CHECK_CLOSE(error(0), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(error(1), -0.25, 1e-6);
+  BOOST_CHECK_CLOSE(error(2), -0.5, 1e-6);
+  BOOST_CHECK_CLOSE(error(3), -0.75, 1e-6);
+}
+
 BOOST_AUTO_TEST_SUITE_END()

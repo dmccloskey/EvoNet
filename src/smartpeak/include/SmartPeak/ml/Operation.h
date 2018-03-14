@@ -218,14 +218,14 @@ public:
     {
       // // traditional
       // Eigen::Tensor<T, 0> n;
-      // n.setValues({y_pred.dimensions().size[0]});
+      // n.setValues({y_pred.dimensions()[0]});
       // Eigen::Tensor<T, 0> one;
       // one.setValues({1.0});
-      // Eigen::Tensor<T, 1> ones(y_pred.dimensions().size[0]);
+      // Eigen::Tensor<T, 1> ones(y_pred.dimensions()[0]);
       // ones.setConstant(1.0);
       // return -(y_true * y_pred.log() + (ones - y_true) * (ones - y_pred).log()).sum() * one / n;
       // simplified
-      Eigen::Tensor<T, 1> ones(y_pred.dimensions().size[0]);
+      Eigen::Tensor<T, 1> ones(y_pred.dimensions()[0]);
       ones.setConstant(1.0);
       return -(y_true * y_pred.log() + (ones - y_true) * (ones - y_pred).log()).sum();
     };
@@ -245,7 +245,7 @@ public:
       const Eigen::Tensor<T, 1>& y_true) const 
     {
       // simplified
-      Eigen::Tensor<T, 1> ones(y_pred.dimensions().size[0]);
+      Eigen::Tensor<T, 1> ones(y_pred.dimensions()[0]);
       ones.setConstant(1.0);
       return -(y_true / y_pred + (ones - y_true) / (ones - y_pred));
     };
@@ -299,10 +299,10 @@ public:
       const Eigen::Tensor<T, 1>& y_true) const 
     {
       Eigen::Tensor<T, 0> n;
-      n.setValues({y_pred.dimensions().size[0]});
+      n.setValues({y_pred.dimensions()[0]});
       Eigen::Tensor<T, 0> c;
       c.setValues({0.5});
-      return (y_true - y_pred).pow(2)).sum() * c / n;
+      return (y_true - y_pred).pow(2).sum() * c / n;
     };
   };
 
@@ -319,11 +319,9 @@ public:
       const Eigen::Tensor<T, 1>& y_pred, 
       const Eigen::Tensor<T, 1>& y_true) const 
     {
-      Eigen::Tensor<T, 0> n;
-      n.setValues({y_pred.dimensions().size[0]});
-      Eigen::Tensor<T, 0> one;
-      one.setValues({1.0});
-      return (y_true - y_pred) * one / n;
+      Eigen::Tensor<T, 1> n(y_pred.dimensions()[0]);
+      n.setConstant(y_pred.dimensions()[0]);
+      return (y_true - y_pred) / n;
     };
   };
 }
