@@ -39,13 +39,11 @@ public:
         std::tie(
           id_,
           links_,
-          nodes_,
-          error_
+          nodes_
         ) == std::tie(
           other.id_,
           other.links_,
-          other.nodes_,
-          other.error_
+          other.nodes_
         )
       ;
     }
@@ -75,14 +73,22 @@ public:
     void initNodes(const int& batch_size);
 
     /**
-      @brief Assigns output values to the input nodes.
-        The node statuses are then changed to NodeStatus::activated
+      @brief Assigns output or error values to the nodes.
+        The node statuses are then changed accordingly (i.e.,
+        status_update of "activated" will update the output values
+        of the node and status_update of "corrected" will update
+        the error values of the node.
 
       dimensions of batch size by nodes
 
-      @param[in] input
+      @param[in] values Values to assign to the node
+      @param[in] node_ids 
+      @param[in] status_update
     */ 
-    void mapValuesToNodes(const Eigen::Tensor<float, 2>& values, const std::vector<int>& node_ids);
+    void mapValuesToNodes(
+      const Eigen::Tensor<float, 2>& values,
+      const std::vector<int>& node_ids,
+      const NodeStatus& status_update);
  
     /**
       @brief A prelude to a forward propogation step. Returns a vector of links
@@ -94,8 +100,6 @@ public:
       @param[out] Links
       @param[out] source_nodes
       @param[out] sink_nodes
-
-      @returns layer vector of links
     */ 
     void getNextInactiveLayer(
       std::vector<int>& links,
@@ -114,8 +118,6 @@ public:
       @param[out] source_nodes
       @param[out] sink_nodes
 
-      @returns layer vector of links
-
       OPTIMIZATION:
       pass memory to tensors so that when the tensors compute the matrices
       the underlying node values are automatically updated
@@ -126,7 +128,7 @@ public:
       const std::vector<int>& sink_nodes);
  
     /**
-      @brief Completion of the forward propogation step. Computes the net
+      @brief Completion of a forward propogation step. Computes the net
         activation for all nodes in the tensor layer.
 
       Note before computing the activation, the layer tensor will be split
@@ -134,14 +136,21 @@ public:
         function will be applied
 
       @param[in] sink_nodes
-
-      @returns layer vector of links
     */ 
     void forwardPropogateLayerActivation(
       const std::vector<int>& sink_nodes);
  
     /**
-      @brief Calculate the error of the model with respect to
+      @brief Foward propogation of the network model.
+        All node outputs and derivatives are calculating
+        starting from the input nodes.  Each node status is
+        changed from "initialized" to "activated" when the
+        outputs and derivatives are calculated.
+    */ 
+    void forwardPropogate();    
+ 
+    /**
+      @brief Calculates the error of the model with respect to
         expected values
 
       @param[in] values Expected node output values
@@ -150,26 +159,55 @@ public:
     void calculateError(const Eigen::Tensor<float, 2>& values, const std::vector<int>& node_ids);
  
     /**
-      @brief A back propogation step.  Returns a vector of links where
-        all sink error values are unknown (i.e. active),
-        but all source node error values are known (i.e. inactive).
+      @brief A prelude to a back propogation step.  Returns a vector of links
+        and associated nodes that satisfy the following conditions:
+        1. all sink error values are unknown (i.e. active),
+        2. all source error values are known (i.e. corrected).
+        3. all nodes need not be the same type
 
-      If multiple vectors of links satisfy the above
-        criteria, only the first vector of links will
-        be returned.  All others will be returned
-        on subsequent calls.
-
-      @param[in] x_I Input value
-
-      @returns layer vector of links
+      @param[out] Links
+      @param[out] source_nodes
+      @param[out] sink_nodes
     */ 
-    void getNextUncorrectedLayer() const;
+    void getNextUncorrectedLayer(
+      std::vector<int>& links,
+      std::vector<int>& source_nodes,
+      std::vector<int>& sink_nodes);
+ 
+    /**
+      @brief A back propogation step. Computes the net
+        error into all nodes composing the next layer:
+        1. all sink error values are unknown (i.e. active),
+        2. all source error values are known (i.e. corrected).
+
+      Note that nodes need not be the same type.
+
+      @param[out] Links
+      @param[out] source_nodes
+      @param[out] sink_nodes
+
+      OPTIMIZATION:
+      pass memory to tensors so that when the tensors compute the matrices
+      the underlying node values are automatically updated
+    */ 
+    void backPropogateLayerError(
+      const std::vector<int>& links,
+      const std::vector<int>& source_nodes,
+      const std::vector<int>& sink_nodes);
+ 
+    /**
+      @brief Back propogation of the network model.
+        All node errors are calculating starting from the output nodes.  
+        Each node status is changed from "activated" to "corrected" when the
+        outputs and derivatives are calculated.
+    */ 
+    void backPropogate();  
 
     void setId(const int& id); ///< id setter
     int getId() const; ///< id getter
 
-    void setError(const double& error); ///< error setter
-    double getError() const; ///< error getter
+    void setError(const Eigen::Tensor<float, 1>& error); ///< error setter
+    Eigen::Tensor<float, 1> getError() const; ///< error getter
 
     void setLossFunction(const SmartPeak::ModelLossFunction& loss_function); ///< loss_function setter
     SmartPeak::ModelLossFunction getLossFunction() const; ///< loss_function getter
@@ -222,7 +260,7 @@ private:
     int id_; ///< Model ID
     std::map<int, Link> links_; ///< Model links
     std::map<int, Node> nodes_; ///< Model nodes
-    double error_; ///< Model error
+    Eigen::Tensor<float, 1> error_; ///< Model error
     SmartPeak::ModelLossFunction loss_function_; ///< Model loss function
 
   };
