@@ -521,10 +521,9 @@ namespace SmartPeak
     {
       for (int j=0; j<batch_size; ++j)
       {
-        source_ptr[i*batch_size + j] = nodes_.at(source_nodes[i]).getOutputPointer()[j];
+        source_ptr[i*batch_size + j] = nodes_.at(source_nodes[i]).getErrorPointer()[j];
       }
     }
-
     // weight_ptr
     float weight_ptr [batch_size * sink_nodes.size()];
     for (int i=0; i<sink_nodes.size(); ++i)
@@ -542,6 +541,15 @@ namespace SmartPeak
         }
       }
     }
+    // derivative_ptr
+    float derivative_ptr [sink_nodes.size() * batch_size];
+    for (int i=0; i<sink_nodes.size(); ++i)
+    {
+      for (int j=0; j<batch_size; ++j)
+      {
+        derivative_ptr[i*batch_size + j] = nodes_.at(sink_nodes[i]).getDerivativePointer()[j];
+      }
+    }
     float sink_ptr [sink_nodes.size() * batch_size];
     for (int i=0; i<sink_nodes.size(); ++i)
     {
@@ -554,11 +562,12 @@ namespace SmartPeak
     // construct the source and weight tensors
     Eigen::TensorMap<Eigen::Tensor<float, 2>> source_tensor(source_ptr, batch_size, source_nodes.size());
     Eigen::TensorMap<Eigen::Tensor<float, 2>> weight_tensor(weight_ptr, source_nodes.size(), sink_nodes.size());
+    Eigen::TensorMap<Eigen::Tensor<float, 2>> derivative_tensor(derivative_ptr, batch_size, sink_nodes.size());
     Eigen::TensorMap<Eigen::Tensor<float, 2>> sink_tensor(sink_ptr, batch_size, sink_nodes.size());
 
     // compute the output tensor
     Eigen::array<Eigen::IndexPair<int>, 1> product_dims = {Eigen::IndexPair<int>(1, 0)};
-    sink_tensor = source_tensor.contract(weight_tensor, product_dims);
+    sink_tensor = source_tensor.contract(weight_tensor, product_dims) * derivative_tensor;
 
     // update the sink nodes
     mapValuesToNodes(sink_tensor, sink_nodes, NodeStatus::corrected);
