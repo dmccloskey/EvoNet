@@ -20,7 +20,9 @@ namespace SmartPeak
   enum class NodeType
   {
     ReLU = 0,
-    ELU = 1
+    ELU = 1,
+    input = 2, // No activation function
+    bias = 3 // Zero value
   };
 
   /**
@@ -63,21 +65,45 @@ public:
     SmartPeak::NodeStatus getStatus() const; ///< status getter
 
     // TODO: will this be needed or can we point to the Tensor value?
-    void setOutput(const Eigen::Tensor<float, 1>& output); ///< ouptput setter
-    Eigen::Tensor<float, 1> getOutput() const; ///< output getter
+    void setOutput(const Eigen::Tensor<float, 1>& output); ///< output setter
+    Eigen::Tensor<float, 1> getOutput() const; ///< output copy getter
+    float* getOutputPointer(); ///< output pointer getter
 
     void setError(const Eigen::Tensor<float, 1>& error); ///< error setter
-    Eigen::Tensor<float, 1> getError() const; ///< error getter
+    Eigen::Tensor<float, 1> getError() const; ///< error copy getter
+    float* getErrorPointer(); ///< error pointer getter
+
+    void setDerivative(const Eigen::Tensor<float, 1>& derivative); ///< derivative setter
+    Eigen::Tensor<float, 1> getDerivative() const; ///< derivative copy getter
+    float* getDerivativePointer(); ///< derivative pointer getter
+
+    /**
+      @brief Initialize node output to zero.
+        The node statuses are then changed to NodeStatus::deactivated
+
+      @param[in] batch_size Size of the output, error, and derivative node vectors
+    */ 
+    void initNode(const int& batch_size);
+
+    /**
+      @brief The current output is passed through an activation function.
+        Contents are updated in place.
+    */
+    void calculateActivation();
+    
+    /**
+      @brief Calculate the derivative from the output.
+    */
+    void calculateDerivative();
 
 private:
     int id_; ///< Node ID
     SmartPeak::NodeType type_; ///< Node Type
     SmartPeak::NodeStatus status_; ///< Node Status
     
-    // TODO: will this be needed or can we point to the Tensor value?
-    // TODO: or can we use an set an index to the tensor #, and tensor dims?
     Eigen::Tensor<float, 1> output_; ///< Node Output (dim is the # of samples)
     Eigen::Tensor<float, 1> error_; ///< Node Error (dim is the # of samples)
+    Eigen::Tensor<float, 1> derivative_; ///< Node Error (dim is the # of samples)
 
   };
 }

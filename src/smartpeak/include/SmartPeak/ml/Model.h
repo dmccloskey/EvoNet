@@ -5,13 +5,23 @@
 
 #include <SmartPeak/ml/Link.h>
 #include <SmartPeak/ml/Node.h>
-#include <SmartPeak/ml/Layer.h>
 
+#include <unsupported/Eigen/CXX11/Tensor>
 #include <vector>
 #include <map>
+#include <tuple>
 
 namespace SmartPeak
 {
+
+  enum class ModelLossFunction
+  {
+    MSE = 0,
+    L2Norm = 1,
+    EuclideanDistance = 2,
+    CrossEntropy = 3,
+    NegativeLogLikelihood = 4
+  };
 
   /**
     @brief Directed Network Model
@@ -29,13 +39,11 @@ public:
         std::tie(
           id_,
           links_,
-          nodes_,
-          error_
+          nodes_
         ) == std::tie(
           other.id_,
           other.links_,
-          other.nodes_,
-          other.error_
+          other.nodes_
         )
       ;
     }
@@ -44,44 +52,173 @@ public:
     {
       return !(*this == other);
     }
+
+    /**
+      @brief Initialize all link weights
+
+      input and node Link weights will be initialized using the method of He, et al 2015
+      bias Link weight will be initialized as a constant
+
+      TODO: make a new class called Weights.  Replace weight with weight_id in Link.  
+        change initLinks() to initWeights()
+    */ 
+    void initLinks() const;  //TODO
+
+    /**
+      @brief Initialize all node output to zero.
+        The node statuses are then changed to NodeStatus::deactivated
+
+      @param[in] batch_size Size of the output, error, and derivative node vectors
+    */ 
+    void initNodes(const int& batch_size);
+
+    /**
+      @brief Assigns output or error values to the nodes.
+        The node statuses are then changed accordingly (i.e.,
+        status_update of "activated" will update the output values
+        of the node and status_update of "corrected" will update
+        the error values of the node.
+
+      dimensions of batch size by nodes
+
+      @param[in] values Values to assign to the node
+      @param[in] node_ids 
+      @param[in] status_update
+    */ 
+    void mapValuesToNodes(
+      const Eigen::Tensor<float, 2>& values,
+      const std::vector<int>& node_ids,
+      const NodeStatus& status_update);
  
     /**
-      @brief A forward propogation step. Returns a vector of links where
-        all sink output values are unknown (i.e. inactive),
-        but all source node output values are known (i.e. active).
+      @brief A prelude to a forward propogation step. Returns a vector of links
+        and associated nodes that satisfy the following conditions:
+        1. all sink output values are unknown (i.e. inactive),
+        2. all source node output values are known (i.e. active).
+        3. all nodes need not be the same type
 
-      If multiple vectors of links satisfy the above
-        criteria, only the first vector of links will
-        be returned.  All others will be returned
-        on subsequent calls.
-
-      @param[in] x_I Input value
-
-      @returns layer vector of links
+      @param[out] Links
+      @param[out] source_nodes
+      @param[out] sink_nodes
     */ 
-    SmartPeak::Layer getNextInactiveLayer() const;
+    void getNextInactiveLayer(
+      std::vector<int>& links,
+      std::vector<int>& source_nodes,
+      std::vector<int>& sink_nodes);
  
     /**
-      @brief A back propogation step.  Returns a vector of links where
-        all sink error values are unknown (i.e. active),
-        but all source node error values are known (i.e. inactive).
+      @brief A prelude to a forward propogation step. Computes the net
+        input into all nodes composing the next layer:
+        1. all sink output values are unknown (i.e. inactive),
+        2. all source node output values are known (i.e. active).
 
-      If multiple vectors of links satisfy the above
-        criteria, only the first vector of links will
-        be returned.  All others will be returned
-        on subsequent calls.
+      Note that nodes need not be the same type.
 
-      @param[in] x_I Input value
+      @param[out] Links
+      @param[out] source_nodes
+      @param[out] sink_nodes
 
-      @returns layer vector of links
+      OPTIMIZATION:
+      pass memory to tensors so that when the tensors compute the matrices
+      the underlying node values are automatically updated
     */ 
-    SmartPeak::Layer getNextUncorrectedLayer() const;
+    void forwardPropogateLayerNetInput(
+      const std::vector<int>& links,
+      const std::vector<int>& source_nodes,
+      const std::vector<int>& sink_nodes);
+ 
+    /**
+      @brief Completion of a forward propogation step. Computes the net
+        activation for all nodes in the tensor layer.
+
+      Note before computing the activation, the layer tensor will be split
+        according to the node type, and the corresponding activation
+        function will be applied
+
+      @param[in] sink_nodes
+    */ 
+    void forwardPropogateLayerActivation(
+      const std::vector<int>& sink_nodes);
+ 
+    /**
+      @brief Foward propogation of the network model.
+        All node outputs and derivatives are calculating
+        starting from the input nodes.  Each node status is
+        changed from "initialized" to "activated" when the
+        outputs and derivatives are calculated.
+    */ 
+    void forwardPropogate();    
+ 
+    /**
+      @brief Calculates the error of the model with respect to
+        expected values
+
+      @param[in] values Expected node output values
+      @param[in] node_ids Output nodes
+    */ 
+    void calculateError(const Eigen::Tensor<float, 2>& values, const std::vector<int>& node_ids);
+ 
+    /**
+      @brief A prelude to a back propogation step.  Returns a vector of links
+        and associated nodes that satisfy the following conditions:
+        1. all sink error values are unknown (i.e. active),
+        2. all source error values are known (i.e. corrected).
+        3. all nodes need not be the same type
+
+      @param[out] Links
+      @param[out] source_nodes
+      @param[out] sink_nodes
+    */ 
+    void getNextUncorrectedLayer(
+      std::vector<int>& links,
+      std::vector<int>& source_nodes,
+      std::vector<int>& sink_nodes);
+ 
+    /**
+      @brief A back propogation step. Computes the net
+        error into all nodes composing the next layer:
+        1. all sink error values are unknown (i.e. active),
+        2. all source error values are known (i.e. corrected).
+
+      Note that nodes need not be the same type.
+
+      @param[out] Links
+      @param[out] source_nodes
+      @param[out] sink_nodes
+
+      OPTIMIZATION:
+      pass memory to tensors so that when the tensors compute the matrices
+      the underlying node values are automatically updated
+    */ 
+    void backPropogateLayerError(
+      const std::vector<int>& links,
+      const std::vector<int>& source_nodes,
+      const std::vector<int>& sink_nodes);
+ 
+    /**
+      @brief Back propogation of the network model.
+        All node errors are calculating starting from the output nodes.  
+        Each node status is changed from "activated" to "corrected" when the
+        outputs and derivatives are calculated.
+    */ 
+    void backPropogate();  
+ 
+    /**
+      @brief Update the weights
+
+      @param[in] learning_rate Learning rate to update the wieghts
+      
+    */ 
+    void updateWeights(const float& learning_rate);  
 
     void setId(const int& id); ///< id setter
     int getId() const; ///< id getter
 
-    void setError(const double& error); ///< error setter
-    double getError() const; ///< error getter
+    void setError(const Eigen::Tensor<float, 1>& error); ///< error setter
+    Eigen::Tensor<float, 1> getError() const; ///< error getter
+
+    void setLossFunction(const SmartPeak::ModelLossFunction& loss_function); ///< loss_function setter
+    SmartPeak::ModelLossFunction getLossFunction() const; ///< loss_function getter
  
     /**
       @brief Add new links to the model.
@@ -105,6 +242,8 @@ public:
     */ 
     void addNodes(const std::vector<Node>& nodes);
     Node getNode(const int& node_id) const; ///< node getter
+    std::vector<int> getNodeIDs(const NodeStatus& node_status) const; ///< node getter (TODO)
+    std::vector<int> getNodeIDs(const NodeType& node_type) const; ///< node getter (TODO)
  
     /**
       @brief Remove existing nodes from the model.
@@ -123,13 +262,14 @@ public:
       @brief Removes links from the model that no longer
         have associated nodes.
     */ 
-    void pruneLinks();
+    void pruneLinks();    
 
 private:
     int id_; ///< Model ID
     std::map<int, Link> links_; ///< Model links
     std::map<int, Node> nodes_; ///< Model nodes
-    double error_; ///< Model error
+    Eigen::Tensor<float, 1> error_; ///< Model error
+    SmartPeak::ModelLossFunction loss_function_; ///< Model loss function
 
   };
 }
