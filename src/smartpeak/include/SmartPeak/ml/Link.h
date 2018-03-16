@@ -8,19 +8,6 @@
 namespace SmartPeak
 {
 
-  enum class WeightInitMethod
-  {
-    RandWeightInit = 0,
-    ConstWeightInit = 1,
-  };
-
-  enum class WeightUpdateMethod
-  {
-    SGD = 0,
-    Adam = 1,
-    GradientNoise = 1,
-  };
-
   /**
     @brief Directed Network Link
   */
@@ -28,11 +15,10 @@ namespace SmartPeak
   {
 public:
     Link(); ///< Default constructor
-    Link(const int& id, const int& source_node_id,
-      const int& sink_node_id); ///< Explicit constructor  
-    Link(const int& id, const int& source_node_id,
+    Link(const int& id,
+      const int& source_node_id,
       const int& sink_node_id,
-      const SmartPeak::WeightInitMethod& weight_init); ///< Explicit constructor 
+      const int& weight_id); ///< Explicit constructor
     ~Link(); ///< Default destructor
 
     inline bool operator==(const Link& other) const
@@ -42,12 +28,12 @@ public:
           id_,
           source_node_id_,
           sink_node_id_,
-          weight_
+          weight_id_
         ) == std::tie(
           other.id_,
           other.source_node_id_,
           other.sink_node_id_,
-          other.weight_
+          other.weight_id_
         )
       ;
     }
@@ -66,35 +52,14 @@ public:
     void setSinkNodeId(const int& sink_node_id); ///< sink_node_id setter
     int getSinkNodeId() const; ///< sink_node_id getter
 
-    void setWeight(const float& weight); ///< weight setter
-    float getWeight() const; ///< weight getter
-
-    void setWeightInitMethod(const SmartPeak::WeightInitMethod& weight_init); ///< weight_init_ setter
-    SmartPeak::WeightInitMethod getWeightInitMethod() const; ///< weight_init_ getter
-
-    /**
-      @brief Initialize link weights.
-
-      @param[in] op_input Input to the weight initialization operator
-    */ 
-    void initWeight(const float& op_input);
- 
-    /**
-      @brief Update the weight
-
-      @param[in] learning_rate Learning rate
-      @param[in] momentum Momentum      
-    */ 
-    void updateWeight(const float& learning_rate, const float& momentum);
+    void setWeightId(const int& weight_id); ///< weight_id setter
+    int getWeightId() const; ///< weight_id getter
 
 private:
     int id_; ///< Link ID
     int source_node_id_; ///< Link source node
     int sink_node_id_; ///< Link sink node
-    float weight_ = 1.0; ///< Link weight
-    float weight_update_ = 0.0; ///< Link weight update
-    SmartPeak::WeightInitMethod weight_init_ = SmartPeak::WeightInitMethod::ConstWeightInit; ///< Weight Init method
-    SmartPeak::WeightUpdateMethod weight_update_ = SmartPeak::WeightUpdateMethod::ConstWeightInit; ///< Weight Update method
+    int weight_id_; ///< Link weight
   };
 }
 
