@@ -8,6 +8,10 @@
 #include <random>
 #include <iostream>
 
+///////////////////////////////////
+/*Section 1: Activation Functions*/
+///////////////////////////////////
+
 namespace SmartPeak
 {
   /**
@@ -92,6 +96,10 @@ private:
     T alpha_;
   };
 
+//////////////////////////////////////////////
+/*Section 2: Weight Initialization Functions*/
+//////////////////////////////////////////////
+
   /**
     @brief Random weight initialization based on the method of He, et al 2015
 
@@ -100,30 +108,28 @@ private:
       Digital selection and analogue amplification coexist in a cortex-inspired silicon circuit. 
       Nature. 405. pp. 947–951.
   */
-  template<typename T>
-  class RandWeightInit
+  class RandWeightInitOp
   {
 public: 
-    RandWeightInit(){}; 
-    ~RandWeightInit(){};
-    T operator()(const T& n_I) const {       
+    RandWeightInitOp(){}; 
+    ~RandWeightInitOp(){};
+    float operator()(const float& n_I) const {       
       std::random_device rd{};
       std::mt19937 gen{rd()};
       std::normal_distribution<> d{0.0, 1.0};
-      return d(gen)*std::sqrt(2/n_I); 
+      return d(gen)*std::sqrt(2.0/n_I); 
     };
   };
 
   /**
     @brief Constant weight initialization.
   */
-  template<typename T>
-  class ConstWeightInit
+  class ConstWeightInitOp
   {
 public: 
-    ConstWeightInit(){}; 
-    ~ConstWeightInit(){};
-    T operator()(const T& x_I) const { return x_I; };
+    ConstWeightInitOp(){}; 
+    ~ConstWeightInitOp(){};
+    float operator()(const float& x_I) const { return x_I; };
   };  
 
   /**
@@ -143,6 +149,10 @@ public:
       return (y_true - y_pred).pow(2).sum(dims).sqrt();
     };
   };
+
+/////////////////////////////
+/*Section 3: Loss Functions*/
+/////////////////////////////
 
   /**
     @brief EuclideanDistance loss function gradient.
@@ -328,6 +338,29 @@ public:
       return (y_true - y_pred) / n;
     };
   };
-}
 
+//////////////////////////////////////
+/*Section 4: Weight Update Functions*/
+//////////////////////////////////////
+
+  /**
+    @brief SGD Stochastic Gradient Descent Solver.
+  */
+  template<typename T>
+  class SGDOp
+  {
+public: 
+    SGDOp(){}; 
+    ~SGDOp(){};
+    Eigen::Tensor<T, 2> operator()(
+      const Eigen::Tensor<T, 2>& y_pred, 
+      const Eigen::Tensor<T, 2>& y_true) const 
+    {
+      Eigen::Tensor<T, 2> n(y_pred.dimensions()[0], y_pred.dimensions()[1]);
+      n.setConstant(y_pred.dimensions()[0]);
+      return (y_true - y_pred) / n;
+    };
+  };
+
+}
 #endif //SMARTPEAK_OPERATION_H

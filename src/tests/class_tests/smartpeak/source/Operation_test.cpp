@@ -140,6 +140,59 @@ BOOST_AUTO_TEST_CASE(operationfunctionEluGradOp)
 }
 
 /**
+  RandWeightInitOp Tests
+*/ 
+BOOST_AUTO_TEST_CASE(constructorRandWeightInitOp) 
+{
+  RandWeightInitOp* ptrRandWeightInit = nullptr;
+  RandWeightInitOp* nullPointerRandWeightInit = nullptr;
+  BOOST_CHECK_EQUAL(ptrRandWeightInit, nullPointerRandWeightInit);
+}
+
+BOOST_AUTO_TEST_CASE(destructorRandWeightInitOp) 
+{
+  RandWeightInitOp* ptrRandWeightInit = nullptr;
+	ptrRandWeightInit = new RandWeightInitOp();
+  delete ptrRandWeightInit;
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionRandWeightInitOp) 
+{
+  RandWeightInitOp operation;
+  BOOST_CHECK_NE(operation(0), 0);
+  BOOST_CHECK_NE(operation(1), 1);
+  BOOST_CHECK_NE(operation(10), 10);
+  BOOST_CHECK_NE(operation(100), 100);
+  // std::cout << "0: " << operation(0) << std::endl;
+  // std::cout << "1: " << operation(1) << std::endl;
+  // std::cout << "10: " << operation(10) << std::endl;
+  // std::cout << "100: " << operation(100) << std::endl;
+}
+
+/**
+  ConstWeightInitOp Tests
+*/ 
+BOOST_AUTO_TEST_CASE(constructorConstWeightInitOp) 
+{
+  ConstWeightInitOp* ptrConstWeightInit = nullptr;
+  ConstWeightInitOp* nullPointerConstWeightInit = nullptr;
+  BOOST_CHECK_EQUAL(ptrConstWeightInit, nullPointerConstWeightInit);
+}
+
+BOOST_AUTO_TEST_CASE(destructorConstWeightInitOp) 
+{
+  ConstWeightInitOp* ptrConstWeightInit = nullptr;
+	ptrConstWeightInit = new ConstWeightInitOp();
+  delete ptrConstWeightInit;
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionConstWeightInitOp) 
+{
+  ConstWeightInitOp operation;
+  BOOST_CHECK_CLOSE(operation(1), 1, 1e-6);
+}
+
+/**
   EuclideanDistanceOp Tests
 */ 
 BOOST_AUTO_TEST_CASE(constructorEuclideanDistanceOp) 

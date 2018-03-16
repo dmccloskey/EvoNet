@@ -75,11 +75,11 @@ namespace SmartPeak
     return sink_node_id_;
   }
 
-  void Link::setWeight(const double& weight)
+  void Link::setWeight(const float& weight)
   {
     weight_ = weight;
   }
-  double Link::getWeight() const
+  float Link::getWeight() const
   {
     return weight_;
   }
@@ -93,18 +93,27 @@ namespace SmartPeak
     return weight_init_;
   }
 
-  // void Link:::initWeight(const double& x_I) const
-  // {
-  //   switch (weight_init_)
-  //   {
-  //     case SmartPeak::WeightInitMethod::RandWeightInit:
-  //       RandWeightInit<double> operation;
-  //       weight_ = operation(x_I);
-  //     case SmartPeak::WeightInitMethod::ConstWeightInit:
-  //       ConstWeightInit<double> operation;
-  //       weight_ = operation(x_I);
-  //     default:
-  //       weight_ = 0.0;
-  //   }
-  // }
+  void Link::initWeight(const float& op_input)
+  {
+    switch (weight_init_)
+    {
+      case SmartPeak::WeightInitMethod::RandWeightInit:
+      {
+        RandWeightInitOp operation;
+        weight_ = operation(op_input);
+        break;
+      }
+      case SmartPeak::WeightInitMethod::ConstWeightInit:
+      {
+        ConstWeightInitOp operation;
+        weight_ = operation(op_input);
+        break;
+      }
+      default:
+      {
+        weight_ = 0.0;
+        break;
+      }
+    }
+  }
 }

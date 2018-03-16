@@ -283,6 +283,9 @@ void makeModel1(Node& i1, Node& i2, Node& h1, Node& h2, Node& o1, Node& o2, Node
   l4 = Link(3, 1, 3, WeightInitMethod::RandWeightInit);
   lb1 = Link(4, 6, 2, WeightInitMethod::ConstWeightInit);
   lb2 = Link(5, 6, 3, WeightInitMethod::ConstWeightInit);
+  l1.setWeight(1.0); l2.setWeight(1.0);
+  l3.setWeight(1.0); l4.setWeight(1.0); 
+  lb1.setWeight(1.0); lb2.setWeight(1.0);
   // hidden layer + bias
   l5 = Link(6, 2, 4, WeightInitMethod::RandWeightInit);
   l6 = Link(7, 2, 5, WeightInitMethod::RandWeightInit);
@@ -290,6 +293,9 @@ void makeModel1(Node& i1, Node& i2, Node& h1, Node& h2, Node& o1, Node& o2, Node
   l8 = Link(9, 3, 5, WeightInitMethod::RandWeightInit);
   lb3 = Link(10, 7, 4, WeightInitMethod::ConstWeightInit);
   lb4 = Link(11, 7, 5, WeightInitMethod::ConstWeightInit);
+  l5.setWeight(1.0); l6.setWeight(1.0);
+  l7.setWeight(1.0); l8.setWeight(1.0); 
+  lb3.setWeight(1.0); lb4.setWeight(1.0);
   model1.setId(1);
   model1.addNodes({i1, i2, h1, h2, o1, o2, b1, b2});
   model1.addLinks({l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4});
@@ -684,6 +690,121 @@ BOOST_AUTO_TEST_CASE(getNextUncorrectedLayer)
   BOOST_CHECK(sink_nodes[0] == h1.getId());
   BOOST_CHECK(sink_nodes[1] == h2.getId());
   BOOST_CHECK(sink_nodes[2] == b2.getId());
+}
+
+BOOST_AUTO_TEST_CASE(backPropogateLayerError) 
+{
+  // Toy network: 1 hidden layer, fully connected, DAG
+  Node i1, i2, h1, h2, o1, o2, b1, b2;
+  Link l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4;
+  Model model1;
+  makeModel1(
+    i1, i2, h1, h2, o1, o2, b1, b2,
+    l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4,
+    model1);
+
+  // initialize nodes
+  const int batch_size = 4;
+  model1.initNodes(batch_size);
+  model1.setLossFunction(ModelLossFunction::MSE);
+
+  // create the input
+  const std::vector<int> node_ids = {0, 1};
+  Eigen::Tensor<float, 2> input(batch_size, node_ids.size()); 
+  input.setValues({{1, 5}, {2, 6}, {3, 7}, {4, 8}});
+  model1.mapValuesToNodes(input, node_ids, NodeStatus::activated);  
+
+  const std::vector<int> biases_ids = {6, 7};
+  Eigen::Tensor<float, 2> biases(batch_size, biases_ids.size()); 
+  biases.setConstant(1);
+  model1.mapValuesToNodes(biases, biases_ids, NodeStatus::activated);
+
+  // calculate the activation
+  model1.forwardPropogate();
+
+  // calculate the model error and node output error
+  std::vector<int> output_nodes = {4, 5};
+  Eigen::Tensor<float, 2> expected(batch_size, output_nodes.size()); 
+  expected.setValues({{0, 1}, {0, 1}, {0, 1}, {0, 1}});
+  model1.calculateError(expected, output_nodes);
+
+  // get the next hidden layer
+  std::vector<int> links, source_nodes, sink_nodes;
+  model1.getNextUncorrectedLayer(links, source_nodes, sink_nodes);
+
+  // back propogate error to the next layer
+  model1.backPropogateLayerError(links, source_nodes, sink_nodes);
+
+  Eigen::Tensor<float, 2> error(batch_size, sink_nodes.size()); 
+  error.setValues({{-7.25, -7.25, 0.0}, {-9.25, -9.25, 0.0}, {-11.25, -11.25, 0.0}, {-13.25, -13.25, 0.0}});
+  for (int i=0; i<sink_nodes.size(); i++)
+  {
+    BOOST_CHECK_EQUAL(model1.getNode(sink_nodes[i]).getError().size(), batch_size);
+    BOOST_CHECK(model1.getNode(sink_nodes[i]).getStatus() == NodeStatus::corrected);
+    for (int j=0; j<batch_size; j++)
+    {
+      // std::cout << "i " << i << " j " << j << std::endl;
+      BOOST_CHECK_EQUAL(model1.getNode(sink_nodes[i]).getError()[j], error(j, i));
+    }
+  }
+}
+
+BOOST_AUTO_TEST_CASE(backPropogate) 
+{
+  // Toy network: 1 hidden layer, fully connected, DAG
+  Node i1, i2, h1, h2, o1, o2, b1, b2;
+  Link l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4;
+  Model model1;
+  makeModel1(
+    i1, i2, h1, h2, o1, o2, b1, b2,
+    l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4,
+    model1);
+
+  // initialize nodes
+  const int batch_size = 4;
+  model1.initNodes(batch_size);
+  model1.setLossFunction(ModelLossFunction::MSE);
+
+  // create the input
+  const std::vector<int> node_ids = {0, 1};
+  Eigen::Tensor<float, 2> input(batch_size, node_ids.size()); 
+  input.setValues({{1, 5}, {2, 6}, {3, 7}, {4, 8}});
+  model1.mapValuesToNodes(input, node_ids, NodeStatus::activated);  
+
+  const std::vector<int> biases_ids = {6, 7};
+  Eigen::Tensor<float, 2> biases(batch_size, biases_ids.size()); 
+  biases.setConstant(1);
+  model1.mapValuesToNodes(biases, biases_ids, NodeStatus::activated);
+
+  // forward propogate
+  model1.forwardPropogate();
+
+  // calculate the model error and node output error
+  std::vector<int> output_nodes = {4, 5};
+  Eigen::Tensor<float, 2> expected(batch_size, output_nodes.size()); 
+  expected.setValues({{0, 1}, {0, 1}, {0, 1}, {0, 1}});
+  model1.calculateError(expected, output_nodes);
+
+  // back propogate
+  model1.backPropogate();
+
+  // test values of input and hidden layers
+  const std::vector<int> hidden_nodes = {0, 1, 2, 3, 6};
+  Eigen::Tensor<float, 2> error(batch_size, hidden_nodes.size()); 
+  error.setValues({
+    {0.0, 0.0, -7.25, -7.25, 0.0}, 
+    {0.0, 0.0, -9.25, -9.25, 0.0}, 
+    {0.0, 0.0, -11.25, -11.25, 0.0}, 
+    {0.0, 0.0, -13.25, -13.25, 0.0}});
+  for (int i=0; i<hidden_nodes.size(); i++)
+  {
+    BOOST_CHECK_EQUAL(model1.getNode(hidden_nodes[i]).getError().size(), batch_size);
+    BOOST_CHECK(model1.getNode(hidden_nodes[i]).getStatus() == NodeStatus::corrected);
+    for (int j=0; j<batch_size; j++)
+    {
+      BOOST_CHECK_EQUAL(model1.getNode(hidden_nodes[i]).getError()[j], error(j, i));
+    }
+  }
 }
 
 BOOST_AUTO_TEST_SUITE_END()

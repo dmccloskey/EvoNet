@@ -311,7 +311,7 @@ namespace SmartPeak
     }
 
     // weight_ptr
-    float weight_ptr [batch_size * sink_nodes.size()];
+    float weight_ptr [source_nodes.size() * sink_nodes.size()];
     for (int i=0; i<sink_nodes.size(); ++i)
     {
       for (int j=0; j<source_nodes.size(); ++j)
@@ -338,12 +338,15 @@ namespace SmartPeak
 
     // construct the source and weight tensors
     Eigen::TensorMap<Eigen::Tensor<float, 2>> source_tensor(source_ptr, batch_size, source_nodes.size());
+    // std::cout << "source_tensor " << source_tensor << std::endl;
     Eigen::TensorMap<Eigen::Tensor<float, 2>> weight_tensor(weight_ptr, source_nodes.size(), sink_nodes.size());
+    // std::cout << "weight_tensor " << weight_tensor << std::endl;
     Eigen::TensorMap<Eigen::Tensor<float, 2>> sink_tensor(sink_ptr, batch_size, sink_nodes.size());
 
     // compute the output tensor
     Eigen::array<Eigen::IndexPair<int>, 1> product_dims = {Eigen::IndexPair<int>(1, 0)};
     sink_tensor = source_tensor.contract(weight_tensor, product_dims);
+    // std::cout << "sink_tensor " << sink_tensor << std::endl;
 
     // update the sink nodes
     mapValuesToNodes(sink_tensor, sink_nodes, NodeStatus::activated);
@@ -525,15 +528,15 @@ namespace SmartPeak
       }
     }
     // weight_ptr
-    float weight_ptr [batch_size * sink_nodes.size()];
+    float weight_ptr [source_nodes.size() * sink_nodes.size()];
     for (int i=0; i<sink_nodes.size(); ++i)
     {
       for (int j=0; j<source_nodes.size(); ++j)
       {
         for (const int& link : links)
         {
-          if (links_.at(link).getSinkNodeId() == sink_nodes[i] &&
-          links_.at(link).getSourceNodeId() == source_nodes[j])
+          if (links_.at(link).getSourceNodeId() == sink_nodes[i] &&
+          links_.at(link).getSinkNodeId() == source_nodes[j])
           {
             weight_ptr[i*source_nodes.size() + j] = links_.at(link).getWeight();
             break;
@@ -561,13 +564,17 @@ namespace SmartPeak
 
     // construct the source and weight tensors
     Eigen::TensorMap<Eigen::Tensor<float, 2>> source_tensor(source_ptr, batch_size, source_nodes.size());
+    // std::cout << "source_tensor " << source_tensor << std::endl;
     Eigen::TensorMap<Eigen::Tensor<float, 2>> weight_tensor(weight_ptr, source_nodes.size(), sink_nodes.size());
+    // std::cout << "weight_tensor " << weight_tensor << std::endl;
     Eigen::TensorMap<Eigen::Tensor<float, 2>> derivative_tensor(derivative_ptr, batch_size, sink_nodes.size());
+    // std::cout << "derivative_tensor " << derivative_tensor << std::endl;
     Eigen::TensorMap<Eigen::Tensor<float, 2>> sink_tensor(sink_ptr, batch_size, sink_nodes.size());
 
     // compute the output tensor
     Eigen::array<Eigen::IndexPair<int>, 1> product_dims = {Eigen::IndexPair<int>(1, 0)};
     sink_tensor = source_tensor.contract(weight_tensor, product_dims) * derivative_tensor;
+    // std::cout << "sink_tensor " << sink_tensor << std::endl;
 
     // update the sink nodes
     mapValuesToNodes(sink_tensor, sink_nodes, NodeStatus::corrected);
@@ -582,7 +589,7 @@ namespace SmartPeak
       std::vector<int> links, source_nodes, sink_nodes;
       getNextUncorrectedLayer(links, source_nodes, sink_nodes);
 
-      // check if all nodes have been activated
+      // check if all nodes have been corrected
       if (links.size() == 0)
       {
         break;

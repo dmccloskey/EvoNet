@@ -104,4 +104,28 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   BOOST_CHECK(link.getSinkNodeId() == node_sink);
 }
 
+BOOST_AUTO_TEST_CASE(initWeight) 
+{
+  int node_source = 1;
+  int node_sink = 2;
+  Link link;
+  link.setId(1);
+  link.setSourceNodeId(node_source);
+  link.setSinkNodeId(node_sink);
+  link.setWeight(4.0);
+
+  // random weight initialization
+  link.setWeightInitMethod(WeightInitMethod::RandWeightInit);
+  link.initWeight(1.0);
+
+  BOOST_CHECK_NE(link.getWeight(), 4.0);
+  BOOST_CHECK_NE(link.getWeight(), 1.0);
+
+  // constant weight intialization
+  link.setWeightInitMethod(WeightInitMethod::ConstWeightInit);
+  link.initWeight(1.0);
+
+  BOOST_CHECK_EQUAL(link.getWeight(), 1.0);
+}
+
 BOOST_AUTO_TEST_SUITE_END()

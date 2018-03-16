@@ -202,6 +202,14 @@ public:
         outputs and derivatives are calculated.
     */ 
     void backPropogate();  
+ 
+    /**
+      @brief Update the weights
+
+      @param[in] learning_rate Learning rate to update the wieghts
+      
+    */ 
+    void updateWeights(const float& learning_rate);  
 
     void setId(const int& id); ///< id setter
     int getId() const; ///< id getter
