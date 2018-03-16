@@ -15,6 +15,7 @@ namespace SmartPeak
   {
 public:
     Link(); ///< Default constructor
+    Link(const int& id); ///< Explicit constructor
     Link(const int& id,
       const int& source_node_id,
       const int& sink_node_id,

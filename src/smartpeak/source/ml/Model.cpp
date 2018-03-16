@@ -3,6 +3,7 @@
 #include <SmartPeak/ml/Model.h>
 #include <SmartPeak/ml/Link.h>
 #include <SmartPeak/ml/Node.h>
+#include <SmartPeak/ml/Weight.h>
 #include <SmartPeak/ml/Operation.h>
 
 #include <vector>
@@ -95,6 +96,50 @@ namespace SmartPeak
     pruneLinks();
   }
 
+
+  void Model::addWeights(const std::vector<Weight>& weights)
+  { 
+    for (Weight const& weight: weights)
+    {
+      // check for duplicate weights (by id)
+      if (weights_.count(weight.getId()) == 0)
+      {
+        weights_[weight.getId()] = weight;
+      }
+      else
+      {
+        // TODO: move to debug log
+        std::cout << "Weight id " << weight.getId() << " already exists!" << std::endl;
+      }
+    }
+  }
+
+  Weight Model::getWeight(const int& weight_id) const
+  {
+    if (weights_.count(weight_id) != 0)
+    {
+      return weights_.at(weight_id);
+    }
+    else
+    {
+      // TODO: move to debug log
+      std::cout << "Weight id " << weight_id << " not found!" << std::endl;
+    }
+  }
+
+  void Model::removeWeights(const std::vector<int>& weight_ids)
+  { 
+    for (int const& weight_id: weight_ids)
+    {
+      // check for duplicate weights (by id)
+      if (weights_.count(weight_id) != 0)
+      {
+        weights_.erase(weight_id);
+      }
+    }
+    pruneLinks();
+  }
+
   void Model::addLinks(const std::vector<Link>& links)
   { 
     for (Link const& link: links)
@@ -123,6 +168,7 @@ namespace SmartPeak
       }
     }
     pruneNodes();
+    pruneWeights();
   }
 
   Link Model::getLink(const int& link_id) const
@@ -163,6 +209,30 @@ namespace SmartPeak
     if (node_ids.size() != 0) { removeNodes(node_ids); }    
   }
 
+  void Model::pruneWeights()
+  {
+    std::vector<int> weight_ids;
+    if (weights_.empty()) { return; }
+    for (const auto& weight : weights_)
+    {
+      bool found = false;
+      if (links_.empty()) { return; }
+      for (const auto& link: links_)
+      {
+        if (weight.second.getId() == link.second.getWeightId())
+        {
+          found = true;
+          break;
+        }
+      }
+      if (!found)
+      {
+        weight_ids.push_back(weight.first);
+      }
+    }
+    if (weight_ids.size() != 0) { removeWeights(weight_ids); }    
+  }
+
   void Model::pruneLinks()
   {
     std::vector<int> link_ids;
@@ -180,6 +250,15 @@ namespace SmartPeak
           break;
         }
       }
+      // if (weights_.empty()) { return; }
+      // for (const auto& weight : weights_)
+      // {
+      //   if (weight.second.getId() == link.second.getWeightId())
+      //   {
+      //     found = true;
+      //     break;
+      //   }
+      // }
       if (!found)
       {
         link_ids.push_back(link.first);
@@ -321,7 +400,7 @@ namespace SmartPeak
           if (links_.at(link).getSinkNodeId() == sink_nodes[i] &&
           links_.at(link).getSourceNodeId() == source_nodes[j])
           {
-            weight_ptr[i*source_nodes.size() + j] = links_.at(link).getWeight();
+            weight_ptr[i*source_nodes.size() + j] = weights_.at(links_.at(link).getWeightId()).getWeight();
             break;
           }
         }
@@ -538,7 +617,7 @@ namespace SmartPeak
           if (links_.at(link).getSourceNodeId() == sink_nodes[i] &&
           links_.at(link).getSinkNodeId() == source_nodes[j])
           {
-            weight_ptr[i*source_nodes.size() + j] = links_.at(link).getWeight();
+            weight_ptr[i*source_nodes.size() + j] = weights_.at(links_.at(link).getWeightId()).getWeight();
             break;
           }
         }

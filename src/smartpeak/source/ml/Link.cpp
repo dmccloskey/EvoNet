@@ -13,12 +13,9 @@ namespace SmartPeak
   {        
   }
 
-  Link::Link(const int& id, const int& source_node_id,
-      const int& sink_node_id):
+  Link::Link(const int& id):
     id_(id)
   {
-    setSourceNodeId(source_node_id);
-    setSinkNodeId(sink_node_id);
   }
 
   Link::Link(const int& id, const int& source_node_id,

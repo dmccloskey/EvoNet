@@ -55,10 +55,13 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
 BOOST_AUTO_TEST_CASE(pruneNodes) 
 {
   Node source1, sink1;
-  Link link1, link2;
+  Link link1;
+  weight weight1;
   source1 = Node(0, NodeType::ReLU, NodeStatus::activated);
   sink1 = Node(1, NodeType::ReLU, NodeStatus::initialized);
   link1 = Link(0, source1.getId(), sink1.getId());
+  weight1 = Weight(0, WeightInitMethod::RandWeightInit, WeightUpdateMethod::SGD);
+
   Model model;
   
   std::vector<Node> nodes_test;
@@ -76,6 +79,7 @@ BOOST_AUTO_TEST_CASE(pruneNodes)
   }  
 
   model.addLinks({link1});
+  model.addWeights({weight1});
   model.pruneNodes();
   for (int i=0; i<nodes_test.size(); ++i)
   {
@@ -83,29 +87,74 @@ BOOST_AUTO_TEST_CASE(pruneNodes)
   }  
 }
 
-BOOST_AUTO_TEST_CASE(pruneLinks) 
+BOOST_AUTO_TEST_CASE(pruneWeights) 
 {
   Node source1, sink1;
-  Link link1, link2;
+  Link link1;
+  weight weight1;
   source1 = Node(0, NodeType::ReLU, NodeStatus::activated);
   sink1 = Node(1, NodeType::ReLU, NodeStatus::initialized);
   link1 = Link(0, source1.getId(), sink1.getId());
+  weight1 = Weight(0, WeightInitMethod::RandWeightInit, WeightUpdateMethod::SGD);
+
+  Model model;
+
+  std::vector<Weight> weights_test;
+  weights_test.push_back(weight1);
+
+  // should not fail
+  model.pruneWeights();
+
+  model.addWeights({weight1});
+  model.pruneWeights();
+  for (int i=0; i<weights_test.size(); ++i)
+  {
+    BOOST_CHECK(model.getWeight(i) == weights_test[i]);
+  }  
+
+  model.addNodes({source1, sink1});
+  model.addLinks({link1});
+  model.pruneWeights();
+  for (int i=0; i<weights_test.size(); ++i)
+  {
+    BOOST_CHECK(model.getWeight(i) == weights_test[i]);
+  }  
+}
+
+BOOST_AUTO_TEST_CASE(pruneLinks) 
+{
+  Node source1, sink1;
+  Link link1;
+  weight weight1;
+  source1 = Node(0, NodeType::ReLU, NodeStatus::activated);
+  sink1 = Node(1, NodeType::ReLU, NodeStatus::initialized);
+  link1 = Link(0, source1.getId(), sink1.getId());
+  weight1 = Weight(0, WeightInitMethod::RandWeightInit, WeightUpdateMethod::SGD);
   Model model;
   
   std::vector<Node> nodes_test;
   nodes_test.push_back(source1);
   nodes_test.push_back(sink1);
+
   std::vector<Link> links_test;
   links_test.push_back(link1);
+
+  std::vector<Weight> weights_test;
+  weights_test.push_back(weight1);
 
   // should not fail
   model.pruneLinks();
 
   model.addNodes({source1, sink1});
+  model.addWeights({weight1});
   model.pruneLinks();
   for (int i=0; i<nodes_test.size(); ++i)
   {
     BOOST_CHECK(model.getNode(i) == nodes_test[i]);
+  }  
+  for (int i=0; i<weights_test.size(); ++i)
+  {
+    BOOST_CHECK(model.getWeight(i) == weights_test[i]);
   }  
   
   model.addLinks({link1});
@@ -118,6 +167,10 @@ BOOST_AUTO_TEST_CASE(pruneLinks)
   {
     BOOST_CHECK(model.getNode(i) == nodes_test[i]);
   }  
+  for (int i=0; i<weights_test.size(); ++i)
+  {
+    BOOST_CHECK(model.getWeight(i) == weights_test[i]);
+  } 
 }
 
 BOOST_AUTO_TEST_CASE(addGetRemoveNodes) 
@@ -161,6 +214,43 @@ BOOST_AUTO_TEST_CASE(addGetRemoveNodes)
   }
 }
 
+BOOST_AUTO_TEST_CASE(addGetRemoveWeights) 
+{
+  weight weight1, weight2;
+  weight1 = weight(0, WeightInitMethod::RandWeightInit, WeightUpdateMethod::SGD);
+  Model model;
+
+  // add weights to the model
+  model.addWeights({weight1});
+
+  // make test weights
+  std::vector<weight> weights_test;
+  weights_test.push_back(weight1);
+  for (int i=0; i<weights_test.size(); ++i)
+  {
+    BOOST_CHECK(model.getWeights(i) == weights_test[i]);
+  }
+
+  // add more weights to the model
+  weight2 = weight(2, WeightInitMethod::RandWeightInit, WeightUpdateMethod::SGD);
+
+  // add weights to the model
+  model.addWeights({weight2});
+  weights_test.push_back(weight2);
+  for (int i=0; i<weights_test.size(); ++i)
+  {
+    BOOST_CHECK(model.getWeights(i) == weights_test[i]);
+  }
+
+  // remove weights from the model
+  model.removeWeights({1});
+  weights_test = {weight1};
+  for (int i=0; i<weights_test.size(); ++i)
+  {
+    BOOST_CHECK(model.getWeights(i) == weights_test[i]);
+  }
+}
+
 BOOST_AUTO_TEST_CASE(addGetRemoveLinks) 
 {
   Node source1, sink1;
@@ -168,6 +258,8 @@ BOOST_AUTO_TEST_CASE(addGetRemoveLinks)
   source1 = Node(0, NodeType::ReLU, NodeStatus::activated);
   sink1 = Node(1, NodeType::ReLU, NodeStatus::initialized);
   link1 = Link(0, source1.getId(), sink1.getId());
+  weight weight1;
+  weight1 = weight(0, WeightInitMethod::RandWeightInit, WeightUpdateMethod::SGD);
   Model model;
 
   // add links (but not nodes) to the model
@@ -185,6 +277,12 @@ BOOST_AUTO_TEST_CASE(addGetRemoveLinks)
   { // Should not be equal because nodes were not yet added to the model
     BOOST_CHECK(model.getNode(i) != nodes_test[i]);
   }
+  std::vector<weight> weights_test;
+  weights_test.push_back(weight1);
+  for (int i=0; i<weights_test.size(); ++i)
+  { // Should not be equal because nodes were not yet added to the model
+    BOOST_CHECK(model.getWeights(i) != weights_test[i]);
+  }
   
   // add nodes to the model
   model.addNodes({source1, sink1});
@@ -192,17 +290,34 @@ BOOST_AUTO_TEST_CASE(addGetRemoveLinks)
   {
     BOOST_CHECK(model.getNode(i) == nodes_test[i]);
   }
+  // add weights to the model  
+  model.addWeights({weight1});
+  for (int i=0; i<weights_test.size(); ++i)
+  {
+    BOOST_CHECK(model.getWeights(i) == weights_test[i]);
+  }
 
   // add more links and nodes to the model
   Node source2, sink2;
   source2 = Node(2, NodeType::ReLU, NodeStatus::activated);
   sink2 = Node(3, NodeType::ReLU, NodeStatus::initialized);
   link2 = Link(1, source2.getId(), sink2.getId());
+  weight weight2;
+  weight2 = weight(1, WeightInitMethod::RandWeightInit, WeightUpdateMethod::SGD);
   // add nodes to the model
   model.addNodes({source2, sink2});
+  nodes_test.push_back(source2);
+  nodes_test.push_back(sink2);
   for (int i=0; i<nodes_test.size(); ++i)
   {
     BOOST_CHECK(model.getNode(i) == nodes_test[i]); 
+  }
+  // add weights to the model  
+  model.addWeights({weight2});
+  weights_test.push_back(weight2);
+  for (int i=0; i<weights_test.size(); ++i)
+  {
+    BOOST_CHECK(model.getWeights(i) == weights_test[i]);
   }
 
   // add links to the model
@@ -212,8 +327,6 @@ BOOST_AUTO_TEST_CASE(addGetRemoveLinks)
   {
     BOOST_CHECK(model.getLink(i) == links_test[i]);
   }
-  nodes_test.push_back(source2);
-  nodes_test.push_back(sink2);
 
   // remove links from the model
   model.removeLinks({1});
@@ -227,11 +340,17 @@ BOOST_AUTO_TEST_CASE(addGetRemoveLinks)
   {
     BOOST_CHECK(model.getNode(i) == nodes_test[i]);
   }
+  weights_test = {weight1, sink1};
+  for (int i=0; i<weights_test.size(); ++i)
+  {
+    BOOST_CHECK(model.getWeights(i) == weights_test[i]);
+  }
 }
 
 //TODO: comparison is failing!
 BOOST_AUTO_TEST_CASE(comparison) 
 {
+  // TODO: continue updating...
   Node source, sink;
   Link link1, link2;
   source = Node(1, NodeType::ReLU, NodeStatus::activated);

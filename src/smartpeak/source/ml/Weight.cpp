@@ -3,6 +3,7 @@
 #include <SmartPeak/ml/Weight.h>
 #include <SmartPeak/ml/Operation.h>
 
+#include <unsupported/Eigen/CXX11/Tensor>
 #include <vector>
 #include <cmath>
 #include <iostream>
@@ -45,6 +46,14 @@ namespace SmartPeak
   float Weight::getWeight() const
   {
     return weight_;
+  }
+  void Weight::setWeightUpdates(const Eigen::Tensor<float, 1>& weight_updates)
+  {
+    weight_updates_ = weight_updates;
+  }
+  Eigen::Tensor<float, 1> Weight::getWeightUpdates() const
+  {
+    return weight_updates_;
   }
 
   void Weight::setWeightInitMethod(const SmartPeak::WeightInitMethod& weight_init)

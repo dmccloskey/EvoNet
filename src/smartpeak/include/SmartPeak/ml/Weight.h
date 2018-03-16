@@ -3,6 +3,7 @@
 #ifndef SMARTPEAK_WEIGHT_H
 #define SMARTPEAK_WEIGHT_H
 
+#include <unsupported/Eigen/CXX11/Tensor>
 #include <tuple>
 
 namespace SmartPeak
@@ -56,6 +57,9 @@ public:
     void setWeight(const float& weight); ///< weight setter
     float getWeight() const; ///< weight getter
 
+    void setWeightUpdates(const Eigen::Tensor<float, 1>& weight_updates); ///< weight_updates setter
+    Eigen::Tensor<float, 1> getWeightUpdates() const; ///< weight_updates getter
+
     void setWeightInitMethod(const SmartPeak::WeightInitMethod& weight_init); ///< weight_init_ setter
     SmartPeak::WeightInitMethod getWeightInitMethod() const; ///< weight_init_ getter
 
@@ -95,9 +99,9 @@ public:
 private:
     int id_; ///< Weight ID
     float weight_ = 1.0; ///< Weight weight
-    Eigen::tensor<float, 1> weight_updates_; ///< Weight weight update
-    SmartPeak::WeightInitMethod weight_init_ = SmartPeak::WeightInitMethod::ConstWeightInit; ///< Weight Init method
-    SmartPeak::WeightUpdateMethod weight_update_ = SmartPeak::WeightUpdateMethod::ConstWeightInit; ///< Weight Update method
+    Eigen::Tensor<float, 1> weight_updates_; ///< Weight weight update
+    SmartPeak::WeightInitMethod weight_init_; ///< Weight Init method
+    SmartPeak::WeightUpdateMethod weight_update_; ///< Weight Update method
   };
 }
 

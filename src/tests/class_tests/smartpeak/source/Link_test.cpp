@@ -29,50 +29,52 @@ BOOST_AUTO_TEST_CASE(constructor2)
   Link link;
   int node_source = 1;
   int node_sink = 2;
-  link = Link(1, node_source, node_sink);
+  int weight = 1;
+  link = Link(1, node_source, node_sink, weight);
 
   BOOST_CHECK_EQUAL(link.getId(), 1);
   BOOST_CHECK(link.getSourceNodeId() == node_source);
   BOOST_CHECK(link.getSinkNodeId() == node_sink);
-  BOOST_CHECK_EQUAL(link.getWeight(), 1.0);
-  BOOST_CHECK(link.getWeightInitMethod() == WeightInitMethod::ConstWeightInit);
+  BOOST_CHECK_EQUAL(link.getWeightId(), 1.0);
 
   // test same sink and source nodes
-  link = Link(1, node_source, node_source);
+  link = Link(1, node_source, node_source, weight);
 
   BOOST_CHECK_EQUAL(link.getId(), 1);
   BOOST_CHECK(link.getSourceNodeId() == node_source);
   BOOST_CHECK(link.getSinkNodeId() != node_sink);
-  BOOST_CHECK_EQUAL(link.getWeight(), 1.0);
-  BOOST_CHECK(link.getWeightInitMethod() == WeightInitMethod::ConstWeightInit);
+  BOOST_CHECK_EQUAL(link.getWeightId(), 1);
 
   // test overload constructor
-  link = Link(1, node_source, node_sink, WeightInitMethod::RandWeightInit);
+  link = Link(1, node_source, node_sink, weight);
 
   BOOST_CHECK_EQUAL(link.getId(), 1);
   BOOST_CHECK(link.getSourceNodeId() == node_source);
   BOOST_CHECK(link.getSinkNodeId() == node_sink);
-  BOOST_CHECK_EQUAL(link.getWeight(), 1.0);
-  BOOST_CHECK(link.getWeightInitMethod() == WeightInitMethod::RandWeightInit);
+  BOOST_CHECK_EQUAL(link.getWeightId(), 1);
 }
 
 BOOST_AUTO_TEST_CASE(comparison) 
 {
-  int source, sink;
+  int source, sink, weight;
   source = 1;
   sink = 2;
+  weight = 3;
   Link link, link_test;
-  link = Link(1, source, sink);
-  link_test = Link(1, source, sink);
+  link = Link(1, source, sink, weight);
+  link_test = Link(1, source, sink, weight);
   BOOST_CHECK(link == link_test);
 
-  link = Link(2, source, sink);
+  link = Link(2, source, sink, weight);
   BOOST_CHECK(link != link_test);
 
-  link = Link(1, source, source);
+  link = Link(1, source, source, weight);
   BOOST_CHECK(link != link_test);
 
-  link = Link(1, sink, sink);
+  link = Link(1, sink, sink, weight);
+  BOOST_CHECK(link != link_test);
+
+  link = Link(1, sink, sink, 4);
   BOOST_CHECK(link != link_test);
 }
 
@@ -84,14 +86,12 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   link.setId(1);
   link.setSourceNodeId(node_source);
   link.setSinkNodeId(node_sink);
-  link.setWeight(4.0);
-  link.setWeightInitMethod(WeightInitMethod::RandWeightInit);
+  link.setWeightId(3);
 
-  BOOST_CHECK_EQUAL(link.getId(), 1.0);
+  BOOST_CHECK_EQUAL(link.getId(), 1);
   BOOST_CHECK(link.getSourceNodeId() == node_source);
   BOOST_CHECK(link.getSinkNodeId() == node_sink);
-  BOOST_CHECK_EQUAL(link.getWeight(), 4.0);
-  BOOST_CHECK(link.getWeightInitMethod() == WeightInitMethod::RandWeightInit);
+  BOOST_CHECK_EQUAL(link.getWeightId(), 3);
   
   // test same sink and source nodes
   link.setSourceNodeId(node_sink);
@@ -102,30 +102,6 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   link.setSinkNodeId(node_source);
   BOOST_CHECK(link.getSourceNodeId() == node_source);
   BOOST_CHECK(link.getSinkNodeId() == node_sink);
-}
-
-BOOST_AUTO_TEST_CASE(initWeight) 
-{
-  int node_source = 1;
-  int node_sink = 2;
-  Link link;
-  link.setId(1);
-  link.setSourceNodeId(node_source);
-  link.setSinkNodeId(node_sink);
-  link.setWeight(4.0);
-
-  // random weight initialization
-  link.setWeightInitMethod(WeightInitMethod::RandWeightInit);
-  link.initWeight(1.0);
-
-  BOOST_CHECK_NE(link.getWeight(), 4.0);
-  BOOST_CHECK_NE(link.getWeight(), 1.0);
-
-  // constant weight intialization
-  link.setWeightInitMethod(WeightInitMethod::ConstWeightInit);
-  link.initWeight(1.0);
-
-  BOOST_CHECK_EQUAL(link.getWeight(), 1.0);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

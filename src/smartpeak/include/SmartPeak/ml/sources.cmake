@@ -13,6 +13,7 @@ set(sources_list_h
 	Operation.h
 	LossFunction.h
 	Operation.h
+	Weight.h
 )
 
 ### add path to the filenames

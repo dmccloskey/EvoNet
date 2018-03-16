@@ -10,6 +10,7 @@ set(ml_executables_list
   Model_test
   Node_test
   Operation_test
+  Weight_test
 )
 
 set(simulator_executables_list

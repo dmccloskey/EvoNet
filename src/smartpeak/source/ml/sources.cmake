@@ -9,6 +9,7 @@ set(sources_list
 	Link.cpp
 	Model.cpp
 	Node.cpp
+	Weight.cpp
 )
 
 ### add path to the filenames
