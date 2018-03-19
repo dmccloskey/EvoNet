@@ -40,11 +40,13 @@ public:
         std::tie(
           id_,
           links_,
-          nodes_
+          nodes_,
+          weights_
         ) == std::tie(
           other.id_,
           other.links_,
-          other.nodes_
+          other.nodes_,
+          other.weights_
         )
       ;
     }

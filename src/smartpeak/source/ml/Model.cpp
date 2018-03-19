@@ -72,7 +72,7 @@ namespace SmartPeak
 
   Node Model::getNode(const int& node_id) const
   {
-    if (nodes_.count(node_id) != 0)
+    if (!nodes_.empty() && nodes_.count(node_id) != 0)
     {
       return nodes_.at(node_id);
     }
@@ -116,7 +116,7 @@ namespace SmartPeak
 
   Weight Model::getWeight(const int& weight_id) const
   {
-    if (weights_.count(weight_id) != 0)
+    if (!weights_.empty() && weights_.count(weight_id) != 0)
     {
       return weights_.at(weight_id);
     }
@@ -173,7 +173,7 @@ namespace SmartPeak
 
   Link Model::getLink(const int& link_id) const
   {
-    if (links_.count(link_id) != 0)
+    if (!links_.empty() && links_.count(link_id) != 0)
     {
       return links_.at(link_id);
     }
