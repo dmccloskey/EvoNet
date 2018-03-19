@@ -572,11 +572,14 @@ BOOST_AUTO_TEST_CASE(settersAndGetters)
   operation = SGDOp(0.9f, 0.1f);
   BOOST_CHECK_CLOSE(operation.getLearningRate(), 0.9, 1e-3);
   BOOST_CHECK_CLOSE(operation.getMomentum(), 0.1, 1e-3);
+  BOOST_CHECK_CLOSE(operation.getMomentumPrev(), 0.0, 1e-3);
 
   operation.setLearningRate(0.8);
   operation.setMomentum(0.2);
+  operation.setMomentumPrev(0.1);
   BOOST_CHECK_CLOSE(operation.getLearningRate(), 0.8, 1e-3);
   BOOST_CHECK_CLOSE(operation.getMomentum(), 0.2, 1e-3);
+  BOOST_CHECK_CLOSE(operation.getMomentumPrev(), 0.1, 1e-3);
 }
 
 BOOST_AUTO_TEST_CASE(operationfunctionSGDOp) 
@@ -584,7 +587,7 @@ BOOST_AUTO_TEST_CASE(operationfunctionSGDOp)
   SGDOp operation(0.01, 0.9);  
   ;
   BOOST_CHECK_CLOSE(operation(1.0, 1.0), 0.99, 1e-3);  // weight update = -0.01
-  BOOST_CHECK_CLOSE(operation(0.99, 1.0), 0.99, 1e-3);
+  BOOST_CHECK_CLOSE(operation(0.99, 1.0), 0.971100032, 1e-3);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

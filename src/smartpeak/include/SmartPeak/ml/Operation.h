@@ -385,6 +385,8 @@ public:
     float getLearningRate() const{return learning_rate_;};
     void setMomentum(const float& momentum){momentum_ = momentum;};
     float getMomentum() const{return momentum_;};
+    void setMomentumPrev(const float& momentum_prev){momentum_prev_ = momentum_prev;};
+    float getMomentumPrev() const{return momentum_prev_;};
     float operator()(const float& weight, const float& error) 
     {
       const float weight_update = momentum_ * momentum_prev_ - learning_rate_ * weight * error;
@@ -420,6 +422,10 @@ public:
     float getMomentum2() const{return momentum2_;};
     void setDelta(const float& delta){delta_ = delta;};
     float getDelta() const{return delta_;};
+    void setMomentumPrev(const float& momentum_prev){momentum_prev_ = momentum_prev;};
+    float getMomentumPrev() const{return momentum_prev_;};
+    void setMomentum2Prev(const float& momentum2_prev){momentum2_prev_ = momentum2_prev;};
+    float getMomentum2Prev() const{return momentum2_prev_;};
     float operator()(const float& weight, const float& error) 
     {
       const float adam1 = momentum_ * momentum_prev_ + (1 - momentum_) * weight * error;
