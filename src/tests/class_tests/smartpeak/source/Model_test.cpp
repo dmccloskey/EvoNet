@@ -59,7 +59,7 @@ BOOST_AUTO_TEST_CASE(pruneNodes)
   Weight weight1;
   source1 = Node(0, NodeType::ReLU, NodeStatus::activated);
   sink1 = Node(1, NodeType::ReLU, NodeStatus::initialized);
-  weight1 = Weight(0, WeightInitMethod::RandWeightInit, WeightUpdateMethod::SGD);
+  weight1 = Weight(0);
   link1 = Link(0, source1.getId(), sink1.getId(), weight1.getId());
 
   Model model;
@@ -94,7 +94,7 @@ BOOST_AUTO_TEST_CASE(pruneWeights)
   Weight weight1;
   source1 = Node(0, NodeType::ReLU, NodeStatus::activated);
   sink1 = Node(1, NodeType::ReLU, NodeStatus::initialized);
-  weight1 = Weight(0, WeightInitMethod::RandWeightInit, WeightUpdateMethod::SGD);
+  weight1 = Weight(0);
   link1 = Link(0, source1.getId(), sink1.getId(), weight1.getId());
 
   Model model;
@@ -128,7 +128,7 @@ BOOST_AUTO_TEST_CASE(pruneLinks)
   Weight weight1;
   source1 = Node(0, NodeType::ReLU, NodeStatus::activated);
   sink1 = Node(1, NodeType::ReLU, NodeStatus::initialized);
-  weight1 = Weight(0, WeightInitMethod::RandWeightInit, WeightUpdateMethod::SGD);
+  weight1 = Weight(0);
   link1 = Link(0, source1.getId(), sink1.getId(), weight1.getId());
   Model model;
   
@@ -217,7 +217,7 @@ BOOST_AUTO_TEST_CASE(addGetRemoveNodes)
 BOOST_AUTO_TEST_CASE(addGetRemoveWeights) 
 {
   Weight weight1, weight2;
-  weight1 = Weight(0, WeightInitMethod::RandWeightInit, WeightUpdateMethod::SGD);
+  weight1 = Weight(0);
   Model model;
 
   // add weights to the model
@@ -232,7 +232,7 @@ BOOST_AUTO_TEST_CASE(addGetRemoveWeights)
   }
 
   // add more weights to the model
-  weight2 = Weight(1, WeightInitMethod::RandWeightInit, WeightUpdateMethod::SGD);
+  weight2 = Weight(1);
 
   // add weights to the model
   model.addWeights({weight2});
@@ -258,7 +258,7 @@ BOOST_AUTO_TEST_CASE(addGetRemoveLinks)
   source1 = Node(0, NodeType::ReLU, NodeStatus::activated);
   sink1 = Node(1, NodeType::ReLU, NodeStatus::initialized);
   Weight weight1;
-  weight1 = Weight(0, WeightInitMethod::RandWeightInit, WeightUpdateMethod::SGD);
+  weight1 = Weight(0);
   link1 = Link(0, source1.getId(), sink1.getId(), weight1.getId());
   Model model;
 
@@ -303,7 +303,7 @@ BOOST_AUTO_TEST_CASE(addGetRemoveLinks)
   source2 = Node(2, NodeType::ReLU, NodeStatus::activated);
   sink2 = Node(3, NodeType::ReLU, NodeStatus::initialized);
   Weight weight2;
-  weight2 = Weight(1, WeightInitMethod::RandWeightInit, WeightUpdateMethod::SGD);
+  weight2 = Weight(1);
   link2 = Link(1, source2.getId(), sink2.getId(), weight2.getId());
   // add nodes to the model
   model.addNodes({source2, sink2});
@@ -356,7 +356,7 @@ BOOST_AUTO_TEST_CASE(comparison)
   source = Node(1, NodeType::ReLU, NodeStatus::activated);
   sink = Node(2, NodeType::ReLU, NodeStatus::initialized);
   Weight weight1;
-  weight1 = Weight(0, WeightInitMethod::RandWeightInit, WeightUpdateMethod::SGD);
+  weight1 = Weight(0);
   link1 = Link(1, source.getId(), sink.getId(), weight1.getId());
   link2 = Link(2, source.getId(), sink.getId(), weight1.getId());
   Model model1(1);
@@ -407,12 +407,12 @@ void makeModel1(Node& i1, Node& i2, Node& h1, Node& h2, Node& o1, Node& o2, Node
   b1 = Node(6, NodeType::bias, NodeStatus::activated);
   b2 = Node(7, NodeType::bias, NodeStatus::activated);
   // weights
-  w1 = Weight(0, WeightInitMethod::RandWeightInit, WeightUpdateMethod::SGD);
-  w2 = Weight(1, WeightInitMethod::RandWeightInit, WeightUpdateMethod::SGD);
-  w3 = Weight(2, WeightInitMethod::RandWeightInit, WeightUpdateMethod::SGD);
-  w4 = Weight(3, WeightInitMethod::RandWeightInit, WeightUpdateMethod::SGD);
-  wb1 = Weight(4, WeightInitMethod::ConstWeightInit, WeightUpdateMethod::SGD);
-  wb2 = Weight(5, WeightInitMethod::ConstWeightInit, WeightUpdateMethod::SGD);
+  w1 = Weight(0);
+  w2 = Weight(1);
+  w3 = Weight(2);
+  w4 = Weight(3);
+  wb1 = Weight(4);
+  wb2 = Weight(5);
   // input layer + bias
   l1 = Link(0, 0, 2, 0);
   l2 = Link(1, 0, 3, 1);
@@ -421,12 +421,12 @@ void makeModel1(Node& i1, Node& i2, Node& h1, Node& h2, Node& o1, Node& o2, Node
   lb1 = Link(4, 6, 2, 4);
   lb2 = Link(5, 6, 3, 5);
   // weights
-  w5 = Weight(6, WeightInitMethod::RandWeightInit, WeightUpdateMethod::SGD);
-  w6 = Weight(7, WeightInitMethod::RandWeightInit, WeightUpdateMethod::SGD);
-  w7 = Weight(8, WeightInitMethod::RandWeightInit, WeightUpdateMethod::SGD);
-  w8 = Weight(9, WeightInitMethod::RandWeightInit, WeightUpdateMethod::SGD);
-  wb3 = Weight(10, WeightInitMethod::ConstWeightInit, WeightUpdateMethod::SGD);
-  wb4 = Weight(11, WeightInitMethod::ConstWeightInit, WeightUpdateMethod::SGD);
+  w5 = Weight(6);
+  w6 = Weight(7);
+  w7 = Weight(8);
+  w8 = Weight(9);
+  wb3 = Weight(10);
+  wb4 = Weight(11);
   // hidden layer + bias
   l5 = Link(6, 2, 4, 6);
   l6 = Link(7, 2, 5, 7);

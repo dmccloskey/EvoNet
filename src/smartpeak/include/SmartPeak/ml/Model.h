@@ -6,6 +6,7 @@
 #include <SmartPeak/ml/Link.h>
 #include <SmartPeak/ml/Node.h>
 #include <SmartPeak/ml/Weight.h>
+#include <SmartPeak/ml/Operation.h>
 
 #include <unsupported/Eigen/CXX11/Tensor>
 #include <vector>
@@ -59,10 +60,10 @@ public:
     /**
       @brief Initialize all link weights
 
-      input and node Link weights will be initialized using the method of He, et al 2015
-      bias Link weight will be initialized as a constant
+      @param[in] weight_init_op Parameterized WeightInitOp to use for weight initialization
+      @param[in] weight_ids 
     */ 
-    void initWeights() const;  //TODO
+    void initWeights(const WeightInitOp& weight_init_op, const std::vector<int>& weight_ids);  //TODO
 
     /**
       @brief Initialize all node output to zero.
@@ -206,10 +207,11 @@ public:
     /**
       @brief Update the weights
 
-      @param[in] learning_rate Learning rate to update the wieghts
+      @param[in] solver_op Parameterized SolverOp to use for weight updates
+      @param[in] weight_ids 
       
     */ 
-    void updateWeights(const float& learning_rate);  
+    void updateWeights(const SolverOp& solver_op, const std::vector<int>& weight_ids);
 
     void setId(const int& id); ///< id setter
     int getId() const; ///< id getter

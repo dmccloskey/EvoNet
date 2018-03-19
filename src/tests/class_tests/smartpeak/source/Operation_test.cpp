@@ -159,14 +159,14 @@ BOOST_AUTO_TEST_CASE(destructorRandWeightInitOp)
 BOOST_AUTO_TEST_CASE(operationfunctionRandWeightInitOp) 
 {
   RandWeightInitOp operation;
-  BOOST_CHECK_NE(operation(0), 0);
-  BOOST_CHECK_NE(operation(1), 1);
-  BOOST_CHECK_NE(operation(10), 10);
-  BOOST_CHECK_NE(operation(100), 100);
-  // std::cout << "0: " << operation(0) << std::endl;
-  // std::cout << "1: " << operation(1) << std::endl;
-  // std::cout << "10: " << operation(10) << std::endl;
-  // std::cout << "100: " << operation(100) << std::endl;
+  operation = RandWeightInitOp(0);
+  BOOST_CHECK_NE(operation(), 0);
+  operation = RandWeightInitOp(1);
+  BOOST_CHECK_NE(operation(), 1);
+  operation = RandWeightInitOp(10);
+  BOOST_CHECK_NE(operation(), 10);
+  operation = RandWeightInitOp(100);
+  BOOST_CHECK_NE(operation(), 100);
 }
 
 /**
@@ -188,8 +188,8 @@ BOOST_AUTO_TEST_CASE(destructorConstWeightInitOp)
 
 BOOST_AUTO_TEST_CASE(operationfunctionConstWeightInitOp) 
 {
-  ConstWeightInitOp operation;
-  BOOST_CHECK_CLOSE(operation(1), 1, 1e-6);
+  ConstWeightInitOp operation(1);
+  BOOST_CHECK_CLOSE(operation(), 1, 1e-6);
 }
 
 /**
@@ -547,6 +547,44 @@ BOOST_AUTO_TEST_CASE(operationfunctionMSEGradOp)
   BOOST_CHECK_CLOSE(error(1, 1), 0.0, 1e-6);
   BOOST_CHECK_CLOSE(error(1, 2), -0.5, 1e-6);
   BOOST_CHECK_CLOSE(error(1, 3), -1.0, 1e-6);
+}
+
+/**
+  SGDOp Tests
+*/ 
+BOOST_AUTO_TEST_CASE(constructorSGDOp) 
+{
+  SGDOp* ptrSGD = nullptr;
+  SGDOp* nullPointerSGD = nullptr;
+  BOOST_CHECK_EQUAL(ptrSGD, nullPointerSGD);
+}
+
+BOOST_AUTO_TEST_CASE(destructorSGDOp) 
+{
+  SGDOp* ptrSGD = nullptr;
+	ptrSGD = new SGDOp();
+  delete ptrSGD;
+}
+
+BOOST_AUTO_TEST_CASE(settersAndGetters) 
+{
+  SGDOp operation;
+  operation = SGDOp(0.9f, 0.1f);
+  BOOST_CHECK_CLOSE(operation.getLearningRate(), 0.9, 1e-3);
+  BOOST_CHECK_CLOSE(operation.getMomentum(), 0.1, 1e-3);
+
+  operation.setLearningRate(0.8);
+  operation.setMomentum(0.2);
+  BOOST_CHECK_CLOSE(operation.getLearningRate(), 0.8, 1e-3);
+  BOOST_CHECK_CLOSE(operation.getMomentum(), 0.2, 1e-3);
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionSGDOp) 
+{
+  SGDOp operation(0.01, 0.9);  
+  ;
+  BOOST_CHECK_CLOSE(operation(1.0, 1.0), 0.99, 1e-3);  // weight update = -0.01
+  BOOST_CHECK_CLOSE(operation(0.99, 1.0), 0.99, 1e-3);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
