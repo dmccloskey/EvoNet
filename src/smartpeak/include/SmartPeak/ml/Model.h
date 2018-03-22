@@ -59,11 +59,8 @@ public:
 
     /**
       @brief Initialize all link weights
-
-      @param[in] weight_init_op Parameterized WeightInitOp to use for weight initialization
-      @param[in] weight_ids 
     */ 
-    void initWeights(const WeightInitOp& weight_init_op, const std::vector<int>& weight_ids);  //TODO
+    void initWeights();
 
     /**
       @brief Initialize all node output to zero.
@@ -206,12 +203,9 @@ public:
  
     /**
       @brief Update the weights
-
-      @param[in] solver_op Parameterized SolverOp to use for weight updates
-      @param[in] weight_ids 
       
     */ 
-    void updateWeights(const SolverOp& solver_op, const std::vector<int>& weight_ids);
+    void updateWeights();
 
     void setId(const int& id); ///< id setter
     int getId() const; ///< id getter
