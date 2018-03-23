@@ -3,9 +3,6 @@ set(directory source/ml)
 
 ### list all filenames of the directory here
 set(sources_list
-	EuclideanDistance.cpp
-	L2.cpp
-	Layer.cpp
 	Link.cpp
 	Model.cpp
 	Node.cpp

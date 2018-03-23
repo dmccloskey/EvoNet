@@ -3,10 +3,7 @@ set(core_executables_list
 )
 
 set(ml_executables_list
-  EuclideanDistance_test
-  L2_test
   Link_test
-  LossFunction_test
   Model_test
   Node_test
   Operation_test

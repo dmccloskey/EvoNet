@@ -3,15 +3,11 @@ set(directory include/SmartPeak/ml)
 
 ### list all header files of the directory here
 set(sources_list_h
-	EuclideanDistance.h
 	Interpreter.h
-	L2.h
-	Layer.h
 	Link.h
 	Model.h
 	Node.h
 	Operation.h
-	LossFunction.h
 	Operation.h
 	Weight.h
 )
