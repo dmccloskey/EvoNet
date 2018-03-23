@@ -730,4 +730,12 @@ namespace SmartPeak
       weights_.at(weight_derivative.first).updateWeight(derivative_sum);
     }
   }
+
+  void Model::reInitializeNodeStatuses()
+  {
+    for (auto& node_map : nodes_)
+    {
+      node_map.second.setStatus(NodeStatus::initialized);
+    }
+  }
 }

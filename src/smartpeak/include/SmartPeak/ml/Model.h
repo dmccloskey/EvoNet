@@ -206,6 +206,12 @@ public:
       
     */ 
     void updateWeights();
+ 
+    /**
+      @brief Reset the node statuses back to inactivated
+      
+    */ 
+    void reInitializeNodeStatuses();
 
     void setId(const int& id); ///< id setter
     int getId() const; ///< id getter

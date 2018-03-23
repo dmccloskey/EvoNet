@@ -1078,6 +1078,49 @@ BOOST_AUTO_TEST_CASE(updateWeights)
   }
 }
 
+BOOST_AUTO_TEST_CASE(reInitializeNodeStatuses) 
+{
+  // Toy network: 1 hidden layer, fully connected, DAG
+  Node i1, i2, h1, h2, o1, o2, b1, b2;
+  Link l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4;
+  Weight w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4;
+  Model model1;
+  makeModel1(
+    i1, i2, h1, h2, o1, o2, b1, b2,
+    l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4,
+    w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4,
+    model1);
+
+  // initialize nodes
+  const int batch_size = 4;
+  model1.initNodes(batch_size);
+  model1.setLossFunction(ModelLossFunction::MSE);
+
+  // create the input
+  const std::vector<int> node_ids = {0, 1};
+  Eigen::Tensor<float, 2> input(batch_size, node_ids.size()); 
+  input.setValues({{1, 5}, {2, 6}, {3, 7}, {4, 8}});
+  model1.mapValuesToNodes(input, node_ids, NodeStatus::activated);  
+
+  const std::vector<int> biases_ids = {6, 7};
+  Eigen::Tensor<float, 2> biases(batch_size, biases_ids.size()); 
+  biases.setConstant(1);
+  model1.mapValuesToNodes(biases, biases_ids, NodeStatus::activated);
+
+  // calculate the activation
+  model1.reInitializeNodeStatuses();
+
+  for (int i=0; i<node_ids.size(); i++)
+  {
+    BOOST_CHECK(model1.getNode(node_ids[i]).getStatus() == NodeStatus::initialized);
+  }
+
+  for (int i=0; i<biases_ids.size(); i++)
+  {
+    BOOST_CHECK(model1.getNode(biases_ids[i]).getStatus() == NodeStatus::initialized);
+  }
+}
+
 BOOST_AUTO_TEST_CASE(modelTrainer) 
 {
   // Toy network: 1 hidden layer, fully connected, DAG
@@ -1100,28 +1143,31 @@ BOOST_AUTO_TEST_CASE(modelTrainer)
   // create the input
   const std::vector<int> node_ids = {0, 1};
   Eigen::Tensor<float, 2> input(batch_size, node_ids.size()); 
-  input.setValues({{1, 5}, {2, 6}, {3, 7}, {4, 8}});
-  model1.mapValuesToNodes(input, node_ids, NodeStatus::activated);  
+  input.setValues({{1, 5}, {2, 6}, {3, 7}, {4, 8}}); 
 
   const std::vector<int> biases_ids = {6, 7};
   Eigen::Tensor<float, 2> biases(batch_size, biases_ids.size()); 
   biases.setConstant(1);
-  model1.mapValuesToNodes(biases, biases_ids, NodeStatus::activated);
+
+  // create the expected output
+  std::vector<int> output_nodes = {4, 5};
+  Eigen::Tensor<float, 2> expected(batch_size, output_nodes.size()); 
+  expected.setValues({{0, 1}, {0, 1}, {0, 1}, {0, 1}});
 
   // iterate until we find the optimal values
-  const int max_iter = 10;
+  const int max_iter = 2;
   for (int iter = 0; iter < max_iter; ++iter)
   {
+    // assign the input data
+    model1.mapValuesToNodes(input, node_ids, NodeStatus::activated); 
+    model1.mapValuesToNodes(biases, biases_ids, NodeStatus::activated);
+
     // forward propogate
     model1.forwardPropogate();
 
     // calculate the model error and node output error
-    std::vector<int> output_nodes = {4, 5};
-    Eigen::Tensor<float, 2> expected(batch_size, output_nodes.size()); 
-    expected.setValues({{0, 1}, {0, 1}, {0, 1}, {0, 1}});
     model1.calculateError(expected, output_nodes);
-
-    std::cout<<"Error at iteration: "<<iter<<" is "<<model1.getError().sum()<<std::endl;
+    // std::cout<<"Error at iteration: "<<iter<<" is "<<model1.getError().sum()<<std::endl;
 
     // back propogate
     model1.backPropogate();
@@ -1130,8 +1176,11 @@ BOOST_AUTO_TEST_CASE(modelTrainer)
     model1.updateWeights();   
 
     // reinitialize the model
-     
+    model1.reInitializeNodeStatuses();
   }
+  
+  const Eigen::Tensor<float, 0> total_error = model1.getError().sum();
+  BOOST_CHECK_CLOSE(total_error(0), 0.5, 1e-3);  
 }
 
 BOOST_AUTO_TEST_SUITE_END()
