@@ -60,7 +60,8 @@ namespace SmartPeak
       // check for duplicate nodes (by id)
       if (nodes_.count(node.getId()) == 0)
       {
-        nodes_[node.getId()] = node;
+        nodes_.emplace(node.getId(), node);
+        // nodes_[node.getId()] = node;
       }
       else
       {
@@ -104,7 +105,8 @@ namespace SmartPeak
       // check for duplicate weights (by id)
       if (weights_.count(weight.getId()) == 0)
       {
-        weights_[weight.getId()] = weight;
+        weights_.emplace(weight.getId(), weight);
+        // weights_[weight.getId()] = weight;
       }
       else
       {
@@ -147,7 +149,8 @@ namespace SmartPeak
       // check for duplicate links (by id)
       if (links_.count(link.getId()) == 0)
       {
-        links_[link.getId()] = link;
+        links_.emplace(link.getId(), link);
+        // links_[link.getId()] = link;
       }
       else
       {
@@ -672,9 +675,11 @@ namespace SmartPeak
     const int max_iters = 1e6;
     for (int iter; iter<max_iters; ++iter)
     {
+      // std::cout<<"iter # "<<iter<<::std::endl;
       // get the next hidden layer
       std::vector<int> links, source_nodes, sink_nodes;
       getNextUncorrectedLayer(links, source_nodes, sink_nodes);
+      // std::cout<<"link size "<<links.size()<<::std::endl;
 
       // check if all nodes have been corrected
       if (links.size() == 0)
@@ -684,6 +689,45 @@ namespace SmartPeak
 
       // calculate the net input
       backPropogateLayerError(links, source_nodes, sink_nodes);
+    }
+  }
+
+  void Model::updateWeights()
+  {
+
+    std::map<int, std::vector<float>> weight_derivatives;  
+    // initalize the map
+    for (const auto& weight_map: weights_)  
+    {
+      const std::vector<float> derivatives;
+      weight_derivatives.emplace(weight_map.first, derivatives);
+    }
+
+    // collect the derivative for all weights
+    for (const auto& link_map : links_)
+    {
+      if (nodes_.at(link_map.second.getSinkNodeId()).getStatus() == NodeStatus::corrected)
+      {
+        const int batch_size = nodes_.at(link_map.second.getSinkNodeId()).getError().size(); // infer the batch_size
+        Eigen::TensorMap<Eigen::Tensor<float, 1>> error_tensor(nodes_.at(link_map.second.getSinkNodeId()).getErrorPointer(), batch_size);
+        Eigen::TensorMap<Eigen::Tensor<float, 1>> output_tensor(nodes_.at(link_map.second.getSinkNodeId()).getOutputPointer(), batch_size);
+        auto derivative_tensor = - error_tensor * output_tensor; // derivative of the weight wrt the error
+        Eigen::Tensor<float, 0> derivative_mean_tensor = derivative_tensor.mean(); // average derivative
+        // std::cout<<"derivative_mean_tensor "<<derivative_mean_tensor(0)<<std::endl;
+        weight_derivatives[link_map.second.getWeightId()].push_back(derivative_mean_tensor(0));
+      }      
+    }
+
+    // calculate the average of all error averages 
+    // and update the weights
+    for (const auto& weight_derivative : weight_derivatives)
+    {
+      float derivative_sum = 0.0;
+      for (const float& derivative : weight_derivative.second)
+      {
+        derivative_sum += derivative / weight_derivative.second.size();
+      }
+      weights_.at(weight_derivative.first).updateWeight(derivative_sum);
     }
   }
 }

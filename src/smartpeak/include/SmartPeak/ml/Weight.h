@@ -6,6 +6,7 @@
 #include <SmartPeak/ml/Operation.h>
 
 #include <unsupported/Eigen/CXX11/Tensor>
+#include <memory>
 #include <tuple>
 
 namespace SmartPeak
@@ -19,6 +20,7 @@ namespace SmartPeak
 public:
     Weight(); ///< Default constructor
     Weight(const int& id); ///< Explicit constructor 
+    Weight(const int& id, std::shared_ptr<WeightInitOp>& weight_init, std::shared_ptr<SolverOp>& solver); ///< Explicit constructor 
     ~Weight(); ///< Default destructor
 
     inline bool operator==(const Weight& other) const
@@ -43,10 +45,10 @@ public:
     void setWeight(const float& weight); ///< weight setter
     float getWeight() const; ///< weight getter
 
-    void setWeightInitOp(WeightInitOp& weight_init); ///< weight initialization operator setter
+    void setWeightInitOp(std::shared_ptr<WeightInitOp>& weight_init); ///< weight initialization operator setter
     WeightInitOp* getWeightInitOp() const; ///< weight initialization operator getter
 
-    void setSolverOp(SolverOp& solver); ///< weight update operator setter
+    void setSolverOp(std::shared_ptr<SolverOp>& solver); ///< weight update operator setter
     SolverOp* getSolverOp() const; ///< weight update operator getter
 
     /**
@@ -64,8 +66,8 @@ public:
 private:
     int id_; ///< Weight ID
     float weight_ = 1.0; ///< Weight weight
-    WeightInitOp* weight_init_; ///< weight initialization operator
-    SolverOp* solver_; ///< weight update operator
+    std::shared_ptr<WeightInitOp> weight_init_; ///< weight initialization operator
+    std::shared_ptr<SolverOp> solver_; ///< weight update operator
   };
 }
 
