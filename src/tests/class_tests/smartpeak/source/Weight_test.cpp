@@ -39,9 +39,6 @@ BOOST_AUTO_TEST_CASE(constructor2)
   // ConstWeightInitOp weight_init(2.0);
   // SGDOp solver(0.01, 0.9);
   weight = Weight(1, weight_init, solver);
-
-  weight.setWeightInitOp(weight_init);
-  weight.setSolverOp(solver);
   BOOST_CHECK_NE(weight.getWeightInitOp(), weight_init.get());
   BOOST_CHECK_NE(weight.getSolverOp(), solver.get());
   BOOST_CHECK_EQUAL(weight.getWeightInitOp()->operator()(), 2.0);
