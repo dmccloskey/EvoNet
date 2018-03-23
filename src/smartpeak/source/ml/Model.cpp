@@ -322,6 +322,14 @@ namespace SmartPeak
       node_map.second.initNode(batch_size);
     }
   }
+
+  void Model::initWeights()
+  {
+    for (auto& weight_map : weights_)
+    {
+      weight_map.second.initWeight();
+    }
+  }
   
   void Model::mapValuesToNodes(
     const Eigen::Tensor<float, 2>& values,

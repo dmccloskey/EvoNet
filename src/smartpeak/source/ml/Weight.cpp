@@ -58,5 +58,14 @@ namespace SmartPeak
     return solver_;
   }
 
+  void Weight::initWeight()
+  {
+    // weight_ = weight_init_();
+    weight_ = weight_init_->operator()();
+  }
 
+  void Weight::updateWeight(const float& error)
+  {
+    weight_ = solver_->operator()(weight_, error);
+  }
 }

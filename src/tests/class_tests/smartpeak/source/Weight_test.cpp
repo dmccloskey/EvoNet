@@ -61,4 +61,25 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   weight.setSolverOp(solver);
 }
 
+BOOST_AUTO_TEST_CASE(initWeight) 
+{
+  Weight weight;
+  weight.setId(1);
+  ConstWeightInitOp weight_init(5.0);
+  weight.setWeightInitOp(weight_init);
+  weight.initWeight();
+  BOOST_CHECK_EQUAL(weight.getWeight(), 5.0);
+}
+
+BOOST_AUTO_TEST_CASE(updateWeight) 
+{
+  Weight weight;
+  weight.setId(1);
+  weight.setWeight(1.0);
+  SGDOp solver(0.01, 0.9);
+  weight.setSolverOp(solver);
+  weight.updateWeight(2.0);
+  BOOST_CHECK_CLOSE(weight.getWeight(), 0.98, 1e-3);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
