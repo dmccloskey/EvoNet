@@ -606,18 +606,18 @@ namespace SmartPeak
     // allows for cycles
     for (auto& link_map : links_)
     {
-      if ((nodes_.at(link_map.second.getSinkNodeId()).getStatus() == NodeStatus::corrected || 
-          nodes_.at(link_map.second.getSinkNodeId()).getStatus() == NodeStatus::activated) && 
+      if ((nodes_.at(link_map.second.getSourceNodeId()).getStatus() == NodeStatus::corrected || 
+          nodes_.at(link_map.second.getSourceNodeId()).getStatus() == NodeStatus::activated) && 
         std::count(links.begin(), links.end(), link_map.second.getId()) == 0 && // unique links 
-        nodes_.at(link_map.second.getSourceNodeId()).getStatus() == NodeStatus::activated &&
+        nodes_.at(link_map.second.getSinkNodeId()).getStatus() == NodeStatus::corrected &&
         std::count(source_nodes.begin(), source_nodes.end(), link_map.second.getSinkNodeId()) != 0 // sink node has already been identified)
       ) 
       {
         links.push_back(link_map.second.getId());
         // could use std::set instead to check for duplicates
-        if (std::count(source_nodes.begin(), source_nodes.end(), link_map.second.getSinkNodeId()) == 0)
+        if (std::count(sink_nodes.begin(), sink_nodes.end(), link_map.second.getSourceNodeId()) == 0)
         {
-          source_nodes.push_back(link_map.second.getSinkNodeId());
+          sink_nodes.push_back(link_map.second.getSourceNodeId());
         }
       }
     }

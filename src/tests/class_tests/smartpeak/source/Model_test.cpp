@@ -1115,12 +1115,12 @@ BOOST_AUTO_TEST_CASE(getNextUncorrectedLayer2b)
 
   // test links and source and sink nodes
   std::vector<int> links_test, source_nodes_test, sink_nodes_test;
-  links_test = {0, 2, 3};
+  links_test = {0, 3, 2};
   source_nodes_test = {1};
-  sink_nodes_test = {0, 2, 3};
+  sink_nodes_test = {0, 3, 2};
   BOOST_CHECK_EQUAL(links.size(), links_test.size());
   BOOST_CHECK_EQUAL(source_nodes.size(), source_nodes_test.size());
-  BOOST_CHECK_EQUAL(sink_nodes_test.size(), sink_nodes_test.size());
+  BOOST_CHECK_EQUAL(sink_nodes.size(), sink_nodes_test.size());
   for (int i=0; i<links_test.size(); i++)
   {
     BOOST_CHECK_EQUAL(links[i], links_test[i]);
