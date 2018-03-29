@@ -1,13 +1,13 @@
 ##Dockerfile
 #https://hub.docker.com/r/ducatel/visual-studio-linux-build-box/
 
-#FROM dmccloskey/docker-openms:AbsoluteQuantitation
-# FROM dmccloskey/docker-openms-contrib:boostLibs
+# FROM dmccloskey/docker-openms-contrib:develop
 FROM dmccloskey/docker-openms-contrib:smartPeak
 
 USER root
 COPY docker-entrypoint.sh /usr/local/bin/
 
+## use with dmccloskey/docker-openms-contrib:develop
 # RUN apt-get update && \
 # 	DEBIAN_FRONTEND=noninteractive && \
 # 	apt-get install -y \
@@ -20,6 +20,7 @@ COPY docker-entrypoint.sh /usr/local/bin/
 # 	git && \
 # 	apt-get clean && \
 #     rm -r /var/lib/apt/lists/* && \
+## use with dmccloskey/docker-openms-contrib:smartPeak
 RUN DEBIAN_FRONTEND=noninteractive && \
 	apk add --no-cache \
 	gdb \

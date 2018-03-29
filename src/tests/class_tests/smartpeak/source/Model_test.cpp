@@ -1361,7 +1361,7 @@ BOOST_AUTO_TEST_CASE(reInitializeNodeStatuses)
   }
 }
 
-BOOST_AUTO_TEST_CASE(modelTrainer) 
+BOOST_AUTO_TEST_CASE(modelTrainer1) 
 {
   // Toy network: 1 hidden layer, fully connected, DAG
   Node i1, i2, h1, h2, o1, o2, b1, b2;
@@ -1395,7 +1395,7 @@ BOOST_AUTO_TEST_CASE(modelTrainer)
   expected.setValues({{0, 1}, {0, 1}, {0, 1}, {0, 1}});
 
   // iterate until we find the optimal values
-  const int max_iter = 2;
+  const int max_iter = 20;
   for (int iter = 0; iter < max_iter; ++iter)
   {
     // assign the input data
@@ -1420,6 +1420,117 @@ BOOST_AUTO_TEST_CASE(modelTrainer)
   }
   
   const Eigen::Tensor<float, 0> total_error = model1.getError().sum();
+  BOOST_CHECK_CLOSE(total_error(0), 0.170693, 1e-3);  
+}
+
+BOOST_AUTO_TEST_CASE(modelTrainer2) 
+{
+  // Toy network: 1 hidden layer, fully connected, DCG
+  Node i1, h1, o1, b1, b2;
+  Link l1, l2, l3, lb1, lb2;
+  Weight w1, w2, w3, wb1, wb2;
+  Model model2;
+  makeModel2(
+    i1, h1, o1, b1, b2,
+    l1, l2, l3, lb1, lb2,
+    w1, w2, w3, wb1, wb2,
+    model2);
+
+  // initialize nodes
+  // const int batch_size = 8;
+  const int batch_size = 1;
+  model2.initNodes(batch_size);
+  model2.initWeights();
+  model2.setLossFunction(ModelLossFunction::MSE);
+
+  // set the input, biases, and output nodes
+  const std::vector<int> input_ids = {0};
+
+  const std::vector<int> biases_ids = {3, 4};
+  Eigen::Tensor<float, 2> biases(batch_size, biases_ids.size()); 
+  biases.setConstant(0);
+
+  const std::vector<int> output_nodes = {2};
+
+  // input sequence
+  const int sequence_length = 5;
+  Eigen::Tensor<float, 3> sequences_in(sequence_length, batch_size, input_ids.size()); 
+  sequences_in.setValues(
+    // {{{1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}},
+    // {{2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}},
+    // {{3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}},
+    // {{4}, {5}, {6}, {7}, {8}, {9}, {10}, {11}},
+    // {{5}, {6}, {7}, {8}, {9}, {10}, {11}, {12}}}
+    {{{1}},
+    {{2}},
+    {{3}},
+    {{4}},
+    {{5}}}
+  );
+
+  // expected sequence
+  // y = mx + b*yprev where m = 2 and b = 0.1
+  Eigen::Tensor<float, 3> sequences_out(sequence_length, batch_size, output_nodes.size()); 
+  sequences_out.setValues(
+    // {{{2}, {4.2}, {6.42}, {8.642}, {10.8642}, {13.08642}, {15.308642}, {17.5308642}},
+    // {{4.2}, {6.42}, {8.642}, {10.8642}, {13.08642}, {15.308642}, {17.5308642}, {19.75308642}},
+    // {{6.42}, {8.642}, {10.8642}, {13.08642}, {15.308642}, {17.5308642}, {19.75308642}, {21.97530864}},
+    // {{8.642}, {10.8642}, {13.08642}, {15.308642}, {17.5308642}, {19.75308642}, {21.97530864}, {24.19753086}},
+    // {{10.8642}, {13.08642}, {15.308642}, {17.5308642}, {19.75308642}, {21.97530864}, {24.19753086}, {26.41975309}}}
+    {{{2}},
+    {{4.2}},
+    {{6.42}},
+    {{8.642}},
+    {{10.8642}}}
+  );
+
+  // iterate until we find the optimal values
+  const int max_iter = 2;
+  sequence_length;
+  for (int iter = 0; iter < max_iter; ++iter)
+  {
+    for (int seq_iter = 0; seq_iter < sequence_length; ++seq_iter)
+    {
+      // assign the input data
+      Eigen::Tensor<float, 2> input = sequences_in.chip(seq_iter,0);
+      model2.mapValuesToNodes(input, input_ids, NodeStatus::activated); 
+      model2.mapValuesToNodes(biases, biases_ids, NodeStatus::activated);
+
+      // forward propogate
+      model2.forwardPropogate();
+
+      if (seq_iter > 0) // need to calculate yprev
+      {
+        // calculate the model error and node output error
+        Eigen::Tensor<float, 2> expected = sequences_out.chip(seq_iter,0);
+        model2.calculateError(expected, output_nodes);
+        std::cout<<"Error at iteration: "<<iter<<" is "<<model2.getError().sum()<<std::endl;
+
+        // back propogate
+        model2.backPropogate();
+
+        // update the weights
+        model2.updateWeights();
+      }
+
+      // reinitialize the model
+      model2.reInitializeNodeStatuses();
+
+      // 
+      std::cout << "Input node: "<< model2.getNode(0).getOutput() << std::endl;
+      std::cout << "Link #0: "<< model2.getWeight(0).getWeight() << std::endl;
+      std::cout << "Hidden node: "<< model2.getNode(1).getOutput() << std::endl;
+      std::cout << "Link #1: "<< model2.getWeight(1).getWeight() << std::endl;
+      std::cout << "Out node: "<< model2.getNode(2).getOutput() << std::endl;
+      std::cout << "Link #2: "<< model2.getWeight(2).getWeight() << std::endl;
+      std::cout << "Bias hidden node: "<< model2.getNode(3).getOutput() << std::endl;
+      std::cout << "Link #3: "<< model2.getWeight(3).getWeight() << std::endl;
+      std::cout << "Bias out node: "<< model2.getNode(4).getOutput() << std::endl;
+      std::cout << "Link #4: "<< model2.getWeight(4).getWeight() << std::endl;
+    }
+  }
+  
+  const Eigen::Tensor<float, 0> total_error = model2.getError().sum();
   BOOST_CHECK_CLOSE(total_error(0), 0.5, 1e-3);  
 }
 

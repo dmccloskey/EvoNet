@@ -737,7 +737,7 @@ namespace SmartPeak
       {
         const int batch_size = nodes_.at(link_map.second.getSinkNodeId()).getError().size(); // infer the batch_size
         Eigen::TensorMap<Eigen::Tensor<float, 1>> error_tensor(nodes_.at(link_map.second.getSinkNodeId()).getErrorPointer(), batch_size);
-        Eigen::TensorMap<Eigen::Tensor<float, 1>> output_tensor(nodes_.at(link_map.second.getSinkNodeId()).getOutputPointer(), batch_size);
+        Eigen::TensorMap<Eigen::Tensor<float, 1>> output_tensor(nodes_.at(link_map.second.getSourceNodeId()).getOutputPointer(), batch_size);
         auto derivative_tensor = - error_tensor * output_tensor; // derivative of the weight wrt the error
         Eigen::Tensor<float, 0> derivative_mean_tensor = derivative_tensor.mean(); // average derivative
         // std::cout<<"derivative_mean_tensor "<<derivative_mean_tensor(0)<<std::endl;
