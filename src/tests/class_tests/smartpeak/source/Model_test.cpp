@@ -1437,8 +1437,8 @@ BOOST_AUTO_TEST_CASE(modelTrainer2)
     model2);
 
   // initialize nodes
-  // const int batch_size = 8;
-  const int batch_size = 1;
+  const int batch_size = 8;
+  // const int batch_size = 1;
   model2.initNodes(batch_size);
   model2.initWeights();
   model2.setLossFunction(ModelLossFunction::MSE);
@@ -1456,36 +1456,36 @@ BOOST_AUTO_TEST_CASE(modelTrainer2)
   const int sequence_length = 5;
   Eigen::Tensor<float, 3> sequences_in(sequence_length, batch_size, input_ids.size()); 
   sequences_in.setValues(
-    // {{{1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}},
-    // {{2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}},
-    // {{3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}},
-    // {{4}, {5}, {6}, {7}, {8}, {9}, {10}, {11}},
-    // {{5}, {6}, {7}, {8}, {9}, {10}, {11}, {12}}}
-    {{{1}},
-    {{2}},
-    {{3}},
-    {{4}},
-    {{5}}}
+    {{{1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}},
+    {{2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}},
+    {{3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}},
+    {{4}, {5}, {6}, {7}, {8}, {9}, {10}, {11}},
+    {{5}, {6}, {7}, {8}, {9}, {10}, {11}, {12}}}
+    // {{{1}},
+    // {{2}},
+    // {{3}},
+    // {{4}},
+    // {{5}}}
   );
 
   // expected sequence
   // y = mx + b*yprev where m = 2 and b = 0.1
   Eigen::Tensor<float, 3> sequences_out(sequence_length, batch_size, output_nodes.size()); 
   sequences_out.setValues(
-    // {{{2}, {4.2}, {6.42}, {8.642}, {10.8642}, {13.08642}, {15.308642}, {17.5308642}},
-    // {{4.2}, {6.42}, {8.642}, {10.8642}, {13.08642}, {15.308642}, {17.5308642}, {19.75308642}},
-    // {{6.42}, {8.642}, {10.8642}, {13.08642}, {15.308642}, {17.5308642}, {19.75308642}, {21.97530864}},
-    // {{8.642}, {10.8642}, {13.08642}, {15.308642}, {17.5308642}, {19.75308642}, {21.97530864}, {24.19753086}},
-    // {{10.8642}, {13.08642}, {15.308642}, {17.5308642}, {19.75308642}, {21.97530864}, {24.19753086}, {26.41975309}}}
-    {{{2}},
-    {{4.2}},
-    {{6.42}},
-    {{8.642}},
-    {{10.8642}}}
+    {{{2}, {4.2}, {6.42}, {8.642}, {10.8642}, {13.08642}, {15.308642}, {17.5308642}},
+    {{4.2}, {6.42}, {8.642}, {10.8642}, {13.08642}, {15.308642}, {17.5308642}, {19.75308642}},
+    {{6.42}, {8.642}, {10.8642}, {13.08642}, {15.308642}, {17.5308642}, {19.75308642}, {21.97530864}},
+    {{8.642}, {10.8642}, {13.08642}, {15.308642}, {17.5308642}, {19.75308642}, {21.97530864}, {24.19753086}},
+    {{10.8642}, {13.08642}, {15.308642}, {17.5308642}, {19.75308642}, {21.97530864}, {24.19753086}, {26.41975309}}}
+    // {{{2}},
+    // {{4.2}},
+    // {{6.42}},
+    // {{8.642}},
+    // {{10.8642}}}
   );
 
   // iterate until we find the optimal values
-  const int max_iter = 2;
+  const int max_iter = 20;
   sequence_length;
   for (int iter = 0; iter < max_iter; ++iter)
   {
@@ -1523,10 +1523,10 @@ BOOST_AUTO_TEST_CASE(modelTrainer2)
       std::cout << "Link #1: "<< model2.getWeight(1).getWeight() << std::endl;
       std::cout << "Out node: "<< model2.getNode(2).getOutput() << std::endl;
       std::cout << "Link #2: "<< model2.getWeight(2).getWeight() << std::endl;
-      std::cout << "Bias hidden node: "<< model2.getNode(3).getOutput() << std::endl;
-      std::cout << "Link #3: "<< model2.getWeight(3).getWeight() << std::endl;
-      std::cout << "Bias out node: "<< model2.getNode(4).getOutput() << std::endl;
-      std::cout << "Link #4: "<< model2.getWeight(4).getWeight() << std::endl;
+      // std::cout << "Bias hidden node: "<< model2.getNode(3).getOutput() << std::endl;
+      // std::cout << "Link #3: "<< model2.getWeight(3).getWeight() << std::endl;
+      // std::cout << "Bias out node: "<< model2.getNode(4).getOutput() << std::endl;
+      // std::cout << "Link #4: "<< model2.getWeight(4).getWeight() << std::endl;
     }
   }
   
