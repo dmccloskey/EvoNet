@@ -362,13 +362,30 @@ public:
 
   /**
     @brief Base class for all solvers.
+
+    Clipping reference:
+      Razvan Pascanu, Tomas Mikolov, Yoshua Bengio (2013)
+      On the difficulty of training Recurrent Neural Networks
+      arXiv:1211.5063 [cs.LG]
   */
   class SolverOp
   {
 public: 
     SolverOp(){}; 
+    SolverOp(const float& gradient_threshold){setGradientThreshold(gradient_threshold);}; 
     ~SolverOp(){};
+    void setGradientThreshold(const float& gradient_threshold){gradient_threshold_ = gradient_threshold;};
+    float getGradientThreshold() const{return gradient_threshold_;};
     virtual float operator()(const float& weight, const float& error) = 0;
+    float clip_gradient(const float& gradient)
+    {
+      if (std::abs(gradient) >= gradient_threshold_)
+      {
+        return gradient * gradient_threshold_/std::abs(gradient);
+      }
+    }
+private:
+    float gradient_threshold_ = 1e6; ///< maximum gradient magnitude
   };
 
   /**
