@@ -13,18 +13,15 @@ namespace SmartPeak
   {        
   }
 
-  Link::Link(const int& id, const int& source_node_id,
-      const int& sink_node_id):
+  Link::Link(const int& id):
     id_(id)
   {
-    setSourceNodeId(source_node_id);
-    setSinkNodeId(sink_node_id);
   }
 
   Link::Link(const int& id, const int& source_node_id,
       const int& sink_node_id,
-      const SmartPeak::WeightInitMethod& weight_init):
-    id_(id), weight_init_(weight_init)
+      const int& weight_id):
+    id_(id), weight_id_(weight_id)
   {
     setSourceNodeId(source_node_id);
     setSinkNodeId(sink_node_id);
@@ -75,45 +72,12 @@ namespace SmartPeak
     return sink_node_id_;
   }
 
-  void Link::setWeight(const float& weight)
+  void Link::setWeightId(const int& weight_id)
   {
-    weight_ = weight;
+    weight_id_ = weight_id;
   }
-  float Link::getWeight() const
+  int Link::getWeightId() const
   {
-    return weight_;
-  }
-
-  void Link::setWeightInitMethod(const SmartPeak::WeightInitMethod& weight_init)
-  {
-    weight_init_ = weight_init;
-  }
-  SmartPeak::WeightInitMethod Link::getWeightInitMethod() const
-  {
-    return weight_init_;
-  }
-
-  void Link::initWeight(const float& op_input)
-  {
-    switch (weight_init_)
-    {
-      case SmartPeak::WeightInitMethod::RandWeightInit:
-      {
-        RandWeightInitOp operation;
-        weight_ = operation(op_input);
-        break;
-      }
-      case SmartPeak::WeightInitMethod::ConstWeightInit:
-      {
-        ConstWeightInitOp operation;
-        weight_ = operation(op_input);
-        break;
-      }
-      default:
-      {
-        weight_ = 0.0;
-        break;
-      }
-    }
+    return weight_id_;
   }
 }

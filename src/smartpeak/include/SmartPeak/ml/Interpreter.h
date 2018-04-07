@@ -5,7 +5,6 @@
 
 #include <SmartPeak/ml/Node.h>
 #include <SmartPeak/ml/Link.h>
-#include <SmartPeak/ml/Interpreter.h>
 
 #include <vector>
 
@@ -33,67 +32,14 @@ namespace SmartPeak
           1. sinks * weights . derivatives = sources
           2. adjust the weights
       Update the network model from the execution graph tensors (if training)
+
+    TODO: rename to Trainer
   */
   class Interpreter
   {
 public:
     Interpreter(); ///< Default constructor
     ~Interpreter(); ///< Default destructor
- 
-    /**
-      @brief Provide a list of tensor indexes that are inputs to the model.
-        Each index is bound check and this modifies the consistent_ flag of the
-        interpreter.
-
-      @param[in] input_tensors Tensor input indexes
-
-      @returns Status True on success, False if not
-    */ 
-    bool setInputTensors(std::vector<int> input_tensors);
- 
-    /**
-      @brief Provide a list of tensor indexes that are outputs to the model
-        Each index is bound check and this modifies the consistent_ flag of the
-        interpreter.
-
-      @param[in] input_tensors Tensor output indexes
-
-      @returns Status True on success, False if not
-    */ 
-    bool setOutputTensors(std::vector<int> output_tensors);
- 
-    /**
-      @brief Adds intermediate layers.
-
-      @param[in] source_tensors Tensor output indexes
-      @param[in] sink_tensors Tensor output indexes
-
-      @returns Status True on success, False if not
-    */ 
-    bool addIntermediateTensor(const std::vector<int>& source_tensors,
-      const std::vector<int>& sink_tensors);
- 
-    /**
-      @brief Adds `tensors_to_add` tensors, preserving pre-existing Tensor entries.
-        The value pointed to by `first_new_tensor_index` will be set to the
-        index of the first new tensor if `first_new_tensor_index` is non-null.
-
-      @param[in] tensors_to_add New tensors to add
-      @param[in] first_new_tensor_index Index to insert new tensors
-
-      @returns Status True on success, False if not
-    */ 
-    bool addTensors(const std::vector<int>& tensors_to_add,
-      int& first_new_tensor_index);
- 
-    /**
-      @brief Removes `tensors_to_remove` tensors.
-
-      @param[in] tensors_to_remove Existing tensors to remove
-
-      @returns Status True on success, False if not
-    */ 
-    bool removeTensors(const std::vector<int>& tensors_to_remove);
  
     /**
       @brief Allocate tensor dimensions.
@@ -120,77 +66,6 @@ public:
       @returns Status True on success, False if not
     */ 
     bool checkTensorIndices();
- 
-    /**
-      @brief Add an instruction involving two tensors to the execution graph.
-
-      @param[in] instruction Instruction to add
-
-      @returns Status True on success, False if not
-    */ 
-    bool addInstructions();
- 
-    /**
-      @brief Remove an instruction involving two tensors in the execution graph.
-
-      @param[in] instruction Instruction to remove
-
-      @returns Status True on success, False if not
-    */ 
-    bool removeInstructions();
- 
-    /**
-      @brief Map a network model to the execution graph.
-
-      @param[in] model The model to construct the execution graph from
-
-      @returns Status True on success, False if not
-    */ 
-    bool mapModelToTensors();
- 
-    /**
-      @brief Update a network model parameters from the tensors of the
-        execution graph.
-
-      @param[in, out] model The model update
-
-      @returns Status True on success, False if not
-    */ 
-    bool updateModelFromTensors();
- 
-    /**
-      @brief Forward propogation
-
-      @param[in] Input data
-
-      @returns Status True on success, False if not
-    */ 
-    bool forwardPropogate();
- 
-    /**
-      @brief Error calculation
-
-      @param[in] Expected values
-
-      @returns Status True on success, False if not
-    */ 
-    bool errorCalculation();
- 
-    /**
-      @brief Backward propogation
-
-      @param[in] Error
-
-      @returns Status True on success, False if not
-    */ 
-    bool backwardPropogate();
- 
-    /**
-      @brief Update the weights
-
-      @returns Status True on success, False if not
-    */ 
-    bool weightUpdate();
 
 private:
 

@@ -5,6 +5,8 @@
 
 #include <SmartPeak/ml/Link.h>
 #include <SmartPeak/ml/Node.h>
+#include <SmartPeak/ml/Weight.h>
+#include <SmartPeak/ml/Operation.h>
 
 #include <unsupported/Eigen/CXX11/Tensor>
 #include <vector>
@@ -39,11 +41,13 @@ public:
         std::tie(
           id_,
           links_,
-          nodes_
+          nodes_,
+          weights_
         ) == std::tie(
           other.id_,
           other.links_,
-          other.nodes_
+          other.nodes_,
+          other.weights_
         )
       ;
     }
@@ -55,14 +59,8 @@ public:
 
     /**
       @brief Initialize all link weights
-
-      input and node Link weights will be initialized using the method of He, et al 2015
-      bias Link weight will be initialized as a constant
-
-      TODO: make a new class called Weights.  Replace weight with weight_id in Link.  
-        change initLinks() to initWeights()
     */ 
-    void initLinks() const;  //TODO
+    void initWeights();
 
     /**
       @brief Initialize all node output to zero.
@@ -205,11 +203,15 @@ public:
  
     /**
       @brief Update the weights
-
-      @param[in] learning_rate Learning rate to update the wieghts
       
     */ 
-    void updateWeights(const float& learning_rate);  
+    void updateWeights();
+ 
+    /**
+      @brief Reset the node statuses back to inactivated
+      
+    */ 
+    void reInitializeNodeStatuses();
 
     void setId(const int& id); ///< id setter
     int getId() const; ///< id getter
@@ -253,6 +255,21 @@ public:
     void removeNodes(const std::vector<int>& node_ids);
  
     /**
+      @brief Add new weights to the model.
+
+      @param[in] weights Weights to add to the model
+    */ 
+    void addWeights(const std::vector<Weight>& weights);
+    Weight getWeight(const int& weight_id) const; ///< weight getter
+ 
+    /**
+      @brief Remove existing weights from the model.
+
+      @param[in] weight_ids Weights to remove from the model
+    */ 
+    void removeWeights(const std::vector<int>& weight_ids);
+ 
+    /**
       @brief Removes nodes from the model that no longer
         have an associated link.
     */ 
@@ -263,11 +280,18 @@ public:
         have associated nodes.
     */ 
     void pruneLinks();    
+ 
+    /**
+      @brief Removes weights from the model that no longer
+        have associated links.
+    */ 
+    void pruneWeights(); 
 
 private:
     int id_; ///< Model ID
     std::map<int, Link> links_; ///< Model links
     std::map<int, Node> nodes_; ///< Model nodes
+    std::map<int, Weight> weights_; ///< Model nodes
     Eigen::Tensor<float, 1> error_; ///< Model error
     SmartPeak::ModelLossFunction loss_function_; ///< Model loss function
 
