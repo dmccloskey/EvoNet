@@ -66,9 +66,11 @@ public:
       @brief Initialize all node output to zero.
         The node statuses are then changed to NodeStatus::deactivated
 
-      @param[in] batch_size Size of the output, error, and derivative node vectors
+      @param[in] batch_size Batch size of the output, error, and derivative node vectors
+      @param[in] memory_size Memory size of the output, error, and derivative node vectors
     */ 
     void initNodes(const int& batch_size);
+    void initNodes(const int& batch_size, const int& memory_size); //TODO
 
     /**
       @brief Assigns output or error values to the nodes.
@@ -148,13 +150,35 @@ public:
     void forwardPropogate();    
  
     /**
+      @brief Foward propogation through time (FPTT) of the network model.
+        All node outputs and derivatives are calculating
+        starting from the input nodes.  Each node status is
+        changed from "initialized" to "activated" when the
+        outputs and derivatives are calculated.  This is repeated
+        for n_time steps without weight updates.
+
+      @param[in] time_steps The number of time_steps forward to 
+        continuously accumulate errors.
+    */ 
+    void FPTT(const int& time_steps);
+ 
+    /**
       @brief Calculates the error of the model with respect to
-        expected values
+        the expected values
 
       @param[in] values Expected node output values
       @param[in] node_ids Output nodes
     */ 
     void calculateError(const Eigen::Tensor<float, 2>& values, const std::vector<int>& node_ids);
+ 
+    /**
+      @brief Calculates the error of the model through time (CETT)
+        with respect to the expected values
+
+      @param[in] values Expected node output values
+      @param[in] node_ids Output nodes
+    */ 
+    void CETT(const Eigen::Tensor<float, 3>& values, const std::vector<int>& node_ids);
  
     /**
       @brief A prelude to a back propogation step.  Returns a vector of links
@@ -200,6 +224,28 @@ public:
         outputs and derivatives are calculated.
     */ 
     void backPropogate();  
+ 
+    /**
+      @brief Truncated Back Propogation Through Time (TBPTT) of the network model.
+        All node errors are calculating starting from the output nodes.  
+        Each node status is changed from "activated" to "corrected" when the
+        outputs and derivatives are calculated.
+
+      @param[in] time_steps The number of time_steps backwards to 
+        unfold the network model.
+    */ 
+    void TBPTT(const int& time_steps);  
+ 
+    /**
+      @brief Recurrent Real Time Learning (RTRL) of the network model.
+        All node errors are calculating starting from the output nodes.  
+        Each node status is changed from "activated" to "corrected" when the
+        outputs and derivatives are calculated.
+
+      @param[in] time_steps The number of time_steps backwards to 
+        unfold the network model.
+    */ 
+    void RTRL(const int& time_steps);  
  
     /**
       @brief Update the weights
@@ -293,6 +339,7 @@ private:
     std::map<int, Node> nodes_; ///< Model nodes
     std::map<int, Weight> weights_; ///< Model nodes
     Eigen::Tensor<float, 1> error_; ///< Model error
+    // Eigen::Tensor<float, 2> error_; ///< Model error
     SmartPeak::ModelLossFunction loss_function_; ///< Model loss function
 
   };
