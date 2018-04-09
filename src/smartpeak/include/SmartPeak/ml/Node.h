@@ -64,26 +64,26 @@ public:
     void setStatus(const SmartPeak::NodeStatus& status); ///< status setter
     SmartPeak::NodeStatus getStatus() const; ///< status getter
 
-    // TODO: will this be needed or can we point to the Tensor value?
-    void setOutput(const Eigen::Tensor<float, 1>& output); ///< output setter
-    Eigen::Tensor<float, 1> getOutput() const; ///< output copy getter
+    void setOutput(const Eigen::Tensor<float, 2>& output); ///< output setter
+    Eigen::Tensor<float, 2> getOutput() const; ///< output copy getter
     float* getOutputPointer(); ///< output pointer getter
 
-    void setError(const Eigen::Tensor<float, 1>& error); ///< error setter
-    Eigen::Tensor<float, 1> getError() const; ///< error copy getter
+    void setError(const Eigen::Tensor<float, 2>& error); ///< error setter
+    Eigen::Tensor<float, 2> getError() const; ///< error copy getter
     float* getErrorPointer(); ///< error pointer getter
 
-    void setDerivative(const Eigen::Tensor<float, 1>& derivative); ///< derivative setter
-    Eigen::Tensor<float, 1> getDerivative() const; ///< derivative copy getter
+    void setDerivative(const Eigen::Tensor<float, 2>& derivative); ///< derivative setter
+    Eigen::Tensor<float, 2> getDerivative() const; ///< derivative copy getter
     float* getDerivativePointer(); ///< derivative pointer getter
 
     /**
       @brief Initialize node output to zero.
         The node statuses are then changed to NodeStatus::deactivated
 
-      @param[in] batch_size Size of the output, error, and derivative node vectors
+      @param[in] batch_size Size of the row dim for the output, error, and derivative node vectors
+      @param[in] memory_size Size of the col dim output, error, and derivative node vectors
     */ 
-    void initNode(const int& batch_size);
+    void initNode(const int& batch_size, const int& memory_size);
 
     /**
       @brief The current output is passed through an activation function.
@@ -101,9 +101,17 @@ private:
     SmartPeak::NodeType type_; ///< Node Type
     SmartPeak::NodeStatus status_; ///< Node Status
     
-    Eigen::Tensor<float, 1> output_; ///< Node Output (dim is the # of samples)
-    Eigen::Tensor<float, 1> error_; ///< Node Error (dim is the # of samples)
-    Eigen::Tensor<float, 1> derivative_; ///< Node Error (dim is the # of samples)
+    
+
+    /**
+      @brief output, error and derivative have the following dimensions:
+        rows: # of samples, cols: # of time steps
+        where the number of samples spans 0 to n samples
+        and the number of time steps spans m time points to 0
+    */
+    Eigen::Tensor<float, 2> output_; ///< Node Output (rows: # of samples, cols: # of time steps)
+    Eigen::Tensor<float, 2> error_; ///< Node Error (rows: # of samples, cols: # of time steps)
+    Eigen::Tensor<float, 2> derivative_; ///< Node Error (rows: # of samples, cols: # of time steps)
 
   };
 }

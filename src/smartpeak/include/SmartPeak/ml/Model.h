@@ -69,8 +69,25 @@ public:
       @param[in] batch_size Batch size of the output, error, and derivative node vectors
       @param[in] memory_size Memory size of the output, error, and derivative node vectors
     */ 
-    void initNodes(const int& batch_size);
-    void initNodes(const int& batch_size, const int& memory_size); //TODO
+    void initNodes(const int& batch_size, const int& memory_size);
+
+    /**
+      @brief Assigns output or error values to the nodes.
+        The node statuses are then changed accordingly (i.e.,
+        status_update of "activated" will update the output values
+        of the node and status_update of "corrected" will update
+        the error values of the node.
+
+      dimensions of batch size by memory size by nodes
+
+      @param[in] values Values to assign to the node
+      @param[in] node_ids 
+      @param[in] status_update
+    */ 
+    void mapValuesToNodes(
+      const Eigen::Tensor<float, 3>& values,
+      const std::vector<int>& node_ids,
+      const NodeStatus& status_update);
 
     /**
       @brief Assigns output or error values to the nodes.
@@ -85,7 +102,7 @@ public:
       @param[in] node_ids 
       @param[in] status_update
     */ 
-    void mapValuesToNodes(
+    void mapValuesToCurrentNodes(
       const Eigen::Tensor<float, 2>& values,
       const std::vector<int>& node_ids,
       const NodeStatus& status_update);

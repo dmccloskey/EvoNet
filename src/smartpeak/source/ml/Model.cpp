@@ -326,11 +326,11 @@ namespace SmartPeak
     }
   }
 
-  void Model::initNodes(const int& batch_size)
+  void Model::initNodes(const int& batch_size, const int& memory_size)
   {
     for (auto& node_map : nodes_)
     {
-      node_map.second.initNode(batch_size);
+      node_map.second.initNode(batch_size, memory_size);
     }
   }
 
@@ -342,19 +342,19 @@ namespace SmartPeak
     }
   }
   
-  void Model::mapValuesToNodes(
+  void Model::mapValuesToCurrentNodes(
     const Eigen::Tensor<float, 2>& values,
     const std::vector<int>& node_ids,
     const NodeStatus& status_update)
   {
     // check dimension mismatches
-    if (node_ids.size() != values.dimension(1))
+    if (node_ids.size() != values.dimension(2))
     {
       std::cout << "The number of input features and the number of nodes do not match." << std::endl;
       return;
     }
     // assumes the node exists
-    else if (nodes_.at(node_ids[0]).getOutput().size() != values.dimension(0))
+    else if (nodes_.at(node_ids[0]).getOutput().dimension(0) != values.dimension(0))
     {
       std::cout << "The number of input samples and the node batch size does not match." << std::endl;
       return;
@@ -385,6 +385,55 @@ namespace SmartPeak
       }
     }
   }
+  
+  void Model::mapValuesToNodes(
+    const Eigen::Tensor<float, 3>& values,
+    const std::vector<int>& node_ids,
+    const NodeStatus& status_update)
+  {
+    // check dimension mismatches
+    if (node_ids.size() != values.dimension(2))
+    {
+      std::cout << "The number of input features and the number of nodes do not match." << std::endl;
+      return;
+    }
+    // assumes the node exists
+    else if (nodes_.at(node_ids[0]).getOutput().dimension(0) != values.dimension(0))
+    {
+      std::cout << "The number of input samples and the node batch size does not match." << std::endl;
+      return;
+    }
+    else if (nodes_.at(node_ids[0]).getOutput().dimension(1) != values.dimension(1))
+    {
+      std::cout << "The number of input time steps and the node memory size does not match." << std::endl;
+      return;
+    }
+
+    // copy over the input values
+    for (int i=0; i<node_ids.size(); ++i)
+    {
+      if (status_update == NodeStatus::activated)
+      {
+        for (int j=0; j<nodes_.at(node_ids[i]).getOutput().size(); ++j)
+        {
+          // SANITY CHECK:
+          // std::cout << "i" << i << " j" << j << " values: " << values.data()[i*values.dimension(0) + j] << std::endl;
+          nodes_.at(node_ids[i]).getOutputPointer()[j] = values.data()[i*values.dimension(1)*values.dimension(2) + j];
+          nodes_.at(node_ids[i]).setStatus(NodeStatus::activated);
+        }
+      }
+      else if (status_update == NodeStatus::corrected)
+      {
+        for (int j=0; j<nodes_.at(node_ids[i]).getError().size(); ++j)
+        {
+          // SANITY CHECK:
+          // std::cout << "i" << i << " j" << j << " values: " << values.data()[i*values.dimension(0) + j] << std::endl;
+          nodes_.at(node_ids[i]).getErrorPointer()[j] = values.data()[i*values.dimension(1)*values.dimension(2) + j];
+          nodes_.at(node_ids[i]).setStatus(NodeStatus::corrected);
+        }
+      }
+    }
+  }
 
   void Model::forwardPropogateLayerNetInput(
     const std::vector<int>& links,
@@ -392,7 +441,7 @@ namespace SmartPeak
     const std::vector<int>& sink_nodes)
   {
     // infer the batch size from the first source node
-    const int batch_size = nodes_.at(source_nodes[0]).getOutput().size();
+    const int batch_size = nodes_.at(source_nodes[0]).getOutput().dimension(0);
 
     // concatenate the source and weight tensors
     // using col-major ordering where rows are the batch vectors
@@ -404,7 +453,7 @@ namespace SmartPeak
     {
       for (int j=0; j<batch_size; ++j)
       {
-        source_ptr[i*batch_size + j] = nodes_.at(source_nodes[i]).getOutputPointer()[j];
+        source_ptr[i*batch_size + j] = nodes_.at(source_nodes[i]).getOutputPointer()[j]; //current time-step
       }
     }
 
@@ -430,7 +479,7 @@ namespace SmartPeak
     {
       for (int j=0; j<batch_size; ++j)
       {
-        sink_ptr[i*batch_size + j] = nodes_.at(sink_nodes[i]).getOutputPointer()[j];
+        sink_ptr[i*batch_size + j] = nodes_.at(sink_nodes[i]).getOutputPointer()[j]; //current time-step
       }
     }
 
@@ -447,7 +496,7 @@ namespace SmartPeak
     // std::cout << "sink_tensor " << sink_tensor << std::endl;
 
     // update the sink nodes
-    mapValuesToNodes(sink_tensor, sink_nodes, NodeStatus::activated);
+    mapValuesToCurrentNodes(sink_tensor, sink_nodes, NodeStatus::activated);
     // std::cout<<&sink_ptr[0]<<std::endl;
     // std::cout<<sink_ptr[0]<<std::endl;
     // std::cout<<&nodes_.at(sink_nodes[0]).getOutputPointer()[0]<<std::endl;
@@ -492,7 +541,7 @@ namespace SmartPeak
   {
     //TODO: encapsulate into a seperate method
     // infer the batch size from the first source node
-    const int batch_size = nodes_.at(node_ids[0]).getOutput().size();
+    const int batch_size = nodes_.at(node_ids[0]).getOutput().dimension(0);
 
     //TODO: encapsulate into a seperate method
     // check dimension mismatches
@@ -571,7 +620,7 @@ namespace SmartPeak
     }
 
     // update the output node errors
-    mapValuesToNodes(error_tensor, node_ids, NodeStatus::corrected);
+    mapValuesToCurrentNodes(error_tensor, node_ids, NodeStatus::corrected);
   }
   
   void Model::getNextUncorrectedLayer(
@@ -629,7 +678,7 @@ namespace SmartPeak
     const std::vector<int>& sink_nodes)
   {
     // infer the batch size from the first source node
-    const int batch_size = nodes_.at(source_nodes[0]).getOutput().size();
+    const int batch_size = nodes_.at(source_nodes[0]).getOutput().dimension(0);
 
     // concatenate the source and weight tensors
     // using col-major ordering where rows are the batch vectors
@@ -694,7 +743,7 @@ namespace SmartPeak
     // std::cout << "sink_tensor " << sink_tensor << std::endl;
 
     // update the sink nodes
-    mapValuesToNodes(sink_tensor, sink_nodes, NodeStatus::corrected);
+    mapValuesToCurrentNodes(sink_tensor, sink_nodes, NodeStatus::corrected);
   }
   
   void Model::backPropogate()

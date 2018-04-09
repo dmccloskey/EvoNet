@@ -50,11 +50,11 @@ namespace SmartPeak
     return status_;
   }
 
-  void Node::setOutput(const Eigen::Tensor<float, 1>& output)
+  void Node::setOutput(const Eigen::Tensor<float, 2>& output)
   {
     output_ = output;
   }
-  Eigen::Tensor<float, 1> Node::getOutput() const
+  Eigen::Tensor<float, 2> Node::getOutput() const
   {
     return output_;
   }
@@ -63,11 +63,11 @@ namespace SmartPeak
     return output_.data();
   }
 
-  void Node::setError(const Eigen::Tensor<float, 1>& error)
+  void Node::setError(const Eigen::Tensor<float, 2>& error)
   {
     error_ = error;
   }
-  Eigen::Tensor<float, 1> Node::getError() const
+  Eigen::Tensor<float, 2> Node::getError() const
   {
     return error_;
   }
@@ -76,11 +76,11 @@ namespace SmartPeak
     return error_.data();
   }
 
-  void Node::setDerivative(const Eigen::Tensor<float, 1>& derivative)
+  void Node::setDerivative(const Eigen::Tensor<float, 2>& derivative)
   {
     derivative_ = derivative;
   }
-  Eigen::Tensor<float, 1> Node::getDerivative() const
+  Eigen::Tensor<float, 2> Node::getDerivative() const
   {
     return derivative_;
   }
@@ -89,9 +89,9 @@ namespace SmartPeak
     return derivative_.data();
   }
 
-  void Node::initNode(const int& batch_size)
+  void Node::initNode(const int& batch_size, const int& memory_size)
   {
-    Eigen::Tensor<float, 1> init_values(batch_size);
+    Eigen::Tensor<float, 2> init_values(batch_size, memory_size);
     init_values.setConstant(0.0f);
     setOutput(init_values);
     setError(init_values);
