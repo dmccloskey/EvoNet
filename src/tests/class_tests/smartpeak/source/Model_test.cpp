@@ -836,7 +836,10 @@ BOOST_AUTO_TEST_CASE(forwardPropogateLayerNetInput)
     BOOST_CHECK(model1.getNode(sink_nodes[i]).getStatus() == NodeStatus::activated);
     for (int j=0; j<batch_size; j++)
     {
-      BOOST_CHECK_EQUAL(model1.getNode(sink_nodes[i]).getOutput()(j, 0), net(j, i));
+      for (int k=0; k<memory_size; ++k)
+      {
+        BOOST_CHECK_EQUAL(model1.getNode(sink_nodes[i]).getOutput()(j, 0), net(j, i));
+      }      
     }
   }
 }
@@ -892,8 +895,11 @@ BOOST_AUTO_TEST_CASE(forwardPropogateLayerActivation)
     BOOST_CHECK(model1.getNode(sink_nodes[i]).getStatus() == NodeStatus::activated);
     for (int j=0; j<batch_size; j++)
     {
-      BOOST_CHECK_EQUAL(model1.getNode(sink_nodes[i]).getOutput()(j, 0), output(j, i));
-      BOOST_CHECK_EQUAL(model1.getNode(sink_nodes[i]).getDerivative()(j, 0), derivative(j, i));
+      for (int k=0; k<memory_size; ++k)
+      {
+        BOOST_CHECK_EQUAL(model1.getNode(sink_nodes[i]).getOutput()(j, k), output(j, i));
+        BOOST_CHECK_EQUAL(model1.getNode(sink_nodes[i]).getDerivative()(j, k), derivative(j, i));
+      }
     }
   }
 }
@@ -941,10 +947,13 @@ BOOST_AUTO_TEST_CASE(forwardPropogate)
     BOOST_CHECK_EQUAL(model1.getNode(output_nodes[i]).getOutput().size(), batch_size*memory_size);
     BOOST_CHECK_EQUAL(model1.getNode(output_nodes[i]).getDerivative().size(), batch_size*memory_size);
     BOOST_CHECK(model1.getNode(output_nodes[i]).getStatus() == NodeStatus::activated);
-    for (int j=0; j<batch_size; j++)
+    for (int j=0; j<batch_size; ++j)
     {
-      BOOST_CHECK_EQUAL(model1.getNode(output_nodes[i]).getOutput()(j, 0), output(j, i));
-      BOOST_CHECK_EQUAL(model1.getNode(output_nodes[i]).getDerivative()(j, 0), derivative(j, i));
+      for (int k=0; k<memory_size; ++k)
+      {
+        BOOST_CHECK_EQUAL(model1.getNode(output_nodes[i]).getOutput()(j, k), output(j, i));
+        BOOST_CHECK_EQUAL(model1.getNode(output_nodes[i]).getDerivative()(j, k), derivative(j, i));
+      }
     }
   }
 }
@@ -979,7 +988,7 @@ BOOST_AUTO_TEST_CASE(calculateError)
   error.setValues({0.125, 0.125, 0.125, 0.125});
   for (int j=0; j<batch_size; j++)
   {
-    BOOST_CHECK_CLOSE(model1.getError()[j], error(j), 1e-6);
+    BOOST_CHECK_CLOSE(model1.getError()(j), error(j), 1e-6);
   }
   Eigen::Tensor<float, 2> node_error(batch_size, output_nodes.size()); 
   node_error.setValues({{0, 0.25}, {0, 0.25}, {0, 0.25}, {0, 0.25}});
@@ -987,9 +996,12 @@ BOOST_AUTO_TEST_CASE(calculateError)
   {
     BOOST_CHECK_EQUAL(model1.getNode(output_nodes[i]).getError().size(), batch_size*memory_size);
     BOOST_CHECK(model1.getNode(output_nodes[i]).getStatus() == NodeStatus::corrected);
-    for (int j=0; j<batch_size; j++)
+    for (int j=0; j<batch_size; ++j)
     {
-      BOOST_CHECK_EQUAL(model1.getNode(output_nodes[i]).getError()(j, 0), node_error(j, i));
+      for (int k=0; k<memory_size; ++k)
+      {
+        BOOST_CHECK_EQUAL(model1.getNode(output_nodes[i]).getError()(j, k), node_error(j, i));
+      }
     }
   }
 
@@ -1001,7 +1013,7 @@ BOOST_AUTO_TEST_CASE(calculateError)
 
   // control test (output values should be 0.0 from initialization)
   error.setValues({52.625, 85.625, 126.625, 175.625});
-  for (int j=0; j<batch_size; j++)
+  for (int j=0; j<batch_size; ++j)
   {
     BOOST_CHECK_CLOSE(model1.getError()(j), error(j), 1e-6);
   }
@@ -1010,9 +1022,12 @@ BOOST_AUTO_TEST_CASE(calculateError)
   {
     BOOST_CHECK_EQUAL(model1.getNode(output_nodes[i]).getError().size(), batch_size*memory_size);
     BOOST_CHECK(model1.getNode(output_nodes[i]).getStatus() == NodeStatus::corrected);
-    for (int j=0; j<batch_size; j++)
+    for (int j=0; j<batch_size; ++j)
     {
-      BOOST_CHECK_EQUAL(model1.getNode(output_nodes[i]).getError()(j, 0), node_error(j, i));
+      for (int k=0; k<memory_size; ++k)
+      {
+        BOOST_CHECK_EQUAL(model1.getNode(output_nodes[i]).getError()(j, k), node_error(j, i));
+      }
     }
   }
 }
@@ -1263,10 +1278,12 @@ BOOST_AUTO_TEST_CASE(backPropogateLayerError)
   {
     BOOST_CHECK_EQUAL(model1.getNode(sink_nodes[i]).getError().size(), batch_size*memory_size);
     BOOST_CHECK(model1.getNode(sink_nodes[i]).getStatus() == NodeStatus::corrected);
-    for (int j=0; j<batch_size; j++)
+    for (int j=0; j<batch_size; ++j)
     {
-      // std::cout << "i " << i << " j " << j << std::endl;
-      BOOST_CHECK_EQUAL(model1.getNode(sink_nodes[i]).getError()(j, 0), error(j, i));
+      for (int k=0; k<memory_size; ++k)
+      {
+        BOOST_CHECK_EQUAL(model1.getNode(sink_nodes[i]).getError()(j, k), error(j, i));
+      }      
     }
   }
 }
@@ -1333,8 +1350,10 @@ BOOST_AUTO_TEST_CASE(backPropogate)
     BOOST_CHECK(model1.getNode(hidden_nodes[i]).getStatus() == NodeStatus::corrected);
     for (int j=0; j<batch_size; j++)
     {
-      // std::cout << "i " << i << " j " << j << std::endl;
-      BOOST_CHECK_EQUAL(model1.getNode(hidden_nodes[i]).getError()(j, 0), error(j, i));
+      for (int k=0; k<memory_size; ++k)
+      {
+        BOOST_CHECK_EQUAL(model1.getNode(hidden_nodes[i]).getError()(j, k), error(j, i));
+      }       
     }
   }
 }
