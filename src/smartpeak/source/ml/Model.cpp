@@ -421,7 +421,7 @@ namespace SmartPeak
         for (int j=0; j<nodes_.at(node_ids[i]).getOutput().size(); ++j)
         {
           // SANITY CHECK:
-          std::cout << "i" << i << " j" << j << " values: " << values.data()[i*values.dimension(0)*values.dimension(1) + j] << std::endl;
+          // std::cout << "i" << i << " j" << j << " values: " << values.data()[i*values.dimension(0)*values.dimension(1) + j] << std::endl;
           nodes_.at(node_ids[i]).getOutputPointer()[j] = values.data()[i*values.dimension(0)*values.dimension(1) + j];
           nodes_.at(node_ids[i]).setStatus(NodeStatus::activated);
         }

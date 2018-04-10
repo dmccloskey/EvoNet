@@ -666,55 +666,56 @@ BOOST_AUTO_TEST_CASE(mapValuesToNodes2)
   }
 }
 
-// BOOST_AUTO_TEST_CASE(getNextInactiveLayer1) 
-// {
-//   // Toy network: 1 hidden layer, fully connected, DAG
-//   Node i1, i2, h1, h2, o1, o2, b1, b2;
-//   Link l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4;
-//   Weight w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4;
-//   Model model1;
-//   makeModel1(
-//     i1, i2, h1, h2, o1, o2, b1, b2,
-//     l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4,
-//     w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4,
-//     model1);
+BOOST_AUTO_TEST_CASE(getNextInactiveLayer1) 
+{
+  // Toy network: 1 hidden layer, fully connected, DAG
+  Node i1, i2, h1, h2, o1, o2, b1, b2;
+  Link l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4;
+  Weight w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4;
+  Model model1;
+  makeModel1(
+    i1, i2, h1, h2, o1, o2, b1, b2,
+    l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4,
+    w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4,
+    model1);
 
-//   // initialize nodes
-//   const int batch_size = 4;
-//   model1.initNodes(batch_size);
+  // initialize nodes
+  const int batch_size = 4;
+  const int memory_size = 1;
+  model1.initNodes(batch_size, memory_size);
 
-//   // create the input and biases
-//   const std::vector<int> input_ids = {0, 1};
-//   Eigen::Tensor<float, 2> input(batch_size, input_ids.size()); 
-//   input.setValues({{1, 5}, {2, 6}, {3, 7}, {4, 8}});
-//   model1.mapValuesToNodes(input, input_ids, NodeStatus::activated);  
+  // create the input and biases
+  const std::vector<int> input_ids = {0, 1};
+  Eigen::Tensor<float, 3> input(batch_size, memory_size, input_ids.size()); 
+  input.setValues({{{1, 5}}, {{2, 6}}, {{3, 7}}, {{4, 8}}});
+  model1.mapValuesToNodes(input, input_ids, NodeStatus::activated);  
 
-//   const std::vector<int> biases_ids = {6, 7};
-//   Eigen::Tensor<float, 2> biases(batch_size, biases_ids.size()); 
-//   biases.setConstant(1);
-//   model1.mapValuesToNodes(biases, biases_ids, NodeStatus::activated);  
+  const std::vector<int> biases_ids = {6, 7};
+  Eigen::Tensor<float, 3> biases(batch_size, memory_size, biases_ids.size()); 
+  biases.setConstant(1);
+  model1.mapValuesToNodes(biases, biases_ids, NodeStatus::activated);  
 
-//   // get the next hidden layer
-//   std::vector<int> links, source_nodes, sink_nodes;
-//   model1.getNextInactiveLayer(links, source_nodes, sink_nodes);
+  // get the next hidden layer
+  std::vector<int> links, source_nodes, sink_nodes;
+  model1.getNextInactiveLayer(links, source_nodes, sink_nodes);
 
-//   // test links and source and sink nodes
-//   BOOST_CHECK_EQUAL(links.size(), 6);
-//   BOOST_CHECK(links[0] == l1.getId());
-//   BOOST_CHECK(links[1] == l2.getId());
-//   BOOST_CHECK(links[2] == l3.getId());
-//   BOOST_CHECK(links[3] == l4.getId());
-//   BOOST_CHECK(links[4] == lb1.getId());
-//   BOOST_CHECK(links[5] == lb2.getId());
-//   BOOST_CHECK_EQUAL(source_nodes.size(), 3);
-//   BOOST_CHECK(source_nodes[0] == i1.getId());
-//   BOOST_CHECK(source_nodes[1] == i2.getId());
-//   BOOST_CHECK(source_nodes[2] == b1.getId());
-//   BOOST_CHECK_EQUAL(sink_nodes.size(), 2);
-//   BOOST_CHECK(sink_nodes[0] == h1.getId());
-//   BOOST_CHECK(sink_nodes[1] == h2.getId());
+  // test links and source and sink nodes
+  BOOST_CHECK_EQUAL(links.size(), 6);
+  BOOST_CHECK(links[0] == l1.getId());
+  BOOST_CHECK(links[1] == l2.getId());
+  BOOST_CHECK(links[2] == l3.getId());
+  BOOST_CHECK(links[3] == l4.getId());
+  BOOST_CHECK(links[4] == lb1.getId());
+  BOOST_CHECK(links[5] == lb2.getId());
+  BOOST_CHECK_EQUAL(source_nodes.size(), 3);
+  BOOST_CHECK(source_nodes[0] == i1.getId());
+  BOOST_CHECK(source_nodes[1] == i2.getId());
+  BOOST_CHECK(source_nodes[2] == b1.getId());
+  BOOST_CHECK_EQUAL(sink_nodes.size(), 2);
+  BOOST_CHECK(sink_nodes[0] == h1.getId());
+  BOOST_CHECK(sink_nodes[1] == h2.getId());
 
-// }
+}
 
 // BOOST_AUTO_TEST_CASE(getNextInactiveLayer2) 
 // {
@@ -790,286 +791,291 @@ BOOST_AUTO_TEST_CASE(mapValuesToNodes2)
 
 // }
 
-// BOOST_AUTO_TEST_CASE(forwardPropogateLayerNetInput) 
-// {
-//   // Toy network: 1 hidden layer, fully connected, DAG
-//   Node i1, i2, h1, h2, o1, o2, b1, b2;
-//   Link l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4;
-//   Weight w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4;
-//   Model model1;
-//   makeModel1(
-//     i1, i2, h1, h2, o1, o2, b1, b2,
-//     l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4,
-//     w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4,
-//     model1);
+BOOST_AUTO_TEST_CASE(forwardPropogateLayerNetInput) 
+{
+  // Toy network: 1 hidden layer, fully connected, DAG
+  Node i1, i2, h1, h2, o1, o2, b1, b2;
+  Link l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4;
+  Weight w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4;
+  Model model1;
+  makeModel1(
+    i1, i2, h1, h2, o1, o2, b1, b2,
+    l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4,
+    w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4,
+    model1);
 
-//   // initialize nodes
-//   const int batch_size = 4;
-//   model1.initNodes(batch_size);
+  // initialize nodes
+  const int batch_size = 4;
+  const int memory_size = 1;
+  model1.initNodes(batch_size, memory_size);
 
-//   // create the input
-//   const std::vector<int> node_ids = {0, 1};
-//   Eigen::Tensor<float, 2> input(batch_size, node_ids.size()); 
-//   input.setValues({{1, 5}, {2, 6}, {3, 7}, {4, 8}});
-//   model1.mapValuesToNodes(input, node_ids, NodeStatus::activated);  
+  // create the input
+  const std::vector<int> input_ids = {0, 1};
+  Eigen::Tensor<float, 3> input(batch_size, memory_size, input_ids.size()); 
+  input.setValues({{{1, 5}}, {{2, 6}}, {{3, 7}}, {{4, 8}}});
+  model1.mapValuesToNodes(input, input_ids, NodeStatus::activated);  
 
-//   const std::vector<int> biases_ids = {6, 7};
-//   Eigen::Tensor<float, 2> biases(batch_size, biases_ids.size()); 
-//   biases.setConstant(1);
-//   model1.mapValuesToNodes(biases, biases_ids, NodeStatus::activated);  
+  const std::vector<int> biases_ids = {6, 7};
+  Eigen::Tensor<float, 3> biases(batch_size, memory_size, biases_ids.size()); 
+  biases.setConstant(1);
+  model1.mapValuesToNodes(biases, biases_ids, NodeStatus::activated);   
 
-//   // get the next hidden layer
-//   std::vector<int> links, source_nodes, sink_nodes;
-//   model1.getNextInactiveLayer(links, source_nodes, sink_nodes);
+  // get the next hidden layer
+  std::vector<int> links, source_nodes, sink_nodes;
+  model1.getNextInactiveLayer(links, source_nodes, sink_nodes);
 
-//   // calculate the net input
-//   model1.forwardPropogateLayerNetInput(links, source_nodes, sink_nodes);
+  // calculate the net input
+  model1.forwardPropogateLayerNetInput(links, source_nodes, sink_nodes);
 
-//   // control test
-//   Eigen::Tensor<float, 2> net(batch_size, node_ids.size()); 
-//   net.setValues({{7, 7}, {9, 9}, {11, 11}, {13, 13}});
-//   for (int i=0; i<sink_nodes.size(); i++)
-//   {
-//     BOOST_CHECK_EQUAL(model1.getNode(sink_nodes[i]).getOutput().size(), batch_size);
-//     BOOST_CHECK(model1.getNode(sink_nodes[i]).getStatus() == NodeStatus::activated);
-//     for (int j=0; j<batch_size; j++)
-//     {
-//       BOOST_CHECK_EQUAL(model1.getNode(sink_nodes[i]).getOutput()[j], net(j, i));
-//     }
-//   }
-// }
+  // control test
+  Eigen::Tensor<float, 2> net(batch_size, 2); 
+  net.setValues({{7, 7}, {9, 9}, {11, 11}, {13, 13}});
+  for (int i=0; i<sink_nodes.size(); i++)
+  {
+    BOOST_CHECK_EQUAL(model1.getNode(sink_nodes[i]).getOutput().size(), batch_size*memory_size);
+    BOOST_CHECK(model1.getNode(sink_nodes[i]).getStatus() == NodeStatus::activated);
+    for (int j=0; j<batch_size; j++)
+    {
+      BOOST_CHECK_EQUAL(model1.getNode(sink_nodes[i]).getOutput()(j, 0), net(j, i));
+    }
+  }
+}
 
-// BOOST_AUTO_TEST_CASE(forwardPropogateLayerActivation) 
-// {
-//   // Toy network: 1 hidden layer, fully connected, DAG
-//   Node i1, i2, h1, h2, o1, o2, b1, b2;
-//   Link l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4;
-//   Weight w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4;
-//   Model model1;
-//   makeModel1(
-//     i1, i2, h1, h2, o1, o2, b1, b2,
-//     l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4,
-//     w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4,
-//     model1);
+BOOST_AUTO_TEST_CASE(forwardPropogateLayerActivation) 
+{
+  // Toy network: 1 hidden layer, fully connected, DAG
+  Node i1, i2, h1, h2, o1, o2, b1, b2;
+  Link l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4;
+  Weight w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4;
+  Model model1;
+  makeModel1(
+    i1, i2, h1, h2, o1, o2, b1, b2,
+    l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4,
+    w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4,
+    model1);
 
-//   // initialize nodes
-//   const int batch_size = 4;
-//   model1.initNodes(batch_size);
+  // initialize nodes
+  const int batch_size = 4;
+  const int memory_size = 1;
+  model1.initNodes(batch_size, memory_size);
 
-//   // create the input
-//   const std::vector<int> node_ids = {0, 1};
-//   Eigen::Tensor<float, 2> input(batch_size, node_ids.size()); 
-//   input.setValues({{1, 5}, {2, 6}, {3, 7}, {4, 8}});
-//   model1.mapValuesToNodes(input, node_ids, NodeStatus::activated);  
+  // create the input
+  const std::vector<int> input_ids = {0, 1};
+  Eigen::Tensor<float, 3> input(batch_size, memory_size, input_ids.size()); 
+  input.setValues({{{1, 5}}, {{2, 6}}, {{3, 7}}, {{4, 8}}});
+  model1.mapValuesToNodes(input, input_ids, NodeStatus::activated);  
 
-//   const std::vector<int> biases_ids = {6, 7};
-//   Eigen::Tensor<float, 2> biases(batch_size, biases_ids.size()); 
-//   biases.setConstant(1);
-//   model1.mapValuesToNodes(biases, biases_ids, NodeStatus::activated);  
+  const std::vector<int> biases_ids = {6, 7};
+  Eigen::Tensor<float, 3> biases(batch_size, memory_size, biases_ids.size()); 
+  biases.setConstant(1);
+  model1.mapValuesToNodes(biases, biases_ids, NodeStatus::activated);  
 
-//   // get the next hidden layer
-//   std::vector<int> links, source_nodes, sink_nodes;
-//   model1.getNextInactiveLayer(links, source_nodes, sink_nodes);
+  // get the next hidden layer
+  std::vector<int> links, source_nodes, sink_nodes;
+  model1.getNextInactiveLayer(links, source_nodes, sink_nodes);
 
-//   // calculate the net input
-//   model1.forwardPropogateLayerNetInput(links, source_nodes, sink_nodes);
+  // calculate the net input
+  model1.forwardPropogateLayerNetInput(links, source_nodes, sink_nodes);
 
-//   // calculate the activation
-//   model1.forwardPropogateLayerActivation(sink_nodes);
+  // calculate the activation
+  model1.forwardPropogateLayerActivation(sink_nodes);
 
-//   // control test
-//   Eigen::Tensor<float, 2> output(batch_size, node_ids.size()); 
-//   output.setValues({{7, 7}, {9, 9}, {11, 11}, {13, 13}});
-//   Eigen::Tensor<float, 2> derivative(batch_size, node_ids.size()); 
-//   derivative.setValues({{1, 1}, {1, 1}, {1, 1}, {1, 1}});
-//   for (int i=0; i<sink_nodes.size(); i++)
-//   {
-//     BOOST_CHECK_EQUAL(model1.getNode(sink_nodes[i]).getOutput().size(), batch_size);
-//     BOOST_CHECK_EQUAL(model1.getNode(sink_nodes[i]).getDerivative().size(), batch_size);
-//     BOOST_CHECK(model1.getNode(sink_nodes[i]).getStatus() == NodeStatus::activated);
-//     for (int j=0; j<batch_size; j++)
-//     {
-//       BOOST_CHECK_EQUAL(model1.getNode(sink_nodes[i]).getOutput()[j], output(j, i));
-//       BOOST_CHECK_EQUAL(model1.getNode(sink_nodes[i]).getDerivative()[j], derivative(j, i));
-//     }
-//   }
-// }
+  // control test
+  Eigen::Tensor<float, 2> output(batch_size, 2); 
+  output.setValues({{7, 7}, {9, 9}, {11, 11}, {13, 13}});
+  Eigen::Tensor<float, 2> derivative(batch_size, 2); 
+  derivative.setValues({{1, 1}, {1, 1}, {1, 1}, {1, 1}});
+  for (int i=0; i<sink_nodes.size(); i++)
+  {
+    BOOST_CHECK_EQUAL(model1.getNode(sink_nodes[i]).getOutput().size(), batch_size*memory_size);
+    BOOST_CHECK_EQUAL(model1.getNode(sink_nodes[i]).getDerivative().size(), batch_size*memory_size);
+    BOOST_CHECK(model1.getNode(sink_nodes[i]).getStatus() == NodeStatus::activated);
+    for (int j=0; j<batch_size; j++)
+    {
+      BOOST_CHECK_EQUAL(model1.getNode(sink_nodes[i]).getOutput()(j, 0), output(j, i));
+      BOOST_CHECK_EQUAL(model1.getNode(sink_nodes[i]).getDerivative()(j, 0), derivative(j, i));
+    }
+  }
+}
 
-// BOOST_AUTO_TEST_CASE(forwardPropogate) 
-// {
-//   // Toy network: 1 hidden layer, fully connected, DAG
-//   Node i1, i2, h1, h2, o1, o2, b1, b2;
-//   Link l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4;
-//   Weight w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4;
-//   Model model1;
-//   makeModel1(
-//     i1, i2, h1, h2, o1, o2, b1, b2,
-//     l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4,
-//     w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4,
-//     model1);
+BOOST_AUTO_TEST_CASE(forwardPropogate) 
+{
+  // Toy network: 1 hidden layer, fully connected, DAG
+  Node i1, i2, h1, h2, o1, o2, b1, b2;
+  Link l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4;
+  Weight w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4;
+  Model model1;
+  makeModel1(
+    i1, i2, h1, h2, o1, o2, b1, b2,
+    l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4,
+    w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4,
+    model1);
 
-//   // initialize nodes
-//   const int batch_size = 4;
-//   model1.initNodes(batch_size);
+  // initialize nodes
+  const int batch_size = 4;
+  const int memory_size = 1;
+  model1.initNodes(batch_size, memory_size);
 
-//   // create the input
-//   const std::vector<int> node_ids = {0, 1};
-//   Eigen::Tensor<float, 2> input(batch_size, node_ids.size()); 
-//   input.setValues({{1, 5}, {2, 6}, {3, 7}, {4, 8}});
-//   model1.mapValuesToNodes(input, node_ids, NodeStatus::activated);  
+  // create the input
+  const std::vector<int> input_ids = {0, 1};
+  Eigen::Tensor<float, 3> input(batch_size, memory_size, input_ids.size()); 
+  input.setValues({{{1, 5}}, {{2, 6}}, {{3, 7}}, {{4, 8}}});
+  model1.mapValuesToNodes(input, input_ids, NodeStatus::activated);  
 
-//   const std::vector<int> biases_ids = {6, 7};
-//   Eigen::Tensor<float, 2> biases(batch_size, biases_ids.size()); 
-//   biases.setConstant(1);
-//   model1.mapValuesToNodes(biases, biases_ids, NodeStatus::activated);
+  const std::vector<int> biases_ids = {6, 7};
+  Eigen::Tensor<float, 3> biases(batch_size, memory_size, biases_ids.size()); 
+  biases.setConstant(1);
+  model1.mapValuesToNodes(biases, biases_ids, NodeStatus::activated); 
 
-//   // calculate the activation
-//   model1.forwardPropogate();
+  // calculate the activation
+  model1.forwardPropogate();
 
-//   // test values of output nodes
-//   Eigen::Tensor<float, 2> output(batch_size, node_ids.size()); 
-//   output.setValues({{15, 15}, {19, 19}, {23, 23}, {27, 27}});
-//   Eigen::Tensor<float, 2> derivative(batch_size, node_ids.size()); 
-//   derivative.setValues({{1, 1}, {1, 1}, {1, 1}, {1, 1}});  
-//   const std::vector<int> output_nodes = {4, 5};
-//   for (int i=0; i<output_nodes.size(); i++)
-//   {
-//     BOOST_CHECK_EQUAL(model1.getNode(output_nodes[i]).getOutput().size(), batch_size);
-//     BOOST_CHECK_EQUAL(model1.getNode(output_nodes[i]).getDerivative().size(), batch_size);
-//     BOOST_CHECK(model1.getNode(output_nodes[i]).getStatus() == NodeStatus::activated);
-//     for (int j=0; j<batch_size; j++)
-//     {
-//       BOOST_CHECK_EQUAL(model1.getNode(output_nodes[i]).getOutput()[j], output(j, i));
-//       BOOST_CHECK_EQUAL(model1.getNode(output_nodes[i]).getDerivative()[j], derivative(j, i));
-//     }
-//   }
-// }
+  // test values of output nodes
+  Eigen::Tensor<float, 2> output(batch_size, 2); 
+  output.setValues({{15, 15}, {19, 19}, {23, 23}, {27, 27}});
+  Eigen::Tensor<float, 2> derivative(batch_size, 2); 
+  derivative.setValues({{1, 1}, {1, 1}, {1, 1}, {1, 1}});  
+  const std::vector<int> output_nodes = {4, 5};
+  for (int i=0; i<output_nodes.size(); i++)
+  {
+    BOOST_CHECK_EQUAL(model1.getNode(output_nodes[i]).getOutput().size(), batch_size*memory_size);
+    BOOST_CHECK_EQUAL(model1.getNode(output_nodes[i]).getDerivative().size(), batch_size*memory_size);
+    BOOST_CHECK(model1.getNode(output_nodes[i]).getStatus() == NodeStatus::activated);
+    for (int j=0; j<batch_size; j++)
+    {
+      BOOST_CHECK_EQUAL(model1.getNode(output_nodes[i]).getOutput()(j, 0), output(j, i));
+      BOOST_CHECK_EQUAL(model1.getNode(output_nodes[i]).getDerivative()(j, 0), derivative(j, i));
+    }
+  }
+}
 
-// BOOST_AUTO_TEST_CASE(calculateError) 
-// {
-//   // Toy network: 1 hidden layer, fully connected, DAG
-//   Node i1, i2, h1, h2, o1, o2, b1, b2;
-//   Link l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4;
-//   Weight w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4;
-//   Model model1;
-//   makeModel1(
-//     i1, i2, h1, h2, o1, o2, b1, b2,
-//     l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4,
-//     w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4,
-//     model1);
+BOOST_AUTO_TEST_CASE(calculateError) 
+{
+  // Toy network: 1 hidden layer, fully connected, DAG
+  Node i1, i2, h1, h2, o1, o2, b1, b2;
+  Link l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4;
+  Weight w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4;
+  Model model1;
+  makeModel1(
+    i1, i2, h1, h2, o1, o2, b1, b2,
+    l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4,
+    w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4,
+    model1);
 
-//   // initialize nodes and loss function
-//   const int batch_size = 4;
-//   model1.initNodes(batch_size);
-//   model1.setLossFunction(ModelLossFunction::MSE);
+  // initialize nodes and loss function
+  const int batch_size = 4;
+  const int memory_size = 1;
+  model1.initNodes(batch_size, memory_size);
+  model1.setLossFunction(ModelLossFunction::MSE);
 
-//   // calculate the model error
-//   std::vector<int> output_nodes = {4, 5};
-//   Eigen::Tensor<float, 2> expected(batch_size, output_nodes.size()); 
-//   expected.setValues({{0, 1}, {0, 1}, {0, 1}, {0, 1}});
-//   model1.calculateError(expected, output_nodes);
+  // calculate the model error
+  std::vector<int> output_nodes = {4, 5};
+  Eigen::Tensor<float, 2> expected(batch_size, output_nodes.size()); 
+  expected.setValues({{0, 1}, {0, 1}, {0, 1}, {0, 1}});
+  model1.calculateError(expected, output_nodes);
 
-//   // control test (output values should be 0.0 from initialization)
-//   Eigen::Tensor<float, 1> error(batch_size); 
-//   error.setValues({0.125, 0.125, 0.125, 0.125});
-//   for (int j=0; j<batch_size; j++)
-//   {
-//     BOOST_CHECK_CLOSE(model1.getError()[j], error(j), 1e-6);
-//   }
-//   Eigen::Tensor<float, 2> node_error(batch_size, output_nodes.size()); 
-//   node_error.setValues({{0, 0.25}, {0, 0.25}, {0, 0.25}, {0, 0.25}});
-//   for (int i=0; i<output_nodes.size(); ++i)
-//   {
-//     BOOST_CHECK_EQUAL(model1.getNode(output_nodes[i]).getError().size(), batch_size);
-//     BOOST_CHECK(model1.getNode(output_nodes[i]).getStatus() == NodeStatus::corrected);
-//     for (int j=0; j<batch_size; j++)
-//     {
-//       BOOST_CHECK_EQUAL(model1.getNode(output_nodes[i]).getError()[j], node_error(j, i));
-//     }
-//   }
+  // control test (output values should be 0.0 from initialization)
+  Eigen::Tensor<float, 1> error(batch_size); 
+  error.setValues({0.125, 0.125, 0.125, 0.125});
+  for (int j=0; j<batch_size; j++)
+  {
+    BOOST_CHECK_CLOSE(model1.getError()[j], error(j), 1e-6);
+  }
+  Eigen::Tensor<float, 2> node_error(batch_size, output_nodes.size()); 
+  node_error.setValues({{0, 0.25}, {0, 0.25}, {0, 0.25}, {0, 0.25}});
+  for (int i=0; i<output_nodes.size(); ++i)
+  {
+    BOOST_CHECK_EQUAL(model1.getNode(output_nodes[i]).getError().size(), batch_size*memory_size);
+    BOOST_CHECK(model1.getNode(output_nodes[i]).getStatus() == NodeStatus::corrected);
+    for (int j=0; j<batch_size; j++)
+    {
+      BOOST_CHECK_EQUAL(model1.getNode(output_nodes[i]).getError()(j, 0), node_error(j, i));
+    }
+  }
 
-//   // calculate the model error
-//   Eigen::Tensor<float, 2> input(batch_size, output_nodes.size()); 
-//   input.setValues({{15, 15}, {19, 19}, {23, 23}, {27, 27}});
-//   model1.mapValuesToNodes(input, output_nodes, NodeStatus::activated);
-//   model1.calculateError(expected, output_nodes);
+  // calculate the model error
+  Eigen::Tensor<float, 3> input(batch_size, memory_size, output_nodes.size()); 
+  input.setValues({{{15, 15}}, {{19, 19}}, {{23, 23}}, {{27, 27}}});
+  model1.mapValuesToNodes(input, output_nodes, NodeStatus::activated);
+  model1.calculateError(expected, output_nodes);
 
-//   // control test (output values should be 0.0 from initialization)
-//   error.setValues({52.625, 85.625, 126.625, 175.625});
-//   for (int j=0; j<batch_size; j++)
-//   {
-//     BOOST_CHECK_CLOSE(model1.getError()[j], error(j), 1e-6);
-//   }
-//   node_error.setValues({{-3.75, -3.5}, {-4.75, -4.5}, {-5.75, -5.5}, {-6.75, -6.5}});
-//   for (int i=0; i<output_nodes.size(); ++i)
-//   {
-//     BOOST_CHECK_EQUAL(model1.getNode(output_nodes[i]).getError().size(), batch_size);
-//     BOOST_CHECK(model1.getNode(output_nodes[i]).getStatus() == NodeStatus::corrected);
-//     for (int j=0; j<batch_size; j++)
-//     {
-//       BOOST_CHECK_EQUAL(model1.getNode(output_nodes[i]).getError()[j], node_error(j, i));
-//     }
-//   }
-// }
+  // control test (output values should be 0.0 from initialization)
+  error.setValues({52.625, 85.625, 126.625, 175.625});
+  for (int j=0; j<batch_size; j++)
+  {
+    BOOST_CHECK_CLOSE(model1.getError()(j), error(j), 1e-6);
+  }
+  node_error.setValues({{-3.75, -3.5}, {-4.75, -4.5}, {-5.75, -5.5}, {-6.75, -6.5}});
+  for (int i=0; i<output_nodes.size(); ++i)
+  {
+    BOOST_CHECK_EQUAL(model1.getNode(output_nodes[i]).getError().size(), batch_size*memory_size);
+    BOOST_CHECK(model1.getNode(output_nodes[i]).getStatus() == NodeStatus::corrected);
+    for (int j=0; j<batch_size; j++)
+    {
+      BOOST_CHECK_EQUAL(model1.getNode(output_nodes[i]).getError()(j, 0), node_error(j, i));
+    }
+  }
+}
 
-// BOOST_AUTO_TEST_CASE(getNextUncorrectedLayer1) 
-// {
-//   // Toy network: 1 hidden layer, fully connected, DAG
-//   Node i1, i2, h1, h2, o1, o2, b1, b2;
-//   Link l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4;
-//   Weight w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4;
-//   Model model1;
-//   makeModel1(
-//     i1, i2, h1, h2, o1, o2, b1, b2,
-//     l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4,
-//     w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4,
-//     model1);
+BOOST_AUTO_TEST_CASE(getNextUncorrectedLayer1) 
+{
+  // Toy network: 1 hidden layer, fully connected, DAG
+  Node i1, i2, h1, h2, o1, o2, b1, b2;
+  Link l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4;
+  Weight w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4;
+  Model model1;
+  makeModel1(
+    i1, i2, h1, h2, o1, o2, b1, b2,
+    l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4,
+    w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4,
+    model1);
 
-//   // initialize nodes
-//   const int batch_size = 4;
-//   model1.initNodes(batch_size);
-//   model1.setLossFunction(ModelLossFunction::MSE);
+  // initialize nodes
+  const int batch_size = 4;
+  const int memory_size = 1;
+  model1.initNodes(batch_size, memory_size);
+  model1.setLossFunction(ModelLossFunction::MSE);
 
-//   // create the input
-//   const std::vector<int> node_ids = {0, 1};
-//   Eigen::Tensor<float, 2> input(batch_size, node_ids.size()); 
-//   input.setValues({{1, 5}, {2, 6}, {3, 7}, {4, 8}});
-//   model1.mapValuesToNodes(input, node_ids, NodeStatus::activated);  
+  // create the input
+  const std::vector<int> input_ids = {0, 1};
+  Eigen::Tensor<float, 3> input(batch_size, memory_size, input_ids.size()); 
+  input.setValues({{{1, 5}}, {{2, 6}}, {{3, 7}}, {{4, 8}}});
+  model1.mapValuesToNodes(input, input_ids, NodeStatus::activated);  
 
-//   const std::vector<int> biases_ids = {6, 7};
-//   Eigen::Tensor<float, 2> biases(batch_size, biases_ids.size()); 
-//   biases.setConstant(1);
-//   model1.mapValuesToNodes(biases, biases_ids, NodeStatus::activated);
+  const std::vector<int> biases_ids = {6, 7};
+  Eigen::Tensor<float, 3> biases(batch_size, memory_size, biases_ids.size()); 
+  biases.setConstant(1);
+  model1.mapValuesToNodes(biases, biases_ids, NodeStatus::activated); 
 
-//   // calculate the activation
-//   model1.forwardPropogate();
+  // calculate the activation
+  model1.forwardPropogate();
 
-//   // calculate the model error and node output error
-//   std::vector<int> output_nodes = {4, 5};
-//   Eigen::Tensor<float, 2> expected(batch_size, output_nodes.size()); 
-//   expected.setValues({{0, 1}, {0, 1}, {0, 1}, {0, 1}});
-//   model1.calculateError(expected, output_nodes);
+  // calculate the model error and node output error
+  std::vector<int> output_nodes = {4, 5};
+  Eigen::Tensor<float, 2> expected(batch_size, output_nodes.size()); 
+  expected.setValues({{0, 1}, {0, 1}, {0, 1}, {0, 1}});
+  model1.calculateError(expected, output_nodes);
 
-//   // get the next hidden layer
-//   std::vector<int> links, source_nodes, sink_nodes;
-//   model1.getNextUncorrectedLayer(links, source_nodes, sink_nodes);
+  // get the next hidden layer
+  std::vector<int> links, source_nodes, sink_nodes;
+  model1.getNextUncorrectedLayer(links, source_nodes, sink_nodes);
 
-//   // test links and source and sink nodes
-//   BOOST_CHECK_EQUAL(links.size(), 6);
-//   BOOST_CHECK(links[0] == l5.getId());
-//   BOOST_CHECK(links[1] == l6.getId());
-//   BOOST_CHECK(links[2] == l7.getId());
-//   BOOST_CHECK(links[3] == l8.getId());
-//   BOOST_CHECK(links[4] == lb3.getId());
-//   BOOST_CHECK(links[5] == lb4.getId());
-//   BOOST_CHECK_EQUAL(source_nodes.size(), 2);
-//   BOOST_CHECK(source_nodes[0] == o1.getId());
-//   BOOST_CHECK(source_nodes[1] == o2.getId());
-//   BOOST_CHECK_EQUAL(sink_nodes.size(), 3);
-//   BOOST_CHECK(sink_nodes[0] == h1.getId());
-//   BOOST_CHECK(sink_nodes[1] == h2.getId());
-//   BOOST_CHECK(sink_nodes[2] == b2.getId());
-// }
+  // test links and source and sink nodes
+  BOOST_CHECK_EQUAL(links.size(), 6);
+  BOOST_CHECK(links[0] == l5.getId());
+  BOOST_CHECK(links[1] == l6.getId());
+  BOOST_CHECK(links[2] == l7.getId());
+  BOOST_CHECK(links[3] == l8.getId());
+  BOOST_CHECK(links[4] == lb3.getId());
+  BOOST_CHECK(links[5] == lb4.getId());
+  BOOST_CHECK_EQUAL(source_nodes.size(), 2);
+  BOOST_CHECK(source_nodes[0] == o1.getId());
+  BOOST_CHECK(source_nodes[1] == o2.getId());
+  BOOST_CHECK_EQUAL(sink_nodes.size(), 3);
+  BOOST_CHECK(sink_nodes[0] == h1.getId());
+  BOOST_CHECK(sink_nodes[1] == h2.getId());
+  BOOST_CHECK(sink_nodes[2] == b2.getId());
+}
 
 // BOOST_AUTO_TEST_CASE(getNextUncorrectedLayer2a) 
 // {
@@ -1205,231 +1211,235 @@ BOOST_AUTO_TEST_CASE(mapValuesToNodes2)
 //   }
 // }
 
-// BOOST_AUTO_TEST_CASE(backPropogateLayerError) 
-// {
-//   // Toy network: 1 hidden layer, fully connected, DAG
-//   Node i1, i2, h1, h2, o1, o2, b1, b2;
-//   Link l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4;
-//   Weight w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4;
-//   Model model1;
-//   makeModel1(
-//     i1, i2, h1, h2, o1, o2, b1, b2,
-//     l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4,
-//     w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4,
-//     model1);
+BOOST_AUTO_TEST_CASE(backPropogateLayerError) 
+{
+  // Toy network: 1 hidden layer, fully connected, DAG
+  Node i1, i2, h1, h2, o1, o2, b1, b2;
+  Link l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4;
+  Weight w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4;
+  Model model1;
+  makeModel1(
+    i1, i2, h1, h2, o1, o2, b1, b2,
+    l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4,
+    w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4,
+    model1);
 
-//   // initialize nodes
-//   const int batch_size = 4;
-//   model1.initNodes(batch_size);
-//   model1.setLossFunction(ModelLossFunction::MSE);
+  // initialize nodes
+  const int batch_size = 4;
+  const int memory_size = 1;
+  model1.initNodes(batch_size, memory_size);
+  model1.setLossFunction(ModelLossFunction::MSE);
 
-//   // create the input
-//   const std::vector<int> node_ids = {0, 1};
-//   Eigen::Tensor<float, 2> input(batch_size, node_ids.size()); 
-//   input.setValues({{1, 5}, {2, 6}, {3, 7}, {4, 8}});
-//   model1.mapValuesToNodes(input, node_ids, NodeStatus::activated);  
+  // create the input
+  const std::vector<int> input_ids = {0, 1};
+  Eigen::Tensor<float, 3> input(batch_size, memory_size, input_ids.size()); 
+  input.setValues({{{1, 5}}, {{2, 6}}, {{3, 7}}, {{4, 8}}});
+  model1.mapValuesToNodes(input, input_ids, NodeStatus::activated);  
 
-//   const std::vector<int> biases_ids = {6, 7};
-//   Eigen::Tensor<float, 2> biases(batch_size, biases_ids.size()); 
-//   biases.setConstant(1);
-//   model1.mapValuesToNodes(biases, biases_ids, NodeStatus::activated);
+  const std::vector<int> biases_ids = {6, 7};
+  Eigen::Tensor<float, 3> biases(batch_size, memory_size, biases_ids.size()); 
+  biases.setConstant(1);
+  model1.mapValuesToNodes(biases, biases_ids, NodeStatus::activated); 
 
-//   // calculate the activation
-//   model1.forwardPropogate();
+  // calculate the activation
+  model1.forwardPropogate();
 
-//   // calculate the model error and node output error
-//   std::vector<int> output_nodes = {4, 5};
-//   Eigen::Tensor<float, 2> expected(batch_size, output_nodes.size()); 
-//   expected.setValues({{0, 1}, {0, 1}, {0, 1}, {0, 1}});
-//   model1.calculateError(expected, output_nodes);
+  // calculate the model error and node output error
+  std::vector<int> output_nodes = {4, 5};
+  Eigen::Tensor<float, 2> expected(batch_size, output_nodes.size()); 
+  expected.setValues({{0, 1}, {0, 1}, {0, 1}, {0, 1}});
+  model1.calculateError(expected, output_nodes);
 
-//   // get the next hidden layer
-//   std::vector<int> links, source_nodes, sink_nodes;
-//   model1.getNextUncorrectedLayer(links, source_nodes, sink_nodes);
+  // get the next hidden layer
+  std::vector<int> links, source_nodes, sink_nodes;
+  model1.getNextUncorrectedLayer(links, source_nodes, sink_nodes);
 
-//   // back propogate error to the next layer
-//   model1.backPropogateLayerError(links, source_nodes, sink_nodes);
+  // back propogate error to the next layer
+  model1.backPropogateLayerError(links, source_nodes, sink_nodes);
 
-//   Eigen::Tensor<float, 2> error(batch_size, sink_nodes.size()); 
-//   error.setValues({{-7.25, -7.25, 0.0}, {-9.25, -9.25, 0.0}, {-11.25, -11.25, 0.0}, {-13.25, -13.25, 0.0}});
-//   for (int i=0; i<sink_nodes.size(); i++)
-//   {
-//     BOOST_CHECK_EQUAL(model1.getNode(sink_nodes[i]).getError().size(), batch_size);
-//     BOOST_CHECK(model1.getNode(sink_nodes[i]).getStatus() == NodeStatus::corrected);
-//     for (int j=0; j<batch_size; j++)
-//     {
-//       // std::cout << "i " << i << " j " << j << std::endl;
-//       BOOST_CHECK_EQUAL(model1.getNode(sink_nodes[i]).getError()[j], error(j, i));
-//     }
-//   }
-// }
+  Eigen::Tensor<float, 2> error(batch_size, sink_nodes.size()); 
+  error.setValues({{-7.25, -7.25, 0.0}, {-9.25, -9.25, 0.0}, {-11.25, -11.25, 0.0}, {-13.25, -13.25, 0.0}});
+  for (int i=0; i<sink_nodes.size(); i++)
+  {
+    BOOST_CHECK_EQUAL(model1.getNode(sink_nodes[i]).getError().size(), batch_size*memory_size);
+    BOOST_CHECK(model1.getNode(sink_nodes[i]).getStatus() == NodeStatus::corrected);
+    for (int j=0; j<batch_size; j++)
+    {
+      // std::cout << "i " << i << " j " << j << std::endl;
+      BOOST_CHECK_EQUAL(model1.getNode(sink_nodes[i]).getError()(j, 0), error(j, i));
+    }
+  }
+}
 
-// BOOST_AUTO_TEST_CASE(backPropogate) 
-// {
-//   // Toy network: 1 hidden layer, fully connected, DAG
-//   Node i1, i2, h1, h2, o1, o2, b1, b2;
-//   Link l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4;
-//   Weight w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4;
-//   Model model1;
-//   makeModel1(
-//     i1, i2, h1, h2, o1, o2, b1, b2,
-//     l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4,
-//     w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4,
-//     model1);
+BOOST_AUTO_TEST_CASE(backPropogate) 
+{
+  // Toy network: 1 hidden layer, fully connected, DAG
+  Node i1, i2, h1, h2, o1, o2, b1, b2;
+  Link l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4;
+  Weight w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4;
+  Model model1;
+  makeModel1(
+    i1, i2, h1, h2, o1, o2, b1, b2,
+    l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4,
+    w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4,
+    model1);
 
-//   // initialize nodes
-//   const int batch_size = 4;
-//   model1.initNodes(batch_size);
-//   model1.setLossFunction(ModelLossFunction::MSE);
+  // initialize nodes
+  const int batch_size = 4;
+  const int memory_size = 1;
+  model1.initNodes(batch_size, memory_size);
+  model1.setLossFunction(ModelLossFunction::MSE);
 
-//   // create the input
-//   const std::vector<int> node_ids = {0, 1};
-//   Eigen::Tensor<float, 2> input(batch_size, node_ids.size()); 
-//   input.setValues({{1, 5}, {2, 6}, {3, 7}, {4, 8}});
-//   model1.mapValuesToNodes(input, node_ids, NodeStatus::activated);  
+  // create the input
+  const std::vector<int> input_ids = {0, 1};
+  Eigen::Tensor<float, 3> input(batch_size, memory_size, input_ids.size()); 
+  input.setValues({{{1, 5}}, {{2, 6}}, {{3, 7}}, {{4, 8}}});
+  model1.mapValuesToNodes(input, input_ids, NodeStatus::activated);  
 
-//   const std::vector<int> biases_ids = {6, 7};
-//   Eigen::Tensor<float, 2> biases(batch_size, biases_ids.size()); 
-//   biases.setConstant(1);
-//   model1.mapValuesToNodes(biases, biases_ids, NodeStatus::activated);
+  const std::vector<int> biases_ids = {6, 7};
+  Eigen::Tensor<float, 3> biases(batch_size, memory_size, biases_ids.size()); 
+  biases.setConstant(1);
+  model1.mapValuesToNodes(biases, biases_ids, NodeStatus::activated); 
 
-//   // forward propogate
-//   model1.forwardPropogate();
+  // forward propogate
+  model1.forwardPropogate();
 
-//   // calculate the model error and node output error
-//   std::vector<int> output_nodes = {4, 5};
-//   Eigen::Tensor<float, 2> expected(batch_size, output_nodes.size()); 
-//   expected.setValues({{0, 1}, {0, 1}, {0, 1}, {0, 1}});
-//   model1.calculateError(expected, output_nodes);
+  // calculate the model error and node output error
+  std::vector<int> output_nodes = {4, 5};
+  Eigen::Tensor<float, 2> expected(batch_size, output_nodes.size()); 
+  expected.setValues({{0, 1}, {0, 1}, {0, 1}, {0, 1}});
+  model1.calculateError(expected, output_nodes);
 
-//   // back propogate
-//   model1.backPropogate();
+  // back propogate
+  model1.backPropogate();
 
-//   // test values of input and hidden layers
-//   const std::vector<int> hidden_nodes = {0, 1, 2, 3, 6};
-//   Eigen::Tensor<float, 2> error(batch_size, hidden_nodes.size()); 
-//   // error.setValues({
-//   //   {0.0, 0.0, -4.75, -4.75, 0.0}, 
-//   //   {0.0, 0.0, -6.25, -6.25, 0.0}, 
-//   //   {0.0, 0.0, -7.75, -7.75, 0.0}, 
-//   //   {0.0, 0.0, -9.25, -9.25, 0.0}});
-//   error.setValues({
-//     {0.0, 0.0, -7.25, -7.25, 0.0}, 
-//     {0.0, 0.0, -9.25, -9.25, 0.0}, 
-//     {0.0, 0.0, -11.25, -11.25, 0.0}, 
-//     {0.0, 0.0, -13.25, -13.25, 0.0}});
-//   for (int i=0; i<hidden_nodes.size(); i++)
-//   {
-//     // BOOST_CHECK_EQUAL(model1.getNode(hidden_nodes[i]).getError().size(), batch_size); // why does
-//                             // uncommenting this line cause a memory error "std::out_of_range map:at"
-//     BOOST_CHECK(model1.getNode(hidden_nodes[i]).getStatus() == NodeStatus::corrected);
-//     for (int j=0; j<batch_size; j++)
-//     {
-//       // std::cout << "i " << i << " j " << j << std::endl;
-//       BOOST_CHECK_EQUAL(model1.getNode(hidden_nodes[i]).getError()[j], error(j, i));
-//     }
-//   }
-// }
+  // test values of input and hidden layers
+  const std::vector<int> hidden_nodes = {0, 1, 2, 3, 6};
+  Eigen::Tensor<float, 2> error(batch_size, hidden_nodes.size()); 
+  // error.setValues({
+  //   {0.0, 0.0, -4.75, -4.75, 0.0}, 
+  //   {0.0, 0.0, -6.25, -6.25, 0.0}, 
+  //   {0.0, 0.0, -7.75, -7.75, 0.0}, 
+  //   {0.0, 0.0, -9.25, -9.25, 0.0}});
+  error.setValues({
+    {0.0, 0.0, -7.25, -7.25, 0.0}, 
+    {0.0, 0.0, -9.25, -9.25, 0.0}, 
+    {0.0, 0.0, -11.25, -11.25, 0.0}, 
+    {0.0, 0.0, -13.25, -13.25, 0.0}});
+  for (int i=0; i<hidden_nodes.size(); i++)
+  {
+    // BOOST_CHECK_EQUAL(model1.getNode(hidden_nodes[i]).getError().size(), batch_size); // why does
+                            // uncommenting this line cause a memory error "std::out_of_range map:at"
+    BOOST_CHECK(model1.getNode(hidden_nodes[i]).getStatus() == NodeStatus::corrected);
+    for (int j=0; j<batch_size; j++)
+    {
+      // std::cout << "i " << i << " j " << j << std::endl;
+      BOOST_CHECK_EQUAL(model1.getNode(hidden_nodes[i]).getError()(j, 0), error(j, i));
+    }
+  }
+}
 
-// BOOST_AUTO_TEST_CASE(updateWeights) 
-// {
-//   // Toy network: 1 hidden layer, fully connected, DAG
-//   Node i1, i2, h1, h2, o1, o2, b1, b2;
-//   Link l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4;
-//   Weight w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4;
-//   Model model1;
-//   makeModel1(
-//     i1, i2, h1, h2, o1, o2, b1, b2,
-//     l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4,
-//     w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4,
-//     model1);
+BOOST_AUTO_TEST_CASE(updateWeights) 
+{
+  // Toy network: 1 hidden layer, fully connected, DAG
+  Node i1, i2, h1, h2, o1, o2, b1, b2;
+  Link l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4;
+  Weight w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4;
+  Model model1;
+  makeModel1(
+    i1, i2, h1, h2, o1, o2, b1, b2,
+    l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4,
+    w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4,
+    model1);
 
-//   // initialize nodes
-//   const int batch_size = 4;
-//   model1.initNodes(batch_size);
-//   model1.initWeights();
-//   model1.setLossFunction(ModelLossFunction::MSE);
+  // initialize nodes
+  const int batch_size = 4;
+  const int memory_size = 1;
+  model1.initNodes(batch_size, memory_size);
+  model1.initWeights();
+  model1.setLossFunction(ModelLossFunction::MSE);
 
-//   // create the input
-//   const std::vector<int> node_ids = {0, 1};
-//   Eigen::Tensor<float, 2> input(batch_size, node_ids.size()); 
-//   input.setValues({{1, 5}, {2, 6}, {3, 7}, {4, 8}});
-//   model1.mapValuesToNodes(input, node_ids, NodeStatus::activated);  
+  // create the input
+  const std::vector<int> input_ids = {0, 1};
+  Eigen::Tensor<float, 3> input(batch_size, memory_size, input_ids.size()); 
+  input.setValues({{{1, 5}}, {{2, 6}}, {{3, 7}}, {{4, 8}}});
+  model1.mapValuesToNodes(input, input_ids, NodeStatus::activated);  
 
-//   const std::vector<int> biases_ids = {6, 7};
-//   Eigen::Tensor<float, 2> biases(batch_size, biases_ids.size()); 
-//   biases.setConstant(1);
-//   model1.mapValuesToNodes(biases, biases_ids, NodeStatus::activated);
+  const std::vector<int> biases_ids = {6, 7};
+  Eigen::Tensor<float, 3> biases(batch_size, memory_size, biases_ids.size()); 
+  biases.setConstant(1);
+  model1.mapValuesToNodes(biases, biases_ids, NodeStatus::activated); 
 
-//   // forward propogate
-//   model1.forwardPropogate();
+  // forward propogate
+  model1.forwardPropogate();
 
-//   // calculate the model error and node output error
-//   std::vector<int> output_nodes = {4, 5};
-//   Eigen::Tensor<float, 2> expected(batch_size, output_nodes.size()); 
-//   expected.setValues({{0, 1}, {0, 1}, {0, 1}, {0, 1}});
-//   model1.calculateError(expected, output_nodes);
+  // calculate the model error and node output error
+  std::vector<int> output_nodes = {4, 5};
+  Eigen::Tensor<float, 2> expected(batch_size, output_nodes.size()); 
+  expected.setValues({{0, 1}, {0, 1}, {0, 1}, {0, 1}});
+  model1.calculateError(expected, output_nodes);
 
-//   // back propogate
-//   model1.backPropogate();
+  // back propogate
+  model1.backPropogate();
 
-//   // update the weights
-//   model1.updateWeights();
+  // update the weights
+  model1.updateWeights();
 
-//   // test values of input and hidden layers
-//   const std::vector<int> weight_ids = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
-//   Eigen::Tensor<float, 1> weights(weight_ids.size());
-//   weights.setValues({
-//     -0.075, -0.075, -0.075, -0.075, -0.075, -0.075,
-//     -0.1525, -0.1, -0.1525, -0.1, -0.1525, -0.1});
-//   for (int i=0; i<weight_ids.size(); i++)
-//   {
-//     BOOST_CHECK_CLOSE(model1.getWeight(weight_ids[i]).getWeight(), weights(i), 1e-3);
-//   }
-// }
+  // test values of input and hidden layers
+  const std::vector<int> weight_ids = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
+  Eigen::Tensor<float, 1> weights(weight_ids.size());
+  weights.setValues({
+    -0.075, -0.075, -0.075, -0.075, -0.075, -0.075,
+    -0.1525, -0.1, -0.1525, -0.1, -0.1525, -0.1});
+  for (int i=0; i<weight_ids.size(); i++)
+  {
+    BOOST_CHECK_CLOSE(model1.getWeight(weight_ids[i]).getWeight(), weights(i), 1e-3);
+  }
+}
 
-// BOOST_AUTO_TEST_CASE(reInitializeNodeStatuses) 
-// {
-//   // Toy network: 1 hidden layer, fully connected, DAG
-//   Node i1, i2, h1, h2, o1, o2, b1, b2;
-//   Link l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4;
-//   Weight w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4;
-//   Model model1;
-//   makeModel1(
-//     i1, i2, h1, h2, o1, o2, b1, b2,
-//     l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4,
-//     w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4,
-//     model1);
+BOOST_AUTO_TEST_CASE(reInitializeNodeStatuses) 
+{
+  // Toy network: 1 hidden layer, fully connected, DAG
+  Node i1, i2, h1, h2, o1, o2, b1, b2;
+  Link l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4;
+  Weight w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4;
+  Model model1;
+  makeModel1(
+    i1, i2, h1, h2, o1, o2, b1, b2,
+    l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4,
+    w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4,
+    model1);
 
-//   // initialize nodes
-//   const int batch_size = 4;
-//   model1.initNodes(batch_size);
-//   model1.setLossFunction(ModelLossFunction::MSE);
+  // initialize nodes
+  const int batch_size = 4;
+  const int memory_size = 1;
+  model1.initNodes(batch_size, memory_size);
+  model1.setLossFunction(ModelLossFunction::MSE);
 
-//   // create the input
-//   const std::vector<int> node_ids = {0, 1};
-//   Eigen::Tensor<float, 2> input(batch_size, node_ids.size()); 
-//   input.setValues({{1, 5}, {2, 6}, {3, 7}, {4, 8}});
-//   model1.mapValuesToNodes(input, node_ids, NodeStatus::activated);  
+  // create the input
+  const std::vector<int> input_ids = {0, 1};
+  Eigen::Tensor<float, 3> input(batch_size, memory_size, input_ids.size()); 
+  input.setValues({{{1, 5}}, {{2, 6}}, {{3, 7}}, {{4, 8}}});
+  model1.mapValuesToNodes(input, input_ids, NodeStatus::activated);  
 
-//   const std::vector<int> biases_ids = {6, 7};
-//   Eigen::Tensor<float, 2> biases(batch_size, biases_ids.size()); 
-//   biases.setConstant(1);
-//   model1.mapValuesToNodes(biases, biases_ids, NodeStatus::activated);
+  const std::vector<int> biases_ids = {6, 7};
+  Eigen::Tensor<float, 3> biases(batch_size, memory_size, biases_ids.size()); 
+  biases.setConstant(1);
+  model1.mapValuesToNodes(biases, biases_ids, NodeStatus::activated); 
 
-//   // calculate the activation
-//   model1.reInitializeNodeStatuses();
+  // calculate the activation
+  model1.reInitializeNodeStatuses();
 
-//   for (int i=0; i<node_ids.size(); i++)
-//   {
-//     BOOST_CHECK(model1.getNode(node_ids[i]).getStatus() == NodeStatus::initialized);
-//   }
+  for (int i=0; i<input_ids.size(); i++)
+  {
+    BOOST_CHECK(model1.getNode(input_ids[i]).getStatus() == NodeStatus::initialized);
+  }
 
-//   for (int i=0; i<biases_ids.size(); i++)
-//   {
-//     BOOST_CHECK(model1.getNode(biases_ids[i]).getStatus() == NodeStatus::initialized);
-//   }
-// }
+  for (int i=0; i<biases_ids.size(); i++)
+  {
+    BOOST_CHECK(model1.getNode(biases_ids[i]).getStatus() == NodeStatus::initialized);
+  }
+}
 
 // BOOST_AUTO_TEST_CASE(modelTrainer1) 
 // {
@@ -1446,18 +1456,21 @@ BOOST_AUTO_TEST_CASE(mapValuesToNodes2)
 
 //   // initialize nodes
 //   const int batch_size = 4;
-//   model1.initNodes(batch_size);
+//   const int memory_size = 1;
+//   model1.initNodes(batch_size, memory_size);
 //   model1.initWeights();
 //   model1.setLossFunction(ModelLossFunction::MSE);
 
 //   // create the input
-//   const std::vector<int> node_ids = {0, 1};
-//   Eigen::Tensor<float, 2> input(batch_size, node_ids.size()); 
-//   input.setValues({{1, 5}, {2, 6}, {3, 7}, {4, 8}}); 
+//   const std::vector<int> input_ids = {0, 1};
+//   Eigen::Tensor<float, 3> input(batch_size, memory_size, input_ids.size()); 
+//   input.setValues({{{1, 5}}, {{2, 6}}, {{3, 7}}, {{4, 8}}});
+//   model1.mapValuesToNodes(input, input_ids, NodeStatus::activated);  
 
 //   const std::vector<int> biases_ids = {6, 7};
-//   Eigen::Tensor<float, 2> biases(batch_size, biases_ids.size()); 
+//   Eigen::Tensor<float, 3> biases(batch_size, memory_size, biases_ids.size()); 
 //   biases.setConstant(1);
+//   model1.mapValuesToNodes(biases, biases_ids, NodeStatus::activated); 
 
 //   // create the expected output
 //   std::vector<int> output_nodes = {4, 5};
@@ -1469,7 +1482,7 @@ BOOST_AUTO_TEST_CASE(mapValuesToNodes2)
 //   for (int iter = 0; iter < max_iter; ++iter)
 //   {
 //     // assign the input data
-//     model1.mapValuesToNodes(input, node_ids, NodeStatus::activated); 
+//     model1.mapValuesToNodes(input, input_ids, NodeStatus::activated); 
 //     model1.mapValuesToNodes(biases, biases_ids, NodeStatus::activated);
 
 //     // forward propogate
