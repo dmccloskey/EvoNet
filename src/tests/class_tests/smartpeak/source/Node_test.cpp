@@ -103,7 +103,7 @@ BOOST_AUTO_TEST_CASE(calculateActivation)
   node.setId(1);
   node.initNode(5,1);
   Eigen::Tensor<float, 2> output_test(5, 1);
-  output_test.setValues({{0.0, 1.0, 10.0, -1.0, -10.0}});
+  output_test.setValues({{0.0}, {1.0}, {10.0}, {-1.0}, {-10.0}});
 
   // test input
   node.setType(NodeType::input);
@@ -157,7 +157,7 @@ BOOST_AUTO_TEST_CASE(calculateDerivative)
   node.setId(1);
   node.initNode(5,1);
   Eigen::Tensor<float, 2> output_test(5, 1);
-  output_test.setValues({{0.0, 1.0, 10.0, -1.0, -10.0}});
+  output_test.setValues({{0.0}, {1.0}, {10.0}, {-1.0}, {-10.0}});
   node.setOutput(output_test);
 
   // test input

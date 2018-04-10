@@ -305,12 +305,12 @@ namespace SmartPeak
     {
       if (        
         // does not allow for cycles
-        // nodes_.at(link_map.second.getSourceNodeId()).getType() == NodeType::bias && 
-        // nodes_.at(link_map.second.getSourceNodeId()).getStatus() == NodeStatus::activated && 
+        nodes_.at(link_map.second.getSourceNodeId()).getType() == NodeType::bias && 
+        nodes_.at(link_map.second.getSourceNodeId()).getStatus() == NodeStatus::activated && 
         // allows for cycles
-        (nodes_.at(link_map.second.getSourceNodeId()).getStatus() == NodeStatus::activated || 
-          nodes_.at(link_map.second.getSourceNodeId()).getStatus() == NodeStatus::initialized) && 
-        std::count(links.begin(), links.end(), link_map.second.getId()) == 0 && // unique links\
+        // (nodes_.at(link_map.second.getSourceNodeId()).getStatus() == NodeStatus::activated || 
+        //   nodes_.at(link_map.second.getSourceNodeId()).getStatus() == NodeStatus::initialized) && 
+        // std::count(links.begin(), links.end(), link_map.second.getId()) == 0 && // unique links\
         // required regardless if cycles are or are not allowed
         nodes_.at(link_map.second.getSinkNodeId()).getStatus() == NodeStatus::initialized &&
         std::count(sink_nodes.begin(), sink_nodes.end(), link_map.second.getSinkNodeId()) != 0 // sink node has already been identified
@@ -342,13 +342,14 @@ namespace SmartPeak
     }
   }
   
-  void Model::mapValuesToCurrentNodes(
+  void Model::mapValuesToNodes(
     const Eigen::Tensor<float, 2>& values,
+    const int& memory_step,
     const std::vector<int>& node_ids,
     const NodeStatus& status_update)
   {
     // check dimension mismatches
-    if (node_ids.size() != values.dimension(2))
+    if (node_ids.size() != values.dimension(1))
     {
       std::cout << "The number of input features and the number of nodes do not match." << std::endl;
       return;
@@ -360,26 +361,29 @@ namespace SmartPeak
       return;
     }
 
+    // // infer the memory size from the node output size
+    // const int memory_size = nodes_.at(node_ids[0]).getOutput().dimension(1);
+
     // copy over the input values
     for (int i=0; i<node_ids.size(); ++i)
     {
       if (status_update == NodeStatus::activated)
       {
-        for (int j=0; j<nodes_.at(node_ids[i]).getOutput().size(); ++j)
+        for (int j=0; j<values.dimension(0); ++j)
         {
           // SANITY CHECK:
           // std::cout << "i" << i << " j" << j << " values: " << values.data()[i*values.dimension(0) + j] << std::endl;
-          nodes_.at(node_ids[i]).getOutputPointer()[j] = values.data()[i*values.dimension(0) + j];
+          nodes_.at(node_ids[i]).getOutputPointer()[j + values.dimension(0)*memory_step] = values.data()[i*values.dimension(0) + j];
           nodes_.at(node_ids[i]).setStatus(NodeStatus::activated);
         }
       }
       else if (status_update == NodeStatus::corrected)
       {
-        for (int j=0; j<nodes_.at(node_ids[i]).getError().size(); ++j)
+        for (int j=0; j<values.dimension(0); ++j)
         {
           // SANITY CHECK:
           // std::cout << "i" << i << " j" << j << " values: " << values.data()[i*values.dimension(0) + j] << std::endl;
-          nodes_.at(node_ids[i]).getErrorPointer()[j] = values.data()[i*values.dimension(0) + j];
+          nodes_.at(node_ids[i]).getErrorPointer()[j + values.dimension(0)*memory_step] = values.data()[i*values.dimension(0) + j];
           nodes_.at(node_ids[i]).setStatus(NodeStatus::corrected);
         }
       }
@@ -417,8 +421,8 @@ namespace SmartPeak
         for (int j=0; j<nodes_.at(node_ids[i]).getOutput().size(); ++j)
         {
           // SANITY CHECK:
-          // std::cout << "i" << i << " j" << j << " values: " << values.data()[i*values.dimension(0) + j] << std::endl;
-          nodes_.at(node_ids[i]).getOutputPointer()[j] = values.data()[i*values.dimension(1)*values.dimension(2) + j];
+          std::cout << "i" << i << " j" << j << " values: " << values.data()[i*values.dimension(0)*values.dimension(1) + j] << std::endl;
+          nodes_.at(node_ids[i]).getOutputPointer()[j] = values.data()[i*values.dimension(0)*values.dimension(1) + j];
           nodes_.at(node_ids[i]).setStatus(NodeStatus::activated);
         }
       }
@@ -428,7 +432,7 @@ namespace SmartPeak
         {
           // SANITY CHECK:
           // std::cout << "i" << i << " j" << j << " values: " << values.data()[i*values.dimension(0) + j] << std::endl;
-          nodes_.at(node_ids[i]).getErrorPointer()[j] = values.data()[i*values.dimension(1)*values.dimension(2) + j];
+          nodes_.at(node_ids[i]).getErrorPointer()[j] = values.data()[i*values.dimension(0)*values.dimension(1) + j];
           nodes_.at(node_ids[i]).setStatus(NodeStatus::corrected);
         }
       }
@@ -496,7 +500,7 @@ namespace SmartPeak
     // std::cout << "sink_tensor " << sink_tensor << std::endl;
 
     // update the sink nodes
-    mapValuesToCurrentNodes(sink_tensor, sink_nodes, NodeStatus::activated);
+    mapValuesToNodes(sink_tensor, 0, sink_nodes, NodeStatus::activated);
     // std::cout<<&sink_ptr[0]<<std::endl;
     // std::cout<<sink_ptr[0]<<std::endl;
     // std::cout<<&nodes_.at(sink_nodes[0]).getOutputPointer()[0]<<std::endl;
@@ -620,7 +624,7 @@ namespace SmartPeak
     }
 
     // update the output node errors
-    mapValuesToCurrentNodes(error_tensor, node_ids, NodeStatus::corrected);
+    mapValuesToNodes(error_tensor, 0, node_ids, NodeStatus::corrected);
   }
   
   void Model::getNextUncorrectedLayer(
@@ -652,24 +656,24 @@ namespace SmartPeak
       }
     }
 
-    // allows for cycles
-    for (auto& link_map : links_)
-    {
-      if ((nodes_.at(link_map.second.getSourceNodeId()).getStatus() == NodeStatus::corrected || 
-          nodes_.at(link_map.second.getSourceNodeId()).getStatus() == NodeStatus::activated) && 
-        std::count(links.begin(), links.end(), link_map.second.getId()) == 0 && // unique links 
-        nodes_.at(link_map.second.getSinkNodeId()).getStatus() == NodeStatus::corrected &&
-        std::count(source_nodes.begin(), source_nodes.end(), link_map.second.getSinkNodeId()) != 0 // sink node has already been identified)
-      ) 
-      {
-        links.push_back(link_map.second.getId());
-        // could use std::set instead to check for duplicates
-        if (std::count(sink_nodes.begin(), sink_nodes.end(), link_map.second.getSourceNodeId()) == 0)
-        {
-          sink_nodes.push_back(link_map.second.getSourceNodeId());
-        }
-      }
-    }
+    // // allows for cycles
+    // for (auto& link_map : links_)
+    // {
+    //   if ((nodes_.at(link_map.second.getSourceNodeId()).getStatus() == NodeStatus::corrected || 
+    //       nodes_.at(link_map.second.getSourceNodeId()).getStatus() == NodeStatus::activated) && 
+    //     std::count(links.begin(), links.end(), link_map.second.getId()) == 0 && // unique links 
+    //     nodes_.at(link_map.second.getSinkNodeId()).getStatus() == NodeStatus::corrected &&
+    //     std::count(source_nodes.begin(), source_nodes.end(), link_map.second.getSinkNodeId()) != 0 // sink node has already been identified)
+    //   ) 
+    //   {
+    //     links.push_back(link_map.second.getId());
+    //     // could use std::set instead to check for duplicates
+    //     if (std::count(sink_nodes.begin(), sink_nodes.end(), link_map.second.getSourceNodeId()) == 0)
+    //     {
+    //       sink_nodes.push_back(link_map.second.getSourceNodeId());
+    //     }
+    //   }
+    // }
   }
 
   void Model::backPropogateLayerError(
@@ -743,7 +747,7 @@ namespace SmartPeak
     // std::cout << "sink_tensor " << sink_tensor << std::endl;
 
     // update the sink nodes
-    mapValuesToCurrentNodes(sink_tensor, sink_nodes, NodeStatus::corrected);
+    mapValuesToNodes(sink_tensor, 0, sink_nodes, NodeStatus::corrected);
   }
   
   void Model::backPropogate()

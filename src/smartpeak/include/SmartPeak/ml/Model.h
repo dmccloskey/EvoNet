@@ -90,7 +90,8 @@ public:
       const NodeStatus& status_update);
 
     /**
-      @brief Assigns output or error values to the nodes.
+      @brief Assigns output or error values to the nodes at a specific
+        place in memory.
         The node statuses are then changed accordingly (i.e.,
         status_update of "activated" will update the output values
         of the node and status_update of "corrected" will update
@@ -99,11 +100,13 @@ public:
       dimensions of batch size by nodes
 
       @param[in] values Values to assign to the node
+      @param[in] memory_step The memory step to add values to 
       @param[in] node_ids 
       @param[in] status_update
     */ 
-    void mapValuesToCurrentNodes(
+    void mapValuesToNodes(
       const Eigen::Tensor<float, 2>& values,
+      const int& memory_step,
       const std::vector<int>& node_ids,
       const NodeStatus& status_update);
  
