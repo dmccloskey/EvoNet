@@ -94,7 +94,18 @@ BOOST_AUTO_TEST_CASE(initNode)
   BOOST_CHECK_EQUAL(node.getError()(0,0), 0.0);
   BOOST_CHECK_EQUAL(node.getError()(1,4), 0.0);
   BOOST_CHECK(node.getStatus() == NodeStatus::initialized);
+}
 
+BOOST_AUTO_TEST_CASE(checkTimeStep)
+{
+  Node node;
+  node.setId(1);
+  node.initNode(2,5);
+
+  BOOST_CHECK(!node.checkTimeStep(-1));
+  BOOST_CHECK(!node.checkTimeStep(5));
+  BOOST_CHECK(node.checkTimeStep(0));
+  BOOST_CHECK(node.checkTimeStep(4));
 }
 
 BOOST_AUTO_TEST_CASE(calculateActivation)

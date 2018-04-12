@@ -127,6 +127,42 @@ public:
       std::vector<int>& sink_nodes);
  
     /**
+      @brief Continuation of the forward propogation step that identifies all biases
+        for the identified sink nodes. Returns a vector of links
+        and associated nodes that satisfy the following conditions:
+        1. all sink output values are unknown (i.e. inactive),
+        2. all source node output values are known (i.e. active) and biases.
+
+      @param[out] Links
+      @param[out] source_nodes
+      @param[in] sink_nodes
+      @param[out] sink_nodes_with_biases
+    */ 
+    void getNextInactiveLayerBiases(
+      std::vector<int>& links,
+      std::vector<int>& source_nodes,
+      const std::vector<int>& sink_nodes,
+      std::vector<int>& sink_nodes_with_biases);
+ 
+    /**
+      @brief Continuation of the forward propogation step that identifies 
+        all cyclic source nodes for the identified sink nodes. Returns a vector of links
+        and associated nodes that satisfy the following conditions:
+        1. all sink output values are unknown (i.e. inactive),
+        2. all source node output values are unknown (i.e. inactive).
+
+      @param[out] Links
+      @param[out] source_nodes
+      @param[in] sink_nodes
+      @param[out] sink_nodes_with_cycles
+    */ 
+    void getNextInactiveLayerCycles(
+      std::vector<int>& links,
+      std::vector<int>& source_nodes,
+      const std::vector<int>& sink_nodes,
+      std::vector<int>& sink_nodes_with_cycles);
+ 
+    /**
       @brief A prelude to a forward propogation step. Computes the net
         input into all nodes composing the next layer:
         1. all sink output values are unknown (i.e. inactive),

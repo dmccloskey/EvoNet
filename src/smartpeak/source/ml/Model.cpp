@@ -269,62 +269,6 @@ namespace SmartPeak
     }
     if (link_ids.size() != 0) { removeLinks(link_ids); }
   }
-  
-  void Model::getNextInactiveLayer(
-    std::vector<int>& links,
-    std::vector<int>& source_nodes,
-    std::vector<int>& sink_nodes)
-  {
-    links.clear();
-    source_nodes.clear();
-    sink_nodes.clear();
-
-    // get all links where the source node is active and the sink node is inactive
-    // except for biases
-    for (auto& link_map : links_)
-    {
-      if (nodes_.at(link_map.second.getSourceNodeId()).getType() != NodeType::bias &&
-        nodes_.at(link_map.second.getSourceNodeId()).getStatus() == NodeStatus::activated && 
-        nodes_.at(link_map.second.getSinkNodeId()).getStatus() == NodeStatus::initialized)
-      {
-        links.push_back(link_map.second.getId());
-        // could use std::set instead to check for duplicates
-        if (std::count(source_nodes.begin(), source_nodes.end(), link_map.second.getSourceNodeId()) == 0)
-        {
-          source_nodes.push_back(link_map.second.getSourceNodeId());
-        }
-        if (std::count(sink_nodes.begin(), sink_nodes.end(), link_map.second.getSinkNodeId()) == 0)
-        {
-          sink_nodes.push_back(link_map.second.getSinkNodeId());
-        }
-      }
-    }
-
-    // get all the biases for the sink nodes
-    for (auto& link_map : links_)
-    {
-      if (        
-        // does not allow for cycles
-        nodes_.at(link_map.second.getSourceNodeId()).getType() == NodeType::bias && 
-        nodes_.at(link_map.second.getSourceNodeId()).getStatus() == NodeStatus::activated && 
-        // allows for cycles
-        // (nodes_.at(link_map.second.getSourceNodeId()).getStatus() == NodeStatus::activated || 
-        //   nodes_.at(link_map.second.getSourceNodeId()).getStatus() == NodeStatus::initialized) && 
-        // std::count(links.begin(), links.end(), link_map.second.getId()) == 0 && // unique links\
-        // required regardless if cycles are or are not allowed
-        nodes_.at(link_map.second.getSinkNodeId()).getStatus() == NodeStatus::initialized &&
-        std::count(sink_nodes.begin(), sink_nodes.end(), link_map.second.getSinkNodeId()) != 0 // sink node has already been identified
-      )
-      {
-        links.push_back(link_map.second.getId());
-        // could use std::set instead to check for duplicates
-        if (std::count(source_nodes.begin(), source_nodes.end(), link_map.second.getSourceNodeId()) == 0)
-        {
-          source_nodes.push_back(link_map.second.getSourceNodeId());
-        }
-      }
-    }
-  }
 
   void Model::initNodes(const int& batch_size, const int& memory_size)
   {
@@ -438,6 +382,101 @@ namespace SmartPeak
       }
     }
   }
+  
+  void Model::getNextInactiveLayer(
+    std::vector<int>& links,
+    std::vector<int>& source_nodes,
+    std::vector<int>& sink_nodes)
+  {
+    links.clear();
+    source_nodes.clear();
+    sink_nodes.clear();
+
+    // get all links where the source node is active and the sink node is inactive
+    // except for biases
+    for (auto& link_map : links_)
+    {
+      if (nodes_.at(link_map.second.getSourceNodeId()).getType() != NodeType::bias &&
+        nodes_.at(link_map.second.getSourceNodeId()).getStatus() == NodeStatus::activated && 
+        nodes_.at(link_map.second.getSinkNodeId()).getStatus() == NodeStatus::initialized)
+      {
+        links.push_back(link_map.second.getId());
+        // could use std::set instead to check for duplicates
+        if (std::count(source_nodes.begin(), source_nodes.end(), link_map.second.getSourceNodeId()) == 0)
+        {
+          source_nodes.push_back(link_map.second.getSourceNodeId());
+        }
+        if (std::count(sink_nodes.begin(), sink_nodes.end(), link_map.second.getSinkNodeId()) == 0)
+        {
+          sink_nodes.push_back(link_map.second.getSinkNodeId());
+        }
+      }
+    }
+  }
+  
+  void Model::getNextInactiveLayerBiases(
+    std::vector<int>& links,
+    std::vector<int>& source_nodes,
+    const std::vector<int>& sink_nodes,
+    std::vector<int>& sink_nodes_with_biases)
+  {
+
+    // get all the biases for the sink nodes
+    for (auto& link_map : links_)
+    {
+      if (        
+        // does not allow for cycles
+        nodes_.at(link_map.second.getSourceNodeId()).getType() == NodeType::bias && 
+        nodes_.at(link_map.second.getSourceNodeId()).getStatus() == NodeStatus::activated &&
+        // required regardless if cycles are or are not allowed
+        nodes_.at(link_map.second.getSinkNodeId()).getStatus() == NodeStatus::initialized &&
+        std::count(sink_nodes.begin(), sink_nodes.end(), link_map.second.getSinkNodeId()) != 0 // sink node has already been identified
+      )
+      {
+        links.push_back(link_map.second.getId());
+        // could use std::set instead to check for duplicates
+        if (std::count(source_nodes.begin(), source_nodes.end(), link_map.second.getSourceNodeId()) == 0)
+        {
+          source_nodes.push_back(link_map.second.getSourceNodeId());
+        }
+        if (std::count(sink_nodes_with_biases.begin(), sink_nodes_with_biases.end(), link_map.second.getSinkNodeId()) == 0)
+        {
+          sink_nodes_with_biases.push_back(link_map.second.getSinkNodeId());
+        }
+      }
+    }
+  }
+  
+  void Model::getNextInactiveLayerCycles(
+    std::vector<int>& links,
+    std::vector<int>& source_nodes,
+    const std::vector<int>& sink_nodes,
+    std::vector<int>& sink_nodes_with_cycles)
+  {
+
+    // get cyclic source nodes
+    for (auto& link_map : links_)
+    {
+      if (
+        (nodes_.at(link_map.second.getSourceNodeId()).getStatus() == NodeStatus::initialized) &&
+        // required regardless if cycles are or are not allowed
+        nodes_.at(link_map.second.getSinkNodeId()).getStatus() == NodeStatus::initialized &&
+        std::count(sink_nodes.begin(), sink_nodes.end(), link_map.second.getSinkNodeId()) != 0 // sink node has already been identified
+      )
+      {
+        links.push_back(link_map.second.getId());
+        // could use std::set instead to check for duplicates
+        if (std::count(source_nodes.begin(), source_nodes.end(), link_map.second.getSourceNodeId()) == 0)
+        {
+          source_nodes.push_back(link_map.second.getSourceNodeId());
+        }
+        if (std::count(sink_nodes_with_cycles.begin(), sink_nodes_with_cycles.end(), link_map.second.getSinkNodeId()) == 0)
+        {
+          sink_nodes_with_cycles.push_back(link_map.second.getSinkNodeId());
+        }
+      }
+    }
+  }
 
   void Model::forwardPropogateLayerNetInput(
     const std::vector<int>& links,
@@ -457,7 +496,14 @@ namespace SmartPeak
     {
       for (int j=0; j<batch_size; ++j)
       {
-        source_ptr[i*batch_size + j] = nodes_.at(source_nodes[i]).getOutputPointer()[j]; //current time-step
+        if (nodes_.at(source_nodes[i]).getStatus() == NodeStatus::activated)
+        {
+          source_ptr[i*batch_size + j] = nodes_.at(source_nodes[i]).getOutputPointer()[j]; //current time-step
+        }
+        else if (nodes_.at(source_nodes[i]).getStatus() == NodeStatus::initialized)
+        {
+          source_ptr[i*batch_size + j] = nodes_.at(source_nodes[i]).getOutputPointer()[batch_size + j]; //previous time-step
+        }
       }
     }
 
@@ -479,13 +525,15 @@ namespace SmartPeak
       }
     }
     float sink_ptr [sink_nodes.size() * batch_size];
-    for (int i=0; i<sink_nodes.size(); ++i)
-    {
-      for (int j=0; j<batch_size; ++j)
-      {
-        sink_ptr[i*batch_size + j] = nodes_.at(sink_nodes[i]).getOutputPointer()[j]; //current time-step
-      }
-    }
+    // // Not necessary because the underlying data will not be linked with the tensor
+    // // in the current implementation
+    // for (int i=0; i<sink_nodes.size(); ++i)
+    // {
+    //   for (int j=0; j<batch_size; ++j)
+    //   {
+    //     sink_ptr[i*batch_size + j] = nodes_.at(sink_nodes[i]).getOutputPointer()[j]; //current time-step
+    //   }
+    // }
 
     // construct the source and weight tensors
     Eigen::TensorMap<Eigen::Tensor<float, 2>> source_tensor(source_ptr, batch_size, source_nodes.size());
@@ -512,8 +560,8 @@ namespace SmartPeak
   {
     for (const int& node : sink_nodes)
     {
-      nodes_.at(node).calculateActivation();
-      nodes_.at(node).calculateDerivative();
+      nodes_.at(node).calculateActivation(0);
+      nodes_.at(node).calculateDerivative(0);
     }
   }
   
@@ -525,6 +573,13 @@ namespace SmartPeak
       // get the next hidden layer
       std::vector<int> links, source_nodes, sink_nodes;
       getNextInactiveLayer(links, source_nodes, sink_nodes);
+
+      // TODO: get biases
+      // TODO: get cycles
+      // TODO: remove cycles if size of sinks with cycles = size of sinks
+      //       or get cycles 
+      // allows for a "pause" in forward propogation to allow all update
+      // steps to catch up
 
       // check if all nodes have been activated
       if (links.size() == 0)

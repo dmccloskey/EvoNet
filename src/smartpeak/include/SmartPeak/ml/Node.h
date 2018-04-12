@@ -86,22 +86,33 @@ public:
     void initNode(const int& batch_size, const int& memory_size);
 
     /**
+      @brief CHeck that the time_step is greater than 0 and not larger than
+        the node memory size.
+
+      @param[in] time_step Time step
+    */ 
+    bool checkTimeStep(const int& time_step);
+
+    /**
       @brief The current output is passed through an activation function.
         Contents are updated in place.
+
+      @param[in] time_step Time step to activate all samples in the batch
     */
-    void calculateActivation();
+    void calculateActivation(const int& time_step);
     
     /**
       @brief Calculate the derivative from the output.
+
+      @param[in] time_step Time step to calculate the derivative
+        for all samples in the batch
     */
-    void calculateDerivative();
+    void calculateDerivative(const int& time_step);
 
 private:
     int id_; ///< Node ID
     SmartPeak::NodeType type_; ///< Node Type
-    SmartPeak::NodeStatus status_; ///< Node Status
-    
-    
+    SmartPeak::NodeStatus status_; ///< Node Status   
 
     /**
       @brief output, error and derivative have the following dimensions:

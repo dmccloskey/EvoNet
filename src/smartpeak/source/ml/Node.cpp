@@ -99,20 +99,31 @@ namespace SmartPeak
     setStatus(NodeStatus::initialized);
   }
 
-  void Node::calculateActivation()
+  void Node::calculateActivation(const int& time_step)
   {
+    const int batch_size = output_.dimension(0);
+    if (!checkTimeStep(time_step)) return;
+    Eigen::Tensor<float, 1> output_step = output_.chip(time_step, 1);
     switch (type_)
     {
       case NodeType::bias: {break;} 
       case NodeType::input: {break;}        
       case NodeType::ReLU:
       {
-        output_ = output_.unaryExpr(ReLUOp<float>());
+        output_step = output_step.unaryExpr(ReLUOp<float>());
+        for (int i=0; i<output_step.size(); ++i)
+        {
+          output_(i, time_step) = output_step(i);
+        }
         break;
       }
       case NodeType::ELU:
       {
-        output_ = output_.unaryExpr(ELUOp<float>(1.0));
+        output_step = output_step.unaryExpr(ELUOp<float>(1.0));
+        for (int i=0; i<output_step.size(); ++i)
+        {
+          output_(i, time_step) = output_step(i);
+        }
         break;
       }
       default:
@@ -123,28 +134,47 @@ namespace SmartPeak
     }
   }
 
-  void Node::calculateDerivative()
+  void Node::calculateDerivative(const int& time_step)
   {
+    const int batch_size = output_.dimension(0);
+    if (!checkTimeStep(time_step)) return;
+    Eigen::Tensor<float, 1> output_step = output_.chip(time_step, 1);
     switch (type_)
     {
       case NodeType::bias:
       {
-        derivative_.setConstant(0.0);
+        output_step.setConstant(0.0);
+        for (int i=0; i<output_step.size(); ++i)
+        {
+          derivative_(i, time_step) = output_step(i);
+        }
         break;
       } 
       case NodeType::input:
       {
-        derivative_.setConstant(0.0);
+        output_step.setConstant(0.0);
+        for (int i=0; i<output_step.size(); ++i)
+        {
+          derivative_(i, time_step) = output_step(i);
+        }
         break;
       }        
       case NodeType::ReLU:
       {
-        derivative_ = output_.unaryExpr(ReLUGradOp<float>());
+        output_step = output_step.unaryExpr(ReLUGradOp<float>());
+        for (int i=0; i<output_step.size(); ++i)
+        {
+          derivative_(i, time_step) = output_step(i);
+        }
         break;
       }
       case NodeType::ELU:
       {
-        derivative_ = output_.unaryExpr(ELUGradOp<float>(1.0));
+        output_step = output_step.unaryExpr(ELUGradOp<float>(1.0));
+        for (int i=0; i<output_step.size(); ++i)
+        {
+          derivative_(i, time_step) = output_step(i);
+        }
         break;
       }
       default:
@@ -152,6 +182,25 @@ namespace SmartPeak
         std::cout << "Node type not supported." << std::endl;
         break;
       }
+    }
+  }
+
+  bool Node::checkTimeStep(const int&time_step)
+  {
+    const int memory_size = output_.dimension(1);
+    if (time_step < 0)
+    {
+      std::cout << "time_step is less than 0." << std::endl;
+      return false;
+    }
+    else if (time_step >= memory_size)
+    {
+      std::cout << "time_step is greater than the node memory_size." << std::endl;
+      return false;
+    }
+    else
+    {
+      return true;
     }
   }
 }
