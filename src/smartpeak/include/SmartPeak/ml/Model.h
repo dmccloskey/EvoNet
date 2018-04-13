@@ -250,7 +250,25 @@ public:
     void getNextUncorrectedLayer(
       std::vector<int>& links,
       std::vector<int>& source_nodes,
-      std::vector<int>& sink_nodes);
+      std::vector<int>& sink_nodes);      
+ 
+    /**
+      @brief A continuation of a back propogation step.  Returns a vector of links
+        and associated nodes that satisfy the following conditions:
+        1. all sink error values are known (i.e. corrected),
+        2. all source error values are known (i.e. corrected).
+        3. all nodes need not be the same type
+
+      @param[out] Links
+      @param[out] source_nodes
+      @param[out] sink_nodes
+      @param[out] source_nodes_with_cycles
+    */ 
+    void getNextUncorrectedLayerCycles(
+      std::vector<int>& links,
+      const std::vector<int>& source_nodes,
+      std::vector<int>& sink_nodes,
+      std::vector<int>& source_nodes_with_cycles);
  
     /**
       @brief A back propogation step. Computes the net

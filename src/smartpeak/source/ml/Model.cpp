@@ -478,6 +478,86 @@ namespace SmartPeak
     }
   }
 
+  // Failed attempt to link Node memory directly with the tensor used for computation
+  //=================================================================================
+  // void Model::forwardPropogateLayerNetInput(
+  //   const std::vector<int>& links,
+  //   const std::vector<int>& source_nodes,
+  //   const std::vector<int>& sink_nodes)
+  // {
+  //   // infer the batch size from the first source node
+  //   const int batch_size = nodes_.at(source_nodes[0]).getOutput().dimension(0);
+
+  //   // concatenate the source and weight tensors
+  //   // using col-major ordering where rows are the batch vectors
+  //   // and cols are the nodes
+
+  //   // source_ptr
+  //   float source_ptr [source_nodes.size() * batch_size];
+  //   for (int i=0; i<source_nodes.size(); ++i)
+  //   {
+  //     for (int j=0; j<batch_size; ++j)
+  //     {
+  //       if (nodes_.at(source_nodes[i]).getStatus() == NodeStatus::activated)
+  //       {
+  //         source_ptr[i*batch_size + j] = nodes_.at(source_nodes[i]).getOutputPointer()[j]; //current time-step
+  //       }
+  //       else if (nodes_.at(source_nodes[i]).getStatus() == NodeStatus::initialized)
+  //       {
+  //         source_ptr[i*batch_size + j] = nodes_.at(source_nodes[i]).getOutputPointer()[batch_size + j]; //previous time-step
+  //       }
+  //     }
+  //   }
+
+  //   // weight_ptr
+  //   float weight_ptr [source_nodes.size() * sink_nodes.size()];
+  //   for (int i=0; i<sink_nodes.size(); ++i)
+  //   {
+  //     for (int j=0; j<source_nodes.size(); ++j)
+  //     {
+  //       for (const int& link : links)
+  //       {
+  //         if (links_.at(link).getSinkNodeId() == sink_nodes[i] &&
+  //         links_.at(link).getSourceNodeId() == source_nodes[j])
+  //         {
+  //           weight_ptr[i*source_nodes.size() + j] = weights_.at(links_.at(link).getWeightId()).getWeight();
+  //           break;
+  //         }
+  //       }
+  //     }
+  //   }
+  //   float sink_ptr [sink_nodes.size() * batch_size];
+  //   // // Not necessary because the underlying data will not be linked with the tensor
+  //   // // in the current implementation
+  //   // for (int i=0; i<sink_nodes.size(); ++i)
+  //   // {
+  //   //   for (int j=0; j<batch_size; ++j)
+  //   //   {
+  //   //     sink_ptr[i*batch_size + j] = nodes_.at(sink_nodes[i]).getOutputPointer()[j]; //current time-step
+  //   //   }
+  //   // }
+
+  //   // construct the source and weight tensors
+  //   Eigen::TensorMap<Eigen::Tensor<float, 2>> source_tensor(source_ptr, batch_size, source_nodes.size());
+  //   // std::cout << "source_tensor " << source_tensor << std::endl;
+  //   Eigen::TensorMap<Eigen::Tensor<float, 2>> weight_tensor(weight_ptr, source_nodes.size(), sink_nodes.size());
+  //   // std::cout << "weight_tensor " << weight_tensor << std::endl;
+  //   Eigen::TensorMap<Eigen::Tensor<float, 2>> sink_tensor(sink_ptr, batch_size, sink_nodes.size());
+
+  //   // compute the output tensor
+  //   Eigen::array<Eigen::IndexPair<int>, 1> product_dims = {Eigen::IndexPair<int>(1, 0)};
+  //   sink_tensor = source_tensor.contract(weight_tensor, product_dims);
+  //   // std::cout << "sink_tensor " << sink_tensor << std::endl;
+
+  //   // update the sink nodes
+  //   mapValuesToNodes(sink_tensor, 0, sink_nodes, NodeStatus::activated);
+  //   // std::cout<<&sink_ptr[0]<<std::endl;
+  //   // std::cout<<sink_ptr[0]<<std::endl;
+  //   // std::cout<<&nodes_.at(sink_nodes[0]).getOutputPointer()[0]<<std::endl;
+  //   // std::cout<<nodes_.at(sink_nodes[0]).getOutputPointer()[0]<<std::endl;
+  // }
+  //=================================================================================
+
   void Model::forwardPropogateLayerNetInput(
     const std::vector<int>& links,
     const std::vector<int>& source_nodes,
@@ -490,25 +570,24 @@ namespace SmartPeak
     // using col-major ordering where rows are the batch vectors
     // and cols are the nodes
 
-    // source_ptr
-    float source_ptr [source_nodes.size() * batch_size];
+    // construct the source and weight tensors
+    Eigen::Tensor<float, 2> source_tensor(batch_size, source_nodes.size());
     for (int i=0; i<source_nodes.size(); ++i)
     {
       for (int j=0; j<batch_size; ++j)
       {
         if (nodes_.at(source_nodes[i]).getStatus() == NodeStatus::activated)
         {
-          source_ptr[i*batch_size + j] = nodes_.at(source_nodes[i]).getOutputPointer()[j]; //current time-step
+          source_tensor(j, i) = nodes_.at(source_nodes[i]).getOutput()(j, 0); //current time-step
         }
         else if (nodes_.at(source_nodes[i]).getStatus() == NodeStatus::initialized)
         {
-          source_ptr[i*batch_size + j] = nodes_.at(source_nodes[i]).getOutputPointer()[batch_size + j]; //previous time-step
+          source_tensor(j, i) = nodes_.at(source_nodes[i]).getOutput()(j, 1); //previous time-step
         }
       }
     }
 
-    // weight_ptr
-    float weight_ptr [source_nodes.size() * sink_nodes.size()];
+    Eigen::Tensor<float, 2> weight_tensor(source_nodes.size(), sink_nodes.size());
     for (int i=0; i<sink_nodes.size(); ++i)
     {
       for (int j=0; j<source_nodes.size(); ++j)
@@ -518,41 +597,19 @@ namespace SmartPeak
           if (links_.at(link).getSinkNodeId() == sink_nodes[i] &&
           links_.at(link).getSourceNodeId() == source_nodes[j])
           {
-            weight_ptr[i*source_nodes.size() + j] = weights_.at(links_.at(link).getWeightId()).getWeight();
+            weight_tensor(j, i) = weights_.at(links_.at(link).getWeightId()).getWeight();
             break;
           }
         }
       }
     }
-    float sink_ptr [sink_nodes.size() * batch_size];
-    // // Not necessary because the underlying data will not be linked with the tensor
-    // // in the current implementation
-    // for (int i=0; i<sink_nodes.size(); ++i)
-    // {
-    //   for (int j=0; j<batch_size; ++j)
-    //   {
-    //     sink_ptr[i*batch_size + j] = nodes_.at(sink_nodes[i]).getOutputPointer()[j]; //current time-step
-    //   }
-    // }
-
-    // construct the source and weight tensors
-    Eigen::TensorMap<Eigen::Tensor<float, 2>> source_tensor(source_ptr, batch_size, source_nodes.size());
-    // std::cout << "source_tensor " << source_tensor << std::endl;
-    Eigen::TensorMap<Eigen::Tensor<float, 2>> weight_tensor(weight_ptr, source_nodes.size(), sink_nodes.size());
-    // std::cout << "weight_tensor " << weight_tensor << std::endl;
-    Eigen::TensorMap<Eigen::Tensor<float, 2>> sink_tensor(sink_ptr, batch_size, sink_nodes.size());
 
     // compute the output tensor
     Eigen::array<Eigen::IndexPair<int>, 1> product_dims = {Eigen::IndexPair<int>(1, 0)};
-    sink_tensor = source_tensor.contract(weight_tensor, product_dims);
-    // std::cout << "sink_tensor " << sink_tensor << std::endl;
+    Eigen::Tensor<float, 2> sink_tensor = source_tensor.contract(weight_tensor, product_dims);
 
     // update the sink nodes
     mapValuesToNodes(sink_tensor, 0, sink_nodes, NodeStatus::activated);
-    // std::cout<<&sink_ptr[0]<<std::endl;
-    // std::cout<<sink_ptr[0]<<std::endl;
-    // std::cout<<&nodes_.at(sink_nodes[0]).getOutputPointer()[0]<<std::endl;
-    // std::cout<<nodes_.at(sink_nodes[0]).getOutputPointer()[0]<<std::endl;
   }
   
   void Model::forwardPropogateLayerActivation(
@@ -574,12 +631,27 @@ namespace SmartPeak
       std::vector<int> links, source_nodes, sink_nodes;
       getNextInactiveLayer(links, source_nodes, sink_nodes);
 
-      // TODO: get biases
-      // TODO: get cycles
-      // TODO: remove cycles if size of sinks with cycles = size of sinks
-      //       or get cycles 
-      // allows for a "pause" in forward propogation to allow all update
-      // steps to catch up
+      // get biases,
+      std::vector<int> sink_nodes_with_biases;
+      getNextInactiveLayerBiases(links, source_nodes, sink_nodes, sink_nodes_with_biases);
+      
+      // get cycles
+      std::vector<int> links_cycles, source_nodes_cycles, sink_nodes_cycles;
+      getNextInactiveLayerCycles(links_cycles, source_nodes_cycles, sink_nodes, sink_nodes_cycles);
+
+      if (sink_nodes_cycles.size() == sink_nodes.size())
+      { // all forward propogation steps have caught up
+        // add sink nodes with cycles to the forward propogation step
+        links.insert( links.end(), links_cycles.begin(), links_cycles.end() );
+        source_nodes.insert( source_nodes.end(), source_nodes_cycles.begin(), source_nodes_cycles.end() );
+      }
+      else
+      { // remove source/sink nodes with cycles from the forward propogation step
+        for (const int node_id : sink_nodes_cycles)
+        {
+          sink_nodes.erase(std::remove(sink_nodes.begin(), sink_nodes.end(), node_id), sink_nodes.end());
+        }
+      }
 
       // check if all nodes have been activated
       if (links.size() == 0)
@@ -617,15 +689,23 @@ namespace SmartPeak
     }
 
     // make the tensor for the calculated model output
-    float node_ptr [node_ids.size() * batch_size];
+    // float node_ptr [node_ids.size() * batch_size];
+    // for (int i=0; i<node_ids.size(); ++i)
+    // {
+    //   for (int j=0; j<batch_size; ++j)
+    //   {
+    //     node_ptr[i*batch_size + j] = nodes_.at(node_ids[i]).getOutputPointer()[j];
+    //   }
+    // }
+    // Eigen::TensorMap<Eigen::Tensor<float, 2>> node_tensor(node_ptr, batch_size, node_ids.size());
+    Eigen::Tensor<float, 2> node_tensor(batch_size, node_ids.size());
     for (int i=0; i<node_ids.size(); ++i)
     {
       for (int j=0; j<batch_size; ++j)
       {
-        node_ptr[i*batch_size + j] = nodes_.at(node_ids[i]).getOutputPointer()[j];
+        node_tensor(j, i) = nodes_.at(node_ids[i]).getOutput()(j, 0); // current time-step
       }
     }
-    Eigen::TensorMap<Eigen::Tensor<float, 2>> node_tensor(node_ptr, batch_size, node_ids.size());
 
     // calculate the model error wrt the expected model output
     Eigen::Tensor<float, 2> error_tensor(batch_size, node_ids.size());
@@ -710,26 +790,114 @@ namespace SmartPeak
         }
       }
     }
-
-    // // allows for cycles
-    // for (auto& link_map : links_)
-    // {
-    //   if ((nodes_.at(link_map.second.getSourceNodeId()).getStatus() == NodeStatus::corrected || 
-    //       nodes_.at(link_map.second.getSourceNodeId()).getStatus() == NodeStatus::activated) && 
-    //     std::count(links.begin(), links.end(), link_map.second.getId()) == 0 && // unique links 
-    //     nodes_.at(link_map.second.getSinkNodeId()).getStatus() == NodeStatus::corrected &&
-    //     std::count(source_nodes.begin(), source_nodes.end(), link_map.second.getSinkNodeId()) != 0 // sink node has already been identified)
-    //   ) 
-    //   {
-    //     links.push_back(link_map.second.getId());
-    //     // could use std::set instead to check for duplicates
-    //     if (std::count(sink_nodes.begin(), sink_nodes.end(), link_map.second.getSourceNodeId()) == 0)
-    //     {
-    //       sink_nodes.push_back(link_map.second.getSourceNodeId());
-    //     }
-    //   }
-    // }
   }
+  
+  void Model::getNextUncorrectedLayerCycles(
+    std::vector<int>& links,
+    const std::vector<int>& source_nodes,
+    std::vector<int>& sink_nodes,
+    std::vector<int>& source_nodes_with_cycles)
+  {
+
+    // allows for cycles
+    for (auto& link_map : links_)
+    {
+      if (nodes_.at(link_map.second.getSourceNodeId()).getStatus() == NodeStatus::corrected && 
+        std::count(links.begin(), links.end(), link_map.second.getId()) == 0 && // unique links 
+        nodes_.at(link_map.second.getSinkNodeId()).getStatus() == NodeStatus::corrected &&
+        std::count(source_nodes.begin(), source_nodes.end(), link_map.second.getSinkNodeId()) != 0 // sink node has already been identified)
+      ) 
+      {
+        links.push_back(link_map.second.getId());
+        // could use std::set instead to check for duplicates
+        if (std::count(sink_nodes.begin(), sink_nodes.end(), link_map.second.getSourceNodeId()) == 0)
+        {
+          sink_nodes.push_back(link_map.second.getSourceNodeId());
+        }
+        if (std::count(source_nodes_with_cycles.begin(), source_nodes_with_cycles.end(), link_map.second.getSinkNodeId()) == 0)
+        {
+          source_nodes_with_cycles.push_back(link_map.second.getSinkNodeId());
+        }
+      }
+    }
+  }
+
+  // Failed attempt to link Node memory direction with computational tensor
+  //=======================================================================
+  // void Model::backPropogateLayerError(
+  //   const std::vector<int>& links,
+  //   const std::vector<int>& source_nodes,
+  //   const std::vector<int>& sink_nodes)
+  // {
+  //   // infer the batch size from the first source node
+  //   const int batch_size = nodes_.at(source_nodes[0]).getOutput().dimension(0);
+
+  //   // concatenate the source and weight tensors
+  //   // using col-major ordering where rows are the batch vectors
+  //   // and cols are the nodes
+
+  //   // source_ptr
+  //   float source_ptr [source_nodes.size() * batch_size];
+  //   for (int i=0; i<source_nodes.size(); ++i)
+  //   {
+  //     for (int j=0; j<batch_size; ++j)
+  //     {
+  //       source_ptr[i*batch_size + j] = nodes_.at(source_nodes[i]).getErrorPointer()[j];
+  //     }
+  //   }
+  //   // weight_ptr
+  //   float weight_ptr [source_nodes.size() * sink_nodes.size()];
+  //   for (int i=0; i<sink_nodes.size(); ++i)
+  //   {
+  //     for (int j=0; j<source_nodes.size(); ++j)
+  //     {
+  //       for (const int& link : links)
+  //       {
+  //         if (links_.at(link).getSourceNodeId() == sink_nodes[i] &&
+  //         links_.at(link).getSinkNodeId() == source_nodes[j])
+  //         {
+  //           weight_ptr[i*source_nodes.size() + j] = weights_.at(links_.at(link).getWeightId()).getWeight();
+  //           break;
+  //         }
+  //       }
+  //     }
+  //   }
+  //   // derivative_ptr
+  //   float derivative_ptr [sink_nodes.size() * batch_size];
+  //   for (int i=0; i<sink_nodes.size(); ++i)
+  //   {
+  //     for (int j=0; j<batch_size; ++j)
+  //     {
+  //       derivative_ptr[i*batch_size + j] = nodes_.at(sink_nodes[i]).getDerivativePointer()[j];
+  //     }
+  //   }
+  //   float sink_ptr [sink_nodes.size() * batch_size];
+  //   for (int i=0; i<sink_nodes.size(); ++i)
+  //   {
+  //     for (int j=0; j<batch_size; ++j)
+  //     {
+  //       sink_ptr[i*batch_size + j] = nodes_.at(sink_nodes[i]).getOutputPointer()[j];
+  //     }
+  //   }
+
+  //   // construct the source and weight tensors
+  //   Eigen::TensorMap<Eigen::Tensor<float, 2>> source_tensor(source_ptr, batch_size, source_nodes.size());
+  //   // std::cout << "source_tensor " << source_tensor << std::endl;
+  //   Eigen::TensorMap<Eigen::Tensor<float, 2>> weight_tensor(weight_ptr, source_nodes.size(), sink_nodes.size());
+  //   // std::cout << "weight_tensor " << weight_tensor << std::endl;
+  //   Eigen::TensorMap<Eigen::Tensor<float, 2>> derivative_tensor(derivative_ptr, batch_size, sink_nodes.size());
+  //   // std::cout << "derivative_tensor " << derivative_tensor << std::endl;
+  //   Eigen::TensorMap<Eigen::Tensor<float, 2>> sink_tensor(sink_ptr, batch_size, sink_nodes.size());
+
+  //   // compute the output tensor
+  //   Eigen::array<Eigen::IndexPair<int>, 1> product_dims = {Eigen::IndexPair<int>(1, 0)};
+  //   sink_tensor = source_tensor.contract(weight_tensor, product_dims) * derivative_tensor;
+  //   // std::cout << "sink_tensor " << sink_tensor << std::endl;
+
+  //   // update the sink nodes
+  //   mapValuesToNodes(sink_tensor, 0, sink_nodes, NodeStatus::corrected);
+  // }
+  //=======================================================================
 
   void Model::backPropogateLayerError(
     const std::vector<int>& links,
@@ -743,17 +911,18 @@ namespace SmartPeak
     // using col-major ordering where rows are the batch vectors
     // and cols are the nodes
 
-    // source_ptr
-    float source_ptr [source_nodes.size() * batch_size];
+    // construct the source tensors
+    Eigen::Tensor<float, 2> source_tensor(batch_size, source_nodes.size());
     for (int i=0; i<source_nodes.size(); ++i)
     {
       for (int j=0; j<batch_size; ++j)
       {
-        source_ptr[i*batch_size + j] = nodes_.at(source_nodes[i]).getErrorPointer()[j];
+        source_tensor(j, i) = nodes_.at(source_nodes[i]).getError()(j, 0); // current time-step
       }
     }
-    // weight_ptr
-    float weight_ptr [source_nodes.size() * sink_nodes.size()];
+
+    // construct the weight tensors
+    Eigen::Tensor<float, 2> weight_tensor(source_nodes.size(), sink_nodes.size());
     for (int i=0; i<sink_nodes.size(); ++i)
     {
       for (int j=0; j<source_nodes.size(); ++j)
@@ -763,43 +932,26 @@ namespace SmartPeak
           if (links_.at(link).getSourceNodeId() == sink_nodes[i] &&
           links_.at(link).getSinkNodeId() == source_nodes[j])
           {
-            weight_ptr[i*source_nodes.size() + j] = weights_.at(links_.at(link).getWeightId()).getWeight();
+            weight_tensor(j, i) = weights_.at(links_.at(link).getWeightId()).getWeight();
             break;
           }
         }
       }
     }
-    // derivative_ptr
-    float derivative_ptr [sink_nodes.size() * batch_size];
+    
+    // construct the derivative tensors
+    Eigen::Tensor<float, 2> derivative_tensor(batch_size, sink_nodes.size());
     for (int i=0; i<sink_nodes.size(); ++i)
     {
       for (int j=0; j<batch_size; ++j)
       {
-        derivative_ptr[i*batch_size + j] = nodes_.at(sink_nodes[i]).getDerivativePointer()[j];
+        derivative_tensor(j, i) = nodes_.at(sink_nodes[i]).getDerivative()(j, 0); // current time-step
       }
     }
-    float sink_ptr [sink_nodes.size() * batch_size];
-    for (int i=0; i<sink_nodes.size(); ++i)
-    {
-      for (int j=0; j<batch_size; ++j)
-      {
-        sink_ptr[i*batch_size + j] = nodes_.at(sink_nodes[i]).getOutputPointer()[j];
-      }
-    }
-
-    // construct the source and weight tensors
-    Eigen::TensorMap<Eigen::Tensor<float, 2>> source_tensor(source_ptr, batch_size, source_nodes.size());
-    // std::cout << "source_tensor " << source_tensor << std::endl;
-    Eigen::TensorMap<Eigen::Tensor<float, 2>> weight_tensor(weight_ptr, source_nodes.size(), sink_nodes.size());
-    // std::cout << "weight_tensor " << weight_tensor << std::endl;
-    Eigen::TensorMap<Eigen::Tensor<float, 2>> derivative_tensor(derivative_ptr, batch_size, sink_nodes.size());
-    // std::cout << "derivative_tensor " << derivative_tensor << std::endl;
-    Eigen::TensorMap<Eigen::Tensor<float, 2>> sink_tensor(sink_ptr, batch_size, sink_nodes.size());
 
     // compute the output tensor
     Eigen::array<Eigen::IndexPair<int>, 1> product_dims = {Eigen::IndexPair<int>(1, 0)};
-    sink_tensor = source_tensor.contract(weight_tensor, product_dims) * derivative_tensor;
-    // std::cout << "sink_tensor " << sink_tensor << std::endl;
+    Eigen::Tensor<float, 2> sink_tensor = source_tensor.contract(weight_tensor, product_dims) * derivative_tensor;
 
     // update the sink nodes
     mapValuesToNodes(sink_tensor, 0, sink_nodes, NodeStatus::corrected);

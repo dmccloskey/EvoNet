@@ -700,6 +700,57 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayer1)
   model1.getNextInactiveLayer(links, source_nodes, sink_nodes);
 
   // test links and source and sink nodes
+  BOOST_CHECK_EQUAL(links.size(), 4);
+  BOOST_CHECK(links[0] == l1.getId());
+  BOOST_CHECK(links[1] == l2.getId());
+  BOOST_CHECK(links[2] == l3.getId());
+  BOOST_CHECK(links[3] == l4.getId());
+  BOOST_CHECK_EQUAL(source_nodes.size(), 2);
+  BOOST_CHECK(source_nodes[0] == i1.getId());
+  BOOST_CHECK(source_nodes[1] == i2.getId());
+  BOOST_CHECK_EQUAL(sink_nodes.size(), 2);
+  BOOST_CHECK(sink_nodes[0] == h1.getId());
+  BOOST_CHECK(sink_nodes[1] == h2.getId());
+
+}
+
+BOOST_AUTO_TEST_CASE(getNextInactiveLayerBiases1) 
+{
+  // Toy network: 1 hidden layer, fully connected, DAG
+  Node i1, i2, h1, h2, o1, o2, b1, b2;
+  Link l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4;
+  Weight w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4;
+  Model model1;
+  makeModel1(
+    i1, i2, h1, h2, o1, o2, b1, b2,
+    l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4,
+    w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4,
+    model1);
+
+  // initialize nodes
+  const int batch_size = 4;
+  const int memory_size = 1;
+  model1.initNodes(batch_size, memory_size);
+
+  // create the input and biases
+  const std::vector<int> input_ids = {0, 1};
+  Eigen::Tensor<float, 3> input(batch_size, memory_size, input_ids.size()); 
+  input.setValues({{{1, 5}}, {{2, 6}}, {{3, 7}}, {{4, 8}}});
+  model1.mapValuesToNodes(input, input_ids, NodeStatus::activated);  
+
+  const std::vector<int> biases_ids = {6, 7};
+  Eigen::Tensor<float, 3> biases(batch_size, memory_size, biases_ids.size()); 
+  biases.setConstant(1);
+  model1.mapValuesToNodes(biases, biases_ids, NodeStatus::activated);  
+
+  // get the next hidden layer
+  std::vector<int> links = {0, 1, 2, 3};
+  std::vector<int> source_nodes = {0, 1};
+  std::vector<int> sink_nodes = {2, 3};
+  std::vector<int> sink_nodes_with_biases;
+  model1.getNextInactiveLayerBiases(links, source_nodes, sink_nodes, sink_nodes_with_biases);
+
+  // test links and source and sink nodes
   BOOST_CHECK_EQUAL(links.size(), 6);
   BOOST_CHECK(links[0] == l1.getId());
   BOOST_CHECK(links[1] == l2.getId());
@@ -714,6 +765,9 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayer1)
   BOOST_CHECK_EQUAL(sink_nodes.size(), 2);
   BOOST_CHECK(sink_nodes[0] == h1.getId());
   BOOST_CHECK(sink_nodes[1] == h2.getId());
+  BOOST_CHECK_EQUAL(sink_nodes_with_biases.size(), 2);
+  BOOST_CHECK(sink_nodes_with_biases[0] == h1.getId());
+  BOOST_CHECK(sink_nodes_with_biases[1] == h2.getId());
 
 }
 
@@ -823,6 +877,8 @@ BOOST_AUTO_TEST_CASE(forwardPropogateLayerNetInput)
   // get the next hidden layer
   std::vector<int> links, source_nodes, sink_nodes;
   model1.getNextInactiveLayer(links, source_nodes, sink_nodes);
+  std::vector<int> sink_nodes_with_biases;
+  model1.getNextInactiveLayerBiases(links, source_nodes, sink_nodes, sink_nodes_with_biases);
 
   // calculate the net input
   model1.forwardPropogateLayerNetInput(links, source_nodes, sink_nodes);
@@ -876,6 +932,8 @@ BOOST_AUTO_TEST_CASE(forwardPropogateLayerActivation)
   // get the next hidden layer
   std::vector<int> links, source_nodes, sink_nodes;
   model1.getNextInactiveLayer(links, source_nodes, sink_nodes);
+  std::vector<int> sink_nodes_with_biases;
+  model1.getNextInactiveLayerBiases(links, source_nodes, sink_nodes, sink_nodes_with_biases);
 
   // calculate the net input
   model1.forwardPropogateLayerNetInput(links, source_nodes, sink_nodes);
