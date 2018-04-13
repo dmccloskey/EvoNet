@@ -112,53 +112,67 @@ BOOST_AUTO_TEST_CASE(calculateActivation)
 {
   Node node;
   node.setId(1);
-  node.initNode(5,1);
-  Eigen::Tensor<float, 2> output_test(5, 1);
-  output_test.setValues({{0.0}, {1.0}, {10.0}, {-1.0}, {-10.0}});
+  node.initNode(5,2);
+  Eigen::Tensor<float, 2> output_test(5, 2);
+  output_test.setValues({{0.0, -1.0}, {1.0, -1.0}, {10.0, -1.0}, {-1.0, -1.0}, {-10.0, -1.0}});
 
   // test input
   node.setType(NodeType::input);
   node.setOutput(output_test);
-  node.calculateActivation();
+  node.calculateActivation(0);
 
   BOOST_CHECK_CLOSE(node.getOutput()(0,0), 0.0, 1e-6);
   BOOST_CHECK_CLOSE(node.getOutput()(1,0), 1.0, 1e-6);
   BOOST_CHECK_CLOSE(node.getOutput()(2,0), 10.0, 1e-6);
   BOOST_CHECK_CLOSE(node.getOutput()(3,0), -1.0, 1e-6);
   BOOST_CHECK_CLOSE(node.getOutput()(4,0), -10.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getOutput()(0,1), -1.0, 1e-6); // time point 1 should not be calculated
 
   // test bias
   node.setType(NodeType::bias);
   node.setOutput(output_test);
-  node.calculateActivation();
+  node.calculateActivation(0);
 
   BOOST_CHECK_CLOSE(node.getOutput()(0,0), 0.0, 1e-6);
   BOOST_CHECK_CLOSE(node.getOutput()(1,0), 1.0, 1e-6);
   BOOST_CHECK_CLOSE(node.getOutput()(2,0), 10.0, 1e-6);
   BOOST_CHECK_CLOSE(node.getOutput()(3,0), -1.0, 1e-6);
   BOOST_CHECK_CLOSE(node.getOutput()(4,0), -10.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getOutput()(0,1), -1.0, 1e-6); // time point 1 should not be calculated
 
   // test ReLU
   node.setType(NodeType::ReLU);
   node.setOutput(output_test);
-  node.calculateActivation();
+  node.calculateActivation(0);
 
   BOOST_CHECK_CLOSE(node.getOutput()(0,0), 0.0, 1e-6);
   BOOST_CHECK_CLOSE(node.getOutput()(1,0), 1.0, 1e-6);
   BOOST_CHECK_CLOSE(node.getOutput()(2,0), 10.0, 1e-6);
   BOOST_CHECK_CLOSE(node.getOutput()(3,0), 0.0, 1e-6);
   BOOST_CHECK_CLOSE(node.getOutput()(4,0), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getOutput()(0,1), -1.0, 1e-6); // time point 1 should not be calculated
+
+  node.setOutput(output_test);
+  node.calculateActivation(1);
+
+  BOOST_CHECK_CLOSE(node.getOutput()(0,1), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getOutput()(1,1), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getOutput()(2,1), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getOutput()(3,1), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getOutput()(4,1), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getOutput()(4,0), -10.0, 1e-6); // time point 0 should not be calculated
 
   // test ELU
   node.setType(NodeType::ELU);
   node.setOutput(output_test);
-  node.calculateActivation();
+  node.calculateActivation(0);
   
   BOOST_CHECK_CLOSE(node.getOutput()(0,0), 0.0, 1e-6);
   BOOST_CHECK_CLOSE(node.getOutput()(1,0), 1.0, 1e-6);
   BOOST_CHECK_CLOSE(node.getOutput()(2,0), 10.0, 1e-6);
   BOOST_CHECK_CLOSE(node.getOutput()(3,0), -0.63212055, 1e-6);
   BOOST_CHECK_CLOSE(node.getOutput()(4,0), -0.999954581, 1e-6);
+  BOOST_CHECK_CLOSE(node.getOutput()(0,1), -1.0, 1e-6); // time point 1 should not be calculated
 
 }
 
@@ -166,50 +180,70 @@ BOOST_AUTO_TEST_CASE(calculateDerivative)
 {
   Node node;
   node.setId(1);
-  node.initNode(5,1);
-  Eigen::Tensor<float, 2> output_test(5, 1);
-  output_test.setValues({{0.0}, {1.0}, {10.0}, {-1.0}, {-10.0}});
+  node.initNode(5,2);
+  Eigen::Tensor<float, 2> output_test(5, 2);
+  output_test.setValues({{0.0, 1.0}, {1.0, 1.0}, {10.0, 1.0}, {-1.0, 1.0}, {-10.0, 1.0}});
   node.setOutput(output_test);
 
   // test input
   node.setType(NodeType::input);
-  node.calculateDerivative();
+  node.calculateDerivative(0);
 
   BOOST_CHECK_CLOSE(node.getDerivative()(0,0), 0.0, 1e-6);
   BOOST_CHECK_CLOSE(node.getDerivative()(1,0), 0.0, 1e-6);
   BOOST_CHECK_CLOSE(node.getDerivative()(2,0), 0.0, 1e-6);
   BOOST_CHECK_CLOSE(node.getDerivative()(3,0), 0.0, 1e-6);
   BOOST_CHECK_CLOSE(node.getDerivative()(4,0), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getDerivative()(0,1), 0.0, 1e-6); // time step 1 should not be calculated
 
   // test bias
   node.setType(NodeType::bias);
-  node.calculateDerivative();
+  node.initNode(5,2);
+  node.setOutput(output_test);
+  node.calculateDerivative(0);
 
   BOOST_CHECK_CLOSE(node.getDerivative()(0,0), 0.0, 1e-6);
   BOOST_CHECK_CLOSE(node.getDerivative()(1,0), 0.0, 1e-6);
   BOOST_CHECK_CLOSE(node.getDerivative()(2,0), 0.0, 1e-6);
   BOOST_CHECK_CLOSE(node.getDerivative()(3,0), 0.0, 1e-6);
   BOOST_CHECK_CLOSE(node.getDerivative()(4,0), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getDerivative()(0,1), 0.0, 1e-6); // time step 1 should not be calculated
 
   // test ReLU
   node.setType(NodeType::ReLU);
-  node.calculateDerivative();
+  node.initNode(5,2);
+  node.setOutput(output_test);
+  node.calculateDerivative(0);
 
   BOOST_CHECK_CLOSE(node.getDerivative()(0,0), 0.0, 1e-6);
   BOOST_CHECK_CLOSE(node.getDerivative()(1,0), 1.0, 1e-6);
   BOOST_CHECK_CLOSE(node.getDerivative()(2,0), 1.0, 1e-6);
   BOOST_CHECK_CLOSE(node.getDerivative()(3,0), 0.0, 1e-6);
   BOOST_CHECK_CLOSE(node.getDerivative()(4,0), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getDerivative()(0,1), 0.0, 1e-6); // time step 1 should not be calculated
+
+  node.initNode(5,2);
+  node.setOutput(output_test);
+  node.calculateDerivative(1);
+  BOOST_CHECK_CLOSE(node.getDerivative()(0,1), 1.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getDerivative()(1,1), 1.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getDerivative()(2,1), 1.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getDerivative()(3,1), 1.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getDerivative()(4,1), 1.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getDerivative()(2,0), 0.0, 1e-6); // time step 0 should not be calculated
 
   // test ELU
   node.setType(NodeType::ELU);
-  node.calculateDerivative();
+  node.initNode(5,2);
+  node.setOutput(output_test);
+  node.calculateDerivative(0);
   
   BOOST_CHECK_CLOSE(node.getDerivative()(0,0), 1.0, 1e-6);
   BOOST_CHECK_CLOSE(node.getDerivative()(1,0), 1.0, 1e-6);
   BOOST_CHECK_CLOSE(node.getDerivative()(2,0), 1.0, 1e-6);
   BOOST_CHECK_CLOSE(node.getDerivative()(3,0), 0.36787945, 1e-6);
   BOOST_CHECK_CLOSE(node.getDerivative()(4,0), 4.54187393e-05, 1e-6);
+  BOOST_CHECK_CLOSE(node.getDerivative()(0,1), 0.0, 1e-6); // time step 1 should not be calculated
 
 }
 
