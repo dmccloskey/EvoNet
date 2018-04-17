@@ -65,7 +65,7 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   BOOST_CHECK(node.getType() == NodeType::ReLU);
   BOOST_CHECK(node.getStatus() == NodeStatus::initialized);
 
-  Eigen::Tensor<float, 2> output_test(3, 1), error_test(3, 1), derivative_test(3, 1);
+  Eigen::Tensor<float, 2> output_test(3, 2), error_test(3, 2), derivative_test(3, 2);
   output_test.setConstant(0.0f);
   node.setOutput(output_test);
   error_test.setConstant(1.0f);
@@ -73,12 +73,52 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   derivative_test.setConstant(2.0f);
   node.setDerivative(derivative_test);
 
+  // Test set values
   BOOST_CHECK_EQUAL(node.getOutput()(0,0), output_test(0,0));
   BOOST_CHECK_EQUAL(node.getOutputPointer()[0], output_test.data()[0]);
   BOOST_CHECK_EQUAL(node.getError()(0,0), error_test(0,0));
   BOOST_CHECK_EQUAL(node.getErrorPointer()[0], error_test.data()[0]);
   BOOST_CHECK_EQUAL(node.getDerivative()(0,0), derivative_test(0,0));
   BOOST_CHECK_EQUAL(node.getDerivativePointer()[0], derivative_test.data()[0]);
+
+  // Output 
+  // Test mutability
+  node.getOutputPointer()[0] = 10.0;
+  BOOST_CHECK_EQUAL(node.getOutput()(0,0), 10.0);
+
+  // Test mutability
+  node.getOutputMutable()->operator()(0,0) = 0.0;
+  BOOST_CHECK_EQUAL(node.getOutput()(0,0), 0.0);
+
+  // Test col-wise storage
+  node.getOutputPointer()[3] = 10.0;
+  BOOST_CHECK_EQUAL(node.getOutput()(0,1), 10.0);  
+
+  // Error
+  // Test mutability
+  node.getErrorPointer()[0] = 11.0;
+  BOOST_CHECK_EQUAL(node.getError()(0,0), 11.0);
+
+  // Test mutability
+  node.getErrorMutable()->operator()(0,0) = 0.0;
+  BOOST_CHECK_EQUAL(node.getError()(0,0), 0.0);
+
+  // Test col-wise storage
+  node.getErrorPointer()[3] = 11.0;
+  BOOST_CHECK_EQUAL(node.getError()(0,1), 11.0);
+
+  // Derivative
+  // Test mutability
+  node.getDerivativePointer()[0] = 12.0;
+  BOOST_CHECK_EQUAL(node.getDerivative()(0,0), 12.0);
+
+  // Test mutability
+  node.getDerivativeMutable()->operator()(0,0) = 0.0;
+  BOOST_CHECK_EQUAL(node.getDerivative()(0,0), 0.0);
+
+  // Test col-wise storage
+  node.getDerivativePointer()[3] = 12.0;
+  BOOST_CHECK_EQUAL(node.getDerivative()(0,1), 12.0);
 }
 
 BOOST_AUTO_TEST_CASE(initNode)

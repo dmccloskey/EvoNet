@@ -641,8 +641,11 @@ BOOST_AUTO_TEST_CASE(mapValuesToNodes2)
 
   // test mapping of output values
   model1.mapValuesToNodes(input, node_ids, NodeStatus::activated);
-  BOOST_CHECK(model1.getNode(0).getStatus() == NodeStatus::activated);
-  BOOST_CHECK(model1.getNode(1).getStatus() == NodeStatus::activated);
+  for (int i=0; i<8; ++i)
+  {
+    if (i<2) BOOST_CHECK(model1.getNode(i).getStatus() == NodeStatus::activated);
+    else BOOST_CHECK(model1.getNode(i).getStatus() == NodeStatus::initialized);
+  }
   for (int i=0; i<batch_size; ++i)
   {
     for (int j=0; j<memory_size; ++j)
@@ -701,16 +704,17 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayer1)
 
   // test links and source and sink nodes
   BOOST_CHECK_EQUAL(links.size(), 4);
-  BOOST_CHECK(links[0] == l1.getId());
-  BOOST_CHECK(links[1] == l2.getId());
-  BOOST_CHECK(links[2] == l3.getId());
-  BOOST_CHECK(links[3] == l4.getId());
+  for (int i=0; i<links.size(); ++i) std::cout << "link id " << links[i] << std::endl;
+  BOOST_CHECK_EQUAL(links[0], l1.getId());
+  BOOST_CHECK_EQUAL(links[1], l2.getId());
+  BOOST_CHECK_EQUAL(links[2], l3.getId());
+  BOOST_CHECK_EQUAL(links[3], l4.getId());
   BOOST_CHECK_EQUAL(source_nodes.size(), 2);
-  BOOST_CHECK(source_nodes[0] == i1.getId());
-  BOOST_CHECK(source_nodes[1] == i2.getId());
+  BOOST_CHECK_EQUAL(source_nodes[0], i1.getId());
+  BOOST_CHECK_EQUAL(source_nodes[1], i2.getId());
   BOOST_CHECK_EQUAL(sink_nodes.size(), 2);
-  BOOST_CHECK(sink_nodes[0] == h1.getId());
-  BOOST_CHECK(sink_nodes[1] == h2.getId());
+  BOOST_CHECK_EQUAL(sink_nodes[0], h1.getId());
+  BOOST_CHECK_EQUAL(sink_nodes[1], h2.getId());
 
 }
 
@@ -752,22 +756,22 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayerBiases1)
 
   // test links and source and sink nodes
   BOOST_CHECK_EQUAL(links.size(), 6);
-  BOOST_CHECK(links[0] == l1.getId());
-  BOOST_CHECK(links[1] == l2.getId());
-  BOOST_CHECK(links[2] == l3.getId());
-  BOOST_CHECK(links[3] == l4.getId());
-  BOOST_CHECK(links[4] == lb1.getId());
-  BOOST_CHECK(links[5] == lb2.getId());
+  BOOST_CHECK_EQUAL(links[0], l1.getId());
+  BOOST_CHECK_EQUAL(links[1], l2.getId());
+  BOOST_CHECK_EQUAL(links[2], l3.getId());
+  BOOST_CHECK_EQUAL(links[3], l4.getId());
+  BOOST_CHECK_EQUAL(links[4], lb1.getId());
+  BOOST_CHECK_EQUAL(links[5], lb2.getId());
   BOOST_CHECK_EQUAL(source_nodes.size(), 3);
-  BOOST_CHECK(source_nodes[0] == i1.getId());
-  BOOST_CHECK(source_nodes[1] == i2.getId());
-  BOOST_CHECK(source_nodes[2] == b1.getId());
+  BOOST_CHECK_EQUAL(source_nodes[0], i1.getId());
+  BOOST_CHECK_EQUAL(source_nodes[1], i2.getId());
+  BOOST_CHECK_EQUAL(source_nodes[2], b1.getId());
   BOOST_CHECK_EQUAL(sink_nodes.size(), 2);
-  BOOST_CHECK(sink_nodes[0] == h1.getId());
-  BOOST_CHECK(sink_nodes[1] == h2.getId());
+  BOOST_CHECK_EQUAL(sink_nodes[0], h1.getId());
+  BOOST_CHECK_EQUAL(sink_nodes[1], h2.getId());
   BOOST_CHECK_EQUAL(sink_nodes_with_biases.size(), 2);
-  BOOST_CHECK(sink_nodes_with_biases[0] == h1.getId());
-  BOOST_CHECK(sink_nodes_with_biases[1] == h2.getId());
+  BOOST_CHECK_EQUAL(sink_nodes_with_biases[0], h1.getId());
+  BOOST_CHECK_EQUAL(sink_nodes_with_biases[1], h2.getId());
 
 }
 
@@ -1135,19 +1139,19 @@ BOOST_AUTO_TEST_CASE(getNextUncorrectedLayer1)
 
   // test links and source and sink nodes
   BOOST_CHECK_EQUAL(links.size(), 6);
-  BOOST_CHECK(links[0] == l5.getId());
-  BOOST_CHECK(links[1] == l6.getId());
-  BOOST_CHECK(links[2] == l7.getId());
-  BOOST_CHECK(links[3] == l8.getId());
-  BOOST_CHECK(links[4] == lb3.getId());
-  BOOST_CHECK(links[5] == lb4.getId());
+  BOOST_CHECK_EQUAL(links[0], l5.getId());
+  BOOST_CHECK_EQUAL(links[1], l6.getId());
+  BOOST_CHECK_EQUAL(links[2], l7.getId());
+  BOOST_CHECK_EQUAL(links[3], l8.getId());
+  BOOST_CHECK_EQUAL(links[4], lb3.getId());
+  BOOST_CHECK_EQUAL(links[5], lb4.getId());
   BOOST_CHECK_EQUAL(source_nodes.size(), 2);
-  BOOST_CHECK(source_nodes[0] == o1.getId());
-  BOOST_CHECK(source_nodes[1] == o2.getId());
+  BOOST_CHECK_EQUAL(source_nodes[0], o1.getId());
+  BOOST_CHECK_EQUAL(source_nodes[1], o2.getId());
   BOOST_CHECK_EQUAL(sink_nodes.size(), 3);
-  BOOST_CHECK(sink_nodes[0] == h1.getId());
-  BOOST_CHECK(sink_nodes[1] == h2.getId());
-  BOOST_CHECK(sink_nodes[2] == b2.getId());
+  BOOST_CHECK_EQUAL(sink_nodes[0], h1.getId());
+  BOOST_CHECK_EQUAL(sink_nodes[1], h2.getId());
+  BOOST_CHECK_EQUAL(sink_nodes[2], b2.getId());
 }
 
 // BOOST_AUTO_TEST_CASE(getNextUncorrectedLayer2a) 
@@ -1404,7 +1408,7 @@ BOOST_AUTO_TEST_CASE(backPropogate)
   for (int i=0; i<hidden_nodes.size(); i++)
   {
     // BOOST_CHECK_EQUAL(model1.getNode(hidden_nodes[i]).getError().size(), batch_size); // why does
-                            //uncommenting this line cause a memory error "std::out_of_range map:at"
+                            // uncommenting this line cause a memory error "std::out_of_range map:at"
     // BOOST_CHECK(model1.getNode(hidden_nodes[i]).getStatus() == NodeStatus::corrected);
     for (int j=0; j<batch_size; j++)
     {
@@ -1470,8 +1474,8 @@ BOOST_AUTO_TEST_CASE(updateWeights)
     -0.1525, -0.1, -0.1525, -0.1, -0.1525, -0.1});
   for (int i=0; i<weight_ids.size(); i++)
   {
-    std::cout<<model1.getWeight(weight_ids[i]).getWeight()<<std::endl;
-    // BOOST_CHECK_CLOSE(model1.getWeight(weight_ids[i]).getWeight(), weights(i), 1e-3);
+    // std::cout<<model1.getWeight(weight_ids[i]).getWeight()<<std::endl;
+    BOOST_CHECK_CLOSE(model1.getWeight(weight_ids[i]).getWeight(), weights(i), 1e-3);
   }
 }
 

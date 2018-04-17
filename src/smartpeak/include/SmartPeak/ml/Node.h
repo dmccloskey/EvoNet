@@ -66,14 +66,17 @@ public:
 
     void setOutput(const Eigen::Tensor<float, 2>& output); ///< output setter
     Eigen::Tensor<float, 2> getOutput() const; ///< output copy getter
+    Eigen::Tensor<float, 2>* getOutputMutable(); ///< output copy getter
     float* getOutputPointer(); ///< output pointer getter
 
     void setError(const Eigen::Tensor<float, 2>& error); ///< error setter
     Eigen::Tensor<float, 2> getError() const; ///< error copy getter
+    Eigen::Tensor<float, 2>* getErrorMutable(); ///< error copy getter
     float* getErrorPointer(); ///< error pointer getter
 
     void setDerivative(const Eigen::Tensor<float, 2>& derivative); ///< derivative setter
     Eigen::Tensor<float, 2> getDerivative() const; ///< derivative copy getter
+    Eigen::Tensor<float, 2>* getDerivativeMutable(); ///< derivative copy getter
     float* getDerivativePointer(); ///< derivative pointer getter
 
     /**

@@ -311,24 +311,24 @@ namespace SmartPeak
     // copy over the input values
     for (int i=0; i<node_ids.size(); ++i)
     {
-      if (status_update == NodeStatus::activated)
+      for (int j=0; j<values.dimension(0); ++j)
       {
-        for (int j=0; j<values.dimension(0); ++j)
+        if (status_update == NodeStatus::activated)
         {
           // SANITY CHECK:
           // std::cout << "i" << i << " j" << j << " values: " << values.data()[i*values.dimension(0) + j] << std::endl;
-          // nodes_.at(node_ids[i]).getOutputPointer()[j + values.dimension(0)*memory_step] = values.data()[i*values.dimension(0) + j];
-          nodes_.at(node_ids[i]).getOutputPointer()[j + values.dimension(0)*memory_step] = values(j, i);
+          // nodes_.at(node_ids[i]).getOutputPointer()[j + values.dimension(0)*memory_step] = std::move(values.data()[i*values.dimension(0) + j]);
+          // nodes_.at(node_ids[i]).getOutputPointer()[j + values.dimension(0)*memory_step] = values(j, i);
+          nodes_.at(node_ids[i]).getOutputMutable()->operator()(j, memory_step) = values(j, i);
           nodes_.at(node_ids[i]).setStatus(NodeStatus::activated);
         }
-      }
-      else if (status_update == NodeStatus::corrected)
-      {
-        for (int j=0; j<values.dimension(0); ++j)
+        else if (status_update == NodeStatus::corrected)
         {
           // SANITY CHECK:
           // std::cout << "i" << i << " j" << j << " values: " << values.data()[i*values.dimension(0) + j] << std::endl;
-          nodes_.at(node_ids[i]).getErrorPointer()[j + values.dimension(0)*memory_step] = values(j, i);
+          // nodes_.at(node_ids[i]).getErrorPointer()[j + values.dimension(0)*memory_step] = std::move(values.data()[i*values.dimension(0) + j]);
+          // nodes_.at(node_ids[i]).getErrorPointer()[j + values.dimension(0)*memory_step] = values(j, i);
+          nodes_.at(node_ids[i]).getErrorMutable()->operator()(j, memory_step) = values(j, i);
           nodes_.at(node_ids[i]).setStatus(NodeStatus::corrected);
         }
       }
@@ -361,38 +361,20 @@ namespace SmartPeak
     // copy over the input values
     for (int i=0; i<node_ids.size(); ++i)
     {
-      if (status_update == NodeStatus::activated)
+      for (int k=0; k<values.dimension(1); ++k)
       {
-        // for (int j=0; j<nodes_.at(node_ids[i]).getOutput().size(); ++j)
-        // {
-        //   // SANITY CHECK:
-        //   // std::cout << "i" << i << " j" << j << " values: " << values.data()[i*values.dimension(0)*values.dimension(1) + j] << std::endl;
-        //   nodes_.at(node_ids[i]).getOutputPointer()[j] = values.data()[i*values.dimension(0)*values.dimension(1) + j];
-        //   nodes_.at(node_ids[i]).setStatus(NodeStatus::activated);
-        // }
-        for (int k=0; k<values.dimension(1); ++k)
+        for (int j=0; j<values.dimension(0); ++j)
         {
-          for (int j=0; j<values.dimension(0); ++j)
+          if (status_update == NodeStatus::activated)
           {
-            nodes_.at(node_ids[i]).getOutputPointer()[k*values.dimension(0) + j] = values(j, k, i);
+            // nodes_.at(node_ids[i]).getOutputPointer()[k*values.dimension(0) + j] = values(j, k, i);
+            nodes_.at(node_ids[i]).getOutputMutable()->operator()(j, k) = values(j, k, i);
             nodes_.at(node_ids[i]).setStatus(NodeStatus::activated);
           }
-        }
-      }
-      else if (status_update == NodeStatus::corrected)
-      {
-        // for (int j=0; j<nodes_.at(node_ids[i]).getError().size(); ++j)
-        // {
-        //   // SANITY CHECK:
-        //   // std::cout << "i" << i << " j" << j << " values: " << values.data()[i*values.dimension(0) + j] << std::endl;
-        //   nodes_.at(node_ids[i]).getErrorPointer()[j] = values.data()[i*values.dimension(0)*values.dimension(1) + j];
-        //   nodes_.at(node_ids[i]).setStatus(NodeStatus::corrected);
-        // }
-        for (int k=0; k<values.dimension(1); ++k)
-        {
-          for (int j=0; j<values.dimension(0); ++j)
+          else if (status_update == NodeStatus::corrected)
           {
             nodes_.at(node_ids[i]).getErrorPointer()[k*values.dimension(0) + j] = values(j, k, i);
+            nodes_.at(node_ids[i]).getErrorMutable()->operator()(j, k) = values(j, k, i);
             nodes_.at(node_ids[i]).setStatus(NodeStatus::corrected);
           }
         }
@@ -417,6 +399,7 @@ namespace SmartPeak
         nodes_.at(link_map.second.getSourceNodeId()).getStatus() == NodeStatus::activated && 
         nodes_.at(link_map.second.getSinkNodeId()).getStatus() == NodeStatus::initialized)
       {
+        // std::cout << "Model::getNextInactiveLayer() link_id: " << link_map.first << std::endl;
         links.push_back(link_map.second.getId());
         // could use std::set instead to check for duplicates
         if (std::count(source_nodes.begin(), source_nodes.end(), link_map.second.getSourceNodeId()) == 0)
@@ -969,6 +952,7 @@ namespace SmartPeak
         }
         else if (nodes_.at(sink_nodes[i]).getStatus() == NodeStatus::corrected)
         {
+          std::cout << "Previous derivative (batch_size, Sink) " << j << "," << i << std::endl;
           derivative_tensor(j, i) = nodes_.at(sink_nodes[i]).getDerivative()(j, 1); // previous time-step
           sink_nodes_prev.push_back(i);
         }        
@@ -1028,6 +1012,7 @@ namespace SmartPeak
       std::vector<int> links_cycles, source_nodes_cycles, sink_nodes_cycles;
       getNextUncorrectedLayerCycles(links_cycles, source_nodes, sink_nodes_cycles, source_nodes_cycles);
 
+      // std::cout << "Back Propogate cycles found: " << source_nodes_cycles.size() << std::endl;
       if (source_nodes_cycles.size() == source_nodes.size())
       { // all backward propogation steps have caught up
         // add source nodes with cycles to the backward propogation step
@@ -1069,10 +1054,12 @@ namespace SmartPeak
     {
       if (nodes_.at(link_map.second.getSinkNodeId()).getStatus() == NodeStatus::corrected)
       {
-        auto error_tensor = nodes_.at(link_map.second.getSinkNodeId()).getError().chip(0, 1); // first time-step
-        auto output_tensor = nodes_.at(link_map.second.getSourceNodeId()).getOutput().chip(0, 1);  // first time-step
-        auto derivative_tensor = - error_tensor * output_tensor; // derivative of the weight wrt the error
-        Eigen::Tensor<float, 0> derivative_mean_tensor = derivative_tensor.mean(); // average derivative
+
+        Eigen::Tensor<float, 1> error_tensor = nodes_.at(link_map.second.getSinkNodeId()).getError().chip(0, 1); // first time-step
+        Eigen::Tensor<float, 1> output_tensor = nodes_.at(link_map.second.getSourceNodeId()).getOutput().chip(0, 1);  // first time-step
+        // auto derivative_tensor = - error_tensor * output_tensor; // derivative of the weight wrt the error
+        // Eigen::Tensor<float, 0> derivative_mean_tensor = derivative_tensor.mean(); // average derivative
+        Eigen::Tensor<float, 0> derivative_mean_tensor = (- error_tensor * output_tensor).mean(); // average derivative
         // std::cout<<"derivative_mean_tensor "<<derivative_mean_tensor(0)<<std::endl;
         weight_derivatives.at(link_map.second.getWeightId()).push_back(derivative_mean_tensor(0));
       }      

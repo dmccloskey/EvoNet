@@ -58,6 +58,10 @@ namespace SmartPeak
   {
     return output_;
   }
+  Eigen::Tensor<float, 2>* Node::getOutputMutable()
+  {
+    return &output_;
+  }
   float* Node::getOutputPointer()
   {
     return output_.data();
@@ -71,6 +75,10 @@ namespace SmartPeak
   {
     return error_;
   }
+  Eigen::Tensor<float, 2>* Node::getErrorMutable()
+  {
+    return &error_;
+  }
   float* Node::getErrorPointer()
   {
     return error_.data();
@@ -83,6 +91,10 @@ namespace SmartPeak
   Eigen::Tensor<float, 2> Node::getDerivative() const
   {
     return derivative_;
+  }
+  Eigen::Tensor<float, 2>* Node::getDerivativeMutable()
+  {
+    return &derivative_;
   }
   float* Node::getDerivativePointer()
   {
