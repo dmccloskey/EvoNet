@@ -630,7 +630,7 @@ namespace SmartPeak
     const int max_iters = 1e6;
     for (int iter; iter<max_iters; ++iter)
     {      
-      std::cout<<"Model::forwardPropogate() iter: "<<iter<<std::endl;
+      // std::cout<<"Model::forwardPropogate() iter: "<<iter<<std::endl;
 
       // get the next hidden layer
       std::vector<int> links, source_nodes, sink_nodes;
@@ -644,7 +644,7 @@ namespace SmartPeak
       std::vector<int> links_cycles, source_nodes_cycles, sink_nodes_cycles;
       getNextInactiveLayerCycles(links_cycles, source_nodes_cycles, sink_nodes, sink_nodes_cycles);
 
-      std::cout<<"Model::forwardPropogate() sink_nodes_cycles.size(): "<<sink_nodes_cycles.size()<<std::endl;
+      // std::cout<<"Model::forwardPropogate() sink_nodes_cycles.size(): "<<sink_nodes_cycles.size()<<std::endl;
       if (sink_nodes_cycles.size() == sink_nodes.size())
       { // all forward propogation steps have caught up
         // add sink nodes with cycles to the forward propogation step
@@ -682,7 +682,7 @@ namespace SmartPeak
   {
     for (int time_step=0; time_step<time_steps; ++time_step)
     {
-      std::cout<<"Model::FPTT() time_step: "<<time_step<<std::endl;
+      // std::cout<<"Model::FPTT() time_step: "<<time_step<<std::endl;
       if (time_step>0)
       {
         // move to the next memory step
@@ -694,7 +694,7 @@ namespace SmartPeak
           {
             node_map.second.setStatus(NodeStatus::initialized); // reinitialize non-input nodes
           }   
-          std::cout<<"Model::FPTT() output: "<<node_map.second.getOutput()<<" for node_id: "<<node_map.first<<std::endl;
+          // std::cout<<"Model::FPTT() output: "<<node_map.second.getOutput()<<" for node_id: "<<node_map.first<<std::endl;
         }
       }
 
@@ -942,7 +942,8 @@ namespace SmartPeak
   void Model::backPropogateLayerError(
     const std::vector<int>& links,
     const std::vector<int>& source_nodes,
-    const std::vector<int>& sink_nodes)
+    const std::vector<int>& sink_nodes,
+    const int& time_step)
   {
     // infer the batch size from the first source node
     const int batch_size = nodes_.at(source_nodes[0]).getOutput().dimension(0);
@@ -957,7 +958,7 @@ namespace SmartPeak
     {
       for (int j=0; j<batch_size; ++j)
       {
-        source_tensor(j, i) = nodes_.at(source_nodes[i]).getError()(j, 0); // current time-step
+        source_tensor(j, i) = nodes_.at(source_nodes[i]).getError()(j, time_step); // current time-step
       }
     }
 
@@ -988,12 +989,12 @@ namespace SmartPeak
       {
         if (nodes_.at(sink_nodes[i]).getStatus() == NodeStatus::activated)
         {
-          derivative_tensor(j, i) = nodes_.at(sink_nodes[i]).getDerivative()(j, 0); // current time-step
+          derivative_tensor(j, i) = nodes_.at(sink_nodes[i]).getDerivative()(j, time_step); // current time-step
         }
         else if (nodes_.at(sink_nodes[i]).getStatus() == NodeStatus::corrected)
         {
           std::cout << "Previous derivative (batch_size, Sink) " << j << "," << i << std::endl;
-          derivative_tensor(j, i) = nodes_.at(sink_nodes[i]).getDerivative()(j, 1); // previous time-step
+          derivative_tensor(j, i) = nodes_.at(sink_nodes[i]).getDerivative()(j, time_step + 1); // previous time-step
           sink_nodes_prev.push_back(i);
         }        
       }
@@ -1026,24 +1027,24 @@ namespace SmartPeak
       }
 
       // update the sink nodes errors for the current time-step
-      mapValuesToNodes(sink_tensor_cur, 0, sink_nodes, NodeStatus::corrected);
+      mapValuesToNodes(sink_tensor_cur, time_step, sink_nodes, NodeStatus::corrected);
 
       // update the sink nodes errors for the previous time-step
-      mapValuesToNodes(sink_tensor_prev, 1, sink_nodes, NodeStatus::corrected);
+      mapValuesToNodes(sink_tensor_prev, time_step + 1, sink_nodes, NodeStatus::corrected);
     }
     else
     {
       // update the sink nodes errors for the current time-step
-      mapValuesToNodes(sink_tensor, 0, sink_nodes, NodeStatus::corrected);
+      mapValuesToNodes(sink_tensor, time_step, sink_nodes, NodeStatus::corrected);
     }
   }
   
-  void Model::backPropogate()
+  void Model::backPropogate(const int& time_step)
   {
     const int max_iters = 1e6;
     for (int iter; iter<max_iters; ++iter)
     {
-      // std::cout<<"iter # "<<iter<<::std::endl;
+      std::cout<<"Model::backPropogate() iter :"<<iter<<::std::endl;
       // get the next uncorrected layer
       std::vector<int> links, source_nodes, sink_nodes;
       getNextUncorrectedLayer(links, source_nodes, sink_nodes);
@@ -1074,7 +1075,30 @@ namespace SmartPeak
       }
 
       // calculate the net input
-      backPropogateLayerError(links, source_nodes, sink_nodes);
+      backPropogateLayerError(links, source_nodes, sink_nodes, time_step);
+    }
+  }
+
+  void Model::TBPTT(const int& time_steps,
+    const std::vector<int> node_ids)
+  {
+    for (int time_step=0; time_step<time_steps; ++time_step)
+    {
+      std::cout<<"Model::TBPTT() time_step: "<<time_step<<std::endl;
+      if (time_step>0)
+      {
+        for (auto& node_map: nodes_)
+        {
+          if (std::count(node_ids.begin(), node_ids.end(), node_map.first) == 0)
+          {
+            node_map.second.setStatus(NodeStatus::activated); // reinitialize non-output nodes
+          }   
+          std::cout<<"Model::TBPTT() output: "<<node_map.second.getError()<<" for node_id: "<<node_map.first<<std::endl;
+        }
+      }
+
+      // calculate the error for each batch of memory
+      backPropogate(time_step);
     }
   }
 

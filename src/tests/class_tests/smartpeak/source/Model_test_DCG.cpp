@@ -344,7 +344,7 @@ BOOST_AUTO_TEST_CASE(getNextUncorrectedLayer2)
   sink_nodes_test = {1, 4};
   BOOST_CHECK_EQUAL(links.size(), links_test.size());
   BOOST_CHECK_EQUAL(source_nodes.size(), source_nodes_test.size());
-  // BOOST_CHECK_EQUAL(sink_nodes.size(), sink_nodes_test.size()); //???
+  BOOST_CHECK_EQUAL(sink_nodes.size(), sink_nodes_test.size());
   for (int i=0; i<links.size(); ++i)
   {
     BOOST_CHECK_EQUAL(links[i], links_test[i]);
@@ -355,7 +355,7 @@ BOOST_AUTO_TEST_CASE(getNextUncorrectedLayer2)
   }
   for (int i=0; i<sink_nodes.size(); ++i)
   {
-    // BOOST_CHECK_EQUAL(sink_nodes[i], sink_nodes_test[i]); //???
+    BOOST_CHECK_EQUAL(sink_nodes[i], sink_nodes_test[i]);
   }
 }
 
@@ -402,7 +402,7 @@ BOOST_AUTO_TEST_CASE(getNextUncorrectedLayerCycles2)
   model2.getNextUncorrectedLayer(links, source_nodes, sink_nodes);
 
   // calculate the net input
-  model2.backPropogateLayerError(links, source_nodes, sink_nodes);
+  model2.backPropogateLayerError(links, source_nodes, sink_nodes, 0);
 
   // get the next hidden layer
   model2.getNextUncorrectedLayer(links, source_nodes, sink_nodes);
@@ -433,7 +433,7 @@ BOOST_AUTO_TEST_CASE(getNextUncorrectedLayerCycles2)
   }
 }
 
-BOOST_AUTO_TEST_CASE(BFPTT) 
+BOOST_AUTO_TEST_CASE(BPTT) 
 {
   // Toy network: 1 hidden layer, fully connected, DCG
   Model model2 = makeModel2();
@@ -444,67 +444,60 @@ BOOST_AUTO_TEST_CASE(BFPTT)
   model2.initNodes(batch_size, memory_size);
 
   // create the input and biases
-  const std::vector<int> input_ids = {0};
+  const std::vector<int> input_ids = {0, 3, 4};
   Eigen::Tensor<float, 3> input(batch_size, memory_size, input_ids.size()); 
   input.setValues(
-    {{{1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}},
-    {{2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}},
-    {{3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}},
-    {{4}, {5}, {6}, {7}, {8}, {9}, {10}, {11}},
-    {{5}, {6}, {7}, {8}, {9}, {10}, {11}, {12}}}
+    {{{1, 0, 0}, {2, 0, 0}, {3, 0, 0}, {4, 0, 0}, {5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}},
+    {{2, 0, 0}, {3, 0, 0}, {4, 0, 0}, {5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}, {9, 0, 0}},
+    {{3, 0, 0}, {4, 0, 0}, {5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}, {9, 0, 0}, {10, 0, 0}},
+    {{4, 0, 0}, {5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}, {9, 0, 0}, {10, 0, 0}, {11, 0, 0}},
+    {{5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}, {9, 0, 0}, {10, 0, 0}, {11, 0, 0}, {12, 0, 0}}}
   );
-  model2.mapValuesToNodes(input, input_ids, NodeStatus::activated);  
 
-  const std::vector<int> biases_ids = {3, 4};
-  Eigen::Tensor<float, 3> biases(batch_size, memory_size, biases_ids.size()); 
-  biases.setConstant(1);
-  model2.mapValuesToNodes(biases, biases_ids, NodeStatus::activated);
-  
+  // forward propogate
+  model2.FPTT(4, input, input_ids);
+
+  // calculate the model error
   model2.setLossFunction(ModelLossFunction::MSE);
-
-  // calculate the activation
-  model2.forwardPropogate(0);
-
-  // calculate the model error and node output error
-  std::vector<int> output_nodes = {2};
+  const std::vector<int> output_nodes = {2};
+  // expected sequence
+  // y = m1*(m2*x + b*yprev) where m1 = 2, m2 = 0.5 and b = -2
   Eigen::Tensor<float, 2> expected(batch_size, output_nodes.size()); 
-  expected.setValues({{2}, {3}, {4}, {5}, {6}});
+  expected.setValues({{2.5}, {3}, {3.5}, {4}, {4.5}});
   model2.calculateError(expected, output_nodes);
 
-  // get the next hidden layer
-  std::vector<int> links, source_nodes, sink_nodes;
-  model2.getNextUncorrectedLayer(links, source_nodes, sink_nodes);
+  std::cout<<"Model error:"<<model2.getError()<<std::endl;
 
-  // calculate the net input
-  model2.backPropogateLayerError(links, source_nodes, sink_nodes);
+  // backpropogate through time
+  model2.TBPTT(4, output_nodes);
 
-  // get the next hidden layer
-  model2.getNextUncorrectedLayer(links, source_nodes, sink_nodes);
-  std::vector<int> source_nodes_with_cycles;
-  model2.getNextUncorrectedLayerCycles(links, source_nodes, sink_nodes, source_nodes_with_cycles);
-
-  // test links and source and sink nodes
-  std::vector<int> links_test, source_nodes_test, sink_nodes_test, source_nodes_with_cycles_test;
-  links_test = {0, 3, 2};
-  source_nodes_test = {1};
-  sink_nodes_test = {0, 3, 2};
-  source_nodes_with_cycles_test = {1};
-  BOOST_CHECK_EQUAL(links.size(), links_test.size());
-  BOOST_CHECK_EQUAL(source_nodes.size(), source_nodes_test.size());
-  BOOST_CHECK_EQUAL(sink_nodes.size(), sink_nodes_test.size());
-  BOOST_CHECK_EQUAL(source_nodes_with_cycles.size(), source_nodes_with_cycles_test.size());
-  for (int i=0; i<links_test.size(); i++)
-  {
-    BOOST_CHECK_EQUAL(links[i], links_test[i]);
-  }
-  for (int i=0; i<source_nodes_test.size(); i++)
-  {
-    BOOST_CHECK_EQUAL(source_nodes[i], source_nodes_test[i]);
-  }
-  for (int i=0; i<sink_nodes_test.size(); i++)
-  {
-    BOOST_CHECK_EQUAL(sink_nodes[i], sink_nodes_test[i]);
-  }
+  // test values of output nodes
+  Eigen::Tensor<float, 3> error(batch_size, memory_size, 5); // dim2: # of model nodes
+  error.setValues({
+    {{4, 10, 10, 0, 0}, {3, 6, 6, 0, 0}, {2, 3, 3, 0, 0}, {1, 1, 1, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}},
+    {{5, 14, 14, 0, 0}, {4, 9, 9, 0, 0}, {3, 5, 5, 0, 0}, {2, 2, 2, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}},
+    {{6, 18, 18, 0, 0}, {5, 12, 12, 0, 0}, {4, 7, 7, 0, 0}, {3, 3, 3, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}},
+    {{7, 22, 22, 0, 0}, {6, 15, 15, 0, 0}, {5, 9, 9, 0, 0}, {4, 4, 4, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}},
+    {{8, 26, 26, 0, 0}, {7, 18, 18, 0, 0}, {6, 11, 11, 0, 0}, {5, 5, 5, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}}}
+  ); 
+  const std::vector<int> error_nodes = {0, 1, 2, 3, 4};
+  
+  // for (int j=0; j<batch_size; ++j)
+  // {
+  //   for (int k=0; k<memory_size; ++k)
+  //   {
+  //     for (int i=0; i<error_nodes.size(); i++)
+  //     {
+  //       if (model2.getNode(error_nodes[i]).getError()(j, k) != error(j, k, i))
+  //       {
+  //         std::cout<<"Batch: "<<j<<" Memory: "<<k<<" Node: "<<i;
+  //         std::cout<<" Model error:"<<model2.getNode(output_nodes[i]).getError()(j, k)<<" = "<<error(j, k, i)<<std::endl;
+  //       }
+        
+  //       // BOOST_CHECK_CLOSE(model2.getNode(error_nodes[i]).getError()(j, k), error(j, k, i), 1e-3);
+  //     }
+  //   }
+  // }  
 }
 
 // BOOST_AUTO_TEST_CASE(modelTrainer2) 

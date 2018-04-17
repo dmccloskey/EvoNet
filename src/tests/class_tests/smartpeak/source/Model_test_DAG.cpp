@@ -610,7 +610,7 @@ BOOST_AUTO_TEST_CASE(backPropogateLayerError)
   model1.getNextUncorrectedLayer(links, source_nodes, sink_nodes);
 
   // back propogate error to the next layer
-  model1.backPropogateLayerError(links, source_nodes, sink_nodes);
+  model1.backPropogateLayerError(links, source_nodes, sink_nodes, 0);
 
   Eigen::Tensor<float, 2> error(batch_size, sink_nodes.size()); 
   error.setValues({{-7.25, -7.25, 0.0}, {-9.25, -9.25, 0.0}, {-11.25, -11.25, 0.0}, {-13.25, -13.25, 0.0}});
@@ -660,7 +660,7 @@ BOOST_AUTO_TEST_CASE(backPropogate)
   model1.calculateError(expected, output_nodes);
 
   // back propogate
-  model1.backPropogate();
+  model1.backPropogate(0);
 
   // test values of input and hidden layers
   const std::vector<int> hidden_nodes = {0, 1, 2, 3, 6};
@@ -718,7 +718,7 @@ BOOST_AUTO_TEST_CASE(updateWeights)
   model1.calculateError(expected, output_nodes);
 
   // back propogate
-  model1.backPropogate();
+  model1.backPropogate(0);
 
   // update the weights
   model1.updateWeights();
@@ -816,7 +816,7 @@ BOOST_AUTO_TEST_CASE(modelTrainer1)
     std::cout<<"Error at iteration: "<<iter<<" is "<<model1.getError().sum()<<std::endl;
 
     // back propogate
-    model1.backPropogate();
+    model1.backPropogate(0);
 
     // update the weights
     model1.updateWeights();   

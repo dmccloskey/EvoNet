@@ -295,6 +295,7 @@ public:
       @param[out] Links
       @param[out] source_nodes
       @param[out] sink_nodes
+      @param[in] time_step Time step to forward propogate.
 
       OPTIMIZATION:
       pass memory to tensors so that when the tensors compute the matrices
@@ -303,15 +304,18 @@ public:
     void backPropogateLayerError(
       const std::vector<int>& links,
       const std::vector<int>& source_nodes,
-      const std::vector<int>& sink_nodes);
+      const std::vector<int>& sink_nodes,
+      const int& time_step);
  
     /**
       @brief Back propogation of the network model.
         All node errors are calculating starting from the output nodes.  
         Each node status is changed from "activated" to "corrected" when the
         outputs and derivatives are calculated.
+
+      @param[in] time_step Time step to forward propogate.
     */ 
-    void backPropogate();  
+    void backPropogate(const int& time_step);  
  
     /**
       @brief Truncated Back Propogation Through Time (TBPTT) of the network model.
@@ -322,7 +326,8 @@ public:
       @param[in] time_steps The number of time_steps backwards to 
         unfold the network model.
     */ 
-    void TBPTT(const int& time_steps);  
+    void TBPTT(const int& time_steps,
+      const std::vector<int> node_ids);  
  
     /**
       @brief Recurrent Real Time Learning (RTRL) of the network model.
