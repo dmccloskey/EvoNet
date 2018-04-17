@@ -173,6 +173,7 @@ public:
       @param[out] Links
       @param[out] source_nodes
       @param[out] sink_nodes
+      @param[in] time_step Time step to activate.
 
       OPTIMIZATION:
       pass memory to tensors so that when the tensors compute the matrices
@@ -181,7 +182,8 @@ public:
     void forwardPropogateLayerNetInput(
       const std::vector<int>& links,
       const std::vector<int>& source_nodes,
-      const std::vector<int>& sink_nodes);
+      const std::vector<int>& sink_nodes,
+      const int& time_step);
  
     /**
       @brief Completion of a forward propogation step. Computes the net
@@ -192,9 +194,11 @@ public:
         function will be applied
 
       @param[in] sink_nodes
+      @param[in] time_step Time step to activate.
     */ 
     void forwardPropogateLayerActivation(
-      const std::vector<int>& sink_nodes);
+      const std::vector<int>& sink_nodes,
+      const int& time_step);
  
     /**
       @brief Foward propogation of the network model.
@@ -202,8 +206,10 @@ public:
         starting from the input nodes.  Each node status is
         changed from "initialized" to "activated" when the
         outputs and derivatives are calculated.
+
+      @param[in] time_step Time step to forward propogate.
     */ 
-    void forwardPropogate();    
+    void forwardPropogate(const int& time_step);    
  
     /**
       @brief Foward propogation through time (FPTT) of the network model.
@@ -212,11 +218,19 @@ public:
         changed from "initialized" to "activated" when the
         outputs and derivatives are calculated.  This is repeated
         for n_time steps without weight updates.
+      
+      NOTE: The implementation assumes that the output values for
+        all input and biases have already been set.  
 
       @param[in] time_steps The number of time_steps forward to 
-        continuously accumulate errors.
+        continuously calculate node outputs and node derivatives.
+      @param[in] values Input values at each time step where
+        dim0: batch_size, dim1: time_step, and dim2: nodes.
+      @param[in] node_ids 
     */ 
-    void FPTT(const int& time_steps);
+    void FPTT(const int& time_steps, 
+      const Eigen::Tensor<float, 3>& values,
+      const std::vector<int> node_ids);
  
     /**
       @brief Calculates the error of the model with respect to

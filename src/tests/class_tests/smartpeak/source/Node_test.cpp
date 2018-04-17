@@ -284,7 +284,55 @@ BOOST_AUTO_TEST_CASE(calculateDerivative)
   BOOST_CHECK_CLOSE(node.getDerivative()(3,0), 0.36787945, 1e-6);
   BOOST_CHECK_CLOSE(node.getDerivative()(4,0), 4.54187393e-05, 1e-6);
   BOOST_CHECK_CLOSE(node.getDerivative()(0,1), 0.0, 1e-6); // time step 1 should not be calculated
+}
 
+BOOST_AUTO_TEST_CASE(saveCurrentOutput)
+{
+  Node node;
+  node.setId(1);
+  node.initNode(5,2);
+  Eigen::Tensor<float, 2> output(5, 2);
+  output.setValues({{0.0, 5.0}, {1.0, 6.0}, {2.0, 7.0}, {3.0, 8.0}, {4.0, 9.0}});
+  node.setOutput(output);
+
+  node.saveCurrentOutput();  
+  Eigen::Tensor<float, 2> output_test(5, 2);
+  output_test.setValues({{0.0, 0.0}, {0.0, 1.0}, {0.0, 2.0}, {0.0, 3.0}, {0.0, 4.0}});
+  for (int i=0; i<output.dimension(0); ++i)
+    for (int j=0; j<output.dimension(1); ++j)
+      BOOST_CHECK_CLOSE(node.getOutput()(i,j), output_test(i,j), 1e-6);
+}
+BOOST_AUTO_TEST_CASE(saveCurrentDerivative)
+{
+  Node node;
+  node.setId(1);
+  node.initNode(5,2);
+  Eigen::Tensor<float, 2> derivative(5, 2);
+  derivative.setValues({{0.0, 5.0}, {1.0, 6.0}, {2.0, 7.0}, {3.0, 8.0}, {4.0, 9.0}});
+  node.setDerivative(derivative);
+
+  node.saveCurrentDerivative();  
+  Eigen::Tensor<float, 2> Derivative_test(5, 2);
+  Derivative_test.setValues({{0.0, 0.0}, {0.0, 1.0}, {0.0, 2.0}, {0.0, 3.0}, {0.0, 4.0}});
+  for (int i=0; i<derivative.dimension(0); ++i)
+    for (int j=0; j<derivative.dimension(1); ++j)
+      BOOST_CHECK_CLOSE(node.getDerivative()(i,j), Derivative_test(i,j), 1e-6);
+}
+BOOST_AUTO_TEST_CASE(saveCurrentError)
+{
+  Node node;
+  node.setId(1);
+  node.initNode(5,2);
+  Eigen::Tensor<float, 2> error(5, 2);
+  error.setValues({{0.0, 5.0}, {1.0, 6.0}, {2.0, 7.0}, {3.0, 8.0}, {4.0, 9.0}});
+  node.setError(error);
+
+  node.saveCurrentError();  
+  Eigen::Tensor<float, 2> Error_test(5, 2);
+  Error_test.setValues({{0.0, 0.0}, {0.0, 1.0}, {0.0, 2.0}, {0.0, 3.0}, {0.0, 4.0}});
+  for (int i=0; i<error.dimension(0); ++i)
+    for (int j=0; j<error.dimension(1); ++j)
+      BOOST_CHECK_CLOSE(node.getError()(i,j), Error_test(i,j), 1e-6);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

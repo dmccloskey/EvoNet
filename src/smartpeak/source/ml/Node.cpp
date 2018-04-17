@@ -215,4 +215,64 @@ namespace SmartPeak
       return true;
     }
   }
+
+  void Node::saveCurrentOutput()
+  {
+    const int batch_size = output_.dimension(0);
+    const int memory_size = output_.dimension(1);
+    for (int i=0; i<batch_size; ++i)
+    {
+      for (int j=memory_size-1; j>=0 ; --j)
+      {
+        if (j==0)
+        {
+          output_(i, j) = 0.0;
+        }
+        else
+        {
+          output_(i, j) = output_(i, j-1);
+        }
+      }
+    }
+  }
+
+  void Node::saveCurrentDerivative()
+  {
+    const int batch_size = derivative_.dimension(0);
+    const int memory_size = derivative_.dimension(1);
+    for (int i=0; i<batch_size; ++i)
+    {
+      for (int j=memory_size-1; j>=0 ; --j)
+      {
+        if (j==0)
+        {
+          derivative_(i, j) = 0.0;
+        }
+        else
+        {
+          derivative_(i, j) = derivative_(i, j-1);
+        }
+      }
+    }
+  }
+
+  void Node::saveCurrentError()
+  {
+    const int batch_size = error_.dimension(0);
+    const int memory_size = error_.dimension(1);
+    for (int i=0; i<batch_size; ++i)
+    {
+      for (int j=memory_size-1; j>=0 ; --j)
+      {
+        if (j==0)
+        {
+          error_(i, j) = 0.0;
+        }
+        else
+        {
+          error_(i, j) = error_(i, j-1);
+        }
+      }
+    }
+  }
 }

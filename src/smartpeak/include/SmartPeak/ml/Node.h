@@ -111,6 +111,21 @@ public:
         for all samples in the batch
     */
     void calculateDerivative(const int& time_step);
+    
+    /**
+      @brief Shifts the current output batch by 1 unit back in memory.
+    */
+    void saveCurrentOutput();
+    
+    /**
+      @brief Shifts the current derivative batch by 1 unit back in memory.
+    */
+    void saveCurrentDerivative();
+    
+    /**
+      @brief Shifts the current error batch by 1 unit back in memory.
+    */
+    void saveCurrentError();
 
 private:
     int id_; ///< Node ID
