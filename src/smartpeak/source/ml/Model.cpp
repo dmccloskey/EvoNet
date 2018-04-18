@@ -1004,7 +1004,6 @@ namespace SmartPeak
     Eigen::array<Eigen::IndexPair<int>, 1> product_dims = {Eigen::IndexPair<int>(1, 0)};
     Eigen::Tensor<float, 2> sink_tensor = source_tensor.contract(weight_tensor, product_dims) * derivative_tensor;
 
-    std::vector<int> sink_nodes_cur;
     if (sink_nodes_prev.size()>0)
     {
       std::cout<<"Model::backPropogateLayerError() sink_nodes_prev.size(): "<<sink_nodes_prev.size()<<std::endl;
@@ -1014,6 +1013,7 @@ namespace SmartPeak
       Eigen::Tensor<float, 2> sink_tensor_prev(batch_size, sink_nodes_prev.size());
       int sink_tensor_cur_iter = 0;
       int sink_tensor_prev_iter = 0;
+      std::vector<int> sink_nodes_cur;
       for (int i=0; i<sink_nodes.size(); ++i)
       {
         if (std::count(sink_nodes_prev.begin(), sink_nodes_prev.end(), i) != 0)
@@ -1074,7 +1074,7 @@ namespace SmartPeak
         // add source nodes with cycles to the backward propogation step
         links.insert( links.end(), links_cycles.begin(), links_cycles.end() );
         sink_nodes.insert( sink_nodes.end(), sink_nodes_cycles.begin(), sink_nodes_cycles.end() );
-        node_ids_with_cycles.insert(node_ids_with_cycles.end(), source_nodes_cycles.begin(), source_nodes_cycles.end() );
+        // node_ids_with_cycles.insert(node_ids_with_cycles.end(), source_nodes_cycles.begin(), source_nodes_cycles.end() );
       }
       else
       { // remove source/sink nodes with cycles from the backward propogation step
