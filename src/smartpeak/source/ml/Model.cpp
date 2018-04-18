@@ -993,7 +993,7 @@ namespace SmartPeak
         }
         else if (nodes_.at(sink_nodes[i]).getStatus() == NodeStatus::corrected)
         {
-          std::cout << "Model::backPropogateLayerError() Previous derivative (batch_size, Sink) " << j << "," << i << std::endl;
+          // std::cout << "Model::backPropogateLayerError() Previous derivative (batch_size, Sink) " << j << "," << i << std::endl;
           derivative_tensor(j, i) = nodes_.at(sink_nodes[i]).getDerivative()(j, time_step + 1); // previous time-step
           if (std::count(sink_nodes_prev.begin(), sink_nodes_prev.end(), i) == 0) sink_nodes_prev.push_back(i);
         }        
@@ -1006,8 +1006,6 @@ namespace SmartPeak
 
     if (sink_nodes_prev.size()>0)
     {
-      std::cout<<"Model::backPropogateLayerError() sink_nodes_prev.size(): "<<sink_nodes_prev.size()<<std::endl;
-      std::cout<<"Model::backPropogateLayerError() sink_nodes.size(): "<<sink_nodes.size()<<std::endl;
       // split the sink_tensor into current and previous
       Eigen::Tensor<float, 2> sink_tensor_cur(batch_size, sink_nodes.size() - sink_nodes_prev.size());
       Eigen::Tensor<float, 2> sink_tensor_prev(batch_size, sink_nodes_prev.size());
@@ -1018,7 +1016,7 @@ namespace SmartPeak
       {
         if (std::count(sink_nodes_prev.begin(), sink_nodes_prev.end(), i) != 0)
         {
-          // std::cout<<"Model::backPropogateLayerError() sink_tensor_prev_iter: "<<sink_tensor_prev_iter<<std::endl;
+          // std::cout<<"Model::backPropogateLayerError() sink_id is prev: "<<i<<std::endl;
           for (int j=0; j<batch_size; ++j)
           {
             sink_tensor_prev(j, sink_tensor_prev_iter) = sink_tensor(j, i);
@@ -1027,17 +1025,15 @@ namespace SmartPeak
         }
         else
         {
-          // std::cout<<"Model::backPropogateLayerError() sink_tensor_cur_iter: "<<sink_tensor_cur_iter<<std::endl;
+          // std::cout<<"Model::backPropogateLayerError() sink_id is cur: "<<i<<std::endl;
           for (int j=0; j<batch_size; ++j)
           {
             sink_tensor_cur(j, sink_tensor_cur_iter) = sink_tensor(j, i);            
           }
           sink_tensor_cur_iter += 1;
-          sink_nodes_cur.push_back(i);
+          sink_nodes_cur.push_back(sink_nodes[i]);
         }
       }
-      std::cout<<"Model::backPropogateLayerError() sink_tensor_cur: "<<sink_tensor_cur<<std::endl;
-      std::cout<<"Model::backPropogateLayerError() sink_tensor_prev: "<<sink_tensor_prev<<std::endl;
 
       // update the sink nodes errors for the current time-step
       mapValuesToNodes(sink_tensor_cur, time_step, sink_nodes_cur, NodeStatus::corrected);
@@ -1055,11 +1051,18 @@ namespace SmartPeak
   void Model::backPropogate(const int& time_step)
   {
     std::vector<int> node_ids_with_cycles;
-    // const int max_iters = 1e6;
-    const int max_iters = 5;
+    const int max_iters = 1e6;
     for (int iter; iter<max_iters; ++iter)
     {
-      std::cout<<"Model::backPropogate() iter :"<<iter<<::std::endl;
+      // std::cout<<"Model::backPropogate() iter :"<<iter<<::std::endl;
+
+      // std::cout<<"Model::backPropogate() NodeStatuses :";
+      // for (const auto& node_map : nodes_)
+      // {
+      //   if (node_map.second.getStatus() == NodeStatus::activated) std::cout<<"Node status for Node ID: "<<node_map.first<<" is Activated"<<std::endl;
+      //   if (node_map.second.getStatus() == NodeStatus::corrected) std::cout<<"Node status for Node ID: "<<node_map.first<<" is Corrected"<<std::endl;
+      // }
+
       // get the next uncorrected layer
       std::vector<int> links, source_nodes, sink_nodes;
       getNextUncorrectedLayer(links, source_nodes, sink_nodes);
@@ -1084,6 +1087,7 @@ namespace SmartPeak
         }
       }
 
+      // std::cout<<"Model::backPropogate() links.size()[after cycles] :"<<links.size()<<::std::endl;
       // check if all nodes have been corrected
       if (links.size() == 0)
       {
@@ -1100,7 +1104,7 @@ namespace SmartPeak
   {
     for (int time_step=0; time_step<time_steps; ++time_step)
     {
-      std::cout<<"Model::TBPTT() time_step: "<<time_step<<std::endl;
+      // std::cout<<"Model::TBPTT() time_step: "<<time_step<<std::endl;
       if (time_step>0)
       {
         for (auto& node_map: nodes_)
@@ -1116,9 +1120,13 @@ namespace SmartPeak
       // calculate the error for each batch of memory
       backPropogate(time_step);
     }
+    // for (auto& node_map: nodes_)
+    // {
+    //   std::cout<<"Model::TBPTT() error: "<<node_map.second.getError()<<" for node_id: "<<node_map.first<<std::endl;
+    // }
   }
 
-  void Model::updateWeights()
+  void Model::updateWeights(const int& time_steps)
   {
 
     std::map<int, std::vector<float>> weight_derivatives;  
@@ -1132,17 +1140,22 @@ namespace SmartPeak
     // collect the derivative for all weights
     for (const auto& link_map : links_)
     {
-      if (nodes_.at(link_map.second.getSinkNodeId()).getStatus() == NodeStatus::corrected)
+      if (nodes_.at(link_map.second.getSinkNodeId()).getStatus() == NodeStatus::corrected)      
       {
-
-        Eigen::Tensor<float, 1> error_tensor = nodes_.at(link_map.second.getSinkNodeId()).getError().chip(0, 1); // first time-step
-        Eigen::Tensor<float, 1> output_tensor = nodes_.at(link_map.second.getSourceNodeId()).getOutput().chip(0, 1);  // first time-step
-        // auto derivative_tensor = - error_tensor * output_tensor; // derivative of the weight wrt the error
-        // Eigen::Tensor<float, 0> derivative_mean_tensor = derivative_tensor.mean(); // average derivative
-        Eigen::Tensor<float, 0> derivative_mean_tensor = (- error_tensor * output_tensor).mean(); // average derivative
-        // std::cout<<"derivative_mean_tensor "<<derivative_mean_tensor(0)<<std::endl;
-        weight_derivatives.at(link_map.second.getWeightId()).push_back(derivative_mean_tensor(0));
-      }      
+        // Sum the error from current and previous time-steps
+        float error_sum = 0.0;
+        for (int i=0; i<time_steps; ++i)
+        {
+          Eigen::Tensor<float, 1> error_tensor = nodes_.at(link_map.second.getSinkNodeId()).getError().chip(0, 1); // first time-step
+          Eigen::Tensor<float, 1> output_tensor = nodes_.at(link_map.second.getSourceNodeId()).getOutput().chip(0, 1);  // first time-step
+          // auto derivative_tensor = - error_tensor * output_tensor; // derivative of the weight wrt the error
+          // Eigen::Tensor<float, 0> derivative_mean_tensor = derivative_tensor.mean(); // average derivative
+          Eigen::Tensor<float, 0> derivative_mean_tensor = (- error_tensor * output_tensor).mean(); // average derivative
+          // std::cout<<"derivative_mean_tensor "<<derivative_mean_tensor(0)<<std::endl;
+          error_sum += derivative_mean_tensor(0);
+        } 
+        weight_derivatives.at(link_map.second.getWeightId()).push_back(error_sum); 
+      }    
     }
 
     // calculate the average of all error averages 

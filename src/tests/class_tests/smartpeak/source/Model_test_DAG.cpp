@@ -721,7 +721,7 @@ BOOST_AUTO_TEST_CASE(updateWeights)
   model1.backPropogate(0);
 
   // update the weights
-  model1.updateWeights();
+  model1.updateWeights(1);
 
   // test values of input and hidden layers
   const std::vector<int> weight_ids = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
@@ -819,7 +819,7 @@ BOOST_AUTO_TEST_CASE(modelTrainer1)
     model1.backPropogate(0);
 
     // update the weights
-    model1.updateWeights();   
+    model1.updateWeights(1);   
 
     // reinitialize the model
     model1.reInitializeNodeStatuses();

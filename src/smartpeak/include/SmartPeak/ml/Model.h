@@ -344,7 +344,7 @@ public:
       @brief Update the weights
       
     */ 
-    void updateWeights();
+    void updateWeights(const int& time_steps);
  
     /**
       @brief Reset the node statuses back to inactivated
