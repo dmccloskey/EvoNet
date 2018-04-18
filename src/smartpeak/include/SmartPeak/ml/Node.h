@@ -93,6 +93,8 @@ public:
         the node memory size.
 
       @param[in] time_step Time step
+
+      @returns true if valid time_step, false otherwise
     */ 
     bool checkTimeStep(const int& time_step);
 

@@ -993,9 +993,9 @@ namespace SmartPeak
         }
         else if (nodes_.at(sink_nodes[i]).getStatus() == NodeStatus::corrected)
         {
-          std::cout << "Previous derivative (batch_size, Sink) " << j << "," << i << std::endl;
+          std::cout << "Model::backPropogateLayerError() Previous derivative (batch_size, Sink) " << j << "," << i << std::endl;
           derivative_tensor(j, i) = nodes_.at(sink_nodes[i]).getDerivative()(j, time_step + 1); // previous time-step
-          sink_nodes_prev.push_back(i);
+          if (std::count(sink_nodes_prev.begin(), sink_nodes_prev.end(), i) == 0) sink_nodes_prev.push_back(i);
         }        
       }
     }
@@ -1004,8 +1004,11 @@ namespace SmartPeak
     Eigen::array<Eigen::IndexPair<int>, 1> product_dims = {Eigen::IndexPair<int>(1, 0)};
     Eigen::Tensor<float, 2> sink_tensor = source_tensor.contract(weight_tensor, product_dims) * derivative_tensor;
 
+    std::vector<int> sink_nodes_cur;
     if (sink_nodes_prev.size()>0)
     {
+      std::cout<<"Model::backPropogateLayerError() sink_nodes_prev.size(): "<<sink_nodes_prev.size()<<std::endl;
+      std::cout<<"Model::backPropogateLayerError() sink_nodes.size(): "<<sink_nodes.size()<<std::endl;
       // split the sink_tensor into current and previous
       Eigen::Tensor<float, 2> sink_tensor_cur(batch_size, sink_nodes.size() - sink_nodes_prev.size());
       Eigen::Tensor<float, 2> sink_tensor_prev(batch_size, sink_nodes_prev.size());
@@ -1013,24 +1016,34 @@ namespace SmartPeak
       int sink_tensor_prev_iter = 0;
       for (int i=0; i<sink_nodes.size(); ++i)
       {
-        for (int j=0; j<batch_size; ++j)
+        if (std::count(sink_nodes_prev.begin(), sink_nodes_prev.end(), i) != 0)
         {
-          if (std::count(sink_nodes_prev.begin(), sink_nodes_prev.end(), i) > 0)
+          // std::cout<<"Model::backPropogateLayerError() sink_tensor_prev_iter: "<<sink_tensor_prev_iter<<std::endl;
+          for (int j=0; j<batch_size; ++j)
           {
             sink_tensor_prev(j, sink_tensor_prev_iter) = sink_tensor(j, i);
           }
-          else
+          sink_tensor_prev_iter += 1;
+        }
+        else
+        {
+          // std::cout<<"Model::backPropogateLayerError() sink_tensor_cur_iter: "<<sink_tensor_cur_iter<<std::endl;
+          for (int j=0; j<batch_size; ++j)
           {
-            sink_tensor_prev(j, sink_tensor_cur_iter) = sink_tensor(j, i);
+            sink_tensor_cur(j, sink_tensor_cur_iter) = sink_tensor(j, i);            
           }
+          sink_tensor_cur_iter += 1;
+          sink_nodes_cur.push_back(i);
         }
       }
+      std::cout<<"Model::backPropogateLayerError() sink_tensor_cur: "<<sink_tensor_cur<<std::endl;
+      std::cout<<"Model::backPropogateLayerError() sink_tensor_prev: "<<sink_tensor_prev<<std::endl;
 
       // update the sink nodes errors for the current time-step
-      mapValuesToNodes(sink_tensor_cur, time_step, sink_nodes, NodeStatus::corrected);
+      mapValuesToNodes(sink_tensor_cur, time_step, sink_nodes_cur, NodeStatus::corrected);
 
       // update the sink nodes errors for the previous time-step
-      mapValuesToNodes(sink_tensor_prev, time_step + 1, sink_nodes, NodeStatus::corrected);
+      mapValuesToNodes(sink_tensor_prev, time_step + 1, sink_nodes_prev, NodeStatus::corrected);
     }
     else
     {
@@ -1041,7 +1054,9 @@ namespace SmartPeak
   
   void Model::backPropogate(const int& time_step)
   {
-    const int max_iters = 1e6;
+    std::vector<int> node_ids_with_cycles;
+    // const int max_iters = 1e6;
+    const int max_iters = 5;
     for (int iter; iter<max_iters; ++iter)
     {
       std::cout<<"Model::backPropogate() iter :"<<iter<<::std::endl;
@@ -1058,7 +1073,8 @@ namespace SmartPeak
       { // all backward propogation steps have caught up
         // add source nodes with cycles to the backward propogation step
         links.insert( links.end(), links_cycles.begin(), links_cycles.end() );
-        sink_nodes.insert( sink_nodes.end(), source_nodes_cycles.begin(), source_nodes_cycles.end() );
+        sink_nodes.insert( sink_nodes.end(), sink_nodes_cycles.begin(), sink_nodes_cycles.end() );
+        node_ids_with_cycles.insert(node_ids_with_cycles.end(), source_nodes_cycles.begin(), source_nodes_cycles.end() );
       }
       else
       { // remove source/sink nodes with cycles from the backward propogation step
@@ -1093,7 +1109,7 @@ namespace SmartPeak
           {
             node_map.second.setStatus(NodeStatus::activated); // reinitialize non-output nodes
           }   
-          std::cout<<"Model::TBPTT() output: "<<node_map.second.getError()<<" for node_id: "<<node_map.first<<std::endl;
+          // std::cout<<"Model::TBPTT() output: "<<node_map.second.getError()<<" for node_id: "<<node_map.first<<std::endl;
         }
       }
 
