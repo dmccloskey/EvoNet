@@ -5,8 +5,8 @@ set(core_executables_list
 set(ml_executables_list
   Link_test
   Model_test
-  Model_test_DAG
-  Model_test_DCG
+  Model_DAG_test
+  Model_DCG_test
   Node_test
   Operation_test
   Weight_test

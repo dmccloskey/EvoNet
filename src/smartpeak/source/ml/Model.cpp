@@ -1048,7 +1048,7 @@ namespace SmartPeak
     }
   }
   
-  void Model::backPropogate(const int& time_step)
+  std::vector<int> Model::backPropogate(const int& time_step)
   {
     std::vector<int> node_ids_with_cycles;
     const int max_iters = 1e6;
@@ -1077,7 +1077,7 @@ namespace SmartPeak
         // add source nodes with cycles to the backward propogation step
         links.insert( links.end(), links_cycles.begin(), links_cycles.end() );
         sink_nodes.insert( sink_nodes.end(), sink_nodes_cycles.begin(), sink_nodes_cycles.end() );
-        // node_ids_with_cycles.insert(node_ids_with_cycles.end(), source_nodes_cycles.begin(), source_nodes_cycles.end() );
+        node_ids_with_cycles.insert(node_ids_with_cycles.end(), source_nodes_cycles.begin(), sink_nodes_cycles.end() );
       }
       else
       { // remove source/sink nodes with cycles from the backward propogation step
@@ -1097,10 +1097,10 @@ namespace SmartPeak
       // calculate the net input
       backPropogateLayerError(links, source_nodes, sink_nodes, time_step);
     }
+    return node_ids_with_cycles;
   }
 
-  void Model::TBPTT(const int& time_steps,
-    const std::vector<int> node_ids)
+  void Model::TBPTT(const int& time_steps
   {
     for (int time_step=0; time_step<time_steps; ++time_step)
     {
@@ -1109,16 +1109,17 @@ namespace SmartPeak
       {
         for (auto& node_map: nodes_)
         {
-          if (std::count(node_ids.begin(), node_ids.end(), node_map.first) == 0)
+          if (std::count(node_ids_with_cycles.begin(), node_ids_with_cycles.end(), node_map.first) == 0)
           {
-            node_map.second.setStatus(NodeStatus::activated); // reinitialize non-output nodes
+            node_map.second.setStatus(NodeStatus::activated); // reinitialize cyclic nodes
           }   
           // std::cout<<"Model::TBPTT() output: "<<node_map.second.getError()<<" for node_id: "<<node_map.first<<std::endl;
         }
       }
 
       // calculate the error for each batch of memory
-      backPropogate(time_step);
+      if (time_step==0) std::vector<int> node_ids_with_cycles =  backPropogate(time_step);
+      else backPropogate(time_step);
     }
     // for (auto& node_map: nodes_)
     // {

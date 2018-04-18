@@ -1,6 +1,6 @@
 /**TODO:  Add copyright*/
 
-#define BOOST_TEST_MODULE Model test DCG suite 
+#define BOOST_TEST_MODULE Model DCG test suite 
 #include <boost/test/unit_test.hpp>
 #include <SmartPeak/ml/Model.h>
 
@@ -15,8 +15,18 @@ using namespace std;
 
 BOOST_AUTO_TEST_SUITE(modelDCG)
 
+/**
+ * Part 3 test suit for the Model class
+ * 
+ * The following test methods that are
+ * required of a Recurrent Neural Network (RNN)
+*/
+
 Model makeModel2()
 {
+  /**
+   * Directed Cyclic Graph Toy Network Model
+  */
   Node i1, h1, o1, b1, b2;
   Link l1, l2, l3, lb1, lb2;
   Weight w1, w2, w3, wb1, wb2;
@@ -458,7 +468,7 @@ BOOST_AUTO_TEST_CASE(BPTT)
   // std::cout<<"Model error:"<<model2.getError()<<std::endl;
 
   // backpropogate through time
-  model2.TBPTT(4, output_nodes);
+  model2.TBPTT(4);
 
   // test values of output nodes
   Eigen::Tensor<float, 3> error(batch_size, memory_size, 5); // dim2: # of model nodes
@@ -530,12 +540,13 @@ Model makeModel2a()
 BOOST_AUTO_TEST_CASE(modelTrainer2) 
 {
   // Toy network: 1 hidden layer, fully connected, DCG
-  Model model2 = makeModel2a();
+  Model model2 = makeModel2a(); // requires ADAM
 
   // initialize nodes
   const int batch_size = 5;
   const int memory_size = 8;
   model2.initNodes(batch_size, memory_size);
+  // model2.initWeights();
 
   // create the input and biases
   const std::vector<int> input_ids = {0, 3, 4};
@@ -567,7 +578,7 @@ BOOST_AUTO_TEST_CASE(modelTrainer2)
     std::cout<<"Error at iteration: "<<iter<<" is "<<model2.getError().sum()<<std::endl;
 
     // backpropogate through time
-    model2.TBPTT(8, output_nodes);
+    model2.TBPTT(8);
 
     // update the weights
     model2.updateWeights(4);   

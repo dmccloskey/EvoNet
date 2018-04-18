@@ -15,6 +15,13 @@ using namespace std;
 
 BOOST_AUTO_TEST_SUITE(model)
 
+/**
+ * Part 1 test suit for the Model class
+ * 
+ * The following test methods that do not require
+ * a toy network model to test
+*/
+
 BOOST_AUTO_TEST_CASE(constructor) 
 {
   Model* ptr = nullptr;

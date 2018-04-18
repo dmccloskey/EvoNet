@@ -1,6 +1,6 @@
 /**TODO:  Add copyright*/
 
-#define BOOST_TEST_MODULE Model test DAG suite 
+#define BOOST_TEST_MODULE Model DAG test suite 
 #include <boost/test/unit_test.hpp>
 #include <SmartPeak/ml/Model.h>
 
@@ -15,8 +15,18 @@ using namespace std;
 
 BOOST_AUTO_TEST_SUITE(model_DAG)
 
+/**
+ * Part 2 test suit for the Model class
+ * 
+ * The following test methods that are
+ * required of a standard feed forward neural network
+*/
+
 Model makeModel1()
 {
+  /**
+   * Directed Acyclic Graph Toy Network Model
+  */
   Node i1, i2, h1, h2, o1, o2, b1, b2;
   Link l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4;
   Weight w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4;

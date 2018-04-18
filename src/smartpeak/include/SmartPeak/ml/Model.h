@@ -314,8 +314,10 @@ public:
         outputs and derivatives are calculated.
 
       @param[in] time_step Time step to forward propogate.
+
+      @returns Vector of cyclic sink node IDs
     */ 
-    void backPropogate(const int& time_step);  
+    std::vector<int> backPropogate(const int& time_step);  
  
     /**
       @brief Truncated Back Propogation Through Time (TBPTT) of the network model.
@@ -326,8 +328,7 @@ public:
       @param[in] time_steps The number of time_steps backwards to 
         unfold the network model.
     */ 
-    void TBPTT(const int& time_steps,
-      const std::vector<int> node_ids);  
+    void TBPTT(const int& time_steps);  
  
     /**
       @brief Recurrent Real Time Learning (RTRL) of the network model.
