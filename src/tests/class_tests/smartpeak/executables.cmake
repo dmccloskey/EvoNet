@@ -3,13 +3,16 @@ set(core_executables_list
 )
 
 set(ml_executables_list
+  ActivationFunction_test
   Link_test
+  Lossfunction_test
   Model_test
   Model_DAG_test
   Model_DCG_test
   Node_test
-  Operation_test
+  Solver_test
   Weight_test
+  WeightInit_test
 )
 
 set(simulator_executables_list
