@@ -43,8 +43,8 @@ Model makeModel1()
   b2 = Node(7, NodeType::bias, NodeStatus::activated);
 
   // weights  
-  std::unique_ptr<WeightInitOp> weight_init;
-  std::unique_ptr<SolverOp> solver;
+  std::shared_ptr<WeightInitOp> weight_init;
+  std::shared_ptr<SolverOp> solver;
   // weight_init.reset(new RandWeightInitOp(1.0)); // No random init for testing
   weight_init.reset(new ConstWeightInitOp(1.0));
   solver.reset(new SGDOp(0.01, 0.9));

@@ -106,7 +106,7 @@ namespace SmartPeak
       if (weights_.count(weight.getId()) == 0)
       {
         // weights_.insert(std::make_pair(weight.getId(), weight));
-        weights_.emplace(weight.getId(), weight);
+        weights_.emplace(weight.getId(), std::move(weight));
         // weights_[weight.getId()] = weight;
       }
       else
@@ -121,7 +121,7 @@ namespace SmartPeak
   {
     if (!weights_.empty() && weights_.count(weight_id) != 0)
     {
-      return weights_.at(weight_id).getWeight();
+      return std::move(weights_.at(weight_id).getWeight());
     }
     else
     {

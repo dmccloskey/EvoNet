@@ -35,8 +35,8 @@ BOOST_AUTO_TEST_CASE(constructor2)
   BOOST_CHECK_EQUAL(weight.getId(), 1);
 
   // ID and attributes
-  std::unique_ptr<WeightInitOp> weight_init(new ConstWeightInitOp(2.0));
-  std::unique_ptr<SolverOp> solver(new SGDOp(0.01, 0.9));
+  std::shared_ptr<WeightInitOp> weight_init(new ConstWeightInitOp(2.0));
+  std::shared_ptr<SolverOp> solver(new SGDOp(0.01, 0.9));
   // ConstWeightInitOp weight_init(2.0);
   // SGDOp solver(0.01, 0.9);
   weight = Weight(1, weight_init, solver);
@@ -67,11 +67,11 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   BOOST_CHECK_EQUAL(weight.getWeight(), 4.0);
 
 
-  std::unique_ptr<WeightInitOp> weight_init(new ConstWeightInitOp(2.0));
-  std::unique_ptr<SolverOp> solver(new SGDOp(0.01, 0.9));
+  std::shared_ptr<WeightInitOp> weight_init(new ConstWeightInitOp(2.0));
+  std::shared_ptr<SolverOp> solver(new SGDOp(0.01, 0.9));
   
-  // std::unique_ptr<WeightInitOp> weight_init = std::make_unique<ConstWeightInitOp>(2.0); // C++ 14
-  // std::unique_ptr<SolverOp> solver = std::make_unique<SGDOp>(0.01, 0.9); // C++ 14
+  // std::shared_ptr<WeightInitOp> weight_init = std::make_unique<ConstWeightInitOp>(2.0); // C++ 14
+  // std::shared_ptr<SolverOp> solver = std::make_unique<SGDOp>(0.01, 0.9); // C++ 14
   // ConstWeightInitOp weight_init(2.0);
   // SGDOp solver(0.01, 0.9);
 
@@ -88,7 +88,7 @@ BOOST_AUTO_TEST_CASE(initWeight)
 {
   Weight weight;
   weight.setId(1);
-  std::unique_ptr<WeightInitOp> weight_init(new ConstWeightInitOp(2.0));
+  std::shared_ptr<WeightInitOp> weight_init(new ConstWeightInitOp(2.0));
   // ConstWeightInitOp weight_init(5.0);
   weight.setWeightInitOp(weight_init);
   weight.initWeight();
@@ -100,7 +100,7 @@ BOOST_AUTO_TEST_CASE(updateWeight)
   Weight weight;
   weight.setId(1);
   weight.setWeight(1.0);
-  std::unique_ptr<SolverOp> solver(new SGDOp(0.01, 0.9));
+  std::shared_ptr<SolverOp> solver(new SGDOp(0.01, 0.9));
   // SGDOp solver(0.01, 0.9);
   weight.setSolverOp(solver);
   weight.updateWeight(2.0);
