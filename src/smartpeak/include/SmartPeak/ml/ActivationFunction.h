@@ -91,5 +91,61 @@ public:
 private:
     T alpha_;
   };
+
+  /**
+    @brief Sigmoid activation function
+  */
+  template<typename T>
+  class SigmoidOp
+  {
+public: 
+    SigmoidOp(){}; 
+    ~SigmoidOp(){};
+    T operator()(const T& x_I) const { return 1 / (1 + std::exp(x_I)); };
+  };
+
+  /**
+    @brief Sigmoid gradient
+  */
+  template<typename T>
+  class SigmoidGradOp
+  {
+public: 
+    SigmoidGradOp(){}; 
+    ~SigmoidGradOp(){};
+    T operator()(const T& x_I) const
+    {
+      SmartPeak::SigmoidOp<T> sigmoidop;
+      return sigmoidop(x_I) * (1 - sigmoidop(x_I));
+    };
+  };
+  
+  /**
+    @brief Hyperbolic Tangent activation function
+  */
+  template<typename T>
+  class TanHOp
+  {
+public: 
+    TanHOp(){}; 
+    ~TanHOp(){};
+    T operator()(const T& x_I) const { (std::exp(x_I) - std::exp(-x_I)) / (std::exp(x_I) + std::exp(-x_I)); };
+  };
+
+  /**
+    @brief Hyperbolic Tangent gradient
+  */
+  template<typename T>
+  class TanHGradOp
+  {
+public: 
+    TanHGradOp(){}; 
+    ~TanHGradOp(){};
+    T operator()(const T& x_I) const
+    {
+      SmartPeak::TanHOp<T> tanhop;
+      return 1 - std::pow(tanhop(x_I), 2);
+    };
+  };
 }
 #endif //SMARTPEAK_ACTIVATIONFUNCTION_H

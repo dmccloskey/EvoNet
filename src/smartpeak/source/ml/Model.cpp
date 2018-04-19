@@ -4,7 +4,7 @@
 #include <SmartPeak/ml/Link.h>
 #include <SmartPeak/ml/Node.h>
 #include <SmartPeak/ml/Weight.h>
-#include <SmartPeak/ml/Operation.h>
+#include <SmartPeak/ml/LossFunction.h>
 
 #include <vector>
 #include <map>
@@ -55,7 +55,7 @@ namespace SmartPeak
 
   void Model::addNodes(const std::vector<Node>& nodes)
   { 
-    for (Node const& node: nodes)
+    for (const Node& node: nodes)
     {
       // check for duplicate nodes (by id)
       if (nodes_.count(node.getId()) == 0)
@@ -86,7 +86,7 @@ namespace SmartPeak
 
   void Model::removeNodes(const std::vector<int>& node_ids)
   { 
-    for (int const& node_id: node_ids)
+    for (const int& node_id: node_ids)
     {
       // check for duplicate nodes (by id)
       if (nodes_.count(node_id) != 0)
@@ -100,11 +100,12 @@ namespace SmartPeak
 
   void Model::addWeights(const std::vector<Weight>& weights)
   { 
-    for (Weight const& weight: weights)
+    for (const Weight& weight: weights)
     {
       // check for duplicate weights (by id)
       if (weights_.count(weight.getId()) == 0)
       {
+        // weights_.insert(std::make_pair(weight.getId(), weight));
         weights_.emplace(weight.getId(), weight);
         // weights_[weight.getId()] = weight;
       }
@@ -120,7 +121,7 @@ namespace SmartPeak
   {
     if (!weights_.empty() && weights_.count(weight_id) != 0)
     {
-      return weights_.at(weight_id);
+      return weights_.at(weight_id).getWeight();
     }
     else
     {
@@ -144,7 +145,7 @@ namespace SmartPeak
 
   void Model::addLinks(const std::vector<Link>& links)
   { 
-    for (Link const& link: links)
+    for (const Link& link: links)
     {
       // check for duplicate links (by id)
       if (links_.count(link.getId()) == 0)
@@ -162,7 +163,7 @@ namespace SmartPeak
 
   void Model::removeLinks(const std::vector<int>& link_ids)
   { 
-    for (int const& link_id: link_ids)
+    for (const int& link_id: link_ids)
     {
       // check for duplicate links (by id)
       if (links_.count(link_id) != 0)
@@ -1077,7 +1078,7 @@ namespace SmartPeak
         // add source nodes with cycles to the backward propogation step
         links.insert( links.end(), links_cycles.begin(), links_cycles.end() );
         sink_nodes.insert( sink_nodes.end(), sink_nodes_cycles.begin(), sink_nodes_cycles.end() );
-        node_ids_with_cycles.insert(node_ids_with_cycles.end(), source_nodes_cycles.begin(), sink_nodes_cycles.end() );
+        node_ids_with_cycles.insert(node_ids_with_cycles.end(), sink_nodes_cycles.begin(), sink_nodes_cycles.end() );
       }
       else
       { // remove source/sink nodes with cycles from the backward propogation step
@@ -1100,16 +1101,17 @@ namespace SmartPeak
     return node_ids_with_cycles;
   }
 
-  void Model::TBPTT(const int& time_steps
+  void Model::TBPTT(const int& time_steps)
   {
+    std::vector<int> node_ids; // determined at time step 0
     for (int time_step=0; time_step<time_steps; ++time_step)
     {
       // std::cout<<"Model::TBPTT() time_step: "<<time_step<<std::endl;
-      if (time_step>0)
+      if (time_step > 0 && node_ids.size()>0)
       {
         for (auto& node_map: nodes_)
         {
-          if (std::count(node_ids_with_cycles.begin(), node_ids_with_cycles.end(), node_map.first) == 0)
+          if (std::count(node_ids.begin(), node_ids.end(), node_map.first) == 0)
           {
             node_map.second.setStatus(NodeStatus::activated); // reinitialize cyclic nodes
           }   
@@ -1118,8 +1120,8 @@ namespace SmartPeak
       }
 
       // calculate the error for each batch of memory
-      if (time_step==0) std::vector<int> node_ids_with_cycles =  backPropogate(time_step);
-      else backPropogate(time_step);
+      // backPropogate(time_step);
+      node_ids = backPropogate(time_step);
     }
     // for (auto& node_map: nodes_)
     // {

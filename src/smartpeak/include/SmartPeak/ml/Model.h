@@ -6,7 +6,6 @@
 #include <SmartPeak/ml/Link.h>
 #include <SmartPeak/ml/Node.h>
 #include <SmartPeak/ml/Weight.h>
-#include <SmartPeak/ml/Operation.h>
 
 #include <unsupported/Eigen/CXX11/Tensor>
 #include <vector>

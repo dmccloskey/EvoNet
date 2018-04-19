@@ -3,7 +3,7 @@
 #define BOOST_TEST_MODULE Model DCG test suite 
 #include <boost/test/unit_test.hpp>
 #include <SmartPeak/ml/Model.h>
-
+#include <SmartPeak/ml/Weight.h>
 #include <SmartPeak/ml/Link.h>
 #include <SmartPeak/ml/Node.h>
 
@@ -38,8 +38,8 @@ Model makeModel2()
   b1 = Node(3, NodeType::bias, NodeStatus::activated);
   b2 = Node(4, NodeType::bias, NodeStatus::activated);
   // weights  
-  std::shared_ptr<WeightInitOp> weight_init;
-  std::shared_ptr<SolverOp> solver;
+  std::unique_ptr<WeightInitOp> weight_init;
+  std::unique_ptr<SolverOp> solver;
   // weight_init.reset(new RandWeightInitOp(1.0)); // No random init for testing
   weight_init.reset(new ConstWeightInitOp(1.0));
   solver.reset(new SGDOp(0.01, 0.9));
@@ -238,7 +238,6 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayerCycles2)
   }
 }
 
-
 BOOST_AUTO_TEST_CASE(FPTT) 
 {
   // Toy network: 1 hidden layer, fully connected, DCG
@@ -248,6 +247,7 @@ BOOST_AUTO_TEST_CASE(FPTT)
   const int batch_size = 5;
   const int memory_size = 8;
   model2.initNodes(batch_size, memory_size);
+  model2.initWeights();
 
   // create the input and biases
   const std::vector<int> input_ids = {0, 3, 4};
@@ -441,6 +441,7 @@ BOOST_AUTO_TEST_CASE(BPTT)
   const int batch_size = 5;
   const int memory_size = 8;
   model2.initNodes(batch_size, memory_size);
+  model2.initWeights();
 
   // create the input and biases
   const std::vector<int> input_ids = {0, 3, 4};
@@ -493,6 +494,57 @@ BOOST_AUTO_TEST_CASE(BPTT)
   }  
 }
 
+BOOST_AUTO_TEST_CASE(updateWeights2) 
+{
+  // Toy network: 1 hidden layer, fully connected, DCG
+  Model model2 = makeModel2();
+
+  // initialize nodes
+  const int batch_size = 5;
+  const int memory_size = 8;
+  model2.initNodes(batch_size, memory_size);
+  model2.initWeights();
+
+  // create the input and biases
+  const std::vector<int> input_ids = {0, 3, 4};
+  Eigen::Tensor<float, 3> input(batch_size, memory_size, input_ids.size()); 
+  input.setValues(
+    {{{1, 0, 0}, {2, 0, 0}, {3, 0, 0}, {4, 0, 0}, {5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}},
+    {{2, 0, 0}, {3, 0, 0}, {4, 0, 0}, {5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}, {9, 0, 0}},
+    {{3, 0, 0}, {4, 0, 0}, {5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}, {9, 0, 0}, {10, 0, 0}},
+    {{4, 0, 0}, {5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}, {9, 0, 0}, {10, 0, 0}, {11, 0, 0}},
+    {{5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}, {9, 0, 0}, {10, 0, 0}, {11, 0, 0}, {12, 0, 0}}}
+  );
+
+  // forward propogate
+  model2.FPTT(4, input, input_ids);
+
+  // calculate the model error
+  model2.setLossFunction(ModelLossFunction::MSE);
+  const std::vector<int> output_nodes = {2};
+  // expected sequence
+  // y = m1*(m2*x + b*yprev) where m1 = 2, m2 = 0.5 and b = -2
+  Eigen::Tensor<float, 2> expected(batch_size, output_nodes.size()); 
+  expected.setValues({{2.5}, {3}, {3.5}, {4}, {4.5}});
+  model2.calculateError(expected, output_nodes);
+
+  // backpropogate through time
+  model2.TBPTT(4);
+
+  // update weights
+  model2.updateWeights(4);
+
+  // test values of output nodes
+  std::vector<int> weight_nodes = {0, 1, 2, 3, 4};
+  Eigen::Tensor<float, 1> weights(weight_nodes.size());
+  weights.setValues({0.248, -1.312, -1.312, 1.0, 1.0}); 
+  
+  for (int i=0; i<weight_nodes.size(); ++i)
+  {       
+    BOOST_CHECK_CLOSE(model2.getWeight(weight_nodes[i]).getWeight(), weights(i), 1e-3);
+  }
+}
+
 Model makeModel2a()
 {
   Node i1, h1, o1, b1, b2;
@@ -506,8 +558,8 @@ Model makeModel2a()
   b1 = Node(3, NodeType::bias, NodeStatus::activated);
   b2 = Node(4, NodeType::bias, NodeStatus::activated);
   // weights  
-  std::shared_ptr<WeightInitOp> weight_init;
-  std::shared_ptr<SolverOp> solver;
+  std::unique_ptr<WeightInitOp> weight_init;
+  std::unique_ptr<SolverOp> solver;
   // weight_init.reset(new RandWeightInitOp(1.0)); // No random init for testing
   weight_init.reset(new RandWeightInitOp(1.0));
   solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
@@ -546,7 +598,7 @@ BOOST_AUTO_TEST_CASE(modelTrainer2)
   const int batch_size = 5;
   const int memory_size = 8;
   model2.initNodes(batch_size, memory_size);
-  // model2.initWeights();
+  model2.initWeights();
 
   // create the input and biases
   const std::vector<int> input_ids = {0, 3, 4};
@@ -567,7 +619,7 @@ BOOST_AUTO_TEST_CASE(modelTrainer2)
   model2.setLossFunction(ModelLossFunction::MSE);
 
   // iterate until we find the optimal values
-  const int max_iter = 1000;
+  const int max_iter = 100;
   for (int iter = 0; iter < max_iter; ++iter)
   {
     // forward propogate
@@ -575,7 +627,7 @@ BOOST_AUTO_TEST_CASE(modelTrainer2)
 
     // calculate the model error
     model2.calculateError(expected, output_nodes);
-    std::cout<<"Error at iteration: "<<iter<<" is "<<model2.getError().sum()<<std::endl;
+    // std::cout<<"Error at iteration: "<<iter<<" is "<<model2.getError().sum()<<std::endl;
 
     // backpropogate through time
     model2.TBPTT(8);
@@ -584,11 +636,12 @@ BOOST_AUTO_TEST_CASE(modelTrainer2)
     model2.updateWeights(4);   
 
     // reinitialize the model
-    model2.reInitializeNodeStatuses();
+    model2.reInitializeNodeStatuses();    
+    model2.initNodes(batch_size, memory_size);
   }
   
   const Eigen::Tensor<float, 0> total_error = model2.getError().sum();
-  BOOST_CHECK_CLOSE(total_error(0), 0.0464666, 1e-3);  
+  BOOST_CHECK_CLOSE(total_error(0), 0.0262552425, 1e-3);  
 
   // std::cout << "Link #0: "<< model2.getWeight(0).getWeight() << std::endl;
   // std::cout << "Link #1: "<< model2.getWeight(1).getWeight() << std::endl;

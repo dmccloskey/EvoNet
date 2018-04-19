@@ -1,7 +1,7 @@
 /**TODO:  Add copyright*/
 
 #include <SmartPeak/ml/Node.h>
-#include <SmartPeak/ml/Operation.h>
+#include <SmartPeak/ml/ActivationFunction.h>
 
 #include <vector>
 #include <cmath>

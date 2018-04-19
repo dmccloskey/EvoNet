@@ -1,7 +1,6 @@
 /**TODO:  Add copyright*/
 
 #include <SmartPeak/ml/Link.h>
-#include <SmartPeak/ml/Operation.h>
 
 #include <vector>
 #include <cmath>

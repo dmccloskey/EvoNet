@@ -1,6 +1,7 @@
 /**TODO:  Add copyright*/
 
 #include <SmartPeak/ml/Weight.h>
+#include <SmartPeak/ml/WeightInit.h>
 
 #include <unsupported/Eigen/CXX11/Tensor>
 #include <vector>
@@ -18,7 +19,7 @@ namespace SmartPeak
   {
   }
 
-  Weight::Weight(const int& id, std::shared_ptr<WeightInitOp>& weight_init, std::shared_ptr<SolverOp>& solver):
+  Weight::Weight(const int& id, std::unique_ptr<WeightInitOp>& weight_init, std::unique_ptr<SolverOp>& solver):
     id_(id)
   {
     setWeightInitOp(weight_init);
@@ -47,7 +48,7 @@ namespace SmartPeak
     return weight_;
   }
 
-  void Weight::setWeightInitOp(std::shared_ptr<WeightInitOp>& weight_init)
+  void Weight::setWeightInitOp(std::unique_ptr<WeightInitOp>& weight_init)
   {
     weight_init_.reset();
     weight_init_ = std::move(weight_init);
@@ -57,7 +58,7 @@ namespace SmartPeak
     return weight_init_.get();
   }
 
-  void Weight::setSolverOp(std::shared_ptr<SolverOp>& solver)
+  void Weight::setSolverOp(std::unique_ptr<SolverOp>& solver)
   {
     solver_.reset();
     solver_ = std::move(solver);
