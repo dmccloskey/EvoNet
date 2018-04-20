@@ -34,7 +34,8 @@ endif()
 #------------------------------------------------------------------------------
 # Include the standard Dart testing module
 # for Nightly Build log
-enable_testing()
+include(CTest)
+#enable_testing()
 include(Dart)
 
 #------------------------------------------------------------------------------

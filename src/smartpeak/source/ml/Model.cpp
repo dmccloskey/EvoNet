@@ -121,7 +121,7 @@ namespace SmartPeak
   {
     if (!weights_.empty() && weights_.count(weight_id) != 0)
     {
-      return std::move(weights_.at(weight_id).getWeight());
+      return std::move(weights_.at(weight_id));
     }
     else
     {
@@ -567,6 +567,13 @@ namespace SmartPeak
   {
     // infer the batch size from the first source node
     const int batch_size = nodes_.at(source_nodes[0]).getOutput().dimension(0);
+    const int memory_size = nodes_.at(source_nodes[0]).getOutput().dimension(1);
+
+    if (time_step >= memory_size)
+    {
+      std::cout<<"time step: "<<time_step<<" exceeds the memory_size!"<<std::endl;
+      return;
+    }
 
     // concatenate the source and weight tensors
     // using col-major ordering where rows are the batch vectors
@@ -584,8 +591,14 @@ namespace SmartPeak
         }
         else if (nodes_.at(source_nodes[i]).getStatus() == NodeStatus::initialized)
         {
-          // std::cout<<"Model::forwardPropogateLayerNetInput() source_node prev: "<<source_nodes[i]<<std::endl;
-          source_tensor(j, i) = nodes_.at(source_nodes[i]).getOutput()(j, time_step + 1); //previous time-step
+          if (time_step + 1 < memory_size)
+          {
+            source_tensor(j, i) = nodes_.at(source_nodes[i]).getOutput()(j, time_step + 1); //previous time-step
+          }
+          else
+          {
+            source_tensor(j, i) = 0.0;
+          }
         }
       }
     }
@@ -681,7 +694,15 @@ namespace SmartPeak
     const Eigen::Tensor<float, 3>& values,
     const std::vector<int> node_ids)
   {
-    for (int time_step=0; time_step<time_steps; ++time_step)
+    // check time_steps vs memory_size
+    int max_steps = time_steps;
+    if (time_steps >= nodes_.begin()->second.getOutput().dimension(1))
+    {
+      std::cout<<"Time_steps will be scaled back to the memory_size - 1."<<std::endl;
+      max_steps = nodes_.begin()->second.getOutput().dimension(1) - 1;
+    }
+
+    for (int time_step=0; time_step<max_steps; ++time_step)
     {
       // std::cout<<"Model::FPTT() time_step: "<<time_step<<std::endl;
       if (time_step>0)
@@ -948,6 +969,13 @@ namespace SmartPeak
   {
     // infer the batch size from the first source node
     const int batch_size = nodes_.at(source_nodes[0]).getOutput().dimension(0);
+    const int memory_size = nodes_.at(source_nodes[0]).getOutput().dimension(1);
+
+    if (time_step >= memory_size)
+    {
+      std::cout<<"time step: "<<time_step<<" exceeds the memory_size!"<<std::endl;
+      return;
+    }
 
     // concatenate the source and weight tensors
     // using col-major ordering where rows are the batch vectors
@@ -995,7 +1023,15 @@ namespace SmartPeak
         else if (nodes_.at(sink_nodes[i]).getStatus() == NodeStatus::corrected)
         {
           // std::cout << "Model::backPropogateLayerError() Previous derivative (batch_size, Sink) " << j << "," << i << std::endl;
-          derivative_tensor(j, i) = nodes_.at(sink_nodes[i]).getDerivative()(j, time_step + 1); // previous time-step
+          if (time_step + 1 < memory_size)
+          {
+            derivative_tensor(j, i) = nodes_.at(sink_nodes[i]).getDerivative()(j, time_step + 1); // previous time-step
+          }
+          else
+          {
+            derivative_tensor(j, i) = 0.0; // previous time-step
+          }
+          
           if (std::count(sink_nodes_prev.begin(), sink_nodes_prev.end(), i) == 0) sink_nodes_prev.push_back(i);
         }        
       }
@@ -1040,7 +1076,10 @@ namespace SmartPeak
       mapValuesToNodes(sink_tensor_cur, time_step, sink_nodes_cur, NodeStatus::corrected);
 
       // update the sink nodes errors for the previous time-step
-      mapValuesToNodes(sink_tensor_prev, time_step + 1, sink_nodes_prev, NodeStatus::corrected);
+      if (time_step + 1 < memory_size)
+      {
+        mapValuesToNodes(sink_tensor_prev, time_step + 1, sink_nodes_prev, NodeStatus::corrected);
+      }
     }
     else
     {
@@ -1103,8 +1142,16 @@ namespace SmartPeak
 
   void Model::TBPTT(const int& time_steps)
   {
+    // check time_steps vs memory_size
+    int max_steps = time_steps;
+    if (time_steps >= nodes_.begin()->second.getOutput().dimension(1))
+    {
+      std::cout<<"Time_steps will be scaled back to the memory_size - 1."<<std::endl;
+      max_steps = nodes_.begin()->second.getOutput().dimension(1) - 1;
+    }
+
     std::vector<int> node_ids; // determined at time step 0
-    for (int time_step=0; time_step<time_steps; ++time_step)
+    for (int time_step=0; time_step<max_steps; ++time_step)
     {
       // std::cout<<"Model::TBPTT() time_step: "<<time_step<<std::endl;
       if (time_step > 0 && node_ids.size()>0)
@@ -1131,6 +1178,13 @@ namespace SmartPeak
 
   void Model::updateWeights(const int& time_steps)
   {
+    // check time_steps vs memory_size
+    int max_steps = time_steps;
+    // if (time_steps >= nodes_.begin()->second.getOutput().dimension(1))
+    // {
+    //   std::cout<<"Time_steps will be scaled back to the memory_size - 1."<<std::endl;
+    //   max_steps = nodes_.begin()->second.getOutput().dimension(1) - 1;
+    // }
 
     std::map<int, std::vector<float>> weight_derivatives;  
     // initalize the map
@@ -1147,7 +1201,7 @@ namespace SmartPeak
       {
         // Sum the error from current and previous time-steps
         float error_sum = 0.0;
-        for (int i=0; i<time_steps; ++i)
+        for (int i=0; i<max_steps; ++i)
         {
           Eigen::Tensor<float, 1> error_tensor = nodes_.at(link_map.second.getSinkNodeId()).getError().chip(0, 1); // first time-step
           Eigen::Tensor<float, 1> output_tensor = nodes_.at(link_map.second.getSourceNodeId()).getOutput().chip(0, 1);  // first time-step

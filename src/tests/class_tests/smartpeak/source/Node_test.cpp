@@ -17,6 +17,7 @@ BOOST_AUTO_TEST_CASE(constructor)
   Node* nullPointer = nullptr;
 	ptr = new Node();
   BOOST_CHECK_NE(ptr, nullPointer);
+  delete ptr;
 }
 
 BOOST_AUTO_TEST_CASE(destructor) 

@@ -108,15 +108,15 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayer2)
   BOOST_CHECK_EQUAL(links.size(), links_test.size());
   BOOST_CHECK_EQUAL(source_nodes.size(), source_nodes_test.size());
   BOOST_CHECK_EQUAL(sink_nodes.size(), sink_nodes_test.size());
-  for (int i=0; i<links.size(); i++)
+  for (int i=0; i<links.size(); ++i)
   {
     BOOST_CHECK_EQUAL(links[i], links_test[i]);
   }
-  for (int i=0; i<source_nodes.size(); i++)
+  for (int i=0; i<source_nodes.size(); ++i)
   {
     BOOST_CHECK_EQUAL(source_nodes[i], source_nodes_test[i]);
   }
-  for (int i=0; i<sink_nodes.size(); i++)
+  for (int i=0; i<sink_nodes.size(); ++i)
   {
     BOOST_CHECK_EQUAL(sink_nodes[i], sink_nodes_test[i]);
   }
@@ -166,15 +166,15 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayerBiases2)
   BOOST_CHECK_EQUAL(source_nodes.size(), source_nodes_test.size());
   BOOST_CHECK_EQUAL(sink_nodes.size(), sink_nodes_test.size());
   BOOST_CHECK_EQUAL(sink_nodes_with_biases.size(), sink_nodes_with_biases_test.size());
-  for (int i=0; i<links.size(); i++)
+  for (int i=0; i<links.size(); ++i)
   {
     BOOST_CHECK_EQUAL(links[i], links_test[i]);
   }
-  for (int i=0; i<source_nodes.size(); i++)
+  for (int i=0; i<source_nodes.size(); ++i)
   {
     BOOST_CHECK_EQUAL(source_nodes[i], source_nodes_test[i]);
   }
-  for (int i=0; i<sink_nodes.size(); i++)
+  for (int i=0; i<sink_nodes.size(); ++i)
   {
     BOOST_CHECK_EQUAL(sink_nodes[i], sink_nodes_test[i]);
   }
@@ -224,15 +224,15 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayerCycles2)
   BOOST_CHECK_EQUAL(source_nodes.size(), source_nodes_test.size());
   BOOST_CHECK_EQUAL(sink_nodes.size(), sink_nodes_test.size());
   BOOST_CHECK_EQUAL(sink_nodes_with_cycles.size(), sink_nodes_with_cycles_test.size());
-  for (int i=0; i<links.size(); i++)
+  for (int i=0; i<links.size(); ++i)
   {
     BOOST_CHECK_EQUAL(links[i], links_test[i]);
   }
-  for (int i=0; i<source_nodes.size(); i++)
+  for (int i=0; i<source_nodes.size(); ++i)
   {
     BOOST_CHECK_EQUAL(source_nodes[i], source_nodes_test[i]);
   }
-  for (int i=0; i<sink_nodes.size(); i++)
+  for (int i=0; i<sink_nodes.size(); ++i)
   {
     BOOST_CHECK_EQUAL(sink_nodes[i], sink_nodes_test[i]);
   }
@@ -418,15 +418,15 @@ BOOST_AUTO_TEST_CASE(getNextUncorrectedLayerCycles2)
   BOOST_CHECK_EQUAL(source_nodes.size(), source_nodes_test.size());
   BOOST_CHECK_EQUAL(sink_nodes.size(), sink_nodes_test.size());
   BOOST_CHECK_EQUAL(source_nodes_with_cycles.size(), source_nodes_with_cycles_test.size());
-  for (int i=0; i<links_test.size(); i++)
+  for (int i=0; i<links_test.size(); ++i)
   {
     BOOST_CHECK_EQUAL(links[i], links_test[i]);
   }
-  for (int i=0; i<source_nodes_test.size(); i++)
+  for (int i=0; i<source_nodes_test.size(); ++i)
   {
     BOOST_CHECK_EQUAL(source_nodes[i], source_nodes_test[i]);
   }
-  for (int i=0; i<sink_nodes_test.size(); i++)
+  for (int i=0; i<sink_nodes_test.size(); ++i)
   {
     BOOST_CHECK_EQUAL(sink_nodes[i], sink_nodes_test[i]);
   }
@@ -623,17 +623,17 @@ BOOST_AUTO_TEST_CASE(modelTrainer2)
   for (int iter = 0; iter < max_iter; ++iter)
   {
     // forward propogate
-    model2.FPTT(8, input, input_ids);
+    model2.FPTT(7, input, input_ids);
 
     // calculate the model error
     model2.calculateError(expected, output_nodes);
     // std::cout<<"Error at iteration: "<<iter<<" is "<<model2.getError().sum()<<std::endl;
 
     // backpropogate through time
-    model2.TBPTT(8);
+    model2.TBPTT(7);
 
     // update the weights
-    model2.updateWeights(4);   
+    model2.updateWeights(7);   
 
     // reinitialize the model
     model2.reInitializeNodeStatuses();    

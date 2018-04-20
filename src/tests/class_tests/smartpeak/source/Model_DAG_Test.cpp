@@ -352,11 +352,11 @@ BOOST_AUTO_TEST_CASE(forwardPropogateLayerNetInput)
   // control test
   Eigen::Tensor<float, 2> net(batch_size, 2); 
   net.setValues({{7, 7}, {9, 9}, {11, 11}, {13, 13}});
-  for (int i=0; i<sink_nodes.size(); i++)
+  for (int i=0; i<sink_nodes.size(); ++i)
   {
     BOOST_CHECK_EQUAL(model1.getNode(sink_nodes[i]).getOutput().size(), batch_size*memory_size);
     BOOST_CHECK(model1.getNode(sink_nodes[i]).getStatus() == NodeStatus::activated);
-    for (int j=0; j<batch_size; j++)
+    for (int j=0; j<batch_size; ++j)
     {
       for (int k=0; k<memory_size; ++k)
       {
@@ -404,12 +404,12 @@ BOOST_AUTO_TEST_CASE(forwardPropogateLayerActivation)
   output.setValues({{7, 7}, {9, 9}, {11, 11}, {13, 13}});
   Eigen::Tensor<float, 2> derivative(batch_size, 2); 
   derivative.setValues({{1, 1}, {1, 1}, {1, 1}, {1, 1}});
-  for (int i=0; i<sink_nodes.size(); i++)
+  for (int i=0; i<sink_nodes.size(); ++i)
   {
     BOOST_CHECK_EQUAL(model1.getNode(sink_nodes[i]).getOutput().size(), batch_size*memory_size);
     BOOST_CHECK_EQUAL(model1.getNode(sink_nodes[i]).getDerivative().size(), batch_size*memory_size);
     // BOOST_CHECK(model1.getNode(sink_nodes[i]).getStatus() == NodeStatus::activated);
-    for (int j=0; j<batch_size; j++)
+    for (int j=0; j<batch_size; ++j)
     {
       for (int k=0; k<memory_size; ++k)
       {
@@ -450,7 +450,7 @@ BOOST_AUTO_TEST_CASE(forwardPropogate)
   Eigen::Tensor<float, 2> derivative(batch_size, 2); 
   derivative.setValues({{1, 1}, {1, 1}, {1, 1}, {1, 1}});  
   const std::vector<int> output_nodes = {4, 5};
-  for (int i=0; i<output_nodes.size(); i++)
+  for (int i=0; i<output_nodes.size(); ++i)
   {
     BOOST_CHECK_EQUAL(model1.getNode(output_nodes[i]).getOutput().size(), batch_size*memory_size);
     BOOST_CHECK_EQUAL(model1.getNode(output_nodes[i]).getDerivative().size(), batch_size*memory_size);
@@ -486,7 +486,7 @@ BOOST_AUTO_TEST_CASE(calculateError)
   // control test (output values should be 0.0 from initialization)
   Eigen::Tensor<float, 1> error(batch_size); 
   error.setValues({0.125, 0.125, 0.125, 0.125});
-  for (int j=0; j<batch_size; j++)
+  for (int j=0; j<batch_size; ++j)
   {
     BOOST_CHECK_CLOSE(model1.getError()(j), error(j), 1e-6);
   }
@@ -624,7 +624,7 @@ BOOST_AUTO_TEST_CASE(backPropogateLayerError)
 
   Eigen::Tensor<float, 2> error(batch_size, sink_nodes.size()); 
   error.setValues({{-7.25, -7.25, 0.0}, {-9.25, -9.25, 0.0}, {-11.25, -11.25, 0.0}, {-13.25, -13.25, 0.0}});
-  for (int i=0; i<sink_nodes.size(); i++)
+  for (int i=0; i<sink_nodes.size(); ++i)
   {
     BOOST_CHECK_EQUAL(model1.getNode(sink_nodes[i]).getError().size(), batch_size*memory_size);
     BOOST_CHECK(model1.getNode(sink_nodes[i]).getStatus() == NodeStatus::corrected);
@@ -632,7 +632,7 @@ BOOST_AUTO_TEST_CASE(backPropogateLayerError)
     {
       for (int k=0; k<memory_size; ++k)
       {
-        BOOST_CHECK_EQUAL(model1.getNode(sink_nodes[i]).getError()(j, k), error(j, i));
+        BOOST_CHECK_CLOSE(model1.getNode(sink_nodes[i]).getError()(j, k), error(j, i), 1e-3);
       }      
     }
   }
@@ -680,16 +680,16 @@ BOOST_AUTO_TEST_CASE(backPropogate)
     {0.0, 0.0, -9.25, -9.25, 0.0}, 
     {0.0, 0.0, -11.25, -11.25, 0.0}, 
     {0.0, 0.0, -13.25, -13.25, 0.0}});
-  for (int i=0; i<hidden_nodes.size(); i++)
+  for (int i=0; i<hidden_nodes.size(); ++i)
   {
     // BOOST_CHECK_EQUAL(model1.getNode(hidden_nodes[i]).getError().size(), batch_size); // why does
                             // uncommenting this line cause a memory error "std::out_of_range map:at"
     // BOOST_CHECK(model1.getNode(hidden_nodes[i]).getStatus() == NodeStatus::corrected);
-    for (int j=0; j<batch_size; j++)
+    for (int j=0; j<batch_size; ++j)
     {
       for (int k=0; k<memory_size; ++k)
       {
-        BOOST_CHECK_EQUAL(model1.getNode(hidden_nodes[i]).getError()(j, k), error(j, i));
+        BOOST_CHECK_CLOSE(model1.getNode(hidden_nodes[i]).getError()(j, k), error(j, i), 1e-3);
       }       
     }
   }
@@ -739,7 +739,7 @@ BOOST_AUTO_TEST_CASE(updateWeights)
   weights.setValues({
     -0.075, -0.075, -0.075, -0.075, -0.075, -0.075,
     -0.1525, -0.1, -0.1525, -0.1, -0.1525, -0.1});
-  for (int i=0; i<weight_ids.size(); i++)
+  for (int i=0; i<weight_ids.size(); ++i)
   {
     // std::cout<<model1.getWeight(weight_ids[i]).getWeight()<<std::endl;
     BOOST_CHECK_CLOSE(model1.getWeight(weight_ids[i]).getWeight(), weights(i), 1e-3);
@@ -771,12 +771,12 @@ BOOST_AUTO_TEST_CASE(reInitializeNodeStatuses)
   // calculate the activation
   model1.reInitializeNodeStatuses();
 
-  for (int i=0; i<input_ids.size(); i++)
+  for (int i=0; i<input_ids.size(); ++i)
   {
     BOOST_CHECK(model1.getNode(input_ids[i]).getStatus() == NodeStatus::initialized);
   }
 
-  for (int i=0; i<biases_ids.size(); i++)
+  for (int i=0; i<biases_ids.size(); ++i)
   {
     BOOST_CHECK(model1.getNode(biases_ids[i]).getStatus() == NodeStatus::initialized);
   }

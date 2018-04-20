@@ -4,92 +4,134 @@
 #include <boost/test/unit_test.hpp>
 #include <SmartPeak/ml/Interpreter.h>
 
+#include <SmartPeak/ml/Model.h>
+#include <SmartPeak/ml/Weight.h>
 #include <SmartPeak/ml/Link.h>
 #include <SmartPeak/ml/Node.h>
-#include <SmartPeak/ml/Model.h>
 
 using namespace SmartPeak;
 using namespace std;
 
 BOOST_AUTO_TEST_SUITE(interpreter)
 
-BOOST_AUTO_TEST_CASE(constructor) 
-{
-  Interpreter* ptr = nullptr;
-  Interpreter* nullPointer = nullptr;
-	ptr = new Interpreter();
-  BOOST_CHECK_NE(ptr, nullPointer);
-}
+// BOOST_AUTO_TEST_CASE(constructor) 
+// {
+//   Interpreter* ptr = nullptr;
+//   Interpreter* nullPointer = nullptr;
+// 	ptr = new Interpreter();
+//   BOOST_CHECK_NE(ptr, nullPointer);
+// }
 
-BOOST_AUTO_TEST_CASE(destructor) 
+// BOOST_AUTO_TEST_CASE(destructor) 
+// {
+//   Interpreter* ptr = nullptr;
+// 	ptr = new Interpreter();
+//   delete ptr;
+// }
+
+Model makeModel2a()
 {
-  Interpreter* ptr = nullptr;
-	ptr = new Interpreter();
-  delete ptr;
+  Node i1, h1, o1, b1, b2;
+  Link l1, l2, l3, lb1, lb2;
+  Weight w1, w2, w3, wb1, wb2;
+  Model model2;
+  // Toy network: 1 hidden layer, fully connected, DCG
+  i1 = Node(0, NodeType::input, NodeStatus::activated);
+  h1 = Node(1, NodeType::ELU, NodeStatus::deactivated);
+  o1 = Node(2, NodeType::ELU, NodeStatus::deactivated);
+  b1 = Node(3, NodeType::bias, NodeStatus::activated);
+  b2 = Node(4, NodeType::bias, NodeStatus::activated);
+  // weights  
+  std::shared_ptr<WeightInitOp> weight_init;
+  std::shared_ptr<SolverOp> solver;
+  // weight_init.reset(new RandWeightInitOp(1.0)); // No random init for testing
+  weight_init.reset(new RandWeightInitOp(1.0));
+  solver.reset(new AdamOp(0.02, 0.9, 0.999, 1e-8));
+  w1 = Weight(0, weight_init, solver);
+  weight_init.reset(new RandWeightInitOp(1.0));
+  solver.reset(new AdamOp(0.02, 0.9, 0.999, 1e-8));
+  w2 = Weight(1, weight_init, solver);
+  weight_init.reset(new RandWeightInitOp(1.0));
+  solver.reset(new AdamOp(0.02, 0.9, 0.999, 1e-8));
+  w3 = Weight(2, weight_init, solver);
+  weight_init.reset(new ConstWeightInitOp(1.0));
+  solver.reset(new AdamOp(0.02, 0.9, 0.999, 1e-8));
+  wb1 = Weight(3, weight_init, solver);
+  weight_init.reset(new ConstWeightInitOp(1.0));
+  solver.reset(new AdamOp(0.02, 0.9, 0.999, 1e-8));
+  wb2 = Weight(4, weight_init, solver);
+  // links
+  l1 = Link(0, 0, 1, 0);
+  l2 = Link(1, 1, 2, 1);
+  l3 = Link(2, 2, 1, 2);
+  lb1 = Link(3, 3, 1, 3);
+  lb2 = Link(4, 4, 2, 4);
+  model2.setId(2);
+  model2.addNodes({i1, h1, o1, b1, b2});
+  model2.addWeights({w1, w2, w3, wb1, wb2});
+  model2.addLinks({l1, l2, l3, lb1, lb2});
+  return model2;
 }
 
 BOOST_AUTO_TEST_CASE(forwardPropogate) 
 {
-  // Toy network: 1 hidden layer, fully connected
-  Node i1, i2, h1, h2, o1, o2, b1, b2;
-  Link l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4;
-  i1 = Node(0, NodeType::input, NodeStatus::deactivated);
-  i2 = Node(1, NodeType::input, NodeStatus::deactivated);
-  h1 = Node(2, NodeType::ReLU, NodeStatus::deactivated);
-  h2 = Node(3, NodeType::ReLU, NodeStatus::deactivated);
-  o1 = Node(4, NodeType::ReLU, NodeStatus::deactivated);
-  o2 = Node(5, NodeType::ReLU, NodeStatus::deactivated);
-  b1 = Node(6, NodeType::bias, NodeStatus::deactivated);
-  b2 = Node(7, NodeType::bias, NodeStatus::deactivated);
-  // input layer + bias
-  l1 = Link(0, 0, 2, WeightInitMethod::RandWeightInit);
-  l2 = Link(1, 0, 3, WeightInitMethod::RandWeightInit);
-  l3 = Link(2, 1, 2, WeightInitMethod::RandWeightInit);
-  l4 = Link(3, 1, 3, WeightInitMethod::RandWeightInit);
-  lb1 = Link(4, 6, 2, WeightInitMethod::ConstWeightInit);
-  lb2 = Link(5, 6, 3, WeightInitMethod::ConstWeightInit);
-  // hidden layer + bias
-  l5 = Link(6, 2, 4, WeightInitMethod::RandWeightInit);
-  l6 = Link(7, 2, 5, WeightInitMethod::RandWeightInit);
-  l7 = Link(8, 3, 4, WeightInitMethod::RandWeightInit);
-  l8 = Link(9, 3, 5, WeightInitMethod::RandWeightInit);
-  lb3 = Link(10, 7, 4, WeightInitMethod::ConstWeightInit);
-  lb4 = Link(11, 7, 5, WeightInitMethod::ConstWeightInit);
-  Model model1(1);
-  model.addNodes({i1, i2, h1, h2, o1, o2, b1, b2});
-  model.addLinks({l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4});
+  // Toy network: 1 hidden layer, fully connected, DCG
+  Model model2 = makeModel2a(); // requires ADAM
 
-  // set the input data
-  int batch_size = 4;
-  int n_epochs = 10;
+  // initialize nodes
+  const int batch_size = 5;
+  const int memory_size = 8;
+  model2.initNodes(batch_size, memory_size);
+  model2.initWeights();
 
-  Eigen::array<Eigen::Index> input_dim = {2, batch_size};
-  Eigen::Tensor<float, 2> input(input_dim); 
-  input.setValues({{1, 5}, {2, 6}, {3, 6}, {4, 7}});
-  Eigen::array<Eigen::Index> output_dim = {2, batch_size};
-  Eigen::Tensor<float, 2> expected(output_dim); 
-  expected.setValues({{0, 1}, {0, 1}, {0, 1}, {0, 1}});
+  // create the input and biases
+  const std::vector<int> input_ids = {0, 3, 4};
+  Eigen::Tensor<float, 3> input(batch_size, memory_size, input_ids.size()); 
+  input.setValues(
+    {{{1, 0, 0}, {2, 0, 0}, {3, 0, 0}, {4, 0, 0}, {5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}},
+    {{2, 0, 0}, {3, 0, 0}, {4, 0, 0}, {5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}, {9, 0, 0}},
+    {{3, 0, 0}, {4, 0, 0}, {5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}, {9, 0, 0}, {10, 0, 0}},
+    {{4, 0, 0}, {5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}, {9, 0, 0}, {10, 0, 0}, {11, 0, 0}},
+    {{5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}, {9, 0, 0}, {10, 0, 0}, {11, 0, 0}, {12, 0, 0}}}
+  ); 
 
-  // initialize model weights (method of He, et al,)
-  /**
-    References:
-      Kaiming He, Xiangyu Zhang, Shaoqing Ren, Jian Sun (2015)
-        Delving Deep into Rectifiers: Surpassing Human-Level Performance on ImageNet Classification
-        arXiv:1502.01852
-  */
-  model.initLink();
-  model.initNodes();
+  // expected output
+  const std::vector<int> output_nodes = {2};
+  // y = m1*(m2*x + b*yprev) where m1 = 0.5, m2 = 2.0 and b = -1
+  Eigen::Tensor<float, 2> expected(batch_size, output_nodes.size()); 
+  expected.setValues({{2.5}, {3}, {3.5}, {4}, {4.5}});
+  model2.setLossFunction(ModelLossFunction::MSE);
 
-  // assign input node values
-  std::vector<int> input_nodes = {0, 1};
-  model.setNodeOutput(input, input_nodes);
+  // iterate until we find the optimal values
+  const int max_iter = 100;
+  for (int iter = 0; iter < max_iter; ++iter)
+  {
+    // forward propogate
+    model2.FPTT(7, input, input_ids);
 
-  // create the tensors based on the model network
+    // calculate the model error
+    model2.calculateError(expected, output_nodes);
+    std::cout<<"Error at iteration: "<<iter<<" is "<<model2.getError().sum()<<std::endl;
 
-  // calculate the error
-  std::vector<int> output_nodes = {4, 5};
-  model.setNodeOutput(expected, output_nodes);
+    // backpropogate through time
+    model2.TBPTT(7);
 
+    // update the weights
+    model2.updateWeights(7);   
+
+    // reinitialize the model
+    model2.reInitializeNodeStatuses();    
+    model2.initNodes(batch_size, memory_size);
+  }
+  
+  const Eigen::Tensor<float, 0> total_error = model2.getError().sum();
+  BOOST_CHECK_CLOSE(total_error(0), 0.0262552425, 1e-3);  
+
+  // std::cout << "Link #0: "<< model2.getWeight(0).getWeight() << std::endl;
+  // std::cout << "Link #1: "<< model2.getWeight(1).getWeight() << std::endl;
+  // std::cout << "Link #2: "<< model2.getWeight(2).getWeight() << std::endl;
+  // std::cout << "Link #3: "<< model2.getWeight(3).getWeight() << std::endl;
+  // std::cout << "Link #4: "<< model2.getWeight(4).getWeight() << std::endl;
   
 }
 
