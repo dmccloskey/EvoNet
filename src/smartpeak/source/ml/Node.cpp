@@ -113,7 +113,6 @@ namespace SmartPeak
 
   void Node::calculateActivation(const int& time_step)
   {
-    const int batch_size = output_.dimension(0);
     if (!checkTimeStep(time_step)) return;
     Eigen::Tensor<float, 1> output_step = output_.chip(time_step, 1);
     switch (type_)
@@ -148,7 +147,6 @@ namespace SmartPeak
 
   void Node::calculateDerivative(const int& time_step)
   {
-    const int batch_size = output_.dimension(0);
     if (!checkTimeStep(time_step)) return;
     Eigen::Tensor<float, 1> output_step = output_.chip(time_step, 1);
     switch (type_)

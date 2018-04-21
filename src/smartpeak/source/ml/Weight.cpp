@@ -48,7 +48,7 @@ namespace SmartPeak
     return weight_;
   }
 
-  void Weight::setWeightInitOp(std::shared_ptr<WeightInitOp>& weight_init)
+  void Weight::setWeightInitOp(const std::shared_ptr<WeightInitOp>& weight_init)
   {
     weight_init_.reset();
     weight_init_ = std::move(weight_init);
@@ -58,7 +58,7 @@ namespace SmartPeak
     return weight_init_.get();
   }
 
-  void Weight::setSolverOp(std::shared_ptr<SolverOp>& solver)
+  void Weight::setSolverOp(const std::shared_ptr<SolverOp>& solver)
   {
     solver_.reset();
     solver_ = std::move(solver);

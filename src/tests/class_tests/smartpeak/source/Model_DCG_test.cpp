@@ -56,6 +56,8 @@ Model makeModel2()
   weight_init.reset(new ConstWeightInitOp(1.0));
   solver.reset(new SGDOp(0.01, 0.9));
   wb2 = Weight(4, weight_init, solver);
+  weight_init.reset();
+  solver.reset();
   // links
   l1 = Link(0, 0, 1, 0);
   l2 = Link(1, 1, 2, 1);
@@ -68,11 +70,12 @@ Model makeModel2()
   model2.addLinks({l1, l2, l3, lb1, lb2});
   return model2;
 }
+Model model2 = makeModel2();
 
 BOOST_AUTO_TEST_CASE(getNextInactiveLayer2) 
 {
   // Toy network: 1 hidden layer, fully connected, DCG
-  Model model2 = makeModel2();
+  // Model model2 = makeModel2(); // memory leaks when calling global functions in BOOST_AUTO_TEST_CASE
 
   // initialize nodes
   const int batch_size = 5;
@@ -125,7 +128,7 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayer2)
 BOOST_AUTO_TEST_CASE(getNextInactiveLayerBiases2) 
 {
   // Toy network: 1 hidden layer, fully connected, DCG
-  Model model2 = makeModel2();
+  // Model model2 = makeModel2();
 
   // initialize nodes
   const int batch_size = 5;
@@ -183,7 +186,7 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayerBiases2)
 BOOST_AUTO_TEST_CASE(getNextInactiveLayerCycles2) 
 {
   // Toy network: 1 hidden layer, fully connected, DCG
-  Model model2 = makeModel2();
+  // Model model2 = makeModel2();
 
   // initialize nodes
   const int batch_size = 5;
@@ -241,7 +244,7 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayerCycles2)
 BOOST_AUTO_TEST_CASE(FPTT) 
 {
   // Toy network: 1 hidden layer, fully connected, DCG
-  Model model2 = makeModel2();
+  // Model model2 = makeModel2();
 
   // initialize nodes
   const int batch_size = 5;
@@ -297,12 +300,13 @@ BOOST_AUTO_TEST_CASE(FPTT)
 BOOST_AUTO_TEST_CASE(getNextUncorrectedLayer2) 
 {
   // Toy network: 1 hidden layer, fully connected, DCG
-  Model model2 = makeModel2();
+  // Model model2 = makeModel2();
 
   // initialize nodes
   const int batch_size = 5;
   const int memory_size = 8;
   model2.initNodes(batch_size, memory_size);
+  model2.initWeights();
 
   // create the input and biases
   const std::vector<int> input_ids = {0};
@@ -361,12 +365,13 @@ BOOST_AUTO_TEST_CASE(getNextUncorrectedLayer2)
 BOOST_AUTO_TEST_CASE(getNextUncorrectedLayerCycles2) 
 {
   // Toy network: 1 hidden layer, fully connected, DCG
-  Model model2 = makeModel2();
+  // Model model2 = makeModel2();
 
   // initialize nodes
   const int batch_size = 5;
   const int memory_size = 8;
   model2.initNodes(batch_size, memory_size);
+  model2.initWeights();
 
   // create the input and biases
   const std::vector<int> input_ids = {0};
@@ -435,7 +440,7 @@ BOOST_AUTO_TEST_CASE(getNextUncorrectedLayerCycles2)
 BOOST_AUTO_TEST_CASE(BPTT) 
 {
   // Toy network: 1 hidden layer, fully connected, DCG
-  Model model2 = makeModel2();
+  // Model model2 = makeModel2();
 
   // initialize nodes
   const int batch_size = 5;
@@ -497,7 +502,7 @@ BOOST_AUTO_TEST_CASE(BPTT)
 BOOST_AUTO_TEST_CASE(updateWeights2) 
 {
   // Toy network: 1 hidden layer, fully connected, DCG
-  Model model2 = makeModel2();
+  // Model model2 = makeModel2();
 
   // initialize nodes
   const int batch_size = 5;
@@ -576,6 +581,8 @@ Model makeModel2a()
   weight_init.reset(new ConstWeightInitOp(1.0));
   solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
   wb2 = Weight(4, weight_init, solver);
+  weight_init.reset();
+  solver.reset();
   // links
   l1 = Link(0, 0, 1, 0);
   l2 = Link(1, 1, 2, 1);
@@ -588,17 +595,18 @@ Model makeModel2a()
   model2.addLinks({l1, l2, l3, lb1, lb2});
   return model2;
 }
+Model model2a = makeModel2a(); // requires ADAM
 
 BOOST_AUTO_TEST_CASE(modelTrainer2) 
 {
   // Toy network: 1 hidden layer, fully connected, DCG
-  Model model2 = makeModel2a(); // requires ADAM
+  // Model model2a = makeModel2a(); // requires ADAM
 
   // initialize nodes
   const int batch_size = 5;
   const int memory_size = 8;
-  model2.initNodes(batch_size, memory_size);
-  model2.initWeights();
+  model2a.initNodes(batch_size, memory_size);
+  model2a.initWeights();
 
   // create the input and biases
   const std::vector<int> input_ids = {0, 3, 4};
@@ -616,38 +624,38 @@ BOOST_AUTO_TEST_CASE(modelTrainer2)
   // y = m1*(m2*x + b*yprev) where m1 = 0.5, m2 = 2.0 and b = -1
   Eigen::Tensor<float, 2> expected(batch_size, output_nodes.size()); 
   expected.setValues({{2.5}, {3}, {3.5}, {4}, {4.5}});
-  model2.setLossFunction(ModelLossFunction::MSE);
+  model2a.setLossFunction(ModelLossFunction::MSE);
 
   // iterate until we find the optimal values
   const int max_iter = 100;
   for (int iter = 0; iter < max_iter; ++iter)
   {
     // forward propogate
-    model2.FPTT(7, input, input_ids);
+    model2a.FPTT(memory_size, input, input_ids); 
 
     // calculate the model error
-    model2.calculateError(expected, output_nodes);
-    // std::cout<<"Error at iteration: "<<iter<<" is "<<model2.getError().sum()<<std::endl;
+    model2a.calculateError(expected, output_nodes);
+    // std::cout<<"Error at iteration: "<<iter<<" is "<<model2a.getError().sum()<<std::endl;
 
     // backpropogate through time
-    model2.TBPTT(7);
+    model2a.TBPTT(memory_size-1);
 
     // update the weights
-    model2.updateWeights(7);   
+    model2a.updateWeights(memory_size);   
 
     // reinitialize the model
-    model2.reInitializeNodeStatuses();    
-    model2.initNodes(batch_size, memory_size);
+    model2a.reInitializeNodeStatuses();    
+    model2a.initNodes(batch_size, memory_size);
   }
   
-  const Eigen::Tensor<float, 0> total_error = model2.getError().sum();
+  const Eigen::Tensor<float, 0> total_error = model2a.getError().sum();
   BOOST_CHECK_CLOSE(total_error(0), 0.0262552425, 1e-3);  
 
-  // std::cout << "Link #0: "<< model2.getWeight(0).getWeight() << std::endl;
-  // std::cout << "Link #1: "<< model2.getWeight(1).getWeight() << std::endl;
-  // std::cout << "Link #2: "<< model2.getWeight(2).getWeight() << std::endl;
-  // std::cout << "Link #3: "<< model2.getWeight(3).getWeight() << std::endl;
-  // std::cout << "Link #4: "<< model2.getWeight(4).getWeight() << std::endl;
+  // std::cout << "Link #0: "<< model2a.getWeight(0).getWeight() << std::endl;
+  // std::cout << "Link #1: "<< model2a.getWeight(1).getWeight() << std::endl;
+  // std::cout << "Link #2: "<< model2a.getWeight(2).getWeight() << std::endl;
+  // std::cout << "Link #3: "<< model2a.getWeight(3).getWeight() << std::endl;
+  // std::cout << "Link #4: "<< model2a.getWeight(4).getWeight() << std::endl;
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -107,17 +107,17 @@ BOOST_AUTO_TEST_CASE(forwardPropogate)
   for (int iter = 0; iter < max_iter; ++iter)
   {
     // forward propogate
-    model2.FPTT(7, input, input_ids);
+    model2.FPTT(memory_size, input, input_ids);
 
     // calculate the model error
     model2.calculateError(expected, output_nodes);
     std::cout<<"Error at iteration: "<<iter<<" is "<<model2.getError().sum()<<std::endl;
 
     // backpropogate through time
-    model2.TBPTT(7);
+    model2.TBPTT(memory_size-1);
 
     // update the weights
-    model2.updateWeights(7);   
+    model2.updateWeights(memory_size);   
 
     // reinitialize the model
     model2.reInitializeNodeStatuses();    

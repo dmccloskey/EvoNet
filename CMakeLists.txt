@@ -33,7 +33,7 @@ endif()
 
 #------------------------------------------------------------------------------
 # Include the standard Dart testing module
-# for Nightly Build log
+# for Nightly Build log and Valgrind for memcheck
 include(CTest)
 #enable_testing()
 include(Dart)
@@ -124,6 +124,11 @@ endif()
 # Force build type into the cache (needs to be set beforehand)
 set(CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE} CACHE STRING "Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel." FORCE)
 
+if (CMAKE_BUILD_TYPE EQUAL Debug)
+  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall")
+elseif (CMAKE_BUILD_TYPE EQUAL Release)
+  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall")
+endif()
 #------------------------------------------------------------------------------
 # Enable STL debug mode (GCC only)
 #------------------------------------------------------------------------------

@@ -103,11 +103,12 @@ Model makeModel1()
   model1.addLinks({l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4});
   return model1;
 }
+Model model1 = makeModel1();
 
 BOOST_AUTO_TEST_CASE(initNodes) 
 {
   // Toy network: 1 hidden layer, fully connected, DAG
-  Model model1 = makeModel1();
+  // Model model1 = makeModel1();
 
   model1.initNodes(2, 2); // batch_size = 2, memory_size = 2
   BOOST_CHECK_EQUAL(model1.getNode(0).getError().size(), 4);
@@ -121,7 +122,7 @@ BOOST_AUTO_TEST_CASE(initNodes)
 BOOST_AUTO_TEST_CASE(initWeights) 
 {
   // Toy network: 1 hidden layer, fully connected, DAG
-  Model model1 = makeModel1();
+  // Model model1 = makeModel1();
 
   model1.initWeights();
   // BOOST_CHECK_NE(model1.getWeight(0).getWeight(), 1.0);
@@ -133,7 +134,7 @@ BOOST_AUTO_TEST_CASE(initWeights)
 BOOST_AUTO_TEST_CASE(mapValuesToNodes)
 {
   // Toy network: 1 hidden layer, fully connected, DAG
-  Model model1 = makeModel1();
+  // Model model1 = makeModel1();
 
   const int batch_size = 4;
   const int memory_size = 2;
@@ -186,7 +187,7 @@ BOOST_AUTO_TEST_CASE(mapValuesToNodes)
 BOOST_AUTO_TEST_CASE(mapValuesToNodes2)
 {
   // Toy network: 1 hidden layer, fully connected, DAG
-  Model model1 = makeModel1();
+  // Model model1 = makeModel1();
 
   const int batch_size = 4;
   const int memory_size = 2;
@@ -234,7 +235,7 @@ BOOST_AUTO_TEST_CASE(mapValuesToNodes2)
 BOOST_AUTO_TEST_CASE(getNextInactiveLayer1) 
 {
   // Toy network: 1 hidden layer, fully connected, DAG
-  Model model1 = makeModel1();
+  // Model model1 = makeModel1();
 
   // initialize nodes
   const int batch_size = 4;
@@ -274,7 +275,7 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayer1)
 BOOST_AUTO_TEST_CASE(getNextInactiveLayerBiases1) 
 {
   // Toy network: 1 hidden layer, fully connected, DAG
-  Model model1 = makeModel1();
+  // Model model1 = makeModel1();
 
   // initialize nodes
   const int batch_size = 4;
@@ -322,7 +323,7 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayerBiases1)
 BOOST_AUTO_TEST_CASE(forwardPropogateLayerNetInput) 
 {
   // Toy network: 1 hidden layer, fully connected, DAG
-  Model model1 = makeModel1();
+  // Model model1 = makeModel1();
 
   // initialize nodes
   const int batch_size = 4;
@@ -369,7 +370,7 @@ BOOST_AUTO_TEST_CASE(forwardPropogateLayerNetInput)
 BOOST_AUTO_TEST_CASE(forwardPropogateLayerActivation) 
 {
   // Toy network: 1 hidden layer, fully connected, DAG
-  Model model1 = makeModel1();
+  // Model model1 = makeModel1();
 
   // initialize nodes
   const int batch_size = 4;
@@ -423,7 +424,7 @@ BOOST_AUTO_TEST_CASE(forwardPropogateLayerActivation)
 BOOST_AUTO_TEST_CASE(forwardPropogate) 
 {
   // Toy network: 1 hidden layer, fully connected, DAG
-  Model model1 = makeModel1();
+  // Model model1 = makeModel1();
 
   // initialize nodes
   const int batch_size = 4;
@@ -469,7 +470,7 @@ BOOST_AUTO_TEST_CASE(forwardPropogate)
 BOOST_AUTO_TEST_CASE(calculateError) 
 {
   // Toy network: 1 hidden layer, fully connected, DAG
-  Model model1 = makeModel1();
+  // Model model1 = makeModel1();
 
   // initialize nodes and loss function
   const int batch_size = 4;
@@ -535,7 +536,7 @@ BOOST_AUTO_TEST_CASE(calculateError)
 BOOST_AUTO_TEST_CASE(getNextUncorrectedLayer1) 
 {
   // Toy network: 1 hidden layer, fully connected, DAG
-  Model model1 = makeModel1();
+  // Model model1 = makeModel1();
 
   // initialize nodes
   const int batch_size = 4;
@@ -587,7 +588,7 @@ BOOST_AUTO_TEST_CASE(getNextUncorrectedLayer1)
 BOOST_AUTO_TEST_CASE(backPropogateLayerError) 
 {
   // Toy network: 1 hidden layer, fully connected, DAG
-  Model model1 = makeModel1();
+  // Model model1 = makeModel1();
 
   // initialize nodes
   const int batch_size = 4;
@@ -641,7 +642,7 @@ BOOST_AUTO_TEST_CASE(backPropogateLayerError)
 BOOST_AUTO_TEST_CASE(backPropogate) 
 {
   // Toy network: 1 hidden layer, fully connected, DAG
-  Model model1 = makeModel1();
+  // Model model1 = makeModel1();
 
   // initialize nodes
   const int batch_size = 4;
@@ -698,7 +699,7 @@ BOOST_AUTO_TEST_CASE(backPropogate)
 BOOST_AUTO_TEST_CASE(updateWeights) 
 {
   // Toy network: 1 hidden layer, fully connected, DAG
-  Model model1 = makeModel1();
+  // Model model1 = makeModel1();
 
   // initialize nodes
   const int batch_size = 4;
@@ -749,7 +750,7 @@ BOOST_AUTO_TEST_CASE(updateWeights)
 BOOST_AUTO_TEST_CASE(reInitializeNodeStatuses) 
 {
   // Toy network: 1 hidden layer, fully connected, DAG
-  Model model1 = makeModel1();
+  // Model model1 = makeModel1();
 
   // initialize nodes
   const int batch_size = 4;
@@ -785,7 +786,7 @@ BOOST_AUTO_TEST_CASE(reInitializeNodeStatuses)
 BOOST_AUTO_TEST_CASE(modelTrainer1) 
 {
   // Toy network: 1 hidden layer, fully connected, DAG
-  Model model1 = makeModel1();
+  // Model model1 = makeModel1();
 
   // initialize nodes
   const int batch_size = 4;

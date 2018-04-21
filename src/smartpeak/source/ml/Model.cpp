@@ -305,6 +305,12 @@ namespace SmartPeak
       std::cout << "The number of input samples and the node batch size does not match." << std::endl;
       return;
     }
+    // assumes the node exists
+    else if (nodes_.at(node_ids[0]).getOutput().dimension(1) <= memory_step)
+    {
+      std::cout << "The memory_step is greater than the memory_size." << std::endl;
+      return;
+    }
 
     // // infer the memory size from the node output size
     // const int memory_size = nodes_.at(node_ids[0]).getOutput().dimension(1);
@@ -400,7 +406,9 @@ namespace SmartPeak
         nodes_.at(link_map.second.getSourceNodeId()).getStatus() == NodeStatus::activated && 
         nodes_.at(link_map.second.getSinkNodeId()).getStatus() == NodeStatus::initialized)
       {
-        // std::cout << "Model::getNextInactiveLayer() link_id: " << link_map.first << std::endl;
+        // std::cout << "Model::getNextInactiveLayer() link_id: " << link_map.second.getId() << std::endl;
+        // std::cout << "Model::getNextInactiveLayer() source_node_id: " << link_map.second.getSourceNodeId() << std::endl;
+        // std::cout << "Model::getNextInactiveLayer() sink_node_id: " << link_map.second.getSinkNodeId() << std::endl;
         links.push_back(link_map.second.getId());
         // could use std::set instead to check for duplicates
         if (std::count(source_nodes.begin(), source_nodes.end(), link_map.second.getSourceNodeId()) == 0)
@@ -434,6 +442,9 @@ namespace SmartPeak
         std::count(sink_nodes.begin(), sink_nodes.end(), link_map.second.getSinkNodeId()) != 0 // sink node has already been identified
       )
       {
+        // std::cout << "Model::getNextInactiveLayerBiases() link_id: " << link_map.second.getId() << std::endl;
+        // std::cout << "Model::getNextInactiveLayerBiases() source_node_id: " << link_map.second.getSourceNodeId() << std::endl;
+        // std::cout << "Model::getNextInactiveLayerBiases() sink_node_id: " << link_map.second.getSinkNodeId() << std::endl;
         links.push_back(link_map.second.getId());
         // could use std::set instead to check for duplicates
         if (std::count(source_nodes.begin(), source_nodes.end(), link_map.second.getSourceNodeId()) == 0)
@@ -465,6 +476,9 @@ namespace SmartPeak
         std::count(sink_nodes.begin(), sink_nodes.end(), link_map.second.getSinkNodeId()) != 0 // sink node has already been identified
       )
       {
+        // std::cout << "Model::getNextInactiveLayerCycles() link_id: " << link_map.second.getId() << std::endl;
+        // std::cout << "Model::getNextInactiveLayerCycles() source_node_id: " << link_map.second.getSourceNodeId() << std::endl;
+        // std::cout << "Model::getNextInactiveLayerCycles() sink_node_id: " << link_map.second.getSinkNodeId() << std::endl;
         links.push_back(link_map.second.getId());
         // could use std::set instead to check for duplicates
         if (std::count(source_nodes.begin(), source_nodes.end(), link_map.second.getSourceNodeId()) == 0)
@@ -597,6 +611,7 @@ namespace SmartPeak
           }
           else
           {
+            std::cout<<"time_step exceeded memory size in forwardPropogateLayerNetInput."<<std::endl;
             source_tensor(j, i) = 0.0;
           }
         }
@@ -649,16 +664,28 @@ namespace SmartPeak
       // get the next hidden layer
       std::vector<int> links, source_nodes, sink_nodes;
       getNextInactiveLayer(links, source_nodes, sink_nodes);
+      // std::cout<<"Model::forwardPropogate() getNextInactiveLayer links, source, and sink sizes "<<std::endl;
+      // std::cout<<"Model::forwardPropogate() links.size(): "<<links.size()<<std::endl;
+      // std::cout<<"Model::forwardPropogate() source nodes: "<<source_nodes.size()<<std::endl;
+      // std::cout<<"Model::forwardPropogate() sink nodes: "<<sink_nodes.size()<<std::endl;
 
       // get biases,
       std::vector<int> sink_nodes_with_biases;
       getNextInactiveLayerBiases(links, source_nodes, sink_nodes, sink_nodes_with_biases);
+      // std::cout<<"Model::forwardPropogate() getNextInactiveLayerBiases links, source, and sink sizes "<<std::endl;
+      // std::cout<<"Model::forwardPropogate() links.size(): "<<links.size()<<std::endl;
+      // std::cout<<"Model::forwardPropogate() source nodes: "<<source_nodes.size()<<std::endl;
+      // std::cout<<"Model::forwardPropogate() sink nodes: "<<sink_nodes.size()<<std::endl;
       
       // get cycles
       std::vector<int> links_cycles, source_nodes_cycles, sink_nodes_cycles;
       getNextInactiveLayerCycles(links_cycles, source_nodes_cycles, sink_nodes, sink_nodes_cycles);
+      // std::cout<<"Model::forwardPropogate() getNextInactiveLayerCycles links, source, and sink sizes "<<std::endl;
+      // std::cout<<"Model::forwardPropogate() sink_nodes_cycles: "<<sink_nodes_cycles.size()<<std::endl;
+      // std::cout<<"Model::forwardPropogate() links: "<<links.size()<<std::endl;
+      // std::cout<<"Model::forwardPropogate() source nodes: "<<source_nodes.size()<<std::endl;
+      // std::cout<<"Model::forwardPropogate() sink nodes: "<<sink_nodes.size()<<std::endl;
 
-      // std::cout<<"Model::forwardPropogate() sink_nodes_cycles.size(): "<<sink_nodes_cycles.size()<<std::endl;
       if (sink_nodes_cycles.size() == sink_nodes.size())
       { // all forward propogation steps have caught up
         // add sink nodes with cycles to the forward propogation step
@@ -678,6 +705,7 @@ namespace SmartPeak
       {
         break;
       }      
+      // std::cout<<"Model::forwardPropogate() final links, source, and sink sizes "<<std::endl;
       // std::cout<<"Model::forwardPropogate() links.size(): "<<links.size()<<std::endl;
       // std::cout<<"Model::forwardPropogate() source nodes: "<<source_nodes.size()<<std::endl;
       // std::cout<<"Model::forwardPropogate() sink nodes: "<<sink_nodes.size()<<std::endl;
@@ -696,10 +724,10 @@ namespace SmartPeak
   {
     // check time_steps vs memory_size
     int max_steps = time_steps;
-    if (time_steps >= nodes_.begin()->second.getOutput().dimension(1))
+    if (time_steps > nodes_.begin()->second.getOutput().dimension(1))
     {
-      std::cout<<"Time_steps will be scaled back to the memory_size - 1."<<std::endl;
-      max_steps = nodes_.begin()->second.getOutput().dimension(1) - 1;
+      std::cout<<"Time_steps will be scaled back to the memory_size."<<std::endl;
+      max_steps = nodes_.begin()->second.getOutput().dimension(1);
     }
 
     for (int time_step=0; time_step<max_steps; ++time_step)
@@ -1180,11 +1208,11 @@ namespace SmartPeak
   {
     // check time_steps vs memory_size
     int max_steps = time_steps;
-    // if (time_steps >= nodes_.begin()->second.getOutput().dimension(1))
-    // {
-    //   std::cout<<"Time_steps will be scaled back to the memory_size - 1."<<std::endl;
-    //   max_steps = nodes_.begin()->second.getOutput().dimension(1) - 1;
-    // }
+    if (time_steps > nodes_.begin()->second.getOutput().dimension(1))
+    {
+      std::cout<<"Time_steps will be scaled back to the memory_size."<<std::endl;
+      max_steps = nodes_.begin()->second.getOutput().dimension(1);
+    }
 
     std::map<int, std::vector<float>> weight_derivatives;  
     // initalize the map
