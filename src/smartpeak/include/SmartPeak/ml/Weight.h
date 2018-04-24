@@ -3,7 +3,8 @@
 #ifndef SMARTPEAK_WEIGHT_H
 #define SMARTPEAK_WEIGHT_H
 
-#include <SmartPeak/ml/Operation.h>
+#include <SmartPeak/ml/Solver.h>
+#include <SmartPeak/ml/WeightInit.h>
 
 #include <unsupported/Eigen/CXX11/Tensor>
 #include <memory>
@@ -45,10 +46,10 @@ public:
     void setWeight(const float& weight); ///< weight setter
     float getWeight() const; ///< weight getter
 
-    void setWeightInitOp(std::shared_ptr<WeightInitOp>& weight_init); ///< weight initialization operator setter
+    void setWeightInitOp(const std::shared_ptr<WeightInitOp>& weight_init); ///< weight initialization operator setter
     WeightInitOp* getWeightInitOp() const; ///< weight initialization operator getter
 
-    void setSolverOp(std::shared_ptr<SolverOp>& solver); ///< weight update operator setter
+    void setSolverOp(const std::shared_ptr<SolverOp>& solver); ///< weight update operator setter
     SolverOp* getSolverOp() const; ///< weight update operator getter
 
     /**

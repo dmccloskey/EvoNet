@@ -6,7 +6,6 @@
 #include <SmartPeak/ml/Link.h>
 #include <SmartPeak/ml/Node.h>
 #include <SmartPeak/ml/Weight.h>
-#include <SmartPeak/ml/Operation.h>
 
 #include <unsupported/Eigen/CXX11/Tensor>
 #include <vector>
@@ -66,9 +65,10 @@ public:
       @brief Initialize all node output to zero.
         The node statuses are then changed to NodeStatus::deactivated
 
-      @param[in] batch_size Size of the output, error, and derivative node vectors
+      @param[in] batch_size Batch size of the output, error, and derivative node vectors
+      @param[in] memory_size Memory size of the output, error, and derivative node vectors
     */ 
-    void initNodes(const int& batch_size);
+    void initNodes(const int& batch_size, const int& memory_size);
 
     /**
       @brief Assigns output or error values to the nodes.
@@ -77,14 +77,35 @@ public:
         of the node and status_update of "corrected" will update
         the error values of the node.
 
-      dimensions of batch size by nodes
+      dimensions of batch size by memory size by nodes
 
       @param[in] values Values to assign to the node
       @param[in] node_ids 
       @param[in] status_update
     */ 
     void mapValuesToNodes(
+      const Eigen::Tensor<float, 3>& values,
+      const std::vector<int>& node_ids,
+      const NodeStatus& status_update);
+
+    /**
+      @brief Assigns output or error values to the nodes at a specific
+        place in memory.
+        The node statuses are then changed accordingly (i.e.,
+        status_update of "activated" will update the output values
+        of the node and status_update of "corrected" will update
+        the error values of the node.
+
+      dimensions of batch size by nodes
+
+      @param[in] values Values to assign to the node
+      @param[in] memory_step The memory step to add values to 
+      @param[in] node_ids 
+      @param[in] status_update
+    */ 
+    void mapValuesToNodes(
       const Eigen::Tensor<float, 2>& values,
+      const int& memory_step,
       const std::vector<int>& node_ids,
       const NodeStatus& status_update);
  
@@ -105,6 +126,42 @@ public:
       std::vector<int>& sink_nodes);
  
     /**
+      @brief Continuation of the forward propogation step that identifies all biases
+        for the identified sink nodes. Returns a vector of links
+        and associated nodes that satisfy the following conditions:
+        1. all sink output values are unknown (i.e. inactive),
+        2. all source node output values are known (i.e. active) and biases.
+
+      @param[out] Links
+      @param[out] source_nodes
+      @param[in] sink_nodes
+      @param[out] sink_nodes_with_biases
+    */ 
+    void getNextInactiveLayerBiases(
+      std::vector<int>& links,
+      std::vector<int>& source_nodes,
+      const std::vector<int>& sink_nodes,
+      std::vector<int>& sink_nodes_with_biases);
+ 
+    /**
+      @brief Continuation of the forward propogation step that identifies 
+        all cyclic source nodes for the identified sink nodes. Returns a vector of links
+        and associated nodes that satisfy the following conditions:
+        1. all sink output values are unknown (i.e. inactive),
+        2. all source node output values are unknown (i.e. inactive).
+
+      @param[out] Links
+      @param[out] source_nodes
+      @param[in] sink_nodes
+      @param[out] sink_nodes_with_cycles
+    */ 
+    void getNextInactiveLayerCycles(
+      std::vector<int>& links,
+      std::vector<int>& source_nodes,
+      const std::vector<int>& sink_nodes,
+      std::vector<int>& sink_nodes_with_cycles);
+ 
+    /**
       @brief A prelude to a forward propogation step. Computes the net
         input into all nodes composing the next layer:
         1. all sink output values are unknown (i.e. inactive),
@@ -115,6 +172,7 @@ public:
       @param[out] Links
       @param[out] source_nodes
       @param[out] sink_nodes
+      @param[in] time_step Time step to activate.
 
       OPTIMIZATION:
       pass memory to tensors so that when the tensors compute the matrices
@@ -123,7 +181,8 @@ public:
     void forwardPropogateLayerNetInput(
       const std::vector<int>& links,
       const std::vector<int>& source_nodes,
-      const std::vector<int>& sink_nodes);
+      const std::vector<int>& sink_nodes,
+      const int& time_step);
  
     /**
       @brief Completion of a forward propogation step. Computes the net
@@ -134,9 +193,11 @@ public:
         function will be applied
 
       @param[in] sink_nodes
+      @param[in] time_step Time step to activate.
     */ 
     void forwardPropogateLayerActivation(
-      const std::vector<int>& sink_nodes);
+      const std::vector<int>& sink_nodes,
+      const int& time_step);
  
     /**
       @brief Foward propogation of the network model.
@@ -144,17 +205,49 @@ public:
         starting from the input nodes.  Each node status is
         changed from "initialized" to "activated" when the
         outputs and derivatives are calculated.
+
+      @param[in] time_step Time step to forward propogate.
     */ 
-    void forwardPropogate();    
+    void forwardPropogate(const int& time_step);    
+ 
+    /**
+      @brief Foward propogation through time (FPTT) of the network model.
+        All node outputs and derivatives are calculating
+        starting from the input nodes.  Each node status is
+        changed from "initialized" to "activated" when the
+        outputs and derivatives are calculated.  This is repeated
+        for n_time steps without weight updates.
+      
+      NOTE: The implementation assumes that the output values for
+        all input and biases have already been set.  
+
+      @param[in] time_steps The number of time_steps forward to 
+        continuously calculate node outputs and node derivatives.
+      @param[in] values Input values at each time step where
+        dim0: batch_size, dim1: time_step, and dim2: nodes.
+      @param[in] node_ids 
+    */ 
+    void FPTT(const int& time_steps, 
+      const Eigen::Tensor<float, 3>& values,
+      const std::vector<int> node_ids);
  
     /**
       @brief Calculates the error of the model with respect to
-        expected values
+        the expected values
 
       @param[in] values Expected node output values
       @param[in] node_ids Output nodes
     */ 
     void calculateError(const Eigen::Tensor<float, 2>& values, const std::vector<int>& node_ids);
+ 
+    /**
+      @brief Calculates the error of the model through time (CETT)
+        with respect to the expected values
+
+      @param[in] values Expected node output values
+      @param[in] node_ids Output nodes
+    */ 
+    void CETT(const Eigen::Tensor<float, 3>& values, const std::vector<int>& node_ids);
  
     /**
       @brief A prelude to a back propogation step.  Returns a vector of links
@@ -170,7 +263,25 @@ public:
     void getNextUncorrectedLayer(
       std::vector<int>& links,
       std::vector<int>& source_nodes,
-      std::vector<int>& sink_nodes);
+      std::vector<int>& sink_nodes);      
+ 
+    /**
+      @brief A continuation of a back propogation step.  Returns a vector of links
+        and associated nodes that satisfy the following conditions:
+        1. all sink error values are known (i.e. corrected),
+        2. all source error values are known (i.e. corrected).
+        3. all nodes need not be the same type
+
+      @param[out] Links
+      @param[out] source_nodes
+      @param[out] sink_nodes
+      @param[out] source_nodes_with_cycles
+    */ 
+    void getNextUncorrectedLayerCycles(
+      std::vector<int>& links,
+      const std::vector<int>& source_nodes,
+      std::vector<int>& sink_nodes,
+      std::vector<int>& source_nodes_with_cycles);
  
     /**
       @brief A back propogation step. Computes the net
@@ -183,6 +294,7 @@ public:
       @param[out] Links
       @param[out] source_nodes
       @param[out] sink_nodes
+      @param[in] time_step Time step to forward propogate.
 
       OPTIMIZATION:
       pass memory to tensors so that when the tensors compute the matrices
@@ -191,21 +303,48 @@ public:
     void backPropogateLayerError(
       const std::vector<int>& links,
       const std::vector<int>& source_nodes,
-      const std::vector<int>& sink_nodes);
+      const std::vector<int>& sink_nodes,
+      const int& time_step);
  
     /**
       @brief Back propogation of the network model.
         All node errors are calculating starting from the output nodes.  
         Each node status is changed from "activated" to "corrected" when the
         outputs and derivatives are calculated.
+
+      @param[in] time_step Time step to forward propogate.
+
+      @returns Vector of cyclic sink node IDs
     */ 
-    void backPropogate();  
+    std::vector<int> backPropogate(const int& time_step);  
+ 
+    /**
+      @brief Truncated Back Propogation Through Time (TBPTT) of the network model.
+        All node errors are calculating starting from the output nodes.  
+        Each node status is changed from "activated" to "corrected" when the
+        outputs and derivatives are calculated.
+
+      @param[in] time_steps The number of time_steps backwards to 
+        unfold the network model.
+    */ 
+    void TBPTT(const int& time_steps);  
+ 
+    /**
+      @brief Recurrent Real Time Learning (RTRL) of the network model.
+        All node errors are calculating starting from the output nodes.  
+        Each node status is changed from "activated" to "corrected" when the
+        outputs and derivatives are calculated.
+
+      @param[in] time_steps The number of time_steps backwards to 
+        unfold the network model.
+    */ 
+    void RTRL(const int& time_steps);  
  
     /**
       @brief Update the weights
       
     */ 
-    void updateWeights();
+    void updateWeights(const int& time_steps);
  
     /**
       @brief Reset the node statuses back to inactivated
@@ -293,6 +432,7 @@ private:
     std::map<int, Node> nodes_; ///< Model nodes
     std::map<int, Weight> weights_; ///< Model nodes
     Eigen::Tensor<float, 1> error_; ///< Model error
+    // Eigen::Tensor<float, 2> error_; ///< Model error
     SmartPeak::ModelLossFunction loss_function_; ///< Model loss function
 
   };

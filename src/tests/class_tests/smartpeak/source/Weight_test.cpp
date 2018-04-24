@@ -3,7 +3,8 @@
 #define BOOST_TEST_MODULE Weight test suite 
 #include <boost/test/unit_test.hpp>
 #include <SmartPeak/ml/Weight.h>
-#include <SmartPeak/ml/Operation.h>
+#include <SmartPeak/ml/Solver.h>
+#include <SmartPeak/ml/WeightInit.h>
 
 using namespace SmartPeak;
 using namespace std;
@@ -69,8 +70,8 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   std::shared_ptr<WeightInitOp> weight_init(new ConstWeightInitOp(2.0));
   std::shared_ptr<SolverOp> solver(new SGDOp(0.01, 0.9));
   
-  // std::unique_ptr<WeightInitOp> weight_init = std::make_unique<ConstWeightInitOp>(2.0); // C++ 14
-  // std::unique_ptr<SolverOp> solver = std::make_unique<SGDOp>(0.01, 0.9); // C++ 14
+  // std::shared_ptr<WeightInitOp> weight_init = std::make_unique<ConstWeightInitOp>(2.0); // C++ 14
+  // std::shared_ptr<SolverOp> solver = std::make_unique<SGDOp>(0.01, 0.9); // C++ 14
   // ConstWeightInitOp weight_init(2.0);
   // SGDOp solver(0.01, 0.9);
 

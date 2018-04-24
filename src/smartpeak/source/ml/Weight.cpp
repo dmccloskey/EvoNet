@@ -1,6 +1,7 @@
 /**TODO:  Add copyright*/
 
 #include <SmartPeak/ml/Weight.h>
+#include <SmartPeak/ml/WeightInit.h>
 
 #include <unsupported/Eigen/CXX11/Tensor>
 #include <vector>
@@ -47,7 +48,7 @@ namespace SmartPeak
     return weight_;
   }
 
-  void Weight::setWeightInitOp(std::shared_ptr<WeightInitOp>& weight_init)
+  void Weight::setWeightInitOp(const std::shared_ptr<WeightInitOp>& weight_init)
   {
     weight_init_.reset();
     weight_init_ = std::move(weight_init);
@@ -57,7 +58,7 @@ namespace SmartPeak
     return weight_init_.get();
   }
 
-  void Weight::setSolverOp(std::shared_ptr<SolverOp>& solver)
+  void Weight::setSolverOp(const std::shared_ptr<SolverOp>& solver)
   {
     solver_.reset();
     solver_ = std::move(solver);
@@ -75,6 +76,9 @@ namespace SmartPeak
 
   void Weight::updateWeight(const float& error)
   {
+    //TODO: implement gradient clipping
+    // const float new_weight = solver_->operator()(weight_, error);
+    // weight_ = solver_->clip_gradient(new_weight);   
     weight_ = solver_->operator()(weight_, error);
   }
 }

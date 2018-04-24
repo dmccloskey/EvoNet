@@ -17,6 +17,7 @@ BOOST_AUTO_TEST_CASE(constructor)
   Node* nullPointer = nullptr;
 	ptr = new Node();
   BOOST_CHECK_NE(ptr, nullPointer);
+  delete ptr;
 }
 
 BOOST_AUTO_TEST_CASE(destructor) 
@@ -65,7 +66,7 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   BOOST_CHECK(node.getType() == NodeType::ReLU);
   BOOST_CHECK(node.getStatus() == NodeStatus::initialized);
 
-  Eigen::Tensor<float, 1> output_test(3), error_test(3), derivative_test(3);
+  Eigen::Tensor<float, 2> output_test(3, 2), error_test(3, 2), derivative_test(3, 2);
   output_test.setConstant(0.0f);
   node.setOutput(output_test);
   error_test.setConstant(1.0f);
@@ -73,81 +74,146 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   derivative_test.setConstant(2.0f);
   node.setDerivative(derivative_test);
 
-  BOOST_CHECK_EQUAL(node.getOutput()[0], output_test[0]);
+  // Test set values
+  BOOST_CHECK_EQUAL(node.getOutput()(0,0), output_test(0,0));
   BOOST_CHECK_EQUAL(node.getOutputPointer()[0], output_test.data()[0]);
-  BOOST_CHECK_EQUAL(node.getError()[0], error_test[0]);
+  BOOST_CHECK_EQUAL(node.getError()(0,0), error_test(0,0));
   BOOST_CHECK_EQUAL(node.getErrorPointer()[0], error_test.data()[0]);
-  BOOST_CHECK_EQUAL(node.getDerivative()[0], derivative_test[0]);
+  BOOST_CHECK_EQUAL(node.getDerivative()(0,0), derivative_test(0,0));
   BOOST_CHECK_EQUAL(node.getDerivativePointer()[0], derivative_test.data()[0]);
+
+  // Output 
+  // Test mutability
+  node.getOutputPointer()[0] = 10.0;
+  BOOST_CHECK_EQUAL(node.getOutput()(0,0), 10.0);
+
+  // Test mutability
+  node.getOutputMutable()->operator()(0,0) = 0.0;
+  BOOST_CHECK_EQUAL(node.getOutput()(0,0), 0.0);
+
+  // Test col-wise storage
+  node.getOutputPointer()[3] = 10.0;
+  BOOST_CHECK_EQUAL(node.getOutput()(0,1), 10.0);  
+
+  // Error
+  // Test mutability
+  node.getErrorPointer()[0] = 11.0;
+  BOOST_CHECK_EQUAL(node.getError()(0,0), 11.0);
+
+  // Test mutability
+  node.getErrorMutable()->operator()(0,0) = 0.0;
+  BOOST_CHECK_EQUAL(node.getError()(0,0), 0.0);
+
+  // Test col-wise storage
+  node.getErrorPointer()[3] = 11.0;
+  BOOST_CHECK_EQUAL(node.getError()(0,1), 11.0);
+
+  // Derivative
+  // Test mutability
+  node.getDerivativePointer()[0] = 12.0;
+  BOOST_CHECK_EQUAL(node.getDerivative()(0,0), 12.0);
+
+  // Test mutability
+  node.getDerivativeMutable()->operator()(0,0) = 0.0;
+  BOOST_CHECK_EQUAL(node.getDerivative()(0,0), 0.0);
+
+  // Test col-wise storage
+  node.getDerivativePointer()[3] = 12.0;
+  BOOST_CHECK_EQUAL(node.getDerivative()(0,1), 12.0);
 }
 
 BOOST_AUTO_TEST_CASE(initNode)
 {
   Node node;
   node.setId(1);
-  node.initNode(2);
+  node.initNode(2,5);
 
-  BOOST_CHECK_EQUAL(node.getOutput()[0], 0.0);
-  BOOST_CHECK_EQUAL(node.getOutput()[1], 0.0);
-  BOOST_CHECK_EQUAL(node.getDerivative()[0], 0.0);
-  BOOST_CHECK_EQUAL(node.getDerivative()[1], 0.0);
-  BOOST_CHECK_EQUAL(node.getError()[0], 0.0);
-  BOOST_CHECK_EQUAL(node.getError()[1], 0.0);
+  BOOST_CHECK_EQUAL(node.getOutput()(0,0), 0.0);
+  BOOST_CHECK_EQUAL(node.getOutput()(1,4), 0.0);
+  BOOST_CHECK_EQUAL(node.getDerivative()(0,0), 0.0);
+  BOOST_CHECK_EQUAL(node.getDerivative()(1,4), 0.0);
+  BOOST_CHECK_EQUAL(node.getError()(0,0), 0.0);
+  BOOST_CHECK_EQUAL(node.getError()(1,4), 0.0);
   BOOST_CHECK(node.getStatus() == NodeStatus::initialized);
+}
 
+BOOST_AUTO_TEST_CASE(checkTimeStep)
+{
+  Node node;
+  node.setId(1);
+  node.initNode(2,5);
+
+  BOOST_CHECK(!node.checkTimeStep(-1));
+  BOOST_CHECK(!node.checkTimeStep(5));
+  BOOST_CHECK(node.checkTimeStep(0));
+  BOOST_CHECK(node.checkTimeStep(4));
 }
 
 BOOST_AUTO_TEST_CASE(calculateActivation)
 {
   Node node;
   node.setId(1);
-  node.initNode(5);
-  Eigen::Tensor<float, 1> output_test(5);
-  output_test.setValues({0.0, 1.0, 10.0, -1.0, -10.0});
+  node.initNode(5,2);
+  Eigen::Tensor<float, 2> output_test(5, 2);
+  output_test.setValues({{0.0, -1.0}, {1.0, -1.0}, {10.0, -1.0}, {-1.0, -1.0}, {-10.0, -1.0}});
 
   // test input
   node.setType(NodeType::input);
   node.setOutput(output_test);
-  node.calculateActivation();
+  node.calculateActivation(0);
 
-  BOOST_CHECK_CLOSE(node.getOutput()[0], 0.0, 1e-6);
-  BOOST_CHECK_CLOSE(node.getOutput()[1], 1.0, 1e-6);
-  BOOST_CHECK_CLOSE(node.getOutput()[2], 10.0, 1e-6);
-  BOOST_CHECK_CLOSE(node.getOutput()[3], -1.0, 1e-6);
-  BOOST_CHECK_CLOSE(node.getOutput()[4], -10.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getOutput()(0,0), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getOutput()(1,0), 1.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getOutput()(2,0), 10.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getOutput()(3,0), -1.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getOutput()(4,0), -10.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getOutput()(0,1), -1.0, 1e-6); // time point 1 should not be calculated
 
   // test bias
   node.setType(NodeType::bias);
   node.setOutput(output_test);
-  node.calculateActivation();
+  node.calculateActivation(0);
 
-  BOOST_CHECK_CLOSE(node.getOutput()[0], 0.0, 1e-6);
-  BOOST_CHECK_CLOSE(node.getOutput()[1], 1.0, 1e-6);
-  BOOST_CHECK_CLOSE(node.getOutput()[2], 10.0, 1e-6);
-  BOOST_CHECK_CLOSE(node.getOutput()[3], -1.0, 1e-6);
-  BOOST_CHECK_CLOSE(node.getOutput()[4], -10.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getOutput()(0,0), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getOutput()(1,0), 1.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getOutput()(2,0), 10.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getOutput()(3,0), -1.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getOutput()(4,0), -10.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getOutput()(0,1), -1.0, 1e-6); // time point 1 should not be calculated
 
   // test ReLU
   node.setType(NodeType::ReLU);
   node.setOutput(output_test);
-  node.calculateActivation();
+  node.calculateActivation(0);
 
-  BOOST_CHECK_CLOSE(node.getOutput()[0], 0.0, 1e-6);
-  BOOST_CHECK_CLOSE(node.getOutput()[1], 1.0, 1e-6);
-  BOOST_CHECK_CLOSE(node.getOutput()[2], 10.0, 1e-6);
-  BOOST_CHECK_CLOSE(node.getOutput()[3], 0.0, 1e-6);
-  BOOST_CHECK_CLOSE(node.getOutput()[4], 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getOutput()(0,0), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getOutput()(1,0), 1.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getOutput()(2,0), 10.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getOutput()(3,0), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getOutput()(4,0), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getOutput()(0,1), -1.0, 1e-6); // time point 1 should not be calculated
+
+  node.setOutput(output_test);
+  node.calculateActivation(1);
+
+  BOOST_CHECK_CLOSE(node.getOutput()(0,1), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getOutput()(1,1), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getOutput()(2,1), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getOutput()(3,1), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getOutput()(4,1), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getOutput()(4,0), -10.0, 1e-6); // time point 0 should not be calculated
 
   // test ELU
   node.setType(NodeType::ELU);
   node.setOutput(output_test);
-  node.calculateActivation();
+  node.calculateActivation(0);
   
-  BOOST_CHECK_CLOSE(node.getOutput()[0], 0.0, 1e-6);
-  BOOST_CHECK_CLOSE(node.getOutput()[1], 1.0, 1e-6);
-  BOOST_CHECK_CLOSE(node.getOutput()[2], 10.0, 1e-6);
-  BOOST_CHECK_CLOSE(node.getOutput()[3], -0.63212055, 1e-6);
-  BOOST_CHECK_CLOSE(node.getOutput()[4], -0.999954581, 1e-6);
+  BOOST_CHECK_CLOSE(node.getOutput()(0,0), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getOutput()(1,0), 1.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getOutput()(2,0), 10.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getOutput()(3,0), -0.63212055, 1e-6);
+  BOOST_CHECK_CLOSE(node.getOutput()(4,0), -0.999954581, 1e-6);
+  BOOST_CHECK_CLOSE(node.getOutput()(0,1), -1.0, 1e-6); // time point 1 should not be calculated
 
 }
 
@@ -155,51 +221,119 @@ BOOST_AUTO_TEST_CASE(calculateDerivative)
 {
   Node node;
   node.setId(1);
-  node.initNode(5);
-  Eigen::Tensor<float, 1> output_test(5);
-  output_test.setValues({0.0, 1.0, 10.0, -1.0, -10.0});
+  node.initNode(5,2);
+  Eigen::Tensor<float, 2> output_test(5, 2);
+  output_test.setValues({{0.0, 1.0}, {1.0, 1.0}, {10.0, 1.0}, {-1.0, 1.0}, {-10.0, 1.0}});
   node.setOutput(output_test);
 
   // test input
   node.setType(NodeType::input);
-  node.calculateDerivative();
+  node.calculateDerivative(0);
 
-  BOOST_CHECK_CLOSE(node.getDerivative()[0], 0.0, 1e-6);
-  BOOST_CHECK_CLOSE(node.getDerivative()[1], 0.0, 1e-6);
-  BOOST_CHECK_CLOSE(node.getDerivative()[2], 0.0, 1e-6);
-  BOOST_CHECK_CLOSE(node.getDerivative()[3], 0.0, 1e-6);
-  BOOST_CHECK_CLOSE(node.getDerivative()[4], 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getDerivative()(0,0), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getDerivative()(1,0), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getDerivative()(2,0), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getDerivative()(3,0), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getDerivative()(4,0), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getDerivative()(0,1), 0.0, 1e-6); // time step 1 should not be calculated
 
   // test bias
   node.setType(NodeType::bias);
-  node.calculateDerivative();
+  node.initNode(5,2);
+  node.setOutput(output_test);
+  node.calculateDerivative(0);
 
-  BOOST_CHECK_CLOSE(node.getDerivative()[0], 0.0, 1e-6);
-  BOOST_CHECK_CLOSE(node.getDerivative()[1], 0.0, 1e-6);
-  BOOST_CHECK_CLOSE(node.getDerivative()[2], 0.0, 1e-6);
-  BOOST_CHECK_CLOSE(node.getDerivative()[3], 0.0, 1e-6);
-  BOOST_CHECK_CLOSE(node.getDerivative()[4], 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getDerivative()(0,0), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getDerivative()(1,0), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getDerivative()(2,0), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getDerivative()(3,0), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getDerivative()(4,0), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getDerivative()(0,1), 0.0, 1e-6); // time step 1 should not be calculated
 
   // test ReLU
   node.setType(NodeType::ReLU);
-  node.calculateDerivative();
+  node.initNode(5,2);
+  node.setOutput(output_test);
+  node.calculateDerivative(0);
 
-  BOOST_CHECK_CLOSE(node.getDerivative()[0], 0.0, 1e-6);
-  BOOST_CHECK_CLOSE(node.getDerivative()[1], 1.0, 1e-6);
-  BOOST_CHECK_CLOSE(node.getDerivative()[2], 1.0, 1e-6);
-  BOOST_CHECK_CLOSE(node.getDerivative()[3], 0.0, 1e-6);
-  BOOST_CHECK_CLOSE(node.getDerivative()[4], 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getDerivative()(0,0), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getDerivative()(1,0), 1.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getDerivative()(2,0), 1.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getDerivative()(3,0), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getDerivative()(4,0), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getDerivative()(0,1), 0.0, 1e-6); // time step 1 should not be calculated
+
+  node.initNode(5,2);
+  node.setOutput(output_test);
+  node.calculateDerivative(1);
+  BOOST_CHECK_CLOSE(node.getDerivative()(0,1), 1.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getDerivative()(1,1), 1.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getDerivative()(2,1), 1.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getDerivative()(3,1), 1.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getDerivative()(4,1), 1.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getDerivative()(2,0), 0.0, 1e-6); // time step 0 should not be calculated
 
   // test ELU
   node.setType(NodeType::ELU);
-  node.calculateDerivative();
+  node.initNode(5,2);
+  node.setOutput(output_test);
+  node.calculateDerivative(0);
   
-  BOOST_CHECK_CLOSE(node.getDerivative()[0], 1.0, 1e-6);
-  BOOST_CHECK_CLOSE(node.getDerivative()[1], 1.0, 1e-6);
-  BOOST_CHECK_CLOSE(node.getDerivative()[2], 1.0, 1e-6);
-  BOOST_CHECK_CLOSE(node.getDerivative()[3], 0.36787945, 1e-6);
-  BOOST_CHECK_CLOSE(node.getDerivative()[4], 4.54187393e-05, 1e-6);
+  BOOST_CHECK_CLOSE(node.getDerivative()(0,0), 1.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getDerivative()(1,0), 1.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getDerivative()(2,0), 1.0, 1e-6);
+  BOOST_CHECK_CLOSE(node.getDerivative()(3,0), 0.36787945, 1e-6);
+  BOOST_CHECK_CLOSE(node.getDerivative()(4,0), 4.54187393e-05, 1e-6);
+  BOOST_CHECK_CLOSE(node.getDerivative()(0,1), 0.0, 1e-6); // time step 1 should not be calculated
+}
 
+BOOST_AUTO_TEST_CASE(saveCurrentOutput)
+{
+  Node node;
+  node.setId(1);
+  node.initNode(5,2);
+  Eigen::Tensor<float, 2> output(5, 2);
+  output.setValues({{0.0, 5.0}, {1.0, 6.0}, {2.0, 7.0}, {3.0, 8.0}, {4.0, 9.0}});
+  node.setOutput(output);
+
+  node.saveCurrentOutput();  
+  Eigen::Tensor<float, 2> output_test(5, 2);
+  output_test.setValues({{0.0, 0.0}, {0.0, 1.0}, {0.0, 2.0}, {0.0, 3.0}, {0.0, 4.0}});
+  for (int i=0; i<output.dimension(0); ++i)
+    for (int j=0; j<output.dimension(1); ++j)
+      BOOST_CHECK_CLOSE(node.getOutput()(i,j), output_test(i,j), 1e-6);
+}
+BOOST_AUTO_TEST_CASE(saveCurrentDerivative)
+{
+  Node node;
+  node.setId(1);
+  node.initNode(5,2);
+  Eigen::Tensor<float, 2> derivative(5, 2);
+  derivative.setValues({{0.0, 5.0}, {1.0, 6.0}, {2.0, 7.0}, {3.0, 8.0}, {4.0, 9.0}});
+  node.setDerivative(derivative);
+
+  node.saveCurrentDerivative();  
+  Eigen::Tensor<float, 2> Derivative_test(5, 2);
+  Derivative_test.setValues({{0.0, 0.0}, {0.0, 1.0}, {0.0, 2.0}, {0.0, 3.0}, {0.0, 4.0}});
+  for (int i=0; i<derivative.dimension(0); ++i)
+    for (int j=0; j<derivative.dimension(1); ++j)
+      BOOST_CHECK_CLOSE(node.getDerivative()(i,j), Derivative_test(i,j), 1e-6);
+}
+BOOST_AUTO_TEST_CASE(saveCurrentError)
+{
+  Node node;
+  node.setId(1);
+  node.initNode(5,2);
+  Eigen::Tensor<float, 2> error(5, 2);
+  error.setValues({{0.0, 5.0}, {1.0, 6.0}, {2.0, 7.0}, {3.0, 8.0}, {4.0, 9.0}});
+  node.setError(error);
+
+  node.saveCurrentError();  
+  Eigen::Tensor<float, 2> Error_test(5, 2);
+  Error_test.setValues({{0.0, 0.0}, {0.0, 1.0}, {0.0, 2.0}, {0.0, 3.0}, {0.0, 4.0}});
+  for (int i=0; i<error.dimension(0); ++i)
+    for (int j=0; j<error.dimension(1); ++j)
+      BOOST_CHECK_CLOSE(node.getError()(i,j), Error_test(i,j), 1e-6);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
