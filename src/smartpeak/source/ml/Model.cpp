@@ -1134,6 +1134,7 @@ namespace SmartPeak
       // get the next uncorrected layer
       std::vector<int> links, source_nodes, sink_nodes;
       getNextUncorrectedLayer(links, source_nodes, sink_nodes);
+      // std::cout<<"link size "<<links.size()<<::std::endl;
 
       // get cycles
       std::vector<int> links_cycles, source_nodes_cycles, sink_nodes_cycles;
@@ -1241,6 +1242,53 @@ namespace SmartPeak
         } 
         weight_derivatives.at(link_map.second.getWeightId()).push_back(error_sum); 
       }    
+    }
+
+    // calculate the average of all error averages 
+    // and update the weights
+    for (const auto& weight_derivative : weight_derivatives)
+    {
+      float derivative_sum = 0.0;
+      for (const float& derivative : weight_derivative.second)
+      {
+        derivative_sum += derivative / weight_derivative.second.size();
+      }
+      weights_.at(weight_derivative.first).updateWeight(derivative_sum);
+    }
+  }
+
+  void Model::reInitializeNodeStatuses()
+  {
+    for (auto& node_map : nodes_)
+    {
+      node_map.second.setStatus(NodeStatus::initialized);
+    }
+  }
+
+  void Model::updateWeights()
+  {
+
+    std::map<int, std::vector<float>> weight_derivatives;  
+    // initalize the map
+    for (const auto& weight_map: weights_)  
+    {
+      const std::vector<float> derivatives;
+      weight_derivatives.emplace(weight_map.first, derivatives);
+    }
+
+    // collect the derivative for all weights
+    for (const auto& link_map : links_)
+    {
+      if (nodes_.at(link_map.second.getSinkNodeId()).getStatus() == NodeStatus::corrected)
+      {
+        const int batch_size = nodes_.at(link_map.second.getSinkNodeId()).getError().size(); // infer the batch_size
+        Eigen::TensorMap<Eigen::Tensor<float, 1>> error_tensor(nodes_.at(link_map.second.getSinkNodeId()).getErrorPointer(), batch_size);
+        Eigen::TensorMap<Eigen::Tensor<float, 1>> output_tensor(nodes_.at(link_map.second.getSourceNodeId()).getOutputPointer(), batch_size);
+        auto derivative_tensor = - error_tensor * output_tensor; // derivative of the weight wrt the error
+        Eigen::Tensor<float, 0> derivative_mean_tensor = derivative_tensor.mean(); // average derivative
+        // std::cout<<"derivative_mean_tensor "<<derivative_mean_tensor(0)<<std::endl;
+        weight_derivatives[link_map.second.getWeightId()].push_back(derivative_mean_tensor(0));
+      }      
     }
 
     // calculate the average of all error averages 
