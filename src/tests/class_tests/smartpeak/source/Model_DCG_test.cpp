@@ -92,12 +92,12 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayer2)
     {{4}, {5}, {6}, {7}, {8}, {9}, {10}, {11}},
     {{5}, {6}, {7}, {8}, {9}, {10}, {11}, {12}}}
   );
-  model2.mapValuesToNodes(input, input_ids, NodeStatus::activated);  
+  model2.mapValuesToNodes(input, input_ids, NodeStatus::activated, "output");  
 
   const std::vector<int> biases_ids = {3, 4};
   Eigen::Tensor<float, 3> biases(batch_size, memory_size, biases_ids.size()); 
   biases.setConstant(1);
-  model2.mapValuesToNodes(biases, biases_ids, NodeStatus::activated);  
+  model2.mapValuesToNodes(biases, biases_ids, NodeStatus::activated, "output");  
 
   // get the next hidden layer
   std::vector<int> links, source_nodes, sink_nodes;
@@ -145,12 +145,12 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayerBiases2)
     {{4}, {5}, {6}, {7}, {8}, {9}, {10}, {11}},
     {{5}, {6}, {7}, {8}, {9}, {10}, {11}, {12}}}
   );
-  model2.mapValuesToNodes(input, input_ids, NodeStatus::activated);  
+  model2.mapValuesToNodes(input, input_ids, NodeStatus::activated, "output");  
 
   const std::vector<int> biases_ids = {3, 4};
   Eigen::Tensor<float, 3> biases(batch_size, memory_size, biases_ids.size()); 
   biases.setConstant(1);
-  model2.mapValuesToNodes(biases, biases_ids, NodeStatus::activated); 
+  model2.mapValuesToNodes(biases, biases_ids, NodeStatus::activated, "output"); 
 
   // get the next hidden layer
   std::vector<int> links = {0};
@@ -203,12 +203,12 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayerCycles2)
     {{4}, {5}, {6}, {7}, {8}, {9}, {10}, {11}},
     {{5}, {6}, {7}, {8}, {9}, {10}, {11}, {12}}}
   );
-  model2.mapValuesToNodes(input, input_ids, NodeStatus::activated);  
+  model2.mapValuesToNodes(input, input_ids, NodeStatus::activated, "output");  
 
   const std::vector<int> biases_ids = {3, 4};
   Eigen::Tensor<float, 3> biases(batch_size, memory_size, biases_ids.size()); 
   biases.setConstant(1);
-  model2.mapValuesToNodes(biases, biases_ids, NodeStatus::activated); 
+  model2.mapValuesToNodes(biases, biases_ids, NodeStatus::activated, "output"); 
 
   // get the next hidden layer
   std::vector<int> links = {0, 3};
@@ -262,8 +262,16 @@ BOOST_AUTO_TEST_CASE(FPTT)
     {{4, 0, 0}, {5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}, {9, 0, 0}, {10, 0, 0}, {11, 0, 0}},
     {{5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}, {9, 0, 0}, {10, 0, 0}, {11, 0, 0}, {12, 0, 0}}}
   );
+  Eigen::Tensor<float, 2> dt(batch_size, memory_size); 
+  dt.setValues({
+    {1, 1, 1, 1, 1, 1, 1, 1},
+    {1, 1, 1, 1, 1, 1, 1, 1},
+    {1, 1, 1, 1, 1, 1, 1, 1},
+    {1, 1, 1, 1, 1, 1, 1, 1},
+    {1, 1, 1, 1, 1, 1, 1, 1}}
+  );
 
-  model2.FPTT(4, input, input_ids);
+  model2.FPTT(4, input, input_ids, dt);
 
   // test values of output nodes
   Eigen::Tensor<float, 3> output(batch_size, memory_size, 5); // dim2: # of model nodes
@@ -318,12 +326,12 @@ BOOST_AUTO_TEST_CASE(getNextUncorrectedLayer2)
     {{4}, {5}, {6}, {7}, {8}, {9}, {10}, {11}},
     {{5}, {6}, {7}, {8}, {9}, {10}, {11}, {12}}}
   );
-  model2.mapValuesToNodes(input, input_ids, NodeStatus::activated);  
+  model2.mapValuesToNodes(input, input_ids, NodeStatus::activated, "output");  
 
   const std::vector<int> biases_ids = {3, 4};
   Eigen::Tensor<float, 3> biases(batch_size, memory_size, biases_ids.size()); 
   biases.setConstant(1);
-  model2.mapValuesToNodes(biases, biases_ids, NodeStatus::activated);
+  model2.mapValuesToNodes(biases, biases_ids, NodeStatus::activated, "output");
   
   model2.setLossFunction(ModelLossFunction::MSE);
 
@@ -383,12 +391,12 @@ BOOST_AUTO_TEST_CASE(getNextUncorrectedLayerCycles2)
     {{4}, {5}, {6}, {7}, {8}, {9}, {10}, {11}},
     {{5}, {6}, {7}, {8}, {9}, {10}, {11}, {12}}}
   );
-  model2.mapValuesToNodes(input, input_ids, NodeStatus::activated);  
+  model2.mapValuesToNodes(input, input_ids, NodeStatus::activated, "output");  
 
   const std::vector<int> biases_ids = {3, 4};
   Eigen::Tensor<float, 3> biases(batch_size, memory_size, biases_ids.size()); 
   biases.setConstant(1);
-  model2.mapValuesToNodes(biases, biases_ids, NodeStatus::activated);
+  model2.mapValuesToNodes(biases, biases_ids, NodeStatus::activated, "output");
   
   model2.setLossFunction(ModelLossFunction::MSE);
 
@@ -458,9 +466,17 @@ BOOST_AUTO_TEST_CASE(BPTT)
     {{4, 0, 0}, {5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}, {9, 0, 0}, {10, 0, 0}, {11, 0, 0}},
     {{5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}, {9, 0, 0}, {10, 0, 0}, {11, 0, 0}, {12, 0, 0}}}
   );
+  Eigen::Tensor<float, 2> dt(batch_size, memory_size);   
+  dt.setValues({
+    {1, 1, 1, 1, 1, 1, 1, 1},
+    {1, 1, 1, 1, 1, 1, 1, 1},
+    {1, 1, 1, 1, 1, 1, 1, 1},
+    {1, 1, 1, 1, 1, 1, 1, 1},
+    {1, 1, 1, 1, 1, 1, 1, 1}}
+  );
 
   // forward propogate
-  model2.FPTT(4, input, input_ids);
+  model2.FPTT(4, input, input_ids, dt);
 
   // calculate the model error
   model2.setLossFunction(ModelLossFunction::MSE);
@@ -520,9 +536,17 @@ BOOST_AUTO_TEST_CASE(updateWeights2)
     {{4, 0, 0}, {5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}, {9, 0, 0}, {10, 0, 0}, {11, 0, 0}},
     {{5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}, {9, 0, 0}, {10, 0, 0}, {11, 0, 0}, {12, 0, 0}}}
   );
+  Eigen::Tensor<float, 2> dt(batch_size, memory_size); 
+  dt.setValues({
+    {1, 1, 1, 1, 1, 1, 1, 1},
+    {1, 1, 1, 1, 1, 1, 1, 1},
+    {1, 1, 1, 1, 1, 1, 1, 1},
+    {1, 1, 1, 1, 1, 1, 1, 1},
+    {1, 1, 1, 1, 1, 1, 1, 1}}
+  );
 
   // forward propogate
-  model2.FPTT(4, input, input_ids);
+  model2.FPTT(4, input, input_ids, dt);
 
   // calculate the model error
   model2.setLossFunction(ModelLossFunction::MSE);
@@ -618,6 +642,14 @@ BOOST_AUTO_TEST_CASE(modelTrainer2)
     {{4, 0, 0}, {5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}, {9, 0, 0}, {10, 0, 0}, {11, 0, 0}},
     {{5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}, {9, 0, 0}, {10, 0, 0}, {11, 0, 0}, {12, 0, 0}}}
   ); 
+  Eigen::Tensor<float, 2> dt(batch_size, memory_size); 
+  dt.setValues({
+    {1, 1, 1, 1, 1, 1, 1, 1},
+    {1, 1, 1, 1, 1, 1, 1, 1},
+    {1, 1, 1, 1, 1, 1, 1, 1},
+    {1, 1, 1, 1, 1, 1, 1, 1},
+    {1, 1, 1, 1, 1, 1, 1, 1}}
+  );
 
   // expected output
   const std::vector<int> output_nodes = {2};
@@ -631,7 +663,7 @@ BOOST_AUTO_TEST_CASE(modelTrainer2)
   for (int iter = 0; iter < max_iter; ++iter)
   {
     // forward propogate
-    model2a.FPTT(memory_size, input, input_ids); 
+    model2a.FPTT(memory_size, input, input_ids, dt); 
 
     // calculate the model error
     model2a.calculateError(expected, output_nodes);

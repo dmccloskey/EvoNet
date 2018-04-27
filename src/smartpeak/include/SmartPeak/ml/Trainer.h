@@ -84,6 +84,7 @@ private:
     int batch_size_;
     int memory_size_;
     int n_epochs_;
+    float dt_;
 
   };
 }

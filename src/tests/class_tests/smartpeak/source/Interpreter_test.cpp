@@ -94,6 +94,14 @@ BOOST_AUTO_TEST_CASE(forwardPropogate)
     {{4, 0, 0}, {5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}, {9, 0, 0}, {10, 0, 0}, {11, 0, 0}},
     {{5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}, {9, 0, 0}, {10, 0, 0}, {11, 0, 0}, {12, 0, 0}}}
   ); 
+  Eigen::Tensor<float, 3> dt(batch_size, memory_size, input_ids.size()); 
+  dt.setValues(
+    {{{1, 1, 1}, {1, 1, 1}, {1, 1, 1}, {1, 1, 1}, {1, 1, 1}, {1, 1, 1}, {1, 1, 1}, {1, 1, 1}},
+    {{1, 1, 1}, {1, 1, 1}, {1, 1, 1}, {1, 1, 1}, {1, 1, 1}, {1, 1, 1}, {1, 1, 1}, {1, 1, 1}},
+    {{1, 1, 1}, {1, 1, 1}, {1, 1, 1}, {1, 1, 1}, {1, 1, 1}, {1, 1, 1}, {1, 1, 1}, {1, 1, 1}},
+    {{1, 1, 1}, {1, 1, 1}, {1, 1, 1}, {1, 1, 1}, {1, 1, 1}, {1, 1, 1}, {1, 1, 1}, {1, 1, 1}},
+    {{1, 1, 1}, {1, 1, 1}, {1, 1, 1}, {1, 1, 1}, {1, 1, 1}, {1, 1, 1}, {1, 1, 1}, {1, 1, 1}}}
+  );
 
   // expected output
   const std::vector<int> output_nodes = {2};
@@ -107,7 +115,7 @@ BOOST_AUTO_TEST_CASE(forwardPropogate)
   for (int iter = 0; iter < max_iter; ++iter)
   {
     // forward propogate
-    model2.FPTT(memory_size, input, input_ids);
+    model2.FPTT(memory_size, input, input_ids, dt);
 
     // calculate the model error
     model2.calculateError(expected, output_nodes);

@@ -288,10 +288,49 @@ namespace SmartPeak
   }
   
   void Model::mapValuesToNodes(
+    const Eigen::Tensor<float, 1>& values,
+    const int& memory_step,
+    const NodeStatus& status_update,
+    const std::string& value_type)
+  {
+    // // assumes the node exists [TODO]
+    // else if (nodes_.at(node_ids[0]).getOutput().dimension(0) != values.dimension(0))
+    // {
+    //   std::cout << "The number of input samples and the node batch size does not match." << std::endl;
+    //   return;
+    // }
+
+    // // infer the memory size from the node output size
+    // const int memory_size = nodes_.at(node_ids[0]).getOutput().dimension(1);
+
+    // copy over the input values
+    for (auto& node_map : nodes_)
+    {
+      for (int j=0; j<values.dimension(0); ++j)
+      {
+        if (value_type == "output")
+        {
+          node_map.second.getOutputMutable()->operator()(j, memory_step) = values(j);
+        }
+        else if (value_type == "error")
+        {
+          node_map.second.getErrorMutable()->operator()(j, memory_step) = values(j);
+        }
+        else if (value_type == "dt")
+        {
+          node_map.second.getDtMutable()->operator()(j, memory_step) = values(j);
+        }
+        node_map.second.setStatus(status_update);
+      }
+    }
+  }
+  
+  void Model::mapValuesToNodes(
     const Eigen::Tensor<float, 2>& values,
     const int& memory_step,
     const std::vector<int>& node_ids,
-    const NodeStatus& status_update)
+    const NodeStatus& status_update,
+    const std::string& value_type)
   {
     // check dimension mismatches
     if (node_ids.size() != values.dimension(1))
@@ -320,24 +359,23 @@ namespace SmartPeak
     {
       for (int j=0; j<values.dimension(0); ++j)
       {
-        if (status_update == NodeStatus::activated)
+        if (value_type == "output")
         {
           // SANITY CHECK:
           // std::cout << "i" << i << " j" << j << " values: " << values.data()[i*values.dimension(0) + j] << std::endl;
           // nodes_.at(node_ids[i]).getOutputPointer()[j + values.dimension(0)*memory_step] = std::move(values.data()[i*values.dimension(0) + j]);
           // nodes_.at(node_ids[i]).getOutputPointer()[j + values.dimension(0)*memory_step] = values(j, i);
           nodes_.at(node_ids[i]).getOutputMutable()->operator()(j, memory_step) = values(j, i);
-          nodes_.at(node_ids[i]).setStatus(NodeStatus::activated);
         }
-        else if (status_update == NodeStatus::corrected)
+        else if (value_type == "error")
         {
-          // SANITY CHECK:
-          // std::cout << "i" << i << " j" << j << " values: " << values.data()[i*values.dimension(0) + j] << std::endl;
-          // nodes_.at(node_ids[i]).getErrorPointer()[j + values.dimension(0)*memory_step] = std::move(values.data()[i*values.dimension(0) + j]);
-          // nodes_.at(node_ids[i]).getErrorPointer()[j + values.dimension(0)*memory_step] = values(j, i);
           nodes_.at(node_ids[i]).getErrorMutable()->operator()(j, memory_step) = values(j, i);
-          nodes_.at(node_ids[i]).setStatus(NodeStatus::corrected);
         }
+        else if (value_type == "dt")
+        {
+          nodes_.at(node_ids[i]).getDtMutable()->operator()(j, memory_step) = values(j, i);
+        }
+        nodes_.at(node_ids[i]).setStatus(status_update);
       }
     }
   }
@@ -345,7 +383,8 @@ namespace SmartPeak
   void Model::mapValuesToNodes(
     const Eigen::Tensor<float, 3>& values,
     const std::vector<int>& node_ids,
-    const NodeStatus& status_update)
+    const NodeStatus& status_update,
+    const std::string& value_type)
   {
     // check dimension mismatches
     if (node_ids.size() != values.dimension(2))
@@ -372,18 +411,20 @@ namespace SmartPeak
       {
         for (int j=0; j<values.dimension(0); ++j)
         {
-          if (status_update == NodeStatus::activated)
+          if (value_type == "output")
           {
             // nodes_.at(node_ids[i]).getOutputPointer()[k*values.dimension(0) + j] = values(j, k, i);
             nodes_.at(node_ids[i]).getOutputMutable()->operator()(j, k) = values(j, k, i);
-            nodes_.at(node_ids[i]).setStatus(NodeStatus::activated);
           }
-          else if (status_update == NodeStatus::corrected)
+          else if (value_type == "error")
           {
-            nodes_.at(node_ids[i]).getErrorPointer()[k*values.dimension(0) + j] = values(j, k, i);
             nodes_.at(node_ids[i]).getErrorMutable()->operator()(j, k) = values(j, k, i);
-            nodes_.at(node_ids[i]).setStatus(NodeStatus::corrected);
           }
+          else if (value_type == "dt")
+          {
+            nodes_.at(node_ids[i]).getDtMutable()->operator()(j, k) = values(j, k, i);
+          }
+          nodes_.at(node_ids[i]).setStatus(status_update);
         }
       }
     }
@@ -640,7 +681,7 @@ namespace SmartPeak
     Eigen::Tensor<float, 2> sink_tensor = source_tensor.contract(weight_tensor, product_dims);
 
     // update the sink nodes
-    mapValuesToNodes(sink_tensor, time_step, sink_nodes, NodeStatus::activated);
+    mapValuesToNodes(sink_tensor, time_step, sink_nodes, NodeStatus::activated, "output");
   }
   
   void Model::forwardPropogateLayerActivation(
@@ -720,7 +761,8 @@ namespace SmartPeak
 
   void Model::FPTT(const int& time_steps, 
     const Eigen::Tensor<float, 3>& values,
-    const std::vector<int> node_ids)
+    const std::vector<int> node_ids,
+    const Eigen::Tensor<float, 2>& dt)
   {
     // check time_steps vs memory_size
     int max_steps = time_steps;
@@ -740,6 +782,7 @@ namespace SmartPeak
         {          
           node_map.second.saveCurrentOutput();
           node_map.second.saveCurrentDerivative();
+          node_map.second.saveCurrentDt();
           if (std::count(node_ids.begin(), node_ids.end(), node_map.first) == 0)
           {
             node_map.second.setStatus(NodeStatus::initialized); // reinitialize non-input nodes
@@ -749,9 +792,11 @@ namespace SmartPeak
       }
 
       // initialize nodes for the next time-step
+      const Eigen::Tensor<float, 1> dt_values = dt.chip(time_step, 1);
+      mapValuesToNodes(dt_values, 0, NodeStatus::initialized, "dt");
       const Eigen::Tensor<float, 2> active_values = values.chip(time_step, 1);
       // std::cout<<"Model::FPTT() active_values: "<<active_values<<std::endl;
-      mapValuesToNodes(active_values, 0, node_ids, NodeStatus::activated);
+      mapValuesToNodes(active_values, 0, node_ids, NodeStatus::activated, "output");
 
       forwardPropogate(0); // always working at the current head of memory
     }
@@ -849,7 +894,7 @@ namespace SmartPeak
     }
 
     // update the output node errors
-    mapValuesToNodes(error_tensor, 0, node_ids, NodeStatus::corrected);
+    mapValuesToNodes(error_tensor, 0, node_ids, NodeStatus::corrected, "error");
   }
   
   void Model::getNextUncorrectedLayer(
@@ -1101,18 +1146,18 @@ namespace SmartPeak
       }
 
       // update the sink nodes errors for the current time-step
-      mapValuesToNodes(sink_tensor_cur, time_step, sink_nodes_cur, NodeStatus::corrected);
+      mapValuesToNodes(sink_tensor_cur, time_step, sink_nodes_cur, NodeStatus::corrected, "error");
 
       // update the sink nodes errors for the previous time-step
       if (time_step + 1 < memory_size)
       {
-        mapValuesToNodes(sink_tensor_prev, time_step + 1, sink_nodes_prev, NodeStatus::corrected);
+        mapValuesToNodes(sink_tensor_prev, time_step + 1, sink_nodes_prev, NodeStatus::corrected, "error");
       }
     }
     else
     {
       // update the sink nodes errors for the current time-step
-      mapValuesToNodes(sink_tensor, time_step, sink_nodes, NodeStatus::corrected);
+      mapValuesToNodes(sink_tensor, time_step, sink_nodes, NodeStatus::corrected, "error");
     }
   }
   
@@ -1242,53 +1287,6 @@ namespace SmartPeak
         } 
         weight_derivatives.at(link_map.second.getWeightId()).push_back(error_sum); 
       }    
-    }
-
-    // calculate the average of all error averages 
-    // and update the weights
-    for (const auto& weight_derivative : weight_derivatives)
-    {
-      float derivative_sum = 0.0;
-      for (const float& derivative : weight_derivative.second)
-      {
-        derivative_sum += derivative / weight_derivative.second.size();
-      }
-      weights_.at(weight_derivative.first).updateWeight(derivative_sum);
-    }
-  }
-
-  void Model::reInitializeNodeStatuses()
-  {
-    for (auto& node_map : nodes_)
-    {
-      node_map.second.setStatus(NodeStatus::initialized);
-    }
-  }
-
-  void Model::updateWeights()
-  {
-
-    std::map<int, std::vector<float>> weight_derivatives;  
-    // initalize the map
-    for (const auto& weight_map: weights_)  
-    {
-      const std::vector<float> derivatives;
-      weight_derivatives.emplace(weight_map.first, derivatives);
-    }
-
-    // collect the derivative for all weights
-    for (const auto& link_map : links_)
-    {
-      if (nodes_.at(link_map.second.getSinkNodeId()).getStatus() == NodeStatus::corrected)
-      {
-        const int batch_size = nodes_.at(link_map.second.getSinkNodeId()).getError().size(); // infer the batch_size
-        Eigen::TensorMap<Eigen::Tensor<float, 1>> error_tensor(nodes_.at(link_map.second.getSinkNodeId()).getErrorPointer(), batch_size);
-        Eigen::TensorMap<Eigen::Tensor<float, 1>> output_tensor(nodes_.at(link_map.second.getSourceNodeId()).getOutputPointer(), batch_size);
-        auto derivative_tensor = - error_tensor * output_tensor; // derivative of the weight wrt the error
-        Eigen::Tensor<float, 0> derivative_mean_tensor = derivative_tensor.mean(); // average derivative
-        // std::cout<<"derivative_mean_tensor "<<derivative_mean_tensor(0)<<std::endl;
-        weight_derivatives[link_map.second.getWeightId()].push_back(derivative_mean_tensor(0));
-      }      
     }
 
     // calculate the average of all error averages 

@@ -82,11 +82,13 @@ public:
       @param[in] values Values to assign to the node
       @param[in] node_ids 
       @param[in] status_update
+      @param[in] value_type ("output", "derivative", "error", or "dt")
     */ 
     void mapValuesToNodes(
       const Eigen::Tensor<float, 3>& values,
       const std::vector<int>& node_ids,
-      const NodeStatus& status_update);
+      const NodeStatus& status_update,
+      const std::string& value_type);
 
     /**
       @brief Assigns output or error values to the nodes at a specific
@@ -107,7 +109,26 @@ public:
       const Eigen::Tensor<float, 2>& values,
       const int& memory_step,
       const std::vector<int>& node_ids,
-      const NodeStatus& status_update);
+      const NodeStatus& status_update,
+      const std::string& value_type);
+
+    /**
+      @brief Assigns output or error values to all nodes at a specific
+        place in memory.
+        The node statuses are also updated according to status_update.
+
+      dimensions of batch size by nodes
+
+      @param[in] values Values to assign to the node
+      @param[in] memory_step The memory step to add values to 
+      @param[in] status_update
+      @param[in] value_type
+    */       
+    void mapValuesToNodes(
+      const Eigen::Tensor<float, 1>& values,
+      const int& memory_step,
+      const NodeStatus& status_update,
+      const std::string& value_type);
  
     /**
       @brief A prelude to a forward propogation step. Returns a vector of links
@@ -225,11 +246,13 @@ public:
         continuously calculate node outputs and node derivatives.
       @param[in] values Input values at each time step where
         dim0: batch_size, dim1: time_step, and dim2: nodes.
-      @param[in] node_ids 
+      @param[in] node_ids
+      @param[in] dt Node time resolution 
     */ 
     void FPTT(const int& time_steps, 
       const Eigen::Tensor<float, 3>& values,
-      const std::vector<int> node_ids);
+      const std::vector<int> node_ids,
+      const Eigen::Tensor<float, 2>& dt);
  
     /**
       @brief Calculates the error of the model with respect to

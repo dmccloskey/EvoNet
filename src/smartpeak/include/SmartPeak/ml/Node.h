@@ -79,6 +79,11 @@ public:
     Eigen::Tensor<float, 2>* getDerivativeMutable(); ///< derivative copy getter
     float* getDerivativePointer(); ///< derivative pointer getter
 
+    void setDt(const Eigen::Tensor<float, 2>& dt); ///< dt setter
+    Eigen::Tensor<float, 2> getDt() const; ///< dt copy getter
+    Eigen::Tensor<float, 2>* getDtMutable(); ///< dt copy getter
+    float* getDtPointer(); ///< dt pointer getter
+
     /**
       @brief Initialize node output to zero.
         The node statuses are then changed to NodeStatus::deactivated
@@ -128,6 +133,11 @@ public:
       @brief Shifts the current error batch by 1 unit back in memory.
     */
     void saveCurrentError();
+    
+    /**
+      @brief Shifts the current dt batch by 1 unit back in memory.
+    */
+    void saveCurrentDt();
 
 private:
     int id_; ///< Node ID
@@ -143,6 +153,7 @@ private:
     Eigen::Tensor<float, 2> output_; ///< Node Output (rows: # of samples, cols: # of time steps)
     Eigen::Tensor<float, 2> error_; ///< Node Error (rows: # of samples, cols: # of time steps)
     Eigen::Tensor<float, 2> derivative_; ///< Node Error (rows: # of samples, cols: # of time steps)
+    Eigen::Tensor<float, 2> dt_; ///< Resolution of each time-step (rows: # of samples, cols: # of time steps)
 
   };
 }

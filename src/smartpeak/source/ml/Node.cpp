@@ -101,6 +101,23 @@ namespace SmartPeak
     return derivative_.data();
   }
 
+  void Node::setDt(const Eigen::Tensor<float, 2>& dt)
+  {
+    dt_ = dt;
+  }
+  Eigen::Tensor<float, 2> Node::getDt() const
+  {
+    return dt_;
+  }
+  Eigen::Tensor<float, 2>* Node::getDtMutable()
+  {
+    return &dt_;
+  }
+  float* Node::getDtPointer()
+  {
+    return dt_.data();
+  }
+
   void Node::initNode(const int& batch_size, const int& memory_size)
   {
     Eigen::Tensor<float, 2> init_values(batch_size, memory_size);
@@ -108,6 +125,10 @@ namespace SmartPeak
     setOutput(init_values);
     setError(init_values);
     setDerivative(init_values);
+
+    init_values.setConstant(1.0f);
+    setDt(init_values);
+
     setStatus(NodeStatus::initialized);
   }
 
@@ -115,6 +136,9 @@ namespace SmartPeak
   {
     if (!checkTimeStep(time_step)) return;
     Eigen::Tensor<float, 1> output_step = output_.chip(time_step, 1);
+
+    // Scale the current output by the designated non-linearity
+    // Scale the activated output by the time scale
     switch (type_)
     {
       case NodeType::bias: {break;} 
@@ -124,7 +148,7 @@ namespace SmartPeak
         output_step = output_step.unaryExpr(ReLUOp<float>());
         for (int i=0; i<output_step.size(); ++i)
         {
-          output_(i, time_step) = output_step(i);
+          output_(i, time_step) = output_step(i) * dt_(i, time_step);
         }
         break;
       }
@@ -133,7 +157,7 @@ namespace SmartPeak
         output_step = output_step.unaryExpr(ELUOp<float>(1.0));
         for (int i=0; i<output_step.size(); ++i)
         {
-          output_(i, time_step) = output_step(i);
+          output_(i, time_step) = output_step(i) * dt_(i, time_step);
         }
         break;
       }
@@ -269,6 +293,26 @@ namespace SmartPeak
         else
         {
           error_(i, j) = error_(i, j-1);
+        }
+      }
+    }
+  }
+
+  void Node::saveCurrentDt()
+  {
+    const int batch_size = dt_.dimension(0);
+    const int memory_size = dt_.dimension(1);
+    for (int i=0; i<batch_size; ++i)
+    {
+      for (int j=memory_size-1; j>=0 ; --j)
+      {
+        if (j==0)
+        {
+          dt_(i, j) = 0.0;
+        }
+        else
+        {
+          dt_(i, j) = dt_(i, j-1);
         }
       }
     }
