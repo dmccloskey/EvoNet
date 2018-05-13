@@ -456,6 +456,8 @@ private:
     std::map<int, Weight> weights_; ///< Model nodes
     Eigen::Tensor<float, 1> error_; ///< Model error
     // Eigen::Tensor<float, 2> error_; ///< Model error
+
+    // TODO: will most likely need to expand to a derived class model (e.g., SolverOp)
     SmartPeak::ModelLossFunction loss_function_; ///< Model loss function
 
   };

@@ -79,6 +79,22 @@ public:
       @returns Status True on success, False if not
     */ 
     bool storeNodeStates(const std::string& filename, Model& model);
+ 
+    /**
+      @brief Entry point for users to code their script
+        for model training
+
+      @param model The model to train
+    */ 
+    virtual void trainModel(Model& model) = 0;
+ 
+    /**
+      @brief Entry point for users to code their script
+        to build the model
+
+      @returns The constructed model
+    */ 
+    virtual Model makeModel() = 0;
 
 private:
     int batch_size_;
