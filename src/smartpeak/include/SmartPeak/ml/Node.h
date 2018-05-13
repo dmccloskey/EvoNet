@@ -32,6 +32,7 @@ namespace SmartPeak
   {
 public:
     Node(); ///< Default constructor
+    Node(const std::string& name, const SmartPeak::NodeType& type, const SmartPeak::NodeStatus& status); ///< Explicit constructor  
     Node(const int& id, const SmartPeak::NodeType& type, const SmartPeak::NodeStatus& status); ///< Explicit constructor  
     ~Node(); ///< Default destructor
 
@@ -41,11 +42,13 @@ public:
         std::tie(
           id_,
           type_,
-          status_
+          status_,
+          name_
         ) == std::tie(
           other.id_,
           other.type_,
-          other.status_
+          other.status_,
+          other.name_
         )
       ;
     }
@@ -57,6 +60,9 @@ public:
 
     void setId(const int& id); ///< id setter
     int getId() const; ///< id getter
+
+    void setName(const std::string& name); ///< naem setter
+    std::string getName() const; ///< name getter
 
     void setType(const SmartPeak::NodeType& type); ///< type setter
     SmartPeak::NodeType getType() const; ///< type getter
@@ -140,7 +146,8 @@ public:
     void saveCurrentDt();
 
 private:
-    int id_; ///< Node ID
+    int id_ = NULL; ///< Weight ID
+    std::string name_ = ""; ///< Weight Name
     SmartPeak::NodeType type_; ///< Node Type
     SmartPeak::NodeStatus status_; ///< Node Status   
 

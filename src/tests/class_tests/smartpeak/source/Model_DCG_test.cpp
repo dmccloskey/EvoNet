@@ -32,38 +32,38 @@ Model makeModel2()
   Weight w1, w2, w3, wb1, wb2;
   Model model2;
   // Toy network: 1 hidden layer, fully connected, DCG
-  i1 = Node(0, NodeType::input, NodeStatus::activated);
-  h1 = Node(1, NodeType::ReLU, NodeStatus::deactivated);
-  o1 = Node(2, NodeType::ReLU, NodeStatus::deactivated);
-  b1 = Node(3, NodeType::bias, NodeStatus::activated);
-  b2 = Node(4, NodeType::bias, NodeStatus::activated);
+  i1 = Node("0", NodeType::input, NodeStatus::activated);
+  h1 = Node("1", NodeType::ReLU, NodeStatus::deactivated);
+  o1 = Node("2", NodeType::ReLU, NodeStatus::deactivated);
+  b1 = Node("3", NodeType::bias, NodeStatus::activated);
+  b2 = Node("4", NodeType::bias, NodeStatus::activated);
   // weights  
   std::shared_ptr<WeightInitOp> weight_init;
   std::shared_ptr<SolverOp> solver;
   // weight_init.reset(new RandWeightInitOp(1.0)); // No random init for testing
   weight_init.reset(new ConstWeightInitOp(1.0));
   solver.reset(new SGDOp(0.01, 0.9));
-  w1 = Weight(0, weight_init, solver);
+  w1 = Weight("0", weight_init, solver);
   weight_init.reset(new ConstWeightInitOp(1.0));
   solver.reset(new SGDOp(0.01, 0.9));
-  w2 = Weight(1, weight_init, solver);
+  w2 = Weight("1", weight_init, solver);
   weight_init.reset(new ConstWeightInitOp(1.0));
   solver.reset(new SGDOp(0.01, 0.9));
-  w3 = Weight(2, weight_init, solver);
+  w3 = Weight("2", weight_init, solver);
   weight_init.reset(new ConstWeightInitOp(1.0));
   solver.reset(new SGDOp(0.01, 0.9));
-  wb1 = Weight(3, weight_init, solver);
+  wb1 = Weight("3", weight_init, solver);
   weight_init.reset(new ConstWeightInitOp(1.0));
   solver.reset(new SGDOp(0.01, 0.9));
-  wb2 = Weight(4, weight_init, solver);
+  wb2 = Weight("4", weight_init, solver);
   weight_init.reset();
   solver.reset();
   // links
-  l1 = Link(0, 0, 1, 0);
-  l2 = Link(1, 1, 2, 1);
-  l3 = Link(2, 2, 1, 2);
-  lb1 = Link(3, 3, 1, 3);
-  lb2 = Link(4, 4, 2, 4);
+  l1 = Link("0", "0", "1", "0");
+  l2 = Link("1", "1", "2", "1");
+  l3 = Link("2", "2", "1", "2");
+  lb1 = Link("3", "3", "1", "3");
+  lb2 = Link("4", "4", "2", "4");
   model2.setId(2);
   model2.addNodes({i1, h1, o1, b1, b2});
   model2.addWeights({w1, w2, w3, wb1, wb2});
@@ -83,7 +83,7 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayer2)
   model2.initNodes(batch_size, memory_size);
 
   // create the input and biases
-  const std::vector<int> input_ids = {0};
+  const std::vector<std::string> input_ids = {"0"};
   Eigen::Tensor<float, 3> input(batch_size, memory_size, input_ids.size()); 
   input.setValues(
     {{{1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}},
@@ -94,20 +94,20 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayer2)
   );
   model2.mapValuesToNodes(input, input_ids, NodeStatus::activated, "output");  
 
-  const std::vector<int> biases_ids = {3, 4};
+  const std::vector<std::string> biases_ids = {"3", "4"};
   Eigen::Tensor<float, 3> biases(batch_size, memory_size, biases_ids.size()); 
   biases.setConstant(1);
   model2.mapValuesToNodes(biases, biases_ids, NodeStatus::activated, "output");  
 
   // get the next hidden layer
-  std::vector<int> links, source_nodes, sink_nodes;
+  std::vector<std::string> links, source_nodes, sink_nodes;
   model2.getNextInactiveLayer(links, source_nodes, sink_nodes);  
 
   // test links and source and sink nodes
-  std::vector<int> links_test, source_nodes_test, sink_nodes_test;
-  links_test = {0,};
-  source_nodes_test = {0};
-  sink_nodes_test = {1};
+  std::vector<std::string> links_test, source_nodes_test, sink_nodes_test;
+  links_test = {"0"};
+  source_nodes_test = {"0"};
+  sink_nodes_test = {"1"};
   BOOST_CHECK_EQUAL(links.size(), links_test.size());
   BOOST_CHECK_EQUAL(source_nodes.size(), source_nodes_test.size());
   BOOST_CHECK_EQUAL(sink_nodes.size(), sink_nodes_test.size());
@@ -136,7 +136,7 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayerBiases2)
   model2.initNodes(batch_size, memory_size);
 
   // create the input and biases
-  const std::vector<int> input_ids = {0};
+  const std::vector<std::string> input_ids = {"0"};
   Eigen::Tensor<float, 3> input(batch_size, memory_size, input_ids.size()); 
   input.setValues(
     {{{1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}},
@@ -147,24 +147,24 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayerBiases2)
   );
   model2.mapValuesToNodes(input, input_ids, NodeStatus::activated, "output");  
 
-  const std::vector<int> biases_ids = {3, 4};
+  const std::vector<std::string> biases_ids = {"3", "4"};
   Eigen::Tensor<float, 3> biases(batch_size, memory_size, biases_ids.size()); 
   biases.setConstant(1);
   model2.mapValuesToNodes(biases, biases_ids, NodeStatus::activated, "output"); 
 
   // get the next hidden layer
-  std::vector<int> links = {0};
-  std::vector<int> source_nodes = {0};
-  std::vector<int> sink_nodes = {1};
-  std::vector<int> sink_nodes_with_biases;
+  std::vector<std::string> links = {"0"};
+  std::vector<std::string> source_nodes = {"0"};
+  std::vector<std::string> sink_nodes = {"1"};
+  std::vector<std::string> sink_nodes_with_biases;
   model2.getNextInactiveLayerBiases(links, source_nodes, sink_nodes, sink_nodes_with_biases);  
 
   // test links and source and sink nodes
-  std::vector<int> links_test, source_nodes_test, sink_nodes_test, sink_nodes_with_biases_test;
-  links_test = {0, 3};
-  source_nodes_test = {0, 3};
-  sink_nodes_test = {1};
-  sink_nodes_with_biases_test = {3};
+  std::vector<std::string> links_test, source_nodes_test, sink_nodes_test, sink_nodes_with_biases_test;
+  links_test = {"0", "3"};
+  source_nodes_test = {"0", "3"};
+  sink_nodes_test = {"1"};
+  sink_nodes_with_biases_test = {"3"};
   BOOST_CHECK_EQUAL(links.size(), links_test.size());
   BOOST_CHECK_EQUAL(source_nodes.size(), source_nodes_test.size());
   BOOST_CHECK_EQUAL(sink_nodes.size(), sink_nodes_test.size());
@@ -194,7 +194,7 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayerCycles2)
   model2.initNodes(batch_size, memory_size);
 
   // create the input and biases
-  const std::vector<int> input_ids = {0};
+  const std::vector<std::string> input_ids = {"0"};
   Eigen::Tensor<float, 3> input(batch_size, memory_size, input_ids.size()); 
   input.setValues(
     {{{1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}},
@@ -205,24 +205,24 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayerCycles2)
   );
   model2.mapValuesToNodes(input, input_ids, NodeStatus::activated, "output");  
 
-  const std::vector<int> biases_ids = {3, 4};
+  const std::vector<std::string> biases_ids = {"3", "4"};
   Eigen::Tensor<float, 3> biases(batch_size, memory_size, biases_ids.size()); 
   biases.setConstant(1);
   model2.mapValuesToNodes(biases, biases_ids, NodeStatus::activated, "output"); 
 
   // get the next hidden layer
-  std::vector<int> links = {0, 3};
-  std::vector<int> source_nodes = {0, 3};
-  std::vector<int> sink_nodes = {1};
-  std::vector<int> sink_nodes_with_cycles;
+  std::vector<std::string> links = {"0", "3"};
+  std::vector<std::string> source_nodes = {"0", "3"};
+  std::vector<std::string> sink_nodes = {"1"};
+  std::vector<std::string> sink_nodes_with_cycles;
   model2.getNextInactiveLayerCycles(links, source_nodes, sink_nodes, sink_nodes_with_cycles);  
 
   // test links and source and sink nodes
-  std::vector<int> links_test, source_nodes_test, sink_nodes_test, sink_nodes_with_cycles_test;
-  links_test = {0, 3, 2};
-  source_nodes_test = {0, 3, 2};
-  sink_nodes_test = {1};
-  sink_nodes_with_cycles_test = {2};
+  std::vector<std::string> links_test, source_nodes_test, sink_nodes_test, sink_nodes_with_cycles_test;
+  links_test = {"0", "3", "2"};
+  source_nodes_test = {"0", "3", "2"};
+  sink_nodes_test = {"1"};
+  sink_nodes_with_cycles_test = {"2"};
   BOOST_CHECK_EQUAL(links.size(), links_test.size());
   BOOST_CHECK_EQUAL(source_nodes.size(), source_nodes_test.size());
   BOOST_CHECK_EQUAL(sink_nodes.size(), sink_nodes_test.size());
@@ -253,7 +253,7 @@ BOOST_AUTO_TEST_CASE(FPTT)
   model2.initWeights();
 
   // create the input and biases
-  const std::vector<int> input_ids = {0, 3, 4};
+  const std::vector<std::string> input_ids = {"0", "3", "4"};
   Eigen::Tensor<float, 3> input(batch_size, memory_size, input_ids.size()); 
   input.setValues(
     {{{1, 0, 0}, {2, 0, 0}, {3, 0, 0}, {4, 0, 0}, {5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}},
@@ -290,7 +290,7 @@ BOOST_AUTO_TEST_CASE(FPTT)
     {{0, 1, 1, 0, 0}, {0, 1, 1, 0, 0}, {0, 1, 1, 0, 0}, {0, 1, 1, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}},
     {{0, 1, 1, 0, 0}, {0, 1, 1, 0, 0}, {0, 1, 1, 0, 0}, {0, 1, 1, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}}}
   );  
-  const std::vector<int> output_nodes = {0, 1, 2, 3, 4};
+  const std::vector<std::string> output_nodes = {"0", "1", "2", "3", "4"};
   
   for (int j=0; j<batch_size; ++j)
   {
@@ -317,7 +317,7 @@ BOOST_AUTO_TEST_CASE(getNextUncorrectedLayer2)
   model2.initWeights();
 
   // create the input and biases
-  const std::vector<int> input_ids = {0};
+  const std::vector<std::string> input_ids = {"0"};
   Eigen::Tensor<float, 3> input(batch_size, memory_size, input_ids.size()); 
   input.setValues(
     {{{1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}},
@@ -328,7 +328,7 @@ BOOST_AUTO_TEST_CASE(getNextUncorrectedLayer2)
   );
   model2.mapValuesToNodes(input, input_ids, NodeStatus::activated, "output");  
 
-  const std::vector<int> biases_ids = {3, 4};
+  const std::vector<std::string> biases_ids = {"3", "4"};
   Eigen::Tensor<float, 3> biases(batch_size, memory_size, biases_ids.size()); 
   biases.setConstant(1);
   model2.mapValuesToNodes(biases, biases_ids, NodeStatus::activated, "output");
@@ -339,20 +339,20 @@ BOOST_AUTO_TEST_CASE(getNextUncorrectedLayer2)
   model2.forwardPropogate(0);
 
   // calculate the model error and node output error
-  std::vector<int> output_nodes = {2};
+  std::vector<std::string> output_nodes = {"2"};
   Eigen::Tensor<float, 2> expected(batch_size, output_nodes.size()); 
   expected.setValues({{2}, {3}, {4}, {5}, {6}});
   model2.calculateError(expected, output_nodes);
 
   // get the next hidden layer
-  std::vector<int> links, source_nodes, sink_nodes;
+  std::vector<std::string> links, source_nodes, sink_nodes;
   model2.getNextUncorrectedLayer(links, source_nodes, sink_nodes);
 
   // test links and source and sink nodes
-  std::vector<int> links_test, source_nodes_test, sink_nodes_test;
-  links_test = {1, 4};
-  source_nodes_test = {2};
-  sink_nodes_test = {1, 4};
+  std::vector<std::string> links_test, source_nodes_test, sink_nodes_test;
+  links_test = {"1", "4"};
+  source_nodes_test = {"2"};
+  sink_nodes_test = {"1", "4"};
   BOOST_CHECK_EQUAL(links.size(), links_test.size());
   BOOST_CHECK_EQUAL(source_nodes.size(), source_nodes_test.size());
   BOOST_CHECK_EQUAL(sink_nodes.size(), sink_nodes_test.size());
@@ -382,7 +382,7 @@ BOOST_AUTO_TEST_CASE(getNextUncorrectedLayerCycles2)
   model2.initWeights();
 
   // create the input and biases
-  const std::vector<int> input_ids = {0};
+  const std::vector<std::string> input_ids = {"0"};
   Eigen::Tensor<float, 3> input(batch_size, memory_size, input_ids.size()); 
   input.setValues(
     {{{1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}},
@@ -393,7 +393,7 @@ BOOST_AUTO_TEST_CASE(getNextUncorrectedLayerCycles2)
   );
   model2.mapValuesToNodes(input, input_ids, NodeStatus::activated, "output");  
 
-  const std::vector<int> biases_ids = {3, 4};
+  const std::vector<std::string> biases_ids = {"3", "4"};
   Eigen::Tensor<float, 3> biases(batch_size, memory_size, biases_ids.size()); 
   biases.setConstant(1);
   model2.mapValuesToNodes(biases, biases_ids, NodeStatus::activated, "output");
@@ -404,13 +404,13 @@ BOOST_AUTO_TEST_CASE(getNextUncorrectedLayerCycles2)
   model2.forwardPropogate(0);
 
   // calculate the model error and node output error
-  std::vector<int> output_nodes = {2};
+  std::vector<std::string> output_nodes = {"2"};
   Eigen::Tensor<float, 2> expected(batch_size, output_nodes.size()); 
   expected.setValues({{2}, {3}, {4}, {5}, {6}});
   model2.calculateError(expected, output_nodes);
 
   // get the next hidden layer
-  std::vector<int> links, source_nodes, sink_nodes;
+  std::vector<std::string> links, source_nodes, sink_nodes;
   model2.getNextUncorrectedLayer(links, source_nodes, sink_nodes);
 
   // calculate the net input
@@ -418,15 +418,15 @@ BOOST_AUTO_TEST_CASE(getNextUncorrectedLayerCycles2)
 
   // get the next hidden layer
   model2.getNextUncorrectedLayer(links, source_nodes, sink_nodes);
-  std::vector<int> source_nodes_with_cycles;
+  std::vector<std::string> source_nodes_with_cycles;
   model2.getNextUncorrectedLayerCycles(links, source_nodes, sink_nodes, source_nodes_with_cycles);
 
   // test links and source and sink nodes
-  std::vector<int> links_test, source_nodes_test, sink_nodes_test, source_nodes_with_cycles_test;
-  links_test = {0, 3, 2};
-  source_nodes_test = {1};
-  sink_nodes_test = {0, 3, 2};
-  source_nodes_with_cycles_test = {1};
+  std::vector<std::string> links_test, source_nodes_test, sink_nodes_test, source_nodes_with_cycles_test;
+  links_test = {"0", "3", "2"};
+  source_nodes_test = {"1"};
+  sink_nodes_test = {"0", "3", "2"};
+  source_nodes_with_cycles_test = {"1"};
   BOOST_CHECK_EQUAL(links.size(), links_test.size());
   BOOST_CHECK_EQUAL(source_nodes.size(), source_nodes_test.size());
   BOOST_CHECK_EQUAL(sink_nodes.size(), sink_nodes_test.size());
@@ -457,7 +457,7 @@ BOOST_AUTO_TEST_CASE(BPTT)
   model2.initWeights();
 
   // create the input and biases
-  const std::vector<int> input_ids = {0, 3, 4};
+  const std::vector<std::string> input_ids = {"0", "3", "4"};
   Eigen::Tensor<float, 3> input(batch_size, memory_size, input_ids.size()); 
   input.setValues(
     {{{1, 0, 0}, {2, 0, 0}, {3, 0, 0}, {4, 0, 0}, {5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}},
@@ -480,7 +480,7 @@ BOOST_AUTO_TEST_CASE(BPTT)
 
   // calculate the model error
   model2.setLossFunction(ModelLossFunction::MSE);
-  const std::vector<int> output_nodes = {2};
+  const std::vector<std::string> output_nodes = {"2"};
   // expected sequence
   // y = m1*(m2*x + b*yprev) where m1 = 2, m2 = 0.5 and b = -2
   Eigen::Tensor<float, 2> expected(batch_size, output_nodes.size()); 
@@ -501,7 +501,7 @@ BOOST_AUTO_TEST_CASE(BPTT)
     {{0, -3.6, -3.6, 0, 0}, {0, -3.6, -3.6, 0, 0}, {0, -3.6, -3.6, 0, 0}, {0, -3.6, -3.6, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}},
     {{0, -4.3, -4.3, 0, 0}, {0, -4.3, -4.3, 0, 0}, {0, -4.3, -4.3, 0, 0}, {0, -4.3, -4.3, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}}}
   ); 
-  const std::vector<int> error_nodes = {0, 1, 2, 3, 4};
+  const std::vector<std::string> error_nodes = {"0", "1", "2", "3", "4"};
   
   for (int j=0; j<batch_size; ++j)
   {
@@ -527,7 +527,7 @@ BOOST_AUTO_TEST_CASE(updateWeights2)
   model2.initWeights();
 
   // create the input and biases
-  const std::vector<int> input_ids = {0, 3, 4};
+  const std::vector<std::string> input_ids = {"0", "3", "4"};
   Eigen::Tensor<float, 3> input(batch_size, memory_size, input_ids.size()); 
   input.setValues(
     {{{1, 0, 0}, {2, 0, 0}, {3, 0, 0}, {4, 0, 0}, {5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}},
@@ -550,7 +550,7 @@ BOOST_AUTO_TEST_CASE(updateWeights2)
 
   // calculate the model error
   model2.setLossFunction(ModelLossFunction::MSE);
-  const std::vector<int> output_nodes = {2};
+  const std::vector<std::string> output_nodes = {"2"};
   // expected sequence
   // y = m1*(m2*x + b*yprev) where m1 = 2, m2 = 0.5 and b = -2
   Eigen::Tensor<float, 2> expected(batch_size, output_nodes.size()); 
@@ -564,7 +564,7 @@ BOOST_AUTO_TEST_CASE(updateWeights2)
   model2.updateWeights(4);
 
   // test values of output nodes
-  std::vector<int> weight_nodes = {0, 1, 2, 3, 4};
+  std::vector<std::string> weight_nodes = {"0", "1", "2", "3", "4"};
   Eigen::Tensor<float, 1> weights(weight_nodes.size());
   weights.setValues({0.248, -1.312, -1.312, 1.0, 1.0}); 
   
@@ -581,38 +581,38 @@ Model makeModel2a()
   Weight w1, w2, w3, wb1, wb2;
   Model model2;
   // Toy network: 1 hidden layer, fully connected, DCG
-  i1 = Node(0, NodeType::input, NodeStatus::activated);
-  h1 = Node(1, NodeType::ELU, NodeStatus::deactivated);
-  o1 = Node(2, NodeType::ELU, NodeStatus::deactivated);
-  b1 = Node(3, NodeType::bias, NodeStatus::activated);
-  b2 = Node(4, NodeType::bias, NodeStatus::activated);
+  i1 = Node("0", NodeType::input, NodeStatus::activated);
+  h1 = Node("1", NodeType::ELU, NodeStatus::deactivated);
+  o1 = Node("2", NodeType::ELU, NodeStatus::deactivated);
+  b1 = Node("3", NodeType::bias, NodeStatus::activated);
+  b2 = Node("4", NodeType::bias, NodeStatus::activated);
   // weights  
   std::shared_ptr<WeightInitOp> weight_init;
   std::shared_ptr<SolverOp> solver;
   // weight_init.reset(new RandWeightInitOp(1.0)); // No random init for testing
   weight_init.reset(new RandWeightInitOp(1.0));
   solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
-  w1 = Weight(0, weight_init, solver);
+  w1 = Weight("0", weight_init, solver);
   weight_init.reset(new RandWeightInitOp(1.0));
   solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
-  w2 = Weight(1, weight_init, solver);
+  w2 = Weight("1", weight_init, solver);
   weight_init.reset(new RandWeightInitOp(1.0));
   solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
-  w3 = Weight(2, weight_init, solver);
+  w3 = Weight("2", weight_init, solver);
   weight_init.reset(new ConstWeightInitOp(1.0));
   solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
-  wb1 = Weight(3, weight_init, solver);
+  wb1 = Weight("3", weight_init, solver);
   weight_init.reset(new ConstWeightInitOp(1.0));
   solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
-  wb2 = Weight(4, weight_init, solver);
+  wb2 = Weight("4", weight_init, solver);
   weight_init.reset();
   solver.reset();
   // links
-  l1 = Link(0, 0, 1, 0);
-  l2 = Link(1, 1, 2, 1);
-  l3 = Link(2, 2, 1, 2);
-  lb1 = Link(3, 3, 1, 3);
-  lb2 = Link(4, 4, 2, 4);
+  l1 = Link("0", "0", "1", "0");
+  l2 = Link("1", "1", "2", "1");
+  l3 = Link("2", "2", "1", "2");
+  lb1 = Link("3", "3", "1", "3");
+  lb2 = Link("4", "4", "2", "4");
   model2.setId(2);
   model2.addNodes({i1, h1, o1, b1, b2});
   model2.addWeights({w1, w2, w3, wb1, wb2});
@@ -633,7 +633,7 @@ BOOST_AUTO_TEST_CASE(modelTrainer2)
   model2a.initWeights();
 
   // create the input and biases
-  const std::vector<int> input_ids = {0, 3, 4};
+  const std::vector<std::string> input_ids = {"0", "3", "4"};
   Eigen::Tensor<float, 3> input(batch_size, memory_size, input_ids.size()); 
   input.setValues(
     {{{1, 0, 0}, {2, 0, 0}, {3, 0, 0}, {4, 0, 0}, {5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}},
@@ -652,7 +652,7 @@ BOOST_AUTO_TEST_CASE(modelTrainer2)
   );
 
   // expected output
-  const std::vector<int> output_nodes = {2};
+  const std::vector<std::string> output_nodes = {"2"};
   // y = m1*(m2*x + b*yprev) where m1 = 0.5, m2 = 2.0 and b = -1
   Eigen::Tensor<float, 2> expected(batch_size, output_nodes.size()); 
   expected.setValues({{2.5}, {3}, {3.5}, {4}, {4.5}});
@@ -683,11 +683,11 @@ BOOST_AUTO_TEST_CASE(modelTrainer2)
   const Eigen::Tensor<float, 0> total_error = model2a.getError().sum();
   BOOST_CHECK_CLOSE(total_error(0), 0.0262552425, 1e-3);  
 
-  // std::cout << "Link #0: "<< model2a.getWeight(0).getWeight() << std::endl;
-  // std::cout << "Link #1: "<< model2a.getWeight(1).getWeight() << std::endl;
-  // std::cout << "Link #2: "<< model2a.getWeight(2).getWeight() << std::endl;
-  // std::cout << "Link #3: "<< model2a.getWeight(3).getWeight() << std::endl;
-  // std::cout << "Link #4: "<< model2a.getWeight(4).getWeight() << std::endl;
+  // std::cout << "Link #0: "<< model2a.getWeight("0").getWeight() << std::endl;
+  // std::cout << "Link #1: "<< model2a.getWeight("1").getWeight() << std::endl;
+  // std::cout << "Link #2: "<< model2a.getWeight("2").getWeight() << std::endl;
+  // std::cout << "Link #3: "<< model2a.getWeight("3").getWeight() << std::endl;
+  // std::cout << "Link #4: "<< model2a.getWeight("4").getWeight() << std::endl;
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -16,10 +16,11 @@ namespace SmartPeak
 public:
     Link(); ///< Default constructor
     Link(const int& id); ///< Explicit constructor
-    Link(const int& id,
-      const int& source_node_id,
-      const int& sink_node_id,
-      const int& weight_id); ///< Explicit constructor
+    Link(const std::string& name); ///< Explicit constructor
+    Link(const std::string& name,
+      const std::string& source_node_name,
+      const std::string& sink_node_name,
+      const std::string& weight_name); ///< Explicit constructor
     ~Link(); ///< Default destructor
 
     inline bool operator==(const Link& other) const
@@ -27,14 +28,16 @@ public:
       return
         std::tie(
           id_,
-          source_node_id_,
-          sink_node_id_,
-          weight_id_
+          source_node_name_,
+          sink_node_name_,
+          weight_name_,
+          name_
         ) == std::tie(
           other.id_,
-          other.source_node_id_,
-          other.sink_node_id_,
-          other.weight_id_
+          other.source_node_name_,
+          other.sink_node_name_,
+          other.weight_name_,
+          other.name_
         )
       ;
     }
@@ -47,20 +50,27 @@ public:
     void setId(const int& id); ///< id setter
     int getId() const; ///< id getter
 
-    void setSourceNodeId(const int& source_node_id); ///< source_node_id setter
-    int getSourceNodeId() const; ///< source_node_id getter
+    void setWeight(const float& weight); ///< weight setter
+    float getWeight() const; ///< weight getter
 
-    void setSinkNodeId(const int& sink_node_id); ///< sink_node_id setter
-    int getSinkNodeId() const; ///< sink_node_id getter
+    void setName(const std::string& name); ///< naem setter
+    std::string getName() const; ///< name getter
 
-    void setWeightId(const int& weight_id); ///< weight_id setter
-    int getWeightId() const; ///< weight_id getter
+    void setSourceNodeName(const std::string& source_node_name); ///< source_node_name setter
+    std::string getSourceNodeName() const; ///< source_node_name getter
+
+    void setSinkNodeName(const std::string& sink_node_name); ///< sink_node_name setter
+    std::string getSinkNodeName() const; ///< sink_node_name getter
+
+    void setWeightName(const std::string& weight_name); ///< weight_name setter
+    std::string getWeightName() const; ///< weight_name getter
 
 private:
-    int id_; ///< Link ID
-    int source_node_id_; ///< Link source node
-    int sink_node_id_; ///< Link sink node
-    int weight_id_; ///< Link weight
+    int id_ = NULL; ///< Weight ID
+    std::string name_ = ""; ///< Weight Name
+    std::string source_node_name_; ///< Link source node
+    std::string sink_node_name_; ///< Link sink node
+    std::string weight_name_; ///< Link weight
   };
 }
 

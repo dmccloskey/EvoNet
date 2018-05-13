@@ -7,6 +7,7 @@
 #include <vector>
 #include <cmath>
 #include <iostream>
+#include <string>
 
 namespace SmartPeak
 {
@@ -17,10 +18,30 @@ namespace SmartPeak
   Weight::Weight(const int& id):
     id_(id)
   {
+    if (name_ == "")
+    {
+      name_ = std::to_string(id);
+    }
+  }
+
+  Weight::Weight(const std::string& name):
+    name_(name)
+  {
   }
 
   Weight::Weight(const int& id, std::shared_ptr<WeightInitOp>& weight_init, std::shared_ptr<SolverOp>& solver):
     id_(id)
+  {
+    if (name_ == "")
+    {
+      name_ = std::to_string(id);
+    }
+    setWeightInitOp(weight_init);
+    setSolverOp(solver);
+  }
+
+  Weight::Weight(const std::string& name, std::shared_ptr<WeightInitOp>& weight_init, std::shared_ptr<SolverOp>& solver):
+    name_(name)
   {
     setWeightInitOp(weight_init);
     setSolverOp(solver);
@@ -33,10 +54,23 @@ namespace SmartPeak
   void Weight::setId(const int& id)
   {
     id_ = id;
+    if (name_ == "")
+    {
+      name_ = std::to_string(id);
+    }
   }
   int Weight::getId() const
   {
     return id_;
+  }
+  
+  void Weight::setName(const std::string& name)
+  {
+    name_ = name;    
+  }
+  std::string Weight::getName() const
+  {
+    return name_;
   }
 
   void Weight::setWeight(const float& weight)

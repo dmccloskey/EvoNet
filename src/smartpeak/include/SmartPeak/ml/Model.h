@@ -80,13 +80,13 @@ public:
       dimensions of batch size by memory size by nodes
 
       @param[in] values Values to assign to the node
-      @param[in] node_ids 
+      @param[in] node_names 
       @param[in] status_update
       @param[in] value_type ("output", "derivative", "error", or "dt")
     */ 
     void mapValuesToNodes(
       const Eigen::Tensor<float, 3>& values,
-      const std::vector<int>& node_ids,
+      const std::vector<std::string>& node_names,
       const NodeStatus& status_update,
       const std::string& value_type);
 
@@ -102,13 +102,13 @@ public:
 
       @param[in] values Values to assign to the node
       @param[in] memory_step The memory step to add values to 
-      @param[in] node_ids 
+      @param[in] node_names 
       @param[in] status_update
     */ 
     void mapValuesToNodes(
       const Eigen::Tensor<float, 2>& values,
       const int& memory_step,
-      const std::vector<int>& node_ids,
+      const std::vector<std::string>& node_names,
       const NodeStatus& status_update,
       const std::string& value_type);
 
@@ -142,9 +142,9 @@ public:
       @param[out] sink_nodes
     */ 
     void getNextInactiveLayer(
-      std::vector<int>& links,
-      std::vector<int>& source_nodes,
-      std::vector<int>& sink_nodes);
+      std::vector<std::string>& links,
+      std::vector<std::string>& source_nodes,
+      std::vector<std::string>& sink_nodes);
  
     /**
       @brief Continuation of the forward propogation step that identifies all biases
@@ -159,10 +159,10 @@ public:
       @param[out] sink_nodes_with_biases
     */ 
     void getNextInactiveLayerBiases(
-      std::vector<int>& links,
-      std::vector<int>& source_nodes,
-      const std::vector<int>& sink_nodes,
-      std::vector<int>& sink_nodes_with_biases);
+      std::vector<std::string>& links,
+      std::vector<std::string>& source_nodes,
+      const std::vector<std::string>& sink_nodes,
+      std::vector<std::string>& sink_nodes_with_biases);
  
     /**
       @brief Continuation of the forward propogation step that identifies 
@@ -177,10 +177,10 @@ public:
       @param[out] sink_nodes_with_cycles
     */ 
     void getNextInactiveLayerCycles(
-      std::vector<int>& links,
-      std::vector<int>& source_nodes,
-      const std::vector<int>& sink_nodes,
-      std::vector<int>& sink_nodes_with_cycles);
+      std::vector<std::string>& links,
+      std::vector<std::string>& source_nodes,
+      const std::vector<std::string>& sink_nodes,
+      std::vector<std::string>& sink_nodes_with_cycles);
  
     /**
       @brief A prelude to a forward propogation step. Computes the net
@@ -200,9 +200,9 @@ public:
       the underlying node values are automatically updated
     */ 
     void forwardPropogateLayerNetInput(
-      const std::vector<int>& links,
-      const std::vector<int>& source_nodes,
-      const std::vector<int>& sink_nodes,
+      const std::vector<std::string>& links,
+      const std::vector<std::string>& source_nodes,
+      const std::vector<std::string>& sink_nodes,
       const int& time_step);
  
     /**
@@ -217,7 +217,7 @@ public:
       @param[in] time_step Time step to activate.
     */ 
     void forwardPropogateLayerActivation(
-      const std::vector<int>& sink_nodes,
+      const std::vector<std::string>& sink_nodes,
       const int& time_step);
  
     /**
@@ -246,12 +246,12 @@ public:
         continuously calculate node outputs and node derivatives.
       @param[in] values Input values at each time step where
         dim0: batch_size, dim1: time_step, and dim2: nodes.
-      @param[in] node_ids
+      @param[in] node_names
       @param[in] dt Node time resolution 
     */ 
     void FPTT(const int& time_steps, 
       const Eigen::Tensor<float, 3>& values,
-      const std::vector<int> node_ids,
+      const std::vector<std::string> node_names,
       const Eigen::Tensor<float, 2>& dt);
  
     /**
@@ -259,18 +259,18 @@ public:
         the expected values
 
       @param[in] values Expected node output values
-      @param[in] node_ids Output nodes
+      @param[in] node_names Output nodes
     */ 
-    void calculateError(const Eigen::Tensor<float, 2>& values, const std::vector<int>& node_ids);
+    void calculateError(const Eigen::Tensor<float, 2>& values, const std::vector<std::string>& node_names);
  
     /**
       @brief Calculates the error of the model through time (CETT)
         with respect to the expected values
 
       @param[in] values Expected node output values
-      @param[in] node_ids Output nodes
+      @param[in] node_names Output nodes
     */ 
-    void CETT(const Eigen::Tensor<float, 3>& values, const std::vector<int>& node_ids);
+    void CETT(const Eigen::Tensor<float, 3>& values, const std::vector<std::string>& node_names);
  
     /**
       @brief A prelude to a back propogation step.  Returns a vector of links
@@ -284,9 +284,9 @@ public:
       @param[out] sink_nodes
     */ 
     void getNextUncorrectedLayer(
-      std::vector<int>& links,
-      std::vector<int>& source_nodes,
-      std::vector<int>& sink_nodes);      
+      std::vector<std::string>& links,
+      std::vector<std::string>& source_nodes,
+      std::vector<std::string>& sink_nodes);      
  
     /**
       @brief A continuation of a back propogation step.  Returns a vector of links
@@ -301,10 +301,10 @@ public:
       @param[out] source_nodes_with_cycles
     */ 
     void getNextUncorrectedLayerCycles(
-      std::vector<int>& links,
-      const std::vector<int>& source_nodes,
-      std::vector<int>& sink_nodes,
-      std::vector<int>& source_nodes_with_cycles);
+      std::vector<std::string>& links,
+      const std::vector<std::string>& source_nodes,
+      std::vector<std::string>& sink_nodes,
+      std::vector<std::string>& source_nodes_with_cycles);
  
     /**
       @brief A back propogation step. Computes the net
@@ -324,9 +324,9 @@ public:
       the underlying node values are automatically updated
     */ 
     void backPropogateLayerError(
-      const std::vector<int>& links,
-      const std::vector<int>& source_nodes,
-      const std::vector<int>& sink_nodes,
+      const std::vector<std::string>& links,
+      const std::vector<std::string>& source_nodes,
+      const std::vector<std::string>& sink_nodes,
       const int& time_step);
  
     /**
@@ -339,7 +339,7 @@ public:
 
       @returns Vector of cyclic sink node IDs
     */ 
-    std::vector<int> backPropogate(const int& time_step);  
+    std::vector<std::string> backPropogate(const int& time_step);  
  
     /**
       @brief Truncated Back Propogation Through Time (TBPTT) of the network model.
@@ -390,14 +390,14 @@ public:
       @param[in] links Links to add to the model
     */ 
     void addLinks(const std::vector<Link>& links);
-    Link getLink(const int& link_id) const; ///< link getter
+    Link getLink(const std::string& link_name) const; ///< link getter
  
     /**
       @brief Remove existing links from the model.
 
-      @param[in] Link_ids Links to remove from the model
+      @param[in] Link_names Links to remove from the model
     */ 
-    void removeLinks(const std::vector<int>& link_ids);
+    void removeLinks(const std::vector<std::string>& link_names);
  
     /**
       @brief Add new nodes to the model.
@@ -405,16 +405,16 @@ public:
       @param[in] nodes Nodes to add to the model
     */ 
     void addNodes(const std::vector<Node>& nodes);
-    Node getNode(const int& node_id) const; ///< node getter
-    std::vector<int> getNodeIDs(const NodeStatus& node_status) const; ///< node getter (TODO)
-    std::vector<int> getNodeIDs(const NodeType& node_type) const; ///< node getter (TODO)
+    Node getNode(const std::string& node_name) const; ///< node getter
+    std::vector<std::string> getNodeIDs(const NodeStatus& node_status) const; ///< node getter (TODO)
+    std::vector<std::string> getNodeIDs(const NodeType& node_type) const; ///< node getter (TODO)
  
     /**
       @brief Remove existing nodes from the model.
 
-      @param[in] node_ids Nodes to remove from the model
+      @param[in] node_names Nodes to remove from the model
     */ 
-    void removeNodes(const std::vector<int>& node_ids);
+    void removeNodes(const std::vector<std::string>& node_names);
  
     /**
       @brief Add new weights to the model.
@@ -422,14 +422,14 @@ public:
       @param[in] weights Weights to add to the model
     */ 
     void addWeights(const std::vector<Weight>& weights);
-    Weight getWeight(const int& weight_id) const; ///< weight getter
+    Weight getWeight(const std::string& weight_name) const; ///< weight getter
  
     /**
       @brief Remove existing weights from the model.
 
-      @param[in] weight_ids Weights to remove from the model
+      @param[in] weight_names Weights to remove from the model
     */ 
-    void removeWeights(const std::vector<int>& weight_ids);
+    void removeWeights(const std::vector<std::string>& weight_names);
  
     /**
       @brief Removes nodes from the model that no longer
@@ -451,9 +451,9 @@ public:
 
 private:
     int id_; ///< Model ID
-    std::map<int, Link> links_; ///< Model links
-    std::map<int, Node> nodes_; ///< Model nodes
-    std::map<int, Weight> weights_; ///< Model nodes
+    std::map<std::string, Link> links_; ///< Model links
+    std::map<std::string, Node> nodes_; ///< Model nodes
+    std::map<std::string, Weight> weights_; ///< Model nodes
     Eigen::Tensor<float, 1> error_; ///< Model error
     // Eigen::Tensor<float, 2> error_; ///< Model error
 

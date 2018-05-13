@@ -15,15 +15,24 @@ namespace SmartPeak
   Link::Link(const int& id):
     id_(id)
   {
+    if (name_ == "")
+    {
+      name_ = std::to_string(id);
+    }
   }
 
-  Link::Link(const int& id, const int& source_node_id,
-      const int& sink_node_id,
-      const int& weight_id):
-    id_(id), weight_id_(weight_id)
+  Link::Link(const std::string& name):
+    name_(name)
   {
-    setSourceNodeId(source_node_id);
-    setSinkNodeId(sink_node_id);
+  }
+
+  Link::Link(const std::string& name, const std::string& source_node_name,
+      const std::string& sink_node_name,
+      const std::string& weight_name):
+    name_(name), weight_name_(weight_name)
+  {
+    setSourceNodeName(source_node_name);
+    setSinkNodeName(sink_node_name);
   }
 
   Link::~Link()
@@ -38,45 +47,54 @@ namespace SmartPeak
   {
     return id_;
   }
-
-  void Link::setSourceNodeId(const int& source_node_id)
+  
+  void Link::setName(const std::string& name)
   {
-    if (sink_node_id_ == source_node_id)
+    name_ = name;    
+  }
+  std::string Link::getName() const
+  {
+    return name_;
+  }
+
+  void Link::setSourceNodeName(const std::string& source_node_name)
+  {
+    if (sink_node_name_ == source_node_name)
     {
       std::cout << "Source and Sink nodes are the same!" << std::endl;
     }
     else
     {
-      source_node_id_ = source_node_id;
+      source_node_name_ = source_node_name;
     }    
   }
-  int Link::getSourceNodeId() const
+  std::string Link::getSourceNodeName() const
   {
-    return source_node_id_;
+    return source_node_name_;
   }
 
-  void Link::setSinkNodeId(const int& sink_node_id)
+  void Link::setSinkNodeName(const std::string& sink_node_name)
   {
-    if (source_node_id_ == sink_node_id)
+    if (source_node_name_ == sink_node_name)
     {
       std::cout << "Source and Sink nodes are the same!" << std::endl;
     }
     else
     {
-      sink_node_id_ = sink_node_id;
+      sink_node_name_ = sink_node_name;
     }    
   }
-  int Link::getSinkNodeId() const
+  std::string Link::getSinkNodeName() const
   {
-    return sink_node_id_;
+    return sink_node_name_;
   }
 
-  void Link::setWeightId(const int& weight_id)
+  void Link::setWeightName(const std::string& weight_name)
   {
-    weight_id_ = weight_id;
+    weight_name_ = weight_name;
   }
-  int Link::getWeightId() const
+  std::string Link::getWeightName() const
   {
-    return weight_id_;
+    return weight_name_;
   }
 }

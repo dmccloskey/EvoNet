@@ -34,6 +34,7 @@ BOOST_AUTO_TEST_CASE(constructor2)
   Node node(1, NodeType::ReLU, NodeStatus::initialized);
 
   BOOST_CHECK_EQUAL(node.getId(), 1);
+  BOOST_CHECK_EQUAL(node.getName(), "1");
   BOOST_CHECK(node.getType() == NodeType::ReLU);
   BOOST_CHECK(node.getStatus() == NodeStatus::initialized);
 }
@@ -59,10 +60,12 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
 {
   Node node;
   node.setId(1);
+  node.setName("Node1");
   node.setType(NodeType::ReLU);
   node.setStatus(NodeStatus::initialized);
 
   BOOST_CHECK_EQUAL(node.getId(), 1);
+  BOOST_CHECK_EQUAL(node.getName(), "Node11");
   BOOST_CHECK(node.getType() == NodeType::ReLU);
   BOOST_CHECK(node.getStatus() == NodeStatus::initialized);
 

@@ -13,10 +13,20 @@ namespace SmartPeak
   {        
   }
 
+  Node::Node(const std::string& name, const SmartPeak::NodeType& type,
+    const SmartPeak::NodeStatus& status):
+    name_(name), type_(type), status_(status)
+  {
+  }
+
   Node::Node(const int& id, const SmartPeak::NodeType& type,
     const SmartPeak::NodeStatus& status):
     id_(id), type_(type), status_(status)
   {
+    if (name_ == "")
+    {
+      name_ = std::to_string(id);
+    }
   }
 
   Node::~Node()
@@ -26,10 +36,23 @@ namespace SmartPeak
   void Node::setId(const int& id)
   {
     id_ = id;
+    if (name_ == "")
+    {
+      name_ = std::to_string(id);
+    }
   }
   int Node::getId() const
   {
     return id_;
+  }
+  
+  void Node::setName(const std::string& name)
+  {
+    name_ = name;    
+  }
+  std::string Node::getName() const
+  {
+    return name_;
   }
 
   void Node::setType(const SmartPeak::NodeType& type)
