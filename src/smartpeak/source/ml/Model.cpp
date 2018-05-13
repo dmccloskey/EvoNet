@@ -698,7 +698,7 @@ namespace SmartPeak
   void Model::forwardPropogate(const int& time_step)
   {
     const int max_iters = 1e6;
-    for (int iter; iter<max_iters; ++iter)
+    for (int iter=0; iter<max_iters; ++iter)
     {      
       // std::cout<<"Model::forwardPropogate() iter: "<<iter<<std::endl;
 
@@ -1165,7 +1165,7 @@ namespace SmartPeak
   {
     std::vector<std::string> node_names_with_cycles;
     const int max_iters = 1e6;
-    for (int iter; iter<max_iters; ++iter)
+    for (int iter=0; iter<max_iters; ++iter)
     {
       // std::cout<<"Model::backPropogate() iter :"<<iter<<::std::endl;
 

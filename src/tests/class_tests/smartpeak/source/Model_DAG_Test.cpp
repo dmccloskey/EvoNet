@@ -655,19 +655,19 @@ BOOST_AUTO_TEST_CASE(getNextUncorrectedLayer1)
 
   // test links and source and sink nodes
   BOOST_CHECK_EQUAL(links.size(), 6);
-  BOOST_CHECK_EQUAL(links[0], "6");
-  BOOST_CHECK_EQUAL(links[1], "7");
-  BOOST_CHECK_EQUAL(links[2], "8");
-  BOOST_CHECK_EQUAL(links[3], "9");
-  BOOST_CHECK_EQUAL(links[4], "10");
-  BOOST_CHECK_EQUAL(links[5], "11");
+  BOOST_CHECK_EQUAL(links[0], "10");
+  BOOST_CHECK_EQUAL(links[1], "11");
+  BOOST_CHECK_EQUAL(links[2], "6");
+  BOOST_CHECK_EQUAL(links[3], "7");
+  BOOST_CHECK_EQUAL(links[4], "8");
+  BOOST_CHECK_EQUAL(links[5], "9");
   BOOST_CHECK_EQUAL(source_nodes.size(), 2);
   BOOST_CHECK_EQUAL(source_nodes[0], "4");
   BOOST_CHECK_EQUAL(source_nodes[1], "5");
   BOOST_CHECK_EQUAL(sink_nodes.size(), 3);
-  BOOST_CHECK_EQUAL(sink_nodes[0], "2");
-  BOOST_CHECK_EQUAL(sink_nodes[1], "3");
-  BOOST_CHECK_EQUAL(sink_nodes[2], "7");
+  BOOST_CHECK_EQUAL(sink_nodes[0], "7");
+  BOOST_CHECK_EQUAL(sink_nodes[1], "2");
+  BOOST_CHECK_EQUAL(sink_nodes[2], "3");
 }
 
 BOOST_AUTO_TEST_CASE(backPropogateLayerError) 
@@ -709,7 +709,7 @@ BOOST_AUTO_TEST_CASE(backPropogateLayerError)
   model1.backPropogateLayerError(links, source_nodes, sink_nodes, 0);
 
   Eigen::Tensor<float, 2> error(batch_size, sink_nodes.size()); 
-  error.setValues({{-7.25, -7.25, 0.0}, {-9.25, -9.25, 0.0}, {-11.25, -11.25, 0.0}, {-13.25, -13.25, 0.0}});
+  error.setValues({{0.0, -7.25, -7.25}, {0.0, -9.25, -9.25}, {0.0, -11.25, -11.25}, {0.0, -13.25, -13.25}});
   for (int i=0; i<sink_nodes.size(); ++i)
   {
     BOOST_CHECK_EQUAL(model1.getNode(sink_nodes[i]).getError().size(), batch_size*memory_size);

@@ -65,7 +65,7 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   node.setStatus(NodeStatus::initialized);
 
   BOOST_CHECK_EQUAL(node.getId(), 1);
-  BOOST_CHECK_EQUAL(node.getName(), "Node11");
+  BOOST_CHECK_EQUAL(node.getName(), "Node1");
   BOOST_CHECK(node.getType() == NodeType::ReLU);
   BOOST_CHECK(node.getStatus() == NodeStatus::initialized);
 
