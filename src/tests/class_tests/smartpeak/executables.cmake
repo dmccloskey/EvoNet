@@ -11,9 +11,9 @@ set(ml_executables_list
   Model_DCG_test
   Node_test
   Solver_test
+  Trainer_test
   Weight_test
   WeightInit_test
-  Interpreter_test
 )
 
 set(simulator_executables_list

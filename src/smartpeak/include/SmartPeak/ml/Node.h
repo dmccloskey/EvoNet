@@ -22,7 +22,9 @@ namespace SmartPeak
     ReLU = 0,
     ELU = 1,
     input = 2, // No activation function
-    bias = 3 // Zero value
+    bias = 3, // Zero value
+    Sigmoid = 4,
+    TanH = 5
   };
 
   /**

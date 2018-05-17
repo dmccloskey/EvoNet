@@ -184,6 +184,24 @@ namespace SmartPeak
         }
         break;
       }
+      case NodeType::Sigmoid:
+      {
+        output_step = output_step.unaryExpr(SigmoidOp<float>());
+        for (int i=0; i<output_step.size(); ++i)
+        {
+          output_(i, time_step) = output_step(i) * dt_(i, time_step);
+        }
+        break;
+      }
+      case NodeType::TanH:
+      {
+        output_step = output_step.unaryExpr(TanHOp<float>());
+        for (int i=0; i<output_step.size(); ++i)
+        {
+          output_(i, time_step) = output_step(i) * dt_(i, time_step);
+        }
+        break;
+      }
       default:
       {
         std::cout << "Node type not supported." << std::endl;
