@@ -376,4 +376,38 @@ BOOST_AUTO_TEST_CASE(saveCurrentDt)
       BOOST_CHECK_CLOSE(node.getDt()(i,j), Dt_test(i,j), 1e-6);
 }
 
+BOOST_AUTO_TEST_CASE(checkOutput)
+{
+  Node node;
+  node.setId(1);
+  node.initNode(5,2);
+
+  node.setOutputMin(0.0);
+  node.setOutputMax(5.0);
+
+  Eigen::Tensor<float, 2> output(5, 2);
+  output.setValues({{0.0, 5.0}, {1.0, 6.0}, {2.0, 7.0}, {3.0, 8.0}, {4.0, 9.0}});
+  node.setOutput(output);
+
+  for (int i=0; i<output.dimension(0); ++i)
+  {
+    for (int j=0; j<output.dimension(1); ++j)
+    {
+      BOOST_CHECK(node.getOutput()(i,j) >= 0.0);
+      BOOST_CHECK(node.getOutput()(i,j) <= 5.0);
+    }
+  }
+
+  node.setType(NodeType::ReLU);
+  node.calculateActivation(0);
+  for (int i=0; i<output.dimension(0); ++i)
+  {
+    for (int j=0; j<output.dimension(1); ++j)
+    {
+      BOOST_CHECK(node.getOutput()(i,j) >= 0.0);
+      BOOST_CHECK(node.getOutput()(i,j) <= 5.0);
+    }
+  }
+}
+
 BOOST_AUTO_TEST_SUITE_END()

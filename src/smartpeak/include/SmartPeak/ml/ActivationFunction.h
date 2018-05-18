@@ -11,6 +11,19 @@
 namespace SmartPeak
 {
   /**
+    @brief Base class for all activation functions.
+  */
+ template<typename T>
+  class ActivationOp
+  {
+public: 
+    ActivationOp(){};  
+    ~ActivationOp(){};
+    // virtual T operator()() const = 0;
+    virtual T operator()(const T& x_I) const = 0;
+  };
+
+  /**
     @brief Rectified Linear Unit (ReLU) activation function
 
     References:
@@ -19,7 +32,7 @@ namespace SmartPeak
       Nature. 405. pp. 947–951.
   */
   template<typename T>
-  class ReLUOp
+  class ReLUOp: public ActivationOp<T>
   {
 public: 
     ReLUOp(){}; 
@@ -36,7 +49,7 @@ public:
       Nature. 405. pp. 947–951.
   */
   template<typename T>
-  class ReLUGradOp
+  class ReLUGradOp: public ActivationOp<T>
   {
 public: 
     ReLUGradOp(){}; 
@@ -53,7 +66,7 @@ public:
       arXiv:1511.07289
   */
   template<typename T>
-  class ELUOp
+  class ELUOp: public ActivationOp<T>
   {
 public: 
     ELUOp(){}; 
@@ -75,7 +88,7 @@ private:
       arXiv:1511.07289
   */
   template<typename T>
-  class ELUGradOp
+  class ELUGradOp: public ActivationOp<T>
   {
 public: 
     ELUGradOp(){}; 
@@ -96,7 +109,7 @@ private:
     @brief Sigmoid activation function
   */
   template<typename T>
-  class SigmoidOp
+  class SigmoidOp: public ActivationOp<T>
   {
 public: 
     SigmoidOp(){}; 
@@ -108,7 +121,7 @@ public:
     @brief Sigmoid gradient
   */
   template<typename T>
-  class SigmoidGradOp
+  class SigmoidGradOp: public ActivationOp<T>
   {
 public: 
     SigmoidGradOp(){}; 
@@ -124,7 +137,7 @@ public:
     @brief Hyperbolic Tangent activation function
   */
   template<typename T>
-  class TanHOp
+  class TanHOp: public ActivationOp<T>
   {
 public: 
     TanHOp(){}; 
@@ -136,7 +149,7 @@ public:
     @brief Hyperbolic Tangent gradient
   */
   template<typename T>
-  class TanHGradOp
+  class TanHGradOp: public ActivationOp<T>
   {
 public: 
     TanHGradOp(){}; 

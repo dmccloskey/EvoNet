@@ -76,6 +76,7 @@ namespace SmartPeak
   void Node::setOutput(const Eigen::Tensor<float, 2>& output)
   {
     output_ = output;
+    checkOutput();
   }
   Eigen::Tensor<float, 2> Node::getOutput() const
   {
@@ -139,6 +140,15 @@ namespace SmartPeak
   float* Node::getDtPointer()
   {
     return dt_.data();
+  }
+
+  void Node::setOutputMin(const float& output_min)
+  {
+    output_min_ = output_min;
+  }
+  void Node::setOutputMax(const float& output_max)
+  {
+    output_max_ = output_max;
   }
 
   void Node::initNode(const int& batch_size, const int& memory_size)
@@ -355,6 +365,22 @@ namespace SmartPeak
         {
           dt_(i, j) = dt_(i, j-1);
         }
+      }
+    }
+  }
+
+  void Node::checkOutput()
+  {
+    const int batch_size = derivative_.dimension(0);
+    const int memory_size = derivative_.dimension(1);
+    for (int i=0; i<batch_size; ++i)
+    {
+      for (int j=0; j<memory_size ; ++j)
+      {
+        if (output_(i,j) < output_min_)
+          output_(i,j) = output_min_;
+        else if (output_(i,j) > output_max_)
+          output_(i,j) = output_max_;
       }
     }
   }

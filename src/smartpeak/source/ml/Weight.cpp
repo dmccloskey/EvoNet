@@ -76,6 +76,7 @@ namespace SmartPeak
   void Weight::setWeight(const float& weight)
   {
     weight_ = weight;
+    checkWeight();
   }
   float Weight::getWeight() const
   {
@@ -102,10 +103,20 @@ namespace SmartPeak
     return solver_.get();
   }
 
+  void Weight::setWeightMin(const float& weight_min)
+  {
+    weight_min_ = weight_min;
+  }
+  void Weight::setWeightMax(const float& weight_max)
+  {
+    weight_max_ = weight_max;
+  }
+
   void Weight::initWeight()
   {
     // weight_ = weight_init_();
     weight_ = weight_init_->operator()();
+    checkWeight();
   }
 
   void Weight::updateWeight(const float& error)
@@ -114,5 +125,14 @@ namespace SmartPeak
     // const float new_weight = solver_->operator()(weight_, error);
     // weight_ = solver_->clip_gradient(new_weight);   
     weight_ = solver_->operator()(weight_, error);
+    checkWeight();
+  }
+
+  void Weight::checkWeight()
+  {
+    if (weight_ < weight_min_)
+      weight_ = weight_min_;
+    else if (weight_ > weight_max_)
+      weight_ = weight_max_;
   }
 }

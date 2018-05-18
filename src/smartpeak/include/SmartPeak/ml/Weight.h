@@ -60,6 +60,9 @@ public:
     void setSolverOp(const std::shared_ptr<SolverOp>& solver); ///< weight update operator setter
     SolverOp* getSolverOp() const; ///< weight update operator getter
 
+    void setWeightMin(const float& weight_min); ///< min weight setter
+    void setWeightMax(const float& weight_max); ///< max weight setter
+
     /**
       @brief Initializes the weight.  
     */ 
@@ -71,6 +74,11 @@ public:
       @param[in] errpr Weight error   
     */ 
     void updateWeight(const float& error);
+ 
+    /**
+      @brief Check if the weight is within the min/max.  
+    */ 
+    void checkWeight();
 
 private:
     int id_ = NULL; ///< Weight ID
@@ -78,6 +86,9 @@ private:
     float weight_ = 1.0; ///< Weight weight
     std::shared_ptr<WeightInitOp> weight_init_; ///< weight initialization operator
     std::shared_ptr<SolverOp> solver_; ///< weight update operator
+
+    float weight_min_ = -1.0e6;
+    float weight_max_ = 1.0e6;
   };
 }
 

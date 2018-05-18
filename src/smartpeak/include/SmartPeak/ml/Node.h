@@ -92,6 +92,9 @@ public:
     Eigen::Tensor<float, 2>* getDtMutable(); ///< dt copy getter
     float* getDtPointer(); ///< dt pointer getter
 
+    void setOutputMin(const float& min_output); ///< min output setter
+    void setOutputMax(const float& output_max); ///< max output setter
+
     /**
       @brief Initialize node output to zero.
         The node statuses are then changed to NodeStatus::deactivated
@@ -146,12 +149,20 @@ public:
       @brief Shifts the current dt batch by 1 unit back in memory.
     */
     void saveCurrentDt();
+ 
+    /**
+      @brief Check if the output is within the min/max.  
+    */ 
+    void checkOutput();
 
 private:
     int id_ = NULL; ///< Weight ID
     std::string name_ = ""; ///< Weight Name
     SmartPeak::NodeType type_; ///< Node Type
     SmartPeak::NodeStatus status_; ///< Node Status   
+
+    float output_min_ = -1.0e6; ///< Min Node output
+    float output_max_ = 1.0e6; ///< Max Node output
 
     /**
       @brief output, error and derivative have the following dimensions:

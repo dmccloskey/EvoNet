@@ -112,4 +112,26 @@ BOOST_AUTO_TEST_CASE(updateWeight)
   BOOST_CHECK_CLOSE(weight.getWeight(), 0.98, 1e-3);
 }
 
+BOOST_AUTO_TEST_CASE(checkWeight) 
+{
+  Weight weight;
+  weight.setId(1);
+  weight.setWeightMin(0.0);
+  weight.setWeightMax(2.0);
+
+  weight.setWeight(-1.0);
+  BOOST_CHECK_EQUAL(weight.getWeight(), 0.0);
+  weight.setWeight(3.0);
+  BOOST_CHECK_EQUAL(weight.getWeight(), 2.0);
+
+  std::shared_ptr<SolverOp> solver(new SGDOp(0.01, 0.9));
+  // SGDOp solver(0.01, 0.9);
+  weight.setSolverOp(solver);
+  weight.setWeightMin(1.0);
+  weight.setWeightMax(2.0);
+  weight.setWeight(1.0);
+  weight.updateWeight(2.0);
+  BOOST_CHECK_EQUAL(weight.getWeight(), 1.0);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
