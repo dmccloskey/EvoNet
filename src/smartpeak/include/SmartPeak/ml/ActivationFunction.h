@@ -142,7 +142,7 @@ public:
 public: 
     TanHOp(){}; 
     ~TanHOp(){};
-    T operator()(const T& x_I) const { (std::exp(x_I) - std::exp(-x_I)) / (std::exp(x_I) + std::exp(-x_I)); };
+    T operator()(const T& x_I) const { return (std::exp(x_I) - std::exp(-x_I)) / (std::exp(x_I) + std::exp(-x_I)); };
   };
 
   /**
@@ -158,6 +158,37 @@ public:
     {
       SmartPeak::TanHOp<T> tanhop;
       return 1 - std::pow(tanhop(x_I), 2);
+    };
+  };
+  
+  /**
+    @brief Rectified Hyperbolic Tangent activation function
+  */
+  template<typename T>
+  class ReTanHOp: public ActivationOp<T>
+  {
+public: 
+    ReTanHOp(){}; 
+    ~ReTanHOp(){};
+    T operator()(const T& x_I) const
+    { 
+      return (x_I > 0.0) ? (std::exp(x_I) - std::exp(-x_I)) / (std::exp(x_I) + std::exp(-x_I)) : 0.0;
+    };
+  };
+
+  /**
+    @brief Rectified Hyperbolic Tangent gradient
+  */
+  template<typename T>
+  class ReTanHGradOp: public ActivationOp<T>
+  {
+public: 
+    ReTanHGradOp(){}; 
+    ~ReTanHGradOp(){};
+    T operator()(const T& x_I) const
+    {
+      SmartPeak::ReTanHOp<T> tanhop;
+      return (x_I > 0.0) ? 1 - std::pow(tanhop(x_I), 2) : 0.0;
     };
   };
 }
