@@ -17,11 +17,9 @@ namespace SmartPeak
 
     based on the following:
       https://stackoverflow.com/questions/25389480/how-to-write-read-an-eigen-matrix-from-binary-file
-      https://gist.github.com/infusion/43bd2aa421790d5b4582
 
     TODO copy over tests
   */
-  template<typename T>
   class DataFile
   {
 public:
@@ -36,15 +34,8 @@ public:
 
       @returns Status True on success, False if not
     */ 
-    bool loadDataBinary(const std::string& filename, T& data)
-    {
-      std::ifstream in(filename, std::ios::in | std::ios::binary);
-      for (int i=0; i<data.NumDimensions; ++i) 
-        in.read((char*) (&data.dimension(i)), sizeof(Eigen::Tensor::Index));
-      // data.resize(rows, cols);
-      in.read( (char *) data.data(),  data.size()*sizeof(Eigen::Tensor::Scalar));
-      in.close();
-    };
+    template<typename T>
+    bool loadDataBinary(const std::string& filename, T& data);
  
     /**
       @brief Load data from file
@@ -54,34 +45,8 @@ public:
 
       @returns Status True on success, False if not
     */ 
-    bool loadDataCsv(const std::string& filename, T& data);
- 
-    /**
-      @brief Load data from file
-
-      @param filename The name of the data file
-      @param data The data to load data into
-
-      @returns Status True on success, False if not
-    */ 
-    bool storeDataBinary(const std::string& filename, const T& data)
-    {
-      std::ofstream out(filename, std::ios::out | std::ios::binary | ios::trunc);
-      for (int i=0; i<data.NumDimensions; ++i) 
-        out.write((char*) (&data.dimension(i)), sizeof(Eigen::Tensor::Index));
-      out.write((char*) data.data(), data.size()*sizeof(Eigen::Tensor::Scalar) );
-      out.close();
-    };    
- 
-    /**
-      @brief Load data from file
-
-      @param filename The name of the data file
-      @param data The data to load data into
-
-      @returns Status True on success, False if not
-    */ 
-    bool storeDataCsv(const std::string& filename, const T& data);
+    template<typename T>
+    bool storeDataBinary(const std::string& filename, const T& data);
   };
 }
 

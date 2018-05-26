@@ -2,6 +2,10 @@ set(core_executables_list
   Helloworld_test
 )
 
+set(io_executables_list
+  DataFile_test
+)
+
 set(ml_executables_list
   ActivationFunction_test
   Link_test
@@ -25,6 +29,7 @@ set(simulator_executables_list
 ### collect test executables
 set(TEST_executables
     ${core_executables_list}
+    ${io_executables_list}
     ${ml_executables_list}
     ${simulator_executables_list}
 )

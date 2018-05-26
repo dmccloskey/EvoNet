@@ -5,8 +5,6 @@
 
 #include <SmartPeak/ml/Link.h>
 
-#include <unsupported/Eigen/CXX11/Tensor>
-
 #include <iostream>
 #include <fstream>
 #include <vector>
