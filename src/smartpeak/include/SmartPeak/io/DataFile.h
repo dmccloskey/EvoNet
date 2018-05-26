@@ -21,7 +21,7 @@ namespace SmartPeak
 
     TODO copy over tests
   */
-  template<typedef T>
+  template<typename T>
   class DataFile
   {
 public:
@@ -38,12 +38,11 @@ public:
     */ 
     bool loadDataBinary(const std::string& filename, T& data)
     {
-      std::ifstream in(filename, ios::in | std::ios::binary);
-      Eigen::Index rows=0, cols=0;
+      std::ifstream in(filename, std::ios::in | std::ios::binary);
       for (int i=0; i<data.NumDimensions; ++i) 
-        in.read((char*) (&data.dimension(i)), sizeof(Eigen::Index));
+        in.read((char*) (&data.dimension(i)), sizeof(Eigen::Tensor::Index));
       // data.resize(rows, cols);
-      in.read( (char *) data.data(),  data.size()*sizeof(Eigen::Scalar));
+      in.read( (char *) data.data(),  data.size()*sizeof(Eigen::Tensor::Scalar));
       in.close();
     };
  
@@ -67,10 +66,10 @@ public:
     */ 
     bool storeDataBinary(const std::string& filename, const T& data)
     {
-      std::ofstream out(filename, ios::out | ios::binary | ios::trunc);
+      std::ofstream out(filename, std::ios::out | std::ios::binary | ios::trunc);
       for (int i=0; i<data.NumDimensions; ++i) 
-        out.write((char*) (&data.dimension(i)), sizeof(Eigen::Index));
-      out.write((char*) data.data(), data.size()*sizeof(Eigen::Scalar) );
+        out.write((char*) (&data.dimension(i)), sizeof(Eigen::Tensor::Index));
+      out.write((char*) data.data(), data.size()*sizeof(Eigen::Tensor::Scalar) );
       out.close();
     };    
  

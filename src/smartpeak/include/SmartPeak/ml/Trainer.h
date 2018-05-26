@@ -6,6 +6,7 @@
 #include <SmartPeak/ml/Model.h>
 
 #include <vector>
+#include <string>
 
 namespace SmartPeak
 {
