@@ -68,13 +68,10 @@ public:
     Model replicateModel(const Model& model, const bool& with_modifications);
  
     /**
-      @brief Select random node given the following conditions:
-        1. the Node is not of NodeType input nor bias
-        2. more distant nodes (as based on the number of links seperating them)
-          have a lower probability of being selected
-        3. directionality of the node
+      @brief Select random node given a set of conditions
 
       @param node Previous node selected (for distance calculation)
+      @param distance_weight Probability weighting to punish more distance nodes
       @param node_type_exclude Node types to exclude
       @param node_type_include Node types to include
       @param direction Source to Sink node direction; options are "forward, reverse"
@@ -82,10 +79,27 @@ public:
       @returns A node
     */ 
     Node selectNodeRandom(const Node& node, 
+      const float& distance_weight,
+      const std::vector<NodeType>& node_type_exclude,
+      const std::vector<NodeType>& node_type_include,
+      const std::string& direction);
+ 
+    /**
+      @brief Select random link given a set of conditions
+
+      @param node Previous node selected (for distance calculation)
+      @param node_type_exclude Node types to exclude
+      @param node_type_include Node types to include
+      @param direction Source to Sink node direction; options are "forward, reverse"
+
+      @returns A Link
+    */ 
+    Link selectLinkRandom(const Node& node, 
       const std::vector<NodeType>& node_type_exclude,
       const std::vector<NodeType>& node_type_include,
       const std::string& direction);
 
+    // Model modification operators
     void addNode(Model& model); ///< add node to the model
     void addLink(Model& model); ///< add link to the model
     void deleteNode(Model& model); ///< delete node to the model
