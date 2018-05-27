@@ -25,7 +25,7 @@ public:
     ~WeightFile(); ///< Default destructor
  
     /**
-      @brief Load weights from file
+      @brief Load weights from binary file
 
       @param filename The name of the weights file
       @param weights The weights to load data into
@@ -33,17 +33,35 @@ public:
       @returns Status True on success, False if not
     */ 
     bool loadWeightsBinary(const std::string& filename, std::vector<Weight>& weights);
-    bool loadWeightsCsv(const std::string& filename, std::vector<Weight>& weights);
  
     /**
-      @brief Load weights from file
+      @brief Load weights from csv file
 
       @param filename The name of the weights file
       @param weights The weights to load data into
 
       @returns Status True on success, False if not
     */ 
+    bool loadWeightsCsv(const std::string& filename, std::vector<Weight>& weights);
+ 
+    /**
+      @brief Stores weights from binary file
+
+      @param filename The name of the weights file
+      @param weights The weights to sore
+
+      @returns Status True on success, False if not
+    */ 
     bool storeWeightsBinary(const std::string& filename, const std::vector<Weight>& weights);
+ 
+    /**
+      @brief Stores weights from binary file
+
+      @param filename The name of the weights file
+      @param weights The weights to sore
+
+      @returns Status True on success, False if not
+    */ 
     bool storeWeightsCsv(const std::string& filename, const std::vector<Weight>& weights);
   };
 }

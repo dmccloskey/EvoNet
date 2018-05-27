@@ -389,18 +389,18 @@ namespace SmartPeak
     // check dimension mismatches
     if (node_names.size() != values.dimension(2))
     {
-      std::cout << "The number of input features and the number of nodes do not match." << std::endl;
+      printf("The number of input features %d and the number of nodes %d do not match.\n", (int)values.dimension(2), node_names.size());
       return;
     }
     // assumes the node exists
     else if (nodes_.at(node_names[0]).getOutput().dimension(0) != values.dimension(0))
     {
-      std::cout << "The number of input samples and the node batch size does not match." << std::endl;
+      printf("The number of input samples %d and the node batch size %d does not match.\n", (int)values.dimension(0), (int)nodes_.at(node_names[0]).getOutput().dimension(0));
       return;
     }
     else if (nodes_.at(node_names[0]).getOutput().dimension(1) != values.dimension(1))
     {
-      std::cout << "The number of input time steps and the node memory size does not match." << std::endl;
+      printf("The number of input time steps %d and the node memory size %d does not match.\n", (int)values.dimension(1), (int)nodes_.at(node_names[0]).getOutput().dimension(1));
       return;
     }
 

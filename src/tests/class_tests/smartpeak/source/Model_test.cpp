@@ -280,7 +280,7 @@ BOOST_AUTO_TEST_CASE(addGetRemoveLinks)
   std::vector<Node> nodes_test;
   nodes_test.push_back(source1);
   nodes_test.push_back(sink1);  
-  // TODO: WHY ARE THESE GENERATING MEMORY ACCESS ERRORS?
+  // // TODO: WHY ARE THESE GENERATING MEMORY ACCESS ERRORS?
   // for (int i=0; i<nodes_test.size(); ++i)
   // { // Should not be equal because nodes were not yet added to the model
   //   BOOST_CHECK(model.getNode(nodes_test[i].getName()) != nodes_test[i]);

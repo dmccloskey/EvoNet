@@ -1,7 +1,7 @@
 /**TODO:  Add copyright*/
 
-#ifndef SMARTPEAK_TRAINER_H
-#define SMARTPEAK_TRAINER_H
+#ifndef SMARTPEAK_MODELTRAINER_H
+#define SMARTPEAK_MODELTRAINER_H
 
 #include <SmartPeak/ml/Model.h>
 
@@ -33,13 +33,13 @@ namespace SmartPeak
           2. adjust the weights
       Update the network model from the execution graph tensors (if training)
 
-    TODO: rename to Trainer
+    TODO: rename to ModelTrainer
   */
-  class Trainer
+  class ModelTrainer
   {
 public:
-    Trainer(); ///< Default constructor
-    ~Trainer(); ///< Default destructor
+    ModelTrainer(); ///< Default constructor
+    ~ModelTrainer(); ///< Default destructor
 
     void setBatchSize(const int& batch_size); ///< batch_size setter
     void setMemorySize(const int& memory_size); ///< memory_size setter
@@ -142,7 +142,7 @@ public:
     /**
       @brief Check input dimensions.
 
-      @param TODO...
+      @param [TODO: add params docstrings]
 
       @returns True on success, False if not
     */ 
@@ -155,7 +155,7 @@ public:
     /**
       @brief Check output dimensions.
 
-      @param TODO...
+      @param [TODO: add params docstrings]
 
       @returns True on success, False if not
     */ 
@@ -165,6 +165,18 @@ public:
       const std::vector<std::string>& output_nodes);
  
     /**
+      @brief [TODO: add method] Check time step dimensions required for FPTT.
+
+      @param [TODO: add params docstrings]
+
+      @returns True on success, False if not
+    */ 
+    bool checkTimeSteps(const int& n_epochs,
+      const Eigen::Tensor<float, 3>& time_steps,
+      const int& batch_size,
+      const int& memory_size);
+ 
+    /**
       @brief Entry point for users to code their script
         for model training
 
@@ -172,12 +184,14 @@ public:
       @param n_epochs The number of epochs to train
       @param input Input data tensor of dimensions: batch_size, memory_size, input_nodes, n_epochs
       @param output Expected output data tensor of dimensions: batch_size, output_nodes, n_epochs
+      @param [TODO: add param] time_steps Time steps of the forward passes of dimensions: batch_size, memory_size, n_epochs
       @param input_nodes Input node names
       @param output_nodes Output node names
     */ 
     virtual void trainModel(Model& model,
       const Eigen::Tensor<float, 4>& input,
       const Eigen::Tensor<float, 3>& output,
+      const Eigen::Tensor<float, 3>& time_steps,
       const std::vector<std::string>& input_nodes,
       const std::vector<std::string>& output_nodes) = 0;
  
@@ -189,12 +203,14 @@ public:
       @param n_epochs The number of epochs to train
       @param input Input data tensor of dimensions: batch_size, memory_size, input_nodes, n_epochs
       @param output Expected output data tensor of dimensions: batch_size, output_nodes, n_epochs
+      @param [TODO: add param] time_steps Time steps of the forward passes of dimensions: batch_size, memory_size, n_epochs
       @param input_nodes Input node names
       @param output_nodes Output node names
     */ 
     virtual void validateModel(Model& model,
       const Eigen::Tensor<float, 4>& input,
       const Eigen::Tensor<float, 3>& output,
+      const Eigen::Tensor<float, 3>& time_steps,
       const std::vector<std::string>& input_nodes,
       const std::vector<std::string>& output_nodes) = 0;
  
@@ -215,4 +231,4 @@ private:
   };
 }
 
-#endif //SMARTPEAK_TRAINER_H
+#endif //SMARTPEAK_MODELTRAINER_H

@@ -6,7 +6,7 @@ set(sources_list
 	Link.cpp
 	Model.cpp
 	Node.cpp
-	Trainer.cpp
+	ModelTrainer.cpp
 	Weight.cpp
 )
 

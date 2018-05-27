@@ -34,8 +34,34 @@ public:
 
       @returns Status True on success, False if not
     */ 
-    template<typename T>
-    bool loadDataBinary(const std::string& filename, T& data);
+    template<typename T, int R>
+    bool loadDataBinary(const std::string& filename, Eigen::Tensor<T, R>& data)
+    {
+      try
+      {
+        std::ifstream in(filename, std::ios::in | std::ios::binary);
+        in.seekg(0);
+        Eigen::array<Eigen::DenseIndex, R> dims;
+        for (int i=0; i<R; ++i) 
+        {
+          char value_char[12];
+          in.read((char*) (&value_char), sizeof(value_char));
+          dims[i] = (int)std::stoi(value_char);
+          // printf("dimension loaded: %d = %d\n", i, dims[i]); // DEBUGGING
+        }
+        data = Eigen::Tensor<T, R>(dims);
+        in.read((char *) data.data(), sizeof(data.data()));
+        in.close();
+      }
+      catch (std::exception& e)
+      {
+        printf("Exception: %s", e.what());
+      }
+      catch (...)
+      {
+        printf("Exception");
+      }
+    };
  
     /**
       @brief Load data from file
@@ -45,8 +71,32 @@ public:
 
       @returns Status True on success, False if not
     */ 
-    template<typename T>
-    bool storeDataBinary(const std::string& filename, const T& data);
+    template<typename T, int R>
+    bool storeDataBinary(const std::string& filename, const Eigen::Tensor<T, R>& data)
+    {
+      try
+      {
+        std::ofstream out(filename, std::ios::out | std::ios::binary | std::ios::trunc);
+        for (int i=0; i<R; ++i) 
+        {
+          char value_char[12];
+          // printf("dimension stored: %d = %d\n", i, data.dimension(i)); // DEBUGGING
+          sprintf(value_char, "%d", data.dimension(i));
+          out.write((char*) (&value_char), sizeof(value_char));
+          // out.write((char*) (&data.dimension(i)), sizeof(typename Eigen::Tensor<T, R>::Index));
+        }
+        out.write((char*) data.data(), data.size()*sizeof(typename Eigen::Tensor<T, R>::Scalar));
+        out.close();
+      }
+      catch (std::exception& e)
+      {
+        printf("Exception: %s", e.what());
+      }
+      catch (...)
+      {
+        printf("Exception");
+      }
+    };
   };
 }
 

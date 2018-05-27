@@ -1,8 +1,8 @@
 /**TODO:  Add copyright*/
 
-#define BOOST_TEST_MODULE Trainer test suite 
+#define BOOST_TEST_MODULE ModelTrainer test suite 
 #include <boost/test/unit_test.hpp>
-#include <SmartPeak/ml/Trainer.h>
+#include <SmartPeak/ml/ModelTrainer.h>
 
 #include <SmartPeak/ml/Model.h>
 #include <SmartPeak/ml/Weight.h>
@@ -14,32 +14,34 @@ using namespace std;
 
 BOOST_AUTO_TEST_SUITE(trainer)
 
-// No Tests as Trainer is virtual
+// No Tests as ModelTrainer is virtual
 // BOOST_AUTO_TEST_CASE(constructor) 
 // {
-//   Trainer* ptr = nullptr;
-//   Trainer* nullPointer = nullptr;
-// 	ptr = new Trainer();
+//   ModelTrainer* ptr = nullptr;
+//   ModelTrainer* nullPointer = nullptr;
+// 	ptr = new ModelTrainer();
 //   BOOST_CHECK_NE(ptr, nullPointer);
 // }
 
 // BOOST_AUTO_TEST_CASE(destructor) 
 // {
-//   Trainer* ptr = nullptr;
-// 	ptr = new Trainer();
+//   ModelTrainer* ptr = nullptr;
+// 	ptr = new ModelTrainer();
 //   delete ptr;
 // }
 
-class TrainerTest: public Trainer
+class ModelTrainerTest: public ModelTrainer
 {
   void trainModel(Model& model,
       const Eigen::Tensor<float, 4>& input,
       const Eigen::Tensor<float, 3>& output,
+      const Eigen::Tensor<float, 3>& time_steps,
       const std::vector<std::string>& input_nodes,
       const std::vector<std::string>& output_nodes){};
   void validateModel(Model& model,
       const Eigen::Tensor<float, 4>& input,
       const Eigen::Tensor<float, 3>& output,
+      const Eigen::Tensor<float, 3>& time_steps,
       const std::vector<std::string>& input_nodes,
       const std::vector<std::string>& output_nodes){};
   Model makeModel(){};
@@ -47,7 +49,7 @@ class TrainerTest: public Trainer
 
 BOOST_AUTO_TEST_CASE(gettersAndSetters) 
 {
-  TrainerTest trainer;
+  ModelTrainerTest trainer;
   trainer.setBatchSize(4);
   trainer.setMemorySize(1);
   trainer.setNEpochs(100);
@@ -57,10 +59,61 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   BOOST_CHECK_EQUAL(trainer.getNEpochs(), 100);
 }
 
+BOOST_AUTO_TEST_CASE(checkInputData) 
+{
+  ModelTrainerTest trainer;
+  trainer.setBatchSize(4);
+  trainer.setMemorySize(1);
+  trainer.setNEpochs(100);
+
+  const std::vector<std::string> input_nodes = {"0", "1", "6", "7"};
+  Eigen::Tensor<float, 4> input_data(trainer.getBatchSize(), trainer.getMemorySize(), input_nodes.size(), trainer.getNEpochs());
+
+  BOOST_CHECK(trainer.checkInputData(trainer.getNEpochs(),
+    input_data, trainer.getBatchSize(), trainer.getMemorySize(), input_nodes));
+
+  BOOST_CHECK(!trainer.checkInputData(90,
+    input_data, trainer.getBatchSize(), trainer.getMemorySize(), input_nodes));
+
+  const std::vector<std::string> input_nodes2 = {"0", "1"};
+  BOOST_CHECK(!trainer.checkInputData(trainer.getNEpochs(),
+    input_data, trainer.getBatchSize(), trainer.getMemorySize(), input_nodes2));
+
+  BOOST_CHECK(!trainer.checkInputData(trainer.getNEpochs(),
+    input_data, trainer.getBatchSize(), 3, input_nodes));
+
+  BOOST_CHECK(!trainer.checkInputData(trainer.getNEpochs(),
+    input_data, 3, trainer.getMemorySize(), input_nodes));
+}
+
+BOOST_AUTO_TEST_CASE(checkOutputData) 
+{
+  ModelTrainerTest trainer;
+  trainer.setBatchSize(4);
+  trainer.setMemorySize(1);
+  trainer.setNEpochs(100);
+
+  const std::vector<std::string> output_nodes = {"4", "5"};
+  Eigen::Tensor<float, 3> output_data(trainer.getBatchSize(), output_nodes.size(), trainer.getNEpochs());
+
+  BOOST_CHECK(trainer.checkOutputData(trainer.getNEpochs(),
+    output_data, trainer.getBatchSize(), output_nodes));
+
+  BOOST_CHECK(!trainer.checkOutputData(90,
+    output_data, trainer.getBatchSize(), output_nodes));
+
+  const std::vector<std::string> output_nodes2 = {"0"};
+  BOOST_CHECK(!trainer.checkOutputData(trainer.getNEpochs(),
+    output_data, trainer.getBatchSize(), output_nodes2));
+
+  BOOST_CHECK(!trainer.checkOutputData(trainer.getNEpochs(),
+    output_data, 3, output_nodes));
+}
+
 // BOOST_AUTO_TEST_CASE(LSTM) 
 // {
 //   //LSTM
-//   class LSTMTrainer: public Trainer
+//   class LSTMModelTrainer: public ModelTrainer
 //   {
 //   public:
 //     Model makeModel()
@@ -99,7 +152,7 @@ BOOST_AUTO_TEST_CASE(DAGToy)
 {
 
   // Define the makeModel and trainModel scripts
-  class DAGToyTrainer: public Trainer
+  class DAGToyModelTrainer: public ModelTrainer
   {
   public:
     Model makeModel()
@@ -113,14 +166,14 @@ BOOST_AUTO_TEST_CASE(DAGToy)
       Model model1;
 
       // Toy network: 1 hidden layer, fully connected, DAG
-      i1 = Node("0", NodeType::input, NodeStatus::activated);
-      i2 = Node("1", NodeType::input, NodeStatus::activated);
+      i1 = Node("0", NodeType::input, NodeStatus::deactivated);
+      i2 = Node("1", NodeType::input, NodeStatus::deactivated);
       h1 = Node("2", NodeType::ReLU, NodeStatus::deactivated);
       h2 = Node("3", NodeType::ReLU, NodeStatus::deactivated);
       o1 = Node("4", NodeType::ReLU, NodeStatus::deactivated);
       o2 = Node("5", NodeType::ReLU, NodeStatus::deactivated);
-      b1 = Node("6", NodeType::bias, NodeStatus::activated);
-      b2 = Node("7", NodeType::bias, NodeStatus::activated);
+      b1 = Node("6", NodeType::bias, NodeStatus::deactivated);
+      b2 = Node("7", NodeType::bias, NodeStatus::deactivated);
 
       // weights  
       std::shared_ptr<WeightInitOp> weight_init;
@@ -187,12 +240,14 @@ BOOST_AUTO_TEST_CASE(DAGToy)
   void trainModel(Model& model,
       const Eigen::Tensor<float, 4>& input,
       const Eigen::Tensor<float, 3>& output,
+      const Eigen::Tensor<float, 3>& time_steps,
       const std::vector<std::string>& input_nodes,
       const std::vector<std::string>& output_nodes)
     {
+      printf("Training the model\n");
 
       // Check input and output data
-      if (!checkInputData(getNEpochs(), output, getBatchSize(), getMemorySize(), output_nodes))
+      if (!checkInputData(getNEpochs(), input, getBatchSize(), getMemorySize(), input_nodes))
       {
         return;
       }
@@ -200,9 +255,17 @@ BOOST_AUTO_TEST_CASE(DAGToy)
       {
         return;
       }
+      printf("Data checks passed\n");
+      
+      // Initialize the model
+      model.initNodes(getBatchSize(), getMemorySize());
+      model.initWeights();
+      model.setLossFunction(ModelLossFunction::MSE);
+      printf("Initialized the model\n");
 
       for (int iter = 0; iter < getNEpochs(); ++iter) // use n_epochs here
       {
+        printf("Training epoch: %d\t", iter);
         // assign the input data
         model.mapValuesToNodes(input.chip(iter, 3), input_nodes, NodeStatus::activated, "output"); 
 
@@ -211,6 +274,7 @@ BOOST_AUTO_TEST_CASE(DAGToy)
 
         // calculate the model error and node output error
         model.calculateError(output.chip(iter, 2), output_nodes);
+        std::cout<<"Model error: "<<model.getError().sum()<<std::endl;
 
         // back propogate
         model.backPropogate(0);
@@ -226,11 +290,12 @@ BOOST_AUTO_TEST_CASE(DAGToy)
   void validateModel(Model& model,
       const Eigen::Tensor<float, 4>& input,
       const Eigen::Tensor<float, 3>& output,
+      const Eigen::Tensor<float, 3>& time_steps,
       const std::vector<std::string>& input_nodes,
       const std::vector<std::string>& output_nodes){}
   };
 
-  DAGToyTrainer trainer;
+  DAGToyModelTrainer trainer;
 
   // Test parameters
   trainer.setBatchSize(4);
@@ -238,14 +303,31 @@ BOOST_AUTO_TEST_CASE(DAGToy)
   trainer.setNEpochs(20);
   const std::vector<std::string> input_nodes = {"0", "1", "6", "7"}; // true inputs + biases
   const std::vector<std::string> output_nodes = {"4", "5"};
-  Eigen::Tensor<float, 4> input_data;
-  Eigen::Tensor<float, 3> output_data;
 
+  // Make the input data
+  Eigen::Tensor<float, 4> input_data(trainer.getBatchSize(), trainer.getMemorySize(), input_nodes.size(), trainer.getNEpochs());
+  Eigen::Tensor<float, 3> input_tmp(trainer.getBatchSize(), trainer.getMemorySize(), input_nodes.size()); 
+  input_tmp.setValues({{{1, 5, 1, 1}}, {{2, 6, 1, 1}}, {{3, 7, 1, 1}}, {{4, 8, 1, 1}}});
+  for (int batch_iter=0; batch_iter<trainer.getBatchSize(); ++batch_iter)
+    for (int memory_iter=0; memory_iter<trainer.getMemorySize(); ++memory_iter)
+      for (int nodes_iter=0; nodes_iter<input_nodes.size(); ++nodes_iter)
+        for (int epochs_iter=0; epochs_iter<trainer.getNEpochs(); ++epochs_iter)
+          input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = input_tmp(batch_iter, memory_iter, nodes_iter);
+  
+  // Make the output data
+  Eigen::Tensor<float, 3> output_data(trainer.getBatchSize(), output_nodes.size(), trainer.getNEpochs());
+  Eigen::Tensor<float, 2> output_tmp(trainer.getBatchSize(), output_nodes.size()); 
+  output_tmp.setValues({{0, 1}, {0, 1}, {0, 1}, {0, 1}});
+  for (int batch_iter=0; batch_iter<trainer.getBatchSize(); ++batch_iter)
+    for (int nodes_iter=0; nodes_iter<output_nodes.size(); ++nodes_iter)
+      for (int epochs_iter=0; epochs_iter<trainer.getNEpochs(); ++epochs_iter)
+        output_data(batch_iter, nodes_iter, epochs_iter) = output_tmp(batch_iter, nodes_iter);
+
+  // Make the simulation time_steps (Not used)
+  Eigen::Tensor<float, 3> time_steps(trainer.getBatchSize(), trainer.getMemorySize(), trainer.getNEpochs());
 
   Model model1 = trainer.makeModel();
-  trainer.loadInputData("DAGToyInputData.csv", input_data);
-  trainer.loadOutputData("DAGToyOutputData.csv", output_data);
-  trainer.trainModel(model1, input_data, output_data,
+  trainer.trainModel(model1, input_data, output_data, time_steps,
     input_nodes, output_nodes);
 
   const Eigen::Tensor<float, 0> total_error = model1.getError().sum();

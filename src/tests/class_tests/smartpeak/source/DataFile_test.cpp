@@ -31,15 +31,15 @@ BOOST_AUTO_TEST_CASE(storeAndLoadBinary)
 
   // std::path data_path = std::current_path().replace_filename("data");  C++ 17
   // data_path /= "DataFileTest.dat";  C++ 17
-  std::string filename = "../Data/DataFileTest.dat";
+  std::string filename = "DataFileTest.dat";
 
   Eigen::Tensor<float, 3> random_dat(2,2,2);
   random_dat.setRandom();
-	data.storeDataBinary<Eigen::Tensor<float, 3>>(filename, random_dat);
+	data.storeDataBinary<float, 3>(filename, random_dat);
 	// data.storeDataBinary(data_path.string(), random_dat);  C++ 17
 
   Eigen::Tensor<float, 3> test_dat(2,2,2);
-	data.loadDataBinary<Eigen::Tensor<float, 3>>(filename, test_dat);
+	data.loadDataBinary<float, 3>(filename, test_dat);
 	// data.loadDataBinary(data_path.string(), test_dat);  C++ 17
 
   BOOST_CHECK_CLOSE(test_dat(0, 0, 0), random_dat(0, 0, 0), 1e-6);

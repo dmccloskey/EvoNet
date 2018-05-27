@@ -8,6 +8,7 @@ set(sources_list_h
 	LossFunction.h
 	Link.h
 	Model.h
+	ModelTrainer.h
 	Node.h
 	Solver.h
 	Weight.h
