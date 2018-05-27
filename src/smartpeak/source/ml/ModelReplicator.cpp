@@ -8,17 +8,17 @@ namespace SmartPeak
   ModelReplicator::ModelReplicator(){};
   ModelReplicator::~ModelReplicator(){};
 
-  void ModelReplicator::setBatchSize(const int& n_node_additions)
+  void ModelReplicator::setNNodeAdditions(const int& n_node_additions)
   {
     n_node_additions_ = n_node_additions;
   }
 
-  void ModelReplicator::setMemorySize(const int& n_link_additions)
+  void ModelReplicator::setNLinkAdditions(const int& n_link_additions)
   {
     n_link_additions_ = n_link_additions;    
   }
 
-  void ModelReplicator::setNEpochs(const int& n_node_deletions)
+  void ModelReplicator::setNNodeDeletions(const int& n_node_deletions)
   {
     n_node_deletions_ = n_node_deletions;    
   }
@@ -38,17 +38,17 @@ namespace SmartPeak
     weight_change_stdev_ = weight_change_stdev;    
   }
 
-  int ModelReplicator::getBatchSize() const
+  int ModelReplicator::getNNodeAdditions() const
   {
     return n_node_additions_;
   }
 
-  int ModelReplicator::getMemorySize() const
+  int ModelReplicator::getNLinkAdditions() const
   {
     return n_link_additions_;
   }
 
-  int ModelReplicator::getNEpochs() const
+  int ModelReplicator::getNNodeDeletions() const
   {
     return n_node_deletions_;
   }
@@ -130,7 +130,7 @@ namespace SmartPeak
         std::string link_name(link_name_char);
 
         char weight_name_char[64];
-        sprintf(weight_name_char, "Weight_%d_to_%d", i, j);
+        sprintf(weight_name_char, "Input_%d_to_Hidden_%d", i, j);
         std::string weight_name(weight_name_char);
 
         std::shared_ptr<WeightInitOp> hidden_weight_init = weight_init;
@@ -143,11 +143,11 @@ namespace SmartPeak
         std::string bias_name(bias_name_char);
 
         char weight_bias_name_char[64];
-        sprintf(weight_bias_name_char, "Weight_bias_%d_to_%d", i, j);
+        sprintf(weight_bias_name_char, "Bias_%d_to_Hidden_%d", j, j);
         std::string weight_bias_name(weight_bias_name_char);
 
         char link_bias_name_char[64];
-        sprintf(link_bias_name_char, "Bias_%d_to_Hidden_%d", i, j);
+        sprintf(link_bias_name_char, "Bias_%d_to_Hidden_%d", j, j);
         std::string link_bias_name(link_bias_name_char);
 
         std::shared_ptr<WeightInitOp> bias_weight_init = weight_init;
@@ -174,11 +174,11 @@ namespace SmartPeak
         std::string output_name(output_name_char);
 
         char link_name_char[64];
-        sprintf(link_name_char, "Input_%d_to_Output_%d", i, j);
+        sprintf(link_name_char, "Hidden_%d_to_Output_%d", i, j);
         std::string link_name(link_name_char);
 
         char weight_name_char[64];
-        sprintf(weight_name_char, "Weight_%d_to_%d", i, j);
+        sprintf(weight_name_char, "Hidden_%d_to_Output_%d", i, j);
         std::string weight_name(weight_name_char);
 
         std::shared_ptr<WeightInitOp> output_weight_init = weight_init;
@@ -191,11 +191,11 @@ namespace SmartPeak
         std::string bias_name(bias_name_char);
 
         char weight_bias_name_char[64];
-        sprintf(weight_bias_name_char, "Weight_bias_%d_to_%d", i, j);
+        sprintf(weight_bias_name_char, "Bias_%d_to_Output_%d", j, j);
         std::string weight_bias_name(weight_bias_name_char);
 
         char link_bias_name_char[64];
-        sprintf(link_bias_name_char, "Bias_%d_to_Output_%d", i, j);
+        sprintf(link_bias_name_char, "Bias_%d_to_Output_%d", j, j);
         std::string link_bias_name(link_bias_name_char);
 
         std::shared_ptr<WeightInitOp> bias_weight_init = weight_init;
@@ -218,6 +218,10 @@ namespace SmartPeak
   Model ModelReplicator::copyModel(const Model& model)
   {
     // [TODO: add method body]
+    // [TODO: implement copy and copy assignment operators
+    //  in model, node, link, and weight classes
+    //  see: https://www.geeksforgeeks.org/copy-constructor-vs-assignment-operator-in-c/
+    //  but with "rhs" instead of "t"]
   }
 
   void ModelReplicator::addNode(Model& model)

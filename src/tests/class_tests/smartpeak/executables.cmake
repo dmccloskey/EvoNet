@@ -15,6 +15,7 @@ set(ml_executables_list
   Model_DCG_test
   Node_test
   Solver_test
+  ModelReplicator_test
   ModelTrainer_test
   Weight_test
   WeightInit_test

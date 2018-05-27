@@ -20,16 +20,16 @@ public:
     ModelReplicator(); ///< Default constructor
     ~ModelReplicator(); ///< Default destructor
 
-    void setBatchSize(const int& n_node_additions); ///< n_node_additions setter
-    void setMemorySize(const int& n_link_additions); ///< n_link_additions setter
-    void setNEpochs(const int& n_node_deletions); ///< n_node_deletions setter
+    void setNNodeAdditions(const int& n_node_additions); ///< n_node_additions setter
+    void setNLinkAdditions(const int& n_link_additions); ///< n_link_additions setter
+    void setNNodeDeletions(const int& n_node_deletions); ///< n_node_deletions setter
     void setNLinkDeletions(const int& n_link_deletions); ///< n_link_deletions setter
     void setNWeightChanges(const int& n_weight_changes); ///< n_weight_changes setter
     void setWeightChangeStDev(const float& weight_change_stdev); ///< weight_change_stdev setter
 
-    int getBatchSize() const; ///< n_node_additions setter
-    int getMemorySize() const; ///< n_link_additions setter
-    int getNEpochs() const; ///< n_node_deletions setter
+    int getNNodeAdditions() const; ///< n_node_additions setter
+    int getNLinkAdditions() const; ///< n_link_additions setter
+    int getNNodeDeletions() const; ///< n_node_deletions setter
     int getNLinkDeletions() const; ///< n_link_deletions setter
     int getNWeightChanges() const; ///< n_weight_changes setter
     float getWeightChangeStDev() const; ///< weight_change_stdev setter
