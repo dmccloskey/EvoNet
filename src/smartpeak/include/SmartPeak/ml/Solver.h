@@ -128,5 +128,21 @@ private:
       Adding Gradient Noise Improves Learning for Very Deep Networks, 1–11. 
       Retrieved from http://arxiv.org/abs/1511.06807
   */
+
+  /**
+    @brief Hebian Solver.
+    [TODO: add method body and tests]
+    
+  */
+
+  /**
+    @brief SM-G-ABS (Safe mutation gradient) Solver.
+    [TODO: add method body and tests]
+
+    References:
+      Joel Lehman, Jay Chen, Jeff Clune, Kenneth O. Stanley (2018).
+      Safe Mutations for Deep and Recurrent Neural Networks through Output Gradients.
+      arXiv:1712.06563
+  */
 }
 #endif //SMARTPEAK_SOLVER_H
