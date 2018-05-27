@@ -112,5 +112,21 @@ private:
     float momentum_prev_ = 0.0;
     float momentum2_prev_ = 0.0;
   };
+
+  /**
+    @brief Random Solver.
+    [TODO: add method body and tests]
+    
+  */
+
+  /**
+    @brief SGD with noise.
+    [TODO: add method body and tests]
+
+    References:
+      Neelakantan, A., Vilnis, L., Le, Q. V., Sutskever, I., Kaiser, L., Kurach, K., & Martens, J. (2015). 
+      Adding Gradient Noise Improves Learning for Very Deep Networks, 1–11. 
+      Retrieved from http://arxiv.org/abs/1511.06807
+  */
 }
 #endif //SMARTPEAK_SOLVER_H

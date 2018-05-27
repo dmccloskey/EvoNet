@@ -212,11 +212,18 @@ namespace SmartPeak
 
   void ModelReplicator::modifyModel(Model& model)
   {
+    // [TODO: add method body]
+  }
 
+  Model ModelReplicator::copyModel(const Model& model)
+  {
+    // [TODO: add method body]
   }
 
   void ModelReplicator::addNode(Model& model)
   {
+    // [TODO: add method body]
+
     // pick a random node from the model
     // that is not an input or bias
 
@@ -226,26 +233,28 @@ namespace SmartPeak
 
   void ModelReplicator::addLink(Model& model)
   {    
+    // [TODO: add method body]
+
     // pick a random source and sink node from the model
-    // that are not inputs or biases
-    // enforce ACG link direcitonality if required
-    // [TODO: any other rules?]
 
     // add link to the model
   }
 
   void ModelReplicator::deleteNode(Model& model)
   {
+    // [TODO: add method body]
 
   }
 
   void ModelReplicator::deleteLink(Model& model)
   {
+    // [TODO: add method body]
 
   }
 
   void ModelReplicator::modifyWeight(Model& model)
   {
+    // [TODO: add method body]
     
   }
 }

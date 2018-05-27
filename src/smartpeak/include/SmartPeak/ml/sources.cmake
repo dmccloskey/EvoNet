@@ -11,6 +11,7 @@ set(sources_list_h
 	ModelReplicator.h
 	ModelTrainer.h
 	Node.h
+	PopulationTrainer.h
 	Solver.h
 	Weight.h
 	WeightInit.h

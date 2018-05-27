@@ -23,6 +23,7 @@ public:
  
     /**
       @brief Select the top N models with the least error
+      [TODO: add method and tests]
 
       Modes:
       - Top N selection: set n_top ? 0, set n_random == 0
@@ -43,6 +44,7 @@ public:
  
     /**
       @brief Copies the models in the population
+      [TODO: add method and tests]
 
       @param models The vector of models to copy
 
@@ -52,6 +54,7 @@ public:
  
     /**
       @brief Replicates the models in the population
+      [TODO: add method and tests]
 
       @param models The vector (i.e., population) of models to modify
       @param model_replicator The replicator to use

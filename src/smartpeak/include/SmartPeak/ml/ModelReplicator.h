@@ -51,21 +51,20 @@ public:
       const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver);
  
     /**
-      @brief Modify (i.e., mutate) as existing model
+      @brief Modify (i.e., mutate) an existing model in place
 
       @param model The model to modify
     */ 
     void modifyModel(Model& model);
  
     /**
-      @brief Modify (i.e., mutate) as existing model
+      @brief copies an existing model
 
-      @param model The model to modify
-      @param with_modifications Should modifications be done to the replicated model?
+      @param model The model to copy
 
-      @returns A replicated model with or without modifications
+      @returns An identical model
     */ 
-    Model replicateModel(const Model& model, const bool& with_modifications);
+    Model copyModel(const Model& model);
  
     /**
       @brief Select random node given a set of conditions
