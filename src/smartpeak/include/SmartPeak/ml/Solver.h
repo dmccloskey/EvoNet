@@ -16,7 +16,19 @@ namespace SmartPeak
     Clipping reference:
       Razvan Pascanu, Tomas Mikolov, Yoshua Bengio (2013)
       On the difficulty of training Recurrent Neural Networks
-      arXiv:1211.5063 [cs.LG]
+      arXiv:1211.5063 [cs.LG]      
+
+    [TODO: add method body and tests]
+    Gradient Noise with annealed variance reference:
+      Neelakantan, A., Vilnis, L., Le, Q. V., Sutskever, I., Kaiser, L., Kurach, K., & Martens, J. (2015). 
+      Adding Gradient Noise Improves Learning for Very Deep Networks, 1–11. 
+      Retrieved from http://arxiv.org/abs/1511.06807
+
+      Max Welling and Yee Whye Teh. 2011. Bayesian learning via stochastic gradient langevin dynamics. 
+      In Proceedings of the 28th International Conference on International Conference on Machine Learning (ICML'11), Lise Getoor and Tobias Scheffer (Eds.). Omnipress, USA, 681-688.
+
+    [TODO: add tests for clipGradient and addGradientNoise]
+    
   */
   class SolverOp
   {
@@ -27,15 +39,32 @@ public:
     void setGradientThreshold(const float& gradient_threshold){gradient_threshold_ = gradient_threshold;};
     float getGradientThreshold() const{return gradient_threshold_;};
     virtual float operator()(const float& weight, const float& error) = 0;
-    float clip_gradient(const float& gradient)
+    float clipGadient(const float& gradient)
     {
       if (std::abs(gradient) >= gradient_threshold_)
       {
         return gradient * gradient_threshold_/std::abs(gradient);
       }
     }
+    void setGradientNoiseSigma(const float& gradient_noise_sigma){gradient_noise_sigma_ = gradient_noise_sigma;};
+    float getGradientNoiseSigma() const{return gradient_noise_sigma_;};
+    void setGradientNoiseGamma(const float& gradient_noise_gamma){gradient_noise_gamma_ = gradient_noise_gamma;};
+    float getGradientNoiseGamma() const{return gradient_noise_gamma_;};
+    float addGradientNoise(const float& gradient, const float& time)
+    {
+      const float sigma_annealed = gradient_noise_sigma_ / std::pow((1 + time), gradient_noise_gamma_); // annealed variance
+      std::random_device rd{};
+      std::mt19937 gen{rd()};
+      std::normal_distribution<> d{0.0f, sigma_annealed};
+      return gradient + d(gen);
+    }
 private:
+    // clipping parameters
     float gradient_threshold_ = 1e6; ///< maximum gradient magnitude
+
+    // gradient noise with annealed variance parameters
+    float gradient_noise_sigma_ = 1.0; ///< variance before annealing
+    float gradient_noise_gamma_ = 0.55; ///< time-dependend annealing factor
   };
 
   /**
@@ -117,16 +146,6 @@ private:
     @brief Random Solver.
     [TODO: add method body and tests]
     
-  */
-
-  /**
-    @brief SGD with noise.
-    [TODO: add method body and tests]
-
-    References:
-      Neelakantan, A., Vilnis, L., Le, Q. V., Sutskever, I., Kaiser, L., Kurach, K., & Martens, J. (2015). 
-      Adding Gradient Noise Improves Learning for Very Deep Networks, 1–11. 
-      Retrieved from http://arxiv.org/abs/1511.06807
   */
 
   /**

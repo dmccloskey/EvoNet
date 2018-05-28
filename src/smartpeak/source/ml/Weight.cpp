@@ -123,7 +123,7 @@ namespace SmartPeak
   {
     //TODO: implement gradient clipping
     // const float new_weight = solver_->operator()(weight_, error);
-    // weight_ = solver_->clip_gradient(new_weight);   
+    // weight_ = solver_->clipGradient(new_weight);   
     weight_ = solver_->operator()(weight_, error);
     checkWeight();
   }
