@@ -175,6 +175,8 @@ BOOST_AUTO_TEST_CASE(selectRandomNode1)
   std::string random_node;
   bool test_passed;
 
+  // [TODO: add loop here with iter = 100]
+
   exclusion_list = {NodeType::bias, NodeType::input};
   inclusion_list = {};
   std::vector<std::string> node_names = {"2", "3", "4", "5"};
@@ -212,6 +214,8 @@ BOOST_AUTO_TEST_CASE(selectRandomLink1)
   std::string random_link;
   bool test_passed;
   std::vector<std::string> link_names = {"6", "7", "8", "9"};
+
+  // [TODO: add loop here with iter = 100]
 
   source_exclusion_list = {NodeType::bias, NodeType::input};
   source_inclusion_list = {};
@@ -253,14 +257,14 @@ BOOST_AUTO_TEST_CASE(addLink)
     "Weight_0_To_4_", "Weight_0_To_5_", "Weight_1_To_4_", "Weight_1_To_5_" // new weights
     };
 
-  sink_inclusion_list = {};
+  // [TODO: add loop here with iter = 100]
   model_replicator.selectLink(model1);
 
   bool link_found = false;
   if (std::count(link_names.begin(), link_names.end(), model1.getLinks().rbegin()->first.getName()) != 0)
     link_found = true;
   BOOST_CHECK(link_found);
-  
+
   bool weight_found = false;
   if (std::count(weight_names.begin(), weight_names.end(), model1.getWeights().rbegin()->first.getName()) != 0) // [TODO: implement getWeights]
     weight_found = true;
