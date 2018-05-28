@@ -177,7 +177,7 @@ BOOST_AUTO_TEST_CASE(selectRandomNode1)
 
   exclusion_list = {NodeType::bias, NodeType::input};
   inclusion_list = {};
-  std::vector<std::string> node_names = {"2", "3"};
+  std::vector<std::string> node_names = {"2", "3", "4", "5"};
   random_node = model_replicator.selectRandomNode(model1, exclusion_list, inclusion_list);
 
   test_passed = false;
@@ -205,9 +205,37 @@ BOOST_AUTO_TEST_CASE(selectNodes)
   // [TODO: make test]
 }
 
-BOOST_AUTO_TEST_CASE(selectRandomLink) 
+BOOST_AUTO_TEST_CASE(selectRandomLink1) 
 {
-  // [TODO: make test]
+  ModelReplicator model_replicator;
+  std::vector<NodeType> source_exclusion_list, source_inclusion_list, sink_exclusion_list, sink_inclusion_list;
+  std::string random_link;
+  bool test_passed;
+  std::vector<std::string> link_names = {"6", "7", "8", "9"};
+
+  source_exclusion_list = {NodeType::bias, NodeType::input};
+  source_inclusion_list = {};
+  sink_exclusion_list = {NodeType::bias, NodeType::input};
+  sink_inclusion_list = {};
+  random_link = model_replicator.selectRandomLink(
+    model1, source_exclusion_list, source_inclusion_list, sink_exclusion_list, sink_inclusion_list);
+
+  test_passed = false;
+  if (std::count(link_names.begin(), link_names.end(), random_link) != 0)
+    test_passed = true;
+  BOOST_CHECK(test_passed);
+
+  source_exclusion_list = {NodeType::bias, NodeType::input};
+  source_inclusion_list = {NodeType::ReLU};
+  sink_exclusion_list = {};
+  sink_inclusion_list = {};
+  random_link = model_replicator.selectRandomLink(
+    model1, source_exclusion_list, source_inclusion_list, sink_exclusion_list, sink_inclusion_list);
+
+  test_passed = false;
+  if (std::count(link_names.begin(), link_names.end(), random_link) != 0)
+    test_passed = true;
+  BOOST_CHECK(test_passed);
 }
 
 BOOST_AUTO_TEST_CASE(addLink) 

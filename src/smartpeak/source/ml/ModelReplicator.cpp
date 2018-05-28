@@ -246,15 +246,6 @@ namespace SmartPeak
 
   }
 
-  void ModelReplicator::addLink(Model& model)
-  {    
-    // [TODO: add method body]
-
-    // pick a random source and sink node from the model
-
-    // add link to the model
-  }
-
   void ModelReplicator::deleteNode(Model& model)
   {
     // [TODO: add method body]
@@ -342,7 +333,7 @@ namespace SmartPeak
     const std::vector<NodeType>& node_type_exclude,
     const std::vector<NodeType>& node_type_include)
   {
-    std::vector<std::string> node_ids = selectNodes(Model, node_type_exclude, node_type_include);
+    std::vector<std::string> node_ids = selectNodes(model, node_type_exclude, node_type_include);
 
     if (node_ids.size()>0)
       return selectRandomElement<std::string>(node_ids);
@@ -358,17 +349,15 @@ namespace SmartPeak
     const std::vector<NodeType>& sink_node_type_include)
   {
     // select all source and sink nodes that meet the inclusion/exclusion criteria
-    std::vector<std::string> source_node_ids = selectNodes(Model, source_node_type_exclude, source_node_type_include);
+    std::vector<std::string> source_node_ids = selectNodes(model, source_node_type_exclude, source_node_type_include);
     if (source_node_ids.size() == 0)
     {
       printf("No source nodes were found that matched the inclusion/exclusion criteria");
-      return;
     }
-    std::vector<std::string> sink_node_ids = selectNodes(Model, sink_node_type_exclude, sink_node_type_include);
+    std::vector<std::string> sink_node_ids = selectNodes(model, sink_node_type_exclude, sink_node_type_include);
     if (sink_node_ids.size() == 0)
     {
       printf("No sink nodes were found that matched the inclusion/exclusion criteria");
-      return;
     }
 
     // find all links that have an existing connection with the source and sink node candidates
@@ -387,7 +376,7 @@ namespace SmartPeak
   }
 
   void ModelReplicator::addLink(
-    const Model& model)
+    Model& model)
   {
     // define the inclusion/exclusion nodes    
     const std::vector<NodeType> source_node_type_exclude = {};
@@ -396,17 +385,15 @@ namespace SmartPeak
     const std::vector<NodeType> sink_node_type_include = {};
 
     // select candidate source and sink nodes
-    std::vector<std::string> source_node_ids = selectNodes(Model, source_node_type_exclude, source_node_type_include);
+    std::vector<std::string> source_node_ids = selectNodes(model, source_node_type_exclude, source_node_type_include);
     if (source_node_ids.size() == 0)
     {
       printf("No source nodes were found that matched the inclusion/exclusion criteria"); 
-      return;
     }
-    std::vector<std::string> sink_node_ids = selectNodes(Model, sink_node_type_exclude, sink_node_type_include);
+    std::vector<std::string> sink_node_ids = selectNodes(model, sink_node_type_exclude, sink_node_type_include);
     if (sink_node_ids.size() == 0)
     {
       printf("No sink nodes were found that matched the inclusion/exclusion criteria"); 
-      return;
     }
 
     // select a random source and sink node
