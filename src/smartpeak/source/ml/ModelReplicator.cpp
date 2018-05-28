@@ -223,49 +223,6 @@ namespace SmartPeak
     }
     return model;
   }
-
-  void ModelReplicator::modifyModel(Model& model)
-  {
-    // [TODO: add method body]
-  }
-
-  Model ModelReplicator::copyModel(const Model& model)
-  {
-    // [TODO: add method body]
-    // [TODO: implement copy and copy assignment operators
-    //  in model, node, link, and weight classes
-    //  see: https://www.geeksforgeeks.org/copy-constructor-vs-assignment-operator-in-c/
-    //  but with "rhs" instead of "t"]
-  }
-
-  void ModelReplicator::addNode(Model& model)
-  {
-    // [TODO: add method body]
-
-    // pick a random node from the model
-    // that is not an input or bias
-
-    // copy the node, its links, and its bias
-
-  }
-
-  void ModelReplicator::deleteNode(Model& model)
-  {
-    // [TODO: add method body]
-
-  }
-
-  void ModelReplicator::deleteLink(Model& model)
-  {
-    // [TODO: add method body]
-
-  }
-
-  void ModelReplicator::modifyWeight(Model& model)
-  {
-    // [TODO: add method body]
-    
-  }
   
   std::vector<std::string> ModelReplicator::selectNodes(
     const Model& model,
@@ -431,5 +388,57 @@ namespace SmartPeak
     std::string link_name(link_name_char);
     Link link(link_name, source_node_name, sink_node_name, weight_name);
     model.addLinks({link});
+  }
+
+  void ModelReplicator::copyNode(Model& model)
+  {
+    // [TODO: add method body]
+
+    // pick a random node from the model
+    // that is not an input or bias
+
+    // copy the node, its links, and its bias
+
+    // add a new link that connects the new copied node
+    // to its original node
+
+  }
+
+  void ModelReplicator::addNode(Model& model)
+  {
+    // [TODO: add method body]
+
+  }
+
+  void ModelReplicator::deleteNode(Model& model)
+  {
+    // [TODO: add method body]
+
+  }
+
+  void ModelReplicator::deleteLink(Model& model)
+  {
+    // [TODO: add method body]
+
+  }
+
+  void ModelReplicator::modifyWeight(Model& model)
+  {
+    // [TODO: add method body]
+    
+  }
+
+  void ModelReplicator::modifyModel(Model& model)
+  {
+    // [TODO: add method body]
+  }
+
+  Model ModelReplicator::copyModel(const Model& model)
+  {
+    // [TODO: add method body]
+    // [TODO: implement copy and copy assignment operators
+    //  in model, node, link, and weight classes
+    //  see: https://www.geeksforgeeks.org/copy-constructor-vs-assignment-operator-in-c/
+    //  but with "rhs" instead of "t"]
   }
 }
