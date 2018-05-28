@@ -2,11 +2,17 @@
 
 #include <SmartPeak/ml/ModelReplicator.h>
 
+#include <random>
 
 namespace SmartPeak
 {
   ModelReplicator::ModelReplicator(){};
   ModelReplicator::~ModelReplicator(){};
+
+  void ModelReplicator::setNNodeCopies(const int& n_node_copies)
+  {
+    n_node_copies_ = n_node_copies;
+  }
 
   void ModelReplicator::setNNodeAdditions(const int& n_node_additions)
   {
@@ -36,6 +42,11 @@ namespace SmartPeak
   void ModelReplicator::setWeightChangeStDev(const float& weight_change_stdev)
   {
     weight_change_stdev_ = weight_change_stdev;    
+  }
+
+  int ModelReplicator::getNNodeCopies() const
+  {
+    return n_node_copies_;
   }
 
   int ModelReplicator::getNNodeAdditions() const
@@ -260,5 +271,150 @@ namespace SmartPeak
   {
     // [TODO: add method body]
     
+  }
+  
+  std::vector<std::string> ModelReplicator::selectNodes(
+    const Model& model,
+    const std::vector<NodeType>& node_type_exclude,
+    const std::vector<NodeType>& node_type_include)
+  {
+    // populate our list of nodes to select from
+    std::vector<std::string> node_ids;
+    for (const Node& node : model.getNodes())
+    {
+      // check the exclusion list
+      bool exclude_node = false;
+      for (const NodeType& node_type: node_type_exclude)
+      {
+        if (node_type == node.getType())
+        {
+          exclude_node = true;
+          break;
+        }
+      }
+
+      // check the inclusion list
+      bool include_node = true;
+      if (node_type_include.size()>0)
+      {
+        include_node = false;
+        for (const NodeType& node_type: node_type_include)
+        {
+          if (node_type == node.getType())
+          {
+            include_node = true;
+            break;
+          }
+        }
+      }
+
+      // add the node name to the list
+      if (include_node && !exclude_node)
+        node_ids.push_back(node.getName());
+    }
+    return node_ids;
+  }
+
+  template<typename T>
+  T ModelReplicator::selectRandomElement(std::vector<T> elements)
+  {
+    // select a random node
+    // based on https://www.rosettacode.org/wiki/Pick_random_element
+    std::random_device seed;
+    std::mt19937 engine(seed());
+    std::uniform_int_distribution<int> choose(0, elements.size() - 1);
+    return elements[choose(engine)];
+  }
+
+  std::string ModelReplicator::selectRandomNode(
+    const Model& model,
+    const std::vector<NodeType>& node_type_exclude,
+    const std::vector<NodeType>& node_type_include,
+    const Node& node, 
+    const float& distance_weight,
+    const std::string& direction)
+  {
+    // [TODO: add method body]    
+  }
+
+  std::string ModelReplicator::selectRandomNode(
+    const Model& model,
+    const std::vector<NodeType>& node_type_exclude,
+    const std::vector<NodeType>& node_type_include)
+  {
+    std::vector<std::string> node_ids = selectNodes(Model, node_type_exclude, node_type_include);
+
+    if (node_ids.size()>0)
+      return selectRandomElement<std::string>(node_ids);
+    else
+      printf("No nodes were found that matched the inclusion/exclusion criteria");
+  }
+
+  std::string ModelReplicator::selectRandomLink(
+    const Model& model,
+    const std::vector<NodeType>& source_node_type_exclude,
+    const std::vector<NodeType>& source_node_type_include,
+    const std::vector<NodeType>& sink_node_type_exclude,
+    const std::vector<NodeType>& sink_node_type_include)
+  {
+    // select all source and sink nodes that meet the inclusion/exclusion criteria
+    std::vector<std::string> source_node_ids = selectNodes(Model, source_node_type_exclude, source_node_type_include);
+    if (source_node_ids.size() == 0)
+    {
+      printf("No source nodes were found that matched the inclusion/exclusion criteria");
+      return;
+    }
+    std::vector<std::string> sink_node_ids = selectNodes(Model, sink_node_type_exclude, sink_node_type_include);
+    if (sink_node_ids.size() == 0)
+    {
+      printf("No sink nodes were found that matched the inclusion/exclusion criteria");
+      return;
+    }
+
+    // find all links that have an existing connection with the source and sink node candidates
+    std::vector<std::string> link_ids;
+    for (const Link& link : model.getLinks())
+    {
+      if (std::count(source_node_ids.begin(), source_node_ids.end(), link.getSourceNodeName()) != 0)
+        if (std::count(sink_node_ids.begin(), sink_node_ids.end(), link.getSinkNodeName()) != 0)
+          link_ids.push_back(link.getName());
+    }
+    
+    if (link_ids.size()>0)
+      return selectRandomElement<std::string>(link_ids);
+    else
+      printf("No links were found that matched the node inclusion/exclusion criteria"); 
+  }
+
+  void ModelReplicator::addLink(
+    const Model& model)
+  {
+    // define the inclusion/exclusion nodes    
+    const std::vector<NodeType> source_node_type_exclude = {};
+    const std::vector<NodeType> source_node_type_include = {};
+    const std::vector<NodeType> sink_node_type_exclude = {NodeType::bias, NodeType::input};
+    const std::vector<NodeType> sink_node_type_include = {};
+
+    // select candidate source and sink nodes
+    std::vector<std::string> source_node_ids = selectNodes(Model, source_node_type_exclude, source_node_type_include);
+    if (source_node_ids.size() == 0)
+    {
+      printf("No source nodes were found that matched the inclusion/exclusion criteria"); 
+      return;
+    }
+    std::vector<std::string> sink_node_ids = selectNodes(Model, sink_node_type_exclude, sink_node_type_include);
+    if (sink_node_ids.size() == 0)
+    {
+      printf("No sink nodes were found that matched the inclusion/exclusion criteria"); 
+      return;
+    }
+
+    // select a random source and sink node
+    std::string source_node_name = selectRandomElement<std::string>(source_node_ids);
+    std::string sink_node_name = selectRandomElement<std::string>(sink_node_ids);
+
+    // create the new link [TODO: finish...]
+
+    // add the link to the model [TODO: finish...]
   }
 }

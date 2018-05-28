@@ -104,6 +104,16 @@ namespace SmartPeak
     }
   }
 
+  std::vector<Node> Model::getNodes() const
+  {
+    std::vector<Node> nodes;
+    for (const auto& node: nodes_)
+    {
+      nodes.push_back(node.second);
+    }
+    return nodes;
+  }
+
   void Model::removeNodes(const std::vector<std::string>& node_names)
   { 
     for (const std::string& node_name: node_names)
@@ -206,6 +216,16 @@ namespace SmartPeak
       // TODO: move to debug log
       std::cout << "Link id " << link_name << " not found!" << std::endl;
     }
+  }
+
+  std::vector<Link> Model::getLinks() const
+  {
+    std::vector<Link> links;
+    for (const auto& link: links_)
+    {
+      links.push_back(link.second);
+    }
+    return links;
   }
 
   void Model::pruneNodes()

@@ -20,6 +20,7 @@ public:
     ModelReplicator(); ///< Default constructor
     ~ModelReplicator(); ///< Default destructor
 
+    void setNNodeCopies(const int& n_node_copies); ///< n_node_copies setter
     void setNNodeAdditions(const int& n_node_additions); ///< n_node_additions setter
     void setNLinkAdditions(const int& n_link_additions); ///< n_link_additions setter
     void setNNodeDeletions(const int& n_node_deletions); ///< n_node_deletions setter
@@ -27,6 +28,7 @@ public:
     void setNWeightChanges(const int& n_weight_changes); ///< n_weight_changes setter
     void setWeightChangeStDev(const float& weight_change_stdev); ///< weight_change_stdev setter
 
+    int getNNodeCopies() const; ///< n_node_copies setter
     int getNNodeAdditions() const; ///< n_node_additions setter
     int getNLinkAdditions() const; ///< n_link_additions setter
     int getNNodeDeletions() const; ///< n_node_deletions setter
@@ -67,39 +69,75 @@ public:
     Model copyModel(const Model& model);
  
     /**
-      @brief Select random node given a set of conditions
+      @brief Select nodes given a set of conditions
 
-      @param node Previous node selected (for distance calculation)
-      @param distance_weight Probability weighting to punish more distance nodes
+      @param model The model
       @param node_type_exclude Node types to exclude
       @param node_type_include Node types to include
+
+      @returns A node name
+    */ 
+    std::vector<std::string> selectNodes(
+      const Model& model,
+      const std::vector<NodeType>& node_type_exclude,
+      const std::vector<NodeType>& node_type_include);
+
+    template<typename T>
+    T selectRandomElement(std::vector<T> elements);
+ 
+    /**
+      @brief Select random node given a set of conditions
+
+      @param model The model
+      @param node_type_exclude Node types to exclude
+      @param node_type_include Node types to include
+      @param node Previous node selected (for distance calculation)
+      @param distance_weight Probability weighting to punish more "distant" nodes
       @param direction Source to Sink node direction; options are "forward, reverse"
 
-      @returns A node
+      @returns A node name
     */ 
-    Node selectNodeRandom(const Node& node, 
-      const float& distance_weight,
+    std::string selectRandomNode(
+      const Model& model,
       const std::vector<NodeType>& node_type_exclude,
       const std::vector<NodeType>& node_type_include,
+      const Node& node, 
+      const float& distance_weight,
       const std::string& direction);
+    std::string selectRandomNode(
+      const Model& model,
+      const std::vector<NodeType>& node_type_exclude,
+      const std::vector<NodeType>& node_type_include);
  
     /**
       @brief Select random link given a set of conditions
 
-      @param node Previous node selected (for distance calculation)
-      @param node_type_exclude Node types to exclude
-      @param node_type_include Node types to include
+      @param model The model
+      @param source_node_type_exclude Source node types to exclude
+      @param source_node_type_include Source node types to include
+      @param sink_node_type_exclude Sink node types to exclude
+      @param sink_node_type_include Sink node types to include
       @param direction Source to Sink node direction; options are "forward, reverse"
 
-      @returns A Link
+      @returns A link name
     */ 
-    Link selectLinkRandom(const Node& node, 
-      const std::vector<NodeType>& node_type_exclude,
-      const std::vector<NodeType>& node_type_include,
+    std::string selectRandomLink(
+      const Model& model,
+      const std::vector<NodeType>& source_node_type_exclude,
+      const std::vector<NodeType>& source_node_type_include,
+      const std::vector<NodeType>& sink_node_type_exclude,
+      const std::vector<NodeType>& sink_node_type_include,
       const std::string& direction);
+    std::string selectRandomLink(
+      const Model& model,
+      const std::vector<NodeType>& source_node_type_exclude,
+      const std::vector<NodeType>& source_node_type_include,
+      const std::vector<NodeType>& sink_node_type_exclude,
+      const std::vector<NodeType>& sink_node_type_include);
 
     // Model modification operators
-    void addNode(Model& model); ///< add node to the model
+    void copyNode(Model& model); ///< copy node in the model (Layer expansion to the left or right)
+    void addNode(Model& model); ///< add node to the model (Layer injection up or down)
     void addLink(Model& model); ///< add link to the model
     void deleteNode(Model& model); ///< delete node to the model
     void deleteLink(Model& model); ///< delete link to the model
@@ -107,7 +145,8 @@ public:
 
 private:
     // modification parameters
-    int n_node_additions_; ///< new nodes to add to the model (nodes are created through replication)
+    int n_node_copies_; ///< nodes to duplicate in the model (nodes are created through replication)
+    int n_node_additions_; ///< new nodes to add to the model (with a random source and sink connection)
     int n_link_additions_; ///< new links to add to the model
     int n_node_deletions_; ///< nodes to remove from the model
     int n_link_deletions_; ///< links to remove from the model

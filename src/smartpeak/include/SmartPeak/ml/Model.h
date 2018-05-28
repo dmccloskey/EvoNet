@@ -407,6 +407,7 @@ public:
     */ 
     void addLinks(const std::vector<Link>& links);
     Link getLink(const std::string& link_name) const; ///< link getter
+    std::vector<Link> getLinks() const;  ///< links getter
  
     /**
       @brief Remove existing links from the model.
@@ -422,6 +423,7 @@ public:
     */ 
     void addNodes(const std::vector<Node>& nodes);
     Node getNode(const std::string& node_name) const; ///< node getter
+    std::vector<Node> getNodes() const; ///< nodes getter
     std::vector<std::string> getNodeIDs(const NodeStatus& node_status) const; ///< node getter (TODO)
     std::vector<std::string> getNodeIDs(const NodeType& node_type) const; ///< node getter (TODO)
  

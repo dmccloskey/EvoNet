@@ -199,6 +199,7 @@ BOOST_AUTO_TEST_CASE(addGetRemoveNodes)
   for (int i=0; i<nodes_test.size(); ++i)
   {
     BOOST_CHECK(model.getNode(nodes_test[i].getName()) == nodes_test[i]);
+    BOOST_CHECK(model.getNodes()[i] == nodes_test[i]);
   }
 
   // add more nodes to the model
@@ -212,6 +213,7 @@ BOOST_AUTO_TEST_CASE(addGetRemoveNodes)
   for (int i=0; i<nodes_test.size(); ++i)
   {
     BOOST_CHECK(model.getNode(nodes_test[i].getName()) == nodes_test[i]);
+    BOOST_CHECK(model.getNodes()[i] == nodes_test[i]);
   }
 
   // remove nodes from the model
@@ -220,6 +222,7 @@ BOOST_AUTO_TEST_CASE(addGetRemoveNodes)
   for (int i=0; i<nodes_test.size(); ++i)
   {
     BOOST_CHECK(model.getNode(nodes_test[i].getName()) == nodes_test[i]);
+    BOOST_CHECK(model.getNodes()[i] == nodes_test[i]);
   }
 }
 
@@ -278,6 +281,7 @@ BOOST_AUTO_TEST_CASE(addGetRemoveLinks)
   for (int i=0; i<links_test.size(); ++i)
   {
     BOOST_CHECK(model.getLink(links_test[i].getName()) == links_test[i]);
+    BOOST_CHECK(model.getLinks()[i] == links_test[i]);
   }
   std::vector<Node> nodes_test;
   nodes_test.push_back(source1);
@@ -336,6 +340,7 @@ BOOST_AUTO_TEST_CASE(addGetRemoveLinks)
   for (int i=0; i<links_test.size(); ++i)
   {
     BOOST_CHECK(model.getLink(links_test[i].getName()) == links_test[i]);
+    BOOST_CHECK(model.getLinks()[i] == links_test[i]);
   }
 
   // remove links from the model
@@ -344,6 +349,7 @@ BOOST_AUTO_TEST_CASE(addGetRemoveLinks)
   for (int i=0; i<links_test.size(); ++i)
   {
     BOOST_CHECK(model.getLink(links_test[i].getName()) == links_test[i]);
+    BOOST_CHECK(model.getLinks()[i] == links_test[i]);
   }
   nodes_test = {source1, sink1};
   for (int i=0; i<nodes_test.size(); ++i)
