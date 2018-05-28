@@ -376,7 +376,7 @@ namespace SmartPeak
 
     Weight weight = model.getWeight(model.getLink(random_link).getWeightName()); // copy assignment
     char weight_name_char[64];
-    sprintf(weight_name_char, "Weight_%s_to_%s@%s", source_node_name.data(), sink_node_name.data(), timestamp);
+    sprintf(weight_name_char, "Weight_%s_to_%s@addLink:%s", source_node_name.data(), sink_node_name.data(), timestamp);
     std::string weight_name(weight_name_char);
     weight.setName(weight_name);
     weight.initWeight();
@@ -384,7 +384,7 @@ namespace SmartPeak
 
     // create the new link
     char link_name_char[64];
-    sprintf(link_name_char, "Link_%s_to_%s", source_node_name.data(), sink_node_name.data(), timestamp);
+    sprintf(link_name_char, "Link_%s_to_%s@addLink:", source_node_name.data(), sink_node_name.data(), timestamp);
     std::string link_name(link_name_char);
     Link link(link_name, source_node_name, sink_node_name, weight_name);
     model.addLinks({link});
