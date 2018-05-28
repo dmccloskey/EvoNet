@@ -368,6 +368,8 @@ namespace SmartPeak
         if (std::count(sink_node_ids.begin(), sink_node_ids.end(), link.getSinkNodeName()) != 0)
           link_ids.push_back(link.getName());
     }
+
+    // [TODO: break into seperate method here for testing purposes]
     
     if (link_ids.size()>0)
       return selectRandomElement<std::string>(link_ids);
@@ -379,7 +381,7 @@ namespace SmartPeak
     Model& model)
   {
     // define the inclusion/exclusion nodes    
-    const std::vector<NodeType> source_node_type_exclude = {};
+    const std::vector<NodeType> source_node_type_exclude = {NodeType::bias};
     const std::vector<NodeType> source_node_type_include = {};
     const std::vector<NodeType> sink_node_type_exclude = {NodeType::bias, NodeType::input};
     const std::vector<NodeType> sink_node_type_include = {};
@@ -400,8 +402,24 @@ namespace SmartPeak
     std::string source_node_name = selectRandomElement<std::string>(source_node_ids);
     std::string sink_node_name = selectRandomElement<std::string>(sink_node_ids);
 
-    // create the new link [TODO: finish...]
+    // [TODO: Need a check if the link already exists...]
 
-    // add the link to the model [TODO: finish...]
+    // create the new weight based on a random link
+    std::string random_link = selectRandomLink(model, source_node_type_exclude, source_node_type_include, sink_node_type_exclude, sink_node_type_include);
+
+    Weight weight = model.getWeight(model.getLink(random_link).getWeightName()); // copy assignment
+    char weight_name_char[64];
+    sprintf(weight_name_char, "Weight_%s_to_%s", source_node_name, sink_node_name);
+    std::string weight_name(weight_name_char);
+    weight.setName(weight_name);
+    weight.initWeight();
+    model.addWeights({weight});
+
+    // create the new link
+    char link_name_char[64];
+    sprintf(link_name_char, "Link_%s_to_%s", source_node_name, sink_node_name);
+    std::string link_name(link_name_char);
+    Link link(link_name, source_node_name, sink_node_name, weight_name);
+    model.addLinks({link});
   }
 }

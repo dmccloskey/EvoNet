@@ -240,7 +240,31 @@ BOOST_AUTO_TEST_CASE(selectRandomLink1)
 
 BOOST_AUTO_TEST_CASE(addLink) 
 {
-  // [TODO: make test]
+  ModelReplicator model_replicator;
+  model_replicator.addLink(model1);
+  std::vector<std::string> link_names = {
+    "Link_0_To_2_", "Link_0_To_3_", "Link_1_To_2_", "Link_1_To_3_", // existing links
+    "Link_2_To_4_", "Link_2_To_5_", "Link_3_To_4_", "Link_3_To_5_", // existing links
+    "Link_0_To_4_", "Link_0_To_5_", "Link_1_To_4_", "Link_1_To_5_" // new links
+    };
+  std::vector<std::string> weight_names = {
+    "Weight_0_To_2_", "Weight_0_To_3_", "Weight_1_To_2_", "Weight_1_To_3_", // existing weights
+    "Weight_2_To_4_", "Weight_2_To_5_", "Weight_3_To_4_", "Weight_3_To_5_", // existing weights
+    "Weight_0_To_4_", "Weight_0_To_5_", "Weight_1_To_4_", "Weight_1_To_5_" // new weights
+    };
+
+  sink_inclusion_list = {};
+  model_replicator.selectLink(model1);
+
+  bool link_found = false;
+  if (std::count(link_names.begin(), link_names.end(), model1.getLinks().rbegin()->first.getName()) != 0)
+    link_found = true;
+  BOOST_CHECK(link_found);
+  
+  bool weight_found = false;
+  if (std::count(weight_names.begin(), weight_names.end(), model1.getWeights().rbegin()->first.getName()) != 0) // [TODO: implement getWeights]
+    weight_found = true;
+  BOOST_CHECK(weight_found);
 }
 
 BOOST_AUTO_TEST_CASE(modifyModel) 
