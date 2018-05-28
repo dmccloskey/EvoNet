@@ -365,6 +365,7 @@ namespace SmartPeak
     // [TODO: Need a check if the link already exists...]
 
     // generate a current time-stamp to avoid duplicate name additions
+    // [TODO: refactor to its own method for testing purposes]
     std::chrono::time_point<std::chrono::system_clock> time_now = std::chrono::system_clock::now();
     std::time_t time_now_t = std::chrono::system_clock::to_time_t(time_now);
     std::tm now_tm = *std::localtime(&time_now_t);
