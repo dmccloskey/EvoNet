@@ -15,6 +15,17 @@ namespace SmartPeak
   {        
   }
 
+  Weight::Weight(const Weight& other)
+  {
+    id_ = other.id_;
+    name_ = other.name_;
+    weight_ = other.weight_;
+    weight_init_ = other.weight_init_;
+    solver_ = other.solver_;
+    weight_min_ = other.weight_min_;
+    weight_max_ = other.weight_max_;
+  }
+
   Weight::Weight(const int& id):
     id_(id)
   {

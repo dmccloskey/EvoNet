@@ -17,6 +17,17 @@ namespace SmartPeak
   {        
   }
 
+  Model::Model(const Model& other)
+  {
+    id_ = other.id_;
+    name_ = other.name_;
+    links_ = other.links_;
+    nodes_ = other.nodes_;
+    weights_ = other.weights_;
+    error_ = other.error_;
+    loss_function_ = other.loss_function_;
+  }
+
   Model::Model(const int& id):
     id_(id)
   {
@@ -33,6 +44,15 @@ namespace SmartPeak
   int Model::getId() const
   {
     return id_;
+  }
+  
+  void Model::setName(const std::string& name)
+  {
+    name_ = name;    
+  }
+  std::string Model::getName() const
+  {
+    return name_;
   }
 
   void Model::setError(const Eigen::Tensor<float, 1>& error)

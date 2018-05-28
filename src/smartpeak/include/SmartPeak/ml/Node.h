@@ -34,6 +34,7 @@ namespace SmartPeak
   {
 public:
     Node(); ///< Default constructor
+    Node(const Node& other); ///< Copy constructor // [TODO: add test]
     Node(const std::string& name, const SmartPeak::NodeType& type, const SmartPeak::NodeStatus& status); ///< Explicit constructor  
     Node(const int& id, const SmartPeak::NodeType& type, const SmartPeak::NodeStatus& status); ///< Explicit constructor  
     ~Node(); ///< Default destructor
@@ -58,6 +59,21 @@ public:
     inline bool operator!=(const Node& other) const
     {
       return !(*this == other);
+    }
+
+    inline Node& operator=(const Node& other)
+    { // [TODO: add test]
+      id_ = other.id_;
+      name_ = other.name_;
+      type_ = other.type_;
+      status_ = other.status_;
+      output_min_ = other.output_min_;
+      output_max_ = other.output_max_;
+      output_ = other.output_;
+      error_ = other.error_;
+      derivative_ = other.derivative_;
+      dt_ = other.dt_;
+      return *this;
     }
 
     void setId(const int& id); ///< id setter

@@ -48,12 +48,14 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
 {
   Model model;
   model.setId(1);
+  model.setName("model1");
   Eigen::Tensor<float, 1> error(3);
   error.setValues({0, 0, 0});
   model.setError(error);
   model.setLossFunction(ModelLossFunction::MSE);
 
   BOOST_CHECK_EQUAL(model.getId(), 1);
+  BOOST_CHECK_EQUAL(model.getName(), "model1");
   BOOST_CHECK_EQUAL(model.getError()(0), error(0));
   BOOST_CHECK(model.getLossFunction() == ModelLossFunction::MSE);
 

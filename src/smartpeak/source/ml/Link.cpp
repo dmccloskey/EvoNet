@@ -11,6 +11,15 @@ namespace SmartPeak
   Link::Link()
   {        
   }
+  
+  Link::Link(const Link& other)
+  {    
+    id_ = other.id_;
+    name_ = other.name_;
+    source_node_name_ = other.source_node_name_;
+    sink_node_name_ = other.sink_node_name_;
+    weight_name_ = other.weight_name_;
+  }
 
   Link::Link(const int& id):
     id_(id)

@@ -15,6 +15,7 @@ namespace SmartPeak
   {
 public:
     Link(); ///< Default constructor
+    Link(const Link& other); ///< Copy constructor // [TODO: add test]
     Link(const int& id); ///< Explicit constructor
     Link(const std::string& name); ///< Explicit constructor
     Link(const std::string& name,
@@ -45,6 +46,16 @@ public:
     inline bool operator!=(const Link& other) const
     {
       return !(*this == other);
+    }
+
+    inline Link& operator=(const Link& other)
+    { // [TODO: add test]
+      id_ = other.id_;
+      name_ = other.name_;
+      source_node_name_ = other.source_node_name_;
+      sink_node_name_ = other.sink_node_name_;
+      weight_name_ = other.weight_name_;
+      return *this;
     }
 
     void setId(const int& id); ///< id setter

@@ -13,6 +13,20 @@ namespace SmartPeak
   {        
   }
 
+  Node::Node(const Node& other)
+  {    
+    id_ = other.id_;
+    name_ = other.name_;
+    type_ = other.type_;
+    status_ = other.status_;
+    output_min_ = other.output_min_;
+    output_max_ = other.output_max_;
+    output_ = other.output_;
+    error_ = other.error_;
+    derivative_ = other.derivative_;
+    dt_ = other.dt_;
+  }
+
   Node::Node(const std::string& name, const SmartPeak::NodeType& type,
     const SmartPeak::NodeStatus& status):
     name_(name), type_(type), status_(status)

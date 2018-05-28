@@ -31,6 +31,7 @@ namespace SmartPeak
   {
 public:
     Model(); ///< Default constructor
+    Model(const Model& other); ///< Copy constructor // [TODO: add test]
     Model(const int& id); ///< Explicit constructor  
     ~Model(); ///< Default destructor
 
@@ -54,6 +55,18 @@ public:
     inline bool operator!=(const Model& other) const
     {
       return !(*this == other);
+    }
+
+    inline Model& operator=(const Model& other)
+    { // [TODO: add test]
+      id_ = other.id_;
+      name_ = other.name_;
+      links_ = other.links_;
+      nodes_ = other.nodes_;
+      weights_ = other.weights_;
+      error_ = other.error_;
+      loss_function_ = other.loss_function_;
+      return *this;
     }
 
     /**
@@ -378,6 +391,9 @@ public:
     void setId(const int& id); ///< id setter
     int getId() const; ///< id getter
 
+    void setName(const std::string& name); ///< name setter
+    std::string getName() const; ///< name getter
+
     void setError(const Eigen::Tensor<float, 1>& error); ///< error setter
     Eigen::Tensor<float, 1> getError() const; ///< error getter
 
@@ -451,6 +467,7 @@ public:
 
 private:
     int id_; ///< Model ID
+    std::string name_; ///< Model Name
     std::map<std::string, Link> links_; ///< Model links
     std::map<std::string, Node> nodes_; ///< Model nodes
     std::map<std::string, Weight> weights_; ///< Model nodes

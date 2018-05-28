@@ -21,6 +21,7 @@ namespace SmartPeak
   {
 public:
     Weight(); ///< Default constructor
+    Weight(const Weight& other); ///< Copy constructor // [TODO: add test]
     Weight(const int& id); ///< Explicit constructor 
     Weight(const std::string& name); ///< Explicit constructor 
     Weight(const int& id, std::shared_ptr<WeightInitOp>& weight_init, std::shared_ptr<SolverOp>& solver); ///< Explicit constructor 
@@ -43,6 +44,18 @@ public:
     inline bool operator!=(const Weight& other) const
     {
       return !(*this == other);
+    }
+
+    inline Weight& operator=(const Weight& other)
+    { // [TODO: add test]
+      id_  = other.id_;
+      name_  = other.name_;
+      weight_  = other.weight_;
+      weight_init_ = other.weight_init_;
+      solver_ = other.solver_;
+      weight_min_ = other.weight_min_;
+      weight_max_ = other.weight_max_;
+      return *this;
     }
 
     void setId(const int& id); ///< id setter
