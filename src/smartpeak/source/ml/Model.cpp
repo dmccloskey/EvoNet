@@ -159,6 +159,16 @@ namespace SmartPeak
       std::cout << "Weight id " << weight_name << " not found!" << std::endl;
     }
   }
+  
+  std::vector<Weight> Model::getWeights() const
+  {
+    std::vector<Weight> weights;
+    for (const auto& weight: weights_)
+    {
+      weights.push_back(weight.second);
+    }
+    return weights;
+  }
 
   void Model::removeWeights(const std::vector<std::string>& weight_names)
   { 

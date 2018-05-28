@@ -241,6 +241,7 @@ BOOST_AUTO_TEST_CASE(addGetRemoveWeights)
   for (int i=0; i<weights_test.size(); ++i)
   {
     BOOST_CHECK(model.getWeight(weights_test[i].getName()) == weights_test[i]);
+    BOOST_CHECK(model.getWeights()[i] == weights_test[i]);
   }
 
   // add more weights to the model
@@ -252,6 +253,7 @@ BOOST_AUTO_TEST_CASE(addGetRemoveWeights)
   for (int i=0; i<weights_test.size(); ++i)
   {
     BOOST_CHECK(model.getWeight(weights_test[i].getName()) == weights_test[i]);
+    BOOST_CHECK(model.getWeights()[i] == weights_test[i]);
   }
 
   // remove weights from the model
@@ -260,6 +262,7 @@ BOOST_AUTO_TEST_CASE(addGetRemoveWeights)
   for (int i=0; i<weights_test.size(); ++i)
   {
     BOOST_CHECK(model.getWeight(weights_test[i].getName()) == weights_test[i]);
+    BOOST_CHECK(model.getWeights()[i] == weights_test[i]);
   }
 }
 

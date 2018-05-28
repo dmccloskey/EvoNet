@@ -2,7 +2,10 @@
 
 #include <SmartPeak/ml/ModelReplicator.h>
 
-#include <random>
+#include <random> // random number geenrator
+
+#include <ctime> // time format
+#include <chrono> // current time
 
 namespace SmartPeak
 {
@@ -404,12 +407,19 @@ namespace SmartPeak
 
     // [TODO: Need a check if the link already exists...]
 
+    // generate a current time-stamp to avoid duplicate name additions
+    std::chrono::time_point<std::chrono::system_clock> time_now = std::chrono::system_clock::now();
+    std::time_t time_now_t = std::chrono::system_clock::to_time_t(time_now);
+    std::tm now_tm = *std::localtime(&time_now_t);
+    char timestamp[512];
+    std::strftime(timestamp, 512, "%Y-%m-%d-%H-%M-%S", &now_tm);
+
     // create the new weight based on a random link
     std::string random_link = selectRandomLink(model, source_node_type_exclude, source_node_type_include, sink_node_type_exclude, sink_node_type_include);
 
     Weight weight = model.getWeight(model.getLink(random_link).getWeightName()); // copy assignment
     char weight_name_char[64];
-    sprintf(weight_name_char, "Weight_%s_to_%s", source_node_name, sink_node_name);
+    sprintf(weight_name_char, "Weight_%s_to_%s@%s", source_node_name.data(), sink_node_name.data(), timestamp);
     std::string weight_name(weight_name_char);
     weight.setName(weight_name);
     weight.initWeight();
@@ -417,7 +427,7 @@ namespace SmartPeak
 
     // create the new link
     char link_name_char[64];
-    sprintf(link_name_char, "Link_%s_to_%s", source_node_name, sink_node_name);
+    sprintf(link_name_char, "Link_%s_to_%s", source_node_name.data(), sink_node_name.data(), timestamp);
     std::string link_name(link_name_char);
     Link link(link_name, source_node_name, sink_node_name, weight_name);
     model.addLinks({link});

@@ -6,6 +6,9 @@
 
 #include <iostream>
 
+#include <algorithm> // tokenizing
+#include <regex> // tokenizing
+
 using namespace SmartPeak;
 using namespace std;
 
@@ -247,28 +250,51 @@ BOOST_AUTO_TEST_CASE(addLink)
   ModelReplicator model_replicator;
   model_replicator.addLink(model1);
   std::vector<std::string> link_names = {
-    "Link_0_To_2_", "Link_0_To_3_", "Link_1_To_2_", "Link_1_To_3_", // existing links
-    "Link_2_To_4_", "Link_2_To_5_", "Link_3_To_4_", "Link_3_To_5_", // existing links
-    "Link_0_To_4_", "Link_0_To_5_", "Link_1_To_4_", "Link_1_To_5_" // new links
+    "Link_0_to_2", "Link_0_to_3", "Link_1_to_2", "Link_1_to_3", // existing links
+    "Link_2_to_4", "Link_2_to_5", "Link_3_to_4", "Link_3_to_5", // existing links
+    "Link_0_to_4", "Link_0_to_5", "Link_1_to_4", "Link_1_to_5", // new links
+    "Link_2_to_3", "Link_3_to_2", "Link_4_to_5", "Link_5_to_4", // new links
+    "Link_4_to_2", "Link_5_to_2", "Link_4_to_3", "Link_5_to_3", // new cyclic links
+    "Link_2_to_2", "Link_5_to_5", "Link_4_to_4", "Link_3_to_3", // new cyclic links
     };
   std::vector<std::string> weight_names = {
-    "Weight_0_To_2_", "Weight_0_To_3_", "Weight_1_To_2_", "Weight_1_To_3_", // existing weights
-    "Weight_2_To_4_", "Weight_2_To_5_", "Weight_3_To_4_", "Weight_3_To_5_", // existing weights
-    "Weight_0_To_4_", "Weight_0_To_5_", "Weight_1_To_4_", "Weight_1_To_5_" // new weights
+    "Weight_0_to_2", "Weight_0_to_3", "Weight_1_to_2", "Weight_1_to_3", // existing weights
+    "Weight_2_to_4", "Weight_2_to_5", "Weight_3_to_4", "Weight_3_to_5", // existing weights
+    "Weight_0_to_4", "Weight_0_to_5", "Weight_1_to_4", "Weight_1_to_5", // new weights
+    "Weight_2_to_3", "Weight_3_to_2", "Weight_4_to_5", "Weight_5_to_4", // new weights
+    "Weight_4_to_2", "Weight_5_to_2", "Weight_4_to_3", "Weight_5_to_3", // new cyclic weights
+    "Weight_2_to_2", "Weight_5_to_5", "Weight_4_to_4", "Weight_3_to_3", // new cyclic weights
     };
 
   // [TODO: add loop here with iter = 100]
-  model_replicator.selectLink(model1);
+  model_replicator.addLink(model1);
+  std::regex re("@");
 
   bool link_found = false;
-  if (std::count(link_names.begin(), link_names.end(), model1.getLinks().rbegin()->first.getName()) != 0)
+  std::string link_name = model1.getLinks().rbegin()->getName();
+  std::vector<std::string> link_name_tokens;
+  std::copy(
+    std::sregex_token_iterator(link_name.begin(), link_name.end(), re, -1),
+    std::sregex_token_iterator(),
+    std::back_inserter(link_name_tokens));
+  if (std::count(link_names.begin(), link_names.end(), link_name_tokens[0]) != 0)
     link_found = true;
   BOOST_CHECK(link_found);
 
   bool weight_found = false;
-  if (std::count(weight_names.begin(), weight_names.end(), model1.getWeights().rbegin()->first.getName()) != 0) // [TODO: implement getWeights]
+  std::string weight_name = model1.getWeights().rbegin()->getName();
+  std::vector<std::string> weight_name_tokens;
+  std::copy(
+    std::sregex_token_iterator(weight_name.begin(), weight_name.end(), re, -1),
+    std::sregex_token_iterator(),
+    std::back_inserter(weight_name_tokens));
+  if (std::count(weight_names.begin(), weight_names.end(), weight_name_tokens[0]) != 0) // [TODO: implement getWeights]
     weight_found = true;
   BOOST_CHECK(weight_found);
+
+  // remove the links and weights that were added
+  model1.removeLinks({model1.getLinks().rbegin()->getName()});
+  model1.removeWeights({model1.getWeights().rbegin()->getName()});
 }
 
 BOOST_AUTO_TEST_CASE(modifyModel) 

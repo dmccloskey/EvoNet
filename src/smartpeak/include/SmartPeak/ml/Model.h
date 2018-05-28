@@ -441,6 +441,7 @@ public:
     */ 
     void addWeights(const std::vector<Weight>& weights);
     Weight getWeight(const std::string& weight_name) const; ///< weight getter
+    std::vector<Weight> getWeights() const;  ///< weights getter
  
     /**
       @brief Remove existing weights from the model.
