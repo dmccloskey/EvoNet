@@ -369,14 +369,14 @@ namespace SmartPeak
     std::chrono::time_point<std::chrono::system_clock> time_now = std::chrono::system_clock::now();
     std::time_t time_now_t = std::chrono::system_clock::to_time_t(time_now);
     std::tm now_tm = *std::localtime(&time_now_t);
-    char timestamp[512];
-    std::strftime(timestamp, 512, "%Y-%m-%d-%H-%M-%S", &now_tm);
+    char timestamp[64];
+    std::strftime(timestamp, 64, "%Y-%m-%d-%H-%M-%S", &now_tm);
 
-    // create the new weight based on a random link
+    // create the new weight based on a random link (this can probably be optmized...)
     std::string random_link = selectRandomLink(model, source_node_type_exclude, source_node_type_include, sink_node_type_exclude, sink_node_type_include);
 
     Weight weight = model.getWeight(model.getLink(random_link).getWeightName()); // copy assignment
-    char weight_name_char[64];
+    char weight_name_char[128];
     sprintf(weight_name_char, "Weight_%s_to_%s@addLink:%s", source_node_name.data(), sink_node_name.data(), timestamp);
     std::string weight_name(weight_name_char);
     weight.setName(weight_name);
@@ -384,8 +384,8 @@ namespace SmartPeak
     model.addWeights({weight});
 
     // create the new link
-    char link_name_char[64];
-    sprintf(link_name_char, "Link_%s_to_%s@addLink:", source_node_name.data(), sink_node_name.data(), timestamp);
+    char link_name_char[128];
+    sprintf(link_name_char, "Link_%s_to_%s@addLink:%s", source_node_name.data(), sink_node_name.data(), timestamp);
     std::string link_name(link_name_char);
     Link link(link_name, source_node_name, sink_node_name, weight_name);
     model.addLinks({link});
@@ -409,17 +409,33 @@ namespace SmartPeak
   {
     // [TODO: add method body]
 
+    // pick a random node from the model
+    // that is not an input or bias
+
+    // copy the node and its bias
+
+    // add a new link that connects the new copied node
+    // to its original node
   }
 
   void ModelReplicator::deleteNode(Model& model)
   {
     // [TODO: add method body]
 
+    // pick a random node from the model
+    // that is not an input, bias, nor output
+
+    // delete the node, its bias, and its bias link
+
   }
 
   void ModelReplicator::deleteLink(Model& model)
   {
     // [TODO: add method body]
+
+    // pick a random link from the model
+
+    // delete the node, its bias, and its bias link
 
   }
 
@@ -437,9 +453,5 @@ namespace SmartPeak
   Model ModelReplicator::copyModel(const Model& model)
   {
     // [TODO: add method body]
-    // [TODO: implement copy and copy assignment operators
-    //  in model, node, link, and weight classes
-    //  see: https://www.geeksforgeeks.org/copy-constructor-vs-assignment-operator-in-c/
-    //  but with "rhs" instead of "t"]
   }
 }
