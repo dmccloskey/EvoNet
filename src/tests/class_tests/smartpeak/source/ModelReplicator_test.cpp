@@ -309,7 +309,7 @@ BOOST_AUTO_TEST_CASE(addNode)
   ModelReplicator model_replicator;
   model_replicator.addNode(model_addNode);
   std::vector<std::string> node_names = {
-    "Node_2", "Node_3", "Node_4", "Node_5", // existing nodes
+    "2", "3", "4", "5" // existing nodes
     };
 
   // [TODO: add loop here with iter = 100]
@@ -317,36 +317,64 @@ BOOST_AUTO_TEST_CASE(addNode)
 
   // check that the node was found
   bool node_found = false;
-  std::string node_name = model_addNode.getNodes().rbegin()->getName();
-  std::vector<std::string> node_name_tokens;
-  std::copy(
-    std::sregex_token_iterator(node_name.begin(), node_name.end(), re, -1),
-    std::sregex_token_iterator(),
-    std::back_inserter(node_name_tokens));
-  if (std::count(node_names.begin(), node_names.end(), node_name_tokens[0]) != 0)
-    node_found = true;
-  std::cout<<"Node found: "<<node_name_tokens[0]<<std::endl;
+  std::string node_name = "";
+  for (const Node& node: model_addNode.getNodes())
+  {
+    node_name = node.getName();
+    std::vector<std::string> node_name_tokens;
+    std::copy(
+      std::sregex_token_iterator(node_name.begin(), node_name.end(), re, -1),
+      std::sregex_token_iterator(),
+      std::back_inserter(node_name_tokens));
+    if (node_name_tokens.size() > 1 && 
+      std::count(node_names.begin(), node_names.end(), node_name_tokens[0]) != 0)
+    {
+      node_found = true;
+      break;
+    }
+  }
   BOOST_CHECK(node_found);
 
   // check the correct text after @
-  bool node_text_found = false;
-  std::regex re_addNodes(":");
+  bool add_node_marker_found = false;
+  std::regex re_addNodes("@|:");
   std::vector<std::string> node_text_tokens;
   std::copy(
-    std::sregex_token_iterator(node_name_tokens[1].begin(), node_name_tokens[1].end(), re, -1),
+    std::sregex_token_iterator(node_name.begin(), node_name.end(), re_addNodes, -1),
     std::sregex_token_iterator(),
     std::back_inserter(node_text_tokens));
-  if (node_text_tokens[0] == "addNode")
-    node_text_found = true;
-  BOOST_CHECK(node_text_found);
+  if (node_text_tokens.size() > 1 && node_text_tokens[1] == "addNode")
+    add_node_marker_found = true;
+  BOOST_CHECK(add_node_marker_found);
 
+  // [TODO: check that the modified link was found]
+
+  // [TODO: check that the modified link weight name was not changed]
+
+  // [TODO: check that the new link was found]
+
+  // [TODO: check that the new weight was found]
 }
 
+Model model_deleteNode = makeModel1();
 BOOST_AUTO_TEST_CASE(deleteNode) 
 {
-  // [TODO: make test]
+  ModelReplicator model_replicator;
+
+  model_replicator.deleteNode(model_deleteNode);
+  BOOST_CHECK_EQUAL(model_deleteNode.getNodes().size(), 7);
+  BOOST_CHECK_EQUAL(model_deleteNode.getLinks().size(), 7);
+
+  model_replicator.deleteNode(model_deleteNode);
+  BOOST_CHECK_EQUAL(model_deleteNode.getNodes().size(),5);
+  BOOST_CHECK_EQUAL(model_deleteNode.getLinks().size(),2);
+
+  model_replicator.deleteNode(model_deleteNode);
+  BOOST_CHECK_EQUAL(model_deleteNode.getNodes().size(),5);
+  BOOST_CHECK_EQUAL(model_deleteNode.getLinks().size(),2);
 }
 
+Model model_deleteLink = makeModel1();
 BOOST_AUTO_TEST_CASE(deleteLink) 
 {
   // [TODO: make test]

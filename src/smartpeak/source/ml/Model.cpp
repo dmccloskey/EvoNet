@@ -77,13 +77,8 @@ namespace SmartPeak
   { 
     for (const Node& node: nodes)
     {
-      // check for duplicate nodes (by id)
-      if (nodes_.count(node.getName()) == 0)
-      {
-        nodes_.emplace(node.getName(), node);
-        // nodes_[node.getName()] = node;
-      }
-      else
+      auto found = nodes_.emplace(node.getName(), node);
+      if (!found.second)
       {
         // TODO: move to debug log
         std::cout << "Node name " << node.getName() << " already exists!" << std::endl;
@@ -132,14 +127,8 @@ namespace SmartPeak
   { 
     for (const Weight& weight: weights)
     {
-      // check for duplicate weights (by id)
-      if (weights_.count(weight.getName()) == 0)
-      {
-        // weights_.insert(std::make_pair(weight.getName(), weight));
-        weights_.emplace(weight.getName(), std::move(weight));
-        // weights_[weight.getName()] = weight;
-      }
-      else
+      auto found = weights_.emplace(weight.getName(), std::move(weight));
+      if (!found.second)
       {
         // TODO: move to debug log
         std::cout << "Weight name " << weight.getName() << " already exists!" << std::endl;
@@ -187,13 +176,8 @@ namespace SmartPeak
   { 
     for (const Link& link: links)
     {
-      // check for duplicate links (by id)
-      if (links_.count(link.getName()) == 0)
-      {
-        links_.emplace(link.getName(), link);
-        // links_[link.getName()] = link;
-      }
-      else
+      auto found = links_.emplace(link.getName(), link);
+      if (!found.second)
       {
         // TODO: move to debug log
         std::cout << "Link name " << link.getName() << " already exists!" << std::endl;

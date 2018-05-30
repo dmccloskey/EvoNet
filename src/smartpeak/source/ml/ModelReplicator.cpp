@@ -298,7 +298,7 @@ namespace SmartPeak
     if (node_ids.size()>0)
       return selectRandomElement<std::string>(node_ids);
     else
-      printf("No nodes were found that matched the inclusion/exclusion criteria");
+      printf("No nodes were found that matched the inclusion/exclusion criteria.\n");
   }
 
   std::string ModelReplicator::selectRandomLink(
@@ -312,12 +312,12 @@ namespace SmartPeak
     std::vector<std::string> source_node_ids = selectNodes(model, source_node_type_exclude, source_node_type_include);
     if (source_node_ids.size() == 0)
     {
-      printf("No source nodes were found that matched the inclusion/exclusion criteria");
+      printf("No source nodes were found that matched the inclusion/exclusion criteria.\n");
     }
     std::vector<std::string> sink_node_ids = selectNodes(model, sink_node_type_exclude, sink_node_type_include);
     if (sink_node_ids.size() == 0)
     {
-      printf("No sink nodes were found that matched the inclusion/exclusion criteria");
+      printf("No sink nodes were found that matched the inclusion/exclusion criteria.\n");
     }
 
     // find all links that have an existing connection with the source and sink node candidates
@@ -334,7 +334,7 @@ namespace SmartPeak
     if (link_ids.size()>0)
       return selectRandomElement<std::string>(link_ids);
     else
-      printf("No links were found that matched the node inclusion/exclusion criteria"); 
+      printf("No links were found that matched the node inclusion/exclusion criteria.\n"); 
   }
 
   void ModelReplicator::addLink(
@@ -350,12 +350,12 @@ namespace SmartPeak
     std::vector<std::string> source_node_ids = selectNodes(model, source_node_type_exclude, source_node_type_include);
     if (source_node_ids.size() == 0)
     {
-      printf("No source nodes were found that matched the inclusion/exclusion criteria"); 
+      printf("No source nodes were found that matched the inclusion/exclusion criteria.\n"); 
     }
     std::vector<std::string> sink_node_ids = selectNodes(model, sink_node_type_exclude, sink_node_type_include);
     if (sink_node_ids.size() == 0)
     {
-      printf("No sink nodes were found that matched the inclusion/exclusion criteria"); 
+      printf("No sink nodes were found that matched the inclusion/exclusion criteria.\n"); 
     }
 
     // select a random source and sink node
@@ -414,6 +414,7 @@ namespace SmartPeak
     std::vector<NodeType> node_exclusion_list = {NodeType::bias, NodeType::input};
     std::vector<NodeType> node_inclusion_list = {NodeType::hidden, NodeType::output};
     std::string random_node_name = selectRandomNode(model, node_exclusion_list, node_inclusion_list);
+    
     // copy the node and its bias
     Node new_node = model.getNode(random_node_name);
 
@@ -444,7 +445,7 @@ namespace SmartPeak
     std::string new_node_name(new_node_name_char);
     new_node.setName(new_node_name); 
     std::cout<<"New node name: "<<new_node_name<<std::endl; 
-    // model.addNodes({new_node});
+    model.addNodes({new_node});
     
     // change the output node name of the link to the new copied node name
     Link modified_link = model.getLink(input_link_name);
@@ -454,7 +455,7 @@ namespace SmartPeak
     std::string modified_link_name(modified_link_name_char);
     modified_link.setName(modified_link_name);
     std::cout<<"Modified link name: "<<modified_link_name<<std::endl;  
-    // model.addLinks({modified_link});
+    model.addLinks({modified_link});
 
     // add a new weight that connects the new copied node
     // to its original node
@@ -474,11 +475,11 @@ namespace SmartPeak
     std::string link_name(link_name_char);
     Link link(link_name, new_node_name, random_node_name, weight_name);
     model.addLinks({link});
-    std::cout<<link_name<<std::endl;
     std::cout<<"New link name: "<<link_name<<std::endl;
 
-    // // remove the unmodified link
-    // model.removeLinks({input_link_name});
+    // remove the unmodified link
+    model.removeLinks({input_link_name});
+    std::cout<<"Removed link name: "<<input_link_name<<std::endl;
   }
 
   void ModelReplicator::deleteNode(Model& model)
