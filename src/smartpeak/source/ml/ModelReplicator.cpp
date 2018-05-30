@@ -108,7 +108,7 @@ namespace SmartPeak
       char bias_name_char[64];
       sprintf(bias_name_char, "Hidden_bias_%d", i);
       std::string bias_name(bias_name_char);
-      Node bias(bias_name, NodeType::bias, NodeStatus::deactivated);
+      Node bias(bias_name, NodeType::bias, NodeStatus::deactivated, NodeActivation::Linear);
       model.addNodes({node, bias});
     }
     // Create the output nodes + biases
@@ -122,7 +122,7 @@ namespace SmartPeak
       char bias_name_char[64];
       sprintf(bias_name_char, "Output_bias_%d", i);
       std::string bias_name(bias_name_char);
-      Node bias(bias_name, NodeType::bias, NodeStatus::deactivated);
+      Node bias(bias_name, NodeType::bias, NodeStatus::deactivated, NodeActivation::Linear);
       model.addNodes({node, bias});
     }
 

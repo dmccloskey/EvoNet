@@ -66,8 +66,8 @@ BOOST_AUTO_TEST_CASE(pruneNodes)
   Node source1, sink1;
   Link link1;
   Weight weight1;
-  source1 = Node("0", NodeType::ReLU, NodeStatus::activated);
-  sink1 = Node("1", NodeType::ReLU, NodeStatus::initialized);
+  source1 = Node("0", NodeType::hidden, NodeStatus::activated, NodeActivation::ReLU);
+  sink1 = Node("1", NodeType::hidden, NodeStatus::initialized, NodeActivation::ReLU);
   weight1 = Weight("0");
   link1 = Link("0", source1.getName(), sink1.getName(), weight1.getName());
 
@@ -101,8 +101,8 @@ BOOST_AUTO_TEST_CASE(pruneWeights)
   Node source1, sink1;
   Link link1;
   Weight weight1;
-  source1 = Node("0", NodeType::ReLU, NodeStatus::activated);
-  sink1 = Node("1", NodeType::ReLU, NodeStatus::initialized);
+  source1 = Node("0", NodeType::hidden, NodeStatus::activated, NodeActivation::ReLU);
+  sink1 = Node("1", NodeType::hidden, NodeStatus::initialized, NodeActivation::ReLU);
   weight1 = Weight("0");
   link1 = Link("0", source1.getName(), sink1.getName(), weight1.getName());
 
@@ -135,8 +135,8 @@ BOOST_AUTO_TEST_CASE(pruneLinks)
   Node source1, sink1;
   Link link1;
   Weight weight1;
-  source1 = Node("0", NodeType::ReLU, NodeStatus::activated);
-  sink1 = Node("1", NodeType::ReLU, NodeStatus::initialized);
+  source1 = Node("0", NodeType::hidden, NodeStatus::activated, NodeActivation::ReLU);
+  sink1 = Node("1", NodeType::hidden, NodeStatus::initialized, NodeActivation::ReLU);
   weight1 = Weight("0");
   link1 = Link("0", source1.getName(), sink1.getName(), weight1.getName());
   Model model;
@@ -185,8 +185,8 @@ BOOST_AUTO_TEST_CASE(pruneLinks)
 BOOST_AUTO_TEST_CASE(addGetRemoveNodes) 
 {
   Node source1, sink1, source2, sink2;
-  source1 = Node("0", NodeType::ReLU, NodeStatus::activated);
-  sink1 = Node("1", NodeType::ReLU, NodeStatus::initialized);
+  source1 = Node("0", NodeType::hidden, NodeStatus::activated, NodeActivation::ReLU);
+  sink1 = Node("1", NodeType::hidden, NodeStatus::initialized, NodeActivation::ReLU);
   Model model;
 
   // add nodes to the model
@@ -203,8 +203,8 @@ BOOST_AUTO_TEST_CASE(addGetRemoveNodes)
   }
 
   // add more nodes to the model
-  source2 = Node(2, NodeType::ReLU, NodeStatus::activated);
-  sink2 = Node(3, NodeType::ReLU, NodeStatus::initialized);
+  source2 = Node(2, NodeType::hidden, NodeStatus::activated, NodeActivation::ReLU);
+  sink2 = Node(3, NodeType::hidden, NodeStatus::initialized, NodeActivation::ReLU);
 
   // add nodes to the model
   model.addNodes({source2, sink2});
@@ -270,8 +270,8 @@ BOOST_AUTO_TEST_CASE(addGetRemoveLinks)
 {
   Node source1, sink1;
   Link link1, link2;
-  source1 = Node("0", NodeType::ReLU, NodeStatus::activated);
-  sink1 = Node("1", NodeType::ReLU, NodeStatus::initialized);
+  source1 = Node("0", NodeType::hidden, NodeStatus::activated, NodeActivation::ReLU);
+  sink1 = Node("1", NodeType::hidden, NodeStatus::initialized, NodeActivation::ReLU);
   Weight weight1;
   weight1 = Weight("0");
   link1 = Link("0", source1.getName(), sink1.getName(), weight1.getName());
@@ -316,8 +316,8 @@ BOOST_AUTO_TEST_CASE(addGetRemoveLinks)
 
   // add more links and nodes to the model
   Node source2, sink2;
-  source2 = Node("2", NodeType::ReLU, NodeStatus::activated);
-  sink2 = Node("3", NodeType::ReLU, NodeStatus::initialized);
+  source2 = Node("2", NodeType::hidden, NodeStatus::activated, NodeActivation::ReLU);
+  sink2 = Node("3", NodeType::hidden, NodeStatus::initialized, NodeActivation::ReLU);
   Weight weight2;
   weight2 = Weight("1");
   link2 = Link("1", source2.getName(), sink2.getName(), weight2.getName());
@@ -371,8 +371,8 @@ BOOST_AUTO_TEST_CASE(comparison)
 {
   Node source, sink;
   Link link1, link2;
-  source = Node("1", NodeType::ReLU, NodeStatus::activated);
-  sink = Node("2", NodeType::ReLU, NodeStatus::initialized);
+  source = Node("1", NodeType::hidden, NodeStatus::activated, NodeActivation::ReLU);
+  sink = Node("2", NodeType::hidden, NodeStatus::initialized, NodeActivation::ReLU);
   Weight weight1;
   weight1 = Weight("0");
   link1 = Link("1", source.getName(), sink.getName(), weight1.getName());

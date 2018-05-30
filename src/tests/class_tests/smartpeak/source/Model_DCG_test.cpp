@@ -32,11 +32,11 @@ Model makeModel2()
   Weight w1, w2, w3, wb1, wb2;
   Model model2;
   // Toy network: 1 hidden layer, fully connected, DCG
-  i1 = Node("0", NodeType::input, NodeStatus::activated);
-  h1 = Node("1", NodeType::ReLU, NodeStatus::deactivated);
-  o1 = Node("2", NodeType::ReLU, NodeStatus::deactivated);
-  b1 = Node("3", NodeType::bias, NodeStatus::activated);
-  b2 = Node("4", NodeType::bias, NodeStatus::activated);
+  i1 = Node("0", NodeType::input, NodeStatus::activated, NodeActivation::Linear);
+  h1 = Node("1", NodeType::hidden, NodeStatus::activated, NodeActivation::ReLU);
+  o1 = Node("2", NodeType::hidden, NodeStatus::activated, NodeActivation::ReLU);
+  b1 = Node("3", NodeType::bias, NodeStatus::activated, NodeActivation::Linear);
+  b2 = Node("4", NodeType::bias, NodeStatus::activated, NodeActivation::Linear);
   // weights  
   std::shared_ptr<WeightInitOp> weight_init;
   std::shared_ptr<SolverOp> solver;
@@ -581,11 +581,11 @@ Model makeModel2a()
   Weight w1, w2, w3, wb1, wb2;
   Model model2;
   // Toy network: 1 hidden layer, fully connected, DCG
-  i1 = Node("0", NodeType::input, NodeStatus::activated);
-  h1 = Node("1", NodeType::ELU, NodeStatus::deactivated);
-  o1 = Node("2", NodeType::ELU, NodeStatus::deactivated);
-  b1 = Node("3", NodeType::bias, NodeStatus::activated);
-  b2 = Node("4", NodeType::bias, NodeStatus::activated);
+  i1 = Node("0", NodeType::input, NodeStatus::activated, NodeActivation::Linear);
+  h1 = Node("1", NodeType::hidden, NodeStatus::deactivated, NodeActivation::ELU);
+  o1 = Node("2", NodeType::hidden, NodeStatus::deactivated, NodeActivation::ELU);
+  b1 = Node("3", NodeType::bias, NodeStatus::activated, NodeActivation::Linear);
+  b2 = Node("4", NodeType::bias, NodeStatus::activated, NodeActivation::Linear);
   // weights  
   std::shared_ptr<WeightInitOp> weight_init;
   std::shared_ptr<SolverOp> solver;

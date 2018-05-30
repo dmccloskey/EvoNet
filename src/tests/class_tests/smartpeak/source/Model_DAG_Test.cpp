@@ -33,14 +33,14 @@ Model makeModel1()
   Model model1;
 
   // Toy network: 1 hidden layer, fully connected, DAG
-  i1 = Node("0", NodeType::input, NodeStatus::activated);
-  i2 = Node("1", NodeType::input, NodeStatus::activated);
-  h1 = Node("2", NodeType::ReLU, NodeStatus::deactivated);
-  h2 = Node("3", NodeType::ReLU, NodeStatus::deactivated);
-  o1 = Node("4", NodeType::ReLU, NodeStatus::deactivated);
-  o2 = Node("5", NodeType::ReLU, NodeStatus::deactivated);
-  b1 = Node("6", NodeType::bias, NodeStatus::activated);
-  b2 = Node("7", NodeType::bias, NodeStatus::activated);
+  i1 = Node("0", NodeType::input, NodeStatus::activated, NodeActivation::Linear);
+  i2 = Node("1", NodeType::input, NodeStatus::activated, NodeActivation::Linear);
+  h1 = Node("2", NodeType::hidden, NodeStatus::activated, NodeActivation::ReLU);
+  h2 = Node("3", NodeType::hidden, NodeStatus::activated, NodeActivation::ReLU);
+  o1 = Node("4", NodeType::output, NodeStatus::activated, NodeActivation::ReLU);
+  o2 = Node("5", NodeType::output, NodeStatus::activated, NodeActivation::ReLU);
+  b1 = Node("6", NodeType::bias, NodeStatus::activated, NodeActivation::Linear);
+  b2 = Node("7", NodeType::bias, NodeStatus::activated, NodeActivation::Linear);
 
   // weights  
   std::shared_ptr<WeightInitOp> weight_init;

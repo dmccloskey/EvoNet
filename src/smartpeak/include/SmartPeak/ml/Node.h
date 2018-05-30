@@ -27,10 +27,11 @@ namespace SmartPeak
 
   enum class NodeActivation
   {
-    ReLU = 0,
-    ELU = 1,
-    Sigmoid = 2,
-    TanH = 3
+    Linear = 0,
+    ReLU = 1,
+    ELU = 2,
+    Sigmoid = 3,
+    TanH = 4
   };
 
   /**
