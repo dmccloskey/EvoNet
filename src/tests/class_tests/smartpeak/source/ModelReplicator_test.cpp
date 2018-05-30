@@ -169,8 +169,8 @@ Model makeModel1()
   model1.addLinks({l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4});
   return model1;
 }
-Model model1 = makeModel1();
 
+Model model_selectRandomNode1 = makeModel1();
 BOOST_AUTO_TEST_CASE(selectRandomNode1) 
 {
   ModelReplicator model_replicator;
@@ -183,7 +183,7 @@ BOOST_AUTO_TEST_CASE(selectRandomNode1)
   exclusion_list = {NodeType::bias, NodeType::input};
   inclusion_list = {};
   std::vector<std::string> node_names = {"2", "3", "4", "5"};
-  random_node = model_replicator.selectRandomNode(model1, exclusion_list, inclusion_list);
+  random_node = model_replicator.selectRandomNode(model_selectRandomNode1, exclusion_list, inclusion_list);
 
   test_passed = false;
   if (std::count(node_names.begin(), node_names.end(), random_node) != 0)
@@ -192,7 +192,7 @@ BOOST_AUTO_TEST_CASE(selectRandomNode1)
 
   exclusion_list = {};
   inclusion_list = {NodeType::hidden, NodeType::output};
-  random_node = model_replicator.selectRandomNode(model1, exclusion_list, inclusion_list);
+  random_node = model_replicator.selectRandomNode(model_selectRandomNode1, exclusion_list, inclusion_list);
 
   test_passed = false;
   if (std::count(node_names.begin(), node_names.end(), random_node) != 0)
@@ -210,6 +210,7 @@ BOOST_AUTO_TEST_CASE(selectNodes)
   // [TODO: make test]
 }
 
+Model model_selectRandomLink1 = makeModel1();
 BOOST_AUTO_TEST_CASE(selectRandomLink1) 
 {
   ModelReplicator model_replicator;
@@ -225,7 +226,7 @@ BOOST_AUTO_TEST_CASE(selectRandomLink1)
   sink_exclusion_list = {NodeType::bias, NodeType::input};
   sink_inclusion_list = {};
   random_link = model_replicator.selectRandomLink(
-    model1, source_exclusion_list, source_inclusion_list, sink_exclusion_list, sink_inclusion_list);
+    model_selectRandomLink1, source_exclusion_list, source_inclusion_list, sink_exclusion_list, sink_inclusion_list);
 
   test_passed = false;
   if (std::count(link_names.begin(), link_names.end(), random_link) != 0)
@@ -237,7 +238,7 @@ BOOST_AUTO_TEST_CASE(selectRandomLink1)
   sink_exclusion_list = {};
   sink_inclusion_list = {};
   random_link = model_replicator.selectRandomLink(
-    model1, source_exclusion_list, source_inclusion_list, sink_exclusion_list, sink_inclusion_list);
+    model_selectRandomLink1, source_exclusion_list, source_inclusion_list, sink_exclusion_list, sink_inclusion_list);
 
   test_passed = false;
   if (std::count(link_names.begin(), link_names.end(), random_link) != 0)
@@ -245,10 +246,12 @@ BOOST_AUTO_TEST_CASE(selectRandomLink1)
   BOOST_CHECK(test_passed);
 }
 
+
+Model model_addLink = makeModel1();
 BOOST_AUTO_TEST_CASE(addLink) 
 {
   ModelReplicator model_replicator;
-  model_replicator.addLink(model1);
+  model_replicator.addLink(model_addLink);
   std::vector<std::string> link_names = {
     "Link_0_to_2", "Link_0_to_3", "Link_1_to_2", "Link_1_to_3", // existing links
     "Link_2_to_4", "Link_2_to_5", "Link_3_to_4", "Link_3_to_5", // existing links
@@ -267,11 +270,10 @@ BOOST_AUTO_TEST_CASE(addLink)
     };
 
   // [TODO: add loop here with iter = 100]
-  model_replicator.addLink(model1);
   std::regex re("@");
 
   bool link_found = false;
-  std::string link_name = model1.getLinks().rbegin()->getName();
+  std::string link_name = model_addLink.getLinks().rbegin()->getName();
   std::vector<std::string> link_name_tokens;
   std::copy(
     std::sregex_token_iterator(link_name.begin(), link_name.end(), re, -1),
@@ -284,7 +286,7 @@ BOOST_AUTO_TEST_CASE(addLink)
   BOOST_CHECK(link_found);
 
   bool weight_found = false;
-  std::string weight_name = model1.getWeights().rbegin()->getName();
+  std::string weight_name = model_addLink.getWeights().rbegin()->getName();
   std::vector<std::string> weight_name_tokens;
   std::copy(
     std::sregex_token_iterator(weight_name.begin(), weight_name.end(), re, -1),
@@ -297,8 +299,57 @@ BOOST_AUTO_TEST_CASE(addLink)
   BOOST_CHECK(weight_found);
 
   // remove the links and weights that were added
-  model1.removeLinks({model1.getLinks().rbegin()->getName()});
-  model1.removeWeights({model1.getWeights().rbegin()->getName()});
+  model_addLink.removeLinks({model_addLink.getLinks().rbegin()->getName()});
+  model_addLink.removeWeights({model_addLink.getWeights().rbegin()->getName()});
+}
+
+Model model_addNode = makeModel1();
+BOOST_AUTO_TEST_CASE(addNode) 
+{
+  ModelReplicator model_replicator;
+  model_replicator.addNode(model_addNode);
+  std::vector<std::string> node_names = {
+    "Node_2", "Node_3", "Node_4", "Node_5", // existing nodes
+    };
+
+  // [TODO: add loop here with iter = 100]
+  std::regex re("@");
+
+  // check that the node was found
+  bool node_found = false;
+  std::string node_name = model_addNode.getNodes().rbegin()->getName();
+  std::vector<std::string> node_name_tokens;
+  std::copy(
+    std::sregex_token_iterator(node_name.begin(), node_name.end(), re, -1),
+    std::sregex_token_iterator(),
+    std::back_inserter(node_name_tokens));
+  if (std::count(node_names.begin(), node_names.end(), node_name_tokens[0]) != 0)
+    node_found = true;
+  std::cout<<"Node found: "<<node_name_tokens[0]<<std::endl;
+  BOOST_CHECK(node_found);
+
+  // check the correct text after @
+  bool node_text_found = false;
+  std::regex re_addNodes(":");
+  std::vector<std::string> node_text_tokens;
+  std::copy(
+    std::sregex_token_iterator(node_name_tokens[1].begin(), node_name_tokens[1].end(), re, -1),
+    std::sregex_token_iterator(),
+    std::back_inserter(node_text_tokens));
+  if (node_text_tokens[0] == "addNode")
+    node_text_found = true;
+  BOOST_CHECK(node_text_found);
+
+}
+
+BOOST_AUTO_TEST_CASE(deleteNode) 
+{
+  // [TODO: make test]
+}
+
+BOOST_AUTO_TEST_CASE(deleteLink) 
+{
+  // [TODO: make test]
 }
 
 BOOST_AUTO_TEST_CASE(modifyModel) 
