@@ -444,7 +444,7 @@ namespace SmartPeak
     std::string new_node_name(new_node_name_char);
     new_node.setName(new_node_name); 
     std::cout<<"New node name: "<<new_node_name<<std::endl; 
-    model.addNodes({new_node});
+    // model.addNodes({new_node});
     
     // change the output node name of the link to the new copied node name
     Link modified_link = model.getLink(input_link_name);
@@ -454,10 +454,7 @@ namespace SmartPeak
     std::string modified_link_name(modified_link_name_char);
     modified_link.setName(modified_link_name);
     std::cout<<"Modified link name: "<<modified_link_name<<std::endl;  
-    model.addLinks({modified_link});
-
-    // remove the unmodified link
-    model.removeLinks({input_link_name});
+    // model.addLinks({modified_link});
 
     // add a new weight that connects the new copied node
     // to its original node
@@ -479,6 +476,9 @@ namespace SmartPeak
     model.addLinks({link});
     std::cout<<link_name<<std::endl;
     std::cout<<"New link name: "<<link_name<<std::endl;
+
+    // // remove the unmodified link
+    // model.removeLinks({input_link_name});
   }
 
   void ModelReplicator::deleteNode(Model& model)
