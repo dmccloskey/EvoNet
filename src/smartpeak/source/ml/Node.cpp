@@ -19,6 +19,7 @@ namespace SmartPeak
     name_ = other.name_;
     type_ = other.type_;
     status_ = other.status_;
+    activation_ = other.activation_;
     output_min_ = other.output_min_;
     output_max_ = other.output_max_;
     output_ = other.output_;
@@ -28,14 +29,14 @@ namespace SmartPeak
   }
 
   Node::Node(const std::string& name, const SmartPeak::NodeType& type,
-    const SmartPeak::NodeStatus& status):
-    name_(name), type_(type), status_(status)
+    const SmartPeak::NodeStatus& status, const SmartPeak::NodeActivation& activation):
+    name_(name), type_(type), status_(status), activation_(activation)
   {
   }
 
   Node::Node(const int& id, const SmartPeak::NodeType& type,
-    const SmartPeak::NodeStatus& status):
-    id_(id), type_(type), status_(status)
+    const SmartPeak::NodeStatus& status, const SmartPeak::NodeActivation& activation):
+    id_(id), type_(type), status_(status), activation_(activation)
   {
     if (name_ == "")
     {
@@ -85,6 +86,15 @@ namespace SmartPeak
   SmartPeak::NodeStatus Node::getStatus() const
   {
     return status_;
+  }
+
+  void Node::setActivation(const SmartPeak::NodeActivation& activation)
+  {
+    activation_ = activation;
+  }
+  SmartPeak::NodeActivation Node::getActivation() const
+  {
+    return activation_;
   }
 
   void Node::setOutput(const Eigen::Tensor<float, 2>& output)
@@ -188,8 +198,20 @@ namespace SmartPeak
     // Scale the activated output by the time scale
     switch (type_)
     {
-      case NodeType::bias: {break;} 
-      case NodeType::input: {break;}        
+      // no activation
+      case NodeType::bias: {return;} 
+      case NodeType::input: {return;} 
+      case NodeType::hidden: {break;} 
+      case NodeType::output: {break;} 
+      default:
+      {
+        std::cout << "Node type not supported." << std::endl;
+        return;
+      }
+    }
+
+    switch(activation_)
+    {
       case NodeType::ReLU:
       {
         output_step = output_step.unaryExpr(ReLUOp<float>());
@@ -228,8 +250,8 @@ namespace SmartPeak
       }
       default:
       {
-        std::cout << "Node type not supported." << std::endl;
-        break;
+        std::cout << "Node activation not supported." << std::endl;
+        return;
       }
     }
   }
@@ -238,6 +260,7 @@ namespace SmartPeak
   {
     if (!checkTimeStep(time_step)) return;
     Eigen::Tensor<float, 1> output_step = output_.chip(time_step, 1);
+
     switch (type_)
     {
       case NodeType::bias:
@@ -247,7 +270,7 @@ namespace SmartPeak
         {
           derivative_(i, time_step) = output_step(i);
         }
-        break;
+        return;
       } 
       case NodeType::input:
       {
@@ -256,9 +279,20 @@ namespace SmartPeak
         {
           derivative_(i, time_step) = output_step(i);
         }
-        break;
-      }        
-      case NodeType::ReLU:
+        return;
+      }   
+      case NodeType::hidden: {break;}  
+      case NodeType::output: {break;}   
+      default:
+      {
+        std::cout << "Node type not supported." << std::endl;
+        return;
+      }
+    }
+
+    switch (activation_)
+    {       
+      case NodeActivation::ReLU:
       {
         output_step = output_step.unaryExpr(ReLUGradOp<float>());
         for (int i=0; i<output_step.size(); ++i)
@@ -267,7 +301,7 @@ namespace SmartPeak
         }
         break;
       }
-      case NodeType::ELU:
+      case NodeActivation::ELU:
       {
         output_step = output_step.unaryExpr(ELUGradOp<float>(1.0));
         for (int i=0; i<output_step.size(); ++i)
@@ -275,11 +309,12 @@ namespace SmartPeak
           derivative_(i, time_step) = output_step(i);
         }
         break;
-      }
+      } 
+      // [TODO: add cases for for Sigmoid, tanH, etc.]
       default:
       {
-        std::cout << "Node type not supported." << std::endl;
-        break;
+        std::cout << "Node activation not supported." << std::endl;
+        return;
       }
     }
   }

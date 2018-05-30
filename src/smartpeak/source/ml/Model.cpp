@@ -86,7 +86,7 @@ namespace SmartPeak
       else
       {
         // TODO: move to debug log
-        std::cout << "Node id " << node.getName() << " already exists!" << std::endl;
+        std::cout << "Node name " << node.getName() << " already exists!" << std::endl;
       }
     }
   }
@@ -100,7 +100,7 @@ namespace SmartPeak
     else
     {
       // TODO: move to debug log
-      std::cout << "Node id " << node_name << " not found!" << std::endl;
+      std::cout << "Node name " << node_name << " not found!" << std::endl;
     }
   }
 
@@ -142,7 +142,7 @@ namespace SmartPeak
       else
       {
         // TODO: move to debug log
-        std::cout << "Weight id " << weight.getName() << " already exists!" << std::endl;
+        std::cout << "Weight name " << weight.getName() << " already exists!" << std::endl;
       }
     }
   }
@@ -156,7 +156,7 @@ namespace SmartPeak
     else
     {
       // TODO: move to debug log
-      std::cout << "Weight id " << weight_name << " not found!" << std::endl;
+      std::cout << "Weight name " << weight_name << " not found!" << std::endl;
     }
   }
   
@@ -196,7 +196,7 @@ namespace SmartPeak
       else
       {
         // TODO: move to debug log
-        std::cout << "Link id " << link.getName() << " already exists!" << std::endl;
+        std::cout << "Link name " << link.getName() << " already exists!" << std::endl;
       }
     }
   }
@@ -224,7 +224,7 @@ namespace SmartPeak
     else
     {
       // TODO: move to debug log
-      std::cout << "Link id " << link_name << " not found!" << std::endl;
+      std::cout << "Link name " << link_name << " not found!" << std::endl;
     }
   }
 

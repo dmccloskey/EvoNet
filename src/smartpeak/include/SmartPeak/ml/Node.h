@@ -19,12 +19,18 @@ namespace SmartPeak
 
   enum class NodeType
   {
+    input = 1, // No activation function
+    bias = 2, // Zero value
+    output = 3, 
+    hidden = 4
+  };
+
+  enum class NodeActivation
+  {
     ReLU = 0,
     ELU = 1,
-    input = 2, // No activation function
-    bias = 3, // Zero value
-    Sigmoid = 4,
-    TanH = 5
+    Sigmoid = 2,
+    TanH = 3
   };
 
   /**
@@ -35,8 +41,8 @@ namespace SmartPeak
 public:
     Node(); ///< Default constructor
     Node(const Node& other); ///< Copy constructor // [TODO: add test]
-    Node(const std::string& name, const SmartPeak::NodeType& type, const SmartPeak::NodeStatus& status); ///< Explicit constructor  
-    Node(const int& id, const SmartPeak::NodeType& type, const SmartPeak::NodeStatus& status); ///< Explicit constructor  
+    Node(const std::string& name, const SmartPeak::NodeType& type, const SmartPeak::NodeStatus& status, const SmartPeak::NodeActivation); ///< Explicit constructor  
+    Node(const int& id, const SmartPeak::NodeType& type, const SmartPeak::NodeStatus& status, const SmartPeak::NodeActivation); ///< Explicit constructor  
     ~Node(); ///< Default destructor
 
     inline bool operator==(const Node& other) const
@@ -46,11 +52,13 @@ public:
           id_,
           type_,
           status_,
+          activation_,
           name_
         ) == std::tie(
           other.id_,
           other.type_,
           other.status_,
+          other.activation_,
           other.name_
         )
       ;
@@ -66,6 +74,7 @@ public:
       id_ = other.id_;
       name_ = other.name_;
       type_ = other.type_;
+      activation_ = other.activation_;
       status_ = other.status_;
       output_min_ = other.output_min_;
       output_max_ = other.output_max_;
@@ -87,6 +96,9 @@ public:
 
     void setStatus(const SmartPeak::NodeStatus& status); ///< status setter
     SmartPeak::NodeStatus getStatus() const; ///< status getter
+
+    void setActivation(const SmartPeak::NodeActivation& activation); ///< activation setter
+    SmartPeak::NodeActivation getActivation() const; ///< activation getter
 
     void setOutput(const Eigen::Tensor<float, 2>& output); ///< output setter
     Eigen::Tensor<float, 2> getOutput() const; ///< output copy getter
@@ -176,6 +188,7 @@ private:
     std::string name_ = ""; ///< Weight Name
     SmartPeak::NodeType type_; ///< Node Type
     SmartPeak::NodeStatus status_; ///< Node Status   
+    SmartPeak::NodeActivation activation_; ///< Node Status   
 
     float output_min_ = -1.0e6; ///< Min Node output
     float output_max_ = 1.0e6; ///< Max Node output

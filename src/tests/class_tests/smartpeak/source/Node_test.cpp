@@ -29,30 +29,39 @@ BOOST_AUTO_TEST_CASE(destructor)
 
 BOOST_AUTO_TEST_CASE(constructor2) 
 {
-  NodeType type = NodeType::ReLU;
-  NodeStatus status = NodeStatus::initialized;
-  Node node(1, NodeType::ReLU, NodeStatus::initialized);
+  Node node("1", NodeType::hidden, NodeStatus::initialized, NodeActivation::ReLU);
+  node.setId(1);
 
   BOOST_CHECK_EQUAL(node.getId(), 1);
   BOOST_CHECK_EQUAL(node.getName(), "1");
-  BOOST_CHECK(node.getType() == NodeType::ReLU);
+  BOOST_CHECK(node.getType() == NodeType::hidden);
   BOOST_CHECK(node.getStatus() == NodeStatus::initialized);
+  BOOST_CHECK(node.getActivation() == NodeActivation::ReLU);
 }
 
 BOOST_AUTO_TEST_CASE(comparison) 
 {
   Node node, node_test;
-  node = Node(1, NodeType::ReLU, NodeStatus::initialized);
-  node_test = Node(1, NodeType::ReLU, NodeStatus::initialized);
+  node = Node("1", NodeType::hidden, NodeStatus::initialized, NodeActivation::ReLU);
+  node.setId(1);
+  node_test = Node("1", NodeType::hidden, NodeStatus::initialized, NodeActivation::ReLU);
+  node_test.setId(1);
   BOOST_CHECK(node == node_test);
 
-  node = Node(2, NodeType::ReLU, NodeStatus::initialized);
+  node.setId(2);
   BOOST_CHECK(node != node_test);
 
-  node = Node(1, NodeType::ELU, NodeStatus::initialized);
+  node = Node("2", NodeType::hidden, NodeStatus::initialized, NodeActivation::ReLU);
+  node.setId(1);
   BOOST_CHECK(node != node_test);
 
-  node = Node(1, NodeType::ReLU, NodeStatus::activated);
+  node = Node("1", NodeType::hidden, NodeStatus::initialized, NodeActivation::ELU);
+  BOOST_CHECK(node != node_test);
+
+  node = Node("1", NodeType::hidden, NodeStatus::activated, NodeActivation::ReLU);
+  BOOST_CHECK(node != node_test);
+
+  node = Node("1", NodeType::output, NodeStatus::initialized, NodeActivation::ReLU);
   BOOST_CHECK(node != node_test);
 }
 
@@ -61,13 +70,15 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   Node node;
   node.setId(1);
   node.setName("Node1");
-  node.setType(NodeType::ReLU);
+  node.setType(NodeType::hidden);
   node.setStatus(NodeStatus::initialized);
+  node.setActivation(NodeActivation::ReLU);
 
   BOOST_CHECK_EQUAL(node.getId(), 1);
   BOOST_CHECK_EQUAL(node.getName(), "Node1");
-  BOOST_CHECK(node.getType() == NodeType::ReLU);
+  BOOST_CHECK(node.getType() == NodeType::hidden);
   BOOST_CHECK(node.getStatus() == NodeStatus::initialized);
+  BOOST_CHECK(node.getActivation() == NodeActivation::ReLU);
 
   Eigen::Tensor<float, 2> output_test(3, 2), error_test(3, 2), derivative_test(3, 2), dt_test(3, 2);
   output_test.setConstant(0.0f);
@@ -204,7 +215,8 @@ BOOST_AUTO_TEST_CASE(calculateActivation)
   BOOST_CHECK_CLOSE(node.getOutput()(0,1), -1.0, 1e-6); // time point 1 should not be calculated
 
   // test ReLU
-  node.setType(NodeType::ReLU);
+  node.setType(NodeType::hidden);
+  node.setActivation(NodeActivation::ReLU);
   node.setOutput(output_test);
   node.calculateActivation(0);
 
@@ -226,7 +238,8 @@ BOOST_AUTO_TEST_CASE(calculateActivation)
   BOOST_CHECK_CLOSE(node.getOutput()(4,0), -10.0, 1e-6); // time point 0 should not be calculated
 
   // test ELU
-  node.setType(NodeType::ELU);
+  node.setType(NodeType::hidden);
+  node.setActivation(NodeActivation::ELU);
   node.setOutput(output_test);
   node.calculateActivation(0);
   
@@ -236,6 +249,8 @@ BOOST_AUTO_TEST_CASE(calculateActivation)
   BOOST_CHECK_CLOSE(node.getOutput()(3,0), -0.63212055, 1e-6);
   BOOST_CHECK_CLOSE(node.getOutput()(4,0), -0.999954581, 1e-6);
   BOOST_CHECK_CLOSE(node.getOutput()(0,1), -1.0, 1e-6); // time point 1 should not be calculated
+
+  // [TODO: add tests for Sigmoid, tanH, etc.]
 
 }
 
@@ -273,7 +288,8 @@ BOOST_AUTO_TEST_CASE(calculateDerivative)
   BOOST_CHECK_CLOSE(node.getDerivative()(0,1), 0.0, 1e-6); // time step 1 should not be calculated
 
   // test ReLU
-  node.setType(NodeType::ReLU);
+  node.setType(NodeType::hidden);
+  node.setActivation(NodeActivation::ReLU);
   node.initNode(5,2);
   node.setOutput(output_test);
   node.calculateDerivative(0);
@@ -296,7 +312,8 @@ BOOST_AUTO_TEST_CASE(calculateDerivative)
   BOOST_CHECK_CLOSE(node.getDerivative()(2,0), 0.0, 1e-6); // time step 0 should not be calculated
 
   // test ELU
-  node.setType(NodeType::ELU);
+  node.setType(NodeType::hidden);
+  node.setActivation(NodeActivation::ELU);
   node.initNode(5,2);
   node.setOutput(output_test);
   node.calculateDerivative(0);
@@ -307,6 +324,8 @@ BOOST_AUTO_TEST_CASE(calculateDerivative)
   BOOST_CHECK_CLOSE(node.getDerivative()(3,0), 0.36787945, 1e-6);
   BOOST_CHECK_CLOSE(node.getDerivative()(4,0), 4.54187393e-05, 1e-6);
   BOOST_CHECK_CLOSE(node.getDerivative()(0,1), 0.0, 1e-6); // time step 1 should not be calculated
+
+  // [TODO: add tests for Sigmoid, tanH, etc.]
 }
 
 BOOST_AUTO_TEST_CASE(saveCurrentOutput)
@@ -398,7 +417,8 @@ BOOST_AUTO_TEST_CASE(checkOutput)
     }
   }
 
-  node.setType(NodeType::ReLU);
+  node.setType(NodeType::hidden);
+  node.setActivation(NodeActivation::ReLU);
   node.calculateActivation(0);
   for (int i=0; i<output.dimension(0); ++i)
   {

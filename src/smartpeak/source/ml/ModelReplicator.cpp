@@ -513,8 +513,7 @@ namespace SmartPeak
 
   void ModelReplicator::modifyWeight(Model& model)
   {
-    // [TODO: add method body]
-    
+    // [TODO: add method body]    
   }
 
   void ModelReplicator::modifyModel(Model& model)
