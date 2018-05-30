@@ -279,6 +279,8 @@ BOOST_AUTO_TEST_CASE(addLink)
     std::back_inserter(link_name_tokens));
   if (std::count(link_names.begin(), link_names.end(), link_name_tokens[0]) != 0)
     link_found = true;
+  // add tests for the correct tokens after @
+  // std::regex re(":"); to split the "addLinks" from the timestamp
   BOOST_CHECK(link_found);
 
   bool weight_found = false;
@@ -290,6 +292,8 @@ BOOST_AUTO_TEST_CASE(addLink)
     std::back_inserter(weight_name_tokens));
   if (std::count(weight_names.begin(), weight_names.end(), weight_name_tokens[0]) != 0) // [TODO: implement getWeights]
     weight_found = true;
+  // add tests for the correct tokens after @
+  // std::regex re(":"); to split the "addLinks" from the timestamp
   BOOST_CHECK(weight_found);
 
   // remove the links and weights that were added

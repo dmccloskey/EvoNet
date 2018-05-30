@@ -407,35 +407,107 @@ namespace SmartPeak
 
   void ModelReplicator::addNode(Model& model)
   {
-    // [TODO: add method body]
+    // [TODO: add tests]
 
     // pick a random node from the model
-    // that is not an input or bias
+    // that is not an input or bias    
+    std::vector<NodeType> node_exclusion_list = {NodeType::bias, NodeType::input};
+    std::vector<NodeType> node_inclusion_list = {};
+    std::string random_node_name = model_replicator.selectRandomNode(model, node_exclusion_list, node_inclusion_list);
 
     // copy the node and its bias
+    Node new_node = model.getNode(random_node_name);
+
+    // select a random input link
+    std::vector<std::string> input_link_names;
+    for (const Link& link: model.getLinks())
+    {
+      if (link.getSinkNodeName() == new_node.getName())
+      {
+        input_link_names.push_back(link.getName());
+      }
+    }
+    std::string input_link_name = selectRandomElement<std::string>(input_link_names);    
+
+    // generate a current time-stamp to avoid duplicate name additions
+    // [TODO: refactor to its own method for testing purposes]
+    std::chrono::time_point<std::chrono::system_clock> time_now = std::chrono::system_clock::now();
+    std::time_t time_now_t = std::chrono::system_clock::to_time_t(time_now);
+    std::tm now_tm = *std::localtime(&time_now_t);
+    char timestamp[64];
+    std::strftime(timestamp, 64, "%Y-%m-%d-%H-%M-%S", &now_tm);
+    
+    // [TODO: change its iteraction probability?]
+    // update the copied node name and add it to the model
+    char new_node_name_char[128];
+    sprintf(new_node_name_char, "%s@addNode:%s", random_node_name.data(), timestamp);
+    std::string new_node_name(new_node_name_char);
+    new_node.setName(new_node_name);
+    
+    // change the output node name of the link to the new copied node name
+    Link modified_link = model.getLink(input_link_name);
+    modified_link.setSinkNodeName(new_node_name);
+    char link_name_char[128];
+    sprintf(modified_link_name_char, "Link_%s_to_%s@addNode:%s", modified_link.getSourceNodeName().data(), new_node_name, timestamp);
+    std::string modified_link_name(modified_link_name_char);
+    modified_link.setName(modified_link_name);
+    model.addLinks({modified_link});
+
+    // remove the unmodified link
+    model.removeLinks({input_link_name});
+
+    // add a new weight that connects the new copied node
+    // to its original node
+    Weight weight = model.getWeight(model.getLink(input_link_name).getWeightName()); // copy assignment
+    char weight_name_char[128];
+    sprintf(weight_name_char, "Weight_%s_to_%s@addNode:%s", new_node_name.data(), random_node_name.data(), timestamp);
+    std::string weight_name(weight_name_char);
+    weight.setName(weight_name);
+    weight.initWeight();
+    model.addWeights({weight});
 
     // add a new link that connects the new copied node
     // to its original node
+    char link_name_char[128];
+    sprintf(link_name_char, "Link_%s_to_%s@addNode:%s", new_node_name.data(), random_node_name.data(), timestamp);
+    std::string link_name(link_name_char);
+    Link link(link_name, new_node_name, random_node_name, weight_name);
+    model.addLinks({link});
   }
 
   void ModelReplicator::deleteNode(Model& model)
   {
-    // [TODO: add method body]
+    // [TODO: add tests]
+    // [TODO: need to change NodeType to input, bias, hidden, or output]
+    // [TODO: need to add ActivationType to ReLU, Sigmoid, etc,....]
 
     // pick a random node from the model
-    // that is not an input, bias, nor output
+    // that is not an input, bias, [TODO: nor output]
+    std::vector<NodeType> node_exclusion_list = {NodeType::bias, NodeType::input};
+    std::vector<NodeType> node_inclusion_list = {};
+    std::string random_node_name = model_replicator.selectRandomNode(model, node_exclusion_list, node_inclusion_list);
 
     // delete the node, its bias, and its bias link
+    model.removeNodes({random_node_name});
 
   }
 
   void ModelReplicator::deleteLink(Model& model)
   {
-    // [TODO: add method body]
+    // [TODO: add tests]
 
     // pick a random link from the model
+    // that does not connect from a bias or input
+    // [TODO: and does not connect to an output]
+    std::vector<NodeType> source_exclusion_list = {NodeType::bias, NodeType::input};
+    std::vector<NodeType> source_inclusion_list = {};
+    std::vector<NodeType> sink_exclusion_list = {NodeType::bias, NodeType::input};
+    std::vector<NodeType> sink_inclusion_list = {};
+    std::string random_link = model_replicator.selectRandomLink(
+      model, source_exclusion_list, source_inclusion_list, sink_exclusion_list, sink_inclusion_list);
 
-    // delete the node, its bias, and its bias link
+    // delete the link and weight if required    
+    model.removeLinks({random_link});
 
   }
 

@@ -136,12 +136,63 @@ public:
       const std::vector<NodeType>& sink_node_type_include);
 
     // Model modification operators
-    void copyNode(Model& model); ///< copy node in the model (Layer expansion to the left or right)
-    void addNode(Model& model); ///< add node to the model (Layer injection up or down)
-    void addLink(Model& model); ///< add link to the model
-    void deleteNode(Model& model); ///< delete node to the model
-    void deleteLink(Model& model); ///< delete link to the model
-    void modifyWeight(Model& model); ///< modify weights in the model
+
+    /**
+      @brief Copy a node in the model (Layer expansion to the left or right)
+
+      @param model The model
+    */ 
+    void copyNode(Model& model);
+
+    /**
+      @brief Add node to the model (Layer injection up or down).
+        The method utilizes a modified version of the NEAT algorithm whereby a random
+        link is chosen and bifurcated with a new node.  Instead, new nodes are added
+        using the following procedure:
+        1. an existing node is randomly chosen from the model.
+        2. a randomly connected input link to the node is chosen.
+          Note that an input link is chose because it is easier
+          to exclude input nodes than output nodes.
+        3. the chosen node is copied and a new link is added
+          between the new node and the existing node.
+        4. the new link becomes the input link of the existing node and the output link of the new node, 
+          and existing link becomes the input link of the new node.
+
+      References:
+        Kenneth O. Stanley & Risto Miikkulainen (2002). "Evolving Neural Networks Through Augmenting Topologies". 
+        Evolutionary Computation. 10 (2): 99–127. doi:10.1162/106365602320169811
+
+      @param model The model
+    */ 
+    void addNode(Model& model);
+
+    /**
+      @brief add link to the model
+
+      @param model The model
+    */ 
+    void addLink(Model& model);
+
+    /**
+      @brief delete node to the model
+
+      @param model The model
+    */ 
+    void deleteNode(Model& model);
+
+    /**
+      @brief delete link to the model
+
+      @param model The model
+    */ 
+    void deleteLink(Model& model);
+
+    /**
+      @brief modify weights in the model
+
+      @param model The model
+    */ 
+    void modifyWeight(Model& model);
 
 private:
     // modification parameters
