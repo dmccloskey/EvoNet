@@ -83,7 +83,7 @@ namespace SmartPeak
   }
 
   Model ModelReplicator::makeBaselineModel(const int& n_input_nodes, const int& n_hidden_nodes, const int& n_output_nodes,
-    const NodeType& hidden_node_type, const NodeType& output_node_type,
+    const NodeActivation& hidden_node_activation, const NodeActivation& output_node_activation,
     const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver)
   {
     Model model;
@@ -94,7 +94,7 @@ namespace SmartPeak
       char node_name_char[64];
       sprintf(node_name_char, "Input_%d", i);
       std::string node_name(node_name_char);
-      Node node(node_name, NodeType::input, NodeStatus::deactivated);
+      Node node(node_name, NodeType::input, NodeStatus::activated, NodeActivation::Linear);
       model.addNodes({node});
     }
     // Create the hidden nodes + biases
@@ -103,12 +103,12 @@ namespace SmartPeak
       char node_name_char[64];
       sprintf(node_name_char, "Hidden_%d", i);
       std::string node_name(node_name_char);
-      Node node(node_name, hidden_node_type, NodeStatus::deactivated);
+      Node node(node_name, NodeType::hidden, NodeStatus::deactivated, hidden_node_activation);
 
       char bias_name_char[64];
       sprintf(bias_name_char, "Hidden_bias_%d", i);
       std::string bias_name(bias_name_char);
-      Node bias(bias_name, NodeType::bias, NodeStatus::deactivated, NodeActivation::Linear);
+      Node bias(bias_name, NodeType::bias, NodeStatus::activated, NodeActivation::Linear);
       model.addNodes({node, bias});
     }
     // Create the output nodes + biases
@@ -117,12 +117,12 @@ namespace SmartPeak
       char node_name_char[64];
       sprintf(node_name_char, "Output_%d", i);
       std::string node_name(node_name_char);
-      Node node(node_name, output_node_type, NodeStatus::deactivated);
+      Node node(node_name, NodeType::output, NodeStatus::deactivated, output_node_activation);
       
       char bias_name_char[64];
       sprintf(bias_name_char, "Output_bias_%d", i);
       std::string bias_name(bias_name_char);
-      Node bias(bias_name, NodeType::bias, NodeStatus::deactivated, NodeActivation::Linear);
+      Node bias(bias_name, NodeType::bias, NodeStatus::activated, NodeActivation::Linear);
       model.addNodes({node, bias});
     }
 
@@ -413,7 +413,7 @@ namespace SmartPeak
     // that is not an input or bias    
     std::vector<NodeType> node_exclusion_list = {NodeType::bias, NodeType::input};
     std::vector<NodeType> node_inclusion_list = {};
-    std::string random_node_name = model_replicator.selectRandomNode(model, node_exclusion_list, node_inclusion_list);
+    std::string random_node_name = selectRandomNode(model, node_exclusion_list, node_inclusion_list);
 
     // copy the node and its bias
     Node new_node = model.getNode(random_node_name);
@@ -447,7 +447,7 @@ namespace SmartPeak
     // change the output node name of the link to the new copied node name
     Link modified_link = model.getLink(input_link_name);
     modified_link.setSinkNodeName(new_node_name);
-    char link_name_char[128];
+    char modified_link_name_char[128];
     sprintf(modified_link_name_char, "Link_%s_to_%s@addNode:%s", modified_link.getSourceNodeName().data(), new_node_name, timestamp);
     std::string modified_link_name(modified_link_name_char);
     modified_link.setName(modified_link_name);
@@ -485,7 +485,7 @@ namespace SmartPeak
     // that is not an input, bias, [TODO: nor output]
     std::vector<NodeType> node_exclusion_list = {NodeType::bias, NodeType::input};
     std::vector<NodeType> node_inclusion_list = {};
-    std::string random_node_name = model_replicator.selectRandomNode(model, node_exclusion_list, node_inclusion_list);
+    std::string random_node_name = selectRandomNode(model, node_exclusion_list, node_inclusion_list);
 
     // delete the node, its bias, and its bias link
     model.removeNodes({random_node_name});
@@ -503,7 +503,7 @@ namespace SmartPeak
     std::vector<NodeType> source_inclusion_list = {};
     std::vector<NodeType> sink_exclusion_list = {NodeType::bias, NodeType::input};
     std::vector<NodeType> sink_inclusion_list = {};
-    std::string random_link = model_replicator.selectRandomLink(
+    std::string random_link = selectRandomLink(
       model, source_exclusion_list, source_inclusion_list, sink_exclusion_list, sink_inclusion_list);
 
     // delete the link and weight if required    

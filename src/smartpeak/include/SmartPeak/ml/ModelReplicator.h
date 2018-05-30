@@ -42,14 +42,14 @@ public:
       @param n_input_nodes The number of input nodes the model should have
       @param n_hidden_nodes The number of hidden nodes the model should have
       @param n_output_nodes The number of output nodes the model should have
-      @param hidden_node_type The type of hidden node to create
-      @param output_node_type The type of output node to create
+      @param hidden_node_activation The activation function of the hidden node to create
+      @param output_node_activation The activation function of the output node to create
       @param [TODO: docstrings for new params]
 
       @returns A baseline model
     */ 
     Model makeBaselineModel(const int& n_input_nodes, const int& n_hidden_nodes, const int& n_output_nodes,
-      const NodeType& hidden_node_type, const NodeType& output_node_type,
+      const NodeActivation& hidden_node_activation, const NodeActivation& output_node_activation,
       const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver);
  
     /**

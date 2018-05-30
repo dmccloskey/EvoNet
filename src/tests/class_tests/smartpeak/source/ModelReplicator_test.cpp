@@ -58,7 +58,7 @@ BOOST_AUTO_TEST_CASE(makeBaselineModel)
   solver.reset(new SGDOp(0.01, 0.9));
   Model model = model_replicator.makeBaselineModel(
     2, 1, 2,
-    NodeType::ReLU, NodeType::ReLU,
+    NodeActivation::ReLU, NodeActivation::ReLU,
     weight_init, solver);
 
   std::vector<std::string> node_names = {
@@ -101,10 +101,10 @@ Model makeModel1()
   // Toy network: 1 hidden layer, fully connected, DAG
   i1 = Node("0", NodeType::input, NodeStatus::activated, NodeActivation::Linear);
   i2 = Node("1", NodeType::input, NodeStatus::activated, NodeActivation::Linear);
-  h1 = Node("2", NodeType::hidden, NodeStatus::activated, NodeActivation::ReLU);
-  h2 = Node("3", NodeType::hidden, NodeStatus::activated, NodeActivation::ReLU);
-  o1 = Node("4", NodeType::output, NodeStatus::activated, NodeActivation::ReLU);
-  o2 = Node("5", NodeType::output, NodeStatus::activated, NodeActivation::ReLU);
+  h1 = Node("2", NodeType::hidden, NodeStatus::deactivated, NodeActivation::ReLU);
+  h2 = Node("3", NodeType::hidden, NodeStatus::deactivated, NodeActivation::ReLU);
+  o1 = Node("4", NodeType::output, NodeStatus::deactivated, NodeActivation::ReLU);
+  o2 = Node("5", NodeType::output, NodeStatus::deactivated, NodeActivation::ReLU);
   b1 = Node("6", NodeType::bias, NodeStatus::activated, NodeActivation::Linear);
   b2 = Node("7", NodeType::bias, NodeStatus::activated, NodeActivation::Linear);
 
@@ -191,7 +191,7 @@ BOOST_AUTO_TEST_CASE(selectRandomNode1)
   BOOST_CHECK(test_passed);
 
   exclusion_list = {};
-  inclusion_list = {NodeType::ReLU};
+  inclusion_list = {NodeType::hidden, NodeType::output};
   random_node = model_replicator.selectRandomNode(model1, exclusion_list, inclusion_list);
 
   test_passed = false;
@@ -233,7 +233,7 @@ BOOST_AUTO_TEST_CASE(selectRandomLink1)
   BOOST_CHECK(test_passed);
 
   source_exclusion_list = {NodeType::bias, NodeType::input};
-  source_inclusion_list = {NodeType::ReLU};
+  source_inclusion_list = {NodeType::hidden, NodeType::output};
   sink_exclusion_list = {};
   sink_inclusion_list = {};
   random_link = model_replicator.selectRandomLink(

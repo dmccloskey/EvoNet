@@ -42,8 +42,8 @@ namespace SmartPeak
 public:
     Node(); ///< Default constructor
     Node(const Node& other); ///< Copy constructor // [TODO: add test]
-    Node(const std::string& name, const SmartPeak::NodeType& type, const SmartPeak::NodeStatus& status, const SmartPeak::NodeActivation); ///< Explicit constructor  
-    Node(const int& id, const SmartPeak::NodeType& type, const SmartPeak::NodeStatus& status, const SmartPeak::NodeActivation); ///< Explicit constructor  
+    Node(const std::string& name, const SmartPeak::NodeType& type, const SmartPeak::NodeStatus& status, const SmartPeak::NodeActivation& activation); ///< Explicit constructor  
+    Node(const int& id, const SmartPeak::NodeType& type, const SmartPeak::NodeStatus& status, const SmartPeak::NodeActivation& activation); ///< Explicit constructor  
     ~Node(); ///< Default destructor
 
     inline bool operator==(const Node& other) const

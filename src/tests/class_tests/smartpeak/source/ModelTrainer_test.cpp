@@ -134,15 +134,15 @@ BOOST_AUTO_TEST_CASE(checkOutputData)
 //       // Toy network: 1 hidden layer, fully connected, DAG
 //       input = Node("input", NodeType::input, NodeStatus::activated, NodeActivation::Linear);
 //       forget_gate = Node("forget_gate", NodeType::Sigmoid, NodeStatus::deactivated);
-//       forget_mult = Node("forget_mult", NodeType::hidden, NodeStatus::activated, NodeActivation::ReLU); //?
+//       forget_mult = Node("forget_mult", NodeType::hidden, NodeStatus::deactivated, NodeActivation::ReLU); //?
 //       add_gate1 = Node("add_gate1", NodeType::Sigmoid, NodeStatus::deactivated);
 //       add_gate2 = Node("add_gate2", NodeType::TanH, NodeStatus::deactivated);
-//       add_mult = Node("add_mult", NodeType::hidden, NodeStatus::activated, NodeActivation::ReLU); //?
-//       memory_cell = Node("memory_cell", NodeType::hidden, NodeStatus::activated, NodeActivation::ReLU); //?
+//       add_mult = Node("add_mult", NodeType::hidden, NodeStatus::deactivated, NodeActivation::ReLU); //?
+//       memory_cell = Node("memory_cell", NodeType::hidden, NodeStatus::deactivated, NodeActivation::ReLU); //?
 //       output_gate1 = Node("output_gate1", NodeType::Sigmoid, NodeStatus::activated);
 //       output_gate2 = Node("output_gate2", NodeType::TanH, NodeStatus::activated);
-//       output_mult = Node("output_mult", NodeType::hidden, NodeStatus::activated, NodeActivation::ReLU); //?
-//       output = Node("output", NodeType::hidden, NodeStatus::activated, NodeActivation::ReLU);
+//       output_mult = Node("output_mult", NodeType::hidden, NodeStatus::deactivated, NodeActivation::ReLU); //?
+//       output = Node("output", NodeType::hidden, NodeStatus::deactivated, NodeActivation::ReLU);
 //     }
 //   };
   
@@ -166,14 +166,14 @@ BOOST_AUTO_TEST_CASE(DAGToy)
       Model model1;
 
       // Toy network: 1 hidden layer, fully connected, DAG
-      i1 = Node("0", NodeType::input, NodeStatus::deactivated);
-      i2 = Node("1", NodeType::input, NodeStatus::deactivated);
-      h1 = Node("2", NodeType::hidden, NodeStatus::activated, NodeActivation::ReLU);
-      h2 = Node("3", NodeType::hidden, NodeStatus::activated, NodeActivation::ReLU);
+      i1 = Node("0", NodeType::input, NodeStatus::activated, NodeActivation::Linear);
+      i2 = Node("1", NodeType::input, NodeStatus::activated, NodeActivation::Linear);
+      h1 = Node("2", NodeType::hidden, NodeStatus::deactivated, NodeActivation::ReLU);
+      h2 = Node("3", NodeType::hidden, NodeStatus::deactivated, NodeActivation::ReLU);
       o1 = Node("4", NodeType::output, NodeStatus::activated, NodeActivation::ReLU);
       o2 = Node("5", NodeType::output, NodeStatus::activated, NodeActivation::ReLU);
-      b1 = Node("6", NodeType::bias, NodeStatus::deactivated, NodeActivation::Linear);
-      b2 = Node("7", NodeType::bias, NodeStatus::deactivated, NodeActivation::Linear);
+      b1 = Node("6", NodeType::bias, NodeStatus::activated, NodeActivation::Linear);
+      b2 = Node("7", NodeType::bias, NodeStatus::activated, NodeActivation::Linear);
 
       // weights  
       std::shared_ptr<WeightInitOp> weight_init;

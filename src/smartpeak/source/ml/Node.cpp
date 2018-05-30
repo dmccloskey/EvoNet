@@ -212,7 +212,7 @@ namespace SmartPeak
 
     switch(activation_)
     {
-      case NodeType::ReLU:
+      case NodeActivation::ReLU:
       {
         output_step = output_step.unaryExpr(ReLUOp<float>());
         for (int i=0; i<output_step.size(); ++i)
@@ -221,7 +221,7 @@ namespace SmartPeak
         }
         break;
       }
-      case NodeType::ELU:
+      case NodeActivation::ELU:
       {
         output_step = output_step.unaryExpr(ELUOp<float>(1.0));
         for (int i=0; i<output_step.size(); ++i)
@@ -230,7 +230,7 @@ namespace SmartPeak
         }
         break;
       }
-      case NodeType::Sigmoid:
+      case NodeActivation::Sigmoid:
       {
         output_step = output_step.unaryExpr(SigmoidOp<float>());
         for (int i=0; i<output_step.size(); ++i)
@@ -239,7 +239,7 @@ namespace SmartPeak
         }
         break;
       }
-      case NodeType::TanH:
+      case NodeActivation::TanH:
       {
         output_step = output_step.unaryExpr(TanHOp<float>());
         for (int i=0; i<output_step.size(); ++i)

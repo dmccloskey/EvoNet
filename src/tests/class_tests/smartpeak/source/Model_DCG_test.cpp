@@ -33,8 +33,8 @@ Model makeModel2()
   Model model2;
   // Toy network: 1 hidden layer, fully connected, DCG
   i1 = Node("0", NodeType::input, NodeStatus::activated, NodeActivation::Linear);
-  h1 = Node("1", NodeType::hidden, NodeStatus::activated, NodeActivation::ReLU);
-  o1 = Node("2", NodeType::hidden, NodeStatus::activated, NodeActivation::ReLU);
+  h1 = Node("1", NodeType::hidden, NodeStatus::deactivated, NodeActivation::ReLU);
+  o1 = Node("2", NodeType::output, NodeStatus::deactivated, NodeActivation::ReLU);
   b1 = Node("3", NodeType::bias, NodeStatus::activated, NodeActivation::Linear);
   b2 = Node("4", NodeType::bias, NodeStatus::activated, NodeActivation::Linear);
   // weights  
@@ -583,7 +583,7 @@ Model makeModel2a()
   // Toy network: 1 hidden layer, fully connected, DCG
   i1 = Node("0", NodeType::input, NodeStatus::activated, NodeActivation::Linear);
   h1 = Node("1", NodeType::hidden, NodeStatus::deactivated, NodeActivation::ELU);
-  o1 = Node("2", NodeType::hidden, NodeStatus::deactivated, NodeActivation::ELU);
+  o1 = Node("2", NodeType::output, NodeStatus::deactivated, NodeActivation::ELU);
   b1 = Node("3", NodeType::bias, NodeStatus::activated, NodeActivation::Linear);
   b2 = Node("4", NodeType::bias, NodeStatus::activated, NodeActivation::Linear);
   // weights  
