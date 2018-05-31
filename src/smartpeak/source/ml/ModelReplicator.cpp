@@ -298,7 +298,10 @@ namespace SmartPeak
     if (node_ids.size()>0)
       return selectRandomElement<std::string>(node_ids);
     else
+    {
       printf("No nodes were found that matched the inclusion/exclusion criteria.\n");
+      return "";
+    }
   }
 
   std::string ModelReplicator::selectRandomLink(
@@ -313,11 +316,13 @@ namespace SmartPeak
     if (source_node_ids.size() == 0)
     {
       printf("No source nodes were found that matched the inclusion/exclusion criteria.\n");
+      return "";
     }
     std::vector<std::string> sink_node_ids = selectNodes(model, sink_node_type_exclude, sink_node_type_include);
     if (sink_node_ids.size() == 0)
     {
       printf("No sink nodes were found that matched the inclusion/exclusion criteria.\n");
+      return "";
     }
 
     // find all links that have an existing connection with the source and sink node candidates
@@ -334,7 +339,10 @@ namespace SmartPeak
     if (link_ids.size()>0)
       return selectRandomElement<std::string>(link_ids);
     else
+    {
       printf("No links were found that matched the node inclusion/exclusion criteria.\n"); 
+      return "";
+    }
   }
 
   void ModelReplicator::addLink(
