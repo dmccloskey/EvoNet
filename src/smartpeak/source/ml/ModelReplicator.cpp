@@ -414,7 +414,7 @@ namespace SmartPeak
     std::vector<NodeType> node_exclusion_list = {NodeType::bias, NodeType::input};
     std::vector<NodeType> node_inclusion_list = {NodeType::hidden, NodeType::output};
     std::string random_node_name = selectRandomNode(model, node_exclusion_list, node_inclusion_list);
-    
+
     // copy the node and its bias
     Node new_node = model.getNode(random_node_name);
 
@@ -444,7 +444,6 @@ namespace SmartPeak
     sprintf(new_node_name_char, "%s@addNode:%s", random_node_name.data(), timestamp);
     std::string new_node_name(new_node_name_char);
     new_node.setName(new_node_name); 
-    std::cout<<"New node name: "<<new_node_name<<std::endl; 
     model.addNodes({new_node});
     
     // change the output node name of the link to the new copied node name
@@ -453,8 +452,7 @@ namespace SmartPeak
     char modified_link_name_char[512];
     sprintf(modified_link_name_char, "Link_%s_to_%s@addNode:%s", modified_link.getSourceNodeName().data(), new_node_name.data(), timestamp);
     std::string modified_link_name(modified_link_name_char);
-    modified_link.setName(modified_link_name);
-    std::cout<<"Modified link name: "<<modified_link_name<<std::endl;  
+    modified_link.setName(modified_link_name); 
     model.addLinks({modified_link});
 
     // add a new weight that connects the new copied node
@@ -466,7 +464,6 @@ namespace SmartPeak
     weight.setName(weight_name);
     weight.initWeight();
     model.addWeights({weight});
-    std::cout<<"New weight name: "<<weight_name<<std::endl;
 
     // add a new link that connects the new copied node
     // to its original node
@@ -475,11 +472,9 @@ namespace SmartPeak
     std::string link_name(link_name_char);
     Link link(link_name, new_node_name, random_node_name, weight_name);
     model.addLinks({link});
-    std::cout<<"New link name: "<<link_name<<std::endl;
 
     // remove the unmodified link
     model.removeLinks({input_link_name});
-    std::cout<<"Removed link name: "<<input_link_name<<std::endl;
   }
 
   void ModelReplicator::deleteNode(Model& model)
@@ -490,13 +485,17 @@ namespace SmartPeak
 
     // pick a random node from the model
     // that is not an input, bias, [TODO: nor output]
-    std::vector<NodeType> node_exclusion_list = {NodeType::bias, NodeType::input};
-    std::vector<NodeType> node_inclusion_list = {NodeType::output};
+    std::vector<NodeType> node_exclusion_list = {NodeType::bias, NodeType::input, NodeType::output};
+    std::vector<NodeType> node_inclusion_list = {NodeType::hidden};
     std::string random_node_name = selectRandomNode(model, node_exclusion_list, node_inclusion_list);
 
     // delete the node, its bias, and its bias link
-    model.removeNodes({random_node_name});
-
+    if (!random_node_name.empty())
+    {
+      std::cout<<"Random node name: "<<random_node_name<<std::endl;
+      model.removeNodes({random_node_name});
+      model.pruneModel();  // this action can remove additional nodes including inputs, biases, and outputs
+    }
   }
 
   void ModelReplicator::deleteLink(Model& model)
@@ -510,12 +509,15 @@ namespace SmartPeak
     std::vector<NodeType> source_inclusion_list = {};
     std::vector<NodeType> sink_exclusion_list = {NodeType::bias};
     std::vector<NodeType> sink_inclusion_list = {};
-    std::string random_link = selectRandomLink(
+    std::string random_link_name = selectRandomLink(
       model, source_exclusion_list, source_inclusion_list, sink_exclusion_list, sink_inclusion_list);
 
-    // delete the link and weight if required    
-    model.removeLinks({random_link});
-
+    // delete the link and weight if required
+    if (!random_link_name.empty())
+    {
+      model.removeLinks({random_link_name});
+      model.pruneModel();  // this action can remove additional nodes including inputs, biases, and outputs
+    }
   }
 
   void ModelReplicator::modifyWeight(Model& model)

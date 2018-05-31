@@ -453,20 +453,33 @@ public:
     /**
       @brief Removes nodes from the model that no longer
         have an associated link.
+
+      @returns True if nodes were removed, False otherwise
     */ 
-    void pruneNodes();
+    bool pruneNodes();
  
     /**
       @brief Removes links from the model that no longer
         have associated nodes.
+
+      @returns True if links were removed, False otherwise
     */ 
-    void pruneLinks();    
+    bool pruneLinks();    
  
     /**
       @brief Removes weights from the model that no longer
         have associated links.
+
+      @returns True if weights were removed, False otherwise
     */ 
-    void pruneWeights(); 
+    bool pruneWeights(); 
+ 
+    /**
+      @brief Removes dangling links, weights, and nodes 
+        recursively until there are no more dangling
+        model components.
+    */ 
+    void pruneModel(); 
 
 private:
     int id_; ///< Model ID

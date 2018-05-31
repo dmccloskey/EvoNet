@@ -82,11 +82,9 @@ BOOST_AUTO_TEST_CASE(pruneNodes)
 
   model.addNodes({source1, sink1});
   model.pruneNodes();
-  for (int i=0; i<nodes_test.size(); ++i)
-  {
-    BOOST_CHECK(model.getNode(nodes_test[i].getName()) == nodes_test[i]);
-  }  
+  BOOST_CHECK_EQUAL(model.getNodes().size(), 0);
 
+  model.addNodes({source1, sink1});
   model.addLinks({link1});
   model.addWeights({weight1});
   model.pruneNodes();
@@ -116,11 +114,9 @@ BOOST_AUTO_TEST_CASE(pruneWeights)
 
   model.addWeights({weight1});
   model.pruneWeights();
-  for (int i=0; i<weights_test.size(); ++i)
-  {
-    BOOST_CHECK(model.getWeight(weights_test[i].getName()) == weights_test[i]);
-  }  
+  BOOST_CHECK_EQUAL(model.getWeights().size(), 0);
 
+  model.addWeights({weight1});
   model.addNodes({source1, sink1});
   model.addLinks({link1});
   model.pruneWeights();
@@ -288,18 +284,9 @@ BOOST_AUTO_TEST_CASE(addGetRemoveLinks)
   }
   std::vector<Node> nodes_test;
   nodes_test.push_back(source1);
-  nodes_test.push_back(sink1);  
-  // // TODO: WHY ARE THESE GENERATING MEMORY ACCESS ERRORS?
-  // for (int i=0; i<nodes_test.size(); ++i)
-  // { // Should not be equal because nodes were not yet added to the model
-  //   BOOST_CHECK(model.getNode(nodes_test[i].getName()) != nodes_test[i]);
-  // }
+  nodes_test.push_back(sink1);
   std::vector<Weight> weights_test;
   weights_test.push_back(weight1);
-  // for (int i=0; i<weights_test.size(); ++i)
-  // { // Should not be equal because nodes were not yet added to the model
-  //   BOOST_CHECK(model.getWeight(weights_test[i].getName()) != weights_test[i]);
-  // }
   
   // add nodes to the model
   model.addNodes({source1, sink1});
@@ -408,6 +395,46 @@ BOOST_AUTO_TEST_CASE(comparison)
   model2.setId(1);
   model2.addLinks({link2});
   BOOST_CHECK(model1 != model2);
+}
+
+BOOST_AUTO_TEST_CASE(pruneModel) 
+{
+  // minimal toy model
+  Node input, hidden, output;
+  input = Node("i", NodeType::input, NodeStatus::activated, NodeActivation::Linear);
+  hidden = Node("h", NodeType::hidden, NodeStatus::initialized, NodeActivation::ReLU);
+  output = Node("o", NodeType::output, NodeStatus::initialized, NodeActivation::ReLU);
+  Weight w_i_to_h, w_h_to_o;
+  std::shared_ptr<WeightInitOp> weight_init;
+  std::shared_ptr<SolverOp> solver;
+  weight_init.reset(new ConstWeightInitOp(1.0));
+  solver.reset(new SGDOp(0.01, 0.9));
+  w_i_to_h = Weight("i_to_h", weight_init, solver);
+  weight_init.reset(new ConstWeightInitOp(1.0));
+  solver.reset(new SGDOp(0.01, 0.9));
+  w_h_to_o = Weight("h_to_o", weight_init, solver);
+  Link l_i_to_h, l_h_to_o;
+  l_i_to_h = Link("i_to_h", "i", "h", "i_to_h");
+  l_h_to_o = Link("h_to_o", "h", "o", "h_to_o");
+  Model model;
+  model.addNodes({input, hidden, output});
+  model.addWeights({w_i_to_h, w_h_to_o});
+  model.addLinks({l_i_to_h, l_h_to_o});
+
+  model.pruneModel();
+  BOOST_CHECK_EQUAL(model.getNodes().size(), 3);
+  BOOST_CHECK_EQUAL(model.getWeights().size(), 2);
+  BOOST_CHECK_EQUAL(model.getLinks().size(), 2);
+  
+  model.removeLinks({"i_to_h"});
+  BOOST_CHECK_EQUAL(model.getNodes().size(), 2);
+  BOOST_CHECK_EQUAL(model.getWeights().size(), 1);
+  BOOST_CHECK_EQUAL(model.getLinks().size(), 1);
+  
+  model.removeNodes({"h"});
+  BOOST_CHECK_EQUAL(model.getNodes().size(), 0);
+  BOOST_CHECK_EQUAL(model.getWeights().size(), 0);
+  BOOST_CHECK_EQUAL(model.getLinks().size(), 0);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

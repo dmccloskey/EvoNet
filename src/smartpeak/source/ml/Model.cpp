@@ -222,14 +222,14 @@ namespace SmartPeak
     return links;
   }
 
-  void Model::pruneNodes()
+  bool Model::pruneNodes()
   {
     std::vector<std::string> node_names;
-    if (nodes_.empty()) { return; }
+    if (nodes_.empty()) { return false; }
     for (const auto& node : nodes_)
     {
       bool found = false;
-      if (links_.empty()) { return; }
+      // if (links_.empty()) { found = true; }
       for (const auto& link: links_)
       {
         if (node.second.getName() == link.second.getSourceNodeName() ||
@@ -244,17 +244,23 @@ namespace SmartPeak
         node_names.push_back(node.first);
       }
     }
-    if (node_names.size() != 0) { removeNodes(node_names); }    
+    if (node_names.size() != 0)
+    {
+      removeNodes(node_names); 
+      return true;
+    }  
+    else
+      return false;  
   }
 
-  void Model::pruneWeights()
+  bool Model::pruneWeights()
   {
     std::vector<std::string> weight_names;
-    if (weights_.empty()) { return; }
+    if (weights_.empty()) { return false; }
     for (const auto& weight : weights_)
     {
       bool found = false;
-      if (links_.empty()) { return; }
+      // if (links_.empty()) { found = true; }
       for (const auto& link: links_)
       {
         if (weight.second.getName() == link.second.getWeightName())
@@ -268,41 +274,69 @@ namespace SmartPeak
         weight_names.push_back(weight.first);
       }
     }
-    if (weight_names.size() != 0) { removeWeights(weight_names); }    
+    if (weight_names.size() != 0)
+    { 
+      removeWeights(weight_names);
+      return true;
+    }  
+    else
+      return false;     
   }
 
-  void Model::pruneLinks()
+  bool Model::pruneLinks()
   {
     std::vector<std::string> link_names;
-    if (links_.empty()) { return; }
+    if (links_.empty()) { return false; }
     for (const auto& link: links_)
     {
-      bool found = false;
-      if (nodes_.empty()) { return; }
+      bool source_node_found = false;
+      bool sink_node_found = false;
+      // if (nodes_.empty())
+      // {
+      //   source_node_found = true;
+      //   sink_node_found = true;
+      // }
       for (const auto& node : nodes_)
       {
-        if (node.second.getName() == link.second.getSourceNodeName() ||
-          node.second.getName() == link.second.getSinkNodeName())
+        if (node.second.getName() == link.second.getSourceNodeName())
+          source_node_found = true;
+        if (node.second.getName() == link.second.getSinkNodeName())
+          sink_node_found = true;
+        if (source_node_found && sink_node_found)
+          break;
+      }
+      bool weight_found = false;
+      // if (weights_.empty()) { weight_found = true; }
+      for (const auto& weight : weights_)
+      {
+        if (weight.second.getName() == link.second.getWeightName())
         {
-          found = true;
+          weight_found = true;
           break;
         }
       }
-      // if (weights_.empty()) { return; }
-      // for (const auto& weight : weights_)
-      // {
-      //   if (weight.second.getName() == link.second.getWeightName())
-      //   {
-      //     found = true;
-      //     break;
-      //   }
-      // }
-      if (!found)
+      if (!source_node_found || !sink_node_found)
       {
         link_names.push_back(link.first);
       }
     }
-    if (link_names.size() != 0) { removeLinks(link_names); }
+    if (link_names.size() != 0)
+    {
+      removeLinks(link_names);
+      return true;
+    }  
+    else
+      return false; 
+  }
+
+  void Model::pruneModel()
+  {
+    int cnt = 0;
+    while (pruneLinks() || pruneWeights() || pruneNodes())
+    {
+      std::cout<<"Pruning model iteration: "<<cnt<<std::endl;
+      cnt += 1;
+    }
   }
 
   void Model::initNodes(const int& batch_size, const int& memory_size)

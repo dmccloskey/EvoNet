@@ -131,12 +131,12 @@ Model makeModel1()
   solver.reset(new SGDOp(0.01, 0.9));
   wb2 = Weight("5", weight_init, solver);
   // input layer + bias
-  l1 = Link("0", "0", "2", "0");
-  l2 = Link("1", "0", "3", "1");
-  l3 = Link("2", "1", "2", "2");
-  l4 = Link("3", "1", "3", "3");
-  lb1 = Link("4", "6", "2", "4");
-  lb2 = Link("5", "6", "3", "5");
+  l1 = Link("0_to_2", "0", "2", "0");
+  l2 = Link("0_to_3", "0", "3", "1");
+  l3 = Link("1_to_2", "1", "2", "2");
+  l4 = Link("1_to_3", "1", "3", "3");
+  lb1 = Link("6_to_2", "6", "2", "4");
+  lb2 = Link("6_to_3", "6", "3", "5");
   // weights
   weight_init.reset(new ConstWeightInitOp(1.0));
   solver.reset(new SGDOp(0.01, 0.9));
@@ -157,12 +157,12 @@ Model makeModel1()
   solver.reset(new SGDOp(0.01, 0.9));
   wb4 = Weight("11", weight_init, solver);
   // hidden layer + bias
-  l5 = Link("6", "2", "4", "6");
-  l6 = Link("7", "2", "5", "7");
-  l7 = Link("8", "3", "4", "8");
-  l8 = Link("9", "3", "5", "9");
-  lb3 = Link("10", "7", "4", "10");
-  lb4 = Link("11", "7", "5", "11");
+  l5 = Link("2_to_4", "2", "4", "6");
+  l6 = Link("2_to_5", "2", "5", "7");
+  l7 = Link("3_to_4", "3", "4", "8");
+  l8 = Link("3_to_5", "3", "5", "9");
+  lb3 = Link("7_to_4", "7", "4", "10");
+  lb4 = Link("7_to_5", "7", "5", "11");
   model1.setId(1);
   model1.addNodes({i1, i2, h1, h2, o1, o2, b1, b2});
   model1.addWeights({w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4});
@@ -217,7 +217,7 @@ BOOST_AUTO_TEST_CASE(selectRandomLink1)
   std::vector<NodeType> source_exclusion_list, source_inclusion_list, sink_exclusion_list, sink_inclusion_list;
   std::string random_link;
   bool test_passed;
-  std::vector<std::string> link_names = {"6", "7", "8", "9"};
+  std::vector<std::string> link_names = {"2_to_4", "3_to_4", "2_to_5", "3_to_5"};
 
   // [TODO: add loop here with iter = 100]
 
@@ -297,10 +297,6 @@ BOOST_AUTO_TEST_CASE(addLink)
   // add tests for the correct tokens after @
   // std::regex re(":"); to split the "addLinks" from the timestamp
   BOOST_CHECK(weight_found);
-
-  // remove the links and weights that were added
-  model_addLink.removeLinks({model_addLink.getLinks().rbegin()->getName()});
-  model_addLink.removeWeights({model_addLink.getWeights().rbegin()->getName()});
 }
 
 Model model_addNode = makeModel1();
@@ -366,18 +362,22 @@ BOOST_AUTO_TEST_CASE(deleteNode)
   BOOST_CHECK_EQUAL(model_deleteNode.getLinks().size(), 7);
 
   model_replicator.deleteNode(model_deleteNode);
-  BOOST_CHECK_EQUAL(model_deleteNode.getNodes().size(),5);
+  BOOST_CHECK_EQUAL(model_deleteNode.getNodes().size(),3);
   BOOST_CHECK_EQUAL(model_deleteNode.getLinks().size(),2);
 
   model_replicator.deleteNode(model_deleteNode);
-  BOOST_CHECK_EQUAL(model_deleteNode.getNodes().size(),5);
-  BOOST_CHECK_EQUAL(model_deleteNode.getLinks().size(),2);
+  BOOST_CHECK_EQUAL(model_deleteNode.getNodes().size(), 3);
+  BOOST_CHECK_EQUAL(model_deleteNode.getLinks().size(), 2);
 }
 
 Model model_deleteLink = makeModel1();
 BOOST_AUTO_TEST_CASE(deleteLink) 
 {
-  // [TODO: make test]
+  ModelReplicator model_replicator;
+
+  model_replicator.deleteLink(model_deleteLink);
+  BOOST_CHECK_EQUAL(model_deleteLink.getNodes().size(), 8);
+  BOOST_CHECK_EQUAL(model_deleteLink.getLinks().size(), 11);
 }
 
 BOOST_AUTO_TEST_CASE(modifyModel) 
