@@ -223,25 +223,8 @@ BOOST_AUTO_TEST_CASE(DELETEAfterTesting)
 
   // train the population
   std::cout<<"Training the population..."<<std::endl;
-  for (int i=0; i<population.size(); ++i)
-  {
-    std::cout<<"Training the model "<<i<<"..."<<std::endl;
-    try
-    {
-      model_trainer.trainModel(
-        population[i], input_data, output_data, time_steps,
-        input_nodes, output_nodes);
-    }
-    catch (std::exception& e)
-    {
-      printf("The model %s is broken.\n", population[i].getName().data());
-      // need to remove the model somehow...
-    }
-
-    const Eigen::Tensor<float, 0> total_error = population[i].getError().sum();
-    std::cout<<"Total error for Model "<<population[i].getName()<<" is "<<total_error(0)<<std::endl;
-  }
-
+  population_trainer.trainModels(population, model_trainer);
+  
   // select the top N from the population
   // NOTES: will need to deal with cases where there are less models in the population than N
   std::cout<<"Select the top N models from the population..."<<std::endl;

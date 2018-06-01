@@ -75,18 +75,6 @@ public:
     */ 
     void trainModels(std::vector<Model>& models,
       const ModelTrainer& model_trainer);
- 
-    /**
-      @brief Trains each of the models in the population
-        using the same test data set
-        
-      [TODO: add method and tests]
-
-      @param[in, out] models The vector of models to copy
-      @param[in] model_trainer The trainer to use
-    */ 
-    void validateModels(std::vector<Model>& models,
-      const ModelTrainer& model_trainer);
   };
 }
 
