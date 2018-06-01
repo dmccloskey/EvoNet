@@ -477,9 +477,12 @@ public:
     /**
       @brief Removes dangling links, weights, and nodes 
         recursively until there are no more dangling
-        model components.
+        model components or the number of user specified
+        iterations has been reached.
+
+      @param[in] iterations The number of recursive iterations to prune
     */ 
-    void pruneModel(); 
+    void pruneModel(int iterations = 1e3); 
 
 private:
     int id_; ///< Model ID

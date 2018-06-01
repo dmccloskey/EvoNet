@@ -119,7 +119,7 @@ namespace SmartPeak
         nodes_.erase(node_name);
       }
     }
-    pruneLinks();
+    // pruneLinks(); // Allow for dangling links
   }
 
 
@@ -195,7 +195,7 @@ namespace SmartPeak
         links_.erase(link_name);
       }
     }
-    pruneNodes();
+    // pruneNodes(); // Allow dangling nodes to exist
     pruneWeights();
   }
 
@@ -329,12 +329,13 @@ namespace SmartPeak
       return false; 
   }
 
-  void Model::pruneModel()
+  void Model::pruneModel(int iterations)
   {
     int cnt = 0;
     while (pruneLinks() || pruneWeights() || pruneNodes())
     {
-      std::cout<<"Pruning model iteration: "<<cnt<<std::endl;
+      if (cnt >= iterations) {break;}
+      // std::cout<<"Pruning model iteration: "<<cnt<<std::endl;
       cnt += 1;
     }
   }

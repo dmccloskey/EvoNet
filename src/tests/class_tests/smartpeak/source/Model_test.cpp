@@ -427,11 +427,19 @@ BOOST_AUTO_TEST_CASE(pruneModel)
   BOOST_CHECK_EQUAL(model.getLinks().size(), 2);
   
   model.removeLinks({"i_to_h"});
+  BOOST_CHECK_EQUAL(model.getNodes().size(), 3);
+  BOOST_CHECK_EQUAL(model.getWeights().size(), 1);
+  BOOST_CHECK_EQUAL(model.getLinks().size(), 1);
+  model.pruneModel(1);
   BOOST_CHECK_EQUAL(model.getNodes().size(), 2);
   BOOST_CHECK_EQUAL(model.getWeights().size(), 1);
   BOOST_CHECK_EQUAL(model.getLinks().size(), 1);
   
   model.removeNodes({"h"});
+  BOOST_CHECK_EQUAL(model.getNodes().size(), 1);
+  BOOST_CHECK_EQUAL(model.getWeights().size(), 1);
+  BOOST_CHECK_EQUAL(model.getLinks().size(), 1);
+  model.pruneModel(1);
   BOOST_CHECK_EQUAL(model.getNodes().size(), 0);
   BOOST_CHECK_EQUAL(model.getWeights().size(), 0);
   BOOST_CHECK_EQUAL(model.getLinks().size(), 0);
