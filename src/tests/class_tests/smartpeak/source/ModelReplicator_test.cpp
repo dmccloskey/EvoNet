@@ -47,38 +47,102 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   BOOST_CHECK_EQUAL(model_replicator.getWeightChangeStDev(), 6.0f);
 }
 
+BOOST_AUTO_TEST_CASE(makeUniqueHash) 
+{
+  ModelReplicator model_replicator;
+
+  std::string unique_str, left_str, right_str;
+  left_str = "hello";
+  bool left_str_found, right_str_found;
+
+  for (int i=0; i<5; ++i)
+  {
+    right_str = std::to_string(i);
+    unique_str = model_replicator.makeUniqueHash(left_str, right_str);
+
+    std::regex re("_");
+    std::vector<std::string> unique_str_tokens;
+    std::copy(
+      std::sregex_token_iterator(unique_str.begin(), unique_str.end(), re, -1),
+      std::sregex_token_iterator(),
+      std::back_inserter(unique_str_tokens));
+      
+    left_str_found = false;
+    if (unique_str_tokens.size() > 1 && left_str == unique_str_tokens[0])
+      left_str_found = true;
+    BOOST_CHECK(left_str_found);
+
+    right_str_found = false;
+    if (unique_str_tokens.size() > 2 && right_str == unique_str_tokens[1])
+      right_str_found = true;
+    BOOST_CHECK(right_str_found);
+  }
+}
+
 BOOST_AUTO_TEST_CASE(makeBaselineModel) 
 {
   ModelReplicator model_replicator;
+  Model model;
+  std::vector<std::string> node_names, link_names, source_node_names, sink_node_names;
 
   std::shared_ptr<WeightInitOp> weight_init;
   std::shared_ptr<SolverOp> solver;
 
   weight_init.reset(new ConstWeightInitOp(1.0));
   solver.reset(new SGDOp(0.01, 0.9));
-  Model model = model_replicator.makeBaselineModel(
+  model = model_replicator.makeBaselineModel(
     2, 1, 2,
     NodeActivation::ReLU, NodeActivation::ReLU,
-    weight_init, solver);
+    weight_init, solver,
+    ModelLossFunction::MSE);
 
-  std::vector<std::string> node_names = {
+  node_names = {
     "Input_0", "Input_1", "Hidden_0", "Output_0", "Output_1",
     "Hidden_bias_0", "Output_bias_0", "Output_bias_1"};
   for (const std::string& node_name : node_names)
     BOOST_CHECK_EQUAL(model.getNode(node_name).getName(), node_name);
   
-  std::vector<std::string> link_names = {
+  link_names = {
     "Input_0_to_Hidden_0", "Input_1_to_Hidden_0", "Bias_0_to_Hidden_0",
     "Hidden_0_to_Output_0", "Hidden_0_to_Output_1",
     "Bias_0_to_Output_0", "Bias_1_to_Output_1"};
-  std::vector<std::string> source_node_names = {
+  source_node_names = {
     "Input_0", "Input_1", "Hidden_bias_0", 
     "Hidden_0", "Hidden_0", 
     "Output_bias_0", "Output_bias_1"};
-  std::vector<std::string> sink_node_names = {
+  sink_node_names = {
     "Hidden_0", "Hidden_0", "Hidden_0", 
     "Output_0", "Output_1", 
     "Output_0", "Output_1"};
+  for (int i=0; i<link_names.size(); ++i)
+  {
+    BOOST_CHECK_EQUAL(model.getLink(link_names[i]).getName(), link_names[i]);
+    BOOST_CHECK_EQUAL(model.getLink(link_names[i]).getSourceNodeName(), source_node_names[i]);
+    BOOST_CHECK_EQUAL(model.getLink(link_names[i]).getSinkNodeName(), sink_node_names[i]);
+    BOOST_CHECK_EQUAL(model.getWeight(link_names[i]).getName(), link_names[i]);
+  }
+
+  model = model_replicator.makeBaselineModel(
+    2, 0, 2,
+    NodeActivation::ReLU, NodeActivation::ReLU,
+    weight_init, solver,
+    ModelLossFunction::MSE);
+
+  node_names = {
+    "Input_0", "Input_1", "Output_0", "Output_1",
+    "Output_bias_0", "Output_bias_1"};
+  for (const std::string& node_name : node_names)
+    BOOST_CHECK_EQUAL(model.getNode(node_name).getName(), node_name);
+  
+  link_names = {
+    "Input_0_to_Output_0", "Input_1_to_Output_0", "Bias_0_to_Output_0",
+    "Input_0_to_Output_1", "Input_1_to_Output_1", "Bias_1_to_Output_1"};
+  source_node_names = {
+    "Input_0", "Input_1", "Output_bias_0", 
+    "Input_0", "Input_1", "Output_bias_1"};
+  sink_node_names = {
+    "Output_0", "Output_0", "Output_0",  
+    "Output_1", "Output_1", "Output_1"};
   for (int i=0; i<link_names.size(); ++i)
   {
     BOOST_CHECK_EQUAL(model.getLink(link_names[i]).getName(), link_names[i]);

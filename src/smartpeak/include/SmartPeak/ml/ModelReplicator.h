@@ -50,7 +50,8 @@ public:
     */ 
     Model makeBaselineModel(const int& n_input_nodes, const int& n_hidden_nodes, const int& n_output_nodes,
       const NodeActivation& hidden_node_activation, const NodeActivation& output_node_activation,
-      const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver);
+      const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver,
+      const ModelLossFunction& error_function, std::string unique_str = "");
  
     /**
       @brief Modify (i.e., mutate) an existing model in place
@@ -155,14 +156,14 @@ public:
 
       @param[in, out] model The model
     */ 
-    void addNode(Model& model);
+    void addNode(Model& model, std::string unique_str = "");
 
     /**
       @brief add link to the model
 
       @param[in, out] model The model
     */ 
-    void addLink(Model& model);
+    void addLink(Model& model, std::string unique_str = "");
 
     /**
       @brief delete node to the model
@@ -186,6 +187,17 @@ public:
       @param[in, out] model The model
     */ 
     void modifyWeight(Model& model);
+
+    /**
+      @brief Make a unique time stampped hash of the form
+        left_str + right_str + timestamp
+
+      @param[in] left_str
+      @param[in] right_str
+
+      @returns A unique string hash
+    */ 
+    std::string makeUniqueHash(const std::string& left_str, const std::string& right_str);
 
 private:
     // modification parameters

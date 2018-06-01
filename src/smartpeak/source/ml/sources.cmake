@@ -8,6 +8,7 @@ set(sources_list
 	ModelReplicator.cpp
 	ModelTrainer.cpp
 	Node.cpp
+	PopulationTrainer.cpp
 	Weight.cpp
 )
 

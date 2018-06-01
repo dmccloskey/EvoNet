@@ -179,14 +179,25 @@ namespace SmartPeak
   {
     Eigen::Tensor<float, 2> init_values(batch_size, memory_size);
     init_values.setConstant(0.0f);
-    setOutput(init_values);
     setError(init_values);
     setDerivative(init_values);
 
     init_values.setConstant(1.0f);
     setDt(init_values);
+    
+    if (type_ == NodeType::bias)
+    {
+      init_values.setConstant(1.0f);
+      setStatus(NodeStatus::activated);
+      setOutput(init_values);
+    }
+    else
+    {
+      init_values.setConstant(0.0f);
+      setStatus(NodeStatus::initialized);
+      setOutput(init_values);
+    }
 
-    setStatus(NodeStatus::initialized);
   }
 
   void Node::calculateActivation(const int& time_step)

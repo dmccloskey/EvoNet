@@ -206,8 +206,10 @@ public:
       @param [TODO: add param] time_steps Time steps of the forward passes of dimensions: batch_size, memory_size, n_epochs
       @param input_nodes Input node names
       @param output_nodes Output node names
+
+      @returns vector of average model error scores
     */ 
-    virtual void validateModel(Model& model,
+    virtual std::vector<float> validateModel(Model& model,
       const Eigen::Tensor<float, 4>& input,
       const Eigen::Tensor<float, 3>& output,
       const Eigen::Tensor<float, 3>& time_steps,

@@ -38,7 +38,7 @@ class ModelTrainerTest: public ModelTrainer
       const Eigen::Tensor<float, 3>& time_steps,
       const std::vector<std::string>& input_nodes,
       const std::vector<std::string>& output_nodes){};
-  void validateModel(Model& model,
+  std::vector<float> validateModel(Model& model,
       const Eigen::Tensor<float, 4>& input,
       const Eigen::Tensor<float, 3>& output,
       const Eigen::Tensor<float, 3>& time_steps,
@@ -285,7 +285,7 @@ BOOST_AUTO_TEST_CASE(DAGToy)
       }
     }
 
-  void validateModel(Model& model,
+  std::vector<float> validateModel(Model& model,
       const Eigen::Tensor<float, 4>& input,
       const Eigen::Tensor<float, 3>& output,
       const Eigen::Tensor<float, 3>& time_steps,
@@ -435,7 +435,7 @@ BOOST_AUTO_TEST_CASE(DCGToy)
       }
     }
 
-    void validateModel(Model& model,
+    std::vector<float> validateModel(Model& model,
       const Eigen::Tensor<float, 4>& input,
       const Eigen::Tensor<float, 3>& output,
       const Eigen::Tensor<float, 3>& time_steps,

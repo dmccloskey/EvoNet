@@ -218,8 +218,9 @@ BOOST_AUTO_TEST_CASE(mapValuesToNodes2)
   model1.mapValuesToNodes(input, node_ids, NodeStatus::activated, "output");
   for (int i=0; i<8; ++i)
   {
-    if (i<2) BOOST_CHECK(model1.getNode(std::to_string(i)).getStatus() == NodeStatus::activated);
-    else BOOST_CHECK(model1.getNode(std::to_string(i)).getStatus() == NodeStatus::initialized);
+    if (i<2) BOOST_CHECK(model1.getNode(std::to_string(i)).getStatus() == NodeStatus::activated); // input
+    else if (i >= 6) BOOST_CHECK(model1.getNode(std::to_string(i)).getStatus() == NodeStatus::activated); // bias
+    else BOOST_CHECK(model1.getNode(std::to_string(i)).getStatus() == NodeStatus::initialized); // hidden and output
   }
   for (int i=0; i<batch_size; ++i)
   {

@@ -187,9 +187,9 @@ public:
 private:
     int id_ = NULL; ///< Weight ID
     std::string name_ = ""; ///< Weight Name
-    SmartPeak::NodeType type_; ///< Node Type
-    SmartPeak::NodeStatus status_; ///< Node Status   
-    SmartPeak::NodeActivation activation_; ///< Node Status   
+    SmartPeak::NodeType type_ = SmartPeak::NodeType::hidden; ///< Node Type
+    SmartPeak::NodeStatus status_ = SmartPeak::NodeStatus::deactivated; ///< Node Status   
+    SmartPeak::NodeActivation activation_ = SmartPeak::NodeActivation::ReLU; ///< Node Status   
 
     float output_min_ = -1.0e6; ///< Min Node output
     float output_max_ = 1.0e6; ///< Max Node output

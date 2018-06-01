@@ -2,8 +2,9 @@
 
 #include <SmartPeak/ml/ModelReplicator.h>
 
-#include <random> // random number geenrator
-
+#include <random> // random number generator
+#include <algorithm> // tokenizing
+#include <regex> // tokenizing
 #include <ctime> // time format
 #include <chrono> // current time
 
@@ -81,12 +82,32 @@ namespace SmartPeak
   {
     return weight_change_stdev_;
   }
+  
+  std::string ModelReplicator::makeUniqueHash(const std::string& left_str, const std::string& right_str)
+  {
+    std::chrono::time_point<std::chrono::system_clock> time_now = std::chrono::system_clock::now();
+    std::time_t time_now_t = std::chrono::system_clock::to_time_t(time_now);
+    std::tm now_tm = *std::localtime(&time_now_t);
+    char timestamp[64];
+    std::strftime(timestamp, 64, "%Y-%m-%d-%H-%M-%S", &now_tm);
+
+    char hash_char[512];
+    sprintf(hash_char, "%s_%s_%s", left_str.data(), right_str.data(), timestamp);
+    std::string hash_str(hash_char);
+
+    return hash_str;
+  }
 
   Model ModelReplicator::makeBaselineModel(const int& n_input_nodes, const int& n_hidden_nodes, const int& n_output_nodes,
     const NodeActivation& hidden_node_activation, const NodeActivation& output_node_activation,
-    const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver)
+    const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver,
+    const ModelLossFunction& error_function, std::string unique_str)
   {
     Model model;
+    model.setLossFunction(error_function);
+
+    std::string model_name = makeUniqueHash("Model", unique_str);
+    model.setName(model_name);
 
     // Create the input nodes
     for (int i=0; i<n_input_nodes; ++i)
@@ -221,6 +242,57 @@ namespace SmartPeak
         model.addLinks({link, link_bias});
       }
     }
+
+    // Create the weights and links for input to output
+    if (n_hidden_nodes == 0)
+    {
+      for (int i=0; i<n_input_nodes; ++i)
+      {
+        char input_name_char[64];
+        sprintf(input_name_char, "Input_%d", i);
+        std::string input_name(input_name_char);
+
+        for (int j=0; j<n_output_nodes; ++j)
+        {
+          char output_name_char[64];
+          sprintf(output_name_char, "Output_%d", j);
+          std::string output_name(output_name_char);
+
+          char link_name_char[64];
+          sprintf(link_name_char, "Input_%d_to_Output_%d", i, j);
+          std::string link_name(link_name_char);
+
+          char weight_name_char[64];
+          sprintf(weight_name_char, "Input_%d_to_Output_%d", i, j);
+          std::string weight_name(weight_name_char);
+
+          std::shared_ptr<WeightInitOp> output_weight_init = weight_init;
+          std::shared_ptr<SolverOp> output_solver = solver;
+          Weight weight(weight_name_char, output_weight_init, output_solver);
+          Link link(link_name, input_name, output_name, weight_name);
+
+          char bias_name_char[64];
+          sprintf(bias_name_char, "Output_bias_%d", j);
+          std::string bias_name(bias_name_char);
+
+          char weight_bias_name_char[64];
+          sprintf(weight_bias_name_char, "Bias_%d_to_Output_%d", j, j);
+          std::string weight_bias_name(weight_bias_name_char);
+
+          char link_bias_name_char[64];
+          sprintf(link_bias_name_char, "Bias_%d_to_Output_%d", j, j);
+          std::string link_bias_name(link_bias_name_char);
+
+          std::shared_ptr<WeightInitOp> bias_weight_init = weight_init;
+          std::shared_ptr<SolverOp> bias_solver = solver;
+          Weight weight_bias(weight_bias_name, bias_weight_init, bias_solver);
+          Link link_bias(link_bias_name, bias_name, output_name, weight_bias_name);
+
+          model.addWeights({weight, weight_bias});
+          model.addLinks({link, link_bias});
+        }
+      }
+    }
     return model;
   }
   
@@ -346,7 +418,7 @@ namespace SmartPeak
   }
 
   void ModelReplicator::addLink(
-    Model& model)
+    Model& model, std::string unique_str)
   {
     // define the inclusion/exclusion nodes    
     const std::vector<NodeType> source_node_type_exclude = {NodeType::bias};
@@ -359,11 +431,13 @@ namespace SmartPeak
     if (source_node_ids.size() == 0)
     {
       printf("No source nodes were found that matched the inclusion/exclusion criteria.\n"); 
+      return;
     }
     std::vector<std::string> sink_node_ids = selectNodes(model, sink_node_type_exclude, sink_node_type_include);
     if (sink_node_ids.size() == 0)
     {
       printf("No sink nodes were found that matched the inclusion/exclusion criteria.\n"); 
+      return;
     }
 
     // select a random source and sink node
@@ -372,29 +446,21 @@ namespace SmartPeak
 
     // [TODO: Need a check if the link already exists...]
 
-    // generate a current time-stamp to avoid duplicate name additions
-    // [TODO: refactor to its own method for testing purposes]
-    std::chrono::time_point<std::chrono::system_clock> time_now = std::chrono::system_clock::now();
-    std::time_t time_now_t = std::chrono::system_clock::to_time_t(time_now);
-    std::tm now_tm = *std::localtime(&time_now_t);
-    char timestamp[64];
-    std::strftime(timestamp, 64, "%Y-%m-%d-%H-%M-%S", &now_tm);
-
     // create the new weight based on a random link (this can probably be optmized...)
     std::string random_link = selectRandomLink(model, source_node_type_exclude, source_node_type_include, sink_node_type_exclude, sink_node_type_include);
 
     Weight weight = model.getWeight(model.getLink(random_link).getWeightName()); // copy assignment
     char weight_name_char[128];
-    sprintf(weight_name_char, "Weight_%s_to_%s@addLink:%s", source_node_name.data(), sink_node_name.data(), timestamp);
-    std::string weight_name(weight_name_char);
+    sprintf(weight_name_char, "Weight_%s_to_%s@addLink:", source_node_name.data(), sink_node_name.data());
+    std::string weight_name = makeUniqueHash(weight_name_char, unique_str);
     weight.setName(weight_name);
     weight.initWeight();
     model.addWeights({weight});
 
     // create the new link
     char link_name_char[128];
-    sprintf(link_name_char, "Link_%s_to_%s@addLink:%s", source_node_name.data(), sink_node_name.data(), timestamp);
-    std::string link_name(link_name_char);
+    sprintf(link_name_char, "Link_%s_to_%s@addLink:", source_node_name.data(), sink_node_name.data());
+    std::string link_name = makeUniqueHash(link_name_char, unique_str);
     Link link(link_name, source_node_name, sink_node_name, weight_name);
     model.addLinks({link});
   }
@@ -413,7 +479,7 @@ namespace SmartPeak
 
   }
 
-  void ModelReplicator::addNode(Model& model)
+  void ModelReplicator::addNode(Model& model, std::string unique_str)
   {
     // [TODO: add tests]
 
@@ -437,20 +503,22 @@ namespace SmartPeak
       }
     }
     std::string input_link_name = selectRandomElement<std::string>(input_link_names);  
-
-    // generate a current time-stamp to avoid duplicate name additions
-    // [TODO: refactor to its own method for testing purposes]
-    std::chrono::time_point<std::chrono::system_clock> time_now = std::chrono::system_clock::now();
-    std::time_t time_now_t = std::chrono::system_clock::to_time_t(time_now);
-    std::tm now_tm = *std::localtime(&time_now_t);
-    char timestamp[64];
-    std::strftime(timestamp, 64, "%Y-%m-%d-%H-%M-%S", &now_tm);
     
     // [TODO: change its iteraction probability?]
-    // update the copied node name and add it to the model
+    // update the copied node name and add it to the model    
+    std::regex re("@");
+    std::vector<std::string> str_tokens;
+    std::string add_node_name = random_node_name;
+    std::copy(
+      std::sregex_token_iterator(random_node_name.begin(), random_node_name.end(), re, -1),
+      std::sregex_token_iterator(),
+      std::back_inserter(str_tokens));
+    if (str_tokens.size() >= 1)
+      add_node_name = random_node_name[0]; // only retain the last timestamp
+
     char new_node_name_char[128];
-    sprintf(new_node_name_char, "%s@addNode:%s", random_node_name.data(), timestamp);
-    std::string new_node_name(new_node_name_char);
+    sprintf(new_node_name_char, "%s@addNode:", add_node_name.data());
+    std::string new_node_name = makeUniqueHash(new_node_name_char, unique_str);
     new_node.setName(new_node_name); 
     model.addNodes({new_node});
     
@@ -458,8 +526,8 @@ namespace SmartPeak
     Link modified_link = model.getLink(input_link_name);
     modified_link.setSinkNodeName(new_node_name);
     char modified_link_name_char[512];
-    sprintf(modified_link_name_char, "Link_%s_to_%s@addNode:%s", modified_link.getSourceNodeName().data(), new_node_name.data(), timestamp);
-    std::string modified_link_name(modified_link_name_char);
+    sprintf(modified_link_name_char, "Link_%s_to_%s@addNode:", modified_link.getSourceNodeName().data(), new_node_name.data());
+    std::string modified_link_name = makeUniqueHash(modified_link_name_char, unique_str);
     modified_link.setName(modified_link_name); 
     model.addLinks({modified_link});
 
@@ -467,8 +535,8 @@ namespace SmartPeak
     // to its original node
     Weight weight = model.getWeight(model.getLink(input_link_name).getWeightName()); // copy assignment
     char weight_name_char[512];
-    sprintf(weight_name_char, "Weight_%s_to_%s@addNode:%s", new_node_name.data(), random_node_name.data(), timestamp);
-    std::string weight_name(weight_name_char);
+    sprintf(weight_name_char, "Weight_%s_to_%s@addNode:", new_node_name.data(), random_node_name.data());
+    std::string weight_name = makeUniqueHash(weight_name_char, unique_str);
     weight.setName(weight_name);
     weight.initWeight();
     model.addWeights({weight});
@@ -476,8 +544,8 @@ namespace SmartPeak
     // add a new link that connects the new copied node
     // to its original node
     char link_name_char[512];
-    sprintf(link_name_char, "Link_%s_to_%s@addNode:%s", new_node_name.data(), random_node_name.data(), timestamp);
-    std::string link_name(link_name_char);
+    sprintf(link_name_char, "Link_%s_to_%s@addNode:", new_node_name.data(), random_node_name.data());
+    std::string link_name = makeUniqueHash(link_name_char, unique_str);
     Link link(link_name, new_node_name, random_node_name, weight_name);
     model.addLinks({link});
 
@@ -557,14 +625,14 @@ namespace SmartPeak
     cnt = 0;
     while(cnt < n_node_additions_)
     {
-      addNode(model);
+      addNode(model, std::to_string(cnt));
       cnt += 1;
     }
 
     cnt = 0;
     while(cnt < n_link_additions_)
     {
-      addLink(model);
+      addLink(model, std::to_string(cnt));
       cnt += 1;
     }
 
