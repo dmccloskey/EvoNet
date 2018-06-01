@@ -55,14 +55,14 @@ public:
     /**
       @brief Modify (i.e., mutate) an existing model in place
 
-      @param model The model to modify
+      @param[in, out] model The model to modify
     */ 
     void modifyModel(Model& model);
  
     /**
       @brief copies an existing model
 
-      @param model The model to copy
+      @param[in, out] model The model to copy
 
       @returns An identical model
     */ 
@@ -71,7 +71,7 @@ public:
     /**
       @brief Select nodes given a set of conditions
 
-      @param model The model
+      @param[in, out] model The model
       @param node_type_exclude Node types to exclude
       @param node_type_include Node types to include
 
@@ -88,7 +88,7 @@ public:
     /**
       @brief Select random node given a set of conditions
 
-      @param model The model
+      @param[in, out] model The model
       @param node_type_exclude Node types to exclude
       @param node_type_include Node types to include
       @param node Previous node selected (for distance calculation)
@@ -112,7 +112,7 @@ public:
     /**
       @brief Select random link given a set of conditions
 
-      @param model The model
+      @param[in, out] model The model
       @param source_node_type_exclude Source node types to exclude
       @param source_node_type_include Source node types to include
       @param sink_node_type_exclude Sink node types to exclude
@@ -140,7 +140,7 @@ public:
     /**
       @brief Copy a node in the model (Layer expansion to the left or right)
 
-      @param model The model
+      @param[in, out] model The model
     */ 
     void copyNode(Model& model);
 
@@ -162,47 +162,49 @@ public:
         Kenneth O. Stanley & Risto Miikkulainen (2002). "Evolving Neural Networks Through Augmenting Topologies". 
         Evolutionary Computation. 10 (2): 99–127. doi:10.1162/106365602320169811
 
-      @param model The model
+      @param[in, out] model The model
     */ 
     void addNode(Model& model);
 
     /**
       @brief add link to the model
 
-      @param model The model
+      @param[in, out] model The model
     */ 
     void addLink(Model& model);
 
     /**
       @brief delete node to the model
 
-      @param model The model
+      @param[in, out] model The model
+      @param[in] prune_iterations The number of model recursive prune iterations
     */ 
-    void deleteNode(Model& model);
+    void deleteNode(Model& model, int prune_iterations = 1e6);
 
     /**
       @brief delete link to the model
 
-      @param model The model
+      @param[in, out] model The model
+      @param[in] prune_iterations The number of model recursive prune iterations
     */ 
-    void deleteLink(Model& model);
+    void deleteLink(Model& model, int prune_iterations = 1e6);
 
     /**
       @brief modify weights in the model
 
-      @param model The model
+      @param[in, out] model The model
     */ 
     void modifyWeight(Model& model);
 
 private:
     // modification parameters
-    int n_node_copies_; ///< nodes to duplicate in the model (nodes are created through replication)
-    int n_node_additions_; ///< new nodes to add to the model (with a random source and sink connection)
-    int n_link_additions_; ///< new links to add to the model
-    int n_node_deletions_; ///< nodes to remove from the model
-    int n_link_deletions_; ///< links to remove from the model
-    int n_weight_changes_; ///< the number of weights to change in the model
-    float weight_change_stdev_; ///< the standard deviation to change the weights in the model
+    int n_node_copies_ = 0; ///< nodes to duplicate in the model (nodes are created through replication)
+    int n_node_additions_ = 0; ///< new nodes to add to the model (with a random source and sink connection)
+    int n_link_additions_ = 0; ///< new links to add to the model
+    int n_node_deletions_ = 0; ///< nodes to remove from the model
+    int n_link_deletions_ = 0; ///< links to remove from the model
+    int n_weight_changes_ = 0; ///< the number of weights to change in the model
+    float weight_change_stdev_ = 0; ///< the standard deviation to change the weights in the model
   };
 }
 

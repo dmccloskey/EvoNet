@@ -202,12 +202,12 @@ BOOST_AUTO_TEST_CASE(selectRandomNode1)
 
 BOOST_AUTO_TEST_CASE(selectRandomElement) 
 {
-  // [TODO: make test]
+  // [TODO: make test; currently, combined with selectRandomNode1]
 }
 
 BOOST_AUTO_TEST_CASE(selectNodes) 
 {
-  // [TODO: make test]
+  // [TODO: make test; currenlty, combined with selectRandomNode1]
 }
 
 Model model_selectRandomLink1 = makeModel1();
@@ -281,7 +281,7 @@ BOOST_AUTO_TEST_CASE(addLink)
     std::back_inserter(link_name_tokens));
   if (std::count(link_names.begin(), link_names.end(), link_name_tokens[0]) != 0)
     link_found = true;
-  // add tests for the correct tokens after @
+  // [TODO: add tests for the correct tokens after @]
   // std::regex re(":"); to split the "addLinks" from the timestamp
   BOOST_CHECK(link_found);
 
@@ -294,7 +294,7 @@ BOOST_AUTO_TEST_CASE(addLink)
     std::back_inserter(weight_name_tokens));
   if (std::count(weight_names.begin(), weight_names.end(), weight_name_tokens[0]) != 0) // [TODO: implement getWeights]
     weight_found = true;
-  // add tests for the correct tokens after @
+  // [TODO: add tests for the correct tokens after @]
   // std::regex re(":"); to split the "addLinks" from the timestamp
   BOOST_CHECK(weight_found);
 }
@@ -357,17 +357,20 @@ BOOST_AUTO_TEST_CASE(deleteNode)
 {
   ModelReplicator model_replicator;
 
-  model_replicator.deleteNode(model_deleteNode);
+  model_replicator.deleteNode(model_deleteNode, 10);
   BOOST_CHECK_EQUAL(model_deleteNode.getNodes().size(), 7);
   BOOST_CHECK_EQUAL(model_deleteNode.getLinks().size(), 7);
+  BOOST_CHECK_EQUAL(model_deleteNode.getWeights().size(), 7);
 
-  model_replicator.deleteNode(model_deleteNode);
+  model_replicator.deleteNode(model_deleteNode, 10);
   BOOST_CHECK_EQUAL(model_deleteNode.getNodes().size(),3);
-  BOOST_CHECK_EQUAL(model_deleteNode.getLinks().size(),2);
+  BOOST_CHECK_EQUAL(model_deleteNode.getLinks().size(), 2);
+  BOOST_CHECK_EQUAL(model_deleteNode.getWeights().size(), 2);
 
-  model_replicator.deleteNode(model_deleteNode);
+  model_replicator.deleteNode(model_deleteNode, 10);
   BOOST_CHECK_EQUAL(model_deleteNode.getNodes().size(), 3);
   BOOST_CHECK_EQUAL(model_deleteNode.getLinks().size(), 2);
+  BOOST_CHECK_EQUAL(model_deleteNode.getWeights().size(), 2);
 }
 
 Model model_deleteLink = makeModel1();
@@ -375,14 +378,49 @@ BOOST_AUTO_TEST_CASE(deleteLink)
 {
   ModelReplicator model_replicator;
 
-  model_replicator.deleteLink(model_deleteLink);
+  model_replicator.deleteLink(model_deleteLink, 10);
   BOOST_CHECK_EQUAL(model_deleteLink.getNodes().size(), 8);
   BOOST_CHECK_EQUAL(model_deleteLink.getLinks().size(), 11);
+
+  // [TODO: additional tests needed?]
 }
 
+Model model_modifyModel1 = makeModel1();
+Model model_modifyModel2 = makeModel1();
+Model model_modifyModel3 = makeModel1();
 BOOST_AUTO_TEST_CASE(modifyModel) 
 {
-  // [TODO: make test]
+  ModelReplicator model_replicator;
+
+  // No change with defaults
+  model_replicator.modifyModel(model_modifyModel1);
+  BOOST_CHECK_EQUAL(model_modifyModel1.getNodes().size(), 8);
+  BOOST_CHECK_EQUAL(model_modifyModel1.getLinks().size(), 12);
+  BOOST_CHECK_EQUAL(model_modifyModel1.getWeights().size(), 12);
+
+  model_replicator.setNNodeAdditions(1);
+  model_replicator.setNLinkAdditions(1);
+  model_replicator.modifyModel(model_modifyModel1);
+  BOOST_CHECK_EQUAL(model_modifyModel1.getNodes().size(), 9);
+  BOOST_CHECK_EQUAL(model_modifyModel1.getLinks().size(), 14);
+  BOOST_CHECK_EQUAL(model_modifyModel1.getWeights().size(), 14);
+
+  model_replicator.setNNodeAdditions(0);
+  model_replicator.setNLinkAdditions(0);
+  model_replicator.setNNodeDeletions(1);
+  model_replicator.modifyModel(model_modifyModel2);
+  BOOST_CHECK_EQUAL(model_modifyModel2.getNodes().size(), 7);
+  BOOST_CHECK_EQUAL(model_modifyModel2.getLinks().size(), 7);
+  BOOST_CHECK_EQUAL(model_modifyModel2.getWeights().size(), 7);
+
+  model_replicator.setNNodeAdditions(0);
+  model_replicator.setNLinkAdditions(0);
+  model_replicator.setNNodeDeletions(0);
+  model_replicator.setNLinkDeletions(1);
+  model_replicator.modifyModel(model_modifyModel3);
+  BOOST_CHECK_EQUAL(model_modifyModel3.getNodes().size(), 8);
+  BOOST_CHECK_EQUAL(model_modifyModel3.getLinks().size(), 11);
+  BOOST_CHECK_EQUAL(model_modifyModel3.getWeights().size(), 11);
 }
 
 BOOST_AUTO_TEST_CASE(copyModel) 

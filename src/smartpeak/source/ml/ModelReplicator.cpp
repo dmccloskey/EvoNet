@@ -485,7 +485,7 @@ namespace SmartPeak
     model.removeLinks({input_link_name});
   }
 
-  void ModelReplicator::deleteNode(Model& model)
+  void ModelReplicator::deleteNode(Model& model, int prune_iterations)
   {
     // [TODO: add tests]
     // [TODO: need to change NodeType to input, bias, hidden, or output]
@@ -502,11 +502,11 @@ namespace SmartPeak
     {
       std::cout<<"Random node name: "<<random_node_name<<std::endl;
       model.removeNodes({random_node_name});
-      model.pruneModel();  // this action can remove additional nodes including inputs, biases, and outputs
+      model.pruneModel(prune_iterations);  // this action can remove additional nodes including inputs, biases, and outputs
     }
   }
 
-  void ModelReplicator::deleteLink(Model& model)
+  void ModelReplicator::deleteLink(Model& model, int prune_iterations)
   {
     // [TODO: add tests]
 
@@ -524,7 +524,7 @@ namespace SmartPeak
     if (!random_link_name.empty())
     {
       model.removeLinks({random_link_name});
-      model.pruneModel();  // this action can remove additional nodes including inputs, biases, and outputs
+      model.pruneModel(prune_iterations);  // this action can remove additional nodes including inputs, biases, and outputs
     }
   }
 
@@ -549,6 +549,40 @@ namespace SmartPeak
 
     // apply each of the model modification operators according
     // to user specifications
+    const int prune_iterations = 1e6;
+    int cnt;
+
+    // [TODO: copyNode]
+
+    cnt = 0;
+    while(cnt < n_node_additions_)
+    {
+      addNode(model);
+      cnt += 1;
+    }
+
+    cnt = 0;
+    while(cnt < n_link_additions_)
+    {
+      addLink(model);
+      cnt += 1;
+    }
+
+    cnt = 0;
+    while(cnt < n_node_deletions_)
+    {
+      deleteNode(model, prune_iterations);
+      cnt += 1;
+    } 
+
+    cnt = 0;
+    while(cnt < n_link_deletions_)
+    {
+      deleteLink(model, prune_iterations);
+      cnt += 1;
+    } 
+
+    // [TODO: modifyWeight]
   }
 
   Model ModelReplicator::copyModel(const Model& model)
