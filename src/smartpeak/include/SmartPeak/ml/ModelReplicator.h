@@ -60,15 +60,6 @@ public:
     void modifyModel(Model& model);
  
     /**
-      @brief copies an existing model
-
-      @param[in, out] model The model to copy
-
-      @returns An identical model
-    */ 
-    Model copyModel(const Model& model);
- 
-    /**
       @brief Select nodes given a set of conditions
 
       @param[in, out] model The model

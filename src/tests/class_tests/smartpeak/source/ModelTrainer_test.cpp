@@ -334,4 +334,9 @@ BOOST_AUTO_TEST_CASE(DAGToy)
   BOOST_CHECK(total_error(0) < 0.3);  
 }
 
+BOOST_AUTO_TEST_CASE(DCGToy) 
+{
+  // [TODO: add tests using DCG toy network]
+}
+
 BOOST_AUTO_TEST_SUITE_END()

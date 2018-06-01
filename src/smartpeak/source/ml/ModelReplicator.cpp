@@ -584,9 +584,4 @@ namespace SmartPeak
 
     // [TODO: modifyWeight]
   }
-
-  Model ModelReplicator::copyModel(const Model& model)
-  {
-    // [TODO: add method body]
-  }
 }

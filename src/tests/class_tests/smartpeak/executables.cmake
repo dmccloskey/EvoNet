@@ -10,13 +10,14 @@ set(ml_executables_list
   ActivationFunction_test
   Link_test
   Lossfunction_test
+  ModelReplicator_test
+  ModelTrainer_test
   Model_test
   Model_DAG_test
   Model_DCG_test
   Node_test
+  PopulationTrainer_test
   Solver_test
-  ModelReplicator_test
-  ModelTrainer_test
   Weight_test
   WeightInit_test
 )

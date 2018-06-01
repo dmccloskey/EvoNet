@@ -423,9 +423,4 @@ BOOST_AUTO_TEST_CASE(modifyModel)
   BOOST_CHECK_EQUAL(model_modifyModel3.getWeights().size(), 11);
 }
 
-BOOST_AUTO_TEST_CASE(copyModel) 
-{
-  // [TODO: make test]
-}
-
 BOOST_AUTO_TEST_SUITE_END()
