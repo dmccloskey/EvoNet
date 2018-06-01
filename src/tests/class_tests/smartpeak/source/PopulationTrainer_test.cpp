@@ -12,6 +12,10 @@
 #include <ctime> // time format
 #include <chrono> // current time
 
+#include <set> // std::map sort
+#include <algorithm> // std::map sort
+#include <functional> // std::map sort
+
 using namespace SmartPeak;
 using namespace std;
 
@@ -144,7 +148,7 @@ BOOST_AUTO_TEST_CASE(DELETEAfterTesting)
   // define the model replicator for growth mode
   ModelReplicator model_replicator;
   model_replicator.setNNodeAdditions(1);
-  model_replicator.setNLinkAdditions(0);
+  model_replicator.setNLinkAdditions(1);
   model_replicator.setNNodeDeletions(0);
   model_replicator.setNLinkDeletions(0);
 
@@ -240,10 +244,65 @@ BOOST_AUTO_TEST_CASE(DELETEAfterTesting)
 
   // select the top N from the population
   // NOTES: will need to deal with cases where there are less models in the population than N
+  std::cout<<"Select the top N models from the population..."<<std::endl;
+
+  // score each model on the validation data
+  std::map<std::string, float> population_errors_map;
+  for (int i=0; i<population.size(); ++i)
+  {
+    std::cout<<"Validating the model "<<i<<"..."<<std::endl;    
+    try
+    {
+      std::vector<float> model_errors = model_trainer.validateModel(
+        population[i], input_data, output_data, time_steps,
+        input_nodes, output_nodes);
+      float model_ave_error = accumulate(model_errors.begin(), model_errors.end(), 0.0)/model_errors.size();
+      population_errors_map.emplace(population[i].getName(), model_ave_error);
+    }
+    catch (std::exception& e)
+    {
+      printf("The model %s is broken.\n", population[i].getName().data());
+      population_errors_map.emplace(population[i].getName(), 1e6f);
+    }
+  }
+
+  // sort each model based on their scores in ascending order
+  std::vector<std::pair<std::string, float>> pairs;
+  for (auto itr = population_errors_map.begin(); itr != population_errors_map.end(); ++itr)
+      pairs.push_back(*itr);
+
+  std::sort(
+    pairs.begin(), pairs.end(), 
+    [=](std::pair<std::string, float>& a, std::pair<std::string, float>& b)
+    {
+      return a.second < b.second;
+    }
+  );
+
+  // select the top N from the population
+  int n_top = 2;  // move into function arguments
+  std::vector<std::string> top_n_model_names;
+  for (int i=0; i<n_top; ++i) {top_n_model_names.push_back(pairs[i].first);}
+  std::vector<Model> top_n_models;
+  for (int i=0; i<n_top; ++i)
+    for (int j=0; j<population.size(); ++j)
+      if (population[j].getName() == top_n_model_names[i])
+        top_n_models.push_back(population[j]);
 
   // replicate and modify
+  int n_replicates_per_model = 4;
+  std::vector<Model> population_new;
+  for (const auto& model: top_n_models)
+  {
+    for (int i=0; i<n_replicates_per_model; ++i)
+    {
+      Model model_copy = model;
+      model_replicator.modifyModel(model_copy);
+      population_new.push_back(model_copy);
+    }
 
-
+    population_new.push_back(model); // persist the original model
+  }
 }
 
 BOOST_AUTO_TEST_CASE(selectModels) 
