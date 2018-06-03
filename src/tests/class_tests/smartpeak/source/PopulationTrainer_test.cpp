@@ -52,7 +52,7 @@ BOOST_AUTO_TEST_CASE(DELETEAfterTesting)
       const std::vector<std::string>& input_nodes,
       const std::vector<std::string>& output_nodes)
     {
-      printf("Training the model\n");
+      // printf("Training the model\n");
 
       // Check input and output data
       if (!checkInputData(getNEpochs(), input, getBatchSize(), getMemorySize(), input_nodes))
@@ -63,23 +63,22 @@ BOOST_AUTO_TEST_CASE(DELETEAfterTesting)
       {
         return;
       }
-      printf("Data checks passed\n");
+      // printf("Data checks passed\n");
       
       // Initialize the model
       model.initNodes(getBatchSize(), getMemorySize());
-      model.initWeights();
-      printf("Initialized the model\n");
+      // printf("Initialized the model\n");
 
       for (int iter = 0; iter < getNEpochs(); ++iter) // use n_epochs here
       {
-        printf("Training epoch: %d\t", iter);
+        // printf("Training epoch: %d\t", iter);
 
         // forward propogate
         model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2)); 
 
         // calculate the model error and node output error
         model.calculateError(output.chip(iter, 2), output_nodes);
-        std::cout<<"Model error: "<<model.getError().sum()<<std::endl;
+        // std::cout<<"Model error: "<<model.getError().sum()<<std::endl;
 
         // back propogate
         model.TBPTT(getMemorySize()-1);
@@ -99,7 +98,7 @@ BOOST_AUTO_TEST_CASE(DELETEAfterTesting)
       const std::vector<std::string>& input_nodes,
       const std::vector<std::string>& output_nodes)
     {
-      printf("Validating the model\n");
+      // printf("Validating model %s\n", model.getName().data());
 
       std::vector<float> model_error;
 
@@ -112,16 +111,15 @@ BOOST_AUTO_TEST_CASE(DELETEAfterTesting)
       {
         return model_error;
       }
-      printf("Data checks passed\n");
+      // printf("Data checks passed\n");
       
       // Initialize the model
       model.initNodes(getBatchSize(), getMemorySize());
-      model.initWeights();
-      printf("Initialized the model\n");
+      // printf("Initialized the model\n");
 
       for (int iter = 0; iter < getNEpochs(); ++iter) // use n_epochs here
       {
-        printf("validation epoch: %d\t", iter);
+        // printf("validation epoch: %d\t", iter);
 
         // forward propogate
         model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2)); 
@@ -130,7 +128,7 @@ BOOST_AUTO_TEST_CASE(DELETEAfterTesting)
         model.calculateError(output.chip(iter, 2), output_nodes); 
         const Eigen::Tensor<float, 0> total_error = model.getError().sum();
         model_error.push_back(total_error(0));  
-        std::cout<<"Model error: "<<total_error(0)<<std::endl;
+        // std::cout<<"Model error: "<<total_error(0)<<std::endl;
 
         // reinitialize the model
         model.reInitializeNodeStatuses();
@@ -143,38 +141,7 @@ BOOST_AUTO_TEST_CASE(DELETEAfterTesting)
   ModelTrainerTest model_trainer;
   model_trainer.setBatchSize(5);
   model_trainer.setMemorySize(8);
-  model_trainer.setNEpochs(20);
-
-  // define the model replicator for growth mode
-  ModelReplicator model_replicator;
-  model_replicator.setNNodeAdditions(1);
-  model_replicator.setNLinkAdditions(1);
-  model_replicator.setNNodeDeletions(0);
-  model_replicator.setNLinkDeletions(0);
-
-  // define the initial population of 10 baseline models
-  std::cout<<"Making the initial population..."<<std::endl;
-  std::vector<Model> population; 
-  std::shared_ptr<WeightInitOp> weight_init;
-  std::shared_ptr<SolverOp> solver;
-  for (int i=0; i<10; ++i)
-  {
-    // baseline model
-    std::cout<<"Making the baseline model "<<i<<"..."<<std::endl;
-    weight_init.reset(new RandWeightInitOp(1.0));
-    solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
-    Model model = model_replicator.makeBaselineModel(
-      1, 0, 1,
-      NodeActivation::ReLU, NodeActivation::ReLU,
-      weight_init, solver,
-      ModelLossFunction::MSE, std::to_string(i));
-    
-    // modify the models
-    std::cout<<"Modifying the baseline model "<<i<<"..."<<std::endl;
-    model_replicator.modifyModel(model);
-
-    population.push_back(model);
-  }
+  model_trainer.setNEpochs(100);
 
   // Make the input data
   std::cout<<"Making the input data..."<<std::endl;
@@ -221,71 +188,84 @@ BOOST_AUTO_TEST_CASE(DELETEAfterTesting)
       for (int epochs_iter=0; epochs_iter<model_trainer.getNEpochs(); ++epochs_iter)
         time_steps(batch_iter, memory_iter, epochs_iter) = time_steps_tmp(batch_iter, memory_iter);
 
-  // train the population
-  std::cout<<"Training the population..."<<std::endl;
-  population_trainer.trainModels(population, model_trainer);
-  
-  // select the top N from the population
-  // NOTES: will need to deal with cases where there are less models in the population than N
-  std::cout<<"Select the top N models from the population..."<<std::endl;
+  // define the model replicator for growth mode
+  ModelReplicator model_replicator;
+  model_replicator.setNNodeAdditions(1);
+  model_replicator.setNLinkAdditions(1);
+  model_replicator.setNNodeDeletions(0);
+  model_replicator.setNLinkDeletions(0);
 
-  // score each model on the validation data
-  std::map<std::string, float> population_errors_map;
-  for (int i=0; i<population.size(); ++i)
+  // Evolve the population
+  std::vector<Model> population; 
+  int iterations = 10;
+  for (int iter=0; iter<iterations; ++iter)
   {
-    std::cout<<"Validating the model "<<i<<"..."<<std::endl;    
-    try
+    if (iter == 0)
     {
-      std::vector<float> model_errors = model_trainer.validateModel(
-        population[i], input_data, output_data, time_steps,
-        input_nodes, output_nodes);
-      float model_ave_error = accumulate(model_errors.begin(), model_errors.end(), 0.0)/model_errors.size();
-      population_errors_map.emplace(population[i].getName(), model_ave_error);
+      // define the initial population of 10 baseline models
+      // std::cout<<"Making the initial population..."<<std::endl;
+      std::shared_ptr<WeightInitOp> weight_init;
+      std::shared_ptr<SolverOp> solver;
+      for (int i=0; i<12; ++i)
+      {
+        // baseline model
+        // std::cout<<"Making the baseline model "<<i<<"..."<<std::endl;
+        weight_init.reset(new RandWeightInitOp(1.0));
+        solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
+        Model model = model_replicator.makeBaselineModel(
+          1, 0, 1,
+          NodeActivation::ReLU, NodeActivation::ReLU,
+          weight_init, solver,
+          ModelLossFunction::MSE, std::to_string(i));
+        model.initWeights();
+        
+        // modify the models
+        // std::cout<<"Modifying the baseline model "<<i<<"..."<<std::endl;
+        model_replicator.modifyModel(model);
+
+        population.push_back(model);
+      }
     }
-    catch (std::exception& e)
+
+    if (iter > 2)
+    {      
+      // model_replicator.setNNodeAdditions(1);
+      model_replicator.setNLinkAdditions(1);
+      // model_replicator.setNNodeDeletions(1);
+      model_replicator.setNLinkDeletions(1);
+    }
+
+    // train the population
+    std::cout<<"Training the population..."<<std::endl;
+    model_trainer.setNEpochs(100); // just for this test case!
+    population_trainer.trainModels(population, model_trainer,
+      input_data, output_data, time_steps, input_nodes, output_nodes);
+
+    // select the top N from the population
+    std::cout<<"Select the top N models from the population..."<<std::endl;
+    model_trainer.setNEpochs(100); // just for this test case!
+    population = population_trainer.selectModels(
+      3, 3, population, model_trainer,
+      input_data, output_data, time_steps, input_nodes, output_nodes);
+
+    for (const Model& model: population)
     {
-      printf("The model %s is broken.\n", population[i].getName().data());
-      population_errors_map.emplace(population[i].getName(), 1e6f);
+      const Eigen::Tensor<float, 0> total_error = model.getError().sum();
+      printf("Model %s (Nodes: %d, Links: %d) error: %.2f\n", model.getName().data(), model.getNodes().size(), model.getLinks().size(), total_error.data()[0]);
+      for (auto link: model.getLinks())
+        printf("Links %s\n", link.getName().data());
+    }
+
+    if (iter < iterations - 1)  
+    {
+      // replicate and modify models
+      std::cout<<"Replicate and modify the top N models from the population..."<<std::endl;  
+      population_trainer.replicateModels(population, model_replicator, 4);
     }
   }
 
-  // sort each model based on their scores in ascending order
-  std::vector<std::pair<std::string, float>> pairs;
-  for (auto itr = population_errors_map.begin(); itr != population_errors_map.end(); ++itr)
-      pairs.push_back(*itr);
-
-  std::sort(
-    pairs.begin(), pairs.end(), 
-    [=](std::pair<std::string, float>& a, std::pair<std::string, float>& b)
-    {
-      return a.second < b.second;
-    }
-  );
-
-  // select the top N from the population
-  int n_top = 2;  // move into function arguments
-  std::vector<std::string> top_n_model_names;
-  for (int i=0; i<n_top; ++i) {top_n_model_names.push_back(pairs[i].first);}
-  std::vector<Model> top_n_models;
-  for (int i=0; i<n_top; ++i)
-    for (int j=0; j<population.size(); ++j)
-      if (population[j].getName() == top_n_model_names[i])
-        top_n_models.push_back(population[j]);
-
-  // replicate and modify
-  int n_replicates_per_model = 4;
-  std::vector<Model> population_new;
-  for (const auto& model: top_n_models)
-  {
-    for (int i=0; i<n_replicates_per_model; ++i)
-    {
-      Model model_copy = model;
-      model_replicator.modifyModel(model_copy);
-      population_new.push_back(model_copy);
-    }
-
-    population_new.push_back(model); // persist the original model
-  }
+  // record the model structure
+  // record the model accuracy on the validation data
 }
 
 BOOST_AUTO_TEST_CASE(selectModels) 

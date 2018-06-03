@@ -185,7 +185,8 @@ namespace SmartPeak
         sprintf(link_bias_name_char, "Bias_%d_to_Hidden_%d", j, j);
         std::string link_bias_name(link_bias_name_char);
 
-        std::shared_ptr<WeightInitOp> bias_weight_init = weight_init;
+        std::shared_ptr<WeightInitOp> bias_weight_init;
+        bias_weight_init.reset(new ConstWeightInitOp(1.0));;
         std::shared_ptr<SolverOp> bias_solver = solver;
         Weight weight_bias(weight_bias_name, bias_weight_init, bias_solver);
         Link link_bias(link_bias_name, bias_name, hidden_name, weight_bias_name);
@@ -233,7 +234,8 @@ namespace SmartPeak
         sprintf(link_bias_name_char, "Bias_%d_to_Output_%d", j, j);
         std::string link_bias_name(link_bias_name_char);
 
-        std::shared_ptr<WeightInitOp> bias_weight_init = weight_init;
+        std::shared_ptr<WeightInitOp> bias_weight_init;
+        bias_weight_init.reset(new ConstWeightInitOp(1.0));
         std::shared_ptr<SolverOp> bias_solver = solver;
         Weight weight_bias(weight_bias_name, bias_weight_init, bias_solver);
         Link link_bias(link_bias_name, bias_name, output_name, weight_bias_name);
@@ -283,7 +285,8 @@ namespace SmartPeak
           sprintf(link_bias_name_char, "Bias_%d_to_Output_%d", j, j);
           std::string link_bias_name(link_bias_name_char);
 
-          std::shared_ptr<WeightInitOp> bias_weight_init = weight_init;
+          std::shared_ptr<WeightInitOp> bias_weight_init;
+          bias_weight_init.reset(new ConstWeightInitOp(1.0));
           std::shared_ptr<SolverOp> bias_solver = solver;
           Weight weight_bias(weight_bias_name, bias_weight_init, bias_solver);
           Link link_bias(link_bias_name, bias_name, output_name, weight_bias_name);
@@ -489,10 +492,11 @@ namespace SmartPeak
     std::vector<NodeType> node_inclusion_list = {NodeType::hidden, NodeType::output};
     std::string random_node_name = selectRandomNode(model, node_exclusion_list, node_inclusion_list);
 
-    // copy the node and its bias
+    // copy the node
     Node new_node = model.getNode(random_node_name);
 
     // select a random input link
+    // [OPTIMIZATION: refactor to pass back the Link and not just the name]
     std::vector<std::string> input_link_names;
     for (const Link& link: model.getLinks())
     {
@@ -502,7 +506,7 @@ namespace SmartPeak
         input_link_names.push_back(link.getName());
       }
     }
-    std::string input_link_name = selectRandomElement<std::string>(input_link_names);  
+    std::string input_link_name = selectRandomElement<std::string>(input_link_names);   
     
     // [TODO: change its iteraction probability?]
     // update the copied node name and add it to the model    
@@ -513,14 +517,42 @@ namespace SmartPeak
       std::sregex_token_iterator(random_node_name.begin(), random_node_name.end(), re, -1),
       std::sregex_token_iterator(),
       std::back_inserter(str_tokens));
-    if (str_tokens.size() >= 1)
-      add_node_name = random_node_name[0]; // only retain the last timestamp
+    if (str_tokens.size() > 1)
+      add_node_name = str_tokens[0]; // only retain the last timestamp
+    // printf("New node name: %s\n", add_node_name.data());
 
     char new_node_name_char[128];
     sprintf(new_node_name_char, "%s@addNode:", add_node_name.data());
     std::string new_node_name = makeUniqueHash(new_node_name_char, unique_str);
     new_node.setName(new_node_name); 
     model.addNodes({new_node});
+
+    // create a new bias
+    char new_bias_name_char[128];
+    sprintf(new_bias_name_char, "Bias_%s@addNode:", add_node_name.data());
+    std::string new_bias_name = makeUniqueHash(new_bias_name_char, unique_str);
+    Node new_bias(new_bias_name, NodeType::bias, NodeStatus::activated, NodeActivation::Linear);
+    new_bias.initNode(new_node.getOutput().dimension(0), new_node.getOutput().dimension(1));
+    model.addNodes({new_bias});
+
+    // create a link from the new bias to the new node
+    char weight_bias_name_char[512];
+    sprintf(weight_bias_name_char, "%s_to_%s@addNode:", new_bias_name.data(), new_node_name.data());
+    std::string weight_bias_name = makeUniqueHash(weight_bias_name_char, unique_str);
+
+    char link_bias_name_char[512];
+    sprintf(link_bias_name_char, "%s_to_%s@addNode:", new_bias_name.data(), new_node_name.data());
+    std::string link_bias_name = makeUniqueHash(link_bias_name_char, unique_str);
+
+    std::shared_ptr<WeightInitOp> bias_weight_init;
+    bias_weight_init.reset(new ConstWeightInitOp(1.0));
+    Weight weight_bias = model.getWeight(model.getLink(input_link_name).getWeightName()); // [OPTIMIZATION: use Link.getWeightName() directly]
+    weight_bias.setName(weight_bias_name);
+    weight_bias.setWeightInitOp(bias_weight_init);
+    Link link_bias(link_bias_name, new_bias_name, new_node_name, weight_bias_name);
+
+    model.addWeights({weight_bias});
+    model.addLinks({link_bias});
     
     // change the output node name of the link to the new copied node name
     Link modified_link = model.getLink(input_link_name);
@@ -568,7 +600,7 @@ namespace SmartPeak
     // delete the node, its bias, and its bias link
     if (!random_node_name.empty())
     {
-      std::cout<<"Random node name: "<<random_node_name<<std::endl;
+      // std::cout<<"Random node name: "<<random_node_name<<std::endl;
       model.removeNodes({random_node_name});
       model.pruneModel(prune_iterations);  // this action can remove additional nodes including inputs, biases, and outputs
     }
@@ -611,9 +643,14 @@ namespace SmartPeak
 
   }
 
-  void ModelReplicator::modifyModel(Model& model)
+  void ModelReplicator::modifyModel(Model& model, std::string unique_str)
   {
-    // [TODO: add method body]
+    // [TODO: implement a random ordering of modifications
+    //        e.g., add 1 node, delete 1 link, add 1 link, delete 1 node,
+    //        etc.,
+    // generate a random ordering of std::strings of mutations types
+    // this will need to be its own function
+    // implement one mutation at a time
 
     // apply each of the model modification operators according
     // to user specifications
@@ -623,20 +660,23 @@ namespace SmartPeak
     // [TODO: copyNode]
 
     cnt = 0;
+    // printf("ModelReplicator::modifyModel adding nodes...\n");
     while(cnt < n_node_additions_)
     {
-      addNode(model, std::to_string(cnt));
+      addNode(model, unique_str + std::to_string(cnt));
       cnt += 1;
     }
 
     cnt = 0;
+    // printf("ModelReplicator::modifyModel adding links...\n");
     while(cnt < n_link_additions_)
     {
-      addLink(model, std::to_string(cnt));
+      addLink(model, unique_str + std::to_string(cnt));
       cnt += 1;
     }
 
     cnt = 0;
+    // printf("ModelReplicator::modifyModel deleting nodes...\n");
     while(cnt < n_node_deletions_)
     {
       deleteNode(model, prune_iterations);
@@ -644,6 +684,7 @@ namespace SmartPeak
     } 
 
     cnt = 0;
+    // printf("ModelReplicator::modifyModel deleting links...\n");
     while(cnt < n_link_deletions_)
     {
       deleteLink(model, prune_iterations);

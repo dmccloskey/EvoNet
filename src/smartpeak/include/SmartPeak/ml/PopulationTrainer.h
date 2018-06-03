@@ -41,28 +41,33 @@ public:
     std::vector<Model> selectModels(
       const int& n_top,
       const int& n_random,
-      const std::vector<Model>& models);
+      std::vector<Model>& models,
+      ModelTrainer& model_trainer,
+      const Eigen::Tensor<float, 4>& input,
+      const Eigen::Tensor<float, 3>& output,
+      const Eigen::Tensor<float, 3>& time_steps,
+      const std::vector<std::string>& input_nodes,
+      const std::vector<std::string>& output_nodes);
  
     /**
-      @brief Copies the models in the population
-      [TODO: add method and tests]
+      @brief Replicates the models in the population.  Replicates
+        are modified while the original models are persisted.
 
-      @param[in] models The vector of models to copy
+      Example use case:
+        - 2 selected models are replicated 4 times with modifications
+          resulting in a population of 10 models (2 original, and 8 
+          modified)
 
-      @returns A vector of replicated models
-    */ 
-    std::vector<Model> copyModels(const std::vector<Model>& models);
- 
-    /**
-      @brief Replicates the models in the population
       [TODO: add method and tests]
 
       @param[in, out] models The vector (i.e., population) of models to modify
       @param[in] model_replicator The replicator to use
+      @param[in] n_replicates_per_model The number of replications per model
     */ 
-    void modifyModels(
+    void replicateModels(
       std::vector<Model>& models,
-      const ModelReplicator& model_replicator);
+      ModelReplicator& model_replicator,
+      const int& n_replicates_per_model);
  
     /**
       @brief Trains each of the models in the population
@@ -73,8 +78,14 @@ public:
       @param[in, out] models The vector of models to copy
       @param[in] model_trainer The trainer to use
     */ 
-    void trainModels(std::vector<Model>& models,
-      const ModelTrainer& model_trainer);
+    void trainModels(
+      std::vector<Model>& models,
+      ModelTrainer& model_trainer,
+      const Eigen::Tensor<float, 4>& input,
+      const Eigen::Tensor<float, 3>& output,
+      const Eigen::Tensor<float, 3>& time_steps,
+      const std::vector<std::string>& input_nodes,
+      const std::vector<std::string>& output_nodes);
   };
 }
 

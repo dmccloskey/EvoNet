@@ -71,6 +71,7 @@ namespace SmartPeak
     if (sink_node_name_ == source_node_name)
     {
       std::cout << "Source and Sink nodes are the same!" << std::endl;
+      source_node_name_ = source_node_name;
     }
     else
     {
@@ -84,14 +85,7 @@ namespace SmartPeak
 
   void Link::setSinkNodeName(const std::string& sink_node_name)
   {
-    if (source_node_name_ == sink_node_name)
-    {
-      std::cout << "Source and Sink nodes are the same!" << std::endl;
-    }
-    else
-    {
-      sink_node_name_ = sink_node_name;
-    }    
+    sink_node_name_ = sink_node_name;   
   }
   std::string Link::getSinkNodeName() const
   {

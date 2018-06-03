@@ -58,7 +58,7 @@ public:
 
       @param[in, out] model The model to modify
     */ 
-    void modifyModel(Model& model);
+    void modifyModel(Model& model, std::string unique_str = "");
  
     /**
       @brief Select nodes given a set of conditions

@@ -97,13 +97,14 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   
   // test same sink and source nodes
   link.setSourceNodeName(node_sink);
-  BOOST_CHECK_EQUAL(link.getSourceNodeName(), node_source);
+  BOOST_CHECK_EQUAL(link.getSourceNodeName(), node_sink);
   BOOST_CHECK_EQUAL(link.getSinkNodeName(), node_sink);
   
   // test same sink and source nodes
+  link.setSourceNodeName(node_source);
   link.setSinkNodeName(node_source);
   BOOST_CHECK_EQUAL(link.getSourceNodeName(), node_source);
-  BOOST_CHECK_EQUAL(link.getSinkNodeName(), node_sink);
+  BOOST_CHECK_EQUAL(link.getSinkNodeName(), node_source);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
