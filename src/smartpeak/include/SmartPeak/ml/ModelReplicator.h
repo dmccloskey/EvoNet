@@ -197,7 +197,14 @@ public:
 
       @returns A unique string hash
     */ 
-    std::string makeUniqueHash(const std::string& left_str, const std::string& right_str);
+    std::string makeUniqueHash(const std::string& left_str, const std::string& right_str);    
+
+    /**
+      @brief randomly order the mutations
+
+      @returns A random list of mutations types
+    */ 
+    std::vector<std::string> makeRandomModificationOrder();
 
 private:
     // modification parameters

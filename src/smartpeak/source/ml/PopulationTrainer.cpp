@@ -5,6 +5,8 @@
 #include <random> // random number generator
 #include <ctime> // time format
 #include <chrono> // current time
+#include <algorithm> // tokenizing
+#include <regex> // tokenizing
 
 namespace SmartPeak
 {
@@ -104,13 +106,22 @@ namespace SmartPeak
         
         //[TODO: add check to make sure that all names in `models` are unique]
         // rename the model
+        std::regex re("@");
+        std::vector<std::string> str_tokens;
+        std::string model_name_new = model.getName();
+        std::copy(
+          std::sregex_token_iterator(model_name_new.begin(), model_name_new.end(), re, -1),
+          std::sregex_token_iterator(),
+          std::back_inserter(str_tokens));
+        if (str_tokens.size() > 1)
+          model_name_new = str_tokens[0]; // only retain the last timestamp
+
         char model_name_char[128];
-        sprintf(model_name_char, "%s@replicateModel:", model.getName().data());
+        sprintf(model_name_char, "%s@replicateModel:", model_name_new.data());
         std::string model_name = model_replicator.makeUniqueHash(model_name_char, std::to_string(i));
         model_copy.setName(model_name);
 
         model_replicator.modifyModel(model_copy, std::to_string(i));
-        model_copy.initWeights();
         models.push_back(model_copy);
       }
     } 

@@ -549,6 +549,7 @@ namespace SmartPeak
     Weight weight_bias = model.getWeight(model.getLink(input_link_name).getWeightName()); // [OPTIMIZATION: use Link.getWeightName() directly]
     weight_bias.setName(weight_bias_name);
     weight_bias.setWeightInitOp(bias_weight_init);
+    weight_bias.initWeight();
     Link link_bias(link_bias_name, new_bias_name, new_node_name, weight_bias_name);
 
     model.addWeights({weight_bias});
@@ -642,6 +643,8 @@ namespace SmartPeak
     // delete the previous weight
 
   }
+  
+  // std::vector<std::string> makeRandomModificationOrder();
 
   void ModelReplicator::modifyModel(Model& model, std::string unique_str)
   {

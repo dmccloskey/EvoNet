@@ -214,7 +214,7 @@ BOOST_AUTO_TEST_CASE(DELETEAfterTesting)
         solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
         Model model = model_replicator.makeBaselineModel(
           1, 0, 1,
-          NodeActivation::ReLU, NodeActivation::ReLU,
+          NodeActivation::ELU, NodeActivation::ELU,
           weight_init, solver,
           ModelLossFunction::MSE, std::to_string(i));
         model.initWeights();
@@ -227,11 +227,11 @@ BOOST_AUTO_TEST_CASE(DELETEAfterTesting)
       }
     }
 
-    if (iter > 2)
+    if (iter > 0)
     {      
-      // model_replicator.setNNodeAdditions(1);
+      model_replicator.setNNodeAdditions(0);
       model_replicator.setNLinkAdditions(1);
-      // model_replicator.setNNodeDeletions(1);
+      model_replicator.setNNodeDeletions(0);
       model_replicator.setNLinkDeletions(1);
     }
 
