@@ -20,7 +20,7 @@ namespace SmartPeak
   {
 public:
     PopulationTrainer(); ///< Default constructor
-    ~PopulationTrainer(); ///< Default destructor
+    ~PopulationTrainer(); ///< Default destructor 
  
     /**
       @brief Select the top N models with the least error
@@ -54,7 +54,7 @@ public:
 
       @returns key value pair of model_name and model_error
     */ 
-    std::map<std::string, float> validateModels_(
+    std::vector<std::pair<std::string, float>> validateModels_(
       std::vector<Model>& models,
       ModelTrainer& model_trainer,
       const Eigen::Tensor<float, 4>& input,
@@ -68,8 +68,8 @@ public:
 
       @returns key value pair of model_name and model_error
     */ 
-    const std::map<std::string, float> getTopNModels_(
-      const std::map<std::string, float> model_validation_scores,
+    std::vector<std::pair<std::string, float>> getTopNModels_(
+      std::vector<std::pair<std::string, float>> model_validation_scores,
       const int& n_top);
  
     /**
@@ -77,8 +77,8 @@ public:
 
       @returns key value pair of model_name and model_error
     */ 
-    const std::map<std::string, float> getRandomModels_(
-      const std::map<std::string, float> model_validation_scores,
+    std::vector<std::pair<std::string, float>> getRandomModels_(
+      std::vector<std::pair<std::string, float>> model_validation_scores,
       const int& n_random);
  
     /**
@@ -95,6 +95,8 @@ public:
       @param[in, out] models The vector (i.e., population) of models to modify
       @param[in] model_replicator The replicator to use
       @param[in] n_replicates_per_model The number of replications per model
+
+      @returns A vector of models
     */ 
     void replicateModels(
       std::vector<Model>& models,
