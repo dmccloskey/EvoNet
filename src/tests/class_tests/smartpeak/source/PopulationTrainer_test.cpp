@@ -178,7 +178,7 @@ BOOST_AUTO_TEST_CASE(getTopNModels_)
   }
 }
 
-BOOST_AUTO_TEST_CASE(getRandomModels_) 
+BOOST_AUTO_TEST_CASE(getRandomNModels_) 
 {
   PopulationTrainer population_trainer;
 
@@ -189,7 +189,7 @@ BOOST_AUTO_TEST_CASE(getRandomModels_)
     models_validation_errors.push_back(std::make_pair(std::to_string(i+1), (float)(n_models-i)));
   
   const int n_random_models = 2;
-  std::vector<std::pair<std::string, float>> random_n_models = population_trainer.getRandomModels_(
+  std::vector<std::pair<std::string, float>> random_n_models = population_trainer.getRandomNModels_(
     models_validation_errors, n_random_models);
   
   BOOST_CHECK_EQUAL(random_n_models.size(), 2);  
@@ -287,12 +287,12 @@ BOOST_AUTO_TEST_CASE(DELETEAfterTesting)
     {
       // define the initial population of 10 baseline models
       // std::cout<<"Making the initial population..."<<std::endl;
-      std::shared_ptr<WeightInitOp> weight_init;
-      std::shared_ptr<SolverOp> solver;
       for (int i=0; i<12; ++i)
       {
         // baseline model
         // std::cout<<"Making the baseline model "<<i<<"..."<<std::endl;
+        std::shared_ptr<WeightInitOp> weight_init;
+        std::shared_ptr<SolverOp> solver;
         weight_init.reset(new RandWeightInitOp(1.0));
         solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
         Model model = model_replicator.makeBaselineModel(
@@ -304,7 +304,7 @@ BOOST_AUTO_TEST_CASE(DELETEAfterTesting)
         
         // modify the models
         // std::cout<<"Modifying the baseline model "<<i<<"..."<<std::endl;
-        model_replicator.modifyModel(model);
+        model_replicator.modifyModel(model, std::to_string(i));
 
         population.push_back(model);
       }
@@ -331,20 +331,20 @@ BOOST_AUTO_TEST_CASE(DELETEAfterTesting)
       3, 3, population, model_trainer,
       input_data, output_data, time_steps, input_nodes, output_nodes);
 
-    // for (const Model& model: population)
-    // {
-    //   const Eigen::Tensor<float, 0> total_error = model.getError().sum();
-    //   printf("Model %s (Nodes: %d, Links: %d) error: %.2f\n", model.getName().data(), model.getNodes().size(), model.getLinks().size(), total_error.data()[0]);
-    //   for (auto link: model.getLinks())
-    //     printf("Links %s\n", link.getName().data());
-    // }
+    for (const Model& model: population)
+    {
+      const Eigen::Tensor<float, 0> total_error = model.getError().sum();
+      printf("Model %s (Nodes: %d, Links: %d) error: %.2f\n", model.getName().data(), model.getNodes().size(), model.getLinks().size(), total_error.data()[0]);
+      for (auto link: model.getLinks())
+        printf("Links %s\n", link.getName().data());
+    }
 
     if (iter < iterations - 1)  
     {
       // replicate and modify models
       std::cout<<"Replicate and modify the top N models from the population..."<<std::endl; 
       printf("population size: %d\n", population.size()); 
-      population_trainer.replicateModels(population, model_replicator, 3);
+      population_trainer.replicateModels(population, model_replicator, 3, std::to_string(iter));
     }
 
   }

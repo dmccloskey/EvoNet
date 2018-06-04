@@ -77,7 +77,7 @@ public:
 
       @returns key value pair of model_name and model_error
     */ 
-    std::vector<std::pair<std::string, float>> getRandomModels_(
+    std::vector<std::pair<std::string, float>> getRandomNModels_(
       std::vector<std::pair<std::string, float>> model_validation_scores,
       const int& n_random);
  
@@ -101,7 +101,8 @@ public:
     void replicateModels(
       std::vector<Model>& models,
       ModelReplicator& model_replicator,
-      const int& n_replicates_per_model);
+      const int& n_replicates_per_model,
+      std::string unique_str = "");
  
     /**
       @brief Trains each of the models in the population

@@ -40,7 +40,7 @@ namespace SmartPeak
 
     // [TODO: refactor to its own method]
     // select a random subset of the top N
-    models_validation_errors = getRandomModels_(
+    models_validation_errors = getRandomNModels_(
       models_validation_errors, n_random
     );
     
@@ -74,6 +74,8 @@ namespace SmartPeak
         float model_ave_error = 1e6;
         if (model_errors.size()>0)
           model_ave_error = accumulate(model_errors.begin(), model_errors.end(), 0.0)/model_errors.size();
+        if (isnan(model_ave_error))
+          model_ave_error = 1e6;
         models_validation_errors.push_back(std::make_pair(models[i].getName(), model_ave_error));
       }
       catch (std::exception& e)
@@ -100,9 +102,6 @@ namespace SmartPeak
       }
     );
 
-    // [TODO: add test to check the correct sorting]
-    // for(auto p: pairs) printf("Sorted models: model %s\t%.2f\n", p.first.data(), p.second);
-
     // select the top N from the models
     int n_ = n_top;
     if (n_ > model_validation_scores.size())
@@ -111,13 +110,10 @@ namespace SmartPeak
     std::vector<std::pair<std::string, float>> top_n_models;
     for (int i=0; i<n_; ++i) {top_n_models.push_back(model_validation_scores[i]);}
 
-    // [TODO: add test to check the correct top N]
-    // printf("Top N models size: %d", top_n_models.size());
-
     return top_n_models;
   }
 
-  std::vector<std::pair<std::string, float>> PopulationTrainer::getRandomModels_(
+  std::vector<std::pair<std::string, float>> PopulationTrainer::getRandomNModels_(
     std::vector<std::pair<std::string, float>> model_validation_scores,
     const int& n_random)
   {
@@ -132,21 +128,19 @@ namespace SmartPeak
     std::vector<std::pair<std::string, float>> random_n_models;
     for (int i=0; i<n_; ++i) {random_n_models.push_back(model_validation_scores[i]);}
 
-    // [TODO: add test to check the correct models]
-    // printf("Top N random models size: %d", random_n_models.size());
-
     return random_n_models;
   }
 
   void PopulationTrainer::replicateModels(
     std::vector<Model>& models,
     ModelReplicator& model_replicator,
-    const int& n_replicates_per_model)
+    const int& n_replicates_per_model,
+    std::string unique_str)
   {
     // printf("Models size: %i\t", models.size());
     // replicate and modify
     std::vector<Model> models_copy = models;
-    for (const Model model: models_copy)
+    for (const Model& model: models_copy)
     {
       for (int i=0; i<n_replicates_per_model; ++i)
       {
@@ -166,11 +160,11 @@ namespace SmartPeak
           model_name_new = str_tokens[0]; // only retain the last timestamp
 
         char model_name_char[128];
-        sprintf(model_name_char, "%s@replicateModel:", model_name_new.data());
+        sprintf(model_name_char, "%s@replicateModel:%s", model_name_new.data(), unique_str.data());
         std::string model_name = model_replicator.makeUniqueHash(model_name_char, std::to_string(i));
         model_copy.setName(model_name);
 
-        model_replicator.modifyModel(model_copy, std::to_string(i));
+        model_replicator.modifyModel(model_copy, unique_str + "-" + std::to_string(i));
         models.push_back(model_copy);
       }
     } 
@@ -200,6 +194,7 @@ namespace SmartPeak
       catch (std::exception& e)
       {
         printf("The model %s is broken.\n", models[i].getName().data());
+        printf("Error: %s.\n", e.what());
         // need to remove the model somehow...
       }
     }    

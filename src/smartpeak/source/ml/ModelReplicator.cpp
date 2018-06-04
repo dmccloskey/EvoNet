@@ -595,7 +595,7 @@ namespace SmartPeak
     std::string random_node_name = selectRandomNode(model, node_exclusion_list, node_inclusion_list);
 
     // delete the node, its bias, and its bias link
-    if (!random_node_name.empty())
+    if (!random_node_name.empty() || random_node_name == "")
     {
       // std::cout<<"Random node name: "<<random_node_name<<std::endl;
       model.removeNodes({random_node_name});
@@ -616,7 +616,7 @@ namespace SmartPeak
       model, source_exclusion_list, source_inclusion_list, sink_exclusion_list, sink_inclusion_list);
 
     // delete the link and weight if required
-    if (!random_link_name.empty())
+    if (!random_link_name.empty() || random_link_name == "")
     {
       model.removeLinks({random_link_name});
       model.pruneModel(prune_iterations);  // this action can remove additional nodes including inputs, biases, and outputs
@@ -647,10 +647,10 @@ namespace SmartPeak
     for(int i=0; i<n_node_deletions_; ++i) modifications.push_back("delete_node");
     for(int i=0; i<n_link_deletions_; ++i) modifications.push_back("delete_link");
 
-    // randomize
-    std::random_device seed;
-    std::mt19937 engine(seed());
-    std::shuffle(modifications.begin(), modifications.end(), engine);
+    // // randomize
+    // std::random_device seed;
+    // std::mt19937 engine(seed());
+    // std::shuffle(modifications.begin(), modifications.end(), engine);
 
     return modifications;
   }
@@ -672,12 +672,12 @@ namespace SmartPeak
       // [TODO: copyNode]
       if (modification == "add_node")
       {
-        addNode(model, unique_str + std::to_string(modifications_counts.at(modification)));
+        addNode(model, unique_str + "-" + std::to_string(modifications_counts.at(modification)));
         modifications_counts[modification] += 1;
       }
       else if (modification == "add_link")
       {
-        addLink(model, unique_str + std::to_string(modifications_counts.at(modification)));
+        addLink(model, unique_str + "-" + std::to_string(modifications_counts.at(modification)));
         modifications_counts[modification] += 1;
       }
       else if (modification == "delete_node")
