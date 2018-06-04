@@ -47,7 +47,39 @@ public:
       const Eigen::Tensor<float, 3>& output,
       const Eigen::Tensor<float, 3>& time_steps,
       const std::vector<std::string>& input_nodes,
+      const std::vector<std::string>& output_nodes);    
+ 
+    /**
+      @brief validate all of the models
+
+      @returns key value pair of model_name and model_error
+    */ 
+    std::map<std::string, float> validateModels_(
+      std::vector<Model>& models,
+      ModelTrainer& model_trainer,
+      const Eigen::Tensor<float, 4>& input,
+      const Eigen::Tensor<float, 3>& output,
+      const Eigen::Tensor<float, 3>& time_steps,
+      const std::vector<std::string>& input_nodes,
       const std::vector<std::string>& output_nodes);
+ 
+    /**
+      @brief return the top N models with the lowest error.
+
+      @returns key value pair of model_name and model_error
+    */ 
+    const std::map<std::string, float> getTopNModels_(
+      const std::map<std::string, float> model_validation_scores,
+      const int& n_top);
+ 
+    /**
+      @brief return a random list of model names.
+
+      @returns key value pair of model_name and model_error
+    */ 
+    const std::map<std::string, float> getRandomModels_(
+      const std::map<std::string, float> model_validation_scores,
+      const int& n_random);
  
     /**
       @brief Replicates the models in the population.  Replicates

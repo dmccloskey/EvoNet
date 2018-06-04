@@ -24,7 +24,55 @@ namespace SmartPeak
     const std::vector<std::string>& input_nodes,
     const std::vector<std::string>& output_nodes)
   {
+    std::map<std::string, float> models_validation_errors;
     // [TODO: refactor to its own method]
+    // score the models
+    models_validation_errors = validateModels_(
+      models[i], input, output, time_steps, input_nodes, output_nodes
+    );
+    
+    // [TODO: refactor to its own method]
+    // sort each model based on their scores in ascending order
+    models_validation_errors = getTopNModels_(
+      const std::map<std::string, float> model_validation_scores,
+      const int& n_top
+    );
+
+    // [TODO: refactor to its own method]
+    // select a random subset of the top N
+    models_validation_errors = getRandomModels_(
+      const std::map<std::string, float> model_validation_scores,
+      const int& n_random
+    );
+
+    std::random_device seed;
+    std::mt19937 engine(seed());
+    std::shuffle(top_n_models.begin(), top_n_models.end(), engine);
+    std::vector<Model> random_n_models;
+    for (int i=0; i<n_random; ++i) {random_n_models.push_back(top_n_models[i]);}
+
+    // [TODO: add test to check the correct models]
+    // printf("Top N random models size: %d", random_n_models.size());
+
+    
+    // std::vector<Model> top_n_models;
+    // for (int i=0; i<n_top; ++i)
+    //   for (int j=0; j<models.size(); ++j)
+    //     if (models[j].getName() == top_n_model_names[i])
+    //       top_n_models.push_back(models[j]);
+
+    return random_n_models;
+  }
+
+  std::map<std::string, float> validateModels_(
+    std::vector<Model>& models,
+    ModelTrainer& model_trainer,
+    const Eigen::Tensor<float, 4>& input,
+    const Eigen::Tensor<float, 3>& output,
+    const Eigen::Tensor<float, 3>& time_steps,
+    const std::vector<std::string>& input_nodes,
+    const std::vector<std::string>& output_nodes)
+  {
     // score the models
     std::map<std::string, float> models_validation_errors;
     for (int i=0; i<models.size(); ++i)
@@ -45,7 +93,14 @@ namespace SmartPeak
     }
     // [TODO: add test that models_validation_errors has expected keys and values]
 
-    // [TODO: refactor to its own method]
+    return models_validation_errors;
+    
+  }
+
+  const std::map<std::string, float> getTopNModels_(
+    const std::map<std::string, float> model_validation_scores,
+    const int& n_top)
+  {
     // sort each model based on their scores in ascending order
     std::vector<std::pair<std::string, float>> pairs;
     for (auto itr = models_validation_errors.begin(); itr != models_validation_errors.end(); ++itr)
@@ -64,29 +119,26 @@ namespace SmartPeak
 
     // [TODO: refactor to its own method]
     // select the top N from the models
-    std::vector<std::string> top_n_model_names;
-    for (int i=0; i<n_top; ++i) {top_n_model_names.push_back(pairs[i].first);}
-    std::vector<Model> top_n_models;
-    for (int i=0; i<n_top; ++i)
-      for (int j=0; j<models.size(); ++j)
-        if (models[j].getName() == top_n_model_names[i])
-          top_n_models.push_back(models[j]);
+    const std::map<std::string, float> top_n_model;
+    for (int i=0; i<n_top; ++i) {top_n_model.emplace(pairs[i].first, pairs[i].second);}
 
     // [TODO: add test to check the correct top N]
     // printf("Top N models size: %d", top_n_models.size());
+    return top_n_model;
+  }
 
+  const std::map<std::string, float> getRandomModels_(
+    const std::map<std::string, float> model_validation_scores,
+    const int& n_random)
+  {
     // [TODO: refactor to its own method]
-    // select a random subset of the top N    
+    // select a random subset of the top N
     std::random_device seed;
     std::mt19937 engine(seed());
-    std::shuffle(top_n_models.begin(), top_n_models.end(), engine);
-    std::vector<Model> random_n_models;
-    for (int i=0; i<n_random; ++i) {random_n_models.push_back(top_n_models[i]);}
+    std::shuffle(model_validation_scores.begin(), model_validation_scores.end(), engine);
+    std::vector<std::string> random_n_models;
+    for (int i=0; i<n_random; ++i) {random_n_models.push_back(model_validation_scores[i]);}
 
-    // [TODO: add test to check the correct models]
-    // printf("Top N random models size: %d", random_n_models.size());
-
-    return random_n_models;
   }
 
   void PopulationTrainer::replicateModels(

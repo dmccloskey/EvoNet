@@ -511,9 +511,9 @@ BOOST_AUTO_TEST_CASE(modifyModel)
   model_replicator.setNNodeAdditions(1);
   model_replicator.setNLinkAdditions(1);
   model_replicator.modifyModel(model_modifyModel1);
-  BOOST_CHECK_EQUAL(model_modifyModel1.getNodes().size(), 9);
-  BOOST_CHECK_EQUAL(model_modifyModel1.getLinks().size(), 14);
-  BOOST_CHECK_EQUAL(model_modifyModel1.getWeights().size(), 14);
+  BOOST_CHECK_EQUAL(model_modifyModel1.getNodes().size(), 10);
+  BOOST_CHECK_EQUAL(model_modifyModel1.getLinks().size(), 15);
+  BOOST_CHECK_EQUAL(model_modifyModel1.getWeights().size(), 15);
 
   model_replicator.setNNodeAdditions(0);
   model_replicator.setNLinkAdditions(0);
