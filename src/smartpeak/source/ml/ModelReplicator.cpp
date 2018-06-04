@@ -588,12 +588,8 @@ namespace SmartPeak
 
   void ModelReplicator::deleteNode(Model& model, int prune_iterations)
   {
-    // [TODO: add tests]
-    // [TODO: need to change NodeType to input, bias, hidden, or output]
-    // [TODO: need to add ActivationType to ReLU, Sigmoid, etc,....]
-
     // pick a random node from the model
-    // that is not an input, bias, [TODO: nor output]
+    // that is not an input, bias, nor output
     std::vector<NodeType> node_exclusion_list = {NodeType::bias, NodeType::input, NodeType::output};
     std::vector<NodeType> node_inclusion_list = {NodeType::hidden};
     std::string random_node_name = selectRandomNode(model, node_exclusion_list, node_inclusion_list);
@@ -609,8 +605,6 @@ namespace SmartPeak
 
   void ModelReplicator::deleteLink(Model& model, int prune_iterations)
   {
-    // [TODO: add tests]
-
     // pick a random link from the model
     // that does not connect from a bias or input
     // [TODO: need to implement a check that the deletion does not also remove an input/output node]
@@ -644,56 +638,59 @@ namespace SmartPeak
 
   }
   
-  // std::vector<std::string> makeRandomModificationOrder();
+  std::vector<std::string> ModelReplicator::makeRandomModificationOrder()
+  {
+    // create the list of modifications
+    std::vector<std::string> modifications;
+    for(int i=0; i<n_node_additions_; ++i) modifications.push_back("add_node");
+    for(int i=0; i<n_link_additions_; ++i) modifications.push_back("add_link");
+    for(int i=0; i<n_node_deletions_; ++i) modifications.push_back("delete_node");
+    for(int i=0; i<n_link_deletions_; ++i) modifications.push_back("delete_link");
+
+    // randomize
+    std::random_device seed;
+    std::mt19937 engine(seed());
+    std::shuffle(modifications.begin(), modifications.end(), engine);
+
+    return modifications;
+  }
 
   void ModelReplicator::modifyModel(Model& model, std::string unique_str)
   {
-    // [TODO: implement a random ordering of modifications
-    //        e.g., add 1 node, delete 1 link, add 1 link, delete 1 node,
-    //        etc.,
-    // generate a random ordering of std::strings of mutations types
-    // this will need to be its own function
-    // implement one mutation at a time
+    // randomly order the modifications
+    std::vector<std::string> modifications = makeRandomModificationOrder();
 
-    // apply each of the model modification operators according
-    // to user specifications
+    // implement each modification one at a time
+    // and track the counts that each modification is called
+    std::map<std::string, int> modifications_counts;
+    for (const std::string& modification: modifications)
+      modifications_counts.emplace(modification, 0);
+
     const int prune_iterations = 1e6;
-    int cnt;
-
-    // [TODO: copyNode]
-
-    cnt = 0;
-    // printf("ModelReplicator::modifyModel adding nodes...\n");
-    while(cnt < n_node_additions_)
+    for (const std::string& modification: modifications)
     {
-      addNode(model, unique_str + std::to_string(cnt));
-      cnt += 1;
+      // [TODO: copyNode]
+      if (modification == "add_node")
+      {
+        addNode(model, unique_str + std::to_string(modifications_counts.at(modification)));
+        modifications_counts[modification] += 1;
+      }
+      else if (modification == "add_link")
+      {
+        addLink(model, unique_str + std::to_string(modifications_counts.at(modification)));
+        modifications_counts[modification] += 1;
+      }
+      else if (modification == "delete_node")
+      {
+        deleteNode(model, prune_iterations);
+        modifications_counts[modification] += 1;
+      }
+      else if (modification == "delete_link")
+      {
+        deleteLink(model, prune_iterations);
+        modifications_counts[modification] += 1;
+      }
+      // [TODO: modifyWeight]
     }
-
-    cnt = 0;
-    // printf("ModelReplicator::modifyModel adding links...\n");
-    while(cnt < n_link_additions_)
-    {
-      addLink(model, unique_str + std::to_string(cnt));
-      cnt += 1;
-    }
-
-    cnt = 0;
-    // printf("ModelReplicator::modifyModel deleting nodes...\n");
-    while(cnt < n_node_deletions_)
-    {
-      deleteNode(model, prune_iterations);
-      cnt += 1;
-    } 
-
-    cnt = 0;
-    // printf("ModelReplicator::modifyModel deleting links...\n");
-    while(cnt < n_link_deletions_)
-    {
-      deleteLink(model, prune_iterations);
-      cnt += 1;
-    } 
-
-    // [TODO: modifyWeight]
   }
 }

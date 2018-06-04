@@ -449,6 +449,52 @@ BOOST_AUTO_TEST_CASE(deleteLink)
   // [TODO: additional tests needed?]
 }
 
+BOOST_AUTO_TEST_CASE(makeRandomModificationOrder) 
+{
+  ModelReplicator model_replicator;
+
+  model_replicator.setNNodeAdditions(1);
+  model_replicator.setNLinkAdditions(0);
+  model_replicator.setNNodeDeletions(0);
+  model_replicator.setNLinkDeletions(0);
+  BOOST_CHECK_EQUAL(model_replicator.makeRandomModificationOrder()[0], "add_node");
+  model_replicator.setNNodeAdditions(0);
+  model_replicator.setNLinkAdditions(1);
+  model_replicator.setNNodeDeletions(0);
+  model_replicator.setNLinkDeletions(0);
+  BOOST_CHECK_EQUAL(model_replicator.makeRandomModificationOrder()[0], "add_link");
+  model_replicator.setNNodeAdditions(0);
+  model_replicator.setNLinkAdditions(0);
+  model_replicator.setNNodeDeletions(1);
+  model_replicator.setNLinkDeletions(0);
+  BOOST_CHECK_EQUAL(model_replicator.makeRandomModificationOrder()[0], "delete_node");
+  model_replicator.setNNodeAdditions(0);
+  model_replicator.setNLinkAdditions(0);
+  model_replicator.setNNodeDeletions(0);
+  model_replicator.setNLinkDeletions(1);
+  BOOST_CHECK_EQUAL(model_replicator.makeRandomModificationOrder()[0], "delete_link");
+
+  bool add_node_found = false;
+  bool add_link_found = false;
+  bool delete_node_found = false;
+  bool delete_link_found = false;
+  model_replicator.setNNodeAdditions(2);
+  model_replicator.setNLinkAdditions(2);
+  model_replicator.setNNodeDeletions(0);
+  model_replicator.setNLinkDeletions(2);
+  for (const std::string& modification: model_replicator.makeRandomModificationOrder())
+  {
+    if (modification == "add_node") add_node_found = true;
+    else if (modification == "add_link") add_link_found = true;
+    else if (modification == "delete_node") delete_node_found = true;
+    else if (modification == "delete_link") delete_link_found = true;
+  }
+  BOOST_CHECK(add_node_found);
+  BOOST_CHECK(add_link_found);
+  BOOST_CHECK(!delete_node_found);
+  BOOST_CHECK(delete_link_found);
+}
+
 Model model_modifyModel1 = makeModel1();
 Model model_modifyModel2 = makeModel1();
 Model model_modifyModel3 = makeModel1();
