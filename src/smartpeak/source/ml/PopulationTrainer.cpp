@@ -20,10 +20,13 @@ namespace SmartPeak
     for (const Model& model: models)
       unique_models.emplace(model.getName(), model);    
     
-    models.clear();
-    for (const auto& model: unique_models)
+    if (unique_models.size() < models.size())
     {
-      models.push_back(model.second);
+      models.clear();
+      for (const auto& model: unique_models)
+      {
+        models.push_back(model.second);
+      }
     }
     
     // models.erase(std::unique(models.begin(), models.end(), 
@@ -49,25 +52,25 @@ namespace SmartPeak
     const std::vector<std::string>& input_nodes,
     const std::vector<std::string>& output_nodes)
   {
-    printf("PopulationTrainer::selectModels, Models size: %i\n", models.size());
+    // printf("PopulationTrainer::selectModels, Models size: %i\n", models.size());
     // score the models
     std::vector<std::pair<std::string, float>> models_validation_errors;
     models_validation_errors = validateModels_(
       models, model_trainer, input, output, time_steps, input_nodes, output_nodes
     );
-    printf("PopulationTrainer::selectModels, models_validation_errors1 size: %i\n", models_validation_errors.size());
+    // printf("PopulationTrainer::selectModels, models_validation_errors1 size: %i\n", models_validation_errors.size());
     
     // sort each model based on their scores in ascending order
     models_validation_errors = getTopNModels_(
       models_validation_errors, n_top
     );
-    printf("PopulationTrainer::selectModels, models_validation_errors2 size: %i\n", models_validation_errors.size());
+    // printf("PopulationTrainer::selectModels, models_validation_errors2 size: %i\n", models_validation_errors.size());
 
     // select a random subset of the top N
     models_validation_errors = getRandomNModels_(
       models_validation_errors, n_random
     );
-    printf("PopulationTrainer::selectModels, models_validation_errors3 size: %i\n", models_validation_errors.size());
+    // printf("PopulationTrainer::selectModels, models_validation_errors3 size: %i\n", models_validation_errors.size());
     
     std::vector<std::string> selected_models;
     for (const std::pair<std::string, float>& model_error: models_validation_errors)
@@ -85,12 +88,12 @@ namespace SmartPeak
         ),
         models.end()
       );
-      printf("PopulationTrainer::selectModels, Models size: %i\n", models.size());
+      // printf("PopulationTrainer::selectModels, Models size: %i\n", models.size());
     }
 
     if (models.size() > n_random)
       removeDuplicateModels(models);
-    printf("PopulationTrainer::selectModels, Models size: %i\n", models.size());
+    // printf("PopulationTrainer::selectModels, Models size: %i\n", models.size());
   }
 
  std::vector<std::pair<std::string, float>> PopulationTrainer::validateModels_(
@@ -180,14 +183,13 @@ namespace SmartPeak
     // printf("Models size: %i\t", models.size());
     // replicate and modify
     std::vector<Model> models_copy = models;
+    int cnt = 0;
     for (const Model& model: models_copy)
     {
       for (int i=0; i<n_replicates_per_model; ++i)
       {
-        // printf("Modifying model %s iteration %d\n", model.getName().data(), i);
         Model model_copy(model);
         
-        //[TODO: add check to make sure that all names in `models` are unique]
         // rename the model
         std::regex re("@");
         std::vector<std::string> str_tokens;
@@ -201,16 +203,26 @@ namespace SmartPeak
 
         char model_name_char[128];
         sprintf(model_name_char, "%s@replicateModel:%s", model_name_new.data(), unique_str.data());
-        std::string model_name = model_replicator.makeUniqueHash(model_name_char, std::to_string(i));
+        std::string model_name = model_replicator.makeUniqueHash(model_name_char, std::to_string(cnt));
         model_copy.setName(model_name);
+
+        // printf("replicateModels, Original name %s, new base name %s, new model name %s\n",
+        //   model.getName().data(), model_name_new.data(), model_name.data());
 
         model_replicator.modifyModel(model_copy, unique_str + "-" + std::to_string(i));
         models.push_back(model_copy);
+
+        cnt += 1;
       }
     } 
     // [TODO: add test for size change]
     // [TODO: add test for new names]
     // printf("Models size: %i\n", models.size());
+    
+    // [TODO: make test to ensure there are no duplicate model names!]
+    // printf("replicateModels, Models size: %i\n", models.size());
+    removeDuplicateModels(models);
+    // printf("replicateModels, Models size: %i\n", models.size());
   }
 
   void PopulationTrainer::trainModels(
@@ -242,15 +254,18 @@ namespace SmartPeak
     }
 
     // purge broken models
-    models.erase(
-      std::remove_if(models.begin(), models.end(),
-        [=](const Model& model)
-        {
-          return std::count(broken_model_names.begin(), broken_model_names.end(), model.getName()) != 0;
-        }
-      ),
-      models.end()
-    );
+    if (broken_model_names.size() > 0)
+    {
+      models.erase(
+        std::remove_if(models.begin(), models.end(),
+          [=](const Model& model)
+          {
+            return std::count(broken_model_names.begin(), broken_model_names.end(), model.getName()) != 0;
+          }
+        ),
+        models.end()
+      );
+    }
   }
 
   // float PopulationTrainer::calculateMean(std::vector<float> values)

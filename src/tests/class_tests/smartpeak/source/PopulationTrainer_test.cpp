@@ -14,6 +14,7 @@
 
 #include <set> // std::map sort
 #include <algorithm> // std::map sort
+#include <regex> // tokenizing
 #include <functional> // std::map sort
 
 using namespace SmartPeak;
@@ -229,25 +230,162 @@ BOOST_AUTO_TEST_CASE(selectModels)
   // [TODO: add tests]
 }
 
-BOOST_AUTO_TEST_CASE(modifyModels) 
+BOOST_AUTO_TEST_CASE(replicateModels) 
 {
   PopulationTrainer population_trainer;
+  ModelTrainerTest model_trainer;
 
-  // [TODO: add tests]
+  ModelReplicator model_replicator;
+  model_replicator.setNNodeAdditions(1);
+  model_replicator.setNLinkAdditions(1);
+  model_replicator.setNNodeDeletions(0);
+  model_replicator.setNLinkDeletions(0);
+
+  // create an initial population
+  std::vector<Model> population;
+  for (int i=0; i<2; ++i)
+  {
+    // baseline model
+    std::shared_ptr<WeightInitOp> weight_init;
+    std::shared_ptr<SolverOp> solver;
+    weight_init.reset(new ConstWeightInitOp(1.0));
+    solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
+    Model model = model_replicator.makeBaselineModel(
+      1, 0, 1,
+      NodeActivation::ELU, NodeActivation::ELU,
+      weight_init, solver,
+      ModelLossFunction::MSE, std::to_string(i));
+    model.initWeights();
+    
+    // modify the models
+    model_replicator.modifyModel(model, std::to_string(i));
+
+    population.push_back(model);
+  }
+
+  population_trainer.replicateModels(population, model_replicator, 2);
+
+  // check for the expected size
+  BOOST_CHECK_EQUAL(population.size(), 6);
+
+  // // check for the expected tags
+  // int cnt = 0;
+  // for (const Model& model: population)
+  // {    
+  //   std::regex re("@replicateModel:");
+  //   std::vector<std::string> str_tokens;
+  //   std::copy(
+  //     std::sregex_token_iterator(model.getName().begin(), model.getName().end(), re, -1),
+  //     std::sregex_token_iterator(),
+  //     std::back_inserter(str_tokens));
+  //   if (cnt < 2)
+  //     BOOST_CHECK_EQUAL(str_tokens.size(), 1); // original model, no tag
+  //   else
+  //     BOOST_CHECK_EQUAL(str_tokens.size(), 2); // replicaed moel, tag
+  //   cnt += 1;
+  // }
 }
 
 BOOST_AUTO_TEST_CASE(trainModels) 
 {
   PopulationTrainer population_trainer;
 
-  // [TODO: add tests]
+  ModelTrainerTest model_trainer;
+  model_trainer.setBatchSize(5);
+  model_trainer.setMemorySize(8);
+  model_trainer.setNEpochs(100);
+
+  ModelReplicator model_replicator;
+  model_replicator.setNNodeAdditions(1);
+  model_replicator.setNLinkAdditions(1);
+  model_replicator.setNNodeDeletions(0);
+  model_replicator.setNLinkDeletions(0);
+
+  // create an initial population
+  std::vector<Model> population;
+  for (int i=0; i<4; ++i)
+  {
+    // baseline model
+    std::shared_ptr<WeightInitOp> weight_init;
+    std::shared_ptr<SolverOp> solver;
+    weight_init.reset(new ConstWeightInitOp(1.0));
+    solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
+    Model model = model_replicator.makeBaselineModel(
+      1, 0, 1,
+      NodeActivation::ELU, NodeActivation::ELU,
+      weight_init, solver,
+      ModelLossFunction::MSE, std::to_string(i));
+    model.initWeights();
+    
+    // modify the models
+    model_replicator.modifyModel(model, std::to_string(i));
+
+    population.push_back(model);
+  }
+
+  // Break two of the models
+  for (int i=0; i<2; ++i)
+  {
+    model_replicator.deleteLink(population[i], 1e6);
+    model_replicator.deleteLink(population[i], 1e6);  
+    model_replicator.deleteLink(population[i], 1e6);
+  }
+
+  // Toy data set used for all tests
+  // Make the input data
+  const std::vector<std::string> input_nodes = {"Input_0"}; // true inputs + biases
+  Eigen::Tensor<float, 4> input_data(model_trainer.getBatchSize(), model_trainer.getMemorySize(), input_nodes.size(), model_trainer.getNEpochs());
+  Eigen::Tensor<float, 3> input_tmp(model_trainer.getBatchSize(), model_trainer.getMemorySize(), input_nodes.size()); 
+  input_tmp.setValues(
+    {{{1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}},
+    {{2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}},
+    {{3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}},
+    {{4}, {5}, {6}, {7}, {8}, {9}, {10}, {11}},
+    {{5}, {6}, {7}, {8}, {9}, {10}, {11}, {12}}}
+  );
+  for (int batch_iter=0; batch_iter<model_trainer.getBatchSize(); ++batch_iter)
+    for (int memory_iter=0; memory_iter<model_trainer.getMemorySize(); ++memory_iter)
+      for (int nodes_iter=0; nodes_iter<input_nodes.size(); ++nodes_iter)
+        for (int epochs_iter=0; epochs_iter<model_trainer.getNEpochs(); ++epochs_iter)
+          input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = input_tmp(batch_iter, memory_iter, nodes_iter);
+  // Make the output data
+  const std::vector<std::string> output_nodes = {"Output_0"};
+  Eigen::Tensor<float, 3> output_data(model_trainer.getBatchSize(), output_nodes.size(), model_trainer.getNEpochs());
+  Eigen::Tensor<float, 2> output_tmp(model_trainer.getBatchSize(), output_nodes.size()); 
+  output_tmp.setValues({{2.5}, {3}, {3.5}, {4}, {4.5}});
+  for (int batch_iter=0; batch_iter<model_trainer.getBatchSize(); ++batch_iter)
+    for (int nodes_iter=0; nodes_iter<output_nodes.size(); ++nodes_iter)
+      for (int epochs_iter=0; epochs_iter<model_trainer.getNEpochs(); ++epochs_iter)
+        output_data(batch_iter, nodes_iter, epochs_iter) = output_tmp(batch_iter, nodes_iter);
+  // Make the simulation time_steps
+  Eigen::Tensor<float, 3> time_steps(model_trainer.getBatchSize(), model_trainer.getMemorySize(), model_trainer.getNEpochs());
+  Eigen::Tensor<float, 2> time_steps_tmp(model_trainer.getBatchSize(), model_trainer.getMemorySize()); 
+  time_steps_tmp.setValues({
+    {1, 1, 1, 1, 1, 1, 1, 1},
+    {1, 1, 1, 1, 1, 1, 1, 1},
+    {1, 1, 1, 1, 1, 1, 1, 1},
+    {1, 1, 1, 1, 1, 1, 1, 1},
+    {1, 1, 1, 1, 1, 1, 1, 1}}
+  );
+  for (int batch_iter=0; batch_iter<model_trainer.getBatchSize(); ++batch_iter)
+    for (int memory_iter=0; memory_iter<model_trainer.getMemorySize(); ++memory_iter)
+      for (int epochs_iter=0; epochs_iter<model_trainer.getNEpochs(); ++epochs_iter)
+        time_steps(batch_iter, memory_iter, epochs_iter) = time_steps_tmp(batch_iter, memory_iter);
+
+  population_trainer.trainModels(population, model_trainer,
+    input_data, output_data, time_steps, input_nodes, output_nodes);
+
+  BOOST_CHECK_EQUAL(population.size(), 2); // broken models should be removed
+
+  for (int i=0; i<2; ++i)
+    BOOST_CHECK_EQUAL(population[i].getError().size(), model_trainer.getBatchSize()); // error has been calculated
 }
 
 BOOST_AUTO_TEST_CASE(DELETEAfterTesting) 
 {
   PopulationTrainer population_trainer;
-  ModelTrainerTest model_trainer;
 
+  ModelTrainerTest model_trainer;
   model_trainer.setBatchSize(5);
   model_trainer.setMemorySize(8);
   model_trainer.setNEpochs(100);
@@ -332,23 +470,18 @@ BOOST_AUTO_TEST_CASE(DELETEAfterTesting)
       }
     }
 
-    if (iter > 0)
-    {      
-      model_replicator.setNNodeAdditions(0);
-      model_replicator.setNLinkAdditions(1);
-      model_replicator.setNNodeDeletions(0);
-      model_replicator.setNLinkDeletions(1);
-    }
+    model_replicator.setNNodeAdditions(0);
+    model_replicator.setNLinkAdditions(1);
+    model_replicator.setNNodeDeletions(0);
+    model_replicator.setNLinkDeletions(1);
 
     // train the population
     std::cout<<"Training the population..."<<std::endl;
-    printf("population size: %d\n", population.size()); 
     population_trainer.trainModels(population, model_trainer,
       input_data, output_data, time_steps, input_nodes, output_nodes);
 
     // select the top N from the population
     std::cout<<"Select the top N models from the population..."<<std::endl;
-    printf("population size: %d\n", population.size()); 
     population_trainer.selectModels(
       3, 3, population, model_trainer,
       input_data, output_data, time_steps, input_nodes, output_nodes);
@@ -365,7 +498,6 @@ BOOST_AUTO_TEST_CASE(DELETEAfterTesting)
     {
       // replicate and modify models
       std::cout<<"Replicate and modify the top N models from the population..."<<std::endl; 
-      printf("population size: %d\n", population.size()); 
       population_trainer.replicateModels(population, model_replicator, 3, std::to_string(iter));
     }
 
