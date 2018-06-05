@@ -24,7 +24,6 @@ public:
 
     /**
       @brief Remove models with non-unique names from the population of models
-      [TODO: add tests]
 
       @param[in, out] models The vector (i.e., population) of models to select from
     */ 
@@ -96,8 +95,6 @@ public:
           resulting in a population of 10 models (2 original, and 8 
           modified)
 
-      [TODO: add method and tests]
-
       @param[in, out] models The vector (i.e., population) of models to modify
       @param[in] model_replicator The replicator to use
       @param[in] n_replicates_per_model The number of replications per model
@@ -113,8 +110,6 @@ public:
     /**
       @brief Trains each of the models in the population
         using the same test data set
-
-      [TODO: add method and tests]
 
       @param[in, out] models The vector of models to copy
       @param[in] model_trainer The trainer to use

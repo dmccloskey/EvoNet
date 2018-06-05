@@ -180,7 +180,6 @@ namespace SmartPeak
     const int& n_replicates_per_model,
     std::string unique_str)
   {
-    // printf("Models size: %i\t", models.size());
     // replicate and modify
     std::vector<Model> models_copy = models;
     int cnt = 0;
@@ -206,23 +205,14 @@ namespace SmartPeak
         std::string model_name = model_replicator.makeUniqueHash(model_name_char, std::to_string(cnt));
         model_copy.setName(model_name);
 
-        // printf("replicateModels, Original name %s, new base name %s, new model name %s\n",
-        //   model.getName().data(), model_name_new.data(), model_name.data());
-
         model_replicator.modifyModel(model_copy, unique_str + "-" + std::to_string(i));
         models.push_back(model_copy);
 
         cnt += 1;
       }
     } 
-    // [TODO: add test for size change]
-    // [TODO: add test for new names]
-    // printf("Models size: %i\n", models.size());
-    
-    // [TODO: make test to ensure there are no duplicate model names!]
-    // printf("replicateModels, Models size: %i\n", models.size());
+
     removeDuplicateModels(models);
-    // printf("replicateModels, Models size: %i\n", models.size());
   }
 
   void PopulationTrainer::trainModels(

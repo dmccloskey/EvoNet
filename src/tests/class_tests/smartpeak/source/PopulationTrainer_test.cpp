@@ -381,7 +381,7 @@ BOOST_AUTO_TEST_CASE(trainModels)
     BOOST_CHECK_EQUAL(population[i].getError().size(), model_trainer.getBatchSize()); // error has been calculated
 }
 
-BOOST_AUTO_TEST_CASE(DELETEAfterTesting) 
+BOOST_AUTO_TEST_CASE(exampleUsage) 
 {
   PopulationTrainer population_trainer;
 
@@ -446,11 +446,10 @@ BOOST_AUTO_TEST_CASE(DELETEAfterTesting)
     if (iter == 0)
     {
       // define the initial population of 10 baseline models
-      // std::cout<<"Making the initial population..."<<std::endl;
+      std::cout<<"Making the initial population..."<<std::endl;
       for (int i=0; i<12; ++i)
       {
         // baseline model
-        // std::cout<<"Making the baseline model "<<i<<"..."<<std::endl;
         std::shared_ptr<WeightInitOp> weight_init;
         std::shared_ptr<SolverOp> solver;
         weight_init.reset(new RandWeightInitOp(1.0));
@@ -463,7 +462,6 @@ BOOST_AUTO_TEST_CASE(DELETEAfterTesting)
         model.initWeights();
         
         // modify the models
-        // std::cout<<"Modifying the baseline model "<<i<<"..."<<std::endl;
         model_replicator.modifyModel(model, std::to_string(i));
 
         population.push_back(model);
@@ -505,6 +503,9 @@ BOOST_AUTO_TEST_CASE(DELETEAfterTesting)
 
   // record the model structure
   // record the model accuracy on the validation data
+
+  // [TODO: check that one of the models has a 0.0 error
+  //        i.e., correct structure and weights]
 }
 
 
