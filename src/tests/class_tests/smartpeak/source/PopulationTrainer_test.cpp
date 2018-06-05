@@ -36,6 +36,70 @@ BOOST_AUTO_TEST_CASE(destructor)
   delete ptr;
 }
 
+BOOST_AUTO_TEST_CASE(removeDuplicateModels) 
+{
+  PopulationTrainer population_trainer;
+
+  // make a vector of models to use for testing
+  std::vector<Model> models;
+  for (int i=0; i<2; ++i)
+  {
+    for (int j=0; j<4; ++j)
+    {
+      Model model;
+      model.setName(std::to_string(j));
+      models.push_back(model);
+    }
+  }
+
+  population_trainer.removeDuplicateModels(models);
+  BOOST_CHECK_EQUAL(models.size(), 4);
+  for (int i=0; i<4; ++i)
+    BOOST_CHECK_EQUAL(models[i].getName(), std::to_string(i));
+}
+
+BOOST_AUTO_TEST_CASE(getTopNModels_) 
+{
+  PopulationTrainer population_trainer;
+
+  // make dummy data
+  std::vector<std::pair<std::string, float>> models_validation_errors;
+  const int n_models = 4;
+  for (int i=0; i<n_models; ++i)
+    models_validation_errors.push_back(std::make_pair(std::to_string(i+1), (float)(n_models-i)));
+
+  const int n_top_models = 2;
+  std::vector<std::pair<std::string, float>> top_n_models = population_trainer.getTopNModels_(
+    models_validation_errors, n_top_models);
+  
+  for (int i=0; i<n_top_models; ++i)
+  {
+    BOOST_CHECK_EQUAL(top_n_models[i].first, std::to_string(n_models-i));
+    BOOST_CHECK_EQUAL(top_n_models[i].second, (float)(i+1));
+  }
+}
+
+BOOST_AUTO_TEST_CASE(getRandomNModels_) 
+{
+  PopulationTrainer population_trainer;
+
+  // make dummy data
+  std::vector<std::pair<std::string, float>> models_validation_errors;
+  const int n_models = 4;
+  for (int i=0; i<n_models; ++i)
+    models_validation_errors.push_back(std::make_pair(std::to_string(i+1), (float)(n_models-i)));
+  
+  const int n_random_models = 2;
+  std::vector<std::pair<std::string, float>> random_n_models = population_trainer.getRandomNModels_(
+    models_validation_errors, n_random_models);
+  
+  BOOST_CHECK_EQUAL(random_n_models.size(), 2);  
+  // for (int i=0; i<n_random_models; ++i)
+  // {
+  //   printf("model name %s error %.2f", random_n_models[i].first.data(), random_n_models[i].second);
+  // }
+}
+
 // Toy ModelTrainer used for all tests
 class ModelTrainerTest: public ModelTrainer
 {
@@ -155,48 +219,6 @@ BOOST_AUTO_TEST_CASE(validateModels_)
   // }
 
   // // [TODO: complete]
-}
-
-BOOST_AUTO_TEST_CASE(getTopNModels_) 
-{
-  PopulationTrainer population_trainer;
-
-  // make dummy data
-  std::vector<std::pair<std::string, float>> models_validation_errors;
-  const int n_models = 4;
-  for (int i=0; i<n_models; ++i)
-    models_validation_errors.push_back(std::make_pair(std::to_string(i+1), (float)(n_models-i)));
-
-  const int n_top_models = 2;
-  std::vector<std::pair<std::string, float>> top_n_models = population_trainer.getTopNModels_(
-    models_validation_errors, n_top_models);
-  
-  for (int i=0; i<n_top_models; ++i)
-  {
-    BOOST_CHECK_EQUAL(top_n_models[i].first, std::to_string(n_models-i));
-    BOOST_CHECK_EQUAL(top_n_models[i].second, (float)(i+1));
-  }
-}
-
-BOOST_AUTO_TEST_CASE(getRandomNModels_) 
-{
-  PopulationTrainer population_trainer;
-
-  // make dummy data
-  std::vector<std::pair<std::string, float>> models_validation_errors;
-  const int n_models = 4;
-  for (int i=0; i<n_models; ++i)
-    models_validation_errors.push_back(std::make_pair(std::to_string(i+1), (float)(n_models-i)));
-  
-  const int n_random_models = 2;
-  std::vector<std::pair<std::string, float>> random_n_models = population_trainer.getRandomNModels_(
-    models_validation_errors, n_random_models);
-  
-  BOOST_CHECK_EQUAL(random_n_models.size(), 2);  
-  // for (int i=0; i<n_random_models; ++i)
-  // {
-  //   printf("model name %s error %.2f", random_n_models[i].first.data(), random_n_models[i].second);
-  // }
 }
 
 BOOST_AUTO_TEST_CASE(selectModels) 
@@ -327,7 +349,7 @@ BOOST_AUTO_TEST_CASE(DELETEAfterTesting)
     // select the top N from the population
     std::cout<<"Select the top N models from the population..."<<std::endl;
     printf("population size: %d\n", population.size()); 
-    population = population_trainer.selectModels(
+    population_trainer.selectModels(
       3, 3, population, model_trainer,
       input_data, output_data, time_steps, input_nodes, output_nodes);
 

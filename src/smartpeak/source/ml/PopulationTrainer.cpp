@@ -14,7 +14,31 @@ namespace SmartPeak
   PopulationTrainer::PopulationTrainer(){};
   PopulationTrainer::~PopulationTrainer(){};
 
-  std::vector<Model> PopulationTrainer::selectModels(
+  void PopulationTrainer::removeDuplicateModels(std::vector<Model>& models)
+  {
+    std::map<std::string, Model> unique_models;
+    for (const Model& model: models)
+      unique_models.emplace(model.getName(), model);    
+    
+    models.clear();
+    for (const auto& model: unique_models)
+    {
+      models.push_back(model.second);
+    }
+    
+    // models.erase(std::unique(models.begin(), models.end(), 
+    //   [=](const Model& a, const Model& b)
+    //     {
+    //       printf("Model a %s Model b %s are equal? ", a.getName().data(), b.getName().data());
+    //       bool areequal = a.getName() == b.getName();
+    //       std::cout<<areequal<<std::endl;
+    //       return a.getName() == b.getName();
+    //     }),
+    //   models.end()
+    // );
+  }
+
+  void PopulationTrainer::selectModels(
     const int& n_top,
     const int& n_random,
     std::vector<Model>& models,
@@ -25,32 +49,48 @@ namespace SmartPeak
     const std::vector<std::string>& input_nodes,
     const std::vector<std::string>& output_nodes)
   {
-    std::vector<std::pair<std::string, float>> models_validation_errors;
-    // [TODO: refactor to its own method]
+    printf("PopulationTrainer::selectModels, Models size: %i\n", models.size());
     // score the models
+    std::vector<std::pair<std::string, float>> models_validation_errors;
     models_validation_errors = validateModels_(
       models, model_trainer, input, output, time_steps, input_nodes, output_nodes
     );
+    printf("PopulationTrainer::selectModels, models_validation_errors1 size: %i\n", models_validation_errors.size());
     
-    // [TODO: refactor to its own method]
     // sort each model based on their scores in ascending order
     models_validation_errors = getTopNModels_(
       models_validation_errors, n_top
     );
+    printf("PopulationTrainer::selectModels, models_validation_errors2 size: %i\n", models_validation_errors.size());
 
-    // [TODO: refactor to its own method]
     // select a random subset of the top N
     models_validation_errors = getRandomNModels_(
       models_validation_errors, n_random
     );
+    printf("PopulationTrainer::selectModels, models_validation_errors3 size: %i\n", models_validation_errors.size());
     
-    std::vector<Model> selected_models;
+    std::vector<std::string> selected_models;
     for (const std::pair<std::string, float>& model_error: models_validation_errors)
-      for (int j=0; j<models.size(); ++j)
-        if (models[j].getName() == model_error.first)
-          selected_models.push_back(models[j]);
+      selected_models.push_back(model_error.first);
 
-    return selected_models;
+    // purge non-selected models
+    if (selected_models.size() != models.size())
+    {
+      models.erase(
+        std::remove_if(models.begin(), models.end(),
+          [=](const Model& model)
+          {
+            return std::count(selected_models.begin(), selected_models.end(), model.getName()) == 0;
+          }
+        ),
+        models.end()
+      );
+      printf("PopulationTrainer::selectModels, Models size: %i\n", models.size());
+    }
+
+    if (models.size() > n_random)
+      removeDuplicateModels(models);
+    printf("PopulationTrainer::selectModels, Models size: %i\n", models.size());
   }
 
  std::vector<std::pair<std::string, float>> PopulationTrainer::validateModels_(
@@ -182,6 +222,7 @@ namespace SmartPeak
     const std::vector<std::string>& input_nodes,
     const std::vector<std::string>& output_nodes)
   {
+    std::vector<std::string> broken_model_names;
     // train the models
     for (int i=0; i<models.size(); ++i)
     {
@@ -195,9 +236,21 @@ namespace SmartPeak
       {
         printf("The model %s is broken.\n", models[i].getName().data());
         printf("Error: %s.\n", e.what());
-        // need to remove the model somehow...
+        broken_model_names.push_back(models[i].getName());
       }
-    }    
+      models[i].getName();
+    }
+
+    // purge broken models
+    models.erase(
+      std::remove_if(models.begin(), models.end(),
+        [=](const Model& model)
+        {
+          return std::count(broken_model_names.begin(), broken_model_names.end(), model.getName()) != 0;
+        }
+      ),
+      models.end()
+    );
   }
 
   // float PopulationTrainer::calculateMean(std::vector<float> values)

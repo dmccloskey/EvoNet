@@ -21,10 +21,18 @@ namespace SmartPeak
 public:
     PopulationTrainer(); ///< Default constructor
     ~PopulationTrainer(); ///< Default destructor 
+
+    /**
+      @brief Remove models with non-unique names from the population of models
+      [TODO: add tests]
+
+      @param[in, out] models The vector (i.e., population) of models to select from
+    */ 
+    void removeDuplicateModels(std::vector<Model>& models);  
  
     /**
       @brief Select the top N models with the least error
-      [TODO: add method and tests]
+      [TODO: add tests]
 
       Use cases with different parameters:
       - Top N selection: set n_top ? 0, set n_random == 0
@@ -35,10 +43,8 @@ public:
       @param[in] n_top The number models to select
       @param[in] n_random The number of random models to select from the pool of top models
       @param[in, out] models The vector (i.e., population) of models to select from
-
-      @returns A vector of models (i.e., subset of the population)
     */ 
-    std::vector<Model> selectModels(
+    void selectModels(
       const int& n_top,
       const int& n_random,
       std::vector<Model>& models,

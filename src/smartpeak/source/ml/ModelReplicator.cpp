@@ -595,7 +595,7 @@ namespace SmartPeak
     std::string random_node_name = selectRandomNode(model, node_exclusion_list, node_inclusion_list);
 
     // delete the node, its bias, and its bias link
-    if (!random_node_name.empty() || random_node_name == "")
+    if (!random_node_name.empty() || random_node_name != "") // isn't this this same thing?
     {
       // std::cout<<"Random node name: "<<random_node_name<<std::endl;
       model.removeNodes({random_node_name});
@@ -616,7 +616,7 @@ namespace SmartPeak
       model, source_exclusion_list, source_inclusion_list, sink_exclusion_list, sink_inclusion_list);
 
     // delete the link and weight if required
-    if (!random_link_name.empty() || random_link_name == "")
+    if (!random_link_name.empty() || random_link_name != "") // isn't this this same thing?
     {
       model.removeLinks({random_link_name});
       model.pruneModel(prune_iterations);  // this action can remove additional nodes including inputs, biases, and outputs
