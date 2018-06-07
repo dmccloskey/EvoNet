@@ -5,6 +5,9 @@ docker build -t dmccloskey/docker-openms-vscode .
 docker run -it --name=cpp_openms_1 -v //C/Users/dmccloskey/Documents/GitHub/smartPeak_cpp/:/home/user/code/ --privileged --security-opt seccomp:unconfined dmccloskey/docker-openms-vscode /bin/bash
 docker run -it --name=cpp_openms_1 -v //C/Users/domccl/GitHub/smartPeak_cpp/:/home/user/code/ --privileged --security-opt seccomp:unconfined dmccloskey/docker-openms-vscode /bin/bash
 
+# MNST
+docker run -it --name=cpp_openms_1 -v //C/Users/domccl/GitHub/smartPeak_cpp/:/home/user/code/ -v //C/Users/domccl/GitHub/mnist/:/home/user/data/ --privileged --security-opt seccomp:unconfined dmccloskey/docker-openms-vscode /bin/bash
+
 # build code
 cd /home/user/code/build
 cmake -DCMAKE_PREFIX_PATH="/usr/local/contrib-build/;/usr/local/contrib/;/usr/;/usr/local" -DBOOST_USE_STATIC=OFF -DHAS_XSERVER=Off ..

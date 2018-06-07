@@ -275,7 +275,7 @@
             "args": [],
             "stopAtEntry": false,
             "cwd": "/home/user/code",
-            "program":"/home/user/code/build/src/tests/class_tests/bin/PeakSimulator_test",
+            "program":"/home/user/code/build/src/tests/class_tests/bin/MNIST_test",
             "environment": [],
             "externalConsole": true,
             "pipeTransport": {

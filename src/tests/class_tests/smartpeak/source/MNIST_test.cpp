@@ -125,7 +125,7 @@ int ReverseInt(int i)
 }
 
 template<typename T>
-void ReadMNIST(const std::string& filename, Eigen::Tensor<T, 2> data)
+void ReadMNIST(const std::string& filename, Eigen::Tensor<T, 2>& data, const bool& is_labels)
 {
   // dims: sample, pixel intensity or sample, label
   // e.g., pixel data dims: 1000 x (28x28)
@@ -142,10 +142,18 @@ void ReadMNIST(const std::string& filename, Eigen::Tensor<T, 2> data)
     magic_number= ReverseInt(magic_number);
     file.read((char*)&number_of_images,sizeof(number_of_images));
     number_of_images= ReverseInt(number_of_images);
-    file.read((char*)&n_rows,sizeof(n_rows));
-    n_rows= ReverseInt(n_rows);
-    file.read((char*)&n_cols,sizeof(n_cols));
-    n_cols= ReverseInt(n_cols);
+    if (!is_labels)
+    {
+      file.read((char*)&n_rows,sizeof(n_rows));
+      n_rows= ReverseInt(n_rows);
+      file.read((char*)&n_cols,sizeof(n_cols));
+      n_cols= ReverseInt(n_cols);
+    }
+    else
+    {
+      n_rows=1;
+      n_cols=1;
+    }
     for(int i=0;i<number_of_images;++i)
     {
       for(int r=0;r<n_rows;++r)
@@ -205,14 +213,14 @@ BOOST_AUTO_TEST_CASE(mnistTest)
   model_trainer.setMemorySize(0);
   model_trainer.setNEpochs(100);
 
-  const int mnist_pixels = 784;
-  const int mnist_training_size = 1000;
+  const int input_size = 784;
+  const int training_data_size = 60000;
+  const int validation_data_size = 10000;
   const std::vector<float> mnist_labels = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
-
 
   // Make the input nodes
   std::vector<std::string> input_nodes;
-  for (int i=0; i<mnist_pixels; ++i)
+  for (int i=0; i<input_size; ++i)
     input_nodes.push_back("Input_" + std::to_string(i));
 
   // Make the output nodes
@@ -221,20 +229,32 @@ BOOST_AUTO_TEST_CASE(mnistTest)
     output_nodes.push_back("output_" + std::to_string(i));
 
   // Read input images
-  const std::string training_data = ""; //TODO
-  Eigen::Tensor<float, 2> input_data_mnist(mnist_training_size, mnist_pixels);
-  ReadMNIST<float>(training_data, input_data_mnist);
+  std::cout<<"Reading in the training and validation data..."<<std::endl;
+  const std::string training_data_filename = "/home/user/data/train-images.idx3-ubyte";
+  Eigen::Tensor<float, 2> training_data(training_data_size, input_size);
+  ReadMNIST<float>(training_data_filename, training_data, false);
+
+  const std::string validation_data_filename = "/home/user/data/t10k-images.idx3-ubyte";
+  Eigen::Tensor<float, 2> validation_data(validation_data_size, input_size);
+  ReadMNIST<float>(validation_data_filename, validation_data, false);
 
   // Normalize images
-  input_data_mnist = input_data_mnist.unaryExpr(UnitScale<float>(input_data_mnist));
+  training_data = training_data.unaryExpr(UnitScale<float>(training_data));
+  validation_data = validation_data.unaryExpr(UnitScale<float>(validation_data));
 
-  // Read input labels
-  const std::string training_labels = ""; //TODO
-  Eigen::Tensor<float, 2> output_data_mnist(mnist_training_size, 1);
-  ReadMNIST<float>(training_labels, output_data_mnist);
+  // Read input label
+  std::cout<<"Reading in the training and validation labels..."<<std::endl;  
+  const std::string training_labels_filename = "/home/user/data/train-labels.idx1-ubyte";
+  Eigen::Tensor<float, 2> training_labels(training_data_size, 1);
+  ReadMNIST<float>(training_labels_filename, training_labels, true);
+  
+  const std::string validation_labels_filename = "/home/user/data/t10k-labels.idx1-ubyte";
+  Eigen::Tensor<float, 2> validation_labels(validation_data_size, 1);
+  ReadMNIST<float>(validation_labels_filename, validation_labels, true);
 
   // Convert labels to 1 hot encoding
-  Eigen::Tensor<int, 2> output_data_encoded = OneHotEncoder<float>(output_data_mnist, mnist_labels);
+  Eigen::Tensor<int, 2> training_labels_encoded = OneHotEncoder<float>(training_labels, mnist_labels);
+  Eigen::Tensor<int, 2> validation_labels_encoded = OneHotEncoder<float>(validation_labels, mnist_labels);
 
   // Make the simulation time_steps
   Eigen::Tensor<float, 3> time_steps;
@@ -258,6 +278,7 @@ BOOST_AUTO_TEST_CASE(mnistTest)
 
     if (iter == 0)
     {
+      std::cout<<"Initializing the population..."<<std::endl;  
       // define the initial population
       for (int i=0; i<population_size; ++i)
       {
@@ -284,7 +305,7 @@ BOOST_AUTO_TEST_CASE(mnistTest)
     // make the start and end sample indices
     mnist_sample_start = mnist_sample_end;
     mnist_sample_end = mnist_sample_start + model_trainer.getBatchSize()*model_trainer.getNEpochs();
-    if (mnist_sample_end > mnist_training_size - 1)
+    if (mnist_sample_end > training_data_size - 1)
       mnist_sample_end = mnist_sample_end - model_trainer.getBatchSize()*model_trainer.getNEpochs(); 
 
     // make a vector of sample_indices
@@ -292,25 +313,27 @@ BOOST_AUTO_TEST_CASE(mnistTest)
     for (int i=0; i<model_trainer.getBatchSize()*model_trainer.getNEpochs(); ++i)
     {
       int sample_index = i + mnist_sample_start;
-      if (sample_index > mnist_training_size - 1);
+      if (sample_index > training_data_size - 1);
         sample_index = sample_index - model_trainer.getBatchSize()*model_trainer.getNEpochs();
       sample_indices.push_back(sample_index);
     }   
   
     // Reformat the input data for training
+    std::cout<<"Reformatting the input data..."<<std::endl;  
     Eigen::Tensor<float, 4> input_data(model_trainer.getBatchSize(), model_trainer.getMemorySize(), input_nodes.size(), model_trainer.getNEpochs());
     for (int batch_iter=0; batch_iter<model_trainer.getBatchSize(); ++batch_iter)
       for (int memory_iter=0; memory_iter<model_trainer.getMemorySize(); ++memory_iter)
         for (int nodes_iter=0; nodes_iter<input_nodes.size(); ++nodes_iter)
           for (int epochs_iter=0; epochs_iter<model_trainer.getNEpochs(); ++epochs_iter)
-            input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = input_data_mnist(sample_indices[epochs_iter*model_trainer.getBatchSize() + batch_iter], nodes_iter);
+            input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[epochs_iter*model_trainer.getBatchSize() + batch_iter], nodes_iter);
 
     // reformat the output data for training
+    std::cout<<"Reformatting the output data..."<<std::endl;  
     Eigen::Tensor<float, 3> output_data(model_trainer.getBatchSize(), output_nodes.size(), model_trainer.getNEpochs());
     for (int batch_iter=0; batch_iter<model_trainer.getBatchSize(); ++batch_iter)
       for (int nodes_iter=0; nodes_iter<output_nodes.size(); ++nodes_iter)
         for (int epochs_iter=0; epochs_iter<model_trainer.getNEpochs(); ++epochs_iter)
-          output_data(batch_iter, nodes_iter, epochs_iter) = (float)output_data_encoded(sample_indices[epochs_iter*model_trainer.getBatchSize() + batch_iter], nodes_iter);
+          output_data(batch_iter, nodes_iter, epochs_iter) = (float)training_labels_encoded(sample_indices[epochs_iter*model_trainer.getBatchSize() + batch_iter], nodes_iter);
 
     // // model modification scheduling
     // if (iter > 100)
