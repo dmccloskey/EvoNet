@@ -321,7 +321,24 @@ namespace SmartPeak
         }
         break;
       } 
-      // [TODO: add cases for for Sigmoid, tanH, etc.]
+      case NodeActivation::Sigmoid:
+      {
+        output_step = output_step.unaryExpr(SigmoidGradOp<float>());
+        for (int i=0; i<output_step.size(); ++i)
+        {
+          derivative_(i, time_step) = output_step(i);
+        }
+        break;
+      } 
+      case NodeActivation::TanH:
+      {
+        output_step = output_step.unaryExpr(TanHGradOp<float>());
+        for (int i=0; i<output_step.size(); ++i)
+        {
+          derivative_(i, time_step) = output_step(i);
+        }
+        break;
+      } 
       default:
       {
         std::cout << "Node activation not supported." << std::endl;

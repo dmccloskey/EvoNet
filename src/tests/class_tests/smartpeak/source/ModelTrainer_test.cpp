@@ -110,44 +110,6 @@ BOOST_AUTO_TEST_CASE(checkOutputData)
     output_data, 3, output_nodes));
 }
 
-// BOOST_AUTO_TEST_CASE(LSTM) 
-// {
-//   //LSTM
-//   class LSTMModelTrainer: public ModelTrainer
-//   {
-//   public:
-//     Model makeModel()
-//     {
-//       /**
-//        * Long Short Term Memory Model
-//       */
-//       Node input,
-//         forget_gate, forget_mult,
-//         add_gate1, add_gate2, add_mult,
-//         memory_cell,
-//         output_gate1, output_gate2, output_mult,
-//         output;
-//       Link l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4;
-//       Weight w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4;
-//       Model model1;
-
-//       // Toy network: 1 hidden layer, fully connected, DAG
-//       input = Node("input", NodeType::input, NodeStatus::activated, NodeActivation::Linear);
-//       forget_gate = Node("forget_gate", NodeType::Sigmoid, NodeStatus::deactivated);
-//       forget_mult = Node("forget_mult", NodeType::hidden, NodeStatus::deactivated, NodeActivation::ReLU); //?
-//       add_gate1 = Node("add_gate1", NodeType::Sigmoid, NodeStatus::deactivated);
-//       add_gate2 = Node("add_gate2", NodeType::TanH, NodeStatus::deactivated);
-//       add_mult = Node("add_mult", NodeType::hidden, NodeStatus::deactivated, NodeActivation::ReLU); //?
-//       memory_cell = Node("memory_cell", NodeType::hidden, NodeStatus::deactivated, NodeActivation::ReLU); //?
-//       output_gate1 = Node("output_gate1", NodeType::Sigmoid, NodeStatus::activated);
-//       output_gate2 = Node("output_gate2", NodeType::TanH, NodeStatus::activated);
-//       output_mult = Node("output_mult", NodeType::hidden, NodeStatus::deactivated, NodeActivation::ReLU); //?
-//       output = Node("output", NodeType::hidden, NodeStatus::deactivated, NodeActivation::ReLU);
-//     }
-//   };
-  
-// }
-
 BOOST_AUTO_TEST_CASE(DAGToy) 
 {
 

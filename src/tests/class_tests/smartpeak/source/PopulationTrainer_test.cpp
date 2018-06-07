@@ -312,7 +312,7 @@ BOOST_AUTO_TEST_CASE(trainModels)
     solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
     Model model = model_replicator.makeBaselineModel(
       1, 0, 1,
-      NodeActivation::ELU, NodeActivation::ELU,
+      NodeActivation::ReLU, NodeActivation::ReLU,
       weight_init, solver,
       ModelLossFunction::MSE, std::to_string(i));
     model.initWeights();
@@ -456,7 +456,12 @@ BOOST_AUTO_TEST_CASE(exampleUsage)
         solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
         Model model = model_replicator.makeBaselineModel(
           1, 0, 1,
-          NodeActivation::ELU, NodeActivation::ELU,
+          NodeActivation::ReLU,
+          NodeActivation::ReLU,
+          // NodeActivation::ELU,
+          // NodeActivation::ELU,
+          // NodeActivation::TanH,
+          // NodeActivation::TanH,
           weight_init, solver,
           ModelLossFunction::MSE, std::to_string(i));
         model.initWeights();
