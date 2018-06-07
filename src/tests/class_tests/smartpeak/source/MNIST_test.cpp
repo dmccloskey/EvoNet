@@ -5,6 +5,7 @@
 #include <SmartPeak/ml/PopulationTrainer.h>
 
 #include <SmartPeak/ml/Model.h>
+#include <fstream>
 
 using namespace SmartPeak;
 
@@ -130,7 +131,7 @@ void ReadMNIST(const std::string& filename, Eigen::Tensor<T, 2> data)
   // e.g., pixel data dims: 1000 x (28x28)
   // e.g., label data dims: 1000 x 1
 
-  std::ifstream file (filename, ios::binary);
+  std::ifstream file (filename, std::ios::binary);
   if (file.is_open())
   {
     int magic_number=0;
@@ -161,26 +162,35 @@ void ReadMNIST(const std::string& filename, Eigen::Tensor<T, 2> data)
 }
 
 template<typename T>
-void UnitScale(Eigen::Tensor<T, 2> data)
+class UnitScale
 {
-  // normalize
-  const T max_value = data.maximum();
-  const T min_value = data.minimum();
-  data = data * 1/sqrt(pow(max_value - min_value));
-}
+public: 
+  UnitScale(){}; 
+  UnitScale(const Eigen::Tensor<T, 2>& data){setUnitScale(data);}; 
+  ~UnitScale(){};
+  void setUnitScale(const Eigen::Tensor<T, 2>& data)
+  {
+    const Eigen::Tensor<T,0> max_value = data.maximum();
+    const Eigen::Tensor<T,0> min_value = data.minimum();
+    unit_scale_ = 1/sqrt(pow(max_value(0) - min_value(0), 2));
+  }  
+  T operator()(const T& x_I) const { return x_I/unit_scale_; };
+private:
+  T unit_scale_;
+};
 
 template<typename T>
 Eigen::Tensor<int, 2> OneHotEncoder(Eigen::Tensor<T, 2>& data, const std::vector<T>& all_possible_values)
 {
   // integer encode input data
   std::map<T, int> T_to_int;
-  for (int i=0; i<all_possible_values.size(), ++i)
+  for (int i=0; i<all_possible_values.size(); ++i)
     T_to_int.emplace(all_possible_values[i], i);
 
   // convert to 1 hot vector
   Eigen::Tensor<int, 2> onehot_encoded(data.dimension(0), T_to_int.size());
   onehot_encoded.setConstant(0);
-  for (int i=0; i<data.dimension(0), ++i)
+  for (int i=0; i<data.dimension(0); ++i)
     onehot_encoded(i, T_to_int.at(data(i,0)))=1;
   
   return onehot_encoded;
@@ -216,15 +226,15 @@ BOOST_AUTO_TEST_CASE(mnistTest)
   ReadMNIST<float>(training_data, input_data_mnist);
 
   // Normalize images
-  Eigen::Tensor<float, 2> input_data_normalized = UnitScale<float>(input_data_mnist);
+  input_data_mnist = input_data_mnist.unaryExpr(UnitScale<float>(input_data_mnist));
 
   // Read input labels
   const std::string training_labels = ""; //TODO
-  Eigen::Tensor<int, 2> output_data_mnist(mnist_training_size, 1);
-  ReadMNIST<int>(training_labels, output_data);
+  Eigen::Tensor<float, 2> output_data_mnist(mnist_training_size, 1);
+  ReadMNIST<float>(training_labels, output_data_mnist);
 
   // Convert labels to 1 hot encoding
-  Eigen::Tensor<float, 2> output_data_encoded = OneHotEncoder<float>(output_data, output_data_mnist);
+  Eigen::Tensor<int, 2> output_data_encoded = OneHotEncoder<float>(output_data_mnist, mnist_labels);
 
   // Make the simulation time_steps
   Eigen::Tensor<float, 3> time_steps;
@@ -241,6 +251,7 @@ BOOST_AUTO_TEST_CASE(mnistTest)
   const int iterations = 10;
   const int population_size = 12;
   int mnist_sample_start = 0;
+  int mnist_sample_end = 0;
   for (int iter=0; iter<iterations; ++iter)
   {
     printf("Iteration #: %d\n", iter);
@@ -271,8 +282,8 @@ BOOST_AUTO_TEST_CASE(mnistTest)
     }
 
     // make the start and end sample indices
-    mnist_sample_start = mnist_sample_end + 1;
-    int mnist_sample_end = mnist_sample_start + model_trainer.getBatchSize()*model_trainer.getNEpochs();
+    mnist_sample_start = mnist_sample_end;
+    mnist_sample_end = mnist_sample_start + model_trainer.getBatchSize()*model_trainer.getNEpochs();
     if (mnist_sample_end > mnist_training_size - 1)
       mnist_sample_end = mnist_sample_end - model_trainer.getBatchSize()*model_trainer.getNEpochs(); 
 
@@ -292,14 +303,14 @@ BOOST_AUTO_TEST_CASE(mnistTest)
       for (int memory_iter=0; memory_iter<model_trainer.getMemorySize(); ++memory_iter)
         for (int nodes_iter=0; nodes_iter<input_nodes.size(); ++nodes_iter)
           for (int epochs_iter=0; epochs_iter<model_trainer.getNEpochs(); ++epochs_iter)
-            input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = input_data_normalized(sample_indices[epochs_iter*model_trainer.getBatchSize() + batch_iter], nodes_iter);
+            input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = input_data_mnist(sample_indices[epochs_iter*model_trainer.getBatchSize() + batch_iter], nodes_iter);
 
     // reformat the output data for training
     Eigen::Tensor<float, 3> output_data(model_trainer.getBatchSize(), output_nodes.size(), model_trainer.getNEpochs());
     for (int batch_iter=0; batch_iter<model_trainer.getBatchSize(); ++batch_iter)
       for (int nodes_iter=0; nodes_iter<output_nodes.size(); ++nodes_iter)
         for (int epochs_iter=0; epochs_iter<model_trainer.getNEpochs(); ++epochs_iter)
-          output_data(batch_iter, nodes_iter, epochs_iter) = output_data_encoded(sample_indices[epochs_iter*model_trainer.getBatchSize() + batch_iter], nodes_iter);
+          output_data(batch_iter, nodes_iter, epochs_iter) = (float)output_data_encoded(sample_indices[epochs_iter*model_trainer.getBatchSize() + batch_iter], nodes_iter);
 
     // // model modification scheduling
     // if (iter > 100)

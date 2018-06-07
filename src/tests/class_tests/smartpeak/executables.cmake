@@ -20,6 +20,7 @@ set(ml_executables_list
   Solver_test
   Weight_test
   WeightInit_test
+  MNIST_test
 )
 
 set(simulator_executables_list
