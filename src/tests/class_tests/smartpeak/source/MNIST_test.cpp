@@ -7,6 +7,9 @@
 #include <SmartPeak/ml/Model.h>
 #include <fstream>
 
+#define EIGEN_DEFAULT_DENSE_INDEX_TYPE int
+#define EIGEN_USE_GPU
+
 using namespace SmartPeak;
 
 BOOST_AUTO_TEST_SUITE(mnist)
@@ -231,6 +234,45 @@ Eigen::Tensor<int, 2> OneHotEncoder(Eigen::Tensor<T, 2>& data, const std::vector
   return onehot_encoded;
 }
 
+BOOST_AUTO_TEST_CASE(cuda) 
+{
+  Eigen::Tensor<float, 1> in1(Eigen::array<int, 1>(2));
+  Eigen::Tensor<float, 1> in2(Eigen::array<int, 1>(2));
+  Eigen::Tensor<float, 1> out(Eigen::array<int, 1>(2));
+  in1.setRandom();
+  in2.setRandom();
+
+  std::size_t in1_bytes = in1.size() * sizeof(float);
+  std::size_t in2_bytes = in2.size() * sizeof(float);
+  std::size_t out_bytes = out.size() * sizeof(float);
+
+  float* d_in1;
+  float* d_in2;
+  float* d_out;
+  cudaMalloc((void**)(&d_in1), in1_bytes);
+  cudaMalloc((void**)(&d_in2), in2_bytes);
+  cudaMalloc((void**)(&d_out), out_bytes);
+
+  cudaMemcpy(d_in1, in1.data(), in1_bytes, cudaMemcpyHostToDevice);
+  cudaMemcpy(d_in2, in2.data(), in2_bytes, cudaMemcpyHostToDevice);
+
+  Eigen::CudaStreamDevice stream;
+  Eigen::GpuDevice gpu_device(&stream);
+
+  Eigen::TensorMap<Eigen::Tensor<float, 1>, Eigen::Aligned> gpu_in1(
+      d_in1, Eigen::array<int, 1>(2));
+  Eigen::TensorMap<Eigen::Tensor<float, 1>, Eigen::Aligned> gpu_in2(
+      d_in2, Eigen::array<int, 1>(2));
+  Eigen::TensorMap<Eigen::Tensor<float, 1>, Eigen::Aligned> gpu_out(
+      d_out, Eigen::array<int, 1>(2));
+
+  gpu_out.device(gpu_device) = gpu_in1 + gpu_in2;
+
+  assert(cudaMemcpyAsync(out.data(), d_out, out_bytes, cudaMemcpyDeviceToHost,
+                         gpu_device.stream()) == cudaSuccess);
+  assert(cudaStreamSynchronize(gpu_device.stream()) == cudaSuccess);
+}
+
 BOOST_AUTO_TEST_CASE(mnistTest) 
 {
   PopulationTrainer population_trainer;
@@ -296,10 +338,10 @@ BOOST_AUTO_TEST_CASE(mnistTest)
 
   // Evolve the population
   std::vector<Model> population; 
-  const int population_size = 3;
+  const int population_size = 1;
   const int n_top = 1;
   const int n_random = 1;
-  const int n_replicates_per_model = 2;
+  const int n_replicates_per_model = 0;
   int mnist_sample_start = 0;
   int mnist_sample_end = 0;
   const int iterations = 2;
@@ -319,7 +361,7 @@ BOOST_AUTO_TEST_CASE(mnistTest)
         weight_init.reset(new RandWeightInitOp(input_nodes.size()));
         solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
         Model model = model_replicator.makeBaselineModel(
-          input_nodes.size(), 0, output_nodes.size(),
+          input_nodes.size(), 100, output_nodes.size(),
           NodeActivation::ELU,
           NodeActivation::ELU,
           weight_init, solver,
