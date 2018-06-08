@@ -124,6 +124,14 @@ public:
     {
       return;
     }
+    if (!model.checkNodeNames(input_nodes))
+    {
+      return;
+    }
+    if (!model.checkNodeNames(output_nodes))
+    {
+      return;
+    }
     // printf("Data checks passed\n");
     
     // Initialize the model
@@ -169,6 +177,14 @@ public:
       return model_error;
     }
     if (!checkOutputData(getNEpochs(), output, getBatchSize(), output_nodes))
+    {
+      return model_error;
+    }
+    if (!model.checkNodeNames(input_nodes))
+    {
+      return model_error;
+    }
+    if (!model.checkNodeNames(output_nodes))
     {
       return model_error;
     }
@@ -219,7 +235,7 @@ BOOST_AUTO_TEST_CASE(validateModels_)
   //   model.setError(model_error);
   // }
 
-  // // [TODO: complete]
+  // [TODO: complete]
 }
 
 BOOST_AUTO_TEST_CASE(selectModels) 
@@ -375,10 +391,15 @@ BOOST_AUTO_TEST_CASE(trainModels)
   population_trainer.trainModels(population, model_trainer,
     input_data, output_data, time_steps, input_nodes, output_nodes);
 
-  BOOST_CHECK_EQUAL(population.size(), 2); // broken models should be removed
+  BOOST_CHECK_EQUAL(population.size(), 4); // broken models should still be there
 
-  for (int i=0; i<2; ++i)
-    BOOST_CHECK_EQUAL(population[i].getError().size(), model_trainer.getBatchSize()); // error has been calculated
+  for (int i=0; i<population.size(); ++i)
+  {
+    if (i<2)
+      BOOST_CHECK_EQUAL(population[i].getError().size(), 0); // error has not been calculated
+    else
+      BOOST_CHECK_EQUAL(population[i].getError().size(), model_trainer.getBatchSize()); // error has been calculated
+  }
 }
 
 BOOST_AUTO_TEST_CASE(exampleUsage) 
@@ -440,14 +461,18 @@ BOOST_AUTO_TEST_CASE(exampleUsage)
 
   // Evolve the population
   std::vector<Model> population; 
-  int iterations = 10;
+  const int population_size = 12;
+  const int n_top = 3;
+  const int n_random = 3;
+  const int n_replicates_per_model = 3;
+  const int iterations = 10;
   for (int iter=0; iter<iterations; ++iter)
   {
     if (iter == 0)
     {
       // define the initial population of 10 baseline models
       std::cout<<"Making the initial population..."<<std::endl;
-      for (int i=0; i<12; ++i)
+      for (int i=0; i<population_size; ++i)
       {
         // baseline model
         std::shared_ptr<WeightInitOp> weight_init;
@@ -455,13 +480,9 @@ BOOST_AUTO_TEST_CASE(exampleUsage)
         weight_init.reset(new RandWeightInitOp(1.0));
         solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
         Model model = model_replicator.makeBaselineModel(
-          1, 0, 1,
+          input_nodes.size(), 0, output_nodes.size(),
           NodeActivation::ReLU,
           NodeActivation::ReLU,
-          // NodeActivation::ELU,
-          // NodeActivation::ELU,
-          // NodeActivation::TanH,
-          // NodeActivation::TanH,
           weight_init, solver,
           ModelLossFunction::MSE, std::to_string(i));
         model.initWeights();
@@ -486,7 +507,7 @@ BOOST_AUTO_TEST_CASE(exampleUsage)
     // select the top N from the population
     std::cout<<"Select the top N models from the population..."<<std::endl;
     population_trainer.selectModels(
-      3, 3, population, model_trainer,
+      n_top, n_random, population, model_trainer,
       input_data, output_data, time_steps, input_nodes, output_nodes);
 
     for (const Model& model: population)
@@ -501,7 +522,7 @@ BOOST_AUTO_TEST_CASE(exampleUsage)
     {
       // replicate and modify models
       std::cout<<"Replicate and modify the top N models from the population..."<<std::endl; 
-      population_trainer.replicateModels(population, model_replicator, 3, std::to_string(iter));
+      population_trainer.replicateModels(population, model_replicator, n_replicates_per_model, std::to_string(iter));
     }
 
   }

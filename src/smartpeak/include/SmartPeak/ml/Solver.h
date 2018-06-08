@@ -18,7 +18,6 @@ namespace SmartPeak
       On the difficulty of training Recurrent Neural Networks
       arXiv:1211.5063 [cs.LG]      
 
-    [TODO: add method body and tests]
     Gradient Noise with annealed variance reference:
       Neelakantan, A., Vilnis, L., Le, Q. V., Sutskever, I., Kaiser, L., Kurach, K., & Martens, J. (2015). 
       Adding Gradient Noise Improves Learning for Very Deep Networks, 1–11. 

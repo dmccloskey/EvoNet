@@ -31,7 +31,6 @@ public:
  
     /**
       @brief Select the top N models with the least error
-      [TODO: add tests]
 
       Use cases with different parameters:
       - Top N selection: set n_top ? 0, set n_random == 0

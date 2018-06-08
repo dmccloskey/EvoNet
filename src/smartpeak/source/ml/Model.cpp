@@ -362,15 +362,6 @@ namespace SmartPeak
     const NodeStatus& status_update,
     const std::string& value_type)
   {
-    // // assumes the node exists [TODO]
-    // else if (nodes_.at(node_names[0]).getOutput().dimension(0) != values.dimension(0))
-    // {
-    //   std::cout << "The number of input samples and the node batch size does not match." << std::endl;
-    //   return;
-    // }
-
-    // // infer the memory size from the node output size
-    // const int memory_size = nodes_.at(node_names[0]).getOutput().dimension(1);
 
     // copy over the input values
     for (auto& node_map : nodes_)
@@ -1377,5 +1368,47 @@ namespace SmartPeak
     {
       node_map.second.setStatus(NodeStatus::initialized);
     }
+  }
+
+  bool Model::checkNodeNames(const std::vector<std::string> node_names)
+  {
+    bool nodes_found = true;
+    for (const std::string& node_name: node_names)
+    {
+      if (nodes_.empty() || nodes_.count(node_name) == 0)
+      {
+        nodes_found = false;
+        std::cout << "Node name " << node_name << " not found!" << std::endl;
+      }
+    }
+    return nodes_found;
+  }
+
+  bool Model::checkLinkNames(const std::vector<std::string> link_names)
+  {
+    bool links_found = true;
+    for (const std::string& link_name: link_names)
+    {
+      if (links_.empty() || links_.count(link_name) == 0)
+      {
+        links_found = false;
+        std::cout << "Link name " << link_name << " not found!" << std::endl;
+      }
+    }
+    return links_found;
+  }
+
+  bool Model::checkWeightNames(const std::vector<std::string> weight_names)
+  {
+    bool weights_found = true;
+    for (const std::string& weight_name: weight_names)
+    {
+      if (weights_.empty() || weights_.count(weight_name) == 0)
+      {
+        weights_found = false;
+        std::cout << "Weight name " << weight_name << " not found!" << std::endl;
+      }
+    }
+    return weights_found;
   }
 }

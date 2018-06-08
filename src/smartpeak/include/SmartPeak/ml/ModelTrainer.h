@@ -142,7 +142,11 @@ public:
     /**
       @brief Check input dimensions.
 
-      @param [TODO: add params docstrings]
+      @param n_epochs The number of training epochs
+      @param input The input data
+      @param batch_size The batch size of the nodes
+      @param memory_size The memory size of the nodes
+      @param input_nodes The node names
 
       @returns True on success, False if not
     */ 
@@ -155,7 +159,10 @@ public:
     /**
       @brief Check output dimensions.
 
-      @param [TODO: add params docstrings]
+      @param n_epochs The number of training epochs
+      @param output The output data
+      @param batch_size The batch size of the nodes
+      @param output_nodes The node names
 
       @returns True on success, False if not
     */ 
@@ -167,7 +174,10 @@ public:
     /**
       @brief [TODO: add method] Check time step dimensions required for FPTT.
 
-      @param [TODO: add params docstrings]
+      @param n_epochs The number of training epochs
+      @param time_steps The time step spacing
+      @param batch_size The batch size of the nodes
+      @param memory_size The memory size of the nodes
 
       @returns True on success, False if not
     */ 
@@ -179,6 +189,8 @@ public:
     /**
       @brief Entry point for users to code their script
         for model training
+
+      [TODO: create a standardized version for DCG and DAG?]
 
       @param[in, out] model The model to train
       @param[in] n_epochs The number of epochs to train
@@ -198,6 +210,8 @@ public:
     /**
       @brief Entry point for users to code their script
         for model validation
+
+      [TODO: create a standardized version for DCG and DAG?]
 
       @param[in, out] model The model to train
       @param[in] n_epochs The number of epochs to train

@@ -445,4 +445,65 @@ BOOST_AUTO_TEST_CASE(pruneModel)
   BOOST_CHECK_EQUAL(model.getLinks().size(), 0);
 }
 
+BOOST_AUTO_TEST_CASE(checkNodeNames) 
+{
+  // Test model
+  Node input, hidden, output;
+  input = Node("i", NodeType::input, NodeStatus::activated, NodeActivation::Linear);
+  hidden = Node("h", NodeType::hidden, NodeStatus::initialized, NodeActivation::ReLU);
+  output = Node("o", NodeType::output, NodeStatus::initialized, NodeActivation::ReLU);
+  Model model;
+  model.addNodes({input, hidden, output});
+
+  std::vector<std::string> node_names;
+
+  node_names = {"i", "h", "o"};
+  BOOST_CHECK(model.checkNodeNames(node_names));
+
+  node_names = {"i", "h", "a"}; // no "a" node
+  BOOST_CHECK(!model.checkNodeNames(node_names));
+}
+
+BOOST_AUTO_TEST_CASE(checkLinkNames) 
+{
+  // Test model
+  Link l_i_to_h, l_h_to_o;
+  l_i_to_h = Link("i_to_h", "i", "h", "i_to_h");
+  l_h_to_o = Link("h_to_o", "h", "o", "h_to_o");
+  Model model;
+  model.addLinks({l_i_to_h, l_h_to_o});
+
+  std::vector<std::string> link_names;
+
+  link_names = {"i_to_h", "h_to_o"};
+  BOOST_CHECK(model.checkLinkNames(link_names));
+
+  link_names = {"i_to_h", "h_to_i"};  // no "h_to_i" link
+  BOOST_CHECK(!model.checkLinkNames(link_names));
+}
+
+BOOST_AUTO_TEST_CASE(checkWeightNames) 
+{
+  // Test model
+  Weight w_i_to_h, w_h_to_o;
+  std::shared_ptr<WeightInitOp> weight_init;
+  std::shared_ptr<SolverOp> solver;
+  weight_init.reset(new ConstWeightInitOp(1.0));
+  solver.reset(new SGDOp(0.01, 0.9));
+  w_i_to_h = Weight("i_to_h", weight_init, solver);
+  weight_init.reset(new ConstWeightInitOp(1.0));
+  solver.reset(new SGDOp(0.01, 0.9));
+  w_h_to_o = Weight("h_to_o", weight_init, solver);
+  Model model;
+  model.addWeights({w_i_to_h, w_h_to_o});
+
+  std::vector<std::string> weight_names;
+
+  weight_names = {"i_to_h", "h_to_o"};
+  BOOST_CHECK(model.checkWeightNames(weight_names));
+
+  weight_names = {"i_to_h", "h_to_i"};  // no "h_to_i" weight
+  BOOST_CHECK(!model.checkWeightNames(weight_names));
+}
+
 BOOST_AUTO_TEST_SUITE_END()

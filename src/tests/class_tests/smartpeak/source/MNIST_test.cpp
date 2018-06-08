@@ -34,11 +34,18 @@ public:
     {
       return;
     }
+    if (!model.checkNodeNames(input_nodes))
+    {
+      return;
+    }
+    if (!model.checkNodeNames(output_nodes))
+    {
+      return;
+    }
     printf("Data checks passed\n");
     
     // Initialize the model
     model.initNodes(getBatchSize(), getMemorySize());
-    model.initWeights();
     printf("Initialized the model\n");
 
     for (int iter = 0; iter < getNEpochs(); ++iter) // use n_epochs here
@@ -62,6 +69,7 @@ public:
 
       // reinitialize the model
       model.reInitializeNodeStatuses();
+      model.initNodes(getBatchSize(), getMemorySize());
     }
   }
   std::vector<float> validateModel(Model& model,
@@ -81,6 +89,14 @@ public:
       return model_error;
     }
     if (!checkOutputData(getNEpochs(), output, getBatchSize(), output_nodes))
+    {
+      return model_error;
+    }
+    if (!model.checkNodeNames(input_nodes))
+    {
+      return model_error;
+    }
+    if (!model.checkNodeNames(output_nodes))
     {
       return model_error;
     }
@@ -131,6 +147,7 @@ void ReadMNIST(const std::string& filename, Eigen::Tensor<T, 2>& data, const boo
   // e.g., pixel data dims: 1000 x (28x28)
   // e.g., label data dims: 1000 x 1
 
+  // open up the file
   std::ifstream file (filename, std::ios::binary);
   if (file.is_open())
   {
@@ -138,10 +155,18 @@ void ReadMNIST(const std::string& filename, Eigen::Tensor<T, 2>& data, const boo
     int number_of_images=0;
     int n_rows=0;
     int n_cols=0;
+
+    // get the magic number
     file.read((char*)&magic_number,sizeof(magic_number));
     magic_number= ReverseInt(magic_number);
+
+    // get the number of images
     file.read((char*)&number_of_images,sizeof(number_of_images));
     number_of_images= ReverseInt(number_of_images);
+    if (number_of_images > data.dimension(0))
+      number_of_images = data.dimension(0);
+
+    // get the number of rows and cols
     if (!is_labels)
     {
       file.read((char*)&n_rows,sizeof(n_rows));
@@ -154,6 +179,8 @@ void ReadMNIST(const std::string& filename, Eigen::Tensor<T, 2>& data, const boo
       n_rows=1;
       n_cols=1;
     }
+
+    // get the actual data
     for(int i=0;i<number_of_images;++i)
     {
       for(int r=0;r<n_rows;++r)
@@ -208,14 +235,9 @@ BOOST_AUTO_TEST_CASE(mnistTest)
 {
   PopulationTrainer population_trainer;
 
-  ModelTrainerTest model_trainer;
-  model_trainer.setBatchSize(64);
-  model_trainer.setMemorySize(0);
-  model_trainer.setNEpochs(100);
-
   const int input_size = 784;
-  const int training_data_size = 60000;
-  const int validation_data_size = 10000;
+  const int training_data_size = 1000; //60000;
+  const int validation_data_size = 100; //10000;
   const std::vector<float> mnist_labels = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 
   // Make the input nodes
@@ -226,9 +248,9 @@ BOOST_AUTO_TEST_CASE(mnistTest)
   // Make the output nodes
   std::vector<std::string> output_nodes;
   for (int i=0; i<mnist_labels.size(); ++i)
-    output_nodes.push_back("output_" + std::to_string(i));
+    output_nodes.push_back("Output_" + std::to_string(i));
 
-  // Read input images
+  // Read input images [BUG FREE]
   std::cout<<"Reading in the training and validation data..."<<std::endl;
   const std::string training_data_filename = "/home/user/data/train-images.idx3-ubyte";
   Eigen::Tensor<float, 2> training_data(training_data_size, input_size);
@@ -238,11 +260,11 @@ BOOST_AUTO_TEST_CASE(mnistTest)
   Eigen::Tensor<float, 2> validation_data(validation_data_size, input_size);
   ReadMNIST<float>(validation_data_filename, validation_data, false);
 
-  // Normalize images
+  // Normalize images [BUG FREE]
   training_data = training_data.unaryExpr(UnitScale<float>(training_data));
   validation_data = validation_data.unaryExpr(UnitScale<float>(validation_data));
 
-  // Read input label
+  // Read input label [BUG FREE]
   std::cout<<"Reading in the training and validation labels..."<<std::endl;  
   const std::string training_labels_filename = "/home/user/data/train-labels.idx1-ubyte";
   Eigen::Tensor<float, 2> training_labels(training_data_size, 1);
@@ -252,12 +274,18 @@ BOOST_AUTO_TEST_CASE(mnistTest)
   Eigen::Tensor<float, 2> validation_labels(validation_data_size, 1);
   ReadMNIST<float>(validation_labels_filename, validation_labels, true);
 
-  // Convert labels to 1 hot encoding
+  // Convert labels to 1 hot encoding [BUG FREE]
   Eigen::Tensor<int, 2> training_labels_encoded = OneHotEncoder<float>(training_labels, mnist_labels);
   Eigen::Tensor<int, 2> validation_labels_encoded = OneHotEncoder<float>(validation_labels, mnist_labels);
 
   // Make the simulation time_steps
   Eigen::Tensor<float, 3> time_steps;
+
+  // define the model replicator for growth mode
+  ModelTrainerTest model_trainer;
+  model_trainer.setBatchSize(4);
+  model_trainer.setMemorySize(1);
+  model_trainer.setNEpochs(100);
 
   // define the model replicator for growth mode
   ModelReplicator model_replicator;
@@ -268,10 +296,13 @@ BOOST_AUTO_TEST_CASE(mnistTest)
 
   // Evolve the population
   std::vector<Model> population; 
-  const int iterations = 10;
-  const int population_size = 12;
+  const int population_size = 3;
+  const int n_top = 1;
+  const int n_random = 1;
+  const int n_replicates_per_model = 2;
   int mnist_sample_start = 0;
   int mnist_sample_end = 0;
+  const int iterations = 2;
   for (int iter=0; iter<iterations; ++iter)
   {
     printf("Iteration #: %d\n", iter);
@@ -279,13 +310,13 @@ BOOST_AUTO_TEST_CASE(mnistTest)
     if (iter == 0)
     {
       std::cout<<"Initializing the population..."<<std::endl;  
-      // define the initial population
+      // define the initial population [BUG FREE]
       for (int i=0; i<population_size; ++i)
       {
         // baseline model
         std::shared_ptr<WeightInitOp> weight_init;
         std::shared_ptr<SolverOp> solver;
-        weight_init.reset(new RandWeightInitOp(1.0));
+        weight_init.reset(new RandWeightInitOp(input_nodes.size()));
         solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
         Model model = model_replicator.makeBaselineModel(
           input_nodes.size(), 0, output_nodes.size(),
@@ -298,27 +329,44 @@ BOOST_AUTO_TEST_CASE(mnistTest)
         // modify the models
         model_replicator.modifyModel(model, std::to_string(i));
 
+        char cout_char[512];
+        sprintf(cout_char, "Model %s (Nodes: %d, Links: %d)\n", model.getName().data(), model.getNodes().size(), model.getLinks().size());
+        std::cout<<cout_char;
+        // for (auto link: model.getLinks())
+        // {
+        //   memset(cout_char, 0, sizeof(cout_char));
+        //   sprintf(cout_char, "Links %s\n", link.getName().data());
+        //   std::cout<<cout_char;
+        // }
+        // for (auto node: model.getNodes())
+        // {
+        //   memset(cout_char, 0, sizeof(cout_char));
+        //   sprintf(cout_char, "Nodes %s\n", node.getName().data());
+        //   std::cout<<cout_char;
+        // }
         population.push_back(model);
       }
     }
 
-    // make the start and end sample indices
+    // make the start and end sample indices [BUG FREE]
     mnist_sample_start = mnist_sample_end;
     mnist_sample_end = mnist_sample_start + model_trainer.getBatchSize()*model_trainer.getNEpochs();
     if (mnist_sample_end > training_data_size - 1)
       mnist_sample_end = mnist_sample_end - model_trainer.getBatchSize()*model_trainer.getNEpochs(); 
 
-    // make a vector of sample_indices
+    // make a vector of sample_indices [BUG FREE]
     std::vector<int> sample_indices;
     for (int i=0; i<model_trainer.getBatchSize()*model_trainer.getNEpochs(); ++i)
     {
       int sample_index = i + mnist_sample_start;
-      if (sample_index > training_data_size - 1);
+      if (sample_index > training_data_size - 1)
+      {
         sample_index = sample_index - model_trainer.getBatchSize()*model_trainer.getNEpochs();
+      }
       sample_indices.push_back(sample_index);
     }   
   
-    // Reformat the input data for training
+    // Reformat the input data for training [BUG FREE]
     std::cout<<"Reformatting the input data..."<<std::endl;  
     Eigen::Tensor<float, 4> input_data(model_trainer.getBatchSize(), model_trainer.getMemorySize(), input_nodes.size(), model_trainer.getNEpochs());
     for (int batch_iter=0; batch_iter<model_trainer.getBatchSize(); ++batch_iter)
@@ -327,7 +375,7 @@ BOOST_AUTO_TEST_CASE(mnistTest)
           for (int epochs_iter=0; epochs_iter<model_trainer.getNEpochs(); ++epochs_iter)
             input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[epochs_iter*model_trainer.getBatchSize() + batch_iter], nodes_iter);
 
-    // reformat the output data for training
+    // reformat the output data for training [BUG FREE]
     std::cout<<"Reformatting the output data..."<<std::endl;  
     Eigen::Tensor<float, 3> output_data(model_trainer.getBatchSize(), output_nodes.size(), model_trainer.getNEpochs());
     for (int batch_iter=0; batch_iter<model_trainer.getBatchSize(); ++batch_iter)
@@ -352,6 +400,7 @@ BOOST_AUTO_TEST_CASE(mnistTest)
     // }
 
     // train the population
+    std::cout<<"Training the models..."<<std::endl;
     population_trainer.trainModels(population, model_trainer,
       input_data, output_data, time_steps, input_nodes, output_nodes);
 
@@ -360,14 +409,17 @@ BOOST_AUTO_TEST_CASE(mnistTest)
     // reformat the output data for validation
 
     // select the top N from the population
+    std::cout<<"Selecting the models..."<<std::endl;
     population_trainer.selectModels(
-      3, 3, population, model_trainer,
+      n_top, n_random, population, model_trainer,
       input_data, output_data, time_steps, input_nodes, output_nodes);
 
     for (const Model& model: population)
     {
       const Eigen::Tensor<float, 0> total_error = model.getError().sum();
-      printf("Model %s (Nodes: %d, Links: %d) error: %.2f\n", model.getName().data(), model.getNodes().size(), model.getLinks().size(), total_error.data()[0]);
+      char cout_char[512];
+      sprintf(cout_char, "Model %s (Nodes: %d, Links: %d) error: %.2f\n", model.getName().data(), model.getNodes().size(), model.getLinks().size(), total_error.data()[0]);
+      std::cout<<cout_char;
       // for (auto link: model.getLinks())
       //   printf("Links %s\n", link.getName().data());
     }
@@ -375,7 +427,8 @@ BOOST_AUTO_TEST_CASE(mnistTest)
     if (iter < iterations - 1)  
     {
       // replicate and modify models
-      population_trainer.replicateModels(population, model_replicator, 3, std::to_string(iter));
+      std::cout<<"Replicating and modifying the models..."<<std::endl;
+      population_trainer.replicateModels(population, model_replicator, n_replicates_per_model, std::to_string(iter));
     }
   }
 }

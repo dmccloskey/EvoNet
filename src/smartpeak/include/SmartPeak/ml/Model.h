@@ -485,6 +485,27 @@ public:
       @param[in] iterations The number of recursive iterations to prune
     */ 
     void pruneModel(int iterations = 1e3); 
+ 
+    /**
+      @brief Check to ensure that the nodes are in the model
+
+      @param[in] node_names 
+    */ 
+    bool checkNodeNames(const std::vector<std::string> node_names); 
+ 
+    /**
+      @brief Check to ensure that the links are in the model
+
+      @param[in] link_names 
+    */ 
+    bool checkLinkNames(const std::vector<std::string> link_names); 
+ 
+    /**
+      @brief Check to ensure that the weights are in the model
+
+      @param[in] weight_names 
+    */ 
+    bool checkWeightNames(const std::vector<std::string> weight_names);
 
 private:
     int id_; ///< Model ID

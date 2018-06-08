@@ -44,7 +44,10 @@ public:
       @param n_output_nodes The number of output nodes the model should have
       @param hidden_node_activation The activation function of the hidden node to create
       @param output_node_activation The activation function of the output node to create
-      @param [TODO: docstrings for new params]
+      @param weight_init Weight init operator to use for hidden and output nodes
+      @param solver Solver operator to use for hidden and output nodes
+      @param error_function Model loss function
+      @param unique_str Optional string to make the model name unique
 
       @returns A baseline model
     */ 

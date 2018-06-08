@@ -118,7 +118,7 @@ namespace SmartPeak
       Node node(node_name, NodeType::input, NodeStatus::activated, NodeActivation::Linear);
       model.addNodes({node});
     }
-    // Create the hidden nodes + biases
+    // Create the hidden nodes + biases and hidden to bias links
     for (int i=0; i<n_hidden_nodes; ++i)
     {
       char node_name_char[64];
@@ -131,8 +131,25 @@ namespace SmartPeak
       std::string bias_name(bias_name_char);
       Node bias(bias_name, NodeType::bias, NodeStatus::activated, NodeActivation::Linear);
       model.addNodes({node, bias});
+
+      char weight_bias_name_char[64];
+      sprintf(weight_bias_name_char, "Bias_%d_to_Hidden_%d", i, i);
+      std::string weight_bias_name(weight_bias_name_char);
+
+      char link_bias_name_char[64];
+      sprintf(link_bias_name_char, "Bias_%d_to_Hidden_%d", i, i);
+      std::string link_bias_name(link_bias_name_char);
+
+      std::shared_ptr<WeightInitOp> bias_weight_init;
+      bias_weight_init.reset(new ConstWeightInitOp(1.0));;
+      std::shared_ptr<SolverOp> bias_solver = solver;
+      Weight weight_bias(weight_bias_name, bias_weight_init, bias_solver);
+      Link link_bias(link_bias_name, bias_name, node_name, weight_bias_name);
+
+      model.addWeights({weight_bias});
+      model.addLinks({link_bias});
     }
-    // Create the output nodes + biases
+    // Create the output nodes + biases and bias to output link
     for (int i=0; i<n_output_nodes; ++i)
     {
       char node_name_char[64];
@@ -145,6 +162,23 @@ namespace SmartPeak
       std::string bias_name(bias_name_char);
       Node bias(bias_name, NodeType::bias, NodeStatus::activated, NodeActivation::Linear);
       model.addNodes({node, bias});
+
+      char weight_bias_name_char[64];
+      sprintf(weight_bias_name_char, "Bias_%d_to_Output_%d", i, i);
+      std::string weight_bias_name(weight_bias_name_char);
+
+      char link_bias_name_char[64];
+      sprintf(link_bias_name_char, "Bias_%d_to_Output_%d", i, i);
+      std::string link_bias_name(link_bias_name_char);
+
+      std::shared_ptr<WeightInitOp> bias_weight_init;
+      bias_weight_init.reset(new ConstWeightInitOp(1.0));
+      std::shared_ptr<SolverOp> bias_solver = solver;
+      Weight weight_bias(weight_bias_name, bias_weight_init, bias_solver);
+      Link link_bias(link_bias_name, bias_name, node_name, weight_bias_name);
+
+      model.addWeights({weight_bias});
+      model.addLinks({link_bias});
     }
 
     // Create the weights and links for input to hidden
@@ -173,26 +207,8 @@ namespace SmartPeak
         Weight weight(weight_name_char, hidden_weight_init, hidden_solver);
         Link link(link_name, input_name, hidden_name, weight_name);
 
-        char bias_name_char[64];
-        sprintf(bias_name_char, "Hidden_bias_%d", j);
-        std::string bias_name(bias_name_char);
-
-        char weight_bias_name_char[64];
-        sprintf(weight_bias_name_char, "Bias_%d_to_Hidden_%d", j, j);
-        std::string weight_bias_name(weight_bias_name_char);
-
-        char link_bias_name_char[64];
-        sprintf(link_bias_name_char, "Bias_%d_to_Hidden_%d", j, j);
-        std::string link_bias_name(link_bias_name_char);
-
-        std::shared_ptr<WeightInitOp> bias_weight_init;
-        bias_weight_init.reset(new ConstWeightInitOp(1.0));;
-        std::shared_ptr<SolverOp> bias_solver = solver;
-        Weight weight_bias(weight_bias_name, bias_weight_init, bias_solver);
-        Link link_bias(link_bias_name, bias_name, hidden_name, weight_bias_name);
-
-        model.addWeights({weight, weight_bias});
-        model.addLinks({link, link_bias});
+        model.addWeights({weight});
+        model.addLinks({link});
       }
     }
 
@@ -222,26 +238,8 @@ namespace SmartPeak
         Weight weight(weight_name_char, output_weight_init, output_solver);
         Link link(link_name, hidden_name, output_name, weight_name);
 
-        char bias_name_char[64];
-        sprintf(bias_name_char, "Output_bias_%d", j);
-        std::string bias_name(bias_name_char);
-
-        char weight_bias_name_char[64];
-        sprintf(weight_bias_name_char, "Bias_%d_to_Output_%d", j, j);
-        std::string weight_bias_name(weight_bias_name_char);
-
-        char link_bias_name_char[64];
-        sprintf(link_bias_name_char, "Bias_%d_to_Output_%d", j, j);
-        std::string link_bias_name(link_bias_name_char);
-
-        std::shared_ptr<WeightInitOp> bias_weight_init;
-        bias_weight_init.reset(new ConstWeightInitOp(1.0));
-        std::shared_ptr<SolverOp> bias_solver = solver;
-        Weight weight_bias(weight_bias_name, bias_weight_init, bias_solver);
-        Link link_bias(link_bias_name, bias_name, output_name, weight_bias_name);
-
-        model.addWeights({weight, weight_bias});
-        model.addLinks({link, link_bias});
+        model.addWeights({weight});
+        model.addLinks({link});
       }
     }
 
@@ -273,26 +271,8 @@ namespace SmartPeak
           Weight weight(weight_name_char, output_weight_init, output_solver);
           Link link(link_name, input_name, output_name, weight_name);
 
-          char bias_name_char[64];
-          sprintf(bias_name_char, "Output_bias_%d", j);
-          std::string bias_name(bias_name_char);
-
-          char weight_bias_name_char[64];
-          sprintf(weight_bias_name_char, "Bias_%d_to_Output_%d", j, j);
-          std::string weight_bias_name(weight_bias_name_char);
-
-          char link_bias_name_char[64];
-          sprintf(link_bias_name_char, "Bias_%d_to_Output_%d", j, j);
-          std::string link_bias_name(link_bias_name_char);
-
-          std::shared_ptr<WeightInitOp> bias_weight_init;
-          bias_weight_init.reset(new ConstWeightInitOp(1.0));
-          std::shared_ptr<SolverOp> bias_solver = solver;
-          Weight weight_bias(weight_bias_name, bias_weight_init, bias_solver);
-          Link link_bias(link_bias_name, bias_name, output_name, weight_bias_name);
-
-          model.addWeights({weight, weight_bias});
-          model.addLinks({link, link_bias});
+          model.addWeights({weight});
+          model.addLinks({link});
         }
       }
     }
@@ -408,8 +388,6 @@ namespace SmartPeak
         if (std::count(sink_node_ids.begin(), sink_node_ids.end(), link.getSinkNodeName()) != 0)
           link_ids.push_back(link.getName());
     }
-
-    // [TODO: break into seperate method here for testing purposes]
     
     if (link_ids.size()>0)
       return selectRandomElement<std::string>(link_ids);
@@ -423,7 +401,7 @@ namespace SmartPeak
   void ModelReplicator::addLink(
     Model& model, std::string unique_str)
   {
-    // define the inclusion/exclusion nodes    
+    // define the inclusion/exclusion nodes
     const std::vector<NodeType> source_node_type_exclude = {NodeType::bias};
     const std::vector<NodeType> source_node_type_include = {};
     const std::vector<NodeType> sink_node_type_exclude = {NodeType::bias, NodeType::input};
@@ -484,8 +462,6 @@ namespace SmartPeak
 
   void ModelReplicator::addNode(Model& model, std::string unique_str)
   {
-    // [TODO: add tests]
-
     // pick a random node from the model
     // that is not an input or bias    
     std::vector<NodeType> node_exclusion_list = {NodeType::bias, NodeType::input};
@@ -508,7 +484,6 @@ namespace SmartPeak
     }
     std::string input_link_name = selectRandomElement<std::string>(input_link_names);   
     
-    // [TODO: change its iteraction probability?]
     // update the copied node name and add it to the model    
     std::regex re("@");
     std::vector<std::string> str_tokens;

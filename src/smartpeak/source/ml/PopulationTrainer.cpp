@@ -124,6 +124,7 @@ namespace SmartPeak
       catch (std::exception& e)
       {
         printf("The model %s is broken.\n", models[i].getName().data());
+        printf("Error: %s.\n", e.what());
         models_validation_errors.push_back(std::make_pair(models[i].getName(),1e6f));
       }
     }
