@@ -3,7 +3,6 @@
 #define BOOST_TEST_MODULE LinkFile test suite 
 #include <boost/test/unit_test.hpp>
 #include <SmartPeak/io/LinkFile.h>
-// #include <filesystem> C++ 17
 
 using namespace SmartPeak;
 using namespace std;
@@ -41,16 +40,17 @@ BOOST_AUTO_TEST_CASE(storeAndLoadCsv)
       "Sink_" + std::to_string(i),
       "Weight_" + std::to_string(i));
   }
-  data.storeLinksCsv<float, 3>(filename, links);
+  data.storeLinksCsv(filename, links);
 
-	data.loadLinksCsv<float, 3>(filename, links);
+  std::vector<Link> links_test;
+	data.loadLinksCsv(filename, links_test);
 
   for (int i=0; i<3; ++i)
   {
-    BOOST_CHECK_EQUAL(link.getName(), "Link_" + std::to_string(i));
-    BOOST_CHECK_EQUAL(link.getSourceNodeName(), "Source_" + std::to_string(i));
-    BOOST_CHECK_EQUAL(link.getSinkNodeName(), "Sink_" + std::to_string(i));
-    BOOST_CHECK_EQUAL(link.getWeightName(), "Weight_" + std::to_string(i));
+    BOOST_CHECK_EQUAL(links_test[i].getName(), "Link_" + std::to_string(i));
+    BOOST_CHECK_EQUAL(links_test[i].getSourceNodeName(), "Source_" + std::to_string(i));
+    BOOST_CHECK_EQUAL(links_test[i].getSinkNodeName(), "Sink_" + std::to_string(i));
+    BOOST_CHECK_EQUAL(links_test[i].getWeightName(), "Weight_" + std::to_string(i));
   }
 }
 
