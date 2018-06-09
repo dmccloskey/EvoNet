@@ -10,6 +10,7 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <map>
 #include <string>
 
 namespace SmartPeak
@@ -63,6 +64,8 @@ public:
       @returns Status True on success, False if not
     */ 
     bool storeWeightsCsv(const std::string& filename, const std::vector<Weight>& weights);
+
+    std::map<std::string, float> parseParameters(const std::string& parameters);
   };
 }
 

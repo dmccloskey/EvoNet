@@ -24,6 +24,17 @@ BOOST_AUTO_TEST_CASE(destructor)
   delete ptr;
 }
 
+BOOST_AUTO_TEST_CASE(parseParameters)
+{
+  WeightFile data;
+  std::string parameters = "learning_rate:1.0;momentum:0.9;gradient_noise_sigma:1e3";
+  std::map<std::string, float> parameter_test = data.parseParameters(parameters);
+
+  BOOST_CHECK_EQUAL(parameter_test.at("learning_rate"), 1.0);
+  BOOST_CHECK_CLOSE(parameter_test.at("momentum"), 0.9, 1e3);
+  BOOST_CHECK_EQUAL(parameter_test.at("gradient_noise_sigma"), 1e3);
+}
+
 BOOST_AUTO_TEST_CASE(storeAndLoadCsv) 
 {
   WeightFile data;

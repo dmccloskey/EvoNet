@@ -4,6 +4,7 @@
 #include <SmartPeak/io/csv.h>
 
 #include <map>
+#include <regex>
 
 namespace SmartPeak
 {
@@ -23,34 +24,79 @@ namespace SmartPeak
     while(weights_in.read_row(weight_name, weight_init_op_str, weight_init_params_str, solver_op_str, solver_params_str))
     {
       // parse the weight_init_params
-      std::map<std::string, float> weight_init_params;
-      // TODO...
+      std::map<std::string, float> weight_init_params = parseParameters(weight_init_params_str);
 
       // parse the weight_init_op
       std::shared_ptr<WeightInitOp> weight_init;
       if (weight_init_op_str == "ConstWeightInitOp")
       {
-        weight_init.reset(new ConstWeightInitOp(1.0));
+        ConstWeightInitOp* ptr = nullptr;
+        if (weight_init_params.count("n"))
+          ptr = new ConstWeightInitOp(weight_init_params.at("n"));
+        else
+          ptr = new ConstWeightInitOp(1.0);
+        weight_init.reset(ptr);
       }
       else if (weight_init_op_str == "RandWeightInitOp")
       {
-        weight_init.reset(new RandWeightInitOp(1.0));
+        RandWeightInitOp* ptr = nullptr;
+        if (weight_init_params.count("n"))
+          ptr = new RandWeightInitOp(weight_init_params.at("n"));
+        else
+          ptr = new RandWeightInitOp(1.0);
+        weight_init.reset(ptr);
       }
       else std::cout<<"WeightInitOp for weight_name "<<weight_name<<" was not recognized."<<std::endl;
 
       // parse the solver_params_str
-      std::map<std::string, float> weight_params;
-      // TODO...
+      std::map<std::string, float> solver_params = parseParameters(solver_params_str);
 
       // parse the solver_op
       std::shared_ptr<SolverOp> solver;
       if (weight_init_op_str == "SGDOp")
       {
-        solver.reset(new SGDOp(0.01, 0.9));
+        SGDOp* ptr = new SGDOp();
+        ptr->setLearningRate(0.01);
+        if (solver_params.count("learning_rate"))
+          ptr->setLearningRate(solver_params.at("learning_rate"));
+        ptr->setMomentum(0.9);
+        if (solver_params.count("momentum"))
+          ptr->setMomentum(solver_params.at("momentum"));
+        ptr->setGradientThreshold(1e6);
+        if (solver_params.count("gradient_threshold"))
+          ptr->setGradientThreshold(solver_params.at("gradient_threshold"));
+        ptr->setGradientNoiseSigma(0.0);
+        if (solver_params.count("gradient_noise_sigma"))
+          ptr->setGradientNoiseSigma(solver_params.at("gradient_noise_sigma"));
+        ptr->setGradientNoiseGamma(0.0);
+        if (solver_params.count("gradient_noise_gamma"))
+          ptr->setGradientNoiseGamma(solver_params.at("gradient_noise_gamma"));
+        solver.reset(ptr);
       }
       else if (weight_init_op_str == "AdamOp")
       {
-        solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
+        AdamOp* ptr = new AdamOp();
+        if (solver_params.count("learning_rate"))
+          ptr->setLearningRate(solver_params.at("learning_rate"));
+        ptr->setMomentum(0.9);
+        if (solver_params.count("momentum"))
+          ptr->setMomentum(solver_params.at("momentum"));
+        ptr->setMomentum2(0.999);
+        if (solver_params.count("momentum2"))
+          ptr->setMomentum2(solver_params.at("momentum2"));
+        ptr->setDelta(1e-8);
+        if (solver_params.count("delta"))
+          ptr->setDelta(solver_params.at("delta"));
+        ptr->setGradientThreshold(1e6);
+        if (solver_params.count("gradient_threshold"))
+          ptr->setGradientThreshold(solver_params.at("gradient_threshold"));
+        ptr->setGradientNoiseSigma(0.0);
+        if (solver_params.count("gradient_noise_sigma"))
+          ptr->setGradientNoiseSigma(solver_params.at("gradient_noise_sigma"));
+        ptr->setGradientNoiseGamma(0.0);
+        if (solver_params.count("gradient_noise_gamma"))
+          ptr->setGradientNoiseGamma(solver_params.at("gradient_noise_gamma"));
+        solver.reset(ptr);
       }
       else std::cout<<"WeightInitOp for weight_name "<<weight_name<<" was not recognized."<<std::endl;
 
@@ -58,6 +104,44 @@ namespace SmartPeak
       weights.push_back(weight);
     }
   }
+
+  std::map<std::string, float> WeightFile::parseParameters(const std::string& parameters)
+  {
+    // parse the parameters
+    std::regex re(";");
+    std::vector<std::string> str_tokens;
+    std::copy(
+      std::sregex_token_iterator(parameters.begin(), parameters.end(), re, -1),
+      std::sregex_token_iterator(),
+      std::back_inserter(str_tokens));
+
+    // break into parameter name and value
+    std::map<std::string, float> parameters_map;
+    for (std::string str: str_tokens)
+    {
+      str.erase(remove_if(str.begin(), str.end(), isspace), str.end());
+      std::regex re1(":");
+      std::vector<std::string> params;
+      std::copy(
+        std::sregex_token_iterator(str.begin(), str.end(), re1, -1),
+        std::sregex_token_iterator(),
+        std::back_inserter(params));
+      std::string param_name = params[0];
+      float param_value = 0.0;
+      try
+      {
+        param_value = std::stof(params[1]);
+      }
+      catch (std::exception& e)
+      {
+        printf("Exception: %s", e.what());
+      }
+      parameters_map.emplace(param_name, param_value);
+    }
+
+    return parameters_map;
+  }
+  
 
   bool WeightFile::storeWeightsBinary(const std::string& filename, const std::vector<Weight>& weights){}
 
