@@ -65,6 +65,9 @@ foreach(_class_test ${TEST_executables})
   if (OPENMP_FOUND AND NOT MSVC AND NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     set_target_properties(${_class_test} PROPERTIES LINK_FLAGS ${OpenMP_CXX_FLAGS})
   endif()
+  if (EIGEN_USE_GPU)
+    set_property(TARGET ${_class_test} PROPERTY CUDA_STANDARD 11)
+  endif()
 endforeach(_class_test)
 
 #------------------------------------------------------------------------------

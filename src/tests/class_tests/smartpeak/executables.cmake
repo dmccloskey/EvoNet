@@ -4,6 +4,7 @@ set(core_executables_list
 
 set(io_executables_list
   DataFile_test
+  LinkFile_test
 )
 
 set(ml_executables_list

@@ -12,6 +12,25 @@
 
 using namespace SmartPeak;
 
+/**
+ * EXAMPLES using the MNIST data set
+ * 
+ * EXAMPLE1:
+ * - classification on MNIST using DAG
+ * - whole image pixels (linearized) 28x28 normalized to 0 to 1
+ * - classifier (1 hot vector from 0 to 9)
+ * 
+ * EXAMPLE2:
+ * - classification on MNIST using DCG
+ * - scan of pixel 8x8 pixel subset over time
+ * - classifier (1 hot vector from 0 to 9)
+ * 
+ * ISSUES:
+ * 1. problem: Forward propogation and backward propogation are slow
+ *    fix: need to implement GPU device in tensor library
+ *    steps: 1) install CUDA toolkit, 2) modify cmake to build with nvcc, 3) modify code to use GpuDevice
+ */
+
 BOOST_AUTO_TEST_SUITE(mnist)
 
 // Toy ModelTrainer used for all tests
