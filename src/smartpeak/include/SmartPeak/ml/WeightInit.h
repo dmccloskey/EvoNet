@@ -19,6 +19,7 @@ namespace SmartPeak
 public: 
     WeightInitOp(){}; 
     ~WeightInitOp(){};
+    virtual std::string getName() const = 0;
     virtual float operator()() const = 0;
   };  
 
@@ -36,6 +37,7 @@ public:
     RandWeightInitOp(const float& n):n_(n){};
     RandWeightInitOp(){}; 
     ~RandWeightInitOp(){};
+    std::string getName() const{return "RandWeightInitOp";};
     float operator()() const {       
       std::random_device rd{};
       std::mt19937 gen{rd()};
@@ -55,6 +57,7 @@ public:
     ConstWeightInitOp(const float& n):n_(n){};
     ConstWeightInitOp(){}; 
     ~ConstWeightInitOp(){};
+    std::string getName() const{return "ConstWeightInitOp";};
     float operator()() const { return n_; };
 private:
     float n_; ///< the constant to return

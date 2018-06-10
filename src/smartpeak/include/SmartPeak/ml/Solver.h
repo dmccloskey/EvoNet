@@ -35,6 +35,7 @@ public:
     SolverOp(){}; 
     SolverOp(const float& gradient_threshold){setGradientThreshold(gradient_threshold);}; 
     ~SolverOp(){};
+    virtual std::string getName() const = 0;
     void setGradientThreshold(const float& gradient_threshold){gradient_threshold_ = gradient_threshold;};
     float getGradientThreshold() const{return gradient_threshold_;};
     virtual float operator()(const float& weight, const float& error) = 0;
@@ -89,6 +90,7 @@ public:
       const float new_weight = weight + weight_update;
       return new_weight;
     };
+    std::string getName() const{return "SGDOp";};
 private:
     float learning_rate_; ///< Learning rate
     float momentum_; ///< Momentum
@@ -132,6 +134,7 @@ public:
       const float new_weight = weight - learning_rate_ * unbiased_adam1 / (std::sqrt(unbiased_adam2) + delta_);
       return new_weight;
     };
+    std::string getName() const{return "AdamOp";};
 private:
     float learning_rate_; ///< Learning rate
     float momentum_; ///< Momentum

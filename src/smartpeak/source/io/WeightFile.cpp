@@ -16,12 +16,12 @@ namespace SmartPeak
 
   bool WeightFile::loadWeightsCsv(const std::string& filename, std::vector<Weight>& weights)
   {
-    io::CSVReader<5> weights_in(filename);
+    io::CSVReader<6> weights_in(filename);
     weights_in.read_header(io::ignore_extra_column, 
-      "weight_name", "weight_init_op", "weight_init_params", "solver_op", "solver_params");
-    std::string weight_name, weight_init_op_str, weight_init_params_str, solver_op_str, solver_params_str;
+      "weight_name", "weight_init_op", "weight_init_params", "solver_op", "solver_params", "weight_value");
+    std::string weight_name, weight_init_op_str, weight_init_params_str, solver_op_str, solver_params_str, weight_value_str;
 
-    while(weights_in.read_row(weight_name, weight_init_op_str, weight_init_params_str, solver_op_str, solver_params_str))
+    while(weights_in.read_row(weight_name, weight_init_op_str, weight_init_params_str, solver_op_str, solver_params_str, weight_value_str))
     {
       // parse the weight_init_params
       std::map<std::string, float> weight_init_params = parseParameters(weight_init_params_str);
@@ -101,6 +101,18 @@ namespace SmartPeak
       else std::cout<<"WeightInitOp for weight_name "<<weight_name<<" was not recognized."<<std::endl;
 
       Weight weight(weight_name, weight_init, solver);
+
+      // parse the weight value
+      float weight_value = 0;
+      try
+      {
+        weight_value = std::stof(weight_value_str);
+      }
+      catch (std::exception& e)
+      {
+        printf("Exception: %s", e.what());
+      }
+      
       weights.push_back(weight);
     }
   }

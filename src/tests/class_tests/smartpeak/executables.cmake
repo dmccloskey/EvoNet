@@ -3,6 +3,7 @@ set(core_executables_list
 )
 
 set(io_executables_list
+  CSVWriter_test
   DataFile_test
   LinkFile_test
   NodeFile_test

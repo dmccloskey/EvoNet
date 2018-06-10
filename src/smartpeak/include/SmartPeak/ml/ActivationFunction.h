@@ -19,6 +19,7 @@ namespace SmartPeak
 public: 
     ActivationOp(){};  
     ~ActivationOp(){};
+    virtual std::string getName() const = 0;
     // virtual T operator()() const = 0;
     virtual T operator()(const T& x_I) const = 0;
   };
@@ -38,6 +39,7 @@ public:
     ReLUOp(){}; 
     ~ReLUOp(){};
     T operator()(const T& x_I) const { return (x_I > 0.0) ? x_I: 0.0; };
+    std::string getName() const{return "ReLUOp";};
   };
 
   /**
@@ -55,6 +57,7 @@ public:
     ReLUGradOp(){}; 
     ~ReLUGradOp(){};
     T operator()(const T& x_I) const { return (x_I > 0.0) ? 1.0: 0.0; };
+    std::string getName() const{return "ReLUGradOp";};
   };
 
   /**
@@ -75,6 +78,7 @@ public:
     T operator()(const T& x_I) const { return (x_I > 0.0) ? x_I : alpha_ * (std::exp(x_I) - 1); };
     void setAlpha(const T& alpha) { alpha_ = alpha; };
     T getAlpha() const { return alpha_; };
+    std::string getName() const{return "ReLUGradOp";};
 private:
     T alpha_;
   };
@@ -101,6 +105,7 @@ public:
     };
     void setAlpha(const T& alpha) { alpha_ = alpha; };
     T getAlpha() const { return alpha_; };
+    std::string getName() const{return "ReLUGradOp";};
 private:
     T alpha_;
   };
@@ -115,6 +120,7 @@ public:
     SigmoidOp(){}; 
     ~SigmoidOp(){};
     T operator()(const T& x_I) const { return 1 / (1 + std::exp(x_I)); };
+    std::string getName() const{return "ReLUGradOp";};
   };
 
   /**
@@ -131,6 +137,7 @@ public:
       SmartPeak::SigmoidOp<T> sigmoidop;
       return sigmoidop(x_I) * (1 - sigmoidop(x_I));
     };
+    std::string getName() const{return "ReLUGradOp";};
   };
   
   /**
@@ -143,6 +150,7 @@ public:
     TanHOp(){}; 
     ~TanHOp(){};
     T operator()(const T& x_I) const { return (std::exp(x_I) - std::exp(-x_I)) / (std::exp(x_I) + std::exp(-x_I)); };
+    std::string getName() const{return "ReLUGradOp";};
   };
 
   /**
@@ -159,6 +167,7 @@ public:
       SmartPeak::TanHOp<T> tanhop;
       return 1 - std::pow(tanhop(x_I), 2);
     };
+    std::string getName() const{return "ReLUGradOp";};
   };
   
   /**
@@ -174,6 +183,7 @@ public:
     { 
       return (x_I > 0.0) ? (std::exp(x_I) - std::exp(-x_I)) / (std::exp(x_I) + std::exp(-x_I)) : 0.0;
     };
+    std::string getName() const{return "ReLUGradOp";};
   };
 
   /**
@@ -190,6 +200,7 @@ public:
       SmartPeak::ReTanHOp<T> tanhop;
       return (x_I > 0.0) ? 1 - std::pow(tanhop(x_I), 2) : 0.0;
     };
+    std::string getName() const{return "ReLUGradOp";};
   };
 }
 #endif //SMARTPEAK_ACTIVATIONFUNCTION_H

@@ -32,6 +32,7 @@ BOOST_AUTO_TEST_CASE(settersAndGetters)
 {
   SGDOp operation;
   operation = SGDOp(0.9f, 0.1f);
+  BOOST_CHECK_EQUAL(operation.getName(), "SGDOp");
   BOOST_CHECK_CLOSE(operation.getLearningRate(), 0.9, 1e-3);
   BOOST_CHECK_CLOSE(operation.getMomentum(), 0.1, 1e-3);
   BOOST_CHECK_CLOSE(operation.getMomentumPrev(), 0.0, 1e-3);
@@ -42,6 +43,9 @@ BOOST_AUTO_TEST_CASE(settersAndGetters)
   BOOST_CHECK_CLOSE(operation.getLearningRate(), 0.8, 1e-3);
   BOOST_CHECK_CLOSE(operation.getMomentum(), 0.2, 1e-3);
   BOOST_CHECK_CLOSE(operation.getMomentumPrev(), 0.1, 1e-3);
+
+  AdamOp adam_op;
+  BOOST_CHECK_EQUAL(adam_op.getName(), "AdamOp");
 }
 
 BOOST_AUTO_TEST_CASE(operationfunctionSGDOp) 

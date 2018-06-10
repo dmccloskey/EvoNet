@@ -3,6 +3,7 @@ set(directory source/io)
 
 ### list all filenames of the directory here
 set(sources_list
+	CSVWriter.cpp
 	DataFile.cpp
 	LinkFile.cpp
 	NodeFile.cpp
