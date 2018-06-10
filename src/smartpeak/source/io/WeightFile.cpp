@@ -2,6 +2,7 @@
 
 #include <SmartPeak/io/WeightFile.h>
 #include <SmartPeak/io/csv.h>
+#include <SmartPeak/io/CSVWriter.h>
 
 #include <map>
 #include <regex>
@@ -16,6 +17,8 @@ namespace SmartPeak
 
   bool WeightFile::loadWeightsCsv(const std::string& filename, std::vector<Weight>& weights)
   {
+    weights.clear();
+
     io::CSVReader<6> weights_in(filename);
     weights_in.read_header(io::ignore_extra_column, 
       "weight_name", "weight_init_op", "weight_init_params", "solver_op", "solver_params", "weight_value");
@@ -46,14 +49,14 @@ namespace SmartPeak
           ptr = new RandWeightInitOp(1.0);
         weight_init.reset(ptr);
       }
-      else std::cout<<"WeightInitOp for weight_name "<<weight_name<<" was not recognized."<<std::endl;
+      else std::cout<<"WeightInitOp "<<weight_init_op_str<<" for weight_name "<<weight_name<<" was not recognized."<<std::endl;
 
       // parse the solver_params_str
       std::map<std::string, float> solver_params = parseParameters(solver_params_str);
 
       // parse the solver_op
       std::shared_ptr<SolverOp> solver;
-      if (weight_init_op_str == "SGDOp")
+      if (solver_op_str == "SGDOp")
       {
         SGDOp* ptr = new SGDOp();
         ptr->setLearningRate(0.01);
@@ -73,7 +76,7 @@ namespace SmartPeak
           ptr->setGradientNoiseGamma(solver_params.at("gradient_noise_gamma"));
         solver.reset(ptr);
       }
-      else if (weight_init_op_str == "AdamOp")
+      else if (solver_op_str == "AdamOp")
       {
         AdamOp* ptr = new AdamOp();
         if (solver_params.count("learning_rate"))
@@ -98,7 +101,7 @@ namespace SmartPeak
           ptr->setGradientNoiseGamma(solver_params.at("gradient_noise_gamma"));
         solver.reset(ptr);
       }
-      else std::cout<<"WeightInitOp for weight_name "<<weight_name<<" was not recognized."<<std::endl;
+      else std::cout<<"SolverOp "<<solver_op_str<<" for weight_name "<<weight_name<<" was not recognized."<<std::endl;
 
       Weight weight(weight_name, weight_init, solver);
 
@@ -112,7 +115,7 @@ namespace SmartPeak
       {
         printf("Exception: %s", e.what());
       }
-      
+
       weights.push_back(weight);
     }
   }
@@ -157,5 +160,39 @@ namespace SmartPeak
 
   bool WeightFile::storeWeightsBinary(const std::string& filename, const std::vector<Weight>& weights){}
 
-  bool WeightFile::storeWeightsCsv(const std::string& filename, const std::vector<Weight>& weights){}
+  bool WeightFile::storeWeightsCsv(const std::string& filename, const std::vector<Weight>& weights)
+  {
+    CSVWriter csvwriter(filename);
+
+    // write the headers to the first line
+    const std::vector<std::string> headers = {"weight_name", "weight_init_op", "weight_init_params", "solver_op", "solver_params", "weight_value"};
+    csvwriter.writeDataInRow(headers.begin(), headers.end());
+
+    for (const Weight& weight: weights)
+    {
+      std::vector<std::string> row;
+
+      row.push_back(weight.getName());
+      
+      // parse the weight_init_op
+      const std::string weight_init_op_name = weight.getWeightInitOp()->getName();
+      row.push_back(weight_init_op_name);
+
+      // parse the weight_init_params
+      row.push_back(weight.getWeightInitOp()->getParameters());
+
+      // parse the solver_op
+      const std::string solver_op_name = weight.getSolverOp()->getName();
+      row.push_back(solver_op_name);
+
+      // parse the solver_op_params
+      row.push_back(weight.getSolverOp()->getParameters());
+
+      // parse the weight value
+      row.push_back(std::to_string(weight.getWeight()));
+
+      // write to file
+      csvwriter.writeDataInRow(row.begin(), row.end());
+    }
+  }
 }

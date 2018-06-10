@@ -53,6 +53,7 @@ BOOST_AUTO_TEST_CASE(storeAndLoadCsv)
       "Weight_" + std::to_string(i), 
       weight_init,
       solver);
+    weights.push_back(weight);
   }
   data.storeWeightsCsv(filename, weights);
 
@@ -62,7 +63,7 @@ BOOST_AUTO_TEST_CASE(storeAndLoadCsv)
   for (int i=0; i<3; ++i)
   {
     BOOST_CHECK_EQUAL(weights_test[i].getName(), "Weight_" + std::to_string(i));
-    BOOST_CHECK_EQUAL(weights_test[i].getWeightInitOp()->operator()(), 2.0);
+    BOOST_CHECK_EQUAL(weights_test[i].getWeightInitOp()->operator()(), 1.0);
     BOOST_CHECK_CLOSE(weights_test[i].getSolverOp()->operator()(1.0, 2.0), 0.98, 1e-3);
   }
 }

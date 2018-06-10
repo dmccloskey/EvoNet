@@ -58,6 +58,7 @@ public:
       std::normal_distribution<> d{0.0f, sigma_annealed};
       return gradient + d(gen);
     }
+    virtual std::string getParameters() const = 0;
 private:
     // clipping parameters
     float gradient_threshold_ = 1e6; ///< maximum gradient magnitude
@@ -91,9 +92,26 @@ public:
       return new_weight;
     };
     std::string getName() const{return "SGDOp";};
+    std::string getParameters() const
+    {
+      std::string params = "";
+      params += "gradient_threshold:" + 
+        std::to_string(getGradientThreshold()) + 
+        ";gradient_noise_sigma:" + 
+        std::to_string(getGradientNoiseSigma()) + 
+        ";gradient_noise_gamma:" + 
+        std::to_string(getGradientNoiseGamma()) +
+        ";learning_rate:" + 
+        std::to_string(getLearningRate()) + 
+        ";momentum:" + 
+        std::to_string(getMomentum()) + 
+        ";momentum_prev:" + 
+        std::to_string(getMomentumPrev());
+      return params;
+    }
 private:
-    float learning_rate_; ///< Learning rate
-    float momentum_; ///< Momentum
+    float learning_rate_ = 0.01; ///< Learning rate
+    float momentum_ = 0.9; ///< Momentum
     float momentum_prev_ = 0.0;
   };
 
@@ -135,11 +153,34 @@ public:
       return new_weight;
     };
     std::string getName() const{return "AdamOp";};
+    std::string getParameters() const
+    {
+      std::string params = "";
+      params += "gradient_threshold:" + 
+        std::to_string(getGradientThreshold()) + 
+        ";gradient_noise_sigma:" + 
+        std::to_string(getGradientNoiseSigma()) + 
+        ";gradient_noise_gamma:" + 
+        std::to_string(getGradientNoiseGamma()) +
+        ";learning_rate:" + 
+        std::to_string(getLearningRate()) + 
+        ";momentum:" + 
+        std::to_string(getMomentum()) + 
+        ";momentum2:" + 
+        std::to_string(getMomentum2()) + 
+        ";delta:" + 
+        std::to_string(getDelta()) + 
+        ";momentum_prev:" + 
+        std::to_string(getMomentumPrev()) + 
+        ";momentum2_prev:" + 
+        std::to_string(getMomentum2Prev());
+      return params;
+    }
 private:
-    float learning_rate_; ///< Learning rate
-    float momentum_; ///< Momentum
-    float momentum2_; ///< Momentum2
-    float delta_; ///< Delta
+    float learning_rate_ = 0.01; ///< Learning rate
+    float momentum_ = 0.9; ///< Momentum
+    float momentum2_ = 0.999; ///< Momentum2
+    float delta_ = 1e-8; ///< Delta
     float momentum_prev_ = 0.0;
     float momentum2_prev_ = 0.0;
   };

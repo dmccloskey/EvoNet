@@ -39,6 +39,7 @@ BOOST_AUTO_TEST_CASE(storeAndLoadCsv)
       NodeType::hidden,
       NodeStatus::initialized,
       NodeActivation::ReLU);
+    nodes.push_back(node);
   }
   data.storeNodesCsv(filename, nodes);
 

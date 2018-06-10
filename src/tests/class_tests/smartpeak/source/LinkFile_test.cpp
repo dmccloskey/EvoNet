@@ -39,6 +39,7 @@ BOOST_AUTO_TEST_CASE(storeAndLoadCsv)
       "Source_" + std::to_string(i),
       "Sink_" + std::to_string(i),
       "Weight_" + std::to_string(i));
+    links.push_back(link);
   }
   data.storeLinksCsv(filename, links);
 
