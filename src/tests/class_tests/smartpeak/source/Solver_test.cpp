@@ -57,4 +57,13 @@ BOOST_AUTO_TEST_CASE(operationfunctionSGDOp)
   BOOST_CHECK_CLOSE(operation(0.99, 1.0), 0.971100032, 1e-3);
 }
 
+BOOST_AUTO_TEST_CASE(clipGradient) 
+{
+  SGDOp operation(0.01, 0.9);
+  operation.setGradientThreshold(1000);
+  BOOST_CHECK_CLOSE(operation.clipGradient(1.0), 1.0, 1e-3);
+  BOOST_CHECK_CLOSE(operation.clipGradient(1000.0), 1000.0, 1e-3);
+  BOOST_CHECK_CLOSE(operation.clipGradient(100000.0), 1000.0, 1e-3);
+}
+
 BOOST_AUTO_TEST_SUITE_END()

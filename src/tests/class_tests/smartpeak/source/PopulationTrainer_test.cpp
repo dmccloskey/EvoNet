@@ -8,6 +8,9 @@
 #include <SmartPeak/ml/Weight.h>
 #include <SmartPeak/ml/Link.h>
 #include <SmartPeak/ml/Node.h>
+#include <SmartPeak/io/WeightFile.h>
+#include <SmartPeak/io/LinkFile.h>
+#include <SmartPeak/io/NodeFile.h>
 
 #include <ctime> // time format
 #include <chrono> // current time
@@ -524,11 +527,21 @@ BOOST_AUTO_TEST_CASE(exampleUsage)
       std::cout<<"Replicate and modify the top N models from the population..."<<std::endl; 
       population_trainer.replicateModels(population, model_replicator, n_replicates_per_model, std::to_string(iter));
     }
-
+    else
+    {
+      population_trainer.selectModels(
+        1, 1, population, model_trainer,
+        input_data, output_data, time_steps, input_nodes, output_nodes);
+    }
   }
 
-  // record the model structure
-  // record the model accuracy on the validation data
+  // write the model to file
+  WeightFile weightfile;
+  weightfile.storeWeightsCsv("populationTrainerWeights.csv", population[0].getWeights());
+  LinkFile linkfile;
+  linkfile.storeLinksCsv("populationTrainerLinks.csv", population[0].getLinks());
+  NodeFile nodefile;
+  nodefile.storeNodesCsv("populationTrainerNodes.csv", population[0].getNodes());
 
   // [TODO: check that one of the models has a 0.0 error
   //        i.e., correct structure and weights]

@@ -39,12 +39,13 @@ public:
     void setGradientThreshold(const float& gradient_threshold){gradient_threshold_ = gradient_threshold;};
     float getGradientThreshold() const{return gradient_threshold_;};
     virtual float operator()(const float& weight, const float& error) = 0;
-    float clipGadient(const float& gradient)
+    float clipGradient(const float& gradient)
     {
       if (std::abs(gradient) >= gradient_threshold_)
       {
         return gradient * gradient_threshold_/std::abs(gradient);
       }
+      return gradient;
     }
     void setGradientNoiseSigma(const float& gradient_noise_sigma){gradient_noise_sigma_ = gradient_noise_sigma;};
     float getGradientNoiseSigma() const{return gradient_noise_sigma_;};
