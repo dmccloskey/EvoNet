@@ -1,18 +1,19 @@
-set (BOOST_VERSION  1.65.1)
+include(${CMAKE_ROOT}/Modules/ExternalProject.cmake)
 
+set_property (DIRECTORY PROPERTY EP_BASE Dependencies)
+
+set (DEPENDENCIES)
+set (EXTRA_CMAKE_ARGS)
+
+set (BOOST_VERSION  1.67.0)
 message (STATUS "Adding Boost ${BOOST_VERSION} as an external project.")
 
-set (BOOST_BOOTSTRAP_PREFIX ${CMAKE_CURRENT_SOURCE_DIR}/boostbuild)
-set (BOOST_INSTALL_PREFIX ${CMAKE_CURRENT_SOURCE_DIR}/boostbuild)
-set (BOOST_BUILD_PREFIX ${BOOST_BOOTSTRAP_PREFIX}/boost)
-set (BOOST_GIT_REPO_DIR ${CMAKE_CURRENT_SOURCE_DIR}/repos/boost)
-
 if (WIN32)
-    set (BOOST_BOOTSTRAP_CMD ${BOOST_GIT_REPO_DIR}/bootstrap.bat)
-    set (BOOST_BUILD_CMD ${BOOST_GIT_REPO_DIR}/b2.exe)
+    set (BOOST_BOOTSTRAP_CMD bootstrap.bat)
+    set (BOOST_BUILD_CMD b2.exe)
 elseif (UNIX)
-    set (BOOST_BOOTSTRAP_CMD ./${BOOST_GIT_REPO_DIR}/bootstrap.sh)
-    set (BOOST_BUILD_CMD ./${BOOST_GIT_REPO_DIR}/b2)
+    set (BOOST_BOOTSTRAP_CMD ./bootstrap.sh)
+    set (BOOST_BUILD_CMD ./b2)
 endif ()
 
 
@@ -28,7 +29,8 @@ if (NOT BOOST_ADDR_MODEL MATCHES "32|64")
   Message(FATAL_ERROR "BOOST_ADDR_MODEL is neither 32 nor 64! Please correct this!")
 endif()
 
-if (MSVC)  
+#if (MSVC)
+if (WIN32)
   ## check that the console environment has a cl.exe architecture which is identical to the VS Generator
   ## If cl.exe builds 32-bit libs and VS Generator is Win64, we'd end up with mixed 32bit/64bit libraries, depending on how each lib is build (Cmake, bjam, nmake)
   execute_process(COMMAND "cl.exe" OUTPUT_VARIABLE cl_out ERROR_VARIABLE cl_out)
@@ -57,8 +59,8 @@ if (MSVC)
     set(BOOST_TOOLSET msvc-12.0)
   elseif (CMAKE_GENERATOR MATCHES ".*Visual Studio 14.*")
     set(BOOST_TOOLSET msvc-14.0)
-  elseif (BOOST_TOOLSET MATCHES ".*Visual Studio 15.*")
-    set(TMP_MSVC_VERSION msvc-15.0)
+  elseif (CMAKE_GENERATOR MATCHES ".*Visual Studio 15.*")
+    set(BOOST_TOOLSET msvc-15.0)
   else()
     if (OVERRIDE_GENERATOR)
       message(FATAL_ERROR "Chosen to override the Generator check, proceed with caution.")
@@ -67,10 +69,7 @@ if (MSVC)
     endif()
   endif()
 
-else() ## linux/Mingw/macos
-    determine_compiler_version()
-
-    # use proper toolchain (random guesses. There is not proper documentation)
+else() ## linux/macos
     if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
       if(APPLE)
         set(BOOST_TOOLSET "clang-darwin")
@@ -88,20 +87,31 @@ else() ## linux/Mingw/macos
     endif()
 endif()
 
-ExternalProject_Add (boost
-    PREFIX ${CMAKE_CURRENT_BINARY_DIR}/boost
-    GIT_REPOSITORY git at github.com:boostorg/boost.git
+ExternalProject_Add(boost
+    #PREFIX ${CMAKE_CURRENT_BINARY_DIR}/boost
+    GIT_REPOSITORY "https://github.com/boostorg/boost.git"
     GIT_TAG boost-${BOOST_VERSION}
-    UPDATE_COMMAND ${BOOST_BOOTSTRAP_CMD}
-    CONFIGURE_COMMAND ""
+    UPDATE_COMMAND ""
+    CONFIGURE_COMMAND ${BOOST_BOOTSTRAP_CMD}
+    BUILD_IN_SOURCE 1
     BUILD_COMMAND ${BOOST_BUILD_CMD}
+        install
         address-model=${BOOST_ADDR_MODEL}
         ${BOOST_ARCH_MODEL}
-        --with-test toolset=${BOOST_TOOLSET} 
+        --with-test 
+        toolset=${BOOST_TOOLSET} 
         variant=release 
         link=static  
         --prefix=${BOOST_BUILD_PREFIX}
-        install
-    BUILD_IN_SOURCE 1
     INSTALL_COMMAND ""
+    GIT_PROGRESS 1
+    LOG_DOWNLOAD 1
+    LOG_UPDATE 1
+    LOG_CONFIGURE 1
+    LOG_BUILD 1
+    LOG_INSTALL 1
 )
+
+list (APPEND EXTRA_CMAKE_ARGS
+  -DBOOST_ROOT=${CMAKE_CURRENT_BINARY_DIR}/Dependencies/Source/boost
+  -DBoost_NO_SYSTEM_PATHS=ON)
