@@ -7,9 +7,21 @@
 # $Author: Douglas McCloseky
 # --------------------------------------------------------------------------
 
+cmake_minimum_required(VERSION 3.0.2 FATAL_ERROR)
 
-cmake_minimum_required(VERSION 3.8.2 FATAL_ERROR)
-project ("SmartPeak_host")
+#------------------------------------------------------------------------------
+# Handle superbuild first
+#------------------------------------------------------------------------------
+option (USE_SUPERBUILD "Whether or not a superbuild should be invoked" ON)
+
+if (USE_SUPERBUILD)
+  project ("SuperBuild" NONE)
+  include(external/boost.cmake)
+  include(external/eigen.cmake)
+  return() # stop processing this file further
+else()
+  project ("SmartPeak_host")
+endif()
  
 #------------------------------------------------------------------------------
 # General CMake definitions & helper
@@ -33,6 +45,7 @@ endif()
 
 #------------------------------------------------------------------------------
 # Include the standard Dart testing module
+#------------------------------------------------------------------------------
 # for Nightly Build log and Valgrind for memcheck
 include(CTest)
 #enable_testing()
@@ -59,7 +72,7 @@ list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/modules")
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/Windows")
 
 #------------------------------------------------------------------------------
-# OpenMS Version Information
+# SmartPeak Version Information
 #------------------------------------------------------------------------------
 set (smartPeak_VERSION_MAJOR 1)
 set (smartPeak_VERSION_MINOR 0)
@@ -102,9 +115,10 @@ if (MINGW OR MSYS)
 endif()
 
 #------------------------------------------------------------------------------
-# All the multi-threading stuff (OpenMP, CUDA, TBB)
+# Multi-threading stuff (OpenMP, CUDA, TBB)
 #------------------------------------------------------------------------------
-include(cmake/multithreading.cmake)
+include(external/multithreading.cmake)
+# TODO: CUDA
 
 #------------------------------------------------------------------------------
 # Check architecture 32bit vs. 64bit
@@ -218,9 +232,9 @@ endif()
 add_subdirectory(src)
 
 #------------------------------------------------------------------------------
-# Documentation
+# Documentation [TODO]
 #------------------------------------------------------------------------------
-add_subdirectory(doc)
+#add_subdirectory(doc)
 
 #------------------------------------------------------------------------------
 # Handle export of targets and install them
@@ -250,7 +264,3 @@ if(NOT "${PACKAGE_TYPE}" STREQUAL "none")
   include(CPack)
   include(cmake/package_components.cmake)
 endif()
-
-##------------------------------------------------------------------------------ 
-## add the executable
-#add_executable(SmartPeak_host main.cpp)

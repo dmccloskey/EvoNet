@@ -10,12 +10,18 @@ set (CONFIGURED_TEST_CONFIG_H "${PROJECT_BINARY_DIR}/include/SmartPeak/test_conf
 configure_file(${PROJECT_SOURCE_DIR}/include/SmartPeak/test_config.h.in ${CONFIGURED_TEST_CONFIG_H})
 
 #------------------------------------------------------------------------------
-# Some tests have a link dependency to boost so we find our own boost here
-find_boost(math_c99 unit_test_framework)
-#find_boost(math_c99)
+# Boost
+#------------------------------------------------------------------------------
+find_package(boost 1.64 COMPONENTS unit_test_framework)
 
-if(NOT Boost_FOUND)
-  message(FATAL_ERROR "Boost was not found!")
+if(Boost_FOUND)
+  message(STATUS "Found Boost version ${Boost_MAJOR_VERSION}.${Boost_MINOR_VERSION}.${Boost_SUBMINOR_VERSION}" )
+  set(CF_SMARTPEAK_BOOST_VERSION_MAJOR ${Boost_MAJOR_VERSION})
+	set(CF_SMARTPEAK_BOOST_VERSION_MINOR ${Boost_MINOR_VERSION})
+  set(CF_SMARTPEAK_BOOST_VERSION_SUBMINOR ${Boost_SUBMINOR_VERSION})
+	set(CF_SMARTPEAK_BOOST_VERSION ${Boost_VERSION})
+else()
+  message(FATAL_ERROR "Boost or one of its components not found!")
 endif()
 
 #------------------------------------------------------------------------------
