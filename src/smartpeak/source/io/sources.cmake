@@ -1,15 +1,13 @@
 ### the directory name
-set(directory source/ml)
+set(directory source/io)
 
 ### list all filenames of the directory here
 set(sources_list
-	Link.cpp
-	Model.cpp
-	ModelReplicator.cpp
-	ModelTrainer.cpp
-	Node.cpp
-	PopulationTrainer.cpp
-	Weight.cpp
+	CSVWriter.cpp
+	DataFile.cpp
+	LinkFile.cpp
+	NodeFile.cpp
+	WeightFile.cpp
 )
 
 ### add path to the filenames
@@ -22,5 +20,5 @@ endforeach(i)
 set(SmartPeak_sources ${SmartPeak_sources} ${sources})
 
 ### source group definition
-source_group("Source Files\\ml" FILES ${sources})
+source_group("Source Files\\io" FILES ${sources})
 

@@ -1,20 +1,14 @@
 ### the directory name
-set(directory include/SmartPeak/ml)
+set(directory include/SmartPeak/io)
 
 ### list all header files of the directory here
 set(sources_list_h
-	ActivationFunction.h
-	Interpreter.h
-	LossFunction.h
-	Link.h
-	Model.h
-	ModelReplicator.h
-	ModelTrainer.h
-	Node.h
-	PopulationTrainer.h
-	Solver.h
-	Weight.h
-	WeightInit.h
+	csv.h
+	CSVWriter.h
+	DataFile.h
+	LinkFile.h
+	NodeFile.h 
+	WeightFile.h
 )
 
 ### add path to the filenames
@@ -24,7 +18,7 @@ foreach(i ${sources_list_h})
 endforeach(i)
 
 ### source group definition
-source_group("Header Files\\SmartPeak\\ml" FILES ${sources_h})
+source_group("Header Files\\SmartPeak\\io" FILES ${sources_h})
 
 set(SmartPeak_sources_h ${SmartPeak_sources_h} ${sources_h})
 

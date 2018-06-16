@@ -19,7 +19,9 @@ namespace SmartPeak
 public: 
     WeightInitOp(){}; 
     ~WeightInitOp(){};
+    virtual std::string getName() const = 0;
     virtual float operator()() const = 0;
+    virtual std::string getParameters() const = 0;
   };  
 
   /**
@@ -36,14 +38,21 @@ public:
     RandWeightInitOp(const float& n):n_(n){};
     RandWeightInitOp(){}; 
     ~RandWeightInitOp(){};
+    std::string getName() const{return "RandWeightInitOp";};
     float operator()() const {       
       std::random_device rd{};
       std::mt19937 gen{rd()};
       std::normal_distribution<> d{0.0, 1.0};
       return d(gen)*std::sqrt(2.0/n_); 
     };
+    float getN() const {return n_;};
+    std::string getParameters() const
+    {
+      std::string params = "n:" + std::to_string(getN());
+      return params;
+    }
 private:
-    float n_; ///< the number of input nodes 
+    float n_ = 1.0; ///< the number of input nodes 
   };
 
   /**
@@ -55,9 +64,16 @@ public:
     ConstWeightInitOp(const float& n):n_(n){};
     ConstWeightInitOp(){}; 
     ~ConstWeightInitOp(){};
+    std::string getName() const{return "ConstWeightInitOp";};
     float operator()() const { return n_; };
+    float getN() const {return n_;};
+    std::string getParameters() const
+    {
+      std::string params = "n:" + std::to_string(getN());
+      return params;
+    }
 private:
-    float n_; ///< the constant to return
+    float n_ = 1.0; ///< the constant to return
   };  
 }
 #endif //SMARTPEAK_WEIGHTINIT_H

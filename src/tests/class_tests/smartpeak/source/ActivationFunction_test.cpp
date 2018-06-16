@@ -193,6 +193,7 @@ BOOST_AUTO_TEST_CASE(operationfunctionSigmoidGradOp)
   BOOST_CHECK_CLOSE(operation(-1.0), 0.19661193324148185, 1e-6);
   BOOST_CHECK_CLOSE(operation(-10.0), 4.5395807735907655e-05, 1e-6);
 }
+
 /**
   TanHOp Tests
 */ 
@@ -214,11 +215,11 @@ BOOST_AUTO_TEST_CASE(operationfunctionTanHOp)
 {
   TanHOp<double> operation;
 
-  BOOST_CHECK_CLOSE(operation(0.0), 1.0, 1e-6);
-  BOOST_CHECK_CLOSE(operation(1.0), 0.36787944117144233, 1e-6);
-  BOOST_CHECK_CLOSE(operation(10.0), 4.5399929762484847e-05, 1e-6);
-  BOOST_CHECK_CLOSE(operation(-1.0), 2.7182818284590455, 1e-6);
-  BOOST_CHECK_CLOSE(operation(-10.0), 22026.465794806718, 1e-6);
+  BOOST_CHECK_CLOSE(operation(0.0), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(operation(1.0), 0.76159415595576485, 1e-6);
+  BOOST_CHECK_CLOSE(operation(10.0), 0.99999999587769262, 1e-6);
+  BOOST_CHECK_CLOSE(operation(-1.0), -0.76159415595576485, 1e-6);
+  BOOST_CHECK_CLOSE(operation(-10.0), -0.99999999587769262, 1e-6);
 }
 
 /**
@@ -242,13 +243,67 @@ BOOST_AUTO_TEST_CASE(operationfunctionTanHGradOp)
 {
   TanHGradOp<double> operation;
 
-  BOOST_CHECK_CLOSE(operation(0.0), 0.0, 1e-6);
-  BOOST_CHECK_CLOSE(operation(1.0), 0.8646647167633873, 1e-6);
-  BOOST_CHECK_CLOSE(operation(10.0), 1.0, 1e-6);
-  BOOST_CHECK_CLOSE(operation(-1.0), -6.3890560989306522, 1e-6);
-  BOOST_CHECK_CLOSE(operation(-10.0), -485165194.40979034, 1e-6);
+  BOOST_CHECK_CLOSE(operation(0.0), 1.0, 1e-6);
+  BOOST_CHECK_CLOSE(operation(1.0), 0.41997434161402614, 1e-6);
+  BOOST_CHECK_CLOSE(operation(10.0), 8.2446147686709992e-09, 1e-6);
+  BOOST_CHECK_CLOSE(operation(-1.0), 0.41997434161402614, 1e-6);
+  BOOST_CHECK_CLOSE(operation(-10.0), 8.2446147686709992e-09, 1e-6);
 }
 
+/**
+  ReTanHOp Tests
+*/ 
+BOOST_AUTO_TEST_CASE(constructorReTanHOp) 
+{
+  ReTanHOp<double>* ptrReTanH = nullptr;
+  ReTanHOp<double>* nullPointerReTanH = nullptr;
+  BOOST_CHECK_EQUAL(ptrReTanH, nullPointerReTanH);
+}
 
+BOOST_AUTO_TEST_CASE(destructorReTanHOp) 
+{
+  ReTanHOp<double>* ptrReTanH = nullptr;
+	ptrReTanH = new ReTanHOp<double>();
+  delete ptrReTanH;
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionReTanHOp) 
+{
+  ReTanHOp<double> operation;
+
+  BOOST_CHECK_CLOSE(operation(0.0), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(operation(1.0), 0.76159415595576485, 1e-6);
+  BOOST_CHECK_CLOSE(operation(10.0), 0.99999999587769262, 1e-6);
+  BOOST_CHECK_CLOSE(operation(-1.0), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(operation(-10.0), 0.0, 1e-6);
+}
+
+/**
+  ReTanHGradOp Tests
+*/ 
+BOOST_AUTO_TEST_CASE(constructorReTanHGradOp) 
+{
+  ReTanHGradOp<double>* ptrReTanHGrad = nullptr;
+  ReTanHGradOp<double>* nullPointerReTanHGrad = nullptr;
+  BOOST_CHECK_EQUAL(ptrReTanHGrad, nullPointerReTanHGrad);
+}
+
+BOOST_AUTO_TEST_CASE(destructorReTanHGradOp) 
+{
+  ReTanHGradOp<double>* ptrReTanHGrad = nullptr;
+	ptrReTanHGrad = new ReTanHGradOp<double>();
+  delete ptrReTanHGrad;
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionReTanHGradOp) 
+{
+  ReTanHGradOp<double> operation;
+
+  BOOST_CHECK_CLOSE(operation(0.0), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(operation(1.0), 0.41997434161402614, 1e-6);
+  BOOST_CHECK_CLOSE(operation(10.0), 8.2446147686709992e-09, 1e-6);
+  BOOST_CHECK_CLOSE(operation(-1.0), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(operation(-10.0), 0.0, 1e-6);
+}
 
 BOOST_AUTO_TEST_SUITE_END()

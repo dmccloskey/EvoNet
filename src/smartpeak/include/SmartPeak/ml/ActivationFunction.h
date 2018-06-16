@@ -11,6 +11,20 @@
 namespace SmartPeak
 {
   /**
+    @brief Base class for all activation functions.
+  */
+ template<typename T>
+  class ActivationOp
+  {
+public: 
+    ActivationOp(){};  
+    ~ActivationOp(){};
+    virtual std::string getName() const = 0;
+    // virtual T operator()() const = 0;
+    virtual T operator()(const T& x_I) const = 0;
+  };
+
+  /**
     @brief Rectified Linear Unit (ReLU) activation function
 
     References:
@@ -19,12 +33,13 @@ namespace SmartPeak
       Nature. 405. pp. 947–951.
   */
   template<typename T>
-  class ReLUOp
+  class ReLUOp: public ActivationOp<T>
   {
 public: 
     ReLUOp(){}; 
     ~ReLUOp(){};
     T operator()(const T& x_I) const { return (x_I > 0.0) ? x_I: 0.0; };
+    std::string getName() const{return "ReLUOp";};
   };
 
   /**
@@ -36,12 +51,13 @@ public:
       Nature. 405. pp. 947–951.
   */
   template<typename T>
-  class ReLUGradOp
+  class ReLUGradOp: public ActivationOp<T>
   {
 public: 
     ReLUGradOp(){}; 
     ~ReLUGradOp(){};
     T operator()(const T& x_I) const { return (x_I > 0.0) ? 1.0: 0.0; };
+    std::string getName() const{return "ReLUGradOp";};
   };
 
   /**
@@ -53,7 +69,7 @@ public:
       arXiv:1511.07289
   */
   template<typename T>
-  class ELUOp
+  class ELUOp: public ActivationOp<T>
   {
 public: 
     ELUOp(){}; 
@@ -62,6 +78,7 @@ public:
     T operator()(const T& x_I) const { return (x_I > 0.0) ? x_I : alpha_ * (std::exp(x_I) - 1); };
     void setAlpha(const T& alpha) { alpha_ = alpha; };
     T getAlpha() const { return alpha_; };
+    std::string getName() const{return "ReLUGradOp";};
 private:
     T alpha_;
   };
@@ -75,7 +92,7 @@ private:
       arXiv:1511.07289
   */
   template<typename T>
-  class ELUGradOp
+  class ELUGradOp: public ActivationOp<T>
   {
 public: 
     ELUGradOp(){}; 
@@ -88,6 +105,7 @@ public:
     };
     void setAlpha(const T& alpha) { alpha_ = alpha; };
     T getAlpha() const { return alpha_; };
+    std::string getName() const{return "ReLUGradOp";};
 private:
     T alpha_;
   };
@@ -96,19 +114,20 @@ private:
     @brief Sigmoid activation function
   */
   template<typename T>
-  class SigmoidOp
+  class SigmoidOp: public ActivationOp<T>
   {
 public: 
     SigmoidOp(){}; 
     ~SigmoidOp(){};
     T operator()(const T& x_I) const { return 1 / (1 + std::exp(x_I)); };
+    std::string getName() const{return "ReLUGradOp";};
   };
 
   /**
     @brief Sigmoid gradient
   */
   template<typename T>
-  class SigmoidGradOp
+  class SigmoidGradOp: public ActivationOp<T>
   {
 public: 
     SigmoidGradOp(){}; 
@@ -118,25 +137,27 @@ public:
       SmartPeak::SigmoidOp<T> sigmoidop;
       return sigmoidop(x_I) * (1 - sigmoidop(x_I));
     };
+    std::string getName() const{return "ReLUGradOp";};
   };
   
   /**
     @brief Hyperbolic Tangent activation function
   */
   template<typename T>
-  class TanHOp
+  class TanHOp: public ActivationOp<T>
   {
 public: 
     TanHOp(){}; 
     ~TanHOp(){};
-    T operator()(const T& x_I) const { (std::exp(x_I) - std::exp(-x_I)) / (std::exp(x_I) + std::exp(-x_I)); };
+    T operator()(const T& x_I) const { return (std::exp(x_I) - std::exp(-x_I)) / (std::exp(x_I) + std::exp(-x_I)); };
+    std::string getName() const{return "ReLUGradOp";};
   };
 
   /**
     @brief Hyperbolic Tangent gradient
   */
   template<typename T>
-  class TanHGradOp
+  class TanHGradOp: public ActivationOp<T>
   {
 public: 
     TanHGradOp(){}; 
@@ -146,6 +167,40 @@ public:
       SmartPeak::TanHOp<T> tanhop;
       return 1 - std::pow(tanhop(x_I), 2);
     };
+    std::string getName() const{return "ReLUGradOp";};
+  };
+  
+  /**
+    @brief Rectified Hyperbolic Tangent activation function
+  */
+  template<typename T>
+  class ReTanHOp: public ActivationOp<T>
+  {
+public: 
+    ReTanHOp(){}; 
+    ~ReTanHOp(){};
+    T operator()(const T& x_I) const
+    { 
+      return (x_I > 0.0) ? (std::exp(x_I) - std::exp(-x_I)) / (std::exp(x_I) + std::exp(-x_I)) : 0.0;
+    };
+    std::string getName() const{return "ReLUGradOp";};
+  };
+
+  /**
+    @brief Rectified Hyperbolic Tangent gradient
+  */
+  template<typename T>
+  class ReTanHGradOp: public ActivationOp<T>
+  {
+public: 
+    ReTanHGradOp(){}; 
+    ~ReTanHGradOp(){};
+    T operator()(const T& x_I) const
+    {
+      SmartPeak::ReTanHOp<T> tanhop;
+      return (x_I > 0.0) ? 1 - std::pow(tanhop(x_I), 2) : 0.0;
+    };
+    std::string getName() const{return "ReLUGradOp";};
   };
 }
 #endif //SMARTPEAK_ACTIVATIONFUNCTION_H

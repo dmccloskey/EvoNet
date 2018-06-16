@@ -16,7 +16,18 @@ namespace SmartPeak
     Clipping reference:
       Razvan Pascanu, Tomas Mikolov, Yoshua Bengio (2013)
       On the difficulty of training Recurrent Neural Networks
-      arXiv:1211.5063 [cs.LG]
+      arXiv:1211.5063 [cs.LG]      
+
+    Gradient Noise with annealed variance reference:
+      Neelakantan, A., Vilnis, L., Le, Q. V., Sutskever, I., Kaiser, L., Kurach, K., & Martens, J. (2015). 
+      Adding Gradient Noise Improves Learning for Very Deep Networks, 1–11. 
+      Retrieved from http://arxiv.org/abs/1511.06807
+
+      Max Welling and Yee Whye Teh. 2011. Bayesian learning via stochastic gradient langevin dynamics. 
+      In Proceedings of the 28th International Conference on International Conference on Machine Learning (ICML'11), Lise Getoor and Tobias Scheffer (Eds.). Omnipress, USA, 681-688.
+
+    [TODO: add tests for clipGradient and addGradientNoise]
+    
   */
   class SolverOp
   {
@@ -24,18 +35,38 @@ public:
     SolverOp(){}; 
     SolverOp(const float& gradient_threshold){setGradientThreshold(gradient_threshold);}; 
     ~SolverOp(){};
+    virtual std::string getName() const = 0;
     void setGradientThreshold(const float& gradient_threshold){gradient_threshold_ = gradient_threshold;};
     float getGradientThreshold() const{return gradient_threshold_;};
     virtual float operator()(const float& weight, const float& error) = 0;
-    float clip_gradient(const float& gradient)
+    float clipGradient(const float& gradient)
     {
       if (std::abs(gradient) >= gradient_threshold_)
       {
         return gradient * gradient_threshold_/std::abs(gradient);
       }
+      return gradient;
     }
+    void setGradientNoiseSigma(const float& gradient_noise_sigma){gradient_noise_sigma_ = gradient_noise_sigma;};
+    float getGradientNoiseSigma() const{return gradient_noise_sigma_;};
+    void setGradientNoiseGamma(const float& gradient_noise_gamma){gradient_noise_gamma_ = gradient_noise_gamma;};
+    float getGradientNoiseGamma() const{return gradient_noise_gamma_;};
+    float addGradientNoise(const float& gradient, const float& time)
+    {
+      const float sigma_annealed = gradient_noise_sigma_ / std::pow((1 + time), gradient_noise_gamma_); // annealed variance
+      std::random_device rd{};
+      std::mt19937 gen{rd()};
+      std::normal_distribution<> d{0.0f, sigma_annealed};
+      return gradient + d(gen);
+    }
+    virtual std::string getParameters() const = 0;
 private:
+    // clipping parameters
     float gradient_threshold_ = 1e6; ///< maximum gradient magnitude
+
+    // gradient noise with annealed variance parameters
+    float gradient_noise_sigma_ = 1.0; ///< variance before annealing
+    float gradient_noise_gamma_ = 0.55; ///< time-dependend annealing factor
   };
 
   /**
@@ -61,9 +92,27 @@ public:
       const float new_weight = weight + weight_update;
       return new_weight;
     };
+    std::string getName() const{return "SGDOp";};
+    std::string getParameters() const
+    {
+      std::string params = "";
+      params += "gradient_threshold:" + 
+        std::to_string(getGradientThreshold()) + 
+        ";gradient_noise_sigma:" + 
+        std::to_string(getGradientNoiseSigma()) + 
+        ";gradient_noise_gamma:" + 
+        std::to_string(getGradientNoiseGamma()) +
+        ";learning_rate:" + 
+        std::to_string(getLearningRate()) + 
+        ";momentum:" + 
+        std::to_string(getMomentum()) + 
+        ";momentum_prev:" + 
+        std::to_string(getMomentumPrev());
+      return params;
+    }
 private:
-    float learning_rate_; ///< Learning rate
-    float momentum_; ///< Momentum
+    float learning_rate_ = 0.01; ///< Learning rate
+    float momentum_ = 0.9; ///< Momentum
     float momentum_prev_ = 0.0;
   };
 
@@ -104,13 +153,59 @@ public:
       const float new_weight = weight - learning_rate_ * unbiased_adam1 / (std::sqrt(unbiased_adam2) + delta_);
       return new_weight;
     };
+    std::string getName() const{return "AdamOp";};
+    std::string getParameters() const
+    {
+      std::string params = "";
+      params += "gradient_threshold:" + 
+        std::to_string(getGradientThreshold()) + 
+        ";gradient_noise_sigma:" + 
+        std::to_string(getGradientNoiseSigma()) + 
+        ";gradient_noise_gamma:" + 
+        std::to_string(getGradientNoiseGamma()) +
+        ";learning_rate:" + 
+        std::to_string(getLearningRate()) + 
+        ";momentum:" + 
+        std::to_string(getMomentum()) + 
+        ";momentum2:" + 
+        std::to_string(getMomentum2()) + 
+        ";delta:" + 
+        std::to_string(getDelta()) + 
+        ";momentum_prev:" + 
+        std::to_string(getMomentumPrev()) + 
+        ";momentum2_prev:" + 
+        std::to_string(getMomentum2Prev());
+      return params;
+    }
 private:
-    float learning_rate_; ///< Learning rate
-    float momentum_; ///< Momentum
-    float momentum2_; ///< Momentum2
-    float delta_; ///< Delta
+    float learning_rate_ = 0.01; ///< Learning rate
+    float momentum_ = 0.9; ///< Momentum
+    float momentum2_ = 0.999; ///< Momentum2
+    float delta_ = 1e-8; ///< Delta
     float momentum_prev_ = 0.0;
     float momentum2_prev_ = 0.0;
   };
+
+  /**
+    @brief Random Solver.
+    [TODO: add method body and tests]
+    
+  */
+
+  /**
+    @brief Hebian Solver.
+    [TODO: add method body and tests]
+    
+  */
+
+  /**
+    @brief SM-G-ABS (Safe mutation gradient) Solver.
+    [TODO: add method body and tests]
+
+    References:
+      Joel Lehman, Jay Chen, Jeff Clune, Kenneth O. Stanley (2018).
+      Safe Mutations for Deep and Recurrent Neural Networks through Output Gradients.
+      arXiv:1712.06563
+  */
 }
 #endif //SMARTPEAK_SOLVER_H

@@ -19,10 +19,19 @@ namespace SmartPeak
 
   enum class NodeType
   {
-    ReLU = 0,
-    ELU = 1,
-    input = 2, // No activation function
-    bias = 3 // Zero value
+    input = 1, // No activation function
+    bias = 2, // Zero value
+    output = 3, 
+    hidden = 4
+  };
+
+  enum class NodeActivation
+  {
+    Linear = 0,
+    ReLU = 1,
+    ELU = 2,
+    Sigmoid = 3,
+    TanH = 4
   };
 
   /**
@@ -32,7 +41,9 @@ namespace SmartPeak
   {
 public:
     Node(); ///< Default constructor
-    Node(const int& id, const SmartPeak::NodeType& type, const SmartPeak::NodeStatus& status); ///< Explicit constructor  
+    Node(const Node& other); ///< Copy constructor // [TODO: add test]
+    Node(const std::string& name, const SmartPeak::NodeType& type, const SmartPeak::NodeStatus& status, const SmartPeak::NodeActivation& activation); ///< Explicit constructor  
+    Node(const int& id, const SmartPeak::NodeType& type, const SmartPeak::NodeStatus& status, const SmartPeak::NodeActivation& activation); ///< Explicit constructor  
     ~Node(); ///< Default destructor
 
     inline bool operator==(const Node& other) const
@@ -41,11 +52,15 @@ public:
         std::tie(
           id_,
           type_,
-          status_
+          status_,
+          activation_,
+          name_
         ) == std::tie(
           other.id_,
           other.type_,
-          other.status_
+          other.status_,
+          other.activation_,
+          other.name_
         )
       ;
     }
@@ -55,14 +70,36 @@ public:
       return !(*this == other);
     }
 
+    inline Node& operator=(const Node& other)
+    { // [TODO: add test]
+      id_ = other.id_;
+      name_ = other.name_;
+      type_ = other.type_;
+      activation_ = other.activation_;
+      status_ = other.status_;
+      output_min_ = other.output_min_;
+      output_max_ = other.output_max_;
+      output_ = other.output_;
+      error_ = other.error_;
+      derivative_ = other.derivative_;
+      dt_ = other.dt_;
+      return *this;
+    }
+
     void setId(const int& id); ///< id setter
     int getId() const; ///< id getter
+
+    void setName(const std::string& name); ///< naem setter
+    std::string getName() const; ///< name getter
 
     void setType(const SmartPeak::NodeType& type); ///< type setter
     SmartPeak::NodeType getType() const; ///< type getter
 
     void setStatus(const SmartPeak::NodeStatus& status); ///< status setter
     SmartPeak::NodeStatus getStatus() const; ///< status getter
+
+    void setActivation(const SmartPeak::NodeActivation& activation); ///< activation setter
+    SmartPeak::NodeActivation getActivation() const; ///< activation getter
 
     void setOutput(const Eigen::Tensor<float, 2>& output); ///< output setter
     Eigen::Tensor<float, 2> getOutput() const; ///< output copy getter
@@ -78,6 +115,14 @@ public:
     Eigen::Tensor<float, 2> getDerivative() const; ///< derivative copy getter
     Eigen::Tensor<float, 2>* getDerivativeMutable(); ///< derivative copy getter
     float* getDerivativePointer(); ///< derivative pointer getter
+
+    void setDt(const Eigen::Tensor<float, 2>& dt); ///< dt setter
+    Eigen::Tensor<float, 2> getDt() const; ///< dt copy getter
+    Eigen::Tensor<float, 2>* getDtMutable(); ///< dt copy getter
+    float* getDtPointer(); ///< dt pointer getter
+
+    void setOutputMin(const float& min_output); ///< min output setter
+    void setOutputMax(const float& output_max); ///< max output setter
 
     /**
       @brief Initialize node output to zero.
@@ -128,11 +173,26 @@ public:
       @brief Shifts the current error batch by 1 unit back in memory.
     */
     void saveCurrentError();
+    
+    /**
+      @brief Shifts the current dt batch by 1 unit back in memory.
+    */
+    void saveCurrentDt();
+ 
+    /**
+      @brief Check if the output is within the min/max.  
+    */ 
+    void checkOutput();
 
 private:
-    int id_; ///< Node ID
-    SmartPeak::NodeType type_; ///< Node Type
-    SmartPeak::NodeStatus status_; ///< Node Status   
+    int id_ = NULL; ///< Weight ID
+    std::string name_ = ""; ///< Weight Name
+    SmartPeak::NodeType type_ = SmartPeak::NodeType::hidden; ///< Node Type
+    SmartPeak::NodeStatus status_ = SmartPeak::NodeStatus::deactivated; ///< Node Status   
+    SmartPeak::NodeActivation activation_ = SmartPeak::NodeActivation::ReLU; ///< Node Status   
+
+    float output_min_ = -1.0e6; ///< Min Node output
+    float output_max_ = 1.0e6; ///< Max Node output
 
     /**
       @brief output, error and derivative have the following dimensions:
@@ -143,6 +203,7 @@ private:
     Eigen::Tensor<float, 2> output_; ///< Node Output (rows: # of samples, cols: # of time steps)
     Eigen::Tensor<float, 2> error_; ///< Node Error (rows: # of samples, cols: # of time steps)
     Eigen::Tensor<float, 2> derivative_; ///< Node Error (rows: # of samples, cols: # of time steps)
+    Eigen::Tensor<float, 2> dt_; ///< Resolution of each time-step (rows: # of samples, cols: # of time steps)
 
   };
 }
