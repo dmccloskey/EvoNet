@@ -101,8 +101,8 @@ ExternalProject_Add(boost
         --with-test 
         toolset=${BOOST_TOOLSET} 
         variant=release 
-        link=static  
-        --prefix=${BOOST_BUILD_PREFIX}
+        link=static
+        --prefix=${CMAKE_CURRENT_BINARY_DIR}/Dependencies/Source/boost/build
     INSTALL_COMMAND ""
     GIT_PROGRESS 1
     LOG_DOWNLOAD 1
