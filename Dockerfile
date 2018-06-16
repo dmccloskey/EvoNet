@@ -2,7 +2,8 @@
 #https://hub.docker.com/r/ducatel/visual-studio-linux-build-box/
 
 # FROM dmccloskey/docker-openms-contrib:develop
-FROM dmccloskey/docker-openms-contrib:smartPeak
+# FROM dmccloskey/docker-openms-contrib:smartPeak
+FROM dmccloskey/docker-openms-contrib:smartpeak2
 
 USER root
 COPY docker-entrypoint.sh /usr/local/bin/
@@ -20,12 +21,10 @@ COPY docker-entrypoint.sh /usr/local/bin/
 # 	git && \
 # 	apt-get clean && \
 #     rm -r /var/lib/apt/lists/* && \
-## use with dmccloskey/docker-openms-contrib:smartPeak
+## use with dmccloskey/docker-openms-contrib:smartPeak or smartpeak2
 RUN DEBIAN_FRONTEND=noninteractive && \
 	apk add --no-cache \
-	valgrind \
-	gdb \
-	git && \
+	valgrind && \
 	##change permissions
 	ln -s /usr/local/bin/docker-entrypoint.sh / && \
 	chmod +x /usr/local/bin/docker-entrypoint.sh && \

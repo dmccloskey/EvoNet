@@ -27,81 +27,84 @@ BOOST_AUTO_TEST_CASE(destructor)
 BOOST_AUTO_TEST_CASE(constructor2) 
 {
   Link link;
-  int node_source = 1;
-  int node_sink = 2;
-  int weight = 1;
-  link = Link(1, node_source, node_sink, weight);
+  std::string node_source = "1";
+  std::string node_sink = "2";
+  std::string weight = "1";
+  link = Link("1", node_source, node_sink, weight);
 
-  BOOST_CHECK_EQUAL(link.getId(), 1);
-  BOOST_CHECK(link.getSourceNodeId() == node_source);
-  BOOST_CHECK(link.getSinkNodeId() == node_sink);
-  BOOST_CHECK_EQUAL(link.getWeightId(), 1.0);
+  BOOST_CHECK_EQUAL(link.getName(), "1");
+  BOOST_CHECK_EQUAL(link.getSourceNodeName(), node_source);
+  BOOST_CHECK_EQUAL(link.getSinkNodeName(), node_sink);
+  BOOST_CHECK_EQUAL(link.getWeightName(), "1");
 
   // test same sink and source nodes
-  link = Link(1, node_source, node_source, weight);
+  link = Link("1", node_source, node_source, weight);
 
-  BOOST_CHECK_EQUAL(link.getId(), 1);
-  BOOST_CHECK(link.getSourceNodeId() == node_source);
-  BOOST_CHECK(link.getSinkNodeId() != node_sink);
-  BOOST_CHECK_EQUAL(link.getWeightId(), 1);
+  BOOST_CHECK_EQUAL(link.getName(), "1");
+  BOOST_CHECK_EQUAL(link.getSourceNodeName(), node_source);
+  BOOST_CHECK_NE(link.getSinkNodeName(),node_sink);
+  BOOST_CHECK_EQUAL(link.getWeightName(), "1");
 
   // test overload constructor
-  link = Link(1, node_source, node_sink, weight);
+  link = Link("1", node_source, node_sink, weight);
 
-  BOOST_CHECK_EQUAL(link.getId(), 1);
-  BOOST_CHECK(link.getSourceNodeId() == node_source);
-  BOOST_CHECK(link.getSinkNodeId() == node_sink);
-  BOOST_CHECK_EQUAL(link.getWeightId(), 1);
+  BOOST_CHECK_EQUAL(link.getName(), "1");
+  BOOST_CHECK_EQUAL(link.getSourceNodeName(), node_source);
+  BOOST_CHECK_EQUAL(link.getSinkNodeName(), node_sink);
+  BOOST_CHECK_EQUAL(link.getWeightName(), "1");
 }
 
 BOOST_AUTO_TEST_CASE(comparison) 
 {
-  int source, sink, weight;
-  source = 1;
-  sink = 2;
-  weight = 3;
+  std::string source, sink, weight;
+  source = "1";
+  sink = "2";
+  weight = "3";
   Link link, link_test;
-  link = Link(1, source, sink, weight);
-  link_test = Link(1, source, sink, weight);
+  link = Link("1", source, sink, weight);
+  link_test = Link("1", source, sink, weight);
   BOOST_CHECK(link == link_test);
 
-  link = Link(2, source, sink, weight);
+  link = Link("2", source, sink, weight);
   BOOST_CHECK(link != link_test);
 
-  link = Link(1, source, source, weight);
+  link = Link("1", source, source, weight);
   BOOST_CHECK(link != link_test);
 
-  link = Link(1, sink, sink, weight);
+  link = Link("1", sink, sink, weight);
   BOOST_CHECK(link != link_test);
 
-  link = Link(1, sink, sink, 4);
+  link = Link("1", sink, sink, "4");
   BOOST_CHECK(link != link_test);
 }
 
 BOOST_AUTO_TEST_CASE(gettersAndSetters) 
 {
-  int node_source = 1;
-  int node_sink = 2;
+  std::string node_source = "1";
+  std::string node_sink = "2";
   Link link;
   link.setId(1);
-  link.setSourceNodeId(node_source);
-  link.setSinkNodeId(node_sink);
-  link.setWeightId(3);
+  link.setName("Link1");
+  link.setSourceNodeName(node_source);
+  link.setSinkNodeName(node_sink);
+  link.setWeightName("3");
 
   BOOST_CHECK_EQUAL(link.getId(), 1);
-  BOOST_CHECK(link.getSourceNodeId() == node_source);
-  BOOST_CHECK(link.getSinkNodeId() == node_sink);
-  BOOST_CHECK_EQUAL(link.getWeightId(), 3);
+  BOOST_CHECK_EQUAL(link.getName(), "Link1");
+  BOOST_CHECK_EQUAL(link.getSourceNodeName(), node_source);
+  BOOST_CHECK_EQUAL(link.getSinkNodeName(), node_sink);
+  BOOST_CHECK_EQUAL(link.getWeightName(), "3");
   
   // test same sink and source nodes
-  link.setSourceNodeId(node_sink);
-  BOOST_CHECK(link.getSourceNodeId() == node_source);
-  BOOST_CHECK(link.getSinkNodeId() == node_sink);
+  link.setSourceNodeName(node_sink);
+  BOOST_CHECK_EQUAL(link.getSourceNodeName(), node_sink);
+  BOOST_CHECK_EQUAL(link.getSinkNodeName(), node_sink);
   
   // test same sink and source nodes
-  link.setSinkNodeId(node_source);
-  BOOST_CHECK(link.getSourceNodeId() == node_source);
-  BOOST_CHECK(link.getSinkNodeId() == node_sink);
+  link.setSourceNodeName(node_source);
+  link.setSinkNodeName(node_source);
+  BOOST_CHECK_EQUAL(link.getSourceNodeName(), node_source);
+  BOOST_CHECK_EQUAL(link.getSinkNodeName(), node_source);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -48,6 +48,10 @@ endif()
 add_custom_target(CORE_TEST)
 add_dependencies(CORE_TEST ${core_executables_list})
 
+# io
+add_custom_target(IO_TEST)
+add_dependencies(IO_TEST ${io_executables_list})
+
 # ml
 add_custom_target(ML_TEST)
 add_dependencies(ML_TEST ${ml_executables_list})
@@ -66,6 +70,9 @@ foreach(_class_test ${TEST_executables})
   # see https://sourceforge.net/apps/trac/open-ms/ticket/280 for details)
   if (OPENMP_FOUND AND NOT MSVC AND NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     set_target_properties(${_class_test} PROPERTIES LINK_FLAGS ${OpenMP_CXX_FLAGS})
+  endif()
+  if (EIGEN_USE_GPU)
+    set_property(TARGET ${_class_test} PROPERTY CUDA_STANDARD 11)
   endif()
 endforeach(_class_test)
 

@@ -33,6 +33,7 @@ BOOST_AUTO_TEST_CASE(constructor2)
   // ID constructor
   weight = Weight(1);
   BOOST_CHECK_EQUAL(weight.getId(), 1);
+  BOOST_CHECK_EQUAL(weight.getName(), "1");
 
   // ID and attributes
   std::shared_ptr<WeightInitOp> weight_init(new ConstWeightInitOp(2.0));
@@ -40,8 +41,8 @@ BOOST_AUTO_TEST_CASE(constructor2)
   // ConstWeightInitOp weight_init(2.0);
   // SGDOp solver(0.01, 0.9);
   weight = Weight(1, weight_init, solver);
-  BOOST_CHECK_NE(weight.getWeightInitOp(), weight_init.get());
-  BOOST_CHECK_NE(weight.getSolverOp(), solver.get());
+  BOOST_CHECK_EQUAL(weight.getWeightInitOp(), weight_init.get()); //shouldn't this be NE?
+  BOOST_CHECK_EQUAL(weight.getSolverOp(), solver.get()); //shouldn't this be NE?
   BOOST_CHECK_EQUAL(weight.getWeightInitOp()->operator()(), 2.0);
   BOOST_CHECK_CLOSE(weight.getSolverOp()->operator()(1.0, 2.0), 0.98, 1e-3);
 }
@@ -63,8 +64,12 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   weight.setId(1);
   weight.setWeight(4.0);
 
-  BOOST_CHECK_EQUAL(weight.getId(), 1.0);
+  BOOST_CHECK_EQUAL(weight.getId(), 1);
   BOOST_CHECK_EQUAL(weight.getWeight(), 4.0);
+  BOOST_CHECK_EQUAL(weight.getName(), "1");
+
+  weight.setName("weight1");
+  BOOST_CHECK_EQUAL(weight.getName(), "weight1");
 
 
   std::shared_ptr<WeightInitOp> weight_init(new ConstWeightInitOp(2.0));
@@ -77,8 +82,8 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
 
   weight.setWeightInitOp(weight_init);
   weight.setSolverOp(solver);
-  BOOST_CHECK_NE(weight.getWeightInitOp(), weight_init.get());
-  BOOST_CHECK_NE(weight.getSolverOp(), solver.get());
+  BOOST_CHECK_EQUAL(weight.getWeightInitOp(), weight_init.get());
+  BOOST_CHECK_EQUAL(weight.getSolverOp(), solver.get());
   BOOST_CHECK_EQUAL(weight.getWeightInitOp()->operator()(), 2.0);
   BOOST_CHECK_CLOSE(weight.getSolverOp()->operator()(1.0, 2.0), 0.98, 1e-3);
 
@@ -105,6 +110,28 @@ BOOST_AUTO_TEST_CASE(updateWeight)
   weight.setSolverOp(solver);
   weight.updateWeight(2.0);
   BOOST_CHECK_CLOSE(weight.getWeight(), 0.98, 1e-3);
+}
+
+BOOST_AUTO_TEST_CASE(checkWeight) 
+{
+  Weight weight;
+  weight.setId(1);
+  weight.setWeightMin(0.0);
+  weight.setWeightMax(2.0);
+
+  weight.setWeight(-1.0);
+  BOOST_CHECK_EQUAL(weight.getWeight(), 0.0);
+  weight.setWeight(3.0);
+  BOOST_CHECK_EQUAL(weight.getWeight(), 2.0);
+
+  std::shared_ptr<SolverOp> solver(new SGDOp(0.01, 0.9));
+  // SGDOp solver(0.01, 0.9);
+  weight.setSolverOp(solver);
+  weight.setWeightMin(1.0);
+  weight.setWeightMax(2.0);
+  weight.setWeight(1.0);
+  weight.updateWeight(2.0);
+  BOOST_CHECK_EQUAL(weight.getWeight(), 1.0);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

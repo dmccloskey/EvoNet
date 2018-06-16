@@ -57,6 +57,11 @@ option(MT_ENABLE_OPENMP "Enable OpenMP support" ON)
 option(BOOST_USE_STATIC "Use Boost static libraries." ON)
 
 #------------------------------------------------------------------------------
+if (EIGEN_USE_GPU)
+  enable_language(CUDA)
+endif()
+
+#------------------------------------------------------------------------------
 # Extend module path with our modules
 # (create an empty list if CMAKE_MODULE_PATH does not exist)
 if(NOT CMAKE_MODULE_PATH)
