@@ -7,7 +7,7 @@
 # $Author: Douglas McCloseky
 # --------------------------------------------------------------------------
 
-cmake_minimum_required(VERSION 3.0.2 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.8.2 FATAL_ERROR)
 
 #------------------------------------------------------------------------------
 # Handle superbuild first
@@ -55,11 +55,6 @@ include(Dart)
 option(MT_ENABLE_TBB "Enable Intel TBB support" OFF)
 option(MT_ENABLE_OPENMP "Enable OpenMP support" ON)
 option(BOOST_USE_STATIC "Use Boost static libraries." ON)
-
-#------------------------------------------------------------------------------
-if (EIGEN_USE_GPU)
-  enable_language(CUDA)
-endif()
 
 #------------------------------------------------------------------------------
 # Extend module path with our modules
@@ -118,7 +113,9 @@ endif()
 # Multi-threading stuff (OpenMP, CUDA, TBB)
 #------------------------------------------------------------------------------
 include(external/multithreading.cmake)
-# TODO: CUDA
+if (EIGEN_USE_GPU)
+  enable_language(CUDA)
+endif()
 
 #------------------------------------------------------------------------------
 # Check architecture 32bit vs. 64bit
