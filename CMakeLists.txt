@@ -114,6 +114,9 @@ endif()
 #------------------------------------------------------------------------------
 include(external/multithreading.cmake)
 if (EIGEN_USE_GPU)
+  find_package(CUDA QUIET REQUIRED)
+  #set(CUDA_HOST_COMPILATION_CPP ON)
+  #set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-Wno-deprecated-gpu-targets;-ccbin=msvc-15.0")
   enable_language(CUDA)
 endif()
 

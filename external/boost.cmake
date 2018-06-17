@@ -95,7 +95,6 @@ ExternalProject_Add(boost
     CONFIGURE_COMMAND ${BOOST_BOOTSTRAP_CMD}
     BUILD_IN_SOURCE 1
     BUILD_COMMAND ${BOOST_BUILD_CMD}
-        install
         address-model=${BOOST_ADDR_MODEL}
         ${BOOST_ARCH_MODEL}
         --with-test 
@@ -103,6 +102,7 @@ ExternalProject_Add(boost
         variant=release 
         link=static
         --prefix=${CMAKE_CURRENT_BINARY_DIR}/Dependencies/Source/boost/build
+        install
     INSTALL_COMMAND ""
     GIT_PROGRESS 1
     LOG_DOWNLOAD 1
