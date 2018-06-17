@@ -10,7 +10,7 @@ namespace SmartPeak
   LinkFile::LinkFile(){}
   LinkFile::~LinkFile(){}
  
-  bool LinkFile::loadLinksBinary(const std::string& filename, std::vector<Link>& links){}
+  bool LinkFile::loadLinksBinary(const std::string& filename, std::vector<Link>& links) { return true; }
 
   bool LinkFile::loadLinksCsv(const std::string& filename, std::vector<Link>& links)
   {
@@ -26,9 +26,10 @@ namespace SmartPeak
       Link link(link_name, source_node_name, sink_node_name, weight_name);
       links.push_back(link);
     }
+	return true;
   }
 
-  bool LinkFile::storeLinksBinary(const std::string& filename, const std::vector<Link>& links){}
+  bool LinkFile::storeLinksBinary(const std::string& filename, const std::vector<Link>& links) { return true; }
 
   bool LinkFile::storeLinksCsv(const std::string& filename, const std::vector<Link>& links)
   {    
@@ -49,5 +50,6 @@ namespace SmartPeak
       // write to file
       csvwriter.writeDataInRow(row.begin(), row.end());
     }
+	return true;
   }
 }

@@ -25,4 +25,4 @@ ctest -DCTEST_MEMORYCHECK_COMMAND="/usr/bin/valgrind" -DMemoryCheckCommand="/usr
 cmake -DEIGEN_USE_GPU=OFF -DUSE_SUPERBUILD=OFF -DBOOST_ROOT=C:\Users\dmccloskey\Documents\GitHub\smartPeak_cpp\build3\Dependencies\Source\boost  -DEIGEN3_INCLUDE_DIR=C:\Users\dmccloskey\Documents\GitHub\smartPeak_cpp\build3\Dependencies\Source\eigen ..
 
 cmake -DEIGEN_USE_GPU=ON -DUSE_SUPERBUILD=OFF -DBOOST_ROOT=[TODO] -DEIGEN3_INCLUDE_DIR=C:\Users\domccl\GitHub\smartPeak_cpp\build2\Dependencies\Source\eigen ..
-cmake -DEIGEN_USE_GPU=ON -G "Visual Studio 15 2017 Win64" -T host=x64 -DUSE_SUPERBUILD=OFF -DEIGEN3_INCLUDE_DIR=C:\Users\domccl\GitHub\smartPeak_cpp\build2\Dependencies\Source\eigen ..
+cmake -DEIGEN_USE_GPU=ON -DBOOST_USE_STATIC=OFF -G "Visual Studio 15 2017 Win64" -T host=x64 -DUSE_SUPERBUILD=OFF -DEIGEN3_INCLUDE_DIR=C:\Users\domccl\GitHub\smartPeak_cpp\build2\Dependencies\Source\eigen ..

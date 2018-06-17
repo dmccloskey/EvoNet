@@ -108,7 +108,11 @@ BOOST_AUTO_TEST_CASE(getRandomNModels_)
 class ModelTrainerTest: public ModelTrainer
 {
 public:
-  Model makeModel(){};
+  Model makeModel()
+  {
+    Model model;
+    return model;
+  };
   void trainModel(Model& model,
     const Eigen::Tensor<float, 4>& input,
     const Eigen::Tensor<float, 3>& output,

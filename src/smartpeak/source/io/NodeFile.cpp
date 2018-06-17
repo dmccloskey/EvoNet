@@ -10,7 +10,7 @@ namespace SmartPeak
   NodeFile::NodeFile(){}
   NodeFile::~NodeFile(){}
  
-  bool NodeFile::loadNodesBinary(const std::string& filename, std::vector<Node>& nodes){}
+  bool NodeFile::loadNodesBinary(const std::string& filename, std::vector<Node>& nodes) { return true; }
 
   bool NodeFile::loadNodesCsv(const std::string& filename, std::vector<Node>& nodes)
   {
@@ -51,9 +51,10 @@ namespace SmartPeak
       Node node(node_name, node_type, node_status, node_activation);
       nodes.push_back(node);
     }
+	return true;
   }
 
-  bool NodeFile::storeNodesBinary(const std::string& filename, const std::vector<Node>& nodes){}
+  bool NodeFile::storeNodesBinary(const std::string& filename, const std::vector<Node>& nodes) { return true; }
 
   bool NodeFile::storeNodesCsv(const std::string& filename, const std::vector<Node>& nodes)
   {
@@ -99,5 +100,6 @@ namespace SmartPeak
       // write to file
       csvwriter.writeDataInRow(row.begin(), row.end());
     }
+	return true;
   }
 }

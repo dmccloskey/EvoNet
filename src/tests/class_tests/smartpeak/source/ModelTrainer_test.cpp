@@ -33,18 +33,26 @@ BOOST_AUTO_TEST_SUITE(trainer)
 class ModelTrainerTest: public ModelTrainer
 {
   void trainModel(Model& model,
-      const Eigen::Tensor<float, 4>& input,
-      const Eigen::Tensor<float, 3>& output,
-      const Eigen::Tensor<float, 3>& time_steps,
-      const std::vector<std::string>& input_nodes,
-      const std::vector<std::string>& output_nodes){};
+    const Eigen::Tensor<float, 4>& input,
+    const Eigen::Tensor<float, 3>& output,
+    const Eigen::Tensor<float, 3>& time_steps,
+    const std::vector<std::string>& input_nodes,
+    const std::vector<std::string>& output_nodes){};
   std::vector<float> validateModel(Model& model,
-      const Eigen::Tensor<float, 4>& input,
-      const Eigen::Tensor<float, 3>& output,
-      const Eigen::Tensor<float, 3>& time_steps,
-      const std::vector<std::string>& input_nodes,
-      const std::vector<std::string>& output_nodes){};
-  Model makeModel(){};
+    const Eigen::Tensor<float, 4>& input,
+    const Eigen::Tensor<float, 3>& output,
+    const Eigen::Tensor<float, 3>& time_steps,
+    const std::vector<std::string>& input_nodes,
+    const std::vector<std::string>& output_nodes)
+  {
+    std::vector<float> result;
+    return result;
+  };
+  Model makeModel()
+  {
+    Model model;
+    return model;
+  };
 };
 
 BOOST_AUTO_TEST_CASE(gettersAndSetters) 
@@ -248,11 +256,15 @@ BOOST_AUTO_TEST_CASE(DAGToy)
     }
 
   std::vector<float> validateModel(Model& model,
-      const Eigen::Tensor<float, 4>& input,
-      const Eigen::Tensor<float, 3>& output,
-      const Eigen::Tensor<float, 3>& time_steps,
-      const std::vector<std::string>& input_nodes,
-      const std::vector<std::string>& output_nodes){}
+    const Eigen::Tensor<float, 4>& input,
+    const Eigen::Tensor<float, 3>& output,
+    const Eigen::Tensor<float, 3>& time_steps,
+    const std::vector<std::string>& input_nodes,
+    const std::vector<std::string>& output_nodes)
+  {
+    std::vector<float> result;
+    return result;
+  };
   };
 
   DAGToyModelTrainer trainer;
@@ -402,7 +414,11 @@ BOOST_AUTO_TEST_CASE(DCGToy)
       const Eigen::Tensor<float, 3>& output,
       const Eigen::Tensor<float, 3>& time_steps,
       const std::vector<std::string>& input_nodes,
-      const std::vector<std::string>& output_nodes){}
+      const std::vector<std::string>& output_nodes)
+    {
+      std::vector<float> result;
+      return result;
+    };
   };
 
   DCGToyModelTrainer trainer;

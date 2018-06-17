@@ -824,8 +824,8 @@ BOOST_AUTO_TEST_CASE(updateWeights)
   const std::vector<std::string> weight_ids = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"};
   Eigen::Tensor<float, 1> weights(weight_ids.size());
   weights.setValues({
-    0.71875, 0.71875, 0.308750033, 0.308750033, 0.897499978, 0.897499978,
-    0.449999988, 0.475000023, 0.449999988, 0.475000023, 0.94749999, 0.949999988});
+    0.71875f, 0.71875f, 0.308750033f, 0.308750033f, 0.897499978f, 0.897499978f,
+    0.449999988f, 0.475000023f, 0.449999988f, 0.475000023f, 0.94749999f, 0.949999988f});
   for (int i=0; i<weight_ids.size(); ++i)
   {
     // std::cout<<model1.getWeight(weight_ids[i]).getWeight()<<std::endl;

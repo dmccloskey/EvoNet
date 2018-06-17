@@ -4,6 +4,7 @@
 #define SMARTPEAK_LINK_H
 
 #include <tuple>
+#include <string>
 
 namespace SmartPeak
 {
