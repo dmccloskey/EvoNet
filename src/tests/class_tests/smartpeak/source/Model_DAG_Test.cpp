@@ -207,7 +207,7 @@ BOOST_AUTO_TEST_CASE(mapValuesToNodes2)
 
   // create the input
   const std::vector<std::string> node_ids = {"0", "1"};
-  Eigen::Tensor<float, 3> input(batch_size, memory_size, node_ids.size()); 
+  Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)node_ids.size()); 
   input.setValues({
     {{1, 5}, {0, 0}},
     {{2, 6}, {0, 0}},
@@ -330,12 +330,12 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayer1)
 
   // create the input and biases
   const std::vector<std::string> input_ids = {"0", "1"};
-  Eigen::Tensor<float, 3> input(batch_size, memory_size, input_ids.size()); 
+  Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size()); 
   input.setValues({{{1, 5}}, {{2, 6}}, {{3, 7}}, {{4, 8}}});
   model1.mapValuesToNodes(input, input_ids, NodeStatus::activated, "output");  
 
   const std::vector<std::string> biases_ids = {"6", "7"};
-  Eigen::Tensor<float, 3> biases(batch_size, memory_size, biases_ids.size()); 
+  Eigen::Tensor<float, 3> biases(batch_size, memory_size, (int)biases_ids.size()); 
   biases.setConstant(1);
   model1.mapValuesToNodes(biases, biases_ids, NodeStatus::activated, "output");  
 
@@ -370,12 +370,12 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayerBiases1)
 
   // create the input and biases
   const std::vector<std::string> input_ids = {"0", "1"};
-  Eigen::Tensor<float, 3> input(batch_size, memory_size, input_ids.size()); 
+  Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size()); 
   input.setValues({{{1, 5}}, {{2, 6}}, {{3, 7}}, {{4, 8}}});
   model1.mapValuesToNodes(input, input_ids, NodeStatus::activated, "output");  
 
   const std::vector<std::string> biases_ids = {"6", "7"};
-  Eigen::Tensor<float, 3> biases(batch_size, memory_size, biases_ids.size()); 
+  Eigen::Tensor<float, 3> biases(batch_size, memory_size, (int)biases_ids.size()); 
   biases.setConstant(1);
   model1.mapValuesToNodes(biases, biases_ids, NodeStatus::activated, "output");  
 
@@ -418,12 +418,12 @@ BOOST_AUTO_TEST_CASE(forwardPropogateLayerNetInput)
 
   // create the input
   const std::vector<std::string> input_ids = {"0", "1"};
-  Eigen::Tensor<float, 3> input(batch_size, memory_size, input_ids.size()); 
+  Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size()); 
   input.setValues({{{1, 5}}, {{2, 6}}, {{3, 7}}, {{4, 8}}});
   model1.mapValuesToNodes(input, input_ids, NodeStatus::activated, "output");  
 
   const std::vector<std::string> biases_ids = {"6", "7"};
-  Eigen::Tensor<float, 3> biases(batch_size, memory_size, biases_ids.size()); 
+  Eigen::Tensor<float, 3> biases(batch_size, memory_size, (int)biases_ids.size()); 
   biases.setConstant(1);
   model1.mapValuesToNodes(biases, biases_ids, NodeStatus::activated, "output");   
 
@@ -465,12 +465,12 @@ BOOST_AUTO_TEST_CASE(forwardPropogateLayerActivation)
 
   // create the input
   const std::vector<std::string> input_ids = {"0", "1"};
-  Eigen::Tensor<float, 3> input(batch_size, memory_size, input_ids.size()); 
+  Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size()); 
   input.setValues({{{1, 5}}, {{2, 6}}, {{3, 7}}, {{4, 8}}});
   model1.mapValuesToNodes(input, input_ids, NodeStatus::activated, "output");  
 
   const std::vector<std::string> biases_ids = {"6", "7"};
-  Eigen::Tensor<float, 3> biases(batch_size, memory_size, biases_ids.size()); 
+  Eigen::Tensor<float, 3> biases(batch_size, memory_size, (int)biases_ids.size()); 
   biases.setConstant(1);
   model1.mapValuesToNodes(biases, biases_ids, NodeStatus::activated, "output");  
 
@@ -519,12 +519,12 @@ BOOST_AUTO_TEST_CASE(forwardPropogate)
 
   // create the input
   const std::vector<std::string> input_ids = {"0", "1"};
-  Eigen::Tensor<float, 3> input(batch_size, memory_size, input_ids.size()); 
+  Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size()); 
   input.setValues({{{1, 5}}, {{2, 6}}, {{3, 7}}, {{4, 8}}});
   model1.mapValuesToNodes(input, input_ids, NodeStatus::activated, "output");  
 
   const std::vector<std::string> biases_ids = {"6", "7"};
-  Eigen::Tensor<float, 3> biases(batch_size, memory_size, biases_ids.size()); 
+  Eigen::Tensor<float, 3> biases(batch_size, memory_size, (int)biases_ids.size()); 
   biases.setConstant(1);
   model1.mapValuesToNodes(biases, biases_ids, NodeStatus::activated, "output"); 
 
@@ -537,7 +537,7 @@ BOOST_AUTO_TEST_CASE(forwardPropogate)
   Eigen::Tensor<float, 2> derivative(batch_size, 2); 
   derivative.setValues({{1, 1}, {1, 1}, {1, 1}, {1, 1}});  
   const std::vector<std::string> output_nodes = {"4", "5"};
-  for (int i=0; i<output_nodes.size(); ++i)
+  for (int i=0; i<(int)output_nodes.size(); ++i)
   {
     BOOST_CHECK_EQUAL(model1.getNode(output_nodes[i]).getOutput().size(), batch_size*memory_size);
     BOOST_CHECK_EQUAL(model1.getNode(output_nodes[i]).getDerivative().size(), batch_size*memory_size);
@@ -566,7 +566,7 @@ BOOST_AUTO_TEST_CASE(calculateError)
 
   // calculate the model error
   std::vector<std::string> output_nodes = {"4", "5"};
-  Eigen::Tensor<float, 2> expected(batch_size, output_nodes.size()); 
+  Eigen::Tensor<float, 2> expected(batch_size, (int)output_nodes.size()); 
   expected.setValues({{0, 1}, {0, 1}, {0, 1}, {0, 1}});
   model1.calculateError(expected, output_nodes);
 
@@ -577,9 +577,9 @@ BOOST_AUTO_TEST_CASE(calculateError)
   {
     BOOST_CHECK_CLOSE(model1.getError()(j), error(j), 1e-6);
   }
-  Eigen::Tensor<float, 2> node_error(batch_size, output_nodes.size()); 
+  Eigen::Tensor<float, 2> node_error(batch_size, (int)output_nodes.size()); 
   node_error.setValues({{0, 0.25}, {0, 0.25}, {0, 0.25}, {0, 0.25}});
-  for (int i=0; i<output_nodes.size(); ++i)
+  for (int i=0; i<(int)output_nodes.size(); ++i)
   {
     BOOST_CHECK_EQUAL(model1.getNode(output_nodes[i]).getError().size(), batch_size*memory_size);
     BOOST_CHECK(model1.getNode(output_nodes[i]).getStatus() == NodeStatus::corrected);
@@ -593,7 +593,7 @@ BOOST_AUTO_TEST_CASE(calculateError)
   }
 
   // calculate the model error
-  Eigen::Tensor<float, 3> input(batch_size, memory_size, output_nodes.size()); 
+  Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)output_nodes.size()); 
   input.setValues({{{15, 15}}, {{19, 19}}, {{23, 23}}, {{27, 27}}});
   model1.mapValuesToNodes(input, output_nodes, NodeStatus::activated, "output");
   model1.calculateError(expected, output_nodes);
@@ -605,7 +605,7 @@ BOOST_AUTO_TEST_CASE(calculateError)
     BOOST_CHECK_CLOSE(model1.getError()(j), error(j), 1e-6);
   }
   node_error.setValues({{-3.75, -3.5}, {-4.75, -4.5}, {-5.75, -5.5}, {-6.75, -6.5}});
-  for (int i=0; i<output_nodes.size(); ++i)
+  for (int i=0; i<(int)output_nodes.size(); ++i)
   {
     BOOST_CHECK_EQUAL(model1.getNode(output_nodes[i]).getError().size(), batch_size*memory_size);
     BOOST_CHECK(model1.getNode(output_nodes[i]).getStatus() == NodeStatus::corrected);
@@ -632,12 +632,12 @@ BOOST_AUTO_TEST_CASE(getNextUncorrectedLayer1)
 
   // create the input
   const std::vector<std::string> input_ids = {"0", "1"};
-  Eigen::Tensor<float, 3> input(batch_size, memory_size, input_ids.size()); 
+  Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size()); 
   input.setValues({{{1, 5}}, {{2, 6}}, {{3, 7}}, {{4, 8}}});
   model1.mapValuesToNodes(input, input_ids, NodeStatus::activated, "output");  
 
   const std::vector<std::string> biases_ids = {"6", "7"};
-  Eigen::Tensor<float, 3> biases(batch_size, memory_size, biases_ids.size()); 
+  Eigen::Tensor<float, 3> biases(batch_size, memory_size, (int)biases_ids.size()); 
   biases.setConstant(1);
   model1.mapValuesToNodes(biases, biases_ids, NodeStatus::activated, "output"); 
 
@@ -646,7 +646,7 @@ BOOST_AUTO_TEST_CASE(getNextUncorrectedLayer1)
 
   // calculate the model error and node output error
   std::vector<std::string> output_nodes = {"4", "5"};
-  Eigen::Tensor<float, 2> expected(batch_size, output_nodes.size()); 
+  Eigen::Tensor<float, 2> expected(batch_size, (int)output_nodes.size()); 
   expected.setValues({{0, 1}, {0, 1}, {0, 1}, {0, 1}});
   model1.calculateError(expected, output_nodes);
 
@@ -684,12 +684,12 @@ BOOST_AUTO_TEST_CASE(backPropogateLayerError)
 
   // create the input
   const std::vector<std::string> input_ids = {"0", "1"};
-  Eigen::Tensor<float, 3> input(batch_size, memory_size, input_ids.size()); 
+  Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size()); 
   input.setValues({{{1, 5}}, {{2, 6}}, {{3, 7}}, {{4, 8}}});
   model1.mapValuesToNodes(input, input_ids, NodeStatus::activated, "output");  
 
   const std::vector<std::string> biases_ids = {"6", "7"};
-  Eigen::Tensor<float, 3> biases(batch_size, memory_size, biases_ids.size()); 
+  Eigen::Tensor<float, 3> biases(batch_size, memory_size, (int)biases_ids.size()); 
   biases.setConstant(1);
   model1.mapValuesToNodes(biases, biases_ids, NodeStatus::activated, "output"); 
 
@@ -698,7 +698,7 @@ BOOST_AUTO_TEST_CASE(backPropogateLayerError)
 
   // calculate the model error and node output error
   std::vector<std::string> output_nodes = {"4", "5"};
-  Eigen::Tensor<float, 2> expected(batch_size, output_nodes.size()); 
+  Eigen::Tensor<float, 2> expected(batch_size, (int)output_nodes.size()); 
   expected.setValues({{0, 1}, {0, 1}, {0, 1}, {0, 1}});
   model1.calculateError(expected, output_nodes);
 
@@ -709,7 +709,7 @@ BOOST_AUTO_TEST_CASE(backPropogateLayerError)
   // back propogate error to the next layer
   model1.backPropogateLayerError(links, source_nodes, sink_nodes, 0);
 
-  Eigen::Tensor<float, 2> error(batch_size, sink_nodes.size()); 
+  Eigen::Tensor<float, 2> error(batch_size, (int)sink_nodes.size()); 
   error.setValues({{0.0, -7.25, -7.25}, {0.0, -9.25, -9.25}, {0.0, -11.25, -11.25}, {0.0, -13.25, -13.25}});
   for (int i=0; i<sink_nodes.size(); ++i)
   {
@@ -738,12 +738,12 @@ BOOST_AUTO_TEST_CASE(backPropogate)
 
   // create the input
   const std::vector<std::string> input_ids = {"0", "1"};
-  Eigen::Tensor<float, 3> input(batch_size, memory_size, input_ids.size()); 
+  Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size()); 
   input.setValues({{{1, 5}}, {{2, 6}}, {{3, 7}}, {{4, 8}}});
   model1.mapValuesToNodes(input, input_ids, NodeStatus::activated, "output");  
 
   const std::vector<std::string> biases_ids = {"6", "7"};
-  Eigen::Tensor<float, 3> biases(batch_size, memory_size, biases_ids.size()); 
+  Eigen::Tensor<float, 3> biases(batch_size, memory_size, (int)biases_ids.size()); 
   biases.setConstant(1);
   model1.mapValuesToNodes(biases, biases_ids, NodeStatus::activated, "output"); 
 
@@ -752,7 +752,7 @@ BOOST_AUTO_TEST_CASE(backPropogate)
 
   // calculate the model error and node output error
   std::vector<std::string> output_nodes = {"4", "5"};
-  Eigen::Tensor<float, 2> expected(batch_size, output_nodes.size()); 
+  Eigen::Tensor<float, 2> expected(batch_size, (int)output_nodes.size()); 
   expected.setValues({{0, 1}, {0, 1}, {0, 1}, {0, 1}});
   model1.calculateError(expected, output_nodes);
 
@@ -796,12 +796,12 @@ BOOST_AUTO_TEST_CASE(updateWeights)
 
   // create the input
   const std::vector<std::string> input_ids = {"0", "1"};
-  Eigen::Tensor<float, 3> input(batch_size, memory_size, input_ids.size()); 
+  Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size()); 
   input.setValues({{{1, 5}}, {{2, 6}}, {{3, 7}}, {{4, 8}}});
   model1.mapValuesToNodes(input, input_ids, NodeStatus::activated, "output");  
 
   const std::vector<std::string> biases_ids = {"6", "7"};
-  Eigen::Tensor<float, 3> biases(batch_size, memory_size, biases_ids.size()); 
+  Eigen::Tensor<float, 3> biases(batch_size, memory_size, (int)biases_ids.size()); 
   biases.setConstant(1);
   model1.mapValuesToNodes(biases, biases_ids, NodeStatus::activated, "output"); 
 
@@ -810,7 +810,7 @@ BOOST_AUTO_TEST_CASE(updateWeights)
 
   // calculate the model error and node output error
   std::vector<std::string> output_nodes = {"4", "5"};
-  Eigen::Tensor<float, 2> expected(batch_size, output_nodes.size()); 
+  Eigen::Tensor<float, 2> expected(batch_size, (int)output_nodes.size()); 
   expected.setValues({{0, 1}, {0, 1}, {0, 1}, {0, 1}});
   model1.calculateError(expected, output_nodes);
 
@@ -822,7 +822,7 @@ BOOST_AUTO_TEST_CASE(updateWeights)
 
   // test values of input and hidden layers
   const std::vector<std::string> weight_ids = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"};
-  Eigen::Tensor<float, 1> weights(weight_ids.size());
+  Eigen::Tensor<float, 1> weights((int)weight_ids.size());
   weights.setValues({
     0.71875f, 0.71875f, 0.308750033f, 0.308750033f, 0.897499978f, 0.897499978f,
     0.449999988f, 0.475000023f, 0.449999988f, 0.475000023f, 0.94749999f, 0.949999988f});
@@ -846,24 +846,24 @@ BOOST_AUTO_TEST_CASE(reInitializeNodeStatuses)
 
   // create the input
   const std::vector<std::string> input_ids = {"0", "1"};
-  Eigen::Tensor<float, 3> input(batch_size, memory_size, input_ids.size()); 
+  Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size()); 
   input.setValues({{{1, 5}}, {{2, 6}}, {{3, 7}}, {{4, 8}}});
   model1.mapValuesToNodes(input, input_ids, NodeStatus::activated, "output");  
 
   const std::vector<std::string> biases_ids = {"6", "7"};
-  Eigen::Tensor<float, 3> biases(batch_size, memory_size, biases_ids.size()); 
+  Eigen::Tensor<float, 3> biases(batch_size, memory_size, (int)biases_ids.size()); 
   biases.setConstant(1);
   model1.mapValuesToNodes(biases, biases_ids, NodeStatus::activated, "output"); 
 
   // calculate the activation
   model1.reInitializeNodeStatuses();
 
-  for (int i=0; i<input_ids.size(); ++i)
+  for (int i=0; i<(int)input_ids.size(); ++i)
   {
     BOOST_CHECK(model1.getNode(input_ids[i]).getStatus() == NodeStatus::initialized);
   }
 
-  for (int i=0; i<biases_ids.size(); ++i)
+  for (int i=0; i<(int)biases_ids.size(); ++i)
   {
     BOOST_CHECK(model1.getNode(biases_ids[i]).getStatus() == NodeStatus::initialized);
   }
@@ -883,18 +883,18 @@ BOOST_AUTO_TEST_CASE(modelTrainer1)
 
   // create the input
   const std::vector<std::string> input_ids = {"0", "1"};
-  Eigen::Tensor<float, 3> input(batch_size, memory_size, input_ids.size()); 
+  Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size()); 
   input.setValues({{{1, 5}}, {{2, 6}}, {{3, 7}}, {{4, 8}}});
   model1.mapValuesToNodes(input, input_ids, NodeStatus::activated, "output");  
 
   const std::vector<std::string> biases_ids = {"6", "7"};
-  Eigen::Tensor<float, 3> biases(batch_size, memory_size, biases_ids.size()); 
+  Eigen::Tensor<float, 3> biases(batch_size, memory_size, (int)biases_ids.size()); 
   biases.setConstant(1);
   model1.mapValuesToNodes(biases, biases_ids, NodeStatus::activated, "output"); 
 
   // create the expected output
   std::vector<std::string> output_nodes = {"4", "5"};
-  Eigen::Tensor<float, 2> expected(batch_size, output_nodes.size()); 
+  Eigen::Tensor<float, 2> expected(batch_size, (int)output_nodes.size()); 
   expected.setValues({{0, 1}, {0, 1}, {0, 1}, {0, 1}});
 
   // iterate until we find the optimal values

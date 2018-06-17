@@ -75,7 +75,7 @@ BOOST_AUTO_TEST_CASE(checkInputData)
   trainer.setNEpochs(100);
 
   const std::vector<std::string> input_nodes = {"0", "1", "6", "7"};
-  Eigen::Tensor<float, 4> input_data(trainer.getBatchSize(), trainer.getMemorySize(), input_nodes.size(), trainer.getNEpochs());
+  Eigen::Tensor<float, 4> input_data(trainer.getBatchSize(), trainer.getMemorySize(), (int)input_nodes.size(), trainer.getNEpochs());
 
   BOOST_CHECK(trainer.checkInputData(trainer.getNEpochs(),
     input_data, trainer.getBatchSize(), trainer.getMemorySize(), input_nodes));
@@ -102,7 +102,7 @@ BOOST_AUTO_TEST_CASE(checkOutputData)
   trainer.setNEpochs(100);
 
   const std::vector<std::string> output_nodes = {"4", "5"};
-  Eigen::Tensor<float, 3> output_data(trainer.getBatchSize(), output_nodes.size(), trainer.getNEpochs());
+  Eigen::Tensor<float, 3> output_data(trainer.getBatchSize(), (int)output_nodes.size(), trainer.getNEpochs());
 
   BOOST_CHECK(trainer.checkOutputData(trainer.getNEpochs(),
     output_data, trainer.getBatchSize(), output_nodes));
@@ -277,21 +277,21 @@ BOOST_AUTO_TEST_CASE(DAGToy)
   const std::vector<std::string> output_nodes = {"4", "5"};
 
   // Make the input data
-  Eigen::Tensor<float, 4> input_data(trainer.getBatchSize(), trainer.getMemorySize(), input_nodes.size(), trainer.getNEpochs());
-  Eigen::Tensor<float, 3> input_tmp(trainer.getBatchSize(), trainer.getMemorySize(), input_nodes.size()); 
+  Eigen::Tensor<float, 4> input_data(trainer.getBatchSize(), trainer.getMemorySize(), (int)input_nodes.size(), trainer.getNEpochs());
+  Eigen::Tensor<float, 3> input_tmp(trainer.getBatchSize(), trainer.getMemorySize(), (int)input_nodes.size()); 
   input_tmp.setValues({{{1, 5, 1, 1}}, {{2, 6, 1, 1}}, {{3, 7, 1, 1}}, {{4, 8, 1, 1}}});
   for (int batch_iter=0; batch_iter<trainer.getBatchSize(); ++batch_iter)
     for (int memory_iter=0; memory_iter<trainer.getMemorySize(); ++memory_iter)
-      for (int nodes_iter=0; nodes_iter<input_nodes.size(); ++nodes_iter)
+      for (int nodes_iter=0; nodes_iter<(int)input_nodes.size(); ++nodes_iter)
         for (int epochs_iter=0; epochs_iter<trainer.getNEpochs(); ++epochs_iter)
           input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = input_tmp(batch_iter, memory_iter, nodes_iter);
   
   // Make the output data
-  Eigen::Tensor<float, 3> output_data(trainer.getBatchSize(), output_nodes.size(), trainer.getNEpochs());
-  Eigen::Tensor<float, 2> output_tmp(trainer.getBatchSize(), output_nodes.size()); 
+  Eigen::Tensor<float, 3> output_data(trainer.getBatchSize(), (int)output_nodes.size(), trainer.getNEpochs());
+  Eigen::Tensor<float, 2> output_tmp(trainer.getBatchSize(), (int)output_nodes.size()); 
   output_tmp.setValues({{0, 1}, {0, 1}, {0, 1}, {0, 1}});
   for (int batch_iter=0; batch_iter<trainer.getBatchSize(); ++batch_iter)
-    for (int nodes_iter=0; nodes_iter<output_nodes.size(); ++nodes_iter)
+    for (int nodes_iter=0; nodes_iter<(int)output_nodes.size(); ++nodes_iter)
       for (int epochs_iter=0; epochs_iter<trainer.getNEpochs(); ++epochs_iter)
         output_data(batch_iter, nodes_iter, epochs_iter) = output_tmp(batch_iter, nodes_iter);
 
@@ -431,8 +431,8 @@ BOOST_AUTO_TEST_CASE(DCGToy)
   const std::vector<std::string> output_nodes = {"2"};
 
   // Make the input data
-  Eigen::Tensor<float, 4> input_data(trainer.getBatchSize(), trainer.getMemorySize(), input_nodes.size(), trainer.getNEpochs());
-  Eigen::Tensor<float, 3> input_tmp(trainer.getBatchSize(), trainer.getMemorySize(), input_nodes.size()); 
+  Eigen::Tensor<float, 4> input_data(trainer.getBatchSize(), trainer.getMemorySize(), (int)input_nodes.size(), trainer.getNEpochs());
+  Eigen::Tensor<float, 3> input_tmp(trainer.getBatchSize(), trainer.getMemorySize(), (int)input_nodes.size()); 
   input_tmp.setValues(
     {{{1, 0, 0}, {2, 0, 0}, {3, 0, 0}, {4, 0, 0}, {5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}},
     {{2, 0, 0}, {3, 0, 0}, {4, 0, 0}, {5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}, {9, 0, 0}},
@@ -442,16 +442,16 @@ BOOST_AUTO_TEST_CASE(DCGToy)
   );
   for (int batch_iter=0; batch_iter<trainer.getBatchSize(); ++batch_iter)
     for (int memory_iter=0; memory_iter<trainer.getMemorySize(); ++memory_iter)
-      for (int nodes_iter=0; nodes_iter<input_nodes.size(); ++nodes_iter)
+      for (int nodes_iter=0; nodes_iter<(int)input_nodes.size(); ++nodes_iter)
         for (int epochs_iter=0; epochs_iter<trainer.getNEpochs(); ++epochs_iter)
           input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = input_tmp(batch_iter, memory_iter, nodes_iter);
   
   // Make the output data
-  Eigen::Tensor<float, 3> output_data(trainer.getBatchSize(), output_nodes.size(), trainer.getNEpochs());
-  Eigen::Tensor<float, 2> output_tmp(trainer.getBatchSize(), output_nodes.size()); 
+  Eigen::Tensor<float, 3> output_data(trainer.getBatchSize(), (int)output_nodes.size(), trainer.getNEpochs());
+  Eigen::Tensor<float, 2> output_tmp(trainer.getBatchSize(), (int)output_nodes.size()); 
   output_tmp.setValues({{2.5}, {3}, {3.5}, {4}, {4.5}});
   for (int batch_iter=0; batch_iter<trainer.getBatchSize(); ++batch_iter)
-    for (int nodes_iter=0; nodes_iter<output_nodes.size(); ++nodes_iter)
+    for (int nodes_iter=0; nodes_iter<(int)output_nodes.size(); ++nodes_iter)
       for (int epochs_iter=0; epochs_iter<trainer.getNEpochs(); ++epochs_iter)
         output_data(batch_iter, nodes_iter, epochs_iter) = output_tmp(batch_iter, nodes_iter);
 
