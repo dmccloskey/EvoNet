@@ -114,7 +114,10 @@ endif()
 #------------------------------------------------------------------------------
 include(external/multithreading.cmake)
 if (EIGEN_USE_GPU)
-  find_package(CUDA QUIET REQUIRED)
+  find_package(CUDA REQUIRED)
+  if(CUDA_FOUND)
+    message(STATUS "Found CUDA Toolkit version ${CUDA_VERSION_MAJOR}.${CUDA_VERSION_MINOR}" )
+  endif()
   enable_language(CUDA)
 endif()
 

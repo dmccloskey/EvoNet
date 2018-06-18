@@ -1,20 +1,19 @@
 /**TODO:  Add copyright*/
 
-#define BOOST_TEST_MODULE MNIST test suite 
-
-#define EIGEN_DEFAULT_DENSE_INDEX_TYPE int
-#define EIGEN_USE_GPU
+#define BOOST_TEST_MODULE MNIST test suite
 
 #include <boost/test/unit_test.hpp>
 #include <SmartPeak/ml/PopulationTrainer.h>
 #include <SmartPeak/ml/ModelTrainer.h>
 #include <SmartPeak/ml/ModelReplicator.h>
-#include <SmartPeak/ml/Model.h>
-
-#include <unsupported/Eigen/CXX11/Tensor>
-
+#include <SmartPeak/ml/Model.h> 
 
 #include <fstream>
+
+#define EIGEN_DEFAULT_DENSE_INDEX_TYPE int
+#define EIGEN_USE_GPU
+
+#include <unsupported/Eigen/CXX11/Tensor>
 #include <cuda.h>
 #include <cuda_runtime_api.h>
 
@@ -265,45 +264,49 @@ Eigen::Tensor<int, 2> OneHotEncoder(Eigen::Tensor<T, 2>& data, const std::vector
   return onehot_encoded;
 }
 
-//  BOOST_AUTO_TEST_CASE(cuda) 
-//  {
-//    const int tensor_dim = 2;
-//    Eigen::Tensor<float, 1> in1(tensor_dim);
-//    Eigen::Tensor<float, 1> in2(tensor_dim);
-//    Eigen::Tensor<float, 1> out(tensor_dim);
-//    in1.setRandom();
-//    in2.setRandom();
+ BOOST_AUTO_TEST_CASE(cuda) 
+ {
+   int tensor_dim = 2;
+   Eigen::Tensor<float, 1> in1(tensor_dim);
+   Eigen::Tensor<float, 1> in2(tensor_dim);
+   Eigen::Tensor<float, 1> out(tensor_dim);
+   in1.setRandom();
+   in2.setRandom();
 
-//    std::size_t in1_bytes = in1.size() * sizeof(float);
-//    std::size_t in2_bytes = in2.size() * sizeof(float);
-//    std::size_t out_bytes = out.size() * sizeof(float);
+   std::size_t in1_bytes = in1.size() * sizeof(float);
+   std::size_t in2_bytes = in2.size() * sizeof(float);
+   std::size_t out_bytes = out.size() * sizeof(float);
 
-//    float* d_in1;
-//    float* d_in2;
-//    float* d_out;
-//    cudaMalloc((void**)(&d_in1), in1_bytes);
-//    cudaMalloc((void**)(&d_in2), in2_bytes);
-//    cudaMalloc((void**)(&d_out), out_bytes);
+   float* d_in1;
+   float* d_in2;
+   float* d_out;
+   cudaMalloc((void**)(&d_in1), in1_bytes);
+   cudaMalloc((void**)(&d_in2), in2_bytes);
+   cudaMalloc((void**)(&d_out), out_bytes);
 
-//    cudaMemcpy(d_in1, in1.data(), in1_bytes, cudaMemcpyHostToDevice);
-//    cudaMemcpy(d_in2, in2.data(), in2_bytes, cudaMemcpyHostToDevice);
+   cudaMemcpy(d_in1, in1.data(), in1_bytes, cudaMemcpyHostToDevice);
+   cudaMemcpy(d_in2, in2.data(), in2_bytes, cudaMemcpyHostToDevice);
 
-//    Eigen::CudaStreamDevice stream;
-//    Eigen::GpuDevice gpu_device(&stream);
+   Eigen::CudaStreamDevice stream;
+   Eigen::GpuDevice gpu_device(&stream);
 
-//    Eigen::TensorMap<Eigen::Tensor<float, 1>, Eigen::Aligned> gpu_in1(
-//        d_in1, tensor_dim);
-//    Eigen::TensorMap<Eigen::Tensor<float, 1>, Eigen::Aligned> gpu_in2(
-//        d_in2, tensor_dim);
-//    Eigen::TensorMap<Eigen::Tensor<float, 1>, Eigen::Aligned> gpu_out(
-//        d_out, tensor_dim);
+   Eigen::TensorMap<Eigen::Tensor<float, 1>, Eigen::Aligned> gpu_in1(
+       d_in1, tensor_dim);
+   Eigen::TensorMap<Eigen::Tensor<float, 1>, Eigen::Aligned> gpu_in2(
+       d_in2, tensor_dim);
+   Eigen::TensorMap<Eigen::Tensor<float, 1>, Eigen::Aligned> gpu_out(
+       d_out, tensor_dim);
 
-//    gpu_out.device(gpu_device) = gpu_in1 + gpu_in2;
+   gpu_out.device(gpu_device) = gpu_in1 + gpu_in2;
 
-//    //BOOST_CHECK_EQUAL(cudaMemcpyAsync(out.data(), d_out, out_bytes, cudaMemcpyDeviceToHost,
-//    //                       gpu_device.stream()) == cudaSuccess);
-//    //BOOST_CHECK_EQUAL(cudaStreamSynchronize(gpu_device.stream()) == cudaSuccess);
-//  }
+   //BOOST_CHECK_EQUAL(cudaMemcpyAsync(out.data(), d_out, out_bytes, cudaMemcpyDeviceToHost,
+   //                       gpu_device.stream()) == cudaSuccess);
+   //BOOST_CHECK_EQUAL(cudaStreamSynchronize(gpu_device.stream()) == cudaSuccess);
+
+   cudaFree(d_in1);
+   cudaFree(d_in2);
+   cudaFree(d_out);
+ }
 
 BOOST_AUTO_TEST_CASE(mnistTest) 
 {
