@@ -24,11 +24,11 @@ ctest -DCTEST_MEMORYCHECK_COMMAND="/usr/bin/valgrind" -DMemoryCheckCommand="/usr
 
 ##Windows (MSVC or Cygwin64)
 ###dmccloskey
-cmake -DEIGEN_USE_GPU=OFF -DUSE_SUPERBUILD=OFF -DBOOST_ROOT=C:\Users\dmccloskey\Documents\GitHub\smartPeak_cpp\build3\Dependencies\Source\boost  -DEIGEN3_INCLUDE_DIR=C:\Users\dmccloskey\Documents\GitHub\smartPeak_cpp\build3\Dependencies\Source\eigen ..
+cmake -DEIGEN_USE_GPU=OFF -DUSE_SUPERBUILD=OFF -DBOOST_ROOT=C:/Users/dmccloskey/Documents/GitHub/smartPeak_cpp/build3/Dependencies/Source/boost  -DEIGEN3_INCLUDE_DIR=C:/Users/dmccloskey/Documents/GitHub/smartPeak_cpp/build3/Dependencies/Source/eigen ..
 
 ###domccl
 cmake -G "Visual Studio 15 2017 Win64" -T host=x64 -DUSE_SUPERBUILD=ON ..
 cmake -G "Unix Makefiles" -DUSE_SUPERBUILD=ON ..
-cmake -DEIGEN_USE_GPU=ON -DBOOST_USE_STATIC=OFF -G "Visual Studio 15 2017 Win64" -T host=x64 -DUSE_SUPERBUILD=OFF -DEIGEN3_INCLUDE_DIR=C:\Users\domccl\GitHub\smartPeak_cpp\build2\Dependencies\Source\eigen ..
-cmake -DEIGEN_USE_GPU=ON -DBOOST_USE_STATIC=OFF -G "Unix Makefiles" -DBOOST_ROOT=C:\local\boost_1_67_0 -DUSE_SUPERBUILD=OFF -DEIGEN3_INCLUDE_DIR=C:\Users\domccl\GitHub\smartPeak_cpp\build2\Dependencies\Source\eigen ..
+cmake -DEIGEN_USE_GPU=ON -DBOOST_USE_STATIC=OFF -G "Visual Studio 15 2017 Win64" -T host=x64 -DUSE_SUPERBUILD=OFF -DEIGEN3_INCLUDE_DIR=C:/Users/domccl/GitHub/smartPeak_cpp/build2/Dependencies/Source/eigen ..
+cmake -DEIGEN_USE_GPU=OFF -DBOOST_USE_STATIC=OFF -G "Unix Makefiles" -DBOOST_ROOT=C:/Users/domccl/GitHub/smartPeak_cpp/build2/Dependencies/Source/boost -DUSE_SUPERBUILD=OFF -DEIGEN3_INCLUDE_DIR=C:/Users/domccl/GitHub/smartPeak_cpp/build2/Dependencies/Source/eigen ..
 

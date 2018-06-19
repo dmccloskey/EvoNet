@@ -77,7 +77,7 @@ else() ## linux/macos
         set(_boost_bootstrap_toolchain "clang")
         set(BOOST_TOOLSET "clang")
       endif()
-    elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+    elseif("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU*")
       if(APPLE)
         ## For Apples old GCC (tag in lib name will be xgcc)
         set(BOOST_TOOLSET "darwin") 

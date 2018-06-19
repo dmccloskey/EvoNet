@@ -88,6 +88,6 @@ endif()
 # add filenames to Visual Studio solution tree
 set(sources_VS)
 foreach(i ${TEST_executables})
-  list(APPEND sources_VS "${i}.cpp")
+  list(APPEND sources_VS "${i}")
 endforeach(i)
 source_group("" FILES ${sources_VS})

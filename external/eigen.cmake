@@ -15,7 +15,7 @@ message (STATUS "Adding Eigen ${EIGEN_VERSION} as an external project.")
 
 ExternalProject_Add(eigen
   GIT_REPOSITORY "https://github.com/eigenteam/eigen-git-mirror.git"
-  GIT_TAG ${EIGEN_VERSION}
+  #GIT_TAG ${EIGEN_VERSION} # Need the dev branch to compile use MSVC
   UPDATE_COMMAND ""
   CONFIGURE_COMMAND ""
   BUILD_IN_SOURCE 1
