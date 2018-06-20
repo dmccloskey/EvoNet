@@ -52,14 +52,17 @@ public:
         data = Eigen::Tensor<T, R>(dims);
         in.read((char *) data.data(), sizeof(data.data()));
         in.close();
+		    return true;
       }
       catch (std::exception& e)
       {
         printf("Exception: %s", e.what());
+		    return false;
       }
       catch (...)
       {
         printf("Exception");
+		    return false;
       }
     };
  
@@ -87,14 +90,17 @@ public:
         }
         out.write((char*) data.data(), data.size()*sizeof(typename Eigen::Tensor<T, R>::Scalar));
         out.close();
+		return true;
       }
       catch (std::exception& e)
       {
         printf("Exception: %s", e.what());
+		return false;
       }
       catch (...)
       {
         printf("Exception");
+		return false;
       }
     };
   };

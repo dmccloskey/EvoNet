@@ -8,6 +8,7 @@
 #include <algorithm> // tokenizing
 #include <regex> // tokenizing
 #include <utility>
+#include <numeric> // accumulate
 
 namespace SmartPeak
 {
@@ -116,7 +117,7 @@ namespace SmartPeak
           input_nodes, output_nodes);
         float model_ave_error = 1e6;
         if (model_errors.size()>0)
-          model_ave_error = accumulate(model_errors.begin(), model_errors.end(), 0.0)/model_errors.size();
+          model_ave_error = std::accumulate(model_errors.begin(), model_errors.end(), 0.0)/model_errors.size();
         if (isnan(model_ave_error))
           model_ave_error = 1e6;
         models_validation_errors.push_back(std::make_pair(models[i].getName(), model_ave_error));

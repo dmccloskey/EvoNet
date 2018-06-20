@@ -13,7 +13,7 @@ namespace SmartPeak
   WeightFile::WeightFile(){}
   WeightFile::~WeightFile(){}
  
-  bool WeightFile::loadWeightsBinary(const std::string& filename, std::vector<Weight>& weights){}
+  bool WeightFile::loadWeightsBinary(const std::string& filename, std::vector<Weight>& weights) { return true; }
 
   bool WeightFile::loadWeightsCsv(const std::string& filename, std::vector<Weight>& weights)
   {
@@ -118,6 +118,7 @@ namespace SmartPeak
 
       weights.push_back(weight);
     }
+	return true;
   }
 
   std::map<std::string, float> WeightFile::parseParameters(const std::string& parameters)
@@ -158,7 +159,7 @@ namespace SmartPeak
   }
   
 
-  bool WeightFile::storeWeightsBinary(const std::string& filename, const std::vector<Weight>& weights){}
+  bool WeightFile::storeWeightsBinary(const std::string& filename, const std::vector<Weight>& weights) { return true; }
 
   bool WeightFile::storeWeightsCsv(const std::string& filename, const std::vector<Weight>& weights)
   {
@@ -194,5 +195,6 @@ namespace SmartPeak
       // write to file
       csvwriter.writeDataInRow(row.begin(), row.end());
     }
+	return true;
   }
 }

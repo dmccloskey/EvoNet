@@ -1,14 +1,24 @@
 /**TODO:  Add copyright*/
 
-#define BOOST_TEST_MODULE MNIST test suite 
-#include <boost/test/unit_test.hpp>
 #include <SmartPeak/ml/PopulationTrainer.h>
+#include <SmartPeak/ml/ModelTrainer.h>
+#include <SmartPeak/ml/ModelReplicator.h>
+#include <SmartPeak/ml/Model.h> 
 
-#include <SmartPeak/ml/Model.h>
 #include <fstream>
+
+// workaround issue between gcc >= 4.7 and cuda 5.5
+#if (defined __GNUC__) && (__GNUC__>4 || __GNUC_MINOR__>=7)
+  #undef _GLIBCXX_ATOMIC_BUILTINS
+  #undef _GLIBCXX_USE_INT128
+#endif
 
 #define EIGEN_DEFAULT_DENSE_INDEX_TYPE int
 #define EIGEN_USE_GPU
+
+#include <unsupported/Eigen/CXX11/Tensor>
+#include <cuda.h>
+#include <cuda_runtime.h>
 
 using namespace SmartPeak;
 
@@ -31,13 +41,15 @@ using namespace SmartPeak;
  *    steps: 1) install CUDA toolkit, 2) modify cmake to build with nvcc, 3) modify code to use GpuDevice
  */
 
-BOOST_AUTO_TEST_SUITE(mnist)
-
 // Toy ModelTrainer used for all tests
 class ModelTrainerTest: public ModelTrainer
 {
 public:
-  Model makeModel(){};
+  Model makeModel()
+  {
+    Model model;
+    return model;
+  };
   void trainModel(Model& model,
     const Eigen::Tensor<float, 4>& input,
     const Eigen::Tensor<float, 3>& output,
@@ -253,52 +265,86 @@ Eigen::Tensor<int, 2> OneHotEncoder(Eigen::Tensor<T, 2>& data, const std::vector
   return onehot_encoded;
 }
 
-// BOOST_AUTO_TEST_CASE(cuda) 
-// {
-//   Eigen::Tensor<float, 1> in1(Eigen::array<int, 1>(2));
-//   Eigen::Tensor<float, 1> in2(Eigen::array<int, 1>(2));
-//   Eigen::Tensor<float, 1> out(Eigen::array<int, 1>(2));
-//   in1.setRandom();
-//   in2.setRandom();
-
-//   std::size_t in1_bytes = in1.size() * sizeof(float);
-//   std::size_t in2_bytes = in2.size() * sizeof(float);
-//   std::size_t out_bytes = out.size() * sizeof(float);
-
-//   float* d_in1;
-//   float* d_in2;
-//   float* d_out;
-//   cudaMalloc((void**)(&d_in1), in1_bytes);
-//   cudaMalloc((void**)(&d_in2), in2_bytes);
-//   cudaMalloc((void**)(&d_out), out_bytes);
-
-//   cudaMemcpy(d_in1, in1.data(), in1_bytes, cudaMemcpyHostToDevice);
-//   cudaMemcpy(d_in2, in2.data(), in2_bytes, cudaMemcpyHostToDevice);
-
-//   Eigen::CudaStreamDevice stream;
-//   Eigen::GpuDevice gpu_device(&stream);
-
-//   Eigen::TensorMap<Eigen::Tensor<float, 1>, Eigen::Aligned> gpu_in1(
-//       d_in1, Eigen::array<int, 1>(2));
-//   Eigen::TensorMap<Eigen::Tensor<float, 1>, Eigen::Aligned> gpu_in2(
-//       d_in2, Eigen::array<int, 1>(2));
-//   Eigen::TensorMap<Eigen::Tensor<float, 1>, Eigen::Aligned> gpu_out(
-//       d_out, Eigen::array<int, 1>(2));
-
-//   gpu_out.device(gpu_device) = gpu_in1 + gpu_in2;
-
-//   assert(cudaMemcpyAsync(out.data(), d_out, out_bytes, cudaMemcpyDeviceToHost,
-//                          gpu_device.stream()) == cudaSuccess);
-//   assert(cudaStreamSynchronize(gpu_device.stream()) == cudaSuccess);
-// }
-
-BOOST_AUTO_TEST_CASE(mnistTest) 
+int main(int argc, char** argv)
 {
+  try
+  {
+	// adapted from "eigen / unsupported / test / cxx11_tensor_cuda.cu"
+
+	int n_gpus = 0;
+	cudaGetDeviceCount(&n_gpus);
+    if (n_gpus > 0)
+    {
+	  std::cout << n_gpus <<" were found." << std::endl;
+    }
+
+    int tensor_dim = 2;
+    Eigen::Tensor<float, 1> in1(tensor_dim);
+    Eigen::Tensor<float, 1> in2(tensor_dim);
+    Eigen::Tensor<float, 1> out(tensor_dim);
+    in1.setRandom();
+    in2.setRandom();
+
+    std::size_t in1_bytes = in1.size() * sizeof(float);
+    std::size_t in2_bytes = in2.size() * sizeof(float);
+    std::size_t out_bytes = out.size() * sizeof(float);
+
+    float* d_in1;
+    float* d_in2;
+    float* d_out;
+    cudaMalloc((void**)(&d_in1), in1_bytes);
+    cudaMalloc((void**)(&d_in2), in2_bytes);
+    cudaMalloc((void**)(&d_out), out_bytes);
+
+    cudaMemcpy(d_in1, in1.data(), in1_bytes, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_in2, in2.data(), in2_bytes, cudaMemcpyHostToDevice);
+
+    Eigen::CudaStreamDevice stream;
+    Eigen::GpuDevice gpu_device(&stream);
+
+    Eigen::TensorMap<Eigen::Tensor<float, 1>, Eigen::Aligned> gpu_in1(
+      d_in1, tensor_dim);
+    Eigen::TensorMap<Eigen::Tensor<float, 1>, Eigen::Aligned> gpu_in2(
+      d_in2, tensor_dim);
+    Eigen::TensorMap<Eigen::Tensor<float, 1>, Eigen::Aligned> gpu_out(
+      d_out, tensor_dim);
+
+    gpu_out.device(gpu_device) = gpu_in1 + gpu_in2;
+    
+	cudaError_t result = cudaMemcpyAsync(out.data(), d_out, out_bytes, cudaMemcpyDeviceToHost, gpu_device.stream());
+	if (result != cudaSuccess)
+	{
+	  throw std::runtime_error("failed to copy to device memory");
+	}
+
+	cudaStreamSynchronize(gpu_device.stream());
+
+	for (int i = 0; i < tensor_dim; ++i)
+	{
+	  std::cout << "OUT: " << out(i);
+	  std::cout << "IN1 + IN2: " << in1(i) + in2(1) << std::endl;
+	}
+
+    cudaFree(d_in1);
+    cudaFree(d_in2);
+    cudaFree(d_out);
+  }
+  catch (std::exception& e)
+  {
+    printf("Exception: %s", e.what());
+    return false;
+  }
+  catch (...)
+  {
+    printf("Exception");
+    return false;
+  }
+
   PopulationTrainer population_trainer;
 
-  const int input_size = 784;
-  const int training_data_size = 1000; //60000;
-  const int validation_data_size = 100; //10000;
+  const std::size_t input_size = 784;
+  const std::size_t training_data_size = 1000; //60000;
+  const std::size_t validation_data_size = 100; //10000;
   const std::vector<float> mnist_labels = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 
   // Make the input nodes
@@ -429,7 +475,7 @@ BOOST_AUTO_TEST_CASE(mnistTest)
   
     // Reformat the input data for training [BUG FREE]
     std::cout<<"Reformatting the input data..."<<std::endl;  
-    Eigen::Tensor<float, 4> input_data(model_trainer.getBatchSize(), model_trainer.getMemorySize(), input_nodes.size(), model_trainer.getNEpochs());
+    Eigen::Tensor<float, 4> input_data(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)input_nodes.size(), model_trainer.getNEpochs());
     for (int batch_iter=0; batch_iter<model_trainer.getBatchSize(); ++batch_iter)
       for (int memory_iter=0; memory_iter<model_trainer.getMemorySize(); ++memory_iter)
         for (int nodes_iter=0; nodes_iter<input_nodes.size(); ++nodes_iter)
@@ -438,7 +484,7 @@ BOOST_AUTO_TEST_CASE(mnistTest)
 
     // reformat the output data for training [BUG FREE]
     std::cout<<"Reformatting the output data..."<<std::endl;  
-    Eigen::Tensor<float, 3> output_data(model_trainer.getBatchSize(), output_nodes.size(), model_trainer.getNEpochs());
+    Eigen::Tensor<float, 3> output_data(model_trainer.getBatchSize(), (int)output_nodes.size(), model_trainer.getNEpochs());
     for (int batch_iter=0; batch_iter<model_trainer.getBatchSize(); ++batch_iter)
       for (int nodes_iter=0; nodes_iter<output_nodes.size(); ++nodes_iter)
         for (int epochs_iter=0; epochs_iter<model_trainer.getNEpochs(); ++epochs_iter)
@@ -492,7 +538,6 @@ BOOST_AUTO_TEST_CASE(mnistTest)
       population_trainer.replicateModels(population, model_replicator, n_replicates_per_model, std::to_string(iter));
     }
   }
+
+  return 0;
 }
-
-
-BOOST_AUTO_TEST_SUITE_END()

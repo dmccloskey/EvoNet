@@ -29,8 +29,8 @@ if (NOT BOOST_ADDR_MODEL MATCHES "32|64")
   Message(FATAL_ERROR "BOOST_ADDR_MODEL is neither 32 nor 64! Please correct this!")
 endif()
 
-#if (MSVC)
-if (WIN32)
+if (MSVC)
+#if (WIN32)
   ## check that the console environment has a cl.exe architecture which is identical to the VS Generator
   ## If cl.exe builds 32-bit libs and VS Generator is Win64, we'd end up with mixed 32bit/64bit libraries, depending on how each lib is build (Cmake, bjam, nmake)
   execute_process(COMMAND "cl.exe" OUTPUT_VARIABLE cl_out ERROR_VARIABLE cl_out)
@@ -65,7 +65,7 @@ if (WIN32)
     if (OVERRIDE_GENERATOR)
       message(FATAL_ERROR "Chosen to override the Generator check, proceed with caution.")
     else()
-      message(FATAL_ERROR "Please use 'Visual Studio ?? [Win64]' (??={8 2005, 9 2008, 10, 11, 12, 14, 15}) as Generator - identical to the MSVC toolchain you plan to use for OpenMS! Note that you must not use NMake or alike for the contrib (nor for OpenMS). There will be errors (mostly missing libraries). Under very special circumstances, you can override this with -DOVERRIDE_GENERATOR=On.")
+      message(FATAL_ERROR "Please use 'Visual Studio ?? [Win64]' (??={8 2005, 9 2008, 10, 11, 12, 14, 15}) as Generator - identical to the MSVC toolchain you plan to use! There will be errors (mostly missing libraries). Under very special circumstances, you can override this with -DOVERRIDE_GENERATOR=On.")
     endif()
   endif()
 
@@ -77,7 +77,7 @@ else() ## linux/macos
         set(_boost_bootstrap_toolchain "clang")
         set(BOOST_TOOLSET "clang")
       endif()
-    elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+    elseif("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU*")
       if(APPLE)
         ## For Apples old GCC (tag in lib name will be xgcc)
         set(BOOST_TOOLSET "darwin") 
@@ -95,7 +95,6 @@ ExternalProject_Add(boost
     CONFIGURE_COMMAND ${BOOST_BOOTSTRAP_CMD}
     BUILD_IN_SOURCE 1
     BUILD_COMMAND ${BOOST_BUILD_CMD}
-        install
         address-model=${BOOST_ADDR_MODEL}
         ${BOOST_ARCH_MODEL}
         --with-test 
@@ -103,6 +102,7 @@ ExternalProject_Add(boost
         variant=release 
         link=static
         --prefix=${CMAKE_CURRENT_BINARY_DIR}/Dependencies/Source/boost/build
+        install
     INSTALL_COMMAND ""
     GIT_PROGRESS 1
     LOG_DOWNLOAD 1

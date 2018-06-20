@@ -176,9 +176,9 @@ BOOST_AUTO_TEST_CASE(operationfunctionCrossEntropyOp)
   const int outputs = 4;
   const int batch_size = 2;
   Eigen::Tensor<float, 2> y_true(batch_size, outputs); 
-  y_true.setValues({{.1, .1, .6, .2}, {.1, .1, .6, .2}}); 
+  y_true.setValues({{.1f, .1f, .6f, .2f}, {.1f, .1f, .6f, .2f}}); 
   Eigen::Tensor<float, 2> y_pred(batch_size, outputs); 
-  y_pred.setValues({{1, 0, 0, 0}, {1, 0, 0, 0}}); 
+  y_pred.setValues({{1.0f, 0.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f, 0.0f}}); 
 
   Eigen::Tensor<float, 1> error = operation(y_pred, y_true);
   BOOST_CHECK_CLOSE(error(0), 3.7416575, 1e-6);
@@ -208,10 +208,10 @@ BOOST_AUTO_TEST_CASE(operationfunctionCrossEntropyGradOp)
 
   const int outputs = 4;
   const int batch_size = 2;
-  Eigen::Tensor<float, 2> y_true(batch_size, outputs); 
-  y_true.setValues({{.1, .1, .6, .2}, {.1, .1, .6, .2}}); 
-  Eigen::Tensor<float, 2> y_pred(batch_size, outputs); 
-  y_pred.setValues({{1, 0, 0, 0}, {1, 0, 0, 0}}); 
+  Eigen::Tensor<float, 2> y_true(batch_size, outputs);
+  y_true.setValues({ { .1f, .1f, .6f, .2f },{ .1f, .1f, .6f, .2f } });
+  Eigen::Tensor<float, 2> y_pred(batch_size, outputs);
+  y_pred.setValues({ { 1.0f, 0.0f, 0.0f, 0.0f },{ 1.0f, 0.0f, 0.0f, 0.0f } });
 
   Eigen::Tensor<float, 2> error = operation(y_pred, y_true);
   BOOST_CHECK_CLOSE(error(0, 0), 0.0, 1e-6);

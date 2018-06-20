@@ -42,9 +42,11 @@ public:
       const Eigen::Tensor<T, 2>& y_true) const 
     {
       const Eigen::Tensor<float, 1>::Dimensions dims1({1}); // sum along nodes
-      Eigen::Tensor<T, 1> a = (y_true - y_pred).pow(2).sum(dims1).sqrt();
-      Eigen::array<int, 2> new_dims({y_pred.dimensions()[0], 1}); // reshape to a column vector of size batch_size
-      Eigen::array<int, 2> bcast({1, y_pred.dimensions()[1]}); // broadcast along the number of nodes
+      //Eigen::Tensor<T, 1> a = (y_true - y_pred).pow(2).sum(dims1).sqrt();  [TODO: delete]
+      const Eigen::array<int, 2> new_dims = {(int)y_pred.dimensions()[0], 1}; // reshape to a column vector of size batch_size
+      const Eigen::array<int, 2> bcast = {1, (int)y_pred.dimensions()[1]}; // broadcast along the number of nodes
+	  //const Eigen::array<int, 2> new_dims({ (int)y_pred.dimensions()[0], 1 }); // reshape to a column vector of size batch_size
+	  //const Eigen::array<int, 2> bcast({ 1, (int)y_pred.dimensions()[1] }); // broadcast along the number of nodes
       return (y_true - y_pred)/(
         (y_true - y_pred).pow(2).sum(dims1).sqrt().eval()
           .reshape(new_dims).broadcast(bcast));

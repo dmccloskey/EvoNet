@@ -57,16 +57,18 @@ namespace SmartPeak
     model.addNodes(nodes);
     model.addLinks(links);
     model.addWeights(weights);
+
+	return true;
   }
 
   bool ModelTrainer::loadNodeStates(const std::string& filename, Model& model)
   {
-    
+	return true;
   }
 
   bool ModelTrainer::loadWeights(const std::string& filename, Model& model)
   {
-    
+	return true;
   }
 
   bool ModelTrainer::storeModel(const std::string& filename_nodes,
@@ -74,27 +76,27 @@ namespace SmartPeak
     const std::string& filename_weights,
     const Model& model)
   {
-    
+	return true;
   }
 
   bool ModelTrainer::storeNodeStates(const std::string& filename, const Model& model)
   {
-    
+	return true;    
   }
 
   bool ModelTrainer::storeWeights(const std::string& filename, const Model& model)
   {
-    
+	return true;
   }
 
   bool ModelTrainer::loadInputData(const std::string& filename, Eigen::Tensor<float, 4>& input)
   {
-    
+	return true;
   }
 
   bool ModelTrainer::loadOutputData(const std::string& filename, Eigen::Tensor<float, 3>& output)
   {
-    
+	return true;
   }
 
   bool ModelTrainer::checkInputData(const int& n_epochs,

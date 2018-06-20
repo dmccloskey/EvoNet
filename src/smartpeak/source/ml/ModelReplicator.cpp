@@ -332,16 +332,16 @@ namespace SmartPeak
     return elements[choose(engine)];
   }
 
-  std::string ModelReplicator::selectRandomNode(
-    const Model& model,
-    const std::vector<NodeType>& node_type_exclude,
-    const std::vector<NodeType>& node_type_include,
-    const Node& node, 
-    const float& distance_weight,
-    const std::string& direction)
-  {
-    // [TODO: add method body]    
-  }
+  //std::string ModelReplicator::selectRandomNode(
+  //  const Model& model,
+  //  const std::vector<NodeType>& node_type_exclude,
+  //  const std::vector<NodeType>& node_type_include,
+  //  const Node& node, 
+  //  const float& distance_weight,
+  //  const std::string& direction)
+  //{
+  //  // [TODO: add method body]    
+  //}
 
   std::string ModelReplicator::selectRandomNode(
     const Model& model,

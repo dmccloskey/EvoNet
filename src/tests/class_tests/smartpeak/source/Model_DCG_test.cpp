@@ -84,7 +84,7 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayer2)
 
   // create the input and biases
   const std::vector<std::string> input_ids = {"0"};
-  Eigen::Tensor<float, 3> input(batch_size, memory_size, input_ids.size()); 
+  Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size()); 
   input.setValues(
     {{{1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}},
     {{2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}},
@@ -95,7 +95,7 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayer2)
   model2.mapValuesToNodes(input, input_ids, NodeStatus::activated, "output");  
 
   const std::vector<std::string> biases_ids = {"3", "4"};
-  Eigen::Tensor<float, 3> biases(batch_size, memory_size, biases_ids.size()); 
+  Eigen::Tensor<float, 3> biases(batch_size, memory_size, (int)biases_ids.size()); 
   biases.setConstant(1);
   model2.mapValuesToNodes(biases, biases_ids, NodeStatus::activated, "output");  
 
@@ -137,7 +137,7 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayerBiases2)
 
   // create the input and biases
   const std::vector<std::string> input_ids = {"0"};
-  Eigen::Tensor<float, 3> input(batch_size, memory_size, input_ids.size()); 
+  Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size()); 
   input.setValues(
     {{{1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}},
     {{2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}},
@@ -148,7 +148,7 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayerBiases2)
   model2.mapValuesToNodes(input, input_ids, NodeStatus::activated, "output");  
 
   const std::vector<std::string> biases_ids = {"3", "4"};
-  Eigen::Tensor<float, 3> biases(batch_size, memory_size, biases_ids.size()); 
+  Eigen::Tensor<float, 3> biases(batch_size, memory_size, (int)biases_ids.size()); 
   biases.setConstant(1);
   model2.mapValuesToNodes(biases, biases_ids, NodeStatus::activated, "output"); 
 
@@ -195,7 +195,7 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayerCycles2)
 
   // create the input and biases
   const std::vector<std::string> input_ids = {"0"};
-  Eigen::Tensor<float, 3> input(batch_size, memory_size, input_ids.size()); 
+  Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size()); 
   input.setValues(
     {{{1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}},
     {{2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}},
@@ -206,7 +206,7 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayerCycles2)
   model2.mapValuesToNodes(input, input_ids, NodeStatus::activated, "output");  
 
   const std::vector<std::string> biases_ids = {"3", "4"};
-  Eigen::Tensor<float, 3> biases(batch_size, memory_size, biases_ids.size()); 
+  Eigen::Tensor<float, 3> biases(batch_size, memory_size, (int)biases_ids.size()); 
   biases.setConstant(1);
   model2.mapValuesToNodes(biases, biases_ids, NodeStatus::activated, "output"); 
 
@@ -254,7 +254,7 @@ BOOST_AUTO_TEST_CASE(FPTT)
 
   // create the input and biases
   const std::vector<std::string> input_ids = {"0", "3", "4"};
-  Eigen::Tensor<float, 3> input(batch_size, memory_size, input_ids.size()); 
+  Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size()); 
   input.setValues(
     {{{1, 0, 0}, {2, 0, 0}, {3, 0, 0}, {4, 0, 0}, {5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}},
     {{2, 0, 0}, {3, 0, 0}, {4, 0, 0}, {5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}, {9, 0, 0}},
@@ -318,7 +318,7 @@ BOOST_AUTO_TEST_CASE(getNextUncorrectedLayer2)
 
   // create the input and biases
   const std::vector<std::string> input_ids = {"0"};
-  Eigen::Tensor<float, 3> input(batch_size, memory_size, input_ids.size()); 
+  Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size()); 
   input.setValues(
     {{{1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}},
     {{2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}},
@@ -329,7 +329,7 @@ BOOST_AUTO_TEST_CASE(getNextUncorrectedLayer2)
   model2.mapValuesToNodes(input, input_ids, NodeStatus::activated, "output");  
 
   const std::vector<std::string> biases_ids = {"3", "4"};
-  Eigen::Tensor<float, 3> biases(batch_size, memory_size, biases_ids.size()); 
+  Eigen::Tensor<float, 3> biases(batch_size, memory_size, (int)biases_ids.size()); 
   biases.setConstant(1);
   model2.mapValuesToNodes(biases, biases_ids, NodeStatus::activated, "output");
   
@@ -340,7 +340,7 @@ BOOST_AUTO_TEST_CASE(getNextUncorrectedLayer2)
 
   // calculate the model error and node output error
   std::vector<std::string> output_nodes = {"2"};
-  Eigen::Tensor<float, 2> expected(batch_size, output_nodes.size()); 
+  Eigen::Tensor<float, 2> expected(batch_size, (int)output_nodes.size()); 
   expected.setValues({{2}, {3}, {4}, {5}, {6}});
   model2.calculateError(expected, output_nodes);
 
@@ -383,7 +383,7 @@ BOOST_AUTO_TEST_CASE(getNextUncorrectedLayerCycles2)
 
   // create the input and biases
   const std::vector<std::string> input_ids = {"0"};
-  Eigen::Tensor<float, 3> input(batch_size, memory_size, input_ids.size()); 
+  Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size()); 
   input.setValues(
     {{{1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}},
     {{2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}},
@@ -394,7 +394,7 @@ BOOST_AUTO_TEST_CASE(getNextUncorrectedLayerCycles2)
   model2.mapValuesToNodes(input, input_ids, NodeStatus::activated, "output");  
 
   const std::vector<std::string> biases_ids = {"3", "4"};
-  Eigen::Tensor<float, 3> biases(batch_size, memory_size, biases_ids.size()); 
+  Eigen::Tensor<float, 3> biases(batch_size, memory_size, (int)biases_ids.size()); 
   biases.setConstant(1);
   model2.mapValuesToNodes(biases, biases_ids, NodeStatus::activated, "output");
   
@@ -405,7 +405,7 @@ BOOST_AUTO_TEST_CASE(getNextUncorrectedLayerCycles2)
 
   // calculate the model error and node output error
   std::vector<std::string> output_nodes = {"2"};
-  Eigen::Tensor<float, 2> expected(batch_size, output_nodes.size()); 
+  Eigen::Tensor<float, 2> expected(batch_size, (int)output_nodes.size()); 
   expected.setValues({{2}, {3}, {4}, {5}, {6}});
   model2.calculateError(expected, output_nodes);
 
@@ -458,7 +458,7 @@ BOOST_AUTO_TEST_CASE(BPTT)
 
   // create the input and biases
   const std::vector<std::string> input_ids = {"0", "3", "4"};
-  Eigen::Tensor<float, 3> input(batch_size, memory_size, input_ids.size()); 
+  Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size()); 
   input.setValues(
     {{{1, 0, 0}, {2, 0, 0}, {3, 0, 0}, {4, 0, 0}, {5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}},
     {{2, 0, 0}, {3, 0, 0}, {4, 0, 0}, {5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}, {9, 0, 0}},
@@ -481,9 +481,9 @@ BOOST_AUTO_TEST_CASE(BPTT)
   // calculate the model error
   model2.setLossFunction(ModelLossFunction::MSE);
   const std::vector<std::string> output_nodes = {"2"};
-  // expected sequence
+  // expected sequence5,
   // y = m1*(m2*x + b*yprev) where m1 = 2, m2 = 0.5 and b = -2
-  Eigen::Tensor<float, 2> expected(batch_size, output_nodes.size()); 
+  Eigen::Tensor<float, 2> expected(batch_size, (int)output_nodes.size()); 
   expected.setValues({{2.5}, {3}, {3.5}, {4}, {4.5}});
   model2.calculateError(expected, output_nodes);
 
@@ -495,11 +495,11 @@ BOOST_AUTO_TEST_CASE(BPTT)
   // test values of output nodes
   Eigen::Tensor<float, 3> error(batch_size, memory_size, 5); // dim2: # of model nodes
   error.setValues({
-    {{0, -1.5, -1.5, 0, 0}, {0, -1.5, -1.5, 0, 0}, {0, -1.5, -1.5, 0, 0}, {0, -1.5, -1.5, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}},
-    {{0, -2.2, -2.2, 0, 0}, {0, -2.2, -2.2, 0, 0}, {0, -2.2, -2.2, 0, 0}, {0, -2.2, -2.2, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}},
-    {{0, -2.9, -2.9, 0, 0}, {0, -2.9, -2.9, 0, 0}, {0, -2.9, -2.9, 0, 0}, {0, -2.9, -2.9, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}},
-    {{0, -3.6, -3.6, 0, 0}, {0, -3.6, -3.6, 0, 0}, {0, -3.6, -3.6, 0, 0}, {0, -3.6, -3.6, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}},
-    {{0, -4.3, -4.3, 0, 0}, {0, -4.3, -4.3, 0, 0}, {0, -4.3, -4.3, 0, 0}, {0, -4.3, -4.3, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}}}
+    {{0.0f, -1.5f, -1.5f, 0.0f, 0}, {0.0f, -1.5f, -1.5f, 0.0f, 0}, {0.0f, -1.5f, -1.5f, 0.0f, 0}, {0.0f, -1.5f, -1.5f, 0.0f, 0}, {0.0f, 0.0f, 0.0f, 0.0f, 0}, {0.0f, 0.0f, 0.0f, 0.0f, 0}, {0.0f, 0.0f, 0.0f, 0.0f, 0}, {0.0f, 0.0f, 0.0f, 0.0f, 0}},
+    {{0.0f, -2.2f, -2.2f, 0.0f, 0}, {0.0f, -2.2f, -2.2f, 0.0f, 0}, {0.0f, -2.2f, -2.2f, 0.0f, 0}, {0.0f, -2.2f, -2.2f, 0.0f, 0}, {0.0f, 0.0f, 0.0f, 0.0f, 0}, {0.0f, 0.0f, 0.0f, 0.0f, 0}, {0.0f, 0.0f, 0.0f, 0.0f, 0}, {0.0f, 0.0f, 0.0f, 0.0f, 0}},
+    {{0.0f, -2.9f, -2.9f, 0.0f, 0}, {0.0f, -2.9f, -2.9f, 0.0f, 0}, {0.0f, -2.9f, -2.9f, 0.0f, 0}, {0.0f, -2.9f, -2.9f, 0.0f, 0}, {0.0f, 0.0f, 0.0f, 0.0f, 0}, {0.0f, 0.0f, 0.0f, 0.0f, 0}, {0.0f, 0.0f, 0.0f, 0.0f, 0}, {0.0f, 0.0f, 0.0f, 0.0f, 0}},
+    {{0.0f, -3.6f, -3.6f, 0.0f, 0}, {0.0f, -3.6f, -3.6f, 0.0f, 0}, {0.0f, -3.6f, -3.6f, 0.0f, 0}, {0.0f, -3.6f, -3.6f, 0.0f, 0}, {0.0f, 0.0f, 0.0f, 0.0f, 0}, {0.0f, 0.0f, 0.0f, 0.0f, 0}, {0.0f, 0.0f, 0.0f, 0.0f, 0}, {0.0f, 0.0f, 0.0f, 0.0f, 0}},
+    {{0.0f, -4.3f, -4.3f, 0.0f, 0}, {0.0f, -4.3f, -4.3f, 0.0f, 0}, {0.0f, -4.3f, -4.3f, 0.0f, 0}, {0.0f, -4.3f, -4.3f, 0.0f, 0}, {0.0f, 0.0f, 0.0f, 0.0f, 0}, {0.0f, 0.0f, 0.0f, 0.0f, 0}, {0.0f, 0.0f, 0.0f, 0.0f, 0}, {0.0f, 0.0f, 0.0f, 0.0f, 0}}}
   ); 
   const std::vector<std::string> error_nodes = {"0", "1", "2", "3", "4"};
   
@@ -528,7 +528,7 @@ BOOST_AUTO_TEST_CASE(updateWeights2)
 
   // create the input and biases
   const std::vector<std::string> input_ids = {"0", "3", "4"};
-  Eigen::Tensor<float, 3> input(batch_size, memory_size, input_ids.size()); 
+  Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size()); 
   input.setValues(
     {{{1, 0, 0}, {2, 0, 0}, {3, 0, 0}, {4, 0, 0}, {5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}},
     {{2, 0, 0}, {3, 0, 0}, {4, 0, 0}, {5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}, {9, 0, 0}},
@@ -553,7 +553,7 @@ BOOST_AUTO_TEST_CASE(updateWeights2)
   const std::vector<std::string> output_nodes = {"2"};
   // expected sequence
   // y = m1*(m2*x + b*yprev) where m1 = 2, m2 = 0.5 and b = -2
-  Eigen::Tensor<float, 2> expected(batch_size, output_nodes.size()); 
+  Eigen::Tensor<float, 2> expected(batch_size, (int)output_nodes.size()); 
   expected.setValues({{2.5}, {3}, {3.5}, {4}, {4.5}});
   model2.calculateError(expected, output_nodes);
 
@@ -566,7 +566,7 @@ BOOST_AUTO_TEST_CASE(updateWeights2)
   // test values of output nodes
   std::vector<std::string> weight_nodes = {"0", "1", "2", "3", "4"};
   Eigen::Tensor<float, 1> weights(weight_nodes.size());
-  weights.setValues({0.248, -1.312, -1.312, 1.0, 1.0}); 
+  weights.setValues({0.248f, -1.312f, -1.312f, 1.0f, 1.0f}); 
   
   for (int i=0; i<weight_nodes.size(); ++i)
   {       
@@ -634,7 +634,7 @@ BOOST_AUTO_TEST_CASE(modelTrainer2)
 
   // create the input and biases
   const std::vector<std::string> input_ids = {"0", "3", "4"};
-  Eigen::Tensor<float, 3> input(batch_size, memory_size, input_ids.size()); 
+  Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size()); 
   input.setValues(
     {{{1, 0, 0}, {2, 0, 0}, {3, 0, 0}, {4, 0, 0}, {5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}},
     {{2, 0, 0}, {3, 0, 0}, {4, 0, 0}, {5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}, {9, 0, 0}},
@@ -654,7 +654,7 @@ BOOST_AUTO_TEST_CASE(modelTrainer2)
   // expected output
   const std::vector<std::string> output_nodes = {"2"};
   // y = m1*(m2*x + b*yprev) where m1 = 0.5, m2 = 2.0 and b = -1
-  Eigen::Tensor<float, 2> expected(batch_size, output_nodes.size()); 
+  Eigen::Tensor<float, 2> expected(batch_size, (int)output_nodes.size()); 
   expected.setValues({{2.5}, {3}, {3.5}, {4}, {4.5}});
   model2a.setLossFunction(ModelLossFunction::MSE);
 
