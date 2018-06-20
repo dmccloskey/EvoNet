@@ -196,6 +196,39 @@ public:
       std::vector<std::string>& source_nodes,
       const std::vector<std::string>& sink_nodes,
       std::vector<std::string>& sink_nodes_with_cycles);
+
+	/**
+	@brief getForwardPropogationLayerNodeAndLinkNames.
+
+	Note that nodes need not be the same type.
+
+	@param[in] time_step Time step to activate.
+	*/
+	void getForwardPropogationLayerNodeAndLinkNames(
+	  const int& time_step,
+	  std::vector<std::string>& links,
+	  std::vector<std::string>& source_nodes,
+	  std::vector<std::string>& sink_nodes);
+
+	/**
+	@brief Allocate tensor memory for all forward
+	  propogation tensors.
+
+	Note that nodes need not be the same type.
+
+	@param[in] time_step Time step to activate.
+	*/
+	void allocateForwardPropogationLayerTensors(const int& time_step);
+
+	///**
+	//@brief Forward propogate the layer input by calculating
+	//  the net node input and activated node output.
+
+	//Note that nodes need not be the same type.
+
+	//@param[in] time_step Time step to activate.
+	//*/
+	//void forwardPropogate(const int& time_step);
  
     /**
       @brief A prelude to a forward propogation step. Computes the net
@@ -518,6 +551,18 @@ private:
 
     // TODO: will most likely need to expand to a derived class model (e.g., SolverOp)
     SmartPeak::ModelLossFunction loss_function_; ///< Model loss function
+
+	// Internal structures to allow for efficient multi-threading
+	// and off-loading of computation from host to devices
+	std::vector<std::vector<std::string>> FP_node_names_; // layers of nodes in computational order for TFPTT
+	std::vector<std::vector<std::string>> FP_link_names_; // lyaers of links in computation order for TFPTT
+	std::vector<Eigen::Tensor<float, 2>> FP_node_tensors_; // layers of nodes in computational order for TFPTT
+	std::vector<Eigen::Tensor<float, 2>> FP_link_tensors_; // lyaers of links in computation order for TFPTT
+
+	std::vector<std::vector<std::string>> BP_node_layers_; // layers of nodes in computational order for TBPTT
+	std::vector<std::vector<std::string>> BP_link_layers_; // lyaers of links in computation order for TBPTT
+	std::vector<Eigen::Tensor<float, 2>> BP_node_tensors_; // layers of nodes in computational order for TFPTT
+	std::vector<Eigen::Tensor<float, 2>> BP_link_tensors_; // lyaers of links in computation order for TBPTT
 
   };
 }

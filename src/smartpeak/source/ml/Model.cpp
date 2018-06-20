@@ -196,7 +196,7 @@ namespace SmartPeak
       }
     }
     // pruneNodes(); // Allow dangling nodes to exist
-    pruneWeights();
+    //pruneWeights();  // testing
   }
 
   Link Model::getLink(const std::string& link_name) const
@@ -594,86 +594,6 @@ namespace SmartPeak
     }
   }
 
-  // Failed attempt to link Node memory directly with the tensor used for computation
-  //=================================================================================
-  // void Model::forwardPropogateLayerNetInput(
-  //   const std::vector<std::string>& links,
-  //   const std::vector<std::string>& source_nodes,
-  //   const std::vector<std::string>& sink_nodes)
-  // {
-  //   // infer the batch size from the first source node
-  //   const int batch_size = nodes_.at(source_nodes[0]).getOutput().dimension(0);
-
-  //   // concatenate the source and weight tensors
-  //   // using col-major ordering where rows are the batch vectors
-  //   // and cols are the nodes
-
-  //   // source_ptr
-  //   float source_ptr [source_nodes.size() * batch_size];
-  //   for (int i=0; i<source_nodes.size(); ++i)
-  //   {
-  //     for (int j=0; j<batch_size; ++j)
-  //     {
-  //       if (nodes_.at(source_nodes[i]).getStatus() == NodeStatus::activated)
-  //       {
-  //         source_ptr[i*batch_size + j] = nodes_.at(source_nodes[i]).getOutputPointer()[j]; //current time-step
-  //       }
-  //       else if (nodes_.at(source_nodes[i]).getStatus() == NodeStatus::initialized)
-  //       {
-  //         source_ptr[i*batch_size + j] = nodes_.at(source_nodes[i]).getOutputPointer()[batch_size + j]; //previous time-step
-  //       }
-  //     }
-  //   }
-
-  //   // weight_ptr
-  //   float weight_ptr [source_nodes.size() * sink_nodes.size()];
-  //   for (int i=0; i<sink_nodes.size(); ++i)
-  //   {
-  //     for (int j=0; j<source_nodes.size(); ++j)
-  //     {
-  //       for (const std::string& link : links)
-  //       {
-  //         if (links_.at(link).getSinkNodeName() == sink_nodes[i] &&
-  //         links_.at(link).getSourceNodeName() == source_nodes[j])
-  //         {
-  //           weight_ptr[i*source_nodes.size() + j] = weights_.at(links_.at(link).getWeightName()).getWeight();
-  //           break;
-  //         }
-  //       }
-  //     }
-  //   }
-  //   float sink_ptr [sink_nodes.size() * batch_size];
-  //   // // Not necessary because the underlying data will not be linked with the tensor
-  //   // // in the current implementation
-  //   // for (int i=0; i<sink_nodes.size(); ++i)
-  //   // {
-  //   //   for (int j=0; j<batch_size; ++j)
-  //   //   {
-  //   //     sink_ptr[i*batch_size + j] = nodes_.at(sink_nodes[i]).getOutputPointer()[j]; //current time-step
-  //   //   }
-  //   // }
-
-  //   // construct the source and weight tensors
-  //   Eigen::TensorMap<Eigen::Tensor<float, 2>> source_tensor(source_ptr, batch_size, source_nodes.size());
-  //   // std::cout << "source_tensor " << source_tensor << std::endl;
-  //   Eigen::TensorMap<Eigen::Tensor<float, 2>> weight_tensor(weight_ptr, source_nodes.size(), sink_nodes.size());
-  //   // std::cout << "weight_tensor " << weight_tensor << std::endl;
-  //   Eigen::TensorMap<Eigen::Tensor<float, 2>> sink_tensor(sink_ptr, batch_size, sink_nodes.size());
-
-  //   // compute the output tensor
-  //   Eigen::array<Eigen::IndexPair<int>, 1> product_dims = {Eigen::IndexPair<int>(1, 0)};
-  //   sink_tensor = source_tensor.contract(weight_tensor, product_dims);
-  //   // std::cout << "sink_tensor " << sink_tensor << std::endl;
-
-  //   // update the sink nodes
-  //   mapValuesToNodes(sink_tensor, 0, sink_nodes, NodeStatus::activated);
-  //   // std::cout<<&sink_ptr[0]<<std::endl;
-  //   // std::cout<<sink_ptr[0]<<std::endl;
-  //   // std::cout<<&nodes_.at(sink_nodes[0]).getOutputPointer()[0]<<std::endl;
-  //   // std::cout<<nodes_.at(sink_nodes[0]).getOutputPointer()[0]<<std::endl;
-  // }
-  //=================================================================================
-
   void Model::forwardPropogateLayerNetInput(
     const std::vector<std::string>& links,
     const std::vector<std::string>& source_nodes,
@@ -753,6 +673,83 @@ namespace SmartPeak
       nodes_.at(node).calculateActivation(time_step);
       nodes_.at(node).calculateDerivative(time_step);
     }
+  }
+
+  void Model::getForwardPropogationLayerNodeAndLinkNames(
+	const int& time_step,
+	std::vector<std::string>& links_O,
+	std::vector<std::string>& source_nodes_O,
+	std::vector<std::string>& sink_nodes_O)
+  {
+	const int max_iters = 1e6;
+	for (int iter = 0; iter<max_iters; ++iter)
+	{
+	  // std::cout<<"Model::forwardPropogate() iter: "<<iter<<std::endl;
+
+	  // get the next hidden layer
+	  std::vector<std::string> links, source_nodes, sink_nodes;
+	  getNextInactiveLayer(links, source_nodes, sink_nodes);
+	  // std::cout<<"Model::forwardPropogate() getNextInactiveLayer links, source, and sink sizes "<<std::endl;
+	  // std::cout<<"Model::forwardPropogate() links.size(): "<<links.size()<<std::endl;
+	  // std::cout<<"Model::forwardPropogate() source nodes: "<<source_nodes.size()<<std::endl;
+	  // std::cout<<"Model::forwardPropogate() sink nodes: "<<sink_nodes.size()<<std::endl;
+
+	  // get biases,
+	  std::vector<std::string> sink_nodes_with_biases;
+	  getNextInactiveLayerBiases(links, source_nodes, sink_nodes, sink_nodes_with_biases);
+	  // std::cout<<"Model::forwardPropogate() getNextInactiveLayerBiases links, source, and sink sizes "<<std::endl;
+	  // std::cout<<"Model::forwardPropogate() links.size(): "<<links.size()<<std::endl;
+	  // std::cout<<"Model::forwardPropogate() source nodes: "<<source_nodes.size()<<std::endl;
+	  // std::cout<<"Model::forwardPropogate() sink nodes: "<<sink_nodes.size()<<std::endl;
+
+	  // get cycles
+	  std::vector<std::string> links_cycles, source_nodes_cycles, sink_nodes_cycles;
+	  getNextInactiveLayerCycles(links_cycles, source_nodes_cycles, sink_nodes, sink_nodes_cycles);
+	  // std::cout<<"Model::forwardPropogate() getNextInactiveLayerCycles links, source, and sink sizes "<<std::endl;
+	  // std::cout<<"Model::forwardPropogate() sink_nodes_cycles: "<<sink_nodes_cycles.size()<<std::endl;
+	  // std::cout<<"Model::forwardPropogate() links: "<<links.size()<<std::endl;
+	  // std::cout<<"Model::forwardPropogate() source nodes: "<<source_nodes.size()<<std::endl;
+	  // std::cout<<"Model::forwardPropogate() sink nodes: "<<sink_nodes.size()<<std::endl;
+
+	  if (sink_nodes_cycles.size() == sink_nodes.size())
+	  { // all forward propogation steps have caught up
+		// add sink nodes with cycles to the forward propogation step
+		links.insert(links.end(), links_cycles.begin(), links_cycles.end());
+		source_nodes.insert(source_nodes.end(), source_nodes_cycles.begin(), source_nodes_cycles.end());
+	  }
+	  else
+	  { // remove source/sink nodes with cycles from the forward propogation step
+		for (const std::string node_name : sink_nodes_cycles)
+		{
+		  sink_nodes.erase(std::remove(sink_nodes.begin(), sink_nodes.end(), node_name), sink_nodes.end());
+		}
+	  }
+
+	  // check if all nodes have been activated
+	  if (links.size() == 0)
+	  {
+		break;
+	  }
+	  // std::cout<<"Model::forwardPropogate() final links, source, and sink sizes "<<std::endl;
+	  // std::cout<<"Model::forwardPropogate() links.size(): "<<links.size()<<std::endl;
+	  // std::cout<<"Model::forwardPropogate() source nodes: "<<source_nodes.size()<<std::endl;
+	  // std::cout<<"Model::forwardPropogate() sink nodes: "<<sink_nodes.size()<<std::endl;
+
+	  // split sink nodes and links by activation function
+	  std::map<NodeActivation, std::vector<std::string>> node_activations_map;
+	  for (const std::string& node_name : sink_nodes)
+	  {
+		std::vector<std::string> node_names = { node_name };
+		auto found = node_activations_map.emplace(nodes_[node_name].getActivation(), node_names);
+		if (!found.second)
+		{
+		  node_activations_map[nodes_[node_name].getActivation()].push_back(node_name);
+		}
+	  }
+
+	  // change the node activation status
+	  // [NOTE: is this needed or can we just check if the node is already found?]
+	}
   }
   
   void Model::forwardPropogate(const int& time_step)
@@ -1016,83 +1013,6 @@ namespace SmartPeak
       }
     }
   }
-
-  // Failed attempt to link Node memory direction with computational tensor
-  //=======================================================================
-  // void Model::backPropogateLayerError(
-  //   const std::vector<std::string>& links,
-  //   const std::vector<std::string>& source_nodes,
-  //   const std::vector<std::string>& sink_nodes)
-  // {
-  //   // infer the batch size from the first source node
-  //   const int batch_size = nodes_.at(source_nodes[0]).getOutput().dimension(0);
-
-  //   // concatenate the source and weight tensors
-  //   // using col-major ordering where rows are the batch vectors
-  //   // and cols are the nodes
-
-  //   // source_ptr
-  //   float source_ptr [source_nodes.size() * batch_size];
-  //   for (int i=0; i<source_nodes.size(); ++i)
-  //   {
-  //     for (int j=0; j<batch_size; ++j)
-  //     {
-  //       source_ptr[i*batch_size + j] = nodes_.at(source_nodes[i]).getErrorPointer()[j];
-  //     }
-  //   }
-  //   // weight_ptr
-  //   float weight_ptr [source_nodes.size() * sink_nodes.size()];
-  //   for (int i=0; i<sink_nodes.size(); ++i)
-  //   {
-  //     for (int j=0; j<source_nodes.size(); ++j)
-  //     {
-  //       for (const std::string& link : links)
-  //       {
-  //         if (links_.at(link).getSourceNodeName() == sink_nodes[i] &&
-  //         links_.at(link).getSinkNodeName() == source_nodes[j])
-  //         {
-  //           weight_ptr[i*source_nodes.size() + j] = weights_.at(links_.at(link).getWeightName()).getWeight();
-  //           break;
-  //         }
-  //       }
-  //     }
-  //   }
-  //   // derivative_ptr
-  //   float derivative_ptr [sink_nodes.size() * batch_size];
-  //   for (int i=0; i<sink_nodes.size(); ++i)
-  //   {
-  //     for (int j=0; j<batch_size; ++j)
-  //     {
-  //       derivative_ptr[i*batch_size + j] = nodes_.at(sink_nodes[i]).getDerivativePointer()[j];
-  //     }
-  //   }
-  //   float sink_ptr [sink_nodes.size() * batch_size];
-  //   for (int i=0; i<sink_nodes.size(); ++i)
-  //   {
-  //     for (int j=0; j<batch_size; ++j)
-  //     {
-  //       sink_ptr[i*batch_size + j] = nodes_.at(sink_nodes[i]).getOutputPointer()[j];
-  //     }
-  //   }
-
-  //   // construct the source and weight tensors
-  //   Eigen::TensorMap<Eigen::Tensor<float, 2>> source_tensor(source_ptr, batch_size, source_nodes.size());
-  //   // std::cout << "source_tensor " << source_tensor << std::endl;
-  //   Eigen::TensorMap<Eigen::Tensor<float, 2>> weight_tensor(weight_ptr, source_nodes.size(), sink_nodes.size());
-  //   // std::cout << "weight_tensor " << weight_tensor << std::endl;
-  //   Eigen::TensorMap<Eigen::Tensor<float, 2>> derivative_tensor(derivative_ptr, batch_size, sink_nodes.size());
-  //   // std::cout << "derivative_tensor " << derivative_tensor << std::endl;
-  //   Eigen::TensorMap<Eigen::Tensor<float, 2>> sink_tensor(sink_ptr, batch_size, sink_nodes.size());
-
-  //   // compute the output tensor
-  //   Eigen::array<Eigen::IndexPair<int>, 1> product_dims = {Eigen::IndexPair<int>(1, 0)};
-  //   sink_tensor = source_tensor.contract(weight_tensor, product_dims) * derivative_tensor;
-  //   // std::cout << "sink_tensor " << sink_tensor << std::endl;
-
-  //   // update the sink nodes
-  //   mapValuesToNodes(sink_tensor, 0, sink_nodes, NodeStatus::corrected);
-  // }
-  //=======================================================================
 
   void Model::backPropogateLayerError(
     const std::vector<std::string>& links,

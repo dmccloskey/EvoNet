@@ -267,78 +267,78 @@ Eigen::Tensor<int, 2> OneHotEncoder(Eigen::Tensor<T, 2>& data, const std::vector
 
 int main(int argc, char** argv)
 {
-  try
-  {
-	// adapted from "eigen / unsupported / test / cxx11_tensor_cuda.cu"
+ // try
+ // {
+	//// adapted from "eigen / unsupported / test / cxx11_tensor_cuda.cu"
 
-	int n_gpus = 0;
-	cudaGetDeviceCount(&n_gpus);
-    if (n_gpus > 0)
-    {
-	  std::cout << n_gpus <<" were found." << std::endl;
-    }
+	//int n_gpus = 0;
+	//cudaGetDeviceCount(&n_gpus);
+ //   if (n_gpus > 0)
+ //   {
+	//  std::cout << n_gpus <<" were found." << std::endl;
+ //   }
 
-    int tensor_dim = 2;
-    Eigen::Tensor<float, 1> in1(tensor_dim);
-    Eigen::Tensor<float, 1> in2(tensor_dim);
-    Eigen::Tensor<float, 1> out(tensor_dim);
-    in1.setRandom();
-    in2.setRandom();
+ //   int tensor_dim = 2;
+ //   Eigen::Tensor<float, 1> in1(tensor_dim);
+ //   Eigen::Tensor<float, 1> in2(tensor_dim);
+ //   Eigen::Tensor<float, 1> out(tensor_dim);
+ //   in1.setRandom();
+ //   in2.setRandom();
 
-    std::size_t in1_bytes = in1.size() * sizeof(float);
-    std::size_t in2_bytes = in2.size() * sizeof(float);
-    std::size_t out_bytes = out.size() * sizeof(float);
+ //   std::size_t in1_bytes = in1.size() * sizeof(float);
+ //   std::size_t in2_bytes = in2.size() * sizeof(float);
+ //   std::size_t out_bytes = out.size() * sizeof(float);
 
-    float* d_in1;
-    float* d_in2;
-    float* d_out;
-    cudaMalloc((void**)(&d_in1), in1_bytes);
-    cudaMalloc((void**)(&d_in2), in2_bytes);
-    cudaMalloc((void**)(&d_out), out_bytes);
+ //   float* d_in1;
+ //   float* d_in2;
+ //   float* d_out;
+ //   cudaMalloc((void**)(&d_in1), in1_bytes);
+ //   cudaMalloc((void**)(&d_in2), in2_bytes);
+ //   cudaMalloc((void**)(&d_out), out_bytes);
 
-    cudaMemcpy(d_in1, in1.data(), in1_bytes, cudaMemcpyHostToDevice);
-    cudaMemcpy(d_in2, in2.data(), in2_bytes, cudaMemcpyHostToDevice);
+ //   cudaMemcpy(d_in1, in1.data(), in1_bytes, cudaMemcpyHostToDevice);
+ //   cudaMemcpy(d_in2, in2.data(), in2_bytes, cudaMemcpyHostToDevice);
 
-    Eigen::CudaStreamDevice stream;
-    Eigen::GpuDevice gpu_device(&stream);
+ //   Eigen::CudaStreamDevice stream;
+ //   Eigen::GpuDevice gpu_device(&stream);
 
-    Eigen::TensorMap<Eigen::Tensor<float, 1>, Eigen::Aligned> gpu_in1(
-      d_in1, tensor_dim);
-    Eigen::TensorMap<Eigen::Tensor<float, 1>, Eigen::Aligned> gpu_in2(
-      d_in2, tensor_dim);
-    Eigen::TensorMap<Eigen::Tensor<float, 1>, Eigen::Aligned> gpu_out(
-      d_out, tensor_dim);
+ //   Eigen::TensorMap<Eigen::Tensor<float, 1>, Eigen::Aligned> gpu_in1(
+ //     d_in1, tensor_dim);
+ //   Eigen::TensorMap<Eigen::Tensor<float, 1>, Eigen::Aligned> gpu_in2(
+ //     d_in2, tensor_dim);
+ //   Eigen::TensorMap<Eigen::Tensor<float, 1>, Eigen::Aligned> gpu_out(
+ //     d_out, tensor_dim);
 
-    gpu_out.device(gpu_device) = gpu_in1 + gpu_in2;
-    
-	cudaError_t result = cudaMemcpyAsync(out.data(), d_out, out_bytes, cudaMemcpyDeviceToHost, gpu_device.stream());
-	if (result != cudaSuccess)
-	{
-	  throw std::runtime_error("failed to copy to device memory");
-	}
+ //   gpu_out.device(gpu_device) = gpu_in1 + gpu_in2;
+ //   
+	//cudaError_t result = cudaMemcpyAsync(out.data(), d_out, out_bytes, cudaMemcpyDeviceToHost, gpu_device.stream());
+	//if (result != cudaSuccess)
+	//{
+	//  throw std::runtime_error("failed to copy to device memory");
+	//}
 
-	cudaStreamSynchronize(gpu_device.stream());
+	//cudaStreamSynchronize(gpu_device.stream());
 
-	for (int i = 0; i < tensor_dim; ++i)
-	{
-	  std::cout << "OUT: " << out(i);
-	  std::cout << "IN1 + IN2: " << in1(i) + in2(1) << std::endl;
-	}
+	//for (int i = 0; i < tensor_dim; ++i)
+	//{
+	//  std::cout << "OUT: " << out(i);
+	//  std::cout << "IN1 + IN2: " << in1(i) + in2(1) << std::endl;
+	//}
 
-    cudaFree(d_in1);
-    cudaFree(d_in2);
-    cudaFree(d_out);
-  }
-  catch (std::exception& e)
-  {
-    printf("Exception: %s", e.what());
-    return false;
-  }
-  catch (...)
-  {
-    printf("Exception");
-    return false;
-  }
+ //   cudaFree(d_in1);
+ //   cudaFree(d_in2);
+ //   cudaFree(d_out);
+ // }
+ // catch (std::exception& e)
+ // {
+ //   printf("Exception: %s", e.what());
+ //   return false;
+ // }
+ // catch (...)
+ // {
+ //   printf("Exception");
+ //   return false;
+ // }
 
   PopulationTrainer population_trainer;
 
@@ -359,11 +359,13 @@ int main(int argc, char** argv)
 
   // Read input images [BUG FREE]
   std::cout<<"Reading in the training and validation data..."<<std::endl;
-  const std::string training_data_filename = "/home/user/data/train-images.idx3-ubyte";
+  const std::string training_data_filename = "C:/Users/domccl/GitHub/mnist/train-images.idx3-ubyte";
+  //const std::string training_data_filename = "/home/user/data/train-images.idx3-ubyte";
   Eigen::Tensor<float, 2> training_data(training_data_size, input_size);
   ReadMNIST<float>(training_data_filename, training_data, false);
 
-  const std::string validation_data_filename = "/home/user/data/t10k-images.idx3-ubyte";
+  const std::string validation_data_filename = "C:/Users/domccl/GitHub/mnist/t10k-images.idx3-ubyte";
+  //const std::string validation_data_filename = "/home/user/data/t10k-images.idx3-ubyte";
   Eigen::Tensor<float, 2> validation_data(validation_data_size, input_size);
   ReadMNIST<float>(validation_data_filename, validation_data, false);
 
@@ -373,11 +375,13 @@ int main(int argc, char** argv)
 
   // Read input label [BUG FREE]
   std::cout<<"Reading in the training and validation labels..."<<std::endl;  
-  const std::string training_labels_filename = "/home/user/data/train-labels.idx1-ubyte";
+  const std::string training_labels_filename = "C:/Users/domccl/GitHub/mnist/train-labels.idx1-ubyte";
+  //const std::string training_labels_filename = "/home/user/data/train-labels.idx1-ubyte";
   Eigen::Tensor<float, 2> training_labels(training_data_size, 1);
   ReadMNIST<float>(training_labels_filename, training_labels, true);
   
-  const std::string validation_labels_filename = "/home/user/data/t10k-labels.idx1-ubyte";
+  const std::string validation_labels_filename = "C:/Users/domccl/GitHub/mnist/t10k-labels.idx1-ubyte";
+  //const std::string validation_labels_filename = "/home/user/data/t10k-labels.idx1-ubyte";
   Eigen::Tensor<float, 2> validation_labels(validation_data_size, 1);
   ReadMNIST<float>(validation_labels_filename, validation_labels, true);
 

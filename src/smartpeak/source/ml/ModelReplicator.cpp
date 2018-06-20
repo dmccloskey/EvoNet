@@ -558,7 +558,8 @@ namespace SmartPeak
     model.addLinks({link});
 
     // remove the unmodified link
-    model.removeLinks({input_link_name});
+	// [CHECK: is this needed?  identified as a high CPU call due to prune weights]
+    model.removeLinks({input_link_name});  
   }
 
   void ModelReplicator::deleteNode(Model& model, int prune_iterations)
