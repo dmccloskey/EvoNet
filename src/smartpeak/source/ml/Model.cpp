@@ -736,14 +736,17 @@ namespace SmartPeak
 	  // std::cout<<"Model::forwardPropogate() sink nodes: "<<sink_nodes.size()<<std::endl;
 
 	  // split sink nodes and links by activation function
-	  std::map<NodeActivation, std::vector<std::string>> node_activations_map;
+	  std::map<NodeActivation, std::vector<std::string>> source_nodes_map;
+	  std::map<NodeActivation, std::vector<std::string>> sink_nodes_map;
+	  std::map<NodeActivation, std::vector<std::string>> links_map;
+	  int index = 0;
 	  for (const std::string& node_name : sink_nodes)
 	  {
 		std::vector<std::string> node_names = { node_name };
-		auto found = node_activations_map.emplace(nodes_[node_name].getActivation(), node_names);
+		auto found = sink_nodes_map.emplace(nodes_[node_name].getActivation(), node_names);
 		if (!found.second)
 		{
-		  node_activations_map[nodes_[node_name].getActivation()].push_back(node_name);
+		  sink_nodes_map[nodes_[node_name].getActivation()].push_back(node_name);
 		}
 	  }
 
