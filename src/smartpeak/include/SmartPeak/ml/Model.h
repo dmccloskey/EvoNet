@@ -204,7 +204,7 @@ public:
 
 	@param[in] time_step Time step to activate.
 	*/
-	void getForwardPropogationLayerNodeAndLinkNames(
+	void cacheFPLayerNodeAndLinkNames(
 	  const int& time_step,
 	  std::vector<std::string>& links,
 	  std::vector<std::string>& source_nodes,

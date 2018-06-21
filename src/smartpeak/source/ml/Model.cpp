@@ -675,7 +675,7 @@ namespace SmartPeak
     }
   }
 
-  void Model::getForwardPropogationLayerNodeAndLinkNames(
+  void Model::cacheFPLayerNodeAndLinkNames(
 	const int& time_step,
 	std::vector<std::string>& links_O,
 	std::vector<std::string>& source_nodes_O,
