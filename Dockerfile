@@ -2,8 +2,8 @@
 #https://hub.docker.com/r/ducatel/visual-studio-linux-build-box/
 
 # FROM dmccloskey/docker-openms-contrib:develop
-# FROM dmccloskey/docker-openms-contrib:smartPeak
-FROM dmccloskey/docker-openms-contrib:smartpeak2
+FROM dmccloskey/docker-openms-contrib:smartPeak
+# FROM dmccloskey/docker-openms-contrib:smartpeak2
 
 USER root
 COPY docker-entrypoint.sh /usr/local/bin/

@@ -19,12 +19,12 @@ cd /home/user/code/build
 cmake -DCMAKE_PREFIX_PATH="/usr/local/contrib-build/;/usr/local/contrib/;/usr/;/usr/local" -DBOOST_USE_STATIC=OFF -DHAS_XSERVER=Off ..
 cmake -DCMAKE_PREFIX_PATH="/usr/local/dependencies-build/;/usr/local/smartPeak_dependencies/;/usr/;/usr/local" -DBOOST_USE_STATIC=OFF -DHAS_XSERVER=Off ..
 cmake -DEIGEN_USE_GPU=ON -DCUDA_TOOLKIT_ROOT_DIR="/usr/local/cuda-9.2" -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH="/usr/local/contrib-build/;/usr/local/contrib-build/include/;/usr/local/smartPeak_dependencies/;/usr/;/usr/local" -DBOOST_USE_STATIC=OFF -DHAS_XSERVER=Off ..
-cmake -DEIGEN_USE_GPU=OFF -DCUDA_TOOLKIT_ROOT_DIR="/usr/local/cuda-9.2" -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH="/usr/local/contrib-build/;/usr/local/contrib-build/include/;/usr/local/smartPeak_dependencies/;/usr/;/usr/local" -DBOOST_USE_STATIC=OFF -DHAS_XSERVER=Off ..
+cmake -DEIGEN_USE_GPU=OFF -DUSE_SUPERBUILD=OFF -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH="/usr/local/contrib-build/;/usr/local/contrib-build/include/;/usr/local/smartPeak_dependencies/;/usr/;/usr/local" -DBOOST_USE_STATIC=OFF -DHAS_XSERVER=Off ..
 ctest -DCTEST_MEMORYCHECK_COMMAND="/usr/bin/valgrind" -DMemoryCheckCommand="/usr/bin/valgrind" -T memcheck -R Model_DAG_test -V
 
 ##Windows (MSVC or Cygwin64)
 ###dmccloskey
-cmake -DEIGEN_USE_GPU=OFF -DBOOST_USE_STATIC=OFF -G "Visual Studio 15 2017 Win64" -T host=x64 -DUSE_SUPERBUILD=OFF -DBOOST_ROOT=C:/Users/dmccloskey/Documents/GitHub/boost_1_67 -DEIGEN3_INCLUDE_DIR=C:/Users/dmccloskey/Documents/GitHub/eigen ..
+cmake -DEIGEN_USE_GPU=OFF -DBOOST_USE_STATIC=OFF -G "Visual Studio 15 2017 Win64" -T host=x64 -DUSE_SUPERBUILD=OFF -DBoost_INCLUDE_DIR=C:/Users/dmccloskey/Documents/GitHub/Boost_1_67 -DBOOST_ROOT=C:/Users/dmccloskey/Documents/GitHub/Boost_1_67 -DEIGEN3_INCLUDE_DIR=C:/Users/dmccloskey/Documents/GitHub/eigen ..
 
 ###domccl
 cmake -G "Visual Studio 15 2017 Win64" -T host=x64 -DUSE_SUPERBUILD=ON ..
