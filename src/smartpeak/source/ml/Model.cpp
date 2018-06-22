@@ -491,6 +491,28 @@ namespace SmartPeak
   }
   
   void Model::getNextInactiveLayer(
+    std::map<std::string, std::vector<std::string>>& sink_links_map)
+  {
+
+    // get all links where the source node is active and the sink node is inactive
+    // except for biases
+    for (auto& link_map : links_)
+    {
+      if (nodes_.at(link_map.second.getSourceNodeName()).getType() != NodeType::bias &&
+        nodes_.at(link_map.second.getSourceNodeName()).getStatus() == NodeStatus::activated && 
+        nodes_.at(link_map.second.getSinkNodeName()).getStatus() == NodeStatus::initialized)
+      {
+        std::vector<std::string> links = {link_map.second.getName()};
+        auto found = sink_links_map.emplace(link_map.second.getSinkNodeName(), links);        
+        if (!found.second)
+        {
+          sink_links_map[link_map.second.getSinkNodeName()].push_back(link_map.second.getName());
+        }
+      }
+    }
+  }  
+  
+  void Model::getNextInactiveLayer(
     std::vector<std::string>& links,
     std::vector<std::string>& source_nodes,
     std::vector<std::string>& sink_nodes)
@@ -520,6 +542,29 @@ namespace SmartPeak
         {
           sink_nodes.push_back(link_map.second.getSinkNodeName());
         }
+      }
+    }
+  }
+  
+  void Model::getNextInactiveLayerBiases(
+    std::map<std::string, std::vector<std::string>>& sink_links_map,
+    std::vector<std::string>& sink_nodes_with_biases)
+  {
+
+    // get all the biases for the sink nodes
+    for (auto& link_map : links_)
+    {
+      if (        
+        // does not allow for cycles
+        nodes_.at(link_map.second.getSourceNodeName()).getType() == NodeType::bias && 
+        nodes_.at(link_map.second.getSourceNodeName()).getStatus() == NodeStatus::activated &&
+        // required regardless if cycles are or are not allowed
+        nodes_.at(link_map.second.getSinkNodeName()).getStatus() == NodeStatus::initialized &&
+        sink_links_map.count(link_map.second.getSinkNodeName()) != 0 // sink node has already been identified
+      )
+      {
+        sink_links_map[link_map.second.getSinkNodeName()].push_back(link_map.second.getName());
+        sink_nodes_with_biases.push_back(link_map.second.getSinkNodeName());
       }
     }
   }
@@ -561,6 +606,27 @@ namespace SmartPeak
   }
   
   void Model::getNextInactiveLayerCycles(
+    std::map<std::string, std::vector<std::string>>& sink_links_map,
+    std::vector<std::string>& sink_nodes_with_cycles)
+  {
+
+    // get cyclic source nodes
+    for (auto& link_map : links_)
+    {
+      if (
+        (nodes_.at(link_map.second.getSourceNodeName()).getStatus() == NodeStatus::initialized) &&
+        // required regardless if cycles are or are not allowed
+        nodes_.at(link_map.second.getSinkNodeName()).getStatus() == NodeStatus::initialized &&
+        sink_links_map.count(link_map.second.getSinkNodeName()) != 0 // sink node has already been identified
+      )
+      {
+        sink_links_map[link_map.second.getSinkNodeName()].push_back(link_map.second.getName());
+        sink_nodes_with_cycles.push_back(link_map.second.getSinkNodeName());
+      }
+    }
+  }
+  
+  void Model::getNextInactiveLayerCycles(
     std::vector<std::string>& links,
     std::vector<std::string>& source_nodes,
     const std::vector<std::string>& sink_nodes,
@@ -591,6 +657,57 @@ namespace SmartPeak
           sink_nodes_with_cycles.push_back(link_map.second.getSinkNodeName());
         }
       }
+    }
+  }
+
+  void Model::forwardPropogateLayerNetInput(
+    std::map<std::string, std::vector<std::string>>& sink_links_map,
+    const int& time_step)
+  {
+
+    // get all the information needed to construct the tensors
+    int batch_size = 0;
+    int memory_size = 0;
+    for (const auto& sink_links : sink_links_map)
+    {
+      batch_size = nodes_.at(sink_links.first).getOutput().dimension(0);
+      memory_size = nodes_.at(sink_links.first).getOutput().dimension(1);
+      break;
+    }
+
+    // iterate through each sink node and calculate the net input
+    // invoke the activation function once the net input is calculated
+    for (const auto& sink_links : sink_links_map)
+    {
+      Eigen::Tensor<float, 2> sink_tensor(batch_size, 1);
+      sink_tensor.setConstant(0.0f);
+      Eigen::Tensor<float, 2> weight_tensor(batch_size, 1);
+      for (const std::string& link : sink_links.second)
+      {
+        weight_tensor.setConstant(weights_.at(links_.at(link).getWeightName()).getWeight());
+        if (nodes_.at(links_.at(link).getSourceNodeName()).getStatus() == NodeStatus::activated)
+        {
+          sink_tensor = sink_tensor + weight_tensor * nodes_.at(links_.at(link).getSourceNodeName()).getOutput().chip(0, time_step); //current time-step
+        }
+        else if (nodes_.at(links_.at(link).getSourceNodeName()).getStatus() == NodeStatus::initialized)
+        {
+          if (time_step + 1 < memory_size)
+          {
+            sink_tensor = sink_tensor + weight_tensor * nodes_.at(links_.at(link).getSourceNodeName()).getOutput().chip(0, time_step + 1); //previous time-step
+          }
+          else
+          {
+            std::cout<<"time_step exceeded memory size in forwardPropogateLayerNetInput."<<std::endl;
+          }
+        }
+      }
+
+      // update the sink output
+      mapValuesToNodes(sink_tensor, time_step, {sink_links.first}, NodeStatus::activated, "output");
+
+      // calculate the output and derivative
+      nodes_.at(sink_links.first).calculateActivation(time_step);
+      nodes_.at(sink_links.first).calculateDerivative(time_step);
     }
   }
 
@@ -757,6 +874,43 @@ namespace SmartPeak
     }
   }
   
+  void Model::forwardPropogate_test(const int& time_step)
+  {
+    const int max_iters = 1e6;
+    for (int iter=0; iter<max_iters; ++iter)
+    {      
+      // std::cout<<"Model::forwardPropogate() iter: "<<iter<<std::endl;
+
+      // get the next hidden layer
+      std::map<std::string, std::vector<std::string>> sink_links_map;
+      getNextInactiveLayer(sink_links_map);
+
+      // get biases,
+      std::vector<std::string> sink_nodes_with_biases;
+      getNextInactiveLayerBiases(sink_links_map, sink_nodes_with_biases);
+      
+      // get cycles
+      std::map<std::string, std::vector<std::string>> sink_links_map_cycles = sink_links_map;
+      std::vector<std::string> sink_nodes_cycles;
+      getNextInactiveLayerCycles(sink_links_map_cycles, sink_nodes_cycles);
+
+      if (sink_links_map_cycles.size() == sink_links_map.size())
+      { // all forward propogation steps have caught up
+        // add sink nodes with cycles to the forward propogation step
+        sink_links_map = sink_links_map_cycles;
+      }
+
+      // check if all nodes have been activated
+      if (sink_links_map.size() == 0)
+      {
+        break;
+      }
+
+      // calculate the net input
+      forwardPropogateLayerNetInput(sink_links_map, time_step);
+    }
+  }
+  
   void Model::forwardPropogate(const int& time_step)
   {
     const int max_iters = 1e6;
@@ -818,6 +972,49 @@ namespace SmartPeak
 
       // calculate the activation
       forwardPropogateLayerActivation(sink_nodes, time_step);
+    }
+  }
+
+  void Model::FPTT_test(const int& time_steps, 
+    const Eigen::Tensor<float, 3>& values,
+    const std::vector<std::string> node_names,
+    const Eigen::Tensor<float, 2>& dt)
+  {
+    // check time_steps vs memory_size
+    int max_steps = time_steps;
+    if (time_steps > nodes_.begin()->second.getOutput().dimension(1))
+    {
+      std::cout<<"Time_steps will be scaled back to the memory_size."<<std::endl;
+      max_steps = nodes_.begin()->second.getOutput().dimension(1);
+    }
+
+    for (int time_step=0; time_step<max_steps; ++time_step)
+    {
+      // std::cout<<"Model::FPTT() time_step: "<<time_step<<std::endl;
+      if (time_step>0)
+      {
+        // move to the next memory step
+        for (auto& node_map: nodes_)
+        {          
+          node_map.second.saveCurrentOutput();
+          node_map.second.saveCurrentDerivative();
+          node_map.second.saveCurrentDt();
+          if (std::count(node_names.begin(), node_names.end(), node_map.first) == 0)
+          {
+            node_map.second.setStatus(NodeStatus::initialized); // reinitialize non-input nodes
+          }   
+          // std::cout<<"Model::FPTT() output: "<<node_map.second.getOutput()<<" for node_name: "<<node_map.first<<std::endl;
+        }
+      }
+
+      // initialize nodes for the next time-step
+      const Eigen::Tensor<float, 1> dt_values = dt.chip(time_step, 1);
+      mapValuesToNodes(dt_values, 0, NodeStatus::initialized, "dt");
+      const Eigen::Tensor<float, 2> active_values = values.chip(time_step, 1);
+      // std::cout<<"Model::FPTT() active_values: "<<active_values<<std::endl;
+      mapValuesToNodes(active_values, 0, node_names, NodeStatus::activated, "output");
+
+      forwardPropogate_test(0); // always working at the current head of memory
     }
   }
 

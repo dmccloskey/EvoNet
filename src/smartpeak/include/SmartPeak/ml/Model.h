@@ -160,6 +160,8 @@ public:
       std::vector<std::string>& links,
       std::vector<std::string>& source_nodes,
       std::vector<std::string>& sink_nodes);
+    void getNextInactiveLayer(
+      std::map<std::string, std::vector<std::string>>& sink_links_map);
  
     /**
       @brief Continuation of the forward propogation step that identifies all biases
@@ -178,6 +180,10 @@ public:
       std::vector<std::string>& source_nodes,
       const std::vector<std::string>& sink_nodes,
       std::vector<std::string>& sink_nodes_with_biases);
+    void getNextInactiveLayerBiases(
+      std::map<std::string, std::vector<std::string>>& sink_links_map,
+      std::vector<std::string>& sink_nodes_with_biases
+      );
  
     /**
       @brief Continuation of the forward propogation step that identifies 
@@ -195,6 +201,9 @@ public:
       std::vector<std::string>& links,
       std::vector<std::string>& source_nodes,
       const std::vector<std::string>& sink_nodes,
+      std::vector<std::string>& sink_nodes_with_cycles);
+    void getNextInactiveLayerCycles(
+      std::map<std::string, std::vector<std::string>>& sink_links_map,
       std::vector<std::string>& sink_nodes_with_cycles);
 
 	/**
@@ -252,6 +261,9 @@ public:
       const std::vector<std::string>& source_nodes,
       const std::vector<std::string>& sink_nodes,
       const int& time_step);
+    void forwardPropogateLayerNetInput(
+      std::map<std::string, std::vector<std::string>>& sink_links_map,
+      const int& time_step);
  
     /**
       @brief Completion of a forward propogation step. Computes the net
@@ -277,7 +289,8 @@ public:
 
       @param[in] time_step Time step to forward propogate.
     */ 
-    void forwardPropogate(const int& time_step);    
+    void forwardPropogate(const int& time_step);  
+    void forwardPropogate_test(const int& time_step);    
  
     /**
       @brief Foward propogation through time (FPTT) of the network model.
@@ -298,6 +311,10 @@ public:
       @param[in] dt Node time resolution 
     */ 
     void FPTT(const int& time_steps, 
+      const Eigen::Tensor<float, 3>& values,
+      const std::vector<std::string> node_names,
+      const Eigen::Tensor<float, 2>& dt);
+    void FPTT_test(const int& time_steps, 
       const Eigen::Tensor<float, 3>& values,
       const std::vector<std::string> node_names,
       const Eigen::Tensor<float, 2>& dt);
