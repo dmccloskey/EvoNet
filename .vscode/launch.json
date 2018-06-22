@@ -275,7 +275,9 @@
             "args": [],
             "stopAtEntry": false,
             "cwd": "/home/user/code",
-            "program":"/home/user/code/build/src/tests/class_tests/bin/WeightFile_test",
+            "program":"/home/user/code/build2/bin/MNIST_example",
+            // "program":"/home/user/code/build/src/examples/bin/MNIST_example",
+            // "program":"/home/user/code/build/src/tests/class_tests/bin/MNIST_example",
             "environment": [],
             "externalConsole": true,
             "pipeTransport": {

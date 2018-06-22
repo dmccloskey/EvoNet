@@ -1,6 +1,6 @@
 
 
-cmake_minimum_required(VERSION 3.0.2 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.8.2 FATAL_ERROR)
 project("SmartPeak_class_tests_smartpeak")
 
 #------------------------------------------------------------------------------

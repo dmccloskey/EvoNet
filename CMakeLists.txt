@@ -47,9 +47,11 @@ endif()
 # Include the standard Dart testing module
 #------------------------------------------------------------------------------
 # for Nightly Build log and Valgrind for memcheck
-include(CTest)
-#enable_testing()
-include(Dart)
+option (BUILD_TESTS "Whether or not build unit tests" ON)
+if(BUILD_TESTS)
+  include(CTest)
+  include(Dart)
+endif()
 
 #------------------------------------------------------------------------------
 option(MT_ENABLE_TBB "Enable Intel TBB support" OFF)

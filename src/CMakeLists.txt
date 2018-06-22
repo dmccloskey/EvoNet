@@ -9,4 +9,15 @@ add_subdirectory(smartpeak)
 #------------------------------------------------------------------------------
 # Tests
 #------------------------------------------------------------------------------
-add_subdirectory(tests)
+option (BUILD_TESTS "Whether or not build unit tests" ON)
+if(BUILD_TESTS)
+  add_subdirectory(tests)
+endif()
+
+#------------------------------------------------------------------------------
+# Examples
+#------------------------------------------------------------------------------
+option (BUILD_EXAMPLES "Whether or not build the examples" ON)
+if(BUILD_EXAMPLES)
+  add_subdirectory(examples)
+endif()
