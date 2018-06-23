@@ -321,8 +321,8 @@ int main(int argc, char** argv)
 
   // define the model replicator for growth mode
   ModelReplicator model_replicator;
-  model_replicator.setNNodeAdditions(1);
-  model_replicator.setNLinkAdditions(1);
+  model_replicator.setNNodeAdditions(0);
+  model_replicator.setNLinkAdditions(0);
   model_replicator.setNNodeDeletions(0);
   model_replicator.setNLinkDeletions(0);
 
@@ -351,7 +351,7 @@ int main(int argc, char** argv)
         weight_init.reset(new RandWeightInitOp(input_nodes.size()));
         solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
         Model model = model_replicator.makeBaselineModel(
-          input_nodes.size(), 0, output_nodes.size(),
+          input_nodes.size(), 100, output_nodes.size(),
           NodeActivation::ELU,
           NodeActivation::ELU,
           weight_init, solver,

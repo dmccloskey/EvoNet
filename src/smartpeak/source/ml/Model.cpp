@@ -687,13 +687,17 @@ namespace SmartPeak
         weight_tensor.setConstant(weights_.at(links_.at(link).getWeightName()).getWeight());
         if (nodes_.at(links_.at(link).getSourceNodeName()).getStatus() == NodeStatus::activated)
         {
-          sink_tensor = sink_tensor + weight_tensor * nodes_.at(links_.at(link).getSourceNodeName()).getOutput().chip(0, time_step); //current time-step
+          Eigen::array<int, 2> offsets = {0, time_step};
+          Eigen::array<int, 2> extent = {batch_size, time_step + 1};
+          sink_tensor = sink_tensor + weight_tensor * nodes_.at(links_.at(link).getSourceNodeName()).getOutput().slice(offsets, extent); //current time-step
         }
         else if (nodes_.at(links_.at(link).getSourceNodeName()).getStatus() == NodeStatus::initialized)
         {
+          Eigen::array<int, 2> offsets = {0, time_step + 1};
+          Eigen::array<int, 2> extent = {batch_size, time_step + 2};
           if (time_step + 1 < memory_size)
           {
-            sink_tensor = sink_tensor + weight_tensor * nodes_.at(links_.at(link).getSourceNodeName()).getOutput().chip(0, time_step + 1); //previous time-step
+            sink_tensor = sink_tensor + weight_tensor * nodes_.at(links_.at(link).getSourceNodeName()).getOutput().slice(offsets, extent); //previous time-step
           }
           else
           {
