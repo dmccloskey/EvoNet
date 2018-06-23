@@ -12,7 +12,7 @@ configure_file(${PROJECT_SOURCE_DIR}/include/SmartPeak/test_config.h.in ${CONFIG
 #------------------------------------------------------------------------------
 # Boost
 #------------------------------------------------------------------------------
-find_package(boost COMPONENTS unit_test_framework)
+find_package(boost 1.64 COMPONENTS unit_test_framework)
 
 if(Boost_FOUND)
   message(STATUS "Found Boost version ${Boost_MAJOR_VERSION}.${Boost_MINOR_VERSION}.${Boost_SUBMINOR_VERSION}" )
@@ -64,8 +64,7 @@ add_dependencies(ALGORITHM_TEST ${simulator_executables_list})
 # Add the actual tests
 foreach(_class_test ${TEST_executables})
   add_executable(${_class_test} source/${_class_test})
-  target_link_libraries(${_class_test} ${SmartPeak_LIBRARIES})
-  target_link_libraries(${_class_test} ${Boost_LIBRARIES})
+  target_link_libraries(${_class_test} ${SmartPeak_LIBRARIES} ${Boost_LIBRARIES})
   add_test(${_class_test} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${_class_test})
   # only add OPENMP flags to gcc linker (execpt Mac OS X, due to compiler bug
   # see https://sourceforge.net/apps/trac/open-ms/ticket/280 for details)

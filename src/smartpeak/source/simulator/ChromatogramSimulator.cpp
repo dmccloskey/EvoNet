@@ -1,8 +1,8 @@
 /**TODO:  Add copyright*/
 
-#include <SmartPeak//simulator/ChromatogramSimulator.h>
-#include <SmartPeak//simulator/PeakSimulator.h>
-#include <SmartPeak//simulator/EMGModel.h>
+#include <SmartPeak/simulator/ChromatogramSimulator.h>
+#include <SmartPeak/simulator/PeakSimulator.h>
+#include <SmartPeak/simulator/EMGModel.h>
 
 #include <vector>
 #include <algorithm>

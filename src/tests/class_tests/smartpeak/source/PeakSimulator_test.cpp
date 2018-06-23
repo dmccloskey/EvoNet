@@ -1,8 +1,8 @@
 /**TODO:  Add copyright*/
 
 #define BOOST_TEST_MODULE PeakSimulator test suite 
-#include <boost/test/unit_test.hpp>
-#include <SmartPeak//simulator/PeakSimulator.h>
+#include <boost/test/included/unit_test.hpp>
+#include <SmartPeak/simulator/PeakSimulator.h>
 
 #include <iostream>
 

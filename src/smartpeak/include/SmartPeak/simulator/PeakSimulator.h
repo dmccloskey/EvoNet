@@ -3,7 +3,7 @@
 #ifndef SMARTPEAK_PEAKSIMULATOR_H
 #define SMARTPEAK_PEAKSIMULATOR_H
 
-#include <SmartPeak//simulator/EMGModel.h>
+#include <SmartPeak/simulator/EMGModel.h>
 
 #include <vector>
 #include <random>

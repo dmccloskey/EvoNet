@@ -1,10 +1,10 @@
 /**TODO:  Add copyright*/
 
 #define BOOST_TEST_MODULE ChromatogramSimulator test suite 
-#include <boost/test/unit_test.hpp>
-#include <SmartPeak//simulator/ChromatogramSimulator.h>
-#include <SmartPeak//simulator/PeakSimulator.h>
-#include <SmartPeak//simulator/EMGModel.h>
+#include <boost/test/included/unit_test.hpp>
+#include <SmartPeak/simulator/ChromatogramSimulator.h>
+#include <SmartPeak/simulator/PeakSimulator.h>
+#include <SmartPeak/simulator/EMGModel.h>
 
 #include <iostream>
 

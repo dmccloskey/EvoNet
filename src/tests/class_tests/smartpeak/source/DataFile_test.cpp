@@ -1,7 +1,7 @@
 /**TODO:  Add copyright*/
 
 #define BOOST_TEST_MODULE DataFile test suite 
-#include <boost/test/unit_test.hpp>
+#include <boost/test/included/unit_test.hpp>
 #include <SmartPeak/io/DataFile.h>
 // #include <filesystem> C++ 17
 

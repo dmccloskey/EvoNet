@@ -3,8 +3,8 @@
 #ifndef SMARTPEAK_CHROMATOGRAMSIMULATOR_H
 #define SMARTPEAK_CHROMATOGRAMSIMULATOR_H
 
-#include <SmartPeak//simulator/EMGModel.h>
-#include <SmartPeak//simulator/PeakSimulator.h>
+#include <SmartPeak/simulator/EMGModel.h>
+#include <SmartPeak/simulator/PeakSimulator.h>
 
 namespace SmartPeak
 {

@@ -289,8 +289,7 @@ public:
 
       @param[in] time_step Time step to forward propogate.
     */ 
-    void forwardPropogate(const int& time_step);  
-    void forwardPropogate_test(const int& time_step);    
+    void forwardPropogate(const int& time_step);     
  
     /**
       @brief Foward propogation through time (FPTT) of the network model.
@@ -311,10 +310,6 @@ public:
       @param[in] dt Node time resolution 
     */ 
     void FPTT(const int& time_steps, 
-      const Eigen::Tensor<float, 3>& values,
-      const std::vector<std::string> node_names,
-      const Eigen::Tensor<float, 2>& dt);
-    void FPTT_test(const int& time_steps, 
       const Eigen::Tensor<float, 3>& values,
       const std::vector<std::string> node_names,
       const Eigen::Tensor<float, 2>& dt);
@@ -351,7 +346,9 @@ public:
     void getNextUncorrectedLayer(
       std::vector<std::string>& links,
       std::vector<std::string>& source_nodes,
-      std::vector<std::string>& sink_nodes);      
+      std::vector<std::string>& sink_nodes);
+    void getNextUncorrectedLayer(
+      std::map<std::string, std::vector<std::string>>& sink_links_map);      
  
     /**
       @brief A continuation of a back propogation step.  Returns a vector of links
@@ -370,6 +367,9 @@ public:
       const std::vector<std::string>& source_nodes,
       std::vector<std::string>& sink_nodes,
       std::vector<std::string>& source_nodes_with_cycles);
+    void getNextUncorrectedLayer(
+      std::map<std::string, std::vector<std::string>>& sink_links_map,
+      std::vector<std::string>& source_nodes_with_cycles); 
  
     /**
       @brief A back propogation step. Computes the net

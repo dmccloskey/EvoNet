@@ -1,7 +1,7 @@
 /**TODO:  Add copyright*/
 
 #define BOOST_TEST_MODULE Model DCG test suite 
-#include <boost/test/unit_test.hpp>
+#include <boost/test/included/unit_test.hpp>
 #include <SmartPeak/ml/Model.h>
 #include <SmartPeak/ml/Weight.h>
 #include <SmartPeak/ml/Link.h>
@@ -20,6 +20,8 @@ BOOST_AUTO_TEST_SUITE(modelDCG)
  * 
  * The following test methods that are
  * required of a Recurrent Neural Network (RNN)
+ * 
+ * TODO: refactor to use updated Model FP methods
 */
 
 Model makeModel2()

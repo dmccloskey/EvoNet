@@ -23,8 +23,9 @@ COPY docker-entrypoint.sh /usr/local/bin/
 #     rm -r /var/lib/apt/lists/* && \
 ## use with dmccloskey/docker-openms-contrib:smartPeak or smartpeak2
 RUN DEBIAN_FRONTEND=noninteractive && \
-	# apk add --no-cache \
-	# valgrind && \
+	apk add --no-cache \
+	gdb \
+	valgrind && \
 	##change permissions
 	ln -s /usr/local/bin/docker-entrypoint.sh / && \
 	chmod +x /usr/local/bin/docker-entrypoint.sh && \

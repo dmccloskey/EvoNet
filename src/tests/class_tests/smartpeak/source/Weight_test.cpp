@@ -1,7 +1,7 @@
 /**TODO:  Add copyright*/
 
 #define BOOST_TEST_MODULE Weight test suite 
-#include <boost/test/unit_test.hpp>
+#include <boost/test/included/unit_test.hpp>
 #include <SmartPeak/ml/Weight.h>
 #include <SmartPeak/ml/Solver.h>
 #include <SmartPeak/ml/WeightInit.h>

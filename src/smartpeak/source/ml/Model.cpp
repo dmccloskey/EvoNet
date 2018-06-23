@@ -878,7 +878,7 @@ namespace SmartPeak
     }
   }
   
-  void Model::forwardPropogate_test(const int& time_step)
+  void Model::forwardPropogate(const int& time_step)
   {
     const int max_iters = 1e6;
     for (int iter=0; iter<max_iters; ++iter)
@@ -915,112 +915,70 @@ namespace SmartPeak
     }
   }
   
-  void Model::forwardPropogate(const int& time_step)
-  {
-    const int max_iters = 1e6;
-    for (int iter=0; iter<max_iters; ++iter)
-    {      
-      // std::cout<<"Model::forwardPropogate() iter: "<<iter<<std::endl;
+  // [DEPRECATED]
+  // void Model::forwardPropogate(const int& time_step)
+  // {
+  //   const int max_iters = 1e6;
+  //   for (int iter=0; iter<max_iters; ++iter)
+  //   {      
+  //     // std::cout<<"Model::forwardPropogate() iter: "<<iter<<std::endl;
 
-      // get the next hidden layer
-      std::vector<std::string> links, source_nodes, sink_nodes;
-      getNextInactiveLayer(links, source_nodes, sink_nodes);
-      // std::cout<<"Model::forwardPropogate() getNextInactiveLayer links, source, and sink sizes "<<std::endl;
-      // std::cout<<"Model::forwardPropogate() links.size(): "<<links.size()<<std::endl;
-      // std::cout<<"Model::forwardPropogate() source nodes: "<<source_nodes.size()<<std::endl;
-      // std::cout<<"Model::forwardPropogate() sink nodes: "<<sink_nodes.size()<<std::endl;
+  //     // get the next hidden layer
+  //     std::vector<std::string> links, source_nodes, sink_nodes;
+  //     getNextInactiveLayer(links, source_nodes, sink_nodes);
+  //     // std::cout<<"Model::forwardPropogate() getNextInactiveLayer links, source, and sink sizes "<<std::endl;
+  //     // std::cout<<"Model::forwardPropogate() links.size(): "<<links.size()<<std::endl;
+  //     // std::cout<<"Model::forwardPropogate() source nodes: "<<source_nodes.size()<<std::endl;
+  //     // std::cout<<"Model::forwardPropogate() sink nodes: "<<sink_nodes.size()<<std::endl;
 
-      // get biases,
-      std::vector<std::string> sink_nodes_with_biases;
-      getNextInactiveLayerBiases(links, source_nodes, sink_nodes, sink_nodes_with_biases);
-      // std::cout<<"Model::forwardPropogate() getNextInactiveLayerBiases links, source, and sink sizes "<<std::endl;
-      // std::cout<<"Model::forwardPropogate() links.size(): "<<links.size()<<std::endl;
-      // std::cout<<"Model::forwardPropogate() source nodes: "<<source_nodes.size()<<std::endl;
-      // std::cout<<"Model::forwardPropogate() sink nodes: "<<sink_nodes.size()<<std::endl;
+  //     // get biases,
+  //     std::vector<std::string> sink_nodes_with_biases;
+  //     getNextInactiveLayerBiases(links, source_nodes, sink_nodes, sink_nodes_with_biases);
+  //     // std::cout<<"Model::forwardPropogate() getNextInactiveLayerBiases links, source, and sink sizes "<<std::endl;
+  //     // std::cout<<"Model::forwardPropogate() links.size(): "<<links.size()<<std::endl;
+  //     // std::cout<<"Model::forwardPropogate() source nodes: "<<source_nodes.size()<<std::endl;
+  //     // std::cout<<"Model::forwardPropogate() sink nodes: "<<sink_nodes.size()<<std::endl;
       
-      // get cycles
-      std::vector<std::string> links_cycles, source_nodes_cycles, sink_nodes_cycles;
-      getNextInactiveLayerCycles(links_cycles, source_nodes_cycles, sink_nodes, sink_nodes_cycles);
-      // std::cout<<"Model::forwardPropogate() getNextInactiveLayerCycles links, source, and sink sizes "<<std::endl;
-      // std::cout<<"Model::forwardPropogate() sink_nodes_cycles: "<<sink_nodes_cycles.size()<<std::endl;
-      // std::cout<<"Model::forwardPropogate() links: "<<links.size()<<std::endl;
-      // std::cout<<"Model::forwardPropogate() source nodes: "<<source_nodes.size()<<std::endl;
-      // std::cout<<"Model::forwardPropogate() sink nodes: "<<sink_nodes.size()<<std::endl;
+  //     // get cycles
+  //     std::vector<std::string> links_cycles, source_nodes_cycles, sink_nodes_cycles;
+  //     getNextInactiveLayerCycles(links_cycles, source_nodes_cycles, sink_nodes, sink_nodes_cycles);
+  //     // std::cout<<"Model::forwardPropogate() getNextInactiveLayerCycles links, source, and sink sizes "<<std::endl;
+  //     // std::cout<<"Model::forwardPropogate() sink_nodes_cycles: "<<sink_nodes_cycles.size()<<std::endl;
+  //     // std::cout<<"Model::forwardPropogate() links: "<<links.size()<<std::endl;
+  //     // std::cout<<"Model::forwardPropogate() source nodes: "<<source_nodes.size()<<std::endl;
+  //     // std::cout<<"Model::forwardPropogate() sink nodes: "<<sink_nodes.size()<<std::endl;
 
-      if (sink_nodes_cycles.size() == sink_nodes.size())
-      { // all forward propogation steps have caught up
-        // add sink nodes with cycles to the forward propogation step
-        links.insert( links.end(), links_cycles.begin(), links_cycles.end() );
-        source_nodes.insert( source_nodes.end(), source_nodes_cycles.begin(), source_nodes_cycles.end() );
-      }
-      else
-      { // remove source/sink nodes with cycles from the forward propogation step
-        for (const std::string node_name : sink_nodes_cycles)
-        {
-          sink_nodes.erase(std::remove(sink_nodes.begin(), sink_nodes.end(), node_name), sink_nodes.end());
-        }
-      }
+  //     if (sink_nodes_cycles.size() == sink_nodes.size())
+  //     { // all forward propogation steps have caught up
+  //       // add sink nodes with cycles to the forward propogation step
+  //       links.insert( links.end(), links_cycles.begin(), links_cycles.end() );
+  //       source_nodes.insert( source_nodes.end(), source_nodes_cycles.begin(), source_nodes_cycles.end() );
+  //     }
+  //     else
+  //     { // remove source/sink nodes with cycles from the forward propogation step
+  //       for (const std::string node_name : sink_nodes_cycles)
+  //       {
+  //         sink_nodes.erase(std::remove(sink_nodes.begin(), sink_nodes.end(), node_name), sink_nodes.end());
+  //       }
+  //     }
 
-      // check if all nodes have been activated
-      if (links.size() == 0)
-      {
-        break;
-      }      
-      // std::cout<<"Model::forwardPropogate() final links, source, and sink sizes "<<std::endl;
-      // std::cout<<"Model::forwardPropogate() links.size(): "<<links.size()<<std::endl;
-      // std::cout<<"Model::forwardPropogate() source nodes: "<<source_nodes.size()<<std::endl;
-      // std::cout<<"Model::forwardPropogate() sink nodes: "<<sink_nodes.size()<<std::endl;
+  //     // check if all nodes have been activated
+  //     if (links.size() == 0)
+  //     {
+  //       break;
+  //     }      
+  //     // std::cout<<"Model::forwardPropogate() final links, source, and sink sizes "<<std::endl;
+  //     // std::cout<<"Model::forwardPropogate() links.size(): "<<links.size()<<std::endl;
+  //     // std::cout<<"Model::forwardPropogate() source nodes: "<<source_nodes.size()<<std::endl;
+  //     // std::cout<<"Model::forwardPropogate() sink nodes: "<<sink_nodes.size()<<std::endl;
 
-      // calculate the net input
-      forwardPropogateLayerNetInput(links, source_nodes, sink_nodes, time_step);
+  //     // calculate the net input
+  //     forwardPropogateLayerNetInput(links, source_nodes, sink_nodes, time_step);
 
-      // calculate the activation
-      forwardPropogateLayerActivation(sink_nodes, time_step);
-    }
-  }
-
-  void Model::FPTT_test(const int& time_steps, 
-    const Eigen::Tensor<float, 3>& values,
-    const std::vector<std::string> node_names,
-    const Eigen::Tensor<float, 2>& dt)
-  {
-    // check time_steps vs memory_size
-    int max_steps = time_steps;
-    if (time_steps > nodes_.begin()->second.getOutput().dimension(1))
-    {
-      std::cout<<"Time_steps will be scaled back to the memory_size."<<std::endl;
-      max_steps = nodes_.begin()->second.getOutput().dimension(1);
-    }
-
-    for (int time_step=0; time_step<max_steps; ++time_step)
-    {
-      // std::cout<<"Model::FPTT() time_step: "<<time_step<<std::endl;
-      if (time_step>0)
-      {
-        // move to the next memory step
-        for (auto& node_map: nodes_)
-        {          
-          node_map.second.saveCurrentOutput();
-          node_map.second.saveCurrentDerivative();
-          node_map.second.saveCurrentDt();
-          if (std::count(node_names.begin(), node_names.end(), node_map.first) == 0)
-          {
-            node_map.second.setStatus(NodeStatus::initialized); // reinitialize non-input nodes
-          }   
-          // std::cout<<"Model::FPTT() output: "<<node_map.second.getOutput()<<" for node_name: "<<node_map.first<<std::endl;
-        }
-      }
-
-      // initialize nodes for the next time-step
-      const Eigen::Tensor<float, 1> dt_values = dt.chip(time_step, 1);
-      mapValuesToNodes(dt_values, 0, NodeStatus::initialized, "dt");
-      const Eigen::Tensor<float, 2> active_values = values.chip(time_step, 1);
-      // std::cout<<"Model::FPTT() active_values: "<<active_values<<std::endl;
-      mapValuesToNodes(active_values, 0, node_names, NodeStatus::activated, "output");
-
-      forwardPropogate_test(0); // always working at the current head of memory
-    }
-  }
+  //     // calculate the activation
+  //     forwardPropogateLayerActivation(sink_nodes, time_step);
+  //   }
+  // }
 
   void Model::FPTT(const int& time_steps, 
     const Eigen::Tensor<float, 3>& values,

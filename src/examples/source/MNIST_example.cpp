@@ -78,7 +78,7 @@ public:
       model.mapValuesToNodes(input.chip(iter, 3), input_nodes, NodeStatus::activated, "output"); 
 
       // forward propogate
-      model.forwardPropogate_test(0);
+      model.forwardPropogate(0);
 
       // calculate the model error and node output error
       model.calculateError(output.chip(iter, 2), output_nodes);
@@ -137,7 +137,7 @@ public:
       model.mapValuesToNodes(input.chip(iter, 3), input_nodes, NodeStatus::activated, "output"); 
 
       // forward propogate
-      model.forwardPropogate_test(0);
+      model.forwardPropogate(0);
 
       // calculate the model error and node output error
       model.calculateError(output.chip(iter, 2), output_nodes); 

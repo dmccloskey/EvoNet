@@ -1,8 +1,8 @@
 /**TODO:  Add copyright*/
 
 #define BOOST_TEST_MODULE EMGModel test suite 
-#include <boost/test/unit_test.hpp>
-#include <SmartPeak//simulator/EMGModel.h>
+#include <boost/test/included/unit_test.hpp>
+#include <SmartPeak/simulator/EMGModel.h>
 
 using namespace SmartPeak;
 using namespace std;

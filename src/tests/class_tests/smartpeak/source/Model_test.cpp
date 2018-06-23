@@ -1,7 +1,7 @@
 /**TODO:  Add copyright*/
 
 #define BOOST_TEST_MODULE Model test suite 
-#include <boost/test/unit_test.hpp>
+#include <boost/test/included/unit_test.hpp>
 #include <SmartPeak/ml/Model.h>
 
 #include <SmartPeak/ml/Link.h>
@@ -428,7 +428,7 @@ BOOST_AUTO_TEST_CASE(pruneModel)
   
   model.removeLinks({"i_to_h"});
   BOOST_CHECK_EQUAL(model.getNodes().size(), 3);
-  BOOST_CHECK_EQUAL(model.getWeights().size(), 1);
+  BOOST_CHECK_EQUAL(model.getWeights().size(), 2);  // was 2 when wieghts were pruned after links were removed
   BOOST_CHECK_EQUAL(model.getLinks().size(), 1);
   model.pruneModel(1);
   BOOST_CHECK_EQUAL(model.getNodes().size(), 2);
@@ -440,7 +440,7 @@ BOOST_AUTO_TEST_CASE(pruneModel)
   BOOST_CHECK_EQUAL(model.getWeights().size(), 1);
   BOOST_CHECK_EQUAL(model.getLinks().size(), 1);
   model.pruneModel(1);
-  BOOST_CHECK_EQUAL(model.getNodes().size(), 0);
+  BOOST_CHECK_EQUAL(model.getNodes().size(), 1);  // was 0
   BOOST_CHECK_EQUAL(model.getWeights().size(), 0);
   BOOST_CHECK_EQUAL(model.getLinks().size(), 0);
 }
