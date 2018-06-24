@@ -23,7 +23,8 @@ cmake -DEIGEN_USE_GPU=ON -DCUDA_TOOLKIT_ROOT_DIR="/usr/local/cuda-9.2" -DCMAKE_B
 cmake -DEIGEN_USE_GPU=OFF -DUSE_SUPERBUILD=OFF -DBUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH="/usr/local/contrib-build/;/usr/local/contrib-build/include/;/usr/local/smartPeak_dependencies/;/usr/;/usr/local" -DBOOST_USE_STATIC=OFF -DHAS_XSERVER=Off ..
 
 ### code prifiling with valgrind and gprof
-cmake -DEIGEN_USE_GPU=OFF -DUSE_SUPERBUILD=OFF -DCMAKE_CXX_FLAGS_DEBUG=-pg -DCMAKE_EXE_LINKER_FLAGS_DEBUG=-pg -DCMAKE_SHARED_LINKER_FLAGS_DEBUG=-pg -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH="/usr/local/contrib-build/;/usr/local/contrib-build/include/;/usr/local/smartPeak_dependencies/;/usr/;/usr/local" -DBOOST_USE_STATIC=OFF -DHAS_XSERVER=Off ..
+LIBRARY_PATH=/usr/lib/pcc/x86_64-alpine-linux-musl/1.2.0.DEVEL/lib:$LIBRARY_PATH
+cmake -DEIGEN_USE_GPU=OFF -DUSE_SUPERBUILD=OFF -DCMAKE_CXX_FLAGS_DEBUG=-pg -DCMAKE_EXE_LINKER_FLAGS_DEBUG=-pg -DCMAKE_SHARED_LINKER_FLAGS=-pg -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH="/usr/local/contrib-build/;/usr/local/contrib-build/include/;/usr/local/smartPeak_dependencies/;/usr/;/usr/local" -DBOOST_USE_STATIC=OFF -DHAS_XSERVER=Off ..
 ctest -DCTEST_MEMORYCHECK_COMMAND="/usr/bin/valgrind" -DMemoryCheckCommand="/usr/bin/valgrind" -T memcheck -R Model_DAG_test -V
 ./Model_DAG_test
 
