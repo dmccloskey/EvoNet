@@ -564,7 +564,10 @@ namespace SmartPeak
       )
       {
         sink_links_map[link_map.second.getSinkNodeName()].push_back(link_map.second.getName());
-        sink_nodes_with_biases.push_back(link_map.second.getSinkNodeName());
+        if (std::count(sink_nodes_with_biases.begin(), sink_nodes_with_biases.end(), link_map.second.getSinkNodeName()) == 0)
+        {
+          sink_nodes_with_biases.push_back(link_map.second.getSinkNodeName());
+        }
       }
     }
   }
@@ -715,6 +718,7 @@ namespace SmartPeak
     }
   }
 
+  // [DEPRECATED]
   void Model::forwardPropogateLayerNetInput(
     const std::vector<std::string>& links,
     const std::vector<std::string>& source_nodes,
@@ -786,6 +790,7 @@ namespace SmartPeak
     mapValuesToNodes(sink_tensor, time_step, sink_nodes, NodeStatus::activated, "output");
   }
   
+  // [DEPRECATED]
   void Model::forwardPropogateLayerActivation(
     const std::vector<std::string>& sink_nodes,
       const int& time_step)
@@ -1119,6 +1124,31 @@ namespace SmartPeak
   }
   
   void Model::getNextUncorrectedLayer(
+    std::map<std::string, std::vector<std::string>>& sink_links_map,
+    std::vector<std::string>& source_nodes)
+  {
+    // get all links where the source node is corrected and the sink node is active
+    // including biases
+    for (auto& link_map : links_)
+    {
+      if (nodes_.at(link_map.second.getSinkNodeName()).getStatus() == NodeStatus::corrected && 
+        nodes_.at(link_map.second.getSourceNodeName()).getStatus() == NodeStatus::activated)
+      {
+        std::vector<std::string> links = {link_map.second.getName()};
+        auto found = sink_links_map.emplace(link_map.second.getSourceNodeName(), links);        
+        if (!found.second)
+        {
+          sink_links_map[link_map.second.getSourceNodeName()].push_back(link_map.second.getName());
+        }
+        if (std::count(source_nodes.begin(), source_nodes.end(), link_map.second.getSinkNodeName()) == 0)
+        {
+          source_nodes.push_back(link_map.second.getSinkNodeName());
+        }
+      }
+    }
+  }
+  
+  void Model::getNextUncorrectedLayer(
     std::vector<std::string>& links,
     std::vector<std::string>& source_nodes,
     std::vector<std::string>& sink_nodes)
@@ -1143,6 +1173,29 @@ namespace SmartPeak
         if (std::count(sink_nodes.begin(), sink_nodes.end(), link_map.second.getSourceNodeName()) == 0)
         {
           sink_nodes.push_back(link_map.second.getSourceNodeName());
+        }
+      }
+    }
+  }
+  
+  void Model::getNextUncorrectedLayerCycles(
+    std::map<std::string, std::vector<std::string>>& sink_links_map,
+    const std::vector<std::string>& source_nodes,
+    std::vector<std::string>& source_nodes_with_cycles)
+  {
+
+    // allows for cycles
+    for (auto& link_map : links_)
+    {
+      if (nodes_.at(link_map.second.getSourceNodeName()).getStatus() == NodeStatus::corrected &&
+        nodes_.at(link_map.second.getSinkNodeName()).getStatus() == NodeStatus::corrected &&
+        std::count(source_nodes.begin(), source_nodes.end(), link_map.second.getSinkNodeName()) != 0 // sink node has already been identified)
+      ) 
+      {
+        sink_links_map[link_map.second.getSourceNodeName()].push_back(link_map.second.getName());
+        if (std::count(source_nodes_with_cycles.begin(), source_nodes_with_cycles.end(), link_map.second.getSinkNodeName()) == 0)
+        {
+          source_nodes_with_cycles.push_back(link_map.second.getSinkNodeName());
         }
       }
     }
@@ -1175,6 +1228,60 @@ namespace SmartPeak
           source_nodes_with_cycles.push_back(link_map.second.getSinkNodeName());
         }
       }
+    }
+  }
+
+  void Model::backPropogateLayerError(
+    const std::map<std::string, std::vector<std::string>>& sink_links_map,
+    const int& time_step)
+  {
+
+    // get all the information needed to construct the tensors
+    int batch_size = 0;
+    int memory_size = 0;
+    for (const auto& sources_links : sink_links_map)
+    {
+      batch_size = nodes_.at(sources_links.first).getOutput().dimension(0);
+      memory_size = nodes_.at(sources_links.first).getOutput().dimension(1);
+      break;
+    }
+
+    if (time_step >= memory_size)
+    {
+      std::cout<<"time step: "<<time_step<<" exceeds the memory_size!"<<std::endl;
+      return;
+    }
+
+    // iterate through each source node and calculate the error
+    for (const auto& sources_links : sink_links_map)
+    {
+      Eigen::Tensor<float, 2> sink_tensor(batch_size, 1);
+      sink_tensor.setConstant(0.0f);
+      Eigen::Tensor<float, 2> weight_tensor(batch_size, 1);
+      Eigen::array<int, 2> offsets = {0, time_step};
+      Eigen::array<int, 2> extent = {batch_size, time_step + 1};
+      Eigen::array<int, 2> offsets_prev = {0, time_step + 1};
+      Eigen::array<int, 2> extent_prev = {batch_size, time_step + 2};
+      for (const std::string& link : sources_links.second)
+      {
+        weight_tensor.setConstant(weights_.at(links_.at(link).getWeightName()).getWeight());
+        sink_tensor = sink_tensor + weight_tensor * nodes_.at(links_.at(link).getSinkNodeName()).getError().slice(offsets, extent);
+      }
+      
+      if (nodes_.at(sources_links.first).getStatus() == NodeStatus::activated)
+      {
+        sink_tensor = sink_tensor* nodes_.at(sources_links.first).getDerivative().slice(offsets, extent); // current time-step
+        mapValuesToNodes(sink_tensor, time_step, {sources_links.first}, NodeStatus::corrected, "error");
+      }
+      else if (nodes_.at(sources_links.first).getStatus() == NodeStatus::corrected)
+      {
+        // std::cout << "Model::backPropogateLayerError() Previous derivative (batch_size, Sink) " << j << "," << i << std::endl;
+        if (time_step + 1 < memory_size)
+        {
+          sink_tensor = sink_tensor * nodes_.at(sources_links.first).getDerivative().slice(offsets_prev, extent_prev); // previous time-step
+        }  
+        mapValuesToNodes(sink_tensor, time_step + 1, {sources_links.first}, NodeStatus::corrected, "error");  
+      }  
     }
   }
 
@@ -1247,8 +1354,7 @@ namespace SmartPeak
           else
           {
             derivative_tensor(j, i) = 0.0; // previous time-step
-          }
-          
+          }          
           if (std::count(sink_nodes_prev.begin(), sink_nodes_prev.end(), sink_nodes[i]) == 0) sink_nodes_prev.push_back(sink_nodes[i]);
         }        
       }
@@ -1311,52 +1417,91 @@ namespace SmartPeak
     const int max_iters = 1e6;
     for (int iter=0; iter<max_iters; ++iter)
     {
-      // std::cout<<"Model::backPropogate() iter :"<<iter<<::std::endl;
-
-      // std::cout<<"Model::backPropogate() NodeStatuses :";
-      // for (const auto& node_map : nodes_)
-      // {
-      //   if (node_map.second.getStatus() == NodeStatus::activated) std::cout<<"Node status for Node ID: "<<node_map.first<<" is Activated"<<std::endl;
-      //   if (node_map.second.getStatus() == NodeStatus::corrected) std::cout<<"Node status for Node ID: "<<node_map.first<<" is Corrected"<<std::endl;
-      // }
-
       // get the next uncorrected layer
-      std::vector<std::string> links, source_nodes, sink_nodes;
-      getNextUncorrectedLayer(links, source_nodes, sink_nodes);
+      std::map<std::string, std::vector<std::string>> sink_links_map;
+      std::vector<std::string> source_nodes;
+      getNextUncorrectedLayer(sink_links_map, source_nodes);
       // std::cout<<"link size "<<links.size()<<::std::endl;
 
       // get cycles
-      std::vector<std::string> links_cycles, source_nodes_cycles, sink_nodes_cycles;
-      getNextUncorrectedLayerCycles(links_cycles, source_nodes, sink_nodes_cycles, source_nodes_cycles);
+      std::map<std::string, std::vector<std::string>> sink_links_map_cycles = sink_links_map;
+      std::vector<std::string> source_nodes_cycles;
+      getNextUncorrectedLayerCycles(sink_links_map_cycles, source_nodes, source_nodes_cycles);
 
       // std::cout << "Back Propogate cycles found: " << source_nodes_cycles.size() << std::endl;
-      if (source_nodes_cycles.size() == source_nodes.size())
+      if (sink_links_map_cycles.size() != sink_links_map.size())
       { // all backward propogation steps have caught up
         // add source nodes with cycles to the backward propogation step
-        links.insert( links.end(), links_cycles.begin(), links_cycles.end() );
-        sink_nodes.insert( sink_nodes.end(), sink_nodes_cycles.begin(), sink_nodes_cycles.end() );
-        node_names_with_cycles.insert(node_names_with_cycles.end(), sink_nodes_cycles.begin(), sink_nodes_cycles.end() );
-      }
-      else
-      { // remove source/sink nodes with cycles from the backward propogation step
-        for (const std::string node_name : source_nodes_cycles)
-        {
-          source_nodes.erase(std::remove(source_nodes.begin(), source_nodes.end(), node_name), source_nodes.end());
-        }
+        sink_links_map = sink_links_map_cycles;
+        for (const auto& sink_link : sink_links_map)
+          node_names_with_cycles.push_back(sink_link.first);
       }
 
       // std::cout<<"Model::backPropogate() links.size()[after cycles] :"<<links.size()<<::std::endl;
       // check if all nodes have been corrected
-      if (links.size() == 0)
+      if (sink_links_map.size() == 0)
       {
         break;
       }
 
       // calculate the net input
-      backPropogateLayerError(links, source_nodes, sink_nodes, time_step);
+      backPropogateLayerError(sink_links_map, time_step);
     }
     return node_names_with_cycles;
   }
+  
+  // std::vector<std::string> Model::backPropogate(const int& time_step)
+  // {
+  //   std::vector<std::string> node_names_with_cycles;
+  //   const int max_iters = 1e6;
+  //   for (int iter=0; iter<max_iters; ++iter)
+  //   {
+  //     // std::cout<<"Model::backPropogate() iter :"<<iter<<::std::endl;
+
+  //     // std::cout<<"Model::backPropogate() NodeStatuses :";
+  //     // for (const auto& node_map : nodes_)
+  //     // {
+  //     //   if (node_map.second.getStatus() == NodeStatus::activated) std::cout<<"Node status for Node ID: "<<node_map.first<<" is Activated"<<std::endl;
+  //     //   if (node_map.second.getStatus() == NodeStatus::corrected) std::cout<<"Node status for Node ID: "<<node_map.first<<" is Corrected"<<std::endl;
+  //     // }
+
+  //     // get the next uncorrected layer
+  //     std::vector<std::string> links, source_nodes, sink_nodes;
+  //     getNextUncorrectedLayer(links, source_nodes, sink_nodes);
+  //     // std::cout<<"link size "<<links.size()<<::std::endl;
+
+  //     // get cycles
+  //     std::vector<std::string> links_cycles, source_nodes_cycles, sink_nodes_cycles;
+  //     getNextUncorrectedLayerCycles(links_cycles, source_nodes, sink_nodes_cycles, source_nodes_cycles);
+
+  //     // std::cout << "Back Propogate cycles found: " << source_nodes_cycles.size() << std::endl;
+  //     if (source_nodes_cycles.size() == source_nodes.size())
+  //     { // all backward propogation steps have caught up
+  //       // add source nodes with cycles to the backward propogation step
+  //       links.insert( links.end(), links_cycles.begin(), links_cycles.end() );
+  //       sink_nodes.insert( sink_nodes.end(), sink_nodes_cycles.begin(), sink_nodes_cycles.end() );
+  //       node_names_with_cycles.insert(node_names_with_cycles.end(), sink_nodes_cycles.begin(), sink_nodes_cycles.end() );
+  //     }
+  //     else
+  //     { // remove source/sink nodes with cycles from the backward propogation step
+  //       for (const std::string node_name : source_nodes_cycles)
+  //       {
+  //         source_nodes.erase(std::remove(source_nodes.begin(), source_nodes.end(), node_name), source_nodes.end());
+  //       }
+  //     }
+
+  //     // std::cout<<"Model::backPropogate() links.size()[after cycles] :"<<links.size()<<::std::endl;
+  //     // check if all nodes have been corrected
+  //     if (links.size() == 0)
+  //     {
+  //       break;
+  //     }
+
+  //     // calculate the net input
+  //     backPropogateLayerError(links, source_nodes, sink_nodes, time_step);
+  //   }
+  //   return node_names_with_cycles;
+  // }
 
   void Model::TBPTT(const int& time_steps)
   {

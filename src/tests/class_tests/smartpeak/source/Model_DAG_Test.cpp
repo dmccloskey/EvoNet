@@ -362,6 +362,7 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayer1)
   model1.getNextInactiveLayer(sink_links_map);
   
   // test links and source and sink nodes
+  // [TODO: test for size of each vector!]
   BOOST_CHECK_EQUAL(sink_links_map.at("2")[0], "0");
   BOOST_CHECK_EQUAL(sink_links_map.at("2")[1], "2");  
   BOOST_CHECK_EQUAL(sink_links_map.at("3")[0], "1");
@@ -426,6 +427,7 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayerBiases1)
   model1.getNextInactiveLayerBiases(sink_links_map, sink_nodes_with_biases2);
   
   // test links and source and sink nodes
+  // [TODO: test for size of each vector!]
   BOOST_CHECK_EQUAL(sink_links_map.at("2")[0], "0");
   BOOST_CHECK_EQUAL(sink_links_map.at("2")[1], "2");
   BOOST_CHECK_EQUAL(sink_links_map.at("2")[2], "4");

@@ -26,6 +26,10 @@ namespace SmartPeak
 
   /**
     @brief Directed Network Model
+
+    Assumptions about the model structure:
+    1. Inputs can only be sources
+    2. Outputs can only be sinks (will break back propogation algorithm)
   */
   class Model
   {
@@ -348,7 +352,8 @@ public:
       std::vector<std::string>& source_nodes,
       std::vector<std::string>& sink_nodes);
     void getNextUncorrectedLayer(
-      std::map<std::string, std::vector<std::string>>& sink_links_map);      
+      std::map<std::string, std::vector<std::string>>& sink_links_map,
+      std::vector<std::string>& source_nodes);      
  
     /**
       @brief A continuation of a back propogation step.  Returns a vector of links
@@ -367,8 +372,9 @@ public:
       const std::vector<std::string>& source_nodes,
       std::vector<std::string>& sink_nodes,
       std::vector<std::string>& source_nodes_with_cycles);
-    void getNextUncorrectedLayer(
+    void getNextUncorrectedLayerCycles(
       std::map<std::string, std::vector<std::string>>& sink_links_map,
+      const std::vector<std::string>& source_nodes,
       std::vector<std::string>& source_nodes_with_cycles); 
  
     /**
@@ -392,6 +398,9 @@ public:
       const std::vector<std::string>& links,
       const std::vector<std::string>& source_nodes,
       const std::vector<std::string>& sink_nodes,
+      const int& time_step);
+    void backPropogateLayerError(
+      const std::map<std::string, std::vector<std::string>>& sink_links_map,
       const int& time_step);
  
     /**
