@@ -275,9 +275,9 @@
             "args": [],
             "stopAtEntry": false,
             "cwd": "/home/user/code",
-            "program":"/home/user/code/build2/bin/MNIST_example",
+            // "program":"/home/user/code/build2/bin/MNIST_example",
             // "program":"/home/user/code/build/src/examples/bin/MNIST_example",
-            // "program":"/home/user/code/build/src/tests/class_tests/bin/MNIST_example",
+            "program":"/home/user/code/build2/src/tests/class_tests/bin/Model_DCG_test",
             "environment": [],
             "externalConsole": true,
             "pipeTransport": {

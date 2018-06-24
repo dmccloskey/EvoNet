@@ -24,6 +24,7 @@ COPY docker-entrypoint.sh /usr/local/bin/
 ## use with dmccloskey/docker-openms-contrib:smartPeak or smartpeak2
 RUN DEBIAN_FRONTEND=noninteractive && \
 	apk add --no-cache \
+	pcc-libs-dev \
 	gdb \
 	valgrind && \
 	##change permissions

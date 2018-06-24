@@ -685,22 +685,22 @@ namespace SmartPeak
       Eigen::Tensor<float, 2> sink_tensor(batch_size, 1);
       sink_tensor.setConstant(0.0f);
       Eigen::Tensor<float, 2> weight_tensor(batch_size, 1);
+      Eigen::array<int, 2> offsets = {0, time_step};
+      Eigen::array<int, 2> extent = {batch_size, 1};
+      Eigen::array<int, 2> offsets_prev = {0, time_step + 1};
+      Eigen::array<int, 2> extent_prev = {batch_size, 1};
       for (const std::string& link : sink_links.second)
       {
         weight_tensor.setConstant(weights_.at(links_.at(link).getWeightName()).getWeight());
         if (nodes_.at(links_.at(link).getSourceNodeName()).getStatus() == NodeStatus::activated)
         {
-          Eigen::array<int, 2> offsets = {0, time_step};
-          Eigen::array<int, 2> extent = {batch_size, time_step + 1};
           sink_tensor = sink_tensor + weight_tensor * nodes_.at(links_.at(link).getSourceNodeName()).getOutput().slice(offsets, extent); //current time-step
         }
         else if (nodes_.at(links_.at(link).getSourceNodeName()).getStatus() == NodeStatus::initialized)
         {
-          Eigen::array<int, 2> offsets = {0, time_step + 1};
-          Eigen::array<int, 2> extent = {batch_size, time_step + 2};
           if (time_step + 1 < memory_size)
           {
-            sink_tensor = sink_tensor + weight_tensor * nodes_.at(links_.at(link).getSourceNodeName()).getOutput().slice(offsets, extent); //previous time-step
+            sink_tensor = sink_tensor + weight_tensor * nodes_.at(links_.at(link).getSourceNodeName()).getOutput().slice(offsets_prev, extent_prev); //previous time-step
           }
           else
           {
@@ -1252,36 +1252,50 @@ namespace SmartPeak
       return;
     }
 
-    // iterate through each source node and calculate the error
-    for (const auto& sources_links : sink_links_map)
+    // iterate through each sink node and calculate the error
+    for (const auto& sinks_links : sink_links_map)
     {
       Eigen::Tensor<float, 2> sink_tensor(batch_size, 1);
       sink_tensor.setConstant(0.0f);
       Eigen::Tensor<float, 2> weight_tensor(batch_size, 1);
       Eigen::array<int, 2> offsets = {0, time_step};
-      Eigen::array<int, 2> extent = {batch_size, time_step + 1};
+      Eigen::array<int, 2> extent = {batch_size, 1};
       Eigen::array<int, 2> offsets_prev = {0, time_step + 1};
-      Eigen::array<int, 2> extent_prev = {batch_size, time_step + 2};
-      for (const std::string& link : sources_links.second)
+      Eigen::array<int, 2> extent_prev = {batch_size, 1};
+
+      // calculate the total incoming error
+      for (const std::string& link : sinks_links.second)
       {
         weight_tensor.setConstant(weights_.at(links_.at(link).getWeightName()).getWeight());
         sink_tensor = sink_tensor + weight_tensor * nodes_.at(links_.at(link).getSinkNodeName()).getError().slice(offsets, extent);
       }
       
-      if (nodes_.at(sources_links.first).getStatus() == NodeStatus::activated)
+      // scale the error by the derivative
+      if (nodes_.at(sinks_links.first).getStatus() == NodeStatus::activated)
       {
-        sink_tensor = sink_tensor* nodes_.at(sources_links.first).getDerivative().slice(offsets, extent); // current time-step
-        mapValuesToNodes(sink_tensor, time_step, {sources_links.first}, NodeStatus::corrected, "error");
+        sink_tensor = sink_tensor * nodes_.at(sinks_links.first).getDerivative().slice(offsets, extent); // current time-step
       }
-      else if (nodes_.at(sources_links.first).getStatus() == NodeStatus::corrected)
+      else if (nodes_.at(sinks_links.first).getStatus() == NodeStatus::corrected)
       {
         // std::cout << "Model::backPropogateLayerError() Previous derivative (batch_size, Sink) " << j << "," << i << std::endl;
         if (time_step + 1 < memory_size)
         {
-          sink_tensor = sink_tensor * nodes_.at(sources_links.first).getDerivative().slice(offsets_prev, extent_prev); // previous time-step
+          sink_tensor = sink_tensor * nodes_.at(sinks_links.first).getDerivative().slice(offsets_prev, extent_prev); // previous time-step
         }  
-        mapValuesToNodes(sink_tensor, time_step + 1, {sources_links.first}, NodeStatus::corrected, "error");  
       }  
+
+      // update the errors      
+      if (nodes_.at(sinks_links.first).getStatus() == NodeStatus::activated)
+      {
+        mapValuesToNodes(sink_tensor, time_step, {sinks_links.first}, NodeStatus::corrected, "error");
+      }
+      else if (nodes_.at(sinks_links.first).getStatus() == NodeStatus::corrected)
+      {
+        if (time_step + 1 < memory_size)
+        {
+          mapValuesToNodes(sink_tensor, time_step + 1, {sinks_links.first}, NodeStatus::corrected, "error");
+        }  
+      }
     }
   }
 
@@ -1420,24 +1434,26 @@ namespace SmartPeak
       // get the next uncorrected layer
       std::map<std::string, std::vector<std::string>> sink_links_map;
       std::vector<std::string> source_nodes;
-      getNextUncorrectedLayer(sink_links_map, source_nodes);
-      // std::cout<<"link size "<<links.size()<<::std::endl;
+      getNextUncorrectedLayer(sink_links_map, source_nodes);  
 
       // get cycles
       std::map<std::string, std::vector<std::string>> sink_links_map_cycles = sink_links_map;
       std::vector<std::string> source_nodes_cycles;
       getNextUncorrectedLayerCycles(sink_links_map_cycles, source_nodes, source_nodes_cycles);
 
-      // std::cout << "Back Propogate cycles found: " << source_nodes_cycles.size() << std::endl;
-      if (sink_links_map_cycles.size() != sink_links_map.size())
+      if (source_nodes_cycles.size() == source_nodes.size())
       { // all backward propogation steps have caught up
         // add source nodes with cycles to the backward propogation step
+        for (const auto& sink_link : sink_links_map_cycles)
+        {
+          if (sink_links_map.count(sink_link.first) == 0)
+          {
+            node_names_with_cycles.push_back(sink_link.first);
+          }
+        }
         sink_links_map = sink_links_map_cycles;
-        for (const auto& sink_link : sink_links_map)
-          node_names_with_cycles.push_back(sink_link.first);
       }
 
-      // std::cout<<"Model::backPropogate() links.size()[after cycles] :"<<links.size()<<::std::endl;
       // check if all nodes have been corrected
       if (sink_links_map.size() == 0)
       {
@@ -1450,6 +1466,7 @@ namespace SmartPeak
     return node_names_with_cycles;
   }
   
+  // // [DEPRECATED]
   // std::vector<std::string> Model::backPropogate(const int& time_step)
   // {
   //   std::vector<std::string> node_names_with_cycles;
@@ -1516,7 +1533,7 @@ namespace SmartPeak
     std::vector<std::string> node_names; // determined at time step 0
     for (int time_step=0; time_step<max_steps; ++time_step)
     {
-      // std::cout<<"Model::TBPTT() time_step: "<<time_step<<std::endl;
+      std::cout<<"Model::TBPTT() time_step: "<<time_step<<std::endl;
       if (time_step > 0 && node_names.size()>0)
       {
         for (auto& node_map: nodes_)
@@ -1525,7 +1542,7 @@ namespace SmartPeak
           {
             node_map.second.setStatus(NodeStatus::activated); // reinitialize cyclic nodes
           }   
-          // std::cout<<"Model::TBPTT() output: "<<node_map.second.getError()<<" for node_name: "<<node_map.first<<std::endl;
+          std::cout<<"Model::TBPTT() output: "<<node_map.second.getError()<<" for node_name: "<<node_map.first<<std::endl;
         }
       }
 

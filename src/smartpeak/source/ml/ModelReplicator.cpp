@@ -402,9 +402,9 @@ namespace SmartPeak
     Model& model, std::string unique_str)
   {
     // define the inclusion/exclusion nodes
-    const std::vector<NodeType> source_node_type_exclude = {NodeType::bias};
+    const std::vector<NodeType> source_node_type_exclude = {NodeType::bias, NodeType::output}; // no output can be a source
     const std::vector<NodeType> source_node_type_include = {};
-    const std::vector<NodeType> sink_node_type_exclude = {NodeType::bias, NodeType::input};
+    const std::vector<NodeType> sink_node_type_exclude = {NodeType::bias, NodeType::input};  // no input can be a sink
     const std::vector<NodeType> sink_node_type_include = {};
 
     // select candidate source and sink nodes

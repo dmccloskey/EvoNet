@@ -716,27 +716,47 @@ BOOST_AUTO_TEST_CASE(getNextUncorrectedLayer1)
   expected.setValues({{0, 1}, {0, 1}, {0, 1}, {0, 1}});
   model1.calculateError(expected, output_nodes);
 
+  // // get the next hidden layer
+  // std::vector<std::string> links, source_nodes, sink_nodes;
+  // model1.getNextUncorrectedLayer(links, source_nodes, sink_nodes);
+
+  // // test links and source and sink nodes
+  // BOOST_CHECK_EQUAL(links.size(), 6);
+  // BOOST_CHECK_EQUAL(links[0], "10");
+  // BOOST_CHECK_EQUAL(links[1], "11");
+  // BOOST_CHECK_EQUAL(links[2], "6");
+  // BOOST_CHECK_EQUAL(links[3], "7");
+  // BOOST_CHECK_EQUAL(links[4], "8");
+  // BOOST_CHECK_EQUAL(links[5], "9");
+  // BOOST_CHECK_EQUAL(source_nodes.size(), 2);
+  // BOOST_CHECK_EQUAL(source_nodes[0], "4");
+  // BOOST_CHECK_EQUAL(source_nodes[1], "5");
+  // BOOST_CHECK_EQUAL(sink_nodes.size(), 3);
+  // BOOST_CHECK_EQUAL(sink_nodes[0], "7");
+  // BOOST_CHECK_EQUAL(sink_nodes[1], "2");
+  // BOOST_CHECK_EQUAL(sink_nodes[2], "3");
+
   // get the next hidden layer
-  std::vector<std::string> links, source_nodes, sink_nodes;
-  model1.getNextUncorrectedLayer(links, source_nodes, sink_nodes);
+  std::map<std::string, std::vector<std::string>> sink_links_map;
+  std::vector<std::string> source_nodes;
+  model1.getNextUncorrectedLayer(sink_links_map, source_nodes);
 
   // test links and source and sink nodes
-  BOOST_CHECK_EQUAL(links.size(), 6);
-  BOOST_CHECK_EQUAL(links[0], "10");
-  BOOST_CHECK_EQUAL(links[1], "11");
-  BOOST_CHECK_EQUAL(links[2], "6");
-  BOOST_CHECK_EQUAL(links[3], "7");
-  BOOST_CHECK_EQUAL(links[4], "8");
-  BOOST_CHECK_EQUAL(links[5], "9");
+  BOOST_CHECK_EQUAL(sink_links_map.at("7").size(), 2);
+  BOOST_CHECK_EQUAL(sink_links_map.at("7")[0], "10");
+  BOOST_CHECK_EQUAL(sink_links_map.at("7")[1], "11");
+  BOOST_CHECK_EQUAL(sink_links_map.at("2").size(), 2);
+  BOOST_CHECK_EQUAL(sink_links_map.at("2")[0], "6");
+  BOOST_CHECK_EQUAL(sink_links_map.at("2")[1], "7");
+  BOOST_CHECK_EQUAL(sink_links_map.at("3").size(), 2);
+  BOOST_CHECK_EQUAL(sink_links_map.at("3")[0], "8");
+  BOOST_CHECK_EQUAL(sink_links_map.at("3")[1], "9");
   BOOST_CHECK_EQUAL(source_nodes.size(), 2);
   BOOST_CHECK_EQUAL(source_nodes[0], "4");
   BOOST_CHECK_EQUAL(source_nodes[1], "5");
-  BOOST_CHECK_EQUAL(sink_nodes.size(), 3);
-  BOOST_CHECK_EQUAL(sink_nodes[0], "7");
-  BOOST_CHECK_EQUAL(sink_nodes[1], "2");
-  BOOST_CHECK_EQUAL(sink_nodes[2], "3");
 }
 
+// [TODO: update to use new methods]
 BOOST_AUTO_TEST_CASE(backPropogateLayerError) 
 {
   // Toy network: 1 hidden layer, fully connected, DAG

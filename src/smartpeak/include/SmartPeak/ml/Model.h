@@ -155,6 +155,8 @@ public:
         1. all sink output values are unknown (i.e. inactive),
         2. all source node output values are known (i.e. active).
         3. all nodes need not be the same type
+      
+      [TODO: check that only sink nodes where ALL sources are active are identified]
 
       @param[out] Links
       @param[out] source_nodes
@@ -342,6 +344,8 @@ public:
         1. all sink error values are unknown (i.e. active),
         2. all source error values are known (i.e. corrected).
         3. all nodes need not be the same type
+      
+      [TODO: check that only sink nodes where ALL sources are corrected are identified]
 
       @param[out] Links
       @param[out] source_nodes

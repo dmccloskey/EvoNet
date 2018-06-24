@@ -317,24 +317,24 @@ int main(int argc, char** argv)
   ModelTrainerTest model_trainer;
   model_trainer.setBatchSize(4);
   model_trainer.setMemorySize(1);
-  model_trainer.setNEpochs(100);
+  model_trainer.setNEpochs(20);
 
   // define the model replicator for growth mode
   ModelReplicator model_replicator;
-  model_replicator.setNNodeAdditions(0);
-  model_replicator.setNLinkAdditions(0);
+  model_replicator.setNNodeAdditions(1);
+  model_replicator.setNLinkAdditions(2);
   model_replicator.setNNodeDeletions(0);
   model_replicator.setNLinkDeletions(0);
 
   // Evolve the population
   std::vector<Model> population; 
-  const int population_size = 1;
+  const int population_size = 2;
   const int n_top = 1;
   const int n_random = 1;
-  const int n_replicates_per_model = 0;
+  const int n_replicates_per_model = 1;
   int mnist_sample_start = 0;
   int mnist_sample_end = 0;
-  const int iterations = 2;
+  const int iterations = 10;
   for (int iter=0; iter<iterations; ++iter)
   {
     printf("Iteration #: %d\n", iter);
