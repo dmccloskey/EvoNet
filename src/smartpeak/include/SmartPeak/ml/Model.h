@@ -275,6 +275,8 @@ public:
       @brief Completion of a forward propogation step. Computes the net
         activation for all nodes in the tensor layer.
 
+      [DEPRECATED]
+
       Note before computing the activation, the layer tensor will be split
         according to the node type, and the corresponding activation
         function will be applied
@@ -294,8 +296,11 @@ public:
         outputs and derivatives are calculated.
 
       @param[in] time_step Time step to forward propogate.
+      @param[in] cache_FP_steps Whether to save the FP steps
+        for faster iteration next epoch.
+      @param[in] use_cache Whether to use the cached FP steps.
     */ 
-    void forwardPropogate(const int& time_step);     
+    void forwardPropogate(const int& time_step, bool cache_FP_steps = false, bool use_cache = false);     
  
     /**
       @brief Foward propogation through time (FPTT) of the network model.
@@ -417,7 +422,7 @@ public:
 
       @returns Vector of cyclic sink node IDs
     */ 
-    std::vector<std::string> backPropogate(const int& time_step);  
+    std::vector<std::string> backPropogate(const int& time_step, bool cache_BP_steps = false, bool use_cache = false);  
  
     /**
       @brief Truncated Back Propogation Through Time (TBPTT) of the network model.
@@ -570,6 +575,8 @@ public:
     */ 
     bool checkWeightNames(const std::vector<std::string> weight_names);
 
+    void clear_cache(); ///< clear the FP and BP caches
+
 private:
     int id_; ///< Model ID
     std::string name_; ///< Model Name
@@ -584,15 +591,9 @@ private:
 
 	// Internal structures to allow for efficient multi-threading
 	// and off-loading of computation from host to devices
-	std::vector<std::vector<std::string>> FP_node_names_; // layers of nodes in computational order for TFPTT
-	std::vector<std::vector<std::string>> FP_link_names_; // lyaers of links in computation order for TFPTT
-	std::vector<Eigen::Tensor<float, 2>> FP_node_tensors_; // layers of nodes in computational order for TFPTT
-	std::vector<Eigen::Tensor<float, 2>> FP_link_tensors_; // lyaers of links in computation order for TFPTT
-
-	std::vector<std::vector<std::string>> BP_node_layers_; // layers of nodes in computational order for TBPTT
-	std::vector<std::vector<std::string>> BP_link_layers_; // lyaers of links in computation order for TBPTT
-	std::vector<Eigen::Tensor<float, 2>> BP_node_tensors_; // layers of nodes in computational order for TFPTT
-	std::vector<Eigen::Tensor<float, 2>> BP_link_tensors_; // lyaers of links in computation order for TBPTT
+	std::vector<std::map<std::string, std::vector<std::string>>> FP_sink_link_cache_; 
+	std::vector<std::map<std::string, std::vector<std::string>>> BP_sink_link_cache_;
+	std::vector<std::string> BP_cyclic_nodes_cache_;
 
   };
 }

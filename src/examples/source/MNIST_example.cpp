@@ -68,24 +68,38 @@ public:
     printf("Data checks passed\n");
     
     // Initialize the model
+    model.clear_cache();
     model.initNodes(getBatchSize(), getMemorySize());
     printf("Initialized the model\n");
 
+    bool cache_steps, use_cache;
     for (int iter = 0; iter < getNEpochs(); ++iter) // use n_epochs here
     {
       printf("Training epoch: %d\t", iter);
+
+      if (iter == 0)
+      {
+        cache_steps = true;
+        use_cache = false;
+      }
+      else
+      {
+        cache_steps = false;
+        use_cache = true;
+      }
+
       // assign the input data
       model.mapValuesToNodes(input.chip(iter, 3), input_nodes, NodeStatus::activated, "output"); 
 
       // forward propogate
-      model.forwardPropogate(0);
+      model.forwardPropogate(0, cache_steps, use_cache);
 
       // calculate the model error and node output error
       model.calculateError(output.chip(iter, 2), output_nodes);
       std::cout<<"Model error: "<<model.getError().sum()<<std::endl;
 
       // back propogate
-      model.backPropogate(0);
+      model.backPropogate(0, cache_steps, use_cache);
 
       // update the weights
       model.updateWeights(1);   
@@ -126,18 +140,31 @@ public:
     // printf("Data checks passed\n");
     
     // Initialize the model
+    model.clear_cache();
     model.initNodes(getBatchSize(), getMemorySize());
     // printf("Initialized the model\n");
 
+    bool cache_steps, use_cache;
     for (int iter = 0; iter < getNEpochs(); ++iter) // use n_epochs here
     {
       // printf("validation epoch: %d\t", iter);
+
+      if (iter == 0)
+      {
+        cache_steps = true;
+        use_cache = false;
+      }
+      else
+      {
+        cache_steps = false;
+        use_cache = true;
+      }
 
       // assign the input data
       model.mapValuesToNodes(input.chip(iter, 3), input_nodes, NodeStatus::activated, "output"); 
 
       // forward propogate
-      model.forwardPropogate(0);
+      model.forwardPropogate(0, cache_steps, use_cache);
 
       // calculate the model error and node output error
       model.calculateError(output.chip(iter, 2), output_nodes); 

@@ -883,40 +883,49 @@ namespace SmartPeak
     }
   }
   
-  void Model::forwardPropogate(const int& time_step)
-  {
-    const int max_iters = 1e6;
-    for (int iter=0; iter<max_iters; ++iter)
-    {      
-      // std::cout<<"Model::forwardPropogate() iter: "<<iter<<std::endl;
+  void Model::forwardPropogate(const int& time_step, bool cache_FP_steps, bool use_cache)
+  { 
+    if (use_cache)
+    {
+      for (auto& sink_link : FP_sink_link_cache_)
+        forwardPropogateLayerNetInput(sink_link, time_step);
+    }
+    else
+    {
+      const int max_iters = 1e6;
+      for (int iter=0; iter<max_iters; ++iter)
+      { 
+        // get the next hidden layer
+        std::map<std::string, std::vector<std::string>> sink_links_map;
+        getNextInactiveLayer(sink_links_map);
 
-      // get the next hidden layer
-      std::map<std::string, std::vector<std::string>> sink_links_map;
-      getNextInactiveLayer(sink_links_map);
+        // get biases,
+        std::vector<std::string> sink_nodes_with_biases;
+        getNextInactiveLayerBiases(sink_links_map, sink_nodes_with_biases);
+        
+        // get cycles
+        std::map<std::string, std::vector<std::string>> sink_links_map_cycles = sink_links_map;
+        std::vector<std::string> sink_nodes_cycles;
+        getNextInactiveLayerCycles(sink_links_map_cycles, sink_nodes_cycles);
 
-      // get biases,
-      std::vector<std::string> sink_nodes_with_biases;
-      getNextInactiveLayerBiases(sink_links_map, sink_nodes_with_biases);
-      
-      // get cycles
-      std::map<std::string, std::vector<std::string>> sink_links_map_cycles = sink_links_map;
-      std::vector<std::string> sink_nodes_cycles;
-      getNextInactiveLayerCycles(sink_links_map_cycles, sink_nodes_cycles);
+        if (sink_links_map_cycles.size() == sink_links_map.size())
+        { // all forward propogation steps have caught up
+          // add sink nodes with cycles to the forward propogation step
+          sink_links_map = sink_links_map_cycles;
+        }
 
-      if (sink_links_map_cycles.size() == sink_links_map.size())
-      { // all forward propogation steps have caught up
-        // add sink nodes with cycles to the forward propogation step
-        sink_links_map = sink_links_map_cycles;
+        // check if all nodes have been activated
+        if (sink_links_map.size() == 0)
+        {
+          break;
+        }
+
+        if (cache_FP_steps)
+          FP_sink_link_cache_.push_back(sink_links_map);
+
+        // calculate the net input
+        forwardPropogateLayerNetInput(sink_links_map, time_step);
       }
-
-      // check if all nodes have been activated
-      if (sink_links_map.size() == 0)
-      {
-        break;
-      }
-
-      // calculate the net input
-      forwardPropogateLayerNetInput(sink_links_map, time_step);
     }
   }
   
@@ -1425,45 +1434,59 @@ namespace SmartPeak
     }
   }
   
-  std::vector<std::string> Model::backPropogate(const int& time_step)
+  std::vector<std::string> Model::backPropogate(const int& time_step, bool cache_BP_steps, bool use_cache)
   {
-    std::vector<std::string> node_names_with_cycles;
-    const int max_iters = 1e6;
-    for (int iter=0; iter<max_iters; ++iter)
+    if (use_cache)
     {
-      // get the next uncorrected layer
-      std::map<std::string, std::vector<std::string>> sink_links_map;
-      std::vector<std::string> source_nodes;
-      getNextUncorrectedLayer(sink_links_map, source_nodes);  
-
-      // get cycles
-      std::map<std::string, std::vector<std::string>> sink_links_map_cycles = sink_links_map;
-      std::vector<std::string> source_nodes_cycles;
-      getNextUncorrectedLayerCycles(sink_links_map_cycles, source_nodes, source_nodes_cycles);
-
-      if (source_nodes_cycles.size() == source_nodes.size())
-      { // all backward propogation steps have caught up
-        // add source nodes with cycles to the backward propogation step
-        for (const auto& sink_link : sink_links_map_cycles)
-        {
-          if (sink_links_map.count(sink_link.first) == 0)
-          {
-            node_names_with_cycles.push_back(sink_link.first);
-          }
-        }
-        sink_links_map = sink_links_map_cycles;
-      }
-
-      // check if all nodes have been corrected
-      if (sink_links_map.size() == 0)
-      {
-        break;
-      }
-
-      // calculate the net input
-      backPropogateLayerError(sink_links_map, time_step);
+      for (auto const& sink_links_map: BP_sink_link_cache_)
+        backPropogateLayerError(sink_links_map, time_step);
+      return BP_cyclic_nodes_cache_;
     }
-    return node_names_with_cycles;
+    else
+    {
+      std::vector<std::string> node_names_with_cycles;
+      const int max_iters = 1e6;
+      for (int iter=0; iter<max_iters; ++iter)
+      {
+        // get the next uncorrected layer
+        std::map<std::string, std::vector<std::string>> sink_links_map;
+        std::vector<std::string> source_nodes;
+        getNextUncorrectedLayer(sink_links_map, source_nodes);  
+
+        // get cycles
+        std::map<std::string, std::vector<std::string>> sink_links_map_cycles = sink_links_map;
+        std::vector<std::string> source_nodes_cycles;
+        getNextUncorrectedLayerCycles(sink_links_map_cycles, source_nodes, source_nodes_cycles);
+
+        if (source_nodes_cycles.size() == source_nodes.size())
+        { // all backward propogation steps have caught up
+          // add source nodes with cycles to the backward propogation step
+          for (const auto& sink_link : sink_links_map_cycles)
+          {
+            if (sink_links_map.count(sink_link.first) == 0)
+            {
+              node_names_with_cycles.push_back(sink_link.first);
+            }
+          }
+          sink_links_map = sink_links_map_cycles;
+        }
+
+        // check if all nodes have been corrected
+        if (sink_links_map.size() == 0)
+        {
+          break;
+        }
+
+        // calculate the net input
+        backPropogateLayerError(sink_links_map, time_step);
+
+        if (cache_BP_steps)
+          BP_sink_link_cache_.push_back(sink_links_map);
+      }
+      if (cache_BP_steps)
+        BP_cyclic_nodes_cache_ = node_names_with_cycles;
+      return node_names_with_cycles;
+    }
   }
   
   // // [DEPRECATED]
@@ -1656,5 +1679,12 @@ namespace SmartPeak
       }
     }
     return weights_found;
+  }
+
+  void Model::clear_cache()
+  {
+    FP_sink_link_cache_.clear();
+    BP_sink_link_cache_.clear();
+    BP_cyclic_nodes_cache_.clear();
   }
 }
