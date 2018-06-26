@@ -506,4 +506,9 @@ BOOST_AUTO_TEST_CASE(checkWeightNames)
   BOOST_CHECK(!model.checkWeightNames(weight_names));
 }
 
+BOOST_AUTO_TEST_CASE(clearCache) 
+{
+  // No tests
+}
+
 BOOST_AUTO_TEST_SUITE_END()

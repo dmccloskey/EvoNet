@@ -179,6 +179,8 @@ public:
       @param[out] Links
       @param[out] source_nodes
       @param[in] sink_nodes
+
+      @param[in, out] sink_links_map Map of sink nodes (keys) to a vector of links (values)
       @param[out] sink_nodes_with_biases
     */ 
     void getNextInactiveLayerBiases(
@@ -201,6 +203,8 @@ public:
       @param[out] Links
       @param[out] source_nodes
       @param[in] sink_nodes
+
+      @param[in, out] sink_links_map Map of sink nodes (keys) to a vector of links (values)
       @param[out] sink_nodes_with_cycles
     */ 
     void getNextInactiveLayerCycles(
@@ -212,55 +216,34 @@ public:
       std::map<std::string, std::vector<std::string>>& sink_links_map,
       std::vector<std::string>& sink_nodes_with_cycles);
 
-	/**
-	@brief getForwardPropogationLayerNodeAndLinkNames.
+    /**
+    @brief Allocate tensor memory for all forward
+      propogation tensors.
 
-	Note that nodes need not be the same type.
+    Note that nodes need not be the same type.
 
-	@param[in] time_step Time step to activate.
-	*/
-	void cacheFPLayerNodeAndLinkNames(
-	  const int& time_step,
-	  std::vector<std::string>& links,
-	  std::vector<std::string>& source_nodes,
-	  std::vector<std::string>& sink_nodes);
-
-	/**
-	@brief Allocate tensor memory for all forward
-	  propogation tensors.
-
-	Note that nodes need not be the same type.
-
-	@param[in] time_step Time step to activate.
-	*/
-	void allocateForwardPropogationLayerTensors(const int& time_step);
-
-	///**
-	//@brief Forward propogate the layer input by calculating
-	//  the net node input and activated node output.
-
-	//Note that nodes need not be the same type.
-
-	//@param[in] time_step Time step to activate.
-	//*/
-	//void forwardPropogate(const int& time_step);
+    @param[in] time_step Time step to activate.
+    */
+    void allocateForwardPropogationLayerTensors(const int& time_step);
  
     /**
-      @brief A prelude to a forward propogation step. Computes the net
-        input into all nodes composing the next layer:
-        1. all sink output values are unknown (i.e. inactive),
-        2. all source node output values are known (i.e. active).
+    @brief A prelude to a forward propogation step. Computes the net
+      input into all nodes composing the next layer:
+      1. all sink output values are unknown (i.e. inactive),
+      2. all source node output values are known (i.e. active).
 
-      Note that nodes need not be the same type.
+    Note that nodes need not be the same type.
 
-      @param[out] Links
-      @param[out] source_nodes
-      @param[out] sink_nodes
-      @param[in] time_step Time step to activate.
+    @param[out] Links
+    @param[out] source_nodes
+    @param[out] sink_nodes
+    @param[in] time_step Time step to activate.
 
-      OPTIMIZATION:
-      pass memory to tensors so that when the tensors compute the matrices
-      the underlying node values are automatically updated
+    [OPTIMIZATION:
+    pass memory to tensors so that when the tensors compute the matrices
+    the underlying node values are automatically updated]
+
+    [PARALLEL: allow for parallelization of iteration of sink nodes]
     */ 
     void forwardPropogateLayerNetInput(
       const std::vector<std::string>& links,
@@ -272,53 +255,55 @@ public:
       const int& time_step);
  
     /**
-      @brief Completion of a forward propogation step. Computes the net
-        activation for all nodes in the tensor layer.
+    @brief Completion of a forward propogation step. Computes the net
+      activation for all nodes in the tensor layer.
 
-      [DEPRECATED]
+    [DEPRECATED]
 
-      Note before computing the activation, the layer tensor will be split
-        according to the node type, and the corresponding activation
-        function will be applied
+    Note before computing the activation, the layer tensor will be split
+      according to the node type, and the corresponding activation
+      function will be applied
 
-      @param[in] sink_nodes
-      @param[in] time_step Time step to activate.
+    @param[in] sink_nodes
+    @param[in] time_step Time step to activate.
     */ 
     void forwardPropogateLayerActivation(
       const std::vector<std::string>& sink_nodes,
       const int& time_step);
  
     /**
-      @brief Foward propogation of the network model.
-        All node outputs and derivatives are calculating
-        starting from the input nodes.  Each node status is
-        changed from "initialized" to "activated" when the
-        outputs and derivatives are calculated.
+    @brief Foward propogation of the network model.
+      All node outputs and derivatives are calculating
+      starting from the input nodes.  Each node status is
+      changed from "initialized" to "activated" when the
+      outputs and derivatives are calculated.
+    
+    [TODO: add tests for caching]
 
-      @param[in] time_step Time step to forward propogate.
-      @param[in] cache_FP_steps Whether to save the FP steps
-        for faster iteration next epoch.
-      @param[in] use_cache Whether to use the cached FP steps.
+    @param[in] time_step Time step to forward propogate.
+    @param[in] cache_FP_steps Whether to save the FP steps
+      for faster iteration next epoch.
+    @param[in] use_cache Whether to use the cached FP steps.
     */ 
     void forwardPropogate(const int& time_step, bool cache_FP_steps = false, bool use_cache = false);     
  
     /**
-      @brief Foward propogation through time (FPTT) of the network model.
-        All node outputs and derivatives are calculating
-        starting from the input nodes.  Each node status is
-        changed from "initialized" to "activated" when the
-        outputs and derivatives are calculated.  This is repeated
-        for n_time steps without weight updates.
-      
-      NOTE: The implementation assumes that the output values for
-        all input and biases have already been set.  
+    @brief Foward propogation through time (FPTT) of the network model.
+      All node outputs and derivatives are calculating
+      starting from the input nodes.  Each node status is
+      changed from "initialized" to "activated" when the
+      outputs and derivatives are calculated.  This is repeated
+      for n_time steps without weight updates.
+    
+    NOTE: The implementation assumes that the output values for
+      all input and biases have already been set.  
 
-      @param[in] time_steps The number of time_steps forward to 
-        continuously calculate node outputs and node derivatives.
-      @param[in] values Input values at each time step where
-        dim0: batch_size, dim1: time_step, and dim2: nodes.
-      @param[in] node_names
-      @param[in] dt Node time resolution 
+    @param[in] time_steps The number of time_steps forward to 
+      continuously calculate node outputs and node derivatives.
+    @param[in] values Input values at each time step where
+      dim0: batch_size, dim1: time_step, and dim2: nodes.
+    @param[in] node_names
+    @param[in] dt Node time resolution 
     */ 
     void FPTT(const int& time_steps, 
       const Eigen::Tensor<float, 3>& values,
@@ -326,35 +311,35 @@ public:
       const Eigen::Tensor<float, 2>& dt);
  
     /**
-      @brief Calculates the error of the model with respect to
-        the expected values
+    @brief Calculates the error of the model with respect to
+      the expected values
 
-      @param[in] values Expected node output values
-      @param[in] node_names Output nodes
+    @param[in] values Expected node output values
+    @param[in] node_names Output nodes
     */ 
     void calculateError(const Eigen::Tensor<float, 2>& values, const std::vector<std::string>& node_names);
  
     /**
-      @brief Calculates the error of the model through time (CETT)
-        with respect to the expected values
+    @brief Calculates the error of the model through time (CETT)
+      with respect to the expected values
 
-      @param[in] values Expected node output values
-      @param[in] node_names Output nodes
+    @param[in] values Expected node output values
+    @param[in] node_names Output nodes
     */ 
     void CETT(const Eigen::Tensor<float, 3>& values, const std::vector<std::string>& node_names);
  
     /**
-      @brief A prelude to a back propogation step.  Returns a vector of links
-        and associated nodes that satisfy the following conditions:
-        1. all sink error values are unknown (i.e. active),
-        2. all source error values are known (i.e. corrected).
-        3. all nodes need not be the same type
-      
-      [TODO: check that only sink nodes where ALL sources are corrected are identified]
+    @brief A prelude to a back propogation step.  Returns a vector of links
+      and associated nodes that satisfy the following conditions:
+      1. all sink error values are unknown (i.e. active),
+      2. all source error values are known (i.e. corrected).
+      3. all nodes need not be the same type
+    
+    [TODO: check that only sink nodes where ALL sources are corrected are identified]
 
-      @param[out] Links
-      @param[out] source_nodes
-      @param[out] sink_nodes
+    @param[out] Links
+    @param[out] source_nodes
+    @param[out] sink_nodes
     */ 
     void getNextUncorrectedLayer(
       std::vector<std::string>& links,
@@ -365,16 +350,16 @@ public:
       std::vector<std::string>& source_nodes);      
  
     /**
-      @brief A continuation of a back propogation step.  Returns a vector of links
-        and associated nodes that satisfy the following conditions:
-        1. all sink error values are known (i.e. corrected),
-        2. all source error values are known (i.e. corrected).
-        3. all nodes need not be the same type
+    @brief A continuation of a back propogation step.  Returns a vector of links
+      and associated nodes that satisfy the following conditions:
+      1. all sink error values are known (i.e. corrected),
+      2. all source error values are known (i.e. corrected).
+      3. all nodes need not be the same type
 
-      @param[out] Links
-      @param[out] source_nodes
-      @param[out] sink_nodes
-      @param[out] source_nodes_with_cycles
+    @param[out] Links
+    @param[out] source_nodes
+    @param[out] sink_nodes
+    @param[out] source_nodes_with_cycles
     */ 
     void getNextUncorrectedLayerCycles(
       std::vector<std::string>& links,
@@ -387,21 +372,23 @@ public:
       std::vector<std::string>& source_nodes_with_cycles); 
  
     /**
-      @brief A back propogation step. Computes the net
-        error into all nodes composing the next layer:
-        1. all sink error values are unknown (i.e. active),
-        2. all source error values are known (i.e. corrected).
+    @brief A back propogation step. Computes the net
+      error into all nodes composing the next layer:
+      1. all sink error values are unknown (i.e. active),
+      2. all source error values are known (i.e. corrected).
 
-      Note that nodes need not be the same type.
+    Note that nodes need not be the same type.
 
-      @param[out] Links
-      @param[out] source_nodes
-      @param[out] sink_nodes
-      @param[in] time_step Time step to forward propogate.
+    @param[out] Links
+    @param[out] source_nodes
+    @param[out] sink_nodes
+    @param[in] time_step Time step to forward propogate.
 
-      OPTIMIZATION:
-      pass memory to tensors so that when the tensors compute the matrices
-      the underlying node values are automatically updated
+    [OPTIMIZATION:
+    pass memory to tensors so that when the tensors compute the matrices
+    the underlying node values are automatically updated]
+
+    [PARALLEL: allow for parallelization of iteration of sink nodes]
     */ 
     void backPropogateLayerError(
       const std::vector<std::string>& links,
@@ -413,47 +400,52 @@ public:
       const int& time_step);
  
     /**
-      @brief Back propogation of the network model.
-        All node errors are calculating starting from the output nodes.  
-        Each node status is changed from "activated" to "corrected" when the
-        outputs and derivatives are calculated.
+    @brief Back propogation of the network model.
+      All node errors are calculating starting from the output nodes.  
+      Each node status is changed from "activated" to "corrected" when the
+      outputs and derivatives are calculated.
 
-      @param[in] time_step Time step to forward propogate.
+    [TODO: add tests for caching]
 
-      @returns Vector of cyclic sink node IDs
+    @param[in] time_step Time step to forward propogate.
+    @param[in] cache_BP_steps Whether to save the BP steps
+      for faster iteration next epoch.
+    @param[in] use_cache Whether to use the cached BP steps.
+
+    @returns Vector of cyclic sink node IDs
     */ 
     std::vector<std::string> backPropogate(const int& time_step, bool cache_BP_steps = false, bool use_cache = false);  
  
     /**
-      @brief Truncated Back Propogation Through Time (TBPTT) of the network model.
-        All node errors are calculating starting from the output nodes.  
-        Each node status is changed from "activated" to "corrected" when the
-        outputs and derivatives are calculated.
+    @brief Truncated Back Propogation Through Time (TBPTT) of the network model.
+      All node errors are calculating starting from the output nodes.  
+      Each node status is changed from "activated" to "corrected" when the
+      outputs and derivatives are calculated.
 
-      @param[in] time_steps The number of time_steps backwards to 
-        unfold the network model.
+    @param[in] time_steps The number of time_steps backwards to 
+      unfold the network model.
     */ 
     void TBPTT(const int& time_steps);  
  
     /**
-      @brief Recurrent Real Time Learning (RTRL) of the network model.
-        All node errors are calculating starting from the output nodes.  
-        Each node status is changed from "activated" to "corrected" when the
-        outputs and derivatives are calculated.
+    @brief Recurrent Real Time Learning (RTRL) of the network model.
+      All node errors are calculating starting from the output nodes.  
+      Each node status is changed from "activated" to "corrected" when the
+      outputs and derivatives are calculated.
 
-      @param[in] time_steps The number of time_steps backwards to 
-        unfold the network model.
+    @param[in] time_steps The number of time_steps backwards to 
+      unfold the network model.
     */ 
     void RTRL(const int& time_steps);  
  
     /**
-      @brief Update the weights
+    @brief Update the weights
       
     */ 
     void updateWeights(const int& time_steps);
  
     /**
-      @brief Reset the node statuses back to inactivated
+    @brief Reset the node statuses back to inactivated
       
     */ 
     void reInitializeNodeStatuses();
@@ -575,7 +567,7 @@ public:
     */ 
     bool checkWeightNames(const std::vector<std::string> weight_names);
 
-    void clear_cache(); ///< clear the FP and BP caches
+    void clearCache(); ///< clear the FP and BP caches
 
 private:
     int id_; ///< Model ID
@@ -589,12 +581,11 @@ private:
     // TODO: will most likely need to expand to a derived class model (e.g., SolverOp)
     SmartPeak::ModelLossFunction loss_function_; ///< Model loss function
 
-	// Internal structures to allow for efficient multi-threading
-	// and off-loading of computation from host to devices
-	std::vector<std::map<std::string, std::vector<std::string>>> FP_sink_link_cache_; 
-	std::vector<std::map<std::string, std::vector<std::string>>> BP_sink_link_cache_;
-	std::vector<std::string> BP_cyclic_nodes_cache_;
-
+    // Internal structures to allow for efficient multi-threading
+    // and off-loading of computation from host to devices
+    std::vector<std::map<std::string, std::vector<std::string>>> FP_sink_link_cache_; 
+    std::vector<std::map<std::string, std::vector<std::string>>> BP_sink_link_cache_;
+    std::vector<std::string> BP_cyclic_nodes_cache_;
   };
 }
 

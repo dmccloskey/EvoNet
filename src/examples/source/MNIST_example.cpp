@@ -4,6 +4,9 @@
 #include <SmartPeak/ml/ModelTrainer.h>
 #include <SmartPeak/ml/ModelReplicator.h>
 #include <SmartPeak/ml/Model.h> 
+#include <SmartPeak/io/WeightFile.h>
+#include <SmartPeak/io/LinkFile.h>
+#include <SmartPeak/io/NodeFile.h>
 
 #include <fstream>
 
@@ -68,7 +71,7 @@ public:
     printf("Data checks passed\n");
     
     // Initialize the model
-    model.clear_cache();
+    model.clearCache();
     model.initNodes(getBatchSize(), getMemorySize());
     printf("Initialized the model\n");
 
@@ -96,6 +99,14 @@ public:
 
       // calculate the model error and node output error
       model.calculateError(output.chip(iter, 2), output_nodes);
+      std::cout<<"Expected: "; 
+      for (const auto& d : output.chip(iter, 2)) 
+        std::cout<<d<<" ";
+      std::endl;
+      std::cout<<"Expected: "; 
+      for (const auto& n : output_nodes) 
+        std::cout<<model.getNode(node).getOutput()<<" ";
+      std::endl;
       std::cout<<"Model error: "<<model.getError().sum()<<std::endl;
 
       // back propogate
@@ -140,7 +151,7 @@ public:
     // printf("Data checks passed\n");
     
     // Initialize the model
-    model.clear_cache();
+    model.clearCache();
     model.initNodes(getBatchSize(), getMemorySize());
     // printf("Initialized the model\n");
 
@@ -342,14 +353,14 @@ int main(int argc, char** argv)
 
   // define the model replicator for growth mode
   ModelTrainerTest model_trainer;
-  model_trainer.setBatchSize(4);
+  model_trainer.setBatchSize(16);
   model_trainer.setMemorySize(1);
-  model_trainer.setNEpochs(20);
+  model_trainer.setNEpochs(100);
 
   // define the model replicator for growth mode
   ModelReplicator model_replicator;
-  model_replicator.setNNodeAdditions(1);
-  model_replicator.setNLinkAdditions(2);
+  model_replicator.setNNodeAdditions(0);
+  model_replicator.setNLinkAdditions(0);
   model_replicator.setNNodeDeletions(0);
   model_replicator.setNLinkDeletions(0);
 
@@ -361,7 +372,7 @@ int main(int argc, char** argv)
   const int n_replicates_per_model = 1;
   int mnist_sample_start = 0;
   int mnist_sample_end = 0;
-  const int iterations = 10;
+  const int iterations = 2;
   for (int iter=0; iter<iterations; ++iter)
   {
     printf("Iteration #: %d\n", iter);
@@ -442,21 +453,28 @@ int main(int argc, char** argv)
         for (int epochs_iter=0; epochs_iter<model_trainer.getNEpochs(); ++epochs_iter)
           output_data(batch_iter, nodes_iter, epochs_iter) = (float)training_labels_encoded(sample_indices[epochs_iter*model_trainer.getBatchSize() + batch_iter], nodes_iter);
 
-    // // model modification scheduling
-    // if (iter > 100)
-    // {
-    //   model_replicator.setNNodeAdditions(1);
-    //   model_replicator.setNLinkAdditions(1);
-    //   model_replicator.setNNodeDeletions(1);
-    //   model_replicator.setNLinkDeletions(1);
-    // }
-    // else
-    // {
-    //   model_replicator.setNNodeAdditions(0);
-    //   model_replicator.setNLinkAdditions(3);
-    //   model_replicator.setNNodeDeletions(0);
-    //   model_replicator.setNLinkDeletions(3);
-    // }
+    // model modification scheduling
+    if (iter > 100)
+    {
+      model_replicator.setNNodeAdditions(1);
+      model_replicator.setNLinkAdditions(2);
+      model_replicator.setNNodeDeletions(1);
+      model_replicator.setNLinkDeletions(2);
+    }
+    else if (iter > 10 && iter < 100)
+    {
+      model_replicator.setNNodeAdditions(1);
+      model_replicator.setNLinkAdditions(2);
+      model_replicator.setNNodeDeletions(0);
+      model_replicator.setNLinkDeletions(0);
+    }
+    else
+    {
+      model_replicator.setNNodeAdditions(10);
+      model_replicator.setNLinkAdditions(20);
+      model_replicator.setNNodeDeletions(0);
+      model_replicator.setNLinkDeletions(0);
+    }
 
     // train the population
     std::cout<<"Training the models..."<<std::endl;
@@ -490,6 +508,14 @@ int main(int argc, char** argv)
       population_trainer.replicateModels(population, model_replicator, n_replicates_per_model, std::to_string(iter));
     }
   }
+
+  // write the model to file
+  WeightFile weightfile;
+  weightfile.storeWeightsCsv("MNISTExampleWeights.csv", population[0].getWeights());
+  LinkFile linkfile;
+  linkfile.storeLinksCsv("MNISTExampleLinks.csv", population[0].getLinks());
+  NodeFile nodefile;
+  nodefile.storeNodesCsv("MNISTExampleNodes.csv", population[0].getNodes());
 
   return 0;
 }

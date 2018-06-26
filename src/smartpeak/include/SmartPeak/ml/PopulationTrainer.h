@@ -38,6 +38,8 @@ public:
       - Random selection: set n_top == 0, set n_random > 0
       - Binary selection: given models.size() == 2, set n_top == 1, set n_random == 0
 
+      [PARALELLIZATION: add parallel validation of models]
+
       @param[in] n_top The number models to select
       @param[in] n_random The number of random models to select from the pool of top models
       @param[in, out] models The vector (i.e., population) of models to select from
@@ -109,6 +111,8 @@ public:
     /**
       @brief Trains each of the models in the population
         using the same test data set
+
+      [PARALELLIZATION: add parallel training of models]
 
       @param[in, out] models The vector of models to copy
       @param[in] model_trainer The trainer to use
