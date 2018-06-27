@@ -99,15 +99,29 @@ public:
 
       // calculate the model error and node output error
       model.calculateError(output.chip(iter, 2), output_nodes);
-      std::cout<<"Expected: "; 
-      for (const auto& d : output.chip(iter, 2)) 
-        std::cout<<d<<" ";
-      std::endl;
-      std::cout<<"Expected: "; 
-      for (const auto& n : output_nodes) 
-        std::cout<<model.getNode(node).getOutput()<<" ";
-      std::endl;
       std::cout<<"Model error: "<<model.getError().sum()<<std::endl;
+
+      printf("Node ID:\t");
+      for (const std::string& node : output_nodes)
+        printf("%s\t", node.data());
+      printf("\nExpected:\n");
+      const Eigen::Tensor<float, 2> output_chip = output.chip(iter, 2);
+      for (int j=0; j<getBatchSize(); ++j) 
+      {
+        printf("Batch %d:\t", j);
+        for (int i=0; i<output_nodes.size(); ++i)
+          printf("%0.2f\t", (float)output_chip(j, i));
+        printf("\n");
+      }
+      printf("\nCalculated:\n");
+      for (int j=0; j<getBatchSize(); ++j) 
+      {
+        printf("Batch %d:\t", j);
+        for (int i=0; i<output_nodes.size(); ++i)
+          printf("%0.2f\t", model.getNode(output_nodes[i]).getOutput()(j,0));
+        printf("\n");
+      }
+      printf("\n");      
 
       // back propogate
       model.backPropogate(0, cache_steps, use_cache);
@@ -132,22 +146,22 @@ public:
     std::vector<float> model_error;
 
     // Check input and output data
-    if (!checkInputData(getNEpochs(), input, getBatchSize(), getMemorySize(), input_nodes))
-    {
-      return model_error;
-    }
-    if (!checkOutputData(getNEpochs(), output, getBatchSize(), output_nodes))
-    {
-      return model_error;
-    }
-    if (!model.checkNodeNames(input_nodes))
-    {
-      return model_error;
-    }
-    if (!model.checkNodeNames(output_nodes))
-    {
-      return model_error;
-    }
+    // if (!checkInputData(getNEpochs(), input, getBatchSize(), getMemorySize(), input_nodes))
+    // {
+    //   return model_error;
+    // }
+    // if (!checkOutputData(getNEpochs(), output, getBatchSize(), output_nodes))
+    // {
+    //   return model_error;
+    // }
+    // if (!model.checkNodeNames(input_nodes))
+    // {
+    //   return model_error;
+    // }
+    // if (!model.checkNodeNames(output_nodes))
+    // {
+    //   return model_error;
+    // }
     // printf("Data checks passed\n");
     
     // Initialize the model
@@ -353,9 +367,9 @@ int main(int argc, char** argv)
 
   // define the model replicator for growth mode
   ModelTrainerTest model_trainer;
-  model_trainer.setBatchSize(16);
+  model_trainer.setBatchSize(8);
   model_trainer.setMemorySize(1);
-  model_trainer.setNEpochs(100);
+  model_trainer.setNEpochs(50);
 
   // define the model replicator for growth mode
   ModelReplicator model_replicator;
@@ -366,13 +380,13 @@ int main(int argc, char** argv)
 
   // Evolve the population
   std::vector<Model> population; 
-  const int population_size = 2;
-  const int n_top = 1;
-  const int n_random = 1;
-  const int n_replicates_per_model = 1;
+  const int population_size = 1;
+  int n_top = 1;
+  int n_random = 1;
+  int n_replicates_per_model = 0;
   int mnist_sample_start = 0;
   int mnist_sample_end = 0;
-  const int iterations = 2;
+  const int iterations = 5;
   for (int iter=0; iter<iterations; ++iter)
   {
     printf("Iteration #: %d\n", iter);
@@ -461,17 +475,17 @@ int main(int argc, char** argv)
       model_replicator.setNNodeDeletions(1);
       model_replicator.setNLinkDeletions(2);
     }
-    else if (iter > 10 && iter < 100)
+    else if (iter > 1 && iter < 100)
     {
       model_replicator.setNNodeAdditions(1);
       model_replicator.setNLinkAdditions(2);
-      model_replicator.setNNodeDeletions(0);
-      model_replicator.setNLinkDeletions(0);
+      model_replicator.setNNodeDeletions(1);
+      model_replicator.setNLinkDeletions(2);
     }
-    else
-    {
+    else if (iter == 0)
+    {      
       model_replicator.setNNodeAdditions(10);
-      model_replicator.setNLinkAdditions(20);
+      model_replicator.setNLinkAdditions(50);
       model_replicator.setNNodeDeletions(0);
       model_replicator.setNLinkDeletions(0);
     }
@@ -486,10 +500,12 @@ int main(int argc, char** argv)
     // reformat the output data for validation
 
     // select the top N from the population
-    std::cout<<"Selecting the models..."<<std::endl;
+    std::cout<<"Selecting the models..."<<std::endl;    
+    model_trainer.setNEpochs(4);  // lower the number of epochs for validation
     population_trainer.selectModels(
       n_top, n_random, population, model_trainer,
       input_data, output_data, time_steps, input_nodes, output_nodes);
+    model_trainer.setNEpochs(50);  // restor the number of epochs for training
 
     for (const Model& model: population)
     {
@@ -503,9 +519,20 @@ int main(int argc, char** argv)
 
     if (iter < iterations - 1)  
     {
+      if (iter == 0)
+      {
+        n_top = 5;
+        n_random = 5;
+        n_replicates_per_model = 10;
+      }
+      else
+      {
+        n_replicates_per_model = 2;
+      }
       // replicate and modify models
       std::cout<<"Replicating and modifying the models..."<<std::endl;
       population_trainer.replicateModels(population, model_replicator, n_replicates_per_model, std::to_string(iter));
+      std::cout<<"Population size of "<<population.size()<<std::endl;
     }
   }
 
