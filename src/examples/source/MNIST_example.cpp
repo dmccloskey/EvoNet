@@ -485,7 +485,7 @@ int main(int argc, char** argv)
     else if (iter == 0)
     {      
       model_replicator.setNNodeAdditions(10);
-      model_replicator.setNLinkAdditions(50);
+      model_replicator.setNLinkAdditions(20);
       model_replicator.setNNodeDeletions(0);
       model_replicator.setNLinkDeletions(0);
     }
@@ -527,6 +527,8 @@ int main(int argc, char** argv)
       }
       else
       {
+        n_top = 5;
+        n_random = 5;
         n_replicates_per_model = 2;
       }
       // replicate and modify models

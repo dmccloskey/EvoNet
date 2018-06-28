@@ -581,11 +581,15 @@ private:
     // TODO: will most likely need to expand to a derived class model (e.g., SolverOp)
     SmartPeak::ModelLossFunction loss_function_; ///< Model loss function
 
-    // Internal structures to allow for efficient multi-threading
-    // and off-loading of computation from host to devices
+    // Internal structures to allow for caching of the different FP and BP layers
     std::vector<std::map<std::string, std::vector<std::string>>> FP_sink_link_cache_; 
     std::vector<std::map<std::string, std::vector<std::string>>> BP_sink_link_cache_;
     std::vector<std::string> BP_cyclic_nodes_cache_;
+
+    // Internal structures to allow for efficient multi-threading
+    // and off-loading of computation from host to devices
+
+
   };
 }
 
