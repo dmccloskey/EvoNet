@@ -9,6 +9,7 @@ set(sources_list
 	ModelTrainer.cpp
 	Node.cpp
 	PopulationTrainer.cpp
+	SharedFunctions.cpp
 	Weight.cpp
 )
 

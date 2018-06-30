@@ -240,10 +240,10 @@ public:
     @param[in] time_step Time step to activate.
 
     [OPTIMIZATION:
-    pass memory to tensors so that when the tensors compute the matrices
-    the underlying node values are automatically updated]
-
+      pass memory to tensors so that when the tensors compute the matrices
+      the underlying node values are automatically updated?]
     [PARALLEL: allow for parallelization of iteration of sink nodes]
+    [THREADPOOL/CUDA: move to seperate file for cpu/cuda compilation]
     */ 
     void forwardPropogateLayerNetInput(
       const std::vector<std::string>& links,

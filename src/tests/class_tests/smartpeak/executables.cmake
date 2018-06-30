@@ -21,6 +21,7 @@ set(ml_executables_list
   Model_DCG_test
   Node_test
   PopulationTrainer_test
+  SharedFunctions_test
   Solver_test
   Weight_test
   WeightInit_test

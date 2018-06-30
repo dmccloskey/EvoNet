@@ -682,9 +682,9 @@ namespace SmartPeak
     // invoke the activation function once the net input is calculated
     for (const auto& sink_links : sink_links_map)
     {
-      Eigen::Tensor<float, 2> sink_tensor(batch_size, 1);
+      Eigen::Tensor<float, 2> sink_tensor(batch_size, 1);  // can be changed to dim of 1 when switching to chip
       sink_tensor.setConstant(0.0f);
-      Eigen::Tensor<float, 2> weight_tensor(batch_size, 1);
+      Eigen::Tensor<float, 2> weight_tensor(batch_size, 1);  // can be changed to dim of 1 when switching to chip
       Eigen::array<int, 2> offsets = {0, time_step};
       Eigen::array<int, 2> extent = {batch_size, 1};
       Eigen::array<int, 2> offsets_prev = {0, time_step + 1};
@@ -709,6 +709,9 @@ namespace SmartPeak
         }
       }
 
+      // [OPTIMIZATION: can map and output/derivative calculations be combined?
+      //  e.g., using the `chip` operator for the sink?
+      //  This would also be needed for using CUDA to save data transfers from host to device]
       // update the sink output
       mapValuesToNodes(sink_tensor, time_step, {sink_links.first}, NodeStatus::activated, "output");
 

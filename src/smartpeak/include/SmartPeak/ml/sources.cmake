@@ -12,6 +12,7 @@ set(sources_list_h
 	ModelTrainer.h
 	Node.h
 	PopulationTrainer.h
+	SharedFunctions.h
 	Solver.h
 	Weight.h
 	WeightInit.h

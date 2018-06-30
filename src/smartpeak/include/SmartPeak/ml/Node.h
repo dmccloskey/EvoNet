@@ -144,18 +144,22 @@ public:
     bool checkTimeStep(const int& time_step);
 
     /**
-      @brief The current output is passed through an activation function.
-        Contents are updated in place.
+    @brief The current output is passed through an activation function.
+    Contents are updated in place.
 
-      @param[in] time_step Time step to activate all samples in the batch
+    @param[in] time_step Time step to activate all samples in the batch
+
+    [THREADPOOL/CUDA: move to seperate file for cpu/cuda compilation]
     */
     void calculateActivation(const int& time_step);
-    
-    /**
-      @brief Calculate the derivative from the output.
 
-      @param[in] time_step Time step to calculate the derivative
-        for all samples in the batch
+    /**
+    @brief Calculate the derivative from the output.
+
+    @param[in] time_step Time step to calculate the derivative
+    for all samples in the batch
+
+    [THREADPOOL/CUDA: move to seperate file for cpu/cuda compilation]
     */
     void calculateDerivative(const int& time_step);
     

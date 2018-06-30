@@ -9,6 +9,7 @@
 #include <regex> // tokenizing
 #include <utility>
 #include <numeric> // accumulate
+#include <thread>
 
 namespace SmartPeak
 {
