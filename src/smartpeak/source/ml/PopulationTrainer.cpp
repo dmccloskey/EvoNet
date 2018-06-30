@@ -262,32 +262,39 @@ namespace SmartPeak
     {
       for (int i=0; i<n_replicates_per_model; ++i)
       {
-        Model model_copy(model);
-        
-        // rename the model
-        std::regex re("@");
-        std::vector<std::string> str_tokens;
-        std::string model_name_new = model.getName();
-        std::copy(
-          std::sregex_token_iterator(model_name_new.begin(), model_name_new.end(), re, -1),
-          std::sregex_token_iterator(),
-          std::back_inserter(str_tokens));
-        if (str_tokens.size() > 1)
-          model_name_new = str_tokens[0]; // only retain the last timestamp
-
-        char model_name_char[128];
-        sprintf(model_name_char, "%s@replicateModel:%s", model_name_new.data(), unique_str.data());
-        std::string model_name = model_replicator.makeUniqueHash(model_name_char, std::to_string(cnt));
-        model_copy.setName(model_name);
-
-        model_replicator.modifyModel(model_copy, unique_str + "-" + std::to_string(i));
-        models.push_back(model_copy);
-
+        models.push_back(replicateModel_(model, model_replicator, unique_str, cnt, i));
         cnt += 1;
       }
     } 
 
     removeDuplicateModels(models);
+  }
+
+  Model PopulationTrainer::replicateModel_(
+    const Model& model,
+    ModelReplicator& model_replicator,
+    std::string unique_str, int cnt, int i)
+  {
+    Model model_copy(model);
+    
+    // rename the model
+    std::regex re("@");
+    std::vector<std::string> str_tokens;
+    std::string model_name_new = model.getName();
+    std::copy(
+      std::sregex_token_iterator(model_name_new.begin(), model_name_new.end(), re, -1),
+      std::sregex_token_iterator(),
+      std::back_inserter(str_tokens));
+    if (str_tokens.size() > 1)
+      model_name_new = str_tokens[0]; // only retain the last timestamp
+
+    char model_name_char[128];
+    sprintf(model_name_char, "%s@replicateModel:%s", model_name_new.data(), unique_str.data());
+    std::string model_name = model_replicator.makeUniqueHash(model_name_char, std::to_string(cnt));
+    model_copy.setName(model_name);
+
+    model_replicator.modifyModel(model_copy, unique_str + "-" + std::to_string(i));
+    return model_copy;
   }
 
   void PopulationTrainer::trainModels(
@@ -304,19 +311,13 @@ namespace SmartPeak
     // train the models
     for (int i=0; i<models.size(); ++i)
     {
-      try
+      std::pair<std::string, bool> status = trainModel_(
+        models[i], model_trainer, input, output, time_steps, input_nodes, output_nodes);
+      
+      if (!status.second)
       {
-        model_trainer.trainModel(
-          models[i], input, output, time_steps,
-          input_nodes, output_nodes);
+        broken_model_names.push_back(status.first);
       }
-      catch (std::exception& e)
-      {
-        printf("The model %s is broken.\n", models[i].getName().data());
-        printf("Error: %s.\n", e.what());
-        broken_model_names.push_back(models[i].getName());
-      }
-      models[i].getName();
     }
 
     // purge broken models
@@ -332,6 +333,32 @@ namespace SmartPeak
         models.end()
       );
     }
+  }
+
+  
+  std::pair<std::string, bool> PopulationTrainer::trainModel_(
+    Model& model,
+    ModelTrainer& model_trainer,
+    const Eigen::Tensor<float, 4>& input,
+    const Eigen::Tensor<float, 3>& output,
+    const Eigen::Tensor<float, 3>& time_steps,
+    const std::vector<std::string>& input_nodes,
+    const std::vector<std::string>& output_nodes)
+  {
+    try
+    {
+      model_trainer.trainModel(
+        model, input, output, time_steps,
+        input_nodes, output_nodes);
+      return std::make_pair(model.getName(), true);
+    }
+    catch (std::exception& e)
+    {
+      printf("The model %s is broken.\n", model.getName().data());
+      printf("Error: %s.\n", e.what());
+      return std::make_pair(model.getName(), false);
+    }
+
   }
 
   // float PopulationTrainer::calculateMean(std::vector<float> values)

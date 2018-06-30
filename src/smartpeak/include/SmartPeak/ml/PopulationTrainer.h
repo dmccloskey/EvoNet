@@ -117,6 +117,11 @@ public:
       const int& n_replicates_per_model,
       std::string unique_str = "",
       int n_threads = 1);
+
+    Model replicateModel_(
+      const Model& model,
+      ModelReplicator& model_replicator,
+      std::string unique_str, int cnt, int i);
  
     /**
       @brief Trains each of the models in the population
@@ -136,6 +141,15 @@ public:
       const std::vector<std::string>& input_nodes,
       const std::vector<std::string>& output_nodes,
       int n_threads = 1);
+
+    std::pair<std::string, bool> trainModel_(
+      Model& model,
+      ModelTrainer& model_trainer,
+      const Eigen::Tensor<float, 4>& input,
+      const Eigen::Tensor<float, 3>& output,
+      const Eigen::Tensor<float, 3>& time_steps,
+      const std::vector<std::string>& input_nodes,
+      const std::vector<std::string>& output_nodes);
   };
 }
 
