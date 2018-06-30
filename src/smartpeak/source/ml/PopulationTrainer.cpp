@@ -60,47 +60,50 @@ namespace SmartPeak
     // score the models
     std::vector<std::pair<std::string, float>> models_validation_errors;
 
-    models_validation_errors = validateModels_(
-      models, model_trainer, input, output, time_steps, input_nodes, output_nodes
-    );
+    // models_validation_errors = validateModels_(
+    //   models, model_trainer, input, output, time_steps, input_nodes, output_nodes
+    // );
 
-    // std::vector<std::thread> task_threads;
-    // std::vector<std::future<std::pair<std::string, float>>> task_results;
-    // int thread_cnt = 0;
-    // for (int i=0; i<models.size(); ++i)
-    // {
+    std::vector<std::future<std::pair<std::string, float>>> task_results;
+    int thread_cnt = 0;
+    for (int i=0; i<models.size(); ++i)
+    {
 
-    //   std::packaged_task<std::pair<std::string, float> // encapsulate in a packaged_task
-    //     (Model,
-    //       ModelTrainer, // virtual function is causing problems... [TODO: google...]
-    //       Eigen::Tensor<float, 4>,
-    //       Eigen::Tensor<float, 3>,
-    //       Eigen::Tensor<float, 3>,
-    //       std::vector<std::string>,
-    //       std::vector<std::string>
-    //     )> task(validateModel_);
+      std::packaged_task<std::pair<std::string, float> // encapsulate in a packaged_task
+        (Model*,
+          ModelTrainer*,
+          Eigen::Tensor<float, 4>,
+          Eigen::Tensor<float, 3>,
+          Eigen::Tensor<float, 3>,
+          std::vector<std::string>,
+          std::vector<std::string>
+        )> task(PopulationTrainer::validateModel_);
       
-    //   // launch the thread
-    //   task_results.push_back(task.get_future());
-    //   std::thread task_td(std::move(task),
-    //     models[i], model_trainer, input, output, time_steps, input_nodes, output_nodes);
-    //   task_threads.push_back(task_td);  // "use of deleted function?"
+      // launch the thread
+      task_results.push_back(task.get_future());
+      std::thread task_thread(std::move(task),
+        &models[i], &model_trainer, 
+        std::ref(input), std::ref(output), std::ref(time_steps), 
+        std::ref(input_nodes), std::ref(output_nodes));
+      task_thread.detach();
 
-    //   // join the threads
-    //   if (thread_cnt == n_threads - 1 || i == models.size() - 1)
-    //   {
-    //     for (int j=0; j<n_threads; ++j)
-    //     {
-    //       task_threads[j].join();
-    //       models_validation_errors.push_back(task_results[j].get());
-    //     }
-    //     task_threads.clear();
-    //     task_results.clear();
-    //     thread_cnt = 0;
-    //   }
+      // retreive the results
+      if (thread_cnt == n_threads - 1 || i == models.size() - 1)
+      {
+        for (int j=0; j<n_threads; ++j)
+        {
+          models_validation_errors.push_back(task_results[j].get());
+        }
+        task_results.clear();
+        thread_cnt = 0;
+      }
+      else
+      {
+        ++thread_cnt;
+      }
 
-    //   ++thread_cnt;
-    // }
+      
+    }
     // printf("PopulationTrainer::selectModels, models_validation_errors1 size: %i\n", models_validation_errors.size());
     
     // sort each model based on their scores in ascending order
@@ -176,9 +179,9 @@ namespace SmartPeak
     return models_validation_errors;    
   }
 
- std::pair<std::string, float> PopulationTrainer::validateModel_(
-    Model& model,
-    ModelTrainer& model_trainer,
+  std::pair<std::string, float> PopulationTrainer::validateModel_(
+    Model* model,
+    ModelTrainer* model_trainer,
     const Eigen::Tensor<float, 4>& input,
     const Eigen::Tensor<float, 3>& output,
     const Eigen::Tensor<float, 3>& time_steps,
@@ -188,21 +191,21 @@ namespace SmartPeak
     // score the model
     try
     {
-      std::vector<float> model_errors = model_trainer.validateModel(
-        model, input, output, time_steps,
+      std::vector<float> model_errors = model_trainer->validateModel(
+        *model, input, output, time_steps,
         input_nodes, output_nodes);
       float model_ave_error = 1e6;
       if (model_errors.size()>0)
         model_ave_error = std::accumulate(model_errors.begin(), model_errors.end(), 0.0)/model_errors.size();
       if (isnan(model_ave_error))
         model_ave_error = 1e6;
-      return std::make_pair(model.getName(), model_ave_error);
+      return std::make_pair(model->getName(), model_ave_error);
     }
     catch (std::exception& e)
     {
-      printf("The model %s is broken.\n", model.getName().data());
+      printf("The model %s is broken.\n", model->getName().data());
       printf("Error: %s.\n", e.what());
-      return std::make_pair(model.getName(),1e6f);
+      return std::make_pair(model->getName(),1e6f);
     }  
   }
 
@@ -262,7 +265,7 @@ namespace SmartPeak
     {
       for (int i=0; i<n_replicates_per_model; ++i)
       {
-        models.push_back(replicateModel_(model, model_replicator, unique_str, cnt, i));
+        models.push_back(replicateModel_(model, &model_replicator, unique_str, cnt, i));
         cnt += 1;
       }
     } 
@@ -272,7 +275,7 @@ namespace SmartPeak
 
   Model PopulationTrainer::replicateModel_(
     const Model& model,
-    ModelReplicator& model_replicator,
+    ModelReplicator* model_replicator,
     std::string unique_str, int cnt, int i)
   {
     Model model_copy(model);
@@ -290,10 +293,10 @@ namespace SmartPeak
 
     char model_name_char[128];
     sprintf(model_name_char, "%s@replicateModel:%s", model_name_new.data(), unique_str.data());
-    std::string model_name = model_replicator.makeUniqueHash(model_name_char, std::to_string(cnt));
+    std::string model_name = model_replicator->makeUniqueHash(model_name_char, std::to_string(cnt));
     model_copy.setName(model_name);
 
-    model_replicator.modifyModel(model_copy, unique_str + "-" + std::to_string(i));
+    model_replicator->modifyModel(model_copy, unique_str + "-" + std::to_string(i));
     return model_copy;
   }
 
@@ -312,7 +315,7 @@ namespace SmartPeak
     for (int i=0; i<models.size(); ++i)
     {
       std::pair<std::string, bool> status = trainModel_(
-        models[i], model_trainer, input, output, time_steps, input_nodes, output_nodes);
+        &models[i], &model_trainer, input, output, time_steps, input_nodes, output_nodes);
       
       if (!status.second)
       {
@@ -337,8 +340,8 @@ namespace SmartPeak
 
   
   std::pair<std::string, bool> PopulationTrainer::trainModel_(
-    Model& model,
-    ModelTrainer& model_trainer,
+    Model* model,
+    ModelTrainer* model_trainer,
     const Eigen::Tensor<float, 4>& input,
     const Eigen::Tensor<float, 3>& output,
     const Eigen::Tensor<float, 3>& time_steps,
@@ -347,16 +350,16 @@ namespace SmartPeak
   {
     try
     {
-      model_trainer.trainModel(
-        model, input, output, time_steps,
+      model_trainer->trainModel(
+        *model, input, output, time_steps,
         input_nodes, output_nodes);
-      return std::make_pair(model.getName(), true);
+      return std::make_pair(model->getName(), true);
     }
     catch (std::exception& e)
     {
-      printf("The model %s is broken.\n", model.getName().data());
+      printf("The model %s is broken.\n", model->getName().data());
       printf("Error: %s.\n", e.what());
-      return std::make_pair(model.getName(), false);
+      return std::make_pair(model->getName(), false);
     }
 
   }

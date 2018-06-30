@@ -515,7 +515,7 @@ BOOST_AUTO_TEST_CASE(exampleUsage)
     std::cout<<"Select the top N models from the population..."<<std::endl;
     population_trainer.selectModels(
       n_top, n_random, population, model_trainer,
-      input_data, output_data, time_steps, input_nodes, output_nodes);
+      input_data, output_data, time_steps, input_nodes, output_nodes, 2);
 
     for (const Model& model: population)
     {

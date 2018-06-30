@@ -1478,7 +1478,7 @@ namespace SmartPeak
     std::vector<std::string> node_names; // determined at time step 0
     for (int time_step=0; time_step<max_steps; ++time_step)
     {
-      std::cout<<"Model::TBPTT() time_step: "<<time_step<<std::endl;
+      // std::cout<<"Model::TBPTT() time_step: "<<time_step<<std::endl;
       if (time_step > 0 && node_names.size()>0)
       {
         for (auto& node_map: nodes_)

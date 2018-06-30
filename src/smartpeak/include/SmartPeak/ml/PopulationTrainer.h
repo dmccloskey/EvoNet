@@ -69,9 +69,9 @@ public:
       const Eigen::Tensor<float, 3>& time_steps,
       const std::vector<std::string>& input_nodes,
       const std::vector<std::string>& output_nodes);
-    std::pair<std::string, float> validateModel_(
-      Model& models,
-      ModelTrainer& model_trainer,
+    static std::pair<std::string, float> validateModel_(
+      Model* model,
+      ModelTrainer* model_trainer,
       const Eigen::Tensor<float, 4>& input,
       const Eigen::Tensor<float, 3>& output,
       const Eigen::Tensor<float, 3>& time_steps,
@@ -120,7 +120,7 @@ public:
 
     Model replicateModel_(
       const Model& model,
-      ModelReplicator& model_replicator,
+      ModelReplicator* model_replicator,
       std::string unique_str, int cnt, int i);
  
     /**
@@ -143,8 +143,8 @@ public:
       int n_threads = 1);
 
     std::pair<std::string, bool> trainModel_(
-      Model& model,
-      ModelTrainer& model_trainer,
+      Model* model,
+      ModelTrainer* model_trainer,
       const Eigen::Tensor<float, 4>& input,
       const Eigen::Tensor<float, 3>& output,
       const Eigen::Tensor<float, 3>& time_steps,
