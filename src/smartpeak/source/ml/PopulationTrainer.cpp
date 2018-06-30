@@ -10,6 +10,7 @@
 #include <utility>
 #include <numeric> // accumulate
 #include <thread>
+#include <future>
 
 namespace SmartPeak
 {
@@ -52,14 +53,54 @@ namespace SmartPeak
     const Eigen::Tensor<float, 3>& output,
     const Eigen::Tensor<float, 3>& time_steps,
     const std::vector<std::string>& input_nodes,
-    const std::vector<std::string>& output_nodes)
+    const std::vector<std::string>& output_nodes,
+    int n_threads)
   {
     // printf("PopulationTrainer::selectModels, Models size: %i\n", models.size());
     // score the models
     std::vector<std::pair<std::string, float>> models_validation_errors;
+
     models_validation_errors = validateModels_(
       models, model_trainer, input, output, time_steps, input_nodes, output_nodes
     );
+
+    // std::vector<std::thread> task_threads;
+    // std::vector<std::future<std::pair<std::string, float>>> task_results;
+    // int thread_cnt = 0;
+    // for (int i=0; i<models.size(); ++i)
+    // {
+
+    //   std::packaged_task<std::pair<std::string, float> // encapsulate in a packaged_task
+    //     (Model,
+    //       ModelTrainer, // virtual function is causing problems... [TODO: google...]
+    //       Eigen::Tensor<float, 4>,
+    //       Eigen::Tensor<float, 3>,
+    //       Eigen::Tensor<float, 3>,
+    //       std::vector<std::string>,
+    //       std::vector<std::string>
+    //     )> task(validateModel_);
+      
+    //   // launch the thread
+    //   task_results.push_back(task.get_future());
+    //   std::thread task_td(std::move(task),
+    //     models[i], model_trainer, input, output, time_steps, input_nodes, output_nodes);
+    //   task_threads.push_back(task_td);  // "use of deleted function?"
+
+    //   // join the threads
+    //   if (thread_cnt == n_threads - 1 || i == models.size() - 1)
+    //   {
+    //     for (int j=0; j<n_threads; ++j)
+    //     {
+    //       task_threads[j].join();
+    //       models_validation_errors.push_back(task_results[j].get());
+    //     }
+    //     task_threads.clear();
+    //     task_results.clear();
+    //     thread_cnt = 0;
+    //   }
+
+    //   ++thread_cnt;
+    // }
     // printf("PopulationTrainer::selectModels, models_validation_errors1 size: %i\n", models_validation_errors.size());
     
     // sort each model based on their scores in ascending order
@@ -135,6 +176,36 @@ namespace SmartPeak
     return models_validation_errors;    
   }
 
+ std::pair<std::string, float> PopulationTrainer::validateModel_(
+    Model& model,
+    ModelTrainer& model_trainer,
+    const Eigen::Tensor<float, 4>& input,
+    const Eigen::Tensor<float, 3>& output,
+    const Eigen::Tensor<float, 3>& time_steps,
+    const std::vector<std::string>& input_nodes,
+    const std::vector<std::string>& output_nodes)
+  {
+    // score the model
+    try
+    {
+      std::vector<float> model_errors = model_trainer.validateModel(
+        model, input, output, time_steps,
+        input_nodes, output_nodes);
+      float model_ave_error = 1e6;
+      if (model_errors.size()>0)
+        model_ave_error = std::accumulate(model_errors.begin(), model_errors.end(), 0.0)/model_errors.size();
+      if (isnan(model_ave_error))
+        model_ave_error = 1e6;
+      return std::make_pair(model.getName(), model_ave_error);
+    }
+    catch (std::exception& e)
+    {
+      printf("The model %s is broken.\n", model.getName().data());
+      printf("Error: %s.\n", e.what());
+      return std::make_pair(model.getName(),1e6f);
+    }  
+  }
+
   std::vector<std::pair<std::string, float>> PopulationTrainer::getTopNModels_(
     std::vector<std::pair<std::string, float>> model_validation_scores,
     const int& n_top)
@@ -181,7 +252,8 @@ namespace SmartPeak
     std::vector<Model>& models,
     ModelReplicator& model_replicator,
     const int& n_replicates_per_model,
-    std::string unique_str)
+    std::string unique_str,
+    int n_threads)
   {
     // replicate and modify
     std::vector<Model> models_copy = models;
@@ -225,7 +297,8 @@ namespace SmartPeak
     const Eigen::Tensor<float, 3>& output,
     const Eigen::Tensor<float, 3>& time_steps,
     const std::vector<std::string>& input_nodes,
-    const std::vector<std::string>& output_nodes)
+    const std::vector<std::string>& output_nodes,
+    int n_threads)
   {
     std::vector<std::string> broken_model_names;
     // train the models

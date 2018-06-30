@@ -53,7 +53,8 @@ public:
       const Eigen::Tensor<float, 3>& output,
       const Eigen::Tensor<float, 3>& time_steps,
       const std::vector<std::string>& input_nodes,
-      const std::vector<std::string>& output_nodes);    
+      const std::vector<std::string>& output_nodes,
+      int n_threads = 1);    
  
     /**
       @brief validate all of the models
@@ -62,6 +63,14 @@ public:
     */ 
     std::vector<std::pair<std::string, float>> validateModels_(
       std::vector<Model>& models,
+      ModelTrainer& model_trainer,
+      const Eigen::Tensor<float, 4>& input,
+      const Eigen::Tensor<float, 3>& output,
+      const Eigen::Tensor<float, 3>& time_steps,
+      const std::vector<std::string>& input_nodes,
+      const std::vector<std::string>& output_nodes);
+    std::pair<std::string, float> validateModel_(
+      Model& models,
       ModelTrainer& model_trainer,
       const Eigen::Tensor<float, 4>& input,
       const Eigen::Tensor<float, 3>& output,
@@ -106,7 +115,8 @@ public:
       std::vector<Model>& models,
       ModelReplicator& model_replicator,
       const int& n_replicates_per_model,
-      std::string unique_str = "");
+      std::string unique_str = "",
+      int n_threads = 1);
  
     /**
       @brief Trains each of the models in the population
@@ -124,7 +134,8 @@ public:
       const Eigen::Tensor<float, 3>& output,
       const Eigen::Tensor<float, 3>& time_steps,
       const std::vector<std::string>& input_nodes,
-      const std::vector<std::string>& output_nodes);
+      const std::vector<std::string>& output_nodes,
+      int n_threads = 1);
   };
 }
 
