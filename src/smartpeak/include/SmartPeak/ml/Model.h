@@ -136,6 +136,11 @@ public:
       @brief Assigns output or error values to a single node at a specific
         place in memory.
 
+      [TODO: replace chip with index assignment
+        w/ chip: 1/1 Test #16: PopulationTrainer_test ...........   Passed  766.58 sec
+        w/o chip: 1/1 Test #16: PopulationTrainer_test ...........   Passed   54.16 sec
+      ]
+
       dimensions of batch size
 
       @param[in] values Values to assign to the node
