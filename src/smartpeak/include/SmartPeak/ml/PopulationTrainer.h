@@ -38,7 +38,7 @@ public:
       - Random selection: set n_top == 0, set n_random > 0
       - Binary selection: given models.size() == 2, set n_top == 1, set n_random == 0
 
-      [PARALELLIZATION: add parallel validation of models]
+      [TESTS: add thread tests]
 
       @param[in] n_top The number models to select
       @param[in] n_random The number of random models to select from the pool of top models
@@ -83,7 +83,7 @@ public:
 
       @returns key value pair of model_name and model_error
     */ 
-    std::vector<std::pair<std::string, float>> getTopNModels_(
+    static std::vector<std::pair<std::string, float>> getTopNModels_(
       std::vector<std::pair<std::string, float>> model_validation_scores,
       const int& n_top);
  
@@ -92,7 +92,7 @@ public:
 
       @returns key value pair of model_name and model_error
     */ 
-    std::vector<std::pair<std::string, float>> getRandomNModels_(
+    static std::vector<std::pair<std::string, float>> getRandomNModels_(
       std::vector<std::pair<std::string, float>> model_validation_scores,
       const int& n_random);
  
@@ -104,6 +104,8 @@ public:
         - 2 selected models are replicated 4 times with modifications
           resulting in a population of 10 models (2 original, and 8 
           modified)
+
+      [TESTS: add thread tests]
 
       @param[in, out] models The vector (i.e., population) of models to modify
       @param[in] model_replicator The replicator to use
@@ -118,8 +120,8 @@ public:
       std::string unique_str = "",
       int n_threads = 1);
 
-    Model replicateModel_(
-      const Model& model,
+    static Model replicateModel_(
+      Model* model,
       ModelReplicator* model_replicator,
       std::string unique_str, int cnt, int i);
  
@@ -127,7 +129,7 @@ public:
       @brief Trains each of the models in the population
         using the same test data set
 
-      [PARALELLIZATION: add parallel training of models]
+      [TESTS: add thread tests]
 
       @param[in, out] models The vector of models to copy
       @param[in] model_trainer The trainer to use
@@ -142,7 +144,7 @@ public:
       const std::vector<std::string>& output_nodes,
       int n_threads = 1);
 
-    std::pair<std::string, bool> trainModel_(
+    static std::pair<std::string, bool> trainModel_(
       Model* model,
       ModelTrainer* model_trainer,
       const Eigen::Tensor<float, 4>& input,

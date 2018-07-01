@@ -509,7 +509,7 @@ BOOST_AUTO_TEST_CASE(exampleUsage)
     // train the population
     std::cout<<"Training the population..."<<std::endl;
     population_trainer.trainModels(population, model_trainer,
-      input_data, output_data, time_steps, input_nodes, output_nodes);
+      input_data, output_data, time_steps, input_nodes, output_nodes, 2);
 
     // select the top N from the population
     std::cout<<"Select the top N models from the population..."<<std::endl;
@@ -529,13 +529,13 @@ BOOST_AUTO_TEST_CASE(exampleUsage)
     {
       // replicate and modify models
       std::cout<<"Replicate and modify the top N models from the population..."<<std::endl; 
-      population_trainer.replicateModels(population, model_replicator, n_replicates_per_model, std::to_string(iter));
+      population_trainer.replicateModels(population, model_replicator, n_replicates_per_model, std::to_string(iter), 2);
     }
     else
     {
       population_trainer.selectModels(
         1, 1, population, model_trainer,
-        input_data, output_data, time_steps, input_nodes, output_nodes);
+        input_data, output_data, time_steps, input_nodes, output_nodes, 2);
     }
   }
 

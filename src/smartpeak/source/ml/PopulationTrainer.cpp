@@ -90,9 +90,9 @@ namespace SmartPeak
       // retreive the results
       if (thread_cnt == n_threads - 1 || i == models.size() - 1)
       {
-        for (int j=0; j<n_threads; ++j)
+        for (auto& task_result: task_results)
         {
-          models_validation_errors.push_back(task_results[j].get());
+          models_validation_errors.push_back(task_result.get());
         }
         task_results.clear();
         thread_cnt = 0;
@@ -100,9 +100,7 @@ namespace SmartPeak
       else
       {
         ++thread_cnt;
-      }
-
-      
+      }      
     }
     // printf("PopulationTrainer::selectModels, models_validation_errors1 size: %i\n", models_validation_errors.size());
     
@@ -142,7 +140,8 @@ namespace SmartPeak
     // printf("PopulationTrainer::selectModels, Models size: %i\n", models.size());
   }
 
- std::vector<std::pair<std::string, float>> PopulationTrainer::validateModels_(
+  // [DEPRECATED]
+  std::vector<std::pair<std::string, float>> PopulationTrainer::validateModels_(
     std::vector<Model>& models,
     ModelTrainer& model_trainer,
     const Eigen::Tensor<float, 4>& input,
@@ -261,29 +260,58 @@ namespace SmartPeak
     // replicate and modify
     std::vector<Model> models_copy = models;
     int cnt = 0;
-    for (const Model& model: models_copy)
+    std::vector<std::future<Model>> task_results;
+    int thread_cnt = 0;
+    for (Model& model: models_copy)
     {
       for (int i=0; i<n_replicates_per_model; ++i)
       {
-        models.push_back(replicateModel_(model, &model_replicator, unique_str, cnt, i));
+        // models.push_back(replicateModel_(&model, &model_replicator, unique_str, cnt, i));
+
+        std::packaged_task<Model // encapsulate in a packaged_task
+          (Model*, ModelReplicator*, std::string, int, int
+          )> task(PopulationTrainer::replicateModel_);
+        
+        // launch the thread
+        task_results.push_back(task.get_future());
+        std::thread task_thread(std::move(task),
+          &model, &model_replicator, 
+          std::ref(unique_str), std::ref(cnt), std::ref(i));
+        task_thread.detach();
+
+        // retreive the results
+        if (thread_cnt == n_threads - 1 || cnt == models_copy.size() - 1)
+        {
+          for (auto& task_result: task_results)
+          {
+            models.push_back(task_result.get());
+          }
+          task_results.clear();
+          thread_cnt = 0;
+        }
+        else
+        {
+          ++thread_cnt;
+        }
+
         cnt += 1;
       }
     } 
 
-    removeDuplicateModels(models);
+    // removeDuplicateModels(models);  // safer to use, but does hurt performance
   }
 
   Model PopulationTrainer::replicateModel_(
-    const Model& model,
+    Model* model,
     ModelReplicator* model_replicator,
     std::string unique_str, int cnt, int i)
   {
-    Model model_copy(model);
+    Model model_copy(*model);
     
     // rename the model
     std::regex re("@");
     std::vector<std::string> str_tokens;
-    std::string model_name_new = model.getName();
+    std::string model_name_new = model->getName();
     std::copy(
       std::sregex_token_iterator(model_name_new.begin(), model_name_new.end(), re, -1),
       std::sregex_token_iterator(),
@@ -297,7 +325,7 @@ namespace SmartPeak
     model_copy.setName(model_name);
 
     model_replicator->modifyModel(model_copy, unique_str + "-" + std::to_string(i));
-    return model_copy;
+    return model_copy; // return the model not the pointer
   }
 
   void PopulationTrainer::trainModels(
@@ -311,15 +339,50 @@ namespace SmartPeak
     int n_threads)
   {
     std::vector<std::string> broken_model_names;
+    std::vector<std::future<std::pair<std::string, bool>>> task_results;
+    int thread_cnt = 0;
+
     // train the models
     for (int i=0; i<models.size(); ++i)
     {
-      std::pair<std::string, bool> status = trainModel_(
-        &models[i], &model_trainer, input, output, time_steps, input_nodes, output_nodes);
+      // std::pair<std::string, bool> status = trainModel_(
+      //   &models[i], &model_trainer, input, output, time_steps, input_nodes, output_nodes);
+
+      std::packaged_task<std::pair<std::string, bool> // encapsulate in a packaged_task
+        (Model*,
+          ModelTrainer*,
+          Eigen::Tensor<float, 4>,
+          Eigen::Tensor<float, 3>,
+          Eigen::Tensor<float, 3>,
+          std::vector<std::string>,
+          std::vector<std::string>
+        )> task(PopulationTrainer::trainModel_);
       
-      if (!status.second)
+      // launch the thread
+      task_results.push_back(task.get_future());
+      std::thread task_thread(std::move(task),
+        &models[i], &model_trainer, 
+        std::ref(input), std::ref(output), std::ref(time_steps), 
+        std::ref(input_nodes), std::ref(output_nodes));
+      task_thread.detach();
+
+      // retreive the results
+      if (thread_cnt == n_threads - 1 || i == models.size() - 1)
       {
-        broken_model_names.push_back(status.first);
+        for (auto& task_result: task_results)
+        {
+          std::pair<std::string, bool> status = task_result.get();          
+          if (!status.second)
+          {
+            broken_model_names.push_back(status.first);
+          }
+        }
+        task_results.clear();
+        thread_cnt = 0;
+      }
+      else
+      {
+        ++thread_cnt;
       }
     }
 
@@ -337,7 +400,6 @@ namespace SmartPeak
       );
     }
   }
-
   
   std::pair<std::string, bool> PopulationTrainer::trainModel_(
     Model* model,
