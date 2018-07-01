@@ -272,7 +272,7 @@ public:
       const int& time_step);
     void forwardPropogateLayerNetInput(
       std::map<std::string, std::vector<std::string>>& sink_links_map,
-      const int& time_step);
+      const int& time_step, int n_threads = 1);
  
     /**
     @brief Completion of a forward propogation step. Computes the net
@@ -305,7 +305,8 @@ public:
       for faster iteration next epoch.
     @param[in] use_cache Whether to use the cached FP steps.
     */ 
-    void forwardPropogate(const int& time_step, bool cache_FP_steps = false, bool use_cache = false);     
+    void forwardPropogate(const int& time_step, bool cache_FP_steps = false, bool use_cache = false,
+      int n_threads = 1);     
  
     /**
     @brief Foward propogation through time (FPTT) of the network model.
@@ -328,11 +329,16 @@ public:
     void FPTT(const int& time_steps, 
       const Eigen::Tensor<float, 3>& values,
       const std::vector<std::string> node_names,
-      const Eigen::Tensor<float, 2>& dt);
+      const Eigen::Tensor<float, 2>& dt,
+      int n_threads = 1);
  
     /**
     @brief Calculates the error of the model with respect to
       the expected values
+    
+    [PARALLEL: refactor to its own function
+      add in thread support for loops
+      update LossFunction to use dim 1 instead of dim 2 for integration with chip]
 
     @param[in] values Expected node output values
     @param[in] node_names Output nodes
@@ -417,7 +423,7 @@ public:
       const int& time_step);
     void backPropogateLayerError(
       const std::map<std::string, std::vector<std::string>>& sink_links_map,
-      const int& time_step);
+      const int& time_step, int n_threads = 1);
  
     /**
     @brief Back propogation of the network model.
@@ -434,7 +440,7 @@ public:
 
     @returns Vector of cyclic sink node IDs
     */ 
-    std::vector<std::string> backPropogate(const int& time_step, bool cache_BP_steps = false, bool use_cache = false);  
+    std::vector<std::string> backPropogate(const int& time_step, bool cache_BP_steps = false, bool use_cache = false, int n_threads = 1);  
  
     /**
     @brief Truncated Back Propogation Through Time (TBPTT) of the network model.
@@ -445,7 +451,7 @@ public:
     @param[in] time_steps The number of time_steps backwards to 
       unfold the network model.
     */ 
-    void TBPTT(const int& time_steps);  
+    void TBPTT(const int& time_steps, int n_threads = 1);  
  
     /**
     @brief Recurrent Real Time Learning (RTRL) of the network model.
@@ -456,7 +462,7 @@ public:
     @param[in] time_steps The number of time_steps backwards to 
       unfold the network model.
     */ 
-    void RTRL(const int& time_steps);  
+    void RTRL(const int& time_steps, int n_threads = 1);  
  
     /**
     @brief Update the weights

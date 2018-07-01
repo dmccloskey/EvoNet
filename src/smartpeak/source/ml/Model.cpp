@@ -698,7 +698,7 @@ namespace SmartPeak
 
   void Model::forwardPropogateLayerNetInput(
     std::map<std::string, std::vector<std::string>>& sink_links_map,
-    const int& time_step)
+    const int& time_step, int n_threads)
   {
 
     // get all the information needed to construct the tensors
@@ -737,16 +737,6 @@ namespace SmartPeak
           }
         }
       }
-
-      // [OPTIMIZATION: can map and output/derivative calculations be combined?
-      //  e.g., using the `chip` operator for the sink?
-      //  This would also be needed for using CUDA to save data transfers from host to device]
-      // update the sink output
-      // mapValuesToNodes(sink_tensor, time_step, {sink_links.first}, NodeStatus::activated, "output");
-
-      // // calculate the output and derivative
-      // nodes_.at(sink_links.first).calculateActivation(time_step);
-      // nodes_.at(sink_links.first).calculateDerivative(time_step);
 
       // calculate the output and the derivative
       const NodeType sink_node_type = nodes_.at(sink_links.first).getType();
@@ -853,12 +843,12 @@ namespace SmartPeak
     }
   }
   
-  void Model::forwardPropogate(const int& time_step, bool cache_FP_steps, bool use_cache)
+  void Model::forwardPropogate(const int& time_step, bool cache_FP_steps, bool use_cache, int n_threads)
   { 
     if (use_cache)
     {
       for (auto& sink_link : FP_sink_link_cache_)
-        forwardPropogateLayerNetInput(sink_link, time_step);
+        forwardPropogateLayerNetInput(sink_link, time_step, n_threads);
     }
     else
     {
@@ -894,7 +884,7 @@ namespace SmartPeak
           FP_sink_link_cache_.push_back(sink_links_map);
 
         // calculate the net input
-        forwardPropogateLayerNetInput(sink_links_map, time_step);
+        forwardPropogateLayerNetInput(sink_links_map, time_step, n_threads);
       }
     }
   }
@@ -967,7 +957,7 @@ namespace SmartPeak
   void Model::FPTT(const int& time_steps, 
     const Eigen::Tensor<float, 3>& values,
     const std::vector<std::string> node_names,
-    const Eigen::Tensor<float, 2>& dt)
+    const Eigen::Tensor<float, 2>& dt, int n_threads)
   {
     // check time_steps vs memory_size
     int max_steps = time_steps;
@@ -1003,7 +993,10 @@ namespace SmartPeak
       // std::cout<<"Model::FPTT() active_values: "<<active_values<<std::endl;
       mapValuesToNodes(active_values, 0, node_names, NodeStatus::activated, "output");
 
-      forwardPropogate(0); // always working at the current head of memory
+      if (time_step == 0)
+        forwardPropogate(0, true, false, n_threads); // always working at the current head of memory
+      else
+        forwardPropogate(0, false, true, n_threads); // always working at the current head of memory
     }
   }
   
@@ -1029,15 +1022,7 @@ namespace SmartPeak
     }
 
     // make the tensor for the calculated model output
-    // float node_ptr [node_names.size() * batch_size];
-    // for (int i=0; i<node_names.size(); ++i)
-    // {
-    //   for (int j=0; j<batch_size; ++j)
-    //   {
-    //     node_ptr[i*batch_size + j] = nodes_.at(node_names[i]).getOutputPointer()[j];
-    //   }
-    // }
-    // Eigen::TensorMap<Eigen::Tensor<float, 2>> node_tensor(node_ptr, batch_size, node_names.size());
+    // [TODO: use slice or transition to chip for thread support]
     Eigen::Tensor<float, 2> node_tensor(batch_size, node_names.size());
     for (int i=0; i<node_names.size(); ++i)
     {
@@ -1212,7 +1197,7 @@ namespace SmartPeak
 
   void Model::backPropogateLayerError(
     const std::map<std::string, std::vector<std::string>>& sink_links_map,
-    const int& time_step)
+    const int& time_step, int n_threads)
   {
 
     // get all the information needed to construct the tensors
@@ -1234,45 +1219,41 @@ namespace SmartPeak
     // iterate through each sink node and calculate the error
     for (const auto& sinks_links : sink_links_map)
     {
-      Eigen::Tensor<float, 2> sink_tensor(batch_size, 1);
+      Eigen::Tensor<float, 1> sink_tensor(batch_size);
       sink_tensor.setConstant(0.0f);
-      Eigen::Tensor<float, 2> weight_tensor(batch_size, 1);
-      Eigen::array<int, 2> offsets = {0, time_step};
-      Eigen::array<int, 2> extent = {batch_size, 1};
-      Eigen::array<int, 2> offsets_prev = {0, time_step + 1};
-      Eigen::array<int, 2> extent_prev = {batch_size, 1};
+      Eigen::Tensor<float, 1> weight_tensor(batch_size);
 
       // calculate the total incoming error
       for (const std::string& link : sinks_links.second)
       {
         weight_tensor.setConstant(weights_.at(links_.at(link).getWeightName()).getWeight());
-        sink_tensor = sink_tensor + weight_tensor * nodes_.at(links_.at(link).getSinkNodeName()).getError().slice(offsets, extent);
+        sink_tensor = sink_tensor + weight_tensor * nodes_.at(links_.at(link).getSinkNodeName()).getError().chip(time_step, 1);
       }
       
       // scale the error by the derivative
       if (nodes_.at(sinks_links.first).getStatus() == NodeStatus::activated)
       {
-        sink_tensor = sink_tensor * nodes_.at(sinks_links.first).getDerivative().slice(offsets, extent); // current time-step
+        sink_tensor = sink_tensor * nodes_.at(sinks_links.first).getDerivative().chip(time_step, 1); // current time-step
       }
       else if (nodes_.at(sinks_links.first).getStatus() == NodeStatus::corrected)
       {
         // std::cout << "Model::backPropogateLayerError() Previous derivative (batch_size, Sink) " << j << "," << i << std::endl;
         if (time_step + 1 < memory_size)
         {
-          sink_tensor = sink_tensor * nodes_.at(sinks_links.first).getDerivative().slice(offsets_prev, extent_prev); // previous time-step
+          sink_tensor = sink_tensor * nodes_.at(sinks_links.first).getDerivative().chip(time_step + 1, 1); // previous time-step
         }  
       }  
 
       // update the errors      
       if (nodes_.at(sinks_links.first).getStatus() == NodeStatus::activated)
       {
-        mapValuesToNodes(sink_tensor, time_step, {sinks_links.first}, NodeStatus::corrected, "error");
+        mapValuesToNode(sink_tensor, time_step, sinks_links.first, NodeStatus::corrected, "error");
       }
       else if (nodes_.at(sinks_links.first).getStatus() == NodeStatus::corrected)
       {
         if (time_step + 1 < memory_size)
         {
-          mapValuesToNodes(sink_tensor, time_step + 1, {sinks_links.first}, NodeStatus::corrected, "error");
+          mapValuesToNode(sink_tensor, time_step + 1, sinks_links.first, NodeStatus::corrected, "error");
         }  
       }
     }
@@ -1404,12 +1385,12 @@ namespace SmartPeak
     }
   }
   
-  std::vector<std::string> Model::backPropogate(const int& time_step, bool cache_BP_steps, bool use_cache)
+  std::vector<std::string> Model::backPropogate(const int& time_step, bool cache_BP_steps, bool use_cache, int n_threads)
   {
     if (use_cache)
     {
       for (auto const& sink_links_map: BP_sink_link_cache_)
-        backPropogateLayerError(sink_links_map, time_step);
+        backPropogateLayerError(sink_links_map, time_step, n_threads);
       return BP_cyclic_nodes_cache_;
     }
     else
@@ -1435,7 +1416,15 @@ namespace SmartPeak
           {
             if (sink_links_map.count(sink_link.first) == 0)
             {
-              node_names_with_cycles.push_back(sink_link.first);
+              if (cache_BP_steps)
+              {
+                BP_cyclic_nodes_cache_.push_back(sink_link.first);
+                node_names_with_cycles.push_back(sink_link.first);
+              }
+              else
+              {
+                node_names_with_cycles.push_back(sink_link.first);
+              }
             }
           }
           sink_links_map = sink_links_map_cycles;
@@ -1448,13 +1437,11 @@ namespace SmartPeak
         }
 
         // calculate the net input
-        backPropogateLayerError(sink_links_map, time_step);
+        backPropogateLayerError(sink_links_map, time_step, n_threads);
 
         if (cache_BP_steps)
           BP_sink_link_cache_.push_back(sink_links_map);
       }
-      if (cache_BP_steps)
-        BP_cyclic_nodes_cache_ = node_names_with_cycles;
       return node_names_with_cycles;
     }
   }
@@ -1513,7 +1500,7 @@ namespace SmartPeak
   //   return node_names_with_cycles;
   // }
 
-  void Model::TBPTT(const int& time_steps)
+  void Model::TBPTT(const int& time_steps, int n_threads)
   {
     // check time_steps vs memory_size
     int max_steps = time_steps;
@@ -1535,13 +1522,16 @@ namespace SmartPeak
           {
             node_map.second.setStatus(NodeStatus::activated); // reinitialize cyclic nodes
           }   
-          std::cout<<"Model::TBPTT() output: "<<node_map.second.getError()<<" for node_name: "<<node_map.first<<std::endl;
+          // std::cout<<"Model::TBPTT() output: "<<node_map.second.getError()<<" for node_name: "<<node_map.first<<std::endl;
         }
       }
 
       // calculate the error for each batch of memory
-      // backPropogate(time_step);
-      node_names = backPropogate(time_step);
+      if (time_step == 0)
+        node_names = backPropogate(time_step, true, false, n_threads);
+      else
+        node_names = backPropogate(time_step, false, true, n_threads);
+      // node_names = backPropogate(time_step, false, false, n_threads);
     }
     // for (auto& node_map: nodes_)
     // {

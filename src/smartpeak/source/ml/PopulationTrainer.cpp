@@ -366,12 +366,16 @@ namespace SmartPeak
         std::ref(input_nodes), std::ref(output_nodes));
       task_thread.detach();
 
+      std::cout<<"taks count: "<<task_results.size()<<std::endl;
+
       // retreive the results
       if (thread_cnt == n_threads - 1 || i == models.size() - 1)
       {
-        for (auto& task_result: task_results)
+        // for (auto& task_result: task_results)
+        for (int j=0; j<task_results.size(); ++j)
         {
-          std::pair<std::string, bool> status = task_result.get();          
+          // std::pair<std::string, bool> status = task_result.get();  
+          std::pair<std::string, bool> status = task_results[j].get();         
           if (!status.second)
           {
             broken_model_names.push_back(status.first);
@@ -423,7 +427,6 @@ namespace SmartPeak
       printf("Error: %s.\n", e.what());
       return std::make_pair(model->getName(), false);
     }
-
   }
 
   // float PopulationTrainer::calculateMean(std::vector<float> values)
