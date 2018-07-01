@@ -61,6 +61,7 @@ public:
 
       @returns key value pair of model_name and model_error
     */ 
+    // [DEPRECATED]
     std::vector<std::pair<std::string, float>> validateModels_(
       std::vector<Model>& models,
       ModelTrainer& model_trainer,

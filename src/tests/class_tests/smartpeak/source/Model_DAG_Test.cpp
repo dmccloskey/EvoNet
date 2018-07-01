@@ -258,6 +258,54 @@ BOOST_AUTO_TEST_CASE(mapValuesToNodes2)
   }
 }
 
+BOOST_AUTO_TEST_CASE(mapValuesToNode)
+{
+  // Toy network: 1 hidden layer, fully connected, DAG
+  // Model model1 = makeModel1();
+
+  const int batch_size = 4;
+  const int memory_size = 2;
+  const int time_step = 0;
+  model1.initNodes(batch_size, memory_size);
+
+  // create the input
+  const std::string node_id = {"0"};
+  Eigen::Tensor<float, 1> input(batch_size); 
+  input.setValues({1, 2, 3, 4});
+
+  // test mapping of output values
+  model1.mapValuesToNode(input, time_step, node_id, NodeStatus::activated, "output");
+  BOOST_CHECK(model1.getNode(node_id).getStatus() == NodeStatus::activated); // input
+  for (int i=0; i<batch_size; ++i)
+  {
+    BOOST_CHECK_EQUAL(model1.getNode(node_id).getOutput()(i, time_step), input(i));
+  }
+
+  // test mapping of output values
+  model1.mapValuesToNode(input, time_step, node_id, NodeStatus::activated, "derivative");
+  BOOST_CHECK(model1.getNode(node_id).getStatus() == NodeStatus::activated); // input
+  for (int i=0; i<batch_size; ++i)
+  {
+    BOOST_CHECK_EQUAL(model1.getNode(node_id).getDerivative()(i, time_step), input(i));
+  }
+
+  // test mapping of error values
+  model1.mapValuesToNode(input, time_step, node_id, NodeStatus::corrected, "error");
+  BOOST_CHECK(model1.getNode(node_id).getStatus() == NodeStatus::corrected); // input
+  for (int i=0; i<batch_size; ++i)
+  {
+    BOOST_CHECK_EQUAL(model1.getNode(node_id).getError()(i, time_step), input(i));
+  }
+
+  // test mapping of dt values
+  model1.mapValuesToNode(input, time_step, node_id, NodeStatus::activated, "dt");
+  BOOST_CHECK(model1.getNode(node_id).getStatus() == NodeStatus::activated); // input
+  for (int i=0; i<batch_size; ++i)
+  {
+    BOOST_CHECK_EQUAL(model1.getNode(node_id).getDt()(i, time_step), input(i));
+  }
+}
+
 BOOST_AUTO_TEST_CASE(mapValuesToNodes3)
 {
   // Toy network: 1 hidden layer, fully connected, DAG

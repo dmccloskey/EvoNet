@@ -1,6 +1,7 @@
 /**TODO:  Add copyright*/
 
 #define BOOST_TEST_MODULE Model test suite 
+// #include <boost/test/unit_test.hpp> // changes every so often...
 #include <boost/test/included/unit_test.hpp>
 #include <SmartPeak/ml/Model.h>
 

@@ -123,11 +123,31 @@ public:
       @param[in] memory_step The memory step to add values to 
       @param[in] node_names 
       @param[in] status_update
+      @param[in] value_type String of "output", "derivative", or "error"
     */ 
     void mapValuesToNodes(
       const Eigen::Tensor<float, 2>& values,
       const int& memory_step,
       const std::vector<std::string>& node_names,
+      const NodeStatus& status_update,
+      const std::string& value_type);
+
+    /**
+      @brief Assigns output or error values to a single node at a specific
+        place in memory.
+
+      dimensions of batch size
+
+      @param[in] values Values to assign to the node
+      @param[in] memory_step The memory step to add values to 
+      @param[in] node_name
+      @param[in] status_update
+      @param[in] value_type String of "output", "derivative", or "error"
+    */ 
+    void mapValuesToNode(
+      const Eigen::Tensor<float, 1>& values,
+      const int& memory_step,
+      const std::string& node_name,
       const NodeStatus& status_update,
       const std::string& value_type);
 
@@ -141,7 +161,7 @@ public:
       @param[in] values Values to assign to the node
       @param[in] memory_step The memory step to add values to 
       @param[in] status_update
-      @param[in] value_type
+      @param[in] value_type String of "output", "derivative", or "error"
     */       
     void mapValuesToNodes(
       const Eigen::Tensor<float, 1>& values,

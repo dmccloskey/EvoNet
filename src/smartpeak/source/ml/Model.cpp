@@ -1,10 +1,8 @@
 /**TODO:  Add copyright*/
 
 #include <SmartPeak/ml/Model.h>
-#include <SmartPeak/ml/Link.h>
-#include <SmartPeak/ml/Node.h>
-#include <SmartPeak/ml/Weight.h>
 #include <SmartPeak/ml/LossFunction.h>
+#include <SmartPeak/ml/SharedFunctions.h>
 
 #include <vector>
 #include <map>
@@ -440,6 +438,41 @@ namespace SmartPeak
     }
   }
   
+  void Model::mapValuesToNode(
+    const Eigen::Tensor<float, 1>& values,
+    const int& memory_step,
+    const std::string& node_name,
+    const NodeStatus& status_update,
+    const std::string& value_type)
+  {
+    // check dimension mismatches
+    // assumes the node exists
+    if (nodes_.at(node_name).getOutput().dimension(0) != values.dimension(0))
+    {
+      std::cout << "The number of input samples and the node batch size does not match." << std::endl;
+      return;
+    }
+
+    // copy over the input values
+    if (value_type == "output")
+    {
+      nodes_.at(node_name).getOutputMutable()->chip(memory_step, 1) = values;
+    }
+    else if (value_type == "error")
+    {
+      nodes_.at(node_name).getErrorMutable()->chip(memory_step, 1) = values;
+    }
+    else if (value_type == "derivative")
+    {
+      nodes_.at(node_name).getDerivativeMutable()->chip(memory_step, 1) = values;
+    }
+    else if (value_type == "dt")
+    {
+      nodes_.at(node_name).getDtMutable()->chip(memory_step, 1) = values;
+    }
+    nodes_.at(node_name).setStatus(status_update);
+  }
+  
   void Model::mapValuesToNodes(
     const Eigen::Tensor<float, 3>& values,
     const std::vector<std::string>& node_names,
@@ -682,25 +715,21 @@ namespace SmartPeak
     // invoke the activation function once the net input is calculated
     for (const auto& sink_links : sink_links_map)
     {
-      Eigen::Tensor<float, 2> sink_tensor(batch_size, 1);  // can be changed to dim of 1 when switching to chip
+      Eigen::Tensor<float, 1> sink_tensor(batch_size);  // can be changed to dim of 1 when switching to chip
       sink_tensor.setConstant(0.0f);
-      Eigen::Tensor<float, 2> weight_tensor(batch_size, 1);  // can be changed to dim of 1 when switching to chip
-      Eigen::array<int, 2> offsets = {0, time_step};
-      Eigen::array<int, 2> extent = {batch_size, 1};
-      Eigen::array<int, 2> offsets_prev = {0, time_step + 1};
-      Eigen::array<int, 2> extent_prev = {batch_size, 1};
+      Eigen::Tensor<float, 1> weight_tensor(batch_size);  // can be changed to dim of 1 when switching to chip
       for (const std::string& link : sink_links.second)
       {
         weight_tensor.setConstant(weights_.at(links_.at(link).getWeightName()).getWeight());
         if (nodes_.at(links_.at(link).getSourceNodeName()).getStatus() == NodeStatus::activated)
         {
-          sink_tensor = sink_tensor + weight_tensor * nodes_.at(links_.at(link).getSourceNodeName()).getOutput().slice(offsets, extent); //current time-step
+          sink_tensor = sink_tensor + weight_tensor * nodes_.at(links_.at(link).getSourceNodeName()).getOutput().chip(time_step, 1); //current time-step
         }
         else if (nodes_.at(links_.at(link).getSourceNodeName()).getStatus() == NodeStatus::initialized)
         {
           if (time_step + 1 < memory_size)
           {
-            sink_tensor = sink_tensor + weight_tensor * nodes_.at(links_.at(link).getSourceNodeName()).getOutput().slice(offsets_prev, extent_prev); //previous time-step
+            sink_tensor = sink_tensor + weight_tensor * nodes_.at(links_.at(link).getSourceNodeName()).getOutput().chip(time_step + 1, 1); //previous time-step
           }
           else
           {
@@ -713,11 +742,30 @@ namespace SmartPeak
       //  e.g., using the `chip` operator for the sink?
       //  This would also be needed for using CUDA to save data transfers from host to device]
       // update the sink output
-      mapValuesToNodes(sink_tensor, time_step, {sink_links.first}, NodeStatus::activated, "output");
+      // mapValuesToNodes(sink_tensor, time_step, {sink_links.first}, NodeStatus::activated, "output");
 
-      // calculate the output and derivative
-      nodes_.at(sink_links.first).calculateActivation(time_step);
-      nodes_.at(sink_links.first).calculateDerivative(time_step);
+      // // calculate the output and derivative
+      // nodes_.at(sink_links.first).calculateActivation(time_step);
+      // nodes_.at(sink_links.first).calculateDerivative(time_step);
+
+      // calculate the output and the derivative
+      const NodeType sink_node_type = nodes_.at(sink_links.first).getType();
+      const NodeActivation sink_node_activation = nodes_.at(sink_links.first).getActivation();
+      Eigen::Tensor<float, 1> output = calculateActivation(
+        sink_node_type, sink_node_activation, sink_tensor,
+        nodes_.at(sink_links.first).getDt().chip(time_step, 1),
+        1);
+      Eigen::Tensor<float, 1> derivative = calculateDerivative(
+        sink_node_type, sink_node_activation, output, 1);
+
+      // update the node
+      mapValuesToNode(output, time_step, sink_links.first, NodeStatus::activated, "output");
+      mapValuesToNode(derivative, time_step, sink_links.first, NodeStatus::activated, "derivative");
+
+      // std::cout<<"Sink :"<<sink_tensor<<std::endl;
+      // std::cout<<"Dt :"<<nodes_.at(sink_links.first).getDt().chip(time_step, 1)<<std::endl;
+      // std::cout<<"Output :"<<output<<std::endl;
+      // std::cout<<"Derivative :"<<derivative<<std::endl;
     }
   }
 
