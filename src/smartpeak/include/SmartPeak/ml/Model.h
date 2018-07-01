@@ -329,7 +329,9 @@ public:
     void FPTT(const int& time_steps, 
       const Eigen::Tensor<float, 3>& values,
       const std::vector<std::string> node_names,
-      const Eigen::Tensor<float, 2>& dt,
+      const Eigen::Tensor<float, 2>& dt, 
+      bool cache_FP_steps = false, 
+      bool use_cache = false,
       int n_threads = 1);
  
     /**
@@ -451,7 +453,7 @@ public:
     @param[in] time_steps The number of time_steps backwards to 
       unfold the network model.
     */ 
-    void TBPTT(const int& time_steps, int n_threads = 1);  
+    void TBPTT(const int& time_steps, bool cache_FP_steps = false, bool use_cache = false, int n_threads = 1);  
  
     /**
     @brief Recurrent Real Time Learning (RTRL) of the network model.

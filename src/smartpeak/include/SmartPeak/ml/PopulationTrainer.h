@@ -145,7 +145,7 @@ public:
       const std::vector<std::string>& output_nodes,
       int n_threads = 1);
 
-    static std::pair<std::string, bool> trainModel_(
+    static std::pair<bool, Model> trainModel_(
       Model* model,
       ModelTrainer* model_trainer,
       const Eigen::Tensor<float, 4>& input,

@@ -142,6 +142,7 @@ public:
     // printf("Data checks passed\n");
     
     // Initialize the model
+    model.clearCache();
     model.initNodes(getBatchSize(), getMemorySize());
     // printf("Initialized the model\n");
 
@@ -198,6 +199,7 @@ public:
     // printf("Data checks passed\n");
     
     // Initialize the model
+    model.clearCache();
     model.initNodes(getBatchSize(), getMemorySize());
     // printf("Initialized the model\n");
 
@@ -316,7 +318,7 @@ BOOST_AUTO_TEST_CASE(trainModels)
   ModelTrainerTest model_trainer;
   model_trainer.setBatchSize(5);
   model_trainer.setMemorySize(8);
-  model_trainer.setNEpochs(100);
+  model_trainer.setNEpochs(5);
 
   ModelReplicator model_replicator;
   model_replicator.setNNodeAdditions(1);

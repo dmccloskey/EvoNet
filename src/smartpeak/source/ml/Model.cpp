@@ -957,7 +957,8 @@ namespace SmartPeak
   void Model::FPTT(const int& time_steps, 
     const Eigen::Tensor<float, 3>& values,
     const std::vector<std::string> node_names,
-    const Eigen::Tensor<float, 2>& dt, int n_threads)
+    const Eigen::Tensor<float, 2>& dt,
+    bool cache_FP_steps, bool use_cache, int n_threads)
   {
     // check time_steps vs memory_size
     int max_steps = time_steps;
@@ -993,10 +994,12 @@ namespace SmartPeak
       // std::cout<<"Model::FPTT() active_values: "<<active_values<<std::endl;
       mapValuesToNodes(active_values, 0, node_names, NodeStatus::activated, "output");
 
-      if (time_step == 0)
-        forwardPropogate(0, true, false, n_threads); // always working at the current head of memory
+      if (cache_FP_steps && time_step == 0)
+        forwardPropogate(0, true, false, n_threads);
+      else if (cache_FP_steps && time_step > 0)
+        forwardPropogate(0, false, true, n_threads);
       else
-        forwardPropogate(0, false, true, n_threads); // always working at the current head of memory
+        forwardPropogate(0, cache_FP_steps, use_cache, n_threads); // always working at the current head of memory
     }
   }
   
@@ -1417,14 +1420,9 @@ namespace SmartPeak
             if (sink_links_map.count(sink_link.first) == 0)
             {
               if (cache_BP_steps)
-              {
                 BP_cyclic_nodes_cache_.push_back(sink_link.first);
-                node_names_with_cycles.push_back(sink_link.first);
-              }
               else
-              {
                 node_names_with_cycles.push_back(sink_link.first);
-              }
             }
           }
           sink_links_map = sink_links_map_cycles;
@@ -1442,7 +1440,10 @@ namespace SmartPeak
         if (cache_BP_steps)
           BP_sink_link_cache_.push_back(sink_links_map);
       }
-      return node_names_with_cycles;
+      if (cache_BP_steps)
+        return BP_cyclic_nodes_cache_;
+      else
+        return node_names_with_cycles;
     }
   }
   
@@ -1500,7 +1501,7 @@ namespace SmartPeak
   //   return node_names_with_cycles;
   // }
 
-  void Model::TBPTT(const int& time_steps, int n_threads)
+  void Model::TBPTT(const int& time_steps, bool cache_BP_steps, bool use_cache, int n_threads)
   {
     // check time_steps vs memory_size
     int max_steps = time_steps;
@@ -1527,11 +1528,12 @@ namespace SmartPeak
       }
 
       // calculate the error for each batch of memory
-      if (time_step == 0)
+      if (cache_BP_steps && time_step == 0)
         node_names = backPropogate(time_step, true, false, n_threads);
-      else
+      else if (cache_BP_steps && time_step > 0)
         node_names = backPropogate(time_step, false, true, n_threads);
-      // node_names = backPropogate(time_step, false, false, n_threads);
+      else
+        node_names = backPropogate(time_step, cache_BP_steps, use_cache, n_threads);
     }
     // for (auto& node_map: nodes_)
     // {

@@ -723,7 +723,11 @@ BOOST_AUTO_TEST_CASE(modelTrainer2)
   for (int iter = 0; iter < max_iter; ++iter)
   {
     // forward propogate
-    model2a.FPTT(memory_size, input, input_ids, dt); 
+    model2a.FPTT(memory_size, input, input_ids, dt);
+    // if (iter == 0)
+    //   model2a.FPTT(memory_size, input, input_ids, dt, true, true); 
+    // else      
+    //   model2a.FPTT(memory_size, input, input_ids, dt, false, true); 
 
     // calculate the model error
     model2a.calculateError(expected, output_nodes);
@@ -731,6 +735,10 @@ BOOST_AUTO_TEST_CASE(modelTrainer2)
 
     // backpropogate through time
     model2a.TBPTT(memory_size-1);
+    // if (iter == 0)
+    //   model2a.TBPTT(memory_size-1, true, true);
+    // else
+    //   model2a.TBPTT(memory_size-1, false, true);
 
     // update the weights
     model2a.updateWeights(memory_size);   
