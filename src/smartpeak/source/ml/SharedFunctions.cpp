@@ -16,8 +16,13 @@ namespace SmartPeak
     int n_threads)
   {
     Eigen::Tensor<float, 1> output(net_input.dimension(0));
-    Eigen::ThreadPool threadPool(n_threads); 
-    Eigen::ThreadPoolDevice threadPoolDevice(&threadPool, n_threads);
+    Eigen::DefaultDevice threadPoolDevice;
+    if (n_threads > 1)
+    {  // transfer incurs a significant cost
+       // create the ThreadPoolDevice only if > 1 threads are available!
+      Eigen::ThreadPool threadPool(n_threads); 
+      Eigen::ThreadPoolDevice threadPoolDevice(&threadPool, n_threads);
+    }
 
     // Scale the current output by the designated non-linearity
     // Scale the activated output by the time scale
@@ -73,8 +78,13 @@ namespace SmartPeak
     int n_threads)
   {
     Eigen::Tensor<float, 1> derivative(output.dimension(0));
-    Eigen::ThreadPool threadPool(n_threads); 
-    Eigen::ThreadPoolDevice threadPoolDevice(&threadPool, n_threads);
+    Eigen::DefaultDevice threadPoolDevice;
+    if (n_threads > 1)
+    {  // transfer incurs a significant cost
+       // create the ThreadPoolDevice only if > 1 threads are available!
+      Eigen::ThreadPool threadPool(n_threads); 
+      Eigen::ThreadPoolDevice threadPoolDevice(&threadPool, n_threads);
+    }
 
     switch (node_type)
     {

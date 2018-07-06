@@ -151,14 +151,22 @@ public:
       // printf("Training epoch: %d\t", iter);
 
       // forward propogate
-      model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2)); 
+      // model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2)); 
+      if (iter == 0)
+        model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), true, true); 
+      else      
+        model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), false, true); 
 
       // calculate the model error and node output error
       model.calculateError(output.chip(iter, 2), output_nodes);
       // std::cout<<"Model error: "<<model.getError().sum()<<std::endl;
 
       // back propogate
-      model.TBPTT(getMemorySize()-1);
+      // model.TBPTT(getMemorySize()-1);
+      if (iter == 0)
+        model.TBPTT(getMemorySize()-1, true, true);
+      else
+        model.TBPTT(getMemorySize()-1, false, true);
 
       // update the weights
       model.updateWeights(getMemorySize());   

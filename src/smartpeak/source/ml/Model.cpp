@@ -452,6 +452,27 @@ namespace SmartPeak
       std::cout << "The number of input samples and the node batch size does not match." << std::endl;
       return;
     }
+    
+    // // copy over the input values
+    // for (int j=0; j<values.dimension(0); ++j)
+    // {
+    //   if (value_type == "output")
+    //   {
+    //     nodes_.at(node_name).getOutputMutable()->operator()(j, memory_step) = values(j);
+    //   }
+    //   else if (value_type == "error")
+    //   {
+    //     nodes_.at(node_name).getErrorMutable()->operator()(j, memory_step) = values(j);
+    //   }
+    //   else if (value_type == "derivative")
+    //   {
+    //     nodes_.at(node_name).getDerivativeMutable()->operator()(j, memory_step) = values(j);
+    //   }
+    //   else if (value_type == "dt")
+    //   {
+    //     nodes_.at(node_name).getDtMutable()->operator()(j, memory_step) = values(j);
+    //   }
+    // }
 
     // copy over the input values
     if (value_type == "output")
@@ -470,6 +491,8 @@ namespace SmartPeak
     {
       nodes_.at(node_name).getDtMutable()->chip(memory_step, 1) = values;
     }
+
+    // update the status
     nodes_.at(node_name).setStatus(status_update);
   }
   
@@ -715,11 +738,13 @@ namespace SmartPeak
     // invoke the activation function once the net input is calculated
     for (const auto& sink_links : sink_links_map)
     {
-      Eigen::Tensor<float, 1> sink_tensor(batch_size);  // can be changed to dim of 1 when switching to chip
+      // launch thread[sink_links]
+      Eigen::Tensor<float, 1> sink_tensor(batch_size);
       sink_tensor.setConstant(0.0f);
-      Eigen::Tensor<float, 1> weight_tensor(batch_size);  // can be changed to dim of 1 when switching to chip
+      Eigen::Tensor<float, 1> weight_tensor(batch_size);
       for (const std::string& link : sink_links.second)
       {
+        // launch threads[link]
         weight_tensor.setConstant(weights_.at(links_.at(link).getWeightName()).getWeight());
         if (nodes_.at(links_.at(link).getSourceNodeName()).getStatus() == NodeStatus::activated)
         {
@@ -736,6 +761,8 @@ namespace SmartPeak
             std::cout<<"time_step exceeded memory size in forwardPropogateLayerNetInput."<<std::endl;
           }
         }
+        // accumuate temporary sink_tensor values from all threads
+        // kill threads[link]
       }
 
       // calculate the output and the derivative
@@ -750,12 +777,8 @@ namespace SmartPeak
 
       // update the node
       mapValuesToNode(output, time_step, sink_links.first, NodeStatus::activated, "output");
-      mapValuesToNode(derivative, time_step, sink_links.first, NodeStatus::activated, "derivative");
-
-      // std::cout<<"Sink :"<<sink_tensor<<std::endl;
-      // std::cout<<"Dt :"<<nodes_.at(sink_links.first).getDt().chip(time_step, 1)<<std::endl;
-      // std::cout<<"Output :"<<output<<std::endl;
-      // std::cout<<"Derivative :"<<derivative<<std::endl;
+      mapValuesToNode(derivative, time_step, sink_links.first, NodeStatus::activated, "derivative");      
+      // kill thread[sink_links]
     }
   }
 
