@@ -340,7 +340,7 @@ namespace SmartPeak
   {
     // std::vector<std::string> broken_model_names;
     std::vector<Model> trained_models;
-    std::vector<std::future<std::pair<std::string, bool>>> task_results;
+    std::vector<std::future<std::pair<bool, Model>>> task_results;
     int thread_cnt = 0;
 
     // train the models
@@ -353,49 +353,49 @@ namespace SmartPeak
       //   broken_model_names.push_back(status.first);
       // }
 
-      std::pair<bool, Model> status = trainModel_(
-        &models[i], &model_trainer, input, output, time_steps, input_nodes, output_nodes);  
-      if (status.first)
-        trained_models.push_back(status.second);
+      // std::pair<bool, Model> status = trainModel_(
+      //   &models[i], &model_trainer, input, output, time_steps, input_nodes, output_nodes);  
+      // if (status.first)
+      //   trained_models.push_back(status.second);
 
-      // std::packaged_task<std::pair<std::string, bool> // encapsulate in a packaged_task
-      //   (Model*,
-      //     ModelTrainer*,
-      //     Eigen::Tensor<float, 4>,
-      //     Eigen::Tensor<float, 3>,
-      //     Eigen::Tensor<float, 3>,
-      //     std::vector<std::string>,
-      //     std::vector<std::string>
-      //   )> task(PopulationTrainer::trainModel_);
+      std::packaged_task<std::pair<bool, Model> // encapsulate in a packaged_task
+        (Model*,
+          ModelTrainer*,
+          Eigen::Tensor<float, 4>,
+          Eigen::Tensor<float, 3>,
+          Eigen::Tensor<float, 3>,
+          std::vector<std::string>,
+          std::vector<std::string>
+        )> task(PopulationTrainer::trainModel_);
       
-      // // launch the thread
-      // task_results.push_back(task.get_future());
-      // std::thread task_thread(std::move(task),
-      //   &models[i], &model_trainer, 
-      //   std::ref(input), std::ref(output), std::ref(time_steps), 
-      //   std::ref(input_nodes), std::ref(output_nodes));
-      // task_thread.detach();
+      // launch the thread
+      task_results.push_back(task.get_future());
+      std::thread task_thread(std::move(task),
+        &models[i], &model_trainer, 
+        std::ref(input), std::ref(output), std::ref(time_steps), 
+        std::ref(input_nodes), std::ref(output_nodes));
+      task_thread.detach();
 
-      // // retreive the results
-      // if (thread_cnt == n_threads - 1 || i == models.size() - 1)
-      // {
-      //   for (auto& task_result: task_results)
-      //   // for (int j=0; j<task_results.size(); ++j)
-      //   {
-      //     std::pair<std::string, bool> status = task_result.get();  
-      //     // std::pair<std::string, bool> status = task_results[j].get();         
-      //     if (!status.second)
-      //     {
-      //       broken_model_names.push_back(status.first);
-      //     }
-      //   }
-      //   task_results.clear();
-      //   thread_cnt = 0;
-      // }
-      // else
-      // {
-      //   ++thread_cnt;
-      // }
+      // retreive the results
+      if (thread_cnt == n_threads - 1 || i == models.size() - 1)
+      {
+        for (auto& task_result: task_results)
+        // for (int j=0; j<task_results.size(); ++j)
+        {
+          std::pair<bool, Model> status = task_result.get();  
+          // std::pair<bool, Model> status status = task_results[j].get();         
+          if (status.first)
+          {
+            trained_models.push_back(status.second);
+          }
+        }
+        task_results.clear();
+        thread_cnt = 0;
+      }
+      else
+      {
+        ++thread_cnt;
+      }
     }
 
     // update models
@@ -437,7 +437,7 @@ namespace SmartPeak
     {
       printf("The model %s is broken.\n", model_copy.getName().data());
       printf("Error: %s.\n", e.what());
-      return std::make_pair(true, model_copy);
+      return std::make_pair(false, model_copy);
     }
   }
 
