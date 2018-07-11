@@ -279,13 +279,15 @@ public:
       std::map<std::string, std::vector<std::string>>& sink_links_map,
       const int& time_step, int n_threads = 1);
 
+    // [TODO: need to be static]
     Eigen::Tensor<float, 1> calculateNodeInput_(
       const std::string& sink_link, 
       const int& batch_size,
       const int& memory_size,
       const int& time_step
     );
-    bool calculateNetNodeInput_(
+    // [TODO: need to be static]
+    bool calculateNetNodeInput_( //[TODO: return the nodes]
       const std::string& sink_node,
       const std::vector<std::string>& sink_links, 
       const int& batch_size,
