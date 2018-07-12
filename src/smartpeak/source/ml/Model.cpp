@@ -562,10 +562,12 @@ namespace SmartPeak
         nodes_.at(link_map.second.getSinkNodeName()).getStatus() == NodeStatus::initialized)
       {
         FP_operation_arguments arguments;
-        arguments.source_node.reset(&nodes_.at(link_map.second.getSourceNodeName()));
-        arguments.weight.reset(&weights_.at(link_map.second.getWeightName()));
+        Node* source_node = new Node(nodes_.at(link_map.second.getSourceNodeName()));
+        arguments.source_node.reset(source_node);
+        Weight* weight = new Weight(weights_.at(link_map.second.getWeightName()));
+        arguments.weight.reset(weight);
         arguments.time_step = 0;
-        auto found = FP_operations_map.emplace(link_map.second.getSinkNodeName(), (int)FP_operations.size());        
+        auto found = FP_operations_map.emplace(link_map.second.getSinkNodeName(), (int)FP_operations.size());
         if (!found.second)
         {
           FP_operations[FP_operations_map.at(link_map.second.getSinkNodeName())].arguments.push_back(arguments);
@@ -574,7 +576,8 @@ namespace SmartPeak
         {
           FP_operation_list operation_list;
           FP_operation_result result;
-          result.sink_node.reset(&nodes_.at(link_map.second.getSinkNodeName()));
+          Node* source_sink = new Node(nodes_.at(link_map.second.getSinkNodeName()));
+          result.sink_node.reset(source_sink);
           operation_list.result = result;
           operation_list.arguments.push_back(arguments);
           FP_operations.push_back(operation_list);
@@ -658,9 +661,12 @@ namespace SmartPeak
       )
       {
         FP_operation_arguments arguments;
-        arguments.source_node.reset(&nodes_.at(link_map.second.getSourceNodeName()));
-        arguments.weight.reset(&weights_.at(link_map.second.getWeightName()));
+        Node* source_node = new Node(nodes_.at(link_map.second.getSourceNodeName()));
+        arguments.source_node.reset(source_node);
+        Weight* weight = new Weight(weights_.at(link_map.second.getWeightName()));
+        arguments.weight.reset(weight);
         arguments.time_step = 0;
+        std::cout<<FP_operations_map.at(link_map.second.getSinkNodeName())<<std::endl;
         FP_operations[FP_operations_map.at(link_map.second.getSinkNodeName())].arguments.push_back(arguments);
         if (std::count(sink_nodes_with_biases.begin(), sink_nodes_with_biases.end(), link_map.second.getSinkNodeName()) == 0)
         {
@@ -749,8 +755,10 @@ namespace SmartPeak
       )
       {
         FP_operation_arguments arguments;
-        arguments.source_node.reset(&nodes_.at(link_map.second.getSourceNodeName()));
-        arguments.weight.reset(&weights_.at(link_map.second.getWeightName()));
+        Node* source_node = new Node(nodes_.at(link_map.second.getSourceNodeName()));
+        arguments.source_node.reset(source_node);
+        Weight* weight = new Weight(weights_.at(link_map.second.getWeightName()));
+        arguments.weight.reset(weight);
         arguments.time_step = 1;
         FP_operations[FP_operations_map.at(link_map.second.getSinkNodeName())].arguments.push_back(arguments);
         sink_nodes_with_cycles.push_back(link_map.second.getSinkNodeName());
