@@ -887,15 +887,15 @@ namespace SmartPeak
     Eigen::Tensor<float, 1> derivative = calculateDerivative(
       sink_node_type, sink_node_activation, output, 1);
 
-    // update the node [TODO!]
-    // mapValuesToNode(output, time_step, sink_node, NodeStatus::activated, "output");
-    // mapValuesToNode(derivative, time_step, sink_node, NodeStatus::activated, "derivative");
+    // update the node [TODO: check if the model node is also updated]
+    operations->result.sink_node->setStatus(NodeStatus::activated);
+    operations->result.sink_node->getOutputMutable()->chip(time_step, 1) = output;
+    operations->result.sink_node->getDerivativeMutable()->chip(time_step, 1) = derivative;
 
     return true;
   }
 
   void Model::forwardPropogateLayerNetInput(
-      std::map<std::string, int>& FP_operations_map,
       std::vector<FP_operation_list> FP_operations,
     const int& time_step, int n_threads)
   {
@@ -966,13 +966,11 @@ namespace SmartPeak
     // invoke the activation function once the net input is calculated
     for (const auto& sink_links : sink_links_map)
     {
-      // launch thread[sink_links]
       Eigen::Tensor<float, 1> sink_tensor(batch_size);
       sink_tensor.setConstant(0.0f);
       Eigen::Tensor<float, 1> weight_tensor(batch_size);
       for (const std::string& link : sink_links.second)
       {
-        // launch threads[link]
         weight_tensor.setConstant(weights_.at(links_.at(link).getWeightName()).getWeight());
         if (nodes_.at(links_.at(link).getSourceNodeName()).getStatus() == NodeStatus::activated)
         {
@@ -989,8 +987,6 @@ namespace SmartPeak
             std::cout<<"time_step exceeded memory size in forwardPropogateLayerNetInput."<<std::endl;
           }
         }
-        // accumuate temporary sink_tensor values from all threads
-        // kill threads[link]
       }
 
       // calculate the output and the derivative
@@ -1006,7 +1002,6 @@ namespace SmartPeak
       // update the node
       mapValuesToNode(output, time_step, sink_links.first, NodeStatus::activated, "output");
       mapValuesToNode(derivative, time_step, sink_links.first, NodeStatus::activated, "derivative");      
-      // kill thread[sink_links]
     }
   }
 
@@ -1098,8 +1093,8 @@ namespace SmartPeak
   { 
     if (use_cache)
     {
-      for (auto& sink_link : FP_sink_link_cache_)
-        forwardPropogateLayerNetInput(sink_link, time_step, n_threads);
+      for (auto& FP_operations : FP_operations_cache_)
+        forwardPropogateLayerNetInput(FP_operations, time_step, n_threads);
     }
     else
     {
@@ -1107,38 +1102,86 @@ namespace SmartPeak
       for (int iter=0; iter<max_iters; ++iter)
       { 
         // get the next hidden layer
-        std::map<std::string, std::vector<std::string>> sink_links_map;
-        getNextInactiveLayer(sink_links_map);
+        std::map<std::string, int> FP_operations_map;
+        std::vector<FP_operation_list> FP_operations_list;
+        getNextInactiveLayer(FP_operations_map, FP_operations_list);
 
         // get biases,
         std::vector<std::string> sink_nodes_with_biases;
-        getNextInactiveLayerBiases(sink_links_map, sink_nodes_with_biases);
+        getNextInactiveLayerBiases(FP_operations_map, FP_operations_list, sink_nodes_with_biases);
         
         // get cycles
-        std::map<std::string, std::vector<std::string>> sink_links_map_cycles = sink_links_map;
+        std::vector<FP_operation_list> FP_operations_list_cycles = FP_operations_list;
         std::vector<std::string> sink_nodes_cycles;
-        getNextInactiveLayerCycles(sink_links_map_cycles, sink_nodes_cycles);
+        getNextInactiveLayerCycles(FP_operations_map, FP_operations_list_cycles, sink_nodes_cycles);
 
-        if (sink_links_map_cycles.size() == sink_links_map.size())
+        if (FP_operations_list_cycles.size() == FP_operations_list.size())
         { // all forward propogation steps have caught up
           // add sink nodes with cycles to the forward propogation step
-          sink_links_map = sink_links_map_cycles;
+          FP_operations_list = FP_operations_list_cycles;
         }
 
         // check if all nodes have been activated
-        if (sink_links_map.size() == 0)
+        if (FP_operations_list.size() == 0)
         {
           break;
         }
 
         if (cache_FP_steps)
-          FP_sink_link_cache_.push_back(sink_links_map);
+          FP_operations_cache_.push_back(FP_operations_list);
 
         // calculate the net input
-        forwardPropogateLayerNetInput(sink_links_map, time_step, n_threads);
+        forwardPropogateLayerNetInput(FP_operations_list, time_step, n_threads);
       }
     }
   }
+  
+  // [DEPRECATED]
+  // void Model::forwardPropogate(const int& time_step, bool cache_FP_steps, bool use_cache, int n_threads)
+  // { 
+  //   if (use_cache)
+  //   {
+  //     for (auto& sink_link : FP_sink_link_cache_)
+  //       forwardPropogateLayerNetInput(sink_link, time_step, n_threads);
+  //   }
+  //   else
+  //   {
+  //     const int max_iters = 1e6;
+  //     for (int iter=0; iter<max_iters; ++iter)
+  //     { 
+  //       // get the next hidden layer
+  //       std::map<std::string, std::vector<std::string>> sink_links_map;
+  //       getNextInactiveLayer(sink_links_map);
+
+  //       // get biases,
+  //       std::vector<std::string> sink_nodes_with_biases;
+  //       getNextInactiveLayerBiases(sink_links_map, sink_nodes_with_biases);
+        
+  //       // get cycles
+  //       std::map<std::string, std::vector<std::string>> sink_links_map_cycles = sink_links_map;
+  //       std::vector<std::string> sink_nodes_cycles;
+  //       getNextInactiveLayerCycles(sink_links_map_cycles, sink_nodes_cycles);
+
+  //       if (sink_links_map_cycles.size() == sink_links_map.size())
+  //       { // all forward propogation steps have caught up
+  //         // add sink nodes with cycles to the forward propogation step
+  //         sink_links_map = sink_links_map_cycles;
+  //       }
+
+  //       // check if all nodes have been activated
+  //       if (sink_links_map.size() == 0)
+  //       {
+  //         break;
+  //       }
+
+  //       if (cache_FP_steps)
+  //         FP_sink_link_cache_.push_back(sink_links_map);
+
+  //       // calculate the net input
+  //       forwardPropogateLayerNetInput(sink_links_map, time_step, n_threads);
+  //     }
+  //   }
+  // }
   
   // [DEPRECATED]
   // void Model::forwardPropogate(const int& time_step)

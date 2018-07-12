@@ -310,7 +310,6 @@ public:
       std::map<std::string, std::vector<std::string>>& sink_links_map,
       const int& time_step, int n_threads = 1);
     void forwardPropogateLayerNetInput(
-      std::map<std::string, int>& FP_operations_map,
       std::vector<FP_operation_list> FP_operations,
       const int& time_step, int n_threads = 1);
 
@@ -672,7 +671,6 @@ private:
 
     // Internal structures to allow for efficient multi-threading
     // and off-loading of computation from host to devices
-    std::vector<std::map<std::string, int>> FP_operations_map_;
     std::vector<std::vector<FP_operation_list>> FP_operations_cache_;
 
   };
