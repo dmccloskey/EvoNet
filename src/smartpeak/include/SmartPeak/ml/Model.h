@@ -212,6 +212,9 @@ public:
       std::vector<std::string>& sink_nodes);
     void getNextInactiveLayer(
       std::map<std::string, std::vector<std::string>>& sink_links_map);
+    void getNextInactiveLayer(
+      std::map<std::string, int>& FP_operations_map,
+      std::vector<FP_operation_list> FP_operations);
  
     /**
       @brief Continuation of the forward propogation step that identifies all biases
@@ -236,6 +239,11 @@ public:
       std::map<std::string, std::vector<std::string>>& sink_links_map,
       std::vector<std::string>& sink_nodes_with_biases
       );
+    void getNextInactiveLayerBiases(
+      std::map<std::string, int>& FP_operations_map,
+      std::vector<FP_operation_list> FP_operations,
+      std::vector<std::string>& sink_nodes_with_biases
+      );
  
     /**
       @brief Continuation of the forward propogation step that identifies 
@@ -258,6 +266,10 @@ public:
       std::vector<std::string>& sink_nodes_with_cycles);
     void getNextInactiveLayerCycles(
       std::map<std::string, std::vector<std::string>>& sink_links_map,
+      std::vector<std::string>& sink_nodes_with_cycles);
+    void getNextInactiveLayerCycles(
+      std::map<std::string, int>& FP_operations_map,
+      std::vector<FP_operation_list> FP_operations,
       std::vector<std::string>& sink_nodes_with_cycles);
 
     /**
@@ -297,18 +309,21 @@ public:
     void forwardPropogateLayerNetInput(
       std::map<std::string, std::vector<std::string>>& sink_links_map,
       const int& time_step, int n_threads = 1);
+    void forwardPropogateLayerNetInput(
+      std::map<std::string, int>& FP_operations_map,
+      std::vector<FP_operation_list> FP_operations,
+      const int& time_step, int n_threads = 1);
 
     // [TODO: need to be static]
-    Eigen::Tensor<float, 1> calculateNodeInput_(
-      const std::string& sink_link, 
+    static Eigen::Tensor<float, 1> calculateNodeInput_(
+      FP_operation_arguments* arguments, 
       const int& batch_size,
       const int& memory_size,
       const int& time_step
     );
     // [TODO: need to be static]
-    bool calculateNetNodeInput_( //[TODO: return the nodes]
-      const std::string& sink_node,
-      const std::vector<std::string>& sink_links, 
+    static bool calculateNetNodeInput_( //[TODO: return the nodes]
+      FP_operation_list* operations, 
       const int& batch_size,
       const int& memory_size,
       const int& time_step,
@@ -416,10 +431,6 @@ public:
       std::vector<std::string>& sink_nodes);
     void getNextUncorrectedLayer(
       std::map<std::string, std::vector<std::string>>& sink_links_map,
-      std::vector<std::string>& source_nodes);
-    void getNextUncorrectedLayer(
-      std::map<std::string, int>& FP_operations_map,
-      std::vector<FP_operation_list> FP_operations,
       std::vector<std::string>& source_nodes);
  
     /**
