@@ -15,6 +15,25 @@
 namespace SmartPeak
 {
 
+  struct FP_operation_result
+  {
+    std::shared_ptr<Node> sink_node;
+    int time_step = 0;
+  };
+
+  struct FP_operation_arguments
+  {
+    std::shared_ptr<Node> source_node;
+    std::shared_ptr<Weight> weight;
+    int time_step = 0;
+  };
+
+  struct FP_operation_list
+  {
+    FP_operation_result result;
+    std::vector<FP_operation_arguments> arguments;
+  };
+
   enum class ModelLossFunction
   {
     MSE = 0,
@@ -397,7 +416,11 @@ public:
       std::vector<std::string>& sink_nodes);
     void getNextUncorrectedLayer(
       std::map<std::string, std::vector<std::string>>& sink_links_map,
-      std::vector<std::string>& source_nodes);      
+      std::vector<std::string>& source_nodes);
+    void getNextUncorrectedLayer(
+      std::map<std::string, int>& FP_operations_map,
+      std::vector<FP_operation_list> FP_operations,
+      std::vector<std::string>& source_nodes);
  
     /**
     @brief A continuation of a back propogation step.  Returns a vector of links
@@ -638,7 +661,8 @@ private:
 
     // Internal structures to allow for efficient multi-threading
     // and off-loading of computation from host to devices
-
+    std::vector<std::map<std::string, int>> FP_operations_map_;
+    std::vector<std::vector<FP_operation_list>> FP_operations_cache_;
 
   };
 }

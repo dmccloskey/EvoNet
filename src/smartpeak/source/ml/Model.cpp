@@ -721,94 +721,149 @@ namespace SmartPeak
     }
   }
 
-  Eigen::Tensor<float, 1> Model::calculateNodeInput_(
-    const std::string& link, 
-    const int& batch_size,
-    const int& memory_size,
-    const int& time_step)
-  {
-    Eigen::Tensor<float, 1> sink_tensor(batch_size);
-    sink_tensor.setConstant(0.0f);
-    Eigen::Tensor<float, 1> weight_tensor(batch_size);
-    weight_tensor.setConstant(weights_.at(links_.at(link).getWeightName()).getWeight());
-    if (nodes_.at(links_.at(link).getSourceNodeName()).getStatus() == NodeStatus::activated)
-    {
-      sink_tensor = weight_tensor * nodes_.at(links_.at(link).getSourceNodeName()).getOutput().chip(time_step, 1); //current time-step
-    }
-    else if (nodes_.at(links_.at(link).getSourceNodeName()).getStatus() == NodeStatus::initialized)
-    {
-      if (time_step + 1 < memory_size)
-      {
-        sink_tensor = weight_tensor * nodes_.at(links_.at(link).getSourceNodeName()).getOutput().chip(time_step + 1, 1); //previous time-step
-      }
-      else
-      {
-        std::cout<<"time_step exceeded memory size in forwardPropogateLayerNetInput."<<std::endl;
-      }
-    }
-    return sink_tensor;
-  }
+  // [PROTOTYPE implementation of thread support]
+  // Eigen::Tensor<float, 1> Model::calculateNodeInput_(
+  //   const std::string& link, 
+  //   const int& batch_size,
+  //   const int& memory_size,
+  //   const int& time_step)
+  // {
+  //   Eigen::Tensor<float, 1> sink_tensor(batch_size);
+  //   sink_tensor.setConstant(0.0f);
+  //   Eigen::Tensor<float, 1> weight_tensor(batch_size);
+  //   weight_tensor.setConstant(weights_.at(links_.at(link).getWeightName()).getWeight());
+  //   if (nodes_.at(links_.at(link).getSourceNodeName()).getStatus() == NodeStatus::activated)
+  //   {
+  //     sink_tensor = weight_tensor * nodes_.at(links_.at(link).getSourceNodeName()).getOutput().chip(time_step, 1); //current time-step
+  //   }
+  //   else if (nodes_.at(links_.at(link).getSourceNodeName()).getStatus() == NodeStatus::initialized)
+  //   {
+  //     if (time_step + 1 < memory_size)
+  //     {
+  //       sink_tensor = weight_tensor * nodes_.at(links_.at(link).getSourceNodeName()).getOutput().chip(time_step + 1, 1); //previous time-step
+  //     }
+  //     else
+  //     {
+  //       std::cout<<"time_step exceeded memory size in forwardPropogateLayerNetInput."<<std::endl;
+  //     }
+  //   }
+  //   return sink_tensor;
+  // }
   
-  bool Model::calculateNetNodeInput_(
-    const std::string& sink_node,
-    const std::vector<std::string>& sink_links, 
-    const int& batch_size,
-    const int& memory_size,
-    const int& time_step,
-    int n_threads)
-  {
-    std::vector<std::future<Eigen::Tensor<float, 1>>> task_results;
-    int thread_cnt = 0;
+  // [PROTOTYPE implementation of thread support]
+  // bool Model::calculateNetNodeInput_(
+  //   const std::string& sink_node,
+  //   const std::vector<std::string>& sink_links, 
+  //   const int& batch_size,
+  //   const int& memory_size,
+  //   const int& time_step,
+  //   int n_threads)
+  // {
+  //   std::vector<std::future<Eigen::Tensor<float, 1>>> task_results;
+  //   int thread_cnt = 0;
     
-    Eigen::Tensor<float, 1> sink_tensor(batch_size);
-    sink_tensor.setConstant(0.0f);
-    Eigen::Tensor<float, 1> weight_tensor(batch_size);
+  //   Eigen::Tensor<float, 1> sink_tensor(batch_size);
+  //   sink_tensor.setConstant(0.0f);
+  //   Eigen::Tensor<float, 1> weight_tensor(batch_size);
 
-    // for (const std::string& link : sink_links)
-    for (int i=0; i<sink_links.size(); ++i)
-    {
-      std::packaged_task<Eigen::Tensor<float, 1> // encapsulate in a packaged_task
-        (std::string, int, int, int
-        )> task(Model::calculateNodeInput_);
+  //   // for (const std::string& link : sink_links)
+  //   for (int i=0; i<sink_links.size(); ++i)
+  //   {
+  //     std::packaged_task<Eigen::Tensor<float, 1> // encapsulate in a packaged_task
+  //       (std::string, int, int, int
+  //       )> task(Model::calculateNodeInput_);
       
-      // launch the thread
-      task_results.push_back(task.get_future());
-      std::thread task_thread(std::move(task),
-        std::ref(sink_links[i]), std::ref(batch_size), std::ref(memory_size), std::ref(time_step));
-      task_thread.detach();
+  //     // launch the thread
+  //     task_results.push_back(task.get_future());
+  //     std::thread task_thread(std::move(task),
+  //       std::ref(sink_links[i]), std::ref(batch_size), std::ref(memory_size), std::ref(time_step));
+  //     task_thread.detach();
 
-      // retreive the results
-      if (thread_cnt == n_threads - 1 || i == sink_links.size() - 1)
-      {
-        for (auto& task_result: task_results)
-        {
-          sink_tensor += task_result.get();
-        }
-        task_results.clear();
-        thread_cnt = 0;
-      }
-      else
-      {
-        ++thread_cnt;
-      } 
-    }
+  //     // retreive the results
+  //     if (thread_cnt == n_threads - 1 || i == sink_links.size() - 1)
+  //     {
+  //       for (auto& task_result: task_results)
+  //       {
+  //         sink_tensor += task_result.get();
+  //       }
+  //       task_results.clear();
+  //       thread_cnt = 0;
+  //     }
+  //     else
+  //     {
+  //       ++thread_cnt;
+  //     } 
+  //   }
 
-    // calculate the output and the derivative
-    const NodeType sink_node_type = nodes_.at(sink_node).getType();
-    const NodeActivation sink_node_activation = nodes_.at(sink_node).getActivation();
-    Eigen::Tensor<float, 1> output = calculateActivation(
-      sink_node_type, sink_node_activation, sink_tensor,
-      nodes_.at(sink_node).getDt().chip(time_step, 1),
-      1);
-    Eigen::Tensor<float, 1> derivative = calculateDerivative(
-      sink_node_type, sink_node_activation, output, 1);
+  // [PROTOTYPE implementation of thread support]
+  //   // calculate the output and the derivative
+  //   const NodeType sink_node_type = nodes_.at(sink_node).getType();
+  //   const NodeActivation sink_node_activation = nodes_.at(sink_node).getActivation();
+  //   Eigen::Tensor<float, 1> output = calculateActivation(
+  //     sink_node_type, sink_node_activation, sink_tensor,
+  //     nodes_.at(sink_node).getDt().chip(time_step, 1),
+  //     1);
+  //   Eigen::Tensor<float, 1> derivative = calculateDerivative(
+  //     sink_node_type, sink_node_activation, output, 1);
 
-    // update the node
-    mapValuesToNode(output, time_step, sink_node, NodeStatus::activated, "output");
-    mapValuesToNode(derivative, time_step, sink_node, NodeStatus::activated, "derivative");
+  //   // update the node
+  //   mapValuesToNode(output, time_step, sink_node, NodeStatus::activated, "output");
+  //   mapValuesToNode(derivative, time_step, sink_node, NodeStatus::activated, "derivative");
 
-    return true;
-  }
+  //   return true;
+  // }
+
+  // void Model::forwardPropogateLayerNetInput(
+  //   std::map<std::string, std::vector<std::string>>& sink_links_map,
+  //   const int& time_step, int n_threads)
+  // {
+
+  //   // get all the information needed to construct the tensors
+  //   int batch_size = 0;
+  //   int memory_size = 0;
+  //   for (const auto& sink_links : sink_links_map)
+  //   {
+  //     batch_size = nodes_.at(sink_links.first).getOutput().dimension(0);
+  //     memory_size = nodes_.at(sink_links.first).getOutput().dimension(1);
+  //     break;
+  //   }
+
+  //   // iterate through each sink node and calculate the net input
+  //   // invoke the activation function once the net input is calculated
+  //   std::vector<std::future<bool>> task_results;
+  //   int thread_cnt = 0;
+  //   const int threads_per_sub_process = 1; // [TODO: how to best divide up the allowable threads?]
+  //   int sink_links_cnt = 0;
+  //   for (const auto& sink_links : sink_links_map)
+  //   {
+  //     std::packaged_task<bool // encapsulate in a packaged_task
+  //       (std::string, std::vector<std::string>, int, int, int, int
+  //       )> task(Model::calculateNetNodeInput_);
+      
+  //     // launch the thread
+  //     task_results.push_back(task.get_future());
+  //     std::thread task_thread(std::move(task),
+  //       std::ref(sink_links[i]), std::ref(batch_size), std::ref(memory_size), std::ref(time_step),
+  //       std::ref(threads_per_sub_process));
+  //     task_thread.detach();
+
+  //     // retreive the results
+  //     if (thread_cnt == n_threads - 1 || sink_links_cnt == sink_links_map.size() - 1)
+  //     {
+  //       for (auto& task_result: task_results)
+  //       {
+  //         bool success = task_result.get();
+  //       }
+  //       task_results.clear();
+  //       thread_cnt = 0;
+  //     }
+  //     else
+  //     {
+  //       thread_cnt += threads_per_sub_process;
+  //     } 
+  //     ++sink_links_cnt;
+  //   }
+  // }
 
   void Model::forwardPropogateLayerNetInput(
     std::map<std::string, std::vector<std::string>>& sink_links_map,
@@ -827,38 +882,49 @@ namespace SmartPeak
 
     // iterate through each sink node and calculate the net input
     // invoke the activation function once the net input is calculated
-    std::vector<std::future<bool>> task_results;
-    int thread_cnt = 0;
-    const int threads_per_sub_process = 1; // [TODO: how to best divide up the allowable threads?]
-    int sink_links_cnt = 0;
     for (const auto& sink_links : sink_links_map)
     {
-      std::packaged_task<bool // encapsulate in a packaged_task
-        (std::string, std::vector<std::string>, int, int, int, int
-        )> task(Model::calculateNetNodeInput_);
-      
-      // launch the thread
-      task_results.push_back(task.get_future());
-      std::thread task_thread(std::move(task),
-        std::ref(sink_links[i]), std::ref(batch_size), std::ref(memory_size), std::ref(time_step),
-        std::ref(threads_per_sub_process));
-      task_thread.detach();
-
-      // retreive the results
-      if (thread_cnt == n_threads - 1 || sink_links_cnt == sink_links_map.size() - 1)
+      // launch thread[sink_links]
+      Eigen::Tensor<float, 1> sink_tensor(batch_size);
+      sink_tensor.setConstant(0.0f);
+      Eigen::Tensor<float, 1> weight_tensor(batch_size);
+      for (const std::string& link : sink_links.second)
       {
-        for (auto& task_result: task_results)
+        // launch threads[link]
+        weight_tensor.setConstant(weights_.at(links_.at(link).getWeightName()).getWeight());
+        if (nodes_.at(links_.at(link).getSourceNodeName()).getStatus() == NodeStatus::activated)
         {
-          bool success = task_result.get();
+          sink_tensor = sink_tensor + weight_tensor * nodes_.at(links_.at(link).getSourceNodeName()).getOutput().chip(time_step, 1); //current time-step
         }
-        task_results.clear();
-        thread_cnt = 0;
+        else if (nodes_.at(links_.at(link).getSourceNodeName()).getStatus() == NodeStatus::initialized)
+        {
+          if (time_step + 1 < memory_size)
+          {
+            sink_tensor = sink_tensor + weight_tensor * nodes_.at(links_.at(link).getSourceNodeName()).getOutput().chip(time_step + 1, 1); //previous time-step
+          }
+          else
+          {
+            std::cout<<"time_step exceeded memory size in forwardPropogateLayerNetInput."<<std::endl;
+          }
+        }
+        // accumuate temporary sink_tensor values from all threads
+        // kill threads[link]
       }
-      else
-      {
-        thread_cnt += threads_per_sub_process;
-      } 
-      ++sink_links_cnt;
+
+      // calculate the output and the derivative
+      const NodeType sink_node_type = nodes_.at(sink_links.first).getType();
+      const NodeActivation sink_node_activation = nodes_.at(sink_links.first).getActivation();
+      Eigen::Tensor<float, 1> output = calculateActivation(
+        sink_node_type, sink_node_activation, sink_tensor,
+        nodes_.at(sink_links.first).getDt().chip(time_step, 1),
+        1);
+      Eigen::Tensor<float, 1> derivative = calculateDerivative(
+        sink_node_type, sink_node_activation, output, 1);
+
+      // update the node
+      mapValuesToNode(output, time_step, sink_links.first, NodeStatus::activated, "output");
+      mapValuesToNode(derivative, time_step, sink_links.first, NodeStatus::activated, "derivative");      
+      // kill thread[sink_links]
     }
   }
 
