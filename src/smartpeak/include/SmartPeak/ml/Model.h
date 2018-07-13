@@ -431,6 +431,10 @@ public:
     void getNextUncorrectedLayer(
       std::map<std::string, std::vector<std::string>>& sink_links_map,
       std::vector<std::string>& source_nodes);
+    void getNextUncorrectedLayer(
+      std::map<std::string, int>& BP_operations_map,
+      std::vector<FP_operation_list>& BP_operations,
+      std::vector<std::string>& source_nodes);
  
     /**
     @brief A continuation of a back propogation step.  Returns a vector of links
@@ -453,6 +457,11 @@ public:
       std::map<std::string, std::vector<std::string>>& sink_links_map,
       const std::vector<std::string>& source_nodes,
       std::vector<std::string>& source_nodes_with_cycles); 
+    void getNextUncorrectedLayerCycles(
+      std::map<std::string, int>& BP_operations_map,
+      std::vector<FP_operation_list>& BP_operations,
+      std::vector<std::string>& source_nodes,
+      std::vector<std::string>& source_nodes_with_cycles);
  
     /**
     @brief A back propogation step. Computes the net
@@ -480,6 +489,9 @@ public:
       const int& time_step);
     void backPropogateLayerError(
       const std::map<std::string, std::vector<std::string>>& sink_links_map,
+      const int& time_step, int n_threads = 1);
+    void backPropogateLayerError(
+      std::vector<FP_operation_list>& BP_operations,
       const int& time_step, int n_threads = 1);
  
     /**
@@ -673,7 +685,6 @@ private:
     // and off-loading of computation from host to devices
     std::vector<std::vector<FP_operation_list>> FP_operations_cache_;
     std::vector<std::vector<FP_operation_list>> BP_operations_cache_;
-
   };
 }
 
