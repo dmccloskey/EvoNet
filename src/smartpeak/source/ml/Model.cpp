@@ -834,6 +834,9 @@ namespace SmartPeak
     const int& memory_size,
     const int& time_step)
   {
+    static std::mutex calculateNodeInput_mutex;
+    std::lock_guard<std::mutex> lock2(calculateNodeInput_mutex);
+
     Eigen::Tensor<float, 1> sink_tensor(batch_size);
     sink_tensor.setConstant(0.0f);
     Eigen::Tensor<float, 1> weight_tensor(batch_size);
@@ -849,13 +852,16 @@ namespace SmartPeak
     return sink_tensor;
   }
   
-  std::pair<Eigen::Tensor<float, 1>, Eigen::Tensor<float, 1>> Model::calculateNetNodeInput_(
+  bool Model::calculateNetNodeInput_(
     FP_operation_list* operations,  
     const int& batch_size,
     const int& memory_size,
     const int& time_step,
     int n_threads)
   {
+    static std::mutex calculateNetNodeInput_mutex;
+    std::lock_guard<std::mutex> lock(calculateNetNodeInput_mutex);
+
     std::vector<std::future<Eigen::Tensor<float, 1>>> task_results;
     int thread_cnt = 0;
     
@@ -902,13 +908,12 @@ namespace SmartPeak
     Eigen::Tensor<float, 1> derivative = calculateDerivative(
       sink_node_type, sink_node_activation, output, 1);
 
-    // // update the node [TODO: check if the model node is also updated]
-    // operations->result.sink_node->setStatus(NodeStatus::activated);
-    // operations->result.sink_node->getOutputMutable()->chip(time_step, 1) = output;
-    // operations->result.sink_node->getDerivativeMutable()->chip(time_step, 1) = derivative;
+    // update the node [TODO: check if the model node is also updated]
+    operations->result.sink_node->setStatus(NodeStatus::activated);
+    operations->result.sink_node->getOutputMutable()->chip(time_step, 1) = output;
+    operations->result.sink_node->getDerivativeMutable()->chip(time_step, 1) = derivative;
 
-    std::pair<Eigen::Tensor<float, 1>, Eigen::Tensor<float, 1>> result = std::make_pair(output, derivative);
-    return result;
+    return true;
   }
 
   void Model::forwardPropogateLayerNetInput(
@@ -928,13 +933,13 @@ namespace SmartPeak
 
     // iterate through each sink node and calculate the net input
     // invoke the activation function once the net input is calculated
-    std::vector<std::future<std::pair<Eigen::Tensor<float, 1>, Eigen::Tensor<float, 1>>>> task_results;
+    std::vector<std::future<bool>> task_results;
     int thread_cnt = 0;
     const int threads_per_sub_process = 1; // [TODO: how to best divide up the allowable threads?]
     int operations_cnt = 0;
     for (auto& FP_operation : FP_operations)
     {
-      std::packaged_task<std::pair<Eigen::Tensor<float, 1>, Eigen::Tensor<float, 1>> // encapsulate in a packaged_task
+      std::packaged_task<bool // encapsulate in a packaged_task
         (FP_operation_list*, int, int, int, int
         )> task(Model::calculateNetNodeInput_);
       
@@ -950,19 +955,13 @@ namespace SmartPeak
       {
         for (auto& task_result: task_results)
         {
-          std::pair<Eigen::Tensor<float, 1>, Eigen::Tensor<float, 1>> result = task_result.get();
-
-          // update the node [TODO: check if the model node is also updated]
-          FP_operation.result.sink_node->setStatus(NodeStatus::activated);
-          FP_operation.result.sink_node->getOutputMutable()->chip(time_step, 1) = result.first;
-          FP_operation.result.sink_node->getDerivativeMutable()->chip(time_step, 1) = result.second;
-
-          Eigen::Tensor<float, 1> model_output(batch_size);
-          model_output = nodes_.at(FP_operation.result.sink_node->getName()).getOutput().chip(time_step, 1);
-          Eigen::Tensor<float, 1> result_output(batch_size);
-          result_output = FP_operation.result.sink_node->getOutput().chip(time_step, 1);
-          std::cout<<"Model output: "<<model_output<<std::endl;
-          std::cout<<"FP operation result: "<<result_output<<std::endl;
+          bool success = task_result.get();
+          // Eigen::Tensor<float, 1> model_output(batch_size);
+          // model_output = nodes_.at(FP_operation.result.sink_node->getName()).getOutput().chip(time_step, 1);
+          // Eigen::Tensor<float, 1> result_output(batch_size);
+          // result_output = FP_operation.result.sink_node->getOutput().chip(time_step, 1);
+          // std::cout<<"Model output: "<<model_output<<std::endl;
+          // std::cout<<"FP operation result: "<<result_output<<std::endl;
         }
         task_results.clear();
         thread_cnt = 0;
@@ -1969,6 +1968,9 @@ namespace SmartPeak
 
   void Model::clearCache()
   {
+    FP_operations_cache_.clear();
+
+    // [DEPRECATED]
     FP_sink_link_cache_.clear();
     BP_sink_link_cache_.clear();
     BP_cyclic_nodes_cache_.clear();

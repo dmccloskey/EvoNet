@@ -321,7 +321,7 @@ public:
       const int& time_step
     );
     // [TODO: need to be static]
-    static std::pair<Eigen::Tensor<float, 1>, Eigen::Tensor<float, 1>> calculateNetNodeInput_( //[TODO: return the nodes]
+    static bool calculateNetNodeInput_( //[TODO: return the nodes]
       FP_operation_list* operations, 
       const int& batch_size,
       const int& memory_size,

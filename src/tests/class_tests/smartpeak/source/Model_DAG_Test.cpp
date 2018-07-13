@@ -138,6 +138,7 @@ BOOST_AUTO_TEST_CASE(mapValuesToNodes)
 
   const int batch_size = 4;
   const int memory_size = 2;
+  model1.clearCache();
   model1.initNodes(batch_size, memory_size);
 
   // create the input
@@ -203,6 +204,7 @@ BOOST_AUTO_TEST_CASE(mapValuesToNodes2)
 
   const int batch_size = 4;
   const int memory_size = 2;
+  model1.clearCache();
   model1.initNodes(batch_size, memory_size);
 
   // create the input
@@ -266,6 +268,7 @@ BOOST_AUTO_TEST_CASE(mapValuesToNode)
   const int batch_size = 4;
   const int memory_size = 2;
   const int time_step = 0;
+  model1.clearCache();
   model1.initNodes(batch_size, memory_size);
 
   // create the input
@@ -313,6 +316,7 @@ BOOST_AUTO_TEST_CASE(mapValuesToNodes3)
 
   const int batch_size = 4;
   const int memory_size = 2;
+  model1.clearCache();
   model1.initNodes(batch_size, memory_size);
 
   // create the input
@@ -374,6 +378,7 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayer1)
   // initialize nodes
   const int batch_size = 4;
   const int memory_size = 1;
+  model1.clearCache();
   model1.initNodes(batch_size, memory_size);
 
   // create the input and biases
@@ -426,6 +431,7 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayerBiases1)
   // initialize nodes
   const int batch_size = 4;
   const int memory_size = 1;
+  model1.clearCache();
   model1.initNodes(batch_size, memory_size);
 
   // create the input and biases
@@ -495,6 +501,7 @@ BOOST_AUTO_TEST_CASE(forwardPropogateLayerNetInput)
   // initialize nodes
   const int batch_size = 4;
   const int memory_size = 1;
+  model1.clearCache();
   model1.initNodes(batch_size, memory_size);
 
   // create the input
@@ -629,6 +636,7 @@ BOOST_AUTO_TEST_CASE(forwardPropogate)
   // initialize nodes
   const int batch_size = 4;
   const int memory_size = 1;
+  model1.clearCache();
   model1.initNodes(batch_size, memory_size);
 
   // create the input
@@ -643,7 +651,7 @@ BOOST_AUTO_TEST_CASE(forwardPropogate)
   model1.mapValuesToNodes(biases, biases_ids, NodeStatus::activated, "output"); 
 
   // calculate the activation
-  model1.forwardPropogate(0);
+  model1.forwardPropogate(0, true, false, 1);  // need a cache or a segmentation fault will occur!
 
   // test values of output nodes
   Eigen::Tensor<float, 2> output(batch_size, 2); 
@@ -741,6 +749,7 @@ BOOST_AUTO_TEST_CASE(getNextUncorrectedLayer1)
   // initialize nodes
   const int batch_size = 4;
   const int memory_size = 1;
+  model1.clearCache();
   model1.initNodes(batch_size, memory_size);
   model1.setLossFunction(ModelLossFunction::MSE);
 
@@ -756,7 +765,7 @@ BOOST_AUTO_TEST_CASE(getNextUncorrectedLayer1)
   model1.mapValuesToNodes(biases, biases_ids, NodeStatus::activated, "output"); 
 
   // calculate the activation
-  model1.forwardPropogate(0);
+  model1.forwardPropogate(0, true, false, 1);
 
   // calculate the model error and node output error
   std::vector<std::string> output_nodes = {"4", "5"};
@@ -813,6 +822,7 @@ BOOST_AUTO_TEST_CASE(backPropogateLayerError)
   // initialize nodes
   const int batch_size = 4;
   const int memory_size = 1;
+  model1.clearCache();
   model1.initNodes(batch_size, memory_size);
   model1.setLossFunction(ModelLossFunction::MSE);
 
@@ -828,7 +838,7 @@ BOOST_AUTO_TEST_CASE(backPropogateLayerError)
   model1.mapValuesToNodes(biases, biases_ids, NodeStatus::activated, "output"); 
 
   // calculate the activation
-  model1.forwardPropogate(0);
+  model1.forwardPropogate(0, true, false, 1);
 
   // calculate the model error and node output error
   std::vector<std::string> output_nodes = {"4", "5"};
@@ -867,6 +877,7 @@ BOOST_AUTO_TEST_CASE(backPropogate)
   // initialize nodes
   const int batch_size = 4;
   const int memory_size = 1;
+  model1.clearCache();
   model1.initNodes(batch_size, memory_size);
   model1.setLossFunction(ModelLossFunction::MSE);
 
@@ -882,7 +893,7 @@ BOOST_AUTO_TEST_CASE(backPropogate)
   model1.mapValuesToNodes(biases, biases_ids, NodeStatus::activated, "output"); 
 
   // forward propogate
-  model1.forwardPropogate(0);
+  model1.forwardPropogate(0, true, false, 1);
 
   // calculate the model error and node output error
   std::vector<std::string> output_nodes = {"4", "5"};
@@ -924,6 +935,7 @@ BOOST_AUTO_TEST_CASE(updateWeights)
   // initialize nodes
   const int batch_size = 4;
   const int memory_size = 1;
+  model1.clearCache();
   model1.initNodes(batch_size, memory_size);
   model1.initWeights();
   model1.setLossFunction(ModelLossFunction::MSE);
@@ -940,7 +952,7 @@ BOOST_AUTO_TEST_CASE(updateWeights)
   model1.mapValuesToNodes(biases, biases_ids, NodeStatus::activated, "output"); 
 
   // forward propogate
-  model1.forwardPropogate(0);
+  model1.forwardPropogate(0, true, false, 1);
 
   // calculate the model error and node output error
   std::vector<std::string> output_nodes = {"4", "5"};
@@ -1011,6 +1023,7 @@ BOOST_AUTO_TEST_CASE(modelTrainer1)
   // initialize nodes
   const int batch_size = 4;
   const int memory_size = 1;
+  model1.clearCache();
   model1.initNodes(batch_size, memory_size);
   model1.initWeights();
   model1.setLossFunction(ModelLossFunction::MSE);
@@ -1040,7 +1053,10 @@ BOOST_AUTO_TEST_CASE(modelTrainer1)
     model1.mapValuesToNodes(biases, biases_ids, NodeStatus::activated, "output");
 
     // forward propogate
-    model1.forwardPropogate(0);
+    if (iter == 0)
+      model1.forwardPropogate(0, true, false, 1);
+    else
+      model1.forwardPropogate(0, false, true, 1);
 
     // calculate the model error and node output error
     model1.calculateError(expected, output_nodes);
