@@ -1603,6 +1603,70 @@ namespace SmartPeak
   }
 
   void Model::backPropogateLayerError(
+    std::vector<FP_operation_list>& BP_operations,
+    const int& time_step, int n_threads)
+  {
+
+    // get all the information needed to construct the tensors
+    int batch_size = 0;
+    int memory_size = 0;
+    for (const auto& sources_links : sink_links_map)
+    {
+      batch_size = nodes_.at(sources_links.first)->getOutput().dimension(0);
+      memory_size = nodes_.at(sources_links.first)->getOutput().dimension(1);
+      break;
+    }
+
+    if (time_step >= memory_size)
+    {
+      std::cout<<"time step: "<<time_step<<" exceeds the memory_size!"<<std::endl;
+      return;
+    }
+
+    // iterate through each sink node and calculate the error
+    for (const auto& sinks_links : sink_links_map)
+    {
+      Eigen::Tensor<float, 1> sink_tensor(batch_size);
+      sink_tensor.setConstant(0.0f);
+      Eigen::Tensor<float, 1> weight_tensor(batch_size);
+
+      // calculate the total incoming error
+      for (const std::string& link : sinks_links.second)
+      {
+        weight_tensor.setConstant(weights_.at(links_.at(link)->getWeightName())->getWeight());
+        sink_tensor = sink_tensor + weight_tensor * nodes_.at(links_.at(link)->getSinkNodeName())->getError().chip(time_step, 1);
+      }
+      
+      // scale the error by the derivative
+      if (nodes_.at(sinks_links.first)->getStatus() == NodeStatus::activated)
+      {
+        sink_tensor = sink_tensor * nodes_.at(sinks_links.first)->getDerivative().chip(time_step, 1); // current time-step
+      }
+      else if (nodes_.at(sinks_links.first)->getStatus() == NodeStatus::corrected)
+      {
+        // std::cout << "Model::backPropogateLayerError() Previous derivative (batch_size, Sink) " << j << "," << i << std::endl;
+        if (time_step + 1 < memory_size)
+        {
+          sink_tensor = sink_tensor * nodes_.at(sinks_links.first)->getDerivative().chip(time_step + 1, 1); // previous time-step
+        }  
+      }  
+
+      // update the errors      
+      if (nodes_.at(sinks_links.first)->getStatus() == NodeStatus::activated)
+      {
+        mapValuesToNode(sink_tensor, time_step, sinks_links.first, NodeStatus::corrected, "error");
+      }
+      else if (nodes_.at(sinks_links.first)->getStatus() == NodeStatus::corrected)
+      {
+        if (time_step + 1 < memory_size)
+        {
+          mapValuesToNode(sink_tensor, time_step + 1, sinks_links.first, NodeStatus::corrected, "error");
+        }  
+      }
+    }
+  }
+
+  void Model::backPropogateLayerError(
     const std::map<std::string, std::vector<std::string>>& sink_links_map,
     const int& time_step, int n_threads)
   {
@@ -1813,24 +1877,25 @@ namespace SmartPeak
         getNextUncorrectedLayer(BP_operations_map, BP_operations_list, source_nodes);  
 
         // get cycles
-        std::map<std::string, std::vector<std::string>> sink_links_map_cycles = sink_links_map;
+        std::map<std::string, int> BP_operations_map_cycles = BP_operations_map;
+        std::vector<FP_operation_list> BP_operations_list_cycles = BP_operations_list;
         std::vector<std::string> source_nodes_cycles;
         getNextUncorrectedLayerCycles(BP_operations_map, BP_operations_list, source_nodes, source_nodes_cycles);
 
         if (source_nodes_cycles.size() == source_nodes.size())
         { // all backward propogation steps have caught up
           // add source nodes with cycles to the backward propogation step
-          for (const auto& sink_link : sink_links_map_cycles)
+          for (const auto& sink_operation : BP_operations_map_cycles)
           {
-            if (sink_links_map.count(sink_link.first) == 0)
+            if (BP_operations_map.count(sink_operation.first) == 0)
             {
-              if (cache_BP_steps)
-                BP_cyclic_nodes_cache_.push_back(sink_link.first);
+              if (cache_BP_steps) // track sink nodes with cycles
+                BP_cyclic_nodes_cache_.push_back(sink_operation.first);
               else
-                node_names_with_cycles.push_back(sink_link.first);
+                node_names_with_cycles.push_back(sink_operation.first);
             }
           }
-          sink_links_map = sink_links_map_cycles;
+          BP_operations_list = BP_operations_list_cycles;
         }
 
         // check if all nodes have been corrected
@@ -1843,7 +1908,7 @@ namespace SmartPeak
         backPropogateLayerError(BP_operations_list, time_step, n_threads);
 
         if (cache_BP_steps)
-          BP_sink_link_cache_.push_back(BP_operations_list);
+          BP_operations_cache_.push_back(BP_operations_list);
       }
       if (cache_BP_steps)
         return BP_cyclic_nodes_cache_;

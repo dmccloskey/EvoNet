@@ -313,14 +313,12 @@ public:
       std::vector<FP_operation_list>& FP_operations,
       const int& time_step, int n_threads = 1);
 
-    // [TODO: need to be static]
     static Eigen::Tensor<float, 1> calculateNodeInput_(
       FP_operation_arguments* arguments, 
       const int& batch_size,
       const int& memory_size,
       const int& time_step
     );
-    // [TODO: need to be static]
     static bool calculateNetNodeInput_( //[TODO: return the nodes]
       FP_operation_list* operations, 
       const int& batch_size,
@@ -493,6 +491,20 @@ public:
     void backPropogateLayerError(
       std::vector<FP_operation_list>& BP_operations,
       const int& time_step, int n_threads = 1);
+
+    static Eigen::Tensor<float, 1> calculateNodeError_(
+      FP_operation_arguments* arguments, 
+      const int& batch_size,
+      const int& memory_size,
+      const int& time_step
+    );
+    static bool calculateNetNodeError_( //[TODO: return the nodes]
+      FP_operation_list* operations, 
+      const int& batch_size,
+      const int& memory_size,
+      const int& time_step,
+      int n_threads = 1
+    );
  
     /**
     @brief Back propogation of the network model.
