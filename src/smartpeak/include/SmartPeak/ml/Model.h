@@ -655,9 +655,9 @@ public:
 private:
     int id_; ///< Model ID
     std::string name_; ///< Model Name
-    std::map<std::string, Link> links_; ///< Model links
-    std::map<std::string, Node> nodes_; ///< Model nodes
-    std::map<std::string, Weight> weights_; ///< Model nodes
+    std::map<std::string, std::shared_ptr<Link>> links_; ///< Model links
+    std::map<std::string, std::shared_ptr<Node>> nodes_; ///< Model nodes
+    std::map<std::string, std::shared_ptr<Weight>> weights_; ///< Model nodes
     Eigen::Tensor<float, 1> error_; ///< Model error
     // Eigen::Tensor<float, 2> error_; ///< Model error
 
@@ -672,6 +672,7 @@ private:
     // Internal structures to allow for efficient multi-threading
     // and off-loading of computation from host to devices
     std::vector<std::vector<FP_operation_list>> FP_operations_cache_;
+    std::vector<std::vector<FP_operation_list>> BP_operations_cache_;
 
   };
 }

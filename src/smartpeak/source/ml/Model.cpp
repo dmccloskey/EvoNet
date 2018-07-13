@@ -78,7 +78,9 @@ namespace SmartPeak
   { 
     for (const Node& node: nodes)
     {
-      auto found = nodes_.emplace(node.getName(), node);
+      std::shared_ptr<Node> node_ptr;
+      node_ptr.reset(new Node(node));
+      auto found = nodes_.emplace(node.getName(), node_ptr);
       if (!found.second)
       {
         // TODO: move to debug log
@@ -91,7 +93,7 @@ namespace SmartPeak
   {
     if (!nodes_.empty() && nodes_.count(node_name) != 0)
     {
-      return nodes_.at(node_name);
+      return *nodes_.at(node_name);
     }
     else
     {
@@ -105,7 +107,7 @@ namespace SmartPeak
     std::vector<Node> nodes;
     for (const auto& node: nodes_)
     {
-      nodes.push_back(node.second);
+      nodes.push_back(*node.second);
     }
     return nodes;
   }
@@ -128,7 +130,9 @@ namespace SmartPeak
   { 
     for (const Weight& weight: weights)
     {
-      auto found = weights_.emplace(weight.getName(), std::move(weight));
+      std::shared_ptr<Weight> weight_ptr;
+      weight_ptr.reset(new Weight(weight));
+      auto found = weights_.emplace(weight.getName(), weight_ptr);
       if (!found.second)
       {
         // TODO: move to debug log
@@ -141,7 +145,7 @@ namespace SmartPeak
   {
     if (!weights_.empty() && weights_.count(weight_name) != 0)
     {
-      return std::move(weights_.at(weight_name));
+      return *std::move(weights_.at(weight_name));
     }
     else
     {
@@ -155,7 +159,7 @@ namespace SmartPeak
     std::vector<Weight> weights;
     for (const auto& weight: weights_)
     {
-      weights.push_back(weight.second);
+      weights.push_back(*weight.second);
     }
     return weights;
   }
@@ -177,7 +181,9 @@ namespace SmartPeak
   { 
     for (const Link& link: links)
     {
-      auto found = links_.emplace(link.getName(), link);
+      std::shared_ptr<Link> link_ptr;
+      link_ptr.reset(new Link(link));
+      auto found = links_.emplace(link.getName(), link_ptr);
       if (!found.second)
       {
         // TODO: move to debug log
@@ -204,7 +210,7 @@ namespace SmartPeak
   {
     if (!links_.empty() && links_.count(link_name) != 0)
     {
-      return links_.at(link_name);
+      return *links_.at(link_name);
     }
     else
     {
@@ -218,7 +224,7 @@ namespace SmartPeak
     std::vector<Link> links;
     for (const auto& link: links_)
     {
-      links.push_back(link.second);
+      links.push_back(*link.second);
     }
     return links;
   }
@@ -233,8 +239,8 @@ namespace SmartPeak
       // if (links_.empty()) { found = true; }
       for (const auto& link: links_)
       {
-        if (node.second.getName() == link.second.getSourceNodeName() ||
-          node.second.getName() == link.second.getSinkNodeName())
+        if (node.second->getName() == link.second->getSourceNodeName() ||
+          node.second->getName() == link.second->getSinkNodeName())
         {
           found = true;
           break;
@@ -264,7 +270,7 @@ namespace SmartPeak
       // if (links_.empty()) { found = true; }
       for (const auto& link: links_)
       {
-        if (weight.second.getName() == link.second.getWeightName())
+        if (weight.second->getName() == link.second->getWeightName())
         {
           found = true;
           break;
@@ -299,9 +305,9 @@ namespace SmartPeak
       // }
       for (const auto& node : nodes_)
       {
-        if (node.second.getName() == link.second.getSourceNodeName())
+        if (node.second->getName() == link.second->getSourceNodeName())
           source_node_found = true;
-        if (node.second.getName() == link.second.getSinkNodeName())
+        if (node.second->getName() == link.second->getSinkNodeName())
           sink_node_found = true;
         if (source_node_found && sink_node_found)
           break;
@@ -310,7 +316,7 @@ namespace SmartPeak
       // if (weights_.empty()) { weight_found = true; }
       for (const auto& weight : weights_)
       {
-        if (weight.second.getName() == link.second.getWeightName())
+        if (weight.second->getName() == link.second->getWeightName())
         {
           weight_found = true;
           break;
@@ -345,7 +351,7 @@ namespace SmartPeak
   {
     for (auto& node_map : nodes_)
     {
-      node_map.second.initNode(batch_size, memory_size);
+      node_map.second->initNode(batch_size, memory_size);
     }
   }
 
@@ -353,7 +359,7 @@ namespace SmartPeak
   {
     for (auto& weight_map : weights_)
     {
-      weight_map.second.initWeight();
+      weight_map.second->initWeight();
     }
   }
   
@@ -371,17 +377,17 @@ namespace SmartPeak
       {
         if (value_type == "output")
         {
-          node_map.second.getOutputMutable()->operator()(j, memory_step) = values(j);
+          node_map.second->getOutputMutable()->operator()(j, memory_step) = values(j);
         }
         else if (value_type == "error")
         {
-          node_map.second.getErrorMutable()->operator()(j, memory_step) = values(j);
+          node_map.second->getErrorMutable()->operator()(j, memory_step) = values(j);
         }
         else if (value_type == "dt")
         {
-          node_map.second.getDtMutable()->operator()(j, memory_step) = values(j);
+          node_map.second->getDtMutable()->operator()(j, memory_step) = values(j);
         }
-        node_map.second.setStatus(status_update);
+        node_map.second->setStatus(status_update);
       }
     }
   }
@@ -400,20 +406,20 @@ namespace SmartPeak
       return;
     }
     // assumes the node exists
-    else if (nodes_.at(node_names[0]).getOutput().dimension(0) != values.dimension(0))
+    else if (nodes_.at(node_names[0])->getOutput().dimension(0) != values.dimension(0))
     {
       std::cout << "The number of input samples and the node batch size does not match." << std::endl;
       return;
     }
     // assumes the node exists
-    else if (nodes_.at(node_names[0]).getOutput().dimension(1) <= memory_step)
+    else if (nodes_.at(node_names[0])->getOutput().dimension(1) <= memory_step)
     {
       std::cout << "The memory_step is greater than the memory_size." << std::endl;
       return;
     }
 
     // // infer the memory size from the node output size
-    // const int memory_size = nodes_.at(node_names[0]).getOutput().dimension(1);
+    // const int memory_size = nodes_.at(node_names[0])->getOutput().dimension(1);
 
     // copy over the input values
     for (int i=0; i<node_names.size(); ++i)
@@ -424,19 +430,19 @@ namespace SmartPeak
         {
           // SANITY CHECK:
           // std::cout << "i" << i << " j" << j << " values: " << values.data()[i*values.dimension(0) + j] << std::endl;
-          // nodes_.at(node_names[i]).getOutputPointer()[j + values.dimension(0)*memory_step] = std::move(values.data()[i*values.dimension(0) + j]);
-          // nodes_.at(node_names[i]).getOutputPointer()[j + values.dimension(0)*memory_step] = values(j, i);
-          nodes_.at(node_names[i]).getOutputMutable()->operator()(j, memory_step) = values(j, i);
+          // nodes_.at(node_names[i])->getOutputPointer()[j + values.dimension(0)*memory_step] = std::move(values.data()[i*values.dimension(0) + j]);
+          // nodes_.at(node_names[i])->getOutputPointer()[j + values.dimension(0)*memory_step] = values(j, i);
+          nodes_.at(node_names[i])->getOutputMutable()->operator()(j, memory_step) = values(j, i);
         }
         else if (value_type == "error")
         {
-          nodes_.at(node_names[i]).getErrorMutable()->operator()(j, memory_step) = values(j, i);
+          nodes_.at(node_names[i])->getErrorMutable()->operator()(j, memory_step) = values(j, i);
         }
         else if (value_type == "dt")
         {
-          nodes_.at(node_names[i]).getDtMutable()->operator()(j, memory_step) = values(j, i);
+          nodes_.at(node_names[i])->getDtMutable()->operator()(j, memory_step) = values(j, i);
         }
-        nodes_.at(node_names[i]).setStatus(status_update);
+        nodes_.at(node_names[i])->setStatus(status_update);
       }
     }
   }
@@ -450,7 +456,7 @@ namespace SmartPeak
   {
     // check dimension mismatches
     // assumes the node exists
-    if (nodes_.at(node_name).getOutput().dimension(0) != values.dimension(0))
+    if (nodes_.at(node_name)->getOutput().dimension(0) != values.dimension(0))
     {
       std::cout << "The number of input samples and the node batch size does not match." << std::endl;
       return;
@@ -461,42 +467,42 @@ namespace SmartPeak
     // {
     //   if (value_type == "output")
     //   {
-    //     nodes_.at(node_name).getOutputMutable()->operator()(j, memory_step) = values(j);
+    //     nodes_.at(node_name)->getOutputMutable()->operator()(j, memory_step) = values(j);
     //   }
     //   else if (value_type == "error")
     //   {
-    //     nodes_.at(node_name).getErrorMutable()->operator()(j, memory_step) = values(j);
+    //     nodes_.at(node_name)->getErrorMutable()->operator()(j, memory_step) = values(j);
     //   }
     //   else if (value_type == "derivative")
     //   {
-    //     nodes_.at(node_name).getDerivativeMutable()->operator()(j, memory_step) = values(j);
+    //     nodes_.at(node_name)->getDerivativeMutable()->operator()(j, memory_step) = values(j);
     //   }
     //   else if (value_type == "dt")
     //   {
-    //     nodes_.at(node_name).getDtMutable()->operator()(j, memory_step) = values(j);
+    //     nodes_.at(node_name)->getDtMutable()->operator()(j, memory_step) = values(j);
     //   }
     // }
 
     // copy over the input values
     if (value_type == "output")
     {
-      nodes_.at(node_name).getOutputMutable()->chip(memory_step, 1) = values;
+      nodes_.at(node_name)->getOutputMutable()->chip(memory_step, 1) = values;
     }
     else if (value_type == "error")
     {
-      nodes_.at(node_name).getErrorMutable()->chip(memory_step, 1) = values;
+      nodes_.at(node_name)->getErrorMutable()->chip(memory_step, 1) = values;
     }
     else if (value_type == "derivative")
     {
-      nodes_.at(node_name).getDerivativeMutable()->chip(memory_step, 1) = values;
+      nodes_.at(node_name)->getDerivativeMutable()->chip(memory_step, 1) = values;
     }
     else if (value_type == "dt")
     {
-      nodes_.at(node_name).getDtMutable()->chip(memory_step, 1) = values;
+      nodes_.at(node_name)->getDtMutable()->chip(memory_step, 1) = values;
     }
 
     // update the status
-    nodes_.at(node_name).setStatus(status_update);
+    nodes_.at(node_name)->setStatus(status_update);
   }
   
   void Model::mapValuesToNodes(
@@ -512,14 +518,14 @@ namespace SmartPeak
       return;
     }
     // assumes the node exists
-    else if (nodes_.at(node_names[0]).getOutput().dimension(0) != values.dimension(0))
+    else if (nodes_.at(node_names[0])->getOutput().dimension(0) != values.dimension(0))
     {
-      printf("The number of input samples %d and the node batch size %d does not match.\n", (int)values.dimension(0), (int)nodes_.at(node_names[0]).getOutput().dimension(0));
+      printf("The number of input samples %d and the node batch size %d does not match.\n", (int)values.dimension(0), (int)nodes_.at(node_names[0])->getOutput().dimension(0));
       return;
     }
-    else if (nodes_.at(node_names[0]).getOutput().dimension(1) != values.dimension(1))
+    else if (nodes_.at(node_names[0])->getOutput().dimension(1) != values.dimension(1))
     {
-      printf("The number of input time steps %d and the node memory size %d does not match.\n", (int)values.dimension(1), (int)nodes_.at(node_names[0]).getOutput().dimension(1));
+      printf("The number of input time steps %d and the node memory size %d does not match.\n", (int)values.dimension(1), (int)nodes_.at(node_names[0])->getOutput().dimension(1));
       return;
     }
 
@@ -532,18 +538,18 @@ namespace SmartPeak
         {
           if (value_type == "output")
           {
-            // nodes_.at(node_names[i]).getOutputPointer()[k*values.dimension(0) + j] = values(j, k, i);
-            nodes_.at(node_names[i]).getOutputMutable()->operator()(j, k) = values(j, k, i);
+            // nodes_.at(node_names[i])->getOutputPointer()[k*values.dimension(0) + j] = values(j, k, i);
+            nodes_.at(node_names[i])->getOutputMutable()->operator()(j, k) = values(j, k, i);
           }
           else if (value_type == "error")
           {
-            nodes_.at(node_names[i]).getErrorMutable()->operator()(j, k) = values(j, k, i);
+            nodes_.at(node_names[i])->getErrorMutable()->operator()(j, k) = values(j, k, i);
           }
           else if (value_type == "dt")
           {
-            nodes_.at(node_names[i]).getDtMutable()->operator()(j, k) = values(j, k, i);
+            nodes_.at(node_names[i])->getDtMutable()->operator()(j, k) = values(j, k, i);
           }
-          nodes_.at(node_names[i]).setStatus(status_update);
+          nodes_.at(node_names[i])->setStatus(status_update);
         }
       }
     }
@@ -558,32 +564,28 @@ namespace SmartPeak
     // except for biases
     for (auto& link_map : links_)
     {
-      if (nodes_.at(link_map.second.getSourceNodeName()).getType() != NodeType::bias &&
-        nodes_.at(link_map.second.getSourceNodeName()).getStatus() == NodeStatus::activated && 
-        nodes_.at(link_map.second.getSinkNodeName()).getStatus() == NodeStatus::initialized)
+      if (nodes_.at(link_map.second->getSourceNodeName())->getType() != NodeType::bias &&
+        nodes_.at(link_map.second->getSourceNodeName())->getStatus() == NodeStatus::activated && 
+        nodes_.at(link_map.second->getSinkNodeName())->getStatus() == NodeStatus::initialized)
       {
         FP_operation_arguments arguments;
-        // Node* source_node = &nodes_.at(link_map.second.getSourceNodeName()); // passes a copy of the object...
-        Node* source_node = &nodes_[link_map.second.getSourceNodeName()]; // need a check to ensure the node exists...
-        arguments.source_node.reset(source_node);
-        Weight* weight = &weights_[link_map.second.getWeightName()];
-        arguments.weight.reset(weight);
+        arguments.source_node = nodes_.at(link_map.second->getSourceNodeName());
+        arguments.weight = weights_.at(link_map.second->getWeightName());
         arguments.time_step = 0;
 
-        // std::cout<<"Addres of model source node: "<<&nodes_.at(link_map.second.getSourceNodeName())<<std::endl;
+        // std::cout<<"Addres of model source node: "<<&nodes_.at(link_map.second->getSourceNodeName())<<std::endl;
         // std::cout<<"Addres of arguments source node: "<<arguments.source_node<<std::endl;
         
-        auto found = FP_operations_map.emplace(link_map.second.getSinkNodeName(), (int)FP_operations.size());
+        auto found = FP_operations_map.emplace(link_map.second->getSinkNodeName(), (int)FP_operations.size());
         if (!found.second)
         {
-          FP_operations[FP_operations_map.at(link_map.second.getSinkNodeName())].arguments.push_back(arguments);
+          FP_operations[FP_operations_map.at(link_map.second->getSinkNodeName())].arguments.push_back(arguments);
         }
         else
         {
           FP_operation_list operation_list;
           FP_operation_result result;
-          Node* source_sink = &nodes_[link_map.second.getSinkNodeName()];
-          result.sink_node.reset(source_sink);
+          result.sink_node = nodes_.at(link_map.second->getSinkNodeName());
           operation_list.result = result;
           operation_list.arguments.push_back(arguments);
           FP_operations.push_back(operation_list);
@@ -600,15 +602,15 @@ namespace SmartPeak
     // except for biases
     for (auto& link_map : links_)
     {
-      if (nodes_.at(link_map.second.getSourceNodeName()).getType() != NodeType::bias &&
-        nodes_.at(link_map.second.getSourceNodeName()).getStatus() == NodeStatus::activated && 
-        nodes_.at(link_map.second.getSinkNodeName()).getStatus() == NodeStatus::initialized)
+      if (nodes_.at(link_map.second->getSourceNodeName())->getType() != NodeType::bias &&
+        nodes_.at(link_map.second->getSourceNodeName())->getStatus() == NodeStatus::activated && 
+        nodes_.at(link_map.second->getSinkNodeName())->getStatus() == NodeStatus::initialized)
       {
-        std::vector<std::string> links = {link_map.second.getName()};
-        auto found = sink_links_map.emplace(link_map.second.getSinkNodeName(), links);        
+        std::vector<std::string> links = {link_map.second->getName()};
+        auto found = sink_links_map.emplace(link_map.second->getSinkNodeName(), links);        
         if (!found.second)
         {
-          sink_links_map[link_map.second.getSinkNodeName()].push_back(link_map.second.getName());
+          sink_links_map[link_map.second->getSinkNodeName()].push_back(link_map.second->getName());
         }
       }
     }
@@ -627,22 +629,22 @@ namespace SmartPeak
     // except for biases
     for (auto& link_map : links_)
     {
-      if (nodes_.at(link_map.second.getSourceNodeName()).getType() != NodeType::bias &&
-        nodes_.at(link_map.second.getSourceNodeName()).getStatus() == NodeStatus::activated && 
-        nodes_.at(link_map.second.getSinkNodeName()).getStatus() == NodeStatus::initialized)
+      if (nodes_.at(link_map.second->getSourceNodeName())->getType() != NodeType::bias &&
+        nodes_.at(link_map.second->getSourceNodeName())->getStatus() == NodeStatus::activated && 
+        nodes_.at(link_map.second->getSinkNodeName())->getStatus() == NodeStatus::initialized)
       {
-        // std::cout << "Model::getNextInactiveLayer() link_name: " << link_map.second.getName() << std::endl;
-        // std::cout << "Model::getNextInactiveLayer() source_node_name: " << link_map.second.getSourceNodeName() << std::endl;
-        // std::cout << "Model::getNextInactiveLayer() sink_node_name: " << link_map.second.getSinkNodeName() << std::endl;
-        links.push_back(link_map.second.getName());
+        // std::cout << "Model::getNextInactiveLayer() link_name: " << link_map.second->getName() << std::endl;
+        // std::cout << "Model::getNextInactiveLayer() source_node_name: " << link_map.second->getSourceNodeName() << std::endl;
+        // std::cout << "Model::getNextInactiveLayer() sink_node_name: " << link_map.second->getSinkNodeName() << std::endl;
+        links.push_back(link_map.second->getName());
         // could use std::set instead to check for duplicates
-        if (std::count(source_nodes.begin(), source_nodes.end(), link_map.second.getSourceNodeName()) == 0)
+        if (std::count(source_nodes.begin(), source_nodes.end(), link_map.second->getSourceNodeName()) == 0)
         {
-          source_nodes.push_back(link_map.second.getSourceNodeName());
+          source_nodes.push_back(link_map.second->getSourceNodeName());
         }
-        if (std::count(sink_nodes.begin(), sink_nodes.end(), link_map.second.getSinkNodeName()) == 0)
+        if (std::count(sink_nodes.begin(), sink_nodes.end(), link_map.second->getSinkNodeName()) == 0)
         {
-          sink_nodes.push_back(link_map.second.getSinkNodeName());
+          sink_nodes.push_back(link_map.second->getSinkNodeName());
         }
       }
     }
@@ -659,24 +661,21 @@ namespace SmartPeak
     {
       if (        
         // does not allow for cycles
-        nodes_.at(link_map.second.getSourceNodeName()).getType() == NodeType::bias && 
-        nodes_.at(link_map.second.getSourceNodeName()).getStatus() == NodeStatus::activated &&
+        nodes_.at(link_map.second->getSourceNodeName())->getType() == NodeType::bias && 
+        nodes_.at(link_map.second->getSourceNodeName())->getStatus() == NodeStatus::activated &&
         // required regardless if cycles are or are not allowed
-        nodes_.at(link_map.second.getSinkNodeName()).getStatus() == NodeStatus::initialized &&
-        FP_operations_map.count(link_map.second.getSinkNodeName()) != 0 // sink node has already been identified
+        nodes_.at(link_map.second->getSinkNodeName())->getStatus() == NodeStatus::initialized &&
+        FP_operations_map.count(link_map.second->getSinkNodeName()) != 0 // sink node has already been identified
       )
       {
         FP_operation_arguments arguments;
-        // Node* source_node = &nodes_.at(link_map.second.getSourceNodeName()); // passes a copy of the object...
-        Node* source_node = &nodes_[link_map.second.getSourceNodeName()]; // need a check to ensure the node exists...
-        arguments.source_node.reset(source_node);
-        Weight* weight = &weights_[link_map.second.getWeightName()];
-        arguments.weight.reset(weight);
+        arguments.source_node = nodes_.at(link_map.second->getSourceNodeName());
+        arguments.weight = weights_.at(link_map.second->getWeightName());
         arguments.time_step = 0;
-        FP_operations[FP_operations_map.at(link_map.second.getSinkNodeName())].arguments.push_back(arguments);
-        if (std::count(sink_nodes_with_biases.begin(), sink_nodes_with_biases.end(), link_map.second.getSinkNodeName()) == 0)
+        FP_operations[FP_operations_map.at(link_map.second->getSinkNodeName())].arguments.push_back(arguments);
+        if (std::count(sink_nodes_with_biases.begin(), sink_nodes_with_biases.end(), link_map.second->getSinkNodeName()) == 0)
         {
-          sink_nodes_with_biases.push_back(link_map.second.getSinkNodeName());
+          sink_nodes_with_biases.push_back(link_map.second->getSinkNodeName());
         }
       }
     }
@@ -692,17 +691,17 @@ namespace SmartPeak
     {
       if (        
         // does not allow for cycles
-        nodes_.at(link_map.second.getSourceNodeName()).getType() == NodeType::bias && 
-        nodes_.at(link_map.second.getSourceNodeName()).getStatus() == NodeStatus::activated &&
+        nodes_.at(link_map.second->getSourceNodeName())->getType() == NodeType::bias && 
+        nodes_.at(link_map.second->getSourceNodeName())->getStatus() == NodeStatus::activated &&
         // required regardless if cycles are or are not allowed
-        nodes_.at(link_map.second.getSinkNodeName()).getStatus() == NodeStatus::initialized &&
-        sink_links_map.count(link_map.second.getSinkNodeName()) != 0 // sink node has already been identified
+        nodes_.at(link_map.second->getSinkNodeName())->getStatus() == NodeStatus::initialized &&
+        sink_links_map.count(link_map.second->getSinkNodeName()) != 0 // sink node has already been identified
       )
       {
-        sink_links_map[link_map.second.getSinkNodeName()].push_back(link_map.second.getName());
-        if (std::count(sink_nodes_with_biases.begin(), sink_nodes_with_biases.end(), link_map.second.getSinkNodeName()) == 0)
+        sink_links_map[link_map.second->getSinkNodeName()].push_back(link_map.second->getName());
+        if (std::count(sink_nodes_with_biases.begin(), sink_nodes_with_biases.end(), link_map.second->getSinkNodeName()) == 0)
         {
-          sink_nodes_with_biases.push_back(link_map.second.getSinkNodeName());
+          sink_nodes_with_biases.push_back(link_map.second->getSinkNodeName());
         }
       }
     }
@@ -720,25 +719,25 @@ namespace SmartPeak
     {
       if (        
         // does not allow for cycles
-        nodes_.at(link_map.second.getSourceNodeName()).getType() == NodeType::bias && 
-        nodes_.at(link_map.second.getSourceNodeName()).getStatus() == NodeStatus::activated &&
+        nodes_.at(link_map.second->getSourceNodeName())->getType() == NodeType::bias && 
+        nodes_.at(link_map.second->getSourceNodeName())->getStatus() == NodeStatus::activated &&
         // required regardless if cycles are or are not allowed
-        nodes_.at(link_map.second.getSinkNodeName()).getStatus() == NodeStatus::initialized &&
-        std::count(sink_nodes.begin(), sink_nodes.end(), link_map.second.getSinkNodeName()) != 0 // sink node has already been identified
+        nodes_.at(link_map.second->getSinkNodeName())->getStatus() == NodeStatus::initialized &&
+        std::count(sink_nodes.begin(), sink_nodes.end(), link_map.second->getSinkNodeName()) != 0 // sink node has already been identified
       )
       {
-        // std::cout << "Model::getNextInactiveLayerBiases() link_name: " << link_map.second.getName() << std::endl;
-        // std::cout << "Model::getNextInactiveLayerBiases() source_node_name: " << link_map.second.getSourceNodeName() << std::endl;
-        // std::cout << "Model::getNextInactiveLayerBiases() sink_node_name: " << link_map.second.getSinkNodeName() << std::endl;
-        links.push_back(link_map.second.getName());
+        // std::cout << "Model::getNextInactiveLayerBiases() link_name: " << link_map.second->getName() << std::endl;
+        // std::cout << "Model::getNextInactiveLayerBiases() source_node_name: " << link_map.second->getSourceNodeName() << std::endl;
+        // std::cout << "Model::getNextInactiveLayerBiases() sink_node_name: " << link_map.second->getSinkNodeName() << std::endl;
+        links.push_back(link_map.second->getName());
         // could use std::set instead to check for duplicates
-        if (std::count(source_nodes.begin(), source_nodes.end(), link_map.second.getSourceNodeName()) == 0)
+        if (std::count(source_nodes.begin(), source_nodes.end(), link_map.second->getSourceNodeName()) == 0)
         {
-          source_nodes.push_back(link_map.second.getSourceNodeName());
+          source_nodes.push_back(link_map.second->getSourceNodeName());
         }
-        if (std::count(sink_nodes_with_biases.begin(), sink_nodes_with_biases.end(), link_map.second.getSinkNodeName()) == 0)
+        if (std::count(sink_nodes_with_biases.begin(), sink_nodes_with_biases.end(), link_map.second->getSinkNodeName()) == 0)
         {
-          sink_nodes_with_biases.push_back(link_map.second.getSinkNodeName());
+          sink_nodes_with_biases.push_back(link_map.second->getSinkNodeName());
         }
       }
     }
@@ -754,21 +753,24 @@ namespace SmartPeak
     for (auto& link_map : links_)
     {
       if (
-        (nodes_.at(link_map.second.getSourceNodeName()).getStatus() == NodeStatus::initialized) &&
+        (nodes_.at(link_map.second->getSourceNodeName())->getStatus() == NodeStatus::initialized) &&
         // required regardless if cycles are or are not allowed
-        nodes_.at(link_map.second.getSinkNodeName()).getStatus() == NodeStatus::initialized &&
-        FP_operations_map.count(link_map.second.getSinkNodeName()) != 0 // sink node has already been identified
+        nodes_.at(link_map.second->getSinkNodeName())->getStatus() == NodeStatus::initialized &&
+        FP_operations_map.count(link_map.second->getSinkNodeName()) != 0 // sink node has already been identified
       )
       {
         FP_operation_arguments arguments;
-        // Node* source_node = &nodes_.at(link_map.second.getSourceNodeName()); // passes a copy of the object...
-        Node* source_node = &nodes_[link_map.second.getSourceNodeName()]; // need a check to ensure the node exists...
-        arguments.source_node.reset(source_node);
-        Weight* weight = &weights_[link_map.second.getWeightName()];
-        arguments.weight.reset(weight);
+        arguments.source_node = nodes_.at(link_map.second->getSourceNodeName());
+        arguments.weight = weights_.at(link_map.second->getWeightName());
+
+        // [PARRALLEL] can we check that we will not over exceed the memory
+        //             and take appropriate measures here?
+        // e.g.
+        // memory_size = arguments.source_node->getOutput().dimension(1);
+        // if (time_step + 1 >= memory_size) ...
         arguments.time_step = 1;
-        FP_operations[FP_operations_map.at(link_map.second.getSinkNodeName())].arguments.push_back(arguments);
-        sink_nodes_with_cycles.push_back(link_map.second.getSinkNodeName());
+        FP_operations[FP_operations_map.at(link_map.second->getSinkNodeName())].arguments.push_back(arguments);
+        sink_nodes_with_cycles.push_back(link_map.second->getSinkNodeName());
       }
     }
   }
@@ -782,14 +784,14 @@ namespace SmartPeak
     for (auto& link_map : links_)
     {
       if (
-        (nodes_.at(link_map.second.getSourceNodeName()).getStatus() == NodeStatus::initialized) &&
+        (nodes_.at(link_map.second->getSourceNodeName())->getStatus() == NodeStatus::initialized) &&
         // required regardless if cycles are or are not allowed
-        nodes_.at(link_map.second.getSinkNodeName()).getStatus() == NodeStatus::initialized &&
-        sink_links_map.count(link_map.second.getSinkNodeName()) != 0 // sink node has already been identified
+        nodes_.at(link_map.second->getSinkNodeName())->getStatus() == NodeStatus::initialized &&
+        sink_links_map.count(link_map.second->getSinkNodeName()) != 0 // sink node has already been identified
       )
       {
-        sink_links_map[link_map.second.getSinkNodeName()].push_back(link_map.second.getName());
-        sink_nodes_with_cycles.push_back(link_map.second.getSinkNodeName());
+        sink_links_map[link_map.second->getSinkNodeName()].push_back(link_map.second->getName());
+        sink_nodes_with_cycles.push_back(link_map.second->getSinkNodeName());
       }
     }
   }
@@ -805,24 +807,24 @@ namespace SmartPeak
     for (auto& link_map : links_)
     {
       if (
-        (nodes_.at(link_map.second.getSourceNodeName()).getStatus() == NodeStatus::initialized) &&
+        (nodes_.at(link_map.second->getSourceNodeName())->getStatus() == NodeStatus::initialized) &&
         // required regardless if cycles are or are not allowed
-        nodes_.at(link_map.second.getSinkNodeName()).getStatus() == NodeStatus::initialized &&
-        std::count(sink_nodes.begin(), sink_nodes.end(), link_map.second.getSinkNodeName()) != 0 // sink node has already been identified
+        nodes_.at(link_map.second->getSinkNodeName())->getStatus() == NodeStatus::initialized &&
+        std::count(sink_nodes.begin(), sink_nodes.end(), link_map.second->getSinkNodeName()) != 0 // sink node has already been identified
       )
       {
-        // std::cout << "Model::getNextInactiveLayerCycles() link_name: " << link_map.second.getName() << std::endl;
-        // std::cout << "Model::getNextInactiveLayerCycles() source_node_name: " << link_map.second.getSourceNodeName() << std::endl;
-        // std::cout << "Model::getNextInactiveLayerCycles() sink_node_name: " << link_map.second.getSinkNodeName() << std::endl;
-        links.push_back(link_map.second.getName());
+        // std::cout << "Model::getNextInactiveLayerCycles() link_name: " << link_map.second->getName() << std::endl;
+        // std::cout << "Model::getNextInactiveLayerCycles() source_node_name: " << link_map.second->getSourceNodeName() << std::endl;
+        // std::cout << "Model::getNextInactiveLayerCycles() sink_node_name: " << link_map.second->getSinkNodeName() << std::endl;
+        links.push_back(link_map.second->getName());
         // could use std::set instead to check for duplicates
-        if (std::count(source_nodes.begin(), source_nodes.end(), link_map.second.getSourceNodeName()) == 0)
+        if (std::count(source_nodes.begin(), source_nodes.end(), link_map.second->getSourceNodeName()) == 0)
         {
-          source_nodes.push_back(link_map.second.getSourceNodeName());
+          source_nodes.push_back(link_map.second->getSourceNodeName());
         }
-        if (std::count(sink_nodes_with_cycles.begin(), sink_nodes_with_cycles.end(), link_map.second.getSinkNodeName()) == 0)
+        if (std::count(sink_nodes_with_cycles.begin(), sink_nodes_with_cycles.end(), link_map.second->getSinkNodeName()) == 0)
         {
-          sink_nodes_with_cycles.push_back(link_map.second.getSinkNodeName());
+          sink_nodes_with_cycles.push_back(link_map.second->getSinkNodeName());
         }
       }
     }
@@ -834,8 +836,8 @@ namespace SmartPeak
     const int& memory_size,
     const int& time_step)
   {
-    static std::mutex calculateNodeInput_mutex;
-    std::lock_guard<std::mutex> lock2(calculateNodeInput_mutex);
+    // static std::mutex calculateNodeInput_mutex;
+    // std::lock_guard<std::mutex> lock2(calculateNodeInput_mutex);
 
     Eigen::Tensor<float, 1> sink_tensor(batch_size);
     sink_tensor.setConstant(0.0f);
@@ -859,8 +861,8 @@ namespace SmartPeak
     const int& time_step,
     int n_threads)
   {
-    static std::mutex calculateNetNodeInput_mutex;
-    std::lock_guard<std::mutex> lock(calculateNetNodeInput_mutex);
+    // static std::mutex calculateNetNodeInput_mutex;
+    // std::lock_guard<std::mutex> lock(calculateNetNodeInput_mutex);
 
     std::vector<std::future<Eigen::Tensor<float, 1>>> task_results;
     int thread_cnt = 0;
@@ -986,8 +988,8 @@ namespace SmartPeak
     int memory_size = 0;
     for (const auto& sink_links : sink_links_map)
     {
-      batch_size = nodes_.at(sink_links.first).getOutput().dimension(0);
-      memory_size = nodes_.at(sink_links.first).getOutput().dimension(1);
+      batch_size = nodes_.at(sink_links.first)->getOutput().dimension(0);
+      memory_size = nodes_.at(sink_links.first)->getOutput().dimension(1);
       break;
     }
 
@@ -1000,16 +1002,16 @@ namespace SmartPeak
       Eigen::Tensor<float, 1> weight_tensor(batch_size);
       for (const std::string& link : sink_links.second)
       {
-        weight_tensor.setConstant(weights_.at(links_.at(link).getWeightName()).getWeight());
-        if (nodes_.at(links_.at(link).getSourceNodeName()).getStatus() == NodeStatus::activated)
+        weight_tensor.setConstant(weights_.at(links_.at(link)->getWeightName())->getWeight());
+        if (nodes_.at(links_.at(link)->getSourceNodeName())->getStatus() == NodeStatus::activated)
         {
-          sink_tensor = sink_tensor + weight_tensor * nodes_.at(links_.at(link).getSourceNodeName()).getOutput().chip(time_step, 1); //current time-step
+          sink_tensor = sink_tensor + weight_tensor * nodes_.at(links_.at(link)->getSourceNodeName())->getOutput().chip(time_step, 1); //current time-step
         }
-        else if (nodes_.at(links_.at(link).getSourceNodeName()).getStatus() == NodeStatus::initialized)
+        else if (nodes_.at(links_.at(link)->getSourceNodeName())->getStatus() == NodeStatus::initialized)
         {
           if (time_step + 1 < memory_size)
           {
-            sink_tensor = sink_tensor + weight_tensor * nodes_.at(links_.at(link).getSourceNodeName()).getOutput().chip(time_step + 1, 1); //previous time-step
+            sink_tensor = sink_tensor + weight_tensor * nodes_.at(links_.at(link)->getSourceNodeName())->getOutput().chip(time_step + 1, 1); //previous time-step
           }
           else
           {
@@ -1019,11 +1021,11 @@ namespace SmartPeak
       }
 
       // calculate the output and the derivative
-      const NodeType sink_node_type = nodes_.at(sink_links.first).getType();
-      const NodeActivation sink_node_activation = nodes_.at(sink_links.first).getActivation();
+      const NodeType sink_node_type = nodes_.at(sink_links.first)->getType();
+      const NodeActivation sink_node_activation = nodes_.at(sink_links.first)->getActivation();
       Eigen::Tensor<float, 1> output = calculateActivation(
         sink_node_type, sink_node_activation, sink_tensor,
-        nodes_.at(sink_links.first).getDt().chip(time_step, 1),
+        nodes_.at(sink_links.first)->getDt().chip(time_step, 1),
         1);
       Eigen::Tensor<float, 1> derivative = calculateDerivative(
         sink_node_type, sink_node_activation, output, 1);
@@ -1042,8 +1044,8 @@ namespace SmartPeak
     const int& time_step)
   {
     // infer the batch size from the first source node
-    const int batch_size = nodes_.at(source_nodes[0]).getOutput().dimension(0);
-    const int memory_size = nodes_.at(source_nodes[0]).getOutput().dimension(1);
+    const int batch_size = nodes_.at(source_nodes[0])->getOutput().dimension(0);
+    const int memory_size = nodes_.at(source_nodes[0])->getOutput().dimension(1);
 
     if (time_step >= memory_size)
     {
@@ -1061,15 +1063,15 @@ namespace SmartPeak
     {
       for (int j=0; j<batch_size; ++j)
       {
-        if (nodes_.at(source_nodes[i]).getStatus() == NodeStatus::activated)
+        if (nodes_.at(source_nodes[i])->getStatus() == NodeStatus::activated)
         {
-          source_tensor(j, i) = nodes_.at(source_nodes[i]).getOutput()(j, time_step); //current time-step
+          source_tensor(j, i) = nodes_.at(source_nodes[i])->getOutput()(j, time_step); //current time-step
         }
-        else if (nodes_.at(source_nodes[i]).getStatus() == NodeStatus::initialized)
+        else if (nodes_.at(source_nodes[i])->getStatus() == NodeStatus::initialized)
         {
           if (time_step + 1 < memory_size)
           {
-            source_tensor(j, i) = nodes_.at(source_nodes[i]).getOutput()(j, time_step + 1); //previous time-step
+            source_tensor(j, i) = nodes_.at(source_nodes[i])->getOutput()(j, time_step + 1); //previous time-step
           }
           else
           {
@@ -1088,10 +1090,10 @@ namespace SmartPeak
       {
         for (const std::string& link : links)
         {
-          if (links_.at(link).getSinkNodeName() == sink_nodes[i] &&
-          links_.at(link).getSourceNodeName() == source_nodes[j])
+          if (links_.at(link)->getSinkNodeName() == sink_nodes[i] &&
+          links_.at(link)->getSourceNodeName() == source_nodes[j])
           {
-            weight_tensor(j, i) = weights_.at(links_.at(link).getWeightName()).getWeight();
+            weight_tensor(j, i) = weights_.at(links_.at(link)->getWeightName())->getWeight();
             break;
           }
         }
@@ -1113,8 +1115,8 @@ namespace SmartPeak
   {
     for (const std::string& node : sink_nodes)
     {
-      nodes_.at(node).calculateActivation(time_step);
-      nodes_.at(node).calculateDerivative(time_step);
+      nodes_.at(node)->calculateActivation(time_step);
+      nodes_.at(node)->calculateDerivative(time_step);
     }
   }
   
@@ -1285,10 +1287,10 @@ namespace SmartPeak
   {
     // check time_steps vs memory_size
     int max_steps = time_steps;
-    if (time_steps > nodes_.begin()->second.getOutput().dimension(1))
+    if (time_steps > nodes_.begin()->second->getOutput().dimension(1))
     {
       std::cout<<"Time_steps will be scaled back to the memory_size."<<std::endl;
-      max_steps = nodes_.begin()->second.getOutput().dimension(1);
+      max_steps = nodes_.begin()->second->getOutput().dimension(1);
     }
 
     for (int time_step=0; time_step<max_steps; ++time_step)
@@ -1299,14 +1301,14 @@ namespace SmartPeak
         // move to the next memory step
         for (auto& node_map: nodes_)
         {          
-          node_map.second.saveCurrentOutput();
-          node_map.second.saveCurrentDerivative();
-          node_map.second.saveCurrentDt();
+          node_map.second->saveCurrentOutput();
+          node_map.second->saveCurrentDerivative();
+          node_map.second->saveCurrentDt();
           if (std::count(node_names.begin(), node_names.end(), node_map.first) == 0)
           {
-            node_map.second.setStatus(NodeStatus::initialized); // reinitialize non-input nodes
+            node_map.second->setStatus(NodeStatus::initialized); // reinitialize non-input nodes
           }   
-          // std::cout<<"Model::FPTT() output: "<<node_map.second.getOutput()<<" for node_name: "<<node_map.first<<std::endl;
+          // std::cout<<"Model::FPTT() output: "<<node_map.second->getOutput()<<" for node_name: "<<node_map.first<<std::endl;
         }
       }
 
@@ -1331,7 +1333,7 @@ namespace SmartPeak
   {
     //TODO: encapsulate into a seperate method
     // infer the batch size from the first source node
-    const int batch_size = nodes_.at(node_names[0]).getOutput().dimension(0);
+    const int batch_size = nodes_.at(node_names[0])->getOutput().dimension(0);
 
     //TODO: encapsulate into a seperate method
     // check dimension mismatches
@@ -1354,7 +1356,7 @@ namespace SmartPeak
     {
       for (int j=0; j<batch_size; ++j)
       {
-        node_tensor(j, i) = nodes_.at(node_names[i]).getOutput()(j, 0); // current time-step
+        node_tensor(j, i) = nodes_.at(node_names[i])->getOutput()(j, 0); // current time-step
       }
     }
 
@@ -1421,18 +1423,18 @@ namespace SmartPeak
     // including biases
     for (auto& link_map : links_)
     {
-      if (nodes_.at(link_map.second.getSinkNodeName()).getStatus() == NodeStatus::corrected && 
-        nodes_.at(link_map.second.getSourceNodeName()).getStatus() == NodeStatus::activated)
+      if (nodes_.at(link_map.second->getSinkNodeName())->getStatus() == NodeStatus::corrected && 
+        nodes_.at(link_map.second->getSourceNodeName())->getStatus() == NodeStatus::activated)
       {
-        std::vector<std::string> links = {link_map.second.getName()};
-        auto found = sink_links_map.emplace(link_map.second.getSourceNodeName(), links);        
+        std::vector<std::string> links = {link_map.second->getName()};
+        auto found = sink_links_map.emplace(link_map.second->getSourceNodeName(), links);        
         if (!found.second)
         {
-          sink_links_map[link_map.second.getSourceNodeName()].push_back(link_map.second.getName());
+          sink_links_map[link_map.second->getSourceNodeName()].push_back(link_map.second->getName());
         }
-        if (std::count(source_nodes.begin(), source_nodes.end(), link_map.second.getSinkNodeName()) == 0)
+        if (std::count(source_nodes.begin(), source_nodes.end(), link_map.second->getSinkNodeName()) == 0)
         {
-          source_nodes.push_back(link_map.second.getSinkNodeName());
+          source_nodes.push_back(link_map.second->getSinkNodeName());
         }
       }
     }
@@ -1451,18 +1453,18 @@ namespace SmartPeak
     // including biases
     for (auto& link_map : links_)
     {
-      if (nodes_.at(link_map.second.getSinkNodeName()).getStatus() == NodeStatus::corrected && 
-        nodes_.at(link_map.second.getSourceNodeName()).getStatus() == NodeStatus::activated)
+      if (nodes_.at(link_map.second->getSinkNodeName())->getStatus() == NodeStatus::corrected && 
+        nodes_.at(link_map.second->getSourceNodeName())->getStatus() == NodeStatus::activated)
       {
-        links.push_back(link_map.second.getName());
+        links.push_back(link_map.second->getName());
         // could use std::set instead to check for duplicates
-        if (std::count(source_nodes.begin(), source_nodes.end(), link_map.second.getSinkNodeName()) == 0)
+        if (std::count(source_nodes.begin(), source_nodes.end(), link_map.second->getSinkNodeName()) == 0)
         {
-          source_nodes.push_back(link_map.second.getSinkNodeName());
+          source_nodes.push_back(link_map.second->getSinkNodeName());
         }
-        if (std::count(sink_nodes.begin(), sink_nodes.end(), link_map.second.getSourceNodeName()) == 0)
+        if (std::count(sink_nodes.begin(), sink_nodes.end(), link_map.second->getSourceNodeName()) == 0)
         {
-          sink_nodes.push_back(link_map.second.getSourceNodeName());
+          sink_nodes.push_back(link_map.second->getSourceNodeName());
         }
       }
     }
@@ -1477,15 +1479,15 @@ namespace SmartPeak
     // allows for cycles
     for (auto& link_map : links_)
     {
-      if (nodes_.at(link_map.second.getSourceNodeName()).getStatus() == NodeStatus::corrected &&
-        nodes_.at(link_map.second.getSinkNodeName()).getStatus() == NodeStatus::corrected &&
-        std::count(source_nodes.begin(), source_nodes.end(), link_map.second.getSinkNodeName()) != 0 // sink node has already been identified)
+      if (nodes_.at(link_map.second->getSourceNodeName())->getStatus() == NodeStatus::corrected &&
+        nodes_.at(link_map.second->getSinkNodeName())->getStatus() == NodeStatus::corrected &&
+        std::count(source_nodes.begin(), source_nodes.end(), link_map.second->getSinkNodeName()) != 0 // sink node has already been identified)
       ) 
       {
-        sink_links_map[link_map.second.getSourceNodeName()].push_back(link_map.second.getName());
-        if (std::count(source_nodes_with_cycles.begin(), source_nodes_with_cycles.end(), link_map.second.getSinkNodeName()) == 0)
+        sink_links_map[link_map.second->getSourceNodeName()].push_back(link_map.second->getName());
+        if (std::count(source_nodes_with_cycles.begin(), source_nodes_with_cycles.end(), link_map.second->getSinkNodeName()) == 0)
         {
-          source_nodes_with_cycles.push_back(link_map.second.getSinkNodeName());
+          source_nodes_with_cycles.push_back(link_map.second->getSinkNodeName());
         }
       }
     }
@@ -1501,21 +1503,21 @@ namespace SmartPeak
     // allows for cycles
     for (auto& link_map : links_)
     {
-      if (nodes_.at(link_map.second.getSourceNodeName()).getStatus() == NodeStatus::corrected && 
-        std::count(links.begin(), links.end(), link_map.second.getName()) == 0 && // unique links 
-        nodes_.at(link_map.second.getSinkNodeName()).getStatus() == NodeStatus::corrected &&
-        std::count(source_nodes.begin(), source_nodes.end(), link_map.second.getSinkNodeName()) != 0 // sink node has already been identified)
+      if (nodes_.at(link_map.second->getSourceNodeName())->getStatus() == NodeStatus::corrected && 
+        std::count(links.begin(), links.end(), link_map.second->getName()) == 0 && // unique links 
+        nodes_.at(link_map.second->getSinkNodeName())->getStatus() == NodeStatus::corrected &&
+        std::count(source_nodes.begin(), source_nodes.end(), link_map.second->getSinkNodeName()) != 0 // sink node has already been identified)
       ) 
       {
-        links.push_back(link_map.second.getName());
+        links.push_back(link_map.second->getName());
         // could use std::set instead to check for duplicates
-        if (std::count(sink_nodes.begin(), sink_nodes.end(), link_map.second.getSourceNodeName()) == 0)
+        if (std::count(sink_nodes.begin(), sink_nodes.end(), link_map.second->getSourceNodeName()) == 0)
         {
-          sink_nodes.push_back(link_map.second.getSourceNodeName());
+          sink_nodes.push_back(link_map.second->getSourceNodeName());
         }
-        if (std::count(source_nodes_with_cycles.begin(), source_nodes_with_cycles.end(), link_map.second.getSinkNodeName()) == 0)
+        if (std::count(source_nodes_with_cycles.begin(), source_nodes_with_cycles.end(), link_map.second->getSinkNodeName()) == 0)
         {
-          source_nodes_with_cycles.push_back(link_map.second.getSinkNodeName());
+          source_nodes_with_cycles.push_back(link_map.second->getSinkNodeName());
         }
       }
     }
@@ -1531,8 +1533,8 @@ namespace SmartPeak
     int memory_size = 0;
     for (const auto& sources_links : sink_links_map)
     {
-      batch_size = nodes_.at(sources_links.first).getOutput().dimension(0);
-      memory_size = nodes_.at(sources_links.first).getOutput().dimension(1);
+      batch_size = nodes_.at(sources_links.first)->getOutput().dimension(0);
+      memory_size = nodes_.at(sources_links.first)->getOutput().dimension(1);
       break;
     }
 
@@ -1552,30 +1554,30 @@ namespace SmartPeak
       // calculate the total incoming error
       for (const std::string& link : sinks_links.second)
       {
-        weight_tensor.setConstant(weights_.at(links_.at(link).getWeightName()).getWeight());
-        sink_tensor = sink_tensor + weight_tensor * nodes_.at(links_.at(link).getSinkNodeName()).getError().chip(time_step, 1);
+        weight_tensor.setConstant(weights_.at(links_.at(link)->getWeightName())->getWeight());
+        sink_tensor = sink_tensor + weight_tensor * nodes_.at(links_.at(link)->getSinkNodeName())->getError().chip(time_step, 1);
       }
       
       // scale the error by the derivative
-      if (nodes_.at(sinks_links.first).getStatus() == NodeStatus::activated)
+      if (nodes_.at(sinks_links.first)->getStatus() == NodeStatus::activated)
       {
-        sink_tensor = sink_tensor * nodes_.at(sinks_links.first).getDerivative().chip(time_step, 1); // current time-step
+        sink_tensor = sink_tensor * nodes_.at(sinks_links.first)->getDerivative().chip(time_step, 1); // current time-step
       }
-      else if (nodes_.at(sinks_links.first).getStatus() == NodeStatus::corrected)
+      else if (nodes_.at(sinks_links.first)->getStatus() == NodeStatus::corrected)
       {
         // std::cout << "Model::backPropogateLayerError() Previous derivative (batch_size, Sink) " << j << "," << i << std::endl;
         if (time_step + 1 < memory_size)
         {
-          sink_tensor = sink_tensor * nodes_.at(sinks_links.first).getDerivative().chip(time_step + 1, 1); // previous time-step
+          sink_tensor = sink_tensor * nodes_.at(sinks_links.first)->getDerivative().chip(time_step + 1, 1); // previous time-step
         }  
       }  
 
       // update the errors      
-      if (nodes_.at(sinks_links.first).getStatus() == NodeStatus::activated)
+      if (nodes_.at(sinks_links.first)->getStatus() == NodeStatus::activated)
       {
         mapValuesToNode(sink_tensor, time_step, sinks_links.first, NodeStatus::corrected, "error");
       }
-      else if (nodes_.at(sinks_links.first).getStatus() == NodeStatus::corrected)
+      else if (nodes_.at(sinks_links.first)->getStatus() == NodeStatus::corrected)
       {
         if (time_step + 1 < memory_size)
         {
@@ -1592,8 +1594,8 @@ namespace SmartPeak
     const int& time_step)
   {
     // infer the batch size from the first source node
-    const int batch_size = nodes_.at(source_nodes[0]).getOutput().dimension(0);
-    const int memory_size = nodes_.at(source_nodes[0]).getOutput().dimension(1);
+    const int batch_size = nodes_.at(source_nodes[0])->getOutput().dimension(0);
+    const int memory_size = nodes_.at(source_nodes[0])->getOutput().dimension(1);
 
     if (time_step >= memory_size)
     {
@@ -1611,7 +1613,7 @@ namespace SmartPeak
     {
       for (int j=0; j<batch_size; ++j)
       {
-        source_tensor(j, i) = nodes_.at(source_nodes[i]).getError()(j, time_step); // current time-step
+        source_tensor(j, i) = nodes_.at(source_nodes[i])->getError()(j, time_step); // current time-step
       }
     }
 
@@ -1623,10 +1625,10 @@ namespace SmartPeak
       {
         for (const std::string& link : links)
         {
-          if (links_.at(link).getSourceNodeName() == sink_nodes[i] &&
-          links_.at(link).getSinkNodeName() == source_nodes[j])
+          if (links_.at(link)->getSourceNodeName() == sink_nodes[i] &&
+          links_.at(link)->getSinkNodeName() == source_nodes[j])
           {
-            weight_tensor(j, i) = weights_.at(links_.at(link).getWeightName()).getWeight();
+            weight_tensor(j, i) = weights_.at(links_.at(link)->getWeightName())->getWeight();
             break;
           }
         }
@@ -1640,16 +1642,16 @@ namespace SmartPeak
     {
       for (int j=0; j<batch_size; ++j)
       {
-        if (nodes_.at(sink_nodes[i]).getStatus() == NodeStatus::activated)
+        if (nodes_.at(sink_nodes[i])->getStatus() == NodeStatus::activated)
         {
-          derivative_tensor(j, i) = nodes_.at(sink_nodes[i]).getDerivative()(j, time_step); // current time-step
+          derivative_tensor(j, i) = nodes_.at(sink_nodes[i])->getDerivative()(j, time_step); // current time-step
         }
-        else if (nodes_.at(sink_nodes[i]).getStatus() == NodeStatus::corrected)
+        else if (nodes_.at(sink_nodes[i])->getStatus() == NodeStatus::corrected)
         {
           // std::cout << "Model::backPropogateLayerError() Previous derivative (batch_size, Sink) " << j << "," << i << std::endl;
           if (time_step + 1 < memory_size)
           {
-            derivative_tensor(j, i) = nodes_.at(sink_nodes[i]).getDerivative()(j, time_step + 1); // previous time-step
+            derivative_tensor(j, i) = nodes_.at(sink_nodes[i])->getDerivative()(j, time_step + 1); // previous time-step
           }
           else
           {
@@ -1782,8 +1784,8 @@ namespace SmartPeak
   //     // std::cout<<"Model::backPropogate() NodeStatuses :";
   //     // for (const auto& node_map : nodes_)
   //     // {
-  //     //   if (node_map.second.getStatus() == NodeStatus::activated) std::cout<<"Node status for Node ID: "<<node_map.first<<" is Activated"<<std::endl;
-  //     //   if (node_map.second.getStatus() == NodeStatus::corrected) std::cout<<"Node status for Node ID: "<<node_map.first<<" is Corrected"<<std::endl;
+  //     //   if (node_map.second->getStatus() == NodeStatus::activated) std::cout<<"Node status for Node ID: "<<node_map.first<<" is Activated"<<std::endl;
+  //     //   if (node_map.second->getStatus() == NodeStatus::corrected) std::cout<<"Node status for Node ID: "<<node_map.first<<" is Corrected"<<std::endl;
   //     // }
 
   //     // get the next uncorrected layer
@@ -1828,10 +1830,10 @@ namespace SmartPeak
   {
     // check time_steps vs memory_size
     int max_steps = time_steps;
-    if (time_steps >= nodes_.begin()->second.getOutput().dimension(1))
+    if (time_steps >= nodes_.begin()->second->getOutput().dimension(1))
     {
       std::cout<<"Time_steps will be scaled back to the memory_size - 1."<<std::endl;
-      max_steps = nodes_.begin()->second.getOutput().dimension(1) - 1;
+      max_steps = nodes_.begin()->second->getOutput().dimension(1) - 1;
     }
 
     std::vector<std::string> node_names; // determined at time step 0
@@ -1844,9 +1846,9 @@ namespace SmartPeak
         {
           if (std::count(node_names.begin(), node_names.end(), node_map.first) == 0)
           {
-            node_map.second.setStatus(NodeStatus::activated); // reinitialize cyclic nodes
+            node_map.second->setStatus(NodeStatus::activated); // reinitialize cyclic nodes
           }   
-          // std::cout<<"Model::TBPTT() output: "<<node_map.second.getError()<<" for node_name: "<<node_map.first<<std::endl;
+          // std::cout<<"Model::TBPTT() output: "<<node_map.second->getError()<<" for node_name: "<<node_map.first<<std::endl;
         }
       }
 
@@ -1860,7 +1862,7 @@ namespace SmartPeak
     }
     // for (auto& node_map: nodes_)
     // {
-    //   std::cout<<"Model::TBPTT() error: "<<node_map.second.getError()<<" for node_name: "<<node_map.first<<std::endl;
+    //   std::cout<<"Model::TBPTT() error: "<<node_map.second->getError()<<" for node_name: "<<node_map.first<<std::endl;
     // }
   }
 
@@ -1868,10 +1870,10 @@ namespace SmartPeak
   {
     // check time_steps vs memory_size
     int max_steps = time_steps;
-    if (time_steps > nodes_.begin()->second.getOutput().dimension(1))
+    if (time_steps > nodes_.begin()->second->getOutput().dimension(1))
     {
       std::cout<<"Time_steps will be scaled back to the memory_size."<<std::endl;
-      max_steps = nodes_.begin()->second.getOutput().dimension(1);
+      max_steps = nodes_.begin()->second->getOutput().dimension(1);
     }
 
     std::map<std::string, std::vector<float>> weight_derivatives;  
@@ -1885,21 +1887,21 @@ namespace SmartPeak
     // collect the derivative for all weights
     for (const auto& link_map : links_)
     {
-      if (nodes_.at(link_map.second.getSinkNodeName()).getStatus() == NodeStatus::corrected)      
+      if (nodes_.at(link_map.second->getSinkNodeName())->getStatus() == NodeStatus::corrected)      
       {
         // Sum the error from current and previous time-steps
         float error_sum = 0.0;
         for (int i=0; i<max_steps; ++i)
         {
-          Eigen::Tensor<float, 1> error_tensor = nodes_.at(link_map.second.getSinkNodeName()).getError().chip(0, 1); // first time-step
-          Eigen::Tensor<float, 1> output_tensor = nodes_.at(link_map.second.getSourceNodeName()).getOutput().chip(0, 1);  // first time-step
+          Eigen::Tensor<float, 1> error_tensor = nodes_.at(link_map.second->getSinkNodeName())->getError().chip(0, 1); // first time-step
+          Eigen::Tensor<float, 1> output_tensor = nodes_.at(link_map.second->getSourceNodeName())->getOutput().chip(0, 1);  // first time-step
           // auto derivative_tensor = - error_tensor * output_tensor; // derivative of the weight wrt the error
           // Eigen::Tensor<float, 0> derivative_mean_tensor = derivative_tensor.mean(); // average derivative
           Eigen::Tensor<float, 0> derivative_mean_tensor = (- error_tensor * output_tensor).mean(); // average derivative
           // std::cout<<"derivative_mean_tensor "<<derivative_mean_tensor(0)<<std::endl;
           error_sum += derivative_mean_tensor(0);
         } 
-        weight_derivatives.at(link_map.second.getWeightName()).push_back(error_sum); 
+        weight_derivatives.at(link_map.second->getWeightName()).push_back(error_sum); 
       }    
     }
 
@@ -1912,7 +1914,7 @@ namespace SmartPeak
       {
         derivative_sum += derivative / weight_derivative.second.size();
       }
-      weights_.at(weight_derivative.first).updateWeight(derivative_sum);
+      weights_.at(weight_derivative.first)->updateWeight(derivative_sum);
     }
   }
 
@@ -1920,7 +1922,7 @@ namespace SmartPeak
   {
     for (auto& node_map : nodes_)
     {
-      node_map.second.setStatus(NodeStatus::initialized);
+      node_map.second->setStatus(NodeStatus::initialized);
     }
   }
 
