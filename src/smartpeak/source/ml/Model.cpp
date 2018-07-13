@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <thread>
 #include <future>
+#include <mutex>
 
 namespace SmartPeak
 {
@@ -550,7 +551,7 @@ namespace SmartPeak
   
   void Model::getNextInactiveLayer(
       std::map<std::string, int>& FP_operations_map,
-      std::vector<FP_operation_list> FP_operations)
+      std::vector<FP_operation_list>& FP_operations)
   {
 
     // get all links where the source node is active and the sink node is inactive
@@ -562,11 +563,16 @@ namespace SmartPeak
         nodes_.at(link_map.second.getSinkNodeName()).getStatus() == NodeStatus::initialized)
       {
         FP_operation_arguments arguments;
-        Node* source_node = new Node(nodes_.at(link_map.second.getSourceNodeName()));
+        // Node* source_node = &nodes_.at(link_map.second.getSourceNodeName()); // passes a copy of the object...
+        Node* source_node = &nodes_[link_map.second.getSourceNodeName()]; // need a check to ensure the node exists...
         arguments.source_node.reset(source_node);
-        Weight* weight = new Weight(weights_.at(link_map.second.getWeightName()));
+        Weight* weight = &weights_[link_map.second.getWeightName()];
         arguments.weight.reset(weight);
         arguments.time_step = 0;
+
+        // std::cout<<"Addres of model source node: "<<&nodes_.at(link_map.second.getSourceNodeName())<<std::endl;
+        // std::cout<<"Addres of arguments source node: "<<arguments.source_node<<std::endl;
+        
         auto found = FP_operations_map.emplace(link_map.second.getSinkNodeName(), (int)FP_operations.size());
         if (!found.second)
         {
@@ -576,7 +582,7 @@ namespace SmartPeak
         {
           FP_operation_list operation_list;
           FP_operation_result result;
-          Node* source_sink = new Node(nodes_.at(link_map.second.getSinkNodeName()));
+          Node* source_sink = &nodes_[link_map.second.getSinkNodeName()];
           result.sink_node.reset(source_sink);
           operation_list.result = result;
           operation_list.arguments.push_back(arguments);
@@ -644,7 +650,7 @@ namespace SmartPeak
   
   void Model::getNextInactiveLayerBiases(
     std::map<std::string, int>& FP_operations_map,
-    std::vector<FP_operation_list> FP_operations,
+    std::vector<FP_operation_list>& FP_operations,
     std::vector<std::string>& sink_nodes_with_biases)
   {
 
@@ -661,12 +667,12 @@ namespace SmartPeak
       )
       {
         FP_operation_arguments arguments;
-        Node* source_node = new Node(nodes_.at(link_map.second.getSourceNodeName()));
+        // Node* source_node = &nodes_.at(link_map.second.getSourceNodeName()); // passes a copy of the object...
+        Node* source_node = &nodes_[link_map.second.getSourceNodeName()]; // need a check to ensure the node exists...
         arguments.source_node.reset(source_node);
-        Weight* weight = new Weight(weights_.at(link_map.second.getWeightName()));
+        Weight* weight = &weights_[link_map.second.getWeightName()];
         arguments.weight.reset(weight);
         arguments.time_step = 0;
-        std::cout<<FP_operations_map.at(link_map.second.getSinkNodeName())<<std::endl;
         FP_operations[FP_operations_map.at(link_map.second.getSinkNodeName())].arguments.push_back(arguments);
         if (std::count(sink_nodes_with_biases.begin(), sink_nodes_with_biases.end(), link_map.second.getSinkNodeName()) == 0)
         {
@@ -740,7 +746,7 @@ namespace SmartPeak
   
   void Model::getNextInactiveLayerCycles(
     std::map<std::string, int>& FP_operations_map,
-    std::vector<FP_operation_list> FP_operations,
+    std::vector<FP_operation_list>& FP_operations,
     std::vector<std::string>& sink_nodes_with_cycles)
   {
 
@@ -755,9 +761,10 @@ namespace SmartPeak
       )
       {
         FP_operation_arguments arguments;
-        Node* source_node = new Node(nodes_.at(link_map.second.getSourceNodeName()));
+        // Node* source_node = &nodes_.at(link_map.second.getSourceNodeName()); // passes a copy of the object...
+        Node* source_node = &nodes_[link_map.second.getSourceNodeName()]; // need a check to ensure the node exists...
         arguments.source_node.reset(source_node);
-        Weight* weight = new Weight(weights_.at(link_map.second.getWeightName()));
+        Weight* weight = &weights_[link_map.second.getWeightName()];
         arguments.weight.reset(weight);
         arguments.time_step = 1;
         FP_operations[FP_operations_map.at(link_map.second.getSinkNodeName())].arguments.push_back(arguments);
@@ -842,7 +849,7 @@ namespace SmartPeak
     return sink_tensor;
   }
   
-  bool Model::calculateNetNodeInput_(
+  std::pair<Eigen::Tensor<float, 1>, Eigen::Tensor<float, 1>> Model::calculateNetNodeInput_(
     FP_operation_list* operations,  
     const int& batch_size,
     const int& memory_size,
@@ -895,16 +902,17 @@ namespace SmartPeak
     Eigen::Tensor<float, 1> derivative = calculateDerivative(
       sink_node_type, sink_node_activation, output, 1);
 
-    // update the node [TODO: check if the model node is also updated]
-    operations->result.sink_node->setStatus(NodeStatus::activated);
-    operations->result.sink_node->getOutputMutable()->chip(time_step, 1) = output;
-    operations->result.sink_node->getDerivativeMutable()->chip(time_step, 1) = derivative;
+    // // update the node [TODO: check if the model node is also updated]
+    // operations->result.sink_node->setStatus(NodeStatus::activated);
+    // operations->result.sink_node->getOutputMutable()->chip(time_step, 1) = output;
+    // operations->result.sink_node->getDerivativeMutable()->chip(time_step, 1) = derivative;
 
-    return true;
+    std::pair<Eigen::Tensor<float, 1>, Eigen::Tensor<float, 1>> result = std::make_pair(output, derivative);
+    return result;
   }
 
   void Model::forwardPropogateLayerNetInput(
-      std::vector<FP_operation_list> FP_operations,
+      std::vector<FP_operation_list>& FP_operations,
     const int& time_step, int n_threads)
   {
 
@@ -920,13 +928,13 @@ namespace SmartPeak
 
     // iterate through each sink node and calculate the net input
     // invoke the activation function once the net input is calculated
-    std::vector<std::future<bool>> task_results;
+    std::vector<std::future<std::pair<Eigen::Tensor<float, 1>, Eigen::Tensor<float, 1>>>> task_results;
     int thread_cnt = 0;
     const int threads_per_sub_process = 1; // [TODO: how to best divide up the allowable threads?]
-    int sink_links_cnt = 0;
+    int operations_cnt = 0;
     for (auto& FP_operation : FP_operations)
     {
-      std::packaged_task<bool // encapsulate in a packaged_task
+      std::packaged_task<std::pair<Eigen::Tensor<float, 1>, Eigen::Tensor<float, 1>> // encapsulate in a packaged_task
         (FP_operation_list*, int, int, int, int
         )> task(Model::calculateNetNodeInput_);
       
@@ -938,11 +946,23 @@ namespace SmartPeak
       task_thread.detach();
 
       // retreive the results
-      if (thread_cnt == n_threads - 1 || sink_links_cnt == FP_operations.size() - 1)
+      if (thread_cnt == n_threads - 1 || operations_cnt == FP_operations.size() - 1)
       {
         for (auto& task_result: task_results)
         {
-          bool success = task_result.get();
+          std::pair<Eigen::Tensor<float, 1>, Eigen::Tensor<float, 1>> result = task_result.get();
+
+          // update the node [TODO: check if the model node is also updated]
+          FP_operation.result.sink_node->setStatus(NodeStatus::activated);
+          FP_operation.result.sink_node->getOutputMutable()->chip(time_step, 1) = result.first;
+          FP_operation.result.sink_node->getDerivativeMutable()->chip(time_step, 1) = result.second;
+
+          Eigen::Tensor<float, 1> model_output(batch_size);
+          model_output = nodes_.at(FP_operation.result.sink_node->getName()).getOutput().chip(time_step, 1);
+          Eigen::Tensor<float, 1> result_output(batch_size);
+          result_output = FP_operation.result.sink_node->getOutput().chip(time_step, 1);
+          std::cout<<"Model output: "<<model_output<<std::endl;
+          std::cout<<"FP operation result: "<<result_output<<std::endl;
         }
         task_results.clear();
         thread_cnt = 0;
@@ -951,7 +971,9 @@ namespace SmartPeak
       {
         thread_cnt += threads_per_sub_process;
       } 
-      ++sink_links_cnt;
+      // std::cout<<"thread_count"<<thread_cnt<<std::endl;
+      // std::cout<<"operations_cnt"<<operations_cnt<<std::endl;
+      ++operations_cnt;
     }
   }
 
