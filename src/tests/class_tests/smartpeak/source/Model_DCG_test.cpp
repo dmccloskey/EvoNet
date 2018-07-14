@@ -641,8 +641,8 @@ Model makeModel2a()
   Model model2;
   // Toy network: 1 hidden layer, fully connected, DCG
   i1 = Node("0", NodeType::input, NodeStatus::activated, NodeActivation::Linear);
-  h1 = Node("1", NodeType::hidden, NodeStatus::deactivated, NodeActivation::ELU);
-  o1 = Node("2", NodeType::output, NodeStatus::deactivated, NodeActivation::ELU);
+  h1 = Node("1", NodeType::hidden, NodeStatus::deactivated, NodeActivation::TanH);
+  o1 = Node("2", NodeType::output, NodeStatus::deactivated, NodeActivation::TanH);
   b1 = Node("3", NodeType::bias, NodeStatus::activated, NodeActivation::Linear);
   b2 = Node("4", NodeType::bias, NodeStatus::activated, NodeActivation::Linear);
   // weights  

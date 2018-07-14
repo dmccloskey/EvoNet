@@ -1,5 +1,7 @@
 /**TODO:  Add copyright*/
 
+#pragma once
+
 #include <SmartPeak/ml/PopulationTrainer.h>
 #include <SmartPeak/ml/ModelTrainer.h>
 #include <SmartPeak/ml/ModelReplicator.h>
