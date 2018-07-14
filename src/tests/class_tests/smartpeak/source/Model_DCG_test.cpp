@@ -566,7 +566,7 @@ BOOST_AUTO_TEST_CASE(BPTT)
     {
       for (int i=0; i<error_nodes.size(); ++i)
       {        
-        std::cout<<"i: "<<i<<" j: "<<j<<", k: "<<k<<" calc: "<<model2.getNode(error_nodes[i]).getError()(j, k)<<", expected: "<<error(j, k, i)<<std::endl;
+        // std::cout<<"i: "<<i<<" j: "<<j<<", k: "<<k<<" calc: "<<model2.getNode(error_nodes[i]).getError()(j, k)<<", expected: "<<error(j, k, i)<<std::endl;
         BOOST_CHECK_CLOSE(model2.getNode(error_nodes[i]).getError()(j, k), error(j, k, i), 1e-3);
       }
     }
@@ -725,9 +725,9 @@ BOOST_AUTO_TEST_CASE(modelTrainer2)
     // forward propogate
     // model2a.FPTT(memory_size, input, input_ids, dt);
     if (iter == 0)
-      model2a.FPTT(memory_size, input, input_ids, dt, true, true); 
+      model2a.FPTT(memory_size, input, input_ids, dt, true, true, 2); 
     else      
-      model2a.FPTT(memory_size, input, input_ids, dt, false, true); 
+      model2a.FPTT(memory_size, input, input_ids, dt, false, true, 2); 
 
     // calculate the model error
     model2a.calculateError(expected, output_nodes);
@@ -736,12 +736,12 @@ BOOST_AUTO_TEST_CASE(modelTrainer2)
     // backpropogate through time
     // model2a.TBPTT(memory_size-1);
     if (iter == 0)
-      model2a.TBPTT(memory_size-1, true, true);
+      model2a.TBPTT(memory_size - 1, true, true, 2);
     else
-      model2a.TBPTT(memory_size-1, false, true);
+      model2a.TBPTT(memory_size - 1, false, true, 2);
 
     // update the weights
-    model2a.updateWeights(memory_size);   
+    model2a.updateWeights(memory_size - 1);   
 
     // reinitialize the model
     model2a.reInitializeNodeStatuses();    

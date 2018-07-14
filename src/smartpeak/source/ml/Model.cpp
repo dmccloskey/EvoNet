@@ -1992,7 +1992,7 @@ namespace SmartPeak
         std::map<std::string, int> BP_operations_map_cycles = BP_operations_map;
         std::vector<FP_operation_list> BP_operations_list_cycles = BP_operations_list;
         std::vector<std::string> source_nodes_cycles;
-        getNextUncorrectedLayerCycles(BP_operations_map, BP_operations_list, source_nodes, source_nodes_cycles);
+        getNextUncorrectedLayerCycles(BP_operations_map_cycles, BP_operations_list_cycles, source_nodes, source_nodes_cycles);
 
         // std::cout<<"getNextUncorrectedLayerCycles"<<std::endl;
         // for (auto& operation: BP_operations_list_cycles)
@@ -2175,6 +2175,7 @@ namespace SmartPeak
           if (std::count(node_names.begin(), node_names.end(), node_map.first) == 0)
           {
             node_map.second->setStatus(NodeStatus::activated); // reinitialize cyclic nodes
+            // std::cout<<"Model::TBPTT() cyclic nodes: "<<node_map.first<<std::endl;
           }   
           // std::cout<<"Model::TBPTT() output: "<<node_map.second->getError()<<" for node_name: "<<node_map.first<<std::endl;
         }
@@ -2218,9 +2219,11 @@ namespace SmartPeak
       if (nodes_.at(link_map.second->getSinkNodeName())->getStatus() == NodeStatus::corrected)      
       {
         // Sum the error from current and previous time-steps
+        // [PARALLEL: implement threads here]
         float error_sum = 0.0;
         for (int i=0; i<max_steps; ++i)
         {
+          // [PARALLEL: move to threadPool/CUDA implementations]
           Eigen::Tensor<float, 1> error_tensor = nodes_.at(link_map.second->getSinkNodeName())->getError().chip(0, 1); // first time-step
           Eigen::Tensor<float, 1> output_tensor = nodes_.at(link_map.second->getSourceNodeName())->getOutput().chip(0, 1);  // first time-step
           // auto derivative_tensor = - error_tensor * output_tensor; // derivative of the weight wrt the error
@@ -2229,6 +2232,7 @@ namespace SmartPeak
           // std::cout<<"derivative_mean_tensor "<<derivative_mean_tensor(0)<<std::endl;
           error_sum += derivative_mean_tensor(0);
         } 
+        // [PARALELL: collect threads here sum the error]
         weight_derivatives.at(link_map.second->getWeightName()).push_back(error_sum); 
       }    
     }
