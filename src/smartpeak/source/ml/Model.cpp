@@ -1145,8 +1145,8 @@ namespace SmartPeak
         std::vector<std::string> sink_nodes_cycles;
         getNextInactiveLayerCycles(FP_operations_map, FP_operations_list, sink_nodes_cycles);
 
-        std::cout<<"sink nodes cycles size "<<sink_nodes_cycles.size()<<std::endl;
-        std::cout<<"FP operations list size "<<FP_operations_list.size()<<std::endl;
+        // std::cout<<"sink nodes cycles size "<<sink_nodes_cycles.size()<<std::endl;
+        // std::cout<<"FP operations list size "<<FP_operations_list.size()<<std::endl;
         if (sink_nodes_cycles.size() > 0 && 
           sink_nodes_cycles.size() != FP_operations_list.size())
         { // not all forward propogation steps have caught up
@@ -1539,7 +1539,22 @@ namespace SmartPeak
         arguments.source_node = nodes_.at(link_map.second->getSinkNodeName());
         arguments.weight = weights_.at(link_map.second->getWeightName());
         arguments.time_step = 0;        
-        BP_operations[BP_operations_map.at(link_map.second->getSourceNodeName())].arguments.push_back(arguments);
+        
+        auto found = BP_operations_map.emplace(link_map.second->getSourceNodeName(), (int)BP_operations.size());
+        if (!found.second)
+        {
+          BP_operations[BP_operations_map.at(link_map.second->getSourceNodeName())].arguments.push_back(arguments);
+        }
+        else
+        {
+          FP_operation_list operation_list;
+          FP_operation_result result;
+          result.sink_node = nodes_.at(link_map.second->getSourceNodeName());
+          result.time_step = 1;
+          operation_list.result = result;
+          operation_list.arguments.push_back(arguments);
+          BP_operations.push_back(operation_list);
+        }
         
         if (std::count(source_nodes_with_cycles.begin(), source_nodes_with_cycles.end(), link_map.second->getSinkNodeName()) == 0)
         {
@@ -1600,6 +1615,91 @@ namespace SmartPeak
         }
       }
     }
+  }  
+
+  Eigen::Tensor<float, 1> Model::calculateNodeError_(
+    FP_operation_arguments* arguments, 
+    const int& batch_size,
+    const int& memory_size,
+    const int& time_step
+  )
+  {
+    // static std::mutex calculateNodeInput_mutex;
+    // std::lock_guard<std::mutex> lock2(calculateNodeInput_mutex);
+
+    Eigen::Tensor<float, 1> sink_tensor(batch_size);
+    Eigen::Tensor<float, 1> weight_tensor(batch_size);
+    weight_tensor.setConstant(arguments->weight->getWeight());
+    sink_tensor = weight_tensor * arguments->source_node->getError().chip(time_step, 1);
+    // std::cout<<"Weight tensor: "<<weight_tensor<<std::endl;
+    // std::cout<<"Source tensor: "<<arguments->source_node->getError().chip(time_step, 1)<<std::endl;
+    // std::cout<<"Sink tensor: "<<sink_tensor<<std::endl;
+    return sink_tensor;
+  }
+
+  bool Model::calculateNetNodeError_(
+    FP_operation_list* operations, 
+    const int& batch_size,
+    const int& memory_size,
+    const int& time_step,
+    int n_threads
+  )
+  {
+    // static std::mutex calculateNetNodeInput_mutex;
+    // std::lock_guard<std::mutex> lock(calculateNetNodeInput_mutex);
+
+    std::vector<std::future<Eigen::Tensor<float, 1>>> task_results;
+    int thread_cnt = 0;
+    
+    Eigen::Tensor<float, 1> sink_tensor(batch_size);
+    sink_tensor.setConstant(0.0f);
+
+    // for (const std::string& link : sink_links)
+    for (int i=0; i<operations->arguments.size(); ++i)
+    {
+      std::packaged_task<Eigen::Tensor<float, 1> // encapsulate in a packaged_task
+        (FP_operation_arguments*, int, int, int
+        )> task(Model::calculateNodeError_);
+      
+      // launch the thread
+      task_results.push_back(task.get_future());
+      std::thread task_thread(std::move(task),
+        &operations->arguments[i], std::ref(batch_size), std::ref(memory_size), std::ref(time_step));
+      task_thread.detach();
+
+      // retreive the results
+      if (thread_cnt == n_threads - 1 || i == operations->arguments.size() - 1)
+      {
+        for (auto& task_result: task_results)
+        {
+          sink_tensor += task_result.get();
+        }
+        task_results.clear();
+        thread_cnt = 0;
+      }
+      else
+      {
+        ++thread_cnt;
+      } 
+    }
+   
+    if (operations->result.time_step == 0 || time_step + operations->result.time_step < memory_size)
+    {
+      // scale the error by the derivative
+      // std::cout<<"Sink tensor sum: "<<sink_tensor<<std::endl;
+      sink_tensor = sink_tensor * operations->result.sink_node->getDerivative().chip(time_step + operations->result.time_step, 1);
+      // std::cout<<"Sink tensor derivative scale: "<<sink_tensor<<std::endl;
+
+      // update the node error
+      operations->result.sink_node->setStatus(NodeStatus::corrected);
+      operations->result.sink_node->getErrorMutable()->chip(time_step + operations->result.time_step, 1) = sink_tensor;
+    }
+    else
+    {
+      std::cout<<"time_step exceeded memory size in backwardPropogateLayerError."<<std::endl;
+    }
+
+    return true;
   }
 
   void Model::backPropogateLayerError(
@@ -1610,10 +1710,10 @@ namespace SmartPeak
     // get all the information needed to construct the tensors
     int batch_size = 0;
     int memory_size = 0;
-    for (const auto& sources_links : sink_links_map)
+    for (const auto& BP_operation : BP_operations)
     {
-      batch_size = nodes_.at(sources_links.first)->getOutput().dimension(0);
-      memory_size = nodes_.at(sources_links.first)->getOutput().dimension(1);
+      batch_size = BP_operation.result.sink_node->getOutput().dimension(0);
+      memory_size = BP_operation.result.sink_node->getOutput().dimension(1);
       break;
     }
 
@@ -1624,45 +1724,46 @@ namespace SmartPeak
     }
 
     // iterate through each sink node and calculate the error
-    for (const auto& sinks_links : sink_links_map)
+    std::vector<std::future<bool>> task_results;
+    int thread_cnt = 0;
+    const int threads_per_sub_process = 1; // [TODO: how to best divide up the allowable threads?]
+    int operations_cnt = 0;
+    for (auto& BP_operation : BP_operations)
     {
-      Eigen::Tensor<float, 1> sink_tensor(batch_size);
-      sink_tensor.setConstant(0.0f);
-      Eigen::Tensor<float, 1> weight_tensor(batch_size);
-
-      // calculate the total incoming error
-      for (const std::string& link : sinks_links.second)
-      {
-        weight_tensor.setConstant(weights_.at(links_.at(link)->getWeightName())->getWeight());
-        sink_tensor = sink_tensor + weight_tensor * nodes_.at(links_.at(link)->getSinkNodeName())->getError().chip(time_step, 1);
-      }
+      std::packaged_task<bool // encapsulate in a packaged_task
+        (FP_operation_list*, int, int, int, int
+        )> task(Model::calculateNetNodeError_);
       
-      // scale the error by the derivative
-      if (nodes_.at(sinks_links.first)->getStatus() == NodeStatus::activated)
-      {
-        sink_tensor = sink_tensor * nodes_.at(sinks_links.first)->getDerivative().chip(time_step, 1); // current time-step
-      }
-      else if (nodes_.at(sinks_links.first)->getStatus() == NodeStatus::corrected)
-      {
-        // std::cout << "Model::backPropogateLayerError() Previous derivative (batch_size, Sink) " << j << "," << i << std::endl;
-        if (time_step + 1 < memory_size)
-        {
-          sink_tensor = sink_tensor * nodes_.at(sinks_links.first)->getDerivative().chip(time_step + 1, 1); // previous time-step
-        }  
-      }  
+      // launch the thread
+      task_results.push_back(task.get_future());
+      std::thread task_thread(std::move(task),
+        &BP_operation, std::ref(batch_size), std::ref(memory_size), std::ref(time_step),
+        std::ref(threads_per_sub_process));
+      task_thread.detach();
 
-      // update the errors      
-      if (nodes_.at(sinks_links.first)->getStatus() == NodeStatus::activated)
+      // retreive the results
+      if (thread_cnt == n_threads - 1 || operations_cnt == BP_operations.size() - 1)
       {
-        mapValuesToNode(sink_tensor, time_step, sinks_links.first, NodeStatus::corrected, "error");
-      }
-      else if (nodes_.at(sinks_links.first)->getStatus() == NodeStatus::corrected)
-      {
-        if (time_step + 1 < memory_size)
+        for (auto& task_result: task_results)
         {
-          mapValuesToNode(sink_tensor, time_step + 1, sinks_links.first, NodeStatus::corrected, "error");
-        }  
+          bool success = task_result.get();
+          // Eigen::Tensor<float, 1> model_output(batch_size);
+          // model_output = nodes_.at(BP_operation.result.sink_node->getName())->getError().chip(time_step, 1);
+          // Eigen::Tensor<float, 1> result_error(batch_size);
+          // result_error = BP_operation.result.sink_node->getError().chip(time_step, 1);
+          // std::cout<<"Model error: "<<model_output<<std::endl;
+          // std::cout<<"BP operation result: "<<result_error<<std::endl;
+        }
+        task_results.clear();
+        thread_cnt = 0;
       }
+      else
+      {
+        thread_cnt += threads_per_sub_process;
+      } 
+      // std::cout<<"thread_count"<<thread_cnt<<std::endl;
+      // std::cout<<"operations_cnt"<<operations_cnt<<std::endl;
+      ++operations_cnt;
     }
   }
 
@@ -1876,11 +1977,33 @@ namespace SmartPeak
         std::vector<std::string> source_nodes;
         getNextUncorrectedLayer(BP_operations_map, BP_operations_list, source_nodes);  
 
+        // std::cout<<"getNextUncorrectedLayer"<<std::endl;
+        // for (auto& operation: BP_operations_list)
+        // {
+        //   std::cout<<"Sink node: "<<operation.result.sink_node->getName()<<std::endl;
+        //   for (auto& argument: operation.arguments)
+        //   {
+        //     std::cout<<"Source node: "<<argument.source_node->getName()<<std::endl;
+        //     std::cout<<"Weight: "<<argument.weight->getName()<<std::endl;
+        //   }
+        // }
+
         // get cycles
         std::map<std::string, int> BP_operations_map_cycles = BP_operations_map;
         std::vector<FP_operation_list> BP_operations_list_cycles = BP_operations_list;
         std::vector<std::string> source_nodes_cycles;
         getNextUncorrectedLayerCycles(BP_operations_map, BP_operations_list, source_nodes, source_nodes_cycles);
+
+        // std::cout<<"getNextUncorrectedLayerCycles"<<std::endl;
+        // for (auto& operation: BP_operations_list_cycles)
+        // {
+        //   std::cout<<"Sink node: "<<operation.result.sink_node->getName()<<std::endl;
+        //   for (auto& argument: operation.arguments)
+        //   {
+        //     std::cout<<"Source node: "<<argument.source_node->getName()<<std::endl;
+        //     std::cout<<"Weight: "<<argument.weight->getName()<<std::endl;
+        //   }
+        // }
 
         if (source_nodes_cycles.size() == source_nodes.size())
         { // all backward propogation steps have caught up

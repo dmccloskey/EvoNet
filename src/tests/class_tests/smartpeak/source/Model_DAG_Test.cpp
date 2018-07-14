@@ -793,21 +793,44 @@ BOOST_AUTO_TEST_CASE(getNextUncorrectedLayer1)
   // BOOST_CHECK_EQUAL(sink_nodes[1], "2");
   // BOOST_CHECK_EQUAL(sink_nodes[2], "3");
 
+  // // get the next hidden layer
+  // std::map<std::string, std::vector<std::string>> sink_links_map;
+  // std::vector<std::string> source_nodes;
+  // model1.getNextUncorrectedLayer(sink_links_map, source_nodes);
+
+  // // test links and source and sink nodes
+  // BOOST_CHECK_EQUAL(sink_links_map.at("7").size(), 2);
+  // BOOST_CHECK_EQUAL(sink_links_map.at("7")[0], "10");
+  // BOOST_CHECK_EQUAL(sink_links_map.at("7")[1], "11");
+  // BOOST_CHECK_EQUAL(sink_links_map.at("2").size(), 2);
+  // BOOST_CHECK_EQUAL(sink_links_map.at("2")[0], "6");
+  // BOOST_CHECK_EQUAL(sink_links_map.at("2")[1], "7");
+  // BOOST_CHECK_EQUAL(sink_links_map.at("3").size(), 2);
+  // BOOST_CHECK_EQUAL(sink_links_map.at("3")[0], "8");
+  // BOOST_CHECK_EQUAL(sink_links_map.at("3")[1], "9");
+  // BOOST_CHECK_EQUAL(source_nodes.size(), 2);
+  // BOOST_CHECK_EQUAL(source_nodes[0], "4");
+  // BOOST_CHECK_EQUAL(source_nodes[1], "5");
+
   // get the next hidden layer
-  std::map<std::string, std::vector<std::string>> sink_links_map;
+  std::map<std::string, int> BP_operations_map;
+  std::vector<FP_operation_list> BP_operations_list;
   std::vector<std::string> source_nodes;
-  model1.getNextUncorrectedLayer(sink_links_map, source_nodes);
+  model1.getNextUncorrectedLayer(BP_operations_map, BP_operations_list, source_nodes);  
 
   // test links and source and sink nodes
-  BOOST_CHECK_EQUAL(sink_links_map.at("7").size(), 2);
-  BOOST_CHECK_EQUAL(sink_links_map.at("7")[0], "10");
-  BOOST_CHECK_EQUAL(sink_links_map.at("7")[1], "11");
-  BOOST_CHECK_EQUAL(sink_links_map.at("2").size(), 2);
-  BOOST_CHECK_EQUAL(sink_links_map.at("2")[0], "6");
-  BOOST_CHECK_EQUAL(sink_links_map.at("2")[1], "7");
-  BOOST_CHECK_EQUAL(sink_links_map.at("3").size(), 2);
-  BOOST_CHECK_EQUAL(sink_links_map.at("3")[0], "8");
-  BOOST_CHECK_EQUAL(sink_links_map.at("3")[1], "9");
+  BOOST_CHECK_EQUAL(BP_operations_list[0].arguments.size(), 2);
+  BOOST_CHECK_EQUAL(BP_operations_list[0].result.sink_node->getName(), "7");
+  BOOST_CHECK_EQUAL(BP_operations_list[0].arguments[0].weight->getName(), "10");
+  BOOST_CHECK_EQUAL(BP_operations_list[0].arguments[1].weight->getName(), "11");
+  BOOST_CHECK_EQUAL(BP_operations_list[1].arguments.size(), 2);
+  BOOST_CHECK_EQUAL(BP_operations_list[1].result.sink_node->getName(), "2");
+  BOOST_CHECK_EQUAL(BP_operations_list[1].arguments[0].weight->getName(), "6");
+  BOOST_CHECK_EQUAL(BP_operations_list[1].arguments[1].weight->getName(), "7");
+  BOOST_CHECK_EQUAL(BP_operations_list[2].arguments.size(), 2);
+  BOOST_CHECK_EQUAL(BP_operations_list[2].result.sink_node->getName(), "3");
+  BOOST_CHECK_EQUAL(BP_operations_list[2].arguments[0].weight->getName(), "8");
+  BOOST_CHECK_EQUAL(BP_operations_list[2].arguments[1].weight->getName(), "9");
   BOOST_CHECK_EQUAL(source_nodes.size(), 2);
   BOOST_CHECK_EQUAL(source_nodes[0], "4");
   BOOST_CHECK_EQUAL(source_nodes[1], "5");
@@ -846,24 +869,49 @@ BOOST_AUTO_TEST_CASE(backPropogateLayerError)
   expected.setValues({{0, 1}, {0, 1}, {0, 1}, {0, 1}});
   model1.calculateError(expected, output_nodes);
 
+  // // get the next hidden layer
+  // std::vector<std::string> links, source_nodes, sink_nodes;
+  // model1.getNextUncorrectedLayer(links, source_nodes, sink_nodes);
+
+  // // back propogate error to the next layer
+  // model1.backPropogateLayerError(links, source_nodes, sink_nodes, 0);
+
+  // Eigen::Tensor<float, 2> error(batch_size, (int)sink_nodes.size()); 
+  // error.setValues({{0.0, -7.25, -7.25}, {0.0, -9.25, -9.25}, {0.0, -11.25, -11.25}, {0.0, -13.25, -13.25}});
+  // for (int i=0; i<sink_nodes.size(); ++i)
+  // {
+  //   BOOST_CHECK_EQUAL(model1.getNode(sink_nodes[i]).getError().size(), batch_size*memory_size);
+  //   BOOST_CHECK(model1.getNode(sink_nodes[i]).getStatus() == NodeStatus::corrected);
+  //   for (int j=0; j<batch_size; ++j)
+  //   {
+  //     for (int k=0; k<memory_size; ++k)
+  //     {
+  //       BOOST_CHECK_CLOSE(model1.getNode(sink_nodes[i]).getError()(j, k), error(j, i), 1e-3);
+  //     }      
+  //   }
+  // }
+
   // get the next hidden layer
-  std::vector<std::string> links, source_nodes, sink_nodes;
-  model1.getNextUncorrectedLayer(links, source_nodes, sink_nodes);
+  std::map<std::string, int> BP_operations_map;
+  std::vector<FP_operation_list> BP_operations_list;
+  std::vector<std::string> source_nodes;
+  model1.getNextUncorrectedLayer(BP_operations_map, BP_operations_list, source_nodes);  
 
   // back propogate error to the next layer
-  model1.backPropogateLayerError(links, source_nodes, sink_nodes, 0);
+  model1.backPropogateLayerError(BP_operations_list, 0, 1);
 
-  Eigen::Tensor<float, 2> error(batch_size, (int)sink_nodes.size()); 
+  // Eigen::Tensor<float, 2> error(batch_size, (int)sink_nodes.size()); 
+  Eigen::Tensor<float, 2> error(batch_size, (int)BP_operations_list.size()); 
   error.setValues({{0.0, -7.25, -7.25}, {0.0, -9.25, -9.25}, {0.0, -11.25, -11.25}, {0.0, -13.25, -13.25}});
-  for (int i=0; i<sink_nodes.size(); ++i)
+  for (int i=0; i<BP_operations_list.size(); ++i)
   {
-    BOOST_CHECK_EQUAL(model1.getNode(sink_nodes[i]).getError().size(), batch_size*memory_size);
-    BOOST_CHECK(model1.getNode(sink_nodes[i]).getStatus() == NodeStatus::corrected);
+    BOOST_CHECK_EQUAL(model1.getNode(BP_operations_list[i].result.sink_node->getName()).getError().size(), batch_size*memory_size);
+    BOOST_CHECK(model1.getNode(BP_operations_list[i].result.sink_node->getName()).getStatus() == NodeStatus::corrected);
     for (int j=0; j<batch_size; ++j)
     {
       for (int k=0; k<memory_size; ++k)
       {
-        BOOST_CHECK_CLOSE(model1.getNode(sink_nodes[i]).getError()(j, k), error(j, i), 1e-3);
+        BOOST_CHECK_CLOSE(model1.getNode(BP_operations_list[i].result.sink_node->getName()).getError()(j, k), error(j, i), 1e-3);
       }      
     }
   }
@@ -961,7 +1009,7 @@ BOOST_AUTO_TEST_CASE(updateWeights)
   model1.calculateError(expected, output_nodes);
 
   // back propogate
-  model1.backPropogate(0);
+  model1.backPropogate(0, true, false, 1);
 
   // update the weights
   model1.updateWeights(1);
