@@ -92,7 +92,8 @@ namespace SmartPeak
       {
         for (auto& task_result: task_results)
         {
-          models_validation_errors.push_back(task_result.get());
+          if (task_result.valid())
+            models_validation_errors.push_back(task_result.get());
         }
         task_results.clear();
         thread_cnt = 0;
@@ -288,10 +289,9 @@ namespace SmartPeak
         // retreive the results
         if (thread_cnt == n_threads - 1 || cnt == models_copy.size() - 1)
         {
-          for (auto& task_result: task_results)
-          {
-            models.push_back(task_result.get());
-          }
+          for (auto& task_result: task_results)          
+            if (task_result.valid())
+              models.push_back(task_result.get());
           task_results.clear();
           thread_cnt = 0;
         }
@@ -389,11 +389,14 @@ namespace SmartPeak
         for (auto& task_result: task_results)
         // for (int j=0; j<task_results.size(); ++j)
         {
-          std::pair<bool, Model> status = task_result.get();  
-          // std::pair<bool, Model> status status = task_results[j].get();         
-          if (status.first)
+          if (task_result.valid())
           {
-            trained_models.push_back(status.second);
+            std::pair<bool, Model> status = task_result.get();  
+            // std::pair<bool, Model> status status = task_results[j].get();         
+            if (status.first)
+            {
+              trained_models.push_back(status.second);
+            }
           }
         }
         task_results.clear();

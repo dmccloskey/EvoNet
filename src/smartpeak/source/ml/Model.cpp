@@ -895,9 +895,8 @@ namespace SmartPeak
       if (thread_cnt == n_threads - 1 || i == operations->arguments.size() - 1)
       {
         for (auto& task_result: task_results)
-        {
-          sink_tensor += task_result.get();
-        }
+          if (task_result.valid())
+            sink_tensor += task_result.get();
         task_results.clear();
         thread_cnt = 0;
       }
@@ -964,13 +963,16 @@ namespace SmartPeak
       {
         for (auto& task_result: task_results)
         {
-          bool success = task_result.get();
-          // Eigen::Tensor<float, 1> model_output(batch_size);
-          // model_output = nodes_.at(FP_operation.result.sink_node->getName()).getOutput().chip(time_step, 1);
-          // Eigen::Tensor<float, 1> result_output(batch_size);
-          // result_output = FP_operation.result.sink_node->getOutput().chip(time_step, 1);
-          // std::cout<<"Model output: "<<model_output<<std::endl;
-          // std::cout<<"FP operation result: "<<result_output<<std::endl;
+          if (task_result.valid())
+          {
+            bool success = task_result.get();
+            // Eigen::Tensor<float, 1> model_output(batch_size);
+            // model_output = nodes_.at(FP_operation.result.sink_node->getName()).getOutput().chip(time_step, 1);
+            // Eigen::Tensor<float, 1> result_output(batch_size);
+            // result_output = FP_operation.result.sink_node->getOutput().chip(time_step, 1);
+            // std::cout<<"Model output: "<<model_output<<std::endl;
+            // std::cout<<"FP operation result: "<<result_output<<std::endl;
+          }
         }
         task_results.clear();
         thread_cnt = 0;
@@ -1677,10 +1679,9 @@ namespace SmartPeak
       // retreive the results
       if (thread_cnt == n_threads - 1 || i == operations->arguments.size() - 1)
       {
-        for (auto& task_result: task_results)
-        {
-          sink_tensor += task_result.get();
-        }
+        for (auto& task_result: task_results)        
+          if (task_result.valid())
+            sink_tensor += task_result.get();
         task_results.clear();
         thread_cnt = 0;
       }
@@ -1753,13 +1754,16 @@ namespace SmartPeak
       {
         for (auto& task_result: task_results)
         {
-          bool success = task_result.get();
-          // Eigen::Tensor<float, 1> model_output(batch_size);
-          // model_output = nodes_.at(BP_operation.result.sink_node->getName())->getError().chip(time_step, 1);
-          // Eigen::Tensor<float, 1> result_error(batch_size);
-          // result_error = BP_operation.result.sink_node->getError().chip(time_step, 1);
-          // std::cout<<"Model error: "<<model_output<<std::endl;
-          // std::cout<<"BP operation result: "<<result_error<<std::endl;
+          if (task_result.valid())
+          {
+            bool success = task_result.get();
+            // Eigen::Tensor<float, 1> model_output(batch_size);
+            // model_output = nodes_.at(BP_operation.result.sink_node->getName())->getError().chip(time_step, 1);
+            // Eigen::Tensor<float, 1> result_error(batch_size);
+            // result_error = BP_operation.result.sink_node->getError().chip(time_step, 1);
+            // std::cout<<"Model error: "<<model_output<<std::endl;
+            // std::cout<<"BP operation result: "<<result_error<<std::endl;
+          }
         }
         task_results.clear();
         thread_cnt = 0;

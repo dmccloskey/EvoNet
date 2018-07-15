@@ -10,6 +10,7 @@
 
 #include <random>
 #include <fstream>
+#include <thread>
 
 #include <unsupported/Eigen/CXX11/Tensor>
 
@@ -239,7 +240,13 @@ int main(int argc, char** argv)
   const int sequence_length = 2; // test sequence length
   const std::size_t training_data_size = 100000; //60000;
   const std::size_t validation_data_size = 10000; //10000;
-  const int n_threads = 4; // the number of threads
+
+  const int n_hard_threads = std::thread::hardware_concurrency();
+  const int n_threads = n_hard_threads/2; // the number of threads
+  char threads_cout[512];
+  sprintf(threads_cout, "Threads for population training: %d, Threads for model training/validation: %d\n",
+    n_hard_threads, 2);
+  std::cout<<threads_cout;
 
   // Make the input nodes 
   // [TODO: refactor into a convenience function]
@@ -282,7 +289,7 @@ int main(int argc, char** argv)
 
   // Evolve the population
   std::vector<Model> population; 
-  const int iterations = 1000;
+  const int iterations = 1;
   for (int iter=0; iter<iterations; ++iter)
   {
     printf("Iteration #: %d\n", iter);
@@ -369,8 +376,8 @@ int main(int argc, char** argv)
       std::uniform_int_distribution<> zero_to_two(0, 2);
       model_replicator.setNNodeAdditions(zero_to_one(gen));
       model_replicator.setNLinkAdditions(zero_to_two(gen));
-      // model_replicator.setNNodeDeletions(zero_to_one(gen));
-      // model_replicator.setNLinkDeletions(zero_to_two(gen));
+      model_replicator.setNNodeDeletions(zero_to_one(gen));
+      model_replicator.setNLinkDeletions(zero_to_two(gen));
     }
 
     // train the population
