@@ -239,7 +239,7 @@ int main(int argc, char** argv)
   const int sequence_length = 2; // test sequence length
   const std::size_t training_data_size = 100000; //60000;
   const std::size_t validation_data_size = 10000; //10000;
-  const int n_threads = 8; // the number of threads
+  const int n_threads = 4; // the number of threads
 
   // Make the input nodes 
   // [TODO: refactor into a convenience function]
