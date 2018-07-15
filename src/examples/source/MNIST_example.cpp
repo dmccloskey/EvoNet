@@ -1,7 +1,5 @@
 /**TODO:  Add copyright*/
 
-#pragma once
-
 #include <SmartPeak/ml/PopulationTrainer.h>
 #include <SmartPeak/ml/ModelTrainer.h>
 #include <SmartPeak/ml/ModelReplicator.h>
@@ -103,6 +101,7 @@ public:
       model.calculateError(output.chip(iter, 2), output_nodes);
       std::cout<<"Model error: "<<model.getError().sum()<<std::endl;
 
+      // Print some details that are useful for debugging
       printf("Node ID:\t");
       for (const std::string& node : output_nodes)
         printf("%s\t", node.data());
@@ -317,6 +316,7 @@ int main(int argc, char** argv)
   const std::size_t training_data_size = 1000; //60000;
   const std::size_t validation_data_size = 100; //10000;
   const std::vector<float> mnist_labels = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+  const int n_threads = 8;
 
   // Make the input nodes
   std::vector<std::string> input_nodes;
@@ -495,7 +495,7 @@ int main(int argc, char** argv)
     // train the population
     std::cout<<"Training the models..."<<std::endl;
     population_trainer.trainModels(population, model_trainer,
-      input_data, output_data, time_steps, input_nodes, output_nodes);
+      input_data, output_data, time_steps, input_nodes, output_nodes, n_threads);
 
     // reformat the input data for validation
 
@@ -506,7 +506,7 @@ int main(int argc, char** argv)
     model_trainer.setNEpochs(4);  // lower the number of epochs for validation
     population_trainer.selectModels(
       n_top, n_random, population, model_trainer,
-      input_data, output_data, time_steps, input_nodes, output_nodes);
+      input_data, output_data, time_steps, input_nodes, output_nodes, n_threads);
     model_trainer.setNEpochs(50);  // restor the number of epochs for training
 
     for (const Model& model: population)
@@ -535,7 +535,7 @@ int main(int argc, char** argv)
       }
       // replicate and modify models
       std::cout<<"Replicating and modifying the models..."<<std::endl;
-      population_trainer.replicateModels(population, model_replicator, n_replicates_per_model, std::to_string(iter));
+      population_trainer.replicateModels(population, model_replicator, n_replicates_per_model, std::to_string(iter), n_threads);
       std::cout<<"Population size of "<<population.size()<<std::endl;
     }
   }

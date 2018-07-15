@@ -338,12 +338,19 @@ namespace SmartPeak
 
   void Model::pruneModel(int iterations)
   {
-    int cnt = 0;
-    while (pruneLinks() || pruneWeights() || pruneNodes())
+    try
     {
-      if (cnt >= iterations) {break;}
-      // std::cout<<"Pruning model iteration: "<<cnt<<std::endl;
-      cnt += 1;
+      int cnt = 0;
+      while (pruneLinks() || pruneWeights() || pruneNodes())
+      {
+        if (cnt >= iterations) {break;}
+        // std::cout<<"Pruning model iteration: "<<cnt<<std::endl;
+        cnt += 1;
+      }
+    }
+    catch (std::exception& e)
+    {
+      printf("Exception: %s", e.what());
     }
   }
 
@@ -2303,6 +2310,7 @@ namespace SmartPeak
   void Model::clearCache()
   {
     FP_operations_cache_.clear();
+    BP_operations_cache_.clear();
 
     // [DEPRECATED]
     FP_sink_link_cache_.clear();

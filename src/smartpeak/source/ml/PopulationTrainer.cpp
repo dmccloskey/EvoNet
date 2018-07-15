@@ -197,7 +197,13 @@ namespace SmartPeak
       if (model_errors.size()>0)
         model_ave_error = std::accumulate(model_errors.begin(), model_errors.end(), 0.0)/model_errors.size();
       if (isnan(model_ave_error))
-        model_ave_error = 1e6;
+        model_ave_error = 1e6;      
+
+      char cout_char[512];
+      sprintf(cout_char, "Model %s (Nodes: %d, Links: %d) error: %.2f\n", 
+        model->getName().data(), model->getNodes().size(), model->getLinks().size(), model_ave_error);
+      std::cout<<cout_char;
+
       return std::make_pair(model->getName(), model_ave_error);
     }
     catch (std::exception& e)
@@ -325,6 +331,7 @@ namespace SmartPeak
     model_copy.setName(model_name);
 
     model_replicator->modifyModel(model_copy, unique_str + "-" + std::to_string(i));
+    model_copy.pruneModel(1);
     return model_copy; // return the model not the pointer
   }
 

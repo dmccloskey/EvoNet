@@ -54,7 +54,7 @@ public:
       const Eigen::Tensor<float, 3>& time_steps,
       const std::vector<std::string>& input_nodes,
       const std::vector<std::string>& output_nodes,
-      int n_threads = 1);    
+      int n_threads = 1);
  
     /**
       @brief validate all of the models

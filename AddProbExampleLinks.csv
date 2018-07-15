@@ -1,0 +1,12 @@
+link_name,source_node_name,sink_node_name,weight_name
+Bias_0_to_Hidden_0,Hidden_bias_0,Hidden_0,Bias_0_to_Hidden_0
+Bias_0_to_Output_0,Output_bias_0,Output_0,Bias_0_to_Output_0
+Bias_Hidden_0@addNode:_1-0-1_2018-07-15-13-17-26_to_Hidden_0@addNode:_1-0-1_2018-07-15-13-17-26@addNode:_1-0-1_2018-07-15-13-17-26,Bias_Hidden_0@addNode:_1-0-1_2018-07-15-13-17-26,Hidden_0@addNode:_1-0-1_2018-07-15-13-17-26,Bias_Hidden_0@addNode:_1-0-1_2018-07-15-13-17-26_to_Hidden_0@addNode:_1-0-1_2018-07-15-13-17-26@addNode:_1-0-1_2018-07-15-13-17-26
+Bias_Hidden_1@addNode:_1-0-0_2018-07-15-13-17-26_to_Hidden_1@addNode:_1-0-0_2018-07-15-13-17-26@addNode:_1-0-0_2018-07-15-13-17-26,Bias_Hidden_1@addNode:_1-0-0_2018-07-15-13-17-26,Hidden_1@addNode:_1-0-0_2018-07-15-13-17-26,Bias_Hidden_1@addNode:_1-0-0_2018-07-15-13-17-26_to_Hidden_1@addNode:_1-0-0_2018-07-15-13-17-26@addNode:_1-0-0_2018-07-15-13-17-26
+Hidden_0_to_Output_0,Hidden_0,Output_0,Hidden_0_to_Output_0
+Input_0_to_Hidden_0,Input_0,Hidden_0,Input_0_to_Hidden_0
+Link_Hidden_0@addNode:_1-0-1_2018-07-15-13-17-26_to_Hidden_0@addNode:_1-0-1_2018-07-15-13-17-26,Hidden_0@addNode:_1-0-1_2018-07-15-13-17-26,Hidden_0,Weight_Hidden_0@addNode:_1-0-1_2018-07-15-13-17-26_to_Hidden_0@addNode:_1-0-1_2018-07-15-13-17-26
+Link_Hidden_1@addNode:_1-0-0_2018-07-15-13-17-26_to_Hidden_0@addLink:_1-0-3_2018-07-15-13-17-26,Hidden_1@addNode:_1-0-0_2018-07-15-13-17-26,Hidden_0,Weight_Hidden_1@addNode:_1-0-0_2018-07-15-13-17-26_to_Hidden_0@addLink:_1-0-3_2018-07-15-13-17-26
+Link_Input_1_to_Hidden_0@addLink:_1-0-0_2018-07-15-13-17-26,Input_1,Hidden_0,Weight_Input_1_to_Hidden_0@addLink:_1-0-0_2018-07-15-13-17-26
+Link_Input_1_to_Hidden_0@addNode:_1-0-1_2018-07-15-13-17-26@addLink:_1-0-1_2018-07-15-13-17-26,Input_1,Hidden_0@addNode:_1-0-1_2018-07-15-13-17-26,Weight_Input_1_to_Hidden_0@addNode:_1-0-1_2018-07-15-13-17-26@addLink:_1-0-1_2018-07-15-13-17-26
+Link_Input_1_to_Hidden_0@addNode:_1-0-1_2018-07-15-13-17-26@addNode:_1-0-1_2018-07-15-13-17-26,Input_1,Hidden_0@addNode:_1-0-1_2018-07-15-13-17-26,Input_1_to_Hidden_0
