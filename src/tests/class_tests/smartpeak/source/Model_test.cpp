@@ -398,6 +398,45 @@ BOOST_AUTO_TEST_CASE(comparison)
   BOOST_CHECK(model1 != model2);
 }
 
+BOOST_AUTO_TEST_CASE(copy) 
+{
+  Node source1, sink1, source2, sink2;
+  Link link1, link2;
+  source1 = Node("1.1", NodeType::hidden, NodeStatus::activated, NodeActivation::ReLU);
+  sink1 = Node("1.2", NodeType::hidden, NodeStatus::initialized, NodeActivation::ReLU);
+  source2 = Node("2.1", NodeType::hidden, NodeStatus::activated, NodeActivation::ReLU);
+  sink2 = Node("2.2", NodeType::hidden, NodeStatus::initialized, NodeActivation::ReLU);
+  Weight weight1, weight2;
+  std::shared_ptr<WeightInitOp> weight_init;
+  std::shared_ptr<SolverOp> solver;
+  weight_init.reset(new RandWeightInitOp(1));
+  solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
+  weight1 = Weight("1", weight_init, solver);
+  weight_init.reset(new RandWeightInitOp(1));
+  solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
+  weight2 = Weight("2", weight_init, solver);
+  link1 = Link("1", source1.getName(), sink1.getName(), weight1.getName());
+  link2 = Link("2", source2.getName(), sink2.getName(), weight2.getName());
+  Model model1(1);
+  model1.addLinks({link1, link2});
+  model1.addWeights({weight1, weight2});
+  model1.addNodes({source1, sink1, source2, sink2});
+
+  // test copy
+  Model model2(model1);
+  BOOST_CHECK(model1 == model2);
+
+  Model model3 = model1;
+  BOOST_CHECK(model1 == model3);
+
+  // test references
+  model2.removeLinks({"1"});
+  model2.pruneModel(1);
+  
+  BOOST_CHECK(model1 != model2);
+  BOOST_CHECK_EQUAL(model1.getLink("1").getName(), "1");
+}
+
 BOOST_AUTO_TEST_CASE(pruneModel) 
 {
   // minimal toy model

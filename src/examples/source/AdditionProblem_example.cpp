@@ -239,7 +239,7 @@ int main(int argc, char** argv)
   const int sequence_length = 2; // test sequence length
   const std::size_t training_data_size = 100000; //60000;
   const std::size_t validation_data_size = 10000; //10000;
-  const int n_threads = 2; // the number of threads
+  const int n_threads = 4; // the number of threads
 
   // Make the input nodes 
   // [TODO: refactor into a convenience function]
@@ -282,7 +282,7 @@ int main(int argc, char** argv)
 
   // Evolve the population
   std::vector<Model> population; 
-  const int iterations = 100;
+  const int iterations = 1000;
   for (int iter=0; iter<iterations; ++iter)
   {
     printf("Iteration #: %d\n", iter);
@@ -363,12 +363,15 @@ int main(int argc, char** argv)
     // }
 
     // generate a random number of model modifications
-    std::uniform_int_distribution<> zero_to_one(0, 1);
-    std::uniform_int_distribution<> zero_to_two(0, 2);
-    model_replicator.setNNodeAdditions(zero_to_one(gen));
-    model_replicator.setNLinkAdditions(zero_to_two(gen));
-    model_replicator.setNNodeDeletions(zero_to_one(gen));
-    model_replicator.setNLinkDeletions(zero_to_two(gen));
+    if (iter>0)
+    {
+      std::uniform_int_distribution<> zero_to_one(0, 1);
+      std::uniform_int_distribution<> zero_to_two(0, 2);
+      model_replicator.setNNodeAdditions(zero_to_one(gen));
+      model_replicator.setNLinkAdditions(zero_to_two(gen));
+      // model_replicator.setNNodeDeletions(zero_to_one(gen));
+      // model_replicator.setNLinkDeletions(zero_to_two(gen));
+    }
 
     // train the population
     std::cout<<"Training the models..."<<std::endl;
@@ -431,7 +434,7 @@ int main(int argc, char** argv)
       {
         n_top = 2;
         n_random = 2;
-        n_replicates_per_model = 2;
+        n_replicates_per_model = 3;
       }
 
       // // Binary selection with a total population size of 2
