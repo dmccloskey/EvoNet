@@ -239,7 +239,7 @@ int main(int argc, char** argv)
   const int sequence_length = 2; // test sequence length
   const std::size_t training_data_size = 100000; //60000;
   const std::size_t validation_data_size = 10000; //10000;
-  const int n_threads = 4; // the number of threads
+  const int n_threads = 2; // the number of threads
 
   // Make the input nodes 
   // [TODO: refactor into a convenience function]
@@ -420,19 +420,19 @@ int main(int argc, char** argv)
 
     if (iter < iterations - 1)  
     {
-      // // Population size of 8
-      // if (iter == 0)
-      // {
-      //   n_top = 3;
-      //   n_random = 3;
-      //   n_replicates_per_model = 7;
-      // }
-      // else
-      // {
-      //   n_top = 3;
-      //   n_random = 3;
-      //   n_replicates_per_model = 2;
-      // }
+      // Population size of 8
+      if (iter == 0)
+      {
+        n_top = 2;
+        n_random = 2;
+        n_replicates_per_model = 7;
+      }
+      else
+      {
+        n_top = 2;
+        n_random = 2;
+        n_replicates_per_model = 2;
+      }
 
       // // Binary selection with a total population size of 2
       // if (iter == 0)
@@ -441,14 +441,6 @@ int main(int argc, char** argv)
       //   n_random = 1;
       //   n_replicates_per_model = 1;
       // } n_threads
-
-      // Population size of 8
-      if (iter == 0)
-      {
-        n_top = 2;
-        n_random = 2;
-        n_replicates_per_model = 3;
-      }
 
       // replicate and modify models
       std::cout<<"Replicating and modifying the models..."<<std::endl;
