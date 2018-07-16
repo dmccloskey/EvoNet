@@ -55,15 +55,15 @@ static float AddProb(
   for (int i=0; i<sequence_length; ++i)
   {
     // the random sequence
-    random_sequence[i] = zero_to_one(gen);
+    random_sequence(i) = zero_to_one(gen);
     // the mask
     if (i == mask_index_1 || i == mask_index_2)
-      mask_sequence[i] = 1.0;
+      mask_sequence(i) = 1.0;
     else
-      mask_sequence[i] = 0.0;
+      mask_sequence(i) = 0.0;
 
     // result update
-    result += mask_sequence[i] * random_sequence[i];
+    result += mask_sequence(i) * random_sequence(i);
   }
 
   return result;
