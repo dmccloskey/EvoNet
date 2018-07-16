@@ -11,6 +11,11 @@
 #include <numeric> // accumulate
 #include <thread>
 #include <future>
+#include <mutex>
+
+static std::mutex trainModel_mutex;
+static std::mutex validateModel_mutex;
+static std::mutex replicateModel_mutex;
 
 namespace SmartPeak
 {
@@ -93,7 +98,16 @@ namespace SmartPeak
         for (auto& task_result: task_results)
         {
           if (task_result.valid())
-            models_validation_errors.push_back(task_result.get());
+          {
+            try
+            {
+              models_validation_errors.push_back(task_result.get());
+            }
+            catch (std::exception& e)
+            {
+              printf("Exception: %s", e.what());
+            }
+          }
         }
         task_results.clear();
         thread_cnt = 0;
@@ -188,6 +202,7 @@ namespace SmartPeak
     const std::vector<std::string>& input_nodes,
     const std::vector<std::string>& output_nodes)
   {
+    std::lock_guard<std::mutex> lock(validateModel_mutex);
     // score the model
     try
     {
@@ -289,9 +304,20 @@ namespace SmartPeak
         // retreive the results
         if (thread_cnt == n_threads - 1 || cnt == models_copy.size() - 1)
         {
-          for (auto& task_result: task_results)          
+          for (auto& task_result: task_results)
+          {       
             if (task_result.valid())
-              models.push_back(task_result.get());
+            {
+              try
+              {
+                models.push_back(task_result.get());
+              }              
+              catch (std::exception& e)
+              {
+                printf("Exception: %s", e.what());
+              }
+            }
+          }
           task_results.clear();
           thread_cnt = 0;
         }
@@ -311,7 +337,9 @@ namespace SmartPeak
     Model* model,
     ModelReplicator* model_replicator,
     std::string unique_str, int cnt, int i)
-  {
+  {    
+    std::lock_guard<std::mutex> lock(replicateModel_mutex);
+
     Model model_copy(*model);
     
     // rename the model
@@ -391,11 +419,18 @@ namespace SmartPeak
         {
           if (task_result.valid())
           {
-            std::pair<bool, Model> status = task_result.get();  
-            // std::pair<bool, Model> status status = task_results[j].get();         
-            if (status.first)
+            try
             {
-              trained_models.push_back(status.second);
+              std::pair<bool, Model> status = task_result.get();  
+              // std::pair<bool, Model> status status = task_results[j].get();         
+              if (status.first)
+              {
+                trained_models.push_back(status.second);
+              }
+            }
+            catch (std::exception& e)
+            {
+              printf("Exception: %s", e.what());
             }
           }
         }
@@ -435,6 +470,8 @@ namespace SmartPeak
     const std::vector<std::string>& input_nodes,
     const std::vector<std::string>& output_nodes)
   {
+    std::lock_guard<std::mutex> lock(trainModel_mutex);
+
     Model model_copy(*model);
     try
     {
