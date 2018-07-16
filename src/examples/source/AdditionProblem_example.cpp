@@ -31,16 +31,16 @@ using namespace SmartPeak;
   @returns the result of the two random numbers in the sequence
 **/
 static float AddProb(
-  const int& sequence_length,
-  std::vector<float>& random_sequence,
-  std::vector<float>& mask_sequence)
+  Eigen::Tensor<float, 1>& random_sequence,
+  Eigen::Tensor<float, 1>& mask_sequence)
 {
   float result = 0.0;
+  const int sequence_length = random_sequence.size();
   
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_real_distribution<> zero_to_one(0, 1);
-    std::uniform_int_distribution<> zero_to_length(0, sequence_length-1);
+  std::random_device rd;
+  std::mt19937 gen(rd());
+  std::uniform_real_distribution<> zero_to_one(0, 1);
+  std::uniform_int_distribution<> zero_to_length(0, sequence_length-1);
 
   // generate 2 random and unique indexes between 
   // [0, sequence_length) for the mask
@@ -52,8 +52,6 @@ static float AddProb(
 
   // generate the random sequence
   // and the mask sequence
-  random_sequence.clear();
-  mask_sequence.clear();
   for (int i=0; i<sequence_length; ++i)
   {
     // the random sequence
@@ -287,7 +285,7 @@ int main(int argc, char** argv)
 
   // Evolve the population
   std::vector<Model> population; 
-  const int iterations = 1;
+  const int iterations = 100;
   for (int iter=0; iter<iterations; ++iter)
   {
     printf("Iteration #: %d\n", iter);
@@ -329,17 +327,17 @@ int main(int argc, char** argv)
       for (int epochs_iter=0; epochs_iter<model_trainer.getNEpochs(); ++epochs_iter) {
 
         // generate a new sequence
-        std::vector<float> random_sequence;
-        std::vector<float> mask_sequence;
-        float result = AddProb(sequence_length, random_sequence, mask_sequence);
+        Eigen::Tensor<float, 1> random_sequence(sequence_length);
+        Eigen::Tensor<float, 1> mask_sequence(sequence_length);
+        float result = AddProb(random_sequence, mask_sequence);
 
         // assign the output
         output_data_training(batch_iter, 0, epochs_iter) = result;
         
         // assign the input sequences
         for (int memory_iter=0; memory_iter<model_trainer.getMemorySize(); ++memory_iter) {
-          input_data_training(batch_iter, memory_iter, 0, epochs_iter) = random_sequence[memory_iter]; // random sequence
-          input_data_training(batch_iter, memory_iter, 1, epochs_iter) = mask_sequence[memory_iter]; // mask sequence
+          input_data_training(batch_iter, memory_iter, 0, epochs_iter) = random_sequence(memory_iter); // random sequence
+          input_data_training(batch_iter, memory_iter, 1, epochs_iter) = mask_sequence(memory_iter); // mask sequence
         }
       }
     }
@@ -393,17 +391,17 @@ int main(int argc, char** argv)
       for (int epochs_iter=0; epochs_iter<model_trainer.getNEpochs(); ++epochs_iter) {
 
         // generate a new sequence
-        std::vector<float> random_sequence;
-        std::vector<float> mask_sequence;
-        float result = AddProb(sequence_length, random_sequence, mask_sequence);
+        Eigen::Tensor<float, 1> random_sequence(sequence_length);
+        Eigen::Tensor<float, 1> mask_sequence(sequence_length);
+        float result = AddProb(random_sequence, mask_sequence);
 
         // assign the output
         output_data_validation(batch_iter, 0, epochs_iter) = result;
         
         // assign the input sequences
         for (int memory_iter=0; memory_iter<model_trainer.getMemorySize(); ++memory_iter) {
-          input_data_validation(batch_iter, memory_iter, 0, epochs_iter) = random_sequence[memory_iter]; // random sequence
-          input_data_validation(batch_iter, memory_iter, 1, epochs_iter) = mask_sequence[memory_iter]; // mask sequence
+          input_data_validation(batch_iter, memory_iter, 0, epochs_iter) = random_sequence(memory_iter); // random sequence
+          input_data_validation(batch_iter, memory_iter, 1, epochs_iter) = mask_sequence(memory_iter); // mask sequence
         }
       }
     }
