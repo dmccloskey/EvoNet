@@ -40,7 +40,7 @@ static float AddProb(
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_real_distribution<> zero_to_one(0, 1);
-    std::uniform_int_distribution<> zero_to_length(0, sequence_length);
+    std::uniform_int_distribution<> zero_to_length(0, sequence_length-1);
 
   // generate 2 random and unique indexes between 
   // [0, sequence_length) for the mask
@@ -53,9 +53,7 @@ static float AddProb(
   // generate the random sequence
   // and the mask sequence
   random_sequence.clear();
-  random_sequence.reserve(sequence_length);
   mask_sequence.clear();
-  mask_sequence.reserve(sequence_length);
   for (int i=0; i<sequence_length; ++i)
   {
     // the random sequence
