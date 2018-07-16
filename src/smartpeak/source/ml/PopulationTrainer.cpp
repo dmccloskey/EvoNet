@@ -288,8 +288,6 @@ namespace SmartPeak
     {
       for (int i=0; i<n_replicates_per_model; ++i)
       {
-        // models.push_back(replicateModel_(&model, &model_replicator, unique_str, cnt, i));
-
         std::packaged_task<Model // encapsulate in a packaged_task
           (Model*, ModelReplicator*, std::string, int, int
           )> task(PopulationTrainer::replicateModel_);

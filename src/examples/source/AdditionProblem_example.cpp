@@ -258,7 +258,7 @@ int main(int argc, char** argv)
 
   // define the model replicator for growth mode
   ModelTrainerTest model_trainer;
-  model_trainer.setBatchSize(4);
+  model_trainer.setBatchSize(8);
   model_trainer.setMemorySize(sequence_length);
   model_trainer.setNEpochs(100);
 
