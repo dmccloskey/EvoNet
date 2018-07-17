@@ -4,7 +4,7 @@ set_property (DIRECTORY PROPERTY EP_BASE Dependencies)
 
 set (DEPENDENCIES)
 
-set (EIGEN_VERSION 3.3.4)
+set (EIGEN_VERSION master)
 message (STATUS "Adding Eigen ${EIGEN_VERSION} as an external project.")
 
 #if (WIN32)

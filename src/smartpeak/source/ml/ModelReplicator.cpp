@@ -324,12 +324,19 @@ namespace SmartPeak
   template<typename T>
   T ModelReplicator::selectRandomElement(std::vector<T> elements)
   {
-    // select a random node
-    // based on https://www.rosettacode.org/wiki/Pick_random_element
-    std::random_device seed;
-    std::mt19937 engine(seed());
-    std::uniform_int_distribution<int> choose(0, elements.size() - 1);
-    return elements[choose(engine)];
+    try
+    {
+      // select a random node
+      // based on https://www.rosettacode.org/wiki/Pick_random_element
+      std::random_device seed;
+      std::mt19937 engine(seed());
+      std::uniform_int_distribution<int> choose(0, elements.size() - 1);
+      return elements[choose(engine)];
+    }
+    catch (std::exception& e)
+    {
+      printf("Exception in selectRandomElement: %s", e.what());
+    }
   }
 
   //std::string ModelReplicator::selectRandomNode(
@@ -467,6 +474,11 @@ namespace SmartPeak
     std::vector<NodeType> node_exclusion_list = {NodeType::bias, NodeType::input};
     std::vector<NodeType> node_inclusion_list = {NodeType::hidden, NodeType::output};
     std::string random_node_name = selectRandomNode(model, node_exclusion_list, node_inclusion_list);
+    if (random_node_name.empty() || random_node_name == "")
+    {
+      std::cout<<"No nodes were added to the model."<<std::endl;
+      return;
+    }
 
     // copy the node
     Node new_node = model.getNode(random_node_name);
@@ -481,6 +493,11 @@ namespace SmartPeak
       {
         input_link_names.push_back(link.getName());
       }
+    }    
+    if (input_link_names.size() == 0)
+    {
+      std::cout<<"No nodes were added to the model."<<std::endl;
+      return;
     }
     std::string input_link_name = selectRandomElement<std::string>(input_link_names);   
     
