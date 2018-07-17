@@ -233,7 +233,7 @@ int main(int argc, char** argv)
   // Add problem parameters
   const std::size_t input_size = 2;  // random number from the sequence and 0 or 1 from the mask
   const std::size_t output_size = 1;  // result of random number addition
-  const int sequence_length = 2; // test sequence length
+  const int sequence_length = 10; // test sequence length
   const std::size_t training_data_size = 100000; //60000;
   const std::size_t validation_data_size = 10000; //10000;
 
@@ -285,7 +285,7 @@ int main(int argc, char** argv)
 
   // Evolve the population
   std::vector<Model> population; 
-  const int iterations = 100;
+  const int iterations = 1000;
   for (int iter=0; iter<iterations; ++iter)
   {
     printf("Iteration #: %d\n", iter);
