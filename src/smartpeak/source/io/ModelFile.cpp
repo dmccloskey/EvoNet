@@ -16,18 +16,35 @@ namespace SmartPeak
 
 		file << "digraph G {\n"; // first line
 
+		// write node formating to file
+		for (const Node& node : model.getNodes())
+		{
+			if (node.getType() == NodeType::input)
+			{
+				char line_char[512];
+				sprintf(line_char, "\t\"%s\" [shape=circle,style=filled,color=\"#D3D3D3\"];\n",	node.getName().data());
+				std::string line(line_char);
+				file << line;
+			}
+			else if (node.getType() == NodeType::output)
+			{
+				char line_char[512];
+				sprintf(line_char, "\t\"%s\" [shape=circle,style=filled,color=\"#00FFFF\"];\n", node.getName().data());
+				std::string line(line_char);
+				file << line;
+			}
+		}
+
 		// write each source/sink to file
 		for (const Link& link : model.getLinks())
 		{
-			char line_char[512];
-			// [TODO: check if source node is input, fill node color light grey
-			// check if sink node is output, fill node color light blue
-			// check if source is a bias, ignore]
-			// [TODO: How to include a "" around each node name?]
-			sprintf(line_char, "\t%s -> %s;\n", link.getSourceNodeName().data(), link.getSinkNodeName().data());
-			// [TODO: include name of the link]
-			std::string line(line_char);
-			file << line;
+			if (model.getNode(link.getSourceNodeName()).getType() != NodeType::bias)
+			{
+				char line_char[512];
+				sprintf(line_char, "\t\"%s\" -> \"%s\";\n", link.getSourceNodeName().data(), link.getSinkNodeName().data());
+				std::string line(line_char);
+				file << line;
+			}
 		}
 
 		file << "}";  // last line

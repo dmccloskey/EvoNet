@@ -11,14 +11,7 @@
 #include <SmartPeak/io/WeightFile.h>
 #include <SmartPeak/io/LinkFile.h>
 #include <SmartPeak/io/NodeFile.h>
-
-#include <ctime> // time format
-#include <chrono> // current time
-
-#include <set> // std::map sort
-#include <algorithm> // std::map sort
-#include <regex> // tokenizing
-#include <functional> // std::map sort
+#include <SmartPeak/io/ModelFile.h>
 
 using namespace SmartPeak;
 using namespace std;
@@ -153,9 +146,9 @@ public:
       // forward propogate
       // model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2)); 
       if (iter == 0)
-        model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), true, true); 
+        model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), true, true, 2); 
       else      
-        model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), false, true); 
+        model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), false, true, 2); 
 
       // calculate the model error and node output error
       model.calculateError(output.chip(iter, 2), output_nodes);
@@ -164,9 +157,9 @@ public:
       // back propogate
       // model.TBPTT(getMemorySize()-1);
       if (iter == 0)
-        model.TBPTT(getMemorySize()-1, true, true);
+        model.TBPTT(getMemorySize()-1, true, true, 2);
       else
-        model.TBPTT(getMemorySize()-1, false, true);
+        model.TBPTT(getMemorySize()-1, false, true, 2);
 
       // update the weights
       model.updateWeights(getMemorySize());   
@@ -175,6 +168,7 @@ public:
       model.reInitializeNodeStatuses();
       model.initNodes(getBatchSize(), getMemorySize());
     }
+		model.clearCache();
   }
   std::vector<float> validateModel(Model& model,
     const Eigen::Tensor<float, 4>& input,
@@ -228,6 +222,7 @@ public:
       model.reInitializeNodeStatuses();
       model.initNodes(getBatchSize(), getMemorySize());
     }
+		model.clearCache();
     return model_error;
   }
 };
@@ -478,9 +473,9 @@ BOOST_AUTO_TEST_CASE(exampleUsage)
 
   // Evolve the population
   std::vector<Model> population; 
-  const int population_size = 12;
-  const int n_top = 3;
-  const int n_random = 3;
+  const int population_size = 8;
+  const int n_top = 2;
+  const int n_random = 2;
   const int n_replicates_per_model = 3;
   const int iterations = 10;
   for (int iter=0; iter<iterations; ++iter)
@@ -497,7 +492,7 @@ BOOST_AUTO_TEST_CASE(exampleUsage)
         weight_init.reset(new RandWeightInitOp(1.0));
         solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
         Model model = model_replicator.makeBaselineModel(
-          (int)input_nodes.size(), 0, (int)output_nodes.size(),
+          (int)input_nodes.size(), 1, (int)output_nodes.size(),
           NodeActivation::ReLU,
           NodeActivation::ReLU,
           weight_init, solver,
@@ -527,13 +522,13 @@ BOOST_AUTO_TEST_CASE(exampleUsage)
       n_top, n_random, population, model_trainer,
       input_data, output_data, time_steps, input_nodes, output_nodes, 2);
 
-    for (const Model& model: population)
-    {
-      const Eigen::Tensor<float, 0> total_error = model.getError().sum();
-      printf("Model %s (Nodes: %d, Links: %d) error: %.2f\n", model.getName().data(), model.getNodes().size(), model.getLinks().size(), total_error.data()[0]);
-      for (auto link: model.getLinks())
-        printf("Links %s\n", link.getName().data());
-    }
+    //for (const Model& model: population)
+    //{
+    //  const Eigen::Tensor<float, 0> total_error = model.getError().sum();
+    //  printf("Model %s (Nodes: %d, Links: %d) error: %.2f\n", model.getName().data(), model.getNodes().size(), model.getLinks().size(), total_error.data()[0]);
+    //  for (auto link: model.getLinks())
+    //    printf("Links %s\n", link.getName().data());
+    //}
 
     if (iter < iterations - 1)  
     {
@@ -556,6 +551,8 @@ BOOST_AUTO_TEST_CASE(exampleUsage)
   linkfile.storeLinksCsv("populationTrainerLinks.csv", population[0].getLinks());
   NodeFile nodefile;
   nodefile.storeNodesCsv("populationTrainerNodes.csv", population[0].getNodes());
+	ModelFile modelfile;
+	modelfile.storeModelDot("populationTrainerGraph.gv", population[0]);
 
   // [TODO: check that one of the models has a 0.0 error
   //        i.e., correct structure and weights]

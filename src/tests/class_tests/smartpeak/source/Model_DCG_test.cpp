@@ -651,18 +651,23 @@ Model makeModel2a()
   // weight_init.reset(new RandWeightInitOp(1.0)); // No random init for testing
   weight_init.reset(new RandWeightInitOp(1.0));
   solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
+	solver->setGradientThreshold(100.0f);
   w1 = Weight("0", weight_init, solver);
   weight_init.reset(new RandWeightInitOp(1.0));
   solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
+	solver->setGradientThreshold(100.0f);
   w2 = Weight("1", weight_init, solver);
   weight_init.reset(new RandWeightInitOp(1.0));
   solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
+	solver->setGradientThreshold(100.0f);
   w3 = Weight("2", weight_init, solver);
   weight_init.reset(new ConstWeightInitOp(1.0));
   solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
+	solver->setGradientThreshold(100.0f);
   wb1 = Weight("3", weight_init, solver);
   weight_init.reset(new ConstWeightInitOp(1.0));
   solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
+	solver->setGradientThreshold(100.0f);
   wb2 = Weight("4", weight_init, solver);
   weight_init.reset();
   solver.reset();
@@ -719,7 +724,7 @@ BOOST_AUTO_TEST_CASE(modelTrainer2)
   model2a.setLossFunction(ModelLossFunction::MSE);
 
   // iterate until we find the optimal values
-  const int max_iter = 100;
+  const int max_iter = 1000;
   for (int iter = 0; iter < max_iter; ++iter)
   {
     // forward propogate
