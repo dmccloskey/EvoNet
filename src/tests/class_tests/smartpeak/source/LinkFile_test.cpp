@@ -55,24 +55,4 @@ BOOST_AUTO_TEST_CASE(storeAndLoadCsv)
   }
 }
 
-BOOST_AUTO_TEST_CASE(storeDot)
-{
-	LinkFile data;
-
-	std::string filename = "LinkFileTest.gv";
-
-	// create list of dummy links
-	std::vector<Link> links;
-	for (int i = 0; i<3; ++i)
-	{
-		const Link link(
-			"Link_" + std::to_string(i),
-			"Node_" + std::to_string(i),
-			"Node_" + std::to_string(i + 1),
-			"Weight_" + std::to_string(i));
-		links.push_back(link);
-	}
-	data.storeLinksDot(filename, links);
-}
-
 BOOST_AUTO_TEST_SUITE_END()

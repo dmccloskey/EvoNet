@@ -6,6 +6,7 @@ set(sources_list
 	CSVWriter.cpp
 	DataFile.cpp
 	LinkFile.cpp
+	ModelFile.cpp
 	NodeFile.cpp
 	WeightFile.cpp
 )

@@ -7,6 +7,7 @@ set(sources_list_h
 	CSVWriter.h
 	DataFile.h
 	LinkFile.h
+	ModelFile.h
 	NodeFile.h 
 	WeightFile.h
 )

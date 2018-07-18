@@ -6,6 +6,7 @@ set(io_executables_list
   CSVWriter_test
   DataFile_test
   LinkFile_test
+  ModelFile_test
   NodeFile_test
   WeightFile_test
 )
