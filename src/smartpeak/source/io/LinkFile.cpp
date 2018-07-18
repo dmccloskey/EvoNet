@@ -52,4 +52,30 @@ namespace SmartPeak
     }
 	return true;
   }
+
+	bool LinkFile::storeLinksDot(const std::string& filename, const std::vector<Link>& links)
+	{
+		std::fstream file;
+		// Open the file in truncate mode
+		file.open(filename, std::ios::out | std::ios::trunc);
+
+		file << "Model M {\n"; // first line
+
+		// [TODO: define node formatting and colors]
+
+		// write each source/sink to file
+		for (const Link& link : links)
+		{
+			char line_char[512];
+			sprintf(line_char, "\t%s -> %s;\n", link.getSourceNodeName(), link.getSinkNodeName());
+			// [TODO: include name of the link]
+			std::string line(line_char);
+			file << line;
+		}
+
+		file << "}";  // last line
+		file.close();
+
+		return true;
+	}
 }

@@ -33,7 +33,7 @@ public:
     bool loadLinksCsv(const std::string& filename, std::vector<Link>& links);
  
     /**
-      @brief Load links from file
+      @brief save links to file
 
       @param filename The name of the links file
       @param links The links to load data into
@@ -42,6 +42,16 @@ public:
     */ 
     bool storeLinksBinary(const std::string& filename, const std::vector<Link>& links);
     bool storeLinksCsv(const std::string& filename, const std::vector<Link>& links);
+
+		/**
+		@brief save links to file in dot format
+
+		@param filename The name of the links file (.gv extension)
+		@param links The links to save to disk
+
+		@returns Status True on success, False if not
+		*/
+		bool storeLinksDot(const std::string& filename, const std::vector<Link>& links);
   };
 }
 
