@@ -67,8 +67,8 @@ BOOST_AUTO_TEST_CASE(storeDot)
 	{
 		const Link link(
 			"Link_" + std::to_string(i),
-			"Source_" + std::to_string(i),
-			"Sink_" + std::to_string(i + 1),
+			"Node_" + std::to_string(i),
+			"Node_" + std::to_string(i + 1),
 			"Weight_" + std::to_string(i));
 		links.push_back(link);
 	}

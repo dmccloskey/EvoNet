@@ -59,15 +59,16 @@ namespace SmartPeak
 		// Open the file in truncate mode
 		file.open(filename, std::ios::out | std::ios::trunc);
 
-		file << "Model M {\n"; // first line
-
-		// [TODO: define node formatting and colors]
+		file << "digraph G {\n"; // first line
 
 		// write each source/sink to file
 		for (const Link& link : links)
 		{
 			char line_char[512];
-			sprintf(line_char, "\t%s -> %s;\n", link.getSourceNodeName(), link.getSinkNodeName());
+			// [TODO: check if source node is input, fill node color light grey
+			// check if sink node is output, fill node color light blue
+			// check if source is a bias, ignore]
+			sprintf(line_char, "\t%s -> %s;\n", link.getSourceNodeName().data(), link.getSinkNodeName().data());
 			// [TODO: include name of the link]
 			std::string line(line_char);
 			file << line;

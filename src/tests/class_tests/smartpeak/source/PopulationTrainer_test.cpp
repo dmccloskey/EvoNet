@@ -554,6 +554,7 @@ BOOST_AUTO_TEST_CASE(exampleUsage)
   weightfile.storeWeightsCsv("populationTrainerWeights.csv", population[0].getWeights());
   LinkFile linkfile;
   linkfile.storeLinksCsv("populationTrainerLinks.csv", population[0].getLinks());
+	linkfile.storeLinksDot("populationTrainerLinks.gv", population[0].getLinks());
   NodeFile nodefile;
   nodefile.storeNodesCsv("populationTrainerNodes.csv", population[0].getNodes());
 
