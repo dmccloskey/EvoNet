@@ -206,7 +206,7 @@ BOOST_AUTO_TEST_CASE(DAGToy)
       return model1;
     }
 
-  void trainModel(Model& model,
+		void trainModel(Model& model,
       const Eigen::Tensor<float, 4>& input,
       const Eigen::Tensor<float, 3>& output,
       const Eigen::Tensor<float, 3>& time_steps,
@@ -227,6 +227,7 @@ BOOST_AUTO_TEST_CASE(DAGToy)
       printf("Data checks passed\n");
       
       // Initialize the model
+			model.initError(getBatchSize(), getMemorySize());
       model.initNodes(getBatchSize(), getMemorySize());
       model.initWeights();
       printf("Initialized the model\n");
@@ -241,7 +242,7 @@ BOOST_AUTO_TEST_CASE(DAGToy)
         model.forwardPropogate(0);
 
         // calculate the model error and node output error
-        model.calculateError(output.chip(iter, 2), output_nodes);
+        model.calculateError(output.chip(iter, 2), output_nodes, 0);
         std::cout<<"Model error: "<<model.getError().sum()<<std::endl;
 
         // back propogate
@@ -255,17 +256,17 @@ BOOST_AUTO_TEST_CASE(DAGToy)
       }
     }
 
-  std::vector<float> validateModel(Model& model,
-    const Eigen::Tensor<float, 4>& input,
-    const Eigen::Tensor<float, 3>& output,
-    const Eigen::Tensor<float, 3>& time_steps,
-    const std::vector<std::string>& input_nodes,
-    const std::vector<std::string>& output_nodes)
-  {
-    std::vector<float> result;
-    return result;
-  };
-  };
+		std::vector<float> validateModel(Model& model,
+			const Eigen::Tensor<float, 4>& input,
+			const Eigen::Tensor<float, 3>& output,
+			const Eigen::Tensor<float, 3>& time_steps,
+			const std::vector<std::string>& input_nodes,
+			const std::vector<std::string>& output_nodes)
+		{
+			std::vector<float> result;
+			return result;
+		};
+	};
 
   DAGToyModelTrainer trainer;
 
@@ -394,7 +395,7 @@ BOOST_AUTO_TEST_CASE(DCGToy)
         model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2)); 
 
         // calculate the model error and node output error
-        model.calculateError(output.chip(iter, 2), output_nodes);
+        model.calculateError(output.chip(iter, 2), output_nodes, 0);
         std::cout<<"Model error: "<<model.getError().sum()<<std::endl;
 
         // back propogate

@@ -131,6 +131,8 @@ BOOST_AUTO_TEST_CASE(initWeights)
   BOOST_CHECK_EQUAL(model1.getWeight("5").getWeight(), 1.0);
 }
 
+// [TODO: initModelError
+
 BOOST_AUTO_TEST_CASE(mapValuesToNodes)
 {
   // Toy network: 1 hidden layer, fully connected, DAG
@@ -138,6 +140,7 @@ BOOST_AUTO_TEST_CASE(mapValuesToNodes)
 
   const int batch_size = 4;
   const int memory_size = 2;
+	model1.initError(batch_size, memory_size);
   model1.clearCache();
   model1.initNodes(batch_size, memory_size);
 
@@ -204,6 +207,7 @@ BOOST_AUTO_TEST_CASE(mapValuesToNodes2)
 
   const int batch_size = 4;
   const int memory_size = 2;
+	model1.initError(batch_size, memory_size);
   model1.clearCache();
   model1.initNodes(batch_size, memory_size);
 
@@ -268,6 +272,7 @@ BOOST_AUTO_TEST_CASE(mapValuesToNode)
   const int batch_size = 4;
   const int memory_size = 2;
   const int time_step = 0;
+	model1.initError(batch_size, memory_size);
   model1.clearCache();
   model1.initNodes(batch_size, memory_size);
 
@@ -316,6 +321,7 @@ BOOST_AUTO_TEST_CASE(mapValuesToNodes3)
 
   const int batch_size = 4;
   const int memory_size = 2;
+	model1.initError(batch_size, memory_size);
   model1.clearCache();
   model1.initNodes(batch_size, memory_size);
 
@@ -378,6 +384,7 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayer1)
   // initialize nodes
   const int batch_size = 4;
   const int memory_size = 1;
+	model1.initError(batch_size, memory_size);
   model1.clearCache();
   model1.initNodes(batch_size, memory_size);
 
@@ -431,6 +438,7 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayerBiases1)
   // initialize nodes
   const int batch_size = 4;
   const int memory_size = 1;
+	model1.initError(batch_size, memory_size);
   model1.clearCache();
   model1.initNodes(batch_size, memory_size);
 
@@ -501,6 +509,7 @@ BOOST_AUTO_TEST_CASE(forwardPropogateLayerNetInput)
   // initialize nodes
   const int batch_size = 4;
   const int memory_size = 1;
+	model1.initError(batch_size, memory_size);
   model1.clearCache();
   model1.initNodes(batch_size, memory_size);
 
@@ -636,6 +645,7 @@ BOOST_AUTO_TEST_CASE(forwardPropogate)
   // initialize nodes
   const int batch_size = 4;
   const int memory_size = 1;
+	model1.initError(batch_size, memory_size);
   model1.clearCache();
   model1.initNodes(batch_size, memory_size);
 
@@ -683,6 +693,7 @@ BOOST_AUTO_TEST_CASE(calculateError)
   // initialize nodes and loss function
   const int batch_size = 4;
   const int memory_size = 1;
+	model1.initError(batch_size, memory_size);
   model1.initNodes(batch_size, memory_size);
   model1.setLossFunction(ModelLossFunction::MSE);
 
@@ -690,7 +701,7 @@ BOOST_AUTO_TEST_CASE(calculateError)
   std::vector<std::string> output_nodes = {"4", "5"};
   Eigen::Tensor<float, 2> expected(batch_size, (int)output_nodes.size()); 
   expected.setValues({{0, 1}, {0, 1}, {0, 1}, {0, 1}});
-  model1.calculateError(expected, output_nodes);
+  model1.calculateError(expected, output_nodes, 0);
 
   // control test (output values should be 0.0 from initialization)
   Eigen::Tensor<float, 1> error(batch_size); 
@@ -718,7 +729,7 @@ BOOST_AUTO_TEST_CASE(calculateError)
   Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)output_nodes.size()); 
   input.setValues({{{15, 15}}, {{19, 19}}, {{23, 23}}, {{27, 27}}});
   model1.mapValuesToNodes(input, output_nodes, NodeStatus::activated, "output");
-  model1.calculateError(expected, output_nodes);
+  model1.calculateError(expected, output_nodes, 0);
 
   // control test (output values should be 0.0 from initialization)
   error.setValues({52.625, 85.625, 126.625, 175.625});
@@ -749,6 +760,7 @@ BOOST_AUTO_TEST_CASE(getNextUncorrectedLayer1)
   // initialize nodes
   const int batch_size = 4;
   const int memory_size = 1;
+	model1.initError(batch_size, memory_size);
   model1.clearCache();
   model1.initNodes(batch_size, memory_size);
   model1.setLossFunction(ModelLossFunction::MSE);
@@ -771,7 +783,7 @@ BOOST_AUTO_TEST_CASE(getNextUncorrectedLayer1)
   std::vector<std::string> output_nodes = {"4", "5"};
   Eigen::Tensor<float, 2> expected(batch_size, (int)output_nodes.size()); 
   expected.setValues({{0, 1}, {0, 1}, {0, 1}, {0, 1}});
-  model1.calculateError(expected, output_nodes);
+  model1.calculateError(expected, output_nodes, 0);
 
   // // get the next hidden layer
   // std::vector<std::string> links, source_nodes, sink_nodes;
@@ -845,6 +857,7 @@ BOOST_AUTO_TEST_CASE(backPropogateLayerError)
   // initialize nodes
   const int batch_size = 4;
   const int memory_size = 1;
+	model1.initError(batch_size, memory_size);
   model1.clearCache();
   model1.initNodes(batch_size, memory_size);
   model1.setLossFunction(ModelLossFunction::MSE);
@@ -867,7 +880,7 @@ BOOST_AUTO_TEST_CASE(backPropogateLayerError)
   std::vector<std::string> output_nodes = {"4", "5"};
   Eigen::Tensor<float, 2> expected(batch_size, (int)output_nodes.size()); 
   expected.setValues({{0, 1}, {0, 1}, {0, 1}, {0, 1}});
-  model1.calculateError(expected, output_nodes);
+  model1.calculateError(expected, output_nodes, 0);
 
   // // get the next hidden layer
   // std::vector<std::string> links, source_nodes, sink_nodes;
@@ -925,6 +938,7 @@ BOOST_AUTO_TEST_CASE(backPropogate)
   // initialize nodes
   const int batch_size = 4;
   const int memory_size = 1;
+	model1.initError(batch_size, memory_size);
   model1.clearCache();
   model1.initNodes(batch_size, memory_size);
   model1.setLossFunction(ModelLossFunction::MSE);
@@ -947,7 +961,7 @@ BOOST_AUTO_TEST_CASE(backPropogate)
   std::vector<std::string> output_nodes = {"4", "5"};
   Eigen::Tensor<float, 2> expected(batch_size, (int)output_nodes.size()); 
   expected.setValues({{0, 1}, {0, 1}, {0, 1}, {0, 1}});
-  model1.calculateError(expected, output_nodes);
+  model1.calculateError(expected, output_nodes, 0);
 
   // back propogate
   model1.backPropogate(0);
@@ -983,6 +997,7 @@ BOOST_AUTO_TEST_CASE(updateWeights)
   // initialize nodes
   const int batch_size = 4;
   const int memory_size = 1;
+	model1.initError(batch_size, memory_size);
   model1.clearCache();
   model1.initNodes(batch_size, memory_size);
   model1.initWeights();
@@ -1006,7 +1021,7 @@ BOOST_AUTO_TEST_CASE(updateWeights)
   std::vector<std::string> output_nodes = {"4", "5"};
   Eigen::Tensor<float, 2> expected(batch_size, (int)output_nodes.size()); 
   expected.setValues({{0, 1}, {0, 1}, {0, 1}, {0, 1}});
-  model1.calculateError(expected, output_nodes);
+  model1.calculateError(expected, output_nodes, 0);
 
   // back propogate
   model1.backPropogate(0, true, false, 1);
@@ -1035,6 +1050,7 @@ BOOST_AUTO_TEST_CASE(reInitializeNodeStatuses)
   // initialize nodes
   const int batch_size = 4;
   const int memory_size = 1;
+	model1.initError(batch_size, memory_size);
   model1.initNodes(batch_size, memory_size);
   model1.setLossFunction(ModelLossFunction::MSE);
 
@@ -1071,6 +1087,7 @@ BOOST_AUTO_TEST_CASE(modelTrainer1)
   // initialize nodes
   const int batch_size = 4;
   const int memory_size = 1;
+	model1.initError(batch_size, memory_size);
   model1.clearCache();
   model1.initNodes(batch_size, memory_size);
   model1.initWeights();
@@ -1107,7 +1124,7 @@ BOOST_AUTO_TEST_CASE(modelTrainer1)
       model1.forwardPropogate(0, false, true, 1);
 
     // calculate the model error and node output error
-    model1.calculateError(expected, output_nodes);
+    model1.calculateError(expected, output_nodes, 0);
     std::cout<<"Error at iteration: "<<iter<<" is "<<model1.getError().sum()<<std::endl;
 
     // back propogate

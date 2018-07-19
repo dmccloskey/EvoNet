@@ -79,6 +79,8 @@ public:
     printf("Data checks passed\n");
     
     // Initialize the model
+		model.initModelError(getBatchSize(), getMemorySize());
+		model.clearCache();
     model.initNodes(getBatchSize(), getMemorySize());
     printf("Initialized the model\n");
 
@@ -92,7 +94,7 @@ public:
       model.forwardPropogate(0);
 
       // calculate the model error and node output error
-      model.calculateError(output.chip(iter, 2), output_nodes);
+      model.calculateError(output.chip(iter, 2), output_nodes, 0);
       std::cout<<"Model error: "<<model.getError().sum()<<std::endl;
 
       // back propogate
@@ -105,6 +107,7 @@ public:
       model.reInitializeNodeStatuses();
       model.initNodes(getBatchSize(), getMemorySize());
     }
+		model.clearCache();
   }
   std::vector<float> validateModel(Model& model,
     const Eigen::Tensor<float, 4>& input,
@@ -137,6 +140,8 @@ public:
     // printf("Data checks passed\n");
     
     // Initialize the model
+		model.initModelError(getBatchSize(), getMemorySize());
+		model.clearCache();
     model.initNodes(getBatchSize(), getMemorySize());
     // printf("Initialized the model\n");
 
@@ -151,7 +156,7 @@ public:
       model.forwardPropogate(0);
 
       // calculate the model error and node output error
-      model.calculateError(output.chip(iter, 2), output_nodes); 
+      model.calculateError(output.chip(iter, 2), output_nodes, 0); 
       const Eigen::Tensor<float, 0> total_error = model.getError().sum();
       model_error.push_back(total_error(0));  
       // std::cout<<"Model error: "<<total_error(0)<<std::endl;
@@ -160,6 +165,7 @@ public:
       model.reInitializeNodeStatuses();
       model.initNodes(getBatchSize(), getMemorySize());
     }
+		model.clearCache();
     return model_error;
   }
 };

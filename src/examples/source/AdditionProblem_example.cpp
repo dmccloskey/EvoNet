@@ -108,6 +108,7 @@ public:
     
     // Initialize the model
     const int n_threads = 2;
+		model.initError(getBatchSize(), getMemorySize());
     model.clearCache();
     model.initNodes(getBatchSize(), getMemorySize());
     // printf("Initialized the model\n");
@@ -123,7 +124,7 @@ public:
         model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), false, true, n_threads); 
 
       // calculate the model error and node output error
-      model.calculateError(output.chip(iter, 2), output_nodes);
+      model.calculateError(output.chip(iter, 2), output_nodes, 0);
       // std::cout<<"Model "<<model.getName()<<" error: "<<model.getError().sum()<<std::endl;
 
       // // Print some details that are useful for debugging
@@ -196,6 +197,7 @@ public:
     
     // Initialize the model
     const int n_threads = 2;
+		model.initError(getBatchSize(), getMemorySize());
     model.clearCache();
     model.initNodes(getBatchSize(), getMemorySize());
     // printf("Initialized the model\n");
@@ -211,7 +213,7 @@ public:
         model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), false, true, n_threads);
 
       // calculate the model error and node output error
-      model.calculateError(output.chip(iter, 2), output_nodes); 
+      model.calculateError(output.chip(iter, 2), output_nodes, 0); 
       const Eigen::Tensor<float, 0> total_error = model.getError().sum();
       model_error.push_back(total_error(0));  
       // std::cout<<"Model error: "<<total_error(0)<<std::endl;

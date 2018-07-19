@@ -50,8 +50,8 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   Model model;
   model.setId(1);
   model.setName("model1");
-  Eigen::Tensor<float, 1> error(3);
-  error.setValues({0, 0, 0});
+  Eigen::Tensor<float, 2> error(3, 1);
+  error.setConstant(0.0f);
   model.setError(error);
   model.setLossFunction(ModelLossFunction::MSE);
 

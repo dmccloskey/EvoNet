@@ -83,6 +83,7 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayer2)
   // initialize nodes
   const int batch_size = 5;
   const int memory_size = 8;
+	model2.initError(batch_size, memory_size);
   model2.initNodes(batch_size, memory_size);
 
   // create the input and biases
@@ -137,6 +138,7 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayerBiases2)
   // initialize nodes
   const int batch_size = 5;
   const int memory_size = 8;
+	model2.initError(batch_size, memory_size);
   model2.initNodes(batch_size, memory_size);
 
   // create the input and biases
@@ -196,6 +198,7 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayerCycles2)
   // initialize nodes
   const int batch_size = 5;
   const int memory_size = 8;
+	model2.initError(batch_size, memory_size);
   model2.initNodes(batch_size, memory_size);
 
   // create the input and biases
@@ -254,6 +257,7 @@ BOOST_AUTO_TEST_CASE(FPTT)
   // initialize nodes
   const int batch_size = 5;
   const int memory_size = 8;
+	model2.initError(batch_size, memory_size);
   model2.initNodes(batch_size, memory_size);
   model2.initWeights();
 
@@ -318,6 +322,7 @@ BOOST_AUTO_TEST_CASE(getNextUncorrectedLayer2)
   // initialize nodes
   const int batch_size = 5;
   const int memory_size = 8;
+	model2.initError(batch_size, memory_size);
   model2.initNodes(batch_size, memory_size);
   model2.initWeights();
 
@@ -347,7 +352,7 @@ BOOST_AUTO_TEST_CASE(getNextUncorrectedLayer2)
   std::vector<std::string> output_nodes = {"2"};
   Eigen::Tensor<float, 2> expected(batch_size, (int)output_nodes.size()); 
   expected.setValues({{2}, {3}, {4}, {5}, {6}});
-  model2.calculateError(expected, output_nodes);
+  model2.calculateError(expected, output_nodes, 0);
 
   // // get the next hidden layer
   // std::vector<std::string> links, source_nodes, sink_nodes;
@@ -403,6 +408,7 @@ BOOST_AUTO_TEST_CASE(getNextUncorrectedLayerCycles2)
   const int batch_size = 5;
   const int memory_size = 8;
   model2.clearCache();
+	model2.initError(batch_size, memory_size);
   model2.initNodes(batch_size, memory_size);
   model2.initWeights();
 
@@ -432,7 +438,7 @@ BOOST_AUTO_TEST_CASE(getNextUncorrectedLayerCycles2)
   std::vector<std::string> output_nodes = {"2"};
   Eigen::Tensor<float, 2> expected(batch_size, (int)output_nodes.size()); 
   expected.setValues({{2}, {3}, {4}, {5}, {6}});
-  model2.calculateError(expected, output_nodes);
+  model2.calculateError(expected, output_nodes, 0);
 
   // // get the next hidden layer
   // std::vector<std::string> links, source_nodes, sink_nodes;
@@ -510,6 +516,7 @@ BOOST_AUTO_TEST_CASE(BPTT)
   const int batch_size = 5;
   const int memory_size = 8;
   model2.clearCache();
+	model2.initError(batch_size, memory_size);
   model2.initNodes(batch_size, memory_size);
   model2.initWeights();
 
@@ -542,7 +549,7 @@ BOOST_AUTO_TEST_CASE(BPTT)
   // y = m1*(m2*x + b*yprev) where m1 = 2, m2 = 0.5 and b = -2
   Eigen::Tensor<float, 2> expected(batch_size, (int)output_nodes.size()); 
   expected.setValues({{2.5}, {3}, {3.5}, {4}, {4.5}});
-  model2.calculateError(expected, output_nodes);
+  model2.calculateError(expected, output_nodes, 0);
 
   // std::cout<<"Model error:"<<model2.getError()<<std::endl;
 
@@ -581,6 +588,7 @@ BOOST_AUTO_TEST_CASE(updateWeights2)
   // initialize nodes
   const int batch_size = 5;
   const int memory_size = 8;
+	model2.initError(batch_size, memory_size);
   model2.clearCache();
   model2.initNodes(batch_size, memory_size);
   model2.initWeights();
@@ -614,7 +622,7 @@ BOOST_AUTO_TEST_CASE(updateWeights2)
   // y = m1*(m2*x + b*yprev) where m1 = 2, m2 = 0.5 and b = -2
   Eigen::Tensor<float, 2> expected(batch_size, (int)output_nodes.size()); 
   expected.setValues({{2.5}, {3}, {3.5}, {4}, {4.5}});
-  model2.calculateError(expected, output_nodes);
+  model2.calculateError(expected, output_nodes, 0);
 
   // backpropogate through time
   model2.TBPTT(4);
@@ -693,7 +701,8 @@ BOOST_AUTO_TEST_CASE(modelTrainer2)
   // initialize nodes
   const int batch_size = 5;
   const int memory_size = 8;
-  model2.clearCache();
+	model2a.initError(batch_size, memory_size);
+  model2a.clearCache();
   model2a.initNodes(batch_size, memory_size);
   model2a.initWeights();
 
@@ -735,7 +744,7 @@ BOOST_AUTO_TEST_CASE(modelTrainer2)
       model2a.FPTT(memory_size, input, input_ids, dt, false, true, 2); 
 
     // calculate the model error
-    model2a.calculateError(expected, output_nodes);
+    model2a.calculateError(expected, output_nodes, 0);
     std::cout<<"Error at iteration: "<<iter<<" is "<<model2a.getError().sum()<<std::endl;
 
     // backpropogate through time

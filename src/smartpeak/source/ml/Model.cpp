@@ -61,11 +61,11 @@ namespace SmartPeak
     return name_;
   }
 
-  void Model::setError(const Eigen::Tensor<float, 1>& error)
+  void Model::setError(const Eigen::Tensor<float, 2>& error)
   {
     error_ = error;
   }
-  Eigen::Tensor<float, 1> Model::getError() const
+  Eigen::Tensor<float, 2> Model::getError() const
   {
     return error_;
   }
@@ -366,6 +366,13 @@ namespace SmartPeak
       node_map.second->initNode(batch_size, memory_size);
     }
   }
+
+	void Model::initError(const int & batch_size, const int & memory_size)
+	{
+		Eigen::Tensor<float, 2> init_values(batch_size, memory_size);
+		init_values.setConstant(0.0f);
+		setError(init_values);
+	}
 
   void Model::initWeights()
   {
@@ -1332,15 +1339,17 @@ namespace SmartPeak
 
     for (int time_step=0; time_step<max_steps; ++time_step)
     {
+			const int time_step_cur = max_steps - 1 - time_step;
+
       // std::cout<<"Model::FPTT() time_step: "<<time_step<<std::endl;
       if (time_step>0)
       {
         // move to the next memory step
         for (auto& node_map: nodes_)
         {          
-          node_map.second->saveCurrentOutput();
-          node_map.second->saveCurrentDerivative();
-          node_map.second->saveCurrentDt();
+          //node_map.second->saveCurrentOutput();
+          //node_map.second->saveCurrentDerivative();
+          //node_map.second->saveCurrentDt();
           if (std::count(node_names.begin(), node_names.end(), node_map.first) == 0)
           {
             node_map.second->setStatus(NodeStatus::initialized); // reinitialize non-input nodes
@@ -1351,22 +1360,23 @@ namespace SmartPeak
 
       // initialize nodes for the next time-step
       const Eigen::Tensor<float, 1> dt_values = dt.chip(time_step, 1);
-      mapValuesToNodes(dt_values, 0, NodeStatus::initialized, "dt");
+      mapValuesToNodes(dt_values, time_step_cur, NodeStatus::initialized, "dt");
       const Eigen::Tensor<float, 2> active_values = values.chip(time_step, 1);
       // std::cout<<"Model::FPTT() active_values: "<<active_values<<std::endl;
-      mapValuesToNodes(active_values, 0, node_names, NodeStatus::activated, "output");
+      mapValuesToNodes(active_values, time_step_cur, node_names, NodeStatus::activated, "output");
 
       if (cache_FP_steps && time_step == 0)
-        forwardPropogate(0, true, false, n_threads);
+        forwardPropogate(time_step_cur, true, false, n_threads);
       else if (cache_FP_steps && time_step > 0)
-        forwardPropogate(0, false, true, n_threads);
+        forwardPropogate(time_step_cur, false, true, n_threads);
       else
-        forwardPropogate(0, cache_FP_steps, use_cache, n_threads); // always working at the current head of memory
+        forwardPropogate(time_step_cur, cache_FP_steps, use_cache, n_threads); // always working at the current head of memory
     }
   }
   
   void Model::calculateError(
-    const Eigen::Tensor<float, 2>& values, const std::vector<std::string>& node_names)
+    const Eigen::Tensor<float, 2>& values, const std::vector<std::string>& node_names,
+		const int& time_step)
   {
     //TODO: encapsulate into a seperate method
     // infer the batch size from the first source node
@@ -1404,7 +1414,7 @@ namespace SmartPeak
       case ModelLossFunction::EuclideanDistance:
       {
         EuclideanDistanceOp<float> operation;
-        error_ = operation(node_tensor, values);
+        error_.chip(time_step, 1) = operation(node_tensor, values);
         EuclideanDistanceGradOp<float> gradient;
         error_tensor = gradient(node_tensor, values);
         break;
@@ -1412,7 +1422,7 @@ namespace SmartPeak
       case ModelLossFunction::L2Norm:
       {
         L2NormOp<float> operation;
-        error_ = operation(node_tensor, values);
+				error_.chip(time_step, 1) = operation(node_tensor, values);
         L2NormGradOp<float> gradient;
         error_tensor = gradient(node_tensor, values);
         break;
@@ -1420,7 +1430,7 @@ namespace SmartPeak
       case ModelLossFunction::CrossEntropy:
       {
         CrossEntropyOp<float> operation;
-        error_ = operation(node_tensor, values);
+				error_.chip(time_step, 1) = operation(node_tensor, values);
         CrossEntropyGradOp<float> gradient;
         error_tensor = gradient(node_tensor, values);
         break;
@@ -1428,7 +1438,7 @@ namespace SmartPeak
       case ModelLossFunction::NegativeLogLikelihood:
       {
         NegativeLogLikelihoodOp<float> operation;
-        error_ = operation(node_tensor, values);
+				error_.chip(time_step, 1) = operation(node_tensor, values);
         NegativeLogLikelihoodGradOp<float> gradient;
         error_tensor = gradient(node_tensor, values);
         break;
@@ -1436,7 +1446,7 @@ namespace SmartPeak
       case ModelLossFunction::MSE:
       {
         MSEOp<float> operation;
-        error_ = operation(node_tensor, values);
+				error_.chip(time_step, 1) = operation(node_tensor, values);
         MSEGradOp<float> gradient;
         error_tensor = gradient(node_tensor, values);
         break;
@@ -1449,8 +1459,24 @@ namespace SmartPeak
     }
 
     // update the output node errors
-    mapValuesToNodes(error_tensor, 0, node_names, NodeStatus::corrected, "error");
+    mapValuesToNodes(error_tensor, time_step, node_names, NodeStatus::corrected, "error");
   }
+
+	void Model::CETT(const Eigen::Tensor<float, 3>& values, const std::vector<std::string>& node_names, const int & time_steps)
+	{
+		// check time_steps vs memory_size
+		int max_steps = time_steps;
+		if (time_steps > nodes_.begin()->second->getOutput().dimension(1))
+		{
+			std::cout << "Time_steps will be scaled back to the memory_size." << std::endl;
+			max_steps = nodes_.begin()->second->getOutput().dimension(1);
+		}
+
+		for (int i=0; i<time_steps; ++i)
+		{
+			calculateError(values.chip(i, 1), node_names, i);
+		}
+	}
   
   void Model::getNextUncorrectedLayer(
     std::map<std::string, int>& BP_operations_map,

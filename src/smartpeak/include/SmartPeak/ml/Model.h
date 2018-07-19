@@ -108,6 +108,14 @@ public:
     */ 
     void initNodes(const int& batch_size, const int& memory_size);
 
+		/**
+		@brief Initialize model errors to zero.
+
+		@param[in] batch_size Batch size of the output, error, and derivative node vectors
+		@param[in] memory_size Memory size of the output, error, and derivative node vectors
+		*/
+		void initError(const int& batch_size, const int& memory_size);
+
     /**
       @brief Assigns output or error values to the nodes.
         The node statuses are then changed accordingly (i.e.,
@@ -398,7 +406,8 @@ public:
     @param[in] values Expected node output values
     @param[in] node_names Output nodes
     */ 
-    void calculateError(const Eigen::Tensor<float, 2>& values, const std::vector<std::string>& node_names);
+    void calculateError(const Eigen::Tensor<float, 2>& values, const std::vector<std::string>& node_names,
+			const int& time_step);
  
     /**
     @brief Calculates the error of the model through time (CETT)
@@ -407,7 +416,7 @@ public:
     @param[in] values Expected node output values
     @param[in] node_names Output nodes
     */ 
-    void CETT(const Eigen::Tensor<float, 3>& values, const std::vector<std::string>& node_names);
+    void CETT(const Eigen::Tensor<float, 3>& values, const std::vector<std::string>& node_names, const int& time_steps);
  
     /**
     @brief A prelude to a back propogation step.  Returns a vector of links
@@ -563,8 +572,8 @@ public:
     void setName(const std::string& name); ///< name setter
     std::string getName() const; ///< name getter
 
-    void setError(const Eigen::Tensor<float, 1>& error); ///< error setter
-    Eigen::Tensor<float, 1> getError() const; ///< error getter
+    void setError(const Eigen::Tensor<float, 2>& error); ///< error setter
+    Eigen::Tensor<float, 2> getError() const; ///< error getter
 
     void setLossFunction(const SmartPeak::ModelLossFunction& loss_function); ///< loss_function setter
     SmartPeak::ModelLossFunction getLossFunction() const; ///< loss_function getter
@@ -682,8 +691,8 @@ private:
     std::map<std::string, std::shared_ptr<Link>> links_; ///< Model links
     std::map<std::string, std::shared_ptr<Node>> nodes_; ///< Model nodes
     std::map<std::string, std::shared_ptr<Weight>> weights_; ///< Model nodes
-    Eigen::Tensor<float, 1> error_; ///< Model error
-    // Eigen::Tensor<float, 2> error_; ///< Model error
+    //Eigen::Tensor<float, 1> error_; ///< Model error
+    Eigen::Tensor<float, 2> error_; ///< Model error
 
     // TODO: will most likely need to expand to a derived class model (e.g., SolverOp)
     SmartPeak::ModelLossFunction loss_function_; ///< Model loss function
