@@ -867,7 +867,7 @@ namespace SmartPeak
     }
     else
     {
-      std::cout<<"time_step exceeded memory size in forwardPropogateLayerNetInput."<<std::endl;
+      //std::cout<<"time_step exceeded memory size in forwardPropogateLayerNetInput."<<std::endl;
     }
     return sink_tensor;
   }
@@ -1751,7 +1751,7 @@ namespace SmartPeak
     {
       // scale the error by the derivative
       // std::cout<<"Sink tensor sum: "<<sink_tensor<<std::endl;
-      sink_tensor = sink_tensor * operations->result.sink_node->getDerivative().chip(time_step + operations->result.time_step, 1);
+      sink_tensor = sink_tensor * operations->result.sink_node->getDerivative().chip(time_step + operations->result.time_step, 1) + operations->result.sink_node->getError().chip(time_step + operations->result.time_step, 1);
       // std::cout<<"Sink tensor derivative scale: "<<sink_tensor<<std::endl;
 
       // update the node error

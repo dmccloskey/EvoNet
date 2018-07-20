@@ -108,7 +108,7 @@ public:
   };
   void trainModel(Model& model,
     const Eigen::Tensor<float, 4>& input,
-    const Eigen::Tensor<float, 3>& output,
+    const Eigen::Tensor<float, 4>& output,
     const Eigen::Tensor<float, 3>& time_steps,
     const std::vector<std::string>& input_nodes,
     const std::vector<std::string>& output_nodes)
@@ -152,7 +152,7 @@ public:
         model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), false, true, 2); 
 
       // calculate the model error and node output error
-      model.calculateError(output.chip(iter, 2), output_nodes, 0);
+			model.CETT(output.chip(iter,3), output_nodes, getMemorySize());
       // std::cout<<"Model error: "<<model.getError().sum()<<std::endl;
 
       // back propogate
@@ -173,7 +173,7 @@ public:
   }
   std::vector<float> validateModel(Model& model,
     const Eigen::Tensor<float, 4>& input,
-    const Eigen::Tensor<float, 3>& output,
+    const Eigen::Tensor<float, 4>& output,
     const Eigen::Tensor<float, 3>& time_steps,
     const std::vector<std::string>& input_nodes,
     const std::vector<std::string>& output_nodes)
@@ -215,7 +215,7 @@ public:
       model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2)); 
 
       // calculate the model error and node output error
-      model.calculateError(output.chip(iter, 2), output_nodes, 0); 
+			model.CETT(output.chip(iter, 3), output_nodes, getMemorySize());
       const Eigen::Tensor<float, 0> total_error = model.getError().sum();
       model_error.push_back(total_error(0));  
       // std::cout<<"Model error: "<<total_error(0)<<std::endl;
@@ -380,13 +380,19 @@ BOOST_AUTO_TEST_CASE(trainModels)
           input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = input_tmp(batch_iter, memory_iter, nodes_iter);
   // Make the output data
   const std::vector<std::string> output_nodes = {"Output_0"};
-  Eigen::Tensor<float, 3> output_data(model_trainer.getBatchSize(), (int)output_nodes.size(), model_trainer.getNEpochs());
-  Eigen::Tensor<float, 2> output_tmp(model_trainer.getBatchSize(), (int)output_nodes.size()); 
-  output_tmp.setValues({{2.5}, {3}, {3.5}, {4}, {4.5}});
-  for (int batch_iter=0; batch_iter<model_trainer.getBatchSize(); ++batch_iter)
-    for (int nodes_iter=0; nodes_iter<(int)output_nodes.size(); ++nodes_iter)
-      for (int epochs_iter=0; epochs_iter<model_trainer.getNEpochs(); ++epochs_iter)
-        output_data(batch_iter, nodes_iter, epochs_iter) = output_tmp(batch_iter, nodes_iter);
+	Eigen::Tensor<float, 4> output_data(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)output_nodes.size(), model_trainer.getNEpochs());
+	Eigen::Tensor<float, 3> output_tmp(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)output_nodes.size());
+	output_tmp.setValues(
+		{ { { 4 },{ 4 },{ 3 },{ 3 },{ 2 },{ 2 },{ 1 },{ 1 } },
+		{ { 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 },{ 2 },{ 1 } },
+		{ { 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 },{ 2 } },
+		{ { 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 } },
+		{ { 6 },{ 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 } } });
+	for (int batch_iter = 0; batch_iter<model_trainer.getBatchSize(); ++batch_iter)
+		for (int memory_iter = 0; memory_iter<model_trainer.getMemorySize(); ++memory_iter)
+			for (int nodes_iter = 0; nodes_iter<(int)output_nodes.size(); ++nodes_iter)
+				for (int epochs_iter = 0; epochs_iter<model_trainer.getNEpochs(); ++epochs_iter)
+					output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = output_tmp(batch_iter, nodes_iter);
   // Make the simulation time_steps
   Eigen::Tensor<float, 3> time_steps(model_trainer.getBatchSize(), model_trainer.getMemorySize(), model_trainer.getNEpochs());
   Eigen::Tensor<float, 2> time_steps_tmp(model_trainer.getBatchSize(), model_trainer.getMemorySize()); 
@@ -444,13 +450,19 @@ BOOST_AUTO_TEST_CASE(exampleUsage)
           input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = input_tmp(batch_iter, memory_iter, nodes_iter);
   // Make the output data
   const std::vector<std::string> output_nodes = {"Output_0"};
-  Eigen::Tensor<float, 3> output_data(model_trainer.getBatchSize(), (int)output_nodes.size(), model_trainer.getNEpochs());
-  Eigen::Tensor<float, 2> output_tmp(model_trainer.getBatchSize(), (int)output_nodes.size()); 
-  output_tmp.setValues({{2.5}, {3}, {3.5}, {4}, {4.5}});
+  Eigen::Tensor<float, 4> output_data(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)output_nodes.size(), model_trainer.getNEpochs());
+  Eigen::Tensor<float, 3> output_tmp(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)output_nodes.size());
+  output_tmp.setValues(
+		{ { { 4 },{ 4 },{ 3 },{ 3 },{ 2 },{ 2 },{ 1 },{ 1 } },
+		{ { 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 },{ 2 },{ 1 } },
+		{ { 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 },{ 2 } },
+		{ { 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 } },
+		{ { 6 },{ 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 } } });
   for (int batch_iter=0; batch_iter<model_trainer.getBatchSize(); ++batch_iter)
-    for (int nodes_iter=0; nodes_iter<(int)output_nodes.size(); ++nodes_iter)
-      for (int epochs_iter=0; epochs_iter<model_trainer.getNEpochs(); ++epochs_iter)
-        output_data(batch_iter, nodes_iter, epochs_iter) = output_tmp(batch_iter, nodes_iter);
+		for (int memory_iter = 0; memory_iter<model_trainer.getMemorySize(); ++memory_iter)
+			for (int nodes_iter=0; nodes_iter<(int)output_nodes.size(); ++nodes_iter)
+				for (int epochs_iter=0; epochs_iter<model_trainer.getNEpochs(); ++epochs_iter)
+					output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = output_tmp(batch_iter, memory_iter, nodes_iter);
   // Make the simulation time_steps
   Eigen::Tensor<float, 3> time_steps(model_trainer.getBatchSize(), model_trainer.getMemorySize(), model_trainer.getNEpochs());
   Eigen::Tensor<float, 2> time_steps_tmp(model_trainer.getBatchSize(), model_trainer.getMemorySize()); 

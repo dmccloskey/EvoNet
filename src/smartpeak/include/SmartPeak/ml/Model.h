@@ -414,6 +414,8 @@ public:
       with respect to the expected values
 
     @param[in] values Expected node output values
+			(dim0: batch_size, dim1: memory_size, dim2: output nodes)
+			where t=n to t=0
     @param[in] node_names Output nodes
     */ 
     void CETT(const Eigen::Tensor<float, 3>& values, const std::vector<std::string>& node_names, const int& time_steps);

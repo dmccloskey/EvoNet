@@ -195,17 +195,17 @@ public:
       @param[in, out] model The model to train
       @param[in] n_epochs The number of epochs to train
       @param[in] input Input data tensor of dimensions: batch_size, memory_size, input_nodes, n_epochs
-      @param[in] output Expected output data tensor of dimensions: batch_size, output_nodes, n_epochs
+      @param[in] output Expected output data tensor of dimensions: batch_size, memory_size, output_nodes, n_epochs
       @param[in] time_steps Time steps of the forward passes of dimensions: batch_size, memory_size, n_epochs
       @param[in] input_nodes Input node names
       @param[in] output_nodes Output node names
     */ 
-    virtual void trainModel(Model& model,
-      const Eigen::Tensor<float, 4>& input,
-      const Eigen::Tensor<float, 3>& output,
-      const Eigen::Tensor<float, 3>& time_steps,
-      const std::vector<std::string>& input_nodes,
-      const std::vector<std::string>& output_nodes) = 0;
+		virtual void trainModel(Model& model,
+			const Eigen::Tensor<float, 4>& input,
+			const Eigen::Tensor<float, 4>& output,
+			const Eigen::Tensor<float, 3>& time_steps,
+			const std::vector<std::string>& input_nodes,
+			const std::vector<std::string>& output_nodes) = 0;
  
     /**
       @brief Entry point for users to code their script
@@ -216,19 +216,19 @@ public:
       @param[in, out] model The model to train
       @param[in] n_epochs The number of epochs to train
       @param[in] input Input data tensor of dimensions: batch_size, memory_size, input_nodes, n_epochs
-      @param[in] output Expected output data tensor of dimensions: batch_size, output_nodes, n_epochs
+      @param[in] output Expected output data tensor of dimensions: batch_size, memory_size, output_nodes, n_epochs
       @param[in] time_steps Time steps of the forward passes of dimensions: batch_size, memory_size, n_epochs
       @param[in] input_nodes Input node names
       @param[in] output_nodes Output node names
 
       @returns vector of average model error scores
     */ 
-    virtual std::vector<float> validateModel(Model& model,
-      const Eigen::Tensor<float, 4>& input,
-      const Eigen::Tensor<float, 3>& output,
-      const Eigen::Tensor<float, 3>& time_steps,
-      const std::vector<std::string>& input_nodes,
-      const std::vector<std::string>& output_nodes) = 0;
+		virtual std::vector<float> validateModel(Model& model,
+			const Eigen::Tensor<float, 4>& input,
+			const Eigen::Tensor<float, 4>& output,
+			const Eigen::Tensor<float, 3>& time_steps,
+			const std::vector<std::string>& input_nodes,
+			const std::vector<std::string>& output_nodes) = 0;
  
     /**
       @brief Entry point for users to code their script

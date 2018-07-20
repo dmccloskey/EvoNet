@@ -131,7 +131,16 @@ BOOST_AUTO_TEST_CASE(initWeights)
   BOOST_CHECK_EQUAL(model1.getWeight("5").getWeight(), 1.0);
 }
 
-// [TODO: initModelError
+// [TODO: initError
+BOOST_AUTO_TEST_CASE(initError)
+{
+	// Toy network: 1 hidden layer, fully connected, DAG
+	// Model model1 = makeModel1();
+
+	model1.initError(2, 1);
+	BOOST_CHECK_EQUAL(model1.getError()(0, 0), 0.0);
+	BOOST_CHECK_EQUAL(model1.getError()(1, 0), 0.0);
+}
 
 BOOST_AUTO_TEST_CASE(mapValuesToNodes)
 {

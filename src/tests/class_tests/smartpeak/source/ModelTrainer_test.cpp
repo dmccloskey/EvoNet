@@ -34,13 +34,13 @@ class ModelTrainerTest: public ModelTrainer
 {
   void trainModel(Model& model,
     const Eigen::Tensor<float, 4>& input,
-    const Eigen::Tensor<float, 3>& output,
+    const Eigen::Tensor<float, 4>& output,
     const Eigen::Tensor<float, 3>& time_steps,
     const std::vector<std::string>& input_nodes,
     const std::vector<std::string>& output_nodes){};
   std::vector<float> validateModel(Model& model,
     const Eigen::Tensor<float, 4>& input,
-    const Eigen::Tensor<float, 3>& output,
+    const Eigen::Tensor<float, 4>& output,
     const Eigen::Tensor<float, 3>& time_steps,
     const std::vector<std::string>& input_nodes,
     const std::vector<std::string>& output_nodes)
@@ -208,7 +208,7 @@ BOOST_AUTO_TEST_CASE(DAGToy)
 
 		void trainModel(Model& model,
       const Eigen::Tensor<float, 4>& input,
-      const Eigen::Tensor<float, 3>& output,
+      const Eigen::Tensor<float, 4>& output,
       const Eigen::Tensor<float, 3>& time_steps,
       const std::vector<std::string>& input_nodes,
       const std::vector<std::string>& output_nodes)
@@ -242,7 +242,7 @@ BOOST_AUTO_TEST_CASE(DAGToy)
         model.forwardPropogate(0);
 
         // calculate the model error and node output error
-        model.calculateError(output.chip(iter, 2), output_nodes, 0);
+        model.CETT(output.chip(iter, 3), output_nodes, 1);
         std::cout<<"Model error: "<<model.getError().sum()<<std::endl;
 
         // back propogate
@@ -258,7 +258,7 @@ BOOST_AUTO_TEST_CASE(DAGToy)
 
 		std::vector<float> validateModel(Model& model,
 			const Eigen::Tensor<float, 4>& input,
-			const Eigen::Tensor<float, 3>& output,
+			const Eigen::Tensor<float, 4>& output,
 			const Eigen::Tensor<float, 3>& time_steps,
 			const std::vector<std::string>& input_nodes,
 			const std::vector<std::string>& output_nodes)
@@ -288,13 +288,14 @@ BOOST_AUTO_TEST_CASE(DAGToy)
           input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = input_tmp(batch_iter, memory_iter, nodes_iter);
   
   // Make the output data
-  Eigen::Tensor<float, 3> output_data(trainer.getBatchSize(), (int)output_nodes.size(), trainer.getNEpochs());
-  Eigen::Tensor<float, 2> output_tmp(trainer.getBatchSize(), (int)output_nodes.size()); 
+  Eigen::Tensor<float, 4> output_data(trainer.getBatchSize(), trainer.getMemorySize(), (int)output_nodes.size(), trainer.getNEpochs());
+  Eigen::Tensor<float, 2> output_tmp(trainer.getBatchSize(), (int)output_nodes.size());
   output_tmp.setValues({{0, 1}, {0, 1}, {0, 1}, {0, 1}});
   for (int batch_iter=0; batch_iter<trainer.getBatchSize(); ++batch_iter)
-    for (int nodes_iter=0; nodes_iter<(int)output_nodes.size(); ++nodes_iter)
-      for (int epochs_iter=0; epochs_iter<trainer.getNEpochs(); ++epochs_iter)
-        output_data(batch_iter, nodes_iter, epochs_iter) = output_tmp(batch_iter, nodes_iter);
+		for (int memory_iter = 0; memory_iter<trainer.getMemorySize(); ++memory_iter)
+			for (int nodes_iter=0; nodes_iter<(int)output_nodes.size(); ++nodes_iter)
+				for (int epochs_iter=0; epochs_iter<trainer.getNEpochs(); ++epochs_iter)
+					output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = output_tmp(batch_iter, nodes_iter);
 
   // Make the simulation time_steps (Not used)
   Eigen::Tensor<float, 3> time_steps(trainer.getBatchSize(), trainer.getMemorySize(), trainer.getNEpochs());
@@ -364,7 +365,7 @@ BOOST_AUTO_TEST_CASE(DCGToy)
 
     void trainModel(Model& model,
       const Eigen::Tensor<float, 4>& input,
-      const Eigen::Tensor<float, 3>& output,
+      const Eigen::Tensor<float, 4>& output,
       const Eigen::Tensor<float, 3>& time_steps,
       const std::vector<std::string>& input_nodes,
       const std::vector<std::string>& output_nodes)
@@ -395,7 +396,7 @@ BOOST_AUTO_TEST_CASE(DCGToy)
         model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2)); 
 
         // calculate the model error and node output error
-        model.calculateError(output.chip(iter, 2), output_nodes, 0);
+        model.CETT(output.chip(iter, 3), output_nodes, 1);
         std::cout<<"Model error: "<<model.getError().sum()<<std::endl;
 
         // back propogate
@@ -412,7 +413,7 @@ BOOST_AUTO_TEST_CASE(DCGToy)
 
     std::vector<float> validateModel(Model& model,
       const Eigen::Tensor<float, 4>& input,
-      const Eigen::Tensor<float, 3>& output,
+      const Eigen::Tensor<float, 4>& output,
       const Eigen::Tensor<float, 3>& time_steps,
       const std::vector<std::string>& input_nodes,
       const std::vector<std::string>& output_nodes)
@@ -448,13 +449,19 @@ BOOST_AUTO_TEST_CASE(DCGToy)
           input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = input_tmp(batch_iter, memory_iter, nodes_iter);
   
   // Make the output data
-  Eigen::Tensor<float, 3> output_data(trainer.getBatchSize(), (int)output_nodes.size(), trainer.getNEpochs());
-  Eigen::Tensor<float, 2> output_tmp(trainer.getBatchSize(), (int)output_nodes.size()); 
-  output_tmp.setValues({{2.5}, {3}, {3.5}, {4}, {4.5}});
+  Eigen::Tensor<float, 4> output_data(trainer.getBatchSize(), trainer.getMemorySize(), (int)output_nodes.size(), trainer.getNEpochs());
+  Eigen::Tensor<float, 3> output_tmp(trainer.getBatchSize(), trainer.getMemorySize(), (int)output_nodes.size()); 
+  output_tmp.setValues(
+		{ { { 4 },{ 4 },{ 3 },{ 3 },{ 2 },{ 2 },{ 1 },{ 1 } },
+		{ { 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 },{ 2 },{ 1 } },
+		{ { 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 },{ 2 } },
+		{ { 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 } },
+		{ { 6 },{ 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 } } });
   for (int batch_iter=0; batch_iter<trainer.getBatchSize(); ++batch_iter)
-    for (int nodes_iter=0; nodes_iter<(int)output_nodes.size(); ++nodes_iter)
-      for (int epochs_iter=0; epochs_iter<trainer.getNEpochs(); ++epochs_iter)
-        output_data(batch_iter, nodes_iter, epochs_iter) = output_tmp(batch_iter, nodes_iter);
+		for (int memory_iter = 0; memory_iter<trainer.getMemorySize(); ++memory_iter)
+			for (int nodes_iter=0; nodes_iter<(int)output_nodes.size(); ++nodes_iter)
+				for (int epochs_iter=0; epochs_iter<trainer.getNEpochs(); ++epochs_iter)
+					output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = output_tmp(batch_iter, nodes_iter);
 
   // Make the simulation time_steps
   Eigen::Tensor<float, 3> time_steps(trainer.getBatchSize(), trainer.getMemorySize(), trainer.getNEpochs());

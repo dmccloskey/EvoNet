@@ -314,6 +314,76 @@ BOOST_AUTO_TEST_CASE(FPTT)
   }   
 }
 
+BOOST_AUTO_TEST_CASE(CETT)
+{
+	// Toy network: 1 hidden layer, fully connected, DCG
+	// Model model2 = makeModel2();
+
+	// initialize nodes
+	const int batch_size = 5;
+	const int memory_size = 8;
+	model2.initError(batch_size, memory_size);
+	model2.initNodes(batch_size, memory_size);
+	model2.initWeights();
+	model2.setLossFunction(ModelLossFunction::MSE);
+
+	// create the input and biases
+	const std::vector<std::string> input_ids = { "0", "3", "4" };
+	Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size());
+	input.setValues(
+		{ { { 1, 0, 0 },{ 2, 0, 0 },{ 3, 0, 0 },{ 4, 0, 0 },{ 5, 0, 0 },{ 6, 0, 0 },{ 7, 0, 0 },{ 8, 0, 0 } },
+		{ { 2, 0, 0 },{ 3, 0, 0 },{ 4, 0, 0 },{ 5, 0, 0 },{ 6, 0, 0 },{ 7, 0, 0 },{ 8, 0, 0 },{ 9, 0, 0 } },
+		{ { 3, 0, 0 },{ 4, 0, 0 },{ 5, 0, 0 },{ 6, 0, 0 },{ 7, 0, 0 },{ 8, 0, 0 },{ 9, 0, 0 },{ 10, 0, 0 } },
+		{ { 4, 0, 0 },{ 5, 0, 0 },{ 6, 0, 0 },{ 7, 0, 0 },{ 8, 0, 0 },{ 9, 0, 0 },{ 10, 0, 0 },{ 11, 0, 0 } },
+		{ { 5, 0, 0 },{ 6, 0, 0 },{ 7, 0, 0 },{ 8, 0, 0 },{ 9, 0, 0 },{ 10, 0, 0 },{ 11, 0, 0 },{ 12, 0, 0 } } }
+	);
+	Eigen::Tensor<float, 2> dt(batch_size, memory_size);
+	dt.setValues({
+		{ 1, 1, 1, 1, 1, 1, 1, 1 },
+		{ 1, 1, 1, 1, 1, 1, 1, 1 },
+		{ 1, 1, 1, 1, 1, 1, 1, 1 },
+		{ 1, 1, 1, 1, 1, 1, 1, 1 },
+		{ 1, 1, 1, 1, 1, 1, 1, 1 } }
+	);
+
+	model2.FPTT(4, input, input_ids, dt);
+	
+	// calculate the error
+  // expected output (from t=n to t=0)
+	const std::vector<std::string> output_nodes = { "2" };
+	// y = m1*(m2*x + b*yprev) where m1 = 1, m2 = 1 and b = -1
+	Eigen::Tensor<float, 3> expected(batch_size, memory_size, (int)output_nodes.size());
+	expected.setValues(
+		{{ {4}, {4}, {3}, {3}, {2}, {2}, {1}, {1}},
+		{ {5}, {4}, {4}, {3}, {3}, {2}, {2}, {1}},
+		{ {5}, {5}, {4}, {4}, {3}, {3}, {2}, {2}},
+		{ {6}, {5}, {5}, {4}, {4}, {3}, {3}, {2}},
+		{ {6}, {6}, {5}, {5}, {4}, {4}, {3}, {3}}}
+	);
+	model2.CETT(expected, output_nodes, memory_size);
+
+	// test values of errors of the output nodes
+	Eigen::Tensor<float, 3> error(batch_size, memory_size, (int)output_nodes.size());
+	error.setValues(		
+		{{{-1.2f}, {-1.2f}, {-1.4f}, {-1.4f}, {-1.6f}, {-1.6f}, {-1.8f}, {-1.8f}},
+		{{-1.8f}, {-2.0f }, {-2.0f }, {-2.2f}, {-2.2f}, {-2.4f}, {-2.4f}, {-2.6f}},
+		{{-2.6f}, {-2.6f}, {-2.8f}, {-2.8f}, {-3.0f}, {-3.0f}, {-3.2f}, {-3.2f}},
+		{{-3.2f}, {-3.4f}, {-3.4f}, {-3.6f}, {-3.6f}, {-3.8f}, {-3.8f}, {-4.0f }},
+		{{-4.0f}, {-4.0f }, {-4.2f}, {-4.2f}, {-4.4f}, {-4.4f}, {-4.6f}, {-4.6f}}}
+	);
+
+	for (int j = 0; j<batch_size; ++j)
+	{
+		for (int k = 0; k<memory_size; ++k)
+		{
+			for (int i = 0; i<output_nodes.size(); ++i)
+			{
+				BOOST_CHECK_CLOSE(model2.getNode(output_nodes[i]).getError()(j, k), error(j, k, i), 1e-3);
+			}
+		}
+	}
+}
+
 BOOST_AUTO_TEST_CASE(getNextUncorrectedLayer2) 
 {
   // Toy network: 1 hidden layer, fully connected, DCG
@@ -507,7 +577,7 @@ BOOST_AUTO_TEST_CASE(getNextUncorrectedLayerCycles2)
   }
 }
 
-BOOST_AUTO_TEST_CASE(BPTT) 
+BOOST_AUTO_TEST_CASE(BPTT1) 
 {
   // Toy network: 1 hidden layer, fully connected, DCG
   // Model model2 = makeModel2();
@@ -577,7 +647,84 @@ BOOST_AUTO_TEST_CASE(BPTT)
         BOOST_CHECK_CLOSE(model2.getNode(error_nodes[i]).getError()(j, k), error(j, k, i), 1e-3);
       }
     }
-  }  
+  }
+}
+
+BOOST_AUTO_TEST_CASE(BPTT2)
+{
+	// Toy network: 1 hidden layer, fully connected, DCG
+	// Model model2 = makeModel2();
+
+	// initialize nodes
+	const int batch_size = 5;
+	const int memory_size = 8;
+	model2.clearCache();
+	model2.initError(batch_size, memory_size);
+	model2.initNodes(batch_size, memory_size);
+	model2.initWeights();
+
+	// create the input and biases
+	const std::vector<std::string> input_ids = { "0", "3", "4" };
+	Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size());
+	input.setValues(
+		{ { { 1, 0, 0 },{ 2, 0, 0 },{ 3, 0, 0 },{ 4, 0, 0 },{ 5, 0, 0 },{ 6, 0, 0 },{ 7, 0, 0 },{ 8, 0, 0 } },
+		{ { 2, 0, 0 },{ 3, 0, 0 },{ 4, 0, 0 },{ 5, 0, 0 },{ 6, 0, 0 },{ 7, 0, 0 },{ 8, 0, 0 },{ 9, 0, 0 } },
+		{ { 3, 0, 0 },{ 4, 0, 0 },{ 5, 0, 0 },{ 6, 0, 0 },{ 7, 0, 0 },{ 8, 0, 0 },{ 9, 0, 0 },{ 10, 0, 0 } },
+		{ { 4, 0, 0 },{ 5, 0, 0 },{ 6, 0, 0 },{ 7, 0, 0 },{ 8, 0, 0 },{ 9, 0, 0 },{ 10, 0, 0 },{ 11, 0, 0 } },
+		{ { 5, 0, 0 },{ 6, 0, 0 },{ 7, 0, 0 },{ 8, 0, 0 },{ 9, 0, 0 },{ 10, 0, 0 },{ 11, 0, 0 },{ 12, 0, 0 } } }
+	);
+	Eigen::Tensor<float, 2> dt(batch_size, memory_size);
+	dt.setValues({
+		{ 1, 1, 1, 1, 1, 1, 1, 1 },
+		{ 1, 1, 1, 1, 1, 1, 1, 1 },
+		{ 1, 1, 1, 1, 1, 1, 1, 1 },
+		{ 1, 1, 1, 1, 1, 1, 1, 1 },
+		{ 1, 1, 1, 1, 1, 1, 1, 1 } }
+	);
+
+	// forward propogate
+	model2.FPTT(4, input, input_ids, dt);
+
+	// calculate the model error
+	model2.setLossFunction(ModelLossFunction::MSE);
+	// expected output (from t=n to t=0)
+	const std::vector<std::string> output_nodes = { "2" };
+	// y = m1*(m2*x + b*yprev) where m1 = 1, m2 = 1 and b = -1
+	Eigen::Tensor<float, 3> expected(batch_size, memory_size, (int)output_nodes.size());
+	expected.setValues(
+		{ { { 4 },{ 4 },{ 3 },{ 3 },{ 2 },{ 2 },{ 1 },{ 1 } },
+		{ { 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 },{ 2 },{ 1 } },
+		{ { 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 },{ 2 } },
+		{ { 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 } },
+		{ { 6 },{ 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 } } }
+	);
+	model2.CETT(expected, output_nodes, 4);
+
+	// backpropogate through time
+	model2.TBPTT(4);
+
+	// test values of output nodes
+	Eigen::Tensor<float, 3> error(batch_size, memory_size, 5); // dim2: # of model nodes
+	error.setValues({
+		{ { 0.0f, -1.2f, -1.2f, 0.0f, 0.0f },{ 0.0f, -2.4f, -2.4f, 0.0f, 0.0f },{ 0.0f, -3.8f, -3.8f, 0.0f, 0.0f },{ 0.0f, -5.2f, -5.2f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f } },
+		{ { 0.0f, -1.8f, -1.8f, 0.0f, 0.0f },{ 0.0f, -3.8f, -3.8f, 0.0f, 0.0f },{ 0.0f, -5.8f, -5.8f, 0.0f, 0.0f },{ 0.0f, -8.0f, -8.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f } },
+		{ { 0.0f, -2.6f, -2.6f, 0.0f, 0.0f },{ 0.0f, -5.2f, -5.2f, 0.0f, 0.0f },{ 0.0f, -8.0f, -8.0f, 0.0f, 0.0f },{ 0.0f, -10.8f, -10.8f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f } },
+		{ { 0.0f, -3.2f, -3.2f, 0.0f, 0.0f },{ 0.0f, -6.6f, -6.6f, 0.0f, 0.0f },{ 0.0f, -10.0f, -10.0f, 0.0f, 0.0f },{ 0.0f, -13.6f, -13.6f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f } },
+		{ { 0.0f, -4.0f, -4.0f, 0.0f, 0.0f },{ 0.0f, -8.0f, -8.0f, 0.0f, 0.0f },{ 0.0f, -12.2f, -12.2f, 0.0f, 0.0f },{ 0.0f, -16.4f, -16.4f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f } } }
+	);
+	const std::vector<std::string> error_nodes = { "0", "1", "2", "3", "4" };
+
+	for (int j = 0; j<batch_size; ++j)
+	{
+		for (int k = 0; k<memory_size; ++k)
+		{
+			for (int i = 0; i<error_nodes.size(); ++i)
+			{
+				// std::cout<<"i: "<<i<<" j: "<<j<<", k: "<<k<<" calc: "<<model2.getNode(error_nodes[i]).getError()(j, k)<<", expected: "<<error(j, k, i)<<std::endl;
+				BOOST_CHECK_CLOSE(model2.getNode(error_nodes[i]).getError()(j, k), error(j, k, i), 1e-3);
+			}
+		}
+	}
 }
 
 BOOST_AUTO_TEST_CASE(updateWeights2) 
@@ -649,33 +796,33 @@ Model makeModel2a()
   Model model2;
   // Toy network: 1 hidden layer, fully connected, DCG
   i1 = Node("0", NodeType::input, NodeStatus::activated, NodeActivation::Linear);
-  h1 = Node("1", NodeType::hidden, NodeStatus::deactivated, NodeActivation::TanH);
-  o1 = Node("2", NodeType::output, NodeStatus::deactivated, NodeActivation::TanH);
+  h1 = Node("1", NodeType::hidden, NodeStatus::deactivated, NodeActivation::ReLU);
+  o1 = Node("2", NodeType::output, NodeStatus::deactivated, NodeActivation::ReLU);
   b1 = Node("3", NodeType::bias, NodeStatus::activated, NodeActivation::Linear);
   b2 = Node("4", NodeType::bias, NodeStatus::activated, NodeActivation::Linear);
   // weights  
   std::shared_ptr<WeightInitOp> weight_init;
   std::shared_ptr<SolverOp> solver;
   // weight_init.reset(new RandWeightInitOp(1.0)); // No random init for testing
-  weight_init.reset(new RandWeightInitOp(1.0));
+  weight_init.reset(new ConstWeightInitOp(1.0));
   solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
-	solver->setGradientThreshold(100.0f);
+	solver->setGradientThreshold(1000.0f);
   w1 = Weight("0", weight_init, solver);
-  weight_init.reset(new RandWeightInitOp(1.0));
+  weight_init.reset(new ConstWeightInitOp(1.0));
   solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
-	solver->setGradientThreshold(100.0f);
+	solver->setGradientThreshold(1000.0f);
   w2 = Weight("1", weight_init, solver);
-  weight_init.reset(new RandWeightInitOp(1.0));
+  weight_init.reset(new ConstWeightInitOp(1.0));
   solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
-	solver->setGradientThreshold(100.0f);
+	solver->setGradientThreshold(1000.0f);
   w3 = Weight("2", weight_init, solver);
   weight_init.reset(new ConstWeightInitOp(1.0));
   solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
-	solver->setGradientThreshold(100.0f);
+	solver->setGradientThreshold(1000.0f);
   wb1 = Weight("3", weight_init, solver);
   weight_init.reset(new ConstWeightInitOp(1.0));
   solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
-	solver->setGradientThreshold(100.0f);
+	solver->setGradientThreshold(1000.0f);
   wb2 = Weight("4", weight_init, solver);
   weight_init.reset();
   solver.reset();
@@ -706,7 +853,7 @@ BOOST_AUTO_TEST_CASE(modelTrainer2)
   model2a.initNodes(batch_size, memory_size);
   model2a.initWeights();
 
-  // create the input and biases
+  // create the input and biases (from time t=0 to t=n)
   const std::vector<std::string> input_ids = {"0", "3", "4"};
   Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size()); 
   input.setValues(
@@ -725,15 +872,23 @@ BOOST_AUTO_TEST_CASE(modelTrainer2)
     {1, 1, 1, 1, 1, 1, 1, 1}}
   );
 
-  // expected output
+  // expected output (from t=n to t=0)
   const std::vector<std::string> output_nodes = {"2"};
   // y = m1*(m2*x + b*yprev) where m1 = 0.5, m2 = 2.0 and b = -1
-  Eigen::Tensor<float, 2> expected(batch_size, (int)output_nodes.size()); 
-  expected.setValues({{2.5}, {3}, {3.5}, {4}, {4.5}});
+  //Eigen::Tensor<float, 2> expected(batch_size, (int)output_nodes.size()); 
+  //expected.setValues({{2.5}, {3}, {3.5}, {4}, {4.5}});
+	Eigen::Tensor<float, 3> expected(batch_size, memory_size, (int)output_nodes.size());
+	expected.setValues(
+		{{ {4}, {4}, {3}, {3}, {2}, {2}, {1}, {1}},
+		{ {5}, {4}, {4}, {3}, {3}, {2}, {2}, {1}},
+		{ {5}, {5}, {4}, {4}, {3}, {3}, {2}, {2}},
+		{ {6}, {5}, {5}, {4}, {4}, {3}, {3}, {2}},
+		{ {6}, {6}, {5}, {5}, {4}, {4}, {3}, {3}}}
+	);
   model2a.setLossFunction(ModelLossFunction::MSE);
 
   // iterate until we find the optimal values
-  const int max_iter = 1000;
+  const int max_iter = 500;
   for (int iter = 0; iter < max_iter; ++iter)
   {
     // forward propogate
@@ -744,8 +899,16 @@ BOOST_AUTO_TEST_CASE(modelTrainer2)
       model2a.FPTT(memory_size, input, input_ids, dt, false, true, 2); 
 
     // calculate the model error
-    model2a.calculateError(expected, output_nodes, 0);
+    //model2a.calculateError(expected, output_nodes, 0);
+		model2a.CETT(expected, output_nodes, memory_size);
     std::cout<<"Error at iteration: "<<iter<<" is "<<model2a.getError().sum()<<std::endl;
+
+		//std::cout << "Link #0: "<< model2a.getWeight("0").getWeight() << std::endl;
+		//std::cout << "Link #1: "<< model2a.getWeight("1").getWeight() << std::endl;
+		//std::cout << "Link #2: "<< model2a.getWeight("2").getWeight() << std::endl;
+		//std::cout << "Link #3: "<< model2a.getWeight("3").getWeight() << std::endl;
+		//std::cout << "Link #4: "<< model2a.getWeight("4").getWeight() << std::endl;
+		//std::cout << "output: " << model2a.getNode("2").getOutput() << std::endl;
 
     // backpropogate through time
     // model2a.TBPTT(memory_size-1);
@@ -763,13 +926,7 @@ BOOST_AUTO_TEST_CASE(modelTrainer2)
   }
   
   const Eigen::Tensor<float, 0> total_error = model2a.getError().sum();
-  BOOST_CHECK(total_error(0) < 10.0);  
-
-  // std::cout << "Link #0: "<< model2a.getWeight("0").getWeight() << std::endl;
-  // std::cout << "Link #1: "<< model2a.getWeight("1").getWeight() << std::endl;
-  // std::cout << "Link #2: "<< model2a.getWeight("2").getWeight() << std::endl;
-  // std::cout << "Link #3: "<< model2a.getWeight("3").getWeight() << std::endl;
-  // std::cout << "Link #4: "<< model2a.getWeight("4").getWeight() << std::endl;
+  BOOST_CHECK(total_error(0) < 16.7);  
 }
 
 BOOST_AUTO_TEST_SUITE_END()
