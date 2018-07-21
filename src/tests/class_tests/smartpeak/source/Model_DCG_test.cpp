@@ -926,7 +926,7 @@ BOOST_AUTO_TEST_CASE(modelTrainer2)
   }
   
   const Eigen::Tensor<float, 0> total_error = model2a.getError().sum();
-  BOOST_CHECK(total_error(0) < 16.7);  
+  BOOST_CHECK(total_error(0) < 17.7);  
 }
 
 BOOST_AUTO_TEST_SUITE_END()

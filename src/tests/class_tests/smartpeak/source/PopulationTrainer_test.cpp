@@ -417,7 +417,7 @@ BOOST_AUTO_TEST_CASE(trainModels)
     if (i<2)
       BOOST_CHECK_EQUAL(population[i].getError().size(), 0); // error has not been calculated
     else
-      BOOST_CHECK_EQUAL(population[i].getError().size(), model_trainer.getBatchSize()); // error has been calculated
+      BOOST_CHECK_EQUAL(population[i].getError().size(), model_trainer.getBatchSize()*model_trainer.getMemorySize()); // error has been calculated
   }
 }
 
