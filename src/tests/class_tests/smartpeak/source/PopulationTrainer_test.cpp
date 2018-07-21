@@ -503,7 +503,7 @@ BOOST_AUTO_TEST_CASE(exampleUsage)
         std::shared_ptr<WeightInitOp> weight_init;
         std::shared_ptr<SolverOp> solver;
         weight_init.reset(new RandWeightInitOp(1.0));
-        solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
+        solver.reset(new AdamOp(0.1, 0.9, 0.999, 1e-8));
         Model model = model_replicator.makeBaselineModel(
           (int)input_nodes.size(), 1, (int)output_nodes.size(),
           NodeActivation::ReLU,
