@@ -167,8 +167,9 @@ public:
       @returns True on success, False if not
     */ 
     bool checkOutputData(const int& n_epochs,
-      const Eigen::Tensor<float, 3>& output,
+      const Eigen::Tensor<float, 4>& output,
       const int& batch_size,
+			const int& memory_size,
       const std::vector<std::string>& output_nodes);
  
     /**

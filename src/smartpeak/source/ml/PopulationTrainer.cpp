@@ -55,7 +55,7 @@ namespace SmartPeak
     std::vector<Model>& models,
     ModelTrainer& model_trainer,
     const Eigen::Tensor<float, 4>& input,
-    const Eigen::Tensor<float, 3>& output,
+    const Eigen::Tensor<float, 4>& output,
     const Eigen::Tensor<float, 3>& time_steps,
     const std::vector<std::string>& input_nodes,
     const std::vector<std::string>& output_nodes,
@@ -78,7 +78,7 @@ namespace SmartPeak
         (Model*,
           ModelTrainer*,
           Eigen::Tensor<float, 4>,
-          Eigen::Tensor<float, 3>,
+          Eigen::Tensor<float, 4>,
           Eigen::Tensor<float, 3>,
           std::vector<std::string>,
           std::vector<std::string>
@@ -160,7 +160,7 @@ namespace SmartPeak
     std::vector<Model>& models,
     ModelTrainer& model_trainer,
     const Eigen::Tensor<float, 4>& input,
-    const Eigen::Tensor<float, 3>& output,
+    const Eigen::Tensor<float, 4>& output,
     const Eigen::Tensor<float, 3>& time_steps,
     const std::vector<std::string>& input_nodes,
     const std::vector<std::string>& output_nodes)
@@ -197,7 +197,7 @@ namespace SmartPeak
     Model* model,
     ModelTrainer* model_trainer,
     const Eigen::Tensor<float, 4>& input,
-    const Eigen::Tensor<float, 3>& output,
+    const Eigen::Tensor<float, 4>& output,
     const Eigen::Tensor<float, 3>& time_steps,
     const std::vector<std::string>& input_nodes,
     const std::vector<std::string>& output_nodes)
@@ -365,7 +365,7 @@ namespace SmartPeak
     std::vector<Model>& models,
     ModelTrainer& model_trainer,
     const Eigen::Tensor<float, 4>& input,
-    const Eigen::Tensor<float, 3>& output,
+    const Eigen::Tensor<float, 4>& output,
     const Eigen::Tensor<float, 3>& time_steps,
     const std::vector<std::string>& input_nodes,
     const std::vector<std::string>& output_nodes,
@@ -395,7 +395,7 @@ namespace SmartPeak
         (Model*,
           ModelTrainer*,
           Eigen::Tensor<float, 4>,
-          Eigen::Tensor<float, 3>,
+          Eigen::Tensor<float, 4>,
           Eigen::Tensor<float, 3>,
           std::vector<std::string>,
           std::vector<std::string>
@@ -463,7 +463,7 @@ namespace SmartPeak
     Model* model,
     ModelTrainer* model_trainer,
     const Eigen::Tensor<float, 4>& input,
-    const Eigen::Tensor<float, 3>& output,
+    const Eigen::Tensor<float, 4>& output,
     const Eigen::Tensor<float, 3>& time_steps,
     const std::vector<std::string>& input_nodes,
     const std::vector<std::string>& output_nodes)

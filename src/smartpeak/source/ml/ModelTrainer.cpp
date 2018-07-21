@@ -132,28 +132,34 @@ namespace SmartPeak
   }
 
   bool ModelTrainer::checkOutputData(const int& n_epochs,
-    const Eigen::Tensor<float, 3>& output,
+    const Eigen::Tensor<float, 4>& output,
     const int& batch_size,
+		const int& memory_size,
     const std::vector<std::string>& output_nodes)
   {
-    if (output.dimension(0) != batch_size)
-    {
-      printf("batch_size of %d is not compatible with the output dim 0 of %d\n", batch_size, (int)output.dimension(0));
-      return false;
-    }
-    else if (output.dimension(1) != output_nodes.size())
-    {
-      printf("output_nodes size of %d is not compatible with the output dim 1 of %d\n", output_nodes.size(), (int)output.dimension(1));
-      return false;
-    }
-    else if (output.dimension(2) != n_epochs)
-    {
-      printf("n_epochs of %d is not compatible with the output dim 2 of %d\n", n_epochs, (int)output.dimension(2));
-      return false;
-    }
-    else 
-    {
-      return true;
-    }
+		if (output.dimension(0) != batch_size)
+		{
+			printf("batch_size of %d is not compatible with the output dim 0 of %d\n", batch_size, (int)output.dimension(0));
+			return false;
+		}
+		else if (output.dimension(1) != memory_size)
+		{
+			printf("memory_size of %d is not compatible with the output dim 1 of %d\n", memory_size, (int)output.dimension(1));
+			return false;
+		}
+		else if (output.dimension(2) != output_nodes.size())
+		{
+			printf("output_nodes size of %d is not compatible with the output dim 2 of %d\n", output_nodes.size(), (int)output.dimension(2));
+			return false;
+		}
+		else if (output.dimension(3) != n_epochs)
+		{
+			printf("n_epochs of %d is not compatible with the output dim 3 of %d\n", n_epochs, (int)output.dimension(3));
+			return false;
+		}
+		else
+		{
+			return true;
+		}
   }
 }

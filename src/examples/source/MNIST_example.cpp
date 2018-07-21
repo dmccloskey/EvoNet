@@ -42,170 +42,126 @@ public:
     Model model;
     return model;
   };
-  void trainModel(Model& model,
-    const Eigen::Tensor<float, 4>& input,
-    const Eigen::Tensor<float, 3>& output,
-    const Eigen::Tensor<float, 3>& time_steps,
-    const std::vector<std::string>& input_nodes,
-    const std::vector<std::string>& output_nodes)
-  {
-    printf("Training the model\n");
+	void trainModel(Model& model,
+		const Eigen::Tensor<float, 4>& input,
+		const Eigen::Tensor<float, 4>& output,
+		const Eigen::Tensor<float, 3>& time_steps,
+		const std::vector<std::string>& input_nodes,
+		const std::vector<std::string>& output_nodes)
+	{
+		// printf("Training the model\n");
 
-    // Check input and output data
-    if (!checkInputData(getNEpochs(), input, getBatchSize(), getMemorySize(), input_nodes))
-    {
-      return;
-    }
-    if (!checkOutputData(getNEpochs(), output, getBatchSize(), output_nodes))
-    {
-      return;
-    }
-    if (!model.checkNodeNames(input_nodes))
-    {
-      return;
-    }
-    if (!model.checkNodeNames(output_nodes))
-    {
-      return;
-    }
-    printf("Data checks passed\n");
-    
-    // Initialize the model
+		// Check input and output data
+		if (!checkInputData(getNEpochs(), input, getBatchSize(), getMemorySize(), input_nodes))
+		{
+			return;
+		}
+		if (!checkOutputData(getNEpochs(), output, getBatchSize(), getMemorySize(), output_nodes))
+		{
+			return;
+		}
+		if (!model.checkNodeNames(input_nodes))
+		{
+			return;
+		}
+		if (!model.checkNodeNames(output_nodes))
+		{
+			return;
+		}
+		// printf("Data checks passed\n");
+
+		// Initialize the model
 		model.initError(getBatchSize(), getMemorySize());
-    model.clearCache();
-    model.initNodes(getBatchSize(), getMemorySize());
-    printf("Initialized the model\n");
+		model.clearCache();
+		model.initNodes(getBatchSize(), getMemorySize());
+		// printf("Initialized the model\n");
 
-    bool cache_steps, use_cache;
-    for (int iter = 0; iter < getNEpochs(); ++iter) // use n_epochs here
-    {
-      printf("Training epoch: %d\t", iter);
+		for (int iter = 0; iter < getNEpochs(); ++iter) // use n_epochs here
+		{
+			// printf("Training epoch: %d\t", iter);
 
-      if (iter == 0)
-      {
-        cache_steps = true;
-        use_cache = false;
-      }
-      else
-      {
-        cache_steps = false;
-        use_cache = true;
-      }
+			// forward propogate 
+			if (iter == 0)
+				model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), true, true, 2);
+			else
+				model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), false, true, 2);
 
-      // assign the input data
-      model.mapValuesToNodes(input.chip(iter, 3), input_nodes, NodeStatus::activated, "output"); 
+			// calculate the model error and node output error
+			model.CETT(output.chip(iter, 3), output_nodes, getMemorySize());
+			// std::cout<<"Model error: "<<model.getError().sum()<<std::endl;
 
-      // forward propogate
-      model.forwardPropogate(0, cache_steps, use_cache);
+			// back propogate
+			// model.TBPTT(getMemorySize()-1);
+			if (iter == 0)
+				model.TBPTT(getMemorySize() - 1, true, true, 2);
+			else
+				model.TBPTT(getMemorySize() - 1, false, true, 2);
 
-      // calculate the model error and node output error
-      model.calculateError(output.chip(iter, 2), output_nodes, 0);
-      std::cout<<"Model error: "<<model.getError().sum()<<std::endl;
+			// update the weights
+			model.updateWeights(getMemorySize());
 
-      // Print some details that are useful for debugging
-      printf("Node ID:\t");
-      for (const std::string& node : output_nodes)
-        printf("%s\t", node.data());
-      printf("\nExpected:\n");
-      const Eigen::Tensor<float, 2> output_chip = output.chip(iter, 2);
-      for (int j=0; j<getBatchSize(); ++j) 
-      {
-        printf("Batch %d:\t", j);
-        for (int i=0; i<output_nodes.size(); ++i)
-          printf("%0.2f\t", (float)output_chip(j, i));
-        printf("\n");
-      }
-      printf("\nCalculated:\n");
-      for (int j=0; j<getBatchSize(); ++j) 
-      {
-        printf("Batch %d:\t", j);
-        for (int i=0; i<output_nodes.size(); ++i)
-          printf("%0.2f\t", model.getNode(output_nodes[i]).getOutput()(j,0));
-        printf("\n");
-      }
-      printf("\n");      
+			// reinitialize the model
+			model.reInitializeNodeStatuses();
+			model.initNodes(getBatchSize(), getMemorySize());
+		}
+		model.clearCache();
+	}
+	std::vector<float> validateModel(Model& model,
+		const Eigen::Tensor<float, 4>& input,
+		const Eigen::Tensor<float, 4>& output,
+		const Eigen::Tensor<float, 3>& time_steps,
+		const std::vector<std::string>& input_nodes,
+		const std::vector<std::string>& output_nodes)
+	{
+		// printf("Validating model %s\n", model.getName().data());
 
-      // back propogate
-      model.backPropogate(0, cache_steps, use_cache);
+		std::vector<float> model_error;
 
-      // update the weights
-      model.updateWeights(1);   
+		// Check input and output data
+		if (!checkInputData(getNEpochs(), input, getBatchSize(), getMemorySize(), input_nodes))
+		{
+			return model_error;
+		}
+		if (!checkOutputData(getNEpochs(), output, getBatchSize(), getMemorySize(), output_nodes))
+		{
+			return model_error;
+		}
+		if (!model.checkNodeNames(input_nodes))
+		{
+			return model_error;
+		}
+		if (!model.checkNodeNames(output_nodes))
+		{
+			return model_error;
+		}
+		// printf("Data checks passed\n");
 
-      // reinitialize the model
-      model.reInitializeNodeStatuses();
-      model.initNodes(getBatchSize(), getMemorySize());
-    }
-  }
-  std::vector<float> validateModel(Model& model,
-    const Eigen::Tensor<float, 4>& input,
-    const Eigen::Tensor<float, 3>& output,
-    const Eigen::Tensor<float, 3>& time_steps,
-    const std::vector<std::string>& input_nodes,
-    const std::vector<std::string>& output_nodes)
-  {
-    // printf("Validating model %s\n", model.getName().data());
-
-    std::vector<float> model_error;
-
-    // Check input and output data
-    // if (!checkInputData(getNEpochs(), input, getBatchSize(), getMemorySize(), input_nodes))
-    // {
-    //   return model_error;
-    // }
-    // if (!checkOutputData(getNEpochs(), output, getBatchSize(), output_nodes))
-    // {
-    //   return model_error;
-    // }
-    // if (!model.checkNodeNames(input_nodes))
-    // {
-    //   return model_error;
-    // }
-    // if (!model.checkNodeNames(output_nodes))
-    // {
-    //   return model_error;
-    // }
-    // printf("Data checks passed\n");
-    
-    // Initialize the model
+		// Initialize the model
 		model.initError(getBatchSize(), getMemorySize());
-    model.clearCache();
-    model.initNodes(getBatchSize(), getMemorySize());
-    // printf("Initialized the model\n");
+		model.clearCache();
+		model.initNodes(getBatchSize(), getMemorySize());
+		// printf("Initialized the model\n");
 
-    bool cache_steps, use_cache;
-    for (int iter = 0; iter < getNEpochs(); ++iter) // use n_epochs here
-    {
-      // printf("validation epoch: %d\t", iter);
+		for (int iter = 0; iter < getNEpochs(); ++iter) // use n_epochs here
+		{
+			// printf("validation epoch: %d\t", iter);
 
-      if (iter == 0)
-      {
-        cache_steps = true;
-        use_cache = false;
-      }
-      else
-      {
-        cache_steps = false;
-        use_cache = true;
-      }
+			// forward propogate
+			model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2));
 
-      // assign the input data
-      model.mapValuesToNodes(input.chip(iter, 3), input_nodes, NodeStatus::activated, "output"); 
+			// calculate the model error and node output error
+			model.CETT(output.chip(iter, 3), output_nodes, getMemorySize());
+			const Eigen::Tensor<float, 0> total_error = model.getError().sum();
+			model_error.push_back(total_error(0));
+			// std::cout<<"Model error: "<<total_error(0)<<std::endl;
 
-      // forward propogate
-      model.forwardPropogate(0, cache_steps, use_cache);
-
-      // calculate the model error and node output error
-      model.calculateError(output.chip(iter, 2), output_nodes, 0); 
-      const Eigen::Tensor<float, 0> total_error = model.getError().sum();
-      model_error.push_back(total_error(0));  
-      // std::cout<<"Model error: "<<total_error(0)<<std::endl;
-
-      // reinitialize the model
-      model.reInitializeNodeStatuses();
-      model.initNodes(getBatchSize(), getMemorySize());
-    }
-    return model_error;
-  }
+			// reinitialize the model
+			model.reInitializeNodeStatuses();
+			model.initNodes(getBatchSize(), getMemorySize());
+		}
+		model.clearCache();
+		return model_error;
+	}
 };
 
 int ReverseInt(int i)
@@ -366,14 +322,26 @@ int main(int argc, char** argv)
   Eigen::Tensor<int, 2> training_labels_encoded = OneHotEncoder<float>(training_labels, mnist_labels);
   Eigen::Tensor<int, 2> validation_labels_encoded = OneHotEncoder<float>(validation_labels, mnist_labels);
 
-  // Make the simulation time_steps
-  Eigen::Tensor<float, 3> time_steps;
+	// define the model replicator for growth mode
+	ModelTrainerTest model_trainer;
+	model_trainer.setBatchSize(8);
+	model_trainer.setMemorySize(1);
+	model_trainer.setNEpochs(50);
 
-  // define the model replicator for growth mode
-  ModelTrainerTest model_trainer;
-  model_trainer.setBatchSize(8);
-  model_trainer.setMemorySize(1);
-  model_trainer.setNEpochs(50);
+  // Make the simulation time_steps
+	Eigen::Tensor<float, 3> time_steps(model_trainer.getBatchSize(), model_trainer.getMemorySize(), model_trainer.getNEpochs());
+	Eigen::Tensor<float, 2> time_steps_tmp(model_trainer.getBatchSize(), model_trainer.getMemorySize());
+	time_steps_tmp.setValues({
+		{ 1, 1, 1, 1, 1, 1, 1, 1 },
+		{ 1, 1, 1, 1, 1, 1, 1, 1 },
+		{ 1, 1, 1, 1, 1, 1, 1, 1 },
+		{ 1, 1, 1, 1, 1, 1, 1, 1 },
+		{ 1, 1, 1, 1, 1, 1, 1, 1 } }
+	);
+	for (int batch_iter = 0; batch_iter<model_trainer.getBatchSize(); ++batch_iter)
+		for (int memory_iter = 0; memory_iter<model_trainer.getMemorySize(); ++memory_iter)
+			for (int epochs_iter = 0; epochs_iter<model_trainer.getNEpochs(); ++epochs_iter)
+				time_steps(batch_iter, memory_iter, epochs_iter) = time_steps_tmp(batch_iter, memory_iter);
 
   // define the model replicator for growth mode
   ModelReplicator model_replicator;
@@ -465,11 +433,12 @@ int main(int argc, char** argv)
 
     // reformat the output data for training [BUG FREE]
     std::cout<<"Reformatting the output data..."<<std::endl;  
-    Eigen::Tensor<float, 3> output_data(model_trainer.getBatchSize(), (int)output_nodes.size(), model_trainer.getNEpochs());
+    Eigen::Tensor<float, 4> output_data(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)output_nodes.size(), model_trainer.getNEpochs());
     for (int batch_iter=0; batch_iter<model_trainer.getBatchSize(); ++batch_iter)
-      for (int nodes_iter=0; nodes_iter<output_nodes.size(); ++nodes_iter)
-        for (int epochs_iter=0; epochs_iter<model_trainer.getNEpochs(); ++epochs_iter)
-          output_data(batch_iter, nodes_iter, epochs_iter) = (float)training_labels_encoded(sample_indices[epochs_iter*model_trainer.getBatchSize() + batch_iter], nodes_iter);
+			for (int memory_iter = 0; memory_iter<model_trainer.getMemorySize(); ++memory_iter)
+				for (int nodes_iter=0; nodes_iter<output_nodes.size(); ++nodes_iter)
+					for (int epochs_iter=0; epochs_iter<model_trainer.getNEpochs(); ++epochs_iter)
+						output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = (float)training_labels_encoded(sample_indices[epochs_iter*model_trainer.getBatchSize() + batch_iter], nodes_iter);
 
     // model modification scheduling
     if (iter > 100)

@@ -80,7 +80,7 @@ public:
   };
   void trainModel(Model& model,
     const Eigen::Tensor<float, 4>& input,
-    const Eigen::Tensor<float, 3>& output,
+    const Eigen::Tensor<float, 4>& output,
     const Eigen::Tensor<float, 3>& time_steps,
     const std::vector<std::string>& input_nodes,
     const std::vector<std::string>& output_nodes)
@@ -92,7 +92,7 @@ public:
     {
       return;
     }
-    if (!checkOutputData(getNEpochs(), output, getBatchSize(), output_nodes))
+    if (!checkOutputData(getNEpochs(), output, getBatchSize(), getMemorySize(), output_nodes))
     {
       return;
     }
@@ -124,7 +124,7 @@ public:
         model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), false, true, n_threads); 
 
       // calculate the model error and node output error
-      model.calculateError(output.chip(iter, 2), output_nodes, 0);
+      model.CETT(output.chip(iter, 3), output_nodes, 1);  // just the last result
       // std::cout<<"Model "<<model.getName()<<" error: "<<model.getError().sum()<<std::endl;
 
       // // Print some details that are useful for debugging
@@ -167,7 +167,7 @@ public:
   }
   std::vector<float> validateModel(Model& model,
     const Eigen::Tensor<float, 4>& input,
-    const Eigen::Tensor<float, 3>& output,
+    const Eigen::Tensor<float, 4>& output,
     const Eigen::Tensor<float, 3>& time_steps,
     const std::vector<std::string>& input_nodes,
     const std::vector<std::string>& output_nodes)
@@ -181,7 +181,7 @@ public:
     {
       return model_error;
     }
-    if (!checkOutputData(getNEpochs(), output, getBatchSize(), output_nodes))
+    if (!checkOutputData(getNEpochs(), output, getBatchSize(), getMemorySize(), output_nodes))
     {
       return model_error;
     }
@@ -213,7 +213,7 @@ public:
         model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), false, true, n_threads);
 
       // calculate the model error and node output error
-      model.calculateError(output.chip(iter, 2), output_nodes, 0); 
+			model.CETT(output.chip(iter, 3), output_nodes, 1); // just the last predicted result
       const Eigen::Tensor<float, 0> total_error = model.getError().sum();
       model_error.push_back(total_error(0));  
       // std::cout<<"Model error: "<<total_error(0)<<std::endl;
@@ -324,7 +324,7 @@ int main(int argc, char** argv)
     // Generate the input and output data for training [BUG FREE]
     std::cout<<"Generating the input/output data for training..."<<std::endl;  
     Eigen::Tensor<float, 4> input_data_training(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)input_nodes.size(), model_trainer.getNEpochs());
-    Eigen::Tensor<float, 3> output_data_training(model_trainer.getBatchSize(), (int)output_nodes.size(), model_trainer.getNEpochs());  
+    Eigen::Tensor<float, 4> output_data_training(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)output_nodes.size(), model_trainer.getNEpochs());
     for (int batch_iter=0; batch_iter<model_trainer.getBatchSize(); ++batch_iter) {
       for (int epochs_iter=0; epochs_iter<model_trainer.getNEpochs(); ++epochs_iter) {
 
@@ -332,14 +332,17 @@ int main(int argc, char** argv)
         Eigen::Tensor<float, 1> random_sequence(sequence_length);
         Eigen::Tensor<float, 1> mask_sequence(sequence_length);
         float result = AddProb(random_sequence, mask_sequence);
-
-        // assign the output
-        output_data_training(batch_iter, 0, epochs_iter) = result;
         
-        // assign the input sequences
         for (int memory_iter=0; memory_iter<model_trainer.getMemorySize(); ++memory_iter) {
+					// assign the input sequences
           input_data_training(batch_iter, memory_iter, 0, epochs_iter) = random_sequence(memory_iter); // random sequence
           input_data_training(batch_iter, memory_iter, 1, epochs_iter) = mask_sequence(memory_iter); // mask sequence
+
+					// assign the output
+					if (memory_iter == 0)
+						output_data_training(batch_iter, memory_iter, 0, epochs_iter) = result;
+					else
+						output_data_training(batch_iter, memory_iter, 0, epochs_iter) = 0.0;
         }
       }
     }
@@ -388,22 +391,25 @@ int main(int argc, char** argv)
     model_trainer.setNEpochs(20);  // lower the number of epochs for validation
 
     Eigen::Tensor<float, 4> input_data_validation(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)input_nodes.size(), model_trainer.getNEpochs());
-    Eigen::Tensor<float, 3> output_data_validation(model_trainer.getBatchSize(), (int)output_nodes.size(), model_trainer.getNEpochs());  
+    Eigen::Tensor<float, 4> output_data_validation(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)output_nodes.size(), model_trainer.getNEpochs());
     for (int batch_iter=0; batch_iter<model_trainer.getBatchSize(); ++batch_iter) {
       for (int epochs_iter=0; epochs_iter<model_trainer.getNEpochs(); ++epochs_iter) {
 
         // generate a new sequence
         Eigen::Tensor<float, 1> random_sequence(sequence_length);
         Eigen::Tensor<float, 1> mask_sequence(sequence_length);
-        float result = AddProb(random_sequence, mask_sequence);
-
-        // assign the output
-        output_data_validation(batch_iter, 0, epochs_iter) = result;
+        float result = AddProb(random_sequence, mask_sequence);        
         
-        // assign the input sequences
         for (int memory_iter=0; memory_iter<model_trainer.getMemorySize(); ++memory_iter) {
+					// assign the input sequences
           input_data_validation(batch_iter, memory_iter, 0, epochs_iter) = random_sequence(memory_iter); // random sequence
           input_data_validation(batch_iter, memory_iter, 1, epochs_iter) = mask_sequence(memory_iter); // mask sequence
+
+					// assign the output
+					if (memory_iter == 0)
+						output_data_validation(batch_iter, memory_iter, 0, epochs_iter) = result;
+					else
+						output_data_validation(batch_iter, memory_iter, 0, epochs_iter) = 0.0;
         }
       }
     }

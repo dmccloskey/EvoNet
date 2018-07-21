@@ -120,7 +120,7 @@ public:
     {
       return;
     }
-    if (!checkOutputData(getNEpochs(), output, getBatchSize(), output_nodes))
+    if (!checkOutputData(getNEpochs(), output, getBatchSize(), getMemorySize(), output_nodes))
     {
       return;
     }
@@ -144,8 +144,7 @@ public:
     {
       // printf("Training epoch: %d\t", iter);
 
-      // forward propogate
-      // model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2)); 
+      // forward propogate 
       if (iter == 0)
         model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), true, true, 2); 
       else      
@@ -187,7 +186,7 @@ public:
     {
       return model_error;
     }
-    if (!checkOutputData(getNEpochs(), output, getBatchSize(), output_nodes))
+    if (!checkOutputData(getNEpochs(), output, getBatchSize(), getMemorySize(), output_nodes))
     {
       return model_error;
     }
@@ -392,7 +391,7 @@ BOOST_AUTO_TEST_CASE(trainModels)
 		for (int memory_iter = 0; memory_iter<model_trainer.getMemorySize(); ++memory_iter)
 			for (int nodes_iter = 0; nodes_iter<(int)output_nodes.size(); ++nodes_iter)
 				for (int epochs_iter = 0; epochs_iter<model_trainer.getNEpochs(); ++epochs_iter)
-					output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = output_tmp(batch_iter, nodes_iter);
+					output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = output_tmp(batch_iter, memory_iter, nodes_iter);
   // Make the simulation time_steps
   Eigen::Tensor<float, 3> time_steps(model_trainer.getBatchSize(), model_trainer.getMemorySize(), model_trainer.getNEpochs());
   Eigen::Tensor<float, 2> time_steps_tmp(model_trainer.getBatchSize(), model_trainer.getMemorySize()); 
