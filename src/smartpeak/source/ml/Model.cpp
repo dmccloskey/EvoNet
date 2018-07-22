@@ -1760,7 +1760,7 @@ namespace SmartPeak
     }
     else
     {
-      std::cout<<"time_step exceeded memory size in backwardPropogateLayerError."<<std::endl;
+      //std::cout<<"time_step exceeded memory size in backwardPropogateLayerError."<<std::endl;
     }
 
     return true;

@@ -102,34 +102,42 @@ public:
 		std::shared_ptr<WeightInitOp> weight_init;
 		std::shared_ptr<SolverOp> solver;
 		weight_init.reset(new ConstWeightInitOp(1.0));
+		//solver.reset(new SGDOp(0.01, 0.9));
 		solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
 		solver->setGradientThreshold(1000.0f);
 		Weight_i_rand_to_h = Weight("Weight_i_rand_to_h", weight_init, solver);
 		weight_init.reset(new ConstWeightInitOp(100.0));
+		//solver.reset(new SGDOp(0.01, 0.9));
 		solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
 		solver->setGradientThreshold(1000.0f);
 		Weight_i_mask_to_h = Weight("Weight_i_mask_to_h", weight_init, solver);
 		weight_init.reset(new ConstWeightInitOp(1.0));
+		//solver.reset(new SGDOp(0.01, 0.9));
 		solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
 		solver->setGradientThreshold(1000.0f);
 		Weight_h_to_m = Weight("Weight_h_to_m", weight_init, solver);
 		weight_init.reset(new ConstWeightInitOp(1.0));
+		//solver.reset(new SGDOp(0.01, 0.9));
 		solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
 		solver->setGradientThreshold(1000.0f);
 		Weight_m_to_m = Weight("Weight_m_to_m", weight_init, solver);
 		weight_init.reset(new ConstWeightInitOp(1.0));
+		//solver.reset(new SGDOp(0.01, 0.9));
 		solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
 		solver->setGradientThreshold(1000.0f);
 		Weight_m_to_o = Weight("Weight_m_to_o", weight_init, solver);
 		weight_init.reset(new ConstWeightInitOp(-100.0));
+		//solver.reset(new SGDOp(0.01, 0.9));
 		solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
 		solver->setGradientThreshold(1000.0f);
 		Weight_h_bias_to_h = Weight("Weight_h_bias_to_h", weight_init, solver);
 		weight_init.reset(new ConstWeightInitOp(0.0));
+		//solver.reset(new SGDOp(0.01, 0.9));
 		solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
 		solver->setGradientThreshold(1000.0f);
 		Weight_m_bias_to_m = Weight("Weight_m_bias_to_m", weight_init, solver);
 		weight_init.reset(new ConstWeightInitOp(0.0));
+		//solver.reset(new SGDOp(0.01, 0.9));
 		solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
 		solver->setGradientThreshold(1000.0f);
 		Weight_o_bias_to_o = Weight("Weight_o_bias_to_o", weight_init, solver);
@@ -207,8 +215,10 @@ public:
         model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), false, true, n_threads); 
 
       // calculate the model error and node output error
-      model.CETT(output.chip(iter, 3), output_nodes, 1);  // just the last result
-      std::cout<<"Model "<<model.getName()<<" error: "<<model.getError().sum()<<std::endl;
+      //model.CETT(output.chip(iter, 3), output_nodes, getMemorySize());  // just the last result
+			model.CETT(output.chip(iter, 3), output_nodes, 1);  // just the last result
+
+      //std::cout<<"Model "<<model.getName()<<" error: "<<model.getError().sum()<<std::endl;
 			//for (const Node& node: model.getNodes())
 			//	std::cout << node.getName()<< ": " << node.getOutput() << std::endl;
 			//for (const Weight& weight : model.getWeights())
@@ -297,11 +307,9 @@ int main(int argc, char** argv)
   PopulationTrainer population_trainer;
 
   // Add problem parameters
-  const std::size_t input_size = 2;  // random number from the sequence and 0 or 1 from the mask
-  const std::size_t output_size = 1;  // result of random number addition
   const int sequence_length = 10; // test sequence length
 	const int n_epochs = 500;
-	const int n_epochs_validation = 1;
+	const int n_epochs_validation = 10;
 
   const int n_hard_threads = std::thread::hardware_concurrency();
   const int n_threads = n_hard_threads/2; // the number of threads
@@ -345,7 +353,7 @@ int main(int argc, char** argv)
 
   // Evolve the population
   std::vector<Model> population; 
-  const int iterations = 1;
+  const int iterations = 4;
   for (int iter=0; iter<iterations; ++iter)
   {
     printf("Iteration #: %d\n", iter);
@@ -366,9 +374,6 @@ int main(int argc, char** argv)
         std::string model_name(model_name_char);
 				model.setName(model_name);
         population.push_back(model);
-
-				ModelFile modelfile;
-				modelfile.storeModelDot("MemoryCellExampleGraph.gv", model);
       }
     }
   
@@ -383,16 +388,20 @@ int main(int argc, char** argv)
         Eigen::Tensor<float, 1> random_sequence(sequence_length);
         Eigen::Tensor<float, 1> mask_sequence(sequence_length);
         float result = AddProb(random_sequence, mask_sequence);
+
+				float result_cumulative = 0.0;
         
         for (int memory_iter=0; memory_iter<model_trainer.getMemorySize(); ++memory_iter) {
 					// assign the input sequences
           input_data_training(batch_iter, memory_iter, 0, epochs_iter) = random_sequence(memory_iter); // random sequence
           input_data_training(batch_iter, memory_iter, 1, epochs_iter) = mask_sequence(memory_iter); // mask sequence
-					input_data_training(batch_iter, memory_iter, 2, epochs_iter) = 1.0f; // bias
-					input_data_training(batch_iter, memory_iter, 3, epochs_iter) = 1.0f; // bias
-					input_data_training(batch_iter, memory_iter, 4, epochs_iter) = 1.0f; // bias
+					//input_data_training(batch_iter, memory_iter, 2, epochs_iter) = -1.0f; // h bias
+					//input_data_training(batch_iter, memory_iter, 3, epochs_iter) = 0.0f; // m bias
+					//input_data_training(batch_iter, memory_iter, 4, epochs_iter) = 0.0f; // 0 bias
 
 					// assign the output
+					//result_cumulative += random_sequence(memory_iter) * mask_sequence(memory_iter);
+					//output_data_training(batch_iter, memory_iter, 0, epochs_iter) = result_cumulative;
 					if (memory_iter == 0)
 						output_data_training(batch_iter, memory_iter, 0, epochs_iter) = result;
 					else
@@ -401,16 +410,16 @@ int main(int argc, char** argv)
       }
     }
 
-    //// generate a random number of model modifications
-    //if (iter>0)
-    //{
-    //  std::uniform_int_distribution<> zero_to_one(0, 1);
-    //  std::uniform_int_distribution<> zero_to_two(0, 2);
-    //  model_replicator.setNNodeAdditions(zero_to_one(gen));
-    //  model_replicator.setNLinkAdditions(zero_to_two(gen));
-    //  model_replicator.setNNodeDeletions(zero_to_one(gen));
-    //  model_replicator.setNLinkDeletions(zero_to_two(gen));
-    //}
+    // generate a random number of model modifications
+    if (iter>0)
+    {
+      std::uniform_int_distribution<> zero_to_one(0, 1);
+      std::uniform_int_distribution<> zero_to_two(0, 2);
+      model_replicator.setNNodeAdditions(zero_to_one(gen));
+      model_replicator.setNLinkAdditions(zero_to_two(gen));
+      model_replicator.setNNodeDeletions(zero_to_one(gen));
+      model_replicator.setNLinkDeletions(zero_to_two(gen));
+    }
 
     // train the population
     std::cout<<"Training the models..."<<std::endl;
@@ -429,17 +438,21 @@ int main(int argc, char** argv)
         // generate a new sequence
         Eigen::Tensor<float, 1> random_sequence(sequence_length);
         Eigen::Tensor<float, 1> mask_sequence(sequence_length);
-        float result = AddProb(random_sequence, mask_sequence);        
+        float result = AddProb(random_sequence, mask_sequence);    
+
+				float result_cumulative = 0.0;
         
         for (int memory_iter=0; memory_iter<model_trainer.getMemorySize(); ++memory_iter) {
 					// assign the input sequences
           input_data_validation(batch_iter, memory_iter, 0, epochs_iter) = random_sequence(memory_iter); // random sequence
           input_data_validation(batch_iter, memory_iter, 1, epochs_iter) = mask_sequence(memory_iter); // mask sequence
-					input_data_validation(batch_iter, memory_iter, 2, epochs_iter) = 1.0f; // bias
-					input_data_validation(batch_iter, memory_iter, 3, epochs_iter) = 1.0f; // bias
-					input_data_validation(batch_iter, memory_iter, 4, epochs_iter) = 1.0f; // bias
+					//input_data_validation(batch_iter, memory_iter, 2, epochs_iter) = -1.0f; // h bias
+					//input_data_validation(batch_iter, memory_iter, 3, epochs_iter) = 0.0f; // m bias
+					//input_data_validation(batch_iter, memory_iter, 4, epochs_iter) = 0.0f; // o bias
 
 					// assign the output
+					//result_cumulative += random_sequence(memory_iter) * mask_sequence(memory_iter);
+					//output_data_validation(batch_iter, memory_iter, 0, epochs_iter) = result_cumulative;
 					if (memory_iter == 0)
 						output_data_validation(batch_iter, memory_iter, 0, epochs_iter) = result;
 					else
@@ -458,22 +471,51 @@ int main(int argc, char** argv)
 
     if (iter < iterations - 1)  
     {
+			// Population size of 8
+			if (iter == 0)
+			{
+				n_top = 2;
+				n_random = 2;
+				n_replicates_per_model = 7;
+			}
+			else
+			{
+				n_top = 2;
+				n_random = 2;
+				n_replicates_per_model = 3;
+			}
       // replicate and modify models
       std::cout<<"Replicating and modifying the models..."<<std::endl;
       population_trainer.replicateModels(population, model_replicator, n_replicates_per_model, std::to_string(iter), n_threads);
       std::cout<<"Population size of "<<population.size()<<std::endl;
     }
+		else
+		{
+			for (const Model& model: population)
+			{
+				// last validation error
+				const Eigen::Tensor<float, 0> total_error = model.getError().sum();
+				const float model_error = total_error(0);
+
+				// write the model to file
+				char model_name_score_char[512];
+				// [TODO: clean up symbols from names]
+				sprintf(model_name_score_char, "%s_", model.getName().data());
+				//sprintf(model_name_score_char, "%s_%0.6f", model.getName().data(), total_error);  // [TODO: write scores somehow]
+				std::string model_name_score(model_name_score_char);
+
+				WeightFile weightfile;
+				weightfile.storeWeightsCsv(model_name_score + "MemoryCellExampleWeights.csv", model.getWeights());
+				LinkFile linkfile;
+				linkfile.storeLinksCsv(model_name_score + "MemoryCellExampleLinks.csv", model.getLinks());
+				NodeFile nodefile;
+				nodefile.storeNodesCsv(model_name_score + "MemoryCellExampleNodes.csv", model.getNodes());
+				ModelFile modelfile;
+				modelfile.storeModelDot(model_name_score + "MemoryCellExampleGraph.gv", model);
+			}
+		}
   }
 
-  // write the model to file
-  WeightFile weightfile;
-  weightfile.storeWeightsCsv("MemoryCellExampleWeights.csv", population[0].getWeights());
-  LinkFile linkfile;
-  linkfile.storeLinksCsv("MemoryCellExampleLinks.csv", population[0].getLinks());
-  NodeFile nodefile;
-  nodefile.storeNodesCsv("MemoryCellExampleNodes.csv", population[0].getNodes());
-	ModelFile modelfile;
-	modelfile.storeModelDot("MemoryCellExampleGraph.gv", population[0]);
-  
+  system("pause");
   return 0;
 }
