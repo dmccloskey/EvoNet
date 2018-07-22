@@ -407,6 +407,8 @@ BOOST_AUTO_TEST_CASE(addNode)
     add_node_marker_found = true;
   BOOST_CHECK(add_node_marker_found);
 
+	// [TODO: check that the node is of the correct type]
+
   // [TODO: check that the modified link was found]
 
   // [TODO: check that the modified link weight name was not changed]

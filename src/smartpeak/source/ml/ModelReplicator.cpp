@@ -517,6 +517,7 @@ namespace SmartPeak
     sprintf(new_node_name_char, "%s@addNode:", add_node_name.data());
     std::string new_node_name = makeUniqueHash(new_node_name_char, unique_str);
     new_node.setName(new_node_name); 
+		new_node.setType(NodeType::hidden); // [TODO: add test to check for the type!
     model.addNodes({new_node});
 
     // create a new bias

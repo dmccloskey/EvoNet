@@ -1,6 +1,7 @@
 set(ml_executables_list
   MNIST_example
   AdditionProblem_example
+  MemoryCell_example
 )
 
 ### collect example executables

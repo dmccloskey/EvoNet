@@ -428,7 +428,7 @@ BOOST_AUTO_TEST_CASE(exampleUsage)
   ModelTrainerTest model_trainer;
   model_trainer.setBatchSize(5);
   model_trainer.setMemorySize(8);
-  model_trainer.setNEpochs(100);
+  model_trainer.setNEpochs(1000);
 
   // Toy data set used for all tests
   // Make the input data
@@ -486,11 +486,11 @@ BOOST_AUTO_TEST_CASE(exampleUsage)
 
   // Evolve the population
   std::vector<Model> population; 
-  const int population_size = 8;
+  const int population_size = 100;
   const int n_top = 2;
   const int n_random = 2;
   const int n_replicates_per_model = 3;
-  const int iterations = 10;
+  const int iterations = 1;
   for (int iter=0; iter<iterations; ++iter)
   {
     if (iter == 0)
