@@ -152,7 +152,7 @@ public:
 
       // calculate the model error and node output error
 			model.CETT(output.chip(iter,3), output_nodes, getMemorySize());
-      // std::cout<<"Model error: "<<model.getError().sum()<<std::endl;
+      std::cout<<"Model error: "<<model.getError().sum()<<std::endl;
 
       // back propogate
       // model.TBPTT(getMemorySize()-1);
@@ -428,7 +428,7 @@ BOOST_AUTO_TEST_CASE(exampleUsage)
   ModelTrainerTest model_trainer;
   model_trainer.setBatchSize(5);
   model_trainer.setMemorySize(8);
-  model_trainer.setNEpochs(1000);
+  model_trainer.setNEpochs(500);
 
   // Toy data set used for all tests
   // Make the input data
@@ -486,11 +486,11 @@ BOOST_AUTO_TEST_CASE(exampleUsage)
 
   // Evolve the population
   std::vector<Model> population; 
-  const int population_size = 100;
+  const int population_size = 8;
   const int n_top = 2;
   const int n_random = 2;
   const int n_replicates_per_model = 3;
-  const int iterations = 1;
+  const int iterations = 10;
   for (int iter=0; iter<iterations; ++iter)
   {
     if (iter == 0)

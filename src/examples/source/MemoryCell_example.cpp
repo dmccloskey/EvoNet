@@ -81,13 +81,11 @@ public:
 		Link Link_i_rand_to_h, Link_i_mask_to_h,
 			Link_h_to_m,
 			Link_m_to_o, Link_m_to_m,
-			Link_h_to_o,
 			Link_h_bias_to_h,
 			Link_m_bias_to_m, Link_o_bias_to_o;
 		Weight Weight_i_rand_to_h, Weight_i_mask_to_h,
 			Weight_h_to_m,
 			Weight_m_to_o, Weight_m_to_m,
-			Weight_h_to_o,
 			Weight_h_bias_to_h,
 			Weight_m_bias_to_m, Weight_o_bias_to_o;
 		Model model;
@@ -123,10 +121,6 @@ public:
 		solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
 		solver->setGradientThreshold(1000.0f);
 		Weight_m_to_o = Weight("Weight_m_to_o", weight_init, solver);
-		weight_init.reset(new ConstWeightInitOp(1.0));
-		solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
-		solver->setGradientThreshold(1000.0f);
-		Weight_h_to_o = Weight("Weight_h_to_o", weight_init, solver);
 		weight_init.reset(new ConstWeightInitOp(-100.0));
 		solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
 		solver->setGradientThreshold(1000.0f);
@@ -145,26 +139,23 @@ public:
 		Link_i_rand_to_h = Link("Link_i_rand_to_h", "i_rand", "h", "Weight_i_rand_to_h");
 		Link_i_mask_to_h = Link("Link_i_mask_to_h", "i_mask", "h", "Weight_i_mask_to_h");
 		Link_h_to_m = Link("Link_h_to_m", "h", "m", "Weight_h_to_m");
-		Link_m_to_o = Link("Link_m_to_o", "m", "h", "Weight_m_to_o");
+		Link_m_to_o = Link("Link_m_to_o", "m", "o", "Weight_m_to_o");
 		Link_m_to_m = Link("Link_m_to_m", "m", "m", "Weight_m_to_m");
-		Link_h_to_o = Link("Link_h_to_o", "h", "o", "Weight_h_to_o");
 		Link_h_bias_to_h = Link("Link_h_bias_to_h", "h_bias", "h", "Weight_h_bias_to_h");
 		Link_m_bias_to_m = Link("Link_m_bias_to_m", "m_bias", "m", "Weight_m_bias_to_m");
 		Link_o_bias_to_o = Link("Link_o_bias_to_o", "o_bias", "o", "Weight_o_bias_to_o");
 		// add nodes, links, and weights to the model
 		model.setName("MemoryCell");
-		model.addNodes({ i_rand, i_mask, h, h, m, o,
-			h_bias, h_bias, m_bias, o_bias });
+		model.addNodes({ i_rand, i_mask, h, m, o,
+			h_bias, m_bias, o_bias });
 		model.addWeights({ Weight_i_rand_to_h, Weight_i_mask_to_h,
 			Weight_h_to_m,
 			Weight_m_to_o, Weight_m_to_m,
-			Weight_h_to_o,
 			Weight_h_bias_to_h,
 			Weight_m_bias_to_m, Weight_o_bias_to_o });
 		model.addLinks({ Link_i_rand_to_h, Link_i_mask_to_h,
 			Link_h_to_m,
 			Link_m_to_o, Link_m_to_m,
-			Link_h_to_o,
 			Link_h_bias_to_h,
 			Link_m_bias_to_m, Link_o_bias_to_o });
 		model.setLossFunction(ModelLossFunction::MSE);
@@ -218,30 +209,10 @@ public:
       // calculate the model error and node output error
       model.CETT(output.chip(iter, 3), output_nodes, 1);  // just the last result
       std::cout<<"Model "<<model.getName()<<" error: "<<model.getError().sum()<<std::endl;
-			std::cout << "Output: " << model.getNode("o").getOutput() << std::endl;
-
-      // // Print some details that are useful for debugging
-      // printf("Node ID:\t");
-      // for (const std::string& node : output_nodes)
-      //   printf("%s\t", node.data());
-      // printf("\nExpected:\n");
-      // const Eigen::Tensor<float, 2> output_chip = output.chip(iter, 2);
-      // for (int j=0; j<getBatchSize(); ++j) 
-      // {
-      //   printf("Batch %d:\t", j);
-      //   for (int i=0; i<output_nodes.size(); ++i)
-      //     printf("%0.2f\t", (float)output_chip(j, i));
-      //   printf("\n");
-      // }
-      // printf("\nCalculated:\n");
-      // for (int j=0; j<getBatchSize(); ++j) 
-      // {
-      //   printf("Batch %d:\t", j);
-      //   for (int i=0; i<output_nodes.size(); ++i)
-      //     printf("%0.2f\t", model.getNode(output_nodes[i]).getOutput()(j,0));
-      //   printf("\n");
-      // }
-      // printf("\n"); 
+			//for (const Node& node: model.getNodes())
+			//	std::cout << node.getName()<< ": " << node.getOutput() << std::endl;
+			//for (const Weight& weight : model.getWeights())
+			//	std::cout << weight.getName() << ": " << weight.getWeight() << std::endl;
 
       // back propogate
       if (iter == 0)
@@ -329,7 +300,8 @@ int main(int argc, char** argv)
   const std::size_t input_size = 2;  // random number from the sequence and 0 or 1 from the mask
   const std::size_t output_size = 1;  // result of random number addition
   const int sequence_length = 10; // test sequence length
-	const int n_epochs = 2;
+	const int n_epochs = 500;
+	const int n_epochs_validation = 1;
 
   const int n_hard_threads = std::thread::hardware_concurrency();
   const int n_threads = n_hard_threads/2; // the number of threads
@@ -339,7 +311,7 @@ int main(int argc, char** argv)
   std::cout<<threads_cout;
 
   // Make the input nodes 
-	std::vector<std::string> input_nodes = {"i_rand", "i_mask", "h_bias", "h_bias", "m_bias", "o_bias" };
+	std::vector<std::string> input_nodes = {"i_rand", "i_mask", "h_bias", "m_bias", "o_bias" };
 
   // Make the output nodes
 	std::vector<std::string> output_nodes = {"o"};
@@ -373,7 +345,7 @@ int main(int argc, char** argv)
 
   // Evolve the population
   std::vector<Model> population; 
-  const int iterations = 100;
+  const int iterations = 1;
   for (int iter=0; iter<iterations; ++iter)
   {
     printf("Iteration #: %d\n", iter);
@@ -386,12 +358,17 @@ int main(int argc, char** argv)
       {
         // make the model name
         Model model = model_trainer.makeModel();
+				//model.initWeights(); // initialize the weights to defined values according to the initialization method
+														 // comment to initialize all weights at 1
 
         char model_name_char[512];
         sprintf(model_name_char, "%s_%d", model.getName().data(), i);
         std::string model_name(model_name_char);
 				model.setName(model_name);
         population.push_back(model);
+
+				ModelFile modelfile;
+				modelfile.storeModelDot("MemoryCellExampleGraph.gv", model);
       }
     }
   
@@ -442,7 +419,7 @@ int main(int argc, char** argv)
 
     // generate the input/output data for validation
     std::cout<<"Generating the input/output data for validation..."<<std::endl;      
-    model_trainer.setNEpochs(20);  // lower the number of epochs for validation
+    model_trainer.setNEpochs(n_epochs_validation);  // lower the number of epochs for validation
 
     Eigen::Tensor<float, 4> input_data_validation(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)input_nodes.size(), model_trainer.getNEpochs());
     Eigen::Tensor<float, 4> output_data_validation(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)output_nodes.size(), model_trainer.getNEpochs());
