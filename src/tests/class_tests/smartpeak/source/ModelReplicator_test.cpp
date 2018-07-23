@@ -397,7 +397,7 @@ BOOST_AUTO_TEST_CASE(addNode)
 
   // check the correct text after @
   bool add_node_marker_found = false;
-  std::regex re_addNodes("@|:");
+	std::regex re_addNodes("@|#");
   std::vector<std::string> node_text_tokens;
   std::copy(
     std::sregex_token_iterator(node_name.begin(), node_name.end(), re_addNodes, -1),

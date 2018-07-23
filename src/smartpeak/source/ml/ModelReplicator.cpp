@@ -439,7 +439,7 @@ namespace SmartPeak
 
     Weight weight = model.getWeight(model.getLink(random_link).getWeightName()); // copy assignment
     char weight_name_char[128];
-    sprintf(weight_name_char, "Weight_%s_to_%s@addLink:", source_node_name.data(), sink_node_name.data());
+		sprintf(weight_name_char, "Weight_%s_to_%s@addLink#", source_node_name.data(), sink_node_name.data());
     std::string weight_name = makeUniqueHash(weight_name_char, unique_str);
     weight.setName(weight_name);
     weight.initWeight();
@@ -447,7 +447,7 @@ namespace SmartPeak
 
     // create the new link
     char link_name_char[128];
-    sprintf(link_name_char, "Link_%s_to_%s@addLink:", source_node_name.data(), sink_node_name.data());
+		sprintf(link_name_char, "Link_%s_to_%s@addLink#", source_node_name.data(), sink_node_name.data());
     std::string link_name = makeUniqueHash(link_name_char, unique_str);
     Link link(link_name, source_node_name, sink_node_name, weight_name);
     model.addLinks({link});
@@ -514,7 +514,7 @@ namespace SmartPeak
     // printf("New node name: %s\n", add_node_name.data());
 
     char new_node_name_char[128];
-    sprintf(new_node_name_char, "%s@addNode:", add_node_name.data());
+		sprintf(new_node_name_char, "%s@addNode#", add_node_name.data());
     std::string new_node_name = makeUniqueHash(new_node_name_char, unique_str);
     new_node.setName(new_node_name); 
 		new_node.setType(NodeType::hidden); // [TODO: add test to check for the type!
@@ -522,7 +522,7 @@ namespace SmartPeak
 
     // create a new bias
     char new_bias_name_char[128];
-    sprintf(new_bias_name_char, "Bias_%s@addNode:", add_node_name.data());
+    sprintf(new_bias_name_char, "Bias_%s@addNode#", add_node_name.data());
     std::string new_bias_name = makeUniqueHash(new_bias_name_char, unique_str);
     Node new_bias(new_bias_name, NodeType::bias, NodeStatus::activated, NodeActivation::Linear);
     new_bias.initNode(new_node.getOutput().dimension(0), new_node.getOutput().dimension(1));
@@ -530,11 +530,11 @@ namespace SmartPeak
 
     // create a link from the new bias to the new node
     char weight_bias_name_char[512];
-    sprintf(weight_bias_name_char, "%s_to_%s@addNode:", new_bias_name.data(), new_node_name.data());
+    sprintf(weight_bias_name_char, "%s_to_%s@addNode#", new_bias_name.data(), new_node_name.data());
     std::string weight_bias_name = makeUniqueHash(weight_bias_name_char, unique_str);
 
     char link_bias_name_char[512];
-    sprintf(link_bias_name_char, "%s_to_%s@addNode:", new_bias_name.data(), new_node_name.data());
+    sprintf(link_bias_name_char, "%s_to_%s@addNode#", new_bias_name.data(), new_node_name.data());
     std::string link_bias_name = makeUniqueHash(link_bias_name_char, unique_str);
 
     std::shared_ptr<WeightInitOp> bias_weight_init;
@@ -552,7 +552,7 @@ namespace SmartPeak
     Link modified_link = model.getLink(input_link_name);
     modified_link.setSinkNodeName(new_node_name);
     char modified_link_name_char[512];
-    sprintf(modified_link_name_char, "Link_%s_to_%s@addNode:", modified_link.getSourceNodeName().data(), new_node_name.data());
+    sprintf(modified_link_name_char, "Link_%s_to_%s@addNode#", modified_link.getSourceNodeName().data(), new_node_name.data());
     std::string modified_link_name = makeUniqueHash(modified_link_name_char, unique_str);
     modified_link.setName(modified_link_name); 
     model.addLinks({modified_link});
@@ -561,7 +561,7 @@ namespace SmartPeak
     // to its original node
     Weight weight = model.getWeight(model.getLink(input_link_name).getWeightName()); // copy assignment
     char weight_name_char[512];
-    sprintf(weight_name_char, "Weight_%s_to_%s@addNode:", new_node_name.data(), random_node_name.data());
+    sprintf(weight_name_char, "Weight_%s_to_%s@addNode#", new_node_name.data(), random_node_name.data());
     std::string weight_name = makeUniqueHash(weight_name_char, unique_str);
     weight.setName(weight_name);
     weight.initWeight();
@@ -570,7 +570,7 @@ namespace SmartPeak
     // add a new link that connects the new copied node
     // to its original node
     char link_name_char[512];
-    sprintf(link_name_char, "Link_%s_to_%s@addNode:", new_node_name.data(), random_node_name.data());
+    sprintf(link_name_char, "Link_%s_to_%s@addNode#", new_node_name.data(), random_node_name.data());
     std::string link_name = makeUniqueHash(link_name_char, unique_str);
     Link link(link_name, new_node_name, random_node_name, weight_name);
     model.addLinks({link});

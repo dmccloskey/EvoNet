@@ -359,7 +359,7 @@ namespace SmartPeak
       model_name_new = str_tokens[0]; // only retain the last timestamp
 
     char model_name_char[128];
-    sprintf(model_name_char, "%s@replicateModel:%s", model_name_new.data(), unique_str.data());
+		sprintf(model_name_char, "%s@replicateModel#%s", model_name_new.data(), unique_str.data());
     std::string model_name = model_replicator->makeUniqueHash(model_name_char, std::to_string(cnt));
     model_copy.setName(model_name);
 

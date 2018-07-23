@@ -29,6 +29,11 @@ namespace SmartPeak
 	bool PopulationTrainerFile::storeModels(const std::vector<Model>& models,
 		const std::string& filename)
 	{
+		std::fstream file;
+		// Open the file in truncate mode
+
+		file.open(filename + ".sh", std::ios::out | std::ios::trunc);
+
 		for (const Model& model : models)
 		{
 			// write the model to file
@@ -43,8 +48,15 @@ namespace SmartPeak
 			NodeFile nodefile;
 			nodefile.storeNodesCsv(model_name_score + filename + "_Nodes.csv", model.getNodes());
 			ModelFile modelfile;
-			modelfile.storeModelDot(model_name_score + filename + "_Graph.gv", model);
+			std::string dot_filename = model_name_score + filename + "_Graph.gv";
+			modelfile.storeModelDot(dot_filename, model);
+
+			char sh_cmd_char[512];
+			sprintf(sh_cmd_char, "dot -Tpng -o %s.png %s\n", dot_filename.data(), dot_filename.data());
+			std::string sh_cmd(sh_cmd_char);
+			file << sh_cmd;
 		}
+		file.close();
 
 		return true;
 	}
