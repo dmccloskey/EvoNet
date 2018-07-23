@@ -8,6 +8,7 @@ set(sources_list
 	LinkFile.cpp
 	ModelFile.cpp
 	NodeFile.cpp
+	PopulationTrainerFile.cpp
 	WeightFile.cpp
 )
 

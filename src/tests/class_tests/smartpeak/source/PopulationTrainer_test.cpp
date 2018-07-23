@@ -490,7 +490,7 @@ BOOST_AUTO_TEST_CASE(exampleUsage)
   const int n_top = 2;
   const int n_random = 2;
   const int n_replicates_per_model = 3;
-  const int iterations = 10;
+  const int iterations = 5;
   for (int iter=0; iter<iterations; ++iter)
   {
     if (iter == 0)
@@ -531,7 +531,7 @@ BOOST_AUTO_TEST_CASE(exampleUsage)
 
     // select the top N from the population
     std::cout<<"Select the top N models from the population..."<<std::endl;
-    population_trainer.selectModels(
+		std::vector<std::pair<std::string, float>> models_validation_errors = population_trainer.selectModels(
       n_top, n_random, population, model_trainer,
       input_data, output_data, time_steps, input_nodes, output_nodes, 2);
 
@@ -551,7 +551,7 @@ BOOST_AUTO_TEST_CASE(exampleUsage)
     }
     else
     {
-      population_trainer.selectModels(
+			models_validation_errors = population_trainer.selectModels(
         1, 1, population, model_trainer,
         input_data, output_data, time_steps, input_nodes, output_nodes, 2);
     }

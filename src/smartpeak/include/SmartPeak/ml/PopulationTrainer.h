@@ -27,7 +27,7 @@ public:
 
       @param[in, out] models The vector (i.e., population) of models to select from
     */ 
-    void removeDuplicateModels(std::vector<Model>& models);  
+    void removeDuplicateModels(std::vector<Model>& models);
  
     /**
       @brief Select the top N models with the least error
@@ -43,8 +43,10 @@ public:
       @param[in] n_top The number models to select
       @param[in] n_random The number of random models to select from the pool of top models
       @param[in, out] models The vector (i.e., population) of models to select from
+
+			@returns a list of pairs of model_name to average validation error
     */ 
-    void selectModels(
+		std::vector<std::pair<std::string, float>> selectModels(
       const int& n_top,
       const int& n_random,
       std::vector<Model>& models,

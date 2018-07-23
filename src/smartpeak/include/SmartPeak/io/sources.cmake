@@ -8,7 +8,8 @@ set(sources_list_h
 	DataFile.h
 	LinkFile.h
 	ModelFile.h
-	NodeFile.h 
+	NodeFile.h
+	PopulationTrainerFile.h
 	WeightFile.h
 )
 

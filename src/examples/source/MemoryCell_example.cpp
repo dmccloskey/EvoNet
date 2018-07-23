@@ -3,11 +3,8 @@
 #include <SmartPeak/ml/PopulationTrainer.h>
 #include <SmartPeak/ml/ModelTrainer.h>
 #include <SmartPeak/ml/ModelReplicator.h>
-#include <SmartPeak/ml/Model.h> 
-#include <SmartPeak/io/WeightFile.h>
-#include <SmartPeak/io/LinkFile.h>
-#include <SmartPeak/io/NodeFile.h>
-#include <SmartPeak/io/ModelFile.h>
+#include <SmartPeak/ml/Model.h>
+#include <SmartPeak/io/PopulationTrainerFile.h>
 
 #include <random>
 #include <fstream>
@@ -101,42 +98,50 @@ public:
 		// weights  
 		std::shared_ptr<WeightInitOp> weight_init;
 		std::shared_ptr<SolverOp> solver;
-		weight_init.reset(new ConstWeightInitOp(1.0));
+		weight_init.reset(new RandWeightInitOp(2.0));
+		//weight_init.reset(new ConstWeightInitOp(1.0)); //solution
 		//solver.reset(new SGDOp(0.01, 0.9));
 		solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
 		solver->setGradientThreshold(1000.0f);
 		Weight_i_rand_to_h = Weight("Weight_i_rand_to_h", weight_init, solver);
-		weight_init.reset(new ConstWeightInitOp(100.0));
+		weight_init.reset(new RandWeightInitOp(2.0));
+		//weight_init.reset(new ConstWeightInitOp(100.0)); //solution
 		//solver.reset(new SGDOp(0.01, 0.9));
 		solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
 		solver->setGradientThreshold(1000.0f);
 		Weight_i_mask_to_h = Weight("Weight_i_mask_to_h", weight_init, solver);
-		weight_init.reset(new ConstWeightInitOp(1.0));
+		weight_init.reset(new RandWeightInitOp(2.0));
+		//weight_init.reset(new ConstWeightInitOp(1.0)); //solution
 		//solver.reset(new SGDOp(0.01, 0.9));
 		solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
 		solver->setGradientThreshold(1000.0f);
 		Weight_h_to_m = Weight("Weight_h_to_m", weight_init, solver);
-		weight_init.reset(new ConstWeightInitOp(1.0));
+		weight_init.reset(new RandWeightInitOp(2.0));
+		//weight_init.reset(new ConstWeightInitOp(1.0)); //solution
 		//solver.reset(new SGDOp(0.01, 0.9));
 		solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
 		solver->setGradientThreshold(1000.0f);
 		Weight_m_to_m = Weight("Weight_m_to_m", weight_init, solver);
-		weight_init.reset(new ConstWeightInitOp(1.0));
+		weight_init.reset(new RandWeightInitOp(2.0));
+		//weight_init.reset(new ConstWeightInitOp(1.0)); //solution
 		//solver.reset(new SGDOp(0.01, 0.9));
 		solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
 		solver->setGradientThreshold(1000.0f);
 		Weight_m_to_o = Weight("Weight_m_to_o", weight_init, solver);
-		weight_init.reset(new ConstWeightInitOp(-100.0));
+		weight_init.reset(new ConstWeightInitOp(1.0));
+		//weight_init.reset(new ConstWeightInitOp(-100.0)); //solution
 		//solver.reset(new SGDOp(0.01, 0.9));
 		solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
 		solver->setGradientThreshold(1000.0f);
 		Weight_h_bias_to_h = Weight("Weight_h_bias_to_h", weight_init, solver);
-		weight_init.reset(new ConstWeightInitOp(0.0));
+		weight_init.reset(new ConstWeightInitOp(1.0));
+		//weight_init.reset(new ConstWeightInitOp(0.0)); //solution
 		//solver.reset(new SGDOp(0.01, 0.9));
 		solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
 		solver->setGradientThreshold(1000.0f);
 		Weight_m_bias_to_m = Weight("Weight_m_bias_to_m", weight_init, solver);
-		weight_init.reset(new ConstWeightInitOp(0.0));
+		weight_init.reset(new ConstWeightInitOp(1.0));
+		//weight_init.reset(new ConstWeightInitOp(0.0)); //solution
 		//solver.reset(new SGDOp(0.01, 0.9));
 		solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
 		solver->setGradientThreshold(1000.0f);
@@ -353,7 +358,7 @@ int main(int argc, char** argv)
 
   // Evolve the population
   std::vector<Model> population; 
-  const int iterations = 4;
+  const int iterations = 10;
   for (int iter=0; iter<iterations; ++iter)
   {
     printf("Iteration #: %d\n", iter);
@@ -463,7 +468,7 @@ int main(int argc, char** argv)
 
     // select the top N from the population
     std::cout<<"Selecting the models..."<<std::endl;    
-    population_trainer.selectModels(
+		std::vector<std::pair<std::string, float>> models_validation_errors = population_trainer.selectModels(
       n_top, n_random, population, model_trainer,
       input_data_validation, output_data_validation, time_steps, input_nodes, output_nodes, n_threads);
 
@@ -491,28 +496,9 @@ int main(int argc, char** argv)
     }
 		else
 		{
-			for (const Model& model: population)
-			{
-				// last validation error
-				const Eigen::Tensor<float, 0> total_error = model.getError().sum();
-				const float model_error = total_error(0);
-
-				// write the model to file
-				char model_name_score_char[512];
-				// [TODO: clean up symbols from names]
-				sprintf(model_name_score_char, "%s_", model.getName().data());
-				//sprintf(model_name_score_char, "%s_%0.6f", model.getName().data(), total_error);  // [TODO: write scores somehow]
-				std::string model_name_score(model_name_score_char);
-
-				WeightFile weightfile;
-				weightfile.storeWeightsCsv(model_name_score + "MemoryCellExampleWeights.csv", model.getWeights());
-				LinkFile linkfile;
-				linkfile.storeLinksCsv(model_name_score + "MemoryCellExampleLinks.csv", model.getLinks());
-				NodeFile nodefile;
-				nodefile.storeNodesCsv(model_name_score + "MemoryCellExampleNodes.csv", model.getNodes());
-				ModelFile modelfile;
-				modelfile.storeModelDot(model_name_score + "MemoryCellExampleGraph.gv", model);
-			}
+			PopulationTrainerFile population_trainer_file;
+			population_trainer_file.storeModels(population, "MemoryCell");
+			population_trainer_file.storeModelValidations("MemoryCellValidationErrors.csv", models_validation_errors);
 		}
   }
 

@@ -2,6 +2,11 @@
 
 #include <SmartPeak/ml/PopulationTrainer.h>
 
+#include <SmartPeak/io/WeightFile.h>
+#include <SmartPeak/io/LinkFile.h>
+#include <SmartPeak/io/NodeFile.h>
+#include <SmartPeak/io/ModelFile.h>
+
 #include <random> // random number generator
 #include <ctime> // time format
 #include <chrono> // current time
@@ -49,7 +54,7 @@ namespace SmartPeak
     // );
   }
 
-  void PopulationTrainer::selectModels(
+	std::vector<std::pair<std::string, float>> PopulationTrainer::selectModels(
     const int& n_top,
     const int& n_random,
     std::vector<Model>& models,
@@ -153,6 +158,8 @@ namespace SmartPeak
     if (models.size() > n_random)
       removeDuplicateModels(models);
     // printf("PopulationTrainer::selectModels, Models size: %i\n", models.size());
+
+		return models_validation_errors;
   }
 
   // [DEPRECATED]

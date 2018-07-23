@@ -8,6 +8,7 @@ set(io_executables_list
   LinkFile_test
   ModelFile_test
   NodeFile_test
+  PopulationTrainerFile_test
   WeightFile_test
 )
 
