@@ -37,7 +37,7 @@ static float AddProb(
   
   std::random_device rd;
   std::mt19937 gen(rd());
-  std::uniform_real_distribution<> zero_to_one(0, 1);
+  std::uniform_real_distribution<> zero_to_one(0, 10);
   std::uniform_int_distribution<> zero_to_length(0, sequence_length-1);
 
   // generate 2 random and unique indexes between 
@@ -89,9 +89,9 @@ public:
 		// Nodes
 		i_rand = Node("i_rand", NodeType::input, NodeStatus::activated, NodeActivation::Linear);
 		i_mask = Node("i_mask", NodeType::input, NodeStatus::activated, NodeActivation::Linear);
-		h = Node("h", NodeType::hidden, NodeStatus::deactivated, NodeActivation::ReLU);
-		m = Node("m", NodeType::hidden, NodeStatus::deactivated, NodeActivation::ReLU);
-		o = Node("o", NodeType::output, NodeStatus::deactivated, NodeActivation::ReLU);
+		h = Node("h", NodeType::hidden, NodeStatus::deactivated, NodeActivation::TanH);
+		m = Node("m", NodeType::hidden, NodeStatus::deactivated, NodeActivation::TanH);
+		o = Node("o", NodeType::output, NodeStatus::deactivated, NodeActivation::TanH);
 		h_bias = Node("h_bias", NodeType::bias, NodeStatus::activated, NodeActivation::Linear);
 		m_bias = Node("m_bias", NodeType::bias, NodeStatus::activated, NodeActivation::Linear);
 		o_bias = Node("o_bias", NodeType::bias, NodeStatus::activated, NodeActivation::Linear);
@@ -220,20 +220,24 @@ public:
         model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), false, true, n_threads); 
 
       // calculate the model error and node output error
-      //model.CETT(output.chip(iter, 3), output_nodes, getMemorySize());  // just the last result
-			model.CETT(output.chip(iter, 3), output_nodes, 1);  // just the last result
+      model.CETT(output.chip(iter, 3), output_nodes, getMemorySize());  // just the last result
+			//model.CETT(output.chip(iter, 3), output_nodes, 1);  // just the last result
 
       //std::cout<<"Model "<<model.getName()<<" error: "<<model.getError().sum()<<std::endl;
-			//for (const Node& node: model.getNodes())
-			//	std::cout << node.getName()<< ": " << node.getOutput() << std::endl;
-			//for (const Weight& weight : model.getWeights())
-			//	std::cout << weight.getName() << ": " << weight.getWeight() << std::endl;
 
       // back propogate
       if (iter == 0)
         model.TBPTT(getMemorySize()-1, true, true, n_threads);
       else
         model.TBPTT(getMemorySize()-1, false, true, n_threads);
+
+			//for (const Node& node : model.getNodes())
+			//{
+			//	std::cout << node.getName() << " Output: " << node.getOutput() << std::endl;
+			//	std::cout << node.getName() << " Error: " << node.getError() << std::endl;
+			//}
+			//for (const Weight& weight : model.getWeights())
+			//	std::cout << weight.getName() << " Weight: " << weight.getWeight() << std::endl;
 
       // update the weights
       model.updateWeights(getMemorySize());   
@@ -371,8 +375,7 @@ int main(int argc, char** argv)
       {
         // make the model name
         Model model = model_trainer.makeModel();
-				//model.initWeights(); // initialize the weights to defined values according to the initialization method
-														 // comment to initialize all weights at 1
+				model.initWeights(); // initialize the weights
 
         char model_name_char[512];
         sprintf(model_name_char, "%s_%d", model.getName().data(), i);
@@ -400,17 +403,17 @@ int main(int argc, char** argv)
 					// assign the input sequences
           input_data_training(batch_iter, memory_iter, 0, epochs_iter) = random_sequence(memory_iter); // random sequence
           input_data_training(batch_iter, memory_iter, 1, epochs_iter) = mask_sequence(memory_iter); // mask sequence
-					//input_data_training(batch_iter, memory_iter, 2, epochs_iter) = -1.0f; // h bias
-					//input_data_training(batch_iter, memory_iter, 3, epochs_iter) = 0.0f; // m bias
-					//input_data_training(batch_iter, memory_iter, 4, epochs_iter) = 0.0f; // 0 bias
+					input_data_training(batch_iter, memory_iter, 2, epochs_iter) = 0.0f; // h bias
+					input_data_training(batch_iter, memory_iter, 3, epochs_iter) = 0.0f; // m bias
+					input_data_training(batch_iter, memory_iter, 4, epochs_iter) = 0.0f; // 0 bias
 
 					// assign the output
-					//result_cumulative += random_sequence(memory_iter) * mask_sequence(memory_iter);
-					//output_data_training(batch_iter, memory_iter, 0, epochs_iter) = result_cumulative;
-					if (memory_iter == 0)
-						output_data_training(batch_iter, memory_iter, 0, epochs_iter) = result;
-					else
-						output_data_training(batch_iter, memory_iter, 0, epochs_iter) = 0.0;
+					result_cumulative += random_sequence(memory_iter) * mask_sequence(memory_iter);
+					output_data_training(batch_iter, memory_iter, 0, epochs_iter) = result_cumulative;
+					//if (memory_iter == 0)
+					//	output_data_training(batch_iter, memory_iter, 0, epochs_iter) = result;
+					//else
+					//	output_data_training(batch_iter, memory_iter, 0, epochs_iter) = 0.0;
         }
       }
     }
@@ -451,17 +454,17 @@ int main(int argc, char** argv)
 					// assign the input sequences
           input_data_validation(batch_iter, memory_iter, 0, epochs_iter) = random_sequence(memory_iter); // random sequence
           input_data_validation(batch_iter, memory_iter, 1, epochs_iter) = mask_sequence(memory_iter); // mask sequence
-					//input_data_validation(batch_iter, memory_iter, 2, epochs_iter) = -1.0f; // h bias
-					//input_data_validation(batch_iter, memory_iter, 3, epochs_iter) = 0.0f; // m bias
-					//input_data_validation(batch_iter, memory_iter, 4, epochs_iter) = 0.0f; // o bias
+					input_data_validation(batch_iter, memory_iter, 2, epochs_iter) = 0.0f; // h bias
+					input_data_validation(batch_iter, memory_iter, 3, epochs_iter) = 0.0f; // m bias
+					input_data_validation(batch_iter, memory_iter, 4, epochs_iter) = 0.0f; // o bias
 
 					// assign the output
-					//result_cumulative += random_sequence(memory_iter) * mask_sequence(memory_iter);
-					//output_data_validation(batch_iter, memory_iter, 0, epochs_iter) = result_cumulative;
-					if (memory_iter == 0)
-						output_data_validation(batch_iter, memory_iter, 0, epochs_iter) = result;
-					else
-						output_data_validation(batch_iter, memory_iter, 0, epochs_iter) = 0.0;
+					result_cumulative += random_sequence(memory_iter) * mask_sequence(memory_iter);
+					output_data_validation(batch_iter, memory_iter, 0, epochs_iter) = result_cumulative;
+					//if (memory_iter == 0)
+					//	output_data_validation(batch_iter, memory_iter, 0, epochs_iter) = result;
+					//else
+					//	output_data_validation(batch_iter, memory_iter, 0, epochs_iter) = 0.0;
         }
       }
     }
@@ -479,14 +482,14 @@ int main(int argc, char** argv)
 			// Population size of 8
 			if (iter == 0)
 			{
-				n_top = 2;
-				n_random = 2;
-				n_replicates_per_model = 7;
+				n_top = 4;
+				n_random = 4;
+				n_replicates_per_model = 15;
 			}
 			else
 			{
-				n_top = 2;
-				n_random = 2;
+				n_top = 4;
+				n_random = 4;
 				n_replicates_per_model = 3;
 			}
       // replicate and modify models
