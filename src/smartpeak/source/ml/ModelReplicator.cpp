@@ -649,6 +649,23 @@ namespace SmartPeak
     return modifications;
   }
 
+	void ModelReplicator::setRandomModifications(const std::pair<int, int>& node_additions, const std::pair<int, int>& link_additions, const std::pair<int, int>& node_deletions, const std::pair<int, int>& link_deletions)
+	{
+		// random generator for model modifications
+		std::random_device rd;
+		std::mt19937 gen(rd());
+
+		// set 
+		std::uniform_int_distribution<> node_addition_gen(node_additions.first, node_additions.second);
+		setNNodeAdditions(node_addition_gen(gen));
+		std::uniform_int_distribution<> link_addition_gen(link_additions.first, link_additions.second);
+		setNLinkAdditions(link_addition_gen(gen));
+		std::uniform_int_distribution<> node_deletion_gen(node_deletions.first, node_deletions.second);
+		setNNodeDeletions(node_deletion_gen(gen));
+		std::uniform_int_distribution<> link_deletion_gen(link_deletions.first, link_deletions.second);
+		setNLinkDeletions(link_deletion_gen(gen));
+	}
+
   void ModelReplicator::modifyModel(Model& model, std::string unique_str)
   {
     // randomly order the modifications

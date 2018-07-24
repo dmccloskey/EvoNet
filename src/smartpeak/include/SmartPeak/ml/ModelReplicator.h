@@ -209,6 +209,20 @@ public:
     */ 
     std::vector<std::string> makeRandomModificationOrder();
 
+		/**
+		@brief set random model modifications
+
+		@param[in] node_additions lower/upper bound for the number of potential node additions
+		@param[in] link_additions lower/upper bound for the number of potential link additions
+		@param[in] node_deletions lower/upper bound for the number of potential node deletions
+		@param[in] link_deletions lower/upper bound for the number of potential link deletions
+		*/
+		void setRandomModifications(
+			const std::pair<int, int>& node_additions,
+			const std::pair<int, int>& link_additions,
+			const std::pair<int, int>& node_deletions,
+			const std::pair<int, int>& link_deletions);
+
 private:
     // modification parameters
     int n_node_copies_ = 0; ///< nodes to duplicate in the model (nodes are created through replication)

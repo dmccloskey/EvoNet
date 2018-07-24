@@ -37,7 +37,7 @@ static float AddProb(
   
   std::random_device rd;
   std::mt19937 gen(rd());
-  std::uniform_real_distribution<> zero_to_one(0, 10);
+  std::uniform_real_distribution<> zero_to_one(-0.5, 0.5);
   std::uniform_int_distribution<> zero_to_length(0, sequence_length-1);
 
   // generate 2 random and unique indexes between 
@@ -89,7 +89,10 @@ public:
 		// Nodes
 		i_rand = Node("i_rand", NodeType::input, NodeStatus::activated, NodeActivation::Linear);
 		i_mask = Node("i_mask", NodeType::input, NodeStatus::activated, NodeActivation::Linear);
-		h = Node("h", NodeType::hidden, NodeStatus::deactivated, NodeActivation::TanH);
+		//h = Node("h", NodeType::hidden, NodeStatus::deactivated, NodeActivation::ReLU);
+		//m = Node("m", NodeType::hidden, NodeStatus::deactivated, NodeActivation::ReLU);
+		//o = Node("o", NodeType::output, NodeStatus::deactivated, NodeActivation::ReLU);
+		h = Node("h", NodeType::hidden, NodeStatus::deactivated, NodeActivation::TanH);  // works well in range 0-1
 		m = Node("m", NodeType::hidden, NodeStatus::deactivated, NodeActivation::TanH);
 		o = Node("o", NodeType::output, NodeStatus::deactivated, NodeActivation::TanH);
 		h_bias = Node("h_bias", NodeType::bias, NodeStatus::activated, NodeActivation::Linear);
@@ -220,8 +223,8 @@ public:
         model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), false, true, n_threads); 
 
       // calculate the model error and node output error
-      model.CETT(output.chip(iter, 3), output_nodes, getMemorySize());  // just the last result
 			//model.CETT(output.chip(iter, 3), output_nodes, 1);  // just the last result
+      model.CETT(output.chip(iter, 3), output_nodes, getMemorySize());
 
       //std::cout<<"Model "<<model.getName()<<" error: "<<model.getError().sum()<<std::endl;
 
@@ -296,7 +299,8 @@ public:
         model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), false, true, n_threads);
 
       // calculate the model error and node output error
-			model.CETT(output.chip(iter, 3), output_nodes, 1); // just the last predicted result
+			//model.CETT(output.chip(iter, 3), output_nodes, 1); // just the last predicted result
+			model.CETT(output.chip(iter, 3), output_nodes, getMemorySize()); // just the last predicted result
       const Eigen::Tensor<float, 0> total_error = model.getError().sum();
       model_error.push_back(total_error(0));  
       //std::cout<<"Model error: "<<total_error(0)<<std::endl;
@@ -328,7 +332,8 @@ int main(int argc, char** argv)
   std::cout<<threads_cout;
 
   // Make the input nodes 
-	std::vector<std::string> input_nodes = {"i_rand", "i_mask", "h_bias", "m_bias", "o_bias" };
+	//std::vector<std::string> input_nodes = {"i_rand", "i_mask", "h_bias", "m_bias", "o_bias" };
+	std::vector<std::string> input_nodes = { "i_rand", "i_mask"};
 
   // Make the output nodes
 	std::vector<std::string> output_nodes = {"o"};
@@ -403,9 +408,9 @@ int main(int argc, char** argv)
 					// assign the input sequences
           input_data_training(batch_iter, memory_iter, 0, epochs_iter) = random_sequence(memory_iter); // random sequence
           input_data_training(batch_iter, memory_iter, 1, epochs_iter) = mask_sequence(memory_iter); // mask sequence
-					input_data_training(batch_iter, memory_iter, 2, epochs_iter) = 0.0f; // h bias
-					input_data_training(batch_iter, memory_iter, 3, epochs_iter) = 0.0f; // m bias
-					input_data_training(batch_iter, memory_iter, 4, epochs_iter) = 0.0f; // 0 bias
+					//input_data_training(batch_iter, memory_iter, 2, epochs_iter) = 0.0f; // h bias
+					//input_data_training(batch_iter, memory_iter, 3, epochs_iter) = 0.0f; // m bias
+					//input_data_training(batch_iter, memory_iter, 4, epochs_iter) = 0.0f; // 0 bias
 
 					// assign the output
 					result_cumulative += random_sequence(memory_iter) * mask_sequence(memory_iter);
@@ -425,8 +430,8 @@ int main(int argc, char** argv)
       std::uniform_int_distribution<> zero_to_two(0, 2);
       model_replicator.setNNodeAdditions(zero_to_one(gen));
       model_replicator.setNLinkAdditions(zero_to_two(gen));
-      model_replicator.setNNodeDeletions(zero_to_one(gen));
-      model_replicator.setNLinkDeletions(zero_to_two(gen));
+      //model_replicator.setNNodeDeletions(zero_to_one(gen));
+      //model_replicator.setNLinkDeletions(zero_to_two(gen));
     }
 
     // train the population
@@ -454,9 +459,9 @@ int main(int argc, char** argv)
 					// assign the input sequences
           input_data_validation(batch_iter, memory_iter, 0, epochs_iter) = random_sequence(memory_iter); // random sequence
           input_data_validation(batch_iter, memory_iter, 1, epochs_iter) = mask_sequence(memory_iter); // mask sequence
-					input_data_validation(batch_iter, memory_iter, 2, epochs_iter) = 0.0f; // h bias
-					input_data_validation(batch_iter, memory_iter, 3, epochs_iter) = 0.0f; // m bias
-					input_data_validation(batch_iter, memory_iter, 4, epochs_iter) = 0.0f; // o bias
+					//input_data_validation(batch_iter, memory_iter, 2, epochs_iter) = 0.0f; // h bias
+					//input_data_validation(batch_iter, memory_iter, 3, epochs_iter) = 0.0f; // m bias
+					//input_data_validation(batch_iter, memory_iter, 4, epochs_iter) = 0.0f; // o bias
 
 					// assign the output
 					result_cumulative += random_sequence(memory_iter) * mask_sequence(memory_iter);
@@ -482,14 +487,14 @@ int main(int argc, char** argv)
 			// Population size of 8
 			if (iter == 0)
 			{
-				n_top = 4;
-				n_random = 4;
-				n_replicates_per_model = 15;
+				n_top = 2;
+				n_random = 2;
+				n_replicates_per_model = 7;
 			}
 			else
 			{
-				n_top = 4;
-				n_random = 4;
+				n_top = 2;
+				n_random = 2;
 				n_replicates_per_model = 3;
 			}
       // replicate and modify models
