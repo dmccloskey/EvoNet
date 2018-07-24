@@ -226,7 +226,7 @@ public:
 			//model.CETT(output.chip(iter, 3), output_nodes, 1);  // just the last result
       model.CETT(output.chip(iter, 3), output_nodes, getMemorySize());
 
-      //std::cout<<"Model "<<model.getName()<<" error: "<<model.getError().sum()<<std::endl;
+      std::cout<<"Model "<<model.getName()<<" error: "<<model.getError().sum()<<std::endl;
 
       // back propogate
       if (iter == 0)
@@ -321,7 +321,7 @@ int main(int argc, char** argv)
 
   // Add problem parameters
   const int sequence_length = 10; // test sequence length
-	const int n_epochs = 500;
+	const int n_epochs = 10000;
 	const int n_epochs_validation = 10;
 
   const int n_hard_threads = std::thread::hardware_concurrency();
@@ -360,14 +360,10 @@ int main(int argc, char** argv)
   int n_top = 1;
   int n_random = 1;
   int n_replicates_per_model = 0;
-  
-  // random generator for model modifications
-  std::random_device rd;
-  std::mt19937 gen(rd());
 
   // Evolve the population
   std::vector<Model> population; 
-  const int iterations = 10;
+  const int iterations = 1;
   for (int iter=0; iter<iterations; ++iter)
   {
     printf("Iteration #: %d\n", iter);
@@ -426,12 +422,11 @@ int main(int argc, char** argv)
     // generate a random number of model modifications
     if (iter>0)
     {
-      std::uniform_int_distribution<> zero_to_one(0, 1);
-      std::uniform_int_distribution<> zero_to_two(0, 2);
-      model_replicator.setNNodeAdditions(zero_to_one(gen));
-      model_replicator.setNLinkAdditions(zero_to_two(gen));
-      //model_replicator.setNNodeDeletions(zero_to_one(gen));
-      //model_replicator.setNLinkDeletions(zero_to_two(gen));
+			model_replicator.setRandomModifications(
+				std::make_pair(0, 1),
+				std::make_pair(0, 2),
+				std::make_pair(0, 1),
+				std::make_pair(0, 2));
     }
 
     // train the population
