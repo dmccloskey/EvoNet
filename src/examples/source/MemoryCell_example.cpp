@@ -226,7 +226,7 @@ public:
 			model.CETT(output.chip(iter, 3), output_nodes, 1);  // just the last result
       //model.CETT(output.chip(iter, 3), output_nodes, getMemorySize());
 
-      std::cout<<"Model "<<model.getName()<<" error: "<<model.getError().sum()<<std::endl;
+      //std::cout<<"Model "<<model.getName()<<" error: "<<model.getError().sum()<<std::endl;
 
       // back propogate
       if (iter == 0)
