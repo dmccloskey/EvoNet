@@ -223,8 +223,8 @@ public:
         model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), false, true, n_threads); 
 
       // calculate the model error and node output error
-			//model.CETT(output.chip(iter, 3), output_nodes, 1);  // just the last result
-      model.CETT(output.chip(iter, 3), output_nodes, getMemorySize());
+			model.CETT(output.chip(iter, 3), output_nodes, 1);  // just the last result
+      //model.CETT(output.chip(iter, 3), output_nodes, getMemorySize());
 
       std::cout<<"Model "<<model.getName()<<" error: "<<model.getError().sum()<<std::endl;
 
@@ -299,8 +299,8 @@ public:
         model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), false, true, n_threads);
 
       // calculate the model error and node output error
-			//model.CETT(output.chip(iter, 3), output_nodes, 1); // just the last predicted result
-			model.CETT(output.chip(iter, 3), output_nodes, getMemorySize()); // just the last predicted result
+			model.CETT(output.chip(iter, 3), output_nodes, 1); // just the last predicted result
+			//model.CETT(output.chip(iter, 3), output_nodes, getMemorySize()); // just the last predicted result
       const Eigen::Tensor<float, 0> total_error = model.getError().sum();
       model_error.push_back(total_error(0));  
       //std::cout<<"Model error: "<<total_error(0)<<std::endl;
@@ -363,7 +363,7 @@ int main(int argc, char** argv)
 
   // Evolve the population
   std::vector<Model> population; 
-  const int iterations = 1;
+  const int iterations = 12;
   for (int iter=0; iter<iterations; ++iter)
   {
     printf("Iteration #: %d\n", iter);
@@ -409,12 +409,12 @@ int main(int argc, char** argv)
 					//input_data_training(batch_iter, memory_iter, 4, epochs_iter) = 0.0f; // 0 bias
 
 					// assign the output
-					result_cumulative += random_sequence(memory_iter) * mask_sequence(memory_iter);
-					output_data_training(batch_iter, memory_iter, 0, epochs_iter) = result_cumulative;
-					//if (memory_iter == 0)
-					//	output_data_training(batch_iter, memory_iter, 0, epochs_iter) = result;
-					//else
-					//	output_data_training(batch_iter, memory_iter, 0, epochs_iter) = 0.0;
+					//result_cumulative += random_sequence(memory_iter) * mask_sequence(memory_iter);
+					//output_data_training(batch_iter, memory_iter, 0, epochs_iter) = result_cumulative;
+					if (memory_iter == 0)
+						output_data_training(batch_iter, memory_iter, 0, epochs_iter) = result;
+					else
+						output_data_training(batch_iter, memory_iter, 0, epochs_iter) = 0.0;
         }
       }
     }
@@ -459,12 +459,12 @@ int main(int argc, char** argv)
 					//input_data_validation(batch_iter, memory_iter, 4, epochs_iter) = 0.0f; // o bias
 
 					// assign the output
-					result_cumulative += random_sequence(memory_iter) * mask_sequence(memory_iter);
-					output_data_validation(batch_iter, memory_iter, 0, epochs_iter) = result_cumulative;
-					//if (memory_iter == 0)
-					//	output_data_validation(batch_iter, memory_iter, 0, epochs_iter) = result;
-					//else
-					//	output_data_validation(batch_iter, memory_iter, 0, epochs_iter) = 0.0;
+					//result_cumulative += random_sequence(memory_iter) * mask_sequence(memory_iter);
+					//output_data_validation(batch_iter, memory_iter, 0, epochs_iter) = result_cumulative;
+					if (memory_iter == 0)
+						output_data_validation(batch_iter, memory_iter, 0, epochs_iter) = result;
+					else
+						output_data_validation(batch_iter, memory_iter, 0, epochs_iter) = 0.0;
         }
       }
     }
@@ -479,17 +479,17 @@ int main(int argc, char** argv)
 
     if (iter < iterations - 1)  
     {
-			// Population size of 8
+			// Population size of 16
 			if (iter == 0)
 			{
-				n_top = 2;
-				n_random = 2;
-				n_replicates_per_model = 7;
+				n_top = 3;
+				n_random = 3;
+				n_replicates_per_model = 15;
 			}
 			else
 			{
-				n_top = 2;
-				n_random = 2;
+				n_top = 3;
+				n_random = 3;
 				n_replicates_per_model = 3;
 			}
       // replicate and modify models
