@@ -685,6 +685,15 @@ public:
     */ 
     bool checkWeightNames(const std::vector<std::string> weight_names);
 
+		/**
+		@brief Check that the path from input to output is complete
+		*/
+		bool checkModelCompleteness(
+			const std::vector<std::string>& input_nodes,
+			const std::vector<std::string>& output_nodes,
+			const int& batch_size, const int& memory_size,
+			int n_threads);
+
     void clearCache(); ///< clear the FP and BP caches
 
 private:

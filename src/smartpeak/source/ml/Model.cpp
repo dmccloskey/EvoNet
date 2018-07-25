@@ -2374,7 +2374,71 @@ namespace SmartPeak
     return weights_found;
   }
 
-  void Model::clearCache()
+	bool Model::checkModelCompleteness(
+		const std::vector<std::string>& input_nodes, 
+		const std::vector<std::string>& output_nodes,
+		const int& batch_size, const int& memory_size,
+		int n_threads)
+	{
+		// set all node outputs to zero except for the input
+		// set all node derivatives to one
+		// set all node errors to zero except for the output
+		Eigen::Tensor<float, 2> zero(batch_size, memory_size);
+		zero.setConstant(0.0f);
+		Eigen::Tensor<float, 2> one(batch_size, memory_size);
+		one.setConstant(1.0f);
+		for (auto& node_map: nodes_)
+		{
+			if (std::count(input_nodes.begin(), input_nodes.end(), node_map.second->getName()) != 0)
+			{
+				node_map.second->setOutput(one);
+				node_map.second->setError(zero);
+				node_map.second->setDerivative(one);
+			}
+			else if (std::count(output_nodes.begin(), output_nodes.end(), node_map.second->getName()) != 0)
+			{
+				node_map.second->setOutput(zero);
+				node_map.second->setError(one);
+				node_map.second->setDerivative(one);
+			}
+			else
+			{
+				node_map.second->setOutput(zero);
+				node_map.second->setError(zero);
+				node_map.second->setDerivative(one);
+			}
+		}
+
+		// set all weights to 1
+		for (auto& weight_map : weights_)
+			weight_map.second->setWeight(1.0f);
+
+		// Forward propogate
+		forwardPropogate(1, false, false, n_threads);
+
+		// check that all output nodes are greater than 0
+		for (const std::string& node_name: output_nodes)
+		{
+			Eigen::Tensor<float, 1> output = nodes_.at(node_name)->getOutput().sum();
+			if (output(0) == 0.0)
+				return false;
+		}
+
+		// backward propagation
+		backPropogate(1, false, false, n_threads);
+
+		// check that all input nodes are greater than 0
+		for (const std::string& node_name : input_nodes)
+		{
+			Eigen::Tensor<float, 1> error = nodes_.at(node_name)->getError().sum();
+			if (error(0) == 0.0)
+				return false;
+		}
+
+		return true;
+	}
+
+	void Model::clearCache()
   {
     FP_operations_cache_.clear();
     BP_operations_cache_.clear();
