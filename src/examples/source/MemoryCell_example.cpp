@@ -321,7 +321,7 @@ int main(int argc, char** argv)
 
   // Add problem parameters
   const int sequence_length = 10; // test sequence length
-	const int n_epochs = 10000;
+	const int n_epochs = 500;
 	const int n_epochs_validation = 10;
 
   const int n_hard_threads = std::thread::hardware_concurrency();
