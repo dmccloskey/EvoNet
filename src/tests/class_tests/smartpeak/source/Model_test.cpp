@@ -551,4 +551,63 @@ BOOST_AUTO_TEST_CASE(clearCache)
   // No tests
 }
 
+BOOST_AUTO_TEST_CASE(checkModelCompleteness)
+{
+	Node i1, i2, h1, o1, o2;
+	i1 = Node("i1", NodeType::input, NodeStatus::activated, NodeActivation::Linear);
+	i2 = Node("i2", NodeType::input, NodeStatus::activated, NodeActivation::Linear);
+	h1 = Node("h1", NodeType::hidden, NodeStatus::activated, NodeActivation::TanH);
+	o1 = Node("o1", NodeType::output, NodeStatus::activated, NodeActivation::TanH);
+	o2 = Node("o2", NodeType::output, NodeStatus::activated, NodeActivation::TanH);
+
+	Weight w_i1_h1, w_i2_h1, w_h1_o1, w_h1_o2;
+	std::shared_ptr<WeightInitOp> weight_init;
+	std::shared_ptr<SolverOp> solver;
+	weight_init.reset(new RandWeightInitOp(2.0));
+	solver.reset(new SGDOp(0.01, 0.9));
+	w_i1_h1 = Weight("w_i1_h1", weight_init, solver);
+	weight_init.reset(new RandWeightInitOp(2.0));
+	solver.reset(new SGDOp(0.01, 0.9));
+	w_i2_h1 = Weight("w_i2_h1", weight_init, solver);
+	weight_init.reset(new RandWeightInitOp(2.0));
+	solver.reset(new SGDOp(0.01, 0.9));
+	w_h1_o1 = Weight("w_h1_o1", weight_init, solver);
+	weight_init.reset(new RandWeightInitOp(2.0));
+	solver.reset(new SGDOp(0.01, 0.9));
+	w_h1_o2 = Weight("w_h1_o2", weight_init, solver);
+
+	Link l_i1_h1, l_i2_h1, l_h1_o1, l_h1_o2;
+	l_i1_h1 = Link("l_i1_h1", "i1", "h1", "w_i1_h1");
+	l_i2_h1 = Link("l_i2_h1", "i2", "h1", "w_i2_h1");
+	l_h1_o1 = Link("l_h1_o1", "h1", "o1", "w_h1_o1");
+	l_h1_o2 = Link("l_h1_o2", "h1", "o2", "w_h1_o2");
+
+	std::vector<std::string> input_nodes = { "i1", "i2" };
+	std::vector<std::string> output_nodes = { "o1", "o2" };
+
+	// model 1: fully connected model
+	Model model1;
+	model1.addNodes({ i1, i2, h1, o1, o2 });
+	model1.addWeights({ w_i1_h1, w_i2_h1, w_h1_o1, w_h1_o2 });
+	model1.addLinks({ l_i1_h1, l_i2_h1, l_h1_o1, l_h1_o2 });
+
+	BOOST_CHECK(model1.checkModelCompleteness(input_nodes, output_nodes, 2));
+
+	// model 2: disconnected output
+	Model model2;
+	model2.addNodes({ i1, i2, h1, o1, o2 });
+	model2.addWeights({ w_i1_h1, w_i2_h1, w_h1_o2 });
+	model2.addLinks({ l_i1_h1, l_i2_h1, l_h1_o2 });
+
+	BOOST_CHECK(!model2.checkModelCompleteness(input_nodes, output_nodes, 2));
+
+	// model 3: disconnected input
+	Model model3;
+	model3.addNodes({ i1, i2, h1, o1, o2 });
+	model3.addWeights({ w_i1_h1, w_h1_o1, w_h1_o2 });
+	model3.addLinks({ l_i1_h1, l_h1_o1, l_h1_o2 });
+
+	BOOST_CHECK(!model3.checkModelCompleteness(input_nodes, output_nodes, 2));
+}
+
 BOOST_AUTO_TEST_SUITE_END()

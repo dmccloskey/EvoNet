@@ -691,7 +691,6 @@ public:
 		bool checkModelCompleteness(
 			const std::vector<std::string>& input_nodes,
 			const std::vector<std::string>& output_nodes,
-			const int& batch_size, const int& memory_size,
 			int n_threads);
 
     void clearCache(); ///< clear the FP and BP caches
