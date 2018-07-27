@@ -492,9 +492,23 @@ int main(int argc, char** argv)
 				n_random = 3;
 				n_replicates_per_model = 3;
 			}
+			// Population size of 8
+			//if (iter == 0)
+			//{
+			//	n_top = 2;
+			//	n_random = 2;
+			//	n_replicates_per_model = 7;
+			//}
+			//else
+			//{
+			//	n_top = 2;
+			//	n_random = 2;
+			//	n_replicates_per_model = 3;
+			//}
       // replicate and modify models
       std::cout<<"Replicating and modifying the models..."<<std::endl;
-      population_trainer.replicateModels(population, model_replicator, n_replicates_per_model, std::to_string(iter), n_threads);
+      population_trainer.replicateModels(population, model_replicator, input_nodes, output_nodes,
+				n_replicates_per_model, std::to_string(iter), n_threads);
       std::cout<<"Population size of "<<population.size()<<std::endl;
     }
 		else
@@ -505,6 +519,5 @@ int main(int argc, char** argv)
 		}
   }
 
-  system("pause");
   return 0;
 }

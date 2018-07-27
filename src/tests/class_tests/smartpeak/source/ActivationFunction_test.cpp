@@ -306,4 +306,61 @@ BOOST_AUTO_TEST_CASE(operationfunctionReTanHGradOp)
   BOOST_CHECK_CLOSE(operation(-10.0), 0.0, 1e-6);
 }
 
+
+/**
+LinearOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorLinearOp)
+{
+	LinearOp<double>* ptrLinear = nullptr;
+	LinearOp<double>* nullPointerLinear = nullptr;
+	BOOST_CHECK_EQUAL(ptrLinear, nullPointerLinear);
+}
+
+BOOST_AUTO_TEST_CASE(destructorLinearOp)
+{
+	LinearOp<double>* ptrLinear = nullptr;
+	ptrLinear = new LinearOp<double>();
+	delete ptrLinear;
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionLinearOp)
+{
+	LinearOp<double> operation;
+
+	BOOST_CHECK_CLOSE(operation(0.0), 0.0, 1e-6);
+	BOOST_CHECK_CLOSE(operation(1.0), 1.0, 1e-6);
+	BOOST_CHECK_CLOSE(operation(10.0), 10.0, 1e-6);
+	BOOST_CHECK_CLOSE(operation(-1.0), -1.0, 1e-6);
+	BOOST_CHECK_CLOSE(operation(-10.0), -10.0, 1e-6);
+}
+
+/**
+LinearGradOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorLinearGradOp)
+{
+	LinearGradOp<double>* ptrLinearGrad = nullptr;
+	LinearGradOp<double>* nullPointerLinearGrad = nullptr;
+	BOOST_CHECK_EQUAL(ptrLinearGrad, nullPointerLinearGrad);
+}
+
+BOOST_AUTO_TEST_CASE(destructorLinearGradOp)
+{
+	LinearGradOp<double>* ptrLinearGrad = nullptr;
+	ptrLinearGrad = new LinearGradOp<double>();
+	delete ptrLinearGrad;
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionLinearGradOp)
+{
+	LinearGradOp<double> operation;
+
+	BOOST_CHECK_CLOSE(operation(0.0), 1.0, 1e-6);
+	BOOST_CHECK_CLOSE(operation(1.0), 1.0, 1e-6);
+	BOOST_CHECK_CLOSE(operation(10.0), 1.0, 1e-6);
+	BOOST_CHECK_CLOSE(operation(-1.0), 1.0, 1e-6);
+	BOOST_CHECK_CLOSE(operation(-10.0), 1.0, 1e-6);
+}
+
 BOOST_AUTO_TEST_SUITE_END()

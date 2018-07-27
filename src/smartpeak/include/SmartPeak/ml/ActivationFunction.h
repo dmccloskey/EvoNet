@@ -183,7 +183,7 @@ public:
     { 
       return (x_I > 0.0) ? (std::exp(x_I) - std::exp(-x_I)) / (std::exp(x_I) + std::exp(-x_I)) : 0.0;
     };
-    std::string getName() const{return "ReLUGradOp";};
+    std::string getName() const{return "ReTanHOp";};
   };
 
   /**
@@ -200,7 +200,39 @@ public:
       SmartPeak::ReTanHOp<T> tanhop;
       return (x_I > 0.0) ? 1 - std::pow(tanhop(x_I), 2) : 0.0;
     };
-    std::string getName() const{return "ReLUGradOp";};
+    std::string getName() const{return "ReTanHGradOp";};
   };
+
+	/**
+	@brief Linear activation function
+	*/
+	template<typename T>
+	class LinearOp : public ActivationOp<T>
+	{
+	public:
+		LinearOp() {};
+		~LinearOp() {};
+		T operator()(const T& x_I) const
+		{
+			return x_I;
+		};
+		std::string getName() const { return "LinearOp"; };
+	};
+
+	/**
+	@brief Linear gradient
+	*/
+	template<typename T>
+	class LinearGradOp : public ActivationOp<T>
+	{
+	public:
+		LinearGradOp() {};
+		~LinearGradOp() {};
+		T operator()(const T& x_I) const
+		{
+			return 1.0;
+		};
+		std::string getName() const { return "LinearGradOp"; };
+	};
 }
 #endif //SMARTPEAK_ACTIVATIONFUNCTION_H

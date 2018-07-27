@@ -651,18 +651,27 @@ namespace SmartPeak
 
 	void ModelReplicator::setRandomModifications(const std::pair<int, int>& node_additions, const std::pair<int, int>& link_additions, const std::pair<int, int>& node_deletions, const std::pair<int, int>& link_deletions)
 	{
+		// set 
+		node_additions_ = node_additions;
+		link_additions_ = link_additions;
+		node_deletions_ = node_deletions;
+		link_deletions_ = link_deletions;
+	}
+
+	void ModelReplicator::makeRandomModifications()
+	{
 		// random generator for model modifications
 		std::random_device rd;
 		std::mt19937 gen(rd());
 
 		// set 
-		std::uniform_int_distribution<> node_addition_gen(node_additions.first, node_additions.second);
+		std::uniform_int_distribution<> node_addition_gen(node_additions_.first, node_additions_.second);
 		setNNodeAdditions(node_addition_gen(gen));
-		std::uniform_int_distribution<> link_addition_gen(link_additions.first, link_additions.second);
+		std::uniform_int_distribution<> link_addition_gen(link_additions_.first, link_additions_.second);
 		setNLinkAdditions(link_addition_gen(gen));
-		std::uniform_int_distribution<> node_deletion_gen(node_deletions.first, node_deletions.second);
+		std::uniform_int_distribution<> node_deletion_gen(node_deletions_.first, node_deletions_.second);
 		setNNodeDeletions(node_deletion_gen(gen));
-		std::uniform_int_distribution<> link_deletion_gen(link_deletions.first, link_deletions.second);
+		std::uniform_int_distribution<> link_deletion_gen(link_deletions_.first, link_deletions_.second);
 		setNLinkDeletions(link_deletion_gen(gen));
 	}
 

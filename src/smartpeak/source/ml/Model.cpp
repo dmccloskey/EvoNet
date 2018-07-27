@@ -27,9 +27,9 @@ namespace SmartPeak
   {
     id_ = other.id_;
     name_ = other.name_;
-    links_ = other.links_;
-    nodes_ = other.nodes_;
-    weights_ = other.weights_;
+    addLinks(other.getLinks());
+		addNodes(other.getNodes());
+		addWeights(other.getWeights());
     error_ = other.error_;
     loss_function_ = other.loss_function_;
   }
@@ -150,7 +150,8 @@ namespace SmartPeak
   {
     if (!weights_.empty() && weights_.count(weight_name) != 0)
     {
-      return *std::move(weights_.at(weight_name));
+      //return *std::move(weights_.at(weight_name));
+			return *weights_.at(weight_name);
     }
     else
     {
@@ -2379,12 +2380,31 @@ namespace SmartPeak
 		const std::vector<std::string>& output_nodes,
 		int n_threads)
 	{
+		// check that all input/output nodes exist!
+		if (!checkNodeNames(input_nodes) || !checkNodeNames(output_nodes))
+			return false;
+
+		// infer the batch and memory size
+		// [BUG: modifying the batch_size or memory_size causes a memory corruption error when
+		//			 using the training the population after replicating and modifying the models
+		//			 potential cause: the batch/memory sizes are not updated during training?]
+		int batch_size_cur = nodes_.at(input_nodes[0])->getOutput().dimension(0);
+		int memory_size_cur = nodes_.at(input_nodes[0])->getOutput().dimension(1);
+
+		// check for uninitialized nodes
+		int batch_size = 2;
+		int memory_size = 2;
+		if (batch_size_cur != 0)
+			batch_size = batch_size_cur;
+		if (memory_size_cur != 0)
+			memory_size = memory_size_cur;
+			
 		// set all node outputs to zero except for the input
 		// set all node derivatives to one
 		// set all node errors to zero except for the output
-		Eigen::Tensor<float, 2> zero(1, 2);
+		Eigen::Tensor<float, 2> zero(batch_size, memory_size);
 		zero.setConstant(0.0f);
-		Eigen::Tensor<float, 2> one(1, 2);
+		Eigen::Tensor<float, 2> one(batch_size, memory_size);
 		one.setConstant(1.0f);
 		for (auto& node_map: nodes_)
 		{
@@ -2410,8 +2430,8 @@ namespace SmartPeak
 				node_map.second->setDt(one);
 			}
 			node_map.second->setStatus(NodeStatus::initialized);
-			//node_map.second->setActivation(NodeActivation::Linear);  // safer but requires setting
-																															// the node activation back to its original value
+			node_map.second->setActivation(NodeActivation::Linear);  // safer but requires setting
+																															 // the node activation back to its original value
 		}
 
 		// set all weights to 1

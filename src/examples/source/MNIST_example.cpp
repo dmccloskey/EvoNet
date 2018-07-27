@@ -506,7 +506,8 @@ int main(int argc, char** argv)
       }
       // replicate and modify models
       std::cout<<"Replicating and modifying the models..."<<std::endl;
-      population_trainer.replicateModels(population, model_replicator, n_replicates_per_model, std::to_string(iter), n_threads);
+      population_trainer.replicateModels(population, model_replicator, input_nodes, output_nodes, 
+				n_replicates_per_model, std::to_string(iter), n_threads);
       std::cout<<"Population size of "<<population.size()<<std::endl;
     }
   }

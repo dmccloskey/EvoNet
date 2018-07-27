@@ -54,7 +54,7 @@ namespace SmartPeak
   {
 public:
     Model(); ///< Default constructor
-    Model(const Model& other); ///< Copy constructor // [TODO: add test]
+    Model(const Model& other); ///< Copy constructor that does not create a shared memory address between model nodes/links/weights
     Model(const int& id); ///< Explicit constructor  
     ~Model(); ///< Default destructor
 
@@ -82,8 +82,12 @@ public:
       return !(*this == other);
     }
 
+
+		/**
+		@brief Copy assignment operator that creates a new model with different memory addresses
+		*/
     inline Model& operator=(const Model& other)
-    { // [TODO: add test]
+    {
       id_ = other.id_;
       name_ = other.name_;
       links_ = other.links_;
@@ -691,7 +695,7 @@ public:
 		bool checkModelCompleteness(
 			const std::vector<std::string>& input_nodes,
 			const std::vector<std::string>& output_nodes,
-			int n_threads);
+			int n_threads = 1);
 
     void clearCache(); ///< clear the FP and BP caches
 

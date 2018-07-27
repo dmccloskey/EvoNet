@@ -259,6 +259,15 @@ namespace SmartPeak
         }
         break;
       }
+			case NodeActivation::Linear:
+			{
+				output_step = output_step.unaryExpr(LinearOp<float>());
+				for (int i = 0; i<output_step.size(); ++i)
+				{
+					output_(i, time_step) = output_step(i) * dt_(i, time_step);
+				}
+				break;
+			}
       default:
       {
         std::cout << "Node activation not supported." << std::endl;
@@ -338,7 +347,16 @@ namespace SmartPeak
           derivative_(i, time_step) = output_step(i);
         }
         break;
-      } 
+      }
+			case NodeActivation::Linear:
+			{
+				output_step = output_step.unaryExpr(LinearGradOp<float>());
+				for (int i = 0; i<output_step.size(); ++i)
+				{
+					derivative_(i, time_step) = output_step(i);
+				}
+				break;
+			}
       default:
       {
         std::cout << "Node activation not supported." << std::endl;

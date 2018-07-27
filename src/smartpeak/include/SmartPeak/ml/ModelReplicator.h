@@ -210,7 +210,7 @@ public:
     std::vector<std::string> makeRandomModificationOrder();
 
 		/**
-		@brief set random model modifications
+		@brief set random model modification parameters
 
 		@param[in] node_additions lower/upper bound for the number of potential node additions
 		@param[in] link_additions lower/upper bound for the number of potential link additions
@@ -223,13 +223,26 @@ public:
 			const std::pair<int, int>& node_deletions,
 			const std::pair<int, int>& link_deletions);
 
+		/**
+		@brief make random model modification parameters
+		*/
+		void makeRandomModifications();
+
 private:
     // modification parameters
-    int n_node_copies_ = 0; ///< nodes to duplicate in the model (nodes are created through replication)
     int n_node_additions_ = 0; ///< new nodes to add to the model (with a random source and sink connection)
     int n_link_additions_ = 0; ///< new links to add to the model
     int n_node_deletions_ = 0; ///< nodes to remove from the model
     int n_link_deletions_ = 0; ///< links to remove from the model
+
+		// random modification parameters
+		std::pair<int, int> node_additions_ = std::make_pair(0, 0);
+		std::pair<int, int> link_additions_ = std::make_pair(0, 0);
+		std::pair<int, int> node_deletions_ = std::make_pair(0, 0);
+		std::pair<int, int> link_deletions_ = std::make_pair(0, 0);
+
+		// not yet implemented...
+		int n_node_copies_ = 0; ///< nodes to duplicate in the model (nodes are created through replication)
     int n_weight_changes_ = 0; ///< the number of weights to change in the model
     float weight_change_stdev_ = 0; ///< the standard deviation to change the weights in the model
   };

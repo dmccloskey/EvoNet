@@ -282,6 +282,8 @@ namespace SmartPeak
   void PopulationTrainer::replicateModels(
     std::vector<Model>& models,
     ModelReplicator& model_replicator,
+		const std::vector<std::string>& input_nodes,
+		const std::vector<std::string>& output_nodes,
     const int& n_replicates_per_model,
     std::string unique_str,
     int n_threads)
@@ -296,13 +298,16 @@ namespace SmartPeak
       for (int i=0; i<n_replicates_per_model; ++i)
       {
         std::packaged_task<Model // encapsulate in a packaged_task
-          (Model*, ModelReplicator*, std::string, int, int
+          (Model*, ModelReplicator*, 
+						std::vector<std::string>, std::vector<std::string>,
+						std::string, int, int
           )> task(PopulationTrainer::replicateModel_);
         
         // launch the thread
         task_results.push_back(task.get_future());
         std::thread task_thread(std::move(task),
           &model, &model_replicator, 
+					std::ref(input_nodes), std::ref(output_nodes),
           std::ref(unique_str), std::ref(cnt), std::ref(i));
         task_thread.detach();
 
@@ -341,11 +346,11 @@ namespace SmartPeak
   Model PopulationTrainer::replicateModel_(
     Model* model,
     ModelReplicator* model_replicator,
+		const std::vector<std::string>& input_nodes,
+		const std::vector<std::string>& output_nodes,
     std::string unique_str, int cnt, int i)
   {    
     std::lock_guard<std::mutex> lock(replicateModel_mutex);
-
-    Model model_copy(*model);
     
     // rename the model
     std::regex re("@");
@@ -358,14 +363,29 @@ namespace SmartPeak
     if (str_tokens.size() > 1)
       model_name_new = str_tokens[0]; // only retain the last timestamp
 
-    char model_name_char[128];
+		char model_name_char[128];
 		sprintf(model_name_char, "%s@replicateModel#%s", model_name_new.data(), unique_str.data());
-    std::string model_name = model_replicator->makeUniqueHash(model_name_char, std::to_string(cnt));
-    model_copy.setName(model_name);
+		std::string model_name = model_replicator->makeUniqueHash(model_name_char, std::to_string(cnt));
 
-    model_replicator->modifyModel(model_copy, unique_str + "-" + std::to_string(i));
-    model_copy.pruneModel(1);
-    return model_copy; // return the model not the pointer
+		int max_iters = 5;
+		for (int iter=0; iter<max_iters; ++iter)
+		{
+			Model model_copy(*model);
+			model_copy.setName(model_name);
+
+			model_replicator->makeRandomModifications();
+			model_replicator->modifyModel(model_copy, unique_str + "-" + std::to_string(i));
+			model_copy.pruneModel(1);
+
+			Model model_check(model_copy);
+			bool complete_model = model_check.checkModelCompleteness(input_nodes, output_nodes);
+			//bool complete_model = true;
+
+			if (complete_model)
+				return model_copy; // return the model not the pointer
+		}
+
+		throw std::runtime_error("All modified models were broken!");
   }
 
   void PopulationTrainer::trainModels(

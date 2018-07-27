@@ -26,20 +26,6 @@ namespace SmartPeak
 
     // Scale the current output by the designated non-linearity
     // Scale the activated output by the time scale
-    switch (node_type)
-    {
-      // no activation
-      case NodeType::bias: {return net_input;} 
-      case NodeType::input: {return net_input;} 
-      case NodeType::hidden: {break;} 
-      case NodeType::output: {break;} 
-      default:
-      {
-        std::cout << "Node type not supported." << std::endl;
-        return net_input;
-      }
-    }
-
     switch(node_activation)
     {
       case NodeActivation::ReLU:
@@ -62,6 +48,11 @@ namespace SmartPeak
         output.device(threadPoolDevice) = net_input.unaryExpr(TanHOp<float>()) * dt;
         break;
       }
+			case NodeActivation::Linear:
+			{
+				output.device(threadPoolDevice) = net_input.unaryExpr(LinearOp<float>()) * dt;
+				break;
+			}
       default:
       {
         std::cout << "Node activation not supported." << std::endl;
@@ -86,27 +77,6 @@ namespace SmartPeak
       Eigen::ThreadPoolDevice threadPoolDevice(&threadPool, n_threads);
     }
 
-    switch (node_type)
-    {
-      case NodeType::bias:
-      {
-        derivative.setConstant(0.0);
-        return derivative;
-      } 
-      case NodeType::input:
-      {
-        derivative.setConstant(0.0);
-        return derivative;
-      }   
-      case NodeType::hidden: {break;}  
-      case NodeType::output: {break;}   
-      default:
-      {
-        std::cout << "Node type not supported." << std::endl;
-        return output;
-      }
-    }
-
     switch (node_activation)
     {       
       case NodeActivation::ReLU:
@@ -128,7 +98,12 @@ namespace SmartPeak
       {
         derivative.device(threadPoolDevice) = output.unaryExpr(TanHGradOp<float>());
         break;
-      } 
+      }
+			case NodeActivation::Linear:
+			{
+				derivative.device(threadPoolDevice) = output.unaryExpr(LinearGradOp<float>());
+				break;
+			}
       default:
       {
         std::cout << "Node activation not supported." << std::endl;

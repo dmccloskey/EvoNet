@@ -398,6 +398,45 @@ BOOST_AUTO_TEST_CASE(comparison)
   BOOST_CHECK(model1 != model2);
 }
 
+BOOST_AUTO_TEST_CASE(copyAssignment)
+{
+	Node source1, sink1, source2, sink2;
+	Link link1, link2;
+	source1 = Node("1.1", NodeType::hidden, NodeStatus::activated, NodeActivation::ReLU);
+	sink1 = Node("1.2", NodeType::hidden, NodeStatus::initialized, NodeActivation::ReLU);
+	source2 = Node("2.1", NodeType::hidden, NodeStatus::activated, NodeActivation::ReLU);
+	sink2 = Node("2.2", NodeType::hidden, NodeStatus::initialized, NodeActivation::ReLU);
+	Weight weight1, weight2;
+	std::shared_ptr<WeightInitOp> weight_init;
+	std::shared_ptr<SolverOp> solver;
+	weight_init.reset(new RandWeightInitOp(1));
+	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
+	weight1 = Weight("1", weight_init, solver);
+	weight_init.reset(new RandWeightInitOp(1));
+	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
+	weight2 = Weight("2", weight_init, solver);
+	link1 = Link("1", source1.getName(), sink1.getName(), weight1.getName());
+	link2 = Link("2", source2.getName(), sink2.getName(), weight2.getName());
+	Model model1(1);
+	model1.addLinks({ link1, link2 });
+	model1.addWeights({ weight1, weight2 });
+	model1.addNodes({ source1, sink1, source2, sink2 });
+
+	// test copy assignment
+	Model model2 = model1;
+	BOOST_CHECK(model1 != model2);
+
+	Model model3 = model1;
+	BOOST_CHECK(model1 != model3);
+
+	// test references
+	model2.removeLinks({ "1" });
+	model2.pruneModel(1);
+
+	BOOST_CHECK(model1 != model2);
+	BOOST_CHECK_EQUAL(model1.getLink("1").getName(), "1");
+}
+
 BOOST_AUTO_TEST_CASE(copy) 
 {
   Node source1, sink1, source2, sink2;
@@ -424,10 +463,10 @@ BOOST_AUTO_TEST_CASE(copy)
 
   // test copy
   Model model2(model1);
-  BOOST_CHECK(model1 == model2);
+  BOOST_CHECK(model1 != model2);
 
   Model model3 = model1;
-  BOOST_CHECK(model1 == model3);
+  BOOST_CHECK(model1 != model3);
 
   // test references
   model2.removeLinks({"1"});
@@ -585,11 +624,16 @@ BOOST_AUTO_TEST_CASE(checkModelCompleteness)
 	std::vector<std::string> input_nodes = { "i1", "i2" };
 	std::vector<std::string> output_nodes = { "o1", "o2" };
 
+	int batch_size = 2;
+	int memory_size = 2;
+
 	// model 1: fully connected model
 	Model model1;
 	model1.addNodes({ i1, i2, h1, o1, o2 });
 	model1.addWeights({ w_i1_h1, w_i2_h1, w_h1_o1, w_h1_o2 });
 	model1.addLinks({ l_i1_h1, l_i2_h1, l_h1_o1, l_h1_o2 });
+	model1.initNodes(batch_size, memory_size);
+	model1.initError(batch_size, memory_size);
 
 	BOOST_CHECK(model1.checkModelCompleteness(input_nodes, output_nodes, 2));
 
@@ -598,6 +642,8 @@ BOOST_AUTO_TEST_CASE(checkModelCompleteness)
 	model2.addNodes({ i1, i2, h1, o1, o2 });
 	model2.addWeights({ w_i1_h1, w_i2_h1, w_h1_o2 });
 	model2.addLinks({ l_i1_h1, l_i2_h1, l_h1_o2 });
+	model2.initNodes(batch_size, memory_size);
+	model2.initError(batch_size, memory_size);
 
 	BOOST_CHECK(!model2.checkModelCompleteness(input_nodes, output_nodes, 2));
 
@@ -606,8 +652,30 @@ BOOST_AUTO_TEST_CASE(checkModelCompleteness)
 	model3.addNodes({ i1, i2, h1, o1, o2 });
 	model3.addWeights({ w_i1_h1, w_h1_o1, w_h1_o2 });
 	model3.addLinks({ l_i1_h1, l_h1_o1, l_h1_o2 });
+	model3.initNodes(batch_size, memory_size);
+	model3.initError(batch_size, memory_size);
 
 	BOOST_CHECK(!model3.checkModelCompleteness(input_nodes, output_nodes, 2));
+
+	// model 4: missing input nodes
+	Model model4;
+	model4.addNodes({ i2, h1, o1, o2 });
+	model4.addWeights({ w_i1_h1, w_i2_h1, w_h1_o1, w_h1_o2 });
+	model4.addLinks({ l_i1_h1, l_i2_h1, l_h1_o1, l_h1_o2 });
+	model4.initNodes(batch_size, memory_size);
+	model4.initError(batch_size, memory_size);
+
+	BOOST_CHECK(!model4.checkModelCompleteness(input_nodes, output_nodes, 2));
+
+	// model 5: missing output nodes
+	Model model5;
+	model5.addNodes({ i1, i2, h1, o2 });
+	model5.addWeights({ w_i1_h1, w_i2_h1, w_h1_o1, w_h1_o2 });
+	model5.addLinks({ l_i1_h1, l_i2_h1, l_h1_o1, l_h1_o2 });
+	model5.initNodes(batch_size, memory_size);
+	model5.initError(batch_size, memory_size);
+
+	BOOST_CHECK(!model5.checkModelCompleteness(input_nodes, output_nodes, 2));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

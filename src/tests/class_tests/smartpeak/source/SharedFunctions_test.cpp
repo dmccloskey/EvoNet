@@ -21,7 +21,7 @@ BOOST_AUTO_TEST_CASE(SFcalculateActivation)
 
   // test input
   result = calculateActivation(
-    NodeType::input, NodeActivation::ReLU,
+    NodeType::input, NodeActivation::Linear,
     net_input, dt);
   BOOST_CHECK_CLOSE(result(0), 0.0, 1e-6);
   BOOST_CHECK_CLOSE(result(1), 1.0, 1e-6);
@@ -31,7 +31,7 @@ BOOST_AUTO_TEST_CASE(SFcalculateActivation)
 
   // test bias
   result = calculateActivation(
-    NodeType::bias, NodeActivation::ReLU,
+    NodeType::bias, NodeActivation::Linear,
     net_input, dt);
   BOOST_CHECK_CLOSE(result(0), 0.0, 1e-6);
   BOOST_CHECK_CLOSE(result(1), 1.0, 1e-6);
@@ -87,23 +87,23 @@ BOOST_AUTO_TEST_CASE(SFcalculateDerivative)
 
   Eigen::Tensor<float, 1> result;
 
-  // test input
+  // test input/linear
   result = calculateDerivative(
-    NodeType::input, NodeActivation::ReLU, output);
-  BOOST_CHECK_CLOSE(result(0), 0.0, 1e-6);
-  BOOST_CHECK_CLOSE(result(1), 0.0, 1e-6);
-  BOOST_CHECK_CLOSE(result(2), 0.0, 1e-6);
-  BOOST_CHECK_CLOSE(result(3), 0.0, 1e-6);
-  BOOST_CHECK_CLOSE(result(4), 0.0, 1e-6);
+    NodeType::input, NodeActivation::Linear, output);
+  BOOST_CHECK_CLOSE(result(0), 1.0, 1e-6);
+  BOOST_CHECK_CLOSE(result(1), 1.0, 1e-6);
+  BOOST_CHECK_CLOSE(result(2), 1.0, 1e-6);
+  BOOST_CHECK_CLOSE(result(3), 1.0, 1e-6);
+  BOOST_CHECK_CLOSE(result(4), 1.0, 1e-6);
 
-  // test bias
+  // test bias/linear
   result = calculateDerivative(
-    NodeType::bias, NodeActivation::ReLU, output);
-  BOOST_CHECK_CLOSE(result(0), 0.0, 1e-6);
-  BOOST_CHECK_CLOSE(result(1), 0.0, 1e-6);
-  BOOST_CHECK_CLOSE(result(2), 0.0, 1e-6);
-  BOOST_CHECK_CLOSE(result(3), 0.0, 1e-6);
-  BOOST_CHECK_CLOSE(result(4), 0.0, 1e-6);
+    NodeType::bias, NodeActivation::Linear, output);
+	BOOST_CHECK_CLOSE(result(0), 1.0, 1e-6);
+	BOOST_CHECK_CLOSE(result(1), 1.0, 1e-6);
+	BOOST_CHECK_CLOSE(result(2), 1.0, 1e-6);
+	BOOST_CHECK_CLOSE(result(3), 1.0, 1e-6);
+	BOOST_CHECK_CLOSE(result(4), 1.0, 1e-6);
 
   // test ReLU
   result = calculateDerivative(
@@ -136,9 +136,9 @@ BOOST_AUTO_TEST_CASE(SFcalculateDerivative)
   result = calculateDerivative(
     NodeType::hidden, NodeActivation::TanH, output);  
   BOOST_CHECK_CLOSE(result(0), 1.0, 1e-6);
-  BOOST_CHECK_CLOSE(result(1), 0.419974297, 1e-6);
+  BOOST_CHECK_CLOSE(result(1), 0.419974, 1e-4);
   BOOST_CHECK_CLOSE(result(2), 0.0, 1e-6);
-  BOOST_CHECK_CLOSE(result(3), 0.419974297, 1e-6);
+  BOOST_CHECK_CLOSE(result(3), 0.419974, 1e-4);
   BOOST_CHECK_CLOSE(result(4), 0.0, 1e-6);
 }
 

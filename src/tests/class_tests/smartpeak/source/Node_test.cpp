@@ -283,6 +283,19 @@ BOOST_AUTO_TEST_CASE(calculateActivation)
   BOOST_CHECK_CLOSE(node.getOutput()(4,0), -1.0, 1e-6);
   BOOST_CHECK_CLOSE(node.getOutput()(0,1), -1.0, 1e-6); // time point 1 should not be calculated
 
+  // test Linear
+	node.setType(NodeType::hidden);
+	node.setActivation(NodeActivation::Linear);
+	node.setOutput(output_test);
+	node.calculateActivation(0);
+
+	BOOST_CHECK_CLOSE(node.getOutput()(0, 0), 0.0, 1e-6);
+	BOOST_CHECK_CLOSE(node.getOutput()(1, 0), 1.0, 1e-6);
+	BOOST_CHECK_CLOSE(node.getOutput()(2, 0), 10.0, 1e-6);
+	BOOST_CHECK_CLOSE(node.getOutput()(3, 0), -1.0, 1e-6);
+	BOOST_CHECK_CLOSE(node.getOutput()(4, 0), -10.0, 1e-6);
+	BOOST_CHECK_CLOSE(node.getOutput()(0, 1), -1.0, 1e-6); // time point 1 should not be calculated
+
 }
 
 BOOST_AUTO_TEST_CASE(calculateDerivative)
@@ -378,11 +391,25 @@ BOOST_AUTO_TEST_CASE(calculateDerivative)
   node.calculateDerivative(0);
   
   BOOST_CHECK_CLOSE(node.getDerivative()(0,0), 1.0, 1e-6);
-  BOOST_CHECK_CLOSE(node.getDerivative()(1,0), 0.419974297, 1e-6);
+  BOOST_CHECK_CLOSE(node.getDerivative()(1,0), 0.419974297, 1e-4);
   BOOST_CHECK_CLOSE(node.getDerivative()(2,0), 0.0, 1e-6);
-  BOOST_CHECK_CLOSE(node.getDerivative()(3,0), 0.419974297, 1e-6);
+  BOOST_CHECK_CLOSE(node.getDerivative()(3,0), 0.419974297, 1e-4);
   BOOST_CHECK_CLOSE(node.getDerivative()(4,0), 0.0, 1e-6);
   BOOST_CHECK_CLOSE(node.getDerivative()(0,1), 0.0, 1e-6); // time step 1 should not be calculated
+
+  // test Linear
+	node.setType(NodeType::hidden);
+	node.setActivation(NodeActivation::Linear);
+	node.initNode(5, 2);
+	node.setOutput(output_test);
+	node.calculateDerivative(0);
+
+	BOOST_CHECK_CLOSE(node.getDerivative()(0, 0), 1.0, 1e-6);
+	BOOST_CHECK_CLOSE(node.getDerivative()(1, 0), 1.0, 1e-6);
+	BOOST_CHECK_CLOSE(node.getDerivative()(2, 0), 1.0, 1e-6);
+	BOOST_CHECK_CLOSE(node.getDerivative()(3, 0), 1.0, 1e-6);
+	BOOST_CHECK_CLOSE(node.getDerivative()(4, 0), 1.0, 1e-6);
+	BOOST_CHECK_CLOSE(node.getDerivative()(0, 1), 0.0, 1e-6); // time step 1 should not be calculated
 }
 
 BOOST_AUTO_TEST_CASE(saveCurrentOutput)
