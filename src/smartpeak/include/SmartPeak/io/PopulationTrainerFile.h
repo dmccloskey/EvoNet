@@ -54,7 +54,7 @@ public:
 		*/
 		bool storeModelValidations(
 			const std::string& filename,
-			const std::vector<std::pair<std::string, float>>& models_validation_errors);
+			const std::vector<std::pair<int, float>>& models_validation_errors);
 	};
 }
 

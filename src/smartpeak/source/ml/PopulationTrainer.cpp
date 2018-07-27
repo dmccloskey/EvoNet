@@ -54,7 +54,7 @@ namespace SmartPeak
     // );
   }
 
-	std::vector<std::pair<std::string, float>> PopulationTrainer::selectModels(
+	std::vector<std::pair<int, float>> PopulationTrainer::selectModels(
     const int& n_top,
     const int& n_random,
     std::vector<Model>& models,
@@ -68,18 +68,18 @@ namespace SmartPeak
   {
     // printf("PopulationTrainer::selectModels, Models size: %i\n", models.size());
     // score the models
-    std::vector<std::pair<std::string, float>> models_validation_errors;
+    std::vector<std::pair<int, float>> models_validation_errors;
 
     // models_validation_errors = validateModels_(
     //   models, model_trainer, input, output, time_steps, input_nodes, output_nodes
     // );
 
-    std::vector<std::future<std::pair<std::string, float>>> task_results;
+    std::vector<std::future<std::pair<int, float>>> task_results;
     int thread_cnt = 0;
     for (int i=0; i<models.size(); ++i)
     {
 
-      std::packaged_task<std::pair<std::string, float> // encapsulate in a packaged_task
+      std::packaged_task<std::pair<int, float> // encapsulate in a packaged_task
         (Model*,
           ModelTrainer*,
           Eigen::Tensor<float, 4>,
@@ -136,8 +136,8 @@ namespace SmartPeak
     );
     // printf("PopulationTrainer::selectModels, models_validation_errors3 size: %i\n", models_validation_errors.size());
     
-    std::vector<std::string> selected_models;
-    for (const std::pair<std::string, float>& model_error: models_validation_errors)
+    std::vector<int> selected_models;
+    for (const std::pair<int, float>& model_error: models_validation_errors)
       selected_models.push_back(model_error.first);
 
     // purge non-selected models
@@ -162,45 +162,7 @@ namespace SmartPeak
 		return models_validation_errors;
   }
 
-  // [DEPRECATED]
-  std::vector<std::pair<std::string, float>> PopulationTrainer::validateModels_(
-    std::vector<Model>& models,
-    ModelTrainer& model_trainer,
-    const Eigen::Tensor<float, 4>& input,
-    const Eigen::Tensor<float, 4>& output,
-    const Eigen::Tensor<float, 3>& time_steps,
-    const std::vector<std::string>& input_nodes,
-    const std::vector<std::string>& output_nodes)
-  {
-    // score the models
-    std::vector<std::pair<std::string, float>> models_validation_errors;
-    for (int i=0; i<models.size(); ++i)
-    {
-      try
-      {
-        std::vector<float> model_errors = model_trainer.validateModel(
-          models[i], input, output, time_steps,
-          input_nodes, output_nodes);
-        float model_ave_error = 1e6;
-        if (model_errors.size()>0)
-          model_ave_error = std::accumulate(model_errors.begin(), model_errors.end(), 0.0)/model_errors.size();
-        if (isnan(model_ave_error))
-          model_ave_error = 1e6;
-        models_validation_errors.push_back(std::make_pair(models[i].getName(), model_ave_error));
-      }
-      catch (std::exception& e)
-      {
-        printf("The model %s is broken.\n", models[i].getName().data());
-        printf("Error: %s.\n", e.what());
-        models_validation_errors.push_back(std::make_pair(models[i].getName(),1e6f));
-      }
-    }
-    // [TODO: add test that models_validation_errors has expected keys and values]
-
-    return models_validation_errors;    
-  }
-
-  std::pair<std::string, float> PopulationTrainer::validateModel_(
+  std::pair<int, float> PopulationTrainer::validateModel_(
     Model* model,
     ModelTrainer* model_trainer,
     const Eigen::Tensor<float, 4>& input,
@@ -227,24 +189,24 @@ namespace SmartPeak
         model->getName().data(), model->getNodes().size(), model->getLinks().size(), model_ave_error);
       std::cout<<cout_char;
 
-      return std::make_pair(model->getName(), model_ave_error);
+      return std::make_pair(model->getId(), model_ave_error);
     }
     catch (std::exception& e)
     {
       printf("The model %s is broken.\n", model->getName().data());
       printf("Error: %s.\n", e.what());
-      return std::make_pair(model->getName(),1e6f);
+      return std::make_pair(model->getId(),1e6f);
     }  
   }
 
-  std::vector<std::pair<std::string, float>> PopulationTrainer::getTopNModels_(
-    std::vector<std::pair<std::string, float>> model_validation_scores,
+  std::vector<std::pair<int, float>> PopulationTrainer::getTopNModels_(
+    std::vector<std::pair<int, float>> model_validation_scores,
     const int& n_top)
   {
     // sort each model based on their scores in ascending order
     std::sort(
       model_validation_scores.begin(), model_validation_scores.end(), 
-      [=](std::pair<std::string, float>& a, std::pair<std::string, float>& b)
+      [=](std::pair<int, float>& a, std::pair<int, float>& b)
       {
         return a.second < b.second;
       }
@@ -255,14 +217,14 @@ namespace SmartPeak
     if (n_ > model_validation_scores.size())
       n_ = model_validation_scores.size();
       
-    std::vector<std::pair<std::string, float>> top_n_models;
+    std::vector<std::pair<int, float>> top_n_models;
     for (int i=0; i<n_; ++i) {top_n_models.push_back(model_validation_scores[i]);}
 
     return top_n_models;
   }
 
-  std::vector<std::pair<std::string, float>> PopulationTrainer::getRandomNModels_(
-    std::vector<std::pair<std::string, float>> model_validation_scores,
+  std::vector<std::pair<int, float>> PopulationTrainer::getRandomNModels_(
+    std::vector<std::pair<int, float>> model_validation_scores,
     const int& n_random)
   {
     int n_ = n_random;
@@ -273,7 +235,7 @@ namespace SmartPeak
     std::random_device seed;
     std::mt19937 engine(seed());
     std::shuffle(model_validation_scores.begin(), model_validation_scores.end(), engine);
-    std::vector<std::pair<std::string, float>> random_n_models;
+    std::vector<std::pair<int, float>> random_n_models;
     for (int i=0; i<n_; ++i) {random_n_models.push_back(model_validation_scores[i]);}
 
     return random_n_models;
@@ -300,7 +262,7 @@ namespace SmartPeak
         std::packaged_task<Model // encapsulate in a packaged_task
           (Model*, ModelReplicator*, 
 						std::vector<std::string>, std::vector<std::string>,
-						std::string, int, int
+						std::string, int
           )> task(PopulationTrainer::replicateModel_);
         
         // launch the thread
@@ -308,7 +270,7 @@ namespace SmartPeak
         std::thread task_thread(std::move(task),
           &model, &model_replicator, 
 					std::ref(input_nodes), std::ref(output_nodes),
-          std::ref(unique_str), std::ref(cnt), std::ref(i));
+          std::ref(unique_str), std::ref(cnt));
         task_thread.detach();
 
         // retreive the results
@@ -320,7 +282,9 @@ namespace SmartPeak
             {
               try
               {
-                models.push_back(task_result.get());
+								Model model_task_result = task_result.get();
+								model_task_result.setId(getNextID());
+                models.push_back(model_task_result);
               }              
               catch (std::exception& e)
               {
@@ -348,7 +312,7 @@ namespace SmartPeak
     ModelReplicator* model_replicator,
 		const std::vector<std::string>& input_nodes,
 		const std::vector<std::string>& output_nodes,
-    std::string unique_str, int cnt, int i)
+    std::string unique_str, int cnt)
   {    
     std::lock_guard<std::mutex> lock(replicateModel_mutex);
     
@@ -374,7 +338,7 @@ namespace SmartPeak
 			model_copy.setName(model_name);
 
 			model_replicator->makeRandomModifications();
-			model_replicator->modifyModel(model_copy, unique_str + "-" + std::to_string(i));
+			model_replicator->modifyModel(model_copy, unique_str);
 			model_copy.pruneModel(1);
 
 			Model model_check(model_copy);
@@ -512,6 +476,11 @@ namespace SmartPeak
       return std::make_pair(false, model_copy);
     }
   }
+
+	int PopulationTrainer::getNextID()
+	{
+		return ++unique_id_;
+	}
 
   // float PopulationTrainer::calculateMean(std::vector<float> values)
   // {

@@ -47,6 +47,7 @@ BOOST_AUTO_TEST_CASE(storeModels)
   {
     Model model;
     model.setName(std::to_string(i) + ":" + "." + ";");
+		model.setId(i);
     models.push_back(model);
   }
 
@@ -60,9 +61,9 @@ BOOST_AUTO_TEST_CASE(storeModelValidations)
 	PopulationTrainerFile data;
 
 	// make a vector of models to use for testing
-	std::vector<std::pair<std::string, float>> models_validation_errors;
+	std::vector<std::pair<int, float>> models_validation_errors;
 	for (int i = 0; i<4; ++i)
-		models_validation_errors.push_back(std::make_pair(std::to_string(i), float(i)));
+		models_validation_errors.push_back(std::make_pair(i, float(i)));
 
 	bool success = data.storeModelValidations("StoreModelValidationsTest.csv", models_validation_errors);
 

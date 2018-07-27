@@ -46,7 +46,7 @@ public:
 
 			@returns a list of pairs of model_name to average validation error
     */ 
-		std::vector<std::pair<std::string, float>> selectModels(
+		std::vector<std::pair<int, float>> selectModels(
       const int& n_top,
       const int& n_random,
       std::vector<Model>& models,
@@ -63,16 +63,7 @@ public:
 
       @returns key value pair of model_name and model_error
     */ 
-    // [DEPRECATED]
-    std::vector<std::pair<std::string, float>> validateModels_(
-      std::vector<Model>& models,
-      ModelTrainer& model_trainer,
-      const Eigen::Tensor<float, 4>& input,
-      const Eigen::Tensor<float, 4>& output,
-      const Eigen::Tensor<float, 3>& time_steps,
-      const std::vector<std::string>& input_nodes,
-      const std::vector<std::string>& output_nodes);
-    static std::pair<std::string, float> validateModel_(
+    static std::pair<int, float> validateModel_(
       Model* model,
       ModelTrainer* model_trainer,
       const Eigen::Tensor<float, 4>& input,
@@ -86,8 +77,8 @@ public:
 
       @returns key value pair of model_name and model_error
     */ 
-    static std::vector<std::pair<std::string, float>> getTopNModels_(
-      std::vector<std::pair<std::string, float>> model_validation_scores,
+    static std::vector<std::pair<int, float>> getTopNModels_(
+      std::vector<std::pair<int, float>> model_validation_scores,
       const int& n_top);
  
     /**
@@ -95,8 +86,8 @@ public:
 
       @returns key value pair of model_name and model_error
     */ 
-    static std::vector<std::pair<std::string, float>> getRandomNModels_(
-      std::vector<std::pair<std::string, float>> model_validation_scores,
+    static std::vector<std::pair<int, float>> getRandomNModels_(
+      std::vector<std::pair<int, float>> model_validation_scores,
       const int& n_random);
  
     /**
@@ -130,7 +121,7 @@ public:
       ModelReplicator* model_replicator,
 			const std::vector<std::string>& input_nodes,
 			const std::vector<std::string>& output_nodes,
-      std::string unique_str, int cnt, int i);
+      std::string unique_str, int cnt);
  
     /**
       @brief Trains each of the models in the population
@@ -159,6 +150,11 @@ public:
       const Eigen::Tensor<float, 3>& time_steps,
       const std::vector<std::string>& input_nodes,
       const std::vector<std::string>& output_nodes);
+
+		int getNextID();
+
+private:
+		int unique_id_ = 0;
   };
 }
 

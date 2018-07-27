@@ -61,13 +61,13 @@ BOOST_AUTO_TEST_CASE(getTopNModels_)
   PopulationTrainer population_trainer;
 
   // make dummy data
-  std::vector<std::pair<std::string, float>> models_validation_errors;
+  std::vector<std::pair<int, float>> models_validation_errors;
   const int n_models = 4;
   for (int i=0; i<n_models; ++i)
-    models_validation_errors.push_back(std::make_pair(std::to_string(i+1), (float)(n_models-i)));
+    models_validation_errors.push_back(std::make_pair(i+1, (float)(n_models-i)));
 
   const int n_top_models = 2;
-  std::vector<std::pair<std::string, float>> top_n_models = population_trainer.getTopNModels_(
+  std::vector<std::pair<int, float>> top_n_models = population_trainer.getTopNModels_(
     models_validation_errors, n_top_models);
   
   for (int i=0; i<n_top_models; ++i)
@@ -82,13 +82,13 @@ BOOST_AUTO_TEST_CASE(getRandomNModels_)
   PopulationTrainer population_trainer;
 
   // make dummy data
-  std::vector<std::pair<std::string, float>> models_validation_errors;
+  std::vector<std::pair<int, float>> models_validation_errors;
   const int n_models = 4;
   for (int i=0; i<n_models; ++i)
-    models_validation_errors.push_back(std::make_pair(std::to_string(i+1), (float)(n_models-i)));
+    models_validation_errors.push_back(std::make_pair(i+1, (float)(n_models-i)));
   
   const int n_random_models = 2;
-  std::vector<std::pair<std::string, float>> random_n_models = population_trainer.getRandomNModels_(
+  std::vector<std::pair<int, float>> random_n_models = population_trainer.getRandomNModels_(
     models_validation_errors, n_random_models);
   
   BOOST_CHECK_EQUAL(random_n_models.size(), 2);  
@@ -566,7 +566,7 @@ BOOST_AUTO_TEST_CASE(exampleUsage)
 
     // select the top N from the population
     std::cout<<"Select the top N models from the population..."<<std::endl;
-		std::vector<std::pair<std::string, float>> models_validation_errors = population_trainer.selectModels(
+		std::vector<std::pair<int, float>> models_validation_errors = population_trainer.selectModels(
       n_top, n_random, population, model_trainer,
       input_data, output_data, time_steps, input_nodes, output_nodes, 2);
 

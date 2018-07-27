@@ -416,7 +416,7 @@ int main(int argc, char** argv)
 
     // select the top N from the population
     std::cout<<"Selecting the models..."<<std::endl;    
-		std::vector<std::pair<std::string, float>> models_validation_errors = population_trainer.selectModels(
+		std::vector<std::pair<int, float>> models_validation_errors = population_trainer.selectModels(
       n_top, n_random, population, model_trainer,
       input_data_validation, output_data_validation, time_steps, input_nodes, output_nodes, n_threads);
 

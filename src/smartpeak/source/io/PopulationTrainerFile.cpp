@@ -37,9 +37,11 @@ namespace SmartPeak
 		for (const Model& model : models)
 		{
 			// write the model to file
-			std::string model_name = model.getName();
-			sanitizeModelName(model_name);
-			std::string model_name_score = model_name + "_";
+			//std::string model_name = model.getName();
+			//sanitizeModelName(model_name);
+			//std::string model_name_score = model_name + "_";
+			int model_id = model.getId();
+			std::string model_name_score = std::to_string(model_id) + "_";
 
 			WeightFile weightfile;
 			weightfile.storeWeightsCsv(model_name_score + filename + "_Weights.csv", model.getWeights());
@@ -63,7 +65,7 @@ namespace SmartPeak
 
 	bool PopulationTrainerFile::storeModelValidations(
 		const std::string& filename,
-		const std::vector<std::pair<std::string, float>>& models_validation_errors)
+		const std::vector<std::pair<int, float>>& models_validation_errors)
 	{
 		CSVWriter csvwriter(filename);
 
@@ -71,10 +73,10 @@ namespace SmartPeak
 		const std::vector<std::string> headers = { "model_name", "ave_validation_error" };
 		csvwriter.writeDataInRow(headers.begin(), headers.end());
 
-		for (const std::pair<std::string, float>& model_validation_error : models_validation_errors)
+		for (const std::pair<int, float>& model_validation_error : models_validation_errors)
 		{
 			std::vector<std::string> row;
-			row.push_back(model_validation_error.first);
+			row.push_back(std::to_string(model_validation_error.first));
 			char error[512];
 			sprintf(error, "%0.6f", model_validation_error.second);
 			std::string error_str(error);
