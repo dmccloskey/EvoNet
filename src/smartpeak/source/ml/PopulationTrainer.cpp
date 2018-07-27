@@ -147,7 +147,7 @@ namespace SmartPeak
         std::remove_if(models.begin(), models.end(),
           [=](const Model& model)
           {
-            return std::count(selected_models.begin(), selected_models.end(), model.getName()) == 0;
+            return std::count(selected_models.begin(), selected_models.end(), model.getId()) == 0;
           }
         ),
         models.end()
