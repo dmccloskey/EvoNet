@@ -97,9 +97,9 @@ public:
 		// Nodes
 		i_rand = Node("i_rand", NodeType::input, NodeStatus::activated, NodeActivation::Linear);
 		i_mask = Node("i_mask", NodeType::input, NodeStatus::activated, NodeActivation::Linear);
-		h = Node("h", NodeType::hidden, NodeStatus::deactivated, NodeActivation::TanH);
-		m = Node("m", NodeType::hidden, NodeStatus::deactivated, NodeActivation::TanH);
-		o = Node("o", NodeType::output, NodeStatus::deactivated, NodeActivation::TanH);
+		h = Node("h", NodeType::hidden, NodeStatus::deactivated, NodeActivation::ReLU);
+		m = Node("m", NodeType::hidden, NodeStatus::deactivated, NodeActivation::ReLU);
+		o = Node("o", NodeType::output, NodeStatus::deactivated, NodeActivation::ReLU);
 		h_bias = Node("h_bias", NodeType::bias, NodeStatus::activated, NodeActivation::Linear);
 		m_bias = Node("m_bias", NodeType::bias, NodeStatus::activated, NodeActivation::Linear);
 		o_bias = Node("o_bias", NodeType::bias, NodeStatus::activated, NodeActivation::Linear);
@@ -398,20 +398,16 @@ public:
         model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), false, true, n_threads); 
 
       // calculate the model error and node output error
-			model.CETT(output.chip(iter, 3), output_nodes, 1);  // just the last result
-      //model.CETT(output.chip(iter, 3), output_nodes, getMemorySize());
+			//model.CETT(output.chip(iter, 3), output_nodes, 1);  // just the last result
+      model.CETT(output.chip(iter, 3), output_nodes, getMemorySize());
 
       //std::cout<<"Model "<<model.getName()<<" error: "<<model.getError().sum()<<std::endl;
 
       // back propogate
-      if (iter == 0)
-        model.TBPTT(1, true, true, n_threads);
-      else
-        model.TBPTT(1, false, true, n_threads);
-			//if (iter == 0)
-			//	model.TBPTT(getMemorySize() - 1, true, true, n_threads);
-			//else
-			//	model.TBPTT(getMemorySize() - 1, false, true, n_threads);
+			if (iter == 0)
+				model.TBPTT(getMemorySize() - 1, true, true, n_threads);
+			else
+				model.TBPTT(getMemorySize() - 1, false, true, n_threads);
 
 			//for (const Node& node : model.getNodes())
 			//{
@@ -478,8 +474,8 @@ public:
         model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), false, true, n_threads);
 
       // calculate the model error and node output error
-			model.CETT(output.chip(iter, 3), output_nodes, 1); // just the last predicted result
-			//model.CETT(output.chip(iter, 3), output_nodes, getMemorySize()); // just the last predicted result
+			//model.CETT(output.chip(iter, 3), output_nodes, 1); // just the last predicted result
+			model.CETT(output.chip(iter, 3), output_nodes, getMemorySize()); // just the last predicted result
       const Eigen::Tensor<float, 0> total_error = model.getError().sum();
       model_error.push_back(total_error(0));  
       //std::cout<<"Model error: "<<total_error(0)<<std::endl;
@@ -500,7 +496,7 @@ int main(int argc, char** argv)
 
   // Add problem parameters
   const int sequence_length = 25; // test sequence length
-	const int n_epochs = 500;
+	const int n_epochs = 1000;
 	const int n_epochs_validation = 25;
 
   const int n_hard_threads = std::thread::hardware_concurrency();
@@ -543,7 +539,7 @@ int main(int argc, char** argv)
 
   // Evolve the population
   std::vector<Model> population; 
-  const int iterations = 50;
+  const int iterations = 1;
   for (int iter=0; iter<iterations; ++iter)
   {
     printf("Iteration #: %d\n", iter);
@@ -555,15 +551,16 @@ int main(int argc, char** argv)
       for (int i=0; i<population_size; ++i)
       {
         // make the model name
-        //Model model = model_trainer.makeModelMemoryCellSol();
-				Model model = model_trainer.makeModel();
-				model.initWeights(); // initialize the weights
+        Model model = model_trainer.makeModelMemoryCellSol();
+				//Model model = model_trainer.makeModel();
 
         char model_name_char[512];
         sprintf(model_name_char, "%s_%d", model.getName().data(), i);
         std::string model_name(model_name_char);
 				model.setName(model_name);
 				model.setId(i);
+
+				model.initWeights(); // initialize the weights
         population.push_back(model);
       }
     }
