@@ -405,9 +405,13 @@ public:
 
       // back propogate
       if (iter == 0)
-        model.TBPTT(getMemorySize()-1, true, true, n_threads);
+        model.TBPTT(1, true, true, n_threads);
       else
-        model.TBPTT(getMemorySize()-1, false, true, n_threads);
+        model.TBPTT(1, false, true, n_threads);
+			//if (iter == 0)
+			//	model.TBPTT(getMemorySize() - 1, true, true, n_threads);
+			//else
+			//	model.TBPTT(getMemorySize() - 1, false, true, n_threads);
 
 			//for (const Node& node : model.getNodes())
 			//{
