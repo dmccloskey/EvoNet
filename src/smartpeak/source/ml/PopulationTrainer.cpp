@@ -185,7 +185,7 @@ namespace SmartPeak
         model_ave_error = 1e6;      
 
       char cout_char[512];
-      sprintf(cout_char, "Model %s (Nodes: %d, Links: %d) error: %.2f\n", 
+      sprintf(cout_char, "Model %s (Nodes: %d, Links: %d) error: %.6f\n", 
         model->getName().data(), model->getNodes().size(), model->getLinks().size(), model_ave_error);
       std::cout<<cout_char;
 
@@ -483,6 +483,11 @@ namespace SmartPeak
 	int PopulationTrainer::getNextID()
 	{
 		return ++unique_id_;
+	}
+
+	void PopulationTrainer::setID(const int & id)
+	{
+		unique_id_ = id;
 	}
 
   // float PopulationTrainer::calculateMean(std::vector<float> values)

@@ -152,6 +152,7 @@ public:
       const std::vector<std::string>& output_nodes);
 
 		int getNextID();
+		void setID(const int& id);
 
 private:
 		int unique_id_ = 0;
