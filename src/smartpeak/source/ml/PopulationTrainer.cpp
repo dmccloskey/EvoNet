@@ -339,14 +339,17 @@ namespace SmartPeak
 
 			model_replicator->makeRandomModifications();
 			model_replicator->modifyModel(model_copy, unique_str);
+
+			// model checks
+			model_copy.removeIsolatedNodes();
 			model_copy.pruneModel(10);
 
+			// additional model checks
 			Model model_check(model_copy);
-			bool complete_model = model_check.checkModelCompleteness(input_nodes, output_nodes);
-			//bool complete_model = true;
+			bool complete_model = model_check.checkCompleteInputToOutput(input_nodes, output_nodes);
 
 			if (complete_model)
-				return model_copy; // return the model not the pointer
+				return model_copy;
 		}
 
 		throw std::runtime_error("All modified models were broken!");

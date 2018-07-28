@@ -577,7 +577,7 @@ namespace SmartPeak
   
   void Model::getNextInactiveLayer(
       std::map<std::string, int>& FP_operations_map,
-      std::vector<FP_operation_list>& FP_operations)
+      std::vector<OperationList>& FP_operations)
   {
 
     // get all links where the source node is active and the sink node is inactive
@@ -588,7 +588,7 @@ namespace SmartPeak
         nodes_.at(link_map.second->getSourceNodeName())->getStatus() == NodeStatus::activated && 
         nodes_.at(link_map.second->getSinkNodeName())->getStatus() == NodeStatus::initialized)
       {
-        FP_operation_arguments arguments;
+        OperationArguments arguments;
         arguments.source_node = nodes_.at(link_map.second->getSourceNodeName());
         arguments.weight = weights_.at(link_map.second->getWeightName());
         arguments.time_step = 0;
@@ -603,8 +603,8 @@ namespace SmartPeak
         }
         else
         {
-          FP_operation_list operation_list;
-          FP_operation_result result;
+          OperationList operation_list;
+          OperationResult result;
           result.sink_node = nodes_.at(link_map.second->getSinkNodeName());
           operation_list.result = result;
           operation_list.arguments.push_back(arguments);
@@ -672,7 +672,7 @@ namespace SmartPeak
   
   void Model::getNextInactiveLayerBiases(
     std::map<std::string, int>& FP_operations_map,
-    std::vector<FP_operation_list>& FP_operations,
+    std::vector<OperationList>& FP_operations,
     std::vector<std::string>& sink_nodes_with_biases)
   {
 
@@ -688,7 +688,7 @@ namespace SmartPeak
         FP_operations_map.count(link_map.second->getSinkNodeName()) != 0 // sink node has already been identified
       )
       {
-        FP_operation_arguments arguments;
+        OperationArguments arguments;
         arguments.source_node = nodes_.at(link_map.second->getSourceNodeName());
         arguments.weight = weights_.at(link_map.second->getWeightName());
         arguments.time_step = 0;
@@ -765,7 +765,7 @@ namespace SmartPeak
   
   void Model::getNextInactiveLayerCycles(
     std::map<std::string, int>& FP_operations_map,
-    std::vector<FP_operation_list>& FP_operations,
+    std::vector<OperationList>& FP_operations,
     std::vector<std::string>& sink_nodes_with_cycles)
   {
 
@@ -779,7 +779,7 @@ namespace SmartPeak
         FP_operations_map.count(link_map.second->getSinkNodeName()) != 0 // sink node has already been identified
       )
       {
-        FP_operation_arguments arguments;
+        OperationArguments arguments;
         arguments.source_node = nodes_.at(link_map.second->getSourceNodeName());
         arguments.weight = weights_.at(link_map.second->getWeightName());
 
@@ -851,7 +851,7 @@ namespace SmartPeak
   }
 
   Eigen::Tensor<float, 1> Model::calculateNodeInput_(
-    FP_operation_arguments* arguments, 
+    OperationArguments* arguments, 
     const int& batch_size,
     const int& memory_size,
     const int& time_step)
@@ -874,7 +874,7 @@ namespace SmartPeak
   }
   
   bool Model::calculateNetNodeInput_(
-    FP_operation_list* operations,  
+    OperationList* operations,  
     const int& batch_size,
     const int& memory_size,
     const int& time_step,
@@ -893,7 +893,7 @@ namespace SmartPeak
     for (int i=0; i<operations->arguments.size(); ++i)
     {
       std::packaged_task<Eigen::Tensor<float, 1> // encapsulate in a packaged_task
-        (FP_operation_arguments*, int, int, int
+        (OperationArguments*, int, int, int
         )> task(Model::calculateNodeInput_);
       
       // launch the thread
@@ -947,7 +947,7 @@ namespace SmartPeak
   }
 
   void Model::forwardPropogateLayerNetInput(
-      std::vector<FP_operation_list>& FP_operations,
+      std::vector<OperationList>& FP_operations,
     const int& time_step, int n_threads)
   {
 
@@ -970,7 +970,7 @@ namespace SmartPeak
     for (auto& FP_operation : FP_operations)
     {
       std::packaged_task<bool // encapsulate in a packaged_task
-        (FP_operation_list*, int, int, int, int
+        (OperationList*, int, int, int, int
         )> task(Model::calculateNetNodeInput_);
       
       // launch the thread
@@ -1172,7 +1172,7 @@ namespace SmartPeak
       { 
         // get the next hidden layer
         std::map<std::string, int> FP_operations_map;
-        std::vector<FP_operation_list> FP_operations_list;
+        std::vector<OperationList> FP_operations_list;
         getNextInactiveLayer(FP_operations_map, FP_operations_list);
 
         // get biases,
@@ -1189,7 +1189,7 @@ namespace SmartPeak
           sink_nodes_cycles.size() != FP_operations_list.size())
         { // not all forward propogation steps have caught up
           // need to remove sink nodes with cycles
-          std::vector<FP_operation_list> FP_operations_list_nocycles;
+          std::vector<OperationList> FP_operations_list_nocycles;
           for (const std::string& sink_node: sink_nodes_cycles)
           {
             FP_operations_list_nocycles.push_back(FP_operations_list[FP_operations_map.at(sink_node)]);
@@ -1481,7 +1481,7 @@ namespace SmartPeak
   
   void Model::getNextUncorrectedLayer(
     std::map<std::string, int>& BP_operations_map,
-    std::vector<FP_operation_list>& BP_operations,
+    std::vector<OperationList>& BP_operations,
     std::vector<std::string>& source_nodes)
   {
     // get all links where the source node is corrected and the sink node is active
@@ -1491,7 +1491,7 @@ namespace SmartPeak
       if (nodes_.at(link_map.second->getSinkNodeName())->getStatus() == NodeStatus::corrected && 
         nodes_.at(link_map.second->getSourceNodeName())->getStatus() == NodeStatus::activated)
       {        
-        FP_operation_arguments arguments;
+        OperationArguments arguments;
         arguments.source_node = nodes_.at(link_map.second->getSinkNodeName());
         arguments.weight = weights_.at(link_map.second->getWeightName());
         arguments.time_step = 0;
@@ -1506,8 +1506,8 @@ namespace SmartPeak
         }
         else
         {
-          FP_operation_list operation_list;
-          FP_operation_result result;
+          OperationList operation_list;
+          OperationResult result;
           result.sink_node = nodes_.at(link_map.second->getSourceNodeName());
           operation_list.result = result;
           operation_list.arguments.push_back(arguments);
@@ -1579,7 +1579,7 @@ namespace SmartPeak
   
   void Model::getNextUncorrectedLayerCycles(
     std::map<std::string, int>& BP_operations_map,
-    std::vector<FP_operation_list>& BP_operations,
+    std::vector<OperationList>& BP_operations,
     std::vector<std::string>& source_nodes,
     std::vector<std::string>& source_nodes_with_cycles)
   {
@@ -1592,7 +1592,7 @@ namespace SmartPeak
         std::count(source_nodes.begin(), source_nodes.end(), link_map.second->getSinkNodeName()) != 0 // source node has already been identified)
       ) 
       {
-        FP_operation_arguments arguments;
+        OperationArguments arguments;
         arguments.source_node = nodes_.at(link_map.second->getSinkNodeName());
         arguments.weight = weights_.at(link_map.second->getWeightName());
         arguments.time_step = 0;        
@@ -1604,8 +1604,8 @@ namespace SmartPeak
         }
         else
         {
-          FP_operation_list operation_list;
-          FP_operation_result result;
+          OperationList operation_list;
+          OperationResult result;
           result.sink_node = nodes_.at(link_map.second->getSourceNodeName());
           result.time_step = 1;
           operation_list.result = result;
@@ -1675,7 +1675,7 @@ namespace SmartPeak
   }  
 
   Eigen::Tensor<float, 1> Model::calculateNodeError_(
-    FP_operation_arguments* arguments, 
+    OperationArguments* arguments, 
     const int& batch_size,
     const int& memory_size,
     const int& time_step
@@ -1694,7 +1694,7 @@ namespace SmartPeak
   }
 
   bool Model::calculateNetNodeError_(
-    FP_operation_list* operations, 
+    OperationList* operations, 
     const int& batch_size,
     const int& memory_size,
     const int& time_step,
@@ -1713,7 +1713,7 @@ namespace SmartPeak
     for (int i=0; i<operations->arguments.size(); ++i)
     {
       std::packaged_task<Eigen::Tensor<float, 1> // encapsulate in a packaged_task
-        (FP_operation_arguments*, int, int, int
+        (OperationArguments*, int, int, int
         )> task(Model::calculateNodeError_);
       
       // launch the thread
@@ -1768,7 +1768,7 @@ namespace SmartPeak
   }
 
   void Model::backPropogateLayerError(
-    std::vector<FP_operation_list>& BP_operations,
+    std::vector<OperationList>& BP_operations,
     const int& time_step, int n_threads)
   {
 
@@ -1796,7 +1796,7 @@ namespace SmartPeak
     for (auto& BP_operation : BP_operations)
     {
       std::packaged_task<bool // encapsulate in a packaged_task
-        (FP_operation_list*, int, int, int, int
+        (OperationList*, int, int, int, int
         )> task(Model::calculateNetNodeError_);
       
       // launch the thread
@@ -2048,7 +2048,7 @@ namespace SmartPeak
       {
         // get the next uncorrected layer
         std::map<std::string, int> BP_operations_map;
-        std::vector<FP_operation_list> BP_operations_list;
+        std::vector<OperationList> BP_operations_list;
         std::vector<std::string> source_nodes;
         getNextUncorrectedLayer(BP_operations_map, BP_operations_list, source_nodes);  
 
@@ -2065,7 +2065,7 @@ namespace SmartPeak
 
         // get cycles
         std::map<std::string, int> BP_operations_map_cycles = BP_operations_map;
-        std::vector<FP_operation_list> BP_operations_list_cycles = BP_operations_list;
+        std::vector<OperationList> BP_operations_list_cycles = BP_operations_list;
         std::vector<std::string> source_nodes_cycles;
         getNextUncorrectedLayerCycles(BP_operations_map_cycles, BP_operations_list_cycles, source_nodes, source_nodes_cycles);
 
@@ -2375,7 +2375,7 @@ namespace SmartPeak
     return weights_found;
   }
 
-	bool Model::checkModelCompleteness(
+	bool Model::checkCompleteInputToOutput(
 		const std::vector<std::string>& input_nodes, 
 		const std::vector<std::string>& output_nodes,
 		int n_threads)
@@ -2465,6 +2465,48 @@ namespace SmartPeak
 		}
 
 		return true;
+	}
+
+	bool Model::removeIsolatedNodes()
+	{
+		// key/value pair of node name and source/sink count pair
+		std::map<std::string, std::pair<int, int>> node_counts;
+
+		// count all sink/source connections for each node
+		for (const auto& link_map: links_)
+		{
+			// source
+			if (nodes_.at(link_map.second->getSourceNodeName())->getType() == NodeType::hidden)
+			{
+				auto found = node_counts.emplace(link_map.second->getSourceNodeName(), std::make_pair(1, 0));
+				if (!found.second)
+				{
+					node_counts[link_map.second->getSourceNodeName()].first += 1;
+				}
+			}
+
+			// sink
+			if (nodes_.at(link_map.second->getSinkNodeName())->getType() == NodeType::hidden
+				&& nodes_.at(link_map.second->getSourceNodeName())->getType() != NodeType::bias)
+			{
+				auto found = node_counts.emplace(link_map.second->getSinkNodeName(), std::make_pair(0, 1));
+				if (!found.second)
+				{
+					node_counts[link_map.second->getSinkNodeName()].second += 1;
+				}
+			}
+		}
+
+		bool dead_end_node_found = false;
+		for (const auto& node_count: node_counts)
+		{
+			if (node_count.second.first == 0 || node_count.second.second == 0)
+			{
+				removeNodes({node_count.first});
+				dead_end_node_found = true;
+			}
+		}
+		return dead_end_node_found;
 	}
 
 	void Model::clearCache()

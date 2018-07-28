@@ -15,23 +15,23 @@
 namespace SmartPeak
 {
 
-  struct FP_operation_result
+  struct OperationResult
   {
     std::shared_ptr<Node> sink_node;
     int time_step = 0;
   };
 
-  struct FP_operation_arguments
+  struct OperationArguments
   {
     std::shared_ptr<Node> source_node;
     std::shared_ptr<Weight> weight;
     int time_step = 0;
   };
 
-  struct FP_operation_list
+  struct OperationList
   {
-    FP_operation_result result;
-    std::vector<FP_operation_arguments> arguments;
+    OperationResult result;
+    std::vector<OperationArguments> arguments;
   };
 
   enum class ModelLossFunction
@@ -226,7 +226,7 @@ public:
       std::map<std::string, std::vector<std::string>>& sink_links_map);
     void getNextInactiveLayer(
       std::map<std::string, int>& FP_operations_map,
-      std::vector<FP_operation_list>& FP_operations);
+      std::vector<OperationList>& FP_operations);
  
     /**
       @brief Continuation of the forward propogation step that identifies all biases
@@ -253,7 +253,7 @@ public:
       );
     void getNextInactiveLayerBiases(
       std::map<std::string, int>& FP_operations_map,
-      std::vector<FP_operation_list>& FP_operations,
+      std::vector<OperationList>& FP_operations,
       std::vector<std::string>& sink_nodes_with_biases
       );
  
@@ -281,7 +281,7 @@ public:
       std::vector<std::string>& sink_nodes_with_cycles);
     void getNextInactiveLayerCycles(
       std::map<std::string, int>& FP_operations_map,
-      std::vector<FP_operation_list>& FP_operations,
+      std::vector<OperationList>& FP_operations,
       std::vector<std::string>& sink_nodes_with_cycles);
 
     /**
@@ -322,17 +322,17 @@ public:
       std::map<std::string, std::vector<std::string>>& sink_links_map,
       const int& time_step, int n_threads = 1);
     void forwardPropogateLayerNetInput(
-      std::vector<FP_operation_list>& FP_operations,
+      std::vector<OperationList>& FP_operations,
       const int& time_step, int n_threads = 1);
 
     static Eigen::Tensor<float, 1> calculateNodeInput_(
-      FP_operation_arguments* arguments, 
+      OperationArguments* arguments, 
       const int& batch_size,
       const int& memory_size,
       const int& time_step
     );
     static bool calculateNetNodeInput_( //[TODO: return the nodes]
-      FP_operation_list* operations, 
+      OperationList* operations, 
       const int& batch_size,
       const int& memory_size,
       const int& time_step,
@@ -446,7 +446,7 @@ public:
       std::vector<std::string>& source_nodes);
     void getNextUncorrectedLayer(
       std::map<std::string, int>& BP_operations_map,
-      std::vector<FP_operation_list>& BP_operations,
+      std::vector<OperationList>& BP_operations,
       std::vector<std::string>& source_nodes);
  
     /**
@@ -472,7 +472,7 @@ public:
       std::vector<std::string>& source_nodes_with_cycles); 
     void getNextUncorrectedLayerCycles(
       std::map<std::string, int>& BP_operations_map,
-      std::vector<FP_operation_list>& BP_operations,
+      std::vector<OperationList>& BP_operations,
       std::vector<std::string>& source_nodes,
       std::vector<std::string>& source_nodes_with_cycles);
  
@@ -504,17 +504,17 @@ public:
       const std::map<std::string, std::vector<std::string>>& sink_links_map,
       const int& time_step, int n_threads = 1);
     void backPropogateLayerError(
-      std::vector<FP_operation_list>& BP_operations,
+      std::vector<OperationList>& BP_operations,
       const int& time_step, int n_threads = 1);
 
     static Eigen::Tensor<float, 1> calculateNodeError_(
-      FP_operation_arguments* arguments, 
+      OperationArguments* arguments, 
       const int& batch_size,
       const int& memory_size,
       const int& time_step
     );
     static bool calculateNetNodeError_( //[TODO: return the nodes]
-      FP_operation_list* operations, 
+      OperationList* operations, 
       const int& batch_size,
       const int& memory_size,
       const int& time_step,
@@ -690,12 +690,21 @@ public:
     bool checkWeightNames(const std::vector<std::string> weight_names);
 
 		/**
-		@brief Check that the path from input to output is complete
+		@brief Check that the path from input to output is not broken
+
+		@param[in] input_nodes
+		@param[out] output_nodes
 		*/
-		bool checkModelCompleteness(
+		bool checkCompleteInputToOutput(
 			const std::vector<std::string>& input_nodes,
 			const std::vector<std::string>& output_nodes,
 			int n_threads = 1);
+
+		/**
+		@brief Remove hidden nodes that have either only 1 source and no sink connection
+			or 1 sink and no source connection
+		*/
+		bool removeIsolatedNodes();
 
     void clearCache(); ///< clear the FP and BP caches
 
@@ -718,8 +727,8 @@ private:
 
     // Internal structures to allow for efficient multi-threading
     // and off-loading of computation from host to devices
-    std::vector<std::vector<FP_operation_list>> FP_operations_cache_;
-    std::vector<std::vector<FP_operation_list>> BP_operations_cache_;
+    std::vector<std::vector<OperationList>> FP_operations_cache_;
+    std::vector<std::vector<OperationList>> BP_operations_cache_;
   };
 }
 

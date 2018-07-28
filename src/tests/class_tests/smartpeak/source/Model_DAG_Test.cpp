@@ -835,7 +835,7 @@ BOOST_AUTO_TEST_CASE(getNextUncorrectedLayer1)
 
   // get the next hidden layer
   std::map<std::string, int> BP_operations_map;
-  std::vector<FP_operation_list> BP_operations_list;
+  std::vector<OperationList> BP_operations_list;
   std::vector<std::string> source_nodes;
   model1.getNextUncorrectedLayer(BP_operations_map, BP_operations_list, source_nodes);  
 
@@ -915,7 +915,7 @@ BOOST_AUTO_TEST_CASE(backPropogateLayerError)
 
   // get the next hidden layer
   std::map<std::string, int> BP_operations_map;
-  std::vector<FP_operation_list> BP_operations_list;
+  std::vector<OperationList> BP_operations_list;
   std::vector<std::string> source_nodes;
   model1.getNextUncorrectedLayer(BP_operations_map, BP_operations_list, source_nodes);  
 
