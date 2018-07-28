@@ -46,6 +46,7 @@ BOOST_AUTO_TEST_CASE(removeDuplicateModels)
     {
       Model model;
       model.setName(std::to_string(j));
+			model.setId(i*j+j);
       models.push_back(model);
     }
   }
@@ -72,7 +73,7 @@ BOOST_AUTO_TEST_CASE(getTopNModels_)
   
   for (int i=0; i<n_top_models; ++i)
   {
-    BOOST_CHECK_EQUAL(top_n_models[i].first, std::to_string(n_models-i));
+    BOOST_CHECK_EQUAL(top_n_models[i].first, n_models-i);
     BOOST_CHECK_EQUAL(top_n_models[i].second, (float)(i+1));
   }
 }

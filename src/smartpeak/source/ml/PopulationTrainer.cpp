@@ -339,7 +339,7 @@ namespace SmartPeak
 
 			model_replicator->makeRandomModifications();
 			model_replicator->modifyModel(model_copy, unique_str);
-			model_copy.pruneModel(1);
+			model_copy.pruneModel(10);
 
 			Model model_check(model_copy);
 			bool complete_model = model_check.checkModelCompleteness(input_nodes, output_nodes);
