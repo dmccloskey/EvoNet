@@ -38,7 +38,8 @@ BOOST_AUTO_TEST_CASE(storeAndLoadCsv)
       "Node_" + std::to_string(i), 
       NodeType::hidden,
       NodeStatus::initialized,
-      NodeActivation::ReLU);
+      NodeActivation::ReLU, 
+			NodeIntegration::Sum);
     nodes.push_back(node);
   }
   data.storeNodesCsv(filename, nodes);
@@ -52,6 +53,7 @@ BOOST_AUTO_TEST_CASE(storeAndLoadCsv)
     BOOST_CHECK(nodes_test[i].getType() == NodeType::hidden);
     BOOST_CHECK(nodes_test[i].getStatus() == NodeStatus::initialized);
     BOOST_CHECK(nodes_test[i].getActivation() == NodeActivation::ReLU);
+		BOOST_CHECK(nodes_test[i].getIntegration() == NodeIntegration::Sum);
   }
 }
 

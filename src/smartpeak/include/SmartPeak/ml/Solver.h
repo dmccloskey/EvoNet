@@ -186,6 +186,26 @@ private:
     float momentum2_prev_ = 0.0;
   };
 
+	/**
+	@brief Dummy solver that prevents weight update.
+	*/
+	class DummySolverOp : public SolverOp
+	{
+	public:
+		DummySolverOp() {};
+		~DummySolverOp() {};
+		float operator()(const float& weight, const float& error)
+		{
+			return weight;
+		};
+		std::string getName() const { return "DummySolverOp"; };
+		std::string getParameters() const
+		{
+			std::string params = "";
+			return params;
+		}
+	};
+
   /**
     @brief Random Solver.
     [TODO: add method body and tests]

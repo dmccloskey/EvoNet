@@ -48,6 +48,10 @@ BOOST_AUTO_TEST_CASE(settersAndGetters)
   AdamOp adam_op;
   BOOST_CHECK_EQUAL(adam_op.getName(), "AdamOp");
   BOOST_CHECK_EQUAL(adam_op.getParameters(), "gradient_threshold:1000000.000000;gradient_noise_sigma:1.000000;gradient_noise_gamma:0.550000;learning_rate:0.010000;momentum:0.900000;momentum2:0.999000;delta:0.000000;momentum_prev:0.000000;momentum2_prev:0.000000");
+
+	DummySolverOp dummy_solver_op;
+	BOOST_CHECK_EQUAL(dummy_solver_op.getName(), "DummySolverOp");
+	BOOST_CHECK_EQUAL(dummy_solver_op.getParameters(), "");
 }
 
 BOOST_AUTO_TEST_CASE(operationfunctionSGDOp) 
@@ -55,6 +59,13 @@ BOOST_AUTO_TEST_CASE(operationfunctionSGDOp)
   SGDOp operation(0.01, 0.9);
   BOOST_CHECK_CLOSE(operation(1.0, 1.0), 0.99, 1e-3);  // weight update = -0.01
   BOOST_CHECK_CLOSE(operation(0.99, 1.0), 0.971100032, 1e-3);
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionDummySolverOp)
+{
+	DummySolverOp operation;
+	BOOST_CHECK_CLOSE(operation(1.0, 1.0), 1.0, 1e-3);
+	BOOST_CHECK_CLOSE(operation(0.99, 1.0), 0.99, 1e-3);
 }
 
 BOOST_AUTO_TEST_CASE(clipGradient) 

@@ -2309,10 +2309,21 @@ namespace SmartPeak
         for (int i=0; i<max_steps; ++i)
         {
           // [PARALLEL: move to threadPool/CUDA implementations]
-          Eigen::Tensor<float, 1> error_tensor = nodes_.at(link_map.second->getSinkNodeName())->getError().chip(0, 1); // first time-step
-          Eigen::Tensor<float, 1> output_tensor = nodes_.at(link_map.second->getSourceNodeName())->getOutput().chip(0, 1);  // first time-step
-          // auto derivative_tensor = - error_tensor * output_tensor; // derivative of the weight wrt the error
-          // Eigen::Tensor<float, 0> derivative_mean_tensor = derivative_tensor.mean(); // average derivative
+					// [BUG:  is there a bug here? shouldn't it be .chip(i,1)? YES!]
+					// [Tests: update tests accordingly]
+          Eigen::Tensor<float, 1> error_tensor = nodes_.at(link_map.second->getSinkNodeName())->getError().chip(i, 1);
+
+					// [TODO: correct for Sum NodeIntegration, but will need to update/generalize for Product NodeIntegration]
+					Eigen::Tensor<float, 1> output_tensor;
+					if (nodes_.at(link_map.second->getSinkNodeName())->getIntegration() == NodeIntegration::Sum)
+						output_tensor = nodes_.at(link_map.second->getSourceNodeName())->getOutput().chip(i, 1);
+					//else if (nodes_.at(link_map.second->getSinkNodeName())->getIntegration() == NodeIntegration::Product)
+					//	output_tensor = nodes_.at(link_map.second->getSourceNodeName())->getInput().chip(i, 1);
+					//else if (nodes_.at(link_map.second->getSinkNodeName())->getIntegration() == NodeIntegration::Max)
+					//	output_tensor = nodes_.at(link_map.second->getSourceNodeName())->getOutput().chip(i, 1);
+					else
+						std::cout<<"NodeIntegration type is not supported."<<std::endl; // should throw an error!
+
           Eigen::Tensor<float, 0> derivative_mean_tensor = (- error_tensor * output_tensor).mean(); // average derivative
           // std::cout<<"derivative_mean_tensor "<<derivative_mean_tensor(0)<<std::endl;
           error_sum += derivative_mean_tensor(0);

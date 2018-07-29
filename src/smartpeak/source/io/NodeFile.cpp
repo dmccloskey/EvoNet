@@ -16,12 +16,12 @@ namespace SmartPeak
   {
     nodes.clear();
 
-    io::CSVReader<4> nodes_in(filename);
+    io::CSVReader<5> nodes_in(filename);
     nodes_in.read_header(io::ignore_extra_column, 
-      "node_name", "node_type", "node_status", "node_activation");
-    std::string node_name, node_type_str, node_status_str, node_activation_str;
+      "node_name", "node_type", "node_status", "node_activation", "node_integration");
+    std::string node_name, node_type_str, node_status_str, node_activation_str, node_integration_str;
 
-    while(nodes_in.read_row(node_name, node_type_str, node_status_str,node_activation_str))
+    while(nodes_in.read_row(node_name, node_type_str, node_status_str, node_activation_str, node_integration_str))
     {
       // parse the node_type
       NodeType node_type;
@@ -47,8 +47,15 @@ namespace SmartPeak
       else if (node_activation_str == "Sigmoid") node_activation = NodeActivation::Sigmoid;
       else if (node_activation_str == "TanH") node_activation = NodeActivation::TanH;
       else std::cout<<"NodeActivation for node_name "<<node_name<<" was not recognized."<<std::endl;
+
+			// parse the node_integration
+			NodeIntegration node_integration;
+			if (node_integration_str == "Sum") node_integration = NodeIntegration::Sum;
+			else if (node_integration_str == "Product") node_integration = NodeIntegration::Product;
+			else if (node_integration_str == "Max") node_integration = NodeIntegration::Max;
+			else std::cout << "NodeIntegration for node_name " << node_name << " was not recognized." << std::endl;
       
-      Node node(node_name, node_type, node_status, node_activation);
+      Node node(node_name, node_type, node_status, node_activation, node_integration);
       nodes.push_back(node);
     }
 	return true;
@@ -61,7 +68,7 @@ namespace SmartPeak
     CSVWriter csvwriter(filename);
 
     // write the headers to the first line
-    const std::vector<std::string> headers = {"node_name", "node_type", "node_status", "node_activation"};
+    const std::vector<std::string> headers = {"node_name", "node_type", "node_status", "node_activation", "node_integration"};
     csvwriter.writeDataInRow(headers.begin(), headers.end());
 
     for (const Node& node: nodes)
@@ -96,6 +103,14 @@ namespace SmartPeak
       else if (node.getActivation() == NodeActivation::TanH) node_activation_str = "TanH";
       else std::cout<<"NodeActivation for node_name "<<node.getName()<<" was not recognized."<<std::endl;
       row.push_back(node_activation_str);
+
+			// parse the node_integration
+			std::string node_integration_str = "";
+			if (node.getIntegration() == NodeIntegration::Sum) node_integration_str = "Sum";
+			else if (node.getIntegration() == NodeIntegration::Product) node_integration_str = "Product";
+			else if (node.getIntegration() == NodeIntegration::Max) node_integration_str = "Max";
+			else std::cout << "NodeIntegration for node_name " << node.getName() << " was not recognized." << std::endl;
+			row.push_back(node_integration_str);
 
       // write to file
       csvwriter.writeDataInRow(row.begin(), row.end());

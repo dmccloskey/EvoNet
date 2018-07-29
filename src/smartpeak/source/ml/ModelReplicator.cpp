@@ -99,7 +99,8 @@ namespace SmartPeak
   }
 
   Model ModelReplicator::makeBaselineModel(const int& n_input_nodes, const int& n_hidden_nodes, const int& n_output_nodes,
-    const NodeActivation& hidden_node_activation, const NodeActivation& output_node_activation,
+    const NodeActivation& hidden_node_activation, const NodeIntegration& hidden_node_integration,
+		const NodeActivation& output_node_activation, const NodeIntegration& output_node_integration,
     const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver,
     const ModelLossFunction& error_function, std::string unique_str)
   {
@@ -115,7 +116,7 @@ namespace SmartPeak
       char node_name_char[64];
       sprintf(node_name_char, "Input_%d", i);
       std::string node_name(node_name_char);
-      Node node(node_name, NodeType::input, NodeStatus::activated, NodeActivation::Linear);
+      Node node(node_name, NodeType::input, NodeStatus::activated, NodeActivation::Linear, NodeIntegration::Sum);
       model.addNodes({node});
     }
     // Create the hidden nodes + biases and hidden to bias links
@@ -124,12 +125,12 @@ namespace SmartPeak
       char node_name_char[64];
       sprintf(node_name_char, "Hidden_%d", i);
       std::string node_name(node_name_char);
-      Node node(node_name, NodeType::hidden, NodeStatus::deactivated, hidden_node_activation);
+      Node node(node_name, NodeType::hidden, NodeStatus::deactivated, hidden_node_activation, hidden_node_integration);
 
       char bias_name_char[64];
       sprintf(bias_name_char, "Hidden_bias_%d", i);
       std::string bias_name(bias_name_char);
-      Node bias(bias_name, NodeType::bias, NodeStatus::activated, NodeActivation::Linear);
+      Node bias(bias_name, NodeType::bias, NodeStatus::activated, NodeActivation::Linear, NodeIntegration::Sum);
       model.addNodes({node, bias});
 
       char weight_bias_name_char[64];
@@ -155,12 +156,12 @@ namespace SmartPeak
       char node_name_char[64];
       sprintf(node_name_char, "Output_%d", i);
       std::string node_name(node_name_char);
-      Node node(node_name, NodeType::output, NodeStatus::deactivated, output_node_activation);
+      Node node(node_name, NodeType::output, NodeStatus::deactivated, output_node_activation, output_node_integration);
       
       char bias_name_char[64];
       sprintf(bias_name_char, "Output_bias_%d", i);
       std::string bias_name(bias_name_char);
-      Node bias(bias_name, NodeType::bias, NodeStatus::activated, NodeActivation::Linear);
+      Node bias(bias_name, NodeType::bias, NodeStatus::activated, NodeActivation::Linear, NodeIntegration::Sum);
       model.addNodes({node, bias});
 
       char weight_bias_name_char[64];
@@ -531,7 +532,7 @@ namespace SmartPeak
     char new_bias_name_char[128];
     sprintf(new_bias_name_char, "Bias_%s@addNode#", add_node_name.data());
     std::string new_bias_name = makeUniqueHash(new_bias_name_char, unique_str);
-    Node new_bias(new_bias_name, NodeType::bias, NodeStatus::activated, NodeActivation::Linear);
+    Node new_bias(new_bias_name, NodeType::bias, NodeStatus::activated, NodeActivation::Linear, NodeIntegration::Sum);
     new_bias.initNode(new_node.getOutput().dimension(0), new_node.getOutput().dimension(1));
     model.addNodes({new_bias});
 

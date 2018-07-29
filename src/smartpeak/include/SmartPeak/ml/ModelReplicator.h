@@ -43,7 +43,9 @@ public:
       @param n_hidden_nodes The number of hidden nodes the model should have
       @param n_output_nodes The number of output nodes the model should have
       @param hidden_node_activation The activation function of the hidden node to create
+      @param hidden_node_integration The integration function of the hidden node to create
       @param output_node_activation The activation function of the output node to create
+      @param output_node_integration The integration function of the output node to create
       @param weight_init Weight init operator to use for hidden and output nodes
       @param solver Solver operator to use for hidden and output nodes
       @param error_function Model loss function
@@ -52,7 +54,8 @@ public:
       @returns A baseline model
     */ 
     Model makeBaselineModel(const int& n_input_nodes, const int& n_hidden_nodes, const int& n_output_nodes,
-      const NodeActivation& hidden_node_activation, const NodeActivation& output_node_activation,
+			const NodeActivation& hidden_node_activation, const NodeIntegration& hidden_node_integration,
+			const NodeActivation& output_node_activation, const NodeIntegration& output_node_integration,
       const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver,
       const ModelLossFunction& error_function, std::string unique_str = "");
  

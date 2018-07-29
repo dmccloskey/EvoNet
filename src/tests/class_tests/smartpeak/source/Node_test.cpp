@@ -29,40 +29,44 @@ BOOST_AUTO_TEST_CASE(destructor)
 
 BOOST_AUTO_TEST_CASE(constructor2) 
 {
-  Node node("1", NodeType::hidden, NodeStatus::initialized, NodeActivation::ReLU);
+  Node node("1", NodeType::hidden, NodeStatus::initialized, NodeActivation::ReLU, NodeIntegration::Sum);
   node.setId(1);
 
   BOOST_CHECK_EQUAL(node.getId(), 1);
   BOOST_CHECK_EQUAL(node.getName(), "1");
   BOOST_CHECK(node.getType() == NodeType::hidden);
   BOOST_CHECK(node.getStatus() == NodeStatus::initialized);
-  BOOST_CHECK(node.getActivation() == NodeActivation::ReLU);
+  BOOST_CHECK(node.getActivation() == NodeActivation::ReLU, NodeIntegration::Sum);
+	BOOST_CHECK(node.getIntegration() == NodeIntegration::Sum);
 }
 
 BOOST_AUTO_TEST_CASE(comparison) 
 {
   Node node, node_test;
-  node = Node("1", NodeType::hidden, NodeStatus::initialized, NodeActivation::ReLU);
+  node = Node("1", NodeType::hidden, NodeStatus::initialized, NodeActivation::ReLU, NodeIntegration::Sum);
   node.setId(1);
-  node_test = Node("1", NodeType::hidden, NodeStatus::initialized, NodeActivation::ReLU);
+  node_test = Node("1", NodeType::hidden, NodeStatus::initialized, NodeActivation::ReLU, NodeIntegration::Sum);
   node_test.setId(1);
   BOOST_CHECK(node == node_test);
 
   node.setId(2);
   BOOST_CHECK(node != node_test);
 
-  node = Node("2", NodeType::hidden, NodeStatus::initialized, NodeActivation::ReLU);
+  node = Node("2", NodeType::hidden, NodeStatus::initialized, NodeActivation::ReLU, NodeIntegration::Sum);
   node.setId(1);
   BOOST_CHECK(node != node_test);
 
-  node = Node("1", NodeType::hidden, NodeStatus::initialized, NodeActivation::ELU);
+  node = Node("1", NodeType::hidden, NodeStatus::initialized, NodeActivation::ELU, NodeIntegration::Sum);
   BOOST_CHECK(node != node_test);
 
-  node = Node("1", NodeType::hidden, NodeStatus::activated, NodeActivation::ReLU);
+  node = Node("1", NodeType::hidden, NodeStatus::activated, NodeActivation::ReLU, NodeIntegration::Sum);
   BOOST_CHECK(node != node_test);
 
-  node = Node("1", NodeType::output, NodeStatus::initialized, NodeActivation::ReLU);
+  node = Node("1", NodeType::output, NodeStatus::initialized, NodeActivation::ReLU, NodeIntegration::Sum);
   BOOST_CHECK(node != node_test);
+
+	node = Node("1", NodeType::hidden, NodeStatus::initialized, NodeActivation::ReLU, NodeIntegration::Product);
+	BOOST_CHECK(node != node_test);
 }
 
 BOOST_AUTO_TEST_CASE(gettersAndSetters) 
@@ -73,12 +77,14 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   node.setType(NodeType::hidden);
   node.setStatus(NodeStatus::initialized);
   node.setActivation(NodeActivation::ReLU);
+	node.setIntegration(NodeIntegration::Sum);
 
   BOOST_CHECK_EQUAL(node.getId(), 1);
   BOOST_CHECK_EQUAL(node.getName(), "Node1");
   BOOST_CHECK(node.getType() == NodeType::hidden);
   BOOST_CHECK(node.getStatus() == NodeStatus::initialized);
-  BOOST_CHECK(node.getActivation() == NodeActivation::ReLU);
+  BOOST_CHECK(node.getActivation() == NodeActivation::ReLU, NodeIntegration::Sum);
+	BOOST_CHECK(node.getIntegration() == NodeIntegration::Sum);
 
   Eigen::Tensor<float, 2> output_test(3, 2), error_test(3, 2), derivative_test(3, 2), dt_test(3, 2);
   output_test.setConstant(0.0f);
@@ -413,7 +419,7 @@ BOOST_AUTO_TEST_CASE(calculateDerivative)
 }
 
 BOOST_AUTO_TEST_CASE(saveCurrentOutput)
-{
+{ //[DEPRECATED]
   Node node;
   node.setId(1);
   node.initNode(5,2);
@@ -429,7 +435,7 @@ BOOST_AUTO_TEST_CASE(saveCurrentOutput)
       BOOST_CHECK_CLOSE(node.getOutput()(i,j), output_test(i,j), 1e-6);
 }
 BOOST_AUTO_TEST_CASE(saveCurrentDerivative)
-{
+{ //[DEPRECATED]
   Node node;
   node.setId(1);
   node.initNode(5,2);
@@ -446,7 +452,7 @@ BOOST_AUTO_TEST_CASE(saveCurrentDerivative)
 }
 
 BOOST_AUTO_TEST_CASE(saveCurrentError)
-{
+{ //[DEPRECATED]
   Node node;
   node.setId(1);
   node.initNode(5,2);
@@ -463,7 +469,7 @@ BOOST_AUTO_TEST_CASE(saveCurrentError)
 }
 
 BOOST_AUTO_TEST_CASE(saveCurrentDt)
-{
+{ //[DEPRECATED]
   Node node;
   node.setId(1);
   node.initNode(5,2);

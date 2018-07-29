@@ -29,14 +29,14 @@ namespace SmartPeak
   }
 
   Node::Node(const std::string& name, const SmartPeak::NodeType& type,
-    const SmartPeak::NodeStatus& status, const SmartPeak::NodeActivation& activation):
-    name_(name), type_(type), status_(status), activation_(activation)
+    const SmartPeak::NodeStatus& status, const SmartPeak::NodeActivation& activation, const SmartPeak::NodeIntegration& integration):
+    name_(name), type_(type), status_(status), activation_(activation), integration_(integration)
   {
   }
 
   Node::Node(const int& id, const SmartPeak::NodeType& type,
-    const SmartPeak::NodeStatus& status, const SmartPeak::NodeActivation& activation):
-    id_(id), type_(type), status_(status), activation_(activation)
+    const SmartPeak::NodeStatus& status, const SmartPeak::NodeActivation& activation, const SmartPeak::NodeIntegration& integration):
+    id_(id), type_(type), status_(status), activation_(activation), integration_(integration)
   {
     if (name_ == "")
     {
@@ -96,6 +96,15 @@ namespace SmartPeak
   {
     return activation_;
   }
+
+	void Node::setIntegration(const SmartPeak::NodeIntegration& integration)
+	{
+		integration_ = integration;
+	}
+	SmartPeak::NodeIntegration Node::getIntegration() const
+	{
+		return integration_;
+	}
 
   void Node::setOutput(const Eigen::Tensor<float, 2>& output)
   {
@@ -385,7 +394,7 @@ namespace SmartPeak
   }
 
   void Node::saveCurrentOutput()
-  {
+  { //[DEPRECATED]
     const int batch_size = output_.dimension(0);
     const int memory_size = output_.dimension(1);
     for (int i=0; i<batch_size; ++i)
@@ -405,7 +414,7 @@ namespace SmartPeak
   }
 
   void Node::saveCurrentDerivative()
-  {
+  { //[DEPRECATED]
     const int batch_size = derivative_.dimension(0);
     const int memory_size = derivative_.dimension(1);
     for (int i=0; i<batch_size; ++i)
@@ -425,7 +434,7 @@ namespace SmartPeak
   }
 
   void Node::saveCurrentError()
-  {
+  { //[DEPRECATED]
     const int batch_size = error_.dimension(0);
     const int memory_size = error_.dimension(1);
     for (int i=0; i<batch_size; ++i)
@@ -445,7 +454,7 @@ namespace SmartPeak
   }
 
   void Node::saveCurrentDt()
-  {
+  { //[DEPRECATED]
     const int batch_size = dt_.dimension(0);
     const int memory_size = dt_.dimension(1);
     for (int i=0; i<batch_size; ++i)

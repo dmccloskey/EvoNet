@@ -154,14 +154,14 @@ public:
 			Weight_m_bias_to_m, Weight_o_bias_to_o;
 		Model model;
 		// Nodes
-		i_rand = Node("Input_0", NodeType::input, NodeStatus::activated, NodeActivation::Linear);
-		i_mask = Node("Input_1", NodeType::input, NodeStatus::activated, NodeActivation::Linear);
-		h = Node("h", NodeType::hidden, NodeStatus::deactivated, NodeActivation::ReLU);
-		m = Node("m", NodeType::hidden, NodeStatus::deactivated, NodeActivation::ReLU);
-		o = Node("Output_0", NodeType::output, NodeStatus::deactivated, NodeActivation::ReLU);
-		h_bias = Node("h_bias", NodeType::bias, NodeStatus::activated, NodeActivation::Linear);
-		m_bias = Node("m_bias", NodeType::bias, NodeStatus::activated, NodeActivation::Linear);
-		o_bias = Node("o_bias", NodeType::bias, NodeStatus::activated, NodeActivation::Linear);
+		i_rand = Node("Input_0", NodeType::input, NodeStatus::activated, NodeActivation::Linear, NodeIntegration::Sum);
+		i_mask = Node("Input_1", NodeType::input, NodeStatus::activated, NodeActivation::Linear, NodeIntegration::Sum);
+		h = Node("h", NodeType::hidden, NodeStatus::deactivated, NodeActivation::ReLU, NodeIntegration::Sum);
+		m = Node("m", NodeType::hidden, NodeStatus::deactivated, NodeActivation::ReLU, NodeIntegration::Sum);
+		o = Node("Output_0", NodeType::output, NodeStatus::deactivated, NodeActivation::ReLU, NodeIntegration::Sum);
+		h_bias = Node("h_bias", NodeType::bias, NodeStatus::activated, NodeActivation::Linear, NodeIntegration::Sum);
+		m_bias = Node("m_bias", NodeType::bias, NodeStatus::activated, NodeActivation::Linear, NodeIntegration::Sum);
+		o_bias = Node("o_bias", NodeType::bias, NodeStatus::activated, NodeActivation::Linear, NodeIntegration::Sum);
 		// weights  
 		std::shared_ptr<WeightInitOp> weight_init;
 		std::shared_ptr<SolverOp> solver;
@@ -291,7 +291,7 @@ public:
 			//model.CETT(output.chip(iter, 3), output_nodes, 1);  // just the last result
 			model.CETT(output.chip(iter, 3), output_nodes, getMemorySize());
 
-			//std::cout<<"Model "<<model.getName()<<" error: "<<model.getError().sum()<<std::endl;
+			std::cout<<"Model "<<model.getName()<<" error: "<<model.getError().sum()<<std::endl;
 
 			// back propogate
 			if (iter == 0)
@@ -451,27 +451,27 @@ int main(int argc, char** argv)
 			// define the initial population [BUG FREE]
 			for (int i = 0; i<population_size; ++i)
 			{
-				// baseline model
-				std::shared_ptr<WeightInitOp> weight_init;
-				std::shared_ptr<SolverOp> solver;
-				weight_init.reset(new RandWeightInitOp(input_nodes.size()));
-				solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
-				Model model = model_replicator.makeBaselineModel(
-					input_nodes.size(), 1, output_nodes.size(),
-					NodeActivation::ReLU,
-					NodeActivation::ReLU,
-					weight_init, solver,
-					ModelLossFunction::MSE, std::to_string(i));
-				model.initWeights();
-
-				//// make the model name
-				//Model model = model_trainer.makeModel();
+				//// baseline model
+				//std::shared_ptr<WeightInitOp> weight_init;
+				//std::shared_ptr<SolverOp> solver;
+				//weight_init.reset(new RandWeightInitOp(input_nodes.size()));
+				//solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
+				//Model model = model_replicator.makeBaselineModel(
+				//	input_nodes.size(), 1, output_nodes.size(),
+				//	NodeActivation::ReLU, NodeIntegration::Sum,
+				//	NodeActivation::ReLU, NodeIntegration::Sum,
+				//	weight_init, solver,
+				//	ModelLossFunction::MSE, std::to_string(i));
 				//model.initWeights();
 
-				//char model_name_char[512];
-				//sprintf(model_name_char, "%s_%d", model.getName().data(), i);
-				//std::string model_name(model_name_char);
-				//model.setName(model_name);
+				// make the model name
+				Model model = model_trainer.makeModel();
+				model.initWeights();
+
+				char model_name_char[512];
+				sprintf(model_name_char, "%s_%d", model.getName().data(), i);
+				std::string model_name(model_name_char);
+				model.setName(model_name);
 
 				model.setId(i);
 

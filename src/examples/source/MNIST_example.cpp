@@ -378,8 +378,8 @@ int main(int argc, char** argv)
         solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
         Model model = model_replicator.makeBaselineModel(
           input_nodes.size(), 100, output_nodes.size(),
-          NodeActivation::ELU,
-          NodeActivation::ELU,
+          NodeActivation::ELU, NodeIntegration::Sum,
+          NodeActivation::ELU, NodeIntegration::Sum,
           weight_init, solver,
           ModelLossFunction::MSE, std::to_string(i));
         model.initWeights();

@@ -145,7 +145,7 @@ BOOST_AUTO_TEST_CASE(makeBaselineModel)
   solver.reset(new SGDOp(0.01, 0.9));
   model = model_replicator.makeBaselineModel(
     2, 1, 2,
-    NodeActivation::ReLU, NodeActivation::ReLU,
+    NodeActivation::ReLU, NodeIntegration::Sum, NodeActivation::ReLU, NodeIntegration::Sum,
     weight_init, solver,
     ModelLossFunction::MSE);
 
@@ -177,7 +177,7 @@ BOOST_AUTO_TEST_CASE(makeBaselineModel)
 
   model = model_replicator.makeBaselineModel(
     2, 0, 2,
-    NodeActivation::ReLU, NodeActivation::ReLU,
+    NodeActivation::ReLU, NodeIntegration::Sum, NodeActivation::ReLU, NodeIntegration::Sum,
     weight_init, solver,
     ModelLossFunction::MSE);
 
@@ -216,14 +216,14 @@ Model makeModel1()
   Model model1;
 
   // Toy network: 1 hidden layer, fully connected, DAG
-  i1 = Node("0", NodeType::input, NodeStatus::activated, NodeActivation::Linear);
-  i2 = Node("1", NodeType::input, NodeStatus::activated, NodeActivation::Linear);
-  h1 = Node("2", NodeType::hidden, NodeStatus::deactivated, NodeActivation::ReLU);
-  h2 = Node("3", NodeType::hidden, NodeStatus::deactivated, NodeActivation::ReLU);
-  o1 = Node("4", NodeType::output, NodeStatus::deactivated, NodeActivation::ReLU);
-  o2 = Node("5", NodeType::output, NodeStatus::deactivated, NodeActivation::ReLU);
-  b1 = Node("6", NodeType::bias, NodeStatus::activated, NodeActivation::Linear);
-  b2 = Node("7", NodeType::bias, NodeStatus::activated, NodeActivation::Linear);
+  i1 = Node("0", NodeType::input, NodeStatus::activated, NodeActivation::Linear, NodeIntegration::Sum);
+  i2 = Node("1", NodeType::input, NodeStatus::activated, NodeActivation::Linear, NodeIntegration::Sum);
+  h1 = Node("2", NodeType::hidden, NodeStatus::deactivated, NodeActivation::ReLU, NodeIntegration::Sum);
+  h2 = Node("3", NodeType::hidden, NodeStatus::deactivated, NodeActivation::ReLU, NodeIntegration::Sum);
+  o1 = Node("4", NodeType::output, NodeStatus::deactivated, NodeActivation::ReLU, NodeIntegration::Sum);
+  o2 = Node("5", NodeType::output, NodeStatus::deactivated, NodeActivation::ReLU, NodeIntegration::Sum);
+  b1 = Node("6", NodeType::bias, NodeStatus::activated, NodeActivation::Linear, NodeIntegration::Sum);
+  b2 = Node("7", NodeType::bias, NodeStatus::activated, NodeActivation::Linear, NodeIntegration::Sum);
 
   // weights  
   std::shared_ptr<WeightInitOp> weight_init;

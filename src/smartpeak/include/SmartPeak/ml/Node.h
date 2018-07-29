@@ -34,6 +34,13 @@ namespace SmartPeak
     TanH = 4
   };
 
+	enum class NodeIntegration
+	{
+		Sum = 0,
+		Product = 1,
+		Max = 2
+	};
+
   /**
     @brief Network Node
   */
@@ -42,8 +49,8 @@ namespace SmartPeak
 public:
     Node(); ///< Default constructor
     Node(const Node& other); ///< Copy constructor // [TODO: add test]
-    Node(const std::string& name, const SmartPeak::NodeType& type, const SmartPeak::NodeStatus& status, const SmartPeak::NodeActivation& activation); ///< Explicit constructor  
-    Node(const int& id, const SmartPeak::NodeType& type, const SmartPeak::NodeStatus& status, const SmartPeak::NodeActivation& activation); ///< Explicit constructor  
+    Node(const std::string& name, const SmartPeak::NodeType& type, const SmartPeak::NodeStatus& status, const SmartPeak::NodeActivation& activation, const SmartPeak::NodeIntegration& integration); ///< Explicit constructor  
+    Node(const int& id, const SmartPeak::NodeType& type, const SmartPeak::NodeStatus& status, const SmartPeak::NodeActivation& activation, const SmartPeak::NodeIntegration& integration); ///< Explicit constructor  
     ~Node(); ///< Default destructor
 
     inline bool operator==(const Node& other) const
@@ -100,6 +107,9 @@ public:
 
     void setActivation(const SmartPeak::NodeActivation& activation); ///< activation setter
     SmartPeak::NodeActivation getActivation() const; ///< activation getter
+
+		void setIntegration(const SmartPeak::NodeIntegration & integration); ///< integration setter
+		SmartPeak::NodeIntegration getIntegration() const; ///< integration getter
 
     void setOutput(const Eigen::Tensor<float, 2>& output); ///< output setter
     Eigen::Tensor<float, 2> getOutput() const; ///< output copy getter
@@ -165,26 +175,36 @@ public:
     
     /**
       @brief Shifts the current output batch by 1 unit back in memory.
+
+			[DEPRECATED]
     */
     void saveCurrentOutput();
     
     /**
       @brief Shifts the current derivative batch by 1 unit back in memory.
+
+			[DEPRECATED]
     */
     void saveCurrentDerivative();
     
     /**
       @brief Shifts the current error batch by 1 unit back in memory.
+
+			[DEPRECATED]
     */
     void saveCurrentError();
     
     /**
       @brief Shifts the current dt batch by 1 unit back in memory.
+
+			[DEPRECATED]
     */
     void saveCurrentDt();
  
     /**
       @brief Check if the output is within the min/max.  
+
+			[DEPRECATED]
     */ 
     void checkOutput();
 
@@ -194,6 +214,7 @@ private:
     SmartPeak::NodeType type_ = SmartPeak::NodeType::hidden; ///< Node Type
     SmartPeak::NodeStatus status_ = SmartPeak::NodeStatus::deactivated; ///< Node Status   
     SmartPeak::NodeActivation activation_ = SmartPeak::NodeActivation::ReLU; ///< Node Status   
+		SmartPeak::NodeIntegration integration_ = SmartPeak::NodeIntegration::Sum; ///< Node Integration   
 
     float output_min_ = -1.0e6; ///< Min Node output
     float output_max_ = 1.0e6; ///< Max Node output
