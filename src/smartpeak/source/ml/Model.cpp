@@ -1482,7 +1482,8 @@ namespace SmartPeak
 		for (int i=0; i<max_steps; ++i)
 		{
 			int next_time_step = values.dimension(1) - 1 - i;
-			std::cout<<"Expected output for time point "<< i << " is " << values.chip(next_time_step, 1)<<std::endl;
+			// [TESTS: Test for the expected output error at each time step]
+			//std::cout<<"Expected output for time point "<< i << " is " << values.chip(next_time_step, 1)<<std::endl;
 			calculateError(values.chip(next_time_step, 1), node_names, i);
 			//calculateError(values.chip(i, 1), node_names, i);
 		}

@@ -135,7 +135,7 @@ public:
 	NOTE: unless the weights/biases are set to the exact values required
 	to solve the problem, backpropogation does not converge on the solution
 
-	NOTE: evolution also does not seem to conver on the solution when using
+	NOTE: evolution also does not seem to converge on the solution when using
 	this as the starting network
 	*/
 	Model makeModel()
@@ -167,49 +167,49 @@ public:
 		std::shared_ptr<SolverOp> solver;
 		weight_init.reset(new ConstWeightInitOp(1.0)); //solution
 		//solver.reset(new SGDOp(0.01, 0.9));
-		//weight_init.reset(new RandWeightInitOp(2.0));
+		weight_init.reset(new RandWeightInitOp(2.0));
 		solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
 		solver->setGradientThreshold(10.0f);
 		Weight_i_rand_to_h = Weight("Weight_i_rand_to_h", weight_init, solver);
-		weight_init.reset(new ConstWeightInitOp(100.0)); //solution
+		weight_init.reset(new ConstWeightInitOp(100.0)); //solution (large weight magnituted will need to an explosion of even a small error!)
 		//solver.reset(new SGDOp(0.01, 0.9));
-		//weight_init.reset(new RandWeightInitOp(2.0));
+		weight_init.reset(new RandWeightInitOp(2.0));
 		solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
 		solver->setGradientThreshold(10.0f);
 		Weight_i_mask_to_h = Weight("Weight_i_mask_to_h", weight_init, solver);
 		weight_init.reset(new ConstWeightInitOp(1.0)); //solution
 		//solver.reset(new SGDOp(0.01, 0.9));
-		//weight_init.reset(new RandWeightInitOp(2.0));
+		weight_init.reset(new RandWeightInitOp(2.0));
 		solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
 		solver->setGradientThreshold(10.0f);
 		Weight_h_to_m = Weight("Weight_h_to_m", weight_init, solver);
 		weight_init.reset(new ConstWeightInitOp(1.0)); //solution
 		//solver.reset(new SGDOp(0.01, 0.9));
-		//weight_init.reset(new RandWeightInitOp(2.0));
+		weight_init.reset(new RandWeightInitOp(2.0));
 		solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
 		solver->setGradientThreshold(10.0f);
 		Weight_m_to_m = Weight("Weight_m_to_m", weight_init, solver);
 		weight_init.reset(new ConstWeightInitOp(1.0)); //solution
 		//solver.reset(new SGDOp(0.01, 0.9));
-		//weight_init.reset(new RandWeightInitOp(2.0));
+		weight_init.reset(new RandWeightInitOp(2.0));
 		solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
 		solver->setGradientThreshold(10.0f);
 		Weight_m_to_o = Weight("Weight_m_to_o", weight_init, solver);
-		weight_init.reset(new ConstWeightInitOp(-100.0)); //solution
+		weight_init.reset(new ConstWeightInitOp(-100.0)); //solution (large weight magnituted will need to an explosion of even a small error!)
 		//solver.reset(new SGDOp(0.01, 0.9));
-		//weight_init.reset(new ConstWeightInitOp(1.0));
+		weight_init.reset(new ConstWeightInitOp(1.0));
 		solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
 		solver->setGradientThreshold(10.0f);
 		Weight_h_bias_to_h = Weight("Weight_h_bias_to_h", weight_init, solver);
 		weight_init.reset(new ConstWeightInitOp(0.0)); //solution
 		//solver.reset(new SGDOp(0.01, 0.9));
-		//weight_init.reset(new ConstWeightInitOp(1.0));
+		weight_init.reset(new ConstWeightInitOp(1.0));
 		solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
 		solver->setGradientThreshold(10.0f);
 		Weight_m_bias_to_m = Weight("Weight_m_bias_to_m", weight_init, solver);
 		weight_init.reset(new ConstWeightInitOp(0.0)); //solution
 		//solver.reset(new SGDOp(0.01, 0.9));
-		//weight_init.reset(new ConstWeightInitOp(1.0));
+		weight_init.reset(new ConstWeightInitOp(0.0));
 		solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
 		solver->setGradientThreshold(10.0f);
 		Weight_o_bias_to_o = Weight("Weight_o_bias_to_o", weight_init, solver);
@@ -288,10 +288,10 @@ public:
 				model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), false, true, n_threads);
 
 			// calculate the model error and node output error
-			model.CETT(output.chip(iter, 3), output_nodes, 1);  // just the last result
-			//model.CETT(output.chip(iter, 3), output_nodes, getMemorySize());
+			//model.CETT(output.chip(iter, 3), output_nodes, 1);  // just the last result
+			model.CETT(output.chip(iter, 3), output_nodes, getMemorySize());
 
-			std::cout<<"Model "<<model.getName()<<" error: "<<model.getError().sum()<<std::endl;
+			//std::cout<<"Model "<<model.getName()<<" error: "<<model.getError().sum()<<std::endl;
 
 			// back propogate
 			if (iter == 0)
@@ -440,7 +440,7 @@ int main(int argc, char** argv)
 
 	// Evolve the population
 	std::vector<Model> population;
-	const int iterations = 1;
+	const int iterations = 10;
 	for (int iter = 0; iter<iterations; ++iter)
 	{
 		printf("Iteration #: %d\n", iter);
@@ -451,27 +451,28 @@ int main(int argc, char** argv)
 			// define the initial population [BUG FREE]
 			for (int i = 0; i<population_size; ++i)
 			{
-				//// baseline model
-				//std::shared_ptr<WeightInitOp> weight_init;
-				//std::shared_ptr<SolverOp> solver;
-				//weight_init.reset(new RandWeightInitOp(input_nodes.size()));
-				//solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
-				//Model model = model_replicator.makeBaselineModel(
-				//	input_nodes.size(), 1, output_nodes.size(),
-				//	NodeActivation::ReLU,
-				//	NodeActivation::ReLU,
-				//	weight_init, solver,
-				//	ModelLossFunction::MSE, std::to_string(i));
-				//model.initWeights();
-
-				// make the model name
-				Model model = model_trainer.makeModel();
+				// baseline model
+				std::shared_ptr<WeightInitOp> weight_init;
+				std::shared_ptr<SolverOp> solver;
+				weight_init.reset(new RandWeightInitOp(input_nodes.size()));
+				solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
+				Model model = model_replicator.makeBaselineModel(
+					input_nodes.size(), 1, output_nodes.size(),
+					NodeActivation::ReLU,
+					NodeActivation::ReLU,
+					weight_init, solver,
+					ModelLossFunction::MSE, std::to_string(i));
 				model.initWeights();
 
-				char model_name_char[512];
-				sprintf(model_name_char, "%s_%d", model.getName().data(), i);
-				std::string model_name(model_name_char);
-				model.setName(model_name);
+				//// make the model name
+				//Model model = model_trainer.makeModel();
+				//model.initWeights();
+
+				//char model_name_char[512];
+				//sprintf(model_name_char, "%s_%d", model.getName().data(), i);
+				//std::string model_name(model_name_char);
+				//model.setName(model_name);
+
 				model.setId(i);
 
 				population.push_back(model);
