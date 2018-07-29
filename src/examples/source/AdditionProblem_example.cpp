@@ -22,15 +22,16 @@ RNNS
 References:
 [TODO]
 
-@input[in] sequence_length
-@input[in, out] random_sequence
-@input[in, out] mask_sequence
+@param[in, out] random_sequence
+@param[in, out] mask_sequence
+@param[in] n_masks The number of random additions
 
 @returns the result of the two random numbers in the sequence
 **/
 static float AddProb(
 	Eigen::Tensor<float, 1>& random_sequence,
-	Eigen::Tensor<float, 1>& mask_sequence)
+	Eigen::Tensor<float, 1>& mask_sequence,
+	const int& n_masks)
 {
 	float result = 0.0;
 	const int sequence_length = random_sequence.size();
@@ -42,11 +43,15 @@ static float AddProb(
 
 	// generate 2 random and unique indexes between 
 	// [0, sequence_length) for the mask
-	int mask_index_1 = zero_to_length(gen);
-	int mask_index_2 = 0;
-	do {
-		mask_index_2 = zero_to_length(gen);
-	} while (mask_index_1 == mask_index_2);
+	std::vector<int> mask_indices = {zero_to_length(gen)};
+	for (int i=0; i<n_masks-1; ++i)
+	{
+		int mask_index = 0;
+		do {
+			mask_index = zero_to_length(gen);
+		} while (std::count(mask_indices.begin(), mask_indices.end(), mask_index) != 0 );
+		mask_indices.push_back(mask_index);
+	}
 
 	// generate the random sequence
 	// and the mask sequence
@@ -55,7 +60,7 @@ static float AddProb(
 		// the random sequence
 		random_sequence(i) = zero_to_one(gen);
 		// the mask
-		if (i == mask_index_1 || i == mask_index_2)
+		if (std::count(mask_indices.begin(), mask_indices.end(), i) != 0)
 			mask_sequence(i) = 1.0;
 		else
 			mask_sequence(i) = 0.0;
@@ -64,7 +69,61 @@ static float AddProb(
 		result += mask_sequence(i) * random_sequence(i);
 	}
 
+	//std::cout<<"mask sequence: "<<mask_sequence<<std::endl; [TESTS:convert to a test!]
+	//std::cout<<"random sequence: "<<random_sequence<<std::endl; [TESTS:convert to a test!]
+	//std::cout<<"result: "<<result<<std::endl; [TESTS:convert to a test!]
+
 	return result;
+};
+
+/*
+@brief make the training/test/validation data
+
+@input[in, out] input_data Dimensions of (batch_size, memory_size, n_input_nodes, n_epochs)
+@input[in, out] output_data Dimensions of (batch_size, memory_size, n_input_nodes, n_epochs)
+
+@returns the result of the two random numbers in the sequence
+**/
+static void MakeAddProbTrainingData(
+	Eigen::Tensor<float, 4>& input_data,
+	Eigen::Tensor<float, 4>& output_data,
+	const int& batch_size,
+	const int& memory_size,
+	const int& n_epochs,
+	const int& n_input_nodes,
+	const int& n_output_nodes,
+	const int& sequence_length,
+	const int& n_masks)
+{
+	// Generate the input and output data for training [BUG FREE]
+	for (int batch_iter = 0; batch_iter<batch_size; ++batch_iter) {
+		for (int epochs_iter = 0; epochs_iter<n_epochs; ++epochs_iter) {
+
+			// generate a new sequence
+			Eigen::Tensor<float, 1> random_sequence(sequence_length);
+			Eigen::Tensor<float, 1> mask_sequence(sequence_length);
+			float result = AddProb(random_sequence, mask_sequence, n_masks);
+
+			float result_cumulative = 0.0;
+
+			for (int memory_iter = 0; memory_iter<memory_size; ++memory_iter) {
+				// assign the input sequences
+				input_data(batch_iter, memory_iter, 0, epochs_iter) = random_sequence(memory_iter); // random sequence
+				input_data(batch_iter, memory_iter, 1, epochs_iter) = mask_sequence(memory_iter); // mask sequence
+
+				// assign the output
+				result_cumulative += random_sequence(memory_iter) * mask_sequence(memory_iter);
+				//std::cout<<"result cumulative: "<<result_cumulative<<std::endl; // [TESTS: convert to a test!]
+				output_data(batch_iter, memory_iter, 0, epochs_iter) = result_cumulative;
+				//if (memory_iter == 0)
+				//	output_data_training(batch_iter, memory_iter, 0, epochs_iter) = result;
+				//else
+				//	output_data_training(batch_iter, memory_iter, 0, epochs_iter) = 0.0;
+			}
+		}
+	}
+	//std::cout << "Input data: " << input_data << std::endl; // [TESTS: convert to a test!]
+	//std::cout << "Output data: " << output_data << std::endl; // [TESTS: convert to a test!]
 };
 
 class ModelTrainerTest : public ModelTrainer
@@ -95,76 +154,76 @@ public:
 			Weight_m_bias_to_m, Weight_o_bias_to_o;
 		Model model;
 		// Nodes
-		i_rand = Node("i_rand", NodeType::input, NodeStatus::activated, NodeActivation::Linear);
-		i_mask = Node("i_mask", NodeType::input, NodeStatus::activated, NodeActivation::Linear);
-		h = Node("h", NodeType::hidden, NodeStatus::deactivated, NodeActivation::TanH);
-		m = Node("m", NodeType::hidden, NodeStatus::deactivated, NodeActivation::TanH);
-		o = Node("o", NodeType::output, NodeStatus::deactivated, NodeActivation::TanH);
+		i_rand = Node("Input_0", NodeType::input, NodeStatus::activated, NodeActivation::Linear);
+		i_mask = Node("Input_1", NodeType::input, NodeStatus::activated, NodeActivation::Linear);
+		h = Node("h", NodeType::hidden, NodeStatus::deactivated, NodeActivation::ReLU);
+		m = Node("m", NodeType::hidden, NodeStatus::deactivated, NodeActivation::ReLU);
+		o = Node("Output_0", NodeType::output, NodeStatus::deactivated, NodeActivation::ReLU);
 		h_bias = Node("h_bias", NodeType::bias, NodeStatus::activated, NodeActivation::Linear);
 		m_bias = Node("m_bias", NodeType::bias, NodeStatus::activated, NodeActivation::Linear);
 		o_bias = Node("o_bias", NodeType::bias, NodeStatus::activated, NodeActivation::Linear);
 		// weights  
 		std::shared_ptr<WeightInitOp> weight_init;
 		std::shared_ptr<SolverOp> solver;
-		weight_init.reset(new RandWeightInitOp(2.0));
-		//weight_init.reset(new ConstWeightInitOp(1.0)); //solution
+		weight_init.reset(new ConstWeightInitOp(1.0)); //solution
 		//solver.reset(new SGDOp(0.01, 0.9));
+		//weight_init.reset(new RandWeightInitOp(2.0));
 		solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
-		solver->setGradientThreshold(1000.0f);
+		solver->setGradientThreshold(10.0f);
 		Weight_i_rand_to_h = Weight("Weight_i_rand_to_h", weight_init, solver);
-		weight_init.reset(new RandWeightInitOp(2.0));
-		//weight_init.reset(new ConstWeightInitOp(100.0)); //solution
+		weight_init.reset(new ConstWeightInitOp(100.0)); //solution
 		//solver.reset(new SGDOp(0.01, 0.9));
+		//weight_init.reset(new RandWeightInitOp(2.0));
 		solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
-		solver->setGradientThreshold(1000.0f);
+		solver->setGradientThreshold(10.0f);
 		Weight_i_mask_to_h = Weight("Weight_i_mask_to_h", weight_init, solver);
-		weight_init.reset(new RandWeightInitOp(2.0));
-		//weight_init.reset(new ConstWeightInitOp(1.0)); //solution
+		weight_init.reset(new ConstWeightInitOp(1.0)); //solution
 		//solver.reset(new SGDOp(0.01, 0.9));
+		//weight_init.reset(new RandWeightInitOp(2.0));
 		solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
-		solver->setGradientThreshold(1000.0f);
+		solver->setGradientThreshold(10.0f);
 		Weight_h_to_m = Weight("Weight_h_to_m", weight_init, solver);
-		weight_init.reset(new RandWeightInitOp(2.0));
-		//weight_init.reset(new ConstWeightInitOp(1.0)); //solution
+		weight_init.reset(new ConstWeightInitOp(1.0)); //solution
 		//solver.reset(new SGDOp(0.01, 0.9));
+		//weight_init.reset(new RandWeightInitOp(2.0));
 		solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
-		solver->setGradientThreshold(1000.0f);
+		solver->setGradientThreshold(10.0f);
 		Weight_m_to_m = Weight("Weight_m_to_m", weight_init, solver);
-		weight_init.reset(new RandWeightInitOp(2.0));
-		//weight_init.reset(new ConstWeightInitOp(1.0)); //solution
+		weight_init.reset(new ConstWeightInitOp(1.0)); //solution
 		//solver.reset(new SGDOp(0.01, 0.9));
+		//weight_init.reset(new RandWeightInitOp(2.0));
 		solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
-		solver->setGradientThreshold(1000.0f);
+		solver->setGradientThreshold(10.0f);
 		Weight_m_to_o = Weight("Weight_m_to_o", weight_init, solver);
-		weight_init.reset(new ConstWeightInitOp(1.0));
-		//weight_init.reset(new ConstWeightInitOp(-100.0)); //solution
+		weight_init.reset(new ConstWeightInitOp(-100.0)); //solution
 		//solver.reset(new SGDOp(0.01, 0.9));
+		//weight_init.reset(new ConstWeightInitOp(1.0));
 		solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
-		solver->setGradientThreshold(1000.0f);
+		solver->setGradientThreshold(10.0f);
 		Weight_h_bias_to_h = Weight("Weight_h_bias_to_h", weight_init, solver);
-		weight_init.reset(new ConstWeightInitOp(1.0));
-		//weight_init.reset(new ConstWeightInitOp(0.0)); //solution
+		weight_init.reset(new ConstWeightInitOp(0.0)); //solution
 		//solver.reset(new SGDOp(0.01, 0.9));
+		//weight_init.reset(new ConstWeightInitOp(1.0));
 		solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
-		solver->setGradientThreshold(1000.0f);
+		solver->setGradientThreshold(10.0f);
 		Weight_m_bias_to_m = Weight("Weight_m_bias_to_m", weight_init, solver);
-		weight_init.reset(new ConstWeightInitOp(1.0));
-		//weight_init.reset(new ConstWeightInitOp(0.0)); //solution
+		weight_init.reset(new ConstWeightInitOp(0.0)); //solution
 		//solver.reset(new SGDOp(0.01, 0.9));
+		//weight_init.reset(new ConstWeightInitOp(1.0));
 		solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
-		solver->setGradientThreshold(1000.0f);
+		solver->setGradientThreshold(10.0f);
 		Weight_o_bias_to_o = Weight("Weight_o_bias_to_o", weight_init, solver);
 		weight_init.reset();
 		solver.reset();
 		// links
-		Link_i_rand_to_h = Link("Link_i_rand_to_h", "i_rand", "h", "Weight_i_rand_to_h");
-		Link_i_mask_to_h = Link("Link_i_mask_to_h", "i_mask", "h", "Weight_i_mask_to_h");
+		Link_i_rand_to_h = Link("Link_i_rand_to_h", "Input_0", "h", "Weight_i_rand_to_h");
+		Link_i_mask_to_h = Link("Link_i_mask_to_h", "Input_1", "h", "Weight_i_mask_to_h");
 		Link_h_to_m = Link("Link_h_to_m", "h", "m", "Weight_h_to_m");
-		Link_m_to_o = Link("Link_m_to_o", "m", "o", "Weight_m_to_o");
+		Link_m_to_o = Link("Link_m_to_o", "m", "Output_0", "Weight_m_to_o");
 		Link_m_to_m = Link("Link_m_to_m", "m", "m", "Weight_m_to_m");
 		Link_h_bias_to_h = Link("Link_h_bias_to_h", "h_bias", "h", "Weight_h_bias_to_h");
 		Link_m_bias_to_m = Link("Link_m_bias_to_m", "m_bias", "m", "Weight_m_bias_to_m");
-		Link_o_bias_to_o = Link("Link_o_bias_to_o", "o_bias", "o", "Weight_o_bias_to_o");
+		Link_o_bias_to_o = Link("Link_o_bias_to_o", "o_bias", "Output_0", "Weight_o_bias_to_o");
 		// add nodes, links, and weights to the model
 		model.setName("MemoryCell");
 		model.addNodes({ i_rand, i_mask, h, m, o,
@@ -229,10 +288,10 @@ public:
 				model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), false, true, n_threads);
 
 			// calculate the model error and node output error
-			//model.CETT(output.chip(iter, 3), output_nodes, 1);  // just the last result
-			model.CETT(output.chip(iter, 3), output_nodes, getMemorySize());
+			model.CETT(output.chip(iter, 3), output_nodes, 1);  // just the last result
+			//model.CETT(output.chip(iter, 3), output_nodes, getMemorySize());
 
-			//std::cout<<"Model "<<model.getName()<<" error: "<<model.getError().sum()<<std::endl;
+			std::cout<<"Model "<<model.getName()<<" error: "<<model.getError().sum()<<std::endl;
 
 			// back propogate
 			if (iter == 0)
@@ -254,6 +313,7 @@ public:
 			// reinitialize the model
 			model.reInitializeNodeStatuses();
 			model.initNodes(getBatchSize(), getMemorySize());
+			model.initError(getBatchSize(), getMemorySize());
 		}
 		model.clearCache();
 	}
@@ -314,6 +374,7 @@ public:
 			// reinitialize the model
 			model.reInitializeNodeStatuses();
 			model.initNodes(getBatchSize(), getMemorySize());
+			model.initError(getBatchSize(), getMemorySize());
 		}
 		model.clearCache();
 		return model_error;
@@ -327,7 +388,8 @@ int main(int argc, char** argv)
 
 	// Add problem parameters
 	const int sequence_length = 25; // test sequence length
-	const int n_epochs = 500;
+	const int n_masks = 5;
+	const int n_epochs = 1000;
 	const int n_epochs_validation = 25;
 
 	const int n_hard_threads = std::thread::hardware_concurrency();
@@ -338,11 +400,9 @@ int main(int argc, char** argv)
 	std::cout << threads_cout;
 
 	// Make the input nodes 
-	//std::vector<std::string> input_nodes = { "i_rand", "i_mask" };
 	std::vector<std::string> input_nodes = { "Input_0", "Input_1" };
 
 	// Make the output nodes
-	//std::vector<std::string> output_nodes = { "o" };
 	std::vector<std::string> output_nodes = { "Output_0" };
 
 	// define the model replicator for growth mode
@@ -354,6 +414,14 @@ int main(int argc, char** argv)
 	// Make the simulation time_steps
 	Eigen::Tensor<float, 3> time_steps(model_trainer.getBatchSize(), model_trainer.getMemorySize(), model_trainer.getNEpochs());
 	time_steps.setConstant(1.0f);
+
+	// generate the input/output data for validation
+	std::cout << "Generating the input/output data for validation..." << std::endl;
+	Eigen::Tensor<float, 4> input_data_validation(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)input_nodes.size(), n_epochs_validation);
+	Eigen::Tensor<float, 4> output_data_validation(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)output_nodes.size(), n_epochs_validation);
+	MakeAddProbTrainingData(input_data_validation, output_data_validation,
+		model_trainer.getBatchSize(), model_trainer.getMemorySize(), n_epochs_validation, (int)input_nodes.size(), (int)output_nodes.size(),
+		sequence_length, n_masks);
 
 	// define the model replicator for growth mode
 	ModelReplicator model_replicator;
@@ -372,7 +440,7 @@ int main(int argc, char** argv)
 
 	// Evolve the population
 	std::vector<Model> population;
-	const int iterations = 50;
+	const int iterations = 1;
 	for (int iter = 0; iter<iterations; ++iter)
 	{
 		printf("Iteration #: %d\n", iter);
@@ -383,28 +451,27 @@ int main(int argc, char** argv)
 			// define the initial population [BUG FREE]
 			for (int i = 0; i<population_size; ++i)
 			{
-				// baseline model
-				std::shared_ptr<WeightInitOp> weight_init;
-				std::shared_ptr<SolverOp> solver;
-				weight_init.reset(new RandWeightInitOp(input_nodes.size()));
-				solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
-				Model model = model_replicator.makeBaselineModel(
-					input_nodes.size(), 1, output_nodes.size(),
-					NodeActivation::ReLU,
-					NodeActivation::ReLU,
-					weight_init, solver,
-					ModelLossFunction::MSE, std::to_string(i));
-				model.initWeights();
-
-				//// make the model name
-				////Model model = model_trainer.makeModelMemoryCellSol();
-				//Model model = model_trainer.makeModel();
+				//// baseline model
+				//std::shared_ptr<WeightInitOp> weight_init;
+				//std::shared_ptr<SolverOp> solver;
+				//weight_init.reset(new RandWeightInitOp(input_nodes.size()));
+				//solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
+				//Model model = model_replicator.makeBaselineModel(
+				//	input_nodes.size(), 1, output_nodes.size(),
+				//	NodeActivation::ReLU,
+				//	NodeActivation::ReLU,
+				//	weight_init, solver,
+				//	ModelLossFunction::MSE, std::to_string(i));
 				//model.initWeights();
 
-				//char model_name_char[512];
-				//sprintf(model_name_char, "%s_%d", model.getName().data(), i);
-				//std::string model_name(model_name_char);
-				//model.setName(model_name);
+				// make the model name
+				Model model = model_trainer.makeModel();
+				model.initWeights();
+
+				char model_name_char[512];
+				sprintf(model_name_char, "%s_%d", model.getName().data(), i);
+				std::string model_name(model_name_char);
+				model.setName(model_name);
 				model.setId(i);
 
 				population.push_back(model);
@@ -415,31 +482,9 @@ int main(int argc, char** argv)
 		std::cout << "Generating the input/output data for training..." << std::endl;
 		Eigen::Tensor<float, 4> input_data_training(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)input_nodes.size(), model_trainer.getNEpochs());
 		Eigen::Tensor<float, 4> output_data_training(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)output_nodes.size(), model_trainer.getNEpochs());
-		for (int batch_iter = 0; batch_iter<model_trainer.getBatchSize(); ++batch_iter) {
-			for (int epochs_iter = 0; epochs_iter<model_trainer.getNEpochs(); ++epochs_iter) {
-
-				// generate a new sequence
-				Eigen::Tensor<float, 1> random_sequence(sequence_length);
-				Eigen::Tensor<float, 1> mask_sequence(sequence_length);
-				float result = AddProb(random_sequence, mask_sequence);
-
-				float result_cumulative = 0.0;
-
-				for (int memory_iter = 0; memory_iter<model_trainer.getMemorySize(); ++memory_iter) {
-					// assign the input sequences
-					input_data_training(batch_iter, memory_iter, 0, epochs_iter) = random_sequence(memory_iter); // random sequence
-					input_data_training(batch_iter, memory_iter, 1, epochs_iter) = mask_sequence(memory_iter); // mask sequence
-
-					// assign the output
-					result_cumulative += random_sequence(memory_iter) * mask_sequence(memory_iter);
-					output_data_training(batch_iter, memory_iter, 0, epochs_iter) = result_cumulative;
-					//if (memory_iter == 0)
-					//	output_data_training(batch_iter, memory_iter, 0, epochs_iter) = result;
-					//else
-					//	output_data_training(batch_iter, memory_iter, 0, epochs_iter) = 0.0;
-				}
-			}
-		}
+		MakeAddProbTrainingData(input_data_training, output_data_training,
+			model_trainer.getBatchSize(), model_trainer.getMemorySize(), n_epochs, (int)input_nodes.size(), (int)output_nodes.size(),
+			sequence_length, n_masks);
 
 		// generate a random number of model modifications
 		if (iter>0)
@@ -456,44 +501,12 @@ int main(int argc, char** argv)
 		population_trainer.trainModels(population, model_trainer,
 			input_data_training, output_data_training, time_steps, input_nodes, output_nodes, n_threads);
 
-		// generate the input/output data for validation
-		std::cout << "Generating the input/output data for validation..." << std::endl;
-		model_trainer.setNEpochs(n_epochs_validation);  // lower the number of epochs for validation
-
-		Eigen::Tensor<float, 4> input_data_validation(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)input_nodes.size(), model_trainer.getNEpochs());
-		Eigen::Tensor<float, 4> output_data_validation(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)output_nodes.size(), model_trainer.getNEpochs());
-		for (int batch_iter = 0; batch_iter<model_trainer.getBatchSize(); ++batch_iter) {
-			for (int epochs_iter = 0; epochs_iter<model_trainer.getNEpochs(); ++epochs_iter) {
-
-				// generate a new sequence
-				Eigen::Tensor<float, 1> random_sequence(sequence_length);
-				Eigen::Tensor<float, 1> mask_sequence(sequence_length);
-				float result = AddProb(random_sequence, mask_sequence);
-
-				float result_cumulative = 0.0;
-
-				for (int memory_iter = 0; memory_iter<model_trainer.getMemorySize(); ++memory_iter) {
-					// assign the input sequences
-					input_data_validation(batch_iter, memory_iter, 0, epochs_iter) = random_sequence(memory_iter); // random sequence
-					input_data_validation(batch_iter, memory_iter, 1, epochs_iter) = mask_sequence(memory_iter); // mask sequence
-
-					// assign the output
-					result_cumulative += random_sequence(memory_iter) * mask_sequence(memory_iter);
-					output_data_validation(batch_iter, memory_iter, 0, epochs_iter) = result_cumulative;
-					//if (memory_iter == 0)
-					//	output_data_validation(batch_iter, memory_iter, 0, epochs_iter) = result;
-					//else
-					//	output_data_validation(batch_iter, memory_iter, 0, epochs_iter) = 0.0;
-				}
-			}
-		}
-
 		// select the top N from the population
 		std::cout << "Selecting the models..." << std::endl;
+		model_trainer.setNEpochs(n_epochs_validation);  // lower the number of epochs for validation
 		std::vector<std::pair<int, float>> models_validation_errors = population_trainer.selectModels(
 			n_top, n_random, population, model_trainer,
 			input_data_validation, output_data_validation, time_steps, input_nodes, output_nodes, n_threads);
-
 		model_trainer.setNEpochs(n_epochs);  // restore the number of epochs for training
 
 		if (iter < iterations - 1)

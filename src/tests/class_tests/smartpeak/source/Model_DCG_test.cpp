@@ -316,6 +316,9 @@ BOOST_AUTO_TEST_CASE(FPTT)
 
 BOOST_AUTO_TEST_CASE(CETT)
 {
+	// [TODO: update tests]
+	// [BUG: discovered that the output was not being traversed in reverse order]
+
 	// Toy network: 1 hidden layer, fully connected, DCG
 	// Model model2 = makeModel2();
 
@@ -923,6 +926,7 @@ BOOST_AUTO_TEST_CASE(modelTrainer2)
     // reinitialize the model
     model2a.reInitializeNodeStatuses();    
     model2a.initNodes(batch_size, memory_size);
+		model2a.initError(batch_size, memory_size);
   }
   
   const Eigen::Tensor<float, 0> total_error = model2a.getError().sum();

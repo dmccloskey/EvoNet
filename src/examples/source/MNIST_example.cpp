@@ -103,6 +103,7 @@ public:
 			// reinitialize the model
 			model.reInitializeNodeStatuses();
 			model.initNodes(getBatchSize(), getMemorySize());
+			model.initError(getBatchSize(), getMemorySize());
 		}
 		model.clearCache();
 	}
@@ -158,6 +159,7 @@ public:
 			// reinitialize the model
 			model.reInitializeNodeStatuses();
 			model.initNodes(getBatchSize(), getMemorySize());
+			model.initError(getBatchSize(), getMemorySize());
 		}
 		model.clearCache();
 		return model_error;

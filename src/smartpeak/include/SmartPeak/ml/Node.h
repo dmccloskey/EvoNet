@@ -11,7 +11,7 @@ namespace SmartPeak
   enum class NodeStatus
   {
     // TODO: will these be the final set of states a node can be in?
-    deactivated = 0, // Weights have been updated (optional), ready to be re-initialized.
+    deactivated = 0, // Optional: utilized to indicate that there should be no change in node status
     initialized = 1, // Memory has been allocated for Tensors
     activated = 2, // Output has been calculated
     corrected = 3 // Error has been calculated

@@ -414,13 +414,18 @@ namespace SmartPeak
     const std::vector<NodeType> sink_node_type_exclude = {NodeType::bias, NodeType::input};  // no input can be a sink
     const std::vector<NodeType> sink_node_type_include = {};
 
-    // select candidate source and sink nodes
+    // select candidate source nodes
     std::vector<std::string> source_node_ids = selectNodes(model, source_node_type_exclude, source_node_type_include);
     if (source_node_ids.size() == 0)
     {
       printf("No source nodes were found that matched the inclusion/exclusion criteria.\n"); 
       return;
     }
+
+		// select a random source node
+		std::string source_node_name = selectRandomElement<std::string>(source_node_ids);
+
+		// select candidate sink nodes
     std::vector<std::string> sink_node_ids = selectNodes(model, sink_node_type_exclude, sink_node_type_include);
     if (sink_node_ids.size() == 0)
     {
@@ -428,8 +433,10 @@ namespace SmartPeak
       return;
     }
 
-    // select a random source and sink node
-    std::string source_node_name = selectRandomElement<std::string>(source_node_ids);
+		// remove candidate sink nodes for which a link already exists
+		
+
+    // select a random sink node
     std::string sink_node_name = selectRandomElement<std::string>(sink_node_ids);
 
     // [TODO: Need a check if the link already exists...]

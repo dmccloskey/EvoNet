@@ -407,7 +407,8 @@ namespace SmartPeak
         {
           node_map.second->getDtMutable()->operator()(j, memory_step) = values(j);
         }
-        node_map.second->setStatus(status_update);
+				if (status_update != NodeStatus::deactivated) // [TESTS:  add tests]
+					node_map.second->setStatus(status_update);
       }
     }
   }
@@ -462,7 +463,8 @@ namespace SmartPeak
         {
           nodes_.at(node_names[i])->getDtMutable()->operator()(j, memory_step) = values(j, i);
         }
-        nodes_.at(node_names[i])->setStatus(status_update);
+				if (status_update != NodeStatus::deactivated) // [TESTS:  add tests]
+					nodes_.at(node_names[i])->setStatus(status_update);
       }
     }
   }
@@ -522,7 +524,8 @@ namespace SmartPeak
     }
 
     // update the status
-    nodes_.at(node_name)->setStatus(status_update);
+		if (status_update != NodeStatus::deactivated) // [TESTS:  add tests]
+			nodes_.at(node_name)->setStatus(status_update);
   }
   
   void Model::mapValuesToNodes(
@@ -569,7 +572,8 @@ namespace SmartPeak
           {
             nodes_.at(node_names[i])->getDtMutable()->operator()(j, k) = values(j, k, i);
           }
-          nodes_.at(node_names[i])->setStatus(status_update);
+					if (status_update != NodeStatus::deactivated) // [TESTS:  add tests]
+						nodes_.at(node_names[i])->setStatus(status_update);
         }
       }
     }
@@ -1361,9 +1365,9 @@ namespace SmartPeak
 
       // initialize nodes for the next time-step
       const Eigen::Tensor<float, 1> dt_values = dt.chip(time_step, 1);
-      mapValuesToNodes(dt_values, time_step_cur, NodeStatus::initialized, "dt");
+      mapValuesToNodes(dt_values, time_step_cur, NodeStatus::deactivated, "dt"); // [TESTS: setting this to "initialized" caused one hell of a headache to debug...]
       const Eigen::Tensor<float, 2> active_values = values.chip(time_step, 1);
-      // std::cout<<"Model::FPTT() active_values: "<<active_values<<std::endl;
+       //std::cout<<"Model::FPTT() active_values: "<<active_values<<std::endl;
       mapValuesToNodes(active_values, time_step_cur, node_names, NodeStatus::activated, "output");
 
       if (cache_FP_steps && time_step == 0)
@@ -1473,9 +1477,14 @@ namespace SmartPeak
 			max_steps = nodes_.begin()->second->getOutput().dimension(1);
 		}
 
-		for (int i=0; i<time_steps; ++i)
+		// NOTE: the output are stored [Tmax, Tmax - 1, ..., T=0]
+		//	     while the expected output (values) are stored [T=0, T=1, ..., Tmax]
+		for (int i=0; i<max_steps; ++i)
 		{
-			calculateError(values.chip(i, 1), node_names, i);
+			int next_time_step = values.dimension(1) - 1 - i;
+			std::cout<<"Expected output for time point "<< i << " is " << values.chip(next_time_step, 1)<<std::endl;
+			calculateError(values.chip(next_time_step, 1), node_names, i);
+			//calculateError(values.chip(i, 1), node_names, i);
 		}
 	}
   
