@@ -915,7 +915,13 @@ namespace SmartPeak
           {
             try
             {
-              sink_tensor += task_result.get(); // [TODO: update depending on Sum, Product, or Max NodeIntegration]
+							// [TESTS: add tests for Sum, Product, or Max NodeIntegration]
+							if (operations->result.sink_node->getIntegration() == NodeIntegration::Sum)
+								sink_tensor += task_result.get(); 
+							else if (operations->result.sink_node->getIntegration() == NodeIntegration::Product)
+								sink_tensor *= task_result.get();
+							else if (operations->result.sink_node->getIntegration() == NodeIntegration::Max)
+								sink_tensor = sink_tensor.cwiseMax(task_result.get());
             }            
             catch (std::exception& e)
             {
@@ -1738,7 +1744,7 @@ namespace SmartPeak
           {
             try
             {
-              sink_tensor += task_result.get();
+              sink_tensor += task_result.get();  // [CHECK: this should still work with NodeIntegration]
             }
             catch (std::exception& e)
             {
@@ -1756,7 +1762,7 @@ namespace SmartPeak
     }
    
     if (operations->result.time_step == 0 || time_step + operations->result.time_step < memory_size)
-    {
+    { // [PARALLEL: could add a dummy time step with output 0 so as not to need a check for the memory size being exceeded]
       // scale the error by the derivative
       // std::cout<<"Sink tensor sum: "<<sink_tensor<<std::endl;
       sink_tensor = sink_tensor * operations->result.sink_node->getDerivative().chip(time_step + operations->result.time_step, 1) + operations->result.sink_node->getError().chip(time_step + operations->result.time_step, 1);
@@ -2314,10 +2320,12 @@ namespace SmartPeak
 					Eigen::Tensor<float, 1> output_tensor;
 					if (nodes_.at(link_map.second->getSinkNodeName())->getIntegration() == NodeIntegration::Sum)
 						output_tensor = nodes_.at(link_map.second->getSourceNodeName())->getOutput().chip(i, 1);
-					//else if (nodes_.at(link_map.second->getSinkNodeName())->getIntegration() == NodeIntegration::Product)
-					//	output_tensor = nodes_.at(link_map.second->getSourceNodeName())->getInput().chip(i, 1);
-					//else if (nodes_.at(link_map.second->getSinkNodeName())->getIntegration() == NodeIntegration::Max)
-					//	output_tensor = nodes_.at(link_map.second->getSourceNodeName())->getOutput().chip(i, 1);
+					else if (nodes_.at(link_map.second->getSinkNodeName())->getIntegration() == NodeIntegration::Product)
+					{
+						output_tensor = nodes_.at(link_map.second->getSourceNodeName())->getInput().chip(i, 1)/weights_.at(link_map.second->getWeightName())->getWeight();
+					}
+					else if (nodes_.at(link_map.second->getSinkNodeName())->getIntegration() == NodeIntegration::Max)
+						output_tensor = nodes_.at(link_map.second->getSourceNodeName())->getOutput().chip(i, 1); // [TODO: update with correct formual]
 					else
 						std::cout<<"NodeIntegration type is not supported."<<std::endl; // should throw an error!
 
