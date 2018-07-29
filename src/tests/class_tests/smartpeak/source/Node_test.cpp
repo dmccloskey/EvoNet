@@ -86,7 +86,7 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   BOOST_CHECK(node.getActivation() == NodeActivation::ReLU, NodeIntegration::Sum);
 	BOOST_CHECK(node.getIntegration() == NodeIntegration::Sum);
 
-  Eigen::Tensor<float, 2> output_test(3, 2), error_test(3, 2), derivative_test(3, 2), dt_test(3, 2);
+  Eigen::Tensor<float, 2> output_test(3, 2), error_test(3, 2), derivative_test(3, 2), dt_test(3, 2), input_test(3, 2);
   output_test.setConstant(0.0f);
   node.setOutput(output_test);
   error_test.setConstant(1.0f);
@@ -95,8 +95,12 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   node.setDerivative(derivative_test);
   dt_test.setConstant(0.5f);
   node.setDt(dt_test);
+	input_test.setConstant(3.0f);
+	node.setInput(input_test);
 
   // Test set values
+	BOOST_CHECK_EQUAL(node.getInput()(0, 0), input_test(0, 0));
+	BOOST_CHECK_EQUAL(node.getInputPointer()[0], input_test.data()[0]);
   BOOST_CHECK_EQUAL(node.getOutput()(0,0), output_test(0,0));
   BOOST_CHECK_EQUAL(node.getOutputPointer()[0], output_test.data()[0]);
   BOOST_CHECK_EQUAL(node.getError()(0,0), error_test(0,0));
@@ -105,6 +109,19 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   BOOST_CHECK_EQUAL(node.getDerivativePointer()[0], derivative_test.data()[0]);
   BOOST_CHECK_EQUAL(node.getDt()(0,0), dt_test(0,0));
   BOOST_CHECK_EQUAL(node.getDtPointer()[0], dt_test.data()[0]);
+
+	// Input 
+	// Test mutability
+	node.getInputPointer()[0] = 9.0;
+	BOOST_CHECK_EQUAL(node.getInput()(0, 0), 9.0);
+
+	// Test mutability
+	node.getInputMutable()->operator()(0, 0) = 0.0;
+	BOOST_CHECK_EQUAL(node.getInput()(0, 0), 0.0);
+
+	// Test col-wise storage
+	node.getInputPointer()[3] = 9.0;
+	BOOST_CHECK_EQUAL(node.getInput()(0, 1), 9.0);
 
   // Output 
   // Test mutability
@@ -166,6 +183,8 @@ BOOST_AUTO_TEST_CASE(initNode)
 
   node.setType(NodeType::hidden);
   node.initNode(2,5);
+	BOOST_CHECK_EQUAL(node.getInput()(0, 0), 0.0);
+	BOOST_CHECK_EQUAL(node.getInput()(1, 4), 0.0);
   BOOST_CHECK_EQUAL(node.getOutput()(0,0), 0.0);
   BOOST_CHECK_EQUAL(node.getOutput()(1,4), 0.0);
   BOOST_CHECK_EQUAL(node.getDerivative()(0,0), 0.0);
@@ -196,7 +215,7 @@ BOOST_AUTO_TEST_CASE(checkTimeStep)
 }
 
 BOOST_AUTO_TEST_CASE(calculateActivation)
-{
+{  // [DEPRECATED]
   Node node;
   node.setId(1);
   node.initNode(5,2);
@@ -305,7 +324,7 @@ BOOST_AUTO_TEST_CASE(calculateActivation)
 }
 
 BOOST_AUTO_TEST_CASE(calculateDerivative)
-{
+{  // [DEPRECATED]
   Node node;
   node.setId(1);
   node.initNode(5,2);
@@ -416,73 +435,6 @@ BOOST_AUTO_TEST_CASE(calculateDerivative)
 	BOOST_CHECK_CLOSE(node.getDerivative()(3, 0), 1.0, 1e-6);
 	BOOST_CHECK_CLOSE(node.getDerivative()(4, 0), 1.0, 1e-6);
 	BOOST_CHECK_CLOSE(node.getDerivative()(0, 1), 0.0, 1e-6); // time step 1 should not be calculated
-}
-
-BOOST_AUTO_TEST_CASE(saveCurrentOutput)
-{ //[DEPRECATED]
-  Node node;
-  node.setId(1);
-  node.initNode(5,2);
-  Eigen::Tensor<float, 2> output(5, 2);
-  output.setValues({{0.0, 5.0}, {1.0, 6.0}, {2.0, 7.0}, {3.0, 8.0}, {4.0, 9.0}});
-  node.setOutput(output);
-
-  node.saveCurrentOutput();  
-  Eigen::Tensor<float, 2> output_test(5, 2);
-  output_test.setValues({{0.0, 0.0}, {0.0, 1.0}, {0.0, 2.0}, {0.0, 3.0}, {0.0, 4.0}});
-  for (int i=0; i<output.dimension(0); ++i)
-    for (int j=0; j<output.dimension(1); ++j)
-      BOOST_CHECK_CLOSE(node.getOutput()(i,j), output_test(i,j), 1e-6);
-}
-BOOST_AUTO_TEST_CASE(saveCurrentDerivative)
-{ //[DEPRECATED]
-  Node node;
-  node.setId(1);
-  node.initNode(5,2);
-  Eigen::Tensor<float, 2> derivative(5, 2);
-  derivative.setValues({{0.0, 5.0}, {1.0, 6.0}, {2.0, 7.0}, {3.0, 8.0}, {4.0, 9.0}});
-  node.setDerivative(derivative);
-
-  node.saveCurrentDerivative();  
-  Eigen::Tensor<float, 2> Derivative_test(5, 2);
-  Derivative_test.setValues({{0.0, 0.0}, {0.0, 1.0}, {0.0, 2.0}, {0.0, 3.0}, {0.0, 4.0}});
-  for (int i=0; i<derivative.dimension(0); ++i)
-    for (int j=0; j<derivative.dimension(1); ++j)
-      BOOST_CHECK_CLOSE(node.getDerivative()(i,j), Derivative_test(i,j), 1e-6);
-}
-
-BOOST_AUTO_TEST_CASE(saveCurrentError)
-{ //[DEPRECATED]
-  Node node;
-  node.setId(1);
-  node.initNode(5,2);
-  Eigen::Tensor<float, 2> error(5, 2);
-  error.setValues({{0.0, 5.0}, {1.0, 6.0}, {2.0, 7.0}, {3.0, 8.0}, {4.0, 9.0}});
-  node.setError(error);
-
-  node.saveCurrentError();  
-  Eigen::Tensor<float, 2> Error_test(5, 2);
-  Error_test.setValues({{0.0, 0.0}, {0.0, 1.0}, {0.0, 2.0}, {0.0, 3.0}, {0.0, 4.0}});
-  for (int i=0; i<error.dimension(0); ++i)
-    for (int j=0; j<error.dimension(1); ++j)
-      BOOST_CHECK_CLOSE(node.getError()(i,j), Error_test(i,j), 1e-6);
-}
-
-BOOST_AUTO_TEST_CASE(saveCurrentDt)
-{ //[DEPRECATED]
-  Node node;
-  node.setId(1);
-  node.initNode(5,2);
-  Eigen::Tensor<float, 2> dt(5, 2);
-  dt.setValues({{0.0, 5.0}, {1.0, 6.0}, {2.0, 7.0}, {3.0, 8.0}, {4.0, 9.0}});
-  node.setDt(dt);
-
-  node.saveCurrentDt();  
-  Eigen::Tensor<float, 2> Dt_test(5, 2);
-  Dt_test.setValues({{0.0, 0.0}, {0.0, 1.0}, {0.0, 2.0}, {0.0, 3.0}, {0.0, 4.0}});
-  for (int i=0; i<dt.dimension(0); ++i)
-    for (int j=0; j<dt.dimension(1); ++j)
-      BOOST_CHECK_CLOSE(node.getDt()(i,j), Dt_test(i,j), 1e-6);
 }
 
 BOOST_AUTO_TEST_CASE(checkOutput)

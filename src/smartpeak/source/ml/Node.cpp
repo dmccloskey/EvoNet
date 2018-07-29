@@ -22,6 +22,7 @@ namespace SmartPeak
     activation_ = other.activation_;
     output_min_ = other.output_min_;
     output_max_ = other.output_max_;
+		input_ = other.input_;
     output_ = other.output_;
     error_ = other.error_;
     derivative_ = other.derivative_;
@@ -106,6 +107,23 @@ namespace SmartPeak
 		return integration_;
 	}
 
+	void Node::setInput(const Eigen::Tensor<float, 2>& input)
+	{
+		input_ = input;
+	}
+	Eigen::Tensor<float, 2> Node::getInput() const
+	{
+		return input_;
+	}
+	Eigen::Tensor<float, 2>* Node::getInputMutable()
+	{
+		return &input_;
+	}
+	float* Node::getInputPointer()
+	{
+		return input_.data();
+	}
+
   void Node::setOutput(const Eigen::Tensor<float, 2>& output)
   {
     output_ = output;
@@ -188,6 +206,7 @@ namespace SmartPeak
   {
     Eigen::Tensor<float, 2> init_values(batch_size, memory_size);
     init_values.setConstant(0.0f);
+		setInput(init_values);
     setError(init_values);
     setDerivative(init_values);
 
@@ -209,6 +228,7 @@ namespace SmartPeak
 
   }
 
+	// [DEPRECATED]
   void Node::calculateActivation(const int& time_step)
   {
     if (!checkTimeStep(time_step)) return;
@@ -285,6 +305,7 @@ namespace SmartPeak
     }
   }
 
+	// [DEPRECATED]
   void Node::calculateDerivative(const int& time_step)
   {
     if (!checkTimeStep(time_step)) return;
@@ -390,86 +411,6 @@ namespace SmartPeak
     else
     {
       return true;
-    }
-  }
-
-  void Node::saveCurrentOutput()
-  { //[DEPRECATED]
-    const int batch_size = output_.dimension(0);
-    const int memory_size = output_.dimension(1);
-    for (int i=0; i<batch_size; ++i)
-    {
-      for (int j=memory_size-1; j>=0 ; --j)
-      {
-        if (j==0)
-        {
-          output_(i, j) = 0.0;
-        }
-        else
-        {
-          output_(i, j) = output_(i, j-1);
-        }
-      }
-    }
-  }
-
-  void Node::saveCurrentDerivative()
-  { //[DEPRECATED]
-    const int batch_size = derivative_.dimension(0);
-    const int memory_size = derivative_.dimension(1);
-    for (int i=0; i<batch_size; ++i)
-    {
-      for (int j=memory_size-1; j>=0 ; --j)
-      {
-        if (j==0)
-        {
-          derivative_(i, j) = 0.0;
-        }
-        else
-        {
-          derivative_(i, j) = derivative_(i, j-1);
-        }
-      }
-    }
-  }
-
-  void Node::saveCurrentError()
-  { //[DEPRECATED]
-    const int batch_size = error_.dimension(0);
-    const int memory_size = error_.dimension(1);
-    for (int i=0; i<batch_size; ++i)
-    {
-      for (int j=memory_size-1; j>=0 ; --j)
-      {
-        if (j==0)
-        {
-          error_(i, j) = 0.0;
-        }
-        else
-        {
-          error_(i, j) = error_(i, j-1);
-        }
-      }
-    }
-  }
-
-  void Node::saveCurrentDt()
-  { //[DEPRECATED]
-    const int batch_size = dt_.dimension(0);
-    const int memory_size = dt_.dimension(1);
-    for (int i=0; i<batch_size; ++i)
-    {
-      for (int j=memory_size-1; j>=0 ; --j)
-      {
-        if (j==0)
-        {
-          dt_(i, j) = 0.0;
-        }
-        else
-        {
-          dt_(i, j) = dt_(i, j-1);
-        }
-      }
     }
   }
 

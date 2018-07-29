@@ -86,6 +86,7 @@ public:
       status_ = other.status_;
       output_min_ = other.output_min_;
       output_max_ = other.output_max_;
+			input_ = other.input_;
       output_ = other.output_;
       error_ = other.error_;
       derivative_ = other.derivative_;
@@ -109,7 +110,12 @@ public:
     SmartPeak::NodeActivation getActivation() const; ///< activation getter
 
 		void setIntegration(const SmartPeak::NodeIntegration & integration); ///< integration setter
-		SmartPeak::NodeIntegration getIntegration() const; ///< integration getter
+		SmartPeak::NodeIntegration getIntegration() const; ///< integration 
+
+		void setInput(const Eigen::Tensor<float, 2>& input); ///< input setter
+		Eigen::Tensor<float, 2> getInput() const; ///< input copy getter
+		Eigen::Tensor<float, 2>* getInputMutable(); ///< input copy getter
+		float* getInputPointer(); ///< input pointer getter
 
     void setOutput(const Eigen::Tensor<float, 2>& output); ///< output setter
     Eigen::Tensor<float, 2> getOutput() const; ///< output copy getter
@@ -156,6 +162,8 @@ public:
     /**
     @brief The current output is passed through an activation function.
     Contents are updated in place.
+		
+		[DEPRECATED]
 
     @param[in] time_step Time step to activate all samples in the batch
 
@@ -165,6 +173,8 @@ public:
 
     /**
     @brief Calculate the derivative from the output.
+		
+		[DEPRECATED]
 
     @param[in] time_step Time step to calculate the derivative
     for all samples in the batch
@@ -172,34 +182,6 @@ public:
     [THREADPOOL/CUDA: move to seperate file for cpu/cuda compilation]
     */
     void calculateDerivative(const int& time_step);
-    
-    /**
-      @brief Shifts the current output batch by 1 unit back in memory.
-
-			[DEPRECATED]
-    */
-    void saveCurrentOutput();
-    
-    /**
-      @brief Shifts the current derivative batch by 1 unit back in memory.
-
-			[DEPRECATED]
-    */
-    void saveCurrentDerivative();
-    
-    /**
-      @brief Shifts the current error batch by 1 unit back in memory.
-
-			[DEPRECATED]
-    */
-    void saveCurrentError();
-    
-    /**
-      @brief Shifts the current dt batch by 1 unit back in memory.
-
-			[DEPRECATED]
-    */
-    void saveCurrentDt();
  
     /**
       @brief Check if the output is within the min/max.  
@@ -225,6 +207,7 @@ private:
         where the number of samples spans 0 to n samples
         and the number of time steps spans m time points to 0
     */
+		Eigen::Tensor<float, 2> input_; ///< Node Net Input (rows: # of samples, cols: # of time steps)
     Eigen::Tensor<float, 2> output_; ///< Node Output (rows: # of samples, cols: # of time steps)
     Eigen::Tensor<float, 2> error_; ///< Node Error (rows: # of samples, cols: # of time steps)
     Eigen::Tensor<float, 2> derivative_; ///< Node Error (rows: # of samples, cols: # of time steps)

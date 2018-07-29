@@ -915,7 +915,7 @@ namespace SmartPeak
           {
             try
             {
-              sink_tensor += task_result.get();
+              sink_tensor += task_result.get(); // [TODO: update depending on Sum, Product, or Max NodeIntegration]
             }            
             catch (std::exception& e)
             {
@@ -941,9 +941,9 @@ namespace SmartPeak
       1);
     Eigen::Tensor<float, 1> derivative = calculateDerivative(
       sink_node_type, sink_node_activation, output, 1);
-
-    // update the node [TODO: check if the model node is also updated]
+    
     operations->result.sink_node->setStatus(NodeStatus::activated);
+		operations->result.sink_node->getInputMutable()->chip(time_step, 1) = sink_tensor; // [TESTS: update tests]
     operations->result.sink_node->getOutputMutable()->chip(time_step, 1) = output;
     operations->result.sink_node->getDerivativeMutable()->chip(time_step, 1) = derivative;
 
@@ -1351,10 +1351,7 @@ namespace SmartPeak
       {
         // move to the next memory step
         for (auto& node_map: nodes_)
-        {          
-          //node_map.second->saveCurrentOutput();
-          //node_map.second->saveCurrentDerivative();
-          //node_map.second->saveCurrentDt();
+        {      
           if (std::count(node_names.begin(), node_names.end(), node_map.first) == 0)
           {
             node_map.second->setStatus(NodeStatus::initialized); // reinitialize non-input nodes
