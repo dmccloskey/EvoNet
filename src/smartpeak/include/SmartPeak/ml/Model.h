@@ -6,6 +6,7 @@
 #include <SmartPeak/ml/Link.h>
 #include <SmartPeak/ml/Node.h>
 #include <SmartPeak/ml/Weight.h>
+#include <SmartPeak/ml/LossFunction.h>
 
 #include <unsupported/Eigen/CXX11/Tensor>
 #include <vector>
@@ -412,6 +413,17 @@ public:
     */ 
     void calculateError(const Eigen::Tensor<float, 2>& values, const std::vector<std::string>& node_names,
 			const int& time_step);
+		Eigen::Tensor<float, 1> calculateModelError_(
+			const Eigen::Tensor<float, 1>& output,
+			const Eigen::Tensor<float, 1>& expected,
+			LossFunctionOp<float>* loss_function
+			);
+		Eigen::Tensor<float, 1> calculateOutputNodeError_(
+			const Eigen::Tensor<float, 1>& output,
+			const Eigen::Tensor<float, 1>& expected,
+			const Eigen::Tensor<float, 1>& derivative,
+			LossFunctionGradOp<float>* loss_function_grad
+			);
  
     /**
     @brief Calculates the error of the model through time (CETT)
@@ -721,14 +733,15 @@ private:
     SmartPeak::ModelLossFunction loss_function_; ///< Model loss function
 
     // Internal structures to allow for caching of the different FP and BP layers
-    std::vector<std::map<std::string, std::vector<std::string>>> FP_sink_link_cache_; 
-    std::vector<std::map<std::string, std::vector<std::string>>> BP_sink_link_cache_;
+    std::vector<std::map<std::string, std::vector<std::string>>> FP_sink_link_cache_; // [DEPRECATED]
+    std::vector<std::map<std::string, std::vector<std::string>>> BP_sink_link_cache_; // [DEPRECATED]
     std::vector<std::string> BP_cyclic_nodes_cache_;
 
     // Internal structures to allow for efficient multi-threading
     // and off-loading of computation from host to devices
     std::vector<std::vector<OperationList>> FP_operations_cache_;
     std::vector<std::vector<OperationList>> BP_operations_cache_;
+		std::vector<Node> output_node_cache_; 
   };
 }
 

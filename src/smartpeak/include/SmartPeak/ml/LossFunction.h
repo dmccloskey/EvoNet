@@ -10,11 +10,39 @@
 
 namespace SmartPeak
 {
+	/**
+	@brief Base class loss function.
+	*/
+	template<typename T>
+	class LossFunctionOp
+	{
+	public:
+		LossFunctionOp() {};
+		~LossFunctionOp() {};
+		virtual Eigen::Tensor<T, 1> operator()(
+			const Eigen::Tensor<T, 2>& y_pred,
+			const Eigen::Tensor<T, 2>& y_true) const = 0;
+	};
+
+	/**
+	@brief Base class loss function gradient.
+	*/
+	template<typename T>
+	class LossFunctionGradOp
+	{
+	public:
+		LossFunctionGradOp() {};
+		~LossFunctionGradOp() {};
+		virtual Eigen::Tensor<T, 2> operator()(
+			const Eigen::Tensor<T, 2>& y_pred,
+			const Eigen::Tensor<T, 2>& y_true) const = 0;
+	};
+
   /**
     @brief EuclideanDistance loss function.
   */
   template<typename T>
-  class EuclideanDistanceOp
+  class EuclideanDistanceOp : public LossFunctionOp<T>
   {
 public: 
     EuclideanDistanceOp(){}; 
@@ -32,7 +60,7 @@ public:
     @brief EuclideanDistance loss function gradient.
   */
   template<typename T>
-  class EuclideanDistanceGradOp
+  class EuclideanDistanceGradOp : public LossFunctionGradOp<T>
   {
 public: 
     EuclideanDistanceGradOp(){}; 
@@ -57,7 +85,7 @@ public:
     @brief L2Norm loss function.
   */
   template<typename T>
-  class L2NormOp
+  class L2NormOp : public LossFunctionOp<T>
   {
 public: 
     L2NormOp(){}; 
@@ -77,7 +105,7 @@ public:
     @brief L2Norm loss function gradient.
   */
   template<typename T>
-  class L2NormGradOp
+  class L2NormGradOp : public LossFunctionGradOp<T>
   {
 public: 
     L2NormGradOp(){}; 
@@ -94,7 +122,7 @@ public:
     @brief CrossEntropy loss function.
   */
   template<typename T>
-  class CrossEntropyOp
+  class CrossEntropyOp : public LossFunctionOp<T>
   {
 public: 
     CrossEntropyOp(){}; 
@@ -123,7 +151,7 @@ public:
     @brief CrossEntropy loss function gradient.
   */
   template<typename T>
-  class CrossEntropyGradOp
+  class CrossEntropyGradOp : public LossFunctionGradOp<T>
   {
 public: 
     CrossEntropyGradOp(){}; 
@@ -143,7 +171,7 @@ public:
     @brief NegativeLogLikelihood loss function.
   */
   template<typename T>
-  class NegativeLogLikelihoodOp
+  class NegativeLogLikelihoodOp : public LossFunctionOp<T>
   {
 public: 
     NegativeLogLikelihoodOp(){}; 
@@ -161,7 +189,7 @@ public:
     @brief NegativeLogLikelihood loss function gradient.
   */
   template<typename T>
-  class NegativeLogLikelihoodGradOp
+  class NegativeLogLikelihoodGradOp : public LossFunctionGradOp<T>
   {
 public: 
     NegativeLogLikelihoodGradOp(){}; 
@@ -178,7 +206,7 @@ public:
     @brief MSE Mean Squared Error loss function.
   */
   template<typename T>
-  class MSEOp
+  class MSEOp : public LossFunctionOp<T>
   {
 public: 
     MSEOp(){}; 
@@ -200,7 +228,7 @@ public:
     @brief MSE Mean Squared Error loss function gradient.
   */
   template<typename T>
-  class MSEGradOp
+  class MSEGradOp : public LossFunctionGradOp<T>
   {
 public: 
     MSEGradOp(){}; 

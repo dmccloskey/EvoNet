@@ -1382,95 +1382,209 @@ namespace SmartPeak
         forwardPropogate(time_step_cur, cache_FP_steps, use_cache, n_threads); // always working at the current head of memory
     }
   }
-  
-  void Model::calculateError(
-    const Eigen::Tensor<float, 2>& values, const std::vector<std::string>& node_names,
+
+	Eigen::Tensor<float, 1> Model::calculateModelError_(
+		const Eigen::Tensor<float, 1>& output,
+		const Eigen::Tensor<float, 1>& expected,
+		LossFunctionOp<float>* loss_function
+	){
+		Eigen::Tensor<float, 1> model_error;
+		return model_error;
+	};
+	Eigen::Tensor<float, 1> Model::calculateOutputNodeError_(
+		const Eigen::Tensor<float, 1>& output,
+		const Eigen::Tensor<float, 1>& expected,
+		const Eigen::Tensor<float, 1>& derivative,
+		LossFunctionGradOp<float>* loss_function_grad
+	){
+		Eigen::Tensor<float, 1> node_error;
+		return node_error;
+	};
+
+	void Model::calculateError(
+		const Eigen::Tensor<float, 2>& values, const std::vector<std::string>& node_names,
 		const int& time_step)
-  {
-    //TODO: encapsulate into a seperate method
-    // infer the batch size from the first source node
-    const int batch_size = nodes_.at(node_names[0])->getOutput().dimension(0);
+	{
+		//TODO: encapsulate into a seperate method
+		// infer the batch size from the first source node
+		const int batch_size = nodes_.at(node_names[0])->getOutput().dimension(0);
 
-    //TODO: encapsulate into a seperate method
-    // check dimension mismatches
-    if (node_names.size() != values.dimension(1))
-    {
-      std::cout << "The number of output features and the number of nodes do not match." << std::endl;
-      return;
-    }
-    // assumes the node exists
-    else if (batch_size != values.dimension(0))
-    {
-      std::cout << "The number of output samples and the node batch size does not match." << std::endl;
-      return;
-    }
+		//TODO: encapsulate into a seperate method
+		// check dimension mismatches
+		if (node_names.size() != values.dimension(1))
+		{
+			std::cout << "The number of output features and the number of nodes do not match." << std::endl;
+			return;
+		}
+		// assumes the node exists
+		else if (batch_size != values.dimension(0))
+		{
+			std::cout << "The number of output samples and the node batch size does not match." << std::endl;
+			return;
+		}
 
-    // make the tensor for the calculated model output
-    // [TODO: use slice or transition to chip for thread support]
-    Eigen::Tensor<float, 2> node_tensor(batch_size, node_names.size());
-    for (int i=0; i<node_names.size(); ++i)
-    {
-      for (int j=0; j<batch_size; ++j)
-      {
-        node_tensor(j, i) = nodes_.at(node_names[i])->getOutput()(j, 0); // current time-step
-      }
-    }
+		// make the tensor for the calculated model output
+		// [TODO: use slice or transition to chip for thread support]
+		Eigen::Tensor<float, 2> node_tensor(batch_size, node_names.size());
+		//Eigen::Tensor<float, 1> node_tensor(batch_size); // [chip and thread support]
+		for (int i = 0; i<node_names.size(); ++i)
+		{
+			// copy reference to node shared_ptr [add to cache if option is enabled]
+			// copy reference to the model loss function and loss function gradient
+			// launch the thread
+			for (int j = 0; j<batch_size; ++j)
+			{
+				//node_tesnor = nodes_.at(node_names[i])->getOutput().chip(time_step, 1); // [chip and thread support]
+				node_tensor(j, i) = nodes_.at(node_names[i])->getOutput()(j, time_step); // current time-step
+			}
+		}
 
 		// [BUG: are we missing multiplications by the node output derivatives here?]
-    // calculate the model error wrt the expected model output
-    Eigen::Tensor<float, 2> error_tensor(batch_size, node_names.size());
-    switch (loss_function_)
-    {
-      case ModelLossFunction::EuclideanDistance:
-      {
-        EuclideanDistanceOp<float> operation;
-        error_.chip(time_step, 1) = operation(node_tensor, values);
-        EuclideanDistanceGradOp<float> gradient;
-        error_tensor = gradient(node_tensor, values);
-        break;
-      } 
-      case ModelLossFunction::L2Norm:
-      {
-        L2NormOp<float> operation;
-				error_.chip(time_step, 1) = operation(node_tensor, values);
-        L2NormGradOp<float> gradient;
-        error_tensor = gradient(node_tensor, values);
-        break;
-      }
-      case ModelLossFunction::CrossEntropy:
-      {
-        CrossEntropyOp<float> operation;
-				error_.chip(time_step, 1) = operation(node_tensor, values);
-        CrossEntropyGradOp<float> gradient;
-        error_tensor = gradient(node_tensor, values);
-        break;
-      }
-      case ModelLossFunction::NegativeLogLikelihood:
-      {
-        NegativeLogLikelihoodOp<float> operation;
-				error_.chip(time_step, 1) = operation(node_tensor, values);
-        NegativeLogLikelihoodGradOp<float> gradient;
-        error_tensor = gradient(node_tensor, values);
-        break;
-      }
-      case ModelLossFunction::MSE:
-      {
-        MSEOp<float> operation;
-				error_.chip(time_step, 1) = operation(node_tensor, values);
-        MSEGradOp<float> gradient;
-        error_tensor = gradient(node_tensor, values);
-        break;
-      }
-      default:
-      {
-        std::cout << "Loss Function not supported." << std::endl;
-        break;
-      }
-    }
+		// calculate the model error wrt the expected model output
+		Eigen::Tensor<float, 2> error_tensor(batch_size, node_names.size());
+		//Eigen::Tensor<float, 1> error_tensor(batch_size); // [chip and thread support]
+		//Eigen::Tensor<float, 1> model_error(batch_size); // [chip and thread support]
+		switch (loss_function_)
+		{
+		case ModelLossFunction::EuclideanDistance:
+		{
+			EuclideanDistanceOp<float> operation;
+			error_.chip(time_step, 1) = operation(node_tensor, values);
+			EuclideanDistanceGradOp<float> gradient;
+			error_tensor = gradient(node_tensor, values); // 
+			break;
+		}
+		case ModelLossFunction::L2Norm:
+		{
+			L2NormOp<float> operation;
+			error_.chip(time_step, 1) = operation(node_tensor, values);
+			L2NormGradOp<float> gradient;
+			error_tensor = gradient(node_tensor, values);
+			break;
+		}
+		case ModelLossFunction::CrossEntropy:
+		{
+			CrossEntropyOp<float> operation;
+			error_.chip(time_step, 1) = operation(node_tensor, values);
+			CrossEntropyGradOp<float> gradient;
+			error_tensor = gradient(node_tensor, values);
+			break;
+		}
+		case ModelLossFunction::NegativeLogLikelihood:
+		{
+			NegativeLogLikelihoodOp<float> operation;
+			error_.chip(time_step, 1) = operation(node_tensor, values);
+			NegativeLogLikelihoodGradOp<float> gradient;
+			error_tensor = gradient(node_tensor, values);
+			break;
+		}
+		case ModelLossFunction::MSE:
+		{
+			MSEOp<float> operation;
+			error_.chip(time_step, 1) = operation(node_tensor, values);
+			MSEGradOp<float> gradient;
+			error_tensor = gradient(node_tensor, values);
+			break;
+		}
+		default:
+		{
+			std::cout << "Loss Function not supported." << std::endl;
+			break;
+		}
+		}
+		
+		// update the output node errors
+		mapValuesToNodes(error_tensor, time_step, node_names, NodeStatus::corrected, "error");
+	}
+  
+  //void Model::calculateError(
+  //  const Eigen::Tensor<float, 2>& values, const std::vector<std::string>& node_names,
+		//const int& time_step)
+  //{
+  //  //TODO: encapsulate into a seperate method
+  //  // infer the batch size from the first source node
+  //  const int batch_size = nodes_.at(node_names[0])->getOutput().dimension(0);
 
-    // update the output node errors
-    mapValuesToNodes(error_tensor, time_step, node_names, NodeStatus::corrected, "error");
-  }
+  //  //TODO: encapsulate into a seperate method
+  //  // check dimension mismatches
+  //  if (node_names.size() != values.dimension(1))
+  //  {
+  //    std::cout << "The number of output features and the number of nodes do not match." << std::endl;
+  //    return;
+  //  }
+  //  // assumes the node exists
+  //  else if (batch_size != values.dimension(0))
+  //  {
+  //    std::cout << "The number of output samples and the node batch size does not match." << std::endl;
+  //    return;
+  //  }
+
+  //  // make the tensor for the calculated model output
+  //  // [TODO: use slice or transition to chip for thread support]
+  //  Eigen::Tensor<float, 2> node_tensor(batch_size, node_names.size());
+  //  for (int i=0; i<node_names.size(); ++i)
+  //  {
+  //    for (int j=0; j<batch_size; ++j)
+  //    {
+  //      node_tensor(j, i) = nodes_.at(node_names[i])->getOutput()(j, time_step); // current time-step
+  //    }
+  //  }
+
+		//// [BUG: are we missing multiplications by the node output derivatives here?]
+  //  // calculate the model error wrt the expected model output
+  //  Eigen::Tensor<float, 2> error_tensor(batch_size, node_names.size());
+  //  switch (loss_function_)
+  //  {
+  //    case ModelLossFunction::EuclideanDistance:
+  //    {
+  //      EuclideanDistanceOp<float> operation;
+  //      error_.chip(time_step, 1) = operation(node_tensor, values);
+  //      EuclideanDistanceGradOp<float> gradient;
+  //      error_tensor = gradient(node_tensor, values); // 
+  //      break;
+  //    } 
+  //    case ModelLossFunction::L2Norm:
+  //    {
+  //      L2NormOp<float> operation;
+		//		error_.chip(time_step, 1) = operation(node_tensor, values);
+  //      L2NormGradOp<float> gradient;
+  //      error_tensor = gradient(node_tensor, values);
+  //      break;
+  //    }
+  //    case ModelLossFunction::CrossEntropy:
+  //    {
+  //      CrossEntropyOp<float> operation;
+		//		error_.chip(time_step, 1) = operation(node_tensor, values);
+  //      CrossEntropyGradOp<float> gradient;
+  //      error_tensor = gradient(node_tensor, values);
+  //      break;
+  //    }
+  //    case ModelLossFunction::NegativeLogLikelihood:
+  //    {
+  //      NegativeLogLikelihoodOp<float> operation;
+		//		error_.chip(time_step, 1) = operation(node_tensor, values);
+  //      NegativeLogLikelihoodGradOp<float> gradient;
+  //      error_tensor = gradient(node_tensor, values);
+  //      break;
+  //    }
+  //    case ModelLossFunction::MSE:
+  //    {
+  //      MSEOp<float> operation;
+		//		error_.chip(time_step, 1) = operation(node_tensor, values);
+  //      MSEGradOp<float> gradient;
+  //      error_tensor = gradient(node_tensor, values);
+  //      break;
+  //    }
+  //    default:
+  //    {
+  //      std::cout << "Loss Function not supported." << std::endl;
+  //      break;
+  //    }
+  //  }
+
+  //  // update the output node errors
+  //  mapValuesToNodes(error_tensor, time_step, node_names, NodeStatus::corrected, "error");
+  //}
 
 	void Model::CETT(const Eigen::Tensor<float, 3>& values, const std::vector<std::string>& node_names, const int & time_steps)
 	{
