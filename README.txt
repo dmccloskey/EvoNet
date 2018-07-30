@@ -35,6 +35,6 @@ cmake -DEIGEN_USE_GPU=OFF -DBOOST_USE_STATIC=OFF -G "Visual Studio 15 2017 Win64
 ###domccl
 cmake -G "Visual Studio 15 2017 Win64" -T host=x64 -DUSE_SUPERBUILD=ON ..
 cmake -G "Unix Makefiles" -DUSE_SUPERBUILD=ON ..
-cmake -DEIGEN_USE_GPU=ON -DBOOST_USE_STATIC=OFF -G "Visual Studio 15 2017 Win64" -T host=x64 -DUSE_SUPERBUILD=OFF -DEIGEN3_INCLUDE_DIR=C:/Users/domccl/GitHub/smartPeak_cpp/build2/Dependencies/Source/eigen ..
+cmake -DEIGEN_USE_GPU=ON -DBOOST_USE_STATIC=OFF -G "Visual Studio 15 2017 Win64" -T host=x64 -DUSE_SUPERBUILD=OFF -DEIGEN3_INCLUDE_DIR=C:/Users/domccl/GitHub/smartPeak_cpp/build_external/Dependencies/Source/eigen ..
 cmake -DEIGEN_USE_GPU=OFF -DBOOST_USE_STATIC=OFF -G "Unix Makefiles" -DBOOST_ROOT=C:/Users/domccl/GitHub/smartPeak_cpp/build2/Dependencies/Source/boost -DUSE_SUPERBUILD=OFF -DEIGEN3_INCLUDE_DIR=C:/Users/domccl/GitHub/smartPeak_cpp/build2/Dependencies/Source/eigen ..
 
