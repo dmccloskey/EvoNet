@@ -1026,6 +1026,7 @@ namespace SmartPeak
     }
   }
 
+	// [DEPRECATED]
   void Model::forwardPropogateLayerNetInput(
     std::map<std::string, std::vector<std::string>>& sink_links_map,
     const int& time_step, int n_threads)
@@ -1415,6 +1416,7 @@ namespace SmartPeak
       }
     }
 
+		// [BUG: are we missing multiplications by the node output derivatives here?]
     // calculate the model error wrt the expected model output
     Eigen::Tensor<float, 2> error_tensor(batch_size, node_names.size());
     switch (loss_function_)
@@ -1699,7 +1701,12 @@ namespace SmartPeak
     Eigen::Tensor<float, 1> sink_tensor(batch_size);
     Eigen::Tensor<float, 1> weight_tensor(batch_size);
     weight_tensor.setConstant(arguments->weight->getWeight());
-    sink_tensor = weight_tensor * arguments->source_node->getError().chip(time_step, 1);
+		if (arguments->source_node->getIntegration() == NodeIntegration::Sum)
+			sink_tensor = weight_tensor * arguments->source_node->getError().chip(time_step, 1);
+		else if (arguments->source_node->getIntegration() == NodeIntegration::Product)
+			sink_tensor = arguments->source_node->getInput().chip(time_step, 1) * arguments->source_node->getError().chip(time_step, 1); // missing the division by the source node output
+		else if (arguments->source_node->getIntegration() == NodeIntegration::Max)
+			sink_tensor = weight_tensor * arguments->source_node->getError().chip(time_step, 1); // [TODO: update with correct formulat]
     // std::cout<<"Weight tensor: "<<weight_tensor<<std::endl;
     // std::cout<<"Source tensor: "<<arguments->source_node->getError().chip(time_step, 1)<<std::endl;
     // std::cout<<"Sink tensor: "<<sink_tensor<<std::endl;
@@ -1744,7 +1751,12 @@ namespace SmartPeak
           {
             try
             {
-              sink_tensor += task_result.get();  // [CHECK: this should still work with NodeIntegration]
+							if (operations->arguments[i].source_node->getIntegration() == NodeIntegration::Sum)
+								sink_tensor += task_result.get();
+							else if (operations->arguments[i].source_node->getIntegration() == NodeIntegration::Product)
+								sink_tensor += task_result.get() / operations->result.sink_node->getOutput().chip(time_step, 1); // apply the missing division by the source node output
+							else if (operations->arguments[i].source_node->getIntegration() == NodeIntegration::Max)
+								sink_tensor += task_result.get(); // [TODO: update with correct formula]
             }
             catch (std::exception& e)
             {
@@ -1763,10 +1775,9 @@ namespace SmartPeak
    
     if (operations->result.time_step == 0 || time_step + operations->result.time_step < memory_size)
     { // [PARALLEL: could add a dummy time step with output 0 so as not to need a check for the memory size being exceeded]
-      // scale the error by the derivative
-      // std::cout<<"Sink tensor sum: "<<sink_tensor<<std::endl;
+
+      // scale the error by the derivative and add in any residual error
       sink_tensor = sink_tensor * operations->result.sink_node->getDerivative().chip(time_step + operations->result.time_step, 1) + operations->result.sink_node->getError().chip(time_step + operations->result.time_step, 1);
-      // std::cout<<"Sink tensor derivative scale: "<<sink_tensor<<std::endl;
 
       // update the node error
       operations->result.sink_node->setStatus(NodeStatus::corrected);
