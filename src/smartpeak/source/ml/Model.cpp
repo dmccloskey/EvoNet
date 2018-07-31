@@ -16,6 +16,8 @@ static std::mutex calculateNetNodeInput_mutex;
 static std::mutex calculateNodeInput_mutex;
 static std::mutex calculateNetNodeError_mutex;
 static std::mutex calculateNodeError_mutex;
+static std::mutex calculateModelError_mutex;
+static std::mutex calculateOutputNodeError_mutex;
 
 namespace SmartPeak
 {
@@ -1384,26 +1386,38 @@ namespace SmartPeak
   }
 
 	Eigen::Tensor<float, 1> Model::calculateModelError_(
-		const Eigen::Tensor<float, 1>& output,
+		Node* output_node,
 		const Eigen::Tensor<float, 1>& expected,
-		LossFunctionOp<float>* loss_function
+		LossFunctionOp<float>* loss_function,
+		const int& batch_size,
+		const int& time_step
 	){
-		Eigen::Tensor<float, 1> model_error;
+		std::lock_guard<std::mutex> lock(calculateModelError_mutex);
+
+		Eigen::Tensor<float, 1> model_error(batch_size);
+		model_error = loss_function->operator()(output_node->getOutput().chip(time_step, 1), expected);
 		return model_error;
 	};
-	Eigen::Tensor<float, 1> Model::calculateOutputNodeError_(
-		const Eigen::Tensor<float, 1>& output,
+
+	bool Model::calculateOutputNodeError_(
+		Node* output_node,
 		const Eigen::Tensor<float, 1>& expected,
-		const Eigen::Tensor<float, 1>& derivative,
-		LossFunctionGradOp<float>* loss_function_grad
+		LossFunctionGradOp<float>* loss_function_grad,
+		const int& time_step
 	){
-		Eigen::Tensor<float, 1> node_error;
-		return node_error;
+		std::lock_guard<std::mutex> lock(calculateOutputNodeError_mutex);
+
+		output_node->getErrorMutable()->chip(time_step, 1) = loss_function_grad->operator()(
+			output_node->getOutput().chip(time_step, 1), expected) * 
+			output_node->getDerivative().chip(time_step, 1);
+		output_node->setStatus(NodeStatus::corrected);
+		return true;
 	};
 
 	void Model::calculateError(
 		const Eigen::Tensor<float, 2>& values, const std::vector<std::string>& node_names,
-		const int& time_step)
+		const int& time_step, bool cache_output_nodes, bool use_cache,
+		int n_threads)
 	{
 		//TODO: encapsulate into a seperate method
 		// infer the batch size from the first source node
@@ -1423,78 +1437,153 @@ namespace SmartPeak
 			return;
 		}
 
-		// make the tensor for the calculated model output
-		// [TODO: use slice or transition to chip for thread support]
-		Eigen::Tensor<float, 2> node_tensor(batch_size, node_names.size());
-		//Eigen::Tensor<float, 1> node_tensor(batch_size); // [chip and thread support]
-		for (int i = 0; i<node_names.size(); ++i)
+		// get the model loss function and loss function gradients
+		std::shared_ptr<LossFunctionOp<float>> operation_ptr;
+		std::shared_ptr<LossFunctionGradOp<float>> gradient_ptr;
+		switch (loss_function_)
 		{
-			// copy reference to node shared_ptr [add to cache if option is enabled]
-			// copy reference to the model loss function and loss function gradient
-			// launch the thread
-			for (int j = 0; j<batch_size; ++j)
+			case ModelLossFunction::EuclideanDistance:
 			{
-				//node_tesnor = nodes_.at(node_names[i])->getOutput().chip(time_step, 1); // [chip and thread support]
-				node_tensor(j, i) = nodes_.at(node_names[i])->getOutput()(j, time_step); // current time-step
+				operation_ptr.reset(new EuclideanDistanceOp<float>);
+				gradient_ptr.reset(new EuclideanDistanceGradOp<float>);
+				break;
+			}
+			case ModelLossFunction::L2Norm:
+			{
+				operation_ptr.reset(new L2NormOp<float>);
+				gradient_ptr.reset(new L2NormGradOp<float>);
+				break;
+			}
+			case ModelLossFunction::CrossEntropy:
+			{
+				operation_ptr.reset(new CrossEntropyOp<float>);
+				gradient_ptr.reset(new CrossEntropyGradOp<float>);
+				break;
+			}
+			case ModelLossFunction::NegativeLogLikelihood:
+			{
+				operation_ptr.reset(new NegativeLogLikelihoodOp<float>);
+				gradient_ptr.reset(new NegativeLogLikelihoodGradOp<float>);
+				break;
+			}
+			case ModelLossFunction::MSE:
+			{
+				operation_ptr.reset(new MSEOp<float>);
+				gradient_ptr.reset(new MSEGradOp<float>);
+				break;
+			}
+			default:
+			{
+				std::cout << "Loss Function not supported." << std::endl;
+				break;
 			}
 		}
 
-		// [BUG: are we missing multiplications by the node output derivatives here?]
-		// calculate the model error wrt the expected model output
-		Eigen::Tensor<float, 2> error_tensor(batch_size, node_names.size());
-		//Eigen::Tensor<float, 1> error_tensor(batch_size); // [chip and thread support]
-		//Eigen::Tensor<float, 1> model_error(batch_size); // [chip and thread support]
-		switch (loss_function_)
-		{
-		case ModelLossFunction::EuclideanDistance:
-		{
-			EuclideanDistanceOp<float> operation;
-			error_.chip(time_step, 1) = operation(node_tensor, values);
-			EuclideanDistanceGradOp<float> gradient;
-			error_tensor = gradient(node_tensor, values); // 
-			break;
+		// collect the output nodes
+		std::vector<std::shared_ptr<Node>> output_nodes;
+		if (use_cache)
+		{ 
+			output_nodes = output_node_cache_;
 		}
-		case ModelLossFunction::L2Norm:
+		else
 		{
-			L2NormOp<float> operation;
-			error_.chip(time_step, 1) = operation(node_tensor, values);
-			L2NormGradOp<float> gradient;
-			error_tensor = gradient(node_tensor, values);
-			break;
-		}
-		case ModelLossFunction::CrossEntropy:
-		{
-			CrossEntropyOp<float> operation;
-			error_.chip(time_step, 1) = operation(node_tensor, values);
-			CrossEntropyGradOp<float> gradient;
-			error_tensor = gradient(node_tensor, values);
-			break;
-		}
-		case ModelLossFunction::NegativeLogLikelihood:
-		{
-			NegativeLogLikelihoodOp<float> operation;
-			error_.chip(time_step, 1) = operation(node_tensor, values);
-			NegativeLogLikelihoodGradOp<float> gradient;
-			error_tensor = gradient(node_tensor, values);
-			break;
-		}
-		case ModelLossFunction::MSE:
-		{
-			MSEOp<float> operation;
-			error_.chip(time_step, 1) = operation(node_tensor, values);
-			MSEGradOp<float> gradient;
-			error_tensor = gradient(node_tensor, values);
-			break;
-		}
-		default:
-		{
-			std::cout << "Loss Function not supported." << std::endl;
-			break;
-		}
+			for (int i = 0; i < node_names.size(); ++i)
+			{
+				std::shared_ptr<Node> output_node = nodes_.at(node_names[i]);
+				if (cache_output_nodes)
+					output_node_cache_.push_back(output_node);
+				output_nodes.push_back(output_node);
+			}
 		}
 		
-		// update the output node errors
-		mapValuesToNodes(error_tensor, time_step, node_names, NodeStatus::corrected, "error");
+		// loop over all nodes and calculate the error for the model
+		std::vector<std::future<Eigen::Tensor<float, 1>>> model_error_task_results;
+		Eigen::Tensor<float, 1> model_error(batch_size);
+		model_error.setConstant(0.0f);
+		int thread_cnt = 0;
+		for (int i = 0; i<node_names.size(); ++i)
+		{
+			// encapsulate in a packaged_task
+			std::packaged_task<Eigen::Tensor<float, 1> 
+				(Node*, Eigen::Tensor<float, 1>, LossFunctionOp<float>*,
+					int, int
+					)> task(Model::calculateModelError_);
+
+			// launch the thread
+			model_error_task_results.push_back(task.get_future());
+			std::thread task_thread(std::move(task),
+				output_nodes[i].get(), values, operation_ptr.get(), std::ref(batch_size), std::ref(time_step));
+			task_thread.detach();
+
+			// retreive the results
+			if (thread_cnt == n_threads - 1 || i == node_names.size() - 1)
+			{
+				for (auto& task_result : model_error_task_results)
+				{
+					if (task_result.valid())
+					{
+						try
+						{
+							model_error += task_result.get();
+						}
+						catch (std::exception& e)
+						{
+							printf("Exception: %s", e.what());
+						}
+					}
+				}
+				model_error_task_results.clear();
+				thread_cnt = 0;
+			}
+			else
+			{
+				++thread_cnt;
+			}
+		}
+		error_.chip(time_step, 1) = model_error; // asign the model_error
+
+		// loop over all nodes and calculate the error for the nodes
+		std::vector<std::future<bool>> output_node_error_task_results;
+		thread_cnt = 0;
+		for (int i = 0; i<node_names.size(); ++i)
+		{
+			// encapsulate in a packaged_task
+			std::packaged_task<bool
+			(Node*, Eigen::Tensor<float, 1>, LossFunctionGradOp<float>*,
+				int
+				)> task(Model::calculateOutputNodeError_);
+
+			// launch the thread
+			output_node_error_task_results.push_back(task.get_future());
+			std::thread task_thread(std::move(task),
+				output_nodes[i].get(), values, gradient_ptr.get(), std::ref(time_step));
+			task_thread.detach();
+
+			// retreive the results
+			if (thread_cnt == n_threads - 1 || i == node_names.size() - 1)
+			{
+				for (auto& task_result : output_node_error_task_results)
+				{
+					if (task_result.valid())
+					{
+						try
+						{
+							bool result = task_result.get();
+						}
+						catch (std::exception& e)
+						{
+							printf("Exception: %s", e.what());
+						}
+					}
+				}
+				output_node_error_task_results.clear();
+				thread_cnt = 0;
+			}
+			else
+			{
+				++thread_cnt;
+			}
+		}
 	}
   
   //void Model::calculateError(

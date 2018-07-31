@@ -412,17 +412,36 @@ public:
     @param[in] node_names Output nodes
     */ 
     void calculateError(const Eigen::Tensor<float, 2>& values, const std::vector<std::string>& node_names,
-			const int& time_step);
-		Eigen::Tensor<float, 1> calculateModelError_(
-			const Eigen::Tensor<float, 1>& output,
+			const int& time_step, bool cache_output_nodes = false, bool use_cache = false,
+			int n_threads = 1);
+
+		/**
+		@brief Calculates the error of the model for a given node
+
+		@param[in, out]
+		@param[in]
+		@param[in]
+		*/
+		static Eigen::Tensor<float, 1> calculateModelError_(
+			Node* output_node,
 			const Eigen::Tensor<float, 1>& expected,
-			LossFunctionOp<float>* loss_function
+			LossFunctionOp<float>* loss_function,
+			const int& batch_size,
+			const int& time_step
 			);
-		Eigen::Tensor<float, 1> calculateOutputNodeError_(
-			const Eigen::Tensor<float, 1>& output,
+
+		/**
+		@brief Calculates the error of the output node
+
+		@param[in, out] 
+		@param[in] 
+		@param[in] 
+		*/
+		static bool calculateOutputNodeError_(
+			Node* output_node,
 			const Eigen::Tensor<float, 1>& expected,
-			const Eigen::Tensor<float, 1>& derivative,
-			LossFunctionGradOp<float>* loss_function_grad
+			LossFunctionGradOp<float>* loss_function_grad,
+			const int& time_step
 			);
  
     /**
@@ -741,7 +760,7 @@ private:
     // and off-loading of computation from host to devices
     std::vector<std::vector<OperationList>> FP_operations_cache_;
     std::vector<std::vector<OperationList>> BP_operations_cache_;
-		std::vector<Node> output_node_cache_; 
+		std::vector<std::shared_ptr<Node>> output_node_cache_;
   };
 }
 

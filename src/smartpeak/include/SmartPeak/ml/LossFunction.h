@@ -22,6 +22,9 @@ namespace SmartPeak
 		virtual Eigen::Tensor<T, 1> operator()(
 			const Eigen::Tensor<T, 2>& y_pred,
 			const Eigen::Tensor<T, 2>& y_true) const = 0;
+		virtual Eigen::Tensor<T, 1> operator()(
+			const Eigen::Tensor<T, 1>& y_pred,
+			const Eigen::Tensor<T, 1>& y_true) const = 0;
 	};
 
 	/**
@@ -36,6 +39,9 @@ namespace SmartPeak
 		virtual Eigen::Tensor<T, 2> operator()(
 			const Eigen::Tensor<T, 2>& y_pred,
 			const Eigen::Tensor<T, 2>& y_true) const = 0;
+		virtual Eigen::Tensor<T, 1> operator()(
+			const Eigen::Tensor<T, 1>& y_pred,
+			const Eigen::Tensor<T, 1>& y_true) const = 0;
 	};
 
   /**
@@ -54,6 +60,12 @@ public:
       const Eigen::Tensor<float, 1>::Dimensions dims({1}); // sum along nodes
       return (y_true - y_pred).pow(2).sum(dims).sqrt();
     };
+		Eigen::Tensor<T, 1> operator()(
+			const Eigen::Tensor<T, 1>& y_pred,
+			const Eigen::Tensor<T, 1>& y_true) const
+		{
+			return (y_true - y_pred).pow(2).sqrt();
+		};
   };
 
   /**
@@ -79,6 +91,12 @@ public:
         (y_true - y_pred).pow(2).sum(dims1).sqrt().eval()
           .reshape(new_dims).broadcast(bcast));
     };
+		Eigen::Tensor<T, 1> operator()(
+			const Eigen::Tensor<T, 1>& y_pred,
+			const Eigen::Tensor<T, 1>& y_true) const
+		{
+			return (y_true - y_pred) / ((y_true - y_pred).pow(2).sqrt());
+		};
   };
 
   /**
@@ -99,6 +117,14 @@ public:
       c.setConstant(0.5);
       return (y_true - y_pred).pow(2).sum(dims1) * c; // modified to simplify the derivative
     };
+		Eigen::Tensor<T, 1> operator()(
+			const Eigen::Tensor<T, 1>& y_pred,
+			const Eigen::Tensor<T, 1>& y_true) const
+		{
+			Eigen::Tensor<T, 1> c(y_pred.dimension(0));
+			c.setConstant(0.5);
+			return (y_true - y_pred).pow(2) * c; // modified to simplify the derivative
+		};
   };
 
   /**
@@ -116,6 +142,12 @@ public:
     {
       return y_true - y_pred; // modified to exclude the 0.5
     };
+		Eigen::Tensor<T, 1> operator()(
+			const Eigen::Tensor<T, 1>& y_pred,
+			const Eigen::Tensor<T, 1>& y_true) const
+		{
+			return y_true - y_pred; // modified to exclude the 0.5
+		};
   };
 
   /**
@@ -145,6 +177,15 @@ public:
       ones.setConstant(1.0);
       return -(y_true * y_pred.log() + (ones - y_true) * (ones - y_pred).log()).sum(dims1);
     };
+		Eigen::Tensor<T, 1> operator()(
+			const Eigen::Tensor<T, 1>& y_pred,
+			const Eigen::Tensor<T, 1>& y_true) const
+		{
+			// simplified
+			Eigen::Tensor<T, 1> ones(y_pred.dimension(0));
+			ones.setConstant(1.0);
+			return -(y_true * y_pred.log() + (ones - y_true) * (ones - y_pred).log());
+		};
   };
 
   /**
@@ -165,6 +206,15 @@ public:
       ones.setConstant(1.0);
       return -(y_true / y_pred + (ones - y_true) / (ones - y_pred));
     };
+		Eigen::Tensor<T, 1> operator()(
+			const Eigen::Tensor<T, 1>& y_pred,
+			const Eigen::Tensor<T, 1>& y_true) const
+		{
+			// simplified
+			Eigen::Tensor<T, 1> ones(y_pred.dimension(0));
+			ones.setConstant(1.0);
+			return -(y_true / y_pred + (ones - y_true) / (ones - y_pred));
+		};
   };
 
   /**
@@ -183,6 +233,12 @@ public:
       const Eigen::Tensor<float, 1>::Dimensions dims1({1}); // sum along nodes
       return -(y_true * y_pred.log()).sum(dims1);
     };
+		Eigen::Tensor<T, 1> operator()(
+			const Eigen::Tensor<T, 1>& y_pred,
+			const Eigen::Tensor<T, 1>& y_true) const
+		{
+			return -(y_true * y_pred.log());
+		};
   };
 
   /**
@@ -200,6 +256,12 @@ public:
     {
       return -(y_true / y_pred);
     };
+		Eigen::Tensor<T, 1> operator()(
+			const Eigen::Tensor<T, 1>& y_pred,
+			const Eigen::Tensor<T, 1>& y_true) const
+		{
+			return -(y_true / y_pred);
+		};
   };
 
   /**
@@ -222,6 +284,16 @@ public:
       c.setConstant(0.5);
       return (y_true - y_pred).pow(2).sum(dims1) * c / n;
     };
+		Eigen::Tensor<T, 1> operator()(
+			const Eigen::Tensor<T, 1>& y_pred,
+			const Eigen::Tensor<T, 1>& y_true) const
+		{
+			Eigen::Tensor<T, 1> n(y_pred.dimension(0));
+			n.setConstant(y_pred.dimension(0));
+			Eigen::Tensor<T, 1> c(y_pred.dimension(0));
+			c.setConstant(0.5);
+			return (y_true - y_pred).pow(2) * c / n;
+		};
   };
 
   /**
@@ -241,6 +313,14 @@ public:
       n.setConstant(y_pred.dimensions()[0]);
       return (y_true - y_pred) / n;
     };
+		Eigen::Tensor<T, 1> operator()(
+			const Eigen::Tensor<T, 1>& y_pred,
+			const Eigen::Tensor<T, 1>& y_true) const
+		{
+			Eigen::Tensor<T, 1> n(y_pred.dimension(0));
+			n.setConstant(y_pred.dimension(0));
+			return (y_true - y_pred) / n;
+		};
   };
 }
 #endif //SMARTPEAK_LOSSFUNCTION_H
