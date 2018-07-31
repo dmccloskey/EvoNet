@@ -167,49 +167,49 @@ public:
 		std::shared_ptr<SolverOp> solver;
 		weight_init.reset(new ConstWeightInitOp(1.0)); //solution
 		//solver.reset(new SGDOp(0.01, 0.9));
-		//weight_init.reset(new RandWeightInitOp(2.0));
+		weight_init.reset(new RandWeightInitOp(2.0));
 		solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
 		solver->setGradientThreshold(10.0f);
 		Weight_i_rand_to_h = Weight("Weight_i_rand_to_h", weight_init, solver);
 		weight_init.reset(new ConstWeightInitOp(100.0)); //solution (large weight magnituted will need to an explosion of even a small error!)
 		//solver.reset(new SGDOp(0.01, 0.9));
-		//weight_init.reset(new RandWeightInitOp(2.0));
+		weight_init.reset(new RandWeightInitOp(2.0));
 		solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
 		solver->setGradientThreshold(10.0f);
 		Weight_i_mask_to_h = Weight("Weight_i_mask_to_h", weight_init, solver);
 		weight_init.reset(new ConstWeightInitOp(1.0)); //solution
 		//solver.reset(new SGDOp(0.01, 0.9));
-		//weight_init.reset(new RandWeightInitOp(2.0));
+		weight_init.reset(new RandWeightInitOp(2.0));
 		solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
 		solver->setGradientThreshold(10.0f);
 		Weight_h_to_m = Weight("Weight_h_to_m", weight_init, solver);
 		weight_init.reset(new ConstWeightInitOp(1.0)); //solution
 		//solver.reset(new SGDOp(0.01, 0.9));
-		//weight_init.reset(new RandWeightInitOp(2.0));
+		weight_init.reset(new RandWeightInitOp(2.0));
 		solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
 		solver->setGradientThreshold(10.0f);
 		Weight_m_to_m = Weight("Weight_m_to_m", weight_init, solver);
 		weight_init.reset(new ConstWeightInitOp(1.0)); //solution
 		//solver.reset(new SGDOp(0.01, 0.9));
-		//weight_init.reset(new RandWeightInitOp(2.0));
+		weight_init.reset(new RandWeightInitOp(2.0));
 		solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
 		solver->setGradientThreshold(10.0f);
 		Weight_m_to_o = Weight("Weight_m_to_o", weight_init, solver);
 		weight_init.reset(new ConstWeightInitOp(-100.0)); //solution (large weight magnituted will need to an explosion of even a small error!)
 		//solver.reset(new SGDOp(0.01, 0.9));
-		//weight_init.reset(new ConstWeightInitOp(1.0));
+		weight_init.reset(new ConstWeightInitOp(1.0));
 		solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
 		solver->setGradientThreshold(10.0f);
 		Weight_h_bias_to_h = Weight("Weight_h_bias_to_h", weight_init, solver);
 		weight_init.reset(new ConstWeightInitOp(0.0)); //solution
 		//solver.reset(new SGDOp(0.01, 0.9));
-		//weight_init.reset(new ConstWeightInitOp(1.0));
+		weight_init.reset(new ConstWeightInitOp(1.0));
 		solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
 		solver->setGradientThreshold(10.0f);
 		Weight_m_bias_to_m = Weight("Weight_m_bias_to_m", weight_init, solver);
 		weight_init.reset(new ConstWeightInitOp(0.0)); //solution
 		//solver.reset(new SGDOp(0.01, 0.9));
-		//weight_init.reset(new ConstWeightInitOp(0.0));
+		weight_init.reset(new ConstWeightInitOp(1.0));
 		solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
 		solver->setGradientThreshold(10.0f);
 		Weight_o_bias_to_o = Weight("Weight_o_bias_to_o", weight_init, solver);
@@ -299,13 +299,13 @@ public:
 			else
 				model.TBPTT(getMemorySize() - 1, false, true, n_threads);
 
-			for (const Node& node : model.getNodes())
-			{
-				std::cout << node.getName() << " Output: " << node.getOutput() << std::endl;
-				std::cout << node.getName() << " Error: " << node.getError() << std::endl;
-			}
-			for (const Weight& weight : model.getWeights())
-				std::cout << weight.getName() << " Weight: " << weight.getWeight() << std::endl;
+			//for (const Node& node : model.getNodes())
+			//{
+			//	std::cout << node.getName() << " Output: " << node.getOutput() << std::endl;
+			//	std::cout << node.getName() << " Error: " << node.getError() << std::endl;
+			//}
+			//for (const Weight& weight : model.getWeights())
+			//	std::cout << weight.getName() << " Weight: " << weight.getWeight() << std::endl;
 
 			// update the weights
 			model.updateWeights(getMemorySize());
