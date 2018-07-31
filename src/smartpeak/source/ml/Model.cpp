@@ -1679,7 +1679,8 @@ namespace SmartPeak
   //  mapValuesToNodes(error_tensor, time_step, node_names, NodeStatus::corrected, "error");
   //}
 
-	void Model::CETT(const Eigen::Tensor<float, 3>& values, const std::vector<std::string>& node_names, const int & time_steps)
+	void Model::CETT(const Eigen::Tensor<float, 3>& values, const std::vector<std::string>& node_names, const int & time_steps,
+		bool cache_output_nodes, bool use_cache, int n_threads)
 	{
 		// check time_steps vs memory_size
 		int max_steps = time_steps;
@@ -1696,7 +1697,14 @@ namespace SmartPeak
 			int next_time_step = values.dimension(1) - 1 - i;
 			// [TESTS: Test for the expected output error at each time step]
 			//std::cout<<"Expected output for time point "<< i << " is " << values.chip(next_time_step, 1)<<std::endl;
-			calculateError(values.chip(next_time_step, 1), node_names, i);
+
+      // calculate the error for each batch of memory
+			if (cache_output_nodes && i == 0)
+				calculateError(values.chip(next_time_step, 1), node_names, i, true, false, n_threads);
+			else if (cache_output_nodes && i > 0)
+				calculateError(values.chip(next_time_step, 1), node_names, i, false, true, n_threads);
+			else
+				calculateError(values.chip(next_time_step, 1), node_names, i, cache_output_nodes, use_cache, n_threads);
 			//calculateError(values.chip(i, 1), node_names, i);
 		}
 	}
@@ -2757,10 +2765,11 @@ namespace SmartPeak
   {
     FP_operations_cache_.clear();
     BP_operations_cache_.clear();
+		BP_cyclic_nodes_cache_.clear();
+		output_node_cache_.clear();
 
     // [DEPRECATED]
     FP_sink_link_cache_.clear();
     BP_sink_link_cache_.clear();
-    BP_cyclic_nodes_cache_.clear();
   }
 }

@@ -453,7 +453,8 @@ public:
 			where t=n to t=0
     @param[in] node_names Output nodes
     */ 
-    void CETT(const Eigen::Tensor<float, 3>& values, const std::vector<std::string>& node_names, const int& time_steps);
+    void CETT(const Eigen::Tensor<float, 3>& values, const std::vector<std::string>& node_names, const int& time_steps,
+			bool cache_output_nodes = false, bool use_cache = false, int n_threads = 1);
  
     /**
     @brief A prelude to a back propogation step.  Returns a vector of links

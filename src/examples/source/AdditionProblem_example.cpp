@@ -289,7 +289,10 @@ public:
 
 			// calculate the model error and node output error
 			//model.CETT(output.chip(iter, 3), output_nodes, 1);  // just the last result
-			model.CETT(output.chip(iter, 3), output_nodes, getMemorySize());
+			if (iter == 0)
+				model.CETT(output.chip(iter, 3), output_nodes, getMemorySize(), true, true, n_threads);
+			else
+				model.CETT(output.chip(iter, 3), output_nodes, getMemorySize(), false, true, n_threads);
 
 			std::cout<<"Model "<<model.getName()<<" error: "<<model.getError().sum()<<std::endl;
 
@@ -366,7 +369,10 @@ public:
 
 			// calculate the model error and node output error
 			//model.CETT(output.chip(iter, 3), output_nodes, 1); // just the last predicted result
-			model.CETT(output.chip(iter, 3), output_nodes, getMemorySize()); // just the last predicted result
+			if (iter == 0)
+				model.CETT(output.chip(iter, 3), output_nodes, getMemorySize(), true, true, n_threads);
+			else
+				model.CETT(output.chip(iter, 3), output_nodes, getMemorySize(), false, true, n_threads);
 			const Eigen::Tensor<float, 0> total_error = model.getError().sum();
 			model_error.push_back(total_error(0));
 			//std::cout<<"Model error: "<<total_error(0)<<std::endl;
