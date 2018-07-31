@@ -1407,8 +1407,12 @@ namespace SmartPeak
 	){
 		std::lock_guard<std::mutex> lock(calculateOutputNodeError_mutex);
 
+		// [BUG previous incorrect implementation below]
 		output_node->getErrorMutable()->chip(time_step, 1) = loss_function_grad->operator()(
-			output_node->getOutput().chip(time_step, 1), expected) * 
+			output_node->getOutput().chip(time_step, 1), expected);
+		// [CORRECT implementation below]
+		output_node->getErrorMutable()->chip(time_step, 1) = loss_function_grad->operator()(
+			output_node->getOutput().chip(time_step, 1), expected) *
 			output_node->getDerivative().chip(time_step, 1);
 		output_node->setStatus(NodeStatus::corrected);
 		return true;
@@ -1512,7 +1516,7 @@ namespace SmartPeak
 			// launch the thread
 			model_error_task_results.push_back(task.get_future());
 			std::thread task_thread(std::move(task),
-				output_nodes[i].get(), values, operation_ptr.get(), std::ref(batch_size), std::ref(time_step));
+				output_nodes[i].get(), values.chip(i, 1), operation_ptr.get(), std::ref(batch_size), std::ref(time_step));
 			task_thread.detach();
 
 			// retreive the results
@@ -1556,7 +1560,7 @@ namespace SmartPeak
 			// launch the thread
 			output_node_error_task_results.push_back(task.get_future());
 			std::thread task_thread(std::move(task),
-				output_nodes[i].get(), values, gradient_ptr.get(), std::ref(time_step));
+				output_nodes[i].get(), values.chip(i, 1), gradient_ptr.get(), std::ref(time_step));
 			task_thread.detach();
 
 			// retreive the results

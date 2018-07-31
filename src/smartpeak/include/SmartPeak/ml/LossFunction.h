@@ -121,7 +121,7 @@ public:
 			const Eigen::Tensor<T, 1>& y_pred,
 			const Eigen::Tensor<T, 1>& y_true) const
 		{
-			Eigen::Tensor<T, 1> c(y_pred.dimension(0));
+			Eigen::Tensor<T, 1> c((int)y_pred.size());
 			c.setConstant(0.5);
 			return (y_true - y_pred).pow(2) * c; // modified to simplify the derivative
 		};
@@ -182,7 +182,7 @@ public:
 			const Eigen::Tensor<T, 1>& y_true) const
 		{
 			// simplified
-			Eigen::Tensor<T, 1> ones(y_pred.dimension(0));
+			Eigen::Tensor<T, 1> ones((int)y_pred.size());
 			ones.setConstant(1.0);
 			return -(y_true * y_pred.log() + (ones - y_true) * (ones - y_pred).log());
 		};
@@ -211,7 +211,7 @@ public:
 			const Eigen::Tensor<T, 1>& y_true) const
 		{
 			// simplified
-			Eigen::Tensor<T, 1> ones(y_pred.dimension(0));
+			Eigen::Tensor<T, 1> ones((int)y_pred.size());
 			ones.setConstant(1.0);
 			return -(y_true / y_pred + (ones - y_true) / (ones - y_pred));
 		};
@@ -288,9 +288,9 @@ public:
 			const Eigen::Tensor<T, 1>& y_pred,
 			const Eigen::Tensor<T, 1>& y_true) const
 		{
-			Eigen::Tensor<T, 1> n(y_pred.dimension(0));
-			n.setConstant(y_pred.dimension(0));
-			Eigen::Tensor<T, 1> c(y_pred.dimension(0));
+			Eigen::Tensor<T, 1> n((int)y_pred.size());
+			n.setConstant((int)y_pred.size());
+			Eigen::Tensor<T, 1> c((int)y_pred.size());
 			c.setConstant(0.5);
 			return (y_true - y_pred).pow(2) * c / n;
 		};
@@ -317,8 +317,8 @@ public:
 			const Eigen::Tensor<T, 1>& y_pred,
 			const Eigen::Tensor<T, 1>& y_true) const
 		{
-			Eigen::Tensor<T, 1> n(y_pred.dimension(0));
-			n.setConstant(y_pred.dimension(0));
+			Eigen::Tensor<T, 1> n((int)y_pred.size());
+			n.setConstant((int)y_pred.size());
 			return (y_true - y_pred) / n;
 		};
   };
