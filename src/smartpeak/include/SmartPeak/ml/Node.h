@@ -61,12 +61,14 @@ public:
           type_,
           status_,
           activation_,
+					integration_,
           name_
         ) == std::tie(
           other.id_,
           other.type_,
           other.status_,
           other.activation_,
+					other.integration_,
           other.name_
         )
       ;
@@ -83,6 +85,7 @@ public:
       name_ = other.name_;
       type_ = other.type_;
       activation_ = other.activation_;
+			integration_ = other.integration_;
       status_ = other.status_;
       output_min_ = other.output_min_;
       output_max_ = other.output_max_;
@@ -191,12 +194,12 @@ public:
     void checkOutput();
 
 private:
-    int id_ = NULL; ///< Weight ID
+    int id_; ///< Weight ID
     std::string name_ = ""; ///< Weight Name
-    SmartPeak::NodeType type_ = SmartPeak::NodeType::hidden; ///< Node Type
-    SmartPeak::NodeStatus status_ = SmartPeak::NodeStatus::deactivated; ///< Node Status   
-    SmartPeak::NodeActivation activation_ = SmartPeak::NodeActivation::ReLU; ///< Node Status   
-		SmartPeak::NodeIntegration integration_ = SmartPeak::NodeIntegration::Sum; ///< Node Integration   
+		SmartPeak::NodeType type_; ///< Node Type
+    SmartPeak::NodeStatus status_; ///< Node Status   
+    SmartPeak::NodeActivation activation_; ///< Node Status   
+		SmartPeak::NodeIntegration integration_; ///< Node Integration   
 
     float output_min_ = -1.0e6; ///< Min Node output
     float output_max_ = 1.0e6; ///< Max Node output

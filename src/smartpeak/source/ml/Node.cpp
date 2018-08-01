@@ -20,6 +20,7 @@ namespace SmartPeak
     type_ = other.type_;
     status_ = other.status_;
     activation_ = other.activation_;
+		integration_ = other.integration_;
     output_min_ = other.output_min_;
     output_max_ = other.output_max_;
 		input_ = other.input_;

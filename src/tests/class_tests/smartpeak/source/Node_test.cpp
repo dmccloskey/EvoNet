@@ -29,15 +29,15 @@ BOOST_AUTO_TEST_CASE(destructor)
 
 BOOST_AUTO_TEST_CASE(constructor2) 
 {
-  Node node("1", NodeType::hidden, NodeStatus::initialized, NodeActivation::ReLU, NodeIntegration::Sum);
+  Node node("1", NodeType::bias, NodeStatus::initialized, NodeActivation::TanH, NodeIntegration::Product);
   node.setId(1);
 
   BOOST_CHECK_EQUAL(node.getId(), 1);
   BOOST_CHECK_EQUAL(node.getName(), "1");
-  BOOST_CHECK(node.getType() == NodeType::hidden);
+  BOOST_CHECK(node.getType() == NodeType::bias);
   BOOST_CHECK(node.getStatus() == NodeStatus::initialized);
-  BOOST_CHECK(node.getActivation() == NodeActivation::ReLU, NodeIntegration::Sum);
-	BOOST_CHECK(node.getIntegration() == NodeIntegration::Sum);
+  BOOST_CHECK(node.getActivation() == NodeActivation::TanH);
+	BOOST_CHECK(node.getIntegration() == NodeIntegration::Product);
 }
 
 BOOST_AUTO_TEST_CASE(comparison) 

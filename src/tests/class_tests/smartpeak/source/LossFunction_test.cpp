@@ -28,7 +28,7 @@ BOOST_AUTO_TEST_CASE(destructorEuclideanDistanceOp)
   delete ptrReLU;
 }
 
-BOOST_AUTO_TEST_CASE(operationfunctionEuclideanDistanceOp) 
+BOOST_AUTO_TEST_CASE(operationfunctionEuclideanDistanceOp1) 
 {
   EuclideanDistanceOp<float> operation;
   const int outputs = 4;
@@ -41,6 +41,20 @@ BOOST_AUTO_TEST_CASE(operationfunctionEuclideanDistanceOp)
   Eigen::Tensor<float, 1> error = operation(y_pred, y_true);
   BOOST_CHECK_CLOSE(error(0), 3.7416575, 1e-6);
   BOOST_CHECK_CLOSE(error(1), 2.44948983, 1e-6);
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionEuclideanDistanceOp2)
+{
+	EuclideanDistanceOp<float> operation;
+	const int batch_size = 2;
+	Eigen::Tensor<float, 1> y_true(batch_size);
+	y_true.setValues({ 1, 2 });
+	Eigen::Tensor<float, 1> y_pred(batch_size);
+	y_pred.setValues({ 2, 3});
+
+	Eigen::Tensor<float, 1> error = operation(y_pred, y_true);
+	BOOST_CHECK_CLOSE(error(0), 1.0, 1e-6);
+	BOOST_CHECK_CLOSE(error(1), 1.0, 1e-6);
 }
 
 /**
@@ -60,7 +74,7 @@ BOOST_AUTO_TEST_CASE(destructorEuclideanDistanceGradOp)
   delete ptrReLU;
 }
 
-BOOST_AUTO_TEST_CASE(operationfunctionEuclideanDistanceGradOp) 
+BOOST_AUTO_TEST_CASE(operationfunctionEuclideanDistanceGradOp1) 
 {
   EuclideanDistanceGradOp<float> operation;
   const int outputs = 4;
@@ -81,6 +95,20 @@ BOOST_AUTO_TEST_CASE(operationfunctionEuclideanDistanceGradOp)
   BOOST_CHECK_CLOSE(error(1, 3), -0.816496551, 1e-6);
 }
 
+BOOST_AUTO_TEST_CASE(operationfunctionEuclideanDistanceGradOp2)
+{
+	EuclideanDistanceGradOp<float> operation;
+	const int batch_size = 2;
+	Eigen::Tensor<float, 1> y_true(batch_size);
+	y_true.setValues({ 1, 2});
+	Eigen::Tensor<float, 1> y_pred(batch_size);
+	y_pred.setValues({ 2, 3});
+
+	Eigen::Tensor<float, 1> error = operation(y_pred, y_true);
+	BOOST_CHECK_CLOSE(error(0), -1.0, 1e-6);
+	BOOST_CHECK_CLOSE(error(1), -1.0, 1e-6);
+}
+
 /**
   L2NormOp Tests
 */ 
@@ -98,7 +126,7 @@ BOOST_AUTO_TEST_CASE(destructorL2NormOp)
   delete ptrL2Norm;
 }
 
-BOOST_AUTO_TEST_CASE(operationfunctionL2NormOp) 
+BOOST_AUTO_TEST_CASE(operationfunctionL2NormOp1) 
 {
   L2NormOp<float> operation;
   const int outputs = 4;
@@ -111,6 +139,20 @@ BOOST_AUTO_TEST_CASE(operationfunctionL2NormOp)
   Eigen::Tensor<float, 1> error = operation(y_pred, y_true);
   BOOST_CHECK_CLOSE(error(0), 7.0, 1e-6);
   BOOST_CHECK_CLOSE(error(1), 3.0, 1e-6);
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionL2NormOp2)
+{
+	L2NormOp<float> operation;
+	const int batch_size = 2;
+	Eigen::Tensor<float, 1> y_true(batch_size);
+	y_true.setValues({ 1, 2 });
+	Eigen::Tensor<float, 1> y_pred(batch_size);
+	y_pred.setValues({ 2, 3 });
+
+	Eigen::Tensor<float, 1> error = operation(y_pred, y_true);
+	BOOST_CHECK_CLOSE(error(0), 0.5, 1e-6);
+	BOOST_CHECK_CLOSE(error(1), 0.5, 1e-6);
 }
 
 /**
@@ -130,7 +172,7 @@ BOOST_AUTO_TEST_CASE(destructorL2NormGradOp)
   delete ptrL2Norm;
 }
 
-BOOST_AUTO_TEST_CASE(operationfunctionL2NormGradOp) 
+BOOST_AUTO_TEST_CASE(operationfunctionL2NormGradOp1) 
 {
   L2NormGradOp<float> operation;
 
@@ -152,6 +194,21 @@ BOOST_AUTO_TEST_CASE(operationfunctionL2NormGradOp)
   BOOST_CHECK_CLOSE(error(1, 3), -2.0, 1e-6);
 }
 
+BOOST_AUTO_TEST_CASE(operationfunctionL2NormGradOp2)
+{
+	L2NormGradOp<float> operation;
+
+	const int batch_size = 2;
+	Eigen::Tensor<float, 1> y_true(batch_size);
+	y_true.setValues({ 1, 2 });
+	Eigen::Tensor<float, 1> y_pred(batch_size);
+	y_pred.setValues({ 2, 3 });
+
+	Eigen::Tensor<float, 1> error = operation(y_pred, y_true);
+	BOOST_CHECK_CLOSE(error(0), -1.0, 1e-6);
+	BOOST_CHECK_CLOSE(error(1), -1.0, 1e-6);
+}
+
 /**
   CrossEntropyOp Tests
 */ 
@@ -169,7 +226,7 @@ BOOST_AUTO_TEST_CASE(destructorCrossEntropyOp)
   delete ptrCrossEntropy;
 }
 
-BOOST_AUTO_TEST_CASE(operationfunctionCrossEntropyOp) 
+BOOST_AUTO_TEST_CASE(operationfunctionCrossEntropyOp1) 
 {
   CrossEntropyOp<float> operation;
 
@@ -183,6 +240,21 @@ BOOST_AUTO_TEST_CASE(operationfunctionCrossEntropyOp)
   Eigen::Tensor<float, 1> error = operation(y_pred, y_true);
   BOOST_CHECK_CLOSE(error(0), 3.7416575, 1e-6);
   BOOST_CHECK_CLOSE(error(1), 2.44948983, 1e-6);
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionCrossEntropyOp2)
+{
+	CrossEntropyOp<float> operation;
+
+	const int batch_size = 2;
+	Eigen::Tensor<float, 1> y_true(batch_size);
+	y_true.setValues({ .1f, .1f });
+	Eigen::Tensor<float, 1> y_pred(batch_size);
+	y_pred.setValues({ 1.0f, 1.0f });
+
+	Eigen::Tensor<float, 1> error = operation(y_pred, y_true);
+	BOOST_CHECK_CLOSE(error(0), 3.7416575, 1e-6);
+	BOOST_CHECK_CLOSE(error(1), 2.44948983, 1e-6);
 }
 
 /**
@@ -202,7 +274,7 @@ BOOST_AUTO_TEST_CASE(destructorCrossEntropyGradOp)
   delete ptrCrossEntropy;
 }
 
-BOOST_AUTO_TEST_CASE(operationfunctionCrossEntropyGradOp) 
+BOOST_AUTO_TEST_CASE(operationfunctionCrossEntropyGradOp1) 
 {
   CrossEntropyGradOp<float> operation;
 
@@ -224,6 +296,21 @@ BOOST_AUTO_TEST_CASE(operationfunctionCrossEntropyGradOp)
   BOOST_CHECK_CLOSE(error(1, 3), -2.0, 1e-6);
 }
 
+BOOST_AUTO_TEST_CASE(operationfunctionCrossEntropyGradOp2)
+{
+	CrossEntropyGradOp<float> operation;
+
+	const int batch_size = 2;
+	Eigen::Tensor<float, 1> y_true(batch_size);
+	y_true.setValues({.1f, .1f });
+	Eigen::Tensor<float, 1> y_pred(batch_size);
+	y_pred.setValues({ 1.0f, 1.0f });
+
+	Eigen::Tensor<float, 1> error = operation(y_pred, y_true);
+	BOOST_CHECK_CLOSE(error(0), 0.0, 1e-6);
+	BOOST_CHECK_CLOSE(error(1), -1.0, 1e-6);
+}
+
 /**
   NegativeLogLikelihoodOp Tests
 */ 
@@ -241,7 +328,7 @@ BOOST_AUTO_TEST_CASE(destructorNegativeLogLikelihoodOp)
   delete ptrNegativeLogLikelihood;
 }
 
-BOOST_AUTO_TEST_CASE(operationfunctionNegativeLogLikelihoodOp) 
+BOOST_AUTO_TEST_CASE(operationfunctionNegativeLogLikelihoodOp1) 
 {
   NegativeLogLikelihoodOp<float> operation;
 
@@ -255,6 +342,21 @@ BOOST_AUTO_TEST_CASE(operationfunctionNegativeLogLikelihoodOp)
   Eigen::Tensor<float, 1> error = operation(y_pred, y_true);
   BOOST_CHECK_CLOSE(error(0), -3.17805386, 1e-6);
   BOOST_CHECK_CLOSE(error(1), -6.35610771, 1e-6);
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionNegativeLogLikelihoodOp2)
+{
+	NegativeLogLikelihoodOp<float> operation;
+
+	const int batch_size = 2;
+	Eigen::Tensor<float, 1> y_true(batch_size);
+	y_true.setValues({ 1, 2 });
+	Eigen::Tensor<float, 1> y_pred(batch_size);
+	y_pred.setValues({ 2, 3 });
+
+	Eigen::Tensor<float, 1> error = operation(y_pred, y_true);
+	BOOST_CHECK_CLOSE(error(0), -0.693147182, 1e-6);
+	BOOST_CHECK_CLOSE(error(1), -2.19722462, 1e-6);
 }
 
 /**
@@ -274,7 +376,7 @@ BOOST_AUTO_TEST_CASE(destructorNegativeLogLikelihoodGradOp)
   delete ptrNegativeLogLikelihood;
 }
 
-BOOST_AUTO_TEST_CASE(operationfunctionNegativeLogLikelihoodGradOp) 
+BOOST_AUTO_TEST_CASE(operationfunctionNegativeLogLikelihoodGradOp1) 
 {
   NegativeLogLikelihoodGradOp<float> operation;
 
@@ -296,6 +398,22 @@ BOOST_AUTO_TEST_CASE(operationfunctionNegativeLogLikelihoodGradOp)
   BOOST_CHECK_CLOSE(error(1, 3), -0.5, 1e-6);
 }
 
+BOOST_AUTO_TEST_CASE(operationfunctionNegativeLogLikelihoodGradOp2)
+{
+	NegativeLogLikelihoodGradOp<float> operation;
+
+	const int outputs = 4;
+	const int batch_size = 2;
+	Eigen::Tensor<float, 1> y_true(batch_size);
+	y_true.setValues({ 1, 2 });
+	Eigen::Tensor<float, 1> y_pred(batch_size);
+	y_pred.setValues({ 2, 3 });
+
+	Eigen::Tensor<float, 1> error = operation(y_pred, y_true);
+	BOOST_CHECK_CLOSE(error(0), -0.5, 1e-6);
+	BOOST_CHECK_CLOSE(error(1), -0.666666687, 1e-6);
+}
+
 /**
   MSEOp Tests
 */ 
@@ -313,7 +431,7 @@ BOOST_AUTO_TEST_CASE(destructorMSEOp)
   delete ptrMSE;
 }
 
-BOOST_AUTO_TEST_CASE(operationfunctionMSEOp) 
+BOOST_AUTO_TEST_CASE(operationfunctionMSEOp1) 
 {
   MSEOp<float> operation;
 
@@ -327,6 +445,21 @@ BOOST_AUTO_TEST_CASE(operationfunctionMSEOp)
   Eigen::Tensor<float, 1> error = operation(y_pred, y_true);
   BOOST_CHECK_CLOSE(error(0), 3.5, 1e-6);
   BOOST_CHECK_CLOSE(error(1), 1.5, 1e-6);
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionMSEOp2)
+{
+	MSEOp<float> operation;
+
+	const int batch_size = 2;
+	Eigen::Tensor<float, 1> y_true(batch_size);
+	y_true.setValues({ 1, 2 });
+	Eigen::Tensor<float, 1> y_pred(batch_size);
+	y_pred.setValues({ 2, 3 });
+
+	Eigen::Tensor<float, 1> error = operation(y_pred, y_true);
+	BOOST_CHECK_CLOSE(error(0), 0.25, 1e-6);
+	BOOST_CHECK_CLOSE(error(1), 0.25, 1e-6);
 }
 
 /**
@@ -346,7 +479,7 @@ BOOST_AUTO_TEST_CASE(destructorMSEGradOp)
   delete ptrMSE;
 }
 
-BOOST_AUTO_TEST_CASE(operationfunctionMSEGradOp) 
+BOOST_AUTO_TEST_CASE(operationfunctionMSEGradOp1) 
 {
   MSEGradOp<float> operation;
 
@@ -366,6 +499,21 @@ BOOST_AUTO_TEST_CASE(operationfunctionMSEGradOp)
   BOOST_CHECK_CLOSE(error(1, 1), 0.0, 1e-6);
   BOOST_CHECK_CLOSE(error(1, 2), -0.5, 1e-6);
   BOOST_CHECK_CLOSE(error(1, 3), -1.0, 1e-6);
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionMSEGradOp2)
+{
+	MSEGradOp<float> operation;
+
+	const int batch_size = 2;
+	Eigen::Tensor<float, 1> y_true(batch_size);
+	y_true.setValues({ 1, 2 });
+	Eigen::Tensor<float, 1> y_pred(batch_size);
+	y_pred.setValues({ 2, 3 });
+
+	Eigen::Tensor<float, 1> error = operation(y_pred, y_true);
+	BOOST_CHECK_CLOSE(error(0), -0.5, 1e-6);
+	BOOST_CHECK_CLOSE(error(1), -0.5, 1e-6);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

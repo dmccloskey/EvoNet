@@ -13,6 +13,174 @@
 using namespace SmartPeak;
 using namespace std;
 
+Model makeModel1()
+{
+	/**
+	* Directed Acyclic Graph Toy Network Model
+	*/
+	Node i1, i2, h1, h2, o1, o2, b1, b2;
+	Link l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4;
+	Weight w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4;
+	Model model1;
+
+	// Toy network: 1 hidden layer, fully connected, DAG
+	i1 = Node("0", NodeType::input, NodeStatus::activated, NodeActivation::Linear, NodeIntegration::Sum);
+	i2 = Node("1", NodeType::input, NodeStatus::activated, NodeActivation::Linear, NodeIntegration::Sum);
+	h1 = Node("2", NodeType::hidden, NodeStatus::deactivated, NodeActivation::ReLU, NodeIntegration::Sum);
+	h2 = Node("3", NodeType::hidden, NodeStatus::deactivated, NodeActivation::ReLU, NodeIntegration::Sum);
+	o1 = Node("4", NodeType::output, NodeStatus::deactivated, NodeActivation::ReLU, NodeIntegration::Sum);
+	o2 = Node("5", NodeType::output, NodeStatus::deactivated, NodeActivation::ReLU, NodeIntegration::Sum);
+	b1 = Node("6", NodeType::bias, NodeStatus::activated, NodeActivation::Linear, NodeIntegration::Sum);
+	b2 = Node("7", NodeType::bias, NodeStatus::activated, NodeActivation::Linear, NodeIntegration::Sum);
+
+	// weights  
+	std::shared_ptr<WeightInitOp> weight_init;
+	std::shared_ptr<SolverOp> solver;
+	// weight_init.reset(new RandWeightInitOp(1.0)); // No random init for testing
+	weight_init.reset(new ConstWeightInitOp(1.0));
+	solver.reset(new SGDOp(0.01, 0.9));
+	w1 = Weight("0", weight_init, solver);
+	weight_init.reset(new ConstWeightInitOp(1.0));
+	solver.reset(new SGDOp(0.01, 0.9));
+	w2 = Weight("1", weight_init, solver);
+	weight_init.reset(new ConstWeightInitOp(1.0));
+	solver.reset(new SGDOp(0.01, 0.9));
+	w3 = Weight("2", weight_init, solver);
+	weight_init.reset(new ConstWeightInitOp(1.0));
+	solver.reset(new SGDOp(0.01, 0.9));
+	w4 = Weight("3", weight_init, solver);
+	weight_init.reset(new ConstWeightInitOp(1.0));
+	solver.reset(new SGDOp(0.01, 0.9));
+	wb1 = Weight("4", weight_init, solver);
+	weight_init.reset(new ConstWeightInitOp(1.0));
+	solver.reset(new SGDOp(0.01, 0.9));
+	wb2 = Weight("5", weight_init, solver);
+	// input layer + bias
+	l1 = Link("0", "0", "2", "0");
+	l2 = Link("1", "0", "3", "1");
+	l3 = Link("2", "1", "2", "2");
+	l4 = Link("3", "1", "3", "3");
+	lb1 = Link("4", "6", "2", "4");
+	lb2 = Link("5", "6", "3", "5");
+	// weights
+	weight_init.reset(new ConstWeightInitOp(1.0));
+	solver.reset(new SGDOp(0.01, 0.9));
+	w5 = Weight("6", weight_init, solver);
+	weight_init.reset(new ConstWeightInitOp(1.0));
+	solver.reset(new SGDOp(0.01, 0.9));
+	w6 = Weight("7", weight_init, solver);
+	weight_init.reset(new ConstWeightInitOp(1.0));
+	solver.reset(new SGDOp(0.01, 0.9));
+	w7 = Weight("8", weight_init, solver);
+	weight_init.reset(new ConstWeightInitOp(1.0));
+	solver.reset(new SGDOp(0.01, 0.9));
+	w8 = Weight("9", weight_init, solver);
+	weight_init.reset(new ConstWeightInitOp(1.0));
+	solver.reset(new SGDOp(0.01, 0.9));
+	wb3 = Weight("10", weight_init, solver);
+	weight_init.reset(new ConstWeightInitOp(1.0));
+	solver.reset(new SGDOp(0.01, 0.9));
+	wb4 = Weight("11", weight_init, solver);
+	// hidden layer + bias
+	l5 = Link("6", "2", "4", "6");
+	l6 = Link("7", "2", "5", "7");
+	l7 = Link("8", "3", "4", "8");
+	l8 = Link("9", "3", "5", "9");
+	lb3 = Link("10", "7", "4", "10");
+	lb4 = Link("11", "7", "5", "11");
+	model1.setId(1);
+	model1.addNodes({ i1, i2, h1, h2, o1, o2, b1, b2 });
+	model1.addWeights({ w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4 });
+	model1.addLinks({ l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4 });
+	return model1;
+}
+Model model1 = makeModel1();
+
+Model makeModel2()
+{
+	/**
+	* Directed Acyclic Graph Toy Network Model
+	(same as above except the node intergration for hidden and output nodes
+	have been set to Product)
+	*/
+	Node i1, i2, h1, h2, o1, o2, b1, b2;
+	Link l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4;
+	Weight w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4;
+	Model model2;
+
+	// Toy network: 1 hidden layer, fully connected, DAG
+	i1 = Node("0", NodeType::input, NodeStatus::activated, NodeActivation::Linear, NodeIntegration::Sum);
+	i2 = Node("1", NodeType::input, NodeStatus::activated, NodeActivation::Linear, NodeIntegration::Sum);
+	h1 = Node("2", NodeType::hidden, NodeStatus::deactivated, NodeActivation::ReLU, NodeIntegration::Product);
+	h2 = Node("3", NodeType::hidden, NodeStatus::deactivated, NodeActivation::ReLU, NodeIntegration::Product);
+	o1 = Node("4", NodeType::output, NodeStatus::deactivated, NodeActivation::ReLU, NodeIntegration::Product);
+	o2 = Node("5", NodeType::output, NodeStatus::deactivated, NodeActivation::ReLU, NodeIntegration::Product);
+	b1 = Node("6", NodeType::bias, NodeStatus::activated, NodeActivation::Linear, NodeIntegration::Sum);
+	b2 = Node("7", NodeType::bias, NodeStatus::activated, NodeActivation::Linear, NodeIntegration::Sum);
+
+	// weights  
+	std::shared_ptr<WeightInitOp> weight_init;
+	std::shared_ptr<SolverOp> solver;
+	// weight_init.reset(new RandWeightInitOp(1.0)); // No random init for testing
+	weight_init.reset(new ConstWeightInitOp(1.0));
+	solver.reset(new SGDOp(0.01, 0.9));
+	w1 = Weight("0", weight_init, solver);
+	weight_init.reset(new ConstWeightInitOp(1.0));
+	solver.reset(new SGDOp(0.01, 0.9));
+	w2 = Weight("1", weight_init, solver);
+	weight_init.reset(new ConstWeightInitOp(1.0));
+	solver.reset(new SGDOp(0.01, 0.9));
+	w3 = Weight("2", weight_init, solver);
+	weight_init.reset(new ConstWeightInitOp(1.0));
+	solver.reset(new SGDOp(0.01, 0.9));
+	w4 = Weight("3", weight_init, solver);
+	weight_init.reset(new ConstWeightInitOp(1.0));
+	solver.reset(new SGDOp(0.01, 0.9));
+	wb1 = Weight("4", weight_init, solver);
+	weight_init.reset(new ConstWeightInitOp(1.0));
+	solver.reset(new SGDOp(0.01, 0.9));
+	wb2 = Weight("5", weight_init, solver);
+	// input layer + bias
+	l1 = Link("0", "0", "2", "0");
+	l2 = Link("1", "0", "3", "1");
+	l3 = Link("2", "1", "2", "2");
+	l4 = Link("3", "1", "3", "3");
+	lb1 = Link("4", "6", "2", "4");
+	lb2 = Link("5", "6", "3", "5");
+	// weights
+	weight_init.reset(new ConstWeightInitOp(1.0));
+	solver.reset(new SGDOp(0.01, 0.9));
+	w5 = Weight("6", weight_init, solver);
+	weight_init.reset(new ConstWeightInitOp(1.0));
+	solver.reset(new SGDOp(0.01, 0.9));
+	w6 = Weight("7", weight_init, solver);
+	weight_init.reset(new ConstWeightInitOp(1.0));
+	solver.reset(new SGDOp(0.01, 0.9));
+	w7 = Weight("8", weight_init, solver);
+	weight_init.reset(new ConstWeightInitOp(1.0));
+	solver.reset(new SGDOp(0.01, 0.9));
+	w8 = Weight("9", weight_init, solver);
+	weight_init.reset(new ConstWeightInitOp(1.0));
+	solver.reset(new SGDOp(0.01, 0.9));
+	wb3 = Weight("10", weight_init, solver);
+	weight_init.reset(new ConstWeightInitOp(1.0));
+	solver.reset(new SGDOp(0.01, 0.9));
+	wb4 = Weight("11", weight_init, solver);
+	// hidden layer + bias
+	l5 = Link("6", "2", "4", "6");
+	l6 = Link("7", "2", "5", "7");
+	l7 = Link("8", "3", "4", "8");
+	l8 = Link("9", "3", "5", "9");
+	lb3 = Link("10", "7", "4", "10");
+	lb4 = Link("11", "7", "5", "11");
+	model2.setId(2);
+	model2.addNodes({ i1, i2, h1, h2, o1, o2, b1, b2 });
+	model2.addWeights({ w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4 });
+	model2.addLinks({ l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4 });
+	return model2;
+}
+Model model2 = makeModel2();
+
 BOOST_AUTO_TEST_SUITE(model_DAG)
 
 /**
@@ -21,89 +189,6 @@ BOOST_AUTO_TEST_SUITE(model_DAG)
  * The following test methods that are
  * required of a standard feed forward neural network
 */
-
-Model makeModel1()
-{
-  /**
-   * Directed Acyclic Graph Toy Network Model
-  */
-  Node i1, i2, h1, h2, o1, o2, b1, b2;
-  Link l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4;
-  Weight w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4;
-  Model model1;
-
-  // Toy network: 1 hidden layer, fully connected, DAG
-  i1 = Node("0", NodeType::input, NodeStatus::activated, NodeActivation::Linear, NodeIntegration::Sum);
-  i2 = Node("1", NodeType::input, NodeStatus::activated, NodeActivation::Linear, NodeIntegration::Sum);
-  h1 = Node("2", NodeType::hidden, NodeStatus::deactivated, NodeActivation::ReLU, NodeIntegration::Sum);
-  h2 = Node("3", NodeType::hidden, NodeStatus::deactivated, NodeActivation::ReLU, NodeIntegration::Sum);
-  o1 = Node("4", NodeType::output, NodeStatus::deactivated, NodeActivation::ReLU, NodeIntegration::Sum);
-  o2 = Node("5", NodeType::output, NodeStatus::deactivated, NodeActivation::ReLU, NodeIntegration::Sum);
-  b1 = Node("6", NodeType::bias, NodeStatus::activated, NodeActivation::Linear, NodeIntegration::Sum);
-  b2 = Node("7", NodeType::bias, NodeStatus::activated, NodeActivation::Linear, NodeIntegration::Sum);
-
-  // weights  
-  std::shared_ptr<WeightInitOp> weight_init;
-  std::shared_ptr<SolverOp> solver;
-  // weight_init.reset(new RandWeightInitOp(1.0)); // No random init for testing
-  weight_init.reset(new ConstWeightInitOp(1.0));
-  solver.reset(new SGDOp(0.01, 0.9));
-  w1 = Weight("0", weight_init, solver);
-  weight_init.reset(new ConstWeightInitOp(1.0));
-  solver.reset(new SGDOp(0.01, 0.9));
-  w2 = Weight("1", weight_init, solver);
-  weight_init.reset(new ConstWeightInitOp(1.0));
-  solver.reset(new SGDOp(0.01, 0.9));
-  w3 = Weight("2", weight_init, solver);
-  weight_init.reset(new ConstWeightInitOp(1.0));
-  solver.reset(new SGDOp(0.01, 0.9));
-  w4 = Weight("3", weight_init, solver);
-  weight_init.reset(new ConstWeightInitOp(1.0));
-  solver.reset(new SGDOp(0.01, 0.9));
-  wb1 = Weight("4", weight_init, solver);
-  weight_init.reset(new ConstWeightInitOp(1.0));
-  solver.reset(new SGDOp(0.01, 0.9));
-  wb2 = Weight("5", weight_init, solver);
-  // input layer + bias
-  l1 = Link("0", "0", "2", "0");
-  l2 = Link("1", "0", "3", "1");
-  l3 = Link("2", "1", "2", "2");
-  l4 = Link("3", "1", "3", "3");
-  lb1 = Link("4", "6", "2", "4");
-  lb2 = Link("5", "6", "3", "5");
-  // weights
-  weight_init.reset(new ConstWeightInitOp(1.0));
-  solver.reset(new SGDOp(0.01, 0.9));
-  w5 = Weight("6", weight_init, solver);
-  weight_init.reset(new ConstWeightInitOp(1.0));
-  solver.reset(new SGDOp(0.01, 0.9));
-  w6 = Weight("7", weight_init, solver);
-  weight_init.reset(new ConstWeightInitOp(1.0));
-  solver.reset(new SGDOp(0.01, 0.9));
-  w7 = Weight("8", weight_init, solver);
-  weight_init.reset(new ConstWeightInitOp(1.0));
-  solver.reset(new SGDOp(0.01, 0.9));
-  w8 = Weight("9", weight_init, solver);
-  weight_init.reset(new ConstWeightInitOp(1.0));
-  solver.reset(new SGDOp(0.01, 0.9));
-  wb3 = Weight("10", weight_init, solver);
-  weight_init.reset(new ConstWeightInitOp(1.0));
-  solver.reset(new SGDOp(0.01, 0.9));
-  wb4 = Weight("11", weight_init, solver);
-  // hidden layer + bias
-  l5 = Link("6", "2", "4", "6");
-  l6 = Link("7", "2", "5", "7");
-  l7 = Link("8", "3", "4", "8");
-  l8 = Link("9", "3", "5", "9");
-  lb3 = Link("10", "7", "4", "10");
-  lb4 = Link("11", "7", "5", "11");
-  model1.setId(1);
-  model1.addNodes({i1, i2, h1, h2, o1, o2, b1, b2});
-  model1.addWeights({w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4});
-  model1.addLinks({l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4});
-  return model1;
-}
-Model model1 = makeModel1();
 
 BOOST_AUTO_TEST_CASE(initNodes) 
 {
@@ -131,7 +216,6 @@ BOOST_AUTO_TEST_CASE(initWeights)
   BOOST_CHECK_EQUAL(model1.getWeight("5").getWeight(), 1.0);
 }
 
-// [TODO: initError
 BOOST_AUTO_TEST_CASE(initError)
 {
 	// Toy network: 1 hidden layer, fully connected, DAG
@@ -385,6 +469,7 @@ BOOST_AUTO_TEST_CASE(mapValuesToNodes3)
   }
 }
 
+// [TODO: updatefor new methods]
 BOOST_AUTO_TEST_CASE(getNextInactiveLayer1) 
 {
   // Toy network: 1 hidden layer, fully connected, DAG
@@ -439,6 +524,7 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayer1)
 
 }
 
+// [TODO: updatefor new methods]
 BOOST_AUTO_TEST_CASE(getNextInactiveLayerBiases1) 
 {
   // Toy network: 1 hidden layer, fully connected, DAG
@@ -510,6 +596,7 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayerBiases1)
   BOOST_CHECK_EQUAL(sink_nodes_with_biases2[1], "3");
 }
 
+// [TODO: updatefor new methods]
 BOOST_AUTO_TEST_CASE(forwardPropogateLayerNetInput) 
 {
   // Toy network: 1 hidden layer, fully connected, DAG
@@ -646,7 +733,7 @@ BOOST_AUTO_TEST_CASE(forwardPropogateLayerNetInput)
 //   }  
 // }
 
-BOOST_AUTO_TEST_CASE(forwardPropogate) 
+BOOST_AUTO_TEST_CASE(forwardPropogateSum) 
 {
   // Toy network: 1 hidden layer, fully connected, DAG
   // Model model1 = makeModel1();
@@ -694,6 +781,56 @@ BOOST_AUTO_TEST_CASE(forwardPropogate)
   }
 }
 
+BOOST_AUTO_TEST_CASE(forwardPropogateProduct)
+{
+	// Toy network: 1 hidden layer, fully connected, DAG
+
+	// initialize nodes
+	const int batch_size = 4;
+	const int memory_size = 1;
+	model2.initError(batch_size, memory_size);
+	model2.clearCache();
+	model2.initNodes(batch_size, memory_size);
+
+	// create the input
+	const std::vector<std::string> input_ids = { "0", "1" };
+	Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size());
+	input.setValues({ { { 1, 5 } },{ { 2, 6 } },{ { 3, 7 } },{ { 4, 8 } } });
+	model2.mapValuesToNodes(input, input_ids, NodeStatus::activated, "output");
+
+	const std::vector<std::string> biases_ids = { "6", "7" };
+	Eigen::Tensor<float, 3> biases(batch_size, memory_size, (int)biases_ids.size());
+	biases.setConstant(1);
+	model2.mapValuesToNodes(biases, biases_ids, NodeStatus::activated, "output");
+
+	// calculate the activation
+	model2.forwardPropogate(0, true, false, 1);  // need a cache or a segmentation fault will occur!
+
+																							 // test values of output nodes
+	Eigen::Tensor<float, 2> output(batch_size, 2);
+	output.setValues({ { 25, 25 },{ 144, 144 },{ 441, 441 },{ 1024, 1024 } });
+	Eigen::Tensor<float, 2> derivative(batch_size, 2);
+	derivative.setValues({ { 1, 1 },{ 1, 1 },{ 1, 1 },{ 1, 1 } });
+	const std::vector<std::string> output_nodes = { "4", "5" };
+	for (int i = 0; i<(int)output_nodes.size(); ++i)
+	{
+		BOOST_CHECK_EQUAL(model2.getNode(output_nodes[i]).getOutput().size(), batch_size*memory_size);
+		BOOST_CHECK_EQUAL(model2.getNode(output_nodes[i]).getDerivative().size(), batch_size*memory_size);
+		BOOST_CHECK(model2.getNode(output_nodes[i]).getStatus() == NodeStatus::activated);
+		for (int j = 0; j<batch_size; ++j)
+		{
+			for (int k = 0; k<memory_size; ++k)
+			{
+				//std::cout << "Node: " << i << "; Batch: " << j << "; Memory: " << k << std::endl;
+				//std::cout << "Calc Output: " << model2.getNode(output_nodes[i]).getOutput()(j, k) << ", Expected Output: " << output(j, i) << std::endl;
+				//std::cout << "Calc Derivative: " << model2.getNode(output_nodes[i]).getDerivative()(j, k) << ", Expected Derivative: " << derivative(j, i) << std::endl;
+				BOOST_CHECK_CLOSE(model2.getNode(output_nodes[i]).getOutput()(j, k), output(j, i), 1e-3);
+				BOOST_CHECK_CLOSE(model2.getNode(output_nodes[i]).getDerivative()(j, k), derivative(j, i), 1e-3);
+			}
+		}
+	}
+}
+
 BOOST_AUTO_TEST_CASE(calculateError) 
 {
   // Toy network: 1 hidden layer, fully connected, DAG
@@ -720,7 +857,7 @@ BOOST_AUTO_TEST_CASE(calculateError)
     BOOST_CHECK_CLOSE(model1.getError()(j), error(j), 1e-6);
   }
   Eigen::Tensor<float, 2> node_error(batch_size, (int)output_nodes.size()); 
-  node_error.setValues({{0, 0.25}, {0, 0.25}, {0, 0.25}, {0, 0.25}});
+  node_error.setValues({{0.0f, 0.0f }, { 0.0f, 0.0f }, { 0.0f, 0.0f }, { 0.0f, 0.0f }});
   for (int i=0; i<(int)output_nodes.size(); ++i)
   {
     BOOST_CHECK_EQUAL(model1.getNode(output_nodes[i]).getError().size(), batch_size*memory_size);
@@ -729,6 +866,7 @@ BOOST_AUTO_TEST_CASE(calculateError)
     {
       for (int k=0; k<memory_size; ++k)
       {
+				//std::cout << "output node: " << i << "batch: " << j << "memory: " << k << std::endl;
         BOOST_CHECK_EQUAL(model1.getNode(output_nodes[i]).getError()(j, k), node_error(j, i));
       }
     }
@@ -738,6 +876,9 @@ BOOST_AUTO_TEST_CASE(calculateError)
   Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)output_nodes.size()); 
   input.setValues({{{15, 15}}, {{19, 19}}, {{23, 23}}, {{27, 27}}});
   model1.mapValuesToNodes(input, output_nodes, NodeStatus::activated, "output");
+	Eigen::Tensor<float, 3> derivative(batch_size, memory_size, (int)output_nodes.size());
+	derivative.setValues({ {{ 1, 1 }},{{ 1, 1 }},{{ 1, 1 }},{{ 1, 1 }} });
+	model1.mapValuesToNodes(derivative, output_nodes, NodeStatus::activated, "derivative");
   model1.calculateError(expected, output_nodes, 0);
 
   // control test (output values should be 0.0 from initialization)
@@ -761,6 +902,7 @@ BOOST_AUTO_TEST_CASE(calculateError)
   }
 }
 
+// [TODO: updatefor new methods]
 BOOST_AUTO_TEST_CASE(getNextUncorrectedLayer1) 
 {
   // Toy network: 1 hidden layer, fully connected, DAG

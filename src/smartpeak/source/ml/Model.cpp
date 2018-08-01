@@ -570,6 +570,10 @@ namespace SmartPeak
           {
             nodes_.at(node_names[i])->getErrorMutable()->operator()(j, k) = values(j, k, i);
           }
+					else if (value_type == "derivative")
+					{
+						nodes_.at(node_names[i])->getDerivativeMutable()->operator()(j, k) = values(j, k, i);
+					}
           else if (value_type == "dt")
           {
             nodes_.at(node_names[i])->getDtMutable()->operator()(j, k) = values(j, k, i);
@@ -892,8 +896,12 @@ namespace SmartPeak
     int thread_cnt = 0;
     
     Eigen::Tensor<float, 1> sink_tensor(batch_size);
-    sink_tensor.setConstant(0.0f);
-    Eigen::Tensor<float, 1> weight_tensor(batch_size);
+		if (operations->result.sink_node->getIntegration() == NodeIntegration::Sum)
+			sink_tensor.setConstant(0.0f);
+		else if (operations->result.sink_node->getIntegration() == NodeIntegration::Product)
+			sink_tensor.setConstant(1.0f);
+		else if (operations->result.sink_node->getIntegration() == NodeIntegration::Max)
+			sink_tensor.setConstant(0.0f);    
 
     // for (const std::string& link : sink_links)
     for (int i=0; i<operations->arguments.size(); ++i)
@@ -1408,12 +1416,16 @@ namespace SmartPeak
 		std::lock_guard<std::mutex> lock(calculateOutputNodeError_mutex);
 
 		// [BUG previous incorrect implementation below]
-		output_node->getErrorMutable()->chip(time_step, 1) = loss_function_grad->operator()(
-			output_node->getOutput().chip(time_step, 1), expected);
+		//output_node->getErrorMutable()->chip(time_step, 1) = loss_function_grad->operator()(
+		//	output_node->getOutput().chip(time_step, 1), expected);
 		// [CORRECT implementation below]
 		output_node->getErrorMutable()->chip(time_step, 1) = loss_function_grad->operator()(
 			output_node->getOutput().chip(time_step, 1), expected) *
 			output_node->getDerivative().chip(time_step, 1);
+		//std::cout << "expected: " << expected << std::endl;
+		//std::cout << "derivative: " << output_node->getDerivative().chip(time_step, 1) << std::endl;
+		//std::cout << "output: " << output_node->getOutput().chip(time_step, 1) << std::endl;
+		//std::cout << "error: " << output_node->getError().chip(time_step, 1) << std::endl;
 		output_node->setStatus(NodeStatus::corrected);
 		return true;
 	};

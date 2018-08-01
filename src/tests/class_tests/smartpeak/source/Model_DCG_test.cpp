@@ -357,22 +357,22 @@ BOOST_AUTO_TEST_CASE(CETT)
 	// y = m1*(m2*x + b*yprev) where m1 = 1, m2 = 1 and b = -1
 	Eigen::Tensor<float, 3> expected(batch_size, memory_size, (int)output_nodes.size());
 	expected.setValues(
-		{{ {4}, {4}, {3}, {3}, {2}, {2}, {1}, {1}},
-		{ {5}, {4}, {4}, {3}, {3}, {2}, {2}, {1}},
-		{ {5}, {5}, {4}, {4}, {3}, {3}, {2}, {2}},
-		{ {6}, {5}, {5}, {4}, {4}, {3}, {3}, {2}},
-		{ {6}, {6}, {5}, {5}, {4}, {4}, {3}, {3}}}
+		{ { { 1 },{ 1 },{ 2 },{ 2 },{ 3 },{ 3 },{ 4 },{ 4 } },
+		{ { 1 },{ 2 },{ 2 },{ 3 },{ 3 },{ 4 },{ 4 },{ 5 } },
+		{ { 2 },{ 2 },{ 3 },{ 3 },{ 4 },{ 4 },{ 5 },{ 5 } },
+		{ { 2 },{ 3 },{ 3 },{ 4 },{ 4 },{ 5 },{ 5 },{ 6 } },
+		{ { 3 },{ 3 },{ 4 },{ 4 },{ 5 },{ 5 },{ 6 },{ 6 } } }
 	);
 	model2.CETT(expected, output_nodes, memory_size);
 
 	// test values of errors of the output nodes
 	Eigen::Tensor<float, 3> error(batch_size, memory_size, (int)output_nodes.size());
-	error.setValues(		
-		{{{-1.2f}, {-1.2f}, {-1.4f}, {-1.4f}, {-1.6f}, {-1.6f}, {-1.8f}, {-1.8f}},
-		{{-1.8f}, {-2.0f }, {-2.0f }, {-2.2f}, {-2.2f}, {-2.4f}, {-2.4f}, {-2.6f}},
-		{{-2.6f}, {-2.6f}, {-2.8f}, {-2.8f}, {-3.0f}, {-3.0f}, {-3.2f}, {-3.2f}},
-		{{-3.2f}, {-3.4f}, {-3.4f}, {-3.6f}, {-3.6f}, {-3.8f}, {-3.8f}, {-4.0f }},
-		{{-4.0f}, {-4.0f }, {-4.2f}, {-4.2f}, {-4.4f}, {-4.4f}, {-4.6f}, {-4.6f}}}
+	error.setValues(
+	{ { {-1.2f }, { -0.4f }, { 0.0f }, { 0.4f }, { 0.0f }, { 0.0f }, { 0.0f }, { 0.0f }},
+		{ { -1.8f },{ -1.0f },{ -0.2f },{ 0.2f },{ 0.0f },{ 0.0f },{ 0.0f },{ 0.0f } },
+		{ { -2.6f },{ -1.4f },{ -0.6f },{ 0.2f },{ 0.0f },{ 0.0f },{ 0.0f },{ 0.0f } },
+		{ { -3.2f },{ -2.0f },{ -0.8f },{ 0.0f },{ 0.0f },{ 0.0f },{ 0.0f },{ 0.0f } },
+		{ { -4.0f },{ -2.4f },{ -1.2f },{ 0.0f },{ 0.0f },{ 0.0f },{ 0.0f },{ 0.0f } }}
 	);
 
 	for (int j = 0; j<batch_size; ++j)
@@ -381,6 +381,8 @@ BOOST_AUTO_TEST_CASE(CETT)
 		{
 			for (int i = 0; i<output_nodes.size(); ++i)
 			{
+				//std::cout << "Batch: " << j << " Memory: " << k << " Output Node: " << i << std::endl;
+				//std::cout << "Error: " << model2.getNode(output_nodes[i]).getError()(j, k) << " Expected: " << error(j, k, i) << std::endl;
 				BOOST_CHECK_CLOSE(model2.getNode(output_nodes[i]).getError()(j, k), error(j, k, i), 1e-3);
 			}
 		}
@@ -695,11 +697,11 @@ BOOST_AUTO_TEST_CASE(BPTT2)
 	// y = m1*(m2*x + b*yprev) where m1 = 1, m2 = 1 and b = -1
 	Eigen::Tensor<float, 3> expected(batch_size, memory_size, (int)output_nodes.size());
 	expected.setValues(
-		{ { { 4 },{ 4 },{ 3 },{ 3 },{ 2 },{ 2 },{ 1 },{ 1 } },
-		{ { 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 },{ 2 },{ 1 } },
-		{ { 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 },{ 2 } },
-		{ { 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 } },
-		{ { 6 },{ 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 } } }
+		{ { { 1 },{ 1 },{ 2 },{ 2 },{ 3 },{ 3 },{ 4 },{ 4 } },
+		{ { 1 },{ 2 },{ 2 },{ 3 },{ 3 },{ 4 },{ 4 },{ 5 } },
+		{ { 2 },{ 2 },{ 3 },{ 3 },{ 4 },{ 4 },{ 5 },{ 5 } },
+		{ { 2 },{ 3 },{ 3 },{ 4 },{ 4 },{ 5 },{ 5 },{ 6 } },
+		{ { 3 },{ 3 },{ 4 },{ 4 },{ 5 },{ 5 },{ 6 },{ 6 } } }
 	);
 	model2.CETT(expected, output_nodes, 4);
 
@@ -709,11 +711,11 @@ BOOST_AUTO_TEST_CASE(BPTT2)
 	// test values of output nodes
 	Eigen::Tensor<float, 3> error(batch_size, memory_size, 5); // dim2: # of model nodes
 	error.setValues({
-		{ { 0.0f, -1.2f, -1.2f, 0.0f, 0.0f },{ 0.0f, -2.4f, -2.4f, 0.0f, 0.0f },{ 0.0f, -3.8f, -3.8f, 0.0f, 0.0f },{ 0.0f, -5.2f, -5.2f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f } },
-		{ { 0.0f, -1.8f, -1.8f, 0.0f, 0.0f },{ 0.0f, -3.8f, -3.8f, 0.0f, 0.0f },{ 0.0f, -5.8f, -5.8f, 0.0f, 0.0f },{ 0.0f, -8.0f, -8.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f } },
-		{ { 0.0f, -2.6f, -2.6f, 0.0f, 0.0f },{ 0.0f, -5.2f, -5.2f, 0.0f, 0.0f },{ 0.0f, -8.0f, -8.0f, 0.0f, 0.0f },{ 0.0f, -10.8f, -10.8f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f } },
-		{ { 0.0f, -3.2f, -3.2f, 0.0f, 0.0f },{ 0.0f, -6.6f, -6.6f, 0.0f, 0.0f },{ 0.0f, -10.0f, -10.0f, 0.0f, 0.0f },{ 0.0f, -13.6f, -13.6f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f } },
-		{ { 0.0f, -4.0f, -4.0f, 0.0f, 0.0f },{ 0.0f, -8.0f, -8.0f, 0.0f, 0.0f },{ 0.0f, -12.2f, -12.2f, 0.0f, 0.0f },{ 0.0f, -16.4f, -16.4f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f } } }
+		{ { 0.0f, -1.2f, -1.2f, 0.0f, 0.0f },{ 0.0f, -1.6f, -1.6f, 0.0f, 0.0f },{ 0.0f, -1.6f, -1.6f, 0.0f, 0.0f },{ 0.0f, -1.2f, -1.2f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f } },
+		{ { 0.0f, -1.8f, -1.8f, 0.0f, 0.0f },{ 0.0f, -2.8f, -2.8f, 0.0f, 0.0f },{ 0.0f, -3.0f, -3.0f, 0.0f, 0.0f },{ 0.0f, -2.8f, -2.8f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f } },
+		{ { 0.0f, -2.6f, -2.6f, 0.0f, 0.0f },{ 0.0f, -4.0f, -4.0f, 0.0f, 0.0f },{ 0.0f, -4.6f, -4.6f, 0.0f, 0.0f },{ 0.0f, -4.4f, -4.4f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f } },
+		{ { 0.0f, -3.2f, -3.2f, 0.0f, 0.0f },{ 0.0f, -5.2f, -5.2f, 0.0f, 0.0f },{ 0.0f, -6.0f, -6.0f, 0.0f, 0.0f },{ 0.0f, -6.0f, -6.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f } },
+		{ { 0.0f, -4.0f, -4.0f, 0.0f, 0.0f },{ 0.0f, -6.4f, -6.4f, 0.0f, 0.0f },{ 0.0f, -7.6f, -7.6f, 0.0f, 0.0f },{ 0.0f, -7.6f, -7.6f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f } } }
 	);
 	const std::vector<std::string> error_nodes = { "0", "1", "2", "3", "4" };
 
@@ -723,7 +725,7 @@ BOOST_AUTO_TEST_CASE(BPTT2)
 		{
 			for (int i = 0; i<error_nodes.size(); ++i)
 			{
-				// std::cout<<"i: "<<i<<" j: "<<j<<", k: "<<k<<" calc: "<<model2.getNode(error_nodes[i]).getError()(j, k)<<", expected: "<<error(j, k, i)<<std::endl;
+				//std::cout<<"Node: "<<i<<", Batch: "<<j<<", Memory: "<<k<<" calc: "<<model2.getNode(error_nodes[i]).getError()(j, k)<<", expected: "<<error(j, k, i)<<std::endl;
 				BOOST_CHECK_CLOSE(model2.getNode(error_nodes[i]).getError()(j, k), error(j, k, i), 1e-3);
 			}
 		}
@@ -783,10 +785,11 @@ BOOST_AUTO_TEST_CASE(updateWeights2)
   // test values of output nodes
   std::vector<std::string> weight_nodes = {"0", "1", "2", "3", "4"};
   Eigen::Tensor<float, 1> weights(weight_nodes.size());
-  weights.setValues({0.248f, -1.312f, -1.312f, 1.0f, 1.0f}); 
+  weights.setValues({0.422f, -0.3f, -0.3f, 1.0f, 1.0f}); 
   
   for (int i=0; i<weight_nodes.size(); ++i)
   {       
+		//std::cout << "Weight: " << i << "; Calc: " << model2.getWeight(weight_nodes[i]).getWeight() << ", Expected: " << weights(i) << std::endl;
     BOOST_CHECK_CLOSE(model2.getWeight(weight_nodes[i]).getWeight(), weights(i), 1e-3);
   }
 }
@@ -882,11 +885,11 @@ BOOST_AUTO_TEST_CASE(modelTrainer2)
   //expected.setValues({{2.5}, {3}, {3.5}, {4}, {4.5}});
 	Eigen::Tensor<float, 3> expected(batch_size, memory_size, (int)output_nodes.size());
 	expected.setValues(
-		{{ {4}, {4}, {3}, {3}, {2}, {2}, {1}, {1}},
-		{ {5}, {4}, {4}, {3}, {3}, {2}, {2}, {1}},
-		{ {5}, {5}, {4}, {4}, {3}, {3}, {2}, {2}},
-		{ {6}, {5}, {5}, {4}, {4}, {3}, {3}, {2}},
-		{ {6}, {6}, {5}, {5}, {4}, {4}, {3}, {3}}}
+		{ { { 1 },{ 1 },{ 2 },{ 2 },{ 3 },{ 3 },{ 4 },{ 4 } },
+		{ { 1 },{ 2 },{ 2 },{ 3 },{ 3 },{ 4 },{ 4 },{ 5 } },
+		{ { 2 },{ 2 },{ 3 },{ 3 },{ 4 },{ 4 },{ 5 },{ 5 } },
+		{ { 2 },{ 3 },{ 3 },{ 4 },{ 4 },{ 5 },{ 5 },{ 6 } },
+		{ { 3 },{ 3 },{ 4 },{ 4 },{ 5 },{ 5 },{ 6 },{ 6 } } }
 	);
   model2a.setLossFunction(ModelLossFunction::MSE);
 
