@@ -1167,18 +1167,6 @@ namespace SmartPeak
     mapValuesToNodes(sink_tensor, time_step, sink_nodes, NodeStatus::activated, "output");
   }
   
-  // [DEPRECATED]
-  void Model::forwardPropogateLayerActivation(
-    const std::vector<std::string>& sink_nodes,
-      const int& time_step)
-  {
-    for (const std::string& node : sink_nodes)
-    {
-      nodes_.at(node)->calculateActivation(time_step);
-      nodes_.at(node)->calculateDerivative(time_step);
-    }
-  }
-  
   void Model::forwardPropogate(const int& time_step, bool cache_FP_steps, bool use_cache, int n_threads)
   { 
     if (use_cache)

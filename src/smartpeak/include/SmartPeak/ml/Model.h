@@ -332,30 +332,13 @@ public:
       const int& memory_size,
       const int& time_step
     );
-    static bool calculateNetNodeInput_( //[TODO: return the nodes]
+    static bool calculateNetNodeInput_(
       OperationList* operations, 
       const int& batch_size,
       const int& memory_size,
       const int& time_step,
       int n_threads = 1
     );
- 
-    /**
-    @brief Completion of a forward propogation step. Computes the net
-      activation for all nodes in the tensor layer.
-
-    [DEPRECATED]
-
-    Note before computing the activation, the layer tensor will be split
-      according to the node type, and the corresponding activation
-      function will be applied
-
-    @param[in] sink_nodes
-    @param[in] time_step Time step to activate.
-    */ 
-    void forwardPropogateLayerActivation(
-      const std::vector<std::string>& sink_nodes,
-      const int& time_step);
  
     /**
     @brief Foward propogation of the network model.
