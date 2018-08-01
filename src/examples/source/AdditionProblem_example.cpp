@@ -383,8 +383,36 @@ public:
 		weight_init.reset();
 		solver.reset();
 		// links
-		Link_i_rand_to_h = Link("Link_i_rand_to_h", "Input_0", "h", "Weight_i_rand_to_h");
-		Link_i_mask_to_h = Link("Link_i_mask_to_h", "Input_1", "h", "Weight_i_mask_to_h");
+		Link_i_rand_to_forget_gate_sigma = Link("Link_i_rand_to_forget_gate_sigma", "Input_0", "forget_gate_sigma", "Weight_i_rand_to_forget_gate_sigma");
+		Link_i_mask_to_forget_gate_sigma = Link("Link_i_mask_to_forget_gate_sigma", "Input_1", "forget_gate_sigma", "Weight_i_mask_to_forget_gate_sigma");
+		Link_output_gate_prod_to_forget_gate_sigma = Link("Link_output_gate_prod_to_forget_gate_sigma", "output_gate_prod", "forget_gate_sigma", "Weight_output_gate_prod_to_forget_gate_sigma");
+		Link_memory_cell_to_forget_gate_sigma = Link("Link_memory_cell_to_forget_gate_sigma", "memory_cell", "forget_gate_sigma", "Weight_memory_cell_to_forget_gate_sigma");
+		Link_forget_gate_sigma_bias_to_forget_gate_sigma = Link("Link_forget_gate_sigma_bias_to_forget_gate_sigma", "forget_gate_sigma_bias", "forget_gate_sigma", "Weight_forget_gate_sigma_bias_to_forget_gate_sigma");
+		Link_memory_cell_to_forget_gate_prod = Link("Link_memory_cell_to_forget_gate_prod", "memory_cell", "forget_gate_prod", "Weight_memory_cell_to_forget_gate_prod");
+		Link_forget_gate_sigma_to_forget_gate_prod = Link("Link_forget_gate_sigma_to_forget_gate_prod", "forget_gate_sigma", "forget_gate_prod", "Weight_forget_gate_sigma_to_forget_gate_prod");
+		Link_memory_cell_to_update_gate_sigma = Link("Link_memory_cell_to_update_gate_sigma", "memory_cell", "update_gate_sigma", "Weight_memory_cell_to_update_gate_sigma");
+		Link_i_rand_to_update_gate_sigma = Link("Link_i_rand_to_update_gate_sigma", "Input_0", "update_gate_sigma", "Weight_i_rand_to_update_gate_sigma");
+		Link_i_mask_to_update_gate_sigma = Link("Link_i_mask_to_update_gate_sigma", "Input_1", "update_gate_sigma", "Weight_i_mask_to_update_gate_sigma");
+		Link_output_gate_prod_to_update_gate_sigma = Link("Link_output_gate_prod_to_update_gate_sigma", "output_gate_prod", "update_gate_sigma", "Weight_output_gate_prod_to_update_gate_sigma");
+		Link_update_gate_sigma_bias_to_update_gate_sigma = Link("Link_update_gate_sigma_bias_to_update_gate_sigma", "update_gate_sigma_bias", "update_gate_sigma", "Weight_update_gate_sigma_bias_to_update_gate_sigma");
+		Link_i_rand_to_update_gate_tanh = Link("Link_i_rand_to_update_gate_tanh", "Input_0", "update_gate_tanh", "Weight_i_rand_to_update_gate_tanh");
+		Link_i_mask_to_update_gate_tanh = Link("Link_i_mask_to_update_gate_tanh", "Input_1", "update_gate_tanh", "Weight_i_mask_to_update_gate_tanh");
+		Link_output_gate_prod_to_update_gate_tanh = Link("Link_output_gate_prod_to_update_gate_tanh", "output_gate_prod", "update_gate_tanh", "Weight_output_gate_prod_to_update_gate_tanh");
+		Link_update_gate_tanh_bias_to_update_gate_tanh = Link("Link_update_gate_tanh_bias_to_update_gate_tanh", "update_gate_tanh_bias", "update_gate_tanh", "Weight_update_gate_tanh_bias_to_update_gate_tanh");
+		Link_update_gate_tanh_to_update_gate_prod = Link("Link_update_gate_tanh_to_update_gate_prod", "update_gate_tanh", "update_gate_prod", "Weight_update_gate_tanh_to_update_gate_prod");
+		Link_update_gate_sigma_to_update_gate_prod = Link("Link_update_gate_sigma_to_update_gate_prod", "update_gate_sigma", "update_gate_prod", "Weight_update_gate_sigma_to_update_gate_prod");
+		Link_update_gate_prod_to_memory_cell = Link("Link_update_gate_prod_to_memory_cell", "update_gate_prod", "memory_cell", "Weight_update_gate_prod_to_memory_cell");
+		Link_memory_cell_to_memory_cell = Link("Link_memory_cell_to_memory_cell", "memory_cell", "memory_cell", "Weight_memory_cell_to_memory_cell");
+		Link_i_rand_to_output_gate_sigma = Link("Link_i_rand_to_output_gate_sigma", "Input_0", "output_gate_sigma", "Weight_i_rand_to_output_gate_sigma");
+		Link_i_mask_to_output_gate_sigma = Link("Link_i_mask_to_output_gate_sigma", "Input_1", "output_gate_sigma", "Weight_i_mask_to_output_gate_sigma");
+		Link_memory_cell_to_output_gate_sigma = Link("Link_memory_cell_to_output_gate_sigma", "memory_cell", "output_gate_sigma", "Weight_memory_cell_to_output_gate_sigma");
+		Link_output_gate_prod_to_output_gate_sigma = Link("Link_output_gate_prod_to_output_gate_sigma", "output_gate_prod", "output_gate_sigma", "Weight_output_gate_prod_to_output_gate_sigma");
+		Link_output_gate_sigma_bias_to_update_gate_sigma = Link("Link_output_gate_sigma_bias_to_update_gate_sigma", "output_gate_sigma_bias", "update_gate_sigma", "Weight_output_gate_sigma_bias_to_update_gate_sigma");
+		Link_memory_cell_to_output_gate_tanh = Link("Link_memory_cell_to_output_gate_tanh", "memory_cell", "output_gate_tanh", "Weight_memory_cell_to_output_gate_tanh");
+		Link_output_gate_sigma_to_output_gate_prod = Link("Link_output_gate_sigma_to_output_gate_prod", "output_gate_sigma", "output_gate_prod", "Weight_output_gate_sigma_to_output_gate_prod");
+		Link_output_gate_tanh_to_output_gate_prod = Link("Link_output_gate_tanh_to_output_gate_prod", "output_gate_tanh", "output_gate_prod", "Weight_output_gate_tanh_to_output_gate_prod");
+		Link_output_gate_prod_to_o = Link("Link_output_gate_prod_to_o ", "output_gate_prod", "Output_0", "Weight_output_gate_prod_to_o ");
+
 		// add nodes, links, and weights to the model
 		model.setName("MemoryCell");
 		model.addNodes({ i_rand, i_mask, memory_cell, o,
