@@ -716,6 +716,18 @@ public:
 			int n_threads = 1);
 
 		/**
+		@brief Check model link node and weight names
+
+		[TODO: add tests...]
+
+		@param[out] nodes_not_found
+		@param[out] weights_not_found
+		*/
+		bool checkLinksNodeAndWeightNames(
+			std::vector<std::string>& nodes_not_found,
+			std::vector<std::string>& weights_not_found);
+
+		/**
 		@brief Remove hidden nodes that have either only 1 source and no sink connection
 			or 1 sink and no source connection
 		*/

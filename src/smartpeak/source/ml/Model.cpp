@@ -599,7 +599,9 @@ namespace SmartPeak
         nodes_.at(link_map.second->getSinkNodeName())->getStatus() == NodeStatus::initialized)
       {
         OperationArguments arguments;
+				//std::cout<<"Link source node name: "<< link_map.second->getSourceNodeName() <<std::endl
         arguments.source_node = nodes_.at(link_map.second->getSourceNodeName());
+				//std::cout << "Link weight name: " << link_map.second->getWeightName() << std::endl;
         arguments.weight = weights_.at(link_map.second->getWeightName());
         arguments.time_step = 0;
 
@@ -870,16 +872,16 @@ namespace SmartPeak
 
     Eigen::Tensor<float, 1> sink_tensor(batch_size);
     sink_tensor.setConstant(0.0f);
-    Eigen::Tensor<float, 1> weight_tensor(batch_size);
-    weight_tensor.setConstant(arguments->weight->getWeight());
-    if (arguments->time_step == 0 || time_step + arguments->time_step < memory_size)
-    {
-      sink_tensor = weight_tensor * arguments->source_node->getOutput().chip(time_step + arguments->time_step, 1);
-    }
-    else
-    {
-      //std::cout<<"time_step exceeded memory size in forwardPropogateLayerNetInput."<<std::endl;
-    }
+		Eigen::Tensor<float, 1> weight_tensor(batch_size);
+		weight_tensor.setConstant(arguments->weight->getWeight());
+		if (arguments->time_step == 0 || time_step + arguments->time_step < memory_size)
+		{
+			sink_tensor = weight_tensor * arguments->source_node->getOutput().chip(time_step + arguments->time_step, 1);
+		}
+		else
+		{
+			//std::cout<<"time_step exceeded memory size in forwardPropogateLayerNetInput."<<std::endl;
+		}
     return sink_tensor;
   }
   
@@ -1969,7 +1971,7 @@ namespace SmartPeak
 							if (operations->arguments[i].source_node->getIntegration() == NodeIntegration::Sum)
 								sink_tensor += task_result.get();
 							else if (operations->arguments[i].source_node->getIntegration() == NodeIntegration::Product)
-								sink_tensor += task_result.get() / operations->result.sink_node->getOutput().chip(time_step, 1); // apply the missing division by the source node output
+								sink_tensor += task_result.get() / operations->result.sink_node->getOutput().chip(time_step, 1); // apply the missing division by the source node output (DIV BY 0!)
 							else if (operations->arguments[i].source_node->getIntegration() == NodeIntegration::Max)
 								sink_tensor += task_result.get(); // [TODO: update with correct formula]
             }
@@ -2548,7 +2550,7 @@ namespace SmartPeak
 						output_tensor = nodes_.at(link_map.second->getSourceNodeName())->getOutput().chip(i, 1);
 					else if (nodes_.at(link_map.second->getSinkNodeName())->getIntegration() == NodeIntegration::Product)
 					{
-						output_tensor = nodes_.at(link_map.second->getSourceNodeName())->getInput().chip(i, 1)/weights_.at(link_map.second->getWeightName())->getWeight();
+						output_tensor = nodes_.at(link_map.second->getSourceNodeName())->getInput().chip(i, 1)/weights_.at(link_map.second->getWeightName())->getWeight(); // (DIV BY 0!)
 					}
 					else if (nodes_.at(link_map.second->getSinkNodeName())->getIntegration() == NodeIntegration::Max)
 						output_tensor = nodes_.at(link_map.second->getSourceNodeName())->getOutput().chip(i, 1); // [TODO: update with correct formual]
@@ -2717,6 +2719,30 @@ namespace SmartPeak
 		}
 
 		return true;
+	}
+
+	bool Model::checkLinksNodeAndWeightNames(std::vector<std::string>& nodes_not_found, std::vector<std::string>& weights_not_found)
+	{
+		bool link_names_check = true;
+		for (const auto& link_map : links_)
+		{
+			if (!checkNodeNames({ link_map.second->getSourceNodeName() }))
+			{
+				link_names_check = false;
+				nodes_not_found.push_back(link_map.second->getSourceNodeName());
+			}
+			if (!checkNodeNames({ link_map.second->getSinkNodeName() }))
+			{
+				link_names_check = false;
+				nodes_not_found.push_back(link_map.second->getSinkNodeName());
+			}
+			if (!checkWeightNames({ link_map.second->getWeightName() }))
+			{
+				link_names_check = false;
+				weights_not_found.push_back(link_map.second->getWeightName());
+			}
+		}
+		return link_names_check;
 	}
 
 	bool Model::removeIsolatedNodes()
