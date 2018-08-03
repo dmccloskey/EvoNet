@@ -5,10 +5,12 @@
 #include <SmartPeak/ml/ModelReplicator.h>
 #include <SmartPeak/ml/Model.h>
 #include <SmartPeak/io/PopulationTrainerFile.h>
+#include <SmartPeak/io/csv.h>
 
 #include <random>
 #include <fstream>
 #include <thread>
+#include <map>
 
 #include <unsupported/Eigen/CXX11/Tensor>
 
@@ -40,6 +42,7 @@ sample set of MARs
 
 struct MetabolomicsDatum {
 	std::string sample_name;
+	std::string sample_group_name;
 	std::string component_name;
 	std::string component_group_name;
 	std::string calculated_concentration_units;
@@ -47,7 +50,7 @@ struct MetabolomicsDatum {
 	float calculated_concentration;
 	bool used;
 };
-typedef std::vector<MetabolomicsDatum> MetabolomicsData;
+typedef std::map<std::string, std::map<std::string, std::vector<MetabolomicsDatum>>> MetabolomicsData;
 
 struct BiochemicalReaction {
 	std::string model_id;
@@ -65,7 +68,7 @@ struct BiochemicalReaction {
 	// others if needed
 	bool used;
 };
-typedef std::vector<BiochemicalReaction> BiochemicalReactions;
+typedef std::map<std::string, BiochemicalReaction> BiochemicalReactions;
 
 /*
 @brief Read in the metabolomics data from .csv file
@@ -77,6 +80,40 @@ static void ReadMetabolomicsData(
 	const std::string& filename,
 	MetabolomicsData& metabolomicsData)
 {
+	io::CSVReader<8> nodes_in(filename);
+	data_in.read_header(io::ignore_extra_column,
+		"sampe_group_name", "sample_name", "component_group_name", "component_name", 
+		"calculated_concentration_units", "used_", "time_point", "calculated_concentration");
+	std::string sampe_group_name_str, sample_name_str, component_group_name_str, component_name_str,
+		calculated_concentration_units_str, used__str, time_point_str, calculated_concentration_str;
+
+	while (data_in.read_row(sampe_group_name_str, sample_name_str, component_group_name_str, component_name_str,
+		calculated_concentration_units_str, used__str, time_point_str, calculated_concentration_str))
+	{
+		// parse the .csv file
+		MetabolomicsDatum row;
+		row.sample_group_name = sampe_group_name_str;
+		row.sample_name = sample_name_str;
+		row.component_group_name = component_group_name_str;
+		row.component_name = component_group_str;
+		row.calculated_concentration_units = calculated_concentration_units_str;
+		row.time_point = time_point_str;
+		row.used = (used__str == t) ? true : false;
+		row.calculated_concentration = std::stof(calculated_concentration_str);
+
+		// build up the map
+		std::map<std::string, std::vector<MetabolomicsDatum>> replicate;
+		replicate.emplace(component_name_str, { row });
+		auto found_in_data = metabolomicsData.emplace(sampe_group_name_str, replicate);
+		if (!found_in_data.second)
+		{
+			auto found_in_component = metabolomicsData.at(sampe_group_name_str).emplace(component_name_str, { row });
+			if (!found_in_component.second)
+			{
+				metabolomicsData.at(sampe_group_name_str).at(component_name_str).push_back(row);
+			}
+		}
+	}
 };
 
 /*
@@ -91,6 +128,24 @@ static MetabolomicsData MakeDefaultMetabolomicsData()
 	return metabolomicsData;
 };
 
+static std::string RemoveBrackets(const std::string& str)
+{
+	std::string str_copy = str;
+	str_copy = std::regex_replace(str_copy, std::regex("{"), "");
+	str_copy = std::regex_replace(str_copy, std::regex("}"), "");
+	return str_copy;
+}
+static std::vector<std::string> TokenizeString(const std::string& str)
+{
+	std::vector<std::string> tokens;
+	size_t pos = 0;
+	while ((pos = str.find(",")) != std::string::npos) {
+		std::string token = str.substr(0, pos);
+		tokens.push_back(token);
+		str.erase(0, pos + delimiter.length());
+	}
+	return tokens;
+}
 /*
 @brief Read in the biochemical reactsion from .csv file
 
@@ -99,8 +154,38 @@ static MetabolomicsData MakeDefaultMetabolomicsData()
 **/
 static void ReadBiochemicalReactions(
 	const std::string& filename,
-	BiochemicalReactions& metabbiochemicalReactionsolomicsData)
+	BiochemicalReactions& biochemicalReactions)
 {
+	io::CSVReader<9> nodes_in(filename);
+	data_in.read_header(io::ignore_extra_column,
+		"rxn_id", "rxn_name", "equation", "gpr", "used_",
+		"reactants_stoichiometry", "products_stoichiometry", "reactants_ids", "products_ids");
+	std::string rxn_id_str, rxn_name_str, equation_str, gpr_str, used__str,
+		reactants_stoichiometry_str, products_stoichiometry_str, reactants_ids_str, products_ids_str;
+
+	while (data_in.read_row(rxn_id_str, rxn_name_str, equation_str, gpr_str, used__str,
+		reactants_stoichiometry_str, products_stoichiometry_str, reactants_ids_str, products_ids_str))
+	{
+		// parse the .csv file
+		BiochemicalReaction row;
+		row.reaction_name = rxn_name_str;
+		row.reaction_id = rxn_id_str;
+		row.equation = equation_str;
+		row.gpr = gpr_str;
+		row.used = (used__str == t) ? true : false;
+		row.reactants_ids = TokenizeString(RemoveBrackets(reactants_ids_str));
+		row.products_ids = TokenizeString(RemoveBrackets(reactants_ids_str));
+
+		std::vector<std::string> reactants_stoichiometry_vector = TokenizeString(RemoveBrackets(reactants_stoichiometry_str));
+		row.reactants_stoichiometry = std::for_each(reactants_stoichiometry_vector.begin(), reactants_stoichiometry_vector.end(), std::stoi);
+		std::vector<std::string> products_stoichiometry_vector = TokenizeString(RemoveBrackets(products_stoichiometry_str));
+		row.products_stoichiometry = std::for_each(products_stoichiometry_vector.begin(), products_stoichiometry_vector.end(), std::stoi);
+
+		// build up the map
+		auto found_in_data = biochemicalReactions.emplace(reaction_id, { row });
+		if (!found_in_data.second)
+			biochemicalReactions.at(reaction_id) = row;
+	}
 };
 
 static std::string CleanMetId(const std::string& met_id)
