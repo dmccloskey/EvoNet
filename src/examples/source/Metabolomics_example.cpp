@@ -70,6 +70,12 @@ struct BiochemicalReaction {
 };
 typedef std::map<std::string, BiochemicalReaction> BiochemicalReactions;
 
+struct MetaDatum {
+	std::string sample_group_name;
+	std::string label;
+};
+typedef std::map<std::string, MetaDatum> MetaData;
+
 /*
 @brief Read in the metabolomics data from .csv file
 
@@ -128,18 +134,18 @@ static MetabolomicsData MakeDefaultMetabolomicsData()
 	return metabolomicsData;
 };
 
-static std::string RemoveBrackets(const std::string& str)
+static std::string RemoveTokens(const std::string& str, const std::vector<std::string>& tokens)
 {
 	std::string str_copy = str;
-	str_copy = std::regex_replace(str_copy, std::regex("{"), "");
-	str_copy = std::regex_replace(str_copy, std::regex("}"), "");
+	for (const std::string& token : tokens)
+		str_copy = std::regex_replace(str_copy, std::regex(token), "");
 	return str_copy;
 }
-static std::vector<std::string> TokenizeString(const std::string& str)
+static std::vector<std::string> SplitString(const std::string& str, std::string delimeter = ",")
 {
 	std::vector<std::string> tokens;
 	size_t pos = 0;
-	while ((pos = str.find(",")) != std::string::npos) {
+	while ((pos = str.find(delimeter)) != std::string::npos) {
 		std::string token = str.substr(0, pos);
 		tokens.push_back(token);
 		str.erase(0, pos + delimiter.length());
@@ -173,12 +179,12 @@ static void ReadBiochemicalReactions(
 		row.equation = equation_str;
 		row.gpr = gpr_str;
 		row.used = (used__str == t) ? true : false;
-		row.reactants_ids = TokenizeString(RemoveBrackets(reactants_ids_str));
-		row.products_ids = TokenizeString(RemoveBrackets(reactants_ids_str));
+		row.reactants_ids = SplitString(RemoveBrackets(reactants_ids_str));
+		row.products_ids = SplitString(RemoveBrackets(reactants_ids_str));
 
-		std::vector<std::string> reactants_stoichiometry_vector = TokenizeString(RemoveBrackets(reactants_stoichiometry_str));
+		std::vector<std::string> reactants_stoichiometry_vector = SplitString(RemoveTokens(reactants_stoichiometry_str, { "{", "}" }));
 		row.reactants_stoichiometry = std::for_each(reactants_stoichiometry_vector.begin(), reactants_stoichiometry_vector.end(), std::stoi);
-		std::vector<std::string> products_stoichiometry_vector = TokenizeString(RemoveBrackets(products_stoichiometry_str));
+		std::vector<std::string> products_stoichiometry_vector = SplitString(RemoveTokens(products_stoichiometry_str, { "{", "}" }));
 		row.products_stoichiometry = std::for_each(products_stoichiometry_vector.begin(), products_stoichiometry_vector.end(), std::stoi);
 
 		// build up the map
@@ -186,11 +192,6 @@ static void ReadBiochemicalReactions(
 		if (!found_in_data.second)
 			biochemicalReactions.at(reaction_id) = row;
 	}
-};
-
-static std::string CleanMetId(const std::string& met_id)
-{
-	return "";
 };
 
 static float CalculateMAR(
