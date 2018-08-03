@@ -38,6 +38,26 @@ namespace SmartPeak
     n_link_deletions_ = n_link_deletions;
   }
 
+	void ModelReplicator::setNNodeActivationChanges(const int & n_node_activation_changes)
+	{
+		n_node_activation_changes_ = n_node_activation_changes;
+	}
+
+	void ModelReplicator::setNNodeIntegrationChanges(const int & n_node_integration_changes)
+	{
+		n_node_integration_changes_ = n_node_integration_changes;
+	}
+
+	void ModelReplicator::setNodeActivations(const std::vector<NodeActivation>& node_activations)
+	{
+		node_activations_ = node_activations;
+	}
+
+	void ModelReplicator::setNodeIntegrations(const std::vector<NodeIntegration>& node_integrations)
+	{
+		node_integrations_ = node_integrations;
+	}
+
   void ModelReplicator::setNWeightChanges(const int& n_weight_changes)
   {
     n_weight_changes_ = n_weight_changes;    
@@ -72,6 +92,26 @@ namespace SmartPeak
   {
     return n_link_deletions_;
   }
+
+	int ModelReplicator::getNNodeActivationChanges() const
+	{
+		return n_node_activation_changes_;
+	}
+
+	int ModelReplicator::getNNodeIntegrationChanges() const
+	{
+		return n_node_integration_changes_;
+	}
+
+	std::vector<NodeActivation> ModelReplicator::getNodeActivations() const
+	{
+		return node_activations_;
+	}
+
+	std::vector<NodeIntegration> ModelReplicator::getNodeIntegrations() const
+	{
+		return node_integrations_;
+	}
 
   int ModelReplicator::getNWeightChanges() const
   {
@@ -625,6 +665,46 @@ namespace SmartPeak
     }
   }
 
+	void ModelReplicator::changeNodeActivation(Model & model, std::string unique_str)
+	{
+		// pick a random node from the model
+		// that is not an input or bias or output
+		std::vector<NodeType> node_exclusion_list = { NodeType::bias, NodeType::input, NodeType::output };
+		std::vector<NodeType> node_inclusion_list = { NodeType::hidden };
+		std::string random_node_name = selectRandomNode(model, node_exclusion_list, node_inclusion_list);
+		if (random_node_name.empty() || random_node_name == "")
+		{
+			std::cout << "No node activations were changed in the model." << std::endl;
+			return;
+		}
+
+		Node new_node = model.getNode(random_node_name); // copy the node		
+		NodeActivation new_activation = selectRandomElement(node_activations_); // pick a random activation
+		new_node.setActivation(new_activation); // change the activation
+		model.removeNodes({new_node.getName()}); // delete the original node
+		model.addNodes({new_node}); // add in the new node
+	}
+
+	void ModelReplicator::changeNodeIntegration(Model & model, std::string unique_str)
+	{
+		// pick a random node from the model
+		// that is not an input or bias or output
+		std::vector<NodeType> node_exclusion_list = { NodeType::bias, NodeType::input, NodeType::output };
+		std::vector<NodeType> node_inclusion_list = { NodeType::hidden };
+		std::string random_node_name = selectRandomNode(model, node_exclusion_list, node_inclusion_list);
+		if (random_node_name.empty() || random_node_name == "")
+		{
+			std::cout << "No node activations were changed in the model." << std::endl;
+			return;
+		}
+
+		Node new_node = model.getNode(random_node_name); // copy the node		
+		NodeIntegration new_integration = selectRandomElement(node_integrations_); // pick a random integration
+		new_node.setIntegration(new_integration); // change the integration
+		model.removeNodes({ new_node.getName() }); // delete the original node
+		model.addNodes({ new_node }); // add in the new node
+	}
+
   void ModelReplicator::modifyWeight(Model& model)
   {
     // [TODO: add method body]    
@@ -644,6 +724,8 @@ namespace SmartPeak
   {
     // create the list of modifications
     std::vector<std::string> modifications;
+		for (int i = 0; i<n_node_activation_changes_; ++i) modifications.push_back("change_node_activation");
+		for (int i = 0; i<n_node_integration_changes_; ++i) modifications.push_back("change_node_integration");
     for(int i=0; i<n_node_additions_; ++i) modifications.push_back("add_node");
     for(int i=0; i<n_link_additions_; ++i) modifications.push_back("add_link");
     for(int i=0; i<n_node_deletions_; ++i) modifications.push_back("delete_node");
@@ -657,13 +739,21 @@ namespace SmartPeak
     return modifications;
   }
 
-	void ModelReplicator::setRandomModifications(const std::pair<int, int>& node_additions, const std::pair<int, int>& link_additions, const std::pair<int, int>& node_deletions, const std::pair<int, int>& link_deletions)
+	void ModelReplicator::setRandomModifications(
+		const std::pair<int, int>& node_additions,
+		const std::pair<int, int>& link_additions,
+		const std::pair<int, int>& node_deletions,
+		const std::pair<int, int>& link_deletions,
+		const std::pair<int, int>& node_activation_changes,
+		const std::pair<int, int>& node_integration_changes)
 	{
 		// set 
 		node_additions_ = node_additions;
 		link_additions_ = link_additions;
 		node_deletions_ = node_deletions;
 		link_deletions_ = link_deletions;
+		node_activation_changes_ = node_activation_changes;
+		node_integration_changes_ = node_integration_changes;
 	}
 
 	void ModelReplicator::makeRandomModifications()
@@ -681,6 +771,10 @@ namespace SmartPeak
 		setNNodeDeletions(node_deletion_gen(gen));
 		std::uniform_int_distribution<> link_deletion_gen(link_deletions_.first, link_deletions_.second);
 		setNLinkDeletions(link_deletion_gen(gen));
+		std::uniform_int_distribution<> node_activation_changes_gen(node_activation_changes_.first, node_activation_changes_.second);
+		setNNodeActivationChanges(node_activation_changes_gen(gen));
+		std::uniform_int_distribution<> node_integration_changes_gen(node_integration_changes_.first, node_integration_changes_.second);
+		setNNodeIntegrationChanges(node_integration_changes_gen(gen));
 	}
 
   void ModelReplicator::modifyModel(Model& model, std::string unique_str)
@@ -718,6 +812,16 @@ namespace SmartPeak
         deleteLink(model, prune_iterations);
         modifications_counts[modification] += 1;
       }
+			else if (modification == "change_node_activation")
+			{
+				changeNodeActivation(model);
+				modifications_counts[modification] += 1;
+			}
+			else if (modification == "change_node_integration")
+			{
+				changeNodeIntegration(model);
+				modifications_counts[modification] += 1;
+			}
       // [TODO: modifyWeight]
     }
   }

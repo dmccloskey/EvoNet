@@ -20,20 +20,29 @@ public:
     ModelReplicator(); ///< Default constructor
     ~ModelReplicator(); ///< Default destructor
 
-    void setNNodeCopies(const int& n_node_copies); ///< n_node_copies setter
     void setNNodeAdditions(const int& n_node_additions); ///< n_node_additions setter
     void setNLinkAdditions(const int& n_link_additions); ///< n_link_additions setter
     void setNNodeDeletions(const int& n_node_deletions); ///< n_node_deletions setter
     void setNLinkDeletions(const int& n_link_deletions); ///< n_link_deletions setter
-    void setNWeightChanges(const int& n_weight_changes); ///< n_weight_changes setter
-    void setWeightChangeStDev(const float& weight_change_stdev); ///< weight_change_stdev setter
+		void setNNodeActivationChanges(const int& n_node_activation_changes); ///< n_node_activation_changes setter
+		void setNNodeIntegrationChanges(const int& n_node_integration_changes); ///< n_node_integration_changes setter
+		void setNodeActivations(const std::vector<NodeActivation>& node_activations); ///< node_activations setter
+		void setNodeIntegrations(const std::vector<NodeIntegration>& node_integrations); ///< node_integrations setter
 
-    int getNNodeCopies() const; ///< n_node_copies setter
     int getNNodeAdditions() const; ///< n_node_additions setter
     int getNLinkAdditions() const; ///< n_link_additions setter
     int getNNodeDeletions() const; ///< n_node_deletions setter
     int getNLinkDeletions() const; ///< n_link_deletions setter
-    int getNWeightChanges() const; ///< n_weight_changes setter
+		int getNNodeActivationChanges() const; ///< n_node_activation_changes setter
+		int getNNodeIntegrationChanges() const; ///< n_node_integration_changes setter
+		std::vector<NodeActivation> getNodeActivations() const; ///< node_activations setter
+		std::vector<NodeIntegration> getNodeIntegrations() const; ///< node_integrations setter
+
+		void setNNodeCopies(const int& n_node_copies); ///< n_node_copies setter
+		void setNWeightChanges(const int& n_weight_changes); ///< n_weight_changes setter
+		void setWeightChangeStDev(const float& weight_change_stdev); ///< weight_change_stdev setter
+		int getNNodeCopies() const; ///< n_node_copies setter
+		int getNWeightChanges() const; ///< n_weight_changes setter
     float getWeightChangeStDev() const; ///< weight_change_stdev setter
  
     /**
@@ -187,6 +196,20 @@ public:
     */ 
     void deleteLink(Model& model, int prune_iterations = 1e6);
 
+		/**
+		@brief change node activation
+
+		@param[in, out] model The model
+		*/
+		void changeNodeActivation(Model& model, std::string unique_str = "");
+
+		/**
+		@brief change node integration
+
+		@param[in, out] model The model
+		*/
+		void changeNodeIntegration(Model& model, std::string unique_str = "");
+
     /**
       @brief modify weights in the model
 
@@ -224,7 +247,9 @@ public:
 			const std::pair<int, int>& node_additions,
 			const std::pair<int, int>& link_additions,
 			const std::pair<int, int>& node_deletions,
-			const std::pair<int, int>& link_deletions);
+			const std::pair<int, int>& link_deletions,
+			const std::pair<int, int>& node_activation_changes,
+			const std::pair<int, int>& node_integration_changes);
 
 		/**
 		@brief make random model modification parameters
@@ -237,12 +262,19 @@ private:
     int n_link_additions_ = 0; ///< new links to add to the model
     int n_node_deletions_ = 0; ///< nodes to remove from the model
     int n_link_deletions_ = 0; ///< links to remove from the model
+		int n_node_activation_changes_ = 0; ///< nodes to change the activation
+		int n_node_integration_changes_ = 0; ///< nodes to change the activation
 
 		// random modification parameters
 		std::pair<int, int> node_additions_ = std::make_pair(0, 0);
 		std::pair<int, int> link_additions_ = std::make_pair(0, 0);
 		std::pair<int, int> node_deletions_ = std::make_pair(0, 0);
 		std::pair<int, int> link_deletions_ = std::make_pair(0, 0);
+		std::pair<int, int> node_activation_changes_ = std::make_pair(0, 0);
+		std::pair<int, int> node_integration_changes_ = std::make_pair(0, 0);
+		std::vector<NodeActivation> node_activations_;
+		std::vector<NodeIntegration> node_integrations_;
+		
 
 		// not yet implemented...
 		int n_node_copies_ = 0; ///< nodes to duplicate in the model (nodes are created through replication)

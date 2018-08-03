@@ -304,6 +304,8 @@ BOOST_AUTO_TEST_CASE(replicateModels)
 		std::make_pair(0, 0),
 		std::make_pair(0, 0),
 		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
 		std::make_pair(0, 0));
   population_trainer.replicateModels(population1, model_replicator, input_nodes, output_nodes, 2);
 
@@ -314,6 +316,8 @@ BOOST_AUTO_TEST_CASE(replicateModels)
 	model_replicator.setRandomModifications(
 		std::make_pair(1, 1),
 		std::make_pair(1, 1),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
 		std::make_pair(0, 0),
 		std::make_pair(0, 0));
 	population_trainer.replicateModels(population2, model_replicator, input_nodes, output_nodes, 2);
@@ -326,7 +330,9 @@ BOOST_AUTO_TEST_CASE(replicateModels)
 		std::make_pair(0, 0),
 		std::make_pair(0, 0),
 		std::make_pair(1, 1),
-		std::make_pair(1, 1));
+		std::make_pair(1, 1),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0));
 	population_trainer.replicateModels(population3, model_replicator, input_nodes, output_nodes, 2);
 
 	// check for the expected size
@@ -560,7 +566,9 @@ BOOST_AUTO_TEST_CASE(exampleUsage)
 			std::make_pair(0, 0),
 			std::make_pair(1, 1),
 			std::make_pair(0, 0),
-			std::make_pair(1, 1));
+			std::make_pair(1, 1),
+			std::make_pair(0, 0),
+			std::make_pair(0, 0));
 
     // train the population
     std::cout<<"Training the population..."<<std::endl;

@@ -38,6 +38,10 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   model_replicator.setNLinkDeletions(4);
   model_replicator.setNWeightChanges(5);
   model_replicator.setWeightChangeStDev(6.0f);
+	model_replicator.setNNodeActivationChanges(6);
+	model_replicator.setNNodeIntegrationChanges(7);
+	model_replicator.setNodeActivations({NodeActivation::Linear});
+	model_replicator.setNodeIntegrations({NodeIntegration::Sum});
 
   BOOST_CHECK_EQUAL(model_replicator.getNNodeAdditions(), 1);
   BOOST_CHECK_EQUAL(model_replicator.getNLinkAdditions(), 2);
@@ -45,6 +49,10 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   BOOST_CHECK_EQUAL(model_replicator.getNLinkDeletions(), 4);
   BOOST_CHECK_EQUAL(model_replicator.getNWeightChanges(), 5);
   BOOST_CHECK_EQUAL(model_replicator.getWeightChangeStDev(), 6.0f);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeActivationChanges(), 6);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeIntegrationChanges(), 7);
+	BOOST_CHECK(model_replicator.getNodeActivations()[0] == NodeActivation::Linear);
+	BOOST_CHECK(model_replicator.getNodeIntegrations()[0] == NodeIntegration::Sum);
 }
 
 BOOST_AUTO_TEST_CASE(setAndMakeRandomModifications)
@@ -56,17 +64,23 @@ BOOST_AUTO_TEST_CASE(setAndMakeRandomModifications)
 		std::make_pair(1, 2),
 		std::make_pair(0, 0),
 		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
 		std::make_pair(0, 0));
 	model_replicator.makeRandomModifications();
 	BOOST_CHECK_NE(model_replicator.getNNodeAdditions(), 0);
 	BOOST_CHECK_EQUAL(model_replicator.getNLinkAdditions(), 0);
 	BOOST_CHECK_EQUAL(model_replicator.getNNodeDeletions(), 0);
 	BOOST_CHECK_EQUAL(model_replicator.getNLinkDeletions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeActivationChanges(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeIntegrationChanges(), 0);
 
 	// link additions
 	model_replicator.setRandomModifications(
 		std::make_pair(0, 0),
 		std::make_pair(1, 2),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
 		std::make_pair(0, 0),
 		std::make_pair(0, 0));
 	model_replicator.makeRandomModifications();
@@ -74,9 +88,45 @@ BOOST_AUTO_TEST_CASE(setAndMakeRandomModifications)
 	BOOST_CHECK_NE(model_replicator.getNLinkAdditions(), 0);
 	BOOST_CHECK_EQUAL(model_replicator.getNNodeDeletions(), 0);
 	BOOST_CHECK_EQUAL(model_replicator.getNLinkDeletions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeActivationChanges(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeIntegrationChanges(), 0);
 
 	// node deletions
 	model_replicator.setRandomModifications(
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(1, 2),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0));
+	model_replicator.makeRandomModifications();
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeAdditions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNLinkAdditions(), 0);
+	BOOST_CHECK_NE(model_replicator.getNNodeDeletions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNLinkDeletions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeActivationChanges(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeIntegrationChanges(), 0);
+
+	// link deletions
+	model_replicator.setRandomModifications(
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(1, 2),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0));
+	model_replicator.makeRandomModifications();
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeAdditions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNLinkAdditions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeDeletions(), 0);
+	BOOST_CHECK_NE(model_replicator.getNLinkDeletions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeActivationChanges(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeIntegrationChanges(), 0);
+
+	// node activation changes
+	model_replicator.setRandomModifications(
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
 		std::make_pair(0, 0),
 		std::make_pair(0, 0),
 		std::make_pair(1, 2),
@@ -84,11 +134,15 @@ BOOST_AUTO_TEST_CASE(setAndMakeRandomModifications)
 	model_replicator.makeRandomModifications();
 	BOOST_CHECK_EQUAL(model_replicator.getNNodeAdditions(), 0);
 	BOOST_CHECK_EQUAL(model_replicator.getNLinkAdditions(), 0);
-	BOOST_CHECK_NE(model_replicator.getNNodeDeletions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeDeletions(), 0);
 	BOOST_CHECK_EQUAL(model_replicator.getNLinkDeletions(), 0);
+	BOOST_CHECK_NE(model_replicator.getNNodeActivationChanges(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeIntegrationChanges(), 0);
 
-	// link deletions
+	// node integration changes
 	model_replicator.setRandomModifications(
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
 		std::make_pair(0, 0),
 		std::make_pair(0, 0),
 		std::make_pair(0, 0),
@@ -97,7 +151,9 @@ BOOST_AUTO_TEST_CASE(setAndMakeRandomModifications)
 	BOOST_CHECK_EQUAL(model_replicator.getNNodeAdditions(), 0);
 	BOOST_CHECK_EQUAL(model_replicator.getNLinkAdditions(), 0);
 	BOOST_CHECK_EQUAL(model_replicator.getNNodeDeletions(), 0);
-	BOOST_CHECK_NE(model_replicator.getNLinkDeletions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNLinkDeletions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeActivationChanges(), 0);
+	BOOST_CHECK_NE(model_replicator.getNNodeIntegrationChanges(), 0);
 }
 
 BOOST_AUTO_TEST_CASE(makeUniqueHash) 
@@ -504,6 +560,60 @@ BOOST_AUTO_TEST_CASE(deleteLink)
   // [TODO: additional tests needed?]
 }
 
+Model model_changeNodeActivation = makeModel1();
+BOOST_AUTO_TEST_CASE(changeNodeActivation)
+{
+	ModelReplicator model_replicator;
+	model_replicator.setNodeActivations({NodeActivation::ELU});
+	std::vector<std::string> node_names = { "0", "1", "2", "3", "4", "5", "6", "7" };
+	model_replicator.changeNodeActivation(model_changeNodeActivation);
+
+	// [TODO: add loop here with iter = 100]
+
+	int linear_cnt = 0;
+	int relu_cnt = 0;
+	int elu_cnt = 0;
+	for (const std::string& node_name : node_names)
+	{
+		const Node node = model_changeNodeActivation.getNode(node_name);
+		if (node.getActivation() == NodeActivation::Linear)
+			++linear_cnt;
+		else if (node.getActivation() == NodeActivation::ReLU)
+			++relu_cnt;
+		else if (node.getActivation() == NodeActivation::ELU)
+			++elu_cnt;
+	}
+
+	BOOST_CHECK_EQUAL(linear_cnt, 4);
+	BOOST_CHECK_EQUAL(relu_cnt, 3);
+	BOOST_CHECK_EQUAL(elu_cnt, 1);
+}
+
+Model model_changeNodeIntegration = makeModel1();
+BOOST_AUTO_TEST_CASE(changeNodeIntegration)
+{
+	ModelReplicator model_replicator;
+	model_replicator.setNodeIntegrations({ NodeIntegration::Product });
+	std::vector<std::string> node_names = { "0", "1", "2", "3", "4", "5", "6", "7" };
+	model_replicator.changeNodeIntegration(model_changeNodeIntegration);
+
+	// [TODO: add loop here with iter = 100]
+
+	int sum_cnt = 0;
+	int product_cnt = 0;
+	for (const std::string& node_name : node_names)
+	{
+		const Node node = model_changeNodeIntegration.getNode(node_name);
+		if (node.getIntegration() == NodeIntegration::Sum)
+			++sum_cnt;
+		else if (node.getIntegration() == NodeIntegration::Product)
+			++product_cnt;
+	}
+
+	BOOST_CHECK_EQUAL(sum_cnt, 7);
+	BOOST_CHECK_EQUAL(product_cnt, 1);
+}
+
 BOOST_AUTO_TEST_CASE(makeRandomModificationOrder) 
 {
   ModelReplicator model_replicator;
@@ -512,47 +622,79 @@ BOOST_AUTO_TEST_CASE(makeRandomModificationOrder)
   model_replicator.setNLinkAdditions(0);
   model_replicator.setNNodeDeletions(0);
   model_replicator.setNLinkDeletions(0);
+	model_replicator.setNNodeActivationChanges(0);
+	model_replicator.setNNodeIntegrationChanges(0);
   BOOST_CHECK_EQUAL(model_replicator.makeRandomModificationOrder()[0], "add_node");
   model_replicator.setNNodeAdditions(0);
   model_replicator.setNLinkAdditions(1);
   model_replicator.setNNodeDeletions(0);
   model_replicator.setNLinkDeletions(0);
+	model_replicator.setNNodeActivationChanges(0);
+	model_replicator.setNNodeIntegrationChanges(0);
   BOOST_CHECK_EQUAL(model_replicator.makeRandomModificationOrder()[0], "add_link");
   model_replicator.setNNodeAdditions(0);
   model_replicator.setNLinkAdditions(0);
   model_replicator.setNNodeDeletions(1);
   model_replicator.setNLinkDeletions(0);
+	model_replicator.setNNodeActivationChanges(0);
+	model_replicator.setNNodeIntegrationChanges(0);
   BOOST_CHECK_EQUAL(model_replicator.makeRandomModificationOrder()[0], "delete_node");
   model_replicator.setNNodeAdditions(0);
   model_replicator.setNLinkAdditions(0);
   model_replicator.setNNodeDeletions(0);
   model_replicator.setNLinkDeletions(1);
+	model_replicator.setNNodeActivationChanges(0);
+	model_replicator.setNNodeIntegrationChanges(0);
   BOOST_CHECK_EQUAL(model_replicator.makeRandomModificationOrder()[0], "delete_link");
+	model_replicator.setNNodeAdditions(0);
+	model_replicator.setNLinkAdditions(0);
+	model_replicator.setNNodeDeletions(0);
+	model_replicator.setNLinkDeletions(0);
+	model_replicator.setNNodeActivationChanges(1);
+	model_replicator.setNNodeIntegrationChanges(0);
+	BOOST_CHECK_EQUAL(model_replicator.makeRandomModificationOrder()[0], "change_node_activation");
+	model_replicator.setNNodeAdditions(0);
+	model_replicator.setNLinkAdditions(0);
+	model_replicator.setNNodeDeletions(0);
+	model_replicator.setNLinkDeletions(0);
+	model_replicator.setNNodeActivationChanges(0);
+	model_replicator.setNNodeIntegrationChanges(1);
+	BOOST_CHECK_EQUAL(model_replicator.makeRandomModificationOrder()[0], "change_node_integration");
 
   bool add_node_found = false;
   bool add_link_found = false;
   bool delete_node_found = false;
   bool delete_link_found = false;
+	bool change_node_activation_found = false;
+	bool change_node_integration_found = false;
   model_replicator.setNNodeAdditions(2);
   model_replicator.setNLinkAdditions(2);
   model_replicator.setNNodeDeletions(0);
   model_replicator.setNLinkDeletions(2);
+	model_replicator.setNNodeActivationChanges(2);
+	model_replicator.setNNodeIntegrationChanges(2);
   for (const std::string& modification: model_replicator.makeRandomModificationOrder())
   {
     if (modification == "add_node") add_node_found = true;
     else if (modification == "add_link") add_link_found = true;
     else if (modification == "delete_node") delete_node_found = true;
     else if (modification == "delete_link") delete_link_found = true;
+		else if (modification == "change_node_activation") change_node_activation_found = true;
+		else if (modification == "change_node_integration") change_node_integration_found = true;
   }
   BOOST_CHECK(add_node_found);
   BOOST_CHECK(add_link_found);
   BOOST_CHECK(!delete_node_found);
   BOOST_CHECK(delete_link_found);
+	BOOST_CHECK(change_node_activation_found);
+	BOOST_CHECK(change_node_integration_found);
 }
 
 Model model_modifyModel1 = makeModel1();
 Model model_modifyModel2 = makeModel1();
 Model model_modifyModel3 = makeModel1();
+Model model_modifyModel4 = makeModel1();
+Model model_modifyModel5 = makeModel1();
 BOOST_AUTO_TEST_CASE(modifyModel) 
 {
   ModelReplicator model_replicator;
@@ -560,6 +702,15 @@ BOOST_AUTO_TEST_CASE(modifyModel)
   // No change with defaults
   model_replicator.modifyModel(model_modifyModel1);
   BOOST_CHECK_EQUAL(model_modifyModel1.getNodes().size(), 8);
+	int node_activation_changes = 0;
+	int node_integration_changes = 0;
+	for (const Node& node : model_modifyModel1.getNodes())
+	{
+		if (node.getActivation() == NodeActivation::ELU) ++node_activation_changes;
+		if (node.getIntegration() == NodeIntegration::Product) ++node_integration_changes;
+	}
+	BOOST_CHECK_EQUAL(node_activation_changes, 0);
+	BOOST_CHECK_EQUAL(node_integration_changes, 0);
   BOOST_CHECK_EQUAL(model_modifyModel1.getLinks().size(), 12);
   BOOST_CHECK_EQUAL(model_modifyModel1.getWeights().size(), 12);
 
@@ -586,6 +737,50 @@ BOOST_AUTO_TEST_CASE(modifyModel)
   BOOST_CHECK_EQUAL(model_modifyModel3.getNodes().size(), 8);
   BOOST_CHECK_EQUAL(model_modifyModel3.getLinks().size(), 11);
   BOOST_CHECK_EQUAL(model_modifyModel3.getWeights().size(), 11);
+
+	model_replicator.setNNodeAdditions(0);
+	model_replicator.setNLinkAdditions(0);
+	model_replicator.setNNodeDeletions(0);
+	model_replicator.setNLinkDeletions(0);
+	model_replicator.setNNodeActivationChanges(1);
+	model_replicator.setNodeActivations({NodeActivation::ELU});
+	model_replicator.setNNodeIntegrationChanges(0);
+	model_replicator.setNodeIntegrations({NodeIntegration::Product});
+	model_replicator.modifyModel(model_modifyModel4);
+	BOOST_CHECK_EQUAL(model_modifyModel4.getNodes().size(), 8);
+	node_activation_changes = 0;
+	node_integration_changes = 0;
+	for (const Node& node : model_modifyModel4.getNodes())
+	{
+		if (node.getActivation() == NodeActivation::ELU) ++node_activation_changes;
+		if (node.getIntegration() == NodeIntegration::Product) ++node_integration_changes;
+	}
+	BOOST_CHECK_EQUAL(node_activation_changes, 1);
+	BOOST_CHECK_EQUAL(node_integration_changes, 0);
+	BOOST_CHECK_EQUAL(model_modifyModel4.getLinks().size(), 12);
+	BOOST_CHECK_EQUAL(model_modifyModel4.getWeights().size(), 12);
+
+	model_replicator.setNNodeAdditions(0);
+	model_replicator.setNLinkAdditions(0);
+	model_replicator.setNNodeDeletions(0);
+	model_replicator.setNLinkDeletions(0);
+	model_replicator.setNNodeActivationChanges(0);
+	model_replicator.setNodeActivations({ NodeActivation::ELU });
+	model_replicator.setNNodeIntegrationChanges(1);
+	model_replicator.setNodeIntegrations({ NodeIntegration::Product });
+	model_replicator.modifyModel(model_modifyModel5);
+	BOOST_CHECK_EQUAL(model_modifyModel5.getNodes().size(), 8);
+	node_activation_changes = 0;
+	node_integration_changes = 0;
+	for (const Node& node : model_modifyModel5.getNodes())
+	{
+		if (node.getActivation() == NodeActivation::ELU) ++node_activation_changes;
+		if (node.getIntegration() == NodeIntegration::Product) ++node_integration_changes;
+	}
+	BOOST_CHECK_EQUAL(node_activation_changes, 0);
+	BOOST_CHECK_EQUAL(node_integration_changes, 1);
+	BOOST_CHECK_EQUAL(model_modifyModel5.getLinks().size(), 12);
+	BOOST_CHECK_EQUAL(model_modifyModel5.getWeights().size(), 12);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

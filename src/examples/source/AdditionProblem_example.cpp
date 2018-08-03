@@ -665,6 +665,8 @@ int main(int argc, char** argv)
 		std::make_pair(0, 1),
 		std::make_pair(0, 1),
 		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
 		std::make_pair(0, 0));
 
 	// Population initial conditions
@@ -733,7 +735,9 @@ int main(int argc, char** argv)
 				std::make_pair(0, 1),
 				std::make_pair(0, 2),
 				std::make_pair(0, 1),
-				std::make_pair(0, 2));
+				std::make_pair(0, 2),
+				std::make_pair(0, 0),
+				std::make_pair(0, 0));
 		}
 
 		// train the population
