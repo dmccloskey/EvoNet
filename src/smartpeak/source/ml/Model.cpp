@@ -876,11 +876,11 @@ namespace SmartPeak
 		weight_tensor.setConstant(arguments->weight->getWeight());
 		if (arguments->time_step == 0 || time_step + arguments->time_step < memory_size)
 		{
-			sink_tensor = weight_tensor * arguments->source_node->getOutput().chip(time_step + arguments->time_step, 1);
+		  sink_tensor = weight_tensor * arguments->source_node->getOutput().chip(time_step + arguments->time_step, 1);
 		}
 		else
 		{
-			//std::cout<<"time_step exceeded memory size in forwardPropogateLayerNetInput."<<std::endl;
+		  //std::cout<<"time_step exceeded memory size in forwardPropogateLayerNetInput."<<std::endl;
 		}
     return sink_tensor;
   }
@@ -927,13 +927,13 @@ namespace SmartPeak
           {
             try
             {
-							// [TESTS: add tests for Sum, Product, or Max NodeIntegration]
-							if (operations->result.sink_node->getIntegration() == NodeIntegration::Sum)
-								sink_tensor += task_result.get(); 
-							else if (operations->result.sink_node->getIntegration() == NodeIntegration::Product)
-								sink_tensor *= task_result.get();
-							else if (operations->result.sink_node->getIntegration() == NodeIntegration::Max)
-								sink_tensor = sink_tensor.cwiseMax(task_result.get());
+			  // [TESTS: add tests for Sum, Product, or Max NodeIntegration]
+			  if (operations->result.sink_node->getIntegration() == NodeIntegration::Sum)
+				  sink_tensor += task_result.get(); 
+			  else if (operations->result.sink_node->getIntegration() == NodeIntegration::Product)
+				  sink_tensor *= task_result.get();
+			  else if (operations->result.sink_node->getIntegration() == NodeIntegration::Max)
+				  sink_tensor = sink_tensor.cwiseMax(task_result.get());
             }            
             catch (std::exception& e)
             {
@@ -1591,125 +1591,37 @@ namespace SmartPeak
 			}
 		}
 	}
-  
-  //void Model::calculateError(
-  //  const Eigen::Tensor<float, 2>& values, const std::vector<std::string>& node_names,
-		//const int& time_step)
-  //{
-  //  //TODO: encapsulate into a seperate method
-  //  // infer the batch size from the first source node
-  //  const int batch_size = nodes_.at(node_names[0])->getOutput().dimension(0);
+ 
 
-  //  //TODO: encapsulate into a seperate method
-  //  // check dimension mismatches
-  //  if (node_names.size() != values.dimension(1))
-  //  {
-  //    std::cout << "The number of output features and the number of nodes do not match." << std::endl;
-  //    return;
-  //  }
-  //  // assumes the node exists
-  //  else if (batch_size != values.dimension(0))
-  //  {
-  //    std::cout << "The number of output samples and the node batch size does not match." << std::endl;
-  //    return;
-  //  }
-
-  //  // make the tensor for the calculated model output
-  //  // [TODO: use slice or transition to chip for thread support]
-  //  Eigen::Tensor<float, 2> node_tensor(batch_size, node_names.size());
-  //  for (int i=0; i<node_names.size(); ++i)
-  //  {
-  //    for (int j=0; j<batch_size; ++j)
-  //    {
-  //      node_tensor(j, i) = nodes_.at(node_names[i])->getOutput()(j, time_step); // current time-step
-  //    }
-  //  }
-
-		//// [BUG: are we missing multiplications by the node output derivatives here?]
-  //  // calculate the model error wrt the expected model output
-  //  Eigen::Tensor<float, 2> error_tensor(batch_size, node_names.size());
-  //  switch (loss_function_)
-  //  {
-  //    case ModelLossFunction::EuclideanDistance:
-  //    {
-  //      EuclideanDistanceOp<float> operation;
-  //      error_.chip(time_step, 1) = operation(node_tensor, values);
-  //      EuclideanDistanceGradOp<float> gradient;
-  //      error_tensor = gradient(node_tensor, values); // 
-  //      break;
-  //    } 
-  //    case ModelLossFunction::L2Norm:
-  //    {
-  //      L2NormOp<float> operation;
-		//		error_.chip(time_step, 1) = operation(node_tensor, values);
-  //      L2NormGradOp<float> gradient;
-  //      error_tensor = gradient(node_tensor, values);
-  //      break;
-  //    }
-  //    case ModelLossFunction::CrossEntropy:
-  //    {
-  //      CrossEntropyOp<float> operation;
-		//		error_.chip(time_step, 1) = operation(node_tensor, values);
-  //      CrossEntropyGradOp<float> gradient;
-  //      error_tensor = gradient(node_tensor, values);
-  //      break;
-  //    }
-  //    case ModelLossFunction::NegativeLogLikelihood:
-  //    {
-  //      NegativeLogLikelihoodOp<float> operation;
-		//		error_.chip(time_step, 1) = operation(node_tensor, values);
-  //      NegativeLogLikelihoodGradOp<float> gradient;
-  //      error_tensor = gradient(node_tensor, values);
-  //      break;
-  //    }
-  //    case ModelLossFunction::MSE:
-  //    {
-  //      MSEOp<float> operation;
-		//		error_.chip(time_step, 1) = operation(node_tensor, values);
-  //      MSEGradOp<float> gradient;
-  //      error_tensor = gradient(node_tensor, values);
-  //      break;
-  //    }
-  //    default:
-  //    {
-  //      std::cout << "Loss Function not supported." << std::endl;
-  //      break;
-  //    }
-  //  }
-
-  //  // update the output node errors
-  //  mapValuesToNodes(error_tensor, time_step, node_names, NodeStatus::corrected, "error");
-  //}
-
-	void Model::CETT(const Eigen::Tensor<float, 3>& values, const std::vector<std::string>& node_names, const int & time_steps,
-		bool cache_output_nodes, bool use_cache, int n_threads)
+  void Model::CETT(const Eigen::Tensor<float, 3>& values, const std::vector<std::string>& node_names, const int & time_steps,
+	bool cache_output_nodes, bool use_cache, int n_threads)
+  {
+	// check time_steps vs memory_size
+	int max_steps = time_steps;
+	if (time_steps > nodes_.begin()->second->getOutput().dimension(1))
 	{
-		// check time_steps vs memory_size
-		int max_steps = time_steps;
-		if (time_steps > nodes_.begin()->second->getOutput().dimension(1))
-		{
-			std::cout << "Time_steps will be scaled back to the memory_size." << std::endl;
-			max_steps = nodes_.begin()->second->getOutput().dimension(1);
-		}
-
-		// NOTE: the output are stored [Tmax, Tmax - 1, ..., T=0]
-		//	     while the expected output (values) are stored [T=0, T=1, ..., Tmax]
-		for (int i=0; i<max_steps; ++i)
-		{
-			int next_time_step = values.dimension(1) - 1 - i;
-			// [TESTS: Test for the expected output error at each time step]
-			//std::cout<<"Expected output for time point "<< i << " is " << values.chip(next_time_step, 1)<<std::endl;
-
-      // calculate the error for each batch of memory
-			if (cache_output_nodes && i == 0)
-				calculateError(values.chip(next_time_step, 1), node_names, i, true, false, n_threads);
-			else if (cache_output_nodes && i > 0)
-				calculateError(values.chip(next_time_step, 1), node_names, i, false, true, n_threads);
-			else
-				calculateError(values.chip(next_time_step, 1), node_names, i, cache_output_nodes, use_cache, n_threads);
-			//calculateError(values.chip(i, 1), node_names, i);
-		}
+	  std::cout << "Time_steps will be scaled back to the memory_size." << std::endl;
+	  max_steps = nodes_.begin()->second->getOutput().dimension(1);
 	}
+
+	// NOTE: the output are stored [Tmax, Tmax - 1, ..., T=0]
+	//	     while the expected output (values) are stored [T=0, T=1, ..., Tmax]
+	for (int i=0; i<max_steps; ++i)
+	{
+	  int next_time_step = values.dimension(1) - 1 - i;
+	  // [TESTS: Test for the expected output error at each time step]
+	  //std::cout<<"Expected output for time point "<< i << " is " << values.chip(next_time_step, 1)<<std::endl;
+
+	  // calculate the error for each batch of memory
+	  if (cache_output_nodes && i == 0)
+		calculateError(values.chip(next_time_step, 1), node_names, i, true, false, n_threads);
+	  else if (cache_output_nodes && i > 0)
+		calculateError(values.chip(next_time_step, 1), node_names, i, false, true, n_threads);
+	  else
+		calculateError(values.chip(next_time_step, 1), node_names, i, cache_output_nodes, use_cache, n_threads);
+	  //calculateError(values.chip(i, 1), node_names, i);
+	}
+  }
   
   void Model::getNextUncorrectedLayer(
     std::map<std::string, int>& BP_operations_map,
@@ -1971,7 +1883,8 @@ namespace SmartPeak
 							if (operations->arguments[i].source_node->getIntegration() == NodeIntegration::Sum)
 								sink_tensor += task_result.get();
 							else if (operations->arguments[i].source_node->getIntegration() == NodeIntegration::Product)
-								sink_tensor += task_result.get() / operations->result.sink_node->getOutput().chip(time_step, 1); // apply the missing division by the source node output (DIV BY 0!)
+								sink_tensor += (task_result.get() / operations->result.sink_node->getOutput().chip(time_step, 1)
+									).unaryExpr(std::ptr_fun(checkNanInf<float>)); // apply the missing division by the source node output
 							else if (operations->arguments[i].source_node->getIntegration() == NodeIntegration::Max)
 								sink_tensor += task_result.get(); // [TODO: update with correct formula]
             }
@@ -2521,15 +2434,11 @@ namespace SmartPeak
       max_steps = nodes_.begin()->second->getOutput().dimension(1);
     }
 
-    std::map<std::string, std::vector<float>> weight_derivatives;  
-    // initalize the map
-    for (const auto& weight_map: weights_)  
-    {
-      const std::vector<float> derivatives;
-      weight_derivatives.emplace(weight_map.first, derivatives);
-    }
+    std::map<std::string, float> weight_derivatives;
 
-    // collect the derivative for all weights
+    // calculate the average derivative for all weights
+		// sum the average derivative for all time steps
+		// and sum the average derivate for all time steps across shared weights
     for (const auto& link_map : links_)
     {
       if (nodes_.at(link_map.second->getSinkNodeName())->getStatus() == NodeStatus::corrected)      
@@ -2540,43 +2449,36 @@ namespace SmartPeak
         for (int i=0; i<max_steps; ++i)
         {
           // [PARALLEL: move to threadPool/CUDA implementations]
-					// [BUG:  is there a bug here? shouldn't it be .chip(i,1)? YES!]
 					// [Tests: update tests accordingly]
-          Eigen::Tensor<float, 1> error_tensor = nodes_.at(link_map.second->getSinkNodeName())->getError().chip(i, 1);
+					Eigen::Tensor<float, 1> error_tensor = nodes_.at(link_map.second->getSinkNodeName())->getError().chip(i, 1);
 
-					// [TODO: correct for Sum NodeIntegration, but will need to update/generalize for Product NodeIntegration]
 					Eigen::Tensor<float, 1> output_tensor;
 					if (nodes_.at(link_map.second->getSinkNodeName())->getIntegration() == NodeIntegration::Sum)
 						output_tensor = nodes_.at(link_map.second->getSourceNodeName())->getOutput().chip(i, 1);
 					else if (nodes_.at(link_map.second->getSinkNodeName())->getIntegration() == NodeIntegration::Product)
-					{
-						output_tensor = nodes_.at(link_map.second->getSourceNodeName())->getInput().chip(i, 1)/weights_.at(link_map.second->getWeightName())->getWeight(); // (DIV BY 0!)
-					}
+						output_tensor = (nodes_.at(link_map.second->getSourceNodeName())->getInput().chip(i, 1)/
+							weights_.at(link_map.second->getWeightName())->getWeight()
+							).unaryExpr(std::ptr_fun(checkNanInf<float>));
 					else if (nodes_.at(link_map.second->getSinkNodeName())->getIntegration() == NodeIntegration::Max)
-						output_tensor = nodes_.at(link_map.second->getSourceNodeName())->getOutput().chip(i, 1); // [TODO: update with correct formual]
+						output_tensor = nodes_.at(link_map.second->getSourceNodeName())->getOutput().chip(i, 1); // [TODO: update with correct formula]
 					else
 						std::cout<<"NodeIntegration type is not supported."<<std::endl; // should throw an error!
 
           Eigen::Tensor<float, 0> derivative_mean_tensor = (- error_tensor * output_tensor).mean(); // average derivative
-          // std::cout<<"derivative_mean_tensor "<<derivative_mean_tensor(0)<<std::endl;
           error_sum += derivative_mean_tensor(0);
         } 
         // [PARALELL: collect threads here sum the error]
-        weight_derivatives.at(link_map.second->getWeightName()).push_back(error_sum); 
+				auto found = weight_derivatives.emplace(link_map.second->getWeightName(), error_sum);
+				if (!found.second)
+				{
+					weight_derivatives.at(link_map.second->getWeightName()) += error_sum;
+				}         
       }    
     }
 
-    // calculate the average of all error averages 
-    // and update the weights
+    // update the weights
     for (const auto& weight_derivative : weight_derivatives)
-    {
-      float derivative_sum = 0.0;
-      for (const float& derivative : weight_derivative.second)
-      {
-        derivative_sum += derivative / weight_derivative.second.size();
-      }
-      weights_.at(weight_derivative.first)->updateWeight(derivative_sum);
-    }
+      weights_.at(weight_derivative.first)->updateWeight(weight_derivative.second);
   }
 
   void Model::reInitializeNodeStatuses()

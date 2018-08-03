@@ -142,4 +142,23 @@ BOOST_AUTO_TEST_CASE(SFcalculateDerivative)
   BOOST_CHECK_CLOSE(result(4), 0.0, 1e-6);
 }
 
+BOOST_AUTO_TEST_CASE(SFcheckNanInf)
+{
+	Eigen::Tensor<float, 1> values(2);
+	values.setConstant(5.0f);
+	Eigen::Tensor<float, 1> test(2);
+
+	// control
+	test = values.unaryExpr(std::ptr_fun(checkNanInf<float>));
+	BOOST_CHECK_CLOSE(test(0), 5.0, 1e-3);
+	BOOST_CHECK_CLOSE(test(1), 5.0, 1e-3);
+
+	// test
+	values(0) = NAN; //NaN
+	values(1) = INFINITY; //infinity
+	test = values.unaryExpr(std::ptr_fun(checkNanInf<float>));
+	BOOST_CHECK_CLOSE(test(0), 0.0, 1e-3);
+	BOOST_CHECK_CLOSE(test(1), 0.0, 1e-3);
+}
+
 BOOST_AUTO_TEST_SUITE_END()

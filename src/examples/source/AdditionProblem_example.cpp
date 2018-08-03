@@ -314,10 +314,10 @@ public:
 		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100.0f);
 		Weight_i_mask_to_forget_gate_sigma = Weight("Weight_i_mask_to_forget_gate_sigma", weight_init, solver);
 		weight_init.reset(new RandWeightInitOp(2.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100.0f);
-		weight_init.reset(new ConstWeightInitOp(0.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100.0f);
+		weight_init.reset(new ConstWeightInitOp(0.1));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100.0f);
 		Weight_output_gate_prod_to_forget_gate_sigma = Weight("Weight_output_gate_prod_to_forget_gate_sigma", weight_init, solver);
 		weight_init.reset(new RandWeightInitOp(2.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100.0f);
-		weight_init.reset(new ConstWeightInitOp(0.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100.0f);
+		weight_init.reset(new ConstWeightInitOp(0.1));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100.0f);
 		Weight_memory_cell_to_forget_gate_sigma = Weight("Weight_memory_cell_to_forget_gate_sigma", weight_init, solver);
 		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100.0f);
 		Weight_forget_gate_sigma_bias_to_forget_gate_sigma = Weight("Weight_forget_gate_sigma_bias_to_forget_gate_sigma", weight_init, solver);
@@ -328,7 +328,7 @@ public:
 		Weight_forget_gate_sigma_to_forget_gate_prod = Weight("Weight_forget_gate_sigma_to_forget_gate_prod", weight_init, solver);
 
 		weight_init.reset(new RandWeightInitOp(2.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100.0f);
-		weight_init.reset(new ConstWeightInitOp(0.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100.0f);
+		weight_init.reset(new ConstWeightInitOp(0.1));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100.0f);
 		Weight_memory_cell_to_update_gate_sigma = Weight("Weight_memory_cell_to_update_gate_sigma", weight_init, solver);
 		weight_init.reset(new RandWeightInitOp(2.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100.0f);
 		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100.0f);
@@ -337,7 +337,7 @@ public:
 		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100.0f);
 		Weight_i_mask_to_update_gate_sigma = Weight("Weight_i_mask_to_update_gate_sigma", weight_init, solver);
 		weight_init.reset(new RandWeightInitOp(2.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100.0f);
-		weight_init.reset(new ConstWeightInitOp(0.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100.0f);
+		weight_init.reset(new ConstWeightInitOp(0.1));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100.0f);
 		Weight_output_gate_prod_to_update_gate_sigma = Weight("Weight_output_gate_prod_to_update_gate_sigma", weight_init, solver);
 		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100.0f);
 		Weight_update_gate_sigma_bias_to_update_gate_sigma = Weight("Weight_update_gate_sigma_bias_to_update_gate_sigma", weight_init, solver);
@@ -349,7 +349,7 @@ public:
 		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100.0f);
 		Weight_i_mask_to_update_gate_tanh = Weight("Weight_i_mask_to_update_gate_tanh", weight_init, solver);
 		weight_init.reset(new RandWeightInitOp(2.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100.0f);
-		weight_init.reset(new ConstWeightInitOp(0.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100.0f);
+		weight_init.reset(new ConstWeightInitOp(0.1));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100.0f);
 		Weight_output_gate_prod_to_update_gate_tanh = Weight("Weight_output_gate_prod_to_update_gate_tanh", weight_init, solver);
 		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100.0f);
 		Weight_update_gate_tanh_bias_to_update_gate_tanh = Weight("Weight_update_gate_tanh_bias_to_update_gate_tanh", weight_init, solver);
@@ -373,16 +373,16 @@ public:
 		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100.0f);
 		Weight_i_mask_to_output_gate_sigma = Weight("Weight_i_mask_to_output_gate_sigma", weight_init, solver);
 		weight_init.reset(new RandWeightInitOp(2.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100.0f);
-		weight_init.reset(new ConstWeightInitOp(0.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100.0f);
+		weight_init.reset(new ConstWeightInitOp(0.1));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100.0f);
 		Weight_memory_cell_to_output_gate_sigma = Weight("Weight_memory_cell_to_output_gate_sigma", weight_init, solver);
 		weight_init.reset(new RandWeightInitOp(2.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100.0f);
-		weight_init.reset(new ConstWeightInitOp(0.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100.0f);
+		weight_init.reset(new ConstWeightInitOp(0.1));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100.0f);
 		Weight_output_gate_prod_to_output_gate_sigma = Weight("Weight_output_gate_prod_to_output_gate_sigma", weight_init, solver);
 		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100.0f);
 		Weight_output_gate_sigma_bias_to_output_gate_sigma = Weight("Weight_output_gate_sigma_bias_to_output_gate_sigma", weight_init, solver);
 
 		weight_init.reset(new RandWeightInitOp(2.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100.0f);
-		weight_init.reset(new ConstWeightInitOp(0.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100.0f);
+		weight_init.reset(new ConstWeightInitOp(0.1));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100.0f);
 		Weight_memory_cell_to_output_gate_tanh = Weight("Weight_memory_cell_to_output_gate_tanh", weight_init, solver);
 
 		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new DummySolverOp());	solver->setGradientThreshold(100.0f);
@@ -508,14 +508,14 @@ public:
 				model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), false, true, n_threads);
 
 			// calculate the model error and node output 
-			//if (iter == 0)
-			//	model.CETT(output.chip(iter, 3), output_nodes, getMemorySize(), true, true, n_threads);
-			//else
-			//	model.CETT(output.chip(iter, 3), output_nodes, getMemorySize(), false, true, n_threads);
 			if (iter == 0)
-				model.CETT(output.chip(iter, 3), output_nodes, 1, true, true, n_threads);
+				model.CETT(output.chip(iter, 3), output_nodes, getMemorySize(), true, true, n_threads);
 			else
-				model.CETT(output.chip(iter, 3), output_nodes, 1, false, true, n_threads);
+				model.CETT(output.chip(iter, 3), output_nodes, getMemorySize(), false, true, n_threads);
+			//if (iter == 0)
+			//	model.CETT(output.chip(iter, 3), output_nodes, 1, true, true, n_threads);
+			//else
+			//	model.CETT(output.chip(iter, 3), output_nodes, 1, false, true, n_threads);
 
 			std::cout<<"Model "<<model.getName()<<" error: "<<model.getError().sum()<<std::endl;
 
@@ -525,18 +525,15 @@ public:
 			else
 				model.TBPTT(getMemorySize() - 1, false, true, n_threads);
 
-			for (const Node& node : model.getNodes())
-			{
-	/*			if (node.getName() == "output_gate_prod")
-				{*/
-				std::cout << node.getName() << " Input: " << node.getInput() << std::endl;
-				std::cout << node.getName() << " Output: " << node.getOutput() << std::endl;
-				std::cout << node.getName() << " Error: " << node.getError() << std::endl;
-				std::cout << node.getName() << " Derivative: " << node.getDerivative() << std::endl;
-				//}
-			}
-			for (const Weight& weight : model.getWeights())
-				std::cout << weight.getName() << " Weight: " << weight.getWeight() << std::endl;
+			//for (const Node& node : model.getNodes())
+			//{
+			//	std::cout << node.getName() << " Input: " << node.getInput() << std::endl;
+			//	std::cout << node.getName() << " Output: " << node.getOutput() << std::endl;
+			//	std::cout << node.getName() << " Error: " << node.getError() << std::endl;
+			//	std::cout << node.getName() << " Derivative: " << node.getDerivative() << std::endl;
+			//}
+			//for (const Weight& weight : model.getWeights())
+			//	std::cout << weight.getName() << " Weight: " << weight.getWeight() << std::endl;
 
 			// update the weights
 			model.updateWeights(getMemorySize());
@@ -596,14 +593,14 @@ public:
 				model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), false, true, n_threads);
 
 			// calculate the model error and node output error
-			//if (iter == 0)
-			//	model.CETT(output.chip(iter, 3), output_nodes, getMemorySize(), true, true, n_threads);
-			//else
-			//	model.CETT(output.chip(iter, 3), output_nodes, getMemorySize(), false, true, n_threads);
 			if (iter == 0)
-				model.CETT(output.chip(iter, 3), output_nodes, 1, true, true, n_threads);
+				model.CETT(output.chip(iter, 3), output_nodes, getMemorySize(), true, true, n_threads);
 			else
-				model.CETT(output.chip(iter, 3), output_nodes, 1, false, true, n_threads);
+				model.CETT(output.chip(iter, 3), output_nodes, getMemorySize(), false, true, n_threads);
+			//if (iter == 0)
+			//	model.CETT(output.chip(iter, 3), output_nodes, 1, true, true, n_threads);
+			//else
+			//	model.CETT(output.chip(iter, 3), output_nodes, 1, false, true, n_threads);
 
 			const Eigen::Tensor<float, 0> total_error = model.getError().sum();
 			model_error.push_back(total_error(0));
@@ -625,8 +622,8 @@ int main(int argc, char** argv)
 	PopulationTrainer population_trainer;
 
 	// Add problem parameters
-	const int sequence_length = 10; // test sequence length
-	const int n_masks = 2;
+	const int sequence_length = 25; // test sequence length
+	const int n_masks = 5;
 	const int n_epochs = 500;
 	const int n_epochs_validation = 25;
 

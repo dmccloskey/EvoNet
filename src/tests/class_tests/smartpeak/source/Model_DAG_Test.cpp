@@ -1134,6 +1134,8 @@ BOOST_AUTO_TEST_CASE(backPropogate_Sum)
     {
       for (int k=0; k<memory_size; ++k)
       {
+				std::cout << "Node: " << i << "; Batch: " << j << "; Memory: " << k << std::endl;
+				std::cout << "Calc Error: " << model2.getNode(hidden_nodes[i]).getError()(j, k) << ", Expected Error: " << error(j, i) << std::endl;
         BOOST_CHECK_CLOSE(model1.getNode(hidden_nodes[i]).getError()(j, k), error(j, i), 1e-3);
       }       
     }
@@ -1193,8 +1195,8 @@ BOOST_AUTO_TEST_CASE(backPropogate_Product)
 		{
 			for (int k = 0; k<memory_size; ++k)
 			{
-				//std::cout << "Node: " << i << "; Batch: " << j << "; Memory: " << k << std::endl;
-				//std::cout << "Calc Error: " << model2.getNode(hidden_nodes[i]).getError()(j, k) << ", Expected Error: " << error(j, i) << std::endl;
+				std::cout << "Node: " << i << "; Batch: " << j << "; Memory: " << k << std::endl;
+				std::cout << "Calc Error: " << model2.getNode(hidden_nodes[i]).getError()(j, k) << ", Expected Error: " << error(j, i) << std::endl;
 				BOOST_CHECK_CLOSE(model2.getNode(hidden_nodes[i]).getError()(j, k), error(j, i), 1e-3);
 			}
 		}
@@ -1249,7 +1251,7 @@ BOOST_AUTO_TEST_CASE(updateWeights_Sum)
     0.449999988f, 0.475000023f, 0.449999988f, 0.475000023f, 0.94749999f, 0.949999988f});
   for (int i=0; i<weight_ids.size(); ++i)
   {
-    // std::cout<<model1.getWeight(weight_ids[i]).getWeight()<<std::endl;
+     std::cout<<"Weight: "<<i<<"; Calculated: "<<model1.getWeight(weight_ids[i]).getWeight()<<", Expected: "<<weights(i)<<std::endl;
     BOOST_CHECK_CLOSE(model1.getWeight(weight_ids[i]).getWeight(), weights(i), 1e-3);
   }
 }
@@ -1302,7 +1304,7 @@ BOOST_AUTO_TEST_CASE(updateWeights_Product)
 		-26.4262f, -26.3825f, -26.4262f, -26.3825f, 1.0f, 1.0f });
 	for (int i = 0; i<weight_ids.size(); ++i)
 	{
-		//std::cout<<model2.getWeight(weight_ids[i]).getWeight()<<std::endl;
+		std::cout << "Weight: " << i << "; Calculated: " << model2.getWeight(weight_ids[i]).getWeight() << ", Expected: " << weights(i) << std::endl;
 		BOOST_CHECK_CLOSE(model2.getWeight(weight_ids[i]).getWeight(), weights(i), 1e-3);
 	}
 }

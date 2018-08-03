@@ -149,7 +149,7 @@ public:
 public: 
     TanHOp(){}; 
     ~TanHOp(){};
-    T operator()(const T& x_I) const { return (std::exp(x_I) - std::exp(-x_I)) / (std::exp(x_I) + std::exp(-x_I)); };
+    T operator()(const T& x_I) const { return std::tanh(x_I); };
     std::string getName() const{return "ReLUGradOp";};
   };
 

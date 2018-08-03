@@ -20,7 +20,7 @@ namespace SmartPeak
 
   [THREADPOOL/CUDA: move to seperate file for cpu/cuda compilation]
   */
-  static Eigen::Tensor<float, 1> calculateActivation(
+  Eigen::Tensor<float, 1> calculateActivation(
     const NodeType& node_type, const NodeActivation& node_activation,
     const Eigen::Tensor<float, 1>& net_input, const Eigen::Tensor<float, 1>& dt,
     int n_threads = 1);
@@ -33,13 +33,13 @@ namespace SmartPeak
 
   [THREADPOOL/CUDA: move to seperate file for cpu/cuda compilation]
   */
-  static Eigen::Tensor<float, 1> calculateDerivative(
+  Eigen::Tensor<float, 1> calculateDerivative(
     const NodeType& node_type, const NodeActivation& node_activation,
     const Eigen::Tensor<float, 1>& output,
     int n_threads = 1);
 
 	/**
-	@brief Calculate element-wise division safetly
+	@brief Replaces NaN and Inf with 0
 
 	@param[in] time_step Time step to calculate the derivative
 	for all samples in the batch
@@ -47,9 +47,14 @@ namespace SmartPeak
 	[THREADPOOL/CUDA: move to seperate file for cpu/cuda compilation]
 	*/
 
-	static Eigen::Tensor<float, 1> safeDivision(
-		const Eigen::Tensor<float, 1>& left,
-		const Eigen::Tensor<float, 1>& right,
-		int n_threads = 1);
+	template<typename T>
+	T checkNanInf(
+		const T& x)
+	{
+		if (std::isinf(x) || std::isnan(x))
+			return T(0);
+		else
+			return x;
+	}
 }
 #endif //SMARTPEAK_SHAREDFUNCTIONS_H

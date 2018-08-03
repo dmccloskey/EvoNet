@@ -214,12 +214,22 @@ namespace SmartPeak
     init_values.setConstant(1.0f);
     setDt(init_values);
     
+		// corections for specific node types
     if (type_ == NodeType::bias)
     {
       init_values.setConstant(1.0f);
       setStatus(NodeStatus::activated);
       setOutput(init_values);
-    }
+			//setDerivative(init_values);
+		}
+		else if (type_ == NodeType::input)
+		{
+			//init_values.setConstant(1.0f);
+			//setDerivative(init_values);
+			init_values.setConstant(0.0f);
+			setStatus(NodeStatus::initialized);
+			setOutput(init_values);
+		}
     else
     {
       init_values.setConstant(0.0f);
