@@ -517,7 +517,7 @@ public:
 			//else
 			//	model.CETT(output.chip(iter, 3), output_nodes, 1, false, true, n_threads);
 
-			std::cout<<"Model "<<model.getName()<<" error: "<<model.getError().sum()<<std::endl;
+			//std::cout<<"Model "<<model.getName()<<" error: "<<model.getError().sum()<<std::endl;
 
 			// back propogate
 			if (iter == 0)
@@ -680,7 +680,7 @@ int main(int argc, char** argv)
 
 	// Evolve the population
 	std::vector<Model> population;
-	const int iterations = 8;
+	const int iterations = 50;
 	for (int iter = 0; iter<iterations; ++iter)
 	{
 		printf("Iteration #: %d\n", iter);
