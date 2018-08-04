@@ -7,6 +7,8 @@
 #include <SmartPeak/io/PopulationTrainerFile.h>
 #include <SmartPeak/io/csv.h>
 
+#include <SmartPeak/core/StringParsing.h>
+
 #include <random>
 #include <fstream>
 #include <thread>
@@ -133,51 +135,6 @@ static MetabolomicsData MakeDefaultMetabolomicsData()
 	MetabolomicsData metabolomicsData;
 	return metabolomicsData;
 };
-
-/*
-@brief Remove tokens from a string
-
-Tests:
-std::string test = RemoveTokens("{postgres list}");
-BOOST_TEST_EQUAL(test, "postgres list");
-
-@param[in] string
-@param[in] tokens Vector of strings
-
-@returns string without tokens
-**/
-static std::string RemoveTokens(const std::string& str, const std::vector<std::string>& tokens)
-{
-	std::string str_copy = str;
-	for (const std::string& token : tokens)
-		str_copy = std::regex_replace(str_copy, std::regex(token), "");
-	return str_copy;
-}
-
-/*
-@brief Split string into a vector of substrings
-
-Tests:
-std::vector<std::string> test = SplitString("a,b,c,d,e");
-std::vector<std::string> check = {"a","b","c","d","e"};
-BOOST_TEST_EQUAL(test, check);
-
-@param[in] string
-@param[in] delimeter Token to use to split
-
-@returns a vector of strings
-**/
-static std::vector<std::string> SplitString(const std::string& str, std::string delimeter = ",")
-{
-	std::vector<std::string> tokens;
-	size_t pos = 0;
-	while ((pos = str.find(delimeter)) != std::string::npos) {
-		std::string token = str.substr(0, pos);
-		tokens.push_back(token);
-		str.erase(0, pos + delimiter.length());
-	}
-	return tokens;
-}
 
 /*
 @brief Read in the biochemical reactsion from .csv file
