@@ -75,6 +75,7 @@ BOOST_AUTO_TEST_CASE(clipGradient)
   BOOST_CHECK_CLOSE(operation.clipGradient(1.0), 1.0, 1e-3);
   BOOST_CHECK_CLOSE(operation.clipGradient(1000.0), 1000.0, 1e-3);
   BOOST_CHECK_CLOSE(operation.clipGradient(100000.0), 1000.0, 1e-3);
+	BOOST_CHECK_CLOSE(operation.clipGradient(0.0), 0.0, 1e-3);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

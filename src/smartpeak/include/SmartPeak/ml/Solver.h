@@ -41,11 +41,15 @@ public:
     virtual float operator()(const float& weight, const float& error) = 0;
     float clipGradient(const float& gradient)
     {
+			float new_gradient = gradient;
       if (std::abs(gradient) >= gradient_threshold_)
       {
-        return gradient * gradient_threshold_/std::abs(gradient);
+				new_gradient = gradient * gradient_threshold_/std::abs(gradient);
       }
-      return gradient;
+			if (std::isinf(new_gradient) || std::isnan(new_gradient))
+				return gradient;
+			else
+				return new_gradient;
     }
     void setGradientNoiseSigma(const float& gradient_noise_sigma){gradient_noise_sigma_ = gradient_noise_sigma;};
     float getGradientNoiseSigma() const{return gradient_noise_sigma_;};

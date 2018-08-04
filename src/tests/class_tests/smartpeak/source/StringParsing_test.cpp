@@ -9,9 +9,9 @@ using namespace std;
 
 BOOST_AUTO_TEST_SUITE(stringParsing)
 
-BOOST_AUTO_TEST_CASE(SP_RemoveTokens)
+BOOST_AUTO_TEST_CASE(SP_ReplaceTokens)
 {
-	std::string test = RemoveTokens("{postgres list}", { "[\{\}]" });
+	std::string test = ReplaceTokens("{postgres list}", { "[\{\}]" }, "");
 	BOOST_CHECK_EQUAL(test, "postgres list");
 }
 

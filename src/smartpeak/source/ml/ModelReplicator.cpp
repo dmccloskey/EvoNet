@@ -1,6 +1,7 @@
 /**TODO:  Add copyright*/
 
 #include <SmartPeak/ml/ModelReplicator.h>
+#include <SmartPeak/core/Preprocessing.h>
 
 #include <random> // random number generator
 #include <algorithm> // tokenizing
@@ -360,24 +361,6 @@ namespace SmartPeak
         node_ids.push_back(node.getName());
     }
     return node_ids;
-  }
-
-  template<typename T>
-  T ModelReplicator::selectRandomElement(std::vector<T> elements)
-  {
-    try
-    {
-      // select a random node
-      // based on https://www.rosettacode.org/wiki/Pick_random_element
-      std::random_device seed;
-      std::mt19937 engine(seed());
-      std::uniform_int_distribution<int> choose(0, elements.size() - 1);
-      return elements[choose(engine)];
-    }
-    catch (std::exception& e)
-    {
-      printf("Exception in selectRandomElement: %s", e.what());
-    }
   }
 
   //std::string ModelReplicator::selectRandomNode(

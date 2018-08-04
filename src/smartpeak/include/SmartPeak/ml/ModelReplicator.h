@@ -88,9 +88,6 @@ public:
       const Model& model,
       const std::vector<NodeType>& node_type_exclude,
       const std::vector<NodeType>& node_type_include);
-
-    template<typename T>
-    T selectRandomElement(std::vector<T> elements);
  
     /**
       @brief Select random node given a set of conditions

@@ -373,11 +373,6 @@ BOOST_AUTO_TEST_CASE(selectRandomNode1)
   BOOST_CHECK(test_passed);
 }
 
-BOOST_AUTO_TEST_CASE(selectRandomElement) 
-{
-  // [TODO: make test; currently, combined with selectRandomNode1]
-}
-
 BOOST_AUTO_TEST_CASE(selectNodes) 
 {
   // [TODO: make test; currenlty, combined with selectRandomNode1]

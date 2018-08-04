@@ -9,6 +9,11 @@ using namespace std;
 
 BOOST_AUTO_TEST_SUITE(preprocessing)
 
+BOOST_AUTO_TEST_CASE(P_selectRandomElement)
+{
+	// [TODO: make test; currently, combined with selectRandomNode1]
+}
+
 BOOST_AUTO_TEST_CASE(P_UnitScale)
 {
 	// TODO

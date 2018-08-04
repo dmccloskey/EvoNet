@@ -7,6 +7,7 @@
 #include <SmartPeak/io/PopulationTrainerFile.h>
 #include <SmartPeak/io/csv.h>
 
+#include <SmartPeak/core/Preprocessing.h>
 #include <SmartPeak/core/StringParsing.h>
 
 #include <random>
@@ -48,7 +49,7 @@ struct MetabolomicsDatum {
 	std::string component_name;
 	std::string component_group_name;
 	std::string calculated_concentration_units;
-	int time_point;
+	float time_point;
 	float calculated_concentration;
 	bool used;
 };
@@ -88,7 +89,7 @@ static void ReadMetabolomicsData(
 	const std::string& filename,
 	MetabolomicsData& metabolomicsData)
 {
-	io::CSVReader<8> nodes_in(filename);
+	io::CSVReader<8> data_in(filename);
 	data_in.read_header(io::ignore_extra_column,
 		"sampe_group_name", "sample_name", "component_group_name", "component_name", 
 		"calculated_concentration_units", "used_", "time_point", "calculated_concentration");
@@ -102,38 +103,43 @@ static void ReadMetabolomicsData(
 		MetabolomicsDatum row;
 		row.sample_group_name = sampe_group_name_str;
 		row.sample_name = sample_name_str;
-		row.component_group_name = component_group_name_str;
-		row.component_name = component_group_str;
+
+		// metabolite id cleanup
+		if (component_group_name_str == "Pool_2pg_3pg")
+			component_group_name_str = "2pg";
+		else if (component_group_name_str == "Hexose_Pool_fru_glc-D")
+			component_group_name_str = "glc-D";
+
+		// replace "-" with "__"
+		component_group_name_str = ReplaceTokens(component_group_name_str, { "-" }, "__");
+
+		row.component_group_name = component_group_name_str; // matches the met_id in the biochemical models
+		row.component_name = component_name_str;
 		row.calculated_concentration_units = calculated_concentration_units_str;
-		row.time_point = time_point_str;
-		row.used = (used__str == t) ? true : false;
+		row.time_point = std::stof(time_point_str);
+		row.used = (used__str == "t") ? true : false;
 		row.calculated_concentration = std::stof(calculated_concentration_str);
 
 		// build up the map
+		std::vector<MetabolomicsDatum> rows = { row };
 		std::map<std::string, std::vector<MetabolomicsDatum>> replicate;
-		replicate.emplace(component_name_str, { row });
+		replicate.emplace(component_name_str, rows);
 		auto found_in_data = metabolomicsData.emplace(sampe_group_name_str, replicate);
 		if (!found_in_data.second)
 		{
-			auto found_in_component = metabolomicsData.at(sampe_group_name_str).emplace(component_name_str, { row });
+			auto found_in_component = metabolomicsData.at(sampe_group_name_str).emplace(component_group_name_str, rows);
 			if (!found_in_component.second)
 			{
-				metabolomicsData.at(sampe_group_name_str).at(component_name_str).push_back(row);
+				metabolomicsData.at(sampe_group_name_str).at(component_group_name_str).push_back(row);
 			}
 		}
+
+		if (component_group_name_str == "2pg")
+		{
+			row.component_group_name = "3pg";
+			metabolomicsData.at(sampe_group_name_str).at(component_group_name_str).push_back(row);
+		}
 	}
-};
-
-/*
-@brief Generate default reaction concentrations
-
-@param[in] filename
-@param[in, out] metabolomicsData
-**/
-static MetabolomicsData MakeDefaultMetabolomicsData()
-{
-	MetabolomicsData metabolomicsData;
-	return metabolomicsData;
 };
 
 /*
@@ -146,7 +152,7 @@ static void ReadBiochemicalReactions(
 	const std::string& filename,
 	BiochemicalReactions& biochemicalReactions)
 {
-	io::CSVReader<9> nodes_in(filename);
+	io::CSVReader<9> data_in(filename);
 	data_in.read_header(io::ignore_extra_column,
 		"rxn_id", "rxn_name", "equation", "gpr", "used_",
 		"reactants_stoichiometry", "products_stoichiometry", "reactants_ids", "products_ids");
@@ -162,30 +168,228 @@ static void ReadBiochemicalReactions(
 		row.reaction_id = rxn_id_str;
 		row.equation = equation_str;
 		row.gpr = gpr_str;
-		row.used = (used__str == t) ? true : false;
-		row.reactants_ids = SplitString(RemoveBrackets(reactants_ids_str));
-		row.products_ids = SplitString(RemoveBrackets(reactants_ids_str));
+		row.used = (used__str == "t") ? true : false;
+		row.reactants_ids = SplitString(ReplaceTokens(reactants_ids_str, { "[\{\}]", "_p", "_c", "_e", "_m", "_r" }, ""), ",");
+		row.products_ids = SplitString(ReplaceTokens(reactants_ids_str, { "[\{\}]", "_p", "_c", "_e", "_m", "_r" }, ""), ",");
 
-		std::vector<std::string> reactants_stoichiometry_vector = SplitString(RemoveTokens(reactants_stoichiometry_str, { "{", "}" }));
-		row.reactants_stoichiometry = std::for_each(reactants_stoichiometry_vector.begin(), reactants_stoichiometry_vector.end(), std::stoi);
-		std::vector<std::string> products_stoichiometry_vector = SplitString(RemoveTokens(products_stoichiometry_str, { "{", "}" }));
-		row.products_stoichiometry = std::for_each(products_stoichiometry_vector.begin(), products_stoichiometry_vector.end(), std::stoi);
+		std::vector<std::string> reactants_stoichiometry_vector = SplitString(ReplaceTokens(reactants_stoichiometry_str, { "[\{\}]" }, ""), ",");
+		for (const std::string& int_str : reactants_stoichiometry_vector)
+			row.reactants_stoichiometry.push_back(std::stoi(int_str));
+		std::vector<std::string> products_stoichiometry_vector = SplitString(ReplaceTokens(products_stoichiometry_str, { "[\{\}]" }, ""), ",");
+		for (const std::string& int_str : products_stoichiometry_vector)
+			row.products_stoichiometry.push_back(std::stoi(int_str));
 
 		// build up the map
-		auto found_in_data = biochemicalReactions.emplace(reaction_id, { row });
+		auto found_in_data = biochemicalReactions.emplace(rxn_id_str, row);
 		if (!found_in_data.second)
-			biochemicalReactions.at(reaction_id) = row;
+			biochemicalReactions.at(rxn_id_str) = row;
 	}
 };
 
-static float CalculateMAR(
-	const MetabolomicsData& metabolomicsData,
-	const BiochemicalReaction& biochemicalReaction)
+/*
+@brief Read in the meta data from .csv file
+
+@param[in] filename
+@param[in, out] metaData
+**/
+static void ReadMetaData(
+	const std::string& filename,
+	MetaData& metaData)
 {
-	// if n reactants or n_products > 1
-	// and reactants != products
-	// and > 50% metabolomics data coverage
-	return 0.0f;
+	io::CSVReader<2> data_in(filename);
+	data_in.read_header(io::ignore_extra_column,
+		"sample_group_name", "label");
+	std::string sample_group_name_str, label_str;
+
+	while (data_in.read_row(sample_group_name_str, label_str))
+	{
+		// parse the .csv file
+		MetaDatum row;
+		row.sample_group_name = sample_group_name_str;
+		row.label = label_str;
+
+		// build up the map
+		auto found_in_data = metaData.emplace(sample_group_name_str, row);
+		if (!found_in_data.second)
+			metaData.at(sample_group_name_str) = row;
+	}
+};
+
+class MetabolomicsDataSimulator
+{
+public:
+	MetabolomicsDataSimulator() = default;
+	~MetabolomicsDataSimulator() = default;
+
+	void readMetabolomicsData(std::string& filename) { ReadMetabolomicsData(filename, metabolomicsData_);}
+	void readBiochemicalReactions(std::string& filename) { ReadBiochemicalReactions(filename, biochemicalReactions_); }
+	void readMetaData(std::string& filename) { ReadMetaData(filename, metaData_); }
+
+	void simulateData(Eigen::Tensor<float, 4>& input_data, Eigen::Tensor<float, 4>& output_data)
+	{
+		// infer data dimensions based on the input tensors
+		const int batch_size = input_data.dimension(0);
+		const int memory_size = input_data.dimension(1);
+		const int n_input_nodes = input_data.dimension(2);
+		const int n_output_nodes = output_data.dimension(2);
+		const int n_epochs = input_data.dimension(3);
+
+		// get all of the sample group names/labels
+		std::vector<std::string> sample_group_names;
+		std::vector<std::string> labels;
+		sample_group_names.reserve(metaData_.size());
+		labels.reserve(metaData_.size());
+		for (auto const& imap : metaData_)
+		{
+			sample_group_names.push_back(imap.first);
+			labels.push_back(imap.second.label);
+		}
+		assert(labels.size() == n_output_nodes);
+
+		for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
+			for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
+				for (int epochs_iter = 0; epochs_iter < n_epochs; ++epochs_iter) {
+
+					// pick a random sample group name
+					std::string sample_group_name = selectRandomElement(sample_group_names);
+
+					for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
+						input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = calculateMAR(
+							metabolomicsData_.at(sample_group_name),
+							biochemicalReactions_.at(mars_reaction_ids_[nodes_iter]));
+					}
+
+					// convert the label to a one hot vector
+					Eigen::Tensor<int, 1> one_hot_vec = OneHotEncoder<std::string>(metaData_.at(sample_group_name).label, labels);
+
+					for (int nodes_iter = 0; nodes_iter < n_output_nodes; ++nodes_iter) {
+						output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = one_hot_vec(nodes_iter);
+					}
+				}
+			}
+		}
+	}
+
+	/*
+	@brief Find candidate reactions that can be used to calculate the MAR
+
+	@param[in] biochemicalReactions
+
+	@returns a vector of reaction_ids
+	**/
+	void findMARs()
+	{
+		mars_reaction_ids_.clear();
+		for (const auto& biochem_rxn_map : biochemicalReactions_)
+		{
+			std::vector<std::string> products_ids = biochem_rxn_map.second.products_ids;
+			std::vector<std::string> reactants_ids = biochem_rxn_map.second.reactants_ids;
+
+			// ignore source/sink reactions
+			if (products_ids.size() == 0 || reactants_ids.size() == 0)
+				continue;
+
+			// ignore transport reactions
+			std::sort(products_ids.begin(), products_ids.end());
+			std::sort(reactants_ids.begin(), reactants_ids.end());
+			if (products_ids == reactants_ids)
+				continue;
+
+			mars_reaction_ids_.push_back(biochem_rxn_map.first);
+		}
+	}
+
+	/*
+	@brief Generate default reaction concentrations for certain
+	highly connected metabolites (e.g., h, h2o, co2) with
+	units of uM
+
+	@param[in] filename
+	@param[in, out] metabolomicsData
+	**/
+	static float makeDefaultMetabolomicsData(const std::string& met_id)
+	{
+		if (met_id == "pi")
+			return 1.0;
+		else if (met_id == "h2o")
+			return 55.0e-3;
+		else if (met_id == "h2")
+			return 34.0;
+		else if (met_id == "o2")
+			return 55.0;
+		else if (met_id == "co2")
+			return 1.4;
+		else if (met_id == "h")
+			return 1.0;
+		else
+			return 1.0;
+	};
+
+	/*
+	@brief Calculate the Mass Action Ratio (MAR)
+
+	MAR = R1^r1 * R2^r2 / (P1^p1 * P2^p2)
+
+	@param[in] filename
+	@param[in, out] metabolomicsData
+	**/
+	static float calculateMAR(
+		const std::map<std::string, std::vector<MetabolomicsDatum>>& metabolomicsData,
+		const BiochemicalReaction& biochemicalReaction)
+	{
+		// ignore reactions with less than 50% metabolomics data coverage
+		std::vector<std::string> ignore_mets = { "pi", "h", "h2", "h2o", "co2", "o2" };
+		int data_cnt = 0;
+		int total_cnt = 0;
+		for (const std::string& met_id : biochemicalReaction.products_ids) {
+			data_cnt += metabolomicsData.count(met_id);
+			if (std::count(ignore_mets.begin(), ignore_mets.end(), met_id) != 1)
+				++total_cnt;
+		}
+		for (const std::string& met_id : biochemicalReaction.reactants_ids) {
+			data_cnt += metabolomicsData.count(met_id);
+			if (std::count(ignore_mets.begin(), ignore_mets.end(), met_id) != 1)
+				++total_cnt;
+		}
+		if (((float)data_cnt) / ((float)total_cnt) <= 0.5f)
+			return 0.0f;
+
+		// calculate MAR
+		float mar = 1.0f;
+		for (int i = 0; i < biochemicalReaction.products_ids.size(); ++i) {
+			std::string met_id = biochemicalReaction.products_ids[i];
+			int met_stoich = biochemicalReaction.products_stoichiometry[i];
+			float met_conc = 1.0f;
+			if (metabolomicsData.count(met_id) > 0)
+			{
+				MetabolomicsDatum metabolomics_datum = selectRandomElement(metabolomicsData.at(met_id));
+				met_conc = metabolomics_datum.calculated_concentration;
+			}
+			else
+				met_conc = makeDefaultMetabolomicsData(met_id);
+			mar /= pow(met_conc, met_stoich);
+		}
+		for (int i = 0; i < biochemicalReaction.products_ids.size(); ++i) {
+			std::string met_id = biochemicalReaction.reactants_ids[i];
+			int met_stoich = biochemicalReaction.reactants_stoichiometry[i];
+			float met_conc = 1.0f;
+			if (metabolomicsData.count(met_id) > 0)
+			{
+				MetabolomicsDatum metabolomics_datum = selectRandomElement(metabolomicsData.at(met_id));
+				met_conc = metabolomics_datum.calculated_concentration;
+			}
+			else
+				met_conc = makeDefaultMetabolomicsData(met_id);
+			mar *= pow(met_conc, met_stoich);
+		}
+
+		return mar;
+	};
+	
+	MetabolomicsData metabolomicsData_;
+	BiochemicalReactions biochemicalReactions_;
+	MetaData metaData_;
+	std::vector<std::string> mars_reaction_ids_;
 };
 
 class ModelTrainerTest : public ModelTrainer
@@ -393,9 +597,6 @@ int main(int argc, char** argv)
 	std::cout << "Generating the input/output data for validation..." << std::endl;
 	Eigen::Tensor<float, 4> input_data_validation(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)input_nodes.size(), n_epochs_validation);
 	Eigen::Tensor<float, 4> output_data_validation(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)output_nodes.size(), n_epochs_validation);
-	MakeAddProbTrainingData(input_data_validation, output_data_validation,
-		model_trainer.getBatchSize(), model_trainer.getMemorySize(), n_epochs_validation, (int)input_nodes.size(), (int)output_nodes.size(),
-		sequence_length, n_masks);
 
 	// define the model replicator for growth mode
 	ModelReplicator model_replicator;
@@ -445,8 +646,6 @@ int main(int argc, char** argv)
 				model.setId(i);
 
 				population.push_back(model);
-				PopulationTrainerFile population_trainer_file;
-				population_trainer_file.storeModels(population, "AddProb");
 			}
 		}
 
@@ -454,9 +653,6 @@ int main(int argc, char** argv)
 		std::cout << "Generating the input/output data for training..." << std::endl;
 		Eigen::Tensor<float, 4> input_data_training(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)input_nodes.size(), model_trainer.getNEpochs());
 		Eigen::Tensor<float, 4> output_data_training(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)output_nodes.size(), model_trainer.getNEpochs());
-		MakeAddProbTrainingData(input_data_training, output_data_training,
-			model_trainer.getBatchSize(), model_trainer.getMemorySize(), n_epochs, (int)input_nodes.size(), (int)output_nodes.size(),
-			sequence_length, n_masks);
 
 		// generate a random number of model modifications
 		if (iter>0)
@@ -520,7 +716,7 @@ int main(int argc, char** argv)
 		else
 		{
 			PopulationTrainerFile population_trainer_file;
-			population_trainer_file.storeModels(population, "AddProb");
+			population_trainer_file.storeModels(population, "Metabolomics");
 			population_trainer_file.storeModelValidations("AddProbValidationErrors.csv", models_validation_errors);
 		}
 	}

@@ -14,7 +14,7 @@ namespace SmartPeak
 
 
 	/*
-	@brief Remove tokens from a string
+	@brief Replace tokens in a string
 
 	Tests:
 	std::string test = RemoveTokens("{postgres list}");
@@ -23,13 +23,13 @@ namespace SmartPeak
 	@param[in] string
 	@param[in] tokens Vector of strings
 
-	@returns string without tokens
+	@returns string with tokens replaced
 	**/
-	static std::string RemoveTokens(const std::string& str, const std::vector<std::string>& tokens)
+	static std::string ReplaceTokens(const std::string& str, const std::vector<std::string>& tokens, const std::string& replacement)
 	{
 		std::string str_copy = str;
 		for (const std::string& token : tokens)
-			str_copy = std::regex_replace(str_copy, std::regex(token), "");
+			str_copy = std::regex_replace(str_copy, std::regex(token), replacement);
 		return str_copy;
 	}
 
