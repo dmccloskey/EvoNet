@@ -662,7 +662,7 @@ int main(int argc, char** argv)
 	// define the model replicator for growth mode
 	ModelReplicator model_replicator;
 	model_replicator.setNodeActivations({NodeActivation::ReLU, NodeActivation::Linear, NodeActivation::ELU, NodeActivation::Sigmoid, NodeActivation::TanH});
-	model_replicator.setNodeIntegrations({NodeIntegration::Product, NodeIntegration::Max});
+	model_replicator.setNodeIntegrations({NodeIntegration::Product, NodeIntegration::Sum});
 	model_replicator.setRandomModifications(
 		std::make_pair(0, 1),
 		std::make_pair(0, 1),

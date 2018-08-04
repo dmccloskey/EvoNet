@@ -134,6 +134,18 @@ static MetabolomicsData MakeDefaultMetabolomicsData()
 	return metabolomicsData;
 };
 
+/*
+@brief Remove tokens from a string
+
+Tests:
+std::string test = RemoveTokens("{postgres list}");
+BOOST_TEST_EQUAL(test, "postgres list");
+
+@param[in] string
+@param[in] tokens Vector of strings
+
+@returns string without tokens
+**/
 static std::string RemoveTokens(const std::string& str, const std::vector<std::string>& tokens)
 {
 	std::string str_copy = str;
@@ -141,6 +153,20 @@ static std::string RemoveTokens(const std::string& str, const std::vector<std::s
 		str_copy = std::regex_replace(str_copy, std::regex(token), "");
 	return str_copy;
 }
+
+/*
+@brief Split string into a vector of substrings
+
+Tests:
+std::vector<std::string> test = SplitString("a,b,c,d,e");
+std::vector<std::string> check = {"a","b","c","d","e"};
+BOOST_TEST_EQUAL(test, check);
+
+@param[in] string
+@param[in] delimeter Token to use to split
+
+@returns a vector of strings
+**/
 static std::vector<std::string> SplitString(const std::string& str, std::string delimeter = ",")
 {
 	std::vector<std::string> tokens;
@@ -152,6 +178,7 @@ static std::vector<std::string> SplitString(const std::string& str, std::string 
 	}
 	return tokens;
 }
+
 /*
 @brief Read in the biochemical reactsion from .csv file
 
@@ -375,7 +402,7 @@ int main(int argc, char** argv)
 {
 	PopulationTrainer population_trainer;
 
-	// Add problem parameters
+	// parameters
 	const int sequence_length = 25; // test sequence length
 	const int n_masks = 5;
 	const int n_epochs = 500;
