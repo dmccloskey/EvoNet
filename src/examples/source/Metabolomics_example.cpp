@@ -14,6 +14,7 @@
 #include <fstream>
 #include <thread>
 #include <map>
+#include <set>
 
 #include <unsupported/Eigen/CXX11/Tensor>
 
@@ -62,8 +63,8 @@ struct BiochemicalReaction {
 	std::string equation;
 	std::string subsystem;
 	std::string gpr;
-	std::vector<int> reactants_stoichiometry;
-	std::vector<int> products_stoichiometry;
+	std::vector<float> reactants_stoichiometry;
+	std::vector<float> products_stoichiometry;
 	std::vector<std::string> reactants_ids;
 	std::vector<std::string> products_ids;
 	std::string component_group_name;
@@ -89,9 +90,9 @@ static void ReadMetabolomicsData(
 	const std::string& filename,
 	MetabolomicsData& metabolomicsData)
 {
-	io::CSVReader<8> data_in(filename);
+	io::CSVReader<8, io::trim_chars<' ', '\t'>, io::double_quote_escape<',', '"'>> data_in(filename);
 	data_in.read_header(io::ignore_extra_column,
-		"sampe_group_name", "sample_name", "component_group_name", "component_name", 
+		"sample_group_name", "sample_name", "component_group_name", "component_name", 
 		"calculated_concentration_units", "used_", "time_point", "calculated_concentration");
 	std::string sampe_group_name_str, sample_name_str, component_group_name_str, component_name_str,
 		calculated_concentration_units_str, used__str, time_point_str, calculated_concentration_str;
@@ -118,12 +119,15 @@ static void ReadMetabolomicsData(
 		row.calculated_concentration_units = calculated_concentration_units_str;
 		row.time_point = std::stof(time_point_str);
 		row.used = (used__str == "t") ? true : false;
-		row.calculated_concentration = std::stof(calculated_concentration_str);
+		if (calculated_concentration_str!="")
+			row.calculated_concentration = std::stof(calculated_concentration_str);
+		else
+			row.calculated_concentration = 0.0f;
 
 		// build up the map
 		std::vector<MetabolomicsDatum> rows = { row };
 		std::map<std::string, std::vector<MetabolomicsDatum>> replicate;
-		replicate.emplace(component_name_str, rows);
+		replicate.emplace(component_group_name_str, rows);
 		auto found_in_data = metabolomicsData.emplace(sampe_group_name_str, replicate);
 		if (!found_in_data.second)
 		{
@@ -137,7 +141,12 @@ static void ReadMetabolomicsData(
 		if (component_group_name_str == "2pg")
 		{
 			row.component_group_name = "3pg";
-			metabolomicsData.at(sampe_group_name_str).at(component_group_name_str).push_back(row);
+			rows = { row };
+			auto found_in_component = metabolomicsData.at(sampe_group_name_str).emplace(row.component_group_name, rows);
+			if (!found_in_component.second)
+			{
+				metabolomicsData.at(sampe_group_name_str).at(row.component_group_name).push_back(row);
+			}
 		}
 	}
 };
@@ -152,12 +161,12 @@ static void ReadBiochemicalReactions(
 	const std::string& filename,
 	BiochemicalReactions& biochemicalReactions)
 {
-	io::CSVReader<9> data_in(filename);
+	io::CSVReader<9, io::trim_chars<' ', '\t'>, io::double_quote_escape<',', '"'>> data_in(filename);
 	data_in.read_header(io::ignore_extra_column,
 		"rxn_id", "rxn_name", "equation", "gpr", "used_",
 		"reactants_stoichiometry", "products_stoichiometry", "reactants_ids", "products_ids");
 	std::string rxn_id_str, rxn_name_str, equation_str, gpr_str, used__str,
-		reactants_stoichiometry_str, products_stoichiometry_str, reactants_ids_str, products_ids_str;
+		reactants_stoichiometry_str, products_stoichiometry_str, reactants_ids_str, products_ids_str = "";
 
 	while (data_in.read_row(rxn_id_str, rxn_name_str, equation_str, gpr_str, used__str,
 		reactants_stoichiometry_str, products_stoichiometry_str, reactants_ids_str, products_ids_str))
@@ -170,14 +179,16 @@ static void ReadBiochemicalReactions(
 		row.gpr = gpr_str;
 		row.used = (used__str == "t") ? true : false;
 		row.reactants_ids = SplitString(ReplaceTokens(reactants_ids_str, { "[\{\}]", "_p", "_c", "_e", "_m", "_r" }, ""), ",");
-		row.products_ids = SplitString(ReplaceTokens(reactants_ids_str, { "[\{\}]", "_p", "_c", "_e", "_m", "_r" }, ""), ",");
+		row.products_ids = SplitString(ReplaceTokens(products_ids_str, { "[\{\}]", "_p", "_c", "_e", "_m", "_r" }, ""), ",");
 
 		std::vector<std::string> reactants_stoichiometry_vector = SplitString(ReplaceTokens(reactants_stoichiometry_str, { "[\{\}]" }, ""), ",");
 		for (const std::string& int_str : reactants_stoichiometry_vector)
-			row.reactants_stoichiometry.push_back(std::stoi(int_str));
+			if (int_str != "")
+				row.reactants_stoichiometry.push_back(std::stof(int_str));
 		std::vector<std::string> products_stoichiometry_vector = SplitString(ReplaceTokens(products_stoichiometry_str, { "[\{\}]" }, ""), ",");
 		for (const std::string& int_str : products_stoichiometry_vector)
-			row.products_stoichiometry.push_back(std::stoi(int_str));
+			if (int_str!="")
+				row.products_stoichiometry.push_back(std::stof(int_str));
 
 		// build up the map
 		auto found_in_data = biochemicalReactions.emplace(rxn_id_str, row);
@@ -234,33 +245,21 @@ public:
 		const int n_output_nodes = output_data.dimension(2);
 		const int n_epochs = input_data.dimension(3);
 
-		// get all of the sample group names/labels
-		std::vector<std::string> sample_group_names;
-		std::vector<std::string> labels;
-		sample_group_names.reserve(metaData_.size());
-		labels.reserve(metaData_.size());
-		for (auto const& imap : metaData_)
-		{
-			sample_group_names.push_back(imap.first);
-			labels.push_back(imap.second.label);
-		}
-		assert(labels.size() == n_output_nodes);
-
 		for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
 			for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
 				for (int epochs_iter = 0; epochs_iter < n_epochs; ++epochs_iter) {
 
 					// pick a random sample group name
-					std::string sample_group_name = selectRandomElement(sample_group_names);
+					std::string sample_group_name = selectRandomElement(sample_group_names_);
 
 					for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
 						input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = calculateMAR(
 							metabolomicsData_.at(sample_group_name),
-							biochemicalReactions_.at(mars_reaction_ids_[nodes_iter]));
+							biochemicalReactions_.at(reaction_ids_[nodes_iter]));
 					}
 
 					// convert the label to a one hot vector
-					Eigen::Tensor<int, 1> one_hot_vec = OneHotEncoder<std::string>(metaData_.at(sample_group_name).label, labels);
+					Eigen::Tensor<int, 1> one_hot_vec = OneHotEncoder<std::string>(metaData_.at(sample_group_name).label, labels_);
 
 					for (int nodes_iter = 0; nodes_iter < n_output_nodes; ++nodes_iter) {
 						output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = one_hot_vec(nodes_iter);
@@ -279,7 +278,8 @@ public:
 	**/
 	void findMARs()
 	{
-		mars_reaction_ids_.clear();
+		reaction_ids_.clear();
+		findComponentGroupNames();
 		for (const auto& biochem_rxn_map : biochemicalReactions_)
 		{
 			std::vector<std::string> products_ids = biochem_rxn_map.second.products_ids;
@@ -295,7 +295,52 @@ public:
 			if (products_ids == reactants_ids)
 				continue;
 
-			mars_reaction_ids_.push_back(biochem_rxn_map.first);
+			// ignore reactions with less than 50% metabolomics data coverage
+			std::vector<std::string> ignore_mets = { "pi", "h", "h2", "h2o", "co2", "o2" };
+			int data_cnt = 0;
+			int total_cnt = 0;
+			for (const std::string& met_id : products_ids) {
+				if (std::count(component_group_names_.begin(), component_group_names_.end(), met_id) != 0)
+					++data_cnt;
+				if (std::count(ignore_mets.begin(), ignore_mets.end(), met_id) == 0)
+					++total_cnt;
+			}
+			for (const std::string& met_id : reactants_ids) {
+				if (std::count(component_group_names_.begin(), component_group_names_.end(), met_id) != 0)
+					++data_cnt;
+				if (std::count(ignore_mets.begin(), ignore_mets.end(), met_id) == 0)
+					++total_cnt;
+			}
+			if (((float)data_cnt) / ((float)total_cnt) <= 0.5f)
+				continue;
+
+			reaction_ids_.push_back(biochem_rxn_map.first);
+		}
+	}
+
+	void findComponentGroupNames()
+	{
+		// get all of the component_group_names
+		std::set<std::string> component_group_names;
+		for (auto const& met_map1 : metabolomicsData_)
+			for (auto const& met_map_2 : met_map1.second)
+				component_group_names.insert(met_map_2.first);
+
+		component_group_names_.assign(component_group_names.begin(), component_group_names.end());
+	}
+
+	void findLabels()
+	{
+		// get all of the sample group names/labels
+		sample_group_names_.clear();
+		labels_.clear();
+		sample_group_names_.reserve(metaData_.size());
+		labels_.reserve(metaData_.size());
+		for (auto const& imap : metaData_)
+		{
+			sample_group_names_.push_back(imap.first);
+			if (std::count(labels_.begin(), labels_.end(), imap.second.label) == 0)
+				labels_.push_back(imap.second.label);
 		}
 	}
 
@@ -337,23 +382,6 @@ public:
 		const std::map<std::string, std::vector<MetabolomicsDatum>>& metabolomicsData,
 		const BiochemicalReaction& biochemicalReaction)
 	{
-		// ignore reactions with less than 50% metabolomics data coverage
-		std::vector<std::string> ignore_mets = { "pi", "h", "h2", "h2o", "co2", "o2" };
-		int data_cnt = 0;
-		int total_cnt = 0;
-		for (const std::string& met_id : biochemicalReaction.products_ids) {
-			data_cnt += metabolomicsData.count(met_id);
-			if (std::count(ignore_mets.begin(), ignore_mets.end(), met_id) != 1)
-				++total_cnt;
-		}
-		for (const std::string& met_id : biochemicalReaction.reactants_ids) {
-			data_cnt += metabolomicsData.count(met_id);
-			if (std::count(ignore_mets.begin(), ignore_mets.end(), met_id) != 1)
-				++total_cnt;
-		}
-		if (((float)data_cnt) / ((float)total_cnt) <= 0.5f)
-			return 0.0f;
-
 		// calculate MAR
 		float mar = 1.0f;
 		for (int i = 0; i < biochemicalReaction.products_ids.size(); ++i) {
@@ -389,7 +417,10 @@ public:
 	MetabolomicsData metabolomicsData_;
 	BiochemicalReactions biochemicalReactions_;
 	MetaData metaData_;
-	std::vector<std::string> mars_reaction_ids_;
+	std::vector<std::string> reaction_ids_;
+	std::vector<std::string> sample_group_names_;
+	std::vector<std::string> labels_;
+	std::vector<std::string> component_group_names_;
 };
 
 class ModelTrainerTest : public ModelTrainer
@@ -564,8 +595,6 @@ int main(int argc, char** argv)
 	PopulationTrainer population_trainer;
 
 	// parameters
-	const int sequence_length = 25; // test sequence length
-	const int n_masks = 5;
 	const int n_epochs = 500;
 	const int n_epochs_validation = 25;
 
@@ -577,16 +606,28 @@ int main(int argc, char** argv)
 	std::cout << threads_cout;
 	//const int n_threads = 1;
 
-	// Make the input nodes 
-	std::vector<std::string> input_nodes = { "Input_0", "Input_1" };
+	MetabolomicsDataSimulator metabolomics_data;
+	std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
+	metabolomics_data.readBiochemicalReactions(data_dir + "iAB_RBC_283.csv");
+	metabolomics_data.readMetabolomicsData(data_dir + "Metabolomics_data.csv");
+	metabolomics_data.readMetaData(data_dir + "MetaData_prePost.csv");
+	metabolomics_data.findMARs();
+	metabolomics_data.findLabels();
 
-	// Make the output nodes
-	std::vector<std::string> output_nodes = { "Output_0" };
+	// define the model input/output nodes
+	const int n_input_nodes = metabolomics_data.reaction_ids_.size();
+	const int n_output_nodes = metabolomics_data.labels_.size();
+	std::vector<std::string> input_nodes;
+	std::vector<std::string> output_nodes;
+	for (int i = 0; i < n_input_nodes; ++i)
+		input_nodes.push_back("Input_" + std::to_string(i));
+	for (int i = 0; i < n_output_nodes; ++i)
+		output_nodes.push_back("Output_" + std::to_string(i));
 
 	// define the model replicator for growth mode
 	ModelTrainerTest model_trainer;
-	model_trainer.setBatchSize(1);
-	model_trainer.setMemorySize(sequence_length);
+	model_trainer.setBatchSize(8);
+	model_trainer.setMemorySize(1);
 	model_trainer.setNEpochs(n_epochs);
 
 	// Make the simulation time_steps
@@ -595,8 +636,9 @@ int main(int argc, char** argv)
 
 	// generate the input/output data for validation
 	std::cout << "Generating the input/output data for validation..." << std::endl;
-	Eigen::Tensor<float, 4> input_data_validation(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)input_nodes.size(), n_epochs_validation);
-	Eigen::Tensor<float, 4> output_data_validation(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)output_nodes.size(), n_epochs_validation);
+	Eigen::Tensor<float, 4> input_data_validation(model_trainer.getBatchSize(), model_trainer.getMemorySize(), n_input_nodes, n_epochs_validation);
+	Eigen::Tensor<float, 4> output_data_validation(model_trainer.getBatchSize(), model_trainer.getMemorySize(), n_output_nodes, n_epochs_validation);
+	metabolomics_data.simulateData(input_data_validation, output_data_validation);
 
 	// define the model replicator for growth mode
 	ModelReplicator model_replicator;
@@ -633,10 +675,10 @@ int main(int argc, char** argv)
 				// baseline model
 				std::shared_ptr<WeightInitOp> weight_init;
 				std::shared_ptr<SolverOp> solver;
-				weight_init.reset(new RandWeightInitOp(input_nodes.size()));
+				weight_init.reset(new RandWeightInitOp(n_input_nodes));
 				solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
 				Model model = model_replicator.makeBaselineModel(
-					input_nodes.size(), 1, output_nodes.size(),
+					n_input_nodes, 1, n_output_nodes,
 					NodeActivation::ReLU, NodeIntegration::Sum,
 					NodeActivation::ReLU, NodeIntegration::Sum,
 					weight_init, solver,
@@ -651,8 +693,9 @@ int main(int argc, char** argv)
 
 		// Generate the input and output data for training [BUG FREE]
 		std::cout << "Generating the input/output data for training..." << std::endl;
-		Eigen::Tensor<float, 4> input_data_training(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)input_nodes.size(), model_trainer.getNEpochs());
-		Eigen::Tensor<float, 4> output_data_training(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)output_nodes.size(), model_trainer.getNEpochs());
+		Eigen::Tensor<float, 4> input_data_training(model_trainer.getBatchSize(), model_trainer.getMemorySize(), n_input_nodes, model_trainer.getNEpochs());
+		Eigen::Tensor<float, 4> output_data_training(model_trainer.getBatchSize(), model_trainer.getMemorySize(), n_output_nodes, model_trainer.getNEpochs());
+		metabolomics_data.simulateData(input_data_training, output_data_training);
 
 		// generate a random number of model modifications
 		if (iter>0)
