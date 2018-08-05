@@ -656,8 +656,10 @@ int main(int argc, char** argv)
 	model_trainer.setNEpochs(n_epochs);
 
 	// Make the simulation time_steps
-	Eigen::Tensor<float, 3> time_steps(model_trainer.getBatchSize(), model_trainer.getMemorySize(), model_trainer.getNEpochs());
+	Eigen::Tensor<float, 3> time_steps(model_trainer.getBatchSize(), model_trainer.getMemorySize(), n_epochs);
 	time_steps.setConstant(1.0f);
+	Eigen::Tensor<float, 3> time_steps_validation(model_trainer.getBatchSize(), model_trainer.getMemorySize(), n_epochs_validation);
+	time_steps_validation.setConstant(1.0f);
 
 	// generate the input/output data for validation
 	std::cout << "Generating the input/output data for validation..." << std::endl;
@@ -760,7 +762,7 @@ int main(int argc, char** argv)
 		model_trainer.setNEpochs(n_epochs_validation);  // lower the number of epochs for validation
 		std::vector<std::pair<int, float>> models_validation_errors = population_trainer.selectModels(
 			n_top, n_random, population, model_trainer,
-			input_data_validation, output_data_validation, time_steps, input_nodes, output_nodes, n_threads);
+			input_data_validation, output_data_validation, time_steps_validation, input_nodes, output_nodes, n_threads);
 		model_trainer.setNEpochs(n_epochs);  // restore the number of epochs for training
 
 		if (iter < iterations - 1)

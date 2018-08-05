@@ -395,7 +395,7 @@ public:
 			}
 			else
 				met_conc = makeDefaultMetabolomicsData(met_id);
-			mar /= pow(met_conc, met_stoich);
+			mar *= pow(met_conc, met_stoich);
 		}
 		for (int i = 0; i < biochemicalReaction.reactants_ids.size(); ++i) {
 			std::string met_id = biochemicalReaction.reactants_ids[i];
