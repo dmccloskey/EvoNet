@@ -22,7 +22,7 @@ public:
     virtual std::string getName() const = 0;
     // virtual T operator()() const = 0;
     virtual T operator()(const T& x_I) const = 0;
-		T checkNanInf(const T& x, const T& x_new) const
+		T substituteNanInf(const T& x, const T& x_new) const
 		{
 			if (std::isinf(x_new) || std::isnan(x_new))
 				return x;
@@ -82,7 +82,7 @@ public:
     ELUOp(){}; 
     ELUOp(const T& alpha): alpha_(alpha){}; 
     ~ELUOp(){};
-    T operator()(const T& x_I) const { return checkNanInf(T(0), (x_I > 0.0) ? x_I : alpha_ * (std::exp(x_I) - 1)); };
+    T operator()(const T& x_I) const { return substituteNanInf(T(0), (x_I > 0.0) ? x_I : alpha_ * (std::exp(x_I) - 1)); };
     void setAlpha(const T& alpha) { alpha_ = alpha; };
     T getAlpha() const { return alpha_; };
     std::string getName() const{return "ReLUGradOp";};
@@ -126,7 +126,7 @@ private:
 public: 
     SigmoidOp(){}; 
     ~SigmoidOp(){};
-    T operator()(const T& x_I) const { return checkNanInf(T(0), 1 / (1 + std::exp(x_I))); };
+    T operator()(const T& x_I) const { return substituteNanInf(T(0), 1 / (1 + std::exp(x_I))); };
     std::string getName() const{return "ReLUGradOp";};
   };
 
@@ -172,7 +172,7 @@ public:
     T operator()(const T& x_I) const
     {
 			const T x_new = 1 - std::pow(std::tanh(x_I), 2);
-      return checkNanInf(T(0), x_new);
+      return substituteNanInf(T(0), x_new);
     };
     std::string getName() const{return "ReLUGradOp";};
   };
@@ -188,7 +188,7 @@ public:
     ~ReTanHOp(){};
     T operator()(const T& x_I) const
     { 
-      return checkNanInf(T(0), (x_I > 0.0) ? (std::exp(x_I) - std::exp(-x_I)) / (std::exp(x_I) + std::exp(-x_I)) : 0.0);
+      return substituteNanInf(T(0), (x_I > 0.0) ? (std::exp(x_I) - std::exp(-x_I)) / (std::exp(x_I) + std::exp(-x_I)) : 0.0);
     };
     std::string getName() const{return "ReTanHOp";};
   };
@@ -206,7 +206,7 @@ public:
     {
       SmartPeak::ReTanHOp<T> tanhop;
 			T x_new = (x_I > 0.0) ? 1 - std::pow(tanhop(x_I), 2) : 0.0;
-      return checkNanInf(T(0), x_new);
+      return substituteNanInf(T(0), x_new);
     };
     std::string getName() const{return "ReTanHGradOp";};
   };
