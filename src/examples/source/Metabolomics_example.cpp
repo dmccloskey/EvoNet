@@ -494,7 +494,7 @@ public:
 			//else
 			//	model.CETT(output.chip(iter, 3), output_nodes, 1, false, true, n_threads);
 
-			std::cout<<"Model "<<model.getName()<<" error: "<<model.getError().sum()<<std::endl;
+			//std::cout<<"Model "<<model.getName()<<" error: "<<model.getError().sum()<<std::endl;
 
 			// back propogate
 			if (iter == 0)
@@ -667,7 +667,7 @@ int main(int argc, char** argv)
 
 	// Evolve the population
 	std::vector<Model> population;
-	const int iterations = 8;
+	const int iterations = 20;
 	for (int iter = 0; iter<iterations; ++iter)
 	{
 		printf("Iteration #: %d\n", iter);
@@ -684,7 +684,7 @@ int main(int argc, char** argv)
 				weight_init.reset(new RandWeightInitOp(n_input_nodes));
 				solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
 				Model model = model_replicator.makeBaselineModel(
-					n_input_nodes, 1, n_output_nodes,
+					n_input_nodes, 50, n_output_nodes,
 					NodeActivation::ReLU, NodeIntegration::Sum,
 					NodeActivation::ReLU, NodeIntegration::Sum,
 					weight_init, solver,
@@ -707,12 +707,12 @@ int main(int argc, char** argv)
 		if (iter>0)
 		{
 			model_replicator.setRandomModifications(
-				std::make_pair(0, 1),
-				std::make_pair(0, 2),
-				std::make_pair(0, 1),
-				std::make_pair(0, 2),
-				std::make_pair(0, 2),
-				std::make_pair(0, 2));
+				std::make_pair(0, 5),
+				std::make_pair(0, 10),
+				std::make_pair(0, 5),
+				std::make_pair(0, 10),
+				std::make_pair(0, 5),
+				std::make_pair(0, 5));
 		}
 
 		// train the population
@@ -766,7 +766,7 @@ int main(int argc, char** argv)
 		{
 			PopulationTrainerFile population_trainer_file;
 			population_trainer_file.storeModels(population, "Metabolomics");
-			population_trainer_file.storeModelValidations("AddProbValidationErrors.csv", models_validation_errors);
+			population_trainer_file.storeModelValidations("MetabolomicsValidationErrors.csv", models_validation_errors);
 		}
 	}
 
