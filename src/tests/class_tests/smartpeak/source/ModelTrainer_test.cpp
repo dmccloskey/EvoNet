@@ -14,50 +14,24 @@ using namespace std;
 
 BOOST_AUTO_TEST_SUITE(trainer)
 
-// No Tests as ModelTrainer is virtual
-// BOOST_AUTO_TEST_CASE(constructor) 
-// {
-//   ModelTrainer* ptr = nullptr;
-//   ModelTrainer* nullPointer = nullptr;
-// 	ptr = new ModelTrainer();
-//   BOOST_CHECK_NE(ptr, nullPointer);
-// }
-
-// BOOST_AUTO_TEST_CASE(destructor) 
-// {
-//   ModelTrainer* ptr = nullptr;
-// 	ptr = new ModelTrainer();
-//   delete ptr;
-// }
-
-class ModelTrainerTest: public ModelTrainer
+BOOST_AUTO_TEST_CASE(constructor) 
 {
-  void trainModel(Model& model,
-    const Eigen::Tensor<float, 4>& input,
-    const Eigen::Tensor<float, 4>& output,
-    const Eigen::Tensor<float, 3>& time_steps,
-    const std::vector<std::string>& input_nodes,
-    const std::vector<std::string>& output_nodes){};
-  std::vector<float> validateModel(Model& model,
-    const Eigen::Tensor<float, 4>& input,
-    const Eigen::Tensor<float, 4>& output,
-    const Eigen::Tensor<float, 3>& time_steps,
-    const std::vector<std::string>& input_nodes,
-    const std::vector<std::string>& output_nodes)
-  {
-    std::vector<float> result;
-    return result;
-  };
-  Model makeModel()
-  {
-    Model model;
-    return model;
-  };
-};
+  ModelTrainer* ptr = nullptr;
+  ModelTrainer* nullPointer = nullptr;
+ptr = new ModelTrainer();
+  BOOST_CHECK_NE(ptr, nullPointer);
+}
+
+BOOST_AUTO_TEST_CASE(destructor) 
+{
+  ModelTrainer* ptr = nullptr;
+ptr = new ModelTrainer();
+  delete ptr;
+}
 
 BOOST_AUTO_TEST_CASE(gettersAndSetters) 
 {
-  ModelTrainerTest trainer;
+  ModelTrainer trainer;
   trainer.setBatchSize(4);
   trainer.setMemorySize(1);
   trainer.setNEpochs(100);
@@ -69,7 +43,7 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
 
 BOOST_AUTO_TEST_CASE(checkInputData) 
 {
-  ModelTrainerTest trainer;
+  ModelTrainer trainer;
   trainer.setBatchSize(4);
   trainer.setMemorySize(1);
   trainer.setNEpochs(100);
@@ -96,7 +70,7 @@ BOOST_AUTO_TEST_CASE(checkInputData)
 
 BOOST_AUTO_TEST_CASE(checkOutputData) 
 {
-  ModelTrainerTest trainer;
+  ModelTrainer trainer;
   trainer.setBatchSize(4);
   trainer.setMemorySize(1);
   trainer.setNEpochs(100);
@@ -208,82 +182,6 @@ BOOST_AUTO_TEST_CASE(DAGToy)
       model1.setLossFunction(ModelLossFunction::MSE);
       return model1;
     }
-
-		void trainModel(Model& model,
-			const Eigen::Tensor<float, 4>& input,
-			const Eigen::Tensor<float, 4>& output,
-			const Eigen::Tensor<float, 3>& time_steps,
-			const std::vector<std::string>& input_nodes,
-			const std::vector<std::string>& output_nodes)
-		{
-			// printf("Training the model\n");
-
-			// Check input and output data
-			if (!checkInputData(getNEpochs(), input, getBatchSize(), getMemorySize(), input_nodes))
-			{
-				return;
-			}
-			if (!checkOutputData(getNEpochs(), output, getBatchSize(), getMemorySize(), output_nodes))
-			{
-				return;
-			}
-			if (!model.checkNodeNames(input_nodes))
-			{
-				return;
-			}
-			if (!model.checkNodeNames(output_nodes))
-			{
-				return;
-			}
-			// printf("Data checks passed\n");
-
-			// Initialize the model
-			model.initError(getBatchSize(), getMemorySize());
-			model.clearCache();
-			model.initNodes(getBatchSize(), getMemorySize());
-			// printf("Initialized the model\n");
-
-			for (int iter = 0; iter < getNEpochs(); ++iter) // use n_epochs here
-			{
-				// printf("Training epoch: %d\t", iter);
-
-				// forward propogate 
-				if (iter == 0)
-					model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), true, true, 2);
-				else
-					model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), false, true, 2);
-
-				// calculate the model error and node output error
-				model.CETT(output.chip(iter, 3), output_nodes, getMemorySize());
-				std::cout << "Model error: " << model.getError().sum() << std::endl;
-
-				// back propogate
-				// model.TBPTT(getMemorySize()-1);
-				if (iter == 0)
-					model.TBPTT(getMemorySize() - 1, true, true, 2);
-				else
-					model.TBPTT(getMemorySize() - 1, false, true, 2);
-
-				// update the weights
-				model.updateWeights(getMemorySize());
-
-				// reinitialize the model
-				model.reInitializeNodeStatuses();
-				model.initNodes(getBatchSize(), getMemorySize());
-			}
-			model.clearCache();
-		}
-
-		std::vector<float> validateModel(Model& model,
-			const Eigen::Tensor<float, 4>& input,
-			const Eigen::Tensor<float, 4>& output,
-			const Eigen::Tensor<float, 3>& time_steps,
-			const std::vector<std::string>& input_nodes,
-			const std::vector<std::string>& output_nodes)
-		{
-			std::vector<float> result;
-			return result;
-		};
 	};
 
   DAGToyModelTrainer trainer;
@@ -398,82 +296,6 @@ BOOST_AUTO_TEST_CASE(DCGToy)
       model2.addLinks({l1, l2, l3, lb1, lb2});
       return model2;
     }
-
-		void trainModel(Model& model,
-			const Eigen::Tensor<float, 4>& input,
-			const Eigen::Tensor<float, 4>& output,
-			const Eigen::Tensor<float, 3>& time_steps,
-			const std::vector<std::string>& input_nodes,
-			const std::vector<std::string>& output_nodes)
-		{
-			// printf("Training the model\n");
-
-			// Check input and output data
-			if (!checkInputData(getNEpochs(), input, getBatchSize(), getMemorySize(), input_nodes))
-			{
-				return;
-			}
-			if (!checkOutputData(getNEpochs(), output, getBatchSize(), getMemorySize(), output_nodes))
-			{
-				return;
-			}
-			if (!model.checkNodeNames(input_nodes))
-			{
-				return;
-			}
-			if (!model.checkNodeNames(output_nodes))
-			{
-				return;
-			}
-			// printf("Data checks passed\n");
-
-			// Initialize the model
-			model.initError(getBatchSize(), getMemorySize());
-			model.clearCache();
-			model.initNodes(getBatchSize(), getMemorySize());
-			// printf("Initialized the model\n");
-
-			for (int iter = 0; iter < getNEpochs(); ++iter) // use n_epochs here
-			{
-				// printf("Training epoch: %d\t", iter);
-
-				// forward propogate 
-				if (iter == 0)
-					model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), true, true, 2);
-				else
-					model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), false, true, 2);
-
-				// calculate the model error and node output error
-				model.CETT(output.chip(iter, 3), output_nodes, getMemorySize());
-				 std::cout<<"Model error: "<<model.getError().sum()<<std::endl;
-
-				// back propogate
-				// model.TBPTT(getMemorySize()-1);
-				if (iter == 0)
-					model.TBPTT(getMemorySize() - 1, true, true, 2);
-				else
-					model.TBPTT(getMemorySize() - 1, false, true, 2);
-
-				// update the weights
-				model.updateWeights(getMemorySize());
-
-				// reinitialize the model
-				model.reInitializeNodeStatuses();
-				model.initNodes(getBatchSize(), getMemorySize());
-			}
-			model.clearCache();
-		}
-
-    std::vector<float> validateModel(Model& model,
-      const Eigen::Tensor<float, 4>& input,
-      const Eigen::Tensor<float, 4>& output,
-      const Eigen::Tensor<float, 3>& time_steps,
-      const std::vector<std::string>& input_nodes,
-      const std::vector<std::string>& output_nodes)
-    {
-      std::vector<float> result;
-      return result;
-    };
   };
 
   DCGToyModelTrainer trainer;

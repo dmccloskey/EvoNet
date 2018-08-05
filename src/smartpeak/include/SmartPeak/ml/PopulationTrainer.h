@@ -14,7 +14,7 @@ namespace SmartPeak
 {
 
   /**
-    @brief Replicates a model with or without modification (i.e., mutation)
+    @brief Trains a vector of models
   */
   class PopulationTrainer
   {
@@ -156,6 +156,8 @@ public:
 
 private:
 		int unique_id_ = 0;
+
+		// population dynamics
   };
 }
 

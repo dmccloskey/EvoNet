@@ -44,7 +44,7 @@ public:
     Model model;
     return model;
   };
-  void trainModel(Model& model,
+  std::vector<float> trainModel(Model& model,
     const Eigen::Tensor<float, 4>& input,
     const Eigen::Tensor<float, 3>& output,
     const Eigen::Tensor<float, 3>& time_steps,

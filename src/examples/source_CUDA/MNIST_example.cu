@@ -50,7 +50,7 @@ public:
     Model model;
     return model;
   };
-  void trainModel(Model& model,
+  std::vector<float> trainModel(Model& model,
     const Eigen::Tensor<float, 4>& input,
     const Eigen::Tensor<float, 3>& output,
     const Eigen::Tensor<float, 3>& time_steps,
@@ -58,23 +58,24 @@ public:
     const std::vector<std::string>& output_nodes)
   {
     printf("Training the model\n");
+		std::vector<float> model_error;
 
     // Check input and output data
     if (!checkInputData(getNEpochs(), input, getBatchSize(), getMemorySize(), input_nodes))
     {
-      return;
+			return model_error;
     }
     if (!checkOutputData(getNEpochs(), output, getBatchSize(), output_nodes))
     {
-      return;
+			return model_error;
     }
     if (!model.checkNodeNames(input_nodes))
     {
-      return;
+			return model_error;
     }
     if (!model.checkNodeNames(output_nodes))
     {
-      return;
+			return model_error;
     }
     printf("Data checks passed\n");
     
@@ -95,7 +96,10 @@ public:
 
       // calculate the model error and node output error
       model.calculateError(output.chip(iter, 2), output_nodes, 0);
-      std::cout<<"Model error: "<<model.getError().sum()<<std::endl;
+
+			const Eigen::Tensor<float, 0> total_error = model.getError().sum();
+			model_error.push_back(total_error(0));
+			// std::cout<<"Model error: "<<total_error(0)<<std::endl;
 
       // back propogate
       model.backPropogate(0);
@@ -108,6 +112,7 @@ public:
       model.initNodes(getBatchSize(), getMemorySize());
     }
 		model.clearCache();
+		return model_error;
   }
   std::vector<float> validateModel(Model& model,
     const Eigen::Tensor<float, 4>& input,

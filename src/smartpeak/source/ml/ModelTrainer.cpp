@@ -24,6 +24,16 @@ namespace SmartPeak
     n_epochs_ = n_epochs;    
   }
 
+	void ModelTrainer::setNThreads(const int & n_threads)
+	{
+		n_threads_ = n_threads;
+	}
+
+	void ModelTrainer::setVerbosityLevel(const int & verbosity_level)
+	{
+		verbosity_level_ = verbosity_level;
+	}
+
   int ModelTrainer::getBatchSize() const
   {
     return batch_size_;
@@ -39,65 +49,15 @@ namespace SmartPeak
     return n_epochs_;
   }
 
-  bool ModelTrainer::loadModel(const std::string& filename_nodes,
-    const std::string& filename_links,
-    const std::string& filename_weights,
-    Model& model)
-  {
-    // Read in the nodes
-    std::vector<Node> nodes;
+	int ModelTrainer::getNThreads() const
+	{
+		return n_threads_;
+	}
 
-    // Read in the links
-    std::vector<Link> links;
-
-    // Read in the weights
-    std::vector<Weight> weights;
-
-    // Make the model
-    model.addNodes(nodes);
-    model.addLinks(links);
-    model.addWeights(weights);
-
-	return true;
-  }
-
-  bool ModelTrainer::loadNodeStates(const std::string& filename, Model& model)
-  {
-	return true;
-  }
-
-  bool ModelTrainer::loadWeights(const std::string& filename, Model& model)
-  {
-	return true;
-  }
-
-  bool ModelTrainer::storeModel(const std::string& filename_nodes,
-    const std::string& filename_links,
-    const std::string& filename_weights,
-    const Model& model)
-  {
-	return true;
-  }
-
-  bool ModelTrainer::storeNodeStates(const std::string& filename, const Model& model)
-  {
-	return true;    
-  }
-
-  bool ModelTrainer::storeWeights(const std::string& filename, const Model& model)
-  {
-	return true;
-  }
-
-  bool ModelTrainer::loadInputData(const std::string& filename, Eigen::Tensor<float, 4>& input)
-  {
-	return true;
-  }
-
-  bool ModelTrainer::loadOutputData(const std::string& filename, Eigen::Tensor<float, 3>& output)
-  {
-	return true;
-  }
+	int ModelTrainer::getVerbosityLevel() const
+	{
+		return verbosity_level_;
+	}
 
   bool ModelTrainer::checkInputData(const int& n_epochs,
     const Eigen::Tensor<float, 4>& input,
@@ -183,5 +143,150 @@ namespace SmartPeak
 		{
 			return true;
 		}
+	}
+	std::vector<float> ModelTrainer::trainModel(Model & model, const Eigen::Tensor<float, 4>& input, const Eigen::Tensor<float, 4>& output, const Eigen::Tensor<float, 3>& time_steps, const std::vector<std::string>& input_nodes, const std::vector<std::string>& output_nodes)
+	{
+		std::vector<float> model_error;
+
+		// Check input and output data
+		if (!checkInputData(getNEpochs(), input, getBatchSize(), getMemorySize(), input_nodes))
+		{
+			return model_error;
+		}
+		if (!checkOutputData(getNEpochs(), output, getBatchSize(), getMemorySize(), output_nodes))
+		{
+			return model_error;
+		}
+		if (!checkTimeSteps(getNEpochs(), time_steps, getBatchSize(), getMemorySize()))
+		{
+			return model_error;
+		}
+		if (!model.checkNodeNames(input_nodes))
+		{
+			return model_error;
+		}
+		if (!model.checkNodeNames(output_nodes))
+		{
+			return model_error;
+		}
+
+		// Initialize the model
+		model.initError(getBatchSize(), getMemorySize());
+		model.clearCache();
+		model.initNodes(getBatchSize(), getMemorySize());
+
+		for (int iter = 0; iter < getNEpochs(); ++iter) // use n_epochs here
+		{
+			// forward propogate
+			if (iter == 0)
+				model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), true, true, getNThreads());
+			else
+				model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), false, true, getNThreads());
+
+			// calculate the model error and node output 
+			if (iter == 0)
+				model.CETT(output.chip(iter, 3), output_nodes, getMemorySize(), true, true, getNThreads());
+			else
+				model.CETT(output.chip(iter, 3), output_nodes, getMemorySize(), false, true, getNThreads());
+
+			const Eigen::Tensor<float, 0> total_error = model.getError().sum();
+			model_error.push_back(total_error(0));
+			if (getVerbosityLevel() >= 1)
+				std::cout<<"Model "<<model.getName()<<" error: "<<total_error(0)<<std::endl;
+
+			// back propogate
+			if (iter == 0)
+				model.TBPTT(getMemorySize() - 1, true, true, getNThreads());
+			else
+				model.TBPTT(getMemorySize() - 1, false, true, getNThreads());
+
+			if (getVerbosityLevel() >= 2)
+			{
+				for (const Node& node : model.getNodes())
+				{
+					std::cout << node.getName() << " Input: " << node.getInput() << std::endl;
+					std::cout << node.getName() << " Output: " << node.getOutput() << std::endl;
+					std::cout << node.getName() << " Error: " << node.getError() << std::endl;
+					std::cout << node.getName() << " Derivative: " << node.getDerivative() << std::endl;
+				}
+				for (const Weight& weight : model.getWeights())
+					std::cout << weight.getName() << " Weight: " << weight.getWeight() << std::endl;
+			}
+
+			// update the weights
+			model.updateWeights(getMemorySize());
+
+			// reinitialize the model
+			model.reInitializeNodeStatuses();
+			model.initNodes(getBatchSize(), getMemorySize());
+			model.initError(getBatchSize(), getMemorySize());
+		}
+		model.clearCache();
+		return model_error;
+	}
+
+	std::vector<float> ModelTrainer::validateModel(Model & model, const Eigen::Tensor<float, 4>& input, const Eigen::Tensor<float, 4>& output, const Eigen::Tensor<float, 3>& time_steps, const std::vector<std::string>& input_nodes, const std::vector<std::string>& output_nodes)
+	{
+		std::vector<float> model_error;
+
+		// Check input and output data
+		if (!checkInputData(getNEpochs(), input, getBatchSize(), getMemorySize(), input_nodes))
+		{
+			return model_error;
+		}
+		if (!checkOutputData(getNEpochs(), output, getBatchSize(), getMemorySize(), output_nodes))
+		{
+			return model_error;
+		}
+		if (!checkTimeSteps(getNEpochs(), time_steps, getBatchSize(), getMemorySize()))
+		{
+			return model_error;
+		}
+		if (!model.checkNodeNames(input_nodes))
+		{
+			return model_error;
+		}
+		if (!model.checkNodeNames(output_nodes))
+		{
+			return model_error;
+		}
+
+		// Initialize the model
+		model.initError(getBatchSize(), getMemorySize());
+		model.clearCache();
+		model.initNodes(getBatchSize(), getMemorySize());
+
+		for (int iter = 0; iter < getNEpochs(); ++iter) // use n_epochs here
+		{
+
+			// forward propogate
+			if (iter == 0)
+				model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), true, true, getNThreads());
+			else
+				model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), false, true, getNThreads());
+
+			// calculate the model error and node output error
+			if (iter == 0)
+				model.CETT(output.chip(iter, 3), output_nodes, getMemorySize(), true, true, getNThreads());
+			else
+				model.CETT(output.chip(iter, 3), output_nodes, getMemorySize(), false, true, getNThreads());
+
+			const Eigen::Tensor<float, 0> total_error = model.getError().sum();
+			model_error.push_back(total_error(0));
+			if (getVerbosityLevel() >= 1)
+				std::cout << "Model " << model.getName() << " error: " << total_error(0) << std::endl;
+
+			// reinitialize the model
+			model.reInitializeNodeStatuses();
+			model.initNodes(getBatchSize(), getMemorySize());
+			model.initError(getBatchSize(), getMemorySize());
+		}
+		model.clearCache();
+		return model_error;
+	}
+
+	Model ModelTrainer::makeModel()
+	{
+		return Model();
 	}
 }
