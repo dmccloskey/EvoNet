@@ -480,6 +480,10 @@ public:
 		{
 			return;
 		}
+		if (!checkTimeSteps(getNEpochs(), time_steps, getBatchSize(), getMemorySize()))
+		{
+			return;
+		}
 		if (!model.checkNodeNames(input_nodes))
 		{
 			return;
@@ -562,6 +566,10 @@ public:
 			return model_error;
 		}
 		if (!checkOutputData(getNEpochs(), output, getBatchSize(), getMemorySize(), output_nodes))
+		{
+			return model_error;
+		}
+		if (!checkTimeSteps(getNEpochs(), time_steps, getBatchSize(), getMemorySize()))
 		{
 			return model_error;
 		}

@@ -43,13 +43,8 @@ public:
     {
 			float new_gradient = gradient;
       if (std::abs(gradient) >= gradient_threshold_)
-      {
 				new_gradient = gradient * gradient_threshold_/std::abs(gradient);
-      }
-			if (std::isinf(new_gradient) || std::isnan(new_gradient))
-				return gradient;
-			else
-				return new_gradient;
+			return checkWeight(gradient, new_gradient);
     }
     void setGradientNoiseSigma(const float& gradient_noise_sigma){gradient_noise_sigma_ = gradient_noise_sigma;};
     float getGradientNoiseSigma() const{return gradient_noise_sigma_;};
@@ -64,6 +59,13 @@ public:
       return gradient + d(gen);
     }
     virtual std::string getParameters() const = 0;
+		float checkWeight(const float& weight, const float& new_weight)
+		{
+			if (std::isinf(new_weight) || std::isnan(new_weight))
+				return weight;
+			else
+				return new_weight;
+		}
 private:
     // clipping parameters
     float gradient_threshold_ = 1e6; ///< maximum gradient magnitude
@@ -155,7 +157,7 @@ public:
       const float unbiased_adam1 = adam1/ (1 - momentum_);
       const float unbiased_adam2 = adam2/ (1 - momentum2_);
       const float new_weight = weight - learning_rate_ * unbiased_adam1 / (std::sqrt(unbiased_adam2) + delta_);
-      return new_weight;
+      return checkWeight(weight, new_weight);
     };
     std::string getName() const{return "AdamOp";};
     std::string getParameters() const

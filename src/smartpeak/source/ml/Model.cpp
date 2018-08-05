@@ -2597,7 +2597,7 @@ namespace SmartPeak
 		// Forward propogate
 		for (const std::string& node_name : input_nodes)
 			nodes_.at(node_name)->setStatus(NodeStatus::activated);
-		forwardPropogate(1, false, false, n_threads);
+		forwardPropogate(0, false, false, n_threads);
 
 		// check that all output nodes are greater than 0
 		for (const std::string& node_name: output_nodes)
@@ -2610,7 +2610,7 @@ namespace SmartPeak
 		// backward propagation
 		for (const std::string& node_name : output_nodes)
 			nodes_.at(node_name)->setStatus(NodeStatus::corrected);
-		backPropogate(1, false, false, n_threads);
+		backPropogate(0, false, false, n_threads);
 
 		// check that all input nodes are greater than 0
 		for (const std::string& node_name : input_nodes)

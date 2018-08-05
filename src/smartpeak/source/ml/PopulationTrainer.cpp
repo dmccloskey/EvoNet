@@ -182,7 +182,7 @@ namespace SmartPeak
       if (model_errors.size()>0)
         model_ave_error = std::accumulate(model_errors.begin(), model_errors.end(), 0.0)/model_errors.size();
       if (isnan(model_ave_error))
-        model_ave_error = 1e6;      
+        model_ave_error = 1e32; // a large number
 
       char cout_char[512];
       sprintf(cout_char, "Model %s (Nodes: %d, Links: %d) error: %.6f\n", 

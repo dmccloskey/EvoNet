@@ -162,4 +162,26 @@ namespace SmartPeak
 			return true;
 		}
   }
+	bool ModelTrainer::checkTimeSteps(const int & n_epochs, const Eigen::Tensor<float, 3>& time_steps, const int & batch_size, const int & memory_size)
+	{
+		if (time_steps.dimension(0) != batch_size)
+		{
+			printf("batch_size of %d is not compatible with the time_steps dim 0 of %d\n", batch_size, (int)time_steps.dimension(0));
+			return false;
+		}
+		else if (time_steps.dimension(1) != memory_size)
+		{
+			printf("memory_size of %d is not compatible with the time_steps dim 1 of %d\n", memory_size, (int)time_steps.dimension(1));
+			return false;
+		}
+		else if (time_steps.dimension(2) != n_epochs)
+		{
+			printf("n_epochs of %d is not compatible with the time_steps dim 3 of %d\n", n_epochs, (int)time_steps.dimension(2));
+			return false;
+		}
+		else
+		{
+			return true;
+		}
+	}
 }

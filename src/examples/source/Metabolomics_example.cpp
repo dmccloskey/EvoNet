@@ -397,7 +397,7 @@ public:
 				met_conc = makeDefaultMetabolomicsData(met_id);
 			mar /= pow(met_conc, met_stoich);
 		}
-		for (int i = 0; i < biochemicalReaction.products_ids.size(); ++i) {
+		for (int i = 0; i < biochemicalReaction.reactants_ids.size(); ++i) {
 			std::string met_id = biochemicalReaction.reactants_ids[i];
 			int met_stoich = biochemicalReaction.reactants_stoichiometry[i];
 			float met_conc = 1.0f;
@@ -427,7 +427,7 @@ class ModelTrainerTest : public ModelTrainer
 {
 public:
 	/*
-	@brief
+	@brief Dummy model
 	*/
 	Model makeModel()
 	{
@@ -450,6 +450,10 @@ public:
 			return;
 		}
 		if (!checkOutputData(getNEpochs(), output, getBatchSize(), getMemorySize(), output_nodes))
+		{
+			return;
+		}
+		if (!checkTimeSteps(getNEpochs(), time_steps, getBatchSize(), getMemorySize()))
 		{
 			return;
 		}
@@ -538,6 +542,10 @@ public:
 		{
 			return model_error;
 		}
+		if (!checkTimeSteps(getNEpochs(), time_steps, getBatchSize(), getMemorySize()))
+		{
+			return model_error;
+		}
 		if (!model.checkNodeNames(input_nodes))
 		{
 			return model_error;
@@ -595,8 +603,8 @@ int main(int argc, char** argv)
 	PopulationTrainer population_trainer;
 
 	// parameters
-	const int n_epochs = 500;
-	const int n_epochs_validation = 25;
+	const int n_epochs = 50;
+	const int n_epochs_validation = 2;
 
 	const int n_hard_threads = std::thread::hardware_concurrency();
 	const int n_threads = n_hard_threads / 2; // the number of threads
@@ -609,8 +617,8 @@ int main(int argc, char** argv)
 	MetabolomicsDataSimulator metabolomics_data;
 	std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
 	metabolomics_data.readBiochemicalReactions(data_dir + "iAB_RBC_283.csv");
-	metabolomics_data.readMetabolomicsData(data_dir + "Metabolomics_data.csv");
-	metabolomics_data.readMetaData(data_dir + "MetaData_prePost.csv");
+	metabolomics_data.readMetabolomicsData(data_dir + "MetabolomicsData_RBC.csv");
+	metabolomics_data.readMetaData(data_dir + "MetaData_prePost_RBC.csv");
 	metabolomics_data.findMARs();
 	metabolomics_data.findLabels();
 
@@ -624,15 +632,17 @@ int main(int argc, char** argv)
 	for (int i = 0; i < n_output_nodes; ++i)
 		output_nodes.push_back("Output_" + std::to_string(i));
 
-	// define the model replicator for growth mode
+	// innitialize the model trainer
 	ModelTrainerTest model_trainer;
 	model_trainer.setBatchSize(8);
 	model_trainer.setMemorySize(1);
 	model_trainer.setNEpochs(n_epochs);
 
 	// Make the simulation time_steps
-	Eigen::Tensor<float, 3> time_steps(model_trainer.getBatchSize(), model_trainer.getMemorySize(), model_trainer.getNEpochs());
+	Eigen::Tensor<float, 3> time_steps(model_trainer.getBatchSize(), model_trainer.getMemorySize(), n_epochs);
 	time_steps.setConstant(1.0f);
+	Eigen::Tensor<float, 3> time_steps_validation(model_trainer.getBatchSize(), model_trainer.getMemorySize(), n_epochs_validation);
+	time_steps_validation.setConstant(1.0f);
 
 	// generate the input/output data for validation
 	std::cout << "Generating the input/output data for validation..." << std::endl;
@@ -640,17 +650,10 @@ int main(int argc, char** argv)
 	Eigen::Tensor<float, 4> output_data_validation(model_trainer.getBatchSize(), model_trainer.getMemorySize(), n_output_nodes, n_epochs_validation);
 	metabolomics_data.simulateData(input_data_validation, output_data_validation);
 
-	// define the model replicator for growth mode
+	// initialize the model replicator
 	ModelReplicator model_replicator;
 	model_replicator.setNodeActivations({NodeActivation::ReLU, NodeActivation::Linear, NodeActivation::ELU, NodeActivation::Sigmoid, NodeActivation::TanH});
-	model_replicator.setNodeIntegrations({NodeIntegration::Product, NodeIntegration::Max});
-	model_replicator.setRandomModifications(
-		std::make_pair(0, 1),
-		std::make_pair(0, 1),
-		std::make_pair(0, 0),
-		std::make_pair(0, 0),
-		std::make_pair(0, 0),
-		std::make_pair(0, 0));
+	model_replicator.setNodeIntegrations({NodeIntegration::Product, NodeIntegration::Sum});
 
 	// Population initial conditions
 	const int population_size = 1;
@@ -693,8 +696,8 @@ int main(int argc, char** argv)
 
 		// Generate the input and output data for training [BUG FREE]
 		std::cout << "Generating the input/output data for training..." << std::endl;
-		Eigen::Tensor<float, 4> input_data_training(model_trainer.getBatchSize(), model_trainer.getMemorySize(), n_input_nodes, model_trainer.getNEpochs());
-		Eigen::Tensor<float, 4> output_data_training(model_trainer.getBatchSize(), model_trainer.getMemorySize(), n_output_nodes, model_trainer.getNEpochs());
+		Eigen::Tensor<float, 4> input_data_training(model_trainer.getBatchSize(), model_trainer.getMemorySize(), n_input_nodes, n_epochs);
+		Eigen::Tensor<float, 4> output_data_training(model_trainer.getBatchSize(), model_trainer.getMemorySize(), n_output_nodes, n_epochs);
 		metabolomics_data.simulateData(input_data_training, output_data_training);
 
 		// generate a random number of model modifications
@@ -719,7 +722,7 @@ int main(int argc, char** argv)
 		model_trainer.setNEpochs(n_epochs_validation);  // lower the number of epochs for validation
 		std::vector<std::pair<int, float>> models_validation_errors = population_trainer.selectModels(
 			n_top, n_random, population, model_trainer,
-			input_data_validation, output_data_validation, time_steps, input_nodes, output_nodes, n_threads);
+			input_data_validation, output_data_validation, time_steps_validation, input_nodes, output_nodes, n_threads);
 		model_trainer.setNEpochs(n_epochs);  // restore the number of epochs for training
 
 		if (iter < iterations - 1)
