@@ -616,9 +616,12 @@ int main(int argc, char** argv)
 
 	MetabolomicsDataSimulator metabolomics_data;
 	std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
-	metabolomics_data.readBiochemicalReactions(data_dir + "iAB_RBC_283.csv");
-	metabolomics_data.readMetabolomicsData(data_dir + "MetabolomicsData_RBC.csv");
-	metabolomics_data.readMetaData(data_dir + "MetaData_prePost_RBC.csv");
+	std::string biochem_rxns_filename = data_dir + "iAB_RBC_283.csv";
+	std::string metabo_data_filename = data_dir + "MetabolomicsData_RBC.csv";
+	std::string meta_data_filename = data_dir + "MetaData_prePost_RBC.csv";
+	metabolomics_data.readBiochemicalReactions(biochem_rxns_filename);
+	metabolomics_data.readMetabolomicsData(metabo_data_filename);
+	metabolomics_data.readMetaData(meta_data_filename);
 	metabolomics_data.findMARs();
 	metabolomics_data.findLabels();
 
