@@ -502,10 +502,9 @@ namespace SmartPeak
 
 		// generate the input/output data for validation		
 		std::cout << "Generating the input/output data for validation..." << std::endl;
-		int n_epochs_validation = 0;  // [TODO: seperate members for training/validation epochs in model trainer]
-		Eigen::Tensor<float, 4> input_data_validation(model_trainer.getBatchSize(), model_trainer.getMemorySize(), input_nodes.size(), n_epochs_validation);
-		Eigen::Tensor<float, 4> output_data_validation(model_trainer.getBatchSize(), model_trainer.getMemorySize(), output_nodes.size(), n_epochs_validation);
-		Eigen::Tensor<float, 3> time_steps_validation(model_trainer.getBatchSize(), model_trainer.getMemorySize(), n_epochs_validation);
+		Eigen::Tensor<float, 4> input_data_validation(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)input_nodes.size(), model_trainer.getNEpochsValidation());
+		Eigen::Tensor<float, 4> output_data_validation(model_trainer.getBatchSize(), model_trainer.getMemorySize(),(int) output_nodes.size(), model_trainer.getNEpochsValidation());
+		Eigen::Tensor<float, 3> time_steps_validation(model_trainer.getBatchSize(), model_trainer.getMemorySize(), model_trainer.getNEpochsValidation());
 		// [TODO: call DataSimulator]		
 
 		// Population initial conditions
@@ -523,37 +522,11 @@ namespace SmartPeak
 			sprintf(iter_char, "Iteration #: %d\n", iter);
 			std::cout << iter_char;
 
-			if (iter == 0)
-			{
-				std::cout << "Initializing the population..." << std::endl;
-				// define the initial population [BUG FREE]
-				for (int i = 0; i<population_size; ++i)
-				{
-					// baseline model
-					std::shared_ptr<WeightInitOp> weight_init;
-					std::shared_ptr<SolverOp> solver;
-					weight_init.reset(new RandWeightInitOp(input_nodes.size()));
-					solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
-					Model model = model_replicator.makeBaselineModel(
-						input_nodes.size(), 50, output_nodes.size(),
-						NodeActivation::ReLU, NodeIntegration::Sum,
-						NodeActivation::ReLU, NodeIntegration::Sum,
-						weight_init, solver,
-						ModelLossFunction::MSE, std::to_string(i));
-					model.initWeights();
-
-					model.setId(i);
-
-					models.push_back(model);
-				}
-			}
-
 			// Generate the input and output data for training [BUG FREE]
 			std::cout << "Generating the input/output data for training..." << std::endl;
-			int n_epochs = 0;  // [TODO: seperate members for training/validation epochs in model trainer]
-			Eigen::Tensor<float, 4> input_data_training(model_trainer.getBatchSize(), model_trainer.getMemorySize(), input_nodes.size(), n_epochs);
-			Eigen::Tensor<float, 4> output_data_training(model_trainer.getBatchSize(), model_trainer.getMemorySize(), output_nodes.size(), n_epochs);
-			Eigen::Tensor<float, 3> time_steps(model_trainer.getBatchSize(), model_trainer.getMemorySize(), n_epochs);
+			Eigen::Tensor<float, 4> input_data_training(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)input_nodes.size(), model_trainer.getNEpochsTraining());
+			Eigen::Tensor<float, 4> output_data_training(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)output_nodes.size(), model_trainer.getNEpochsTraining());
+			Eigen::Tensor<float, 3> time_steps(model_trainer.getBatchSize(), model_trainer.getMemorySize(), model_trainer.getNEpochsTraining());
 			// [TODO: call DataSimulator]
 
 			// generate a random number of model modifications
@@ -576,11 +549,9 @@ namespace SmartPeak
 
 			// select the top N from the population
 			std::cout << "Selecting the models..." << std::endl;
-			model_trainer.setNEpochs(n_epochs_validation);  // lower the number of epochs for validation [TODO: remove after implementing training/validation epochs in modelTrainer]
 			models_validation_errors = selectModels(
 				n_top, n_random, models, model_trainer,
 				input_data_validation, output_data_validation, time_steps_validation, input_nodes, output_nodes, n_threads);
-			model_trainer.setNEpochs(n_epochs);  // restore the number of epochs for training [TODO: remove after implementing training/validation epochs in modelTrainer]
 
 			if (iter < iterations - 1)
 			{

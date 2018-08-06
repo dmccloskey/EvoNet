@@ -99,151 +99,6 @@ BOOST_AUTO_TEST_CASE(getRandomNModels_)
   // }
 }
 
-// Toy ModelTrainer used for all tests
-class ModelTrainerTest: public ModelTrainer
-{
-public:
-  Model makeModel()
-  {
-    Model model;
-    return model;
-  };
-  std::vector<float> trainModel(Model& model,
-    const Eigen::Tensor<float, 4>& input,
-    const Eigen::Tensor<float, 4>& output,
-    const Eigen::Tensor<float, 3>& time_steps,
-    const std::vector<std::string>& input_nodes,
-    const std::vector<std::string>& output_nodes)
-  {
-    // printf("Training the model\n");
-		std::vector<float> model_error;
-
-    // Check input and output data
-    if (!checkInputData(getNEpochs(), input, getBatchSize(), getMemorySize(), input_nodes))
-    {
-      return model_error;
-    }
-    if (!checkOutputData(getNEpochs(), output, getBatchSize(), getMemorySize(), output_nodes))
-    {
-      return model_error;
-    }
-		if (!checkTimeSteps(getNEpochs(), time_steps, getBatchSize(), getMemorySize()))
-		{
-			return model_error;
-		}
-    if (!model.checkNodeNames(input_nodes))
-    {
-      return model_error;
-    }
-    if (!model.checkNodeNames(output_nodes))
-    {
-      return model_error;
-    }
-    // printf("Data checks passed\n");
-    
-    // Initialize the model
-		model.initError(getBatchSize(), getMemorySize());
-    model.clearCache();
-    model.initNodes(getBatchSize(), getMemorySize());
-    // printf("Initialized the model\n");
-
-    for (int iter = 0; iter < getNEpochs(); ++iter) // use n_epochs here
-    {
-      // printf("Training epoch: %d\t", iter);
-
-      // forward propogate 
-      if (iter == 0)
-        model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), true, true, 2); 
-      else      
-        model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), false, true, 2); 
-
-      // calculate the model error and node output error
-			model.CETT(output.chip(iter,3), output_nodes, getMemorySize());
-			const Eigen::Tensor<float, 0> total_error = model.getError().sum();
-			model_error.push_back(total_error(0));
-			// std::cout<<"Model error: "<<total_error(0)<<std::endl;
-
-      // back propogate
-      // model.TBPTT(getMemorySize()-1);
-      if (iter == 0)
-        model.TBPTT(getMemorySize()-1, true, true, 2);
-      else
-        model.TBPTT(getMemorySize()-1, false, true, 2);
-
-      // update the weights
-      model.updateWeights(getMemorySize());   
-
-      // reinitialize the model
-      model.reInitializeNodeStatuses();
-      model.initNodes(getBatchSize(), getMemorySize());
-			model.initError(getBatchSize(), getMemorySize());
-    }
-		model.clearCache();
-		return model_error;
-  }
-  std::vector<float> validateModel(Model& model,
-    const Eigen::Tensor<float, 4>& input,
-    const Eigen::Tensor<float, 4>& output,
-    const Eigen::Tensor<float, 3>& time_steps,
-    const std::vector<std::string>& input_nodes,
-    const std::vector<std::string>& output_nodes)
-  {
-    // printf("Validating model %s\n", model.getName().data());
-
-    std::vector<float> model_error;
-
-    // Check input and output data
-    if (!checkInputData(getNEpochs(), input, getBatchSize(), getMemorySize(), input_nodes))
-    {
-      return model_error;
-    }
-    if (!checkOutputData(getNEpochs(), output, getBatchSize(), getMemorySize(), output_nodes))
-    {
-      return model_error;
-    }
-		if (!checkTimeSteps(getNEpochs(), time_steps, getBatchSize(), getMemorySize()))
-		{
-			return model_error;
-		}
-    if (!model.checkNodeNames(input_nodes))
-    {
-      return model_error;
-    }
-    if (!model.checkNodeNames(output_nodes))
-    {
-      return model_error;
-    }
-    // printf("Data checks passed\n");
-    
-    // Initialize the model
-		model.initError(getBatchSize(), getMemorySize());
-    model.clearCache();
-    model.initNodes(getBatchSize(), getMemorySize());
-    // printf("Initialized the model\n");
-
-    for (int iter = 0; iter < getNEpochs(); ++iter) // use n_epochs here
-    {
-      // printf("validation epoch: %d\t", iter);
-
-      // forward propogate
-      model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2)); 
-
-      // calculate the model error and node output error
-			model.CETT(output.chip(iter, 3), output_nodes, getMemorySize());
-      const Eigen::Tensor<float, 0> total_error = model.getError().sum();
-      model_error.push_back(total_error(0));  
-      // std::cout<<"Model error: "<<total_error(0)<<std::endl;
-
-      // reinitialize the model
-      model.reInitializeNodeStatuses();
-      model.initNodes(getBatchSize(), getMemorySize());
-			model.initError(getBatchSize(), getMemorySize());
-    }
-		model.clearCache();
-    return model_error;
-  }
-};
-
 BOOST_AUTO_TEST_CASE(validateModels_) 
 {
   // PopulationTrainer population_trainer;
@@ -270,7 +125,7 @@ BOOST_AUTO_TEST_CASE(validateModels_)
 BOOST_AUTO_TEST_CASE(selectModels) 
 {
   PopulationTrainer population_trainer;
-  ModelTrainerTest model_trainer;
+  ModelTrainer model_trainer;
 
   // [TODO: add tests]
 }
@@ -278,7 +133,7 @@ BOOST_AUTO_TEST_CASE(selectModels)
 BOOST_AUTO_TEST_CASE(replicateModels) 
 {
   PopulationTrainer population_trainer;
-  ModelTrainerTest model_trainer;
+  ModelTrainer model_trainer;
 
   ModelReplicator model_replicator;
 
@@ -374,10 +229,11 @@ BOOST_AUTO_TEST_CASE(trainModels)
 {
   PopulationTrainer population_trainer;
 
-  ModelTrainerTest model_trainer;
+  ModelTrainer model_trainer;
   model_trainer.setBatchSize(5);
   model_trainer.setMemorySize(8);
-  model_trainer.setNEpochs(5);
+  model_trainer.setNEpochsTraining(5);
+	model_trainer.setNEpochsValidation(5);
 
   ModelReplicator model_replicator;
   model_replicator.setNNodeAdditions(1);
@@ -418,7 +274,7 @@ BOOST_AUTO_TEST_CASE(trainModels)
   // Toy data set used for all tests
   // Make the input data
   const std::vector<std::string> input_nodes = {"Input_0"}; // true inputs + biases
-  Eigen::Tensor<float, 4> input_data(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)input_nodes.size(), model_trainer.getNEpochs());
+  Eigen::Tensor<float, 4> input_data(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)input_nodes.size(), model_trainer.getNEpochsTraining());
   Eigen::Tensor<float, 3> input_tmp(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)input_nodes.size()); 
   input_tmp.setValues(
     {{{1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}},
@@ -430,11 +286,11 @@ BOOST_AUTO_TEST_CASE(trainModels)
   for (int batch_iter=0; batch_iter<model_trainer.getBatchSize(); ++batch_iter)
     for (int memory_iter=0; memory_iter<model_trainer.getMemorySize(); ++memory_iter)
       for (int nodes_iter=0; nodes_iter<(int)input_nodes.size(); ++nodes_iter)
-        for (int epochs_iter=0; epochs_iter<model_trainer.getNEpochs(); ++epochs_iter)
+        for (int epochs_iter=0; epochs_iter<model_trainer.getNEpochsTraining(); ++epochs_iter)
           input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = input_tmp(batch_iter, memory_iter, nodes_iter);
   // Make the output data
   const std::vector<std::string> output_nodes = {"Output_0"};
-	Eigen::Tensor<float, 4> output_data(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)output_nodes.size(), model_trainer.getNEpochs());
+	Eigen::Tensor<float, 4> output_data(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)output_nodes.size(), model_trainer.getNEpochsTraining());
 	Eigen::Tensor<float, 3> output_tmp(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)output_nodes.size());
 	output_tmp.setValues(
 		{ { { 1 },{ 1 },{ 2 },{ 2 },{ 3 },{ 3 },{ 4 },{ 4 } },
@@ -445,10 +301,10 @@ BOOST_AUTO_TEST_CASE(trainModels)
 	for (int batch_iter = 0; batch_iter<model_trainer.getBatchSize(); ++batch_iter)
 		for (int memory_iter = 0; memory_iter<model_trainer.getMemorySize(); ++memory_iter)
 			for (int nodes_iter = 0; nodes_iter<(int)output_nodes.size(); ++nodes_iter)
-				for (int epochs_iter = 0; epochs_iter<model_trainer.getNEpochs(); ++epochs_iter)
+				for (int epochs_iter = 0; epochs_iter<model_trainer.getNEpochsTraining(); ++epochs_iter)
 					output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = output_tmp(batch_iter, memory_iter, nodes_iter);
   // Make the simulation time_steps
-  Eigen::Tensor<float, 3> time_steps(model_trainer.getBatchSize(), model_trainer.getMemorySize(), model_trainer.getNEpochs());
+  Eigen::Tensor<float, 3> time_steps(model_trainer.getBatchSize(), model_trainer.getMemorySize(), model_trainer.getNEpochsTraining());
   Eigen::Tensor<float, 2> time_steps_tmp(model_trainer.getBatchSize(), model_trainer.getMemorySize()); 
   time_steps_tmp.setValues({
     {1, 1, 1, 1, 1, 1, 1, 1},
@@ -459,7 +315,7 @@ BOOST_AUTO_TEST_CASE(trainModels)
   );
   for (int batch_iter=0; batch_iter<model_trainer.getBatchSize(); ++batch_iter)
     for (int memory_iter=0; memory_iter<model_trainer.getMemorySize(); ++memory_iter)
-      for (int epochs_iter=0; epochs_iter<model_trainer.getNEpochs(); ++epochs_iter)
+      for (int epochs_iter=0; epochs_iter<model_trainer.getNEpochsTraining(); ++epochs_iter)
         time_steps(batch_iter, memory_iter, epochs_iter) = time_steps_tmp(batch_iter, memory_iter);
 
   population_trainer.trainModels(population, model_trainer,
@@ -480,15 +336,15 @@ BOOST_AUTO_TEST_CASE(exampleUsage)
 {
   PopulationTrainer population_trainer;
 
-  ModelTrainerTest model_trainer;
+  ModelTrainer model_trainer;
   model_trainer.setBatchSize(5);
   model_trainer.setMemorySize(8);
-  model_trainer.setNEpochs(500);
+  model_trainer.setNEpochsTraining(500);
 
   // Toy data set used for all tests
   // Make the input data
   const std::vector<std::string> input_nodes = {"Input_0"}; // true inputs + biases
-  Eigen::Tensor<float, 4> input_data(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)input_nodes.size(), model_trainer.getNEpochs());
+  Eigen::Tensor<float, 4> input_data(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)input_nodes.size(), model_trainer.getNEpochsTraining());
   Eigen::Tensor<float, 3> input_tmp(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)input_nodes.size()); 
   input_tmp.setValues(
     {{{1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}},
@@ -500,11 +356,11 @@ BOOST_AUTO_TEST_CASE(exampleUsage)
   for (int batch_iter=0; batch_iter<model_trainer.getBatchSize(); ++batch_iter)
     for (int memory_iter=0; memory_iter<model_trainer.getMemorySize(); ++memory_iter)
       for (int nodes_iter=0; nodes_iter<(int)input_nodes.size(); ++nodes_iter)
-        for (int epochs_iter=0; epochs_iter<model_trainer.getNEpochs(); ++epochs_iter)
+        for (int epochs_iter=0; epochs_iter<model_trainer.getNEpochsTraining(); ++epochs_iter)
           input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = input_tmp(batch_iter, memory_iter, nodes_iter);
   // Make the output data
   const std::vector<std::string> output_nodes = {"Output_0"};
-  Eigen::Tensor<float, 4> output_data(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)output_nodes.size(), model_trainer.getNEpochs());
+  Eigen::Tensor<float, 4> output_data(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)output_nodes.size(), model_trainer.getNEpochsTraining());
   Eigen::Tensor<float, 3> output_tmp(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)output_nodes.size());
   output_tmp.setValues(
 		{ { { 1 },{ 1 },{ 2 },{ 2 },{ 3 },{ 3 },{ 4 },{ 4 } },
@@ -515,10 +371,10 @@ BOOST_AUTO_TEST_CASE(exampleUsage)
   for (int batch_iter=0; batch_iter<model_trainer.getBatchSize(); ++batch_iter)
 		for (int memory_iter = 0; memory_iter<model_trainer.getMemorySize(); ++memory_iter)
 			for (int nodes_iter=0; nodes_iter<(int)output_nodes.size(); ++nodes_iter)
-				for (int epochs_iter=0; epochs_iter<model_trainer.getNEpochs(); ++epochs_iter)
+				for (int epochs_iter=0; epochs_iter<model_trainer.getNEpochsTraining(); ++epochs_iter)
 					output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = output_tmp(batch_iter, memory_iter, nodes_iter);
   // Make the simulation time_steps
-  Eigen::Tensor<float, 3> time_steps(model_trainer.getBatchSize(), model_trainer.getMemorySize(), model_trainer.getNEpochs());
+  Eigen::Tensor<float, 3> time_steps(model_trainer.getBatchSize(), model_trainer.getMemorySize(), model_trainer.getNEpochsTraining());
   Eigen::Tensor<float, 2> time_steps_tmp(model_trainer.getBatchSize(), model_trainer.getMemorySize()); 
   time_steps_tmp.setValues({
     {1, 1, 1, 1, 1, 1, 1, 1},
@@ -529,7 +385,7 @@ BOOST_AUTO_TEST_CASE(exampleUsage)
   );
   for (int batch_iter=0; batch_iter<model_trainer.getBatchSize(); ++batch_iter)
     for (int memory_iter=0; memory_iter<model_trainer.getMemorySize(); ++memory_iter)
-      for (int epochs_iter=0; epochs_iter<model_trainer.getNEpochs(); ++epochs_iter)
+      for (int epochs_iter=0; epochs_iter<model_trainer.getNEpochsTraining(); ++epochs_iter)
         time_steps(batch_iter, memory_iter, epochs_iter) = time_steps_tmp(batch_iter, memory_iter);
 
   // define the model replicator for growth mode

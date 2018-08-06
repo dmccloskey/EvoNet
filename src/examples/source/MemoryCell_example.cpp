@@ -382,10 +382,11 @@ int main(int argc, char** argv)
   ModelTrainerTest model_trainer;
   model_trainer.setBatchSize(1);
   model_trainer.setMemorySize(sequence_length);
-  model_trainer.setNEpochs(n_epochs);
+  model_trainer.setNEpochsTraining(n_epochs);
+	model_trainer.setNEpochsValidation(n_epochs_validation);
 
   // Make the simulation time_steps
-  Eigen::Tensor<float, 3> time_steps(model_trainer.getBatchSize(), model_trainer.getMemorySize(), model_trainer.getNEpochs());
+  Eigen::Tensor<float, 3> time_steps(model_trainer.getBatchSize(), model_trainer.getMemorySize(), model_trainer.getNEpochsTraining());
   time_steps.setConstant(1.0f);
 
   // define the model replicator for growth mode
@@ -432,10 +433,10 @@ int main(int argc, char** argv)
   
     // Generate the input and output data for training [BUG FREE]
     std::cout<<"Generating the input/output data for training..."<<std::endl;  
-    Eigen::Tensor<float, 4> input_data_training(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)input_nodes.size(), model_trainer.getNEpochs());
-    Eigen::Tensor<float, 4> output_data_training(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)output_nodes.size(), model_trainer.getNEpochs());
+    Eigen::Tensor<float, 4> input_data_training(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)input_nodes.size(), model_trainer.getNEpochsTraining());
+    Eigen::Tensor<float, 4> output_data_training(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)output_nodes.size(), model_trainer.getNEpochsTraining());
     for (int batch_iter=0; batch_iter<model_trainer.getBatchSize(); ++batch_iter) {
-      for (int epochs_iter=0; epochs_iter<model_trainer.getNEpochs(); ++epochs_iter) {
+      for (int epochs_iter=0; epochs_iter<model_trainer.getNEpochsTraining(); ++epochs_iter) {
 
         // generate a new sequence
         Eigen::Tensor<float, 1> random_sequence(sequence_length);
@@ -482,12 +483,11 @@ int main(int argc, char** argv)
 
     // generate the input/output data for validation
     std::cout<<"Generating the input/output data for validation..."<<std::endl;      
-    model_trainer.setNEpochs(n_epochs_validation);  // lower the number of epochs for validation
 
-    Eigen::Tensor<float, 4> input_data_validation(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)input_nodes.size(), model_trainer.getNEpochs());
-    Eigen::Tensor<float, 4> output_data_validation(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)output_nodes.size(), model_trainer.getNEpochs());
+    Eigen::Tensor<float, 4> input_data_validation(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)input_nodes.size(), model_trainer.getNEpochsValidation());
+    Eigen::Tensor<float, 4> output_data_validation(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)output_nodes.size(), model_trainer.getNEpochsValidation());
     for (int batch_iter=0; batch_iter<model_trainer.getBatchSize(); ++batch_iter) {
-      for (int epochs_iter=0; epochs_iter<model_trainer.getNEpochs(); ++epochs_iter) {
+      for (int epochs_iter=0; epochs_iter<model_trainer.getNEpochsTraining(); ++epochs_iter) {
 
         // generate a new sequence
         Eigen::Tensor<float, 1> random_sequence(sequence_length);
@@ -520,8 +520,6 @@ int main(int argc, char** argv)
 		std::vector<std::pair<int, float>> models_validation_errors = population_trainer.selectModels(
       n_top, n_random, population, model_trainer,
       input_data_validation, output_data_validation, time_steps, input_nodes, output_nodes, n_threads);
-
-    model_trainer.setNEpochs(n_epochs);  // restore the number of epochs for training
 
     if (iter < iterations - 1)  
     {

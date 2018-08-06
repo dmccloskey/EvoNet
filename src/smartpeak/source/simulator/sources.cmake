@@ -4,6 +4,7 @@ set(directory source/simulator)
 ### list all filenames of the directory here
 set(sources_list
 	ChromatogramSimulator.cpp
+	DataSimulator.cpp
 	EMGModel.cpp
 	PeakSimulator.cpp
 )

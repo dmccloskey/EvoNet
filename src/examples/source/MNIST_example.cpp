@@ -167,10 +167,11 @@ int main(int argc, char** argv)
 	ModelTrainerTest model_trainer;
 	model_trainer.setBatchSize(8);
 	model_trainer.setMemorySize(1);
-	model_trainer.setNEpochs(50);
+	model_trainer.setNEpochsTraining(50);
+	model_trainer.setNEpochsValidation(50);
 
   // Make the simulation time_steps
-	Eigen::Tensor<float, 3> time_steps(model_trainer.getBatchSize(), model_trainer.getMemorySize(), model_trainer.getNEpochs());
+	Eigen::Tensor<float, 3> time_steps(model_trainer.getBatchSize(), model_trainer.getMemorySize(), model_trainer.getNEpochsTraining());
 	Eigen::Tensor<float, 2> time_steps_tmp(model_trainer.getBatchSize(), model_trainer.getMemorySize());
 	time_steps_tmp.setValues({
 		{ 1, 1, 1, 1, 1, 1, 1, 1 },
@@ -181,7 +182,7 @@ int main(int argc, char** argv)
 	);
 	for (int batch_iter = 0; batch_iter<model_trainer.getBatchSize(); ++batch_iter)
 		for (int memory_iter = 0; memory_iter<model_trainer.getMemorySize(); ++memory_iter)
-			for (int epochs_iter = 0; epochs_iter<model_trainer.getNEpochs(); ++epochs_iter)
+			for (int epochs_iter = 0; epochs_iter<model_trainer.getNEpochsTraining(); ++epochs_iter)
 				time_steps(batch_iter, memory_iter, epochs_iter) = time_steps_tmp(batch_iter, memory_iter);
 
   // define the model replicator for growth mode
@@ -247,38 +248,38 @@ int main(int argc, char** argv)
 
     // make the start and end sample indices [BUG FREE]
     mnist_sample_start = mnist_sample_end;
-    mnist_sample_end = mnist_sample_start + model_trainer.getBatchSize()*model_trainer.getNEpochs();
+    mnist_sample_end = mnist_sample_start + model_trainer.getBatchSize()*model_trainer.getNEpochsTraining();
     if (mnist_sample_end > training_data_size - 1)
-      mnist_sample_end = mnist_sample_end - model_trainer.getBatchSize()*model_trainer.getNEpochs(); 
+      mnist_sample_end = mnist_sample_end - model_trainer.getBatchSize()*model_trainer.getNEpochsTraining(); 
 
     // make a vector of sample_indices [BUG FREE]
     std::vector<int> sample_indices;
-    for (int i=0; i<model_trainer.getBatchSize()*model_trainer.getNEpochs(); ++i)
+    for (int i=0; i<model_trainer.getBatchSize()*model_trainer.getNEpochsTraining(); ++i)
     {
       int sample_index = i + mnist_sample_start;
       if (sample_index > training_data_size - 1)
       {
-        sample_index = sample_index - model_trainer.getBatchSize()*model_trainer.getNEpochs();
+        sample_index = sample_index - model_trainer.getBatchSize()*model_trainer.getNEpochsTraining();
       }
       sample_indices.push_back(sample_index);
     }   
   
     // Reformat the input data for training [BUG FREE]
     std::cout<<"Reformatting the input data..."<<std::endl;  
-    Eigen::Tensor<float, 4> input_data(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)input_nodes.size(), model_trainer.getNEpochs());
+    Eigen::Tensor<float, 4> input_data(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)input_nodes.size(), model_trainer.getNEpochsTraining());
     for (int batch_iter=0; batch_iter<model_trainer.getBatchSize(); ++batch_iter)
       for (int memory_iter=0; memory_iter<model_trainer.getMemorySize(); ++memory_iter)
         for (int nodes_iter=0; nodes_iter<input_nodes.size(); ++nodes_iter)
-          for (int epochs_iter=0; epochs_iter<model_trainer.getNEpochs(); ++epochs_iter)
+          for (int epochs_iter=0; epochs_iter<model_trainer.getNEpochsTraining(); ++epochs_iter)
             input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[epochs_iter*model_trainer.getBatchSize() + batch_iter], nodes_iter);
 
     // reformat the output data for training [BUG FREE]
     std::cout<<"Reformatting the output data..."<<std::endl;  
-    Eigen::Tensor<float, 4> output_data(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)output_nodes.size(), model_trainer.getNEpochs());
+    Eigen::Tensor<float, 4> output_data(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)output_nodes.size(), model_trainer.getNEpochsTraining());
     for (int batch_iter=0; batch_iter<model_trainer.getBatchSize(); ++batch_iter)
 			for (int memory_iter = 0; memory_iter<model_trainer.getMemorySize(); ++memory_iter)
 				for (int nodes_iter=0; nodes_iter<output_nodes.size(); ++nodes_iter)
-					for (int epochs_iter=0; epochs_iter<model_trainer.getNEpochs(); ++epochs_iter)
+					for (int epochs_iter=0; epochs_iter<model_trainer.getNEpochsTraining(); ++epochs_iter)
 						output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = (float)training_labels_encoded(sample_indices[epochs_iter*model_trainer.getBatchSize() + batch_iter], nodes_iter);
 
     // model modification scheduling
@@ -314,12 +315,10 @@ int main(int argc, char** argv)
     // reformat the output data for validation
 
     // select the top N from the population
-    std::cout<<"Selecting the models..."<<std::endl;    
-    model_trainer.setNEpochs(4);  // lower the number of epochs for validation
+    std::cout<<"Selecting the models..."<<std::endl; 
 		std::vector<std::pair<int, float>> models_validation_errors = population_trainer.selectModels(
       n_top, n_random, population, model_trainer,
       input_data, output_data, time_steps, input_nodes, output_nodes, n_threads);
-    model_trainer.setNEpochs(50);  // restor the number of epochs for training
 
     for (const Model& model: population)
     {

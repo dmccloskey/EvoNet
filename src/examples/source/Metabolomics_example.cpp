@@ -468,7 +468,8 @@ int main(int argc, char** argv)
 	ModelTrainer model_trainer;
 	model_trainer.setBatchSize(8);
 	model_trainer.setMemorySize(1);
-	model_trainer.setNEpochs(n_epochs);
+	model_trainer.setNEpochsTraining(n_epochs);
+	model_trainer.setNEpochsValidation(n_epochs_validation);
 
 	// generate the input/output data for validation
 	std::cout << "Generating the input/output data for validation..." << std::endl;
@@ -514,7 +515,7 @@ int main(int argc, char** argv)
 	const int iterations = 1;
 	for (int iter = 0; iter<iterations; ++iter)
 	{
-		char[128] iter_char;
+		char iter_char[128];
 		sprintf(iter_char, "Iteration #: %d\n", iter);
 		std::cout << iter_char;
 
@@ -544,11 +545,9 @@ int main(int argc, char** argv)
 
 		// select the top N from the population
 		std::cout << "Selecting the models..." << std::endl;
-		model_trainer.setNEpochs(n_epochs_validation);  // lower the number of epochs for validation
 		std::vector<std::pair<int, float>> models_validation_errors = population_trainer.selectModels(
 			n_top, n_random, population, model_trainer,
 			input_data_validation, output_data_validation, time_steps_validation, input_nodes, output_nodes, n_threads);
-		model_trainer.setNEpochs(n_epochs);  // restore the number of epochs for training
 
 		if (iter < iterations - 1)
 		{

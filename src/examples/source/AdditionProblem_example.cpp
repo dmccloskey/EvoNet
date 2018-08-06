@@ -492,7 +492,8 @@ int main(int argc, char** argv)
 	ModelTrainerTest model_trainer;
 	model_trainer.setBatchSize(1);
 	model_trainer.setMemorySize(sequence_length);
-	model_trainer.setNEpochs(n_epochs);
+	model_trainer.setNEpochsTraining(n_epochs);
+	model_trainer.setNEpochsValidation(n_epochs_validation);
 
 	// Make the simulation time_steps
 	Eigen::Tensor<float, 3> time_steps(model_trainer.getBatchSize(), model_trainer.getMemorySize(), n_epochs);
@@ -573,8 +574,8 @@ int main(int argc, char** argv)
 
 		// Generate the input and output data for training [BUG FREE]
 		std::cout << "Generating the input/output data for training..." << std::endl;
-		Eigen::Tensor<float, 4> input_data_training(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)input_nodes.size(), model_trainer.getNEpochs());
-		Eigen::Tensor<float, 4> output_data_training(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)output_nodes.size(), model_trainer.getNEpochs());
+		Eigen::Tensor<float, 4> input_data_training(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)input_nodes.size(), model_trainer.getNEpochsTraining());
+		Eigen::Tensor<float, 4> output_data_training(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)output_nodes.size(), model_trainer.getNEpochsTraining());
 		MakeAddProbTrainingData(input_data_training, output_data_training,
 			model_trainer.getBatchSize(), model_trainer.getMemorySize(), n_epochs, (int)input_nodes.size(), (int)output_nodes.size(),
 			sequence_length, n_masks);
@@ -598,11 +599,9 @@ int main(int argc, char** argv)
 
 		// select the top N from the population
 		std::cout << "Selecting the models..." << std::endl;
-		model_trainer.setNEpochs(n_epochs_validation);  // lower the number of epochs for validation
 		std::vector<std::pair<int, float>> models_validation_errors = population_trainer.selectModels(
 			n_top, n_random, population, model_trainer,
 			input_data_validation, output_data_validation, time_steps_validation, input_nodes, output_nodes, n_threads);
-		model_trainer.setNEpochs(n_epochs);  // restore the number of epochs for training
 
 		if (iter < iterations - 1)
 		{

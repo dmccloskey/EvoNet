@@ -43,13 +43,15 @@ public:
 
     void setBatchSize(const int& batch_size); ///< batch_size setter
     void setMemorySize(const int& memory_size); ///< memory_size setter
-    void setNEpochs(const int& n_epochs); ///< n_epochs setter
+    void setNEpochsTraining(const int& n_epochs); ///< n_epochs setter
+		void setNEpochsValidation(const int& n_epochs); ///< n_epochs setter
 		void setNThreads(const int& n_threads); ///< n_threads setter
 		void setVerbosityLevel(const int& verbosity_level); ///< verbosity_level setter
 
     int getBatchSize() const; ///< batch_size setter
     int getMemorySize() const; ///< memory_size setter
-    int getNEpochs() const; ///< n_epochs setter
+    int getNEpochsTraining() const; ///< n_epochs setter
+		int getNEpochsValidation() const; ///< n_epochs setter
 		int getNThreads() const; ///< n_threads setter
 		int getVerbosityLevel() const; ///< verbosity_level setter
  
@@ -154,7 +156,8 @@ public:
 private:
     int batch_size_;
     int memory_size_;
-    int n_epochs_;
+    int n_epochs_training_;
+		int n_epochs_validation_;
     bool is_trained_ = false;
 
 		int n_threads_ = 2;

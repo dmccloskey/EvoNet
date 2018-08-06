@@ -19,10 +19,15 @@ namespace SmartPeak
     memory_size_ = memory_size;    
   }
 
-  void ModelTrainer::setNEpochs(const int& n_epochs)
+  void ModelTrainer::setNEpochsTraining(const int& n_epochs)
   {
-    n_epochs_ = n_epochs;    
+    n_epochs_training_ = n_epochs;    
   }
+
+	void ModelTrainer::setNEpochsValidation(const int & n_epochs)
+	{
+		n_epochs_validation_ = n_epochs;
+	}
 
 	void ModelTrainer::setNThreads(const int & n_threads)
 	{
@@ -44,10 +49,15 @@ namespace SmartPeak
     return memory_size_;
   }
 
-  int ModelTrainer::getNEpochs() const
+  int ModelTrainer::getNEpochsTraining() const
   {
-    return n_epochs_;
+    return n_epochs_training_;
   }
+
+	int ModelTrainer::getNEpochsValidation() const
+	{
+		return n_epochs_validation_;
+	}
 
 	int ModelTrainer::getNThreads() const
 	{
@@ -149,15 +159,15 @@ namespace SmartPeak
 		std::vector<float> model_error;
 
 		// Check input and output data
-		if (!checkInputData(getNEpochs(), input, getBatchSize(), getMemorySize(), input_nodes))
+		if (!checkInputData(getNEpochsTraining(), input, getBatchSize(), getMemorySize(), input_nodes))
 		{
 			return model_error;
 		}
-		if (!checkOutputData(getNEpochs(), output, getBatchSize(), getMemorySize(), output_nodes))
+		if (!checkOutputData(getNEpochsTraining(), output, getBatchSize(), getMemorySize(), output_nodes))
 		{
 			return model_error;
 		}
-		if (!checkTimeSteps(getNEpochs(), time_steps, getBatchSize(), getMemorySize()))
+		if (!checkTimeSteps(getNEpochsTraining(), time_steps, getBatchSize(), getMemorySize()))
 		{
 			return model_error;
 		}
@@ -175,7 +185,7 @@ namespace SmartPeak
 		model.clearCache();
 		model.initNodes(getBatchSize(), getMemorySize());
 
-		for (int iter = 0; iter < getNEpochs(); ++iter) // use n_epochs here
+		for (int iter = 0; iter < getNEpochsTraining(); ++iter) // use n_epochs here
 		{
 			// forward propogate
 			if (iter == 0)
@@ -230,15 +240,15 @@ namespace SmartPeak
 		std::vector<float> model_error;
 
 		// Check input and output data
-		if (!checkInputData(getNEpochs(), input, getBatchSize(), getMemorySize(), input_nodes))
+		if (!checkInputData(getNEpochsValidation(), input, getBatchSize(), getMemorySize(), input_nodes))
 		{
 			return model_error;
 		}
-		if (!checkOutputData(getNEpochs(), output, getBatchSize(), getMemorySize(), output_nodes))
+		if (!checkOutputData(getNEpochsValidation(), output, getBatchSize(), getMemorySize(), output_nodes))
 		{
 			return model_error;
 		}
-		if (!checkTimeSteps(getNEpochs(), time_steps, getBatchSize(), getMemorySize()))
+		if (!checkTimeSteps(getNEpochsValidation(), time_steps, getBatchSize(), getMemorySize()))
 		{
 			return model_error;
 		}
@@ -256,7 +266,7 @@ namespace SmartPeak
 		model.clearCache();
 		model.initNodes(getBatchSize(), getMemorySize());
 
-		for (int iter = 0; iter < getNEpochs(); ++iter) // use n_epochs here
+		for (int iter = 0; iter < getNEpochsValidation(); ++iter) // use n_epochs here
 		{
 
 			// forward propogate
