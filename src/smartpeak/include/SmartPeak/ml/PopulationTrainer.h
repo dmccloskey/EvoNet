@@ -151,8 +151,24 @@ public:
       const std::vector<std::string>& input_nodes,
       const std::vector<std::string>& output_nodes);
 
-		int getNextID();
-		void setID(const int& id);
+		int getNextID(); ///< iterate and return the next id in the sequence
+		void setID(const int& id);  ///< unique_id setter
+ 
+		/**
+		@brief Train the population
+
+		@param[in, out] models The vector of models to copy
+		@param[in] model_trainer The trainer to use
+		@param[in] model_replicator The replicator to use
+		@param[in] data_simulator The data simulate/generator to use [TODO]
+		*/
+		std::vector<std::pair<int, float>> trainPopulation(
+			std::vector<Model>& models,
+			ModelTrainer& model_trainer,
+			ModelReplicator& model_replicator,
+			const std::vector<std::string>& input_nodes,
+			const std::vector<std::string>& output_nodes,
+			int n_threads = 1);
 
 private:
 		int unique_id_ = 0;

@@ -489,37 +489,34 @@ int main(int argc, char** argv)
 	int n_random = 1;
 	int n_replicates_per_model = 0;
 
-	// Evolve the population
+	// define the initial population
+	std::cout << "Initializing the population..." << std::endl;
 	std::vector<Model> population;
+	for (int i = 0; i<population_size; ++i)
+	{
+		// baseline model
+		std::shared_ptr<WeightInitOp> weight_init;
+		std::shared_ptr<SolverOp> solver;
+		weight_init.reset(new RandWeightInitOp(n_input_nodes));
+		solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
+		Model model = model_replicator.makeBaselineModel(
+			n_input_nodes, 50, n_output_nodes,
+			NodeActivation::ReLU, NodeIntegration::Sum,
+			NodeActivation::ReLU, NodeIntegration::Sum,
+			weight_init, solver,
+			ModelLossFunction::MSE, std::to_string(i));
+		model.initWeights();
+		model.setId(i);
+		population.push_back(model);
+	}
+
+	// Evolve the population
 	const int iterations = 1;
 	for (int iter = 0; iter<iterations; ++iter)
 	{
-		printf("Iteration #: %d\n", iter);
-
-		if (iter == 0)
-		{
-			std::cout << "Initializing the population..." << std::endl;
-			// define the initial population [BUG FREE]
-			for (int i = 0; i<population_size; ++i)
-			{
-				// baseline model
-				std::shared_ptr<WeightInitOp> weight_init;
-				std::shared_ptr<SolverOp> solver;
-				weight_init.reset(new RandWeightInitOp(n_input_nodes));
-				solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
-				Model model = model_replicator.makeBaselineModel(
-					n_input_nodes, 50, n_output_nodes,
-					NodeActivation::ReLU, NodeIntegration::Sum,
-					NodeActivation::ReLU, NodeIntegration::Sum,
-					weight_init, solver,
-					ModelLossFunction::MSE, std::to_string(i));
-				model.initWeights();
-
-				model.setId(i);
-
-				population.push_back(model);
-			}
-		}
+		char[128] iter_char;
+		sprintf(iter_char, "Iteration #: %d\n", iter);
+		std::cout << iter_char;
 
 		// Generate the input and output data for training [BUG FREE]
 		std::cout << "Generating the input/output data for training..." << std::endl;

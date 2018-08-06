@@ -490,6 +490,126 @@ namespace SmartPeak
 		unique_id_ = id;
 	}
 
+	std::vector<std::pair<int, float>> PopulationTrainer::trainPopulation(
+		std::vector<Model>& models,
+		ModelTrainer & model_trainer,
+		ModelReplicator & model_replicator,
+		const std::vector<std::string>& input_nodes,
+		const std::vector<std::string>& output_nodes,
+		int n_threads)
+	{
+		std::vector<std::pair<int, float>> models_validation_errors;
+
+		// generate the input/output data for validation		
+		std::cout << "Generating the input/output data for validation..." << std::endl;
+		int n_epochs_validation = 0;  // [TODO: seperate members for training/validation epochs in model trainer]
+		Eigen::Tensor<float, 4> input_data_validation(model_trainer.getBatchSize(), model_trainer.getMemorySize(), input_nodes.size(), n_epochs_validation);
+		Eigen::Tensor<float, 4> output_data_validation(model_trainer.getBatchSize(), model_trainer.getMemorySize(), output_nodes.size(), n_epochs_validation);
+		Eigen::Tensor<float, 3> time_steps_validation(model_trainer.getBatchSize(), model_trainer.getMemorySize(), n_epochs_validation);
+		// [TODO: call DataSimulator]		
+
+		// Population initial conditions
+		const int population_size = 1;
+		setID(population_size);
+		int n_top = 1;
+		int n_random = 1;
+		int n_replicates_per_model = 0;
+
+		// Evolve the population
+		const int iterations = 1;
+		for (int iter = 0; iter<iterations; ++iter)
+		{
+			char iter_char[128];
+			sprintf(iter_char, "Iteration #: %d\n", iter);
+			std::cout << iter_char;
+
+			if (iter == 0)
+			{
+				std::cout << "Initializing the population..." << std::endl;
+				// define the initial population [BUG FREE]
+				for (int i = 0; i<population_size; ++i)
+				{
+					// baseline model
+					std::shared_ptr<WeightInitOp> weight_init;
+					std::shared_ptr<SolverOp> solver;
+					weight_init.reset(new RandWeightInitOp(input_nodes.size()));
+					solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
+					Model model = model_replicator.makeBaselineModel(
+						input_nodes.size(), 50, output_nodes.size(),
+						NodeActivation::ReLU, NodeIntegration::Sum,
+						NodeActivation::ReLU, NodeIntegration::Sum,
+						weight_init, solver,
+						ModelLossFunction::MSE, std::to_string(i));
+					model.initWeights();
+
+					model.setId(i);
+
+					models.push_back(model);
+				}
+			}
+
+			// Generate the input and output data for training [BUG FREE]
+			std::cout << "Generating the input/output data for training..." << std::endl;
+			int n_epochs = 0;  // [TODO: seperate members for training/validation epochs in model trainer]
+			Eigen::Tensor<float, 4> input_data_training(model_trainer.getBatchSize(), model_trainer.getMemorySize(), input_nodes.size(), n_epochs);
+			Eigen::Tensor<float, 4> output_data_training(model_trainer.getBatchSize(), model_trainer.getMemorySize(), output_nodes.size(), n_epochs);
+			Eigen::Tensor<float, 3> time_steps(model_trainer.getBatchSize(), model_trainer.getMemorySize(), n_epochs);
+			// [TODO: call DataSimulator]
+
+			// generate a random number of model modifications
+			// [TODO: call modelReplicator scheduler method]
+			if (iter>0)
+			{
+				model_replicator.setRandomModifications(
+					std::make_pair(0, 5),
+					std::make_pair(0, 10),
+					std::make_pair(0, 5),
+					std::make_pair(0, 10),
+					std::make_pair(0, 5),
+					std::make_pair(0, 5));
+			}
+
+			// train the population
+			std::cout << "Training the models..." << std::endl;
+		  trainModels(models, model_trainer,
+				input_data_training, output_data_training, time_steps, input_nodes, output_nodes, n_threads);
+
+			// select the top N from the population
+			std::cout << "Selecting the models..." << std::endl;
+			model_trainer.setNEpochs(n_epochs_validation);  // lower the number of epochs for validation [TODO: remove after implementing training/validation epochs in modelTrainer]
+			models_validation_errors = selectModels(
+				n_top, n_random, models, model_trainer,
+				input_data_validation, output_data_validation, time_steps_validation, input_nodes, output_nodes, n_threads);
+			model_trainer.setNEpochs(n_epochs);  // restore the number of epochs for training [TODO: remove after implementing training/validation epochs in modelTrainer]
+
+			if (iter < iterations - 1)
+			{
+				// Population size of 16
+				// [TODO: replace with call to populationScheduler]
+				if (iter == 0)
+				{
+					n_top = 3;
+					n_random = 3;
+					n_replicates_per_model = 15;
+				}
+				else
+				{
+					n_top = 3;
+					n_random = 3;
+					n_replicates_per_model = 3;
+				}
+
+				// replicate and modify models
+				// [TODO: add options for verbosity]
+				std::cout << "Replicating and modifying the models..." << std::endl;
+				replicateModels(models, model_replicator, input_nodes, output_nodes,
+					n_replicates_per_model, std::to_string(iter), n_threads);
+				std::cout << "Population size of " << models.size() << std::endl;
+			}
+		}
+		return models_validation_errors;
+	}
+
   // float PopulationTrainer::calculateMean(std::vector<float> values)
   // {
   //   if (values.empty())
