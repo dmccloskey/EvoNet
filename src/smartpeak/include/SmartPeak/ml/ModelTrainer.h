@@ -151,7 +151,7 @@ public:
 
       @returns The constructed model
     */ 
-    Model makeModel();
+    virtual Model makeModel() = 0;
 
 		/**
 		@brief Entry point for users to code their adaptive scheduler
@@ -163,11 +163,11 @@ public:
 		@param[in] model_errors The trace of model errors from training/validation
 
 		*/
-		void adaptiveTrainerScheduler(
+		virtual void adaptiveTrainerScheduler(
 			const int& n_generations,
 			const int& n_epochs,
 			const Model& model,
-			const std::vector<float>& model_errors);
+			const std::vector<float>& model_errors) = 0;
 
 private:
     int batch_size_;

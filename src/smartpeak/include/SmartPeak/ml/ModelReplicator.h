@@ -261,10 +261,10 @@ public:
 		@param[in] models The models in the population
 		@param[in] model_errors The trace of models errors from validation at each generation
 		*/
-		void adaptiveReplicatorScheduler(
+		virtual void adaptiveReplicatorScheduler(
 			const int& n_generations,
 			std::vector<Model>& models,
-			std::vector<std::vector<std::pair<int, float>>>& models_errors_per_generations);
+			std::vector<std::vector<std::pair<int, float>>>& models_errors_per_generations) = 0;
 
 private:
     // modification parameters

@@ -34,8 +34,15 @@ using namespace SmartPeak;
  */
 
 // Extended classes
-class ModelTrainerExt: public ModelTrainer
+class ModelTrainerExt : public ModelTrainer
 {
+public:
+	Model makeModel() { return Model(); }
+	void adaptiveTrainerScheduler(
+		const int& n_generations,
+		const int& n_epochs,
+		const Model& model,
+		const std::vector<float>& model_errors) {}
 };
 
 class DataSimulatorExt : public DataSimulator

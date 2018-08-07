@@ -12,26 +12,37 @@
 using namespace SmartPeak;
 using namespace std;
 
+class ModelTrainerExt : public ModelTrainer
+{
+public:
+	Model makeModel() { return Model(); }
+	void adaptiveTrainerScheduler(
+		const int& n_generations,
+		const int& n_epochs,
+		const Model& model,
+		const std::vector<float>& model_errors) {}
+};
+
 BOOST_AUTO_TEST_SUITE(trainer)
 
 BOOST_AUTO_TEST_CASE(constructor) 
 {
-  ModelTrainer* ptr = nullptr;
-  ModelTrainer* nullPointer = nullptr;
-ptr = new ModelTrainer();
+  ModelTrainerExt* ptr = nullptr;
+  ModelTrainerExt* nullPointer = nullptr;
+ptr = new ModelTrainerExt();
   BOOST_CHECK_NE(ptr, nullPointer);
 }
 
 BOOST_AUTO_TEST_CASE(destructor) 
 {
-  ModelTrainer* ptr = nullptr;
-ptr = new ModelTrainer();
+  ModelTrainerExt* ptr = nullptr;
+ptr = new ModelTrainerExt();
   delete ptr;
 }
 
 BOOST_AUTO_TEST_CASE(gettersAndSetters) 
 {
-  ModelTrainer trainer;
+  ModelTrainerExt trainer;
   trainer.setBatchSize(4);
   trainer.setMemorySize(1);
   trainer.setNEpochsTraining(100);
@@ -45,7 +56,7 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
 
 BOOST_AUTO_TEST_CASE(checkInputData) 
 {
-  ModelTrainer trainer;
+  ModelTrainerExt trainer;
   trainer.setBatchSize(4);
   trainer.setMemorySize(1);
   trainer.setNEpochsTraining(100);
@@ -73,7 +84,7 @@ BOOST_AUTO_TEST_CASE(checkInputData)
 
 BOOST_AUTO_TEST_CASE(checkOutputData) 
 {
-  ModelTrainer trainer;
+  ModelTrainerExt trainer;
   trainer.setBatchSize(4);
   trainer.setMemorySize(1);
   trainer.setNEpochsTraining(100);
@@ -185,6 +196,11 @@ BOOST_AUTO_TEST_CASE(DAGToy)
       model1.setLossFunction(ModelLossFunction::MSE);
       return model1;
     }
+		void adaptiveTrainerScheduler(
+			const int& n_generations,
+			const int& n_epochs,
+			const Model& model,
+			const std::vector<float>& model_errors) {}
 	};
 
   DAGToyModelTrainer trainer;
@@ -300,6 +316,11 @@ BOOST_AUTO_TEST_CASE(DCGToy)
       model2.addLinks({l1, l2, l3, lb1, lb2});
       return model2;
     }
+		void adaptiveTrainerScheduler(
+			const int& n_generations,
+			const int& n_epochs,
+			const Model& model,
+			const std::vector<float>& model_errors) {}
   };
 
   DCGToyModelTrainer trainer;

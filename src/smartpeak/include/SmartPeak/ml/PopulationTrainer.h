@@ -184,10 +184,10 @@ public:
 		@param[in] models The models in the population
 		@param[in] model_errors The trace of models errors from validation at each generation
 		*/
-		void adaptivePopulationScheduler(
+		virtual void adaptivePopulationScheduler(
 			const int& n_generations,
 			std::vector<Model>& models,
-			std::vector<std::vector<std::pair<int, float>>>& models_errors_per_generations);
+			std::vector<std::vector<std::pair<int, float>>>& models_errors_per_generations) = 0;
 
 private:
 		int unique_id_ = 0;

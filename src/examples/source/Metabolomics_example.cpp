@@ -480,6 +480,17 @@ public:
 	}
 };
 
+class ModelTrainerExt : public ModelTrainer
+{
+public:
+	Model makeModel() { return Model(); }
+	void adaptiveTrainerScheduler(
+		const int& n_generations,
+		const int& n_epochs,
+		const Model& model,
+		const std::vector<float>& model_errors) {}
+};
+
 // Main
 int main(int argc, char** argv)
 {
@@ -523,7 +534,7 @@ int main(int argc, char** argv)
 		output_nodes.push_back("Output_" + std::to_string(i));
 
 	// innitialize the model trainer
-	ModelTrainer model_trainer;
+	ModelTrainerExt model_trainer;
 	model_trainer.setBatchSize(8);
 	model_trainer.setMemorySize(1);
 	model_trainer.setNEpochsTraining(1000);

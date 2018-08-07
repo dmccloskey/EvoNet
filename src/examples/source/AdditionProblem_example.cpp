@@ -251,7 +251,7 @@ public:
 			Link_m_bias_to_m, Link_o_bias_to_o });
 		model.setLossFunction(ModelLossFunction::MSE);
 		return model;
-	};
+	}
 
 	/*
 	@brief LSTM implementation with 4 hidden layers
@@ -471,7 +471,12 @@ public:
 			std::cout<<"There are errors in the model's links nodes and weights names!"<<std::endl;
 
 		return model;
-	};
+	}
+	void adaptiveTrainerScheduler(
+		const int& n_generations,
+		const int& n_epochs,
+		const Model& model,
+		const std::vector<float>& model_errors) {}
 };
 
 class ModelReplicatorExt : public ModelReplicator

@@ -294,18 +294,4 @@ namespace SmartPeak
 		model.clearCache();
 		return model_error;
 	}
-
-	Model ModelTrainer::makeModel()
-	{
-		return Model();
-	}
-
-	void ModelTrainer::adaptiveTrainerScheduler(
-		const int & n_generations,
-		const int & n_epochs,
-		const Model& model,
-		const std::vector<float>& model_errors)
-	{
-		// TODO: update the ModelTrainer attributes based on the triggers
-	}
 }

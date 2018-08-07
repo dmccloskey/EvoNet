@@ -12,26 +12,35 @@
 using namespace SmartPeak;
 using namespace std;
 
+class ModelReplicatorExt : public ModelReplicator
+{
+public:
+	void adaptiveReplicatorScheduler(
+		const int& n_generations,
+		std::vector<Model>& models,
+		std::vector<std::vector<std::pair<int, float>>>& models_errors_per_generations)	{	}
+};
+
 BOOST_AUTO_TEST_SUITE(ModelReplicator1)
 
 BOOST_AUTO_TEST_CASE(constructor) 
 {
-  ModelReplicator* ptr = nullptr;
-  ModelReplicator* nullPointer = nullptr;
-	ptr = new ModelReplicator();
+  ModelReplicatorExt* ptr = nullptr;
+  ModelReplicatorExt* nullPointer = nullptr;
+	ptr = new ModelReplicatorExt();
   BOOST_CHECK_NE(ptr, nullPointer);
 }
 
 BOOST_AUTO_TEST_CASE(destructor) 
 {
-  ModelReplicator* ptr = nullptr;
-	ptr = new ModelReplicator();
+  ModelReplicatorExt* ptr = nullptr;
+	ptr = new ModelReplicatorExt();
   delete ptr;
 }
 
 BOOST_AUTO_TEST_CASE(gettersAndSetters) 
 {
-  ModelReplicator model_replicator;
+  ModelReplicatorExt model_replicator;
   model_replicator.setNNodeAdditions(1);
   model_replicator.setNLinkAdditions(2);
   model_replicator.setNNodeDeletions(3);
@@ -57,7 +66,7 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
 
 BOOST_AUTO_TEST_CASE(setAndMakeRandomModifications)
 {
-	ModelReplicator model_replicator;
+	ModelReplicatorExt model_replicator;
 
 	// node additions
   model_replicator.setRandomModifications(
@@ -158,7 +167,7 @@ BOOST_AUTO_TEST_CASE(setAndMakeRandomModifications)
 
 BOOST_AUTO_TEST_CASE(makeUniqueHash) 
 {
-  ModelReplicator model_replicator;
+  ModelReplicatorExt model_replicator;
 
   std::string unique_str, left_str, right_str;
   left_str = "hello";
@@ -190,7 +199,7 @@ BOOST_AUTO_TEST_CASE(makeUniqueHash)
 
 BOOST_AUTO_TEST_CASE(makeBaselineModel) 
 {
-  ModelReplicator model_replicator;
+  ModelReplicatorExt model_replicator;
   Model model;
   std::vector<std::string> node_names, link_names, source_node_names, sink_node_names;
 
@@ -346,7 +355,7 @@ Model makeModel1()
 Model model_selectRandomNode1 = makeModel1();
 BOOST_AUTO_TEST_CASE(selectRandomNode1) 
 {
-  ModelReplicator model_replicator;
+  ModelReplicatorExt model_replicator;
   std::vector<NodeType> exclusion_list, inclusion_list;
   std::string random_node;
   bool test_passed;
@@ -381,7 +390,7 @@ BOOST_AUTO_TEST_CASE(selectNodes)
 Model model_selectRandomLink1 = makeModel1();
 BOOST_AUTO_TEST_CASE(selectRandomLink1) 
 {
-  ModelReplicator model_replicator;
+  ModelReplicatorExt model_replicator;
   std::vector<NodeType> source_exclusion_list, source_inclusion_list, sink_exclusion_list, sink_inclusion_list;
   std::string random_link;
   bool test_passed;
@@ -418,7 +427,7 @@ BOOST_AUTO_TEST_CASE(selectRandomLink1)
 Model model_addLink = makeModel1();
 BOOST_AUTO_TEST_CASE(addLink) 
 {
-  ModelReplicator model_replicator;
+  ModelReplicatorExt model_replicator;
   model_replicator.addLink(model_addLink);
   std::vector<std::string> link_names = {
     "Link_0_to_2", "Link_0_to_3", "Link_1_to_2", "Link_1_to_3", // existing links
@@ -470,7 +479,7 @@ BOOST_AUTO_TEST_CASE(addLink)
 Model model_addNode = makeModel1();
 BOOST_AUTO_TEST_CASE(addNode) 
 {
-  ModelReplicator model_replicator;
+  ModelReplicatorExt model_replicator;
   model_replicator.addNode(model_addNode);
   std::vector<std::string> node_names = {
     "2", "3", "4", "5" // existing nodes
@@ -525,7 +534,7 @@ BOOST_AUTO_TEST_CASE(addNode)
 Model model_deleteNode = makeModel1();
 BOOST_AUTO_TEST_CASE(deleteNode) 
 {
-  ModelReplicator model_replicator;
+  ModelReplicatorExt model_replicator;
 
   model_replicator.deleteNode(model_deleteNode, 10);
   BOOST_CHECK_EQUAL(model_deleteNode.getNodes().size(), 7);
@@ -546,7 +555,7 @@ BOOST_AUTO_TEST_CASE(deleteNode)
 Model model_deleteLink = makeModel1();
 BOOST_AUTO_TEST_CASE(deleteLink) 
 {
-  ModelReplicator model_replicator;
+  ModelReplicatorExt model_replicator;
 
   model_replicator.deleteLink(model_deleteLink, 10);
   BOOST_CHECK_EQUAL(model_deleteLink.getNodes().size(), 8);
@@ -558,7 +567,7 @@ BOOST_AUTO_TEST_CASE(deleteLink)
 Model model_changeNodeActivation = makeModel1();
 BOOST_AUTO_TEST_CASE(changeNodeActivation)
 {
-	ModelReplicator model_replicator;
+	ModelReplicatorExt model_replicator;
 	model_replicator.setNodeActivations({NodeActivation::ELU});
 	std::vector<std::string> node_names = { "0", "1", "2", "3", "4", "5", "6", "7" };
 	model_replicator.changeNodeActivation(model_changeNodeActivation);
@@ -587,7 +596,7 @@ BOOST_AUTO_TEST_CASE(changeNodeActivation)
 Model model_changeNodeIntegration = makeModel1();
 BOOST_AUTO_TEST_CASE(changeNodeIntegration)
 {
-	ModelReplicator model_replicator;
+	ModelReplicatorExt model_replicator;
 	model_replicator.setNodeIntegrations({ NodeIntegration::Product });
 	std::vector<std::string> node_names = { "0", "1", "2", "3", "4", "5", "6", "7" };
 	model_replicator.changeNodeIntegration(model_changeNodeIntegration);
@@ -611,7 +620,7 @@ BOOST_AUTO_TEST_CASE(changeNodeIntegration)
 
 BOOST_AUTO_TEST_CASE(makeRandomModificationOrder) 
 {
-  ModelReplicator model_replicator;
+  ModelReplicatorExt model_replicator;
 
   model_replicator.setNNodeAdditions(1);
   model_replicator.setNLinkAdditions(0);
@@ -692,7 +701,7 @@ Model model_modifyModel4 = makeModel1();
 Model model_modifyModel5 = makeModel1();
 BOOST_AUTO_TEST_CASE(modifyModel) 
 {
-  ModelReplicator model_replicator;
+  ModelReplicatorExt model_replicator;
 
   // No change with defaults
   model_replicator.modifyModel(model_modifyModel1);

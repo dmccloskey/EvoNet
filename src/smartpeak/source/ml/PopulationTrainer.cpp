@@ -581,11 +581,6 @@ namespace SmartPeak
 		return models_validation_errors_per_generation;
 	}
 
-	void PopulationTrainer::adaptivePopulationScheduler(const int & n_generations, std::vector<Model>& models, std::vector<std::vector<std::pair<int, float>>>& models_errors_per_generations)
-	{
-		// TODO: update the PopulationTrainer attributes based on the triggers
-	}
-
   // float PopulationTrainer::calculateMean(std::vector<float> values)
   // {
   //   if (values.empty())
