@@ -501,7 +501,8 @@ int main(int argc, char** argv)
 
 	// define the data simulator
 	MetabolomicsDataSimulator metabolomics_data;
-	std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
+	//std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
+	std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
 	std::string biochem_rxns_filename = data_dir + "iAB_RBC_283.csv";
 	std::string metabo_data_filename = data_dir + "MetabolomicsData_RBC.csv";
 	std::string meta_data_filename = data_dir + "MetaData_prePost_RBC.csv";
@@ -528,7 +529,7 @@ int main(int argc, char** argv)
 	model_trainer.setNEpochsTraining(1000);
 	model_trainer.setNEpochsValidation(10);
 	model_trainer.setNThreads(2);
-	model_trainer.setVerbosityLevel(0);
+	model_trainer.setVerbosityLevel(1);
 
 	// initialize the model replicator
 	ModelReplicatorExt model_replicator;
