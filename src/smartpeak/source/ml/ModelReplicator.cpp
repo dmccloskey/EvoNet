@@ -760,6 +760,14 @@ namespace SmartPeak
 		setNNodeIntegrationChanges(node_integration_changes_gen(gen));
 	}
 
+	void ModelReplicator::adaptiveReplicatorScheduler(
+		const int& n_generations,
+		std::vector<Model>& models,
+		std::vector<std::vector<std::pair<int, float>>>& models_errors_per_generations)
+	{
+		// TODO: update the ModelReplicator attributes based on the triggers
+	}
+
   void ModelReplicator::modifyModel(Model& model, std::string unique_str)
   {
     // randomly order the modifications

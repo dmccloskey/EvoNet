@@ -23,7 +23,16 @@ namespace SmartPeak
 			@param[in, out] output Output Tensor for the model
 			@param[in, out] time_steps Time step tensor for the model
 		*/
-		void simulateData(Eigen::Tensor<float, 4>& input_data, Eigen::Tensor<float, 4>& output_data, Eigen::Tensor<float, 3>& time_steps);
+		void simulateTrainingData(Eigen::Tensor<float, 4>& input_data, Eigen::Tensor<float, 4>& output_data, Eigen::Tensor<float, 3>& time_steps);
+
+		/**
+		@brief Entry point to define the simulated data
+
+		@param[in, out] input Input Tensor for the model
+		@param[in, out] output Output Tensor for the model
+		@param[in, out] time_steps Time step tensor for the model
+		*/
+		void simulateValidationData(Eigen::Tensor<float, 4>& input_data, Eigen::Tensor<float, 4>& output_data, Eigen::Tensor<float, 3>& time_steps);
 	};
 }
 

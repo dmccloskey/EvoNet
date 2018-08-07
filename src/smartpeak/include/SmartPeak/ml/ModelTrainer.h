@@ -153,6 +153,22 @@ public:
     */ 
     Model makeModel();
 
+		/**
+		@brief Entry point for users to code their adaptive scheduler
+		to modify training parameters based on a given trigger
+
+		@param[in] n_generations The number of evolution generations
+		@param[in] n_epochs The number of training/validation epochs
+		@param[in] model The model
+		@param[in] model_errors The trace of model errors from training/validation
+
+		*/
+		void adaptiveTrainerScheduler(
+			const int& n_generations,
+			const int& n_epochs,
+			const Model& model,
+			const std::vector<float>& model_errors);
+
 private:
     int batch_size_;
     int memory_size_;

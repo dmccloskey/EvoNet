@@ -226,7 +226,7 @@ static void ReadMetaData(
 	}
 };
 
-class MetabolomicsDataSimulator
+class MetabolomicsDataSimulator: public DataSimulator
 {
 public:
 	MetabolomicsDataSimulator() = default;
@@ -270,6 +270,14 @@ public:
 
 		// update the time_steps
 		time_steps.setConstant(1.0f);
+	}
+	void simulateTrainingData(Eigen::Tensor<float, 4>& input_data, Eigen::Tensor<float, 4>& output_data, Eigen::Tensor<float, 3>& time_steps)
+	{
+		simulateData(input_data, output_data, time_steps);
+	}
+	void simulateValidationData(Eigen::Tensor<float, 4>& input_data, Eigen::Tensor<float, 4>& output_data, Eigen::Tensor<float, 3>& time_steps)
+	{
+		simulateData(input_data, output_data, time_steps);
 	}
 
 	/*
@@ -426,15 +434,63 @@ public:
 	std::vector<std::string> component_group_names_;
 };
 
+// Extended classes
+class ModelReplicatorExt : public ModelReplicator
+{
+public:
+	void adaptiveReplicatorScheduler(
+		const int& n_generations,
+		std::vector<Model>& models,
+		std::vector<std::vector<std::pair<int, float>>>& models_errors_per_generations)
+	{
+		if (n_generations >= 0)
+		{
+			setRandomModifications(
+				std::make_pair(0, 5),
+				std::make_pair(0, 10),
+				std::make_pair(0, 5),
+				std::make_pair(0, 10),
+				std::make_pair(0, 5),
+				std::make_pair(0, 5));
+		}
+	}
+};
+
+class PopulationTrainerExt : public PopulationTrainer
+{
+public:
+	void adaptivePopulationScheduler(
+		const int& n_generations,
+		std::vector<Model>& models,
+		std::vector<std::vector<std::pair<int, float>>>& models_errors_per_generations)
+	{
+		// Population size of 16
+		if (n_generations == 0)
+		{
+			setNTop(3);
+			setNRandom(3);
+			setNReplicatesPerModel(15);
+		}
+		else
+		{
+			setNTop(3);
+			setNRandom(3);
+			setNReplicatesPerModel(3);
+		}
+	}
+};
+
 // Main
 int main(int argc, char** argv)
 {
-	PopulationTrainer population_trainer;
+	// define the population trainer parameters
+	PopulationTrainerExt population_trainer;
+	population_trainer.setNGenerations(10);
+	population_trainer.setNTop(3);
+	population_trainer.setNRandom(3);
+	population_trainer.setNReplicatesPerModel(3);
 
-	// parameters
-	const int n_epochs = 1000;
-	const int n_epochs_validation = 10;
-
+	// define the multithreading parameters
 	const int n_hard_threads = std::thread::hardware_concurrency();
 	const int n_threads = n_hard_threads / 2; // the number of threads
 	char threads_cout[512];
@@ -443,6 +499,7 @@ int main(int argc, char** argv)
 	std::cout << threads_cout;
 	//const int n_threads = 1;
 
+	// define the data simulator
 	MetabolomicsDataSimulator metabolomics_data;
 	std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
 	std::string biochem_rxns_filename = data_dir + "iAB_RBC_283.csv";
@@ -468,31 +525,20 @@ int main(int argc, char** argv)
 	ModelTrainer model_trainer;
 	model_trainer.setBatchSize(8);
 	model_trainer.setMemorySize(1);
-	model_trainer.setNEpochsTraining(n_epochs);
-	model_trainer.setNEpochsValidation(n_epochs_validation);
-
-	// generate the input/output data for validation
-	std::cout << "Generating the input/output data for validation..." << std::endl;
-	Eigen::Tensor<float, 4> input_data_validation(model_trainer.getBatchSize(), model_trainer.getMemorySize(), n_input_nodes, n_epochs_validation);
-	Eigen::Tensor<float, 4> output_data_validation(model_trainer.getBatchSize(), model_trainer.getMemorySize(), n_output_nodes, n_epochs_validation);
-	Eigen::Tensor<float, 3> time_steps_validation(model_trainer.getBatchSize(), model_trainer.getMemorySize(), n_epochs_validation);
-	metabolomics_data.simulateData(input_data_validation, output_data_validation, time_steps_validation);
+	model_trainer.setNEpochsTraining(1000);
+	model_trainer.setNEpochsValidation(10);
+	model_trainer.setNThreads(2);
+	model_trainer.setVerbosityLevel(0);
 
 	// initialize the model replicator
-	ModelReplicator model_replicator;
+	ModelReplicatorExt model_replicator;
 	model_replicator.setNodeActivations({NodeActivation::ReLU, NodeActivation::Linear, NodeActivation::ELU, NodeActivation::Sigmoid, NodeActivation::TanH});
 	model_replicator.setNodeIntegrations({NodeIntegration::Product, NodeIntegration::Sum});
-
-	// Population initial conditions
-	const int population_size = 1;
-	population_trainer.setID(population_size);
-	int n_top = 1;
-	int n_random = 1;
-	int n_replicates_per_model = 0;
 
 	// define the initial population
 	std::cout << "Initializing the population..." << std::endl;
 	std::vector<Model> population;
+	const int population_size = 1;
 	for (int i = 0; i<population_size; ++i)
 	{
 		// baseline model
@@ -512,84 +558,12 @@ int main(int argc, char** argv)
 	}
 
 	// Evolve the population
-	const int iterations = 1;
-	for (int iter = 0; iter<iterations; ++iter)
-	{
-		char iter_char[128];
-		sprintf(iter_char, "Iteration #: %d\n", iter);
-		std::cout << iter_char;
+	std::vector<std::vector<std::pair<int, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
+		population, model_trainer, model_replicator, metabolomics_data, input_nodes, output_nodes, n_threads);
 
-		// Generate the input and output data for training [BUG FREE]
-		std::cout << "Generating the input/output data for training..." << std::endl;
-		Eigen::Tensor<float, 4> input_data_training(model_trainer.getBatchSize(), model_trainer.getMemorySize(), n_input_nodes, n_epochs);
-		Eigen::Tensor<float, 4> output_data_training(model_trainer.getBatchSize(), model_trainer.getMemorySize(), n_output_nodes, n_epochs);
-		Eigen::Tensor<float, 3> time_steps(model_trainer.getBatchSize(), model_trainer.getMemorySize(), n_epochs);
-		metabolomics_data.simulateData(input_data_training, output_data_training, time_steps);
-
-		// generate a random number of model modifications
-		if (iter>0)
-		{
-			model_replicator.setRandomModifications(
-				std::make_pair(0, 5),
-				std::make_pair(0, 10),
-				std::make_pair(0, 5),
-				std::make_pair(0, 10),
-				std::make_pair(0, 5),
-				std::make_pair(0, 5));
-		}
-
-		// train the population
-		std::cout << "Training the models..." << std::endl;
-		population_trainer.trainModels(population, model_trainer,
-			input_data_training, output_data_training, time_steps, input_nodes, output_nodes, n_threads);
-
-		// select the top N from the population
-		std::cout << "Selecting the models..." << std::endl;
-		std::vector<std::pair<int, float>> models_validation_errors = population_trainer.selectModels(
-			n_top, n_random, population, model_trainer,
-			input_data_validation, output_data_validation, time_steps_validation, input_nodes, output_nodes, n_threads);
-
-		if (iter < iterations - 1)
-		{
-			// Population size of 16
-			if (iter == 0)
-			{
-				n_top = 3;
-				n_random = 3;
-				n_replicates_per_model = 15;
-			}
-			else
-			{
-				n_top = 3;
-				n_random = 3;
-				n_replicates_per_model = 3;
-			}
-			// Population size of 8
-			//if (iter == 0)
-			//{
-			//	n_top = 2;
-			//	n_random = 2;
-			//	n_replicates_per_model = 7;
-			//}
-			//else
-			//{
-			//	n_top = 2;
-			//	n_random = 2;
-			//	n_replicates_per_model = 3;
-			//}
-			// replicate and modify models
-			std::cout << "Replicating and modifying the models..." << std::endl;
-			population_trainer.replicateModels(population, model_replicator, input_nodes, output_nodes,
-				n_replicates_per_model, std::to_string(iter), n_threads);
-			std::cout << "Population size of " << population.size() << std::endl;
-		}
-		else
-		{
-			PopulationTrainerFile population_trainer_file;
-			population_trainer_file.storeModels(population, "Metabolomics");
-			population_trainer_file.storeModelValidations("MetabolomicsValidationErrors.csv", models_validation_errors);
-		}
-	}
+	PopulationTrainerFile population_trainer_file;
+	population_trainer_file.storeModels(population, "Metabolomics");
+	population_trainer_file.storeModelValidations("MetabolomicsValidationErrors.csv", models_validation_errors_per_generation.back());
 
 	return 0;
 }

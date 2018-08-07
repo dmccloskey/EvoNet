@@ -253,6 +253,19 @@ public:
 		*/
 		void makeRandomModifications();
 
+		/**
+		@brief Entry point for users to code their adaptive scheduler
+		to modify model modification parameters based on a given trigger
+
+		@param[in] n_generations The number of evolution generations
+		@param[in] models The models in the population
+		@param[in] model_errors The trace of models errors from validation at each generation
+		*/
+		void adaptiveReplicatorScheduler(
+			const int& n_generations,
+			std::vector<Model>& models,
+			std::vector<std::vector<std::pair<int, float>>>& models_errors_per_generations);
+
 private:
     // modification parameters
     int n_node_additions_ = 0; ///< new nodes to add to the model (with a random source and sink connection)

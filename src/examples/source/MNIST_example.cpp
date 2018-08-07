@@ -4,9 +4,7 @@
 #include <SmartPeak/ml/ModelTrainer.h>
 #include <SmartPeak/ml/ModelReplicator.h>
 #include <SmartPeak/ml/Model.h> 
-#include <SmartPeak/io/WeightFile.h>
-#include <SmartPeak/io/LinkFile.h>
-#include <SmartPeak/io/NodeFile.h>
+#include <SmartPeak/io/PopulationTrainerFile.h>
 
 #include <SmartPeak/core/Preprocessing.h>
 
@@ -35,87 +33,307 @@ using namespace SmartPeak;
  *    steps: 1) install CUDA toolkit, 2) modify cmake to build with nvcc, 3) modify code to use GpuDevice
  */
 
-// Toy ModelTrainer used for all tests
-class ModelTrainerTest: public ModelTrainer
+// Extended classes
+class ModelTrainerExt: public ModelTrainer
 {
 };
 
-int ReverseInt(int i)
+class DataSimulatorExt : public DataSimulator
 {
-  unsigned char ch1, ch2, ch3, ch4;
-  ch1=i&255;
-  ch2=(i>>8)&255;
-  ch3=(i>>16)&255;
-  ch4=(i>>24)&255;
-  return((int)ch1<<24)+((int)ch2<<16)+((int)ch3<<8)+ch4;
-}
+public:
+	int ReverseInt(int i)
+	{
+		unsigned char ch1, ch2, ch3, ch4;
+		ch1=i&255;
+		ch2=(i>>8)&255;
+		ch3=(i>>16)&255;
+		ch4=(i>>24)&255;
+		return((int)ch1<<24)+((int)ch2<<16)+((int)ch3<<8)+ch4;
+	}
 
-template<typename T>
-void ReadMNIST(const std::string& filename, Eigen::Tensor<T, 2>& data, const bool& is_labels)
+	template<typename T>
+	void ReadMNIST(const std::string& filename, Eigen::Tensor<T, 2>& data, const bool& is_labels)
+	{
+		// dims: sample, pixel intensity or sample, label
+		// e.g., pixel data dims: 1000 x (28x28)
+		// e.g., label data dims: 1000 x 1
+
+		// open up the file
+		std::ifstream file(filename, std::ios::binary);
+		if (file.is_open())
+		{
+			int magic_number = 0;
+			int number_of_images = 0;
+			int n_rows = 0;
+			int n_cols = 0;
+
+			// get the magic number
+			file.read((char*)&magic_number, sizeof(magic_number));
+			magic_number = ReverseInt(magic_number);
+
+			// get the number of images
+			file.read((char*)&number_of_images, sizeof(number_of_images));
+			number_of_images = ReverseInt(number_of_images);
+			if (number_of_images > data.dimension(0))
+				number_of_images = data.dimension(0);
+
+			// get the number of rows and cols
+			if (!is_labels)
+			{
+				file.read((char*)&n_rows, sizeof(n_rows));
+				n_rows = ReverseInt(n_rows);
+				file.read((char*)&n_cols, sizeof(n_cols));
+				n_cols = ReverseInt(n_cols);
+			}
+			else
+			{
+				n_rows = 1;
+				n_cols = 1;
+			}
+
+			// get the actual data
+			for (int i = 0; i<number_of_images; ++i)
+			{
+				for (int r = 0; r<n_rows; ++r)
+				{
+					for (int c = 0; c<n_cols; ++c)
+					{
+						unsigned char temp = 0;
+						file.read((char*)&temp, sizeof(temp));
+						data(i, (n_rows*r) + c) = (T)temp;
+					}
+				}
+			}
+		}
+	}
+
+	void readData(const std::string& filename_data, const std::string& filename_labels, const bool& is_training,
+		const int& data_size, const int& input_size)
+	{
+		// Read input images [BUG FREE]
+		Eigen::Tensor<float, 2> input_data(data_size, input_size);
+		ReadMNIST<float>(filename_data, input_data, false);
+
+		// Normalize images [BUG FREE]
+		input_data = input_data.unaryExpr(UnitScale<float>(input_data));
+
+		// Read input label [BUG FREE]
+		Eigen::Tensor<float, 2> labels(data_size, 1);
+		ReadMNIST<float>(filename_labels, labels, true);
+
+		// Convert labels to 1 hot encoding [BUG FREE]
+		Eigen::Tensor<int, 2> labels_encoded = OneHotEncoder<float>(labels, mnist_labels);
+
+		if (is_training)
+		{
+			training_data = input_data;
+			training_labels = labels_encoded;
+		}
+		else
+		{
+			validation_data = input_data;
+			validation_labels = labels_encoded;
+		}
+	}
+
+	void simulateTrainingData(Eigen::Tensor<float, 4>& input_data, Eigen::Tensor<float, 4>& output_data, Eigen::Tensor<float, 3>& time_steps)
+	{
+		// infer data dimensions based on the input tensors
+		const int batch_size = input_data.dimension(0);
+		const int memory_size = input_data.dimension(1);
+		const int n_input_nodes = input_data.dimension(2);
+		const int n_output_nodes = output_data.dimension(2);
+		const int n_epochs = input_data.dimension(3);
+
+		assert(n_output_nodes == validation_labels.dimension(1));
+		assert(n_input_nodes == validation_data.dimension(1));
+
+		// make the start and end sample indices [BUG FREE]
+		mnist_sample_start_training = mnist_sample_end_training;
+		mnist_sample_end_training = mnist_sample_start_training + batch_size*n_epochs;
+		if (mnist_sample_end_training > training_data.dimension(0) - 1)
+			mnist_sample_end_training = mnist_sample_end_training - batch_size*n_epochs;
+
+		// make a vector of sample_indices [BUG FREE]
+		std::vector<int> sample_indices;
+		for (int i = 0; i<batch_size*n_epochs; ++i)
+		{
+			int sample_index = i + mnist_sample_start_training;
+			if (sample_index > training_data.dimension(0) - 1)
+			{
+				sample_index = sample_index - batch_size*n_epochs;
+			}
+			sample_indices.push_back(sample_index);
+		}
+
+		// Reformat the input data for training [BUG FREE]
+		for (int batch_iter = 0; batch_iter<batch_size; ++batch_iter)
+			for (int memory_iter = 0; memory_iter<memory_size; ++memory_iter)
+				for (int nodes_iter = 0; nodes_iter<training_data.dimension(1); ++nodes_iter)
+					for (int epochs_iter = 0; epochs_iter<n_epochs; ++epochs_iter)
+						input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
+
+		// reformat the output data for training [BUG FREE]
+		for (int batch_iter = 0; batch_iter<batch_size; ++batch_iter)
+			for (int memory_iter = 0; memory_iter<memory_size; ++memory_iter)
+				for (int nodes_iter = 0; nodes_iter<training_labels.dimension(1); ++nodes_iter)
+					for (int epochs_iter = 0; epochs_iter<n_epochs; ++epochs_iter)
+						output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = (float)training_labels(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
+
+		time_steps.setConstant(1.0f);
+	}
+	void simulateValidationData(Eigen::Tensor<float, 4>& input_data, Eigen::Tensor<float, 4>& output_data, Eigen::Tensor<float, 3>& time_steps)
+	{
+		// infer data dimensions based on the input tensors
+		const int batch_size = input_data.dimension(0);
+		const int memory_size = input_data.dimension(1);
+		const int n_input_nodes = input_data.dimension(2);
+		const int n_output_nodes = output_data.dimension(2);
+		const int n_epochs = input_data.dimension(3);
+
+		assert(n_output_nodes == validation_labels.dimension(1));
+		assert(n_input_nodes == validation_data.dimension(1));
+
+		// make the start and end sample indices [BUG FREE]
+		mnist_sample_start_validation = mnist_sample_end_validation;
+		mnist_sample_end_validation = mnist_sample_start_validation + batch_size * n_epochs;
+		if (mnist_sample_end_validation > validation_data.dimension(0) - 1)
+			mnist_sample_end_validation = mnist_sample_end_validation - batch_size * n_epochs;
+
+		// make a vector of sample_indices [BUG FREE]
+		std::vector<int> sample_indices;
+		for (int i = 0; i<batch_size*n_epochs; ++i)
+		{
+			int sample_index = i + mnist_sample_start_validation;
+			if (sample_index > validation_data.dimension(0) - 1)
+			{
+				sample_index = sample_index - batch_size * n_epochs;
+			}
+			sample_indices.push_back(sample_index);
+		}
+
+		// Reformat the input data for validation [BUG FREE]
+		for (int batch_iter = 0; batch_iter<batch_size; ++batch_iter)
+			for (int memory_iter = 0; memory_iter<memory_size; ++memory_iter)
+				for (int nodes_iter = 0; nodes_iter<validation_data.dimension(1); ++nodes_iter)
+					for (int epochs_iter = 0; epochs_iter<n_epochs; ++epochs_iter)
+						input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = validation_data(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
+
+		// reformat the output data for validation [BUG FREE]
+		for (int batch_iter = 0; batch_iter<batch_size; ++batch_iter)
+			for (int memory_iter = 0; memory_iter<memory_size; ++memory_iter)
+				for (int nodes_iter = 0; nodes_iter<validation_labels.dimension(1); ++nodes_iter)
+					for (int epochs_iter = 0; epochs_iter<n_epochs; ++epochs_iter)
+						output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = (float)validation_labels(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
+
+		time_steps.setConstant(1.0f);
+	}
+	
+	// Data attributes
+	std::vector<float> mnist_labels = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+
+	// Data
+	Eigen::Tensor<float, 2> training_data;
+	Eigen::Tensor<float, 2> validation_data;
+	Eigen::Tensor<int, 2> training_labels;
+	Eigen::Tensor<int, 2> validation_labels;
+
+	// Internal iterators
+	int mnist_sample_start_training = 0;
+	int mnist_sample_end_training = 0;
+	int mnist_sample_start_validation = 0;
+	int mnist_sample_end_validation = 0;
+};
+
+class ModelReplicatorExt : public ModelReplicator
 {
-  // dims: sample, pixel intensity or sample, label
-  // e.g., pixel data dims: 1000 x (28x28)
-  // e.g., label data dims: 1000 x 1
+public:
+	void adaptiveReplicatorScheduler(
+		const int& n_generations,
+		std::vector<Model>& models,
+		std::vector<std::vector<std::pair<int, float>>>& models_errors_per_generations)
+	{
+		if (n_generations > 100)
+		{
+			setNNodeAdditions(1);
+			setNLinkAdditions(2);
+			setNNodeDeletions(1);
+			setNLinkDeletions(2);
+		}
+		else if (n_generations > 1 && n_generations < 100)
+		{
+			setNNodeAdditions(1);
+			setNLinkAdditions(2);
+			setNNodeDeletions(1);
+			setNLinkDeletions(2);
+		}
+		else if (n_generations == 0)
+		{
+			setNNodeAdditions(10);
+			setNLinkAdditions(20);
+			setNNodeDeletions(0);
+			setNLinkDeletions(0);
+		}
+	}
+};
 
-  // open up the file
-  std::ifstream file (filename, std::ios::binary);
-  if (file.is_open())
-  {
-    int magic_number=0;
-    int number_of_images=0;
-    int n_rows=0;
-    int n_cols=0;
-
-    // get the magic number
-    file.read((char*)&magic_number,sizeof(magic_number));
-    magic_number= ReverseInt(magic_number);
-
-    // get the number of images
-    file.read((char*)&number_of_images,sizeof(number_of_images));
-    number_of_images= ReverseInt(number_of_images);
-    if (number_of_images > data.dimension(0))
-      number_of_images = data.dimension(0);
-
-    // get the number of rows and cols
-    if (!is_labels)
-    {
-      file.read((char*)&n_rows,sizeof(n_rows));
-      n_rows= ReverseInt(n_rows);
-      file.read((char*)&n_cols,sizeof(n_cols));
-      n_cols= ReverseInt(n_cols);
-    }
-    else
-    {
-      n_rows=1;
-      n_cols=1;
-    }
-
-    // get the actual data
-    for(int i=0;i<number_of_images;++i)
-    {
-      for(int r=0;r<n_rows;++r)
-      {
-        for(int c=0;c<n_cols;++c)
-        {
-          unsigned char temp=0;
-          file.read((char*)&temp,sizeof(temp));
-          data(i, (n_rows*r)+c) = (T)temp;
-        }
-      }
-    }
-  }
-}
+class PopulationTrainerExt : public PopulationTrainer
+{
+public:
+	void adaptivePopulationScheduler(
+		const int& n_generations,
+		std::vector<Model>& models,
+		std::vector<std::vector<std::pair<int, float>>>& models_errors_per_generations)
+	{
+		// Population size of 16
+		if (n_generations == 0)
+		{
+			setNTop(3);
+			setNRandom(3);
+			setNReplicatesPerModel(15);
+		}
+		else
+		{
+			setNTop(3);
+			setNRandom(3);
+			setNReplicatesPerModel(3);
+		}
+	}
+};
 
 int main(int argc, char** argv)
 {
 
-  PopulationTrainer population_trainer;
-
-  const std::size_t input_size = 784;
-  const std::size_t training_data_size = 1000; //60000;
-  const std::size_t validation_data_size = 100; //10000;
-  const std::vector<float> mnist_labels = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+  PopulationTrainerExt population_trainer;
+	population_trainer.setNGenerations(5);
   const int n_threads = 8;
+
+	// define the model trainer
+	ModelTrainerExt model_trainer;
+	model_trainer.setBatchSize(8);
+	model_trainer.setMemorySize(1);
+	model_trainer.setNEpochsTraining(50);
+	model_trainer.setNEpochsValidation(50);
+
+	// define the data simulator
+	const std::size_t input_size = 784;
+	const std::size_t training_data_size = 1000; //60000;
+	const std::size_t validation_data_size = 100; //10000;
+	DataSimulatorExt data_simulator;
+
+	// read in the training data
+	// const std::string training_data_filename = "C:/Users/domccl/GitHub/mnist/train-images.idx3-ubyte";
+	const std::string training_data_filename = "/home/user/data/train-images-idx3-ubyte";
+	// const std::string training_labels_filename = "C:/Users/domccl/GitHub/mnist/train-labels.idx1-ubyte";
+	const std::string training_labels_filename = "/home/user/data/train-labels-idx1-ubyte";
+	data_simulator.readData(training_data_filename, training_labels_filename, true, training_data_size, input_size);
+
+	// read in the validation data
+	// const std::string validation_data_filename = "C:/Users/domccl/GitHub/mnist/t10k-images.idx3-ubyte";
+	const std::string validation_data_filename = "/home/user/data/t10k-images-idx3-ubyte";
+	// const std::string validation_labels_filename = "C:/Users/domccl/GitHub/mnist/t10k-labels.idx1-ubyte";
+	const std::string validation_labels_filename = "/home/user/data/t10k-labels-idx1-ubyte";
+	data_simulator.readData(validation_data_filename, validation_labels_filename, false, validation_data_size, input_size);
 
   // Make the input nodes
   std::vector<std::string> input_nodes;
@@ -124,241 +342,41 @@ int main(int argc, char** argv)
 
   // Make the output nodes
   std::vector<std::string> output_nodes;
-  for (int i=0; i<mnist_labels.size(); ++i)
+  for (int i=0; i<data_simulator.mnist_labels.size(); ++i)
     output_nodes.push_back("Output_" + std::to_string(i));
 
-  // Read input images [BUG FREE]
-  std::cout<<"Reading in the training and validation data..."<<std::endl;
-  // const std::string training_data_filename = "C:/Users/domccl/GitHub/mnist/train-images.idx3-ubyte";
-  const std::string training_data_filename = "/home/user/data/train-images-idx3-ubyte";
-  // const std::string training_data_filename = "/home/user/data/train-images.idx3-ubyte";
-  Eigen::Tensor<float, 2> training_data(training_data_size, input_size);
-  ReadMNIST<float>(training_data_filename, training_data, false);
-
-  // const std::string validation_data_filename = "C:/Users/domccl/GitHub/mnist/t10k-images.idx3-ubyte";
-  const std::string validation_data_filename = "/home/user/data/t10k-images-idx3-ubyte";
-  // const std::string validation_data_filename = "/home/user/data/t10k-images.idx3-ubyte";
-  Eigen::Tensor<float, 2> validation_data(validation_data_size, input_size);
-  ReadMNIST<float>(validation_data_filename, validation_data, false);
-
-  // Normalize images [BUG FREE]
-  training_data = training_data.unaryExpr(UnitScale<float>(training_data));
-  validation_data = validation_data.unaryExpr(UnitScale<float>(validation_data));
-
-  // Read input label [BUG FREE]
-  std::cout<<"Reading in the training and validation labels..."<<std::endl;  
-  // const std::string training_labels_filename = "C:/Users/domccl/GitHub/mnist/train-labels.idx1-ubyte";
-  const std::string training_labels_filename = "/home/user/data/train-labels-idx1-ubyte";
-  // const std::string training_labels_filename = "/home/user/data/train-labels.idx1-ubyte";
-  Eigen::Tensor<float, 2> training_labels(training_data_size, 1);
-  ReadMNIST<float>(training_labels_filename, training_labels, true);
-  
-  // const std::string validation_labels_filename = "C:/Users/domccl/GitHub/mnist/t10k-labels.idx1-ubyte";
-  const std::string validation_labels_filename = "/home/user/data/t10k-labels-idx1-ubyte";
-  // const std::string validation_labels_filename = "/home/user/data/t10k-labels.idx1-ubyte";
-  Eigen::Tensor<float, 2> validation_labels(validation_data_size, 1);
-  ReadMNIST<float>(validation_labels_filename, validation_labels, true);
-
-  // Convert labels to 1 hot encoding [BUG FREE]
-  Eigen::Tensor<int, 2> training_labels_encoded = OneHotEncoder<float>(training_labels, mnist_labels);
-  Eigen::Tensor<int, 2> validation_labels_encoded = OneHotEncoder<float>(validation_labels, mnist_labels);
-
-	// define the model replicator for growth mode
-	ModelTrainerTest model_trainer;
-	model_trainer.setBatchSize(8);
-	model_trainer.setMemorySize(1);
-	model_trainer.setNEpochsTraining(50);
-	model_trainer.setNEpochsValidation(50);
-
-  // Make the simulation time_steps
-	Eigen::Tensor<float, 3> time_steps(model_trainer.getBatchSize(), model_trainer.getMemorySize(), model_trainer.getNEpochsTraining());
-	Eigen::Tensor<float, 2> time_steps_tmp(model_trainer.getBatchSize(), model_trainer.getMemorySize());
-	time_steps_tmp.setValues({
-		{ 1, 1, 1, 1, 1, 1, 1, 1 },
-		{ 1, 1, 1, 1, 1, 1, 1, 1 },
-		{ 1, 1, 1, 1, 1, 1, 1, 1 },
-		{ 1, 1, 1, 1, 1, 1, 1, 1 },
-		{ 1, 1, 1, 1, 1, 1, 1, 1 } }
-	);
-	for (int batch_iter = 0; batch_iter<model_trainer.getBatchSize(); ++batch_iter)
-		for (int memory_iter = 0; memory_iter<model_trainer.getMemorySize(); ++memory_iter)
-			for (int epochs_iter = 0; epochs_iter<model_trainer.getNEpochsTraining(); ++epochs_iter)
-				time_steps(batch_iter, memory_iter, epochs_iter) = time_steps_tmp(batch_iter, memory_iter);
-
   // define the model replicator for growth mode
-  ModelReplicator model_replicator;
-  model_replicator.setNNodeAdditions(0);
-  model_replicator.setNLinkAdditions(0);
-  model_replicator.setNNodeDeletions(0);
-  model_replicator.setNLinkDeletions(0);
+  ModelReplicatorExt model_replicator;
 
-  // Evolve the population
-  std::vector<Model> population; 
-  const int population_size = 1;
-  int n_top = 1;
-  int n_random = 1;
-  int n_replicates_per_model = 0;
-  int mnist_sample_start = 0;
-  int mnist_sample_end = 0;
-  const int iterations = 5;
-  for (int iter=0; iter<iterations; ++iter)
-  {
-    printf("Iteration #: %d\n", iter);
+	// define the initial population [BUG FREE]
+	std::cout << "Initializing the population..." << std::endl;
+	std::vector<Model> population;
+	const int population_size = 1;
+	for (int i = 0; i<population_size; ++i)
+	{
+		// baseline model
+		std::shared_ptr<WeightInitOp> weight_init;
+		std::shared_ptr<SolverOp> solver;
+		weight_init.reset(new RandWeightInitOp(input_nodes.size()));
+		solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
+		Model model = model_replicator.makeBaselineModel(
+			input_nodes.size(), 100, output_nodes.size(),
+			NodeActivation::ELU, NodeIntegration::Sum,
+			NodeActivation::ELU, NodeIntegration::Sum,
+			weight_init, solver,
+			ModelLossFunction::MSE, std::to_string(i));
+		model.initWeights();
+		model.setId(i);
+		population.push_back(model);
+	}
 
-    if (iter == 0)
-    {
-      std::cout<<"Initializing the population..."<<std::endl;  
-      // define the initial population [BUG FREE]
-      for (int i=0; i<population_size; ++i)
-      {
-        // baseline model
-        std::shared_ptr<WeightInitOp> weight_init;
-        std::shared_ptr<SolverOp> solver;
-        weight_init.reset(new RandWeightInitOp(input_nodes.size()));
-        solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
-        Model model = model_replicator.makeBaselineModel(
-          input_nodes.size(), 100, output_nodes.size(),
-          NodeActivation::ELU, NodeIntegration::Sum,
-          NodeActivation::ELU, NodeIntegration::Sum,
-          weight_init, solver,
-          ModelLossFunction::MSE, std::to_string(i));
-        model.initWeights();
-        
-        // modify the models
-        model_replicator.modifyModel(model, std::to_string(i));
+	// Evolve the population
+	std::vector<std::vector<std::pair<int, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
+		population, model_trainer, model_replicator, data_simulator, input_nodes, output_nodes, n_threads);
 
-        char cout_char[512];
-        sprintf(cout_char, "Model %s (Nodes: %d, Links: %d)\n", model.getName().data(), model.getNodes().size(), model.getLinks().size());
-        std::cout<<cout_char;
-        // for (auto link: model.getLinks())
-        // {
-        //   memset(cout_char, 0, sizeof(cout_char));
-        //   sprintf(cout_char, "Links %s\n", link.getName().data());
-        //   std::cout<<cout_char;
-        // }
-        // for (auto node: model.getNodes())
-        // {
-        //   memset(cout_char, 0, sizeof(cout_char));
-        //   sprintf(cout_char, "Nodes %s\n", node.getName().data());
-        //   std::cout<<cout_char;
-        // }
-        population.push_back(model);
-      }
-    }
-
-    // make the start and end sample indices [BUG FREE]
-    mnist_sample_start = mnist_sample_end;
-    mnist_sample_end = mnist_sample_start + model_trainer.getBatchSize()*model_trainer.getNEpochsTraining();
-    if (mnist_sample_end > training_data_size - 1)
-      mnist_sample_end = mnist_sample_end - model_trainer.getBatchSize()*model_trainer.getNEpochsTraining(); 
-
-    // make a vector of sample_indices [BUG FREE]
-    std::vector<int> sample_indices;
-    for (int i=0; i<model_trainer.getBatchSize()*model_trainer.getNEpochsTraining(); ++i)
-    {
-      int sample_index = i + mnist_sample_start;
-      if (sample_index > training_data_size - 1)
-      {
-        sample_index = sample_index - model_trainer.getBatchSize()*model_trainer.getNEpochsTraining();
-      }
-      sample_indices.push_back(sample_index);
-    }   
-  
-    // Reformat the input data for training [BUG FREE]
-    std::cout<<"Reformatting the input data..."<<std::endl;  
-    Eigen::Tensor<float, 4> input_data(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)input_nodes.size(), model_trainer.getNEpochsTraining());
-    for (int batch_iter=0; batch_iter<model_trainer.getBatchSize(); ++batch_iter)
-      for (int memory_iter=0; memory_iter<model_trainer.getMemorySize(); ++memory_iter)
-        for (int nodes_iter=0; nodes_iter<input_nodes.size(); ++nodes_iter)
-          for (int epochs_iter=0; epochs_iter<model_trainer.getNEpochsTraining(); ++epochs_iter)
-            input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[epochs_iter*model_trainer.getBatchSize() + batch_iter], nodes_iter);
-
-    // reformat the output data for training [BUG FREE]
-    std::cout<<"Reformatting the output data..."<<std::endl;  
-    Eigen::Tensor<float, 4> output_data(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)output_nodes.size(), model_trainer.getNEpochsTraining());
-    for (int batch_iter=0; batch_iter<model_trainer.getBatchSize(); ++batch_iter)
-			for (int memory_iter = 0; memory_iter<model_trainer.getMemorySize(); ++memory_iter)
-				for (int nodes_iter=0; nodes_iter<output_nodes.size(); ++nodes_iter)
-					for (int epochs_iter=0; epochs_iter<model_trainer.getNEpochsTraining(); ++epochs_iter)
-						output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = (float)training_labels_encoded(sample_indices[epochs_iter*model_trainer.getBatchSize() + batch_iter], nodes_iter);
-
-    // model modification scheduling
-    if (iter > 100)
-    {
-      model_replicator.setNNodeAdditions(1);
-      model_replicator.setNLinkAdditions(2);
-      model_replicator.setNNodeDeletions(1);
-      model_replicator.setNLinkDeletions(2);
-    }
-    else if (iter > 1 && iter < 100)
-    {
-      model_replicator.setNNodeAdditions(1);
-      model_replicator.setNLinkAdditions(2);
-      model_replicator.setNNodeDeletions(1);
-      model_replicator.setNLinkDeletions(2);
-    }
-    else if (iter == 0)
-    {      
-      model_replicator.setNNodeAdditions(10);
-      model_replicator.setNLinkAdditions(20);
-      model_replicator.setNNodeDeletions(0);
-      model_replicator.setNLinkDeletions(0);
-    }
-
-    // train the population
-    std::cout<<"Training the models..."<<std::endl;
-    population_trainer.trainModels(population, model_trainer,
-      input_data, output_data, time_steps, input_nodes, output_nodes, n_threads);
-
-    // reformat the input data for validation
-
-    // reformat the output data for validation
-
-    // select the top N from the population
-    std::cout<<"Selecting the models..."<<std::endl; 
-		std::vector<std::pair<int, float>> models_validation_errors = population_trainer.selectModels(
-      n_top, n_random, population, model_trainer,
-      input_data, output_data, time_steps, input_nodes, output_nodes, n_threads);
-
-    for (const Model& model: population)
-    {
-      const Eigen::Tensor<float, 0> total_error = model.getError().sum();
-      char cout_char[512];
-      sprintf(cout_char, "Model %s (Nodes: %d, Links: %d) error: %.2f\n", model.getName().data(), model.getNodes().size(), model.getLinks().size(), total_error.data()[0]);
-      std::cout<<cout_char;
-      // for (auto link: model.getLinks())
-      //   printf("Links %s\n", link.getName().data());
-    }
-
-    if (iter < iterations - 1)  
-    {
-      if (iter == 0)
-      {
-        n_top = 5;
-        n_random = 5;
-        n_replicates_per_model = 10;
-      }
-      else
-      {
-        n_top = 5;
-        n_random = 5;
-        n_replicates_per_model = 2;
-      }
-      // replicate and modify models
-      std::cout<<"Replicating and modifying the models..."<<std::endl;
-      population_trainer.replicateModels(population, model_replicator, input_nodes, output_nodes, 
-				n_replicates_per_model, std::to_string(iter), n_threads);
-      std::cout<<"Population size of "<<population.size()<<std::endl;
-    }
-  }
-
-  // write the model to file
-  WeightFile weightfile;
-  weightfile.storeWeightsCsv("MNISTExampleWeights.csv", population[0].getWeights());
-  LinkFile linkfile;
-  linkfile.storeLinksCsv("MNISTExampleLinks.csv", population[0].getLinks());
-  NodeFile nodefile;
-  nodefile.storeNodesCsv("MNISTExampleNodes.csv", population[0].getNodes());
+	PopulationTrainerFile population_trainer_file;
+	population_trainer_file.storeModels(population, "SequencialMNIST");
+	population_trainer_file.storeModelValidations("SequencialMNISTErrors.csv", models_validation_errors_per_generation.back());
 
   return 0;
 }

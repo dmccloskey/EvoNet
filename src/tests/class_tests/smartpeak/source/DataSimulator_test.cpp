@@ -26,7 +26,7 @@ BOOST_AUTO_TEST_CASE(destructor)
   delete ptr;
 }
 
-BOOST_AUTO_TEST_CASE(simulateData)
+BOOST_AUTO_TEST_CASE(simulateTrainingData)
 {
   DataSimulator datasimulator;
 
@@ -34,7 +34,22 @@ BOOST_AUTO_TEST_CASE(simulateData)
 	Eigen::Tensor<float, 4> output_data(1, 1, 1, 1);
 	Eigen::Tensor<float, 3> time_steps(1, 1, 1);
 
-	datasimulator.simulateData(input_data, output_data, time_steps);
+	datasimulator.simulateTrainingData(input_data, output_data, time_steps);
+
+	BOOST_CHECK_EQUAL(input_data(0, 0, 0, 0), 0.0f);
+	BOOST_CHECK_EQUAL(output_data(0, 0, 0, 0), 0.0f);
+	BOOST_CHECK_EQUAL(time_steps(0, 0, 0), 1.0f);
+}
+
+BOOST_AUTO_TEST_CASE(simulateValidationData)
+{
+	DataSimulator datasimulator;
+
+	Eigen::Tensor<float, 4> input_data(1, 1, 1, 1);
+	Eigen::Tensor<float, 4> output_data(1, 1, 1, 1);
+	Eigen::Tensor<float, 3> time_steps(1, 1, 1);
+
+	datasimulator.simulateValidationData(input_data, output_data, time_steps);
 
 	BOOST_CHECK_EQUAL(input_data(0, 0, 0, 0), 0.0f);
 	BOOST_CHECK_EQUAL(output_data(0, 0, 0, 0), 0.0f);

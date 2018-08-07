@@ -9,10 +9,7 @@
 #include <SmartPeak/ml/Weight.h>
 #include <SmartPeak/ml/Link.h>
 #include <SmartPeak/ml/Node.h>
-#include <SmartPeak/io/WeightFile.h>
-#include <SmartPeak/io/LinkFile.h>
-#include <SmartPeak/io/NodeFile.h>
-#include <SmartPeak/io/ModelFile.h>
+#include <SmartPeak/io/PopulationTrainerFile.h>
 
 using namespace SmartPeak;
 using namespace std;
@@ -32,6 +29,20 @@ BOOST_AUTO_TEST_CASE(destructor)
   PopulationTrainer* ptr = nullptr;
 	ptr = new PopulationTrainer();
   delete ptr;
+}
+
+BOOST_AUTO_TEST_CASE(gettersAndSetters)
+{
+	PopulationTrainer population_trainer;
+	population_trainer.setNTop(4);
+	population_trainer.setNRandom(1);
+	population_trainer.setNReplicatesPerModel(2);
+	population_trainer.setNGenerations(10);
+
+	BOOST_CHECK_EQUAL(population_trainer.getNTop(), 4);
+	BOOST_CHECK_EQUAL(population_trainer.getNRandom(), 1);
+	BOOST_CHECK_EQUAL(population_trainer.getNReplicatesPerModel(), 2);
+	BOOST_CHECK_EQUAL(population_trainer.getNGenerations(), 10);
 }
 
 BOOST_AUTO_TEST_CASE(removeDuplicateModels) 
@@ -133,7 +144,7 @@ BOOST_AUTO_TEST_CASE(selectModels)
 BOOST_AUTO_TEST_CASE(replicateModels) 
 {
   PopulationTrainer population_trainer;
-  ModelTrainer model_trainer;
+	population_trainer.setNReplicatesPerModel(2);
 
   ModelReplicator model_replicator;
 
@@ -174,7 +185,7 @@ BOOST_AUTO_TEST_CASE(replicateModels)
 		std::make_pair(0, 0),
 		std::make_pair(0, 0),
 		std::make_pair(0, 0));
-  population_trainer.replicateModels(population1, model_replicator, input_nodes, output_nodes, 2);
+  population_trainer.replicateModels(population1, model_replicator, input_nodes, output_nodes);
 
 	// check for the expected size
 	BOOST_CHECK_EQUAL(population1.size(), 6);
@@ -187,7 +198,7 @@ BOOST_AUTO_TEST_CASE(replicateModels)
 		std::make_pair(0, 0),
 		std::make_pair(0, 0),
 		std::make_pair(0, 0));
-	population_trainer.replicateModels(population2, model_replicator, input_nodes, output_nodes, 2);
+	population_trainer.replicateModels(population2, model_replicator, input_nodes, output_nodes);
 
   // check for the expected size
   BOOST_CHECK_EQUAL(population2.size(), 6);
@@ -200,7 +211,7 @@ BOOST_AUTO_TEST_CASE(replicateModels)
 		std::make_pair(1, 1),
 		std::make_pair(0, 0),
 		std::make_pair(0, 0));
-	population_trainer.replicateModels(population3, model_replicator, input_nodes, output_nodes, 2);
+	population_trainer.replicateModels(population3, model_replicator, input_nodes, output_nodes);
 
 	// check for the expected size
 	BOOST_CHECK_EQUAL(population3.size(), 2);
@@ -221,8 +232,6 @@ BOOST_AUTO_TEST_CASE(replicateModels)
   //     BOOST_CHECK_EQUAL(str_tokens.size(), 2); // replicaed moel, tag
   //   cnt += 1;
   // }
-
-
 }
 
 BOOST_AUTO_TEST_CASE(trainModels) 
@@ -332,154 +341,161 @@ BOOST_AUTO_TEST_CASE(trainModels)
   }
 }
 
+// Extended classes used for testing
+class ModelReplicatorExt : public ModelReplicator
+{
+public:
+	void adaptiveReplicatorScheduler(
+		const int& n_generations,
+		std::vector<Model>& models,
+		std::vector<std::vector<std::pair<int, float>>>& models_errors_per_generations)
+	{
+		if (n_generations >= 0)
+		{
+			setRandomModifications(
+				std::make_pair(0, 0),
+				std::make_pair(1, 1),
+				std::make_pair(0, 0),
+				std::make_pair(1, 1),
+				std::make_pair(0, 0),
+				std::make_pair(0, 0));
+		}
+	}
+};
+
+class PopulationTrainerExt : public PopulationTrainer
+{
+public:
+	void adaptivePopulationScheduler(
+		const int& n_generations,
+		std::vector<Model>& models,
+		std::vector<std::vector<std::pair<int, float>>>& models_errors_per_generations)
+	{
+		if (n_generations == getNGenerations() - 1)
+		{
+			setNTop(1);
+			setNRandom(1);
+			setNReplicatesPerModel(0);
+		}
+		else
+		{
+			setNTop(3);
+			setNRandom(3);
+			setNReplicatesPerModel(3);
+		}
+	}
+};
+
+class DataSimulatorExt : public DataSimulator
+{
+public:
+	void simulateData(Eigen::Tensor<float, 4>& input_data, Eigen::Tensor<float, 4>& output_data, Eigen::Tensor<float, 3>& time_steps)
+	{
+		// infer data dimensions based on the input tensors
+		const int batch_size = input_data.dimension(0);
+		const int memory_size = input_data.dimension(1);
+		const int n_input_nodes = input_data.dimension(2);
+		const int n_output_nodes = output_data.dimension(2);
+		const int n_epochs = input_data.dimension(3);
+
+		Eigen::Tensor<float, 3> input_tmp(batch_size, memory_size, n_input_nodes);
+		input_tmp.setValues(
+			{ { { 1 },{ 2 },{ 3 },{ 4 },{ 5 },{ 6 },{ 7 },{ 8 } },
+			{ { 2 },{ 3 },{ 4 },{ 5 },{ 6 },{ 7 },{ 8 },{ 9 } },
+			{ { 3 },{ 4 },{ 5 },{ 6 },{ 7 },{ 8 },{ 9 },{ 10 } },
+			{ { 4 },{ 5 },{ 6 },{ 7 },{ 8 },{ 9 },{ 10 },{ 11 } },
+			{ { 5 },{ 6 },{ 7 },{ 8 },{ 9 },{ 10 },{ 11 },{ 12 } } }
+		);
+		for (int batch_iter = 0; batch_iter<batch_size; ++batch_iter)
+			for (int memory_iter = 0; memory_iter<memory_size; ++memory_iter)
+				for (int nodes_iter = 0; nodes_iter<n_input_nodes; ++nodes_iter)
+					for (int epochs_iter = 0; epochs_iter<n_epochs; ++epochs_iter)
+						input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = input_tmp(batch_iter, memory_iter, nodes_iter);
+		Eigen::Tensor<float, 3> output_tmp(batch_size, memory_size, n_output_nodes);
+		output_tmp.setValues(
+			{ { { 1 },{ 1 },{ 2 },{ 2 },{ 3 },{ 3 },{ 4 },{ 4 } },
+			{ { 1 },{ 2 },{ 2 },{ 3 },{ 3 },{ 4 },{ 4 },{ 5 } },
+			{ { 2 },{ 2 },{ 3 },{ 3 },{ 4 },{ 4 },{ 5 },{ 5 } },
+			{ { 2 },{ 3 },{ 3 },{ 4 },{ 4 },{ 5 },{ 5 },{ 6 } },
+			{ { 3 },{ 3 },{ 4 },{ 4 },{ 5 },{ 5 },{ 6 },{ 6 } } });
+		for (int batch_iter = 0; batch_iter<batch_size; ++batch_iter)
+			for (int memory_iter = 0; memory_iter<memory_size; ++memory_iter)
+				for (int nodes_iter = 0; nodes_iter<n_output_nodes; ++nodes_iter)
+					for (int epochs_iter = 0; epochs_iter<n_epochs; ++epochs_iter)
+						output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = output_tmp(batch_iter, memory_iter, nodes_iter);
+
+		// update the time_steps
+		time_steps.setConstant(1.0f);
+	}
+
+	void simulateTrainingData(Eigen::Tensor<float, 4>& input_data, Eigen::Tensor<float, 4>& output_data, Eigen::Tensor<float, 3>& time_steps)
+	{
+		simulateData(input_data, output_data, time_steps);
+	}
+	void simulateValidationData(Eigen::Tensor<float, 4>& input_data, Eigen::Tensor<float, 4>& output_data, Eigen::Tensor<float, 3>& time_steps)
+	{
+		simulateData(input_data, output_data, time_steps);
+	}
+};
+
 BOOST_AUTO_TEST_CASE(exampleUsage) 
 {
-  PopulationTrainer population_trainer;
+	PopulationTrainerExt population_trainer;
+	population_trainer.setNTop(2);
+	population_trainer.setNRandom(2);
+	population_trainer.setNReplicatesPerModel(3);
+	population_trainer.setNGenerations(5);
 
   ModelTrainer model_trainer;
   model_trainer.setBatchSize(5);
   model_trainer.setMemorySize(8);
   model_trainer.setNEpochsTraining(500);
+	model_trainer.setNEpochsValidation(1);
 
   // Toy data set used for all tests
-  // Make the input data
+	DataSimulatorExt data_simulator;
   const std::vector<std::string> input_nodes = {"Input_0"}; // true inputs + biases
-  Eigen::Tensor<float, 4> input_data(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)input_nodes.size(), model_trainer.getNEpochsTraining());
-  Eigen::Tensor<float, 3> input_tmp(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)input_nodes.size()); 
-  input_tmp.setValues(
-    {{{1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}},
-    {{2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}},
-    {{3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}},
-    {{4}, {5}, {6}, {7}, {8}, {9}, {10}, {11}},
-    {{5}, {6}, {7}, {8}, {9}, {10}, {11}, {12}}}
-  );
-  for (int batch_iter=0; batch_iter<model_trainer.getBatchSize(); ++batch_iter)
-    for (int memory_iter=0; memory_iter<model_trainer.getMemorySize(); ++memory_iter)
-      for (int nodes_iter=0; nodes_iter<(int)input_nodes.size(); ++nodes_iter)
-        for (int epochs_iter=0; epochs_iter<model_trainer.getNEpochsTraining(); ++epochs_iter)
-          input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = input_tmp(batch_iter, memory_iter, nodes_iter);
-  // Make the output data
   const std::vector<std::string> output_nodes = {"Output_0"};
-  Eigen::Tensor<float, 4> output_data(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)output_nodes.size(), model_trainer.getNEpochsTraining());
-  Eigen::Tensor<float, 3> output_tmp(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)output_nodes.size());
-  output_tmp.setValues(
-		{ { { 1 },{ 1 },{ 2 },{ 2 },{ 3 },{ 3 },{ 4 },{ 4 } },
-		{ { 1 },{ 2 },{ 2 },{ 3 },{ 3 },{ 4 },{ 4 },{ 5 } },
-		{ { 2 },{ 2 },{ 3 },{ 3 },{ 4 },{ 4 },{ 5 },{ 5 } },
-		{ { 2 },{ 3 },{ 3 },{ 4 },{ 4 },{ 5 },{ 5 },{ 6 } },
-		{ { 3 },{ 3 },{ 4 },{ 4 },{ 5 },{ 5 },{ 6 },{ 6 } } });
-  for (int batch_iter=0; batch_iter<model_trainer.getBatchSize(); ++batch_iter)
-		for (int memory_iter = 0; memory_iter<model_trainer.getMemorySize(); ++memory_iter)
-			for (int nodes_iter=0; nodes_iter<(int)output_nodes.size(); ++nodes_iter)
-				for (int epochs_iter=0; epochs_iter<model_trainer.getNEpochsTraining(); ++epochs_iter)
-					output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = output_tmp(batch_iter, memory_iter, nodes_iter);
-  // Make the simulation time_steps
-  Eigen::Tensor<float, 3> time_steps(model_trainer.getBatchSize(), model_trainer.getMemorySize(), model_trainer.getNEpochsTraining());
-  Eigen::Tensor<float, 2> time_steps_tmp(model_trainer.getBatchSize(), model_trainer.getMemorySize()); 
-  time_steps_tmp.setValues({
-    {1, 1, 1, 1, 1, 1, 1, 1},
-    {1, 1, 1, 1, 1, 1, 1, 1},
-    {1, 1, 1, 1, 1, 1, 1, 1},
-    {1, 1, 1, 1, 1, 1, 1, 1},
-    {1, 1, 1, 1, 1, 1, 1, 1}}
-  );
-  for (int batch_iter=0; batch_iter<model_trainer.getBatchSize(); ++batch_iter)
-    for (int memory_iter=0; memory_iter<model_trainer.getMemorySize(); ++memory_iter)
-      for (int epochs_iter=0; epochs_iter<model_trainer.getNEpochsTraining(); ++epochs_iter)
-        time_steps(batch_iter, memory_iter, epochs_iter) = time_steps_tmp(batch_iter, memory_iter);
 
   // define the model replicator for growth mode
-  ModelReplicator model_replicator;
+	ModelReplicatorExt model_replicator;
   model_replicator.setNNodeAdditions(1);
   model_replicator.setNLinkAdditions(1);
   model_replicator.setNNodeDeletions(0);
   model_replicator.setNLinkDeletions(0);
 
-  // Evolve the population
-  std::vector<Model> population; 
-  const int population_size = 8;
-  const int n_top = 2;
-  const int n_random = 2;
-  const int n_replicates_per_model = 3;
-  const int iterations = 5;
-  for (int iter=0; iter<iterations; ++iter)
-  {
-    if (iter == 0)
-    {
-      // define the initial population of 10 baseline models
-      std::cout<<"Making the initial population..."<<std::endl;
-      for (int i=0; i<population_size; ++i)
-      {
-        // baseline model
-        std::shared_ptr<WeightInitOp> weight_init;
-        std::shared_ptr<SolverOp> solver;
-        weight_init.reset(new RandWeightInitOp(1.0));
-        solver.reset(new AdamOp(0.1, 0.9, 0.999, 1e-8));
-        Model model = model_replicator.makeBaselineModel(
-          (int)input_nodes.size(), 1, (int)output_nodes.size(),
-          NodeActivation::ReLU, NodeIntegration::Sum,
-          NodeActivation::ReLU, NodeIntegration::Sum,
-          weight_init, solver,
-          ModelLossFunction::MSE, std::to_string(i));
-        model.initWeights();
-        
-        // modify the models
-        model_replicator.modifyModel(model, std::to_string(i));
+	// define the initial population of 10 baseline models
+	std::cout << "Making the initial population..." << std::endl;
+	std::vector<Model> population;
+	const int population_size = 8;
+	for (int i = 0; i<population_size; ++i)
+	{
+		// baseline model
+		std::shared_ptr<WeightInitOp> weight_init;
+		std::shared_ptr<SolverOp> solver;
+		weight_init.reset(new RandWeightInitOp(1.0));
+		solver.reset(new AdamOp(0.1, 0.9, 0.999, 1e-8));
+		Model model = model_replicator.makeBaselineModel(
+			(int)input_nodes.size(), 1, (int)output_nodes.size(),
+			NodeActivation::ReLU, NodeIntegration::Sum,
+			NodeActivation::ReLU, NodeIntegration::Sum,
+			weight_init, solver,
+			ModelLossFunction::MSE, std::to_string(i));
+		model.initWeights();
 
-        population.push_back(model);
-      }
-    }
+		// modify the models
+		model_replicator.modifyModel(model, std::to_string(i));
 
-		model_replicator.setRandomModifications(
-			std::make_pair(0, 0),
-			std::make_pair(1, 1),
-			std::make_pair(0, 0),
-			std::make_pair(1, 1),
-			std::make_pair(0, 0),
-			std::make_pair(0, 0));
+		population.push_back(model);
+	}
 
-    // train the population
-    std::cout<<"Training the population..."<<std::endl;
-    population_trainer.trainModels(population, model_trainer,
-      input_data, output_data, time_steps, input_nodes, output_nodes, 2);
+	// Evolve the population
+	std::vector<std::vector<std::pair<int, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
+		population, model_trainer, model_replicator, data_simulator, input_nodes, output_nodes, 2);
 
-    // select the top N from the population
-    std::cout<<"Select the top N models from the population..."<<std::endl;
-		std::vector<std::pair<int, float>> models_validation_errors = population_trainer.selectModels(
-      n_top, n_random, population, model_trainer,
-      input_data, output_data, time_steps, input_nodes, output_nodes, 2);
-
-    //for (const Model& model: population)
-    //{
-    //  const Eigen::Tensor<float, 0> total_error = model.getError().sum();
-    //  printf("Model %s (Nodes: %d, Links: %d) error: %.2f\n", model.getName().data(), model.getNodes().size(), model.getLinks().size(), total_error.data()[0]);
-    //  for (auto link: model.getLinks())
-    //    printf("Links %s\n", link.getName().data());
-    //}
-
-    if (iter < iterations - 1)  
-    {
-      // replicate and modify models
-      std::cout<<"Replicate and modify the top N models from the population..."<<std::endl; 
-      population_trainer.replicateModels(population, model_replicator, input_nodes, output_nodes, n_replicates_per_model, std::to_string(iter), 2);
-    }
-    else
-    {
-			models_validation_errors = population_trainer.selectModels(
-        1, 1, population, model_trainer,
-        input_data, output_data, time_steps, input_nodes, output_nodes, 2);
-    }
-  }
-
-  // write the model to file
-  WeightFile weightfile;
-  weightfile.storeWeightsCsv("populationTrainerWeights.csv", population[0].getWeights());
-  LinkFile linkfile;
-  linkfile.storeLinksCsv("populationTrainerLinks.csv", population[0].getLinks());
-  NodeFile nodefile;
-  nodefile.storeNodesCsv("populationTrainerNodes.csv", population[0].getNodes());
-	ModelFile modelfile;
-	modelfile.storeModelDot("populationTrainerGraph.gv", population[0]);
+	PopulationTrainerFile population_trainer_file;
+	population_trainer_file.storeModels(population, "populationTrainer");
+	population_trainer_file.storeModelValidations("populationTrainerValidationErrors.csv", models_validation_errors_per_generation.back());
 
   // [TODO: check that one of the models has a 0.0 error
   //        i.e., correct structure and weights]

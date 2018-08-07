@@ -24,8 +24,38 @@ static std::mutex replicateModel_mutex;
 
 namespace SmartPeak
 {
-  PopulationTrainer::PopulationTrainer(){};
-  PopulationTrainer::~PopulationTrainer(){};
+	void PopulationTrainer::setNTop(const int & n_top)
+	{
+		n_top_ = n_top;
+	}
+	void PopulationTrainer::setNRandom(const int & n_random)
+	{
+		n_random_ = n_random;
+	}
+	void PopulationTrainer::setNReplicatesPerModel(const int & n_replicates_per_model)
+	{
+		n_replicates_per_model_ = n_replicates_per_model;
+	}
+	void PopulationTrainer::setNGenerations(const int & n_generations)
+	{
+		n_generations_ = n_generations;
+	}
+	int PopulationTrainer::getNTop() const
+	{
+		return n_top_;
+	}
+	int PopulationTrainer::getNRandom() const
+	{
+		return n_random_;
+	}
+	int PopulationTrainer::getNReplicatesPerModel() const
+	{
+		return n_replicates_per_model_;
+	}
+	int PopulationTrainer::getNGenerations() const
+	{
+		return n_generations_;
+	}
 
   void PopulationTrainer::removeDuplicateModels(std::vector<Model>& models)
   {
@@ -55,8 +85,6 @@ namespace SmartPeak
   }
 
 	std::vector<std::pair<int, float>> PopulationTrainer::selectModels(
-    const int& n_top,
-    const int& n_random,
     std::vector<Model>& models,
     ModelTrainer& model_trainer,
     const Eigen::Tensor<float, 4>& input,
@@ -126,13 +154,13 @@ namespace SmartPeak
     
     // sort each model based on their scores in ascending order
     models_validation_errors = getTopNModels_(
-      models_validation_errors, n_top
+      models_validation_errors, getNTop()
     );
     // printf("PopulationTrainer::selectModels, models_validation_errors2 size: %i\n", models_validation_errors.size());
 
     // select a random subset of the top N
     models_validation_errors = getRandomNModels_(
-      models_validation_errors, n_random
+      models_validation_errors, getNRandom()
     );
     // printf("PopulationTrainer::selectModels, models_validation_errors3 size: %i\n", models_validation_errors.size());
     
@@ -155,7 +183,7 @@ namespace SmartPeak
       // printf("PopulationTrainer::selectModels, Models size: %i\n", models.size());
     }
 
-    if (models.size() > n_random)
+    if (models.size() > getNRandom())
       removeDuplicateModels(models);
     // printf("PopulationTrainer::selectModels, Models size: %i\n", models.size());
 
@@ -246,7 +274,6 @@ namespace SmartPeak
     ModelReplicator& model_replicator,
 		const std::vector<std::string>& input_nodes,
 		const std::vector<std::string>& output_nodes,
-    const int& n_replicates_per_model,
     std::string unique_str,
     int n_threads)
   {
@@ -257,7 +284,7 @@ namespace SmartPeak
     int thread_cnt = 0;
     for (Model& model: models_copy)
     {
-      for (int i=0; i<n_replicates_per_model; ++i)
+      for (int i=0; i<getNReplicatesPerModel(); ++i)
       {
         std::packaged_task<Model // encapsulate in a packaged_task
           (Model*, ModelReplicator*, 
@@ -490,33 +517,29 @@ namespace SmartPeak
 		unique_id_ = id;
 	}
 
-	std::vector<std::pair<int, float>> PopulationTrainer::trainPopulation(
+	std::vector<std::vector<std::pair<int, float>>> PopulationTrainer::evolveModels(
 		std::vector<Model>& models,
 		ModelTrainer & model_trainer,
 		ModelReplicator & model_replicator,
+		DataSimulator& data_simulator,
 		const std::vector<std::string>& input_nodes,
 		const std::vector<std::string>& output_nodes,
 		int n_threads)
 	{
-		std::vector<std::pair<int, float>> models_validation_errors;
+		std::vector<std::vector<std::pair<int, float>>> models_validation_errors_per_generation;
 
 		// generate the input/output data for validation		
 		std::cout << "Generating the input/output data for validation..." << std::endl;
 		Eigen::Tensor<float, 4> input_data_validation(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)input_nodes.size(), model_trainer.getNEpochsValidation());
 		Eigen::Tensor<float, 4> output_data_validation(model_trainer.getBatchSize(), model_trainer.getMemorySize(),(int) output_nodes.size(), model_trainer.getNEpochsValidation());
 		Eigen::Tensor<float, 3> time_steps_validation(model_trainer.getBatchSize(), model_trainer.getMemorySize(), model_trainer.getNEpochsValidation());
-		// [TODO: call DataSimulator]		
+		data_simulator.simulateValidationData(input_data_validation, output_data_validation, time_steps_validation);
 
 		// Population initial conditions
-		const int population_size = 1;
-		setID(population_size);
-		int n_top = 1;
-		int n_random = 1;
-		int n_replicates_per_model = 0;
+		setID(models.size());
 
 		// Evolve the population
-		const int iterations = 1;
-		for (int iter = 0; iter<iterations; ++iter)
+		for (int iter = 0; iter<getNGenerations(); ++iter)
 		{
 			char iter_char[128];
 			sprintf(iter_char, "Iteration #: %d\n", iter);
@@ -526,59 +549,41 @@ namespace SmartPeak
 			std::cout << "Generating the input/output data for training..." << std::endl;
 			Eigen::Tensor<float, 4> input_data_training(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)input_nodes.size(), model_trainer.getNEpochsTraining());
 			Eigen::Tensor<float, 4> output_data_training(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)output_nodes.size(), model_trainer.getNEpochsTraining());
-			Eigen::Tensor<float, 3> time_steps(model_trainer.getBatchSize(), model_trainer.getMemorySize(), model_trainer.getNEpochsTraining());
-			// [TODO: call DataSimulator]
-
-			// generate a random number of model modifications
-			// [TODO: call modelReplicator scheduler method]
-			if (iter>0)
-			{
-				model_replicator.setRandomModifications(
-					std::make_pair(0, 5),
-					std::make_pair(0, 10),
-					std::make_pair(0, 5),
-					std::make_pair(0, 10),
-					std::make_pair(0, 5),
-					std::make_pair(0, 5));
-			}
+			Eigen::Tensor<float, 3> time_steps_training(model_trainer.getBatchSize(), model_trainer.getMemorySize(), model_trainer.getNEpochsTraining());
+			data_simulator.simulateTrainingData(input_data_training, output_data_training, time_steps_training);
 
 			// train the population
 			std::cout << "Training the models..." << std::endl;
 		  trainModels(models, model_trainer,
-				input_data_training, output_data_training, time_steps, input_nodes, output_nodes, n_threads);
+				input_data_training, output_data_training, time_steps_training, input_nodes, output_nodes, n_threads);
 
 			// select the top N from the population
 			std::cout << "Selecting the models..." << std::endl;
-			models_validation_errors = selectModels(
-				n_top, n_random, models, model_trainer,
+			std::vector<std::pair<int, float>> models_validation_errors = selectModels(
+				models, model_trainer,
 				input_data_validation, output_data_validation, time_steps_validation, input_nodes, output_nodes, n_threads);
+			models_validation_errors_per_generation.push_back(models_validation_errors);
 
-			if (iter < iterations - 1)
+			if (iter < getNGenerations() - 1)
 			{
-				// Population size of 16
-				// [TODO: replace with call to populationScheduler]
-				if (iter == 0)
-				{
-					n_top = 3;
-					n_random = 3;
-					n_replicates_per_model = 15;
-				}
-				else
-				{
-					n_top = 3;
-					n_random = 3;
-					n_replicates_per_model = 3;
-				}
+				// update the model replication attributes and population dynamics
+				model_replicator.adaptiveReplicatorScheduler(iter, models, models_validation_errors_per_generation);
+				adaptivePopulationScheduler(iter, models, models_validation_errors_per_generation);
 
 				// replicate and modify models
 				// [TODO: add options for verbosity]
 				std::cout << "Replicating and modifying the models..." << std::endl;
 				replicateModels(models, model_replicator, input_nodes, output_nodes,
-					n_replicates_per_model, std::to_string(iter), n_threads);
+					std::to_string(iter), n_threads);
 				std::cout << "Population size of " << models.size() << std::endl;
 			}
 		}
-		return models_validation_errors;
+		return models_validation_errors_per_generation;
+	}
+
+	void PopulationTrainer::adaptivePopulationScheduler(const int & n_generations, std::vector<Model>& models, std::vector<std::vector<std::pair<int, float>>>& models_errors_per_generations)
+	{
+		// TODO: update the PopulationTrainer attributes based on the triggers
 	}
 
   // float PopulationTrainer::calculateMean(std::vector<float> values)
