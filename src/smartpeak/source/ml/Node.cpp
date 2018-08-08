@@ -17,6 +17,8 @@ namespace SmartPeak
   {    
     id_ = other.id_;
     name_ = other.name_;
+		module_id_ = other.module_id_;
+		module_name_ = other.module_name_;
     type_ = other.type_;
     status_ = other.status_;
     activation_ = other.activation_;
@@ -106,6 +108,26 @@ namespace SmartPeak
 	SmartPeak::NodeIntegration Node::getIntegration() const
 	{
 		return integration_;
+	}
+
+	void Node::setModuleId(const int & module_id)
+	{
+		module_id_ = module_id;
+	}
+
+	int Node::getModuleId() const
+	{
+		return module_id_;
+	}
+
+	void Node::setModuleName(const std::string & module_name)
+	{
+		module_name_ = module_name;
+	}
+
+	std::string Node::getModuleName() const
+	{
+		return module_name_;
 	}
 
 	void Node::setInput(const Eigen::Tensor<float, 2>& input)

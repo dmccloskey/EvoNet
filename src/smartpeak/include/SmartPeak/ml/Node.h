@@ -83,6 +83,8 @@ public:
     { // [TODO: add test]
       id_ = other.id_;
       name_ = other.name_;
+			module_id_ = other.module_id_;
+			module_name_ = other.module_name_;
       type_ = other.type_;
       activation_ = other.activation_;
 			integration_ = other.integration_;
@@ -114,6 +116,12 @@ public:
 
 		void setIntegration(const SmartPeak::NodeIntegration & integration); ///< integration setter
 		SmartPeak::NodeIntegration getIntegration() const; ///< integration 
+
+		void setModuleId(const int& module_id); ///< module id setter
+		int getModuleId() const; ///< module id getter
+
+		void setModuleName(const std::string& module_name); ///< module name setter
+		std::string getModuleName() const; ///< module name getter
 
 		void setInput(const Eigen::Tensor<float, 2>& input); ///< input setter
 		Eigen::Tensor<float, 2> getInput() const; ///< input copy getter
@@ -194,8 +202,10 @@ public:
     void checkOutput();
 
 private:
-    int id_; ///< Weight ID
+    int id_ = -1; ///< Weight ID
     std::string name_ = ""; ///< Weight Name
+		int module_id_ = -1; ///< Module ID
+		std::string module_name_ = ""; ///<Module Name
 		SmartPeak::NodeType type_; ///< Node Type
     SmartPeak::NodeStatus status_; ///< Node Status   
     SmartPeak::NodeActivation activation_; ///< Node Status   

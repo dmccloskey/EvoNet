@@ -20,6 +20,8 @@ namespace SmartPeak
     id_ = other.id_;
     name_ = other.name_;
     weight_ = other.weight_;
+		module_id_ = other.module_id_;
+		module_name_ = other.module_name_;
     weight_init_ = other.weight_init_;
     solver_ = other.solver_;
     weight_min_ = other.weight_min_;

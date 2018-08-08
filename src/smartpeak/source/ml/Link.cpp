@@ -16,6 +16,8 @@ namespace SmartPeak
   {    
     id_ = other.id_;
     name_ = other.name_;
+		module_id_ = other.module_id_;
+		module_name_ = other.module_name_;
     source_node_name_ = other.source_node_name_;
     sink_node_name_ = other.sink_node_name_;
     weight_name_ = other.weight_name_;
@@ -100,4 +102,24 @@ namespace SmartPeak
   {
     return weight_name_;
   }
+
+	void Link::setModuleId(const int & module_id)
+	{
+		module_id_ = module_id;
+	}
+
+	int Link::getModuleId() const
+	{
+		return module_id_;
+	}
+
+	void Link::setModuleName(const std::string & module_name)
+	{
+		module_name_ = module_name;
+	}
+
+	std::string Link::getModuleName() const
+	{
+		return module_name_;
+	}
 }

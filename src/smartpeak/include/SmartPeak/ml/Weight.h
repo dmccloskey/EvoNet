@@ -102,9 +102,9 @@ public:
     void checkWeight();
 
 private:
-    int id_ = NULL; ///< Weight ID
+    int id_ = -1; ///< Weight ID
     std::string name_ = ""; ///< Weight Name
-		int module_id_ = NULL; ///< Module ID
+		int module_id_ = -1; ///< Module ID
 		std::string module_name_ = ""; ///<Module Name
     float weight_ = 1.0; ///< Weight weight
     std::shared_ptr<WeightInitOp> weight_init_; ///< weight initialization operator

@@ -53,6 +53,8 @@ public:
     { // [TODO: add test]
       id_ = other.id_;
       name_ = other.name_;
+			module_id_ = other.module_id_;
+			module_name_ = other.module_name_;
       source_node_name_ = other.source_node_name_;
       sink_node_name_ = other.sink_node_name_;
       weight_name_ = other.weight_name_;
@@ -77,9 +79,17 @@ public:
     void setWeightName(const std::string& weight_name); ///< weight_name setter
     std::string getWeightName() const; ///< weight_name getter
 
+		void setModuleId(const int& module_id); ///< module id setter
+		int getModuleId() const; ///< module id getter
+
+		void setModuleName(const std::string& module_name); ///< module name setter
+		std::string getModuleName() const; ///< module name getter
+
 private:
-    int id_ = NULL; ///< Weight ID
+    int id_ = -1; ///< Weight ID
     std::string name_ = ""; ///< Weight Name
+		int module_id_ = -1; ///< Module ID
+		std::string module_name_ = ""; ///<Module Name
     std::string source_node_name_; ///< Link source node
     std::string sink_node_name_; ///< Link sink node
     std::string weight_name_; ///< Link weight
