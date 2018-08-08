@@ -75,6 +75,8 @@ BOOST_AUTO_TEST_CASE(setAndMakeRandomModifications)
 		std::make_pair(0, 0),
 		std::make_pair(0, 0),
 		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
 		std::make_pair(0, 0));
 	model_replicator.makeRandomModifications();
 	BOOST_CHECK_NE(model_replicator.getNNodeAdditions(), 0);
@@ -88,6 +90,8 @@ BOOST_AUTO_TEST_CASE(setAndMakeRandomModifications)
 	model_replicator.setRandomModifications(
 		std::make_pair(0, 0),
 		std::make_pair(1, 2),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
 		std::make_pair(0, 0),
 		std::make_pair(0, 0),
 		std::make_pair(0, 0),
@@ -107,6 +111,8 @@ BOOST_AUTO_TEST_CASE(setAndMakeRandomModifications)
 		std::make_pair(1, 2),
 		std::make_pair(0, 0),
 		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
 		std::make_pair(0, 0));
 	model_replicator.makeRandomModifications();
 	BOOST_CHECK_EQUAL(model_replicator.getNNodeAdditions(), 0);
@@ -122,6 +128,8 @@ BOOST_AUTO_TEST_CASE(setAndMakeRandomModifications)
 		std::make_pair(0, 0),
 		std::make_pair(0, 0),
 		std::make_pair(1, 2),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
 		std::make_pair(0, 0),
 		std::make_pair(0, 0));
 	model_replicator.makeRandomModifications();
@@ -139,6 +147,8 @@ BOOST_AUTO_TEST_CASE(setAndMakeRandomModifications)
 		std::make_pair(0, 0),
 		std::make_pair(0, 0),
 		std::make_pair(1, 2),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
 		std::make_pair(0, 0));
 	model_replicator.makeRandomModifications();
 	BOOST_CHECK_EQUAL(model_replicator.getNNodeAdditions(), 0);
@@ -155,7 +165,9 @@ BOOST_AUTO_TEST_CASE(setAndMakeRandomModifications)
 		std::make_pair(0, 0),
 		std::make_pair(0, 0),
 		std::make_pair(0, 0),
-		std::make_pair(1, 2));
+		std::make_pair(1, 2),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0));
 	model_replicator.makeRandomModifications();
 	BOOST_CHECK_EQUAL(model_replicator.getNNodeAdditions(), 0);
 	BOOST_CHECK_EQUAL(model_replicator.getNLinkAdditions(), 0);

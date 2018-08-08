@@ -123,6 +123,26 @@ namespace SmartPeak
     weight_max_ = weight_max;
   }
 
+	void Weight::setModuleId(const int & module_id)
+	{
+		module_id_ = module_id;
+	}
+
+	int Weight::getModuleId() const
+	{
+		return module_id_;
+	}
+
+	void Weight::setModuleName(const std::string & module_name)
+	{
+		module_name_ = module_name;
+	}
+
+	std::string Weight::getModuleName() const
+	{
+		return module_name_;
+	}
+
   void Weight::initWeight()
   {
     // weight_ = weight_init_();

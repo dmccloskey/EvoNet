@@ -59,6 +59,16 @@ namespace SmartPeak
 		node_integrations_ = node_integrations;
 	}
 
+	void ModelReplicator::setNModuleAdditions(const int & n_module_additions)
+	{
+		n_module_additions_ = n_module_additions;
+	}
+
+	void ModelReplicator::setNModuleDeletions(const int & n_module_deletions)
+	{
+		n_module_deletions_ = n_module_deletions;
+	}
+
   void ModelReplicator::setNWeightChanges(const int& n_weight_changes)
   {
     n_weight_changes_ = n_weight_changes;    
@@ -112,6 +122,16 @@ namespace SmartPeak
 	std::vector<NodeIntegration> ModelReplicator::getNodeIntegrations() const
 	{
 		return node_integrations_;
+	}
+
+	int ModelReplicator::getNModuleAdditions() const
+	{
+		return n_module_additions_;
+	}
+
+	int ModelReplicator::getNModuleDeletions() const
+	{
+		return n_module_deletions_;
 	}
 
   int ModelReplicator::getNWeightChanges() const
@@ -484,6 +504,10 @@ namespace SmartPeak
     model.addLinks({link});
   }
 
+	void ModelReplicator::addModule(Model & model, std::string unique_str)
+	{
+	}
+
   void ModelReplicator::copyNode(Model& model)
   {
     // [TODO: add method body]
@@ -648,6 +672,10 @@ namespace SmartPeak
     }
   }
 
+	void ModelReplicator::deleteModule(Model & model, int prune_iterations)
+	{
+	}
+
 	void ModelReplicator::changeNodeActivation(Model & model, std::string unique_str)
 	{
 		// pick a random node from the model
@@ -711,8 +739,10 @@ namespace SmartPeak
 		for (int i = 0; i<n_node_integration_changes_; ++i) modifications.push_back("change_node_integration");
     for(int i=0; i<n_node_additions_; ++i) modifications.push_back("add_node");
     for(int i=0; i<n_link_additions_; ++i) modifications.push_back("add_link");
+		for (int i = 0; i<n_module_additions_; ++i) modifications.push_back("add_module");
     for(int i=0; i<n_node_deletions_; ++i) modifications.push_back("delete_node");
     for(int i=0; i<n_link_deletions_; ++i) modifications.push_back("delete_link");
+		for (int i = 0; i<n_module_deletions_; ++i) modifications.push_back("delete_module");
 
     // // randomize
     // std::random_device seed;
@@ -728,7 +758,9 @@ namespace SmartPeak
 		const std::pair<int, int>& node_deletions,
 		const std::pair<int, int>& link_deletions,
 		const std::pair<int, int>& node_activation_changes,
-		const std::pair<int, int>& node_integration_changes)
+		const std::pair<int, int>& node_integration_changes,
+		const std::pair<int, int>& module_additions,
+		const std::pair<int, int>& module_deletions)
 	{
 		// set 
 		node_additions_ = node_additions;
@@ -737,6 +769,8 @@ namespace SmartPeak
 		link_deletions_ = link_deletions;
 		node_activation_changes_ = node_activation_changes;
 		node_integration_changes_ = node_integration_changes;
+		module_additions_ = module_additions;
+		module_deletions_ = module_deletions;
 	}
 
 	void ModelReplicator::makeRandomModifications()
@@ -758,6 +792,10 @@ namespace SmartPeak
 		setNNodeActivationChanges(node_activation_changes_gen(gen));
 		std::uniform_int_distribution<> node_integration_changes_gen(node_integration_changes_.first, node_integration_changes_.second);
 		setNNodeIntegrationChanges(node_integration_changes_gen(gen));
+		std::uniform_int_distribution<> module_addition_gen(module_additions_.first, module_additions_.second);
+		setNNodeAdditions(module_addition_gen(gen));
+		std::uniform_int_distribution<> module_deletion_gen(module_deletions_.first, module_deletions_.second);
+		setNNodeDeletions(module_deletion_gen(gen));
 	}
 
   void ModelReplicator::modifyModel(Model& model, std::string unique_str)
@@ -803,6 +841,16 @@ namespace SmartPeak
 			else if (modification == "change_node_integration")
 			{
 				changeNodeIntegration(model);
+				modifications_counts[modification] += 1;
+			}
+			if (modification == "add_module")
+			{
+				addModule(model, unique_str + "-" + std::to_string(modifications_counts.at(modification)));
+				modifications_counts[modification] += 1;
+			}
+			else if (modification == "delete_module")
+			{
+				deleteModule(model, prune_iterations);
 				modifications_counts[modification] += 1;
 			}
       // [TODO: modifyWeight]

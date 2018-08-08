@@ -42,6 +42,8 @@ public:
 				std::make_pair(0, 0),
 				std::make_pair(1, 1),
 				std::make_pair(0, 0),
+				std::make_pair(0, 0),
+				std::make_pair(0, 0),
 				std::make_pair(0, 0));
 		}
 	}
@@ -291,6 +293,8 @@ BOOST_AUTO_TEST_CASE(replicateModels)
 		std::make_pair(0, 0),
 		std::make_pair(0, 0),
 		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
 		std::make_pair(0, 0));
   population_trainer.replicateModels(population1, model_replicator, input_nodes, output_nodes);
 
@@ -301,6 +305,8 @@ BOOST_AUTO_TEST_CASE(replicateModels)
 	model_replicator.setRandomModifications(
 		std::make_pair(1, 1),
 		std::make_pair(1, 1),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
 		std::make_pair(0, 0),
 		std::make_pair(0, 0),
 		std::make_pair(0, 0),
@@ -316,6 +322,8 @@ BOOST_AUTO_TEST_CASE(replicateModels)
 		std::make_pair(0, 0),
 		std::make_pair(1, 1),
 		std::make_pair(1, 1),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
 		std::make_pair(0, 0),
 		std::make_pair(0, 0));
 	population_trainer.replicateModels(population3, model_replicator, input_nodes, output_nodes);

@@ -50,6 +50,8 @@ public:
     { // [TODO: add test]
       id_  = other.id_;
       name_  = other.name_;
+			module_id_ = other.module_id_;
+			module_name_ = other.module_name_;
       weight_  = other.weight_;
       weight_init_ = other.weight_init_;
       solver_ = other.solver_;
@@ -76,6 +78,12 @@ public:
     void setWeightMin(const float& weight_min); ///< min weight setter
     void setWeightMax(const float& weight_max); ///< max weight setter
 
+		void setModuleId(const int& module_id); ///< module id setter
+		int getModuleId() const; ///< module id getter
+
+		void setModuleName(const std::string& module_name); ///< module name setter
+		std::string getModuleName() const; ///< module name getter
+
     /**
       @brief Initializes the weight.  
     */ 
@@ -96,6 +104,8 @@ public:
 private:
     int id_ = NULL; ///< Weight ID
     std::string name_ = ""; ///< Weight Name
+		int module_id_ = NULL; ///< Module ID
+		std::string module_name_ = ""; ///<Module Name
     float weight_ = 1.0; ///< Weight weight
     std::shared_ptr<WeightInitOp> weight_init_; ///< weight initialization operator
     std::shared_ptr<SolverOp> solver_; ///< weight update operator

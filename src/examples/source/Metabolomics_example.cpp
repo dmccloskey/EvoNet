@@ -451,7 +451,9 @@ public:
 				std::make_pair(0, 5),
 				std::make_pair(0, 10),
 				std::make_pair(0, 5),
-				std::make_pair(0, 5));
+				std::make_pair(0, 5),
+				std::make_pair(0, 0),
+				std::make_pair(0, 0));
 		}
 	}
 };

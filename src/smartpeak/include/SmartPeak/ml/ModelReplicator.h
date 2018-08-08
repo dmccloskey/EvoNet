@@ -28,6 +28,8 @@ public:
 		void setNNodeIntegrationChanges(const int& n_node_integration_changes); ///< n_node_integration_changes setter
 		void setNodeActivations(const std::vector<NodeActivation>& node_activations); ///< node_activations setter
 		void setNodeIntegrations(const std::vector<NodeIntegration>& node_integrations); ///< node_integrations setter
+		void setNModuleAdditions(const int& n_module_additions); ///< n_module_additions setter
+		void setNModuleDeletions(const int& n_module_deletions); ///< n_module_deletions setter
 
     int getNNodeAdditions() const; ///< n_node_additions setter
     int getNLinkAdditions() const; ///< n_link_additions setter
@@ -37,10 +39,13 @@ public:
 		int getNNodeIntegrationChanges() const; ///< n_node_integration_changes setter
 		std::vector<NodeActivation> getNodeActivations() const; ///< node_activations setter
 		std::vector<NodeIntegration> getNodeIntegrations() const; ///< node_integrations setter
+		int getNModuleAdditions() const; ///< n_module_additions setter
+		int getNModuleDeletions() const; ///< n_module_deletions setter
 
 		void setNNodeCopies(const int& n_node_copies); ///< n_node_copies setter
 		void setNWeightChanges(const int& n_weight_changes); ///< n_weight_changes setter
 		void setWeightChangeStDev(const float& weight_change_stdev); ///< weight_change_stdev setter
+
 		int getNNodeCopies() const; ///< n_node_copies setter
 		int getNWeightChanges() const; ///< n_weight_changes setter
     float getWeightChangeStDev() const; ///< weight_change_stdev setter
@@ -177,6 +182,13 @@ public:
     */ 
     void addLink(Model& model, std::string unique_str = "");
 
+		/**
+		@brief Add a new module to the model
+
+		@param[in, out] model The model
+		*/
+		void addModule(Model& model, std::string unique_str = "");
+
     /**
       @brief delete node to the model
 
@@ -192,6 +204,14 @@ public:
       @param[in] prune_iterations The number of model recursive prune iterations
     */ 
     void deleteLink(Model& model, int prune_iterations = 1e6);
+
+		/**
+		@brief delete module in the model
+
+		@param[in, out] model The model
+		@param[in] prune_iterations The number of model recursive prune iterations
+		*/
+		void deleteModule(Model& model, int prune_iterations = 1e6);
 
 		/**
 		@brief change node activation
@@ -246,7 +266,9 @@ public:
 			const std::pair<int, int>& node_deletions,
 			const std::pair<int, int>& link_deletions,
 			const std::pair<int, int>& node_activation_changes,
-			const std::pair<int, int>& node_integration_changes);
+			const std::pair<int, int>& node_integration_changes,
+			const std::pair<int, int>& module_additions,
+			const std::pair<int, int>& module_deletions);
 
 		/**
 		@brief make random model modification parameters
@@ -268,12 +290,14 @@ public:
 
 private:
     // modification parameters
-    int n_node_additions_ = 0; ///< new nodes to add to the model (with a random source and sink connection)
+    int n_node_additions_ = 0; ///< new nodes to add to the model (nodes are created through replication)
     int n_link_additions_ = 0; ///< new links to add to the model
     int n_node_deletions_ = 0; ///< nodes to remove from the model
     int n_link_deletions_ = 0; ///< links to remove from the model
 		int n_node_activation_changes_ = 0; ///< nodes to change the activation
 		int n_node_integration_changes_ = 0; ///< nodes to change the activation
+		int n_module_additions_ = 0; ///< new modules added to the model (modules are created through replication)
+		int n_module_deletions_ = 0; ///< modules to remove from the model
 
 		// random modification parameters
 		std::pair<int, int> node_additions_ = std::make_pair(0, 0);
@@ -282,12 +306,14 @@ private:
 		std::pair<int, int> link_deletions_ = std::make_pair(0, 0);
 		std::pair<int, int> node_activation_changes_ = std::make_pair(0, 0);
 		std::pair<int, int> node_integration_changes_ = std::make_pair(0, 0);
+		std::pair<int, int> module_additions_ = std::make_pair(0, 0);
+		std::pair<int, int> module_deletions_ = std::make_pair(0, 0);
 		std::vector<NodeActivation> node_activations_;
 		std::vector<NodeIntegration> node_integrations_;
 		
 
 		// not yet implemented...
-		int n_node_copies_ = 0; ///< nodes to duplicate in the model (nodes are created through replication)
+		int n_node_copies_ = 0; ///< nodes to duplicate in the model (with a random source and sink connection) [TODO: names should be swapped at some point]
     int n_weight_changes_ = 0; ///< the number of weights to change in the model
     float weight_change_stdev_ = 0; ///< the standard deviation to change the weights in the model
   };
