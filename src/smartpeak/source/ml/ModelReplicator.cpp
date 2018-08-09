@@ -587,7 +587,6 @@ namespace SmartPeak
 				new_nodes.push_back(source_node);
 
 				Node sink_node = model.getNode(link.getSinkNodeName());
-				std::string new_node_name, node_prefix;
 				updateName(sink_node.getName(), new_name_format, unique_str, node_prefix, new_node_name);
 				sink_node.setName(new_node_name);
 				sink_node.setModuleName(new_module_name);
@@ -978,9 +977,9 @@ namespace SmartPeak
 		std::uniform_int_distribution<> node_integration_changes_gen(node_integration_changes_.first, node_integration_changes_.second);
 		setNNodeIntegrationChanges(node_integration_changes_gen(gen));
 		std::uniform_int_distribution<> module_addition_gen(module_additions_.first, module_additions_.second);
-		setNNodeAdditions(module_addition_gen(gen));
+		setNModuleAdditions(module_addition_gen(gen));
 		std::uniform_int_distribution<> module_deletion_gen(module_deletions_.first, module_deletions_.second);
-		setNNodeDeletions(module_deletion_gen(gen));
+		setNModuleDeletions(module_deletion_gen(gen));
 	}
 
   void ModelReplicator::modifyModel(Model& model, std::string unique_str)
