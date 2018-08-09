@@ -834,9 +834,11 @@ namespace SmartPeak
 				delete_weights.push_back(link.getWeightName());
 			}
 		}
+		model.removeNodes(delete_nodes);
+		model.removeLinks(delete_links);
+		model.removeWeights(delete_weights);
 
 		// prune the model
-
 		model.pruneModel(prune_iterations);  // this action can remove additional nodes including inputs, biases, and outputs
 	}
 
