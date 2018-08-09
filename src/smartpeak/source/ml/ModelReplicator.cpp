@@ -8,6 +8,7 @@
 #include <regex> // tokenizing
 #include <ctime> // time format
 #include <chrono> // current time
+#include <set>
 
 namespace SmartPeak
 {
@@ -383,6 +384,47 @@ namespace SmartPeak
     return node_ids;
   }
 
+	std::vector<std::string> ModelReplicator::selectModules(const Model & model, const std::vector<NodeType>& node_type_exclude, const std::vector<NodeType>& node_type_include)
+	{
+		// populate our list of modules to select from
+		std::set<std::string> module_name_set;
+		for (const Node& node : model.getNodes())
+		{
+			// check the exclusion list
+			bool exclude_node = false;
+			for (const NodeType& node_type : node_type_exclude)
+			{
+				if (node_type == node.getType())
+				{
+					exclude_node = true;
+					break;
+				}
+			}
+
+			// check the inclusion list
+			bool include_node = true;
+			if (node_type_include.size()>0)
+			{
+				include_node = false;
+				for (const NodeType& node_type : node_type_include)
+				{
+					if (node_type == node.getType())
+					{
+						include_node = true;
+						break;
+					}
+				}
+			}
+
+			// add the node name to the list
+			if (include_node && !exclude_node && !node.getModuleName().empty())
+				module_name_set.insert(node.getModuleName());
+		}
+
+		std::vector<std::string> module_ids(module_name_set.begin(), module_name_set.end());
+		return module_ids;
+	}
+
   //std::string ModelReplicator::selectRandomNode(
   //  const Model& model,
   //  const std::vector<NodeType>& node_type_exclude,
@@ -506,9 +548,116 @@ namespace SmartPeak
 
 	void ModelReplicator::addModule(Model & model, std::string unique_str)
 	{
+		// pick a random module from the model
+		std::vector<NodeType> node_exclusion_list = {};
+		std::vector<NodeType> node_inclusion_list = {};
+		std::string random_module_name = selectRandomModule(model, node_exclusion_list, node_inclusion_list);
+		if (random_module_name.empty())
+		{
+			std::cout << "No modules were added to the model." << std::endl;
+			return;
+		}
+
+		// update the module name [TODO: update the module ID]
+		std::string new_name_format = "%s@addModule#";
+		std::string new_module_name, module_name_prefix;
+		updateName(random_module_name, new_name_format, unique_str, module_name_prefix, new_module_name);
+
+		// copy the module and reconnect the links
+		std::vector<Node> new_nodes;
+		std::vector<Link> new_links;
+		std::vector<Weight> new_weights;
+		std::vector<Link> connecting_links;
+		std::vector<Weight> connecting_weights;
+		for (Link& link : model.getLinks())
+		{
+			if (link.getModuleName() == random_module_name)
+			{ // copy the internal nodes, weights, and links, and give them a new name/id/module_name/module_id
+				std::string new_link_name, link_prefix;
+				updateName(link.getName(), new_name_format, unique_str, link_prefix, new_link_name);
+				link.setName(new_link_name);
+				link.setModuleName(new_module_name);
+				new_links.push_back(link);
+
+				Node source_node = model.getNode(link.getSourceNodeName());
+				std::string new_node_name, node_prefix;
+				updateName(source_node.getName(), new_name_format, unique_str, node_prefix, new_node_name);
+				source_node.setName(new_node_name);
+				source_node.setModuleName(new_module_name);
+				new_nodes.push_back(source_node);
+
+				Node sink_node = model.getNode(link.getSinkNodeName());
+				std::string new_node_name, node_prefix;
+				updateName(sink_node.getName(), new_name_format, unique_str, node_prefix, new_node_name);
+				sink_node.setName(new_node_name);
+				sink_node.setModuleName(new_module_name);
+				new_nodes.push_back(sink_node);
+
+				Weight weight = model.getWeight(link.getWeightName());
+				std::string new_weight_name, weight_prefix;
+				updateName(weight.getName(), new_name_format, unique_str, weight_prefix, new_weight_name);
+				weight.setName(new_weight_name);
+				weight.setModuleName(new_module_name);
+				new_weights.push_back(weight);
+			}
+			else if (model.getNode(link.getSourceNodeName()).getModuleName() == random_module_name)
+			{ // copy the connecting links and weights, and give them a new name/id
+				// and update the source node name (i.e., connect to the new module)
+				std::string new_link_name, link_prefix;
+				updateName(link.getName(), new_name_format, unique_str, link_prefix, new_link_name);
+				link.setName(new_link_name);
+				std::string new_node_name, node_prefix;
+				updateName(link.getSourceNodeName(), new_name_format, unique_str, node_prefix, new_node_name);
+				link.setSinkNodeName(new_node_name);
+				connecting_links.push_back(link);
+
+				Weight weight = model.getWeight(link.getWeightName());
+				std::string new_weight_name, weight_prefix;
+				updateName(weight.getName(), new_name_format, unique_str, weight_prefix, new_weight_name);
+				weight.setName(new_weight_name);
+				connecting_weights.push_back(weight);
+			}
+			else if (model.getNode(link.getSinkNodeName()).getModuleName() == random_module_name)
+			{ // copy the connecting links and weights, and give them a new name/id
+				// and update the sink node name (i.e., connect to the new module)
+				std::string new_link_name, link_prefix;
+				updateName(link.getName(), new_name_format, unique_str, link_prefix, new_link_name);
+				link.setName(new_link_name);
+				std::string new_node_name, node_prefix;
+				updateName(link.getSinkNodeName(), new_name_format, unique_str, node_prefix, new_node_name);
+				link.setSinkNodeName(new_node_name);
+				connecting_links.push_back(link);
+
+				Weight weight = model.getWeight(link.getWeightName());
+				std::string new_weight_name, weight_prefix;
+				updateName(weight.getName(), new_name_format, unique_str, weight_prefix, new_weight_name);
+				weight.setName(new_weight_name);
+				connecting_weights.push_back(weight);
+			}
+		}
+
+		// add the new nodes/links/weights to the model
+		model.addNodes(new_nodes);
+		model.addWeights(new_weights);
+		model.addLinks(new_links);
+		model.addWeights(connecting_weights);
+		model.addLinks(connecting_links);
 	}
 
-  void ModelReplicator::copyNode(Model& model)
+	std::string ModelReplicator::selectRandomModule(const Model & model, const std::vector<NodeType>& node_type_exclude, const std::vector<NodeType>& node_type_include)
+	{
+		std::vector<std::string> module_ids = selectModules(model, node_type_exclude, node_type_include);
+
+		if (module_ids.size()>0)
+			return selectRandomElement<std::string>(module_ids);
+		else
+		{
+			printf("No nodes were found that matched the inclusion/exclusion criteria.\n");
+			return "";
+		}
+	}
+
+	void ModelReplicator::copyNode(Model& model)
   {
     // [TODO: add method body]
 
@@ -554,23 +703,10 @@ namespace SmartPeak
       std::cout<<"No nodes were added to the model."<<std::endl;
       return;
     }
-    std::string input_link_name = selectRandomElement<std::string>(input_link_names);   
-    
-    // update the copied node name and add it to the model    
-    std::regex re("@");
-    std::vector<std::string> str_tokens;
-    std::string add_node_name = random_node_name;
-    std::copy(
-      std::sregex_token_iterator(random_node_name.begin(), random_node_name.end(), re, -1),
-      std::sregex_token_iterator(),
-      std::back_inserter(str_tokens));
-    if (str_tokens.size() > 1)
-      add_node_name = str_tokens[0]; // only retain the last timestamp
-    // printf("New node name: %s\n", add_node_name.data());
+    std::string input_link_name = selectRandomElement<std::string>(input_link_names);
 
-    char new_node_name_char[128];
-		sprintf(new_node_name_char, "%s@addNode#", add_node_name.data());
-    std::string new_node_name = makeUniqueHash(new_node_name_char, unique_str);
+		std::string new_node_name, add_node_name;
+    updateName(random_node_name, "%s@addNode#", unique_str, add_node_name, new_node_name);
     new_node.setName(new_node_name); 
 		new_node.setType(NodeType::hidden); // [TODO: add test to check for the type!
     model.addNodes({new_node});
@@ -639,7 +775,7 @@ namespace SmartPeak
   {
     // pick a random node from the model
     // that is not an input, bias, nor output
-    std::vector<NodeType> node_exclusion_list = {NodeType::bias, NodeType::input, NodeType::output};
+    std::vector<NodeType> node_exclusion_list = {NodeType::bias, NodeType::input, NodeType::output, NodeType::unmodifiable};
     std::vector<NodeType> node_inclusion_list = {NodeType::hidden};
     std::string random_node_name = selectRandomNode(model, node_exclusion_list, node_inclusion_list);
 
@@ -657,9 +793,9 @@ namespace SmartPeak
     // pick a random link from the model
     // that does not connect from a bias or input
     // [TODO: need to implement a check that the deletion does not also remove an input/output node]
-    std::vector<NodeType> source_exclusion_list = {NodeType::bias};
+    std::vector<NodeType> source_exclusion_list = {NodeType::bias, NodeType::unmodifiable};
     std::vector<NodeType> source_inclusion_list = {};
-    std::vector<NodeType> sink_exclusion_list = {NodeType::bias};
+    std::vector<NodeType> sink_exclusion_list = {NodeType::bias, NodeType::unmodifiable};
     std::vector<NodeType> sink_inclusion_list = {};
     std::string random_link_name = selectRandomLink(
       model, source_exclusion_list, source_inclusion_list, sink_exclusion_list, sink_inclusion_list);
@@ -674,6 +810,34 @@ namespace SmartPeak
 
 	void ModelReplicator::deleteModule(Model & model, int prune_iterations)
 	{
+		// pick a random module from the model
+		std::vector<NodeType> node_exclusion_list = {};
+		std::vector<NodeType> node_inclusion_list = {};
+		std::string random_module_name = selectRandomModule(model, node_exclusion_list, node_inclusion_list);
+		if (random_module_name.empty())
+		{
+			std::cout << "No modules were deleted from the model." << std::endl;
+			return;
+		}
+
+		// remove nodes/link/weights from the model
+		std::vector<std::string> delete_nodes;
+		std::vector<std::string> delete_links;
+		std::vector<std::string> delete_weights;
+		for (Link& link : model.getLinks())
+		{
+			if (link.getModuleName() == random_module_name)
+			{
+				delete_links.push_back(link.getName());
+				delete_nodes.push_back(link.getSourceNodeName());
+				delete_nodes.push_back(link.getSinkNodeName());
+				delete_weights.push_back(link.getWeightName());
+			}
+		}
+
+		// prune the model
+
+		model.pruneModel(prune_iterations);  // this action can remove additional nodes including inputs, biases, and outputs
 	}
 
 	void ModelReplicator::changeNodeActivation(Model & model, std::string unique_str)
@@ -731,7 +895,26 @@ namespace SmartPeak
 
   }
   
-  std::vector<std::string> ModelReplicator::makeRandomModificationOrder()
+	void ModelReplicator::updateName(const std::string & name, const std::string & new_name_format, std::string unique_str,
+		std::string& name_prefix, std::string& new_name)
+	{
+		std::regex re("@");
+		std::vector<std::string> str_tokens;
+		name_prefix = name;
+		std::copy(
+			std::sregex_token_iterator(name.begin(), name.end(), re, -1),
+			std::sregex_token_iterator(),
+			std::back_inserter(str_tokens));
+		if (str_tokens.size() > 1)
+			name_prefix = str_tokens[0]; // only retain the last timestamp
+																		 // printf("New node name: %s\n", add_name.data());
+
+		char new_name_char[128];
+		sprintf(new_name_char, new_name_format.data(), name_prefix.data());
+		new_name = makeUniqueHash(new_name_char, unique_str);
+	}
+
+	std::vector<std::string> ModelReplicator::makeRandomModificationOrder()
   {
     // create the list of modifications
     std::vector<std::string> modifications;

@@ -22,7 +22,8 @@ namespace SmartPeak
     input = 1, // No activation function
     bias = 2, // Zero value
     output = 3, 
-    hidden = 4
+    hidden = 4,
+		unmodifiable = 5
   };
 
   enum class NodeActivation

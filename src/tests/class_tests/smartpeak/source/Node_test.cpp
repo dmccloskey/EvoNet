@@ -30,10 +30,11 @@ BOOST_AUTO_TEST_CASE(destructor)
 BOOST_AUTO_TEST_CASE(constructor2) 
 {
   Node node("1", NodeType::bias, NodeStatus::initialized, NodeActivation::TanH, NodeIntegration::Product);
-  node.setId(1);
 
-  BOOST_CHECK_EQUAL(node.getId(), 1);
+  BOOST_CHECK_EQUAL(node.getId(), -1);
   BOOST_CHECK_EQUAL(node.getName(), "1");
+	BOOST_CHECK_EQUAL(node.getModuleId(), -1);
+	BOOST_CHECK_EQUAL(node.getModuleName(), "");
   BOOST_CHECK(node.getType() == NodeType::bias);
   BOOST_CHECK(node.getStatus() == NodeStatus::initialized);
   BOOST_CHECK(node.getActivation() == NodeActivation::TanH);
@@ -78,6 +79,8 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   node.setStatus(NodeStatus::initialized);
   node.setActivation(NodeActivation::ReLU);
 	node.setIntegration(NodeIntegration::Sum);
+	node.setModuleId(4);
+	node.setModuleName("Module1");
 
   BOOST_CHECK_EQUAL(node.getId(), 1);
   BOOST_CHECK_EQUAL(node.getName(), "Node1");
@@ -85,6 +88,8 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   BOOST_CHECK(node.getStatus() == NodeStatus::initialized);
   BOOST_CHECK(node.getActivation() == NodeActivation::ReLU, NodeIntegration::Sum);
 	BOOST_CHECK(node.getIntegration() == NodeIntegration::Sum);
+	BOOST_CHECK_EQUAL(node.getModuleId(), 4);
+	BOOST_CHECK_EQUAL(node.getModuleName(), "Module1");
 
   Eigen::Tensor<float, 2> output_test(3, 2), error_test(3, 2), derivative_test(3, 2), dt_test(3, 2), input_test(3, 2);
   output_test.setConstant(0.0f);
@@ -199,16 +204,30 @@ BOOST_AUTO_TEST_CASE(initNode)
   node.initNode(2,5);
   BOOST_CHECK_EQUAL(node.getOutput()(0,0), 1.0);
   BOOST_CHECK_EQUAL(node.getOutput()(1,4), 1.0);
-	BOOST_CHECK_EQUAL(node.getDerivative()(0, 0), 1.0);
-	BOOST_CHECK_EQUAL(node.getDerivative()(1, 4), 1.0);
+	BOOST_CHECK_EQUAL(node.getDerivative()(0, 0), 0.0);
+	BOOST_CHECK_EQUAL(node.getDerivative()(1, 4), 0.0);
   BOOST_CHECK(node.getStatus() == NodeStatus::activated);
 
 	node.setType(NodeType::input);
 	node.initNode(2, 5);
 	BOOST_CHECK_EQUAL(node.getOutput()(0, 0), 0.0);
 	BOOST_CHECK_EQUAL(node.getOutput()(1, 4), 0.0);
-	BOOST_CHECK_EQUAL(node.getDerivative()(0, 0), 1.0);
-	BOOST_CHECK_EQUAL(node.getDerivative()(1, 4), 1.0);
+	BOOST_CHECK_EQUAL(node.getDerivative()(0, 0), 0.0);
+	BOOST_CHECK_EQUAL(node.getDerivative()(1, 4), 0.0);
+	BOOST_CHECK(node.getStatus() == NodeStatus::initialized);
+
+	node.setType(NodeType::unmodifiable);
+	node.initNode(2, 5);
+	BOOST_CHECK_EQUAL(node.getInput()(0, 0), 0.0);
+	BOOST_CHECK_EQUAL(node.getInput()(1, 4), 0.0);
+	BOOST_CHECK_EQUAL(node.getOutput()(0, 0), 0.0);
+	BOOST_CHECK_EQUAL(node.getOutput()(1, 4), 0.0);
+	BOOST_CHECK_EQUAL(node.getDerivative()(0, 0), 0.0);
+	BOOST_CHECK_EQUAL(node.getDerivative()(1, 4), 0.0);
+	BOOST_CHECK_EQUAL(node.getError()(0, 0), 0.0);
+	BOOST_CHECK_EQUAL(node.getError()(1, 4), 0.0);
+	BOOST_CHECK_EQUAL(node.getDt()(0, 0), 1.0);
+	BOOST_CHECK_EQUAL(node.getDt()(1, 4), 1.0);
 	BOOST_CHECK(node.getStatus() == NodeStatus::initialized);
 }
 

@@ -88,12 +88,16 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   link.setSourceNodeName(node_source);
   link.setSinkNodeName(node_sink);
   link.setWeightName("3");
+	link.setModuleId(4);
+	link.setModuleName("Module1");
 
   BOOST_CHECK_EQUAL(link.getId(), 1);
   BOOST_CHECK_EQUAL(link.getName(), "Link1");
   BOOST_CHECK_EQUAL(link.getSourceNodeName(), node_source);
   BOOST_CHECK_EQUAL(link.getSinkNodeName(), node_sink);
   BOOST_CHECK_EQUAL(link.getWeightName(), "3");
+	BOOST_CHECK_EQUAL(link.getModuleId(), 4);
+	BOOST_CHECK_EQUAL(link.getModuleName(), "Module1");
   
   // test same sink and source nodes
   link.setSourceNodeName(node_sink);

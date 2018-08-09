@@ -93,6 +93,20 @@ public:
       const Model& model,
       const std::vector<NodeType>& node_type_exclude,
       const std::vector<NodeType>& node_type_include);
+
+		/**
+		@brief Select modules given a set of conditions
+
+		@param[in, out] model The model
+		@param node_type_exclude Node types to exclude
+		@param node_type_include Node types to include
+
+		@returns A node name
+		*/
+		std::vector<std::string> selectModules(
+			const Model& model,
+			const std::vector<NodeType>& node_type_exclude,
+			const std::vector<NodeType>& node_type_include);
  
     /**
       @brief Select random node given a set of conditions
@@ -144,8 +158,18 @@ public:
       const std::vector<NodeType>& sink_node_type_exclude,
       const std::vector<NodeType>& sink_node_type_include);
 
-    // Model modification operators
+		/**
+		@brief Select random module given a set of conditions
 
+		@param[in] model The model
+
+		@returns A module name
+		*/
+		std::string selectRandomModule(
+			const Model& model,
+			const std::vector<NodeType>& node_type_exclude,
+			const std::vector<NodeType>& node_type_include);
+		
     /**
       @brief Copy a node in the model (Layer expansion to the left or right)
 
@@ -243,7 +267,19 @@ public:
 
       @returns A unique string hash
     */ 
-    std::string makeUniqueHash(const std::string& left_str, const std::string& right_str);    
+    std::string makeUniqueHash(const std::string& left_str, const std::string& right_str);
+
+		/**
+		@brief Update the name of a node/link/weight/module
+
+		@param[in] name Original name
+		@param[in] new_name_format The format for the new name
+		@param[in] unique_str A unique tag
+
+		@returns A new name
+		*/
+		void updateName(const std::string& name, const std::string& new_name_format, std::string unique_str, 
+			std::string& name_prefix, std::string& new_name);
 
     /**
       @brief randomly order the mutations

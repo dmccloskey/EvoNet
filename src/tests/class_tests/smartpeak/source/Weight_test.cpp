@@ -63,10 +63,14 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   Weight weight;
   weight.setId(1);
   weight.setWeight(4.0);
+	weight.setModuleId(2);
+	weight.setModuleName("2");
 
   BOOST_CHECK_EQUAL(weight.getId(), 1);
   BOOST_CHECK_EQUAL(weight.getWeight(), 4.0);
   BOOST_CHECK_EQUAL(weight.getName(), "1");
+	BOOST_CHECK_EQUAL(weight.getModuleId(), 2);
+	BOOST_CHECK_EQUAL(weight.getModuleName(), "2");
 
   weight.setName("weight1");
   BOOST_CHECK_EQUAL(weight.getName(), "weight1");
