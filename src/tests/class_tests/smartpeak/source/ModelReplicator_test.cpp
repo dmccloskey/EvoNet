@@ -746,34 +746,50 @@ BOOST_AUTO_TEST_CASE(addModule)
 
 	// new module components
 	std::vector<std::string> node_names_prefix = {"2", "3", "6"};
-	std::vector<std::string> link_names_prefix = {"6_to_2", "6_to_3"};
-	std::vector<std::string> weight_names_prefix = { "6_to_2", "6_to_3" };
-
-	// new connecting components
-	std::vector<std::string> link_names_prefix = { "0_to_2", "0_to_3", "1_to_2", "1_to_3", "2_to_4", "2_to_5", "3_to_4", "3_to_5" };
-	std::vector<std::string> weight_names_prefix = { "0_to_2", "0_to_3", "1_to_2", "1_to_3", "2_to_4", "2_to_5", "3_to_4", "3_to_5" };
+	std::vector<std::string> link_names_prefix = { "6_to_2", "6_to_3", // new module
+		"0_to_2", "0_to_3", "1_to_2", "1_to_3", "2_to_4", "2_to_5", "3_to_4", "3_to_5" }; // new connections
+	std::vector<std::string> weight_names_prefix = { "6_to_2", "6_to_3", // new module
+		"0_to_2", "0_to_3", "1_to_2", "1_to_3", "2_to_4", "2_to_5", "3_to_4", "3_to_5" }; // new connections
 
 	// check for the expected model size
 	BOOST_CHECK_EQUAL(model_addModule.getNodes().size(), 10); // 8 existing + 2 new
 	BOOST_CHECK_EQUAL(model_addModule.getLinks().size(), 22); // 12 existing + 2 new + 8 new connecting
 	BOOST_CHECK_EQUAL(model_addModule.getWeights().size(), 22); // 12 existing + 2 new + 8 new connecting
 
-	// [TODO: add loop here with iter = 100]
-	std::regex re("@");
-
 	// check that the expected nodes/links/weights exist
+	std::map<std::string, int> node_names_map, link_names_map, weight_names_map;
+	for (const std::string& name : node_names_prefix)
+		node_names_map.emplace(name, 0);
+	for (const std::string& name : link_names_prefix)
+		link_names_map.emplace(name, 0);
+	for (const std::string& name : weight_names_prefix)
+		weight_names_map.emplace(name, 0);
+	for (const Node& node : model_addModule.getNodes())
+	{
+		std::string name_prefix, new_name;
+		model_replicator.updateName(node.getName(), "", "", name_prefix, new_name);
+		node_names_map.at(name_prefix) += 1;
+	}
+	for (const Link& link : model_addModule.getLinks())
+	{
+		std::string name_prefix, new_name;
+		model_replicator.updateName(link.getName(), "", "", name_prefix, new_name);
+		link_names_map.at(name_prefix) += 1;
+	}
+	for (const Weight& weight : model_addModule.getWeights())
+	{
+		std::string name_prefix, new_name;
+		model_replicator.updateName(weight.getName(), "", "", name_prefix, new_name);
+		weight_names_map.at(name_prefix) += 1;
+	}
+	for (const auto& name_count : node_names_map)
+		BOOST_CHECK_EQUAL(name_count.second, 2);
+	for (const auto& name_count : link_names_map)
+		BOOST_CHECK_EQUAL(name_count.second, 2);
+	for (const auto& name_count : weight_names_map)
+		BOOST_CHECK_EQUAL(name_count.second, 2);
 
-	//// check the correct text after @
-	//bool add_node_marker_found = false;
-	//std::regex re_addNodes("@|#");
-	//std::vector<std::string> node_text_tokens;
-	//std::copy(
-	//	std::sregex_token_iterator(node_name.begin(), node_name.end(), re_addNodes, -1),
-	//	std::sregex_token_iterator(),
-	//	std::back_inserter(node_text_tokens));
-	//if (node_text_tokens.size() > 1 && node_text_tokens[1] == "addModule")
-	//	add_node_marker_found = true;
-	//BOOST_CHECK(add_node_marker_found);
+	// check the correct text after @
 
 	// [TODO: check that the node is of the correct type]
 
@@ -802,7 +818,22 @@ BOOST_AUTO_TEST_CASE(deleteModule)
 	BOOST_CHECK_EQUAL(model_addModule.getLinks().size(), 10); // 12 existing - 2
 	BOOST_CHECK_EQUAL(model_addModule.getWeights().size(), 10); // 12 existing - 2
 
-	// for the expected nodes
+	// check for the expected nodes/links/weights
+	int nodes_cnt = 0;
+	for (const Node& node : model_addModule.getNodes())
+		if (std::count(node_names.begin(), node_names.end(), node.getName()) > 0)
+			++nodes_cnt;
+	BOOST_CHECK_EQUAL(nodes_cnt, 5);
+	int links_cnt = 0;
+	for (const Link& link : model_addModule.getLinks())
+		if (std::count(link_names.begin(), link_names.end(), link.getName()) > 0)
+			++links_cnt;
+	BOOST_CHECK_EQUAL(links_cnt, 5);
+	int weights_cnt = 0;
+	for (const Weight& weight : model_addModule.getWeights())
+		if (std::count(weight_names.begin(), weight_names.end(), weight.getName()) > 0)
+			++weights_cnt;
+	BOOST_CHECK_EQUAL(weights_cnt, 5);
 }
 
 BOOST_AUTO_TEST_CASE(makeRandomModificationOrder) 
