@@ -738,6 +738,73 @@ BOOST_AUTO_TEST_CASE(changeNodeIntegration)
 	BOOST_CHECK_EQUAL(product_cnt, 1);
 }
 
+Model model_addModule = makeModel1();
+BOOST_AUTO_TEST_CASE(addModule)
+{
+	ModelReplicatorExt model_replicator;
+	model_replicator.addModule(model_addModule);
+
+	// new module components
+	std::vector<std::string> node_names_prefix = {"2", "3", "6"};
+	std::vector<std::string> link_names_prefix = {"6_to_2", "6_to_3"};
+	std::vector<std::string> weight_names_prefix = { "6_to_2", "6_to_3" };
+
+	// new connecting components
+	std::vector<std::string> link_names_prefix = { "0_to_2", "0_to_3", "1_to_2", "1_to_3", "2_to_4", "2_to_5", "3_to_4", "3_to_5" };
+	std::vector<std::string> weight_names_prefix = { "0_to_2", "0_to_3", "1_to_2", "1_to_3", "2_to_4", "2_to_5", "3_to_4", "3_to_5" };
+
+	// check for the expected model size
+	BOOST_CHECK_EQUAL(model_addModule.getNodes().size(), 10); // 8 existing + 2 new
+	BOOST_CHECK_EQUAL(model_addModule.getLinks().size(), 22); // 12 existing + 2 new + 8 new connecting
+	BOOST_CHECK_EQUAL(model_addModule.getWeights().size(), 22); // 12 existing + 2 new + 8 new connecting
+
+	// [TODO: add loop here with iter = 100]
+	std::regex re("@");
+
+	// check that the expected nodes/links/weights exist
+
+	//// check the correct text after @
+	//bool add_node_marker_found = false;
+	//std::regex re_addNodes("@|#");
+	//std::vector<std::string> node_text_tokens;
+	//std::copy(
+	//	std::sregex_token_iterator(node_name.begin(), node_name.end(), re_addNodes, -1),
+	//	std::sregex_token_iterator(),
+	//	std::back_inserter(node_text_tokens));
+	//if (node_text_tokens.size() > 1 && node_text_tokens[1] == "addModule")
+	//	add_node_marker_found = true;
+	//BOOST_CHECK(add_node_marker_found);
+
+	// [TODO: check that the node is of the correct type]
+
+	// [TODO: check that the modified link was found]
+
+	// [TODO: check that the modified link weight name was not changed]
+
+	// [TODO: check that the new link was found]
+
+	// [TODO: check that the new weight was found]
+}
+
+Model model_deleteModule = makeModel1();
+BOOST_AUTO_TEST_CASE(deleteModule)
+{
+	ModelReplicatorExt model_replicator;
+	model_replicator.deleteModule(model_deleteModule, 0);
+
+	// remaining
+	std::vector<std::string> node_names = { "0", "1", "4", "5", "7" };
+	std::vector<std::string> link_names = { "0_to_2", "0_to_3", "1_to_2", "1_to_3", "2_to_4", "2_to_5", "3_to_4", "3_to_5" };
+	std::vector<std::string> weight_names = { "0_to_2", "0_to_3", "1_to_2", "1_to_3", "2_to_4", "2_to_5", "3_to_4", "3_to_5" };
+
+	// check for the expected model size
+	BOOST_CHECK_EQUAL(model_addModule.getNodes().size(), 5); // 8 existing - 3
+	BOOST_CHECK_EQUAL(model_addModule.getLinks().size(), 10); // 12 existing - 2
+	BOOST_CHECK_EQUAL(model_addModule.getWeights().size(), 10); // 12 existing - 2
+
+	// for the expected nodes
+}
+
 BOOST_AUTO_TEST_CASE(makeRandomModificationOrder) 
 {
   ModelReplicatorExt model_replicator;
