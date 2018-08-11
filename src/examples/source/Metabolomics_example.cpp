@@ -493,8 +493,8 @@ public:
 		const std::vector<float>& model_errors) {}
 };
 
-// Main
-int main(int argc, char** argv)
+// Scripts to run
+void main_classification()
 {
 	// define the population trainer parameters
 	PopulationTrainerExt population_trainer;
@@ -546,8 +546,8 @@ int main(int argc, char** argv)
 
 	// initialize the model replicator
 	ModelReplicatorExt model_replicator;
-	model_replicator.setNodeActivations({NodeActivation::ReLU, NodeActivation::Linear, NodeActivation::ELU, NodeActivation::Sigmoid, NodeActivation::TanH});
-	model_replicator.setNodeIntegrations({NodeIntegration::Product, NodeIntegration::Sum});
+	model_replicator.setNodeActivations({ NodeActivation::ReLU, NodeActivation::Linear, NodeActivation::ELU, NodeActivation::Sigmoid, NodeActivation::TanH });
+	model_replicator.setNodeIntegrations({ NodeIntegration::Product, NodeIntegration::Sum });
 
 	// define the initial population
 	std::cout << "Initializing the population..." << std::endl;
@@ -578,6 +578,97 @@ int main(int argc, char** argv)
 	PopulationTrainerFile population_trainer_file;
 	population_trainer_file.storeModels(population, "Metabolomics");
 	population_trainer_file.storeModelValidations("MetabolomicsValidationErrors.csv", models_validation_errors_per_generation.back());
+}
 
+void main_reconstruction()
+{
+	// define the population trainer parameters
+	PopulationTrainerExt population_trainer;
+	population_trainer.setNGenerations(10);
+	population_trainer.setNTop(3);
+	population_trainer.setNRandom(3);
+	population_trainer.setNReplicatesPerModel(3);
+
+	// define the multithreading parameters
+	const int n_hard_threads = std::thread::hardware_concurrency();
+	const int n_threads = n_hard_threads / 2; // the number of threads
+	char threads_cout[512];
+	sprintf(threads_cout, "Threads for population training: %d, Threads for model training/validation: %d\n",
+		n_hard_threads, 2);
+	std::cout << threads_cout;
+	//const int n_threads = 1;
+
+	// define the data simulator
+	MetabolomicsDataSimulator metabolomics_data;
+	//std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
+	std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
+	std::string biochem_rxns_filename = data_dir + "iAB_RBC_283.csv";
+	std::string metabo_data_filename = data_dir + "MetabolomicsData_RBC.csv";
+	std::string meta_data_filename = data_dir + "MetaData_prePost_RBC.csv";
+	metabolomics_data.readBiochemicalReactions(biochem_rxns_filename);
+	metabolomics_data.readMetabolomicsData(metabo_data_filename);
+	metabolomics_data.readMetaData(meta_data_filename);
+	metabolomics_data.findMARs();
+	metabolomics_data.findLabels();
+
+	// define the model input/output nodes
+	const int n_input_nodes = metabolomics_data.reaction_ids_.size();
+	const int n_output_nodes = metabolomics_data.labels_.size();
+	std::vector<std::string> input_nodes;
+	std::vector<std::string> output_nodes;
+	for (int i = 0; i < n_input_nodes; ++i)
+		input_nodes.push_back("Input_" + std::to_string(i));
+	for (int i = 0; i < n_output_nodes; ++i)
+		output_nodes.push_back("Output_" + std::to_string(i));
+
+	// innitialize the model trainer
+	ModelTrainerExt model_trainer;
+	model_trainer.setBatchSize(8);
+	model_trainer.setMemorySize(1);
+	model_trainer.setNEpochsTraining(1000);
+	model_trainer.setNEpochsValidation(10);
+	model_trainer.setNThreads(2);
+	model_trainer.setVerbosityLevel(1);
+
+	// initialize the model replicator
+	ModelReplicatorExt model_replicator;
+	model_replicator.setNodeActivations({ NodeActivation::ReLU, NodeActivation::Linear, NodeActivation::ELU, NodeActivation::Sigmoid, NodeActivation::TanH });
+	model_replicator.setNodeIntegrations({ NodeIntegration::Product, NodeIntegration::Sum });
+
+	// define the initial population
+	std::cout << "Initializing the population..." << std::endl;
+	std::vector<Model> population;
+	const int population_size = 1;
+	for (int i = 0; i<population_size; ++i)
+	{
+		// baseline model
+		std::shared_ptr<WeightInitOp> weight_init;
+		std::shared_ptr<SolverOp> solver;
+		weight_init.reset(new RandWeightInitOp(n_input_nodes));
+		solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
+		Model model = model_replicator.makeBaselineModel(
+			n_input_nodes, 50, n_output_nodes,
+			NodeActivation::ReLU, NodeIntegration::Sum,
+			NodeActivation::ReLU, NodeIntegration::Sum,
+			weight_init, solver,
+			ModelLossFunction::MSE, std::to_string(i));
+		model.initWeights();
+		model.setId(i);
+		population.push_back(model);
+	}
+
+	// Evolve the population
+	std::vector<std::vector<std::pair<int, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
+		population, model_trainer, model_replicator, metabolomics_data, input_nodes, output_nodes, n_threads);
+
+	PopulationTrainerFile population_trainer_file;
+	population_trainer_file.storeModels(population, "Metabolomics");
+	population_trainer_file.storeModelValidations("MetabolomicsValidationErrors.csv", models_validation_errors_per_generation.back());
+}
+
+// Main
+int main(int argc, char** argv)
+{
+	main_classification();
 	return 0;
 }
