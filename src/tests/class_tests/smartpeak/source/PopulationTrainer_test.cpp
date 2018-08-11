@@ -269,7 +269,7 @@ BOOST_AUTO_TEST_CASE(replicateModels)
 		std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>());
 		std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
     Model model = model_replicator.makeBaselineModel(
-      1, 1, 1,
+			1, { 1 }, 1,
       NodeActivation::ELU, NodeIntegration::Sum, NodeActivation::ELU, NodeIntegration::Sum,
       weight_init, solver,
       loss_function, loss_function_grad, std::to_string(i));
@@ -379,7 +379,7 @@ BOOST_AUTO_TEST_CASE(trainModels)
 		std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>());
 		std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
     Model model = model_replicator.makeBaselineModel(
-      1, 0, 1,
+			1, { 0 }, 1,
       NodeActivation::ReLU, NodeIntegration::Sum, NodeActivation::ReLU, NodeIntegration::Sum,
       weight_init, solver,
       loss_function, loss_function_grad, std::to_string(i));
@@ -500,7 +500,7 @@ BOOST_AUTO_TEST_CASE(exampleUsage)
 		std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>());
 		std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
 		Model model = model_replicator.makeBaselineModel(
-			(int)input_nodes.size(), 1, (int)output_nodes.size(),
+			(int)input_nodes.size(), { 1 }, (int)output_nodes.size(),
 			NodeActivation::ReLU, NodeIntegration::Sum,
 			NodeActivation::ReLU, NodeIntegration::Sum,
 			weight_init, solver,

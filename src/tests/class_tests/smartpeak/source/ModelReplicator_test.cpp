@@ -292,27 +292,27 @@ BOOST_AUTO_TEST_CASE(makeBaselineModel)
   weight_init.reset(new ConstWeightInitOp(1.0));
   solver.reset(new SGDOp(0.01, 0.9));
   model = model_replicator.makeBaselineModel(
-    2, 1, 2,
+		2, { 1 }, 2,
     NodeActivation::ReLU, NodeIntegration::Sum, NodeActivation::ReLU, NodeIntegration::Sum,
     weight_init, solver,
     loss_function, loss_function_grad);
 
   node_names = {
-    "Input_0", "Input_1", "Hidden_0", "Output_0", "Output_1",
-    "Hidden_bias_0", "Output_bias_0", "Output_bias_1"};
+    "Input_0", "Input_1", "Hidden_0-0", "Output_0", "Output_1",
+    "Hidden_bias_0-0", "Output_bias_0", "Output_bias_1"};
   for (const std::string& node_name : node_names)
     BOOST_CHECK_EQUAL(model.getNode(node_name).getName(), node_name);
   
   link_names = {
-    "Input_0_to_Hidden_0", "Input_1_to_Hidden_0", "Bias_0_to_Hidden_0",
-    "Hidden_0_to_Output_0", "Hidden_0_to_Output_1",
+    "Input_0_to_Hidden_0-0", "Input_1_to_Hidden_0-0", "Bias_0-0_to_Hidden_0-0",
+    "Hidden_0-0_to_Output_0", "Hidden_0-0_to_Output_1",
     "Bias_0_to_Output_0", "Bias_1_to_Output_1"};
   source_node_names = {
-    "Input_0", "Input_1", "Hidden_bias_0", 
-    "Hidden_0", "Hidden_0", 
+    "Input_0", "Input_1", "Hidden_bias_0-0", 
+    "Hidden_0-0", "Hidden_0-0", 
     "Output_bias_0", "Output_bias_1"};
   sink_node_names = {
-    "Hidden_0", "Hidden_0", "Hidden_0", 
+    "Hidden_0-0", "Hidden_0-0", "Hidden_0-0", 
     "Output_0", "Output_1", 
     "Output_0", "Output_1"};
   for (int i=0; i<link_names.size(); ++i)
@@ -323,8 +323,9 @@ BOOST_AUTO_TEST_CASE(makeBaselineModel)
     BOOST_CHECK_EQUAL(model.getWeight(link_names[i]).getName(), link_names[i]);
   }
 
+	std::vector<int> nodes_per_hidden_layer = {};
   model = model_replicator.makeBaselineModel(
-    2, 0, 2,
+		2, nodes_per_hidden_layer, 2,
     NodeActivation::ReLU, NodeIntegration::Sum, NodeActivation::ReLU, NodeIntegration::Sum,
     weight_init, solver,
 		loss_function, loss_function_grad);

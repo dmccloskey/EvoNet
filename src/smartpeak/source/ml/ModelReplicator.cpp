@@ -160,7 +160,7 @@ namespace SmartPeak
     return hash_str;
   }
 
-  Model ModelReplicator::makeBaselineModel(const int& n_input_nodes, const int& n_hidden_nodes, const int& n_output_nodes,
+  Model ModelReplicator::makeBaselineModel(const int& n_input_nodes, const std::vector<int>& n_hidden_nodes_per_layer, const int& n_output_nodes,
     const NodeActivation& hidden_node_activation, const NodeIntegration& hidden_node_integration,
 		const NodeActivation& output_node_activation, const NodeIntegration& output_node_integration,
     const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver,
@@ -184,36 +184,74 @@ namespace SmartPeak
       model.addNodes({node});
     }
     // Create the hidden nodes + biases and hidden to bias links
-    for (int i=0; i<n_hidden_nodes; ++i)
-    {
-      char node_name_char[64];
-      sprintf(node_name_char, "Hidden_%d", i);
-      std::string node_name(node_name_char);
-      Node node(node_name, NodeType::hidden, NodeStatus::deactivated, hidden_node_activation, hidden_node_integration);
+		for (int l = 0; l < n_hidden_nodes_per_layer.size(); ++l)
+		{
+			for (int i = 0; i < n_hidden_nodes_per_layer[l]; ++i)
+			{
+				char node_name_char[64];
+				sprintf(node_name_char, "Hidden_%d-%d", l,i);
+				std::string node_name(node_name_char);
+				Node node(node_name, NodeType::hidden, NodeStatus::deactivated, hidden_node_activation, hidden_node_integration);
 
-      char bias_name_char[64];
-      sprintf(bias_name_char, "Hidden_bias_%d", i);
-      std::string bias_name(bias_name_char);
-      Node bias(bias_name, NodeType::bias, NodeStatus::activated, NodeActivation::Linear, NodeIntegration::Sum);
-      model.addNodes({node, bias});
+				char bias_name_char[64];
+				sprintf(bias_name_char, "Hidden_bias_%d-%d", l, i);
+				std::string bias_name(bias_name_char);
+				Node bias(bias_name, NodeType::bias, NodeStatus::activated, NodeActivation::Linear, NodeIntegration::Sum);
+				model.addNodes({ node, bias });
 
-      char weight_bias_name_char[64];
-      sprintf(weight_bias_name_char, "Bias_%d_to_Hidden_%d", i, i);
-      std::string weight_bias_name(weight_bias_name_char);
+				char weight_bias_name_char[64];
+				sprintf(weight_bias_name_char, "Bias_%d-%d_to_Hidden_%d-%d", l, i, l, i);
+				std::string weight_bias_name(weight_bias_name_char);
 
-      char link_bias_name_char[64];
-      sprintf(link_bias_name_char, "Bias_%d_to_Hidden_%d", i, i);
-      std::string link_bias_name(link_bias_name_char);
+				char link_bias_name_char[64];
+				sprintf(link_bias_name_char, "Bias_%d-%d_to_Hidden_%d-%d", l, i, l, i);
+				std::string link_bias_name(link_bias_name_char);
 
-      std::shared_ptr<WeightInitOp> bias_weight_init;
-      bias_weight_init.reset(new ConstWeightInitOp(1.0));;
-      std::shared_ptr<SolverOp> bias_solver = solver;
-      Weight weight_bias(weight_bias_name, bias_weight_init, bias_solver);
-      Link link_bias(link_bias_name, bias_name, node_name, weight_bias_name);
+				std::shared_ptr<WeightInitOp> bias_weight_init;
+				bias_weight_init.reset(new ConstWeightInitOp(1.0));;
+				std::shared_ptr<SolverOp> bias_solver = solver;
+				Weight weight_bias(weight_bias_name, bias_weight_init, bias_solver);
+				Link link_bias(link_bias_name, bias_name, node_name, weight_bias_name);
 
-      model.addWeights({weight_bias});
-      model.addLinks({link_bias});
-    }
+				model.addWeights({ weight_bias });
+				model.addLinks({ link_bias });
+			}
+
+			// Create the links and weights between hidden layers
+			if (l > 0)
+			{
+				for (int i = 0; i < n_hidden_nodes_per_layer[l-1]; ++i)
+				{
+					char input_name_char[64];
+					sprintf(input_name_char, "Hidden_%d-%d", l - 1, i);
+					std::string input_name(input_name_char);
+
+					for (int j = 0; j < n_hidden_nodes_per_layer[l]; ++j)
+					{
+						char hidden_name_char[64];
+						sprintf(hidden_name_char, "Hidden_%d-%d", l, j);
+						std::string hidden_name(hidden_name_char);
+
+						char link_name_char[64];
+						sprintf(link_name_char, "Hidden_%d-%d_to_Hidden_%d-%d", l - 1, i, l, j);
+						std::string link_name(link_name_char);
+
+						char weight_name_char[64];
+						sprintf(weight_name_char, "Hidden_%d-%d_to_Hidden_%d-%d", l - 1, i, l, j);
+						std::string weight_name(weight_name_char);
+
+						std::shared_ptr<WeightInitOp> hidden_weight_init = weight_init;
+						std::shared_ptr<SolverOp> hidden_solver = solver;
+						Weight weight(weight_name_char, hidden_weight_init, hidden_solver);
+						Link link(link_name, input_name, hidden_name, weight_name);
+
+						model.addWeights({ weight });
+						model.addLinks({ link });
+					}
+				}
+			}
+		}
+
     // Create the output nodes + biases and bias to output link
     for (int i=0; i<n_output_nodes; ++i)
     {
@@ -246,70 +284,74 @@ namespace SmartPeak
       model.addLinks({link_bias});
     }
 
-    // Create the weights and links for input to hidden
-    for (int i=0; i<n_input_nodes; ++i)
-    {
-      char input_name_char[64];
-      sprintf(input_name_char, "Input_%d", i);
-      std::string input_name(input_name_char);
+		if (n_hidden_nodes_per_layer.size() > 0)
+		{
+			// Create the weights and links for input to hidden
+			for (int i = 0; i < n_input_nodes; ++i)
+			{
+				char input_name_char[64];
+				sprintf(input_name_char, "Input_%d", i);
+				std::string input_name(input_name_char);
 
-      for (int j=0; j<n_hidden_nodes; ++j)
-      {
-        char hidden_name_char[64];
-        sprintf(hidden_name_char, "Hidden_%d", j);
-        std::string hidden_name(hidden_name_char);
+				for (int j = 0; j < n_hidden_nodes_per_layer[0]; ++j)
+				{
+					char hidden_name_char[64];
+					sprintf(hidden_name_char, "Hidden_%d-%d", 0, j);
+					std::string hidden_name(hidden_name_char);
 
-        char link_name_char[64];
-        sprintf(link_name_char, "Input_%d_to_Hidden_%d", i, j);
-        std::string link_name(link_name_char);
+					char link_name_char[64];
+					sprintf(link_name_char, "Input_%d_to_Hidden_%d-%d", i, 0, j);
+					std::string link_name(link_name_char);
 
-        char weight_name_char[64];
-        sprintf(weight_name_char, "Input_%d_to_Hidden_%d", i, j);
-        std::string weight_name(weight_name_char);
+					char weight_name_char[64];
+					sprintf(weight_name_char, "Input_%d_to_Hidden_%d-%d", i, 0, j);
+					std::string weight_name(weight_name_char);
 
-        std::shared_ptr<WeightInitOp> hidden_weight_init = weight_init;
-        std::shared_ptr<SolverOp> hidden_solver = solver;
-        Weight weight(weight_name_char, hidden_weight_init, hidden_solver);
-        Link link(link_name, input_name, hidden_name, weight_name);
+					std::shared_ptr<WeightInitOp> hidden_weight_init = weight_init;
+					std::shared_ptr<SolverOp> hidden_solver = solver;
+					Weight weight(weight_name_char, hidden_weight_init, hidden_solver);
+					Link link(link_name, input_name, hidden_name, weight_name);
 
-        model.addWeights({weight});
-        model.addLinks({link});
-      }
-    }
+					model.addWeights({ weight });
+					model.addLinks({ link });
+				}
+			}
 
-    // Create the weights and links for hidden to output
-    for (int i=0; i<n_hidden_nodes; ++i)
-    {
-      char hidden_name_char[64];
-      sprintf(hidden_name_char, "Hidden_%d", i);
-      std::string hidden_name(hidden_name_char);
+			// Create the weights and links for hidden to output
+			for (int i = 0; i<n_hidden_nodes_per_layer.back(); ++i)
+			{
+				char hidden_name_char[64];
+				sprintf(hidden_name_char, "Hidden_%d-%d", n_hidden_nodes_per_layer.size() - 1, i);
+				std::string hidden_name(hidden_name_char);
 
-      for (int j=0; j<n_output_nodes; ++j)
-      {
-        char output_name_char[64];
-        sprintf(output_name_char, "Output_%d", j);
-        std::string output_name(output_name_char);
+				for (int j = 0; j<n_output_nodes; ++j)
+				{
+					char output_name_char[64];
+					sprintf(output_name_char, "Output_%d", j);
+					std::string output_name(output_name_char);
 
-        char link_name_char[64];
-        sprintf(link_name_char, "Hidden_%d_to_Output_%d", i, j);
-        std::string link_name(link_name_char);
+					char link_name_char[64];
+					sprintf(link_name_char, "Hidden_%d-%d_to_Output_%d", n_hidden_nodes_per_layer.size() - 1, i, j);
+					std::string link_name(link_name_char);
 
-        char weight_name_char[64];
-        sprintf(weight_name_char, "Hidden_%d_to_Output_%d", i, j);
-        std::string weight_name(weight_name_char);
+					char weight_name_char[64];
+					sprintf(weight_name_char, "Hidden_%d-%d_to_Output_%d", n_hidden_nodes_per_layer.size() - 1, i, j);
+					std::string weight_name(weight_name_char);
 
-        std::shared_ptr<WeightInitOp> output_weight_init = weight_init;
-        std::shared_ptr<SolverOp> output_solver = solver;
-        Weight weight(weight_name_char, output_weight_init, output_solver);
-        Link link(link_name, hidden_name, output_name, weight_name);
+					std::shared_ptr<WeightInitOp> output_weight_init = weight_init;
+					std::shared_ptr<SolverOp> output_solver = solver;
+					Weight weight(weight_name_char, output_weight_init, output_solver);
+					Link link(link_name, hidden_name, output_name, weight_name);
 
-        model.addWeights({weight});
-        model.addLinks({link});
-      }
-    }
+					model.addWeights({ weight });
+					model.addLinks({ link });
+				}
+			}
+		}
+
 
     // Create the weights and links for input to output
-    if (n_hidden_nodes == 0)
+    if (n_hidden_nodes_per_layer.size() == 0)
     {
       for (int i=0; i<n_input_nodes; ++i)
       {

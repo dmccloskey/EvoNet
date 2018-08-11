@@ -604,7 +604,7 @@ void main_classification()
 		std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>());
 		std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
 		Model model = model_replicator.makeBaselineModel(
-			n_input_nodes, 50, n_output_nodes,
+			n_input_nodes, { 50 }, n_output_nodes,
 			NodeActivation::ReLU, NodeIntegration::Sum,
 			NodeActivation::ReLU, NodeIntegration::Sum,
 			weight_init, solver,
@@ -693,7 +693,7 @@ void main_reconstruction()
 		std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>());
 		std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
 		Model model = model_replicator.makeBaselineModel(
-			n_input_nodes, 50, n_output_nodes,
+			n_input_nodes, { 100, 50, 25, 50, 100 }, n_output_nodes,
 			NodeActivation::ReLU, NodeIntegration::Sum,
 			NodeActivation::ReLU, NodeIntegration::Sum,
 			weight_init, solver,

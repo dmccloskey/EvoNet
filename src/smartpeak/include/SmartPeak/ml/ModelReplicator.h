@@ -67,7 +67,7 @@ public:
 
       @returns A baseline model
     */ 
-    Model makeBaselineModel(const int& n_input_nodes, const int& n_hidden_nodes, const int& n_output_nodes,
+    Model makeBaselineModel(const int& n_input_nodes, const std::vector<int>& n_hidden_nodes_per_layer, const int& n_output_nodes,
 			const NodeActivation& hidden_node_activation, const NodeIntegration& hidden_node_integration,
 			const NodeActivation& output_node_activation, const NodeIntegration& output_node_integration,
       const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver,

@@ -369,7 +369,7 @@ int main(int argc, char** argv)
 		std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>());
 		std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
 		Model model = model_replicator.makeBaselineModel(
-			input_nodes.size(), 100, output_nodes.size(),
+			input_nodes.size(), { 100 }, output_nodes.size(),
 			NodeActivation::ELU, NodeIntegration::Sum,
 			NodeActivation::ELU, NodeIntegration::Sum,
 			weight_init, solver,
