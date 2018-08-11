@@ -70,6 +70,10 @@ Model makeModel2()
   model2.addNodes({i1, h1, o1, b1, b2});
   model2.addWeights({w1, w2, w3, wb1, wb2});
   model2.addLinks({l1, l2, l3, lb1, lb2});
+	std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>());
+	model2.setLossFunction(loss_function);
+	std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
+	model2.setLossFunctionGrad(loss_function_grad);
   return model2;
 }
 Model model2 = makeModel2();
@@ -328,7 +332,6 @@ BOOST_AUTO_TEST_CASE(CETT)
 	model2.initError(batch_size, memory_size);
 	model2.initNodes(batch_size, memory_size);
 	model2.initWeights();
-	model2.setLossFunction(ModelLossFunction::MSE);
 
 	// create the input and biases
 	const std::vector<std::string> input_ids = { "0", "3", "4" };
@@ -418,7 +421,6 @@ BOOST_AUTO_TEST_CASE(getNextUncorrectedLayer2)
   biases.setConstant(1);
   model2.mapValuesToNodes(biases, biases_ids, NodeStatus::activated, "output");
   
-  model2.setLossFunction(ModelLossFunction::MSE);
 
   // calculate the activation
   model2.forwardPropogate(0);
@@ -504,7 +506,6 @@ BOOST_AUTO_TEST_CASE(getNextUncorrectedLayerCycles2)
   biases.setConstant(1);
   model2.mapValuesToNodes(biases, biases_ids, NodeStatus::activated, "output");
   
-  model2.setLossFunction(ModelLossFunction::MSE);
 
   // calculate the activation
   model2.forwardPropogate(0);
@@ -618,7 +619,6 @@ BOOST_AUTO_TEST_CASE(BPTT1)
   model2.FPTT(4, input, input_ids, dt);
 
   // calculate the model error
-  model2.setLossFunction(ModelLossFunction::MSE);
   const std::vector<std::string> output_nodes = {"2"};
   // expected sequence5,
   // y = m1*(m2*x + b*yprev) where m1 = 2, m2 = 0.5 and b = -2
@@ -691,7 +691,6 @@ BOOST_AUTO_TEST_CASE(BPTT2)
 	model2.FPTT(4, input, input_ids, dt);
 
 	// calculate the model error
-	model2.setLossFunction(ModelLossFunction::MSE);
 	// expected output (from t=n to t=0)
 	const std::vector<std::string> output_nodes = { "2" };
 	// y = m1*(m2*x + b*yprev) where m1 = 1, m2 = 1 and b = -1
@@ -768,7 +767,6 @@ BOOST_AUTO_TEST_CASE(updateWeights2)
   model2.FPTT(4, input, input_ids, dt);
 
   // calculate the model error
-  model2.setLossFunction(ModelLossFunction::MSE);
   const std::vector<std::string> output_nodes = {"2"};
   // expected sequence
   // y = m1*(m2*x + b*yprev) where m1 = 2, m2 = 0.5 and b = -2
@@ -842,6 +840,10 @@ Model makeModel2a()
   model2.addNodes({i1, h1, o1, b1, b2});
   model2.addWeights({w1, w2, w3, wb1, wb2});
   model2.addLinks({l1, l2, l3, lb1, lb2});
+	std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>());
+	model2.setLossFunction(loss_function);
+	std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
+	model2.setLossFunctionGrad(loss_function_grad);
   return model2;
 }
 Model model2a = makeModel2a(); // requires ADAM
@@ -891,7 +893,6 @@ BOOST_AUTO_TEST_CASE(modelTrainer2)
 		{ { 2 },{ 3 },{ 3 },{ 4 },{ 4 },{ 5 },{ 5 },{ 6 } },
 		{ { 3 },{ 3 },{ 4 },{ 4 },{ 5 },{ 5 },{ 6 },{ 6 } } }
 	);
-  model2a.setLossFunction(ModelLossFunction::MSE);
 
   // iterate until we find the optimal values
   const int max_iter = 500;

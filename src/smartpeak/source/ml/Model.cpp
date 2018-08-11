@@ -34,6 +34,7 @@ namespace SmartPeak
 		addWeights(other.getWeights());
     error_ = other.error_;
     loss_function_ = other.loss_function_;
+		loss_function_grad_ = other.loss_function_grad_;
   }
 
   Model::Model(const int& id):
@@ -72,14 +73,26 @@ namespace SmartPeak
     return error_;
   }
   
-  void Model::setLossFunction(const SmartPeak::ModelLossFunction& loss_function)
+  void Model::setLossFunction(const std::shared_ptr<LossFunctionOp<float>>& loss_function)
   {
-    loss_function_ = loss_function;
+		loss_function_.reset();
+		loss_function_ = std::move(loss_function);
   }
-  SmartPeak::ModelLossFunction Model::getLossFunction() const
+	LossFunctionOp<float>* Model::getLossFunction() const
   {
-    return loss_function_;
+		return loss_function_.get();
   }
+
+	void Model::setLossFunctionGrad(const std::shared_ptr<LossFunctionGradOp<float>>& loss_function)
+	{
+		loss_function_grad_.reset();
+		loss_function_grad_ = std::move(loss_function);
+	}
+
+	LossFunctionGradOp<float>* Model::getLossFunctionGrad() const
+	{
+		return loss_function_grad_.get();
+	}
 
   void Model::addNodes(const std::vector<Node>& nodes)
   { 
@@ -1443,47 +1456,9 @@ namespace SmartPeak
 			return;
 		}
 
-		// get the model loss function and loss function gradients
-		std::shared_ptr<LossFunctionOp<float>> operation_ptr;
-		std::shared_ptr<LossFunctionGradOp<float>> gradient_ptr;
-		switch (loss_function_)
-		{
-			case ModelLossFunction::EuclideanDistance:
-			{
-				operation_ptr.reset(new EuclideanDistanceOp<float>);
-				gradient_ptr.reset(new EuclideanDistanceGradOp<float>);
-				break;
-			}
-			case ModelLossFunction::L2Norm:
-			{
-				operation_ptr.reset(new L2NormOp<float>);
-				gradient_ptr.reset(new L2NormGradOp<float>);
-				break;
-			}
-			case ModelLossFunction::CrossEntropy:
-			{
-				operation_ptr.reset(new CrossEntropyOp<float>);
-				gradient_ptr.reset(new CrossEntropyGradOp<float>);
-				break;
-			}
-			case ModelLossFunction::NegativeLogLikelihood:
-			{
-				operation_ptr.reset(new NegativeLogLikelihoodOp<float>);
-				gradient_ptr.reset(new NegativeLogLikelihoodGradOp<float>);
-				break;
-			}
-			case ModelLossFunction::MSE:
-			{
-				operation_ptr.reset(new MSEOp<float>);
-				gradient_ptr.reset(new MSEGradOp<float>);
-				break;
-			}
-			default:
-			{
-				std::cout << "Loss Function not supported." << std::endl;
-				break;
-			}
-		}
+		// collect the loss functions
+		std::shared_ptr<LossFunctionOp<float>> loss_function = loss_function_;
+		std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad = loss_function_grad_;
 
 		// collect the output nodes
 		std::vector<std::shared_ptr<Node>> output_nodes;
@@ -1518,7 +1493,7 @@ namespace SmartPeak
 			// launch the thread
 			model_error_task_results.push_back(task.get_future());
 			std::thread task_thread(std::move(task),
-				output_nodes[i].get(), values.chip(i, 1), operation_ptr.get(), std::ref(batch_size), std::ref(time_step));
+				output_nodes[i].get(), values.chip(i, 1), loss_function.get(), std::ref(batch_size), std::ref(time_step));
 			task_thread.detach();
 
 			// retreive the results
@@ -1562,7 +1537,7 @@ namespace SmartPeak
 			// launch the thread
 			output_node_error_task_results.push_back(task.get_future());
 			std::thread task_thread(std::move(task),
-				output_nodes[i].get(), values.chip(i, 1), gradient_ptr.get(), std::ref(time_step));
+				output_nodes[i].get(), values.chip(i, 1), loss_function_grad.get(), std::ref(time_step));
 			task_thread.detach();
 
 			// retreive the results

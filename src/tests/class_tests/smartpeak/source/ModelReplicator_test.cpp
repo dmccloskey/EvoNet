@@ -286,6 +286,8 @@ BOOST_AUTO_TEST_CASE(makeBaselineModel)
 
   std::shared_ptr<WeightInitOp> weight_init;
   std::shared_ptr<SolverOp> solver;
+	std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>());
+	std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
 
   weight_init.reset(new ConstWeightInitOp(1.0));
   solver.reset(new SGDOp(0.01, 0.9));
@@ -293,7 +295,7 @@ BOOST_AUTO_TEST_CASE(makeBaselineModel)
     2, 1, 2,
     NodeActivation::ReLU, NodeIntegration::Sum, NodeActivation::ReLU, NodeIntegration::Sum,
     weight_init, solver,
-    ModelLossFunction::MSE);
+    loss_function, loss_function_grad);
 
   node_names = {
     "Input_0", "Input_1", "Hidden_0", "Output_0", "Output_1",
@@ -325,7 +327,7 @@ BOOST_AUTO_TEST_CASE(makeBaselineModel)
     2, 0, 2,
     NodeActivation::ReLU, NodeIntegration::Sum, NodeActivation::ReLU, NodeIntegration::Sum,
     weight_init, solver,
-    ModelLossFunction::MSE);
+		loss_function, loss_function_grad);
 
   node_names = {
     "Input_0", "Input_1", "Output_0", "Output_1",

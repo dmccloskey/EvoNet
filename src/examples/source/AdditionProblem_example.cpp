@@ -249,7 +249,10 @@ public:
 			Link_m_to_o, Link_m_to_m,
 			Link_h_bias_to_h,
 			Link_m_bias_to_m, Link_o_bias_to_o });
-		model.setLossFunction(ModelLossFunction::MSE);
+		std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>());
+		model.setLossFunction(loss_function);
+		std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
+		model.setLossFunctionGrad(loss_function_grad);
 		return model;
 	}
 
@@ -463,7 +466,10 @@ public:
 			Link_memory_cell_to_output_gate_tanh,
 			Link_output_gate_sigma_to_output_gate_prod, Link_output_gate_tanh_to_output_gate_prod,
 			Link_output_gate_prod_to_o });
-		model.setLossFunction(ModelLossFunction::MSE);
+		std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>());
+		model.setLossFunction(loss_function);
+		std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
+		model.setLossFunctionGrad(loss_function_grad);
 
 		// check the model was built correctly
 		std::vector<std::string> nodes_not_found, weights_not_found;

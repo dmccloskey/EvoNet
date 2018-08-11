@@ -226,11 +226,11 @@ static void ReadMetaData(
 	}
 };
 
-class MetabolomicsDataSimulator: public DataSimulator
+class MetDataSimClassification: public DataSimulator
 {
 public:
-	MetabolomicsDataSimulator() = default;
-	~MetabolomicsDataSimulator() = default;
+	MetDataSimClassification() = default;
+	~MetDataSimClassification() = default;
 
 	void readMetabolomicsData(std::string& filename) { ReadMetabolomicsData(filename, metabolomicsData_);}
 	void readBiochemicalReactions(std::string& filename) { ReadBiochemicalReactions(filename, biochemicalReactions_); }
@@ -434,6 +434,46 @@ public:
 	std::vector<std::string> component_group_names_;
 };
 
+class MetDataSimReconstruction : public MetDataSimClassification
+{
+public:
+	void simulateData(Eigen::Tensor<float, 4>& input_data, Eigen::Tensor<float, 4>& output_data, Eigen::Tensor<float, 3>& time_steps)
+	{
+		// infer data dimensions based on the input tensors
+		const int batch_size = input_data.dimension(0);
+		const int memory_size = input_data.dimension(1);
+		const int n_input_nodes = input_data.dimension(2);
+		const int n_output_nodes = output_data.dimension(2);
+		const int n_epochs = input_data.dimension(3);
+
+		for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
+			for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
+				for (int epochs_iter = 0; epochs_iter < n_epochs; ++epochs_iter) {
+
+					// pick a random sample group name
+					std::string sample_group_name = selectRandomElement(sample_group_names_);
+
+					for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
+						const float mar = calculateMAR(
+							metabolomicsData_.at(sample_group_name),
+							biochemicalReactions_.at(reaction_ids_[nodes_iter]));
+						input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = mar;
+						output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = mar;
+					}
+				}
+			}
+		}
+	}
+	void simulateTrainingData(Eigen::Tensor<float, 4>& input_data, Eigen::Tensor<float, 4>& output_data, Eigen::Tensor<float, 3>& time_steps)
+	{
+		simulateData(input_data, output_data, time_steps);
+	}
+	void simulateValidationData(Eigen::Tensor<float, 4>& input_data, Eigen::Tensor<float, 4>& output_data, Eigen::Tensor<float, 3>& time_steps)
+	{
+		simulateData(input_data, output_data, time_steps);
+	}
+};
+
 // Extended classes
 class ModelReplicatorExt : public ModelReplicator
 {
@@ -513,9 +553,9 @@ void main_classification()
 	//const int n_threads = 1;
 
 	// define the data simulator
-	MetabolomicsDataSimulator metabolomics_data;
-	//std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
-	std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
+	MetDataSimClassification metabolomics_data;
+	std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
+	//std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
 	std::string biochem_rxns_filename = data_dir + "iAB_RBC_283.csv";
 	std::string metabo_data_filename = data_dir + "MetabolomicsData_RBC.csv";
 	std::string meta_data_filename = data_dir + "MetaData_prePost_RBC.csv";
@@ -560,12 +600,14 @@ void main_classification()
 		std::shared_ptr<SolverOp> solver;
 		weight_init.reset(new RandWeightInitOp(n_input_nodes));
 		solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
+		std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>());
+		std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
 		Model model = model_replicator.makeBaselineModel(
 			n_input_nodes, 50, n_output_nodes,
 			NodeActivation::ReLU, NodeIntegration::Sum,
 			NodeActivation::ReLU, NodeIntegration::Sum,
 			weight_init, solver,
-			ModelLossFunction::MSE, std::to_string(i));
+			loss_function, loss_function_grad, std::to_string(i));
 		model.initWeights();
 		model.setId(i);
 		population.push_back(model);
@@ -582,29 +624,30 @@ void main_classification()
 
 void main_reconstruction()
 {
+	// define the multithreading parameters
+	const int n_hard_threads = std::thread::hardware_concurrency();
+	//const int n_threads = n_hard_threads / 2; // the number of threads
+	//char threads_cout[512];
+	//sprintf(threads_cout, "Threads for population training: %d, Threads for model training/validation: %d\n",
+	//	n_hard_threads, 2);
+	//std::cout << threads_cout;
+	const int n_threads = 1;
+
 	// define the population trainer parameters
 	PopulationTrainerExt population_trainer;
-	population_trainer.setNGenerations(10);
+	population_trainer.setNGenerations(1);
 	population_trainer.setNTop(3);
 	population_trainer.setNRandom(3);
 	population_trainer.setNReplicatesPerModel(3);
 
-	// define the multithreading parameters
-	const int n_hard_threads = std::thread::hardware_concurrency();
-	const int n_threads = n_hard_threads / 2; // the number of threads
-	char threads_cout[512];
-	sprintf(threads_cout, "Threads for population training: %d, Threads for model training/validation: %d\n",
-		n_hard_threads, 2);
-	std::cout << threads_cout;
-	//const int n_threads = 1;
-
 	// define the data simulator
-	MetabolomicsDataSimulator metabolomics_data;
+	MetDataSimReconstruction metabolomics_data;
 	//std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
-	std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
-	std::string biochem_rxns_filename = data_dir + "iAB_RBC_283.csv";
-	std::string metabo_data_filename = data_dir + "MetabolomicsData_RBC.csv";
-	std::string meta_data_filename = data_dir + "MetaData_prePost_RBC.csv";
+	//std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
+	std::string data_dir = "/home/user/Data/";
+	std::string biochem_rxns_filename = data_dir + "iAT_PLT_636.csv";
+	std::string metabo_data_filename = data_dir + "MetabolomicsData_PLT.csv";
+	std::string meta_data_filename = data_dir + "MetaData_prePost_PLT.csv";
 	metabolomics_data.readBiochemicalReactions(biochem_rxns_filename);
 	metabolomics_data.readMetabolomicsData(metabo_data_filename);
 	metabolomics_data.readMetaData(meta_data_filename);
@@ -613,7 +656,7 @@ void main_reconstruction()
 
 	// define the model input/output nodes
 	const int n_input_nodes = metabolomics_data.reaction_ids_.size();
-	const int n_output_nodes = metabolomics_data.labels_.size();
+	const int n_output_nodes = metabolomics_data.reaction_ids_.size();
 	std::vector<std::string> input_nodes;
 	std::vector<std::string> output_nodes;
 	for (int i = 0; i < n_input_nodes; ++i)
@@ -627,7 +670,7 @@ void main_reconstruction()
 	model_trainer.setMemorySize(1);
 	model_trainer.setNEpochsTraining(1000);
 	model_trainer.setNEpochsValidation(10);
-	model_trainer.setNThreads(2);
+	model_trainer.setNThreads(n_hard_threads);
 	model_trainer.setVerbosityLevel(1);
 
 	// initialize the model replicator
@@ -646,12 +689,14 @@ void main_reconstruction()
 		std::shared_ptr<SolverOp> solver;
 		weight_init.reset(new RandWeightInitOp(n_input_nodes));
 		solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
+		std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>());
+		std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
 		Model model = model_replicator.makeBaselineModel(
 			n_input_nodes, 50, n_output_nodes,
 			NodeActivation::ReLU, NodeIntegration::Sum,
 			NodeActivation::ReLU, NodeIntegration::Sum,
 			weight_init, solver,
-			ModelLossFunction::MSE, std::to_string(i));
+			loss_function, loss_function_grad, std::to_string(i));
 		model.initWeights();
 		model.setId(i);
 		population.push_back(model);
@@ -669,6 +714,7 @@ void main_reconstruction()
 // Main
 int main(int argc, char** argv)
 {
-	main_classification();
+	//main_classification();
+	main_reconstruction();
 	return 0;
 }

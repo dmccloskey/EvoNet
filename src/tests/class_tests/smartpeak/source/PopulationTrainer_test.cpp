@@ -266,11 +266,13 @@ BOOST_AUTO_TEST_CASE(replicateModels)
     std::shared_ptr<SolverOp> solver;
     weight_init.reset(new ConstWeightInitOp(1.0));
     solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
+		std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>());
+		std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
     Model model = model_replicator.makeBaselineModel(
       1, 1, 1,
       NodeActivation::ELU, NodeIntegration::Sum, NodeActivation::ELU, NodeIntegration::Sum,
       weight_init, solver,
-      ModelLossFunction::MSE, std::to_string(i));
+      loss_function, loss_function_grad, std::to_string(i));
     model.initWeights();
 		model.initNodes(4, 4);
 		model.initError(4, 4);
@@ -374,11 +376,13 @@ BOOST_AUTO_TEST_CASE(trainModels)
     std::shared_ptr<SolverOp> solver;
     weight_init.reset(new ConstWeightInitOp(1.0));
     solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
+		std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>());
+		std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
     Model model = model_replicator.makeBaselineModel(
       1, 0, 1,
       NodeActivation::ReLU, NodeIntegration::Sum, NodeActivation::ReLU, NodeIntegration::Sum,
       weight_init, solver,
-      ModelLossFunction::MSE, std::to_string(i));
+      loss_function, loss_function_grad, std::to_string(i));
     model.initWeights();
     
     // modify the models
@@ -493,12 +497,14 @@ BOOST_AUTO_TEST_CASE(exampleUsage)
 		std::shared_ptr<SolverOp> solver;
 		weight_init.reset(new RandWeightInitOp(1.0));
 		solver.reset(new AdamOp(0.1, 0.9, 0.999, 1e-8));
+		std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>());
+		std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
 		Model model = model_replicator.makeBaselineModel(
 			(int)input_nodes.size(), 1, (int)output_nodes.size(),
 			NodeActivation::ReLU, NodeIntegration::Sum,
 			NodeActivation::ReLU, NodeIntegration::Sum,
 			weight_init, solver,
-			ModelLossFunction::MSE, std::to_string(i));
+		  loss_function, loss_function_grad, std::to_string(i));
 		model.initWeights();
 
 		// modify the models

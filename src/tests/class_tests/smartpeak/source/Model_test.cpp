@@ -53,12 +53,18 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   Eigen::Tensor<float, 2> error(3, 1);
   error.setConstant(0.0f);
   model.setError(error);
-  model.setLossFunction(ModelLossFunction::MSE);
+
+	std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>());
+  model.setLossFunction(loss_function);
+
+	std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
+	model.setLossFunctionGrad(loss_function_grad);
 
   BOOST_CHECK_EQUAL(model.getId(), 1);
   BOOST_CHECK_EQUAL(model.getName(), "model1");
   BOOST_CHECK_EQUAL(model.getError()(0), error(0));
-  BOOST_CHECK(model.getLossFunction() == ModelLossFunction::MSE);
+  BOOST_CHECK_EQUAL(model.getLossFunction(), loss_function.get());
+	BOOST_CHECK_EQUAL(model.getLossFunctionGrad(), loss_function_grad.get());
 
 }
 
@@ -422,6 +428,12 @@ BOOST_AUTO_TEST_CASE(copyAssignment)
 	model1.addWeights({ weight1, weight2 });
 	model1.addNodes({ source1, sink1, source2, sink2 });
 
+	std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>());
+	model1.setLossFunction(loss_function);
+
+	std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
+	model1.setLossFunctionGrad(loss_function_grad);
+
 	// test copy assignment
 	Model model2 = model1;
 	BOOST_CHECK(model1 != model2);
@@ -460,6 +472,12 @@ BOOST_AUTO_TEST_CASE(copy)
   model1.addLinks({link1, link2});
   model1.addWeights({weight1, weight2});
   model1.addNodes({source1, sink1, source2, sink2});
+
+	std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>());
+	model1.setLossFunction(loss_function);
+
+	std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
+	model1.setLossFunctionGrad(loss_function_grad);
 
   // test copy
   Model model2(model1);

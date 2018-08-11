@@ -366,12 +366,14 @@ int main(int argc, char** argv)
 		std::shared_ptr<SolverOp> solver;
 		weight_init.reset(new RandWeightInitOp(input_nodes.size()));
 		solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
+		std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>());
+		std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
 		Model model = model_replicator.makeBaselineModel(
 			input_nodes.size(), 100, output_nodes.size(),
 			NodeActivation::ELU, NodeIntegration::Sum,
 			NodeActivation::ELU, NodeIntegration::Sum,
 			weight_init, solver,
-			ModelLossFunction::MSE, std::to_string(i));
+			loss_function, loss_function_grad, std::to_string(i));
 		model.initWeights();
 		model.setId(i);
 		population.push_back(model);

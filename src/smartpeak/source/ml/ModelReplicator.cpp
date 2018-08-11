@@ -164,10 +164,12 @@ namespace SmartPeak
     const NodeActivation& hidden_node_activation, const NodeIntegration& hidden_node_integration,
 		const NodeActivation& output_node_activation, const NodeIntegration& output_node_integration,
     const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver,
-    const ModelLossFunction& error_function, std::string unique_str)
+    const std::shared_ptr<LossFunctionOp<float>>& loss_function, const std::shared_ptr<LossFunctionGradOp<float>>& loss_function_grad,
+		std::string unique_str)
   {
     Model model;
-    model.setLossFunction(error_function);
+    model.setLossFunction(loss_function);
+		model.setLossFunctionGrad(loss_function_grad);
 
     std::string model_name = makeUniqueHash("Model", unique_str);
     model.setName(model_name);

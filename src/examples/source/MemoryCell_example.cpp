@@ -179,7 +179,10 @@ public:
 			Link_m_to_o, Link_m_to_m,
 			Link_h_bias_to_h,
 			Link_m_bias_to_m, Link_o_bias_to_o });
-		model.setLossFunction(ModelLossFunction::MSE);
+		std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>());
+		model.setLossFunction(loss_function);
+		std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
+		model.setLossFunctionGrad(loss_function_grad);
 		return model;
   };
 
@@ -349,7 +352,10 @@ public:
 			Link_i_h_bias_to_i_h, Link_o_h_bias_to_o_h,
 			Link_i_gate_bias_to_i_gate, Link_o_gate_bias_to_o_gate,
 			Link_m_bias_to_m, Link_o_bias_to_o });
-		model.setLossFunction(ModelLossFunction::MSE);
+		std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>());
+		model.setLossFunction(loss_function);
+		std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
+		model.setLossFunctionGrad(loss_function_grad);
 		return model;
 	};
 };

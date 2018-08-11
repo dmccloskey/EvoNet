@@ -92,6 +92,10 @@ Model makeModel1()
 	model1.addNodes({ i1, i2, h1, h2, o1, o2, b1, b2 });
 	model1.addWeights({ w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4 });
 	model1.addLinks({ l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4 });
+	std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>());
+	model1.setLossFunction(loss_function);
+	std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
+	model1.setLossFunctionGrad(loss_function_grad);
 	return model1;
 }
 Model model1 = makeModel1();
@@ -177,6 +181,10 @@ Model makeModel2()
 	model2.addNodes({ i1, i2, h1, h2, o1, o2, b1, b2 });
 	model2.addWeights({ w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4 });
 	model2.addLinks({ l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4 });
+	std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>());
+	model2.setLossFunction(loss_function);
+	std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
+	model2.setLossFunctionGrad(loss_function_grad);
 	return model2;
 }
 Model model2 = makeModel2();
@@ -843,7 +851,6 @@ BOOST_AUTO_TEST_CASE(calculateError)
   const int memory_size = 1;
 	model1.initError(batch_size, memory_size);
   model1.initNodes(batch_size, memory_size);
-  model1.setLossFunction(ModelLossFunction::MSE);
 
   // calculate the model error
   std::vector<std::string> output_nodes = {"4", "5"};
@@ -915,7 +922,6 @@ BOOST_AUTO_TEST_CASE(getNextUncorrectedLayer1)
 	model1.initError(batch_size, memory_size);
   model1.clearCache();
   model1.initNodes(batch_size, memory_size);
-  model1.setLossFunction(ModelLossFunction::MSE);
 
   // create the input
   const std::vector<std::string> input_ids = {"0", "1"};
@@ -972,7 +978,6 @@ BOOST_AUTO_TEST_CASE(backPropogateLayerError_Sum)
 	model1.initError(batch_size, memory_size);
   model1.clearCache();
   model1.initNodes(batch_size, memory_size);
-  model1.setLossFunction(ModelLossFunction::MSE);
 
   // create the input
   const std::vector<std::string> input_ids = {"0", "1"};
@@ -1031,7 +1036,6 @@ BOOST_AUTO_TEST_CASE(backPropogateLayerError_Product)
 	model2.initError(batch_size, memory_size);
 	model2.clearCache();
 	model2.initNodes(batch_size, memory_size);
-	model2.setLossFunction(ModelLossFunction::MSE);
 
 	// create the input
 	const std::vector<std::string> input_ids = { "0", "1" };
@@ -1092,7 +1096,6 @@ BOOST_AUTO_TEST_CASE(backPropogate_Sum)
 	model1.initError(batch_size, memory_size);
   model1.clearCache();
   model1.initNodes(batch_size, memory_size);
-  model1.setLossFunction(ModelLossFunction::MSE);
 
   // create the input
   const std::vector<std::string> input_ids = {"0", "1"};
@@ -1153,7 +1156,6 @@ BOOST_AUTO_TEST_CASE(backPropogate_Product)
 	model2.initError(batch_size, memory_size);
 	model2.clearCache();
 	model2.initNodes(batch_size, memory_size);
-	model2.setLossFunction(ModelLossFunction::MSE);
 
 	// create the input
 	const std::vector<std::string> input_ids = { "0", "1" };
@@ -1215,7 +1217,6 @@ BOOST_AUTO_TEST_CASE(updateWeights_Sum)
   model1.clearCache();
   model1.initNodes(batch_size, memory_size);
   model1.initWeights();
-  model1.setLossFunction(ModelLossFunction::MSE);
 
   // create the input
   const std::vector<std::string> input_ids = {"0", "1"};
@@ -1268,7 +1269,6 @@ BOOST_AUTO_TEST_CASE(updateWeights_Product)
 	model2.clearCache();
 	model2.initNodes(batch_size, memory_size);
 	model2.initWeights();
-	model2.setLossFunction(ModelLossFunction::MSE);
 
 	// create the input
 	const std::vector<std::string> input_ids = { "0", "1" };
@@ -1319,7 +1319,6 @@ BOOST_AUTO_TEST_CASE(reInitializeNodeStatuses)
   const int memory_size = 1;
 	model1.initError(batch_size, memory_size);
   model1.initNodes(batch_size, memory_size);
-  model1.setLossFunction(ModelLossFunction::MSE);
 
   // create the input
   const std::vector<std::string> input_ids = {"0", "1"};
@@ -1358,7 +1357,6 @@ BOOST_AUTO_TEST_CASE(modelTrainer1)
   model1.clearCache();
   model1.initNodes(batch_size, memory_size);
   model1.initWeights();
-  model1.setLossFunction(ModelLossFunction::MSE);
 
   // create the input
   const std::vector<std::string> input_ids = {"0", "1"};
@@ -1405,7 +1403,7 @@ BOOST_AUTO_TEST_CASE(modelTrainer1)
   }
   
   const Eigen::Tensor<float, 0> total_error = model1.getError().sum();
-  BOOST_CHECK(total_error(0) < 0.3);  
+  BOOST_CHECK(total_error(0) <= 0.5);  
 }
 
 BOOST_AUTO_TEST_SUITE_END()

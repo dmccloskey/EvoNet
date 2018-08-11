@@ -96,6 +96,7 @@ public:
       weights_ = other.weights_;
       error_ = other.error_;
       loss_function_ = other.loss_function_;
+			loss_function_grad_ = other.loss_function_grad_;
       return *this;
     }
 
@@ -596,8 +597,11 @@ public:
     void setError(const Eigen::Tensor<float, 2>& error); ///< error setter
     Eigen::Tensor<float, 2> getError() const; ///< error getter
 
-    void setLossFunction(const SmartPeak::ModelLossFunction& loss_function); ///< loss_function setter
-    SmartPeak::ModelLossFunction getLossFunction() const; ///< loss_function getter
+    void setLossFunction(const std::shared_ptr<LossFunctionOp<float>>& loss_function); ///< loss_function setter
+    LossFunctionOp<float>* getLossFunction() const; ///< loss_function getter
+
+		void setLossFunctionGrad(const std::shared_ptr<LossFunctionGradOp<float>>& loss_function); ///< loss_function grad setter
+		LossFunctionGradOp<float>* getLossFunctionGrad() const; ///< loss_function grad getter
  
     /**
       @brief Add new links to the model.
@@ -745,7 +749,8 @@ private:
     Eigen::Tensor<float, 2> error_; ///< Model error
 
     // TODO: will most likely need to expand to a derived class model (e.g., SolverOp)
-    SmartPeak::ModelLossFunction loss_function_; ///< Model loss function
+    std::shared_ptr<LossFunctionOp<float>> loss_function_; ///< Model loss function
+		std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad_; ///< Model loss function
 
     // Internal structures to allow for caching of the different FP and BP layers
     std::vector<std::map<std::string, std::vector<std::string>>> FP_sink_link_cache_; // [DEPRECATED]
