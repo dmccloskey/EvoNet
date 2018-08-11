@@ -622,7 +622,7 @@ void main_classification()
 		Model model = model_replicator.makeBaselineModel(
 			n_input_nodes, { 200, 100, 50, 10 }, n_output_nodes,
 			NodeActivation::ReLU, NodeIntegration::Sum,
-			NodeActivation::Sigmoid, NodeIntegration::Sum,
+			NodeActivation::ReLU, NodeIntegration::Sum,
 			weight_init, solver,
 			loss_function, loss_function_grad, std::to_string(i));
 		model.initWeights();
