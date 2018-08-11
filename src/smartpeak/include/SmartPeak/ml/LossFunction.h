@@ -3,6 +3,7 @@
 #ifndef SMARTPEAK_LOSSFUNCTION_H
 #define SMARTPEAK_LOSSFUNCTION_H
 
+#include <SmartPeak/ml/SharedFunctions.h>
 #include <unsupported/Eigen/CXX11/Tensor>
 #include <cmath>
 #include <random>
@@ -292,7 +293,7 @@ public:
 			n.setConstant((int)y_pred.size());
 			Eigen::Tensor<T, 1> c((int)y_pred.size());
 			c.setConstant(0.5);
-			return (y_true - y_pred).pow(2) * c / n;
+			return ((y_true - y_pred).pow(2) * c / n).unaryExpr(std::ptr_fun(substituteNanInf<T>));
 		};
   };
 
@@ -319,7 +320,10 @@ public:
 		{
 			Eigen::Tensor<T, 1> n((int)y_pred.size());
 			n.setConstant((int)y_pred.size());
-			return (y_true - y_pred) / n;
+			Eigen::Tensor<T, 1> result = (y_true - y_pred) / n;
+			return result.unaryExpr(std::ptr_fun(substituteNanInf<T>));
+			//return ((y_true - y_pred) / n).unaryExpr(std::ptr_fun(substituteNanInf<T>));
+			//return (y_true - y_pred) / n;
 		};
   };
 }

@@ -6,6 +6,7 @@
 #include <SmartPeak/ml/Node.h>
 
 #include <vector>
+#include <limits>
 
 #define EIGEN_USE_THREADS
 #include <unsupported/Eigen/CXX11/Tensor>
@@ -55,6 +56,27 @@ namespace SmartPeak
 			return T(0);
 		else
 			return x;
+	}
+
+	template<typename T>
+	T substituteNanInf(const T& x)
+	{
+		if (x == std::numeric_limits<T>::infinity())
+		{
+			return T(1e24);
+		}			
+		else if (x == -std::numeric_limits<T>::infinity())
+		{
+			return T(-1e24);
+		}			
+		else if (std::isnan(x))
+		{
+			return T(0);
+		}			
+		else
+		{
+			return x;
+		}			
 	}
 }
 #endif //SMARTPEAK_SHAREDFUNCTIONS_H

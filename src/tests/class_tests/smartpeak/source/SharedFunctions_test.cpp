@@ -161,4 +161,25 @@ BOOST_AUTO_TEST_CASE(SFcheckNanInf)
 	BOOST_CHECK_CLOSE(test(1), 0.0, 1e-3);
 }
 
+BOOST_AUTO_TEST_CASE(SFsubstituteNanInf)
+{
+	Eigen::Tensor<float, 1> values(3);
+	values.setConstant(5.0f);
+	Eigen::Tensor<float, 1> test(3);
+
+	// control
+	test = values.unaryExpr(std::ptr_fun(substituteNanInf<float>));
+	BOOST_CHECK_CLOSE(test(0), 5.0, 1e-3);
+	BOOST_CHECK_CLOSE(test(1), 5.0, 1e-3);
+
+	// test
+	values(0) = NAN; //NaN
+	values(1) = INFINITY; //infinity
+	values(2) = -INFINITY; //infinity
+	test = values.unaryExpr(std::ptr_fun(substituteNanInf<float>));
+	BOOST_CHECK_CLOSE(test(0), 0.0, 1e-3);
+	BOOST_CHECK_CLOSE(test(1), 1e24, 1e-3);
+	BOOST_CHECK_CLOSE(test(2), -1e24, 1e-3);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
