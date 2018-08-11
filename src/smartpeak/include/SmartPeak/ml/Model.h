@@ -35,15 +35,6 @@ namespace SmartPeak
     std::vector<OperationArguments> arguments;
   };
 
-  enum class ModelLossFunction
-  {
-    MSE = 0,
-    L2Norm = 1,
-    EuclideanDistance = 2,
-    CrossEntropy = 3,
-    NegativeLogLikelihood = 4
-  };
-
   /**
     @brief Directed Network Model
 
@@ -645,6 +636,7 @@ public:
     void addWeights(const std::vector<Weight>& weights);
     Weight getWeight(const std::string& weight_name) const; ///< weight getter
     std::vector<Weight> getWeights() const;  ///< weights getter
+		std::map<std::string, std::shared_ptr<Weight>> getWeightsMap();  ///< return a modifiable version of weights_		
  
     /**
       @brief Remove existing weights from the model.

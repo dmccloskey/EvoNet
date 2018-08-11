@@ -481,7 +481,7 @@ public:
 	void adaptiveTrainerScheduler(
 		const int& n_generations,
 		const int& n_epochs,
-		const Model& model,
+		Model& model,
 		const std::vector<float>& model_errors) {}
 };
 

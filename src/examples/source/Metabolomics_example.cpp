@@ -535,8 +535,18 @@ public:
 	void adaptiveTrainerScheduler(
 		const int& n_generations,
 		const int& n_epochs,
-		const Model& model,
-		const std::vector<float>& model_errors) {}
+		Model& model,
+		const std::vector<float>& model_errors)
+	{
+		if (n_epochs > 50)
+		{
+			// update the solver parameters
+			std::shared_ptr<SolverOp> solver;
+			solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
+			for (auto& weight_map : model.getWeightsMap())
+				weight_map.second->setSolverOp(solver);
+		}
+	}
 };
 
 // Scripts to run

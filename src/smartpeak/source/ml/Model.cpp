@@ -185,6 +185,11 @@ namespace SmartPeak
     return weights;
   }
 
+	std::map<std::string, std::shared_ptr<Weight>> Model::getWeightsMap()
+	{
+		return weights_;
+	}
+
   void Model::removeWeights(const std::vector<std::string>& weight_names)
   { 
     for (std::string const& weight_name: weight_names)

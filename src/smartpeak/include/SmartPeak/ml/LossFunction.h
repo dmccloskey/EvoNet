@@ -65,7 +65,7 @@ public:
 			const Eigen::Tensor<T, 1>& y_pred,
 			const Eigen::Tensor<T, 1>& y_true) const
 		{
-			return (y_true - y_pred).pow(2).sqrt();
+			return ((y_true - y_pred).pow(2).sqrt()).unaryExpr(std::ptr_fun(substituteNanInf<T>));
 		};
   };
 
@@ -96,7 +96,7 @@ public:
 			const Eigen::Tensor<T, 1>& y_pred,
 			const Eigen::Tensor<T, 1>& y_true) const
 		{
-			return (y_true - y_pred) / ((y_true - y_pred).pow(2).sqrt());
+			return ((y_true - y_pred) / ((y_true - y_pred).pow(2).sqrt())).unaryExpr(std::ptr_fun(substituteNanInf<T>));
 		};
   };
 
@@ -124,7 +124,7 @@ public:
 		{
 			Eigen::Tensor<T, 1> c((int)y_pred.size());
 			c.setConstant(0.5);
-			return (y_true - y_pred).pow(2) * c; // modified to simplify the derivative
+			return ((y_true - y_pred).pow(2) * c).unaryExpr(std::ptr_fun(substituteNanInf<T>)); // modified to simplify the derivative
 		};
   };
 
@@ -147,7 +147,7 @@ public:
 			const Eigen::Tensor<T, 1>& y_pred,
 			const Eigen::Tensor<T, 1>& y_true) const
 		{
-			return y_true - y_pred; // modified to exclude the 0.5
+			return (y_true - y_pred).unaryExpr(std::ptr_fun(substituteNanInf<T>)); // modified to exclude the 0.5
 		};
   };
 
@@ -185,7 +185,7 @@ public:
 			// simplified
 			Eigen::Tensor<T, 1> ones((int)y_pred.size());
 			ones.setConstant(1.0);
-			return -(y_true * y_pred.log() + (ones - y_true) * (ones - y_pred).log());
+			return (-(y_true * y_pred.log() + (ones - y_true) * (ones - y_pred).log())).unaryExpr(std::ptr_fun(substituteNanInf<T>));
 		};
   };
 
@@ -214,7 +214,7 @@ public:
 			// simplified
 			Eigen::Tensor<T, 1> ones((int)y_pred.size());
 			ones.setConstant(1.0);
-			return -(y_true / y_pred + (ones - y_true) / (ones - y_pred));
+			return (-(y_true / y_pred + (ones - y_true) / (ones - y_pred))).unaryExpr(std::ptr_fun(substituteNanInf<T>));
 		};
   };
 
@@ -238,7 +238,7 @@ public:
 			const Eigen::Tensor<T, 1>& y_pred,
 			const Eigen::Tensor<T, 1>& y_true) const
 		{
-			return -(y_true * y_pred.log());
+			return (-(y_true * y_pred.log())).unaryExpr(std::ptr_fun(substituteNanInf<T>));
 		};
   };
 
@@ -261,7 +261,7 @@ public:
 			const Eigen::Tensor<T, 1>& y_pred,
 			const Eigen::Tensor<T, 1>& y_true) const
 		{
-			return -(y_true / y_pred);
+			return (-(y_true / y_pred)).unaryExpr(std::ptr_fun(substituteNanInf<T>));
 		};
   };
 
@@ -322,8 +322,6 @@ public:
 			n.setConstant((int)y_pred.size());
 			Eigen::Tensor<T, 1> result = (y_true - y_pred) / n;
 			return result.unaryExpr(std::ptr_fun(substituteNanInf<T>));
-			//return ((y_true - y_pred) / n).unaryExpr(std::ptr_fun(substituteNanInf<T>));
-			//return (y_true - y_pred) / n;
 		};
   };
 }

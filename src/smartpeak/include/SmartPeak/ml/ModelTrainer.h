@@ -159,14 +159,14 @@ public:
 
 		@param[in] n_generations The number of evolution generations
 		@param[in] n_epochs The number of training/validation epochs
-		@param[in] model The model
+		@param[in, out] model The model
 		@param[in] model_errors The trace of model errors from training/validation
 
 		*/
 		virtual void adaptiveTrainerScheduler(
 			const int& n_generations,
 			const int& n_epochs,
-			const Model& model,
+			Model& model,
 			const std::vector<float>& model_errors) = 0;
 
 private:

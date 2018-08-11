@@ -19,7 +19,7 @@ public:
 	void adaptiveTrainerScheduler(
 		const int& n_generations,
 		const int& n_epochs,
-		const Model& model,
+		Model& model,
 		const std::vector<float>& model_errors) {}
 };
 
@@ -202,7 +202,7 @@ BOOST_AUTO_TEST_CASE(DAGToy)
 		void adaptiveTrainerScheduler(
 			const int& n_generations,
 			const int& n_epochs,
-			const Model& model,
+			Model& model,
 			const std::vector<float>& model_errors) {}
 	};
 
@@ -325,7 +325,7 @@ BOOST_AUTO_TEST_CASE(DCGToy)
 		void adaptiveTrainerScheduler(
 			const int& n_generations,
 			const int& n_epochs,
-			const Model& model,
+			Model& model,
 			const std::vector<float>& model_errors) {}
   };
 
