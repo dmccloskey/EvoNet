@@ -538,7 +538,7 @@ public:
 		Model& model,
 		const std::vector<float>& model_errors)
 	{
-		if (n_epochs > 50)
+		if (n_epochs > 100)
 		{
 			// update the solver parameters
 			std::shared_ptr<SolverOp> solver;
@@ -620,9 +620,9 @@ void main_classification()
 		std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>());
 		std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
 		Model model = model_replicator.makeBaselineModel(
-			n_input_nodes, { 100, 50, 10 }, n_output_nodes,
+			n_input_nodes, { 200, 100, 50, 10 }, n_output_nodes,
 			NodeActivation::ReLU, NodeIntegration::Sum,
-			NodeActivation::ReLU, NodeIntegration::Sum,
+			NodeActivation::Sigmoid, NodeIntegration::Sum,
 			weight_init, solver,
 			loss_function, loss_function_grad, std::to_string(i));
 		model.initWeights();
