@@ -250,8 +250,8 @@ public:
 				for (int epochs_iter = 0; epochs_iter < n_epochs; ++epochs_iter) {
 
 					// pick a random sample group name
-					//std::string sample_group_name = selectRandomElement(sample_group_names_);
-					std::string sample_group_name = sample_group_names_[0];
+					std::string sample_group_name = selectRandomElement(sample_group_names_);
+					//std::string sample_group_name = sample_group_names_[0];
 
 					for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
 						input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = calculateMAR(
