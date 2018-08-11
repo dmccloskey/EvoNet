@@ -422,6 +422,10 @@ public:
 			mar *= pow(met_conc, met_stoich);
 		}
 
+		// check for the upper/lower limits
+		if (mar >= 1e3) mar = 1e3;
+		else if (mar <= 1e-3) mar = 1e-3;
+
 		return mar;
 	};
 	
