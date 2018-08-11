@@ -544,19 +544,19 @@ void main_classification()
 {
 	// define the population trainer parameters
 	PopulationTrainerExt population_trainer;
-	population_trainer.setNGenerations(10);
+	population_trainer.setNGenerations(1);
 	population_trainer.setNTop(3);
 	population_trainer.setNRandom(3);
 	population_trainer.setNReplicatesPerModel(3);
 
 	// define the multithreading parameters
 	const int n_hard_threads = std::thread::hardware_concurrency();
-	const int n_threads = n_hard_threads / 2; // the number of threads
-	char threads_cout[512];
-	sprintf(threads_cout, "Threads for population training: %d, Threads for model training/validation: %d\n",
-		n_hard_threads, 2);
-	std::cout << threads_cout;
-	//const int n_threads = 1;
+	//const int n_threads = n_hard_threads / 2; // the number of threads
+	//char threads_cout[512];
+	//sprintf(threads_cout, "Threads for population training: %d, Threads for model training/validation: %d\n",
+	//	n_hard_threads, 2);
+	//std::cout << threads_cout;
+	const int n_threads = 1;
 
 	// define the data simulator
 	MetDataSimClassification metabolomics_data;
@@ -588,7 +588,7 @@ void main_classification()
 	model_trainer.setMemorySize(1);
 	model_trainer.setNEpochsTraining(1000);
 	model_trainer.setNEpochsValidation(10);
-	model_trainer.setNThreads(2);
+	model_trainer.setNThreads(n_hard_threads); // [TODO: change back to 2!]
 	model_trainer.setVerbosityLevel(1);
 
 	// initialize the model replicator
@@ -606,7 +606,7 @@ void main_classification()
 		std::shared_ptr<WeightInitOp> weight_init;
 		std::shared_ptr<SolverOp> solver;
 		weight_init.reset(new RandWeightInitOp(n_input_nodes));
-		solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
+		solver.reset(new AdamOp(0.1, 0.9, 0.999, 1e-8));
 		std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>());
 		std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
 		Model model = model_replicator.makeBaselineModel(
@@ -677,7 +677,7 @@ void main_reconstruction()
 	model_trainer.setMemorySize(1);
 	model_trainer.setNEpochsTraining(1000);
 	model_trainer.setNEpochsValidation(10);
-	model_trainer.setNThreads(n_hard_threads);
+	model_trainer.setNThreads(n_hard_threads); // [TODO: change back to 2!]
 	model_trainer.setVerbosityLevel(1);
 
 	// initialize the model replicator
