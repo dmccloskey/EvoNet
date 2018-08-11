@@ -748,11 +748,11 @@ BOOST_AUTO_TEST_CASE(addModule)
 	std::vector<std::string> node_names_prefix = {"2", "3", "6"};
 	std::vector<std::string> link_names_prefix = { "6_to_2", "6_to_3", // new module
 		"0_to_2", "0_to_3", "1_to_2", "1_to_3", "2_to_4", "2_to_5", "3_to_4", "3_to_5" }; // new connections
-	std::vector<std::string> weight_names_prefix = { "6_to_2", "6_to_3", // new module
-		"0_to_2", "0_to_3", "1_to_2", "1_to_3", "2_to_4", "2_to_5", "3_to_4", "3_to_5" }; // new connections
+	std::vector<std::string> weight_names_prefix = { "4", "5", // new module
+		"0", "1", "2", "3", "6", "7", "8", "9" }; // new connections
 
 	// check for the expected model size
-	BOOST_CHECK_EQUAL(model_addModule.getNodes().size(), 10); // 8 existing + 2 new
+	BOOST_CHECK_EQUAL(model_addModule.getNodes().size(), 11); // 8 existing + 3 new
 	BOOST_CHECK_EQUAL(model_addModule.getLinks().size(), 22); // 12 existing + 2 new + 8 new connecting
 	BOOST_CHECK_EQUAL(model_addModule.getWeights().size(), 22); // 12 existing + 2 new + 8 new connecting
 
@@ -768,19 +768,22 @@ BOOST_AUTO_TEST_CASE(addModule)
 	{
 		std::string name_prefix, new_name;
 		model_replicator.updateName(node.getName(), "", "", name_prefix, new_name);
-		node_names_map.at(name_prefix) += 1;
+		if (std::count(node_names_prefix.begin(), node_names_prefix.end(), name_prefix) > 0)
+			node_names_map.at(name_prefix) += 1;
 	}
 	for (const Link& link : model_addModule.getLinks())
 	{
 		std::string name_prefix, new_name;
 		model_replicator.updateName(link.getName(), "", "", name_prefix, new_name);
-		link_names_map.at(name_prefix) += 1;
+		if (std::count(link_names_prefix.begin(), link_names_prefix.end(), name_prefix) > 0)
+			link_names_map.at(name_prefix) += 1;
 	}
 	for (const Weight& weight : model_addModule.getWeights())
 	{
 		std::string name_prefix, new_name;
 		model_replicator.updateName(weight.getName(), "", "", name_prefix, new_name);
-		weight_names_map.at(name_prefix) += 1;
+		if (std::count(weight_names_prefix.begin(), weight_names_prefix.end(), name_prefix) > 0)
+			weight_names_map.at(name_prefix) += 1;
 	}
 	for (const auto& name_count : node_names_map)
 		BOOST_CHECK_EQUAL(name_count.second, 2);
@@ -810,30 +813,30 @@ BOOST_AUTO_TEST_CASE(deleteModule)
 
 	// remaining
 	std::vector<std::string> node_names = { "0", "1", "4", "5", "7" };
-	std::vector<std::string> link_names = { "0_to_2", "0_to_3", "1_to_2", "1_to_3", "2_to_4", "2_to_5", "3_to_4", "3_to_5" };
-	std::vector<std::string> weight_names = { "0_to_2", "0_to_3", "1_to_2", "1_to_3", "2_to_4", "2_to_5", "3_to_4", "3_to_5" };
+	std::vector<std::string> link_names = { "7_to_4", "7_to_5" };
+	std::vector<std::string> weight_names = { "10", "11" };
 
 	// check for the expected model size
-	BOOST_CHECK_EQUAL(model_addModule.getNodes().size(), 5); // 8 existing - 3
-	BOOST_CHECK_EQUAL(model_addModule.getLinks().size(), 10); // 12 existing - 2
-	BOOST_CHECK_EQUAL(model_addModule.getWeights().size(), 10); // 12 existing - 2
+	BOOST_CHECK_EQUAL(model_deleteModule.getNodes().size(), 5); // 8 existing - 3
+	BOOST_CHECK_EQUAL(model_deleteModule.getLinks().size(), 2); // 12 existing - 10
+	BOOST_CHECK_EQUAL(model_deleteModule.getWeights().size(), 2); // 12 existing - 10
 
 	// check for the expected nodes/links/weights
 	int nodes_cnt = 0;
-	for (const Node& node : model_addModule.getNodes())
+	for (const Node& node : model_deleteModule.getNodes())
 		if (std::count(node_names.begin(), node_names.end(), node.getName()) > 0)
 			++nodes_cnt;
 	BOOST_CHECK_EQUAL(nodes_cnt, 5);
 	int links_cnt = 0;
-	for (const Link& link : model_addModule.getLinks())
+	for (const Link& link : model_deleteModule.getLinks())
 		if (std::count(link_names.begin(), link_names.end(), link.getName()) > 0)
 			++links_cnt;
-	BOOST_CHECK_EQUAL(links_cnt, 5);
+	BOOST_CHECK_EQUAL(links_cnt, 2);
 	int weights_cnt = 0;
-	for (const Weight& weight : model_addModule.getWeights())
+	for (const Weight& weight : model_deleteModule.getWeights())
 		if (std::count(weight_names.begin(), weight_names.end(), weight.getName()) > 0)
 			++weights_cnt;
-	BOOST_CHECK_EQUAL(weights_cnt, 5);
+	BOOST_CHECK_EQUAL(weights_cnt, 2);
 }
 
 BOOST_AUTO_TEST_CASE(makeRandomModificationOrder) 
@@ -917,6 +920,8 @@ Model model_modifyModel2 = makeModel1();
 Model model_modifyModel3 = makeModel1();
 Model model_modifyModel4 = makeModel1();
 Model model_modifyModel5 = makeModel1();
+Model model_modifyModel6 = makeModel1();
+Model model_modifyModel7 = makeModel1();
 BOOST_AUTO_TEST_CASE(modifyModel) 
 {
   ModelReplicatorExt model_replicator;
@@ -1003,6 +1008,31 @@ BOOST_AUTO_TEST_CASE(modifyModel)
 	BOOST_CHECK_EQUAL(node_integration_changes, 1);
 	BOOST_CHECK_EQUAL(model_modifyModel5.getLinks().size(), 12);
 	BOOST_CHECK_EQUAL(model_modifyModel5.getWeights().size(), 12);
+
+	model_replicator.setNNodeAdditions(0);
+	model_replicator.setNLinkAdditions(0);
+	model_replicator.setNNodeDeletions(0);
+	model_replicator.setNLinkDeletions(0);
+	model_replicator.setNNodeActivationChanges(0);
+	model_replicator.setNNodeIntegrationChanges(0);
+	model_replicator.setNModuleAdditions(1);
+	model_replicator.modifyModel(model_modifyModel6);
+	BOOST_CHECK_EQUAL(model_modifyModel6.getNodes().size(), 11);
+	BOOST_CHECK_EQUAL(model_modifyModel6.getLinks().size(), 22);
+	BOOST_CHECK_EQUAL(model_modifyModel6.getWeights().size(), 22);
+
+	model_replicator.setNNodeAdditions(0);
+	model_replicator.setNLinkAdditions(0);
+	model_replicator.setNNodeDeletions(0);
+	model_replicator.setNLinkDeletions(0);
+	model_replicator.setNNodeActivationChanges(0);
+	model_replicator.setNNodeIntegrationChanges(0);
+	model_replicator.setNModuleAdditions(0);
+	model_replicator.setNModuleDeletions(1);
+	model_replicator.modifyModel(model_modifyModel7);
+	BOOST_CHECK_EQUAL(model_modifyModel7.getNodes().size(), 3);
+	BOOST_CHECK_EQUAL(model_modifyModel7.getLinks().size(), 2);
+	BOOST_CHECK_EQUAL(model_modifyModel7.getWeights().size(), 2);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
