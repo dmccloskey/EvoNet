@@ -594,7 +594,7 @@ void main_classification()
 
 	// innitialize the model trainer
 	ModelTrainerExt model_trainer;
-	model_trainer.setBatchSize(8);
+	model_trainer.setBatchSize(1);
 	model_trainer.setMemorySize(1);
 	model_trainer.setNEpochsTraining(1000);
 	model_trainer.setNEpochsValidation(10);
