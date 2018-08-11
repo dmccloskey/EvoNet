@@ -250,7 +250,8 @@ public:
 				for (int epochs_iter = 0; epochs_iter < n_epochs; ++epochs_iter) {
 
 					// pick a random sample group name
-					std::string sample_group_name = selectRandomElement(sample_group_names_);
+					//std::string sample_group_name = selectRandomElement(sample_group_names_);
+					std::string sample_group_name = sample_group_names_[0];
 
 					for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
 						input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = calculateMAR(
@@ -559,8 +560,9 @@ void main_classification()
 
 	// define the data simulator
 	MetDataSimClassification metabolomics_data;
-	std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
+	//std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
 	//std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
+	std::string data_dir = "/home/user/Data/";
 	std::string biochem_rxns_filename = data_dir + "iAB_RBC_283.csv";
 	std::string metabo_data_filename = data_dir + "MetabolomicsData_RBC.csv";
 	std::string meta_data_filename = data_dir + "MetaData_prePost_RBC.csv";
@@ -608,7 +610,7 @@ void main_classification()
 		std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>());
 		std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
 		Model model = model_replicator.makeBaselineModel(
-			n_input_nodes, { 50 }, n_output_nodes,
+			n_input_nodes, { 100, 50, 10 }, n_output_nodes,
 			NodeActivation::ReLU, NodeIntegration::Sum,
 			NodeActivation::ReLU, NodeIntegration::Sum,
 			weight_init, solver,
@@ -719,7 +721,7 @@ void main_reconstruction()
 // Main
 int main(int argc, char** argv)
 {
-	//main_classification();
-	main_reconstruction();
+	main_classification();
+	//main_reconstruction();
 	return 0;
 }
