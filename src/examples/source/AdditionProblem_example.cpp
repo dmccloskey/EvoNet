@@ -984,18 +984,32 @@ int main(int argc, char** argv)
 		population.push_back(model);
 	}
 
-	// duplicate the memory cell
-	model_replicator.setRandomModifications(
-		std::make_pair(0, 0),
-		std::make_pair(0, 0),
-		std::make_pair(0, 0),
-		std::make_pair(0, 0),
-		std::make_pair(0, 0),
-		std::make_pair(0, 0),
-		std::make_pair(1, 1),
-		std::make_pair(0, 0));
-	population_trainer.replicateModels(population, model_replicator, input_nodes, output_nodes,
-		"", 1);
+	//// duplicate the memory cell
+	//model_replicator.setRandomModifications(
+	//	std::make_pair(0, 0),
+	//	std::make_pair(0, 0),
+	//	std::make_pair(0, 0),
+	//	std::make_pair(0, 0),
+	//	std::make_pair(0, 0),
+	//	std::make_pair(0, 0),
+	//	std::make_pair(10, 10),
+	//	std::make_pair(0, 0));
+	//population_trainer.replicateModels(population, model_replicator, input_nodes, output_nodes,
+	//	"", 1);
+	//
+	//// hack to test out the duplicated models
+	//std::vector<Model> population_test = { population.back() };
+
+	//PopulationTrainerFile population_trainer_file;
+	//population_trainer_file.storeModels(population_test, "AddProb");
+
+	//// Evolve the population
+	//std::vector<std::vector<std::pair<int, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
+	//	population_test, model_trainer, model_replicator, data_simulator, input_nodes, output_nodes, n_threads);
+
+	////PopulationTrainerFile population_trainer_file;
+	//population_trainer_file.storeModels(population_test, "AddProb");
+	//population_trainer_file.storeModelValidations("AddProbValidationErrors.csv", models_validation_errors_per_generation.back());
 
 	PopulationTrainerFile population_trainer_file;
 	population_trainer_file.storeModels(population, "AddProb");
