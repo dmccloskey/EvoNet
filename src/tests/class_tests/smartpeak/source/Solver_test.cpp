@@ -68,6 +68,13 @@ BOOST_AUTO_TEST_CASE(operationfunctionDummySolverOp)
 	BOOST_CHECK_CLOSE(operation(0.99, 1.0), 0.99, 1e-3);
 }
 
+BOOST_AUTO_TEST_CASE(operationfunctionSGDNoiseOp)
+{
+	SGDNoiseOp operation(0.01, 0.9, 1.0);
+	BOOST_CHECK_NE(operation(1.0, 1.0), 0.99);  // weight update = -0.01
+	BOOST_CHECK_NE(operation(0.99, 1.0), 0.971100032);
+}
+
 BOOST_AUTO_TEST_CASE(clipGradient) 
 {
   SGDOp operation(0.01, 0.9);

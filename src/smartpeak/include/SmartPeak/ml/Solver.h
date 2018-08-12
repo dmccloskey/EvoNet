@@ -50,7 +50,7 @@ public:
     float getGradientNoiseSigma() const{return gradient_noise_sigma_;};
     void setGradientNoiseGamma(const float& gradient_noise_gamma){gradient_noise_gamma_ = gradient_noise_gamma;};
     float getGradientNoiseGamma() const{return gradient_noise_gamma_;};
-    float addGradientNoise(const float& gradient, const float& time)
+    float addGradientNoiseAnnealed(const float& gradient, const float& time)
     {
       const float sigma_annealed = gradient_noise_sigma_ / std::pow((1 + time), gradient_noise_gamma_); // annealed variance
       std::random_device rd{};
@@ -58,6 +58,13 @@ public:
       std::normal_distribution<> d{0.0f, sigma_annealed};
       return gradient + d(gen);
     }
+		float addGradientNoise(const float& gradient)
+		{
+			std::random_device rd{};
+			std::mt19937 gen{ rd() };
+			std::normal_distribution<> d{ 0.0f, gradient_noise_sigma_ };
+			return gradient + d(gen);
+		}
     virtual std::string getParameters() const = 0;
 		float checkWeight(const float& weight, const float& new_weight)
 		{
@@ -210,6 +217,55 @@ private:
 			std::string params = "";
 			return params;
 		}
+	};
+
+	/**
+	@brief SGD Stochastic Gradient Descent with Noise Solver.
+	*/
+	class SGDNoiseOp : public SolverOp
+	{
+	public:
+		SGDNoiseOp() {};
+		~SGDNoiseOp() {};
+		SGDNoiseOp(const float& learning_rate, const float& momentum, const float& gradient_noise_sigma):
+			learning_rate_(learning_rate), momentum_(momentum) {
+			setGradientNoiseSigma(gradient_noise_sigma);
+		}
+		void setLearningRate(const float& learning_rate) { learning_rate_ = learning_rate; };
+		float getLearningRate() const { return learning_rate_; };
+		void setMomentum(const float& momentum) { momentum_ = momentum; };
+		float getMomentum() const { return momentum_; };
+		void setMomentumPrev(const float& momentum_prev) { momentum_prev_ = momentum_prev; };
+		float getMomentumPrev() const { return momentum_prev_; };
+		float operator()(const float& weight, const float& error)
+		{
+			const float weight_update = momentum_ * momentum_prev_ - learning_rate_ * weight * error;
+			momentum_prev_ = weight_update;
+			const float new_weight = weight + weight_update;
+			return addGradientNoise(new_weight);
+		};
+		std::string getName() const { return "SGDNoiseOp"; };
+		std::string getParameters() const
+		{
+			std::string params = "";
+			params += "gradient_threshold:" +
+				std::to_string(getGradientThreshold()) +
+				";gradient_noise_sigma:" +
+				std::to_string(getGradientNoiseSigma()) +
+				";gradient_noise_gamma:" +
+				std::to_string(getGradientNoiseGamma()) +
+				";learning_rate:" +
+				std::to_string(getLearningRate()) +
+				";momentum:" +
+				std::to_string(getMomentum()) +
+				";momentum_prev:" +
+				std::to_string(getMomentumPrev());
+			return params;
+		}
+	private:
+		float learning_rate_ = 0.01; ///< Learning rate
+		float momentum_ = 0.9; ///< Momentum
+		float momentum_prev_ = 0.0;
 	};
 
   /**

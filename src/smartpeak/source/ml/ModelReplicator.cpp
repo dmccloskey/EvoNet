@@ -606,6 +606,7 @@ namespace SmartPeak
 		std::string new_name_format = "%s@addModule#";
 		std::string new_module_name, module_name_prefix;
 		updateName(random_module_name, new_name_format, unique_str, module_name_prefix, new_module_name);
+		std::string new_module_suffix = makeUniqueHash("@addModule#", unique_str); // time-stamp should be constant!
 
 		// copy the module and reconnect the links
 		std::vector<Node> new_nodes;
@@ -617,65 +618,80 @@ namespace SmartPeak
 		{
 			if (link.getModuleName() == random_module_name)
 			{ // copy the internal nodes, weights, and links, and give them a new name/id/module_name/module_id
-				std::string new_link_name, link_prefix;
-				updateName(link.getName(), new_name_format, unique_str, link_prefix, new_link_name);
-				link.setName(new_link_name);
-				link.setModuleName(new_module_name);
-				new_links.push_back(link);
-
 				Node source_node = model.getNode(link.getSourceNodeName());
 				std::string new_node_name, node_prefix;
 				updateName(source_node.getName(), new_name_format, unique_str, node_prefix, new_node_name);
-				source_node.setName(new_node_name);
+				source_node.setName(node_prefix + new_module_suffix);
 				source_node.setModuleName(new_module_name);
-				new_nodes.push_back(source_node);
+				if (std::count(new_nodes.begin(), new_nodes.end(), source_node) == 0)
+					new_nodes.push_back(source_node);
 
 				Node sink_node = model.getNode(link.getSinkNodeName());
 				updateName(sink_node.getName(), new_name_format, unique_str, node_prefix, new_node_name);
-				sink_node.setName(new_node_name);
+				sink_node.setName(node_prefix + new_module_suffix);
 				sink_node.setModuleName(new_module_name);
-				new_nodes.push_back(sink_node);
+				if (std::count(new_nodes.begin(), new_nodes.end(), sink_node) == 0)
+					new_nodes.push_back(sink_node);
 
 				Weight weight = model.getWeight(link.getWeightName());
 				std::string new_weight_name, weight_prefix;
 				updateName(weight.getName(), new_name_format, unique_str, weight_prefix, new_weight_name);
-				weight.setName(new_weight_name);
+				weight.setName(weight_prefix + new_module_suffix);
 				weight.setModuleName(new_module_name);
-				new_weights.push_back(weight);
+				if (std::count(new_weights.begin(), new_weights.end(), weight) == 0)
+					new_weights.push_back(weight);
+
+				std::string new_link_name, link_prefix;
+				updateName(link.getName(), new_name_format, unique_str, link_prefix, new_link_name);
+				link.setName(link_prefix + new_module_suffix);
+				link.setModuleName(new_module_name);
+				link.setSourceNodeName(source_node.getName());
+				link.setSinkNodeName(sink_node.getName());
+				link.setWeightName(weight.getName());
+				if (std::count(new_links.begin(), new_links.end(), link) == 0)
+					new_links.push_back(link);
 			}
 			else if (model.getNode(link.getSourceNodeName()).getModuleName() == random_module_name)
 			{ // copy the connecting links and weights, and give them a new name/id
 				// and update the source node name (i.e., connect to the new module)
-				std::string new_link_name, link_prefix;
-				updateName(link.getName(), new_name_format, unique_str, link_prefix, new_link_name);
-				link.setName(new_link_name);
-				std::string new_node_name, node_prefix;
-				updateName(link.getSourceNodeName(), new_name_format, unique_str, node_prefix, new_node_name);
-				link.setSinkNodeName(new_node_name);
-				connecting_links.push_back(link);
 
 				Weight weight = model.getWeight(link.getWeightName());
 				std::string new_weight_name, weight_prefix;
 				updateName(weight.getName(), new_name_format, unique_str, weight_prefix, new_weight_name);
-				weight.setName(new_weight_name);
-				connecting_weights.push_back(weight);
+				weight.setName(weight_prefix + new_module_suffix);
+				if (std::count(connecting_weights.begin(), connecting_weights.end(), weight) == 0)
+					connecting_weights.push_back(weight);
+
+				std::string new_link_name, link_prefix;
+				updateName(link.getName(), new_name_format, unique_str, link_prefix, new_link_name);
+				link.setName(link_prefix + new_module_suffix);
+				std::string new_node_name, node_prefix;
+				updateName(link.getSourceNodeName(), new_name_format, unique_str, node_prefix, new_node_name);
+				link.setSourceNodeName(node_prefix + new_module_suffix);
+				link.setWeightName(weight.getName());
+				if (std::count(connecting_links.begin(), connecting_links.end(), link) == 0)
+					connecting_links.push_back(link);
 			}
 			else if (model.getNode(link.getSinkNodeName()).getModuleName() == random_module_name)
 			{ // copy the connecting links and weights, and give them a new name/id
 				// and update the sink node name (i.e., connect to the new module)
-				std::string new_link_name, link_prefix;
-				updateName(link.getName(), new_name_format, unique_str, link_prefix, new_link_name);
-				link.setName(new_link_name);
-				std::string new_node_name, node_prefix;
-				updateName(link.getSinkNodeName(), new_name_format, unique_str, node_prefix, new_node_name);
-				link.setSinkNodeName(new_node_name);
-				connecting_links.push_back(link);
 
 				Weight weight = model.getWeight(link.getWeightName());
 				std::string new_weight_name, weight_prefix;
 				updateName(weight.getName(), new_name_format, unique_str, weight_prefix, new_weight_name);
-				weight.setName(new_weight_name);
-				connecting_weights.push_back(weight);
+				weight.setName(weight_prefix + new_module_suffix);
+				if (std::count(connecting_weights.begin(), connecting_weights.end(), weight) == 0)
+					connecting_weights.push_back(weight);
+
+				std::string new_link_name, link_prefix;
+				updateName(link.getName(), new_name_format, unique_str, link_prefix, new_link_name);
+				link.setName(link_prefix + new_module_suffix);
+				std::string new_node_name, node_prefix;
+				updateName(link.getSinkNodeName(), new_name_format, unique_str, node_prefix, new_node_name);
+				link.setSinkNodeName(node_prefix + new_module_suffix);
+				link.setWeightName(weight.getName());
+				if (std::count(connecting_links.begin(), connecting_links.end(), link) == 0)
+					connecting_links.push_back(link);
 			}
 		}
 

@@ -141,175 +141,354 @@ class ModelTrainerExt : public ModelTrainer
 {
 public:
 
-
 	/*
-	@brief LSTM implementation with 4 hidden layers
-
-	References:
-	Hochreiter et al. "Long Short-Term Memory". Neural Computation 9, 1735–1780 (1997)
-	Chung et al. "Empirical Evaluation of Gated Recurrent Neural Networks on Sequence Modeling". 2014. arXiv:1412.3555v1
-
-	GRU implementation with 4 hidden layers
-
-	References:
-	Cho et al. "Learning Phrase Representations using RNN Encoder–Decoder for Statistical Machine Translation". 2014. arXiv:1406.1078v3
-	Chung et al. "Empirical Evaluation of Gated Recurrent Neural Networks on Sequence Modeling". 2014. arXiv:1412.3555v1
+	@brief Memory cell unit with indirect multiplicative gates apply offsets
 	*/
-	Model makeMemoryUnit()
+	Model makeMemoryUnitV02()
 	{
-		Node i_rand, i_mask, memory_cell, o,
-			forget_gate_sigma, forget_gate_prod, update_gate_tanh, update_gate_sigma, update_gate_prod, output_gate_sigma, output_gate_prod,
-			forget_gate_sigma_bias, forget_gate_prod_bias, update_gate_tanh_bias, update_gate_sigma_bias, update_gate_prod_bias, output_gate_sigma_bias, output_gate_prod_bias;
-		Link Link_i_rand_to_forget_gate_sigma, Link_i_mask_to_forget_gate_sigma, Link_forget_gate_sigma_bias_to_forget_gate_sigma,
-			Link_memory_cell_to_forget_gate_prod, Link_forget_gate_sigma_to_forget_gate_prod,
-			Link_i_rand_to_update_gate_sigma, Link_i_mask_to_update_gate_sigma, Link_update_gate_sigma_bias_to_update_gate_sigma,
-			Link_i_rand_to_update_gate_tanh, Link_i_mask_to_update_gate_tanh, Link_update_gate_tanh_bias_to_update_gate_tanh,
-			Link_update_gate_tanh_to_update_gate_prod, Link_update_gate_sigma_to_update_gate_prod,
-			Link_forget_gate_prod_to_memory_cell, Link_update_gate_prod_to_memory_cell,
-			Link_i_rand_to_output_gate_sigma, Link_i_mask_to_output_gate_sigma, Link_output_gate_sigma_bias_to_output_gate_sigma,
-			Link_output_gate_sigma_to_output_gate_prod, Link_memory_cell_to_output_gate_prod,
-			Link_output_gate_prod_to_o;
-		Weight Weight_i_rand_to_forget_gate_sigma, Weight_i_mask_to_forget_gate_sigma, Weight_forget_gate_sigma_bias_to_forget_gate_sigma,
-			Weight_memory_cell_to_forget_gate_prod, Weight_forget_gate_sigma_to_forget_gate_prod,
-			Weight_i_rand_to_update_gate_sigma, Weight_i_mask_to_update_gate_sigma, Weight_update_gate_sigma_bias_to_update_gate_sigma,
-			Weight_i_rand_to_update_gate_tanh, Weight_i_mask_to_update_gate_tanh, Weight_update_gate_tanh_bias_to_update_gate_tanh,
-			Weight_update_gate_tanh_to_update_gate_prod, Weight_update_gate_sigma_to_update_gate_prod,
-			Weight_forget_gate_prod_to_memory_cell, Weight_update_gate_prod_to_memory_cell,
-			Weight_i_rand_to_output_gate_sigma, Weight_i_mask_to_output_gate_sigma, Weight_output_gate_sigma_bias_to_output_gate_sigma,
-			Weight_output_gate_sigma_to_output_gate_prod, Weight_memory_cell_to_output_gate_prod,
-			Weight_output_gate_prod_to_o;
+		Node 
+			i_rand, i_mask, MC, o, // inputs, memory cell, and output
+			fGate_SSig, fGate_PLin, uGate_SLin, uGate_SSig, uGate_PLin, oGate_SSig, oGate_PLin, oGate_SLin, // gates
+			fGate_SSig_bias, fGate_PLin_bias, uGate_SLin_bias, uGate_SSig_bias, uGate_PLin_bias, oGate_SSig_bias, oGate_PLin_bias, oGate_SLin_bias; // gate biases
+		Link 
+			Link_i_rand_to_fGate_SSig, Link_i_mask_to_fGate_SSig, Link_fGate_SSig_bias_to_fGate_SSig, // forget gate
+			Link_MC_to_fGate_PLin, Link_fGate_SSig_to_fGate_PLin, // forget gate
+			Link_i_rand_to_uGate_SSig, Link_i_mask_to_uGate_SSig, Link_uGate_SSig_bias_to_uGate_SSig, // update gate
+			Link_i_rand_to_uGate_SLin, Link_i_mask_to_uGate_SLin, Link_uGate_SLin_bias_to_uGate_SLin,
+			Link_uGate_SSig_to_uGate_PLin, Link_uGate_SLin_to_uGate_PLin,
+			Link_fGate_PLin_to_MC, Link_uGate_PLin_to_MC, Link_MC_to_MC, Link_uGate_SLin_to_MC, // memory cell input links
+			Link_i_rand_to_oGate_SSig, Link_i_mask_to_oGate_SSig, Link_oGate_SSig_bias_to_oGate_SSig,
+			Link_oGate_SSig_to_oGate_PLin, Link_MC_to_oGate_PLin, Link_MC_to_oGate_SLin, Link_oGate_SLin_to_o,
+			Link_oGate_PLin_to_oGate_SLin;
+		Weight
+			Weight_i_rand_to_fGate_SSig, Weight_i_mask_to_fGate_SSig, Weight_fGate_SSig_bias_to_fGate_SSig, // forget gate
+			Weight_MC_to_fGate_PLin, Weight_fGate_SSig_to_fGate_PLin, // forget gate
+			Weight_i_rand_to_uGate_SSig, Weight_i_mask_to_uGate_SSig, Weight_uGate_SSig_bias_to_uGate_SSig, // update gate
+			Weight_i_rand_to_uGate_SLin, Weight_i_mask_to_uGate_SLin, Weight_uGate_SLin_bias_to_uGate_SLin,
+			Weight_uGate_SSig_to_uGate_PLin, Weight_uGate_SLin_to_uGate_PLin,
+			Weight_fGate_PLin_to_MC, Weight_uGate_PLin_to_MC, Weight_MC_to_MC, Weight_uGate_SLin_to_MC, // memory cell input links
+			Weight_i_rand_to_oGate_SSig, Weight_i_mask_to_oGate_SSig, Weight_oGate_SSig_bias_to_oGate_SSig,
+			Weight_oGate_SSig_to_oGate_PLin, Weight_MC_to_oGate_PLin, Weight_MC_to_oGate_SLin, Weight_oGate_SLin_to_o,
+			Weight_oGate_PLin_to_oGate_SLin;
 		Model model;
 
 		// Nodes
 		i_rand = Node("Input_0", NodeType::input, NodeStatus::activated, NodeActivation::Linear, NodeIntegration::Sum);
 		i_mask = Node("Input_1", NodeType::input, NodeStatus::activated, NodeActivation::Linear, NodeIntegration::Sum);
-		memory_cell = Node("memory_cell", NodeType::hidden, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Sum);
+		MC = Node("MC", NodeType::hidden, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Sum); MC.setModuleName("MC1");
 		o = Node("Output_0", NodeType::output, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Sum);
-		forget_gate_sigma = Node("forget_gate_sigma", NodeType::hidden, NodeStatus::deactivated, NodeActivation::Sigmoid, NodeIntegration::Sum);
-		forget_gate_prod = Node("forget_gate_prod", NodeType::hidden, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Product);
-		update_gate_sigma = Node("update_gate_sigma", NodeType::hidden, NodeStatus::deactivated, NodeActivation::Sigmoid, NodeIntegration::Sum);
-		update_gate_tanh = Node("update_gate_tanh", NodeType::hidden, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Sum);
-		update_gate_prod = Node("update_gate_prod", NodeType::hidden, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Product);
-		output_gate_sigma = Node("output_gate_sigma", NodeType::hidden, NodeStatus::deactivated, NodeActivation::Sigmoid, NodeIntegration::Sum);
-		output_gate_prod = Node("output_gate_prod", NodeType::hidden, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Product);
-		forget_gate_sigma_bias = Node("forget_gate_sigma_bias", NodeType::bias, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Sum);
-		forget_gate_prod_bias = Node("forget_gate_prod_bias", NodeType::bias, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Sum);
-		update_gate_sigma_bias = Node("update_gate_sigma_bias", NodeType::bias, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Sum);
-		update_gate_tanh_bias = Node("update_gate_tanh_bias", NodeType::bias, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Sum);
-		update_gate_prod_bias = Node("update_gate_prod_bias", NodeType::bias, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Sum);
-		output_gate_sigma_bias = Node("output_gate_sigma_bias", NodeType::bias, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Sum);
-		output_gate_prod_bias = Node("output_gate_prod_bias", NodeType::bias, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Sum);
+		fGate_SSig = Node("fGate_SSig", NodeType::hidden, NodeStatus::deactivated, NodeActivation::Sigmoid, NodeIntegration::Sum); fGate_SSig.setModuleName("MC1");
+		fGate_PLin = Node("fGate_PLin", NodeType::hidden, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Product); fGate_PLin.setModuleName("MC1");
+		uGate_SSig = Node("uGate_SSig", NodeType::hidden, NodeStatus::deactivated, NodeActivation::Sigmoid, NodeIntegration::Sum); uGate_SSig.setModuleName("MC1");
+		uGate_SLin = Node("uGate_SLin", NodeType::hidden, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Sum); uGate_SLin.setModuleName("MC1");
+		uGate_PLin = Node("uGate_PLin", NodeType::hidden, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Product); uGate_PLin.setModuleName("MC1");
+		oGate_SSig = Node("oGate_SSig", NodeType::hidden, NodeStatus::deactivated, NodeActivation::Sigmoid, NodeIntegration::Sum); oGate_SSig.setModuleName("MC1");
+		oGate_PLin = Node("oGate_PLin", NodeType::hidden, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Product); oGate_PLin.setModuleName("MC1");
+		oGate_SLin = Node("oGate_SLin", NodeType::hidden, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Sum); oGate_SLin.setModuleName("MC1");
+		fGate_SSig_bias = Node("fGate_SSig_bias", NodeType::bias, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Sum); fGate_SSig_bias.setModuleName("MC1");
+		fGate_PLin_bias = Node("fGate_PLin_bias", NodeType::bias, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Sum); fGate_PLin_bias.setModuleName("MC1");
+		uGate_SSig_bias = Node("uGate_SSig_bias", NodeType::bias, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Sum); uGate_SSig_bias.setModuleName("MC1");
+		uGate_SLin_bias = Node("uGate_SLin_bias", NodeType::bias, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Sum); uGate_SLin_bias.setModuleName("MC1");
+		uGate_PLin_bias = Node("uGate_PLin_bias", NodeType::bias, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Sum); uGate_PLin_bias.setModuleName("MC1");
+		oGate_SSig_bias = Node("oGate_SSig_bias", NodeType::bias, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Sum); oGate_SSig_bias.setModuleName("MC1");
+		oGate_PLin_bias = Node("oGate_PLin_bias", NodeType::bias, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Sum); oGate_PLin_bias.setModuleName("MC1");
+
+		// weights  
+		std::shared_ptr<WeightInitOp> weight_init;
+		std::shared_ptr<SolverOp> solver;
+		weight_init.reset(new RandWeightInitOp(2.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8)); solver->setGradientThreshold(10.0f);
+		//weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
+		Weight_i_rand_to_fGate_SSig = Weight("Weight_i_rand_to_fGate_SSig", weight_init, solver);
+		weight_init.reset(new RandWeightInitOp(2.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8)); solver->setGradientThreshold(10.0f);
+		//weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
+		Weight_i_mask_to_fGate_SSig = Weight("Weight_i_mask_to_fGate_SSig", weight_init, solver);
+		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8)); solver->setGradientThreshold(10.0f);
+		Weight_fGate_SSig_bias_to_fGate_SSig = Weight("Weight_fGate_SSig_bias_to_fGate_SSig", weight_init, solver); Weight_fGate_SSig_bias_to_fGate_SSig.setModuleName("MC1");
+
+		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new DummySolverOp());	solver->setGradientThreshold(100000.0f);
+		Weight_MC_to_fGate_PLin = Weight("Weight_MC_to_fGate_PLin", weight_init, solver); Weight_MC_to_fGate_PLin.setModuleName("MC1");
+		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new DummySolverOp());	solver->setGradientThreshold(100000.0f);
+		Weight_fGate_SSig_to_fGate_PLin = Weight("Weight_fGate_SSig_to_fGate_PLin", weight_init, solver); Weight_fGate_SSig_to_fGate_PLin.setModuleName("MC1");
+
+		weight_init.reset(new RandWeightInitOp(2.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8)); solver->setGradientThreshold(10.0f);
+		//weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
+		Weight_i_rand_to_uGate_SSig = Weight("Weight_i_rand_to_uGate_SSig", weight_init, solver);
+		weight_init.reset(new RandWeightInitOp(2.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8)); solver->setGradientThreshold(10.0f);
+		//weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
+		Weight_i_mask_to_uGate_SSig = Weight("Weight_i_mask_to_uGate_SSig", weight_init, solver);
+		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8)); solver->setGradientThreshold(10.0f);
+		Weight_uGate_SSig_bias_to_uGate_SSig = Weight("Weight_uGate_SSig_bias_to_uGate_SSig", weight_init, solver); Weight_uGate_SSig_bias_to_uGate_SSig.setModuleName("MC1");
+
+		weight_init.reset(new RandWeightInitOp(2.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8)); solver->setGradientThreshold(10.0f);
+		//weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
+		Weight_i_rand_to_uGate_SLin = Weight("Weight_i_rand_to_uGate_SLin", weight_init, solver);
+		weight_init.reset(new RandWeightInitOp(2.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8)); solver->setGradientThreshold(10.0f);
+		//weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
+		Weight_i_mask_to_uGate_SLin = Weight("Weight_i_mask_to_uGate_SLin", weight_init, solver);
+		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8)); solver->setGradientThreshold(10.0f);
+		Weight_uGate_SLin_bias_to_uGate_SLin = Weight("Weight_uGate_SLin_bias_to_uGate_SLin", weight_init, solver); Weight_uGate_SLin_bias_to_uGate_SLin.setModuleName("MC1");
+
+		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new DummySolverOp());	solver->setGradientThreshold(100000.0f);
+		Weight_uGate_SLin_to_MC = Weight("Weight_uGate_SLin_to_MC", weight_init, solver); Weight_uGate_SLin_to_MC.setModuleName("MC1");
+		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new DummySolverOp());	solver->setGradientThreshold(100000.0f);
+		Weight_uGate_SLin_to_uGate_PLin = Weight("Weight_uGate_SLin_to_uGate_PLin", weight_init, solver); Weight_uGate_SLin_to_uGate_PLin.setModuleName("MC1");
+		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new DummySolverOp());	solver->setGradientThreshold(100000.0f);
+		Weight_uGate_SSig_to_uGate_PLin = Weight("Weight_uGate_SSig_to_uGate_PLin", weight_init, solver); Weight_uGate_SSig_to_uGate_PLin.setModuleName("MC1");
+
+		weight_init.reset(new ConstWeightInitOp(-1.0));	solver.reset(new DummySolverOp());	solver->setGradientThreshold(100000.0f);
+		Weight_fGate_PLin_to_MC = Weight("Weight_fGate_PLin_to_MC", weight_init, solver); Weight_fGate_PLin_to_MC.setModuleName("MC1");
+		weight_init.reset(new ConstWeightInitOp(-1.0));	solver.reset(new DummySolverOp());	solver->setGradientThreshold(100000.0f);
+		Weight_uGate_PLin_to_MC = Weight("Weight_uGate_PLin_to_MC", weight_init, solver); Weight_uGate_PLin_to_MC.setModuleName("MC1");
+		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new DummySolverOp());	solver->setGradientThreshold(100000.0f);
+		Weight_MC_to_MC = Weight("Weight_MC_to_MC", weight_init, solver); Weight_MC_to_MC.setModuleName("MC1");
+
+		weight_init.reset(new RandWeightInitOp(2.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8)); solver->setGradientThreshold(10.0f);
+		//weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
+		Weight_i_rand_to_oGate_SSig = Weight("Weight_i_rand_to_oGate_SSig", weight_init, solver);
+		weight_init.reset(new RandWeightInitOp(2.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8)); solver->setGradientThreshold(10.0f);
+		//weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
+		Weight_i_mask_to_oGate_SSig = Weight("Weight_i_mask_to_oGate_SSig", weight_init, solver);
+		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8)); solver->setGradientThreshold(10.0f);
+		Weight_oGate_SSig_bias_to_oGate_SSig = Weight("Weight_oGate_SSig_bias_to_oGate_SSig", weight_init, solver); Weight_oGate_SSig_bias_to_oGate_SSig.setModuleName("MC1");
+
+		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new DummySolverOp());	solver->setGradientThreshold(100000.0f); //
+		Weight_oGate_SSig_to_oGate_PLin = Weight("Weight_oGate_SSig_to_oGate_PLin", weight_init, solver); Weight_oGate_SSig_to_oGate_PLin.setModuleName("MC1");
+		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new DummySolverOp());	solver->setGradientThreshold(100000.0f);
+		Weight_MC_to_oGate_PLin = Weight("Weight_MC_to_oGate_PLin", weight_init, solver); Weight_MC_to_oGate_PLin.setModuleName("MC1");
+
+		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new DummySolverOp());	solver->setGradientThreshold(100000.0f);
+		Weight_MC_to_oGate_SLin = Weight("Weight_MC_to_oGate_SLin", weight_init, solver); Weight_MC_to_oGate_SLin.setModuleName("MC1");
+		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new DummySolverOp());	solver->setGradientThreshold(100000.0f);
+		Weight_oGate_SLin_to_o = Weight("Weight_oGate_SLin_to_o", weight_init, solver);
+		weight_init.reset(new ConstWeightInitOp(-1.0));	solver.reset(new DummySolverOp());	solver->setGradientThreshold(100000.0f);
+		Weight_oGate_PLin_to_oGate_SLin = Weight("Weight_oGate_PLin_to_oGate_SLin", weight_init, solver); Weight_oGate_PLin_to_oGate_SLin.setModuleName("MC1");
+
+		weight_init.reset();
+		solver.reset();
+		// links
+		Link_i_rand_to_fGate_SSig = Link("Link_i_rand_to_fGate_SSig", "Input_0", "fGate_SSig", "Weight_i_rand_to_fGate_SSig");
+		Link_i_mask_to_fGate_SSig = Link("Link_i_mask_to_fGate_SSig", "Input_1", "fGate_SSig", "Weight_i_mask_to_fGate_SSig"); Link_fGate_SSig_bias_to_fGate_SSig.setModuleName("MC1");
+		Link_fGate_SSig_bias_to_fGate_SSig = Link("Link_fGate_SSig_bias_to_fGate_SSig", "fGate_SSig_bias", "fGate_SSig", "Weight_fGate_SSig_bias_to_fGate_SSig"); Link_fGate_SSig_bias_to_fGate_SSig.setModuleName("MC1");
+		Link_MC_to_fGate_PLin = Link("Link_MC_to_fGate_PLin", "MC", "fGate_PLin", "Weight_MC_to_fGate_PLin"); Link_MC_to_fGate_PLin.setModuleName("MC1");
+		Link_fGate_SSig_to_fGate_PLin = Link("Link_fGate_SSig_to_fGate_PLin", "fGate_SSig", "fGate_PLin", "Weight_fGate_SSig_to_fGate_PLin"); Link_fGate_SSig_to_fGate_PLin.setModuleName("MC1");
+		Link_i_rand_to_uGate_SSig = Link("Link_i_rand_to_uGate_SSig", "Input_0", "uGate_SSig", "Weight_i_rand_to_uGate_SSig");
+		Link_i_mask_to_uGate_SSig = Link("Link_i_mask_to_uGate_SSig", "Input_1", "uGate_SSig", "Weight_i_mask_to_uGate_SSig");
+		Link_uGate_SSig_bias_to_uGate_SSig = Link("Link_uGate_SSig_bias_to_uGate_SSig", "uGate_SSig_bias", "uGate_SSig", "Weight_uGate_SSig_bias_to_uGate_SSig"); Link_uGate_SSig_bias_to_uGate_SSig.setModuleName("MC1");
+		Link_i_rand_to_uGate_SLin = Link("Link_i_rand_to_uGate_SLin", "Input_0", "uGate_SLin", "Weight_i_rand_to_uGate_SLin");
+		Link_i_mask_to_uGate_SLin = Link("Link_i_mask_to_uGate_SLin", "Input_1", "uGate_SLin", "Weight_i_mask_to_uGate_SLin");
+		Link_uGate_SLin_bias_to_uGate_SLin = Link("Link_uGate_SLin_bias_to_uGate_SLin", "uGate_SLin_bias", "uGate_SLin", "Weight_uGate_SLin_bias_to_uGate_SLin"); Link_uGate_SLin_bias_to_uGate_SLin.setModuleName("MC1");
+		Link_uGate_SLin_to_MC = Link("Link_uGate_SLin_to_MC", "uGate_SLin", "MC", "Weight_uGate_SLin_to_MC"); Link_uGate_SLin_to_MC.setModuleName("MC1");
+		Link_uGate_SLin_to_uGate_PLin = Link("Link_uGate_SLin_to_uGate_PLin", "uGate_SLin", "uGate_PLin", "Weight_uGate_SLin_to_uGate_PLin"); Link_uGate_SLin_to_uGate_PLin.setModuleName("MC1");
+		Link_uGate_SSig_to_uGate_PLin = Link("Link_uGate_SSig_to_uGate_PLin", "uGate_SSig", "uGate_PLin", "Weight_uGate_SSig_to_uGate_PLin"); Link_uGate_SSig_to_uGate_PLin.setModuleName("MC1");
+		Link_fGate_PLin_to_MC = Link("Link_fGate_PLin_to_MC", "fGate_PLin", "MC", "Weight_fGate_PLin_to_MC"); Link_fGate_PLin_to_MC.setModuleName("MC1");
+		Link_uGate_PLin_to_MC = Link("Link_uGate_PLin_to_MC", "uGate_PLin", "MC", "Weight_uGate_PLin_to_MC"); Link_uGate_PLin_to_MC.setModuleName("MC1");
+		Link_MC_to_MC = Link("Link_MC_to_MC", "MC", "MC", "Weight_MC_to_MC"); Link_MC_to_MC.setModuleName("MC1");
+		Link_i_rand_to_oGate_SSig = Link("Link_i_rand_to_oGate_SSig", "Input_0", "oGate_SSig", "Weight_i_rand_to_oGate_SSig");
+		Link_i_mask_to_oGate_SSig = Link("Link_i_mask_to_oGate_SSig", "Input_1", "oGate_SSig", "Weight_i_mask_to_oGate_SSig");
+		Link_oGate_SSig_bias_to_oGate_SSig = Link("Link_oGate_SSig_bias_to_oGate_SSig", "oGate_SSig_bias", "oGate_SSig", "Weight_oGate_SSig_bias_to_oGate_SSig"); Link_oGate_SSig_bias_to_oGate_SSig.setModuleName("MC1");
+		Link_oGate_SSig_to_oGate_PLin = Link("Link_oGate_SSig_to_oGate_PLin", "oGate_SSig", "oGate_PLin", "Weight_oGate_SSig_to_oGate_PLin"); Link_oGate_SSig_to_oGate_PLin.setModuleName("MC1");
+		Link_MC_to_oGate_PLin = Link("Link_MC_to_oGate_PLin", "MC", "oGate_PLin", "Weight_MC_to_oGate_PLin"); Link_MC_to_oGate_PLin.setModuleName("MC1");
+		Link_MC_to_oGate_SLin = Link("Link_MC_to_oGate_SLin ", "MC", "oGate_SLin", "Weight_MC_to_oGate_SLin"); Link_MC_to_oGate_SLin.setModuleName("MC1");
+		Link_oGate_SLin_to_o = Link("Link_oGate_SLin_to_o ", "oGate_SLin", "Output_0", "Weight_oGate_SLin_to_o");
+		Link_oGate_PLin_to_oGate_SLin = Link("Link_oGate_PLin_to_oGate_SLin ", "oGate_PLin", "oGate_SLin", "Weight_oGate_PLin_to_oGate_SLin"); Link_oGate_PLin_to_oGate_SLin.setModuleName("MC1");
+
+		// add nodes, links, and weights to the model
+		model.setName("MemoryCellV02");
+		model.addNodes({ i_rand, i_mask, MC, o,
+			fGate_SSig, fGate_PLin, uGate_SLin, uGate_SSig, uGate_PLin, oGate_SSig, oGate_PLin, oGate_SLin,
+			//fGate_SSig_bias, fGate_PLin_bias, uGate_SLin_bias, uGate_SSig_bias, uGate_PLin_bias, oGate_SSig_bias, oGate_PLin_bias 
+			});
+		model.addWeights({ Weight_i_rand_to_fGate_SSig, Weight_i_mask_to_fGate_SSig, 
+			Weight_MC_to_fGate_PLin, Weight_fGate_SSig_to_fGate_PLin, // forget gate
+			Weight_i_rand_to_uGate_SSig, Weight_i_mask_to_uGate_SSig, 
+			Weight_i_rand_to_uGate_SLin, Weight_i_mask_to_uGate_SLin, 
+			Weight_uGate_SSig_to_uGate_PLin, Weight_uGate_SLin_to_uGate_PLin,
+			Weight_fGate_PLin_to_MC, Weight_uGate_PLin_to_MC, Weight_MC_to_MC, Weight_uGate_SLin_to_MC, // memory cell input links
+			//Weight_oGate_SSig_bias_to_oGate_SSig, Weight_fGate_SSig_bias_to_fGate_SSig, Weight_uGate_SSig_bias_to_uGate_SSig, Weight_uGate_SLin_bias_to_uGate_SLin,
+			Weight_oGate_SSig_to_oGate_PLin, Weight_MC_to_oGate_PLin, Weight_oGate_PLin_to_oGate_SLin,
+			Weight_i_rand_to_oGate_SSig, Weight_i_mask_to_oGate_SSig, Weight_MC_to_oGate_SLin, Weight_oGate_SLin_to_o,
+			});
+		model.addLinks({ Link_i_rand_to_fGate_SSig, Link_i_mask_to_fGate_SSig, 
+			Link_MC_to_fGate_PLin, Link_fGate_SSig_to_fGate_PLin, // forget gate
+			Link_i_rand_to_uGate_SSig, Link_i_mask_to_uGate_SSig, 
+			Link_i_rand_to_uGate_SLin, Link_i_mask_to_uGate_SLin, 
+			Link_uGate_SSig_to_uGate_PLin, Link_uGate_SLin_to_uGate_PLin,
+			Link_fGate_PLin_to_MC, Link_uGate_PLin_to_MC, Link_MC_to_MC, Link_uGate_SLin_to_MC, // memory cell input links
+			//Link_oGate_SSig_bias_to_oGate_SSig, Link_uGate_SLin_bias_to_uGate_SLin, Link_uGate_SSig_bias_to_uGate_SSig, Link_fGate_SSig_bias_to_fGate_SSig,
+			Link_oGate_SSig_to_oGate_PLin, Link_MC_to_oGate_PLin, Link_oGate_PLin_to_oGate_SLin,
+			Link_i_rand_to_oGate_SSig, Link_i_mask_to_oGate_SSig, Link_MC_to_oGate_SLin, Link_oGate_SLin_to_o,
+			 });
+		std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>());
+		model.setLossFunction(loss_function);
+		std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
+		model.setLossFunctionGrad(loss_function_grad);
+
+		// check the model was built correctly
+		std::vector<std::string> nodes_not_found, weights_not_found;
+		if (!model.checkLinksNodeAndWeightNames(nodes_not_found, weights_not_found))
+			std::cout << "There are errors in the model's links nodes and weights names!" << std::endl;
+
+		return model;
+	}
+
+	/*
+	@brief Memory cell unit with direct multiplicative gates
+	*/
+	Model makeMemoryUnitV01()
+	{
+		Node i_rand, i_mask, MC, o,
+			fGate_SSig, fGate_PLin, uGate_SLin, uGate_SSig, uGate_PLin, oGate_SSig, oGate_PLin,
+			fGate_SSig_bias, fGate_PLin_bias, uGate_SLin_bias, uGate_SSig_bias, uGate_PLin_bias, oGate_SSig_bias, oGate_PLin_bias;
+		Link Link_i_rand_to_fGate_SSig, Link_i_mask_to_fGate_SSig, Link_fGate_SSig_bias_to_fGate_SSig,
+			Link_MC_to_fGate_PLin, Link_fGate_SSig_to_fGate_PLin,
+			Link_i_rand_to_uGate_SSig, Link_i_mask_to_uGate_SSig, Link_uGate_SSig_bias_to_uGate_SSig,
+			Link_i_rand_to_uGate_SLin, Link_i_mask_to_uGate_SLin, Link_uGate_SLin_bias_to_uGate_SLin,
+			Link_uGate_SLin_to_uGate_PLin, Link_uGate_SSig_to_uGate_PLin,
+			Link_fGate_PLin_to_MC, Link_uGate_PLin_to_MC,
+			Link_i_rand_to_oGate_SSig, Link_i_mask_to_oGate_SSig, Link_oGate_SSig_bias_to_oGate_SSig,
+			Link_oGate_SSig_to_oGate_PLin, Link_MC_to_oGate_PLin,
+			Link_oGate_PLin_to_o;
+		Weight Weight_i_rand_to_fGate_SSig, Weight_i_mask_to_fGate_SSig, Weight_fGate_SSig_bias_to_fGate_SSig,
+			Weight_MC_to_fGate_PLin, Weight_fGate_SSig_to_fGate_PLin,
+			Weight_i_rand_to_uGate_SSig, Weight_i_mask_to_uGate_SSig, Weight_uGate_SSig_bias_to_uGate_SSig,
+			Weight_i_rand_to_uGate_SLin, Weight_i_mask_to_uGate_SLin, Weight_uGate_SLin_bias_to_uGate_SLin,
+			Weight_uGate_SLin_to_uGate_PLin, Weight_uGate_SSig_to_uGate_PLin,
+			Weight_fGate_PLin_to_MC, Weight_uGate_PLin_to_MC,
+			Weight_i_rand_to_oGate_SSig, Weight_i_mask_to_oGate_SSig, Weight_oGate_SSig_bias_to_oGate_SSig,
+			Weight_oGate_SSig_to_oGate_PLin, Weight_MC_to_oGate_PLin,
+			Weight_oGate_PLin_to_o;
+		Model model;
+
+		// Nodes
+		i_rand = Node("Input_0", NodeType::input, NodeStatus::activated, NodeActivation::Linear, NodeIntegration::Sum);
+		i_mask = Node("Input_1", NodeType::input, NodeStatus::activated, NodeActivation::Linear, NodeIntegration::Sum);
+		MC = Node("MC", NodeType::hidden, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Sum);
+		o = Node("Output_0", NodeType::output, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Sum);
+		fGate_SSig = Node("fGate_SSig", NodeType::hidden, NodeStatus::deactivated, NodeActivation::Sigmoid, NodeIntegration::Sum);
+		fGate_PLin = Node("fGate_PLin", NodeType::hidden, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Product);
+		uGate_SSig = Node("uGate_SSig", NodeType::hidden, NodeStatus::deactivated, NodeActivation::Sigmoid, NodeIntegration::Sum);
+		uGate_SLin = Node("uGate_SLin", NodeType::hidden, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Sum);
+		uGate_PLin = Node("uGate_PLin", NodeType::hidden, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Product);
+		oGate_SSig = Node("oGate_SSig", NodeType::hidden, NodeStatus::deactivated, NodeActivation::Sigmoid, NodeIntegration::Sum);
+		oGate_PLin = Node("oGate_PLin", NodeType::hidden, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Product);
+		fGate_SSig_bias = Node("fGate_SSig_bias", NodeType::bias, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Sum);
+		fGate_PLin_bias = Node("fGate_PLin_bias", NodeType::bias, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Sum);
+		uGate_SSig_bias = Node("uGate_SSig_bias", NodeType::bias, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Sum);
+		uGate_SLin_bias = Node("uGate_SLin_bias", NodeType::bias, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Sum);
+		uGate_PLin_bias = Node("uGate_PLin_bias", NodeType::bias, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Sum);
+		oGate_SSig_bias = Node("oGate_SSig_bias", NodeType::bias, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Sum);
+		oGate_PLin_bias = Node("oGate_PLin_bias", NodeType::bias, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Sum);
 
 		// weights  
 		std::shared_ptr<WeightInitOp> weight_init;
 		std::shared_ptr<SolverOp> solver;
 		weight_init.reset(new RandWeightInitOp(2.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
 		//weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
-		Weight_i_rand_to_forget_gate_sigma = Weight("Weight_i_rand_to_forget_gate_sigma", weight_init, solver);
+		Weight_i_rand_to_fGate_SSig = Weight("Weight_i_rand_to_fGate_SSig", weight_init, solver);
 		weight_init.reset(new RandWeightInitOp(2.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
 		//weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
-		Weight_i_mask_to_forget_gate_sigma = Weight("Weight_i_mask_to_forget_gate_sigma", weight_init, solver);
+		Weight_i_mask_to_fGate_SSig = Weight("Weight_i_mask_to_fGate_SSig", weight_init, solver);
 		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
-		Weight_forget_gate_sigma_bias_to_forget_gate_sigma = Weight("Weight_forget_gate_sigma_bias_to_forget_gate_sigma", weight_init, solver);
+		Weight_fGate_SSig_bias_to_fGate_SSig = Weight("Weight_fGate_SSig_bias_to_fGate_SSig", weight_init, solver);
 
 		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new DummySolverOp());	solver->setGradientThreshold(100000.0f);
-		Weight_memory_cell_to_forget_gate_prod = Weight("Weight_memory_cell_to_forget_gate_prod", weight_init, solver);
+		Weight_MC_to_fGate_PLin = Weight("Weight_MC_to_fGate_PLin", weight_init, solver);
 		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new DummySolverOp());	solver->setGradientThreshold(100000.0f);
-		Weight_forget_gate_sigma_to_forget_gate_prod = Weight("Weight_forget_gate_sigma_to_forget_gate_prod", weight_init, solver);
+		Weight_fGate_SSig_to_fGate_PLin = Weight("Weight_fGate_SSig_to_fGate_PLin", weight_init, solver);
 
 		weight_init.reset(new RandWeightInitOp(2.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
 		//weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
-		Weight_i_rand_to_update_gate_sigma = Weight("Weight_i_rand_to_update_gate_sigma", weight_init, solver);
+		Weight_i_rand_to_uGate_SSig = Weight("Weight_i_rand_to_uGate_SSig", weight_init, solver);
 		weight_init.reset(new RandWeightInitOp(2.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
 		//weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
-		Weight_i_mask_to_update_gate_sigma = Weight("Weight_i_mask_to_update_gate_sigma", weight_init, solver);
+		Weight_i_mask_to_uGate_SSig = Weight("Weight_i_mask_to_uGate_SSig", weight_init, solver);
 		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
-		Weight_update_gate_sigma_bias_to_update_gate_sigma = Weight("Weight_update_gate_sigma_bias_to_update_gate_sigma", weight_init, solver);
+		Weight_uGate_SSig_bias_to_uGate_SSig = Weight("Weight_uGate_SSig_bias_to_uGate_SSig", weight_init, solver);
 
 		weight_init.reset(new RandWeightInitOp(2.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
 		//weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
-		Weight_i_rand_to_update_gate_tanh = Weight("Weight_i_rand_to_update_gate_tanh", weight_init, solver);
+		Weight_i_rand_to_uGate_SLin = Weight("Weight_i_rand_to_uGate_SLin", weight_init, solver);
 		weight_init.reset(new RandWeightInitOp(2.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
 		//weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
-		Weight_i_mask_to_update_gate_tanh = Weight("Weight_i_mask_to_update_gate_tanh", weight_init, solver);
+		Weight_i_mask_to_uGate_SLin = Weight("Weight_i_mask_to_uGate_SLin", weight_init, solver);
 		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
-		Weight_update_gate_tanh_bias_to_update_gate_tanh = Weight("Weight_update_gate_tanh_bias_to_update_gate_tanh", weight_init, solver);
+		Weight_uGate_SLin_bias_to_uGate_SLin = Weight("Weight_uGate_SLin_bias_to_uGate_SLin", weight_init, solver);
 
 		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new DummySolverOp());	solver->setGradientThreshold(100000.0f);
-		Weight_update_gate_tanh_to_update_gate_prod = Weight("Weight_update_gate_tanh_to_update_gate_prod", weight_init, solver);
+		Weight_uGate_SLin_to_uGate_PLin = Weight("Weight_uGate_SLin_to_uGate_PLin", weight_init, solver);
 		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new DummySolverOp());	solver->setGradientThreshold(100000.0f);
-		Weight_update_gate_sigma_to_update_gate_prod = Weight("Weight_update_gate_sigma_to_update_gate_prod", weight_init, solver);
+		Weight_uGate_SSig_to_uGate_PLin = Weight("Weight_uGate_SSig_to_uGate_PLin", weight_init, solver);
 
 		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new DummySolverOp());	solver->setGradientThreshold(100000.0f);
-		Weight_forget_gate_prod_to_memory_cell = Weight("Weight_forget_gate_prod_to_memory_cell", weight_init, solver);
+		Weight_fGate_PLin_to_MC = Weight("Weight_fGate_PLin_to_MC", weight_init, solver);
 		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new DummySolverOp());	solver->setGradientThreshold(100000.0f);
-		Weight_update_gate_prod_to_memory_cell = Weight("Weight_update_gate_prod_to_memory_cell", weight_init, solver);
+		Weight_uGate_PLin_to_MC = Weight("Weight_uGate_PLin_to_MC", weight_init, solver);
 
 		weight_init.reset(new RandWeightInitOp(2.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
 		//weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
-		Weight_i_rand_to_output_gate_sigma = Weight("Weight_i_rand_to_output_gate_sigma", weight_init, solver);
+		Weight_i_rand_to_oGate_SSig = Weight("Weight_i_rand_to_oGate_SSig", weight_init, solver);
 		weight_init.reset(new RandWeightInitOp(2.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
 		//weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
-		Weight_i_mask_to_output_gate_sigma = Weight("Weight_i_mask_to_output_gate_sigma", weight_init, solver);
+		Weight_i_mask_to_oGate_SSig = Weight("Weight_i_mask_to_oGate_SSig", weight_init, solver);
 		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
-		Weight_output_gate_sigma_bias_to_output_gate_sigma = Weight("Weight_output_gate_sigma_bias_to_output_gate_sigma", weight_init, solver);
+		Weight_oGate_SSig_bias_to_oGate_SSig = Weight("Weight_oGate_SSig_bias_to_oGate_SSig", weight_init, solver);
 
 		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new DummySolverOp());	solver->setGradientThreshold(100000.0f); //
-		Weight_output_gate_sigma_to_output_gate_prod = Weight("Weight_output_gate_sigma_to_output_gate_prod", weight_init, solver);
+		Weight_oGate_SSig_to_oGate_PLin = Weight("Weight_oGate_SSig_to_oGate_PLin", weight_init, solver);
 		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new DummySolverOp());	solver->setGradientThreshold(100000.0f);
-		Weight_memory_cell_to_output_gate_prod = Weight("Weight_memory_cell_to_output_gate_prod", weight_init, solver);
+		Weight_MC_to_oGate_PLin = Weight("Weight_MC_to_oGate_PLin", weight_init, solver);
 
 		weight_init.reset(new RandWeightInitOp(2.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
-		Weight_output_gate_prod_to_o = Weight("Weight_output_gate_prod_to_o", weight_init, solver);
+		Weight_oGate_PLin_to_o = Weight("Weight_oGate_PLin_to_o", weight_init, solver);
 
 		weight_init.reset();
 		solver.reset();
 		// links
-		Link_i_rand_to_forget_gate_sigma = Link("Link_i_rand_to_forget_gate_sigma", "Input_0", "forget_gate_sigma", "Weight_i_rand_to_forget_gate_sigma");
-		Link_i_mask_to_forget_gate_sigma = Link("Link_i_mask_to_forget_gate_sigma", "Input_1", "forget_gate_sigma", "Weight_i_mask_to_forget_gate_sigma");
-		Link_forget_gate_sigma_bias_to_forget_gate_sigma = Link("Link_forget_gate_sigma_bias_to_forget_gate_sigma", "forget_gate_sigma_bias", "forget_gate_sigma", "Weight_forget_gate_sigma_bias_to_forget_gate_sigma");
-		Link_memory_cell_to_forget_gate_prod = Link("Link_memory_cell_to_forget_gate_prod", "memory_cell", "forget_gate_prod", "Weight_memory_cell_to_forget_gate_prod");
-		Link_forget_gate_sigma_to_forget_gate_prod = Link("Link_forget_gate_sigma_to_forget_gate_prod", "forget_gate_sigma", "forget_gate_prod", "Weight_forget_gate_sigma_to_forget_gate_prod");
-		Link_i_rand_to_update_gate_sigma = Link("Link_i_rand_to_update_gate_sigma", "Input_0", "update_gate_sigma", "Weight_i_rand_to_update_gate_sigma");
-		Link_i_mask_to_update_gate_sigma = Link("Link_i_mask_to_update_gate_sigma", "Input_1", "update_gate_sigma", "Weight_i_mask_to_update_gate_sigma");
-		Link_update_gate_sigma_bias_to_update_gate_sigma = Link("Link_update_gate_sigma_bias_to_update_gate_sigma", "update_gate_sigma_bias", "update_gate_sigma", "Weight_update_gate_sigma_bias_to_update_gate_sigma");
-		Link_i_rand_to_update_gate_tanh = Link("Link_i_rand_to_update_gate_tanh", "Input_0", "update_gate_tanh", "Weight_i_rand_to_update_gate_tanh");
-		Link_i_mask_to_update_gate_tanh = Link("Link_i_mask_to_update_gate_tanh", "Input_1", "update_gate_tanh", "Weight_i_mask_to_update_gate_tanh");
-		Link_update_gate_tanh_bias_to_update_gate_tanh = Link("Link_update_gate_tanh_bias_to_update_gate_tanh", "update_gate_tanh_bias", "update_gate_tanh", "Weight_update_gate_tanh_bias_to_update_gate_tanh");
-		Link_update_gate_tanh_to_update_gate_prod = Link("Link_update_gate_tanh_to_update_gate_prod", "update_gate_tanh", "update_gate_prod", "Weight_update_gate_tanh_to_update_gate_prod");
-		Link_update_gate_sigma_to_update_gate_prod = Link("Link_update_gate_sigma_to_update_gate_prod", "update_gate_sigma", "update_gate_prod", "Weight_update_gate_sigma_to_update_gate_prod");
-		Link_forget_gate_prod_to_memory_cell = Link("Link_forget_gate_prod_to_memory_cell", "forget_gate_prod", "memory_cell", "Weight_update_gate_prod_to_memory_cell");
-		Link_update_gate_prod_to_memory_cell = Link("Link_update_gate_prod_to_memory_cell", "update_gate_prod", "memory_cell", "Weight_update_gate_prod_to_memory_cell");
-		Link_i_rand_to_output_gate_sigma = Link("Link_i_rand_to_output_gate_sigma", "Input_0", "output_gate_sigma", "Weight_i_rand_to_output_gate_sigma");
-		Link_i_mask_to_output_gate_sigma = Link("Link_i_mask_to_output_gate_sigma", "Input_1", "output_gate_sigma", "Weight_i_mask_to_output_gate_sigma");
-		Link_output_gate_sigma_bias_to_output_gate_sigma = Link("Link_output_gate_sigma_bias_to_output_gate_sigma", "output_gate_sigma_bias", "output_gate_sigma", "Weight_output_gate_sigma_bias_to_output_gate_sigma");
-		Link_output_gate_sigma_to_output_gate_prod = Link("Link_output_gate_sigma_to_output_gate_prod", "output_gate_sigma", "output_gate_prod", "Weight_output_gate_sigma_to_output_gate_prod");
-		Link_memory_cell_to_output_gate_prod = Link("Link_memory_cell_to_output_gate_prod", "memory_cell", "output_gate_prod", "Weight_memory_cell_to_output_gate_prod");
-		Link_output_gate_prod_to_o = Link("Link_output_gate_prod_to_o ", "output_gate_prod", "Output_0", "Weight_output_gate_prod_to_o");
+		Link_i_rand_to_fGate_SSig = Link("Link_i_rand_to_fGate_SSig", "Input_0", "fGate_SSig", "Weight_i_rand_to_fGate_SSig");
+		Link_i_mask_to_fGate_SSig = Link("Link_i_mask_to_fGate_SSig", "Input_1", "fGate_SSig", "Weight_i_mask_to_fGate_SSig");
+		Link_fGate_SSig_bias_to_fGate_SSig = Link("Link_fGate_SSig_bias_to_fGate_SSig", "fGate_SSig_bias", "fGate_SSig", "Weight_fGate_SSig_bias_to_fGate_SSig");
+		Link_MC_to_fGate_PLin = Link("Link_MC_to_fGate_PLin", "MC", "fGate_PLin", "Weight_MC_to_fGate_PLin");
+		Link_fGate_SSig_to_fGate_PLin = Link("Link_fGate_SSig_to_fGate_PLin", "fGate_SSig", "fGate_PLin", "Weight_fGate_SSig_to_fGate_PLin");
+		Link_i_rand_to_uGate_SSig = Link("Link_i_rand_to_uGate_SSig", "Input_0", "uGate_SSig", "Weight_i_rand_to_uGate_SSig");
+		Link_i_mask_to_uGate_SSig = Link("Link_i_mask_to_uGate_SSig", "Input_1", "uGate_SSig", "Weight_i_mask_to_uGate_SSig");
+		Link_uGate_SSig_bias_to_uGate_SSig = Link("Link_uGate_SSig_bias_to_uGate_SSig", "uGate_SSig_bias", "uGate_SSig", "Weight_uGate_SSig_bias_to_uGate_SSig");
+		Link_i_rand_to_uGate_SLin = Link("Link_i_rand_to_uGate_SLin", "Input_0", "uGate_SLin", "Weight_i_rand_to_uGate_SLin");
+		Link_i_mask_to_uGate_SLin = Link("Link_i_mask_to_uGate_SLin", "Input_1", "uGate_SLin", "Weight_i_mask_to_uGate_SLin");
+		Link_uGate_SLin_bias_to_uGate_SLin = Link("Link_uGate_SLin_bias_to_uGate_SLin", "uGate_SLin_bias", "uGate_SLin", "Weight_uGate_SLin_bias_to_uGate_SLin");
+		Link_uGate_SLin_to_uGate_PLin = Link("Link_uGate_SLin_to_uGate_PLin", "uGate_SLin", "uGate_PLin", "Weight_uGate_SLin_to_uGate_PLin");
+		Link_uGate_SSig_to_uGate_PLin = Link("Link_uGate_SSig_to_uGate_PLin", "uGate_SSig", "uGate_PLin", "Weight_uGate_SSig_to_uGate_PLin");
+		Link_fGate_PLin_to_MC = Link("Link_fGate_PLin_to_MC", "fGate_PLin", "MC", "Weight_fGate_PLin_to_MC");
+		Link_uGate_PLin_to_MC = Link("Link_uGate_PLin_to_MC", "uGate_PLin", "MC", "Weight_uGate_PLin_to_MC");
+		Link_i_rand_to_oGate_SSig = Link("Link_i_rand_to_oGate_SSig", "Input_0", "oGate_SSig", "Weight_i_rand_to_oGate_SSig");
+		Link_i_mask_to_oGate_SSig = Link("Link_i_mask_to_oGate_SSig", "Input_1", "oGate_SSig", "Weight_i_mask_to_oGate_SSig");
+		Link_oGate_SSig_bias_to_oGate_SSig = Link("Link_oGate_SSig_bias_to_oGate_SSig", "oGate_SSig_bias", "oGate_SSig", "Weight_oGate_SSig_bias_to_oGate_SSig");
+		Link_oGate_SSig_to_oGate_PLin = Link("Link_oGate_SSig_to_oGate_PLin", "oGate_SSig", "oGate_PLin", "Weight_oGate_SSig_to_oGate_PLin");
+		Link_MC_to_oGate_PLin = Link("Link_MC_to_oGate_PLin", "MC", "oGate_PLin", "Weight_MC_to_oGate_PLin");
+		Link_oGate_PLin_to_o = Link("Link_oGate_PLin_to_o ", "oGate_PLin", "Output_0", "Weight_oGate_PLin_to_o");
 
 		// add nodes, links, and weights to the model
 		model.setName("MemoryCell");
-		model.addNodes({ i_rand, i_mask, memory_cell, o,
-			forget_gate_sigma, forget_gate_prod, update_gate_tanh, update_gate_sigma, update_gate_prod, output_gate_sigma, output_gate_prod,
-			forget_gate_sigma_bias, forget_gate_prod_bias, update_gate_tanh_bias, update_gate_sigma_bias, update_gate_prod_bias, output_gate_sigma_bias, output_gate_prod_bias });
-		model.addWeights({ Weight_i_rand_to_forget_gate_sigma, Weight_i_mask_to_forget_gate_sigma, Weight_forget_gate_sigma_bias_to_forget_gate_sigma,
-			Weight_memory_cell_to_forget_gate_prod, Weight_forget_gate_sigma_to_forget_gate_prod,
-			Weight_i_rand_to_update_gate_sigma, Weight_i_mask_to_update_gate_sigma, Weight_update_gate_sigma_bias_to_update_gate_sigma,
-			Weight_i_rand_to_update_gate_tanh, Weight_i_mask_to_update_gate_tanh, Weight_update_gate_tanh_bias_to_update_gate_tanh,
-			Weight_update_gate_tanh_to_update_gate_prod, Weight_update_gate_sigma_to_update_gate_prod,
-			Weight_forget_gate_prod_to_memory_cell, Weight_update_gate_prod_to_memory_cell,
-			Weight_i_rand_to_output_gate_sigma, Weight_i_mask_to_output_gate_sigma, Weight_output_gate_sigma_bias_to_output_gate_sigma,
-			Weight_output_gate_sigma_to_output_gate_prod, Weight_memory_cell_to_output_gate_prod,
-			Weight_output_gate_prod_to_o });
-		model.addLinks({ Link_i_rand_to_forget_gate_sigma, Link_i_mask_to_forget_gate_sigma, Link_forget_gate_sigma_bias_to_forget_gate_sigma,
-			Link_memory_cell_to_forget_gate_prod, Link_forget_gate_sigma_to_forget_gate_prod,
-			Link_i_rand_to_update_gate_sigma, Link_i_mask_to_update_gate_sigma, Link_update_gate_sigma_bias_to_update_gate_sigma,
-			Link_i_rand_to_update_gate_tanh, Link_i_mask_to_update_gate_tanh, Link_update_gate_tanh_bias_to_update_gate_tanh,
-			Link_update_gate_tanh_to_update_gate_prod, Link_update_gate_sigma_to_update_gate_prod,
-			Link_forget_gate_prod_to_memory_cell, Link_update_gate_prod_to_memory_cell,
-			Link_i_rand_to_output_gate_sigma, Link_i_mask_to_output_gate_sigma, Link_output_gate_sigma_bias_to_output_gate_sigma,
-			Link_output_gate_sigma_to_output_gate_prod, Link_memory_cell_to_output_gate_prod,
-			Link_output_gate_prod_to_o });
+		model.addNodes({ i_rand, i_mask, MC, o,
+			fGate_SSig, fGate_PLin, uGate_SLin, uGate_SSig, uGate_PLin, oGate_SSig, oGate_PLin,
+			fGate_SSig_bias, fGate_PLin_bias, uGate_SLin_bias, uGate_SSig_bias, uGate_PLin_bias, oGate_SSig_bias, oGate_PLin_bias });
+		model.addWeights({ Weight_i_rand_to_fGate_SSig, Weight_i_mask_to_fGate_SSig, Weight_fGate_SSig_bias_to_fGate_SSig,
+			Weight_MC_to_fGate_PLin, Weight_fGate_SSig_to_fGate_PLin,
+			Weight_i_rand_to_uGate_SSig, Weight_i_mask_to_uGate_SSig, Weight_uGate_SSig_bias_to_uGate_SSig,
+			Weight_i_rand_to_uGate_SLin, Weight_i_mask_to_uGate_SLin, Weight_uGate_SLin_bias_to_uGate_SLin,
+			Weight_uGate_SLin_to_uGate_PLin, Weight_uGate_SSig_to_uGate_PLin,
+			Weight_fGate_PLin_to_MC, Weight_uGate_PLin_to_MC,
+			Weight_i_rand_to_oGate_SSig, Weight_i_mask_to_oGate_SSig, Weight_oGate_SSig_bias_to_oGate_SSig,
+			Weight_oGate_SSig_to_oGate_PLin, Weight_MC_to_oGate_PLin,
+			Weight_oGate_PLin_to_o });
+		model.addLinks({ Link_i_rand_to_fGate_SSig, Link_i_mask_to_fGate_SSig, Link_fGate_SSig_bias_to_fGate_SSig,
+			Link_MC_to_fGate_PLin, Link_fGate_SSig_to_fGate_PLin,
+			Link_i_rand_to_uGate_SSig, Link_i_mask_to_uGate_SSig, Link_uGate_SSig_bias_to_uGate_SSig,
+			Link_i_rand_to_uGate_SLin, Link_i_mask_to_uGate_SLin, Link_uGate_SLin_bias_to_uGate_SLin,
+			Link_uGate_SLin_to_uGate_PLin, Link_uGate_SSig_to_uGate_PLin,
+			Link_fGate_PLin_to_MC, Link_uGate_PLin_to_MC,
+			Link_i_rand_to_oGate_SSig, Link_i_mask_to_oGate_SSig, Link_oGate_SSig_bias_to_oGate_SSig,
+			Link_oGate_SSig_to_oGate_PLin, Link_MC_to_oGate_PLin,
+			Link_oGate_PLin_to_o });
 		std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>());
 		model.setLossFunction(loss_function);
 		std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
@@ -611,7 +790,7 @@ public:
 		Link_update_gate_tanh_bias_to_update_gate_tanh = Link("Link_update_gate_tanh_bias_to_update_gate_tanh", "update_gate_tanh_bias", "update_gate_tanh", "Weight_update_gate_tanh_bias_to_update_gate_tanh");
 		Link_update_gate_tanh_to_update_gate_prod = Link("Link_update_gate_tanh_to_update_gate_prod", "update_gate_tanh", "update_gate_prod", "Weight_update_gate_tanh_to_update_gate_prod");
 		Link_update_gate_sigma_to_update_gate_prod = Link("Link_update_gate_sigma_to_update_gate_prod", "update_gate_sigma", "update_gate_prod", "Weight_update_gate_sigma_to_update_gate_prod");
-		Link_forget_gate_prod_to_memory_cell = Link("Link_forget_gate_prod_to_memory_cell", "forget_gate_prod", "memory_cell", "Weight_update_gate_prod_to_memory_cell");
+		Link_forget_gate_prod_to_memory_cell = Link("Link_forget_gate_prod_to_memory_cell", "forget_gate_prod", "memory_cell", "Weight_forget_gate_prod_to_memory_cell");
 		Link_update_gate_prod_to_memory_cell = Link("Link_update_gate_prod_to_memory_cell", "update_gate_prod", "memory_cell", "Weight_update_gate_prod_to_memory_cell");
 		Link_memory_cell_to_memory_cell = Link("Link_memory_cell_to_memory_cell", "memory_cell", "memory_cell", "Weight_memory_cell_to_memory_cell");
 		Link_i_rand_to_output_gate_sigma = Link("Link_i_rand_to_output_gate_sigma", "Input_0", "output_gate_sigma", "Weight_i_rand_to_output_gate_sigma");
@@ -759,10 +938,10 @@ int main(int argc, char** argv)
 	// define the model replicator for growth mode
 	ModelTrainerExt model_trainer;
 	model_trainer.setBatchSize(1);
-	model_trainer.setMemorySize(25);
-	model_trainer.setNEpochsTraining(500);
-	model_trainer.setNEpochsValidation(5);
-	model_trainer.setVerbosityLevel(2);
+	model_trainer.setMemorySize(data_simulator.sequence_length_);
+	model_trainer.setNEpochsTraining(5000);
+	model_trainer.setNEpochsValidation(10);
+	model_trainer.setVerbosityLevel(1);
 
 	// define the model replicator for growth mode
 	ModelReplicatorExt model_replicator;
@@ -791,7 +970,8 @@ int main(int argc, char** argv)
 		// make the model name
 		//Model model = model_trainer.makeModelSolution();
 		//Model model = model_trainer.makeModel();
-		Model model = model_trainer.makeMemoryUnit();
+		Model model = model_trainer.makeMemoryUnitV02();
+		//Model model = model_trainer.makeMemoryUnitV01();
 		model.initWeights();
 
 		char model_name_char[512];
@@ -802,15 +982,29 @@ int main(int argc, char** argv)
 		model.setId(i);
 
 		population.push_back(model);
-		PopulationTrainerFile population_trainer_file;
-		population_trainer_file.storeModels(population, "AddProb");
 	}
+
+	// duplicate the memory cell
+	model_replicator.setRandomModifications(
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(1, 1),
+		std::make_pair(0, 0));
+	population_trainer.replicateModels(population, model_replicator, input_nodes, output_nodes,
+		"", 1);
+
+	PopulationTrainerFile population_trainer_file;
+	population_trainer_file.storeModels(population, "AddProb");
 
 	// Evolve the population
 	std::vector<std::vector<std::pair<int, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
 		population, model_trainer, model_replicator, data_simulator, input_nodes, output_nodes, n_threads);
 
-	PopulationTrainerFile population_trainer_file;
+	//PopulationTrainerFile population_trainer_file;
 	population_trainer_file.storeModels(population, "AddProb");
 	population_trainer_file.storeModelValidations("AddProbValidationErrors.csv", models_validation_errors_per_generation.back());
 

@@ -2547,6 +2547,7 @@ namespace SmartPeak
 			if (std::count(input_nodes.begin(), input_nodes.end(), node_map.second->getName()) != 0)
 			{
 				node_map.second->setOutput(one);
+				node_map.second->setInput(one);
 				node_map.second->setError(zero);
 				node_map.second->setDerivative(one);
 				node_map.second->setDt(one);
@@ -2554,6 +2555,7 @@ namespace SmartPeak
 			else if (std::count(output_nodes.begin(), output_nodes.end(), node_map.second->getName()) != 0)
 			{
 				node_map.second->setOutput(zero);
+				node_map.second->setInput(zero);
 				node_map.second->setError(one);
 				node_map.second->setDerivative(one);
 				node_map.second->setDt(one);
@@ -2561,6 +2563,7 @@ namespace SmartPeak
 			else
 			{
 				node_map.second->setOutput(zero);
+				node_map.second->setInput(zero);
 				node_map.second->setError(zero);
 				node_map.second->setDerivative(one);
 				node_map.second->setDt(one);
