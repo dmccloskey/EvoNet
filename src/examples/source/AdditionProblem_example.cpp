@@ -470,25 +470,30 @@ public:
 		model.setName("MemoryCell");
 		model.addNodes({ i_rand, i_mask, MC, o,
 			fGate_SSig, fGate_PLin, uGate_SLin, uGate_SSig, uGate_PLin, oGate_SSig, oGate_PLin,
-			fGate_SSig_bias, fGate_PLin_bias, uGate_SLin_bias, uGate_SSig_bias, uGate_PLin_bias, oGate_SSig_bias, oGate_PLin_bias });
-		model.addWeights({ Weight_i_rand_to_fGate_SSig, Weight_i_mask_to_fGate_SSig, Weight_fGate_SSig_bias_to_fGate_SSig,
+			//fGate_SSig_bias, fGate_PLin_bias, uGate_SLin_bias, uGate_SSig_bias, uGate_PLin_bias, oGate_SSig_bias, oGate_PLin_bias
+			});
+		model.addWeights({ Weight_i_rand_to_fGate_SSig, Weight_i_mask_to_fGate_SSig, 
 			Weight_MC_to_fGate_PLin, Weight_fGate_SSig_to_fGate_PLin,
-			Weight_i_rand_to_uGate_SSig, Weight_i_mask_to_uGate_SSig, Weight_uGate_SSig_bias_to_uGate_SSig,
-			Weight_i_rand_to_uGate_SLin, Weight_i_mask_to_uGate_SLin, Weight_uGate_SLin_bias_to_uGate_SLin,
+			Weight_i_rand_to_uGate_SSig, Weight_i_mask_to_uGate_SSig, 
+			Weight_i_rand_to_uGate_SLin, Weight_i_mask_to_uGate_SLin, 
 			Weight_uGate_SLin_to_uGate_PLin, Weight_uGate_SSig_to_uGate_PLin,
 			Weight_fGate_PLin_to_MC, Weight_uGate_PLin_to_MC,
-			Weight_i_rand_to_oGate_SSig, Weight_i_mask_to_oGate_SSig, Weight_oGate_SSig_bias_to_oGate_SSig,
+			Weight_i_rand_to_oGate_SSig, Weight_i_mask_to_oGate_SSig, 
 			Weight_oGate_SSig_to_oGate_PLin, Weight_MC_to_oGate_PLin,
-			Weight_oGate_PLin_to_o });
-		model.addLinks({ Link_i_rand_to_fGate_SSig, Link_i_mask_to_fGate_SSig, Link_fGate_SSig_bias_to_fGate_SSig,
+			Weight_oGate_PLin_to_o,
+			//Weight_fGate_SSig_bias_to_fGate_SSig, Weight_uGate_SSig_bias_to_uGate_SSig, Weight_uGate_SLin_bias_to_uGate_SLin, Weight_oGate_SSig_bias_to_oGate_SSig
+			});
+		model.addLinks({ Link_i_rand_to_fGate_SSig, Link_i_mask_to_fGate_SSig,
 			Link_MC_to_fGate_PLin, Link_fGate_SSig_to_fGate_PLin,
-			Link_i_rand_to_uGate_SSig, Link_i_mask_to_uGate_SSig, Link_uGate_SSig_bias_to_uGate_SSig,
-			Link_i_rand_to_uGate_SLin, Link_i_mask_to_uGate_SLin, Link_uGate_SLin_bias_to_uGate_SLin,
+			Link_i_rand_to_uGate_SSig, Link_i_mask_to_uGate_SSig,
+			Link_i_rand_to_uGate_SLin, Link_i_mask_to_uGate_SLin,
 			Link_uGate_SLin_to_uGate_PLin, Link_uGate_SSig_to_uGate_PLin,
 			Link_fGate_PLin_to_MC, Link_uGate_PLin_to_MC,
-			Link_i_rand_to_oGate_SSig, Link_i_mask_to_oGate_SSig, Link_oGate_SSig_bias_to_oGate_SSig,
+			Link_i_rand_to_oGate_SSig, Link_i_mask_to_oGate_SSig,
 			Link_oGate_SSig_to_oGate_PLin, Link_MC_to_oGate_PLin,
-			Link_oGate_PLin_to_o });
+			Link_oGate_PLin_to_o,
+			//Link_fGate_SSig_bias_to_fGate_SSig, Link_uGate_SSig_bias_to_uGate_SSig, Link_uGate_SLin_bias_to_uGate_SLin, Link_oGate_SSig_bias_to_oGate_SSig
+			});
 		std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>());
 		model.setLossFunction(loss_function);
 		std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
@@ -911,8 +916,8 @@ int main(int argc, char** argv)
 {
 	// define the population trainer parameters
 	PopulationTrainerExt population_trainer;
-	population_trainer.setNGenerations(1);
-	//population_trainer.setNGenerations(20);
+	//population_trainer.setNGenerations(1);
+	population_trainer.setNGenerations(20);
 	population_trainer.setNTop(3);
 	population_trainer.setNRandom(3);
 	population_trainer.setNReplicatesPerModel(3);
@@ -939,7 +944,7 @@ int main(int argc, char** argv)
 	ModelTrainerExt model_trainer;
 	model_trainer.setBatchSize(1);
 	model_trainer.setMemorySize(data_simulator.sequence_length_);
-	model_trainer.setNEpochsTraining(5000);
+	model_trainer.setNEpochsTraining(500);
 	model_trainer.setNEpochsValidation(10);
 	model_trainer.setVerbosityLevel(1);
 
@@ -970,8 +975,8 @@ int main(int argc, char** argv)
 		// make the model name
 		//Model model = model_trainer.makeModelSolution();
 		//Model model = model_trainer.makeModel();
-		Model model = model_trainer.makeMemoryUnitV02();
-		//Model model = model_trainer.makeMemoryUnitV01();
+		//Model model = model_trainer.makeMemoryUnitV02();
+		Model model = model_trainer.makeMemoryUnitV01();
 		model.initWeights();
 
 		char model_name_char[512];
