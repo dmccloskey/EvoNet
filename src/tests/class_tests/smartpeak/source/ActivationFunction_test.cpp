@@ -306,7 +306,6 @@ BOOST_AUTO_TEST_CASE(operationfunctionReTanHGradOp)
   BOOST_CHECK_CLOSE(operation(-10.0), 0.0, 1e-6);
 }
 
-
 /**
 LinearOp Tests
 */
@@ -361,6 +360,119 @@ BOOST_AUTO_TEST_CASE(operationfunctionLinearGradOp)
 	BOOST_CHECK_CLOSE(operation(10.0), 1.0, 1e-6);
 	BOOST_CHECK_CLOSE(operation(-1.0), 1.0, 1e-6);
 	BOOST_CHECK_CLOSE(operation(-10.0), 1.0, 1e-6);
+}
+
+
+/**
+InverseOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorInverseOp)
+{
+	InverseOp<double>* ptrInverse = nullptr;
+	InverseOp<double>* nullPointerInverse = nullptr;
+	BOOST_CHECK_EQUAL(ptrInverse, nullPointerInverse);
+}
+
+BOOST_AUTO_TEST_CASE(destructorInverseOp)
+{
+	InverseOp<double>* ptrInverse = nullptr;
+	ptrInverse = new InverseOp<double>();
+	delete ptrInverse;
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionInverseOp)
+{
+	InverseOp<double> operation;
+
+	BOOST_CHECK_CLOSE(operation(0.0), 0.0, 1e-6);
+	BOOST_CHECK_CLOSE(operation(1.0), 1.0, 1e-6);
+	BOOST_CHECK_CLOSE(operation(10.0), 0.1, 1e-6);
+	BOOST_CHECK_CLOSE(operation(-1.0), -1.0, 1e-6);
+	BOOST_CHECK_CLOSE(operation(-10.0), -0.1, 1e-6);
+}
+
+/**
+InverseGradOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorInverseGradOp)
+{
+	InverseGradOp<double>* ptrInverseGrad = nullptr;
+	InverseGradOp<double>* nullPointerInverseGrad = nullptr;
+	BOOST_CHECK_EQUAL(ptrInverseGrad, nullPointerInverseGrad);
+}
+
+BOOST_AUTO_TEST_CASE(destructorInverseGradOp)
+{
+	InverseGradOp<double>* ptrInverseGrad = nullptr;
+	ptrInverseGrad = new InverseGradOp<double>();
+	delete ptrInverseGrad;
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionInverseGradOp)
+{
+	InverseGradOp<double> operation;
+
+	BOOST_CHECK_CLOSE(operation(0.0), 0.0, 1e-6);
+	BOOST_CHECK_CLOSE(operation(1.0), -1.0, 1e-6);
+	BOOST_CHECK_CLOSE(operation(10.0), -0.01, 1e-6);
+	BOOST_CHECK_CLOSE(operation(-1.0), -1.0, 1e-6);
+	BOOST_CHECK_CLOSE(operation(-10.0), -0.01, 1e-6);
+}
+
+/**
+ExponentialOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorExponentialOp)
+{
+	ExponentialOp<double>* ptrExponential = nullptr;
+	ExponentialOp<double>* nullPointerExponential = nullptr;
+	BOOST_CHECK_EQUAL(ptrExponential, nullPointerExponential);
+}
+
+BOOST_AUTO_TEST_CASE(destructorExponentialOp)
+{
+	ExponentialOp<double>* ptrExponential = nullptr;
+	ptrExponential = new ExponentialOp<double>();
+	delete ptrExponential;
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionExponentialOp)
+{
+	ExponentialOp<double> operation;
+
+	BOOST_CHECK_CLOSE(operation(0.0), 1.0, 1e-6);
+	BOOST_CHECK_CLOSE(operation(1.0), 2.718281828, 1e-6);
+	BOOST_CHECK_CLOSE(operation(10.0), 22026.46579, 1e-6);
+	BOOST_CHECK_CLOSE(operation(-1.0), 0.367879441, 1e-6);
+	BOOST_CHECK_CLOSE(operation(-10.0), 4.53999E-05, 1e-4);
+}
+
+/**
+ExponentialGradOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorExponentialGradOp)
+{
+	ExponentialGradOp<double>* ptrExponentialGrad = nullptr;
+	ExponentialGradOp<double>* nullPointerExponentialGrad = nullptr;
+	BOOST_CHECK_EQUAL(ptrExponentialGrad, nullPointerExponentialGrad);
+}
+
+BOOST_AUTO_TEST_CASE(destructorExponentialGradOp)
+{
+	ExponentialGradOp<double>* ptrExponentialGrad = nullptr;
+	ptrExponentialGrad = new ExponentialGradOp<double>();
+	delete ptrExponentialGrad;
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionExponentialGradOp)
+{
+	ExponentialGradOp<double> operation;
+
+	BOOST_CHECK_CLOSE(operation(0.0), 1.0, 1e-6);
+	BOOST_CHECK_CLOSE(operation(1.0), 2.718281828, 1e-6);
+	BOOST_CHECK_CLOSE(operation(10.0), 22026.46579, 1e-6);
+	BOOST_CHECK_CLOSE(operation(-1.0), 0.367879441, 1e-6);
+	BOOST_CHECK_CLOSE(operation(-10.0), 4.53999E-05, 1e-4);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

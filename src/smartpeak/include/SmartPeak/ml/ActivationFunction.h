@@ -3,10 +3,12 @@
 #ifndef SMARTPEAK_ACTIVATIONFUNCTION_H
 #define SMARTPEAK_ACTIVATIONFUNCTION_H
 
+
 #include <unsupported/Eigen/CXX11/Tensor>
 #include <cmath>
 #include <random>
 #include <iostream>
+#include <limits>
 
 namespace SmartPeak
 {
@@ -22,12 +24,24 @@ public:
     virtual std::string getName() const = 0;
     // virtual T operator()() const = 0;
     virtual T operator()(const T& x_I) const = 0;
-		T substituteNanInf(const T& x, const T& x_new) const
+		T substituteNanInf(const T& x) const
 		{
-			if (std::isinf(x_new) || std::isnan(x_new))
-				return x;
+			if (x == std::numeric_limits<T>::infinity())
+			{
+				return T(1e24);
+			}
+			else if (x == -std::numeric_limits<T>::infinity())
+			{
+				return T(-1e24);
+			}
+			else if (std::isnan(x))
+			{
+				return T(0);
+			}
 			else
-				return x_new;
+			{
+				return x;
+			}
 		}
   };
 
@@ -82,7 +96,7 @@ public:
     ELUOp(){}; 
     ELUOp(const T& alpha): alpha_(alpha){}; 
     ~ELUOp(){};
-    T operator()(const T& x_I) const { return this->substituteNanInf(T(0), (x_I > 0.0) ? x_I : alpha_ * (std::exp(x_I) - 1)); };
+    T operator()(const T& x_I) const { return this->substituteNanInf((x_I > 0.0) ? x_I : alpha_ * (std::exp(x_I) - 1)); };
     void setAlpha(const T& alpha) { alpha_ = alpha; };
     T getAlpha() const { return alpha_; };
     std::string getName() const{return "ReLUGradOp";};
@@ -126,7 +140,7 @@ private:
 public: 
     SigmoidOp(){}; 
     ~SigmoidOp(){};
-    T operator()(const T& x_I) const { return this->substituteNanInf(T(0), 1 / (1 + std::exp(x_I))); };
+    T operator()(const T& x_I) const { return this->substituteNanInf(1 / (1 + std::exp(x_I))); };
     std::string getName() const{return "ReLUGradOp";};
   };
 
@@ -172,7 +186,7 @@ public:
     T operator()(const T& x_I) const
     {
 			const T x_new = 1 - std::pow(std::tanh(x_I), 2);
-      return this->substituteNanInf(T(0), x_new);
+      return this->substituteNanInf(x_new);
     };
     std::string getName() const{return "ReLUGradOp";};
   };
@@ -188,7 +202,7 @@ public:
     ~ReTanHOp(){};
     T operator()(const T& x_I) const
     { 
-      return this->substituteNanInf(T(0), (x_I > 0.0) ? (std::exp(x_I) - std::exp(-x_I)) / (std::exp(x_I) + std::exp(-x_I)) : 0.0);
+      return this->substituteNanInf((x_I > 0.0) ? (std::exp(x_I) - std::exp(-x_I)) / (std::exp(x_I) + std::exp(-x_I)) : 0.0);
     };
     std::string getName() const{return "ReTanHOp";};
   };
@@ -206,7 +220,7 @@ public:
     {
       SmartPeak::ReTanHOp<T> tanhop;
 			T x_new = (x_I > 0.0) ? 1 - std::pow(tanhop(x_I), 2) : 0.0;
-      return this->substituteNanInf(T(0), x_new);
+      return this->substituteNanInf(x_new);
     };
     std::string getName() const{return "ReTanHGradOp";};
   };
@@ -241,6 +255,70 @@ public:
 			return 1.0;
 		};
 		std::string getName() const { return "LinearGradOp"; };
+	};
+
+	/**
+	@brief Inverse activation function
+	*/
+	template<typename T>
+	class InverseOp : public ActivationOp<T>
+	{
+	public:
+		InverseOp() {};
+		~InverseOp() {};
+		T operator()(const T& x_I) const
+		{
+			return this->substituteNanInf(x_I != 0.0 ? 1 / x_I : 0.0);
+		};
+		std::string getName() const { return "InverseOp"; };
+	};
+
+	/**
+	@brief Inverse gradient
+	*/
+	template<typename T>
+	class InverseGradOp : public ActivationOp<T>
+	{
+	public:
+		InverseGradOp() {};
+		~InverseGradOp() {};
+		T operator()(const T& x_I) const
+		{
+			return this->substituteNanInf(x_I != 0.0 ? -1 / std::pow(x_I, 2) : 0.0);
+		};
+		std::string getName() const { return "InverseGradOp"; };
+	};
+
+	/**
+	@brief Exponential activation function
+	*/
+	template<typename T>
+	class ExponentialOp : public ActivationOp<T>
+	{
+	public:
+		ExponentialOp() {};
+		~ExponentialOp() {};
+		T operator()(const T& x_I) const
+		{
+			return this->substituteNanInf(std::exp(x_I));
+		};
+		std::string getName() const { return "ExponentialOp"; };
+	};
+
+	/**
+	@brief Exponential gradient
+	*/
+	template<typename T>
+	class ExponentialGradOp : public ActivationOp<T>
+	{
+	public:
+		ExponentialGradOp() {};
+		~ExponentialGradOp() {};
+		T operator()(const T& x_I) const
+		{
+			return this->substituteNanInf(std::exp(x_I));
+		};
+		std::string getName() const { return "ExponentialGradOp"; };
 	};
 }
 #endif //SMARTPEAK_ACTIVATIONFUNCTION_H
