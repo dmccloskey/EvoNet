@@ -32,7 +32,9 @@ namespace SmartPeak
     ReLU = 1,
     ELU = 2,
     Sigmoid = 3,
-    TanH = 4
+    TanH = 4,
+		Inverse = 5,
+		Exponential = 6
   };
 
 	enum class NodeIntegration
@@ -172,33 +174,8 @@ public:
     bool checkTimeStep(const int& time_step);
 
     /**
-    @brief The current output is passed through an activation function.
-    Contents are updated in place.
-		
-		[DEPRECATED]
-
-    @param[in] time_step Time step to activate all samples in the batch
-
-    [THREADPOOL/CUDA: move to seperate file for cpu/cuda compilation]
-    */
-    void calculateActivation(const int& time_step);
-
-    /**
-    @brief Calculate the derivative from the output.
-		
-		[DEPRECATED]
-
-    @param[in] time_step Time step to calculate the derivative
-    for all samples in the batch
-
-    [THREADPOOL/CUDA: move to seperate file for cpu/cuda compilation]
-    */
-    void calculateDerivative(const int& time_step);
- 
-    /**
       @brief Check if the output is within the min/max.  
 
-			[DEPRECATED]
     */ 
     void checkOutput();
 

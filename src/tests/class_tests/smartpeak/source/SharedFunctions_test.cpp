@@ -78,6 +78,26 @@ BOOST_AUTO_TEST_CASE(SFcalculateActivation)
   BOOST_CHECK_CLOSE(result(2), 1.0, 1e-6);
   BOOST_CHECK_CLOSE(result(3), -0.761594176, 1e-6);
   BOOST_CHECK_CLOSE(result(4), -1.0, 1e-6);
+
+	// test Inverse
+	result = calculateActivation(
+		NodeType::hidden, NodeActivation::Inverse,
+		net_input, dt);
+	BOOST_CHECK_CLOSE(result(0), 0.0, 1e-6);
+	BOOST_CHECK_CLOSE(result(1), 1.0, 1e-4);
+	BOOST_CHECK_CLOSE(result(2), 0.1, 1e-4);
+	BOOST_CHECK_CLOSE(result(3), -1.0, 1e-4);
+	BOOST_CHECK_CLOSE(result(4), -0.1, 1e-4);
+
+	// test Exponential
+	result = calculateActivation(
+		NodeType::hidden, NodeActivation::Exponential,
+		net_input, dt);
+	BOOST_CHECK_CLOSE(result(0), 1.0, 1e-4);
+	BOOST_CHECK_CLOSE(result(1), 2.718281828, 1e-4);
+	BOOST_CHECK_CLOSE(result(2), 22026.46579, 1e-4);
+	BOOST_CHECK_CLOSE(result(3), 0.367879441, 1e-4);
+	BOOST_CHECK_CLOSE(result(4), 4.53999E-05, 1e-4);
 }
 
 BOOST_AUTO_TEST_CASE(SFcalculateDerivative) 
@@ -140,6 +160,24 @@ BOOST_AUTO_TEST_CASE(SFcalculateDerivative)
   BOOST_CHECK_CLOSE(result(2), 0.0, 1e-6);
   BOOST_CHECK_CLOSE(result(3), 0.419974, 1e-4);
   BOOST_CHECK_CLOSE(result(4), 0.0, 1e-6);
+
+	// test Inverse
+	result = calculateDerivative(
+		NodeType::hidden, NodeActivation::Inverse, output);
+	BOOST_CHECK_CLOSE(result(0), 0.0, 1e-6);
+	BOOST_CHECK_CLOSE(result(1), -1.0, 1e-6);
+	BOOST_CHECK_CLOSE(result(2), -0.01, 1e-4);
+	BOOST_CHECK_CLOSE(result(3), -1.0, 1e-6);
+	BOOST_CHECK_CLOSE(result(4), -0.01, 1e-4);
+
+	// test Exponential
+	result = calculateDerivative(
+		NodeType::hidden, NodeActivation::Exponential, output);
+	BOOST_CHECK_CLOSE(result(0), 1.0, 1e-6);
+	BOOST_CHECK_CLOSE(result(1), 2.718281828, 1e-4);
+	BOOST_CHECK_CLOSE(result(2), 22026.46579, 1e-4);
+	BOOST_CHECK_CLOSE(result(3), 0.367879441, 1e-4);
+	BOOST_CHECK_CLOSE(result(4), 4.53999E-05, 1e-4);
 }
 
 BOOST_AUTO_TEST_CASE(SFcheckNanInf)

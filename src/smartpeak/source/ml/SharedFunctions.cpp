@@ -53,6 +53,16 @@ namespace SmartPeak
 				output.device(threadPoolDevice) = net_input.unaryExpr(LinearOp<float>()) * dt;
 				break;
 			}
+			case NodeActivation::Inverse:
+			{
+				output.device(threadPoolDevice) = net_input.unaryExpr(InverseOp<float>()) * dt;
+				break;
+			}
+			case NodeActivation::Exponential:
+			{
+				output.device(threadPoolDevice) = net_input.unaryExpr(ExponentialOp<float>()) * dt;
+				break;
+			}
       default:
       {
         std::cout << "Node activation not supported." << std::endl;
@@ -102,6 +112,16 @@ namespace SmartPeak
 			case NodeActivation::Linear:
 			{
 				derivative.device(threadPoolDevice) = output.unaryExpr(LinearGradOp<float>());
+				break;
+			}
+			case NodeActivation::Inverse:
+			{
+				derivative.device(threadPoolDevice) = output.unaryExpr(InverseGradOp<float>());
+				break;
+			}
+			case NodeActivation::Exponential:
+			{
+				derivative.device(threadPoolDevice) = output.unaryExpr(ExponentialGradOp<float>());
 				break;
 			}
       default:
