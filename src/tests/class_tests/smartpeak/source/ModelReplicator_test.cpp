@@ -49,7 +49,9 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   model_replicator.setWeightChangeStDev(6.0f);
 	model_replicator.setNNodeActivationChanges(6);
 	model_replicator.setNNodeIntegrationChanges(7);
-	model_replicator.setNodeActivations({NodeActivation::Linear});
+	std::vector<std::pair<std::shared_ptr<ActivationOp<float>>, std::shared_ptr<ActivationOp<float>>>> activations = {
+		std::make_pair(std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>())) };
+	model_replicator.setNodeActivations(activations);
 	model_replicator.setNodeIntegrations({NodeIntegration::Sum});
 
   BOOST_CHECK_EQUAL(model_replicator.getNNodeAdditions(), 1);
@@ -60,7 +62,7 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   BOOST_CHECK_EQUAL(model_replicator.getWeightChangeStDev(), 6.0f);
 	BOOST_CHECK_EQUAL(model_replicator.getNNodeActivationChanges(), 6);
 	BOOST_CHECK_EQUAL(model_replicator.getNNodeIntegrationChanges(), 7);
-	BOOST_CHECK(model_replicator.getNodeActivations()[0] == NodeActivation::Linear);
+	BOOST_CHECK(model_replicator.getNodeActivations()[0] == activations[0]);
 	BOOST_CHECK(model_replicator.getNodeIntegrations()[0] == NodeIntegration::Sum);
 }
 
@@ -293,7 +295,7 @@ BOOST_AUTO_TEST_CASE(makeBaselineModel)
   solver.reset(new SGDOp(0.01, 0.9));
   model = model_replicator.makeBaselineModel(
 		2, { 1 }, 2,
-    NodeActivation::ReLU, NodeIntegration::Sum, NodeActivation::ReLU, NodeIntegration::Sum,
+    std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), NodeIntegration::Sum, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), NodeIntegration::Sum,
     weight_init, solver,
     loss_function, loss_function_grad);
 
@@ -326,7 +328,8 @@ BOOST_AUTO_TEST_CASE(makeBaselineModel)
 	std::vector<int> nodes_per_hidden_layer = {};
   model = model_replicator.makeBaselineModel(
 		2, nodes_per_hidden_layer, 2,
-    NodeActivation::ReLU, NodeIntegration::Sum, NodeActivation::ReLU, NodeIntegration::Sum,
+    std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), NodeIntegration::Sum, 
+		std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), NodeIntegration::Sum,
     weight_init, solver,
 		loss_function, loss_function_grad);
 
@@ -365,14 +368,14 @@ Model makeModel1()
   Model model1;
 
   // Toy network: 1 hidden layer, fully connected, DAG
-  i1 = Node("0", NodeType::input, NodeStatus::activated, NodeActivation::Linear, NodeIntegration::Sum);
-  i2 = Node("1", NodeType::input, NodeStatus::activated, NodeActivation::Linear, NodeIntegration::Sum);
-  h1 = Node("2", NodeType::hidden, NodeStatus::deactivated, NodeActivation::ReLU, NodeIntegration::Sum);
-  h2 = Node("3", NodeType::hidden, NodeStatus::deactivated, NodeActivation::ReLU, NodeIntegration::Sum);
-  o1 = Node("4", NodeType::output, NodeStatus::deactivated, NodeActivation::ReLU, NodeIntegration::Sum);
-  o2 = Node("5", NodeType::output, NodeStatus::deactivated, NodeActivation::ReLU, NodeIntegration::Sum);
-  b1 = Node("6", NodeType::bias, NodeStatus::activated, NodeActivation::Linear, NodeIntegration::Sum);
-  b2 = Node("7", NodeType::bias, NodeStatus::activated, NodeActivation::Linear, NodeIntegration::Sum);
+  i1 = Node("0", NodeType::input, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum);
+  i2 = Node("1", NodeType::input, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum);
+  h1 = Node("2", NodeType::hidden, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), NodeIntegration::Sum);
+  h2 = Node("3", NodeType::hidden, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), NodeIntegration::Sum);
+  o1 = Node("4", NodeType::output, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), NodeIntegration::Sum);
+  o2 = Node("5", NodeType::output, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), NodeIntegration::Sum);
+  b1 = Node("6", NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum);
+  b2 = Node("7", NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum);
 
   // weights  
   std::shared_ptr<WeightInitOp> weight_init;
@@ -691,7 +694,8 @@ Model model_changeNodeActivation = makeModel1();
 BOOST_AUTO_TEST_CASE(changeNodeActivation)
 {
 	ModelReplicatorExt model_replicator;
-	model_replicator.setNodeActivations({NodeActivation::ELU});
+	model_replicator.setNodeActivations({
+		std::make_pair(std::shared_ptr<ActivationOp<float>>(new ELUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ELUGradOp<float>()))});
 	std::vector<std::string> node_names = { "0", "1", "2", "3", "4", "5", "6", "7" };
 	model_replicator.changeNodeActivation(model_changeNodeActivation);
 
@@ -703,11 +707,11 @@ BOOST_AUTO_TEST_CASE(changeNodeActivation)
 	for (const std::string& node_name : node_names)
 	{
 		const Node node = model_changeNodeActivation.getNode(node_name);
-		if (node.getActivation() == NodeActivation::Linear)
+		if (node.getActivation()->getName() == "LinearOp")
 			++linear_cnt;
-		else if (node.getActivation() == NodeActivation::ReLU)
+		else if (node.getActivation()->getName() == "ReLUOp")
 			++relu_cnt;
-		else if (node.getActivation() == NodeActivation::ELU)
+		else if (node.getActivation()->getName() == "ELUOp")
 			++elu_cnt;
 	}
 
@@ -936,7 +940,7 @@ BOOST_AUTO_TEST_CASE(modifyModel)
 	int node_integration_changes = 0;
 	for (const Node& node : model_modifyModel1.getNodes())
 	{
-		if (node.getActivation() == NodeActivation::ELU) ++node_activation_changes;
+		if (node.getActivation()->getName() == "ELUOp") ++node_activation_changes;
 		if (node.getIntegration() == NodeIntegration::Product) ++node_integration_changes;
 	}
 	BOOST_CHECK_EQUAL(node_activation_changes, 0);
@@ -973,7 +977,7 @@ BOOST_AUTO_TEST_CASE(modifyModel)
 	model_replicator.setNNodeDeletions(0);
 	model_replicator.setNLinkDeletions(0);
 	model_replicator.setNNodeActivationChanges(1);
-	model_replicator.setNodeActivations({NodeActivation::ELU});
+	model_replicator.setNodeActivations({std::make_pair(std::shared_ptr<ActivationOp<float>>(new ELUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ELUGradOp<float>()))});
 	model_replicator.setNNodeIntegrationChanges(0);
 	model_replicator.setNodeIntegrations({NodeIntegration::Product});
 	model_replicator.modifyModel(model_modifyModel4);
@@ -982,7 +986,7 @@ BOOST_AUTO_TEST_CASE(modifyModel)
 	node_integration_changes = 0;
 	for (const Node& node : model_modifyModel4.getNodes())
 	{
-		if (node.getActivation() == NodeActivation::ELU) ++node_activation_changes;
+		if (node.getActivation()->getName() == "ELUOp") ++node_activation_changes;
 		if (node.getIntegration() == NodeIntegration::Product) ++node_integration_changes;
 	}
 	BOOST_CHECK_EQUAL(node_activation_changes, 1);
@@ -995,7 +999,7 @@ BOOST_AUTO_TEST_CASE(modifyModel)
 	model_replicator.setNNodeDeletions(0);
 	model_replicator.setNLinkDeletions(0);
 	model_replicator.setNNodeActivationChanges(0);
-	model_replicator.setNodeActivations({ NodeActivation::ELU });
+	model_replicator.setNodeActivations({ std::make_pair(std::shared_ptr<ActivationOp<float>>(new ELUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ELUGradOp<float>())) });
 	model_replicator.setNNodeIntegrationChanges(1);
 	model_replicator.setNodeIntegrations({ NodeIntegration::Product });
 	model_replicator.modifyModel(model_modifyModel5);
@@ -1004,7 +1008,7 @@ BOOST_AUTO_TEST_CASE(modifyModel)
 	node_integration_changes = 0;
 	for (const Node& node : model_modifyModel5.getNodes())
 	{
-		if (node.getActivation() == NodeActivation::ELU) ++node_activation_changes;
+		if (node.getActivation()->getName() == "ELUOp") ++node_activation_changes;
 		if (node.getIntegration() == NodeIntegration::Product) ++node_integration_changes;
 	}
 	BOOST_CHECK_EQUAL(node_activation_changes, 0);

@@ -29,7 +29,12 @@ BOOST_AUTO_TEST_CASE(destructor)
 
 BOOST_AUTO_TEST_CASE(constructor2) 
 {
-  Node node("1", NodeType::bias, NodeStatus::initialized, NodeActivation::TanH, NodeIntegration::Product);
+	std::shared_ptr<ActivationOp<float>> activation(new TanHOp<float>());
+	std::shared_ptr<ActivationOp<float>> activation_grad(new TanHGradOp<float>());
+
+  Node node("1", NodeType::bias, NodeStatus::initialized, 
+		activation, activation_grad,
+		NodeIntegration::Product);
 
   BOOST_CHECK_EQUAL(node.getId(), -1);
   BOOST_CHECK_EQUAL(node.getName(), "1");
@@ -37,36 +42,39 @@ BOOST_AUTO_TEST_CASE(constructor2)
 	BOOST_CHECK_EQUAL(node.getModuleName(), "");
   BOOST_CHECK(node.getType() == NodeType::bias);
   BOOST_CHECK(node.getStatus() == NodeStatus::initialized);
-  BOOST_CHECK(node.getActivation() == NodeActivation::TanH);
+  BOOST_CHECK_EQUAL(node.getActivation(), activation.get());
+	BOOST_CHECK_EQUAL(node.getActivationGrad(), activation_grad.get());
 	BOOST_CHECK(node.getIntegration() == NodeIntegration::Product);
 }
 
 BOOST_AUTO_TEST_CASE(comparison) 
 {
   Node node, node_test;
-  node = Node("1", NodeType::hidden, NodeStatus::initialized, NodeActivation::ReLU, NodeIntegration::Sum);
+	BOOST_CHECK(node == node_test);
+
+  node = Node("1", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), NodeIntegration::Sum);
   node.setId(1);
-  node_test = Node("1", NodeType::hidden, NodeStatus::initialized, NodeActivation::ReLU, NodeIntegration::Sum);
+  node_test = Node("1", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), NodeIntegration::Sum);
   node_test.setId(1);
-  BOOST_CHECK(node == node_test);
+  BOOST_CHECK(node != node_test);
 
   node.setId(2);
   BOOST_CHECK(node != node_test);
 
-  node = Node("2", NodeType::hidden, NodeStatus::initialized, NodeActivation::ReLU, NodeIntegration::Sum);
+  node = Node("2", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), NodeIntegration::Sum);
   node.setId(1);
   BOOST_CHECK(node != node_test);
 
-  node = Node("1", NodeType::hidden, NodeStatus::initialized, NodeActivation::ELU, NodeIntegration::Sum);
+  node = Node("1", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new ELUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ELUGradOp<float>()), NodeIntegration::Sum);
   BOOST_CHECK(node != node_test);
 
-  node = Node("1", NodeType::hidden, NodeStatus::activated, NodeActivation::ReLU, NodeIntegration::Sum);
+  node = Node("1", NodeType::hidden, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), NodeIntegration::Sum);
   BOOST_CHECK(node != node_test);
 
-  node = Node("1", NodeType::output, NodeStatus::initialized, NodeActivation::ReLU, NodeIntegration::Sum);
+  node = Node("1", NodeType::output, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), NodeIntegration::Sum);
   BOOST_CHECK(node != node_test);
 
-	node = Node("1", NodeType::hidden, NodeStatus::initialized, NodeActivation::ReLU, NodeIntegration::Product);
+	node = Node("1", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), NodeIntegration::Product);
 	BOOST_CHECK(node != node_test);
 }
 
@@ -77,7 +85,10 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   node.setName("Node1");
   node.setType(NodeType::hidden);
   node.setStatus(NodeStatus::initialized);
-  node.setActivation(NodeActivation::ReLU);
+	std::shared_ptr<ActivationOp<float>> activation(new TanHOp<float>());
+	std::shared_ptr<ActivationOp<float>> activation_grad(new TanHGradOp<float>());
+	node.setActivation(activation);
+	node.setActivationGrad(activation_grad);
 	node.setIntegration(NodeIntegration::Sum);
 	node.setModuleId(4);
 	node.setModuleName("Module1");
@@ -86,7 +97,8 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   BOOST_CHECK_EQUAL(node.getName(), "Node1");
   BOOST_CHECK(node.getType() == NodeType::hidden);
   BOOST_CHECK(node.getStatus() == NodeStatus::initialized);
-  BOOST_CHECK(node.getActivation() == NodeActivation::ReLU, NodeIntegration::Sum);
+	BOOST_CHECK_EQUAL(node.getActivation(), activation.get());
+	BOOST_CHECK_EQUAL(node.getActivationGrad(), activation_grad.get());
 	BOOST_CHECK(node.getIntegration() == NodeIntegration::Sum);
 	BOOST_CHECK_EQUAL(node.getModuleId(), 4);
 	BOOST_CHECK_EQUAL(node.getModuleName(), "Module1");

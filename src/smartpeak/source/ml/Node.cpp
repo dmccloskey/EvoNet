@@ -22,6 +22,7 @@ namespace SmartPeak
     type_ = other.type_;
     status_ = other.status_;
     activation_ = other.activation_;
+		activation_grad_ = other.activation_grad_;
 		integration_ = other.integration_;
     output_min_ = other.output_min_;
     output_max_ = other.output_max_;
@@ -32,21 +33,24 @@ namespace SmartPeak
     dt_ = other.dt_;
   }
 
-  Node::Node(const std::string& name, const SmartPeak::NodeType& type,
-    const SmartPeak::NodeStatus& status, const SmartPeak::NodeActivation& activation, const SmartPeak::NodeIntegration& integration):
-    name_(name), type_(type), status_(status), activation_(activation), integration_(integration)
+  Node::Node(const std::string& name, const SmartPeak::NodeType& type, const SmartPeak::NodeStatus& status,
+		const std::shared_ptr<ActivationOp<float>>& activation, const std::shared_ptr<ActivationOp<float>>& activation_grad,
+		const SmartPeak::NodeIntegration& integration):
+    name_(name), type_(type), status_(status), integration_(integration)
   {
+		setActivation(activation);
+		setActivationGrad(activation_grad);
   }
 
-  Node::Node(const int& id, const SmartPeak::NodeType& type,
-    const SmartPeak::NodeStatus& status, const SmartPeak::NodeActivation& activation, const SmartPeak::NodeIntegration& integration):
-    id_(id), type_(type), status_(status), activation_(activation), integration_(integration)
-  {
-    if (name_ == "")
-    {
-      name_ = std::to_string(id);
-    }
-  }
+  //Node::Node(const int& id, const SmartPeak::NodeType& type,
+  //  const SmartPeak::NodeStatus& status, const SmartPeak::NodeActivation& activation, const SmartPeak::NodeIntegration& integration):
+  //  id_(id), type_(type), status_(status), activation_(activation), integration_(integration)
+  //{
+  //  if (name_ == "")
+  //  {
+  //    name_ = std::to_string(id);
+  //  }
+  //}
 
   Node::~Node()
   {
@@ -92,14 +96,35 @@ namespace SmartPeak
     return status_;
   }
 
-  void Node::setActivation(const SmartPeak::NodeActivation& activation)
+  void Node::setActivation(const std::shared_ptr<ActivationOp<float>>& activation)
   {
-    activation_ = activation;
+		activation_.reset();
+		activation_ = std::move(activation);
   }
-  SmartPeak::NodeActivation Node::getActivation() const
+	std::shared_ptr<ActivationOp<float>> Node::getActivationShared() const
+	{
+		return activation_;
+	}
+	ActivationOp<float>*  Node::getActivation() const
   {
-    return activation_;
+    return activation_.get();
   }
+
+	void Node::setActivationGrad(const std::shared_ptr<ActivationOp<float>>& activation_grad)
+	{
+		activation_grad_.reset();
+		activation_grad_ = std::move(activation_grad);
+	}
+
+	std::shared_ptr<ActivationOp<float>> Node::getActivationGradShared() const
+	{
+		return activation_grad_;
+	}
+
+	ActivationOp<float>* Node::getActivationGrad() const
+	{
+		return activation_grad_.get();
+	}
 
 	void Node::setIntegration(const SmartPeak::NodeIntegration& integration)
 	{

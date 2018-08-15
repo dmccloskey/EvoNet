@@ -3,7 +3,9 @@
 #ifndef SMARTPEAK_NODE_H
 #define SMARTPEAK_NODE_H
 
+#include <SmartPeak/ml/ActivationFunction.h>
 #include <unsupported/Eigen/CXX11/Tensor>
+#include <memory>
 #include <vector>
 
 namespace SmartPeak
@@ -52,8 +54,9 @@ namespace SmartPeak
 public:
     Node(); ///< Default constructor
     Node(const Node& other); ///< Copy constructor // [TODO: add test]
-    Node(const std::string& name, const SmartPeak::NodeType& type, const SmartPeak::NodeStatus& status, const SmartPeak::NodeActivation& activation, const SmartPeak::NodeIntegration& integration); ///< Explicit constructor  
-    Node(const int& id, const SmartPeak::NodeType& type, const SmartPeak::NodeStatus& status, const SmartPeak::NodeActivation& activation, const SmartPeak::NodeIntegration& integration); ///< Explicit constructor  
+    Node(const std::string& name, const SmartPeak::NodeType& type, const SmartPeak::NodeStatus& status, 
+			const std::shared_ptr<ActivationOp<float>>& activation, const std::shared_ptr<ActivationOp<float>>& activation_grad, 
+			const SmartPeak::NodeIntegration& integration); ///< Explicit constructor
     ~Node(); ///< Default destructor
 
     inline bool operator==(const Node& other) const
@@ -64,6 +67,7 @@ public:
           type_,
           status_,
           activation_,
+					activation_grad_,
 					integration_,
           name_
         ) == std::tie(
@@ -71,6 +75,7 @@ public:
           other.type_,
           other.status_,
           other.activation_,
+					other.activation_grad_,
 					other.integration_,
           other.name_
         )
@@ -90,6 +95,7 @@ public:
 			module_name_ = other.module_name_;
       type_ = other.type_;
       activation_ = other.activation_;
+			activation_grad_ = other.activation_grad_;
 			integration_ = other.integration_;
       status_ = other.status_;
       output_min_ = other.output_min_;
@@ -114,8 +120,13 @@ public:
     void setStatus(const SmartPeak::NodeStatus& status); ///< status setter
     SmartPeak::NodeStatus getStatus() const; ///< status getter
 
-    void setActivation(const SmartPeak::NodeActivation& activation); ///< activation setter
-    SmartPeak::NodeActivation getActivation() const; ///< activation getter
+    void setActivation(const std::shared_ptr<ActivationOp<float>>& activation); ///< activation setter
+		std::shared_ptr<ActivationOp<float>> getActivationShared() const; // [TODO: add tests]
+		ActivationOp<float>* getActivation() const; ///< activation getter
+
+		void setActivationGrad(const std::shared_ptr<ActivationOp<float>>& activation_grad); ///< activation setter
+		std::shared_ptr<ActivationOp<float>> getActivationGradShared() const; // [TODO: add tests]
+		ActivationOp<float>* getActivationGrad() const; ///< activation getter
 
 		void setIntegration(const SmartPeak::NodeIntegration & integration); ///< integration setter
 		SmartPeak::NodeIntegration getIntegration() const; ///< integration 
@@ -186,7 +197,8 @@ private:
 		std::string module_name_ = ""; ///<Module Name
 		SmartPeak::NodeType type_; ///< Node Type
     SmartPeak::NodeStatus status_; ///< Node Status   
-    SmartPeak::NodeActivation activation_; ///< Node Status   
+    std::shared_ptr<ActivationOp<float>> activation_; ///< Node activation function 
+		std::shared_ptr<ActivationOp<float>> activation_grad_; ///< Node activation function 
 		SmartPeak::NodeIntegration integration_; ///< Node Integration   
 
     float output_min_ = -1.0e6; ///< Min Node output

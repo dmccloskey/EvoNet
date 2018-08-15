@@ -34,11 +34,11 @@ Model makeModel2()
   Weight w1, w2, w3, wb1, wb2;
   Model model2;
   // Toy network: 1 hidden layer, fully connected, DCG
-  i1 = Node("0", NodeType::input, NodeStatus::activated, NodeActivation::Linear, NodeIntegration::Sum);
-  h1 = Node("1", NodeType::hidden, NodeStatus::deactivated, NodeActivation::ReLU, NodeIntegration::Sum);
-  o1 = Node("2", NodeType::output, NodeStatus::deactivated, NodeActivation::ReLU, NodeIntegration::Sum);
-  b1 = Node("3", NodeType::bias, NodeStatus::activated, NodeActivation::Linear, NodeIntegration::Sum);
-  b2 = Node("4", NodeType::bias, NodeStatus::activated, NodeActivation::Linear, NodeIntegration::Sum);
+  i1 = Node("0", NodeType::input, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum);
+  h1 = Node("1", NodeType::hidden, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), NodeIntegration::Sum);
+  o1 = Node("2", NodeType::output, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), NodeIntegration::Sum);
+  b1 = Node("3", NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum);
+  b2 = Node("4", NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum);
   // weights  
   std::shared_ptr<WeightInitOp> weight_init;
   std::shared_ptr<SolverOp> solver;
@@ -799,11 +799,11 @@ Model makeModel2a()
   Weight w1, w2, w3, wb1, wb2;
   Model model2;
   // Toy network: 1 hidden layer, fully connected, DCG
-  i1 = Node("0", NodeType::input, NodeStatus::activated, NodeActivation::Linear, NodeIntegration::Sum);
-  h1 = Node("1", NodeType::hidden, NodeStatus::deactivated, NodeActivation::ReLU, NodeIntegration::Sum);
-  o1 = Node("2", NodeType::output, NodeStatus::deactivated, NodeActivation::ReLU, NodeIntegration::Sum);
-  b1 = Node("3", NodeType::bias, NodeStatus::activated, NodeActivation::Linear, NodeIntegration::Sum);
-  b2 = Node("4", NodeType::bias, NodeStatus::activated, NodeActivation::Linear, NodeIntegration::Sum);
+  i1 = Node("0", NodeType::input, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum);
+  h1 = Node("1", NodeType::hidden, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), NodeIntegration::Sum);
+  o1 = Node("2", NodeType::output, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), NodeIntegration::Sum);
+  b1 = Node("3", NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum);
+  b2 = Node("4", NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum);
   // weights  
   std::shared_ptr<WeightInitOp> weight_init;
   std::shared_ptr<SolverOp> solver;

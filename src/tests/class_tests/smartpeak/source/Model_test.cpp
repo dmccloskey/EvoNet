@@ -73,8 +73,8 @@ BOOST_AUTO_TEST_CASE(pruneNodes)
   Node source1, sink1;
   Link link1;
   Weight weight1;
-  source1 = Node("0", NodeType::hidden, NodeStatus::activated, NodeActivation::ReLU, NodeIntegration::Sum);
-  sink1 = Node("1", NodeType::hidden, NodeStatus::initialized, NodeActivation::ReLU, NodeIntegration::Sum);
+  source1 = Node("0", NodeType::hidden, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), NodeIntegration::Sum);
+  sink1 = Node("1", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), NodeIntegration::Sum);
   weight1 = Weight("0");
   link1 = Link("0", source1.getName(), sink1.getName(), weight1.getName());
 
@@ -106,8 +106,8 @@ BOOST_AUTO_TEST_CASE(pruneWeights)
   Node source1, sink1;
   Link link1;
   Weight weight1;
-  source1 = Node("0", NodeType::hidden, NodeStatus::activated, NodeActivation::ReLU, NodeIntegration::Sum);
-  sink1 = Node("1", NodeType::hidden, NodeStatus::initialized, NodeActivation::ReLU, NodeIntegration::Sum);
+  source1 = Node("0", NodeType::hidden, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), NodeIntegration::Sum);
+  sink1 = Node("1", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), NodeIntegration::Sum);
   weight1 = Weight("0");
   link1 = Link("0", source1.getName(), sink1.getName(), weight1.getName());
 
@@ -138,8 +138,8 @@ BOOST_AUTO_TEST_CASE(pruneLinks)
   Node source1, sink1;
   Link link1;
   Weight weight1;
-  source1 = Node("0", NodeType::hidden, NodeStatus::activated, NodeActivation::ReLU, NodeIntegration::Sum);
-  sink1 = Node("1", NodeType::hidden, NodeStatus::initialized, NodeActivation::ReLU, NodeIntegration::Sum);
+  source1 = Node("0", NodeType::hidden, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), NodeIntegration::Sum);
+  sink1 = Node("1", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), NodeIntegration::Sum);
   weight1 = Weight("0");
   link1 = Link("0", source1.getName(), sink1.getName(), weight1.getName());
   Model model;
@@ -188,8 +188,8 @@ BOOST_AUTO_TEST_CASE(pruneLinks)
 BOOST_AUTO_TEST_CASE(addGetRemoveNodes) 
 {
   Node source1, sink1, source2, sink2;
-  source1 = Node("0", NodeType::hidden, NodeStatus::activated, NodeActivation::ReLU, NodeIntegration::Sum);
-  sink1 = Node("1", NodeType::hidden, NodeStatus::initialized, NodeActivation::ReLU, NodeIntegration::Sum);
+  source1 = Node("0", NodeType::hidden, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), NodeIntegration::Sum);
+  sink1 = Node("1", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), NodeIntegration::Sum);
   Model model;
 
   // add nodes to the model
@@ -206,8 +206,8 @@ BOOST_AUTO_TEST_CASE(addGetRemoveNodes)
   }
 
   // add more nodes to the model
-  source2 = Node(2, NodeType::hidden, NodeStatus::activated, NodeActivation::ReLU, NodeIntegration::Sum);
-  sink2 = Node(3, NodeType::hidden, NodeStatus::initialized, NodeActivation::ReLU, NodeIntegration::Sum);
+  source2 = Node("2", NodeType::hidden, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), NodeIntegration::Sum);
+  sink2 = Node("3", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), NodeIntegration::Sum);
 
   // add nodes to the model
   model.addNodes({source2, sink2});
@@ -273,8 +273,8 @@ BOOST_AUTO_TEST_CASE(addGetRemoveLinks)
 {
   Node source1, sink1;
   Link link1, link2;
-  source1 = Node("0", NodeType::hidden, NodeStatus::activated, NodeActivation::ReLU, NodeIntegration::Sum);
-  sink1 = Node("1", NodeType::hidden, NodeStatus::initialized, NodeActivation::ReLU, NodeIntegration::Sum);
+  source1 = Node("0", NodeType::hidden, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), NodeIntegration::Sum);
+  sink1 = Node("1", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), NodeIntegration::Sum);
   Weight weight1;
   weight1 = Weight("0");
   link1 = Link("0", source1.getName(), sink1.getName(), weight1.getName());
@@ -310,8 +310,8 @@ BOOST_AUTO_TEST_CASE(addGetRemoveLinks)
 
   // add more links and nodes to the model
   Node source2, sink2;
-  source2 = Node("2", NodeType::hidden, NodeStatus::activated, NodeActivation::ReLU, NodeIntegration::Sum);
-  sink2 = Node("3", NodeType::hidden, NodeStatus::initialized, NodeActivation::ReLU, NodeIntegration::Sum);
+  source2 = Node("2", NodeType::hidden, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), NodeIntegration::Sum);
+  sink2 = Node("3", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), NodeIntegration::Sum);
   Weight weight2;
   weight2 = Weight("1");
   link2 = Link("1", source2.getName(), sink2.getName(), weight2.getName());
@@ -365,8 +365,8 @@ BOOST_AUTO_TEST_CASE(comparison)
 {
   Node source, sink;
   Link link1, link2;
-  source = Node("1", NodeType::hidden, NodeStatus::activated, NodeActivation::ReLU, NodeIntegration::Sum);
-  sink = Node("2", NodeType::hidden, NodeStatus::initialized, NodeActivation::ReLU, NodeIntegration::Sum);
+  source = Node("1", NodeType::hidden, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), NodeIntegration::Sum);
+  sink = Node("2", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), NodeIntegration::Sum);
   Weight weight1;
   weight1 = Weight("0");
   link1 = Link("1", source.getName(), sink.getName(), weight1.getName());
@@ -408,10 +408,10 @@ BOOST_AUTO_TEST_CASE(copyAssignment)
 {
 	Node source1, sink1, source2, sink2;
 	Link link1, link2;
-	source1 = Node("1.1", NodeType::hidden, NodeStatus::activated, NodeActivation::ReLU, NodeIntegration::Sum);
-	sink1 = Node("1.2", NodeType::hidden, NodeStatus::initialized, NodeActivation::ReLU, NodeIntegration::Sum);
-	source2 = Node("2.1", NodeType::hidden, NodeStatus::activated, NodeActivation::ReLU, NodeIntegration::Sum);
-	sink2 = Node("2.2", NodeType::hidden, NodeStatus::initialized, NodeActivation::ReLU, NodeIntegration::Sum);
+	source1 = Node("1.1", NodeType::hidden, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), NodeIntegration::Sum);
+	sink1 = Node("1.2", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), NodeIntegration::Sum);
+	source2 = Node("2.1", NodeType::hidden, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), NodeIntegration::Sum);
+	sink2 = Node("2.2", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), NodeIntegration::Sum);
 	Weight weight1, weight2;
 	std::shared_ptr<WeightInitOp> weight_init;
 	std::shared_ptr<SolverOp> solver;
@@ -453,10 +453,10 @@ BOOST_AUTO_TEST_CASE(copy)
 {
   Node source1, sink1, source2, sink2;
   Link link1, link2;
-  source1 = Node("1.1", NodeType::hidden, NodeStatus::activated, NodeActivation::ReLU, NodeIntegration::Sum);
-  sink1 = Node("1.2", NodeType::hidden, NodeStatus::initialized, NodeActivation::ReLU, NodeIntegration::Sum);
-  source2 = Node("2.1", NodeType::hidden, NodeStatus::activated, NodeActivation::ReLU, NodeIntegration::Sum);
-  sink2 = Node("2.2", NodeType::hidden, NodeStatus::initialized, NodeActivation::ReLU, NodeIntegration::Sum);
+  source1 = Node("1.1", NodeType::hidden, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), NodeIntegration::Sum);
+  sink1 = Node("1.2", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), NodeIntegration::Sum);
+  source2 = Node("2.1", NodeType::hidden, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), NodeIntegration::Sum);
+  sink2 = Node("2.2", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), NodeIntegration::Sum);
   Weight weight1, weight2;
   std::shared_ptr<WeightInitOp> weight_init;
   std::shared_ptr<SolverOp> solver;
@@ -498,9 +498,9 @@ BOOST_AUTO_TEST_CASE(pruneModel)
 {
   // minimal toy model
   Node input, hidden, output;
-  input = Node("i", NodeType::input, NodeStatus::activated, NodeActivation::Linear, NodeIntegration::Sum);
-  hidden = Node("h", NodeType::hidden, NodeStatus::initialized, NodeActivation::ReLU, NodeIntegration::Sum);
-  output = Node("o", NodeType::output, NodeStatus::initialized, NodeActivation::ReLU, NodeIntegration::Sum);
+  input = Node("i", NodeType::input, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum);
+  hidden = Node("h", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), NodeIntegration::Sum);
+  output = Node("o", NodeType::output, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), NodeIntegration::Sum);
   Weight w_i_to_h, w_h_to_o;
   std::shared_ptr<WeightInitOp> weight_init;
   std::shared_ptr<SolverOp> solver;
@@ -546,9 +546,9 @@ BOOST_AUTO_TEST_CASE(checkNodeNames)
 {
   // Test model
   Node input, hidden, output;
-  input = Node("i", NodeType::input, NodeStatus::activated, NodeActivation::Linear, NodeIntegration::Sum);
-  hidden = Node("h", NodeType::hidden, NodeStatus::initialized, NodeActivation::ReLU, NodeIntegration::Sum);
-  output = Node("o", NodeType::output, NodeStatus::initialized, NodeActivation::ReLU, NodeIntegration::Sum);
+  input = Node("i", NodeType::input, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum);
+  hidden = Node("h", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), NodeIntegration::Sum);
+  output = Node("o", NodeType::output, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), NodeIntegration::Sum);
   Model model;
   model.addNodes({input, hidden, output});
 
@@ -611,11 +611,11 @@ BOOST_AUTO_TEST_CASE(clearCache)
 BOOST_AUTO_TEST_CASE(checkCompleteInputToOutput)
 {
 	Node i1, i2, h1, o1, o2;
-	i1 = Node("i1", NodeType::input, NodeStatus::activated, NodeActivation::Linear, NodeIntegration::Sum);
-	i2 = Node("i2", NodeType::input, NodeStatus::activated, NodeActivation::Linear, NodeIntegration::Sum);
-	h1 = Node("h1", NodeType::hidden, NodeStatus::activated, NodeActivation::TanH, NodeIntegration::Sum);
-	o1 = Node("o1", NodeType::output, NodeStatus::activated, NodeActivation::TanH, NodeIntegration::Sum);
-	o2 = Node("o2", NodeType::output, NodeStatus::activated, NodeActivation::TanH, NodeIntegration::Sum);
+	i1 = Node("i1", NodeType::input, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum);
+	i2 = Node("i2", NodeType::input, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum);
+	h1 = Node("h1", NodeType::hidden, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new TanHOp<float>()), std::shared_ptr<ActivationOp<float>>(new TanHGradOp<float>()), NodeIntegration::Sum);
+	o1 = Node("o1", NodeType::output, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new TanHOp<float>()), std::shared_ptr<ActivationOp<float>>(new TanHGradOp<float>()), NodeIntegration::Sum);
+	o2 = Node("o2", NodeType::output, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new TanHOp<float>()), std::shared_ptr<ActivationOp<float>>(new TanHGradOp<float>()), NodeIntegration::Sum);
 
 	Weight w_i1_h1, w_i2_h1, w_h1_o1, w_h1_o2;
 	std::shared_ptr<WeightInitOp> weight_init;
@@ -699,13 +699,13 @@ BOOST_AUTO_TEST_CASE(checkCompleteInputToOutput)
 BOOST_AUTO_TEST_CASE(removeIsolatedNodes)
 {
 	Node i1, i2, h1, h2, o1, o2, b2;
-	i1 = Node("i1", NodeType::input, NodeStatus::activated, NodeActivation::Linear, NodeIntegration::Sum);
-	i2 = Node("i2", NodeType::input, NodeStatus::activated, NodeActivation::Linear, NodeIntegration::Sum);
-	h1 = Node("h1", NodeType::hidden, NodeStatus::activated, NodeActivation::TanH, NodeIntegration::Sum);
-	h2 = Node("h2", NodeType::hidden, NodeStatus::activated, NodeActivation::TanH, NodeIntegration::Sum); // deadend
-	b2 = Node("b2", NodeType::bias, NodeStatus::activated, NodeActivation::Linear, NodeIntegration::Sum); // deadend
-	o1 = Node("o1", NodeType::output, NodeStatus::activated, NodeActivation::TanH, NodeIntegration::Sum);
-	o2 = Node("o2", NodeType::output, NodeStatus::activated, NodeActivation::TanH, NodeIntegration::Sum);
+	i1 = Node("i1", NodeType::input, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum);
+	i2 = Node("i2", NodeType::input, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum);
+	h1 = Node("h1", NodeType::hidden, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new TanHOp<float>()), std::shared_ptr<ActivationOp<float>>(new TanHGradOp<float>()), NodeIntegration::Sum);
+	h2 = Node("h2", NodeType::hidden, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new TanHOp<float>()), std::shared_ptr<ActivationOp<float>>(new TanHGradOp<float>()), NodeIntegration::Sum); // deadend
+	b2 = Node("b2", NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum); // deadend
+	o1 = Node("o1", NodeType::output, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new TanHOp<float>()), std::shared_ptr<ActivationOp<float>>(new TanHGradOp<float>()), NodeIntegration::Sum);
+	o2 = Node("o2", NodeType::output, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new TanHOp<float>()), std::shared_ptr<ActivationOp<float>>(new TanHGradOp<float>()), NodeIntegration::Sum);
 
 	Weight w_i1_h1, w_i2_h1, w_h1_o1, w_h1_o2,
 		w_h1_h2, w_h2_h1, w_b2_h2; // deadend

@@ -173,25 +173,25 @@ public:
 		Model model;
 
 		// Nodes
-		i_rand = Node("Input_0", NodeType::input, NodeStatus::activated, NodeActivation::Linear, NodeIntegration::Sum);
-		i_mask = Node("Input_1", NodeType::input, NodeStatus::activated, NodeActivation::Linear, NodeIntegration::Sum);
-		MC = Node("MC", NodeType::hidden, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Sum); MC.setModuleName("MC1");
-		o = Node("Output_0", NodeType::output, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Sum);
-		fGate_SSig = Node("fGate_SSig", NodeType::hidden, NodeStatus::deactivated, NodeActivation::Sigmoid, NodeIntegration::Sum); fGate_SSig.setModuleName("MC1");
-		fGate_PLin = Node("fGate_PLin", NodeType::hidden, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Product); fGate_PLin.setModuleName("MC1");
-		uGate_SSig = Node("uGate_SSig", NodeType::hidden, NodeStatus::deactivated, NodeActivation::Sigmoid, NodeIntegration::Sum); uGate_SSig.setModuleName("MC1");
-		uGate_SLin = Node("uGate_SLin", NodeType::hidden, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Sum); uGate_SLin.setModuleName("MC1");
-		uGate_PLin = Node("uGate_PLin", NodeType::hidden, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Product); uGate_PLin.setModuleName("MC1");
-		oGate_SSig = Node("oGate_SSig", NodeType::hidden, NodeStatus::deactivated, NodeActivation::Sigmoid, NodeIntegration::Sum); oGate_SSig.setModuleName("MC1");
-		oGate_PLin = Node("oGate_PLin", NodeType::hidden, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Product); oGate_PLin.setModuleName("MC1");
-		oGate_SLin = Node("oGate_SLin", NodeType::hidden, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Sum); oGate_SLin.setModuleName("MC1");
-		fGate_SSig_bias = Node("fGate_SSig_bias", NodeType::bias, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Sum); fGate_SSig_bias.setModuleName("MC1");
-		fGate_PLin_bias = Node("fGate_PLin_bias", NodeType::bias, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Sum); fGate_PLin_bias.setModuleName("MC1");
-		uGate_SSig_bias = Node("uGate_SSig_bias", NodeType::bias, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Sum); uGate_SSig_bias.setModuleName("MC1");
-		uGate_SLin_bias = Node("uGate_SLin_bias", NodeType::bias, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Sum); uGate_SLin_bias.setModuleName("MC1");
-		uGate_PLin_bias = Node("uGate_PLin_bias", NodeType::bias, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Sum); uGate_PLin_bias.setModuleName("MC1");
-		oGate_SSig_bias = Node("oGate_SSig_bias", NodeType::bias, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Sum); oGate_SSig_bias.setModuleName("MC1");
-		oGate_PLin_bias = Node("oGate_PLin_bias", NodeType::bias, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Sum); oGate_PLin_bias.setModuleName("MC1");
+		i_rand = Node("Input_0", NodeType::input, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum);
+		i_mask = Node("Input_1", NodeType::input, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum);
+		MC = Node("MC", NodeType::hidden, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum); MC.setModuleName("MC1");
+		o = Node("Output_0", NodeType::output, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum);
+		fGate_SSig = Node("fGate_SSig", NodeType::hidden, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new SigmoidOp<float>()), std::shared_ptr<ActivationOp<float>>(new SigmoidGradOp<float>()), NodeIntegration::Sum); fGate_SSig.setModuleName("MC1");
+		fGate_PLin = Node("fGate_PLin", NodeType::hidden, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Product); fGate_PLin.setModuleName("MC1");
+		uGate_SSig = Node("uGate_SSig", NodeType::hidden, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new SigmoidOp<float>()), std::shared_ptr<ActivationOp<float>>(new SigmoidGradOp<float>()), NodeIntegration::Sum); uGate_SSig.setModuleName("MC1");
+		uGate_SLin = Node("uGate_SLin", NodeType::hidden, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum); uGate_SLin.setModuleName("MC1");
+		uGate_PLin = Node("uGate_PLin", NodeType::hidden, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Product); uGate_PLin.setModuleName("MC1");
+		oGate_SSig = Node("oGate_SSig", NodeType::hidden, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new SigmoidOp<float>()), std::shared_ptr<ActivationOp<float>>(new SigmoidGradOp<float>()), NodeIntegration::Sum); oGate_SSig.setModuleName("MC1");
+		oGate_PLin = Node("oGate_PLin", NodeType::hidden, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Product); oGate_PLin.setModuleName("MC1");
+		oGate_SLin = Node("oGate_SLin", NodeType::hidden, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum); oGate_SLin.setModuleName("MC1");
+		fGate_SSig_bias = Node("fGate_SSig_bias", NodeType::bias, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum); fGate_SSig_bias.setModuleName("MC1");
+		fGate_PLin_bias = Node("fGate_PLin_bias", NodeType::bias, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum); fGate_PLin_bias.setModuleName("MC1");
+		uGate_SSig_bias = Node("uGate_SSig_bias", NodeType::bias, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum); uGate_SSig_bias.setModuleName("MC1");
+		uGate_SLin_bias = Node("uGate_SLin_bias", NodeType::bias, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum); uGate_SLin_bias.setModuleName("MC1");
+		uGate_PLin_bias = Node("uGate_PLin_bias", NodeType::bias, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum); uGate_PLin_bias.setModuleName("MC1");
+		oGate_SSig_bias = Node("oGate_SSig_bias", NodeType::bias, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum); oGate_SSig_bias.setModuleName("MC1");
+		oGate_PLin_bias = Node("oGate_PLin_bias", NodeType::bias, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum); oGate_PLin_bias.setModuleName("MC1");
 
 		// weights  
 		std::shared_ptr<WeightInitOp> weight_init;
@@ -360,24 +360,24 @@ public:
 		Model model;
 
 		// Nodes
-		i_rand = Node("Input_0", NodeType::input, NodeStatus::activated, NodeActivation::Linear, NodeIntegration::Sum);
-		i_mask = Node("Input_1", NodeType::input, NodeStatus::activated, NodeActivation::Linear, NodeIntegration::Sum);
-		MC = Node("MC", NodeType::hidden, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Sum);
-		o = Node("Output_0", NodeType::output, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Sum);
-		fGate_SSig = Node("fGate_SSig", NodeType::hidden, NodeStatus::deactivated, NodeActivation::Sigmoid, NodeIntegration::Sum);
-		fGate_PLin = Node("fGate_PLin", NodeType::hidden, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Product);
-		uGate_SSig = Node("uGate_SSig", NodeType::hidden, NodeStatus::deactivated, NodeActivation::Sigmoid, NodeIntegration::Sum);
-		uGate_SLin = Node("uGate_SLin", NodeType::hidden, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Sum);
-		uGate_PLin = Node("uGate_PLin", NodeType::hidden, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Product);
-		oGate_SSig = Node("oGate_SSig", NodeType::hidden, NodeStatus::deactivated, NodeActivation::Sigmoid, NodeIntegration::Sum);
-		oGate_PLin = Node("oGate_PLin", NodeType::hidden, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Product);
-		fGate_SSig_bias = Node("fGate_SSig_bias", NodeType::bias, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Sum);
-		fGate_PLin_bias = Node("fGate_PLin_bias", NodeType::bias, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Sum);
-		uGate_SSig_bias = Node("uGate_SSig_bias", NodeType::bias, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Sum);
-		uGate_SLin_bias = Node("uGate_SLin_bias", NodeType::bias, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Sum);
-		uGate_PLin_bias = Node("uGate_PLin_bias", NodeType::bias, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Sum);
-		oGate_SSig_bias = Node("oGate_SSig_bias", NodeType::bias, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Sum);
-		oGate_PLin_bias = Node("oGate_PLin_bias", NodeType::bias, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Sum);
+		i_rand = Node("Input_0", NodeType::input, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum);
+		i_mask = Node("Input_1", NodeType::input, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum);
+		MC = Node("MC", NodeType::hidden, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum);
+		o = Node("Output_0", NodeType::output, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum);
+		fGate_SSig = Node("fGate_SSig", NodeType::hidden, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new SigmoidOp<float>()), std::shared_ptr<ActivationOp<float>>(new SigmoidGradOp<float>()), NodeIntegration::Sum);
+		fGate_PLin = Node("fGate_PLin", NodeType::hidden, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Product);
+		uGate_SSig = Node("uGate_SSig", NodeType::hidden, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new SigmoidOp<float>()), std::shared_ptr<ActivationOp<float>>(new SigmoidGradOp<float>()), NodeIntegration::Sum);
+		uGate_SLin = Node("uGate_SLin", NodeType::hidden, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum);
+		uGate_PLin = Node("uGate_PLin", NodeType::hidden, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Product);
+		oGate_SSig = Node("oGate_SSig", NodeType::hidden, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new SigmoidOp<float>()), std::shared_ptr<ActivationOp<float>>(new SigmoidGradOp<float>()), NodeIntegration::Sum);
+		oGate_PLin = Node("oGate_PLin", NodeType::hidden, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Product);
+		fGate_SSig_bias = Node("fGate_SSig_bias", NodeType::bias, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum);
+		fGate_PLin_bias = Node("fGate_PLin_bias", NodeType::bias, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum);
+		uGate_SSig_bias = Node("uGate_SSig_bias", NodeType::bias, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum);
+		uGate_SLin_bias = Node("uGate_SLin_bias", NodeType::bias, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum);
+		uGate_PLin_bias = Node("uGate_PLin_bias", NodeType::bias, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum);
+		oGate_SSig_bias = Node("oGate_SSig_bias", NodeType::bias, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum);
+		oGate_PLin_bias = Node("oGate_PLin_bias", NodeType::bias, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum);
 
 		// weights  
 		std::shared_ptr<WeightInitOp> weight_init;
@@ -532,14 +532,14 @@ public:
 			Weight_m_bias_to_m, Weight_o_bias_to_o;
 		Model model;
 		// Nodes
-		i_rand = Node("Input_0", NodeType::input, NodeStatus::activated, NodeActivation::Linear, NodeIntegration::Sum);
-		i_mask = Node("Input_1", NodeType::input, NodeStatus::activated, NodeActivation::Linear, NodeIntegration::Sum);
-		h = Node("h", NodeType::hidden, NodeStatus::deactivated, NodeActivation::ReLU, NodeIntegration::Sum);
-		m = Node("m", NodeType::hidden, NodeStatus::deactivated, NodeActivation::ReLU, NodeIntegration::Sum);
-		o = Node("Output_0", NodeType::output, NodeStatus::deactivated, NodeActivation::ReLU, NodeIntegration::Sum);
-		h_bias = Node("h_bias", NodeType::bias, NodeStatus::activated, NodeActivation::Linear, NodeIntegration::Sum);
-		m_bias = Node("m_bias", NodeType::bias, NodeStatus::activated, NodeActivation::Linear, NodeIntegration::Sum);
-		o_bias = Node("o_bias", NodeType::bias, NodeStatus::activated, NodeActivation::Linear, NodeIntegration::Sum);
+		i_rand = Node("Input_0", NodeType::input, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum);
+		i_mask = Node("Input_1", NodeType::input, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum);
+		h = Node("h", NodeType::hidden, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), NodeIntegration::Sum);
+		m = Node("m", NodeType::hidden, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), NodeIntegration::Sum);
+		o = Node("Output_0", NodeType::output, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), NodeIntegration::Sum);
+		h_bias = Node("h_bias", NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum);
+		m_bias = Node("m_bias", NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum);
+		o_bias = Node("o_bias", NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum);
 		// weights  
 		std::shared_ptr<WeightInitOp> weight_init;
 		std::shared_ptr<SolverOp> solver;
@@ -664,26 +664,26 @@ public:
 		Model model;
 
 		// Nodes
-		i_rand = Node("Input_0", NodeType::input, NodeStatus::activated, NodeActivation::Linear, NodeIntegration::Sum);
-		i_mask = Node("Input_1", NodeType::input, NodeStatus::activated, NodeActivation::Linear, NodeIntegration::Sum);
-		memory_cell = Node("memory_cell", NodeType::hidden, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Sum);
-		o = Node("Output_0", NodeType::output, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Sum);
-		forget_gate_sigma = Node("forget_gate_sigma", NodeType::hidden, NodeStatus::deactivated, NodeActivation::Sigmoid, NodeIntegration::Sum);
-		forget_gate_prod = Node("forget_gate_prod", NodeType::hidden, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Product);
-		update_gate_sigma = Node("update_gate_sigma", NodeType::hidden, NodeStatus::deactivated, NodeActivation::Sigmoid, NodeIntegration::Sum);
-		update_gate_tanh = Node("update_gate_tanh", NodeType::hidden, NodeStatus::deactivated, NodeActivation::TanH, NodeIntegration::Sum);
-		update_gate_prod = Node("update_gate_prod", NodeType::hidden, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Product);
-		output_gate_sigma = Node("output_gate_sigma", NodeType::hidden, NodeStatus::deactivated, NodeActivation::Sigmoid, NodeIntegration::Sum);
-		output_gate_tanh = Node("output_gate_tanh", NodeType::hidden, NodeStatus::deactivated, NodeActivation::TanH, NodeIntegration::Sum); // originally TanH (changed to allow for the output of larger numbers
-		output_gate_prod = Node("output_gate_prod", NodeType::hidden, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Product);
-		forget_gate_sigma_bias = Node("forget_gate_sigma_bias", NodeType::bias, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Sum);
-		forget_gate_prod_bias = Node("forget_gate_prod_bias", NodeType::bias, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Sum);
-		update_gate_sigma_bias = Node("update_gate_sigma_bias", NodeType::bias, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Sum);
-		update_gate_tanh_bias = Node("update_gate_tanh_bias", NodeType::bias, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Sum);
-		update_gate_prod_bias = Node("update_gate_prod_bias", NodeType::bias, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Sum);
-		output_gate_sigma_bias = Node("output_gate_sigma_bias", NodeType::bias, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Sum);
-		output_gate_tanh_bias = Node("output_gate_tanh_bias", NodeType::bias, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Sum);
-		output_gate_prod_bias = Node("output_gate_prod_bias", NodeType::bias, NodeStatus::deactivated, NodeActivation::Linear, NodeIntegration::Sum);
+		i_rand = Node("Input_0", NodeType::input, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum);
+		i_mask = Node("Input_1", NodeType::input, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum);
+		memory_cell = Node("memory_cell", NodeType::hidden, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum);
+		o = Node("Output_0", NodeType::output, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum);
+		forget_gate_sigma = Node("forget_gate_sigma", NodeType::hidden, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new SigmoidOp<float>()), std::shared_ptr<ActivationOp<float>>(new SigmoidGradOp<float>()), NodeIntegration::Sum);
+		forget_gate_prod = Node("forget_gate_prod", NodeType::hidden, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Product);
+		update_gate_sigma = Node("update_gate_sigma", NodeType::hidden, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new SigmoidOp<float>()), std::shared_ptr<ActivationOp<float>>(new SigmoidGradOp<float>()), NodeIntegration::Sum);
+		update_gate_tanh = Node("update_gate_tanh", NodeType::hidden, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new TanHOp<float>()), std::shared_ptr<ActivationOp<float>>(new TanHGradOp<float>()), NodeIntegration::Sum);
+		update_gate_prod = Node("update_gate_prod", NodeType::hidden, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Product);
+		output_gate_sigma = Node("output_gate_sigma", NodeType::hidden, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new SigmoidOp<float>()), std::shared_ptr<ActivationOp<float>>(new SigmoidGradOp<float>()), NodeIntegration::Sum);
+		output_gate_tanh = Node("output_gate_tanh", NodeType::hidden, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new TanHOp<float>()), std::shared_ptr<ActivationOp<float>>(new TanHGradOp<float>()), NodeIntegration::Sum); // originally TanH (changed to allow for the output of larger numbers
+		output_gate_prod = Node("output_gate_prod", NodeType::hidden, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Product);
+		forget_gate_sigma_bias = Node("forget_gate_sigma_bias", NodeType::bias, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum);
+		forget_gate_prod_bias = Node("forget_gate_prod_bias", NodeType::bias, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum);
+		update_gate_sigma_bias = Node("update_gate_sigma_bias", NodeType::bias, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum);
+		update_gate_tanh_bias = Node("update_gate_tanh_bias", NodeType::bias, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum);
+		update_gate_prod_bias = Node("update_gate_prod_bias", NodeType::bias, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum);
+		output_gate_sigma_bias = Node("output_gate_sigma_bias", NodeType::bias, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum);
+		output_gate_tanh_bias = Node("output_gate_tanh_bias", NodeType::bias, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum);
+		output_gate_prod_bias = Node("output_gate_prod_bias", NodeType::bias, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum);
 
 		// weights  
 		std::shared_ptr<WeightInitOp> weight_init;
@@ -950,7 +950,11 @@ int main(int argc, char** argv)
 
 	// define the model replicator for growth mode
 	ModelReplicatorExt model_replicator;
-	model_replicator.setNodeActivations({NodeActivation::ReLU, NodeActivation::Linear, NodeActivation::ELU, NodeActivation::Sigmoid, NodeActivation::TanH});
+	model_replicator.setNodeActivations({std::make_pair(std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>())),
+		std::make_pair(std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>())), 
+		std::make_pair(std::shared_ptr<ActivationOp<float>>(new ELUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ELUGradOp<float>())), 
+		std::make_pair(std::shared_ptr<ActivationOp<float>>(new SigmoidOp<float>()), std::shared_ptr<ActivationOp<float>>(new SigmoidGradOp<float>())), 
+		std::make_pair(std::shared_ptr<ActivationOp<float>>(new TanHOp<float>()), std::shared_ptr<ActivationOp<float>>(new TanHGradOp<float>()))});
 	model_replicator.setNodeIntegrations({NodeIntegration::Product, NodeIntegration::Sum});
 
 	// define the initial population [BUG FREE]
@@ -966,8 +970,8 @@ int main(int argc, char** argv)
 		//solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
 		//Model model = model_replicator.makeBaselineModel(
 		//	input_nodes.size(), 1, output_nodes.size(),
-		//	NodeActivation::ReLU, NodeIntegration::Sum,
-		//	NodeActivation::ReLU, NodeIntegration::Sum,
+		//	std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), NodeIntegration::Sum,
+		//	std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), NodeIntegration::Sum,
 		//	weight_init, solver,
 		//	ModelLossFunction::MSE, std::to_string(i));
 		//model.initWeights();

@@ -26,7 +26,7 @@ public:
     void setNLinkDeletions(const int& n_link_deletions); ///< n_link_deletions setter
 		void setNNodeActivationChanges(const int& n_node_activation_changes); ///< n_node_activation_changes setter
 		void setNNodeIntegrationChanges(const int& n_node_integration_changes); ///< n_node_integration_changes setter
-		void setNodeActivations(const std::vector<NodeActivation>& node_activations); ///< node_activations setter
+		void setNodeActivations(const std::vector<std::pair<std::shared_ptr<ActivationOp<float>>, std::shared_ptr<ActivationOp<float>>>>& node_activations); ///< node_activations setter
 		void setNodeIntegrations(const std::vector<NodeIntegration>& node_integrations); ///< node_integrations setter
 		void setNModuleAdditions(const int& n_module_additions); ///< n_module_additions setter
 		void setNModuleDeletions(const int& n_module_deletions); ///< n_module_deletions setter
@@ -37,7 +37,7 @@ public:
     int getNLinkDeletions() const; ///< n_link_deletions setter
 		int getNNodeActivationChanges() const; ///< n_node_activation_changes setter
 		int getNNodeIntegrationChanges() const; ///< n_node_integration_changes setter
-		std::vector<NodeActivation> getNodeActivations() const; ///< node_activations setter
+		std::vector<std::pair<std::shared_ptr<ActivationOp<float>>, std::shared_ptr<ActivationOp<float>>>> getNodeActivations() const; ///< node_activations setter
 		std::vector<NodeIntegration> getNodeIntegrations() const; ///< node_integrations setter
 		int getNModuleAdditions() const; ///< n_module_additions setter
 		int getNModuleDeletions() const; ///< n_module_deletions setter
@@ -57,8 +57,10 @@ public:
       @param n_hidden_nodes The number of hidden nodes the model should have
       @param n_output_nodes The number of output nodes the model should have
       @param hidden_node_activation The activation function of the hidden node to create
+      @param hidden_node_activation_grad The activation function gradient of the hidden node to create
       @param hidden_node_integration The integration function of the hidden node to create
       @param output_node_activation The activation function of the output node to create
+      @param output_node_activation_grad The activation function gradient of the output node to create
       @param output_node_integration The integration function of the output node to create
       @param weight_init Weight init operator to use for hidden and output nodes
       @param solver Solver operator to use for hidden and output nodes
@@ -68,8 +70,12 @@ public:
       @returns A baseline model
     */ 
     Model makeBaselineModel(const int& n_input_nodes, const std::vector<int>& n_hidden_nodes_per_layer, const int& n_output_nodes,
-			const NodeActivation& hidden_node_activation, const NodeIntegration& hidden_node_integration,
-			const NodeActivation& output_node_activation, const NodeIntegration& output_node_integration,
+			const std::shared_ptr<ActivationOp<float>>& hidden_node_activation, 
+			const std::shared_ptr<ActivationOp<float>>& hidden_node_activation_grad,
+			const NodeIntegration& hidden_node_integration,
+			const std::shared_ptr<ActivationOp<float>>& output_node_activation, 
+			const std::shared_ptr<ActivationOp<float>>& output_node_activation_grad,
+			const NodeIntegration& output_node_integration,
       const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver,
 			const std::shared_ptr<LossFunctionOp<float>>& loss_function, const std::shared_ptr<LossFunctionGradOp<float>>& loss_function_grad,
 			std::string unique_str = "");
@@ -345,7 +351,7 @@ private:
 		std::pair<int, int> node_integration_changes_ = std::make_pair(0, 0);
 		std::pair<int, int> module_additions_ = std::make_pair(0, 0);
 		std::pair<int, int> module_deletions_ = std::make_pair(0, 0);
-		std::vector<NodeActivation> node_activations_;
+		std::vector<std::pair<std::shared_ptr<ActivationOp<float>>, std::shared_ptr<ActivationOp<float>>>> node_activations_;
 		std::vector<NodeIntegration> node_integrations_;
 		
 

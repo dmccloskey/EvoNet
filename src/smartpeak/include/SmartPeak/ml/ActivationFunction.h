@@ -99,7 +99,7 @@ public:
     T operator()(const T& x_I) const { return this->substituteNanInf((x_I > 0.0) ? x_I : alpha_ * (std::exp(x_I) - 1)); };
     void setAlpha(const T& alpha) { alpha_ = alpha; };
     T getAlpha() const { return alpha_; };
-    std::string getName() const{return "ReLUGradOp";};
+    std::string getName() const{return "ELUOp";};
 private:
     T alpha_;
   };
@@ -126,7 +126,7 @@ public:
     };
     void setAlpha(const T& alpha) { alpha_ = alpha; };
     T getAlpha() const { return alpha_; };
-    std::string getName() const{return "ReLUGradOp";};
+    std::string getName() const{return "ELUGradOp";};
 private:
     T alpha_;
   };
@@ -141,7 +141,7 @@ public:
     SigmoidOp(){}; 
     ~SigmoidOp(){};
     T operator()(const T& x_I) const { return this->substituteNanInf(1 / (1 + std::exp(x_I))); };
-    std::string getName() const{return "ReLUGradOp";};
+    std::string getName() const{return "SigmoidOp";};
   };
 
   /**
@@ -158,7 +158,7 @@ public:
       SmartPeak::SigmoidOp<T> sigmoidop;
       return sigmoidop(x_I) * (1 - sigmoidop(x_I));
     };
-    std::string getName() const{return "ReLUGradOp";};
+    std::string getName() const{return "SigmoidGradOp";};
   };
   
   /**
@@ -171,7 +171,7 @@ public:
     TanHOp(){}; 
     ~TanHOp(){};
     T operator()(const T& x_I) const { return std::tanh(x_I); };
-    std::string getName() const{return "ReLUGradOp";};
+    std::string getName() const{return "TanHOp";};
   };
 
   /**
@@ -188,7 +188,7 @@ public:
 			const T x_new = 1 - std::pow(std::tanh(x_I), 2);
       return this->substituteNanInf(x_new);
     };
-    std::string getName() const{return "ReLUGradOp";};
+    std::string getName() const{return "TanHGradOp";};
   };
   
   /**

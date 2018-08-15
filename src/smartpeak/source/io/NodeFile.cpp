@@ -16,12 +16,12 @@ namespace SmartPeak
   {
     nodes.clear();
 
-    io::CSVReader<5> nodes_in(filename);
+    io::CSVReader<6> nodes_in(filename);
     nodes_in.read_header(io::ignore_extra_column, 
-      "node_name", "node_type", "node_status", "node_activation", "node_integration");
-    std::string node_name, node_type_str, node_status_str, node_activation_str, node_integration_str;
+      "node_name", "node_type", "node_status", "node_activation", "node_activation_grad", "node_integration");
+    std::string node_name, node_type_str, node_status_str, node_activation_str, node_activation_grad_str, node_integration_str;
 
-    while(nodes_in.read_row(node_name, node_type_str, node_status_str, node_activation_str, node_integration_str))
+    while(nodes_in.read_row(node_name, node_type_str, node_status_str, node_activation_str, node_activation_grad_str, node_integration_str))
     {
       // parse the node_type
       NodeType node_type;
@@ -40,13 +40,22 @@ namespace SmartPeak
       else std::cout<<"NodeStatus for node_name "<<node_name<<" was not recognized."<<std::endl;
 
       // parse the node_activation
-      NodeActivation node_activation;
-      if (node_activation_str == "ReLU") node_activation = NodeActivation::ReLU;
-      else if (node_activation_str == "ELU") node_activation = NodeActivation::ELU;
-      else if (node_activation_str == "Linear") node_activation = NodeActivation::Linear;
-      else if (node_activation_str == "Sigmoid") node_activation = NodeActivation::Sigmoid;
-      else if (node_activation_str == "TanH") node_activation = NodeActivation::TanH;
+			std::shared_ptr<ActivationOp<float>> node_activation;
+      if (node_activation_str == "ReLUOp") node_activation.reset(new ReLUOp<float>());
+      else if (node_activation_str == "ELUOp") node_activation.reset(new ELUOp<float>());
+      else if (node_activation_str == "LinearOp") node_activation.reset(new LinearOp<float>());
+      else if (node_activation_str == "SigmoidOp") node_activation.reset(new SigmoidOp<float>());
+      else if (node_activation_str == "TanHOp") node_activation.reset(new TanHOp<float>());
       else std::cout<<"NodeActivation for node_name "<<node_name<<" was not recognized."<<std::endl;
+
+			// parse the node_activation
+			std::shared_ptr<ActivationOp<float>> node_activation_grad;
+			if (node_activation_grad_str == "ReLUGradOp") node_activation_grad.reset(new ReLUGradOp<float>());
+			else if (node_activation_grad_str == "ELUGradOp") node_activation_grad.reset(new ELUGradOp<float>());
+			else if (node_activation_grad_str == "LinearGradOp") node_activation_grad.reset(new LinearGradOp<float>());
+			else if (node_activation_grad_str == "SigmoidGradOp") node_activation_grad.reset(new SigmoidGradOp<float>());
+			else if (node_activation_grad_str == "TanHGradOp") node_activation_grad.reset(new TanHGradOp<float>());
+			else std::cout << "NodeActivationGrad for node_name " << node_name << " was not recognized." << std::endl;
 
 			// parse the node_integration
 			NodeIntegration node_integration;
@@ -55,7 +64,7 @@ namespace SmartPeak
 			else if (node_integration_str == "Max") node_integration = NodeIntegration::Max;
 			else std::cout << "NodeIntegration for node_name " << node_name << " was not recognized." << std::endl;
       
-      Node node(node_name, node_type, node_status, node_activation, node_integration);
+      Node node(node_name, node_type, node_status, node_activation, node_activation_grad, node_integration);
       nodes.push_back(node);
     }
 	return true;
@@ -68,7 +77,7 @@ namespace SmartPeak
     CSVWriter csvwriter(filename);
 
     // write the headers to the first line
-    const std::vector<std::string> headers = {"node_name", "node_type", "node_status", "node_activation", "node_integration"};
+    const std::vector<std::string> headers = {"node_name", "node_type", "node_status", "node_activation", "node_activation_grad", "node_integration"};
     csvwriter.writeDataInRow(headers.begin(), headers.end());
 
     for (const Node& node: nodes)
@@ -95,14 +104,10 @@ namespace SmartPeak
       row.push_back(node_status_str);
 
       // parse the node_activation
-      std::string node_activation_str = "";
-      if (node.getActivation() == NodeActivation::ReLU) node_activation_str = "ReLU";
-      else if (node.getActivation() == NodeActivation::ELU) node_activation_str = "ELU";
-      else if (node.getActivation() == NodeActivation::Linear) node_activation_str = "Linear";
-      else if (node.getActivation() == NodeActivation::Sigmoid) node_activation_str = "Sigmoid";
-      else if (node.getActivation() == NodeActivation::TanH) node_activation_str = "TanH";
-      else std::cout<<"NodeActivation for node_name "<<node.getName()<<" was not recognized."<<std::endl;
-      row.push_back(node_activation_str);
+			std::string node_activation_str = node.getActivation()->getName();
+			row.push_back(node_activation_str);
+			std::string node_activation_grad_str = node.getActivationGrad()->getName();
+			row.push_back(node_activation_grad_str);
 
 			// parse the node_integration
 			std::string node_integration_str = "";

@@ -11,8 +11,25 @@
 #define EIGEN_USE_THREADS
 #include <unsupported/Eigen/CXX11/Tensor>
 
+
 namespace SmartPeak
 {
+	/**
+	@brief Functor for use with calculate activation/derivative.
+	*/
+	template<typename T>
+	class FunctorOp
+	{
+	public:
+		FunctorOp() {};
+		FunctorOp(ActivationOp<T>* node_activation) : activation_(node_activation) {};
+		~FunctorOp() {};
+		T operator()(const T& x_I) const {
+			return (*activation_)(x_I);
+		}
+	private:
+		ActivationOp<T>* activation_;
+	};
   /**
   @brief The current output is passed through an activation function.
   Contents are updated in place.
@@ -22,7 +39,7 @@ namespace SmartPeak
   [THREADPOOL/CUDA: move to seperate file for cpu/cuda compilation]
   */
   Eigen::Tensor<float, 1> calculateActivation(
-    const NodeType& node_type, const NodeActivation& node_activation,
+    ActivationOp<float>* node_activation,
     const Eigen::Tensor<float, 1>& net_input, const Eigen::Tensor<float, 1>& dt,
     int n_threads = 1);
 
@@ -35,7 +52,7 @@ namespace SmartPeak
   [THREADPOOL/CUDA: move to seperate file for cpu/cuda compilation]
   */
   Eigen::Tensor<float, 1> calculateDerivative(
-    const NodeType& node_type, const NodeActivation& node_activation,
+    ActivationOp<float>* node_activation_grad,
     const Eigen::Tensor<float, 1>& output,
     int n_threads = 1);
 

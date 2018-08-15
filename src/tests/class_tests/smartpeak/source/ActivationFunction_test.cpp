@@ -39,6 +39,13 @@ BOOST_AUTO_TEST_CASE(operationfunctionReluOp)
   BOOST_CHECK_CLOSE(operation(-10.0), 0.0, 1e-6);
 }
 
+BOOST_AUTO_TEST_CASE(getNameReLUOp)
+{
+	ReLUOp<double> operation;
+
+	BOOST_CHECK_EQUAL(operation.getName(), "ReLUOp");
+}
+
 /**
   ReLUGradOp Tests
 */ 
@@ -65,6 +72,13 @@ BOOST_AUTO_TEST_CASE(operationfunctionReluGradOp)
   BOOST_CHECK_CLOSE(operation(10.0), 1.0, 1e-6);
   BOOST_CHECK_CLOSE(operation(-1.0), 0.0, 1e-6);
   BOOST_CHECK_CLOSE(operation(-10.0), 0.0, 1e-6);
+}
+
+BOOST_AUTO_TEST_CASE(getNameReLUGradOp)
+{
+	ReLUGradOp<double> operation;
+
+	BOOST_CHECK_EQUAL(operation.getName(), "ReLUGradOp");
 }
 
 /**
@@ -103,6 +117,13 @@ BOOST_AUTO_TEST_CASE(operationfunctionEluOp)
   BOOST_CHECK_CLOSE(operation(-10.0), -0.99995460007023751, 1e-6);
 }
 
+BOOST_AUTO_TEST_CASE(getNameELUOp)
+{
+	ELUOp<double> operation;
+
+	BOOST_CHECK_EQUAL(operation.getName(), "ELUOp");
+}
+
 /**
   ELUGradOp Tests
 */ 
@@ -138,6 +159,14 @@ BOOST_AUTO_TEST_CASE(operationfunctionEluGradOp)
   BOOST_CHECK_CLOSE(operation(-1.0), 0.36787944117144233, 1e-6);
   BOOST_CHECK_CLOSE(operation(-10.0), 4.5399929762490743e-05, 1e-6);
 }
+
+BOOST_AUTO_TEST_CASE(getNameELUGradOp)
+{
+	ELUGradOp<double> operation;
+
+	BOOST_CHECK_EQUAL(operation.getName(), "ELUGradOp");
+}
+
 /**
   SigmoidOp Tests
 */ 
@@ -164,6 +193,13 @@ BOOST_AUTO_TEST_CASE(operationfunctionSigmoidOp)
   BOOST_CHECK_CLOSE(operation(10.0), 4.5397868702434395e-05, 1e-6);
   BOOST_CHECK_CLOSE(operation(-1.0), 0.7310585786300049, 1e-6);
   BOOST_CHECK_CLOSE(operation(-10.0), 0.99995460213129761, 1e-6);
+}
+
+BOOST_AUTO_TEST_CASE(getNameSigmoidOp)
+{
+	SigmoidOp<double> operation;
+
+	BOOST_CHECK_EQUAL(operation.getName(), "SigmoidOp");
 }
 
 /**
@@ -194,6 +230,13 @@ BOOST_AUTO_TEST_CASE(operationfunctionSigmoidGradOp)
   BOOST_CHECK_CLOSE(operation(-10.0), 4.5395807735907655e-05, 1e-6);
 }
 
+BOOST_AUTO_TEST_CASE(getNameSigmoidGradOp)
+{
+	SigmoidGradOp<double> operation;
+
+	BOOST_CHECK_EQUAL(operation.getName(), "SigmoidGradOp");
+}
+
 /**
   TanHOp Tests
 */ 
@@ -220,6 +263,13 @@ BOOST_AUTO_TEST_CASE(operationfunctionTanHOp)
   BOOST_CHECK_CLOSE(operation(10.0), 0.99999999587769262, 1e-6);
   BOOST_CHECK_CLOSE(operation(-1.0), -0.76159415595576485, 1e-6);
   BOOST_CHECK_CLOSE(operation(-10.0), -0.99999999587769262, 1e-6);
+}
+
+BOOST_AUTO_TEST_CASE(getNameTanHOp)
+{
+	TanHOp<double> operation;
+
+	BOOST_CHECK_EQUAL(operation.getName(), "TanHOp");
 }
 
 /**
@@ -250,6 +300,13 @@ BOOST_AUTO_TEST_CASE(operationfunctionTanHGradOp)
   BOOST_CHECK_CLOSE(operation(-10.0), 8.2446147686709992e-09, 1e-4);
 }
 
+BOOST_AUTO_TEST_CASE(getNameTanHGradOp)
+{
+	TanHGradOp<double> operation;
+
+	BOOST_CHECK_EQUAL(operation.getName(), "TanHGradOp");
+}
+
 /**
   ReTanHOp Tests
 */ 
@@ -276,6 +333,13 @@ BOOST_AUTO_TEST_CASE(operationfunctionReTanHOp)
   BOOST_CHECK_CLOSE(operation(10.0), 0.99999999587769262, 1e-6);
   BOOST_CHECK_CLOSE(operation(-1.0), 0.0, 1e-6);
   BOOST_CHECK_CLOSE(operation(-10.0), 0.0, 1e-6);
+}
+
+BOOST_AUTO_TEST_CASE(getNameReTanHOp)
+{
+	ReTanHOp<double> operation;
+
+	BOOST_CHECK_EQUAL(operation.getName(), "ReTanHOp");
 }
 
 /**
@@ -306,6 +370,13 @@ BOOST_AUTO_TEST_CASE(operationfunctionReTanHGradOp)
   BOOST_CHECK_CLOSE(operation(-10.0), 0.0, 1e-6);
 }
 
+BOOST_AUTO_TEST_CASE(getNameReTanHGradOp)
+{
+	ReTanHGradOp<double> operation;
+
+	BOOST_CHECK_EQUAL(operation.getName(), "ReTanHGradOp");
+}
+
 /**
 LinearOp Tests
 */
@@ -332,6 +403,13 @@ BOOST_AUTO_TEST_CASE(operationfunctionLinearOp)
 	BOOST_CHECK_CLOSE(operation(10.0), 10.0, 1e-6);
 	BOOST_CHECK_CLOSE(operation(-1.0), -1.0, 1e-6);
 	BOOST_CHECK_CLOSE(operation(-10.0), -10.0, 1e-6);
+}
+
+BOOST_AUTO_TEST_CASE(getNameLinearOp)
+{
+	LinearOp<double> operation;
+
+	BOOST_CHECK_EQUAL(operation.getName(), "LinearOp");
 }
 
 /**
@@ -362,6 +440,12 @@ BOOST_AUTO_TEST_CASE(operationfunctionLinearGradOp)
 	BOOST_CHECK_CLOSE(operation(-10.0), 1.0, 1e-6);
 }
 
+BOOST_AUTO_TEST_CASE(getNameLinearGradOp)
+{
+	LinearGradOp<double> operation;
+
+	BOOST_CHECK_EQUAL(operation.getName(), "LinearGradOp");
+}
 
 /**
 InverseOp Tests
@@ -389,6 +473,13 @@ BOOST_AUTO_TEST_CASE(operationfunctionInverseOp)
 	BOOST_CHECK_CLOSE(operation(10.0), 0.1, 1e-6);
 	BOOST_CHECK_CLOSE(operation(-1.0), -1.0, 1e-6);
 	BOOST_CHECK_CLOSE(operation(-10.0), -0.1, 1e-6);
+}
+
+BOOST_AUTO_TEST_CASE(getNameInverseOp)
+{
+	InverseOp<double> operation;
+
+	BOOST_CHECK_EQUAL(operation.getName(), "InverseOp");
 }
 
 /**
@@ -419,6 +510,13 @@ BOOST_AUTO_TEST_CASE(operationfunctionInverseGradOp)
 	BOOST_CHECK_CLOSE(operation(-10.0), -0.01, 1e-6);
 }
 
+BOOST_AUTO_TEST_CASE(getNameInverseGradOp)
+{
+	InverseGradOp<double> operation;
+
+	BOOST_CHECK_EQUAL(operation.getName(), "InverseGradOp");
+}
+
 /**
 ExponentialOp Tests
 */
@@ -447,6 +545,13 @@ BOOST_AUTO_TEST_CASE(operationfunctionExponentialOp)
 	BOOST_CHECK_CLOSE(operation(-10.0), 4.53999E-05, 1e-4);
 }
 
+BOOST_AUTO_TEST_CASE(getNameExponentialOp)
+{
+	ExponentialOp<double> operation;
+
+	BOOST_CHECK_EQUAL(operation.getName(), "ExponentialOp");
+}
+
 /**
 ExponentialGradOp Tests
 */
@@ -473,6 +578,13 @@ BOOST_AUTO_TEST_CASE(operationfunctionExponentialGradOp)
 	BOOST_CHECK_CLOSE(operation(10.0), 22026.46579, 1e-6);
 	BOOST_CHECK_CLOSE(operation(-1.0), 0.367879441, 1e-6);
 	BOOST_CHECK_CLOSE(operation(-10.0), 4.53999E-05, 1e-4);
+}
+
+BOOST_AUTO_TEST_CASE(getNameExponentialGradOp)
+{
+	ExponentialGradOp<double> operation;
+
+	BOOST_CHECK_EQUAL(operation.getName(), "ExponentialGradOp");
 }
 
 BOOST_AUTO_TEST_SUITE_END()

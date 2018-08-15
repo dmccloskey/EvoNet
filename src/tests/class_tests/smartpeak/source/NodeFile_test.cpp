@@ -38,7 +38,8 @@ BOOST_AUTO_TEST_CASE(storeAndLoadCsv)
       "Node_" + std::to_string(i), 
       NodeType::hidden,
       NodeStatus::initialized,
-      NodeActivation::ReLU, 
+      std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), 
+			std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), 
 			NodeIntegration::Sum);
     nodes.push_back(node);
   }
@@ -52,7 +53,8 @@ BOOST_AUTO_TEST_CASE(storeAndLoadCsv)
     BOOST_CHECK_EQUAL(nodes_test[i].getName(), "Node_" + std::to_string(i));
     BOOST_CHECK(nodes_test[i].getType() == NodeType::hidden);
     BOOST_CHECK(nodes_test[i].getStatus() == NodeStatus::initialized);
-    BOOST_CHECK(nodes_test[i].getActivation() == NodeActivation::ReLU);
+		BOOST_CHECK_EQUAL(nodes_test[i].getActivation()->getName(), "ReLUOp");
+		BOOST_CHECK_EQUAL(nodes_test[i].getActivationGrad()->getName(), "ReLUGradOp");
 		BOOST_CHECK(nodes_test[i].getIntegration() == NodeIntegration::Sum);
   }
 }

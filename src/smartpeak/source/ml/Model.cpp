@@ -969,14 +969,12 @@ namespace SmartPeak
     }
 
     // calculate the output and the derivative
-    const NodeType sink_node_type = operations->result.sink_node->getType();
-    const NodeActivation sink_node_activation = operations->result.sink_node->getActivation();
     Eigen::Tensor<float, 1> output = calculateActivation(
-      sink_node_type, sink_node_activation, sink_tensor,
+      operations->result.sink_node->getActivationShared().get(), sink_tensor,
       operations->result.sink_node->getDt().chip(time_step, 1),
       1);
     Eigen::Tensor<float, 1> derivative = calculateDerivative(
-      sink_node_type, sink_node_activation, output, 1);
+      operations->result.sink_node->getActivationGradShared().get(), output, 1);
     
     operations->result.sink_node->setStatus(NodeStatus::activated);
 		operations->result.sink_node->getInputMutable()->chip(time_step, 1) = sink_tensor; // [TESTS: update tests]
@@ -1054,137 +1052,6 @@ namespace SmartPeak
       // std::cout<<"operations_cnt"<<operations_cnt<<std::endl;
       ++operations_cnt;
     }
-  }
-
-	// [DEPRECATED]
-  void Model::forwardPropogateLayerNetInput(
-    std::map<std::string, std::vector<std::string>>& sink_links_map,
-    const int& time_step, int n_threads)
-  {
-
-    // get all the information needed to construct the tensors
-    int batch_size = 0;
-    int memory_size = 0;
-    for (const auto& sink_links : sink_links_map)
-    {
-      batch_size = nodes_.at(sink_links.first)->getOutput().dimension(0);
-      memory_size = nodes_.at(sink_links.first)->getOutput().dimension(1);
-      break;
-    }
-
-    // iterate through each sink node and calculate the net input
-    // invoke the activation function once the net input is calculated
-    for (const auto& sink_links : sink_links_map)
-    {
-      Eigen::Tensor<float, 1> sink_tensor(batch_size);
-      sink_tensor.setConstant(0.0f);
-      Eigen::Tensor<float, 1> weight_tensor(batch_size);
-      for (const std::string& link : sink_links.second)
-      {
-        weight_tensor.setConstant(weights_.at(links_.at(link)->getWeightName())->getWeight());
-        if (nodes_.at(links_.at(link)->getSourceNodeName())->getStatus() == NodeStatus::activated)
-        {
-          sink_tensor = sink_tensor + weight_tensor * nodes_.at(links_.at(link)->getSourceNodeName())->getOutput().chip(time_step, 1); //current time-step
-        }
-        else if (nodes_.at(links_.at(link)->getSourceNodeName())->getStatus() == NodeStatus::initialized)
-        {
-          if (time_step + 1 < memory_size)
-          {
-            sink_tensor = sink_tensor + weight_tensor * nodes_.at(links_.at(link)->getSourceNodeName())->getOutput().chip(time_step + 1, 1); //previous time-step
-          }
-          else
-          {
-            std::cout<<"time_step exceeded memory size in forwardPropogateLayerNetInput."<<std::endl;
-          }
-        }
-      }
-
-      // calculate the output and the derivative
-      const NodeType sink_node_type = nodes_.at(sink_links.first)->getType();
-      const NodeActivation sink_node_activation = nodes_.at(sink_links.first)->getActivation();
-      Eigen::Tensor<float, 1> output = calculateActivation(
-        sink_node_type, sink_node_activation, sink_tensor,
-        nodes_.at(sink_links.first)->getDt().chip(time_step, 1),
-        1);
-      Eigen::Tensor<float, 1> derivative = calculateDerivative(
-        sink_node_type, sink_node_activation, output, 1);
-
-      // update the node
-      mapValuesToNode(output, time_step, sink_links.first, NodeStatus::activated, "output");
-      mapValuesToNode(derivative, time_step, sink_links.first, NodeStatus::activated, "derivative");      
-    }
-  }
-
-  // [DEPRECATED]
-  void Model::forwardPropogateLayerNetInput(
-    const std::vector<std::string>& links,
-    const std::vector<std::string>& source_nodes,
-    const std::vector<std::string>& sink_nodes,
-    const int& time_step)
-  {
-    // infer the batch size from the first source node
-    const int batch_size = nodes_.at(source_nodes[0])->getOutput().dimension(0);
-    const int memory_size = nodes_.at(source_nodes[0])->getOutput().dimension(1);
-
-    if (time_step >= memory_size)
-    {
-      std::cout<<"time step: "<<time_step<<" exceeds the memory_size!"<<std::endl;
-      return;
-    }
-
-    // concatenate the source and weight tensors
-    // using col-major ordering where rows are the batch vectors
-    // and cols are the nodes
-
-    // construct the source and weight tensors
-    Eigen::Tensor<float, 2> source_tensor(batch_size, source_nodes.size());
-    for (int i=0; i<source_nodes.size(); ++i)
-    {
-      for (int j=0; j<batch_size; ++j)
-      {
-        if (nodes_.at(source_nodes[i])->getStatus() == NodeStatus::activated)
-        {
-          source_tensor(j, i) = nodes_.at(source_nodes[i])->getOutput()(j, time_step); //current time-step
-        }
-        else if (nodes_.at(source_nodes[i])->getStatus() == NodeStatus::initialized)
-        {
-          if (time_step + 1 < memory_size)
-          {
-            source_tensor(j, i) = nodes_.at(source_nodes[i])->getOutput()(j, time_step + 1); //previous time-step
-          }
-          else
-          {
-            std::cout<<"time_step exceeded memory size in forwardPropogateLayerNetInput."<<std::endl;
-            source_tensor(j, i) = 0.0;
-          }
-        }
-      }
-    }
-
-    Eigen::Tensor<float, 2> weight_tensor(source_nodes.size(), sink_nodes.size());
-    // [NOTE: High CPU demand identified here...]
-    for (int i=0; i<sink_nodes.size(); ++i)
-    {
-      for (int j=0; j<source_nodes.size(); ++j)
-      {
-        for (const std::string& link : links)
-        {
-          if (links_.at(link)->getSinkNodeName() == sink_nodes[i] &&
-          links_.at(link)->getSourceNodeName() == source_nodes[j])
-          {
-            weight_tensor(j, i) = weights_.at(links_.at(link)->getWeightName())->getWeight();
-            break;
-          }
-        }
-      }
-    }
-
-    // compute the output tensor
-    Eigen::array<Eigen::IndexPair<int>, 1> product_dims = {Eigen::IndexPair<int>(1, 0)};
-    Eigen::Tensor<float, 2> sink_tensor = source_tensor.contract(weight_tensor, product_dims);
-
-    // update the sink nodes
-    mapValuesToNodes(sink_tensor, time_step, sink_nodes, NodeStatus::activated, "output");
   }
   
   void Model::forwardPropogate(const int& time_step, bool cache_FP_steps, bool use_cache, int n_threads)
@@ -2569,8 +2436,8 @@ namespace SmartPeak
 				node_map.second->setDt(one);
 			}
 			node_map.second->setStatus(NodeStatus::initialized);
-			node_map.second->setActivation(NodeActivation::Linear);  // safer but requires setting
-																															 // the node activation back to its original value
+			node_map.second->setActivation(std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()));  // safer but requires setting																																																		
+			node_map.second->setActivationGrad(std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>())); // the node activation back to its original value
 		}
 
 		// set all weights to 1
