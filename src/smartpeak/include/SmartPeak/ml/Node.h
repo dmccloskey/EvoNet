@@ -46,7 +46,9 @@ public:
     Node(const Node& other); ///< Copy constructor // [TODO: add test]
     Node(const std::string& name, const SmartPeak::NodeType& type, const SmartPeak::NodeStatus& status, 
 			const std::shared_ptr<ActivationOp<float>>& activation, const std::shared_ptr<ActivationOp<float>>& activation_grad, 
-			const std::shared_ptr<IntegrationOp<float>>& integration, const std::shared_ptr<IntegrationErrorOp<float>>& integration_error, const std::shared_ptr<IntegrationWeightGradOp<float>>& integration_weight_grad); ///< Explicit constructor
+			const std::shared_ptr<IntegrationOp<float>>& integration,
+			const std::shared_ptr<IntegrationErrorOp<float>>& integration_error,
+			const std::shared_ptr<IntegrationWeightGradOp<float>>& integration_weight_grad); ///< Explicit constructor
     ~Node(); ///< Default destructor
 
     inline bool operator==(const Node& other) const

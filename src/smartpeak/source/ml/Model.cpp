@@ -880,27 +880,26 @@ namespace SmartPeak
     }
   }
 
-  Eigen::Tensor<float, 1> Model::calculateNodeInput_(
+  bool Model::calculateNodeInput_(
+		OperationResult* result,
     OperationArguments* arguments, 
     const int& batch_size,
     const int& memory_size,
     const int& time_step)
   {
-    std::lock_guard<std::mutex> lock(calculateNodeInput_mutex);
+    //std::lock_guard<std::mutex> lock(calculateNodeInput_mutex);
 
-    Eigen::Tensor<float, 1> sink_tensor(batch_size);
-    sink_tensor.setConstant(0.0f);
 		Eigen::Tensor<float, 1> weight_tensor(batch_size);
 		weight_tensor.setConstant(arguments->weight->getWeight());
 		if (arguments->time_step == 0 || time_step + arguments->time_step < memory_size)
 		{
-		  sink_tensor = weight_tensor * arguments->source_node->getOutput().chip(time_step + arguments->time_step, 1);
+			result->sink_node->getIntegrationShared()->operator()(weight_tensor, arguments->source_node->getOutput().chip(time_step + arguments->time_step, 1));
 		}
 		else
 		{
 		  //std::cout<<"time_step exceeded memory size in forwardPropogateLayerNetInput."<<std::endl;
 		}
-    return sink_tensor;
+    return true;
   }
   
   bool Model::calculateNetNodeInput_(
@@ -913,27 +912,19 @@ namespace SmartPeak
     std::lock_guard<std::mutex> lock(calculateNetNodeInput_mutex);
 
     std::vector<std::future<Eigen::Tensor<float, 1>>> task_results;
-    int thread_cnt = 0;
-    
-    Eigen::Tensor<float, 1> sink_tensor(batch_size);
-		if (operations->result.sink_node->getIntegration() == std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()))
-			sink_tensor.setConstant(0.0f);
-		else if (operations->result.sink_node->getIntegration() == std::shared_ptr<IntegrationOp<float>>(new ProdOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new ProdErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new ProdWeightGradOp<float>()))
-			sink_tensor.setConstant(1.0f);
-		else if (operations->result.sink_node->getIntegration() == NodeIntegration::Max)
-			sink_tensor.setConstant(0.0f);    
+    int thread_cnt = 0; 
 
     // for (const std::string& link : sink_links)
     for (int i=0; i<operations->arguments.size(); ++i)
     {
-      std::packaged_task<Eigen::Tensor<float, 1> // encapsulate in a packaged_task
-        (OperationArguments*, int, int, int
+      std::packaged_task<bool // encapsulate in a packaged_task
+        (OperationResult*, OperationArguments*, int, int, int
         )> task(Model::calculateNodeInput_);
       
       // launch the thread
       task_results.push_back(task.get_future());
       std::thread task_thread(std::move(task),
-        &operations->arguments[i], std::ref(batch_size), std::ref(memory_size), std::ref(time_step));
+        &operations->result, &operations->arguments[i], std::ref(batch_size), std::ref(memory_size), std::ref(time_step));
       task_thread.detach();
 
       // retreive the results
@@ -945,13 +936,7 @@ namespace SmartPeak
           {
             try
             {
-			  // [TESTS: add tests for Sum, Product, or Max NodeIntegration]
-			  if (operations->result.sink_node->getIntegration() == std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()))
-				  sink_tensor += task_result.get(); 
-			  else if (operations->result.sink_node->getIntegration() == std::shared_ptr<IntegrationOp<float>>(new ProdOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new ProdErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new ProdWeightGradOp<float>()))
-				  sink_tensor *= task_result.get();
-			  else if (operations->result.sink_node->getIntegration() == NodeIntegration::Max)
-				  sink_tensor = sink_tensor.cwiseMax(task_result.get());
+							bool result = task_result.get();
             }            
             catch (std::exception& e)
             {
@@ -970,14 +955,14 @@ namespace SmartPeak
 
     // calculate the output and the derivative
     Eigen::Tensor<float, 1> output = calculateActivation(
-      operations->result.sink_node->getActivationShared().get(), sink_tensor,
+      operations->result.sink_node->getActivationShared().get(), operations->result.sink_node->getIntegrationShared()->getNetNodeInput(),
       operations->result.sink_node->getDt().chip(time_step, 1),
       1);
     Eigen::Tensor<float, 1> derivative = calculateDerivative(
       operations->result.sink_node->getActivationGradShared().get(), output, 1);
     
     operations->result.sink_node->setStatus(NodeStatus::activated);
-		operations->result.sink_node->getInputMutable()->chip(time_step, 1) = sink_tensor; // [TESTS: update tests]
+		operations->result.sink_node->getInputMutable()->chip(time_step, 1) = operations->result.sink_node->getIntegrationShared()->getNetNodeInput();
     operations->result.sink_node->getOutputMutable()->chip(time_step, 1) = output;
     operations->result.sink_node->getDerivativeMutable()->chip(time_step, 1) = derivative;
 

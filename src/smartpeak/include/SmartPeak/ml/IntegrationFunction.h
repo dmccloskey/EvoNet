@@ -5,17 +5,15 @@
 
 #include <SmartPeak/ml/SharedFunctions.h>
 #include <unsupported/Eigen/CXX11/Tensor>
-#include <cmath>
-#include <random>
-#include <iostream>
-#include <limits>
+#include <atomic>
 
 namespace SmartPeak
 {
+
   /**
     @brief Base class for all integration functions.
   */
- template<typename T>
+	template<typename T>
   class IntegrationOp
   {
 public: 
@@ -23,13 +21,14 @@ public:
     ~IntegrationOp(){};
 		void setMaxNode(const int& max_node) { max_node_ = max_node; }
 		int getMaxNode() const { return max_node_; }
+		virtual void initNetNodeInput(const int& batch_size) = 0;
 		void setNetNodeInput(const Eigen::Tensor<T, 1>& net_node_input) { net_node_input_ = net_node_input; }
 		Eigen::Tensor<T, 1> getNetNodeInput() const { return net_node_input_; }
     virtual std::string getName() const = 0;
-    virtual void operator()(const Eigen::Tensor<T, 1>& x) = 0;
+    virtual void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>&source_output) = 0;
 	protected:
 		int max_node_ = -1; ///< node that is the max
-		Eigen::Tensor<T, 1> net_node_input_; ///< 
+		std::atomic<Eigen::Tensor<T, 1>> net_node_input_; ///< 
   };
 
   /**
@@ -40,13 +39,13 @@ public:
   {
 public: 
 		SumOp(){};
-		SumOp(const int& batch_size){
+		void initNetNodeInput(const int& batch_size){
 			Eigen::Tensor<T, 1> net_node_input(batch_size);
 			net_node_input.setConstant(0);
 			setNetNodeInput(net_node_input);
 		}
     ~SumOp(){};
-    void operator()(const Eigen::Tensor<T, 1>& x) { net_node_input_ += x; };
+    void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>&source_output) { net_node_input_ += weight * source_output; };
     std::string getName() const{return "SumOp";};
   };
 
@@ -58,13 +57,13 @@ public:
 	{
 	public:
 		ProdOp() {};
-		ProdOp(const int& batch_size) {
+		void initNetNodeInput(const int& batch_size) {
 			Eigen::Tensor<T, 1> net_node_input(batch_size);
 			net_node_input.setConstant(1);
 			setNetNodeInput(net_node_input);
 		}
 		~ProdOp() {};
-		void operator()(const Eigen::Tensor<T, 1>& x) { net_node_input_ *= x; };
+		void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>&source_output) { net_node_input_ *= weight * source_output; };
 		std::string getName() const { return "ProdOp"; };
 	};
 
@@ -76,13 +75,13 @@ public:
 	{
 	public:
 		MaxOp() {};
-		MaxOp(const int& batch_size) {
+		void initNetNodeInput(const int& batch_size) {
 			Eigen::Tensor<T, 1> net_node_input(batch_size);
 			net_node_input.setConstant(0);
 			setNetNodeInput(net_node_input);
 		}
 		~MaxOp() {};
-		void operator()(const Eigen::Tensor<T, 1>& x) { net_node_input_ = net_node_input_.cwiseMax(x); };
+		void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>&source_output) { net_node_input_ = net_node_input_.cwiseMax(weight * source_output); };
 		std::string getName() const { return "MaxOp"; };
 	};
 
@@ -97,13 +96,14 @@ public:
 		~IntegrationErrorOp() {};
 		void setMaxNode(const int& max_node) { max_node_ = max_node; }
 		int getMaxNode() const { return max_node_; }
+		virtual void initNetNodeError(const int& batch_size) = 0;
 		void setNetNodeError(const Eigen::Tensor<T, 1>& net_node_error) { net_node_error_ = net_node_error; }
 		Eigen::Tensor<T, 1> getNetNodeError() const { return net_node_error_; }
 		virtual std::string getName() const = 0;
 		virtual void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_error, const Eigen::Tensor<T, 1>& source_net_input, const Eigen::Tensor<T, 1>& sink_output) = 0;
 	protected:
 		int max_node_ = -1; ///< node that is the max
-		Eigen::Tensor<T, 1> net_node_error_; ///< 
+		std::atomic<Eigen::Tensor<T, 1>> net_node_error_; ///< 
 	};
 
 	/**
@@ -114,7 +114,7 @@ public:
 	{
 	public:
 		SumErrorOp() {};
-		SumErrorOp(const int& batch_size) {
+		void initNetNodeError(const int& batch_size) {
 			Eigen::Tensor<T, 1> net_node_error(batch_size);
 			net_node_error.setConstant(0);
 			setNetNodeError(net_node_error);
@@ -142,7 +142,7 @@ public:
 	{
 	public:
 		ProdErrorOp() {};
-		ProdErrorOp(const int& batch_size) {
+		void initNetNodeError(const int& batch_size) {
 			Eigen::Tensor<T, 1> net_node_error(batch_size);
 			net_node_error.setConstant(0);
 			setNetNodeError(net_node_error);
@@ -170,7 +170,7 @@ public:
 	{
 	public:
 		MaxErrorOp() {};
-		MaxErrorOp(const int& batch_size) {
+		void initNetNodeError(const int& batch_size) {
 			Eigen::Tensor<T, 1> net_node_error(batch_size);
 			net_node_error.setConstant(0);
 			setNetNodeError(net_node_error);
@@ -209,7 +209,7 @@ public:
 		virtual std::string getName() const = 0;
 		virtual void operator()(const Eigen::Tensor<T, 1>& sink_error, const Eigen::Tensor<T, 1>& source_output, const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_net_input) = 0;
 	protected:
-		T net_weight_error_; ///< 
+		std::atomic<T> net_weight_error_ = 0; ///< 
 	};
 
 	/**

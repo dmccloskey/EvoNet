@@ -33,11 +33,14 @@ BOOST_AUTO_TEST_CASE(operationfunctionSumOp)
 	const int batch_size = 3;
 	Eigen::Tensor<double, 1> input1(batch_size), input2(batch_size), input3(batch_size);
 	input1.setValues({ 1, 2, 4 }); input2.setValues({ 2, 4, 1 }); input3.setValues({ 4, 1, 2 });
+	Eigen::Tensor<double, 1> weight1(batch_size), weight2(batch_size), weight3(batch_size);
+	weight1.setValues({ 1, 1, 1 }); weight2.setValues({ 1, 1, 1 }); weight3.setValues({ 1, 1, 1 });
 
-	SumOp<double> operation(3);
-	operation(input1);
-	operation(input2);
-	operation(input3);
+	SumOp<double> operation;
+	operation.initNetNodeInput(3);
+	operation(weight1, input1);
+	operation(weight2, input2);
+	operation(weight3, input3);
 
   BOOST_CHECK_CLOSE(operation.getNetNodeInput()(0), 7.0, 1e-6);
 	BOOST_CHECK_CLOSE(operation.getNetNodeInput()(1), 7.0, 1e-6);
@@ -73,11 +76,14 @@ BOOST_AUTO_TEST_CASE(operationfunctionProdOp)
 	const int batch_size = 3;
 	Eigen::Tensor<double, 1> input1(batch_size), input2(batch_size), input3(batch_size);
 	input1.setValues({ 1, 2, 4 }); input2.setValues({ 2, 4, 1 }); input3.setValues({ 4, 1, 2 });
+	Eigen::Tensor<double, 1> weight1(batch_size), weight2(batch_size), weight3(batch_size);
+	weight1.setValues({ 1, 1, 1 }); weight2.setValues({ 1, 1, 1 }); weight3.setValues({ 1, 1, 1 });
 
-	ProdOp<double> operation(3);
-	operation(input1);
-	operation(input2);
-	operation(input3);
+	ProdOp<double> operation;
+	operation.initNetNodeInput(3);
+	operation(weight1, input1);
+	operation(weight2, input2);
+	operation(weight3, input3);
 
 	BOOST_CHECK_CLOSE(operation.getNetNodeInput()(0), 8.0, 1e-6);
 	BOOST_CHECK_CLOSE(operation.getNetNodeInput()(1), 8.0, 1e-6);
@@ -113,11 +119,14 @@ BOOST_AUTO_TEST_CASE(operationfunctionMaxOp)
 	const int batch_size = 3;
 	Eigen::Tensor<double, 1> input1(batch_size), input2(batch_size), input3(batch_size);
 	input1.setValues({ 1, 2, 4 }); input2.setValues({ 2, 4, 1 }); input3.setValues({ 4, 1, 2 });
+	Eigen::Tensor<double, 1> weight1(batch_size), weight2(batch_size), weight3(batch_size);
+	weight1.setValues({ 1, 1, 1 }); weight2.setValues({ 1, 1, 1 }); weight3.setValues({ 1, 1, 1 });
 
-	MaxOp<double> operation(3);
-	operation(input1);
-	operation(input2);
-	operation(input3);
+	MaxOp<double> operation;
+	operation.initNetNodeInput(3);
+	operation(weight1, input1);
+	operation(weight2, input2);
+	operation(weight3, input3);
 
 	BOOST_CHECK_CLOSE(operation.getNetNodeInput()(0), 4.0, 1e-6);
 	BOOST_CHECK_CLOSE(operation.getNetNodeInput()(1), 4.0, 1e-6);
@@ -157,7 +166,8 @@ BOOST_AUTO_TEST_CASE(operationfunctionSumErrorOp)
 	weight1.setValues({ 1, 1, 1 }); weight2.setValues({ 2, 2, 2 }); weight3.setValues({ 2, 2, 2 });
 	Eigen::Tensor<double, 1> dummy1(batch_size), dummy2(batch_size), dummy3(batch_size);
 
-	SumErrorOp<double> operation(3);
+	SumErrorOp<double> operation;
+	operation.initNetNodeError(3);
 	operation(weight1, source_error1, dummy1, dummy1);
 	operation(weight2, source_error2, dummy2, dummy2);
 	operation(weight3, source_error3, dummy3, dummy3);
@@ -202,7 +212,8 @@ BOOST_AUTO_TEST_CASE(operationfunctionProdErrorOp)
 	sink_output1.setValues({ 1, 1, 1 }); sink_output2.setValues({ 2, 2, 2 }); sink_output3.setValues({ 1, 1, 0 });
 	Eigen::Tensor<double, 1> dummy1(batch_size), dummy2(batch_size), dummy3(batch_size);
 
-	ProdErrorOp<double> operation(3);
+	ProdErrorOp<double> operation;
+	operation.initNetNodeError(3);
 	operation(dummy1, source_error1, source_net_input1, sink_output1);
 	operation(dummy2, source_error2, source_net_input2, sink_output2);
 	operation(dummy3, source_error3, source_net_input3, sink_output3);
@@ -248,7 +259,8 @@ BOOST_AUTO_TEST_CASE(operationfunctionMaxErrorOp)
 	Eigen::Tensor<double, 1> sink_output1(batch_size), sink_output2(batch_size), sink_output3(batch_size);
 	sink_output1.setValues({ 7, 2, 1 }); sink_output2.setValues({ 2, 7, 2 }); sink_output3.setValues({ 0, 0, 7 });
 
-	MaxErrorOp<double> operation(3);
+	MaxErrorOp<double> operation;
+	operation.initNetNodeError(3);
 	operation(weight1, source_error1, source_net_source_error1, sink_output1);
 	operation(weight2, source_error2, source_net_source_error2, sink_output2);
 	operation(weight3, source_error3, source_net_source_error3, sink_output3);

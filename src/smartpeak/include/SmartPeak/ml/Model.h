@@ -318,7 +318,8 @@ public:
       std::vector<OperationList>& FP_operations,
       const int& time_step, int n_threads = 1);
 
-    static Eigen::Tensor<float, 1> calculateNodeInput_(
+    static bool calculateNodeInput_(
+			OperationResult* result,
       OperationArguments* arguments, 
       const int& batch_size,
       const int& memory_size,
