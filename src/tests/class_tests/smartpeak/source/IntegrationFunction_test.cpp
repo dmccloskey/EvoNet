@@ -265,4 +265,136 @@ BOOST_AUTO_TEST_CASE(getNameMaxErrorOp)
 	BOOST_CHECK_EQUAL(operation.getName(), "MaxErrorOp");
 }
 
+/**
+SumWeightGradOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorSumWeightGradOp)
+{
+	SumWeightGradOp<double>* ptrReLU = nullptr;
+	SumWeightGradOp<double>* nullPointerReLU = nullptr;
+	BOOST_CHECK_EQUAL(ptrReLU, nullPointerReLU);
+}
+
+BOOST_AUTO_TEST_CASE(destructorSumWeightGradOp)
+{
+	SumWeightGradOp<double>* ptrReLU = nullptr;
+	ptrReLU = new SumWeightGradOp<double>();
+	delete ptrReLU;
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionSumWeightGradOp)
+{
+	const int batch_size = 3;
+	Eigen::Tensor<double, 1> sink_error1(batch_size), sink_error2(batch_size), sink_error3(batch_size);
+	sink_error1.setValues({ 1, 2, 4 }); sink_error2.setValues({ 2, 4, 1 }); sink_error3.setValues({ 4, 1, 2 });
+	Eigen::Tensor<double, 1> source_output1(batch_size), source_output2(batch_size), source_output3(batch_size);
+	source_output1.setValues({ 1, 1, 1 }); source_output2.setValues({ 2, 2, 2 }); source_output3.setValues({ 2, 2, 2 });
+	Eigen::Tensor<double, 1> weight1(batch_size), weight2(batch_size), weight3(batch_size);
+	weight1.setValues({ 1, 2, 4 }); weight2.setValues({ 2, 4, 1 }); weight3.setValues({ 4, 1, 0 });
+	Eigen::Tensor<double, 1> source_net_input1(batch_size), source_net_input2(batch_size), source_net_input3(batch_size);
+	source_net_input1.setValues({ 1, 1, 1 }); source_net_input2.setValues({ 2, 2, 2 }); source_net_input3.setValues({ 1, 1, 1 });
+
+	SumWeightGradOp<double> operation;
+	operation(source_output1, sink_error1, weight1, source_net_input1);
+	operation(source_output2, sink_error2, weight2, source_net_input2);
+	operation(source_output3, sink_error3, weight3, source_net_input3);
+
+	BOOST_CHECK_CLOSE(operation.getNetWeightError(), -11.66666666667, 1e-6);
+}
+
+BOOST_AUTO_TEST_CASE(getNameSumWeightGradOp)
+{
+	SumWeightGradOp<double> operation;
+
+	BOOST_CHECK_EQUAL(operation.getName(), "SumWeightGradOp");
+}
+
+/**
+ProdWeightGradOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorProdWeightGradOp)
+{
+	ProdWeightGradOp<double>* ptrReLU = nullptr;
+	ProdWeightGradOp<double>* nullPointerReLU = nullptr;
+	BOOST_CHECK_EQUAL(ptrReLU, nullPointerReLU);
+}
+
+BOOST_AUTO_TEST_CASE(destructorProdWeightGradOp)
+{
+	ProdWeightGradOp<double>* ptrReLU = nullptr;
+	ptrReLU = new ProdWeightGradOp<double>();
+	delete ptrReLU;
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionProdWeightGradOp)
+{
+	const int batch_size = 3;
+	Eigen::Tensor<double, 1> sink_error1(batch_size), sink_error2(batch_size), sink_error3(batch_size);
+	sink_error1.setValues({ 1, 2, 4 }); sink_error2.setValues({ 2, 4, 1 }); sink_error3.setValues({ 4, 1, 2 });
+	Eigen::Tensor<double, 1> source_output1(batch_size), source_output2(batch_size), source_output3(batch_size);
+	source_output1.setValues({ 1, 1, 1 }); source_output2.setValues({ 2, 2, 2 }); source_output3.setValues({ 2, 2, 2 });
+	Eigen::Tensor<double, 1> weight1(batch_size), weight2(batch_size), weight3(batch_size);
+	weight1.setValues({ 1, 2, 4 }); weight2.setValues({ 2, 4, 1 }); weight3.setValues({ 4, 1, 0 });
+	Eigen::Tensor<double, 1> source_net_input1(batch_size), source_net_input2(batch_size), source_net_input3(batch_size);
+	source_net_input1.setValues({ 1, 1, 1 }); source_net_input2.setValues({ 2, 2, 2 }); source_net_input3.setValues({ 1, 1, 1 });
+
+	ProdWeightGradOp<double> operation;
+	operation(source_output1, sink_error1, weight1, source_net_input1);
+	operation(source_output2, sink_error2, weight2, source_net_input2);
+	operation(source_output3, sink_error3, weight3, source_net_input3);
+
+	BOOST_CHECK_CLOSE(operation.getNetWeightError(), -3.33333333333e23, 1e-6);
+}
+
+BOOST_AUTO_TEST_CASE(getNameProdWeightGradOp)
+{
+	ProdWeightGradOp<double> operation;
+
+	BOOST_CHECK_EQUAL(operation.getName(), "ProdWeightGradOp");
+}
+
+/**
+MaxWeightGradOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorMaxWeightGradOp)
+{
+	MaxWeightGradOp<double>* ptrReLU = nullptr;
+	MaxWeightGradOp<double>* nullPointerReLU = nullptr;
+	BOOST_CHECK_EQUAL(ptrReLU, nullPointerReLU);
+}
+
+BOOST_AUTO_TEST_CASE(destructorMaxWeightGradOp)
+{
+	MaxWeightGradOp<double>* ptrReLU = nullptr;
+	ptrReLU = new MaxWeightGradOp<double>();
+	delete ptrReLU;
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionMaxWeightGradOp)
+{
+	const int batch_size = 3;
+	Eigen::Tensor<double, 1> sink_error1(batch_size), sink_error2(batch_size), sink_error3(batch_size);
+	sink_error1.setValues({ 1, 2, 4 }); sink_error2.setValues({ 2, 4, 1 }); sink_error3.setValues({ 4, 1, 2 });
+	Eigen::Tensor<double, 1> source_output1(batch_size), source_output2(batch_size), source_output3(batch_size);
+	source_output1.setValues({ 1, 1, 1 }); source_output2.setValues({ 2, 2, 2 }); source_output3.setValues({ 2, 2, 2 });
+	Eigen::Tensor<double, 1> weight1(batch_size), weight2(batch_size), weight3(batch_size);
+	weight1.setValues({ 1, 2, 4 }); weight2.setValues({ 2, 4, 1 }); weight3.setValues({ 4, 1, 0 });
+	Eigen::Tensor<double, 1> source_net_input1(batch_size), source_net_input2(batch_size), source_net_input3(batch_size);
+	source_net_input1.setValues({ 1, 1, 1 }); source_net_input2.setValues({ 2, 2, 2 }); source_net_input3.setValues({ 1, 1, 1 });
+
+	MaxWeightGradOp<double> operation;
+	operation(source_output1, sink_error1, weight1, source_net_input1);
+	operation(source_output2, sink_error2, weight2, source_net_input2);
+	operation(source_output3, sink_error3, weight3, source_net_input3);
+
+	BOOST_CHECK_CLOSE(operation.getNetWeightError(), -11.66666666667, 1e-6);
+}
+
+BOOST_AUTO_TEST_CASE(getNameMaxWeightGradOp)
+{
+	MaxWeightGradOp<double> operation;
+
+	BOOST_CHECK_EQUAL(operation.getName(), "MaxWeightGradOp");
+}
+
 BOOST_AUTO_TEST_SUITE_END()

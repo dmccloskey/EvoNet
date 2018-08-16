@@ -194,5 +194,70 @@ public:
 		};
 		std::string getName() const { return "MaxErrorOp"; };
 	};
+
+	/**
+	@brief Base class for all integration error functions.
+	*/
+	template<typename T>
+	class IntegrationWeightGradOp
+	{
+	public:
+		IntegrationWeightGradOp() {};
+		~IntegrationWeightGradOp() {};
+		void setNetWeightError(const T& net_weight_error) { net_weight_error_ = net_weight_error; }
+		T getNetWeightError() const { return net_weight_error_; }
+		virtual std::string getName() const = 0;
+		virtual void operator()(const Eigen::Tensor<T, 1>& sink_error, const Eigen::Tensor<T, 1>& source_output, const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_net_input) = 0;
+	protected:
+		T net_weight_error_; ///< 
+	};
+
+	/**
+	@brief Sum integration error function
+	*/
+	template<typename T>
+	class SumWeightGradOp : public IntegrationWeightGradOp<T>
+	{
+	public:
+		SumWeightGradOp() { setNetWeightError(T(0)); };
+		~SumWeightGradOp() {};
+		void operator()(const Eigen::Tensor<T, 1>& sink_error, const Eigen::Tensor<T, 1>& source_output, const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_net_input) {
+			Eigen::Tensor<T, 0> derivative_mean_tensor = (-sink_error * source_output).mean(); // average derivative
+			net_weight_error_ += derivative_mean_tensor(0);
+		};
+		std::string getName() const { return "SumWeightGradOp"; };
+	};
+
+	/**
+	@brief Product integration error function
+	*/
+	template<typename T>
+	class ProdWeightGradOp : public IntegrationWeightGradOp<T>
+	{
+	public:
+		ProdWeightGradOp() { setNetWeightError(T(0)); };
+		~ProdWeightGradOp() {};
+		void operator()(const Eigen::Tensor<T, 1>& sink_error, const Eigen::Tensor<T, 1>& source_output, const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_net_input) {
+			Eigen::Tensor<T, 0> derivative_mean_tensor = ((-sink_error * source_net_input / weight).unaryExpr(std::ptr_fun(substituteNanInf<T>))).mean(); // average derivative
+			net_weight_error_ += derivative_mean_tensor(0);
+		};
+		std::string getName() const { return "ProdWeightGradOp"; };
+	};
+
+	/**
+	@brief Max integration error function
+	*/
+	template<typename T>
+	class MaxWeightGradOp : public IntegrationWeightGradOp<T>
+	{
+	public:
+		MaxWeightGradOp() { setNetWeightError(T(0)); };
+		~MaxWeightGradOp() {};
+		void operator()(const Eigen::Tensor<T, 1>& sink_error, const Eigen::Tensor<T, 1>& source_output, const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_net_input) {
+			Eigen::Tensor<T, 0> derivative_mean_tensor = (-sink_error * source_output).mean(); // average derivative
+			net_weight_error_ += derivative_mean_tensor(0);
+		};
+		std::string getName() const { return "MaxWeightGradOp"; };
+	};
 }
 #endif //SMARTPEAK_INTEGRATIONFUNCTION_H
