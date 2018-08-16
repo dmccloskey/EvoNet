@@ -515,12 +515,12 @@ public:
       std::vector<OperationList>& BP_operations,
       const int& time_step, int n_threads = 1);
 
-    static Eigen::Tensor<float, 1> calculateNodeError_(
+    static bool calculateNodeError_(
+			OperationList* operations,
       OperationArguments* arguments, 
       const int& batch_size,
       const int& memory_size,
-      const int& time_step,
-			const Eigen::Tensor<float, 1>& sink_output
+      const int& time_step
     );
     static bool calculateNetNodeError_( //[TODO: return the nodes]
       OperationList* operations, 
