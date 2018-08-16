@@ -1669,7 +1669,8 @@ namespace SmartPeak
     OperationArguments* arguments, 
     const int& batch_size,
     const int& memory_size,
-    const int& time_step
+    const int& time_step,
+		const Eigen::Tensor<float, 1>& sink_output
   )
   {
     std::lock_guard<std::mutex> lock(calculateNodeError_mutex);
@@ -1680,7 +1681,7 @@ namespace SmartPeak
 		if (arguments->source_node->getIntegration() == NodeIntegration::Sum)
 			sink_tensor = weight_tensor * arguments->source_node->getError().chip(time_step, 1);
 		else if (arguments->source_node->getIntegration() == NodeIntegration::Product)
-			sink_tensor = arguments->source_node->getInput().chip(time_step, 1) * arguments->source_node->getError().chip(time_step, 1); // missing the division by the source node output
+			sink_tensor = (arguments->source_node->getInput().chip(time_step, 1) * arguments->source_node->getError().chip(time_step, 1) / sink_output).unaryExpr(std::ptr_fun(checkNanInf<float>));
 		else if (arguments->source_node->getIntegration() == NodeIntegration::Max)
 			sink_tensor = weight_tensor * arguments->source_node->getError().chip(time_step, 1); // [TODO: update with correct formulat]
     // std::cout<<"Weight tensor: "<<weight_tensor<<std::endl;
@@ -1704,18 +1705,20 @@ namespace SmartPeak
     
     Eigen::Tensor<float, 1> sink_tensor(batch_size);
     sink_tensor.setConstant(0.0f);
+		Eigen::Tensor<float, 1> sink_output = operations->result.sink_node->getOutput().chip(time_step, 1);
 
     // for (const std::string& link : sink_links)
     for (int i=0; i<operations->arguments.size(); ++i)
     {
       std::packaged_task<Eigen::Tensor<float, 1> // encapsulate in a packaged_task
-        (OperationArguments*, int, int, int
+        (OperationArguments*, int, int, int, Eigen::Tensor<float, 1>
         )> task(Model::calculateNodeError_);
       
       // launch the thread
       task_results.push_back(task.get_future());
       std::thread task_thread(std::move(task),
-        &operations->arguments[i], std::ref(batch_size), std::ref(memory_size), std::ref(time_step));
+        &operations->arguments[i], std::ref(batch_size), std::ref(memory_size), std::ref(time_step),
+				std::ref(sink_output));
       task_thread.detach();
 
       // retreive the results
@@ -1727,13 +1730,7 @@ namespace SmartPeak
           {
             try
             {
-							if (operations->arguments[i].source_node->getIntegration() == NodeIntegration::Sum)
-								sink_tensor += task_result.get();
-							else if (operations->arguments[i].source_node->getIntegration() == NodeIntegration::Product)
-								sink_tensor += (task_result.get() / operations->result.sink_node->getOutput().chip(time_step, 1)
-									).unaryExpr(std::ptr_fun(checkNanInf<float>)); // apply the missing division by the source node output
-							else if (operations->arguments[i].source_node->getIntegration() == NodeIntegration::Max)
-								sink_tensor += task_result.get(); // [TODO: update with correct formula]
+							sink_tensor += task_result.get();
             }
             catch (std::exception& e)
             {

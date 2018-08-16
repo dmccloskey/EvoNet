@@ -24,24 +24,12 @@ public:
     virtual std::string getName() const = 0;
     // virtual T operator()() const = 0;
     virtual T operator()(const T& x_I) const = 0;
-		T substituteNanInf(const T& x) const
+		T substituteNanInf(const T& x) const		
 		{
-			if (x == std::numeric_limits<T>::infinity())
-			{
-				return T(1e24);
-			}
-			else if (x == -std::numeric_limits<T>::infinity())
-			{
-				return T(-1e24);
-			}
-			else if (std::isnan(x))
-			{
-				return T(0);
-			}
-			else
-			{
-				return x;
-			}
+			if (x == std::numeric_limits<T>::infinity()) { return T(1e24); }
+			else if (x == -std::numeric_limits<T>::infinity()) { return T(-1e24); }
+			else if (std::isnan(x)) { return T(0); }
+			else { return x; }			
 		}
   };
 

@@ -518,7 +518,8 @@ public:
       OperationArguments* arguments, 
       const int& batch_size,
       const int& memory_size,
-      const int& time_step
+      const int& time_step,
+			const Eigen::Tensor<float, 1>& sink_output
     );
     static bool calculateNetNodeError_( //[TODO: return the nodes]
       OperationList* operations, 

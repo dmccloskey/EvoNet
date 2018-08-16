@@ -23,15 +23,32 @@ public:
     ~ModelBuilder() = default; ///< Default destructor
 
 		/**
+		@brief Add inputs nodes to an empty model
+
+		@param[in, out] model An empty model
+		@param[in] names Prefix name to use for the nodes
+		@param[in] n_nodes The number of output nodes
+
+		@returns vector of output node names
+		*/
+		std::vector<std::string> addInputNodes(Model& model, const std::string& name, const int& n_nodes);
+
+		/**
 		@brief Add a fully connected layer to a model
 
 		@param[in, out] Model
 		@param[in] source_node_names Node_names to add the fully connected layer to
 		@param[in] n_nodes The number of output nodes
+    @param[in] node_activation The activation function of the hidden node to create
+    @param[in] node_activation_grad The activation function gradient of the hidden node to create
+    @param[in] node_integration The integration function of the hidden node to create
 
 		@returns vector of output node names
 		*/
-		std::vector<std::string> addFullyConnected(Model& model, const std::string& name, const std::vector<std::string>& source_node_names, const int& n_nodes);
+		std::vector<std::string> addFullyConnected(Model& model, const std::string& name, const std::vector<std::string>& source_node_names, const int& n_nodes,
+			const std::shared_ptr<ActivationOp<float>>& node_activation,
+			const std::shared_ptr<ActivationOp<float>>& node_activation_grad,
+			const NodeIntegration& node_integration);
 
 		/**
 		@brief Add a Soft Max
@@ -95,11 +112,17 @@ public:
 		@param[in, out] Model
 		@param[in] source_node_names Node_names to add the layer to
 		@param[in] n_hidden The number of LSTM hidden states
+    @param[in] node_activation The activation function of the hidden node to create
+    @param[in] node_activation_grad The activation function gradient of the hidden node to create
+    @param[in] node_integration The integration function of the hidden node to create
 
 		@returns vector of output node names
 		*/
 		std::vector<std::string> addPooling(Model& model, const std::string& name, const std::vector<std::string>& source_node_names,
-			const int& n_hidden);
+			const int& n_hidden,
+			const std::shared_ptr<ActivationOp<float>>& node_activation,
+			const std::shared_ptr<ActivationOp<float>>& node_activation_grad,
+			const NodeIntegration& node_integration);
 
 		/**
 		@brief Add one model to another

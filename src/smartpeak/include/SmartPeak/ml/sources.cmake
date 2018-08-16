@@ -4,10 +4,12 @@ set(directory include/SmartPeak/ml)
 ### list all header files of the directory here
 set(sources_list_h
 	ActivationFunction.h
+	IntegrationFunction.h
 	Interpreter.h
 	LossFunction.h
 	Link.h
 	Model.h
+	ModelBuilder.h
 	ModelReplicator.h
 	ModelTrainer.h
 	Node.h

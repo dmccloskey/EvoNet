@@ -5,6 +5,7 @@ set(directory source/ml)
 set(sources_list
 	Link.cpp
 	Model.cpp
+	ModelBuilder.cpp
 	ModelReplicator.cpp
 	ModelTrainer.cpp
 	Node.cpp

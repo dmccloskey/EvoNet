@@ -16,6 +16,7 @@ set(io_executables_list
 
 set(ml_executables_list
   ActivationFunction_test
+  IntegrationFunction_test
   Link_test
   Lossfunction_test
   ModelReplicator_test
