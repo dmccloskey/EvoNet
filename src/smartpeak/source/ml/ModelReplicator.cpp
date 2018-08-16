@@ -55,7 +55,7 @@ namespace SmartPeak
 		node_activations_ = node_activations;
 	}
 
-	void ModelReplicator::setNodeIntegrations(const std::vector<NodeIntegration>& node_integrations)
+	void ModelReplicator::setNodeIntegrations(const std::vector<std::tuple<std::shared_ptr<IntegrationOp<float>>, std::shared_ptr<IntegrationErrorOp<float>>, std::shared_ptr<IntegrationWeightGradOp<float>>>>& node_integrations)
 	{
 		node_integrations_ = node_integrations;
 	}
@@ -120,7 +120,7 @@ namespace SmartPeak
 		return node_activations_;
 	}
 
-	std::vector<NodeIntegration> ModelReplicator::getNodeIntegrations() const
+	std::vector<std::tuple<std::shared_ptr<IntegrationOp<float>>, std::shared_ptr<IntegrationErrorOp<float>>, std::shared_ptr<IntegrationWeightGradOp<float>>>> ModelReplicator::getNodeIntegrations() const
 	{
 		return node_integrations_;
 	}
@@ -163,10 +163,14 @@ namespace SmartPeak
   Model ModelReplicator::makeBaselineModel(const int& n_input_nodes, const std::vector<int>& n_hidden_nodes_per_layer, const int& n_output_nodes,
 		const std::shared_ptr<ActivationOp<float>>& hidden_node_activation,
 		const std::shared_ptr<ActivationOp<float>>& hidden_node_activation_grad,
-		const NodeIntegration& hidden_node_integration,
+		const std::shared_ptr<IntegrationOp<float>>& hidden_node_integration,
+		const std::shared_ptr<IntegrationErrorOp<float>>& hidden_node_integration_error,
+		const std::shared_ptr<IntegrationWeightGradOp<float>>& hidden_node_integration_weight_grad,
 		const std::shared_ptr<ActivationOp<float>>& output_node_activation,
 		const std::shared_ptr<ActivationOp<float>>& output_node_activation_grad,
-		const NodeIntegration& output_node_integration,
+		const std::shared_ptr<IntegrationOp<float>>& output_node_integration,
+		const std::shared_ptr<IntegrationErrorOp<float>>& output_node_integration_error,
+		const std::shared_ptr<IntegrationWeightGradOp<float>>& output_node_integration_weight_grad,
 		const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver,
 		const std::shared_ptr<LossFunctionOp<float>>& loss_function, const std::shared_ptr<LossFunctionGradOp<float>>& loss_function_grad,
 		std::string unique_str)
@@ -184,7 +188,7 @@ namespace SmartPeak
       char node_name_char[64];
       sprintf(node_name_char, "Input_%d", i);
       std::string node_name(node_name_char);
-      Node node(node_name, NodeType::input, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum);
+      Node node(node_name, NodeType::input, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
       model.addNodes({node});
     }
     // Create the hidden nodes + biases and hidden to bias links
@@ -195,12 +199,12 @@ namespace SmartPeak
 				char node_name_char[64];
 				sprintf(node_name_char, "Hidden_%d-%d", l,i);
 				std::string node_name(node_name_char);
-				Node node(node_name, NodeType::hidden, NodeStatus::deactivated, hidden_node_activation, hidden_node_activation_grad, hidden_node_integration);
+				Node node(node_name, NodeType::hidden, NodeStatus::deactivated, hidden_node_activation, hidden_node_activation_grad, hidden_node_integration, hidden_node_integration_error, hidden_node_integration_weight_grad);
 
 				char bias_name_char[64];
 				sprintf(bias_name_char, "Hidden_bias_%d-%d", l, i);
 				std::string bias_name(bias_name_char);
-				Node bias(bias_name, NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum);
+				Node bias(bias_name, NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
 				model.addNodes({ node, bias });
 
 				char weight_bias_name_char[64];
@@ -262,12 +266,12 @@ namespace SmartPeak
       char node_name_char[64];
       sprintf(node_name_char, "Output_%d", i);
       std::string node_name(node_name_char);
-      Node node(node_name, NodeType::output, NodeStatus::deactivated, output_node_activation, output_node_activation_grad, output_node_integration);
+      Node node(node_name, NodeType::output, NodeStatus::deactivated, output_node_activation, output_node_activation_grad, output_node_integration, output_node_integration_error, output_node_integration_weight_grad);
       
       char bias_name_char[64];
       sprintf(bias_name_char, "Output_bias_%d", i);
       std::string bias_name(bias_name_char);
-      Node bias(bias_name, NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum);
+      Node bias(bias_name, NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
       model.addNodes({node, bias});
 
       char weight_bias_name_char[64];
@@ -778,7 +782,7 @@ namespace SmartPeak
     char new_bias_name_char[128];
     sprintf(new_bias_name_char, "Bias_%s@addNode#", add_node_name.data());
     std::string new_bias_name = makeUniqueHash(new_bias_name_char, unique_str);
-    Node new_bias(new_bias_name, NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), NodeIntegration::Sum);
+    Node new_bias(new_bias_name, NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
     new_bias.initNode(new_node.getOutput().dimension(0), new_node.getOutput().dimension(1));
     model.addNodes({new_bias});
 
@@ -940,8 +944,10 @@ namespace SmartPeak
 		}
 
 		Node new_node = model.getNode(random_node_name); // copy the node		
-		NodeIntegration new_integration = selectRandomElement(node_integrations_); // pick a random integration
-		new_node.setIntegration(new_integration); // change the integration
+		std::tuple<std::shared_ptr<IntegrationOp<float>>, std::shared_ptr<IntegrationErrorOp<float>>, std::shared_ptr<IntegrationWeightGradOp<float>>> new_integration = selectRandomElement(node_integrations_); // pick a random integration
+		new_node.setIntegration(std::get<0>(new_integration)); // change the integration
+		new_node.setIntegrationError(std::get<1>(new_integration)); // change the integration
+		new_node.setIntegrationWeightGrad(std::get<2>(new_integration)); // change the integration
 		model.removeNodes({ new_node.getName() }); // delete the original node
 		model.addNodes({ new_node }); // add in the new node
 	}

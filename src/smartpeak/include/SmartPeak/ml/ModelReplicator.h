@@ -27,7 +27,7 @@ public:
 		void setNNodeActivationChanges(const int& n_node_activation_changes); ///< n_node_activation_changes setter
 		void setNNodeIntegrationChanges(const int& n_node_integration_changes); ///< n_node_integration_changes setter
 		void setNodeActivations(const std::vector<std::pair<std::shared_ptr<ActivationOp<float>>, std::shared_ptr<ActivationOp<float>>>>& node_activations); ///< node_activations setter
-		void setNodeIntegrations(const std::vector<NodeIntegration>& node_integrations); ///< node_integrations setter
+		void setNodeIntegrations(const std::vector<std::tuple<std::shared_ptr<IntegrationOp<float>>, std::shared_ptr<IntegrationErrorOp<float>>, std::shared_ptr<IntegrationWeightGradOp<float>>>>& node_integrations); ///< node_integrations setter
 		void setNModuleAdditions(const int& n_module_additions); ///< n_module_additions setter
 		void setNModuleDeletions(const int& n_module_deletions); ///< n_module_deletions setter
 
@@ -38,7 +38,7 @@ public:
 		int getNNodeActivationChanges() const; ///< n_node_activation_changes setter
 		int getNNodeIntegrationChanges() const; ///< n_node_integration_changes setter
 		std::vector<std::pair<std::shared_ptr<ActivationOp<float>>, std::shared_ptr<ActivationOp<float>>>> getNodeActivations() const; ///< node_activations setter
-		std::vector<NodeIntegration> getNodeIntegrations() const; ///< node_integrations setter
+		std::vector<std::tuple<std::shared_ptr<IntegrationOp<float>>, std::shared_ptr<IntegrationErrorOp<float>>, std::shared_ptr<IntegrationWeightGradOp<float>>>> getNodeIntegrations() const; ///< node_integrations setter
 		int getNModuleAdditions() const; ///< n_module_additions setter
 		int getNModuleDeletions() const; ///< n_module_deletions setter
 
@@ -72,10 +72,14 @@ public:
     Model makeBaselineModel(const int& n_input_nodes, const std::vector<int>& n_hidden_nodes_per_layer, const int& n_output_nodes,
 			const std::shared_ptr<ActivationOp<float>>& hidden_node_activation, 
 			const std::shared_ptr<ActivationOp<float>>& hidden_node_activation_grad,
-			const NodeIntegration& hidden_node_integration,
+			const std::shared_ptr<IntegrationOp<float>>& hidden_node_integration,
+			const std::shared_ptr<IntegrationErrorOp<float>>& hidden_node_integration_error,
+			const std::shared_ptr<IntegrationWeightGradOp<float>>& hidden_node_integration_weight_grad,
 			const std::shared_ptr<ActivationOp<float>>& output_node_activation, 
 			const std::shared_ptr<ActivationOp<float>>& output_node_activation_grad,
-			const NodeIntegration& output_node_integration,
+			const std::shared_ptr<IntegrationOp<float>>& output_node_integration,
+			const std::shared_ptr<IntegrationErrorOp<float>>& output_node_integration_error,
+			const std::shared_ptr<IntegrationWeightGradOp<float>>& output_node_integration_weight_grad,
       const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver,
 			const std::shared_ptr<LossFunctionOp<float>>& loss_function, const std::shared_ptr<LossFunctionGradOp<float>>& loss_function_grad,
 			std::string unique_str = "");
@@ -352,7 +356,7 @@ private:
 		std::pair<int, int> module_additions_ = std::make_pair(0, 0);
 		std::pair<int, int> module_deletions_ = std::make_pair(0, 0);
 		std::vector<std::pair<std::shared_ptr<ActivationOp<float>>, std::shared_ptr<ActivationOp<float>>>> node_activations_;
-		std::vector<NodeIntegration> node_integrations_;
+		std::vector<std::tuple<std::shared_ptr<IntegrationOp<float>>, std::shared_ptr<IntegrationErrorOp<float>>, std::shared_ptr<IntegrationWeightGradOp<float>>>> node_integrations_;
 		
 
 		// not yet implemented...

@@ -16,12 +16,12 @@ namespace SmartPeak
   {
     nodes.clear();
 
-    io::CSVReader<6> nodes_in(filename);
+    io::CSVReader<8> nodes_in(filename);
     nodes_in.read_header(io::ignore_extra_column, 
-      "node_name", "node_type", "node_status", "node_activation", "node_activation_grad", "node_integration");
-    std::string node_name, node_type_str, node_status_str, node_activation_str, node_activation_grad_str, node_integration_str;
+      "node_name", "node_type", "node_status", "node_activation", "node_activation_grad", "node_integration", "node_integration_error", "node_integration_weight_grad");
+    std::string node_name, node_type_str, node_status_str, node_activation_str, node_activation_grad_str, node_integration_str, node_integration_error_str, node_integration_weight_grad_str;
 
-    while(nodes_in.read_row(node_name, node_type_str, node_status_str, node_activation_str, node_activation_grad_str, node_integration_str))
+    while(nodes_in.read_row(node_name, node_type_str, node_status_str, node_activation_str, node_activation_grad_str, node_integration_str, node_integration_error_str, node_integration_weight_grad_str))
     {
       // parse the node_type
       NodeType node_type;
@@ -58,13 +58,27 @@ namespace SmartPeak
 			else std::cout << "NodeActivationGrad for node_name " << node_name << " was not recognized." << std::endl;
 
 			// parse the node_integration
-			NodeIntegration node_integration;
-			if (node_integration_str == "Sum") node_integration = NodeIntegration::Sum;
-			else if (node_integration_str == "Product") node_integration = NodeIntegration::Product;
-			else if (node_integration_str == "Max") node_integration = NodeIntegration::Max;
+			std::shared_ptr<IntegrationOp<float>> node_integration;
+			if (node_integration_str == "SumOp") node_integration.reset(new SumOp<float>());
+			else if (node_integration_str == "ProdOp") node_integration.reset(new ProdOp<float>());
+			else if (node_integration_str == "MaxOp") node_integration.reset(new MaxOp<float>());
 			else std::cout << "NodeIntegration for node_name " << node_name << " was not recognized." << std::endl;
-      
-      Node node(node_name, node_type, node_status, node_activation, node_activation_grad, node_integration);
+
+			// parse the node_integration_error
+			std::shared_ptr<IntegrationErrorOp<float>> node_integration_error;
+			if (node_integration_error_str == "SumErrorOp") node_integration_error.reset(new SumErrorOp<float>());
+			else if (node_integration_error_str == "ProdErrorOp") node_integration_error.reset(new ProdErrorOp<float>());
+			else if (node_integration_error_str == "MaxErrorOp") node_integration_error.reset(new MaxErrorOp<float>());
+			else std::cout << "NodeIntegrationError for node_name " << node_name << " was not recognized." << std::endl;
+
+			// parse the node_integration_weight_grad
+			std::shared_ptr<IntegrationWeightGradOp<float>> node_integration_weight_grad;
+			if (node_integration_weight_grad_str == "SumWeightGradOp") node_integration_weight_grad.reset(new SumWeightGradOp<float>());
+			else if (node_integration_weight_grad_str == "ProdWeightGradOp") node_integration_weight_grad.reset(new ProdWeightGradOp<float>());
+			else if (node_integration_weight_grad_str == "MaxWeightGradOp") node_integration_weight_grad.reset(new MaxWeightGradOp<float>());
+			else std::cout << "NodeIntegrationWeightGrad for node_name " << node_name << " was not recognized." << std::endl;
+
+      Node node(node_name, node_type, node_status, node_activation, node_activation_grad, node_integration, node_integration_error, node_integration_weight_grad);
       nodes.push_back(node);
     }
 	return true;
@@ -77,7 +91,7 @@ namespace SmartPeak
     CSVWriter csvwriter(filename);
 
     // write the headers to the first line
-    const std::vector<std::string> headers = {"node_name", "node_type", "node_status", "node_activation", "node_activation_grad", "node_integration"};
+    const std::vector<std::string> headers = {"node_name", "node_type", "node_status", "node_activation", "node_activation_grad", "node_integration", "node_integration_error", "node_integration_weight_grad" };
     csvwriter.writeDataInRow(headers.begin(), headers.end());
 
     for (const Node& node: nodes)
@@ -110,12 +124,12 @@ namespace SmartPeak
 			row.push_back(node_activation_grad_str);
 
 			// parse the node_integration
-			std::string node_integration_str = "";
-			if (node.getIntegration() == NodeIntegration::Sum) node_integration_str = "Sum";
-			else if (node.getIntegration() == NodeIntegration::Product) node_integration_str = "Product";
-			else if (node.getIntegration() == NodeIntegration::Max) node_integration_str = "Max";
-			else std::cout << "NodeIntegration for node_name " << node.getName() << " was not recognized." << std::endl;
+			std::string node_integration_str = node.getIntegration()->getName();
 			row.push_back(node_integration_str);
+			std::string node_integration_error_str = node.getIntegrationError()->getName();
+			row.push_back(node_integration_error_str);
+			std::string node_integration_weight_grad_str = node.getIntegrationWeightGrad()->getName();
+			row.push_back(node_integration_weight_grad_str);
 
       // write to file
       csvwriter.writeDataInRow(row.begin(), row.end());

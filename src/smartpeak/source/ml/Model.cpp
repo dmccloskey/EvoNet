@@ -916,9 +916,9 @@ namespace SmartPeak
     int thread_cnt = 0;
     
     Eigen::Tensor<float, 1> sink_tensor(batch_size);
-		if (operations->result.sink_node->getIntegration() == NodeIntegration::Sum)
+		if (operations->result.sink_node->getIntegration() == std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()))
 			sink_tensor.setConstant(0.0f);
-		else if (operations->result.sink_node->getIntegration() == NodeIntegration::Product)
+		else if (operations->result.sink_node->getIntegration() == std::shared_ptr<IntegrationOp<float>>(new ProdOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new ProdErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new ProdWeightGradOp<float>()))
 			sink_tensor.setConstant(1.0f);
 		else if (operations->result.sink_node->getIntegration() == NodeIntegration::Max)
 			sink_tensor.setConstant(0.0f);    
@@ -946,9 +946,9 @@ namespace SmartPeak
             try
             {
 			  // [TESTS: add tests for Sum, Product, or Max NodeIntegration]
-			  if (operations->result.sink_node->getIntegration() == NodeIntegration::Sum)
+			  if (operations->result.sink_node->getIntegration() == std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()))
 				  sink_tensor += task_result.get(); 
-			  else if (operations->result.sink_node->getIntegration() == NodeIntegration::Product)
+			  else if (operations->result.sink_node->getIntegration() == std::shared_ptr<IntegrationOp<float>>(new ProdOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new ProdErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new ProdWeightGradOp<float>()))
 				  sink_tensor *= task_result.get();
 			  else if (operations->result.sink_node->getIntegration() == NodeIntegration::Max)
 				  sink_tensor = sink_tensor.cwiseMax(task_result.get());
@@ -1678,9 +1678,9 @@ namespace SmartPeak
     Eigen::Tensor<float, 1> sink_tensor(batch_size);
     Eigen::Tensor<float, 1> weight_tensor(batch_size);
     weight_tensor.setConstant(arguments->weight->getWeight());
-		if (arguments->source_node->getIntegration() == NodeIntegration::Sum)
+		if (arguments->source_node->getIntegration() == std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()))
 			sink_tensor = weight_tensor * arguments->source_node->getError().chip(time_step, 1);
-		else if (arguments->source_node->getIntegration() == NodeIntegration::Product)
+		else if (arguments->source_node->getIntegration() == std::shared_ptr<IntegrationOp<float>>(new ProdOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new ProdErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new ProdWeightGradOp<float>()))
 			sink_tensor = (arguments->source_node->getInput().chip(time_step, 1) * arguments->source_node->getError().chip(time_step, 1) / sink_output).unaryExpr(std::ptr_fun(checkNanInf<float>));
 		else if (arguments->source_node->getIntegration() == NodeIntegration::Max)
 			sink_tensor = weight_tensor * arguments->source_node->getError().chip(time_step, 1); // [TODO: update with correct formulat]
@@ -2183,9 +2183,9 @@ namespace SmartPeak
 					Eigen::Tensor<float, 1> error_tensor = nodes_.at(link_map.second->getSinkNodeName())->getError().chip(i, 1);
 
 					Eigen::Tensor<float, 1> output_tensor;
-					if (nodes_.at(link_map.second->getSinkNodeName())->getIntegration() == NodeIntegration::Sum)
+					if (nodes_.at(link_map.second->getSinkNodeName())->getIntegration() == std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()))
 						output_tensor = nodes_.at(link_map.second->getSourceNodeName())->getOutput().chip(i, 1);
-					else if (nodes_.at(link_map.second->getSinkNodeName())->getIntegration() == NodeIntegration::Product)
+					else if (nodes_.at(link_map.second->getSinkNodeName())->getIntegration() == std::shared_ptr<IntegrationOp<float>>(new ProdOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new ProdErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new ProdWeightGradOp<float>()))
 						output_tensor = (nodes_.at(link_map.second->getSourceNodeName())->getInput().chip(i, 1)/
 							weights_.at(link_map.second->getWeightName())->getWeight()
 							).unaryExpr(std::ptr_fun(checkNanInf<float>));

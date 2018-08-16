@@ -31,10 +31,13 @@ BOOST_AUTO_TEST_CASE(constructor2)
 {
 	std::shared_ptr<ActivationOp<float>> activation(new TanHOp<float>());
 	std::shared_ptr<ActivationOp<float>> activation_grad(new TanHGradOp<float>());
+	std::shared_ptr<IntegrationOp<float>> integration(new ProdOp<float>());
+	std::shared_ptr<IntegrationErrorOp<float>> integration_error(new ProdErrorOp<float>());
+	std::shared_ptr<IntegrationWeightGradOp<float>> integration_weight_grad(new ProdWeightGradOp<float>());
 
   Node node("1", NodeType::bias, NodeStatus::initialized, 
 		activation, activation_grad,
-		NodeIntegration::Product);
+		integration, integration_error, integration_weight_grad);
 
   BOOST_CHECK_EQUAL(node.getId(), -1);
   BOOST_CHECK_EQUAL(node.getName(), "1");
@@ -44,7 +47,9 @@ BOOST_AUTO_TEST_CASE(constructor2)
   BOOST_CHECK(node.getStatus() == NodeStatus::initialized);
   BOOST_CHECK_EQUAL(node.getActivation(), activation.get());
 	BOOST_CHECK_EQUAL(node.getActivationGrad(), activation_grad.get());
-	BOOST_CHECK(node.getIntegration() == NodeIntegration::Product);
+	BOOST_CHECK_EQUAL(node.getIntegration(), integration.get());
+	BOOST_CHECK_EQUAL(node.getIntegrationError(), integration_error.get());
+	BOOST_CHECK_EQUAL(node.getIntegrationWeightGrad(), integration_weight_grad.get());
 }
 
 BOOST_AUTO_TEST_CASE(comparison) 
@@ -52,29 +57,29 @@ BOOST_AUTO_TEST_CASE(comparison)
   Node node, node_test;
 	BOOST_CHECK(node == node_test);
 
-  node = Node("1", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), NodeIntegration::Sum);
+  node = Node("1", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
   node.setId(1);
-  node_test = Node("1", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), NodeIntegration::Sum);
+  node_test = Node("1", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
   node_test.setId(1);
   BOOST_CHECK(node != node_test);
 
   node.setId(2);
   BOOST_CHECK(node != node_test);
 
-  node = Node("2", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), NodeIntegration::Sum);
+  node = Node("2", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
   node.setId(1);
   BOOST_CHECK(node != node_test);
 
-  node = Node("1", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new ELUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ELUGradOp<float>()), NodeIntegration::Sum);
+  node = Node("1", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new ELUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ELUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
   BOOST_CHECK(node != node_test);
 
-  node = Node("1", NodeType::hidden, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), NodeIntegration::Sum);
+  node = Node("1", NodeType::hidden, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
   BOOST_CHECK(node != node_test);
 
-  node = Node("1", NodeType::output, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), NodeIntegration::Sum);
+  node = Node("1", NodeType::output, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
   BOOST_CHECK(node != node_test);
 
-	node = Node("1", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), NodeIntegration::Product);
+	node = Node("1", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new ProdOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new ProdErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new ProdWeightGradOp<float>()));
 	BOOST_CHECK(node != node_test);
 }
 
@@ -89,7 +94,12 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
 	std::shared_ptr<ActivationOp<float>> activation_grad(new TanHGradOp<float>());
 	node.setActivation(activation);
 	node.setActivationGrad(activation_grad);
-	node.setIntegration(NodeIntegration::Sum);
+	std::shared_ptr<IntegrationOp<float>> integration(new ProdOp<float>());
+	std::shared_ptr<IntegrationErrorOp<float>> integration_error(new ProdErrorOp<float>());
+	std::shared_ptr<IntegrationWeightGradOp<float>> integration_weight_grad(new ProdWeightGradOp<float>());
+	node.setIntegration(integration);
+	node.setIntegrationError(integration_error);
+	node.setIntegrationWeightGrad(integration_weight_grad);
 	node.setModuleId(4);
 	node.setModuleName("Module1");
 
@@ -99,7 +109,9 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   BOOST_CHECK(node.getStatus() == NodeStatus::initialized);
 	BOOST_CHECK_EQUAL(node.getActivation(), activation.get());
 	BOOST_CHECK_EQUAL(node.getActivationGrad(), activation_grad.get());
-	BOOST_CHECK(node.getIntegration() == NodeIntegration::Sum);
+	BOOST_CHECK_EQUAL(node.getIntegration(), integration.get());
+	BOOST_CHECK_EQUAL(node.getIntegrationError(), integration_error.get());
+	BOOST_CHECK_EQUAL(node.getIntegrationWeightGrad(), integration_weight_grad.get());
 	BOOST_CHECK_EQUAL(node.getModuleId(), 4);
 	BOOST_CHECK_EQUAL(node.getModuleName(), "Module1");
 

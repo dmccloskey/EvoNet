@@ -40,7 +40,7 @@ BOOST_AUTO_TEST_CASE(storeAndLoadCsv)
       NodeStatus::initialized,
       std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), 
 			std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), 
-			NodeIntegration::Sum);
+			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
     nodes.push_back(node);
   }
   data.storeNodesCsv(filename, nodes);
@@ -55,7 +55,7 @@ BOOST_AUTO_TEST_CASE(storeAndLoadCsv)
     BOOST_CHECK(nodes_test[i].getStatus() == NodeStatus::initialized);
 		BOOST_CHECK_EQUAL(nodes_test[i].getActivation()->getName(), "ReLUOp");
 		BOOST_CHECK_EQUAL(nodes_test[i].getActivationGrad()->getName(), "ReLUGradOp");
-		BOOST_CHECK(nodes_test[i].getIntegration() == NodeIntegration::Sum);
+		BOOST_CHECK(nodes_test[i].getIntegration() == std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
   }
 }
 

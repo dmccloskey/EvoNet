@@ -4,6 +4,7 @@
 #define SMARTPEAK_NODE_H
 
 #include <SmartPeak/ml/ActivationFunction.h>
+#include <SmartPeak/ml/IntegrationFunction.h>
 #include <unsupported/Eigen/CXX11/Tensor>
 #include <memory>
 #include <vector>
@@ -28,17 +29,6 @@ namespace SmartPeak
 		unmodifiable = 5
   };
 
-  enum class NodeActivation
-  {
-    Linear = 0,
-    ReLU = 1,
-    ELU = 2,
-    Sigmoid = 3,
-    TanH = 4,
-		Inverse = 5,
-		Exponential = 6
-  };
-
 	enum class NodeIntegration
 	{
 		Sum = 0,
@@ -56,7 +46,7 @@ public:
     Node(const Node& other); ///< Copy constructor // [TODO: add test]
     Node(const std::string& name, const SmartPeak::NodeType& type, const SmartPeak::NodeStatus& status, 
 			const std::shared_ptr<ActivationOp<float>>& activation, const std::shared_ptr<ActivationOp<float>>& activation_grad, 
-			const SmartPeak::NodeIntegration& integration); ///< Explicit constructor
+			const std::shared_ptr<IntegrationOp<float>>& integration, const std::shared_ptr<IntegrationErrorOp<float>>& integration_error, const std::shared_ptr<IntegrationWeightGradOp<float>>& integration_weight_grad); ///< Explicit constructor
     ~Node(); ///< Default destructor
 
     inline bool operator==(const Node& other) const
@@ -69,6 +59,8 @@ public:
           activation_,
 					activation_grad_,
 					integration_,
+					integration_error_,
+					integration_weight_grad_,
           name_
         ) == std::tie(
           other.id_,
@@ -77,6 +69,8 @@ public:
           other.activation_,
 					other.activation_grad_,
 					other.integration_,
+					other.integration_error_,
+					other.integration_weight_grad_,
           other.name_
         )
       ;
@@ -97,6 +91,8 @@ public:
       activation_ = other.activation_;
 			activation_grad_ = other.activation_grad_;
 			integration_ = other.integration_;
+			integration_error_ = other.integration_error_;
+			integration_weight_grad_ = other.integration_weight_grad_;
       status_ = other.status_;
       output_min_ = other.output_min_;
       output_max_ = other.output_max_;
@@ -128,8 +124,18 @@ public:
 		std::shared_ptr<ActivationOp<float>> getActivationGradShared() const; // [TODO: add tests]
 		ActivationOp<float>* getActivationGrad() const; ///< activation getter
 
-		void setIntegration(const SmartPeak::NodeIntegration & integration); ///< integration setter
-		SmartPeak::NodeIntegration getIntegration() const; ///< integration 
+		void setIntegration(const std::shared_ptr<IntegrationOp<float>>& integration); ///< integration setter
+		std::shared_ptr<IntegrationOp<float>> getIntegrationShared() const; // [TODO: add tests]
+		IntegrationOp<float>* getIntegration() const; ///< integration getter
+
+		void setIntegrationError(const std::shared_ptr<IntegrationErrorOp<float>>& integration); ///< integration setter
+		std::shared_ptr<IntegrationErrorOp<float>> getIntegrationErrorShared() const; // [TODO: add tests]
+		IntegrationErrorOp<float>* getIntegrationError() const; ///< integration getter
+
+		void setIntegrationWeightGrad(const std::shared_ptr<IntegrationWeightGradOp<float>>& integration); ///< integration setter
+		std::shared_ptr<IntegrationWeightGradOp<float>> getIntegrationWeightGradShared() const; // [TODO: add tests]
+		IntegrationWeightGradOp<float>* getIntegrationWeightGrad() const; ///< integration getter
+
 
 		void setModuleId(const int& module_id); ///< module id setter
 		int getModuleId() const; ///< module id getter
@@ -199,7 +205,9 @@ private:
     SmartPeak::NodeStatus status_; ///< Node Status   
     std::shared_ptr<ActivationOp<float>> activation_; ///< Node activation function 
 		std::shared_ptr<ActivationOp<float>> activation_grad_; ///< Node activation function 
-		SmartPeak::NodeIntegration integration_; ///< Node Integration   
+		std::shared_ptr<IntegrationOp<float>> integration_; ///< Node integration function 
+		std::shared_ptr<IntegrationErrorOp<float>> integration_error_; ///< Node integration error function 
+		std::shared_ptr<IntegrationWeightGradOp<float>> integration_weight_grad_; ///< Node integration weight grad function 
 
     float output_min_ = -1.0e6; ///< Min Node output
     float output_max_ = 1.0e6; ///< Max Node output

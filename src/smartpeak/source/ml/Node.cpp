@@ -24,6 +24,9 @@ namespace SmartPeak
     activation_ = other.activation_;
 		activation_grad_ = other.activation_grad_;
 		integration_ = other.integration_;
+		integration_error_ = other.integration_error_;
+		integration_weight_grad_ = other.integration_weight_grad_;
+		integration_ = other.integration_;
     output_min_ = other.output_min_;
     output_max_ = other.output_max_;
 		input_ = other.input_;
@@ -35,22 +38,15 @@ namespace SmartPeak
 
   Node::Node(const std::string& name, const SmartPeak::NodeType& type, const SmartPeak::NodeStatus& status,
 		const std::shared_ptr<ActivationOp<float>>& activation, const std::shared_ptr<ActivationOp<float>>& activation_grad,
-		const SmartPeak::NodeIntegration& integration):
-    name_(name), type_(type), status_(status), integration_(integration)
+		const std::shared_ptr<IntegrationOp<float>>& integration, const std::shared_ptr<IntegrationErrorOp<float>>& integration_error, const std::shared_ptr<IntegrationWeightGradOp<float>>& integration_weight_grad):
+    name_(name), type_(type), status_(status)
   {
 		setActivation(activation);
 		setActivationGrad(activation_grad);
+		setIntegration(integration);
+		setIntegrationError(integration_error);
+		setIntegrationWeightGrad(integration_weight_grad);
   }
-
-  //Node::Node(const int& id, const SmartPeak::NodeType& type,
-  //  const SmartPeak::NodeStatus& status, const SmartPeak::NodeActivation& activation, const SmartPeak::NodeIntegration& integration):
-  //  id_(id), type_(type), status_(status), activation_(activation), integration_(integration)
-  //{
-  //  if (name_ == "")
-  //  {
-  //    name_ = std::to_string(id);
-  //  }
-  //}
 
   Node::~Node()
   {
@@ -126,13 +122,46 @@ namespace SmartPeak
 		return activation_grad_.get();
 	}
 
-	void Node::setIntegration(const SmartPeak::NodeIntegration& integration)
+	void Node::setIntegration(const std::shared_ptr<IntegrationOp<float>>& integration)
 	{
-		integration_ = integration;
+		integration_.reset();
+		integration_ = std::move(integration);
 	}
-	SmartPeak::NodeIntegration Node::getIntegration() const
+	std::shared_ptr<IntegrationOp<float>> Node::getIntegrationShared() const
 	{
 		return integration_;
+	}
+	IntegrationOp<float>*  Node::getIntegration() const
+	{
+		return integration_.get();
+	}
+
+	void Node::setIntegrationError(const std::shared_ptr<IntegrationErrorOp<float>>& integration_error)
+	{
+		integration_error_.reset();
+		integration_error_ = std::move(integration_error);
+	}
+	std::shared_ptr<IntegrationErrorOp<float>> Node::getIntegrationErrorShared() const
+	{
+		return integration_error_;
+	}
+	IntegrationErrorOp<float>*  Node::getIntegrationError() const
+	{
+		return integration_error_.get();
+	}
+
+	void Node::setIntegrationWeightGrad(const std::shared_ptr<IntegrationWeightGradOp<float>>& integration_weight_grad)
+	{
+		integration_weight_grad_.reset();
+		integration_weight_grad_ = std::move(integration_weight_grad);
+	}
+	std::shared_ptr<IntegrationWeightGradOp<float>> Node::getIntegrationWeightGradShared() const
+	{
+		return integration_weight_grad_;
+	}
+	IntegrationWeightGradOp<float>*  Node::getIntegrationWeightGrad() const
+	{
+		return integration_weight_grad_.get();
 	}
 
 	void Node::setModuleId(const int & module_id)
