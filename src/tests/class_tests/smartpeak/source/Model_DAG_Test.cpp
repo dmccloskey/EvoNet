@@ -501,35 +501,33 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayer1)
   biases.setConstant(1);
   model1.mapValuesToNodes(biases, biases_ids, NodeStatus::activated, "output");  
 
-  // [DEPRECATED]
-  // // get the next hidden layer
-  // std::vector<std::string> links, source_nodes, sink_nodes;
-  // model1.getNextInactiveLayer(links, source_nodes, sink_nodes);
+	// get the next hidden layer
+	std::map<std::string, int> FP_operations_map;
+	std::vector<OperationList> FP_operations_list;
+	model1.getNextInactiveLayer(FP_operations_map, FP_operations_list);
 
-  // // test links and source and sink nodes
-  // BOOST_CHECK_EQUAL(links.size(), 4);
-  // BOOST_CHECK_EQUAL(links[0], "0");
-  // BOOST_CHECK_EQUAL(links[1], "1");
-  // BOOST_CHECK_EQUAL(links[2], "2");
-  // BOOST_CHECK_EQUAL(links[3], "3");
-  // BOOST_CHECK_EQUAL(source_nodes.size(), 2);
-  // BOOST_CHECK_EQUAL(source_nodes[0], "0");
-  // BOOST_CHECK_EQUAL(source_nodes[1], "1");
-  // BOOST_CHECK_EQUAL(sink_nodes.size(), 2);
-  // BOOST_CHECK_EQUAL(sink_nodes[0], "2");
-  // BOOST_CHECK_EQUAL(sink_nodes[1], "3");
-
-  // get the next hidden layer
-  std::map<std::string, std::vector<std::string>> sink_links_map;
-  model1.getNextInactiveLayer(sink_links_map);
-  
-  // test links and source and sink nodes
-  // [TODO: test for size of each vector!]
-  BOOST_CHECK_EQUAL(sink_links_map.at("2")[0], "0");
-  BOOST_CHECK_EQUAL(sink_links_map.at("2")[1], "2");  
-  BOOST_CHECK_EQUAL(sink_links_map.at("3")[0], "1");
-  BOOST_CHECK_EQUAL(sink_links_map.at("3")[1], "3");
-
+	BOOST_CHECK_EQUAL(FP_operations_map.size(), 2);
+	BOOST_CHECK_EQUAL(FP_operations_map.at("2"), 0);
+	BOOST_CHECK_EQUAL(FP_operations_map.at("3"), 1);
+	BOOST_CHECK_EQUAL(FP_operations_list.size(), 2);
+	BOOST_CHECK_EQUAL(FP_operations_list[0].result.time_step, 0);
+	BOOST_CHECK_EQUAL(FP_operations_list[0].result.sink_node->getName(), "2");
+	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments.size(), 2);
+	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[0].time_step, 0);
+	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[0].source_node->getName(), "0");
+	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[0].weight->getName(), "0");
+	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[1].time_step, 0);
+	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[1].source_node->getName(), "1");
+	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[1].weight->getName(), "2");
+	BOOST_CHECK_EQUAL(FP_operations_list[1].result.time_step, 0);
+	BOOST_CHECK_EQUAL(FP_operations_list[1].result.sink_node->getName(), "3");
+	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments.size(), 2);
+	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[0].time_step, 0);
+	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[0].source_node->getName(), "0");
+	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[0].weight->getName(), "1");
+	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[1].time_step, 0);
+	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[1].source_node->getName(), "1");
+	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[1].weight->getName(), "3");
 }
 
 // [TODO: updatefor new methods]
@@ -556,63 +554,45 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayerBiases1)
   biases.setConstant(1);
   model1.mapValuesToNodes(biases, biases_ids, NodeStatus::activated, "output");  
 
-  // [DEPRECATED]
-  // // get the next hidden layer
-  // std::vector<std::string> links = {"0", "1", "2", "3"};
-  // std::vector<std::string> source_nodes = {"0", "1"};
-  // std::vector<std::string> sink_nodes = {"2", "3"};
-  // std::vector<std::string> sink_nodes_with_biases;
-  // model1.getNextInactiveLayerBiases(links, source_nodes, sink_nodes, sink_nodes_with_biases);
+	// get the next hidden layer
+	std::map<std::string, int> FP_operations_map;
+	std::vector<OperationList> FP_operations_list;
+	model1.getNextInactiveLayer(FP_operations_map, FP_operations_list);
 
-  // // test links and source and sink nodes
-  // BOOST_CHECK_EQUAL(links.size(), 6);
-  // BOOST_CHECK_EQUAL(links[0], "0");
-  // BOOST_CHECK_EQUAL(links[1], "1");
-  // BOOST_CHECK_EQUAL(links[2], "2");
-  // BOOST_CHECK_EQUAL(links[3], "3");
-  // BOOST_CHECK_EQUAL(links[4], "4");
-  // BOOST_CHECK_EQUAL(links[5], "5");
-  // BOOST_CHECK_EQUAL(source_nodes.size(), 3);
-  // BOOST_CHECK_EQUAL(source_nodes[0], "0");
-  // BOOST_CHECK_EQUAL(source_nodes[1], "1");
-  // BOOST_CHECK_EQUAL(source_nodes[2], "6");
-  // BOOST_CHECK_EQUAL(sink_nodes.size(), 2);
-  // BOOST_CHECK_EQUAL(sink_nodes[0], "2");
-  // BOOST_CHECK_EQUAL(sink_nodes[1], "3");
-  // BOOST_CHECK_EQUAL(sink_nodes_with_biases.size(), 2);
-  // BOOST_CHECK_EQUAL(sink_nodes_with_biases[0], "2");
-  // BOOST_CHECK_EQUAL(sink_nodes_with_biases[1], "3");
-
-	// [DEPRECATED]
-  // get the next hidden layer
-	std::map<std::string, std::vector<std::string>> sink_links_map = {
-		{"2", {"0", "2"}},
-		{"3", {"1", "3"}}
-	};
 	std::vector<std::string> sink_nodes_with_biases2;
-	model1.getNextInactiveLayerBiases(sink_links_map, sink_nodes_with_biases2);
+	model1.getNextInactiveLayerBiases(FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
 
-	// test links and source and sink nodes
-	// [TODO: test for size of each vector!]
-	BOOST_CHECK_EQUAL(sink_links_map.at("2")[0], "0");
-	BOOST_CHECK_EQUAL(sink_links_map.at("2")[1], "2");
-	BOOST_CHECK_EQUAL(sink_links_map.at("2")[2], "4");
-	BOOST_CHECK_EQUAL(sink_links_map.at("3")[0], "1");
-	BOOST_CHECK_EQUAL(sink_links_map.at("3")[1], "3");
-	BOOST_CHECK_EQUAL(sink_links_map.at("3")[2], "5");
+	BOOST_CHECK_EQUAL(FP_operations_map.size(), 2);
+	BOOST_CHECK_EQUAL(FP_operations_map.at("2"), 0);
+	BOOST_CHECK_EQUAL(FP_operations_map.at("3"), 1);
+	BOOST_CHECK_EQUAL(FP_operations_list.size(), 2);
+	BOOST_CHECK_EQUAL(FP_operations_list[0].result.time_step, 0);
+	BOOST_CHECK_EQUAL(FP_operations_list[0].result.sink_node->getName(), "2");
+	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments.size(), 3);
+	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[0].time_step, 0);
+	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[0].source_node->getName(), "0");
+	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[0].weight->getName(), "0");
+	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[1].time_step, 0);
+	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[1].source_node->getName(), "1");
+	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[1].weight->getName(), "2");
+	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[2].time_step, 0);
+	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[2].source_node->getName(), "6");
+	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[2].weight->getName(), "4");
+	BOOST_CHECK_EQUAL(FP_operations_list[1].result.time_step, 0);
+	BOOST_CHECK_EQUAL(FP_operations_list[1].result.sink_node->getName(), "3");
+	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments.size(), 3);
+	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[0].time_step, 0);
+	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[0].source_node->getName(), "0");
+	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[0].weight->getName(), "1");
+	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[1].time_step, 0);
+	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[1].source_node->getName(), "1");
+	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[1].weight->getName(), "3");
+	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[2].time_step, 0);
+	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[2].source_node->getName(), "6");
+	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[2].weight->getName(), "5");
 	BOOST_CHECK_EQUAL(sink_nodes_with_biases2.size(), 2);
 	BOOST_CHECK_EQUAL(sink_nodes_with_biases2[0], "2");
 	BOOST_CHECK_EQUAL(sink_nodes_with_biases2[1], "3");
-
-	//// get the next hidden layer
-	//std::map<std::string, int> FP_operations_map;
-	//std::vector<OperationList> FP_operations_list;
-	//model2.getNextInactiveLayer(FP_operations_map, FP_operations_list);
-
-	//std::vector<std::string> sink_nodes_with_biases2;
-	//model2.getNextInactiveLayerBiases(FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
-
-	//std::cout << "check" << std::endl;
 }
 
 BOOST_AUTO_TEST_CASE(forwardPropogateLayerNetInput_Sum) 
