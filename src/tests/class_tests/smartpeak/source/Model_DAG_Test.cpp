@@ -583,25 +583,36 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayerBiases1)
   // BOOST_CHECK_EQUAL(sink_nodes_with_biases[0], "2");
   // BOOST_CHECK_EQUAL(sink_nodes_with_biases[1], "3");
 
+	// [DEPRECATED]
   // get the next hidden layer
-  std::map<std::string, std::vector<std::string>> sink_links_map = {
-    {"2", {"0", "2"}},
-    {"3", {"1", "3"}}
-  };
-  std::vector<std::string> sink_nodes_with_biases2;
-  model1.getNextInactiveLayerBiases(sink_links_map, sink_nodes_with_biases2);
-  
-  // test links and source and sink nodes
-  // [TODO: test for size of each vector!]
-  BOOST_CHECK_EQUAL(sink_links_map.at("2")[0], "0");
-  BOOST_CHECK_EQUAL(sink_links_map.at("2")[1], "2");
-  BOOST_CHECK_EQUAL(sink_links_map.at("2")[2], "4");
-  BOOST_CHECK_EQUAL(sink_links_map.at("3")[0], "1");
-  BOOST_CHECK_EQUAL(sink_links_map.at("3")[1], "3");
-  BOOST_CHECK_EQUAL(sink_links_map.at("3")[2], "5");
-  BOOST_CHECK_EQUAL(sink_nodes_with_biases2.size(), 2);
-  BOOST_CHECK_EQUAL(sink_nodes_with_biases2[0], "2");
-  BOOST_CHECK_EQUAL(sink_nodes_with_biases2[1], "3");
+	std::map<std::string, std::vector<std::string>> sink_links_map = {
+		{"2", {"0", "2"}},
+		{"3", {"1", "3"}}
+	};
+	std::vector<std::string> sink_nodes_with_biases2;
+	model1.getNextInactiveLayerBiases(sink_links_map, sink_nodes_with_biases2);
+
+	// test links and source and sink nodes
+	// [TODO: test for size of each vector!]
+	BOOST_CHECK_EQUAL(sink_links_map.at("2")[0], "0");
+	BOOST_CHECK_EQUAL(sink_links_map.at("2")[1], "2");
+	BOOST_CHECK_EQUAL(sink_links_map.at("2")[2], "4");
+	BOOST_CHECK_EQUAL(sink_links_map.at("3")[0], "1");
+	BOOST_CHECK_EQUAL(sink_links_map.at("3")[1], "3");
+	BOOST_CHECK_EQUAL(sink_links_map.at("3")[2], "5");
+	BOOST_CHECK_EQUAL(sink_nodes_with_biases2.size(), 2);
+	BOOST_CHECK_EQUAL(sink_nodes_with_biases2[0], "2");
+	BOOST_CHECK_EQUAL(sink_nodes_with_biases2[1], "3");
+
+	//// get the next hidden layer
+	//std::map<std::string, int> FP_operations_map;
+	//std::vector<OperationList> FP_operations_list;
+	//model2.getNextInactiveLayer(FP_operations_map, FP_operations_list);
+
+	//std::vector<std::string> sink_nodes_with_biases2;
+	//model2.getNextInactiveLayerBiases(FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
+
+	//std::cout << "check" << std::endl;
 }
 
 BOOST_AUTO_TEST_CASE(forwardPropogateLayerNetInput_Sum) 
@@ -1137,8 +1148,8 @@ BOOST_AUTO_TEST_CASE(backPropogate_Sum)
     {
       for (int k=0; k<memory_size; ++k)
       {
-				std::cout << "Node: " << i << "; Batch: " << j << "; Memory: " << k << std::endl;
-				std::cout << "Calc Error: " << model2.getNode(hidden_nodes[i]).getError()(j, k) << ", Expected Error: " << error(j, i) << std::endl;
+				//std::cout << "Node: " << i << "; Batch: " << j << "; Memory: " << k << std::endl;
+				//std::cout << "Calc Error: " << model1.getNode(hidden_nodes[i]).getError()(j, k) << ", Expected Error: " << error(j, i) << std::endl;
         BOOST_CHECK_CLOSE(model1.getNode(hidden_nodes[i]).getError()(j, k), error(j, i), 1e-3);
       }       
     }
@@ -1197,8 +1208,8 @@ BOOST_AUTO_TEST_CASE(backPropogate_Product)
 		{
 			for (int k = 0; k<memory_size; ++k)
 			{
-				std::cout << "Node: " << i << "; Batch: " << j << "; Memory: " << k << std::endl;
-				std::cout << "Calc Error: " << model2.getNode(hidden_nodes[i]).getError()(j, k) << ", Expected Error: " << error(j, i) << std::endl;
+				//std::cout << "Node: " << i << "; Batch: " << j << "; Memory: " << k << std::endl;
+				//std::cout << "Calc Error: " << model2.getNode(hidden_nodes[i]).getError()(j, k) << ", Expected Error: " << error(j, i) << std::endl;
 				BOOST_CHECK_CLOSE(model2.getNode(hidden_nodes[i]).getError()(j, k), error(j, i), 1e-3);
 			}
 		}
@@ -1304,7 +1315,7 @@ BOOST_AUTO_TEST_CASE(updateWeights_Product)
 		-26.4262f, -26.3825f, -26.4262f, -26.3825f, 1.0f, 1.0f });
 	for (int i = 0; i<weight_ids.size(); ++i)
 	{
-		std::cout << "Weight: " << i << "; Calculated: " << model2.getWeight(weight_ids[i]).getWeight() << ", Expected: " << weights(i) << std::endl;
+		//std::cout << "Weight: " << i << "; Calculated: " << model2.getWeight(weight_ids[i]).getWeight() << ", Expected: " << weights(i) << std::endl;
 		BOOST_CHECK_CLOSE(model2.getWeight(weight_ids[i]).getWeight(), weights(i), 1e-3);
 	}
 }

@@ -516,7 +516,7 @@ public:
       const int& time_step, int n_threads = 1);
 
     static bool calculateNodeError_(
-			OperationList* operations,
+			OperationResult* operations,
       OperationArguments* arguments, 
       const int& batch_size,
       const int& memory_size,

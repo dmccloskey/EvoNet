@@ -887,7 +887,7 @@ namespace SmartPeak
     const int& memory_size,
     const int& time_step)
   {
-    //std::lock_guard<std::mutex> lock(calculateNodeInput_mutex);
+    std::lock_guard<std::mutex> lock(calculateNodeInput_mutex);
 
 		Eigen::Tensor<float, 1> weight_tensor(batch_size);
 		weight_tensor.setConstant(arguments->weight->getWeight());
@@ -911,7 +911,7 @@ namespace SmartPeak
   {
     std::lock_guard<std::mutex> lock(calculateNetNodeInput_mutex);
 
-    std::vector<std::future<Eigen::Tensor<float, 1>>> task_results;
+    std::vector<std::future<bool>> task_results;
 		operations->result.sink_node->getIntegrationShared()->initNetNodeInput(batch_size);
     int thread_cnt = 0; 
 
@@ -1093,118 +1093,6 @@ namespace SmartPeak
       }
     }
   }
-  
-  // [DEPRECATED]
-  // void Model::forwardPropogate(const int& time_step, bool cache_FP_steps, bool use_cache, int n_threads)
-  // { 
-  //   if (use_cache)
-  //   {
-  //     for (auto& sink_link : FP_sink_link_cache_)
-  //       forwardPropogateLayerNetInput(sink_link, time_step, n_threads);
-  //   }
-  //   else
-  //   {
-  //     const int max_iters = 1e6;
-  //     for (int iter=0; iter<max_iters; ++iter)
-  //     { 
-  //       // get the next hidden layer
-  //       std::map<std::string, std::vector<std::string>> sink_links_map;
-  //       getNextInactiveLayer(sink_links_map);
-
-  //       // get biases,
-  //       std::vector<std::string> sink_nodes_with_biases;
-  //       getNextInactiveLayerBiases(sink_links_map, sink_nodes_with_biases);
-        
-  //       // get cycles
-  //       std::map<std::string, std::vector<std::string>> sink_links_map_cycles = sink_links_map;
-  //       std::vector<std::string> sink_nodes_cycles;
-  //       getNextInactiveLayerCycles(sink_links_map_cycles, sink_nodes_cycles);
-
-  //       if (sink_links_map_cycles.size() == sink_links_map.size())
-  //       { // all forward propogation steps have caught up
-  //         // add sink nodes with cycles to the forward propogation step
-  //         sink_links_map = sink_links_map_cycles;
-  //       }
-
-  //       // check if all nodes have been activated
-  //       if (sink_links_map.size() == 0)
-  //       {
-  //         break;
-  //       }
-
-  //       if (cache_FP_steps)
-  //         FP_sink_link_cache_.push_back(sink_links_map);
-
-  //       // calculate the net input
-  //       forwardPropogateLayerNetInput(sink_links_map, time_step, n_threads);
-  //     }
-  //   }
-  // }
-  
-  // [DEPRECATED]
-  // void Model::forwardPropogate(const int& time_step)
-  // {
-  //   const int max_iters = 1e6;
-  //   for (int iter=0; iter<max_iters; ++iter)
-  //   {      
-  //     // std::cout<<"Model::forwardPropogate() iter: "<<iter<<std::endl;
-
-  //     // get the next hidden layer
-  //     std::vector<std::string> links, source_nodes, sink_nodes;
-  //     getNextInactiveLayer(links, source_nodes, sink_nodes);
-  //     // std::cout<<"Model::forwardPropogate() getNextInactiveLayer links, source, and sink sizes "<<std::endl;
-  //     // std::cout<<"Model::forwardPropogate() links.size(): "<<links.size()<<std::endl;
-  //     // std::cout<<"Model::forwardPropogate() source nodes: "<<source_nodes.size()<<std::endl;
-  //     // std::cout<<"Model::forwardPropogate() sink nodes: "<<sink_nodes.size()<<std::endl;
-
-  //     // get biases,
-  //     std::vector<std::string> sink_nodes_with_biases;
-  //     getNextInactiveLayerBiases(links, source_nodes, sink_nodes, sink_nodes_with_biases);
-  //     // std::cout<<"Model::forwardPropogate() getNextInactiveLayerBiases links, source, and sink sizes "<<std::endl;
-  //     // std::cout<<"Model::forwardPropogate() links.size(): "<<links.size()<<std::endl;
-  //     // std::cout<<"Model::forwardPropogate() source nodes: "<<source_nodes.size()<<std::endl;
-  //     // std::cout<<"Model::forwardPropogate() sink nodes: "<<sink_nodes.size()<<std::endl;
-      
-  //     // get cycles
-  //     std::vector<std::string> links_cycles, source_nodes_cycles, sink_nodes_cycles;
-  //     getNextInactiveLayerCycles(links_cycles, source_nodes_cycles, sink_nodes, sink_nodes_cycles);
-  //     // std::cout<<"Model::forwardPropogate() getNextInactiveLayerCycles links, source, and sink sizes "<<std::endl;
-  //     // std::cout<<"Model::forwardPropogate() sink_nodes_cycles: "<<sink_nodes_cycles.size()<<std::endl;
-  //     // std::cout<<"Model::forwardPropogate() links: "<<links.size()<<std::endl;
-  //     // std::cout<<"Model::forwardPropogate() source nodes: "<<source_nodes.size()<<std::endl;
-  //     // std::cout<<"Model::forwardPropogate() sink nodes: "<<sink_nodes.size()<<std::endl;
-
-  //     if (sink_nodes_cycles.size() == sink_nodes.size())
-  //     { // all forward propogation steps have caught up
-  //       // add sink nodes with cycles to the forward propogation step
-  //       links.insert( links.end(), links_cycles.begin(), links_cycles.end() );
-  //       source_nodes.insert( source_nodes.end(), source_nodes_cycles.begin(), source_nodes_cycles.end() );
-  //     }
-  //     else
-  //     { // remove source/sink nodes with cycles from the forward propogation step
-  //       for (const std::string node_name : sink_nodes_cycles)
-  //       {
-  //         sink_nodes.erase(std::remove(sink_nodes.begin(), sink_nodes.end(), node_name), sink_nodes.end());
-  //       }
-  //     }
-
-  //     // check if all nodes have been activated
-  //     if (links.size() == 0)
-  //     {
-  //       break;
-  //     }      
-  //     // std::cout<<"Model::forwardPropogate() final links, source, and sink sizes "<<std::endl;
-  //     // std::cout<<"Model::forwardPropogate() links.size(): "<<links.size()<<std::endl;
-  //     // std::cout<<"Model::forwardPropogate() source nodes: "<<source_nodes.size()<<std::endl;
-  //     // std::cout<<"Model::forwardPropogate() sink nodes: "<<sink_nodes.size()<<std::endl;
-
-  //     // calculate the net input
-  //     forwardPropogateLayerNetInput(links, source_nodes, sink_nodes, time_step);
-
-  //     // calculate the activation
-  //     forwardPropogateLayerActivation(sink_nodes, time_step);
-  //   }
-  // }
 
   void Model::FPTT(const int& time_steps, 
     const Eigen::Tensor<float, 3>& values,
@@ -1665,10 +1553,10 @@ namespace SmartPeak
     Eigen::Tensor<float, 1> weight_tensor(batch_size);
     weight_tensor.setConstant(arguments->weight->getWeight());
 		result->sink_node->getIntegrationErrorShared()->operator()(
-			weight_tensor, 
-			arguments->source_node->getError().chip(time_step, 1), 
+			weight_tensor,
+			arguments->source_node->getError().chip(time_step, 1),
 			arguments->source_node->getInput().chip(time_step, 1),
-			sink_output)
+			sink_output);
     return true;
   }
 
@@ -1682,7 +1570,7 @@ namespace SmartPeak
   {
     std::lock_guard<std::mutex> lock(calculateNetNodeError_mutex);
 
-    std::vector<std::future<Eigen::Tensor<float, 1>>> task_results;
+    std::vector<std::future<bool>> task_results;
     int thread_cnt = 0;
     
 		Eigen::Tensor<float, 1> sink_output = operations->result.sink_node->getOutput().chip(time_step, 1);
@@ -1948,42 +1836,36 @@ namespace SmartPeak
 		// and sum the average derivate for all time steps across shared weights
     for (const auto& link_map : links_)
     {
-      if (nodes_.at(link_map.second->getSinkNodeName())->getStatus() == NodeStatus::corrected)      
+			std::shared_ptr<Node> sink_node = nodes_.at(link_map.second->getSinkNodeName()); // which IntegrationWeightGradOp is determined by the sink node
+			sink_node->getIntegrationWeightGradShared()->initNetWeightError();
+      if (sink_node->getStatus() == NodeStatus::corrected)
       {
         // Sum the error from current and previous time-steps
         // [PARALLEL: implement threads here]
-        float error_sum = 0.0;
+				std::shared_ptr<Node> source_node = nodes_.at(link_map.second->getSourceNodeName());
+				Eigen::Tensor<float, 1> weights(source_node->getOutput().dimension(0));
+				weights.setConstant(weights_.at(link_map.second->getWeightName())->getWeight());
         for (int i=0; i<max_steps; ++i)
         {
           // [PARALLEL: move to threadPool/CUDA implementations]
 					// [Tests: update tests accordingly]
-					Eigen::Tensor<float, 1> error_tensor = nodes_.at(link_map.second->getSinkNodeName())->getError().chip(i, 1);
-
-					Eigen::Tensor<float, 1> output_tensor;
-					if (nodes_.at(link_map.second->getSinkNodeName())->getIntegration() == std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()))
-						output_tensor = nodes_.at(link_map.second->getSourceNodeName())->getOutput().chip(i, 1);
-					else if (nodes_.at(link_map.second->getSinkNodeName())->getIntegration() == std::shared_ptr<IntegrationOp<float>>(new ProdOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new ProdErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new ProdWeightGradOp<float>()))
-						output_tensor = (nodes_.at(link_map.second->getSourceNodeName())->getInput().chip(i, 1)/
-							weights_.at(link_map.second->getWeightName())->getWeight()
-							).unaryExpr(std::ptr_fun(checkNanInf<float>));
-					else if (nodes_.at(link_map.second->getSinkNodeName())->getIntegration() == NodeIntegration::Max)
-						output_tensor = nodes_.at(link_map.second->getSourceNodeName())->getOutput().chip(i, 1); // [TODO: update with correct formula]
-					else
-						std::cout<<"NodeIntegration type is not supported."<<std::endl; // should throw an error!
-
-          Eigen::Tensor<float, 0> derivative_mean_tensor = (- error_tensor * output_tensor).mean(); // average derivative
-          error_sum += derivative_mean_tensor(0);
+					sink_node->getIntegrationWeightGradShared()->operator()(
+						sink_node->getError().chip(i, 1),
+						source_node->getOutput().chip(i, 1),
+						weights,
+						source_node->getInput().chip(i, 1));
         } 
         // [PARALELL: collect threads here sum the error]
-				auto found = weight_derivatives.emplace(link_map.second->getWeightName(), error_sum);
+				auto found = weight_derivatives.emplace(link_map.second->getWeightName(), sink_node->getIntegrationWeightGradShared()->getNetWeightError());
 				if (!found.second)
 				{
-					weight_derivatives.at(link_map.second->getWeightName()) += error_sum;
+					weight_derivatives.at(link_map.second->getWeightName()) += sink_node->getIntegrationWeightGradShared()->getNetWeightError();
 				}         
       }    
     }
 
     // update the weights
+    // [PARALLEL: implement threads here]
     for (const auto& weight_derivative : weight_derivatives)
       weights_.at(weight_derivative.first)->updateWeight(weight_derivative.second);
   }
