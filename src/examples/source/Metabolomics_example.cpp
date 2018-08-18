@@ -674,13 +674,11 @@ void main_classification()
 	std::cout << "Initializing the population..." << std::endl;
 	std::vector<Model> population = {model_trainer.makeModelClassification(n_input_nodes, n_output_nodes)};
 
-	PopulationTrainerFile population_trainer_file;
-	population_trainer_file.storeModels(population, "Metabolomics");
-
 	// Evolve the population
 	std::vector<std::vector<std::pair<int, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
 		population, model_trainer, model_replicator, metabolomics_data, input_nodes, output_nodes, n_threads);
 
+	PopulationTrainerFile population_trainer_file;
 	population_trainer_file.storeModels(population, "Metabolomics");
 	population_trainer_file.storeModelValidations("MetabolomicsValidationErrors.csv", models_validation_errors_per_generation.back());
 }

@@ -777,18 +777,18 @@ namespace SmartPeak
       } 
     }
 
-    // calculate the output and the derivative
-    Eigen::Tensor<float, 1> output = calculateActivation(
-      operations->result.sink_node->getActivationShared().get(), operations->result.sink_node->getIntegrationShared()->getNetNodeInput(),
-      operations->result.sink_node->getDt().chip(time_step, 1),
-      1);
-    Eigen::Tensor<float, 1> derivative = calculateDerivative(
-      operations->result.sink_node->getActivationGradShared().get(), output, 1);
-    
-    operations->result.sink_node->setStatus(NodeStatus::activated);
+		// calculate the output and the derivative
+		Eigen::Tensor<float, 1> output = calculateActivation(
+			operations->result.sink_node->getActivationShared().get(), operations->result.sink_node->getIntegrationShared()->getNetNodeInput(),
+			operations->result.sink_node->getDt().chip(time_step, 1),
+			1);
+		Eigen::Tensor<float, 1> derivative = calculateDerivative(
+			operations->result.sink_node->getActivationGradShared().get(), output, 1);
+
+		operations->result.sink_node->setStatus(NodeStatus::activated);
 		operations->result.sink_node->getInputMutable()->chip(time_step, 1) = operations->result.sink_node->getIntegrationShared()->getNetNodeInput();
-    operations->result.sink_node->getOutputMutable()->chip(time_step, 1) = output;
-    operations->result.sink_node->getDerivativeMutable()->chip(time_step, 1) = derivative;
+		operations->result.sink_node->getOutputMutable()->chip(time_step, 1) = output;
+		operations->result.sink_node->getDerivativeMutable()->chip(time_step, 1) = derivative;
 
     return true;
   }

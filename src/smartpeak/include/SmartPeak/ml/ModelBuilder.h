@@ -82,7 +82,7 @@ public:
 
 		@returns vector of output node names
 		*/
-		std::vector<std::string> addConvolution(Model& model, const std::string& name, const std::vector<std::string>& source_node_names, 
+		std::vector<std::string> addConvolution(Model& model, const std::string& name, const std::string& module_name, const std::vector<std::string>& source_node_names,
 			const int& input_width, const int& input_height,
 			const int& extent_width, const int& extent_height,
 			const int& depth, const int& stride, const int& zero_padding,

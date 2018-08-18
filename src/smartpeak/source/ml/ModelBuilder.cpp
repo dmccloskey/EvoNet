@@ -210,4 +210,54 @@ namespace SmartPeak
 
 		return node_names;
 	}
+	std::vector<std::string> ModelBuilder::addConvolution(Model & model, const std::string & name, const std::string& module_name, const std::vector<std::string>& source_node_names, const int & input_width, const int & input_height, const int & extent_width, const int & extent_height, const int & depth, const int & stride, const int & zero_padding, const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver)
+	{
+		std::vector<std::string> node_names;
+
+		// Parameters for the Convolution layer
+
+
+		// Create the filter bias
+		char bias_name_char[64];
+		sprintf(bias_name_char, "%s-bias", name.data());
+		std::string bias_name(bias_name_char);
+		Node bias(bias_name, NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+		bias.setModuleName(module_name);
+		model.addNodes({ bias });
+
+		// Create the convolution filter nodes + biases and hidden to bias links
+		for (int i = 0; i < extent_height; ++i)
+		{
+			for (int j = 0; j < extent_width; ++j)
+			{
+				char node_name_char[64];
+				sprintf(node_name_char, "%s-H%d-W%d", name.data(), i, j);
+				std::string node_name(node_name_char);
+				node_names.push_back(node_name);
+				Node node(node_name, NodeType::hidden, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+				node.setModuleName(module_name);
+				model.addNodes({ node });
+
+				char weight_bias_name_char[64];
+				sprintf(weight_bias_name_char, "%s_to_%s", bias_name.data(), node_name.data());
+				std::string weight_bias_name(weight_bias_name_char);
+
+				char link_bias_name_char[64];
+				sprintf(link_bias_name_char, "%s_to_%s", bias_name.data(), node_name.data());
+				std::string link_bias_name(link_bias_name_char);
+
+				std::shared_ptr<WeightInitOp> bias_weight_init;
+				bias_weight_init.reset(new ConstWeightInitOp(1.0));;
+				std::shared_ptr<SolverOp> bias_solver = solver;
+				Weight weight_bias(weight_bias_name, bias_weight_init, bias_solver);
+				weight_bias.setModuleName(module_name);
+				Link link_bias(link_bias_name, bias_name, node_name, weight_bias_name);
+				link_bias.setModuleName(module_name);
+
+				model.addWeights({ weight_bias });
+				model.addLinks({ link_bias });
+			}
+		}
+		return node_names;
+	}
 }
