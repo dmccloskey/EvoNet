@@ -834,9 +834,9 @@ BOOST_AUTO_TEST_CASE(modelTrainer2)
     // forward propogate
     // model2a.FPTT(memory_size, input, input_ids, dt);
     if (iter == 0)
-      model2a.FPTT(memory_size, input, input_ids, dt, true, true, 2); 
+      model2a.FPTT(memory_size - 1, input, input_ids, dt, true, true, 2); 
     else      
-      model2a.FPTT(memory_size, input, input_ids, dt, false, true, 2); 
+      model2a.FPTT(memory_size - 1, input, input_ids, dt, false, true, 2); 
 
     // calculate the model error
     //model2a.calculateError(expected, output_nodes, 0);

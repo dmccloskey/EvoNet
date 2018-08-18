@@ -189,9 +189,9 @@ namespace SmartPeak
 		{
 			// forward propogate
 			if (iter == 0)
-				model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), true, true, getNThreads());
+				model.FPTT(getMemorySize() - 1, input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), true, true, getNThreads());
 			else
-				model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), false, true, getNThreads());
+				model.FPTT(getMemorySize() - 1, input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), false, true, getNThreads());
 
 			// calculate the model error and node output 
 			if (iter == 0)
@@ -271,9 +271,9 @@ namespace SmartPeak
 
 			// forward propogate
 			if (iter == 0)
-				model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), true, true, getNThreads());
+				model.FPTT(getMemorySize() - 1, input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), true, true, getNThreads());
 			else
-				model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), false, true, getNThreads());
+				model.FPTT(getMemorySize() - 1, input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), false, true, getNThreads());
 
 			// calculate the model error and node output error
 			if (iter == 0)

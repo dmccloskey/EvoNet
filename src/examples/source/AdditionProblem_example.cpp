@@ -916,8 +916,8 @@ int main(int argc, char** argv)
 {
 	// define the population trainer parameters
 	PopulationTrainerExt population_trainer;
-	//population_trainer.setNGenerations(1);
-	population_trainer.setNGenerations(20);
+	population_trainer.setNGenerations(1);
+	//population_trainer.setNGenerations(20);
 	population_trainer.setNTop(3);
 	population_trainer.setNRandom(3);
 	population_trainer.setNReplicatesPerModel(3);

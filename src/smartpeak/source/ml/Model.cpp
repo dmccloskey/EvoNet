@@ -895,10 +895,13 @@ namespace SmartPeak
         { // not all forward propogation steps have caught up
           // need to remove sink nodes with cycles
           std::vector<OperationList> FP_operations_list_nocycles;
-          for (const std::string& sink_node: sink_nodes_cycles)
-          {
-            FP_operations_list_nocycles.push_back(FP_operations_list[FP_operations_map.at(sink_node)]);
-          }
+					for (const auto& FP_operation : FP_operations_list)
+						if (std::count(sink_nodes_cycles.begin(), sink_nodes_cycles.end(), FP_operation.result.sink_node->getName()) == 0)
+							FP_operations_list_nocycles.push_back(FP_operation);
+					//for (const std::string& sink_node : sink_nodes_cycles)
+					//{
+					//	FP_operations_list_nocycles.push_back(FP_operations_list[FP_operations_map.at(sink_node)]);
+					//}
           FP_operations_list = FP_operations_list_nocycles;
         }
 
@@ -925,10 +928,10 @@ namespace SmartPeak
   {
     // check time_steps vs memory_size
     int max_steps = time_steps;
-    if (time_steps > nodes_.begin()->second->getOutput().dimension(1))
+    if (time_steps >= nodes_.begin()->second->getOutput().dimension(1))
     {
-      std::cout<<"Time_steps will be scaled back to the memory_size."<<std::endl;
-      max_steps = nodes_.begin()->second->getOutput().dimension(1);
+      std::cout<<"Time_steps will be scaled back to the memory_size - 1."<<std::endl;
+      max_steps = nodes_.begin()->second->getOutput().dimension(1) - 1;
     }
 
     for (int time_step=0; time_step<max_steps; ++time_step)
