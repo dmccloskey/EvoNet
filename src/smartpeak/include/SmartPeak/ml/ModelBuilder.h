@@ -45,21 +45,24 @@ public:
 
 		@returns vector of output node names
 		*/
-		std::vector<std::string> addFullyConnected(Model& model, const std::string& name, const std::vector<std::string>& source_node_names, const int& n_nodes,
+		std::vector<std::string> addFullyConnected(Model& model, const std::string& name, const std::string& module_name, 
+			const std::vector<std::string>& source_node_names, const int& n_nodes,
 			const std::shared_ptr<ActivationOp<float>>& node_activation,
 			const std::shared_ptr<ActivationOp<float>>& node_activation_grad,
-			const NodeIntegration& node_integration);
+			const std::shared_ptr<IntegrationOp<float>>& node_integration,
+			const std::shared_ptr<IntegrationErrorOp<float>>& node_integration_error,
+			const std::shared_ptr<IntegrationWeightGradOp<float>>& node_integration_weight_grad,
+			const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver);
 
 		/**
 		@brief Add a Soft Max
 
 		@param[in, out] Model
 		@param[in] source_node_names Node_names to add the layer to
-		@param[in] n_nodes The number of output nodes
 
 		@returns vector of output node names
 		*/
-		std::vector<std::string> addSoftMax(Model& model, const std::string& name, const std::vector<std::string>& source_node_names, const int& n_nodes);
+		std::vector<std::string> addSoftMax(Model& model, const std::string& name, const std::string& module_name, const std::vector<std::string>& source_node_names);
 
 		/**
 		@brief Add a Convolution layer
@@ -82,7 +85,8 @@ public:
 		std::vector<std::string> addConvolution(Model& model, const std::string& name, const std::vector<std::string>& source_node_names, 
 			const int& input_width, const int& input_height,
 			const int& extent_width, const int& extent_height,
-			const int& depth, const int& stride, const int& zero_padding);
+			const int& depth, const int& stride, const int& zero_padding,
+			const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver);
 
 		/**
 		@brief Add a Convolution layer

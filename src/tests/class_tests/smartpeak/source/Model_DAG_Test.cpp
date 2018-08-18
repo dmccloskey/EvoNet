@@ -189,6 +189,95 @@ Model makeModel2()
 }
 Model model2 = makeModel2();
 
+Model makeModel3()
+{
+	/**
+	* Directed Acyclic Graph Toy Network Model
+	(same as above except the node intergration for hidden and output nodes
+	have been set to Product)
+	*/
+	Node i1, i2, h1, h2, o1, o2, b1, b2;
+	Link l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4;
+	Weight w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4;
+	Model model3;
+
+	// Toy network: 1 hidden layer, fully connected, DAG
+	i1 = Node("0", NodeType::input, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+	i2 = Node("1", NodeType::input, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+	h1 = Node("2", NodeType::hidden, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new MaxOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new MaxErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new MaxWeightGradOp<float>()));
+	h2 = Node("3", NodeType::hidden, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new MaxOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new MaxErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new MaxWeightGradOp<float>()));
+	o1 = Node("4", NodeType::output, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new MaxOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new MaxErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new MaxWeightGradOp<float>()));
+	o2 = Node("5", NodeType::output, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new MaxOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new MaxErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new MaxWeightGradOp<float>()));
+	b1 = Node("6", NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+	b2 = Node("7", NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+
+	// weights  
+	std::shared_ptr<WeightInitOp> weight_init;
+	std::shared_ptr<SolverOp> solver;
+	// weight_init.reset(new RandWeightInitOp(1.0)); // No random init for testing
+	weight_init.reset(new ConstWeightInitOp(1.0));
+	solver.reset(new SGDOp(0.01, 0.9));
+	w1 = Weight("0", weight_init, solver);
+	weight_init.reset(new ConstWeightInitOp(1.0));
+	solver.reset(new SGDOp(0.01, 0.9));
+	w2 = Weight("1", weight_init, solver);
+	weight_init.reset(new ConstWeightInitOp(1.0));
+	solver.reset(new SGDOp(0.01, 0.9));
+	w3 = Weight("2", weight_init, solver);
+	weight_init.reset(new ConstWeightInitOp(1.0));
+	solver.reset(new SGDOp(0.01, 0.9));
+	w4 = Weight("3", weight_init, solver);
+	weight_init.reset(new ConstWeightInitOp(1.0));
+	solver.reset(new SGDOp(0.01, 0.9));
+	wb1 = Weight("4", weight_init, solver);
+	weight_init.reset(new ConstWeightInitOp(1.0));
+	solver.reset(new SGDOp(0.01, 0.9));
+	wb2 = Weight("5", weight_init, solver);
+	// input layer + bias
+	l1 = Link("0", "0", "2", "0");
+	l2 = Link("1", "0", "3", "1");
+	l3 = Link("2", "1", "2", "2");
+	l4 = Link("3", "1", "3", "3");
+	lb1 = Link("4", "6", "2", "4");
+	lb2 = Link("5", "6", "3", "5");
+	// weights
+	weight_init.reset(new ConstWeightInitOp(1.0));
+	solver.reset(new SGDOp(0.01, 0.9));
+	w5 = Weight("6", weight_init, solver);
+	weight_init.reset(new ConstWeightInitOp(1.0));
+	solver.reset(new SGDOp(0.01, 0.9));
+	w6 = Weight("7", weight_init, solver);
+	weight_init.reset(new ConstWeightInitOp(1.0));
+	solver.reset(new SGDOp(0.01, 0.9));
+	w7 = Weight("8", weight_init, solver);
+	weight_init.reset(new ConstWeightInitOp(1.0));
+	solver.reset(new SGDOp(0.01, 0.9));
+	w8 = Weight("9", weight_init, solver);
+	weight_init.reset(new ConstWeightInitOp(1.0));
+	solver.reset(new SGDOp(0.01, 0.9));
+	wb3 = Weight("10", weight_init, solver);
+	weight_init.reset(new ConstWeightInitOp(1.0));
+	solver.reset(new SGDOp(0.01, 0.9));
+	wb4 = Weight("11", weight_init, solver);
+	// hidden layer + bias
+	l5 = Link("6", "2", "4", "6");
+	l6 = Link("7", "2", "5", "7");
+	l7 = Link("8", "3", "4", "8");
+	l8 = Link("9", "3", "5", "9");
+	lb3 = Link("10", "7", "4", "10");
+	lb4 = Link("11", "7", "5", "11");
+	model3.setId(3);
+	model3.addNodes({ i1, i2, h1, h2, o1, o2, b1, b2 });
+	model3.addWeights({ w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4 });
+	model3.addLinks({ l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4 });
+	std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>());
+	model3.setLossFunction(loss_function);
+	std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
+	model3.setLossFunctionGrad(loss_function_grad);
+	return model3;
+}
+Model model3 = makeModel3();
+
 BOOST_AUTO_TEST_SUITE(model_DAG)
 
 /**
@@ -832,6 +921,60 @@ BOOST_AUTO_TEST_CASE(forwardPropogate_Product)
 	}
 }
 
+BOOST_AUTO_TEST_CASE(forwardPropogate_Max)
+{
+	// Toy network: 1 hidden layer, fully connected, DAG
+
+	// initialize nodes
+	const int batch_size = 4;
+	const int memory_size = 1;
+	model3.initError(batch_size, memory_size);
+	model3.clearCache();
+	model3.initNodes(batch_size, memory_size);
+
+	// create the input
+	const std::vector<std::string> input_ids = { "0", "1" };
+	Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size());
+	input.setValues({ { { 1, 5 } },{ { 2, 6 } },{ { 3, 7 } },{ { 4, 8 } } });
+	model3.mapValuesToNodes(input, input_ids, NodeStatus::activated, "output");
+
+	const std::vector<std::string> biases_ids = { "6", "7" };
+	Eigen::Tensor<float, 3> biases(batch_size, memory_size, (int)biases_ids.size());
+	biases.setConstant(1);
+	model3.mapValuesToNodes(biases, biases_ids, NodeStatus::activated, "output");
+
+	// calculate the activation
+	model3.forwardPropogate(0, true, false, 1);  // need a cache or a segmentation fault will occur!
+
+																							 // test values of output nodes
+	Eigen::Tensor<float, 2> output(batch_size, 2);
+	output.setValues({ { 5, 5 },{ 6, 6 },{ 7, 7 },{ 8, 8 } });
+	Eigen::Tensor<float, 2> derivative(batch_size, 2);
+	derivative.setValues({ { 1, 1 },{ 1, 1 },{ 1, 1 },{ 1, 1 } });
+	Eigen::Tensor<float, 2> net_input(batch_size, 2);
+	net_input.setValues({ { 5, 5 },{ 6, 6 },{ 7, 7 },{ 8, 8 } });
+	const std::vector<std::string> output_nodes = { "4", "5" };
+	for (int i = 0; i<(int)output_nodes.size(); ++i)
+	{
+		BOOST_CHECK_EQUAL(model3.getNode(output_nodes[i]).getOutput().size(), batch_size*memory_size);
+		BOOST_CHECK_EQUAL(model3.getNode(output_nodes[i]).getDerivative().size(), batch_size*memory_size);
+		BOOST_CHECK(model3.getNode(output_nodes[i]).getStatus() == NodeStatus::activated);
+		for (int j = 0; j<batch_size; ++j)
+		{
+			for (int k = 0; k<memory_size; ++k)
+			{
+				//std::cout << "Node: " << i << "; Batch: " << j << "; Memory: " << k << std::endl;
+				//std::cout << "Calc Output: " << model3.getNode(output_nodes[i]).getOutput()(j, k) << ", Expected Output: " << output(j, i) << std::endl;
+				//std::cout << "Calc Derivative: " << model3.getNode(output_nodes[i]).getDerivative()(j, k) << ", Expected Derivative: " << derivative(j, i) << std::endl;
+				//std::cout << "Calc Net Input: " << model3.getNode(output_nodes[i]).getInput()(j, k) << ", Expected Net Input: " << net_input(j, i) << std::endl;
+				BOOST_CHECK_CLOSE(model3.getNode(output_nodes[i]).getInput()(j, k), net_input(j, i), 1e-3);
+				BOOST_CHECK_CLOSE(model3.getNode(output_nodes[i]).getOutput()(j, k), output(j, i), 1e-3);
+				BOOST_CHECK_CLOSE(model3.getNode(output_nodes[i]).getDerivative()(j, k), derivative(j, i), 1e-3);
+			}
+		}
+	}
+}
+
 BOOST_AUTO_TEST_CASE(calculateError) 
 {
   // Toy network: 1 hidden layer, fully connected, DAG
@@ -1196,6 +1339,66 @@ BOOST_AUTO_TEST_CASE(backPropogate_Product)
 	}
 }
 
+BOOST_AUTO_TEST_CASE(backPropogate_Max)
+{
+	// Toy network: 1 hidden layer, fully connected, DAG
+	// Model model3 = makemodel3();
+
+	// initialize nodes
+	const int batch_size = 4;
+	const int memory_size = 1;
+	model3.initError(batch_size, memory_size);
+	model3.clearCache();
+	model3.initNodes(batch_size, memory_size);
+
+	// create the input
+	const std::vector<std::string> input_ids = { "0", "1" };
+	Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size());
+	input.setValues({ { { 1, 5 } },{ { 2, 6 } },{ { 3, 7 } },{ { 4, 8 } } });
+	model3.mapValuesToNodes(input, input_ids, NodeStatus::activated, "output");
+
+	const std::vector<std::string> biases_ids = { "6", "7" };
+	Eigen::Tensor<float, 3> biases(batch_size, memory_size, (int)biases_ids.size());
+	biases.setConstant(1);
+	model3.mapValuesToNodes(biases, biases_ids, NodeStatus::activated, "output");
+
+	// forward propogate
+	model3.forwardPropogate(0, true, false, 1);
+
+	// calculate the model error and node output error
+	std::vector<std::string> output_nodes = { "4", "5" };
+	Eigen::Tensor<float, 2> expected(batch_size, (int)output_nodes.size());
+	expected.setValues({ { 0, 1 },{ 0, 1 },{ 0, 1 },{ 0, 1 } });
+	model3.calculateError(expected, output_nodes, 0);
+
+	// back propogate
+	model3.backPropogate(0);
+
+	// test values of input and hidden layers
+	const std::vector<std::string> hidden_nodes = { "0", "1", "2", "3", "6" };
+	Eigen::Tensor<float, 2> error(batch_size, hidden_nodes.size());
+	error.setValues({
+		{ 0.0, 0.0, -2.25, -2.25, 0.0 },
+		{ 0.0, 0.0, -2.75, -2.75, 0.0 },
+		{ 0.0, 0.0, -3.25, -3.25, 0.0 },
+		{ 0.0, 0.0, -3.75, -3.75, 0.0 } });
+	for (int i = 0; i<hidden_nodes.size(); ++i)
+	{
+		// BOOST_CHECK_EQUAL(model3.getNode(hidden_nodes[i]).getError().size(), batch_size); // why does
+		// uncommenting this line cause a memory error "std::out_of_range map:at"
+		// BOOST_CHECK(model3.getNode(hidden_nodes[i]).getStatus() == NodeStatus::corrected);
+		for (int j = 0; j<batch_size; ++j)
+		{
+			for (int k = 0; k<memory_size; ++k)
+			{
+				//std::cout << "Node: " << i << "; Batch: " << j << "; Memory: " << k << std::endl;
+				//std::cout << "Calc Error: " << model3.getNode(hidden_nodes[i]).getError()(j, k) << ", Expected Error: " << error(j, i) << std::endl;
+				BOOST_CHECK_CLOSE(model3.getNode(hidden_nodes[i]).getError()(j, k), error(j, i), 1e-3);
+			}
+		}
+	}
+}
+
 BOOST_AUTO_TEST_CASE(updateWeights_Sum) 
 {
   // Toy network: 1 hidden layer, fully connected, DAG
@@ -1243,7 +1446,7 @@ BOOST_AUTO_TEST_CASE(updateWeights_Sum)
     0.449999988f, 0.475000023f, 0.449999988f, 0.475000023f, 0.94749999f, 0.949999988f});
   for (int i=0; i<weight_ids.size(); ++i)
   {
-     std::cout<<"Weight: "<<i<<"; Calculated: "<<model1.getWeight(weight_ids[i]).getWeight()<<", Expected: "<<weights(i)<<std::endl;
+     //std::cout<<"Weight: "<<i<<"; Calculated: "<<model1.getWeight(weight_ids[i]).getWeight()<<", Expected: "<<weights(i)<<std::endl;
     BOOST_CHECK_CLOSE(model1.getWeight(weight_ids[i]).getWeight(), weights(i), 1e-3);
   }
 }
@@ -1297,6 +1500,58 @@ BOOST_AUTO_TEST_CASE(updateWeights_Product)
 	{
 		//std::cout << "Weight: " << i << "; Calculated: " << model2.getWeight(weight_ids[i]).getWeight() << ", Expected: " << weights(i) << std::endl;
 		BOOST_CHECK_CLOSE(model2.getWeight(weight_ids[i]).getWeight(), weights(i), 1e-3);
+	}
+}
+
+BOOST_AUTO_TEST_CASE(updateWeights_Max)
+{
+	// Toy network: 1 hidden layer, fully connected, DAG
+	// Model model3 = makemodel3();
+
+	// initialize nodes
+	const int batch_size = 4;
+	const int memory_size = 1;
+	model3.initError(batch_size, memory_size);
+	model3.clearCache();
+	model3.initNodes(batch_size, memory_size);
+	model3.initWeights();
+
+	// create the input
+	const std::vector<std::string> input_ids = { "0", "1" };
+	Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size());
+	input.setValues({ { { 1, 5 } },{ { 2, 6 } },{ { 3, 7 } },{ { 4, 8 } } });
+	model3.mapValuesToNodes(input, input_ids, NodeStatus::activated, "output");
+
+	const std::vector<std::string> biases_ids = { "6", "7" };
+	Eigen::Tensor<float, 3> biases(batch_size, memory_size, (int)biases_ids.size());
+	biases.setConstant(1);
+	model3.mapValuesToNodes(biases, biases_ids, NodeStatus::activated, "output");
+
+	// forward propogate
+	model3.forwardPropogate(0, true, false, 1);
+
+	// calculate the model error and node output error
+	std::vector<std::string> output_nodes = { "4", "5" };
+	Eigen::Tensor<float, 2> expected(batch_size, (int)output_nodes.size());
+	expected.setValues({ { 0, 1 },{ 0, 1 },{ 0, 1 },{ 0, 1 } });
+	model3.calculateError(expected, output_nodes, 0);
+
+	// back propogate
+	model3.backPropogate(0, true, false, 1);
+
+	// update the weights
+	model3.updateWeights(1);
+
+	// test values of input and hidden layers
+	const std::vector<std::string> weight_ids = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11" };
+	Eigen::Tensor<float, 1> weights((int)weight_ids.size());
+	weights.setValues({
+		0.91875f, 0.91875f, 0.79875f, 0.79875f, 0.97f, 0.97f,
+		0.89125f, 0.9075f, 0.89125f, 0.9075f, 0.98375f, 0.98625f });
+	for (int i = 0; i<weight_ids.size(); ++i)
+	{
+		//std::cout << "Weight: " << i << "; Calculated: " << model3.getWeight(weight_ids[i]).getWeight() << ", Expected: " << weights(i) << std::endl;
+		BOOST_CHECK_CLOSE(model3.getWeight(weight_ids[i]).getWeight(), weights(i), 1e-3);
 	}
 }
 

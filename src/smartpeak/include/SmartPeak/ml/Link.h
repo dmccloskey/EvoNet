@@ -64,9 +64,6 @@ public:
     void setId(const int& id); ///< id setter
     int getId() const; ///< id getter
 
-    void setWeight(const float& weight); ///< weight setter
-    float getWeight() const; ///< weight getter
-
     void setName(const std::string& name); ///< naem setter
     std::string getName() const; ///< name getter
 
