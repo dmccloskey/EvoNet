@@ -204,19 +204,10 @@ public:
         1. all sink output values are unknown (i.e. inactive),
         2. all source node output values are known (i.e. active).
         3. all nodes need not be the same type
-      
-      [TODO: check that only sink nodes where ALL sources are active are identified]
 
-      @param[out] Links
-      @param[out] source_nodes
-      @param[out] sink_nodes
+			@param[out] FP_operations_map Key/Value pair of sink node name to FP_peroations index
+			@param[out] FP_operations
     */ 
-    void getNextInactiveLayer(
-      std::vector<std::string>& links,
-      std::vector<std::string>& source_nodes,
-      std::vector<std::string>& sink_nodes);
-    void getNextInactiveLayer(
-      std::map<std::string, std::vector<std::string>>& sink_links_map);
     void getNextInactiveLayer(
       std::map<std::string, int>& FP_operations_map,
       std::vector<OperationList>& FP_operations);
@@ -228,22 +219,10 @@ public:
         1. all sink output values are unknown (i.e. inactive),
         2. all source node output values are known (i.e. active) and biases.
 
-      @param[out] Links
-      @param[out] source_nodes
-      @param[in] sink_nodes
-
-      @param[in, out] sink_links_map Map of sink nodes (keys) to a vector of links (values)
+			@param[out] FP_operations_map Key/Value pair of sink node name to FP_peroations index
+			@param[out] FP_operations
       @param[out] sink_nodes_with_biases
     */ 
-    void getNextInactiveLayerBiases(
-      std::vector<std::string>& links,
-      std::vector<std::string>& source_nodes,
-      const std::vector<std::string>& sink_nodes,
-      std::vector<std::string>& sink_nodes_with_biases);
-    void getNextInactiveLayerBiases(
-      std::map<std::string, std::vector<std::string>>& sink_links_map,
-      std::vector<std::string>& sink_nodes_with_biases
-      );
     void getNextInactiveLayerBiases(
       std::map<std::string, int>& FP_operations_map,
       std::vector<OperationList>& FP_operations,
@@ -257,21 +236,10 @@ public:
         1. all sink output values are unknown (i.e. inactive),
         2. all source node output values are unknown (i.e. inactive).
 
-      @param[out] Links
-      @param[out] source_nodes
-      @param[in] sink_nodes
-
-      @param[in, out] sink_links_map Map of sink nodes (keys) to a vector of links (values)
+      @param[out] FP_operations_map Key/Value pair of sink node name to FP_peroations index
+      @param[out] FP_operations
       @param[out] sink_nodes_with_cycles
     */ 
-    void getNextInactiveLayerCycles(
-      std::vector<std::string>& links,
-      std::vector<std::string>& source_nodes,
-      const std::vector<std::string>& sink_nodes,
-      std::vector<std::string>& sink_nodes_with_cycles);
-    void getNextInactiveLayerCycles(
-      std::map<std::string, std::vector<std::string>>& sink_links_map,
-      std::vector<std::string>& sink_nodes_with_cycles);
     void getNextInactiveLayerCycles(
       std::map<std::string, int>& FP_operations_map,
       std::vector<OperationList>& FP_operations,
@@ -295,9 +263,7 @@ public:
 
     Note that nodes need not be the same type.
 
-    @param[out] Links
-    @param[out] source_nodes
-    @param[out] sink_nodes
+    @param[in] FP_operations
     @param[in] time_step Time step to activate.
 
     [OPTIMIZATION:
@@ -306,14 +272,6 @@ public:
     [PARALLEL: allow for parallelization of iteration of sink nodes]
     [THREADPOOL/CUDA: move to seperate file for cpu/cuda compilation]
     */ 
-    void forwardPropogateLayerNetInput(
-      const std::vector<std::string>& links,
-      const std::vector<std::string>& source_nodes,
-      const std::vector<std::string>& sink_nodes,
-      const int& time_step);
-    void forwardPropogateLayerNetInput(
-      std::map<std::string, std::vector<std::string>>& sink_links_map,
-      const int& time_step, int n_threads = 1);
     void forwardPropogateLayerNetInput(
       std::vector<OperationList>& FP_operations,
       const int& time_step, int n_threads = 1);
@@ -379,10 +337,6 @@ public:
     /**
     @brief Calculates the error of the model with respect to
       the expected values
-    
-    [PARALLEL: refactor to its own function
-      add in thread support for loops
-      update LossFunction to use dim 1 instead of dim 2 for integration with chip]
 
     @param[in] values Expected node output values
     @param[in] node_names Output nodes
@@ -393,10 +347,6 @@ public:
 
 		/**
 		@brief Calculates the error of the model for a given node
-
-		@param[in, out]
-		@param[in]
-		@param[in]
 		*/
 		static Eigen::Tensor<float, 1> calculateModelError_(
 			Node* output_node,
@@ -408,10 +358,6 @@ public:
 
 		/**
 		@brief Calculates the error of the output node
-
-		@param[in, out] 
-		@param[in] 
-		@param[in] 
 		*/
 		static bool calculateOutputNodeError_(
 			Node* output_node,
@@ -438,20 +384,11 @@ public:
       1. all sink error values are unknown (i.e. active),
       2. all source error values are known (i.e. corrected).
       3. all nodes need not be the same type
-    
-    [TODO: check that only sink nodes where ALL sources are corrected are identified]
 
-    @param[out] Links
-    @param[out] source_nodes
+    @param[out] BP_operatations_map Key/Value pair of source nodes (sink nodes in BP) to index in BP_operations list
+		@param[out] BP_operations Operations list for Back Propogation
     @param[out] sink_nodes
     */ 
-    void getNextUncorrectedLayer(
-      std::vector<std::string>& links,
-      std::vector<std::string>& source_nodes,
-      std::vector<std::string>& sink_nodes);
-    void getNextUncorrectedLayer(
-      std::map<std::string, std::vector<std::string>>& sink_links_map,
-      std::vector<std::string>& source_nodes);
     void getNextUncorrectedLayer(
       std::map<std::string, int>& BP_operations_map,
       std::vector<OperationList>& BP_operations,
@@ -464,20 +401,11 @@ public:
       2. all source error values are known (i.e. corrected).
       3. all nodes need not be the same type
 
-    @param[out] Links
+		@param[out] BP_operatations_map Key/Value pair of source nodes (sink nodes in BP) to index in BP_operations list
+		@param[out] BP_operations Operations list for Back Propogation
     @param[out] source_nodes
-    @param[out] sink_nodes
     @param[out] source_nodes_with_cycles
     */ 
-    void getNextUncorrectedLayerCycles(
-      std::vector<std::string>& links,
-      const std::vector<std::string>& source_nodes,
-      std::vector<std::string>& sink_nodes,
-      std::vector<std::string>& source_nodes_with_cycles);
-    void getNextUncorrectedLayerCycles(
-      std::map<std::string, std::vector<std::string>>& sink_links_map,
-      const std::vector<std::string>& source_nodes,
-      std::vector<std::string>& source_nodes_with_cycles); 
     void getNextUncorrectedLayerCycles(
       std::map<std::string, int>& BP_operations_map,
       std::vector<OperationList>& BP_operations,
@@ -492,25 +420,13 @@ public:
 
     Note that nodes need not be the same type.
 
-    @param[out] Links
-    @param[out] source_nodes
-    @param[out] sink_nodes
-    @param[in] time_step Time step to forward propogate.
+		@param[out] BP_operations Operations list for Back Propogation
+		@param[in] step to forward propogate.
 
     [OPTIMIZATION:
     pass memory to tensors so that when the tensors compute the matrices
     the underlying node values are automatically updated]
-
-    [PARALLEL: allow for parallelization of iteration of sink nodes]
     */ 
-    void backPropogateLayerError(
-      const std::vector<std::string>& links,
-      const std::vector<std::string>& source_nodes,
-      const std::vector<std::string>& sink_nodes,
-      const int& time_step);
-    void backPropogateLayerError(
-      const std::map<std::string, std::vector<std::string>>& sink_links_map,
-      const int& time_step, int n_threads = 1);
     void backPropogateLayerError(
       std::vector<OperationList>& BP_operations,
       const int& time_step, int n_threads = 1);
@@ -522,7 +438,7 @@ public:
       const int& memory_size,
       const int& time_step
     );
-    static bool calculateNetNodeError_( //[TODO: return the nodes]
+    static bool calculateNetNodeError_(
       OperationList* operations, 
       const int& batch_size,
       const int& memory_size,

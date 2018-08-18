@@ -644,62 +644,6 @@ namespace SmartPeak
     }
   }  
   
-  void Model::getNextInactiveLayer(
-    std::map<std::string, std::vector<std::string>>& sink_links_map)
-  {
-
-    // get all links where the source node is active and the sink node is inactive
-    // except for biases
-    for (auto& link_map : links_)
-    {
-      if (nodes_.at(link_map.second->getSourceNodeName())->getType() != NodeType::bias &&
-        nodes_.at(link_map.second->getSourceNodeName())->getStatus() == NodeStatus::activated && 
-        nodes_.at(link_map.second->getSinkNodeName())->getStatus() == NodeStatus::initialized)
-      {
-        std::vector<std::string> links = {link_map.second->getName()};
-        auto found = sink_links_map.emplace(link_map.second->getSinkNodeName(), links);        
-        if (!found.second)
-        {
-          sink_links_map[link_map.second->getSinkNodeName()].push_back(link_map.second->getName());
-        }
-      }
-    }
-  }  
-  
-  void Model::getNextInactiveLayer(
-    std::vector<std::string>& links,
-    std::vector<std::string>& source_nodes,
-    std::vector<std::string>& sink_nodes)
-  {
-    links.clear();
-    source_nodes.clear();
-    sink_nodes.clear();
-
-    // get all links where the source node is active and the sink node is inactive
-    // except for biases
-    for (auto& link_map : links_)
-    {
-      if (nodes_.at(link_map.second->getSourceNodeName())->getType() != NodeType::bias &&
-        nodes_.at(link_map.second->getSourceNodeName())->getStatus() == NodeStatus::activated && 
-        nodes_.at(link_map.second->getSinkNodeName())->getStatus() == NodeStatus::initialized)
-      {
-        // std::cout << "Model::getNextInactiveLayer() link_name: " << link_map.second->getName() << std::endl;
-        // std::cout << "Model::getNextInactiveLayer() source_node_name: " << link_map.second->getSourceNodeName() << std::endl;
-        // std::cout << "Model::getNextInactiveLayer() sink_node_name: " << link_map.second->getSinkNodeName() << std::endl;
-        links.push_back(link_map.second->getName());
-        // could use std::set instead to check for duplicates
-        if (std::count(source_nodes.begin(), source_nodes.end(), link_map.second->getSourceNodeName()) == 0)
-        {
-          source_nodes.push_back(link_map.second->getSourceNodeName());
-        }
-        if (std::count(sink_nodes.begin(), sink_nodes.end(), link_map.second->getSinkNodeName()) == 0)
-        {
-          sink_nodes.push_back(link_map.second->getSinkNodeName());
-        }
-      }
-    }
-  }
-  
   void Model::getNextInactiveLayerBiases(
     std::map<std::string, int>& FP_operations_map,
     std::vector<OperationList>& FP_operations,
@@ -723,68 +667,6 @@ namespace SmartPeak
         arguments.weight = weights_.at(link_map.second->getWeightName());
         arguments.time_step = 0;
         FP_operations[FP_operations_map.at(link_map.second->getSinkNodeName())].arguments.push_back(arguments);
-        if (std::count(sink_nodes_with_biases.begin(), sink_nodes_with_biases.end(), link_map.second->getSinkNodeName()) == 0)
-        {
-          sink_nodes_with_biases.push_back(link_map.second->getSinkNodeName());
-        }
-      }
-    }
-  }
-  
-  void Model::getNextInactiveLayerBiases(
-    std::map<std::string, std::vector<std::string>>& sink_links_map,
-    std::vector<std::string>& sink_nodes_with_biases)
-  {
-
-    // get all the biases for the sink nodes
-    for (auto& link_map : links_)
-    {
-      if (        
-        // does not allow for cycles
-        nodes_.at(link_map.second->getSourceNodeName())->getType() == NodeType::bias && 
-        nodes_.at(link_map.second->getSourceNodeName())->getStatus() == NodeStatus::activated &&
-        // required regardless if cycles are or are not allowed
-        nodes_.at(link_map.second->getSinkNodeName())->getStatus() == NodeStatus::initialized &&
-        sink_links_map.count(link_map.second->getSinkNodeName()) != 0 // sink node has already been identified
-      )
-      {
-        sink_links_map[link_map.second->getSinkNodeName()].push_back(link_map.second->getName());
-        if (std::count(sink_nodes_with_biases.begin(), sink_nodes_with_biases.end(), link_map.second->getSinkNodeName()) == 0)
-        {
-          sink_nodes_with_biases.push_back(link_map.second->getSinkNodeName());
-        }
-      }
-    }
-  }
-  
-  void Model::getNextInactiveLayerBiases(
-    std::vector<std::string>& links,
-    std::vector<std::string>& source_nodes,
-    const std::vector<std::string>& sink_nodes,
-    std::vector<std::string>& sink_nodes_with_biases)
-  {
-
-    // get all the biases for the sink nodes
-    for (auto& link_map : links_)
-    {
-      if (        
-        // does not allow for cycles
-        nodes_.at(link_map.second->getSourceNodeName())->getType() == NodeType::bias && 
-        nodes_.at(link_map.second->getSourceNodeName())->getStatus() == NodeStatus::activated &&
-        // required regardless if cycles are or are not allowed
-        nodes_.at(link_map.second->getSinkNodeName())->getStatus() == NodeStatus::initialized &&
-        std::count(sink_nodes.begin(), sink_nodes.end(), link_map.second->getSinkNodeName()) != 0 // sink node has already been identified
-      )
-      {
-        // std::cout << "Model::getNextInactiveLayerBiases() link_name: " << link_map.second->getName() << std::endl;
-        // std::cout << "Model::getNextInactiveLayerBiases() source_node_name: " << link_map.second->getSourceNodeName() << std::endl;
-        // std::cout << "Model::getNextInactiveLayerBiases() sink_node_name: " << link_map.second->getSinkNodeName() << std::endl;
-        links.push_back(link_map.second->getName());
-        // could use std::set instead to check for duplicates
-        if (std::count(source_nodes.begin(), source_nodes.end(), link_map.second->getSourceNodeName()) == 0)
-        {
-          source_nodes.push_back(link_map.second->getSourceNodeName());
-        }
         if (std::count(sink_nodes_with_biases.begin(), sink_nodes_with_biases.end(), link_map.second->getSinkNodeName()) == 0)
         {
           sink_nodes_with_biases.push_back(link_map.second->getSinkNodeName());
@@ -824,61 +706,6 @@ namespace SmartPeak
       }
     }
   }
-  
-  void Model::getNextInactiveLayerCycles(
-    std::map<std::string, std::vector<std::string>>& sink_links_map,
-    std::vector<std::string>& sink_nodes_with_cycles)
-  {
-
-    // get cyclic source nodes
-    for (auto& link_map : links_)
-    {
-      if (
-        (nodes_.at(link_map.second->getSourceNodeName())->getStatus() == NodeStatus::initialized) &&
-        // required regardless if cycles are or are not allowed
-        nodes_.at(link_map.second->getSinkNodeName())->getStatus() == NodeStatus::initialized &&
-        sink_links_map.count(link_map.second->getSinkNodeName()) != 0 // sink node has already been identified
-      )
-      {
-        sink_links_map[link_map.second->getSinkNodeName()].push_back(link_map.second->getName());
-        sink_nodes_with_cycles.push_back(link_map.second->getSinkNodeName());
-      }
-    }
-  }
-  
-  void Model::getNextInactiveLayerCycles(
-    std::vector<std::string>& links,
-    std::vector<std::string>& source_nodes,
-    const std::vector<std::string>& sink_nodes,
-    std::vector<std::string>& sink_nodes_with_cycles)
-  {
-
-    // get cyclic source nodes
-    for (auto& link_map : links_)
-    {
-      if (
-        (nodes_.at(link_map.second->getSourceNodeName())->getStatus() == NodeStatus::initialized) &&
-        // required regardless if cycles are or are not allowed
-        nodes_.at(link_map.second->getSinkNodeName())->getStatus() == NodeStatus::initialized &&
-        std::count(sink_nodes.begin(), sink_nodes.end(), link_map.second->getSinkNodeName()) != 0 // sink node has already been identified
-      )
-      {
-        // std::cout << "Model::getNextInactiveLayerCycles() link_name: " << link_map.second->getName() << std::endl;
-        // std::cout << "Model::getNextInactiveLayerCycles() source_node_name: " << link_map.second->getSourceNodeName() << std::endl;
-        // std::cout << "Model::getNextInactiveLayerCycles() sink_node_name: " << link_map.second->getSinkNodeName() << std::endl;
-        links.push_back(link_map.second->getName());
-        // could use std::set instead to check for duplicates
-        if (std::count(source_nodes.begin(), source_nodes.end(), link_map.second->getSourceNodeName()) == 0)
-        {
-          source_nodes.push_back(link_map.second->getSourceNodeName());
-        }
-        if (std::count(sink_nodes_with_cycles.begin(), sink_nodes_with_cycles.end(), link_map.second->getSinkNodeName()) == 0)
-        {
-          sink_nodes_with_cycles.push_back(link_map.second->getSinkNodeName());
-        }
-      }
-    }
-  }
 
   bool Model::calculateNodeInput_(
 		OperationResult* result,
@@ -891,14 +718,10 @@ namespace SmartPeak
 
 		Eigen::Tensor<float, 1> weight_tensor(batch_size);
 		weight_tensor.setConstant(arguments->weight->getWeight());
-		if (arguments->time_step == 0 || time_step + arguments->time_step < memory_size)
-		{
-			result->sink_node->getIntegrationShared()->operator()(weight_tensor, arguments->source_node->getOutput().chip(time_step + arguments->time_step, 1));
-		}
-		else
-		{
-		  //std::cout<<"time_step exceeded memory size in forwardPropogateLayerNetInput."<<std::endl;
-		}
+		//if (arguments->time_step == 0 || time_step + arguments->time_step < memory_size)
+		//{
+		result->sink_node->getIntegrationShared()->operator()(weight_tensor, arguments->source_node->getOutput().chip(time_step + arguments->time_step, 1));
+		//}
     return true;
   }
   
@@ -1387,61 +1210,6 @@ namespace SmartPeak
     }
   }
   
-  void Model::getNextUncorrectedLayer(
-    std::map<std::string, std::vector<std::string>>& sink_links_map,
-    std::vector<std::string>& source_nodes)
-  {
-    // get all links where the source node is corrected and the sink node is active
-    // including biases
-    for (auto& link_map : links_)
-    {
-      if (nodes_.at(link_map.second->getSinkNodeName())->getStatus() == NodeStatus::corrected && 
-        nodes_.at(link_map.second->getSourceNodeName())->getStatus() == NodeStatus::activated)
-      {
-        std::vector<std::string> links = {link_map.second->getName()};
-        auto found = sink_links_map.emplace(link_map.second->getSourceNodeName(), links);        
-        if (!found.second)
-        {
-          sink_links_map[link_map.second->getSourceNodeName()].push_back(link_map.second->getName());
-        }
-        if (std::count(source_nodes.begin(), source_nodes.end(), link_map.second->getSinkNodeName()) == 0)
-        {
-          source_nodes.push_back(link_map.second->getSinkNodeName());
-        }
-      }
-    }
-  }
-  
-  void Model::getNextUncorrectedLayer(
-    std::vector<std::string>& links,
-    std::vector<std::string>& source_nodes,
-    std::vector<std::string>& sink_nodes)
-  {
-    links.clear();
-    source_nodes.clear();
-    sink_nodes.clear();
-
-    // get all links where the source node is corrected and the sink node is active
-    // including biases
-    for (auto& link_map : links_)
-    {
-      if (nodes_.at(link_map.second->getSinkNodeName())->getStatus() == NodeStatus::corrected && 
-        nodes_.at(link_map.second->getSourceNodeName())->getStatus() == NodeStatus::activated)
-      {
-        links.push_back(link_map.second->getName());
-        // could use std::set instead to check for duplicates
-        if (std::count(source_nodes.begin(), source_nodes.end(), link_map.second->getSinkNodeName()) == 0)
-        {
-          source_nodes.push_back(link_map.second->getSinkNodeName());
-        }
-        if (std::count(sink_nodes.begin(), sink_nodes.end(), link_map.second->getSourceNodeName()) == 0)
-        {
-          sink_nodes.push_back(link_map.second->getSourceNodeName());
-        }
-      }
-    }
-  }
-  
   void Model::getNextUncorrectedLayerCycles(
     std::map<std::string, int>& BP_operations_map,
     std::vector<OperationList>& BP_operations,
@@ -1485,59 +1253,6 @@ namespace SmartPeak
       }
     }
   }
-  
-  void Model::getNextUncorrectedLayerCycles(
-    std::map<std::string, std::vector<std::string>>& sink_links_map,
-    const std::vector<std::string>& source_nodes,
-    std::vector<std::string>& source_nodes_with_cycles)
-  {
-
-    // allows for cycles
-    for (auto& link_map : links_)
-    {
-      if (nodes_.at(link_map.second->getSourceNodeName())->getStatus() == NodeStatus::corrected &&
-        nodes_.at(link_map.second->getSinkNodeName())->getStatus() == NodeStatus::corrected &&
-        std::count(source_nodes.begin(), source_nodes.end(), link_map.second->getSinkNodeName()) != 0 // source node has already been identified)
-      ) 
-      {
-        sink_links_map[link_map.second->getSourceNodeName()].push_back(link_map.second->getName());
-        if (std::count(source_nodes_with_cycles.begin(), source_nodes_with_cycles.end(), link_map.second->getSinkNodeName()) == 0)
-        {
-          source_nodes_with_cycles.push_back(link_map.second->getSinkNodeName());
-        }
-      }
-    }
-  }
-  
-  void Model::getNextUncorrectedLayerCycles(
-    std::vector<std::string>& links,
-    const std::vector<std::string>& source_nodes,
-    std::vector<std::string>& sink_nodes,
-    std::vector<std::string>& source_nodes_with_cycles)
-  {
-
-    // allows for cycles
-    for (auto& link_map : links_)
-    {
-      if (nodes_.at(link_map.second->getSourceNodeName())->getStatus() == NodeStatus::corrected && 
-        std::count(links.begin(), links.end(), link_map.second->getName()) == 0 && // unique links 
-        nodes_.at(link_map.second->getSinkNodeName())->getStatus() == NodeStatus::corrected &&
-        std::count(source_nodes.begin(), source_nodes.end(), link_map.second->getSinkNodeName()) != 0 // source node has already been identified)
-      ) 
-      {
-        links.push_back(link_map.second->getName());
-        // could use std::set instead to check for duplicates
-        if (std::count(sink_nodes.begin(), sink_nodes.end(), link_map.second->getSourceNodeName()) == 0)
-        {
-          sink_nodes.push_back(link_map.second->getSourceNodeName());
-        }
-        if (std::count(source_nodes_with_cycles.begin(), source_nodes_with_cycles.end(), link_map.second->getSinkNodeName()) == 0)
-        {
-          source_nodes_with_cycles.push_back(link_map.second->getSinkNodeName());
-        }
-      }
-    }
-  }  
 
   bool Model::calculateNodeError_(
 		OperationResult* result,

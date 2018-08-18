@@ -107,31 +107,6 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayer2)
   biases.setConstant(1);
   model2.mapValuesToNodes(biases, biases_ids, NodeStatus::activated, "output");  
 
-  //// get the next hidden layer
-  //std::vector<std::string> links, source_nodes, sink_nodes;
-  //model2.getNextInactiveLayer(links, source_nodes, sink_nodes);  
-
-  //// test links and source and sink nodes
-  //std::vector<std::string> links_test, source_nodes_test, sink_nodes_test;
-  //links_test = {"0"};
-  //source_nodes_test = {"0"};
-  //sink_nodes_test = {"1"};
-  //BOOST_CHECK_EQUAL(links.size(), links_test.size());
-  //BOOST_CHECK_EQUAL(source_nodes.size(), source_nodes_test.size());
-  //BOOST_CHECK_EQUAL(sink_nodes.size(), sink_nodes_test.size());
-  //for (int i=0; i<links.size(); ++i)
-  //{
-  //  BOOST_CHECK_EQUAL(links[i], links_test[i]);
-  //}
-  //for (int i=0; i<source_nodes.size(); ++i)
-  //{
-  //  BOOST_CHECK_EQUAL(source_nodes[i], source_nodes_test[i]);
-  //}
-  //for (int i=0; i<sink_nodes.size(); ++i)
-  //{
-  //  BOOST_CHECK_EQUAL(sink_nodes[i], sink_nodes_test[i]);
-  //}
-
 	// get the next hidden layer
 	std::map<std::string, int> FP_operations_map;
 	std::vector<OperationList> FP_operations_list;
@@ -176,36 +151,6 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayerBiases2)
   Eigen::Tensor<float, 3> biases(batch_size, memory_size, (int)biases_ids.size()); 
   biases.setConstant(1);
   model2.mapValuesToNodes(biases, biases_ids, NodeStatus::activated, "output"); 
-
-  //// get the next hidden layer
-  //std::vector<std::string> links = {"0"};
-  //std::vector<std::string> source_nodes = {"0"};
-  //std::vector<std::string> sink_nodes = {"1"};
-  //std::vector<std::string> sink_nodes_with_biases;
-  //model2.getNextInactiveLayerBiases(links, source_nodes, sink_nodes, sink_nodes_with_biases);  
-
-  //// test links and source and sink nodes
-  //std::vector<std::string> links_test, source_nodes_test, sink_nodes_test, sink_nodes_with_biases_test;
-  //links_test = {"0", "3"};
-  //source_nodes_test = {"0", "3"};
-  //sink_nodes_test = {"1"};
-  //sink_nodes_with_biases_test = {"3"};
-  //BOOST_CHECK_EQUAL(links.size(), links_test.size());
-  //BOOST_CHECK_EQUAL(source_nodes.size(), source_nodes_test.size());
-  //BOOST_CHECK_EQUAL(sink_nodes.size(), sink_nodes_test.size());
-  //BOOST_CHECK_EQUAL(sink_nodes_with_biases.size(), sink_nodes_with_biases_test.size());
-  //for (int i=0; i<links.size(); ++i)
-  //{
-  //  BOOST_CHECK_EQUAL(links[i], links_test[i]);
-  //}
-  //for (int i=0; i<source_nodes.size(); ++i)
-  //{
-  //  BOOST_CHECK_EQUAL(source_nodes[i], source_nodes_test[i]);
-  //}
-  //for (int i=0; i<sink_nodes.size(); ++i)
-  //{
-  //  BOOST_CHECK_EQUAL(sink_nodes[i], sink_nodes_test[i]);
-  //}
 
 	// get the next hidden layer
 	std::map<std::string, int> FP_operations_map;
@@ -259,36 +204,6 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayerCycles2)
   Eigen::Tensor<float, 3> biases(batch_size, memory_size, (int)biases_ids.size()); 
   biases.setConstant(1);
   model2.mapValuesToNodes(biases, biases_ids, NodeStatus::activated, "output"); 
-
-  //// get the next hidden layer
-  //std::vector<std::string> links = {"0", "3"};
-  //std::vector<std::string> source_nodes = {"0", "3"};
-  //std::vector<std::string> sink_nodes = {"1"};
-  //std::vector<std::string> sink_nodes_with_cycles;
-  //model2.getNextInactiveLayerCycles(links, source_nodes, sink_nodes, sink_nodes_with_cycles);  
-
-  //// test links and source and sink nodes
-  //std::vector<std::string> links_test, source_nodes_test, sink_nodes_test, sink_nodes_with_cycles_test;
-  //links_test = {"0", "3", "2"};
-  //source_nodes_test = {"0", "3", "2"};
-  //sink_nodes_test = {"1"};
-  //sink_nodes_with_cycles_test = {"2"};
-  //BOOST_CHECK_EQUAL(links.size(), links_test.size());
-  //BOOST_CHECK_EQUAL(source_nodes.size(), source_nodes_test.size());
-  //BOOST_CHECK_EQUAL(sink_nodes.size(), sink_nodes_test.size());
-  //BOOST_CHECK_EQUAL(sink_nodes_with_cycles.size(), sink_nodes_with_cycles_test.size());
-  //for (int i=0; i<links.size(); ++i)
-  //{
-  //  BOOST_CHECK_EQUAL(links[i], links_test[i]);
-  //}
-  //for (int i=0; i<source_nodes.size(); ++i)
-  //{
-  //  BOOST_CHECK_EQUAL(source_nodes[i], source_nodes_test[i]);
-  //}
-  //for (int i=0; i<sink_nodes.size(); ++i)
-  //{
-  //  BOOST_CHECK_EQUAL(sink_nodes[i], sink_nodes_test[i]);
-  //}
 
 	// get the next hidden layer
 	std::map<std::string, int> FP_operations_map;
@@ -497,50 +412,6 @@ BOOST_AUTO_TEST_CASE(getNextUncorrectedLayer2)
   expected.setValues({{2}, {3}, {4}, {5}, {6}});
   model2.calculateError(expected, output_nodes, 0);
 
-  // // get the next hidden layer
-  // std::vector<std::string> links, source_nodes, sink_nodes;
-  // model2.getNextUncorrectedLayer(links, source_nodes, sink_nodes);
-
-  // // test links and source and sink nodes
-  // std::vector<std::string> links_test, source_nodes_test, sink_nodes_test;
-  // links_test = {"1", "4"};
-  // source_nodes_test = {"2"};
-  // sink_nodes_test = {"1", "4"};
-  // BOOST_CHECK_EQUAL(links.size(), links_test.size());
-  // BOOST_CHECK_EQUAL(source_nodes.size(), source_nodes_test.size());
-  // BOOST_CHECK_EQUAL(sink_nodes.size(), sink_nodes_test.size());
-  // for (int i=0; i<links.size(); ++i)
-  // {
-  //   BOOST_CHECK_EQUAL(links[i], links_test[i]);
-  // }
-  // for (int i=0; i<source_nodes.size(); ++i)
-  // {
-  //   BOOST_CHECK_EQUAL(source_nodes[i], source_nodes_test[i]);
-  // }
-  // for (int i=0; i<sink_nodes.size(); ++i)
-  // {
-  //   BOOST_CHECK_EQUAL(sink_nodes[i], sink_nodes_test[i]);
-  // }
-
-  //// get the next hidden layer
-  //std::map<std::string, std::vector<std::string>> sink_links_map;
-  //std::vector<std::string> source_nodes;
-  //model2.getNextUncorrectedLayer(sink_links_map, source_nodes);
-
-  //// test links and source and sink nodes
-  //BOOST_CHECK_EQUAL(sink_links_map.at("1").size(), 1);
-  //BOOST_CHECK_EQUAL(sink_links_map.at("1")[0], "1");
-  //BOOST_CHECK_EQUAL(sink_links_map.at("4").size(), 1);
-  //BOOST_CHECK_EQUAL(sink_links_map.at("4")[0], "4");
-
-  //std::vector<std::string> source_nodes_test;
-  //source_nodes_test = {"2"};
-  //BOOST_CHECK_EQUAL(source_nodes.size(), source_nodes_test.size());
-  //for (int i=0; i<source_nodes.size(); ++i)
-  //{
-  //  BOOST_CHECK_EQUAL(source_nodes[i], source_nodes_test[i]);
-  //}
-
 	// get the next hidden layer
 	std::map<std::string, int> BP_operations_map;
 	std::vector<OperationList> BP_operations_list;
@@ -603,72 +474,6 @@ BOOST_AUTO_TEST_CASE(getNextUncorrectedLayerCycles2)
   Eigen::Tensor<float, 2> expected(batch_size, (int)output_nodes.size()); 
   expected.setValues({{2}, {3}, {4}, {5}, {6}});
   model2.calculateError(expected, output_nodes, 0);
-
-  // // get the next hidden layer
-  // std::vector<std::string> links, source_nodes, sink_nodes;
-  // model2.getNextUncorrectedLayer(links, source_nodes, sink_nodes);
-
-  // // calculate the net input
-  // model2.backPropogateLayerError(links, source_nodes, sink_nodes, 0);
-
-  // // get the next hidden layer
-  // model2.getNextUncorrectedLayer(links, source_nodes, sink_nodes);
-  // std::vector<std::string> source_nodes_with_cycles;
-  // model2.getNextUncorrectedLayerCycles(links, source_nodes, sink_nodes, source_nodes_with_cycles);
-
-  // // test links and source and sink nodes
-  // std::vector<std::string> links_test, source_nodes_test, sink_nodes_test, source_nodes_with_cycles_test;
-  // links_test = {"0", "3", "2"};
-  // source_nodes_test = {"1"};
-  // sink_nodes_test = {"0", "3", "2"};
-  // source_nodes_with_cycles_test = {"1"};
-  // BOOST_CHECK_EQUAL(links.size(), links_test.size());
-  // BOOST_CHECK_EQUAL(source_nodes.size(), source_nodes_test.size());
-  // BOOST_CHECK_EQUAL(sink_nodes.size(), sink_nodes_test.size());
-  // BOOST_CHECK_EQUAL(source_nodes_with_cycles.size(), source_nodes_with_cycles_test.size());
-  // for (int i=0; i<links_test.size(); ++i)
-  // {
-  //   BOOST_CHECK_EQUAL(links[i], links_test[i]);
-  // }
-  // for (int i=0; i<source_nodes_test.size(); ++i)
-  // {
-  //   BOOST_CHECK_EQUAL(source_nodes[i], source_nodes_test[i]);
-  // }
-  // for (int i=0; i<sink_nodes_test.size(); ++i)
-  // {
-  //   BOOST_CHECK_EQUAL(sink_nodes[i], sink_nodes_test[i]);
-  // }
-
-  //// get the next hidden layer
-  //std::map<std::string, std::vector<std::string>> sink_links_map;
-  //std::vector<std::string> source_nodes;
-  //model2.getNextUncorrectedLayer(sink_links_map, source_nodes);
-
-  //// calculate the net input
-  //model2.backPropogateLayerError(sink_links_map, 0);
-
-  //// get the next hidden layer
-  //sink_links_map.clear();
-  //source_nodes.clear();
-  //model2.getNextUncorrectedLayer(sink_links_map, source_nodes);
-  //std::vector<std::string> source_nodes_with_cycles;
-  //model2.getNextUncorrectedLayerCycles(sink_links_map, source_nodes, source_nodes_with_cycles);
-
-  //// test links and source and sink nodes
-  //BOOST_CHECK_EQUAL(sink_links_map.at("0").size(), 1);
-  //BOOST_CHECK_EQUAL(sink_links_map.at("0")[0], "0");
-  //BOOST_CHECK_EQUAL(sink_links_map.at("3").size(), 1);
-  //BOOST_CHECK_EQUAL(sink_links_map.at("3")[0], "3");
-  //BOOST_CHECK_EQUAL(sink_links_map.at("2").size(), 1);
-  //BOOST_CHECK_EQUAL(sink_links_map.at("2")[0], "2");
-
-  //std::vector<std::string> source_nodes_with_cycles_test;
-  //source_nodes_with_cycles_test = {"1"};
-  //BOOST_CHECK_EQUAL(source_nodes_with_cycles.size(), source_nodes_with_cycles_test.size());
-  //for (int i=0; i<source_nodes_with_cycles.size(); ++i)
-  //{
-  //  BOOST_CHECK_EQUAL(source_nodes[i], source_nodes_with_cycles[i]);
-  //}
 
 	// get the next hidden layer
 	std::map<std::string, int> BP_operations_map;
