@@ -890,6 +890,9 @@ namespace SmartPeak
 
         // std::cout<<"sink nodes cycles size "<<sink_nodes_cycles.size()<<std::endl;
         // std::cout<<"FP operations list size "<<FP_operations_list.size()<<std::endl;
+				// [TODO: add a check that a sink_node_cycle is not a source node in any of the other sink node arguments
+				//				if so, remove the sink node and all other sink nodes where the node is a source
+				//				except if the sink node is its own source node
         if (sink_nodes_cycles.size() > 0 && 
           sink_nodes_cycles.size() != FP_operations_list.size())
         { // not all forward propogation steps have caught up
@@ -898,12 +901,42 @@ namespace SmartPeak
 					for (const auto& FP_operation : FP_operations_list)
 						if (std::count(sink_nodes_cycles.begin(), sink_nodes_cycles.end(), FP_operation.result.sink_node->getName()) == 0)
 							FP_operations_list_nocycles.push_back(FP_operation);
-					//for (const std::string& sink_node : sink_nodes_cycles)
-					//{
-					//	FP_operations_list_nocycles.push_back(FP_operations_list[FP_operations_map.at(sink_node)]);
-					//}
           FP_operations_list = FP_operations_list_nocycles;
         }
+				else if (sink_nodes_cycles.size() > 0)
+				{ // check if any sink is also a source for another sink
+					// if so, only propogate the sink with the least number of sources
+					std::map<std::string, int> sink_node_cycles_source_cnt;
+					//for (const std::string& sink_node : sink_nodes_cycles) {
+					for (const auto& FP_operation : FP_operations_list) {
+						for (const auto& argument : FP_operation.arguments) {
+							if (std::count(sink_nodes_cycles.begin(), sink_nodes_cycles.end(), argument.source_node->getName()) != 0 
+								&& FP_operation.result.sink_node->getName() != argument.source_node->getName()) {
+								auto found = sink_node_cycles_source_cnt.emplace(argument.source_node->getName(), 0);
+								if (!found.second) {
+									sink_node_cycles_source_cnt.at(argument.source_node->getName()) += 1;
+								}
+							}
+						}
+					}
+					if (sink_node_cycles_source_cnt.size() > 0) { // sinks with other sources were found
+						int min_cnt = sink_node_cycles_source_cnt.begin()->second;
+						for (const auto& sink_name_cnt_map : sink_node_cycles_source_cnt) {
+							min_cnt = (min_cnt < sink_name_cnt_map.second) ? min_cnt : sink_name_cnt_map.second;
+						}
+						std::vector<std::string> sink_nodes;
+						for (const auto& sink_name_cnt_map : sink_node_cycles_source_cnt) {
+							if (sink_name_cnt_map.second == min_cnt) {
+								sink_nodes.push_back(sink_name_cnt_map.first);
+							}
+						}
+						std::vector<OperationList> FP_operations_list_nocycles;
+						for (const auto& FP_operation : FP_operations_list)
+							if (std::count(sink_nodes.begin(), sink_nodes.end(), FP_operation.result.sink_node->getName()) != 0)
+								FP_operations_list_nocycles.push_back(FP_operation);
+						FP_operations_list = FP_operations_list_nocycles;
+					}
+				}
 
         // check if all nodes have been activated
         if (FP_operations_list.size() == 0)
