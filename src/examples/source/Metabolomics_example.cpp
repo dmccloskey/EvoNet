@@ -3,6 +3,7 @@
 #include <SmartPeak/ml/PopulationTrainer.h>
 #include <SmartPeak/ml/ModelTrainer.h>
 #include <SmartPeak/ml/ModelReplicator.h>
+#include <SmartPeak/ml/ModelBuilder.h>
 #include <SmartPeak/ml/Model.h>
 #include <SmartPeak/io/PopulationTrainerFile.h>
 #include <SmartPeak/io/csv.h>
@@ -532,6 +533,64 @@ class ModelTrainerExt : public ModelTrainer
 {
 public:
 	Model makeModel() { return Model(); }
+	Model makeModelClassification(const int& n_inputs, const int& n_outputs) {
+		Model model;
+		model.setId(0);
+		model.setName("Classifier");
+		model.setLossFunction(std::shared_ptr<LossFunctionOp<float>>(new CrossEntropyOp<float>()));
+		model.setLossFunctionGrad(std::shared_ptr<LossFunctionGradOp<float>>(new CrossEntropyGradOp<float>()));
+		
+		std::shared_ptr<WeightInitOp> weight_init(new RandWeightInitOp(n_inputs));
+		std::shared_ptr<SolverOp> solver(new AdamOp(0.1, 0.9, 0.999, 1e-8));
+
+		ModelBuilder model_builder;
+
+		// Add the inputs
+		std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input", n_inputs);
+
+		// Add the hidden layers
+		node_names = model_builder.addFullyConnected(model, "FC0", "FC0", node_names, 200,
+			std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()),
+			std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
+			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
+			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
+			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
+			weight_init, solver);
+		node_names = model_builder.addFullyConnected(model, "FC1", "FC1", node_names, 100,
+			std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()),
+			std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
+			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
+			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
+			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
+			weight_init, solver);
+		node_names = model_builder.addFullyConnected(model, "FC2", "FC2", node_names, 50,
+			std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()),
+			std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
+			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
+			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
+			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
+			weight_init, solver);
+		node_names = model_builder.addFullyConnected(model, "FC3", "FC3", node_names, 10,
+			std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()),
+			std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
+			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
+			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
+			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
+			weight_init, solver);
+		node_names = model_builder.addFullyConnected(model, "FC4", "FC4", node_names, n_outputs,
+			std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()),
+			std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
+			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
+			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
+			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
+			weight_init, solver);
+
+		// Add the final softmax layer
+		node_names = model_builder.addSoftMax(model, "SoftMax", "SoftMax", node_names);
+
+		model.initWeights();
+		return model; 
+	}
 	void adaptiveTrainerScheduler(
 		const int& n_generations,
 		const int& n_epochs,
@@ -570,9 +629,9 @@ void main_classification()
 
 	// define the data simulator
 	MetDataSimClassification metabolomics_data;
-	//std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
+	std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
 	//std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
-	std::string data_dir = "/home/user/Data/";
+	//std::string data_dir = "/home/user/Data/";
 	std::string biochem_rxns_filename = data_dir + "iAB_RBC_283.csv";
 	std::string metabo_data_filename = data_dir + "MetabolomicsData_RBC.csv";
 	std::string meta_data_filename = data_dir + "MetaData_prePost_RBC.csv";
@@ -590,14 +649,14 @@ void main_classification()
 	for (int i = 0; i < n_input_nodes; ++i)
 		input_nodes.push_back("Input_" + std::to_string(i));
 	for (int i = 0; i < n_output_nodes; ++i)
-		output_nodes.push_back("Output_" + std::to_string(i));
+		output_nodes.push_back("SoftMax-Out_" + std::to_string(i));
 
 	// innitialize the model trainer
 	ModelTrainerExt model_trainer;
 	model_trainer.setBatchSize(1);
 	model_trainer.setMemorySize(1);
-	model_trainer.setNEpochsTraining(1000);
-	model_trainer.setNEpochsValidation(10);
+	model_trainer.setNEpochsTraining(1);
+	model_trainer.setNEpochsValidation(1);
 	model_trainer.setNThreads(n_hard_threads); // [TODO: change back to 2!]
 	model_trainer.setVerbosityLevel(1);
 
@@ -613,33 +672,15 @@ void main_classification()
 
 	// define the initial population
 	std::cout << "Initializing the population..." << std::endl;
-	std::vector<Model> population;
-	const int population_size = 1;
-	for (int i = 0; i<population_size; ++i)
-	{
-		// baseline model
-		std::shared_ptr<WeightInitOp> weight_init;
-		std::shared_ptr<SolverOp> solver;
-		weight_init.reset(new RandWeightInitOp(n_input_nodes));
-		solver.reset(new AdamOp(0.1, 0.9, 0.999, 1e-8));
-		std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>());
-		std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
-		Model model = model_replicator.makeBaselineModel(
-			n_input_nodes, { 200, 100, 50, 10 }, n_output_nodes,
-			std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-			std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-			weight_init, solver,
-			loss_function, loss_function_grad, std::to_string(i));
-		model.initWeights();
-		model.setId(i);
-		population.push_back(model);
-	}
+	std::vector<Model> population = {model_trainer.makeModelClassification(n_input_nodes, n_output_nodes)};
+
+	PopulationTrainerFile population_trainer_file;
+	population_trainer_file.storeModels(population, "Metabolomics");
 
 	// Evolve the population
 	std::vector<std::vector<std::pair<int, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
 		population, model_trainer, model_replicator, metabolomics_data, input_nodes, output_nodes, n_threads);
 
-	PopulationTrainerFile population_trainer_file;
 	population_trainer_file.storeModels(population, "Metabolomics");
 	population_trainer_file.storeModelValidations("MetabolomicsValidationErrors.csv", models_validation_errors_per_generation.back());
 }

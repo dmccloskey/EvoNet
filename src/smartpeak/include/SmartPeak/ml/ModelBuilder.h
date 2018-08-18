@@ -89,7 +89,7 @@ public:
 			const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver);
 
 		/**
-		@brief Add a Convolution layer
+		@brief Add a Pooling layer
 
 		The input is considered a linearized matrix in column order
 		The output is considered a linearized matrix in column order
@@ -122,7 +122,7 @@ public:
 
 		@returns vector of output node names
 		*/
-		std::vector<std::string> addPooling(Model& model, const std::string& name, const std::vector<std::string>& source_node_names,
+		std::vector<std::string> addLSTM(Model& model, const std::string& name, const std::vector<std::string>& source_node_names,
 			const int& n_hidden,
 			const std::shared_ptr<ActivationOp<float>>& node_activation,
 			const std::shared_ptr<ActivationOp<float>>& node_activation_grad,

@@ -53,7 +53,6 @@ namespace SmartPeak
 			char bias_name_char[64];
 			sprintf(bias_name_char, "%s-bias_%d", name.data(), i);
 			std::string bias_name(bias_name_char);
-			node_names.push_back(bias_name);
 			Node bias(bias_name, NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
 			bias.setModuleName(module_name);
 			model.addNodes({ node, bias });

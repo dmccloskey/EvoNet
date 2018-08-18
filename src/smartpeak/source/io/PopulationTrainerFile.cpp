@@ -43,12 +43,12 @@ namespace SmartPeak
 			int model_id = model.getId();
 			std::string model_name_score = std::to_string(model_id) + "_";
 
-			WeightFile weightfile;
-			weightfile.storeWeightsCsv(model_name_score + filename + "_Weights.csv", model.getWeights());
-			LinkFile linkfile;
-			linkfile.storeLinksCsv(model_name_score + filename + "_Links.csv", model.getLinks());
-			NodeFile nodefile;
-			nodefile.storeNodesCsv(model_name_score + filename + "_Nodes.csv", model.getNodes());
+			//WeightFile weightfile;
+			//weightfile.storeWeightsCsv(model_name_score + filename + "_Weights.csv", model.getWeights());
+			//LinkFile linkfile;
+			//linkfile.storeLinksCsv(model_name_score + filename + "_Links.csv", model.getLinks());
+			//NodeFile nodefile;
+			//nodefile.storeNodesCsv(model_name_score + filename + "_Nodes.csv", model.getNodes());
 			ModelFile modelfile;
 			std::string dot_filename = model_name_score + filename + "_Graph.gv";
 			modelfile.storeModelDot(dot_filename, model);

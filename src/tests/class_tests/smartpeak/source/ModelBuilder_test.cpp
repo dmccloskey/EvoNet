@@ -72,7 +72,6 @@ BOOST_AUTO_TEST_CASE(addFullyConnected)
 	for (size_t i = 0; i<node_names_test.size(); ++i)
 	{
 		BOOST_CHECK_EQUAL(model.getNode(node_names_test[i]).getName(), node_names_test[i]);
-		BOOST_CHECK_EQUAL(node_names[i], node_names_test[i]);
 		BOOST_CHECK_EQUAL(model.getNode(node_names_test[i]).getModuleName(), "Mod1");
 		if (i == 1 || i == 3)
 		{
@@ -84,6 +83,7 @@ BOOST_AUTO_TEST_CASE(addFullyConnected)
 		}
 		else
 		{
+			BOOST_CHECK_EQUAL(node_names[i/node_names.size()], node_names_test[i]);
 			BOOST_CHECK_EQUAL(model.getNode(node_names_test[i]).getActivation()->getName(), "ReLUOp");
 			BOOST_CHECK_EQUAL(model.getNode(node_names_test[i]).getActivationGrad()->getName(), "ReLUGradOp");
 			BOOST_CHECK_EQUAL(model.getNode(node_names_test[i]).getIntegration()->getName(), "ProdOp");
