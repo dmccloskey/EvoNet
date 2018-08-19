@@ -21,9 +21,6 @@ static std::mutex calculateOutputNodeError_mutex;
 
 namespace SmartPeak
 {
-  Model::Model()
-  {        
-  }
 
   Model::Model(const Model& other)
   {
@@ -39,10 +36,6 @@ namespace SmartPeak
 
   Model::Model(const int& id):
     id_(id)
-  {
-  }
-
-  Model::~Model()
   {
   }
   
@@ -622,6 +615,7 @@ namespace SmartPeak
 				//std::cout << "Link weight name: " << link_map.second->getWeightName() << std::endl;
         arguments.weight = weights_.at(link_map.second->getWeightName());
         arguments.time_step = 0;
+				arguments.link_name = link_map.first;
 
         // std::cout<<"Addres of model source node: "<<&nodes_.at(link_map.second->getSourceNodeName())<<std::endl;
         // std::cout<<"Addres of arguments source node: "<<arguments.source_node<<std::endl;
@@ -642,7 +636,7 @@ namespace SmartPeak
         }
       }
     }
-  }  
+  }
   
   void Model::getNextInactiveLayerBiases(
     std::map<std::string, int>& FP_operations_map,
@@ -666,6 +660,7 @@ namespace SmartPeak
         arguments.source_node = nodes_.at(link_map.second->getSourceNodeName());
         arguments.weight = weights_.at(link_map.second->getWeightName());
         arguments.time_step = 0;
+				arguments.link_name = link_map.first;
         FP_operations[FP_operations_map.at(link_map.second->getSinkNodeName())].arguments.push_back(arguments);
         if (std::count(sink_nodes_with_biases.begin(), sink_nodes_with_biases.end(), link_map.second->getSinkNodeName()) == 0)
         {
@@ -701,6 +696,7 @@ namespace SmartPeak
         // memory_size = arguments.source_node->getOutput().dimension(1);
         // if (time_step + 1 >= memory_size) ...
         arguments.time_step = 1;
+				arguments.link_name = link_map.first;
         FP_operations[FP_operations_map.at(link_map.second->getSinkNodeName())].arguments.push_back(arguments);
         sink_nodes_with_cycles.push_back(link_map.second->getSinkNodeName());
       }
@@ -890,9 +886,6 @@ namespace SmartPeak
 
         // std::cout<<"sink nodes cycles size "<<sink_nodes_cycles.size()<<std::endl;
         // std::cout<<"FP operations list size "<<FP_operations_list.size()<<std::endl;
-				// [TODO: add a check that a sink_node_cycle is not a source node in any of the other sink node arguments
-				//				if so, remove the sink node and all other sink nodes where the node is a source
-				//				except if the sink node is its own source node
         if (sink_nodes_cycles.size() > 0 && 
           sink_nodes_cycles.size() != FP_operations_list.size())
         { // not all forward propogation steps have caught up
@@ -907,7 +900,6 @@ namespace SmartPeak
 				{ // check if any sink is also a source for another sink
 					// if so, only propogate the sink with the least number of sources
 					std::map<std::string, int> sink_node_cycles_source_cnt;
-					//for (const std::string& sink_node : sink_nodes_cycles) {
 					for (const auto& FP_operation : FP_operations_list) {
 						for (const auto& argument : FP_operation.arguments) {
 							if (std::count(sink_nodes_cycles.begin(), sink_nodes_cycles.end(), argument.source_node->getName()) != 0 
@@ -920,6 +912,7 @@ namespace SmartPeak
 						}
 					}
 					if (sink_node_cycles_source_cnt.size() > 0) { // sinks with other sources were found
+						// Retain only the sinks with the minimum number in other sources
 						int min_cnt = sink_node_cycles_source_cnt.begin()->second;
 						for (const auto& sink_name_cnt_map : sink_node_cycles_source_cnt) {
 							min_cnt = (min_cnt < sink_name_cnt_map.second) ? min_cnt : sink_name_cnt_map.second;
@@ -1219,6 +1212,7 @@ namespace SmartPeak
         arguments.source_node = nodes_.at(link_map.second->getSinkNodeName());
         arguments.weight = weights_.at(link_map.second->getWeightName());
         arguments.time_step = 0;
+				arguments.link_name = link_map.first;
 
         // std::cout<<"Addres of model source node: "<<&nodes_.at(link_map.second->getSourceNodeName())<<std::endl;
         // std::cout<<"Addres of arguments source node: "<<arguments.source_node<<std::endl;
@@ -1245,6 +1239,52 @@ namespace SmartPeak
       }
     }
   }
+
+	void Model::getNextUncorrectedLayerBiases(
+		std::map<std::string, int>& BP_operations_map,
+		std::vector<OperationList>& BP_operations,
+		std::vector<std::string>& source_nodes,
+		std::vector<std::string>& sink_nodes_with_biases)
+	{
+
+		// allows for cycles
+		for (auto& link_map : links_)
+		{
+			if (nodes_.at(link_map.second->getSourceNodeName())->getStatus() == NodeStatus::activated &&
+				nodes_.at(link_map.second->getSinkNodeName())->getStatus() == NodeStatus::activated &&
+				BP_operations_map.count(link_map.second->getSourceNodeName()) != 0 // sink node has already been identified
+				)
+			{
+				OperationArguments arguments;
+				arguments.source_node = nodes_.at(link_map.second->getSinkNodeName());
+				arguments.weight = weights_.at(link_map.second->getWeightName());
+				arguments.time_step = 0;
+				arguments.link_name = link_map.first;
+
+				auto found = BP_operations_map.emplace(link_map.second->getSourceNodeName(), (int)BP_operations.size());
+				if (!found.second)
+				{
+					BP_operations[BP_operations_map.at(link_map.second->getSourceNodeName())].arguments.push_back(arguments);
+				}
+				else
+				{
+					OperationList operation_list;
+					OperationResult result;
+					result.sink_node = nodes_.at(link_map.second->getSourceNodeName());
+					result.time_step = 1;
+					operation_list.result = result;
+					operation_list.arguments.push_back(arguments);
+					BP_operations.push_back(operation_list);
+				}
+
+				// [TODO: update name to sink_nodes...
+				if (std::count(sink_nodes_with_biases.begin(), sink_nodes_with_biases.end(), link_map.second->getSourceNodeName()) == 0)
+				{
+					sink_nodes_with_biases.push_back(link_map.second->getSourceNodeName());
+				}
+			}
+		}
+	}
   
   void Model::getNextUncorrectedLayerCycles(
     std::map<std::string, int>& BP_operations_map,
@@ -1258,13 +1298,14 @@ namespace SmartPeak
     {
       if (nodes_.at(link_map.second->getSourceNodeName())->getStatus() == NodeStatus::corrected &&
         nodes_.at(link_map.second->getSinkNodeName())->getStatus() == NodeStatus::corrected &&
-        std::count(source_nodes.begin(), source_nodes.end(), link_map.second->getSinkNodeName()) != 0 // source node has already been identified)
+        std::count(source_nodes.begin(), source_nodes.end(), link_map.second->getSinkNodeName()) != 0 // source node has already been identified
       ) 
       {
         OperationArguments arguments;
         arguments.source_node = nodes_.at(link_map.second->getSinkNodeName());
         arguments.weight = weights_.at(link_map.second->getWeightName());
-        arguments.time_step = 0;        
+        arguments.time_step = 0;
+				arguments.link_name = link_map.first;
         
         auto found = BP_operations_map.emplace(link_map.second->getSourceNodeName(), (int)BP_operations.size());
         if (!found.second)
@@ -1295,8 +1336,7 @@ namespace SmartPeak
     OperationArguments* arguments, 
     const int& batch_size,
     const int& memory_size,
-    const int& time_step
-  )
+    const int& time_step)
   {
     std::lock_guard<std::mutex> lock(calculateNodeError_mutex);
 
@@ -1316,8 +1356,7 @@ namespace SmartPeak
     const int& batch_size,
     const int& memory_size,
     const int& time_step,
-    int n_threads
-  )
+    int n_threads)
   {
     std::lock_guard<std::mutex> lock(calculateNetNodeError_mutex);
 
@@ -1381,7 +1420,6 @@ namespace SmartPeak
     std::vector<OperationList>& BP_operations,
     const int& time_step, int n_threads)
   {
-
     // get all the information needed to construct the tensors
     int batch_size = 0;
     int memory_size = 0;
@@ -1464,51 +1502,79 @@ namespace SmartPeak
         std::map<std::string, int> BP_operations_map;
         std::vector<OperationList> BP_operations_list;
         std::vector<std::string> source_nodes;
-        getNextUncorrectedLayer(BP_operations_map, BP_operations_list, source_nodes);  
+        getNextUncorrectedLayer(BP_operations_map, BP_operations_list, source_nodes); 
 
-        // std::cout<<"getNextUncorrectedLayer"<<std::endl;
-        // for (auto& operation: BP_operations_list)
-        // {
-        //   std::cout<<"Sink node: "<<operation.result.sink_node->getName()<<std::endl;
-        //   for (auto& argument: operation.arguments)
-        //   {
-        //     std::cout<<"Source node: "<<argument.source_node->getName()<<std::endl;
-        //     std::cout<<"Weight: "<<argument.weight->getName()<<std::endl;
-        //   }
-        // }
+				// get biases (not a good name...these are just sinks with other sources that have not yet been corrected)
+				std::vector<std::string> sink_nodes_cycles;
+				getNextUncorrectedLayerBiases(BP_operations_map, BP_operations_list, source_nodes, sink_nodes_cycles);
 
         // get cycles
-        std::map<std::string, int> BP_operations_map_cycles = BP_operations_map;
-        std::vector<OperationList> BP_operations_list_cycles = BP_operations_list;
         std::vector<std::string> source_nodes_cycles;
-        getNextUncorrectedLayerCycles(BP_operations_map_cycles, BP_operations_list_cycles, source_nodes, source_nodes_cycles);
+        getNextUncorrectedLayerCycles(BP_operations_map, BP_operations_list, source_nodes, source_nodes_cycles);
 
-        // std::cout<<"getNextUncorrectedLayerCycles"<<std::endl;
-        // for (auto& operation: BP_operations_list_cycles)
-        // {
-        //   std::cout<<"Sink node: "<<operation.result.sink_node->getName()<<std::endl;
-        //   for (auto& argument: operation.arguments)
-        //   {
-        //     std::cout<<"Source node: "<<argument.source_node->getName()<<std::endl;
-        //     std::cout<<"Weight: "<<argument.weight->getName()<<std::endl;
-        //   }
-        // }
-
-        if (source_nodes_cycles.size() == source_nodes.size())
-        { // all backward propogation steps have caught up
-          // add source nodes with cycles to the backward propogation step
-          for (const auto& sink_operation : BP_operations_map_cycles)
-          {
-            if (BP_operations_map.count(sink_operation.first) == 0)
-            {
-              if (cache_BP_steps) // track sink nodes with cycles
-                BP_cyclic_nodes_cache_.push_back(sink_operation.first);
-              else
-                node_names_with_cycles.push_back(sink_operation.first);
-            }
-          }
-          BP_operations_list = BP_operations_list_cycles;
-        }
+				if (sink_nodes_cycles.size() > 0 &&
+					sink_nodes_cycles.size() != BP_operations_list.size())
+				{ // not all forward propogation steps have caught up
+					// need to remove sink nodes with cycles
+					std::vector<OperationList> BP_operations_list_nocycles;
+					for (const auto& BP_operation : BP_operations_list)
+						if (std::count(sink_nodes_cycles.begin(), sink_nodes_cycles.end(), BP_operation.result.sink_node->getName()) == 0)
+							BP_operations_list_nocycles.push_back(BP_operation);
+					BP_operations_list = BP_operations_list_nocycles;
+				}
+				else if (sink_nodes_cycles.size() > 0)
+				{ // check if any sink is also a source for another sink
+					// if so, only propogate the sink with the least number of sources
+					std::map<std::string, int> sink_node_cycles_source_cnt;
+					for (const auto& BP_operation : BP_operations_list) {
+						for (const auto& argument : BP_operation.arguments) {
+							if (std::count(sink_nodes_cycles.begin(), sink_nodes_cycles.end(), argument.source_node->getName()) != 0
+								&& BP_operation.result.sink_node->getName() != argument.source_node->getName()) {
+								auto found = sink_node_cycles_source_cnt.emplace(argument.source_node->getName(), 0);
+								if (!found.second) {
+									sink_node_cycles_source_cnt.at(argument.source_node->getName()) += 1;
+								}
+							}
+						}
+					}
+					if (sink_node_cycles_source_cnt.size() > 0) { 
+						// sinks with other sources were found
+						// Retain only the sinks with the minimum number in other sources
+						int min_cnt = sink_node_cycles_source_cnt.begin()->second;
+						for (const auto& sink_name_cnt_map : sink_node_cycles_source_cnt) {
+							min_cnt = (min_cnt < sink_name_cnt_map.second) ? min_cnt : sink_name_cnt_map.second;
+						}
+						std::vector<std::string> sink_nodes;
+						for (const auto& sink_name_cnt_map : sink_node_cycles_source_cnt) {
+							if (sink_name_cnt_map.second == min_cnt) {
+								sink_nodes.push_back(sink_name_cnt_map.first);
+							}
+						}
+						std::vector<OperationList> BP_operations_list_cycles;
+						for (const auto& BP_operation : BP_operations_list)
+							if (std::count(sink_nodes.begin(), sink_nodes.end(), BP_operation.result.sink_node->getName()) != 0)
+								BP_operations_list_cycles.push_back(BP_operation);
+						// update the BP_operations_list
+						BP_operations_list = BP_operations_list_cycles; 
+						// track sink nodes with cycles
+						for (const std::string& sink_node : sink_nodes) {
+							if (cache_BP_steps) // 
+								BP_cyclic_nodes_cache_.push_back(sink_node);
+							else
+								node_names_with_cycles.push_back(sink_node);
+						}
+					}
+					else {
+						// All sinks are also not sources in other sinks
+						// Retain all sinks for BP
+						for (const std::string& sink_node : sink_nodes_cycles) {
+							if (cache_BP_steps) // 
+								BP_cyclic_nodes_cache_.push_back(sink_node);
+							else
+								node_names_with_cycles.push_back(sink_node);
+						}
+					}
+				}
 
         // check if all nodes have been corrected
         if (BP_operations_list.size() == 0)
@@ -1836,11 +1902,191 @@ namespace SmartPeak
   {
     FP_operations_cache_.clear();
     BP_operations_cache_.clear();
+		FP_cyclic_nodes_cache_.clear();
 		BP_cyclic_nodes_cache_.clear();
 		output_node_cache_.clear();
-
-    // [DEPRECATED]
-    FP_sink_link_cache_.clear();
-    BP_sink_link_cache_.clear();
+		cyclic_source_to_sink_nodes_.clear();
   }
+
+	bool Model::isCyclic(std::list<int> *adj, int v, bool visited[], bool *recStack, bool *cyclic)
+	{
+		if (visited[v] == false)
+		{
+			// Mark the current node as visited and part of recursion stack
+			visited[v] = true;
+			recStack[v] = true;
+
+			// Recur for all the vertices adjacent to this vertex
+			std::list<int>::iterator i;
+			for (i = adj[v].begin(); i != adj[v].end(); ++i)
+			{
+				if (!visited[*i] && isCyclic(adj, *i, visited, recStack, cyclic))
+					return true;
+				else if (recStack[*i]) {
+					cyclic[*i] = true;
+					return true;
+				}
+			}
+		}
+		recStack[v] = false;  // remove the vertex from recursion stack
+		return false;
+	}
+
+	void Model::findCyclicNodesFP()
+	{
+		// create the DFS trees (excluding bias nodes)
+		std::map<int, std::string> node_id_map;
+		int node_cnt = 0;
+		for (auto& node_map : nodes_) {
+			if (node_map.second->getType() != NodeType::bias) {
+				node_map.second->setId(node_cnt);
+				node_id_map.emplace(node_cnt, node_map.first);
+				++node_cnt;
+			}
+			else {
+				node_map.second->setId(-1);
+			}
+		}
+		std::list<int> *adj;
+		adj = new std::list<int>[node_cnt];
+		for (auto& link_map : links_)
+			if (nodes_.at(link_map.second->getSourceNodeName())->getType() != NodeType::bias)
+				adj[nodes_.at(link_map.second->getSinkNodeName())->getId()].push_back(nodes_.at(link_map.second->getSourceNodeName())->getId());
+
+		// Mark all the vertices as not visited and not part of recursion stack
+		bool *visited = new bool[node_cnt];
+		bool *recStack = new bool[node_cnt];
+		bool *cyclic = new bool[node_cnt];
+		for (int i = 0; i < node_cnt; ++i) {
+			visited[i] = false;
+			recStack[i] = false;
+			cyclic[i] = false;
+		}
+
+		// Call the recursive helper function to detect cycles in different DFS trees 
+		for (int i = 0; i < node_cnt; ++i)
+			isCyclic(adj, i, visited, recStack, cyclic);
+
+		FP_cyclic_nodes_cache_.clear();
+		for (int i = 0; i < node_cnt; ++i)
+			if (cyclic[i])
+				FP_cyclic_nodes_cache_.push_back(node_id_map.at(i));
+	}
+
+	void Model::findCyclicNodesBP()
+	{
+		// create the DFS trees (excluding bias nodes)
+		std::map<int, std::string> node_id_map;
+		int node_cnt = 0;
+		for (auto& node_map : nodes_) {
+			if (node_map.second->getType() != NodeType::bias) {
+				node_map.second->setId(node_cnt);
+				node_id_map.emplace(node_cnt, node_map.first);
+				++node_cnt;
+			}
+			else {
+				node_map.second->setId(-1);
+			}
+		}
+		std::list<int> *adj;
+		adj = new std::list<int>[node_cnt];
+		for (auto& link_map : links_)
+			if (nodes_.at(link_map.second->getSourceNodeName())->getType() != NodeType::bias)
+				adj[nodes_.at(link_map.second->getSourceNodeName())->getId()].push_back(nodes_.at(link_map.second->getSinkNodeName())->getId());
+
+		// Mark all the vertices as not visited and not part of recursion stack
+		bool *visited = new bool[node_cnt];
+		bool *recStack = new bool[node_cnt];
+		bool *cyclic = new bool[node_cnt];
+		for (int i = 0; i < node_cnt; ++i) {
+			visited[i] = false;
+			recStack[i] = false;
+			cyclic[i] = false;
+		}
+
+		// Call the recursive helper function to detect cycles in different DFS trees 
+		for (int i = 0; i < node_cnt; ++i)
+			isCyclic(adj, i, visited, recStack, cyclic);
+
+		BP_cyclic_nodes_cache_.clear();
+		for (int i = 0; i < node_cnt; ++i)
+			if (cyclic[i])
+				BP_cyclic_nodes_cache_.push_back(node_id_map.at(i));
+	}
+
+	bool Model::isCyclic(std::list<int>* adj, int v, bool visited[], bool * recStack, std::vector<std::pair<int, int>>& cyclic_nodes)
+	{
+		if (visited[v] == false)
+		{
+			// Mark the current node as visited and part of recursion stack
+			visited[v] = true;
+			recStack[v] = true;
+
+			// Recur for all the vertices adjacent to this vertex
+			std::list<int>::iterator i;
+			for (i = adj[v].begin(); i != adj[v].end(); ++i)
+			{
+				if (!visited[*i] && isCyclic(adj, *i, visited, recStack, cyclic_nodes))
+					return true;
+				else if (recStack[*i]) {
+					cyclic_nodes.push_back(std::make_pair(v, *i));
+					return true;
+				}
+			}
+		}
+		recStack[v] = false;  // remove the vertex from recursion stack
+		return false;
+	}
+
+	void Model::findCyclicNodePairs()
+	{
+		// create the DFS trees (excluding bias nodes)
+		std::map<int, std::string> node_id_map;
+		int node_cnt = 0;
+		for (auto& node_map : nodes_) {
+			if (node_map.second->getType() != NodeType::bias) {
+				node_map.second->setId(node_cnt);
+				node_id_map.emplace(node_cnt, node_map.first);
+				++node_cnt;
+			}
+			else {
+				node_map.second->setId(-1);
+			}
+		}
+		std::list<int> *adj;
+		adj = new std::list<int>[node_cnt];
+		for (auto& link_map : links_)
+			if (nodes_.at(link_map.second->getSourceNodeName())->getType() != NodeType::bias)
+				adj[nodes_.at(link_map.second->getSourceNodeName())->getId()].push_back(nodes_.at(link_map.second->getSinkNodeName())->getId());
+
+		// Mark all the vertices as not visited and not part of recursion stack
+		bool *visited = new bool[node_cnt];
+		bool *recStack = new bool[node_cnt];
+		for (int i = 0; i < node_cnt; ++i) {
+			visited[i] = false;
+			recStack[i] = false;
+		}
+
+		// Call the recursive helper function to detect cycles in different DFS trees 
+		std::vector<std::pair<int, int>> cyclic;
+		for (int i = 0; i < node_cnt; ++i)
+			isCyclic(adj, i, visited, recStack, cyclic);
+
+		cyclic_source_to_sink_nodes_.clear();
+		for (const auto& source_sink: cyclic)
+			cyclic_source_to_sink_nodes_.push_back(std::make_pair(node_id_map.at(source_sink.first), node_id_map.at(source_sink.second)));
+	}
+
+	std::vector<std::string> Model::getFPCyclicNodeCache()
+	{
+		return FP_cyclic_nodes_cache_;
+	}
+	std::vector<std::string> Model::getBPCyclicNodeCache()
+	{
+		return BP_cyclic_nodes_cache_;
+	}
+	std::vector<std::pair<std::string, std::string>> Model::getCyclicSourceToSinkNodes()
+	{
+		return cyclic_source_to_sink_nodes_;
+	}
 }

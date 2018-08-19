@@ -12,6 +12,7 @@
 #include <vector>
 #include <map>
 #include <tuple>
+#include <list>
 
 namespace SmartPeak
 {
@@ -26,6 +27,7 @@ namespace SmartPeak
   {
     std::shared_ptr<Node> source_node;
     std::shared_ptr<Weight> weight;
+		std::string link_name;
     int time_step = 0;
   };
 
@@ -45,10 +47,10 @@ namespace SmartPeak
   class Model
   {
 public:
-    Model(); ///< Default constructor
+    Model() = default; ///< Default constructor
     Model(const Model& other); ///< Copy constructor that does not create a shared memory address between model nodes/links/weights
     Model(const int& id); ///< Explicit constructor  
-    ~Model(); ///< Default destructor
+    ~Model() = default; ///< Default destructor
 
     inline bool operator==(const Model& other) const
     {
@@ -393,6 +395,12 @@ public:
       std::map<std::string, int>& BP_operations_map,
       std::vector<OperationList>& BP_operations,
       std::vector<std::string>& source_nodes);
+
+		void getNextUncorrectedLayerBiases(
+			std::map<std::string, int>& BP_operations_map, 
+			std::vector<OperationList>& BP_operations, 
+			std::vector<std::string>& source_nodes, 
+			std::vector<std::string>& sink_nodes_with_biases);
  
     /**
     @brief A continuation of a back propogation step.  Returns a vector of links
@@ -649,6 +657,20 @@ public:
 
     void clearCache(); ///< clear the FP and BP caches
 
+		/**
+		@brief Find all source and sinks that are involved in a cycle
+		*/
+		bool isCyclic(std::list<int>* adj, int v, bool visited[], bool * recStack, bool *cyclic);
+		void findCyclicNodesFP();
+		void findCyclicNodesBP();
+		bool isCyclic(std::list<int>* adj, int v, bool visited[], bool * recStack, std::vector<std::pair<int, int>>& cyclic_nodes);
+		void findCyclicNodePairs();
+
+		std::vector<std::string> getFPCyclicNodeCache();
+		std::vector<std::string> getBPCyclicNodeCache();
+
+		std::vector<std::pair<std::string, std::string>> getCyclicSourceToSinkNodes();
+
 private:
     int id_; ///< Model ID
     std::string name_; ///< Model Name
@@ -662,9 +684,8 @@ private:
     std::shared_ptr<LossFunctionOp<float>> loss_function_; ///< Model loss function
 		std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad_; ///< Model loss function
 
-    // Internal structures to allow for caching of the different FP and BP layers
-    std::vector<std::map<std::string, std::vector<std::string>>> FP_sink_link_cache_; // [DEPRECATED]
-    std::vector<std::map<std::string, std::vector<std::string>>> BP_sink_link_cache_; // [DEPRECATED]
+		std::vector<std::pair<std::string, std::string>> cyclic_source_to_sink_nodes_;
+		std::vector<std::string> FP_cyclic_nodes_cache_;
     std::vector<std::string> BP_cyclic_nodes_cache_;
 
     // Internal structures to allow for efficient multi-threading

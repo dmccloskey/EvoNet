@@ -78,7 +78,34 @@ Model makeModel2()
 }
 Model model2 = makeModel2();
 
-// [TODO: update to use new methods]
+BOOST_AUTO_TEST_CASE(findCyclicSinks)
+{
+	// Toy network: 1 hidden layer, fully connected, DCG
+	// Model model2 = makeModel2();
+
+	// initialize nodes
+	const int batch_size = 5;
+	const int memory_size = 8;
+	model2.initError(batch_size, memory_size);
+	model2.clearCache();
+	model2.initNodes(batch_size, memory_size);
+	model2.initWeights();
+
+	// find cyclic nodes
+	model2.findCyclicNodesFP();
+	model2.findCyclicNodesBP();
+
+	BOOST_CHECK_EQUAL(model2.getFPCyclicNodeCache().size(), 1);
+	BOOST_CHECK_EQUAL(model2.getFPCyclicNodeCache().back(), "2");
+	BOOST_CHECK_EQUAL(model2.getBPCyclicNodeCache().size(), 1);
+	BOOST_CHECK_EQUAL(model2.getBPCyclicNodeCache().back(), "1");
+
+	model2.findCyclicNodePairs();
+	BOOST_CHECK_EQUAL(model2.getCyclicSourceToSinkNodes().size(), 1);
+	BOOST_CHECK_EQUAL(model2.getCyclicSourceToSinkNodes().back().first, "2");
+	BOOST_CHECK_EQUAL(model2.getCyclicSourceToSinkNodes().back().second, "1");
+}
+
 BOOST_AUTO_TEST_CASE(getNextInactiveLayer2) 
 {
   // Toy network: 1 hidden layer, fully connected, DCG
@@ -123,7 +150,6 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayer2)
 	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[0].weight->getName(), "0");
 }
 
-// [TODO: update to use new methods]
 BOOST_AUTO_TEST_CASE(getNextInactiveLayerBiases2) 
 {
   // Toy network: 1 hidden layer, fully connected, DCG
@@ -176,7 +202,6 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayerBiases2)
 	BOOST_CHECK_EQUAL(sink_nodes_with_biases2[0], "1");
 }
 
-// [TODO: update to use new methods]
 BOOST_AUTO_TEST_CASE(getNextInactiveLayerCycles2) 
 {
   // Toy network: 1 hidden layer, fully connected, DCG
@@ -302,9 +327,6 @@ BOOST_AUTO_TEST_CASE(FPTT)
 
 BOOST_AUTO_TEST_CASE(CETT)
 {
-	// [TODO: update tests]
-	// [BUG: discovered that the output was not being traversed in reverse order]
-
 	// Toy network: 1 hidden layer, fully connected, DCG
 	// Model model2 = makeModel2();
 
