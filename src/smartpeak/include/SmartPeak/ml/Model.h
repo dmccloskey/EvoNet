@@ -469,7 +469,7 @@ public:
 
     @returns Vector of cyclic sink node IDs
     */ 
-    std::vector<std::string> backPropogate(const int& time_step, bool cache_BP_steps = false, bool use_cache = false, int n_threads = 1);  
+    void backPropogate(const int& time_step, bool cache_BP_steps = false, bool use_cache = false, int n_threads = 1);  
  
     /**
     @brief Truncated Back Propogation Through Time (TBPTT) of the network model.
@@ -660,16 +660,10 @@ public:
 		/**
 		@brief Find all source and sinks that are involved in a cycle
 		*/
-		bool isCyclic(std::list<int>* adj, int v, bool visited[], bool * recStack, bool *cyclic);
-		void findCyclicNodesFP();
-		void findCyclicNodesBP();
 		bool isCyclic(std::list<int>* adj, int v, bool visited[], bool * recStack, std::vector<std::pair<int, int>>& cyclic_nodes);
-		void findCyclicNodePairs();
+		void findCyclicPairs();
 
-		std::vector<std::string> getFPCyclicNodeCache();
-		std::vector<std::string> getBPCyclicNodeCache();
-
-		std::vector<std::pair<std::string, std::string>> getCyclicSourceToSinkNodes();
+		std::vector<std::pair<std::string, std::string>> getCyclicPairs();
 
 private:
     int id_; ///< Model ID
@@ -684,9 +678,7 @@ private:
     std::shared_ptr<LossFunctionOp<float>> loss_function_; ///< Model loss function
 		std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad_; ///< Model loss function
 
-		std::vector<std::pair<std::string, std::string>> cyclic_source_to_sink_nodes_;
-		std::vector<std::string> FP_cyclic_nodes_cache_;
-    std::vector<std::string> BP_cyclic_nodes_cache_;
+		std::vector<std::pair<std::string, std::string>> cyclic_pairs_;
 
     // Internal structures to allow for efficient multi-threading
     // and off-loading of computation from host to devices

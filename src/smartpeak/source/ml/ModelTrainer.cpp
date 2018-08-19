@@ -184,6 +184,7 @@ namespace SmartPeak
 		model.initError(getBatchSize(), getMemorySize());
 		model.clearCache();
 		model.initNodes(getBatchSize(), getMemorySize());
+		model.findCyclicPairs();
 
 		for (int iter = 0; iter < getNEpochsTraining(); ++iter) // use n_epochs here
 		{
@@ -265,6 +266,7 @@ namespace SmartPeak
 		model.initError(getBatchSize(), getMemorySize());
 		model.clearCache();
 		model.initNodes(getBatchSize(), getMemorySize());
+		model.findCyclicPairs();
 
 		for (int iter = 0; iter < getNEpochsValidation(); ++iter) // use n_epochs here
 		{
