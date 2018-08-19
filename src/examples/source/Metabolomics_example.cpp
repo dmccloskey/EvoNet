@@ -654,11 +654,11 @@ void main_classification()
 	// innitialize the model trainer
 	ModelTrainerExt model_trainer;
 	model_trainer.setBatchSize(1);
-	model_trainer.setMemorySize(1);
-	model_trainer.setNEpochsTraining(1);
-	model_trainer.setNEpochsValidation(1);
+	model_trainer.setMemorySize(2);
+	model_trainer.setNEpochsTraining(500);
+	model_trainer.setNEpochsValidation(10);
 	model_trainer.setNThreads(n_hard_threads); // [TODO: change back to 2!]
-	model_trainer.setVerbosityLevel(1);
+	model_trainer.setVerbosityLevel(2);
 
 	// initialize the model replicator
 	ModelReplicatorExt model_replicator;

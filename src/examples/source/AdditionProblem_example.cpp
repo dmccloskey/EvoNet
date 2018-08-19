@@ -946,7 +946,7 @@ int main(int argc, char** argv)
 	model_trainer.setMemorySize(data_simulator.sequence_length_);
 	model_trainer.setNEpochsTraining(500);
 	model_trainer.setNEpochsValidation(10);
-	model_trainer.setVerbosityLevel(1);
+	model_trainer.setVerbosityLevel(2);
 
 	// define the model replicator for growth mode
 	ModelReplicatorExt model_replicator;

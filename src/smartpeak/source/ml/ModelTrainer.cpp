@@ -220,8 +220,8 @@ namespace SmartPeak
 					std::cout << node.getName() << " Error: " << node.getError() << std::endl;
 					std::cout << node.getName() << " Derivative: " << node.getDerivative() << std::endl;
 				}
-				for (const Weight& weight : model.getWeights())
-					std::cout << weight.getName() << " Weight: " << weight.getWeight() << std::endl;
+				//for (const Weight& weight : model.getWeights())
+				//	std::cout << weight.getName() << " Weight: " << weight.getWeight() << std::endl;
 			}
 
 			// update the weights

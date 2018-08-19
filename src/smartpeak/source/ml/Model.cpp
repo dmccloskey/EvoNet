@@ -1553,9 +1553,11 @@ namespace SmartPeak
     for (int time_step=0; time_step<max_steps; ++time_step) {
       if (time_step > 0) {
         for (auto& node_map: nodes_) {
-           node_map.second->setStatus(NodeStatus::activated); // reinitialize nodes
+					node_map.second->setStatus(NodeStatus::activated); // reinitialize nodes
         }
-				// [TODO: set output as corrected]
+				for (auto& node : output_node_cache_) {
+					node->setStatus(NodeStatus::corrected);
+				}
       }
 
       // calculate the error for each batch of memory

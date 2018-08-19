@@ -57,6 +57,12 @@ public:
 		/**
 		@brief Add a Soft Max
 
+		[TODO: update to the "stable" version
+			def stable_softmax(X):
+				exps = np.exp(X - np.max(X))
+				return exps / np.sum(exps)
+		}
+
 		@param[in, out] Model
 		@param[in] source_node_names Node_names to add the layer to
 
