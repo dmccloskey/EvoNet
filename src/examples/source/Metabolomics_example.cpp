@@ -629,9 +629,9 @@ void main_classification()
 
 	// define the data simulator
 	MetDataSimClassification metabolomics_data;
-	std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
+	//std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
 	//std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
-	//std::string data_dir = "/home/user/Data/";
+	std::string data_dir = "/home/user/Data/";
 	std::string biochem_rxns_filename = data_dir + "iAB_RBC_283.csv";
 	std::string metabo_data_filename = data_dir + "MetabolomicsData_RBC.csv";
 	std::string meta_data_filename = data_dir + "MetaData_prePost_RBC.csv";
