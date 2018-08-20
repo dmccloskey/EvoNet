@@ -9,7 +9,6 @@
 #include <ctime> // time format
 #include <chrono> // current time
 #include <set>
-#include "..\..\include\SmartPeak\ml\ModelBuilder.h"
 
 namespace SmartPeak
 {
