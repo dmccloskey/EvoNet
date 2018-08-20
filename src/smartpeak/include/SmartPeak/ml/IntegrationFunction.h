@@ -24,6 +24,7 @@ public:
 		Eigen::Tensor<T, 1> getNetNodeInput() const { return net_node_input_; }
     virtual std::string getName() const = 0;
     virtual void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>&source_output) = 0;
+	protected:
 		Eigen::Tensor<T, 1> net_node_input_; ///< 
 		//std::atomic<Eigen::Tensor<T, 1>> net_node_input_; ///< 
   };
@@ -42,7 +43,7 @@ public:
 			setNetNodeInput(net_node_input);
 		}
     ~SumOp(){};
-    void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>&source_output) { net_node_input_ += weight * source_output; };
+    void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>&source_output) { this->net_node_input_ += weight * source_output; };
     std::string getName() const{return "SumOp";};
   };
 
@@ -78,7 +79,7 @@ public:
 			setNetNodeInput(net_node_input);
 		}
 		~MaxOp() {};
-		void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>&source_output) { net_node_input_ = net_node_input_.cwiseMax(weight * source_output); };
+		void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>&source_output) { this->net_node_input_ = this->net_node_input_.cwiseMax(weight * source_output); };
 		std::string getName() const { return "MaxOp"; };
 	};
 
@@ -96,6 +97,7 @@ public:
 		Eigen::Tensor<T, 1> getNetNodeError() const { return net_node_error_; }
 		virtual std::string getName() const = 0;
 		virtual void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_error, const Eigen::Tensor<T, 1>& source_net_input, const Eigen::Tensor<T, 1>& sink_output) = 0;
+	protected:
 		Eigen::Tensor<T, 1> net_node_error_; ///< 
 		//std::atomic<Eigen::Tensor<T, 1>> net_node_error_; ///< 
 	};
@@ -123,7 +125,7 @@ public:
 		@param[in] x4 The sink output tensor
 		*/
 		void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_error, const Eigen::Tensor<T, 1>& source_net_input, const Eigen::Tensor<T, 1>& sink_output) {
-			net_node_error_ += weight * source_error;
+			this->net_node_error_ += weight * source_error;
 		};
 		std::string getName() const { return "SumErrorOp"; };
 	};
@@ -151,7 +153,7 @@ public:
 		@param[in] x4 The sink output tensor
 		*/
 		void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_error, const Eigen::Tensor<T, 1>& source_net_input, const Eigen::Tensor<T, 1>& sink_output) {
-			net_node_error_ += (source_net_input * source_error / sink_output).unaryExpr(std::ptr_fun(substituteNanInf<T>)); // Note: was checkNanInf
+			this->net_node_error_ += (source_net_input * source_error / sink_output).unaryExpr(std::ptr_fun(substituteNanInf<T>)); // Note: was checkNanInf
 		};
 		std::string getName() const { return "ProdErrorOp"; };
 	};
@@ -184,7 +186,7 @@ public:
 				if (v < 1) return 0;
 				else return 1;
 			});
-			net_node_error_ += weight * source_error * perc_max_tensor;
+			this->net_node_error_ += weight * source_error * perc_max_tensor;
 		};
 		std::string getName() const { return "MaxErrorOp"; };
 	};
@@ -203,6 +205,7 @@ public:
 		T getNetWeightError() const { return net_weight_error_; }
 		virtual std::string getName() const = 0;
 		virtual void operator()(const Eigen::Tensor<T, 1>& sink_error, const Eigen::Tensor<T, 1>& source_output, const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_net_input) = 0;
+	protected:
 		T net_weight_error_ = 0; ///< 
 		//std::atomic<T> net_weight_error_ = 0; ///< 
 	};
@@ -218,7 +221,7 @@ public:
 		~SumWeightGradOp() {};
 		void operator()(const Eigen::Tensor<T, 1>& sink_error, const Eigen::Tensor<T, 1>& source_output, const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_net_input) {
 			Eigen::Tensor<T, 0> derivative_mean_tensor = (-sink_error * source_output).mean(); // average derivative
-			net_weight_error_ += derivative_mean_tensor(0);
+			this->net_weight_error_ += derivative_mean_tensor(0);
 		};
 		std::string getName() const { return "SumWeightGradOp"; };
 	};
@@ -234,7 +237,7 @@ public:
 		~ProdWeightGradOp() {};
 		void operator()(const Eigen::Tensor<T, 1>& sink_error, const Eigen::Tensor<T, 1>& source_output, const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_net_input) {
 			Eigen::Tensor<T, 0> derivative_mean_tensor = ((-sink_error * source_net_input / weight).unaryExpr(std::ptr_fun(substituteNanInf<T>))).mean(); // average derivative
-			net_weight_error_ += derivative_mean_tensor(0);
+			this->net_weight_error_ += derivative_mean_tensor(0);
 		};
 		std::string getName() const { return "ProdWeightGradOp"; };
 	};
@@ -250,7 +253,7 @@ public:
 		~MaxWeightGradOp() {};
 		void operator()(const Eigen::Tensor<T, 1>& sink_error, const Eigen::Tensor<T, 1>& source_output, const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_net_input) {
 			Eigen::Tensor<T, 0> derivative_mean_tensor = (-sink_error * source_output).mean(); // average derivative
-			net_weight_error_ += derivative_mean_tensor(0);
+			this->net_weight_error_ += derivative_mean_tensor(0);
 		};
 		std::string getName() const { return "MaxWeightGradOp"; };
 	};
