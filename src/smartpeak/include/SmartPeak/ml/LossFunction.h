@@ -182,7 +182,9 @@ public:
 			const Eigen::Tensor<T, 1>& y_pred,
 			const Eigen::Tensor<T, 1>& y_true) const
 		{
-			return (-y_true * y_pred.log()).unaryExpr(std::ptr_fun(substituteNanInf<T>));
+			Eigen::Tensor<T, 1> ones((int)y_pred.size());
+			ones.setConstant(1.0);
+			return (-(y_true * y_pred.log() + (ones - y_true) * (ones - y_pred).log())).unaryExpr(std::ptr_fun(substituteNanInf<T>));
 		};
   };
 
@@ -208,19 +210,30 @@ public:
 			const Eigen::Tensor<T, 1>& y_pred,
 			const Eigen::Tensor<T, 1>& y_true) const
 		{
-			return (-y_true / y_pred).unaryExpr(std::ptr_fun(substituteNanInf<T>));
+			Eigen::Tensor<T, 1> ones((int)y_pred.size());
+			ones.setConstant(1.0);
+			return (-(y_true / y_pred + (ones - y_true) / (ones - y_pred))).unaryExpr(std::ptr_fun(substituteNanInf<T>));
 		};
   };
 
   /**
     @brief NegativeLogLikelihood loss function.
+
+		NOTES: implemented as the following:
+		def CrossEntropy(yHat, y):
+			if y == 1:
+				return -log(yHat)
+			else:
+				return -log(1 - yHat)
   */
   template<typename T>
   class NegativeLogLikelihoodOp : public LossFunctionOp<T>
   {
 public: 
-    NegativeLogLikelihoodOp(){}; 
-    ~NegativeLogLikelihoodOp(){};
+    NegativeLogLikelihoodOp() = default;
+		NegativeLogLikelihoodOp(const T& n) { setN(n); };
+		void setN(const T& n) { n_ = n; }
+    ~NegativeLogLikelihoodOp() = default;
     Eigen::Tensor<T, 1> operator()(
       const Eigen::Tensor<T, 2>& y_pred, 
       const Eigen::Tensor<T, 2>& y_true) const 
@@ -232,8 +245,10 @@ public:
 			const Eigen::Tensor<T, 1>& y_pred,
 			const Eigen::Tensor<T, 1>& y_true) const
 		{
-			return (-(y_true * y_pred.log())).unaryExpr(std::ptr_fun(substituteNanInf<T>));
+			return -y_true * (y_pred.unaryExpr(ClipOp<T>(1e-12, 0, 1)).log());
 		};
+	private:
+		T n_ = 1; ///< the number of total classifiers
   };
 
   /**
@@ -243,7 +258,9 @@ public:
   class NegativeLogLikelihoodGradOp : public LossFunctionGradOp<T>
   {
 public: 
-    NegativeLogLikelihoodGradOp(){}; 
+    NegativeLogLikelihoodGradOp(){};
+		NegativeLogLikelihoodGradOp(const T& n) { setN(n); };
+		void setN(const T& n) { n_ = n; }
     ~NegativeLogLikelihoodGradOp(){};
     Eigen::Tensor<T, 2> operator()(
       const Eigen::Tensor<T, 2>& y_pred, 
@@ -255,8 +272,10 @@ public:
 			const Eigen::Tensor<T, 1>& y_pred,
 			const Eigen::Tensor<T, 1>& y_true) const
 		{
-			return (-(y_true / y_pred)).unaryExpr(std::ptr_fun(substituteNanInf<T>));
+			return (-y_true / y_pred.unaryExpr(ClipOp<T>(1e-12, 0, 1))).unaryExpr(std::ptr_fun(checkNanInf<T>));
 		};
+	private:
+		T n_ = 1; ///< the number of total classifiers
   };
 
   /**
@@ -318,5 +337,26 @@ public:
 			return result.unaryExpr(std::ptr_fun(substituteNanInf<T>));
 		};
   };
+
+
+
+	/**
+		@brief Hinge loss function.  
+
+		Typically used for classification
+
+		NOTES: implemented as the following:
+		def Hinge(yHat, y):
+			return np.max(0, 1 - yHat * y)
+	*/
+
+
+	/**
+		@brief CrossEntropy loss function.
+
+		Typically used for regression
+
+		https://en.wikipedia.org/wiki/Huber_loss
+	*/
 }
 #endif //SMARTPEAK_LOSSFUNCTION_H

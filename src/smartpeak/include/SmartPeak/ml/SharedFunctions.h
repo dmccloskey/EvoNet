@@ -95,5 +95,29 @@ namespace SmartPeak
 			return x;
 		}			
 	}
+
+	/**
+	@brief Clip
+	*/
+	template<typename T>
+	class ClipOp
+	{
+	public:
+		ClipOp() = default;
+		ClipOp(const T& eps, const T& min, const T& max) : eps_(eps), min_(min), max_(max) {};
+		~ClipOp() = default;
+		T operator()(const T& x) const {
+			if (x < min_ + eps_)
+				return min_ + eps_;
+			else if (x > max_ - eps_)
+				return max_ - eps_;
+			else
+				return x;
+		}
+	private:
+		T eps_ = 1e-12; ///< threshold to clip between min and max
+		T min_ = 0;
+		T max_ = 1;
+	};
 }
 #endif //SMARTPEAK_SHAREDFUNCTIONS_H
