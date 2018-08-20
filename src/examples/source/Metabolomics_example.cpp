@@ -324,7 +324,7 @@ public:
 				if (std::count(ignore_mets.begin(), ignore_mets.end(), met_id) == 0)
 					++total_cnt;
 			}
-			if (((float)data_cnt) / ((float)total_cnt) <= 0.5f)
+			if (((float)data_cnt) / ((float)total_cnt) < 0.75f)
 				continue;
 
 			reaction_ids_.push_back(biochem_rxn_map.first);
@@ -629,8 +629,8 @@ void main_classification()
 
 	// define the data simulator
 	MetDataSimClassification metabolomics_data;
-	//std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
-	std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
+	std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
+	//std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
 	//std::string data_dir = "/home/user/Data/";
 	std::string biochem_rxns_filename = data_dir + "iAB_RBC_283.csv";
 	std::string metabo_data_filename = data_dir + "MetabolomicsData_RBC.csv";

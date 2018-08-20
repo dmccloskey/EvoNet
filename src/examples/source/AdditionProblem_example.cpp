@@ -382,10 +382,10 @@ public:
 		// weights  
 		std::shared_ptr<WeightInitOp> weight_init;
 		std::shared_ptr<SolverOp> solver;
-		weight_init.reset(new RandWeightInitOp(2.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
+		weight_init.reset(new RandWeightInitOp(20.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
 		//weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
 		Weight_i_rand_to_fGate_SSig = Weight("Weight_i_rand_to_fGate_SSig", weight_init, solver);
-		weight_init.reset(new RandWeightInitOp(2.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
+		weight_init.reset(new RandWeightInitOp(20.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
 		//weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
 		Weight_i_mask_to_fGate_SSig = Weight("Weight_i_mask_to_fGate_SSig", weight_init, solver);
 		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
@@ -396,19 +396,19 @@ public:
 		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new DummySolverOp());	solver->setGradientThreshold(100000.0f);
 		Weight_fGate_SSig_to_fGate_PLin = Weight("Weight_fGate_SSig_to_fGate_PLin", weight_init, solver);
 
-		weight_init.reset(new RandWeightInitOp(2.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
+		weight_init.reset(new RandWeightInitOp(20.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
 		//weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
 		Weight_i_rand_to_uGate_SSig = Weight("Weight_i_rand_to_uGate_SSig", weight_init, solver);
-		weight_init.reset(new RandWeightInitOp(2.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
+		weight_init.reset(new RandWeightInitOp(20.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
 		//weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
 		Weight_i_mask_to_uGate_SSig = Weight("Weight_i_mask_to_uGate_SSig", weight_init, solver);
 		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
 		Weight_uGate_SSig_bias_to_uGate_SSig = Weight("Weight_uGate_SSig_bias_to_uGate_SSig", weight_init, solver);
 
-		weight_init.reset(new RandWeightInitOp(2.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
+		weight_init.reset(new RandWeightInitOp(20.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
 		//weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
 		Weight_i_rand_to_uGate_SLin = Weight("Weight_i_rand_to_uGate_SLin", weight_init, solver);
-		weight_init.reset(new RandWeightInitOp(2.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
+		weight_init.reset(new RandWeightInitOp(20.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
 		//weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
 		Weight_i_mask_to_uGate_SLin = Weight("Weight_i_mask_to_uGate_SLin", weight_init, solver);
 		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
@@ -424,10 +424,10 @@ public:
 		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new DummySolverOp());	solver->setGradientThreshold(100000.0f);
 		Weight_uGate_PLin_to_MC = Weight("Weight_uGate_PLin_to_MC", weight_init, solver);
 
-		weight_init.reset(new RandWeightInitOp(2.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
+		weight_init.reset(new RandWeightInitOp(20.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
 		//weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
 		Weight_i_rand_to_oGate_SSig = Weight("Weight_i_rand_to_oGate_SSig", weight_init, solver);
-		weight_init.reset(new RandWeightInitOp(2.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
+		weight_init.reset(new RandWeightInitOp(20.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
 		//weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
 		Weight_i_mask_to_oGate_SSig = Weight("Weight_i_mask_to_oGate_SSig", weight_init, solver);
 		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
@@ -439,7 +439,7 @@ public:
 		Weight_MC_to_oGate_PLin = Weight("Weight_MC_to_oGate_PLin", weight_init, solver);
 
 		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new DummySolverOp());	solver->setGradientThreshold(100000.0f); //
-		//weight_init.reset(new RandWeightInitOp(2.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
+		//weight_init.reset(new RandWeightInitOp(20.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
 		Weight_oGate_PLin_to_o = Weight("Weight_oGate_PLin_to_o", weight_init, solver);
 
 		weight_init.reset();
@@ -947,7 +947,7 @@ int main(int argc, char** argv)
 	model_trainer.setMemorySize(data_simulator.sequence_length_);
 	model_trainer.setNEpochsTraining(500);
 	model_trainer.setNEpochsValidation(10);
-	model_trainer.setVerbosityLevel(2);
+	model_trainer.setVerbosityLevel(1);
 
 	// define the model replicator for growth mode
 	ModelReplicatorExt model_replicator;

@@ -350,9 +350,9 @@ BOOST_AUTO_TEST_CASE(operationfunctionNegativeLogLikelihoodOp2)
 
 	const int batch_size = 2;
 	Eigen::Tensor<float, 1> y_true(batch_size);
-	y_true.setValues({ 0, 1 });
+	y_true.setValues({ 0.0f, 1.0f });
 	Eigen::Tensor<float, 1> y_pred(batch_size);
-	y_pred.setValues({ 0.1, 0.9 });
+	y_pred.setValues({ 0.1f, 0.9f });
 
 	Eigen::Tensor<float, 1> error = operation(y_pred, y_true);
 	BOOST_CHECK_CLOSE(error(0), 0.0, 1e-6);
@@ -407,7 +407,7 @@ BOOST_AUTO_TEST_CASE(operationfunctionNegativeLogLikelihoodGradOp2)
 	Eigen::Tensor<float, 1> y_true(batch_size);
 	y_true.setValues({ 0, 1 });
 	Eigen::Tensor<float, 1> y_pred(batch_size);
-	y_pred.setValues({ 0.1, 0.9 });
+	y_pred.setValues({ 0.1f, 0.9f });
 
 	Eigen::Tensor<float, 1> error = operation(y_pred, y_true);
 	BOOST_CHECK_CLOSE(error(0), 0.0, 1e-6);
