@@ -61,7 +61,7 @@ public:
 			setNetNodeInput(net_node_input);
 		}
 		~ProdOp() {};
-		void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>&source_output) { net_node_input_ *= weight * source_output; };
+		void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>&source_output) { this->net_node_input_ *= weight * source_output; };
 		std::string getName() const { return "ProdOp"; };
 	};
 
