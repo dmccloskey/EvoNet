@@ -24,8 +24,8 @@ public:
     Weight(const Weight& other); ///< Copy constructor // [TODO: add test]
     Weight(const int& id); ///< Explicit constructor 
     Weight(const std::string& name); ///< Explicit constructor 
-    Weight(const int& id, std::shared_ptr<WeightInitOp>& weight_init, std::shared_ptr<SolverOp>& solver); ///< Explicit constructor 
-    Weight(const std::string& name, std::shared_ptr<WeightInitOp>& weight_init, std::shared_ptr<SolverOp>& solver); ///< Explicit constructor 
+    Weight(const int& id, const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver); ///< Explicit constructor 
+    Weight(const std::string& name, const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver); ///< Explicit constructor 
     ~Weight(); ///< Default destructor
 
     inline bool operator==(const Weight& other) const

@@ -42,7 +42,7 @@ namespace SmartPeak
   {
   }
 
-  Weight::Weight(const int& id, std::shared_ptr<WeightInitOp>& weight_init, std::shared_ptr<SolverOp>& solver):
+  Weight::Weight(const int& id, const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver):
     id_(id)
   {
     if (name_ == "")
@@ -53,7 +53,7 @@ namespace SmartPeak
     setSolverOp(solver);
   }
 
-  Weight::Weight(const std::string& name, std::shared_ptr<WeightInitOp>& weight_init, std::shared_ptr<SolverOp>& solver):
+  Weight::Weight(const std::string& name, const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver):
     name_(name)
   {
     setWeightInitOp(weight_init);
