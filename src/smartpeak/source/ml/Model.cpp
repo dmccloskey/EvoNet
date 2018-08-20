@@ -1163,31 +1163,34 @@ namespace SmartPeak
   void Model::CETT(const Eigen::Tensor<float, 3>& values, const std::vector<std::string>& node_names, const int & time_steps,
 	bool cache_output_nodes, bool use_cache, int n_threads)
   {
-	// check time_steps vs memory_size
-	int max_steps = time_steps;
-	if (time_steps > nodes_.begin()->second->getOutput().dimension(1))
-	{
-	  std::cout << "Time_steps will be scaled back to the memory_size." << std::endl;
-	  max_steps = nodes_.begin()->second->getOutput().dimension(1);
-	}
+		// check time_steps vs memory_size
+		int max_steps = time_steps;
+		if (time_steps > nodes_.begin()->second->getOutput().dimension(1))
+		{
+			std::cout << "Time_steps will be scaled back to the memory_size." << std::endl;
+			max_steps = nodes_.begin()->second->getOutput().dimension(1);
+		}
 
-	// NOTE: the output are stored [Tmax, Tmax - 1, ..., T=0]
-	//	     while the expected output (values) are stored [T=0, T=1, ..., Tmax]
-	for (int i=0; i<max_steps; ++i)
-	{
-	  int next_time_step = values.dimension(1) - 1 - i;
-	  // [TESTS: Test for the expected output error at each time step]
-	  //std::cout<<"Expected output for time point "<< i << " is " << values.chip(next_time_step, 1)<<std::endl;
+		if (values.dimension(1) - 1 > nodes_.begin()->second->getOutput().dimension(1))
+			std::cout << "The sequence for CETT needs to be the memory_size - 1!" << std::endl;;
 
-	  // calculate the error for each batch of memory
-	  if (cache_output_nodes && i == 0)
-		calculateError(values.chip(next_time_step, 1), node_names, i, true, false, n_threads);
-	  else if (cache_output_nodes && i > 0)
-		calculateError(values.chip(next_time_step, 1), node_names, i, false, true, n_threads);
-	  else
-		calculateError(values.chip(next_time_step, 1), node_names, i, cache_output_nodes, use_cache, n_threads);
-	  //calculateError(values.chip(i, 1), node_names, i);
-	}
+		// NOTE: the output are stored [Tmax, Tmax - 1, ..., T=0, T=-1]
+		//	     while the expected output (values) are stored [T=0, T=1, ..., Tmax, Tmax]
+		for (int i=0; i<max_steps; ++i)
+		{
+			int next_time_step = values.dimension(1) - 1 - i;
+			// [TESTS: Test for the expected output error at each time step]
+			//std::cout<<"Expected output for time point "<< i << " is " << values.chip(next_time_step, 1)<<std::endl;
+
+			// calculate the error for each batch of memory
+			if (cache_output_nodes && i == 0)
+				calculateError(values.chip(next_time_step, 1), node_names, i, true, false, n_threads);
+			else if (cache_output_nodes && i > 0)
+				calculateError(values.chip(next_time_step, 1), node_names, i, false, true, n_threads);
+			else
+				calculateError(values.chip(next_time_step, 1), node_names, i, cache_output_nodes, use_cache, n_threads);
+			//calculateError(values.chip(i, 1), node_names, i);
+		}
   }
   
   void Model::getNextUncorrectedLayer(
@@ -1252,7 +1255,7 @@ namespace SmartPeak
 				OperationArguments arguments;
 				arguments.source_node = nodes_.at(link_map.second->getSinkNodeName());
 				arguments.weight = weights_.at(link_map.second->getWeightName());
-				arguments.time_step = 1;
+				arguments.time_step = 0;
 				arguments.link_name = link_map.first;
 				BP_operations[BP_operations_map.at(link_map.second->getSourceNodeName())].arguments.push_back(arguments);
 
@@ -1269,21 +1272,29 @@ namespace SmartPeak
     std::map<std::string, int>& BP_operations_map,
     std::vector<OperationList>& BP_operations,
     std::vector<std::string>& source_nodes,
-    std::vector<std::string>& source_nodes_with_cycles)
+    std::vector<std::string>& sink_nodes_with_cycles)
   {
 
     // allows for cycles
     for (auto& link_map : links_)
     {
-      if (nodes_.at(link_map.second->getSourceNodeName())->getStatus() == NodeStatus::corrected &&
-        nodes_.at(link_map.second->getSinkNodeName())->getStatus() == NodeStatus::corrected &&
-        std::count(source_nodes.begin(), source_nodes.end(), link_map.second->getSinkNodeName()) != 0 // source node has already been identified
+			bool isCyclicOperation = false;
+			for (const auto& cyclic_pair : cyclic_pairs_) {
+				if (link_map.second->getSourceNodeName() == cyclic_pair.first &&
+					link_map.second->getSinkNodeName() == cyclic_pair.second) {
+					isCyclicOperation = true;
+					break;
+				}
+			}
+      if (isCyclicOperation && 
+				nodes_.at(link_map.second->getSourceNodeName())->getStatus() == NodeStatus::corrected &&
+        nodes_.at(link_map.second->getSinkNodeName())->getStatus() == NodeStatus::corrected
       ) 
       {
         OperationArguments arguments;
         arguments.source_node = nodes_.at(link_map.second->getSinkNodeName());
         arguments.weight = weights_.at(link_map.second->getWeightName());
-        arguments.time_step = 1;
+        arguments.time_step = 0;
 				arguments.link_name = link_map.first;
         
         auto found = BP_operations_map.emplace(link_map.second->getSourceNodeName(), (int)BP_operations.size());
@@ -1302,9 +1313,9 @@ namespace SmartPeak
           BP_operations.push_back(operation_list);
         }
         
-        if (std::count(source_nodes_with_cycles.begin(), source_nodes_with_cycles.end(), link_map.second->getSinkNodeName()) == 0)
+        if (std::count(sink_nodes_with_cycles.begin(), sink_nodes_with_cycles.end(), link_map.second->getSourceNodeName()) == 0)
         {
-          source_nodes_with_cycles.push_back(link_map.second->getSinkNodeName());
+					sink_nodes_with_cycles.push_back(link_map.second->getSourceNodeName());
         }
       }
     }
@@ -1473,6 +1484,7 @@ namespace SmartPeak
     else
     {
       const int max_iters = 1e6;
+			std::vector<std::string> sink_nodes_cycles_found;
       for (int iter=0; iter<max_iters; ++iter)
       {
         // get the next uncorrected layer
@@ -1482,34 +1494,31 @@ namespace SmartPeak
         getNextUncorrectedLayer(BP_operations_map, BP_operations_list, source_nodes); 
 
 				// get biases (not a good name...these are just sinks with other sources that have not yet been corrected)
-				std::map<std::string, int> BP_operations_map_cycles = BP_operations_map;
-				std::vector<OperationList> BP_operations_list_cycles = BP_operations_list;
-				std::vector<std::string> sink_nodes_cycles;
-				getNextUncorrectedLayerBiases(BP_operations_map_cycles, BP_operations_list_cycles, source_nodes, sink_nodes_cycles);
+				std::map<std::string, int> BP_operations_map_biases = BP_operations_map;
+				std::vector<OperationList> BP_operations_list_biases = BP_operations_list;
+				std::vector<std::string> sink_nodes_biases;
+				getNextUncorrectedLayerBiases(BP_operations_map_biases, BP_operations_list_biases, source_nodes, sink_nodes_biases);
 
-				// Remove all nodes involved in "cycles" that have arguments
-				// involving source to sink node pairs not identified as cycles
-				if (sink_nodes_cycles.size() > 0)
+				// Remove all operations involving sink nodes where not all of the sources
+				// have been calculated
+				if (sink_nodes_biases.size() > 0)
 				{
 					std::vector<std::string> sink_nodes_remove;
 					std::vector<OperationList> BP_operations_list_copy = BP_operations_list;
-					for (const std::string& sink_node : sink_nodes_cycles) {
+					for (const std::string& sink_node : sink_nodes_biases) {
 						for (size_t i = BP_operations_list[BP_operations_map.at(sink_node)].arguments.size();
-							i < BP_operations_list_cycles[BP_operations_map_cycles.at(sink_node)].arguments.size(); ++i) {
+							i < BP_operations_list_biases[BP_operations_map_biases.at(sink_node)].arguments.size(); ++i) {
 							// check if the "cyclic" argument is actually involved in a cycle
 							bool isCyclicOperation = false;
 							for (const auto& cyclic_pair : cyclic_pairs_) {
-								if (BP_operations_list_cycles[BP_operations_map_cycles.at(sink_node)].arguments[i].source_node->getName() == cyclic_pair.second &&
-									BP_operations_list_cycles[BP_operations_map_cycles.at(sink_node)].result.sink_node->getName() == cyclic_pair.first) {
+								if (BP_operations_list_biases[BP_operations_map_biases.at(sink_node)].arguments[i].source_node->getName() == cyclic_pair.second &&
+									BP_operations_list_biases[BP_operations_map_biases.at(sink_node)].result.sink_node->getName() == cyclic_pair.first) {
 									isCyclicOperation = true;
 									break;
 								}
 							}
-							// copy over the cyclic operation
-							if (isCyclicOperation)
-								BP_operations_list_copy[BP_operations_map_cycles.at(sink_node)].arguments.push_back(BP_operations_list_cycles[BP_operations_map_cycles.at(sink_node)].arguments[i]);
-							// id the sink node for removal
-							else {
+							// remove non cyclic sinks and ignore cyclic arguments (we will get to them after all nodes have been correct)
+							if (!isCyclicOperation) {
 								sink_nodes_remove.push_back(sink_node);
 								break;
 							}
@@ -1529,7 +1538,22 @@ namespace SmartPeak
         // check if all nodes have been corrected
         if (BP_operations_list.size() == 0)
         {
-          break;
+					// check for cyclic nodes
+					std::vector<std::string> sink_nodes_cycles;
+					getNextUncorrectedLayerCycles(BP_operations_map, BP_operations_list, source_nodes, sink_nodes_cycles);
+					if (BP_operations_list.size() == 0)
+						break;
+					else {
+						bool new_sink_node_cycle = false;
+						for (const std::string& sink_node : sink_nodes_cycles) {
+							if (std::count(sink_nodes_cycles_found.begin(), sink_nodes_cycles_found.end(), sink_node) == 0) {
+								sink_nodes_cycles_found.push_back(sink_node);
+								new_sink_node_cycle = true;
+							}
+						}
+						if (!new_sink_node_cycle)
+							break;
+					}
         }
 
         // calculate the net input

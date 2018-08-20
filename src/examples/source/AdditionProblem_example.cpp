@@ -45,12 +45,12 @@ public:
 
 					// assign the output
 					result_cumulative += random_sequence(memory_iter) * mask_sequence(memory_iter);
-					//std::cout<<"result cumulative: "<<result_cumulative<<std::endl; // [TESTS: convert to a test!]
 					output_data(batch_iter, memory_iter, 0, epochs_iter) = result_cumulative;
-					//if (memory_iter == 0)
-					//	output_data_training(batch_iter, memory_iter, 0, epochs_iter) = result;
+					//std::cout<<"result cumulative: "<<result_cumulative<<std::endl; // [TESTS: convert to a test!]
+					//if (memory_iter == memory_size - 1)
+					//	output_data(batch_iter, memory_iter, 0, epochs_iter) = result;
 					//else
-					//	output_data_training(batch_iter, memory_iter, 0, epochs_iter) = 0.0;
+					//	output_data(batch_iter, memory_iter, 0, epochs_iter) = 0.0;
 				}
 			}
 		}
@@ -438,7 +438,8 @@ public:
 		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new DummySolverOp());	solver->setGradientThreshold(100000.0f);
 		Weight_MC_to_oGate_PLin = Weight("Weight_MC_to_oGate_PLin", weight_init, solver);
 
-		weight_init.reset(new RandWeightInitOp(2.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
+		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new DummySolverOp());	solver->setGradientThreshold(100000.0f); //
+		//weight_init.reset(new RandWeightInitOp(2.0));	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
 		Weight_oGate_PLin_to_o = Weight("Weight_oGate_PLin_to_o", weight_init, solver);
 
 		weight_init.reset();
@@ -961,38 +962,19 @@ int main(int argc, char** argv)
 	// define the initial population [BUG FREE]
 	std::cout << "Initializing the population..." << std::endl;
 	std::vector<Model> population;
-	const int population_size = 1;
-	for (int i = 0; i<population_size; ++i)
-	{
-		//// baseline model
-		//std::shared_ptr<WeightInitOp> weight_init;
-		//std::shared_ptr<SolverOp> solver;
-		//weight_init.reset(new RandWeightInitOp(input_nodes.size()));
-		//solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
-		//Model model = model_replicator.makeBaselineModel(
-		//	input_nodes.size(), 1, output_nodes.size(),
-		//	std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-		//	std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-		//	weight_init, solver,
-		//	ModelLossFunction::MSE, std::to_string(i));
-		//model.initWeights();
 
-		// make the model name
-		//Model model = model_trainer.makeModelSolution();
-		//Model model = model_trainer.makeModel();
-		//Model model = model_trainer.makeMemoryUnitV02();
-		Model model = model_trainer.makeMemoryUnitV01();
-		model.initWeights();
-
-		char model_name_char[512];
-		sprintf(model_name_char, "%s_%d", model.getName().data(), i);
-		std::string model_name(model_name_char);
-		model.setName(model_name);
-
-		model.setId(i);
-
-		population.push_back(model);
-	}
+	// make the model name
+	//Model model = model_trainer.makeModelSolution();
+	//Model model = model_trainer.makeModel();
+	//Model model = model_trainer.makeMemoryUnitV02();
+	Model model = model_trainer.makeMemoryUnitV01();
+	model.initWeights();
+	char model_name_char[512];
+	sprintf(model_name_char, "%s_%d", model.getName().data(), 0);
+	std::string model_name(model_name_char);
+	model.setName(model_name);
+	model.setId(0);
+	population.push_back(model);
 
 	//// duplicate the memory cell
 	//model_replicator.setRandomModifications(

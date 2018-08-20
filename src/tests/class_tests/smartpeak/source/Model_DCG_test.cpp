@@ -511,8 +511,8 @@ BOOST_AUTO_TEST_CASE(getNextUncorrectedLayerCycles2)
 	BP_operations_list.clear();
 	source_nodes.clear();
 	model2.getNextUncorrectedLayer(BP_operations_map, BP_operations_list, source_nodes);
-	std::vector<std::string> source_nodes_with_cycles;
-	model2.getNextUncorrectedLayerCycles(BP_operations_map, BP_operations_list, source_nodes, source_nodes_with_cycles);
+	std::vector<std::string> sink_nodes_with_cycles;
+	model2.getNextUncorrectedLayerCycles(BP_operations_map, BP_operations_list, source_nodes, sink_nodes_with_cycles);
 
 	// test links and source and sink nodes
 	BOOST_CHECK_EQUAL(BP_operations_list.size(), 3);
@@ -534,8 +534,8 @@ BOOST_AUTO_TEST_CASE(getNextUncorrectedLayerCycles2)
 	BOOST_CHECK_EQUAL(BP_operations_list[2].arguments[0].time_step, 0);
 	BOOST_CHECK_EQUAL(BP_operations_list[2].arguments[0].source_node->getName(), "1");
 	BOOST_CHECK_EQUAL(BP_operations_list[2].arguments[0].weight->getName(), "2");
-	BOOST_CHECK_EQUAL(source_nodes_with_cycles.size(), 1);
-	BOOST_CHECK_EQUAL(source_nodes_with_cycles[0], "1");
+	BOOST_CHECK_EQUAL(sink_nodes_with_cycles.size(), 1);
+	BOOST_CHECK_EQUAL(sink_nodes_with_cycles[0], "2");
 }
 
 BOOST_AUTO_TEST_CASE(BPTT1) 

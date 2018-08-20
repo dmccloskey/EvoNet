@@ -183,18 +183,22 @@ namespace SmartPeak
 		// Initialize the model
 		model.initError(getBatchSize(), getMemorySize());
 		model.clearCache();
-		model.initNodes(getBatchSize(), getMemorySize());
+		model.initNodes(getBatchSize(), getMemorySize() + 1); // The first time point = 0
 		model.findCyclicPairs();
 
 		for (int iter = 0; iter < getNEpochsTraining(); ++iter) // use n_epochs here
 		{
 			// forward propogate
 			if (iter == 0)
-				model.FPTT(getMemorySize() - 1, input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), true, true, getNThreads());
+				model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), true, true, getNThreads());
 			else
-				model.FPTT(getMemorySize() - 1, input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), false, true, getNThreads());
+				model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), false, true, getNThreads());
 
 			// calculate the model error and node output 
+			//if (iter == 0)
+			//	model.CETT(output.chip(iter, 3), output_nodes, 1, true, true, getNThreads());
+			//else
+			//	model.CETT(output.chip(iter, 3), output_nodes, 1, false, true, getNThreads());
 			if (iter == 0)
 				model.CETT(output.chip(iter, 3), output_nodes, getMemorySize(), true, true, getNThreads());
 			else
@@ -207,9 +211,9 @@ namespace SmartPeak
 
 			// back propogate
 			if (iter == 0)
-				model.TBPTT(getMemorySize() - 1, true, true, getNThreads());
+				model.TBPTT(getMemorySize(), true, true, getNThreads());
 			else
-				model.TBPTT(getMemorySize() - 1, false, true, getNThreads());
+				model.TBPTT(getMemorySize(), false, true, getNThreads());
 
 			if (getVerbosityLevel() >= 2)
 			{
@@ -220,8 +224,8 @@ namespace SmartPeak
 					std::cout << node.getName() << " Error: " << node.getError() << std::endl;
 					std::cout << node.getName() << " Derivative: " << node.getDerivative() << std::endl;
 				}
-				//for (const Weight& weight : model.getWeights())
-				//	std::cout << weight.getName() << " Weight: " << weight.getWeight() << std::endl;
+				for (const Weight& weight : model.getWeights())
+					std::cout << weight.getName() << " Weight: " << weight.getWeight() << std::endl;
 			}
 
 			// update the weights
@@ -229,7 +233,7 @@ namespace SmartPeak
 
 			// reinitialize the model
 			model.reInitializeNodeStatuses();
-			model.initNodes(getBatchSize(), getMemorySize());
+			model.initNodes(getBatchSize(), getMemorySize() + 1);
 			model.initError(getBatchSize(), getMemorySize());
 		}
 		model.clearCache();
@@ -265,7 +269,7 @@ namespace SmartPeak
 		// Initialize the model
 		model.initError(getBatchSize(), getMemorySize());
 		model.clearCache();
-		model.initNodes(getBatchSize(), getMemorySize());
+		model.initNodes(getBatchSize(), getMemorySize() + 1); // The first time point = 0
 		model.findCyclicPairs();
 
 		for (int iter = 0; iter < getNEpochsValidation(); ++iter) // use n_epochs here
@@ -273,9 +277,9 @@ namespace SmartPeak
 
 			// forward propogate
 			if (iter == 0)
-				model.FPTT(getMemorySize() - 1, input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), true, true, getNThreads());
+				model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), true, true, getNThreads());
 			else
-				model.FPTT(getMemorySize() - 1, input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), false, true, getNThreads());
+				model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), false, true, getNThreads());
 
 			// calculate the model error and node output error
 			if (iter == 0)
@@ -290,7 +294,7 @@ namespace SmartPeak
 
 			// reinitialize the model
 			model.reInitializeNodeStatuses();
-			model.initNodes(getBatchSize(), getMemorySize());
+			model.initNodes(getBatchSize(), getMemorySize() + 1);
 			model.initError(getBatchSize(), getMemorySize());
 		}
 		model.clearCache();
