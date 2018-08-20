@@ -19,15 +19,11 @@ namespace SmartPeak
 public: 
     IntegrationOp(){};  
     ~IntegrationOp(){};
-		void setMaxNode(const int& max_node) { max_node_ = max_node; }
-		int getMaxNode() const { return max_node_; }
 		virtual void initNetNodeInput(const int& batch_size) = 0;
 		void setNetNodeInput(const Eigen::Tensor<T, 1>& net_node_input) { net_node_input_ = net_node_input; }
 		Eigen::Tensor<T, 1> getNetNodeInput() const { return net_node_input_; }
     virtual std::string getName() const = 0;
     virtual void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>&source_output) = 0;
-	protected:
-		int max_node_ = -1; ///< node that is the max
 		Eigen::Tensor<T, 1> net_node_input_; ///< 
 		//std::atomic<Eigen::Tensor<T, 1>> net_node_input_; ///< 
   };
@@ -95,15 +91,11 @@ public:
 	public:
 		IntegrationErrorOp() {};
 		~IntegrationErrorOp() {};
-		void setMaxNode(const int& max_node) { max_node_ = max_node; }
-		int getMaxNode() const { return max_node_; }
 		virtual void initNetNodeError(const int& batch_size) = 0;
 		void setNetNodeError(const Eigen::Tensor<T, 1>& net_node_error) { net_node_error_ = net_node_error; }
 		Eigen::Tensor<T, 1> getNetNodeError() const { return net_node_error_; }
 		virtual std::string getName() const = 0;
 		virtual void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_error, const Eigen::Tensor<T, 1>& source_net_input, const Eigen::Tensor<T, 1>& sink_output) = 0;
-	protected:
-		int max_node_ = -1; ///< node that is the max
 		Eigen::Tensor<T, 1> net_node_error_; ///< 
 		//std::atomic<Eigen::Tensor<T, 1>> net_node_error_; ///< 
 	};
@@ -211,7 +203,6 @@ public:
 		T getNetWeightError() const { return net_weight_error_; }
 		virtual std::string getName() const = 0;
 		virtual void operator()(const Eigen::Tensor<T, 1>& sink_error, const Eigen::Tensor<T, 1>& source_output, const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_net_input) = 0;
-	protected:
 		T net_weight_error_ = 0; ///< 
 		//std::atomic<T> net_weight_error_ = 0; ///< 
 	};
