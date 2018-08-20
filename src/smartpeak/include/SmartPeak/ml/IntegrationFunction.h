@@ -40,7 +40,7 @@ public:
 		void initNetNodeInput(const int& batch_size){
 			Eigen::Tensor<T, 1> net_node_input(batch_size);
 			net_node_input.setConstant(0);
-			setNetNodeInput(net_node_input);
+			this->setNetNodeInput(net_node_input);
 		}
     ~SumOp(){};
     void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>&source_output) { this->net_node_input_ += weight * source_output; };
@@ -58,7 +58,7 @@ public:
 		void initNetNodeInput(const int& batch_size) {
 			Eigen::Tensor<T, 1> net_node_input(batch_size);
 			net_node_input.setConstant(1);
-			setNetNodeInput(net_node_input);
+			this->setNetNodeInput(net_node_input);
 		}
 		~ProdOp() {};
 		void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>&source_output) { this->net_node_input_ *= weight * source_output; };
@@ -76,7 +76,7 @@ public:
 		void initNetNodeInput(const int& batch_size) {
 			Eigen::Tensor<T, 1> net_node_input(batch_size);
 			net_node_input.setConstant(0);
-			setNetNodeInput(net_node_input);
+			this->setNetNodeInput(net_node_input);
 		}
 		~MaxOp() {};
 		void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>&source_output) { this->net_node_input_ = this->net_node_input_.cwiseMax(weight * source_output); };
@@ -113,7 +113,7 @@ public:
 		void initNetNodeError(const int& batch_size) {
 			Eigen::Tensor<T, 1> net_node_error(batch_size);
 			net_node_error.setConstant(0);
-			setNetNodeError(net_node_error);
+			this->setNetNodeError(net_node_error);
 		}
 		~SumErrorOp() {};
 		/*
@@ -141,7 +141,7 @@ public:
 		void initNetNodeError(const int& batch_size) {
 			Eigen::Tensor<T, 1> net_node_error(batch_size);
 			net_node_error.setConstant(0);
-			setNetNodeError(net_node_error);
+			this->setNetNodeError(net_node_error);
 		}
 		~ProdErrorOp() {};
 		/*
@@ -169,7 +169,7 @@ public:
 		void initNetNodeError(const int& batch_size) {
 			Eigen::Tensor<T, 1> net_node_error(batch_size);
 			net_node_error.setConstant(0);
-			setNetNodeError(net_node_error);
+			this->setNetNodeError(net_node_error);
 		}
 		~MaxErrorOp() {};
 		/*
@@ -217,7 +217,7 @@ public:
 	class SumWeightGradOp : public IntegrationWeightGradOp<T>
 	{
 	public:
-		SumWeightGradOp() { setNetWeightError(T(0)); };
+		SumWeightGradOp() { this->setNetWeightError(T(0)); };
 		~SumWeightGradOp() {};
 		void operator()(const Eigen::Tensor<T, 1>& sink_error, const Eigen::Tensor<T, 1>& source_output, const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_net_input) {
 			Eigen::Tensor<T, 0> derivative_mean_tensor = (-sink_error * source_output).mean(); // average derivative
@@ -233,7 +233,7 @@ public:
 	class ProdWeightGradOp : public IntegrationWeightGradOp<T>
 	{
 	public:
-		ProdWeightGradOp() { setNetWeightError(T(0)); };
+		ProdWeightGradOp() { this->setNetWeightError(T(0)); };
 		~ProdWeightGradOp() {};
 		void operator()(const Eigen::Tensor<T, 1>& sink_error, const Eigen::Tensor<T, 1>& source_output, const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_net_input) {
 			Eigen::Tensor<T, 0> derivative_mean_tensor = ((-sink_error * source_net_input / weight).unaryExpr(std::ptr_fun(substituteNanInf<T>))).mean(); // average derivative
@@ -249,7 +249,7 @@ public:
 	class MaxWeightGradOp : public IntegrationWeightGradOp<T>
 	{
 	public:
-		MaxWeightGradOp() { setNetWeightError(T(0)); };
+		MaxWeightGradOp() { this->setNetWeightError(T(0)); };
 		~MaxWeightGradOp() {};
 		void operator()(const Eigen::Tensor<T, 1>& sink_error, const Eigen::Tensor<T, 1>& source_output, const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_net_input) {
 			Eigen::Tensor<T, 0> derivative_mean_tensor = (-sink_error * source_output).mean(); // average derivative
