@@ -537,8 +537,8 @@ public:
 		Model model;
 		model.setId(0);
 		model.setName("Classifier");
-		model.setLossFunction(std::shared_ptr<LossFunctionOp<float>>(new CrossEntropyOp<float>()));
-		model.setLossFunctionGrad(std::shared_ptr<LossFunctionGradOp<float>>(new CrossEntropyGradOp<float>()));
+		model.setLossFunction(std::shared_ptr<LossFunctionOp<float>>(new NegativeLogLikelihoodOp<float>(n_outputs)));
+		model.setLossFunctionGrad(std::shared_ptr<LossFunctionGradOp<float>>(new NegativeLogLikelihoodGradOp<float>(n_outputs)));
 		
 		std::shared_ptr<WeightInitOp> weight_init(new RandWeightInitOp(n_inputs));
 		std::shared_ptr<SolverOp> solver(new AdamOp(0.1, 0.9, 0.999, 1e-8));
@@ -658,7 +658,7 @@ void main_classification()
 	model_trainer.setNEpochsTraining(500);
 	model_trainer.setNEpochsValidation(10);
 	model_trainer.setNThreads(n_hard_threads); // [TODO: change back to 2!]
-	model_trainer.setVerbosityLevel(2);
+	model_trainer.setVerbosityLevel(1);
 
 	// initialize the model replicator
 	ModelReplicatorExt model_replicator;

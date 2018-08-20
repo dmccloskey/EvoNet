@@ -107,10 +107,10 @@ BOOST_AUTO_TEST_CASE(SFClipOp)
 	net_input.setValues({ 0.0f, 1.0f, 0.5f});
 
 	// test input
-	Eigen::Tensor<float, 1> result = net_input.unaryExpr(ClipOp<float>(0.1, 0, 1));
-	BOOST_CHECK_CLOSE(result(0), 0.1, 1e-6);
-	BOOST_CHECK_CLOSE(result(1), 0.9, 1e-6);
-	BOOST_CHECK_CLOSE(result(2), 0.5, 1e-6);
+	Eigen::Tensor<float, 1> result = net_input.unaryExpr(ClipOp<float>(0.1f, 0.0f, 1.0f));
+	BOOST_CHECK_CLOSE(result(0), 0.1, 1e-3);
+	BOOST_CHECK_CLOSE(result(1), 0.9, 1e-3);
+	BOOST_CHECK_CLOSE(result(2), 0.5, 1e-3);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

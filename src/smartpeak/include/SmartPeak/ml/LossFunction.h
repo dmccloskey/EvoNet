@@ -245,10 +245,12 @@ public:
 			const Eigen::Tensor<T, 1>& y_pred,
 			const Eigen::Tensor<T, 1>& y_true) const
 		{
-			return -y_true * (y_pred.unaryExpr(ClipOp<T>(1e-12, 0, 1)).log());
+			Eigen::Tensor<T, 1> n((int)y_pred.size());
+			n.setConstant(n_);
+			return -y_true * (y_pred.unaryExpr(ClipOp<T>(1e-12, 0, 1)).log()) / n;
 		};
 	private:
-		T n_ = 1; ///< the number of total classifiers
+		T n_ = 1.0; ///< the number of total classifiers
   };
 
   /**
@@ -272,10 +274,12 @@ public:
 			const Eigen::Tensor<T, 1>& y_pred,
 			const Eigen::Tensor<T, 1>& y_true) const
 		{
-			return (-y_true / y_pred.unaryExpr(ClipOp<T>(1e-12, 0, 1))).unaryExpr(std::ptr_fun(checkNanInf<T>));
+			Eigen::Tensor<T, 1> n((int)y_pred.size());
+			n.setConstant(n_);
+			return (-y_true / y_pred.unaryExpr(ClipOp<T>(1e-12, 0, 1)) / n).unaryExpr(std::ptr_fun(checkNanInf<T>));
 		};
 	private:
-		T n_ = 1; ///< the number of total classifiers
+		T n_ = 1.0; ///< the number of total classifiers
   };
 
   /**
