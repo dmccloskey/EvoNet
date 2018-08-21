@@ -209,12 +209,24 @@ namespace SmartPeak
 
 		return node_names;
 	}
-	std::vector<std::string> ModelBuilder::addConvolution(Model & model, const std::string & name, const std::string& module_name, const std::vector<std::string>& source_node_names, const int & input_width, const int & input_height, const int & extent_width, const int & extent_height, const int & depth, const int & stride, const int & zero_padding, const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver)
+	std::vector<std::string> ModelBuilder::addConvolution(Model & model, const std::string & name, const std::string& module_name, const std::vector<std::string>& source_node_names, 
+		const int & input_width, const int & input_height, const int& input_width_zero_padding, const int& input_height_zero_padding,
+		const int & extent_width, const int & extent_height, const int & depth, const int & stride, 
+		const int & output_width_zero_padding, const int& output_height_zero_padding, 
+		const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver)
 	{
 		std::vector<std::string> node_names;
 
 		// Parameters for the Convolution layer
-
+		int input_padded_width = input_width + 2*input_width_zero_padding;
+		assert(input_padded_width % (extent_width + stride) == 0);
+		int strides_width = input_padded_width % (extent_width + stride) + 1; // includes the starting stride
+		int input_padded_height = input_height + 2*input_height_zero_padding;
+		assert(input_padded_height % (extent_height + stride) == 0);
+		int strides_height = input_padded_height % (extent_height + stride) + 1; // includes the starting stride
+		int output_nodes = strides_width + strides_height;
+		int output_padded_width = strides_width + 2 * output_width_zero_padding;
+		int output_padded_height = strides_height + 2 * output_height_zero_padding;
 
 		// Create the filter bias
 		char bias_name_char[64];
@@ -223,40 +235,153 @@ namespace SmartPeak
 		Node bias(bias_name, NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
 		bias.setModuleName(module_name);
 		model.addNodes({ bias });
+		node_names.push_back(bias_name);
 
-		// Create the convolution filter nodes + biases and hidden to bias links
-		for (int i = 0; i < extent_height; ++i)
-		{
-			for (int j = 0; j < extent_width; ++j)
-			{
-				char node_name_char[64];
-				sprintf(node_name_char, "%s-H%d-W%d", name.data(), i, j);
-				std::string node_name(node_name_char);
-				node_names.push_back(node_name);
-				Node node(node_name, NodeType::hidden, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-				node.setModuleName(module_name);
-				model.addNodes({ node });
+		// Create the shared weights for each bias to output node
+		char weight_bias_name_char[64];
+		sprintf(weight_bias_name_char, "%s_to_out", bias_name.data());
+		std::string weight_bias_name(weight_bias_name_char);
+		Weight weight_bias(weight_bias_name, weight_init, solver);
+		weight_bias.setModuleName(module_name);
+		model.addWeights({ weight_bias });
 
-				char weight_bias_name_char[64];
-				sprintf(weight_bias_name_char, "%s_to_%s", bias_name.data(), node_name.data());
-				std::string weight_bias_name(weight_bias_name_char);
-
-				char link_bias_name_char[64];
-				sprintf(link_bias_name_char, "%s_to_%s", bias_name.data(), node_name.data());
-				std::string link_bias_name(link_bias_name_char);
-
-				std::shared_ptr<WeightInitOp> bias_weight_init;
-				bias_weight_init.reset(new ConstWeightInitOp(1.0));;
-				std::shared_ptr<SolverOp> bias_solver = solver;
-				Weight weight_bias(weight_bias_name, bias_weight_init, bias_solver);
-				weight_bias.setModuleName(module_name);
-				Link link_bias(link_bias_name, bias_name, node_name, weight_bias_name);
-				link_bias.setModuleName(module_name);
-
-				model.addWeights({ weight_bias });
-				model.addLinks({ link_bias });
+		// Create the output zero padding nodes
+		for (size_t output_height_iter = 0; output_height_iter < output_padded_height; ++output_height_iter) {
+			for (size_t padding_iter = 0; padding_iter < output_width_zero_padding; ++padding_iter) {
+				char bias_name_char[64];
+				sprintf(bias_name_char, "%s-out-padding_H&d-W%d", name.data(), output_height_iter, padding_iter);
+				std::string bias_name(bias_name_char);
+				Node bias(bias_name, NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+				bias.setModuleName(module_name);
+				model.addNodes({ bias });
+				node_names.push_back(bias_name);
+			}
+			for (size_t padding_iter = 0; padding_iter < output_width_zero_padding; ++padding_iter) {
+				char bias_name_char[64];
+				sprintf(bias_name_char, "%s-out-padding_H&d-W%d", name.data(), output_height_iter, padding_iter + strides_width);
+				std::string bias_name(bias_name_char); 
+				Node bias(bias_name, NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+				bias.setModuleName(module_name);
+				model.addNodes({ bias });
+				node_names.push_back(bias_name);
 			}
 		}
+		for (size_t output_width_iter = 0; output_width_iter < output_padded_width; ++output_width_iter) {
+			for (size_t padding_iter = 0; padding_iter < output_height_zero_padding; ++padding_iter) {
+				char bias_name_char[64];
+				sprintf(bias_name_char, "%s-out-padding_H&d-W%d", name.data(), padding_iter, output_width_iter);
+				std::string bias_name(bias_name_char);
+				Node bias(bias_name, NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+				bias.setModuleName(module_name);
+				model.addNodes({ bias });
+				node_names.push_back(bias_name);
+			}
+			for (size_t padding_iter = 0; padding_iter < output_height_zero_padding; ++padding_iter) {
+				char bias_name_char[64];
+				sprintf(bias_name_char, "%s-out-padding_H&d-W%d", name.data(), padding_iter + strides_height, output_width_iter);
+				std::string bias_name(bias_name_char);
+				Node bias(bias_name, NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+				bias.setModuleName(module_name);
+				model.addNodes({ bias });
+				node_names.push_back(bias_name);
+			}
+		}
+
+		// Create the output nodes
+		for (size_t output_height_iter = 0; output_height_iter < strides_height; ++output_height_iter) {
+			for (size_t output_width_iter = 0; output_width_iter < strides_width; ++output_width_iter) {
+				char output_name_char[64];
+				sprintf(output_name_char, "%s-out_H&d-W%d", name.data(), output_height_iter + output_height_zero_padding, output_width_iter + output_width_zero_padding);
+				std::string output_name(output_name_char);
+				Node output(output_name, NodeType::output, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+				output.setModuleName(module_name);
+				model.addNodes({ output });
+				node_names.push_back(output_name);
+
+				// Create the links between the bias and output nodes
+				char link_bias_name_char[64];
+				sprintf(link_bias_name_char, "%s_to_%s", bias_name.data(), output_name.data());
+				std::string link_bias_name(link_bias_name_char);
+				Link link_bias(link_bias_name, bias_name, output_name, weight_bias_name);
+				link_bias.setModuleName(module_name);
+				model.addLinks({ link_bias });
+			}
+		}		
+
+		// Create the shared weights for each filter link
+		for (size_t filter_height_iter = 0; filter_height_iter < extent_height; ++filter_height_iter) {
+			for (size_t filter_width_iter = 0; filter_width_iter < extent_width; ++filter_width_iter) {
+				char weight_filter_name_char[64];
+				sprintf(weight_filter_name_char, "%s_H%d-W%d", name.data(), filter_height_iter, filter_width_iter);
+				std::string weight_filter_name(weight_filter_name_char);
+				Weight weight_filter(weight_filter_name, weight_init, solver);
+				weight_filter.setModuleName(module_name);
+				model.addWeights({ weight_filter });
+			}
+		}
+
+		// Create the convolution links between input and output
+		for (size_t height_stride_iter = 0; height_stride_iter < stride; ++height_stride_iter) {
+			for (size_t width_stride_iter = 0; width_stride_iter < stride; ++width_stride_iter) {
+				for (size_t height_iter = 0; height_iter < input_height; ++height_iter) {
+					// check if the filter is in the top input height zero padding
+					const int filter_height_end = stride * height_stride_iter + extent_height;
+					if (filter_height_end < input_height_zero_padding) continue;
+
+					// check if the filter is in the bottom input height zero padding
+					const int filter_height_start = stride * height_stride_iter;
+					if (filter_height_end >= input_height_zero_padding + input_height) continue;
+
+					// offset starting height filter for the input zero padding
+					const int filter_height_offset = stride * height_stride_iter + extent_height - input_height_zero_padding;
+
+					for (size_t width_iter = 0; width_iter < input_width; ++width_iter) {
+						// check if the filter is in the left input width zero padding
+						const int filter_width_end = stride * width_stride_iter + extent_width;
+						if (filter_width_end < input_width_zero_padding) continue;
+
+						// check if the filter is in the right input width zero padding
+						const int filter_width_start = stride * width_stride_iter;
+						if (filter_width_end >= input_width_zero_padding + input_width) continue;
+
+						// offset the starting width filter for the input zero padding
+						const int filter_width_offset = stride * width_stride_iter + extent_width - input_width_zero_padding;
+
+						// Create the convolution filter links
+						for (size_t output_height_iter = 0; output_height_iter < strides_height; ++output_height_iter) {
+							for (size_t output_width_iter = 0; output_width_iter < strides_width; ++output_width_iter) {
+								char output_name_char[64];
+								sprintf(output_name_char, "%s_to_%s-out_H&d-W%d", name.data(), output_height_iter + output_height_zero_padding, output_width_iter + output_width_zero_padding);
+								std::string output_name(output_name_char);
+								Node output(output_name, NodeType::output, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+								output.setModuleName(module_name);
+								model.addNodes({ output });
+								node_names.push_back(output_name)
+							}
+						}
+						for (size_t filter_height_iter = 0; filter_height_iter < extent_height; ++filter_height_iter)
+						{
+							for (size_t filter_width_iter = 0; filter_width_iter < extent_width; ++filter_width_iter)
+							{
+								// Weight name
+								char weight_filter_name_char[64];
+								sprintf(weight_filter_name_char, "%s_H%d-W%d", name.data(), filter_height_iter, filter_width_iter);
+								std::string weight_filter_name(weight_filter_name_char);
+							  // Output node name
+
+								// Link name
+								char link_filter_name_char[64];
+								sprintf(link_filter_name_char, "%s_to_%s", filter_name.data(), node_name.data());
+								std::string link_filter_name(link_filter_name_char);
+								Link link_filter(link_filter_name, filter_name, node_name, weight_filter_name);
+								model.addLinks({ link_filter });
+							}
+						}
+					}
+				}
+			}
+		}
+
 		return node_names;
 	}
 }
