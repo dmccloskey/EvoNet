@@ -3,6 +3,7 @@
 #ifndef SMARTPEAK_SHAREDFUNCTIONS_H
 #define SMARTPEAK_SHAREDFUNCTIONS_H
 
+#include <SmartPeak/ml/ActivationFunction.h>
 #include <vector>
 #include <limits>
 
