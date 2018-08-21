@@ -655,8 +655,8 @@ void main_classification()
 	ModelTrainerExt model_trainer;
 	model_trainer.setBatchSize(1);
 	model_trainer.setMemorySize(2);
-	model_trainer.setNEpochsTraining(500);
-	model_trainer.setNEpochsValidation(10);
+	model_trainer.setNEpochsTraining(100000);
+	model_trainer.setNEpochsValidation(100);
 	model_trainer.setNThreads(n_hard_threads); // [TODO: change back to 2!]
 	model_trainer.setVerbosityLevel(1);
 
