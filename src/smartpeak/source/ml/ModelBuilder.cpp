@@ -214,10 +214,10 @@ namespace SmartPeak
 		assert(source_node_names.size() == input_width * input_height);
 		int input_padded_width = input_width + 2*input_width_zero_padding;
 		assert((input_padded_width - extent_width) % stride == 0);
-		int strides_width = std::floor((input_padded_width - extent_width) / stride) + 1; // includes the starting stride
+		int strides_width = std::floor((input_padded_width - extent_width) / stride); // includes the starting stride
 		int input_padded_height = input_height + 2*input_height_zero_padding;
 		assert((input_padded_height - extent_height) % stride == 0);
-		int strides_height = std::floor((input_padded_height - extent_height) / stride) + 1; // includes the starting stride
+		int strides_height = std::floor((input_padded_height - extent_height) / stride); // includes the starting stride
 		int output_nodes = strides_width + strides_height;
 		int output_padded_width = strides_width + 2 * output_width_zero_padding;
 		int output_padded_height = strides_height + 2 * output_height_zero_padding;
@@ -229,7 +229,6 @@ namespace SmartPeak
 		Node bias(bias_name, NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
 		bias.setModuleName(module_name);
 		model.addNodes({ bias });
-		node_names.push_back(bias_name);
 
 		// Create the shared weights for each bias to output node
 		char weight_bias_name_char[64];
@@ -242,7 +241,7 @@ namespace SmartPeak
 		// Create the output zero padding nodes
 		for (size_t output_width_iter = 0; output_width_iter < output_padded_width; ++output_width_iter) {
 			for (size_t output_height_iter = 0; output_height_iter < output_padded_height; ++output_height_iter) {
-				if (output_height_iter < output_height_zero_padding || output_height_iter > output_padded_height - output_height_zero_padding) {
+				if (output_height_iter < output_height_zero_padding || output_height_iter >= output_padded_height - output_height_zero_padding) {
 					char bias_name_char[64];
 					sprintf(bias_name_char, "%s-out-padding_H%d-W%d", name.data(), output_height_iter, output_width_iter);
 					std::string bias_name(bias_name_char);
@@ -251,7 +250,7 @@ namespace SmartPeak
 					model.addNodes({ bias });
 					node_names.push_back(bias_name);
 				}
-				else if (output_width_iter < output_width_zero_padding || output_width_iter > output_padded_width - output_width_zero_padding) {
+				else if (output_width_iter < output_width_zero_padding || output_width_iter >= output_padded_width - output_width_zero_padding) {
 					char bias_name_char[64];
 					sprintf(bias_name_char, "%s-out-padding_H%d-W%d", name.data(), output_height_iter, output_width_iter);
 					std::string bias_name(bias_name_char);
@@ -262,7 +261,7 @@ namespace SmartPeak
 				}
 				else {
 					char output_name_char[64];
-					sprintf(output_name_char, "%s-out_H%d-W%d", name.data(), output_height_iter + output_height_zero_padding, output_width_iter + output_width_zero_padding);
+					sprintf(output_name_char, "%s-out_H%d-W%d", name.data(), output_height_iter, output_width_iter);
 					std::string output_name(output_name_char);
 					Node output(output_name, NodeType::output, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
 					output.setModuleName(module_name);
@@ -309,7 +308,7 @@ namespace SmartPeak
 			// offset the starting width filter for the input zero padding
 			int filter_width_offset_start_tmp = input_width_zero_padding - stride * width_stride_iter;
 			int filter_width_offset_start = max(filter_width_offset_start_tmp, 0);
-			int filter_width_offset_end_tmp = input_width_zero_padding + stride * strides_width - stride * width_stride_iter;
+			int filter_width_offset_end_tmp = - input_width_zero_padding + stride * strides_width - stride * width_stride_iter + extent_width;
 			int filter_width_offset_end = min(filter_width_offset_end_tmp, extent_width);
 
 			int output_height_iter = 0;
@@ -325,17 +324,17 @@ namespace SmartPeak
 					continue;
 
 				// offset starting height filter for the input zero padding
-				tmp = input_height_zero_padding - stride * height_stride_iter;
-				int filter_height_offset_start = max(tmp, 0);
-				tmp = input_height_zero_padding + stride * strides_height - stride * height_stride_iter;
-				int filter_height_offset_end = min(tmp, extent_height);
+				int filter_height_offset_start_tmp = input_height_zero_padding - stride * height_stride_iter;
+				int filter_height_offset_start = max(filter_height_offset_start_tmp, 0);
+				int filter_height_offset_end_tmp = - input_height_zero_padding + stride * strides_height - stride * height_stride_iter + extent_height;
+				int filter_height_offset_end = min(filter_height_offset_end_tmp, extent_height);
 
 				// create the links between input and output
-				tmp = stride * width_stride_iter - input_width_zero_padding - 1;
-				int width_iter = max(tmp, 0);
+				int width_iter_tmp = stride * width_stride_iter - input_width_zero_padding;
+				int width_iter = max(width_iter_tmp, 0);
 				for (size_t filter_width_iter = filter_width_offset_start; filter_width_iter < filter_width_offset_end; ++filter_width_iter) {
-					tmp = stride * height_stride_iter - input_height_zero_padding - 1;
-					int height_iter = max(tmp, 0);
+					int height_iter_tmp = stride * height_stride_iter - input_height_zero_padding;
+					int height_iter = max(height_iter_tmp, 0);
 					for (size_t filter_height_iter = filter_height_offset_start; filter_height_iter < filter_height_offset_end; ++filter_height_iter) {
 						int source_node_iter = height_iter + width_iter * input_height;
 
@@ -358,6 +357,7 @@ namespace SmartPeak
 						std::string link_filter_name(link_filter_name_char);
 
 						Link link_filter(link_filter_name, source_node_names[source_node_iter], output_name, weight_filter_name);
+						link_filter.setModuleName(module_name);
 						model.addLinks({ link_filter });
 
 						++height_iter;
