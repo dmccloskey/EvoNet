@@ -153,7 +153,7 @@ public:
 		@param[in] x4 The sink output tensor
 		*/
 		void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_error, const Eigen::Tensor<T, 1>& source_net_input, const Eigen::Tensor<T, 1>& sink_output) {
-			this->net_node_error_ += (source_net_input * source_error / sink_output).unaryExpr(std::ptr_fun(substituteNanInf<T>)); // Note: was checkNanInf
+			this->net_node_error_ += (source_net_input * source_error / sink_output).unaryExpr(std::ptr_fun(SmartPeak::substituteNanInf<T>)); // Note: was checkNanInf
 		};
 		std::string getName() const { return "ProdErrorOp"; };
 	};
@@ -182,7 +182,7 @@ public:
 		*/
 		void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_error, const Eigen::Tensor<T, 1>& source_net_input, const Eigen::Tensor<T, 1>& sink_output){
 			auto max_tensor = sink_output.cwiseMax(source_net_input);
-			auto perc_max_tensor = (sink_output / max_tensor).unaryExpr(std::ptr_fun(checkNanInf<T>)).unaryExpr([](const T& v) {
+			auto perc_max_tensor = (sink_output / max_tensor).unaryExpr(std::ptr_fun(SmartPeak::checkNanInf<T>)).unaryExpr([](const T& v) {
 				if (v < 1) return 0;
 				else return 1;
 			});
@@ -236,7 +236,7 @@ public:
 		ProdWeightGradOp() { this->setNetWeightError(T(0)); };
 		~ProdWeightGradOp() {};
 		void operator()(const Eigen::Tensor<T, 1>& sink_error, const Eigen::Tensor<T, 1>& source_output, const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_net_input) {
-			Eigen::Tensor<T, 0> derivative_mean_tensor = ((-sink_error * source_net_input / weight).unaryExpr(std::ptr_fun(substituteNanInf<T>))).mean(); // average derivative
+			Eigen::Tensor<T, 0> derivative_mean_tensor = ((-sink_error * source_net_input / weight).unaryExpr(std::ptr_fun(SmartPeak::substituteNanInf<T>))).mean(); // average derivative
 			this->net_weight_error_ += derivative_mean_tensor(0);
 		};
 		std::string getName() const { return "ProdWeightGradOp"; };
