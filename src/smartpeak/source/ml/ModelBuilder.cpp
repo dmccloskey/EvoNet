@@ -3,13 +3,6 @@
 #include <SmartPeak/ml/ModelBuilder.h>
 #include <SmartPeak/core/Preprocessing.h>
 
-#include <random> // random number generator
-#include <algorithm> // tokenizing
-#include <regex> // tokenizing
-#include <ctime> // time format
-#include <chrono> // current time
-#include <set>
-
 namespace SmartPeak
 {
 	std::vector<std::string> ModelBuilder::addInputNodes(Model & model, const std::string & name, const int & n_nodes)
@@ -218,12 +211,13 @@ namespace SmartPeak
 		std::vector<std::string> node_names;
 
 		// Parameters for the Convolution layer
+		assert(source_node_names.size() == input_width * input_height);
 		int input_padded_width = input_width + 2*input_width_zero_padding;
-		assert(input_padded_width % (extent_width + stride) == 0);
-		int strides_width = input_padded_width % (extent_width + stride) + 1; // includes the starting stride
+		assert((input_padded_width - extent_width) % stride == 0);
+		int strides_width = std::floor((input_padded_width - extent_width) / stride) + 1; // includes the starting stride
 		int input_padded_height = input_height + 2*input_height_zero_padding;
-		assert(input_padded_height % (extent_height + stride) == 0);
-		int strides_height = input_padded_height % (extent_height + stride) + 1; // includes the starting stride
+		assert((input_padded_height - extent_height) % stride == 0);
+		int strides_height = std::floor((input_padded_height - extent_height) / stride) + 1; // includes the starting stride
 		int output_nodes = strides_width + strides_height;
 		int output_padded_width = strides_width + 2 * output_width_zero_padding;
 		int output_padded_height = strides_height + 2 * output_height_zero_padding;
@@ -249,7 +243,7 @@ namespace SmartPeak
 		for (size_t output_height_iter = 0; output_height_iter < output_padded_height; ++output_height_iter) {
 			for (size_t padding_iter = 0; padding_iter < output_width_zero_padding; ++padding_iter) {
 				char bias_name_char[64];
-				sprintf(bias_name_char, "%s-out-padding_H&d-W%d", name.data(), output_height_iter, padding_iter);
+				sprintf(bias_name_char, "%s-out-padding_H%d-W%d", name.data(), output_height_iter, padding_iter);
 				std::string bias_name(bias_name_char);
 				Node bias(bias_name, NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
 				bias.setModuleName(module_name);
@@ -258,7 +252,7 @@ namespace SmartPeak
 			}
 			for (size_t padding_iter = 0; padding_iter < output_width_zero_padding; ++padding_iter) {
 				char bias_name_char[64];
-				sprintf(bias_name_char, "%s-out-padding_H&d-W%d", name.data(), output_height_iter, padding_iter + strides_width);
+				sprintf(bias_name_char, "%s-out-padding_H%d-W%d", name.data(), output_height_iter, padding_iter + strides_width + output_width_zero_padding);
 				std::string bias_name(bias_name_char); 
 				Node bias(bias_name, NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
 				bias.setModuleName(module_name);
@@ -266,10 +260,10 @@ namespace SmartPeak
 				node_names.push_back(bias_name);
 			}
 		}
-		for (size_t output_width_iter = 0; output_width_iter < output_padded_width; ++output_width_iter) {
+		for (size_t output_width_iter = 1; output_width_iter < output_padded_width - 1; ++output_width_iter) {
 			for (size_t padding_iter = 0; padding_iter < output_height_zero_padding; ++padding_iter) {
 				char bias_name_char[64];
-				sprintf(bias_name_char, "%s-out-padding_H&d-W%d", name.data(), padding_iter, output_width_iter);
+				sprintf(bias_name_char, "%s-out-padding_H%d-W%d", name.data(), padding_iter, output_width_iter);
 				std::string bias_name(bias_name_char);
 				Node bias(bias_name, NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
 				bias.setModuleName(module_name);
@@ -278,7 +272,7 @@ namespace SmartPeak
 			}
 			for (size_t padding_iter = 0; padding_iter < output_height_zero_padding; ++padding_iter) {
 				char bias_name_char[64];
-				sprintf(bias_name_char, "%s-out-padding_H&d-W%d", name.data(), padding_iter + strides_height, output_width_iter);
+				sprintf(bias_name_char, "%s-out-padding_H%d-W%d", name.data(), padding_iter + strides_height + output_height_zero_padding, output_width_iter);
 				std::string bias_name(bias_name_char);
 				Node bias(bias_name, NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
 				bias.setModuleName(module_name);
@@ -291,7 +285,7 @@ namespace SmartPeak
 		for (size_t output_height_iter = 0; output_height_iter < strides_height; ++output_height_iter) {
 			for (size_t output_width_iter = 0; output_width_iter < strides_width; ++output_width_iter) {
 				char output_name_char[64];
-				sprintf(output_name_char, "%s-out_H&d-W%d", name.data(), output_height_iter + output_height_zero_padding, output_width_iter + output_width_zero_padding);
+				sprintf(output_name_char, "%s-out_H%d-W%d", name.data(), output_height_iter + output_height_zero_padding, output_width_iter + output_width_zero_padding);
 				std::string output_name(output_name_char);
 				Node output(output_name, NodeType::output, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
 				output.setModuleName(module_name);
@@ -320,66 +314,81 @@ namespace SmartPeak
 			}
 		}
 
-		// Create the convolution links between input and output
-		for (size_t height_stride_iter = 0; height_stride_iter < stride; ++height_stride_iter) {
-			for (size_t width_stride_iter = 0; width_stride_iter < stride; ++width_stride_iter) {
-				for (size_t height_iter = 0; height_iter < input_height; ++height_iter) {
-					// check if the filter is in the top input height zero padding
-					const int filter_height_end = stride * height_stride_iter + extent_height;
-					if (filter_height_end < input_height_zero_padding) continue;
+		// Create the convolution links between input and output					
+		int tmp = 0;
+		int output_width_iter = 0;
+		for (size_t width_stride_iter = 0; width_stride_iter < strides_width; ++width_stride_iter) {
+			// check if the filter is in the left input width zero padding
+			const int filter_width_end = stride * width_stride_iter + extent_width;
+			if (filter_width_end <= input_width_zero_padding)
+				continue;
 
-					// check if the filter is in the bottom input height zero padding
-					const int filter_height_start = stride * height_stride_iter;
-					if (filter_height_end >= input_height_zero_padding + input_height) continue;
+			// check if the filter is in the right input width zero padding
+			const int filter_width_start = stride * width_stride_iter;
+			if (filter_width_start >= input_width_zero_padding + input_width)
+				continue;
 
-					// offset starting height filter for the input zero padding
-					const int filter_height_offset = stride * height_stride_iter + extent_height - input_height_zero_padding;
+			// offset the starting width filter for the input zero padding
+			int filter_width_offset_start_tmp = input_width_zero_padding - stride * width_stride_iter;
+			int filter_width_offset_start = max(filter_width_offset_start_tmp, 0);
+			int filter_width_offset_end_tmp = input_width_zero_padding + stride * strides_width - stride * width_stride_iter;
+			int filter_width_offset_end = min(filter_width_offset_end_tmp, extent_width);
 
-					for (size_t width_iter = 0; width_iter < input_width; ++width_iter) {
-						// check if the filter is in the left input width zero padding
-						const int filter_width_end = stride * width_stride_iter + extent_width;
-						if (filter_width_end < input_width_zero_padding) continue;
+			int output_height_iter = 0;
+			for (size_t height_stride_iter = 0; height_stride_iter < strides_height; ++height_stride_iter) {
+				// check if the filter is in the top input height zero padding
+				const int filter_height_end = stride * height_stride_iter + extent_height;
+				if (filter_height_end <= input_height_zero_padding)
+					continue;
 
-						// check if the filter is in the right input width zero padding
-						const int filter_width_start = stride * width_stride_iter;
-						if (filter_width_end >= input_width_zero_padding + input_width) continue;
+				// check if the filter is in the bottom input height zero padding
+				const int filter_height_start = stride * height_stride_iter;
+				if (filter_height_start >= input_height_zero_padding + input_height)
+					continue;
 
-						// offset the starting width filter for the input zero padding
-						const int filter_width_offset = stride * width_stride_iter + extent_width - input_width_zero_padding;
+				// offset starting height filter for the input zero padding
+				tmp = input_height_zero_padding - stride * height_stride_iter;
+				int filter_height_offset_start = max(tmp, 0);
+				tmp = input_height_zero_padding + stride * strides_height - stride * height_stride_iter;
+				int filter_height_offset_end = min(tmp, extent_height);
 
-						// Create the convolution filter links
-						for (size_t output_height_iter = 0; output_height_iter < strides_height; ++output_height_iter) {
-							for (size_t output_width_iter = 0; output_width_iter < strides_width; ++output_width_iter) {
-								char output_name_char[64];
-								sprintf(output_name_char, "%s_to_%s-out_H&d-W%d", name.data(), output_height_iter + output_height_zero_padding, output_width_iter + output_width_zero_padding);
-								std::string output_name(output_name_char);
-								Node output(output_name, NodeType::output, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-								output.setModuleName(module_name);
-								model.addNodes({ output });
-								node_names.push_back(output_name)
-							}
-						}
-						for (size_t filter_height_iter = 0; filter_height_iter < extent_height; ++filter_height_iter)
-						{
-							for (size_t filter_width_iter = 0; filter_width_iter < extent_width; ++filter_width_iter)
-							{
-								// Weight name
-								char weight_filter_name_char[64];
-								sprintf(weight_filter_name_char, "%s_H%d-W%d", name.data(), filter_height_iter, filter_width_iter);
-								std::string weight_filter_name(weight_filter_name_char);
-							  // Output node name
+				// create the links between input and output
+				tmp = stride * width_stride_iter - input_width_zero_padding - 1;
+				int width_iter = max(tmp, 0);
+				for (size_t filter_width_iter = filter_width_offset_start; filter_width_iter < filter_width_offset_end; ++filter_width_iter) {
+					tmp = stride * height_stride_iter - input_height_zero_padding - 1;
+					int height_iter = max(tmp, 0);
+					for (size_t filter_height_iter = filter_height_offset_start; filter_height_iter < filter_height_offset_end; ++filter_height_iter) {
+						int source_node_iter = height_iter + width_iter * input_height;
 
-								// Link name
-								char link_filter_name_char[64];
-								sprintf(link_filter_name_char, "%s_to_%s", filter_name.data(), node_name.data());
-								std::string link_filter_name(link_filter_name_char);
-								Link link_filter(link_filter_name, filter_name, node_name, weight_filter_name);
-								model.addLinks({ link_filter });
-							}
-						}
+						if (source_node_iter >= source_node_names.size())
+							std::cout << "error" << std::endl;
+
+						// Weight name
+						char weight_filter_name_char[64];
+						sprintf(weight_filter_name_char, "%s_H%d-W%d", name.data(), filter_height_iter, filter_width_iter);
+						std::string weight_filter_name(weight_filter_name_char);
+
+						// Output node name
+						char output_name_char[64];
+						sprintf(output_name_char, "%s-out_H%d-W%d", name.data(), output_height_iter + output_height_zero_padding, output_width_iter + output_width_zero_padding);
+						std::string output_name(output_name_char);
+
+						// Link name
+						char link_filter_name_char[64];
+						sprintf(link_filter_name_char, "%s_to_%s", source_node_names[source_node_iter].data(), output_name.data());
+						std::string link_filter_name(link_filter_name_char);
+
+						Link link_filter(link_filter_name, source_node_names[source_node_iter], output_name, weight_filter_name);
+						model.addLinks({ link_filter });
+
+						++height_iter;
 					}
+					++width_iter;
 				}
+				++output_height_iter;
 			}
+			++output_width_iter;
 		}
 
 		return node_names;
