@@ -71,7 +71,7 @@ public:
 		std::vector<std::string> addSoftMax(Model& model, const std::string& name, const std::string& module_name, const std::vector<std::string>& source_node_names);
 
 		/**
-		@brief Add a Convolution layer
+		@brief Add a Convolution layer or Pooling layer
 
 		The input is considered a linearized matrix in column order
 		The output is considered a linearized matrix in column order
@@ -93,31 +93,14 @@ public:
 		*/
 		std::vector<std::string> addConvolution(Model & model, const std::string & name, const std::string& module_name, const std::vector<std::string>& source_node_names,
 			const int & input_width, const int & input_height, const int& input_width_zero_padding, const int& input_height_zero_padding,
-			const int & extent_width, const int & extent_height, const int & depth, const int & stride,
+			const int & extent_width, const int & extent_height, const int & stride,
 			const int & output_width_zero_padding, const int& output_height_zero_padding,
+			const std::shared_ptr<ActivationOp<float>>& node_activation,
+			const std::shared_ptr<ActivationOp<float>>& node_activation_grad,
+			const std::shared_ptr<IntegrationOp<float>>& node_integration,
+			const std::shared_ptr<IntegrationErrorOp<float>>& node_integration_error,
+			const std::shared_ptr<IntegrationWeightGradOp<float>>& node_integration_weight_grad,
 			const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver);
-
-		/**
-		@brief Add a Pooling layer
-
-		The input is considered a linearized matrix in column order
-		The output is considered a linearized matrix in column order
-
-		@param[in, out] Model
-		@param[in] source_node_names Node_names to add the layer to
-		@param[in] input_width The width of the input
-		@param[in] input_height The height of the input
-		@param[in] depth The number of convolution filters
-		@param[in] extent_width The width of the filter
-		@param[in] extent_height The height of the filter
-		@param[in] stride The spacing between filters
-
-		@returns vector of output node names
-		*/
-		std::vector<std::string> addPooling(Model& model, const std::string& name, const std::vector<std::string>& source_node_names,
-			const int& input_width, const int& input_height,
-			const int& extent_width, const int& extent_height,
-			const int& stride);
 
 		/**
 		@brief Add a LSTM layer

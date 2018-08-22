@@ -204,8 +204,13 @@ namespace SmartPeak
 	}
 	std::vector<std::string> ModelBuilder::addConvolution(Model & model, const std::string & name, const std::string& module_name, const std::vector<std::string>& source_node_names, 
 		const int & input_width, const int & input_height, const int& input_width_zero_padding, const int& input_height_zero_padding,
-		const int & extent_width, const int & extent_height, const int & depth, const int & stride, 
-		const int & output_width_zero_padding, const int& output_height_zero_padding, 
+		const int & extent_width, const int & extent_height, const int & stride, 
+		const int & output_width_zero_padding, const int& output_height_zero_padding,
+		const std::shared_ptr<ActivationOp<float>>& node_activation,
+		const std::shared_ptr<ActivationOp<float>>& node_activation_grad,
+		const std::shared_ptr<IntegrationOp<float>>& node_integration,
+		const std::shared_ptr<IntegrationErrorOp<float>>& node_integration_error,
+		const std::shared_ptr<IntegrationWeightGradOp<float>>& node_integration_weight_grad,
 		const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver)
 	{
 		std::vector<std::string> node_names;
@@ -263,7 +268,7 @@ namespace SmartPeak
 					char output_name_char[64];
 					sprintf(output_name_char, "%s-out_H%d-W%d", name.data(), output_height_iter, output_width_iter);
 					std::string output_name(output_name_char);
-					Node output(output_name, NodeType::output, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+					Node output(output_name, NodeType::hidden, NodeStatus::activated, node_activation, node_activation_grad, node_integration, node_integration_error, node_integration_weight_grad);
 					output.setModuleName(module_name);
 					model.addNodes({ output });
 					node_names.push_back(output_name);
@@ -337,9 +342,6 @@ namespace SmartPeak
 					int height_iter = max(height_iter_tmp, 0);
 					for (size_t filter_height_iter = filter_height_offset_start; filter_height_iter < filter_height_offset_end; ++filter_height_iter) {
 						int source_node_iter = height_iter + width_iter * input_height;
-
-						if (source_node_iter >= source_node_names.size())
-							std::cout << "error" << std::endl;
 
 						// Weight name
 						char weight_filter_name_char[64];

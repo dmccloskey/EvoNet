@@ -186,7 +186,7 @@ BOOST_AUTO_TEST_CASE(addSoftMax)
 	}
 }
 
-BOOST_AUTO_TEST_CASE(addConvolutionConnected)
+BOOST_AUTO_TEST_CASE(addConvolution)
 {
 	ModelBuilder model_builder;
 	Model model;
@@ -198,49 +198,45 @@ BOOST_AUTO_TEST_CASE(addConvolutionConnected)
 	// make the fully connected 
 	node_names = model_builder.addConvolution(
 		model, "Filter", "Mod1", node_names, 4, 4, 2, 2,
-		2, 2, 0, 1, 1, 1,
+		2, 2, 1, 1, 1,
+		std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), 
+		std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
 		std::shared_ptr<WeightInitOp>(new ConstWeightInitOp(1.0)), std::shared_ptr<SolverOp>(new SGDOp(0.1, 0.9)));
 
-	std::vector<std::string> node_names_test = { "Filter-bias_0", "Filter-out-bias_H0-W0", "Filter-out-bias_H0-W0", "Hidden-bias_1" };
-	std::vector<std::string> link_names_test = { "Hidden-bias_0_to_Hidden_0", "Hidden-bias_1_to_Hidden_1",
-		"Input_0_to_Hidden_0", "Input_0_to_Hidden_1", "Input_0_to_Hidden_0", "Input_0_to_Hidden_1" };
-	std::vector<std::string> weight_names_test = { "Hidden-bias_0_to_Hidden_0", "Hidden-bias_1_to_Hidden_1",
-		"Input_0_to_Hidden_0", "Input_0_to_Hidden_1", "Input_0_to_Hidden_0", "Input_0_to_Hidden_1" };
+	std::vector<std::string> node_names_test = { "Filter-bias" };
+	std::vector<std::string> weight_names_test = { "Filter-bias_to_out",
+		"Filter_H0-W0", "Filter_H1-W0", "Filter_H0-W1", "Filter_H1-W1" };
 
 	// check the nodes
-	for (size_t i = 0; i < node_names_test.size(); ++i)
+	size_t node_cnt = 0;
+	for (const Node& node: model.getNodes())
 	{
-		BOOST_CHECK_EQUAL(model.getNode(node_names_test[i]).getName(), node_names_test[i]);
-		BOOST_CHECK_EQUAL(model.getNode(node_names_test[i]).getModuleName(), "Mod1");
-		if (i == 1 || i == 3)
-		{
-			BOOST_CHECK_EQUAL(model.getNode(node_names_test[i]).getActivation()->getName(), "LinearOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_names_test[i]).getActivationGrad()->getName(), "LinearGradOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_names_test[i]).getIntegration()->getName(), "SumOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_names_test[i]).getIntegrationError()->getName(), "SumErrorOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_names_test[i]).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
+		if (node_cnt == 0) {
+			BOOST_CHECK_EQUAL(node.getName(), node_names_test[node_cnt]);
+			BOOST_CHECK_EQUAL(node.getModuleName(), "Mod1");
 		}
-		else
-		{
-			BOOST_CHECK_EQUAL(node_names[i / node_names.size()], node_names_test[i]);
-			BOOST_CHECK_EQUAL(model.getNode(node_names_test[i]).getActivation()->getName(), "ReLUOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_names_test[i]).getActivationGrad()->getName(), "ReLUGradOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_names_test[i]).getIntegration()->getName(), "ProdOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_names_test[i]).getIntegrationError()->getName(), "ProdErrorOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_names_test[i]).getIntegrationWeightGrad()->getName(), "ProdWeightGradOp");
+		else if (node_cnt >= 1 && node_cnt < 65) {
+			int name_cnt = std::count(node_names.begin(), node_names.end(), node.getName());
+			BOOST_CHECK_EQUAL(name_cnt, 1);
+			BOOST_CHECK_EQUAL(node.getModuleName(), "Mod1");
 		}
+		BOOST_CHECK_EQUAL(node.getActivation()->getName(), "LinearOp");
+		BOOST_CHECK_EQUAL(node.getActivationGrad()->getName(), "LinearGradOp");
+		BOOST_CHECK_EQUAL(node.getIntegration()->getName(), "SumOp");
+		BOOST_CHECK_EQUAL(node.getIntegrationError()->getName(), "SumErrorOp");
+		BOOST_CHECK_EQUAL(node.getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
+		++node_cnt;
 	}
+	BOOST_CHECK_EQUAL(node_cnt, 81);
 
 	// check the links
-	for (const std::string& name : link_names_test)
+	size_t link_cnt = 0;
+	for (const Link& link : model.getLinks())
 	{
-		BOOST_CHECK_EQUAL(model.getLink(name).getName(), name);
-		std::vector<std::string> test = SplitString(name, "_to_");
-		BOOST_CHECK_EQUAL(model.getLink(name).getSourceNodeName(), test[0]);
-		BOOST_CHECK_EQUAL(model.getLink(name).getSinkNodeName(), test[1]);
-		BOOST_CHECK_EQUAL(model.getLink(name).getWeightName(), name);
-		BOOST_CHECK_EQUAL(model.getLink(name).getModuleName(), "Mod1");
+		BOOST_CHECK_EQUAL(link.getModuleName(), "Mod1");
+		++link_cnt;
 	}
+	BOOST_CHECK_EQUAL(link_cnt, 100);
 
 	// check the weights
 	for (const std::string& name : weight_names_test)
