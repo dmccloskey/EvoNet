@@ -342,8 +342,6 @@ public:
 		};
   };
 
-
-
 	/**
 		@brief Hinge loss function.  
 
@@ -352,15 +350,6 @@ public:
 		NOTES: implemented as the following:
 		def Hinge(yHat, y):
 			return np.max(0, 1 - yHat * y)
-	*/
-
-
-	/**
-		@brief CrossEntropy loss function.
-
-		Typically used for regression
-
-		https://en.wikipedia.org/wiki/Huber_loss
 	*/
 }
 #endif //SMARTPEAK_LOSSFUNCTION_H

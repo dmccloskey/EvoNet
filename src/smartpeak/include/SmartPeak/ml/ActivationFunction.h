@@ -3,7 +3,6 @@
 #ifndef SMARTPEAK_ACTIVATIONFUNCTION_H
 #define SMARTPEAK_ACTIVATIONFUNCTION_H
 
-
 #include <unsupported/Eigen/CXX11/Tensor>
 #include <cmath>
 #include <random>
@@ -307,6 +306,38 @@ public:
 			return this->substituteNanInf(std::exp(x_I));
 		};
 		std::string getName() const { return "ExponentialGradOp"; };
+	};
+
+	/**
+	@brief Log activation function
+	*/
+	template<typename T>
+	class LogOp : public ActivationOp<T>
+	{
+	public:
+		LogOp() {};
+		~LogOp() {};
+		T operator()(const T& x_I) const
+		{
+			return this->substituteNanInf(std::log(x_I));
+		};
+		std::string getName() const { return "LogOp"; };
+	};
+
+	/**
+	@brief Log gradient
+	*/
+	template<typename T>
+	class LogGradOp : public ActivationOp<T>
+	{
+	public:
+		LogGradOp() {};
+		~LogGradOp() {};
+		T operator()(const T& x_I) const
+		{
+			return this->substituteNanInf(1/x_I);
+		};
+		std::string getName() const { return "LogGradOp"; };
 	};
 }
 #endif //SMARTPEAK_ACTIVATIONFUNCTION_H
