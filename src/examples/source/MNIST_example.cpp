@@ -3,7 +3,8 @@
 #include <SmartPeak/ml/PopulationTrainer.h>
 #include <SmartPeak/ml/ModelTrainer.h>
 #include <SmartPeak/ml/ModelReplicator.h>
-#include <SmartPeak/ml/Model.h> 
+#include <SmartPeak/ml/ModelBuilder.h>
+#include <SmartPeak/ml/Model.h>
 #include <SmartPeak/io/PopulationTrainerFile.h>
 
 #include <SmartPeak/core/Preprocessing.h>
@@ -37,6 +38,10 @@ using namespace SmartPeak;
 class ModelTrainerExt : public ModelTrainer
 {
 public:
+	Model makeCovNet() { 
+
+		return Model(); 
+	}
 	Model makeModel() { return Model(); }
 	void adaptiveTrainerScheduler(
 		const int& n_generations,
@@ -308,12 +313,10 @@ public:
 	}
 };
 
-int main(int argc, char** argv)
-{
-
-  PopulationTrainerExt population_trainer;
+void main_EvoNet() {
+	PopulationTrainerExt population_trainer;
 	population_trainer.setNGenerations(5);
-  const int n_threads = 8;
+	const int n_threads = 8;
 
 	// define the model trainer
 	ModelTrainerExt model_trainer;
@@ -342,24 +345,24 @@ int main(int argc, char** argv)
 	const std::string validation_labels_filename = "/home/user/data/t10k-labels-idx1-ubyte";
 	data_simulator.readData(validation_data_filename, validation_labels_filename, false, validation_data_size, input_size);
 
-  // Make the input nodes
-  std::vector<std::string> input_nodes;
-  for (int i=0; i<input_size; ++i)
-    input_nodes.push_back("Input_" + std::to_string(i));
+	// Make the input nodes
+	std::vector<std::string> input_nodes;
+	for (int i = 0; i < input_size; ++i)
+		input_nodes.push_back("Input_" + std::to_string(i));
 
-  // Make the output nodes
-  std::vector<std::string> output_nodes;
-  for (int i=0; i<data_simulator.mnist_labels.size(); ++i)
-    output_nodes.push_back("Output_" + std::to_string(i));
+	// Make the output nodes
+	std::vector<std::string> output_nodes;
+	for (int i = 0; i < data_simulator.mnist_labels.size(); ++i)
+		output_nodes.push_back("Output_" + std::to_string(i));
 
-  // define the model replicator for growth mode
-  ModelReplicatorExt model_replicator;
+	// define the model replicator for growth mode
+	ModelReplicatorExt model_replicator;
 
 	// define the initial population [BUG FREE]
 	std::cout << "Initializing the population..." << std::endl;
 	std::vector<Model> population;
 	const int population_size = 1;
-	for (int i = 0; i<population_size; ++i)
+	for (int i = 0; i < population_size; ++i)
 	{
 		// baseline model
 		std::shared_ptr<WeightInitOp> weight_init;
@@ -386,6 +389,13 @@ int main(int argc, char** argv)
 	PopulationTrainerFile population_trainer_file;
 	population_trainer_file.storeModels(population, "SequencialMNIST");
 	population_trainer_file.storeModelValidations("SequencialMNISTErrors.csv", models_validation_errors_per_generation.back());
+
+}
+
+int main(int argc, char** argv)
+{
+	// run the application
+	main_EvoNet();
 
   return 0;
 }
