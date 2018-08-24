@@ -38,9 +38,117 @@ using namespace SmartPeak;
 class ModelTrainerExt : public ModelTrainer
 {
 public:
-	Model makeCovNet() { 
+	/*
+	@brief Convolution classifier
 
-		return Model(); 
+	References:
+	https://github.com/pytorch/examples/blob/master/mnist/main.py
+	*/
+	Model makeClassifier(const int& n_inputs, const int& n_outputs) {
+		Model model;
+		model.setId(0);
+		model.setName("Classifier");
+		model.setLossFunction(std::shared_ptr<LossFunctionOp<float>>(new NegativeLogLikelihoodOp<float>(n_outputs)));
+		model.setLossFunctionGrad(std::shared_ptr<LossFunctionGradOp<float>>(new NegativeLogLikelihoodGradOp<float>(n_outputs)));
+
+		std::shared_ptr<WeightInitOp> weight_init(new RandWeightInitOp(n_inputs));
+		std::shared_ptr<SolverOp> solver(new AdamOp(0.1, 0.9, 0.999, 1e-8));
+
+		ModelBuilder model_builder;
+
+		// Add the inputs
+		std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", n_inputs);
+
+		// Add the first convolution -> max pool -> ReLU layers
+		int depth = 10;
+		std::vector<std::vector<std::string>> node_names_l0;
+		for (size_t d = 0; d < depth; ++d) {
+			std::vector<std::string> node_names;
+			std::string conv_name = "Conv0-" + std::to_string(d);
+			node_names = model_builder.addConvolution(model, conv_name, conv_name, node_names_input, 
+				28, 28, 0, 0,
+				5, 5, 1, 0, 0,
+				std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()),
+				std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()),
+				std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
+				std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
+				std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
+				weight_init, solver);
+			std::string pool_name = "Pool0-" + std::to_string(d);
+			node_names = model_builder.addConvolution(model, pool_name, pool_name, node_names, 
+				sqrt(node_names.size()), sqrt(node_names.size()), 1, 1,
+				2, 2, 2, 0, 0,
+				std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()),
+				std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
+				std::shared_ptr<IntegrationOp<float>>(new MaxOp<float>()),
+				std::shared_ptr<IntegrationErrorOp<float>>(new MaxErrorOp<float>()),
+				std::shared_ptr<IntegrationWeightGradOp<float>>(new MaxWeightGradOp<float>()),
+				weight_init, solver);
+			node_names_l0.push_back(node_names);
+		}
+
+		// Add the second convolution -> max pool -> ReLU layers
+		std::vector<std::vector<std::string>> node_names_l1;
+		int l_cnt = 0;
+		depth = 2;
+		for (const std::vector<std::string> &node_names_l : node_names_l0) {
+			for (size_t d = 0; d < depth; ++d) {
+				std::vector<std::string> node_names;
+				std::string conv_name = "Conv1-" + std::to_string(l_cnt) + "-" + std::to_string(d);
+				node_names = model_builder.addConvolution(model, conv_name, conv_name, node_names_l, 
+					sqrt(node_names_l.size()), sqrt(node_names_l.size()), 0, 0,
+					5, 5, 1, 0, 0,
+					std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()),
+					std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()),
+					std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
+					std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
+					std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
+					weight_init, solver);
+				std::string pool_name = "Pool1-" + std::to_string(l_cnt) + "-" + std::to_string(d);
+				node_names = model_builder.addConvolution(model, pool_name, pool_name, node_names, 
+					sqrt(node_names.size()), sqrt(node_names.size()), 1, 1,
+					2, 2, 2, 0, 0,
+					std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()),
+					std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
+					std::shared_ptr<IntegrationOp<float>>(new MaxOp<float>()),
+					std::shared_ptr<IntegrationErrorOp<float>>(new MaxErrorOp<float>()),
+					std::shared_ptr<IntegrationWeightGradOp<float>>(new MaxWeightGradOp<float>()),
+					weight_init, solver);
+				node_names_l1.push_back(node_names);
+			}
+			++l_cnt;
+		}
+
+		// Linearize the node names
+		std::vector<std::string> node_names;
+		for (const std::vector<std::string> &node_names_l : node_names_l1) {
+			for (const std::string &node_name : node_names_l) {
+				node_names.push_back(node_name);
+			}
+		}
+
+		// Add the FC layers
+		//assert(node_names.size() == 320);
+		node_names = model_builder.addFullyConnected(model, "FC0", "FC0", node_names, 50,
+			std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()),
+			std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
+			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
+			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
+			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
+			weight_init, solver);
+		node_names = model_builder.addFullyConnected(model, "FC1", "FC1", node_names, n_outputs,
+			std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()),
+			std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
+			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
+			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
+			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
+			weight_init, solver);
+
+		// Add the final softmax layer
+		node_names = model_builder.addSoftMax(model, "SoftMax", "SoftMax", node_names);
+
+		model.initWeights();
+		return model;
 	}
 	Model makeModel() { return Model(); }
 	void adaptiveTrainerScheduler(
@@ -67,7 +175,7 @@ public:
 	void ReadMNIST(const std::string& filename, Eigen::Tensor<T, 2>& data, const bool& is_labels)
 	{
 		// dims: sample, pixel intensity or sample, label
-		// e.g., pixel data dims: 1000 x (28x28)
+		// e.g., pixel data dims: 1000 x (28x28) (stored row-wise; returned col-wise)
 		// e.g., label data dims: 1000 x 1
 
 		// open up the file
@@ -103,7 +211,7 @@ public:
 				n_cols = 1;
 			}
 
-			// get the actual data
+			// get the actual data (read row-wise)
 			for (int i = 0; i<number_of_images; ++i)
 			{
 				for (int r = 0; r<n_rows; ++r)
@@ -112,7 +220,8 @@ public:
 					{
 						unsigned char temp = 0;
 						file.read((char*)&temp, sizeof(temp));
-						data(i, (n_rows*r) + c) = (T)temp;
+						//data(i, (n_rows*r) + c) = (T)temp; // row-wise return
+						data(i, (n_cols*c) + r) = (T)temp; // col-wise return
 					}
 				}
 			}
@@ -391,11 +500,77 @@ void main_EvoNet() {
 	population_trainer_file.storeModelValidations("SequencialMNISTErrors.csv", models_validation_errors_per_generation.back());
 
 }
+void main_Classifier() {
+
+	const int n_hard_threads = std::thread::hardware_concurrency();
+
+	// define the populatin trainer
+	PopulationTrainerExt population_trainer;
+	population_trainer.setNGenerations(1);
+	population_trainer.setNTop(1);
+	population_trainer.setNRandom(1);
+	population_trainer.setNReplicatesPerModel(1);
+
+	// define the model trainer
+	ModelTrainerExt model_trainer;
+	model_trainer.setBatchSize(1);
+	model_trainer.setMemorySize(1);
+	model_trainer.setNEpochsTraining(1000);
+	model_trainer.setNEpochsValidation(10);
+	model_trainer.setVerbosityLevel(2);
+	model_trainer.setNThreads(n_hard_threads);
+
+	// define the data simulator
+	const std::size_t input_size = 784;
+	const std::size_t training_data_size = 10000; //60000;
+	const std::size_t validation_data_size = 100; //10000;
+	DataSimulatorExt data_simulator;
+
+	// read in the training data
+	 const std::string training_data_filename = "C:/Users/domccl/GitHub/mnist/train-images.idx3-ubyte";
+	//const std::string training_data_filename = "/home/user/data/train-images-idx3-ubyte";
+	 const std::string training_labels_filename = "C:/Users/domccl/GitHub/mnist/train-labels.idx1-ubyte";
+	//const std::string training_labels_filename = "/home/user/data/train-labels-idx1-ubyte";
+	data_simulator.readData(training_data_filename, training_labels_filename, true, training_data_size, input_size);
+
+	// read in the validation data
+	 const std::string validation_data_filename = "C:/Users/domccl/GitHub/mnist/t10k-images.idx3-ubyte";
+	//const std::string validation_data_filename = "/home/user/data/t10k-images-idx3-ubyte";
+	 const std::string validation_labels_filename = "C:/Users/domccl/GitHub/mnist/t10k-labels.idx1-ubyte";
+	//const std::string validation_labels_filename = "/home/user/data/t10k-labels-idx1-ubyte";
+	data_simulator.readData(validation_data_filename, validation_labels_filename, false, validation_data_size, input_size);
+
+	// Make the input nodes
+	std::vector<std::string> input_nodes;
+	for (int i = 0; i < input_size; ++i)
+		input_nodes.push_back("Input_" + std::to_string(i));
+
+	// Make the output nodes
+	std::vector<std::string> output_nodes;
+	for (int i = 0; i < data_simulator.mnist_labels.size(); ++i)
+		output_nodes.push_back("SoftMax-Out_" + std::to_string(i));
+
+	// define the model replicator for growth mode
+	ModelReplicatorExt model_replicator;
+
+	// define the initial population [BUG FREE]
+	std::cout << "Initializing the population..." << std::endl;
+	std::vector<Model> population = { model_trainer.makeClassifier(input_nodes.size(), output_nodes.size()) };
+
+	// Evolve the population
+	std::vector<std::vector<std::pair<int, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
+		population, model_trainer, model_replicator, data_simulator, input_nodes, output_nodes, 1);
+
+	PopulationTrainerFile population_trainer_file;
+	population_trainer_file.storeModels(population, "MNIST");
+	population_trainer_file.storeModelValidations("MNISTErrors.csv", models_validation_errors_per_generation.back());
+}
 
 int main(int argc, char** argv)
 {
 	// run the application
-	main_EvoNet();
+	//main_EvoNet();
+	main_Classifier();
 
   return 0;
 }

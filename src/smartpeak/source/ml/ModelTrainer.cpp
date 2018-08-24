@@ -207,7 +207,10 @@ namespace SmartPeak
 			const Eigen::Tensor<float, 0> total_error = model.getError().sum();
 			model_error.push_back(total_error(0));
 			if (getVerbosityLevel() >= 1)
-				std::cout<<"Model "<<model.getName()<<" error: "<<total_error(0)<<std::endl;
+				std::cout << "Model " << model.getName() << " error: " << total_error(0) << std::endl;
+
+			if (getVerbosityLevel() >= 2)
+				std::cout << "Model " << model.getName() << " error: " << model.getError() << std::endl;
 
 			// back propogate
 			if (iter == 0)
@@ -224,8 +227,8 @@ namespace SmartPeak
 					std::cout << node.getName() << " Error: " << node.getError() << std::endl;
 					std::cout << node.getName() << " Derivative: " << node.getDerivative() << std::endl;
 				}
-				for (const Weight& weight : model.getWeights())
-					std::cout << weight.getName() << " Weight: " << weight.getWeight() << std::endl;
+				//for (const Weight& weight : model.getWeights())
+				//	std::cout << weight.getName() << " Weight: " << weight.getWeight() << std::endl;
 			}
 
 			// update the weights

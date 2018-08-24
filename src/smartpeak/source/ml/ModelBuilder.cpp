@@ -218,10 +218,10 @@ namespace SmartPeak
 		// Parameters for the Convolution layer
 		assert(source_node_names.size() == input_width * input_height);
 		int input_padded_width = input_width + 2*input_width_zero_padding;
-		assert((input_padded_width - extent_width) % stride == 0);
+		//assert((input_padded_width - extent_width) % stride == 0);
 		int strides_width = std::floor((input_padded_width - extent_width) / stride); // includes the starting stride
 		int input_padded_height = input_height + 2*input_height_zero_padding;
-		assert((input_padded_height - extent_height) % stride == 0);
+		//assert((input_padded_height - extent_height) % stride == 0);
 		int strides_height = std::floor((input_padded_height - extent_height) / stride); // includes the starting stride
 		int output_nodes = strides_width + strides_height;
 		int output_padded_width = strides_width + 2 * output_width_zero_padding;
