@@ -103,6 +103,14 @@ namespace SmartPeak
 	{
 		std::vector<std::string> node_names;
 
+		// Create the Softmax Max offset node
+		char smm_node_name_char[64];
+		sprintf(smm_node_name_char, "%s-Max", name.data());
+		std::string smm_node_name(smm_node_name_char);
+		Node smm_node(smm_node_name, NodeType::hidden, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new MaxOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new MaxErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new MaxWeightGradOp<float>()));
+		smm_node.setModuleName(module_name);
+		model.addNodes({ smm_node });
+
 		// Create the Softmax Inverse/Sum node
 		char sms_node_name_char[64];
 		sprintf(sms_node_name_char, "%s-Sum", name.data());
@@ -110,6 +118,22 @@ namespace SmartPeak
 		Node sms_node(sms_node_name, NodeType::hidden, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new InverseOp<float>()), std::shared_ptr<ActivationOp<float>>(new InverseGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
 		sms_node.setModuleName(module_name);
 		model.addNodes({ sms_node });
+
+		// Create the unity node
+		char unity_weight_name_char[64];
+		sprintf(unity_weight_name_char, "%s_Unity", name.data());
+		std::string unity_weight_name(unity_weight_name_char);
+		Weight unity_weight(unity_weight_name, std::shared_ptr<WeightInitOp>(new ConstWeightInitOp(1.0)), std::shared_ptr<SolverOp>(new DummySolverOp()));
+		unity_weight.setModuleName(module_name);
+		model.addWeights({ unity_weight });
+
+		// Create the negative unity node
+		char negunity_weight_name_char[64];
+		sprintf(negunity_weight_name_char, "%s_Negative", name.data());
+		std::string negunity_weight_name(negunity_weight_name_char);
+		Weight negunity_weight(negunity_weight_name, std::shared_ptr<WeightInitOp>(new ConstWeightInitOp(-1.0)), std::shared_ptr<SolverOp>(new DummySolverOp()));
+		negunity_weight.setModuleName(module_name);
+		model.addWeights({ negunity_weight });
 
 		// Create the Softmax input/output layer
 		for (int i = 0; i < source_node_names.size(); ++i)
@@ -131,72 +155,52 @@ namespace SmartPeak
 
 			model.addNodes({ smi_node, smo_node });
 
+			// Create the weights and links for the input to softmax Max node
+			char ismm_link_name_char[64];
+			sprintf(ismm_link_name_char, "%s_to_%s", source_node_names[i].data(), smm_node_name.data());
+			std::string ismm_link_name(ismm_link_name_char);
+			Link ismm_link(ismm_link_name, source_node_names[i], smm_node_name, unity_weight_name);
+			ismm_link.setModuleName(module_name);
+			model.addLinks({ ismm_link });
+
+			// Create the weights and links for the softmax Max node softmax input layer
+			char smmsmi_link_name_char[64];
+			sprintf(smmsmi_link_name_char, "%s_to_%s", smm_node_name.data(), smi_node_name.data());
+			std::string smmsmi_link_name(smmsmi_link_name_char);
+			Link smmsmi_link(smmsmi_link_name, smm_node_name, smi_node_name, negunity_weight_name);
+			smmsmi_link.setModuleName(module_name);
+			model.addLinks({ smmsmi_link });
+
 			// Create the weights and links for the input to softmax input layer
 			char ismi_link_name_char[64];
 			sprintf(ismi_link_name_char, "%s_to_%s", source_node_names[i].data(), smi_node_name.data());
 			std::string ismi_link_name(ismi_link_name_char);
-
-			char ismi_weight_name_char[64];
-			sprintf(ismi_weight_name_char, "%s_to_%s", source_node_names[i].data(), smi_node_name.data());
-			std::string ismi_weight_name(ismi_weight_name_char);
-
-			Weight ismi_weight(ismi_weight_name_char, std::shared_ptr<WeightInitOp>(new ConstWeightInitOp(1.0)), std::shared_ptr<SolverOp>(new DummySolverOp()));
-			ismi_weight.setModuleName(module_name);
-			Link ismi_link(ismi_link_name, source_node_names[i], smi_node_name, ismi_weight_name);
+			Link ismi_link(ismi_link_name, source_node_names[i], smi_node_name, unity_weight_name);
 			ismi_link.setModuleName(module_name);
-
-			model.addWeights({ ismi_weight });
 			model.addLinks({ ismi_link });
 
 			// Create the weights and links for the softmax input layer to softmax sum layer
 			char smisms_link_name_char[64];
 			sprintf(smisms_link_name_char, "%s_to_%s", smi_node_name.data(), sms_node_name.data());
 			std::string smisms_link_name(smisms_link_name_char);
-
-			char smisms_weight_name_char[64];
-			sprintf(smisms_weight_name_char, "%s_to_%s", smi_node_name.data(), sms_node_name.data());
-			std::string smisms_weight_name(smisms_weight_name_char);
-
-			Weight smisms_weight(smisms_weight_name_char, std::shared_ptr<WeightInitOp>(new ConstWeightInitOp(1.0)), std::shared_ptr<SolverOp>(new DummySolverOp()));
-			smisms_weight.setModuleName(module_name);
-			Link smisms_link(smisms_link_name, smi_node_name, sms_node_name, smisms_weight_name);
+			Link smisms_link(smisms_link_name, smi_node_name, sms_node_name, unity_weight_name);
 			smisms_link.setModuleName(module_name);
-
-			model.addWeights({ smisms_weight });
 			model.addLinks({ smisms_link });
 
 			// Create the weights and links for the softmax input layer to softmax output layer
 			char smismo_link_name_char[64];
 			sprintf(smismo_link_name_char, "%s_to_%s", smi_node_name.data(), smo_node_name.data());
 			std::string smismo_link_name(smismo_link_name_char);
-
-			char smismo_weight_name_char[64];
-			sprintf(smismo_weight_name_char, "%s_to_%s", smi_node_name.data(), smo_node_name.data());
-			std::string smismo_weight_name(smismo_weight_name_char);
-
-			Weight smismo_weight(smismo_weight_name_char, std::shared_ptr<WeightInitOp>(new ConstWeightInitOp(1.0)), std::shared_ptr<SolverOp>(new DummySolverOp()));
-			smismo_weight.setModuleName(module_name);
-			Link smismo_link(smismo_link_name, smi_node_name, smo_node_name, smismo_weight_name);
+			Link smismo_link(smismo_link_name, smi_node_name, smo_node_name, unity_weight_name);
 			smismo_link.setModuleName(module_name);
-
-			model.addWeights({ smismo_weight });
 			model.addLinks({ smismo_link });
 
 			// Create the weights and links for the softmax sum layer to softmax output layer
 			char smssmo_link_name_char[64];
 			sprintf(smssmo_link_name_char, "%s_to_%s", sms_node_name.data(), smo_node_name.data());
 			std::string smssmo_link_name(smssmo_link_name_char);
-
-			char smssmo_weight_name_char[64];
-			sprintf(smssmo_weight_name_char, "%s_to_%s", sms_node_name.data(), smo_node_name.data());
-			std::string smssmo_weight_name(smssmo_weight_name_char);
-
-			Weight smssmo_weight(smssmo_weight_name_char, std::shared_ptr<WeightInitOp>(new ConstWeightInitOp(1.0)), std::shared_ptr<SolverOp>(new DummySolverOp()));
-			smssmo_weight.setModuleName(module_name);
-			Link smssmo_link(smssmo_link_name, sms_node_name, smo_node_name, smssmo_weight_name);
+			Link smssmo_link(smssmo_link_name, sms_node_name, smo_node_name, unity_weight_name);
 			smssmo_link.setModuleName(module_name);
-
-			model.addWeights({ smssmo_weight });
 			model.addLinks({ smssmo_link });
 		}
 
