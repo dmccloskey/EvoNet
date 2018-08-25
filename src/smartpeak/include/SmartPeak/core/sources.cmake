@@ -5,6 +5,7 @@ set(directory include/SmartPeak/core)
 set(sources_list_h
 Helloworld.h
 Preprocessing.h
+Statistics.h
 StringParsing.h
 )
 

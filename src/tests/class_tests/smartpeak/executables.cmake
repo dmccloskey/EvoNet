@@ -1,6 +1,7 @@
 set(core_executables_list
   Helloworld_test
   Preprocessing_test
+  Statistics_test
   StringParsing_test
 )
 
