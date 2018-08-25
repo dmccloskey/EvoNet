@@ -630,8 +630,8 @@ void main_classification()
 	// define the data simulator
 	MetDataSimClassification metabolomics_data;
 	//std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
-	//std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
-	std::string data_dir = "/home/user/Data/";
+	std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
+	//std::string data_dir = "/home/user/Data/";
 	std::string biochem_rxns_filename = data_dir + "iAB_RBC_283.csv";
 	std::string metabo_data_filename = data_dir + "MetabolomicsData_RBC.csv";
 	std::string meta_data_filename = data_dir + "MetaData_prePost_RBC.csv";
@@ -653,9 +653,9 @@ void main_classification()
 
 	// innitialize the model trainer
 	ModelTrainerExt model_trainer;
-	model_trainer.setBatchSize(1);
-	model_trainer.setMemorySize(2);
-	model_trainer.setNEpochsTraining(100000);
+	model_trainer.setBatchSize(8);
+	model_trainer.setMemorySize(1);
+	model_trainer.setNEpochsTraining(1000);
 	model_trainer.setNEpochsValidation(100);
 	model_trainer.setNThreads(n_hard_threads); // [TODO: change back to 2!]
 	model_trainer.setVerbosityLevel(1);

@@ -209,8 +209,10 @@ namespace SmartPeak
 			if (getVerbosityLevel() >= 1)
 				std::cout << "Model " << model.getName() << " error: " << total_error(0) << std::endl;
 
-			if (getVerbosityLevel() >= 2)
-				std::cout << "Model " << model.getName() << " error: " << model.getError() << std::endl;
+			if (getVerbosityLevel() >= 2) {
+				std::cout << "Expected: " << output.chip(iter, 3) << std::endl;
+				std::cout << "Error: " << model.getError() << std::endl;
+			}
 
 			// back propogate
 			if (iter == 0)
@@ -218,18 +220,18 @@ namespace SmartPeak
 			else
 				model.TBPTT(getMemorySize(), false, true, getNThreads());
 
-			if (getVerbosityLevel() >= 2)
-			{
-				for (const Node& node : model.getNodes())
-				{
-					std::cout << node.getName() << " Input: " << node.getInput() << std::endl;
-					std::cout << node.getName() << " Output: " << node.getOutput() << std::endl;
-					std::cout << node.getName() << " Error: " << node.getError() << std::endl;
-					std::cout << node.getName() << " Derivative: " << node.getDerivative() << std::endl;
-				}
-				//for (const Weight& weight : model.getWeights())
-				//	std::cout << weight.getName() << " Weight: " << weight.getWeight() << std::endl;
-			}
+			//if (getVerbosityLevel() >= 2)
+			//{
+			//	for (const Node& node : model.getNodes())
+			//	{
+			//		std::cout << node.getName() << " Input: " << node.getInput() << std::endl;
+			//		std::cout << node.getName() << " Output: " << node.getOutput() << std::endl;
+			//		std::cout << node.getName() << " Error: " << node.getError() << std::endl;
+			//		std::cout << node.getName() << " Derivative: " << node.getDerivative() << std::endl;
+			//	}
+			//	//for (const Weight& weight : model.getWeights())
+			//	//	std::cout << weight.getName() << " Weight: " << weight.getWeight() << std::endl;
+			//}
 
 			// update the weights
 			model.updateWeights(getMemorySize());
