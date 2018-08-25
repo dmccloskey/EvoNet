@@ -25,7 +25,7 @@ namespace SmartPeak
 	@return pair of lower bound and upper bounds for the data
 	*/
 	template<typename T>
-	std::pair<T, T> getConfidenceIntervals(const std::vector<T>& data, T alpha=0.05)
+	std::pair<T, T> confidence(const std::vector<T>& data, T alpha=0.05)
 	{
 		std::vector<T> data_sorted = data;
 		std::sort(data_sorted.begin(), data_sorted.end());

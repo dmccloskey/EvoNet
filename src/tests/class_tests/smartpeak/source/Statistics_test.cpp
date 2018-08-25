@@ -12,7 +12,7 @@ BOOST_AUTO_TEST_SUITE(statistics)
 BOOST_AUTO_TEST_CASE(S_getConfidenceIntervals)
 {
 	std::vector<float> data = { 0, 2, 9, 8, 5, 3, 1, 7, 6, 4 };
-	std::pair<float,float> result = getConfidenceIntervals(data, 0.1f);
+	std::pair<float,float> result = confidence(data, 0.1f);
 	BOOST_CHECK_CLOSE(result.first, 0, 1e-3);
 	BOOST_CHECK_CLOSE(result.second, 9, 1e-3);
 }
