@@ -171,6 +171,23 @@ public:
 		return((int)ch1<<24)+((int)ch2<<16)+((int)ch3<<8)+ch4;
 	}
 
+	/*
+	@brief Read in the MNIST data set from an IDX file format.
+
+	Output data for sample dimensions are the following:
+		dim 0: sample
+		dim 1: col-wise pixel intensity
+
+	Output data for label dimensions are the following:
+		dim 0: sample
+		dim 1: class label
+
+	See http://yann.lecun.com/exdb/mnist/ for a description of the data set and the file format
+
+	@param[in] filename
+	@param[in, out] data The tensor to hold the data
+	@param[in] is_labels True if the file corresponds to class labels, False otherwise
+	*/
 	template<typename T>
 	void ReadMNIST(const std::string& filename, Eigen::Tensor<T, 2>& data, const bool& is_labels)
 	{
@@ -442,15 +459,15 @@ void main_EvoNet() {
 
 	// read in the training data
 	// const std::string training_data_filename = "C:/Users/domccl/GitHub/mnist/train-images.idx3-ubyte";
-	const std::string training_data_filename = "/home/user/data/train-images-idx3-ubyte";
 	// const std::string training_labels_filename = "C:/Users/domccl/GitHub/mnist/train-labels.idx1-ubyte";
+	const std::string training_data_filename = "/home/user/data/train-images-idx3-ubyte";
 	const std::string training_labels_filename = "/home/user/data/train-labels-idx1-ubyte";
 	data_simulator.readData(training_data_filename, training_labels_filename, true, training_data_size, input_size);
 
 	// read in the validation data
 	// const std::string validation_data_filename = "C:/Users/domccl/GitHub/mnist/t10k-images.idx3-ubyte";
-	const std::string validation_data_filename = "/home/user/data/t10k-images-idx3-ubyte";
 	// const std::string validation_labels_filename = "C:/Users/domccl/GitHub/mnist/t10k-labels.idx1-ubyte";
+	const std::string validation_data_filename = "/home/user/data/t10k-images-idx3-ubyte";
 	const std::string validation_labels_filename = "/home/user/data/t10k-labels-idx1-ubyte";
 	data_simulator.readData(validation_data_filename, validation_labels_filename, false, validation_data_size, input_size);
 
@@ -527,16 +544,20 @@ void main_Classifier() {
 	DataSimulatorExt data_simulator;
 
 	// read in the training data
-	 const std::string training_data_filename = "C:/Users/domccl/GitHub/mnist/train-images.idx3-ubyte";
+	//const std::string training_data_filename = "C:/Users/domccl/GitHub/mnist/train-images.idx3-ubyte";
+	//const std::string training_labels_filename = "C:/Users/domccl/GitHub/mnist/train-labels.idx1-ubyte";
+	const std::string training_data_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/train-images-idx3-ubyte";
+	const std::string training_labels_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/train-labels-idx1-ubyte";
 	//const std::string training_data_filename = "/home/user/data/train-images-idx3-ubyte";
-	 const std::string training_labels_filename = "C:/Users/domccl/GitHub/mnist/train-labels.idx1-ubyte";
 	//const std::string training_labels_filename = "/home/user/data/train-labels-idx1-ubyte";
 	data_simulator.readData(training_data_filename, training_labels_filename, true, training_data_size, input_size);
 
 	// read in the validation data
-	 const std::string validation_data_filename = "C:/Users/domccl/GitHub/mnist/t10k-images.idx3-ubyte";
+	//const std::string validation_data_filename = "C:/Users/domccl/GitHub/mnist/t10k-images.idx3-ubyte";
+	//const std::string validation_labels_filename = "C:/Users/domccl/GitHub/mnist/t10k-labels.idx1-ubyte";
+	const std::string validation_data_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/t10k-images-idx3-ubyte";
+	const std::string validation_labels_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/t10k-labels-idx1-ubyte";
 	//const std::string validation_data_filename = "/home/user/data/t10k-images-idx3-ubyte";
-	 const std::string validation_labels_filename = "C:/Users/domccl/GitHub/mnist/t10k-labels.idx1-ubyte";
 	//const std::string validation_labels_filename = "/home/user/data/t10k-labels-idx1-ubyte";
 	data_simulator.readData(validation_data_filename, validation_labels_filename, false, validation_data_size, input_size);
 
