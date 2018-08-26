@@ -74,6 +74,9 @@ public:
 		*/
 		bool logLayerOutputAndErrorPerEpoch(Model& model, const int& n_epoch);
 
+	private:
+		bool log_ = false; ///< log ...
+
   };
 }
 
