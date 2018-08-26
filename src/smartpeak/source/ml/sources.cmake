@@ -6,6 +6,7 @@ set(sources_list
 	Link.cpp
 	Model.cpp
 	ModelBuilder.cpp
+	ModelLogger.cpp
 	ModelReplicator.cpp
 	ModelTrainer.cpp
 	Node.cpp
