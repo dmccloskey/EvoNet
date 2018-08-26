@@ -47,6 +47,7 @@ Read in the model file from .
 sample set of MARs
 */
 
+// Data structures
 struct PWStats {
 	std::string sample_name_1;
 	std::string sample_name_2;
@@ -242,6 +243,7 @@ static void ReadMetaData(
 	}
 };
 
+// Extended data classes
 class MetDataSimClassification: public DataSimulator
 {
 public:
@@ -496,7 +498,7 @@ public:
 	}
 };
 
-// Extended classes
+// Other extended classes
 class ModelReplicatorExt : public ModelReplicator
 {
 public:
@@ -623,109 +625,74 @@ public:
 	}
 };
 
-// Scripts to run
-void main_statistics()
-{
-	// define the data simulator
-	MetDataSimClassification metabolomics_data;
-	std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
-	//std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
-	//std::string data_dir = "/home/user/Data/";
-	//std::string biochem_rxns_filename = data_dir + "iAB_RBC_283.csv";
-	//std::string metabo_data_filename = data_dir + "MetabolomicsData_RBC.csv";
-	//std::string meta_data_filename = data_dir + "MetaData_prePost_RBC.csv";
-	std::string biochem_rxns_filename = data_dir + "iAT_PLT_636.csv";
-	std::string metabo_data_filename = data_dir + "MetabolomicsData_PLT.csv";
-	std::string meta_data_filename = data_dir + "MetaData_prePost_PLT.csv";
-	metabolomics_data.readBiochemicalReactions(biochem_rxns_filename);
-	metabolomics_data.readMetabolomicsData(metabo_data_filename);
-	metabolomics_data.readMetaData(meta_data_filename);
-	metabolomics_data.findMARs();
-	metabolomics_data.findLabels();
+/*
+@brief Find significant pair-wise MARS between samples (one pre/post vs. all pre/post)
+*/
+PWData PWComparison(MetDataSimClassification& metabolomics_data, const std::vector<std::string>& sample_names, int n_samples = 10000, float alpha = 0.05, float fc = 1.0) {
+	PWData pw_data;
+	for (const std::string& mar : metabolomics_data.reaction_ids_) {
+		for (size_t sgn1_iter = 0; sgn1_iter < sample_names.size(); ++sgn1_iter) {
+			for (size_t sgn2_iter = sgn1_iter + 1; sgn2_iter < sample_names.size(); ++sgn2_iter) {
 
-	//// Find significant pair-wise MARS between samples (one pre/post vs. all pre/post)
-	//PWData pw_data_oneVSall;
-	//int n_samples = 1000;
-	//float alpha = 0.01;
-	//for (const std::string& mar : metabolomics_data.reaction_ids_) {
-	//	for (size_t sgn1_iter = 0; sgn1_iter < metabolomics_data.sample_group_names_.size(); ++sgn1_iter) {
-	//		for (size_t sgn2_iter = sgn1_iter + 1; sgn2_iter < metabolomics_data.sample_group_names_.size(); ++sgn2_iter) {
+				// initialize the data struct
+				PWStats pw_stats;
+				pw_stats.feature_name = mar;
+				pw_stats.sample_name_1 = sample_names[sgn1_iter];
+				pw_stats.sample_name_2 = sample_names[sgn2_iter];
+				pw_stats.n1 = n_samples;
+				pw_stats.n2 = n_samples;
 
-	//			// initialize the data struct
-	//			PWStats pw_stats;
-	//			pw_stats.feature_name = mar;
-	//			pw_stats.sample_name_1 = metabolomics_data.sample_group_names_[sgn1_iter];
-	//			pw_stats.sample_name_2 = metabolomics_data.sample_group_names_[sgn2_iter];
-	//			pw_stats.n1 = n_samples;
-	//			pw_stats.n2 = n_samples;
+				// sample the MAR data
+				std::vector<float> samples1, samples2;
+				for (int sample_iter = 0; sample_iter < n_samples; ++sample_iter) {
+					samples1.push_back(
+						metabolomics_data.calculateMAR(metabolomics_data.metabolomicsData_.at(sample_names[sgn1_iter]),
+							metabolomics_data.biochemicalReactions_.at(mar)));
+					samples2.push_back(
+						metabolomics_data.calculateMAR(metabolomics_data.metabolomicsData_.at(sample_names[sgn2_iter]),
+							metabolomics_data.biochemicalReactions_.at(mar)));
+				}
 
-	//			// sample the MAR data
-	//			std::vector<float> samples1, samples2;
-	//			for (int sample_iter = 0; sample_iter < n_samples; ++sample_iter) {
-	//				samples1.push_back(
-	//					metabolomics_data.calculateMAR(metabolomics_data.metabolomicsData_.at(metabolomics_data.sample_group_names_[sgn1_iter]),
-	//						metabolomics_data.biochemicalReactions_.at(mar)));
-	//				samples2.push_back(
-	//					metabolomics_data.calculateMAR(metabolomics_data.metabolomicsData_.at(metabolomics_data.sample_group_names_[sgn2_iter]),
-	//						metabolomics_data.biochemicalReactions_.at(mar)));
-	//			}
-	//			
-	//			// calculate the 95% CI
-	//			pw_stats.confidence_interval_1 = confidence(samples1, alpha);
-	//			pw_stats.confidence_interval_2 = confidence(samples2, alpha);
+				// calculate the moments and fold change
+				float ave1, adev1, sdev1, var1, skew1, curt1;
+				SmartPeak::moment(&samples1[0], n_samples, ave1, adev1, sdev1, var1, skew1, curt1);
+				float ave2, adev2, sdev2, var2, skew2, curt2;
+				SmartPeak::moment(&samples2[0], n_samples, ave2, adev2, sdev2, var2, skew2, curt2);
+				pw_stats.fold_change = std::log2(ave2 / ave1);
 
-	//			//// calculate the K-S prob
-	//			//float d, prob;
-	//			//kstwo(&samples1[0], n_samples, &samples2[0], n_samples, d, prob);
-	//			//pw_stats.prob = prob;
+				// calculate the 95% CI
+				pw_stats.confidence_interval_1 = confidence(samples1, alpha);
+				pw_stats.confidence_interval_2 = confidence(samples2, alpha);
 
-	//			//if (prob < 0.05) {
-	//			if (pw_stats.confidence_interval_1.first > pw_stats.confidence_interval_2.second || pw_stats.confidence_interval_1.second < pw_stats.confidence_interval_2.first) {
-	//				pw_stats.is_significant = true;
-	//				std::vector<PWStats> pw_stats_vec = { pw_stats };
-	//				auto found = pw_data_oneVSall.emplace(mar, pw_stats_vec);
-	//				if (!found.second) {
-	//					pw_data_oneVSall.at(mar).push_back(pw_stats);
-	//				}
-	//			}
-	//		}
-	//	}
-	//}
+				//// calculate the K-S prob
+				//float d, prob;
+				//kstwo(&samples1[0], n_samples, &samples2[0], n_samples, d, prob);
+				//pw_stats.prob = prob;
 
-	//// Export the results to file
-	//std::string pw_data_oneVSall_filename = data_dir + "RBC_oneVSall.csv";
-	//std::vector<std::string> headers = { "reaction_id", "sample_1", "sample_2", "lb1", "lb2", "ub1", "ub2" };
-	//CSVWriter csvwriter_oneVSall(pw_data_oneVSall_filename);
-	//csvwriter_oneVSall.writeDataInRow(headers.begin(), headers.end());
-	//for (const auto& pw_datum : pw_data_oneVSall) {
-	//	for (const auto& pw_stats : pw_datum.second) {
-	//		std::vector<std::string> line;
-	//		line.push_back(pw_stats.feature_name);
-	//		line.push_back(pw_stats.sample_name_1);
-	//		line.push_back(pw_stats.sample_name_2);
-	//		line.push_back(std::to_string(pw_stats.confidence_interval_1.first));
-	//		line.push_back(std::to_string(pw_stats.confidence_interval_2.first));
-	//		line.push_back(std::to_string(pw_stats.confidence_interval_1.second));
-	//		line.push_back(std::to_string(pw_stats.confidence_interval_2.second));
-	//		csvwriter_oneVSall.writeDataInRow(line.begin(), line.end());
-	//	}
-	//}
+				//if (prob < 0.05) {
+				if ((pw_stats.confidence_interval_1.first > pw_stats.confidence_interval_2.second
+					|| pw_stats.confidence_interval_1.second < pw_stats.confidence_interval_2.first)
+					&& (pw_stats.fold_change > fc || pw_stats.fold_change < -fc)) {
+					pw_stats.is_significant = true;
+					std::vector<PWStats> pw_stats_vec = { pw_stats };
+					auto found = pw_data.emplace(mar, pw_stats_vec);
+					if (!found.second) {
+						pw_data.at(mar).push_back(pw_stats);
+					}
+				}
+			}
+		}
+	}
+	return pw_data;
+}
 
-	// Find significant pair-wise MARS between pre/post samples (one pre vs one post)
-	PWData pw_data_preVSpost;
-	int n_samples = 1000;
-	float alpha = 0.05;
-	int n_pairs = 11;
-	std::vector<std::string> pre_samples = {
-		//"P_36","P_142","P_140","P_34","P_154","P_143","P_30","P_31","P_33","P_35","P_141"
-		"PLT_36","PLT_142","PLT_140","PLT_34","PLT_154","PLT_143","PLT_30","PLT_31","PLT_33","PLT_35","PLT_141"
-		//"RBC_36","RBC_142","RBC_140","RBC_34","RBC_154","RBC_143","RBC_30","RBC_31","RBC_33","RBC_35","RBC_141"
-	};
-	std::vector<std::string> post_samples = { 
-		//"P_43","P_152","P_150","P_38","P_155","P_153","P_37","P_39","P_42","P_40","P_151",
-		"PLT_43","PLT_152","PLT_150","PLT_38","PLT_155","PLT_153","PLT_37","PLT_39","PLT_42","PLT_40","PLT_151"
-		//"RBC_43","RBC_152","RBC_150","RBC_38","RBC_155","RBC_153","RBC_37","RBC_39","RBC_42","RBC_40","RBC_151"
-	};
+/*
+@brief Find significant pair-wise MARS between pre/post samples (one pre vs one post)
+*/
+PWData PWPrePostComparison(MetDataSimClassification& metabolomics_data, 
+	std::vector<std::string>& pre_samples, std::vector<std::string>& post_samples, const int& n_pairs,
+	int n_samples = 10000, float alpha = 0.05, float fc = 1.0) {
+	PWData pw_data;
 	for (const std::string& mar : metabolomics_data.reaction_ids_) {
 		for (size_t pairs_iter = 0; pairs_iter<n_pairs; ++pairs_iter) {
 			std::cout << "MAR: " << mar << " Pair: " << pairs_iter << std::endl;
@@ -766,26 +733,111 @@ void main_statistics()
 			//pw_stats.prob = prob;
 
 			//if (prob < 0.05) {
-			if ((pw_stats.confidence_interval_1.first > pw_stats.confidence_interval_2.second 
+			if ((pw_stats.confidence_interval_1.first > pw_stats.confidence_interval_2.second
 				|| pw_stats.confidence_interval_1.second < pw_stats.confidence_interval_2.first)
-				&& (pw_stats.fold_change > 1.0 || pw_stats.fold_change < -1.0)) {
+				&& (pw_stats.fold_change > fc || pw_stats.fold_change < -fc)) {
 				pw_stats.is_significant = true;
 				std::vector<PWStats> pw_stats_vec = { pw_stats };
-				auto found = pw_data_preVSpost.emplace(mar, pw_stats_vec);
+				auto found = pw_data.emplace(mar, pw_stats_vec);
 				if (!found.second) {
-					pw_data_preVSpost.at(mar).push_back(pw_stats);
+					pw_data.at(mar).push_back(pw_stats);
 				}
 			}
 		}
 	}
+	return pw_data;
+}
+
+/*
+@brief Find significant pair-wise MARS between pre/post samples (one pre vs one post)
+*/
+PWData PWPrePostDifference(MetDataSimClassification& metabolomics_data,
+	std::vector<std::string>& pre_samples, std::vector<std::string>& post_samples, const int& n_pairs,
+	int n_samples = 10000, float alpha = 0.05, float fc = 0.43229) {
+
+	PWData pw_data;
+	for (const std::string& mar : metabolomics_data.reaction_ids_) {
+		for (size_t pairs_iter1 = 0; pairs_iter1<n_pairs; ++pairs_iter1) {
+
+			std::string sample_name_1 = post_samples[pairs_iter1] + "-" + pre_samples[pairs_iter1];
+
+			// sample the MAR data
+			std::vector<float> samples1;
+			for (int sample_iter = 0; sample_iter < n_samples; ++sample_iter) {
+				float s1 = metabolomics_data.calculateMAR(metabolomics_data.metabolomicsData_.at(pre_samples[pairs_iter1]),
+						metabolomics_data.biochemicalReactions_.at(mar));
+				float s2 = metabolomics_data.calculateMAR(metabolomics_data.metabolomicsData_.at(post_samples[pairs_iter1]),
+						metabolomics_data.biochemicalReactions_.at(mar));
+				samples1.push_back(s2 - s1);
+			}
+
+			// calculate the moments and fold change
+			float ave1, adev1, sdev1, var1, skew1, curt1;
+			moment(&samples1[0], n_samples, ave1, adev1, sdev1, var1, skew1, curt1);
+
+			// calculate the 95% CI
+			std::pair<float,float> confidence_interval_1 = confidence(samples1, alpha);
+
+			for (size_t pairs_iter2 = pairs_iter1 + 1; pairs_iter2 < n_pairs; ++pairs_iter2) {
+				std::cout << "MAR: " << mar << " Pair1: " << pairs_iter1 << " Pair2: " << pairs_iter2 << std::endl;
+
+				std::string sample_name_2 = post_samples[pairs_iter2] + "-" + pre_samples[pairs_iter2];
+
+				// initialize the data struct
+				PWStats pw_stats;
+				pw_stats.feature_name = mar;
+				pw_stats.sample_name_1 = sample_name_1;
+				pw_stats.sample_name_2 = sample_name_2;
+				pw_stats.n1 = n_samples;
+				pw_stats.n2 = n_samples;
+
+				// sample the MAR data
+				std::vector<float> samples2;
+				for (int sample_iter = 0; sample_iter < n_samples; ++sample_iter) {
+					float s1 = metabolomics_data.calculateMAR(metabolomics_data.metabolomicsData_.at(pre_samples[pairs_iter2]),
+						metabolomics_data.biochemicalReactions_.at(mar));
+					float s2 = metabolomics_data.calculateMAR(metabolomics_data.metabolomicsData_.at(post_samples[pairs_iter2]),
+						metabolomics_data.biochemicalReactions_.at(mar));
+					samples2.push_back(s2 - s1);
+				}
+
+				// calculate the moments and fold change
+				float ave2, adev2, sdev2, var2, skew2, curt2;
+				moment(&samples2[0], n_samples, ave2, adev2, sdev2, var2, skew2, curt2);
+
+				// calculate the 95% CI
+				std::pair<float, float> confidence_interval_2 = confidence(samples2, alpha);
+
+				// calculate the normalized geometric fold change
+				pw_stats.fold_change = std::log(std::exp(ave2) / std::exp(ave1)) / (std::log(std::exp(ave2) + std::exp(ave1)));
+
+				pw_stats.confidence_interval_1 = confidence_interval_1;
+				pw_stats.confidence_interval_2 = confidence_interval_2;
+
+				//if (prob < 0.05) {
+				if ((pw_stats.confidence_interval_1.first > pw_stats.confidence_interval_2.second
+					|| pw_stats.confidence_interval_1.second < pw_stats.confidence_interval_2.first)
+					&& (pw_stats.fold_change > fc || pw_stats.fold_change < -fc)) {
+					pw_stats.is_significant = true;
+					std::vector<PWStats> pw_stats_vec = { pw_stats };
+					auto found = pw_data.emplace(mar, pw_stats_vec);
+					if (!found.second) {
+						pw_data.at(mar).push_back(pw_stats);
+					}
+				}
+			}
+		}
+	}
+	return pw_data;
+}
+
+bool ExportPWData(const std::string& filename, const PWData& pw_data) {
 
 	// Export the results to file
-	//std::string pw_data_preVSpost_filename = data_dir + "RBC_preVSpost.csv";
-	std::string pw_data_preVSpost_filename = data_dir + "PLT_preVSpost.csv";
-	CSVWriter csvwriter_preVSpost(pw_data_preVSpost_filename);
-	std::vector<std::string> headers = { "reaction_id", "sample_1", "sample_2", "LB1", "LB2", "UB1", "UB2", "Log2(FC)" };
-	csvwriter_preVSpost.writeDataInRow(headers.begin(), headers.end());
-	for (const auto& pw_datum : pw_data_preVSpost) {
+	CSVWriter csvwriter(filename);
+	std::vector<std::string> headers = { "Feature", "Sample1", "Sample2", "LB1", "LB2", "UB1", "UB2", "Log2(FC)" };
+	csvwriter.writeDataInRow(headers.begin(), headers.end());
+	for (const auto& pw_datum : pw_data) {
 		for (const auto& pw_stats : pw_datum.second) {
 			std::vector<std::string> line;
 			line.push_back(pw_stats.feature_name);
@@ -796,8 +848,104 @@ void main_statistics()
 			line.push_back(std::to_string(pw_stats.confidence_interval_1.second));
 			line.push_back(std::to_string(pw_stats.confidence_interval_2.second));
 			line.push_back(std::to_string(pw_stats.fold_change));
-			csvwriter_preVSpost.writeDataInRow(line.begin(), line.end());
+			csvwriter.writeDataInRow(line.begin(), line.end());
 		}
+	}
+	return true;
+}
+
+// Scripts to run
+void main_statistics()
+{
+	// analyses to run
+	bool run_oneVSone = false;
+	bool run_preVSpost = false;
+	bool run_postMinPre = true;
+	std::string blood_fraction = "PLT";
+
+	// define the data simulator
+	MetDataSimClassification metabolomics_data;
+
+	// data dirs
+	std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
+	//std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
+	//std::string data_dir = "/home/user/Data/";
+
+	std::string biochem_rxns_filename, metabo_data_filename, meta_data_filename,
+		oneVSonePre_filename, oneVSonePost_filename, preVSpost_filename, postMinPre_filename;
+	std::vector<std::string> pre_samples, post_samples;
+	if (blood_fraction == "RBC") {
+		// RBC filenames
+		 biochem_rxns_filename = data_dir + "iAB_RBC_283.csv";
+		 metabo_data_filename = data_dir + "MetabolomicsData_RBC.csv";
+		 meta_data_filename = data_dir + "MetaData_prePost_RBC.csv";
+		 oneVSonePre_filename = data_dir + "RBC_oneVSonePre.csv";
+		 oneVSonePost_filename = data_dir + "RBC_oneVSonePost.csv";
+		 preVSpost_filename = data_dir + "RBC_preVSpost.csv";
+		 postMinPre_filename = data_dir + "RBC_postMinPre.csv";
+		 pre_samples = {"RBC_36","RBC_142","RBC_140","RBC_34","RBC_154","RBC_143","RBC_30","RBC_31","RBC_33","RBC_35","RBC_141"};
+		 post_samples = {"RBC_43","RBC_152","RBC_150","RBC_38","RBC_155","RBC_153","RBC_37","RBC_39","RBC_42","RBC_40","RBC_151"};
+	}
+	else if (blood_fraction == "PLT") {
+		// PLT filenames
+		 biochem_rxns_filename = data_dir + "iAT_PLT_636.csv";
+		 metabo_data_filename = data_dir + "MetabolomicsData_PLT.csv";
+		 meta_data_filename = data_dir + "MetaData_prePost_PLT.csv";
+		 oneVSonePre_filename = data_dir + "PLT_oneVSonePre.csv";
+		 oneVSonePost_filename = data_dir + "PLT_oneVSonePost.csv";
+		 preVSpost_filename = data_dir + "PLT_preVSpost.csv";
+		 postMinPre_filename = data_dir + "PLT_postMinPre.csv";
+		 pre_samples = { "PLT_36","PLT_142","PLT_140","PLT_34","PLT_154","PLT_143","PLT_30","PLT_31","PLT_33","PLT_35","PLT_141" };
+		 post_samples = { "PLT_43","PLT_152","PLT_150","PLT_38","PLT_155","PLT_153","PLT_37","PLT_39","PLT_42","PLT_40","PLT_151" };
+	}
+	else if (blood_fraction == "P") {
+		// P filenames
+		 biochem_rxns_filename = data_dir + "iAB_RBC_283.csv";
+		 metabo_data_filename = data_dir + "MetabolomicsData_P.csv";
+		 meta_data_filename = data_dir + "MetaData_prePost_P.csv";
+		 oneVSonePre_filename = data_dir + "P_oneVSonePre.csv";
+		 oneVSonePost_filename = data_dir + "P_oneVSonePost.csv";
+		 preVSpost_filename = data_dir + "P_preVSpost.csv";
+		 postMinPre_filename = data_dir + "P_postMinPre.csv";
+		 pre_samples = { "P_36","P_142","P_140","P_34","P_154","P_143","P_30","P_31","P_33","P_35","P_141" };
+		 post_samples = { "P_43","P_152","P_150","P_38","P_155","P_153","P_37","P_39","P_42","P_40","P_151" };
+	}
+
+	// read in the data
+	metabolomics_data.readBiochemicalReactions(biochem_rxns_filename);
+	metabolomics_data.readMetabolomicsData(metabo_data_filename);
+	metabolomics_data.readMetaData(meta_data_filename);
+	metabolomics_data.findMARs();
+	metabolomics_data.findLabels();
+
+	if (run_oneVSone) {
+		// Find significant pair-wise MARS between each sample (one vs one Pre-ASA)
+		PWData oneVSonePre = PWComparison(metabolomics_data, pre_samples, 10000, 0.05, 1.0);
+
+		// Export to file
+		ExportPWData(oneVSonePre_filename, oneVSonePre);
+
+		// Find significant pair-wise MARS between each sample (one vs one Post-ASA)
+		PWData oneVSonePost = PWComparison(metabolomics_data, post_samples, 10000, 0.05, 1.0);
+
+		// Export to file
+		ExportPWData(oneVSonePost_filename, oneVSonePost);
+	}
+
+	if (run_preVSpost) {
+		// Find significant pair-wise MARS between pre/post samples (one pre vs one post)
+		PWData preVSpost = PWPrePostComparison(metabolomics_data, pre_samples, post_samples, 11, 10000, 0.05, 1.0);
+
+		// Export to file
+		ExportPWData(preVSpost_filename, preVSpost);
+	}
+
+	if (run_postMinPre) {
+		// Find significant pair-wise MARS between post-pre samples (post-pre vs post-pre) for each individual
+		PWData postMinPre = PWPrePostDifference(metabolomics_data, pre_samples, post_samples, 11, 10000, 0.05, 1.0);
+
+		// Export to file
+		ExportPWData(postMinPre_filename, postMinPre);
 	}
 }
 void main_classification()
