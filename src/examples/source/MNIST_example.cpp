@@ -155,7 +155,16 @@ public:
 		const int& n_generations,
 		const int& n_epochs,
 		Model& model,
-		const std::vector<float>& model_errors) {}
+		const std::vector<float>& model_errors) {
+		if (n_epochs > 5) {
+			// update the solver parameters
+			std::shared_ptr<SolverOp> solver;
+			solver.reset(new AdamOp(0.001, 0.9, 0.999, 1e-8));
+			for (auto& weight_map : model.getWeightsMap())
+				if (weight_map.second->getSolverOp()->getName() == "AdamOp")
+					weight_map.second->setSolverOp(solver);
+		}
+	}
 };
 
 class DataSimulatorExt : public DataSimulator
@@ -309,14 +318,16 @@ public:
 			for (int memory_iter = 0; memory_iter<memory_size; ++memory_iter)
 				for (int nodes_iter = 0; nodes_iter<training_data.dimension(1); ++nodes_iter)
 					for (int epochs_iter = 0; epochs_iter<n_epochs; ++epochs_iter)
-						input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
+						input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[0], nodes_iter);
+		//input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
 
 		// reformat the output data for training [BUG FREE]
 		for (int batch_iter = 0; batch_iter<batch_size; ++batch_iter)
 			for (int memory_iter = 0; memory_iter<memory_size; ++memory_iter)
 				for (int nodes_iter = 0; nodes_iter<training_labels.dimension(1); ++nodes_iter)
 					for (int epochs_iter = 0; epochs_iter<n_epochs; ++epochs_iter)
-						output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = (float)training_labels(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
+						output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = (float)training_labels(sample_indices[0], nodes_iter);
+		//output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = (float)training_labels(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
 
 		time_steps.setConstant(1.0f);
 	}
@@ -532,7 +543,7 @@ void main_Classifier() {
 	ModelTrainerExt model_trainer;
 	model_trainer.setBatchSize(1);
 	model_trainer.setMemorySize(1);
-	model_trainer.setNEpochsTraining(1000);
+	model_trainer.setNEpochsTraining(500);
 	model_trainer.setNEpochsValidation(10);
 	model_trainer.setVerbosityLevel(2);
 	model_trainer.setNThreads(n_hard_threads);

@@ -188,6 +188,9 @@ namespace SmartPeak
 
 		for (int iter = 0; iter < getNEpochsTraining(); ++iter) // use n_epochs here
 		{
+			// update the model hyperparameters
+			adaptiveTrainerScheduler(0, iter, model, model_error);
+
 			// forward propogate
 			if (iter == 0)
 				model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), true, true, getNThreads());
@@ -210,8 +213,10 @@ namespace SmartPeak
 				std::cout << "Model " << model.getName() << " error: " << total_error(0) << std::endl;
 
 			if (getVerbosityLevel() >= 2) {
-				std::cout << "Expected: " << output.chip(iter, 3) << std::endl;
-				std::cout << "Error: " << model.getError() << std::endl;
+				for (size_t node_iter = 0; node_iter < output_nodes.size(); ++node_iter) {
+					std::cout << "Output " << output_nodes[node_iter] << ": " << model.getNode(output_nodes[node_iter]).getOutput() << std::endl;
+					std::cout << "Expected " << output_nodes[node_iter] << ": " << output.chip(iter, 3).chip(node_iter, 2) << std::endl;
+				}
 			}
 
 			// back propogate
@@ -220,18 +225,18 @@ namespace SmartPeak
 			else
 				model.TBPTT(getMemorySize(), false, true, getNThreads());
 
-			//if (getVerbosityLevel() >= 2)
-			//{
-			//	for (const Node& node : model.getNodes())
-			//	{
-			//		std::cout << node.getName() << " Input: " << node.getInput() << std::endl;
-			//		std::cout << node.getName() << " Output: " << node.getOutput() << std::endl;
-			//		std::cout << node.getName() << " Error: " << node.getError() << std::endl;
-			//		std::cout << node.getName() << " Derivative: " << node.getDerivative() << std::endl;
-			//	}
-			//	//for (const Weight& weight : model.getWeights())
-			//	//	std::cout << weight.getName() << " Weight: " << weight.getWeight() << std::endl;
-			//}
+			if (getVerbosityLevel() >= 3)
+			{
+				for (const Node& node : model.getNodes())
+				{
+					std::cout << node.getName() << " Input: " << node.getInput() << std::endl;
+					std::cout << node.getName() << " Output: " << node.getOutput() << std::endl;
+					std::cout << node.getName() << " Error: " << node.getError() << std::endl;
+					std::cout << node.getName() << " Derivative: " << node.getDerivative() << std::endl;
+				}
+				for (const Weight& weight : model.getWeights())
+					std::cout << weight.getName() << " Weight: " << weight.getWeight() << std::endl;
+			}
 
 			// update the weights
 			model.updateWeights(getMemorySize());
