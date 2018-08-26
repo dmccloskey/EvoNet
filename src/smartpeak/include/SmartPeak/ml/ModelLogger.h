@@ -11,9 +11,8 @@
 
 namespace SmartPeak
 {
-
   /**
-    @brief Class to help create complex network models
+    @brief Class to log model training metrics
   */
   class ModelLogger
   {
