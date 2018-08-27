@@ -35,7 +35,7 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters1)
 	BOOST_CHECK(model_logger.getLogExpectedPredictedEpoch());
 	BOOST_CHECK(model_logger.getLogWeightsEpoch());
 	BOOST_CHECK(model_logger.getLogNodesEpoch());
-	BOOST_CHECK(model_logger.getLogLayerVarianceEpoch());
+	BOOST_CHECK(model_logger.getLogModuleVarianceEpoch());
 }
 
 BOOST_AUTO_TEST_CASE(initLogs)
@@ -54,8 +54,8 @@ BOOST_AUTO_TEST_CASE(initLogs)
 	BOOST_CHECK_EQUAL(model_logger.getLogWeightsEpochCSVWriter().getLineCount(), 0);
 	BOOST_CHECK_EQUAL(model_logger.getLogNodesEpochCSVWriter().getFilename(), "Model1_NodesPerEpoch.csv");
 	BOOST_CHECK_EQUAL(model_logger.getLogNodesEpochCSVWriter().getLineCount(), 0);
-	BOOST_CHECK_EQUAL(model_logger.getLogLayerVarianceEpochCSVWriter().getFilename(), "Model1_LayerVariancePerEpoch.csv");
-	BOOST_CHECK_EQUAL(model_logger.getLogLayerVarianceEpochCSVWriter().getLineCount(), 0);
+	BOOST_CHECK_EQUAL(model_logger.getLogModuleVarianceEpochCSVWriter().getFilename(), "Model1_ModuleVariancePerEpoch.csv");
+	BOOST_CHECK_EQUAL(model_logger.getLogModuleVarianceEpochCSVWriter().getLineCount(), 0);
 }
 
 BOOST_AUTO_TEST_CASE(logTimePerEpoch)

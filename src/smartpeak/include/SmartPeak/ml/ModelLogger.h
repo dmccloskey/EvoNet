@@ -16,7 +16,7 @@ namespace SmartPeak
   {
 public:
     ModelLogger() = default; ///< Default constructor
-		ModelLogger(bool log_time_epoch, bool log_train_val_metric_epoch, bool log_expected_predicted_epoch, bool log_weights_epoch, bool log_nodes_epoch, bool log_layer_variance_epoch);
+		ModelLogger(bool log_time_epoch, bool log_train_val_metric_epoch, bool log_expected_predicted_epoch, bool log_weights_epoch, bool log_nodes_epoch, bool log_module_variance_epoch);
     ~ModelLogger() = default; ///< Default destructor
 
 		bool getLogTimeEpoch() { return log_time_epoch_; }
@@ -24,14 +24,14 @@ public:
 		bool getLogExpectedPredictedEpoch() { return log_expected_predicted_epoch_; }
 		bool getLogWeightsEpoch() { return log_weights_epoch_; }
 		bool getLogNodesEpoch() { return log_nodes_epoch_; }
-		bool getLogLayerVarianceEpoch() { return log_layer_variance_epoch_; }
+		bool getLogModuleVarianceEpoch() { return log_module_variance_epoch_; }
 
 		CSVWriter getLogTimeEpochCSVWriter() { return log_time_epoch_csvwriter_; }
 		CSVWriter getLogTrainValMetricEpochCSVWriter() { return log_train_val_metric_epoch_csvwriter_; }
 		CSVWriter getLogExpectedPredictedEpochCSVWriter() { return log_expected_predicted_epoch_csvwriter_; }
 		CSVWriter getLogWeightsEpochCSVWriter() { return log_weights_epoch_csvwriter_; }
 		CSVWriter getLogNodesEpochCSVWriter() { return log_nodes_epoch_csvwriter_; }
-		CSVWriter getLogLayerVarianceEpochCSVWriter() { return log_layer_variance_epoch_csvwriter_; }
+		CSVWriter getLogModuleVarianceEpochCSVWriter() { return log_module_variance_epoch_csvwriter_; }
 
 		/**
 		@brief Initialize the log files
@@ -107,14 +107,14 @@ public:
 		bool logNodesPerEpoch(const Model& model, const int& n_epoch);
 
 		/**
-		@brief The mean and variance of each layer output and error for each time step for each mini batch per epoch
+		@brief The mean and variance of each module output and error for each time step for each mini batch per epoch
 
 		@param[in] model
 		@param[in] n_epoch
 
 		@returns True for a successfull write operation
 		*/
-		bool logLayerMeanAndVariancePerEpoch(const Model& model, const int& n_epoch);
+		bool logModuleMeanAndVariancePerEpoch(const Model& model, const int& n_epoch);
 
 	private:
 		bool log_time_epoch_ = false; ///< log ...
@@ -127,8 +127,11 @@ public:
 		CSVWriter log_weights_epoch_csvwriter_;
 		bool log_nodes_epoch_ = false;
 		CSVWriter log_nodes_epoch_csvwriter_;
-		bool log_layer_variance_epoch_ = false;
-		CSVWriter log_layer_variance_epoch_csvwriter_;
+		bool log_module_variance_epoch_ = false;
+		CSVWriter log_module_variance_epoch_csvwriter_;
+
+		// internal variables
+		std::map<std::string, std::vector<std::string>> module_to_node_names_;
 
   };
 }

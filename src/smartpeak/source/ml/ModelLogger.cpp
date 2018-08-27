@@ -6,9 +6,9 @@
 
 namespace SmartPeak
 {
-	ModelLogger::ModelLogger(bool log_time_epoch, bool log_train_val_metric_epoch, bool log_expected_predicted_epoch, bool log_weights_epoch, bool log_nodes_epoch, bool log_layer_variance_epoch):
+	ModelLogger::ModelLogger(bool log_time_epoch, bool log_train_val_metric_epoch, bool log_expected_predicted_epoch, bool log_weights_epoch, bool log_nodes_epoch, bool log_module_variance_epoch):
 		log_time_epoch_(log_time_epoch), log_train_val_metric_epoch_(log_train_val_metric_epoch), log_expected_predicted_epoch_(log_expected_predicted_epoch),
-		log_weights_epoch_(log_weights_epoch), log_nodes_epoch_(log_nodes_epoch), log_layer_variance_epoch_(log_layer_variance_epoch)
+		log_weights_epoch_(log_weights_epoch), log_nodes_epoch_(log_nodes_epoch), log_module_variance_epoch_(log_module_variance_epoch)
 	{
 	}
 
@@ -39,10 +39,10 @@ namespace SmartPeak
 			CSVWriter csvwriter(filename);
 			log_nodes_epoch_csvwriter_ = csvwriter;
 		}
-		if (log_layer_variance_epoch_) {
-			std::string filename = model.getName() + "_LayerVariancePerEpoch.csv";
+		if (log_module_variance_epoch_) {
+			std::string filename = model.getName() + "_ModuleVariancePerEpoch.csv";
 			CSVWriter csvwriter(filename);
-			log_layer_variance_epoch_csvwriter_ = csvwriter;
+			log_module_variance_epoch_csvwriter_ = csvwriter;
 		}
 		return true;
 	}
@@ -64,8 +64,8 @@ namespace SmartPeak
 		if (log_nodes_epoch_) {
 			logNodesPerEpoch(model, n_epochs);
 		}
-		if (log_layer_variance_epoch_) {
-			logLayerMeanAndVariancePerEpoch(model, n_epochs);
+		if (log_module_variance_epoch_) {
+			logModuleMeanAndVariancePerEpoch(model, n_epochs);
 		}
 		return true;
 	}
@@ -145,21 +145,74 @@ namespace SmartPeak
 		return true;
 	}
 
-	bool ModelLogger::logLayerMeanAndVariancePerEpoch(const Model & model, const int & n_epoch)
+	bool ModelLogger::logModuleMeanAndVariancePerEpoch(const Model & model, const int & n_epoch)
 	{
+		// make a map of all modules/nodes in the model
+		if (module_to_node_names_.size() == 0) {
+			module_to_node_names_ = model.getModuleNodeNameMap();
+			module_to_node_names_.erase("");
+		}
+
+		int batch_size = 0;
+		int memory_size = 0;
+		for (const auto& module_to_node_names : module_to_node_names_) {
+			batch_size = model.getNode(module_to_node_names.second.back()).getOutput().dimension(0);
+			memory_size = model.getNode(module_to_node_names.second.back()).getOutput().dimension(1);
+		}
+
 		// writer header
-		if (log_layer_variance_epoch_csvwriter_.getLineCount() == 0) {
+		if (log_module_variance_epoch_csvwriter_.getLineCount() == 0) {
 			std::vector<std::string> headers = { "Epoch" };
-			// [TODO: loop through FP layer cache]
-			// [TODO: loop through BP layer cache]
-			log_layer_variance_epoch_csvwriter_.writeDataInRow(headers.begin(), headers.end());
+			for (const auto& module_to_node_names : module_to_node_names_) {
+				for (size_t batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
+					for (size_t memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
+						std::string mod_output_mean = module_to_node_names.first + "_Output_Mean_Batch-" + std::to_string(batch_iter) + "_Memory-" + std::to_string(memory_iter);
+						headers.push_back(mod_output_mean);
+						std::string mod_output_var = module_to_node_names.first + "_Output_Var_Batch-" + std::to_string(batch_iter) + "_Memory-" + std::to_string(memory_iter);
+						headers.push_back(mod_output_var);
+						std::string mod_error_mean = module_to_node_names.first + "_Error_Mean_Batch-" + std::to_string(batch_iter) + "_Memory-" + std::to_string(memory_iter);
+						headers.push_back(mod_error_mean);
+						std::string mod_error_var = module_to_node_names.first + "_Error_Var_Batch-" + std::to_string(batch_iter) + "_Memory-" + std::to_string(memory_iter);
+						headers.push_back(mod_error_var);
+					}
+				}
+			}
+			log_module_variance_epoch_csvwriter_.writeDataInRow(headers.begin(), headers.end());
 		}
 
 		// write next entry
 		std::vector<std::string> line = { std::to_string(n_epoch)};
-		// [TODO: loop through FP layer cache]
-		// [TODO: loop through BP layer cache]
-		log_layer_variance_epoch_csvwriter_.writeDataInRow(line.begin(), line.end());
+		for (const auto& module_to_node_names : module_to_node_names_) {
+			// calculate the means
+			Eigen::Tensor<float, 2> mean_output(batch_size, memory_size), mean_error(batch_size, memory_size), constant(batch_size, memory_size);
+			constant.setConstant(module_to_node_names.second.size());
+			for (const std::string& node_name : module_to_node_names.second) {
+				mean_output += model.getNode(node_name).getOutput();
+				mean_error += model.getNode(node_name).getError();
+			}
+			mean_output /= constant;
+			mean_error /= constant;
+
+			// calculate the variances
+			Eigen::Tensor<float, 2> variance_output(batch_size, memory_size), variance_error(batch_size, memory_size);
+			for (const std::string& node_name : module_to_node_names.second) {
+				auto diff_output = model.getNode(node_name).getOutput() - mean_output;
+				variance_output += diff_output * diff_output;
+				auto diff_error = model.getNode(node_name).getError() - mean_error;
+				variance_error += diff_error * diff_error;
+			}
+			variance_output /= constant;
+			variance_error /= constant;
+
+			for (size_t batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
+				for (size_t memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
+					line.push_back(std::to_string(mean_output(batch_iter, memory_iter)));
+					line.push_back(std::to_string(variance_output(batch_iter, memory_iter)));
+					line.push_back(std::to_string(mean_error(batch_iter, memory_iter)));
+					line.push_back(std::to_string(variance_error(batch_iter, memory_iter)));
+				}
+			}
+		log_module_variance_epoch_csvwriter_.writeDataInRow(line.begin(), line.end());
 		return true;
 	}
 }

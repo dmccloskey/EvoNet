@@ -544,9 +544,9 @@ public:
     void addNodes(const std::vector<Node>& nodes);
     Node getNode(const std::string& node_name) const; ///< node getter
     std::vector<Node> getNodes() const; ///< nodes getter
-    std::vector<std::string> getNodeIDs(const NodeStatus& node_status) const; ///< node getter (TODO)
-    std::vector<std::string> getNodeIDs(const NodeType& node_type) const; ///< node getter (TODO)
- 
+		std::map<std::string, std::shared_ptr<Node>> getNodesMap();  ///< return a modifiable version of weights
+		std::map<std::string, std::vector<std::string>> getModuleNodeNameMap() const; ///< return a map of modules to a vector of node names [TODO: test!]
+
     /**
       @brief Remove existing nodes from the model.
 

@@ -125,6 +125,24 @@ namespace SmartPeak
     return nodes;
   }
 
+	std::map<std::string, std::shared_ptr<Node>> Model::getNodesMap()
+	{
+		return nodes_;
+	}
+
+	std::map<std::string, std::vector<std::string>> Model::getModuleNodeNameMap() const
+	{
+		std::map<std::string, std::vector<std::string>> module_to_node_names;
+		for (const auto& node_map : nodes_) {
+			std::vector<std::string> node_names = { node_map.first };
+			auto found = module_to_node_names.emplace(node_map.second->getModuleName(), node_names);
+			if (!found.second) {
+				module_to_node_names.at(node_map.second->getModuleName()).push_back(node_map.first);
+			}
+		}
+		return module_to_node_names;
+	}
+
   void Model::removeNodes(const std::vector<std::string>& node_names)
   { 
     for (const std::string& node_name: node_names)
