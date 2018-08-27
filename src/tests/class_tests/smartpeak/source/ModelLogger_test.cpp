@@ -138,6 +138,32 @@ BOOST_AUTO_TEST_CASE(logModuleMeanAndVariancePerEpoch)
 	// [TODO: read in and check]
 }
 
+BOOST_AUTO_TEST_CASE(logWeightsPerEpoch)
+{
+	// make the model
+	ModelBuilder model_builder;
+	Model model;
+	model.setName("Model1");
+	std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input", 2);
+	node_names = model_builder.addFullyConnected(model, "Hidden", "Mod1", node_names,
+		2, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
+		std::shared_ptr<IntegrationOp<float>>(new ProdOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new ProdErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new ProdWeightGradOp<float>()),
+		std::shared_ptr<WeightInitOp>(new ConstWeightInitOp(1.0)), std::shared_ptr<SolverOp>(new SGDOp(0.1, 0.9)));
+
+	int batch_size = 2;
+	int memory_size = 1;
+	model.initNodes(batch_size, memory_size + 1);
+	model.initWeights();
+
+	ModelLogger model_logger(false, false, false, true, false, false);
+	model_logger.initLogs(model);
+
+	model_logger.logWeightsPerEpoch(model, 0);
+	model_logger.logWeightsPerEpoch(model, 1);
+
+	// [TODO: read in and check]
+}
+
 BOOST_AUTO_TEST_CASE(writeLogs)
 {
 	Model model;

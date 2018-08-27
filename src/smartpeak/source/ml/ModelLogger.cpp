@@ -163,6 +163,24 @@ namespace SmartPeak
 
 	bool ModelLogger::logWeightsPerEpoch(const Model & model, const int & n_epoch)
 	{
+		std::vector<Weight> weights = model.getWeights(); // kind of slow
+
+		// write headers
+		if (log_weights_epoch_csvwriter_.getLineCount() == 0) {
+			std::vector<std::string> headers = { "Epoch" };
+			for (const Weight& weight : weights) {
+				headers.push_back(weight.getName());
+			}
+			log_weights_epoch_csvwriter_.writeDataInRow(headers.begin(), headers.end());
+		}
+
+		// write the next entry
+		std::vector<std::string> line = { std::to_string(n_epoch) };
+		for (const Weight& weight : weights) {
+			line.push_back(std::to_string(weight.getWeight()));
+		}
+		log_weights_epoch_csvwriter_.writeDataInRow(line.begin(), line.end());
+
 		return true;
 	}
 
