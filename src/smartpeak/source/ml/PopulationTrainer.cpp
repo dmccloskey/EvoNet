@@ -7,9 +7,6 @@
 #include <SmartPeak/io/NodeFile.h>
 #include <SmartPeak/io/ModelFile.h>
 
-#include <random> // random number generator
-#include <ctime> // time format
-#include <chrono> // current time
 #include <algorithm> // tokenizing
 #include <regex> // tokenizing
 #include <utility>
@@ -87,6 +84,7 @@ namespace SmartPeak
 	std::vector<std::pair<int, float>> PopulationTrainer::selectModels(
     std::vector<Model>& models,
     ModelTrainer& model_trainer,
+		ModelLogger& model_logger,
     const Eigen::Tensor<float, 4>& input,
     const Eigen::Tensor<float, 4>& output,
     const Eigen::Tensor<float, 3>& time_steps,
@@ -110,6 +108,7 @@ namespace SmartPeak
       std::packaged_task<std::pair<int, float> // encapsulate in a packaged_task
         (Model*,
           ModelTrainer*,
+					ModelLogger*,
           Eigen::Tensor<float, 4>,
           Eigen::Tensor<float, 4>,
           Eigen::Tensor<float, 3>,
@@ -120,7 +119,7 @@ namespace SmartPeak
       // launch the thread
       task_results.push_back(task.get_future());
       std::thread task_thread(std::move(task),
-        &models[i], &model_trainer, 
+        &models[i], &model_trainer, &model_logger,
         std::ref(input), std::ref(output), std::ref(time_steps), 
         std::ref(input_nodes), std::ref(output_nodes));
       task_thread.detach();
@@ -193,6 +192,7 @@ namespace SmartPeak
   std::pair<int, float> PopulationTrainer::validateModel_(
     Model* model,
     ModelTrainer* model_trainer,
+		ModelLogger* model_logger,
     const Eigen::Tensor<float, 4>& input,
     const Eigen::Tensor<float, 4>& output,
     const Eigen::Tensor<float, 3>& time_steps,
@@ -205,7 +205,7 @@ namespace SmartPeak
     {
       std::vector<float> model_errors = model_trainer->validateModel(
         *model, input, output, time_steps,
-        input_nodes, output_nodes);
+        input_nodes, output_nodes, *model_logger);
       float model_ave_error = 1e6;
       if (model_errors.size()>0)
         model_ave_error = std::accumulate(model_errors.begin(), model_errors.end(), 0.0)/model_errors.size();
@@ -385,6 +385,7 @@ namespace SmartPeak
   void PopulationTrainer::trainModels(
     std::vector<Model>& models,
     ModelTrainer& model_trainer,
+		ModelLogger& model_logger,
     const Eigen::Tensor<float, 4>& input,
     const Eigen::Tensor<float, 4>& output,
     const Eigen::Tensor<float, 3>& time_steps,
@@ -415,6 +416,7 @@ namespace SmartPeak
       std::packaged_task<std::pair<bool, Model> // encapsulate in a packaged_task
         (Model*,
           ModelTrainer*,
+					ModelLogger*,
           Eigen::Tensor<float, 4>,
           Eigen::Tensor<float, 4>,
           Eigen::Tensor<float, 3>,
@@ -425,7 +427,7 @@ namespace SmartPeak
       // launch the thread
       task_results.push_back(task.get_future());
       std::thread task_thread(std::move(task),
-        &models[i], &model_trainer, 
+        &models[i], &model_trainer, &model_logger,
         std::ref(input), std::ref(output), std::ref(time_steps), 
         std::ref(input_nodes), std::ref(output_nodes));
       task_thread.detach();
@@ -483,6 +485,7 @@ namespace SmartPeak
   std::pair<bool, Model> PopulationTrainer::trainModel_(
     Model* model,
     ModelTrainer* model_trainer,
+		ModelLogger* model_logger,
     const Eigen::Tensor<float, 4>& input,
     const Eigen::Tensor<float, 4>& output,
     const Eigen::Tensor<float, 3>& time_steps,
@@ -496,7 +499,7 @@ namespace SmartPeak
     {
       model_trainer->trainModel(
         model_copy, input, output, time_steps,
-        input_nodes, output_nodes);
+        input_nodes, output_nodes, *model_logger);
       return std::make_pair(true, model_copy);
     }
     catch (std::exception& e)
@@ -522,6 +525,7 @@ namespace SmartPeak
 		ModelTrainer & model_trainer,
 		ModelReplicator & model_replicator,
 		DataSimulator& data_simulator,
+		ModelLogger& model_logger,
 		const std::vector<std::string>& input_nodes,
 		const std::vector<std::string>& output_nodes,
 		int n_threads)
@@ -554,13 +558,13 @@ namespace SmartPeak
 
 			// train the population
 			std::cout << "Training the models..." << std::endl;
-		  trainModels(models, model_trainer,
+		  trainModels(models, model_trainer, model_logger,
 				input_data_training, output_data_training, time_steps_training, input_nodes, output_nodes, n_threads);
 
 			// select the top N from the population
 			std::cout << "Selecting the models..." << std::endl;
 			std::vector<std::pair<int, float>> models_validation_errors = selectModels(
-				models, model_trainer,
+				models, model_trainer, model_logger,
 				input_data_validation, output_data_validation, time_steps_validation, input_nodes, output_nodes, n_threads);
 			models_validation_errors_per_generation.push_back(models_validation_errors);
 

@@ -446,7 +446,7 @@ BOOST_AUTO_TEST_CASE(trainModels)
       for (int epochs_iter=0; epochs_iter<model_trainer.getNEpochsTraining(); ++epochs_iter)
         time_steps(batch_iter, memory_iter, epochs_iter) = time_steps_tmp(batch_iter, memory_iter);
 
-  population_trainer.trainModels(population, model_trainer,
+  population_trainer.trainModels(population, model_trainer, ModelLogger(),
     input_data, output_data, time_steps, input_nodes, output_nodes);
 
   BOOST_CHECK_EQUAL(population.size(), 4); // broken models should still be there
@@ -472,7 +472,11 @@ BOOST_AUTO_TEST_CASE(exampleUsage)
   model_trainer.setBatchSize(5);
   model_trainer.setMemorySize(8);
   model_trainer.setNEpochsTraining(500);
-	model_trainer.setNEpochsValidation(1);
+	model_trainer.setNEpochsValidation(0);
+	model_trainer.setLogging(false, false);
+
+	// define the model logger
+	ModelLogger model_logger;
 
   // Toy data set used for all tests
 	DataSimulatorExt data_simulator;
@@ -515,7 +519,7 @@ BOOST_AUTO_TEST_CASE(exampleUsage)
 
 	// Evolve the population
 	std::vector<std::vector<std::pair<int, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
-		population, model_trainer, model_replicator, data_simulator, input_nodes, output_nodes, 2);
+		population, model_trainer, model_replicator, data_simulator, model_logger, input_nodes, output_nodes, 2);
 
 	PopulationTrainerFile population_trainer_file;
 	population_trainer_file.storeModels(population, "populationTrainer");

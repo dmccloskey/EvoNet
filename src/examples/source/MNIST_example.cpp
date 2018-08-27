@@ -461,6 +461,10 @@ void main_EvoNet() {
 	model_trainer.setMemorySize(1);
 	model_trainer.setNEpochsTraining(50);
 	model_trainer.setNEpochsValidation(50);
+	model_trainer.setLogging(false, false);
+
+	// define the model logger
+	ModelLogger model_logger;
 
 	// define the data simulator
 	const std::size_t input_size = 784;
@@ -521,7 +525,7 @@ void main_EvoNet() {
 
 	// Evolve the population
 	std::vector<std::vector<std::pair<int, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
-		population, model_trainer, model_replicator, data_simulator, input_nodes, output_nodes, n_threads);
+		population, model_trainer, model_replicator, data_simulator, model_logger, input_nodes, output_nodes, n_threads);
 
 	PopulationTrainerFile population_trainer_file;
 	population_trainer_file.storeModels(population, "SequencialMNIST");
@@ -547,6 +551,10 @@ void main_Classifier() {
 	model_trainer.setNEpochsValidation(10);
 	model_trainer.setVerbosityLevel(2);
 	model_trainer.setNThreads(n_hard_threads);
+	model_trainer.setLogging(true, false);
+
+	// define the model logger
+	ModelLogger model_logger(true, true, false, false, false, false);
 
 	// define the data simulator
 	const std::size_t input_size = 784;
@@ -591,7 +599,7 @@ void main_Classifier() {
 
 	// Evolve the population
 	std::vector<std::vector<std::pair<int, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
-		population, model_trainer, model_replicator, data_simulator, input_nodes, output_nodes, 1);
+		population, model_trainer, model_replicator, data_simulator, model_logger, input_nodes, output_nodes, 1);
 
 	PopulationTrainerFile population_trainer_file;
 	population_trainer_file.storeModels(population, "MNIST");

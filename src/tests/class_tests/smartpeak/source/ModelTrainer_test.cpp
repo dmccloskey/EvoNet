@@ -47,11 +47,14 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   trainer.setMemorySize(1);
   trainer.setNEpochsTraining(100);
 	trainer.setNEpochsValidation(10);
+	trainer.setVerbosityLevel(1);
+	trainer.setLogging(true, true);
 
   BOOST_CHECK_EQUAL(trainer.getBatchSize(), 4);
   BOOST_CHECK_EQUAL(trainer.getMemorySize(), 1);
   BOOST_CHECK_EQUAL(trainer.getNEpochsTraining(), 100);
 	BOOST_CHECK_EQUAL(trainer.getNEpochsValidation(), 10);
+	BOOST_CHECK_EQUAL(trainer.getVerbosityLevel(), 1);
 }
 
 BOOST_AUTO_TEST_CASE(checkInputData) 
@@ -213,6 +216,8 @@ BOOST_AUTO_TEST_CASE(DAGToy)
   trainer.setMemorySize(1);
   trainer.setNEpochsTraining(20);
 	trainer.setNEpochsValidation(20);
+	trainer.setNThreads(1);
+	trainer.setLogging(false, false);
   const std::vector<std::string> input_nodes = {"0", "1", "6", "7"}; // true inputs + biases
   const std::vector<std::string> output_nodes = {"4", "5"};
 
@@ -259,7 +264,7 @@ BOOST_AUTO_TEST_CASE(DAGToy)
 
   Model model1 = trainer.makeModel();
   trainer.trainModel(model1, input_data, output_data, time_steps,
-    input_nodes, output_nodes);
+    input_nodes, output_nodes, ModelLogger());
 
   const Eigen::Tensor<float, 0> total_error = model1.getError().sum();
   BOOST_CHECK(total_error(0) < 30.0);  
@@ -388,7 +393,7 @@ BOOST_AUTO_TEST_CASE(DCGToy)
   Model model1 = trainer.makeModel();
 
   trainer.trainModel(model1, input_data, output_data, time_steps,
-    input_nodes, output_nodes);
+    input_nodes, output_nodes, ModelLogger());
 
   const Eigen::Tensor<float, 0> total_error = model1.getError().sum();
   BOOST_CHECK(total_error(0) < 35.8);  

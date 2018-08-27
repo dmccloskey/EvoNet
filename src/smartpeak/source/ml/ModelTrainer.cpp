@@ -39,6 +39,12 @@ namespace SmartPeak
 		verbosity_level_ = verbosity_level;
 	}
 
+	void ModelTrainer::setLogging(const bool& log_training, const bool& log_validation)
+	{
+		log_training_ = log_training;
+		log_validation_ = log_validation;
+	}
+
   int ModelTrainer::getBatchSize() const
   {
     return batch_size_;
@@ -154,7 +160,8 @@ namespace SmartPeak
 			return true;
 		}
 	}
-	std::vector<float> ModelTrainer::trainModel(Model & model, const Eigen::Tensor<float, 4>& input, const Eigen::Tensor<float, 4>& output, const Eigen::Tensor<float, 3>& time_steps, const std::vector<std::string>& input_nodes, const std::vector<std::string>& output_nodes)
+	std::vector<float> ModelTrainer::trainModel(Model & model, const Eigen::Tensor<float, 4>& input, const Eigen::Tensor<float, 4>& output, const Eigen::Tensor<float, 3>& time_steps, const std::vector<std::string>& input_nodes, const std::vector<std::string>& output_nodes,
+		ModelLogger& model_logger)
 	{
 		std::vector<float> model_error;
 
@@ -185,6 +192,10 @@ namespace SmartPeak
 		model.clearCache();
 		model.initNodes(getBatchSize(), getMemorySize() + 1); // The first time point = 0
 		model.findCyclicPairs();
+
+		// Initialize the logger
+		if (log_training_)
+			model_logger.initLogs(model);
 
 		for (int iter = 0; iter < getNEpochsTraining(); ++iter) // use n_epochs here
 		{
@@ -225,6 +236,9 @@ namespace SmartPeak
 			else
 				model.TBPTT(getMemorySize(), false, true, getNThreads());
 
+			// update the weights
+			model.updateWeights(getMemorySize());
+
 			if (getVerbosityLevel() >= 3)
 			{
 				for (const Node& node : model.getNodes())
@@ -238,8 +252,11 @@ namespace SmartPeak
 					std::cout << weight.getName() << " Weight: " << weight.getWeight() << std::endl;
 			}
 
-			// update the weights
-			model.updateWeights(getMemorySize());
+			// log epoch
+			if (log_training_) {
+				const Eigen::Tensor<float, 3> expected_values = output.chip(iter, 3);
+				model_logger.writeLogs(model, iter, { "Error" }, {}, { total_error(0) }, {}, output_nodes, expected_values);
+			}
 
 			// reinitialize the model
 			model.reInitializeNodeStatuses();
@@ -250,7 +267,8 @@ namespace SmartPeak
 		return model_error;
 	}
 
-	std::vector<float> ModelTrainer::validateModel(Model & model, const Eigen::Tensor<float, 4>& input, const Eigen::Tensor<float, 4>& output, const Eigen::Tensor<float, 3>& time_steps, const std::vector<std::string>& input_nodes, const std::vector<std::string>& output_nodes)
+	std::vector<float> ModelTrainer::validateModel(Model & model, const Eigen::Tensor<float, 4>& input, const Eigen::Tensor<float, 4>& output, const Eigen::Tensor<float, 3>& time_steps, const std::vector<std::string>& input_nodes, const std::vector<std::string>& output_nodes,
+		ModelLogger& model_logger)
 	{
 		std::vector<float> model_error;
 
@@ -282,6 +300,10 @@ namespace SmartPeak
 		model.initNodes(getBatchSize(), getMemorySize() + 1); // The first time point = 0
 		model.findCyclicPairs();
 
+		// Initialize the logger
+		if (log_validation_)
+			model_logger.initLogs(model);
+
 		for (int iter = 0; iter < getNEpochsValidation(); ++iter) // use n_epochs here
 		{
 
@@ -301,6 +323,12 @@ namespace SmartPeak
 			model_error.push_back(total_error(0));
 			if (getVerbosityLevel() >= 1)
 				std::cout << "Model " << model.getName() << " error: " << total_error(0) << std::endl;
+
+			// log epoch
+			if (log_validation_) {
+				const Eigen::Tensor<float, 3> expected_values = output.chip(iter, 3);
+				model_logger.writeLogs(model, iter, {}, { "Error" }, {}, { total_error(0) }, output_nodes, expected_values);
+			}
 
 			// reinitialize the model
 			model.reInitializeNodeStatuses();

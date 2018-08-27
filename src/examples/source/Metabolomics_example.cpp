@@ -659,6 +659,10 @@ void main_classification()
 	model_trainer.setNEpochsValidation(100);
 	model_trainer.setNThreads(n_hard_threads); // [TODO: change back to 2!]
 	model_trainer.setVerbosityLevel(1);
+	model_trainer.setLogging(false, false);
+
+	// define the model logger
+	ModelLogger model_logger;
 
 	// initialize the model replicator
 	ModelReplicatorExt model_replicator;
@@ -676,7 +680,7 @@ void main_classification()
 
 	// Evolve the population
 	std::vector<std::vector<std::pair<int, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
-		population, model_trainer, model_replicator, metabolomics_data, input_nodes, output_nodes, n_threads);
+		population, model_trainer, model_replicator, metabolomics_data, model_logger, input_nodes, output_nodes, n_threads);
 
 	PopulationTrainerFile population_trainer_file;
 	population_trainer_file.storeModels(population, "Metabolomics");
@@ -733,6 +737,10 @@ void main_reconstruction()
 	model_trainer.setNEpochsValidation(10);
 	model_trainer.setNThreads(n_hard_threads); // [TODO: change back to 2!]
 	model_trainer.setVerbosityLevel(1);
+	model_trainer.setLogging(false, false);
+
+	// define the model logger
+	ModelLogger model_logger;
 
 	// initialize the model replicator
 	ModelReplicatorExt model_replicator;
@@ -770,7 +778,7 @@ void main_reconstruction()
 
 	// Evolve the population
 	std::vector<std::vector<std::pair<int, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
-		population, model_trainer, model_replicator, metabolomics_data, input_nodes, output_nodes, n_threads);
+		population, model_trainer, model_replicator, metabolomics_data, model_logger, input_nodes, output_nodes, n_threads);
 
 	PopulationTrainerFile population_trainer_file;
 	population_trainer_file.storeModels(population, "Metabolomics");
