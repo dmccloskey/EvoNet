@@ -43,7 +43,8 @@ namespace SmartPeak
 			const Eigen::Tensor<T, 0> min_value = data.minimum();
 			unit_scale_ = 1 / sqrt(pow(max_value(0) - min_value(0), 2));
 		}
-		T operator()(const T& x_I) const { return x_I / unit_scale_; };
+		T getUnitScale() { return unit_scale_; }
+		T operator()(const T& x_I) const { return x_I * unit_scale_; };
 	private:
 		T unit_scale_;
 	};
