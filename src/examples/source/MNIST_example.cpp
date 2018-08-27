@@ -549,12 +549,12 @@ void main_Classifier() {
 	model_trainer.setMemorySize(1);
 	model_trainer.setNEpochsTraining(500);
 	model_trainer.setNEpochsValidation(10);
-	model_trainer.setVerbosityLevel(2);
+	model_trainer.setVerbosityLevel(1);
 	model_trainer.setNThreads(n_hard_threads);
 	model_trainer.setLogging(true, false);
 
 	// define the model logger
-	ModelLogger model_logger(true, true, false, false, false, false);
+	ModelLogger model_logger(true, true, true, false, false, true);
 
 	// define the data simulator
 	const std::size_t input_size = 784;

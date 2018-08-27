@@ -121,16 +121,42 @@ namespace SmartPeak
 
 	bool ModelLogger::logExpectedAndPredictedOutputPerEpoch(const Model & model, const std::vector<std::string>& output_node_names, const Eigen::Tensor<float, 3>& expected_values, const int & n_epoch)
 	{
+		int batch_size = 0;
+		int memory_size = 0;
+		for (const std::string& node_name : output_node_names) {
+			batch_size = model.getNode(node_name).getOutput().dimension(0);
+			memory_size = model.getNode(node_name).getOutput().dimension(1) - 1;
+		}
+
 		// writer header
-		std::vector<std::string> headers = { "Epoch" };
-		for (const std::string& node_name : output_node_names)
-			headers.push_back(node_name); // [TODO: need to iterate for each batch and for each time_step]
-		log_expected_predicted_epoch_csvwriter_.writeDataInRow(headers.begin(), headers.end());
+		if (log_expected_predicted_epoch_csvwriter_.getLineCount() == 0) {
+			std::vector<std::string> headers = { "Epoch" };
+			for (const std::string& node_name : output_node_names) {
+				for (size_t batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
+					for (size_t memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
+						std::string predicted = node_name + "_Predicted_Batch-" + std::to_string(batch_iter) + "_Memory-" + std::to_string(memory_iter);
+						headers.push_back(predicted);
+						std::string expected = node_name + "_Expected_Batch-" + std::to_string(batch_iter) + "_Memory-" + std::to_string(memory_iter);
+						headers.push_back(expected);
+					}
+				}
+			}
+			log_expected_predicted_epoch_csvwriter_.writeDataInRow(headers.begin(), headers.end());
+		}
 
 		// write next entry
 		std::vector<std::string> line = { std::to_string(n_epoch) };
-		//for (const std::string& node_name : output_node_names)
-		//	line.push_back(model.getNode(node_name).getOutput()); // [TODO: need to iterate for each batch and for each time_step]
+		int node_cnt = 0;
+		for (const std::string& node_name : output_node_names) {
+			for (size_t batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
+				for (size_t memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
+					int next_time_step = expected_values.dimension(1) - 1 - memory_iter;
+					line.push_back(std::to_string(model.getNode(node_name).getOutput()(batch_iter,memory_iter)));
+					line.push_back(std::to_string(expected_values(batch_iter, next_time_step, node_cnt)));
+				}
+			}
+			++node_cnt;
+		}
 		log_expected_predicted_epoch_csvwriter_.writeDataInRow(line.begin(), line.end());
 		return true;
 	}
@@ -150,6 +176,8 @@ namespace SmartPeak
 		// make a map of all modules/nodes in the model
 		if (module_to_node_names_.size() == 0) {
 			module_to_node_names_ = model.getModuleNodeNameMap();
+
+			// prune nodes not in a module
 			module_to_node_names_.erase("");
 		}
 
@@ -157,7 +185,7 @@ namespace SmartPeak
 		int memory_size = 0;
 		for (const auto& module_to_node_names : module_to_node_names_) {
 			batch_size = model.getNode(module_to_node_names.second.back()).getOutput().dimension(0);
-			memory_size = model.getNode(module_to_node_names.second.back()).getOutput().dimension(1);
+			memory_size = model.getNode(module_to_node_names.second.back()).getOutput().dimension(1) - 1;
 		}
 
 		// writer header
@@ -183,23 +211,33 @@ namespace SmartPeak
 		// write next entry
 		std::vector<std::string> line = { std::to_string(n_epoch)};
 		for (const auto& module_to_node_names : module_to_node_names_) {
-			// calculate the means
-			Eigen::Tensor<float, 2> mean_output(batch_size, memory_size), mean_error(batch_size, memory_size), constant(batch_size, memory_size);
-			constant.setConstant(module_to_node_names.second.size());
+			// calculate the means (excluding biases)
+			Eigen::Tensor<float, 2> mean_output(batch_size, memory_size + 1), mean_error(batch_size, memory_size + 1), constant(batch_size, memory_size + 1);
+			mean_output.setConstant(0.0f);
+			mean_error.setConstant(0.0f);
+			int nodes_cnt = 0;
 			for (const std::string& node_name : module_to_node_names.second) {
-				mean_output += model.getNode(node_name).getOutput();
-				mean_error += model.getNode(node_name).getError();
+				if (model.getNode(node_name).getType() != NodeType::bias) {
+					mean_output += model.getNode(node_name).getOutput();
+					mean_error += model.getNode(node_name).getError();
+					++nodes_cnt;
+				}
 			}
+			constant.setConstant(nodes_cnt);
 			mean_output /= constant;
 			mean_error /= constant;
 
-			// calculate the variances
-			Eigen::Tensor<float, 2> variance_output(batch_size, memory_size), variance_error(batch_size, memory_size);
+			// calculate the variances (excluding biases)
+			Eigen::Tensor<float, 2> variance_output(batch_size, memory_size + 1), variance_error(batch_size, memory_size + 1);
+			variance_output.setConstant(0.0f);
+			variance_error.setConstant(0.0f);
 			for (const std::string& node_name : module_to_node_names.second) {
-				auto diff_output = model.getNode(node_name).getOutput() - mean_output;
-				variance_output += diff_output * diff_output;
-				auto diff_error = model.getNode(node_name).getError() - mean_error;
-				variance_error += diff_error * diff_error;
+				if (model.getNode(node_name).getType() != NodeType::bias) {
+					auto diff_output = model.getNode(node_name).getOutput() - mean_output;
+					variance_output += (diff_output * diff_output);
+					auto diff_error = model.getNode(node_name).getError() - mean_error;
+					variance_error += (diff_error * diff_error);
+				}
 			}
 			variance_output /= constant;
 			variance_error /= constant;
@@ -212,6 +250,7 @@ namespace SmartPeak
 					line.push_back(std::to_string(variance_error(batch_iter, memory_iter)));
 				}
 			}
+		}
 		log_module_variance_epoch_csvwriter_.writeDataInRow(line.begin(), line.end());
 		return true;
 	}

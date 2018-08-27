@@ -3,7 +3,7 @@
 #define BOOST_TEST_MODULE ModelLogger test suite 
 #include <boost/test/included/unit_test.hpp>
 #include <SmartPeak/ml/ModelLogger.h>
-#include <SmartPeak/core/StringParsing.h>
+#include <SmartPeak/ml/ModelBuilder.h>
 
 #include <iostream>
 
@@ -86,6 +86,54 @@ BOOST_AUTO_TEST_CASE(logTrainValMetricsPerEpoch)
 	training_metrics = { 1.0f };
 	validation_metrics = { 1.1f };
 	model_logger.logTrainValMetricsPerEpoch(model, training_metric_names, validation_metric_names, training_metrics, validation_metrics, 1);
+
+	// [TODO: read in and check]
+}
+
+BOOST_AUTO_TEST_CASE(logExpectedAndPredictedOutputPerEpoch)
+{
+	// make the model
+	ModelBuilder model_builder;
+	Model model;
+	model.setName("Model1");
+	std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input", 2);
+	std::vector<std::string> node_names_test = { "Input_0", "Input_1" };
+	int batch_size = 2;
+	int memory_size = 1;
+	model.initNodes(batch_size, memory_size + 1);
+	Eigen::Tensor<float, 3> expected_values(batch_size, memory_size, (int)node_names.size());
+	expected_values.setConstant(2.0f);
+
+	ModelLogger model_logger(false, false, true, false, false, false);
+	model_logger.initLogs(model);
+
+	model_logger.logExpectedAndPredictedOutputPerEpoch(model, node_names, expected_values, 0);
+	model_logger.logExpectedAndPredictedOutputPerEpoch(model, node_names, expected_values, 1);
+
+	// [TODO: read in and check]
+}
+
+BOOST_AUTO_TEST_CASE(logModuleMeanAndVariancePerEpoch)
+{
+	// make the model
+	ModelBuilder model_builder;
+	Model model;
+	model.setName("Model1");
+	std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input", 2);
+	node_names = model_builder.addFullyConnected(model, "Hidden", "Mod1", node_names,
+		2, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
+		std::shared_ptr<IntegrationOp<float>>(new ProdOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new ProdErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new ProdWeightGradOp<float>()),
+		std::shared_ptr<WeightInitOp>(new ConstWeightInitOp(1.0)), std::shared_ptr<SolverOp>(new SGDOp(0.1, 0.9)));
+
+	int batch_size = 2;
+	int memory_size = 1;
+	model.initNodes(batch_size, memory_size + 1);
+
+	ModelLogger model_logger(false, false, false, false, false, true);
+	model_logger.initLogs(model);
+
+	model_logger.logModuleMeanAndVariancePerEpoch(model, 0);
+	model_logger.logModuleMeanAndVariancePerEpoch(model, 1);
 
 	// [TODO: read in and check]
 }
