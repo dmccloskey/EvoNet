@@ -84,6 +84,53 @@ public:
 	};
 
 	/**
+		@brief Mean integration function
+	*/
+	template<typename T>
+	class MeanOp : public IntegrationOp<T>
+	{
+	public:
+		MeanOp() {};
+		void initNetNodeInput(const int& batch_size) {
+			Eigen::Tensor<T, 1> net_node_input(batch_size);
+			net_node_input.setConstant(0);
+			this->setNetNodeInput(net_node_input);
+			n_ = 0;
+		}
+		~MeanOp() {};
+		Eigen::Tensor<T, 1> getNetNodeInput() const { return this->net_node_input_/n_; }
+		void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>&source_output) { 
+			this->net_node_input_ += weight * source_output; 
+			++n_;
+		};
+		std::string getName() const { return "MeanOp"; };
+	private:
+		int n_ = 0;
+	};
+
+	/**
+		@brief Count integration function
+	*/
+	template<typename T>
+	class CountOp : public IntegrationOp<T>
+	{
+	public:
+		CountOp() {};
+		void initNetNodeInput(const int& batch_size) {
+			Eigen::Tensor<T, 1> net_node_input(batch_size);
+			net_node_input.setConstant(0);
+			this->setNetNodeInput(net_node_input);
+		}
+		~CountOp() {};
+		void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>&source_output) { 
+			Eigen::Tensor<T, 1> one(source_output.dimension(0));
+			one.setConstant(1.0f);
+			this->net_node_input_ += one; 
+		};
+		std::string getName() const { return "CountOp"; };
+	};
+
+	/**
 	@brief Base class for all integration error functions.
 	*/
 	template<typename T>
