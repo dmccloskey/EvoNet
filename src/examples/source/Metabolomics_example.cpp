@@ -633,6 +633,7 @@ PWData PWComparison(MetDataSimClassification& metabolomics_data, const std::vect
 	for (const std::string& mar : metabolomics_data.reaction_ids_) {
 		for (size_t sgn1_iter = 0; sgn1_iter < sample_names.size(); ++sgn1_iter) {
 			for (size_t sgn2_iter = sgn1_iter + 1; sgn2_iter < sample_names.size(); ++sgn2_iter) {
+				std::cout << "MAR: " << mar << " Sample1: " << sgn1_iter << " Sample2: " << sgn2_iter << std::endl;
 
 				// initialize the data struct
 				PWStats pw_stats;
@@ -858,9 +859,9 @@ bool ExportPWData(const std::string& filename, const PWData& pw_data) {
 void main_statistics()
 {
 	// analyses to run
-	bool run_oneVSone = false;
+	bool run_oneVSone = true;
 	bool run_preVSpost = false;
-	bool run_postMinPre = true;
+	bool run_postMinPre = false;
 	std::string blood_fraction = "PLT";
 
 	// define the data simulator
