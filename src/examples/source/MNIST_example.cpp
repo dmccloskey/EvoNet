@@ -44,15 +44,12 @@ public:
 	References:
 	https://github.com/pytorch/examples/blob/master/mnist/main.py
 	*/
-	Model makeClassifier(const int& n_inputs, const int& n_outputs) {
+	Model makeCovNet(const int& n_inputs, const int& n_outputs) {
 		Model model;
 		model.setId(0);
-		model.setName("Classifier");
+		model.setName("CovNet");
 		model.setLossFunction(std::shared_ptr<LossFunctionOp<float>>(new NegativeLogLikelihoodOp<float>(n_outputs)));
 		model.setLossFunctionGrad(std::shared_ptr<LossFunctionGradOp<float>>(new NegativeLogLikelihoodGradOp<float>(n_outputs)));
-
-		std::shared_ptr<WeightInitOp> weight_init(new RandWeightInitOp(n_inputs));
-		std::shared_ptr<SolverOp> solver(new AdamOp(0.1, 0.9, 0.999, 1e-8));
 
 		ModelBuilder model_builder;
 
@@ -73,7 +70,8 @@ public:
 				std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
 				std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
 				std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-				weight_init, solver, 0.0f, 0.5f);
+				std::shared_ptr<WeightInitOp>(new RandWeightInitOp(n_inputs, 2)),
+				std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.5f);
 			std::string pool_name = "Pool0-" + std::to_string(d);
 			node_names = model_builder.addConvolution(model, pool_name, pool_name, node_names, 
 				sqrt(node_names.size()), sqrt(node_names.size()), 1, 1,
@@ -83,7 +81,8 @@ public:
 				std::shared_ptr<IntegrationOp<float>>(new MaxOp<float>()),
 				std::shared_ptr<IntegrationErrorOp<float>>(new MaxErrorOp<float>()),
 				std::shared_ptr<IntegrationWeightGradOp<float>>(new MaxWeightGradOp<float>()),
-				weight_init, solver);
+				std::shared_ptr<WeightInitOp>(new ConstWeightInitOp(1.0)), 
+				std::shared_ptr<SolverOp>(new DummySolverOp()));
 			node_names_l0.push_back(node_names);
 		}
 
@@ -103,7 +102,8 @@ public:
 					std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
 					std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
 					std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-					weight_init, solver, 0.0f, 0.5f);
+					std::shared_ptr<WeightInitOp>(new RandWeightInitOp(n_inputs, 2)),
+					std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.5f);
 				std::string pool_name = "Pool1-" + std::to_string(l_cnt) + "-" + std::to_string(d);
 				node_names = model_builder.addConvolution(model, pool_name, pool_name, node_names, 
 					sqrt(node_names.size()), sqrt(node_names.size()), 1, 1,
@@ -113,7 +113,8 @@ public:
 					std::shared_ptr<IntegrationOp<float>>(new MaxOp<float>()),
 					std::shared_ptr<IntegrationErrorOp<float>>(new MaxErrorOp<float>()),
 					std::shared_ptr<IntegrationWeightGradOp<float>>(new MaxWeightGradOp<float>()),
-					weight_init, solver);
+					std::shared_ptr<WeightInitOp>(new ConstWeightInitOp(1.0)),
+					std::shared_ptr<SolverOp>(new DummySolverOp()));
 				node_names_l1.push_back(node_names);
 			}
 			++l_cnt;
@@ -135,14 +136,16 @@ public:
 			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
 			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
 			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-			weight_init, solver, 0.0f, 0.5f);
+			std::shared_ptr<WeightInitOp>(new RandWeightInitOp(180, 2)),
+			std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.5f);
 		node_names = model_builder.addFullyConnected(model, "FC1", "FC1", node_names, n_outputs,
 			std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()),
 			std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
 			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
 			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
 			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-			weight_init, solver, 0.0f, 0.2f);
+			std::shared_ptr<WeightInitOp>(new RandWeightInitOp(50, 2)), 
+			std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.2f);
 
 		// Add the final softmax layer
 		node_names = model_builder.addSoftMax(model, "SoftMax", "SoftMax", node_names);
@@ -532,7 +535,7 @@ void main_EvoNet() {
 	population_trainer_file.storeModelValidations("SequencialMNISTErrors.csv", models_validation_errors_per_generation.back());
 
 }
-void main_Classifier() {
+void main_CovNet() {
 
 	const int n_hard_threads = std::thread::hardware_concurrency();
 
@@ -595,7 +598,7 @@ void main_Classifier() {
 
 	// define the initial population [BUG FREE]
 	std::cout << "Initializing the population..." << std::endl;
-	std::vector<Model> population = { model_trainer.makeClassifier(input_nodes.size(), output_nodes.size()) };
+	std::vector<Model> population = { model_trainer.makeCovNet(input_nodes.size(), output_nodes.size()) };
 
 	// Evolve the population
 	std::vector<std::vector<std::pair<int, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
@@ -610,7 +613,7 @@ int main(int argc, char** argv)
 {
 	// run the application
 	//main_EvoNet();
-	main_Classifier();
+	main_CovNet();
 
   return 0;
 }

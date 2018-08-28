@@ -30,7 +30,7 @@ BOOST_AUTO_TEST_CASE(destructorRandWeightInitOp)
 
 BOOST_AUTO_TEST_CASE(operationfunctionRandWeightInitOp) 
 {
-  RandWeightInitOp operation;
+  RandWeightInitOp operation(1.0, 2.0);
   operation = RandWeightInitOp(0);
   BOOST_CHECK_NE(operation(), 0);
   operation = RandWeightInitOp(1);
@@ -45,7 +45,7 @@ BOOST_AUTO_TEST_CASE(settersAndGettersRandWeightInitOp)
 {
   RandWeightInitOp operation;
   BOOST_CHECK_EQUAL(operation.getName(), "RandWeightInitOp");
-  BOOST_CHECK_EQUAL(operation.getParameters(), "n:1.000000");
+  BOOST_CHECK_EQUAL(operation.getParameters(), "n:1.000000;f:1.000000");
 }
 
 /**
