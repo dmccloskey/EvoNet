@@ -406,6 +406,18 @@ namespace SmartPeak
 		setError(init_values);
 	}
 
+	std::pair<int, int> Model::getBatchAndMemorySizes() const
+	{
+		int batch_size = 0;
+		int memory_size = 0;
+		for (const auto& node : nodes_) {
+			batch_size = node.second->getBatchSize();
+			memory_size = node.second->getMemorySize();
+			break;
+		}
+		return std::make_pair(batch_size, memory_size);
+	}
+
   void Model::initWeights()
   {
     for (auto& weight_map : weights_)
@@ -823,14 +835,9 @@ namespace SmartPeak
   {
 
     // get all the information needed to construct the tensors
-    int batch_size = 0;
-    int memory_size = 0;
-    for (const auto& FP_operation : FP_operations)
-    {
-      batch_size = FP_operation.result.sink_node->getOutput().dimension(0);
-      memory_size = FP_operation.result.sink_node->getOutput().dimension(1);
-      break;
-    }
+		std::pair<int, int> bmsizes = getBatchAndMemorySizes();
+    int batch_size = bmsizes.first;
+    int memory_size = bmsizes.second;
 
     // iterate through each sink node and calculate the net input
     // invoke the activation function once the net input is calculated
@@ -1048,9 +1055,10 @@ namespace SmartPeak
 		const int& time_step, bool cache_output_nodes, bool use_cache,
 		int n_threads)
 	{
-		//TODO: encapsulate into a seperate method
 		// infer the batch size from the first source node
-		const int batch_size = nodes_.at(node_names[0])->getOutput().dimension(0);
+		std::pair<int, int> bmsizes = getBatchAndMemorySizes();
+		int batch_size = bmsizes.first;
+		int memory_size = bmsizes.second;
 
 		//TODO: encapsulate into a seperate method
 		// check dimension mismatches
@@ -1429,14 +1437,9 @@ namespace SmartPeak
     const int& time_step, int n_threads)
   {
     // get all the information needed to construct the tensors
-    int batch_size = 0;
-    int memory_size = 0;
-    for (const auto& BP_operation : BP_operations)
-    {
-      batch_size = BP_operation.result.sink_node->getOutput().dimension(0);
-      memory_size = BP_operation.result.sink_node->getOutput().dimension(1);
-      break;
-    }
+		std::pair<int, int> bmsizes = getBatchAndMemorySizes();
+		int batch_size = bmsizes.first;
+		int memory_size = bmsizes.second;
 
     if (time_step >= memory_size)
     {
@@ -1730,8 +1733,9 @@ namespace SmartPeak
 		// [BUG: modifying the batch_size or memory_size causes a memory corruption error when
 		//			 using the training the population after replicating and modifying the models
 		//			 potential cause: the batch/memory sizes are not updated during training?]
-		int batch_size_cur = nodes_.at(input_nodes[0])->getOutput().dimension(0);
-		int memory_size_cur = nodes_.at(input_nodes[0])->getOutput().dimension(1);
+		std::pair<int, int> bmsizes = getBatchAndMemorySizes();
+		int batch_size_cur = bmsizes.first;
+		int memory_size_cur = bmsizes.second;
 
 		// check for uninitialized nodes
 		int batch_size = 2;

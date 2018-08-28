@@ -120,6 +120,11 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   Eigen::Tensor<float, 2> output_test(3, 2), error_test(3, 2), derivative_test(3, 2), dt_test(3, 2), input_test(3, 2), drop_test(3, 2);
   output_test.setConstant(0.0f);
   node.setOutput(output_test);
+
+	// Test the batch and memory sizes
+	BOOST_CHECK_EQUAL(node.getBatchSize(), 3);
+	BOOST_CHECK_EQUAL(node.getMemorySize(), 2);
+
   error_test.setConstant(1.0f);
   node.setError(error_test);
   derivative_test.setConstant(2.0f);

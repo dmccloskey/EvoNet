@@ -121,13 +121,9 @@ namespace SmartPeak
 
 	bool ModelLogger::logExpectedAndPredictedOutputPerEpoch(const Model & model, const std::vector<std::string>& output_node_names, const Eigen::Tensor<float, 3>& expected_values, const int & n_epoch)
 	{
-		int batch_size = 0;
-		int memory_size = 0;
-		for (const std::string& node_name : output_node_names) {
-			batch_size = model.getNode(node_name).getOutput().dimension(0);
-			memory_size = model.getNode(node_name).getOutput().dimension(1) - 1;
-			break;
-		}
+		std::pair<int, int> bmsizes = model.getBatchAndMemorySizes();
+		int batch_size = bmsizes.first;
+		int memory_size = bmsizes.second - 1;
 
 		// writer header
 		if (log_expected_predicted_epoch_csvwriter_.getLineCount() == 0) {
@@ -200,13 +196,9 @@ namespace SmartPeak
 			module_to_node_names_.erase("");
 		}
 
-		int batch_size = 0;
-		int memory_size = 0;
-		for (const auto& module_to_node_names : module_to_node_names_) {
-			batch_size = model.getNode(module_to_node_names.second.back()).getOutput().dimension(0);
-			memory_size = model.getNode(module_to_node_names.second.back()).getOutput().dimension(1) - 1;
-			break;
-		}
+		std::pair<int, int> bmsizes = model.getBatchAndMemorySizes();
+		int batch_size = bmsizes.first;
+		int memory_size = bmsizes.second - 1;
 
 		// writer header
 		if (log_module_variance_epoch_csvwriter_.getLineCount() == 0) {

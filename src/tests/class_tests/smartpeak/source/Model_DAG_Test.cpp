@@ -301,6 +301,17 @@ BOOST_AUTO_TEST_CASE(initNodes)
   BOOST_CHECK_EQUAL(model1.getNode("7").getError()(1, 1), 0.0);
 }
 
+BOOST_AUTO_TEST_CASE(getBatchAndMemorySizes)
+{
+	// Toy network: 1 hidden layer, fully connected, DAG
+	// Model model1 = makeModel1();
+
+	model1.initNodes(2, 3); // batch_size = 2, memory_size = 2
+	std::pair<int, int> batch_memory_sizes = model1.getBatchAndMemorySizes();
+	BOOST_CHECK_EQUAL(batch_memory_sizes.first, 2);
+	BOOST_CHECK_EQUAL(batch_memory_sizes.second, 3);
+}
+
 BOOST_AUTO_TEST_CASE(initWeights) 
 {
   // Toy network: 1 hidden layer, fully connected, DAG

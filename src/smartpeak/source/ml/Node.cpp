@@ -35,6 +35,7 @@ namespace SmartPeak
     derivative_ = other.derivative_;
     dt_ = other.dt_;
 		drop_probability_ = other.drop_probability_;
+		drop_ = other.drop_;
   }
 
   Node::Node(const std::string& name, const SmartPeak::NodeType& type, const SmartPeak::NodeStatus& status,
@@ -297,6 +298,16 @@ namespace SmartPeak
 	Eigen::Tensor<float, 2> Node::getDrop() const
 	{
 		return drop_;
+	}
+
+	int Node::getBatchSize() const
+	{
+		return output_.dimension(0);
+	}
+
+	int Node::getMemorySize() const
+	{
+		return output_.dimension(1);
 	}
 
   void Node::initNode(const int& batch_size, const int& memory_size, bool train)

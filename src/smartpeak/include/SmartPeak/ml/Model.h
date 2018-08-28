@@ -125,6 +125,13 @@ public:
 		*/
 		void initError(const int& batch_size, const int& memory_size);
 
+		/**
+		@brief Infer the batch_size and memory_size.
+
+		@return a pair of batch_size and memory_size
+		*/
+		std::pair<int, int> getBatchAndMemorySizes() const;
+
     /**
       @brief Assigns output or error values to the nodes.
         The node statuses are then changed accordingly (i.e.,

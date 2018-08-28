@@ -73,7 +73,7 @@ public:
 				std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
 				std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
 				std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-				weight_init, solver, 0.0f, 0.2f);
+				weight_init, solver, 0.0f, 0.5f);
 			std::string pool_name = "Pool0-" + std::to_string(d);
 			node_names = model_builder.addConvolution(model, pool_name, pool_name, node_names, 
 				sqrt(node_names.size()), sqrt(node_names.size()), 1, 1,
@@ -103,7 +103,7 @@ public:
 					std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
 					std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
 					std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-					weight_init, solver, 0.0f, 0.2f);
+					weight_init, solver, 0.0f, 0.5f);
 				std::string pool_name = "Pool1-" + std::to_string(l_cnt) + "-" + std::to_string(d);
 				node_names = model_builder.addConvolution(model, pool_name, pool_name, node_names, 
 					sqrt(node_names.size()), sqrt(node_names.size()), 1, 1,
@@ -135,14 +135,14 @@ public:
 			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
 			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
 			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-			weight_init, solver, 0.0f, 0.2f);
+			weight_init, solver, 0.0f, 0.5f);
 		node_names = model_builder.addFullyConnected(model, "FC1", "FC1", node_names, n_outputs,
 			std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()),
 			std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
 			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
 			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
 			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-			weight_init, solver);
+			weight_init, solver, 0.0f, 0.5f);
 
 		// Add the final softmax layer
 		node_names = model_builder.addSoftMax(model, "SoftMax", "SoftMax", node_names);
@@ -549,7 +549,7 @@ void main_Classifier() {
 	model_trainer.setMemorySize(1);
 	model_trainer.setNEpochsTraining(500);
 	model_trainer.setNEpochsValidation(10);
-	model_trainer.setVerbosityLevel(2);
+	model_trainer.setVerbosityLevel(1);
 	model_trainer.setNThreads(n_hard_threads);
 	model_trainer.setLogging(true, false);
 

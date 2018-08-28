@@ -101,6 +101,7 @@ public:
       derivative_ = other.derivative_;
       dt_ = other.dt_;
 			drop_probability_ = other.drop_probability_;
+			drop_ = other.drop_;
       return *this;
     }
 
@@ -176,6 +177,9 @@ public:
 
 		void setDrop(const Eigen::Tensor<float, 2>& drop); ///< drop setter
 		Eigen::Tensor<float, 2> getDrop() const; ///< drop copy getter
+
+		int getBatchSize() const;
+		int getMemorySize() const;
 
     /**
       @brief Initialize node output to zero.

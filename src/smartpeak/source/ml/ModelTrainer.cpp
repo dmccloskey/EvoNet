@@ -237,19 +237,6 @@ namespace SmartPeak
 				std::cout << "Weight Update..." << std::endl;
 			model.updateWeights(getMemorySize());
 
-			//if (getVerbosityLevel() >= 3)
-			//{
-			//	for (const Node& node : model.getNodes())
-			//	{
-			//		std::cout << node.getName() << " Input: " << node.getInput() << std::endl;
-			//		std::cout << node.getName() << " Output: " << node.getOutput() << std::endl;
-			//		std::cout << node.getName() << " Error: " << node.getError() << std::endl;
-			//		std::cout << node.getName() << " Derivative: " << node.getDerivative() << std::endl;
-			//	}
-			//	for (const Weight& weight : model.getWeights())
-			//		std::cout << weight.getName() << " Weight: " << weight.getWeight() << std::endl;
-			//}
-
 			// log epoch
 			if (log_training_) {
 				if (getVerbosityLevel() >= 2)
