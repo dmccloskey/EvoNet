@@ -34,6 +34,7 @@ namespace SmartPeak
     error_ = other.error_;
     derivative_ = other.derivative_;
     dt_ = other.dt_;
+		drop_probability_ = other.drop_probability_;
   }
 
   Node::Node(const std::string& name, const SmartPeak::NodeType& type, const SmartPeak::NodeStatus& status,
@@ -208,7 +209,7 @@ namespace SmartPeak
   }
   Eigen::Tensor<float, 2> Node::getOutput() const
   {
-    return output_;
+		return output_ * getDrop();
   }
   Eigen::Tensor<float, 2>* Node::getOutputMutable()
   {
@@ -279,7 +280,26 @@ namespace SmartPeak
     output_max_ = output_max;
   }
 
-  void Node::initNode(const int& batch_size, const int& memory_size)
+	void Node::setDropProbability(const float & drop_probability)
+	{
+		drop_probability_ = drop_probability;
+	}
+
+	float Node::getDropProbability() const
+	{
+		return drop_probability_;
+	}
+
+	void Node::setDrop(const Eigen::Tensor<float, 2>& drop)
+	{
+		drop_ = drop;
+	}
+	Eigen::Tensor<float, 2> Node::getDrop() const
+	{
+		return drop_;
+	}
+
+  void Node::initNode(const int& batch_size, const int& memory_size, bool train)
   {
     Eigen::Tensor<float, 2> init_values(batch_size, memory_size);
     init_values.setConstant(0.0f);
@@ -287,8 +307,18 @@ namespace SmartPeak
     setError(init_values);
     setDerivative(init_values);
 
+		// set Dt
     init_values.setConstant(1.0f);
     setDt(init_values);
+
+		// set Drop probabilities
+		if (train) {
+			init_values.unaryExpr(RandBinaryOp<float>(getDropProbability()));
+			setDrop(init_values);
+		}
+		else {
+			setDrop(init_values);
+		}
     
 		// corections for specific node types
     if (type_ == NodeType::bias)
@@ -312,7 +342,6 @@ namespace SmartPeak
       setStatus(NodeStatus::initialized);
       setOutput(init_values);
     }
-
   }
 
   bool Node::checkTimeStep(const int&time_step)

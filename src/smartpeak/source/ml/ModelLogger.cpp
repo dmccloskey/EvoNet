@@ -126,6 +126,7 @@ namespace SmartPeak
 		for (const std::string& node_name : output_node_names) {
 			batch_size = model.getNode(node_name).getOutput().dimension(0);
 			memory_size = model.getNode(node_name).getOutput().dimension(1) - 1;
+			break;
 		}
 
 		// writer header
@@ -204,6 +205,7 @@ namespace SmartPeak
 		for (const auto& module_to_node_names : module_to_node_names_) {
 			batch_size = model.getNode(module_to_node_names.second.back()).getOutput().dimension(0);
 			memory_size = model.getNode(module_to_node_names.second.back()).getOutput().dimension(1) - 1;
+			break;
 		}
 
 		// writer header

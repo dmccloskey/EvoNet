@@ -6,6 +6,7 @@
 #include <SmartPeak/ml/ActivationFunction.h>
 #include <vector>
 #include <limits>
+#include <random>
 
 #define EIGEN_USE_THREADS
 #include <unsupported/Eigen/CXX11/Tensor>
@@ -117,6 +118,26 @@ namespace SmartPeak
 		T eps_ = 1e-12; ///< threshold to clip between min and max
 		T min_ = 0;
 		T max_ = 1;
+	};
+
+	/**
+	@brief return x or 0 with a specified probability
+	*/
+	template<typename T>
+	class RandBinaryOp
+	{
+	public:
+		RandBinaryOp() = default;
+		RandBinaryOp(const T& p) : p_(p) {};
+		~RandBinaryOp() = default;
+		T operator()(const T& x) const {
+			std::random_device rd;
+			std::mt19937 gen(rd());
+			std::discrete_distribution<> distrib({ 1 - p_, p_ });
+			return x*distrib(gen);
+		}
+	private:
+		T p_ = 1; ///< probablity of 1
 	};
 }
 #endif //SMARTPEAK_SHAREDFUNCTIONS_H

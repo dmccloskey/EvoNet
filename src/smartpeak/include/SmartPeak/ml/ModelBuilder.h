@@ -118,7 +118,9 @@ public:
 			const int& n_hidden,
 			const std::shared_ptr<ActivationOp<float>>& node_activation,
 			const std::shared_ptr<ActivationOp<float>>& node_activation_grad,
-			const NodeIntegration& node_integration);
+			const std::shared_ptr<IntegrationOp<float>>& node_integration,
+			const std::shared_ptr<IntegrationErrorOp<float>>& node_integration_error,
+			const std::shared_ptr<IntegrationWeightGradOp<float>>& node_integration_weight_grad);
 
 		/**
 		@brief Add one model to another

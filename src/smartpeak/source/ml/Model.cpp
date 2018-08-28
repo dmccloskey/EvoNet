@@ -851,12 +851,6 @@ namespace SmartPeak
             try
             {
               bool success = task_result.get();
-              // Eigen::Tensor<float, 1> model_output(batch_size);
-              // model_output = nodes_.at(FP_operation.result.sink_node->getName()).getOutput().chip(time_step, 1);
-              // Eigen::Tensor<float, 1> result_output(batch_size);
-              // result_output = FP_operation.result.sink_node->getOutput().chip(time_step, 1);
-              // std::cout<<"Model output: "<<model_output<<std::endl;
-              // std::cout<<"FP operation result: "<<result_output<<std::endl;
             }
             catch (std::exception& e)
             {
@@ -1028,10 +1022,6 @@ namespace SmartPeak
 	){
 		std::lock_guard<std::mutex> lock(calculateOutputNodeError_mutex);
 
-		// [BUG previous incorrect implementation below]
-		//output_node->getErrorMutable()->chip(time_step, 1) = loss_function_grad->operator()(
-		//	output_node->getOutput().chip(time_step, 1), expected);
-		// [CORRECT implementation below]
 		output_node->getErrorMutable()->chip(time_step, 1) = loss_function_grad->operator()(
 			output_node->getOutput().chip(time_step, 1), expected) *
 			output_node->getDerivative().chip(time_step, 1);
@@ -1131,7 +1121,7 @@ namespace SmartPeak
 				++thread_cnt;
 			}
 		}
-		error_.chip(time_step, 1) = model_error; // asign the model_error
+		error_.chip(time_step, 1) = model_error; // assign the model_error
 
 		// loop over all nodes and calculate the error for the nodes
 		std::vector<std::future<bool>> output_node_error_task_results;

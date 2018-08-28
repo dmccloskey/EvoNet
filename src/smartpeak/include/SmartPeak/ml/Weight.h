@@ -33,10 +33,14 @@ public:
       return
         std::tie(
           id_,
-          name_
+          name_,
+					module_id_,
+					module_name_
         ) == std::tie(
           other.id_,
-          other.name_
+          other.name_,
+					other.module_id_,
+					other.module_name_
         )
       ;
     }
@@ -57,6 +61,7 @@ public:
       solver_ = other.solver_;
       weight_min_ = other.weight_min_;
       weight_max_ = other.weight_max_;
+			drop_probability_ = other.drop_probability_;
       return *this;
     }
 
@@ -68,6 +73,7 @@ public:
 
     void setWeight(const float& weight); ///< weight setter
     float getWeight() const; ///< weight getter
+		float* getWeightMutable(); ///< weight getter
 
     void setWeightInitOp(const std::shared_ptr<WeightInitOp>& weight_init); ///< weight initialization operator setter
     WeightInitOp* getWeightInitOp() const; ///< weight initialization operator getter
@@ -83,6 +89,12 @@ public:
 
 		void setModuleName(const std::string& module_name); ///< module name setter
 		std::string getModuleName() const; ///< module name getter
+
+		void setDropProbability(const float& drop_probability); ///< drop_probability setter
+		float getDropProbability() const; ///< drop_probability getter
+
+		void setDrop(const float& drop); ///< drop setter
+		float getDrop() const; ///< drop getter
 
     /**
       @brief Initializes the weight.  
@@ -112,6 +124,8 @@ private:
 
     float weight_min_ = -1.0e6;
     float weight_max_ = 1.0e6;
+		float drop_probability_ = 1.0;
+		float drop_ = 1.0;
   };
 }
 
