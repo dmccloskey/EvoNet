@@ -28,6 +28,7 @@ namespace SmartPeak
     weight_min_ = other.weight_min_;
     weight_max_ = other.weight_max_;
 		drop_probability_ = other.drop_probability_;
+		drop_ = other.drop_;
   }
 
   Weight::Weight(const int& id):
