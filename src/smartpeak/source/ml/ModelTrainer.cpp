@@ -204,16 +204,16 @@ namespace SmartPeak
 			adaptiveTrainerScheduler(0, iter, model, model_error);
 
 			// forward propogate
+			if (getVerbosityLevel() >= 2)
+				std::cout << "Foward Propogation..." << std::endl;
 			if (iter == 0)
 				model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), true, true, getNThreads());
 			else
 				model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), false, true, getNThreads());
 
 			// calculate the model error and node output 
-			//if (iter == 0)
-			//	model.CETT(output.chip(iter, 3), output_nodes, 1, true, true, getNThreads());
-			//else
-			//	model.CETT(output.chip(iter, 3), output_nodes, 1, false, true, getNThreads());
+			if (getVerbosityLevel() >= 2)
+				std::cout << "Error Calculation..." << std::endl;
 			if (iter == 0)
 				model.CETT(output.chip(iter, 3), output_nodes, getMemorySize(), true, true, getNThreads());
 			else
@@ -224,37 +224,36 @@ namespace SmartPeak
 			if (getVerbosityLevel() >= 1)
 				std::cout << "Model " << model.getName() << " error: " << total_error(0) << std::endl;
 
-			if (getVerbosityLevel() >= 2) {
-				for (size_t node_iter = 0; node_iter < output_nodes.size(); ++node_iter) {
-					std::cout << "Output " << output_nodes[node_iter] << ": " << model.getNode(output_nodes[node_iter]).getOutput() << std::endl;
-					std::cout << "Expected " << output_nodes[node_iter] << ": " << output.chip(iter, 3).chip(node_iter, 2) << std::endl;
-				}
-			}
-
 			// back propogate
+			if (getVerbosityLevel() >= 2)
+				std::cout << "Back Propogation..." << std::endl;
 			if (iter == 0)
 				model.TBPTT(getMemorySize(), true, true, getNThreads());
 			else
 				model.TBPTT(getMemorySize(), false, true, getNThreads());
 
 			// update the weights
+			if (getVerbosityLevel() >= 2)
+				std::cout << "Weight Update..." << std::endl;
 			model.updateWeights(getMemorySize());
 
-			if (getVerbosityLevel() >= 3)
-			{
-				for (const Node& node : model.getNodes())
-				{
-					std::cout << node.getName() << " Input: " << node.getInput() << std::endl;
-					std::cout << node.getName() << " Output: " << node.getOutput() << std::endl;
-					std::cout << node.getName() << " Error: " << node.getError() << std::endl;
-					std::cout << node.getName() << " Derivative: " << node.getDerivative() << std::endl;
-				}
-				for (const Weight& weight : model.getWeights())
-					std::cout << weight.getName() << " Weight: " << weight.getWeight() << std::endl;
-			}
+			//if (getVerbosityLevel() >= 3)
+			//{
+			//	for (const Node& node : model.getNodes())
+			//	{
+			//		std::cout << node.getName() << " Input: " << node.getInput() << std::endl;
+			//		std::cout << node.getName() << " Output: " << node.getOutput() << std::endl;
+			//		std::cout << node.getName() << " Error: " << node.getError() << std::endl;
+			//		std::cout << node.getName() << " Derivative: " << node.getDerivative() << std::endl;
+			//	}
+			//	for (const Weight& weight : model.getWeights())
+			//		std::cout << weight.getName() << " Weight: " << weight.getWeight() << std::endl;
+			//}
 
 			// log epoch
 			if (log_training_) {
+				if (getVerbosityLevel() >= 2)
+					std::cout << "Logging..." << std::endl;
 				const Eigen::Tensor<float, 3> expected_values = output.chip(iter, 3);
 				model_logger.writeLogs(model, iter, { "Error" }, {}, { total_error(0) }, {}, output_nodes, expected_values);
 			}

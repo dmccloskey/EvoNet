@@ -549,7 +549,7 @@ void main_Classifier() {
 	model_trainer.setMemorySize(1);
 	model_trainer.setNEpochsTraining(500);
 	model_trainer.setNEpochsValidation(10);
-	model_trainer.setVerbosityLevel(1);
+	model_trainer.setVerbosityLevel(2);
 	model_trainer.setNThreads(n_hard_threads);
 	model_trainer.setLogging(true, false);
 
