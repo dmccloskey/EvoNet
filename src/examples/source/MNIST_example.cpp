@@ -142,7 +142,7 @@ public:
 			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
 			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
 			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-			weight_init, solver, 0.0f, 0.5f);
+			weight_init, solver, 0.0f, 0.2f);
 
 		// Add the final softmax layer
 		node_names = model_builder.addSoftMax(model, "SoftMax", "SoftMax", node_names);
