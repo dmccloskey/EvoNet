@@ -28,7 +28,8 @@ namespace SmartPeak
 		const std::shared_ptr<IntegrationOp<float>>& node_integration,
 		const std::shared_ptr<IntegrationErrorOp<float>>& node_integration_error,
 		const std::shared_ptr<IntegrationWeightGradOp<float>>& node_integration_weight_grad,
-		const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver)
+		const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver,
+		float drop_out_prob, float drop_connection_prob)
 	{
 		std::vector<std::string> node_names;
 
@@ -41,6 +42,7 @@ namespace SmartPeak
 			node_names.push_back(node_name);
 			Node node(node_name, NodeType::hidden, NodeStatus::deactivated, node_activation, node_activation_grad, node_integration, node_integration_error, node_integration_weight_grad);
 			node.setModuleName(module_name);
+			node.setDropProbability(drop_out_prob);
 
 			char bias_name_char[64];
 			sprintf(bias_name_char, "%s-bias_%d", name.data(), i);
@@ -62,6 +64,7 @@ namespace SmartPeak
 			std::shared_ptr<SolverOp> bias_solver = solver;
 			Weight weight_bias(weight_bias_name, bias_weight_init, bias_solver);
 			weight_bias.setModuleName(module_name);
+			weight_bias.setDropProbability(drop_connection_prob);
 			Link link_bias(link_bias_name, bias_name, node_name, weight_bias_name);
 			link_bias.setModuleName(module_name);
 
@@ -90,6 +93,7 @@ namespace SmartPeak
 				std::shared_ptr<SolverOp> hidden_solver = solver;
 				Weight weight(weight_name_char, hidden_weight_init, hidden_solver);
 				weight.setModuleName(module_name);
+				weight.setDropProbability(drop_connection_prob);
 				Link link(link_name, source_node_names[i], hidden_name, weight_name);
 				link.setModuleName(module_name);
 
@@ -215,7 +219,8 @@ namespace SmartPeak
 		const std::shared_ptr<IntegrationOp<float>>& node_integration,
 		const std::shared_ptr<IntegrationErrorOp<float>>& node_integration_error,
 		const std::shared_ptr<IntegrationWeightGradOp<float>>& node_integration_weight_grad,
-		const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver)
+		const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver,
+		float drop_out_prob, float drop_connection_prob)
 	{
 		std::vector<std::string> node_names;
 
@@ -245,6 +250,7 @@ namespace SmartPeak
 		std::string weight_bias_name(weight_bias_name_char);
 		Weight weight_bias(weight_bias_name, weight_init, solver);
 		weight_bias.setModuleName(module_name);
+		weight_bias.setDropProbability(drop_connection_prob);
 		model.addWeights({ weight_bias });
 
 		// Create the output zero padding nodes
@@ -274,6 +280,7 @@ namespace SmartPeak
 					std::string output_name(output_name_char);
 					Node output(output_name, NodeType::hidden, NodeStatus::activated, node_activation, node_activation_grad, node_integration, node_integration_error, node_integration_weight_grad);
 					output.setModuleName(module_name);
+					output.setDropProbability(drop_out_prob);
 					model.addNodes({ output });
 					node_names.push_back(output_name);
 
@@ -295,7 +302,8 @@ namespace SmartPeak
 				sprintf(weight_filter_name_char, "%s_H%d-W%d", name.data(), filter_height_iter, filter_width_iter);
 				std::string weight_filter_name(weight_filter_name_char);
 				Weight weight_filter(weight_filter_name, weight_init, solver);
-				weight_filter.setModuleName(module_name);
+				weight_filter.setModuleName(module_name); 
+				weight_filter.setDropProbability(drop_connection_prob);
 				model.addWeights({ weight_filter });
 			}
 		}

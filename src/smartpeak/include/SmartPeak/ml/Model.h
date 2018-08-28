@@ -98,6 +98,13 @@ public:
     */ 
     void initWeights();
 
+		/**
+			@brief Initialize all link weights dropout probability
+
+			[TODO: add tests]
+		*/
+		void initWeightsDropProbability();
+
     /**
       @brief Initialize all node output to zero.
         The node statuses are then changed to NodeStatus::deactivated
@@ -105,7 +112,7 @@ public:
       @param[in] batch_size Batch size of the output, error, and derivative node vectors
       @param[in] memory_size Memory size of the output, error, and derivative node vectors
     */ 
-    void initNodes(const int& batch_size, const int& memory_size);
+    void initNodes(const int& batch_size, const int& memory_size, bool train = false);
 
 		/**
 		@brief Initialize model errors to zero.

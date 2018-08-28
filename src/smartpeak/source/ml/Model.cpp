@@ -391,11 +391,11 @@ namespace SmartPeak
     }
   }
 
-  void Model::initNodes(const int& batch_size, const int& memory_size)
+  void Model::initNodes(const int& batch_size, const int& memory_size, bool train)
   {
     for (auto& node_map : nodes_)
     {
-      node_map.second->initNode(batch_size, memory_size);
+      node_map.second->initNode(batch_size, memory_size, train);
     }
   }
 
@@ -413,6 +413,14 @@ namespace SmartPeak
       weight_map.second->initWeight();
     }
   }
+
+	void Model::initWeightsDropProbability()
+	{
+		for (auto& weight_map : weights_)
+		{
+			weight_map.second->setDropProbability(weight_map.second->getDropProbability());
+		}
+	}
   
   void Model::mapValuesToNodes(
     const Eigen::Tensor<float, 1>& values,

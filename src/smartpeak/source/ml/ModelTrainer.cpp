@@ -190,7 +190,7 @@ namespace SmartPeak
 		// Initialize the model
 		model.initError(getBatchSize(), getMemorySize());
 		model.clearCache();
-		model.initNodes(getBatchSize(), getMemorySize() + 1); // The first time point = 0
+		model.initNodes(getBatchSize(), getMemorySize() + 1, true); // The first time point = 0
 		model.findCyclicPairs();
 
 		// Initialize the logger
@@ -262,6 +262,7 @@ namespace SmartPeak
 			model.reInitializeNodeStatuses();
 			model.initNodes(getBatchSize(), getMemorySize() + 1);
 			model.initError(getBatchSize(), getMemorySize());
+			model.initWeightsDropProbability();
 		}
 		model.clearCache();
 		return model_error;

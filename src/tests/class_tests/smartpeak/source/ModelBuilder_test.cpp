@@ -60,7 +60,7 @@ BOOST_AUTO_TEST_CASE(addFullyConnected)
 	node_names = model_builder.addFullyConnected(model, "Hidden", "Mod1", node_names,
 		2, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
 		std::shared_ptr<IntegrationOp<float>>(new ProdOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new ProdErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new ProdWeightGradOp<float>()),
-		std::shared_ptr<WeightInitOp>(new ConstWeightInitOp(1.0)), std::shared_ptr<SolverOp>(new SGDOp(0.1, 0.9)));
+		std::shared_ptr<WeightInitOp>(new ConstWeightInitOp(1.0)), std::shared_ptr<SolverOp>(new SGDOp(0.1, 0.9)), 0.0f, 0.8f);
 
 	std::vector<std::string> node_names_test = { "Hidden_0", "Hidden-bias_0", "Hidden_1", "Hidden-bias_1"};
 	std::vector<std::string> link_names_test = { "Hidden-bias_0_to_Hidden_0", "Hidden-bias_1_to_Hidden_1",
@@ -73,6 +73,7 @@ BOOST_AUTO_TEST_CASE(addFullyConnected)
 	{
 		BOOST_CHECK_EQUAL(model.getNode(node_names_test[i]).getName(), node_names_test[i]);
 		BOOST_CHECK_EQUAL(model.getNode(node_names_test[i]).getModuleName(), "Mod1");
+		BOOST_CHECK_EQUAL(model.getNode(node_names_test[i]).getDropProbability(), 0.0);
 		if (i == 1 || i == 3)
 		{
 			BOOST_CHECK_EQUAL(model.getNode(node_names_test[i]).getActivation()->getName(), "LinearOp");
@@ -110,6 +111,7 @@ BOOST_AUTO_TEST_CASE(addFullyConnected)
 		BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
 		BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "SGDOp");
 		BOOST_CHECK_EQUAL(model.getWeight(name).getModuleName(), "Mod1");
+		BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.8);
 	}
 }
 
@@ -209,7 +211,7 @@ BOOST_AUTO_TEST_CASE(addConvolution)
 		2, 2, 1, 1, 1,
 		std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), 
 		std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-		std::shared_ptr<WeightInitOp>(new ConstWeightInitOp(1.0)), std::shared_ptr<SolverOp>(new SGDOp(0.1, 0.9)));
+		std::shared_ptr<WeightInitOp>(new ConstWeightInitOp(1.0)), std::shared_ptr<SolverOp>(new SGDOp(0.1, 0.9)), 0.2f, 0.8f);
 
 	std::vector<std::string> node_names_test = { "Filter-bias" };
 	std::vector<std::string> weight_names_test = { "Filter-bias_to_out",
@@ -222,11 +224,16 @@ BOOST_AUTO_TEST_CASE(addConvolution)
 		if (node_cnt == 0) {
 			BOOST_CHECK_EQUAL(node.getName(), node_names_test[node_cnt]);
 			BOOST_CHECK_EQUAL(node.getModuleName(), "Mod1");
+			BOOST_CHECK_EQUAL(node.getDropProbability(), 1.0);
 		}
 		else if (node_cnt >= 1 && node_cnt < 65) {
 			int name_cnt = std::count(node_names.begin(), node_names.end(), node.getName());
 			BOOST_CHECK_EQUAL(name_cnt, 1);
 			BOOST_CHECK_EQUAL(node.getModuleName(), "Mod1");
+			if (node.getType() == NodeType::bias)
+				BOOST_CHECK_EQUAL(node.getModuleName(), 1.0f);
+			else
+				BOOST_CHECK_EQUAL(node.getModuleName(), 0.8f);
 		}
 		BOOST_CHECK_EQUAL(node.getActivation()->getName(), "LinearOp");
 		BOOST_CHECK_EQUAL(node.getActivationGrad()->getName(), "LinearGradOp");
