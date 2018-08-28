@@ -65,7 +65,7 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   weight.setWeight(4.0);
 	weight.setModuleId(2);
 	weight.setModuleName("2");
-	weight.setDropProbability(1.0f);
+	weight.setDropProbability(0.0f);
 
 	// Check getters
   BOOST_CHECK_EQUAL(weight.getId(), 1);
@@ -73,7 +73,7 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   BOOST_CHECK_EQUAL(weight.getName(), "1");
 	BOOST_CHECK_EQUAL(weight.getModuleId(), 2);
 	BOOST_CHECK_EQUAL(weight.getModuleName(), "2");
-	BOOST_CHECK_EQUAL(weight.getDropProbability(), 1.0f);
+	BOOST_CHECK_EQUAL(weight.getDropProbability(), 0.0f);
 	BOOST_CHECK_EQUAL(weight.getDrop(), 1.0f);
 
 	// Check name getter
@@ -92,7 +92,7 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   BOOST_CHECK_CLOSE(weight.getSolverOp()->operator()(1.0, 2.0), 0.98, 1e-3);
 
 	// Check drop probability mask
-	weight.setDropProbability(0.0f);
+	weight.setDropProbability(1.0f);
 	BOOST_CHECK_EQUAL(weight.getDrop(), 0.0f);
 	BOOST_CHECK_EQUAL(weight.getWeight(), 0.0f);
 }
@@ -125,7 +125,7 @@ BOOST_AUTO_TEST_CASE(updateWeightWithDropConnection)
 	Weight weight;
 	weight.setId(1);
 	weight.setWeight(1.0);
-	weight.setDropProbability(0.0f);
+	weight.setDropProbability(1.0f);
 	std::shared_ptr<SolverOp> solver(new SGDOp(0.01, 0.9));
 	// SGDOp solver(0.01, 0.9);
 	weight.setSolverOp(solver);

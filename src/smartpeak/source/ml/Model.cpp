@@ -414,12 +414,14 @@ namespace SmartPeak
     }
   }
 
-	void Model::initWeightsDropProbability()
+	void Model::initWeightsDropProbability(bool train)
 	{
-		for (auto& weight_map : weights_)
-		{
-			weight_map.second->setDropProbability(weight_map.second->getDropProbability());
-		}
+		if (train)
+			for (auto& weight_map : weights_)
+				weight_map.second->setDropProbability(weight_map.second->getDropProbability());
+		else
+			for (auto& weight_map : weights_)
+				weight_map.second->setDrop(1.0f);
 	}
   
   void Model::mapValuesToNodes(

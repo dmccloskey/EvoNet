@@ -124,7 +124,7 @@ private:
 
     float weight_min_ = -1.0e6;
     float weight_max_ = 1.0e6;
-		float drop_probability_ = 1.0;
+		float drop_probability_ = 0.0;
 		float drop_ = 1.0;
   };
 }

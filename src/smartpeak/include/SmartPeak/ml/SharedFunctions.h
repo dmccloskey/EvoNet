@@ -133,11 +133,11 @@ namespace SmartPeak
 		T operator()(const T& x) const {
 			std::random_device rd;
 			std::mt19937 gen(rd());
-			std::discrete_distribution<> distrib({ 1 - p_, p_ });
+			std::discrete_distribution<> distrib({ p_, 1 - p_ });
 			return x*distrib(gen);
 		}
 	private:
-		T p_ = 1; ///< probablity of 1
+		T p_ = 1; ///< probablity of 0
 	};
 }
 #endif //SMARTPEAK_SHAREDFUNCTIONS_H

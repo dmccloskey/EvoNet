@@ -120,10 +120,10 @@ BOOST_AUTO_TEST_CASE(SFRandBinaryOp)
 	Eigen::Tensor<float, 1> result;
 
 	// test input
-	result = net_input.unaryExpr(RandBinaryOp<float>(1.0f));
+	result = net_input.unaryExpr(RandBinaryOp<float>(0.0f));
 	BOOST_CHECK_CLOSE(result(0), 2.0, 1e-3);
 	BOOST_CHECK_CLOSE(result(1), 2.0, 1e-3);
-	result = net_input.unaryExpr(RandBinaryOp<float>(0.0f));
+	result = net_input.unaryExpr(RandBinaryOp<float>(1.0f));
 	BOOST_CHECK_CLOSE(result(0), 0.0, 1e-3);
 	BOOST_CHECK_CLOSE(result(1), 0.0, 1e-3);
 }

@@ -53,7 +53,7 @@ public:
 			const std::shared_ptr<IntegrationErrorOp<float>>& node_integration_error,
 			const std::shared_ptr<IntegrationWeightGradOp<float>>& node_integration_weight_grad,
 			const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver,
-			float drop_out_prob = 1.0f, float drop_connection_prob = 1.0f);
+			float drop_out_prob = 0.0f, float drop_connection_prob = 0.0f);
 
 		/**
 		@brief Add a Soft Max
@@ -102,7 +102,7 @@ public:
 			const std::shared_ptr<IntegrationErrorOp<float>>& node_integration_error,
 			const std::shared_ptr<IntegrationWeightGradOp<float>>& node_integration_weight_grad,
 			const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver,
-			float drop_out_prob = 1.0f, float drop_connection_prob = 1.0f);
+			float drop_out_prob = 0.0f, float drop_connection_prob = 0.0f);
 
 		/**
 		@brief Add a LSTM layer

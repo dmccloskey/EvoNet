@@ -102,8 +102,9 @@ public:
 			@brief Initialize all link weights dropout probability
 
 			[TODO: add tests]
+			[TODO: implement sampling from a Gaussian distribution during interence]
 		*/
-		void initWeightsDropProbability();
+		void initWeightsDropProbability(bool train = false);
 
     /**
       @brief Initialize all node output to zero.
@@ -111,6 +112,8 @@ public:
 
       @param[in] batch_size Batch size of the output, error, and derivative node vectors
       @param[in] memory_size Memory size of the output, error, and derivative node vectors
+
+			[TODO: implement sampling from a Gaussian distribution during interence]
     */ 
     void initNodes(const int& batch_size, const int& memory_size, bool train = false);
 

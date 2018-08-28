@@ -266,7 +266,7 @@ BOOST_AUTO_TEST_CASE(initNode2)
 	node.setId(1);
 	node.setType(NodeType::hidden);
 
-	node.setDropProbability(1.0f);
+	node.setDropProbability(0.0f);
 	node.initNode(2, 5);
 	Eigen::Tensor<float, 2> drop_test(2, 5);
 	drop_test.setConstant(4.0f);
@@ -274,7 +274,7 @@ BOOST_AUTO_TEST_CASE(initNode2)
 	BOOST_CHECK_EQUAL(node.getOutput()(0, 0), 4.0);
 	BOOST_CHECK_EQUAL(node.getOutput()(1, 4), 4.0);
 
-	node.setDropProbability(0.0f);
+	node.setDropProbability(1.0f);
 	node.initNode(2, 5);
 	BOOST_CHECK_EQUAL(node.getOutput()(0, 0), 0.0);
 	BOOST_CHECK_EQUAL(node.getOutput()(1, 4), 0.0);
