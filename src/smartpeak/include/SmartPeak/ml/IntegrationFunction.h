@@ -85,6 +85,8 @@ public:
 
 	/**
 		@brief Mean integration function
+
+		[TODO: add tests]
 	*/
 	template<typename T>
 	class MeanOp : public IntegrationOp<T>
@@ -110,6 +112,8 @@ public:
 
 	/**
 		@brief Count integration function
+
+		[TODO: add tests and associated integration classes]
 	*/
 	template<typename T>
 	class CountOp : public IntegrationOp<T>
