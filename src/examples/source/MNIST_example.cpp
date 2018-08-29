@@ -137,7 +137,7 @@ public:
 			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
 			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
 			std::shared_ptr<WeightInitOp>(new RandWeightInitOp(180, 2)),
-			std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.2f);
+			std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 		node_names = model_builder.addFullyConnected(model, "FC1", "FC1", node_names, n_outputs,
 			std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()),
 			std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
@@ -145,7 +145,7 @@ public:
 			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
 			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
 			std::shared_ptr<WeightInitOp>(new RandWeightInitOp(50, 2)), 
-			std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.2f);
+			std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 
 		// Add the final softmax layer
 		node_names = model_builder.addSoftMax(model, "SoftMax", "SoftMax", node_names);
@@ -159,7 +159,7 @@ public:
 		const int& n_epochs,
 		Model& model,
 		const std::vector<float>& model_errors) {
-		if (n_epochs > 5) {
+		if (n_epochs > 10000) {
 			// update the solver parameters
 			std::shared_ptr<SolverOp> solver;
 			solver.reset(new AdamOp(0.001, 0.9, 0.999, 1e-8));
@@ -321,16 +321,16 @@ public:
 			for (int memory_iter = 0; memory_iter<memory_size; ++memory_iter)
 				for (int nodes_iter = 0; nodes_iter<training_data.dimension(1); ++nodes_iter)
 					for (int epochs_iter = 0; epochs_iter<n_epochs; ++epochs_iter)
-						input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
-		//input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[0], nodes_iter);  // test on only 1 sample
+						input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[0], nodes_iter);  // test on only 1 sample
+						//input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
 
 		// reformat the output data for training [BUG FREE]
 		for (int batch_iter = 0; batch_iter<batch_size; ++batch_iter)
 			for (int memory_iter = 0; memory_iter<memory_size; ++memory_iter)
 				for (int nodes_iter = 0; nodes_iter<training_labels.dimension(1); ++nodes_iter)
 					for (int epochs_iter = 0; epochs_iter<n_epochs; ++epochs_iter)
-						output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = (float)training_labels(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
-		//output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = (float)training_labels(sample_indices[0], nodes_iter); // test on only 1 sample
+						output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = (float)training_labels(sample_indices[0], nodes_iter); // test on only 1 sample
+						//output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = (float)training_labels(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
 
 		time_steps.setConstant(1.0f);
 	}
