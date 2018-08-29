@@ -250,16 +250,16 @@ BOOST_AUTO_TEST_CASE(destructorMaxErrorOp)
 BOOST_AUTO_TEST_CASE(operationfunctionMaxErrorOp)
 {
 	const int batch_size = 3;
-	Eigen::Tensor<double, 1> source_error1(batch_size), source_error2(batch_size), source_error3(batch_size);
+	Eigen::Tensor<float, 1> source_error1(batch_size), source_error2(batch_size), source_error3(batch_size);
 	source_error1.setValues({ 1, 2, 4 }); source_error2.setValues({ 2, 4, 1 }); source_error3.setValues({ 4, 1, 2 });
-	Eigen::Tensor<double, 1> weight1(batch_size), weight2(batch_size), weight3(batch_size);
+	Eigen::Tensor<float, 1> weight1(batch_size), weight2(batch_size), weight3(batch_size);
 	weight1.setValues({ 1, 1, 1 }); weight2.setValues({ 2, 2, 2 }); weight3.setValues({ 2, 2, 2 });
-	Eigen::Tensor<double, 1> source_net_source_error1(batch_size), source_net_source_error2(batch_size), source_net_source_error3(batch_size);
+	Eigen::Tensor<float, 1> source_net_source_error1(batch_size), source_net_source_error2(batch_size), source_net_source_error3(batch_size);
 	source_net_source_error1.setValues({ 7, 7, 7 }); source_net_source_error2.setValues({ 7, 7, 7 }); source_net_source_error3.setValues({ 7, 7, 7 });
-	Eigen::Tensor<double, 1> sink_output1(batch_size), sink_output2(batch_size), sink_output3(batch_size);
+	Eigen::Tensor<float, 1> sink_output1(batch_size), sink_output2(batch_size), sink_output3(batch_size);
 	sink_output1.setValues({ 7, 2, 1 }); sink_output2.setValues({ 2, 7, 2 }); sink_output3.setValues({ 0, 0, 7 });
 
-	MaxErrorOp<double> operation;
+	MaxErrorOp<float> operation;
 	operation.initNetNodeError(3);
 	operation(weight1, source_error1, source_net_source_error1, sink_output1);
 	operation(weight2, source_error2, source_net_source_error2, sink_output2);

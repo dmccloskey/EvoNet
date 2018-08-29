@@ -557,7 +557,7 @@ void main_CovNet() {
 	model_trainer.setLogging(true, false);
 
 	// define the model logger
-	ModelLogger model_logger(true, true, true, true, false, true);
+	ModelLogger model_logger(true, true, true, true, true, true);
 
 	// define the data simulator
 	const std::size_t input_size = 784;

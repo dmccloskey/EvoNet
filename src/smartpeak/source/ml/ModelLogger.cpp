@@ -183,6 +183,44 @@ namespace SmartPeak
 
 	bool ModelLogger::logNodesPerEpoch(const Model & model, const int & n_epoch)
 	{
+
+		std::pair<int, int> bmsizes = model.getBatchAndMemorySizes();
+		int batch_size = bmsizes.first;
+		int memory_size = bmsizes.second - 1;
+
+		std::vector<Node> nodes = model.getNodes();
+
+		// writer header
+		if (log_nodes_epoch_csvwriter_.getLineCount() == 0) {
+			std::vector<std::string> headers = { "Epoch" };
+			for (const auto& node : nodes) {
+				for (size_t batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
+					for (size_t memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
+						//std::string node_output = node.getName() + "_Output_Batch-" + std::to_string(batch_iter) + "_Memory-" + std::to_string(memory_iter);
+						//headers.push_back(node_output);
+						std::string node_error = node.getName() + "_Error_Batch-" + std::to_string(batch_iter) + "_Memory-" + std::to_string(memory_iter);
+						headers.push_back(node_error);
+						//std::string node_derivative = node.getName() + "_Derivative_Batch-" + std::to_string(batch_iter) + "_Memory-" + std::to_string(memory_iter);
+						//headers.push_back(node_derivative);
+					}
+				}
+			}
+			log_nodes_epoch_csvwriter_.writeDataInRow(headers.begin(), headers.end());
+		}
+
+		// write next entry
+		std::vector<std::string> line = { std::to_string(n_epoch) };
+		int node_cnt = 0;
+		for (const auto& node : nodes) {
+			for (size_t batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
+				for (size_t memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
+					//line.push_back(std::to_string(node.getOutput()(batch_iter, memory_iter)));
+					line.push_back(std::to_string(node.getError()(batch_iter, memory_iter)));
+					//line.push_back(std::to_string(node.getDerivative()(batch_iter, memory_iter)));
+				}
+			}
+		}
+		log_nodes_epoch_csvwriter_.writeDataInRow(line.begin(), line.end());
 		return true;
 	}
 

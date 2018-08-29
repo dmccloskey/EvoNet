@@ -232,8 +232,7 @@ public:
 		@param[in] x4 The sink output tensor
 		*/
 		void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_error, const Eigen::Tensor<T, 1>& source_net_input, const Eigen::Tensor<T, 1>& sink_output){
-			auto max_tensor = sink_output.cwiseMax(source_net_input);
-			auto perc_max_tensor = (sink_output / max_tensor).unaryExpr(std::ptr_fun(checkNanInf<T>)).unaryExpr([](const T& v) {
+			auto perc_max_tensor = (sink_output / source_net_input).unaryExpr(std::ptr_fun(checkNanInf<T>)).unaryExpr([](const T& v) {
 				if (v < 1) return 0;
 				else return 1;
 			});
