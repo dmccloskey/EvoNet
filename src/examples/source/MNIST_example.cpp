@@ -71,7 +71,7 @@ public:
 				std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
 				std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
 				std::shared_ptr<WeightInitOp>(new RandWeightInitOp(n_inputs, 2)),
-				std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.5f);
+				std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 			std::string pool_name = "Pool0-" + std::to_string(d);
 			node_names = model_builder.addConvolution(model, pool_name, pool_name, node_names, 
 				sqrt(node_names.size()), sqrt(node_names.size()), 1, 1,
@@ -82,7 +82,7 @@ public:
 				std::shared_ptr<IntegrationErrorOp<float>>(new MaxErrorOp<float>()),
 				std::shared_ptr<IntegrationWeightGradOp<float>>(new MaxWeightGradOp<float>()),
 				std::shared_ptr<WeightInitOp>(new ConstWeightInitOp(1.0)), 
-				std::shared_ptr<SolverOp>(new DummySolverOp()));
+				std::shared_ptr<SolverOp>(new DummySolverOp()), 0.0, 0.0, false);
 			node_names_l0.push_back(node_names);
 		}
 
@@ -103,7 +103,7 @@ public:
 					std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
 					std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
 					std::shared_ptr<WeightInitOp>(new RandWeightInitOp(n_inputs, 2)),
-					std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.5f);
+					std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 				std::string pool_name = "Pool1-" + std::to_string(l_cnt) + "-" + std::to_string(d);
 				node_names = model_builder.addConvolution(model, pool_name, pool_name, node_names, 
 					sqrt(node_names.size()), sqrt(node_names.size()), 1, 1,
@@ -114,7 +114,7 @@ public:
 					std::shared_ptr<IntegrationErrorOp<float>>(new MaxErrorOp<float>()),
 					std::shared_ptr<IntegrationWeightGradOp<float>>(new MaxWeightGradOp<float>()),
 					std::shared_ptr<WeightInitOp>(new ConstWeightInitOp(1.0)),
-					std::shared_ptr<SolverOp>(new DummySolverOp()));
+					std::shared_ptr<SolverOp>(new DummySolverOp()), 0.0, 0.0, false);
 				node_names_l1.push_back(node_names);
 			}
 			++l_cnt;
@@ -137,7 +137,7 @@ public:
 			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
 			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
 			std::shared_ptr<WeightInitOp>(new RandWeightInitOp(180, 2)),
-			std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.5f);
+			std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.2f);
 		node_names = model_builder.addFullyConnected(model, "FC1", "FC1", node_names, n_outputs,
 			std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()),
 			std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
