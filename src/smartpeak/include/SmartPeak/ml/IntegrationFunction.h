@@ -225,6 +225,31 @@ public:
 	};
 
 	/**
+	@brief Count integration error function
+	*/
+	template<typename T>
+	class CountErrorOp : public IntegrationErrorOp<T>
+	{
+	public:
+		CountErrorOp() {};
+		~CountErrorOp() {};
+		/*
+		@brief Sum integration error void operator
+
+		@param[in] x1 The weight tensor
+		@param[in] x2 The source error tensor
+		@param[in] x3 The source net input tensor
+		@param[in] x4 The sink output tensor
+		*/
+		Eigen::Tensor<T, 1> operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_error, const Eigen::Tensor<T, 1>& source_net_input, const Eigen::Tensor<T, 1>& sink_output) {
+			Eigen::Tensor<T, 1> constant(weight.dimension(0));
+			constant.setConstant(0);
+			return constant;
+		};
+		std::string getName() const { return "CountErrorOp"; };
+	};
+
+	/**
 	@brief Base class for all integration error functions.
 	*/
 	template<typename T>
@@ -289,6 +314,21 @@ public:
 			this->net_weight_error_ += derivative_mean_tensor(0);
 		};
 		std::string getName() const { return "MaxWeightGradOp"; };
+	};
+
+	/**
+	@brief Count integration error function
+	*/
+	template<typename T>
+	class CountWeightGradOp : public IntegrationWeightGradOp<T>
+	{
+	public:
+		CountWeightGradOp() { this->setNetWeightError(T(0)); };
+		~CountWeightGradOp() {};
+		void operator()(const Eigen::Tensor<T, 1>& sink_error, const Eigen::Tensor<T, 1>& source_output, const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_net_input) {
+			this->net_weight_error_ += 0;
+		};
+		std::string getName() const { return "CountWeightGradOp"; };
 	};
 }
 #endif //SMARTPEAK_INTEGRATIONFUNCTION_H

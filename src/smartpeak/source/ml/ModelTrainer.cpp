@@ -214,6 +214,10 @@ namespace SmartPeak
 			// calculate the model error and node output 
 			if (getVerbosityLevel() >= 2)
 				std::cout << "Error Calculation..." << std::endl;
+			//if (iter == 0)
+			//	model.CETT(output.chip(iter, 3), output_nodes, 1, true, true, getNThreads());
+			//else
+			//	model.CETT(output.chip(iter, 3), output_nodes, 1, false, true, getNThreads());
 			if (iter == 0)
 				model.CETT(output.chip(iter, 3), output_nodes, getMemorySize(), true, true, getNThreads());
 			else
