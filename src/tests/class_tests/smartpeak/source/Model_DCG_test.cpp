@@ -580,7 +580,7 @@ BOOST_AUTO_TEST_CASE(BPTT1)
   // y = m1*(m2*x + b*yprev) where m1 = 2, m2 = 0.5 and b = -2
   Eigen::Tensor<float, 2> expected(batch_size, (int)output_nodes.size()); 
   expected.setValues({{2.5}, {3}, {3.5}, {4}, {4.5}});
-  model2.calculateError(expected, output_nodes, 0);
+  model2.calculateError(expected, output_nodes, 0, true, false);
 
   // std::cout<<"Model error:"<<model2.getError()<<std::endl;
 
@@ -604,7 +604,7 @@ BOOST_AUTO_TEST_CASE(BPTT1)
     {
       for (int i=0; i<error_nodes.size(); ++i)
       {        
-        // std::cout<<"i: "<<i<<" j: "<<j<<", k: "<<k<<" calc: "<<model2.getNode(error_nodes[i]).getError()(j, k)<<", expected: "<<error(j, k, i)<<std::endl;
+         //std::cout<<"i: "<<i<<" j: "<<j<<", k: "<<k<<" calc: "<<model2.getNode(error_nodes[i]).getError()(j, k)<<", expected: "<<error(j, k, i)<<std::endl;
         BOOST_CHECK_CLOSE(model2.getNode(error_nodes[i]).getError()(j, k), error(j, k, i), 1e-3);
       }
     }
@@ -659,7 +659,7 @@ BOOST_AUTO_TEST_CASE(BPTT2)
 		{ { 2 },{ 3 },{ 3 },{ 4 },{ 4 },{ 5 },{ 5 },{ 6 } },
 		{ { 3 },{ 3 },{ 4 },{ 4 },{ 5 },{ 5 },{ 6 },{ 6 } } }
 	);
-	model2.CETT(expected, output_nodes, 4);
+	model2.CETT(expected, output_nodes, 4, true, false);
 
 	// backpropogate through time
 	model2.TBPTT(4);
@@ -730,7 +730,7 @@ BOOST_AUTO_TEST_CASE(updateWeights2)
   // y = m1*(m2*x + b*yprev) where m1 = 2, m2 = 0.5 and b = -2
   Eigen::Tensor<float, 2> expected(batch_size, (int)output_nodes.size()); 
   expected.setValues({{2.5}, {3}, {3.5}, {4}, {4.5}});
-  model2.calculateError(expected, output_nodes, 0);
+  model2.calculateError(expected, output_nodes, 0, true, false);
 
   // backpropogate through time
   model2.TBPTT(4);
@@ -865,8 +865,10 @@ BOOST_AUTO_TEST_CASE(modelTrainer2)
       model2a.FPTT(memory_size - 1, input, input_ids, dt, false, true, 2); 
 
     // calculate the model error
-    //model2a.calculateError(expected, output_nodes, 0);
-		model2a.CETT(expected, output_nodes, memory_size);
+		if (iter == 0)
+			model2a.CETT(expected, output_nodes, memory_size, true, true);
+		else
+			model2a.CETT(expected, output_nodes, memory_size, false, true);
     std::cout<<"Error at iteration: "<<iter<<" is "<<model2a.getError().sum()<<std::endl;
 
 		//std::cout << "Link #0: "<< model2a.getWeight("0").getWeight() << std::endl;

@@ -231,7 +231,7 @@ BOOST_AUTO_TEST_CASE(addConvolution)
 			int name_cnt = std::count(node_names.begin(), node_names.end(), node.getName());
 			BOOST_CHECK_EQUAL(name_cnt, 1);
 			BOOST_CHECK_EQUAL(node.getModuleName(), "Mod1");
-			if (node.getType() == NodeType::bias)
+			if (node.getType() == NodeType::bias || node.getType() == NodeType::zero)
 				BOOST_CHECK_CLOSE(node.getDropProbability(), 0.0f, 1e-3);
 			else
 				BOOST_CHECK_CLOSE(node.getDropProbability(), 0.2f, 1e-3);

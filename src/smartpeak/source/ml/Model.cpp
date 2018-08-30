@@ -1356,14 +1356,13 @@ namespace SmartPeak
   {
     std::lock_guard<std::mutex> lock(calculateNodeError_mutex);
 
-		Eigen::Tensor<float, 1> sink_output = result->sink_node->getOutput().chip(time_step + result->time_step, 1);
     Eigen::Tensor<float, 1> weight_tensor(batch_size);
     weight_tensor.setConstant(arguments->weight->getWeight());
-		result->sink_node->getErrorMutable()->chip(time_step + result->time_step, 1) += arguments->source_node->getIntegrationErrorShared()->operator()(
+		result->sink_node->getErrorMutable()->chip(time_step + result->time_step, 1) += (arguments->source_node->getIntegrationErrorShared()->operator()(
 			weight_tensor,
 			arguments->source_node->getError().chip(time_step, 1),
 			arguments->source_node->getInput().chip(time_step, 1),
-			sink_output) * result->sink_node->getDerivative().chip(time_step + result->time_step, 1);
+			result->sink_node->getOutput().chip(time_step + result->time_step, 1)) * result->sink_node->getDerivative().chip(time_step + result->time_step, 1));
 		//result->sink_node->getIntegrationErrorShared()->operator()(
 		//	weight_tensor,
 		//	arguments->source_node->getError().chip(time_step, 1),
@@ -1382,8 +1381,7 @@ namespace SmartPeak
     std::lock_guard<std::mutex> lock(calculateNetNodeError_mutex);
 
     std::vector<std::future<bool>> task_results;
-    int thread_cnt = 0;    
-		Eigen::Tensor<float, 1> sink_output = operations->result.sink_node->getOutput().chip(time_step, 1);
+    int thread_cnt = 0;
 
     // for (const std::string& link : sink_links)
     for (int i=0; i<operations->arguments.size(); ++i)
