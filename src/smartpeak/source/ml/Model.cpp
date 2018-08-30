@@ -1359,11 +1359,16 @@ namespace SmartPeak
 		Eigen::Tensor<float, 1> sink_output = result->sink_node->getOutput().chip(time_step + result->time_step, 1);
     Eigen::Tensor<float, 1> weight_tensor(batch_size);
     weight_tensor.setConstant(arguments->weight->getWeight());
-		result->sink_node->getIntegrationErrorShared()->operator()(
+		result->sink_node->getErrorMutable()->chip(time_step + result->time_step, 1) += arguments->source_node->getIntegrationErrorShared()->operator()(
 			weight_tensor,
 			arguments->source_node->getError().chip(time_step, 1),
 			arguments->source_node->getInput().chip(time_step, 1),
-			sink_output);
+			sink_output) * result->sink_node->getDerivative().chip(time_step + result->time_step, 1);
+		//result->sink_node->getIntegrationErrorShared()->operator()(
+		//	weight_tensor,
+		//	arguments->source_node->getError().chip(time_step, 1),
+		//	arguments->source_node->getInput().chip(time_step, 1),
+		//	sink_output);
     return true;
   }
 
@@ -1377,10 +1382,8 @@ namespace SmartPeak
     std::lock_guard<std::mutex> lock(calculateNetNodeError_mutex);
 
     std::vector<std::future<bool>> task_results;
-    int thread_cnt = 0;
-    
+    int thread_cnt = 0;    
 		Eigen::Tensor<float, 1> sink_output = operations->result.sink_node->getOutput().chip(time_step, 1);
-		operations->result.sink_node->getIntegrationErrorShared()->initNetNodeError(batch_size);
 
     // for (const std::string& link : sink_links)
     for (int i=0; i<operations->arguments.size(); ++i)
@@ -1420,15 +1423,9 @@ namespace SmartPeak
         ++thread_cnt;
       } 
     }
-   
-    //if (operations->result.time_step == 0 || time_step + operations->result.time_step < memory_size)
-    //{ // [PARALLEL: could add a dummy time step with output 0 so as not to need a check for the memory size being exceeded]
-
 		// scale the error by the derivative and add in any residual error
     // update the node error
     operations->result.sink_node->setStatus(NodeStatus::corrected);
-    operations->result.sink_node->getErrorMutable()->chip(time_step + operations->result.time_step, 1) = operations->result.sink_node->getIntegrationErrorShared()->getNetNodeError() * operations->result.sink_node->getDerivative().chip(time_step + operations->result.time_step, 1) + operations->result.sink_node->getError().chip(time_step + operations->result.time_step, 1);
-
     return true;
   }
 

@@ -143,14 +143,8 @@ public:
 	public:
 		IntegrationErrorOp() {};
 		~IntegrationErrorOp() {};
-		virtual void initNetNodeError(const int& batch_size) = 0;
-		void setNetNodeError(const Eigen::Tensor<T, 1>& net_node_error) { net_node_error_ = net_node_error; }
-		Eigen::Tensor<T, 1> getNetNodeError() const { return net_node_error_; }
 		virtual std::string getName() const = 0;
-		virtual void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_error, const Eigen::Tensor<T, 1>& source_net_input, const Eigen::Tensor<T, 1>& sink_output) = 0;
-	protected:
-		Eigen::Tensor<T, 1> net_node_error_; ///< 
-		//std::atomic<Eigen::Tensor<T, 1>> net_node_error_; ///< 
+		virtual Eigen::Tensor<T, 1> operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_error, const Eigen::Tensor<T, 1>& source_net_input, const Eigen::Tensor<T, 1>& sink_output) = 0;
 	};
 
 	/**
@@ -161,11 +155,6 @@ public:
 	{
 	public:
 		SumErrorOp() {};
-		void initNetNodeError(const int& batch_size) {
-			Eigen::Tensor<T, 1> net_node_error(batch_size);
-			net_node_error.setConstant(0);
-			this->setNetNodeError(net_node_error);
-		}
 		~SumErrorOp() {};
 		/*
 		@brief Sum integration error void operator		
@@ -175,8 +164,8 @@ public:
 		@param[in] x3 The source net input tensor
 		@param[in] x4 The sink output tensor
 		*/
-		void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_error, const Eigen::Tensor<T, 1>& source_net_input, const Eigen::Tensor<T, 1>& sink_output) {
-			this->net_node_error_ += weight * source_error;
+		Eigen::Tensor<T, 1> operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_error, const Eigen::Tensor<T, 1>& source_net_input, const Eigen::Tensor<T, 1>& sink_output) {
+			return weight * source_error;
 		};
 		std::string getName() const { return "SumErrorOp"; };
 	};
@@ -189,11 +178,6 @@ public:
 	{
 	public:
 		ProdErrorOp() {};
-		void initNetNodeError(const int& batch_size) {
-			Eigen::Tensor<T, 1> net_node_error(batch_size);
-			net_node_error.setConstant(0);
-			this->setNetNodeError(net_node_error);
-		}
 		~ProdErrorOp() {};
 		/*
 		@brief Sum integration error void operator
@@ -203,8 +187,8 @@ public:
 		@param[in] x3 The source net input tensor
 		@param[in] x4 The sink output tensor
 		*/
-		void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_error, const Eigen::Tensor<T, 1>& source_net_input, const Eigen::Tensor<T, 1>& sink_output) {
-			this->net_node_error_ += (source_net_input * source_error / sink_output).unaryExpr(std::ptr_fun(substituteNanInf<T>)); // Note: was checkNanInf
+		Eigen::Tensor<T, 1> operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_error, const Eigen::Tensor<T, 1>& source_net_input, const Eigen::Tensor<T, 1>& sink_output) {
+			return (source_net_input * source_error / sink_output).unaryExpr(std::ptr_fun(substituteNanInf<T>)); // Note: was checkNanInf
 		};
 		std::string getName() const { return "ProdErrorOp"; };
 	};
@@ -217,11 +201,6 @@ public:
 	{
 	public:
 		MaxErrorOp() {};
-		void initNetNodeError(const int& batch_size) {
-			Eigen::Tensor<T, 1> net_node_error(batch_size);
-			net_node_error.setConstant(0);
-			this->setNetNodeError(net_node_error);
-		}
 		~MaxErrorOp() {};
 		/*
 		@brief Sum integration error void operator
@@ -231,12 +210,16 @@ public:
 		@param[in] x3 The source net input tensor
 		@param[in] x4 The sink output tensor
 		*/
-		void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_error, const Eigen::Tensor<T, 1>& source_net_input, const Eigen::Tensor<T, 1>& sink_output){
+		Eigen::Tensor<T, 1> operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_error, const Eigen::Tensor<T, 1>& source_net_input, const Eigen::Tensor<T, 1>& sink_output){
+			//std::cout << "Source net input: " << source_net_input << std::endl;
+			//std::cout << "Sink output: " << sink_output << std::endl;
 			auto perc_max_tensor = (sink_output / source_net_input).unaryExpr(std::ptr_fun(checkNanInf<T>)).unaryExpr([](const T& v) {
-				if (v < 1) return 0;
-				else return 1;
+				if (v < 1 - 1e-3) 
+					return 0;
+				else 
+					return 1;
 			});
-			this->net_node_error_ += weight * source_error * perc_max_tensor;
+			return weight * source_error * perc_max_tensor;
 		};
 		std::string getName() const { return "MaxErrorOp"; };
 	};

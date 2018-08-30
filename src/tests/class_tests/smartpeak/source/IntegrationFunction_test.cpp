@@ -165,16 +165,18 @@ BOOST_AUTO_TEST_CASE(operationfunctionSumErrorOp)
 	Eigen::Tensor<double, 1> weight1(batch_size), weight2(batch_size), weight3(batch_size);
 	weight1.setValues({ 1, 1, 1 }); weight2.setValues({ 2, 2, 2 }); weight3.setValues({ 2, 2, 2 });
 	Eigen::Tensor<double, 1> dummy1(batch_size), dummy2(batch_size), dummy3(batch_size);
+	dummy1.setZero(); dummy2.setZero(); dummy3.setZero();
 
 	SumErrorOp<double> operation;
-	operation.initNetNodeError(3);
-	operation(weight1, source_error1, dummy1, dummy1);
-	operation(weight2, source_error2, dummy2, dummy2);
-	operation(weight3, source_error3, dummy3, dummy3);
+	Eigen::Tensor<double, 1> test(batch_size);
+	test.setConstant(0.0f);
+	test += operation(weight1, source_error1, dummy1, dummy1);
+	test += operation(weight2, source_error2, dummy2, dummy2);
+	test += operation(weight3, source_error3, dummy3, dummy3);
 
-	BOOST_CHECK_CLOSE(operation.getNetNodeError()(0), 13.0, 1e-6);
-	BOOST_CHECK_CLOSE(operation.getNetNodeError()(1), 12.0, 1e-6);
-	BOOST_CHECK_CLOSE(operation.getNetNodeError()(2), 10.0, 1e-6);
+	BOOST_CHECK_CLOSE(test(0), 13.0, 1e-6);
+	BOOST_CHECK_CLOSE(test(1), 12.0, 1e-6);
+	BOOST_CHECK_CLOSE(test(2), 10.0, 1e-6);
 }
 
 BOOST_AUTO_TEST_CASE(getNameSumErrorOp)
@@ -211,16 +213,18 @@ BOOST_AUTO_TEST_CASE(operationfunctionProdErrorOp)
 	Eigen::Tensor<double, 1> sink_output1(batch_size), sink_output2(batch_size), sink_output3(batch_size);
 	sink_output1.setValues({ 1, 1, 1 }); sink_output2.setValues({ 2, 2, 2 }); sink_output3.setValues({ 1, 1, 0 });
 	Eigen::Tensor<double, 1> dummy1(batch_size), dummy2(batch_size), dummy3(batch_size);
+	dummy1.setZero(); dummy2.setZero(); dummy3.setZero();
 
 	ProdErrorOp<double> operation;
-	operation.initNetNodeError(3);
-	operation(dummy1, source_error1, source_net_input1, sink_output1);
-	operation(dummy2, source_error2, source_net_input2, sink_output2);
-	operation(dummy3, source_error3, source_net_input3, sink_output3);
+	Eigen::Tensor<double, 1> test(batch_size);
+	test.setConstant(0.0f);
+	test += operation(dummy1, source_error1, source_net_input1, sink_output1);
+	test += operation(dummy2, source_error2, source_net_input2, sink_output2);
+	test += operation(dummy3, source_error3, source_net_input3, sink_output3);
 
-	BOOST_CHECK_CLOSE(operation.getNetNodeError()(0), 11.0, 1e-6);
-	BOOST_CHECK_CLOSE(operation.getNetNodeError()(1), 8.0, 1e-6);
-	BOOST_CHECK_CLOSE(operation.getNetNodeError()(2), 1e24, 1e-6);
+	BOOST_CHECK_CLOSE(test(0), 11.0, 1e-6);
+	BOOST_CHECK_CLOSE(test(1), 8.0, 1e-6);
+	BOOST_CHECK_CLOSE(test(2), 1e24, 1e-6);
 }
 
 BOOST_AUTO_TEST_CASE(getNameProdErrorOp)
@@ -260,14 +264,15 @@ BOOST_AUTO_TEST_CASE(operationfunctionMaxErrorOp)
 	sink_output1.setValues({ 7, 2, 1 }); sink_output2.setValues({ 2, 7, 2 }); sink_output3.setValues({ 0, 0, 7 });
 
 	MaxErrorOp<float> operation;
-	operation.initNetNodeError(3);
-	operation(weight1, source_error1, source_net_source_error1, sink_output1);
-	operation(weight2, source_error2, source_net_source_error2, sink_output2);
-	operation(weight3, source_error3, source_net_source_error3, sink_output3);
+	Eigen::Tensor<float, 1> test(batch_size);
+	test.setConstant(0.0f);
+	test += operation(weight1, source_error1, source_net_source_error1, sink_output1);
+	test += operation(weight2, source_error2, source_net_source_error2, sink_output2);
+	test += operation(weight3, source_error3, source_net_source_error3, sink_output3);
 
-	BOOST_CHECK_CLOSE(operation.getNetNodeError()(0), 1.0, 1e-6);
-	BOOST_CHECK_CLOSE(operation.getNetNodeError()(1), 8.0, 1e-6);
-	BOOST_CHECK_CLOSE(operation.getNetNodeError()(2), 4.0, 1e-6);
+	BOOST_CHECK_CLOSE(test(0), 1.0, 1e-6);
+	BOOST_CHECK_CLOSE(test(1), 8.0, 1e-6);
+	BOOST_CHECK_CLOSE(test(2), 4.0, 1e-6);
 }
 
 BOOST_AUTO_TEST_CASE(getNameMaxErrorOp)

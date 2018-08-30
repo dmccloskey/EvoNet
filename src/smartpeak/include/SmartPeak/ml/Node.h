@@ -23,10 +23,11 @@ namespace SmartPeak
   enum class NodeType
   {
     input = 1, // No activation function
-    bias = 2, // Zero value
+    bias = 2, // Value of 1
     output = 3, 
     hidden = 4,
-		unmodifiable = 5
+		unmodifiable = 5,
+		zero = 6 // value of 0
   };
 
   /**

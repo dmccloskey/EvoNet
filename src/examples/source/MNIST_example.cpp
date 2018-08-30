@@ -57,7 +57,7 @@ public:
 		std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", n_inputs);
 
 		// Add the first convolution -> max pool -> ReLU layers
-		int depth = 10;
+		int depth = 5; // 32
 		std::vector<std::vector<std::string>> node_names_l0;
 		for (size_t d = 0; d < depth; ++d) {
 			std::vector<std::string> node_names;
@@ -122,6 +122,7 @@ public:
 
 		// Linearize the node names
 		std::vector<std::string> node_names;
+		//for (const std::vector<std::string> &node_names_l : node_names_l0) {
 		for (const std::vector<std::string> &node_names_l : node_names_l1) {
 			for (const std::string &node_name : node_names_l) {
 				node_names.push_back(node_name);

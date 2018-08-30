@@ -266,7 +266,7 @@ namespace SmartPeak
 					char bias_name_char[64];
 					sprintf(bias_name_char, "%s-out-padding_H%d-W%d", name.data(), output_height_iter, output_width_iter);
 					std::string bias_name(bias_name_char);
-					Node bias(bias_name, NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+					Node bias(bias_name, NodeType::zero, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
 					bias.setModuleName(module_name);
 					model.addNodes({ bias });
 					node_names.push_back(bias_name);
@@ -275,7 +275,7 @@ namespace SmartPeak
 					char bias_name_char[64];
 					sprintf(bias_name_char, "%s-out-padding_H%d-W%d", name.data(), output_height_iter, output_width_iter);
 					std::string bias_name(bias_name_char);
-					Node bias(bias_name, NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+					Node bias(bias_name, NodeType::zero, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
 					bias.setModuleName(module_name);
 					model.addNodes({ bias });
 					node_names.push_back(bias_name);

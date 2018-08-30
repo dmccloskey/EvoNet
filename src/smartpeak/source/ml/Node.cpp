@@ -347,6 +347,14 @@ namespace SmartPeak
 			setStatus(NodeStatus::initialized);
 			setOutput(init_values);
 		}
+		else if (type_ == NodeType::zero)
+		{
+			//init_values.setConstant(1.0f);
+			//setDerivative(init_values);
+			init_values.setConstant(0.0f);
+			setStatus(NodeStatus::activated);
+			setOutput(init_values);
+		}
     else
     {
       init_values.setConstant(0.0f);
