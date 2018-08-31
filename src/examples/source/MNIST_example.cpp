@@ -57,7 +57,7 @@ public:
 		std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", n_inputs);
 
 		// Add the first convolution -> max pool -> ReLU layers
-		int depth = 5; // 32
+		int depth = 10; //32
 		std::vector<std::vector<std::string>> node_names_l0;
 		for (size_t d = 0; d < depth; ++d) {
 			std::vector<std::string> node_names;
@@ -147,6 +147,138 @@ public:
 			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
 			std::shared_ptr<WeightInitOp>(new RandWeightInitOp(50, 2)), 
 			std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+
+		// Add the final softmax layer
+		node_names = model_builder.addSoftMax(model, "SoftMax", "SoftMax", node_names);
+
+		model.initWeights();
+		return model;
+	}
+	Model makeCovNetFeatureNorm(const int& n_inputs, const int& n_outputs) {
+		Model model;
+		model.setId(0);
+		model.setName("CovNet");
+		model.setLossFunction(std::shared_ptr<LossFunctionOp<float>>(new NegativeLogLikelihoodOp<float>(n_outputs)));
+		model.setLossFunctionGrad(std::shared_ptr<LossFunctionGradOp<float>>(new NegativeLogLikelihoodGradOp<float>(n_outputs)));
+
+		ModelBuilder model_builder;
+
+		// Add the inputs
+		std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", n_inputs);
+
+		// Add the first convolution -> max pool -> ReLU layers
+		int depth = 10; // 32 in production
+		std::vector<std::vector<std::string>> node_names_l0;
+		for (size_t d = 0; d < depth; ++d) {
+			std::vector<std::string> node_names;
+			std::string conv_name = "Conv0-" + std::to_string(d);
+			node_names = model_builder.addConvolution(model, conv_name, conv_name, node_names_input,
+				28, 28, 0, 0,
+				5, 5, 1, 0, 0,
+				std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()),
+				std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()),
+				std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
+				std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
+				std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
+				std::shared_ptr<WeightInitOp>(new RandWeightInitOp(n_inputs, 2)),
+				std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+			std::string norm_name = "Norm0-" + std::to_string(d);
+			node_names = model_builder.addNormalization(model, norm_name, norm_name, node_names,
+				std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()),
+				std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
+				std::shared_ptr<WeightInitOp>(new RandWeightInitOp(n_inputs, 2)),
+				std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0, 0.0);
+			std::string pool_name = "Pool0-" + std::to_string(d);
+			node_names = model_builder.addConvolution(model, pool_name, pool_name, node_names,
+				sqrt(node_names.size()), sqrt(node_names.size()), 1, 1,
+				2, 2, 2, 0, 0,
+				std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()),
+				std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
+				std::shared_ptr<IntegrationOp<float>>(new MaxOp<float>()),
+				std::shared_ptr<IntegrationErrorOp<float>>(new MaxErrorOp<float>()),
+				std::shared_ptr<IntegrationWeightGradOp<float>>(new MaxWeightGradOp<float>()),
+				std::shared_ptr<WeightInitOp>(new ConstWeightInitOp(1.0)),
+				std::shared_ptr<SolverOp>(new DummySolverOp()), 0.0, 0.0, false);
+			node_names_l0.push_back(node_names);
+		}
+
+		// Add the second convolution -> max pool -> ReLU layers
+		std::vector<std::vector<std::string>> node_names_l1;
+		int l_cnt = 0;
+		depth = 2;
+		for (const std::vector<std::string> &node_names_l : node_names_l0) {
+			for (size_t d = 0; d < depth; ++d) {
+				std::vector<std::string> node_names;
+				std::string conv_name = "Conv1-" + std::to_string(l_cnt) + "-" + std::to_string(d);
+				node_names = model_builder.addConvolution(model, conv_name, conv_name, node_names_l,
+					sqrt(node_names_l.size()), sqrt(node_names_l.size()), 0, 0,
+					5, 5, 1, 0, 0,
+					std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()),
+					std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()),
+					std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
+					std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
+					std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
+					std::shared_ptr<WeightInitOp>(new RandWeightInitOp(n_inputs, 2)),
+					std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+				std::string norm_name = "Norm1-" + std::to_string(l_cnt) + "-" + std::to_string(d);
+				node_names = model_builder.addNormalization(model, norm_name, norm_name, node_names,
+					std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()),
+					std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()),
+					std::shared_ptr<WeightInitOp>(new RandWeightInitOp(n_inputs, 2)),
+					std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0, 0.0);
+				std::string pool_name = "Pool1-" + std::to_string(l_cnt) + "-" + std::to_string(d);
+				node_names = model_builder.addConvolution(model, pool_name, pool_name, node_names,
+					sqrt(node_names.size()), sqrt(node_names.size()), 1, 1,
+					2, 2, 2, 0, 0,
+					std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()),
+					std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
+					std::shared_ptr<IntegrationOp<float>>(new MaxOp<float>()),
+					std::shared_ptr<IntegrationErrorOp<float>>(new MaxErrorOp<float>()),
+					std::shared_ptr<IntegrationWeightGradOp<float>>(new MaxWeightGradOp<float>()),
+					std::shared_ptr<WeightInitOp>(new ConstWeightInitOp(1.0)),
+					std::shared_ptr<SolverOp>(new DummySolverOp()), 0.0, 0.0, false);
+				node_names_l1.push_back(node_names);
+			}
+			++l_cnt;
+		}
+
+		// Linearize the node names
+		std::vector<std::string> node_names;
+		//for (const std::vector<std::string> &node_names_l : node_names_l0) {
+		for (const std::vector<std::string> &node_names_l : node_names_l1) {
+			for (const std::string &node_name : node_names_l) {
+				node_names.push_back(node_name);
+			}
+		}
+
+		// Add the FC layers
+		//assert(node_names.size() == 320);
+		node_names = model_builder.addFullyConnected(model, "FC0", "FC0", node_names, 50,
+			std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()),
+			std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
+			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
+			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
+			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
+			std::shared_ptr<WeightInitOp>(new RandWeightInitOp(180, 2)),
+			std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.2f);
+		node_names = model_builder.addNormalization(model, "NormFC0", "NormFC0", node_names,
+			std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()),
+			std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()),
+			std::shared_ptr<WeightInitOp>(new RandWeightInitOp(180, 2)),
+			std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0, 0.0f);
+		node_names = model_builder.addFullyConnected(model, "FC1", "FC1", node_names, n_outputs,
+			std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()),
+			std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
+			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
+			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
+			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
+			std::shared_ptr<WeightInitOp>(new RandWeightInitOp(50, 2)),
+			std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.2f);
+		node_names = model_builder.addNormalization(model, "NormFC1", "NormFC1", node_names,
+			std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()),
+			std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
+			std::shared_ptr<WeightInitOp>(new RandWeightInitOp(50, 2)),
+			std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0, 0.0);
 
 		// Add the final softmax layer
 		node_names = model_builder.addSoftMax(model, "SoftMax", "SoftMax", node_names);
@@ -599,7 +731,8 @@ void main_CovNet() {
 
 	// define the initial population [BUG FREE]
 	std::cout << "Initializing the population..." << std::endl;
-	std::vector<Model> population = { model_trainer.makeCovNet(input_nodes.size(), output_nodes.size()) };
+	//std::vector<Model> population = { model_trainer.makeCovNet(input_nodes.size(), output_nodes.size()) }; 
+		std::vector<Model> population = { model_trainer.makeCovNetFeatureNorm(input_nodes.size(), output_nodes.size()) };
 
 	// Evolve the population
 	std::vector<std::vector<std::pair<int, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
