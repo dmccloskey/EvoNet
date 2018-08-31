@@ -23,9 +23,11 @@ public:
 		void setNetNodeInput(const Eigen::Tensor<T, 1>& net_node_input) { net_node_input_ = net_node_input; }
 		Eigen::Tensor<T, 1> getNetNodeInput() const { return net_node_input_; }
     virtual std::string getName() const = 0;
+		T getN() { return n_; };
     virtual void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>&source_output) = 0;
 	protected:
-		Eigen::Tensor<T, 1> net_node_input_; ///< 
+		Eigen::Tensor<T, 1> net_node_input_; ///<
+		T n_ = 0;
 		//std::atomic<Eigen::Tensor<T, 1>> net_node_input_; ///< 
   };
 
@@ -41,9 +43,13 @@ public:
 			Eigen::Tensor<T, 1> net_node_input(batch_size);
 			net_node_input.setConstant(0);
 			this->setNetNodeInput(net_node_input);
+			this->n_ = 0;
 		}
     ~SumOp(){};
-    void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>&source_output) { this->net_node_input_ += weight * source_output; };
+    void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>&source_output) { 
+			this->net_node_input_ += weight * source_output; 
+			this->n_ += 1;
+		};
     std::string getName() const{return "SumOp";};
   };
 
@@ -59,9 +65,13 @@ public:
 			Eigen::Tensor<T, 1> net_node_input(batch_size);
 			net_node_input.setConstant(1);
 			this->setNetNodeInput(net_node_input);
+			this->n_ = 0;
 		}
 		~ProdOp() {};
-		void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>&source_output) { this->net_node_input_ *= weight * source_output; };
+		void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>&source_output) { 
+			this->net_node_input_ *= weight * source_output;
+			this->n_ += 1;
+		};
 		std::string getName() const { return "ProdOp"; };
 	};
 
@@ -77,9 +87,13 @@ public:
 			Eigen::Tensor<T, 1> net_node_input(batch_size);
 			net_node_input.setConstant(0);
 			this->setNetNodeInput(net_node_input);
+			this->n_ = 0;
 		}
 		~MaxOp() {};
-		void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>&source_output) { this->net_node_input_ = this->net_node_input_.cwiseMax(weight * source_output); };
+		void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>&source_output) { 
+			this->net_node_input_ = this->net_node_input_.cwiseMax(weight * source_output);
+			this->n_ += 1;
+		};
 		std::string getName() const { return "MaxOp"; };
 	};
 
@@ -95,18 +109,19 @@ public:
 			Eigen::Tensor<T, 1> net_node_input(batch_size);
 			net_node_input.setConstant(0);
 			this->setNetNodeInput(net_node_input);
-			n_ = 0;
+			this->n_ = 0;
 		}
 		~MeanOp() {};
-		Eigen::Tensor<T, 1> getNetNodeInput() const { return this->net_node_input_/n_; }
+		Eigen::Tensor<T, 1> getNetNodeInput() const {
+			Eigen::Tensor<T, 1> n(this->net_node_input_.dimension(0));
+			n.setConstant(this->n_);
+			return this->net_node_input_/n; 
+		}
 		void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>&source_output) { 
-			this->net_node_input_ += weight * source_output; 
-			++n_;
+			this->net_node_input_ += weight * source_output;
+			this->n_ += 1;
 		};
-		T getN() { return n_; }
 		std::string getName() const { return "MeanOp"; };
-	private:
-		T n_ = 0;
 	};
 
 	/**
@@ -124,23 +139,24 @@ public:
 			Eigen::Tensor<T, 1> net_node_input(batch_size);
 			net_node_input.setConstant(0);
 			this->setNetNodeInput(net_node_input);
-			n_ = 0;
+			this->n_ = 0;
 		}
 		~VarianceOp() {};
-		Eigen::Tensor<T, 1> getNetNodeInput() const { return (this->net_node_input_  - (ex_ * ex_)/ n_)/n_; }
+		Eigen::Tensor<T, 1> getNetNodeInput() const { 
+			Eigen::Tensor<T, 1> n(this->net_node_input_.dimension(0));
+			n.setConstant(this->n_); 
+			return (this->net_node_input_  - (ex_ * ex_)/ n)/n; }
 		void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>&source_output) {
 			auto input = weight * source_output;
 			if (n_ == 0)
 				k_ = input;
 			auto input_k = input - k_;
 			ex_ += input_k;
-			++n_;
+			this->n_ += 1;
 			this->net_node_input_ += (input_k * input_k);
 		};
-		T getN() { return n_; }
 		std::string getName() const { return "VarianceOp"; };
 	private:
-		T n_ = 0;
 		Eigen::Tensor<T, 1> k_ = 0;
 		Eigen::Tensor<T, 1> ex_ = 0;
 	};
@@ -160,19 +176,19 @@ public:
 			Eigen::Tensor<T, 1> net_node_input(batch_size);
 			net_node_input.setConstant(0);
 			this->setNetNodeInput(net_node_input);
-			n_ = 0;
+			this->n_ = 0;
 		}
 		~VarModOp() {};
-		Eigen::Tensor<T, 1> getNetNodeInput() const { return this->net_node_input_ / n_; }
+		Eigen::Tensor<T, 1> getNetNodeInput() const {
+			Eigen::Tensor<T, 1> n(this->net_node_input_.dimension(0));
+			n.setConstant(this->n_);
+			return this->net_node_input_ / n; }
 		void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>&source_output) {
 			auto input = weight * source_output;
-			++n_;
+			this->n_ += 1;
 			this->net_node_input_ += (input * input);
 		};
-		T getN() { return n_; }
 		std::string getName() const { return "VarModOp"; };
-	private:
-		T n_ = 0;
 	};
 
 	/**
@@ -193,6 +209,7 @@ public:
 			Eigen::Tensor<T, 1> one(source_output.dimension(0));
 			one.setConstant(1.0f);
 			this->net_node_input_ += one; 
+			++(this->n_);
 		};
 		std::string getName() const { return "CountOp"; };
 	};

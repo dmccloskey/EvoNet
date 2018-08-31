@@ -393,4 +393,155 @@ namespace SmartPeak
 
 		return node_names;
 	}
+
+	std::vector<std::string> ModelBuilder::addNormalization(Model & model, const std::string & name, const std::string & module_name, const std::vector<std::string>& source_node_names, 
+		const std::shared_ptr<ActivationOp<float>>& node_activation, const std::shared_ptr<ActivationOp<float>>& node_activation_grad, 
+		const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver, float drop_out_prob, float drop_connection_prob, bool biases)
+	{
+		std::vector<std::string> node_names;
+
+		// Make the mean/linear node
+		char mean_name_char[64];
+		sprintf(mean_name_char, "%s-Mean", name.data());
+		std::string mean_name(mean_name_char);
+		Node mean(mean_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new MeanOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new MeanErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new MeanWeightGradOp<float>()));
+		mean.setModuleName(module_name);
+		mean.setDropProbability(drop_out_prob);
+		//model.addNodes({ mean });
+		node_names.push_back(mean_name);
+
+		// Make the variance/inverse sqrt node
+		char variance_name_char[64];
+		sprintf(variance_name_char, "%s-Variance", name.data());
+		std::string variance_name(variance_name_char);
+		Node variance(variance_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new PowOp<float>(-0.5)), std::shared_ptr<ActivationOp<float>>(new PowGradOp<float>(-0.5)), std::shared_ptr<IntegrationOp<float>>(new VarModOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new VarModErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new VarModWeightGradOp<float>()));
+		variance.setModuleName(module_name);
+		variance.setDropProbability(drop_out_prob);
+		//model.addNodes({ variance });
+		node_names.push_back(variance_name);
+
+		// Create the unity weight
+		char unity_weight_name_char[64];
+		sprintf(unity_weight_name_char, "%s_Unity", name.data());
+		std::string unity_weight_name(unity_weight_name_char);
+		Weight unity_weight(unity_weight_name, std::shared_ptr<WeightInitOp>(new ConstWeightInitOp(1.0)), std::shared_ptr<SolverOp>(new DummySolverOp()));
+		unity_weight.setModuleName(module_name);
+		model.addWeights({ unity_weight });
+
+		// Create the negative unity weight
+		char negunity_weight_name_char[64];
+		sprintf(negunity_weight_name_char, "%s_Negative", name.data());
+		std::string negunity_weight_name(negunity_weight_name_char);
+		Weight negunity_weight(negunity_weight_name, std::shared_ptr<WeightInitOp>(new ConstWeightInitOp(-1.0)), std::shared_ptr<SolverOp>(new DummySolverOp()));
+		negunity_weight.setModuleName(module_name);
+		model.addWeights({ negunity_weight });
+
+		for (const std::string& node_name : source_node_names) {
+			// Make the source-mean nodes
+			char sourceMinMean_name_char[64];
+			sprintf(sourceMinMean_name_char, "%s-SourceMinMean", node_name.data());
+			std::string sourceMinMean_name(sourceMinMean_name_char);
+			Node sourceMinMean(sourceMinMean_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+			sourceMinMean.setModuleName(module_name);
+			sourceMinMean.setDropProbability(drop_out_prob);
+			//model.addNodes({ sourceMinMean });
+			node_names.push_back(sourceMinMean_name);
+
+			// Make the source-mean nodes
+			char normalized_name_char[64];
+			sprintf(normalized_name_char, "%s-Normalized", node_name.data());
+			std::string normalized_name(normalized_name_char);
+			Node normalized(normalized_name, NodeType::hidden, NodeStatus::initialized, node_activation, node_activation_grad, std::shared_ptr<IntegrationOp<float>>(new ProdOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new ProdErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new ProdWeightGradOp<float>()));
+			normalized.setModuleName(module_name);
+			normalized.setDropProbability(drop_out_prob);
+			model.addNodes({ normalized });
+			node_names.push_back(normalized_name);
+
+			// Make the weights/links from source to mean
+			char sToM_link_name_char[64];
+			sprintf(sToM_link_name_char, "%s_to_%s", node_name.data(), mean_name.data());
+			std::string sToM_link_name(sToM_link_name_char);
+			Link sToM_link(sToM_link_name, node_name, mean_name, unity_weight_name);
+			sToM_link.setModuleName(module_name);
+			model.addLinks({ sToM_link });
+
+			// Make the links from source to sourceMinMean
+			char sToSMinM_link_name_char[64];
+			sprintf(sToSMinM_link_name_char, "%s_to_%s", node_name.data(), sourceMinMean_name.data());
+			std::string sToSMinM_link_name(sToSMinM_link_name_char);
+			Link sToSMinM_link(sToSMinM_link_name, node_name, sourceMinMean_name, unity_weight_name);
+			sToSMinM_link.setModuleName(module_name);
+			model.addLinks({ sToSMinM_link });
+
+			// Make the links from the mean to sourceMinMean
+			char mToSMinM_link_name_char[64];
+			sprintf(mToSMinM_link_name_char, "%s_to_%s", mean_name.data(), sourceMinMean_name.data());
+			std::string mToSMinM_link_name(mToSMinM_link_name_char);
+			Link mToSMinM_link(mToSMinM_link_name, mean_name, sourceMinMean_name, negunity_weight_name);
+			mToSMinM_link.setModuleName(module_name);
+			model.addLinks({ mToSMinM_link });
+
+			// Make the links from sourceMinMean to variance
+			char sMinMToV_link_name_char[64];
+			sprintf(sMinMToV_link_name_char, "%s_to_%s", sourceMinMean_name.data(), variance_name.data());
+			std::string sMinMToV_link_name(sMinMToV_link_name_char);
+			Link sMinMToV_link(sMinMToV_link_name, sourceMinMean_name, variance_name, unity_weight_name);
+			sMinMToV_link.setModuleName(module_name);
+			model.addLinks({ sMinMToV_link });
+
+			// Make the weights/links from sourceMinMean to normalized
+			char gamma_weight_name_char[64];
+			sprintf(gamma_weight_name_char, "%s_Gamma", name.data());
+			std::string gamma_weight_name(gamma_weight_name_char);
+			Weight gamma_weight(gamma_weight_name, weight_init, solver);
+			gamma_weight.setModuleName(module_name);
+			model.addWeights({ gamma_weight });
+
+			char sMinMToN_link_name_char[64];
+			sprintf(sMinMToN_link_name_char, "%s_to_%s", sourceMinMean_name.data(), normalized_name.data());
+			std::string sMinMToN_link_name(sMinMToN_link_name_char);
+			Link sMinMToN_link(sMinMToN_link_name, sourceMinMean_name, normalized_name, gamma_weight_name);
+			sMinMToN_link.setModuleName(module_name);
+			model.addLinks({ sMinMToN_link });
+
+			// Make the links from variance to normalized
+			char vToN_link_name_char[64];
+			sprintf(vToN_link_name_char, "%s_to_%s", variance_name.data(), normalized_name.data());
+			std::string vToN_link_name(vToN_link_name_char);
+			Link vToN_link(vToN_link_name, variance_name, normalized_name, unity_weight_name);
+			vToN_link.setModuleName(module_name);
+			model.addLinks({ vToN_link });
+
+			// add the bias nodes, weights, and links
+			if (biases) {
+				char bias_name_char[64];
+				sprintf(bias_name_char, "%s-Normalized-bias", name.data());
+				std::string bias_name(bias_name_char);
+				Node bias(bias_name, NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+				bias.setModuleName(module_name);
+				model.addNodes({ bias });
+
+				char weight_bias_name_char[64];
+				sprintf(weight_bias_name_char, "%s_to_%s", bias_name.data(), normalized_name.data());
+				std::string weight_bias_name(weight_bias_name_char);
+
+				char link_bias_name_char[64];
+				sprintf(link_bias_name_char, "%s_to_%s", bias_name.data(), normalized_name.data());
+				std::string link_bias_name(link_bias_name_char);
+
+				std::shared_ptr<WeightInitOp> bias_weight_init;
+				bias_weight_init.reset(new ConstWeightInitOp(1.0));;
+				std::shared_ptr<SolverOp> bias_solver = solver;
+				Weight weight_bias(weight_bias_name, bias_weight_init, bias_solver);
+				weight_bias.setModuleName(module_name);
+				weight_bias.setDropProbability(drop_connection_prob);
+				Link link_bias(link_bias_name, bias_name, node_name, weight_bias_name);
+				link_bias.setModuleName(module_name);
+
+				model.addWeights({ weight_bias });
+				model.addLinks({ link_bias });
+			}
+		}
+		return node_names;
+	}
 }

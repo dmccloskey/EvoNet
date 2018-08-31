@@ -265,4 +265,87 @@ BOOST_AUTO_TEST_CASE(addConvolution)
 	}
 }
 
+BOOST_AUTO_TEST_CASE(addNormlization)
+{
+	ModelBuilder model_builder;
+	Model model;
+	std::vector<std::string> node_names;
+
+	// make the input
+	node_names = model_builder.addInputNodes(model, "Input", 2);
+
+	// make the normalization 
+	node_names = model_builder.addNormalization(model, "Norm", "Mod1", node_names,
+		std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
+		std::shared_ptr<WeightInitOp>(new RandWeightInitOp(1.0)), std::shared_ptr<SolverOp>(new SGDOp(0.1, 0.9)), 0.2f, 0.8f);
+
+	std::vector<std::string> node_names_test = { "Norm-Mean", "Norm-Variance", "Norm-In_0", "Norm-Out_0", "Norm-In_1", "Norm-Out_1" };
+	std::vector<std::string> link_names_test = {
+		"Input_0_to_Norm-In_0", "Norm-In_0_to_Norm-Sum", "Norm-In_0_to_Norm-Out_0", "Norm-Sum_to_Norm-Out_0",
+		"Input_1_to_Norm-In_1", "Norm-In_1_to_Norm-Sum", "Norm-In_1_to_Norm-Out_1", "Norm-Sum_to_Norm-Out_1" };
+	std::vector<std::string> weight_names_test = {
+		"Norm_Unity", "Norm_Negative" };
+
+	// check the nodes
+	for (const std::string& node_name : node_names_test)
+	{
+		BOOST_CHECK_EQUAL(model.getNode(node_name).getName(), node_name);
+		BOOST_CHECK_EQUAL(model.getNode(node_name).getModuleName(), "Mod1");
+		if (node_name == "SoftMax-Sum")
+		{
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "InverseOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "InverseGradOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "SumOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "SumErrorOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
+		}
+		else if (node_name == "SoftMax-Max")
+		{
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "MaxOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "MaxErrorOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "MaxWeightGradOp");
+		}
+		else if (node_name == "SoftMax-In_0" || node_name == "SoftMax-In_1")
+		{
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "ExponentialOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "ExponentialGradOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "SumOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "SumErrorOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
+		}
+		else if (node_name == "SoftMax-Out_0" || node_name == "SoftMax-Out_1")
+		{
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "ProdOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "ProdErrorOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "ProdWeightGradOp");
+		}
+	}
+
+	// check the links
+	for (const std::string& name : link_names_test)
+	{
+		BOOST_CHECK_EQUAL(model.getLink(name).getName(), name);
+		std::vector<std::string> test = SplitString(name, "_to_");
+		BOOST_CHECK_EQUAL(model.getLink(name).getSourceNodeName(), test[0]);
+		BOOST_CHECK_EQUAL(model.getLink(name).getSinkNodeName(), test[1]);
+		int count = std::count(weight_names_test.begin(), weight_names_test.end(), model.getLink(name).getWeightName());
+		BOOST_CHECK_EQUAL(count, 1);
+		BOOST_CHECK_EQUAL(model.getLink(name).getModuleName(), "Mod1");
+	}
+
+	// check the weights
+	for (const Weight& weight : model.getWeights())
+	{
+		int count = std::count(weight_names_test.begin(), weight_names_test.end(), weight.getName());
+		BOOST_CHECK_EQUAL(count, 1);
+		BOOST_CHECK_EQUAL(weight.getWeightInitOp()->getName(), "ConstWeightInitOp");
+		BOOST_CHECK_EQUAL(weight.getSolverOp()->getName(), "DummySolverOp");
+		BOOST_CHECK_EQUAL(weight.getModuleName(), "Mod1");
+	}
+}
+
 BOOST_AUTO_TEST_SUITE_END()

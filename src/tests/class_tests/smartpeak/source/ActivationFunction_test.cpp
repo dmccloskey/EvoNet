@@ -587,4 +587,74 @@ BOOST_AUTO_TEST_CASE(getNameExponentialGradOp)
 	BOOST_CHECK_EQUAL(operation.getName(), "ExponentialGradOp");
 }
 
+/**
+	PowOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorPowOp)
+{
+	PowOp<double>* ptrPow = nullptr;
+	PowOp<double>* nullPointerPow = nullptr;
+	BOOST_CHECK_EQUAL(ptrPow, nullPointerPow);
+}
+
+BOOST_AUTO_TEST_CASE(destructorPowOp)
+{
+	PowOp<double>* ptrPow = nullptr;
+	ptrPow = new PowOp<double>(2);
+	delete ptrPow;
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionPowOp)
+{
+	PowOp<double> operation(0.5);
+
+	BOOST_CHECK_CLOSE(operation(0.0), 0.0, 1e-6);
+	BOOST_CHECK_CLOSE(operation(1.0), 1.0, 1e-6);
+	BOOST_CHECK_CLOSE(operation(10.0), 3.1622776601683795, 1e-6);
+	BOOST_CHECK_CLOSE(operation(-1.0), 0.0, 1e-6);
+	BOOST_CHECK_CLOSE(operation(-10.0), 0.0, 1e-6);
+}
+
+BOOST_AUTO_TEST_CASE(getNamePowOp)
+{
+	PowOp<double> operation(0.5);
+
+	BOOST_CHECK_EQUAL(operation.getName(), "PowOp");
+}
+
+/**
+	PowGradOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorPowGradOp)
+{
+	PowGradOp<double>* ptrPowGrad = nullptr;
+	PowGradOp<double>* nullPointerPowGrad = nullptr;
+	BOOST_CHECK_EQUAL(ptrPowGrad, nullPointerPowGrad);
+}
+
+BOOST_AUTO_TEST_CASE(destructorPowGradOp)
+{
+	PowGradOp<double>* ptrPowGrad = nullptr;
+	ptrPowGrad = new PowGradOp<double>(0.5);
+	delete ptrPowGrad;
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionPowGradOp)
+{
+	PowGradOp<double> operation(0.5);
+
+	BOOST_CHECK_CLOSE(operation(0.0), 1.0e24, 1e-6);
+	BOOST_CHECK_CLOSE(operation(1.0), 0.5, 1e-6);
+	BOOST_CHECK_CLOSE(operation(10.0), 0.15811388300841897, 1e-6);
+	BOOST_CHECK_CLOSE(operation(-1.0), 0.0, 1e-6);
+	BOOST_CHECK_CLOSE(operation(-10.0), 0.0, 1e-6);
+}
+
+BOOST_AUTO_TEST_CASE(getNamePowGradOp)
+{
+	PowGradOp<double> operation(0.5);
+
+	BOOST_CHECK_EQUAL(operation.getName(), "PowGradOp");
+}
+
 BOOST_AUTO_TEST_SUITE_END()

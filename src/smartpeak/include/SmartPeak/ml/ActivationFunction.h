@@ -339,5 +339,41 @@ public:
 		};
 		std::string getName() const { return "LogGradOp"; };
 	};
+
+	/**
+	@brief Pow activation function
+	*/
+	template<typename T>
+	class PowOp : public ActivationOp<T>
+	{
+	public:
+		PowOp(const T& base): base_(base){};
+		~PowOp() {};
+		T operator()(const T& x_I) const
+		{
+			return this->substituteNanInf(std::pow(x_I, base_));
+		};
+		std::string getName() const { return "PowOp"; };
+	private:
+		T base_;
+	};
+
+	/**
+	@brief Pow gradient
+	*/
+	template<typename T>
+	class PowGradOp : public ActivationOp<T>
+	{
+	public:
+		PowGradOp(const T& base) : base_(base) {};
+		~PowGradOp() {};
+		T operator()(const T& x_I) const
+		{
+			return this->substituteNanInf(base_ * std::pow(x_I, base_ - 1));
+		};
+		std::string getName() const { return "PowGradOp"; };
+	private:
+		T base_;
+	};
 }
 #endif //SMARTPEAK_ACTIVATIONFUNCTION_H

@@ -1358,11 +1358,14 @@ namespace SmartPeak
 
     Eigen::Tensor<float, 1> weight_tensor(batch_size);
     weight_tensor.setConstant(arguments->weight->getWeight());
+		Eigen::Tensor<float, 1> n_input_nodes(arguments->source_node->getOutput().dimension(0));
+		n_input_nodes.setConstant(arguments->source_node->getIntegrationShared()->getN());
 		result->sink_node->getErrorMutable()->chip(time_step + result->time_step, 1) += (arguments->source_node->getIntegrationErrorShared()->operator()(
 			weight_tensor,
 			arguments->source_node->getError().chip(time_step, 1),
 			arguments->source_node->getInput().chip(time_step, 1),
-			result->sink_node->getOutput().chip(time_step + result->time_step, 1)) * result->sink_node->getDerivative().chip(time_step + result->time_step, 1));
+			result->sink_node->getOutput().chip(time_step + result->time_step, 1),
+			n_input_nodes) * result->sink_node->getDerivative().chip(time_step + result->time_step, 1));
 		//result->sink_node->getIntegrationErrorShared()->operator()(
 		//	weight_tensor,
 		//	arguments->source_node->getError().chip(time_step, 1),
@@ -1640,6 +1643,8 @@ namespace SmartPeak
 				std::shared_ptr<Node> source_node = nodes_.at(link_map.second->getSourceNodeName());
 				Eigen::Tensor<float, 1> weights(source_node->getOutput().dimension(0));
 				weights.setConstant(weights_.at(link_map.second->getWeightName())->getWeight());
+				Eigen::Tensor<float, 1> n_input_nodes(sink_node->getOutput().dimension(0));
+				n_input_nodes.setConstant(sink_node->getIntegrationShared()->getN());
         for (int i=0; i<max_steps; ++i)
         {
           // [PARALLEL: move to threadPool/CUDA implementations]
@@ -1648,7 +1653,8 @@ namespace SmartPeak
 						sink_node->getError().chip(i, 1),
 						source_node->getOutput().chip(i, 1),
 						weights,
-						source_node->getInput().chip(i, 1));
+						source_node->getInput().chip(i, 1),
+						n_input_nodes);
         } 
         // [PARALELL: collect threads here sum the error]
 				auto found = weight_derivatives.emplace(link_map.second->getWeightName(), sink_node->getIntegrationWeightGradShared()->getNetWeightError());
