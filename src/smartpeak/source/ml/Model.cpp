@@ -1725,13 +1725,15 @@ namespace SmartPeak
   }
 
 	bool Model::checkCompleteInputToOutput(
-		const std::vector<std::string>& input_nodes, 
-		const std::vector<std::string>& output_nodes,
+		//const std::vector<std::string>& input_nodes, 
+		//const std::vector<std::string>& output_nodes,
 		int n_threads)
 	{
-		// check that all input/output nodes exist!
-		if (!checkNodeNames(input_nodes) || !checkNodeNames(output_nodes))
-			return false;
+
+		// [NOTE: Should not be needed now that the input/output nodes are cached upon model creation]
+		//// check that all input/output nodes exist!
+		//if (!checkNodeNames(input_nodes) || !checkNodeNames(output_nodes))
+		//	return false;
 
 		// infer the batch and memory size
 		// [BUG: modifying the batch_size or memory_size causes a memory corruption error when
@@ -1756,25 +1758,25 @@ namespace SmartPeak
 		zero.setConstant(0.0f);
 		Eigen::Tensor<float, 2> one(batch_size, memory_size);
 		one.setConstant(1.0f);
+		for (auto& node : input_nodes_)
+		{
+			node->setOutput(one);
+			node->setInput(one);
+			node->setError(zero);
+			node->setDerivative(one);
+			node->setDt(one);
+		}
+		for (auto& node : output_nodes_)
+		{
+			node->setOutput(zero);
+			node->setInput(zero);
+			node->setError(one);
+			node->setDerivative(one);
+			node->setDt(one);
+		}
 		for (auto& node_map: nodes_)
 		{
-			if (std::count(input_nodes.begin(), input_nodes.end(), node_map.second->getName()) != 0)
-			{
-				node_map.second->setOutput(one);
-				node_map.second->setInput(one);
-				node_map.second->setError(zero);
-				node_map.second->setDerivative(one);
-				node_map.second->setDt(one);
-			}
-			else if (std::count(output_nodes.begin(), output_nodes.end(), node_map.second->getName()) != 0)
-			{
-				node_map.second->setOutput(zero);
-				node_map.second->setInput(zero);
-				node_map.second->setError(one);
-				node_map.second->setDerivative(one);
-				node_map.second->setDt(one);
-			}
-			else
+			if (node_map.second->getType() != NodeType::input || node_map.second->getType() != NodeType::output)
 			{
 				node_map.second->setOutput(zero);
 				node_map.second->setInput(zero);
@@ -1792,27 +1794,27 @@ namespace SmartPeak
 			weight_map.second->setWeight(1.0f);
 
 		// Forward propogate
-		for (const std::string& node_name : input_nodes)
-			nodes_.at(node_name)->setStatus(NodeStatus::activated);
+		for (auto& node : input_nodes_)
+			node->setStatus(NodeStatus::activated);
 		forwardPropogate(0, false, false, n_threads);
 
 		// check that all output nodes are greater than 0
-		for (const std::string& node_name: output_nodes)
+		for (auto& node: output_nodes_)
 		{
-			Eigen::Tensor<float, 0> output = nodes_.at(node_name)->getOutput().sum();
+			Eigen::Tensor<float, 0> output = node->getOutput().sum();
 			if (output(0) == 0.0f)
 				return false;
 		}
 
 		// backward propagation
-		for (const std::string& node_name : output_nodes)
-			nodes_.at(node_name)->setStatus(NodeStatus::corrected);
+		for (auto& node : output_nodes_)
+			node->setStatus(NodeStatus::corrected);
 		backPropogate(0, false, false, n_threads);
 
 		// check that all input nodes are greater than 0
-		for (const std::string& node_name : input_nodes)
+		for (auto& node : input_nodes_)
 		{
-			Eigen::Tensor<float, 0> error = nodes_.at(node_name)->getError().sum();
+			Eigen::Tensor<float, 0> error = node->getError().sum();
 			if (error(0) == 0.0f)
 				return false;
 		}

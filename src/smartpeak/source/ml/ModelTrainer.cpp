@@ -214,14 +214,8 @@ namespace SmartPeak
 			// calculate the model error and node output 
 			if (getVerbosityLevel() >= 2)
 				std::cout << "Error Calculation..." << std::endl;
-			//if (iter == 0)
-			//	model.CETT(output.chip(iter, 3), output_nodes, 1, true, true, getNThreads());
-			//else
-			//	model.CETT(output.chip(iter, 3), output_nodes, 1, false, true, getNThreads());
-			if (iter == 0)
-				model.CETT(output.chip(iter, 3), output_nodes, getMemorySize(), true, true, getNThreads());
-			else
-				model.CETT(output.chip(iter, 3), output_nodes, getMemorySize(), false, true, getNThreads());
+			//model.CETT(output.chip(iter, 3), output_nodes, 1,getNThreads());
+			model.CETT(output.chip(iter, 3), output_nodes, getMemorySize(), getNThreads());
 
 			const Eigen::Tensor<float, 0> total_error = model.getError().sum();
 			model_error.push_back(total_error(0));
@@ -311,10 +305,7 @@ namespace SmartPeak
 				model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), false, true, getNThreads());
 
 			// calculate the model error and node output error
-			if (iter == 0)
-				model.CETT(output.chip(iter, 3), output_nodes, getMemorySize(), true, true, getNThreads());
-			else
-				model.CETT(output.chip(iter, 3), output_nodes, getMemorySize(), false, true, getNThreads());
+			model.CETT(output.chip(iter, 3), output_nodes, getMemorySize(), getNThreads());
 
 			const Eigen::Tensor<float, 0> total_error = model.getError().sum();
 			model_error.push_back(total_error(0));

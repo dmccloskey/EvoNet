@@ -650,13 +650,11 @@ public:
 		/**
 		@brief Check that the path from input to output is not broken
 
+		[DEPRECATED: params no longer needed]
 		@param[in] input_nodes
 		@param[out] output_nodes
 		*/
-		bool checkCompleteInputToOutput(
-			const std::vector<std::string>& input_nodes,
-			const std::vector<std::string>& output_nodes,
-			int n_threads = 1);
+		bool checkCompleteInputToOutput(int n_threads = 1);
 
 		/**
 		@brief Check model link node and weight names

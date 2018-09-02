@@ -373,7 +373,7 @@ namespace SmartPeak
 
 			// additional model checks
 			Model model_check(model_copy);
-			bool complete_model = model_check.checkCompleteInputToOutput(input_nodes, output_nodes);
+			bool complete_model = model_check.checkCompleteInputToOutput();
 
 			if (complete_model)
 				return model_copy;

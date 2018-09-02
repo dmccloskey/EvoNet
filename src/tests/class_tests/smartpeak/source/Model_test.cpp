@@ -653,7 +653,7 @@ BOOST_AUTO_TEST_CASE(checkCompleteInputToOutput)
 	model1.initNodes(batch_size, memory_size);
 	model1.initError(batch_size, memory_size);
 
-	BOOST_CHECK(model1.checkCompleteInputToOutput(input_nodes, output_nodes, 2));
+	BOOST_CHECK(model1.checkCompleteInputToOutput(2));
 
 	// model 2: disconnected output
 	Model model2;
@@ -663,7 +663,7 @@ BOOST_AUTO_TEST_CASE(checkCompleteInputToOutput)
 	model2.initNodes(batch_size, memory_size);
 	model2.initError(batch_size, memory_size);
 
-	BOOST_CHECK(!model2.checkCompleteInputToOutput(input_nodes, output_nodes, 2));
+	BOOST_CHECK(!model2.checkCompleteInputToOutput(2));
 
 	// model 3: disconnected input
 	Model model3;
@@ -673,7 +673,7 @@ BOOST_AUTO_TEST_CASE(checkCompleteInputToOutput)
 	model3.initNodes(batch_size, memory_size);
 	model3.initError(batch_size, memory_size);
 
-	BOOST_CHECK(!model3.checkCompleteInputToOutput(input_nodes, output_nodes, 2));
+	BOOST_CHECK(!model3.checkCompleteInputToOutput(2));
 
 	// model 4: missing input nodes
 	Model model4;
@@ -683,7 +683,7 @@ BOOST_AUTO_TEST_CASE(checkCompleteInputToOutput)
 	model4.initNodes(batch_size, memory_size);
 	model4.initError(batch_size, memory_size);
 
-	BOOST_CHECK(!model4.checkCompleteInputToOutput(input_nodes, output_nodes, 2));
+	BOOST_CHECK(!model4.checkCompleteInputToOutput(2));
 
 	// model 5: missing output nodes
 	Model model5;
@@ -693,7 +693,7 @@ BOOST_AUTO_TEST_CASE(checkCompleteInputToOutput)
 	model5.initNodes(batch_size, memory_size);
 	model5.initError(batch_size, memory_size);
 
-	BOOST_CHECK(!model5.checkCompleteInputToOutput(input_nodes, output_nodes, 2));
+	BOOST_CHECK(!model5.checkCompleteInputToOutput(2));
 }
 
 BOOST_AUTO_TEST_CASE(removeIsolatedNodes)
