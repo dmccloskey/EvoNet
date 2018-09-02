@@ -113,10 +113,14 @@ namespace SmartPeak
         std::cout << "Node name " << node.getName() << " already exists!" << std::endl;
       }
 			else {
-				if (node.getType() == NodeType::input)
-					input_nodes_.push_back(node_ptr);
-				else if (node.getType() == NodeType::output)
+				if (node.getType() == NodeType::input) {
+					std::shared_ptr<Node> node_ptr_cpy = node_ptr;
+					input_nodes_.push_back(node_ptr_cpy);
+				}
+				else if (node.getType() == NodeType::output) {
+					std::shared_ptr<Node> node_ptr_cpy = node_ptr;
 					output_nodes_.push_back(node_ptr);
+				}
 			}
     }
   }
@@ -1776,7 +1780,7 @@ namespace SmartPeak
 		}
 		for (auto& node_map: nodes_)
 		{
-			if (node_map.second->getType() != NodeType::input || node_map.second->getType() != NodeType::output)
+			if (node_map.second->getType() != NodeType::input && node_map.second->getType() != NodeType::output)
 			{
 				node_map.second->setOutput(zero);
 				node_map.second->setInput(zero);
@@ -1796,7 +1800,13 @@ namespace SmartPeak
 		// Forward propogate
 		for (auto& node : input_nodes_)
 			node->setStatus(NodeStatus::activated);
-		forwardPropogate(0, false, false, n_threads);
+		try {
+			forwardPropogate(0, false, false, n_threads);
+		}
+		catch (std::exception& e) {
+			printf("Exception: %s; CheckCompleteInputToOutput failed during forward propogation.\n", e.what());
+			return false;
+		}
 
 		// check that all output nodes are greater than 0
 		for (auto& node: output_nodes_)
@@ -1809,7 +1819,13 @@ namespace SmartPeak
 		// backward propagation
 		for (auto& node : output_nodes_)
 			node->setStatus(NodeStatus::corrected);
-		backPropogate(0, false, false, n_threads);
+		try {
+			backPropogate(0, false, false, n_threads);
+		}
+		catch (std::exception& e) {
+			printf("Exception: %s; CheckCompleteInputToOutput failed during back propogation.\n", e.what());
+			return false;
+		}
 
 		// check that all input nodes are greater than 0
 		for (auto& node : input_nodes_)
