@@ -32,6 +32,9 @@ namespace SmartPeak
     error_ = other.error_;
     loss_function_ = other.loss_function_;
 		loss_function_grad_ = other.loss_function_grad_;
+		cyclic_pairs_ = other.cyclic_pairs_;
+		input_nodes_ = other.input_nodes_;
+		output_nodes_ = other.output_nodes_;
   }
 
   Model::Model(const int& id):
@@ -87,6 +90,16 @@ namespace SmartPeak
 		return loss_function_grad_.get();
 	}
 
+	std::vector<std::shared_ptr<Node>> Model::getInputNodes()
+	{
+		return input_nodes_;
+	}
+
+	std::vector<std::shared_ptr<Node>> Model::getOutputNodes()
+	{
+		return output_nodes_;
+	}
+
   void Model::addNodes(const std::vector<Node>& nodes)
   { 
     for (const Node& node: nodes)
@@ -99,6 +112,12 @@ namespace SmartPeak
         // TODO: move to debug log
         std::cout << "Node name " << node.getName() << " already exists!" << std::endl;
       }
+			else {
+				if (node.getType() == NodeType::input)
+					input_nodes_.push_back(node_ptr);
+				else if (node.getType() == NodeType::output)
+					output_nodes_.push_back(node_ptr);
+			}
     }
   }
 
@@ -1052,8 +1071,7 @@ namespace SmartPeak
 
 	void Model::calculateError(
 		const Eigen::Tensor<float, 2>& values, const std::vector<std::string>& node_names,
-		const int& time_step, bool cache_output_nodes, bool use_cache,
-		int n_threads)
+		const int& time_step, int n_threads)
 	{
 		// infer the batch size from the first source node
 		std::pair<int, int> bmsizes = getBatchAndMemorySizes();
@@ -1080,19 +1098,10 @@ namespace SmartPeak
 
 		// collect the output nodes
 		std::vector<std::shared_ptr<Node>> output_nodes;
-		if (use_cache)
-		{ 
-			output_nodes = output_node_cache_;
-		}
-		else
+		for (int i = 0; i < node_names.size(); ++i)
 		{
-			for (int i = 0; i < node_names.size(); ++i)
-			{
-				std::shared_ptr<Node> output_node = nodes_.at(node_names[i]);
-				if (cache_output_nodes)
-					output_node_cache_.push_back(output_node);
-				output_nodes.push_back(output_node);
-			}
+			std::shared_ptr<Node> output_node = nodes_.at(node_names[i]);
+			output_nodes.push_back(output_node);
 		}
 		
 		// loop over all nodes and calculate the error for the model
@@ -1186,8 +1195,7 @@ namespace SmartPeak
 	}
  
 
-  void Model::CETT(const Eigen::Tensor<float, 3>& values, const std::vector<std::string>& node_names, const int & time_steps,
-	bool cache_output_nodes, bool use_cache, int n_threads)
+  void Model::CETT(const Eigen::Tensor<float, 3>& values, const std::vector<std::string>& node_names, const int & time_steps, int n_threads)
   {
 		// check time_steps vs memory_size
 		int max_steps = time_steps;
@@ -1209,12 +1217,7 @@ namespace SmartPeak
 			//std::cout<<"Expected output for time point "<< i << " is " << values.chip(next_time_step, 1)<<std::endl;
 
 			// calculate the error for each batch of memory
-			if (cache_output_nodes && i == 0)
-				calculateError(values.chip(next_time_step, 1), node_names, i, true, false, n_threads);
-			else if (cache_output_nodes && i > 0)
-				calculateError(values.chip(next_time_step, 1), node_names, i, false, true, n_threads);
-			else
-				calculateError(values.chip(next_time_step, 1), node_names, i, cache_output_nodes, use_cache, n_threads);
+			calculateError(values.chip(next_time_step, 1), node_names, i, n_threads);
 			//calculateError(values.chip(i, 1), node_names, i);
 		}
   }
@@ -1598,7 +1601,7 @@ namespace SmartPeak
         for (auto& node_map: nodes_) {
 					node_map.second->setStatus(NodeStatus::activated); // reinitialize nodes
         }
-				for (auto& node : output_node_cache_) {
+				for (auto& node : output_nodes_) {
 					node->setStatus(NodeStatus::corrected);
 				}
       }
@@ -1887,7 +1890,6 @@ namespace SmartPeak
   {
     FP_operations_cache_.clear();
     BP_operations_cache_.clear();
-		output_node_cache_.clear();
 		cyclic_pairs_.clear();
   }
 

@@ -90,6 +90,9 @@ public:
       error_ = other.error_;
       loss_function_ = other.loss_function_;
 			loss_function_grad_ = other.loss_function_grad_;
+			cyclic_pairs_ = other.cyclic_pairs_;
+			input_nodes_ = other.input_nodes_;
+			output_nodes_ = other.output_nodes_;
       return *this;
     }
 
@@ -361,8 +364,7 @@ public:
     @param[in] node_names Output nodes
     */ 
     void calculateError(const Eigen::Tensor<float, 2>& values, const std::vector<std::string>& node_names,
-			const int& time_step, bool cache_output_nodes = false, bool use_cache = false,
-			int n_threads = 1);
+			const int& time_step, int n_threads = 1);
 
 		/**
 		@brief Calculates the error of the model for a given node
@@ -394,8 +396,7 @@ public:
 			where t=n to t=0
     @param[in] node_names Output nodes
     */ 
-    void CETT(const Eigen::Tensor<float, 3>& values, const std::vector<std::string>& node_names, const int& time_steps,
-			bool cache_output_nodes = false, bool use_cache = false, int n_threads = 1);
+    void CETT(const Eigen::Tensor<float, 3>& values, const std::vector<std::string>& node_names, const int& time_steps, int n_threads = 1);
  
     /**
     @brief A prelude to a back propogation step.  Returns a vector of links
@@ -536,6 +537,9 @@ public:
 
 		void setLossFunctionGrad(const std::shared_ptr<LossFunctionGradOp<float>>& loss_function); ///< loss_function grad setter
 		LossFunctionGradOp<float>* getLossFunctionGrad() const; ///< loss_function grad getter
+
+		std::vector<std::shared_ptr<Node>> getInputNodes(); ///< input_node getter
+		std::vector<std::shared_ptr<Node>> getOutputNodes(); ///< output_node getter
  
     /**
       @brief Add new links to the model.
@@ -688,20 +692,17 @@ private:
     std::map<std::string, std::shared_ptr<Link>> links_; ///< Model links
     std::map<std::string, std::shared_ptr<Node>> nodes_; ///< Model nodes
     std::map<std::string, std::shared_ptr<Weight>> weights_; ///< Model nodes
-    //Eigen::Tensor<float, 1> error_; ///< Model error
     Eigen::Tensor<float, 2> error_; ///< Model error
-
-    // TODO: will most likely need to expand to a derived class model (e.g., SolverOp)
     std::shared_ptr<LossFunctionOp<float>> loss_function_; ///< Model loss function
 		std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad_; ///< Model loss function
-
 		std::vector<std::pair<std::string, std::string>> cyclic_pairs_;
+		std::vector<std::shared_ptr<Node>> input_nodes_;
+		std::vector<std::shared_ptr<Node>> output_nodes_;
 
     // Internal structures to allow for efficient multi-threading
     // and off-loading of computation from host to devices
     std::vector<std::vector<OperationList>> FP_operations_cache_;
     std::vector<std::vector<OperationList>> BP_operations_cache_;
-		std::vector<std::shared_ptr<Node>> output_node_cache_;
   };
 }
 
