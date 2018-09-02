@@ -286,6 +286,78 @@ public:
 		model.initWeights();
 		return model;
 	}
+	/*
+	@brief Basic VAE with	Xavier initialization
+
+	References:
+	https://github.com/pytorch/examples/blob/master/vae/main.py
+	*/
+	Model makeVAE(const int& n_inputs, const int& n_outputs) {
+		Model model;
+		model.setId(0);
+		model.setName("VAE");
+		model.setLossFunction(std::shared_ptr<LossFunctionOp<float>>(new CrossEntropyOp<float>()));
+		model.setLossFunctionGrad(std::shared_ptr<LossFunctionGradOp<float>>(new CrossEntropyGradOp<float>()));
+
+		ModelBuilder model_builder;
+
+		// Add the inputs
+		std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", n_inputs);
+
+		// Add the Endocer FC layers
+		std::vector<std::string> node_names, node_names_mu, node_names_logvar;	
+		node_names = model_builder.addFullyConnected(model, "FC0", "FC0", node_names_input, 400,
+			std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()),
+			std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
+			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
+			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
+			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
+			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names_input.size() + node_names.size())/2, 1)),
+			std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+		node_names_mu = model_builder.addFullyConnected(model, "Mu", "Mu", node_names, 20,
+			std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()),
+			std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
+			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
+			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
+			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
+			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names.size() + 20)/2, 1)),
+			std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+		node_names_logvar = model_builder.addFullyConnected(model, "LogVar", "LogVar", node_names, 20,
+			std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()),
+			std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
+			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
+			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
+			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
+			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names.size() + 20)/2, 1)),
+			std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+
+		// Add the Decoder input layers
+		std::vector<std::string> node_names_encoder = model_builder.addInputNodes(model, "Gaussian", 20); // addVAE
+
+		// Add the Decoder FC layers
+		node_names = model_builder.addFullyConnected(model, "FC1", "FC1", node_names_encoder, 400,
+			std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()),
+			std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
+			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
+			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
+			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
+			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names_encoder.size() + 400)/2, 1)),
+			std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+		node_names = model_builder.addFullyConnected(model, "Output", "Output", node_names, n_inputs,
+			std::shared_ptr<ActivationOp<float>>(new SigmoidOp<float>()),
+			std::shared_ptr<ActivationOp<float>>(new SigmoidGradOp<float>()),
+			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
+			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
+			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
+			std::shared_ptr<WeightInitOp>(new RandWeightInitOp(node_names.size(), 1)),
+			std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+
+		// Add the final softmax layer
+		node_names = model_builder.addSoftMax(model, "SoftMax", "SoftMax", node_names);
+
+		model.initWeights();
+		return model;
+	}
 	Model makeModel() { return Model(); }
 	void adaptiveTrainerScheduler(
 		const int& n_generations,
