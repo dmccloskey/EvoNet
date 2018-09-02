@@ -151,6 +151,9 @@ public:
 		// Add the final softmax layer
 		node_names = model_builder.addSoftMax(model, "SoftMax", "SoftMax", node_names);
 
+		for (const std::string& node_name : node_names)
+			model.getNodesMap().at(node_name)->setType(NodeType::output);
+
 		model.initWeights();
 		return model;
 	}
@@ -283,6 +286,9 @@ public:
 		// Add the final softmax layer
 		node_names = model_builder.addSoftMax(model, "SoftMax", "SoftMax", node_names);
 
+		for (const std::string& node_name : node_names)
+			model.getNodesMap().at(node_name)->setType(NodeType::output);
+
 		model.initWeights();
 		return model;
 	}
@@ -293,7 +299,7 @@ public:
 	Based on Kingma et al, 2014: https://arxiv.org/pdf/1312.6114
 	https://github.com/pytorch/examples/blob/master/vae/main.py
 	*/
-	Model makeVAE(const int& n_inputs, const int& n_outputs) {
+	Model makeVAE(const int& n_inputs, const int& n_encodings) {
 		Model model;
 		model.setId(0);
 		model.setName("VAE");
@@ -315,13 +321,13 @@ public:
 			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
 			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names_input.size() + node_names.size())/2, 1)),
 			std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
-		node_names_mu = model_builder.addFullyConnected(model, "Mu", "Mu", node_names, 20,
+		node_names_mu = model_builder.addFullyConnected(model, "Mu", "Mu", node_names, n_encodings,
 			std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()),
 			std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
 			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
 			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
 			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names.size() + 20)/2, 1)),
+			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names.size() + n_encodings)/2, 1)),
 			std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 		node_names_logvar = model_builder.addFullyConnected(model, "LogVar", "LogVar", node_names, 20,
 			std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()),
@@ -329,11 +335,11 @@ public:
 			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
 			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
 			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names.size() + 20)/2, 1)),
+			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names.size() + n_encodings)/2, 1)),
 			std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 
 		// Add the Decoder input layers
-		std::vector<std::string> node_names_encoder = model_builder.addInputNodes(model, "Gaussian", 20); // addVAE
+		std::vector<std::string> node_names_encoder = model_builder.addVAEEncoding(model, "Gaussian", "Encoding", node_names_mu, node_names_logvar); // addVAE
 
 		// Add the Decoder FC layers
 		node_names = model_builder.addFullyConnected(model, "FC1", "FC1", node_names_encoder, 400,
@@ -353,8 +359,8 @@ public:
 			std::shared_ptr<WeightInitOp>(new RandWeightInitOp(node_names.size(), 1)),
 			std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 
-		// Add the final softmax layer
-		node_names = model_builder.addSoftMax(model, "SoftMax", "SoftMax", node_names);
+		for (const std::string& node_name : node_names)
+			model.getNodesMap().at(node_name)->setType(NodeType::output);
 
 		model.initWeights();
 		return model;

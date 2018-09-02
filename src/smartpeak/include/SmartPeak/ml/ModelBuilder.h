@@ -130,6 +130,18 @@ public:
 			float drop_out_prob = 0.0f, float drop_connection_prob = 0.0f, bool biases = true);
 
 		/**
+		@brief Add a VAE Encoding layer with input node
+
+		@param[in, out] Model
+		@param[in] mu_node_names Node_names from the average layer
+		@param[in] logvar_node_names Nodes names from the logvar layer
+
+		@returns vector of output node names
+		*/
+		std::vector<std::string> addVAEEncoding(Model& model, const std::string& name, const std::string& module_name,
+			const std::vector<std::string>& mu_node_names, const std::vector<std::string>& logvar_node_names);
+
+		/**
 		@brief Add a LSTM layer
 
 		@param[in, out] Model

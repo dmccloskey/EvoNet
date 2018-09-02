@@ -543,4 +543,105 @@ namespace SmartPeak
 		}
 		return node_names;
 	}
+	std::vector<std::string> ModelBuilder::addVAEEncoding(Model & model, const std::string & name, const std::string & module_name, const std::vector<std::string>& mu_node_names, const std::vector<std::string>& logvar_node_names)
+	{
+		std::vector<std::string> node_names;
+
+		assert(mu_node_names.size() == logvar_node_names.size());
+
+		// Create the unity weight
+		char unity_weight_name_char[512];
+		sprintf(unity_weight_name_char, "%s_Unity", name.data());
+		std::string unity_weight_name(unity_weight_name_char);
+		Weight unity_weight(unity_weight_name, std::shared_ptr<WeightInitOp>(new ConstWeightInitOp(1.0)), std::shared_ptr<SolverOp>(new DummySolverOp()));
+		unity_weight.setModuleName(module_name);
+		model.addWeights({ unity_weight });
+
+		// Create the scalar unity weight
+		char scalar_weight_name_char[512];
+		sprintf(scalar_weight_name_char, "%s_Scalar", name.data());
+		std::string scalar_weight_name(scalar_weight_name_char);
+		Weight scalar_weight(scalar_weight_name, std::shared_ptr<WeightInitOp>(new ConstWeightInitOp(0.5)), std::shared_ptr<SolverOp>(new DummySolverOp()));
+		scalar_weight.setModuleName(module_name);
+		model.addWeights({ scalar_weight });
+
+		for (size_t i = 0; i < logvar_node_names.size(); ++i) {
+			// Make the logVar scalar nodes
+			char logvarScale_name_char[512];
+			sprintf(logvarScale_name_char, "%s-LogVarScale", logvar_node_names[i].data());
+			std::string logvarScale_name(logvarScale_name_char);
+			Node logvarScale(logvarScale_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new ExponentialOp<float>()), std::shared_ptr<ActivationOp<float>>(new ExponentialGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+			logvarScale.setModuleName(module_name);
+			model.addNodes({ logvarScale });
+			//node_names.push_back(logvarScale_name);
+
+			// Make the links from logvar to the scalar node
+			char lvToS_link_name_char[512];
+			sprintf(lvToS_link_name_char, "%s_to_%s", logvar_node_names[i].data(), logvarScale_name.data());
+			std::string lvToS_link_name(lvToS_link_name_char);
+			Link lvToS_link(lvToS_link_name, logvar_node_names[i], logvarScale_name, scalar_weight_name);
+			lvToS_link.setModuleName(module_name);
+			model.addLinks({ lvToS_link });
+
+			// Make the sampler nodes
+			char sampler_name_char[512];
+			sprintf(sampler_name_char, "%s_%d-Sampler", name.data(), i);
+			std::string sampler_name(sampler_name_char);
+			Node sampler(sampler_name, NodeType::input, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+			sampler.setModuleName(module_name);
+			model.addNodes({ sampler });
+			//node_names.push_back(sampler_name);
+
+			// Make the stddev nodes
+			char stddev_name_char[512];
+			sprintf(stddev_name_char, "%s-StdDev", logvar_node_names[i].data());
+			std::string stddev_name(stddev_name_char);
+			Node stddev(stddev_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new ProdOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new ProdErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new ProdWeightGradOp<float>()));
+			stddev.setModuleName(module_name);
+			model.addNodes({ stddev });
+			//node_names.push_back(stddev_name);
+
+			// Make the links from logvar scalar node to the std dev node
+			char ScToStdev_link_name_char[512];
+			sprintf(ScToStdev_link_name_char, "%s_to_%s", logvarScale_name.data(), stddev_name.data());
+			std::string ScToStdev_link_name(ScToStdev_link_name_char);
+			Link ScToStdev_link(ScToStdev_link_name, logvarScale_name, stddev_name, unity_weight_name);
+			ScToStdev_link.setModuleName(module_name);
+			model.addLinks({ ScToStdev_link });
+
+			// Make the links from sampler to the std dev node
+			char SToStdev_link_name_char[512];
+			sprintf(SToStdev_link_name_char, "%s_to_%s", sampler_name.data(), stddev_name.data());
+			std::string SToStdev_link_name(SToStdev_link_name_char);
+			Link SToStdev_link(SToStdev_link_name, sampler_name, stddev_name, unity_weight_name);
+			SToStdev_link.setModuleName(module_name);
+			model.addLinks({ SToStdev_link });
+
+			// Make the output nodes
+			char output_name_char[512];
+			sprintf(output_name_char, "%s_%d", name.data(), i);
+			std::string output_name(output_name_char);
+			Node output(output_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+			output.setModuleName(module_name);
+			model.addNodes({ output });
+			node_names.push_back(output_name);
+
+			// Make the links from std dev node to the output node
+			char StDevToOutput_link_name_char[512];
+			sprintf(StDevToOutput_link_name_char, "%s_to_%s", stddev_name.data(), output_name.data());
+			std::string StDevToOutput_link_name(StDevToOutput_link_name_char);
+			Link StDevToOutput_link(StDevToOutput_link_name, stddev_name, output_name, unity_weight_name);
+			StDevToOutput_link.setModuleName(module_name);
+			model.addLinks({ StDevToOutput_link });
+
+			// Make the links from mean to the output node
+			char muToOutput_link_name_char[512];
+			sprintf(muToOutput_link_name_char, "%s_to_%s", mu_node_names[i].data(), output_name.data());
+			std::string muToOutput_link_name(muToOutput_link_name_char);
+			Link muToOutput_link(muToOutput_link_name, mu_node_names[i], output_name, unity_weight_name);
+			muToOutput_link.setModuleName(module_name);
+			model.addLinks({ muToOutput_link });
+		}
+		return node_names;
+	}
 }
