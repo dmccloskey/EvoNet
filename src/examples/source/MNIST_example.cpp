@@ -290,6 +290,7 @@ public:
 	@brief Basic VAE with	Xavier initialization
 
 	References:
+	Based on Kingma et al, 2014: https://arxiv.org/pdf/1312.6114
 	https://github.com/pytorch/examples/blob/master/vae/main.py
 	*/
 	Model makeVAE(const int& n_inputs, const int& n_outputs) {
