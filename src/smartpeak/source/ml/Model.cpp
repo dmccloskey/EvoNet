@@ -1152,7 +1152,7 @@ namespace SmartPeak
 				++thread_cnt;
 			}
 		}
-		error_.chip(time_step, 1) = model_error; // assign the model_error
+		error_.chip(time_step, 1) += model_error; // add on the model_error
 
 		// loop over all nodes and calculate the error for the nodes
 		std::vector<std::future<bool>> output_node_error_task_results;
@@ -1603,11 +1603,11 @@ namespace SmartPeak
     for (int time_step=0; time_step<max_steps; ++time_step) {
       if (time_step > 0) {
         for (auto& node_map: nodes_) {
-					node_map.second->setStatus(NodeStatus::activated); // reinitialize nodes
+					if (node_map.second->getType() == NodeType::output)
+						node_map.second->setStatus(NodeStatus::corrected); // reinitialize nodes
+					else
+						node_map.second->setStatus(NodeStatus::activated); // reinitialize nodes
         }
-				for (auto& node : output_nodes_) {
-					node->setStatus(NodeStatus::corrected);
-				}
       }
 
       // calculate the error for each batch of memory

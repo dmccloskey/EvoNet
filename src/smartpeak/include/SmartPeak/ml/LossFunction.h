@@ -343,6 +343,116 @@ public:
   };
 
 	/**
+		@brief KLDivergenceMu loss function.
+
+	References
+		Kingma and Welling. Auto-Encoding Variational Bayes. ICLR, 2014 https://arxiv.org/abs/1312.6114
+		0.5 * sum(1 + log(sigma^2) - mu^2 - sigma^2)
+		KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
+	*/
+	template<typename T>
+	class KLDivergenceMuOp : public LossFunctionOp<T>
+	{
+	public:
+		KLDivergenceMuOp() {};
+		~KLDivergenceMuOp() {};
+		Eigen::Tensor<T, 1> operator()(
+			const Eigen::Tensor<T, 2>& y_pred,
+			const Eigen::Tensor<T, 2>& y_true) const
+		{
+			return Eigen::Tensor<T, 1>();
+		};
+		Eigen::Tensor<T, 1> operator()(
+			const Eigen::Tensor<T, 1>& y_pred,
+			const Eigen::Tensor<T, 1>& y_true) const
+		{
+			Eigen::Tensor<T, 1> c((int)y_pred.size());
+			c.setConstant(0.5);
+			return (-c + c*y_pred.pow(2)).unaryExpr(std::ptr_fun(substituteNanInf<T>));
+		};
+	};
+
+	/**
+		@brief KLDivergenceMu  loss function gradient.
+	*/
+	template<typename T>
+	class KLDivergenceMuGradOp : public LossFunctionGradOp<T>
+	{
+	public:
+		KLDivergenceMuGradOp() {};
+		~KLDivergenceMuGradOp() {};
+		Eigen::Tensor<T, 2> operator()(
+			const Eigen::Tensor<T, 2>& y_pred,
+			const Eigen::Tensor<T, 2>& y_true) const
+		{
+			return Eigen::Tensor<T, 2>();
+		};
+		Eigen::Tensor<T, 1> operator()(
+			const Eigen::Tensor<T, 1>& y_pred,
+			const Eigen::Tensor<T, 1>& y_true) const
+		{
+			Eigen::Tensor<T, 1> c((int)y_pred.size());
+			c.setConstant(2.0);
+			return c * y_pred;
+		};
+	};
+
+	/**
+		@brief KLDivergenceLogVar loss function.
+
+	References
+		Kingma and Welling. Auto-Encoding Variational Bayes. ICLR, 2014 https://arxiv.org/abs/1312.6114
+		0.5 * sum(1 + log(sigma^2) - mu^2 - sigma^2)
+		KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
+	*/
+	template<typename T>
+	class KLDivergenceLogVarOp : public LossFunctionOp<T>
+	{
+	public:
+		KLDivergenceLogVarOp() {};
+		~KLDivergenceLogVarOp() {};
+		Eigen::Tensor<T, 1> operator()(
+			const Eigen::Tensor<T, 2>& y_pred,
+			const Eigen::Tensor<T, 2>& y_true) const
+		{
+			return Eigen::Tensor<T, 1>();
+		};
+		Eigen::Tensor<T, 1> operator()(
+			const Eigen::Tensor<T, 1>& y_pred,
+			const Eigen::Tensor<T, 1>& y_true) const
+		{
+			Eigen::Tensor<T, 1> c((int)y_pred.size());
+			c.setConstant(0.5);
+			return (-c -c*y_pred + c*y_pred.exp()).unaryExpr(std::ptr_fun(substituteNanInf<T>));
+		};
+	};
+
+	/**
+		@brief KLDivergenceLogVar  loss function gradient.
+	*/
+	template<typename T>
+	class KLDivergenceLogVarGradOp : public LossFunctionGradOp<T>
+	{
+	public:
+		KLDivergenceLogVarGradOp() {};
+		~KLDivergenceLogVarGradOp() {};
+		Eigen::Tensor<T, 2> operator()(
+			const Eigen::Tensor<T, 2>& y_pred,
+			const Eigen::Tensor<T, 2>& y_true) const
+		{
+			return Eigen::Tensor<T, 2>();
+		};
+		Eigen::Tensor<T, 1> operator()(
+			const Eigen::Tensor<T, 1>& y_pred,
+			const Eigen::Tensor<T, 1>& y_true) const
+		{
+			Eigen::Tensor<T, 1> c((int)y_pred.size());
+			c.setConstant(0.5);
+			return (-c + c*y_pred.exp()).unaryExpr(std::ptr_fun(substituteNanInf<T>));
+		};
+	};
+
+	/**
 		@brief Hinge loss function.  
 
 		Typically used for classification

@@ -1045,9 +1045,10 @@ BOOST_AUTO_TEST_CASE(calculateError)
 	Eigen::Tensor<float, 3> derivative(batch_size, memory_size, (int)output_nodes.size());
 	derivative.setValues({ {{ 1, 1 }},{{ 1, 1 }},{{ 1, 1 }},{{ 1, 1 }} });
 	model1.mapValuesToNodes(derivative, output_nodes, NodeStatus::activated, "derivative");
+	model1.initError(batch_size, memory_size);
   model1.calculateError(expected, output_nodes, 0);
 
-  // control test (output values should be 0.0 from initialization)
+  // test
   error.setValues({52.625, 85.625, 126.625, 175.625});
   for (int j=0; j<batch_size; ++j)
   {
@@ -1679,6 +1680,8 @@ BOOST_AUTO_TEST_CASE(modelTrainer1)
 
     // reinitialize the model
     model1.reInitializeNodeStatuses();
+		model1.initNodes(batch_size, memory_size);
+		model1.initError(batch_size, memory_size);
   }
   
   const Eigen::Tensor<float, 0> total_error = model1.getError().sum();
