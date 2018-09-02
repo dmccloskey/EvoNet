@@ -661,7 +661,7 @@ void main_EvoNet() {
 
 	// Evolve the population
 	std::vector<std::vector<std::pair<int, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
-		population, model_trainer, model_replicator, data_simulator, model_logger, input_nodes, output_nodes, n_threads);
+		population, model_trainer, model_replicator, data_simulator, model_logger, input_nodes, n_threads);
 
 	PopulationTrainerFile population_trainer_file;
 	population_trainer_file.storeModels(population, "SequencialMNIST");
@@ -678,16 +678,6 @@ void main_CovNet() {
 	population_trainer.setNTop(1);
 	population_trainer.setNRandom(1);
 	population_trainer.setNReplicatesPerModel(1);
-
-	// define the model trainer
-	ModelTrainerExt model_trainer;
-	model_trainer.setBatchSize(1);
-	model_trainer.setMemorySize(1);
-	model_trainer.setNEpochsTraining(500);
-	model_trainer.setNEpochsValidation(10);
-	model_trainer.setVerbosityLevel(1);
-	model_trainer.setNThreads(n_hard_threads);
-	model_trainer.setLogging(true, false);
 
 	// define the model logger
 	ModelLogger model_logger(true, true, true, true, false, false);
@@ -726,6 +716,19 @@ void main_CovNet() {
 	for (int i = 0; i < data_simulator.mnist_labels.size(); ++i)
 		output_nodes.push_back("SoftMax-Out_" + std::to_string(i));
 
+	// define the model trainer
+	ModelTrainerExt model_trainer;
+	model_trainer.setBatchSize(1);
+	model_trainer.setMemorySize(1);
+	model_trainer.setNEpochsTraining(500);
+	model_trainer.setNEpochsValidation(10);
+	model_trainer.setVerbosityLevel(1);
+	model_trainer.setNThreads(n_hard_threads);
+	model_trainer.setLogging(true, false);
+	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new NegativeLogLikelihoodOp<float>()) });
+	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new NegativeLogLikelihoodGradOp<float>()) });
+	model_trainer.setOutputNodes({ output_nodes });
+
 	// define the model replicator for growth mode
 	ModelReplicatorExt model_replicator;
 
@@ -736,7 +739,7 @@ void main_CovNet() {
 
 	// Evolve the population
 	std::vector<std::vector<std::pair<int, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
-		population, model_trainer, model_replicator, data_simulator, model_logger, input_nodes, output_nodes, 1);
+		population, model_trainer, model_replicator, data_simulator, model_logger, input_nodes, 1);
 
 	PopulationTrainerFile population_trainer_file;
 	population_trainer_file.storeModels(population, "MNIST");

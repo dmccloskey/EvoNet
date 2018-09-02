@@ -45,6 +45,21 @@ namespace SmartPeak
 		log_validation_ = log_validation;
 	}
 
+	void ModelTrainer::setLossFunctions(const std::vector<std::shared_ptr<LossFunctionOp<float>>>& loss_functions)
+	{
+		loss_functions_ = loss_functions;
+	}
+
+	void ModelTrainer::setLossFunctionGrads(const std::vector<std::shared_ptr<LossFunctionGradOp<float>>>& loss_function_grads)
+	{
+		loss_function_grads_ = loss_function_grads;
+	}
+
+	void ModelTrainer::setOutputNodes(const std::vector<std::vector<std::string>>& output_nodes)
+	{
+		output_nodes_ = output_nodes;
+	}
+
   int ModelTrainer::getBatchSize() const
   {
     return batch_size_;
@@ -73,6 +88,21 @@ namespace SmartPeak
 	int ModelTrainer::getVerbosityLevel() const
 	{
 		return verbosity_level_;
+	}
+
+	std::vector<std::shared_ptr<LossFunctionOp<float>>> ModelTrainer::getLossFunctions()
+	{
+		return loss_functions_;
+	}
+
+	std::vector<std::shared_ptr<LossFunctionGradOp<float>>> ModelTrainer::getLossFunctionGrads()
+	{
+		return loss_function_grads_;
+	}
+
+	std::vector<std::vector<std::string>> ModelTrainer::getOutputNodes()
+	{
+		return output_nodes_;
 	}
 
   bool ModelTrainer::checkInputData(const int& n_epochs,
@@ -160,7 +190,8 @@ namespace SmartPeak
 			return true;
 		}
 	}
-	std::vector<float> ModelTrainer::trainModel(Model & model, const Eigen::Tensor<float, 4>& input, const Eigen::Tensor<float, 4>& output, const Eigen::Tensor<float, 3>& time_steps, const std::vector<std::string>& input_nodes, const std::vector<std::string>& output_nodes,
+	std::vector<float> ModelTrainer::trainModel(Model & model, const Eigen::Tensor<float, 4>& input, const Eigen::Tensor<float, 4>& output, const Eigen::Tensor<float, 3>& time_steps, 
+		const std::vector<std::string>& input_nodes,
 		ModelLogger& model_logger)
 	{
 		std::vector<float> model_error;
@@ -170,6 +201,10 @@ namespace SmartPeak
 		{
 			return model_error;
 		}
+		std::vector<std::string> output_nodes;
+		for (const std::vector<std::string>& output_nodes_vec : output_nodes_)
+			for (const std::string& output_node : output_nodes_vec)
+				output_nodes.push_back(output_node);
 		if (!checkOutputData(getNEpochsTraining(), output, getBatchSize(), getMemorySize(), output_nodes))
 		{
 			return model_error;
@@ -215,7 +250,15 @@ namespace SmartPeak
 			if (getVerbosityLevel() >= 2)
 				std::cout << "Error Calculation..." << std::endl;
 			//model.CETT(output.chip(iter, 3), output_nodes, 1,getNThreads());
-			model.CETT(output.chip(iter, 3), output_nodes, getMemorySize(), getNThreads());
+			int output_node_cnt = 0;
+			for (size_t loss_iter = 0; loss_iter < output_nodes_.size(); loss_iter++) {
+				model.setLossFunction(loss_functions_[loss_iter]);
+				model.setLossFunctionGrad(loss_function_grads_[loss_iter]);
+				Eigen::array<int, 3> offsets = { 0, 0, output_node_cnt };
+				Eigen::array<int, 3> extents = { output.dimension(0), output.dimension(1), output_nodes_[loss_iter].size() };
+				model.CETT(output.chip(iter, 3), output_nodes_[loss_iter], getMemorySize(), getNThreads());
+				output_node_cnt += output_nodes_[loss_iter].size();
+			}
 
 			const Eigen::Tensor<float, 0> total_error = model.getError().sum();
 			model_error.push_back(total_error(0));
@@ -257,7 +300,8 @@ namespace SmartPeak
 		return model_error;
 	}
 
-	std::vector<float> ModelTrainer::validateModel(Model & model, const Eigen::Tensor<float, 4>& input, const Eigen::Tensor<float, 4>& output, const Eigen::Tensor<float, 3>& time_steps, const std::vector<std::string>& input_nodes, const std::vector<std::string>& output_nodes,
+	std::vector<float> ModelTrainer::validateModel(Model & model, const Eigen::Tensor<float, 4>& input, const Eigen::Tensor<float, 4>& output, const Eigen::Tensor<float, 3>& time_steps,
+		const std::vector<std::string>& input_nodes,
 		ModelLogger& model_logger)
 	{
 		std::vector<float> model_error;
@@ -267,6 +311,10 @@ namespace SmartPeak
 		{
 			return model_error;
 		}
+		std::vector<std::string> output_nodes;
+		for (const std::vector<std::string>& output_nodes_vec : output_nodes_)
+			for (const std::string& output_node : output_nodes_vec)
+				output_nodes.push_back(output_node);
 		if (!checkOutputData(getNEpochsValidation(), output, getBatchSize(), getMemorySize(), output_nodes))
 		{
 			return model_error;
@@ -305,7 +353,15 @@ namespace SmartPeak
 				model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), false, true, getNThreads());
 
 			// calculate the model error and node output error
-			model.CETT(output.chip(iter, 3), output_nodes, getMemorySize(), getNThreads());
+			int output_node_cnt = 0;
+			for (size_t loss_iter = 0; loss_iter < output_nodes_.size(); loss_iter++) {
+				model.setLossFunction(loss_functions_[loss_iter]);
+				model.setLossFunctionGrad(loss_function_grads_[loss_iter]);
+				Eigen::array<int, 3> offsets = { 0, 0, output_node_cnt };
+				Eigen::array<int, 3> extents = { output.dimension(0), output.dimension(1), output_nodes_[loss_iter].size() };
+				model.CETT(output.chip(iter, 3), output_nodes_[loss_iter], getMemorySize(), getNThreads());
+				output_node_cnt += output_nodes_[loss_iter].size();
+			}
 
 			const Eigen::Tensor<float, 0> total_error = model.getError().sum();
 			model_error.push_back(total_error(0));

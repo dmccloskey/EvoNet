@@ -63,7 +63,6 @@ public:
       const Eigen::Tensor<float, 4>& output,
       const Eigen::Tensor<float, 3>& time_steps,
       const std::vector<std::string>& input_nodes,
-      const std::vector<std::string>& output_nodes,
       int n_threads = 1);
  
     /**
@@ -78,8 +77,7 @@ public:
       const Eigen::Tensor<float, 4>& input,
       const Eigen::Tensor<float, 4>& output,
       const Eigen::Tensor<float, 3>& time_steps,
-      const std::vector<std::string>& input_nodes,
-      const std::vector<std::string>& output_nodes);
+      const std::vector<std::string>& input_nodes);
  
     /**
       @brief return the top N models with the lowest error.
@@ -118,16 +116,12 @@ public:
     void replicateModels(
       std::vector<Model>& models,
       ModelReplicator& model_replicator,
-			const std::vector<std::string>& input_nodes,
-			const std::vector<std::string>& output_nodes,
       std::string unique_str = "",
       int n_threads = 1);
 
     static Model replicateModel_(
       Model* model,
       ModelReplicator* model_replicator,
-			const std::vector<std::string>& input_nodes,
-			const std::vector<std::string>& output_nodes,
       std::string unique_str, int cnt);
  
     /**
@@ -147,7 +141,6 @@ public:
       const Eigen::Tensor<float, 4>& output,
       const Eigen::Tensor<float, 3>& time_steps,
       const std::vector<std::string>& input_nodes,
-      const std::vector<std::string>& output_nodes,
       int n_threads = 1);
 
     static std::pair<bool, Model> trainModel_(
@@ -157,8 +150,7 @@ public:
       const Eigen::Tensor<float, 4>& input,
       const Eigen::Tensor<float, 4>& output,
       const Eigen::Tensor<float, 3>& time_steps,
-      const std::vector<std::string>& input_nodes,
-      const std::vector<std::string>& output_nodes);
+      const std::vector<std::string>& input_nodes);
 
 		int getNextID(); ///< iterate and return the next id in the sequence
 		void setID(const int& id);  ///< unique_id setter
@@ -178,7 +170,6 @@ public:
 			DataSimulator& data_simulator,
 			ModelLogger& model_logger,
 			const std::vector<std::string>& input_nodes,
-			const std::vector<std::string>& output_nodes,
 			int n_threads = 1);
 
 		/**

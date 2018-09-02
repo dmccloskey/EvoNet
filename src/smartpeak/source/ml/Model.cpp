@@ -33,8 +33,6 @@ namespace SmartPeak
     loss_function_ = other.loss_function_;
 		loss_function_grad_ = other.loss_function_grad_;
 		cyclic_pairs_ = other.cyclic_pairs_;
-		input_nodes_ = other.input_nodes_;
-		output_nodes_ = other.output_nodes_;
   }
 
   Model::Model(const int& id):
@@ -1807,6 +1805,9 @@ namespace SmartPeak
 			printf("Exception: %s; CheckCompleteInputToOutput failed during forward propogation.\n", e.what());
 			return false;
 		}
+
+		for (auto& node_map : nodes_)
+			std::cout << node_map.first << " : " << node_map.second->getOutput() << std::endl;
 
 		// check that all output nodes are greater than 0
 		for (auto& node: output_nodes_)
