@@ -276,6 +276,7 @@ BOOST_AUTO_TEST_CASE(replicateModels)
 		model.initWeights();
 		model.initNodes(4, 4);
 		model.initError(4, 4);
+		model.findCyclicPairs();
 
 		// modify the models
 		model_replicator.modifyModel(model, std::to_string(i));
@@ -377,11 +378,16 @@ BOOST_AUTO_TEST_CASE(trainModels)
 		std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>());
 		std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
     Model model = model_replicator.makeBaselineModel(
-			1, { 0 }, 1,
+			1, {}, 1,
       std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
       weight_init, solver,
       loss_function, loss_function_grad, std::to_string(i));
+		model.setId(i);
+		model.setName(std::to_string(i));
     model.initWeights();
+		model.initError(5, 8);
+		model.initNodes(5, 8);
+		model.findCyclicPairs();
     
     // modify the models
     model_replicator.modifyModel(model, std::to_string(i));
@@ -444,6 +450,10 @@ BOOST_AUTO_TEST_CASE(trainModels)
       for (int epochs_iter=0; epochs_iter<model_trainer.getNEpochsTraining(); ++epochs_iter)
         time_steps(batch_iter, memory_iter, epochs_iter) = time_steps_tmp(batch_iter, memory_iter);
 
+	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
+	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
+	model_trainer.setOutputNodes({ output_nodes });
+
   population_trainer.trainModels(population, model_trainer, ModelLogger(),
     input_data, output_data, time_steps, input_nodes);
 
@@ -452,7 +462,7 @@ BOOST_AUTO_TEST_CASE(trainModels)
   for (int i=0; i<population.size(); ++i)
   {
     if (i<2)
-      BOOST_CHECK_EQUAL(population[i].getError().size(), 0); // error has not been calculated
+      BOOST_CHECK_EQUAL(population[i].getError().size(), model_trainer.getBatchSize()*model_trainer.getMemorySize()); // error has not been calculated
     else
       BOOST_CHECK_EQUAL(population[i].getError().size(), model_trainer.getBatchSize()*model_trainer.getMemorySize()); // error has been calculated
   }
@@ -480,6 +490,7 @@ BOOST_AUTO_TEST_CASE(exampleUsage)
 	model_trainer.setMemorySize(8);
 	model_trainer.setNEpochsTraining(500);
 	model_trainer.setNEpochsValidation(0);
+	model_trainer.setVerbosityLevel(1);
 	model_trainer.setLogging(false, false);
 	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
 	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });

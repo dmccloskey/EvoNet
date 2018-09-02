@@ -1785,8 +1785,12 @@ namespace SmartPeak
 				node_map.second->setError(zero);
 				node_map.second->setDerivative(one);
 				node_map.second->setDt(one);
+				node_map.second->setStatus(NodeStatus::initialized);
 			}
-			node_map.second->setStatus(NodeStatus::initialized);
+			if (node_map.second->getType() == NodeType::input || node_map.second->getType() == NodeType::bias)
+			{
+				node_map.second->setStatus(NodeStatus::activated);
+			}
 			node_map.second->setActivation(std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()));  // safer but requires setting																																																		
 			node_map.second->setActivationGrad(std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>())); // the node activation back to its original value
 		}
@@ -1796,8 +1800,6 @@ namespace SmartPeak
 			weight_map.second->setWeight(1.0f);
 
 		// Forward propogate
-		for (auto& node : input_nodes_)
-			node->setStatus(NodeStatus::activated);
 		try {
 			forwardPropogate(0, false, false, n_threads);
 		}
@@ -1805,9 +1807,6 @@ namespace SmartPeak
 			printf("Exception: %s; CheckCompleteInputToOutput failed during forward propogation.\n", e.what());
 			return false;
 		}
-
-		for (auto& node_map : nodes_)
-			std::cout << node_map.first << " : " << node_map.second->getOutput() << std::endl;
 
 		// check that all output nodes are greater than 0
 		for (auto& node: output_nodes_)

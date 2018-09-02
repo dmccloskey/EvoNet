@@ -91,8 +91,6 @@ public:
       loss_function_ = other.loss_function_;
 			loss_function_grad_ = other.loss_function_grad_;
 			cyclic_pairs_ = other.cyclic_pairs_;
-			input_nodes_ = other.input_nodes_;
-			output_nodes_ = other.output_nodes_;
       return *this;
     }
 
