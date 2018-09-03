@@ -254,9 +254,13 @@ namespace SmartPeak
 			for (size_t loss_iter = 0; loss_iter < output_nodes_.size(); loss_iter++) {
 				model.setLossFunction(loss_functions_[loss_iter]);
 				model.setLossFunctionGrad(loss_function_grads_[loss_iter]);
-				Eigen::array<int, 3> offsets = { 0, 0, output_node_cnt };
-				Eigen::array<int, 3> extents = { output.dimension(0), output.dimension(1), output_nodes_[loss_iter].size() };
-				model.CETT(output.chip(iter, 3), output_nodes_[loss_iter], getMemorySize(), getNThreads());
+				Eigen::Tensor<float, 3> expected_tmp = output.chip(iter, 3);
+				Eigen::Tensor<float, 3> expected(getBatchSize(), getMemorySize(), (int)output_nodes_[loss_iter].size());
+				for (int batch_iter = 0; batch_iter < getBatchSize(); ++batch_iter)
+					for (int memory_iter = 0; memory_iter < getMemorySize(); ++memory_iter)
+						for (int node_iter = 0; node_iter < output_nodes_[loss_iter].size(); ++node_iter)
+							expected(batch_iter, memory_iter, node_iter) = expected_tmp(batch_iter, memory_iter, (int)(node_iter + output_node_cnt));
+				model.CETT(expected, output_nodes_[loss_iter], getMemorySize(), getNThreads());
 				output_node_cnt += output_nodes_[loss_iter].size();
 			}
 
@@ -357,9 +361,13 @@ namespace SmartPeak
 			for (size_t loss_iter = 0; loss_iter < output_nodes_.size(); loss_iter++) {
 				model.setLossFunction(loss_functions_[loss_iter]);
 				model.setLossFunctionGrad(loss_function_grads_[loss_iter]);
-				Eigen::array<int, 3> offsets = { 0, 0, output_node_cnt };
-				Eigen::array<int, 3> extents = { output.dimension(0), output.dimension(1), output_nodes_[loss_iter].size() };
-				model.CETT(output.chip(iter, 3), output_nodes_[loss_iter], getMemorySize(), getNThreads());
+				Eigen::Tensor<float, 3> expected_tmp = output.chip(iter, 3);
+				Eigen::Tensor<float, 3> expected(getBatchSize(), getMemorySize(), (int)output_nodes_[loss_iter].size());
+				for (int batch_iter = 0; batch_iter < getBatchSize(); ++batch_iter)
+					for (int memory_iter = 0; memory_iter < getMemorySize(); ++memory_iter)
+						for (int node_iter = 0; node_iter < output_nodes_[loss_iter].size(); ++node_iter)
+							expected(batch_iter, memory_iter, node_iter) = expected_tmp(batch_iter, memory_iter, (int)(node_iter + output_node_cnt));
+				model.CETT(expected, output_nodes_[loss_iter], getMemorySize(), getNThreads());
 				output_node_cnt += output_nodes_[loss_iter].size();
 			}
 

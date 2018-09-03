@@ -7,6 +7,8 @@
 #include <SmartPeak/ml/Model.h>
 #include <SmartPeak/io/PopulationTrainerFile.h>
 
+#include <SmartPeak/simulator/MNISTSimulator.h>
+
 #include <SmartPeak/core/Preprocessing.h>
 
 #include <fstream>
@@ -22,16 +24,6 @@ using namespace SmartPeak;
  * - classification on MNIST using DAG
  * - whole image pixels (linearized) 28x28 normalized to 0 to 1
  * - classifier (1 hot vector from 0 to 9)
- * 
- * EXAMPLE2:
- * - classification on MNIST using DCG
- * - scan of pixel 8x8 pixel subset over time
- * - classifier (1 hot vector from 0 to 9)
- * 
- * ISSUES:
- * 1. problem: Forward propogation and backward propogation are slow
- *    fix: need to implement GPU device in tensor library
- *    steps: 1) install CUDA toolkit, 2) modify cmake to build with nvcc, 3) modify code to use GpuDevice
  */
 
 // Extended classes
@@ -292,79 +284,7 @@ public:
 		model.initWeights();
 		return model;
 	}
-	/*
-	@brief Basic VAE with	Xavier initialization
 
-	References:
-	Based on Kingma et al, 2014: https://arxiv.org/pdf/1312.6114
-	https://github.com/pytorch/examples/blob/master/vae/main.py
-	*/
-	Model makeVAE(const int& n_inputs, const int& n_encodings) {
-		Model model;
-		model.setId(0);
-		model.setName("VAE");
-		model.setLossFunction(std::shared_ptr<LossFunctionOp<float>>(new CrossEntropyOp<float>()));
-		model.setLossFunctionGrad(std::shared_ptr<LossFunctionGradOp<float>>(new CrossEntropyGradOp<float>()));
-
-		ModelBuilder model_builder;
-
-		// Add the inputs
-		std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", n_inputs);
-
-		// Add the Endocer FC layers
-		std::vector<std::string> node_names, node_names_mu, node_names_logvar;	
-		node_names = model_builder.addFullyConnected(model, "FC0", "FC0", node_names_input, 400,
-			std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()),
-			std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
-			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
-			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
-			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names_input.size() + node_names.size())/2, 1)),
-			std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
-		node_names_mu = model_builder.addFullyConnected(model, "Mu", "Mu", node_names, n_encodings,
-			std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()),
-			std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
-			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
-			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
-			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names.size() + n_encodings)/2, 1)),
-			std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
-		node_names_logvar = model_builder.addFullyConnected(model, "LogVar", "LogVar", node_names, 20,
-			std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()),
-			std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
-			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
-			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
-			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names.size() + n_encodings)/2, 1)),
-			std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
-
-		// Add the Decoder input layers
-		std::vector<std::string> node_names_encoder = model_builder.addVAEEncoding(model, "Gaussian", "Encoding", node_names_mu, node_names_logvar); // addVAE
-
-		// Add the Decoder FC layers
-		node_names = model_builder.addFullyConnected(model, "FC1", "FC1", node_names_encoder, 400,
-			std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()),
-			std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
-			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
-			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
-			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names_encoder.size() + 400)/2, 1)),
-			std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
-		node_names = model_builder.addFullyConnected(model, "Output", "Output", node_names, n_inputs,
-			std::shared_ptr<ActivationOp<float>>(new SigmoidOp<float>()),
-			std::shared_ptr<ActivationOp<float>>(new SigmoidGradOp<float>()),
-			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
-			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
-			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-			std::shared_ptr<WeightInitOp>(new RandWeightInitOp(node_names.size(), 1)),
-			std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
-
-		for (const std::string& node_name : node_names)
-			model.getNodesMap().at(node_name)->setType(NodeType::output);
-
-		model.initWeights();
-		return model;
-	}
 	Model makeModel() { return Model(); }
 	void adaptiveTrainerScheduler(
 		const int& n_generations,
@@ -382,122 +302,9 @@ public:
 	}
 };
 
-class DataSimulatorExt : public DataSimulator
+class DataSimulatorExt : public MNISTSimulator
 {
 public:
-	int ReverseInt(int i)
-	{
-		unsigned char ch1, ch2, ch3, ch4;
-		ch1=i&255;
-		ch2=(i>>8)&255;
-		ch3=(i>>16)&255;
-		ch4=(i>>24)&255;
-		return((int)ch1<<24)+((int)ch2<<16)+((int)ch3<<8)+ch4;
-	}
-
-	/*
-	@brief Read in the MNIST data set from an IDX file format.
-
-	Output data for sample dimensions are the following:
-		dim 0: sample
-		dim 1: col-wise pixel intensity
-
-	Output data for label dimensions are the following:
-		dim 0: sample
-		dim 1: class label
-
-	See http://yann.lecun.com/exdb/mnist/ for a description of the data set and the file format
-
-	@param[in] filename
-	@param[in, out] data The tensor to hold the data
-	@param[in] is_labels True if the file corresponds to class labels, False otherwise
-	*/
-	template<typename T>
-	void ReadMNIST(const std::string& filename, Eigen::Tensor<T, 2>& data, const bool& is_labels)
-	{
-		// dims: sample, pixel intensity or sample, label
-		// e.g., pixel data dims: 1000 x (28x28) (stored row-wise; returned col-wise)
-		// e.g., label data dims: 1000 x 1
-
-		// open up the file
-		std::ifstream file(filename, std::ios::binary);
-		if (file.is_open())
-		{
-			int magic_number = 0;
-			int number_of_images = 0;
-			int n_rows = 0;
-			int n_cols = 0;
-
-			// get the magic number
-			file.read((char*)&magic_number, sizeof(magic_number));
-			magic_number = ReverseInt(magic_number);
-
-			// get the number of images
-			file.read((char*)&number_of_images, sizeof(number_of_images));
-			number_of_images = ReverseInt(number_of_images);
-			if (number_of_images > data.dimension(0))
-				number_of_images = data.dimension(0);
-
-			// get the number of rows and cols
-			if (!is_labels)
-			{
-				file.read((char*)&n_rows, sizeof(n_rows));
-				n_rows = ReverseInt(n_rows);
-				file.read((char*)&n_cols, sizeof(n_cols));
-				n_cols = ReverseInt(n_cols);
-			}
-			else
-			{
-				n_rows = 1;
-				n_cols = 1;
-			}
-
-			// get the actual data (read row-wise)
-			for (int i = 0; i<number_of_images; ++i)
-			{
-				for (int r = 0; r<n_rows; ++r)
-				{
-					for (int c = 0; c<n_cols; ++c)
-					{
-						unsigned char temp = 0;
-						file.read((char*)&temp, sizeof(temp));
-						//data(i, (n_rows*r) + c) = (T)temp; // row-wise return
-						data(i, (n_cols*c) + r) = (T)temp; // col-wise return
-					}
-				}
-			}
-		}
-	}
-
-	void readData(const std::string& filename_data, const std::string& filename_labels, const bool& is_training,
-		const int& data_size, const int& input_size)
-	{
-		// Read input images [BUG FREE]
-		Eigen::Tensor<float, 2> input_data(data_size, input_size);
-		ReadMNIST<float>(filename_data, input_data, false);
-
-		// Normalize images [BUG FREE]
-		input_data = input_data.unaryExpr(UnitScale<float>(input_data));
-
-		// Read input label [BUG FREE]
-		Eigen::Tensor<float, 2> labels(data_size, 1);
-		ReadMNIST<float>(filename_labels, labels, true);
-
-		// Convert labels to 1 hot encoding [BUG FREE]
-		Eigen::Tensor<int, 2> labels_encoded = OneHotEncoder<float>(labels, mnist_labels);
-
-		if (is_training)
-		{
-			training_data = input_data;
-			training_labels = labels_encoded;
-		}
-		else
-		{
-			validation_data = input_data;
-			validation_labels = labels_encoded;
-		}
-	}
-
 	void simulateTrainingData(Eigen::Tensor<float, 4>& input_data, Eigen::Tensor<float, 4>& output_data, Eigen::Tensor<float, 3>& time_steps)
 	{
 		// infer data dimensions based on the input tensors
@@ -592,21 +399,6 @@ public:
 
 		time_steps.setConstant(1.0f);
 	}
-	
-	// Data attributes
-	std::vector<float> mnist_labels = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-
-	// Data
-	Eigen::Tensor<float, 2> training_data;
-	Eigen::Tensor<float, 2> validation_data;
-	Eigen::Tensor<int, 2> training_labels;
-	Eigen::Tensor<int, 2> validation_labels;
-
-	// Internal iterators
-	int mnist_sample_start_training = 0;
-	int mnist_sample_end_training = 0;
-	int mnist_sample_start_validation = 0;
-	int mnist_sample_end_validation = 0;
 };
 
 class ModelReplicatorExt : public ModelReplicator
@@ -665,88 +457,6 @@ public:
 	}
 };
 
-void main_EvoNet() {
-	PopulationTrainerExt population_trainer;
-	population_trainer.setNGenerations(5);
-	const int n_threads = 8;
-
-	// define the model trainer
-	ModelTrainerExt model_trainer;
-	model_trainer.setBatchSize(8);
-	model_trainer.setMemorySize(1);
-	model_trainer.setNEpochsTraining(50);
-	model_trainer.setNEpochsValidation(50);
-	model_trainer.setLogging(false, false);
-
-	// define the model logger
-	ModelLogger model_logger;
-
-	// define the data simulator
-	const std::size_t input_size = 784;
-	const std::size_t training_data_size = 1000; //60000;
-	const std::size_t validation_data_size = 100; //10000;
-	DataSimulatorExt data_simulator;
-
-	// read in the training data
-	// const std::string training_data_filename = "C:/Users/domccl/GitHub/mnist/train-images.idx3-ubyte";
-	// const std::string training_labels_filename = "C:/Users/domccl/GitHub/mnist/train-labels.idx1-ubyte";
-	const std::string training_data_filename = "/home/user/data/train-images-idx3-ubyte";
-	const std::string training_labels_filename = "/home/user/data/train-labels-idx1-ubyte";
-	data_simulator.readData(training_data_filename, training_labels_filename, true, training_data_size, input_size);
-
-	// read in the validation data
-	// const std::string validation_data_filename = "C:/Users/domccl/GitHub/mnist/t10k-images.idx3-ubyte";
-	// const std::string validation_labels_filename = "C:/Users/domccl/GitHub/mnist/t10k-labels.idx1-ubyte";
-	const std::string validation_data_filename = "/home/user/data/t10k-images-idx3-ubyte";
-	const std::string validation_labels_filename = "/home/user/data/t10k-labels-idx1-ubyte";
-	data_simulator.readData(validation_data_filename, validation_labels_filename, false, validation_data_size, input_size);
-
-	// Make the input nodes
-	std::vector<std::string> input_nodes;
-	for (int i = 0; i < input_size; ++i)
-		input_nodes.push_back("Input_" + std::to_string(i));
-
-	// Make the output nodes
-	std::vector<std::string> output_nodes;
-	for (int i = 0; i < data_simulator.mnist_labels.size(); ++i)
-		output_nodes.push_back("Output_" + std::to_string(i));
-
-	// define the model replicator for growth mode
-	ModelReplicatorExt model_replicator;
-
-	// define the initial population [BUG FREE]
-	std::cout << "Initializing the population..." << std::endl;
-	std::vector<Model> population;
-	const int population_size = 1;
-	for (int i = 0; i < population_size; ++i)
-	{
-		// baseline model
-		std::shared_ptr<WeightInitOp> weight_init;
-		std::shared_ptr<SolverOp> solver;
-		weight_init.reset(new RandWeightInitOp(input_nodes.size()));
-		solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
-		std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>());
-		std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
-		Model model = model_replicator.makeBaselineModel(
-			input_nodes.size(), { 100 }, output_nodes.size(),
-			std::shared_ptr<ActivationOp<float>>(new ELUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ELUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-			std::shared_ptr<ActivationOp<float>>(new ELUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ELUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-			weight_init, solver,
-			loss_function, loss_function_grad, std::to_string(i));
-		model.initWeights();
-		model.setId(i);
-		population.push_back(model);
-	}
-
-	// Evolve the population
-	std::vector<std::vector<std::pair<int, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
-		population, model_trainer, model_replicator, data_simulator, model_logger, input_nodes, n_threads);
-
-	PopulationTrainerFile population_trainer_file;
-	population_trainer_file.storeModels(population, "SequencialMNIST");
-	population_trainer_file.storeModelValidations("SequencialMNISTErrors.csv", models_validation_errors_per_generation.back());
-
-}
 void main_CovNet() {
 
 	const int n_hard_threads = std::thread::hardware_concurrency();
@@ -828,7 +538,6 @@ void main_CovNet() {
 int main(int argc, char** argv)
 {
 	// run the application
-	//main_EvoNet();
 	main_CovNet();
 
   return 0;
