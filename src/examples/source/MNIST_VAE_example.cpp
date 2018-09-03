@@ -162,17 +162,17 @@ public:
 
 		std::random_device rd{};
 		std::mt19937 gen{ rd() };
-		std::normal_distribution<> d{ 0.0f, 100.0f };
+		std::normal_distribution<> d{ 0.0f, 1.0f };
 		// Reformat the MNIST image data for training
 		for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
 			for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
 				for (int nodes_iter = 0; nodes_iter < n_input_pixels + 2*n_encodings; ++nodes_iter) {
 					for (int epochs_iter = 0; epochs_iter < n_epochs; ++epochs_iter) {
 						if (nodes_iter < n_input_pixels) {
-							input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
-							output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
-							//output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[0], nodes_iter); // test on only 1 sample
-							//input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[0], nodes_iter);  // test on only 1 sample
+							//input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
+							//output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
+							output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[0], nodes_iter); // test on only 1 sample
+							input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[0], nodes_iter);  // test on only 1 sample
 						}
 						else if (nodes_iter >= n_input_pixels && nodes_iter < n_encodings) {
 							input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = d(gen); // sample from a normal distribution
@@ -314,7 +314,7 @@ void main_VAE() {
 	population_trainer.setNReplicatesPerModel(1);
 
 	// define the model logger
-	ModelLogger model_logger(true, true, true, true, false, false);
+	ModelLogger model_logger(true, true, true, false, false, false);
 
 	// define the data simulator
 	const std::size_t input_size = 784;
@@ -375,11 +375,11 @@ void main_VAE() {
 	model_trainer.setNThreads(n_hard_threads);
 	model_trainer.setLogging(true, false);
 	model_trainer.setLossFunctions({ 
-		std::shared_ptr<LossFunctionOp<float>>(new NegativeLogLikelihoodOp<float>()), 
+		std::shared_ptr<LossFunctionOp<float>>(new CrossEntropyOp<float>()), 
 		std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceMuOp<float>()),
 		std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceLogVarOp<float>()) });
 	model_trainer.setLossFunctionGrads({ 
-		std::shared_ptr<LossFunctionGradOp<float>>(new NegativeLogLikelihoodGradOp<float>()),
+		std::shared_ptr<LossFunctionGradOp<float>>(new CrossEntropyGradOp<float>()),
 		std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceMuGradOp<float>()), 
 		std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceLogVarGradOp<float>()) });
 	model_trainer.setOutputNodes({ output_nodes, encoding_nodes_mu, encoding_nodes_logvar });
