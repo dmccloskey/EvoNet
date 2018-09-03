@@ -859,9 +859,9 @@ bool ExportPWData(const std::string& filename, const PWData& pw_data) {
 void main_statistics()
 {
 	// analyses to run
-	bool run_oneVSone = true;
+	bool run_oneVSone = false;
 	bool run_preVSpost = false;
-	bool run_postMinPre = false;
+	bool run_postMinPre = true;
 	std::string blood_fraction = "PLT";
 
 	// define the data simulator
