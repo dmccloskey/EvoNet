@@ -568,7 +568,7 @@ namespace SmartPeak
 		for (size_t i = 0; i < logvar_node_names.size(); ++i) {
 			// Make the logVar scalar nodes
 			char logvarScale_name_char[512];
-			sprintf(logvarScale_name_char, "%s-LogVarScale", logvar_node_names[i].data());
+			sprintf(logvarScale_name_char, "%s-Scalar", logvar_node_names[i].data());
 			std::string logvarScale_name(logvarScale_name_char);
 			Node logvarScale(logvarScale_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new ExponentialOp<float>()), std::shared_ptr<ActivationOp<float>>(new ExponentialGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
 			logvarScale.setModuleName(module_name);

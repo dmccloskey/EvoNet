@@ -399,31 +399,41 @@ BOOST_AUTO_TEST_CASE(addVAEEncoding)
 		"LogVar_0-StdDev_to_Encoding_0","Mu_0_to_Encoding_0",
 		"LogVar_1-StdDev_to_Encoding_1","Mu_1_to_Encoding_1" };
 	std::vector<std::string> weight_names_test = {
-		"Norm_Unity", "Norm_Scalar"};
+		"Encoding_Unity", "Encoding_Scalar"};
 
 	// check the nodes
 	for (const std::string& node_name : node_names_test)
 	{
 		BOOST_CHECK_EQUAL(model.getNode(node_name).getName(), node_name);
 		BOOST_CHECK_EQUAL(model.getNode(node_name).getModuleName(), "Mod1");
-		if (node_name == "Input_0-SourceMinMean" || node_name == "Input_1-SourceMinMean")
+		if (node_name == "LogVar_0-Scalar" || node_name == "LogVar_1-Scalar")
+		{
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "ExponentialOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "ExponentialGradOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "SumOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "SumErrorOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
+			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.0, 1e-3);
+		}
+		else if (node_name == "LogVar_0-StdDev" || node_name == "LogVar_1-StdDev")
+		{
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "ProdOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "ProdErrorOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "ProdWeightGradOp");
+			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.0, 1e-3);
+		}
+		else if (node_name == "Encoding_0-Sampler" || node_name == "Encoding_1-Sampler")
 		{
 			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
 			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
 			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "SumOp");
 			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "SumErrorOp");
 			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
+			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.0, 1e-3);
 		}
-		else if (node_name == "Input_0-Normalized" || node_name == "Input_1-Normalized")
-		{
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "ReLUOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "ReLUGradOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "ProdOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "ProdErrorOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "ProdWeightGradOp");
-			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.2, 1e-3);
-		}
-		else if (node_name == "Input_0-Normalized-bias" || node_name == "Input_1-Normalized-bias")
+		else if (node_name == "Encoding_0" || node_name == "Encoding_1")
 		{
 			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
 			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
@@ -451,7 +461,7 @@ BOOST_AUTO_TEST_CASE(addVAEEncoding)
 	{
 		BOOST_CHECK_EQUAL(model.getWeight(name).getName(), name);
 		BOOST_CHECK_EQUAL(model.getWeight(name).getModuleName(), "Mod1");
-		if (name == "Norm_Unity" || name == "Norm_Scalar") {
+		if (name == "Encoding_Unity" || name == "Encoding_Scalar") {
 			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
 			BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "DummySolverOp");
 			BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.0f);
