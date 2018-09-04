@@ -127,7 +127,7 @@ private:
 public: 
     SigmoidOp(){}; 
     ~SigmoidOp(){};
-    T operator()(const T& x_I) const { return this->substituteNanInf(1 / (1 + std::exp(x_I))); };
+    T operator()(const T& x_I) const { return this->substituteNanInf(1 / (1 + std::exp(-x_I))); };
     std::string getName() const{return "SigmoidOp";};
   };
 

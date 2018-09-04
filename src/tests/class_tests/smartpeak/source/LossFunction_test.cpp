@@ -248,13 +248,13 @@ BOOST_AUTO_TEST_CASE(operationfunctionCrossEntropyOp2)
 
 	const int batch_size = 2;
 	Eigen::Tensor<float, 1> y_true(batch_size);
-	y_true.setValues({ .1f, .1f });
+	y_true.setValues({ 1.0f, 1.0f });
 	Eigen::Tensor<float, 1> y_pred(batch_size);
-	y_pred.setValues({ 1.0f, 1.0f });
+	y_pred.setValues({ 0.1f, 0.9f });
 
 	Eigen::Tensor<float, 1> error = operation(y_pred, y_true);
-	BOOST_CHECK_CLOSE(error(0), 3.7416575, 1e-6);
-	BOOST_CHECK_CLOSE(error(1), 2.44948983, 1e-6);
+	BOOST_CHECK_CLOSE(error(0), 2.30258512, 1e-6);
+	BOOST_CHECK_CLOSE(error(1), 0.105360545, 1e-6);
 }
 
 /**
@@ -302,13 +302,13 @@ BOOST_AUTO_TEST_CASE(operationfunctionCrossEntropyGradOp2)
 
 	const int batch_size = 2;
 	Eigen::Tensor<float, 1> y_true(batch_size);
-	y_true.setValues({.1f, .1f });
+	y_true.setValues({ 1.0f, 1.0f });
 	Eigen::Tensor<float, 1> y_pred(batch_size);
-	y_pred.setValues({ 1.0f, 1.0f });
+	y_pred.setValues({ 0.1f, 0.9f });
 
 	Eigen::Tensor<float, 1> error = operation(y_pred, y_true);
-	BOOST_CHECK_CLOSE(error(0), 0.0, 1e-6);
-	BOOST_CHECK_CLOSE(error(1), -1.0, 1e-6);
+	BOOST_CHECK_CLOSE(error(0), -10.0, 1e-6);
+	BOOST_CHECK_CLOSE(error(1), -1.11111116, 1e-6);
 }
 
 /**
@@ -667,13 +667,13 @@ BOOST_AUTO_TEST_CASE(operationfunctionBCEWithLogitsOp2)
 
 	const int batch_size = 2;
 	Eigen::Tensor<float, 1> y_true(batch_size);
-	y_true.setValues({ .1f, .1f });
+	y_true.setValues({ 1.0f, 1.0f });
 	Eigen::Tensor<float, 1> y_pred(batch_size);
-	y_pred.setValues({ 1.0f, 1.0f });
+	y_pred.setValues({ -0.954242509f, 0.954242509f });
 
 	Eigen::Tensor<float, 1> error = operation(y_pred, y_true);
-	BOOST_CHECK_CLOSE(error(0), 3.7416575, 1e-6);
-	BOOST_CHECK_CLOSE(error(1), 2.44948983, 1e-6);
+	BOOST_CHECK_CLOSE(error(0), 2.30258512, 1e-6);
+	BOOST_CHECK_CLOSE(error(1), 0.105360545, 1e-6);
 }
 
 /**
@@ -699,13 +699,13 @@ BOOST_AUTO_TEST_CASE(operationfunctionBCEWithLogitsGradOp2)
 
 	const int batch_size = 2;
 	Eigen::Tensor<float, 1> y_true(batch_size);
-	y_true.setValues({ .1f, .1f });
+	y_true.setValues({ 1.0f, 1.0f });
 	Eigen::Tensor<float, 1> y_pred(batch_size);
-	y_pred.setValues({ 1.0f, 0.0f });
+	y_pred.setValues({ -0.954242509f, 0.954242509f });
 
 	Eigen::Tensor<float, 1> error = operation(y_pred, y_true);
-	BOOST_CHECK_CLOSE(error(0), 0.0, 1e-6);
-	BOOST_CHECK_CLOSE(error(1), -1.0, 1e-6);
+	BOOST_CHECK_CLOSE(error(0), -10.0, 1e-6);
+	BOOST_CHECK_CLOSE(error(1), -1.11111116, 1e-6);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
