@@ -657,4 +657,90 @@ BOOST_AUTO_TEST_CASE(getNamePowGradOp)
 	BOOST_CHECK_EQUAL(operation.getName(), "PowGradOp");
 }
 
+/**
+	LeakyReLUOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorLeakyReLUOp)
+{
+	LeakyReLUOp<double>* ptrLeakyReLU = nullptr;
+	LeakyReLUOp<double>* nullPointerLeakyReLU = nullptr;
+	BOOST_CHECK_EQUAL(ptrLeakyReLU, nullPointerLeakyReLU);
+}
+
+BOOST_AUTO_TEST_CASE(destructorLeakyReLUOp)
+{
+	LeakyReLUOp<double>* ptrLeakyReLU = nullptr;
+	ptrLeakyReLU = new LeakyReLUOp<double>();
+	delete ptrLeakyReLU;
+}
+
+BOOST_AUTO_TEST_CASE(gettersAndSettersLeakyReLUOp)
+{
+	LeakyReLUOp<double> operation;
+	operation.setAlpha(1.0);
+
+	BOOST_CHECK_EQUAL(operation.getAlpha(), 1.0);
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionLeakyReLUOp)
+{
+	LeakyReLUOp<double> operation(0.1);
+
+	BOOST_CHECK_CLOSE(operation(0.0), 0.0, 1e-4);
+	BOOST_CHECK_CLOSE(operation(1.0), 1.0, 1e-4);
+	BOOST_CHECK_CLOSE(operation(10.0), 10.0, 1e-4);
+	BOOST_CHECK_CLOSE(operation(-1.0), -0.1, 1e-4);
+	BOOST_CHECK_CLOSE(operation(-10.0), -1.0, 1e-4);
+}
+
+BOOST_AUTO_TEST_CASE(getNameLeakyReLUOp)
+{
+	LeakyReLUOp<double> operation;
+
+	BOOST_CHECK_EQUAL(operation.getName(), "LeakyReLUOp");
+}
+
+/**
+	LeakyReLUGradOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorLeakyReLUGradOp)
+{
+	LeakyReLUGradOp<double>* ptrLeakyReLU = nullptr;
+	LeakyReLUGradOp<double>* nullPointerLeakyReLU = nullptr;
+	BOOST_CHECK_EQUAL(ptrLeakyReLU, nullPointerLeakyReLU);
+}
+
+BOOST_AUTO_TEST_CASE(destructorLeakyReLUGradOp)
+{
+	LeakyReLUGradOp<double>* ptrLeakyReLU = nullptr;
+	ptrLeakyReLU = new LeakyReLUGradOp<double>();
+	delete ptrLeakyReLU;
+}
+
+BOOST_AUTO_TEST_CASE(gettersAndSettersLeakyReLUGradOp)
+{
+	LeakyReLUGradOp<double> operation;
+	operation.setAlpha(1.0);
+
+	BOOST_CHECK_EQUAL(operation.getAlpha(), 1.0);
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionLeakyReLUGradOp)
+{
+	LeakyReLUGradOp<double> operation(0.1);
+
+	BOOST_CHECK_CLOSE(operation(0.0), 1.0, 1e-4);
+	BOOST_CHECK_CLOSE(operation(1.0), 1.0, 1e-4);
+	BOOST_CHECK_CLOSE(operation(10.0), 1.0, 1e-4);
+	BOOST_CHECK_CLOSE(operation(-1.0), 0.1, 1e-4);
+	BOOST_CHECK_CLOSE(operation(-10.0), 0.1, 1e-4);
+}
+
+BOOST_AUTO_TEST_CASE(getNameLeakyReLUGradOp)
+{
+	LeakyReLUGradOp<double> operation;
+
+	BOOST_CHECK_EQUAL(operation.getName(), "LeakyReLUGradOp");
+}
+
 BOOST_AUTO_TEST_SUITE_END()
