@@ -375,11 +375,13 @@ void main_VAE() {
 	model_trainer.setNThreads(n_hard_threads);
 	model_trainer.setLogging(true, false);
 	model_trainer.setLossFunctions({ 
-		std::shared_ptr<LossFunctionOp<float>>(new BCEWithLogitsOp<float>()), 
+		std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()),
+		//std::shared_ptr<LossFunctionOp<float>>(new BCEWithLogitsOp<float>()),
 		std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceMuOp<float>()),
 		std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceLogVarOp<float>()) });
 	model_trainer.setLossFunctionGrads({ 
-		std::shared_ptr<LossFunctionGradOp<float>>(new BCEWithLogitsGradOp<float>()),
+		std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()),
+		//std::shared_ptr<LossFunctionGradOp<float>>(new BCEWithLogitsGradOp<float>()),
 		std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceMuGradOp<float>()), 
 		std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceLogVarGradOp<float>()) });
 	model_trainer.setOutputNodes({ output_nodes, encoding_nodes_mu, encoding_nodes_logvar });
