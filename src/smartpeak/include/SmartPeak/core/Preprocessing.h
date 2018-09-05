@@ -30,6 +30,9 @@ namespace SmartPeak
 		}
 	}
 
+	/*
+	@brief Scale by magnitude of the data
+	*/
 	template<typename T>
 	class UnitScale
 	{
@@ -50,6 +53,50 @@ namespace SmartPeak
 	};
 
 	/*
+	@brief Project the data onto a specific range
+	*/
+	template<typename T>
+	class LinearScale
+	{
+	public:
+		LinearScale() = default;
+		LinearScale(const T& domain_min, const T& domain_max, const T& range_min, const T& range_max):
+			domain_min_(domain_min), domain_max_(domain_max), range_min_(range_min), range_max_(range_max){};
+		~LinearScale() = default;
+		T operator()(const T& x_I) const { 
+			T t = (x_I - domain_min_) / (domain_max_ - domain_min_);
+			return (range_min_ + (range_max_ - range_min_) * t); 
+		};
+	private:
+		T domain_min_;
+		T domain_max_;
+		T range_min_;
+		T range_max_;
+	};
+
+	/*
+	@brief "Smooth" binary labels 0 and 1 by a certain offset
+	*/
+	template<typename T>
+	class LabelSmoother
+	{
+	public:
+		LabelSmoother() = default;
+		LabelSmoother(const T& zero_offset, const T& one_offset) :
+			zero_offset_(zero_offset), one_offset_(one_offset) {};
+		~LabelSmoother() = default;
+		T operator()(const T& x_I) const {
+			const T eps = 1e-3;
+			if (x_I < eps) return x_I + zero_offset_;
+			else if (x_I > 1 - eps) return x_I - one_offset_;
+			else return x_I;
+		};
+	private:
+		T zero_offset_;
+		T one_offset_;
+	};
+
+	/*
 	@brief One hot encoder
 
 	@param[in] data Tensor of input labels in a single column vector
@@ -59,7 +106,7 @@ namespace SmartPeak
 		across the columns with the one hot encoding 
 	*/
 	template<typename T>
-	Eigen::Tensor<int, 2> OneHotEncoder(Eigen::Tensor<T, 2>& data, const std::vector<T>& all_possible_values)
+	Eigen::Tensor<T, 2> OneHotEncoder(const Eigen::Tensor<T, 2>& data, const std::vector<T>& all_possible_values)
 	{
 		// integer encode input data
 		std::map<T, int> T_to_int;
@@ -67,8 +114,8 @@ namespace SmartPeak
 			T_to_int.emplace(all_possible_values[i], i);
 
 		// convert to 1 hot vector
-		Eigen::Tensor<int, 2> onehot_encoded(data.dimension(0), T_to_int.size());
-		onehot_encoded.setConstant(0);
+		Eigen::Tensor<T, 2> onehot_encoded(data.dimension(0), (int)T_to_int.size());
+		onehot_encoded.setZero();
 		for (int i = 0; i<data.dimension(0); ++i)
 			onehot_encoded(i, T_to_int.at(data(i, 0))) = 1;
 

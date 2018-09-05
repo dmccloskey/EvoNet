@@ -232,6 +232,7 @@ void main_EvoNet() {
 	const std::string validation_data_filename = "/home/user/data/t10k-images-idx3-ubyte";
 	const std::string validation_labels_filename = "/home/user/data/t10k-labels-idx1-ubyte";
 	data_simulator.readData(validation_data_filename, validation_labels_filename, false, validation_data_size, input_size);
+	data_simulator.unitScaleData();
 
 	// Make the input nodes
 	std::vector<std::string> input_nodes;

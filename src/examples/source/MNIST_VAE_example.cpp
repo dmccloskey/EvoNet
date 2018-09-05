@@ -56,24 +56,24 @@ public:
 		// Add the Endocer FC layers
 		std::vector<std::string> node_names, node_names_mu, node_names_logvar;	
 		node_names = model_builder.addFullyConnected(model, "FC0", "FC0", node_names_input, n_hidden_0,
-			std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()),
-			std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
+			std::shared_ptr<ActivationOp<float>>(new ELUOp<float>()),
+			std::shared_ptr<ActivationOp<float>>(new ELUGradOp<float>()),
 			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
 			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
 			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
 			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names_input.size() + node_names.size())/2, 1)),
 			std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 		node_names_mu = model_builder.addFullyConnected(model, "Mu", "Mu", node_names, n_encodings,
-			std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()),
-			std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
+			std::shared_ptr<ActivationOp<float>>(new ELUOp<float>()),
+			std::shared_ptr<ActivationOp<float>>(new ELUGradOp<float>()),
 			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
 			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
 			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
 			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names.size() + n_encodings)/2, 1)),
 			std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 		node_names_logvar = model_builder.addFullyConnected(model, "LogVar", "LogVar", node_names, 20,
-			std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()),
-			std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
+			std::shared_ptr<ActivationOp<float>>(new ELUOp<float>()),
+			std::shared_ptr<ActivationOp<float>>(new ELUGradOp<float>()),
 			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
 			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
 			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
@@ -85,16 +85,16 @@ public:
 
 		// Add the Decoder FC layers
 		node_names = model_builder.addFullyConnected(model, "FC1", "FC1", node_names_encoder, n_hidden_0,
-			std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()),
-			std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
+			std::shared_ptr<ActivationOp<float>>(new ELUOp<float>()),
+			std::shared_ptr<ActivationOp<float>>(new ELUGradOp<float>()),
 			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
 			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
 			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
 			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names_encoder.size() + n_hidden_0)/2, 1)),
 			std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 		node_names = model_builder.addFullyConnected(model, "Output", "Output", node_names, n_inputs,
-			std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()),
-			std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
+			std::shared_ptr<ActivationOp<float>>(new ELUOp<float>()),
+			std::shared_ptr<ActivationOp<float>>(new ELUGradOp<float>()),
 			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
 			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
 			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
@@ -340,6 +340,7 @@ void main_VAE() {
 	//const std::string validation_data_filename = "/home/user/data/t10k-images-idx3-ubyte";
 	//const std::string validation_labels_filename = "/home/user/data/t10k-labels-idx1-ubyte";
 	data_simulator.readData(validation_data_filename, validation_labels_filename, false, validation_data_size, input_size);
+	data_simulator.unitScaleData();
 
 	// Make the input nodes
 	std::vector<std::string> input_nodes;
