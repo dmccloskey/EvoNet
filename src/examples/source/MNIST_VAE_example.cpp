@@ -93,8 +93,8 @@ public:
 			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names_encoder.size() + n_hidden_0)/2, 1)),
 			std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 		node_names = model_builder.addFullyConnected(model, "Output", "Output", node_names, n_inputs,
-			std::shared_ptr<ActivationOp<float>>(new SigmoidOp<float>()),
-			std::shared_ptr<ActivationOp<float>>(new SigmoidGradOp<float>()),
+			std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()),
+			std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
 			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
 			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
 			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
@@ -375,11 +375,11 @@ void main_VAE() {
 	model_trainer.setNThreads(n_hard_threads);
 	model_trainer.setLogging(true, false);
 	model_trainer.setLossFunctions({ 
-		std::shared_ptr<LossFunctionOp<float>>(new CrossEntropyOp<float>()), 
+		std::shared_ptr<LossFunctionOp<float>>(new BCEWithLogitsOp<float>()), 
 		std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceMuOp<float>()),
 		std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceLogVarOp<float>()) });
 	model_trainer.setLossFunctionGrads({ 
-		std::shared_ptr<LossFunctionGradOp<float>>(new CrossEntropyGradOp<float>()),
+		std::shared_ptr<LossFunctionGradOp<float>>(new BCEWithLogitsGradOp<float>()),
 		std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceMuGradOp<float>()), 
 		std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceLogVarGradOp<float>()) });
 	model_trainer.setOutputNodes({ output_nodes, encoding_nodes_mu, encoding_nodes_logvar });

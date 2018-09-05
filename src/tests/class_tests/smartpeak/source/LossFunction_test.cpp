@@ -672,8 +672,8 @@ BOOST_AUTO_TEST_CASE(operationfunctionBCEWithLogitsOp2)
 	y_pred.setValues({ -0.954242509f, 0.954242509f });
 
 	Eigen::Tensor<float, 1> error = operation(y_pred, y_true);
-	BOOST_CHECK_CLOSE(error(0), 2.30258512, 1e-6);
-	BOOST_CHECK_CLOSE(error(1), 0.105360545, 1e-6);
+	BOOST_CHECK_CLOSE(error(0), 1.28001761, 1e-6); // Why are these different than CrossEntropy?
+	BOOST_CHECK_CLOSE(error(1), 0.325775027, 1e-6);
 }
 
 /**
@@ -704,8 +704,8 @@ BOOST_AUTO_TEST_CASE(operationfunctionBCEWithLogitsGradOp2)
 	y_pred.setValues({ -0.954242509f, 0.954242509f });
 
 	Eigen::Tensor<float, 1> error = operation(y_pred, y_true);
-	BOOST_CHECK_CLOSE(error(0), -10.0, 1e-6);
-	BOOST_CHECK_CLOSE(error(1), -1.11111116, 1e-6);
+	BOOST_CHECK_CLOSE(error(0), -0.721967578, 1e-6); // Why are these different than CrossEntropy?
+	BOOST_CHECK_CLOSE(error(1), -0.278032422, 1e-6);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

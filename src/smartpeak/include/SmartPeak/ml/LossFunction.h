@@ -190,6 +190,10 @@ public:
 
   /**
     @brief CrossEntropy loss function gradient.
+
+	The derivative of -(z * log(x) + (1 - z)*log(1-x)) is the following
+		= (1-z)/(1-x) - z/x
+		= -(x-z)/((x-1)*x)
   */
   template<typename T>
   class CrossEntropyGradOp : public LossFunctionGradOp<T>
@@ -212,7 +216,8 @@ public:
 		{
 			Eigen::Tensor<T, 1> ones((int)y_pred.size());
 			ones.setConstant(1.0);
-			return (-(y_true / y_pred + (ones - y_true) / (ones - y_pred))).unaryExpr(std::ptr_fun(substituteNanInf<T>));
+			//return (-(y_true / y_pred + (ones - y_true) / (ones - y_pred))).unaryExpr(std::ptr_fun(substituteNanInf<T>));
+			return (-(y_pred - y_true) / ((y_pred - ones) * y_pred)).unaryExpr(std::ptr_fun(substituteNanInf<T>));
 		};
   };
 
@@ -529,7 +534,7 @@ public:
 		{
 			Eigen::Tensor<T, 1> ones((int)y_pred.size());
 			ones.setConstant(1.0);
-			return (-((y_true - ones)*y_pred.exp() + y_pred)/(y_pred.exp() + ones)).unaryExpr(std::ptr_fun(substituteNanInf<T>));
+			return (-((y_true - ones)*y_pred.exp() + y_true)/(y_pred.exp() + ones)).unaryExpr(std::ptr_fun(substituteNanInf<T>));
 		};
 	};
 
