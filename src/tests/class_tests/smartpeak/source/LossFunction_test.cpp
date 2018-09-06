@@ -248,13 +248,13 @@ BOOST_AUTO_TEST_CASE(operationfunctionCrossEntropyOp2)
 
 	const int batch_size = 2;
 	Eigen::Tensor<float, 1> y_true(batch_size);
-	y_true.setValues({ .1f, .1f });
+	y_true.setValues({ 1.0f, 1.0f });
 	Eigen::Tensor<float, 1> y_pred(batch_size);
-	y_pred.setValues({ 1.0f, 1.0f });
+	y_pred.setValues({ 0.1f, 0.9f });
 
 	Eigen::Tensor<float, 1> error = operation(y_pred, y_true);
-	BOOST_CHECK_CLOSE(error(0), 3.7416575, 1e-6);
-	BOOST_CHECK_CLOSE(error(1), 2.44948983, 1e-6);
+	BOOST_CHECK_CLOSE(error(0), 2.30258512, 1e-6);
+	BOOST_CHECK_CLOSE(error(1), 0.105360545, 1e-6);
 }
 
 /**
@@ -302,13 +302,13 @@ BOOST_AUTO_TEST_CASE(operationfunctionCrossEntropyGradOp2)
 
 	const int batch_size = 2;
 	Eigen::Tensor<float, 1> y_true(batch_size);
-	y_true.setValues({.1f, .1f });
+	y_true.setValues({ 1.0f, 1.0f });
 	Eigen::Tensor<float, 1> y_pred(batch_size);
-	y_pred.setValues({ 1.0f, 1.0f });
+	y_pred.setValues({ 0.1f, 0.9f });
 
 	Eigen::Tensor<float, 1> error = operation(y_pred, y_true);
-	BOOST_CHECK_CLOSE(error(0), 0.0, 1e-6);
-	BOOST_CHECK_CLOSE(error(1), -1.0, 1e-6);
+	BOOST_CHECK_CLOSE(error(0), -10.0, 1e-6);
+	BOOST_CHECK_CLOSE(error(1), -1.11111116, 1e-6);
 }
 
 /**
@@ -514,6 +514,198 @@ BOOST_AUTO_TEST_CASE(operationfunctionMSEGradOp2)
 	Eigen::Tensor<float, 1> error = operation(y_pred, y_true);
 	BOOST_CHECK_CLOSE(error(0), -0.5, 1e-6);
 	BOOST_CHECK_CLOSE(error(1), -0.5, 1e-6);
+}
+
+/**
+	KLDivergenceMuOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorKLDivergenceMuOp)
+{
+	KLDivergenceMuOp<double>* ptrKLDivergenceMu = nullptr;
+	KLDivergenceMuOp<double>* nullPointerKLDivergenceMu = nullptr;
+	BOOST_CHECK_EQUAL(ptrKLDivergenceMu, nullPointerKLDivergenceMu);
+}
+
+BOOST_AUTO_TEST_CASE(destructorKLDivergenceMuOp)
+{
+	KLDivergenceMuOp<double>* ptrKLDivergenceMu = nullptr;
+	ptrKLDivergenceMu = new KLDivergenceMuOp<double>();
+	delete ptrKLDivergenceMu;
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionKLDivergenceMuOp2)
+{
+	KLDivergenceMuOp<float> operation;
+
+	const int batch_size = 2;
+	Eigen::Tensor<float, 1> y_true(batch_size);
+	y_true.setValues({ 1, 2 });
+	Eigen::Tensor<float, 1> y_pred(batch_size);
+	y_pred.setValues({ 2, 3 });
+
+	Eigen::Tensor<float, 1> error = operation(y_pred, y_true);
+	BOOST_CHECK_CLOSE(error(0), 1.5, 1e-6);
+	BOOST_CHECK_CLOSE(error(1), 4.0, 1e-6);
+}
+
+/**
+	KLDivergenceMuGradOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorKLDivergenceMuGradOp)
+{
+	KLDivergenceMuGradOp<double>* ptrKLDivergenceMu = nullptr;
+	KLDivergenceMuGradOp<double>* nullPointerKLDivergenceMu = nullptr;
+	BOOST_CHECK_EQUAL(ptrKLDivergenceMu, nullPointerKLDivergenceMu);
+}
+
+BOOST_AUTO_TEST_CASE(destructorKLDivergenceMuGradOp)
+{
+	KLDivergenceMuGradOp<double>* ptrKLDivergenceMu = nullptr;
+	ptrKLDivergenceMu = new KLDivergenceMuGradOp<double>();
+	delete ptrKLDivergenceMu;
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionKLDivergenceMuGradOp2)
+{
+	KLDivergenceMuGradOp<float> operation;
+
+	const int batch_size = 2;
+	Eigen::Tensor<float, 1> y_true(batch_size);
+	y_true.setValues({ 1, 2 });
+	Eigen::Tensor<float, 1> y_pred(batch_size);
+	y_pred.setValues({ 2, 3 });
+
+	Eigen::Tensor<float, 1> error = operation(y_pred, y_true);
+	BOOST_CHECK_CLOSE(error(0), 4.0, 1e-6);
+	BOOST_CHECK_CLOSE(error(1), 6.0, 1e-6);
+}
+
+/**
+	KLDivergenceLogVarOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorKLDivergenceLogVarOp)
+{
+	KLDivergenceLogVarOp<double>* ptrKLDivergenceLogVar = nullptr;
+	KLDivergenceLogVarOp<double>* nullPointerKLDivergenceLogVar = nullptr;
+	BOOST_CHECK_EQUAL(ptrKLDivergenceLogVar, nullPointerKLDivergenceLogVar);
+}
+
+BOOST_AUTO_TEST_CASE(destructorKLDivergenceLogVarOp)
+{
+	KLDivergenceLogVarOp<double>* ptrKLDivergenceLogVar = nullptr;
+	ptrKLDivergenceLogVar = new KLDivergenceLogVarOp<double>();
+	delete ptrKLDivergenceLogVar;
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionKLDivergenceLogVarOp2)
+{
+	KLDivergenceLogVarOp<float> operation;
+
+	const int batch_size = 2;
+	Eigen::Tensor<float, 1> y_true(batch_size);
+	y_true.setValues({ 1, 2 });
+	Eigen::Tensor<float, 1> y_pred(batch_size);
+	y_pred.setValues({ 2, 3 });
+
+	Eigen::Tensor<float, 1> error = operation(y_pred, y_true);
+	BOOST_CHECK_CLOSE(error(0), 2.1945281, 1e-6);
+	BOOST_CHECK_CLOSE(error(1), 8.04276848, 1e-6);
+}
+
+/**
+	KLDivergenceLogVarGradOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorKLDivergenceLogVarGradOp)
+{
+	KLDivergenceLogVarGradOp<double>* ptrKLDivergenceLogVar = nullptr;
+	KLDivergenceLogVarGradOp<double>* nullPointerKLDivergenceLogVar = nullptr;
+	BOOST_CHECK_EQUAL(ptrKLDivergenceLogVar, nullPointerKLDivergenceLogVar);
+}
+
+BOOST_AUTO_TEST_CASE(destructorKLDivergenceLogVarGradOp)
+{
+	KLDivergenceLogVarGradOp<double>* ptrKLDivergenceLogVar = nullptr;
+	ptrKLDivergenceLogVar = new KLDivergenceLogVarGradOp<double>();
+	delete ptrKLDivergenceLogVar;
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionKLDivergenceLogVarGradOp2)
+{
+	KLDivergenceLogVarGradOp<float> operation;
+
+	const int batch_size = 2;
+	Eigen::Tensor<float, 1> y_true(batch_size);
+	y_true.setValues({ 1, 2 });
+	Eigen::Tensor<float, 1> y_pred(batch_size);
+	y_pred.setValues({ 2, 3 });
+
+	Eigen::Tensor<float, 1> error = operation(y_pred, y_true);
+	BOOST_CHECK_CLOSE(error(0), 3.1945281, 1e-6);
+	BOOST_CHECK_CLOSE(error(1), 9.54276848, 1e-6);
+}
+
+/**
+BCEWithLogitsOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorBCEWithLogitsOp)
+{
+	BCEWithLogitsOp<double>* ptrBCEWithLogits = nullptr;
+	BCEWithLogitsOp<double>* nullPointerBCEWithLogits = nullptr;
+	BOOST_CHECK_EQUAL(ptrBCEWithLogits, nullPointerBCEWithLogits);
+}
+
+BOOST_AUTO_TEST_CASE(destructorBCEWithLogitsOp)
+{
+	BCEWithLogitsOp<double>* ptrBCEWithLogits = nullptr;
+	ptrBCEWithLogits = new BCEWithLogitsOp<double>();
+	delete ptrBCEWithLogits;
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionBCEWithLogitsOp2)
+{
+	BCEWithLogitsOp<float> operation;
+
+	const int batch_size = 2;
+	Eigen::Tensor<float, 1> y_true(batch_size);
+	y_true.setValues({ 1.0f, 1.0f });
+	Eigen::Tensor<float, 1> y_pred(batch_size);
+	y_pred.setValues({ -0.954242509f, 0.954242509f });
+
+	Eigen::Tensor<float, 1> error = operation(y_pred, y_true);
+	BOOST_CHECK_CLOSE(error(0), 1.28001761, 1e-6); // Why are these different than CrossEntropy?
+	BOOST_CHECK_CLOSE(error(1), 0.325775027, 1e-6);
+}
+
+/**
+BCEWithLogitsGradOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorBCEWithLogitsGradOp)
+{
+	BCEWithLogitsGradOp<double>* ptrBCEWithLogits = nullptr;
+	BCEWithLogitsGradOp<double>* nullPointerBCEWithLogits = nullptr;
+	BOOST_CHECK_EQUAL(ptrBCEWithLogits, nullPointerBCEWithLogits);
+}
+
+BOOST_AUTO_TEST_CASE(destructorBCEWithLogitsGradOp)
+{
+	BCEWithLogitsGradOp<double>* ptrBCEWithLogits = nullptr;
+	ptrBCEWithLogits = new BCEWithLogitsGradOp<double>();
+	delete ptrBCEWithLogits;
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionBCEWithLogitsGradOp2)
+{
+	BCEWithLogitsGradOp<float> operation;
+
+	const int batch_size = 2;
+	Eigen::Tensor<float, 1> y_true(batch_size);
+	y_true.setValues({ 1.0f, 1.0f });
+	Eigen::Tensor<float, 1> y_pred(batch_size);
+	y_pred.setValues({ -0.954242509f, 0.954242509f });
+
+	Eigen::Tensor<float, 1> error = operation(y_pred, y_true);
+	BOOST_CHECK_CLOSE(error(0), -0.721967578, 1e-6); // Why are these different than CrossEntropy?
+	BOOST_CHECK_CLOSE(error(1), -0.278032422, 1e-6);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -190,6 +190,10 @@ public:
 
   /**
     @brief CrossEntropy loss function gradient.
+
+	The derivative of -(z * log(x) + (1 - z)*log(1-x)) is the following
+		= (1-z)/(1-x) - z/x
+		= -(x-z)/((x-1)*x)
   */
   template<typename T>
   class CrossEntropyGradOp : public LossFunctionGradOp<T>
@@ -212,7 +216,8 @@ public:
 		{
 			Eigen::Tensor<T, 1> ones((int)y_pred.size());
 			ones.setConstant(1.0);
-			return (-(y_true / y_pred + (ones - y_true) / (ones - y_pred))).unaryExpr(std::ptr_fun(substituteNanInf<T>));
+			//return (-(y_true / y_pred + (ones - y_true) / (ones - y_pred))).unaryExpr(std::ptr_fun(substituteNanInf<T>));
+			return (-(y_pred - y_true) / ((y_pred - ones) * y_pred)).unaryExpr(std::ptr_fun(substituteNanInf<T>));
 		};
   };
 
@@ -341,6 +346,197 @@ public:
 			return result.unaryExpr(std::ptr_fun(substituteNanInf<T>));
 		};
   };
+
+	/**
+		@brief KLDivergenceMu loss function.
+
+	References
+		Kingma and Welling. Auto-Encoding Variational Bayes. ICLR, 2014 https://arxiv.org/abs/1312.6114
+		0.5 * sum(1 + log(sigma^2) - mu^2 - sigma^2)
+		KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
+	*/
+	template<typename T>
+	class KLDivergenceMuOp : public LossFunctionOp<T>
+	{
+	public:
+		KLDivergenceMuOp() {};
+		~KLDivergenceMuOp() {};
+		Eigen::Tensor<T, 1> operator()(
+			const Eigen::Tensor<T, 2>& y_pred,
+			const Eigen::Tensor<T, 2>& y_true) const
+		{
+			return Eigen::Tensor<T, 1>();
+		};
+		Eigen::Tensor<T, 1> operator()(
+			const Eigen::Tensor<T, 1>& y_pred,
+			const Eigen::Tensor<T, 1>& y_true) const
+		{
+			Eigen::Tensor<T, 1> c((int)y_pred.size());
+			c.setConstant(0.5);
+			return (-c + c*y_pred.pow(2)).unaryExpr(std::ptr_fun(substituteNanInf<T>));
+		};
+	};
+
+	/**
+		@brief KLDivergenceMu  loss function gradient.
+	*/
+	template<typename T>
+	class KLDivergenceMuGradOp : public LossFunctionGradOp<T>
+	{
+	public:
+		KLDivergenceMuGradOp() {};
+		~KLDivergenceMuGradOp() {};
+		Eigen::Tensor<T, 2> operator()(
+			const Eigen::Tensor<T, 2>& y_pred,
+			const Eigen::Tensor<T, 2>& y_true) const
+		{
+			return Eigen::Tensor<T, 2>();
+		};
+		Eigen::Tensor<T, 1> operator()(
+			const Eigen::Tensor<T, 1>& y_pred,
+			const Eigen::Tensor<T, 1>& y_true) const
+		{
+			Eigen::Tensor<T, 1> c((int)y_pred.size());
+			c.setConstant(2.0);
+			return c * y_pred;
+		};
+	};
+
+	/**
+		@brief KLDivergenceLogVar loss function.
+
+	References
+		Kingma and Welling. Auto-Encoding Variational Bayes. ICLR, 2014 https://arxiv.org/abs/1312.6114
+		0.5 * sum(1 + log(sigma^2) - mu^2 - sigma^2)
+		KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
+	*/
+	template<typename T>
+	class KLDivergenceLogVarOp : public LossFunctionOp<T>
+	{
+	public:
+		KLDivergenceLogVarOp() {};
+		~KLDivergenceLogVarOp() {};
+		Eigen::Tensor<T, 1> operator()(
+			const Eigen::Tensor<T, 2>& y_pred,
+			const Eigen::Tensor<T, 2>& y_true) const
+		{
+			return Eigen::Tensor<T, 1>();
+		};
+		Eigen::Tensor<T, 1> operator()(
+			const Eigen::Tensor<T, 1>& y_pred,
+			const Eigen::Tensor<T, 1>& y_true) const
+		{
+			Eigen::Tensor<T, 1> c((int)y_pred.size());
+			c.setConstant(0.5);
+			return (-c -c*y_pred + c*y_pred.exp()).unaryExpr(std::ptr_fun(substituteNanInf<T>));
+		};
+	};
+
+	/**
+		@brief KLDivergenceLogVar  loss function gradient.
+	*/
+	template<typename T>
+	class KLDivergenceLogVarGradOp : public LossFunctionGradOp<T>
+	{
+	public:
+		KLDivergenceLogVarGradOp() {};
+		~KLDivergenceLogVarGradOp() {};
+		Eigen::Tensor<T, 2> operator()(
+			const Eigen::Tensor<T, 2>& y_pred,
+			const Eigen::Tensor<T, 2>& y_true) const
+		{
+			return Eigen::Tensor<T, 2>();
+		};
+		Eigen::Tensor<T, 1> operator()(
+			const Eigen::Tensor<T, 1>& y_pred,
+			const Eigen::Tensor<T, 1>& y_true) const
+		{
+			Eigen::Tensor<T, 1> c((int)y_pred.size());
+			c.setConstant(0.5);
+			return (-c + c*y_pred.exp()).unaryExpr(std::ptr_fun(substituteNanInf<T>));
+		};
+	};
+
+	/**
+	@brief BCEWithLogits loss function.
+
+	Binary Cross Entropy with integrated sigmoid layer
+	z * -log(sigmoid(x)) + (1 - z) * -log(1 - sigmoid(x))
+	= z * -log(1 / (1 + exp(-x))) + (1 - z) * -log(exp(-x) / (1 + exp(-x)))
+	= z * log(1 + exp(-x)) + (1 - z) * (-log(exp(-x)) + log(1 + exp(-x)))
+	= z * log(1 + exp(-x)) + (1 - z) * (x + log(1 + exp(-x))
+	= (1 - z) * x + log(1 + exp(-x))
+	= x - x * z + log(1 + exp(-x))
+
+
+	References:
+	https://pytorch.org/docs/stable/nn.html#bcewithlogitsloss
+
+	PyTorch implementation:
+	max_val = (-input).clamp(min=0)
+	loss = input - input * target + max_val + ((-max_val).exp() + (-input - max_val).exp()).log()
+
+	TensorFlow implementation:
+	max(x, 0) - x * z + log(1 + exp(-abs(x)))
+	*/
+	template<typename T>
+	class BCEWithLogitsOp : public LossFunctionOp<T>
+	{
+	public:
+		BCEWithLogitsOp() {};
+		~BCEWithLogitsOp() {};
+		Eigen::Tensor<T, 1> operator()(
+			const Eigen::Tensor<T, 2>& y_pred,
+			const Eigen::Tensor<T, 2>& y_true) const
+		{
+			return Eigen::Tensor<T, 1>();
+		};
+		Eigen::Tensor<T, 1> operator()(
+			const Eigen::Tensor<T, 1>& y_pred,
+			const Eigen::Tensor<T, 1>& y_true) const
+		{
+			// Step 1
+			Eigen::Tensor<T, 1> zero((int)y_pred.size());
+			zero.setConstant(0.0);
+			auto max_values = (-y_pred).cwiseMax(zero);
+			// Step 2
+			Eigen::Tensor<T, 1> ones((int)y_pred.size());
+			ones.setConstant(1.0);
+			return y_pred - y_pred * y_true + max_values + ((-max_values).exp() + (-y_pred - max_values).exp()).log();
+		};
+	};
+
+	/**
+	@brief BCEWithLogits loss function gradient.
+
+	Starting from the following BCEWithLogits formula
+	x - x * z + log(1 + exp(-x))
+
+	The derivative with respect to x can be formulated as
+	1 - z + 1/(1 + exp(-x))*(-exp(-x))
+	= -((z - 1)*exp(x) + z)/(exp(x) + 1)
+	*/
+	template<typename T>
+	class BCEWithLogitsGradOp : public LossFunctionGradOp<T>
+	{
+	public:
+		BCEWithLogitsGradOp() {};
+		~BCEWithLogitsGradOp() {};
+		Eigen::Tensor<T, 2> operator()(
+			const Eigen::Tensor<T, 2>& y_pred,
+			const Eigen::Tensor<T, 2>& y_true) const
+		{
+			return Eigen::Tensor<T, 2>();
+		};
+		Eigen::Tensor<T, 1> operator()(
+			const Eigen::Tensor<T, 1>& y_pred,
+			const Eigen::Tensor<T, 1>& y_true) const
+		{
+			Eigen::Tensor<T, 1> ones((int)y_pred.size());
+			ones.setConstant(1.0);
+			return (-((y_true - ones)*y_pred.exp() + y_true)/(y_pred.exp() + ones)).unaryExpr(std::ptr_fun(substituteNanInf<T>));
+		};
+	};
 
 	/**
 		@brief Hinge loss function.  

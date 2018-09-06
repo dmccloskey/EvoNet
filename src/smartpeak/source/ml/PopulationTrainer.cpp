@@ -7,9 +7,6 @@
 #include <SmartPeak/io/NodeFile.h>
 #include <SmartPeak/io/ModelFile.h>
 
-#include <random> // random number generator
-#include <ctime> // time format
-#include <chrono> // current time
 #include <algorithm> // tokenizing
 #include <regex> // tokenizing
 #include <utility>
@@ -87,11 +84,11 @@ namespace SmartPeak
 	std::vector<std::pair<int, float>> PopulationTrainer::selectModels(
     std::vector<Model>& models,
     ModelTrainer& model_trainer,
+		ModelLogger& model_logger,
     const Eigen::Tensor<float, 4>& input,
     const Eigen::Tensor<float, 4>& output,
     const Eigen::Tensor<float, 3>& time_steps,
     const std::vector<std::string>& input_nodes,
-    const std::vector<std::string>& output_nodes,
     int n_threads)
   {
     // printf("PopulationTrainer::selectModels, Models size: %i\n", models.size());
@@ -110,19 +107,19 @@ namespace SmartPeak
       std::packaged_task<std::pair<int, float> // encapsulate in a packaged_task
         (Model*,
           ModelTrainer*,
+					ModelLogger*,
           Eigen::Tensor<float, 4>,
           Eigen::Tensor<float, 4>,
           Eigen::Tensor<float, 3>,
-          std::vector<std::string>,
           std::vector<std::string>
         )> task(PopulationTrainer::validateModel_);
       
       // launch the thread
       task_results.push_back(task.get_future());
       std::thread task_thread(std::move(task),
-        &models[i], &model_trainer, 
+        &models[i], &model_trainer, &model_logger,
         std::ref(input), std::ref(output), std::ref(time_steps), 
-        std::ref(input_nodes), std::ref(output_nodes));
+        std::ref(input_nodes));
       task_thread.detach();
 
       // retreive the results
@@ -193,11 +190,11 @@ namespace SmartPeak
   std::pair<int, float> PopulationTrainer::validateModel_(
     Model* model,
     ModelTrainer* model_trainer,
+		ModelLogger* model_logger,
     const Eigen::Tensor<float, 4>& input,
     const Eigen::Tensor<float, 4>& output,
     const Eigen::Tensor<float, 3>& time_steps,
-    const std::vector<std::string>& input_nodes,
-    const std::vector<std::string>& output_nodes)
+    const std::vector<std::string>& input_nodes)
   {
     std::lock_guard<std::mutex> lock(validateModel_mutex);
     // score the model
@@ -205,7 +202,7 @@ namespace SmartPeak
     {
       std::vector<float> model_errors = model_trainer->validateModel(
         *model, input, output, time_steps,
-        input_nodes, output_nodes);
+        input_nodes, *model_logger);
       float model_ave_error = 1e6;
       if (model_errors.size()>0)
         model_ave_error = std::accumulate(model_errors.begin(), model_errors.end(), 0.0)/model_errors.size();
@@ -272,8 +269,6 @@ namespace SmartPeak
   void PopulationTrainer::replicateModels(
     std::vector<Model>& models,
     ModelReplicator& model_replicator,
-		const std::vector<std::string>& input_nodes,
-		const std::vector<std::string>& output_nodes,
     std::string unique_str,
     int n_threads)
   {
@@ -288,7 +283,6 @@ namespace SmartPeak
       {
         std::packaged_task<Model // encapsulate in a packaged_task
           (Model*, ModelReplicator*, 
-						std::vector<std::string>, std::vector<std::string>,
 						std::string, int
           )> task(PopulationTrainer::replicateModel_);
         
@@ -296,7 +290,6 @@ namespace SmartPeak
         task_results.push_back(task.get_future());
         std::thread task_thread(std::move(task),
           &model, &model_replicator, 
-					std::ref(input_nodes), std::ref(output_nodes),
           std::ref(unique_str), std::ref(cnt));
         task_thread.detach();
 
@@ -337,8 +330,6 @@ namespace SmartPeak
   Model PopulationTrainer::replicateModel_(
     Model* model,
     ModelReplicator* model_replicator,
-		const std::vector<std::string>& input_nodes,
-		const std::vector<std::string>& output_nodes,
     std::string unique_str, int cnt)
   {    
     std::lock_guard<std::mutex> lock(replicateModel_mutex);
@@ -373,7 +364,7 @@ namespace SmartPeak
 
 			// additional model checks
 			Model model_check(model_copy);
-			bool complete_model = model_check.checkCompleteInputToOutput(input_nodes, output_nodes);
+			bool complete_model = model_check.checkCompleteInputToOutput();
 
 			if (complete_model)
 				return model_copy;
@@ -385,11 +376,11 @@ namespace SmartPeak
   void PopulationTrainer::trainModels(
     std::vector<Model>& models,
     ModelTrainer& model_trainer,
+		ModelLogger& model_logger,
     const Eigen::Tensor<float, 4>& input,
     const Eigen::Tensor<float, 4>& output,
     const Eigen::Tensor<float, 3>& time_steps,
     const std::vector<std::string>& input_nodes,
-    const std::vector<std::string>& output_nodes,
     int n_threads)
   {
     // std::vector<std::string> broken_model_names;
@@ -415,19 +406,19 @@ namespace SmartPeak
       std::packaged_task<std::pair<bool, Model> // encapsulate in a packaged_task
         (Model*,
           ModelTrainer*,
+					ModelLogger*,
           Eigen::Tensor<float, 4>,
           Eigen::Tensor<float, 4>,
           Eigen::Tensor<float, 3>,
-          std::vector<std::string>,
           std::vector<std::string>
         )> task(PopulationTrainer::trainModel_);
       
       // launch the thread
       task_results.push_back(task.get_future());
       std::thread task_thread(std::move(task),
-        &models[i], &model_trainer, 
+        &models[i], &model_trainer, &model_logger,
         std::ref(input), std::ref(output), std::ref(time_steps), 
-        std::ref(input_nodes), std::ref(output_nodes));
+        std::ref(input_nodes));
       task_thread.detach();
 
       // retreive the results
@@ -483,11 +474,11 @@ namespace SmartPeak
   std::pair<bool, Model> PopulationTrainer::trainModel_(
     Model* model,
     ModelTrainer* model_trainer,
+		ModelLogger* model_logger,
     const Eigen::Tensor<float, 4>& input,
     const Eigen::Tensor<float, 4>& output,
     const Eigen::Tensor<float, 3>& time_steps,
-    const std::vector<std::string>& input_nodes,
-    const std::vector<std::string>& output_nodes)
+    const std::vector<std::string>& input_nodes)
   {
     std::lock_guard<std::mutex> lock(trainModel_mutex);
 
@@ -496,7 +487,7 @@ namespace SmartPeak
     {
       model_trainer->trainModel(
         model_copy, input, output, time_steps,
-        input_nodes, output_nodes);
+        input_nodes, *model_logger);
       return std::make_pair(true, model_copy);
     }
     catch (std::exception& e)
@@ -522,16 +513,21 @@ namespace SmartPeak
 		ModelTrainer & model_trainer,
 		ModelReplicator & model_replicator,
 		DataSimulator& data_simulator,
+		ModelLogger& model_logger,
 		const std::vector<std::string>& input_nodes,
-		const std::vector<std::string>& output_nodes,
 		int n_threads)
 	{
 		std::vector<std::vector<std::pair<int, float>>> models_validation_errors_per_generation;
 
+		std::vector<std::string> output_nodes;
+		for (const std::vector<std::string>& output_nodes_vec : model_trainer.getOutputNodes())
+			for (const std::string& output_node : output_nodes_vec)
+				output_nodes.push_back(output_node);
+
 		// generate the input/output data for validation		
 		std::cout << "Generating the input/output data for validation..." << std::endl;
 		Eigen::Tensor<float, 4> input_data_validation(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)input_nodes.size(), model_trainer.getNEpochsValidation());
-		Eigen::Tensor<float, 4> output_data_validation(model_trainer.getBatchSize(), model_trainer.getMemorySize(),(int) output_nodes.size(), model_trainer.getNEpochsValidation());
+		Eigen::Tensor<float, 4> output_data_validation(model_trainer.getBatchSize(), model_trainer.getMemorySize(),(int)output_nodes.size(), model_trainer.getNEpochsValidation());
 		Eigen::Tensor<float, 3> time_steps_validation(model_trainer.getBatchSize(), model_trainer.getMemorySize(), model_trainer.getNEpochsValidation());
 		data_simulator.simulateValidationData(input_data_validation, output_data_validation, time_steps_validation);
 
@@ -554,14 +550,14 @@ namespace SmartPeak
 
 			// train the population
 			std::cout << "Training the models..." << std::endl;
-		  trainModels(models, model_trainer,
-				input_data_training, output_data_training, time_steps_training, input_nodes, output_nodes, n_threads);
+		  trainModels(models, model_trainer, model_logger,
+				input_data_training, output_data_training, time_steps_training, input_nodes, n_threads);
 
 			// select the top N from the population
 			std::cout << "Selecting the models..." << std::endl;
 			std::vector<std::pair<int, float>> models_validation_errors = selectModels(
-				models, model_trainer,
-				input_data_validation, output_data_validation, time_steps_validation, input_nodes, output_nodes, n_threads);
+				models, model_trainer, model_logger,
+				input_data_validation, output_data_validation, time_steps_validation, input_nodes, n_threads);
 			models_validation_errors_per_generation.push_back(models_validation_errors);
 
 			if (iter < getNGenerations() - 1)
@@ -573,8 +569,7 @@ namespace SmartPeak
 				// replicate and modify models
 				// [TODO: add options for verbosity]
 				std::cout << "Replicating and modifying the models..." << std::endl;
-				replicateModels(models, model_replicator, input_nodes, output_nodes,
-					std::to_string(iter), n_threads);
+				replicateModels(models, model_replicator,	std::to_string(iter), n_threads);
 				std::cout << "Population size of " << models.size() << std::endl;
 			}
 		}

@@ -5,8 +5,9 @@ set(directory include/SmartPeak/simulator)
 set(sources_list_h
 	ChromatogramSimulator.h
 	DataSimulator.h
-	PeakSimulator.h
 	EMGModel.h
+	MNISTSimulator.h
+	PeakSimulator.h
 )
 
 ### add path to the filenames

@@ -23,18 +23,12 @@ namespace SmartPeak
   enum class NodeType
   {
     input = 1, // No activation function
-    bias = 2, // Zero value
+    bias = 2, // Value of 1
     output = 3, 
     hidden = 4,
-		unmodifiable = 5
+		unmodifiable = 5,
+		zero = 6 // value of 0
   };
-
-	enum class NodeIntegration
-	{
-		Sum = 0,
-		Product = 1,
-		Max = 2
-	};
 
   /**
     @brief Network Node
@@ -63,7 +57,9 @@ public:
 					integration_,
 					integration_error_,
 					integration_weight_grad_,
-          name_
+          name_,
+					module_id_,
+					module_name_
         ) == std::tie(
           other.id_,
           other.type_,
@@ -73,7 +69,9 @@ public:
 					other.integration_,
 					other.integration_error_,
 					other.integration_weight_grad_,
-          other.name_
+          other.name_,
+					other.module_id_,
+					other.module_name_
         )
       ;
     }
@@ -103,6 +101,8 @@ public:
       error_ = other.error_;
       derivative_ = other.derivative_;
       dt_ = other.dt_;
+			drop_probability_ = other.drop_probability_;
+			drop_ = other.drop_;
       return *this;
     }
 
@@ -173,14 +173,24 @@ public:
     void setOutputMin(const float& min_output); ///< min output setter
     void setOutputMax(const float& output_max); ///< max output setter
 
+		void setDropProbability(const float& drop_probability); ///< drop_probability setter
+		float getDropProbability() const; ///< drop_probability getter
+
+		void setDrop(const Eigen::Tensor<float, 2>& drop); ///< drop setter
+		Eigen::Tensor<float, 2> getDrop() const; ///< drop copy getter
+
+		int getBatchSize() const;
+		int getMemorySize() const;
+
     /**
       @brief Initialize node output to zero.
         The node statuses are then changed to NodeStatus::deactivated
 
       @param[in] batch_size Size of the row dim for the output, error, and derivative node vectors
       @param[in] memory_size Size of the col dim output, error, and derivative node vectors
+			@param[in] train True if training, False if validation (effectively shuts of any node regularlization, i.e., DropOut)
     */ 
-    void initNode(const int& batch_size, const int& memory_size);
+    void initNode(const int& batch_size, const int& memory_size, bool train = false);
 
     /**
       @brief CHeck that the time_step is greater than 0 and not larger than
@@ -226,6 +236,8 @@ private:
     Eigen::Tensor<float, 2> derivative_; ///< Node Error (rows: # of samples, cols: # of time steps)
     Eigen::Tensor<float, 2> dt_; ///< Resolution of each time-step (rows: # of samples, cols: # of time steps)
 
+		float drop_probability_ = 0.0;
+		Eigen::Tensor<float, 2> drop_; ///< Node Output drop tensor (initialized once per epoch)
   };
 }
 

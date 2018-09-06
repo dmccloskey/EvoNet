@@ -88,7 +88,7 @@ public:
     T getAlpha() const { return alpha_; };
     std::string getName() const{return "ELUOp";};
 private:
-    T alpha_;
+    T alpha_ = 1;
   };
 
   /**
@@ -115,7 +115,7 @@ public:
     T getAlpha() const { return alpha_; };
     std::string getName() const{return "ELUGradOp";};
 private:
-    T alpha_;
+    T alpha_ = 1;
   };
 
   /**
@@ -127,7 +127,7 @@ private:
 public: 
     SigmoidOp(){}; 
     ~SigmoidOp(){};
-    T operator()(const T& x_I) const { return this->substituteNanInf(1 / (1 + std::exp(x_I))); };
+    T operator()(const T& x_I) const { return this->substituteNanInf(1 / (1 + std::exp(-x_I))); };
     std::string getName() const{return "SigmoidOp";};
   };
 
@@ -338,6 +338,83 @@ public:
 			return this->substituteNanInf(1/x_I);
 		};
 		std::string getName() const { return "LogGradOp"; };
+	};
+
+	/**
+	@brief Pow activation function
+	*/
+	template<typename T>
+	class PowOp : public ActivationOp<T>
+	{
+	public:
+		PowOp(const T& base): base_(base){};
+		~PowOp() {};
+		T operator()(const T& x_I) const
+		{
+			return this->substituteNanInf(std::pow(x_I, base_));
+		};
+		std::string getName() const { return "PowOp"; };
+	private:
+		T base_;
+	};
+
+	/**
+	@brief Pow gradient
+	*/
+	template<typename T>
+	class PowGradOp : public ActivationOp<T>
+	{
+	public:
+		PowGradOp(const T& base) : base_(base) {};
+		~PowGradOp() {};
+		T operator()(const T& x_I) const
+		{
+			return this->substituteNanInf(base_ * std::pow(x_I, base_ - 1));
+		};
+		std::string getName() const { return "PowGradOp"; };
+	private:
+		T base_;
+	};
+
+	/**
+		@brief LeakyReLU activation function
+
+		default alpha = 1e-2
+	*/
+	template<typename T>
+	class LeakyReLUOp : public ActivationOp<T>
+	{
+	public:
+		LeakyReLUOp() {};
+		LeakyReLUOp(const T& alpha) : alpha_(alpha) {};
+		~LeakyReLUOp() {};
+		T operator()(const T& x_I) const { return (x_I >= 0.0) ? x_I : alpha_ * x_I; };
+		void setAlpha(const T& alpha) { alpha_ = alpha; };
+		T getAlpha() const { return alpha_; };
+		std::string getName() const { return "LeakyReLUOp"; };
+	private:
+		T alpha_ = 1e-2;
+	};
+
+	/**
+		@brief LeakyReLU gradient
+	*/
+	template<typename T>
+	class LeakyReLUGradOp : public ActivationOp<T>
+	{
+	public:
+		LeakyReLUGradOp() {};
+		LeakyReLUGradOp(const T& alpha) : alpha_(alpha) {};
+		~LeakyReLUGradOp() {};
+		T operator()(const T& x_I) const
+		{
+			return (x_I >= 0.0) ? 1.0 : alpha_;
+		};
+		void setAlpha(const T& alpha) { alpha_ = alpha; };
+		T getAlpha() const { return alpha_; };
+		std::string getName() const { return "LeakyReLUGradOp"; };
+	private:
+		T alpha_ = 1e-2;
 	};
 }
 #endif //SMARTPEAK_ACTIVATIONFUNCTION_H

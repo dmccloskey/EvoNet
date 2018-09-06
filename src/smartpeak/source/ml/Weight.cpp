@@ -2,6 +2,7 @@
 
 #include <SmartPeak/ml/Weight.h>
 #include <SmartPeak/ml/WeightInit.h>
+#include <SmartPeak/ml/SharedFunctions.h>
 
 #include <unsupported/Eigen/CXX11/Tensor>
 #include <vector>
@@ -26,6 +27,8 @@ namespace SmartPeak
     solver_ = other.solver_;
     weight_min_ = other.weight_min_;
     weight_max_ = other.weight_max_;
+		drop_probability_ = other.drop_probability_;
+		drop_ = other.drop_;
   }
 
   Weight::Weight(const int& id):
@@ -93,8 +96,13 @@ namespace SmartPeak
   }
   float Weight::getWeight() const
   {
-    return weight_;
+    return weight_ * getDrop();
   }
+
+	float* Weight::getWeightMutable()
+	{
+		return &weight_;
+	}
 
   void Weight::setWeightInitOp(const std::shared_ptr<WeightInitOp>& weight_init)
   {
@@ -145,6 +153,28 @@ namespace SmartPeak
 		return module_name_;
 	}
 
+	void Weight::setDropProbability(const float & drop_probability)
+	{
+		drop_probability_ = drop_probability;
+		RandBinaryOp<float> rand_bin(drop_probability_);
+		setDrop(rand_bin(1.0f));
+	}
+
+	float Weight::getDropProbability() const
+	{
+		return drop_probability_;
+	}
+
+	void Weight::setDrop(const float & drop)
+	{
+		drop_ = drop;
+	}
+
+	float Weight::getDrop() const
+	{
+		return drop_;
+	}
+
   void Weight::initWeight()
   {
     // weight_ = weight_init_();
@@ -154,10 +184,8 @@ namespace SmartPeak
 
   void Weight::updateWeight(const float& error)
   {
-    //TEST: implement gradient clipping
-    const float new_weight = solver_->operator()(weight_, error);
-    weight_ = solver_->clipGradient(new_weight);   
-    // weight_ = solver_->operator()(weight_, error);
+    const float new_weight = solver_->operator()(weight_, getDrop()*error);
+    weight_ = solver_->clipGradient(new_weight);
     checkWeight();
   }
 

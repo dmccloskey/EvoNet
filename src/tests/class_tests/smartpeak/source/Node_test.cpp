@@ -102,6 +102,7 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
 	node.setIntegrationWeightGrad(integration_weight_grad);
 	node.setModuleId(4);
 	node.setModuleName("Module1");
+	node.setDropProbability(1.0f);
 
   BOOST_CHECK_EQUAL(node.getId(), 1);
   BOOST_CHECK_EQUAL(node.getName(), "Node1");
@@ -114,10 +115,16 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
 	BOOST_CHECK_EQUAL(node.getIntegrationWeightGrad(), integration_weight_grad.get());
 	BOOST_CHECK_EQUAL(node.getModuleId(), 4);
 	BOOST_CHECK_EQUAL(node.getModuleName(), "Module1");
+	BOOST_CHECK_EQUAL(node.getDropProbability(), 1.0f);
 
-  Eigen::Tensor<float, 2> output_test(3, 2), error_test(3, 2), derivative_test(3, 2), dt_test(3, 2), input_test(3, 2);
+  Eigen::Tensor<float, 2> output_test(3, 2), error_test(3, 2), derivative_test(3, 2), dt_test(3, 2), input_test(3, 2), drop_test(3, 2);
   output_test.setConstant(0.0f);
   node.setOutput(output_test);
+
+	// Test the batch and memory sizes
+	BOOST_CHECK_EQUAL(node.getBatchSize(), 3);
+	BOOST_CHECK_EQUAL(node.getMemorySize(), 2);
+
   error_test.setConstant(1.0f);
   node.setError(error_test);
   derivative_test.setConstant(2.0f);
@@ -126,6 +133,8 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   node.setDt(dt_test);
 	input_test.setConstant(3.0f);
 	node.setInput(input_test);
+	drop_test.setConstant(1.0f);
+	node.setDrop(drop_test);
 
   // Test set values
 	BOOST_CHECK_EQUAL(node.getInput()(0, 0), input_test(0, 0));
@@ -138,6 +147,7 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   BOOST_CHECK_EQUAL(node.getDerivativePointer()[0], derivative_test.data()[0]);
   BOOST_CHECK_EQUAL(node.getDt()(0,0), dt_test(0,0));
   BOOST_CHECK_EQUAL(node.getDtPointer()[0], dt_test.data()[0]);
+	BOOST_CHECK_EQUAL(node.getDrop()(0, 0), drop_test(0, 0));
 
 	// Input 
 	// Test mutability
@@ -253,6 +263,26 @@ BOOST_AUTO_TEST_CASE(initNode)
 	BOOST_CHECK_EQUAL(node.getDt()(0, 0), 1.0);
 	BOOST_CHECK_EQUAL(node.getDt()(1, 4), 1.0);
 	BOOST_CHECK(node.getStatus() == NodeStatus::initialized);
+}
+
+BOOST_AUTO_TEST_CASE(initNode2)
+{
+	Node node;
+	node.setId(1);
+	node.setType(NodeType::hidden);
+
+	node.setDropProbability(0.0f);
+	node.initNode(2, 5);
+	Eigen::Tensor<float, 2> drop_test(2, 5);
+	drop_test.setConstant(4.0f);
+	node.setOutput(drop_test);
+	BOOST_CHECK_EQUAL(node.getOutput()(0, 0), 4.0);
+	BOOST_CHECK_EQUAL(node.getOutput()(1, 4), 4.0);
+
+	node.setDropProbability(1.0f);
+	node.initNode(2, 5);
+	BOOST_CHECK_EQUAL(node.getOutput()(0, 0), 0.0);
+	BOOST_CHECK_EQUAL(node.getOutput()(1, 4), 0.0);
 }
 
 BOOST_AUTO_TEST_CASE(checkTimeStep)

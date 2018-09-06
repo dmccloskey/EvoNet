@@ -23,9 +23,11 @@ public:
 		void setNetNodeInput(const Eigen::Tensor<T, 1>& net_node_input) { net_node_input_ = net_node_input; }
 		Eigen::Tensor<T, 1> getNetNodeInput() const { return net_node_input_; }
     virtual std::string getName() const = 0;
+		T getN() { return n_; };
     virtual void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>&source_output) = 0;
 	protected:
-		Eigen::Tensor<T, 1> net_node_input_; ///< 
+		Eigen::Tensor<T, 1> net_node_input_; ///<
+		T n_ = 0;
 		//std::atomic<Eigen::Tensor<T, 1>> net_node_input_; ///< 
   };
 
@@ -41,9 +43,13 @@ public:
 			Eigen::Tensor<T, 1> net_node_input(batch_size);
 			net_node_input.setConstant(0);
 			this->setNetNodeInput(net_node_input);
+			this->n_ = 0;
 		}
     ~SumOp(){};
-    void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>&source_output) { this->net_node_input_ += weight * source_output; };
+    void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>&source_output) { 
+			this->net_node_input_ += weight * source_output; 
+			this->n_ += 1;
+		};
     std::string getName() const{return "SumOp";};
   };
 
@@ -59,9 +65,13 @@ public:
 			Eigen::Tensor<T, 1> net_node_input(batch_size);
 			net_node_input.setConstant(1);
 			this->setNetNodeInput(net_node_input);
+			this->n_ = 0;
 		}
 		~ProdOp() {};
-		void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>&source_output) { this->net_node_input_ *= weight * source_output; };
+		void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>&source_output) { 
+			this->net_node_input_ *= weight * source_output;
+			this->n_ += 1;
+		};
 		std::string getName() const { return "ProdOp"; };
 	};
 
@@ -77,10 +87,131 @@ public:
 			Eigen::Tensor<T, 1> net_node_input(batch_size);
 			net_node_input.setConstant(0);
 			this->setNetNodeInput(net_node_input);
+			this->n_ = 0;
 		}
 		~MaxOp() {};
-		void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>&source_output) { this->net_node_input_ = this->net_node_input_.cwiseMax(weight * source_output); };
+		void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>&source_output) { 
+			this->net_node_input_ = this->net_node_input_.cwiseMax(weight * source_output);
+			this->n_ += 1;
+		};
 		std::string getName() const { return "MaxOp"; };
+	};
+
+	/**
+		@brief Mean integration function
+	*/
+	template<typename T>
+	class MeanOp : public IntegrationOp<T>
+	{
+	public:
+		MeanOp() {};
+		void initNetNodeInput(const int& batch_size) {
+			Eigen::Tensor<T, 1> net_node_input(batch_size);
+			net_node_input.setConstant(0);
+			this->setNetNodeInput(net_node_input);
+			this->n_ = 0;
+		}
+		~MeanOp() {};
+		Eigen::Tensor<T, 1> getNetNodeInput() const {
+			Eigen::Tensor<T, 1> n(this->net_node_input_.dimension(0));
+			n.setConstant(this->n_);
+			return this->net_node_input_/n; 
+		}
+		void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>&source_output) { 
+			this->net_node_input_ += weight * source_output;
+			this->n_ += 1;
+		};
+		std::string getName() const { return "MeanOp"; };
+	};
+
+	/**
+		@brief Variance integration function
+
+		References:
+		T.F.Chan, G.H. Golub and R.J. LeVeque (1983). ""Algorithms for computing the sample variance: Analysis and recommendations", The American Statistician, 37": 242–247.
+	*/
+	template<typename T>
+	class VarianceOp : public IntegrationOp<T>
+	{
+	public:
+		VarianceOp() {};
+		void initNetNodeInput(const int& batch_size) {
+			Eigen::Tensor<T, 1> net_node_input(batch_size);
+			net_node_input.setConstant(0);
+			this->setNetNodeInput(net_node_input);
+			this->n_ = 0;
+		}
+		~VarianceOp() {};
+		Eigen::Tensor<T, 1> getNetNodeInput() const { 
+			Eigen::Tensor<T, 1> n(this->net_node_input_.dimension(0));
+			n.setConstant(this->n_); 
+			return (this->net_node_input_  - (ex_ * ex_)/ n)/n; }
+		void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>&source_output) {
+			auto input = weight * source_output;
+			if (n_ == 0)
+				k_ = input;
+			auto input_k = input - k_;
+			ex_ += input_k;
+			this->n_ += 1;
+			this->net_node_input_ += (input_k * input_k);
+		};
+		std::string getName() const { return "VarianceOp"; };
+	private:
+		Eigen::Tensor<T, 1> k_ = 0;
+		Eigen::Tensor<T, 1> ex_ = 0;
+	};
+
+	/**
+		@brief VarMod integration function
+
+		Modified variance integration function: 1/n Sum[0 to n](Xi)^2
+		where Xi = xi - u (u: mean, xi: single sample)
+	*/
+	template<typename T>
+	class VarModOp : public IntegrationOp<T>
+	{
+	public:
+		VarModOp() {};
+		void initNetNodeInput(const int& batch_size) {
+			Eigen::Tensor<T, 1> net_node_input(batch_size);
+			net_node_input.setConstant(0);
+			this->setNetNodeInput(net_node_input);
+			this->n_ = 0;
+		}
+		~VarModOp() {};
+		Eigen::Tensor<T, 1> getNetNodeInput() const {
+			Eigen::Tensor<T, 1> n(this->net_node_input_.dimension(0));
+			n.setConstant(this->n_);
+			return this->net_node_input_ / n; }
+		void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>&source_output) {
+			auto input = weight * source_output;
+			this->n_ += 1;
+			this->net_node_input_ += (input * input);
+		};
+		std::string getName() const { return "VarModOp"; };
+	};
+
+	/**
+		@brief Count integration function
+	*/
+	template<typename T>
+	class CountOp : public IntegrationOp<T>
+	{
+	public:
+		CountOp() {};
+		void initNetNodeInput(const int& batch_size) {
+			Eigen::Tensor<T, 1> net_node_input(batch_size);
+			net_node_input.setConstant(0);
+			this->setNetNodeInput(net_node_input);
+		}
+		~CountOp() {};
+		void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>&source_output) { 
+			Eigen::Tensor<T, 1> one(source_output.dimension(0));
+			one.setConstant(1.0f);
+			this->net_node_input_ += one; 
+			++(this->n_);
+		};
+		std::string getName() const { return "CountOp"; };
 	};
 
 	/**
@@ -92,14 +223,17 @@ public:
 	public:
 		IntegrationErrorOp() {};
 		~IntegrationErrorOp() {};
-		virtual void initNetNodeError(const int& batch_size) = 0;
-		void setNetNodeError(const Eigen::Tensor<T, 1>& net_node_error) { net_node_error_ = net_node_error; }
-		Eigen::Tensor<T, 1> getNetNodeError() const { return net_node_error_; }
 		virtual std::string getName() const = 0;
-		virtual void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_error, const Eigen::Tensor<T, 1>& source_net_input, const Eigen::Tensor<T, 1>& sink_output) = 0;
-	protected:
-		Eigen::Tensor<T, 1> net_node_error_; ///< 
-		//std::atomic<Eigen::Tensor<T, 1>> net_node_error_; ///< 
+		/*
+		@brief Sum integration error void operator
+
+		@param[in] x1 The weight tensor
+		@param[in] x2 The source error tensor
+		@param[in] x3 The source net input tensor
+		@param[in] x4 The sink output tensor
+		@param[in] x5 The number of inputs
+		*/
+		virtual Eigen::Tensor<T, 1> operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_error, const Eigen::Tensor<T, 1>& source_net_input, const Eigen::Tensor<T, 1>& sink_output, const Eigen::Tensor<T, 1>& n) = 0;
 	};
 
 	/**
@@ -110,22 +244,9 @@ public:
 	{
 	public:
 		SumErrorOp() {};
-		void initNetNodeError(const int& batch_size) {
-			Eigen::Tensor<T, 1> net_node_error(batch_size);
-			net_node_error.setConstant(0);
-			this->setNetNodeError(net_node_error);
-		}
 		~SumErrorOp() {};
-		/*
-		@brief Sum integration error void operator		
-
-		@param[in] x1 The weight tensor
-		@param[in] x2 The source error tensor
-		@param[in] x3 The source net input tensor
-		@param[in] x4 The sink output tensor
-		*/
-		void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_error, const Eigen::Tensor<T, 1>& source_net_input, const Eigen::Tensor<T, 1>& sink_output) {
-			this->net_node_error_ += weight * source_error;
+		Eigen::Tensor<T, 1> operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_error, const Eigen::Tensor<T, 1>& source_net_input, const Eigen::Tensor<T, 1>& sink_output, const Eigen::Tensor<T, 1>& n) {
+			return weight * source_error;
 		};
 		std::string getName() const { return "SumErrorOp"; };
 	};
@@ -138,22 +259,9 @@ public:
 	{
 	public:
 		ProdErrorOp() {};
-		void initNetNodeError(const int& batch_size) {
-			Eigen::Tensor<T, 1> net_node_error(batch_size);
-			net_node_error.setConstant(0);
-			this->setNetNodeError(net_node_error);
-		}
 		~ProdErrorOp() {};
-		/*
-		@brief Sum integration error void operator
-
-		@param[in] x1 The weight tensor
-		@param[in] x2 The source error tensor
-		@param[in] x3 The source net input tensor
-		@param[in] x4 The sink output tensor
-		*/
-		void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_error, const Eigen::Tensor<T, 1>& source_net_input, const Eigen::Tensor<T, 1>& sink_output) {
-			this->net_node_error_ += (source_net_input * source_error / sink_output).unaryExpr(std::ptr_fun(substituteNanInf<T>)); // Note: was checkNanInf
+		Eigen::Tensor<T, 1> operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_error, const Eigen::Tensor<T, 1>& source_net_input, const Eigen::Tensor<T, 1>& sink_output, const Eigen::Tensor<T, 1>& n) {
+			return (source_net_input * source_error / sink_output).unaryExpr(std::ptr_fun(substituteNanInf<T>)); // Note: was checkNanInf
 		};
 		std::string getName() const { return "ProdErrorOp"; };
 	};
@@ -166,29 +274,67 @@ public:
 	{
 	public:
 		MaxErrorOp() {};
-		void initNetNodeError(const int& batch_size) {
-			Eigen::Tensor<T, 1> net_node_error(batch_size);
-			net_node_error.setConstant(0);
-			this->setNetNodeError(net_node_error);
-		}
 		~MaxErrorOp() {};
-		/*
-		@brief Sum integration error void operator
-
-		@param[in] x1 The weight tensor
-		@param[in] x2 The source error tensor
-		@param[in] x3 The source net input tensor
-		@param[in] x4 The sink output tensor
-		*/
-		void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_error, const Eigen::Tensor<T, 1>& source_net_input, const Eigen::Tensor<T, 1>& sink_output){
-			auto max_tensor = sink_output.cwiseMax(source_net_input);
-			auto perc_max_tensor = (sink_output / max_tensor).unaryExpr(std::ptr_fun(checkNanInf<T>)).unaryExpr([](const T& v) {
-				if (v < 1) return 0;
-				else return 1;
+		Eigen::Tensor<T, 1> operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_error, const Eigen::Tensor<T, 1>& source_net_input, const Eigen::Tensor<T, 1>& sink_output, const Eigen::Tensor<T, 1>& n)
+		{
+			auto perc_max_tensor = (sink_output / source_net_input).unaryExpr(std::ptr_fun(checkNanInf<T>)).unaryExpr([](const T& v) {
+				if (v < 1 - 1e-3) 
+					return 0;
+				else 
+					return 1;
 			});
-			this->net_node_error_ += weight * source_error * perc_max_tensor;
+			return weight * source_error * perc_max_tensor;
 		};
 		std::string getName() const { return "MaxErrorOp"; };
+	};
+
+	/**
+	@brief Mean integration error function
+	*/
+	template<typename T>
+	class MeanErrorOp : public IntegrationErrorOp<T>
+	{
+	public:
+		MeanErrorOp() {};
+		~MeanErrorOp() {};
+		Eigen::Tensor<T, 1> operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_error, const Eigen::Tensor<T, 1>& source_net_input, const Eigen::Tensor<T, 1>& sink_output, const Eigen::Tensor<T, 1>& n) {
+			return weight * source_error / n;
+		};
+		std::string getName() const { return "MeanErrorOp"; };
+	};
+
+	/**
+	@brief VarMod integration error function
+	*/
+	template<typename T>
+	class VarModErrorOp : public IntegrationErrorOp<T>
+	{
+	public:
+		VarModErrorOp() {};
+		~VarModErrorOp() {};
+		Eigen::Tensor<T, 1> operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_error, const Eigen::Tensor<T, 1>& source_net_input, const Eigen::Tensor<T, 1>& sink_output, const Eigen::Tensor<T, 1>& n) {
+			Eigen::Tensor<T, 1> constant(weight.dimension(0));
+			constant.setConstant(2);
+			return weight * source_error * constant / n;
+		};
+		std::string getName() const { return "VarModErrorOp"; };
+	};
+
+	/**
+	@brief Count integration error function
+	*/
+	template<typename T>
+	class CountErrorOp : public IntegrationErrorOp<T>
+	{
+	public:
+		CountErrorOp() {};
+		~CountErrorOp() {};
+		Eigen::Tensor<T, 1> operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_error, const Eigen::Tensor<T, 1>& source_net_input, const Eigen::Tensor<T, 1>& sink_output, const Eigen::Tensor<T, 1>& n) {
+			Eigen::Tensor<T, 1> constant(weight.dimension(0));
+			constant.setConstant(0);
+			return constant;
+		};
+		std::string getName() const { return "CountErrorOp"; };
 	};
 
 	/**
@@ -204,7 +350,7 @@ public:
 		void setNetWeightError(const T& net_weight_error) { net_weight_error_ = net_weight_error; }
 		T getNetWeightError() const { return net_weight_error_; }
 		virtual std::string getName() const = 0;
-		virtual void operator()(const Eigen::Tensor<T, 1>& sink_error, const Eigen::Tensor<T, 1>& source_output, const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_net_input) = 0;
+		virtual void operator()(const Eigen::Tensor<T, 1>& sink_error, const Eigen::Tensor<T, 1>& source_output, const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_net_input, const Eigen::Tensor<T, 1>& n) = 0;
 	protected:
 		T net_weight_error_ = 0; ///< 
 		//std::atomic<T> net_weight_error_ = 0; ///< 
@@ -219,7 +365,7 @@ public:
 	public:
 		SumWeightGradOp() { this->setNetWeightError(T(0)); };
 		~SumWeightGradOp() {};
-		void operator()(const Eigen::Tensor<T, 1>& sink_error, const Eigen::Tensor<T, 1>& source_output, const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_net_input) {
+		void operator()(const Eigen::Tensor<T, 1>& sink_error, const Eigen::Tensor<T, 1>& source_output, const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_net_input, const Eigen::Tensor<T, 1>& n) {
 			Eigen::Tensor<T, 0> derivative_mean_tensor = (-sink_error * source_output).mean(); // average derivative
 			this->net_weight_error_ += derivative_mean_tensor(0);
 		};
@@ -235,7 +381,7 @@ public:
 	public:
 		ProdWeightGradOp() { this->setNetWeightError(T(0)); };
 		~ProdWeightGradOp() {};
-		void operator()(const Eigen::Tensor<T, 1>& sink_error, const Eigen::Tensor<T, 1>& source_output, const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_net_input) {
+		void operator()(const Eigen::Tensor<T, 1>& sink_error, const Eigen::Tensor<T, 1>& source_output, const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_net_input, const Eigen::Tensor<T, 1>& n) {
 			Eigen::Tensor<T, 0> derivative_mean_tensor = ((-sink_error * source_net_input / weight).unaryExpr(std::ptr_fun(substituteNanInf<T>))).mean(); // average derivative
 			this->net_weight_error_ += derivative_mean_tensor(0);
 		};
@@ -251,11 +397,60 @@ public:
 	public:
 		MaxWeightGradOp() { this->setNetWeightError(T(0)); };
 		~MaxWeightGradOp() {};
-		void operator()(const Eigen::Tensor<T, 1>& sink_error, const Eigen::Tensor<T, 1>& source_output, const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_net_input) {
+		void operator()(const Eigen::Tensor<T, 1>& sink_error, const Eigen::Tensor<T, 1>& source_output, const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_net_input, const Eigen::Tensor<T, 1>& n) {
 			Eigen::Tensor<T, 0> derivative_mean_tensor = (-sink_error * source_output).mean(); // average derivative
 			this->net_weight_error_ += derivative_mean_tensor(0);
 		};
 		std::string getName() const { return "MaxWeightGradOp"; };
+	};
+
+	/**
+	@brief Count integration error function
+	*/
+	template<typename T>
+	class CountWeightGradOp : public IntegrationWeightGradOp<T>
+	{
+	public:
+		CountWeightGradOp() { this->setNetWeightError(T(0)); };
+		~CountWeightGradOp() {};
+		void operator()(const Eigen::Tensor<T, 1>& sink_error, const Eigen::Tensor<T, 1>& source_output, const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_net_input, const Eigen::Tensor<T, 1>& n) {
+			this->net_weight_error_ += 0;
+		};
+		std::string getName() const { return "CountWeightGradOp"; };
+	};
+
+	/**
+	@brief Mean integration error function
+	*/
+	template<typename T>
+	class MeanWeightGradOp : public IntegrationWeightGradOp<T>
+	{
+	public:
+		MeanWeightGradOp() { this->setNetWeightError(T(0)); };
+		~MeanWeightGradOp() {};
+		void operator()(const Eigen::Tensor<T, 1>& sink_error, const Eigen::Tensor<T, 1>& source_output, const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_net_input, const Eigen::Tensor<T, 1>& n) {
+			Eigen::Tensor<T, 0> derivative_mean_tensor = (-sink_error * source_output / n).mean(); // average derivative
+			this->net_weight_error_ += derivative_mean_tensor(0);
+		};
+		std::string getName() const { return "MeanWeightGradOp"; };
+	};
+
+	/**
+	@brief VarMod integration error function
+	*/
+	template<typename T>
+	class VarModWeightGradOp : public IntegrationWeightGradOp<T>
+	{
+	public:
+		VarModWeightGradOp() { this->setNetWeightError(T(0)); };
+		~VarModWeightGradOp() {};
+		void operator()(const Eigen::Tensor<T, 1>& sink_error, const Eigen::Tensor<T, 1>& source_output, const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_net_input, const Eigen::Tensor<T, 1>& n) {
+			Eigen::Tensor<T, 1> constant(weight.dimension(0));
+			constant.setConstant(2);
+			Eigen::Tensor<T, 0> derivative_mean_tensor = (-sink_error * source_output * constant / n).mean(); // average derivative
+			this->net_weight_error_ += derivative_mean_tensor(0);
+		};
+		std::string getName() const { return "VarModWeightGradOp"; };
 	};
 }
 #endif //SMARTPEAK_INTEGRATIONFUNCTION_H

@@ -17,8 +17,8 @@ namespace SmartPeak
   class WeightInitOp
   {
 public: 
-    WeightInitOp(){}; 
-    ~WeightInitOp(){};
+    WeightInitOp() = default; 
+		~WeightInitOp() = default;
     virtual std::string getName() const = 0;
     virtual float operator()() const = 0;
     virtual std::string getParameters() const = 0;
@@ -35,24 +35,25 @@ public:
   class RandWeightInitOp: public WeightInitOp
   {
 public: 
-    RandWeightInitOp(const float& n):n_(n){};
-    RandWeightInitOp(){}; 
-    ~RandWeightInitOp(){};
+    RandWeightInitOp(float n = 1.0, float f = 1.0): n_(n), f_(f){};
     std::string getName() const{return "RandWeightInitOp";};
     float operator()() const {       
       std::random_device rd{};
       std::mt19937 gen{rd()};
       std::normal_distribution<> d{0.0, 1.0};
-      return d(gen)*std::sqrt(2.0/n_); 
+      return d(gen)*std::sqrt(f_/n_); 
     };
-    float getN() const {return n_;};
+    float getN() const { return n_; }
+		float getF() const { return f_; }
     std::string getParameters() const
     {
-      std::string params = "n:" + std::to_string(getN());
+			std::string params = "n:" + std::to_string(getN()) +
+				";f:" + std::to_string(getF());
       return params;
     }
 private:
-    float n_ = 1.0; ///< the number of input nodes 
+    float n_ = 1.0; ///< the denominator (i.e., number of input nodes for He et al, or average input/output nodes for Xavior et al)
+		float f_ = 1.0; ///< the numerator (i.e., 2 for He et al, 1 for Xavior et al)
   };
 
   /**

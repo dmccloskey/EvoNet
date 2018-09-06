@@ -4,6 +4,7 @@
 #define SMARTPEAK_MODELTRAINER_H
 
 #include <SmartPeak/ml/Model.h>
+#include <SmartPeak/ml/ModelLogger.h>
 
 #include <vector>
 #include <string>
@@ -12,28 +13,7 @@ namespace SmartPeak
 {
 
   /**
-    @brief Execution graph interpreter for a network model.
-
-    The execution graph is modeled as a DAG of tensors
-      (composed of multiple scalar nodes and scalar weights) with input tensors,
-      output tensors, and intemediate tensors.
-      The tensors are defined based on the network model structure
-      and node types of the model.
-
-    Intended sequence of events:
-      Construct execution graph from the network model
-      For n epochs:
-        Set the input data
-        Set the expected data (if training/validating)
-        Foward propogation:
-          1. f(source * weights) = sinks
-          2. calculate the derivatives for back propogation
-        Back propogation (if training):
-          1. sinks * weights . derivatives = sources
-          2. adjust the weights
-      Update the network model from the execution graph tensors (if training)
-
-    TODO: rename to ModelTrainer
+    @brief Class to train a network model
   */
   class ModelTrainer
   {
@@ -47,6 +27,10 @@ public:
 		void setNEpochsValidation(const int& n_epochs); ///< n_epochs setter
 		void setNThreads(const int& n_threads); ///< n_threads setter
 		void setVerbosityLevel(const int& verbosity_level); ///< verbosity_level setter
+		void setLogging(const bool& log_training, const bool& log_validation); ///< enable_logging setter
+		void setLossFunctions(const std::vector<std::shared_ptr<LossFunctionOp<float>>>& loss_functions); ///< loss_functions setter [TODO: tests]
+		void setLossFunctionGrads(const std::vector<std::shared_ptr<LossFunctionGradOp<float>>>& loss_function_grads); ///< loss_functions setter [TODO: tests]
+		void setOutputNodes(const std::vector<std::vector<std::string>>& output_nodes); ///< output_nodes setter [TODO: tests]
 
     int getBatchSize() const; ///< batch_size setter
     int getMemorySize() const; ///< memory_size setter
@@ -54,6 +38,9 @@ public:
 		int getNEpochsValidation() const; ///< n_epochs setter
 		int getNThreads() const; ///< n_threads setter
 		int getVerbosityLevel() const; ///< verbosity_level setter
+		std::vector<std::shared_ptr<LossFunctionOp<float>>> getLossFunctions(); ///< loss_functions getter [TODO: tests]
+		std::vector<std::shared_ptr<LossFunctionGradOp<float>>> getLossFunctionGrads(); ///< loss_functions getter [TODO: tests]
+		std::vector<std::vector<std::string>> getOutputNodes(); ///< output_nodes getter [TODO: tests]
  
     /**
       @brief Check input dimensions.
@@ -122,7 +109,7 @@ public:
 			const Eigen::Tensor<float, 4>& output,
 			const Eigen::Tensor<float, 3>& time_steps,
 			const std::vector<std::string>& input_nodes,
-			const std::vector<std::string>& output_nodes);
+			ModelLogger& model_logger);
  
     /**
       @brief Entry point for users to code their script
@@ -143,7 +130,7 @@ public:
 			const Eigen::Tensor<float, 4>& output,
 			const Eigen::Tensor<float, 3>& time_steps,
 			const std::vector<std::string>& input_nodes,
-			const std::vector<std::string>& output_nodes);
+			ModelLogger& model_logger);
  
     /**
       @brief Entry point for users to code their script
@@ -176,12 +163,14 @@ private:
 		int n_epochs_validation_;
     bool is_trained_ = false;
 
-		int n_threads_ = 2;
+		int n_threads_ = 1;
 		int verbosity_level_ = 0; ///< level of verbosity (0=none, 1=test/validation errors, 2=test/validation node values
+		bool log_training_ = false;
+		bool log_validation_ = false;
 
-		int FP_memory_steps_;
-		int BP_memory_steps_;
-		int CE_memory_steps_;
+		std::vector<std::shared_ptr<LossFunctionOp<float>>> loss_functions_;
+		std::vector<std::shared_ptr<LossFunctionGradOp<float>>> loss_function_grads_;
+		std::vector<std::vector<std::string>> output_nodes_;
 
   };
 }

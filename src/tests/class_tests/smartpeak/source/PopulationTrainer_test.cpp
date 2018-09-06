@@ -259,34 +259,33 @@ BOOST_AUTO_TEST_CASE(replicateModels)
 
   // create an initial population
   std::vector<Model> population1, population2, population3;
-  for (int i=0; i<2; ++i)
-  {
-    // baseline model
-    std::shared_ptr<WeightInitOp> weight_init;
-    std::shared_ptr<SolverOp> solver;
-    weight_init.reset(new ConstWeightInitOp(1.0));
-    solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
+	for (int i = 0; i < 2; ++i)
+	{
+		// baseline model
+		std::shared_ptr<WeightInitOp> weight_init;
+		std::shared_ptr<SolverOp> solver;
+		weight_init.reset(new ConstWeightInitOp(1.0));
+		solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
 		std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>());
 		std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
-    Model model = model_replicator.makeBaselineModel(
+		Model model = model_replicator.makeBaselineModel(
 			1, { 1 }, 1,
-      std::shared_ptr<ActivationOp<float>>(new ELUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ELUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()), std::shared_ptr<ActivationOp<float>>(new ELUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ELUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-      weight_init, solver,
-      loss_function, loss_function_grad, std::to_string(i));
-    model.initWeights();
+			std::shared_ptr<ActivationOp<float>>(new ELUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ELUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()), std::shared_ptr<ActivationOp<float>>(new ELUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ELUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
+			weight_init, solver,
+			loss_function, loss_function_grad, std::to_string(i));
+		model.initWeights();
 		model.initNodes(4, 4);
 		model.initError(4, 4);
-    
-    // modify the models
-    model_replicator.modifyModel(model, std::to_string(i));
+		model.findCyclicPairs();
+
+		// modify the models
+		model_replicator.modifyModel(model, std::to_string(i));
 
 		Model model1(model), model2(model), model3(model); // copy the models
-    population1.push_back(model1); // push the copies to the different test populations
+		population1.push_back(model1); // push the copies to the different test populations
 		population2.push_back(model2);
 		population3.push_back(model3);
-  }
-	std::vector<std::string> input_nodes = { "Input_0" };
-	std::vector<std::string> output_nodes = { "Output_0" };
+	}
 
 	// control (no modifications)
 	model_replicator.setRandomModifications(
@@ -298,7 +297,7 @@ BOOST_AUTO_TEST_CASE(replicateModels)
 		std::make_pair(0, 0),
 		std::make_pair(0, 0),
 		std::make_pair(0, 0));
-  population_trainer.replicateModels(population1, model_replicator, input_nodes, output_nodes);
+  population_trainer.replicateModels(population1, model_replicator);
 
 	// check for the expected size
 	BOOST_CHECK_EQUAL(population1.size(), 6);
@@ -313,7 +312,7 @@ BOOST_AUTO_TEST_CASE(replicateModels)
 		std::make_pair(0, 0),
 		std::make_pair(0, 0),
 		std::make_pair(0, 0));
-	population_trainer.replicateModels(population2, model_replicator, input_nodes, output_nodes);
+	population_trainer.replicateModels(population2, model_replicator);
 
   // check for the expected size
   BOOST_CHECK_EQUAL(population2.size(), 6);
@@ -328,7 +327,7 @@ BOOST_AUTO_TEST_CASE(replicateModels)
 		std::make_pair(0, 0),
 		std::make_pair(0, 0),
 		std::make_pair(0, 0));
-	population_trainer.replicateModels(population3, model_replicator, input_nodes, output_nodes);
+	population_trainer.replicateModels(population3, model_replicator);
 
 	// check for the expected size
 	BOOST_CHECK_EQUAL(population3.size(), 2);
@@ -379,11 +378,16 @@ BOOST_AUTO_TEST_CASE(trainModels)
 		std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>());
 		std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
     Model model = model_replicator.makeBaselineModel(
-			1, { 0 }, 1,
+			1, {}, 1,
       std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
       weight_init, solver,
       loss_function, loss_function_grad, std::to_string(i));
+		model.setId(i);
+		model.setName(std::to_string(i));
     model.initWeights();
+		model.initError(5, 8);
+		model.initNodes(5, 8);
+		model.findCyclicPairs();
     
     // modify the models
     model_replicator.modifyModel(model, std::to_string(i));
@@ -446,15 +450,19 @@ BOOST_AUTO_TEST_CASE(trainModels)
       for (int epochs_iter=0; epochs_iter<model_trainer.getNEpochsTraining(); ++epochs_iter)
         time_steps(batch_iter, memory_iter, epochs_iter) = time_steps_tmp(batch_iter, memory_iter);
 
-  population_trainer.trainModels(population, model_trainer,
-    input_data, output_data, time_steps, input_nodes, output_nodes);
+	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
+	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
+	model_trainer.setOutputNodes({ output_nodes });
+
+  population_trainer.trainModels(population, model_trainer, ModelLogger(),
+    input_data, output_data, time_steps, input_nodes);
 
   BOOST_CHECK_EQUAL(population.size(), 4); // broken models should still be there
 
   for (int i=0; i<population.size(); ++i)
   {
     if (i<2)
-      BOOST_CHECK_EQUAL(population[i].getError().size(), 0); // error has not been calculated
+      BOOST_CHECK_EQUAL(population[i].getError().size(), model_trainer.getBatchSize()*model_trainer.getMemorySize()); // error has not been calculated
     else
       BOOST_CHECK_EQUAL(population[i].getError().size(), model_trainer.getBatchSize()*model_trainer.getMemorySize()); // error has been calculated
   }
@@ -468,16 +476,25 @@ BOOST_AUTO_TEST_CASE(exampleUsage)
 	population_trainer.setNReplicatesPerModel(3);
 	population_trainer.setNGenerations(5);
 
-  ModelTrainerExt model_trainer;
-  model_trainer.setBatchSize(5);
-  model_trainer.setMemorySize(8);
-  model_trainer.setNEpochsTraining(500);
-	model_trainer.setNEpochsValidation(1);
+	// define the model logger
+	ModelLogger model_logger;
 
   // Toy data set used for all tests
 	DataSimulatorExt data_simulator;
   const std::vector<std::string> input_nodes = {"Input_0"}; // true inputs + biases
   const std::vector<std::string> output_nodes = {"Output_0"};
+	
+	// define the model trainer
+	ModelTrainerExt model_trainer;
+	model_trainer.setBatchSize(5);
+	model_trainer.setMemorySize(8);
+	model_trainer.setNEpochsTraining(500);
+	model_trainer.setNEpochsValidation(0);
+	model_trainer.setVerbosityLevel(1);
+	model_trainer.setLogging(false, false);
+	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
+	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
+	model_trainer.setOutputNodes({ output_nodes });
 
   // define the model replicator for growth mode
 	ModelReplicatorExt model_replicator;
@@ -515,7 +532,7 @@ BOOST_AUTO_TEST_CASE(exampleUsage)
 
 	// Evolve the population
 	std::vector<std::vector<std::pair<int, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
-		population, model_trainer, model_replicator, data_simulator, input_nodes, output_nodes, 2);
+		population, model_trainer, model_replicator, data_simulator, model_logger, input_nodes, 2);
 
 	PopulationTrainerFile population_trainer_file;
 	population_trainer_file.storeModels(population, "populationTrainer");

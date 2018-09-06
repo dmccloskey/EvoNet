@@ -65,24 +65,24 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   weight.setWeight(4.0);
 	weight.setModuleId(2);
 	weight.setModuleName("2");
+	weight.setDropProbability(0.0f);
 
+	// Check getters
   BOOST_CHECK_EQUAL(weight.getId(), 1);
   BOOST_CHECK_EQUAL(weight.getWeight(), 4.0);
   BOOST_CHECK_EQUAL(weight.getName(), "1");
 	BOOST_CHECK_EQUAL(weight.getModuleId(), 2);
 	BOOST_CHECK_EQUAL(weight.getModuleName(), "2");
+	BOOST_CHECK_EQUAL(weight.getDropProbability(), 0.0f);
+	BOOST_CHECK_EQUAL(weight.getDrop(), 1.0f);
 
+	// Check name getter
   weight.setName("weight1");
   BOOST_CHECK_EQUAL(weight.getName(), "weight1");
 
-
+	// Check shared_ptr setters and getters
   std::shared_ptr<WeightInitOp> weight_init(new ConstWeightInitOp(2.0));
   std::shared_ptr<SolverOp> solver(new SGDOp(0.01, 0.9));
-  
-  // std::shared_ptr<WeightInitOp> weight_init = std::make_unique<ConstWeightInitOp>(2.0); // C++ 14
-  // std::shared_ptr<SolverOp> solver = std::make_unique<SGDOp>(0.01, 0.9); // C++ 14
-  // ConstWeightInitOp weight_init(2.0);
-  // SGDOp solver(0.01, 0.9);
 
   weight.setWeightInitOp(weight_init);
   weight.setSolverOp(solver);
@@ -91,6 +91,10 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   BOOST_CHECK_EQUAL(weight.getWeightInitOp()->operator()(), 2.0);
   BOOST_CHECK_CLOSE(weight.getSolverOp()->operator()(1.0, 2.0), 0.98, 1e-3);
 
+	// Check drop probability mask
+	weight.setDropProbability(1.0f);
+	BOOST_CHECK_EQUAL(weight.getDrop(), 0.0f);
+	BOOST_CHECK_EQUAL(weight.getWeight(), 0.0f);
 }
 
 BOOST_AUTO_TEST_CASE(initWeight) 
@@ -114,6 +118,20 @@ BOOST_AUTO_TEST_CASE(updateWeight)
   weight.setSolverOp(solver);
   weight.updateWeight(2.0);
   BOOST_CHECK_CLOSE(weight.getWeight(), 0.98, 1e-3);
+}
+
+BOOST_AUTO_TEST_CASE(updateWeightWithDropConnection)
+{
+	Weight weight;
+	weight.setId(1);
+	weight.setWeight(1.0);
+	weight.setDropProbability(1.0f);
+	std::shared_ptr<SolverOp> solver(new SGDOp(0.01, 0.9));
+	// SGDOp solver(0.01, 0.9);
+	weight.setSolverOp(solver);
+	weight.updateWeight(2.0);
+	BOOST_CHECK_CLOSE(weight.getWeight(), 0.0f, 1e-3); // No weight update due to mask
+	BOOST_CHECK_CLOSE(*weight.getWeightMutable(), 1.0f, 1e-3); // No weight update due to mask
 }
 
 BOOST_AUTO_TEST_CASE(checkWeight) 

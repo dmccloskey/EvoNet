@@ -970,8 +970,8 @@ void main_classification()
 	// define the data simulator
 	MetDataSimClassification metabolomics_data;
 	//std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
-	//std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
-	std::string data_dir = "/home/user/Data/";
+	std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
+	//std::string data_dir = "/home/user/Data/";
 	std::string biochem_rxns_filename = data_dir + "iAB_RBC_283.csv";
 	std::string metabo_data_filename = data_dir + "MetabolomicsData_RBC.csv";
 	std::string meta_data_filename = data_dir + "MetaData_prePost_RBC.csv";
@@ -993,12 +993,19 @@ void main_classification()
 
 	// innitialize the model trainer
 	ModelTrainerExt model_trainer;
-	model_trainer.setBatchSize(1);
-	model_trainer.setMemorySize(2);
-	model_trainer.setNEpochsTraining(100000);
+	model_trainer.setBatchSize(8);
+	model_trainer.setMemorySize(1);
+	model_trainer.setNEpochsTraining(1000);
 	model_trainer.setNEpochsValidation(100);
 	model_trainer.setNThreads(n_hard_threads); // [TODO: change back to 2!]
 	model_trainer.setVerbosityLevel(1);
+	model_trainer.setLogging(false, false);
+	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new NegativeLogLikelihoodOp<float>()) });
+	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new NegativeLogLikelihoodGradOp<float>()) });
+	model_trainer.setOutputNodes({ output_nodes });
+
+	// define the model logger
+	ModelLogger model_logger;
 
 	// initialize the model replicator
 	ModelReplicatorExt model_replicator;
@@ -1016,7 +1023,7 @@ void main_classification()
 
 	// Evolve the population
 	std::vector<std::vector<std::pair<int, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
-		population, model_trainer, model_replicator, metabolomics_data, input_nodes, output_nodes, n_threads);
+		population, model_trainer, model_replicator, metabolomics_data, model_logger, input_nodes, n_threads);
 
 	PopulationTrainerFile population_trainer_file;
 	population_trainer_file.storeModels(population, "Metabolomics");
@@ -1072,6 +1079,13 @@ void main_reconstruction()
 	model_trainer.setNEpochsValidation(10);
 	model_trainer.setNThreads(n_hard_threads); // [TODO: change back to 2!]
 	model_trainer.setVerbosityLevel(1);
+	model_trainer.setLogging(false, false);
+	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
+	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
+	model_trainer.setOutputNodes({ output_nodes });
+
+	// define the model logger
+	ModelLogger model_logger;
 
 	// initialize the model replicator
 	ModelReplicatorExt model_replicator;
@@ -1109,7 +1123,7 @@ void main_reconstruction()
 
 	// Evolve the population
 	std::vector<std::vector<std::pair<int, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
-		population, model_trainer, model_replicator, metabolomics_data, input_nodes, output_nodes, n_threads);
+		population, model_trainer, model_replicator, metabolomics_data, model_logger, input_nodes, n_threads);
 
 	PopulationTrainerFile population_trainer_file;
 	population_trainer_file.storeModels(population, "Metabolomics");

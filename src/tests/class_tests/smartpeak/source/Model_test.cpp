@@ -608,6 +608,27 @@ BOOST_AUTO_TEST_CASE(clearCache)
   // No tests
 }
 
+BOOST_AUTO_TEST_CASE(getInputAndOutputNodes)
+{
+	Node i1, i2, o1, o2;
+	i1 = Node("i1", NodeType::input, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+	i2 = Node("i2", NodeType::input, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+	o1 = Node("o1", NodeType::output, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new TanHOp<float>()), std::shared_ptr<ActivationOp<float>>(new TanHGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+	o2 = Node("o2", NodeType::output, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new TanHOp<float>()), std::shared_ptr<ActivationOp<float>>(new TanHGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+
+	std::vector<std::string> input_nodes = { "i1", "i2" };
+	std::vector<std::string> output_nodes = { "o1", "o2" };
+
+	// model 1: fully connected model
+	Model model1;
+	model1.addNodes({ i1, i2, o1, o2 });
+
+	BOOST_CHECK(model1.getInputNodes()[0] == model1.getNodesMap().at("i1"));
+	BOOST_CHECK(model1.getInputNodes()[1] == model1.getNodesMap().at("i2"));
+	BOOST_CHECK(model1.getOutputNodes()[0] == model1.getNodesMap().at("o1"));
+	BOOST_CHECK(model1.getOutputNodes()[1] == model1.getNodesMap().at("o2"));
+}
+
 BOOST_AUTO_TEST_CASE(checkCompleteInputToOutput)
 {
 	Node i1, i2, h1, o1, o2;
@@ -653,7 +674,7 @@ BOOST_AUTO_TEST_CASE(checkCompleteInputToOutput)
 	model1.initNodes(batch_size, memory_size);
 	model1.initError(batch_size, memory_size);
 
-	BOOST_CHECK(model1.checkCompleteInputToOutput(input_nodes, output_nodes, 2));
+	BOOST_CHECK(model1.checkCompleteInputToOutput(2));
 
 	// model 2: disconnected output
 	Model model2;
@@ -663,7 +684,7 @@ BOOST_AUTO_TEST_CASE(checkCompleteInputToOutput)
 	model2.initNodes(batch_size, memory_size);
 	model2.initError(batch_size, memory_size);
 
-	BOOST_CHECK(!model2.checkCompleteInputToOutput(input_nodes, output_nodes, 2));
+	BOOST_CHECK(!model2.checkCompleteInputToOutput(2));
 
 	// model 3: disconnected input
 	Model model3;
@@ -673,7 +694,7 @@ BOOST_AUTO_TEST_CASE(checkCompleteInputToOutput)
 	model3.initNodes(batch_size, memory_size);
 	model3.initError(batch_size, memory_size);
 
-	BOOST_CHECK(!model3.checkCompleteInputToOutput(input_nodes, output_nodes, 2));
+	BOOST_CHECK(!model3.checkCompleteInputToOutput(2));
 
 	// model 4: missing input nodes
 	Model model4;
@@ -683,7 +704,7 @@ BOOST_AUTO_TEST_CASE(checkCompleteInputToOutput)
 	model4.initNodes(batch_size, memory_size);
 	model4.initError(batch_size, memory_size);
 
-	BOOST_CHECK(!model4.checkCompleteInputToOutput(input_nodes, output_nodes, 2));
+	BOOST_CHECK(!model4.checkCompleteInputToOutput(2));
 
 	// model 5: missing output nodes
 	Model model5;
@@ -693,7 +714,7 @@ BOOST_AUTO_TEST_CASE(checkCompleteInputToOutput)
 	model5.initNodes(batch_size, memory_size);
 	model5.initError(batch_size, memory_size);
 
-	BOOST_CHECK(!model5.checkCompleteInputToOutput(input_nodes, output_nodes, 2));
+	BOOST_CHECK(!model5.checkCompleteInputToOutput(2));
 }
 
 BOOST_AUTO_TEST_CASE(removeIsolatedNodes)

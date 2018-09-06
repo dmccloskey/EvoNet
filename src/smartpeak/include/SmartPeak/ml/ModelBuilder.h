@@ -42,6 +42,9 @@ public:
     @param[in] node_activation The activation function of the hidden node to create
     @param[in] node_activation_grad The activation function gradient of the hidden node to create
     @param[in] node_integration The integration function of the hidden node to create
+		@param[in] drop_out_prob Node drop out probability
+		@param[in] drop_connection_prob Weight drop out probability
+		@param[in] biases Whether to include bias nodes or not
 
 		@returns vector of output node names
 		*/
@@ -52,7 +55,8 @@ public:
 			const std::shared_ptr<IntegrationOp<float>>& node_integration,
 			const std::shared_ptr<IntegrationErrorOp<float>>& node_integration_error,
 			const std::shared_ptr<IntegrationWeightGradOp<float>>& node_integration_weight_grad,
-			const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver);
+			const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver,
+			float drop_out_prob = 0.0f, float drop_connection_prob = 0.0f, bool biases = true);
 
 		/**
 		@brief Add a Soft Max
@@ -100,7 +104,42 @@ public:
 			const std::shared_ptr<IntegrationOp<float>>& node_integration,
 			const std::shared_ptr<IntegrationErrorOp<float>>& node_integration_error,
 			const std::shared_ptr<IntegrationWeightGradOp<float>>& node_integration_weight_grad,
-			const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver);
+			const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver,
+			float drop_out_prob = 0.0f, float drop_connection_prob = 0.0f, bool biases = true);
+
+		/**
+		@brief Add a normalization layer with activation
+
+		@param[in, out] Model
+		@param[in] source_node_names Node_names to add the fully connected layer to
+		@param[in] n_nodes The number of output nodes
+		@param[in] node_activation The activation function of the hidden node to create
+		@param[in] node_activation_grad The activation function gradient of the hidden node to create
+		@param[in] node_integration The integration function of the hidden node to create
+		@param[in] drop_out_prob Node drop out probability
+		@param[in] drop_connection_prob Weight drop out probability
+		@param[in] biases Whether to include bias nodes or not
+
+		@returns vector of output node names
+		*/
+		std::vector<std::string> addNormalization(Model& model, const std::string& name, const std::string& module_name,
+			const std::vector<std::string>& source_node_names,
+			const std::shared_ptr<ActivationOp<float>>& node_activation,
+			const std::shared_ptr<ActivationOp<float>>& node_activation_grad,
+			const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver,
+			float drop_out_prob = 0.0f, float drop_connection_prob = 0.0f, bool biases = true);
+
+		/**
+		@brief Add a VAE Encoding layer with input node
+
+		@param[in, out] Model
+		@param[in] mu_node_names Node_names from the average layer
+		@param[in] logvar_node_names Nodes names from the logvar layer
+
+		@returns vector of output node names
+		*/
+		std::vector<std::string> addVAEEncoding(Model& model, const std::string& name, const std::string& module_name,
+			const std::vector<std::string>& mu_node_names, const std::vector<std::string>& logvar_node_names);
 
 		/**
 		@brief Add a LSTM layer
@@ -118,7 +157,9 @@ public:
 			const int& n_hidden,
 			const std::shared_ptr<ActivationOp<float>>& node_activation,
 			const std::shared_ptr<ActivationOp<float>>& node_activation_grad,
-			const NodeIntegration& node_integration);
+			const std::shared_ptr<IntegrationOp<float>>& node_integration,
+			const std::shared_ptr<IntegrationErrorOp<float>>& node_integration_error,
+			const std::shared_ptr<IntegrationWeightGradOp<float>>& node_integration_weight_grad);
 
 		/**
 		@brief Add one model to another

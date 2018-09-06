@@ -32,6 +32,7 @@ namespace SmartPeak
     error_ = other.error_;
     loss_function_ = other.loss_function_;
 		loss_function_grad_ = other.loss_function_grad_;
+		cyclic_pairs_ = other.cyclic_pairs_;
   }
 
   Model::Model(const int& id):
@@ -87,6 +88,16 @@ namespace SmartPeak
 		return loss_function_grad_.get();
 	}
 
+	std::vector<std::shared_ptr<Node>> Model::getInputNodes()
+	{
+		return input_nodes_;
+	}
+
+	std::vector<std::shared_ptr<Node>> Model::getOutputNodes()
+	{
+		return output_nodes_;
+	}
+
   void Model::addNodes(const std::vector<Node>& nodes)
   { 
     for (const Node& node: nodes)
@@ -99,6 +110,16 @@ namespace SmartPeak
         // TODO: move to debug log
         std::cout << "Node name " << node.getName() << " already exists!" << std::endl;
       }
+			else {
+				if (node.getType() == NodeType::input) {
+					std::shared_ptr<Node> node_ptr_cpy = node_ptr;
+					input_nodes_.push_back(node_ptr_cpy);
+				}
+				else if (node.getType() == NodeType::output) {
+					std::shared_ptr<Node> node_ptr_cpy = node_ptr;
+					output_nodes_.push_back(node_ptr);
+				}
+			}
     }
   }
 
@@ -124,6 +145,24 @@ namespace SmartPeak
     }
     return nodes;
   }
+
+	std::map<std::string, std::shared_ptr<Node>> Model::getNodesMap()
+	{
+		return nodes_;
+	}
+
+	std::map<std::string, std::vector<std::string>> Model::getModuleNodeNameMap() const
+	{
+		std::map<std::string, std::vector<std::string>> module_to_node_names;
+		for (const auto& node_map : nodes_) {
+			std::vector<std::string> node_names = { node_map.first };
+			auto found = module_to_node_names.emplace(node_map.second->getModuleName(), node_names);
+			if (!found.second) {
+				module_to_node_names.at(node_map.second->getModuleName()).push_back(node_map.first);
+			}
+		}
+		return module_to_node_names;
+	}
 
   void Model::removeNodes(const std::vector<std::string>& node_names)
   { 
@@ -373,11 +412,11 @@ namespace SmartPeak
     }
   }
 
-  void Model::initNodes(const int& batch_size, const int& memory_size)
+  void Model::initNodes(const int& batch_size, const int& memory_size, bool train)
   {
     for (auto& node_map : nodes_)
     {
-      node_map.second->initNode(batch_size, memory_size);
+      node_map.second->initNode(batch_size, memory_size, train);
     }
   }
 
@@ -388,6 +427,18 @@ namespace SmartPeak
 		setError(init_values);
 	}
 
+	std::pair<int, int> Model::getBatchAndMemorySizes() const
+	{
+		int batch_size = 0;
+		int memory_size = 0;
+		for (const auto& node : nodes_) {
+			batch_size = node.second->getBatchSize();
+			memory_size = node.second->getMemorySize();
+			break;
+		}
+		return std::make_pair(batch_size, memory_size);
+	}
+
   void Model::initWeights()
   {
     for (auto& weight_map : weights_)
@@ -395,6 +446,16 @@ namespace SmartPeak
       weight_map.second->initWeight();
     }
   }
+
+	void Model::initWeightsDropProbability(bool train)
+	{
+		if (train)
+			for (auto& weight_map : weights_)
+				weight_map.second->setDropProbability(weight_map.second->getDropProbability());
+		else
+			for (auto& weight_map : weights_)
+				weight_map.second->setDrop(1.0f);
+	}
   
   void Model::mapValuesToNodes(
     const Eigen::Tensor<float, 1>& values,
@@ -795,14 +856,9 @@ namespace SmartPeak
   {
 
     // get all the information needed to construct the tensors
-    int batch_size = 0;
-    int memory_size = 0;
-    for (const auto& FP_operation : FP_operations)
-    {
-      batch_size = FP_operation.result.sink_node->getOutput().dimension(0);
-      memory_size = FP_operation.result.sink_node->getOutput().dimension(1);
-      break;
-    }
+		std::pair<int, int> bmsizes = getBatchAndMemorySizes();
+    int batch_size = bmsizes.first;
+    int memory_size = bmsizes.second;
 
     // iterate through each sink node and calculate the net input
     // invoke the activation function once the net input is calculated
@@ -833,12 +889,6 @@ namespace SmartPeak
             try
             {
               bool success = task_result.get();
-              // Eigen::Tensor<float, 1> model_output(batch_size);
-              // model_output = nodes_.at(FP_operation.result.sink_node->getName()).getOutput().chip(time_step, 1);
-              // Eigen::Tensor<float, 1> result_output(batch_size);
-              // result_output = FP_operation.result.sink_node->getOutput().chip(time_step, 1);
-              // std::cout<<"Model output: "<<model_output<<std::endl;
-              // std::cout<<"FP operation result: "<<result_output<<std::endl;
             }
             catch (std::exception& e)
             {
@@ -1010,10 +1060,6 @@ namespace SmartPeak
 	){
 		std::lock_guard<std::mutex> lock(calculateOutputNodeError_mutex);
 
-		// [BUG previous incorrect implementation below]
-		//output_node->getErrorMutable()->chip(time_step, 1) = loss_function_grad->operator()(
-		//	output_node->getOutput().chip(time_step, 1), expected);
-		// [CORRECT implementation below]
 		output_node->getErrorMutable()->chip(time_step, 1) = loss_function_grad->operator()(
 			output_node->getOutput().chip(time_step, 1), expected) *
 			output_node->getDerivative().chip(time_step, 1);
@@ -1027,12 +1073,12 @@ namespace SmartPeak
 
 	void Model::calculateError(
 		const Eigen::Tensor<float, 2>& values, const std::vector<std::string>& node_names,
-		const int& time_step, bool cache_output_nodes, bool use_cache,
-		int n_threads)
+		const int& time_step, int n_threads)
 	{
-		//TODO: encapsulate into a seperate method
 		// infer the batch size from the first source node
-		const int batch_size = nodes_.at(node_names[0])->getOutput().dimension(0);
+		std::pair<int, int> bmsizes = getBatchAndMemorySizes();
+		int batch_size = bmsizes.first;
+		int memory_size = bmsizes.second;
 
 		//TODO: encapsulate into a seperate method
 		// check dimension mismatches
@@ -1054,19 +1100,10 @@ namespace SmartPeak
 
 		// collect the output nodes
 		std::vector<std::shared_ptr<Node>> output_nodes;
-		if (use_cache)
-		{ 
-			output_nodes = output_node_cache_;
-		}
-		else
+		for (int i = 0; i < node_names.size(); ++i)
 		{
-			for (int i = 0; i < node_names.size(); ++i)
-			{
-				std::shared_ptr<Node> output_node = nodes_.at(node_names[i]);
-				if (cache_output_nodes)
-					output_node_cache_.push_back(output_node);
-				output_nodes.push_back(output_node);
-			}
+			std::shared_ptr<Node> output_node = nodes_.at(node_names[i]);
+			output_nodes.push_back(output_node);
 		}
 		
 		// loop over all nodes and calculate the error for the model
@@ -1113,7 +1150,7 @@ namespace SmartPeak
 				++thread_cnt;
 			}
 		}
-		error_.chip(time_step, 1) = model_error; // asign the model_error
+		error_.chip(time_step, 1) += model_error; // add on the model_error
 
 		// loop over all nodes and calculate the error for the nodes
 		std::vector<std::future<bool>> output_node_error_task_results;
@@ -1160,8 +1197,7 @@ namespace SmartPeak
 	}
  
 
-  void Model::CETT(const Eigen::Tensor<float, 3>& values, const std::vector<std::string>& node_names, const int & time_steps,
-	bool cache_output_nodes, bool use_cache, int n_threads)
+  void Model::CETT(const Eigen::Tensor<float, 3>& values, const std::vector<std::string>& node_names, const int & time_steps, int n_threads)
   {
 		// check time_steps vs memory_size
 		int max_steps = time_steps;
@@ -1183,12 +1219,7 @@ namespace SmartPeak
 			//std::cout<<"Expected output for time point "<< i << " is " << values.chip(next_time_step, 1)<<std::endl;
 
 			// calculate the error for each batch of memory
-			if (cache_output_nodes && i == 0)
-				calculateError(values.chip(next_time_step, 1), node_names, i, true, false, n_threads);
-			else if (cache_output_nodes && i > 0)
-				calculateError(values.chip(next_time_step, 1), node_names, i, false, true, n_threads);
-			else
-				calculateError(values.chip(next_time_step, 1), node_names, i, cache_output_nodes, use_cache, n_threads);
+			calculateError(values.chip(next_time_step, 1), node_names, i, n_threads);
 			//calculateError(values.chip(i, 1), node_names, i);
 		}
   }
@@ -1330,14 +1361,21 @@ namespace SmartPeak
   {
     std::lock_guard<std::mutex> lock(calculateNodeError_mutex);
 
-		Eigen::Tensor<float, 1> sink_output = result->sink_node->getOutput().chip(time_step + result->time_step, 1);
     Eigen::Tensor<float, 1> weight_tensor(batch_size);
     weight_tensor.setConstant(arguments->weight->getWeight());
-		result->sink_node->getIntegrationErrorShared()->operator()(
+		Eigen::Tensor<float, 1> n_input_nodes(arguments->source_node->getOutput().dimension(0));
+		n_input_nodes.setConstant(arguments->source_node->getIntegrationShared()->getN());
+		result->sink_node->getErrorMutable()->chip(time_step + result->time_step, 1) += (arguments->source_node->getIntegrationErrorShared()->operator()(
 			weight_tensor,
 			arguments->source_node->getError().chip(time_step, 1),
 			arguments->source_node->getInput().chip(time_step, 1),
-			sink_output);
+			result->sink_node->getOutput().chip(time_step + result->time_step, 1),
+			n_input_nodes) * result->sink_node->getDerivative().chip(time_step + result->time_step, 1));
+		//result->sink_node->getIntegrationErrorShared()->operator()(
+		//	weight_tensor,
+		//	arguments->source_node->getError().chip(time_step, 1),
+		//	arguments->source_node->getInput().chip(time_step, 1),
+		//	sink_output);
     return true;
   }
 
@@ -1352,9 +1390,6 @@ namespace SmartPeak
 
     std::vector<std::future<bool>> task_results;
     int thread_cnt = 0;
-    
-		Eigen::Tensor<float, 1> sink_output = operations->result.sink_node->getOutput().chip(time_step, 1);
-		operations->result.sink_node->getIntegrationErrorShared()->initNetNodeError(batch_size);
 
     // for (const std::string& link : sink_links)
     for (int i=0; i<operations->arguments.size(); ++i)
@@ -1394,15 +1429,9 @@ namespace SmartPeak
         ++thread_cnt;
       } 
     }
-   
-    //if (operations->result.time_step == 0 || time_step + operations->result.time_step < memory_size)
-    //{ // [PARALLEL: could add a dummy time step with output 0 so as not to need a check for the memory size being exceeded]
-
 		// scale the error by the derivative and add in any residual error
     // update the node error
     operations->result.sink_node->setStatus(NodeStatus::corrected);
-    operations->result.sink_node->getErrorMutable()->chip(time_step + operations->result.time_step, 1) = operations->result.sink_node->getIntegrationErrorShared()->getNetNodeError() * operations->result.sink_node->getDerivative().chip(time_step + operations->result.time_step, 1) + operations->result.sink_node->getError().chip(time_step + operations->result.time_step, 1);
-
     return true;
   }
 
@@ -1411,14 +1440,9 @@ namespace SmartPeak
     const int& time_step, int n_threads)
   {
     // get all the information needed to construct the tensors
-    int batch_size = 0;
-    int memory_size = 0;
-    for (const auto& BP_operation : BP_operations)
-    {
-      batch_size = BP_operation.result.sink_node->getOutput().dimension(0);
-      memory_size = BP_operation.result.sink_node->getOutput().dimension(1);
-      break;
-    }
+		std::pair<int, int> bmsizes = getBatchAndMemorySizes();
+		int batch_size = bmsizes.first;
+		int memory_size = bmsizes.second;
 
     if (time_step >= memory_size)
     {
@@ -1577,11 +1601,11 @@ namespace SmartPeak
     for (int time_step=0; time_step<max_steps; ++time_step) {
       if (time_step > 0) {
         for (auto& node_map: nodes_) {
-					node_map.second->setStatus(NodeStatus::activated); // reinitialize nodes
+					if (node_map.second->getType() == NodeType::output)
+						node_map.second->setStatus(NodeStatus::corrected); // reinitialize nodes
+					else
+						node_map.second->setStatus(NodeStatus::activated); // reinitialize nodes
         }
-				for (auto& node : output_node_cache_) {
-					node->setStatus(NodeStatus::corrected);
-				}
       }
 
       // calculate the error for each batch of memory
@@ -1624,6 +1648,8 @@ namespace SmartPeak
 				std::shared_ptr<Node> source_node = nodes_.at(link_map.second->getSourceNodeName());
 				Eigen::Tensor<float, 1> weights(source_node->getOutput().dimension(0));
 				weights.setConstant(weights_.at(link_map.second->getWeightName())->getWeight());
+				Eigen::Tensor<float, 1> n_input_nodes(sink_node->getOutput().dimension(0));
+				n_input_nodes.setConstant(sink_node->getIntegrationShared()->getN());
         for (int i=0; i<max_steps; ++i)
         {
           // [PARALLEL: move to threadPool/CUDA implementations]
@@ -1632,7 +1658,8 @@ namespace SmartPeak
 						sink_node->getError().chip(i, 1),
 						source_node->getOutput().chip(i, 1),
 						weights,
-						source_node->getInput().chip(i, 1));
+						source_node->getInput().chip(i, 1),
+						n_input_nodes);
         } 
         // [PARALELL: collect threads here sum the error]
 				auto found = weight_derivatives.emplace(link_map.second->getWeightName(), sink_node->getIntegrationWeightGradShared()->getNetWeightError());
@@ -1700,20 +1727,23 @@ namespace SmartPeak
   }
 
 	bool Model::checkCompleteInputToOutput(
-		const std::vector<std::string>& input_nodes, 
-		const std::vector<std::string>& output_nodes,
+		//const std::vector<std::string>& input_nodes, 
+		//const std::vector<std::string>& output_nodes,
 		int n_threads)
 	{
-		// check that all input/output nodes exist!
-		if (!checkNodeNames(input_nodes) || !checkNodeNames(output_nodes))
-			return false;
+
+		// [NOTE: Should not be needed now that the input/output nodes are cached upon model creation]
+		//// check that all input/output nodes exist!
+		//if (!checkNodeNames(input_nodes) || !checkNodeNames(output_nodes))
+		//	return false;
 
 		// infer the batch and memory size
 		// [BUG: modifying the batch_size or memory_size causes a memory corruption error when
 		//			 using the training the population after replicating and modifying the models
 		//			 potential cause: the batch/memory sizes are not updated during training?]
-		int batch_size_cur = nodes_.at(input_nodes[0])->getOutput().dimension(0);
-		int memory_size_cur = nodes_.at(input_nodes[0])->getOutput().dimension(1);
+		std::pair<int, int> bmsizes = getBatchAndMemorySizes();
+		int batch_size_cur = bmsizes.first;
+		int memory_size_cur = bmsizes.second;
 
 		// check for uninitialized nodes
 		int batch_size = 2;
@@ -1730,33 +1760,37 @@ namespace SmartPeak
 		zero.setConstant(0.0f);
 		Eigen::Tensor<float, 2> one(batch_size, memory_size);
 		one.setConstant(1.0f);
+		for (auto& node : input_nodes_)
+		{
+			node->setOutput(one);
+			node->setInput(one);
+			node->setError(zero);
+			node->setDerivative(one);
+			node->setDt(one);
+		}
+		for (auto& node : output_nodes_)
+		{
+			node->setOutput(zero);
+			node->setInput(zero);
+			node->setError(one);
+			node->setDerivative(one);
+			node->setDt(one);
+		}
 		for (auto& node_map: nodes_)
 		{
-			if (std::count(input_nodes.begin(), input_nodes.end(), node_map.second->getName()) != 0)
-			{
-				node_map.second->setOutput(one);
-				node_map.second->setInput(one);
-				node_map.second->setError(zero);
-				node_map.second->setDerivative(one);
-				node_map.second->setDt(one);
-			}
-			else if (std::count(output_nodes.begin(), output_nodes.end(), node_map.second->getName()) != 0)
-			{
-				node_map.second->setOutput(zero);
-				node_map.second->setInput(zero);
-				node_map.second->setError(one);
-				node_map.second->setDerivative(one);
-				node_map.second->setDt(one);
-			}
-			else
+			if (node_map.second->getType() != NodeType::input && node_map.second->getType() != NodeType::output)
 			{
 				node_map.second->setOutput(zero);
 				node_map.second->setInput(zero);
 				node_map.second->setError(zero);
 				node_map.second->setDerivative(one);
 				node_map.second->setDt(one);
+				node_map.second->setStatus(NodeStatus::initialized);
 			}
-			node_map.second->setStatus(NodeStatus::initialized);
+			if (node_map.second->getType() == NodeType::input || node_map.second->getType() == NodeType::bias)
+			{
+				node_map.second->setStatus(NodeStatus::activated);
+			}
 			node_map.second->setActivation(std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()));  // safer but requires setting																																																		
 			node_map.second->setActivationGrad(std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>())); // the node activation back to its original value
 		}
@@ -1766,27 +1800,37 @@ namespace SmartPeak
 			weight_map.second->setWeight(1.0f);
 
 		// Forward propogate
-		for (const std::string& node_name : input_nodes)
-			nodes_.at(node_name)->setStatus(NodeStatus::activated);
-		forwardPropogate(0, false, false, n_threads);
+		try {
+			forwardPropogate(0, false, false, n_threads);
+		}
+		catch (std::exception& e) {
+			printf("Exception: %s; CheckCompleteInputToOutput failed during forward propogation.\n", e.what());
+			return false;
+		}
 
 		// check that all output nodes are greater than 0
-		for (const std::string& node_name: output_nodes)
+		for (auto& node: output_nodes_)
 		{
-			Eigen::Tensor<float, 0> output = nodes_.at(node_name)->getOutput().sum();
+			Eigen::Tensor<float, 0> output = node->getOutput().sum();
 			if (output(0) == 0.0f)
 				return false;
 		}
 
 		// backward propagation
-		for (const std::string& node_name : output_nodes)
-			nodes_.at(node_name)->setStatus(NodeStatus::corrected);
-		backPropogate(0, false, false, n_threads);
+		for (auto& node : output_nodes_)
+			node->setStatus(NodeStatus::corrected);
+		try {
+			backPropogate(0, false, false, n_threads);
+		}
+		catch (std::exception& e) {
+			printf("Exception: %s; CheckCompleteInputToOutput failed during back propogation.\n", e.what());
+			return false;
+		}
 
 		// check that all input nodes are greater than 0
-		for (const std::string& node_name : input_nodes)
+		for (auto& node : input_nodes_)
 		{
-			Eigen::Tensor<float, 0> error = nodes_.at(node_name)->getError().sum();
+			Eigen::Tensor<float, 0> error = node->getError().sum();
 			if (error(0) == 0.0f)
 				return false;
 		}
@@ -1864,7 +1908,6 @@ namespace SmartPeak
   {
     FP_operations_cache_.clear();
     BP_operations_cache_.clear();
-		output_node_cache_.clear();
 		cyclic_pairs_.clear();
   }
 

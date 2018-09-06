@@ -604,7 +604,7 @@ BOOST_AUTO_TEST_CASE(BPTT1)
     {
       for (int i=0; i<error_nodes.size(); ++i)
       {        
-        // std::cout<<"i: "<<i<<" j: "<<j<<", k: "<<k<<" calc: "<<model2.getNode(error_nodes[i]).getError()(j, k)<<", expected: "<<error(j, k, i)<<std::endl;
+         //std::cout<<"i: "<<i<<" j: "<<j<<", k: "<<k<<" calc: "<<model2.getNode(error_nodes[i]).getError()(j, k)<<", expected: "<<error(j, k, i)<<std::endl;
         BOOST_CHECK_CLOSE(model2.getNode(error_nodes[i]).getError()(j, k), error(j, k, i), 1e-3);
       }
     }
@@ -865,7 +865,6 @@ BOOST_AUTO_TEST_CASE(modelTrainer2)
       model2a.FPTT(memory_size - 1, input, input_ids, dt, false, true, 2); 
 
     // calculate the model error
-    //model2a.calculateError(expected, output_nodes, 0);
 		model2a.CETT(expected, output_nodes, memory_size);
     std::cout<<"Error at iteration: "<<iter<<" is "<<model2a.getError().sum()<<std::endl;
 

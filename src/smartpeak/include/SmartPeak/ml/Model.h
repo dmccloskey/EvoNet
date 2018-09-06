@@ -90,6 +90,7 @@ public:
       error_ = other.error_;
       loss_function_ = other.loss_function_;
 			loss_function_grad_ = other.loss_function_grad_;
+			cyclic_pairs_ = other.cyclic_pairs_;
       return *this;
     }
 
@@ -98,14 +99,24 @@ public:
     */ 
     void initWeights();
 
+		/**
+			@brief Initialize all link weights dropout probability
+
+			[TODO: add tests]
+			[TODO: implement sampling from a Gaussian distribution during interence]
+		*/
+		void initWeightsDropProbability(bool train = false);
+
     /**
       @brief Initialize all node output to zero.
         The node statuses are then changed to NodeStatus::deactivated
 
       @param[in] batch_size Batch size of the output, error, and derivative node vectors
       @param[in] memory_size Memory size of the output, error, and derivative node vectors
+
+			[TODO: implement sampling from a Gaussian distribution during interence]
     */ 
-    void initNodes(const int& batch_size, const int& memory_size);
+    void initNodes(const int& batch_size, const int& memory_size, bool train = false);
 
 		/**
 		@brief Initialize model errors to zero.
@@ -114,6 +125,13 @@ public:
 		@param[in] memory_size Memory size of the output, error, and derivative node vectors
 		*/
 		void initError(const int& batch_size, const int& memory_size);
+
+		/**
+		@brief Infer the batch_size and memory_size.
+
+		@return a pair of batch_size and memory_size
+		*/
+		std::pair<int, int> getBatchAndMemorySizes() const;
 
     /**
       @brief Assigns output or error values to the nodes.
@@ -344,8 +362,7 @@ public:
     @param[in] node_names Output nodes
     */ 
     void calculateError(const Eigen::Tensor<float, 2>& values, const std::vector<std::string>& node_names,
-			const int& time_step, bool cache_output_nodes = false, bool use_cache = false,
-			int n_threads = 1);
+			const int& time_step, int n_threads = 1);
 
 		/**
 		@brief Calculates the error of the model for a given node
@@ -377,8 +394,7 @@ public:
 			where t=n to t=0
     @param[in] node_names Output nodes
     */ 
-    void CETT(const Eigen::Tensor<float, 3>& values, const std::vector<std::string>& node_names, const int& time_steps,
-			bool cache_output_nodes = false, bool use_cache = false, int n_threads = 1);
+    void CETT(const Eigen::Tensor<float, 3>& values, const std::vector<std::string>& node_names, const int& time_steps, int n_threads = 1);
  
     /**
     @brief A prelude to a back propogation step.  Returns a vector of links
@@ -519,6 +535,9 @@ public:
 
 		void setLossFunctionGrad(const std::shared_ptr<LossFunctionGradOp<float>>& loss_function); ///< loss_function grad setter
 		LossFunctionGradOp<float>* getLossFunctionGrad() const; ///< loss_function grad getter
+
+		std::vector<std::shared_ptr<Node>> getInputNodes(); ///< input_node getter
+		std::vector<std::shared_ptr<Node>> getOutputNodes(); ///< output_node getter
  
     /**
       @brief Add new links to the model.
@@ -544,9 +563,9 @@ public:
     void addNodes(const std::vector<Node>& nodes);
     Node getNode(const std::string& node_name) const; ///< node getter
     std::vector<Node> getNodes() const; ///< nodes getter
-    std::vector<std::string> getNodeIDs(const NodeStatus& node_status) const; ///< node getter (TODO)
-    std::vector<std::string> getNodeIDs(const NodeType& node_type) const; ///< node getter (TODO)
- 
+		std::map<std::string, std::shared_ptr<Node>> getNodesMap();  ///< return a modifiable version of weights
+		std::map<std::string, std::vector<std::string>> getModuleNodeNameMap() const; ///< return a map of modules to a vector of node names [TODO: test!]
+
     /**
       @brief Remove existing nodes from the model.
 
@@ -629,13 +648,11 @@ public:
 		/**
 		@brief Check that the path from input to output is not broken
 
+		[DEPRECATED: params no longer needed]
 		@param[in] input_nodes
 		@param[out] output_nodes
 		*/
-		bool checkCompleteInputToOutput(
-			const std::vector<std::string>& input_nodes,
-			const std::vector<std::string>& output_nodes,
-			int n_threads = 1);
+		bool checkCompleteInputToOutput(int n_threads = 1);
 
 		/**
 		@brief Check model link node and weight names
@@ -671,20 +688,17 @@ private:
     std::map<std::string, std::shared_ptr<Link>> links_; ///< Model links
     std::map<std::string, std::shared_ptr<Node>> nodes_; ///< Model nodes
     std::map<std::string, std::shared_ptr<Weight>> weights_; ///< Model nodes
-    //Eigen::Tensor<float, 1> error_; ///< Model error
     Eigen::Tensor<float, 2> error_; ///< Model error
-
-    // TODO: will most likely need to expand to a derived class model (e.g., SolverOp)
     std::shared_ptr<LossFunctionOp<float>> loss_function_; ///< Model loss function
 		std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad_; ///< Model loss function
-
 		std::vector<std::pair<std::string, std::string>> cyclic_pairs_;
+		std::vector<std::shared_ptr<Node>> input_nodes_;
+		std::vector<std::shared_ptr<Node>> output_nodes_;
 
     // Internal structures to allow for efficient multi-threading
     // and off-loading of computation from host to devices
     std::vector<std::vector<OperationList>> FP_operations_cache_;
     std::vector<std::vector<OperationList>> BP_operations_cache_;
-		std::vector<std::shared_ptr<Node>> output_node_cache_;
   };
 }
 

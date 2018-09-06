@@ -189,10 +189,10 @@ BOOST_AUTO_TEST_CASE(operationfunctionSigmoidOp)
   SigmoidOp<double> operation;
 
   BOOST_CHECK_CLOSE(operation(0.0), 0.5, 1e-6);
-  BOOST_CHECK_CLOSE(operation(1.0), 0.2689414213699951, 1e-6);
-  BOOST_CHECK_CLOSE(operation(10.0), 4.5397868702434395e-05, 1e-6);
-  BOOST_CHECK_CLOSE(operation(-1.0), 0.7310585786300049, 1e-6);
-  BOOST_CHECK_CLOSE(operation(-10.0), 0.99995460213129761, 1e-6);
+  BOOST_CHECK_CLOSE(operation(1.0), 0.7310585786300049, 1e-6);
+  BOOST_CHECK_CLOSE(operation(10.0), 0.99995460213129761, 1e-6);
+  BOOST_CHECK_CLOSE(operation(-1.0), 0.2689414213699951, 1e-6);
+  BOOST_CHECK_CLOSE(operation(-10.0), 4.5397868702434395e-05, 1e-6);
 }
 
 BOOST_AUTO_TEST_CASE(getNameSigmoidOp)
@@ -585,6 +585,162 @@ BOOST_AUTO_TEST_CASE(getNameExponentialGradOp)
 	ExponentialGradOp<double> operation;
 
 	BOOST_CHECK_EQUAL(operation.getName(), "ExponentialGradOp");
+}
+
+/**
+	PowOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorPowOp)
+{
+	PowOp<double>* ptrPow = nullptr;
+	PowOp<double>* nullPointerPow = nullptr;
+	BOOST_CHECK_EQUAL(ptrPow, nullPointerPow);
+}
+
+BOOST_AUTO_TEST_CASE(destructorPowOp)
+{
+	PowOp<double>* ptrPow = nullptr;
+	ptrPow = new PowOp<double>(2);
+	delete ptrPow;
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionPowOp)
+{
+	PowOp<double> operation(0.5);
+
+	BOOST_CHECK_CLOSE(operation(0.0), 0.0, 1e-6);
+	BOOST_CHECK_CLOSE(operation(1.0), 1.0, 1e-6);
+	BOOST_CHECK_CLOSE(operation(10.0), 3.1622776601683795, 1e-6);
+	BOOST_CHECK_CLOSE(operation(-1.0), 0.0, 1e-6);
+	BOOST_CHECK_CLOSE(operation(-10.0), 0.0, 1e-6);
+}
+
+BOOST_AUTO_TEST_CASE(getNamePowOp)
+{
+	PowOp<double> operation(0.5);
+
+	BOOST_CHECK_EQUAL(operation.getName(), "PowOp");
+}
+
+/**
+	PowGradOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorPowGradOp)
+{
+	PowGradOp<double>* ptrPowGrad = nullptr;
+	PowGradOp<double>* nullPointerPowGrad = nullptr;
+	BOOST_CHECK_EQUAL(ptrPowGrad, nullPointerPowGrad);
+}
+
+BOOST_AUTO_TEST_CASE(destructorPowGradOp)
+{
+	PowGradOp<double>* ptrPowGrad = nullptr;
+	ptrPowGrad = new PowGradOp<double>(0.5);
+	delete ptrPowGrad;
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionPowGradOp)
+{
+	PowGradOp<double> operation(0.5);
+
+	BOOST_CHECK_CLOSE(operation(0.0), 1.0e24, 1e-6);
+	BOOST_CHECK_CLOSE(operation(1.0), 0.5, 1e-6);
+	BOOST_CHECK_CLOSE(operation(10.0), 0.15811388300841897, 1e-6);
+	BOOST_CHECK_CLOSE(operation(-1.0), 0.0, 1e-6);
+	BOOST_CHECK_CLOSE(operation(-10.0), 0.0, 1e-6);
+}
+
+BOOST_AUTO_TEST_CASE(getNamePowGradOp)
+{
+	PowGradOp<double> operation(0.5);
+
+	BOOST_CHECK_EQUAL(operation.getName(), "PowGradOp");
+}
+
+/**
+	LeakyReLUOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorLeakyReLUOp)
+{
+	LeakyReLUOp<double>* ptrLeakyReLU = nullptr;
+	LeakyReLUOp<double>* nullPointerLeakyReLU = nullptr;
+	BOOST_CHECK_EQUAL(ptrLeakyReLU, nullPointerLeakyReLU);
+}
+
+BOOST_AUTO_TEST_CASE(destructorLeakyReLUOp)
+{
+	LeakyReLUOp<double>* ptrLeakyReLU = nullptr;
+	ptrLeakyReLU = new LeakyReLUOp<double>();
+	delete ptrLeakyReLU;
+}
+
+BOOST_AUTO_TEST_CASE(gettersAndSettersLeakyReLUOp)
+{
+	LeakyReLUOp<double> operation;
+	operation.setAlpha(1.0);
+
+	BOOST_CHECK_EQUAL(operation.getAlpha(), 1.0);
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionLeakyReLUOp)
+{
+	LeakyReLUOp<double> operation(0.1);
+
+	BOOST_CHECK_CLOSE(operation(0.0), 0.0, 1e-4);
+	BOOST_CHECK_CLOSE(operation(1.0), 1.0, 1e-4);
+	BOOST_CHECK_CLOSE(operation(10.0), 10.0, 1e-4);
+	BOOST_CHECK_CLOSE(operation(-1.0), -0.1, 1e-4);
+	BOOST_CHECK_CLOSE(operation(-10.0), -1.0, 1e-4);
+}
+
+BOOST_AUTO_TEST_CASE(getNameLeakyReLUOp)
+{
+	LeakyReLUOp<double> operation;
+
+	BOOST_CHECK_EQUAL(operation.getName(), "LeakyReLUOp");
+}
+
+/**
+	LeakyReLUGradOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorLeakyReLUGradOp)
+{
+	LeakyReLUGradOp<double>* ptrLeakyReLU = nullptr;
+	LeakyReLUGradOp<double>* nullPointerLeakyReLU = nullptr;
+	BOOST_CHECK_EQUAL(ptrLeakyReLU, nullPointerLeakyReLU);
+}
+
+BOOST_AUTO_TEST_CASE(destructorLeakyReLUGradOp)
+{
+	LeakyReLUGradOp<double>* ptrLeakyReLU = nullptr;
+	ptrLeakyReLU = new LeakyReLUGradOp<double>();
+	delete ptrLeakyReLU;
+}
+
+BOOST_AUTO_TEST_CASE(gettersAndSettersLeakyReLUGradOp)
+{
+	LeakyReLUGradOp<double> operation;
+	operation.setAlpha(1.0);
+
+	BOOST_CHECK_EQUAL(operation.getAlpha(), 1.0);
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionLeakyReLUGradOp)
+{
+	LeakyReLUGradOp<double> operation(0.1);
+
+	BOOST_CHECK_CLOSE(operation(0.0), 1.0, 1e-4);
+	BOOST_CHECK_CLOSE(operation(1.0), 1.0, 1e-4);
+	BOOST_CHECK_CLOSE(operation(10.0), 1.0, 1e-4);
+	BOOST_CHECK_CLOSE(operation(-1.0), 0.1, 1e-4);
+	BOOST_CHECK_CLOSE(operation(-10.0), 0.1, 1e-4);
+}
+
+BOOST_AUTO_TEST_CASE(getNameLeakyReLUGradOp)
+{
+	LeakyReLUGradOp<double> operation;
+
+	BOOST_CHECK_EQUAL(operation.getName(), "LeakyReLUGradOp");
 }
 
 BOOST_AUTO_TEST_SUITE_END()
