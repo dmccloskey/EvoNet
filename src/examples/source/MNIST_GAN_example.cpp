@@ -48,52 +48,67 @@ public:
 		ModelBuilder model_builder;
 
 		// Add the Generator inputs
-		std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", n_inputs);
+		std::vector<std::string> node_names_encoding = model_builder.addInputNodes(model, "Encoding", n_encodings);
 
-		const int n_hidden_0 = 400;
+		const int n_hidden_0 = 256;
+		const int n_hidden_1 = 512;
 
 		// Add the generator FC layers
-		std::vector<std::string> node_names, node_names_mu, node_names_logvar;	
-		node_names = model_builder.addFullyConnected(model, "FC0", "FC0", node_names_input, n_hidden_0,
-			std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()),
-			std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
+		std::vector<std::string> node_names, node_names_gen, node_names_logvar;	
+		node_names = model_builder.addFullyConnected(model, "GenFC0", "GenFC0", node_names_encoding, n_hidden_0,
+			std::shared_ptr<ActivationOp<float>>(new LeakyReLUOp<float>()),
+			std::shared_ptr<ActivationOp<float>>(new LeakyReLUGradOp<float>()),
 			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
 			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
 			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names_input.size() + node_names.size())/2, 1)),
+			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names_encoding.size() + n_hidden_0)/2, 1)),
 			std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
-		node_names_mu = model_builder.addFullyConnected(model, "Mu", "Mu", node_names, n_encodings,
-			std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()),
-			std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
+		node_names = model_builder.addFullyConnected(model, "GenFC1", "GenFC1", node_names, n_hidden_1,
+			std::shared_ptr<ActivationOp<float>>(new LeakyReLUOp<float>()),
+			std::shared_ptr<ActivationOp<float>>(new LeakyReLUGradOp<float>()),
 			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
 			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
 			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names.size() + n_encodings)/2, 1)),
+			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names.size() + n_hidden_1)/2, 1)),
 			std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
-		node_names_logvar = model_builder.addFullyConnected(model, "LogVar", "LogVar", node_names, 20,
-			std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()),
-			std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
+		node_names_gen = model_builder.addFullyConnected(model, "GenOut", "GenOut", node_names, n_inputs,
+			std::shared_ptr<ActivationOp<float>>(new TanHOp<float>()),
+			std::shared_ptr<ActivationOp<float>>(new TanHGradOp<float>()),
 			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
 			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
 			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names.size() + n_encodings)/2, 1)),
+			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names.size() + n_inputs)/2, 1)),
 			std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 
-		// Add the Encoding layers
-		std::vector<std::string> node_names_encoder = model_builder.addVAEEncoding(model, "Encoding", "Encoding", node_names_mu, node_names_logvar);
+		// Specify the output node types manually
+		for (const std::string& node_name : node_names_gen)
+			model.getNodesMap().at(node_name)->setType(NodeType::output);
 
-		// Add the Decoder FC layers
-		node_names = model_builder.addFullyConnected(model, "FC1", "FC1", node_names_encoder, n_hidden_0,
-			std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()),
-			std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
+		// Add the real image inputs
+		std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", n_encodings);
+		for (const std::string& node_name : node_names_gen)
+			node_names_input.push_back(node_name);
+
+		// Add the Disoder FC layers
+		node_names = model_builder.addFullyConnected(model, "DisFC0", "DisFC0", node_names_gen, n_hidden_0,
+			std::shared_ptr<ActivationOp<float>>(new LeakyReLUOp<float>()),
+			std::shared_ptr<ActivationOp<float>>(new LeakyReLUGradOp<float>()),
 			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
 			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
 			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names_encoder.size() + n_hidden_0)/2, 1)),
+			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names_gen.size() + n_hidden_0)/2, 1)),
 			std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
-		node_names = model_builder.addFullyConnected(model, "Output", "Output", node_names, n_inputs,
-			std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()),
-			std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
+		node_names = model_builder.addFullyConnected(model, "DisFC1", "DisFC1", node_names, n_hidden_1,
+			std::shared_ptr<ActivationOp<float>>(new LeakyReLUOp<float>()),
+			std::shared_ptr<ActivationOp<float>>(new LeakyReLUGradOp<float>()),
+			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
+			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
+			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
+			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names.size() + n_hidden_1) / 2, 1)),
+			std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+		node_names = model_builder.addFullyConnected(model, "DisOut", "DisOut", node_names, 1,
+			std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()),
+			std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()),
 			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
 			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
 			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
@@ -317,7 +332,7 @@ void main_GAN() {
 
 	// define the data simulator
 	const std::size_t input_size = 784;
-	const std::size_t encoding_size = 20;
+	const std::size_t encoding_size = 100;
 	const std::size_t training_data_size = 10000; //60000;
 	const std::size_t validation_data_size = 100; //10000;
 	DataSimulatorExt data_simulator;
@@ -350,22 +365,17 @@ void main_GAN() {
 
 	// Make the encoding nodes and add them to the input
 	for (int i = 0; i < encoding_size; ++i)
-		input_nodes.push_back("Encoding_" + std::to_string(i) + "-Sampler");
+		input_nodes.push_back("Encoding_" + std::to_string(i));
 
-	// Make the output nodes
-	std::vector<std::string> output_nodes;
-	for (int i = 0; i < input_size; ++i)
-		output_nodes.push_back("Output_" + std::to_string(i));
+	// Make the discriminator output nodes
+	std::vector<std::string> output_nodes_dec;
+	for (int i = 0; i < 1; ++i)
+		output_nodes_dec.push_back("DisOut_" + std::to_string(i));
 
-	// Make the mu nodes
-	std::vector<std::string> encoding_nodes_mu;
+	// Make the generator output nodes
+	std::vector<std::string> encoding_nodes_gen;
 	for (int i = 0; i < encoding_size; ++i)
-		encoding_nodes_mu.push_back("Mu_" + std::to_string(i));
-
-	// Make the encoding nodes
-	std::vector<std::string> encoding_nodes_logvar;
-	for (int i = 0; i < encoding_size; ++i)
-		encoding_nodes_logvar.push_back("LogVar_" + std::to_string(i));
+		encoding_nodes_gen.push_back("GenOut_" + std::to_string(i));
 
 	// define the model trainer
 	ModelTrainerExt model_trainer;
@@ -378,13 +388,13 @@ void main_GAN() {
 	model_trainer.setLogging(true, false);
 	model_trainer.setLossFunctions({ 
 		std::shared_ptr<LossFunctionOp<float>>(new BCEWithLogitsOp<float>()), 
-		std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceMuOp<float>()),
-		std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceLogVarOp<float>()) });
+		std::shared_ptr<LossFunctionOp<float>>(new BCEWithLogitsOp<float>()),
+		std::shared_ptr<LossFunctionOp<float>>(new BCEWithLogitsOp<float>()) });
 	model_trainer.setLossFunctionGrads({ 
 		std::shared_ptr<LossFunctionGradOp<float>>(new BCEWithLogitsGradOp<float>()),
-		std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceMuGradOp<float>()), 
-		std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceLogVarGradOp<float>()) });
-	model_trainer.setOutputNodes({ output_nodes, encoding_nodes_mu, encoding_nodes_logvar });
+		std::shared_ptr<LossFunctionGradOp<float>>(new BCEWithLogitsGradOp<float>()),
+		std::shared_ptr<LossFunctionGradOp<float>>(new BCEWithLogitsGradOp<float>()) });
+	model_trainer.setOutputNodes({ output_nodes_dec, output_nodes_dec, output_nodes_dec });
 
 	// define the model replicator for growth mode
 	ModelReplicatorExt model_replicator;

@@ -170,30 +170,30 @@ public:
 			node_names = model_builder.addConvolution(model, conv_name, conv_name, node_names_input,
 				28, 28, 0, 0,
 				5, 5, 1, 0, 0,
-				std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()),
-				std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()),
+				std::shared_ptr<ActivationOp<float>>(new LeakyReLUOp<float>()),
+				std::shared_ptr<ActivationOp<float>>(new LeakyReLUGradOp<float>()),
 				std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
 				std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
 				std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
 				std::shared_ptr<WeightInitOp>(new RandWeightInitOp(n_inputs, 2)),
-				std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
-			//std::string norm_name = "Norm0-" + std::to_string(d);
-			//node_names = model_builder.addNormalization(model, norm_name, norm_name, node_names,
-			//	std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()),
-			//	std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()),
-			//	std::shared_ptr<WeightInitOp>(new RandWeightInitOp(node_names.size(), 2)),
-			//	std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0, 0.0);
+				std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.2f);
+			std::string norm_name = "Norm0-" + std::to_string(d);
+			node_names = model_builder.addNormalization(model, norm_name, norm_name, node_names,
+				std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()),
+				std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()),
+				std::shared_ptr<WeightInitOp>(new RandWeightInitOp(node_names.size(), 2)),
+				std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0, 0.0);
 			std::string pool_name = "Pool0-" + std::to_string(d);
 			node_names = model_builder.addConvolution(model, pool_name, pool_name, node_names,
 				sqrt(node_names.size()), sqrt(node_names.size()), 2, 2,
 				3, 3, 2, 0, 0,
-				std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()),
-				std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()),
+				std::shared_ptr<ActivationOp<float>>(new LeakyReLUOp<float>()),
+				std::shared_ptr<ActivationOp<float>>(new LeakyReLUGradOp<float>()),
 				std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
 				std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
 				std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
 				std::shared_ptr<WeightInitOp>(new RandWeightInitOp(node_names.size(), 2)),
-				std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false);
+				std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.2f, false);
 			node_names_l0.push_back(node_names);
 		}
 
@@ -208,30 +208,30 @@ public:
 				node_names = model_builder.addConvolution(model, conv_name, conv_name, node_names_l,
 					sqrt(node_names_l.size()), sqrt(node_names_l.size()), 0, 0,
 					5, 5, 1, 0, 0,
-					std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()),
-					std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()),
+					std::shared_ptr<ActivationOp<float>>(new LeakyReLUOp<float>()),
+					std::shared_ptr<ActivationOp<float>>(new LeakyReLUGradOp<float>()),
 					std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
 					std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
 					std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
 					std::shared_ptr<WeightInitOp>(new RandWeightInitOp(node_names_l.size(), 2)),
-					std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
-				//std::string norm_name = "Norm1-" + std::to_string(l_cnt) + "-" + std::to_string(d);
-				//node_names = model_builder.addNormalization(model, norm_name, norm_name, node_names,
-				//	std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()),
-				//	std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()),
-				//	std::shared_ptr<WeightInitOp>(new RandWeightInitOp(node_names.size(), 2)),
-				//	std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0, 0.0);
+					std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.2f);
+				std::string norm_name = "Norm1-" + std::to_string(l_cnt) + "-" + std::to_string(d);
+				node_names = model_builder.addNormalization(model, norm_name, norm_name, node_names,
+					std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()),
+					std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()),
+					std::shared_ptr<WeightInitOp>(new RandWeightInitOp(node_names.size(), 2)),
+					std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0, 0.0);
 				std::string pool_name = "Pool1-" + std::to_string(l_cnt) + "-" + std::to_string(d);
 				node_names = model_builder.addConvolution(model, pool_name, pool_name, node_names,
 					sqrt(node_names.size()), sqrt(node_names.size()), 2, 2,
 					3, 3, 2, 0, 0,
-					std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()),
-					std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()),
+					std::shared_ptr<ActivationOp<float>>(new LeakyReLUOp<float>()),
+					std::shared_ptr<ActivationOp<float>>(new LeakyReLUGradOp<float>()),
 					std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
 					std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
 					std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
 					std::shared_ptr<WeightInitOp>(new RandWeightInitOp(node_names.size(), 2)),
-					std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false);
+					std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.2f, false);
 				node_names_l1.push_back(node_names);
 			}
 			++l_cnt;
@@ -249,26 +249,26 @@ public:
 		// Add the FC layers
 		//assert(node_names.size() == 320);
 		node_names = model_builder.addFullyConnected(model, "FC0", "FC0", node_names, 50,
-			std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()),
-			std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()),
+			std::shared_ptr<ActivationOp<float>>(new LeakyReLUOp<float>()),
+			std::shared_ptr<ActivationOp<float>>(new LeakyReLUGradOp<float>()),
 			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
 			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
 			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
 			std::shared_ptr<WeightInitOp>(new RandWeightInitOp(node_names.size(), 2)),
-			std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
-		//node_names = model_builder.addNormalization(model, "NormFC0", "NormFC0", node_names,
-		//	std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()),
-		//	std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()),
-		//	std::shared_ptr<WeightInitOp>(new RandWeightInitOp(node_names.size(), 2)),
-		//	std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0, 0.0f);
+			std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.2f);
+		node_names = model_builder.addNormalization(model, "NormFC0", "NormFC0", node_names,
+			std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()),
+			std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()),
+			std::shared_ptr<WeightInitOp>(new RandWeightInitOp(node_names.size(), 2)),
+			std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0, 0.0f);
 		node_names = model_builder.addFullyConnected(model, "FC1", "FC1", node_names, n_outputs,
-			std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()),
-			std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()),
+			std::shared_ptr<ActivationOp<float>>(new LeakyReLUOp<float>()),
+			std::shared_ptr<ActivationOp<float>>(new LeakyReLUGradOp<float>()),
 			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
 			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
 			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
 			std::shared_ptr<WeightInitOp>(new RandWeightInitOp(node_names.size(), 2)),
-			std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+			std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.2f);
 		//node_names = model_builder.addNormalization(model, "NormFC1", "NormFC1", node_names,
 		//	std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()),
 		//	std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()),
