@@ -268,8 +268,8 @@ public:
 				for (int epochs_iter = 0; epochs_iter < n_epochs; ++epochs_iter) {
 
 					// pick a random sample group name
-					std::string sample_group_name = selectRandomElement(sample_group_names_);
-					//std::string sample_group_name = sample_group_names_[0];
+					//std::string sample_group_name = selectRandomElement(sample_group_names_);
+					std::string sample_group_name = sample_group_names_[0];
 
 					for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
 						input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = calculateMAR(
@@ -556,9 +556,11 @@ public:
 		model.setName("Classifier");
 		model.setLossFunction(std::shared_ptr<LossFunctionOp<float>>(new NegativeLogLikelihoodOp<float>(n_outputs)));
 		model.setLossFunctionGrad(std::shared_ptr<LossFunctionGradOp<float>>(new NegativeLogLikelihoodGradOp<float>(n_outputs)));
-		
-		std::shared_ptr<WeightInitOp> weight_init(new RandWeightInitOp(n_inputs));
-		std::shared_ptr<SolverOp> solver(new AdamOp(0.1, 0.9, 0.999, 1e-8));
+
+		const int n_hidden_0 = 200;
+		const int n_hidden_1 = 100;
+		const int n_hidden_2 = 50;
+		const int n_hidden_3 = 10;
 
 		ModelBuilder model_builder;
 
@@ -566,44 +568,53 @@ public:
 		std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input", n_inputs);
 
 		// Add the hidden layers
-		node_names = model_builder.addFullyConnected(model, "FC0", "FC0", node_names, 200,
-			std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()),
-			std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
+		//node_names = model_builder.addFullyConnected(model, "FC0", "FC0", node_names, n_hidden_0,
+		//	std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()),
+		//	std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()),
+		//	std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
+		//	std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
+		//	std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
+		//	std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names.size() + n_hidden_1) / 2, 1)),
+		//	std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+		node_names = model_builder.addFullyConnected(model, "FC1", "FC1", node_names, n_hidden_1,
+			std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()),
+			std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()),
 			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
 			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
 			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-			weight_init, solver);
-		node_names = model_builder.addFullyConnected(model, "FC1", "FC1", node_names, 100,
-			std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()),
-			std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
+			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names.size() + n_hidden_1) / 2, 1)),
+			std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+		node_names = model_builder.addFullyConnected(model, "FC2", "FC2", node_names, n_hidden_2,
+			std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()),
+			std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()),
 			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
 			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
 			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-			weight_init, solver);
-		node_names = model_builder.addFullyConnected(model, "FC2", "FC2", node_names, 50,
-			std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()),
-			std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
+			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names.size() + n_hidden_2) / 2, 1)),
+			std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+		//node_names = model_builder.addFullyConnected(model, "FC3", "FC3", node_names, n_hidden_3,
+		//	std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()),
+		//	std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()),
+		//	std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
+		//	std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
+		//	std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
+		//	std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names.size() + n_hidden_3) / 2, 1)),
+		//	std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+		node_names = model_builder.addFullyConnected(model, "Output", "Output", node_names, n_outputs,
+			std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()),
+			std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()),
 			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
 			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
 			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-			weight_init, solver);
-		node_names = model_builder.addFullyConnected(model, "FC3", "FC3", node_names, 10,
-			std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()),
-			std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
-			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
-			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
-			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-			weight_init, solver);
-		node_names = model_builder.addFullyConnected(model, "FC4", "FC4", node_names, n_outputs,
-			std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()),
-			std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
-			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
-			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
-			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-			weight_init, solver);
+			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names.size() + n_outputs) / 2, 1)),
+			std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 
-		// Add the final softmax layer
-		node_names = model_builder.addSoftMax(model, "SoftMax", "SoftMax", node_names);
+		//// Add the final softmax layer
+		//node_names = model_builder.addSoftMax(model, "SoftMax", "SoftMax", node_names);
+
+		// Specify the output node types manually
+		for (const std::string& node_name : node_names)
+			model.getNodesMap().at(node_name)->setType(NodeType::output);
 
 		model.initWeights();
 		return model; 
@@ -989,23 +1000,23 @@ void main_classification()
 	for (int i = 0; i < n_input_nodes; ++i)
 		input_nodes.push_back("Input_" + std::to_string(i));
 	for (int i = 0; i < n_output_nodes; ++i)
-		output_nodes.push_back("SoftMax-Out_" + std::to_string(i));
+		output_nodes.push_back("Output_" + std::to_string(i));
 
 	// innitialize the model trainer
 	ModelTrainerExt model_trainer;
-	model_trainer.setBatchSize(8);
+	model_trainer.setBatchSize(1);
 	model_trainer.setMemorySize(1);
 	model_trainer.setNEpochsTraining(1000);
 	model_trainer.setNEpochsValidation(100);
 	model_trainer.setNThreads(n_hard_threads); // [TODO: change back to 2!]
 	model_trainer.setVerbosityLevel(1);
-	model_trainer.setLogging(false, false);
-	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new NegativeLogLikelihoodOp<float>()) });
-	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new NegativeLogLikelihoodGradOp<float>()) });
+	model_trainer.setLogging(true, false);
+	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new BCEWithLogitsOp<float>()) });
+	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new BCEWithLogitsGradOp<float>()) });
 	model_trainer.setOutputNodes({ output_nodes });
 
 	// define the model logger
-	ModelLogger model_logger;
+	ModelLogger model_logger(true, true, true, true, true, false);
 
 	// initialize the model replicator
 	ModelReplicatorExt model_replicator;
@@ -1133,8 +1144,8 @@ void main_reconstruction()
 // Main
 int main(int argc, char** argv)
 {
-	main_statistics();
-	//main_classification();
+	//main_statistics();
+	main_classification();
 	//main_reconstruction();
 	return 0;
 }
