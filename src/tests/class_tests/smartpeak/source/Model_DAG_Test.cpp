@@ -1027,13 +1027,14 @@ BOOST_AUTO_TEST_CASE(calculateError)
   for (int i=0; i<(int)output_nodes.size(); ++i)
   {
     BOOST_CHECK_EQUAL(model1.getNode(output_nodes[i]).getError().size(), batch_size*memory_size);
-    BOOST_CHECK(model1.getNode(output_nodes[i]).getStatus() == NodeStatus::corrected);
+    //BOOST_CHECK(model1.getNode(output_nodes[i]).getStatus() == NodeStatus::corrected); // NOTE: status is now changed in CETT
     for (int j=0; j<batch_size; ++j)
     {
       for (int k=0; k<memory_size; ++k)
       {
 				//std::cout << "output node: " << i << "batch: " << j << "memory: " << k << std::endl;
         BOOST_CHECK_EQUAL(model1.getNode(output_nodes[i]).getError()(j, k), node_error(j, i));
+				BOOST_CHECK_EQUAL(model1.getOutputNodes()[i]->getError()(j, k), node_error(j, i));
       }
     }
   }
@@ -1058,7 +1059,7 @@ BOOST_AUTO_TEST_CASE(calculateError)
   for (int i=0; i<(int)output_nodes.size(); ++i)
   {
     BOOST_CHECK_EQUAL(model1.getNode(output_nodes[i]).getError().size(), batch_size*memory_size);
-    BOOST_CHECK(model1.getNode(output_nodes[i]).getStatus() == NodeStatus::corrected);
+    //BOOST_CHECK(model1.getNode(output_nodes[i]).getStatus() == NodeStatus::corrected); // NOTE: status is now changed in CETT
     for (int j=0; j<batch_size; ++j)
     {
       for (int k=0; k<memory_size; ++k)
@@ -1101,6 +1102,10 @@ BOOST_AUTO_TEST_CASE(getNextUncorrectedLayer1)
   Eigen::Tensor<float, 2> expected(batch_size, (int)output_nodes.size()); 
   expected.setValues({{0, 1}, {0, 1}, {0, 1}, {0, 1}});
   model1.calculateError(expected, output_nodes, 0);
+
+	// update the node status for the outputs
+	for (const std::string& output_node : output_nodes)
+		model1.getNodesMap().at(output_node)->setStatus(NodeStatus::corrected);
 
   // get the next hidden layer
   std::map<std::string, int> BP_operations_map;
@@ -1159,6 +1164,10 @@ BOOST_AUTO_TEST_CASE(backPropogateLayerError_Sum)
   expected.setValues({{0, 1}, {0, 1}, {0, 1}, {0, 1}});
   model1.calculateError(expected, output_nodes, 0);
 
+	// update the node status for the outputs
+	for (const std::string& output_node : output_nodes)
+		model1.getNodesMap().at(output_node)->setStatus(NodeStatus::corrected);
+
   // get the next hidden layer
   std::map<std::string, int> BP_operations_map;
   std::vector<OperationList> BP_operations_list;
@@ -1196,7 +1205,7 @@ BOOST_AUTO_TEST_CASE(backPropogateLayerError_Product)
 	model2.initError(batch_size, memory_size);
 	model2.clearCache();
 	model2.initNodes(batch_size, memory_size);
-	model1.findCyclicPairs();
+	model2.findCyclicPairs();
 
 	// create the input
 	const std::vector<std::string> input_ids = { "0", "1" };
@@ -1217,6 +1226,10 @@ BOOST_AUTO_TEST_CASE(backPropogateLayerError_Product)
 	Eigen::Tensor<float, 2> expected(batch_size, (int)output_nodes.size());
 	expected.setValues({ { 0, 1 },{ 0, 1 },{ 0, 1 },{ 0, 1 } });
 	model2.calculateError(expected, output_nodes, 0);
+
+	// update the node status for the outputs
+	for (const std::string& output_node : output_nodes)
+		model2.getNodesMap().at(output_node)->setStatus(NodeStatus::corrected);
 
 	// get the next hidden layer
 	std::map<std::string, int> BP_operations_map;
@@ -1279,6 +1292,10 @@ BOOST_AUTO_TEST_CASE(backPropogate_Sum)
   expected.setValues({{0, 1}, {0, 1}, {0, 1}, {0, 1}});
   model1.calculateError(expected, output_nodes, 0);
 
+	// update the node status for the outputs
+	for (const std::string& output_node : output_nodes)
+		model1.getNodesMap().at(output_node)->setStatus(NodeStatus::corrected);
+
   // back propogate
   model1.backPropogate(0);
 
@@ -1340,6 +1357,10 @@ BOOST_AUTO_TEST_CASE(backPropogate_Product)
 	expected.setValues({ { 0, 1 },{ 0, 1 },{ 0, 1 },{ 0, 1 } });
 	model2.calculateError(expected, output_nodes, 0);
 
+	// update the node status for the outputs
+	for (const std::string& output_node : output_nodes)
+		model2.getNodesMap().at(output_node)->setStatus(NodeStatus::corrected);
+
 	// back propogate
 	model2.backPropogate(0);
 
@@ -1400,6 +1421,10 @@ BOOST_AUTO_TEST_CASE(backPropogate_Max)
 	Eigen::Tensor<float, 2> expected(batch_size, (int)output_nodes.size());
 	expected.setValues({ { 0, 1 },{ 0, 1 },{ 0, 1 },{ 0, 1 } });
 	model3.calculateError(expected, output_nodes, 0);
+
+	// update the node status for the outputs
+	for (const std::string& output_node : output_nodes)
+		model3.getNodesMap().at(output_node)->setStatus(NodeStatus::corrected);
 
 	// back propogate
 	model3.backPropogate(0);
@@ -1463,6 +1488,10 @@ BOOST_AUTO_TEST_CASE(updateWeights_Sum)
   expected.setValues({{0, 1}, {0, 1}, {0, 1}, {0, 1}});
   model1.calculateError(expected, output_nodes, 0);
 
+	// update the node status for the outputs
+	for (const std::string& output_node : output_nodes)
+		model1.getNodesMap().at(output_node)->setStatus(NodeStatus::corrected);
+
   // back propogate
   model1.backPropogate(0, true, false, 1);
 
@@ -1516,6 +1545,10 @@ BOOST_AUTO_TEST_CASE(updateWeights_Product)
 	expected.setValues({ { 0, 1 },{ 0, 1 },{ 0, 1 },{ 0, 1 } });
 	model2.calculateError(expected, output_nodes, 0);
 
+	// update the node status for the outputs
+	for (const std::string& output_node : output_nodes)
+		model2.getNodesMap().at(output_node)->setStatus(NodeStatus::corrected);
+
 	// back propogate
 	model2.backPropogate(0, true, false, 1);
 
@@ -1568,6 +1601,10 @@ BOOST_AUTO_TEST_CASE(updateWeights_Max)
 	Eigen::Tensor<float, 2> expected(batch_size, (int)output_nodes.size());
 	expected.setValues({ { 0, 1 },{ 0, 1 },{ 0, 1 },{ 0, 1 } });
 	model3.calculateError(expected, output_nodes, 0);
+
+	// update the node status for the outputs
+	for (const std::string& output_node : output_nodes)
+		model3.getNodesMap().at(output_node)->setStatus(NodeStatus::corrected);
 
 	// back propogate
 	model3.backPropogate(0, true, false, 1);
@@ -1671,6 +1708,10 @@ BOOST_AUTO_TEST_CASE(modelTrainer1)
     // calculate the model error and node output error
     model1.calculateError(expected, output_nodes, 0);
     std::cout<<"Error at iteration: "<<iter<<" is "<<model1.getError().sum()<<std::endl;
+
+		// update the node status for the outputs
+		for (const std::string& output_node : output_nodes)
+			model1.getNodesMap().at(output_node)->setStatus(NodeStatus::corrected);
 
     // back propogate
     model1.backPropogate(0);

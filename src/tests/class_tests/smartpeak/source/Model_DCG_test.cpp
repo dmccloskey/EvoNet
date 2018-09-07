@@ -389,6 +389,7 @@ BOOST_AUTO_TEST_CASE(CETT)
 				//std::cout << "Batch: " << j << " Memory: " << k << " Output Node: " << i << std::endl;
 				//std::cout << "Error: " << model2.getNode(output_nodes[i]).getError()(j, k) << " Expected: " << error(j, k, i) << std::endl;
 				BOOST_CHECK_CLOSE(model2.getNode(output_nodes[i]).getError()(j, k), error(j, k, i), 1e-3);
+				BOOST_CHECK(model2.getNode(output_nodes[i]).getStatus() == NodeStatus::corrected); // NOTE: status is now changed in CETT
 			}
 		}
 	}
@@ -432,6 +433,10 @@ BOOST_AUTO_TEST_CASE(getNextUncorrectedLayer2)
   Eigen::Tensor<float, 2> expected(batch_size, (int)output_nodes.size()); 
   expected.setValues({{2}, {3}, {4}, {5}, {6}});
   model2.calculateError(expected, output_nodes, 0);
+
+	// update the node status for the outputs
+	for (const std::string& output_node : output_nodes)
+		model2.getNodesMap().at(output_node)->setStatus(NodeStatus::corrected);
 
 	// get the next hidden layer
 	std::map<std::string, int> BP_operations_map;
@@ -496,6 +501,10 @@ BOOST_AUTO_TEST_CASE(getNextUncorrectedLayerCycles2)
   Eigen::Tensor<float, 2> expected(batch_size, (int)output_nodes.size()); 
   expected.setValues({{2}, {3}, {4}, {5}, {6}});
   model2.calculateError(expected, output_nodes, 0);
+
+	// update the node status for the outputs
+	for (const std::string& output_node : output_nodes)
+		model2.getNodesMap().at(output_node)->setStatus(NodeStatus::corrected);
 
 	// get the next hidden layer
 	std::map<std::string, int> BP_operations_map;
@@ -581,6 +590,10 @@ BOOST_AUTO_TEST_CASE(BPTT1)
   Eigen::Tensor<float, 2> expected(batch_size, (int)output_nodes.size()); 
   expected.setValues({{2.5}, {3}, {3.5}, {4}, {4.5}});
   model2.calculateError(expected, output_nodes, 0);
+
+	// update the node status for the outputs
+	for (const std::string& output_node : output_nodes)
+		model2.getNodesMap().at(output_node)->setStatus(NodeStatus::corrected);
 
   // std::cout<<"Model error:"<<model2.getError()<<std::endl;
 
@@ -732,6 +745,10 @@ BOOST_AUTO_TEST_CASE(updateWeights2)
   expected.setValues({{2.5}, {3}, {3.5}, {4}, {4.5}});
   model2.calculateError(expected, output_nodes, 0);
 
+	// update the node status for the outputs
+	for (const std::string& output_node : output_nodes)
+		model2.getNodesMap().at(output_node)->setStatus(NodeStatus::corrected);
+
   // backpropogate through time
   model2.TBPTT(4);
 
@@ -748,6 +765,78 @@ BOOST_AUTO_TEST_CASE(updateWeights2)
 		//std::cout << "Weight: " << i << "; Calc: " << model2.getWeight(weight_nodes[i]).getWeight() << ", Expected: " << weights(i) << std::endl;
     BOOST_CHECK_CLOSE(model2.getWeight(weight_nodes[i]).getWeight(), weights(i), 1e-3);
   }
+}
+
+BOOST_AUTO_TEST_CASE(updateWeights3)
+{
+	// Toy network: 1 hidden layer, fully connected, DCG
+	// Model model2 = makeModel2();
+
+	// initialize nodes
+	const int batch_size = 5;
+	const int memory_size = 8;
+	model2.initError(batch_size, memory_size);
+	model2.clearCache();
+	model2.initNodes(batch_size, memory_size);
+	model2.initWeights();
+	model2.findCyclicPairs();
+
+	// create the input and biases
+	const std::vector<std::string> input_ids = { "0", "3", "4" };
+	Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size());
+	input.setValues(
+		{ {{1, 0, 0}, {2, 0, 0}, {3, 0, 0}, {4, 0, 0}, {5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}},
+		{{2, 0, 0}, {3, 0, 0}, {4, 0, 0}, {5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}, {9, 0, 0}},
+		{{3, 0, 0}, {4, 0, 0}, {5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}, {9, 0, 0}, {10, 0, 0}},
+		{{4, 0, 0}, {5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}, {9, 0, 0}, {10, 0, 0}, {11, 0, 0}},
+		{{5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}, {9, 0, 0}, {10, 0, 0}, {11, 0, 0}, {12, 0, 0}} }
+	);
+	Eigen::Tensor<float, 2> dt(batch_size, memory_size);
+	dt.setValues({
+		{1, 1, 1, 1, 1, 1, 1, 1},
+		{1, 1, 1, 1, 1, 1, 1, 1},
+		{1, 1, 1, 1, 1, 1, 1, 1},
+		{1, 1, 1, 1, 1, 1, 1, 1},
+		{1, 1, 1, 1, 1, 1, 1, 1} }
+	);
+
+	// forward propogate
+	model2.FPTT(4, input, input_ids, dt);
+
+	// calculate the model error
+	const std::vector<std::string> output_nodes = { "2" };
+	// expected sequence
+	// y = m1*(m2*x + b*yprev) where m1 = 1, m2 = 1 and b = -1
+	Eigen::Tensor<float, 3> expected(batch_size, memory_size, (int)output_nodes.size());
+	expected.setValues(
+		{ { { 1 },{ 1 },{ 2 },{ 2 },{ 3 },{ 3 },{ 4 },{ 4 } },
+		{ { 1 },{ 2 },{ 2 },{ 3 },{ 3 },{ 4 },{ 4 },{ 5 } },
+		{ { 2 },{ 2 },{ 3 },{ 3 },{ 4 },{ 4 },{ 5 },{ 5 } },
+		{ { 2 },{ 3 },{ 3 },{ 4 },{ 4 },{ 5 },{ 5 },{ 6 } },
+		{ { 3 },{ 3 },{ 4 },{ 4 },{ 5 },{ 5 },{ 6 },{ 6 } } }
+	);
+	model2.CETT(expected, output_nodes, 4);
+
+	// update the node status for the outputs
+	for (const std::string& output_node : output_nodes)
+		model2.getNodesMap().at(output_node)->setStatus(NodeStatus::corrected);
+
+	// backpropogate through time
+	model2.TBPTT(4);
+
+	// update weights
+	model2.updateWeights(4);
+
+	// test values of output nodes
+	std::vector<std::string> weight_nodes = { "0", "1", "2", "3", "4" };
+	Eigen::Tensor<float, 1> weights(weight_nodes.size());
+	weights.setValues({ -0.2882f, -1.782f, -1.782f, 1.0f, 1.0f });
+
+	for (int i = 0; i < weight_nodes.size(); ++i)
+	{
+		//std::cout << "Weight: " << i << "; Calc: " << model2.getWeight(weight_nodes[i]).getWeight() << ", Expected: " << weights(i) << std::endl;
+		BOOST_CHECK_CLOSE(model2.getWeight(weight_nodes[i]).getWeight(), weights(i), 1e-3);
+	}
 }
 
 Model makeModel2a()

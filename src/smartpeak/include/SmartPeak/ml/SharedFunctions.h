@@ -80,11 +80,11 @@ namespace SmartPeak
 	{
 		if (x == std::numeric_limits<T>::infinity())
 		{
-			return T(1e24);
+			return T(1e9);
 		}			
 		else if (x == -std::numeric_limits<T>::infinity())
 		{
-			return T(-1e24);
+			return T(-1e9);
 		}			
 		else if (std::isnan(x))
 		{
@@ -111,6 +111,8 @@ namespace SmartPeak
 				return min_ + eps_;
 			else if (x > max_ - eps_)
 				return max_ - eps_;
+			else if (std::isnan(x))
+				return min_ + eps_;
 			else
 				return x;
 		}

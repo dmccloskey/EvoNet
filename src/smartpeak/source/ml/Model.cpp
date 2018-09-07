@@ -1060,14 +1060,10 @@ namespace SmartPeak
 	){
 		std::lock_guard<std::mutex> lock(calculateOutputNodeError_mutex);
 
-		output_node->getErrorMutable()->chip(time_step, 1) = loss_function_grad->operator()(
+		output_node->getErrorMutable()->chip(time_step, 1) += loss_function_grad->operator()(
 			output_node->getOutput().chip(time_step, 1), expected) *
 			output_node->getDerivative().chip(time_step, 1);
-		//std::cout << "expected: " << expected << std::endl;
-		//std::cout << "derivative: " << output_node->getDerivative().chip(time_step, 1) << std::endl;
-		//std::cout << "output: " << output_node->getOutput().chip(time_step, 1) << std::endl;
-		//std::cout << "error: " << output_node->getError().chip(time_step, 1) << std::endl;
-		output_node->setStatus(NodeStatus::corrected);
+		//output_node->setStatus(NodeStatus::corrected); // corrected status will be updated in CETT based on the tagged NodeType
 		return true;
 	};
 
@@ -1221,6 +1217,10 @@ namespace SmartPeak
 			// calculate the error for each batch of memory
 			calculateError(values.chip(next_time_step, 1), node_names, i, n_threads);
 			//calculateError(values.chip(i, 1), node_names, i);
+
+			// set the output nodes as corrected
+			for (auto& node : output_nodes_)
+				node->setStatus(NodeStatus::corrected);
 		}
   }
   

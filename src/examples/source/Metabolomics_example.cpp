@@ -97,158 +97,158 @@ struct MetaDatum {
 };
 typedef std::map<std::string, MetaDatum> MetaData;
 
-/*
-@brief Read in the metabolomics data from .csv file
-
-@param[in] filename
-@param[in, out] metabolomicsData
-**/
-static void ReadMetabolomicsData(
-	const std::string& filename,
-	MetabolomicsData& metabolomicsData)
-{
-	io::CSVReader<8, io::trim_chars<' ', '\t'>, io::double_quote_escape<',', '"'>> data_in(filename);
-	data_in.read_header(io::ignore_extra_column,
-		"sample_group_name", "sample_name", "component_group_name", "component_name", 
-		"calculated_concentration_units", "used_", "time_point", "calculated_concentration");
-	std::string sampe_group_name_str, sample_name_str, component_group_name_str, component_name_str,
-		calculated_concentration_units_str, used__str, time_point_str, calculated_concentration_str;
-
-	while (data_in.read_row(sampe_group_name_str, sample_name_str, component_group_name_str, component_name_str,
-		calculated_concentration_units_str, used__str, time_point_str, calculated_concentration_str))
-	{
-		// parse the .csv file
-		MetabolomicsDatum row;
-		row.sample_group_name = sampe_group_name_str;
-		row.sample_name = sample_name_str;
-
-		// metabolite id cleanup
-		if (component_group_name_str == "Pool_2pg_3pg")
-			component_group_name_str = "2pg";
-		else if (component_group_name_str == "Hexose_Pool_fru_glc-D")
-			component_group_name_str = "glc-D";
-
-		// replace "-" with "__"
-		component_group_name_str = ReplaceTokens(component_group_name_str, { "-" }, "__");
-
-		row.component_group_name = component_group_name_str; // matches the met_id in the biochemical models
-		row.component_name = component_name_str;
-		row.calculated_concentration_units = calculated_concentration_units_str;
-		row.time_point = std::stof(time_point_str);
-		row.used = (used__str == "t") ? true : false;
-		if (calculated_concentration_str!="")
-			row.calculated_concentration = std::stof(calculated_concentration_str);
-		else
-			row.calculated_concentration = 0.0f;
-
-		// build up the map
-		std::vector<MetabolomicsDatum> rows = { row };
-		std::map<std::string, std::vector<MetabolomicsDatum>> replicate;
-		replicate.emplace(component_group_name_str, rows);
-		auto found_in_data = metabolomicsData.emplace(sampe_group_name_str, replicate);
-		if (!found_in_data.second)
-		{
-			auto found_in_component = metabolomicsData.at(sampe_group_name_str).emplace(component_group_name_str, rows);
-			if (!found_in_component.second)
-			{
-				metabolomicsData.at(sampe_group_name_str).at(component_group_name_str).push_back(row);
-			}
-		}
-
-		if (component_group_name_str == "2pg")
-		{
-			row.component_group_name = "3pg";
-			rows = { row };
-			auto found_in_component = metabolomicsData.at(sampe_group_name_str).emplace(row.component_group_name, rows);
-			if (!found_in_component.second)
-			{
-				metabolomicsData.at(sampe_group_name_str).at(row.component_group_name).push_back(row);
-			}
-		}
-	}
-};
-
-/*
-@brief Read in the biochemical reactsion from .csv file
-
-@param[in] filename
-@param[in, out] biochemicalReactions
-**/
-static void ReadBiochemicalReactions(
-	const std::string& filename,
-	BiochemicalReactions& biochemicalReactions)
-{
-	io::CSVReader<9, io::trim_chars<' ', '\t'>, io::double_quote_escape<',', '"'>> data_in(filename);
-	data_in.read_header(io::ignore_extra_column,
-		"rxn_id", "rxn_name", "equation", "gpr", "used_",
-		"reactants_stoichiometry", "products_stoichiometry", "reactants_ids", "products_ids");
-	std::string rxn_id_str, rxn_name_str, equation_str, gpr_str, used__str,
-		reactants_stoichiometry_str, products_stoichiometry_str, reactants_ids_str, products_ids_str = "";
-
-	while (data_in.read_row(rxn_id_str, rxn_name_str, equation_str, gpr_str, used__str,
-		reactants_stoichiometry_str, products_stoichiometry_str, reactants_ids_str, products_ids_str))
-	{
-		// parse the .csv file
-		BiochemicalReaction row;
-		row.reaction_name = rxn_name_str;
-		row.reaction_id = rxn_id_str;
-		row.equation = equation_str;
-		row.gpr = gpr_str;
-		row.used = (used__str == "t") ? true : false;
-		row.reactants_ids = SplitString(ReplaceTokens(reactants_ids_str, { "[\{\}]", "_p", "_c", "_e", "_m", "_r" }, ""), ",");
-		row.products_ids = SplitString(ReplaceTokens(products_ids_str, { "[\{\}]", "_p", "_c", "_e", "_m", "_r" }, ""), ",");
-
-		std::vector<std::string> reactants_stoichiometry_vector = SplitString(ReplaceTokens(reactants_stoichiometry_str, { "[\{\}]" }, ""), ",");
-		for (const std::string& int_str : reactants_stoichiometry_vector)
-			if (int_str != "")
-				row.reactants_stoichiometry.push_back(std::stof(int_str));
-		std::vector<std::string> products_stoichiometry_vector = SplitString(ReplaceTokens(products_stoichiometry_str, { "[\{\}]" }, ""), ",");
-		for (const std::string& int_str : products_stoichiometry_vector)
-			if (int_str!="")
-				row.products_stoichiometry.push_back(std::stof(int_str));
-
-		// build up the map
-		auto found_in_data = biochemicalReactions.emplace(rxn_id_str, row);
-		if (!found_in_data.second)
-			biochemicalReactions.at(rxn_id_str) = row;
-	}
-};
-
-/*
-@brief Read in the meta data from .csv file
-
-@param[in] filename
-@param[in, out] metaData
-**/
-static void ReadMetaData(
-	const std::string& filename,
-	MetaData& metaData)
-{
-	io::CSVReader<2> data_in(filename);
-	data_in.read_header(io::ignore_extra_column,
-		"sample_group_name", "label");
-	std::string sample_group_name_str, label_str;
-
-	while (data_in.read_row(sample_group_name_str, label_str))
-	{
-		// parse the .csv file
-		MetaDatum row;
-		row.sample_group_name = sample_group_name_str;
-		row.label = label_str;
-
-		// build up the map
-		auto found_in_data = metaData.emplace(sample_group_name_str, row);
-		if (!found_in_data.second)
-			metaData.at(sample_group_name_str) = row;
-	}
-};
-
 // Extended data classes
 class MetDataSimClassification: public DataSimulator
 {
 public:
 	MetDataSimClassification() = default;
 	~MetDataSimClassification() = default;
+
+	/*
+	@brief Read in the metabolomics data from .csv file
+
+	@param[in] filename
+	@param[in, out] metabolomicsData
+	**/
+	static void ReadMetabolomicsData(
+		const std::string& filename,
+		MetabolomicsData& metabolomicsData)
+	{
+		io::CSVReader<8, io::trim_chars<' ', '\t'>, io::double_quote_escape<',', '"'>> data_in(filename);
+		data_in.read_header(io::ignore_extra_column,
+			"sample_group_name", "sample_name", "component_group_name", "component_name",
+			"calculated_concentration_units", "used_", "time_point", "calculated_concentration");
+		std::string sampe_group_name_str, sample_name_str, component_group_name_str, component_name_str,
+			calculated_concentration_units_str, used__str, time_point_str, calculated_concentration_str;
+
+		while (data_in.read_row(sampe_group_name_str, sample_name_str, component_group_name_str, component_name_str,
+			calculated_concentration_units_str, used__str, time_point_str, calculated_concentration_str))
+		{
+			// parse the .csv file
+			MetabolomicsDatum row;
+			row.sample_group_name = sampe_group_name_str;
+			row.sample_name = sample_name_str;
+
+			// metabolite id cleanup
+			if (component_group_name_str == "Pool_2pg_3pg")
+				component_group_name_str = "2pg";
+			else if (component_group_name_str == "Hexose_Pool_fru_glc-D")
+				component_group_name_str = "glc-D";
+
+			// replace "-" with "__"
+			component_group_name_str = ReplaceTokens(component_group_name_str, { "-" }, "__");
+
+			row.component_group_name = component_group_name_str; // matches the met_id in the biochemical models
+			row.component_name = component_name_str;
+			row.calculated_concentration_units = calculated_concentration_units_str;
+			row.time_point = std::stof(time_point_str);
+			row.used = (used__str == "t") ? true : false;
+			if (calculated_concentration_str != "")
+				row.calculated_concentration = std::stof(calculated_concentration_str);
+			else
+				row.calculated_concentration = 0.0f;
+
+			// build up the map
+			std::vector<MetabolomicsDatum> rows = { row };
+			std::map<std::string, std::vector<MetabolomicsDatum>> replicate;
+			replicate.emplace(component_group_name_str, rows);
+			auto found_in_data = metabolomicsData.emplace(sampe_group_name_str, replicate);
+			if (!found_in_data.second)
+			{
+				auto found_in_component = metabolomicsData.at(sampe_group_name_str).emplace(component_group_name_str, rows);
+				if (!found_in_component.second)
+				{
+					metabolomicsData.at(sampe_group_name_str).at(component_group_name_str).push_back(row);
+				}
+			}
+
+			if (component_group_name_str == "2pg")
+			{
+				row.component_group_name = "3pg";
+				rows = { row };
+				auto found_in_component = metabolomicsData.at(sampe_group_name_str).emplace(row.component_group_name, rows);
+				if (!found_in_component.second)
+				{
+					metabolomicsData.at(sampe_group_name_str).at(row.component_group_name).push_back(row);
+				}
+			}
+		}
+	};
+
+	/*
+	@brief Read in the biochemical reactsion from .csv file
+
+	@param[in] filename
+	@param[in, out] biochemicalReactions
+	**/
+	static void ReadBiochemicalReactions(
+		const std::string& filename,
+		BiochemicalReactions& biochemicalReactions)
+	{
+		io::CSVReader<9, io::trim_chars<' ', '\t'>, io::double_quote_escape<',', '"'>> data_in(filename);
+		data_in.read_header(io::ignore_extra_column,
+			"rxn_id", "rxn_name", "equation", "gpr", "used_",
+			"reactants_stoichiometry", "products_stoichiometry", "reactants_ids", "products_ids");
+		std::string rxn_id_str, rxn_name_str, equation_str, gpr_str, used__str,
+			reactants_stoichiometry_str, products_stoichiometry_str, reactants_ids_str, products_ids_str = "";
+
+		while (data_in.read_row(rxn_id_str, rxn_name_str, equation_str, gpr_str, used__str,
+			reactants_stoichiometry_str, products_stoichiometry_str, reactants_ids_str, products_ids_str))
+		{
+			// parse the .csv file
+			BiochemicalReaction row;
+			row.reaction_name = rxn_name_str;
+			row.reaction_id = rxn_id_str;
+			row.equation = equation_str;
+			row.gpr = gpr_str;
+			row.used = (used__str == "t") ? true : false;
+			row.reactants_ids = SplitString(ReplaceTokens(reactants_ids_str, { "[\{\}]", "_p", "_c", "_e", "_m", "_r" }, ""), ",");
+			row.products_ids = SplitString(ReplaceTokens(products_ids_str, { "[\{\}]", "_p", "_c", "_e", "_m", "_r" }, ""), ",");
+
+			std::vector<std::string> reactants_stoichiometry_vector = SplitString(ReplaceTokens(reactants_stoichiometry_str, { "[\{\}]" }, ""), ",");
+			for (const std::string& int_str : reactants_stoichiometry_vector)
+				if (int_str != "")
+					row.reactants_stoichiometry.push_back(std::stof(int_str));
+			std::vector<std::string> products_stoichiometry_vector = SplitString(ReplaceTokens(products_stoichiometry_str, { "[\{\}]" }, ""), ",");
+			for (const std::string& int_str : products_stoichiometry_vector)
+				if (int_str != "")
+					row.products_stoichiometry.push_back(std::stof(int_str));
+
+			// build up the map
+			auto found_in_data = biochemicalReactions.emplace(rxn_id_str, row);
+			if (!found_in_data.second)
+				biochemicalReactions.at(rxn_id_str) = row;
+		}
+	};
+
+	/*
+	@brief Read in the meta data from .csv file
+
+	@param[in] filename
+	@param[in, out] metaData
+	**/
+	static void ReadMetaData(
+		const std::string& filename,
+		MetaData& metaData)
+	{
+		io::CSVReader<2> data_in(filename);
+		data_in.read_header(io::ignore_extra_column,
+			"sample_group_name", "label");
+		std::string sample_group_name_str, label_str;
+
+		while (data_in.read_row(sample_group_name_str, label_str))
+		{
+			// parse the .csv file
+			MetaDatum row;
+			row.sample_group_name = sample_group_name_str;
+			row.label = label_str;
+
+			// build up the map
+			auto found_in_data = metaData.emplace(sample_group_name_str, row);
+			if (!found_in_data.second)
+				metaData.at(sample_group_name_str) = row;
+		}
+	};
 
 	void readMetabolomicsData(std::string& filename) { ReadMetabolomicsData(filename, metabolomicsData_);}
 	void readBiochemicalReactions(std::string& filename) { ReadBiochemicalReactions(filename, biochemicalReactions_); }
@@ -263,18 +263,27 @@ public:
 		const int n_output_nodes = output_data.dimension(2);
 		const int n_epochs = input_data.dimension(3);
 
+		std::string sample_group_name = sample_group_names_[0];
+		std::vector<float> mars;
+		for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
+			float mar = calculateMAR(metabolomicsData_.at(sample_group_name),
+				biochemicalReactions_.at(reaction_ids_[nodes_iter]));
+			mars.push_back(mar);
+			//std::cout << "OutputNode: "<<nodes_iter<< " = " << mar << std::endl;
+		}
+
 		for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
 			for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
 				for (int epochs_iter = 0; epochs_iter < n_epochs; ++epochs_iter) {
 
 					// pick a random sample group name
 					//std::string sample_group_name = selectRandomElement(sample_group_names_);
-					std::string sample_group_name = sample_group_names_[0];
 
 					for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
-						input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = calculateMAR(
-							metabolomicsData_.at(sample_group_name),
-							biochemicalReactions_.at(reaction_ids_[nodes_iter]));
+						//input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = calculateMAR(
+						//	metabolomicsData_.at(sample_group_name),
+						//	biochemicalReactions_.at(reaction_ids_[nodes_iter]));
+						input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = mars[nodes_iter];
 					}
 
 					// convert the label to a one hot vector
@@ -575,7 +584,7 @@ public:
 		//	std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
 		//	std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
 		//	std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names.size() + n_hidden_1) / 2, 1)),
-		//	std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+		//	std::shared_ptr<SolverOp>(new AdamOp(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 		node_names = model_builder.addFullyConnected(model, "FC1", "FC1", node_names, n_hidden_1,
 			std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()),
 			std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()),
@@ -583,7 +592,7 @@ public:
 			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
 			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
 			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names.size() + n_hidden_1) / 2, 1)),
-			std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+			std::shared_ptr<SolverOp>(new AdamOp(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 		node_names = model_builder.addFullyConnected(model, "FC2", "FC2", node_names, n_hidden_2,
 			std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()),
 			std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()),
@@ -591,7 +600,7 @@ public:
 			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
 			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
 			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names.size() + n_hidden_2) / 2, 1)),
-			std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+			std::shared_ptr<SolverOp>(new AdamOp(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 		//node_names = model_builder.addFullyConnected(model, "FC3", "FC3", node_names, n_hidden_3,
 		//	std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()),
 		//	std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()),
@@ -599,15 +608,17 @@ public:
 		//	std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
 		//	std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
 		//	std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names.size() + n_hidden_3) / 2, 1)),
-		//	std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+		//	std::shared_ptr<SolverOp>(new AdamOp(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 		node_names = model_builder.addFullyConnected(model, "Output", "Output", node_names, n_outputs,
-			std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()),
-			std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()),
+			std::shared_ptr<ActivationOp<float>>(new SigmoidOp<float>()),
+			std::shared_ptr<ActivationOp<float>>(new SigmoidGradOp<float>()),
+			//std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()),
+			//std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()),
 			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
 			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
 			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
 			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names.size() + n_outputs) / 2, 1)),
-			std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+			std::shared_ptr<SolverOp>(new AdamOp(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 
 		//// Add the final softmax layer
 		//node_names = model_builder.addSoftMax(model, "SoftMax", "SoftMax", node_names);
@@ -870,17 +881,17 @@ bool ExportPWData(const std::string& filename, const PWData& pw_data) {
 void main_statistics()
 {
 	// analyses to run
-	bool run_oneVSone = false;
-	bool run_preVSpost = false;
-	bool run_postMinPre = true;
-	std::string blood_fraction = "PLT";
+	bool run_oneVSone = true;
+	bool run_preVSpost = true;
+	bool run_postMinPre = false;
+	std::string blood_fraction = "RBC";
 
 	// define the data simulator
 	MetDataSimClassification metabolomics_data;
 
 	// data dirs
-	std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
-	//std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
+	//std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
+	std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
 	//std::string data_dir = "/home/user/Data/";
 
 	std::string biochem_rxns_filename, metabo_data_filename, meta_data_filename,
@@ -962,6 +973,8 @@ void main_statistics()
 }
 void main_classification()
 {
+	const std::string blood_fraction = "PLT";
+
 	// define the population trainer parameters
 	PopulationTrainerExt population_trainer;
 	population_trainer.setNGenerations(1);
@@ -983,9 +996,26 @@ void main_classification()
 	//std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
 	std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
 	//std::string data_dir = "/home/user/Data/";
-	std::string biochem_rxns_filename = data_dir + "iAB_RBC_283.csv";
-	std::string metabo_data_filename = data_dir + "MetabolomicsData_RBC.csv";
-	std::string meta_data_filename = data_dir + "MetaData_prePost_RBC.csv";
+
+	std::string biochem_rxns_filename, metabo_data_filename, meta_data_filename;
+	if (blood_fraction == "RBC") {
+		// RBC filenames
+		biochem_rxns_filename = data_dir + "iAB_RBC_283.csv";
+		metabo_data_filename = data_dir + "MetabolomicsData_RBC.csv";
+		meta_data_filename = data_dir + "MetaData_prePost_RBC.csv";
+	}
+	else if (blood_fraction == "PLT") {
+		// PLT filenames
+		biochem_rxns_filename = data_dir + "iAT_PLT_636.csv";
+		metabo_data_filename = data_dir + "MetabolomicsData_PLT.csv";
+		meta_data_filename = data_dir + "MetaData_prePost_PLT.csv";
+	}
+	else if (blood_fraction == "P") {
+		// P filenames
+		biochem_rxns_filename = data_dir + "iAB_RBC_283.csv";
+		metabo_data_filename = data_dir + "MetabolomicsData_P.csv";
+		meta_data_filename = data_dir + "MetaData_prePost_P.csv";
+	}
 	metabolomics_data.readBiochemicalReactions(biochem_rxns_filename);
 	metabolomics_data.readMetabolomicsData(metabo_data_filename);
 	metabolomics_data.readMetaData(meta_data_filename);
@@ -1011,8 +1041,12 @@ void main_classification()
 	model_trainer.setNThreads(n_hard_threads); // [TODO: change back to 2!]
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setLogging(true, false);
-	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new BCEWithLogitsOp<float>()) });
-	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new BCEWithLogitsGradOp<float>()) });
+	//model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
+	//model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
+	//model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new BCEWithLogitsOp<float>()) });
+	//model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new BCEWithLogitsGradOp<float>()) });
+	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new CrossEntropyOp<float>()) });
+	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new CrossEntropyGradOp<float>()) });
 	model_trainer.setOutputNodes({ output_nodes });
 
 	// define the model logger

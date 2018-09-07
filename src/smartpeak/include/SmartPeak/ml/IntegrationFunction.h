@@ -261,7 +261,7 @@ public:
 		ProdErrorOp() {};
 		~ProdErrorOp() {};
 		Eigen::Tensor<T, 1> operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_error, const Eigen::Tensor<T, 1>& source_net_input, const Eigen::Tensor<T, 1>& sink_output, const Eigen::Tensor<T, 1>& n) {
-			return (source_net_input * source_error / sink_output).unaryExpr(std::ptr_fun(substituteNanInf<T>)); // Note: was checkNanInf
+			return (source_net_input * source_error / sink_output).unaryExpr(ClipOp<T>(1e-6, -1e-9, 1e9)); // Note: was substituteNanInf
 		};
 		std::string getName() const { return "ProdErrorOp"; };
 	};
@@ -277,7 +277,7 @@ public:
 		~MaxErrorOp() {};
 		Eigen::Tensor<T, 1> operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_error, const Eigen::Tensor<T, 1>& source_net_input, const Eigen::Tensor<T, 1>& sink_output, const Eigen::Tensor<T, 1>& n)
 		{
-			auto perc_max_tensor = (sink_output / source_net_input).unaryExpr(std::ptr_fun(checkNanInf<T>)).unaryExpr([](const T& v) {
+			auto perc_max_tensor = (sink_output / source_net_input).unaryExpr(ClipOp<T>(1e-6, -1e-9, 1e9)).unaryExpr([](const T& v) {
 				if (v < 1 - 1e-3) 
 					return 0;
 				else 
@@ -382,7 +382,7 @@ public:
 		ProdWeightGradOp() { this->setNetWeightError(T(0)); };
 		~ProdWeightGradOp() {};
 		void operator()(const Eigen::Tensor<T, 1>& sink_error, const Eigen::Tensor<T, 1>& source_output, const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_net_input, const Eigen::Tensor<T, 1>& n) {
-			Eigen::Tensor<T, 0> derivative_mean_tensor = ((-sink_error * source_net_input / weight).unaryExpr(std::ptr_fun(substituteNanInf<T>))).mean(); // average derivative
+			Eigen::Tensor<T, 0> derivative_mean_tensor = ((-sink_error * source_net_input / weight).unaryExpr(ClipOp<T>(1e-6, -1e-9, 1e9))).mean(); // average derivative
 			this->net_weight_error_ += derivative_mean_tensor(0);
 		};
 		std::string getName() const { return "ProdWeightGradOp"; };

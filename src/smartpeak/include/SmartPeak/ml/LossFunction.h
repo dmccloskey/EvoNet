@@ -65,7 +65,7 @@ public:
 			const Eigen::Tensor<T, 1>& y_pred,
 			const Eigen::Tensor<T, 1>& y_true) const
 		{
-			return ((y_true - y_pred).pow(2).sqrt()).unaryExpr(std::ptr_fun(substituteNanInf<T>));
+			return ((y_true - y_pred).pow(2).sqrt()).unaryExpr(std::ptr_fun(ClipOp<T>(1e-6, -1e-9, 1e9)));
 		};
   };
 
@@ -96,7 +96,7 @@ public:
 			const Eigen::Tensor<T, 1>& y_pred,
 			const Eigen::Tensor<T, 1>& y_true) const
 		{
-			return ((y_true - y_pred) / ((y_true - y_pred).pow(2).sqrt())).unaryExpr(std::ptr_fun(substituteNanInf<T>));
+			return ((y_true - y_pred) / ((y_true - y_pred).pow(2).sqrt())).unaryExpr(std::ptr_fun(ClipOp<T>(1e-6, -1e-9, 1e9)));
 		};
   };
 
@@ -124,7 +124,7 @@ public:
 		{
 			Eigen::Tensor<T, 1> c((int)y_pred.size());
 			c.setConstant(0.5);
-			return ((y_true - y_pred).pow(2) * c).unaryExpr(std::ptr_fun(substituteNanInf<T>)); // modified to simplify the derivative
+			return ((y_true - y_pred).pow(2) * c).unaryExpr(std::ptr_fun(ClipOp<T>(1e-6, -1e-9, 1e9))); // modified to simplify the derivative
 		};
   };
 
@@ -147,7 +147,7 @@ public:
 			const Eigen::Tensor<T, 1>& y_pred,
 			const Eigen::Tensor<T, 1>& y_true) const
 		{
-			return (y_true - y_pred).unaryExpr(std::ptr_fun(substituteNanInf<T>)); // modified to exclude the 0.5
+			return (y_true - y_pred).unaryExpr(std::ptr_fun(ClipOp<T>(1e-6, -1e-9, 1e9))); // modified to exclude the 0.5
 		};
   };
 
@@ -184,7 +184,7 @@ public:
 		{
 			Eigen::Tensor<T, 1> ones((int)y_pred.size());
 			ones.setConstant(1.0);
-			return (-(y_true * y_pred.log() + (ones - y_true) * (ones - y_pred).log())).unaryExpr(std::ptr_fun(substituteNanInf<T>));
+			return (-(y_true * y_pred.log() + (ones - y_true) * (ones - y_pred).log())).unaryExpr(std::ptr_fun(ClipOp<T>(1e-6, -1e-9, 1e9)));
 		};
   };
 
@@ -216,8 +216,8 @@ public:
 		{
 			Eigen::Tensor<T, 1> ones((int)y_pred.size());
 			ones.setConstant(1.0);
-			//return (-(y_true / y_pred + (ones - y_true) / (ones - y_pred))).unaryExpr(std::ptr_fun(substituteNanInf<T>));
-			return (-(y_pred - y_true) / ((y_pred - ones) * y_pred)).unaryExpr(std::ptr_fun(substituteNanInf<T>));
+			//return (-(y_true / y_pred + (ones - y_true) / (ones - y_pred))).unaryExpr(std::ptr_fun(ClipOp<T>(1e-6, -1e-9, 1e9)));
+			return (-(y_pred - y_true) / ((y_pred - ones) * y_pred)).unaryExpr(std::ptr_fun(ClipOp<T>(1e-6, -1e-9, 1e9)));
 		};
   };
 
@@ -281,7 +281,7 @@ public:
 		{
 			Eigen::Tensor<T, 1> n((int)y_pred.size());
 			n.setConstant(n_);
-			return (-y_true / y_pred.unaryExpr(ClipOp<T>(1e-12, 0, 1)) / n).unaryExpr(std::ptr_fun(checkNanInf<T>));
+			return (-y_true / y_pred.unaryExpr(ClipOp<T>(1e-12, 0, 1)) / n).unaryExpr(ClipOp<T>(1e-6, -1e-9, 1e9));
 		};
 	private:
 		T n_ = 1.0; ///< the number of total classifiers
@@ -315,7 +315,7 @@ public:
 			n.setConstant((int)y_pred.size());
 			Eigen::Tensor<T, 1> c((int)y_pred.size());
 			c.setConstant(0.5);
-			return ((y_true - y_pred).pow(2) * c / n).unaryExpr(std::ptr_fun(substituteNanInf<T>));
+			return ((y_true - y_pred).pow(2) * c / n).unaryExpr(ClipOp<T>(1e-6, -1e-9, 1e9));
 		};
   };
 
@@ -343,7 +343,7 @@ public:
 			Eigen::Tensor<T, 1> n((int)y_pred.size());
 			n.setConstant((int)y_pred.size());
 			Eigen::Tensor<T, 1> result = (y_true - y_pred) / n;
-			return result.unaryExpr(std::ptr_fun(substituteNanInf<T>));
+			return result.unaryExpr(ClipOp<T>(1e-6, -1e-9, 1e9));
 		};
   };
 
@@ -373,7 +373,7 @@ public:
 		{
 			Eigen::Tensor<T, 1> c((int)y_pred.size());
 			c.setConstant(0.5);
-			return (-c + c*y_pred.pow(2)).unaryExpr(std::ptr_fun(substituteNanInf<T>));
+			return (-c + c*y_pred.pow(2)).unaryExpr(std::ptr_fun(ClipOp<T>(1e-6, -1e-9, 1e9)));
 		};
 	};
 
@@ -428,7 +428,7 @@ public:
 		{
 			Eigen::Tensor<T, 1> c((int)y_pred.size());
 			c.setConstant(0.5);
-			return (-c -c*y_pred + c*y_pred.exp()).unaryExpr(std::ptr_fun(substituteNanInf<T>));
+			return (-c -c*y_pred + c*y_pred.exp()).unaryExpr(std::ptr_fun(ClipOp<T>(1e-6, -1e-9, 1e9)));
 		};
 	};
 
@@ -453,7 +453,7 @@ public:
 		{
 			Eigen::Tensor<T, 1> c((int)y_pred.size());
 			c.setConstant(0.5);
-			return (-c + c*y_pred.exp()).unaryExpr(std::ptr_fun(substituteNanInf<T>));
+			return (-c + c*y_pred.exp()).unaryExpr(std::ptr_fun(ClipOp<T>(1e-6, -1e-9, 1e9)));
 		};
 	};
 
@@ -534,7 +534,7 @@ public:
 		{
 			Eigen::Tensor<T, 1> ones((int)y_pred.size());
 			ones.setConstant(1.0);
-			return (-((y_true - ones)*y_pred.exp() + y_true)/(y_pred.exp() + ones)).unaryExpr(std::ptr_fun(substituteNanInf<T>));
+			return (-((y_true - ones)*y_pred.exp() + y_true)/(y_pred.exp() + ones)).unaryExpr(ClipOp<T>(1e-6, -1e-9, 1e9));
 		};
 	};
 

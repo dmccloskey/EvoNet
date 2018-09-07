@@ -18,18 +18,34 @@ namespace SmartPeak
   class ActivationOp
   {
 public: 
-    ActivationOp(){};  
-    ~ActivationOp(){};
+    ActivationOp() = default;  
+		ActivationOp(const T& eps, const T& min, const T& max) : eps_(eps), min_(min), max_(max) {};
+    ~ActivationOp() = default;
     virtual std::string getName() const = 0;
     // virtual T operator()() const = 0;
     virtual T operator()(const T& x_I) const = 0;
 		T substituteNanInf(const T& x) const		
 		{
-			if (x == std::numeric_limits<T>::infinity()) { return T(1e24); }
-			else if (x == -std::numeric_limits<T>::infinity()) { return T(-1e24); }
+			if (x == std::numeric_limits<T>::infinity()) { return T(1e9); }
+			else if (x == -std::numeric_limits<T>::infinity()) { return T(-1e9); }
 			else if (std::isnan(x)) { return T(0); }
 			else { return x; }			
 		}
+		T clip(const T& x) const
+		{
+			if (x < min_ + eps_)
+				return min_ + eps_;
+			else if (x > max_ - eps_)
+				return max_ - eps_;
+			else if (std::isnan(x))
+				return min_ + eps_;
+			else
+				return x;
+		}
+	private:
+		T eps_ = 1e-12; ///< threshold to clip between min and max
+		T min_ = -1e-9;
+		T max_ = 1e9;
   };
 
   /**
