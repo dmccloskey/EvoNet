@@ -105,16 +105,16 @@ namespace SmartPeak
 	@returns an integer tensor where all rows have been expanded
 		across the columns with the one hot encoding 
 	*/
-	template<typename T>
-	Eigen::Tensor<T, 2> OneHotEncoder(const Eigen::Tensor<T, 2>& data, const std::vector<T>& all_possible_values)
+	template<typename Ta, typename Tb>
+	Eigen::Tensor<Tb, 2> OneHotEncoder(const Eigen::Tensor<Ta, 2>& data, const std::vector<Ta>& all_possible_values)
 	{
 		// integer encode input data
-		std::map<T, int> T_to_int;
+		std::map<Ta, int> T_to_int;
 		for (int i = 0; i<all_possible_values.size(); ++i)
 			T_to_int.emplace(all_possible_values[i], i);
 
 		// convert to 1 hot vector
-		Eigen::Tensor<T, 2> onehot_encoded(data.dimension(0), (int)T_to_int.size());
+		Eigen::Tensor<Tb, 2> onehot_encoded(data.dimension(0), (int)T_to_int.size());
 		onehot_encoded.setZero();
 		for (int i = 0; i<data.dimension(0); ++i)
 			onehot_encoded(i, T_to_int.at(data(i, 0))) = 1;
@@ -130,16 +130,16 @@ namespace SmartPeak
 
 	@returns an integer tensor with the one hot encoding
 	*/
-	template<typename T>
-	Eigen::Tensor<int, 1> OneHotEncoder(const T& data, const std::vector<T>& all_possible_values)
+	template<typename Ta, typename Tb>
+	Eigen::Tensor<Tb, 1> OneHotEncoder(const Ta& data, const std::vector<Ta>& all_possible_values)
 	{
 		// integer encode input data
-		std::map<T, int> T_to_int;
+		std::map<Ta, int> T_to_int;
 		for (int i = 0; i<all_possible_values.size(); ++i)
 			T_to_int.emplace(all_possible_values[i], i);
 
 		// convert to 1 hot vector
-		Eigen::Tensor<int, 1> onehot_encoded(T_to_int.size());
+		Eigen::Tensor<Tb, 1> onehot_encoded(T_to_int.size());
 		onehot_encoded.setConstant(0);
 		onehot_encoded(T_to_int.at(data)) = 1;
 

@@ -611,8 +611,8 @@ BOOST_AUTO_TEST_CASE(operationfunctionPowOp)
 	BOOST_CHECK_CLOSE(operation(0.0), 0.0, 1e-6);
 	BOOST_CHECK_CLOSE(operation(1.0), 1.0, 1e-6);
 	BOOST_CHECK_CLOSE(operation(10.0), 3.1622776601683795, 1e-6);
-	BOOST_CHECK_CLOSE(operation(-1.0), 0.0, 1e-6);
-	BOOST_CHECK_CLOSE(operation(-10.0), 0.0, 1e-6);
+	BOOST_CHECK_CLOSE(operation(-1.0), -1.0e9, 1e-6);
+	BOOST_CHECK_CLOSE(operation(-10.0), -1.0e9, 1e-6);
 }
 
 BOOST_AUTO_TEST_CASE(getNamePowOp)
@@ -643,11 +643,11 @@ BOOST_AUTO_TEST_CASE(operationfunctionPowGradOp)
 {
 	PowGradOp<double> operation(0.5);
 
-	BOOST_CHECK_CLOSE(operation(0.0), 1.0e24, 1e-6);
+	BOOST_CHECK_CLOSE(operation(0.0), 1.0e9, 1e-6);
 	BOOST_CHECK_CLOSE(operation(1.0), 0.5, 1e-6);
 	BOOST_CHECK_CLOSE(operation(10.0), 0.15811388300841897, 1e-6);
-	BOOST_CHECK_CLOSE(operation(-1.0), 0.0, 1e-6);
-	BOOST_CHECK_CLOSE(operation(-10.0), 0.0, 1e-6);
+	BOOST_CHECK_CLOSE(operation(-1.0), -1.0e9, 1e-6);
+	BOOST_CHECK_CLOSE(operation(-10.0), -1.0e9, 1e-6);
 }
 
 BOOST_AUTO_TEST_CASE(getNamePowGradOp)

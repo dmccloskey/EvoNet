@@ -110,7 +110,7 @@ public:
 			ReadMNIST<float>(filename_labels, labels, true);
 
 			// Convert labels to 1 hot encoding [BUG FREE]
-			Eigen::Tensor<float, 2> labels_encoded = OneHotEncoder<float>(labels, mnist_labels);
+			Eigen::Tensor<float, 2> labels_encoded = OneHotEncoder<float, float>(labels, mnist_labels);
 
 			if (is_training)
 			{

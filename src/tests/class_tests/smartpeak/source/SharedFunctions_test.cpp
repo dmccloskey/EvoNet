@@ -97,8 +97,8 @@ BOOST_AUTO_TEST_CASE(SFsubstituteNanInf)
 	values(2) = -INFINITY; //infinity
 	test = values.unaryExpr(std::ptr_fun(substituteNanInf<float>));
 	BOOST_CHECK_CLOSE(test(0), 0.0, 1e-3);
-	BOOST_CHECK_CLOSE(test(1), 1e24, 1e-3);
-	BOOST_CHECK_CLOSE(test(2), -1e24, 1e-3);
+	BOOST_CHECK_CLOSE(test(1), 1e9, 1e-3);
+	BOOST_CHECK_CLOSE(test(2), -1e9, 1e-3);
 }
 
 BOOST_AUTO_TEST_CASE(SFClipOp)

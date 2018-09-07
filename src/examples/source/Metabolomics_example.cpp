@@ -280,14 +280,15 @@ public:
 					//std::string sample_group_name = selectRandomElement(sample_group_names_);
 
 					for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
-						//input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = calculateMAR(
-						//	metabolomicsData_.at(sample_group_name),
-						//	biochemicalReactions_.at(reaction_ids_[nodes_iter]));
-						input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = mars[nodes_iter];
+						input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = calculateMAR(
+							metabolomicsData_.at(sample_group_name),
+							biochemicalReactions_.at(reaction_ids_[nodes_iter]));
+						//input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = mars[nodes_iter];
 					}
 
 					// convert the label to a one hot vector
-					Eigen::Tensor<int, 1> one_hot_vec = OneHotEncoder<std::string>(metaData_.at(sample_group_name).label, labels_);
+					Eigen::Tensor<float, 1> one_hot_vec = OneHotEncoder<std::string, float>(metaData_.at(sample_group_name).label, labels_);
+					one_hot_vec = one_hot_vec.unaryExpr(LabelSmoother<float>(0.01, 0.01));
 
 					for (int nodes_iter = 0; nodes_iter < n_output_nodes; ++nodes_iter) {
 						output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = one_hot_vec(nodes_iter);
@@ -578,42 +579,42 @@ public:
 
 		// Add the hidden layers
 		//node_names = model_builder.addFullyConnected(model, "FC0", "FC0", node_names, n_hidden_0,
-		//	std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()),
-		//	std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()),
+		//	std::shared_ptr<ActivationOp<float>>(new LeakyReLUOp<float>()),
+		//	std::shared_ptr<ActivationOp<float>>(new LeakyReLUGradOp<float>()),
 		//	std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
 		//	std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
 		//	std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
 		//	std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names.size() + n_hidden_1) / 2, 1)),
 		//	std::shared_ptr<SolverOp>(new AdamOp(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 		node_names = model_builder.addFullyConnected(model, "FC1", "FC1", node_names, n_hidden_1,
-			std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()),
-			std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()),
+			std::shared_ptr<ActivationOp<float>>(new LeakyReLUOp<float>()),
+			std::shared_ptr<ActivationOp<float>>(new LeakyReLUGradOp<float>()),
 			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
 			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
 			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
 			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names.size() + n_hidden_1) / 2, 1)),
 			std::shared_ptr<SolverOp>(new AdamOp(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 		node_names = model_builder.addFullyConnected(model, "FC2", "FC2", node_names, n_hidden_2,
-			std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()),
-			std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()),
+			std::shared_ptr<ActivationOp<float>>(new LeakyReLUOp<float>()),
+			std::shared_ptr<ActivationOp<float>>(new LeakyReLUGradOp<float>()),
 			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
 			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
 			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
 			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names.size() + n_hidden_2) / 2, 1)),
 			std::shared_ptr<SolverOp>(new AdamOp(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 		//node_names = model_builder.addFullyConnected(model, "FC3", "FC3", node_names, n_hidden_3,
-		//	std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()),
-		//	std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()),
+		//	std::shared_ptr<ActivationOp<float>>(new LeakyReLUOp<float>()),
+		//	std::shared_ptr<ActivationOp<float>>(new LeakyReLUGradOp<float>()),
 		//	std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
 		//	std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
 		//	std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
 		//	std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names.size() + n_hidden_3) / 2, 1)),
 		//	std::shared_ptr<SolverOp>(new AdamOp(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 		node_names = model_builder.addFullyConnected(model, "Output", "Output", node_names, n_outputs,
-			std::shared_ptr<ActivationOp<float>>(new SigmoidOp<float>()),
-			std::shared_ptr<ActivationOp<float>>(new SigmoidGradOp<float>()),
-			//std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()),
-			//std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()),
+			//std::shared_ptr<ActivationOp<float>>(new SigmoidOp<float>()),
+			//std::shared_ptr<ActivationOp<float>>(new SigmoidGradOp<float>()),
+			std::shared_ptr<ActivationOp<float>>(new LeakyReLUOp<float>()),
+			std::shared_ptr<ActivationOp<float>>(new LeakyReLUGradOp<float>()),
 			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
 			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
 			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
@@ -1043,10 +1044,10 @@ void main_classification()
 	model_trainer.setLogging(true, false);
 	//model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
 	//model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
-	//model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new BCEWithLogitsOp<float>()) });
-	//model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new BCEWithLogitsGradOp<float>()) });
-	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new CrossEntropyOp<float>()) });
-	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new CrossEntropyGradOp<float>()) });
+	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new BCEWithLogitsOp<float>()) });
+	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new BCEWithLogitsGradOp<float>()) });
+	//model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new CrossEntropyOp<float>()) });
+	//model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new CrossEntropyGradOp<float>()) });
 	model_trainer.setOutputNodes({ output_nodes });
 
 	// define the model logger

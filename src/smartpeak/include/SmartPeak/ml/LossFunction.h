@@ -18,14 +18,17 @@ namespace SmartPeak
 	class LossFunctionOp
 	{
 	public:
-		LossFunctionOp() {};
-		~LossFunctionOp() {};
+		LossFunctionOp() = default;
+		LossFunctionOp(const T& eps) : eps_(eps) {};
+		~LossFunctionOp() = default;
 		virtual Eigen::Tensor<T, 1> operator()(
 			const Eigen::Tensor<T, 2>& y_pred,
 			const Eigen::Tensor<T, 2>& y_true) const = 0;
 		virtual Eigen::Tensor<T, 1> operator()(
 			const Eigen::Tensor<T, 1>& y_pred,
 			const Eigen::Tensor<T, 1>& y_true) const = 0;
+	protected:
+		T eps_ = 1e-6;
 	};
 
 	/**
@@ -35,14 +38,17 @@ namespace SmartPeak
 	class LossFunctionGradOp
 	{
 	public:
-		LossFunctionGradOp() {};
-		~LossFunctionGradOp() {};
+		LossFunctionGradOp() = default;
+		LossFunctionGradOp(const T& eps) : eps_(eps) {};
+		~LossFunctionGradOp() = default;
 		virtual Eigen::Tensor<T, 2> operator()(
 			const Eigen::Tensor<T, 2>& y_pred,
 			const Eigen::Tensor<T, 2>& y_true) const = 0;
 		virtual Eigen::Tensor<T, 1> operator()(
 			const Eigen::Tensor<T, 1>& y_pred,
 			const Eigen::Tensor<T, 1>& y_true) const = 0;
+	protected:
+		T eps_ = 1e-6;
 	};
 
   /**
@@ -176,7 +182,7 @@ public:
       const Eigen::Tensor<float, 1>::Dimensions dims1({1}); // sum along nodes
       Eigen::Tensor<T, 2> ones(y_pred.dimensions()[0], y_pred.dimensions()[1]);
       ones.setConstant(1.0);
-      return -(y_true * y_pred.log() + (ones - y_true) * (ones - y_pred).log()).sum(dims1);
+      return -(y_true * (y_pred + this->eps_).log() + (ones - y_true) * (ones - (y_pred - this->eps_)).log()).sum(dims1);
     };
 		Eigen::Tensor<T, 1> operator()(
 			const Eigen::Tensor<T, 1>& y_pred,
@@ -184,7 +190,7 @@ public:
 		{
 			Eigen::Tensor<T, 1> ones((int)y_pred.size());
 			ones.setConstant(1.0);
-			return (-(y_true * y_pred.log() + (ones - y_true) * (ones - y_pred).log())).unaryExpr(ClipOp<T>(1e-6, -1e9, 1e9));
+			return (-(y_true * (y_pred + this->eps_).log() + (ones - y_true) * (ones - (y_pred - this->eps_)).log())).unaryExpr(ClipOp<T>(1e-6, -1e9, 1e9));
 		};
   };
 
@@ -217,7 +223,7 @@ public:
 			Eigen::Tensor<T, 1> ones((int)y_pred.size());
 			ones.setConstant(1.0);
 			//return (-(y_true / y_pred + (ones - y_true) / (ones - y_pred))).unaryExpr(ClipOp<T>(1e-6, -1e9, 1e9));
-			return (-(y_pred - y_true) / ((y_pred - ones) * y_pred)).unaryExpr(ClipOp<T>(1e-6, -1e9, 1e9));
+			return (-(y_pred - y_true) / ((y_pred - this->eps_ - ones) * y_pred)).unaryExpr(ClipOp<T>(1e-6, -1e9, 1e9));
 		};
   };
 
@@ -534,7 +540,7 @@ public:
 		{
 			Eigen::Tensor<T, 1> ones((int)y_pred.size());
 			ones.setConstant(1.0);
-			return (-((y_true - ones)*y_pred.exp() + y_true)/(y_pred.exp() + ones)).unaryExpr(ClipOp<T>(1e-6, -1e9, 1e9));
+			return -((y_true - ones)*y_pred.exp().unaryExpr(ClipOp<T>(1e-6, 0, 1e9)) + y_true)/(y_pred.exp().unaryExpr(ClipOp<T>(1e-6, 0, 1e9)) + ones);
 		};
 	};
 
