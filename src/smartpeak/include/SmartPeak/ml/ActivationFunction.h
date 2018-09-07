@@ -44,7 +44,7 @@ public:
 		}
 	private:
 		T eps_ = 1e-12; ///< threshold to clip between min and max
-		T min_ = -1e-9;
+		T min_ = -1e9;
 		T max_ = 1e9;
   };
 
@@ -99,7 +99,7 @@ public:
     ELUOp(){}; 
     ELUOp(const T& alpha): alpha_(alpha){}; 
     ~ELUOp(){};
-    T operator()(const T& x_I) const { return this->substituteNanInf((x_I > 0.0) ? x_I : alpha_ * (std::exp(x_I) - 1)); };
+    T operator()(const T& x_I) const { return this->clip((x_I > 0.0) ? x_I : alpha_ * (std::exp(x_I) - 1)); };
     void setAlpha(const T& alpha) { alpha_ = alpha; };
     T getAlpha() const { return alpha_; };
     std::string getName() const{return "ELUOp";};
@@ -143,7 +143,7 @@ private:
 public: 
     SigmoidOp(){}; 
     ~SigmoidOp(){};
-    T operator()(const T& x_I) const { return this->substituteNanInf(1 / (1 + std::exp(-x_I))); };
+    T operator()(const T& x_I) const { return this->clip(1 / (1 + std::exp(-x_I))); };
     std::string getName() const{return "SigmoidOp";};
   };
 
@@ -189,7 +189,7 @@ public:
     T operator()(const T& x_I) const
     {
 			const T x_new = 1 - std::pow(std::tanh(x_I), 2);
-      return this->substituteNanInf(x_new);
+      return this->clip(x_new);
     };
     std::string getName() const{return "TanHGradOp";};
   };
@@ -205,7 +205,7 @@ public:
     ~ReTanHOp(){};
     T operator()(const T& x_I) const
     { 
-      return this->substituteNanInf((x_I > 0.0) ? (std::exp(x_I) - std::exp(-x_I)) / (std::exp(x_I) + std::exp(-x_I)) : 0.0);
+      return this->clip((x_I > 0.0) ? (std::exp(x_I) - std::exp(-x_I)) / (std::exp(x_I) + std::exp(-x_I)) : 0.0);
     };
     std::string getName() const{return "ReTanHOp";};
   };
@@ -223,7 +223,7 @@ public:
     {
       SmartPeak::ReTanHOp<T> tanhop;
 			T x_new = (x_I > 0.0) ? 1 - std::pow(tanhop(x_I), 2) : 0.0;
-      return this->substituteNanInf(x_new);
+      return this->clip(x_new);
     };
     std::string getName() const{return "ReTanHGradOp";};
   };
@@ -271,7 +271,7 @@ public:
 		~InverseOp() {};
 		T operator()(const T& x_I) const
 		{
-			return this->substituteNanInf(x_I != 0.0 ? 1 / x_I : 0.0);
+			return this->clip(x_I != 0.0 ? 1 / x_I : 0.0);
 		};
 		std::string getName() const { return "InverseOp"; };
 	};
@@ -287,7 +287,7 @@ public:
 		~InverseGradOp() {};
 		T operator()(const T& x_I) const
 		{
-			return this->substituteNanInf(x_I != 0.0 ? -1 / std::pow(x_I, 2) : 0.0);
+			return this->clip(x_I != 0.0 ? -1 / std::pow(x_I, 2) : 0.0);
 		};
 		std::string getName() const { return "InverseGradOp"; };
 	};
@@ -303,7 +303,7 @@ public:
 		~ExponentialOp() {};
 		T operator()(const T& x_I) const
 		{
-			return this->substituteNanInf(std::exp(x_I));
+			return this->clip(std::exp(x_I));
 		};
 		std::string getName() const { return "ExponentialOp"; };
 	};
@@ -319,7 +319,7 @@ public:
 		~ExponentialGradOp() {};
 		T operator()(const T& x_I) const
 		{
-			return this->substituteNanInf(std::exp(x_I));
+			return this->clip(std::exp(x_I));
 		};
 		std::string getName() const { return "ExponentialGradOp"; };
 	};
@@ -335,7 +335,7 @@ public:
 		~LogOp() {};
 		T operator()(const T& x_I) const
 		{
-			return this->substituteNanInf(std::log(x_I));
+			return this->clip(std::log(x_I));
 		};
 		std::string getName() const { return "LogOp"; };
 	};
@@ -351,7 +351,7 @@ public:
 		~LogGradOp() {};
 		T operator()(const T& x_I) const
 		{
-			return this->substituteNanInf(1/x_I);
+			return this->clip(1/x_I);
 		};
 		std::string getName() const { return "LogGradOp"; };
 	};
@@ -367,7 +367,7 @@ public:
 		~PowOp() {};
 		T operator()(const T& x_I) const
 		{
-			return this->substituteNanInf(std::pow(x_I, base_));
+			return this->clip(std::pow(x_I, base_));
 		};
 		std::string getName() const { return "PowOp"; };
 	private:
@@ -385,7 +385,7 @@ public:
 		~PowGradOp() {};
 		T operator()(const T& x_I) const
 		{
-			return this->substituteNanInf(base_ * std::pow(x_I, base_ - 1));
+			return this->clip(base_ * std::pow(x_I, base_ - 1));
 		};
 		std::string getName() const { return "PowGradOp"; };
 	private:
