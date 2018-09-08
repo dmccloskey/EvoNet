@@ -885,15 +885,15 @@ void main_statistics()
 	bool run_oneVSone = true;
 	bool run_preVSpost = true;
 	bool run_postMinPre = false;
-	std::string blood_fraction = "RBC";
+	std::string blood_fraction = "P";
 
 	// define the data simulator
 	MetDataSimClassification metabolomics_data;
 
 	// data dirs
 	//std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
-	std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
-	//std::string data_dir = "/home/user/Data/";
+	//std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
+	std::string data_dir = "/home/user/Data/";
 
 	std::string biochem_rxns_filename, metabo_data_filename, meta_data_filename,
 		oneVSonePre_filename, oneVSonePost_filename, preVSpost_filename, postMinPre_filename;
@@ -1182,8 +1182,8 @@ void main_reconstruction()
 // Main
 int main(int argc, char** argv)
 {
-	//main_statistics();
-	main_classification();
+	main_statistics();
+	//main_classification();
 	//main_reconstruction();
 	return 0;
 }
