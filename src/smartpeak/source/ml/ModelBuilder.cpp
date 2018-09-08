@@ -3,6 +3,9 @@
 #include <SmartPeak/ml/ModelBuilder.h>
 #include <SmartPeak/core/Preprocessing.h>
 
+#define maxFunc(a,b)            (((a) > (b)) ? (a) : (b))
+#define minFunc(a,b)            (((a) < (b)) ? (a) : (b))
+
 namespace SmartPeak
 {
 	std::vector<std::string> ModelBuilder::addInputNodes(Model & model, const std::string & name, const int & n_nodes)
@@ -332,9 +335,9 @@ namespace SmartPeak
 
 			// offset the starting width filter for the input zero padding
 			int filter_width_offset_start_tmp = input_width_zero_padding - stride * width_stride_iter;
-			int filter_width_offset_start = max(filter_width_offset_start_tmp, 0);
+			int filter_width_offset_start = maxFunc(filter_width_offset_start_tmp, 0);
 			int filter_width_offset_end_tmp = - input_width_zero_padding + stride * strides_width - stride * width_stride_iter + extent_width;
-			int filter_width_offset_end = min(filter_width_offset_end_tmp, extent_width);
+			int filter_width_offset_end = minFunc(filter_width_offset_end_tmp, extent_width);
 
 			int output_height_iter = 0;
 			for (size_t height_stride_iter = 0; height_stride_iter < strides_height; ++height_stride_iter) {
