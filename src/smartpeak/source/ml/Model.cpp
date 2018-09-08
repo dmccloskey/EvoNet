@@ -97,6 +97,15 @@ namespace SmartPeak
 	{
 		return output_nodes_;
 	}
+	std::vector<std::string> Model::getOutputNodeNames() const
+	{
+		std::vector<std::string> nodes;
+		for (const auto& node : output_nodes_)
+		{
+			nodes.push_back(node->getName());
+		}
+		return nodes;
+	}
 
   void Model::addNodes(const std::vector<Node>& nodes)
   { 

@@ -214,21 +214,21 @@ BOOST_AUTO_TEST_CASE(operationfunctionL2NormGradOp2)
 */ 
 BOOST_AUTO_TEST_CASE(constructorCrossEntropyOp) 
 {
-  CrossEntropyOp<double>* ptrCrossEntropy = nullptr;
-  CrossEntropyOp<double>* nullPointerCrossEntropy = nullptr;
+  BCEOp<double>* ptrCrossEntropy = nullptr;
+  BCEOp<double>* nullPointerCrossEntropy = nullptr;
   BOOST_CHECK_EQUAL(ptrCrossEntropy, nullPointerCrossEntropy);
 }
 
 BOOST_AUTO_TEST_CASE(destructorCrossEntropyOp) 
 {
-  CrossEntropyOp<double>* ptrCrossEntropy = nullptr;
-	ptrCrossEntropy = new CrossEntropyOp<double>();
+  BCEOp<double>* ptrCrossEntropy = nullptr;
+	ptrCrossEntropy = new BCEOp<double>();
   delete ptrCrossEntropy;
 }
 
 BOOST_AUTO_TEST_CASE(operationfunctionCrossEntropyOp1) 
 {
-  CrossEntropyOp<float> operation;
+  BCEOp<float> operation;
 
   const int outputs = 4;
   const int batch_size = 2;
@@ -244,7 +244,7 @@ BOOST_AUTO_TEST_CASE(operationfunctionCrossEntropyOp1)
 
 BOOST_AUTO_TEST_CASE(operationfunctionCrossEntropyOp2)
 {
-	CrossEntropyOp<float> operation;
+	BCEOp<float> operation;
 
 	const int batch_size = 2;
 	Eigen::Tensor<float, 1> y_true(batch_size);
@@ -262,21 +262,21 @@ BOOST_AUTO_TEST_CASE(operationfunctionCrossEntropyOp2)
 */ 
 BOOST_AUTO_TEST_CASE(constructorCrossEntropyGradOp) 
 {
-  CrossEntropyGradOp<double>* ptrCrossEntropy = nullptr;
-  CrossEntropyGradOp<double>* nullPointerCrossEntropy = nullptr;
+  BCEGradOp<double>* ptrCrossEntropy = nullptr;
+  BCEGradOp<double>* nullPointerCrossEntropy = nullptr;
   BOOST_CHECK_EQUAL(ptrCrossEntropy, nullPointerCrossEntropy);
 }
 
 BOOST_AUTO_TEST_CASE(destructorCrossEntropyGradOp) 
 {
-  CrossEntropyGradOp<double>* ptrCrossEntropy = nullptr;
-	ptrCrossEntropy = new CrossEntropyGradOp<double>();
+  BCEGradOp<double>* ptrCrossEntropy = nullptr;
+	ptrCrossEntropy = new BCEGradOp<double>();
   delete ptrCrossEntropy;
 }
 
 BOOST_AUTO_TEST_CASE(operationfunctionCrossEntropyGradOp1) 
 {
-  CrossEntropyGradOp<float> operation;
+  BCEGradOp<float> operation;
 
   const int outputs = 4;
   const int batch_size = 2;
@@ -298,7 +298,7 @@ BOOST_AUTO_TEST_CASE(operationfunctionCrossEntropyGradOp1)
 
 BOOST_AUTO_TEST_CASE(operationfunctionCrossEntropyGradOp2)
 {
-	CrossEntropyGradOp<float> operation;
+	BCEGradOp<float> operation;
 
 	const int batch_size = 2;
 	Eigen::Tensor<float, 1> y_true(batch_size);

@@ -538,6 +538,7 @@ public:
 
 		std::vector<std::shared_ptr<Node>> getInputNodes(); ///< input_node getter
 		std::vector<std::shared_ptr<Node>> getOutputNodes(); ///< output_node getter
+		std::vector<std::string> getOutputNodeNames() const;
  
     /**
       @brief Add new links to the model.

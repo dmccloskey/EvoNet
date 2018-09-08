@@ -158,14 +158,14 @@ public:
   };
 
   /**
-    @brief CrossEntropy loss function.
+    @brief Binary Cross Entropy loss function.
   */
   template<typename T>
-  class CrossEntropyOp : public LossFunctionOp<T>
+  class BCEOp : public LossFunctionOp<T>
   {
 public: 
-    CrossEntropyOp(){}; 
-    ~CrossEntropyOp(){};
+    BCEOp(){}; 
+    ~BCEOp(){};
     Eigen::Tensor<T, 1> operator()(
       const Eigen::Tensor<T, 2>& y_pred, 
       const Eigen::Tensor<T, 2>& y_true) const 
@@ -195,18 +195,18 @@ public:
   };
 
   /**
-    @brief CrossEntropy loss function gradient.
+    @brief Binary Cross Entropy loss function gradient.
 
 	The derivative of -(z * log(x) + (1 - z)*log(1-x)) is the following
 		= (1-z)/(1-x) - z/x
 		= -(x-z)/((x-1)*x)
   */
   template<typename T>
-  class CrossEntropyGradOp : public LossFunctionGradOp<T>
+  class BCEGradOp : public LossFunctionGradOp<T>
   {
 public: 
-    CrossEntropyGradOp(){}; 
-    ~CrossEntropyGradOp(){};
+    BCEGradOp(){}; 
+    ~BCEGradOp(){};
     Eigen::Tensor<T, 2> operator()(
       const Eigen::Tensor<T, 2>& y_pred, 
       const Eigen::Tensor<T, 2>& y_true) const 

@@ -3,6 +3,7 @@
 #include <SmartPeak/ml/ModelLogger.h>
 #include <ctime> // time format
 #include <chrono> // current time
+#include <set>
 
 namespace SmartPeak
 {
@@ -125,10 +126,19 @@ namespace SmartPeak
 		int batch_size = bmsizes.first;
 		int memory_size = bmsizes.second - 1;
 
+		// collect the model output node names with the specified node names
+		// and remove duplicates if they are duplicated
+		std::set<std::string> output_node_names_set;
+		for (const std::string& node_name : model.getOutputNodeNames())
+			output_node_names_set.insert(node_name);
+		for (const std::string& node_name : output_node_names)
+			output_node_names_set.insert(node_name);
+		std::vector<std::string> output_node_names_all(output_node_names_set.begin(), output_node_names_set.end());
+
 		// writer header
 		if (log_expected_predicted_epoch_csvwriter_.getLineCount() == 0) {
 			std::vector<std::string> headers = { "Epoch" };
-			for (const std::string& node_name : output_node_names) {
+			for (const std::string& node_name : output_node_names_all) {
 				for (size_t batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
 					for (size_t memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
 						std::string predicted = node_name + "_Predicted_Batch-" + std::to_string(batch_iter) + "_Memory-" + std::to_string(memory_iter);
@@ -144,7 +154,7 @@ namespace SmartPeak
 		// write next entry
 		std::vector<std::string> line = { std::to_string(n_epoch) };
 		int node_cnt = 0;
-		for (const std::string& node_name : output_node_names) {
+		for (const std::string& node_name : output_node_names_all) {
 			for (size_t batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
 				for (size_t memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
 					int next_time_step = expected_values.dimension(1) - 1 - memory_iter;

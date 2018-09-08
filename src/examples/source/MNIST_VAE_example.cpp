@@ -43,8 +43,8 @@ public:
 		Model model;
 		model.setId(0);
 		model.setName("VAE");
-		model.setLossFunction(std::shared_ptr<LossFunctionOp<float>>(new CrossEntropyOp<float>()));
-		model.setLossFunctionGrad(std::shared_ptr<LossFunctionGradOp<float>>(new CrossEntropyGradOp<float>()));
+		model.setLossFunction(std::shared_ptr<LossFunctionOp<float>>(new BCEOp<float>()));
+		model.setLossFunctionGrad(std::shared_ptr<LossFunctionGradOp<float>>(new BCEGradOp<float>()));
 
 		ModelBuilder model_builder;
 
