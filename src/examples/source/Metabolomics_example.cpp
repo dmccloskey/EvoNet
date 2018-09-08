@@ -924,7 +924,7 @@ void main_statistics()
 	}
 	else if (blood_fraction == "P") {
 		// P filenames
-		 biochem_rxns_filename = data_dir + "iAB_RBC_283.csv";
+		 biochem_rxns_filename = data_dir + "iAT_PLT_636.csv";
 		 metabo_data_filename = data_dir + "MetabolomicsData_P.csv";
 		 meta_data_filename = data_dir + "MetaData_prePost_P.csv";
 		 oneVSonePre_filename = data_dir + "P_oneVSonePre.csv";
@@ -994,8 +994,8 @@ void main_classification()
 
 	// define the data simulator
 	MetDataSimClassification metabolomics_data;
-	//std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
-	std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
+	std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
+	//std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
 	//std::string data_dir = "/home/user/Data/";
 
 	std::string biochem_rxns_filename, metabo_data_filename, meta_data_filename;
