@@ -148,7 +148,7 @@ public:
 			return (this->net_node_input_  - (ex_ * ex_)/ n)/n; }
 		void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>&source_output) {
 			auto input = weight * source_output;
-			if (n_ == 0)
+			if (this->n_ == 0)
 				k_ = input;
 			auto input_k = input - k_;
 			ex_ += input_k;
