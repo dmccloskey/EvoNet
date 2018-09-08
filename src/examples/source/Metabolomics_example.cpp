@@ -879,14 +879,8 @@ bool ExportPWData(const std::string& filename, const PWData& pw_data) {
 }
 
 // Scripts to run
-void main_statistics()
+void main_statistics(std::string blood_fraction = "PLT", bool run_oneVSone = true, bool run_preVSpost = true, bool run_postMinPre = false)
 {
-	// analyses to run
-	bool run_oneVSone = true;
-	bool run_preVSpost = true;
-	bool run_postMinPre = false;
-	std::string blood_fraction = "P";
-
 	// define the data simulator
 	MetDataSimClassification metabolomics_data;
 
@@ -1182,7 +1176,9 @@ void main_reconstruction()
 // Main
 int main(int argc, char** argv)
 {
-	main_statistics();
+	main_statistics("PLT");
+	main_statistics("RBC");
+	main_statistics("P");
 	//main_classification();
 	//main_reconstruction();
 	return 0;
