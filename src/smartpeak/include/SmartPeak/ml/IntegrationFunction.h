@@ -261,7 +261,7 @@ public:
 		ProdErrorOp() {};
 		~ProdErrorOp() {};
 		Eigen::Tensor<T, 1> operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_error, const Eigen::Tensor<T, 1>& source_net_input, const Eigen::Tensor<T, 1>& sink_output, const Eigen::Tensor<T, 1>& n) {
-			return (source_net_input * source_error / sink_output).unaryExpr(ClipOp<T>(1e-6, -1e9, 1e9)); // Note: was substituteNanInf
+			return (source_net_input * source_error / sink_output).unaryExpr(ClipOp<T>(1e-6, -1e9, 1e9)).unaryExpr(std::ptr_fun(checkNan<T>)); // Note: was substituteNanInf
 		};
 		std::string getName() const { return "ProdErrorOp"; };
 	};

@@ -253,8 +253,8 @@ BOOST_AUTO_TEST_CASE(operationfunctionCrossEntropyOp2)
 	y_pred.setValues({ 0.1f, 0.9f });
 
 	Eigen::Tensor<float, 1> error = operation(y_pred, y_true);
-	BOOST_CHECK_CLOSE(error(0), 2.30258512, 1e-6);
-	BOOST_CHECK_CLOSE(error(1), 0.105360545, 1e-6);
+	BOOST_CHECK_CLOSE(error(0), 2.30257511, 1e-6);
+	BOOST_CHECK_CLOSE(error(1), 0.10535942, 1e-6);
 }
 
 /**
@@ -307,8 +307,8 @@ BOOST_AUTO_TEST_CASE(operationfunctionCrossEntropyGradOp2)
 	y_pred.setValues({ 0.1f, 0.9f });
 
 	Eigen::Tensor<float, 1> error = operation(y_pred, y_true);
-	BOOST_CHECK_CLOSE(error(0), -10.0, 1e-6);
-	BOOST_CHECK_CLOSE(error(1), -1.11111116, 1e-6);
+	BOOST_CHECK_CLOSE(error(0), -9.99998856, 1e-6);
+	BOOST_CHECK_CLOSE(error(1),	-1.11109996, 1e-6);
 }
 
 /**
@@ -411,7 +411,7 @@ BOOST_AUTO_TEST_CASE(operationfunctionNegativeLogLikelihoodGradOp2)
 
 	Eigen::Tensor<float, 1> error = operation(y_pred, y_true);
 	BOOST_CHECK_CLOSE(error(0), 0.0, 1e-6);
-	BOOST_CHECK_CLOSE(error(1), -1.11111116, 1e-6);
+	BOOST_CHECK_CLOSE(error(1), -1.11110985, 1e-6);
 }
 
 /**

@@ -643,7 +643,7 @@ BOOST_AUTO_TEST_CASE(operationfunctionProdWeightGradOp)
 	operation(source_output2, sink_error2, weight2, source_net_input2, dummy2);
 	operation(source_output3, sink_error3, weight3, source_net_input3, dummy3);
 
-	BOOST_CHECK_CLOSE(operation.getNetWeightError(), -3.333333e9, 1e-4);
+	BOOST_CHECK_CLOSE(operation.getNetWeightError(), -333333344, 1e-4);
 }
 
 BOOST_AUTO_TEST_CASE(getNameProdWeightGradOp)

@@ -621,8 +621,8 @@ public:
 			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names.size() + n_outputs) / 2, 1)),
 			std::shared_ptr<SolverOp>(new AdamOp(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 
-		//// Add the final softmax layer
-		//node_names = model_builder.addSoftMax(model, "SoftMax", "SoftMax", node_names);
+		// Add the final softmax layer
+		node_names = model_builder.addSoftMax(model, "SoftMax", "SoftMax", node_names);
 
 		// Specify the output node types manually
 		for (const std::string& node_name : node_names)
@@ -1032,6 +1032,7 @@ void main_classification()
 		input_nodes.push_back("Input_" + std::to_string(i));
 	for (int i = 0; i < n_output_nodes; ++i)
 		output_nodes.push_back("Output_" + std::to_string(i));
+		//output_nodes.push_back("SoftMax-Out_" + std::to_string(i));
 
 	// innitialize the model trainer
 	ModelTrainerExt model_trainer;
@@ -1042,10 +1043,12 @@ void main_classification()
 	model_trainer.setNThreads(n_hard_threads); // [TODO: change back to 2!]
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setLogging(true, false);
-	//model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
-	//model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
-	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new BCEWithLogitsOp<float>()) });
-	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new BCEWithLogitsGradOp<float>()) });
+	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
+	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
+	//model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new NegativeLogLikelihoodOp<float>()) });
+	//model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new NegativeLogLikelihoodGradOp<float>()) });
+	//model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new BCEWithLogitsOp<float>()) });
+	//model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new BCEWithLogitsGradOp<float>()) });
 	//model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new CrossEntropyOp<float>()) });
 	//model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new CrossEntropyGradOp<float>()) });
 	model_trainer.setOutputNodes({ output_nodes });

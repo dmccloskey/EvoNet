@@ -66,10 +66,10 @@ namespace SmartPeak
 	*/
 
 	template<typename T>
-	T checkNanInf(
+	T checkNan(
 		const T& x)
 	{
-		if (std::isinf(x) || std::isnan(x))
+		if (std::isnan(x))
 			return T(0);
 		else
 			return x;
@@ -111,8 +111,6 @@ namespace SmartPeak
 				return min_ + eps_;
 			else if (x > max_ - eps_)
 				return max_ - eps_;
-			else if (std::isnan(x))
-				return min_ + eps_;
 			else
 				return x;
 		}
