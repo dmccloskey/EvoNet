@@ -353,16 +353,16 @@ namespace SmartPeak
 
 				// offset starting height filter for the input zero padding
 				int filter_height_offset_start_tmp = input_height_zero_padding - stride * height_stride_iter;
-				int filter_height_offset_start = max(filter_height_offset_start_tmp, 0);
+				int filter_height_offset_start = maxFunc(filter_height_offset_start_tmp, 0);
 				int filter_height_offset_end_tmp = - input_height_zero_padding + stride * strides_height - stride * height_stride_iter + extent_height;
-				int filter_height_offset_end = min(filter_height_offset_end_tmp, extent_height);
+				int filter_height_offset_end = minFunc(filter_height_offset_end_tmp, extent_height);
 
 				// create the links between input and output
 				int width_iter_tmp = stride * width_stride_iter - input_width_zero_padding;
-				int width_iter = max(width_iter_tmp, 0);
+				int width_iter = maxFunc(width_iter_tmp, 0);
 				for (size_t filter_width_iter = filter_width_offset_start; filter_width_iter < filter_width_offset_end; ++filter_width_iter) {
 					int height_iter_tmp = stride * height_stride_iter - input_height_zero_padding;
-					int height_iter = max(height_iter_tmp, 0);
+					int height_iter = maxFunc(height_iter_tmp, 0);
 					for (size_t filter_height_iter = filter_height_offset_start; filter_height_iter < filter_height_offset_end; ++filter_height_iter) {
 						int source_node_iter = height_iter + width_iter * input_height;
 
