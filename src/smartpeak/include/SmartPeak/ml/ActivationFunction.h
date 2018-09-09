@@ -18,17 +18,22 @@ namespace SmartPeak
   class ActivationOp
   {
 public: 
-    ActivationOp() = default;  
-		ActivationOp(const T& eps, const T& min, const T& max) : eps_(eps), min_(min), max_(max) {};
-    ~ActivationOp() = default;
+	ActivationOp() {};
+		//ActivationOp(const T& eps, const T& min, const T& max) : eps_(eps), min_(min), max_(max) {};
+	ActivationOp(const T& eps, const T& min, const T& max) {
+		setEps(eps);
+		setMin(min);
+		setMax(max);
+	};
+		~ActivationOp() {};
+		void setEps(const T& eps) { eps_ = eps; }
+		void setMin(const T& min) { min_ = min; }
+		void setMax(const T& max) { max_ = max; }
     virtual std::string getName() const = 0;
-    // virtual T operator()() const = 0;
     virtual T operator()(const T& x_I) const = 0;
-		T substituteNanInf(const T& x) const		
+		T substituteNan(const T& x) const		
 		{
-			if (x == std::numeric_limits<T>::infinity()) { return T(1e9); }
-			else if (x == -std::numeric_limits<T>::infinity()) { return T(-1e9); }
-			else if (std::isnan(x)) { return T(0); }
+			if (std::isnan(x)) { return T(0); }
 			else { return x; }			
 		}
 		T clip(const T& x) const
@@ -42,7 +47,7 @@ public:
 			else
 				return x;
 		}
-	private:
+	protected:
 		T eps_ = 1e-12; ///< threshold to clip between min and max
 		T min_ = -1e9;
 		T max_ = 1e9;
@@ -300,6 +305,11 @@ public:
 	{
 	public:
 		ExponentialOp() {};
+		ExponentialOp(const T& eps, const T& min, const T& max) {
+			this->setEps(eps);
+			this->setMin(min);
+			this->setMax(max);
+		};
 		~ExponentialOp() {};
 		T operator()(const T& x_I) const
 		{

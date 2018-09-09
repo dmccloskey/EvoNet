@@ -280,10 +280,10 @@ public:
 					//std::string sample_group_name = selectRandomElement(sample_group_names_);
 
 					for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
-						input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = calculateMAR(
-							metabolomicsData_.at(sample_group_name),
-							biochemicalReactions_.at(reaction_ids_[nodes_iter]));
-						//input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = mars[nodes_iter];
+						//input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = calculateMAR(
+						//	metabolomicsData_.at(sample_group_name),
+						//	biochemicalReactions_.at(reaction_ids_[nodes_iter]));
+						input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = mars[nodes_iter];
 					}
 
 					// convert the label to a one hot vector

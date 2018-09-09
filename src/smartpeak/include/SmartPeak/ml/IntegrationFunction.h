@@ -17,8 +17,9 @@ namespace SmartPeak
   class IntegrationOp
   {
 public: 
-    IntegrationOp(){};  
-    ~IntegrationOp(){};
+    IntegrationOp() = default;
+		IntegrationOp(const T& eps) : eps_(eps) {};
+    ~IntegrationOp() = default;
 		virtual void initNetNodeInput(const int& batch_size) = 0;
 		void setNetNodeInput(const Eigen::Tensor<T, 1>& net_node_input) { net_node_input_ = net_node_input; }
 		Eigen::Tensor<T, 1> getNetNodeInput() const { return net_node_input_; }
@@ -28,6 +29,7 @@ public:
 	protected:
 		Eigen::Tensor<T, 1> net_node_input_; ///<
 		T n_ = 0;
+		T eps_ = 1e-6;
 		//std::atomic<Eigen::Tensor<T, 1>> net_node_input_; ///< 
   };
 
@@ -85,7 +87,7 @@ public:
 		MaxOp() {};
 		void initNetNodeInput(const int& batch_size) {
 			Eigen::Tensor<T, 1> net_node_input(batch_size);
-			net_node_input.setConstant(0);
+			net_node_input.setConstant(-1e12);
 			this->setNetNodeInput(net_node_input);
 			this->n_ = 0;
 		}
@@ -221,8 +223,9 @@ public:
 	class IntegrationErrorOp
 	{
 	public:
-		IntegrationErrorOp() {};
-		~IntegrationErrorOp() {};
+		IntegrationErrorOp() = default;
+		IntegrationErrorOp(const T& eps) : eps_(eps) {};
+		~IntegrationErrorOp() = default;
 		virtual std::string getName() const = 0;
 		/*
 		@brief Sum integration error void operator
@@ -234,6 +237,8 @@ public:
 		@param[in] x5 The number of inputs
 		*/
 		virtual Eigen::Tensor<T, 1> operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_error, const Eigen::Tensor<T, 1>& source_net_input, const Eigen::Tensor<T, 1>& sink_output, const Eigen::Tensor<T, 1>& n) = 0;
+	protected:
+		T eps_ = 1e-6;
 	};
 
 	/**
@@ -261,7 +266,9 @@ public:
 		ProdErrorOp() {};
 		~ProdErrorOp() {};
 		Eigen::Tensor<T, 1> operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_error, const Eigen::Tensor<T, 1>& source_net_input, const Eigen::Tensor<T, 1>& sink_output, const Eigen::Tensor<T, 1>& n) {
-			return (source_net_input * source_error / sink_output).unaryExpr(ClipOp<T>(1e-6, -1e9, 1e9)).unaryExpr(std::ptr_fun(checkNan<T>)); // Note: was substituteNanInf
+			Eigen::Tensor<T, 1> eps(weight.dimension(0));
+			eps.setConstant(this->eps_);
+			return (source_net_input * source_error / (sink_output + eps)).unaryExpr(ClipOp<T>(1e-6, -1e9, 1e9)); // .unaryExpr(std::ptr_fun(checkNan<T>));
 		};
 		std::string getName() const { return "ProdErrorOp"; };
 	};
@@ -344,8 +351,9 @@ public:
 	class IntegrationWeightGradOp
 	{
 	public:
-		IntegrationWeightGradOp() {};
-		~IntegrationWeightGradOp() {};
+		IntegrationWeightGradOp() = default;
+		IntegrationWeightGradOp(const T& eps) : eps_(eps) {};
+		~IntegrationWeightGradOp() = default;
 		void initNetWeightError() { net_weight_error_ = 0; }
 		void setNetWeightError(const T& net_weight_error) { net_weight_error_ = net_weight_error; }
 		T getNetWeightError() const { return net_weight_error_; }
@@ -353,6 +361,7 @@ public:
 		virtual void operator()(const Eigen::Tensor<T, 1>& sink_error, const Eigen::Tensor<T, 1>& source_output, const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_net_input, const Eigen::Tensor<T, 1>& n) = 0;
 	protected:
 		T net_weight_error_ = 0; ///< 
+		T eps_ = 1e-6;
 		//std::atomic<T> net_weight_error_ = 0; ///< 
 	};
 
