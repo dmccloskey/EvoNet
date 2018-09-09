@@ -328,7 +328,7 @@ void main_GAN() {
 	population_trainer.setNReplicatesPerModel(1);
 
 	// define the model logger
-	ModelLogger model_logger(true, true, true, false, false, false);
+	ModelLogger model_logger(true, true, true, false, false, false, false, false);
 
 	// define the data simulator
 	const std::size_t input_size = 784;

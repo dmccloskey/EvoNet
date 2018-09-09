@@ -61,11 +61,9 @@ public:
 		/**
 		@brief Add a Soft Max
 
-		[TODO: update to the "stable" version
-			def stable_softmax(X):
-				exps = np.exp(X - np.max(X))
-				return exps / np.sum(exps)
-		}
+		def stable_softmax(X):
+		exps = np.exp(X)
+		return exps / np.sum(exps)
 
 		@param[in, out] Model
 		@param[in] source_node_names Node_names to add the layer to
@@ -73,6 +71,20 @@ public:
 		@returns vector of output node names
 		*/
 		std::vector<std::string> addSoftMax(Model& model, const std::string& name, const std::string& module_name, const std::vector<std::string>& source_node_names);
+
+		/**
+		@brief Add a Stable Soft Max
+
+		def stable_softmax(X):
+			exps = np.exp(X - np.max(X))
+			return exps / np.sum(exps)
+
+		@param[in, out] Model
+		@param[in] source_node_names Node_names to add the layer to
+
+		@returns vector of output node names
+		*/
+		std::vector<std::string> addStableSoftMax(Model& model, const std::string& name, const std::string& module_name, const std::vector<std::string>& source_node_names);
 
 		/**
 		@brief Add a Convolution layer or Pooling layer

@@ -62,7 +62,7 @@ public:
 public: 
     ReLUOp(){}; 
     ~ReLUOp(){};
-    T operator()(const T& x_I) const { return (x_I > 0.0) ? x_I: 0.0; };
+    T operator()(const T& x_I) const { return this->clip((x_I > 0.0) ? x_I: 0.0); };
     std::string getName() const{return "ReLUOp";};
   };
 
@@ -404,7 +404,7 @@ public:
 		LeakyReLUOp() {};
 		LeakyReLUOp(const T& alpha) : alpha_(alpha) {};
 		~LeakyReLUOp() {};
-		T operator()(const T& x_I) const { return (x_I >= 0.0) ? x_I : alpha_ * x_I; };
+		T operator()(const T& x_I) const { return this->clip((x_I >= 0.0) ? x_I : alpha_ * x_I); };
 		void setAlpha(const T& alpha) { alpha_ = alpha; };
 		T getAlpha() const { return alpha_; };
 		std::string getName() const { return "LeakyReLUOp"; };

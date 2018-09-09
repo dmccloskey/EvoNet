@@ -288,7 +288,7 @@ public:
 
 					// convert the label to a one hot vector
 					Eigen::Tensor<float, 1> one_hot_vec = OneHotEncoder<std::string, float>(metaData_.at(sample_group_name).label, labels_);
-					one_hot_vec = one_hot_vec.unaryExpr(LabelSmoother<float>(0.01, 0.01));
+					//one_hot_vec = one_hot_vec.unaryExpr(LabelSmoother<float>(0.01, 0.01));
 
 					for (int nodes_iter = 0; nodes_iter < n_output_nodes; ++nodes_iter) {
 						output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = one_hot_vec(nodes_iter);
@@ -622,7 +622,7 @@ public:
 			std::shared_ptr<SolverOp>(new AdamOp(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 
 		// Add the final softmax layer
-		node_names = model_builder.addSoftMax(model, "SoftMax", "SoftMax", node_names);
+		node_names = model_builder.addStableSoftMax(model, "SoftMax", "SoftMax", node_names);
 
 		// Specify the output node types manually
 		for (const std::string& node_name : node_names)
@@ -966,9 +966,8 @@ void main_statistics(std::string blood_fraction = "PLT", bool run_oneVSone = tru
 		ExportPWData(postMinPre_filename, postMinPre);
 	}
 }
-void main_classification()
+void main_classification(std::string blood_fraction = "PLT")
 {
-	const std::string blood_fraction = "PLT";
 
 	// define the population trainer parameters
 	PopulationTrainerExt population_trainer;
@@ -1025,8 +1024,8 @@ void main_classification()
 	for (int i = 0; i < n_input_nodes; ++i)
 		input_nodes.push_back("Input_" + std::to_string(i));
 	for (int i = 0; i < n_output_nodes; ++i)
-		output_nodes.push_back("Output_" + std::to_string(i));
-		//output_nodes.push_back("SoftMax-Out_" + std::to_string(i));
+		//output_nodes.push_back("Output_" + std::to_string(i));
+		output_nodes.push_back("SoftMax-Out_" + std::to_string(i));
 
 	// innitialize the model trainer
 	ModelTrainerExt model_trainer;
@@ -1037,10 +1036,10 @@ void main_classification()
 	model_trainer.setNThreads(n_hard_threads); // [TODO: change back to 2!]
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setLogging(true, false);
-	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
-	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
-	//model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new NegativeLogLikelihoodOp<float>()) });
-	//model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new NegativeLogLikelihoodGradOp<float>()) });
+	//model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
+	//model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
+	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new NegativeLogLikelihoodOp<float>(2)) });
+	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new NegativeLogLikelihoodGradOp<float>(2)) });
 	//model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new BCEWithLogitsOp<float>()) });
 	//model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new BCEWithLogitsGradOp<float>()) });
 	//model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new CrossEntropyOp<float>()) });
@@ -1048,7 +1047,7 @@ void main_classification()
 	model_trainer.setOutputNodes({ output_nodes });
 
 	// define the model logger
-	ModelLogger model_logger(true, true, true, true, true, false);
+	ModelLogger model_logger(true, true, true, true, true, false, true, true);
 
 	// initialize the model replicator
 	ModelReplicatorExt model_replicator;
@@ -1176,10 +1175,10 @@ void main_reconstruction()
 // Main
 int main(int argc, char** argv)
 {
-	main_statistics("PLT");
-	main_statistics("RBC");
-	main_statistics("P");
-	//main_classification();
+	//main_statistics("PLT");
+	//main_statistics("RBC");
+	//main_statistics("P");
+	main_classification();
 	//main_reconstruction();
 	return 0;
 }

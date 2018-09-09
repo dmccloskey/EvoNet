@@ -960,7 +960,7 @@ int main(int argc, char** argv)
 	model_trainer.setOutputNodes({ output_nodes });
 
 	// define the model logger
-	ModelLogger model_logger(true, true, true, true, true, true);
+	ModelLogger model_logger(true, true, true, true, true, true, true, true);
 
 	// define the model replicator for growth mode
 	ModelReplicatorExt model_replicator;

@@ -7,9 +7,10 @@
 
 namespace SmartPeak
 {
-	ModelLogger::ModelLogger(bool log_time_epoch, bool log_train_val_metric_epoch, bool log_expected_predicted_epoch, bool log_weights_epoch, bool log_nodes_epoch, bool log_module_variance_epoch):
+	ModelLogger::ModelLogger(bool log_time_epoch, bool log_train_val_metric_epoch, bool log_expected_predicted_epoch, bool log_weights_epoch, bool log_node_errors_epoch, bool log_module_variance_epoch, bool log_node_outputs_epoch, bool log_node_derivatives_epoch):
 		log_time_epoch_(log_time_epoch), log_train_val_metric_epoch_(log_train_val_metric_epoch), log_expected_predicted_epoch_(log_expected_predicted_epoch),
-		log_weights_epoch_(log_weights_epoch), log_nodes_epoch_(log_nodes_epoch), log_module_variance_epoch_(log_module_variance_epoch)
+		log_weights_epoch_(log_weights_epoch), log_node_errors_epoch_(log_node_errors_epoch), log_module_variance_epoch_(log_module_variance_epoch), log_node_outputs_epoch_(log_node_outputs_epoch),
+		log_node_derivatives_epoch_(log_node_derivatives_epoch)
 	{
 	}
 
@@ -35,15 +36,25 @@ namespace SmartPeak
 			CSVWriter csvwriter(filename);
 			log_weights_epoch_csvwriter_ = csvwriter;
 		}
-		if (log_nodes_epoch_) {
-			std::string filename = model.getName() + "_NodesPerEpoch.csv";
+		if (log_node_errors_epoch_) {
+			std::string filename = model.getName() + "_NodeErrorsPerEpoch.csv";
 			CSVWriter csvwriter(filename);
-			log_nodes_epoch_csvwriter_ = csvwriter;
+			log_node_errors_epoch_csvwriter_ = csvwriter;
 		}
 		if (log_module_variance_epoch_) {
 			std::string filename = model.getName() + "_ModuleVariancePerEpoch.csv";
 			CSVWriter csvwriter(filename);
 			log_module_variance_epoch_csvwriter_ = csvwriter;
+		}
+		if (log_node_outputs_epoch_) {
+			std::string filename = model.getName() + "_NodeOutputsPerEpoch.csv";
+			CSVWriter csvwriter(filename);
+			log_node_outputs_epoch_csvwriter_ = csvwriter;
+		}
+		if (log_node_derivatives_epoch_) {
+			std::string filename = model.getName() + "_NodeDerivativesPerEpoch.csv";
+			CSVWriter csvwriter(filename);
+			log_node_derivatives_epoch_csvwriter_ = csvwriter;
 		}
 		return true;
 	}
@@ -62,11 +73,17 @@ namespace SmartPeak
 		if (log_weights_epoch_) {
 			logWeightsPerEpoch(model, n_epochs);
 		}
-		if (log_nodes_epoch_) {
-			logNodesPerEpoch(model, n_epochs);
+		if (log_node_errors_epoch_) {
+			logNodeErrorsPerEpoch(model, n_epochs);
 		}
 		if (log_module_variance_epoch_) {
 			logModuleMeanAndVariancePerEpoch(model, n_epochs);
+		}
+		if (log_node_outputs_epoch_) {
+			logNodeOutputsPerEpoch(model, n_epochs);
+		}
+		if (log_node_derivatives_epoch_) {
+			logNodeDerivativesPerEpoch(model, n_epochs);
 		}
 		return true;
 	}
@@ -126,19 +143,10 @@ namespace SmartPeak
 		int batch_size = bmsizes.first;
 		int memory_size = bmsizes.second - 1;
 
-		// collect the model output node names with the specified node names
-		// and remove duplicates if they are duplicated
-		std::set<std::string> output_node_names_set;
-		for (const std::string& node_name : model.getOutputNodeNames())
-			output_node_names_set.insert(node_name);
-		for (const std::string& node_name : output_node_names)
-			output_node_names_set.insert(node_name);
-		std::vector<std::string> output_node_names_all(output_node_names_set.begin(), output_node_names_set.end());
-
 		// writer header
 		if (log_expected_predicted_epoch_csvwriter_.getLineCount() == 0) {
 			std::vector<std::string> headers = { "Epoch" };
-			for (const std::string& node_name : output_node_names_all) {
+			for (const std::string& node_name : output_node_names) {
 				for (size_t batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
 					for (size_t memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
 						std::string predicted = node_name + "_Predicted_Batch-" + std::to_string(batch_iter) + "_Memory-" + std::to_string(memory_iter);
@@ -154,7 +162,7 @@ namespace SmartPeak
 		// write next entry
 		std::vector<std::string> line = { std::to_string(n_epoch) };
 		int node_cnt = 0;
-		for (const std::string& node_name : output_node_names_all) {
+		for (const std::string& node_name : output_node_names) {
 			for (size_t batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
 				for (size_t memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
 					int next_time_step = expected_values.dimension(1) - 1 - memory_iter;
@@ -191,7 +199,7 @@ namespace SmartPeak
 		return true;
 	}
 
-	bool ModelLogger::logNodesPerEpoch(const Model & model, const int & n_epoch)
+	bool ModelLogger::logNodeErrorsPerEpoch(const Model & model, const int & n_epoch)
 	{
 
 		std::pair<int, int> bmsizes = model.getBatchAndMemorySizes();
@@ -201,7 +209,7 @@ namespace SmartPeak
 		std::vector<Node> nodes = model.getNodes();
 
 		// writer header
-		if (log_nodes_epoch_csvwriter_.getLineCount() == 0) {
+		if (log_node_errors_epoch_csvwriter_.getLineCount() == 0) {
 			std::vector<std::string> headers = { "Epoch" };
 			for (const auto& node : nodes) {
 				for (size_t batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
@@ -215,7 +223,7 @@ namespace SmartPeak
 					}
 				}
 			}
-			log_nodes_epoch_csvwriter_.writeDataInRow(headers.begin(), headers.end());
+			log_node_errors_epoch_csvwriter_.writeDataInRow(headers.begin(), headers.end());
 		}
 
 		// write next entry
@@ -230,7 +238,7 @@ namespace SmartPeak
 				}
 			}
 		}
-		log_nodes_epoch_csvwriter_.writeDataInRow(line.begin(), line.end());
+		log_node_errors_epoch_csvwriter_.writeDataInRow(line.begin(), line.end());
 		return true;
 	}
 
@@ -312,6 +320,80 @@ namespace SmartPeak
 			}
 		}
 		log_module_variance_epoch_csvwriter_.writeDataInRow(line.begin(), line.end());
+		return true;
+	}
+
+	bool ModelLogger::logNodeOutputsPerEpoch(const Model & model, const int & n_epoch)
+	{
+
+		std::pair<int, int> bmsizes = model.getBatchAndMemorySizes();
+		int batch_size = bmsizes.first;
+		int memory_size = bmsizes.second - 1;
+
+		std::vector<Node> nodes = model.getNodes();
+
+		// writer header
+		if (log_node_outputs_epoch_csvwriter_.getLineCount() == 0) {
+			std::vector<std::string> headers = { "Epoch" };
+			for (const auto& node : nodes) {
+				for (size_t batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
+					for (size_t memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
+						std::string node_output = node.getName() + "_Output_Batch-" + std::to_string(batch_iter) + "_Memory-" + std::to_string(memory_iter);
+						headers.push_back(node_output);
+					}
+				}
+			}
+			log_node_outputs_epoch_csvwriter_.writeDataInRow(headers.begin(), headers.end());
+		}
+
+		// write next entry
+		std::vector<std::string> line = { std::to_string(n_epoch) };
+		int node_cnt = 0;
+		for (const auto& node : nodes) {
+			for (size_t batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
+				for (size_t memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
+					line.push_back(std::to_string(node.getOutput()(batch_iter, memory_iter)));
+				}
+			}
+		}
+		log_node_outputs_epoch_csvwriter_.writeDataInRow(line.begin(), line.end());
+		return true;
+	}
+
+	bool ModelLogger::logNodeDerivativesPerEpoch(const Model & model, const int & n_epoch)
+	{
+
+		std::pair<int, int> bmsizes = model.getBatchAndMemorySizes();
+		int batch_size = bmsizes.first;
+		int memory_size = bmsizes.second - 1;
+
+		std::vector<Node> nodes = model.getNodes();
+
+		// writer header
+		if (log_node_derivatives_epoch_csvwriter_.getLineCount() == 0) {
+			std::vector<std::string> headers = { "Epoch" };
+			for (const auto& node : nodes) {
+				for (size_t batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
+					for (size_t memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
+						std::string node_derivative = node.getName() + "_Derivative_Batch-" + std::to_string(batch_iter) + "_Memory-" + std::to_string(memory_iter);
+						headers.push_back(node_derivative);
+					}
+				}
+			}
+			log_node_derivatives_epoch_csvwriter_.writeDataInRow(headers.begin(), headers.end());
+		}
+
+		// write next entry
+		std::vector<std::string> line = { std::to_string(n_epoch) };
+		int node_cnt = 0;
+		for (const auto& node : nodes) {
+			for (size_t batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
+				for (size_t memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
+					line.push_back(std::to_string(node.getDerivative()(batch_iter, memory_iter)));
+				}
+			}
+		}
+		log_node_derivatives_epoch_csvwriter_.writeDataInRow(line.begin(), line.end());
 		return true;
 	}
 }
