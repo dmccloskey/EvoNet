@@ -29,7 +29,7 @@ public:
 	protected:
 		Eigen::Tensor<T, 1> net_node_input_; ///<
 		T n_ = 0;
-		T eps_ = 1e-6;
+		T eps_ = 1e-9;
 		//std::atomic<Eigen::Tensor<T, 1>> net_node_input_; ///< 
   };
 
@@ -269,6 +269,7 @@ public:
 			Eigen::Tensor<T, 1> eps(weight.dimension(0));
 			eps.setConstant(this->eps_);
 			return (source_net_input * source_error / (sink_output + eps)).unaryExpr(ClipOp<T>(1e-6, -1e9, 1e9)); // .unaryExpr(std::ptr_fun(checkNan<T>));
+			//return (source_net_input * source_error / sink_output).unaryExpr(ClipOp<T>(1e-6, -1e9, 1e9)).unaryExpr(std::ptr_fun(checkNan<T>));
 		};
 		std::string getName() const { return "ProdErrorOp"; };
 	};
@@ -284,8 +285,8 @@ public:
 		~MaxErrorOp() {};
 		Eigen::Tensor<T, 1> operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_error, const Eigen::Tensor<T, 1>& source_net_input, const Eigen::Tensor<T, 1>& sink_output, const Eigen::Tensor<T, 1>& n)
 		{
-			auto perc_max_tensor = (sink_output / source_net_input).unaryExpr(ClipOp<T>(1e-6, -1e9, 1e9)).unaryExpr([](const T& v) {
-				if (v < 1 - 1e-3) 
+			auto perc_max_tensor = (sink_output / source_net_input).unaryExpr([](const T& v) {
+				if (v < 1 - 1e-6) 
 					return 0;
 				else 
 					return 1;

@@ -258,7 +258,7 @@ public:
 		{
 			Eigen::Tensor<T, 1> n((int)y_pred.size());
 			n.setConstant(n_);
-			return -y_true * (y_pred.unaryExpr(ClipOp<T>(1e-12, 0, 1)).log()) / n;
+			return -y_true * (y_pred.unaryExpr(ClipOp<T>(1e-6, 0, 1)).log()) / n;
 		};
 	private:
 		T n_ = 1.0; ///< the number of total classifiers
