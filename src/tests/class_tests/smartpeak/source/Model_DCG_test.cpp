@@ -106,20 +106,20 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayer2)
   // initialize nodes
   const int batch_size = 5;
   const int memory_size = 8;
-	model2.initError(batch_size, memory_size);
-  model2.initNodes(batch_size, memory_size);
+	model2.initError(batch_size, memory_size - 1);
+  model2.initNodes(batch_size, memory_size - 1);
 	model2.findCyclicPairs();
 
   // create the input and biases
   const std::vector<std::string> input_ids = {"0"};
-  Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size()); 
-  input.setValues(
-    {{{1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}},
-    {{2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}},
-    {{3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}},
-    {{4}, {5}, {6}, {7}, {8}, {9}, {10}, {11}},
-    {{5}, {6}, {7}, {8}, {9}, {10}, {11}, {12}}}
-  );
+	Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size());
+	input.setValues(
+		{ {{1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}},
+		{{2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}},
+		{{3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}},
+		{{4}, {5}, {6}, {7}, {8}, {9}, {10}, {11}},
+		{{5}, {6}, {7}, {8}, {9}, {10}, {11}, {12}} }
+	);
   model2.mapValuesToNodes(input, input_ids, NodeStatus::activated, "output");  
 
   const std::vector<std::string> biases_ids = {"3", "4"};
@@ -151,20 +151,20 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayerBiases2)
   // initialize nodes
   const int batch_size = 5;
   const int memory_size = 8;
-	model2.initError(batch_size, memory_size);
-  model2.initNodes(batch_size, memory_size);
+	model2.initError(batch_size, memory_size - 1);
+  model2.initNodes(batch_size, memory_size - 1);
 	model2.findCyclicPairs();
 
   // create the input and biases
   const std::vector<std::string> input_ids = {"0"};
-  Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size()); 
-  input.setValues(
-    {{{1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}},
-    {{2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}},
-    {{3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}},
-    {{4}, {5}, {6}, {7}, {8}, {9}, {10}, {11}},
-    {{5}, {6}, {7}, {8}, {9}, {10}, {11}, {12}}}
-  );
+	Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size());
+	input.setValues(
+		{ {{1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}},
+		{{2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}},
+		{{3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}},
+		{{4}, {5}, {6}, {7}, {8}, {9}, {10}, {11}},
+		{{5}, {6}, {7}, {8}, {9}, {10}, {11}, {12}} }
+	);
   model2.mapValuesToNodes(input, input_ids, NodeStatus::activated, "output");  
 
   const std::vector<std::string> biases_ids = {"3", "4"};
@@ -204,20 +204,20 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayerCycles2)
   // initialize nodes
   const int batch_size = 5;
   const int memory_size = 8;
-	model2.initError(batch_size, memory_size);
-  model2.initNodes(batch_size, memory_size);
+	model2.initError(batch_size, memory_size - 1);
+  model2.initNodes(batch_size, memory_size - 1);
 	model2.findCyclicPairs();
 
   // create the input and biases
   const std::vector<std::string> input_ids = {"0"};
-  Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size()); 
-  input.setValues(
-    {{{1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}},
-    {{2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}},
-    {{3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}},
-    {{4}, {5}, {6}, {7}, {8}, {9}, {10}, {11}},
-    {{5}, {6}, {7}, {8}, {9}, {10}, {11}, {12}}}
-  );
+	Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size());
+	input.setValues(
+		{ {{1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}},
+		{{2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}},
+		{{3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}},
+		{{4}, {5}, {6}, {7}, {8}, {9}, {10}, {11}},
+		{{5}, {6}, {7}, {8}, {9}, {10}, {11}, {12}} }
+	);
   model2.mapValuesToNodes(input, input_ids, NodeStatus::activated, "output");  
 
   const std::vector<std::string> biases_ids = {"3", "4"};
@@ -263,8 +263,8 @@ BOOST_AUTO_TEST_CASE(FPTT)
   // initialize nodes
   const int batch_size = 5;
   const int memory_size = 8;
-	model2.initError(batch_size, memory_size);
-  model2.initNodes(batch_size, memory_size);
+	model2.initError(batch_size, memory_size - 1);
+  model2.initNodes(batch_size, memory_size - 1);
   model2.initWeights();
 	model2.clearCache();
 	model2.findCyclicPairs();
@@ -279,7 +279,7 @@ BOOST_AUTO_TEST_CASE(FPTT)
     {{4, 0, 0}, {5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}, {9, 0, 0}, {10, 0, 0}, {11, 0, 0}},
     {{5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}, {9, 0, 0}, {10, 0, 0}, {11, 0, 0}, {12, 0, 0}}}
   );
-  Eigen::Tensor<float, 2> dt(batch_size, memory_size); 
+  Eigen::Tensor<float, 2> dt(batch_size, memory_size); // [NOTE: Should generate a warning about the time steps not matching the memory size]
   dt.setValues({
     {1, 1, 1, 1, 1, 1, 1, 1},
     {1, 1, 1, 1, 1, 1, 1, 1},
@@ -403,8 +403,8 @@ BOOST_AUTO_TEST_CASE(getNextUncorrectedLayer2)
   // initialize nodes
   const int batch_size = 5;
   const int memory_size = 8;
-	model2.initError(batch_size, memory_size);
-  model2.initNodes(batch_size, memory_size);
+	model2.initError(batch_size, memory_size - 1);
+  model2.initNodes(batch_size, memory_size - 1);
   model2.initWeights();
 	model2.findCyclicPairs();
 
@@ -471,8 +471,8 @@ BOOST_AUTO_TEST_CASE(getNextUncorrectedLayerCycles2)
   const int batch_size = 5;
   const int memory_size = 8;
   model2.clearCache();
-	model2.initError(batch_size, memory_size);
-  model2.initNodes(batch_size, memory_size);
+	model2.initError(batch_size, memory_size - 1);
+  model2.initNodes(batch_size, memory_size - 1);
   model2.initWeights();
 	model2.findCyclicPairs();
 
@@ -556,8 +556,8 @@ BOOST_AUTO_TEST_CASE(BPTT1)
   const int batch_size = 5;
   const int memory_size = 8;
   model2.clearCache();
-	model2.initError(batch_size, memory_size);
-  model2.initNodes(batch_size, memory_size);
+	model2.initError(batch_size, memory_size - 1);
+  model2.initNodes(batch_size, memory_size - 1);
   model2.initWeights();
 	model2.findCyclicPairs();
 
@@ -633,8 +633,8 @@ BOOST_AUTO_TEST_CASE(BPTT2)
 	const int batch_size = 5;
 	const int memory_size = 8;
 	model2.clearCache();
-	model2.initError(batch_size, memory_size);
-	model2.initNodes(batch_size, memory_size);
+	model2.initError(batch_size, memory_size - 1);
+	model2.initNodes(batch_size, memory_size - 1);
 	model2.initWeights();
 	model2.findCyclicPairs();
 
@@ -709,9 +709,9 @@ BOOST_AUTO_TEST_CASE(updateWeights2)
   // initialize nodes
   const int batch_size = 5;
   const int memory_size = 8;
-	model2.initError(batch_size, memory_size);
+	model2.initError(batch_size, memory_size - 1);
   model2.clearCache();
-  model2.initNodes(batch_size, memory_size);
+  model2.initNodes(batch_size, memory_size - 1);
   model2.initWeights();
 	model2.findCyclicPairs();
 
@@ -775,9 +775,9 @@ BOOST_AUTO_TEST_CASE(updateWeights3)
 	// initialize nodes
 	const int batch_size = 5;
 	const int memory_size = 8;
-	model2.initError(batch_size, memory_size);
+	model2.initError(batch_size, memory_size - 1);
 	model2.clearCache();
-	model2.initNodes(batch_size, memory_size);
+	model2.initNodes(batch_size, memory_size - 1);
 	model2.initWeights();
 	model2.findCyclicPairs();
 
@@ -943,15 +943,15 @@ BOOST_AUTO_TEST_CASE(modelTrainer2)
 	);
 
   // iterate until we find the optimal values
-  const int max_iter = 500;
+  const int max_iter = 50;
   for (int iter = 0; iter < max_iter; ++iter)
   {
     // forward propogate
     // model2a.FPTT(memory_size, input, input_ids, dt);
     if (iter == 0)
-      model2a.FPTT(memory_size - 1, input, input_ids, dt, true, true, 2); 
+      model2a.FPTT(memory_size, input, input_ids, dt, true, true, 2); 
     else      
-      model2a.FPTT(memory_size - 1, input, input_ids, dt, false, true, 2); 
+      model2a.FPTT(memory_size, input, input_ids, dt, false, true, 2); 
 
     // calculate the model error
 		model2a.CETT(expected, output_nodes, memory_size);
@@ -967,12 +967,12 @@ BOOST_AUTO_TEST_CASE(modelTrainer2)
     // backpropogate through time
     // model2a.TBPTT(memory_size-1);
     if (iter == 0)
-      model2a.TBPTT(memory_size - 1, true, true, 2);
+      model2a.TBPTT(memory_size, true, true, 2);
     else
-      model2a.TBPTT(memory_size - 1, false, true, 2);
+      model2a.TBPTT(memory_size, false, true, 2);
 
     // update the weights
-    model2a.updateWeights(memory_size - 1);   
+    model2a.updateWeights(memory_size);   
 
     // reinitialize the model
     model2a.reInitializeNodeStatuses();    
@@ -981,7 +981,7 @@ BOOST_AUTO_TEST_CASE(modelTrainer2)
   }
   
   const Eigen::Tensor<float, 0> total_error = model2a.getError().sum();
-  BOOST_CHECK(total_error(0) < 17.7);  
+  BOOST_CHECK(total_error(0) < 11.0);  
 }
 
 BOOST_AUTO_TEST_SUITE_END()

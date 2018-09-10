@@ -225,7 +225,7 @@ namespace SmartPeak
 		// Initialize the model
 		model.initError(getBatchSize(), getMemorySize());
 		model.clearCache();
-		model.initNodes(getBatchSize(), getMemorySize() + 1, true); // The first time point = 0
+		model.initNodes(getBatchSize(), getMemorySize(), true); // The first time point = 0
 		model.findCyclicPairs();
 		model.initWeightsDropProbability(true);
 
@@ -284,7 +284,7 @@ namespace SmartPeak
 			// update the weights
 			if (getVerbosityLevel() >= 2)
 				std::cout << "Weight Update..." << std::endl;
-			//model.updateWeights(getMemorySize());
+			model.updateWeights(getMemorySize());
 
 			// log epoch
 			if (log_training_) {
@@ -296,7 +296,7 @@ namespace SmartPeak
 
 			// reinitialize the model
 			model.reInitializeNodeStatuses();
-			model.initNodes(getBatchSize(), getMemorySize() + 1);
+			model.initNodes(getBatchSize(), getMemorySize());
 			model.initError(getBatchSize(), getMemorySize());
 			model.initWeightsDropProbability(true);
 		}
@@ -339,7 +339,7 @@ namespace SmartPeak
 		// Initialize the model
 		model.initError(getBatchSize(), getMemorySize());
 		model.clearCache();
-		model.initNodes(getBatchSize(), getMemorySize() + 1); // The first time point = 0
+		model.initNodes(getBatchSize(), getMemorySize()); // The first time point = 0
 		model.findCyclicPairs();
 		model.initWeightsDropProbability(false);
 
@@ -384,7 +384,7 @@ namespace SmartPeak
 
 			// reinitialize the model
 			model.reInitializeNodeStatuses();
-			model.initNodes(getBatchSize(), getMemorySize() + 1);
+			model.initNodes(getBatchSize(), getMemorySize());
 			model.initError(getBatchSize(), getMemorySize());
 		}
 		model.clearCache();

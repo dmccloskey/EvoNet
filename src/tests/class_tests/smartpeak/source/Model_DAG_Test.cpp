@@ -292,7 +292,7 @@ BOOST_AUTO_TEST_CASE(initNodes)
   // Toy network: 1 hidden layer, fully connected, DAG
   // Model model1 = makeModel1();
 
-  model1.initNodes(2, 2); // batch_size = 2, memory_size = 2
+  model1.initNodes(2, 1); // batch_size = 2, memory_size = 2
   BOOST_CHECK_EQUAL(model1.getNode("0").getError().size(), 4);
   BOOST_CHECK_EQUAL(model1.getNode("0").getError()(0, 0), 0.0);
   BOOST_CHECK_EQUAL(model1.getNode("0").getError()(1, 1), 0.0);
@@ -306,7 +306,7 @@ BOOST_AUTO_TEST_CASE(getBatchAndMemorySizes)
 	// Toy network: 1 hidden layer, fully connected, DAG
 	// Model model1 = makeModel1();
 
-	model1.initNodes(2, 3); // batch_size = 2, memory_size = 2
+	model1.initNodes(2, 2); // batch_size = 2, memory_size = 3
 	std::pair<int, int> batch_memory_sizes = model1.getBatchAndMemorySizes();
 	BOOST_CHECK_EQUAL(batch_memory_sizes.first, 2);
 	BOOST_CHECK_EQUAL(batch_memory_sizes.second, 3);
@@ -341,9 +341,9 @@ BOOST_AUTO_TEST_CASE(mapValuesToNodes)
 
   const int batch_size = 4;
   const int memory_size = 2;
-	model1.initError(batch_size, memory_size);
+	model1.initError(batch_size, memory_size - 1);
   model1.clearCache();
-  model1.initNodes(batch_size, memory_size);
+  model1.initNodes(batch_size, memory_size - 1);
 	model1.findCyclicPairs();
 
   // create the input
@@ -409,9 +409,9 @@ BOOST_AUTO_TEST_CASE(mapValuesToNodes2)
 
   const int batch_size = 4;
   const int memory_size = 2;
-	model1.initError(batch_size, memory_size);
+	model1.initError(batch_size, memory_size - 1);
   model1.clearCache();
-  model1.initNodes(batch_size, memory_size);
+  model1.initNodes(batch_size, memory_size - 1);
 	model1.findCyclicPairs();
 
   // create the input
@@ -475,9 +475,9 @@ BOOST_AUTO_TEST_CASE(mapValuesToNode)
   const int batch_size = 4;
   const int memory_size = 2;
   const int time_step = 0;
-	model1.initError(batch_size, memory_size);
+	model1.initError(batch_size, memory_size - 1);
   model1.clearCache();
-  model1.initNodes(batch_size, memory_size);
+  model1.initNodes(batch_size, memory_size - 1);
 	model1.findCyclicPairs();
 
   // create the input
@@ -525,9 +525,9 @@ BOOST_AUTO_TEST_CASE(mapValuesToNodes3)
 
   const int batch_size = 4;
   const int memory_size = 2;
-	model1.initError(batch_size, memory_size);
+	model1.initError(batch_size, memory_size - 1);
   model1.clearCache();
-  model1.initNodes(batch_size, memory_size);
+  model1.initNodes(batch_size, memory_size - 1);
 	model1.findCyclicPairs();
 
   // create the input
@@ -589,16 +589,16 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayer1)
 
   // initialize nodes
   const int batch_size = 4;
-  const int memory_size = 1;
-	model1.initError(batch_size, memory_size);
+  const int memory_size = 2;
+	model1.initError(batch_size, memory_size - 1);
   model1.clearCache();
-  model1.initNodes(batch_size, memory_size);
+  model1.initNodes(batch_size, memory_size - 1);
 	model1.findCyclicPairs();
 
   // create the input and biases
   const std::vector<std::string> input_ids = {"0", "1"};
   Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size()); 
-  input.setValues({{{1, 5}}, {{2, 6}}, {{3, 7}}, {{4, 8}}});
+  input.setValues({{{1, 5}, {0, 0}}, {{2, 6},{0, 0}}, {{3, 7}, {0, 0}}, {{4, 8}, {0, 0}}});
   model1.mapValuesToNodes(input, input_ids, NodeStatus::activated, "output");  
 
   const std::vector<std::string> biases_ids = {"6", "7"};
@@ -643,16 +643,16 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayerBiases1)
 
   // initialize nodes
   const int batch_size = 4;
-  const int memory_size = 1;
-	model1.initError(batch_size, memory_size);
+  const int memory_size = 2;
+	model1.initError(batch_size, memory_size - 1);
   model1.clearCache();
-  model1.initNodes(batch_size, memory_size);
+  model1.initNodes(batch_size, memory_size - 1);
 	model1.findCyclicPairs();
 
   // create the input and biases
   const std::vector<std::string> input_ids = {"0", "1"};
-  Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size()); 
-  input.setValues({{{1, 5}}, {{2, 6}}, {{3, 7}}, {{4, 8}}});
+  Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size());
+	input.setValues({ {{1, 5}, {0, 0}}, {{2, 6}, {0, 0}}, {{3, 7}, {0, 0}}, {{4, 8}, {0, 0}} });
   model1.mapValuesToNodes(input, input_ids, NodeStatus::activated, "output");  
 
   const std::vector<std::string> biases_ids = {"6", "7"};
@@ -708,16 +708,16 @@ BOOST_AUTO_TEST_CASE(forwardPropogateLayerNetInput_Sum)
 
   // initialize nodes
   const int batch_size = 4;
-  const int memory_size = 1;
-	model1.initError(batch_size, memory_size);
+  const int memory_size = 2;
+	model1.initError(batch_size, memory_size - 1);
   model1.clearCache();
-  model1.initNodes(batch_size, memory_size);
+  model1.initNodes(batch_size, memory_size - 1);
 	model1.findCyclicPairs();
 
   // create the input
   const std::vector<std::string> input_ids = {"0", "1"};
-  Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size()); 
-  input.setValues({{{1, 5}}, {{2, 6}}, {{3, 7}}, {{4, 8}}});
+  Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size());
+	input.setValues({ {{1, 5}, {0, 0}}, {{2, 6}, {0, 0}}, {{3, 7}, {0, 0}}, {{4, 8}, {0, 0}} });
   model1.mapValuesToNodes(input, input_ids, NodeStatus::activated, "output");  
 
   const std::vector<std::string> biases_ids = {"6", "7"};
@@ -751,7 +751,7 @@ BOOST_AUTO_TEST_CASE(forwardPropogateLayerNetInput_Sum)
     BOOST_CHECK(model1.getNode(sink_link.first).getStatus() == NodeStatus::activated);
     for (int j=0; j<batch_size; ++j)
     {
-      for (int k=0; k<memory_size; ++k)
+      for (int k=0; k<memory_size - 1; ++k)
       {
 				//std::cout << "Node: " << i << "; Batch: " << j << "; Memory: " << k << std::endl;
 				//std::cout << "Calc Output: " << model1.getNode(sink_link.first).getOutput()(j, k) << ", Expected Output: " << output(j, i) << std::endl;
@@ -773,16 +773,16 @@ BOOST_AUTO_TEST_CASE(forwardPropogateLayerNetInput_Product)
 
 	// initialize nodes
 	const int batch_size = 4;
-	const int memory_size = 1;
-	model2.initError(batch_size, memory_size);
+	const int memory_size = 2;
+	model2.initError(batch_size, memory_size - 1);
 	model2.clearCache();
-	model2.initNodes(batch_size, memory_size);
+	model2.initNodes(batch_size, memory_size - 1);
 	model2.findCyclicPairs();
 
 	// create the input
 	const std::vector<std::string> input_ids = { "0", "1" };
 	Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size());
-	input.setValues({ { { 1, 5 } },{ { 2, 6 } },{ { 3, 7 } },{ { 4, 8 } } });
+	input.setValues({ {{1, 5}, {0, 0}}, {{2, 6}, {0, 0}}, {{3, 7}, {0, 0}}, {{4, 8}, {0, 0}} });
 	model2.mapValuesToNodes(input, input_ids, NodeStatus::activated, "output");
 
 	const std::vector<std::string> biases_ids = { "6", "7" };
@@ -816,7 +816,7 @@ BOOST_AUTO_TEST_CASE(forwardPropogateLayerNetInput_Product)
 		BOOST_CHECK(model2.getNode(sink_link.first).getStatus() == NodeStatus::activated);
 		for (int j = 0; j<batch_size; ++j)
 		{
-			for (int k = 0; k<memory_size; ++k)
+			for (int k = 0; k<memory_size - 1; ++k)
 			{
 				//std::cout << "Node: " << i << "; Batch: " << j << "; Memory: " << k << std::endl;
 				//std::cout << "Calc Output: " << model2.getNode(sink_link.first).getOutput()(j, k) << ", Expected Output: " << output(j, i) << std::endl;
@@ -838,16 +838,16 @@ BOOST_AUTO_TEST_CASE(forwardPropogate_Sum)
 
   // initialize nodes
   const int batch_size = 4;
-  const int memory_size = 1;
-	model1.initError(batch_size, memory_size);
+  const int memory_size = 2;
+	model1.initError(batch_size, memory_size - 1);
   model1.clearCache();
-  model1.initNodes(batch_size, memory_size);
+  model1.initNodes(batch_size, memory_size - 1);
 	model1.findCyclicPairs();
 
   // create the input
   const std::vector<std::string> input_ids = {"0", "1"};
-  Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size()); 
-  input.setValues({{{1, 5}}, {{2, 6}}, {{3, 7}}, {{4, 8}}});
+  Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size());
+	input.setValues({ {{1, 5}, {0, 0}}, {{2, 6}, {0, 0}}, {{3, 7}, {0, 0}}, {{4, 8}, {0, 0}} });
   model1.mapValuesToNodes(input, input_ids, NodeStatus::activated, "output");  
 
   const std::vector<std::string> biases_ids = {"6", "7"};
@@ -873,7 +873,7 @@ BOOST_AUTO_TEST_CASE(forwardPropogate_Sum)
     BOOST_CHECK(model1.getNode(output_nodes[i]).getStatus() == NodeStatus::activated);
     for (int j=0; j<batch_size; ++j)
     {
-      for (int k=0; k<memory_size; ++k)
+      for (int k=0; k<memory_size - 1; ++k)
       {
 				//std::cout << "Node: " << i << "; Batch: " << j << "; Memory: " << k << std::endl;
 				//std::cout << "Calc Output: " << model1.getNode(output_nodes[i]).getOutput()(j, k) << ", Expected Output: " << output(j, i) << std::endl;
@@ -893,16 +893,16 @@ BOOST_AUTO_TEST_CASE(forwardPropogate_Product)
 
 	// initialize nodes
 	const int batch_size = 4;
-	const int memory_size = 1;
-	model2.initError(batch_size, memory_size);
+	const int memory_size = 2;
+	model2.initError(batch_size, memory_size - 1);
 	model2.clearCache();
-	model2.initNodes(batch_size, memory_size);
+	model2.initNodes(batch_size, memory_size - 1);
 	model2.findCyclicPairs();
 
 	// create the input
 	const std::vector<std::string> input_ids = { "0", "1" };
 	Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size());
-	input.setValues({ { { 1, 5 } },{ { 2, 6 } },{ { 3, 7 } },{ { 4, 8 } } });
+	input.setValues({ {{1, 5}, {0, 0}}, {{2, 6}, {0, 0}}, {{3, 7}, {0, 0}}, {{4, 8}, {0, 0}} });
 	model2.mapValuesToNodes(input, input_ids, NodeStatus::activated, "output");
 
 	const std::vector<std::string> biases_ids = { "6", "7" };
@@ -928,7 +928,7 @@ BOOST_AUTO_TEST_CASE(forwardPropogate_Product)
 		BOOST_CHECK(model2.getNode(output_nodes[i]).getStatus() == NodeStatus::activated);
 		for (int j = 0; j<batch_size; ++j)
 		{
-			for (int k = 0; k<memory_size; ++k)
+			for (int k = 0; k<memory_size - 1; ++k)
 			{
 				//std::cout << "Node: " << i << "; Batch: " << j << "; Memory: " << k << std::endl;
 				//std::cout << "Calc Output: " << model2.getNode(output_nodes[i]).getOutput()(j, k) << ", Expected Output: " << output(j, i) << std::endl;
@@ -948,16 +948,16 @@ BOOST_AUTO_TEST_CASE(forwardPropogate_Max)
 
 	// initialize nodes
 	const int batch_size = 4;
-	const int memory_size = 1;
-	model3.initError(batch_size, memory_size);
+	const int memory_size = 2;
+	model3.initError(batch_size, memory_size - 1);
 	model3.clearCache();
-	model3.initNodes(batch_size, memory_size);
+	model3.initNodes(batch_size, memory_size - 1);
 	model3.findCyclicPairs();
 
 	// create the input
 	const std::vector<std::string> input_ids = { "0", "1" };
 	Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size());
-	input.setValues({ { { 1, 5 } },{ { 2, 6 } },{ { 3, 7 } },{ { 4, 8 } } });
+	input.setValues({ {{1, 5}, {0, 0}}, {{2, 6}, {0, 0}}, {{3, 7}, {0, 0}}, {{4, 8}, {0, 0}} });
 	model3.mapValuesToNodes(input, input_ids, NodeStatus::activated, "output");
 
 	const std::vector<std::string> biases_ids = { "6", "7" };
@@ -983,7 +983,7 @@ BOOST_AUTO_TEST_CASE(forwardPropogate_Max)
 		BOOST_CHECK(model3.getNode(output_nodes[i]).getStatus() == NodeStatus::activated);
 		for (int j = 0; j<batch_size; ++j)
 		{
-			for (int k = 0; k<memory_size; ++k)
+			for (int k = 0; k<memory_size - 1; ++k)
 			{
 				//std::cout << "Node: " << i << "; Batch: " << j << "; Memory: " << k << std::endl;
 				//std::cout << "Calc Output: " << model3.getNode(output_nodes[i]).getOutput()(j, k) << ", Expected Output: " << output(j, i) << std::endl;
@@ -1004,9 +1004,9 @@ BOOST_AUTO_TEST_CASE(calculateError)
 
   // initialize nodes and loss function
   const int batch_size = 4;
-  const int memory_size = 1;
-	model1.initError(batch_size, memory_size);
-  model1.initNodes(batch_size, memory_size);
+  const int memory_size = 2;
+	model1.initError(batch_size, memory_size - 1);
+  model1.initNodes(batch_size, memory_size - 1);
 	model1.findCyclicPairs();
 
   // calculate the model error
@@ -1030,7 +1030,7 @@ BOOST_AUTO_TEST_CASE(calculateError)
     //BOOST_CHECK(model1.getNode(output_nodes[i]).getStatus() == NodeStatus::corrected); // NOTE: status is now changed in CETT
     for (int j=0; j<batch_size; ++j)
     {
-      for (int k=0; k<memory_size; ++k)
+      for (int k=0; k<memory_size - 1; ++k)
       {
 				//std::cout << "output node: " << i << "batch: " << j << "memory: " << k << std::endl;
         BOOST_CHECK_EQUAL(model1.getNode(output_nodes[i]).getError()(j, k), node_error(j, i));
@@ -1041,12 +1041,12 @@ BOOST_AUTO_TEST_CASE(calculateError)
 
   // calculate the model error
   Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)output_nodes.size()); 
-  input.setValues({{{15, 15}}, {{19, 19}}, {{23, 23}}, {{27, 27}}});
+	input.setValues({ {{15, 15}, {0,0}}, {{19, 19}, {0,0}}, {{23, 23}, {0,0}}, {{27, 27}, {0,0}} });
   model1.mapValuesToNodes(input, output_nodes, NodeStatus::activated, "output");
 	Eigen::Tensor<float, 3> derivative(batch_size, memory_size, (int)output_nodes.size());
-	derivative.setValues({ {{ 1, 1 }},{{ 1, 1 }},{{ 1, 1 }},{{ 1, 1 }} });
+	derivative.setValues({ {{ 1, 1 },{ 1, 1 }},{{ 1, 1 },{ 1, 1 }},{{ 1, 1 },{ 1, 1 }},{{ 1, 1 },{ 1, 1 }} });
 	model1.mapValuesToNodes(derivative, output_nodes, NodeStatus::activated, "derivative");
-	model1.initError(batch_size, memory_size);
+	model1.initError(batch_size, memory_size - 1);
   model1.calculateError(expected, output_nodes, 0);
 
   // test
@@ -1062,7 +1062,7 @@ BOOST_AUTO_TEST_CASE(calculateError)
     //BOOST_CHECK(model1.getNode(output_nodes[i]).getStatus() == NodeStatus::corrected); // NOTE: status is now changed in CETT
     for (int j=0; j<batch_size; ++j)
     {
-      for (int k=0; k<memory_size; ++k)
+      for (int k=0; k<memory_size - 1; ++k)
       {
         BOOST_CHECK_EQUAL(model1.getNode(output_nodes[i]).getError()(j, k), node_error(j, i));
       }
@@ -1077,16 +1077,16 @@ BOOST_AUTO_TEST_CASE(getNextUncorrectedLayer1)
 
   // initialize nodes
   const int batch_size = 4;
-  const int memory_size = 1;
-	model1.initError(batch_size, memory_size);
+  const int memory_size = 2;
+	model1.initError(batch_size, memory_size - 1);
   model1.clearCache();
-  model1.initNodes(batch_size, memory_size);
+  model1.initNodes(batch_size, memory_size - 1);
 	model1.findCyclicPairs();
 
   // create the input
   const std::vector<std::string> input_ids = {"0", "1"};
-  Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size()); 
-  input.setValues({{{1, 5}}, {{2, 6}}, {{3, 7}}, {{4, 8}}});
+  Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size());
+	input.setValues({ {{1, 5}, {0, 0}}, {{2, 6}, {0, 0}}, {{3, 7}, {0, 0}}, {{4, 8}, {0, 0}} });
   model1.mapValuesToNodes(input, input_ids, NodeStatus::activated, "output");  
 
   const std::vector<std::string> biases_ids = {"6", "7"};
@@ -1138,16 +1138,16 @@ BOOST_AUTO_TEST_CASE(backPropogateLayerError_Sum)
 
   // initialize nodes
   const int batch_size = 4;
-  const int memory_size = 1;
-	model1.initError(batch_size, memory_size);
+  const int memory_size = 2;
+	model1.initError(batch_size, memory_size - 1);
   model1.clearCache();
-  model1.initNodes(batch_size, memory_size);
+  model1.initNodes(batch_size, memory_size - 1);
 	model1.findCyclicPairs();
 
   // create the input
   const std::vector<std::string> input_ids = {"0", "1"};
-  Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size()); 
-  input.setValues({{{1, 5}}, {{2, 6}}, {{3, 7}}, {{4, 8}}});
+  Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size());
+	input.setValues({ {{1, 5}, {0, 0}}, {{2, 6}, {0, 0}}, {{3, 7}, {0, 0}}, {{4, 8}, {0, 0}} });
   model1.mapValuesToNodes(input, input_ids, NodeStatus::activated, "output");  
 
   const std::vector<std::string> biases_ids = {"6", "7"};
@@ -1186,7 +1186,7 @@ BOOST_AUTO_TEST_CASE(backPropogateLayerError_Sum)
     BOOST_CHECK(model1.getNode(BP_operations_list[i].result.sink_node->getName()).getStatus() == NodeStatus::corrected);
     for (int j=0; j<batch_size; ++j)
     {
-      for (int k=0; k<memory_size; ++k)
+      for (int k=0; k<memory_size - 1; ++k)
       {
         BOOST_CHECK_CLOSE(model1.getNode(BP_operations_list[i].result.sink_node->getName()).getError()(j, k), error(j, i), 1e-3);
       }      
@@ -1201,16 +1201,16 @@ BOOST_AUTO_TEST_CASE(backPropogateLayerError_Product)
 
 	// initialize nodes
 	const int batch_size = 4;
-	const int memory_size = 1;
-	model2.initError(batch_size, memory_size);
+	const int memory_size = 2;
+	model2.initError(batch_size, memory_size - 1);
 	model2.clearCache();
-	model2.initNodes(batch_size, memory_size);
+	model2.initNodes(batch_size, memory_size - 1);
 	model2.findCyclicPairs();
 
 	// create the input
 	const std::vector<std::string> input_ids = { "0", "1" };
 	Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size());
-	input.setValues({ { { 1, 5 } },{ { 2, 6 } },{ { 3, 7 } },{ { 4, 8 } } });
+	input.setValues({ {{1, 5}, {0, 0}}, {{2, 6}, {0, 0}}, {{3, 7}, {0, 0}}, {{4, 8}, {0, 0}} });
 	model2.mapValuesToNodes(input, input_ids, NodeStatus::activated, "output");
 
 	const std::vector<std::string> biases_ids = { "6", "7" };
@@ -1249,7 +1249,7 @@ BOOST_AUTO_TEST_CASE(backPropogateLayerError_Product)
 		BOOST_CHECK(model2.getNode(BP_operations_list[i].result.sink_node->getName()).getStatus() == NodeStatus::corrected);
 		for (int j = 0; j<batch_size; ++j)
 		{
-			for (int k = 0; k<memory_size; ++k)
+			for (int k = 0; k<memory_size - 1; ++k)
 			{
 				//std::cout << "Node: " << i << "; Batch: " << j << "; Memory: " << k << std::endl;
 				//std::cout << "Calc Error: " << model2.getNode(BP_operations_list[i].result.sink_node->getName()).getError()(j, k) << ", Expected Error: " << error(j, i) << std::endl;
@@ -1266,16 +1266,16 @@ BOOST_AUTO_TEST_CASE(backPropogate_Sum)
 
   // initialize nodes
   const int batch_size = 4;
-  const int memory_size = 1;
-	model1.initError(batch_size, memory_size);
+  const int memory_size = 2;
+	model1.initError(batch_size, memory_size - 1);
   model1.clearCache();
-  model1.initNodes(batch_size, memory_size);
+  model1.initNodes(batch_size, memory_size - 1);
 	model1.findCyclicPairs();
 
   // create the input
   const std::vector<std::string> input_ids = {"0", "1"};
-  Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size()); 
-  input.setValues({{{1, 5}}, {{2, 6}}, {{3, 7}}, {{4, 8}}});
+  Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size());
+	input.setValues({ {{1, 5}, {0, 0}}, {{2, 6}, {0, 0}}, {{3, 7}, {0, 0}}, {{4, 8}, {0, 0}} });
   model1.mapValuesToNodes(input, input_ids, NodeStatus::activated, "output");  
 
   const std::vector<std::string> biases_ids = {"6", "7"};
@@ -1314,7 +1314,7 @@ BOOST_AUTO_TEST_CASE(backPropogate_Sum)
     // BOOST_CHECK(model1.getNode(hidden_nodes[i]).getStatus() == NodeStatus::corrected);
     for (int j=0; j<batch_size; ++j)
     {
-      for (int k=0; k<memory_size; ++k)
+      for (int k=0; k<memory_size - 1; ++k)
       {
 				//std::cout << "Node: " << i << "; Batch: " << j << "; Memory: " << k << std::endl;
 				//std::cout << "Calc Error: " << model1.getNode(hidden_nodes[i]).getError()(j, k) << ", Expected Error: " << error(j, i) << std::endl;
@@ -1331,16 +1331,16 @@ BOOST_AUTO_TEST_CASE(backPropogate_Product)
 
 	// initialize nodes
 	const int batch_size = 4;
-	const int memory_size = 1;
-	model2.initError(batch_size, memory_size);
+	const int memory_size = 2;
+	model2.initError(batch_size, memory_size - 1);
 	model2.clearCache();
-	model2.initNodes(batch_size, memory_size);
+	model2.initNodes(batch_size, memory_size - 1);
 	model2.findCyclicPairs();
 
 	// create the input
 	const std::vector<std::string> input_ids = { "0", "1" };
 	Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size());
-	input.setValues({ { { 1, 5 } },{ { 2, 6 } },{ { 3, 7 } },{ { 4, 8 } } });
+	input.setValues({ {{1, 5}, {0, 0}}, {{2, 6}, {0, 0}}, {{3, 7}, {0, 0}}, {{4, 8}, {0, 0}} });
 	model2.mapValuesToNodes(input, input_ids, NodeStatus::activated, "output");
 
 	const std::vector<std::string> biases_ids = { "6", "7" };
@@ -1379,7 +1379,7 @@ BOOST_AUTO_TEST_CASE(backPropogate_Product)
 		// BOOST_CHECK(model2.getNode(hidden_nodes[i]).getStatus() == NodeStatus::corrected);
 		for (int j = 0; j<batch_size; ++j)
 		{
-			for (int k = 0; k<memory_size; ++k)
+			for (int k = 0; k<memory_size - 1; ++k)
 			{
 				//std::cout << "Node: " << i << "; Batch: " << j << "; Memory: " << k << std::endl;
 				//std::cout << "Calc Error: " << model2.getNode(hidden_nodes[i]).getError()(j, k) << ", Expected Error: " << error(j, i) << std::endl;
@@ -1396,16 +1396,16 @@ BOOST_AUTO_TEST_CASE(backPropogate_Max)
 
 	// initialize nodes
 	const int batch_size = 4;
-	const int memory_size = 1;
-	model3.initError(batch_size, memory_size);
+	const int memory_size = 2;
+	model3.initError(batch_size, memory_size - 1);
 	model3.clearCache();
-	model3.initNodes(batch_size, memory_size);
+	model3.initNodes(batch_size, memory_size - 1);
 	model3.findCyclicPairs();
 
 	// create the input
 	const std::vector<std::string> input_ids = { "0", "1" };
 	Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size());
-	input.setValues({ { { 1, 5 } },{ { 2, 6 } },{ { 3, 7 } },{ { 4, 8 } } });
+	input.setValues({ {{1, 5}, {0, 0}}, {{2, 6}, {0, 0}}, {{3, 7}, {0, 0}}, {{4, 8}, {0, 0}} });
 	model3.mapValuesToNodes(input, input_ids, NodeStatus::activated, "output");
 
 	const std::vector<std::string> biases_ids = { "6", "7" };
@@ -1444,7 +1444,7 @@ BOOST_AUTO_TEST_CASE(backPropogate_Max)
 		// BOOST_CHECK(model3.getNode(hidden_nodes[i]).getStatus() == NodeStatus::corrected);
 		for (int j = 0; j<batch_size; ++j)
 		{
-			for (int k = 0; k<memory_size; ++k)
+			for (int k = 0; k<memory_size - 1; ++k)
 			{
 				//std::cout << "Node: " << i << "; Batch: " << j << "; Memory: " << k << std::endl;
 				//std::cout << "Calc Error: " << model3.getNode(hidden_nodes[i]).getError()(j, k) << ", Expected Error: " << error(j, i) << std::endl;
@@ -1461,17 +1461,17 @@ BOOST_AUTO_TEST_CASE(updateWeights_Sum)
 
   // initialize nodes
   const int batch_size = 4;
-  const int memory_size = 1;
-	model1.initError(batch_size, memory_size);
+  const int memory_size = 2;
+	model1.initError(batch_size, memory_size - 1);
   model1.clearCache();
-  model1.initNodes(batch_size, memory_size);
+  model1.initNodes(batch_size, memory_size - 1);
   model1.initWeights();
 	model1.findCyclicPairs();
 
   // create the input
   const std::vector<std::string> input_ids = {"0", "1"};
   Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size()); 
-  input.setValues({{{1, 5}}, {{2, 6}}, {{3, 7}}, {{4, 8}}});
+  input.setValues({ {{1, 5}, {0, 0}}, {{2, 6}, {0, 0}}, {{3, 7}, {0, 0}}, {{4, 8}, {0, 0}} });
   model1.mapValuesToNodes(input, input_ids, NodeStatus::activated, "output");  
 
   const std::vector<std::string> biases_ids = {"6", "7"};
@@ -1518,10 +1518,10 @@ BOOST_AUTO_TEST_CASE(updateWeights_Product)
 
 	// initialize nodes
 	const int batch_size = 4;
-	const int memory_size = 1;
-	model2.initError(batch_size, memory_size);
+	const int memory_size = 2;
+	model2.initError(batch_size, memory_size - 1);
 	model2.clearCache();
-	model2.initNodes(batch_size, memory_size);
+	model2.initNodes(batch_size, memory_size - 1);
 	model2.initWeights();
 	model2.findCyclicPairs();
 
@@ -1575,10 +1575,10 @@ BOOST_AUTO_TEST_CASE(updateWeights_Max)
 
 	// initialize nodes
 	const int batch_size = 4;
-	const int memory_size = 1;
-	model3.initError(batch_size, memory_size);
+	const int memory_size = 2;
+	model3.initError(batch_size, memory_size - 1);
 	model3.clearCache();
-	model3.initNodes(batch_size, memory_size);
+	model3.initNodes(batch_size, memory_size - 1);
 	model3.initWeights();
 	model3.findCyclicPairs();
 
@@ -1632,14 +1632,14 @@ BOOST_AUTO_TEST_CASE(reInitializeNodeStatuses)
 
   // initialize nodes
   const int batch_size = 4;
-  const int memory_size = 1;
-	model1.initError(batch_size, memory_size);
-  model1.initNodes(batch_size, memory_size);
+  const int memory_size = 2;
+	model1.initError(batch_size, memory_size - 1);
+  model1.initNodes(batch_size, memory_size - 1);
 
   // create the input
   const std::vector<std::string> input_ids = {"0", "1"};
   Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size()); 
-  input.setValues({{{1, 5}}, {{2, 6}}, {{3, 7}}, {{4, 8}}});
+  input.setValues({ {{1, 5}, {0, 0}}, {{2, 6}, {0, 0}}, {{3, 7}, {0, 0}}, {{4, 8}, {0, 0}} });
   model1.mapValuesToNodes(input, input_ids, NodeStatus::activated, "output");  
 
   const std::vector<std::string> biases_ids = {"6", "7"};
@@ -1668,17 +1668,17 @@ BOOST_AUTO_TEST_CASE(modelTrainer1)
 
   // initialize nodes
   const int batch_size = 4;
-  const int memory_size = 1;
-	model1.initError(batch_size, memory_size);
+  const int memory_size = 2;
+	model1.initError(batch_size, memory_size - 1);
   model1.clearCache();
-  model1.initNodes(batch_size, memory_size);
+  model1.initNodes(batch_size, memory_size - 1);
   model1.initWeights();
 	model1.findCyclicPairs();
 
   // create the input
   const std::vector<std::string> input_ids = {"0", "1"};
   Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size()); 
-  input.setValues({{{1, 5}}, {{2, 6}}, {{3, 7}}, {{4, 8}}});
+  input.setValues({ {{1, 5}, {0, 0}}, {{2, 6}, {0, 0}}, {{3, 7}, {0, 0}}, {{4, 8}, {0, 0}} });
   model1.mapValuesToNodes(input, input_ids, NodeStatus::activated, "output");  
 
   const std::vector<std::string> biases_ids = {"6", "7"};
@@ -1717,12 +1717,12 @@ BOOST_AUTO_TEST_CASE(modelTrainer1)
     model1.backPropogate(0);
 
     // update the weights
-    model1.updateWeights(1);   
+    model1.updateWeights(1);
 
     // reinitialize the model
     model1.reInitializeNodeStatuses();
-		model1.initNodes(batch_size, memory_size);
-		model1.initError(batch_size, memory_size);
+		model1.initNodes(batch_size, memory_size - 1);
+		model1.initError(batch_size, memory_size - 1);
   }
   
   const Eigen::Tensor<float, 0> total_error = model1.getError().sum();

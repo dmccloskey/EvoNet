@@ -425,7 +425,7 @@ namespace SmartPeak
   {
     for (auto& node_map : nodes_)
     {
-      node_map.second->initNode(batch_size, memory_size, train);
+      node_map.second->initNode(batch_size, memory_size + 1, train); // +1 to ensure we stay within the allocated bounds of the tensor during F and BPTT
     }
   }
 
@@ -1205,11 +1205,12 @@ namespace SmartPeak
   void Model::CETT(const Eigen::Tensor<float, 3>& values, const std::vector<std::string>& node_names, const int & time_steps, int n_threads)
   {
 		// check time_steps vs memory_size
+		// [NOTE: was changed form memory_size to memory_size - 1]
 		int max_steps = time_steps;
-		if (time_steps > nodes_.begin()->second->getOutput().dimension(1))
+		if (time_steps >= nodes_.begin()->second->getOutput().dimension(1))
 		{
-			std::cout << "Time_steps will be scaled back to the memory_size." << std::endl;
-			max_steps = nodes_.begin()->second->getOutput().dimension(1);
+			std::cout << "Time_steps will be scaled back to the memory_size - 1." << std::endl;
+			max_steps = nodes_.begin()->second->getOutput().dimension(1) - 1;
 		}
 
 		if (values.dimension(1) - 1 > nodes_.begin()->second->getOutput().dimension(1))
@@ -1634,12 +1635,13 @@ namespace SmartPeak
   void Model::updateWeights(const int& time_steps)
   {
     // check time_steps vs memory_size
-    int max_steps = time_steps;
-    if (time_steps > nodes_.begin()->second->getOutput().dimension(1))
-    {
-      std::cout<<"Time_steps will be scaled back to the memory_size."<<std::endl;
-      max_steps = nodes_.begin()->second->getOutput().dimension(1);
-    }
+		// [TODO: changed from memory_size to memory_size - 1]
+		int max_steps = time_steps;
+		if (time_steps >= nodes_.begin()->second->getOutput().dimension(1))
+		{
+			std::cout << "Time_steps will be scaled back to the memory_size - 1." << std::endl;
+			max_steps = nodes_.begin()->second->getOutput().dimension(1) - 1;
+		}
 
     std::map<std::string, float> weight_derivatives;
 
@@ -1650,7 +1652,7 @@ namespace SmartPeak
     {
 			std::shared_ptr<Node> sink_node = nodes_.at(link_map.second->getSinkNodeName()); // which IntegrationWeightGradOp is determined by the sink node
 			sink_node->getIntegrationWeightGradShared()->initNetWeightError();
-      if (sink_node->getStatus() == NodeStatus::corrected)
+      if (sink_node->getStatus() == NodeStatus::corrected) // [TODO: Skip dummy nodes?]
       {
         // Sum the error from current and previous time-steps
         // [PARALLEL: implement threads here]
@@ -1659,7 +1661,7 @@ namespace SmartPeak
 				weights.setConstant(weights_.at(link_map.second->getWeightName())->getWeight());
 				Eigen::Tensor<float, 1> n_input_nodes(sink_node->getOutput().dimension(0));
 				n_input_nodes.setConstant(sink_node->getIntegrationShared()->getN());
-        for (int i=0; i<max_steps; ++i)
+        for (int i=0; i<=max_steps; ++i)
         {
           // [PARALLEL: move to threadPool/CUDA implementations]
 					// [Tests: update tests accordingly]
