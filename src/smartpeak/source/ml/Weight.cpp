@@ -184,6 +184,8 @@ namespace SmartPeak
 
   void Weight::updateWeight(const float& error)
   {
+		if (solver_->getName() == "DummySolverOp")
+			return;
     const float new_weight = solver_->operator()(weight_, getDrop()*error);
     weight_ = solver_->clipGradient(new_weight);
     checkWeight();
