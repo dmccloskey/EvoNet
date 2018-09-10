@@ -284,7 +284,7 @@ namespace SmartPeak
 			// update the weights
 			if (getVerbosityLevel() >= 2)
 				std::cout << "Weight Update..." << std::endl;
-			model.updateWeights(getMemorySize());
+			//model.updateWeights(getMemorySize());
 
 			// log epoch
 			if (log_training_) {

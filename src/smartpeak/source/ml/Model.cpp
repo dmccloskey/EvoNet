@@ -879,8 +879,8 @@ namespace SmartPeak
     {
       std::packaged_task<bool // encapsulate in a packaged_task
         (OperationList*, int, int, int, int
-        )> task(Model::calculateNetNodeInput_);
-      
+        )> task(Model::calculateNetNodeInput_);      
+
       // launch the thread
       task_results.push_back(task.get_future());
       std::thread task_thread(std::move(task),

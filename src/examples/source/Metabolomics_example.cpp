@@ -263,14 +263,14 @@ public:
 		const int n_output_nodes = output_data.dimension(2);
 		const int n_epochs = input_data.dimension(3);
 
-		//std::string sample_group_name = sample_group_names_[0];
-		//std::vector<float> mars;
-		//for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
-		//	float mar = calculateMAR(metabolomicsData_.at(sample_group_name),
-		//		biochemicalReactions_.at(reaction_ids_[nodes_iter]));
-		//	mars.push_back(mar);
-		//	//std::cout << "OutputNode: "<<nodes_iter<< " = " << mar << std::endl;
-		//}
+		std::string sample_group_name = sample_group_names_[0];
+		std::vector<float> mars;
+		for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
+			float mar = calculateMAR(metabolomicsData_.at(sample_group_name),
+				biochemicalReactions_.at(reaction_ids_[nodes_iter]));
+			mars.push_back(mar);
+			//std::cout << "OutputNode: "<<nodes_iter<< " = " << mar << std::endl;
+		}
 
 		for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
 			for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
@@ -280,10 +280,10 @@ public:
 					std::string sample_group_name = selectRandomElement(sample_group_names_);
 
 					for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
-						input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = calculateMAR(
-							metabolomicsData_.at(sample_group_name),
-							biochemicalReactions_.at(reaction_ids_[nodes_iter]));
-						//input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = mars[nodes_iter];
+						//input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = calculateMAR(
+						//	metabolomicsData_.at(sample_group_name),
+						//	biochemicalReactions_.at(reaction_ids_[nodes_iter]));
+						input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = mars[nodes_iter];
 					}
 
 					// convert the label to a one hot vector
