@@ -291,6 +291,7 @@ namespace SmartPeak
 				if (getVerbosityLevel() >= 2)
 					std::cout << "Logging..." << std::endl;
 				const Eigen::Tensor<float, 3> expected_values = output.chip(iter, 3);
+				model_logger.writeLogs(model, iter, { "Error" }, {}, { total_error(0) }, {}, output_nodes, expected_values);
 			}
 
 			// reinitialize the model
