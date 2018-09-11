@@ -263,14 +263,15 @@ public:
 		const int n_output_nodes = output_data.dimension(2);
 		const int n_epochs = input_data.dimension(3);
 
-		std::string sample_group_name = sample_group_names_[0];
-		std::vector<float> mars;
-		for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
-			float mar = calculateMAR(metabolomicsData_.at(sample_group_name),
-				biochemicalReactions_.at(reaction_ids_[nodes_iter]));
-			mars.push_back(mar);
-			//std::cout << "OutputNode: "<<nodes_iter<< " = " << mar << std::endl;
-		}
+		// NOTE: used for testing
+		//std::string sample_group_name = sample_group_names_[0];
+		//std::vector<float> mars;
+		//for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
+		//	float mar = calculateMAR(metabolomicsData_.at(sample_group_name),
+		//		biochemicalReactions_.at(reaction_ids_[nodes_iter]));
+		//	mars.push_back(mar);
+		//	//std::cout << "OutputNode: "<<nodes_iter<< " = " << mar << std::endl;
+		//}
 
 		for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
 			for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
@@ -280,10 +281,10 @@ public:
 					std::string sample_group_name = selectRandomElement(sample_group_names_);
 
 					for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
-						//input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = calculateMAR(
-						//	metabolomicsData_.at(sample_group_name),
-						//	biochemicalReactions_.at(reaction_ids_[nodes_iter]));
-						input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = mars[nodes_iter];
+						input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = calculateMAR(
+							metabolomicsData_.at(sample_group_name),
+							biochemicalReactions_.at(reaction_ids_[nodes_iter]));
+						//input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = mars[nodes_iter]; // NOTE: used for testing
 					}
 
 					// convert the label to a one hot vector
@@ -639,14 +640,14 @@ public:
 		Model& model,
 		const std::vector<float>& model_errors)
 	{
-		if (n_epochs > 100)
-		{
-			// update the solver parameters
-			std::shared_ptr<SolverOp> solver;
-			solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
-			for (auto& weight_map : model.getWeightsMap())
-				weight_map.second->setSolverOp(solver);
-		}
+		//if (n_epochs > 100)
+		//{
+		//	// update the solver parameters
+		//	std::shared_ptr<SolverOp> solver;
+		//	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
+		//	for (auto& weight_map : model.getWeightsMap())
+		//		weight_map.second->setSolverOp(solver);
+		//}
 	}
 };
 
@@ -990,8 +991,8 @@ void main_classification(std::string blood_fraction = "PLT")
 	// define the data simulator
 	MetDataSimClassification metabolomics_data;
 	//std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
-	//std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
-	std::string data_dir = "/home/user/Data/";
+	std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
+	//std::string data_dir = "/home/user/Data/";
 
 	std::string biochem_rxns_filename, metabo_data_filename, meta_data_filename;
 	if (blood_fraction == "RBC") {
@@ -1032,12 +1033,12 @@ void main_classification(std::string blood_fraction = "PLT")
 
 	// innitialize the model trainer
 	ModelTrainerExt model_trainer;
-	model_trainer.setBatchSize(1);
+	model_trainer.setBatchSize(4);
 	model_trainer.setMemorySize(1);
-	model_trainer.setNEpochsTraining(200);
-	model_trainer.setNEpochsValidation(1);
-	model_trainer.setNThreads(1); // [TODO: change back to 2!]
-	//model_trainer.setNThreads(n_hard_threads); // [TODO: change back to 2!]
+	model_trainer.setNEpochsTraining(10000);
+	model_trainer.setNEpochsValidation(100);
+	//model_trainer.setNThreads(1); // [TODO: change back to 2!]
+	model_trainer.setNThreads(n_hard_threads); // [TODO: change back to 2!]
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setLogging(true, false);
 	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()),

@@ -238,13 +238,13 @@ namespace SmartPeak
 			// update the model hyperparameters
 			adaptiveTrainerScheduler(0, iter, model, model_error);
 
-			//// forward propogate
-			//if (getVerbosityLevel() >= 2)
-			//	std::cout << "Foward Propogation..." << std::endl;
-			//if (iter == 0)
-			//	model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), true, true, getNThreads());
-			//else
-			//	model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), false, true, getNThreads());
+			// forward propogate
+			if (getVerbosityLevel() >= 2)
+				std::cout << "Foward Propogation..." << std::endl;
+			if (iter == 0)
+				model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), true, true, getNThreads());
+			else
+				model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), false, true, getNThreads());
 
 			// calculate the model error and node output 
 			if (getVerbosityLevel() >= 2)
@@ -291,7 +291,6 @@ namespace SmartPeak
 				if (getVerbosityLevel() >= 2)
 					std::cout << "Logging..." << std::endl;
 				const Eigen::Tensor<float, 3> expected_values = output.chip(iter, 3);
-				model_logger.writeLogs(model, iter, { "Error" }, {}, { total_error(0) }, {}, output_nodes, expected_values);
 			}
 
 			// reinitialize the model
