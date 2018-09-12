@@ -1035,7 +1035,7 @@ void main_classification(std::string blood_fraction = "PLT")
 	ModelTrainerExt model_trainer;
 	model_trainer.setBatchSize(4);
 	model_trainer.setMemorySize(1);
-	model_trainer.setNEpochsTraining(10000);
+	model_trainer.setNEpochsTraining(1000000);
 	model_trainer.setNEpochsValidation(100);
 	//model_trainer.setNThreads(1); // [TODO: change back to 2!]
 	model_trainer.setNThreads(n_hard_threads); // [TODO: change back to 2!]
