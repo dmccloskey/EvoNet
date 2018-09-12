@@ -605,14 +605,14 @@ public:
 			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
 			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names.size() + n_hidden_2) / 2, 1)),
 			std::shared_ptr<SolverOp>(new AdamOp(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
-		//node_names = model_builder.addFullyConnected(model, "FC3", "FC3", node_names, n_hidden_3,
-		//	std::shared_ptr<ActivationOp<float>>(new LeakyReLUOp<float>()),
-		//	std::shared_ptr<ActivationOp<float>>(new LeakyReLUGradOp<float>()),
-		//	std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
-		//	std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
-		//	std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-		//	std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names.size() + n_hidden_3) / 2, 1)),
-		//	std::shared_ptr<SolverOp>(new AdamOp(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+		node_names = model_builder.addFullyConnected(model, "FC3", "FC3", node_names, n_hidden_3,
+			std::shared_ptr<ActivationOp<float>>(new LeakyReLUOp<float>()),
+			std::shared_ptr<ActivationOp<float>>(new LeakyReLUGradOp<float>()),
+			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
+			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
+			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
+			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names.size() + n_hidden_3) / 2, 1)),
+			std::shared_ptr<SolverOp>(new AdamOp(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 		node_names = model_builder.addFullyConnected(model, "Output", "Output", node_names, n_outputs,
 			//std::shared_ptr<ActivationOp<float>>(new SigmoidOp<float>()),
 			//std::shared_ptr<ActivationOp<float>>(new SigmoidGradOp<float>()),
