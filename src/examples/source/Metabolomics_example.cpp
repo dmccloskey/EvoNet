@@ -664,6 +664,14 @@ PWData PWComparison(MetDataSimClassification& metabolomics_data, const std::vect
 	PWData pw_data;
 	for (const std::string& mar : metabolomics_data.reaction_ids_) {
 		for (size_t sgn1_iter = 0; sgn1_iter < sample_names.size(); ++sgn1_iter) {
+
+			// sample the MAR data
+			std::vector<float> samples1;
+			for (int sample_iter = 0; sample_iter < n_samples; ++sample_iter) {
+				samples1.push_back(
+					metabolomics_data.calculateMAR(metabolomics_data.metabolomicsData_.at(sample_names[sgn1_iter]),
+						metabolomics_data.biochemicalReactions_.at(mar)));
+			}
 			for (size_t sgn2_iter = sgn1_iter + 1; sgn2_iter < sample_names.size(); ++sgn2_iter) {
 				std::cout << "MAR: " << mar << " Sample1: " << sgn1_iter << " Sample2: " << sgn2_iter << std::endl;
 
@@ -676,11 +684,8 @@ PWData PWComparison(MetDataSimClassification& metabolomics_data, const std::vect
 				pw_stats.n2 = n_samples;
 
 				// sample the MAR data
-				std::vector<float> samples1, samples2;
+				std::vector<float> samples2;
 				for (int sample_iter = 0; sample_iter < n_samples; ++sample_iter) {
-					samples1.push_back(
-						metabolomics_data.calculateMAR(metabolomics_data.metabolomicsData_.at(sample_names[sgn1_iter]),
-							metabolomics_data.biochemicalReactions_.at(mar)));
 					samples2.push_back(
 						metabolomics_data.calculateMAR(metabolomics_data.metabolomicsData_.at(sample_names[sgn2_iter]),
 							metabolomics_data.biochemicalReactions_.at(mar)));
@@ -1002,7 +1007,6 @@ void main_statistics_timecourse(std::string blood_fraction = "PLT",
 		// Export to file
 		ExportPWData(timeCourse_S01D01_filename, timeCourseS01D01);
 	}
-
 }
 void main_statistics_preVsPost(std::string blood_fraction = "PLT", bool run_oneVSone = true, bool run_preVSpost = true, bool run_postMinPre = false)
 {
@@ -1308,10 +1312,11 @@ void main_reconstruction()
 // Main
 int main(int argc, char** argv)
 {
+	main_statistics_timecourse("PLT", true);
 	//main_statistics_preVsPost("PLT", false, false, false);
 	//main_statistics_preVsPost("RBC", false, false, false);
 	//main_statistics_preVsPost("P", false, false, false);
-	main_classification();
+	//main_classification();
 	//main_reconstruction();
 	return 0;
 }
