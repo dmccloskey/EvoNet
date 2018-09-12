@@ -93,7 +93,10 @@ typedef std::map<std::string, BiochemicalReaction> BiochemicalReactions;
 
 struct MetaDatum {
 	std::string sample_group_name;
-	std::string label;
+	std::string condition;
+	std::string time;
+	std::string subject;
+	std::string temperature;
 };
 typedef std::map<std::string, MetaDatum> MetaData;
 
@@ -231,17 +234,20 @@ public:
 		const std::string& filename,
 		MetaData& metaData)
 	{
-		io::CSVReader<2> data_in(filename);
+		io::CSVReader<5> data_in(filename);
 		data_in.read_header(io::ignore_extra_column,
-			"sample_group_name", "label");
-		std::string sample_group_name_str, label_str;
+			"sample_group_name", "condition", "time", "subject", "temperature");
+		std::string sample_group_name_str, condition_str, time_str, subject_str, temperature_str;
 
-		while (data_in.read_row(sample_group_name_str, label_str))
+		while (data_in.read_row(sample_group_name_str, condition_str, time_str, subject_str, temperature_str))
 		{
 			// parse the .csv file
 			MetaDatum row;
 			row.sample_group_name = sample_group_name_str;
-			row.label = label_str;
+			row.condition = condition_str;
+			row.time = time_str;
+			row.subject = subject_str;
+			row.temperature = temperature_str;
 
 			// build up the map
 			auto found_in_data = metaData.emplace(sample_group_name_str, row);
@@ -288,7 +294,7 @@ public:
 					}
 
 					// convert the label to a one hot vector
-					Eigen::Tensor<float, 1> one_hot_vec = OneHotEncoder<std::string, float>(metaData_.at(sample_group_name).label, labels_);
+					Eigen::Tensor<float, 1> one_hot_vec = OneHotEncoder<std::string, float>(metaData_.at(sample_group_name).condition, labels_);
 					Eigen::Tensor<float, 1> one_hot_vec_smoothed = one_hot_vec.unaryExpr(LabelSmoother<float>(0.01, 0.01));
 
 					for (int nodes_iter = 0; nodes_iter < n_output_nodes/2; ++nodes_iter) {
@@ -382,8 +388,8 @@ public:
 		for (auto const& imap : metaData_)
 		{
 			sample_group_names_.push_back(imap.first);
-			if (std::count(labels_.begin(), labels_.end(), imap.second.label) == 0)
-				labels_.push_back(imap.second.label);
+			if (std::count(labels_.begin(), labels_.end(), imap.second.condition) == 0)
+				labels_.push_back(imap.second.condition);
 		}
 	}
 
@@ -882,15 +888,102 @@ bool ExportPWData(const std::string& filename, const PWData& pw_data) {
 }
 
 // Scripts to run
-void main_statistics(std::string blood_fraction = "PLT", bool run_oneVSone = true, bool run_preVSpost = true, bool run_postMinPre = false)
+void main_statistics_timecourse(std::string blood_fraction = "PLT", bool run_oneVSone = true, bool run_preVSpost = true, bool run_postMinPre = false)
 {
 	// define the data simulator
 	MetDataSimClassification metabolomics_data;
 
 	// data dirs
 	//std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
-	//std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
-	std::string data_dir = "/home/user/Data/";
+	std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
+	//std::string data_dir = "/home/user/Data/";
+
+	std::string biochem_rxns_filename, metabo_data_filename, meta_data_filename,
+		oneVSonePre_filename, oneVSonePost_filename, preVSpost_filename, postMinPre_filename;
+	std::vector<std::string> pre_samples, post_samples;
+	if (blood_fraction == "RBC") {
+		// RBC filenames
+		biochem_rxns_filename = data_dir + "iAB_RBC_283.csv";
+		metabo_data_filename = data_dir + "MetabolomicsData_RBC.csv";
+		meta_data_filename = data_dir + "MetaData_prePost_RBC.csv";
+		oneVSonePre_filename = data_dir + "RBC_oneVSonePre.csv";
+		oneVSonePost_filename = data_dir + "RBC_oneVSonePost.csv";
+		preVSpost_filename = data_dir + "RBC_preVSpost.csv";
+		postMinPre_filename = data_dir + "RBC_postMinPre.csv";
+		pre_samples = { "RBC_36","RBC_142","RBC_140","RBC_34","RBC_154","RBC_143","RBC_30","RBC_31","RBC_33","RBC_35","RBC_141" };
+		post_samples = { "RBC_43","RBC_152","RBC_150","RBC_38","RBC_155","RBC_153","RBC_37","RBC_39","RBC_42","RBC_40","RBC_151" };
+	}
+	else if (blood_fraction == "PLT") {
+		// PLT filenames
+		biochem_rxns_filename = data_dir + "iAT_PLT_636.csv";
+		metabo_data_filename = data_dir + "MetabolomicsData_PLT.csv";
+		meta_data_filename = data_dir + "MetaData_prePost_PLT.csv";
+		oneVSonePre_filename = data_dir + "PLT_oneVSonePre.csv";
+		oneVSonePost_filename = data_dir + "PLT_oneVSonePost.csv";
+		preVSpost_filename = data_dir + "PLT_preVSpost.csv";
+		postMinPre_filename = data_dir + "PLT_postMinPre.csv";
+		pre_samples = { "PLT_36","PLT_142","PLT_140","PLT_34","PLT_154","PLT_143","PLT_30","PLT_31","PLT_33","PLT_35","PLT_141" };
+		post_samples = { "PLT_43","PLT_152","PLT_150","PLT_38","PLT_155","PLT_153","PLT_37","PLT_39","PLT_42","PLT_40","PLT_151" };
+	}
+	else if (blood_fraction == "P") {
+		// P filenames
+		biochem_rxns_filename = data_dir + "iAT_PLT_636.csv";
+		metabo_data_filename = data_dir + "MetabolomicsData_P.csv";
+		meta_data_filename = data_dir + "MetaData_prePost_P.csv";
+		oneVSonePre_filename = data_dir + "P_oneVSonePre.csv";
+		oneVSonePost_filename = data_dir + "P_oneVSonePost.csv";
+		preVSpost_filename = data_dir + "P_preVSpost.csv";
+		postMinPre_filename = data_dir + "P_postMinPre.csv";
+		pre_samples = { "P_36","P_142","P_140","P_34","P_154","P_143","P_30","P_31","P_33","P_35","P_141" };
+		post_samples = { "P_43","P_152","P_150","P_38","P_155","P_153","P_37","P_39","P_42","P_40","P_151" };
+	}
+
+	// read in the data
+	metabolomics_data.readBiochemicalReactions(biochem_rxns_filename);
+	metabolomics_data.readMetabolomicsData(metabo_data_filename);
+	metabolomics_data.readMetaData(meta_data_filename);
+	metabolomics_data.findMARs();
+	metabolomics_data.findLabels();
+
+	if (run_oneVSone) {
+		// Find significant pair-wise MARS between each sample (one vs one Pre-ASA)
+		PWData oneVSonePre = PWComparison(metabolomics_data, pre_samples, 10000, 0.05, 1.0);
+
+		// Export to file
+		ExportPWData(oneVSonePre_filename, oneVSonePre);
+
+		// Find significant pair-wise MARS between each sample (one vs one Post-ASA)
+		PWData oneVSonePost = PWComparison(metabolomics_data, post_samples, 10000, 0.05, 1.0);
+
+		// Export to file
+		ExportPWData(oneVSonePost_filename, oneVSonePost);
+	}
+
+	if (run_preVSpost) {
+		// Find significant pair-wise MARS between pre/post samples (one pre vs one post)
+		PWData preVSpost = PWPrePostComparison(metabolomics_data, pre_samples, post_samples, 11, 10000, 0.05, 1.0);
+
+		// Export to file
+		ExportPWData(preVSpost_filename, preVSpost);
+	}
+
+	if (run_postMinPre) {
+		// Find significant pair-wise MARS between post-pre samples (post-pre vs post-pre) for each individual
+		PWData postMinPre = PWPrePostDifference(metabolomics_data, pre_samples, post_samples, 11, 10000, 0.05, 1.0);
+
+		// Export to file
+		ExportPWData(postMinPre_filename, postMinPre);
+	}
+}
+void main_statistics_preVsPost(std::string blood_fraction = "PLT", bool run_oneVSone = true, bool run_preVSpost = true, bool run_postMinPre = false)
+{
+	// define the data simulator
+	MetDataSimClassification metabolomics_data;
+
+	// data dirs
+	//std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
+	std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
+	//std::string data_dir = "/home/user/Data/";
 
 	std::string biochem_rxns_filename, metabo_data_filename, meta_data_filename,
 		oneVSonePre_filename, oneVSonePost_filename, preVSpost_filename, postMinPre_filename;
@@ -1033,9 +1126,9 @@ void main_classification(std::string blood_fraction = "PLT")
 
 	// innitialize the model trainer
 	ModelTrainerExt model_trainer;
-	model_trainer.setBatchSize(4);
+	model_trainer.setBatchSize(1);
 	model_trainer.setMemorySize(1);
-	model_trainer.setNEpochsTraining(1000000);
+	model_trainer.setNEpochsTraining(100000);
 	model_trainer.setNEpochsValidation(100);
 	//model_trainer.setNThreads(1); // [TODO: change back to 2!]
 	model_trainer.setNThreads(n_hard_threads); // [TODO: change back to 2!]
@@ -1186,9 +1279,9 @@ void main_reconstruction()
 // Main
 int main(int argc, char** argv)
 {
-	//main_statistics("PLT");
-	//main_statistics("RBC");
-	//main_statistics("P");
+	//main_statistics_preVsPost("PLT", false, false, false);
+	//main_statistics_preVsPost("RBC", false, false, false);
+	//main_statistics_preVsPost("P", false, false, false);
 	main_classification();
 	//main_reconstruction();
 	return 0;
