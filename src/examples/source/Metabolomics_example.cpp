@@ -888,7 +888,9 @@ bool ExportPWData(const std::string& filename, const PWData& pw_data) {
 }
 
 // Scripts to run
-void main_statistics_timecourse(std::string blood_fraction = "PLT", bool run_oneVSone = true, bool run_preVSpost = true, bool run_postMinPre = false)
+void main_statistics_timecourse(std::string blood_fraction = "PLT", 
+	bool run_timeCourse_S01D01 = false, bool run_timeCourse_S01D02 = false, bool run_timeCourse_S01D03 = false, bool run_timeCourse_S01D04 = false, bool run_timeCourse_S01D05 = false,
+	bool run_timeCourse_S02D01 = false, bool run_timeCourse_S02D02 = false, bool run_timeCourse_S02D03 = false, bool run_timeCourse_S02D04 = false, bool run_timeCourse_S02D05 = false)
 {
 	// define the data simulator
 	MetDataSimClassification metabolomics_data;
@@ -899,43 +901,91 @@ void main_statistics_timecourse(std::string blood_fraction = "PLT", bool run_one
 	//std::string data_dir = "/home/user/Data/";
 
 	std::string biochem_rxns_filename, metabo_data_filename, meta_data_filename,
-		oneVSonePre_filename, oneVSonePost_filename, preVSpost_filename, postMinPre_filename;
-	std::vector<std::string> pre_samples, post_samples;
+		timeCourse_S01D01_filename, timeCourse_S01D02_filename, timeCourse_S01D03_filename, timeCourse_S01D04_filename, timeCourse_S01D05_filename,
+		timeCourse_S02D01_filename, timeCourse_S02D02_filename, timeCourse_S02D03_filename, timeCourse_S02D04_filename, timeCourse_S02D05_filename;
+	std::vector<std::string> pre_samples, 
+		timeCourse_S01D01_samples, timeCourse_S01D02_samples, timeCourse_S01D03_samples, timeCourse_S01D04_samples, timeCourse_S01D05_samples,
+		timeCourse_S02D01_samples, timeCourse_S02D02_samples, timeCourse_S02D03_samples, timeCourse_S02D04_samples, timeCourse_S02D05_samples;
 	if (blood_fraction == "RBC") {
 		// RBC filenames
 		biochem_rxns_filename = data_dir + "iAB_RBC_283.csv";
 		metabo_data_filename = data_dir + "MetabolomicsData_RBC.csv";
 		meta_data_filename = data_dir + "MetaData_prePost_RBC.csv";
-		oneVSonePre_filename = data_dir + "RBC_oneVSonePre.csv";
-		oneVSonePost_filename = data_dir + "RBC_oneVSonePost.csv";
-		preVSpost_filename = data_dir + "RBC_preVSpost.csv";
-		postMinPre_filename = data_dir + "RBC_postMinPre.csv";
+		timeCourse_S01D01_filename = data_dir + "RBC_timeCourse_S01D01.csv";
+		timeCourse_S01D02_filename = data_dir + "RBC_timeCourse_S01D02.csv";
+		timeCourse_S01D03_filename = data_dir + "RBC_timeCourse_S01D03.csv";
+		timeCourse_S01D04_filename = data_dir + "RBC_timeCourse_S01D04.csv";
+		timeCourse_S01D05_filename = data_dir + "RBC_timeCourse_S01D05.csv";
+		timeCourse_S02D01_filename = data_dir + "RBC_timeCourse_S02D01.csv";
+		timeCourse_S02D02_filename = data_dir + "RBC_timeCourse_S02D02.csv";
+		timeCourse_S02D03_filename = data_dir + "RBC_timeCourse_S02D03.csv";
+		timeCourse_S02D04_filename = data_dir + "RBC_timeCourse_S02D04.csv";
+		timeCourse_S02D05_filename = data_dir + "RBC_timeCourse_S02D05.csv";
 		pre_samples = { "RBC_36","RBC_142","RBC_140","RBC_34","RBC_154","RBC_143","RBC_30","RBC_31","RBC_33","RBC_35","RBC_141" };
-		post_samples = { "RBC_43","RBC_152","RBC_150","RBC_38","RBC_155","RBC_153","RBC_37","RBC_39","RBC_42","RBC_40","RBC_151" };
+		timeCourse_S01D01_samples = { "S01_D01_RBC_25C_0hr","S01_D01_RBC_25C_2hr","S01_D01_RBC_25C_6.5hr","S01_D01_RBC_25C_22hr","S01_D01_RBC_37C_22hr" };
+		timeCourse_S01D02_samples = { "S01_D02_RBC_25C_0hr","S01_D02_RBC_25C_2hr","S01_D02_RBC_25C_6.5hr","S01_D02_RBC_25C_22hr","S01_D02_RBC_37C_22hr" };
+		timeCourse_S01D03_samples = { "S01_D03_RBC_25C_0hr","S01_D03_RBC_25C_2hr","S01_D03_RBC_25C_6.5hr","S01_D03_RBC_25C_22hr","S01_D03_RBC_37C_22hr" };
+		timeCourse_S01D04_samples = { "S01_D04_RBC_25C_0hr","S01_D04_RBC_25C_2hr","S01_D04_RBC_25C_6.5hr","S01_D04_RBC_25C_22hr","S01_D04_RBC_37C_22hr" };
+		timeCourse_S01D05_samples = { "S01_D05_RBC_25C_0hr","S01_D05_RBC_25C_2hr","S01_D05_RBC_25C_6.5hr","S01_D05_RBC_25C_22hr","S01_D05_RBC_37C_22hr" };
+		timeCourse_S02D01_samples = { "S02_D01_RBC_25C_0hr","S02_D01_RBC_25C_2hr","S02_D01_RBC_25C_6.5hr","S02_D01_RBC_25C_22hr","S02_D01_RBC_37C_22hr" };
+		timeCourse_S02D02_samples = { "S02_D02_RBC_25C_0hr","S02_D02_RBC_25C_2hr","S02_D02_RBC_25C_6.5hr","S02_D02_RBC_25C_22hr","S02_D02_RBC_37C_22hr" };
+		timeCourse_S02D03_samples = { "S02_D03_RBC_25C_0hr","S02_D03_RBC_25C_2hr","S02_D03_RBC_25C_6.5hr","S02_D03_RBC_25C_22hr","S02_D03_RBC_37C_22hr" };
+		timeCourse_S02D04_samples = { "S02_D04_RBC_25C_0hr","S02_D04_RBC_25C_2hr","S02_D04_RBC_25C_6.5hr","S02_D04_RBC_25C_22hr","S02_D04_RBC_37C_22hr" };
+		timeCourse_S02D05_samples = { "S02_D05_RBC_25C_0hr","S02_D05_RBC_25C_2hr","S02_D05_RBC_25C_6.5hr","S02_D05_RBC_25C_22hr","S02_D05_RBC_37C_22hr" };
 	}
 	else if (blood_fraction == "PLT") {
 		// PLT filenames
 		biochem_rxns_filename = data_dir + "iAT_PLT_636.csv";
 		metabo_data_filename = data_dir + "MetabolomicsData_PLT.csv";
 		meta_data_filename = data_dir + "MetaData_prePost_PLT.csv";
-		oneVSonePre_filename = data_dir + "PLT_oneVSonePre.csv";
-		oneVSonePost_filename = data_dir + "PLT_oneVSonePost.csv";
-		preVSpost_filename = data_dir + "PLT_preVSpost.csv";
-		postMinPre_filename = data_dir + "PLT_postMinPre.csv";
+		timeCourse_S01D01_filename = data_dir + "PLT_timeCourse_S01D01.csv";
+		timeCourse_S01D02_filename = data_dir + "PLT_timeCourse_S01D02.csv";
+		timeCourse_S01D03_filename = data_dir + "PLT_timeCourse_S01D03.csv";
+		timeCourse_S01D04_filename = data_dir + "PLT_timeCourse_S01D04.csv";
+		timeCourse_S01D05_filename = data_dir + "PLT_timeCourse_S01D05.csv";
+		timeCourse_S02D01_filename = data_dir + "PLT_timeCourse_S02D01.csv";
+		timeCourse_S02D02_filename = data_dir + "PLT_timeCourse_S02D02.csv";
+		timeCourse_S02D03_filename = data_dir + "PLT_timeCourse_S02D03.csv";
+		timeCourse_S02D04_filename = data_dir + "PLT_timeCourse_S02D04.csv";
+		timeCourse_S02D05_filename = data_dir + "PLT_timeCourse_S02D05.csv";
 		pre_samples = { "PLT_36","PLT_142","PLT_140","PLT_34","PLT_154","PLT_143","PLT_30","PLT_31","PLT_33","PLT_35","PLT_141" };
-		post_samples = { "PLT_43","PLT_152","PLT_150","PLT_38","PLT_155","PLT_153","PLT_37","PLT_39","PLT_42","PLT_40","PLT_151" };
+		timeCourse_S01D01_samples = { "S01_D01_PLT_25C_0hr","S01_D01_PLT_25C_2hr","S01_D01_PLT_25C_6.5hr","S01_D01_PLT_25C_22hr","S01_D01_PLT_37C_22hr" };
+		timeCourse_S01D02_samples = { "S01_D02_PLT_25C_0hr","S01_D02_PLT_25C_2hr","S01_D02_PLT_25C_6.5hr","S01_D02_PLT_25C_22hr","S01_D02_PLT_37C_22hr" };
+		timeCourse_S01D03_samples = { "S01_D03_PLT_25C_0hr","S01_D03_PLT_25C_2hr","S01_D03_PLT_25C_6.5hr","S01_D03_PLT_25C_22hr","S01_D03_PLT_37C_22hr" };
+		timeCourse_S01D04_samples = { "S01_D04_PLT_25C_0hr","S01_D04_PLT_25C_2hr","S01_D04_PLT_25C_6.5hr","S01_D04_PLT_25C_22hr","S01_D04_PLT_37C_22hr" };
+		timeCourse_S01D05_samples = { "S01_D05_PLT_25C_0hr","S01_D05_PLT_25C_2hr","S01_D05_PLT_25C_6.5hr","S01_D05_PLT_25C_22hr","S01_D05_PLT_37C_22hr" };
+		timeCourse_S02D01_samples = { "S02_D01_PLT_25C_0hr","S02_D01_PLT_25C_2hr","S02_D01_PLT_25C_6.5hr","S02_D01_PLT_25C_22hr","S02_D01_PLT_37C_22hr" };
+		timeCourse_S02D02_samples = { "S02_D02_PLT_25C_0hr","S02_D02_PLT_25C_2hr","S02_D02_PLT_25C_6.5hr","S02_D02_PLT_25C_22hr","S02_D02_PLT_37C_22hr" };
+		timeCourse_S02D03_samples = { "S02_D03_PLT_25C_0hr","S02_D03_PLT_25C_2hr","S02_D03_PLT_25C_6.5hr","S02_D03_PLT_25C_22hr","S02_D03_PLT_37C_22hr" };
+		timeCourse_S02D04_samples = { "S02_D04_PLT_25C_0hr","S02_D04_PLT_25C_2hr","S02_D04_PLT_25C_6.5hr","S02_D04_PLT_25C_22hr","S02_D04_PLT_37C_22hr" };
+		timeCourse_S02D05_samples = { "S02_D05_PLT_25C_0hr","S02_D05_PLT_25C_2hr","S02_D05_PLT_25C_6.5hr","S02_D05_PLT_25C_22hr","S02_D05_PLT_37C_22hr" };
 	}
 	else if (blood_fraction == "P") {
 		// P filenames
 		biochem_rxns_filename = data_dir + "iAT_PLT_636.csv";
 		metabo_data_filename = data_dir + "MetabolomicsData_P.csv";
 		meta_data_filename = data_dir + "MetaData_prePost_P.csv";
-		oneVSonePre_filename = data_dir + "P_oneVSonePre.csv";
-		oneVSonePost_filename = data_dir + "P_oneVSonePost.csv";
-		preVSpost_filename = data_dir + "P_preVSpost.csv";
-		postMinPre_filename = data_dir + "P_postMinPre.csv";
+		timeCourse_S01D01_filename = data_dir + "P_timeCourse_S01D01.csv";
+		timeCourse_S01D02_filename = data_dir + "P_timeCourse_S01D02.csv";
+		timeCourse_S01D03_filename = data_dir + "P_timeCourse_S01D03.csv";
+		timeCourse_S01D04_filename = data_dir + "P_timeCourse_S01D04.csv";
+		timeCourse_S01D05_filename = data_dir + "P_timeCourse_S01D05.csv";
+		timeCourse_S02D01_filename = data_dir + "P_timeCourse_S02D01.csv";
+		timeCourse_S02D02_filename = data_dir + "P_timeCourse_S02D02.csv";
+		timeCourse_S02D03_filename = data_dir + "P_timeCourse_S02D03.csv";
+		timeCourse_S02D04_filename = data_dir + "P_timeCourse_S02D04.csv";
+		timeCourse_S02D05_filename = data_dir + "P_timeCourse_S02D05.csv";
 		pre_samples = { "P_36","P_142","P_140","P_34","P_154","P_143","P_30","P_31","P_33","P_35","P_141" };
-		post_samples = { "P_43","P_152","P_150","P_38","P_155","P_153","P_37","P_39","P_42","P_40","P_151" };
+		timeCourse_S01D01_samples = { "S01_D01_P_25C_0hr","S01_D01_P_25C_2hr","S01_D01_P_25C_6.5hr","S01_D01_P_25C_22hr","S01_D01_P_37C_22hr" };
+		timeCourse_S01D02_samples = { "S01_D02_P_25C_0hr","S01_D02_P_25C_2hr","S01_D02_P_25C_6.5hr","S01_D02_P_25C_22hr","S01_D02_P_37C_22hr" };
+		timeCourse_S01D03_samples = { "S01_D03_P_25C_0hr","S01_D03_P_25C_2hr","S01_D03_P_25C_6.5hr","S01_D03_P_25C_22hr","S01_D03_P_37C_22hr" };
+		timeCourse_S01D04_samples = { "S01_D04_P_25C_0hr","S01_D04_P_25C_2hr","S01_D04_P_25C_6.5hr","S01_D04_P_25C_22hr","S01_D04_P_37C_22hr" };
+		timeCourse_S01D05_samples = { "S01_D05_P_25C_0hr","S01_D05_P_25C_2hr","S01_D05_P_25C_6.5hr","S01_D05_P_25C_22hr","S01_D05_P_37C_22hr" };
+		timeCourse_S02D01_samples = { "S02_D01_P_25C_0hr","S02_D01_P_25C_2hr","S02_D01_P_25C_6.5hr","S02_D01_P_25C_22hr","S02_D01_P_37C_22hr" };
+		timeCourse_S02D02_samples = { "S02_D02_P_25C_0hr","S02_D02_P_25C_2hr","S02_D02_P_25C_6.5hr","S02_D02_P_25C_22hr","S02_D02_P_37C_22hr" };
+		timeCourse_S02D03_samples = { "S02_D03_P_25C_0hr","S02_D03_P_25C_2hr","S02_D03_P_25C_6.5hr","S02_D03_P_25C_22hr","S02_D03_P_37C_22hr" };
+		timeCourse_S02D04_samples = { "S02_D04_P_25C_0hr","S02_D04_P_25C_2hr","S02_D04_P_25C_6.5hr","S02_D04_P_25C_22hr","S02_D04_P_37C_22hr" };
+		timeCourse_S02D05_samples = { "S02_D05_P_25C_0hr","S02_D05_P_25C_2hr","S02_D05_P_25C_6.5hr","S02_D05_P_25C_22hr","S02_D05_P_37C_22hr" };
 	}
 
 	// read in the data
@@ -945,35 +995,14 @@ void main_statistics_timecourse(std::string blood_fraction = "PLT", bool run_one
 	metabolomics_data.findMARs();
 	metabolomics_data.findLabels();
 
-	if (run_oneVSone) {
+	if (run_timeCourse_S01D01) {
 		// Find significant pair-wise MARS between each sample (one vs one Pre-ASA)
-		PWData oneVSonePre = PWComparison(metabolomics_data, pre_samples, 10000, 0.05, 1.0);
+		PWData timeCourseS01D01 = PWComparison(metabolomics_data, timeCourse_S01D01_samples, 10000, 0.05, 1.0);
 
 		// Export to file
-		ExportPWData(oneVSonePre_filename, oneVSonePre);
-
-		// Find significant pair-wise MARS between each sample (one vs one Post-ASA)
-		PWData oneVSonePost = PWComparison(metabolomics_data, post_samples, 10000, 0.05, 1.0);
-
-		// Export to file
-		ExportPWData(oneVSonePost_filename, oneVSonePost);
+		ExportPWData(timeCourse_S01D01_filename, timeCourseS01D01);
 	}
 
-	if (run_preVSpost) {
-		// Find significant pair-wise MARS between pre/post samples (one pre vs one post)
-		PWData preVSpost = PWPrePostComparison(metabolomics_data, pre_samples, post_samples, 11, 10000, 0.05, 1.0);
-
-		// Export to file
-		ExportPWData(preVSpost_filename, preVSpost);
-	}
-
-	if (run_postMinPre) {
-		// Find significant pair-wise MARS between post-pre samples (post-pre vs post-pre) for each individual
-		PWData postMinPre = PWPrePostDifference(metabolomics_data, pre_samples, post_samples, 11, 10000, 0.05, 1.0);
-
-		// Export to file
-		ExportPWData(postMinPre_filename, postMinPre);
-	}
 }
 void main_statistics_preVsPost(std::string blood_fraction = "PLT", bool run_oneVSone = true, bool run_preVSpost = true, bool run_postMinPre = false)
 {
