@@ -131,5 +131,49 @@ namespace SmartPeak
 		en = sqrt(en1*en2 / (en1 + en2));
 		prob = probks((en + 0.12 + 0.11 / en)*(d));
 	}
+
+	template<typename T>
+	void initLogFacs(T* logFacs, int n) {
+		logFacs[0] = 0;
+		for (int i = 1; i < n + 1; ++i) {
+			logFacs[i] = logFacs[i - 1] + std::log((T)i); // only n times of log() calls
+		}
+	}
+
+	template<typename T>
+	T logHypergeometricProb(T* logFacs, int a, int b, int c, int d) {
+		return logFacs[a + b] + logFacs[c + d] + logFacs[a + c] + logFacs[b + d]
+			- logFacs[a] - logFacs[b] - logFacs[c] - logFacs[d] - logFacs[a + b + c + d];
+	}
+
+	/*
+	@brief Implementation of Fishers exact test
+
+	Example:
+		m = Genes IN GO term
+		n = Genes NOT IN GO term
+		k = Gene hits, that is, differentially expressed
+		x = Genes both IN GO term and differentially expressed 'hits'
+		where a = x, b = m - x, c = k - x, and d = n - (k - x)
+
+	@returns one-tailed probability
+	*/
+	template<typename T>
+	T fisherExactTest(const int& a, const int& b, const int& c, const int& d) {
+		int n = a + b + c + d;
+		T* logFacs = new T[n + 1]; // *** dynamically allocate memory logFacs[0..n] ***
+		initLogFacs(logFacs, n); // *** initialize logFacs array ***
+		T logpCutoff = logHypergeometricProb(logFacs, a, b, c, d); // *** logFacs added
+		T pFraction = 0;
+		for (int x = 0; x <= n; ++x) {
+			if (a + b - x >= 0 && a + c - x >= 0 && d - a + x >= 0) {
+				T l = logHypergeometricProb(logFacs, x, a + b - x, a + c - x, d - a + x);
+				if (l <= logpCutoff) pFraction += std::exp(l - logpCutoff);
+			}
+		}
+		T logpValue = logpCutoff + log(pFraction);
+		delete[] logFacs;
+		return std::exp(logpValue);
+	}
 }
 #endif //SMARTPEAK_STATISTICS_H

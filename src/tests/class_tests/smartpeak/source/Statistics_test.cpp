@@ -43,4 +43,10 @@ BOOST_AUTO_TEST_CASE(S_kstwo)
 	//BOOST_CHECK_CLOSE(prob, 0.10718344778577717, 1e-5); //python3.6
 }
 
+BOOST_AUTO_TEST_CASE(S_fisherExactTest)
+{
+	double prob = fisherExactTest<double>(1982, 3018, 2056, 2944);
+	BOOST_CHECK_CLOSE(prob, 0.1367998254147284, 1e-5);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
