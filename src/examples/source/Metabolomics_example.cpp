@@ -665,6 +665,10 @@ PWData PWComparison(MetDataSimClassification& metabolomics_data, const std::vect
 	for (const std::string& mar : metabolomics_data.reaction_ids_) {
 		for (size_t sgn1_iter = 0; sgn1_iter < sample_names.size(); ++sgn1_iter) {
 
+			// check if the sample name exists
+			if (metabolomics_data.metabolomicsData_.count(sample_names[sgn1_iter]) == 0)
+				continue;
+
 			// sample the MAR data
 			std::vector<float> samples1;
 			for (int sample_iter = 0; sample_iter < n_samples; ++sample_iter) {
@@ -673,6 +677,11 @@ PWData PWComparison(MetDataSimClassification& metabolomics_data, const std::vect
 						metabolomics_data.biochemicalReactions_.at(mar)));
 			}
 			for (size_t sgn2_iter = sgn1_iter + 1; sgn2_iter < sample_names.size(); ++sgn2_iter) {
+
+				// check if the sample name exists
+				if (metabolomics_data.metabolomicsData_.count(sample_names[sgn2_iter]) == 0)
+					continue;
+
 				std::cout << "MAR: " << mar << " Sample1: " << sgn1_iter << " Sample2: " << sgn2_iter << std::endl;
 
 				// initialize the data struct
@@ -733,6 +742,12 @@ PWData PWPrePostComparison(MetDataSimClassification& metabolomics_data,
 	PWData pw_data;
 	for (const std::string& mar : metabolomics_data.reaction_ids_) {
 		for (size_t pairs_iter = 0; pairs_iter<n_pairs; ++pairs_iter) {
+
+			// check if the sample name exists
+			if (metabolomics_data.metabolomicsData_.count(pre_samples[pairs_iter]) == 0 ||
+				metabolomics_data.metabolomicsData_.count(post_samples[pairs_iter]) == 0)
+				continue;
+
 			std::cout << "MAR: " << mar << " Pair: " << pairs_iter << std::endl;
 
 			// initialize the data struct
@@ -895,7 +910,9 @@ bool ExportPWData(const std::string& filename, const PWData& pw_data) {
 // Scripts to run
 void main_statistics_timecourse(std::string blood_fraction = "PLT", 
 	bool run_timeCourse_S01D01 = false, bool run_timeCourse_S01D02 = false, bool run_timeCourse_S01D03 = false, bool run_timeCourse_S01D04 = false, bool run_timeCourse_S01D05 = false,
-	bool run_timeCourse_S02D01 = false, bool run_timeCourse_S02D02 = false, bool run_timeCourse_S02D03 = false, bool run_timeCourse_S02D04 = false, bool run_timeCourse_S02D05 = false)
+	bool run_timeCourse_S02D01 = false, bool run_timeCourse_S02D02 = false, bool run_timeCourse_S02D03 = false, bool run_timeCourse_S02D04 = false, bool run_timeCourse_S02D05 = false,
+	bool run_timeCourse_S01D01vsS01D02 = false, bool run_timeCourse_S01D01vsS01D03 = false, bool run_timeCourse_S01D01vsS01D04 = false, bool run_timeCourse_S01D01vsS01D05 = false,
+	bool run_timeCourse_S02D01vsS02D02 = false, bool run_timeCourse_S02D01vsS02D03 = false, bool run_timeCourse_S02D01vsS02D04 = false, bool run_timeCourse_S02D01vsS02D05 = false)
 {
 	// define the data simulator
 	MetDataSimClassification metabolomics_data;
@@ -907,7 +924,9 @@ void main_statistics_timecourse(std::string blood_fraction = "PLT",
 
 	std::string biochem_rxns_filename, metabo_data_filename, meta_data_filename,
 		timeCourse_S01D01_filename, timeCourse_S01D02_filename, timeCourse_S01D03_filename, timeCourse_S01D04_filename, timeCourse_S01D05_filename,
-		timeCourse_S02D01_filename, timeCourse_S02D02_filename, timeCourse_S02D03_filename, timeCourse_S02D04_filename, timeCourse_S02D05_filename;
+		timeCourse_S02D01_filename, timeCourse_S02D02_filename, timeCourse_S02D03_filename, timeCourse_S02D04_filename, timeCourse_S02D05_filename,
+		timeCourse_S01D01vsS01D02_filename, timeCourse_S01D01vsS01D03_filename, timeCourse_S01D01vsS01D04_filename, timeCourse_S01D01vsS01D05_filename,
+		timeCourse_S02D01vsS02D02_filename, timeCourse_S02D01vsS02D03_filename, timeCourse_S02D01vsS02D04_filename, timeCourse_S02D01vsS02D05_filename;
 	std::vector<std::string> pre_samples, 
 		timeCourse_S01D01_samples, timeCourse_S01D02_samples, timeCourse_S01D03_samples, timeCourse_S01D04_samples, timeCourse_S01D05_samples,
 		timeCourse_S02D01_samples, timeCourse_S02D02_samples, timeCourse_S02D03_samples, timeCourse_S02D04_samples, timeCourse_S02D05_samples;
@@ -926,6 +945,14 @@ void main_statistics_timecourse(std::string blood_fraction = "PLT",
 		timeCourse_S02D03_filename = data_dir + "RBC_timeCourse_S02D03.csv";
 		timeCourse_S02D04_filename = data_dir + "RBC_timeCourse_S02D04.csv";
 		timeCourse_S02D05_filename = data_dir + "RBC_timeCourse_S02D05.csv";
+		timeCourse_S01D01vsS01D02_filename = data_dir + "RBC_timeCourse_S01D01vsS01D02.csv";
+		timeCourse_S01D01vsS01D03_filename = data_dir + "RBC_timeCourse_S01D01vsS01D03.csv";
+		timeCourse_S01D01vsS01D04_filename = data_dir + "RBC_timeCourse_S01D01vsS01D04.csv";
+		timeCourse_S01D01vsS01D05_filename = data_dir + "RBC_timeCourse_S01D01vsS01D05.csv";
+		timeCourse_S02D01vsS02D02_filename = data_dir + "RBC_timeCourse_S02D01vsS02D02.csv";
+		timeCourse_S02D01vsS02D03_filename = data_dir + "RBC_timeCourse_S02D01vsS02D03.csv";
+		timeCourse_S02D01vsS02D04_filename = data_dir + "RBC_timeCourse_S02D01vsS02D04.csv";
+		timeCourse_S02D01vsS02D05_filename = data_dir + "RBC_timeCourse_S02D01vsS02D05.csv";
 		pre_samples = { "RBC_36","RBC_142","RBC_140","RBC_34","RBC_154","RBC_143","RBC_30","RBC_31","RBC_33","RBC_35","RBC_141" };
 		timeCourse_S01D01_samples = { "S01_D01_RBC_25C_0hr","S01_D01_RBC_25C_2hr","S01_D01_RBC_25C_6.5hr","S01_D01_RBC_25C_22hr","S01_D01_RBC_37C_22hr" };
 		timeCourse_S01D02_samples = { "S01_D02_RBC_25C_0hr","S01_D02_RBC_25C_2hr","S01_D02_RBC_25C_6.5hr","S01_D02_RBC_25C_22hr","S01_D02_RBC_37C_22hr" };
@@ -953,6 +980,14 @@ void main_statistics_timecourse(std::string blood_fraction = "PLT",
 		timeCourse_S02D03_filename = data_dir + "PLT_timeCourse_S02D03.csv";
 		timeCourse_S02D04_filename = data_dir + "PLT_timeCourse_S02D04.csv";
 		timeCourse_S02D05_filename = data_dir + "PLT_timeCourse_S02D05.csv";
+		timeCourse_S01D01vsS01D02_filename = data_dir + "PLT_timeCourse_S01D01vsS01D02.csv";
+		timeCourse_S01D01vsS01D03_filename = data_dir + "PLT_timeCourse_S01D01vsS01D03.csv";
+		timeCourse_S01D01vsS01D04_filename = data_dir + "PLT_timeCourse_S01D01vsS01D04.csv";
+		timeCourse_S01D01vsS01D05_filename = data_dir + "PLT_timeCourse_S01D01vsS01D05.csv";
+		timeCourse_S02D01vsS02D02_filename = data_dir + "PLT_timeCourse_S02D01vsS02D02.csv";
+		timeCourse_S02D01vsS02D03_filename = data_dir + "PLT_timeCourse_S02D01vsS02D03.csv";
+		timeCourse_S02D01vsS02D04_filename = data_dir + "PLT_timeCourse_S02D01vsS02D04.csv";
+		timeCourse_S02D01vsS02D05_filename = data_dir + "PLT_timeCourse_S02D01vsS02D05.csv";
 		pre_samples = { "PLT_36","PLT_142","PLT_140","PLT_34","PLT_154","PLT_143","PLT_30","PLT_31","PLT_33","PLT_35","PLT_141" };
 		timeCourse_S01D01_samples = { "S01_D01_PLT_25C_0hr","S01_D01_PLT_25C_2hr","S01_D01_PLT_25C_6.5hr","S01_D01_PLT_25C_22hr","S01_D01_PLT_37C_22hr" };
 		timeCourse_S01D02_samples = { "S01_D02_PLT_25C_0hr","S01_D02_PLT_25C_2hr","S01_D02_PLT_25C_6.5hr","S01_D02_PLT_25C_22hr","S01_D02_PLT_37C_22hr" };
@@ -980,6 +1015,14 @@ void main_statistics_timecourse(std::string blood_fraction = "PLT",
 		timeCourse_S02D03_filename = data_dir + "P_timeCourse_S02D03.csv";
 		timeCourse_S02D04_filename = data_dir + "P_timeCourse_S02D04.csv";
 		timeCourse_S02D05_filename = data_dir + "P_timeCourse_S02D05.csv";
+		timeCourse_S01D01vsS01D02_filename = data_dir + "P_timeCourse_S01D01vsS01D02.csv";
+		timeCourse_S01D01vsS01D03_filename = data_dir + "P_timeCourse_S01D01vsS01D03.csv";
+		timeCourse_S01D01vsS01D04_filename = data_dir + "P_timeCourse_S01D01vsS01D04.csv";
+		timeCourse_S01D01vsS01D05_filename = data_dir + "P_timeCourse_S01D01vsS01D05.csv";
+		timeCourse_S02D01vsS02D02_filename = data_dir + "P_timeCourse_S02D01vsS02D02.csv";
+		timeCourse_S02D01vsS02D03_filename = data_dir + "P_timeCourse_S02D01vsS02D03.csv";
+		timeCourse_S02D01vsS02D04_filename = data_dir + "P_timeCourse_S02D01vsS02D04.csv";
+		timeCourse_S02D01vsS02D05_filename = data_dir + "P_timeCourse_S02D01vsS02D05.csv";
 		pre_samples = { "P_36","P_142","P_140","P_34","P_154","P_143","P_30","P_31","P_33","P_35","P_141" };
 		timeCourse_S01D01_samples = { "S01_D01_P_25C_0hr","S01_D01_P_25C_2hr","S01_D01_P_25C_6.5hr","S01_D01_P_25C_22hr","S01_D01_P_37C_22hr" };
 		timeCourse_S01D02_samples = { "S01_D02_P_25C_0hr","S01_D02_P_25C_2hr","S01_D02_P_25C_6.5hr","S01_D02_P_25C_22hr","S01_D02_P_37C_22hr" };
@@ -1006,6 +1049,150 @@ void main_statistics_timecourse(std::string blood_fraction = "PLT",
 
 		// Export to file
 		ExportPWData(timeCourse_S01D01_filename, timeCourseS01D01);
+	}
+
+	if (run_timeCourse_S01D02) {
+		// Find significant pair-wise MARS between each sample (one vs one Pre-ASA)
+		PWData timeCourseS01D02 = PWComparison(metabolomics_data, timeCourse_S01D02_samples, 10000, 0.05, 1.0);
+
+		// Export to file
+		ExportPWData(timeCourse_S01D02_filename, timeCourseS01D02);
+	}
+
+	if (run_timeCourse_S01D03) {
+		// Find significant pair-wise MARS between each sample (one vs one Pre-ASA)
+		PWData timeCourseS01D03 = PWComparison(metabolomics_data, timeCourse_S01D03_samples, 10000, 0.05, 1.0);
+
+		// Export to file
+		ExportPWData(timeCourse_S01D03_filename, timeCourseS01D03);
+	}
+
+	if (run_timeCourse_S01D04) {
+		// Find significant pair-wise MARS between each sample (one vs one Pre-ASA)
+		PWData timeCourseS01D04 = PWComparison(metabolomics_data, timeCourse_S01D04_samples, 10000, 0.05, 1.0);
+
+		// Export to file
+		ExportPWData(timeCourse_S01D04_filename, timeCourseS01D04);
+	}
+
+	if (run_timeCourse_S01D05) {
+		// Find significant pair-wise MARS between each sample (one vs one Pre-ASA)
+		PWData timeCourseS01D05 = PWComparison(metabolomics_data, timeCourse_S01D05_samples, 10000, 0.05, 1.0);
+
+		// Export to file
+		ExportPWData(timeCourse_S01D05_filename, timeCourseS01D05);
+	}
+
+	if (run_timeCourse_S02D01) {
+		// Find significant pair-wise MARS between each sample (one vs one Pre-ASA)
+		PWData timeCourseS02D01 = PWComparison(metabolomics_data, timeCourse_S02D01_samples, 10000, 0.05, 1.0);
+
+		// Export to file
+		ExportPWData(timeCourse_S02D01_filename, timeCourseS02D01);
+	}
+
+	if (run_timeCourse_S02D02) {
+		// Find significant pair-wise MARS between each sample (one vs one Pre-ASA)
+		PWData timeCourseS02D02 = PWComparison(metabolomics_data, timeCourse_S02D02_samples, 10000, 0.05, 1.0);
+
+		// Export to file
+		ExportPWData(timeCourse_S02D02_filename, timeCourseS02D02);
+	}
+
+	if (run_timeCourse_S02D03) {
+		// Find significant pair-wise MARS between each sample (one vs one Pre-ASA)
+		PWData timeCourseS02D03 = PWComparison(metabolomics_data, timeCourse_S02D03_samples, 10000, 0.05, 1.0);
+
+		// Export to file
+		ExportPWData(timeCourse_S02D03_filename, timeCourseS02D03);
+	}
+
+	if (run_timeCourse_S02D04) {
+		// Find significant pair-wise MARS between each sample (one vs one Pre-ASA)
+		PWData timeCourseS02D04 = PWComparison(metabolomics_data, timeCourse_S02D04_samples, 10000, 0.05, 1.0);
+
+		// Export to file
+		ExportPWData(timeCourse_S02D04_filename, timeCourseS02D04);
+	}
+
+	if (run_timeCourse_S02D05) {
+		// Find significant pair-wise MARS between each sample (one vs one Pre-ASA)
+		PWData timeCourseS02D05 = PWComparison(metabolomics_data, timeCourse_S02D05_samples, 10000, 0.05, 1.0);
+
+		// Export to file
+		ExportPWData(timeCourse_S02D05_filename, timeCourseS02D05);
+	}
+
+	if (run_timeCourse_S01D01vsS01D02) {
+		// Find significant pair-wise MARS between each sample (one vs one Pre-ASA)
+		PWData timeCourseS01D01vsS01D02 = PWPrePostComparison(metabolomics_data, timeCourse_S01D01_samples, timeCourse_S01D02_samples, 4,
+			10000, 0.05, 1.0);
+
+		// Export to file
+		ExportPWData(timeCourse_S01D01vsS01D02_filename, timeCourseS01D01vsS01D02);
+	}
+
+	if (run_timeCourse_S01D01vsS01D03) {
+		// Find significant pair-wise MARS between each sample (one vs one Pre-ASA)
+		PWData timeCourseS01D01vsS01D03 = PWPrePostComparison(metabolomics_data, timeCourse_S01D01_samples, timeCourse_S01D03_samples, 4,
+			10000, 0.05, 1.0);
+
+		// Export to file
+		ExportPWData(timeCourse_S01D01vsS01D03_filename, timeCourseS01D01vsS01D03);
+	}
+
+	if (run_timeCourse_S01D01vsS01D04) {
+		// Find significant pair-wise MARS between each sample (one vs one Pre-ASA)
+		PWData timeCourseS01D01vsS01D04 = PWPrePostComparison(metabolomics_data, timeCourse_S01D01_samples, timeCourse_S01D04_samples, 4,
+			10000, 0.05, 1.0);
+
+		// Export to file
+		ExportPWData(timeCourse_S01D01vsS01D04_filename, timeCourseS01D01vsS01D04);
+	}
+
+	if (run_timeCourse_S01D01vsS01D05) {
+		// Find significant pair-wise MARS between each sample (one vs one Pre-ASA)
+		PWData timeCourseS01D01vsS01D05 = PWPrePostComparison(metabolomics_data, timeCourse_S01D01_samples, timeCourse_S01D05_samples, 4,
+			10000, 0.05, 1.0);
+
+		// Export to file
+		ExportPWData(timeCourse_S01D01vsS01D05_filename, timeCourseS01D01vsS01D05);
+	}
+
+	if (run_timeCourse_S02D01vsS02D02) {
+		// Find significant pair-wise MARS between each sample (one vs one Pre-ASA)
+		PWData timeCourseS02D01vsS02D02 = PWPrePostComparison(metabolomics_data, timeCourse_S02D01_samples, timeCourse_S02D02_samples, 4,
+			10000, 0.05, 1.0);
+
+		// Export to file
+		ExportPWData(timeCourse_S02D01vsS02D02_filename, timeCourseS02D01vsS02D02);
+	}
+
+	if (run_timeCourse_S02D01vsS02D03) {
+		// Find significant pair-wise MARS between each sample (one vs one Pre-ASA)
+		PWData timeCourseS02D01vsS02D03 = PWPrePostComparison(metabolomics_data, timeCourse_S02D01_samples, timeCourse_S02D03_samples, 4,
+			10000, 0.05, 1.0);
+
+		// Export to file
+		ExportPWData(timeCourse_S02D01vsS02D03_filename, timeCourseS02D01vsS02D03);
+	}
+
+	if (run_timeCourse_S02D01vsS02D04) {
+		// Find significant pair-wise MARS between each sample (one vs one Pre-ASA)
+		PWData timeCourseS02D01vsS02D04 = PWPrePostComparison(metabolomics_data, timeCourse_S02D01_samples, timeCourse_S02D04_samples, 4,
+			10000, 0.05, 1.0);
+
+		// Export to file
+		ExportPWData(timeCourse_S02D01vsS02D04_filename, timeCourseS02D01vsS02D04);
+	}
+
+	if (run_timeCourse_S02D01vsS02D05) {
+		// Find significant pair-wise MARS between each sample (one vs one Pre-ASA)
+		PWData timeCourseS02D01vsS02D05 = PWPrePostComparison(metabolomics_data, timeCourse_S02D01_samples, timeCourse_S02D05_samples, 4,
+			10000, 0.05, 1.0);
+
+		// Export to file
+		ExportPWData(timeCourse_S02D01vsS02D05_filename, timeCourseS02D01vsS02D05);
 	}
 }
 void main_statistics_preVsPost(std::string blood_fraction = "PLT", bool run_oneVSone = true, bool run_preVSpost = true, bool run_postMinPre = false)
@@ -1312,7 +1499,9 @@ void main_reconstruction()
 // Main
 int main(int argc, char** argv)
 {
-	main_statistics_timecourse("PLT", true);
+	main_statistics_timecourse("PLT", false, false, false, false, false, 
+		false, false, false, false, false, 
+		true);
 	//main_statistics_preVsPost("PLT", false, false, false);
 	//main_statistics_preVsPost("RBC", false, false, false);
 	//main_statistics_preVsPost("P", false, false, false);
