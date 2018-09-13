@@ -1499,9 +1499,11 @@ void main_reconstruction()
 // Main
 int main(int argc, char** argv)
 {
-	main_statistics_timecourse("PLT", false, false, false, false, false, 
+	main_statistics_timecourse("RBC", 
 		false, false, false, false, false, 
-		true);
+		false, false, false, false, false, 
+		true, true, true, true,
+		true, true, true, true);
 	//main_statistics_preVsPost("PLT", false, false, false);
 	//main_statistics_preVsPost("RBC", false, false, false);
 	//main_statistics_preVsPost("P", false, false, false);
