@@ -24,27 +24,6 @@
 using namespace SmartPeak;
 
 /* NOTES:
-
-Data generation:
-Bootstrap-based approach
-only MARS with > 50% coverage and both reactants/products
-
-Statistical questions:
-What mass action ratios are significantly different between the groups?
-
-DL questions:
-What model structure differentiates the groups
-
-Actions:
-Read in the metabolomics data from .csv
-	set defaults for h, pi, h20, etc.,
-
-Read in the model file from .
-	remove "c", "p", "e" compartment identifiers
-	reactions that have products/reactants > 1
-	reactants and products are not the same
-
-sample set of MARs
 */
 
 // Data structures
@@ -60,6 +39,27 @@ struct PWStats {
 	bool is_significant = false;
 };
 typedef std::map<std::string, std::vector<PWStats>> PWData;
+
+struct PWSampleSummary {
+	std::string sample_name_1;
+	std::string sample_name_2;
+	int n_significant = 0;
+};
+typedef std::vector<PWSampleSummary> PWSampleSummaries;
+
+struct PWFeatureSummary {
+	std::string feature_name;
+	int n_significant = 0;
+};
+typedef std::vector<PWFeatureSummary> PWFeatureSummaries;
+
+struct PWTotalSummary {
+	std::set<std::string> significant_pairs;
+	int n_significant_pairs = 0;
+	std::set<std::string> significant_features;
+	int n_significant_features = 0;
+	int n_significant_total = 0;
+};
 
 struct MetabolomicsDatum {
 	std::string sample_name;
@@ -884,7 +884,54 @@ PWData PWPrePostDifference(MetDataSimClassification& metabolomics_data,
 	return pw_data;
 }
 
-bool ExportPWData(const std::string& filename, const PWData& pw_data) {
+void PWSummary(const PWData& pw_data, PWSampleSummaries& pw_sample_summaries, PWFeatureSummaries& pw_feature_summaries, PWTotalSummary& pw_total_summary) {
+
+	std::map<std::string, PWSampleSummary> pw_sample_summary_map;
+	std::map<std::string, PWFeatureSummary> pw_feature_summary_map;
+	for (const auto& pw_datum : pw_data) {
+		for (const auto& pw_stats : pw_datum.second) {
+			if (!pw_stats.is_significant) continue;
+
+			// Samples
+			PWSampleSummary pw_sample_summary;
+			pw_sample_summary.sample_name_1 = pw_stats.sample_name_1;
+			pw_sample_summary.sample_name_2 = pw_stats.sample_name_2;
+			pw_sample_summary.n_significant = 0;
+			std::string key = pw_stats.sample_name_1 + "_vs_" + pw_stats.sample_name_2;
+			auto found_samples = pw_sample_summary_map.emplace(key, pw_sample_summary);
+			if (!found_samples.second) {
+				pw_sample_summary_map.at(key).n_significant += 1;
+			}
+
+			// Features
+			PWFeatureSummary pw_feature_summary;
+			pw_feature_summary.feature_name = pw_stats.feature_name;
+			pw_feature_summary.n_significant = 0;
+			auto found_features = pw_feature_summary_map.emplace(pw_stats.feature_name, pw_feature_summary);
+			if (!found_features.second) {
+				pw_feature_summary_map.at(pw_stats.feature_name).n_significant += 1;
+			}
+
+			// Totals
+			pw_total_summary.n_significant_total += 1;
+			pw_total_summary.significant_features.insert(pw_stats.feature_name);
+			pw_total_summary.significant_pairs.insert(key);
+		}
+	}
+	// Samples
+	for (const auto& map : pw_sample_summary_map)
+		pw_sample_summaries.push_back(map.second);
+
+	// Features
+	for (const auto& map : pw_feature_summary_map)
+		pw_feature_summaries.push_back(map.second);
+
+	// Totals
+	pw_total_summary.n_significant_features = (int)pw_total_summary.significant_features.size();
+	pw_total_summary.n_significant_pairs = (int)pw_total_summary.significant_pairs.size();
+}
+
+bool WritePWData(const std::string& filename, const PWData& pw_data) {
 
 	// Export the results to file
 	CSVWriter csvwriter(filename);
@@ -903,6 +950,61 @@ bool ExportPWData(const std::string& filename, const PWData& pw_data) {
 			line.push_back(std::to_string(pw_stats.fold_change));
 			csvwriter.writeDataInRow(line.begin(), line.end());
 		}
+	}
+	return true;
+}
+bool ReadPWData(const std::string& filename, PWData& pw_data) {
+	io::CSVReader<8> data_in(filename);
+	data_in.read_header(io::ignore_extra_column,
+		"Feature", "Sample1", "Sample2", "LB1", "LB2", "UB1", "UB2", "Log2(FC)");
+	std::string feature_str, sample_1_str, sample_2_str, lb1_str, lb2_str, ub1_str, ub2_str, log2fc_str;
+
+	while (data_in.read_row(feature_str, sample_1_str, sample_2_str, lb1_str, lb2_str, ub1_str, ub2_str, log2fc_str))
+	{
+		// parse the .csv file
+		PWStats pw_stats;
+		pw_stats.feature_name = feature_str;
+		pw_stats.sample_name_1 = sample_1_str;
+		pw_stats.sample_name_2 = sample_2_str;
+		pw_stats.confidence_interval_1 = std::make_pair(std::stof(lb1_str), std::stof(ub1_str));
+		pw_stats.confidence_interval_2 = std::make_pair(std::stof(lb2_str), std::stof(ub2_str));
+		pw_stats.fold_change = std::stof(log2fc_str);
+		pw_stats.is_significant = true;
+
+		std::vector<PWStats> pw_stats_vec = { pw_stats };
+		auto found = pw_data.emplace(feature_str, pw_stats_vec);
+		if (!found.second) {
+			pw_data.at(feature_str).push_back(pw_stats);
+		}
+	}
+	return true;
+}
+bool WritePWSampleSummaries(const std::string& filename, const PWSampleSummaries& pw_sample_summaries) {
+
+	// Export the results to file
+	CSVWriter csvwriter(filename);
+	std::vector<std::string> headers = { "Sample1", "Sample2", "Sig_pairs" };
+	csvwriter.writeDataInRow(headers.begin(), headers.end());
+	for (const auto& pw_sample_summary : pw_sample_summaries) {
+		std::vector<std::string> line;
+		line.push_back(pw_sample_summary.sample_name_1);
+		line.push_back(pw_sample_summary.sample_name_2);
+		line.push_back(std::to_string(pw_sample_summary.n_significant));
+		csvwriter.writeDataInRow(line.begin(), line.end());
+	}
+	return true;
+}
+bool WritePWFeatureSummaries(const std::string& filename, const PWFeatureSummaries& pw_feature_summaries) {
+
+	// Export the results to file
+	CSVWriter csvwriter(filename);
+	std::vector<std::string> headers = { "Feature", "Sig_features" };
+	csvwriter.writeDataInRow(headers.begin(), headers.end());
+	for (const auto& pw_feature_summary : pw_feature_summaries) {
+		std::vector<std::string> line;
+		line.push_back(pw_feature_summary.feature_name);
+		line.push_back(std::to_string(pw_feature_summary.n_significant));
+		csvwriter.writeDataInRow(line.begin(), line.end());
 	}
 	return true;
 }
@@ -1048,7 +1150,7 @@ void main_statistics_timecourse(std::string blood_fraction = "PLT",
 		PWData timeCourseS01D01 = PWComparison(metabolomics_data, timeCourse_S01D01_samples, 10000, 0.05, 1.0);
 
 		// Export to file
-		ExportPWData(timeCourse_S01D01_filename, timeCourseS01D01);
+		WritePWData(timeCourse_S01D01_filename, timeCourseS01D01);
 	}
 
 	if (run_timeCourse_S01D02) {
@@ -1056,7 +1158,7 @@ void main_statistics_timecourse(std::string blood_fraction = "PLT",
 		PWData timeCourseS01D02 = PWComparison(metabolomics_data, timeCourse_S01D02_samples, 10000, 0.05, 1.0);
 
 		// Export to file
-		ExportPWData(timeCourse_S01D02_filename, timeCourseS01D02);
+		WritePWData(timeCourse_S01D02_filename, timeCourseS01D02);
 	}
 
 	if (run_timeCourse_S01D03) {
@@ -1064,7 +1166,7 @@ void main_statistics_timecourse(std::string blood_fraction = "PLT",
 		PWData timeCourseS01D03 = PWComparison(metabolomics_data, timeCourse_S01D03_samples, 10000, 0.05, 1.0);
 
 		// Export to file
-		ExportPWData(timeCourse_S01D03_filename, timeCourseS01D03);
+		WritePWData(timeCourse_S01D03_filename, timeCourseS01D03);
 	}
 
 	if (run_timeCourse_S01D04) {
@@ -1072,7 +1174,7 @@ void main_statistics_timecourse(std::string blood_fraction = "PLT",
 		PWData timeCourseS01D04 = PWComparison(metabolomics_data, timeCourse_S01D04_samples, 10000, 0.05, 1.0);
 
 		// Export to file
-		ExportPWData(timeCourse_S01D04_filename, timeCourseS01D04);
+		WritePWData(timeCourse_S01D04_filename, timeCourseS01D04);
 	}
 
 	if (run_timeCourse_S01D05) {
@@ -1080,7 +1182,7 @@ void main_statistics_timecourse(std::string blood_fraction = "PLT",
 		PWData timeCourseS01D05 = PWComparison(metabolomics_data, timeCourse_S01D05_samples, 10000, 0.05, 1.0);
 
 		// Export to file
-		ExportPWData(timeCourse_S01D05_filename, timeCourseS01D05);
+		WritePWData(timeCourse_S01D05_filename, timeCourseS01D05);
 	}
 
 	if (run_timeCourse_S02D01) {
@@ -1088,7 +1190,7 @@ void main_statistics_timecourse(std::string blood_fraction = "PLT",
 		PWData timeCourseS02D01 = PWComparison(metabolomics_data, timeCourse_S02D01_samples, 10000, 0.05, 1.0);
 
 		// Export to file
-		ExportPWData(timeCourse_S02D01_filename, timeCourseS02D01);
+		WritePWData(timeCourse_S02D01_filename, timeCourseS02D01);
 	}
 
 	if (run_timeCourse_S02D02) {
@@ -1096,7 +1198,7 @@ void main_statistics_timecourse(std::string blood_fraction = "PLT",
 		PWData timeCourseS02D02 = PWComparison(metabolomics_data, timeCourse_S02D02_samples, 10000, 0.05, 1.0);
 
 		// Export to file
-		ExportPWData(timeCourse_S02D02_filename, timeCourseS02D02);
+		WritePWData(timeCourse_S02D02_filename, timeCourseS02D02);
 	}
 
 	if (run_timeCourse_S02D03) {
@@ -1104,7 +1206,7 @@ void main_statistics_timecourse(std::string blood_fraction = "PLT",
 		PWData timeCourseS02D03 = PWComparison(metabolomics_data, timeCourse_S02D03_samples, 10000, 0.05, 1.0);
 
 		// Export to file
-		ExportPWData(timeCourse_S02D03_filename, timeCourseS02D03);
+		WritePWData(timeCourse_S02D03_filename, timeCourseS02D03);
 	}
 
 	if (run_timeCourse_S02D04) {
@@ -1112,7 +1214,7 @@ void main_statistics_timecourse(std::string blood_fraction = "PLT",
 		PWData timeCourseS02D04 = PWComparison(metabolomics_data, timeCourse_S02D04_samples, 10000, 0.05, 1.0);
 
 		// Export to file
-		ExportPWData(timeCourse_S02D04_filename, timeCourseS02D04);
+		WritePWData(timeCourse_S02D04_filename, timeCourseS02D04);
 	}
 
 	if (run_timeCourse_S02D05) {
@@ -1120,7 +1222,7 @@ void main_statistics_timecourse(std::string blood_fraction = "PLT",
 		PWData timeCourseS02D05 = PWComparison(metabolomics_data, timeCourse_S02D05_samples, 10000, 0.05, 1.0);
 
 		// Export to file
-		ExportPWData(timeCourse_S02D05_filename, timeCourseS02D05);
+		WritePWData(timeCourse_S02D05_filename, timeCourseS02D05);
 	}
 
 	if (run_timeCourse_S01D01vsS01D02) {
@@ -1129,7 +1231,7 @@ void main_statistics_timecourse(std::string blood_fraction = "PLT",
 			10000, 0.05, 1.0);
 
 		// Export to file
-		ExportPWData(timeCourse_S01D01vsS01D02_filename, timeCourseS01D01vsS01D02);
+		WritePWData(timeCourse_S01D01vsS01D02_filename, timeCourseS01D01vsS01D02);
 	}
 
 	if (run_timeCourse_S01D01vsS01D03) {
@@ -1138,7 +1240,7 @@ void main_statistics_timecourse(std::string blood_fraction = "PLT",
 			10000, 0.05, 1.0);
 
 		// Export to file
-		ExportPWData(timeCourse_S01D01vsS01D03_filename, timeCourseS01D01vsS01D03);
+		WritePWData(timeCourse_S01D01vsS01D03_filename, timeCourseS01D01vsS01D03);
 	}
 
 	if (run_timeCourse_S01D01vsS01D04) {
@@ -1147,7 +1249,7 @@ void main_statistics_timecourse(std::string blood_fraction = "PLT",
 			10000, 0.05, 1.0);
 
 		// Export to file
-		ExportPWData(timeCourse_S01D01vsS01D04_filename, timeCourseS01D01vsS01D04);
+		WritePWData(timeCourse_S01D01vsS01D04_filename, timeCourseS01D01vsS01D04);
 	}
 
 	if (run_timeCourse_S01D01vsS01D05) {
@@ -1156,7 +1258,7 @@ void main_statistics_timecourse(std::string blood_fraction = "PLT",
 			10000, 0.05, 1.0);
 
 		// Export to file
-		ExportPWData(timeCourse_S01D01vsS01D05_filename, timeCourseS01D01vsS01D05);
+		WritePWData(timeCourse_S01D01vsS01D05_filename, timeCourseS01D01vsS01D05);
 	}
 
 	if (run_timeCourse_S02D01vsS02D02) {
@@ -1165,7 +1267,7 @@ void main_statistics_timecourse(std::string blood_fraction = "PLT",
 			10000, 0.05, 1.0);
 
 		// Export to file
-		ExportPWData(timeCourse_S02D01vsS02D02_filename, timeCourseS02D01vsS02D02);
+		WritePWData(timeCourse_S02D01vsS02D02_filename, timeCourseS02D01vsS02D02);
 	}
 
 	if (run_timeCourse_S02D01vsS02D03) {
@@ -1174,7 +1276,7 @@ void main_statistics_timecourse(std::string blood_fraction = "PLT",
 			10000, 0.05, 1.0);
 
 		// Export to file
-		ExportPWData(timeCourse_S02D01vsS02D03_filename, timeCourseS02D01vsS02D03);
+		WritePWData(timeCourse_S02D01vsS02D03_filename, timeCourseS02D01vsS02D03);
 	}
 
 	if (run_timeCourse_S02D01vsS02D04) {
@@ -1183,7 +1285,7 @@ void main_statistics_timecourse(std::string blood_fraction = "PLT",
 			10000, 0.05, 1.0);
 
 		// Export to file
-		ExportPWData(timeCourse_S02D01vsS02D04_filename, timeCourseS02D01vsS02D04);
+		WritePWData(timeCourse_S02D01vsS02D04_filename, timeCourseS02D01vsS02D04);
 	}
 
 	if (run_timeCourse_S02D01vsS02D05) {
@@ -1192,7 +1294,7 @@ void main_statistics_timecourse(std::string blood_fraction = "PLT",
 			10000, 0.05, 1.0);
 
 		// Export to file
-		ExportPWData(timeCourse_S02D01vsS02D05_filename, timeCourseS02D01vsS02D05);
+		WritePWData(timeCourse_S02D01vsS02D05_filename, timeCourseS02D01vsS02D05);
 	}
 }
 void main_statistics_preVsPost(std::string blood_fraction = "PLT", bool run_oneVSone = true, bool run_preVSpost = true, bool run_postMinPre = false)
@@ -1257,13 +1359,13 @@ void main_statistics_preVsPost(std::string blood_fraction = "PLT", bool run_oneV
 		PWData oneVSonePre = PWComparison(metabolomics_data, pre_samples, 10000, 0.05, 1.0);
 
 		// Export to file
-		ExportPWData(oneVSonePre_filename, oneVSonePre);
+		WritePWData(oneVSonePre_filename, oneVSonePre);
 
 		// Find significant pair-wise MARS between each sample (one vs one Post-ASA)
 		PWData oneVSonePost = PWComparison(metabolomics_data, post_samples, 10000, 0.05, 1.0);
 
 		// Export to file
-		ExportPWData(oneVSonePost_filename, oneVSonePost);
+		WritePWData(oneVSonePost_filename, oneVSonePost);
 	}
 
 	if (run_preVSpost) {
@@ -1271,7 +1373,7 @@ void main_statistics_preVsPost(std::string blood_fraction = "PLT", bool run_oneV
 		PWData preVSpost = PWPrePostComparison(metabolomics_data, pre_samples, post_samples, 11, 10000, 0.05, 1.0);
 
 		// Export to file
-		ExportPWData(preVSpost_filename, preVSpost);
+		WritePWData(preVSpost_filename, preVSpost);
 	}
 
 	if (run_postMinPre) {
@@ -1279,7 +1381,7 @@ void main_statistics_preVsPost(std::string blood_fraction = "PLT", bool run_oneV
 		PWData postMinPre = PWPrePostDifference(metabolomics_data, pre_samples, post_samples, 11, 10000, 0.05, 1.0);
 
 		// Export to file
-		ExportPWData(postMinPre_filename, postMinPre);
+		WritePWData(postMinPre_filename, postMinPre);
 	}
 }
 void main_classification(std::string blood_fraction = "PLT")
