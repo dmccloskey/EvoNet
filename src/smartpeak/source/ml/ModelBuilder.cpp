@@ -730,4 +730,76 @@ namespace SmartPeak
 		}
 		return node_names;
 	}
+
+	std::vector<std::string> ModelBuilder::addLSTM(Model & model, const std::string & name, const std::string& module_name, const std::vector<std::string>& source_node_names, const int & n_blocks, const int & n_cells,
+		const std::shared_ptr<ActivationOp<float>>& node_activation, const std::shared_ptr<ActivationOp<float>>& node_activation_grad, 
+		const std::shared_ptr<IntegrationOp<float>>& node_integration, const std::shared_ptr<IntegrationErrorOp<float>>& node_integration_error, const std::shared_ptr<IntegrationWeightGradOp<float>>& node_integration_weight_grad,
+		const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver,
+		float drop_out_prob = 0.0f, float drop_connection_prob = 0.0f, bool biases = true)
+	{
+		std::vector<std::string> node_names;
+
+		for (int block_iter = 0; block_iter < n_blocks; ++block_iter) {
+			// Make the LSTM cell
+			std::string output_node_name = addLSTMBlock(model, name, module_name, source_node_names, n_cells, node_activation, node_activation_grad,
+				node_integration, node_integration_error, node_integration_weight_grad,
+				weight_init, solver, drop_out_prob, drop_connection_prob, biases);
+		}
+
+		return node_names;
+	}
+
+	std::string ModelBuilder::addLSTMBlock(
+		Model & model, const std::string & name, const std::string& module_name, 
+		const std::vector<std::string>& source_node_names,
+		const int & n_cells,
+		const std::shared_ptr<ActivationOp<float>>& node_activation, const std::shared_ptr<ActivationOp<float>>& node_activation_grad,
+		const std::shared_ptr<IntegrationOp<float>>& node_integration, const std::shared_ptr<IntegrationErrorOp<float>>& node_integration_error, const std::shared_ptr<IntegrationWeightGradOp<float>>& node_integration_weight_grad,
+		const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver,
+		float drop_out_prob = 0.0f, float drop_connection_prob = 0.0f, bool biases = true)
+	{
+		// Create the unity weight
+		char unity_weight_name_char[512];
+		sprintf(unity_weight_name_char, "%s_Unity", name.data());
+		std::string unity_weight_name(unity_weight_name_char);
+		Weight unity_weight(unity_weight_name, std::shared_ptr<WeightInitOp>(new ConstWeightInitOp(1.0)), std::shared_ptr<SolverOp>(new DummySolverOp()));
+		unity_weight.setModuleName(module_name);
+		model.addWeights({ unity_weight });
+
+		// Make the input node
+
+		// Make the input gate node
+		
+		// Make the output gate node
+		
+		// Make the forget gate node
+
+		// Make the input multiplier node
+
+		// Make the output multiplier node
+		const std::string output_node_name = "";
+
+		// Make the forget gate multiplier node
+
+		// Make the link from input node to input gate
+
+		// Make the link from input node to output gate
+
+		// Make the link from input node to forget gate
+
+		for (int cell_iter = 0; cell_iter < n_cells; ++cell_iter) {
+			// Make the memory cell
+
+			// Make the link from input multiplier node to memory cell
+
+			// Make the link from memory cell to output multiplier node
+
+			// Make the link from memory cell to forget gate multiplier node
+
+			// Make the link from forget gate multiplier node to memory cell
+
+		}
+
+		return output_node_name;
+	}
 }

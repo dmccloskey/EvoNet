@@ -156,22 +156,44 @@ public:
 		/**
 		@brief Add a LSTM layer
 
+		Reference:
+		Hochreiter, Sepp, and Jürgen Schmidhuber. "Long short-term memory." Neural computation 9.8 (1997): 1735-1780.
+
 		@param[in, out] Model
 		@param[in] source_node_names Node_names to add the layer to
-		@param[in] n_hidden The number of LSTM hidden states
-    @param[in] node_activation The activation function of the hidden node to create
-    @param[in] node_activation_grad The activation function gradient of the hidden node to create
-    @param[in] node_integration The integration function of the hidden node to create
+		@param[in] n_blocks The number of independent LSTM cell blocks
+		@param[in] n_cells The number of shared memory cells per LSTM block
+    @param[in] node_activation The activation function of the input node to create
+    @param[in] node_activation_grad The activation function gradient of the input node to create
+    @param[in] node_integration The integration function of the input node to create
+    @param[in] node_integration_error The integration function of the input node to create
+    @param[in] node_integration_weight_grad The integration function of the input node to create
+		@param[in] drop_out_prob input or output Node drop out probability
+		@param[in] drop_connection_prob input or output Weight drop out probability
+		@param[in] biases Whether to include bias nodes or not
 
 		@returns vector of output node names
 		*/
-		std::vector<std::string> addLSTM(Model& model, const std::string& name, const std::vector<std::string>& source_node_names,
-			const int& n_hidden,
+		std::vector<std::string> addLSTM(Model& model, const std::string& name, const std::string& module_name,
+			const std::vector<std::string>& source_node_names,
+			const int& n_blocks, const int& n_cells,
 			const std::shared_ptr<ActivationOp<float>>& node_activation,
 			const std::shared_ptr<ActivationOp<float>>& node_activation_grad,
 			const std::shared_ptr<IntegrationOp<float>>& node_integration,
 			const std::shared_ptr<IntegrationErrorOp<float>>& node_integration_error,
-			const std::shared_ptr<IntegrationWeightGradOp<float>>& node_integration_weight_grad);
+			const std::shared_ptr<IntegrationWeightGradOp<float>>& node_integration_weight_grad,
+			const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver,
+			float drop_out_prob = 0.0f, float drop_connection_prob = 0.0f, bool biases = true);
+		std::string addLSTMBlock(Model& model, const std::string& name, const std::string& module_name,
+			const std::vector<std::string>& source_node_names,
+			const int& n_cells,
+			const std::shared_ptr<ActivationOp<float>>& node_activation,
+			const std::shared_ptr<ActivationOp<float>>& node_activation_grad,
+			const std::shared_ptr<IntegrationOp<float>>& node_integration,
+			const std::shared_ptr<IntegrationErrorOp<float>>& node_integration_error,
+			const std::shared_ptr<IntegrationWeightGradOp<float>>& node_integration_weight_grad,
+			const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver,
+			float drop_out_prob = 0.0f, float drop_connection_prob = 0.0f, bool biases = true);
 
 		/**
 		@brief Add one model to another
