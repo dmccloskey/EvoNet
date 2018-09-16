@@ -767,7 +767,7 @@ namespace SmartPeak
 
 		// Make the input node
 		char blockInput_name_char[512];
-		sprintf(blockInput_name_char, "%s_BlockInput", name.data());
+		sprintf(blockInput_name_char, "%s-BlockInput", name.data());
 		std::string blockInput_name(blockInput_name_char);
 		Node blockInput(blockInput_name, NodeType::hidden, NodeStatus::initialized, node_activation, node_activation_grad, node_integration, node_integration_error, node_integration_weight_grad);
 		blockInput.setModuleName(module_name);
@@ -776,31 +776,31 @@ namespace SmartPeak
 
 		// Make the input gate node
 		char blockGateInput_name_char[512];
-		sprintf(blockGateInput_name_char, "%s_BlockGateInput", name.data());
+		sprintf(blockGateInput_name_char, "%s-BlockGateInput", name.data());
 		std::string blockGateInput_name(blockGateInput_name_char);
-		Node blockGateInput(blockGateInput_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new SigmoidOp<float>()), std::shared_ptr<ActivationOp<float>>(new SigmoidGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+		Node blockGateInput(blockGateInput_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new SigmoidOp<float>()), std::shared_ptr<ActivationOp<float>>(new SigmoidGradOp<float>()), node_integration, node_integration_error, node_integration_weight_grad);
 		blockGateInput.setModuleName(module_name);
 		model.addNodes({ blockGateInput });
 		
 		// Make the output gate node 
 		char blockGateOutput_name_char[512];
-		sprintf(blockGateOutput_name_char, "%s_BlockGateOutput", name.data());
+		sprintf(blockGateOutput_name_char, "%s-BlockGateOutput", name.data());
 		std::string blockGateOutput_name(blockGateOutput_name_char);
-		Node blockGateOutput(blockGateOutput_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new SigmoidOp<float>()), std::shared_ptr<ActivationOp<float>>(new SigmoidGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+		Node blockGateOutput(blockGateOutput_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new SigmoidOp<float>()), std::shared_ptr<ActivationOp<float>>(new SigmoidGradOp<float>()), node_integration, node_integration_error, node_integration_weight_grad);
 		blockGateOutput.setModuleName(module_name);
 		model.addNodes({ blockGateOutput });
 		
 		// Make the forget gate node
 		char blockGateForget_name_char[512];
-		sprintf(blockGateForget_name_char, "%s_BlockGateForget", name.data());
+		sprintf(blockGateForget_name_char, "%s-BlockGateForget", name.data());
 		std::string blockGateForget_name(blockGateForget_name_char);
-		Node blockGateForget(blockGateForget_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new SigmoidOp<float>()), std::shared_ptr<ActivationOp<float>>(new SigmoidGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+		Node blockGateForget(blockGateForget_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new SigmoidOp<float>()), std::shared_ptr<ActivationOp<float>>(new SigmoidGradOp<float>()), node_integration, node_integration_error, node_integration_weight_grad);
 		blockGateForget.setModuleName(module_name);
 		model.addNodes({ blockGateForget });
 
 		// Make the input multiplier node
 		char blockMultInput_name_char[512];
-		sprintf(blockMultInput_name_char, "%s_BlockMultInput", name.data());
+		sprintf(blockMultInput_name_char, "%s-BlockMultInput", name.data());
 		std::string blockMultInput_name(blockMultInput_name_char);
 		Node blockMultInput(blockMultInput_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new ProdOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new ProdErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new ProdWeightGradOp<float>()));
 		blockMultInput.setModuleName(module_name);
@@ -818,7 +818,7 @@ namespace SmartPeak
 
 		// Make the forget gate multiplier node
 		char blockMultForget_name_char[512];
-		sprintf(blockMultForget_name_char, "%s_BlockMultForget", name.data());
+		sprintf(blockMultForget_name_char, "%s-BlockMultForget", name.data());
 		std::string blockMultForget_name(blockMultForget_name_char);
 		Node blockMultForget(blockMultForget_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new ProdOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new ProdErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new ProdWeightGradOp<float>()));
 		blockMultForget.setModuleName(module_name);
@@ -872,36 +872,6 @@ namespace SmartPeak
 			Weight weight_bias(weight_bias_name, bias_weight_init, bias_solver);
 			weight_bias.setModuleName(module_name);
 			Link link_bias(link_bias_name, bias_name, blockInput_name, weight_bias_name);
-			link_bias.setModuleName(module_name);
-
-			model.addWeights({ weight_bias });
-			model.addLinks({ link_bias });
-		}
-
-		if (biases) {  // output biases, links, and weights
-			// Make the output bias nodes
-			char bias_name_char[512];
-			sprintf(bias_name_char, "%s-bias", blockOutput_name.data());
-			std::string bias_name(bias_name_char);
-			Node bias(bias_name, NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-			bias.setModuleName(module_name);
-			model.addNodes({ bias });
-
-			// Make the link between output node bias to output node
-			char weight_bias_name_char[512];
-			sprintf(weight_bias_name_char, "%s_to_%s", bias_name.data(), blockOutput_name.data());
-			std::string weight_bias_name(weight_bias_name_char);
-
-			char link_bias_name_char[512];
-			sprintf(link_bias_name_char, "%s_to_%s", bias_name.data(), blockOutput_name.data());
-			std::string link_bias_name(link_bias_name_char);
-
-			std::shared_ptr<WeightInitOp> bias_weight_init;
-			bias_weight_init.reset(new ConstWeightInitOp(1.0));;
-			std::shared_ptr<SolverOp> bias_solver = solver;
-			Weight weight_bias(weight_bias_name, bias_weight_init, bias_solver);
-			weight_bias.setModuleName(module_name);
-			Link link_bias(link_bias_name, bias_name, blockOutput_name, weight_bias_name);
 			link_bias.setModuleName(module_name);
 
 			model.addWeights({ weight_bias });
@@ -990,7 +960,7 @@ namespace SmartPeak
 		for (int cell_iter = 0; cell_iter < n_cells; ++cell_iter) {
 			// Make the memory cell
 			char blockMemoryCell_name_char[512];
-			sprintf(blockMemoryCell_name_char, "%s_BlockMemoryCell-%d", name.data(), cell_iter);
+			sprintf(blockMemoryCell_name_char, "%s-BlockMemoryCell-%d", name.data(), cell_iter);
 			std::string blockMemoryCell_name(blockMemoryCell_name_char);
 			Node blockMemoryCell(blockMemoryCell_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
 			blockMemoryCell.setModuleName(module_name);
