@@ -741,7 +741,7 @@ namespace SmartPeak
 
 		for (int block_iter = 0; block_iter < n_blocks; ++block_iter) {
 			// Make the LSTM cell
-			std::string output_node_name = addLSTMBlock(model, name, module_name, source_node_names, n_cells, node_activation, node_activation_grad,
+			std::string output_node_name = addLSTMBlock(model, name + std::to_string(block_iter), module_name, source_node_names, n_cells, node_activation, node_activation_grad,
 				node_integration, node_integration_error, node_integration_weight_grad,
 				weight_init, solver, drop_out_prob, drop_connection_prob, biases);
 		}
@@ -767,25 +767,113 @@ namespace SmartPeak
 		model.addWeights({ unity_weight });
 
 		// Make the input node
+		char blockInput_name_char[512];
+		sprintf(blockInput_name_char, "%s_BlockInput", name.data());
+		std::string blockInput_name(blockInput_name_char);
+		Node blockInput(blockInput_name, NodeType::hidden, NodeStatus::initialized, node_activation, node_activation_grad,node_integration, node_integration_error, node_integration_weight_grad);
+		blockInput.setModuleName(module_name);
+		blockInput.setDropProbability(drop_out_prob);
+		model.addNodes({ blockInput });
 
 		// Make the input gate node
+		char blockGateInput_name_char[512];
+		sprintf(blockGateInput_name_char, "%s_BlockGateInput", name.data());
+		std::string blockGateInput_name(blockGateInput_name_char);
+		Node blockGateInput(blockGateInput_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new SigmoidOp<float>()), std::shared_ptr<ActivationOp<float>>(new SigmoidGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+		blockGateInput.setModuleName(module_name);
+		model.addNodes({ blockGateInput });
 		
-		// Make the output gate node
+		// Make the output gate node 
 		
 		// Make the forget gate node
 
 		// Make the input multiplier node
+		char blockMultInput_name_char[512];
+		sprintf(blockMultInput_name_char, "%s_BlockMultInput", name.data());
+		std::string blockMultInput_name(blockMultInput_name_char);
+		Node blockMultInput(blockMultInput_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new ProdOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new ProdErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new ProdWeightGradOp<float>()));
+		blockMultInput.setModuleName(module_name);
+		model.addNodes({ blockMultInput });
 
-		// Make the output multiplier node
-		const std::string output_node_name = "";
+		// Make the output multiplier node[add drop prob]
+		char blockOutput_name_char[512];
+		sprintf(blockOutput_name_char, "%s_BlockMultOutput", name.data());
+		std::string blockOutput_name(blockOutput_name_char);
+		Node blockOutput(blockOutput_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new ProdOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new ProdErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new ProdWeightGradOp<float>()));
+		blockOutput.setModuleName(module_name);
+		blockOutput.setDropProbability(drop_out_prob);
+		model.addNodes({ blockOutput });
+		const std::string output_node_name = blockOutput_name;
 
 		// Make the forget gate multiplier node
 
-		// Make the link from input node to input gate
+		if (biases) {  // input biases, links, and weights
+			// Make the input bias nodes
+			char bias_name_char[512];
+			sprintf(bias_name_char, "%s-bias", blockInput_name.data());
+			std::string bias_name(bias_name_char);
+			Node bias(bias_name, NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+			bias.setModuleName(module_name);
+			model.addNodes({ bias });
 
-		// Make the link from input node to output gate
+			// Make the link between input bias node to input node
+			char weight_bias_name_char[512];
+			sprintf(weight_bias_name_char, "%s_to_%s", bias_name.data(), blockInput_name.data());
+			std::string weight_bias_name(weight_bias_name_char);
 
-		// Make the link from input node to forget gate
+			char link_bias_name_char[512];
+			sprintf(link_bias_name_char, "%s_to_%s", bias_name.data(), blockInput_name.data());
+			std::string link_bias_name(link_bias_name_char);
+
+			std::shared_ptr<WeightInitOp> bias_weight_init;
+			bias_weight_init.reset(new ConstWeightInitOp(1.0));;
+			std::shared_ptr<SolverOp> bias_solver = solver;
+			Weight weight_bias(weight_bias_name, bias_weight_init, bias_solver);
+			weight_bias.setModuleName(module_name);
+			Link link_bias(link_bias_name, bias_name, blockInput_name, weight_bias_name);
+			link_bias.setModuleName(module_name);
+
+			model.addWeights({ weight_bias });
+			model.addLinks({ link_bias });
+		}
+
+		if (biases) {  // output biases, links, and weights
+			// Make the output bias nodes
+			char bias_name_char[512];
+			sprintf(bias_name_char, "%s-bias", blockOutput_name.data());
+			std::string bias_name(bias_name_char);
+			Node bias(bias_name, NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+			bias.setModuleName(module_name);
+			model.addNodes({ bias });
+
+			// Make the link between output node bias to output node
+			char weight_bias_name_char[512];
+			sprintf(weight_bias_name_char, "%s_to_%s", bias_name.data(), blockOutput_name.data());
+			std::string weight_bias_name(weight_bias_name_char);
+
+			char link_bias_name_char[512];
+			sprintf(link_bias_name_char, "%s_to_%s", bias_name.data(), blockOutput_name.data());
+			std::string link_bias_name(link_bias_name_char);
+
+			std::shared_ptr<WeightInitOp> bias_weight_init;
+			bias_weight_init.reset(new ConstWeightInitOp(1.0));;
+			std::shared_ptr<SolverOp> bias_solver = solver;
+			Weight weight_bias(weight_bias_name, bias_weight_init, bias_solver);
+			weight_bias.setModuleName(module_name);
+			Link link_bias(link_bias_name, bias_name, blockOutput_name, weight_bias_name);
+			link_bias.setModuleName(module_name);
+
+			model.addWeights({ weight_bias });
+			model.addLinks({ link_bias });
+		}
+
+		for (const std::string& node_name : source_node_names) {
+			// Make the link from input node to input gate [add drop prob]
+
+			// Make the link from input node to output gate
+
+			// Make the link from input node to forget gate
+		}
 
 		for (int cell_iter = 0; cell_iter < n_cells; ++cell_iter) {
 			// Make the memory cell
