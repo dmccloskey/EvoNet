@@ -784,8 +784,20 @@ namespace SmartPeak
 		model.addNodes({ blockGateInput });
 		
 		// Make the output gate node 
+		char blockGateOutput_name_char[512];
+		sprintf(blockGateOutput_name_char, "%s_BlockGateOutput", name.data());
+		std::string blockGateOutput_name(blockGateOutput_name_char);
+		Node blockGateOutput(blockGateOutput_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new SigmoidOp<float>()), std::shared_ptr<ActivationOp<float>>(new SigmoidGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+		blockGateOutput.setModuleName(module_name);
+		model.addNodes({ blockGateOutput });
 		
 		// Make the forget gate node
+		char blockGateForget_name_char[512];
+		sprintf(blockGateForget_name_char, "%s_BlockGateForget", name.data());
+		std::string blockGateForget_name(blockGateForget_name_char);
+		Node blockGateForget(blockGateForget_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new SigmoidOp<float>()), std::shared_ptr<ActivationOp<float>>(new SigmoidGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+		blockGateForget.setModuleName(module_name);
+		model.addNodes({ blockGateForget });
 
 		// Make the input multiplier node
 		char blockMultInput_name_char[512];
@@ -806,6 +818,12 @@ namespace SmartPeak
 		const std::string output_node_name = blockOutput_name;
 
 		// Make the forget gate multiplier node
+		char blockMultForget_name_char[512];
+		sprintf(blockMultForget_name_char, "%s_BlockMultForget", name.data());
+		std::string blockMultForget_name(blockMultForget_name_char);
+		Node blockMultForget(blockMultForget_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new ProdOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new ProdErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new ProdWeightGradOp<float>()));
+		blockMultForget.setModuleName(module_name);
+		model.addNodes({ blockMultForget });
 
 		if (biases) {  // input biases, links, and weights
 			// Make the input bias nodes
