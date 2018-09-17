@@ -741,7 +741,7 @@ namespace SmartPeak
 
 		for (int block_iter = 0; block_iter < n_blocks; ++block_iter) {
 			// Make the LSTM cell
-			std::vector<std::string> output_node_names = addLSTMBlock(model, name + std::to_string(block_iter), module_name, source_node_names, n_cells, node_activation, node_activation_grad,
+			std::vector<std::string> output_node_names = addLSTMBlock(model, name + "-" + std::to_string(block_iter), module_name, source_node_names, n_cells, node_activation, node_activation_grad,
 				node_integration, node_integration_error, node_integration_weight_grad,
 				weight_init, solver, drop_out_prob, drop_connection_prob, biases);
 			for (const std::string& node_name : output_node_names) node_names.push_back(node_name);
@@ -972,6 +972,14 @@ namespace SmartPeak
 			Node blockMultForget(blockMultForget_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new ProdOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new ProdErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new ProdWeightGradOp<float>()));
 			blockMultForget.setModuleName(module_name);
 			model.addNodes({ blockMultForget });
+
+			// Make the link between the input and the input multiplier node
+			char link_iToIMult_name_char[512];
+			sprintf(link_iToIMult_name_char, "%s_to_%s", blockInput_name.data(), blockMultInput_name.data());
+			std::string link_iToIMult_name(link_iToIMult_name_char);
+			Link link_iToIMult(link_iToIMult_name, blockInput_name, blockMultInput_name, unity_weight_name);
+			link_iToIMult.setModuleName(module_name);
+			model.addLinks({ link_iToIMult });
 
 			// Make the link between the input gate and the input multiplier node
 			char link_iGateToIMult_name_char[512];

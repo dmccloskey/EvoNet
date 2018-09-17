@@ -565,13 +565,14 @@ BOOST_AUTO_TEST_CASE(addLSTMBlock)
 		std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
 		std::shared_ptr<WeightInitOp>(new RandWeightInitOp(1.0)), std::shared_ptr<SolverOp>(new SGDOp(0.1, 0.9)), 0.2f, 0.8f, true);
 
-	std::vector<std::string> node_names_test = { 
+	std::vector<std::string> node_names_test = {
 		"LSTM-BlockGateForget","LSTM-BlockGateForget-bias","LSTM-BlockGateInput","LSTM-BlockGateInput-bias","LSTM-BlockGateOutput","LSTM-BlockGateOutput-bias",
 		"LSTM-BlockInput-0","LSTM-BlockInput-0-bias-0","LSTM-BlockInput-1","LSTM-BlockInput-1-bias-1",
 		"LSTM-BlockMemoryCell-0","LSTM-BlockMemoryCell-1","LSTM-BlockMultForget-0","LSTM-BlockMultForget-1","LSTM-BlockMultInput-0","LSTM-BlockMultInput-1","LSTM-BlockMultOutput-0","LSTM-BlockMultOutput-1" };
-	std::vector<std::string> link_names_test = { 
+	std::vector<std::string> link_names_test = {
 		"Input_0_to_LSTM-BlockGateForget","Input_0_to_LSTM-BlockGateInput","Input_0_to_LSTM-BlockGateOutput","Input_0_to_LSTM-BlockInput-0","Input_0_to_LSTM-BlockInput-1",
 		"Input_1_to_LSTM-BlockGateForget","Input_1_to_LSTM-BlockGateInput","Input_1_to_LSTM-BlockGateOutput","Input_1_to_LSTM-BlockInput-0","Input_1_to_LSTM-BlockInput-1",
+		"LSTM-BlockInput-0_to_LSTM-BlockMultInput-0", "LSTM-BlockInput-1_to_LSTM-BlockMultInput-1",
 		"LSTM-BlockGateForget-bias_to_LSTM-BlockGateForget","LSTM-BlockGateForget_to_LSTM-BlockMultForget-0","LSTM-BlockGateForget_to_LSTM-BlockMultForget-1",
 		"LSTM-BlockGateInput-bias_to_LSTM-BlockGateInput","LSTM-BlockGateInput_to_LSTM-BlockMultInput-0","LSTM-BlockGateInput_to_LSTM-BlockMultInput-1",
 		"LSTM-BlockGateOutput-bias_to_LSTM-BlockGateOutput","LSTM-BlockGateOutput_to_LSTM-BlockMultOutput-0","LSTM-BlockGateOutput_to_LSTM-BlockMultOutput-1",
@@ -582,14 +583,14 @@ BOOST_AUTO_TEST_CASE(addLSTMBlock)
 		"LSTM-BlockMultInput-0_to_LSTM-BlockMemoryCell-0","LSTM-BlockMultInput-1_to_LSTM-BlockMemoryCell-1",
 		"LSTM-BlockMultOutput-0_to_LSTM-BlockGateForget","LSTM-BlockMultOutput-0_to_LSTM-BlockGateInput","LSTM-BlockMultOutput-0_to_LSTM-BlockGateOutput","LSTM-BlockMultOutput-0_to_LSTM-BlockInput-0",
 		"LSTM-BlockMultOutput-1_to_LSTM-BlockGateForget","LSTM-BlockMultOutput-1_to_LSTM-BlockGateInput","LSTM-BlockMultOutput-1_to_LSTM-BlockGateOutput","LSTM-BlockMultOutput-1_to_LSTM-BlockInput-1" };
-	std::vector<std::string> weight_names_test = { 
+	std::vector<std::string> weight_names_test = {
 		"Input_0_to_LSTM-BlockGateForget","Input_0_to_LSTM-BlockGateInput","Input_0_to_LSTM-BlockGateOutput","Input_0_to_LSTM-BlockInput-0","Input_0_to_LSTM-BlockInput-1",
 		"Input_1_to_LSTM-BlockGateForget","Input_1_to_LSTM-BlockGateInput","Input_1_to_LSTM-BlockGateOutput","Input_1_to_LSTM-BlockInput-0","Input_1_to_LSTM-BlockInput-1",
 		"LSTM-BlockMultOutput-0_to_LSTM-BlockGateForget","LSTM-BlockMultOutput-0_to_LSTM-BlockGateInput","LSTM-BlockMultOutput-0_to_LSTM-BlockGateOutput","LSTM-BlockMultOutput-0_to_LSTM-BlockInput-0",
 		"LSTM-BlockMultOutput-1_to_LSTM-BlockGateForget","LSTM-BlockMultOutput-1_to_LSTM-BlockGateInput","LSTM-BlockMultOutput-1_to_LSTM-BlockGateOutput","LSTM-BlockMultOutput-1_to_LSTM-BlockInput-1",
 		"LSTM-BlockGateForget-bias_to_LSTM-BlockGateForget","LSTM-BlockGateInput-bias_to_LSTM-BlockGateInput","LSTM-BlockGateOutput-bias_to_LSTM-BlockGateOutput",
 		"LSTM-BlockInput-0-bias-0_to_LSTM-BlockInput-0","LSTM-BlockInput-1-bias-1_to_LSTM-BlockInput-1",
-		"LSTM_Unity"};
+		"LSTM_Unity" };
 
 	// check the nodes
 	for (const std::string& node_name : node_names_test)
@@ -696,9 +697,8 @@ BOOST_AUTO_TEST_CASE(addLSTMBlock)
 			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "RandWeightInitOp");
 			BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "SGDOp");
 			BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.0f);
-			std::cout << name << std::endl;
 		}
-		else if (name == "Input_0_to_LSTM-BlockInput-0" || name == "Input_0_to_LSTM-BlockInput-1" || 
+		else if (name == "Input_0_to_LSTM-BlockInput-0" || name == "Input_0_to_LSTM-BlockInput-1" ||
 			name == "Input_1_to_LSTM-BlockInput-0" ||
 			name == "Input_1_to_LSTM-BlockInput-1" ||
 			name == "LSTM-BlockMultOutput-0_to_LSTM-BlockInput-0" || name == "LSTM-BlockMultOutput-1_to_LSTM-BlockInput-1") {
@@ -712,7 +712,7 @@ BOOST_AUTO_TEST_CASE(addLSTMBlock)
 			BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "SGDOp");
 			BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.0f);
 		}
-		else if (name == "LSTM-BlockInput-0-bias-0_to_LSTM-BlockInput-0" ||	name == "LSTM-BlockInput-1-bias-1_to_LSTM-BlockInput-1") {
+		else if (name == "LSTM-BlockInput-0-bias-0_to_LSTM-BlockInput-0" || name == "LSTM-BlockInput-1-bias-1_to_LSTM-BlockInput-1") {
 			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
 			BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "SGDOp");
 			BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.8f);
@@ -720,6 +720,30 @@ BOOST_AUTO_TEST_CASE(addLSTMBlock)
 		else
 			BOOST_CHECK(false);
 	}
+}
+	
+BOOST_AUTO_TEST_CASE(addLSTM)
+{
+	ModelBuilder model_builder;
+	Model model;
+	std::vector<std::string> node_names;
+
+	// make the input
+	node_names = model_builder.addInputNodes(model, "Input", 2);
+
+	// make the normalization 
+	node_names = model_builder.addLSTM(model, "LSTM", "Mod1", node_names, 2, 2,
+		std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
+		std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
+		std::shared_ptr<WeightInitOp>(new RandWeightInitOp(1.0)), std::shared_ptr<SolverOp>(new SGDOp(0.1, 0.9)), 0.2f, 0.8f, true);
+
+	std::vector<std::string> node_names_test = { 
+		"LSTM-0-BlockMultOutput-0","LSTM-0-BlockMultOutput-1",
+		"LSTM-1-BlockMultOutput-0","LSTM-1-BlockMultOutput-1" };
+
+	// check the nodes
+	for (size_t node_iter = 0; node_iter<node_names_test.size(); ++node_iter)
+		BOOST_CHECK_EQUAL(node_names[node_iter], node_names_test[node_iter]);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
