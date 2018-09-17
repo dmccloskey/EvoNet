@@ -560,17 +560,33 @@ BOOST_AUTO_TEST_CASE(addLSTMBlock)
 	node_names = model_builder.addInputNodes(model, "Input", 2);
 
 	// make the normalization 
-	std::string output_node_name = model_builder.addLSTMBlock(model, "LSTM", "Mod1", node_names, 2,
+	node_names = model_builder.addLSTMBlock(model, "LSTM", "Mod1", node_names, 2,
 		std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
 		std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
 		std::shared_ptr<WeightInitOp>(new RandWeightInitOp(1.0)), std::shared_ptr<SolverOp>(new SGDOp(0.1, 0.9)), 0.2f, 0.8f, true);
+
+	for (auto& link : model.getLinks())
+		std::cout << "Link: " << link.getName() << std::endl;
+	for (auto& weight : model.getWeights())
+		std::cout << "Weight: " << weight.getName() << std::endl;
 
 	std::vector<std::string> node_names_test = { "LSTM-BlockInput", 
 		"LSTM-BlockGateInput", "LSTM-BlockGateForget", "LSTM-BlockGateOutput",
 		"LSTM-BlockMultInput", "LSTM-BlockMultForget", "LSTM-BlockMultOutput",
 		"LSTM-BlockMemoryCell-1", "LSTM-BlockMemoryCell-2" };
-	std::vector<std::string> link_names_test = { };
-	std::vector<std::string> weight_names_test = {
+	std::vector<std::string> link_names_test = { 
+		"Input_0_to_LSTM-BlockGateForget","Input_0_to_LSTM-BlockGateInput","Input_0_to_LSTM-BlockInput","Input_0_to_LSTM-BlockGateOutput",
+		"Input_1_to_LSTM-BlockGateForget","Input_1_to_LSTM-BlockGateInput","Input_1_to_LSTM-BlockInput","Input_1_to_LSTM-BlockGateOutput",
+		"LSTM-BlockGateForget_to_LSTM-BlockMultForget","LSTM-BlockGateInput_to_LSTM-BlockMultInput","LSTM-BlockGateOutput_to_LSTM-BlockMultOutput",
+		"LSTM-BlockInput-bias_to_LSTM-BlockInput",
+		"LSTM-BlockMemoryCell-0_to_LSTM-BlockMultForget","LSTM-BlockMemoryCell-0_to_LSTM-BlockMultOutput",
+		"LSTM-BlockMemoryCell-1_to_LSTM-BlockMultForget","LSTM-BlockMemoryCell-1_to_LSTM-BlockMultOutput",
+		"LSTM-BlockMultForget_to_LSTM-BlockMemoryCell-0","LSTM-BlockMultForget_to_LSTM-BlockMemoryCell-1",
+		"LSTM-BlockMultInput_to_LSTM-BlockMemoryCell-0","LSTM-BlockMultInput_to_LSTM-BlockMemoryCell-1" };
+	std::vector<std::string> weight_names_test = { 
+		"Input_0_to_LSTM-BlockGateForget","Input_0_to_LSTM-BlockGateInput","Input_0_to_LSTM-BlockInput","Input_0_to_LSTM-BlockMultOutput",
+		"Input_1_to_LSTM-BlockGateForget","Input_1_to_LSTM-BlockGateInput","Input_1_to_LSTM-BlockInput","Input_1_to_LSTM-BlockMultOutput",
+		"LSTM-BlockInput-bias_to_LSTM-BlockInput",
 		"LSTM_Unity"};
 
 	// check the nodes
@@ -642,7 +658,7 @@ BOOST_AUTO_TEST_CASE(addLSTMBlock)
 	{
 		BOOST_CHECK_EQUAL(model.getWeight(name).getName(), name);
 		BOOST_CHECK_EQUAL(model.getWeight(name).getModuleName(), "Mod1");
-		if (name == "Norm_Unity" || name == "Norm_Negative") {
+		if (name == "LSTM_Unity") {
 			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
 			BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "DummySolverOp");
 			BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.0f);

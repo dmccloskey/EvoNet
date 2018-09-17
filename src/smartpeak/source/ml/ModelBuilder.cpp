@@ -735,28 +735,31 @@ namespace SmartPeak
 		const std::shared_ptr<ActivationOp<float>>& node_activation, const std::shared_ptr<ActivationOp<float>>& node_activation_grad, 
 		const std::shared_ptr<IntegrationOp<float>>& node_integration, const std::shared_ptr<IntegrationErrorOp<float>>& node_integration_error, const std::shared_ptr<IntegrationWeightGradOp<float>>& node_integration_weight_grad,
 		const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver,
-		float drop_out_prob = 0.0f, float drop_connection_prob = 0.0f, bool biases = true)
+		float drop_out_prob, float drop_connection_prob, bool biases)
 	{
 		std::vector<std::string> node_names;
 
 		for (int block_iter = 0; block_iter < n_blocks; ++block_iter) {
 			// Make the LSTM cell
-			std::string output_node_name = addLSTMBlock(model, name + std::to_string(block_iter), module_name, source_node_names, n_cells, node_activation, node_activation_grad,
+			std::vector<std::string> output_node_names = addLSTMBlock(model, name + std::to_string(block_iter), module_name, source_node_names, n_cells, node_activation, node_activation_grad,
 				node_integration, node_integration_error, node_integration_weight_grad,
 				weight_init, solver, drop_out_prob, drop_connection_prob, biases);
+			for (const std::string& node_name : output_node_names) node_names.push_back(node_name);
 		}
 		return node_names;
 	}
 
-	std::string ModelBuilder::addLSTMBlock(
+	std::vector<std::string> ModelBuilder::addLSTMBlock(
 		Model & model, const std::string & name, const std::string& module_name, 
 		const std::vector<std::string>& source_node_names,
 		const int & n_cells,
 		const std::shared_ptr<ActivationOp<float>>& node_activation, const std::shared_ptr<ActivationOp<float>>& node_activation_grad,
 		const std::shared_ptr<IntegrationOp<float>>& node_integration, const std::shared_ptr<IntegrationErrorOp<float>>& node_integration_error, const std::shared_ptr<IntegrationWeightGradOp<float>>& node_integration_weight_grad,
 		const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver,
-		float drop_out_prob = 0.0f, float drop_connection_prob = 0.0f, bool biases = true)
+		float drop_out_prob, float drop_connection_prob, bool biases)
 	{
+		std::vector<std::string> node_names;
+
 		// Create the unity weight
 		char unity_weight_name_char[512];
 		sprintf(unity_weight_name_char, "%s_Unity", name.data());
@@ -764,15 +767,6 @@ namespace SmartPeak
 		Weight unity_weight(unity_weight_name, std::shared_ptr<WeightInitOp>(new ConstWeightInitOp(1.0)), std::shared_ptr<SolverOp>(new DummySolverOp()));
 		unity_weight.setModuleName(module_name);
 		model.addWeights({ unity_weight });
-
-		// Make the input node
-		char blockInput_name_char[512];
-		sprintf(blockInput_name_char, "%s-BlockInput", name.data());
-		std::string blockInput_name(blockInput_name_char);
-		Node blockInput(blockInput_name, NodeType::hidden, NodeStatus::initialized, node_activation, node_activation_grad, node_integration, node_integration_error, node_integration_weight_grad);
-		blockInput.setModuleName(module_name);
-		blockInput.setDropProbability(drop_out_prob);
-		model.addNodes({ blockInput });
 
 		// Make the input gate node
 		char blockGateInput_name_char[512];
@@ -798,166 +792,291 @@ namespace SmartPeak
 		blockGateForget.setModuleName(module_name);
 		model.addNodes({ blockGateForget });
 
-		// Make the input multiplier node
-		char blockMultInput_name_char[512];
-		sprintf(blockMultInput_name_char, "%s-BlockMultInput", name.data());
-		std::string blockMultInput_name(blockMultInput_name_char);
-		Node blockMultInput(blockMultInput_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new ProdOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new ProdErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new ProdWeightGradOp<float>()));
-		blockMultInput.setModuleName(module_name);
-		model.addNodes({ blockMultInput });
-
-		// Make the output multiplier node[add drop prob]
-		char blockOutput_name_char[512];
-		sprintf(blockOutput_name_char, "%s_BlockMultOutput", name.data());
-		std::string blockOutput_name(blockOutput_name_char);
-		Node blockOutput(blockOutput_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new ProdOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new ProdErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new ProdWeightGradOp<float>()));
-		blockOutput.setModuleName(module_name);
-		blockOutput.setDropProbability(drop_out_prob);
-		model.addNodes({ blockOutput });
-		const std::string output_node_name = blockOutput_name;
-
-		// Make the forget gate multiplier node
-		char blockMultForget_name_char[512];
-		sprintf(blockMultForget_name_char, "%s-BlockMultForget", name.data());
-		std::string blockMultForget_name(blockMultForget_name_char);
-		Node blockMultForget(blockMultForget_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new ProdOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new ProdErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new ProdWeightGradOp<float>()));
-		blockMultForget.setModuleName(module_name);
-		model.addNodes({ blockMultForget });
-
-		// Make the link between the input gate and the input multiplier node
-		char link_iGateToIMult_name_char[512];
-		sprintf(link_iGateToIMult_name_char, "%s_to_%s", blockGateInput_name.data(), blockMultInput_name.data());
-		std::string link_iGateToIMult_name(link_iGateToIMult_name_char);
-		Link link_iGateToIMult(link_iGateToIMult_name, blockGateInput_name, blockMultInput_name, unity_weight_name);
-		link_iGateToIMult.setModuleName(module_name);
-		model.addLinks({ link_iGateToIMult }); 
-
-		// Make the link between the forget gate and the forget gate multiplier node
-		char link_fGateToFMult_name_char[512];
-		sprintf(link_fGateToFMult_name_char, "%s_to_%s", blockGateForget_name.data(), blockMultForget_name.data());
-		std::string link_fGateToFMult_name(link_fGateToFMult_name_char);
-		Link link_fGateToFMult(link_fGateToFMult_name, blockGateForget_name, blockMultForget_name, unity_weight_name);
-		link_fGateToFMult.setModuleName(module_name);
-		model.addLinks({ link_fGateToFMult });
-
-		// Make the link between the output gate and the output gate multiplier node
-		char link_oGateToOMult_name_char[512];
-		sprintf(link_oGateToOMult_name_char, "%s_to_%s", blockGateOutput_name.data(), blockOutput_name.data());
-		std::string link_oGateToOMult_name(link_oGateToOMult_name_char);
-		Link link_oGateToOMult(link_oGateToOMult_name, blockGateOutput_name, blockOutput_name, unity_weight_name);
-		link_oGateToOMult.setModuleName(module_name);
-		model.addLinks({ link_oGateToOMult });
-
-		if (biases) {  // input biases, links, and weights
-			// Make the input bias nodes
-			char bias_name_char[512];
-			sprintf(bias_name_char, "%s-bias", blockInput_name.data());
-			std::string bias_name(bias_name_char);
-			Node bias(bias_name, NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-			bias.setModuleName(module_name);
-			model.addNodes({ bias });
-
-			// Make the link between input bias node to input node
-			char weight_bias_name_char[512];
-			sprintf(weight_bias_name_char, "%s_to_%s", bias_name.data(), blockInput_name.data());
-			std::string weight_bias_name(weight_bias_name_char);
-
-			char link_bias_name_char[512];
-			sprintf(link_bias_name_char, "%s_to_%s", bias_name.data(), blockInput_name.data());
-			std::string link_bias_name(link_bias_name_char);
-
-			std::shared_ptr<WeightInitOp> bias_weight_init;
-			bias_weight_init.reset(new ConstWeightInitOp(1.0));;
-			std::shared_ptr<SolverOp> bias_solver = solver;
-			Weight weight_bias(weight_bias_name, bias_weight_init, bias_solver);
-			weight_bias.setModuleName(module_name);
-			Link link_bias(link_bias_name, bias_name, blockInput_name, weight_bias_name);
-			link_bias.setModuleName(module_name);
-
-			model.addWeights({ weight_bias });
-			model.addLinks({ link_bias });
-		}
-
-		for (const std::string& node_name : source_node_names) {
-			// Make the link form input to block input
-			char weight_iToIBlock_name_char[512];
-			sprintf(weight_iToIBlock_name_char, "%s_to_%s", node_name.data(), blockInput_name.data());
-			std::string weight_iToIBlock_name(weight_iToIBlock_name_char);
-
-			char link_iToIBlock_name_char[512];
-			sprintf(link_iToIBlock_name_char, "%s_to_%s", node_name.data(), blockInput_name.data());
-			std::string link_iToIBlock_name(link_iToIBlock_name_char);
-
-			std::shared_ptr<WeightInitOp> iToIBlock_weight_init = weight_init;
-			std::shared_ptr<SolverOp> iToIBlock_solver = solver;
-			Weight weight_iToIBlock(weight_iToIBlock_name, iToIBlock_weight_init, iToIBlock_solver);
-			weight_iToIBlock.setModuleName(module_name);
-			weight_iToIBlock.setDropProbability(drop_connection_prob);
-			Link link_iToIBlock(link_iToIBlock_name, node_name, blockInput_name, weight_iToIBlock_name);
-			link_iToIBlock.setModuleName(module_name);
-
-			model.addWeights({ weight_iToIBlock });
-			model.addLinks({ link_iToIBlock })
-
-			// Make the link from input node to input gate
-			char weight_iToIGate_name_char[512];
-			sprintf(weight_iToIGate_name_char, "%s_to_%s", node_name.data(), blockGateInput_name.data());
-			std::string weight_iToIGate_name(weight_iToIGate_name_char);
-
-			char link_iToIGate_name_char[512];
-			sprintf(link_iToIGate_name_char, "%s_to_%s", node_name.data(), blockGateInput_name.data());
-			std::string link_iToIGate_name(link_iToIGate_name_char);
-
-			std::shared_ptr<WeightInitOp> iToIGate_weight_init = weight_init;
-			std::shared_ptr<SolverOp> iToIGate_solver = solver;
-			Weight weight_iToIGate(weight_iToIGate_name, iToIGate_weight_init, iToIGate_solver);
-			weight_iToIGate.setModuleName(module_name);
-			Link link_iToIGate(link_iToIGate_name, node_name, blockGateInput_name, weight_iToIGate_name);
-			link_iToIGate.setModuleName(module_name);
-
-			model.addWeights({ weight_iToIGate });
-			model.addLinks({ link_iToIGate });
-
-			// Make the link from input node to output gate
-			char weight_iToOGate_name_char[512];
-			sprintf(weight_iToOGate_name_char, "%s_to_%s", node_name.data(), blockGateInput_name.data());
-			std::string weight_iToOGate_name(weight_iToOGate_name_char);
-
-			char link_iToOGate_name_char[512];
-			sprintf(link_iToOGate_name_char, "%s_to_%s", node_name.data(), blockGateInput_name.data());
-			std::string link_iToOGate_name(link_iToOGate_name_char);
-
-			std::shared_ptr<WeightInitOp> iToOGate_weight_init = weight_init;
-			std::shared_ptr<SolverOp> iToOGate_solver = solver;
-			Weight weight_iToOGate(weight_iToOGate_name, iToOGate_weight_init, iToOGate_solver);
-			weight_iToOGate.setModuleName(module_name);
-			Link link_iToOGate(link_iToOGate_name, node_name, blockGateInput_name, weight_iToOGate_name);
-			link_iToOGate.setModuleName(module_name);
-
-			model.addWeights({ weight_iToOGate });
-			model.addLinks({ link_iToOGate });
-
-			// Make the link from input node to forget gate
-			char weight_iToFGate_name_char[512];
-			sprintf(weight_iToFGate_name_char, "%s_to_%s", node_name.data(), blockGateInput_name.data());
-			std::string weight_iToFGate_name(weight_iToFGate_name_char);
-
-			char link_iToFGate_name_char[512];
-			sprintf(link_iToFGate_name_char, "%s_to_%s", node_name.data(), blockGateInput_name.data());
-			std::string link_iToFGate_name(link_iToFGate_name_char);
-
-			std::shared_ptr<WeightInitOp> iToFGate_weight_init = weight_init;
-			std::shared_ptr<SolverOp> iToFGate_solver = solver;
-			Weight weight_iToFGate(weight_iToFGate_name, iToFGate_weight_init, iToFGate_solver);
-			weight_iToFGate.setModuleName(module_name);
-			Link link_iToFGate(link_iToFGate_name, node_name, blockGateInput_name, weight_iToFGate_name);
-			link_iToFGate.setModuleName(module_name);
-
-			model.addWeights({ weight_iToFGate });
-			model.addLinks({ link_iToFGate });
-		}
-
 		for (int cell_iter = 0; cell_iter < n_cells; ++cell_iter) {
+			// Make the input node
+			char blockInput_name_char[512];
+			sprintf(blockInput_name_char, "%s-BlockInput-%d", name.data(), cell_iter);
+			std::string blockInput_name(blockInput_name_char);
+			Node blockInput(blockInput_name, NodeType::hidden, NodeStatus::initialized, node_activation, node_activation_grad, node_integration, node_integration_error, node_integration_weight_grad);
+			blockInput.setModuleName(module_name);
+			blockInput.setDropProbability(drop_out_prob);
+			model.addNodes({ blockInput });
+
+			// Make the input multiplier node
+			char blockMultInput_name_char[512];
+			sprintf(blockMultInput_name_char, "%s-BlockMultInput-%d", name.data(), cell_iter);
+			std::string blockMultInput_name(blockMultInput_name_char);
+			Node blockMultInput(blockMultInput_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new ProdOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new ProdErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new ProdWeightGradOp<float>()));
+			blockMultInput.setModuleName(module_name);
+			model.addNodes({ blockMultInput });
+
+			// Make the output multiplier node[add drop prob]
+			char blockOutput_name_char[512];
+			sprintf(blockOutput_name_char, "%s-BlockMultOutput-%d", name.data(), cell_iter);
+			std::string blockOutput_name(blockOutput_name_char);
+			Node blockOutput(blockOutput_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new ProdOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new ProdErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new ProdWeightGradOp<float>()));
+			blockOutput.setModuleName(module_name);
+			blockOutput.setDropProbability(drop_out_prob);
+			model.addNodes({ blockOutput });
+			node_names.push_back(blockOutput_name);
+
+			// Make the forget gate multiplier node
+			char blockMultForget_name_char[512];
+			sprintf(blockMultForget_name_char, "%s-BlockMultForget-%d", name.data(), cell_iter);
+			std::string blockMultForget_name(blockMultForget_name_char);
+			Node blockMultForget(blockMultForget_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new ProdOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new ProdErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new ProdWeightGradOp<float>()));
+			blockMultForget.setModuleName(module_name);
+			model.addNodes({ blockMultForget });
+
+			// Make the link between the input gate and the input multiplier node
+			char link_iGateToIMult_name_char[512];
+			sprintf(link_iGateToIMult_name_char, "%s_to_%s", blockGateInput_name.data(), blockMultInput_name.data());
+			std::string link_iGateToIMult_name(link_iGateToIMult_name_char);
+			Link link_iGateToIMult(link_iGateToIMult_name, blockGateInput_name, blockMultInput_name, unity_weight_name);
+			link_iGateToIMult.setModuleName(module_name);
+			model.addLinks({ link_iGateToIMult });
+
+			// Make the link between the forget gate and the forget gate multiplier node
+			char link_fGateToFMult_name_char[512];
+			sprintf(link_fGateToFMult_name_char, "%s_to_%s", blockGateForget_name.data(), blockMultForget_name.data());
+			std::string link_fGateToFMult_name(link_fGateToFMult_name_char);
+			Link link_fGateToFMult(link_fGateToFMult_name, blockGateForget_name, blockMultForget_name, unity_weight_name);
+			link_fGateToFMult.setModuleName(module_name);
+			model.addLinks({ link_fGateToFMult });
+
+			// Make the link between the output gate and the output gate multiplier node
+			char link_oGateToOMult_name_char[512];
+			sprintf(link_oGateToOMult_name_char, "%s_to_%s", blockGateOutput_name.data(), blockOutput_name.data());
+			std::string link_oGateToOMult_name(link_oGateToOMult_name_char);
+			Link link_oGateToOMult(link_oGateToOMult_name, blockGateOutput_name, blockOutput_name, unity_weight_name);
+			link_oGateToOMult.setModuleName(module_name);
+			model.addLinks({ link_oGateToOMult });
+
+			// Make the link between the output multiplier node and the input
+			char link_OMultToI_name_char[512];
+			sprintf(link_OMultToI_name_char, "%s_to_%s", blockOutput_name.data(), blockInput_name.data());
+			std::string link_OMultToI_name(link_OMultToI_name_char);
+			Link link_OMultToI(link_OMultToI_name, blockOutput_name, blockInput_name, unity_weight_name);
+			link_OMultToI.setModuleName(module_name);
+			model.addLinks({ link_OMultToI });
+
+			// Make the link between the output multiplier node and the input gate
+			char link_OMultToIGate_name_char[512];
+			sprintf(link_OMultToIGate_name_char, "%s_to_%s", blockOutput_name.data(), blockGateInput_name.data());
+			std::string link_OMultToIGate_name(link_OMultToIGate_name_char);
+			Link link_OMultToIGate(link_OMultToIGate_name, blockOutput_name, blockGateInput_name, unity_weight_name);
+			link_OMultToIGate.setModuleName(module_name);
+			model.addLinks({ link_OMultToIGate });
+
+			// Make the link between the output multiplier node and the forget gate
+			char link_OMultToFGate_name_char[512];
+			sprintf(link_OMultToFGate_name_char, "%s_to_%s", blockOutput_name.data(), blockGateForget_name.data());
+			std::string link_OMultToFGate_name(link_OMultToFGate_name_char);
+			Link link_OMultToFGate(link_OMultToFGate_name, blockOutput_name, blockGateForget_name, unity_weight_name);
+			link_OMultToFGate.setModuleName(module_name);
+			model.addLinks({ link_OMultToFGate });
+
+			// Make the link between the output multiplier node and the output gate
+			char link_OMultToOGate_name_char[512];
+			sprintf(link_OMultToOGate_name_char, "%s_to_%s", blockOutput_name.data(), blockGateOutput_name.data());
+			std::string link_OMultToOGate_name(link_OMultToOGate_name_char);
+			Link link_OMultToOGate(link_OMultToOGate_name, blockOutput_name, blockGateOutput_name, unity_weight_name);
+			link_OMultToOGate.setModuleName(module_name);
+			model.addLinks({ link_OMultToOGate });
+
+			if (biases) {  // biases, links, and weights for input, input gate, forget gate, and output gate
+				// Make the input bias nodes
+				char iBias_name_char[512];
+				sprintf(iBias_name_char, "%s-bias", blockInput_name.data());
+				std::string iBias_name(iBias_name_char);
+				Node iBias(iBias_name, NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+				iBias.setModuleName(module_name);
+				model.addNodes({ iBias });
+
+				// Make the link between input bias node to input node
+				char weight_iBias_name_char[512];
+				sprintf(weight_iBias_name_char, "%s_to_%s", iBias_name.data(), blockInput_name.data());
+				std::string weight_iBias_name(weight_iBias_name_char);
+
+				char link_iBias_name_char[512];
+				sprintf(link_iBias_name_char, "%s_to_%s", iBias_name.data(), blockInput_name.data());
+				std::string link_iBias_name(link_iBias_name_char);
+
+				std::shared_ptr<WeightInitOp> iBias_weight_init;
+				iBias_weight_init.reset(new ConstWeightInitOp(1.0));;
+				std::shared_ptr<SolverOp> iBias_solver = solver;
+				Weight weight_iBias(weight_iBias_name, iBias_weight_init, iBias_solver);
+				weight_iBias.setModuleName(module_name);
+				Link link_iBias(link_iBias_name, iBias_name, blockInput_name, weight_iBias_name);
+				link_iBias.setModuleName(module_name);
+
+				model.addWeights({ weight_iBias });
+				model.addLinks({ link_iBias });
+
+				// Make the input gate bias nodes
+				char iGateBias_name_char[512];
+				sprintf(iGateBias_name_char, "%s-bias", blockGateInput_name.data());
+				std::string iGateBias_name(iGateBias_name_char);
+				Node iGateBias(iGateBias_name, NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+				iGateBias.setModuleName(module_name);
+				model.addNodes({ iGateBias });
+
+				// Make the link between input gate bias node to input gate node
+				char weight_iGateBias_name_char[512];
+				sprintf(weight_iGateBias_name_char, "%s_to_%s", iGateBias_name.data(), blockGateInput_name.data());
+				std::string weight_iGateBias_name(weight_iGateBias_name_char);
+
+				char link_iGateBias_name_char[512];
+				sprintf(link_iGateBias_name_char, "%s_to_%s", iGateBias_name.data(), blockGateInput_name.data());
+				std::string link_iGateBias_name(link_iGateBias_name_char);
+
+				std::shared_ptr<WeightInitOp> iGateBias_weight_init;
+				iGateBias_weight_init.reset(new ConstWeightInitOp(1.0));;
+				std::shared_ptr<SolverOp> iGateBias_solver = solver;
+				Weight weight_iGateBias(weight_iGateBias_name, iGateBias_weight_init, iGateBias_solver);
+				weight_iGateBias.setModuleName(module_name);
+				Link link_iGateBias(link_iGateBias_name, iGateBias_name, blockGateInput_name, weight_iGateBias_name);
+				link_iGateBias.setModuleName(module_name);
+
+				model.addWeights({ weight_iGateBias });
+				model.addLinks({ link_iGateBias });
+
+				// Make the forget gate bias nodes
+				char fGateBias_name_char[512];
+				sprintf(fGateBias_name_char, "%s-bias", blockGateForget_name.data());
+				std::string fGateBias_name(fGateBias_name_char);
+				Node fGateBias(fGateBias_name, NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+				fGateBias.setModuleName(module_name);
+				model.addNodes({ fGateBias });
+
+				// Make the link between forget gate bias node to forget gate node
+				char weight_fGateBias_name_char[512];
+				sprintf(weight_fGateBias_name_char, "%s_to_%s", fGateBias_name.data(), blockGateForget_name.data());
+				std::string weight_fGateBias_name(weight_fGateBias_name_char);
+
+				char link_fGateBias_name_char[512];
+				sprintf(link_fGateBias_name_char, "%s_to_%s", fGateBias_name.data(), blockGateForget_name.data());
+				std::string link_fGateBias_name(link_fGateBias_name_char);
+
+				std::shared_ptr<WeightInitOp> fGateBias_weight_init;
+				fGateBias_weight_init.reset(new ConstWeightInitOp(1.0));;
+				std::shared_ptr<SolverOp> fGateBias_solver = solver;
+				Weight weight_fGateBias(weight_fGateBias_name, fGateBias_weight_init, fGateBias_solver);
+				weight_fGateBias.setModuleName(module_name);
+				Link link_fGateBias(link_fGateBias_name, fGateBias_name, blockGateForget_name, weight_fGateBias_name);
+				link_fGateBias.setModuleName(module_name);
+
+				model.addWeights({ weight_fGateBias });
+				model.addLinks({ link_fGateBias });
+
+				// Make the output gate bias nodes
+				char oGateBias_name_char[512];
+				sprintf(oGateBias_name_char, "%s-bias", blockGateOutput_name.data());
+				std::string oGateBias_name(oGateBias_name_char);
+				Node oGateBias(oGateBias_name, NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+				oGateBias.setModuleName(module_name);
+				model.addNodes({ oGateBias });
+
+				// Make the link between output gate bias node to output gate node
+				char weight_oGateBias_name_char[512];
+				sprintf(weight_oGateBias_name_char, "%s_to_%s", oGateBias_name.data(), blockGateOutput_name.data());
+				std::string weight_oGateBias_name(weight_oGateBias_name_char);
+
+				char link_oGateBias_name_char[512];
+				sprintf(link_oGateBias_name_char, "%s_to_%s", oGateBias_name.data(), blockGateOutput_name.data());
+				std::string link_oGateBias_name(link_oGateBias_name_char);
+
+				std::shared_ptr<WeightInitOp> oGateBias_weight_init;
+				oGateBias_weight_init.reset(new ConstWeightInitOp(1.0));;
+				std::shared_ptr<SolverOp> oGateBias_solver = solver;
+				Weight weight_oGateBias(weight_oGateBias_name, oGateBias_weight_init, oGateBias_solver);
+				weight_oGateBias.setModuleName(module_name);
+				Link link_oGateBias(link_oGateBias_name, oGateBias_name, blockGateOutput_name, weight_oGateBias_name);
+				link_oGateBias.setModuleName(module_name);
+
+				model.addWeights({ weight_oGateBias });
+				model.addLinks({ link_oGateBias });
+			}
+
+			for (const std::string& node_name : source_node_names) {
+				// Make the link form input to block input
+				char weight_iToIBlock_name_char[512];
+				sprintf(weight_iToIBlock_name_char, "%s_to_%s", node_name.data(), blockInput_name.data());
+				std::string weight_iToIBlock_name(weight_iToIBlock_name_char);
+
+				char link_iToIBlock_name_char[512];
+				sprintf(link_iToIBlock_name_char, "%s_to_%s", node_name.data(), blockInput_name.data());
+				std::string link_iToIBlock_name(link_iToIBlock_name_char);
+
+				std::shared_ptr<WeightInitOp> iToIBlock_weight_init = weight_init;
+				std::shared_ptr<SolverOp> iToIBlock_solver = solver;
+				Weight weight_iToIBlock(weight_iToIBlock_name, iToIBlock_weight_init, iToIBlock_solver);
+				weight_iToIBlock.setModuleName(module_name);
+				weight_iToIBlock.setDropProbability(drop_connection_prob);
+				Link link_iToIBlock(link_iToIBlock_name, node_name, blockInput_name, weight_iToIBlock_name);
+				link_iToIBlock.setModuleName(module_name);
+
+				model.addWeights({ weight_iToIBlock });
+				model.addLinks({ link_iToIBlock });
+
+				// Make the link from input node to input gate
+				char weight_iToIGate_name_char[512];
+				sprintf(weight_iToIGate_name_char, "%s_to_%s", node_name.data(), blockGateInput_name.data());
+				std::string weight_iToIGate_name(weight_iToIGate_name_char);
+
+				char link_iToIGate_name_char[512];
+				sprintf(link_iToIGate_name_char, "%s_to_%s", node_name.data(), blockGateInput_name.data());
+				std::string link_iToIGate_name(link_iToIGate_name_char);
+
+				std::shared_ptr<WeightInitOp> iToIGate_weight_init = weight_init;
+				std::shared_ptr<SolverOp> iToIGate_solver = solver;
+				Weight weight_iToIGate(weight_iToIGate_name, iToIGate_weight_init, iToIGate_solver);
+				weight_iToIGate.setModuleName(module_name);
+				Link link_iToIGate(link_iToIGate_name, node_name, blockGateInput_name, weight_iToIGate_name);
+				link_iToIGate.setModuleName(module_name);
+
+				model.addWeights({ weight_iToIGate });
+				model.addLinks({ link_iToIGate });
+
+				// Make the link from input node to output gate
+				char weight_iToOGate_name_char[512];
+				sprintf(weight_iToOGate_name_char, "%s_to_%s", node_name.data(), blockGateOutput_name.data());
+				std::string weight_iToOGate_name(weight_iToOGate_name_char);
+
+				char link_iToOGate_name_char[512];
+				sprintf(link_iToOGate_name_char, "%s_to_%s", node_name.data(), blockGateOutput_name.data());
+				std::string link_iToOGate_name(link_iToOGate_name_char);
+
+				std::shared_ptr<WeightInitOp> iToOGate_weight_init = weight_init;
+				std::shared_ptr<SolverOp> iToOGate_solver = solver;
+				Weight weight_iToOGate(weight_iToOGate_name, iToOGate_weight_init, iToOGate_solver);
+				weight_iToOGate.setModuleName(module_name);
+				Link link_iToOGate(link_iToOGate_name, node_name, blockGateOutput_name, weight_iToOGate_name);
+				link_iToOGate.setModuleName(module_name);
+
+				model.addWeights({ weight_iToOGate });
+				model.addLinks({ link_iToOGate });
+
+				// Make the link from input node to forget gate
+				char weight_iToFGate_name_char[512];
+				sprintf(weight_iToFGate_name_char, "%s_to_%s", node_name.data(), blockGateForget_name.data());
+				std::string weight_iToFGate_name(weight_iToFGate_name_char);
+
+				char link_iToFGate_name_char[512];
+				sprintf(link_iToFGate_name_char, "%s_to_%s", node_name.data(), blockGateForget_name.data());
+				std::string link_iToFGate_name(link_iToFGate_name_char);
+
+				std::shared_ptr<WeightInitOp> iToFGate_weight_init = weight_init;
+				std::shared_ptr<SolverOp> iToFGate_solver = solver;
+				Weight weight_iToFGate(weight_iToFGate_name, iToFGate_weight_init, iToFGate_solver);
+				weight_iToFGate.setModuleName(module_name);
+				Link link_iToFGate(link_iToFGate_name, node_name, blockGateForget_name, weight_iToFGate_name);
+				link_iToFGate.setModuleName(module_name);
+
+				model.addWeights({ weight_iToFGate });
+				model.addLinks({ link_iToFGate });
+			}
+
 			// Make the memory cell
 			char blockMemoryCell_name_char[512];
 			sprintf(blockMemoryCell_name_char, "%s-BlockMemoryCell-%d", name.data(), cell_iter);
@@ -984,9 +1103,9 @@ namespace SmartPeak
 
 			// Make the link from memory cell to forget gate multiplier node
 			char link_MemCellToFMult_name_char[512];
-			sprintf(link_MemCellToFMult_name_char, "%s_to_%s", blockMemoryCell_name.data(), blockGateForget_name.data());
+			sprintf(link_MemCellToFMult_name_char, "%s_to_%s", blockMemoryCell_name.data(), blockMultForget_name.data());
 			std::string link_MemCellToFMult_name(link_MemCellToFMult_name_char);
-			Link link_MemCellToFMult(link_MemCellToFMult_name, blockMemoryCell_name, blockGateForget_name, unity_weight_name);
+			Link link_MemCellToFMult(link_MemCellToFMult_name, blockMemoryCell_name, blockMultForget_name, unity_weight_name);
 			link_MemCellToFMult.setModuleName(module_name);
 			model.addLinks({ link_MemCellToFMult });
 
@@ -999,6 +1118,6 @@ namespace SmartPeak
 			model.addLinks({ link_fMultToMemCell });
 		}
 
-		return output_node_name;
+		return node_names;
 	}
 }

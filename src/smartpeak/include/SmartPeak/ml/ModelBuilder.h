@@ -184,7 +184,7 @@ public:
 			const std::shared_ptr<IntegrationWeightGradOp<float>>& node_integration_weight_grad,
 			const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver,
 			float drop_out_prob = 0.0f, float drop_connection_prob = 0.0f, bool biases = true);
-		std::string addLSTMBlock(Model& model, const std::string& name, const std::string& module_name,
+		std::vector<std::string> addLSTMBlock(Model& model, const std::string& name, const std::string& module_name,
 			const std::vector<std::string>& source_node_names,
 			const int& n_cells,
 			const std::shared_ptr<ActivationOp<float>>& node_activation,
