@@ -57,6 +57,10 @@ public:
 			const std::shared_ptr<IntegrationWeightGradOp<float>>& node_integration_weight_grad,
 			const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver,
 			float drop_out_prob = 0.0f, float drop_connection_prob = 0.0f, bool biases = true);
+		void addFullyConnected(Model& model, const std::string& module_name,
+			const std::vector<std::string>& source_node_names, const std::vector<std::string>& sink_node_names,
+			const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver, 
+			float drop_connection_prob = 0.0f);
 
 		/**
 		@brief Add a Soft Max

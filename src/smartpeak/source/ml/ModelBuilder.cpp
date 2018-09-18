@@ -108,6 +108,36 @@ namespace SmartPeak
 		}
 		return node_names;
 	}
+	void ModelBuilder::addFullyConnected(Model & model, const std::string & module_name, const std::vector<std::string>& source_node_names, const std::vector<std::string>& sink_node_names, 
+		const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver, float drop_connection_prob)
+	{
+
+		// Create the weights and links for input to hidden
+		for (const std::string& source_node_name: source_node_names)
+		{
+			for (const std::string& sink_node_name: sink_node_names)
+			{
+				char link_name_char[512];
+				sprintf(link_name_char, "%s_to_%s", source_node_name.data(), sink_node_name.data());
+				std::string link_name(link_name_char);
+
+				char weight_name_char[512];
+				sprintf(weight_name_char, "%s_to_%s", source_node_name.data(), sink_node_name.data());
+				std::string weight_name(weight_name_char);
+
+				std::shared_ptr<WeightInitOp> hidden_weight_init = weight_init;
+				std::shared_ptr<SolverOp> hidden_solver = solver;
+				Weight weight(weight_name_char, hidden_weight_init, hidden_solver);
+				weight.setModuleName(module_name);
+				weight.setDropProbability(drop_connection_prob);
+				Link link(link_name, source_node_name, sink_node_name, weight_name);
+				link.setModuleName(module_name);
+
+				model.addWeights({ weight });
+				model.addLinks({ link });
+			}
+		}
+	}
 	std::vector<std::string> ModelBuilder::addSoftMax(Model & model, const std::string & name, const std::string& module_name, const std::vector<std::string>& source_node_names)
 	{
 		std::vector<std::string> node_names;

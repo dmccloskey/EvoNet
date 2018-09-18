@@ -47,7 +47,7 @@ BOOST_AUTO_TEST_CASE(addInputNodes)
 	}
 }
 
-BOOST_AUTO_TEST_CASE(addFullyConnected)
+BOOST_AUTO_TEST_CASE(addFullyConnected1)
 {
 	ModelBuilder model_builder;
 	Model model;
@@ -91,6 +91,93 @@ BOOST_AUTO_TEST_CASE(addFullyConnected)
 			BOOST_CHECK_EQUAL(model.getNode(node_names_test[i]).getIntegrationError()->getName(), "ProdErrorOp");
 			BOOST_CHECK_EQUAL(model.getNode(node_names_test[i]).getIntegrationWeightGrad()->getName(), "ProdWeightGradOp");
 			BOOST_CHECK_CLOSE(model.getNode(node_names_test[i]).getDropProbability(), 0.2, 1e-3);
+		}
+	}
+
+	// check the links
+	for (const std::string& name : link_names_test)
+	{
+		BOOST_CHECK_EQUAL(model.getLink(name).getName(), name);
+		std::vector<std::string> test = SplitString(name, "_to_");
+		BOOST_CHECK_EQUAL(model.getLink(name).getSourceNodeName(), test[0]);
+		BOOST_CHECK_EQUAL(model.getLink(name).getSinkNodeName(), test[1]);
+		BOOST_CHECK_EQUAL(model.getLink(name).getWeightName(), name);
+		BOOST_CHECK_EQUAL(model.getLink(name).getModuleName(), "Mod1");
+	}
+
+	// check the weights
+	for (const std::string& name : weight_names_test)
+	{
+		BOOST_CHECK_EQUAL(model.getWeight(name).getName(), name);
+		BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
+		BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "SGDOp");
+		BOOST_CHECK_EQUAL(model.getWeight(name).getModuleName(), "Mod1");
+		BOOST_CHECK_CLOSE(model.getWeight(name).getDropProbability(), 0.8, 1e-3);
+	}
+}
+
+BOOST_AUTO_TEST_CASE(addFullyConnected2)
+{
+	ModelBuilder model_builder;
+	Model model;
+	std::vector<std::string> node_names;
+
+	// make the input
+	node_names = model_builder.addInputNodes(model, "Input", 2);
+
+	// make the fully connected 
+	node_names = model_builder.addFullyConnected(model, "Hidden", "Mod1", node_names,
+		2, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
+		std::shared_ptr<IntegrationOp<float>>(new ProdOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new ProdErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new ProdWeightGradOp<float>()),
+		std::shared_ptr<WeightInitOp>(new ConstWeightInitOp(1.0)), std::shared_ptr<SolverOp>(new SGDOp(0.1, 0.9)), 0.2f, 0.8f);
+
+	// make the input
+	std::vector<std::string> node_names_encoding = model_builder.addInputNodes(model, "Encoding", 2);
+
+	// make the fully connected 
+	model_builder.addFullyConnected(model, "Mod1", node_names_encoding, node_names,
+		std::shared_ptr<WeightInitOp>(new ConstWeightInitOp(1.0)), std::shared_ptr<SolverOp>(new SGDOp(0.1, 0.9)), 0.8f);
+
+	std::vector<std::string> node_names_test = { "Hidden_0", "Hidden-bias_0", "Hidden_1", "Hidden-bias_1", "Encoding_0", "Encoding_1" };
+	std::vector<std::string> link_names_test = { "Hidden-bias_0_to_Hidden_0", "Hidden-bias_1_to_Hidden_1",
+		"Input_0_to_Hidden_0", "Input_0_to_Hidden_1", "Input_1_to_Hidden_0", "Input_1_to_Hidden_1",
+		"Encoding_0_to_Hidden_0", "Encoding_0_to_Hidden_1", "Encoding_1_to_Hidden_0", "Encoding_1_to_Hidden_1"};
+	std::vector<std::string> weight_names_test = { "Hidden-bias_0_to_Hidden_0", "Hidden-bias_1_to_Hidden_1",
+		"Input_0_to_Hidden_0", "Input_0_to_Hidden_1", "Input_0_to_Hidden_0", "Input_0_to_Hidden_1",
+		"Encoding_0_to_Hidden_0", "Encoding_0_to_Hidden_1", "Encoding_1_to_Hidden_0", "Encoding_1_to_Hidden_1" };
+
+	// check the nodes
+	for (const std::string& node_name: node_names_test)
+	{
+		BOOST_CHECK_EQUAL(model.getNode(node_name).getName(), node_name);
+		if (node_name == "Hidden-bias_0" || node_name == "Hidden-bias_1")
+		{
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "SumOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "SumErrorOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
+			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.0, 1e-3);
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getModuleName(), "Mod1");
+		}
+		else if (node_name == "Encoding_0" || node_name == "Encoding_1")
+		{
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "SumOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "SumErrorOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
+			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.0, 1e-3);
+		}
+		else
+		{
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getModuleName(), "Mod1");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "ReLUOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "ReLUGradOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "ProdOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "ProdErrorOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "ProdWeightGradOp");
+			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.2, 1e-3);
 		}
 	}
 
