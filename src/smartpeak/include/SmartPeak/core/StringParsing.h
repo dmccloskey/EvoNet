@@ -1,10 +1,11 @@
 #ifndef SMARTPEAK_STRINGPARSING_H
 #define SMARTPEAK_STRINGPARSING_H
 
-#include <algorithm>>
+#include <algorithm>
 #include <vector>
-#include <string>>
+#include <string>
 #include <regex>
+
 
 namespace SmartPeak
 {

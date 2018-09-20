@@ -181,6 +181,8 @@ public:
 	/*
 	@brief Read in the biochemical reactsion from .csv file
 
+	[TODO: add unit tests]
+
 	@param[in] filename
 	@param[in, out] biochemicalReactions
 	**/
@@ -226,6 +228,8 @@ public:
 
 	/*
 	@brief Read in the meta data from .csv file
+
+	[TODO: add unit tests]
 
 	@param[in] filename
 	@param[in, out] metaData
@@ -321,6 +325,8 @@ public:
 	/*
 	@brief Find candidate reactions that can be used to calculate the MAR
 
+	[TODO: add unit tests]
+
 	@param[in] biochemicalReactions
 
 	@returns a vector of reaction_ids
@@ -367,6 +373,53 @@ public:
 		}
 	}
 
+	/*
+	@brief Remove MARs that involve the same set of metabolites
+
+	[TODO: add unit tests]
+
+	@returns a vector of reaction_ids
+	**/
+	void removeRedundantMARs()
+	{
+		std::vector<std::string> reaction_ids_copy, unique_reactants_ids;
+		for (const std::string& reaction_id : reaction_ids_)
+		{
+			std::vector<std::string> products_ids = biochemicalReactions_.at(reaction_id).products_ids;
+			std::vector<std::string> reactants_ids = biochemicalReactions_.at(reaction_id).reactants_ids;
+			std::vector<std::string> metabolite_ids;
+
+			// extract out products and reactants
+			for (const std::string& met_id : products_ids) {
+				if (std::count(component_group_names_.begin(), component_group_names_.end(), met_id) != 0)
+					metabolite_ids.push_back(met_id);
+			}
+			for (const std::string& met_id : reactants_ids) {
+				if (std::count(component_group_names_.begin(), component_group_names_.end(), met_id) != 0)
+					metabolite_ids.push_back(met_id);
+			}
+
+			// sort the metabolite ids, and concatenate into a string
+			std::sort(metabolite_ids.begin(), metabolite_ids.end());
+			std::string metabolites;
+			for (auto const& s : metabolite_ids) { metabolites += "/" + s; }
+
+			// check if the concatenated metabolites exist
+			if (std::count(unique_reactants_ids.begin(), unique_reactants_ids.end(), metabolites) == 0) {
+				reaction_ids_copy.push_back(reaction_id);
+				unique_reactants_ids.push_back(metabolites);
+			}
+		}
+		reaction_ids_ = reaction_ids_copy;
+	}
+
+	/*
+	@brief Find all unique component group names in the data set
+
+	[TODO: add unit tests]
+
+	@returns a vector of component_group_names
+	**/
 	void findComponentGroupNames()
 	{
 		// get all of the component_group_names
@@ -378,7 +431,15 @@ public:
 		component_group_names_.assign(component_group_names.begin(), component_group_names.end());
 	}
 
-	void findLabels()
+
+	/*
+	@brief Find all unique component group names in the data set
+
+	[TODO: add unit tests]
+
+	@returns a vector of labels
+	**/
+	void findLabels(std::string label = "condition")
 	{
 		// get all of the sample group names/labels
 		sample_group_names_.clear();
@@ -388,8 +449,9 @@ public:
 		for (auto const& imap : metaData_)
 		{
 			sample_group_names_.push_back(imap.first);
-			if (std::count(labels_.begin(), labels_.end(), imap.second.condition) == 0)
-				labels_.push_back(imap.second.condition);
+			if (label == "condition")
+				if (std::count(labels_.begin(), labels_.end(), imap.second.condition) == 0)
+					labels_.push_back(imap.second.condition);
 		}
 	}
 
@@ -2012,8 +2074,8 @@ void main_classification(std::string blood_fraction = "PLT")
 	// define the data simulator
 	MetDataSimClassification metabolomics_data;
 	//std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
-	//std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
-	std::string data_dir = "/home/user/Data/";
+	std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
+	//std::string data_dir = "/home/user/Data/";
 
 	std::string biochem_rxns_filename, metabo_data_filename, meta_data_filename;
 	if (blood_fraction == "RBC") {
@@ -2037,7 +2099,8 @@ void main_classification(std::string blood_fraction = "PLT")
 	metabolomics_data.readBiochemicalReactions(biochem_rxns_filename);
 	metabolomics_data.readMetabolomicsData(metabo_data_filename);
 	metabolomics_data.readMetaData(meta_data_filename);
-	metabolomics_data.findMARs();
+	metabolomics_data.findMARs(); 
+	metabolomics_data.removeRedundantMARs();
 	metabolomics_data.findLabels();
 
 	// define the model input/output nodes
@@ -2138,8 +2201,7 @@ void main_reconstruction()
 	// define the model input/output nodes
 	const int n_input_nodes = metabolomics_data.reaction_ids_.size();
 	const int n_output_nodes = metabolomics_data.reaction_ids_.size();
-	std::vector<std::string> input_nodes;
-	std::vector<std::string> output_nodes;
+	std::vector<std::string> input_nodes, encoder_nodes, output_nodes;
 	for (int i = 0; i < n_input_nodes; ++i)
 		input_nodes.push_back("Input_" + std::to_string(i));
 	for (int i = 0; i < n_output_nodes; ++i)
@@ -2210,9 +2272,9 @@ int main(int argc, char** argv)
 	//main_statistics_controls("PLT", true);
 	//main_statistics_controls("RBC", true);
 	//main_statistics_controls("P", true);
-	main_statistics_controlsSummary("PLT", true);
-	main_statistics_controlsSummary("RBC", true);
-	main_statistics_controlsSummary("P", true);
+	//main_statistics_controlsSummary("PLT", true);
+	//main_statistics_controlsSummary("RBC", true);
+	//main_statistics_controlsSummary("P", true);
 	//main_statistics_timecourse("PLT",
 	//	true, true, true, true, true,
 	//	true, true, true, true, true,
@@ -2246,7 +2308,7 @@ int main(int argc, char** argv)
 	//main_statistics_preVsPost("PLT", false, false, false);
 	//main_statistics_preVsPost("RBC", false, false, false);
 	//main_statistics_preVsPost("P", false, false, false);
-	//main_classification();
+	main_classification("PLT");
 	//main_reconstruction();
 	return 0;
 }

@@ -108,7 +108,7 @@ public:
 			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
 			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
 			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names_encoder.size() + n_hidden_0) / 2, 1)),
+			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names.size() + n_hidden_0) / 2, 1)),
 			std::shared_ptr<SolverOp>(new AdamOp(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 		node_names = model_builder.addFullyConnected(model, "DSOutput", "DSOutput", node_names, 2,
 			std::shared_ptr<ActivationOp<float>>(new SigmoidOp<float>()),
@@ -126,7 +126,7 @@ public:
 			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
 			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
 			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names_encoder.size() + n_hidden_0)/2, 1)),
+			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names_z.size() + n_hidden_0)/2, 1)),
 			std::shared_ptr<SolverOp>(new AdamOp(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 		node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names, n_hidden_0,
 			std::shared_ptr<ActivationOp<float>>(new ELUOp<float>(1.0)),
@@ -134,7 +134,7 @@ public:
 			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
 			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
 			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names_encoder.size() + n_hidden_0) / 2, 1)),
+			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names.size() + n_hidden_0) / 2, 1)),
 			std::shared_ptr<SolverOp>(new AdamOp(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 		node_names = model_builder.addFullyConnected(model, "DEOutput", "DEOutput", node_names, n_inputs,
 			std::shared_ptr<ActivationOp<float>>(new TanHOp<float>()),
@@ -411,12 +411,12 @@ void main_AAE() {
 	// Make the output nodes
 	std::vector<std::string> decoder_output_nodes;
 	for (int i = 0; i < input_size; ++i)
-		output_nodes.push_back("DEOutput_" + std::to_string(i));
+		decoder_output_nodes.push_back("DEOutput_" + std::to_string(i));
 
 	// Make the output nodes
 	std::vector<std::string> discriminator_output_nodes;
 	for (int i = 0; i < input_size; ++i)
-		output_nodes.push_back("DSOutput_" + std::to_string(i));
+		discriminator_output_nodes.push_back("DSOutput_" + std::to_string(i));
 
 	// define the model trainer
 	ModelTrainerExt model_trainer;

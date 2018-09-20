@@ -98,6 +98,9 @@ public:
 			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
 			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names_gen.size() + n_hidden_0)/2, 1)),
 			std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+		model_builder.addFullyConnected(model, "DisFC0", node_names_input, node_names,
+			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names_input.size() + node_names.size()) / 2, 1)),
+			std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f);
 		node_names = model_builder.addFullyConnected(model, "DisFC1", "DisFC1", node_names, n_hidden_1,
 			std::shared_ptr<ActivationOp<float>>(new LeakyReLUOp<float>()),
 			std::shared_ptr<ActivationOp<float>>(new LeakyReLUGradOp<float>()),

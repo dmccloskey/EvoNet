@@ -1632,7 +1632,7 @@ namespace SmartPeak
     // }
   }
 
-  void Model::updateWeights(const int& time_steps)
+  void Model::updateWeights(const int& time_steps, std::vector<std::string> weight_names)
   {
     // check time_steps vs memory_size
 		// [TODO: changed from memory_size to memory_size - 1]
@@ -1650,6 +1650,12 @@ namespace SmartPeak
 		// and sum the average derivate for all time steps across shared weights
     for (const auto& link_map : links_)
     {
+			// check if the weight is in the optional update list
+			// [TODO: add tests]
+			if (weight_names.size() != 0 &&
+				std::count(weight_names.begin(), weight_names.end(), link_map.second->getWeightName()) == 0)
+				continue;
+
 			std::shared_ptr<Node> sink_node = nodes_.at(link_map.second->getSinkNodeName()); // which IntegrationWeightGradOp is determined by the sink node
 			sink_node->getIntegrationWeightGradShared()->initNetWeightError();
       if (sink_node->getStatus() == NodeStatus::corrected) // [TODO: Skip dummy nodes?]

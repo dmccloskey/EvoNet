@@ -1509,6 +1509,20 @@ BOOST_AUTO_TEST_CASE(updateWeights_Sum)
      //std::cout<<"Weight: "<<i<<"; Calculated: "<<model1.getWeight(weight_ids[i]).getWeight()<<", Expected: "<<weights(i)<<std::endl;
     BOOST_CHECK_CLOSE(model1.getWeight(weight_ids[i]).getWeight(), weights(i), 1e-3);
   }
+
+	// test with specific weights
+	model1.initWeights();
+
+	// update the weights (The difference is due to the momentum term)
+	model1.updateWeights(1, { "2" });
+	weights.setValues({
+		1.0f, 1.0f, -0.313374996f, 1.0f, 1.0f, 1.0f,
+		1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f });
+	for (int i = 0; i < weight_ids.size(); ++i)
+	{
+		//std::cout<<"Weight: "<<i<<"; Calculated: "<<model1.getWeight(weight_ids[i]).getWeight()<<", Expected: "<<weights(i)<<std::endl;
+		BOOST_CHECK_CLOSE(model1.getWeight(weight_ids[i]).getWeight(), weights(i), 1e-3);
+	}
 }
 
 BOOST_AUTO_TEST_CASE(updateWeights_Product)

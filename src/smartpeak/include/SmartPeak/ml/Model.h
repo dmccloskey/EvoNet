@@ -513,7 +513,7 @@ public:
     @brief Update the weights
       
     */ 
-    void updateWeights(const int& time_steps);
+		void updateWeights(const int& time_steps, std::vector<std::string> weight_names = {});
  
     /**
     @brief Reset the node statuses back to inactivated
