@@ -182,6 +182,7 @@ public:
 		std::normal_distribution<> d{ 0.0f, 0.3f };
 
 		// Mixed Gaussian sampler
+		Eigen::Tensor<float, 
 
 		// Reformat the MNIST image data for training
 		for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
