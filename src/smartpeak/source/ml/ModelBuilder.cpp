@@ -761,6 +761,63 @@ namespace SmartPeak
 		return node_names;
 	}
 
+	std::vector<std::string> ModelBuilder::addDiscriminator(Model & model, const std::string & name, const std::string & module_name, const std::vector<std::string>& encoding_node_names)
+	{
+		std::vector<std::string> node_names;
+
+		// Create the unity weight
+		char unity_weight_name_char[512];
+		sprintf(unity_weight_name_char, "%s_Unity", name.data());
+		std::string unity_weight_name(unity_weight_name_char);
+		Weight unity_weight(unity_weight_name, std::shared_ptr<WeightInitOp>(new ConstWeightInitOp(1.0)), std::shared_ptr<SolverOp>(new DummySolverOp()));
+		unity_weight.setModuleName(module_name);
+		model.addWeights({ unity_weight });
+
+		// Create the negative unity weight
+		char negative_weight_name_char[512];
+		sprintf(negative_weight_name_char, "%s_NegUnity", name.data());
+		std::string negative_weight_name(negative_weight_name_char);
+		Weight negative_weight(negative_weight_name, std::shared_ptr<WeightInitOp>(new ConstWeightInitOp(-1.0)), std::shared_ptr<SolverOp>(new DummySolverOp()));
+		negative_weight.setModuleName(module_name);
+		model.addWeights({ negative_weight });
+
+		for (size_t i = 0; i < encoding_node_names.size(); ++i) {
+			// Make the output node
+			char output_name_char[512];
+			sprintf(output_name_char, "%s-Output-%d", name.data(), i);
+			std::string output_name(output_name_char);
+			Node output(output_name, NodeType::output, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+			output.setModuleName(module_name);
+			model.addNodes({ output });
+			node_names.push_back(output_name);
+
+			// Make the links from the encoding to the output node
+			char lvToS_link_name_char[512];
+			sprintf(lvToS_link_name_char, "%s_to_%s", encoding_node_names[i].data(), output_name.data());
+			std::string lvToS_link_name(lvToS_link_name_char);
+			Link lvToS_link(lvToS_link_name, encoding_node_names[i], output_name, negative_weight_name);
+			lvToS_link.setModuleName(module_name);
+			model.addLinks({ lvToS_link });
+
+			// Make the sampler nodes
+			char sampler_name_char[512];
+			sprintf(sampler_name_char, "%s-Sampler-%d", name.data(), i);
+			std::string sampler_name(sampler_name_char);
+			Node sampler(sampler_name, NodeType::input, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+			sampler.setModuleName(module_name);
+			model.addNodes({ sampler });
+
+			// Make the links from the sampler node to the output node
+			char ScToStdev_link_name_char[512];
+			sprintf(ScToStdev_link_name_char, "%s_to_%s", sampler_name.data(), output_name.data());
+			std::string ScToStdev_link_name(ScToStdev_link_name_char);
+			Link ScToStdev_link(ScToStdev_link_name, sampler_name, output_name, unity_weight_name);
+			ScToStdev_link.setModuleName(module_name);
+			model.addLinks({ ScToStdev_link });
+		}
+		return node_names;
+	}
+
 	std::vector<std::string> ModelBuilder::addLSTM(Model & model, const std::string & name, const std::string& module_name, const std::vector<std::string>& source_node_names, const int & n_blocks, const int & n_cells,
 		const std::shared_ptr<ActivationOp<float>>& node_activation, const std::shared_ptr<ActivationOp<float>>& node_activation_grad, 
 		const std::shared_ptr<IntegrationOp<float>>& node_integration, const std::shared_ptr<IntegrationErrorOp<float>>& node_integration_error, const std::shared_ptr<IntegrationWeightGradOp<float>>& node_integration_weight_grad,

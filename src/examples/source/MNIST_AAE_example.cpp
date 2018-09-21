@@ -81,43 +81,8 @@ public:
 			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names.size() + n_encodings)/2, 1)),
 			std::shared_ptr<SolverOp>(new AdamOp(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 
-		// Add the Sampler layer
-		std::vector<std::string> node_names_noise = model_builder.addInputNodes(model, "Noise", n_encodings);
-
-		// Add the Labels layer
-		std::vector<std::string> node_names_labels = model_builder.addInputNodes(model, "Labels", n_labels);
-
-		// Add the Discriminator FC layers
-		node_names = model_builder.addFullyConnected(model, "DS0", "DS0", node_names_z, n_hidden_0,
-			std::shared_ptr<ActivationOp<float>>(new ELUOp<float>(1.0)),
-			std::shared_ptr<ActivationOp<float>>(new ELUGradOp<float>(1.0)),
-			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
-			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
-			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names_z.size() + n_hidden_0) / 2, 1)),
-			std::shared_ptr<SolverOp>(new AdamOp(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
-		model_builder.addFullyConnected(model, "DS0", node_names_noise, node_names,
-			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names_noise.size() + n_hidden_0) / 2, 1)),
-			std::shared_ptr<SolverOp>(new AdamOp(0.001, 0.9, 0.999, 1e-8)), 0.0f);
-		model_builder.addFullyConnected(model, "DS0", node_names_labels, node_names,
-			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names_labels.size() + n_hidden_0) / 2, 1)),
-			std::shared_ptr<SolverOp>(new AdamOp(0.001, 0.9, 0.999, 1e-8)), 0.0f);
-		node_names = model_builder.addFullyConnected(model, "DS1", "DS1", node_names, n_hidden_0,
-			std::shared_ptr<ActivationOp<float>>(new ELUOp<float>(1.0)),
-			std::shared_ptr<ActivationOp<float>>(new ELUGradOp<float>(1.0)),
-			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
-			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
-			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names.size() + n_hidden_0) / 2, 1)),
-			std::shared_ptr<SolverOp>(new AdamOp(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
-		node_names = model_builder.addFullyConnected(model, "DSOutput", "DSOutput", node_names, 2,
-			std::shared_ptr<ActivationOp<float>>(new SigmoidOp<float>()),
-			std::shared_ptr<ActivationOp<float>>(new SigmoidGradOp<float>()),
-			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
-			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
-			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-			std::shared_ptr<WeightInitOp>(new RandWeightInitOp(node_names.size(), 1)),
-			std::shared_ptr<SolverOp>(new AdamOp(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+		// Add the Discriminator Layer
+		node_names = model_builder.addDiscriminator(model, "DS", "DS", node_names_z);
 
 		// Add the Decoder FC layers
 		node_names = model_builder.addFullyConnected(model, "DE0", "DE0", node_names_z, n_hidden_0,
@@ -136,9 +101,9 @@ public:
 			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
 			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names.size() + n_hidden_0) / 2, 1)),
 			std::shared_ptr<SolverOp>(new AdamOp(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
-		node_names = model_builder.addFullyConnected(model, "DEOutput", "DEOutput", node_names, n_inputs,
-			std::shared_ptr<ActivationOp<float>>(new TanHOp<float>()),
-			std::shared_ptr<ActivationOp<float>>(new TanHGradOp<float>()),
+		node_names = model_builder.addFullyConnected(model, "DE-Output", "DE-Output", node_names, n_inputs,
+			std::shared_ptr<ActivationOp<float>>(new ELUOp<float>()),
+			std::shared_ptr<ActivationOp<float>>(new ELUGradOp<float>()),
 			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
 			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
 			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
@@ -189,7 +154,6 @@ public:
 		const int n_epochs = input_data.dimension(3);
 		const int n_input_pixels = validation_data.dimension(1);
 		const int n_encodings = 2; // not ideal to have this hard coded...
-		const int n_labels = 11; // not ideal to have this hard coded...
 
 		assert(n_output_nodes == n_input_pixels + n_encodings + n_labels);
 		assert(n_input_nodes == n_input_pixels + 2);
@@ -212,13 +176,17 @@ public:
 			sample_indices.push_back(sample_index);
 		}
 
+		// Gaussian noise
 		std::random_device rd{};
 		std::mt19937 gen{ rd() };
-		std::normal_distribution<> d{ 0.0f, 1.0f };
+		std::normal_distribution<> d{ 0.0f, 0.3f };
+
+		// Mixed Gaussian sampler
+
 		// Reformat the MNIST image data for training
 		for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
 			for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
-				for (int nodes_iter = 0; nodes_iter < n_input_pixels + 2*n_encodings; ++nodes_iter) {
+				for (int nodes_iter = 0; nodes_iter < n_input_pixels + n_encodings; ++nodes_iter) {
 					for (int epochs_iter = 0; epochs_iter < n_epochs; ++epochs_iter) {
 						if (nodes_iter < n_input_pixels) {
 							//input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
@@ -226,12 +194,9 @@ public:
 							output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[0], nodes_iter); // test on only 1 sample
 							input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[0], nodes_iter);  // test on only 1 sample
 						}
-						else if (nodes_iter >= n_input_pixels && nodes_iter < n_encodings) {
-							input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = d(gen); // sample from a normal distribution
-							output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 0; // Dummy data for KL divergence mu
-						}
 						else {
-							output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 0; // Dummy data for KL divergence logvar
+							input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = d(gen); // sampler distribution + noise
+							output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 0; // expected value if distributions match
 						}
 					}
 				}
@@ -402,21 +367,17 @@ void main_AAE() {
 
 	// Make the encoding nodes and add them to the input
 	for (int i = 0; i < encoding_size; ++i)
-		input_nodes.push_back("Noise_" + std::to_string(i));
-
-	// Make the encoding nodes and add them to the input
-	for (int i = 0; i < encoding_size; ++i)
-		input_nodes.push_back("Labels_" + std::to_string(i));
+		input_nodes.push_back("DS-Sampler-" + std::to_string(i));
 
 	// Make the output nodes
 	std::vector<std::string> decoder_output_nodes;
 	for (int i = 0; i < input_size; ++i)
-		decoder_output_nodes.push_back("DEOutput_" + std::to_string(i));
+		decoder_output_nodes.push_back("DE-Output_" + std::to_string(i));
 
 	// Make the output nodes
 	std::vector<std::string> discriminator_output_nodes;
 	for (int i = 0; i < input_size; ++i)
-		discriminator_output_nodes.push_back("DSOutput_" + std::to_string(i));
+		discriminator_output_nodes.push_back("DS-Output-" + std::to_string(i));
 
 	// define the model trainer
 	ModelTrainerExt model_trainer;
@@ -429,10 +390,10 @@ void main_AAE() {
 	model_trainer.setLogging(false, false);
 	model_trainer.setLossFunctions({ 
 		std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()),
-		std::shared_ptr<LossFunctionOp<float>>(new BCEOp<float>()) });
+		std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
 	model_trainer.setLossFunctionGrads({ 
 		std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()),
-		std::shared_ptr<LossFunctionGradOp<float>>(new BCEGradOp<float>()) });
+		std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
 	model_trainer.setOutputNodes({ decoder_output_nodes, decoder_output_nodes });
 
 	// define the model replicator for growth mode

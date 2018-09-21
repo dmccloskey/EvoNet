@@ -158,6 +158,17 @@ public:
 			const std::vector<std::string>& mu_node_names, const std::vector<std::string>& logvar_node_names);
 
 		/**
+		@brief Add a VAE Encoding layer with input node
+
+		@param[in, out] Model
+		@param[in] encoding_node_names Node_names for the latent distribution
+
+		@returns vector of output node names
+		*/
+		std::vector<std::string> addDiscriminator(Model& model, const std::string& name, const std::string& module_name,
+			const std::vector<std::string>& encoding_node_names);
+
+		/**
 		@brief Add a LSTM layer
 
 		Reference:

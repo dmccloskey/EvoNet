@@ -637,6 +637,83 @@ BOOST_AUTO_TEST_CASE(addVAEEncoding)
 	}
 }
 
+BOOST_AUTO_TEST_CASE(addDiscriminator)
+{
+	ModelBuilder model_builder;
+	Model model;
+	std::vector<std::string> node_names;
+
+	// make the input
+	std::vector<std::string> encoding_node_names = model_builder.addInputNodes(model, "Mu", 2);
+
+	// make the normalization 
+	node_names = model_builder.addDiscriminator(model, "Discriminator", "Mod1", encoding_node_names);
+
+	std::vector<std::string> node_names_test = {
+		"Discriminator-Output-0", "Discriminator-Output-1", "Discriminator-Sampler-0", "Discriminator-Sampler-1" };
+	std::vector<std::string> link_names_test = {
+		"Mu_0_to_Discriminator-Output-0","Mu_1_to_Discriminator-Output-1",
+		"Discriminator-Sampler-0_to_Discriminator-Output-0","Discriminator-Sampler-1_to_Discriminator-Output-1" };
+	std::vector<std::string> weight_names_test = {
+		"Discriminator_Unity", "Discriminator_NegUnity" };
+
+	// check the nodes
+	for (const std::string& node_name : node_names_test)
+	{
+		BOOST_CHECK_EQUAL(model.getNode(node_name).getName(), node_name);
+		BOOST_CHECK_EQUAL(model.getNode(node_name).getModuleName(), "Mod1");
+		if (node_name == "Discriminator-Output-0" || node_name == "Discriminator-Output-1")
+		{
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "SumOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "SumErrorOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
+			BOOST_CHECK(model.getNode(node_name).getType() == NodeType::output);
+			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.0, 1e-3);
+		}
+		else if (node_name == "Discriminator-Sampler-0" || node_name == "Discriminator-Sampler-1")
+		{
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "SumOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "SumErrorOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
+			BOOST_CHECK(model.getNode(node_name).getType() == NodeType::input);
+			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.0, 1e-3);
+		}
+	}
+
+	// check the links
+	for (const std::string& name : link_names_test)
+	{
+		BOOST_CHECK_EQUAL(model.getLink(name).getName(), name);
+		std::vector<std::string> test = SplitString(name, "_to_");
+		BOOST_CHECK_EQUAL(model.getLink(name).getSourceNodeName(), test[0]);
+		BOOST_CHECK_EQUAL(model.getLink(name).getSinkNodeName(), test[1]);
+		int count = std::count(weight_names_test.begin(), weight_names_test.end(), model.getLink(name).getWeightName());
+		BOOST_CHECK_EQUAL(count, 1);
+		BOOST_CHECK_EQUAL(model.getLink(name).getModuleName(), "Mod1");
+	}
+
+	// check the weights
+	for (const std::string& name : weight_names_test)
+	{
+		BOOST_CHECK_EQUAL(model.getWeight(name).getName(), name);
+		BOOST_CHECK_EQUAL(model.getWeight(name).getModuleName(), "Mod1");
+		if (name == "Discriminator_Unity") {
+			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
+			BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "DummySolverOp");
+			BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.0f);
+		}
+		else if (name == "Discriminator_NegUnity") {
+			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
+			BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "DummySolverOp");
+			BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.0f);
+		}
+	}
+}
+
 BOOST_AUTO_TEST_CASE(addLSTMBlock)
 {
 	ModelBuilder model_builder;
