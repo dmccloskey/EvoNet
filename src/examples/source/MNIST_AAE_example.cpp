@@ -155,8 +155,8 @@ public:
 		const int n_input_pixels = validation_data.dimension(1);
 		const int n_encodings = 2; // not ideal to have this hard coded...
 
-		assert(n_output_nodes == n_input_pixels + n_encodings + n_labels);
-		assert(n_input_nodes == n_input_pixels + 2);
+		assert(n_output_nodes == n_input_pixels + n_encodings);
+		assert(n_input_nodes == n_input_pixels + n_encodings);
 
 		// make the start and end sample indices [BUG FREE]
 		mnist_sample_start_training = mnist_sample_end_training;
