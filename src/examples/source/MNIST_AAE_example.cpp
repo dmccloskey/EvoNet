@@ -42,7 +42,7 @@ public:
 	Alireza Makhzani, Jonathon Shlens, Navdeep Jaitly, Ian Goodfellow, Brendan Frey. "Adversarial Autoencoders" 2015.  arXiv:1511.05644
 	https://github.com/musyoku/adversarial-autoencoder/blob/master/run/semi-supervised/regularize_z/model.py
 	*/
-	Model makeVAE(const int& n_inputs, int n_hidden_0 = 50, int n_encodings = 2, int n_labels = 11) {
+	Model makeAAE(const int& n_inputs, int n_hidden_0 = 50, int n_encodings = 2) {
 		Model model;
 		model.setId(0);
 		model.setName("AAELatentZ");
@@ -64,13 +64,13 @@ public:
 			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
 			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names_input.size() + node_names.size())/2, 1)),
 			std::shared_ptr<SolverOp>(new AdamOp(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
-		node_names = model_builder.addFullyConnected(model, "EC1", "EC1", node_names_input, n_hidden_0,
+		node_names = model_builder.addFullyConnected(model, "EC1", "EC1", node_names, n_hidden_0,
 			std::shared_ptr<ActivationOp<float>>(new ELUOp<float>(1.0)),
 			std::shared_ptr<ActivationOp<float>>(new ELUGradOp<float>(1.0)),
 			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
 			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
 			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names_input.size() + node_names.size()) / 2, 1)),
+			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names.size() + node_names.size()) / 2, 1)),
 			std::shared_ptr<SolverOp>(new AdamOp(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 		node_names_z = model_builder.addFullyConnected(model, "LatentZ", "LatentZ", node_names, n_encodings,
 			std::shared_ptr<ActivationOp<float>>(new ELUOp<float>(1.0)),
@@ -93,14 +93,14 @@ public:
 			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
 			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names_z.size() + n_hidden_0)/2, 1)),
 			std::shared_ptr<SolverOp>(new AdamOp(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
-		node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names, n_hidden_0,
-			std::shared_ptr<ActivationOp<float>>(new ELUOp<float>(1.0)),
-			std::shared_ptr<ActivationOp<float>>(new ELUGradOp<float>(1.0)),
-			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
-			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
-			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names.size() + n_hidden_0) / 2, 1)),
-			std::shared_ptr<SolverOp>(new AdamOp(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+		//node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names, n_hidden_0,
+		//	std::shared_ptr<ActivationOp<float>>(new ELUOp<float>(1.0)),
+		//	std::shared_ptr<ActivationOp<float>>(new ELUGradOp<float>(1.0)),
+		//	std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
+		//	std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
+		//	std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
+		//	std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names.size() + n_hidden_0) / 2, 1)),
+		//	std::shared_ptr<SolverOp>(new AdamOp(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 		node_names = model_builder.addFullyConnected(model, "DE-Output", "DE-Output", node_names, n_inputs,
 			std::shared_ptr<ActivationOp<float>>(new ELUOp<float>()),
 			std::shared_ptr<ActivationOp<float>>(new ELUGradOp<float>()),
@@ -181,14 +181,16 @@ public:
 		std::mt19937 gen{ rd() };
 		std::normal_distribution<> d{ 0.0f, 0.3f };
 
-		// Mixed Gaussian sampler
-		Eigen::Tensor<float, 
-
 		// Reformat the MNIST image data for training
 		for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
 			for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
-				for (int nodes_iter = 0; nodes_iter < n_input_pixels + n_encodings; ++nodes_iter) {
-					for (int epochs_iter = 0; epochs_iter < n_epochs; ++epochs_iter) {
+				for (int epochs_iter = 0; epochs_iter < n_epochs; ++epochs_iter) {
+
+					// Mixed Gaussian sampler
+					//Eigen::Tensor<float, 1> mixed_gaussian = GaussianMixture<float>(n_encodings, training_labels.size(), sample_indices[epochs_iter*batch_size + batch_iter]);
+					Eigen::Tensor<float, 1> mixed_gaussian = GaussianMixture<float>(n_encodings, training_labels.size(), sample_indices[0]); // test on only 1 sample
+
+					for (int nodes_iter = 0; nodes_iter < n_input_pixels + n_encodings; ++nodes_iter) {
 						if (nodes_iter < n_input_pixels) {
 							//input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
 							//output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
@@ -196,7 +198,7 @@ public:
 							input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[0], nodes_iter);  // test on only 1 sample
 						}
 						else {
-							input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = d(gen); // sampler distribution + noise
+							input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = d(gen) + mixed_gaussian(nodes_iter - n_input_pixels); // sampler distribution + noise
 							output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 0; // expected value if distributions match
 						}
 					}
@@ -215,9 +217,9 @@ public:
 		const int n_output_nodes = output_data.dimension(2);
 		const int n_epochs = input_data.dimension(3);
 		const int n_input_pixels = validation_data.dimension(1);
-		const int n_encodings = 20; // not ideal to have this hard coded...
+		const int n_encodings = 2; // not ideal to have this hard coded...
 
-		assert(n_output_nodes == n_input_pixels + 2 * n_encodings);
+		assert(n_output_nodes == n_input_pixels + n_encodings);
 		assert(n_input_nodes == n_input_pixels + n_encodings);
 
 		// make the start and end sample indices [BUG FREE]
@@ -238,23 +240,30 @@ public:
 			sample_indices.push_back(sample_index);
 		}
 
+		// Gaussian noise
+		std::random_device rd{};
+		std::mt19937 gen{ rd() };
+		std::normal_distribution<> d{ 0.0f, 0.3f };
+
 		// Reformat the MNIST image data for training
 		for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
 			for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
-				for (int nodes_iter = 0; nodes_iter < n_input_pixels + 2 * n_encodings; ++nodes_iter) {
-					for (int epochs_iter = 0; epochs_iter < n_epochs; ++epochs_iter) {
+				for (int epochs_iter = 0; epochs_iter < n_epochs; ++epochs_iter) {
+
+					// Mixed Gaussian sampler
+					//Eigen::Tensor<float, 1> mixed_gaussian = GaussianMixture<float>(n_encodings, validation_labels.size(), sample_indices[epochs_iter*batch_size + batch_iter]);
+					Eigen::Tensor<float, 1> mixed_gaussian = GaussianMixture<float>(n_encodings, validation_labels.size(), sample_indices[0]); // test on only 1 sample
+
+					for (int nodes_iter = 0; nodes_iter < n_input_pixels + n_encodings; ++nodes_iter) {
 						if (nodes_iter < n_input_pixels) {
 							input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
 							output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
 							//output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[0], nodes_iter); // test on only 1 sample
 							//input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[0], nodes_iter);  // test on only 1 sample
 						}
-						else if (nodes_iter >= n_input_pixels && nodes_iter < n_encodings) {
-							input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 0; // sample from a normal distribution
-							output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 0; // Dummy data for KL divergence mu
-						}
 						else {
-							output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 0; // Dummy data for KL divergence logvar
+							input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = d(gen) + mixed_gaussian(nodes_iter - n_input_pixels); // sampler distribution + noise
+							output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 0; // expected value if distributions match
 						}
 					}
 				}
@@ -377,7 +386,7 @@ void main_AAE() {
 
 	// Make the output nodes
 	std::vector<std::string> discriminator_output_nodes;
-	for (int i = 0; i < input_size; ++i)
+	for (int i = 0; i < encoding_size; ++i)
 		discriminator_output_nodes.push_back("DS-Output-" + std::to_string(i));
 
 	// define the model trainer
@@ -395,14 +404,14 @@ void main_AAE() {
 	model_trainer.setLossFunctionGrads({ 
 		std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()),
 		std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
-	model_trainer.setOutputNodes({ decoder_output_nodes, decoder_output_nodes });
+	model_trainer.setOutputNodes({ decoder_output_nodes, discriminator_output_nodes });
 
 	// define the model replicator for growth mode
 	ModelReplicatorExt model_replicator;
 
 	// define the initial population [BUG FREE]
 	std::cout << "Initializing the population..." << std::endl;
-	std::vector<Model> population = { model_trainer.makeVAE(input_size, encoding_size) };
+	std::vector<Model> population = { model_trainer.makeAAE(input_size, 50, encoding_size) };
 
 	// Evolve the population
 	std::vector<std::vector<std::pair<int, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(

@@ -181,25 +181,18 @@ namespace SmartPeak
 	template<typename Ta>
 	Eigen::Tensor<Ta, 1> GaussianMixture(const int& n_dims, const int& n_labels, int label = -1)
 	{
-		assert(n_dim % 2 == 0);
+		assert(n_dims % 2 == 0);
 
-		// x and y samplers
-		std::pair<Ta, Ta> sampler = [](const Ta& x, const Ta& y, const int& label, const int& n_labels ) {
-			const Ta shift = 1.4;
-			const Ta r = 2.0 * M_PI / Ta(n_labels) * Ta(label);
-			Ta new_x = x * std::cos(r) - y * std::sin(r);
-			Ta new_y = x * std::sin(r) + y * std::cos(r);
-			Ta new_x += shift * std::cos(r);
-			Ta new_y += shift * std::sin(r);
-			return std::make_pair(new_x, new_y);
-		};
+		std::random_device rd{};
+		std::mt19937 gen{ rd() };
 		
 		// make the gaussian mixture tensor
 		Eigen::Tensor<Ta, 1> gaussian_mixture(n_dims);
 		gaussian_mixture.setZero();
 		const Ta x_var = 0.5;
 		const Ta y_var = 0.05;
-		for (int i = 0; i < n_dims; i+2) {
+		int i = 0;
+		while (i < n_dims) {
 			// random integer
 			if (label == -1) {
 				std::random_device seed;
@@ -211,13 +204,25 @@ namespace SmartPeak
 			// sample from the mixture
 			std::normal_distribution<> dx{ 0.0f, x_var };
 			std::normal_distribution<> dy{ 0.0f, y_var };
-			std::pair<Ta, Ta> samples = sampler(dx(gen), dy(gen), label, n_labels);
+			std::pair<Ta, Ta> samples = GaussianMixtureSampler(dx(gen), dy(gen), label, n_labels);
 			gaussian_mixture(i) = samples.first;
 			gaussian_mixture(i + 1) = samples.second;
+
+			i += 2;
 		}
 
 		return gaussian_mixture;
 	}
+	template<typename Ta>
+	std::pair<Ta, Ta> GaussianMixtureSampler(const Ta& x, const Ta& y, const int& label, const int& n_labels) {
+		const Ta shift = 1.4;
+		const Ta r = 2.0 * M_PI / Ta(n_labels) * Ta(label);
+		Ta new_x = x * std::cos(r) - y * std::sin(r);
+		Ta new_y = x * std::sin(r) + y * std::cos(r);
+		new_x += shift * std::cos(r);
+		new_y += shift * std::sin(r);
+		return std::make_pair(new_x, new_y);
+	};
 
 		//def swiss_roll(batchsize, ndim, num_labels) :
 		//def sample(label, num_labels) :
