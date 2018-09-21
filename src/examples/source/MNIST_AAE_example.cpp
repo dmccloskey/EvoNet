@@ -393,7 +393,7 @@ void main_AAE() {
 	ModelTrainerExt model_trainer;
 	model_trainer.setBatchSize(1);
 	model_trainer.setMemorySize(2);
-	model_trainer.setNEpochsTraining(1);
+	model_trainer.setNEpochsTraining(5000);
 	model_trainer.setNEpochsValidation(1);
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setNThreads(n_hard_threads);
