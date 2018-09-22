@@ -1936,9 +1936,9 @@ namespace SmartPeak
 		node_cnt = 0;
 		for (auto& node_map : nodes_) {
 			if (node_map.second->getType() != NodeType::bias) {
+				++node_cnt;
 				node_map.second->setId(node_cnt);
 				node_id_map.emplace(node_cnt, node_map.first);
-				++node_cnt;
 			}
 			else {
 				node_map.second->setId(-1);
@@ -1952,7 +1952,7 @@ namespace SmartPeak
 		// add the actual nodes
 		for (auto& link_map : links_)
 			if (nodes_.at(link_map.second->getSourceNodeName())->getType() != NodeType::bias)
-				adj[nodes_.at(link_map.second->getSourceNodeName())->getId()].push_back(nodes_.at(link_map.second->getSinkNodeName())->getId());
+				adj[nodes_.at(link_map.second->getSourceNodeName())->getId() - 1].push_back(nodes_.at(link_map.second->getSinkNodeName())->getId());
 
 		return adj;
 	}

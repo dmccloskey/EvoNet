@@ -64,6 +64,11 @@ bool CircuitFinder::circuit(int V)
 			output();
 			F = true;
 		}
+
+		// [PR request]
+		//else if (W > S && !Blocked[W - 1]) {
+		//	F = circuit(W);
+		//}
 		else if (!Blocked[W - 1]) {
 			if (circuit(W))
 				F = true;
@@ -111,6 +116,7 @@ void CircuitFinder::run()
 		}
 		circuit(S);
 
+		// [PR request]
 		// remove this vertex from the graph
 		for (int I = S + 1; I <= N; ++I)
 			AK[I - 1].remove(S);
