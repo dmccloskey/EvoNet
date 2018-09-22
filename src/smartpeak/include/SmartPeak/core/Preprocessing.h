@@ -171,7 +171,7 @@ namespace SmartPeak
 	}
 
 	/*
-	@brief Gaussian mixture sampler
+	@brief 2D Gaussian mixture sampler
 
 	@param[in] n_dims the number of categorical labels
 	@param[in] n_labels the number of categorical labels
@@ -224,35 +224,54 @@ namespace SmartPeak
 		return std::make_pair(new_x, new_y);
 	};
 
-		//def swiss_roll(batchsize, ndim, num_labels) :
-		//def sample(label, num_labels) :
-		//uni = np.random.uniform(0.0, 1.0) / float(num_labels) + float(label) / float(num_labels)
-		//r = sqrt(uni) * 3.0
-		//rad = np.pi * 4.0 * sqrt(uni)
-		//x = r * cos(rad)
-		//y = r * sin(rad)
-		//return np.array([x, y]).reshape((2, ))
+	/*
+	@brief 2D Swiss roll sampler
 
-		//z = np.zeros((batchsize, ndim), dtype = np.float32)
-		//for batch in range(batchsize) :
-		//	for zi in range(ndim // 2):
-		//		z[batch, zi * 2:zi * 2 + 2] = sample(random.randint(0, num_labels - 1), num_labels)
-		//		return z
+	@param[in] n_dims the number of categorical labels
+	@param[in] n_labels the number of categorical labels
 
-		//		def supervised_swiss_roll(batchsize, ndim, label_indices, num_labels) :
-		//		def sample(label, num_labels) :
-		//		uni = np.random.uniform(0.0, 1.0) / float(num_labels) + float(label) / float(num_labels)
-		//		r = sqrt(uni) * 3.0
-		//		rad = np.pi * 4.0 * sqrt(uni)
-		//		x = r * cos(rad)
-		//		y = r * sin(rad)
-		//		return np.array([x, y]).reshape((2, ))
+	@returns a Tensor of gaussian mixture samples
+	*/
+	template<typename Ta>
+	Eigen::Tensor<Ta, 1> SwissRoll(const int& n_dims, const int& n_labels, int label = -1)
+	{
+		assert(n_dims % 2 == 0);
 
-		//		z = np.zeros((batchsize, ndim), dtype = np.float32)
-		//		for batch in range(batchsize) :
-		//			for zi in range(ndim // 2):
-		//				z[batch, zi * 2:zi * 2 + 2] = sample(label_indices[batch], num_labels)
-		//				return z
+		// make the gaussian mixture tensor
+		Eigen::Tensor<Ta, 1> swiss_roll(n_dims);
+		swiss_roll.setZero();
+		int i = 0;
+		while (i < n_dims) {
+			// random integer
+			if (label == -1) {
+				std::random_device seed;
+				std::mt19937 engine(seed());
+				std::uniform_int_distribution<int> choose(0, n_labels - 1);
+				label = choose(engine);
+			}
+
+			// sample from the mixture
+			std::pair<Ta, Ta> samples = SwissRollSampler(label, n_labels);
+			swiss_roll(i) = samples.first;
+			swiss_roll(i + 1) = samples.second;
+
+			i += 2;
+		}
+
+		return swiss_roll;
+	}
+	template<typename Ta>
+	std::pair<Ta, Ta> SwissRollSampler(const int& label, const int& n_labels) {
+		std::random_device rd{};
+		std::mt19937 gen{ rd() };
+		std::uniform_real_distribution<> dist{ 0, 1 };
+		const Ta uni = Ta(dist(gen)) / Ta(n_labels) + Ta(label) / Ta(n_labels);
+		const Ta r = std::sqrt(uni) * 3.0;
+		const Ta rad = M_PI * 4.0 * sqrt(uni);
+		Ta new_x = r * std::cos(rad);
+		Ta new_y = r * std::sin(rad);
+		return std::make_pair(new_x, new_y);
+	};
 }
 
 #endif //SMARTPEAK_PREPROCESSING_H
