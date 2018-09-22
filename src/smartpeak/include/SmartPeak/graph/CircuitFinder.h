@@ -93,11 +93,11 @@ bool CircuitFinder::circuit(int V)
 
 void CircuitFinder::output()
 {
-	std::cout << "circuit: ";
-	for (auto I = Stack.begin(), E = Stack.end(); I != E; ++I) {
-		std::cout << *I << " -> ";
-	}
-	std::cout << *Stack.begin() << std::endl;
+	//std::cout << "circuit: ";
+	//for (auto I = Stack.begin(), E = Stack.end(); I != E; ++I) {
+	//	std::cout << *I << " -> ";
+	//}
+	//std::cout << *Stack.begin() << std::endl;
 
 	auto I = Stack.end();
 	--I;
