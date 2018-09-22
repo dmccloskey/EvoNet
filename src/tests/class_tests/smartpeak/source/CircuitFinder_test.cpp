@@ -16,21 +16,6 @@ using namespace std;
 
 BOOST_AUTO_TEST_SUITE(circuitFinder)
 
-BOOST_AUTO_TEST_CASE(constructor) 
-{
-  CircuitFinder* ptr = nullptr;
-  CircuitFinder* nullPointer = nullptr;
-	ptr = new CircuitFinder();
-  BOOST_CHECK_NE(ptr, nullPointer);
-}
-
-BOOST_AUTO_TEST_CASE(destructor) 
-{
-  CircuitFinder* ptr = nullptr;
-	ptr = new CircuitFinder();
-  delete ptr;
-}
-
 BOOST_AUTO_TEST_CASE(test) 
 {
 	int A1[5][5] = {
@@ -53,7 +38,7 @@ BOOST_AUTO_TEST_CASE(test)
 		4, 0, 0, 0, 0, 0,
 	};
 
-	CircuitFinder<6> CF1(A2);
+	CircuitFinder<6> CF2(A2);
 	CF2.run();
 }
 
