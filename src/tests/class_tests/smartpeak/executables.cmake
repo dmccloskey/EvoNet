@@ -15,6 +15,10 @@ set(io_executables_list
   WeightFile_test
 )
 
+set(graph_executables_list
+  CircuitFinder_test
+)
+
 set(ml_executables_list
   ActivationFunction_test
   IntegrationFunction_test
@@ -47,5 +51,6 @@ set(TEST_executables
     ${core_executables_list}
     ${io_executables_list}
     ${ml_executables_list}
+	${graph_executables_list}
     ${simulator_executables_list}
 )

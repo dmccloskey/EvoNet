@@ -57,8 +57,12 @@ add_custom_target(ML_TEST)
 add_dependencies(ML_TEST ${ml_executables_list})
 
 # algorithm
-add_custom_target(ALGORITHM_TEST)
-add_dependencies(ALGORITHM_TEST ${simulator_executables_list})
+add_custom_target(SIMULATOR_TEST)
+add_dependencies(SIMULATOR_TEST ${simulator_executables_list})
+
+# algorithm
+add_custom_target(GRAPH_TEST)
+add_dependencies(GRAPH_TEST ${graph_executables_list})
 
 #------------------------------------------------------------------------------
 # Add the actual tests

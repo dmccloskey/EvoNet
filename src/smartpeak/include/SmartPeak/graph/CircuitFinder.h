@@ -1,4 +1,3 @@
-
 #ifndef CIRCUIT_FINDER_H
 #define CIRCUIT_FINDER_H
 
