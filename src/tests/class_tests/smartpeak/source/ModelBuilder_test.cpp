@@ -714,7 +714,7 @@ BOOST_AUTO_TEST_CASE(addDiscriminator)
 	}
 }
 
-BOOST_AUTO_TEST_CASE(addLSTMBlock)
+BOOST_AUTO_TEST_CASE(addLSTMBlock1)
 {
 	ModelBuilder model_builder;
 	Model model;
@@ -724,7 +724,7 @@ BOOST_AUTO_TEST_CASE(addLSTMBlock)
 	node_names = model_builder.addInputNodes(model, "Input", 2);
 
 	// make the normalization 
-	node_names = model_builder.addLSTMBlock(model, "LSTM", "Mod1", node_names, 2,
+	node_names = model_builder.addLSTMBlock1(model, "LSTM", "Mod1", node_names, 2,
 		std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
 		std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
 		std::shared_ptr<WeightInitOp>(new RandWeightInitOp(1.0)), std::shared_ptr<SolverOp>(new SGDOp(0.1, 0.9)), 0.2f, 0.8f, true);
@@ -899,7 +899,7 @@ BOOST_AUTO_TEST_CASE(addLSTM)
 	node_names = model_builder.addLSTM(model, "LSTM", "Mod1", node_names, 2, 2,
 		std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
 		std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-		std::shared_ptr<WeightInitOp>(new RandWeightInitOp(1.0)), std::shared_ptr<SolverOp>(new SGDOp(0.1, 0.9)), 0.2f, 0.8f, true);
+		std::shared_ptr<WeightInitOp>(new RandWeightInitOp(1.0)), std::shared_ptr<SolverOp>(new SGDOp(0.1, 0.9)), 0.2f, 0.8f, true, true, 1);
 
 	std::vector<std::string> node_names_test = { 
 		"LSTM-0-BlockMultOutput-0","LSTM-0-BlockMultOutput-1",

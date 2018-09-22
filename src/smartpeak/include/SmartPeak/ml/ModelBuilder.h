@@ -186,6 +186,10 @@ public:
 		@param[in] drop_out_prob input or output Node drop out probability
 		@param[in] drop_connection_prob input or output Weight drop out probability
 		@param[in] biases Whether to include bias nodes or not
+		@param[in] forget_gat Whether to include forget gates or not
+		@param[in] block_version
+			1 output multiplier is connected to block input and block gates
+			2 memory cell is connected to block gates
 
 		@returns vector of output node names
 		*/
@@ -198,8 +202,9 @@ public:
 			const std::shared_ptr<IntegrationErrorOp<float>>& node_integration_error,
 			const std::shared_ptr<IntegrationWeightGradOp<float>>& node_integration_weight_grad,
 			const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver,
-			float drop_out_prob = 0.0f, float drop_connection_prob = 0.0f, bool biases = true);
-		std::vector<std::string> addLSTMBlock(Model& model, const std::string& name, const std::string& module_name,
+			float drop_out_prob = 0.0f, float drop_connection_prob = 0.0f, bool biases = true,
+			bool forget_gate = true, int block_version = 1);
+		std::vector<std::string> addLSTMBlock1(Model& model, const std::string& name, const std::string& module_name,
 			const std::vector<std::string>& source_node_names,
 			const int& n_cells,
 			const std::shared_ptr<ActivationOp<float>>& node_activation,
@@ -208,7 +213,19 @@ public:
 			const std::shared_ptr<IntegrationErrorOp<float>>& node_integration_error,
 			const std::shared_ptr<IntegrationWeightGradOp<float>>& node_integration_weight_grad,
 			const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver,
-			float drop_out_prob = 0.0f, float drop_connection_prob = 0.0f, bool biases = true);
+			float drop_out_prob = 0.0f, float drop_connection_prob = 0.0f, bool biases = true,
+			bool forget_gate = true);
+		std::vector<std::string> addLSTMBlock2(Model& model, const std::string& name, const std::string& module_name,
+			const std::vector<std::string>& source_node_names,
+			const int& n_cells,
+			const std::shared_ptr<ActivationOp<float>>& node_activation,
+			const std::shared_ptr<ActivationOp<float>>& node_activation_grad,
+			const std::shared_ptr<IntegrationOp<float>>& node_integration,
+			const std::shared_ptr<IntegrationErrorOp<float>>& node_integration_error,
+			const std::shared_ptr<IntegrationWeightGradOp<float>>& node_integration_weight_grad,
+			const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver,
+			float drop_out_prob = 0.0f, float drop_connection_prob = 0.0f, bool biases = true,
+			bool forget_gate = true);
 
 		/**
 		@brief Add one model to another
