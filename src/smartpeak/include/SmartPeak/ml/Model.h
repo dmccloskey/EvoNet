@@ -677,7 +677,21 @@ public:
     void clearCache(); ///< clear the FP and BP caches
 
 		/**
+		@brief Convert model to adjacency list
+		TODO: Implement tests
+
+		@param[out] node_id_map Map of node id to node name
+		@param[out] node_cnt the number of vertices in the adjacency list
+
+		@returns An adjacency list representation of a graph
+		*/
+		std::list<int>* convertToAdjacencyList(std::map<int, std::string>& node_id_map, int& node_cnt);
+		void findCycles();
+
+		/**
 		@brief Find all source and sinks that are involved in a cycle
+
+		TODO: move to graph module
 		*/
 		bool isCyclic(std::list<int>* adj, int v, bool visited[], bool * recStack, std::vector<std::pair<int, int>>& cyclic_nodes);
 		void findCyclicPairs();
@@ -685,7 +699,9 @@ public:
 		/**
 		@brief Find all strongly connected components
 
-		NOTES: NOTE IMPLEMENTED!
+		TODO: move to graph module
+
+		NOTES: NOT IMPLEMENTED!
 
 		References:
 			based on Tarjan algorithm

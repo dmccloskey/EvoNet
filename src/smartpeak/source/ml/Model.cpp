@@ -3,6 +3,7 @@
 #include <SmartPeak/ml/Model.h>
 #include <SmartPeak/ml/LossFunction.h>
 #include <SmartPeak/ml/SharedFunctions.h>
+#include <SmartPeak/graph/CircuitFinder.h>
 
 #include <vector>
 #include <map>
@@ -1928,6 +1929,47 @@ namespace SmartPeak
 		cyclic_pairs_.clear();
   }
 
+	std::list<int>* Model::convertToAdjacencyList(std::map<int, std::string>& node_id_map, int& node_cnt)
+	{
+		// create a map of node id to node name (excluding bias nodes)
+		node_id_map.clear();
+		node_cnt = 0;
+		for (auto& node_map : nodes_) {
+			if (node_map.second->getType() != NodeType::bias) {
+				node_map.second->setId(node_cnt);
+				node_id_map.emplace(node_cnt, node_map.first);
+				++node_cnt;
+			}
+			else {
+				node_map.second->setId(-1);
+			}
+		}
+
+		// create the DFS trees (excluding bias nodes)
+		std::list<int> *adj;
+		adj = new std::list<int>[node_cnt];
+
+		// add the actual nodes
+		for (auto& link_map : links_)
+			if (nodes_.at(link_map.second->getSourceNodeName())->getType() != NodeType::bias)
+				adj[nodes_.at(link_map.second->getSourceNodeName())->getId()].push_back(nodes_.at(link_map.second->getSinkNodeName())->getId());
+
+		return adj;
+	}
+
+	void Model::findCycles()
+	{
+		std::map<int, std::string> node_id_map;
+		int node_cnt;
+		std::list<int> *adj = convertToAdjacencyList(node_id_map, node_cnt);
+		
+		CircuitFinder CF(adj, node_cnt);
+		CF.run();
+
+		cyclic_pairs_.clear();
+		for (const auto& source_sink : CF.getCycles())
+			cyclic_pairs_.push_back(std::make_pair(node_id_map.at(source_sink.first), node_id_map.at(source_sink.second)));
+	}
 
 	bool Model::isCyclic(std::list<int>* adj, int v, bool visited[], bool * recStack, std::vector<std::pair<int, int>>& cyclic_nodes)
 	{

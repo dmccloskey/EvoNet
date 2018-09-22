@@ -98,6 +98,26 @@ BOOST_AUTO_TEST_CASE(findCyclicSinks)
 	BOOST_CHECK_EQUAL(model2.getCyclicPairs().back().second, "1");
 }
 
+BOOST_AUTO_TEST_CASE(findCycles)
+{
+	// Toy network: 1 hidden layer, fully connected, DCG
+	// Model model2 = makeModel2();
+
+	// initialize nodes
+	const int batch_size = 5;
+	const int memory_size = 8;
+	model2.initError(batch_size, memory_size);
+	model2.clearCache();
+	model2.initNodes(batch_size, memory_size);
+	model2.initWeights();
+
+	// find cyclic nodes
+	model2.findCycles();
+	BOOST_CHECK_EQUAL(model2.getCyclicPairs().size(), 1);
+	BOOST_CHECK_EQUAL(model2.getCyclicPairs().back().first, "2");
+	BOOST_CHECK_EQUAL(model2.getCyclicPairs().back().second, "1");
+}
+
 BOOST_AUTO_TEST_CASE(getNextInactiveLayer2) 
 {
   // Toy network: 1 hidden layer, fully connected, DCG

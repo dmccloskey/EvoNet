@@ -8,36 +8,38 @@
 
 typedef std::list<int> NodeList;
 
-template<int N>
 class CircuitFinder
 {
 	std::vector<NodeList> AK;
 	std::vector<int> Stack;
+	std::vector<std::pair<int,int>> Cycles; // source/sink pairs
 	std::vector<bool> Blocked;
 	std::vector<NodeList> B;
 	int S;
+	int N;
 
 	void unblock(int U);
 	bool circuit(int V);
 	void output();
 
 public:
-	CircuitFinder(int Array[N][N])
-		: AK(N), Blocked(N), B(N) {
-		for (int I = 0; I < N; ++I) {
-			for (int J = 0; J < N; ++J) {
-				if (Array[I][J]) {
-					AK[I].push_back(Array[I][J]);
-				}
+	CircuitFinder(std::list<int>* adj, int n_nodes){
+		Blocked.resize(n_nodes);
+		B.resize(n_nodes);
+		AK.resize(n_nodes);
+		N = n_nodes;
+		for (int I = 0; I < n_nodes; ++I) {
+			for (auto J = adj[I].begin(), F = adj[I].end(); J != F; ++J) {
+				AK[I].push_back(*J);
 			}
 		}
 	}
 
 	void run();
+	std::vector<std::pair<int, int>> getCycles() { return Cycles; }
 };
 
-template<int N>
-void CircuitFinder<N>::unblock(int U)
+void CircuitFinder::unblock(int U)
 {
 	Blocked[U - 1] = false;
 
@@ -51,8 +53,7 @@ void CircuitFinder<N>::unblock(int U)
 	}
 }
 
-template<int N>
-bool CircuitFinder<N>::circuit(int V)
+bool CircuitFinder::circuit(int V)
 {
 	bool F = false;
 	Stack.push_back(V);
@@ -85,18 +86,20 @@ bool CircuitFinder<N>::circuit(int V)
 	return F;
 }
 
-template<int N>
-void CircuitFinder<N>::output()
+void CircuitFinder::output()
 {
 	std::cout << "circuit: ";
 	for (auto I = Stack.begin(), E = Stack.end(); I != E; ++I) {
 		std::cout << *I << " -> ";
 	}
 	std::cout << *Stack.begin() << std::endl;
+
+	auto I = Stack.end();
+	--I;
+	Cycles.push_back(std::make_pair(*I, *Stack.begin()));
 }
 
-template<int N>
-void CircuitFinder<N>::run()
+void CircuitFinder::run()
 {
 	Stack.clear();
 	S = 1;
