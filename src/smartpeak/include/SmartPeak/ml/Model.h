@@ -13,6 +13,7 @@
 #include <map>
 #include <tuple>
 #include <list>
+#include <stack> // needed for Targjan Algorithm
 
 namespace SmartPeak
 {
@@ -680,6 +681,18 @@ public:
 		*/
 		bool isCyclic(std::list<int>* adj, int v, bool visited[], bool * recStack, std::vector<std::pair<int, int>>& cyclic_nodes);
 		void findCyclicPairs();
+		
+		/**
+		@brief Find all strongly connected components
+
+		NOTES: NOTE IMPLEMENTED!
+
+		References:
+			based on Tarjan algorithm
+			see https://www.geeksforgeeks.org/tarjan-algorithm-find-strongly-connected-components/
+		*/
+		bool isStronglyConnected(std::list<int>* adj, int u, int disc[], int low[], std::stack<int> *st,	bool stackMember[], std::vector<std::vector<int>>& scc);
+		void findStronglyConnectedComponents();
 
 		std::vector<std::pair<std::string, std::string>> getCyclicPairs();
 

@@ -780,8 +780,8 @@ int main(int argc, char** argv)
 	ModelTrainerExt model_trainer;
 	model_trainer.setBatchSize(1);
 	model_trainer.setMemorySize(data_simulator.sequence_length_);
-	model_trainer.setNEpochsTraining(100000);
-	model_trainer.setNEpochsValidation(10);
+	model_trainer.setNEpochsTraining(1);
+	model_trainer.setNEpochsValidation(1);
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setNThreads(n_hard_threads);
 	model_trainer.setLogging(true, false);

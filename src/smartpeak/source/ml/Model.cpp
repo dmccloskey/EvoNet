@@ -1955,7 +1955,7 @@ namespace SmartPeak
 
 	void Model::findCyclicPairs()
 	{
-		// create the DFS trees (excluding bias nodes)
+		// create a map of node id to node name (excluding bias nodes)
 		std::map<int, std::string> node_id_map;
 		int node_cnt = 0;
 		for (auto& node_map : nodes_) {
@@ -1968,8 +1968,12 @@ namespace SmartPeak
 				node_map.second->setId(-1);
 			}
 		}
+
+		// create the DFS trees (excluding bias nodes)
 		std::list<int> *adj;
 		adj = new std::list<int>[node_cnt];
+		
+		// add the actual nodes
 		for (auto& link_map : links_)
 			if (nodes_.at(link_map.second->getSourceNodeName())->getType() != NodeType::bias)
 				adj[nodes_.at(link_map.second->getSourceNodeName())->getId()].push_back(nodes_.at(link_map.second->getSinkNodeName())->getId());
@@ -1990,6 +1994,106 @@ namespace SmartPeak
 		cyclic_pairs_.clear();
 		for (const auto& source_sink: cyclic)
 			cyclic_pairs_.push_back(std::make_pair(node_id_map.at(source_sink.first), node_id_map.at(source_sink.second)));
+	}
+
+	bool Model::isStronglyConnected(std::list<int>* adj, int u, int disc[], int low[], std::stack<int>* st, bool stackMember[], std::vector<std::vector<int>>& scc)
+	{
+		// A static variable is used for simplicity, we can avoid use
+		// of static variable by passing a pointer.
+		static int time = 0;
+
+		// Initialize discovery time and low value
+		disc[u] = low[u] = ++time;
+		st->push(u);
+		stackMember[u] = true;
+
+		// Go through all vertices adjacent to this
+		std::list<int>::iterator i;
+		for (i = adj[u].begin(); i != adj[u].end(); ++i)
+		{
+			int v = *i;  // v is current adjacent of 'u'
+
+			// If v is not visited yet, then recur for it
+			if (disc[v] == -1)
+			{
+				isStronglyConnected(adj, v, disc, low, st, stackMember, scc);
+
+				// Check if the subtree rooted with 'v' has a
+				// connection to one of the ancestors of 'u'
+				// Case 1 (per above discussion on Disc and Low value)
+				low[u] = min(low[u], low[v]);
+			}
+
+			// Update low value of 'u' only of 'v' is still in stack
+			// (i.e. it's a back edge, not cross edge).
+			// Case 2 (per above discussion on Disc and Low value)
+			else if (stackMember[v] == true)
+				low[u] = min(low[u], disc[v]);
+		}
+
+		// head node found, pop the stack and print an SCC
+		int w = 0;  // To store stack extracted vertices
+		if (low[u] == disc[u])
+		{
+			while (st->top() != u)
+			{
+				w = (int)st->top();
+				std::cout << w << " ";
+				stackMember[w] = false;
+				st->pop();
+			}
+			w = (int)st->top();
+			std::cout << w << "n";
+			stackMember[w] = false;
+			st->pop();
+		}
+		return false;
+	}
+
+	void Model::findStronglyConnectedComponents()
+	{
+		// create a map of node id to node name (excluding bias nodes)
+		std::map<int, std::string> node_id_map;
+		int node_cnt = 0;
+		for (auto& node_map : nodes_) {
+			if (node_map.second->getType() != NodeType::bias) {
+				node_map.second->setId(node_cnt);
+				node_id_map.emplace(node_cnt, node_map.first);
+				++node_cnt;
+			}
+			else {
+				node_map.second->setId(-1);
+			}
+		}
+
+		// create the DFS trees (excluding bias nodes)
+		std::list<int> *adj;
+		adj = new std::list<int>[node_cnt];
+
+		// add the actual nodes
+		for (auto& link_map : links_)
+			if (nodes_.at(link_map.second->getSourceNodeName())->getType() != NodeType::bias)
+				adj[nodes_.at(link_map.second->getSourceNodeName())->getId()].push_back(nodes_.at(link_map.second->getSinkNodeName())->getId());
+
+		// Mark all the vertices as not visited and not part of recursion stack
+		int *disc = new int[node_cnt];
+		int *low = new int[node_cnt];
+		bool *stackMember = new bool[node_cnt];
+		std::stack<int> *st = new std::stack<int>();
+
+		// Initialize disc and low, and stackMember arrays
+		for (int i = 0; i < node_cnt; i++)
+		{
+			disc[i] = -1;
+			low[i] = -1;
+			stackMember[i] = false;
+		}
+
+		// Call the recursive helper function to find strongly connected components in DFS tree with vertex 'i'
+		std::vector<std::vector<int>> strongly_connected_components;
+		for (int i = 0; i < node_cnt; i++)
+			if (disc[i] == -1)
+				isStronglyConnected(adj, i, disc, low, st, stackMember, strongly_connected_components);
 	}
 
 	std::vector<std::pair<std::string, std::string>> Model::getCyclicPairs()
