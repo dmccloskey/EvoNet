@@ -346,7 +346,7 @@ void main_AAE() {
 	// define the data simulator
 	const std::size_t input_size = 784;
 	const std::size_t encoding_size = 2;
-	const std::size_t labels_size = 11;
+	const std::size_t hidden_size = 25;
 	const std::size_t training_data_size = 10000; //60000;
 	const std::size_t validation_data_size = 100; //10000;
 	DataSimulatorExt data_simulator;
@@ -411,7 +411,7 @@ void main_AAE() {
 
 	// define the initial population [BUG FREE]
 	std::cout << "Initializing the population..." << std::endl;
-	std::vector<Model> population = { model_trainer.makeAAE(input_size, 50, encoding_size) };
+	std::vector<Model> population = { model_trainer.makeAAE(input_size, hidden_size, encoding_size) };
 
 	// Evolve the population
 	std::vector<std::vector<std::pair<int, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(

@@ -655,7 +655,7 @@ public:
 		std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", n_inputs);
 
 		// Add the LSTM layer
-		std::vector<std::string> node_names = model_builder.addLSTM(model, "LSTM", "LSTM", node_names_input, 1, 1,
+		std::vector<std::string> node_names = model_builder.addLSTM(model, "LSTM", "LSTM", node_names_input, 2, 2,
 			std::shared_ptr<ActivationOp<float>>(new TanHOp<float>()), std::shared_ptr<ActivationOp<float>>(new TanHGradOp<float>()),
 			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
 			std::shared_ptr<WeightInitOp>(new RandWeightInitOp(0.4)), std::shared_ptr<SolverOp>(new AdamOp(0.001, 0.9, 0.999, 1e-8)),
@@ -781,7 +781,7 @@ int main(int argc, char** argv)
 	ModelTrainerExt model_trainer;
 	model_trainer.setBatchSize(1);
 	model_trainer.setMemorySize(data_simulator.sequence_length_);
-	model_trainer.setNEpochsTraining(1000);
+	model_trainer.setNEpochsTraining(10000);
 	model_trainer.setNEpochsValidation(10);
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setNThreads(n_hard_threads);

@@ -344,7 +344,7 @@ BOOST_AUTO_TEST_CASE(mapValuesToNodes)
 	model1.initError(batch_size, memory_size - 1);
   model1.clearCache();
   model1.initNodes(batch_size, memory_size - 1);
-	model1.findCyclicPairs();
+	model1.findCycles();
 
   // create the input
   const std::vector<std::string> node_ids = {"0", "1"};
@@ -412,7 +412,7 @@ BOOST_AUTO_TEST_CASE(mapValuesToNodes2)
 	model1.initError(batch_size, memory_size - 1);
   model1.clearCache();
   model1.initNodes(batch_size, memory_size - 1);
-	model1.findCyclicPairs();
+	model1.findCycles();
 
   // create the input
   const std::vector<std::string> node_ids = {"0", "1"};
@@ -478,7 +478,7 @@ BOOST_AUTO_TEST_CASE(mapValuesToNode)
 	model1.initError(batch_size, memory_size - 1);
   model1.clearCache();
   model1.initNodes(batch_size, memory_size - 1);
-	model1.findCyclicPairs();
+	model1.findCycles();
 
   // create the input
   const std::string node_id = {"0"};
@@ -528,7 +528,7 @@ BOOST_AUTO_TEST_CASE(mapValuesToNodes3)
 	model1.initError(batch_size, memory_size - 1);
   model1.clearCache();
   model1.initNodes(batch_size, memory_size - 1);
-	model1.findCyclicPairs();
+	model1.findCycles();
 
   // create the input
   Eigen::Tensor<float, 1> input(batch_size); 
@@ -593,7 +593,7 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayer1)
 	model1.initError(batch_size, memory_size - 1);
   model1.clearCache();
   model1.initNodes(batch_size, memory_size - 1);
-	model1.findCyclicPairs();
+	model1.findCycles();
 
   // create the input and biases
   const std::vector<std::string> input_ids = {"0", "1"};
@@ -647,7 +647,7 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayerBiases1)
 	model1.initError(batch_size, memory_size - 1);
   model1.clearCache();
   model1.initNodes(batch_size, memory_size - 1);
-	model1.findCyclicPairs();
+	model1.findCycles();
 
   // create the input and biases
   const std::vector<std::string> input_ids = {"0", "1"};
@@ -712,7 +712,7 @@ BOOST_AUTO_TEST_CASE(forwardPropogateLayerNetInput_Sum)
 	model1.initError(batch_size, memory_size - 1);
   model1.clearCache();
   model1.initNodes(batch_size, memory_size - 1);
-	model1.findCyclicPairs();
+	model1.findCycles();
 
   // create the input
   const std::vector<std::string> input_ids = {"0", "1"};
@@ -777,7 +777,7 @@ BOOST_AUTO_TEST_CASE(forwardPropogateLayerNetInput_Product)
 	model2.initError(batch_size, memory_size - 1);
 	model2.clearCache();
 	model2.initNodes(batch_size, memory_size - 1);
-	model2.findCyclicPairs();
+	model2.findCycles();
 
 	// create the input
 	const std::vector<std::string> input_ids = { "0", "1" };
@@ -842,7 +842,7 @@ BOOST_AUTO_TEST_CASE(forwardPropogate_Sum)
 	model1.initError(batch_size, memory_size - 1);
   model1.clearCache();
   model1.initNodes(batch_size, memory_size - 1);
-	model1.findCyclicPairs();
+	model1.findCycles();
 
   // create the input
   const std::vector<std::string> input_ids = {"0", "1"};
@@ -897,7 +897,7 @@ BOOST_AUTO_TEST_CASE(forwardPropogate_Product)
 	model2.initError(batch_size, memory_size - 1);
 	model2.clearCache();
 	model2.initNodes(batch_size, memory_size - 1);
-	model2.findCyclicPairs();
+	model2.findCycles();
 
 	// create the input
 	const std::vector<std::string> input_ids = { "0", "1" };
@@ -952,7 +952,7 @@ BOOST_AUTO_TEST_CASE(forwardPropogate_Max)
 	model3.initError(batch_size, memory_size - 1);
 	model3.clearCache();
 	model3.initNodes(batch_size, memory_size - 1);
-	model3.findCyclicPairs();
+	model3.findCycles();
 
 	// create the input
 	const std::vector<std::string> input_ids = { "0", "1" };
@@ -1007,7 +1007,7 @@ BOOST_AUTO_TEST_CASE(calculateError)
   const int memory_size = 2;
 	model1.initError(batch_size, memory_size - 1);
   model1.initNodes(batch_size, memory_size - 1);
-	model1.findCyclicPairs();
+	model1.findCycles();
 
   // calculate the model error
   std::vector<std::string> output_nodes = {"4", "5"};
@@ -1081,7 +1081,7 @@ BOOST_AUTO_TEST_CASE(getNextUncorrectedLayer1)
 	model1.initError(batch_size, memory_size - 1);
   model1.clearCache();
   model1.initNodes(batch_size, memory_size - 1);
-	model1.findCyclicPairs();
+	model1.findCycles();
 
   // create the input
   const std::vector<std::string> input_ids = {"0", "1"};
@@ -1142,7 +1142,7 @@ BOOST_AUTO_TEST_CASE(backPropogateLayerError_Sum)
 	model1.initError(batch_size, memory_size - 1);
   model1.clearCache();
   model1.initNodes(batch_size, memory_size - 1);
-	model1.findCyclicPairs();
+	model1.findCycles();
 
   // create the input
   const std::vector<std::string> input_ids = {"0", "1"};
@@ -1205,7 +1205,7 @@ BOOST_AUTO_TEST_CASE(backPropogateLayerError_Product)
 	model2.initError(batch_size, memory_size - 1);
 	model2.clearCache();
 	model2.initNodes(batch_size, memory_size - 1);
-	model2.findCyclicPairs();
+	model2.findCycles();
 
 	// create the input
 	const std::vector<std::string> input_ids = { "0", "1" };
@@ -1270,7 +1270,7 @@ BOOST_AUTO_TEST_CASE(backPropogate_Sum)
 	model1.initError(batch_size, memory_size - 1);
   model1.clearCache();
   model1.initNodes(batch_size, memory_size - 1);
-	model1.findCyclicPairs();
+	model1.findCycles();
 
   // create the input
   const std::vector<std::string> input_ids = {"0", "1"};
@@ -1335,7 +1335,7 @@ BOOST_AUTO_TEST_CASE(backPropogate_Product)
 	model2.initError(batch_size, memory_size - 1);
 	model2.clearCache();
 	model2.initNodes(batch_size, memory_size - 1);
-	model2.findCyclicPairs();
+	model2.findCycles();
 
 	// create the input
 	const std::vector<std::string> input_ids = { "0", "1" };
@@ -1400,7 +1400,7 @@ BOOST_AUTO_TEST_CASE(backPropogate_Max)
 	model3.initError(batch_size, memory_size - 1);
 	model3.clearCache();
 	model3.initNodes(batch_size, memory_size - 1);
-	model3.findCyclicPairs();
+	model3.findCycles();
 
 	// create the input
 	const std::vector<std::string> input_ids = { "0", "1" };
@@ -1466,7 +1466,7 @@ BOOST_AUTO_TEST_CASE(updateWeights_Sum)
   model1.clearCache();
   model1.initNodes(batch_size, memory_size - 1);
   model1.initWeights();
-	model1.findCyclicPairs();
+	model1.findCycles();
 
   // create the input
   const std::vector<std::string> input_ids = {"0", "1"};
@@ -1537,7 +1537,7 @@ BOOST_AUTO_TEST_CASE(updateWeights_Product)
 	model2.clearCache();
 	model2.initNodes(batch_size, memory_size - 1);
 	model2.initWeights();
-	model2.findCyclicPairs();
+	model2.findCycles();
 
 	// create the input
 	const std::vector<std::string> input_ids = { "0", "1" };
@@ -1594,7 +1594,7 @@ BOOST_AUTO_TEST_CASE(updateWeights_Max)
 	model3.clearCache();
 	model3.initNodes(batch_size, memory_size - 1);
 	model3.initWeights();
-	model3.findCyclicPairs();
+	model3.findCycles();
 
 	// create the input
 	const std::vector<std::string> input_ids = { "0", "1" };
@@ -1687,7 +1687,7 @@ BOOST_AUTO_TEST_CASE(modelTrainer1)
   model1.clearCache();
   model1.initNodes(batch_size, memory_size - 1);
   model1.initWeights();
-	model1.findCyclicPairs();
+	model1.findCycles();
 
   // create the input
   const std::vector<std::string> input_ids = {"0", "1"};

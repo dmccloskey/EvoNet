@@ -78,26 +78,6 @@ Model makeModel2()
 }
 Model model2 = makeModel2();
 
-BOOST_AUTO_TEST_CASE(findCyclicSinks)
-{
-	// Toy network: 1 hidden layer, fully connected, DCG
-	// Model model2 = makeModel2();
-
-	// initialize nodes
-	const int batch_size = 5;
-	const int memory_size = 8;
-	model2.initError(batch_size, memory_size);
-	model2.clearCache();
-	model2.initNodes(batch_size, memory_size);
-	model2.initWeights();
-
-	// find cyclic nodes
-	model2.findCyclicPairs();
-	BOOST_CHECK_EQUAL(model2.getCyclicPairs().size(), 1);
-	BOOST_CHECK_EQUAL(model2.getCyclicPairs().back().first, "2");
-	BOOST_CHECK_EQUAL(model2.getCyclicPairs().back().second, "1");
-}
-
 BOOST_AUTO_TEST_CASE(findCycles)
 {
 	// Toy network: 1 hidden layer, fully connected, DCG
@@ -128,7 +108,7 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayer2)
   const int memory_size = 8;
 	model2.initError(batch_size, memory_size - 1);
   model2.initNodes(batch_size, memory_size - 1);
-	model2.findCyclicPairs();
+	model2.findCycles();
 
   // create the input and biases
   const std::vector<std::string> input_ids = {"0"};
@@ -173,7 +153,7 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayerBiases2)
   const int memory_size = 8;
 	model2.initError(batch_size, memory_size - 1);
   model2.initNodes(batch_size, memory_size - 1);
-	model2.findCyclicPairs();
+	model2.findCycles();
 
   // create the input and biases
   const std::vector<std::string> input_ids = {"0"};
@@ -226,7 +206,7 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayerCycles2)
   const int memory_size = 8;
 	model2.initError(batch_size, memory_size - 1);
   model2.initNodes(batch_size, memory_size - 1);
-	model2.findCyclicPairs();
+	model2.findCycles();
 
   // create the input and biases
   const std::vector<std::string> input_ids = {"0"};
@@ -287,7 +267,7 @@ BOOST_AUTO_TEST_CASE(FPTT)
   model2.initNodes(batch_size, memory_size - 1);
   model2.initWeights();
 	model2.clearCache();
-	model2.findCyclicPairs();
+	model2.findCycles();
 
   // create the input and biases
   const std::vector<std::string> input_ids = {"0", "3", "4"};
@@ -353,7 +333,7 @@ BOOST_AUTO_TEST_CASE(CETT)
 	model2.initError(batch_size, memory_size);
 	model2.initNodes(batch_size, memory_size);
 	model2.initWeights();
-	model2.findCyclicPairs();
+	model2.findCycles();
 
 	// create the input and biases
 	const std::vector<std::string> input_ids = { "0", "3", "4" };
@@ -426,7 +406,7 @@ BOOST_AUTO_TEST_CASE(getNextUncorrectedLayer2)
 	model2.initError(batch_size, memory_size - 1);
   model2.initNodes(batch_size, memory_size - 1);
   model2.initWeights();
-	model2.findCyclicPairs();
+	model2.findCycles();
 
   // create the input and biases
   const std::vector<std::string> input_ids = {"0"};
@@ -494,7 +474,7 @@ BOOST_AUTO_TEST_CASE(getNextUncorrectedLayerCycles2)
 	model2.initError(batch_size, memory_size - 1);
   model2.initNodes(batch_size, memory_size - 1);
   model2.initWeights();
-	model2.findCyclicPairs();
+	model2.findCycles();
 
   // create the input and biases
   const std::vector<std::string> input_ids = {"0"};
@@ -579,7 +559,7 @@ BOOST_AUTO_TEST_CASE(BPTT1)
 	model2.initError(batch_size, memory_size - 1);
   model2.initNodes(batch_size, memory_size - 1);
   model2.initWeights();
-	model2.findCyclicPairs();
+	model2.findCycles();
 
   // create the input and biases
   const std::vector<std::string> input_ids = {"0", "3", "4"};
@@ -656,7 +636,7 @@ BOOST_AUTO_TEST_CASE(BPTT2)
 	model2.initError(batch_size, memory_size - 1);
 	model2.initNodes(batch_size, memory_size - 1);
 	model2.initWeights();
-	model2.findCyclicPairs();
+	model2.findCycles();
 
 	// create the input and biases
 	const std::vector<std::string> input_ids = { "0", "3", "4" };
@@ -733,7 +713,7 @@ BOOST_AUTO_TEST_CASE(updateWeights2)
   model2.clearCache();
   model2.initNodes(batch_size, memory_size - 1);
   model2.initWeights();
-	model2.findCyclicPairs();
+	model2.findCycles();
 
   // create the input and biases
   const std::vector<std::string> input_ids = {"0", "3", "4"};
@@ -799,7 +779,7 @@ BOOST_AUTO_TEST_CASE(updateWeights3)
 	model2.clearCache();
 	model2.initNodes(batch_size, memory_size - 1);
 	model2.initWeights();
-	model2.findCyclicPairs();
+	model2.findCycles();
 
 	// create the input and biases
 	const std::vector<std::string> input_ids = { "0", "3", "4" };
@@ -927,7 +907,7 @@ BOOST_AUTO_TEST_CASE(modelTrainer2)
   model2a.clearCache();
   model2a.initNodes(batch_size, memory_size);
   model2a.initWeights();
-	model2a.findCyclicPairs();
+	model2a.findCycles();
 
   // create the input and biases (from time t=0 to t=n)
   const std::vector<std::string> input_ids = {"0", "3", "4"};

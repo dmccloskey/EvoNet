@@ -276,7 +276,7 @@ BOOST_AUTO_TEST_CASE(replicateModels)
 		model.initWeights();
 		model.initNodes(4, 4);
 		model.initError(4, 4);
-		model.findCyclicPairs();
+		model.findCycles();
 
 		// modify the models
 		model_replicator.modifyModel(model, std::to_string(i));
@@ -387,7 +387,7 @@ BOOST_AUTO_TEST_CASE(trainModels)
     model.initWeights();
 		model.initError(5, 8);
 		model.initNodes(5, 8);
-		model.findCyclicPairs();
+		model.findCycles();
     
     // modify the models
     model_replicator.modifyModel(model, std::to_string(i));

@@ -172,7 +172,9 @@ public:
 		@brief Add a LSTM layer
 
 		Reference:
-		Hochreiter, Sepp, and Jürgen Schmidhuber. "Long short-term memory." Neural computation 9.8 (1997): 1735-1780.
+		1. Hochreiter, Sepp, and Jürgen Schmidhuber. "Long short-term memory." Neural computation 9.8 (1997): 1735-1780.
+		2. Gers, F. A.; Schmidhuber, J. (2001). "LSTM Recurrent Networks Learn Simple Context Free and Context Sensitive Languages" (PDF). IEEE Transactions on Neural Networks. 12 (6): 1333–1340. doi:10.1109/72.963769.
+
 
 		@param[in, out] Model
 		@param[in] source_node_names Node_names to add the layer to
@@ -188,8 +190,8 @@ public:
 		@param[in] biases Whether to include bias nodes or not
 		@param[in] forget_gat Whether to include forget gates or not
 		@param[in] block_version
-			1 output multiplier is connected to block input and block gates
-			2 memory cell is connected to block gates
+			1 Traditional: output multiplier is connected to block input and block gates
+			2 Peep holes: memory cell is connected to block gates
 
 		@returns vector of output node names
 		*/
@@ -226,6 +228,61 @@ public:
 			const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver,
 			float drop_out_prob = 0.0f, float drop_connection_prob = 0.0f, bool biases = true,
 			bool forget_gate = true);
+
+		/**
+		@brief Add a LSTM layer
+
+		Reference:
+		1. Cho, Kyunghyun; van Merrienboer, Bart; Gulcehre, Caglar; Bahdanau, Dzmitry; Bougares, Fethi; Schwenk, Holger; Bengio, Yoshua (2014). "Learning Phrase Representations using RNN Encoder-Decoder for Statistical Machine Translation". arXiv:1406.1078
+		2. Zhou, G., Wu, J., Zhang, C., Zhou, Z. Minimal Gated Unit for Recurrent	Neural Networks.arXiv preprint arXiv : 1603.09420v1, 2016.
+
+		@param[in, out] Model
+		@param[in] source_node_names Node_names to add the layer to
+		@param[in] n_blocks The number of independent GRU cell blocks
+		@param[in] node_activation The activation function of the input node to create
+		@param[in] node_activation_grad The activation function gradient of the input node to create
+		@param[in] node_integration The integration function of the input node to create
+		@param[in] node_integration_error The integration function of the input node to create
+		@param[in] node_integration_weight_grad The integration function of the input node to create
+		@param[in] drop_out_prob input or output Node drop out probability
+		@param[in] drop_connection_prob input or output Weight drop out probability
+		@param[in] biases Whether to include bias nodes or not
+		@param[in] input_gate_connection Whether to include an input connection to the gates
+		@param[in] block_version
+			1 GRU: input and reset gates
+			2 MGRU: forget gate
+
+		@returns vector of output node names
+		*/
+		std::vector<std::string> addGRU(Model& model, const std::string& name, const std::string& module_name,
+			const std::vector<std::string>& source_node_names,
+			const int& n_blocks, 
+			const std::shared_ptr<ActivationOp<float>>& node_activation,
+			const std::shared_ptr<ActivationOp<float>>& node_activation_grad,
+			const std::shared_ptr<IntegrationOp<float>>& node_integration,
+			const std::shared_ptr<IntegrationErrorOp<float>>& node_integration_error,
+			const std::shared_ptr<IntegrationWeightGradOp<float>>& node_integration_weight_grad,
+			const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver,
+			float drop_out_prob = 0.0f, float drop_connection_prob = 0.0f, bool biases = true,
+			bool forget_gate = true, int block_version = 1);
+		std::vector<std::string> addGRU1(Model& model, const std::string& name, const std::string& module_name,
+			const std::vector<std::string>& source_node_names,
+			const std::shared_ptr<ActivationOp<float>>& node_activation,
+			const std::shared_ptr<ActivationOp<float>>& node_activation_grad,
+			const std::shared_ptr<IntegrationOp<float>>& node_integration,
+			const std::shared_ptr<IntegrationErrorOp<float>>& node_integration_error,
+			const std::shared_ptr<IntegrationWeightGradOp<float>>& node_integration_weight_grad,
+			const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver,
+			float drop_out_prob = 0.0f, float drop_connection_prob = 0.0f, bool biases = true, bool input_gate_connection = true);
+		std::vector<std::string> addGRU2(Model& model, const std::string& name, const std::string& module_name,
+			const std::vector<std::string>& source_node_names,
+			const std::shared_ptr<ActivationOp<float>>& node_activation,
+			const std::shared_ptr<ActivationOp<float>>& node_activation_grad,
+			const std::shared_ptr<IntegrationOp<float>>& node_integration,
+			const std::shared_ptr<IntegrationErrorOp<float>>& node_integration_error,
+			const std::shared_ptr<IntegrationWeightGradOp<float>>& node_integration_weight_grad,
+			const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver,
+			float drop_out_prob = 0.0f, float drop_connection_prob = 0.0f, bool biases = true, bool input_gate_connection = true);
 
 		/**
 		@brief Add one model to another

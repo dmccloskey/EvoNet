@@ -8,6 +8,14 @@
 
 typedef std::list<int> NodeList;
 
+/*
+@brief Elementary circuit finding algorithm
+
+The algorithm is similar to Tiernan and Tarjan, but computationally more efficient
+
+References:
+DONALD B. JOHNSON.  FINDING ALL THE ELEMENTARY CIRCUITS OF A DIRECTED GRAPH.  SIAM J. COMPUT. Vol. 4, No. 1, March 1975
+*/
 class CircuitFinder
 {
 	std::vector<NodeList> AK;
