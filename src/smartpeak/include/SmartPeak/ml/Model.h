@@ -332,6 +332,7 @@ public:
 			const std::string& node_integration, const std::string& node_activation);
 		void getFPOperations();
 		void convertFPOpsToTensorOps();
+		void executeFPOperations(const int& time_step);
  
     /**
     @brief Foward propogation through time (FPTT) of the network model.
@@ -710,6 +711,7 @@ private:
     // Internal structures to allow for efficient multi-threading
     // and off-loading of computation from host to devices
     std::vector<std::vector<OperationList>> FP_operations_cache_;
+		std::vector<std::pair<int, int>> FP_operations_dimensions_;  // vector of source/sink node sizes
     std::vector<std::vector<OperationList>> BP_operations_cache_;
   };
 }
