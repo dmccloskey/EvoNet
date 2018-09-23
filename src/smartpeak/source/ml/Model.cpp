@@ -721,7 +721,6 @@ namespace SmartPeak
     // get all the biases for the sink nodes
     for (auto& link_map : links_)
     {
-
 			std::string ops_key = makeFPOpsKey(link_map.second->getSinkNodeName(), 0,
 				nodes_.at(link_map.second->getSinkNodeName())->getIntegration()->getName(),
 				nodes_.at(link_map.second->getSinkNodeName())->getActivation()->getName());
@@ -739,7 +738,7 @@ namespace SmartPeak
         arguments.weight = weights_.at(link_map.second->getWeightName());
         arguments.time_step = 0;
 				arguments.link_name = link_map.first;
-        FP_operations[FP_operations_map.at(ops_key].arguments.push_back(arguments);
+        FP_operations[FP_operations_map.at(ops_key)].arguments.push_back(arguments);
         if (std::count(sink_nodes_with_biases.begin(), sink_nodes_with_biases.end(), ops_key) == 0)
         {
           sink_nodes_with_biases.push_back(ops_key);
@@ -757,11 +756,14 @@ namespace SmartPeak
     // get cyclic source nodes
     for (auto& link_map : links_)
     {
+			std::string ops_key = makeFPOpsKey(link_map.second->getSinkNodeName(), 0,
+				nodes_.at(link_map.second->getSinkNodeName())->getIntegration()->getName(),
+				nodes_.at(link_map.second->getSinkNodeName())->getActivation()->getName());
       if (
         nodes_.at(link_map.second->getSourceNodeName())->getStatus() == NodeStatus::initialized &&
         // required regardless if cycles are or are not allowed
         nodes_.at(link_map.second->getSinkNodeName())->getStatus() == NodeStatus::initialized &&
-        FP_operations_map.count(link_map.second->getSinkNodeName()) != 0 // sink node has already been identified
+        FP_operations_map.count(ops_key) != 0 // sink node has already been identified
       )
       {
         OperationArguments arguments;
@@ -775,8 +777,8 @@ namespace SmartPeak
         // if (time_step + 1 >= memory_size) ...
         arguments.time_step = 1;
 				arguments.link_name = link_map.first;
-        FP_operations[FP_operations_map.at(link_map.second->getSinkNodeName())].arguments.push_back(arguments);
-        sink_nodes_with_cycles.push_back(link_map.second->getSinkNodeName());
+        FP_operations[FP_operations_map.at(ops_key)].arguments.push_back(arguments);
+        sink_nodes_with_cycles.push_back(ops_key);
       }
     }
   }
