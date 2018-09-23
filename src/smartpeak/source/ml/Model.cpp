@@ -691,7 +691,10 @@ namespace SmartPeak
         // std::cout<<"Addres of model source node: "<<&nodes_.at(link_map.second->getSourceNodeName())<<std::endl;
         // std::cout<<"Addres of arguments source node: "<<arguments.source_node<<std::endl;
         
-        auto found = FP_operations_map.emplace(link_map.second->getSinkNodeName(), (int)FP_operations.size());
+				std::string ops_key = makeFPOpsKey(link_map.second->getSinkNodeName(), 0,
+					nodes_.at(link_map.second->getSinkNodeName())->getIntegration()->getName(),
+					nodes_.at(link_map.second->getSinkNodeName())->getActivation()->getName());
+        auto found = FP_operations_map.emplace(ops_key, (int)FP_operations.size());
         if (!found.second)
         {
           FP_operations[FP_operations_map.at(link_map.second->getSinkNodeName())].arguments.push_back(arguments);
@@ -718,13 +721,17 @@ namespace SmartPeak
     // get all the biases for the sink nodes
     for (auto& link_map : links_)
     {
+
+			std::string ops_key = makeFPOpsKey(link_map.second->getSinkNodeName(), 0,
+				nodes_.at(link_map.second->getSinkNodeName())->getIntegration()->getName(),
+				nodes_.at(link_map.second->getSinkNodeName())->getActivation()->getName());
       if (        
         // does not allow for cycles
         nodes_.at(link_map.second->getSourceNodeName())->getType() == NodeType::bias && 
         nodes_.at(link_map.second->getSourceNodeName())->getStatus() == NodeStatus::activated &&
         // required regardless if cycles are or are not allowed
         nodes_.at(link_map.second->getSinkNodeName())->getStatus() == NodeStatus::initialized &&
-        FP_operations_map.count(link_map.second->getSinkNodeName()) != 0 // sink node has already been identified
+        FP_operations_map.count(ops_key) != 0 // sink node has already been identified
       )
       {
         OperationArguments arguments;
@@ -732,10 +739,10 @@ namespace SmartPeak
         arguments.weight = weights_.at(link_map.second->getWeightName());
         arguments.time_step = 0;
 				arguments.link_name = link_map.first;
-        FP_operations[FP_operations_map.at(link_map.second->getSinkNodeName())].arguments.push_back(arguments);
-        if (std::count(sink_nodes_with_biases.begin(), sink_nodes_with_biases.end(), link_map.second->getSinkNodeName()) == 0)
+        FP_operations[FP_operations_map.at(ops_key].arguments.push_back(arguments);
+        if (std::count(sink_nodes_with_biases.begin(), sink_nodes_with_biases.end(), ops_key) == 0)
         {
-          sink_nodes_with_biases.push_back(link_map.second->getSinkNodeName());
+          sink_nodes_with_biases.push_back(ops_key);
         }
       }
     }
@@ -999,6 +1006,85 @@ namespace SmartPeak
       }
     }
   }
+
+	std::string Model::makeFPOpsKey(const std::string & node_name, const int & time_step, const std::string & node_integration, const std::string & node_activation)
+	{
+		std::string ops_key = node_name + "/" + std::to_string(time_step) + "/" + node_integration + "/" + node_activation;
+		return ops_key;
+	}
+
+	void Model::getFPOperations()
+	{
+		const int max_iters = 1e6;
+		for (int iter = 0; iter < max_iters; ++iter)
+		{
+			// get the next hidden layer
+			std::map<std::string, int> FP_operations_map;
+			std::vector<OperationList> FP_operations_list;
+			getNextInactiveLayer(FP_operations_map, FP_operations_list);
+
+			// get biases,
+			std::vector<std::string> sink_nodes_with_biases;
+			getNextInactiveLayerBiases(FP_operations_map, FP_operations_list, sink_nodes_with_biases);
+
+			// get cycles
+			std::map<std::string, int> FP_operations_map_cycles = FP_operations_map;
+			std::vector<OperationList> FP_operations_list_cycles = FP_operations_list;
+			std::vector<std::string> sink_nodes_cycles;
+			getNextInactiveLayerCycles(FP_operations_map_cycles, FP_operations_list_cycles, sink_nodes_cycles);
+
+			// Remove all nodes involved in "cycles" that have arguments
+			// involving source to sink node pairs not identified as cycles
+			if (sink_nodes_cycles.size() > 0)
+			{
+				std::vector<std::string> sink_nodes_remove;
+				std::vector<OperationList> FP_operations_list_copy = FP_operations_list;
+				for (const std::string& sink_node : sink_nodes_cycles) {
+					for (size_t i = FP_operations_list[FP_operations_map.at(sink_node)].arguments.size();
+						i < FP_operations_list_cycles[FP_operations_map_cycles.at(sink_node)].arguments.size(); ++i) {
+						// check if the "cyclic" argument is actually involved in a cycle
+						bool isCyclicOperation = false;
+						for (const auto& cyclic_pair : cyclic_pairs_) {
+							if (FP_operations_list_cycles[FP_operations_map_cycles.at(sink_node)].arguments[i].source_node->getName() == cyclic_pair.first &&
+								FP_operations_list_cycles[FP_operations_map_cycles.at(sink_node)].result.sink_node->getName() == cyclic_pair.second) {
+								isCyclicOperation = true;
+								break;
+							}
+						}
+						// copy over the cyclic operation
+						if (isCyclicOperation)
+							FP_operations_list_copy[FP_operations_map_cycles.at(sink_node)].arguments.push_back(FP_operations_list_cycles[FP_operations_map_cycles.at(sink_node)].arguments[i]);
+						// id the sink node for removal
+						else {
+							sink_nodes_remove.push_back(sink_node);
+							break;
+						}
+					}
+				}
+				// remove all identified sink nodes
+				if (sink_nodes_remove.size() > 0) {
+					FP_operations_list.clear();
+					for (const auto& FP_operation : FP_operations_list_copy)
+						if (std::count(sink_nodes_remove.begin(), sink_nodes_remove.end(), FP_operation.result.sink_node->getName()) == 0)
+							FP_operations_list.push_back(FP_operation);
+				}
+				else
+					FP_operations_list = FP_operations_list_copy;
+			}
+
+			// check if all nodes have been activated
+			if (FP_operations_list.size() == 0)
+			{
+				break;
+			}
+
+			FP_operations_cache_.push_back(FP_operations_list);
+
+			// activate sink nodes
+			for (auto& FP_operation : FP_operations_list)
+				FP_operation.result.sink_node->setStatus(NodeStatus::activated);
+		}
+	}
 
   void Model::FPTT(const int& time_steps, 
     const Eigen::Tensor<float, 3>& values,
@@ -1590,6 +1676,8 @@ namespace SmartPeak
 							break;
 					}
         }
+
+				// seperate nodes by node integration/activation
 
         // calculate the net input
         backPropogateLayerError(BP_operations_list, time_step, n_threads);

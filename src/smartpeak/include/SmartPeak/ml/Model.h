@@ -326,7 +326,12 @@ public:
     @param[in] use_cache Whether to use the cached FP steps.
     */ 
     void forwardPropogate(const int& time_step, bool cache_FP_steps = false, bool use_cache = false,
-      int n_threads = 1);     
+      int n_threads = 1);
+		
+		static std::string makeFPOpsKey(const std::string& node_name, const int& time_step,
+			const std::string& node_integration, const std::string& node_activation);
+		void getFPOperations();
+		void convertFPOpsToTensorOps();
  
     /**
     @brief Foward propogation through time (FPTT) of the network model.
