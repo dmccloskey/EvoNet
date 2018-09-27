@@ -2105,8 +2105,12 @@ namespace SmartPeak
 		CF.run();
 
 		cyclic_pairs_.clear();
-		for (const auto& source_sink : CF.getCycles())
-			cyclic_pairs_.push_back(std::make_pair(node_id_map.at(source_sink.first), node_id_map.at(source_sink.second)));
+		for (const auto& source_sink : CF.getCycles()) {
+			if (nodes_.at(node_id_map.at(source_sink.second))->getType() == NodeType::recursive) // enforce order of recursive nodes
+				cyclic_pairs_.push_back(std::make_pair(node_id_map.at(source_sink.second), node_id_map.at(source_sink.first)));
+			else
+				cyclic_pairs_.push_back(std::make_pair(node_id_map.at(source_sink.first), node_id_map.at(source_sink.second)));
+		}
 	}
 
 	std::vector<std::pair<std::string, std::string>> Model::getCyclicPairs()

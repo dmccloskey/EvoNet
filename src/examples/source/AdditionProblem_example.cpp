@@ -655,11 +655,11 @@ public:
 		std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", n_inputs);
 
 		// Add the LSTM layer
-		std::vector<std::string> node_names = model_builder.addLSTM(model, "LSTM", "LSTM", node_names_input, 2, 2,
+		std::vector<std::string> node_names = model_builder.addLSTM(model, "LSTM", "LSTM", node_names_input, 1, 1,
 			std::shared_ptr<ActivationOp<float>>(new TanHOp<float>()), std::shared_ptr<ActivationOp<float>>(new TanHGradOp<float>()),
 			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
 			std::shared_ptr<WeightInitOp>(new RandWeightInitOp(0.4)), std::shared_ptr<SolverOp>(new AdamOp(0.001, 0.9, 0.999, 1e-8)),
-			0.0f, 0.0f, true, false, 2);
+			0.0f, 0.0f, true, true, 1);
 
 		// Add a final output layer
 		node_names = model_builder.addFullyConnected(model, "Output", "Output", node_names, 1,

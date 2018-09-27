@@ -27,7 +27,8 @@ namespace SmartPeak
     output = 3, 
     hidden = 4,
 		unmodifiable = 5,
-		zero = 6 // value of 0
+		zero = 6, // value of 0
+		recursive = 7 // special case of hidden where the node should be treated as the source of any cyclic pair
   };
 
   /**

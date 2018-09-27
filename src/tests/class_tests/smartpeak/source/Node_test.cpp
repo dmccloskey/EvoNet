@@ -263,6 +263,20 @@ BOOST_AUTO_TEST_CASE(initNode)
 	BOOST_CHECK_EQUAL(node.getDt()(0, 0), 1.0);
 	BOOST_CHECK_EQUAL(node.getDt()(1, 4), 1.0);
 	BOOST_CHECK(node.getStatus() == NodeStatus::initialized);
+
+	node.setType(NodeType::recursive);
+	node.initNode(2, 5);
+	BOOST_CHECK_EQUAL(node.getInput()(0, 0), 0.0);
+	BOOST_CHECK_EQUAL(node.getInput()(1, 4), 0.0);
+	BOOST_CHECK_EQUAL(node.getOutput()(0, 0), 0.0);
+	BOOST_CHECK_EQUAL(node.getOutput()(1, 4), 0.0);
+	BOOST_CHECK_EQUAL(node.getDerivative()(0, 0), 0.0);
+	BOOST_CHECK_EQUAL(node.getDerivative()(1, 4), 0.0);
+	BOOST_CHECK_EQUAL(node.getError()(0, 0), 0.0);
+	BOOST_CHECK_EQUAL(node.getError()(1, 4), 0.0);
+	BOOST_CHECK_EQUAL(node.getDt()(0, 0), 1.0);
+	BOOST_CHECK_EQUAL(node.getDt()(1, 4), 1.0);
+	BOOST_CHECK(node.getStatus() == NodeStatus::initialized);
 }
 
 BOOST_AUTO_TEST_CASE(initNode2)

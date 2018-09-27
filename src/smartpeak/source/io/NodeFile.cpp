@@ -29,6 +29,7 @@ namespace SmartPeak
       else if (node_type_str == "output") node_type = NodeType::output;
       else if (node_type_str == "input") node_type = NodeType::input;
       else if (node_type_str == "bias") node_type = NodeType::bias;
+			else if (node_type_str == "recursive") node_type = NodeType::recursive;
       else std::cout<<"NodeType for node_name "<<node_name<<" was not recognized."<<std::endl;
 
       // parse the node_status
@@ -105,6 +106,7 @@ namespace SmartPeak
       else if (node.getType() == NodeType::output) node_type_str = "output";
       else if (node.getType() == NodeType::input) node_type_str = "input";
       else if (node.getType() == NodeType::bias) node_type_str = "bias";
+			else if (node.getType() == NodeType::recursive) node_type_str = "recursive";
       else std::cout<<"NodeType for node_name "<<node.getName()<<" was not recognized."<<std::endl;
       row.push_back(node_type_str);
 
