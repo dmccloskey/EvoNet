@@ -1100,37 +1100,36 @@ namespace SmartPeak
 		int batch_size = bmsizes.first;
 		int memory_size = bmsizes.second;
 
+		// pre-allocate all host and device tensor memory
+
 		int FP_operations_cnt = 0;
 		for (auto& FP_operations : FP_operations_cache_) {
-			// Create the source, weight, and sink tensors
-			Eigen::Tensor<float, 2> source_tensor(batch_size, FP_operations_dimensions_[FP_operations_cnt].first);
-			Eigen::Tensor<float, 2> weight_tensor(FP_operations_dimensions_[FP_operations_cnt].first, FP_operations_dimensions_[FP_operations_cnt].second);
-			Eigen::Tensor<float, 2> sink_tensor_output(batch_size, FP_operations_dimensions_[FP_operations_cnt].second);
-			Eigen::Tensor<float, 2> sink_tensor_derivative(batch_size, FP_operations_dimensions_[FP_operations_cnt].second);
+			// Special case if all of all FP_operations with sink node of Sum IntegrationType and the same activation function
 
-			int arguments_cnt = 0;
 			for (auto& FP_operation : FP_operations) {
+				// Create the source, weight, and sink tensors
+				Eigen::Tensor<float, 2> source_tensor(batch_size, FP_operations_dimensions_[FP_operations_cnt].first);
+				Eigen::Tensor<float, 2> weight_tensor(FP_operations_dimensions_[FP_operations_cnt].first, FP_operations_dimensions_[FP_operations_cnt].second);
+				Eigen::Tensor<float, 1> sink_tensor_output(batch_size, FP_operations_dimensions_[FP_operations_cnt].second);
+				Eigen::Tensor<float, 1> sink_tensor_derivative(batch_size, FP_operations_dimensions_[FP_operations_cnt].second);
+				int arguments_cnt = 0;
 				for (auto& FP_argument : FP_operation.arguments) {
 					// Fill the source and weight tensors
 					source_tensor.chip(arguments_cnt, 1) = FP_argument.source_node->getOutputMutable()->chip(time_step + FP_argument.time_step, 1);
 					weight_tensor.chip(arguments_cnt, 0).setConstant(FP_argument.weight->getWeight());
 					++arguments_cnt;
 				}
-			}
-			// Offload memory to device
-			// executeFPOpsDevice(source_tensor, weight_tensor, sink_tensor, derivative_tensor);
-			// sink_tensor.device(...) = 
+				// Offload memory to device
+				// executeFPOpsDevice(source_tensor, weight_tensor, sink_tensor, derivative_tensor);
+				// sink_tensor.device(...) = 
 
-			// Execute operations (i.e., integration, activation, and derivative)
+				// Execute operations (i.e., integration, activation, and derivative)
 
-			// Retrieve results
+				// Retrieve results
 
-			int sinks_cnt = 0;
-			for (auto& FP_operation : FP_operations) {
 				// Update sink nodes
-				FP_operation.result.sink_node->getOutputMutable()->chip(time_step + FP_operation.result.time_step, 1) = sink_tensor_output.chip(sinks_cnt, 1);
-				FP_operation.result.sink_node->getDerivativeMutable()->chip(time_step + FP_operation.result.time_step, 1) = sink_tensor_output.chip(sinks_cnt, 1);
-				++sinks_cnt;
+				FP_operation.result.sink_node->getOutputMutable()->chip(time_step + FP_operation.result.time_step, 1) = sink_tensor_output;
+				FP_operation.result.sink_node->getDerivativeMutable()->chip(time_step + FP_operation.result.time_step, 1) = sink_tensor_output;
 			}
 			++FP_operations_cnt;
 		}
