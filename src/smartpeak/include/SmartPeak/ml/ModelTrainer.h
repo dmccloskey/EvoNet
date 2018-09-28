@@ -95,12 +95,10 @@ public:
         for model training
 
       @param[in, out] model The model to train
-      @param[in] n_epochs The number of epochs to train
       @param[in] input Input data tensor of dimensions: batch_size, memory_size, input_nodes, n_epochs
       @param[in] output Expected output data tensor of dimensions: batch_size, memory_size, output_nodes, n_epochs
       @param[in] time_steps Time steps of the forward passes of dimensions: batch_size, memory_size, n_epochs
       @param[in] input_nodes Input node names
-      @param[in] output_nodes Output node names
 
       @returns vector of average model error scores
     */ 
@@ -116,12 +114,10 @@ public:
         for model validation
 
       @param[in, out] model The model to train
-      @param[in] n_epochs The number of epochs to train
       @param[in] input Input data tensor of dimensions: batch_size, memory_size, input_nodes, n_epochs
       @param[in] output Expected output data tensor of dimensions: batch_size, memory_size, output_nodes, n_epochs
       @param[in] time_steps Time steps of the forward passes of dimensions: batch_size, memory_size, n_epochs
       @param[in] input_nodes Input node names
-      @param[in] output_nodes Output node names
 
       @returns vector of average model error scores
     */ 
@@ -131,6 +127,22 @@ public:
 			const Eigen::Tensor<float, 3>& time_steps,
 			const std::vector<std::string>& input_nodes,
 			ModelLogger& model_logger);
+
+		/**
+			@brief Entry point for users to code their script
+				for model forward evaluations
+
+			@param[in, out] model The model to train
+			@param[in] input Input data tensor of dimensions: batch_size, memory_size, input_nodes, n_epochs
+			@param[in] time_steps Time steps of the forward passes of dimensions: batch_size, memory_size, n_epochs
+			@param[in] input_nodes Input node names
+
+			@returns vector of vectors corresponding to output nodes
+		*/
+		std::vector<std::vector<Eigen::Tensor<float, 2>>> evaluateModel(Model& model,
+			const Eigen::Tensor<float, 4>& input,
+			const Eigen::Tensor<float, 3>& time_steps,
+			const std::vector<std::string>& input_nodes);
  
     /**
       @brief Entry point for users to code their script

@@ -42,7 +42,7 @@ public:
 	Alireza Makhzani, Jonathon Shlens, Navdeep Jaitly, Ian Goodfellow, Brendan Frey. "Adversarial Autoencoders" 2015.  arXiv:1511.05644
 	https://github.com/musyoku/adversarial-autoencoder/blob/master/run/semi-supervised/regularize_z/model.py
 	*/
-	Model makeAAE(const int& n_inputs, int n_hidden_0 = 50, int n_encodings = 2) {
+	Model makeAAELatentZ(const int& n_inputs, int n_hidden_0 = 50, int n_encodings = 2) {
 		Model model;
 		model.setId(0);
 		model.setName("AAELatentZ");
@@ -271,6 +271,49 @@ public:
 		}
 		time_steps.setConstant(1.0f);
 	}
+	void simulateEvaluationData(Eigen::Tensor<float, 4>& input_data, Eigen::Tensor<float, 3>& time_steps)
+	{
+		// infer data dimensions based on the input tensors
+		const int batch_size = input_data.dimension(0);
+		const int memory_size = input_data.dimension(1);
+		const int n_input_nodes = input_data.dimension(2);
+		const int n_epochs = input_data.dimension(3);
+		const int n_input_pixels = validation_data.dimension(1);
+		const int n_encodings = 2; // not ideal to have this hard coded...
+
+		assert(n_input_nodes == n_input_pixels);
+
+		// make the start and end sample indices [BUG FREE]
+		mnist_sample_start_training = mnist_sample_end_training;
+		mnist_sample_end_training = mnist_sample_start_training + batch_size * n_epochs;
+		if (mnist_sample_end_training > training_data.dimension(0) - 1)
+			mnist_sample_end_training = mnist_sample_end_training - batch_size * n_epochs;
+
+		// make a vector of sample_indices [BUG FREE]
+		std::vector<int> sample_indices;
+		for (int i = 0; i < batch_size*n_epochs; ++i)
+		{
+			int sample_index = i + mnist_sample_start_training;
+			if (sample_index > training_data.dimension(0) - 1)
+			{
+				sample_index = sample_index - batch_size * n_epochs;
+			}
+			sample_indices.push_back(sample_index);
+		}
+
+		// Reformat the MNIST image data for training
+		for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
+			for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
+				for (int epochs_iter = 0; epochs_iter < n_epochs; ++epochs_iter) {
+					for (int nodes_iter = 0; nodes_iter < n_input_pixels + n_encodings; ++nodes_iter) {
+						input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
+						//input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[0], nodes_iter);  // test on only 1 sample
+					}
+				}
+			}
+		}
+		time_steps.setConstant(1.0f);
+	}
 };
 
 class ModelReplicatorExt : public ModelReplicator
@@ -329,7 +372,7 @@ public:
 	}
 };
 
-void main_AAE() {
+void main_AAELatentZTrain() {
 
 	const int n_hard_threads = std::thread::hardware_concurrency();
 
@@ -411,7 +454,7 @@ void main_AAE() {
 
 	// define the initial population [BUG FREE]
 	std::cout << "Initializing the population..." << std::endl;
-	std::vector<Model> population = { model_trainer.makeAAE(input_size, hidden_size, encoding_size) };
+	std::vector<Model> population = { model_trainer.makeAAELatentZ(input_size, hidden_size, encoding_size) };
 
 	// Evolve the population
 	std::vector<std::vector<std::pair<int, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
@@ -421,11 +464,98 @@ void main_AAE() {
 	population_trainer_file.storeModels(population, "MNIST");
 	population_trainer_file.storeModelValidations("MNISTErrors.csv", models_validation_errors_per_generation.back());
 }
+void main_AAELatentZEvaluate() {
+
+	const int n_hard_threads = std::thread::hardware_concurrency();
+
+	// define the populatin trainer
+	PopulationTrainerExt population_trainer;
+	population_trainer.setNGenerations(1);
+	population_trainer.setNTop(1);
+	population_trainer.setNRandom(1);
+	population_trainer.setNReplicatesPerModel(1);
+
+	// define the data simulator
+	const std::size_t input_size = 784;
+	const std::size_t encoding_size = 2;
+	const std::size_t hidden_size = 25;
+	const std::size_t training_data_size = 10000; //60000;
+	const std::size_t validation_data_size = 100; //10000;
+	DataSimulatorExt data_simulator;
+
+	// read in the training data
+	const std::string training_data_filename = "C:/Users/domccl/GitHub/mnist/train-images.idx3-ubyte";
+	const std::string training_labels_filename = "C:/Users/domccl/GitHub/mnist/train-labels.idx1-ubyte";
+	//const std::string training_data_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/train-images-idx3-ubyte";
+	//const std::string training_labels_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/train-labels-idx1-ubyte";
+	//const std::string training_data_filename = "/home/user/data/train-images-idx3-ubyte";
+	//const std::string training_labels_filename = "/home/user/data/train-labels-idx1-ubyte";
+	data_simulator.readData(training_data_filename, training_labels_filename, true, training_data_size, input_size);
+
+	// read in the validation data
+	const std::string validation_data_filename = "C:/Users/domccl/GitHub/mnist/t10k-images.idx3-ubyte";
+	const std::string validation_labels_filename = "C:/Users/domccl/GitHub/mnist/t10k-labels.idx1-ubyte";
+	//const std::string validation_data_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/t10k-images-idx3-ubyte";
+	//const std::string validation_labels_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/t10k-labels-idx1-ubyte";
+	//const std::string validation_data_filename = "/home/user/data/t10k-images-idx3-ubyte";
+	//const std::string validation_labels_filename = "/home/user/data/t10k-labels-idx1-ubyte";
+	data_simulator.readData(validation_data_filename, validation_labels_filename, false, validation_data_size, input_size);
+	data_simulator.unitScaleData();
+
+	// Make the input nodes
+	std::vector<std::string> input_nodes;
+	for (int i = 0; i < input_size; ++i)
+		input_nodes.push_back("Input_" + std::to_string(i));
+
+	// Make the output nodes
+	std::vector<std::string> decoder_output_nodes;
+	for (int i = 0; i < input_size; ++i)
+		decoder_output_nodes.push_back("DE-Output_" + std::to_string(i));
+
+	// Make the output nodes
+	std::vector<std::string> discriminator_output_nodes;
+	for (int i = 0; i < encoding_size; ++i)
+		discriminator_output_nodes.push_back("DS-Output-" + std::to_string(i));
+
+	// define the model trainer
+	ModelTrainerExt model_trainer;
+	model_trainer.setBatchSize(1);
+	model_trainer.setMemorySize(1);
+	model_trainer.setNEpochsTraining(5000);
+	model_trainer.setNEpochsValidation(1);
+	model_trainer.setVerbosityLevel(1);
+	model_trainer.setNThreads(n_hard_threads);
+	model_trainer.setLogging(false, false);
+	model_trainer.setLossFunctions({
+		std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()),
+		std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
+	model_trainer.setLossFunctionGrads({
+		std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()),
+		std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
+	model_trainer.setOutputNodes({ decoder_output_nodes, discriminator_output_nodes });
+
+	// define the model replicator for growth mode
+	ModelReplicatorExt model_replicator;
+
+	// read in the trained model
+	std::cout << "Reading in the model..." << std::endl;
+	Model model; // TODO
+
+	// evaluate the trained model
+	std::cout << "Evaluating the model..." << std::endl;
+	Eigen::Tensor<float, 4> input_data; // TODO
+	Eigen::Tensor<float, 3> time_steps; // TODO
+	data_simulator.simulateEvaluationData(input_data, time_steps);
+	std::vector<std::vector<Eigen::Tensor<float, 2>>> model_output = model_trainer.evaluateModel(model, input_data, time_steps, input_nodes);
+
+	// export the results
+	// TODO
+}
 
 int main(int argc, char** argv)
 {
 	// run the application
-	main_AAE();
+	main_AAELatentZTrain();
 
   return 0;
 }

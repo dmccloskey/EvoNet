@@ -390,4 +390,62 @@ namespace SmartPeak
 		model.clearCache();
 		return model_error;
 	}
+
+	std::vector<std::vector<Eigen::Tensor<float, 2>>> ModelTrainer::evaluateModel(Model & model, const Eigen::Tensor<float, 4>& input, const Eigen::Tensor<float, 3>& time_steps, const std::vector<std::string>& input_nodes)
+	{
+		std::vector<std::vector<Eigen::Tensor<float, 2>>> model_output;
+
+		// Check input data
+		if (!checkInputData(getNEpochsValidation(), input, getBatchSize(), getMemorySize(), input_nodes))
+		{
+			return model_output;
+		}
+		if (!checkTimeSteps(getNEpochsValidation(), time_steps, getBatchSize(), getMemorySize()))
+		{
+			return model_output;
+		}
+		if (!model.checkNodeNames(input_nodes))
+		{
+			return model_output;
+		}
+		std::vector<std::string> output_nodes;
+		for (const std::vector<std::string>& output_nodes_vec : output_nodes_)
+			for (const std::string& output_node : output_nodes_vec)
+				output_nodes.push_back(output_node);
+		if (!model.checkNodeNames(output_nodes))
+		{
+			return model_output;
+		}
+
+		// Initialize the model
+		model.initError(getBatchSize(), getMemorySize());
+		model.clearCache();
+		model.initNodes(getBatchSize(), getMemorySize()); // The first time point = 0
+		model.findCycles();
+		model.initWeightsDropProbability(false);
+
+		for (int iter = 0; iter < getNEpochsValidation(); ++iter) // use n_epochs here
+		{
+			// forward propogate
+			if (iter == 0)
+				model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), true, true, getNThreads());
+			else
+				model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), false, true, getNThreads());
+
+			// extract out the model output
+			std::vector<Eigen::Tensor<float, 2>> output;
+			for (const std::vector<std::string>& output_nodes_vec : output_nodes_) {
+				for (const std::string& output_node : output_nodes_vec) {
+					output.push_back(model.getNode(output_node).getOutput());
+				}
+			}
+
+			// reinitialize the model
+			model.reInitializeNodeStatuses();
+			model.initNodes(getBatchSize(), getMemorySize());
+			model.initError(getBatchSize(), getMemorySize());
+		}
+		model.clearCache();
+		return model_output;
+	}
 }
