@@ -59,7 +59,8 @@ namespace SmartPeak
 		return true;
 	}
 
-	bool ModelLogger::writeLogs(const Model & model, const int & n_epochs, const std::vector<std::string>& training_metric_names, const std::vector<std::string>& validation_metric_names, const std::vector<float>& training_metrics, const std::vector<float>& validation_metrics, const std::vector<std::string>& output_node_names, const Eigen::Tensor<float, 3>& expected_values)
+	bool ModelLogger::writeLogs(const Model & model, const int & n_epochs, const std::vector<std::string>& training_metric_names, const std::vector<std::string>& validation_metric_names, const std::vector<float>& training_metrics, const std::vector<float>& validation_metrics, const std::vector<std::string>& output_node_names, const Eigen::Tensor<float, 3>& expected_values,
+		std::vector<std::string> node_names, std::vector<std::string> weight_names, std::vector<std::string> module_names)
 	{
 		if (log_time_epoch_) {
 			logTimePerEpoch(model, n_epochs);
@@ -71,19 +72,19 @@ namespace SmartPeak
 			logExpectedAndPredictedOutputPerEpoch(model, output_node_names, expected_values, n_epochs);
 		}
 		if (log_weights_epoch_) {
-			logWeightsPerEpoch(model, n_epochs);
+			logWeightsPerEpoch(model, n_epochs, weight_names);
 		}
 		if (log_node_errors_epoch_) {
-			logNodeErrorsPerEpoch(model, n_epochs);
+			logNodeErrorsPerEpoch(model, n_epochs, node_names);
 		}
 		if (log_module_variance_epoch_) {
-			logModuleMeanAndVariancePerEpoch(model, n_epochs);
+			logModuleMeanAndVariancePerEpoch(model, n_epochs, module_names);
 		}
 		if (log_node_outputs_epoch_) {
-			logNodeOutputsPerEpoch(model, n_epochs);
+			logNodeOutputsPerEpoch(model, n_epochs, node_names);
 		}
 		if (log_node_derivatives_epoch_) {
-			logNodeDerivativesPerEpoch(model, n_epochs);
+			logNodeDerivativesPerEpoch(model, n_epochs, node_names);
 		}
 		return true;
 	}
@@ -176,9 +177,17 @@ namespace SmartPeak
 		return true;
 	}
 
-	bool ModelLogger::logWeightsPerEpoch(const Model & model, const int & n_epoch)
+	bool ModelLogger::logWeightsPerEpoch(const Model & model, const int & n_epoch, std::vector<std::string> weight_names)
 	{
-		std::vector<Weight> weights = model.getWeights(); // kind of slow
+		std::vector<Weight> weights;
+		if (weight_names.size() == 0) {
+			weights = model.getWeights(); // kind of slow
+		}
+		else {
+			for (const std::string& weight_name : weight_names) {
+				weights.push_back(model.getWeight(weight_name));
+			}
+		}
 
 		// write headers
 		if (log_weights_epoch_csvwriter_.getLineCount() == 0) {
@@ -199,14 +208,22 @@ namespace SmartPeak
 		return true;
 	}
 
-	bool ModelLogger::logNodeErrorsPerEpoch(const Model & model, const int & n_epoch)
+	bool ModelLogger::logNodeErrorsPerEpoch(const Model & model, const int & n_epoch, std::vector<std::string> node_names)
 	{
 
 		std::pair<int, int> bmsizes = model.getBatchAndMemorySizes();
 		int batch_size = bmsizes.first;
 		int memory_size = bmsizes.second - 1;
 
-		std::vector<Node> nodes = model.getNodes();
+		std::vector<Node> nodes;
+		if (node_names.size() == 0) {
+			nodes = model.getNodes();
+		}
+		else {
+			for (const std::string& node_name : node_names) {
+				nodes.push_back(model.getNode(node_name));
+			}
+		}
 
 		// writer header
 		if (log_node_errors_epoch_csvwriter_.getLineCount() == 0) {
@@ -242,7 +259,7 @@ namespace SmartPeak
 		return true;
 	}
 
-	bool ModelLogger::logModuleMeanAndVariancePerEpoch(const Model & model, const int & n_epoch)
+	bool ModelLogger::logModuleMeanAndVariancePerEpoch(const Model & model, const int & n_epoch, std::vector<std::string> module_name)
 	{
 		// make a map of all modules/nodes in the model
 		if (module_to_node_names_.size() == 0) {
@@ -323,14 +340,22 @@ namespace SmartPeak
 		return true;
 	}
 
-	bool ModelLogger::logNodeOutputsPerEpoch(const Model & model, const int & n_epoch)
+	bool ModelLogger::logNodeOutputsPerEpoch(const Model & model, const int & n_epoch, std::vector<std::string> node_names)
 	{
 
 		std::pair<int, int> bmsizes = model.getBatchAndMemorySizes();
 		int batch_size = bmsizes.first;
 		int memory_size = bmsizes.second - 1;
 
-		std::vector<Node> nodes = model.getNodes();
+		std::vector<Node> nodes;
+		if (node_names.size() == 0) {
+			nodes = model.getNodes();
+		}
+		else {
+			for (const std::string& node_name : node_names) {
+				nodes.push_back(model.getNode(node_name));
+			}
+		}
 
 		// writer header
 		if (log_node_outputs_epoch_csvwriter_.getLineCount() == 0) {
@@ -360,14 +385,22 @@ namespace SmartPeak
 		return true;
 	}
 
-	bool ModelLogger::logNodeDerivativesPerEpoch(const Model & model, const int & n_epoch)
+	bool ModelLogger::logNodeDerivativesPerEpoch(const Model & model, const int & n_epoch, std::vector<std::string> node_names)
 	{
 
 		std::pair<int, int> bmsizes = model.getBatchAndMemorySizes();
 		int batch_size = bmsizes.first;
 		int memory_size = bmsizes.second - 1;
 
-		std::vector<Node> nodes = model.getNodes();
+		std::vector<Node> nodes;
+		if (node_names.size() == 0) {
+			nodes = model.getNodes();
+		}
+		else {
+			for (const std::string& node_name : node_names) {
+				nodes.push_back(model.getNode(node_name));
+			}
+		}
 
 		// writer header
 		if (log_node_derivatives_epoch_csvwriter_.getLineCount() == 0) {

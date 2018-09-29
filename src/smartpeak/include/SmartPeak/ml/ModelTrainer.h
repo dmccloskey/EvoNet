@@ -25,9 +25,10 @@ public:
     void setMemorySize(const int& memory_size); ///< memory_size setter
     void setNEpochsTraining(const int& n_epochs); ///< n_epochs setter
 		void setNEpochsValidation(const int& n_epochs); ///< n_epochs setter
+		void setNEpochsEvaluation(const int& n_epochs); ///< n_epochs setter
 		void setNThreads(const int& n_threads); ///< n_threads setter
 		void setVerbosityLevel(const int& verbosity_level); ///< verbosity_level setter
-		void setLogging(const bool& log_training, const bool& log_validation); ///< enable_logging setter
+		void setLogging(bool log_training = false, bool log_validation = false, bool log_evaluation = false); ///< enable_logging setter
 		void setLossFunctions(const std::vector<std::shared_ptr<LossFunctionOp<float>>>& loss_functions); ///< loss_functions setter [TODO: tests]
 		void setLossFunctionGrads(const std::vector<std::shared_ptr<LossFunctionGradOp<float>>>& loss_function_grads); ///< loss_functions setter [TODO: tests]
 		void setOutputNodes(const std::vector<std::vector<std::string>>& output_nodes); ///< output_nodes setter [TODO: tests]
@@ -36,6 +37,7 @@ public:
     int getMemorySize() const; ///< memory_size setter
     int getNEpochsTraining() const; ///< n_epochs setter
 		int getNEpochsValidation() const; ///< n_epochs setter
+		int getNEpochsEvaluation() const; ///< n_epochs setter
 		int getNThreads() const; ///< n_threads setter
 		int getVerbosityLevel() const; ///< verbosity_level setter
 		std::vector<std::shared_ptr<LossFunctionOp<float>>> getLossFunctions(); ///< loss_functions getter [TODO: tests]
@@ -142,7 +144,8 @@ public:
 		std::vector<std::vector<Eigen::Tensor<float, 2>>> evaluateModel(Model& model,
 			const Eigen::Tensor<float, 4>& input,
 			const Eigen::Tensor<float, 3>& time_steps,
-			const std::vector<std::string>& input_nodes);
+			const std::vector<std::string>& input_nodes,
+			ModelLogger& model_logger);
  
     /**
       @brief Entry point for users to code their script
@@ -171,14 +174,15 @@ public:
 private:
     int batch_size_;
     int memory_size_;
-    int n_epochs_training_;
-		int n_epochs_validation_;
-    bool is_trained_ = false;
+    int n_epochs_training_ = 0;
+		int n_epochs_validation_ = 0;
+		int n_epochs_evaluation_ = 0;
 
 		int n_threads_ = 1;
 		int verbosity_level_ = 0; ///< level of verbosity (0=none, 1=test/validation errors, 2=test/validation node values
 		bool log_training_ = false;
 		bool log_validation_ = false;
+		bool log_evaluation_ = false;
 
 		std::vector<std::shared_ptr<LossFunctionOp<float>>> loss_functions_;
 		std::vector<std::shared_ptr<LossFunctionGradOp<float>>> loss_function_grads_;

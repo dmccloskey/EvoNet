@@ -321,6 +321,7 @@ public:
 	{
 		simulateData(input_data, output_data, time_steps);
 	}
+	void simulateEvaluationData(Eigen::Tensor<float, 4>& input_data, Eigen::Tensor<float, 3>& time_steps) {};
 
 	/*
 	@brief Find candidate reactions that can be used to calculate the MAR

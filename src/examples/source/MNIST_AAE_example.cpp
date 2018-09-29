@@ -464,8 +464,8 @@ void main_AAELatentZTrain() {
 	population_trainer_file.storeModels(population, "MNIST");
 	population_trainer_file.storeModelValidations("MNISTErrors.csv", models_validation_errors_per_generation.back());
 }
-void main_AAELatentZEvaluate() {
 
+void main_AAELatentZEvaluate() {
 	const int n_hard_threads = std::thread::hardware_concurrency();
 
 	// define the populatin trainer
@@ -482,6 +482,9 @@ void main_AAELatentZEvaluate() {
 	const std::size_t training_data_size = 10000; //60000;
 	const std::size_t validation_data_size = 100; //10000;
 	DataSimulatorExt data_simulator;
+
+	// define the model logger
+	ModelLogger model_logger(false, false, false, false, false, false, true, false);
 
 	// read in the training data
 	const std::string training_data_filename = "C:/Users/domccl/GitHub/mnist/train-images.idx3-ubyte";
@@ -521,8 +524,9 @@ void main_AAELatentZEvaluate() {
 	ModelTrainerExt model_trainer;
 	model_trainer.setBatchSize(1);
 	model_trainer.setMemorySize(1);
-	model_trainer.setNEpochsTraining(5000);
-	model_trainer.setNEpochsValidation(1);
+	model_trainer.setNEpochsTraining(0);
+	model_trainer.setNEpochsValidation(0);
+	model_trainer.setNEpochsEvaluation(2);
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setNThreads(n_hard_threads);
 	model_trainer.setLogging(false, false);
@@ -540,16 +544,15 @@ void main_AAELatentZEvaluate() {
 	// read in the trained model
 	std::cout << "Reading in the model..." << std::endl;
 	Model model; // TODO
+	std::vector<Model> population = { model };
 
 	// evaluate the trained model
 	std::cout << "Evaluating the model..." << std::endl;
 	Eigen::Tensor<float, 4> input_data; // TODO
 	Eigen::Tensor<float, 3> time_steps; // TODO
 	data_simulator.simulateEvaluationData(input_data, time_steps);
-	std::vector<std::vector<Eigen::Tensor<float, 2>>> model_output = model_trainer.evaluateModel(model, input_data, time_steps, input_nodes);
-
-	// export the results
-	// TODO
+	population_trainer.evaluateModels(
+		population, model_trainer, model_replicator, data_simulator, model_logger, input_nodes, 1);
 }
 
 int main(int argc, char** argv)

@@ -18,6 +18,7 @@
 static std::mutex trainModel_mutex;
 static std::mutex validateModel_mutex;
 static std::mutex replicateModel_mutex;
+static std::mutex evalModel_mutex;
 
 namespace SmartPeak
 {
@@ -391,18 +392,6 @@ namespace SmartPeak
     // train the models
     for (int i=0; i<models.size(); ++i)
     {
-      // std::pair<std::string, bool> status = trainModel_(
-      //   &models[i], &model_trainer, input, output, time_steps, input_nodes, output_nodes);         
-      // if (!status.second)
-      // {
-      //   broken_model_names.push_back(status.first);
-      // }
-
-      // std::pair<bool, Model> status = trainModel_(
-      //   &models[i], &model_trainer, input, output, time_steps, input_nodes, output_nodes);  
-      // if (status.first)
-      //   trained_models.push_back(status.second);
-
       std::packaged_task<std::pair<bool, Model> // encapsulate in a packaged_task
         (Model*,
           ModelTrainer*,
@@ -498,6 +487,91 @@ namespace SmartPeak
     }
   }
 
+	void PopulationTrainer::evalModels(
+		std::vector<Model>& models,
+		ModelTrainer& model_trainer,
+		ModelLogger& model_logger,
+		const Eigen::Tensor<float, 4>& input,
+		const Eigen::Tensor<float, 3>& time_steps,
+		const std::vector<std::string>& input_nodes,
+		int n_threads)
+	{
+		// std::vector<std::string> broken_model_names;
+		std::vector<std::future<bool>> task_results;
+		int thread_cnt = 0;
+
+		// train the models
+		for (int i = 0; i < models.size(); ++i)
+		{
+			std::packaged_task<bool // encapsulate in a packaged_task
+				(Model*,
+					ModelTrainer*,
+					ModelLogger*,
+					Eigen::Tensor<float, 4>,
+					Eigen::Tensor<float, 3>,
+					std::vector<std::string>
+					)> task(PopulationTrainer::evalModel_);
+
+			// launch the thread
+			task_results.push_back(task.get_future());
+			std::thread task_thread(std::move(task),
+				&models[i], &model_trainer, &model_logger,
+				std::ref(input), std::ref(time_steps),
+				std::ref(input_nodes));
+			task_thread.detach();
+
+			// retreive the results
+			if (thread_cnt == n_threads - 1 || i == models.size() - 1)
+			{
+				for (auto& task_result : task_results)
+				{
+					if (task_result.valid())
+					{
+						try
+						{
+							bool status = task_result.get();
+						}
+						catch (std::exception& e)
+						{
+							printf("Exception: %s", e.what());
+						}
+					}
+				}
+				task_results.clear();
+				thread_cnt = 0;
+			}
+			else
+			{
+				++thread_cnt;
+			}
+		}
+	}
+
+	bool PopulationTrainer::evalModel_(
+		Model* model,
+		ModelTrainer* model_trainer,
+		ModelLogger* model_logger,
+		const Eigen::Tensor<float, 4>& input,
+		const Eigen::Tensor<float, 3>& time_steps,
+		const std::vector<std::string>& input_nodes)
+	{
+		std::lock_guard<std::mutex> lock(evalModel_mutex);
+
+		try
+		{
+			model_trainer->evaluateModel(
+				*model, input, time_steps,
+				input_nodes, *model_logger);
+			return true;
+		}
+		catch (std::exception& e)
+		{
+			printf("The model %s is broken.\n", model->getName().data());
+			printf("Error: %s.\n", e.what());
+			return false;
+		}
+	}
+
 	int PopulationTrainer::getNextID()
 	{
 		return ++unique_id_;
@@ -574,6 +648,30 @@ namespace SmartPeak
 			}
 		}
 		return models_validation_errors_per_generation;
+	}
+
+	void PopulationTrainer::evaluateModels(
+		std::vector<Model>& models,
+		ModelTrainer & model_trainer,
+		ModelReplicator & model_replicator,
+		DataSimulator& data_simulator,
+		ModelLogger& model_logger,
+		const std::vector<std::string>& input_nodes,
+		int n_threads)
+	{
+		// generate the input/output data for evaluation		
+		std::cout << "Generating the input/output data for evaluation..." << std::endl;
+		Eigen::Tensor<float, 4> input_data_evaluation(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)input_nodes.size(), model_trainer.getNEpochsEvaluation());
+		Eigen::Tensor<float, 3> time_steps_evaluation(model_trainer.getBatchSize(), model_trainer.getMemorySize(), model_trainer.getNEpochsEvaluation());
+		data_simulator.simulateEvaluationData(input_data_evaluation, time_steps_evaluation);
+
+		// Population initial conditions
+		setID(models.size());
+
+		// Evaluate the population
+		std::cout << "Evaluating the model..." << std::endl;
+		evalModels(models, model_trainer, model_logger,
+			input_data_evaluation, time_steps_evaluation, input_nodes, n_threads);
 	}
 
   // float PopulationTrainer::calculateMean(std::vector<float> values)

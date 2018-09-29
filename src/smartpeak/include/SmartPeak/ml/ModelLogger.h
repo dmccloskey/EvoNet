@@ -54,7 +54,8 @@ public:
 		@returns True for a successfull write operation
 		*/
 		bool writeLogs(const Model & model, const int& n_epochs, const std::vector<std::string>& training_metric_names, const std::vector<std::string>& validation_metric_names,
-			const std::vector<float>& training_metrics, const std::vector<float>& validation_metrics, const std::vector<std::string>& output_node_names, const Eigen::Tensor<float, 3>& expected_values);
+			const std::vector<float>& training_metrics, const std::vector<float>& validation_metrics, const std::vector<std::string>& output_node_names, const Eigen::Tensor<float, 3>& expected_values,
+			std::vector<std::string> node_names = {}, std::vector<std::string> weight_names = {}, std::vector<std::string> module_names = {});
 
 		/**
 		@brief Log epoch iteration number vs. time
@@ -98,7 +99,7 @@ public:
 
 		@returns True for a successfull write operation
 		*/
-		bool logWeightsPerEpoch(const Model& model, const int& n_epoch);
+		bool logWeightsPerEpoch(const Model& model, const int& n_epoch, std::vector<std::string> weight_names = {});
 
 		/**
 		@brief Model node errors for each time step per epoch
@@ -108,7 +109,7 @@ public:
 
 		@returns True for a successfull write operation
 		*/
-		bool logNodeErrorsPerEpoch(const Model& model, const int& n_epoch);
+		bool logNodeErrorsPerEpoch(const Model& model, const int& n_epoch, std::vector<std::string> node_names = {});
 
 		/**
 		@brief The mean and variance of each module output and error for each time step for each mini batch per epoch
@@ -118,7 +119,7 @@ public:
 
 		@returns True for a successfull write operation
 		*/
-		bool logModuleMeanAndVariancePerEpoch(const Model& model, const int& n_epoch);
+		bool logModuleMeanAndVariancePerEpoch(const Model& model, const int& n_epoch, std::vector<std::string> module_names = {});
 
 		/**
 		@brief Model node outputs for each time step per epoch
@@ -128,7 +129,7 @@ public:
 
 		@returns True for a successfull write operation
 		*/
-		bool logNodeOutputsPerEpoch(const Model& model, const int& n_epoch);
+		bool logNodeOutputsPerEpoch(const Model& model, const int& n_epoch, std::vector<std::string> node_names = {});
 
 		/**
 		@brief Model node derivatives for each time step per epoch
@@ -138,7 +139,7 @@ public:
 
 		@returns True for a successfull write operation
 		*/
-		bool logNodeDerivativesPerEpoch(const Model& model, const int& n_epoch);
+		bool logNodeDerivativesPerEpoch(const Model& model, const int& n_epoch, std::vector<std::string> node_names = {});
 
 	private:
 		bool log_time_epoch_ = false; ///< log ...

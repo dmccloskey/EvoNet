@@ -29,6 +29,11 @@ namespace SmartPeak
 		n_epochs_validation_ = n_epochs;
 	}
 
+	void ModelTrainer::setNEpochsEvaluation(const int & n_epochs)
+	{
+		n_epochs_evaluation_ = n_epochs;
+	}
+
 	void ModelTrainer::setNThreads(const int & n_threads)
 	{
 		n_threads_ = n_threads;
@@ -39,10 +44,11 @@ namespace SmartPeak
 		verbosity_level_ = verbosity_level;
 	}
 
-	void ModelTrainer::setLogging(const bool& log_training, const bool& log_validation)
+	void ModelTrainer::setLogging(bool log_training, bool log_validation, bool log_evaluation)
 	{
 		log_training_ = log_training;
 		log_validation_ = log_validation;
+		log_evaluation_ = log_evaluation;
 	}
 
 	void ModelTrainer::setLossFunctions(const std::vector<std::shared_ptr<LossFunctionOp<float>>>& loss_functions)
@@ -78,6 +84,11 @@ namespace SmartPeak
 	int ModelTrainer::getNEpochsValidation() const
 	{
 		return n_epochs_validation_;
+	}
+
+	int ModelTrainer::getNEpochsEvaluation() const
+	{
+		return n_epochs_evaluation_;
 	}
 
 	int ModelTrainer::getNThreads() const
@@ -391,7 +402,8 @@ namespace SmartPeak
 		return model_error;
 	}
 
-	std::vector<std::vector<Eigen::Tensor<float, 2>>> ModelTrainer::evaluateModel(Model & model, const Eigen::Tensor<float, 4>& input, const Eigen::Tensor<float, 3>& time_steps, const std::vector<std::string>& input_nodes)
+	std::vector<std::vector<Eigen::Tensor<float, 2>>> ModelTrainer::evaluateModel(Model & model, const Eigen::Tensor<float, 4>& input, const Eigen::Tensor<float, 3>& time_steps, const std::vector<std::string>& input_nodes,
+		ModelLogger& model_logger)
 	{
 		std::vector<std::vector<Eigen::Tensor<float, 2>>> model_output;
 
@@ -424,8 +436,19 @@ namespace SmartPeak
 		model.findCycles();
 		model.initWeightsDropProbability(false);
 
-		for (int iter = 0; iter < getNEpochsValidation(); ++iter) // use n_epochs here
+		// Initialize the logger
+		if (log_training_)
+			model_logger.initLogs(model);
+
+		for (int iter = 0; iter < getNEpochsEvaluation(); ++iter) // use n_epochs here
 		{
+			// re-initialize only after the first epoch
+			if (iter > 0) {
+				// reinitialize the model
+				model.reInitializeNodeStatuses();
+				model.initNodes(getBatchSize(), getMemorySize());
+			}
+
 			// forward propogate
 			if (iter == 0)
 				model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), true, true, getNThreads());
@@ -440,10 +463,10 @@ namespace SmartPeak
 				}
 			}
 
-			// reinitialize the model
-			model.reInitializeNodeStatuses();
-			model.initNodes(getBatchSize(), getMemorySize());
-			model.initError(getBatchSize(), getMemorySize());
+			// log epoch
+			if (log_validation_) {
+				model_logger.writeLogs(model, iter, {}, {}, {}, {}, output_nodes, Eigen::Tensor<float, 3>(), output_nodes, {}, {});
+			}
 		}
 		model.clearCache();
 		return model_output;

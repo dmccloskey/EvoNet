@@ -15,11 +15,11 @@ namespace SmartPeak
   /**
     @brief PopulationTrainerFile
   */
-  class PopulationTrainerFile
-  {
-public:
-    PopulationTrainerFile(); ///< Default constructor
-    ~PopulationTrainerFile(); ///< Default destructor
+	class PopulationTrainerFile
+	{
+	public:
+		PopulationTrainerFile(); ///< Default constructor
+		~PopulationTrainerFile(); ///< Default destructor
 
 		/**
 		@brief remove characters that cannot be included in a filename
