@@ -52,7 +52,9 @@ namespace SmartPeak
       else std::cout<<"WeightInitOp "<<weight_init_op_str<<" for weight_name "<<weight_name<<" was not recognized."<<std::endl;
 
       // parse the solver_params_str
-      std::map<std::string, float> solver_params = parseParameters(solver_params_str);
+			std::map<std::string, float> solver_params;
+			if (!solver_params_str.empty())
+				solver_params = parseParameters(solver_params_str);
 
       // parse the solver_op
       std::shared_ptr<SolverOp> solver;
