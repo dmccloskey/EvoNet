@@ -1,8 +1,6 @@
 /**TODO:  Add copyright*/
 
 #include <SmartPeak/ml/ModelTrainer.h>
-#include <SmartPeak/io/csv.h>
-
 
 namespace SmartPeak
 {
@@ -408,11 +406,11 @@ namespace SmartPeak
 		std::vector<std::vector<Eigen::Tensor<float, 2>>> model_output;
 
 		// Check input data
-		if (!checkInputData(getNEpochsValidation(), input, getBatchSize(), getMemorySize(), input_nodes))
+		if (!checkInputData(getNEpochsEvaluation(), input, getBatchSize(), getMemorySize(), input_nodes))
 		{
 			return model_output;
 		}
-		if (!checkTimeSteps(getNEpochsValidation(), time_steps, getBatchSize(), getMemorySize()))
+		if (!checkTimeSteps(getNEpochsEvaluation(), time_steps, getBatchSize(), getMemorySize()))
 		{
 			return model_output;
 		}
@@ -437,7 +435,7 @@ namespace SmartPeak
 		model.initWeightsDropProbability(false);
 
 		// Initialize the logger
-		if (log_training_)
+		if (log_evaluation_)
 			model_logger.initLogs(model);
 
 		for (int iter = 0; iter < getNEpochsEvaluation(); ++iter) // use n_epochs here
@@ -464,7 +462,7 @@ namespace SmartPeak
 			}
 
 			// log epoch
-			if (log_validation_) {
+			if (log_evaluation_) {
 				model_logger.writeLogs(model, iter, {}, {}, {}, {}, output_nodes, Eigen::Tensor<float, 3>(), output_nodes, {}, {});
 			}
 		}

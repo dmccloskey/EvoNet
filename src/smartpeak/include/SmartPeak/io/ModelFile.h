@@ -22,14 +22,35 @@ public:
     ~ModelFile(); ///< Default destructor
  
 		/**
-			@brief Load nodes, links, and weights from file and create a Model
+			@brief store Model from file
 
-			@param filename The name of the nodes file
-			@param nodes The nodes to load data into
+			@param filename The name of the model file
+			@param model The model to store
 
 			@returns Status True on success, False if not
 		*/
-		bool loadModelBinary(const std::string& filename_nodes, const std::string& filename_links, const std::string& filename_weights, Model& model);
+		bool storeModelBinary(const std::string& filename, const Model& model);
+ 
+		/**
+			@brief load Model from file
+
+			@param filename The name of the model file
+			@param model The model to load data into
+
+			@returns Status True on success, False if not
+		*/
+		bool loadModelBinary(const std::string& filename, Model& model);
+
+		/**
+			@brief Load nodes, links, and weights from file and create a Model
+
+			@param filename_nodes The name of the node file
+			@param filename_links The name of the link file
+			@param filename_weights The name of the weight file
+			@param model The model to load data into
+
+			@returns Status True on success, False if not
+		*/
 		bool loadModelCsv(const std::string& filename_nodes, const std::string& filename_links, const std::string& filename_weights, Model& model);
 
 		/**

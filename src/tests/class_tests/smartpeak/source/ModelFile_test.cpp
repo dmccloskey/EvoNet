@@ -151,4 +151,24 @@ BOOST_AUTO_TEST_CASE(loadModelCsv)
 	BOOST_CHECK(model_test == model1);
 }
 
+BOOST_AUTO_TEST_CASE(loadModelBinary)
+{
+	ModelFile data;
+	Model model_test;
+	model_test.setId(1);
+	model_test.setName("1");
+
+	std::string filename = "ModelFileTest.binary";
+
+	data.storeModelBinary(filename, model1);
+
+	data.loadModelBinary(filename, model_test);
+	BOOST_CHECK_EQUAL(model_test.getId(), model1.getId());
+	BOOST_CHECK_EQUAL(model_test.getName(), model1.getName());
+	BOOST_CHECK(model_test.getNodes() == model1.getNodes());
+	BOOST_CHECK(model_test.getLinks() == model1.getLinks());
+	BOOST_CHECK(model_test.getWeights() == model1.getWeights());
+	BOOST_CHECK(model_test == model1);
+}
+
 BOOST_AUTO_TEST_SUITE_END()

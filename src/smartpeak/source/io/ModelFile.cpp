@@ -5,11 +5,42 @@
 #include <SmartPeak/io/WeightFile.h>
 #include <SmartPeak/io/LinkFile.h>
 
+//#include <filesystem> // C++ 17
+
 namespace SmartPeak
 {
 
   ModelFile::ModelFile(){}
   ModelFile::~ModelFile(){}
+
+	bool ModelFile::storeModelBinary(const std::string & filename, const Model & model)
+	{
+		auto myfile = std::fstream(filename, std::ios::out | std::ios::binary);
+		myfile.write((char*)&model, sizeof(model));
+		myfile.close();
+		return true;
+	}
+
+	bool ModelFile::loadModelBinary(const std::string & filename, Model & model)
+	{
+		// C++17
+		//std::uintmax_t file_size = std::filesystem::file_size(filename); 
+		//auto myfile = std::fstream(filename, std::ios::in | std::ios::binary);
+		//myfile.read((char*)&model, file_size);
+		//myfile.close();
+
+		// using the C stat header
+		//struct stat results;
+		//int err = stat(filename.data(), &results);
+		//std::uintmax_t file_size = results.st_size;
+
+		auto myfile = std::fstream(filename, std::ios::in | std::ios::binary | std::ios::ate);
+		std::uintmax_t file_size = myfile.tellg();
+		myfile.seekg(0, std::ios::beg);
+		myfile.read((char*)&model, file_size);
+		myfile.close();
+		return true;
+	}
 
 	bool ModelFile::loadModelCsv(const std::string & filename_nodes, const std::string & filename_links, const std::string & filename_weights, Model& model)
 	{

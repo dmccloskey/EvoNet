@@ -306,7 +306,7 @@ public:
 		for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
 			for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
 				for (int epochs_iter = 0; epochs_iter < n_epochs; ++epochs_iter) {
-					for (int nodes_iter = 0; nodes_iter < n_input_pixels + n_encodings; ++nodes_iter) {
+					for (int nodes_iter = 0; nodes_iter < n_input_pixels; ++nodes_iter) {
 						input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
 						//input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[0], nodes_iter);  // test on only 1 sample
 					}
@@ -530,7 +530,7 @@ void main_AAELatentZEvaluate() {
 	model_trainer.setNEpochsEvaluation(2);
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setNThreads(n_hard_threads);
-	model_trainer.setLogging(false, false);
+	model_trainer.setLogging(false, false, true);
 	model_trainer.setLossFunctions({
 		std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()),
 		std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
