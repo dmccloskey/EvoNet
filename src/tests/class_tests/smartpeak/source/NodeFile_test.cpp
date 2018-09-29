@@ -53,6 +53,7 @@ BOOST_AUTO_TEST_CASE(storeAndLoadCsv)
   for (int i=0; i<3; ++i)
   {
     BOOST_CHECK_EQUAL(nodes_test[i].getName(), "Node_" + std::to_string(i));
+		BOOST_CHECK_EQUAL(nodes_test[i].getModuleName(), "");
     BOOST_CHECK(nodes_test[i].getType() == NodeType::hidden);
     BOOST_CHECK(nodes_test[i].getStatus() == NodeStatus::initialized);
 		BOOST_CHECK_EQUAL(nodes_test[i].getActivation()->getName(), "ReLUOp");
@@ -60,6 +61,7 @@ BOOST_AUTO_TEST_CASE(storeAndLoadCsv)
 		BOOST_CHECK_EQUAL(nodes_test[i].getIntegration()->getName(), "SumOp");
 		BOOST_CHECK_EQUAL(nodes_test[i].getIntegrationError()->getName(), "SumErrorOp");
 		BOOST_CHECK_EQUAL(nodes_test[i].getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
+		BOOST_CHECK(nodes_test[i] == nodes[i]);
   }
 }
 

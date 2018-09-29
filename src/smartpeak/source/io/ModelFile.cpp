@@ -1,12 +1,40 @@
 /**TODO:  Add copyright*/
 
 #include <SmartPeak/io/ModelFile.h>
+#include <SmartPeak/io/NodeFile.h>
+#include <SmartPeak/io/WeightFile.h>
+#include <SmartPeak/io/LinkFile.h>
 
 namespace SmartPeak
 {
 
   ModelFile::ModelFile(){}
   ModelFile::~ModelFile(){}
+
+	bool ModelFile::loadModelCsv(const std::string & filename_nodes, const std::string & filename_links, const std::string & filename_weights, Model& model)
+	{
+		// load the nodes
+		NodeFile node_file;
+		std::vector<Node> nodes;
+		node_file.loadNodesCsv(filename_nodes, nodes);
+
+		// load the links
+		LinkFile link_file;
+		std::vector<Link> links;
+		link_file.loadLinksCsv(filename_links, links);
+
+		// load the weights
+		WeightFile weight_file;
+		std::vector<Weight> weights;
+		weight_file.loadWeightsCsv(filename_weights, weights);
+
+		// make the model
+		model.addNodes(nodes);
+		model.addLinks(links);
+		model.addWeights(weights);
+
+		return true;
+	}
 
 	bool ModelFile::storeModelDot(const std::string& filename, const Model& model)
 	{

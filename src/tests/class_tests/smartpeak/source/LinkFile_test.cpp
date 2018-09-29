@@ -34,11 +34,12 @@ BOOST_AUTO_TEST_CASE(storeAndLoadCsv)
   std::vector<Link> links;
   for (int i=0; i<3; ++i)
   {
-    const Link link(
+    Link link(
       "Link_" + std::to_string(i), 
       "Source_" + std::to_string(i),
       "Sink_" + std::to_string(i),
       "Weight_" + std::to_string(i));
+		link.setModuleName(std::to_string(i));
     links.push_back(link);
   }
   data.storeLinksCsv(filename, links);
@@ -52,6 +53,7 @@ BOOST_AUTO_TEST_CASE(storeAndLoadCsv)
     BOOST_CHECK_EQUAL(links_test[i].getSourceNodeName(), "Source_" + std::to_string(i));
     BOOST_CHECK_EQUAL(links_test[i].getSinkNodeName(), "Sink_" + std::to_string(i));
     BOOST_CHECK_EQUAL(links_test[i].getWeightName(), "Weight_" + std::to_string(i));
+		BOOST_CHECK_EQUAL(links_test[i].getModuleName(), std::to_string(i));
   }
 }
 

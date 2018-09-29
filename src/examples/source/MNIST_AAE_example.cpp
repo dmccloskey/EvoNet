@@ -543,6 +543,9 @@ void main_AAELatentZEvaluate() {
 
 	// read in the trained model
 	std::cout << "Reading in the model..." << std::endl;
+	const std::string nodes_filename = "";
+	const std::string links_filename = "";
+	const std::string weights_filename = "";
 	Model model; // TODO
 	std::vector<Model> population = { model };
 

@@ -16,14 +16,15 @@ namespace SmartPeak
   {
     links.clear();
 
-    io::CSVReader<4> links_in(filename);
+    io::CSVReader<5> links_in(filename);
     links_in.read_header(io::ignore_extra_column, 
-      "link_name", "source_node_name", "sink_node_name", "weight_name");
-    std::string link_name, source_node_name, sink_node_name, weight_name;
+      "link_name", "source_node_name", "sink_node_name", "weight_name", "module_name");
+    std::string link_name, source_node_name, sink_node_name, weight_name, module_name = "";
 
-    while(links_in.read_row(link_name, source_node_name, sink_node_name, weight_name))
+    while(links_in.read_row(link_name, source_node_name, sink_node_name, weight_name, module_name))
     {
       Link link(link_name, source_node_name, sink_node_name, weight_name);
+			link.setModuleName(module_name);
       links.push_back(link);
     }
 	return true;
@@ -36,7 +37,7 @@ namespace SmartPeak
     CSVWriter csvwriter(filename);
 
     // write the headers to the first line
-    const std::vector<std::string> headers = {"link_name", "source_node_name", "sink_node_name", "weight_name"};
+    const std::vector<std::string> headers = {"link_name", "source_node_name", "sink_node_name", "weight_name", "module_name" };
     csvwriter.writeDataInRow(headers.begin(), headers.end());
 
     for (const Link& link: links)
@@ -46,6 +47,7 @@ namespace SmartPeak
       row.push_back(link.getSourceNodeName());
       row.push_back(link.getSinkNodeName());
       row.push_back(link.getWeightName());
+			row.push_back(link.getModuleName());
 
       // write to file
       csvwriter.writeDataInRow(row.begin(), row.end());

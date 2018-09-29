@@ -20,6 +20,17 @@ namespace SmartPeak
 public:
     ModelFile(); ///< Default constructor
     ~ModelFile(); ///< Default destructor
+ 
+		/**
+			@brief Load nodes, links, and weights from file and create a Model
+
+			@param filename The name of the nodes file
+			@param nodes The nodes to load data into
+
+			@returns Status True on success, False if not
+		*/
+		bool loadModelBinary(const std::string& filename_nodes, const std::string& filename_links, const std::string& filename_weights, Model& model);
+		bool loadModelCsv(const std::string& filename_nodes, const std::string& filename_links, const std::string& filename_weights, Model& model);
 
 		/**
 		@brief save network model to file in dot format for visualization
