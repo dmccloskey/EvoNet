@@ -6,6 +6,7 @@
 #include <SmartPeak/ml/ModelBuilder.h>
 #include <SmartPeak/ml/Model.h>
 #include <SmartPeak/io/PopulationTrainerFile.h>
+#include <SmartPeak/io/ModelFile.h>
 
 #include <SmartPeak/simulator/MNISTSimulator.h>
 
@@ -543,17 +544,21 @@ void main_AAELatentZEvaluate() {
 
 	// read in the trained model
 	std::cout << "Reading in the model..." << std::endl;
-	const std::string nodes_filename = "";
-	const std::string links_filename = "";
-	const std::string weights_filename = "";
-	Model model; // TODO
+	const std::string data_dir = "C:/Users/domccl/GitHub/smartPeak_cpp/build_win/bin/Debug/";
+	const std::string nodes_filename = data_dir + "0_MNIST_Nodes.csv";
+	const std::string links_filename = data_dir + "0_MNIST_Links.csv";
+	const std::string weights_filename = data_dir + "0_MNIST_Weights.csv";
+	Model model;
+	model.setId(1);
+	model.setName("AAELatentZ");
+
+	ModelFile model_file;
+	model_file.loadModelCsv(nodes_filename, links_filename, weights_filename, model);
+	
 	std::vector<Model> population = { model };
 
 	// evaluate the trained model
 	std::cout << "Evaluating the model..." << std::endl;
-	Eigen::Tensor<float, 4> input_data; // TODO
-	Eigen::Tensor<float, 3> time_steps; // TODO
-	data_simulator.simulateEvaluationData(input_data, time_steps);
 	population_trainer.evaluateModels(
 		population, model_trainer, model_replicator, data_simulator, model_logger, input_nodes, 1);
 }
@@ -561,7 +566,8 @@ void main_AAELatentZEvaluate() {
 int main(int argc, char** argv)
 {
 	// run the application
-	main_AAELatentZTrain();
+	//main_AAELatentZTrain();
+	main_AAELatentZEvaluate();
 
   return 0;
 }

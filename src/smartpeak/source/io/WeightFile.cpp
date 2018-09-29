@@ -101,6 +101,11 @@ namespace SmartPeak
           ptr->setGradientNoiseGamma(solver_params.at("gradient_noise_gamma"));
         solver.reset(ptr);
       }
+			else if (solver_op_str == "DummySolverOp")
+			{
+				DummySolverOp* ptr = new DummySolverOp();
+				solver.reset(ptr);
+			}
       else std::cout<<"SolverOp "<<solver_op_str<<" for weight_name "<<weight_name<<" was not recognized."<<std::endl;
 
       Weight weight(weight_name, weight_init, solver);
