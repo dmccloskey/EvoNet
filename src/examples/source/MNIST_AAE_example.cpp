@@ -188,15 +188,15 @@ public:
 				for (int epochs_iter = 0; epochs_iter < n_epochs; ++epochs_iter) {
 
 					// Mixed Gaussian sampler
-					//Eigen::Tensor<float, 1> mixed_gaussian = GaussianMixture<float>(n_encodings, training_labels.size(), sample_indices[epochs_iter*batch_size + batch_iter]);
-					Eigen::Tensor<float, 1> mixed_gaussian = GaussianMixture<float>(n_encodings, training_labels.size(), sample_indices[0]); // test on only 1 sample
+					Eigen::Tensor<float, 1> mixed_gaussian = GaussianMixture<float>(n_encodings, training_labels.size(), sample_indices[epochs_iter*batch_size + batch_iter]);
+					//Eigen::Tensor<float, 1> mixed_gaussian = GaussianMixture<float>(n_encodings, training_labels.size(), sample_indices[0]); // test on only 1 sample
 
 					for (int nodes_iter = 0; nodes_iter < n_input_pixels + n_encodings; ++nodes_iter) {
 						if (nodes_iter < n_input_pixels) {
-							//input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
-							//output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
-							output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[0], nodes_iter); // test on only 1 sample
-							input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[0], nodes_iter);  // test on only 1 sample
+							input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
+							output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
+							//output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[0], nodes_iter); // test on only 1 sample
+							//input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[0], nodes_iter);  // test on only 1 sample
 						}
 						else {
 							input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = d(gen) + mixed_gaussian(nodes_iter - n_input_pixels); // sampler distribution + noise
@@ -252,8 +252,8 @@ public:
 				for (int epochs_iter = 0; epochs_iter < n_epochs; ++epochs_iter) {
 
 					// Mixed Gaussian sampler
-					//Eigen::Tensor<float, 1> mixed_gaussian = GaussianMixture<float>(n_encodings, validation_labels.size(), sample_indices[epochs_iter*batch_size + batch_iter]);
-					Eigen::Tensor<float, 1> mixed_gaussian = GaussianMixture<float>(n_encodings, validation_labels.size(), sample_indices[0]); // test on only 1 sample
+					Eigen::Tensor<float, 1> mixed_gaussian = GaussianMixture<float>(n_encodings, validation_labels.size(), sample_indices[epochs_iter*batch_size + batch_iter]);
+					//Eigen::Tensor<float, 1> mixed_gaussian = GaussianMixture<float>(n_encodings, validation_labels.size(), sample_indices[0]); // test on only 1 sample
 
 					for (int nodes_iter = 0; nodes_iter < n_input_pixels + n_encodings; ++nodes_iter) {
 						if (nodes_iter < n_input_pixels) {
@@ -385,14 +385,14 @@ void main_AAELatentZTrain() {
 	population_trainer.setNReplicatesPerModel(1);
 
 	// define the model logger
-	ModelLogger model_logger(true, true, true, false, true, false, true, false);
+	ModelLogger model_logger(true, true, false, false, true, false, false, false);
 
 	// define the data simulator
 	const std::size_t input_size = 784;
 	const std::size_t encoding_size = 2;
-	const std::size_t hidden_size = 25;
-	const std::size_t training_data_size = 10000; //60000;
-	const std::size_t validation_data_size = 100; //10000;
+	const std::size_t hidden_size = 500;
+	const std::size_t training_data_size = 60000; //60000;
+	const std::size_t validation_data_size = 1000; //10000;
 	DataSimulatorExt data_simulator;
 
 	// read in the training data
@@ -438,7 +438,7 @@ void main_AAELatentZTrain() {
 	model_trainer.setBatchSize(1);
 	model_trainer.setMemorySize(1);
 	model_trainer.setNEpochsTraining(5000);
-	model_trainer.setNEpochsValidation(1);
+	model_trainer.setNEpochsValidation(50);
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setNThreads(n_hard_threads);
 	model_trainer.setLogging(true, false);
@@ -566,8 +566,8 @@ void main_AAELatentZEvaluate() {
 int main(int argc, char** argv)
 {
 	// run the application
-	//main_AAELatentZTrain();
-	main_AAELatentZEvaluate();
+	main_AAELatentZTrain();
+	//main_AAELatentZEvaluate();
 
   return 0;
 }
