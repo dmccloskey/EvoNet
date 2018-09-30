@@ -43,10 +43,10 @@ public:
 	Alireza Makhzani, Jonathon Shlens, Navdeep Jaitly, Ian Goodfellow, Brendan Frey. "Adversarial Autoencoders" 2015.  arXiv:1511.05644
 	https://github.com/musyoku/adversarial-autoencoder/blob/master/run/semi-supervised/regularize_z/model.py
 	*/
-	Model makeAAELatentZ(const int& n_inputs, int n_hidden_0 = 50, int n_encodings = 2) {
+	Model makeAAELabelStyle(const int& n_inputs, int n_hidden_0 = 50, int n_encodings = 2, int n_labels = 10) {
 		Model model;
 		model.setId(0);
-		model.setName("AAELatentZ");
+		model.setName("AAELabelStyle");
 		model.setLossFunction(std::shared_ptr<LossFunctionOp<float>>(new BCEOp<float>()));
 		model.setLossFunctionGrad(std::shared_ptr<LossFunctionGradOp<float>>(new BCEGradOp<float>()));
 
@@ -73,13 +73,21 @@ public:
 			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
 			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names.size() + node_names.size()) / 2, 1)),
 			std::shared_ptr<SolverOp>(new AdamOp(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
-		node_names_z = model_builder.addFullyConnected(model, "LatentZ", "LatentZ", node_names, n_encodings,
+		node_names_z = model_builder.addFullyConnected(model, "Style", "Style", node_names, n_encodings,
 			std::shared_ptr<ActivationOp<float>>(new ELUOp<float>(1.0)),
 			std::shared_ptr<ActivationOp<float>>(new ELUGradOp<float>(1.0)),
 			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
 			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
 			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
 			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names.size() + n_encodings)/2, 1)),
+			std::shared_ptr<SolverOp>(new AdamOp(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+		node_names_labels = model_builder.addFullyConnected(model, "Labels", "LatentZ", node_names, Labels,
+			std::shared_ptr<ActivationOp<float>>(new SigmoidOp<float>(1.0)),
+			std::shared_ptr<ActivationOp<float>>(new SigmoidGradOp<float>(1.0)),
+			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
+			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
+			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
+			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names.size() + n_encodings) / 2, 1)),
 			std::shared_ptr<SolverOp>(new AdamOp(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 
 		// Add the Discriminator Layer
@@ -103,8 +111,8 @@ public:
 			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names.size() + n_hidden_0) / 2, 1)),
 			std::shared_ptr<SolverOp>(new AdamOp(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 		node_names = model_builder.addFullyConnected(model, "DE-Output", "DE-Output", node_names, n_inputs,
-			std::shared_ptr<ActivationOp<float>>(new ELUOp<float>()),
-			std::shared_ptr<ActivationOp<float>>(new ELUGradOp<float>()),
+			std::shared_ptr<ActivationOp<float>>(new SigmoidOp<float>()),
+			std::shared_ptr<ActivationOp<float>>(new SigmoidGradOp<float>()),
 			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
 			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
 			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
@@ -378,7 +386,7 @@ public:
 	}
 };
 
-void main_AAELatentZTrain() {
+void main_AAELabelStyleTrain() {
 
 	const int n_hard_threads = std::thread::hardware_concurrency();
 
@@ -460,7 +468,7 @@ void main_AAELatentZTrain() {
 
 	// define the initial population [BUG FREE]
 	std::cout << "Initializing the population..." << std::endl;
-	std::vector<Model> population = { model_trainer.makeAAELatentZ(input_size, hidden_size, encoding_size) };
+	std::vector<Model> population = { model_trainer.makeAAELabelStyle(input_size, hidden_size, encoding_size) };
 
 	// Evolve the population
 	std::vector<std::vector<std::pair<int, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
@@ -471,7 +479,7 @@ void main_AAELatentZTrain() {
 	population_trainer_file.storeModelValidations("MNISTErrors.csv", models_validation_errors_per_generation.back());
 }
 
-void main_AAELatentZEvaluate() {
+void main_AAELabelStyleEvaluate() {
 	const int n_hard_threads = std::thread::hardware_concurrency();
 
 	// define the populatin trainer
@@ -555,7 +563,7 @@ void main_AAELatentZEvaluate() {
 	const std::string weights_filename = data_dir + "0_MNIST_Weights.csv";
 	Model model;
 	model.setId(1);
-	model.setName("AAELatentZ");
+	model.setName("AAELabelStyle");
 
 	ModelFile model_file;
 	model_file.loadModelCsv(nodes_filename, links_filename, weights_filename, model);
@@ -571,8 +579,8 @@ void main_AAELatentZEvaluate() {
 int main(int argc, char** argv)
 {
 	// run the application
-	main_AAELatentZTrain();
-	//main_AAELatentZEvaluate();
+	main_AAELabelStyleTrain();
+	//main_AAELabelStyleEvaluate();
 
   return 0;
 }
