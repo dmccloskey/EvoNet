@@ -193,16 +193,13 @@ public:
 		// Gaussian noise
 		std::random_device rd{};
 		std::mt19937 gen{ rd() };
-		std::normal_distribution<> d{ 0.0f, 0.3f };
+		std::normal_distribution<> d{ 0.0f, 1.0f };
 
 		// Reformat the MNIST image data for training
 		for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
 			for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
 				for (int epochs_iter = 0; epochs_iter < n_epochs; ++epochs_iter) {
 
-					// Mixed Gaussian sampler
-					Eigen::Tensor<float, 1> mixed_gaussian = GaussianMixture<float>(n_encodings, training_labels.size(), sample_indices[epochs_iter*batch_size + batch_iter]);
-					//Eigen::Tensor<float, 1> mixed_gaussian = GaussianMixture<float>(n_encodings, training_labels.size(), sample_indices[0]); // test on only 1 sample
 					Eigen::Tensor<float, 1> one_hot_vec = OneHotEncoder<float, float>(float(sample_indices[epochs_iter*batch_size + batch_iter]), mnist_labels);
 					//Eigen::Tensor<float, 1> one_hot_vec = OneHotEncoder<std::string, float>(sample_indices[0], mnist_labels); // test on only 1 sample
 					Eigen::Tensor<float, 1> one_hot_vec_smoothed = one_hot_vec.unaryExpr(LabelSmoother<float>(0.01, 0.01));
@@ -215,7 +212,7 @@ public:
 							//input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[0], nodes_iter);  // test on only 1 sample
 						}
 						else if (nodes_iter >= n_input_pixels && nodes_iter < n_input_pixels + n_encodings) {
-							input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = d(gen) + mixed_gaussian(nodes_iter - n_input_pixels); // sampler distribution + noise
+							input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = d(gen); // sampler distribution + noise
 							output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 0; // expected value if distributions match
 						}
 						else {
@@ -265,16 +262,13 @@ public:
 		// Gaussian noise
 		std::random_device rd{};
 		std::mt19937 gen{ rd() };
-		std::normal_distribution<> d{ 0.0f, 0.3f };
+		std::normal_distribution<> d{ 0.0f, 1.0f };
 
 		// Reformat the MNIST image data for training
 		for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
 			for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
 				for (int epochs_iter = 0; epochs_iter < n_epochs; ++epochs_iter) {
 
-					// Mixed Gaussian sampler
-					Eigen::Tensor<float, 1> mixed_gaussian = GaussianMixture<float>(n_encodings, validation_labels.size(), sample_indices[epochs_iter*batch_size + batch_iter]);
-					//Eigen::Tensor<float, 1> mixed_gaussian = GaussianMixture<float>(n_encodings, validation_labels.size(), sample_indices[0]); // test on only 1 sample
 					Eigen::Tensor<float, 1> one_hot_vec = OneHotEncoder<float, float>(float(sample_indices[epochs_iter*batch_size + batch_iter]), mnist_labels);
 					//Eigen::Tensor<float, 1> one_hot_vec = OneHotEncoder<std::string, float>(sample_indices[0], mnist_labels); // test on only 1 sample
 					Eigen::Tensor<float, 1> one_hot_vec_smoothed = one_hot_vec.unaryExpr(LabelSmoother<float>(0.01, 0.01));
@@ -287,7 +281,7 @@ public:
 							//input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = validation_data(sample_indices[0], nodes_iter);  // test on only 1 sample
 						}
 						else if (nodes_iter >= n_input_pixels && nodes_iter < n_input_pixels + n_encodings) {
-							input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = d(gen) + mixed_gaussian(nodes_iter - n_input_pixels); // sampler distribution + noise
+							input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = d(gen); // sampler distribution + noise
 							output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 0; // expected value if distributions match
 						}
 						else {
