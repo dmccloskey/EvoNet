@@ -282,7 +282,7 @@ public:
 		const int n_input_pixels = validation_data.dimension(1);
 		const int n_encodings = 2; // not ideal to have this hard coded...
 
-		assert(n_input_nodes == n_input_pixels);
+		assert(n_input_nodes == n_input_pixels + n_encodings);
 
 		// make the start and end sample indices [BUG FREE]
 		mnist_sample_start_training = mnist_sample_end_training;
@@ -306,9 +306,14 @@ public:
 		for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
 			for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
 				for (int epochs_iter = 0; epochs_iter < n_epochs; ++epochs_iter) {
-					for (int nodes_iter = 0; nodes_iter < n_input_pixels; ++nodes_iter) {
-						input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
-						//input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[0], nodes_iter);  // test on only 1 sample
+					for (int nodes_iter = 0; nodes_iter < n_input_pixels + n_encodings; ++nodes_iter) {
+						if (nodes_iter < n_input_pixels) {
+							input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
+							//input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[0], nodes_iter);  // test on only 1 sample
+						}
+						else {
+							input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 0; // sampler distribution + noise
+						}
 					}
 				}
 			}
@@ -396,21 +401,21 @@ void main_AAELatentZTrain() {
 	DataSimulatorExt data_simulator;
 
 	// read in the training data
-	const std::string training_data_filename = "C:/Users/domccl/GitHub/mnist/train-images.idx3-ubyte";
-	const std::string training_labels_filename = "C:/Users/domccl/GitHub/mnist/train-labels.idx1-ubyte";
+	//const std::string training_data_filename = "C:/Users/domccl/GitHub/mnist/train-images.idx3-ubyte";
+	//const std::string training_labels_filename = "C:/Users/domccl/GitHub/mnist/train-labels.idx1-ubyte";
 	//const std::string training_data_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/train-images-idx3-ubyte";
 	//const std::string training_labels_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/train-labels-idx1-ubyte";
-	//const std::string training_data_filename = "/home/user/data/train-images-idx3-ubyte";
-	//const std::string training_labels_filename = "/home/user/data/train-labels-idx1-ubyte";
+	const std::string training_data_filename = "/home/user/data/train-images-idx3-ubyte";
+	const std::string training_labels_filename = "/home/user/data/train-labels-idx1-ubyte";
 	data_simulator.readData(training_data_filename, training_labels_filename, true, training_data_size, input_size);
 
 	// read in the validation data
-	const std::string validation_data_filename = "C:/Users/domccl/GitHub/mnist/t10k-images.idx3-ubyte";
-	const std::string validation_labels_filename = "C:/Users/domccl/GitHub/mnist/t10k-labels.idx1-ubyte";
+	//const std::string validation_data_filename = "C:/Users/domccl/GitHub/mnist/t10k-images.idx3-ubyte";
+	//const std::string validation_labels_filename = "C:/Users/domccl/GitHub/mnist/t10k-labels.idx1-ubyte";
 	//const std::string validation_data_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/t10k-images-idx3-ubyte";
 	//const std::string validation_labels_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/t10k-labels-idx1-ubyte";
-	//const std::string validation_data_filename = "/home/user/data/t10k-images-idx3-ubyte";
-	//const std::string validation_labels_filename = "/home/user/data/t10k-labels-idx1-ubyte";
+	const std::string validation_data_filename = "/home/user/data/t10k-images-idx3-ubyte";
+	const std::string validation_labels_filename = "/home/user/data/t10k-labels-idx1-ubyte";
 	data_simulator.readData(validation_data_filename, validation_labels_filename, false, validation_data_size, input_size);
 	data_simulator.unitScaleData();
 

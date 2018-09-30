@@ -204,7 +204,7 @@ namespace SmartPeak
 			// sample from the mixture
 			std::normal_distribution<> dx{ 0.0f, x_var };
 			std::normal_distribution<> dy{ 0.0f, y_var };
-			std::pair<Ta, Ta> samples = GaussianMixtureSampler(dx(gen), dy(gen), label, n_labels);
+			std::pair<Ta, Ta> samples = GaussianMixtureSampler<Ta>(dx(gen), dy(gen), label, n_labels);
 			gaussian_mixture(i) = samples.first;
 			gaussian_mixture(i + 1) = samples.second;
 
@@ -251,7 +251,7 @@ namespace SmartPeak
 			}
 
 			// sample from the mixture
-			std::pair<Ta, Ta> samples = SwissRollSampler(label, n_labels);
+			std::pair<Ta, Ta> samples = SwissRollSampler<Ta>(label, n_labels);
 			swiss_roll(i) = samples.first;
 			swiss_roll(i + 1) = samples.second;
 
