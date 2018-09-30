@@ -64,6 +64,16 @@ namespace SmartPeak
 		output_nodes_ = output_nodes;
 	}
 
+	void ModelTrainer::setNTBPTTSteps(const int & n_TBPTT)
+	{
+		n_TBPTT_steps_ = n_TBPTT;
+	}
+
+	void ModelTrainer::setNTETTSteps(const int & n_TETT)
+	{
+		n_TETT_steps_ = n_TETT;
+	}
+
   int ModelTrainer::getBatchSize() const
   {
     return batch_size_;
@@ -112,6 +122,16 @@ namespace SmartPeak
 	std::vector<std::vector<std::string>> ModelTrainer::getOutputNodes()
 	{
 		return output_nodes_;
+	}
+
+	int ModelTrainer::getNTBPTTSteps() const
+	{
+		return n_TBPTT_steps_;
+	}
+
+	int ModelTrainer::getNTETTSteps() const
+	{
+		return n_TETT_steps_;
 	}
 
   bool ModelTrainer::checkInputData(const int& n_epochs,
@@ -269,7 +289,10 @@ namespace SmartPeak
 					for (int memory_iter = 0; memory_iter < getMemorySize(); ++memory_iter)
 						for (int node_iter = 0; node_iter < output_nodes_[loss_iter].size(); ++node_iter)
 							expected(batch_iter, memory_iter, node_iter) = expected_tmp(batch_iter, memory_iter, (int)(node_iter + output_node_cnt));
-				model.CETT(expected, output_nodes_[loss_iter], getMemorySize(), getNThreads());
+				if (getNTETTSteps() < 0)
+					model.CETT(expected, output_nodes_[loss_iter], getMemorySize(), getNThreads());
+				else
+					model.CETT(expected, output_nodes_[loss_iter], getNTETTSteps(), getNThreads());
 				output_node_cnt += output_nodes_[loss_iter].size();
 			}
 
@@ -281,14 +304,17 @@ namespace SmartPeak
 			// back propogate
 			if (getVerbosityLevel() >= 2)
 				std::cout << "Back Propogation..." << std::endl;
-			//if (iter == 0)
-			//	model.TBPTT(1, true, true, getNThreads());
-			//else
-			//	model.TBPTT(1, false, true, getNThreads());
-			if (iter == 0)
-				model.TBPTT(getMemorySize(), true, true, getNThreads());
+			if (getNTBPTTSteps() < 0) {
+				if (iter == 0)
+					model.TBPTT(getMemorySize(), true, true, getNThreads());
+				else
+					model.TBPTT(getMemorySize(), false, true, getNThreads());
+			}
 			else
-				model.TBPTT(getMemorySize(), false, true, getNThreads());
+				if (iter == 0)
+					model.TBPTT(getNTBPTTSteps(), true, true, getNThreads());
+				else
+					model.TBPTT(getNTBPTTSteps(), false, true, getNThreads());
 
 			// update the weights
 			if (getVerbosityLevel() >= 2)
@@ -376,7 +402,10 @@ namespace SmartPeak
 					for (int memory_iter = 0; memory_iter < getMemorySize(); ++memory_iter)
 						for (int node_iter = 0; node_iter < output_nodes_[loss_iter].size(); ++node_iter)
 							expected(batch_iter, memory_iter, node_iter) = expected_tmp(batch_iter, memory_iter, (int)(node_iter + output_node_cnt));
-				model.CETT(expected, output_nodes_[loss_iter], getMemorySize(), getNThreads());
+				if (getNTETTSteps() < 0)
+					model.CETT(expected, output_nodes_[loss_iter], getMemorySize(), getNThreads());
+				else
+					model.CETT(expected, output_nodes_[loss_iter], getNTETTSteps(), getNThreads());
 				output_node_cnt += output_nodes_[loss_iter].size();
 			}
 

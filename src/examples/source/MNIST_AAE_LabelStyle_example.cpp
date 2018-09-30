@@ -56,7 +56,7 @@ public:
 		std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", n_inputs);
 
 		// Add the Endoder FC layers
-		std::vector<std::string> node_names, node_names_z, node_names_logvar;	
+		std::vector<std::string> node_names, node_names_z, node_names_labels;	
 		node_names = model_builder.addFullyConnected(model, "EC0", "EC0", node_names_input, n_hidden_0,
 			std::shared_ptr<ActivationOp<float>>(new ELUOp<float>(1.0)),
 			std::shared_ptr<ActivationOp<float>>(new ELUGradOp<float>(1.0)),
@@ -81,17 +81,18 @@ public:
 			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
 			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names.size() + n_encodings)/2, 1)),
 			std::shared_ptr<SolverOp>(new AdamOp(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
-		node_names_labels = model_builder.addFullyConnected(model, "Labels", "LatentZ", node_names, Labels,
-			std::shared_ptr<ActivationOp<float>>(new SigmoidOp<float>(1.0)),
-			std::shared_ptr<ActivationOp<float>>(new SigmoidGradOp<float>(1.0)),
+		node_names_labels = model_builder.addFullyConnected(model, "Labels", "Labels", node_names, n_labels,
+			std::shared_ptr<ActivationOp<float>>(new SigmoidOp<float>()),
+			std::shared_ptr<ActivationOp<float>>(new SigmoidGradOp<float>()),
 			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
 			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
 			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names.size() + n_encodings) / 2, 1)),
+			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names.size() + n_labels) / 2, 1)),
 			std::shared_ptr<SolverOp>(new AdamOp(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 
 		// Add the Discriminator Layer
-		node_names = model_builder.addDiscriminator(model, "DS", "DS", node_names_z);
+		node_names = model_builder.addDiscriminator(model, "DSStyle", "DSStyle", node_names_z);
+		node_names = model_builder.addDiscriminator(model, "DSLabels", "DSLabels", node_names_labels);
 
 		// Add the Decoder FC layers
 		node_names = model_builder.addFullyConnected(model, "DE0", "DE0", node_names_z, n_hidden_0,
@@ -102,6 +103,9 @@ public:
 			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
 			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names_z.size() + n_hidden_0)/2, 1)),
 			std::shared_ptr<SolverOp>(new AdamOp(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+		model_builder.addFullyConnected(model, "DE0", node_names_labels, node_names,
+			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names_labels.size() + node_names.size()) / 2, 1)),
+			std::shared_ptr<SolverOp>(new AdamOp(0.001, 0.9, 0.999, 1e-8)), 0.0f);
 		node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names, n_hidden_0,
 			std::shared_ptr<ActivationOp<float>>(new ELUOp<float>(1.0)),
 			std::shared_ptr<ActivationOp<float>>(new ELUGradOp<float>(1.0)),
@@ -163,9 +167,10 @@ public:
 		const int n_epochs = input_data.dimension(3);
 		const int n_input_pixels = validation_data.dimension(1);
 		const int n_encodings = 2; // not ideal to have this hard coded...
+		const int n_labels = 10;
 
-		assert(n_output_nodes == n_input_pixels + n_encodings);
-		assert(n_input_nodes == n_input_pixels + n_encodings);
+		assert(n_output_nodes == n_input_pixels + n_encodings + n_labels);
+		assert(n_input_nodes == n_input_pixels + n_encodings + n_labels);
 
 		// make the start and end sample indices [BUG FREE]
 		mnist_sample_start_training = mnist_sample_end_training;
@@ -198,16 +203,23 @@ public:
 					// Mixed Gaussian sampler
 					Eigen::Tensor<float, 1> mixed_gaussian = GaussianMixture<float>(n_encodings, training_labels.size(), sample_indices[epochs_iter*batch_size + batch_iter]);
 					//Eigen::Tensor<float, 1> mixed_gaussian = GaussianMixture<float>(n_encodings, training_labels.size(), sample_indices[0]); // test on only 1 sample
+					Eigen::Tensor<float, 1> one_hot_vec = OneHotEncoder<float, float>(float(sample_indices[epochs_iter*batch_size + batch_iter]), mnist_labels);
+					//Eigen::Tensor<float, 1> one_hot_vec = OneHotEncoder<std::string, float>(sample_indices[0], mnist_labels); // test on only 1 sample
+					Eigen::Tensor<float, 1> one_hot_vec_smoothed = one_hot_vec.unaryExpr(LabelSmoother<float>(0.01, 0.01));
 
-					for (int nodes_iter = 0; nodes_iter < n_input_pixels + n_encodings; ++nodes_iter) {
+					for (int nodes_iter = 0; nodes_iter < n_input_pixels + n_encodings + n_labels; ++nodes_iter) {
 						if (nodes_iter < n_input_pixels) {
 							input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
 							output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
 							//output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[0], nodes_iter); // test on only 1 sample
 							//input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[0], nodes_iter);  // test on only 1 sample
 						}
-						else {
+						else if (nodes_iter >= n_input_pixels && nodes_iter < n_input_pixels + n_encodings) {
 							input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = d(gen) + mixed_gaussian(nodes_iter - n_input_pixels); // sampler distribution + noise
+							output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 0; // expected value if distributions match
+						}
+						else {
+							input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = one_hot_vec(nodes_iter - n_input_pixels - n_encodings); // smoothed labels
 							output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 0; // expected value if distributions match
 						}
 					}
@@ -227,9 +239,10 @@ public:
 		const int n_epochs = input_data.dimension(3);
 		const int n_input_pixels = validation_data.dimension(1);
 		const int n_encodings = 2; // not ideal to have this hard coded...
+		const int n_labels = 10;
 
-		assert(n_output_nodes == n_input_pixels + n_encodings);
-		assert(n_input_nodes == n_input_pixels + n_encodings);
+		assert(n_output_nodes == n_input_pixels + n_encodings + n_labels);
+		assert(n_input_nodes == n_input_pixels + n_encodings + n_labels);
 
 		// make the start and end sample indices [BUG FREE]
 		mnist_sample_start_training = mnist_sample_end_training;
@@ -262,16 +275,23 @@ public:
 					// Mixed Gaussian sampler
 					Eigen::Tensor<float, 1> mixed_gaussian = GaussianMixture<float>(n_encodings, validation_labels.size(), sample_indices[epochs_iter*batch_size + batch_iter]);
 					//Eigen::Tensor<float, 1> mixed_gaussian = GaussianMixture<float>(n_encodings, validation_labels.size(), sample_indices[0]); // test on only 1 sample
+					Eigen::Tensor<float, 1> one_hot_vec = OneHotEncoder<float, float>(float(sample_indices[epochs_iter*batch_size + batch_iter]), mnist_labels);
+					//Eigen::Tensor<float, 1> one_hot_vec = OneHotEncoder<std::string, float>(sample_indices[0], mnist_labels); // test on only 1 sample
+					Eigen::Tensor<float, 1> one_hot_vec_smoothed = one_hot_vec.unaryExpr(LabelSmoother<float>(0.01, 0.01));
 
-					for (int nodes_iter = 0; nodes_iter < n_input_pixels + n_encodings; ++nodes_iter) {
+					for (int nodes_iter = 0; nodes_iter < n_input_pixels + n_encodings + n_labels; ++nodes_iter) {
 						if (nodes_iter < n_input_pixels) {
-							input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
-							output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
-							//output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[0], nodes_iter); // test on only 1 sample
-							//input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[0], nodes_iter);  // test on only 1 sample
+							input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = validation_data(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
+							output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = validation_data(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
+							//output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = validation_data(sample_indices[0], nodes_iter); // test on only 1 sample
+							//input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = validation_data(sample_indices[0], nodes_iter);  // test on only 1 sample
+						}
+						else if (nodes_iter >= n_input_pixels && nodes_iter < n_input_pixels + n_encodings) {
+							input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = d(gen) + mixed_gaussian(nodes_iter - n_input_pixels); // sampler distribution + noise
+							output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 0; // expected value if distributions match
 						}
 						else {
-							input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = d(gen) + mixed_gaussian(nodes_iter - n_input_pixels); // sampler distribution + noise
+							input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = one_hot_vec(nodes_iter - n_input_pixels - n_encodings); // smoothed labels
 							output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 0; // expected value if distributions match
 						}
 					}
@@ -289,8 +309,9 @@ public:
 		const int n_epochs = input_data.dimension(3);
 		const int n_input_pixels = validation_data.dimension(1);
 		const int n_encodings = 2; // not ideal to have this hard coded...
+		const int n_labels = 10; // not ideal to have this hard coded...
 
-		assert(n_input_nodes == n_input_pixels + n_encodings);
+		assert(n_input_nodes == n_input_pixels + n_encodings + n_labels);
 
 		// make the start and end sample indices [BUG FREE]
 		mnist_sample_start_training = mnist_sample_end_training;
@@ -314,10 +335,13 @@ public:
 		for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
 			for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
 				for (int epochs_iter = 0; epochs_iter < n_epochs; ++epochs_iter) {
-					for (int nodes_iter = 0; nodes_iter < n_input_pixels + n_encodings; ++nodes_iter) {
+					for (int nodes_iter = 0; nodes_iter < n_input_pixels + n_encodings + n_labels; ++nodes_iter) {
 						if (nodes_iter < n_input_pixels) {
 							input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
 							//input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[0], nodes_iter);  // test on only 1 sample
+						}
+						else if (nodes_iter >= n_input_pixels && nodes_iter < n_input_pixels + n_encodings){
+							input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 0; // sampler distribution + noise
 						}
 						else {
 							input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 0; // sampler distribution + noise
@@ -398,32 +422,34 @@ void main_AAELabelStyleTrain() {
 	population_trainer.setNReplicatesPerModel(1);
 
 	// define the model logger
-	ModelLogger model_logger(true, true, false, false, false, false, false, false);
+	//ModelLogger model_logger(true, true, false, false, false, false, false, false);
+	ModelLogger model_logger(true, true, true, false, true, false, false, false);
 
 	// define the data simulator
 	const std::size_t input_size = 784;
 	const std::size_t encoding_size = 2;
-	const std::size_t hidden_size = 500;
-	const std::size_t training_data_size = 60000; //60000;
-	const std::size_t validation_data_size = 1000; //10000;
+	const std::size_t n_labels = 10;
+	const std::size_t hidden_size = 25;
+	const std::size_t training_data_size = 6000; //60000;
+	const std::size_t validation_data_size = 100; //10000;
 	DataSimulatorExt data_simulator;
 
 	// read in the training data
-	//const std::string training_data_filename = "C:/Users/domccl/GitHub/mnist/train-images.idx3-ubyte";
-	//const std::string training_labels_filename = "C:/Users/domccl/GitHub/mnist/train-labels.idx1-ubyte";
+	const std::string training_data_filename = "C:/Users/domccl/GitHub/mnist/train-images.idx3-ubyte";
+	const std::string training_labels_filename = "C:/Users/domccl/GitHub/mnist/train-labels.idx1-ubyte";
 	//const std::string training_data_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/train-images-idx3-ubyte";
 	//const std::string training_labels_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/train-labels-idx1-ubyte";
-	const std::string training_data_filename = "/home/user/data/train-images-idx3-ubyte";
-	const std::string training_labels_filename = "/home/user/data/train-labels-idx1-ubyte";
+	//const std::string training_data_filename = "/home/user/data/train-images-idx3-ubyte";
+	//const std::string training_labels_filename = "/home/user/data/train-labels-idx1-ubyte";
 	data_simulator.readData(training_data_filename, training_labels_filename, true, training_data_size, input_size);
 
 	// read in the validation data
-	//const std::string validation_data_filename = "C:/Users/domccl/GitHub/mnist/t10k-images.idx3-ubyte";
-	//const std::string validation_labels_filename = "C:/Users/domccl/GitHub/mnist/t10k-labels.idx1-ubyte";
+	const std::string validation_data_filename = "C:/Users/domccl/GitHub/mnist/t10k-images.idx3-ubyte";
+	const std::string validation_labels_filename = "C:/Users/domccl/GitHub/mnist/t10k-labels.idx1-ubyte";
 	//const std::string validation_data_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/t10k-images-idx3-ubyte";
 	//const std::string validation_labels_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/t10k-labels-idx1-ubyte";
-	const std::string validation_data_filename = "/home/user/data/t10k-images-idx3-ubyte";
-	const std::string validation_labels_filename = "/home/user/data/t10k-labels-idx1-ubyte";
+	//const std::string validation_data_filename = "/home/user/data/t10k-images-idx3-ubyte";
+	//const std::string validation_labels_filename = "/home/user/data/t10k-labels-idx1-ubyte";
 	data_simulator.readData(validation_data_filename, validation_labels_filename, false, validation_data_size, input_size);
 	data_simulator.unitScaleData();
 
@@ -434,7 +460,11 @@ void main_AAELabelStyleTrain() {
 
 	// Make the encoding nodes and add them to the input
 	for (int i = 0; i < encoding_size; ++i)
-		input_nodes.push_back("DS-Sampler-" + std::to_string(i));
+		input_nodes.push_back("DSStyle-Sampler-" + std::to_string(i));
+
+	// Make the labels nodes and add them to the input
+	for (int i = 0; i < n_labels; ++i)
+		input_nodes.push_back("DSLabels-Sampler-" + std::to_string(i));
 
 	// Make the output nodes
 	std::vector<std::string> decoder_output_nodes;
@@ -442,33 +472,40 @@ void main_AAELabelStyleTrain() {
 		decoder_output_nodes.push_back("DE-Output_" + std::to_string(i));
 
 	// Make the output nodes
-	std::vector<std::string> discriminator_output_nodes;
+	std::vector<std::string> discriminator_style_output_nodes;
 	for (int i = 0; i < encoding_size; ++i)
-		discriminator_output_nodes.push_back("DS-Output-" + std::to_string(i));
+		discriminator_style_output_nodes.push_back("DSStyle-Output-" + std::to_string(i));
+
+	// Make the output nodes
+	std::vector<std::string> discriminator_label_output_nodes;
+	for (int i = 0; i < n_labels	; ++i)
+		discriminator_label_output_nodes.push_back("DSLabels-Output-" + std::to_string(i));
 
 	// define the model trainer
 	ModelTrainerExt model_trainer;
 	model_trainer.setBatchSize(1);
 	model_trainer.setMemorySize(1);
-	model_trainer.setNEpochsTraining(5000);
-	model_trainer.setNEpochsValidation(50);
+	model_trainer.setNEpochsTraining(1);
+	model_trainer.setNEpochsValidation(1);
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setNThreads(n_hard_threads);
 	model_trainer.setLogging(true, false);
 	model_trainer.setLossFunctions({ 
 		std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()),
+		std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()),
 		std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
 	model_trainer.setLossFunctionGrads({ 
 		std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()),
+		std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()),
 		std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
-	model_trainer.setOutputNodes({ decoder_output_nodes, discriminator_output_nodes });
+	model_trainer.setOutputNodes({ decoder_output_nodes, discriminator_style_output_nodes, discriminator_label_output_nodes });
 
 	// define the model replicator for growth mode
 	ModelReplicatorExt model_replicator;
 
 	// define the initial population [BUG FREE]
 	std::cout << "Initializing the population..." << std::endl;
-	std::vector<Model> population = { model_trainer.makeAAELabelStyle(input_size, hidden_size, encoding_size) };
+	std::vector<Model> population = { model_trainer.makeAAELabelStyle(input_size, hidden_size, encoding_size, n_labels) };
 
 	// Evolve the population
 	std::vector<std::vector<std::pair<int, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
@@ -492,6 +529,7 @@ void main_AAELabelStyleEvaluate() {
 	// define the data simulator
 	const std::size_t input_size = 784;
 	const std::size_t encoding_size = 2;
+	const std::size_t n_labels = 10;
 	const std::size_t hidden_size = 25;
 	const std::size_t training_data_size = 10000; //60000;
 	const std::size_t validation_data_size = 100; //10000;
@@ -524,15 +562,28 @@ void main_AAELabelStyleEvaluate() {
 	for (int i = 0; i < input_size; ++i)
 		input_nodes.push_back("Input_" + std::to_string(i));
 
+	// Make the encoding nodes and add them to the input
+	for (int i = 0; i < encoding_size; ++i)
+		input_nodes.push_back("DSStyle-Sampler-" + std::to_string(i));
+
+	// Make the labels nodes and add them to the input
+	for (int i = 0; i < n_labels; ++i)
+		input_nodes.push_back("DSLabels-Sampler-" + std::to_string(i));
+
 	// Make the output nodes
 	std::vector<std::string> decoder_output_nodes;
 	for (int i = 0; i < input_size; ++i)
 		decoder_output_nodes.push_back("DE-Output_" + std::to_string(i));
 
 	// Make the output nodes
-	std::vector<std::string> discriminator_output_nodes;
+	std::vector<std::string> discriminator_style_output_nodes;
 	for (int i = 0; i < encoding_size; ++i)
-		discriminator_output_nodes.push_back("DS-Output-" + std::to_string(i));
+		discriminator_style_output_nodes.push_back("DSStyle-Output-" + std::to_string(i));
+
+	// Make the output nodes
+	std::vector<std::string> discriminator_label_output_nodes;
+	for (int i = 0; i < n_labels; ++i)
+		discriminator_label_output_nodes.push_back("DSLabels-Output-" + std::to_string(i));
 
 	// define the model trainer
 	ModelTrainerExt model_trainer;
@@ -543,14 +594,17 @@ void main_AAELabelStyleEvaluate() {
 	model_trainer.setNEpochsEvaluation(2);
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setNThreads(n_hard_threads);
-	model_trainer.setLogging(false, false, true);
+	model_trainer.setLogging(false, false, true);	
 	model_trainer.setLossFunctions({
+		std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()),
 		std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()),
 		std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
 	model_trainer.setLossFunctionGrads({
 		std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()),
+		std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()),
 		std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
-	model_trainer.setOutputNodes({ decoder_output_nodes, discriminator_output_nodes });
+	model_trainer.setOutputNodes({ decoder_output_nodes, discriminator_style_output_nodes, discriminator_label_output_nodes });
+
 
 	// define the model replicator for growth mode
 	ModelReplicatorExt model_replicator;

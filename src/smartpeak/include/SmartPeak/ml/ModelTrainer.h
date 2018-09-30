@@ -32,6 +32,8 @@ public:
 		void setLossFunctions(const std::vector<std::shared_ptr<LossFunctionOp<float>>>& loss_functions); ///< loss_functions setter [TODO: tests]
 		void setLossFunctionGrads(const std::vector<std::shared_ptr<LossFunctionGradOp<float>>>& loss_function_grads); ///< loss_functions setter [TODO: tests]
 		void setOutputNodes(const std::vector<std::vector<std::string>>& output_nodes); ///< output_nodes setter [TODO: tests]
+		void setNTBPTTSteps(const int& n_TBPTT); ///< n_TBPTT setter
+		void setNTETTSteps(const int& n_TETT); ///< n_TETT setter
 
     int getBatchSize() const; ///< batch_size setter
     int getMemorySize() const; ///< memory_size setter
@@ -43,6 +45,8 @@ public:
 		std::vector<std::shared_ptr<LossFunctionOp<float>>> getLossFunctions(); ///< loss_functions getter [TODO: tests]
 		std::vector<std::shared_ptr<LossFunctionGradOp<float>>> getLossFunctionGrads(); ///< loss_functions getter [TODO: tests]
 		std::vector<std::vector<std::string>> getOutputNodes(); ///< output_nodes getter [TODO: tests]
+		int getNTBPTTSteps() const; ///< n_TBPTT setter
+		int getNTETTSteps() const; ///< n_TETT setter
  
     /**
       @brief Check input dimensions.
@@ -177,6 +181,9 @@ private:
     int n_epochs_training_ = 0;
 		int n_epochs_validation_ = 0;
 		int n_epochs_evaluation_ = 0;
+
+		int n_TBPTT_steps_ = -1; ///< the number of truncated back propogation through time steps
+		int n_TETT_steps_ = -1; ///< the number of truncated error through time calculation steps
 
 		int n_threads_ = 1;
 		int verbosity_level_ = 0; ///< level of verbosity (0=none, 1=test/validation errors, 2=test/validation node values

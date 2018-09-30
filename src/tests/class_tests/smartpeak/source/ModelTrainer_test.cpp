@@ -50,6 +50,8 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
 	trainer.setNEpochsEvaluation(2);
 	trainer.setVerbosityLevel(1);
 	trainer.setLogging(true, true, true);
+	trainer.setNTBPTTSteps(1);
+	trainer.setNTETTSteps(2);
 
   BOOST_CHECK_EQUAL(trainer.getBatchSize(), 4);
   BOOST_CHECK_EQUAL(trainer.getMemorySize(), 1);
@@ -57,6 +59,8 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
 	BOOST_CHECK_EQUAL(trainer.getNEpochsValidation(), 10);
 	BOOST_CHECK_EQUAL(trainer.getNEpochsEvaluation(), 2);
 	BOOST_CHECK_EQUAL(trainer.getVerbosityLevel(), 1);
+	BOOST_CHECK_EQUAL(trainer.getNTBPTTSteps(), 1);
+	BOOST_CHECK_EQUAL(trainer.getNTETTSteps(), 2);
 }
 
 BOOST_AUTO_TEST_CASE(checkInputData) 
