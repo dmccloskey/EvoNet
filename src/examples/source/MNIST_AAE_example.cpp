@@ -126,14 +126,21 @@ public:
 		const int& n_epochs,
 		Model& model,
 		const std::vector<float>& model_errors) {
-		//if (n_epochs > 10000) {
-		//	// update the solver parameters
-		//	std::shared_ptr<SolverOp> solver;
-		//	solver.reset(new AdamOp(0.001, 0.9, 0.999, 1e-8));
-		//	for (auto& weight_map : model.getWeightsMap())
-		//		if (weight_map.second->getSolverOp()->getName() == "AdamOp")
-		//			weight_map.second->setSolverOp(solver);
-		//}
+		if (n_epochs > 1000) {
+			// update the solver parameters
+			std::shared_ptr<SolverOp> solver;
+			solver.reset(new AdamOp(0.0001, 0.9, 0.999, 1e-8));
+			for (auto& weight_map : model.getWeightsMap())
+				if (weight_map.second->getSolverOp()->getName() == "AdamOp")
+					weight_map.second->setSolverOp(solver);
+		}
+		if (n_epochs % 100 == 0) {
+			// save the model every 100 epochs
+			ModelFile data;
+			data.storeModelCsv(model.getName() + "_nodes.csv",
+				model.getName() + "_links.csv",
+				model.getName() + "_weights.csv", model);
+		}
 	}
 };
 
@@ -440,7 +447,7 @@ void main_AAELatentZTrain() {
 
 	// define the model trainer
 	ModelTrainerExt model_trainer;
-	model_trainer.setBatchSize(1);
+	model_trainer.setBatchSize(8);
 	model_trainer.setMemorySize(1);
 	model_trainer.setNEpochsTraining(5000);
 	model_trainer.setNEpochsValidation(50);

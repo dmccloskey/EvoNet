@@ -42,6 +42,17 @@ namespace SmartPeak
 		return true;
 	}
 
+	bool ModelFile::storeModelCsv(const std::string & filename_nodes, const std::string & filename_links, const std::string & filename_weights, const Model & model)
+	{
+		NodeFile node_file;
+		node_file.storeNodesCsv(filename_nodes, model.getNodes());
+		LinkFile link_file;
+		link_file.storeLinksCsv(filename_links, model.getLinks());
+		WeightFile weight_file;
+		weight_file.storeWeightsCsv(filename_weights, model.getWeights());
+		return true;
+	}
+
 	bool ModelFile::loadModelCsv(const std::string & filename_nodes, const std::string & filename_links, const std::string & filename_weights, Model& model)
 	{
 		// load the nodes
