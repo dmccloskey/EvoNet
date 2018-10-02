@@ -134,12 +134,12 @@ public:
 				if (weight_map.second->getSolverOp()->getName() == "AdamOp")
 					weight_map.second->setSolverOp(solver);
 		}
-		if (n_epochs % 100 == 0) {
+		if (n_epochs % 50 == 0) {
 			// save the model every 100 epochs
 			ModelFile data;
-			data.storeModelCsv(model.getName() + "_nodes.csv",
-				model.getName() + "_links.csv",
-				model.getName() + "_weights.csv", model);
+			data.storeModelCsv(model.getName() + "_" + std::to_string(n_epochs) + "_nodes.csv",
+				model.getName() + "_" + std::to_string(n_epochs) + "_links.csv",
+				model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model);
 		}
 	}
 };
@@ -397,7 +397,7 @@ void main_AAELatentZTrain() {
 	population_trainer.setNReplicatesPerModel(1);
 
 	// define the model logger
-	ModelLogger model_logger(true, true, false, false, false, false, false, false);
+	ModelLogger model_logger(true, true, true, false, false, false, false, false);
 
 	// define the data simulator
 	const std::size_t input_size = 784;
