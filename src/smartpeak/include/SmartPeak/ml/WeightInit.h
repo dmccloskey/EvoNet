@@ -1,0 +1,80 @@
+/**TODO:  Add copyright*/
+
+#ifndef SMARTPEAK_WEIGHTINIT_H
+#define SMARTPEAK_WEIGHTINIT_H
+
+#include <unsupported/Eigen/CXX11/Tensor>
+#include <cmath>
+#include <random>
+#include <iostream>
+
+
+namespace SmartPeak
+{
+  /**
+    @brief Base class for all weight initialization functions
+  */
+  class WeightInitOp
+  {
+public: 
+    WeightInitOp() = default; 
+		~WeightInitOp() = default;
+    virtual std::string getName() const = 0;
+    virtual float operator()() const = 0;
+    virtual std::string getParameters() const = 0;
+  };  
+
+  /**
+    @brief Random weight initialization based on the method of He, et al 2015
+
+    References:
+    R Hahnloser, R. Sarpeshkar, M A Mahowald, R. J. Douglas, H.S. Seung (2000). 
+      Digital selection and analogue amplification coexist in a cortex-inspired silicon circuit. 
+      Nature. 405. pp. 947–951.
+  */
+  class RandWeightInitOp: public WeightInitOp
+  {
+public: 
+    RandWeightInitOp(float n = 1.0, float f = 1.0): n_(n), f_(f){};
+    std::string getName() const{return "RandWeightInitOp";};
+    float operator()() const {       
+      std::random_device rd{};
+      std::mt19937 gen{rd()};
+      std::normal_distribution<> d{0.0, 1.0};
+      return d(gen)*std::sqrt(f_/n_); 
+    };
+    float getN() const { return n_; }
+		float getF() const { return f_; }
+    std::string getParameters() const
+    {
+			std::string params = "n:" + std::to_string(getN()) +
+				";f:" + std::to_string(getF());
+      return params;
+    }
+private:
+    float n_ = 1.0; ///< the denominator (i.e., number of input nodes for He et al, or average input/output nodes for Xavior et al)
+		float f_ = 1.0; ///< the numerator (i.e., 2 for He et al, 1 for Xavior et al)
+  };
+
+  /**
+    @brief Constant weight initialization.
+  */
+  class ConstWeightInitOp: public WeightInitOp
+  {
+public: 
+    ConstWeightInitOp(const float& n):n_(n){};
+    ConstWeightInitOp(){}; 
+    ~ConstWeightInitOp(){};
+    std::string getName() const{return "ConstWeightInitOp";};
+    float operator()() const { return n_; };
+    float getN() const {return n_;};
+    std::string getParameters() const
+    {
+      std::string params = "n:" + std::to_string(getN());
+      return params;
+    }
+private:
+    float n_ = 1.0; ///< the constant to return
+  };  
+}
+#endif //SMARTPEAK_WEIGHTINIT_H

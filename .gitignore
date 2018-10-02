@@ -30,3 +30,15 @@
 *.exe
 *.out
 *.app
+
+# Distribution / packaging
+build*/
+
+# VS
+<<<<<<< HEAD
+.vscode*/
+.vs/
+=======
+.vscode/
+.vs*/
+>>>>>>> fea885c9a262efa1f445460dcf5fb8b12a8bf57e
