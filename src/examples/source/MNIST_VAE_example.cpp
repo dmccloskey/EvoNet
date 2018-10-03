@@ -340,6 +340,7 @@ void main_VAE() {
 	// define the data simulator
 	const std::size_t input_size = 784;
 	const std::size_t encoding_size = 20;
+	const std::size_t n_hidden = 128;
 	const std::size_t training_data_size = 60000; //60000;
 	const std::size_t validation_data_size = 10000; //10000;
 	DataSimulatorExt data_simulator;
@@ -414,7 +415,7 @@ void main_VAE() {
 	// define the initial population [BUG FREE]
 	std::cout << "Initializing the population..." << std::endl;
 	Model model;
-	model_trainer.makeVAE(model, input_size, encoding_size);
+	model_trainer.makeVAE(model, input_size, encoding_size, n_hidden);
 	std::vector<Model> population = { model };
 
 	// Evolve the population
