@@ -795,7 +795,7 @@ namespace SmartPeak
 			char lvToS_link_name_char[512];
 			sprintf(lvToS_link_name_char, "%s_to_%s", encoding_node_names[i].data(), output_name.data());
 			std::string lvToS_link_name(lvToS_link_name_char);
-			Link lvToS_link(lvToS_link_name, encoding_node_names[i], output_name, negative_weight_name);
+			Link lvToS_link(lvToS_link_name, encoding_node_names[i], output_name, unity_weight_name);
 			lvToS_link.setModuleName(module_name);
 			model.addLinks({ lvToS_link });
 
@@ -811,7 +811,7 @@ namespace SmartPeak
 			char ScToStdev_link_name_char[512];
 			sprintf(ScToStdev_link_name_char, "%s_to_%s", sampler_name.data(), output_name.data());
 			std::string ScToStdev_link_name(ScToStdev_link_name_char);
-			Link ScToStdev_link(ScToStdev_link_name, sampler_name, output_name, unity_weight_name);
+			Link ScToStdev_link(ScToStdev_link_name, sampler_name, output_name, negative_weight_name);
 			ScToStdev_link.setModuleName(module_name);
 			model.addLinks({ ScToStdev_link });
 		}

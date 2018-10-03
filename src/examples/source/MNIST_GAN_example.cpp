@@ -38,7 +38,7 @@ public:
 	References:
 	Network based on: https://github.com/diegoalejogm/gans/blob/master/1.%20Vanilla%20GAN%20PyTorch.ipynb
 	*/
-	Model makeGAN(const int& n_inputs, const int& n_encodings) {
+	Model makeGAN(const int& n_inputs, int n_encodings = 20, int n_hidden_0 = 256, int n_hidden_1 = 512) {
 		Model model;
 		model.setId(0);
 		model.setName("GAN");
@@ -49,9 +49,6 @@ public:
 
 		// Add the Generator inputs
 		std::vector<std::string> node_names_encoding = model_builder.addInputNodes(model, "Encoding", n_encodings);
-
-		const int n_hidden_0 = 256;
-		const int n_hidden_1 = 512;
 
 		// Add the generator FC layers
 		std::vector<std::string> node_names, node_names_gen, node_names_logvar;	
@@ -145,6 +142,7 @@ public:
 class DataSimulatorExt : public MNISTSimulator
 {
 public:
+	void simulateEvaluationData(Eigen::Tensor<float, 4>& input_data, Eigen::Tensor<float, 3>& time_steps) {};
 	void simulateTrainingData(Eigen::Tensor<float, 4>& input_data, Eigen::Tensor<float, 4>& output_data, Eigen::Tensor<float, 3>& time_steps)
 	{
 		// infer data dimensions based on the input tensors
@@ -243,10 +241,10 @@ public:
 				for (int nodes_iter = 0; nodes_iter < n_input_pixels + 2 * n_encodings; ++nodes_iter) {
 					for (int epochs_iter = 0; epochs_iter < n_epochs; ++epochs_iter) {
 						if (nodes_iter < n_input_pixels) {
-							input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
-							output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
-							//output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[0], nodes_iter); // test on only 1 sample
-							//input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[0], nodes_iter);  // test on only 1 sample
+							input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = validation_data(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
+							output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = validation_data(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
+							//output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = validation_data(sample_indices[0], nodes_iter); // test on only 1 sample
+							//input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = validation_data(sample_indices[0], nodes_iter);  // test on only 1 sample
 						}
 						else if (nodes_iter >= n_input_pixels && nodes_iter < n_encodings) {
 							input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 0; // sample from a normal distribution

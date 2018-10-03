@@ -1678,7 +1678,6 @@ BOOST_AUTO_TEST_CASE(reInitializeNodeStatuses)
 BOOST_AUTO_TEST_CASE(modelTrainer1) 
 {
   // Toy network: 1 hidden layer, fully connected, DAG
-  // Model model1 = makeModel1();
 
   // initialize nodes
   const int batch_size = 4;

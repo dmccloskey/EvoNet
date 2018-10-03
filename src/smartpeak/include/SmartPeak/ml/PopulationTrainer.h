@@ -13,7 +13,6 @@
 
 namespace SmartPeak
 {
-
   /**
     @brief Trains a vector of models
   */
@@ -130,7 +129,7 @@ public:
 
       [TESTS: add thread tests]
 
-      @param[in, out] models The vector of models to copy
+      @param[in, out] models The vector of models to train
       @param[in] model_trainer The trainer to use
     */ 
     void trainModels(
@@ -152,6 +151,32 @@ public:
       const Eigen::Tensor<float, 3>& time_steps,
       const std::vector<std::string>& input_nodes);
 
+		/**
+			@brief Evaluates each of the models in the population
+				using the same test data set
+
+			[TESTS: add thread tests]
+
+			@param[in, out] models The vector of models to evaluate
+			@param[in] model_trainer The trainer to use
+		*/
+		void evalModels(
+			std::vector<Model>& models,
+			ModelTrainer& model_trainer,
+			ModelLogger& model_logger,
+			const Eigen::Tensor<float, 4>& input,
+			const Eigen::Tensor<float, 3>& time_steps,
+			const std::vector<std::string>& input_nodes,
+			int n_threads = 1);
+
+		static bool evalModel_(
+			Model* model,
+			ModelTrainer* model_trainer,
+			ModelLogger* model_logger,
+			const Eigen::Tensor<float, 4>& input,
+			const Eigen::Tensor<float, 3>& time_steps,
+			const std::vector<std::string>& input_nodes);
+
 		int getNextID(); ///< iterate and return the next id in the sequence
 		void setID(const int& id);  ///< unique_id setter
  
@@ -164,6 +189,23 @@ public:
 		@param[in] data_simulator The data simulate/generator to use
 		*/
 		std::vector<std::vector<std::pair<int, float>>> evolveModels(
+			std::vector<Model>& models,
+			ModelTrainer& model_trainer,
+			ModelReplicator& model_replicator,
+			DataSimulator& data_simulator,
+			ModelLogger& model_logger,
+			const std::vector<std::string>& input_nodes,
+			int n_threads = 1);
+
+		/**
+		@brief Evaluate the population
+
+		@param[in, out] models The vector of models to copy
+		@param[in] model_trainer The trainer to use
+		@param[in] model_replicator The replicator to use
+		@param[in] data_simulator The data simulate/generator to use
+		*/
+		void evaluateModels(
 			std::vector<Model>& models,
 			ModelTrainer& model_trainer,
 			ModelReplicator& model_replicator,

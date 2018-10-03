@@ -20,6 +20,54 @@ namespace SmartPeak
 public:
     ModelFile(); ///< Default constructor
     ~ModelFile(); ///< Default destructor
+ 
+		/**
+			@brief store Model from file
+
+			[TODO: Broken; need to implement a better serialization method that deals with shared_ptrs]
+
+			@param filename The name of the model file
+			@param model The model to store
+
+			@returns Status True on success, False if not
+		*/
+		bool storeModelBinary(const std::string& filename, const Model& model);
+ 
+		/**
+			@brief load Model from file
+
+			[TODO: Broken; need to implement a better serialization method that deals with shared_ptrs]
+
+			@param filename The name of the model file
+			@param model The model to load data into
+
+			@returns Status True on success, False if not
+		*/
+		bool loadModelBinary(const std::string& filename, Model& model);
+
+		/**
+			@brief store nodes, links, and weights as a .csv file from a Model
+
+			@param filename_nodes The name of the node file
+			@param filename_links The name of the link file
+			@param filename_weights The name of the weight file
+			@param model The model to load data into
+
+			@returns Status True on success, False if not
+		*/
+		bool storeModelCsv(const std::string& filename_nodes, const std::string& filename_links, const std::string& filename_weights, const Model& model);
+
+		/**
+			@brief Load nodes, links, and weights from file and create a Model
+
+			@param filename_nodes The name of the node file
+			@param filename_links The name of the link file
+			@param filename_weights The name of the weight file
+			@param model The model to load data into
+
+			@returns Status True on success, False if not
+		*/
+		bool loadModelCsv(const std::string& filename_nodes, const std::string& filename_links, const std::string& filename_weights, Model& model);
 
 		/**
 		@brief save network model to file in dot format for visualization

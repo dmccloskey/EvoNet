@@ -19,12 +19,12 @@ namespace SmartPeak
   {
     weights.clear();
 
-    io::CSVReader<6> weights_in(filename);
+    io::CSVReader<7> weights_in(filename);
     weights_in.read_header(io::ignore_extra_column, 
-      "weight_name", "weight_init_op", "weight_init_params", "solver_op", "solver_params", "weight_value");
-    std::string weight_name, weight_init_op_str, weight_init_params_str, solver_op_str, solver_params_str, weight_value_str;
+      "weight_name", "weight_init_op", "weight_init_params", "solver_op", "solver_params", "weight_value", "module_name");
+    std::string weight_name, weight_init_op_str, weight_init_params_str, solver_op_str, solver_params_str, weight_value_str, module_name_str = "";
 
-    while(weights_in.read_row(weight_name, weight_init_op_str, weight_init_params_str, solver_op_str, solver_params_str, weight_value_str))
+    while(weights_in.read_row(weight_name, weight_init_op_str, weight_init_params_str, solver_op_str, solver_params_str, weight_value_str, module_name_str))
     {
       // parse the weight_init_params
       std::map<std::string, float> weight_init_params = parseParameters(weight_init_params_str);
@@ -52,7 +52,9 @@ namespace SmartPeak
       else std::cout<<"WeightInitOp "<<weight_init_op_str<<" for weight_name "<<weight_name<<" was not recognized."<<std::endl;
 
       // parse the solver_params_str
-      std::map<std::string, float> solver_params = parseParameters(solver_params_str);
+			std::map<std::string, float> solver_params;
+			if (!solver_params_str.empty())
+				solver_params = parseParameters(solver_params_str);
 
       // parse the solver_op
       std::shared_ptr<SolverOp> solver;
@@ -101,6 +103,11 @@ namespace SmartPeak
           ptr->setGradientNoiseGamma(solver_params.at("gradient_noise_gamma"));
         solver.reset(ptr);
       }
+			else if (solver_op_str == "DummySolverOp")
+			{
+				DummySolverOp* ptr = new DummySolverOp();
+				solver.reset(ptr);
+			}
       else std::cout<<"SolverOp "<<solver_op_str<<" for weight_name "<<weight_name<<" was not recognized."<<std::endl;
 
       Weight weight(weight_name, weight_init, solver);
@@ -115,6 +122,9 @@ namespace SmartPeak
       {
         printf("Exception: %s", e.what());
       }
+			weight.setWeight(weight_value);
+
+			weight.setModuleName(module_name_str);
 
       weights.push_back(weight);
     }
@@ -166,7 +176,7 @@ namespace SmartPeak
     CSVWriter csvwriter(filename);
 
     // write the headers to the first line
-    const std::vector<std::string> headers = {"weight_name", "weight_init_op", "weight_init_params", "solver_op", "solver_params", "weight_value"};
+    const std::vector<std::string> headers = {"weight_name", "weight_init_op", "weight_init_params", "solver_op", "solver_params", "weight_value", "module_name"};
     csvwriter.writeDataInRow(headers.begin(), headers.end());
 
     for (const Weight& weight: weights)
@@ -191,6 +201,9 @@ namespace SmartPeak
 
       // parse the weight value
       row.push_back(std::to_string(weight.getWeight()));
+
+			// parse the module name
+			row.push_back(weight.getModuleName());
 
       // write to file
       csvwriter.writeDataInRow(row.begin(), row.end());

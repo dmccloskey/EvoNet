@@ -75,6 +75,31 @@ public:
 class DataSimulatorExt : public DataSimulator
 {
 public:
+	void simulateEvaluationData(Eigen::Tensor<float, 4>& input_data, Eigen::Tensor<float, 3>& time_steps)
+	{
+		// infer data dimensions based on the input tensors
+		const int batch_size = input_data.dimension(0);
+		const int memory_size = input_data.dimension(1);
+		const int n_input_nodes = input_data.dimension(2);
+		const int n_epochs = input_data.dimension(3);
+
+		Eigen::Tensor<float, 3> input_tmp(batch_size, memory_size, n_input_nodes);
+		input_tmp.setValues(
+			{ { { 1 },{ 2 },{ 3 },{ 4 },{ 5 },{ 6 },{ 7 },{ 8 } },
+			{ { 2 },{ 3 },{ 4 },{ 5 },{ 6 },{ 7 },{ 8 },{ 9 } },
+			{ { 3 },{ 4 },{ 5 },{ 6 },{ 7 },{ 8 },{ 9 },{ 10 } },
+			{ { 4 },{ 5 },{ 6 },{ 7 },{ 8 },{ 9 },{ 10 },{ 11 } },
+			{ { 5 },{ 6 },{ 7 },{ 8 },{ 9 },{ 10 },{ 11 },{ 12 } } }
+		);
+		for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter)
+			for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter)
+				for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter)
+					for (int epochs_iter = 0; epochs_iter < n_epochs; ++epochs_iter)
+						input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = input_tmp(batch_iter, memory_iter, nodes_iter);
+
+		// update the time_steps
+		time_steps.setConstant(1.0f);
+	}
 	void simulateData(Eigen::Tensor<float, 4>& input_data, Eigen::Tensor<float, 4>& output_data, Eigen::Tensor<float, 3>& time_steps)
 	{
 		// infer data dimensions based on the input tensors
@@ -385,9 +410,6 @@ BOOST_AUTO_TEST_CASE(trainModels)
 		model.setId(i);
 		model.setName(std::to_string(i));
     model.initWeights();
-		model.initError(5, 8);
-		model.initNodes(5, 8);
-		model.findCycles();
     
     // modify the models
     model_replicator.modifyModel(model, std::to_string(i));
@@ -459,13 +481,117 @@ BOOST_AUTO_TEST_CASE(trainModels)
 
   BOOST_CHECK_EQUAL(population.size(), 4); // broken models should still be there
 
+	// TODO implement a better test...
   for (int i=0; i<population.size(); ++i)
   {
     if (i<2)
-      BOOST_CHECK_EQUAL(population[i].getError().size(), model_trainer.getBatchSize()*model_trainer.getMemorySize()); // error has not been calculated
+      BOOST_CHECK_EQUAL(population[i].getError().size(), 0); // error has not been calculated
     else
       BOOST_CHECK_EQUAL(population[i].getError().size(), model_trainer.getBatchSize()*model_trainer.getMemorySize()); // error has been calculated
   }
+}
+
+BOOST_AUTO_TEST_CASE(evalModels)
+{
+	PopulationTrainerExt population_trainer;
+
+	ModelTrainerExt model_trainer;
+	model_trainer.setBatchSize(5);
+	model_trainer.setMemorySize(8);
+	model_trainer.setNEpochsTraining(5);
+	model_trainer.setNEpochsValidation(5);
+	model_trainer.setNEpochsEvaluation(5);
+
+	ModelReplicatorExt model_replicator;
+	model_replicator.setNNodeAdditions(1);
+	model_replicator.setNLinkAdditions(1);
+	model_replicator.setNNodeDeletions(0);
+	model_replicator.setNLinkDeletions(0);
+
+	// create an initial population
+	std::vector<Model> population;
+	for (int i = 0; i < 4; ++i)
+	{
+		// baseline model
+		std::shared_ptr<WeightInitOp> weight_init;
+		std::shared_ptr<SolverOp> solver;
+		weight_init.reset(new ConstWeightInitOp(1.0));
+		solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
+		std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>());
+		std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
+		Model model = model_replicator.makeBaselineModel(
+			1, {}, 1,
+			std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
+			weight_init, solver,
+			loss_function, loss_function_grad, std::to_string(i));
+		model.setId(i);
+		model.setName(std::to_string(i));
+		model.initWeights();
+
+		// modify the models
+		model_replicator.modifyModel(model, std::to_string(i));
+
+		population.push_back(model);
+	}
+
+	// Break two of the models
+	for (int i = 0; i < 2; ++i)
+	{
+		model_replicator.deleteLink(population[i], 1e6);
+		model_replicator.deleteLink(population[i], 1e6);
+		model_replicator.deleteLink(population[i], 1e6);
+	}
+
+	// Toy data set used for all tests
+	// Make the input data
+	const std::vector<std::string> input_nodes = { "Input_0" }; // true inputs + biases
+	Eigen::Tensor<float, 4> input_data(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)input_nodes.size(), model_trainer.getNEpochsTraining());
+	Eigen::Tensor<float, 3> input_tmp(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)input_nodes.size());
+	input_tmp.setValues(
+		{ {{1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}},
+		{{2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}},
+		{{3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}},
+		{{4}, {5}, {6}, {7}, {8}, {9}, {10}, {11}},
+		{{5}, {6}, {7}, {8}, {9}, {10}, {11}, {12}} }
+	);
+	for (int batch_iter = 0; batch_iter < model_trainer.getBatchSize(); ++batch_iter)
+		for (int memory_iter = 0; memory_iter < model_trainer.getMemorySize(); ++memory_iter)
+			for (int nodes_iter = 0; nodes_iter < (int)input_nodes.size(); ++nodes_iter)
+				for (int epochs_iter = 0; epochs_iter < model_trainer.getNEpochsTraining(); ++epochs_iter)
+					input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = input_tmp(batch_iter, memory_iter, nodes_iter);
+	// Make the output data
+	const std::vector<std::string> output_nodes = { "Output_0" };
+	// Make the simulation time_steps
+	Eigen::Tensor<float, 3> time_steps(model_trainer.getBatchSize(), model_trainer.getMemorySize(), model_trainer.getNEpochsTraining());
+	Eigen::Tensor<float, 2> time_steps_tmp(model_trainer.getBatchSize(), model_trainer.getMemorySize());
+	time_steps_tmp.setValues({
+		{1, 1, 1, 1, 1, 1, 1, 1},
+		{1, 1, 1, 1, 1, 1, 1, 1},
+		{1, 1, 1, 1, 1, 1, 1, 1},
+		{1, 1, 1, 1, 1, 1, 1, 1},
+		{1, 1, 1, 1, 1, 1, 1, 1} }
+	);
+	for (int batch_iter = 0; batch_iter < model_trainer.getBatchSize(); ++batch_iter)
+		for (int memory_iter = 0; memory_iter < model_trainer.getMemorySize(); ++memory_iter)
+			for (int epochs_iter = 0; epochs_iter < model_trainer.getNEpochsTraining(); ++epochs_iter)
+				time_steps(batch_iter, memory_iter, epochs_iter) = time_steps_tmp(batch_iter, memory_iter);
+
+	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
+	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
+	model_trainer.setOutputNodes({ output_nodes });
+
+	population_trainer.evalModels(population, model_trainer, ModelLogger(),
+		input_data, time_steps, input_nodes);
+
+	BOOST_CHECK_EQUAL(population.size(), 4); // broken models should still be there
+
+	for (int i = 0; i < population.size(); ++i)
+	{
+		if (i < 2)
+			BOOST_CHECK(population[i].getNode("Output_0").getStatus() != NodeStatus::activated); // output has not been calculated
+		else
+			BOOST_CHECK(population[i].getNode("Output_0").getStatus() == NodeStatus::activated); // output has been calculated
+	}
 }
 
 BOOST_AUTO_TEST_CASE(exampleUsage) 
@@ -542,5 +668,6 @@ BOOST_AUTO_TEST_CASE(exampleUsage)
   //        i.e., correct structure and weights]
 }
 
+// [TODO: test for evaluatePopulation]
 
 BOOST_AUTO_TEST_SUITE_END()

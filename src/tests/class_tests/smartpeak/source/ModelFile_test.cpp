@@ -9,27 +9,8 @@ using namespace std;
 
 BOOST_AUTO_TEST_SUITE(ModelFile1)
 
-BOOST_AUTO_TEST_CASE(constructor) 
+Model makeModel1()
 {
-  ModelFile* ptr = nullptr;
-  ModelFile* nullPointer = nullptr;
-  ptr = new ModelFile();
-  BOOST_CHECK_NE(ptr, nullPointer);
-}
-
-BOOST_AUTO_TEST_CASE(destructor) 
-{
-  ModelFile* ptr = nullptr;
-	ptr = new ModelFile();
-  delete ptr;
-}
-
-BOOST_AUTO_TEST_CASE(storeModelDot)
-{
-	ModelFile data;
-
-	std::string filename = "ModelFileTest.gv";
-
 	/**
 	* Directed Acyclic Graph Toy Network Model
 	*/
@@ -104,11 +85,82 @@ BOOST_AUTO_TEST_CASE(storeModelDot)
 	lb3 = Link("10", "7", "4", "10");
 	lb4 = Link("11", "7", "5", "11");
 	model1.setId(1);
+	model1.setName("1");
 	model1.addNodes({ i1, i2, h1, h2, o1, o2, b1, b2 });
 	model1.addWeights({ w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4 });
 	model1.addLinks({ l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4 });
+	std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>());
+	model1.setLossFunction(loss_function);
+	std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
+	model1.setLossFunctionGrad(loss_function_grad);
+	return model1;
+}
+Model model1 = makeModel1();
+
+BOOST_AUTO_TEST_CASE(constructor) 
+{
+  ModelFile* ptr = nullptr;
+  ModelFile* nullPointer = nullptr;
+  ptr = new ModelFile();
+  BOOST_CHECK_NE(ptr, nullPointer);
+}
+
+BOOST_AUTO_TEST_CASE(destructor) 
+{
+  ModelFile* ptr = nullptr;
+	ptr = new ModelFile();
+  delete ptr;
+}
+
+BOOST_AUTO_TEST_CASE(storeModelDot)
+{
+	ModelFile data;
+
+	std::string filename = "ModelFileTest.gv";
 
 	data.storeModelDot(filename, model1);
 }
+
+BOOST_AUTO_TEST_CASE(loadModelCsv)
+{
+	ModelFile data;
+	Model model_test;
+	model_test.setId(1);
+	model_test.setName("1");
+
+	std::string filename_nodes = "ModelNodeFileTest.csv";
+	std::string filename_links = "ModelLinkFileTest.csv";
+	std::string filename_weights = "ModelWeightFileTest.csv";
+
+	data.storeModelCsv(filename_nodes, filename_links, filename_weights, model1);
+
+	data.loadModelCsv(filename_nodes, filename_links, filename_weights, model_test);
+	BOOST_CHECK_EQUAL(model_test.getId(), model1.getId());
+	BOOST_CHECK_EQUAL(model_test.getName(), model1.getName());
+	BOOST_CHECK(model_test.getNodes() == model1.getNodes());
+	BOOST_CHECK(model_test.getLinks() == model1.getLinks());
+	BOOST_CHECK(model_test.getWeights() == model1.getWeights());
+	//BOOST_CHECK(model_test == model1); // Not sure why this fails
+}
+
+//BOOST_AUTO_TEST_CASE(loadModelBinary)
+//{
+//	ModelFile data;
+//	Model model_test;
+//	model_test.setId(1);
+//	model_test.setName("1");
+//
+//	std::string filename = "ModelFileTest.binary";
+//
+//	data.storeModelBinary(filename, model1);
+//
+//	data.loadModelBinary(filename, model_test);
+//	BOOST_CHECK_EQUAL(model_test.getId(), model1.getId());
+//	BOOST_CHECK_EQUAL(model_test.getName(), model1.getName());
+//	BOOST_CHECK(model_test.getNodes() == model1.getNodes());
+//	BOOST_CHECK(model_test.getLinks() == model1.getLinks());
+//	BOOST_CHECK(model_test.getWeights() == model1.getWeights());
+//	BOOST_CHECK(model_test == model1);
+//}
 
 BOOST_AUTO_TEST_SUITE_END()

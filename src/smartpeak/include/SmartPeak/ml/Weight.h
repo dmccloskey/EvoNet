@@ -34,11 +34,17 @@ public:
         std::tie(
           id_,
           name_,
+					weight_,
+					//weight_init_->getName(),
+					//solver_->getName(),
 					module_id_,
 					module_name_
         ) == std::tie(
           other.id_,
           other.name_,
+					other.weight_,
+					//other.weight_init_->getName(),
+					//other.solver_->getName(),
 					other.module_id_,
 					other.module_name_
         )

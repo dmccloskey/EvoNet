@@ -47,14 +47,20 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   trainer.setMemorySize(1);
   trainer.setNEpochsTraining(100);
 	trainer.setNEpochsValidation(10);
+	trainer.setNEpochsEvaluation(2);
 	trainer.setVerbosityLevel(1);
-	trainer.setLogging(true, true);
+	trainer.setLogging(true, true, true);
+	trainer.setNTBPTTSteps(1);
+	trainer.setNTETTSteps(2);
 
   BOOST_CHECK_EQUAL(trainer.getBatchSize(), 4);
   BOOST_CHECK_EQUAL(trainer.getMemorySize(), 1);
   BOOST_CHECK_EQUAL(trainer.getNEpochsTraining(), 100);
 	BOOST_CHECK_EQUAL(trainer.getNEpochsValidation(), 10);
+	BOOST_CHECK_EQUAL(trainer.getNEpochsEvaluation(), 2);
 	BOOST_CHECK_EQUAL(trainer.getVerbosityLevel(), 1);
+	BOOST_CHECK_EQUAL(trainer.getNTBPTTSteps(), 1);
+	BOOST_CHECK_EQUAL(trainer.getNTETTSteps(), 2);
 }
 
 BOOST_AUTO_TEST_CASE(checkInputData) 
@@ -255,7 +261,7 @@ BOOST_AUTO_TEST_CASE(DAGToy)
 	Eigen::Tensor<float, 3> time_steps(trainer.getBatchSize(), trainer.getMemorySize(), trainer.getNEpochsTraining());
 	Eigen::Tensor<float, 2> time_steps_tmp(trainer.getBatchSize(), trainer.getMemorySize());
 	time_steps_tmp.setValues({
-		{ 1},
+		{ 1 },
 		{ 1 },
 		{ 1 },
 		{ 1 }}
@@ -270,7 +276,10 @@ BOOST_AUTO_TEST_CASE(DAGToy)
     input_nodes, ModelLogger());
 
   const Eigen::Tensor<float, 0> total_error = model1.getError().sum();
-  BOOST_CHECK(total_error(0) < 30.0);  
+  BOOST_CHECK(total_error(0) < 30.0);
+
+	// TODO validateModel
+	// TODO evaluateModel
 }
 
 BOOST_AUTO_TEST_CASE(DCGToy) 
@@ -403,6 +412,9 @@ BOOST_AUTO_TEST_CASE(DCGToy)
 
   const Eigen::Tensor<float, 0> total_error = model1.getError().sum();
   BOOST_CHECK(total_error(0) < 35.8);  
+
+	// TODO validateModel
+	// TODO evaluateModel
 }
 
 BOOST_AUTO_TEST_SUITE_END()

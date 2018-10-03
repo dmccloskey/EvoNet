@@ -6,10 +6,9 @@
 #include <SmartPeak/ml/ModelBuilder.h>
 #include <SmartPeak/ml/Model.h>
 #include <SmartPeak/io/PopulationTrainerFile.h>
+#include <SmartPeak/io/ModelFile.h>
 
 #include <SmartPeak/simulator/MNISTSimulator.h>
-
-#include <fstream>
 
 #include <unsupported/Eigen/CXX11/Tensor>
 
@@ -39,8 +38,7 @@ public:
 	Based on Kingma et al, 2014: https://arxiv.org/pdf/1312.6114
 	https://github.com/pytorch/examples/blob/master/vae/main.py
 	*/
-	Model makeVAE(const int& n_inputs, const int& n_encodings) {
-		Model model;
+	void makeVAE(Model& model, int n_inputs = 784, int n_encodings = 20, int n_hidden_0 = 512) {
 		model.setId(0);
 		model.setName("VAE");
 		model.setLossFunction(std::shared_ptr<LossFunctionOp<float>>(new BCEOp<float>()));
@@ -51,17 +49,24 @@ public:
 		// Add the inputs
 		std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", n_inputs);
 
-		const int n_hidden_0 = 400;
 
 		// Add the Endocer FC layers
 		std::vector<std::string> node_names, node_names_mu, node_names_logvar;	
-		node_names = model_builder.addFullyConnected(model, "FC0", "FC0", node_names_input, n_hidden_0,
+		node_names = model_builder.addFullyConnected(model, "EN0", "EN0", node_names_input, n_hidden_0,
 			std::shared_ptr<ActivationOp<float>>(new ELUOp<float>(1.0)),
 			std::shared_ptr<ActivationOp<float>>(new ELUGradOp<float>(1.0)),
 			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
 			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
 			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
 			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names_input.size() + node_names.size())/2, 1)),
+			std::shared_ptr<SolverOp>(new AdamOp(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+		node_names = model_builder.addFullyConnected(model, "EN1", "EN1", node_names, n_hidden_0,
+			std::shared_ptr<ActivationOp<float>>(new ELUOp<float>(1.0)),
+			std::shared_ptr<ActivationOp<float>>(new ELUGradOp<float>(1.0)),
+			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
+			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
+			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
+			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names.size() + node_names.size()) / 2, 1)),
 			std::shared_ptr<SolverOp>(new AdamOp(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 		node_names_mu = model_builder.addFullyConnected(model, "Mu", "Mu", node_names, n_encodings,
 			std::shared_ptr<ActivationOp<float>>(new ELUOp<float>(1.0)),
@@ -84,7 +89,7 @@ public:
 		std::vector<std::string> node_names_encoder = model_builder.addVAEEncoding(model, "Encoding", "Encoding", node_names_mu, node_names_logvar);
 
 		// Add the Decoder FC layers
-		node_names = model_builder.addFullyConnected(model, "FC1", "FC1", node_names_encoder, n_hidden_0,
+		node_names = model_builder.addFullyConnected(model, "DE0", "DE0", node_names_encoder, n_hidden_0,
 			std::shared_ptr<ActivationOp<float>>(new ELUOp<float>(1.0)),
 			std::shared_ptr<ActivationOp<float>>(new ELUGradOp<float>(1.0)),
 			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
@@ -92,9 +97,17 @@ public:
 			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
 			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names_encoder.size() + n_hidden_0)/2, 1)),
 			std::shared_ptr<SolverOp>(new AdamOp(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
-		node_names = model_builder.addFullyConnected(model, "Output", "Output", node_names, n_inputs,
+		node_names = model_builder.addFullyConnected(model, "DE1", "DE2", node_names, n_hidden_0,
 			std::shared_ptr<ActivationOp<float>>(new ELUOp<float>(1.0)),
 			std::shared_ptr<ActivationOp<float>>(new ELUGradOp<float>(1.0)),
+			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
+			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
+			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
+			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names.size() + n_hidden_0) / 2, 1)),
+			std::shared_ptr<SolverOp>(new AdamOp(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+		node_names = model_builder.addFullyConnected(model, "Output", "Output", node_names, n_inputs,
+			std::shared_ptr<ActivationOp<float>>(new SigmoidOp<float>()),
+			std::shared_ptr<ActivationOp<float>>(new SigmoidGradOp<float>()),
 			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
 			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
 			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
@@ -108,7 +121,6 @@ public:
 			model.getNodesMap().at(node_name)->setType(NodeType::output);
 
 		model.initWeights();
-		return model;
 	}
 	Model makeModel() { return Model(); }
 	void adaptiveTrainerScheduler(
@@ -116,13 +128,19 @@ public:
 		const int& n_epochs,
 		Model& model,
 		const std::vector<float>& model_errors) {
-		if (n_epochs > 10000) {
+		if (n_epochs > 500) {
 			// update the solver parameters
 			std::shared_ptr<SolverOp> solver;
-			solver.reset(new AdamOp(0.001, 0.9, 0.999, 1e-8));
 			for (auto& weight_map : model.getWeightsMap())
 				if (weight_map.second->getSolverOp()->getName() == "AdamOp")
-					weight_map.second->setSolverOp(solver);
+					weight_map.second->getSolverOp()->setLearningRate(1e-4);
+		}
+		if (n_epochs % 50 == 0) {
+			// save the model every 100 epochs
+			ModelFile data;
+			data.storeModelCsv(model.getName() + "_" + std::to_string(n_epochs) + "_nodes.csv",
+				model.getName() + "_" + std::to_string(n_epochs) + "_links.csv",
+				model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model);
 		}
 	}
 };
@@ -130,6 +148,7 @@ public:
 class DataSimulatorExt : public MNISTSimulator
 {
 public:
+	void simulateEvaluationData(Eigen::Tensor<float, 4>& input_data, Eigen::Tensor<float, 3>& time_steps) {};
 	void simulateTrainingData(Eigen::Tensor<float, 4>& input_data, Eigen::Tensor<float, 4>& output_data, Eigen::Tensor<float, 3>& time_steps)
 	{
 		// infer data dimensions based on the input tensors
@@ -171,10 +190,10 @@ public:
 				for (int nodes_iter = 0; nodes_iter < n_input_pixels + 2*n_encodings; ++nodes_iter) {
 					for (int epochs_iter = 0; epochs_iter < n_epochs; ++epochs_iter) {
 						if (nodes_iter < n_input_pixels) {
-							//input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
-							//output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
-							output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[0], nodes_iter); // test on only 1 sample
-							input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[0], nodes_iter);  // test on only 1 sample
+							input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
+							output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
+							//output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[0], nodes_iter); // test on only 1 sample
+							//input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[0], nodes_iter);  // test on only 1 sample
 						}
 						else if (nodes_iter >= n_input_pixels && nodes_iter < n_encodings) {
 							input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = d(gen); // sample from a normal distribution
@@ -228,10 +247,10 @@ public:
 				for (int nodes_iter = 0; nodes_iter < n_input_pixels + 2 * n_encodings; ++nodes_iter) {
 					for (int epochs_iter = 0; epochs_iter < n_epochs; ++epochs_iter) {
 						if (nodes_iter < n_input_pixels) {
-							input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
-							output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
-							//output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[0], nodes_iter); // test on only 1 sample
-							//input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[0], nodes_iter);  // test on only 1 sample
+							input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = validation_data(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
+							output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = validation_data(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
+							//output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = validation_data(sample_indices[0], nodes_iter); // test on only 1 sample
+							//input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = validation_data(sample_indices[0], nodes_iter);  // test on only 1 sample
 						}
 						else if (nodes_iter >= n_input_pixels && nodes_iter < n_encodings) {
 							input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 0; // sample from a normal distribution
@@ -321,8 +340,9 @@ void main_VAE() {
 	// define the data simulator
 	const std::size_t input_size = 784;
 	const std::size_t encoding_size = 20;
-	const std::size_t training_data_size = 10000; //60000;
-	const std::size_t validation_data_size = 100; //10000;
+	const std::size_t n_hidden = 128;
+	const std::size_t training_data_size = 60000; //60000;
+	const std::size_t validation_data_size = 10000; //10000;
 	DataSimulatorExt data_simulator;
 
 	// read in the training data
@@ -370,9 +390,9 @@ void main_VAE() {
 
 	// define the model trainer
 	ModelTrainerExt model_trainer;
-	model_trainer.setBatchSize(1);
+	model_trainer.setBatchSize(8);
 	model_trainer.setMemorySize(1);
-	model_trainer.setNEpochsTraining(500);
+	model_trainer.setNEpochsTraining(5000);
 	model_trainer.setNEpochsValidation(10);
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setNThreads(n_hard_threads);
@@ -394,7 +414,9 @@ void main_VAE() {
 
 	// define the initial population [BUG FREE]
 	std::cout << "Initializing the population..." << std::endl;
-	std::vector<Model> population = { model_trainer.makeVAE(input_size, encoding_size) };
+	Model model;
+	model_trainer.makeVAE(model, input_size, encoding_size, n_hidden);
+	std::vector<Model> population = { model };
 
 	// Evolve the population
 	std::vector<std::vector<std::pair<int, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(

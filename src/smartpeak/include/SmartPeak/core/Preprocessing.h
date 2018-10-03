@@ -170,6 +170,16 @@ namespace SmartPeak
 		return onehot_encoded;
 	}
 
+	template<typename Ta>
+	std::pair<Ta, Ta> GaussianMixtureSampler(const Ta& x, const Ta& y, const int& label, const int& n_labels) {
+		const Ta shift = 1.4;
+		const Ta r = 2.0 * M_PI / Ta(n_labels) * Ta(label);
+		Ta new_x = x * std::cos(r) - y * std::sin(r);
+		Ta new_y = x * std::sin(r) + y * std::cos(r);
+		new_x += shift * std::cos(r);
+		new_y += shift * std::sin(r);
+		return std::make_pair(new_x, new_y);
+	};
 	/*
 	@brief 2D Gaussian mixture sampler
 
@@ -204,7 +214,7 @@ namespace SmartPeak
 			// sample from the mixture
 			std::normal_distribution<> dx{ 0.0f, x_var };
 			std::normal_distribution<> dy{ 0.0f, y_var };
-			std::pair<Ta, Ta> samples = GaussianMixtureSampler(dx(gen), dy(gen), label, n_labels);
+			std::pair<Ta, Ta> samples = GaussianMixtureSampler<Ta>(dx(gen), dy(gen), label, n_labels);
 			gaussian_mixture(i) = samples.first;
 			gaussian_mixture(i + 1) = samples.second;
 
@@ -213,17 +223,19 @@ namespace SmartPeak
 
 		return gaussian_mixture;
 	}
+
 	template<typename Ta>
-	std::pair<Ta, Ta> GaussianMixtureSampler(const Ta& x, const Ta& y, const int& label, const int& n_labels) {
-		const Ta shift = 1.4;
-		const Ta r = 2.0 * M_PI / Ta(n_labels) * Ta(label);
-		Ta new_x = x * std::cos(r) - y * std::sin(r);
-		Ta new_y = x * std::sin(r) + y * std::cos(r);
-		new_x += shift * std::cos(r);
-		new_y += shift * std::sin(r);
+	std::pair<Ta, Ta> SwissRollSampler(const int& label, const int& n_labels) {
+		std::random_device rd{};
+		std::mt19937 gen{ rd() };
+		std::uniform_real_distribution<> dist{ 0, 1 };
+		const Ta uni = Ta(dist(gen)) / Ta(n_labels) + Ta(label) / Ta(n_labels);
+		const Ta r = std::sqrt(uni) * 3.0;
+		const Ta rad = M_PI * 4.0 * sqrt(uni);
+		Ta new_x = r * std::cos(rad);
+		Ta new_y = r * std::sin(rad);
 		return std::make_pair(new_x, new_y);
 	};
-
 	/*
 	@brief 2D Swiss roll sampler
 
@@ -251,7 +263,7 @@ namespace SmartPeak
 			}
 
 			// sample from the mixture
-			std::pair<Ta, Ta> samples = SwissRollSampler(label, n_labels);
+			std::pair<Ta, Ta> samples = SwissRollSampler<Ta>(label, n_labels);
 			swiss_roll(i) = samples.first;
 			swiss_roll(i + 1) = samples.second;
 
@@ -260,18 +272,6 @@ namespace SmartPeak
 
 		return swiss_roll;
 	}
-	template<typename Ta>
-	std::pair<Ta, Ta> SwissRollSampler(const int& label, const int& n_labels) {
-		std::random_device rd{};
-		std::mt19937 gen{ rd() };
-		std::uniform_real_distribution<> dist{ 0, 1 };
-		const Ta uni = Ta(dist(gen)) / Ta(n_labels) + Ta(label) / Ta(n_labels);
-		const Ta r = std::sqrt(uni) * 3.0;
-		const Ta rad = M_PI * 4.0 * sqrt(uni);
-		Ta new_x = r * std::cos(rad);
-		Ta new_y = r * std::sin(rad);
-		return std::make_pair(new_x, new_y);
-	};
 }
 
 #endif //SMARTPEAK_PREPROCESSING_H

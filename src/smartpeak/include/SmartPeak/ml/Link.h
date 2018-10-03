@@ -33,13 +33,17 @@ public:
           source_node_name_,
           sink_node_name_,
           weight_name_,
-          name_
+          name_,
+					module_id_,
+					module_name_
         ) == std::tie(
           other.id_,
           other.source_node_name_,
           other.sink_node_name_,
           other.weight_name_,
-          other.name_
+          other.name_,
+					other.module_id_,
+					other.module_name_
         )
       ;
     }

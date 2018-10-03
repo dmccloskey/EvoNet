@@ -16,12 +16,12 @@ namespace SmartPeak
   {
     nodes.clear();
 
-    io::CSVReader<8> nodes_in(filename);
+    io::CSVReader<9> nodes_in(filename);
     nodes_in.read_header(io::ignore_extra_column, 
-      "node_name", "node_type", "node_status", "node_activation", "node_activation_grad", "node_integration", "node_integration_error", "node_integration_weight_grad");
-    std::string node_name, node_type_str, node_status_str, node_activation_str, node_activation_grad_str, node_integration_str, node_integration_error_str, node_integration_weight_grad_str;
+      "node_name", "node_type", "node_status", "node_activation", "node_activation_grad", "node_integration", "node_integration_error", "node_integration_weight_grad", "module_name");
+    std::string node_name, node_type_str, node_status_str, node_activation_str, node_activation_grad_str, node_integration_str, node_integration_error_str, node_integration_weight_grad_str, module_name_str = "";
 
-    while(nodes_in.read_row(node_name, node_type_str, node_status_str, node_activation_str, node_activation_grad_str, node_integration_str, node_integration_error_str, node_integration_weight_grad_str))
+    while(nodes_in.read_row(node_name, node_type_str, node_status_str, node_activation_str, node_activation_grad_str, node_integration_str, node_integration_error_str, node_integration_weight_grad_str, module_name_str))
     {
       // parse the node_type
       NodeType node_type;
@@ -80,6 +80,7 @@ namespace SmartPeak
 			else std::cout << "NodeIntegrationWeightGrad for node_name " << node_name << " was not recognized." << std::endl;
 
       Node node(node_name, node_type, node_status, node_activation, node_activation_grad, node_integration, node_integration_error, node_integration_weight_grad);
+			node.setModuleName(module_name_str);
       nodes.push_back(node);
     }
 	return true;
@@ -92,7 +93,7 @@ namespace SmartPeak
     CSVWriter csvwriter(filename);
 
     // write the headers to the first line
-    const std::vector<std::string> headers = {"node_name", "node_type", "node_status", "node_activation", "node_activation_grad", "node_integration", "node_integration_error", "node_integration_weight_grad" };
+    const std::vector<std::string> headers = {"node_name", "node_type", "node_status", "node_activation", "node_activation_grad", "node_integration", "node_integration_error", "node_integration_weight_grad", "module_name" };
     csvwriter.writeDataInRow(headers.begin(), headers.end());
 
     for (const Node& node: nodes)
@@ -132,6 +133,8 @@ namespace SmartPeak
 			row.push_back(node_integration_error_str);
 			std::string node_integration_weight_grad_str = node.getIntegrationWeightGrad()->getName();
 			row.push_back(node_integration_weight_grad_str);
+
+			row.push_back(node.getModuleName());
 
       // write to file
       csvwriter.writeDataInRow(row.begin(), row.end());

@@ -25,22 +25,28 @@ public:
     void setMemorySize(const int& memory_size); ///< memory_size setter
     void setNEpochsTraining(const int& n_epochs); ///< n_epochs setter
 		void setNEpochsValidation(const int& n_epochs); ///< n_epochs setter
+		void setNEpochsEvaluation(const int& n_epochs); ///< n_epochs setter
 		void setNThreads(const int& n_threads); ///< n_threads setter
 		void setVerbosityLevel(const int& verbosity_level); ///< verbosity_level setter
-		void setLogging(const bool& log_training, const bool& log_validation); ///< enable_logging setter
+		void setLogging(bool log_training = false, bool log_validation = false, bool log_evaluation = false); ///< enable_logging setter
 		void setLossFunctions(const std::vector<std::shared_ptr<LossFunctionOp<float>>>& loss_functions); ///< loss_functions setter [TODO: tests]
 		void setLossFunctionGrads(const std::vector<std::shared_ptr<LossFunctionGradOp<float>>>& loss_function_grads); ///< loss_functions setter [TODO: tests]
 		void setOutputNodes(const std::vector<std::vector<std::string>>& output_nodes); ///< output_nodes setter [TODO: tests]
+		void setNTBPTTSteps(const int& n_TBPTT); ///< n_TBPTT setter
+		void setNTETTSteps(const int& n_TETT); ///< n_TETT setter
 
     int getBatchSize() const; ///< batch_size setter
     int getMemorySize() const; ///< memory_size setter
     int getNEpochsTraining() const; ///< n_epochs setter
 		int getNEpochsValidation() const; ///< n_epochs setter
+		int getNEpochsEvaluation() const; ///< n_epochs setter
 		int getNThreads() const; ///< n_threads setter
 		int getVerbosityLevel() const; ///< verbosity_level setter
 		std::vector<std::shared_ptr<LossFunctionOp<float>>> getLossFunctions(); ///< loss_functions getter [TODO: tests]
 		std::vector<std::shared_ptr<LossFunctionGradOp<float>>> getLossFunctionGrads(); ///< loss_functions getter [TODO: tests]
 		std::vector<std::vector<std::string>> getOutputNodes(); ///< output_nodes getter [TODO: tests]
+		int getNTBPTTSteps() const; ///< n_TBPTT setter
+		int getNTETTSteps() const; ///< n_TETT setter
  
     /**
       @brief Check input dimensions.
@@ -95,12 +101,10 @@ public:
         for model training
 
       @param[in, out] model The model to train
-      @param[in] n_epochs The number of epochs to train
       @param[in] input Input data tensor of dimensions: batch_size, memory_size, input_nodes, n_epochs
       @param[in] output Expected output data tensor of dimensions: batch_size, memory_size, output_nodes, n_epochs
       @param[in] time_steps Time steps of the forward passes of dimensions: batch_size, memory_size, n_epochs
       @param[in] input_nodes Input node names
-      @param[in] output_nodes Output node names
 
       @returns vector of average model error scores
     */ 
@@ -116,18 +120,33 @@ public:
         for model validation
 
       @param[in, out] model The model to train
-      @param[in] n_epochs The number of epochs to train
       @param[in] input Input data tensor of dimensions: batch_size, memory_size, input_nodes, n_epochs
       @param[in] output Expected output data tensor of dimensions: batch_size, memory_size, output_nodes, n_epochs
       @param[in] time_steps Time steps of the forward passes of dimensions: batch_size, memory_size, n_epochs
       @param[in] input_nodes Input node names
-      @param[in] output_nodes Output node names
 
       @returns vector of average model error scores
     */ 
 		std::vector<float> validateModel(Model& model,
 			const Eigen::Tensor<float, 4>& input,
 			const Eigen::Tensor<float, 4>& output,
+			const Eigen::Tensor<float, 3>& time_steps,
+			const std::vector<std::string>& input_nodes,
+			ModelLogger& model_logger);
+
+		/**
+			@brief Entry point for users to code their script
+				for model forward evaluations
+
+			@param[in, out] model The model to train
+			@param[in] input Input data tensor of dimensions: batch_size, memory_size, input_nodes, n_epochs
+			@param[in] time_steps Time steps of the forward passes of dimensions: batch_size, memory_size, n_epochs
+			@param[in] input_nodes Input node names
+
+			@returns vector of vectors corresponding to output nodes
+		*/
+		std::vector<std::vector<Eigen::Tensor<float, 2>>> evaluateModel(Model& model,
+			const Eigen::Tensor<float, 4>& input,
 			const Eigen::Tensor<float, 3>& time_steps,
 			const std::vector<std::string>& input_nodes,
 			ModelLogger& model_logger);
@@ -159,14 +178,18 @@ public:
 private:
     int batch_size_;
     int memory_size_;
-    int n_epochs_training_;
-		int n_epochs_validation_;
-    bool is_trained_ = false;
+    int n_epochs_training_ = 0;
+		int n_epochs_validation_ = 0;
+		int n_epochs_evaluation_ = 0;
+
+		int n_TBPTT_steps_ = -1; ///< the number of truncated back propogation through time steps
+		int n_TETT_steps_ = -1; ///< the number of truncated error through time calculation steps
 
 		int n_threads_ = 1;
 		int verbosity_level_ = 0; ///< level of verbosity (0=none, 1=test/validation errors, 2=test/validation node values
 		bool log_training_ = false;
 		bool log_validation_ = false;
+		bool log_evaluation_ = false;
 
 		std::vector<std::shared_ptr<LossFunctionOp<float>>> loss_functions_;
 		std::vector<std::shared_ptr<LossFunctionGradOp<float>>> loss_function_grads_;

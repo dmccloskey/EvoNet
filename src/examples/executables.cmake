@@ -1,5 +1,6 @@
 set(ml_executables_list
   MNIST_AAE_example
+  MNIST_AAE_LabelStyle_example
   MNIST_CovNet_example
   MNIST_EvoNet_example
   MNIST_GAN_example

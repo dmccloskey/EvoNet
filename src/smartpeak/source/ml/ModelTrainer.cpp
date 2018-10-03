@@ -1,8 +1,6 @@
 /**TODO:  Add copyright*/
 
 #include <SmartPeak/ml/ModelTrainer.h>
-#include <SmartPeak/io/csv.h>
-
 
 namespace SmartPeak
 {
@@ -29,6 +27,11 @@ namespace SmartPeak
 		n_epochs_validation_ = n_epochs;
 	}
 
+	void ModelTrainer::setNEpochsEvaluation(const int & n_epochs)
+	{
+		n_epochs_evaluation_ = n_epochs;
+	}
+
 	void ModelTrainer::setNThreads(const int & n_threads)
 	{
 		n_threads_ = n_threads;
@@ -39,10 +42,11 @@ namespace SmartPeak
 		verbosity_level_ = verbosity_level;
 	}
 
-	void ModelTrainer::setLogging(const bool& log_training, const bool& log_validation)
+	void ModelTrainer::setLogging(bool log_training, bool log_validation, bool log_evaluation)
 	{
 		log_training_ = log_training;
 		log_validation_ = log_validation;
+		log_evaluation_ = log_evaluation;
 	}
 
 	void ModelTrainer::setLossFunctions(const std::vector<std::shared_ptr<LossFunctionOp<float>>>& loss_functions)
@@ -58,6 +62,16 @@ namespace SmartPeak
 	void ModelTrainer::setOutputNodes(const std::vector<std::vector<std::string>>& output_nodes)
 	{
 		output_nodes_ = output_nodes;
+	}
+
+	void ModelTrainer::setNTBPTTSteps(const int & n_TBPTT)
+	{
+		n_TBPTT_steps_ = n_TBPTT;
+	}
+
+	void ModelTrainer::setNTETTSteps(const int & n_TETT)
+	{
+		n_TETT_steps_ = n_TETT;
 	}
 
   int ModelTrainer::getBatchSize() const
@@ -78,6 +92,11 @@ namespace SmartPeak
 	int ModelTrainer::getNEpochsValidation() const
 	{
 		return n_epochs_validation_;
+	}
+
+	int ModelTrainer::getNEpochsEvaluation() const
+	{
+		return n_epochs_evaluation_;
 	}
 
 	int ModelTrainer::getNThreads() const
@@ -103,6 +122,16 @@ namespace SmartPeak
 	std::vector<std::vector<std::string>> ModelTrainer::getOutputNodes()
 	{
 		return output_nodes_;
+	}
+
+	int ModelTrainer::getNTBPTTSteps() const
+	{
+		return n_TBPTT_steps_;
+	}
+
+	int ModelTrainer::getNTETTSteps() const
+	{
+		return n_TETT_steps_;
 	}
 
   bool ModelTrainer::checkInputData(const int& n_epochs,
@@ -226,8 +255,8 @@ namespace SmartPeak
 		model.initError(getBatchSize(), getMemorySize());
 		model.clearCache();
 		model.initNodes(getBatchSize(), getMemorySize(), true); // The first time point = 0
-		model.findCycles();
 		model.initWeightsDropProbability(true);
+		//model.findCycles(); // [TODO: add method to model to flag when to find cycles]
 
 		// Initialize the logger
 		if (log_training_)
@@ -260,7 +289,10 @@ namespace SmartPeak
 					for (int memory_iter = 0; memory_iter < getMemorySize(); ++memory_iter)
 						for (int node_iter = 0; node_iter < output_nodes_[loss_iter].size(); ++node_iter)
 							expected(batch_iter, memory_iter, node_iter) = expected_tmp(batch_iter, memory_iter, (int)(node_iter + output_node_cnt));
-				model.CETT(expected, output_nodes_[loss_iter], getMemorySize(), getNThreads());
+				if (getNTETTSteps() < 0)
+					model.CETT(expected, output_nodes_[loss_iter], getMemorySize(), getNThreads());
+				else
+					model.CETT(expected, output_nodes_[loss_iter], getNTETTSteps(), getNThreads());
 				output_node_cnt += output_nodes_[loss_iter].size();
 			}
 
@@ -272,14 +304,17 @@ namespace SmartPeak
 			// back propogate
 			if (getVerbosityLevel() >= 2)
 				std::cout << "Back Propogation..." << std::endl;
-			//if (iter == 0)
-			//	model.TBPTT(1, true, true, getNThreads());
-			//else
-			//	model.TBPTT(1, false, true, getNThreads());
-			if (iter == 0)
-				model.TBPTT(getMemorySize(), true, true, getNThreads());
+			if (getNTBPTTSteps() < 0) {
+				if (iter == 0)
+					model.TBPTT(getMemorySize(), true, true, getNThreads());
+				else
+					model.TBPTT(getMemorySize(), false, true, getNThreads());
+			}
 			else
-				model.TBPTT(getMemorySize(), false, true, getNThreads());
+				if (iter == 0)
+					model.TBPTT(getNTBPTTSteps(), true, true, getNThreads());
+				else
+					model.TBPTT(getNTBPTTSteps(), false, true, getNThreads());
 
 			// update the weights
 			if (getVerbosityLevel() >= 2)
@@ -367,7 +402,10 @@ namespace SmartPeak
 					for (int memory_iter = 0; memory_iter < getMemorySize(); ++memory_iter)
 						for (int node_iter = 0; node_iter < output_nodes_[loss_iter].size(); ++node_iter)
 							expected(batch_iter, memory_iter, node_iter) = expected_tmp(batch_iter, memory_iter, (int)(node_iter + output_node_cnt));
-				model.CETT(expected, output_nodes_[loss_iter], getMemorySize(), getNThreads());
+				if (getNTETTSteps() < 0)
+					model.CETT(expected, output_nodes_[loss_iter], getMemorySize(), getNThreads());
+				else
+					model.CETT(expected, output_nodes_[loss_iter], getNTETTSteps(), getNThreads());
 				output_node_cnt += output_nodes_[loss_iter].size();
 			}
 
@@ -389,5 +427,75 @@ namespace SmartPeak
 		}
 		model.clearCache();
 		return model_error;
+	}
+
+	std::vector<std::vector<Eigen::Tensor<float, 2>>> ModelTrainer::evaluateModel(Model & model, const Eigen::Tensor<float, 4>& input, const Eigen::Tensor<float, 3>& time_steps, const std::vector<std::string>& input_nodes,
+		ModelLogger& model_logger)
+	{
+		std::vector<std::vector<Eigen::Tensor<float, 2>>> model_output;
+
+		// Check input data
+		if (!checkInputData(getNEpochsEvaluation(), input, getBatchSize(), getMemorySize(), input_nodes))
+		{
+			return model_output;
+		}
+		if (!checkTimeSteps(getNEpochsEvaluation(), time_steps, getBatchSize(), getMemorySize()))
+		{
+			return model_output;
+		}
+		if (!model.checkNodeNames(input_nodes))
+		{
+			return model_output;
+		}
+		std::vector<std::string> output_nodes;
+		for (const std::vector<std::string>& output_nodes_vec : output_nodes_)
+			for (const std::string& output_node : output_nodes_vec)
+				output_nodes.push_back(output_node);
+		if (!model.checkNodeNames(output_nodes))
+		{
+			return model_output;
+		}
+
+		// Initialize the model
+		model.initError(getBatchSize(), getMemorySize());
+		model.clearCache();
+		model.initNodes(getBatchSize(), getMemorySize()); // The first time point = 0
+		model.findCycles();
+		model.initWeightsDropProbability(false);
+
+		// Initialize the logger
+		if (log_evaluation_)
+			model_logger.initLogs(model);
+
+		for (int iter = 0; iter < getNEpochsEvaluation(); ++iter) // use n_epochs here
+		{
+			// re-initialize only after the first epoch
+			if (iter > 0) {
+				// reinitialize the model
+				model.reInitializeNodeStatuses();
+				model.initNodes(getBatchSize(), getMemorySize());
+			}
+
+			// forward propogate
+			if (iter == 0)
+				model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), true, true, getNThreads());
+			else
+				model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), false, true, getNThreads());
+
+			// extract out the model output
+			std::vector<Eigen::Tensor<float, 2>> output;
+			for (const std::vector<std::string>& output_nodes_vec : output_nodes_) {
+				for (const std::string& output_node : output_nodes_vec) {
+					output.push_back(model.getNode(output_node).getOutput());
+				}
+			}
+
+			// log epoch
+			if (log_evaluation_) {
+				model_logger.writeLogs(model, iter, {}, {}, {}, {}, output_nodes, Eigen::Tensor<float, 3>(), output_nodes, {}, {});
+			}
+		}
+		model.clearCache();
+		return model_output;
 	}
 }

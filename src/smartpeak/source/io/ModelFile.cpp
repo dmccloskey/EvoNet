@@ -1,12 +1,82 @@
 /**TODO:  Add copyright*/
 
 #include <SmartPeak/io/ModelFile.h>
+#include <SmartPeak/io/NodeFile.h>
+#include <SmartPeak/io/WeightFile.h>
+#include <SmartPeak/io/LinkFile.h>
+
+//#include <filesystem> // C++ 17
 
 namespace SmartPeak
 {
 
   ModelFile::ModelFile(){}
   ModelFile::~ModelFile(){}
+
+	bool ModelFile::storeModelBinary(const std::string & filename, const Model & model)
+	{
+		auto myfile = std::fstream(filename, std::ios::out | std::ios::binary);
+		myfile.write((char*)&model, sizeof(model));
+		myfile.close();
+		return true;
+	}
+
+	bool ModelFile::loadModelBinary(const std::string & filename, Model & model)
+	{
+		// C++17
+		//std::uintmax_t file_size = std::filesystem::file_size(filename); 
+		//auto myfile = std::fstream(filename, std::ios::in | std::ios::binary);
+		//myfile.read((char*)&model, file_size);
+		//myfile.close();
+
+		// using the C stat header
+		//struct stat results;
+		//int err = stat(filename.data(), &results);
+		//std::uintmax_t file_size = results.st_size;
+
+		auto myfile = std::fstream(filename, std::ios::in | std::ios::binary | std::ios::ate);
+		std::uintmax_t file_size = myfile.tellg();
+		myfile.seekg(0, std::ios::beg);
+		myfile.read((char*)&model, file_size);
+		myfile.close();
+		return true;
+	}
+
+	bool ModelFile::storeModelCsv(const std::string & filename_nodes, const std::string & filename_links, const std::string & filename_weights, const Model & model)
+	{
+		NodeFile node_file;
+		node_file.storeNodesCsv(filename_nodes, model.getNodes());
+		LinkFile link_file;
+		link_file.storeLinksCsv(filename_links, model.getLinks());
+		WeightFile weight_file;
+		weight_file.storeWeightsCsv(filename_weights, model.getWeights());
+		return true;
+	}
+
+	bool ModelFile::loadModelCsv(const std::string & filename_nodes, const std::string & filename_links, const std::string & filename_weights, Model& model)
+	{
+		// load the nodes
+		NodeFile node_file;
+		std::vector<Node> nodes;
+		node_file.loadNodesCsv(filename_nodes, nodes);
+
+		// load the links
+		LinkFile link_file;
+		std::vector<Link> links;
+		link_file.loadLinksCsv(filename_links, links);
+
+		// load the weights
+		WeightFile weight_file;
+		std::vector<Weight> weights;
+		weight_file.loadWeightsCsv(filename_weights, weights);
+
+		// make the model
+		model.addNodes(nodes);
+		model.addLinks(links);
+		model.addWeights(weights);
+
+		return true;
+	}
 
 	bool ModelFile::storeModelDot(const std::string& filename, const Model& model)
 	{
