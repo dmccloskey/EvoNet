@@ -55,7 +55,7 @@ public:
 
 		// Add the Endocer FC layers
 		std::vector<std::string> node_names, node_names_mu, node_names_logvar;	
-		node_names = model_builder.addFullyConnected(model, "FC0", "FC0", node_names_input, n_hidden_0,
+		node_names = model_builder.addFullyConnected(model, "EN0", "EN0", node_names_input, n_hidden_0,
 			std::shared_ptr<ActivationOp<float>>(new ELUOp<float>(1.0)),
 			std::shared_ptr<ActivationOp<float>>(new ELUGradOp<float>(1.0)),
 			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
@@ -63,7 +63,7 @@ public:
 			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
 			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names_input.size() + node_names.size())/2, 1)),
 			std::shared_ptr<SolverOp>(new AdamOp(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
-		node_names = model_builder.addFullyConnected(model, "FC1", "FC1", node_names, n_hidden_0,
+		node_names = model_builder.addFullyConnected(model, "EN1", "EN1", node_names, n_hidden_0,
 			std::shared_ptr<ActivationOp<float>>(new ELUOp<float>(1.0)),
 			std::shared_ptr<ActivationOp<float>>(new ELUGradOp<float>(1.0)),
 			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
@@ -92,7 +92,7 @@ public:
 		std::vector<std::string> node_names_encoder = model_builder.addVAEEncoding(model, "Encoding", "Encoding", node_names_mu, node_names_logvar);
 
 		// Add the Decoder FC layers
-		node_names = model_builder.addFullyConnected(model, "FC1", "FC1", node_names_encoder, n_hidden_0,
+		node_names = model_builder.addFullyConnected(model, "DE0", "DE0", node_names_encoder, n_hidden_0,
 			std::shared_ptr<ActivationOp<float>>(new ELUOp<float>(1.0)),
 			std::shared_ptr<ActivationOp<float>>(new ELUGradOp<float>(1.0)),
 			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
@@ -100,7 +100,7 @@ public:
 			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
 			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names_encoder.size() + n_hidden_0)/2, 1)),
 			std::shared_ptr<SolverOp>(new AdamOp(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
-		node_names = model_builder.addFullyConnected(model, "FC2", "FC2", node_names, n_hidden_0,
+		node_names = model_builder.addFullyConnected(model, "DE1", "DE2", node_names, n_hidden_0,
 			std::shared_ptr<ActivationOp<float>>(new ELUOp<float>(1.0)),
 			std::shared_ptr<ActivationOp<float>>(new ELUGradOp<float>(1.0)),
 			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),

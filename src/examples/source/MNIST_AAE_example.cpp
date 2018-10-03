@@ -401,7 +401,7 @@ void main_AAELatentZTrain() {
 	// define the data simulator
 	const std::size_t input_size = 784;
 	const std::size_t encoding_size = 2;
-	const std::size_t hidden_size = 500;
+	const std::size_t hidden_size = 512;
 	const std::size_t training_data_size = 60000; //60000;
 	const std::size_t validation_data_size = 1000; //10000;
 	DataSimulatorExt data_simulator;
