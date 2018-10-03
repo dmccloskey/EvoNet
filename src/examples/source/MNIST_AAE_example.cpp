@@ -103,8 +103,8 @@ public:
 			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names.size() + n_hidden_0) / 2, 1)),
 			std::shared_ptr<SolverOp>(new AdamOp(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 		node_names = model_builder.addFullyConnected(model, "DE-Output", "DE-Output", node_names, n_inputs,
-			std::shared_ptr<ActivationOp<float>>(new ELUOp<float>()),
-			std::shared_ptr<ActivationOp<float>>(new ELUGradOp<float>()),
+			std::shared_ptr<ActivationOp<float>>(new SigmoidOp<float>()),
+			std::shared_ptr<ActivationOp<float>>(new SigmoidGradOp<float>()),
 			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
 			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
 			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
@@ -126,13 +126,12 @@ public:
 		const int& n_epochs,
 		Model& model,
 		const std::vector<float>& model_errors) {
-		if (n_epochs > 1000) {
+		if (n_epochs > 200) {
 			// update the solver parameters
 			std::shared_ptr<SolverOp> solver;
-			solver.reset(new AdamOp(0.0001, 0.9, 0.999, 1e-8));
 			for (auto& weight_map : model.getWeightsMap())
 				if (weight_map.second->getSolverOp()->getName() == "AdamOp")
-					weight_map.second->setSolverOp(solver);
+					weight_map.second->getSolverOp()->setLearningRate(1e-4);
 		}
 		if (n_epochs % 50 == 0) {
 			// save the model every 100 epochs

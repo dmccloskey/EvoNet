@@ -65,6 +65,8 @@ public:
 			std::normal_distribution<> d{ 0.0f, gradient_noise_sigma_ };
 			return gradient + d(gen);
 		}
+		void setLearningRate(const float& learning_rate) { learning_rate_ = learning_rate; };
+		float getLearningRate() const { return learning_rate_; };
     virtual std::string getParameters() const = 0;
 		float checkWeight(const float& weight, const float& new_weight)
 		{
@@ -76,6 +78,7 @@ public:
 private:
     // clipping parameters
     float gradient_threshold_ = 1e6; ///< maximum gradient magnitude
+		float learning_rate_ = 1e-3; ///< the learning rate
 
     // gradient noise with annealed variance parameters
     float gradient_noise_sigma_ = 1.0; ///< variance before annealing
