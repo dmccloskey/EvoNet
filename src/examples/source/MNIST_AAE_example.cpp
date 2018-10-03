@@ -10,8 +10,6 @@
 
 #include <SmartPeak/simulator/MNISTSimulator.h>
 
-#include <fstream>
-
 #include <unsupported/Eigen/CXX11/Tensor>
 
 using namespace SmartPeak;

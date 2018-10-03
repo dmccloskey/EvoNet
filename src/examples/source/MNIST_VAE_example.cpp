@@ -10,8 +10,6 @@
 
 #include <SmartPeak/simulator/MNISTSimulator.h>
 
-#include <fstream>
-
 #include <unsupported/Eigen/CXX11/Tensor>
 
 using namespace SmartPeak;
@@ -40,8 +38,7 @@ public:
 	Based on Kingma et al, 2014: https://arxiv.org/pdf/1312.6114
 	https://github.com/pytorch/examples/blob/master/vae/main.py
 	*/
-	Model makeVAE(int n_inputs = 784, int n_encodings = 20, int n_hidden_0 = 512) {
-		Model model;
+	void makeVAE(Model& model, int n_inputs = 784, int n_encodings = 20, int n_hidden_0 = 512) {
 		model.setId(0);
 		model.setName("VAE");
 		model.setLossFunction(std::shared_ptr<LossFunctionOp<float>>(new BCEOp<float>()));
@@ -124,7 +121,6 @@ public:
 			model.getNodesMap().at(node_name)->setType(NodeType::output);
 
 		model.initWeights();
-		return model;
 	}
 	Model makeModel() { return Model(); }
 	void adaptiveTrainerScheduler(
@@ -344,8 +340,8 @@ void main_VAE() {
 	// define the data simulator
 	const std::size_t input_size = 784;
 	const std::size_t encoding_size = 20;
-	const std::size_t training_data_size = 10000; //60000;
-	const std::size_t validation_data_size = 100; //10000;
+	const std::size_t training_data_size = 60000; //60000;
+	const std::size_t validation_data_size = 10000; //10000;
 	DataSimulatorExt data_simulator;
 
 	// read in the training data
@@ -417,7 +413,9 @@ void main_VAE() {
 
 	// define the initial population [BUG FREE]
 	std::cout << "Initializing the population..." << std::endl;
-	std::vector<Model> population = { model_trainer.makeVAE(input_size, encoding_size) };
+	Model model;
+	model_trainer.makeVAE(model, input_size, encoding_size);
+	std::vector<Model> population = { model };
 
 	// Evolve the population
 	std::vector<std::vector<std::pair<int, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(

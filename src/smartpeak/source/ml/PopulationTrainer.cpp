@@ -471,19 +471,21 @@ namespace SmartPeak
   {
     std::lock_guard<std::mutex> lock(trainModel_mutex);
 
-    Model model_copy(*model);
+    //Model model_copy(*model);
     try
     {
       model_trainer->trainModel(
-        model_copy, input, output, time_steps,
+        //model_copy,
+				*model,
+				input, output, time_steps,
         input_nodes, *model_logger);
-      return std::make_pair(true, model_copy);
+      return std::make_pair(true, *model);
     }
     catch (std::exception& e)
     {
-      printf("The model %s is broken.\n", model_copy.getName().data());
+      printf("The model %s is broken.\n", model->getName().data());
       printf("Error: %s.\n", e.what());
-      return std::make_pair(false, model_copy);
+      return std::make_pair(false, *model);
     }
   }
 

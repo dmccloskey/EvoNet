@@ -255,8 +255,8 @@ namespace SmartPeak
 		model.initError(getBatchSize(), getMemorySize());
 		model.clearCache();
 		model.initNodes(getBatchSize(), getMemorySize(), true); // The first time point = 0
-		model.findCycles();
 		model.initWeightsDropProbability(true);
+		//model.findCycles(); // [TODO: add method to model to flag when to find cycles]
 
 		// Initialize the logger
 		if (log_training_)

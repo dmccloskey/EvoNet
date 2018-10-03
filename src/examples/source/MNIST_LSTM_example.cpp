@@ -6,12 +6,11 @@
 #include <SmartPeak/ml/ModelBuilder.h>
 #include <SmartPeak/ml/Model.h>
 #include <SmartPeak/io/PopulationTrainerFile.h>
+#include <SmartPeak/io/ModelFile.h>
 
 #include <SmartPeak/simulator/MNISTSimulator.h>
 
 #include <SmartPeak/core/Preprocessing.h>
-
-#include <fstream>
 
 #include <unsupported/Eigen/CXX11/Tensor>
 
@@ -75,13 +74,19 @@ public:
 		const int& n_epochs,
 		Model& model,
 		const std::vector<float>& model_errors) {
-		if (n_epochs > 10000) {
+		if (n_epochs > 200) {
 			// update the solver parameters
 			std::shared_ptr<SolverOp> solver;
-			solver.reset(new AdamOp(0.001, 0.9, 0.999, 1e-8));
 			for (auto& weight_map : model.getWeightsMap())
 				if (weight_map.second->getSolverOp()->getName() == "AdamOp")
-					weight_map.second->setSolverOp(solver);
+					weight_map.second->getSolverOp()->setLearningRate(1e-4);
+		}
+		if (n_epochs % 50 == 0) {
+			// save the model every 100 epochs
+			ModelFile data;
+			data.storeModelCsv(model.getName() + "_" + std::to_string(n_epochs) + "_nodes.csv",
+				model.getName() + "_" + std::to_string(n_epochs) + "_links.csv",
+				model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model);
 		}
 	}
 };
@@ -254,7 +259,7 @@ void main_LSTMTrain() {
 	population_trainer.setNReplicatesPerModel(1);
 
 	// define the model logger
-	ModelLogger model_logger(true, true, true, false, true, false, false, false);
+	ModelLogger model_logger(true, true, true, false, false, false, false, false);
 
 	// define the data simulator
 	const std::size_t input_size = 784;
@@ -295,9 +300,9 @@ void main_LSTMTrain() {
 
 	// define the model trainer
 	ModelTrainerExt model_trainer;
-	model_trainer.setBatchSize(1);
+	model_trainer.setBatchSize(8);
 	model_trainer.setMemorySize(input_size);
-	model_trainer.setNEpochsTraining(500);
+	model_trainer.setNEpochsTraining(5000);
 	model_trainer.setNEpochsValidation(10);
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setNThreads(n_hard_threads);
