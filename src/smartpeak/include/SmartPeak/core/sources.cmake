@@ -3,10 +3,14 @@ set(directory include/SmartPeak/core)
 
 ### list all header files of the directory here
 set(sources_list_h
-Helloworld.h
-Preprocessing.h
-Statistics.h
-StringParsing.h
+	DeviceManager.h
+	CPUDevice.h
+	GPUDevice.h
+	HardwareManager.h
+	Helloworld.h
+	Preprocessing.h
+	Statistics.h
+	StringParsing.h
 )
 
 ### add path to the filenames

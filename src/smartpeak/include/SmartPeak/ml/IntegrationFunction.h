@@ -5,7 +5,6 @@
 
 #include <SmartPeak/ml/SharedFunctions.h>
 #include <unsupported/Eigen/CXX11/Tensor>
-#include <atomic>
 
 namespace SmartPeak
 {

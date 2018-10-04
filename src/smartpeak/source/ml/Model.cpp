@@ -1104,14 +1104,18 @@ namespace SmartPeak
 
 		int FP_operations_cnt = 0;
 		for (auto& FP_operations : FP_operations_cache_) {
-			// Special case if all of all FP_operations with sink node of Sum IntegrationType and the same activation function
+			// Special case if all FP_operations with sink node of Sum IntegrationType and the same activation function
+			//Eigen::Tensor<float, 2> source_tensor(batch_size, FP_operations_dimensions_[FP_operations_cnt].first);
+			//Eigen::Tensor<float, 2> weight_tensor(FP_operations_dimensions_[FP_operations_cnt].first, FP_operations_dimensions_[FP_operations_cnt].second);
+			//Eigen::Tensor<float, 2> sink_tensor_output(batch_size, FP_operations_dimensions_[FP_operations_cnt].second);
+			//Eigen::Tensor<float, 2> sink_tensor_derivative(batch_size, FP_operations_dimensions_[FP_operations_cnt].second);
 
 			for (auto& FP_operation : FP_operations) {
 				// Create the source, weight, and sink tensors
-				Eigen::Tensor<float, 2> source_tensor(batch_size, FP_operations_dimensions_[FP_operations_cnt].first);
-				Eigen::Tensor<float, 2> weight_tensor(FP_operations_dimensions_[FP_operations_cnt].first, FP_operations_dimensions_[FP_operations_cnt].second);
-				Eigen::Tensor<float, 1> sink_tensor_output(batch_size, FP_operations_dimensions_[FP_operations_cnt].second);
-				Eigen::Tensor<float, 1> sink_tensor_derivative(batch_size, FP_operations_dimensions_[FP_operations_cnt].second);
+				Eigen::Tensor<float, 2> source_tensor(batch_size, FP_operation.arguments.size());
+				Eigen::Tensor<float, 2> weight_tensor(batch_size, FP_operation.arguments.size());
+				Eigen::Tensor<float, 1> sink_tensor_output(batch_size);
+				Eigen::Tensor<float, 1> sink_tensor_derivative(batch_size);
 				int arguments_cnt = 0;
 				for (auto& FP_argument : FP_operation.arguments) {
 					// Fill the source and weight tensors
