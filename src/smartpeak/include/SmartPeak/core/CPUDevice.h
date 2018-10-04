@@ -3,7 +3,7 @@
 
 #define EIGEN_USE_THREADS
 #include <unsupported/Eigen/CXX11/Tensor>
-#include <SmartPeak/core/DeviceManager>
+#include <SmartPeak/core/DeviceManager.h>
 
 namespace SmartPeak
 {

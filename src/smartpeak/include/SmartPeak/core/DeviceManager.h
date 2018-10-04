@@ -18,7 +18,7 @@ namespace SmartPeak
 	public:    
     DeviceManager() = default; ///< Default constructor 
 		DeviceManager(const int& id, const DevicePriority& device_priority, const int& n_kernals) :
-			id_(id), device_type_(device_type), device_priority_(device_priority), n_kernals_(n_kernals) {}; ///< Constructor    
+			id_(id), device_priority_(device_priority), n_kernals_(n_kernals) {}; ///< Constructor    
 		~DeviceManager() = default; ///< Destructor
 
 		virtual void setDevice(int n_kernals = 0) = 0;

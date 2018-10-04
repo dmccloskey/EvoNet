@@ -14,7 +14,7 @@
 #include <cuda_runtime.h>
 
 #include <unsupported/Eigen/CXX11/Tensor>
-#include <SmartPeak/core/DeviceManager>
+#include <SmartPeak/core/DeviceManager.h>
 
 namespace SmartPeak
 {

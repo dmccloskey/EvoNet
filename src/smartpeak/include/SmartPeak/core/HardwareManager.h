@@ -1,7 +1,7 @@
 #ifndef SMARTPEAK_HARDWAREMANAGER_H
 #define SMARTPEAK_HARDWAREMANAGER_H
 
-#include <SmartPeak/core/DeviceManager>
+#include <SmartPeak/core/DeviceManager.h>
 #include <memory>
 
 namespace SmartPeak
@@ -28,8 +28,8 @@ namespace SmartPeak
 			}
 		};
 
-		DeviceManager getDevice(const int& id) const { return devices_.at(id); };
-		DeviceManager getDevice(const std::string& name) const { return devices_by_name_.at(name); };
+		std::shared_ptr<DeviceManager<DeviceType>> getDevice(const int& id) { return devices_.at(id); };
+		std::shared_ptr<DeviceManager<DeviceType>> getDevice(const std::string& name) { return devices_by_name_.at(name); };
 
 	private:
 		std::map<int, std::shared_ptr<DeviceManager<DeviceType>>> devices_;
