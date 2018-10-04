@@ -1,4 +1,5 @@
 set(core_executables_list
+  DeviceManager_test
   Helloworld_test
   Preprocessing_test
   Statistics_test
