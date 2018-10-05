@@ -5,41 +5,47 @@
 
 namespace SmartPeak
 {
-	enum DevicePriority
+	//template <typename DeviceType>
+	class KernalManager 
 	{
-		HIGH = 0,
-		MEDIUM = 1,
-		LOW = 2,
+	public:
+		KernalManager() = default; ///< Default constructor  
+		~KernalManager() = default; ///< Destructor
+
+		virtual void executeForwardPropogationOp() = 0; ///< GPU/CPU specific FP operations
+		virtual void executeBackwardPropogationOp() = 0;
+		virtual void executeCalcError() = 0;
+		virtual void executeUpdateWeights() = 0;
+
+		//DeviceType getDevice() { return device_; };
+		int getDeviceID() const { return device_id_; };
+
+	protected:
+		int device_id_;
+		//DeviceType device_; 
 	};
 
-	template <typename DeviceType>
   class DeviceManager
   {
 	public:    
     DeviceManager() = default; ///< Default constructor 
-		DeviceManager(const int& id, const DevicePriority& priority, const int& n_kernals) :
-			id_(id), priority_(priority), n_kernals_(n_kernals) {}; ///< Constructor    
+		DeviceManager(const int& id, const int& n_streams) :
+			id_(id), n_streams_(n_streams) {}; ///< Constructor    
 		~DeviceManager() = default; ///< Destructor
-
-		virtual void setDevice(int n_kernals = 0) = 0;
-		DeviceType getDevice() { return device_; };
 
 		void setID(const int& id) { id_ = id;};
 		void setName(const std::string& name) { name_ = name; };
-		void setPriority(const DevicePriority& priority) { priority_ = priority; };
-		void setNKernals(const int& n_kernals) { n_kernals_ = n_kernals; };
+		void setNStreams(const int& n_streams) { n_streams_ = n_streams; };
 
 		int getID() const { return id_; };
 		std::string getName() const { return name_; };
-		DevicePriority getPriority() const { return priority_; };
-		int getNKernals() const { return n_kernals_; };
+		int getNStreams() const { return n_streams_; };
 
 	private:
 		int id_;  ///< ID of the device
 		std::string name_; ///< the name of the device
-		DeviceType device_;  ///< the type of device (e.g., CPU or GPU)
-		DevicePriority priority_; ///< the priority of the device
-		int n_kernals_; ///< the number of threads (CPU) or streams (GPU) available on the device
+		int n_streams_; ///< the number of threads (CPU) or streams (GPU) available on the device
+		int steams_used_; ///< the current number of streams in use
   };
 }
 
