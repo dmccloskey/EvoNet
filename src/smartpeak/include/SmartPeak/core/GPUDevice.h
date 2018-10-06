@@ -78,8 +78,6 @@ namespace SmartPeak
 
 			device_.memcpyDeviceToHost(out.data(), d_out, out_bytes);
 
-			std::cout << out << std::endl;
-
 			cudaFree(d_in1);
 			cudaFree(d_in2);
 			cudaFree(d_out);

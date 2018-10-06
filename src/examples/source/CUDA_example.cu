@@ -15,6 +15,10 @@ using namespace std;
 
 int main(int argc, char** argv)
 {
+	GPUDevice gpudevice;
+	gpudevice.setDevice(0);
+	gpudevice.executeForwardPropogationOp();
+
 	// adapted from "eigen / unsupported / test / cxx11_tensor_cuda.cu"
 
 	int n_gpus = 0;
@@ -45,8 +49,8 @@ int main(int argc, char** argv)
   cudaMemcpy(d_in1, in1.data(), in1_bytes, cudaMemcpyHostToDevice);
   cudaMemcpy(d_in2, in2.data(), in2_bytes, cudaMemcpyHostToDevice);
 
-  Eigen::GpuStreamDevice stream;
-  Eigen::GpuDevice gpu_device(&stream);
+  Eigen::GpuStreamDevice stream_default;
+  Eigen::GpuDevice gpu_device(&stream_default);
 
   Eigen::TensorMap<Eigen::Tensor<float, 1>, Eigen::Aligned> gpu_in1(
     d_in1, tensor_dim);
