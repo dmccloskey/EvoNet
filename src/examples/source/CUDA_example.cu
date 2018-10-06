@@ -9,6 +9,7 @@
 
 #include <unsupported/Eigen/CXX11/Tensor>
 #include <SmartPeak/core/GPUDevice.h>
+#include <SmartPeak/core/CPUDevice.h>
 
 using namespace SmartPeak;
 using namespace std;
@@ -17,7 +18,21 @@ int main(int argc, char** argv)
 {
 	GPUDevice gpudevice;
 	gpudevice.setDevice(0);
-	gpudevice.executeForwardPropogationOp();
+	//gpudevice.executeForwardPropogationOp();
+	gpudevice.asyncExample();
+	gpudevice.syncExample();
+
+	CPUDevice cpudevice;
+	cpudevice.setDevice(0);
+	cpudevice.executeBackwardPropogationOp();
+	cpudevice.executeCalcError(); 
+	
+	cudaDeviceProp prop;
+	int whichDevice;
+	int deviceOverlap;
+	cudaGetDevice(&whichDevice);
+	cudaGetDeviceProperties(&prop, whichDevice);
+	std::cout << prop.asyncEngineCount << std::endl;
 
 	// adapted from "eigen / unsupported / test / cxx11_tensor_cuda.cu"
 
