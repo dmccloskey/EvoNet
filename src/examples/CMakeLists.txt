@@ -29,6 +29,10 @@ endif()
 add_custom_target(ML_EXAMPLES)
 add_dependencies(ML_EXAMPLES ${ml_executables_list})
 
+# cuda examples
+add_custom_target(CUDA_EXAMPLES)
+add_dependencies(CUDA_EXAMPLES ${cuda_executables_list})
+
 #------------------------------------------------------------------------------
 # Add the actual examples
 foreach(_examples ${EXAMPLE_executables})
@@ -39,7 +43,7 @@ foreach(_examples ${EXAMPLE_executables})
   if (OPENMP_FOUND AND NOT MSVC AND NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     set_target_properties(${_examples} PROPERTIES LINK_FLAGS ${OpenMP_CXX_FLAGS})
   endif()
-  if (EIGEN_USE_GPU)
+  if (EVONET_CUDA)
     target_link_libraries(${_examples} ${CUDA_LIBRARIES})
     set_property(TARGET ${_examples} PROPERTY CUDA_STANDARD 11)
   endif()

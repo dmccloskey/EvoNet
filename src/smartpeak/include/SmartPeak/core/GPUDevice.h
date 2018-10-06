@@ -2,6 +2,7 @@
 #define SMARTPEAK_GPUDEVICE_H
 
 #ifndef EVONET_CUDA
+#define EIGEN_DEFAULT_DENSE_INDEX_TYPE int
 #define EIGEN_USE_GPU
 #include <cuda.h>
 #include <cuda_runtime.h>
@@ -19,16 +20,33 @@ namespace SmartPeak
 		~GPUDevice() = default; ///< Destructor
 
 		void setDevice(int device_id) {
-			// initialize the stream and create the stream
-			cudaStream_t stream;
-			cudaStreamCreate(&stream);
-			Eigen::GpuStreamDevice stream_device(&stream, device_id);
-			Eigen::GpuDevice gpu_device(&stream_device);
 			device_id_ = device_id;
-			device_ = gpu_device;
+			// initialize the stream and create the stream
+			//cudaStream_t stream;
+			//cudaStreamCreate(&stream);
+			//Eigen::GpuStreamDevice stream_device(&stream, device_id);
+			//Eigen::GpuDevice gpu_device(&stream_device);
+			//device_ = gpu_device;
 		}
 		void executeForwardPropogationOp() {
-			cudaSetDevice(device_id_); // is this needed?			
+			// move to hardware manager
+			int n_gpus = 0;
+			cudaGetDeviceCount(&n_gpus);
+			if (n_gpus > 0)
+			{
+				std::cout << n_gpus <<" were found." << std::endl;
+			}
+			assert(cudaSetDevice(device_id_) == cudaSuccess); // is this needed?
+
+			// initialize the stream
+			cudaStream_t stream;
+			assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess);
+
+			// initialize the GpuDevice
+			Eigen::CudaStreamDevice stream_device(&stream, device_id_);
+			Eigen::GpuDevice device_(&stream_device);
+			//Eigen::GpuStreamDevice stream_device;
+			//Eigen::GpuDevice device_(&stream_device);
 
 			Eigen::Tensor<float, 3> in1(40, 50, 70);
 			Eigen::Tensor<float, 3> in2(40, 50, 70);
@@ -43,10 +61,12 @@ namespace SmartPeak
 			float* d_in1;
 			float* d_in2;
 			float* d_out;
-			cudaMalloc((void**)(&d_in1), in1_bytes);
-			cudaMalloc((void**)(&d_in2), in2_bytes);
-			cudaMalloc((void**)(&d_out), out_bytes);
+			assert(cudaMalloc((void**)(&d_in1), in1_bytes) == cudaSuccess);
+			assert(cudaMalloc((void**)(&d_in2), in2_bytes) == cudaSuccess);
+			assert(cudaMalloc((void**)(&d_out), out_bytes) == cudaSuccess);
 
+			//cudaMemcpyAsync(d_in1, in1.data(), in1_bytes, cudaMemcpyHostToDevice, stream);
+			//cudaMemcpyAsync(d_in2, in2.data(), in2_bytes, cudaMemcpyHostToDevice, stream);
 			device_.memcpyHostToDevice(d_in1, in1.data(), in1_bytes);
 			device_.memcpyHostToDevice(d_in2, in2.data(), in2_bytes);
 
@@ -64,13 +84,12 @@ namespace SmartPeak
 			cudaFree(d_in2);
 			cudaFree(d_out);
 
+			cudaStreamSynchronize(device_.stream());
 			cudaStreamDestroy(device_.stream());
 		}
 		void executeBackwardPropogationOp() {};
 		void executeCalcError() {};
 		void executeUpdateWeights() {};
-	protected:
-		Eigen::GpuDevice device_;
 	};
 }
 

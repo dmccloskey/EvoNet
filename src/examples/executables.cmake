@@ -11,7 +11,12 @@ set(ml_executables_list
   Metabolomics_example
 )
 
+set(cuda_executables_list
+  CUDA_example
+)
+
 ### collect example executables
 set(EXAMPLE_executables
   ${ml_executables_list}
+  ${cuda_executables_list}
 )
