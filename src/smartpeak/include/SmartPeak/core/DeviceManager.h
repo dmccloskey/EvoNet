@@ -10,7 +10,7 @@ namespace SmartPeak
 	{
 	public:
 		KernalManager() = default; ///< Default constructor  
-		KernalManager(int device_id = -1, int n_threads = 1) : device_id_(device_id), n_threads_(n_threads) {};
+		explicit KernalManager(int device_id = -1, int n_threads = 1) : device_id_(device_id), n_threads_(n_threads) {};
 		~KernalManager() = default; ///< Destructor
 
 		virtual void initKernal() = 0;

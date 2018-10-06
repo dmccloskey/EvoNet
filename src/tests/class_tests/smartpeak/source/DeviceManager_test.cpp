@@ -42,8 +42,7 @@ BOOST_AUTO_TEST_CASE(DeviceManagerDestructor)
 
 BOOST_AUTO_TEST_CASE(executeForwardPropogationOp)
 {
-	GPUDevice gpu_device;
-	gpu_device.setDevice(0);
+	GPUDevice gpu_device(0);
 	gpu_device.executeForwardPropogationOp();
 }
 

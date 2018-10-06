@@ -11,6 +11,7 @@ namespace SmartPeak
 	class CPUDevice : public KernalManager
 	{
 	public:
+		using KernalManager::KernalManager;
 
 		void initKernal() {};
 		void syncKernal() {};
