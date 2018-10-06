@@ -43,7 +43,7 @@ namespace SmartPeak
 			assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess);
 
 			// initialize the GpuDevice
-			Eigen::CudaStreamDevice stream_device(&stream, device_id_);
+			Eigen::GpuStreamDevice stream_device(&stream, device_id_);
 			Eigen::GpuDevice device_(&stream_device);
 			//Eigen::GpuStreamDevice stream_device;
 			//Eigen::GpuDevice device_(&stream_device);

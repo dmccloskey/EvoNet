@@ -45,7 +45,7 @@ int main(int argc, char** argv)
   cudaMemcpy(d_in1, in1.data(), in1_bytes, cudaMemcpyHostToDevice);
   cudaMemcpy(d_in2, in2.data(), in2_bytes, cudaMemcpyHostToDevice);
 
-  Eigen::CudaStreamDevice stream;
+  Eigen::GpuStreamDevice stream;
   Eigen::GpuDevice gpu_device(&stream);
 
   Eigen::TensorMap<Eigen::Tensor<float, 1>, Eigen::Aligned> gpu_in1(
