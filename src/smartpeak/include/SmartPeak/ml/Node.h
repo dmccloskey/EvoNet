@@ -152,8 +152,8 @@ public:
 		void setDrop(const Eigen::Tensor<TensorT, 2>& drop); ///< drop setter
 		Eigen::Tensor<TensorT, 2> getDrop() const; ///< drop copy getter
 
-		int getBatchSize() const;
-		int getMemorySize() const;
+		size_t getBatchSize() const;
+		size_t getMemorySize() const;
 
 		Eigen::Tensor<TensorT, 2> getInput() const { return node_data_->getInput(); }; ///< input copy getter
 		Eigen::Tensor<TensorT, 2>* getInputMutable() { return node_data_->getInputMutable(); }; ///< input copy getter

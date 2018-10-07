@@ -72,64 +72,63 @@ public:
       return *this;
     }
 
-		void setInput(const Eigen::Tensor<TensorT, 2>& input); ///< input setter
-		Eigen::Tensor<TensorT, 2> getInput() const { Eigen::Tensor<TensorT, 2> input = input_; return input; }; ///< input copy getter
-		Eigen::TensorMap<Eigen::Tensor<TensorT, 2>>& getInputMutable() { return input_; }; ///< input copy getter
-		std::shared_ptr<HDelT> getHInputPointer() { return h_input_; }; ///< input pointer getter
-		std::shared_ptr<DDelT> getDInputPointer() { return d_input_; }; ///< input pointer getter
+		void setBatchSize(const size_t& batch_size) { batch_size_ = batch_size; }
+		void setMemorySize(const size_t& memory_size) { memory_size_ = memory_size; }
+		size_t getBatchSize() const { return batch_size_; }
+		size_t getMemorySize() const	{ return memory_size_; }
 
-    void setOutput(const Eigen::Tensor<TensorT, 2>& output); ///< output setter
-		Eigen::Tensor<TensorT, 2> getOutput() const { Eigen::Tensor<TensorT, 2> output = output_; return output; }; ///< output copy getter
-		Eigen::TensorMap<Eigen::Tensor<TensorT, 2>>& getOutputMutable() { return output_; }; ///< output copy getter
-		std::shared_ptr<HDelT> getHOutputPointer() { return h_output_; }; ///< output pointer getter
-		std::shared_ptr<DDelT> getDOutputPointer() { return d_output_; }; ///< output pointer getter
+		void setInput(const TensorT* input) { h_input_.reset(input, host_deleter_);	}; ///< input setter
+		Eigen::TensorMap<Eigen::Tensor<TensorT, 2>>& getInput() const { Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> input(h_output_.get(), batch_size_, memory_size_); return input; }; ///< input copy getter
+		Eigen::TensorMap<Eigen::Tensor<TensorT, 2>>& getInputMutable() { Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> input(h_output_.get(), batch_size_, memory_size_); return input; }; ///< input copy getter
+		std::shared_ptr<TensorT[]> getHInputPointer() { return h_input_; }; ///< input pointer getter
+		std::shared_ptr<TensorT[]> getDInputPointer() { return d_input_; }; ///< input pointer getter
 
-    void setError(const Eigen::Tensor<TensorT, 2>& error); ///< error setter
-		Eigen::Tensor<TensorT, 2> getError() const { Eigen::Tensor<TensorT, 2> error = error_; return error; }; ///< error copy getter
-		Eigen::TensorMap<Eigen::Tensor<TensorT, 2>>& getErrorMutable() { return error_; }; ///< error copy getter
-		std::shared_ptr<HDelT> getHErrorPointer() { return h_error_; }; ///< error pointer getter
-		std::shared_ptr<DDelT> getDErrorPointer() { return d_error_; }; ///< error pointer getter
+    void setOutput(const TensorT* output) { h_output_.reset(output, host_deleter_); }; ///< output setter
+		Eigen::TensorMap<Eigen::Tensor<TensorT, 2>>& getOutput() const { Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> output(h_output_.get(), batch_size_, memory_size_); return output; }; ///< output copy getter
+		Eigen::TensorMap<Eigen::Tensor<TensorT, 2>>& getOutputMutable() { Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> output(h_output_.get(), batch_size_, memory_size_); return output; }; ///< output copy getter
+		std::shared_ptr<TensorT[]> getHOutputPointer() { return h_output_; }; ///< output pointer getter
+		std::shared_ptr<TensorT[]> getDOutputPointer() { return d_output_; }; ///< output pointer getter
 
-    void setDerivative(const Eigen::Tensor<TensorT, 2>& derivative); ///< derivative setter
-    Eigen::Tensor<TensorT, 2> getDerivative() const; ///< derivative copy getter
-		Eigen::TensorMap<Eigen::Tensor<TensorT, 2>>& getDerivativeMutable() { return derivative_; }; ///< derivative copy getter
-		std::shared_ptr<HDelT> getHDerivativePointer() { return h_derivative_; }; ///< derivative pointer getter
-		std::shared_ptr<DDelT> getDDerivativePointer() { return d_derivative_; }; ///< derivative pointer getter
+    void setError(const TensorT* error) { h_error_.reset(error, host_deleter_); }; ///< error setter
+		Eigen::TensorMap<Eigen::Tensor<TensorT, 2>>& getError() { Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error(h_error_.get(), batch_size_, memory_size_); return error; }; ///< error copy getter
+		Eigen::TensorMap<Eigen::Tensor<TensorT, 2>>& getErrorMutable() { Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error(h_error_.get(), batch_size_, memory_size_); return error; }; ///< error copy getter
+		std::shared_ptr<TensorT[]> getHErrorPointer() { return h_error_; }; ///< error pointer getter
+		std::shared_ptr<TensorT[]> getDErrorPointer() { return d_error_; }; ///< error pointer getter
 
-    void setDt(const Eigen::Tensor<TensorT, 2>& dt); ///< dt setter
-    Eigen::Tensor<TensorT, 2> getDt() const; ///< dt copy getter
-		Eigen::TensorMap<Eigen::Tensor<TensorT, 2>>& getDtMutable() { return dt_;	}; ///< dt copy getter
-		std::shared_ptr<HDelT> getHDtPointer() { return h_dt_; }; ///< dt pointer getter
-		std::shared_ptr<DDelT> getDDtPointer() { return d_dt_; }; ///< dt pointer getter
+    void setDerivative(const TensorT* derivative) { h_derivative_.reset(derivative, host_deleter_); }; ///< derivative setter
+		Eigen::TensorMap<Eigen::Tensor<TensorT, 2>>& getDerivative() const; ///< derivative copy getter
+		Eigen::TensorMap<Eigen::Tensor<TensorT, 2>>& getDerivativeMutable() { Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> derivative(h_derivative_, batch_size_, memory_size_); return derivative; }; ///< derivative copy getter
+		std::shared_ptr<TensorT[]> getHDerivativePointer() { return h_derivative_; }; ///< derivative pointer getter
+		std::shared_ptr<TensorT[]> getDDerivativePointer() { return d_derivative_; }; ///< derivative pointer getter
 
-		void setOutputMin(const TensorT& min_output); ///< min output setter
-		void setOutputMax(const TensorT& output_max); ///< max output setter
+    void setDt(const TensorT* dt) { h_dt_.reset(dt, host_deleter_); }; ///< dt setter
+		Eigen::TensorMap<Eigen::Tensor<TensorT, 2>>& getDt() const; ///< dt copy getter
+		Eigen::TensorMap<Eigen::Tensor<TensorT, 2>>& getDtMutable() { Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> dt(h_dt_, batch_size_, memory_size_); return dt;	}; ///< dt copy getter
+		std::shared_ptr<TensorT[]> getHDtPointer() { return h_dt_; }; ///< dt pointer getter
+		std::shared_ptr<TensorT[]> getDDtPointer() { return d_dt_; }; ///< dt pointer getter
 
 private:
+		size_t batch_size_ = 1; ///< Mini batch size
+		size_t memory_size_ = 2; ///< Memory size
     /**
       @brief output, error and derivative have the following dimensions:
         rows: # of samples, cols: # of time steps
         where the number of samples spans 0 to n samples
         and the number of time steps spans m time points to 0
-    */
-		Eigen::TensorMap<Eigen::Tensor<TensorT, 2>>& input_; ///< NodeData Net Input (rows: # of samples, cols: # of time steps)
-		Eigen::TensorMap<Eigen::Tensor<TensorT, 2>>& output_; ///< NodeData Output (rows: # of samples, cols: # of time steps)
-		Eigen::TensorMap<Eigen::Tensor<TensorT, 2>>& error_; ///< NodeData Error (rows: # of samples, cols: # of time steps)
-		Eigen::TensorMap<Eigen::Tensor<TensorT, 2>>& derivative_; ///< NodeData Error (rows: # of samples, cols: # of time steps)
-		Eigen::TensorMap<Eigen::Tensor<TensorT, 2>>& dt_; ///< Resolution of each time-step (rows: # of samples, cols: # of time steps)		
-		std::shared_ptr<HDelT> h_input_;
-		std::shared_ptr<HDelT> h_output_;
-		std::shared_ptr<HDelT> h_error_;
-		std::shared_ptr<HDelT> h_derivative_;
-		std::shared_ptr<HDelT> h_dt_;
-		std::shared_ptr<DDelT> d_input_;
-		std::shared_ptr<DDelT> d_output_;
-		std::shared_ptr<DDelT> d_error_;
-		std::shared_ptr<DDelT> d_derivative_;
-		std::shared_ptr<DDelT> d_dt_;
+    */		
+		std::shared_ptr<TensorT[]> h_input_;
+		std::shared_ptr<TensorT[]> h_output_;
+		std::shared_ptr<TensorT[]> h_error_;
+		std::shared_ptr<TensorT[]> h_derivative_;
+		std::shared_ptr<TensorT[]> h_dt_;
+		std::shared_ptr<TensorT[]> d_input_;
+		std::shared_ptr<TensorT[]> d_output_;
+		std::shared_ptr<TensorT[]> d_error_;
+		std::shared_ptr<TensorT[]> d_derivative_;
+		std::shared_ptr<TensorT[]> d_dt_;
 
-		TensorT output_min_ = -1.0e6; ///< Min Node output
-		TensorT output_max_ = 1.0e6; ///< Max Node output
+		HDelT host_deleter_;
+		DDelT device_deleter_;
   };
 }
 

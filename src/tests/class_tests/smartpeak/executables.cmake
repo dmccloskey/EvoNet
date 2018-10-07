@@ -33,6 +33,7 @@ set(ml_executables_list
   Model_DAG_test
   Model_DCG_test
   Node_test
+  NodeData_test
   PopulationTrainer_test
   SharedFunctions_test
   Solver_test

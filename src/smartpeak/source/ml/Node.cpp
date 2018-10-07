@@ -239,13 +239,13 @@ namespace SmartPeak
 	}
 
 	template<typename HDelT, typename DDelT, typename TensorT>
-	int Node<HDelT, DDelT, TensorT>::getBatchSize() const
+	size_t Node<HDelT, DDelT, TensorT>::getBatchSize() const
 	{
 		return batch_size_;
 	}
 
 	template<typename HDelT, typename DDelT, typename TensorT>
-	int Node<HDelT, DDelT, TensorT>::getMemorySize() const
+	size_t Node<HDelT, DDelT, TensorT>::getMemorySize() const
 	{
 		return memory_size_;
 	}
