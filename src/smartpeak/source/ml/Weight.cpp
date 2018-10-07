@@ -12,11 +12,8 @@
 
 namespace SmartPeak
 {
-  Weight::Weight()
-  {        
-  }
-
-  Weight::Weight(const Weight& other)
+	template<typename TensorT>
+  Weight<TensorT>::Weight(const Weight<TensorT>& other)
   {
     id_ = other.id_;
     name_ = other.name_;
@@ -31,7 +28,8 @@ namespace SmartPeak
 		drop_ = other.drop_;
   }
 
-  Weight::Weight(const int& id):
+	template<typename TensorT>
+  Weight<TensorT>::Weight(const int& id):
     id_(id)
   {
     if (name_ == "")
@@ -40,12 +38,14 @@ namespace SmartPeak
     }
   }
 
-  Weight::Weight(const std::string& name):
+	template<typename TensorT>
+  Weight<TensorT>::Weight(const std::string& name):
     name_(name)
   {
   }
 
-  Weight::Weight(const int& id, const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver):
+	template<typename TensorT>
+  Weight<TensorT>::Weight(const int& id, const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver):
     id_(id)
   {
     if (name_ == "")
@@ -56,18 +56,16 @@ namespace SmartPeak
     setSolverOp(solver);
   }
 
-  Weight::Weight(const std::string& name, const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver):
+	template<typename TensorT>
+  Weight<TensorT>::Weight(const std::string& name, const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver):
     name_(name)
   {
     setWeightInitOp(weight_init);
     setSolverOp(solver);
   }
 
-  Weight::~Weight()
-  {
-  }
-  
-  void Weight::setId(const int& id)
+	template<typename TensorT>
+  void Weight<TensorT>::setId(const int& id)
   {
     id_ = id;
     if (name_ == "")
@@ -75,123 +73,146 @@ namespace SmartPeak
       name_ = std::to_string(id);
     }
   }
-  int Weight::getId() const
+	template<typename TensorT>
+  int Weight<TensorT>::getId() const
   {
     return id_;
   }
-  
-  void Weight::setName(const std::string& name)
+
+	template<typename TensorT>
+  void Weight<TensorT>::setName(const std::string& name)
   {
     name_ = name;    
   }
-  std::string Weight::getName() const
+	template<typename TensorT>
+  std::string Weight<TensorT>::getName() const
   {
     return name_;
   }
 
-  void Weight::setWeight(const float& weight)
+	template<typename TensorT>
+  void Weight<TensorT>::setWeight(const TensorT& weight)
   {
     weight_ = weight;
     checkWeight();
   }
-  float Weight::getWeight() const
+	template<typename TensorT>
+  TensorT Weight<TensorT>::getWeight() const
   {
     return weight_ * getDrop();
   }
 
-	float* Weight::getWeightMutable()
+	template<typename TensorT>
+	TensorT* Weight<TensorT>::getWeightMutable()
 	{
 		return &weight_;
 	}
 
-  void Weight::setWeightInitOp(const std::shared_ptr<WeightInitOp>& weight_init)
+	template<typename TensorT>
+  void Weight<TensorT>::setWeightInitOp(const std::shared_ptr<WeightInitOp>& weight_init)
   {
     weight_init_.reset();
     weight_init_ = std::move(weight_init);
   }
-  WeightInitOp* Weight::getWeightInitOp() const
+	template<typename TensorT>
+  WeightInitOp* Weight<TensorT>::getWeightInitOp() const
   {
     return weight_init_.get();
   }
 
-  void Weight::setSolverOp(const std::shared_ptr<SolverOp>& solver)
+	template<typename TensorT>
+  void Weight<TensorT>::setSolverOp(const std::shared_ptr<SolverOp>& solver)
   {
     solver_.reset();
     solver_ = std::move(solver);
   }
-  SolverOp* Weight::getSolverOp() const
+	template<typename TensorT>
+  SolverOp* Weight<TensorT>::getSolverOp() const
   {
     return solver_.get();
   }
 
-  void Weight::setWeightMin(const float& weight_min)
+	template<typename TensorT>
+  void Weight<TensorT>::setWeightMin(const TensorT& weight_min)
   {
     weight_min_ = weight_min;
   }
-  void Weight::setWeightMax(const float& weight_max)
+	template<typename TensorT>
+  void Weight<TensorT>::setWeightMax(const TensorT& weight_max)
   {
     weight_max_ = weight_max;
   }
 
-	void Weight::setModuleId(const int & module_id)
+	template<typename TensorT>
+	void Weight<TensorT>::setModuleId(const int & module_id)
 	{
 		module_id_ = module_id;
 	}
 
-	int Weight::getModuleId() const
+	template<typename TensorT>
+	int Weight<TensorT>::getModuleId() const
 	{
 		return module_id_;
 	}
 
-	void Weight::setModuleName(const std::string & module_name)
+	template<typename TensorT>
+	void Weight<TensorT>::setModuleName(const std::string & module_name)
 	{
 		module_name_ = module_name;
 	}
 
-	std::string Weight::getModuleName() const
+	template<typename TensorT>
+	std::string Weight<TensorT>::getModuleName() const
 	{
 		return module_name_;
 	}
 
-	void Weight::setDropProbability(const float & drop_probability)
+	template<typename TensorT>
+	void Weight<TensorT>::setDropProbability(const TensorT & drop_probability)
 	{
 		drop_probability_ = drop_probability;
-		RandBinaryOp<float> rand_bin(drop_probability_);
+		RandBinaryOp<TensorT> rand_bin(drop_probability_);
 		setDrop(rand_bin(1.0f));
 	}
 
-	float Weight::getDropProbability() const
+	template<typename TensorT>
+	TensorT Weight<TensorT>::getDropProbability() const
 	{
 		return drop_probability_;
 	}
 
-	void Weight::setDrop(const float & drop)
+	template<typename TensorT>
+	void Weight<TensorT>::setDrop(const TensorT & drop)
 	{
 		drop_ = drop;
 	}
 
-	float Weight::getDrop() const
+	template<typename TensorT>
+	TensorT Weight<TensorT>::getDrop() const
 	{
 		return drop_;
 	}
 
-  void Weight::initWeight()
+	template<typename TensorT>
+  void Weight<TensorT>::initWeight()
   {
     // weight_ = weight_init_();
     weight_ = weight_init_->operator()();
     checkWeight();
   }
 
-  void Weight::updateWeight(const float& error)
+	template<typename TensorT>
+  void Weight<TensorT>::updateWeight(const TensorT& error)
   {
 		if (solver_->getName() == "DummySolverOp")
 			return;
-    const float new_weight = solver_->operator()(weight_, getDrop()*error);
+    const TensorT new_weight = solver_->operator()(weight_, getDrop()*error);
     weight_ = solver_->clipGradient(new_weight);
     checkWeight();
   }
 
-  void Weight::checkWeight()
+	template<typename TensorT>
+  void Weight<TensorT>::checkWeight()
   {
     if (weight_ < weight_min_)
       weight_ = weight_min_;

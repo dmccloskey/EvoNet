@@ -9,38 +9,32 @@
 
 namespace SmartPeak
 {
-  Node::Node()
-  {        
-  }
-
-  Node::Node(const Node& other)
-  {    
-    id_ = other.id_;
-    name_ = other.name_;
+	template<typename HDelT, typename DDelT, typename TensorT>
+	Node<HDelT, DDelT, TensorT>::Node(const Node<HDelT, DDelT, TensorT>& other)
+	{
+		id_ = other.id_;
+		name_ = other.name_;
 		module_id_ = other.module_id_;
 		module_name_ = other.module_name_;
-    type_ = other.type_;
-    status_ = other.status_;
-    activation_ = other.activation_;
+		type_ = other.type_;
+		status_ = other.status_;
+		activation_ = other.activation_;
 		activation_grad_ = other.activation_grad_;
 		integration_ = other.integration_;
 		integration_error_ = other.integration_error_;
 		integration_weight_grad_ = other.integration_weight_grad_;
 		integration_ = other.integration_;
-    output_min_ = other.output_min_;
-    output_max_ = other.output_max_;
-		input_ = other.input_;
-    output_ = other.output_;
-    error_ = other.error_;
-    derivative_ = other.derivative_;
-    dt_ = other.dt_;
+		output_min_ = other.output_min_;
+		output_max_ = other.output_max_;
+		node_data_ = other.node_data_;
 		drop_probability_ = other.drop_probability_;
 		drop_ = other.drop_;
-  }
+	}
 
-  Node::Node(const std::string& name, const SmartPeak::NodeType& type, const SmartPeak::NodeStatus& status,
-		const std::shared_ptr<ActivationOp<float>>& activation, const std::shared_ptr<ActivationOp<float>>& activation_grad,
-		const std::shared_ptr<IntegrationOp<float>>& integration, const std::shared_ptr<IntegrationErrorOp<float>>& integration_error, const std::shared_ptr<IntegrationWeightGradOp<float>>& integration_weight_grad):
+	template<typename HDelT, typename DDelT, typename TensorT>
+	Node<HDelT, DDelT, TensorT>::Node(const std::string& name, const SmartPeak::NodeType& type, const SmartPeak::NodeStatus& status,
+		const std::shared_ptr<ActivationOp<TensorT>>& activation, const std::shared_ptr<ActivationOp<TensorT>>& activation_grad,
+		const std::shared_ptr<IntegrationOp<TensorT>>& integration, const std::shared_ptr<IntegrationErrorOp<TensorT>>& integration_error, const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& integration_weight_grad):
     name_(name), type_(type), status_(status)
   {
 		setActivation(activation);
@@ -50,11 +44,8 @@ namespace SmartPeak
 		setIntegrationWeightGrad(integration_weight_grad);
   }
 
-  Node::~Node()
-  {
-  }
-  
-  void Node::setId(const int& id)
+	template<typename HDelT, typename DDelT, typename TensorT>
+  void Node<HDelT, DDelT, TensorT>::setId(const int& id)
   {
     id_ = id;
     if (name_ == "")
@@ -62,269 +53,235 @@ namespace SmartPeak
       name_ = std::to_string(id);
     }
   }
-  int Node::getId() const
+
+	template<typename HDelT, typename DDelT, typename TensorT>
+  int Node<HDelT, DDelT, TensorT>::getId() const
   {
     return id_;
   }
-  
-  void Node::setName(const std::string& name)
+
+	template<typename HDelT, typename DDelT, typename TensorT>
+  void Node<HDelT, DDelT, TensorT>::setName(const std::string& name)
   {
     name_ = name;    
   }
-  std::string Node::getName() const
+	template<typename HDelT, typename DDelT, typename TensorT>
+  std::string Node<HDelT, DDelT, TensorT>::getName() const
   {
     return name_;
   }
 
-  void Node::setType(const SmartPeak::NodeType& type)
+	template<typename HDelT, typename DDelT, typename TensorT>
+  void Node<HDelT, DDelT, TensorT>::setType(const SmartPeak::NodeType& type)
   {
     type_ = type;
   }
-  SmartPeak::NodeType Node::getType() const
+	template<typename HDelT, typename DDelT, typename TensorT>
+  SmartPeak::NodeType Node<HDelT, DDelT, TensorT>::getType() const
   {
     return type_;
   }
 
-  void Node::setStatus(const SmartPeak::NodeStatus& status)
+	template<typename HDelT, typename DDelT, typename TensorT>
+  void Node<HDelT, DDelT, TensorT>::setStatus(const SmartPeak::NodeStatus& status)
   {
     status_ = status;
   }
-  SmartPeak::NodeStatus Node::getStatus() const
+	template<typename HDelT, typename DDelT, typename TensorT>
+  SmartPeak::NodeStatus Node<HDelT, DDelT, TensorT>::getStatus() const
   {
     return status_;
   }
 
-  void Node::setActivation(const std::shared_ptr<ActivationOp<float>>& activation)
+	template<typename HDelT, typename DDelT, typename TensorT>
+  void Node<HDelT, DDelT, TensorT>::setActivation(const std::shared_ptr<ActivationOp<TensorT>>& activation)
   {
 		activation_.reset();
 		activation_ = std::move(activation);
   }
-	std::shared_ptr<ActivationOp<float>> Node::getActivationShared() const
+	template<typename HDelT, typename DDelT, typename TensorT>
+	std::shared_ptr<ActivationOp<TensorT>> Node<HDelT, DDelT, TensorT>::getActivationShared() const
 	{
 		return activation_;
 	}
-	ActivationOp<float>*  Node::getActivation() const
+	template<typename HDelT, typename DDelT, typename TensorT>
+	ActivationOp<TensorT>*  Node<HDelT, DDelT, TensorT>::getActivation() const
   {
     return activation_.get();
   }
 
-	void Node::setActivationGrad(const std::shared_ptr<ActivationOp<float>>& activation_grad)
+	template<typename HDelT, typename DDelT, typename TensorT>
+	void Node<HDelT, DDelT, TensorT>::setActivationGrad(const std::shared_ptr<ActivationOp<TensorT>>& activation_grad)
 	{
 		activation_grad_.reset();
 		activation_grad_ = std::move(activation_grad);
 	}
 
-	std::shared_ptr<ActivationOp<float>> Node::getActivationGradShared() const
+	template<typename HDelT, typename DDelT, typename TensorT>
+	std::shared_ptr<ActivationOp<TensorT>> Node<HDelT, DDelT, TensorT>::getActivationGradShared() const
 	{
 		return activation_grad_;
 	}
 
-	ActivationOp<float>* Node::getActivationGrad() const
+	template<typename HDelT, typename DDelT, typename TensorT>
+	ActivationOp<TensorT>* Node<HDelT, DDelT, TensorT>::getActivationGrad() const
 	{
 		return activation_grad_.get();
 	}
 
-	void Node::setIntegration(const std::shared_ptr<IntegrationOp<float>>& integration)
+	template<typename HDelT, typename DDelT, typename TensorT>
+	void Node<HDelT, DDelT, TensorT>::setIntegration(const std::shared_ptr<IntegrationOp<TensorT>>& integration)
 	{
 		integration_.reset();
 		integration_ = std::move(integration);
 	}
-	std::shared_ptr<IntegrationOp<float>> Node::getIntegrationShared() const
+	template<typename HDelT, typename DDelT, typename TensorT>
+	std::shared_ptr<IntegrationOp<TensorT>> Node<HDelT, DDelT, TensorT>::getIntegrationShared() const
 	{
 		return integration_;
 	}
-	IntegrationOp<float>*  Node::getIntegration() const
+	template<typename HDelT, typename DDelT, typename TensorT>
+	IntegrationOp<TensorT>*  Node<HDelT, DDelT, TensorT>::getIntegration() const
 	{
 		return integration_.get();
 	}
 
-	void Node::setIntegrationError(const std::shared_ptr<IntegrationErrorOp<float>>& integration_error)
+	template<typename HDelT, typename DDelT, typename TensorT>
+	void Node<HDelT, DDelT, TensorT>::setIntegrationError(const std::shared_ptr<IntegrationErrorOp<TensorT>>& integration_error)
 	{
 		integration_error_.reset();
 		integration_error_ = std::move(integration_error);
 	}
-	std::shared_ptr<IntegrationErrorOp<float>> Node::getIntegrationErrorShared() const
+	template<typename HDelT, typename DDelT, typename TensorT>
+	std::shared_ptr<IntegrationErrorOp<TensorT>> Node<HDelT, DDelT, TensorT>::getIntegrationErrorShared() const
 	{
 		return integration_error_;
 	}
-	IntegrationErrorOp<float>*  Node::getIntegrationError() const
+	template<typename HDelT, typename DDelT, typename TensorT>
+	IntegrationErrorOp<TensorT>*  Node<HDelT, DDelT, TensorT>::getIntegrationError() const
 	{
 		return integration_error_.get();
 	}
 
-	void Node::setIntegrationWeightGrad(const std::shared_ptr<IntegrationWeightGradOp<float>>& integration_weight_grad)
+	template<typename HDelT, typename DDelT, typename TensorT>
+	void Node<HDelT, DDelT, TensorT>::setIntegrationWeightGrad(const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& integration_weight_grad)
 	{
 		integration_weight_grad_.reset();
 		integration_weight_grad_ = std::move(integration_weight_grad);
 	}
-	std::shared_ptr<IntegrationWeightGradOp<float>> Node::getIntegrationWeightGradShared() const
+	template<typename HDelT, typename DDelT, typename TensorT>
+	std::shared_ptr<IntegrationWeightGradOp<TensorT>> Node<HDelT, DDelT, TensorT>::getIntegrationWeightGradShared() const
 	{
 		return integration_weight_grad_;
 	}
-	IntegrationWeightGradOp<float>*  Node::getIntegrationWeightGrad() const
+	template<typename HDelT, typename DDelT, typename TensorT>
+	IntegrationWeightGradOp<TensorT>*  Node<HDelT, DDelT, TensorT>::getIntegrationWeightGrad() const
 	{
 		return integration_weight_grad_.get();
 	}
 
-	void Node::setModuleId(const int & module_id)
+	template<typename HDelT, typename DDelT, typename TensorT>
+	void Node<HDelT, DDelT, TensorT>::setModuleId(const int & module_id)
 	{
 		module_id_ = module_id;
 	}
 
-	int Node::getModuleId() const
+	template<typename HDelT, typename DDelT, typename TensorT>
+	int Node<HDelT, DDelT, TensorT>::getModuleId() const
 	{
 		return module_id_;
 	}
 
-	void Node::setModuleName(const std::string & module_name)
+	template<typename HDelT, typename DDelT, typename TensorT>
+	void Node<HDelT, DDelT, TensorT>::setModuleName(const std::string & module_name)
 	{
 		module_name_ = module_name;
 	}
 
-	std::string Node::getModuleName() const
+	template<typename HDelT, typename DDelT, typename TensorT>
+	std::string Node<HDelT, DDelT, TensorT>::getModuleName() const
 	{
 		return module_name_;
 	}
 
-	void Node::setInput(const Eigen::Tensor<float, 2>& input)
-	{
-		input_ = input;
-	}
-	Eigen::Tensor<float, 2> Node::getInput() const
-	{
-		return input_;
-	}
-	Eigen::Tensor<float, 2>* Node::getInputMutable()
-	{
-		return &input_;
-	}
-	float* Node::getInputPointer()
-	{
-		return input_.data();
-	}
-
-  void Node::setOutput(const Eigen::Tensor<float, 2>& output)
-  {
-    output_ = output;
-    checkOutput();
-  }
-  Eigen::Tensor<float, 2> Node::getOutput() const
-  {
-		return output_ * getDrop();
-  }
-  Eigen::Tensor<float, 2>* Node::getOutputMutable()
-  {
-    return &output_;
-  }
-  float* Node::getOutputPointer()
-  {
-    return output_.data();
-  }
-
-  void Node::setError(const Eigen::Tensor<float, 2>& error)
-  {
-    error_ = error;
-  }
-  Eigen::Tensor<float, 2> Node::getError() const
-  {
-    return error_;
-  }
-  Eigen::Tensor<float, 2>* Node::getErrorMutable()
-  {
-    return &error_;
-  }
-  float* Node::getErrorPointer()
-  {
-    return error_.data();
-  }
-
-  void Node::setDerivative(const Eigen::Tensor<float, 2>& derivative)
-  {
-    derivative_ = derivative;
-  }
-  Eigen::Tensor<float, 2> Node::getDerivative() const
-  {
-    return derivative_;
-  }
-  Eigen::Tensor<float, 2>* Node::getDerivativeMutable()
-  {
-    return &derivative_;
-  }
-  float* Node::getDerivativePointer()
-  {
-    return derivative_.data();
-  }
-
-  void Node::setDt(const Eigen::Tensor<float, 2>& dt)
-  {
-    dt_ = dt;
-  }
-  Eigen::Tensor<float, 2> Node::getDt() const
-  {
-    return dt_;
-  }
-  Eigen::Tensor<float, 2>* Node::getDtMutable()
-  {
-    return &dt_;
-  }
-  float* Node::getDtPointer()
-  {
-    return dt_.data();
-  }
-
-  void Node::setOutputMin(const float& output_min)
+	template<typename HDelT, typename DDelT, typename TensorT>
+  void Node<HDelT, DDelT, TensorT>::setOutputMin(const TensorT& output_min)
   {
     output_min_ = output_min;
   }
-  void Node::setOutputMax(const float& output_max)
+	template<typename HDelT, typename DDelT, typename TensorT>
+  void Node<HDelT, DDelT, TensorT>::setOutputMax(const TensorT& output_max)
   {
     output_max_ = output_max;
   }
 
-	void Node::setDropProbability(const float & drop_probability)
+	template<typename HDelT, typename DDelT, typename TensorT>
+	void Node<HDelT, DDelT, TensorT>::setDropProbability(const TensorT & drop_probability)
 	{
 		drop_probability_ = drop_probability;
 	}
 
-	float Node::getDropProbability() const
+	template<typename HDelT, typename DDelT, typename TensorT>
+	TensorT Node<HDelT, DDelT, TensorT>::getDropProbability() const
 	{
 		return drop_probability_;
 	}
 
-	void Node::setDrop(const Eigen::Tensor<float, 2>& drop)
+	template<typename HDelT, typename DDelT, typename TensorT>
+	void Node<HDelT, DDelT, TensorT>::setDrop(const Eigen::Tensor<TensorT, 2>& drop)
 	{
 		drop_ = drop;
 	}
-	Eigen::Tensor<float, 2> Node::getDrop() const
+	template<typename HDelT, typename DDelT, typename TensorT>
+	Eigen::Tensor<TensorT, 2> Node<HDelT, DDelT, TensorT>::getDrop() const
 	{
 		return drop_;
 	}
 
-	int Node::getBatchSize() const
+	template<typename HDelT, typename DDelT, typename TensorT>
+	int Node<HDelT, DDelT, TensorT>::getBatchSize() const
 	{
-		return output_.dimension(0);
+		return batch_size_;
 	}
 
-	int Node::getMemorySize() const
+	template<typename HDelT, typename DDelT, typename TensorT>
+	int Node<HDelT, DDelT, TensorT>::getMemorySize() const
 	{
-		return output_.dimension(1);
+		return memory_size_;
 	}
 
-  void Node::initNode(const int& batch_size, const int& memory_size, bool train)
+	template<typename HDelT, typename DDelT, typename TensorT>
+	void Node<HDelT, DDelT, TensorT>::setNodeData(const std::shared_ptr<NodeData<HDelT, DDelT, TensorT>>& node_data)
+	{
+		node_data_.reset();
+		node_data_ = std::move(node_data);
+	}
+
+	template<typename HDelT, typename DDelT, typename TensorT>
+	std::shared_ptr<NodeData<HDelT, DDelT, TensorT>> Node<HDelT, DDelT, TensorT>::getNodeData()
+	{
+		return node_data_;
+	}
+
+	template<typename HDelT, typename DDelT, typename TensorT>
+  void Node<HDelT, DDelT, TensorT>::initNode(const int& batch_size, const int& memory_size, bool train)
   {
-    Eigen::Tensor<float, 2> init_values(batch_size, memory_size);
+		batch_size_ = batch_size;
+		memory_size_ = memory_size;
+
+    Eigen::Tensor<TensorT, 2> init_values(batch_size, memory_size);
     init_values.setConstant(0.0f);
-		setInput(init_values);
-    setError(init_values);
-    setDerivative(init_values);
+		node_data_->setInput(init_values);
+		node_data_->setError(init_values);
+		node_data_->setDerivative(init_values);
 
 		// set Dt
     init_values.setConstant(1.0f);
-    setDt(init_values);
+		node_data_->setDt(init_values);
 
 		// set Drop probabilities
 		if (train) {
-			init_values.unaryExpr(RandBinaryOp<float>(getDropProbability()));
+			init_values.unaryExpr(RandBinaryOp<TensorT>(getDropProbability()));
 			setDrop(init_values);
 		}
 		else {
@@ -336,16 +293,16 @@ namespace SmartPeak
     {
       init_values.setConstant(1.0f);
       setStatus(NodeStatus::activated);
-      setOutput(init_values);
-			//setDerivative(init_values);
+			node_data_->setOutput(init_values);
+			//node_data_->setDerivative(init_values);
 		}
 		else if (type_ == NodeType::input)
 		{
 			//init_values.setConstant(1.0f);
-			//setDerivative(init_values);
+			//node_data_->setDerivative(init_values);
 			init_values.setConstant(0.0f);
 			setStatus(NodeStatus::initialized);
-			setOutput(init_values);
+			node_data_->setOutput(init_values);
 		}
 		else if (type_ == NodeType::zero)
 		{
@@ -353,25 +310,25 @@ namespace SmartPeak
 			//setDerivative(init_values);
 			init_values.setConstant(0.0f);
 			setStatus(NodeStatus::activated);
-			setOutput(init_values);
+			node_data_->setOutput(init_values);
 		}
     else
     {
       init_values.setConstant(0.0f);
       setStatus(NodeStatus::initialized);
-      setOutput(init_values);
+			node_data_->setOutput(init_values);
     }
   }
 
-  bool Node::checkTimeStep(const int&time_step)
+	template<typename HDelT, typename DDelT, typename TensorT>
+  bool Node<HDelT, DDelT, TensorT>::checkTimeStep(const int&time_step)
   {
-    const int memory_size = output_.dimension(1);
     if (time_step < 0)
     {
       std::cout << "time_step is less than 0." << std::endl;
       return false;
     }
-    else if (time_step >= memory_size)
+    else if (time_step >= memory_size_)
     {
       std::cout << "time_step is greater than the node memory_size." << std::endl;
       return false;
@@ -382,18 +339,17 @@ namespace SmartPeak
     }
   }
 
-  void Node::checkOutput()
+	template<typename HDelT, typename DDelT, typename TensorT>
+  void Node<HDelT, DDelT, TensorT>::checkOutput()
   {
-    const int batch_size = derivative_.dimension(0);
-    const int memory_size = derivative_.dimension(1);
-    for (int i=0; i<batch_size; ++i)
+    for (int i=0; i<batch_size_; ++i)
     {
-      for (int j=0; j<memory_size ; ++j)
+      for (int j=0; j<memory_size_ ; ++j)
       {
-        if (output_(i,j) < output_min_)
-          output_(i,j) = output_min_;
-        else if (output_(i,j) > output_max_)
-          output_(i,j) = output_max_;
+        if (node_data_->getOutput()(i,j) < output_min_)
+					node_data_->getOutputMutable()->operator()(i,j) = output_min_;
+        else if (node_data_->getOutput()(i,j) > output_max_)
+					node_data_->getOutputMutable()->operator()(i,j) = output_max_;
       }
     }
   }

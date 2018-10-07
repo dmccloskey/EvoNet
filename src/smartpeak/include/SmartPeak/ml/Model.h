@@ -17,24 +17,27 @@
 namespace SmartPeak
 {
 
+	template<typename HDelT, typename DDelT, typename TensorT>
   struct OperationResult
   {
-    std::shared_ptr<Node> sink_node;
+    std::shared_ptr<Node<HDelT, DDelT, TensorT>> sink_node;
     int time_step = 0;
   };
 
+	template<typename HDelT, typename DDelT, typename TensorT>
   struct OperationArguments
   {
-    std::shared_ptr<Node> source_node;
-    std::shared_ptr<Weight> weight;
+    std::shared_ptr<Node<HDelT, DDelT, TensorT>> source_node;
+    std::shared_ptr<Weight<TensorT>> weight;
 		std::string link_name;
     int time_step = 0;
   };
 
+	template<typename HDelT, typename DDelT, typename TensorT>
   struct OperationList
   {
-    OperationResult result;
-    std::vector<OperationArguments> arguments;
+    OperationResult<HDelT, DDelT, TensorT> result;
+    std::vector<OperationArguments<HDelT, DDelT, TensorT>> arguments;
   };
 
   /**
@@ -44,6 +47,7 @@ namespace SmartPeak
     1. Inputs can only be sources
     2. Outputs can only be sinks (will break back propogation algorithm)
   */
+	template<typename HDelT, typename DDelT, typename TensorT>
   class Model
   {
 public:
@@ -148,7 +152,7 @@ public:
       @param[in] value_type ("output", "derivative", "error", or "dt")
     */ 
     void mapValuesToNodes(
-      const Eigen::Tensor<float, 3>& values,
+      const Eigen::Tensor<TensorT, 3>& values,
       const std::vector<std::string>& node_names,
       const NodeStatus& status_update,
       const std::string& value_type);
@@ -170,7 +174,7 @@ public:
       @param[in] value_type String of "output", "derivative", or "error"
     */ 
     void mapValuesToNodes(
-      const Eigen::Tensor<float, 2>& values,
+      const Eigen::Tensor<TensorT, 2>& values,
       const int& memory_step,
       const std::vector<std::string>& node_names,
       const NodeStatus& status_update,
@@ -194,7 +198,7 @@ public:
       @param[in] value_type String of "output", "derivative", or "error"
     */ 
     void mapValuesToNode(
-      const Eigen::Tensor<float, 1>& values,
+      const Eigen::Tensor<TensorT, 1>& values,
       const int& memory_step,
       const std::string& node_name,
       const NodeStatus& status_update,
@@ -213,7 +217,7 @@ public:
       @param[in] value_type String of "output", "derivative", or "error"
     */       
     void mapValuesToNodes(
-      const Eigen::Tensor<float, 1>& values,
+      const Eigen::Tensor<TensorT, 1>& values,
       const int& memory_step,
       const NodeStatus& status_update,
       const std::string& value_type);
@@ -230,7 +234,7 @@ public:
     */ 
     void getNextInactiveLayer(
       std::map<std::string, int>& FP_operations_map,
-      std::vector<OperationList>& FP_operations);
+      std::vector<OperationList<HDelT, DDelT, TensorT>>& FP_operations);
  
     /**
       @brief Continuation of the forward propogation step that identifies all biases
@@ -245,7 +249,7 @@ public:
     */ 
     void getNextInactiveLayerBiases(
       std::map<std::string, int>& FP_operations_map,
-      std::vector<OperationList>& FP_operations,
+      std::vector<OperationList<HDelT, DDelT, TensorT>>& FP_operations,
       std::vector<std::string>& sink_nodes_with_biases
       );
  
@@ -262,7 +266,7 @@ public:
     */ 
     void getNextInactiveLayerCycles(
       std::map<std::string, int>& FP_operations_map,
-      std::vector<OperationList>& FP_operations,
+      std::vector<OperationList<HDelT, DDelT, TensorT>>& FP_operations,
       std::vector<std::string>& sink_nodes_with_cycles);
 
     /**
@@ -293,18 +297,18 @@ public:
     [THREADPOOL/CUDA: move to seperate file for cpu/cuda compilation]
     */ 
     void forwardPropogateLayerNetInput(
-      std::vector<OperationList>& FP_operations,
+      std::vector<OperationList<HDelT, DDelT, TensorT>>& FP_operations,
       const int& time_step, int n_threads = 1);
 
     static bool calculateNodeInput_(
-			OperationResult* result,
-      OperationArguments* arguments, 
+			OperationResult<HDelT, DDelT, TensorT>* result,
+      OperationArguments<HDelT, DDelT, TensorT>* arguments,
       const int& batch_size,
       const int& memory_size,
       const int& time_step
     );
     static bool calculateNetNodeInput_(
-      OperationList* operations, 
+      OperationList<HDelT, DDelT, TensorT>* operations,
       const int& batch_size,
       const int& memory_size,
       const int& time_step,
@@ -353,9 +357,9 @@ public:
     @param[in] dt Node time resolution 
     */ 
     void FPTT(const int& time_steps, 
-      const Eigen::Tensor<float, 3>& values,
+      const Eigen::Tensor<TensorT, 3>& values,
       const std::vector<std::string> node_names,
-      const Eigen::Tensor<float, 2>& dt, 
+      const Eigen::Tensor<TensorT, 2>& dt, 
       bool cache_FP_steps = false, 
       bool use_cache = false,
       int n_threads = 1);
@@ -367,16 +371,16 @@ public:
     @param[in] values Expected node output values
     @param[in] node_names Output nodes
     */ 
-    void calculateError(const Eigen::Tensor<float, 2>& values, const std::vector<std::string>& node_names,
+    void calculateError(const Eigen::Tensor<TensorT, 2>& values, const std::vector<std::string>& node_names,
 			const int& time_step, int n_threads = 1);
 
 		/**
 		@brief Calculates the error of the model for a given node
 		*/
-		static Eigen::Tensor<float, 1> calculateModelError_(
-			Node* output_node,
-			const Eigen::Tensor<float, 1>& expected,
-			LossFunctionOp<float>* loss_function,
+		static Eigen::Tensor<TensorT, 1> calculateModelError_(
+			Node<HDelT, DDelT, TensorT>* output_node,
+			const Eigen::Tensor<TensorT, 1>& expected,
+			LossFunctionOp<TensorT>* loss_function,
 			const int& batch_size,
 			const int& time_step
 			);
@@ -385,9 +389,9 @@ public:
 		@brief Calculates the error of the output node
 		*/
 		static bool calculateOutputNodeError_(
-			Node* output_node,
-			const Eigen::Tensor<float, 1>& expected,
-			LossFunctionGradOp<float>* loss_function_grad,
+			Node<HDelT, DDelT, TensorT>* output_node,
+			const Eigen::Tensor<TensorT, 1>& expected,
+			LossFunctionGradOp<TensorT>* loss_function_grad,
 			const int& time_step
 			);
  
@@ -400,7 +404,7 @@ public:
 			where t=n to t=0
     @param[in] node_names Output nodes
     */ 
-    void CETT(const Eigen::Tensor<float, 3>& values, const std::vector<std::string>& node_names, const int& time_steps, int n_threads = 1);
+    void CETT(const Eigen::Tensor<TensorT, 3>& values, const std::vector<std::string>& node_names, const int& time_steps, int n_threads = 1);
  
     /**
     @brief A prelude to a back propogation step.  Returns a vector of links
@@ -415,12 +419,12 @@ public:
     */ 
     void getNextUncorrectedLayer(
       std::map<std::string, int>& BP_operations_map,
-      std::vector<OperationList>& BP_operations,
+      std::vector<OperationList<HDelT, DDelT, TensorT>>& BP_operations,
       std::vector<std::string>& source_nodes);
 
 		void getNextUncorrectedLayerBiases(
 			std::map<std::string, int>& BP_operations_map, 
-			std::vector<OperationList>& BP_operations, 
+			std::vector<OperationList<HDelT, DDelT, TensorT>>& BP_operations,
 			std::vector<std::string>& source_nodes, 
 			std::vector<std::string>& sink_nodes_with_biases);
  
@@ -438,7 +442,7 @@ public:
     */ 
     void getNextUncorrectedLayerCycles(
       std::map<std::string, int>& BP_operations_map,
-      std::vector<OperationList>& BP_operations,
+      std::vector<OperationList<HDelT, DDelT, TensorT>>& BP_operations,
       std::vector<std::string>& source_nodes,
       std::vector<std::string>& source_nodes_with_cycles);
  
@@ -458,18 +462,18 @@ public:
     the underlying node values are automatically updated]
     */ 
     void backPropogateLayerError(
-      std::vector<OperationList>& BP_operations,
+      std::vector<OperationList<HDelT, DDelT, TensorT>>& BP_operations,
       const int& time_step, int n_threads = 1);
 
     static bool calculateNodeError_(
-			OperationResult* operations,
-      OperationArguments* arguments, 
+			OperationResult<HDelT, DDelT, TensorT>* operations,
+      OperationArguments<HDelT, DDelT, TensorT>* arguments,
       const int& batch_size,
       const int& memory_size,
       const int& time_step
     );
     static bool calculateNetNodeError_(
-      OperationList* operations, 
+      OperationList<HDelT, DDelT, TensorT>* operations,
       const int& batch_size,
       const int& memory_size,
       const int& time_step,
@@ -533,14 +537,14 @@ public:
     void setName(const std::string& name); ///< name setter
     std::string getName() const; ///< name getter
 
-    void setError(const Eigen::Tensor<float, 2>& error); ///< error setter
-    Eigen::Tensor<float, 2> getError() const; ///< error getter
+    void setError(const Eigen::Tensor<TensorT, 2>& error); ///< error setter
+    Eigen::Tensor<TensorT, 2> getError() const; ///< error getter
 
-    void setLossFunction(const std::shared_ptr<LossFunctionOp<float>>& loss_function); ///< loss_function setter
-    LossFunctionOp<float>* getLossFunction() const; ///< loss_function getter
+    void setLossFunction(const std::shared_ptr<LossFunctionOp<TensorT>>& loss_function); ///< loss_function setter
+    LossFunctionOp<TensorT>* getLossFunction() const; ///< loss_function getter
 
-		void setLossFunctionGrad(const std::shared_ptr<LossFunctionGradOp<float>>& loss_function); ///< loss_function grad setter
-		LossFunctionGradOp<float>* getLossFunctionGrad() const; ///< loss_function grad getter
+		void setLossFunctionGrad(const std::shared_ptr<LossFunctionGradOp<TensorT>>& loss_function); ///< loss_function grad setter
+		LossFunctionGradOp<TensorT>* getLossFunctionGrad() const; ///< loss_function grad getter
 
 		std::vector<std::shared_ptr<Node>> getInputNodes(); ///< input_node getter
 		std::vector<std::shared_ptr<Node>> getOutputNodes(); ///< output_node getter
@@ -567,10 +571,10 @@ public:
 
       @param[in] nodes Nodes to add to the model
     */ 
-    void addNodes(const std::vector<Node>& nodes);
-    Node getNode(const std::string& node_name) const; ///< node getter
-    std::vector<Node> getNodes() const; ///< nodes getter
-		std::map<std::string, std::shared_ptr<Node>> getNodesMap();  ///< return a modifiable version of weights
+    void addNodes(const std::vector<Node<HDelT, DDelT, TensorT>>& nodes);
+    Node<HDelT, DDelT, TensorT> getNode(const std::string& node_name) const; ///< node getter
+    std::vector<Node<HDelT, DDelT, TensorT>> getNodes() const; ///< nodes getter
+		std::map<std::string, std::shared_ptr<Node<HDelT, DDelT, TensorT>>> getNodesMap();  ///< return a modifiable version of weights
 		std::map<std::string, std::vector<std::string>> getModuleNodeNameMap() const; ///< return a map of modules to a vector of node names [TODO: test!]
 
     /**
@@ -585,10 +589,10 @@ public:
 
       @param[in] weights Weights to add to the model
     */ 
-    void addWeights(const std::vector<Weight>& weights);
-    Weight getWeight(const std::string& weight_name) const; ///< weight getter
-    std::vector<Weight> getWeights() const;  ///< weights getter
-		std::map<std::string, std::shared_ptr<Weight>> getWeightsMap();  ///< return a modifiable version of weights_		
+    void addWeights(const std::vector<Weight<TensorT>>& weights);
+    Weight<TensorT> getWeight(const std::string& weight_name) const; ///< weight getter
+    std::vector<Weight<TensorT>> getWeights() const;  ///< weights getter
+		std::map<std::string, std::shared_ptr<Weight<TensorT>>> getWeightsMap();  ///< return a modifiable version of weights_		
  
     /**
       @brief Remove existing weights from the model.
@@ -699,20 +703,20 @@ private:
     int id_; ///< Model ID
     std::string name_; ///< Model Name
     std::map<std::string, std::shared_ptr<Link>> links_; ///< Model links
-    std::map<std::string, std::shared_ptr<Node>> nodes_; ///< Model nodes
-    std::map<std::string, std::shared_ptr<Weight>> weights_; ///< Model nodes
-    Eigen::Tensor<float, 2> error_; ///< Model error
-    std::shared_ptr<LossFunctionOp<float>> loss_function_; ///< Model loss function
-		std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad_; ///< Model loss function
+    std::map<std::string, std::shared_ptr<Node<HDelT, DDelT, TensorT>>> nodes_; ///< Model nodes
+    std::map<std::string, std::shared_ptr<Weight<TensorT>>> weights_; ///< Model nodes
+    Eigen::Tensor<TensorT, 2> error_; ///< Model error
+    std::shared_ptr<LossFunctionOp<TensorT>> loss_function_; ///< Model loss function
+		std::shared_ptr<LossFunctionGradOp<TensorT>> loss_function_grad_; ///< Model loss function
 		std::vector<std::pair<std::string, std::string>> cyclic_pairs_;
-		std::vector<std::shared_ptr<Node>> input_nodes_;
-		std::vector<std::shared_ptr<Node>> output_nodes_;
+		std::vector<std::shared_ptr<Node<HDelT, DDelT, TensorT>>> input_nodes_;
+		std::vector<std::shared_ptr<Node<HDelT, DDelT, TensorT>>> output_nodes_;
 
     // Internal structures to allow for efficient multi-threading
     // and off-loading of computation from host to devices
-    std::vector<std::vector<OperationList>> FP_operations_cache_;
+    std::vector<std::vector<OperationList<HDelT, DDelT, TensorT>>> FP_operations_cache_;
 		std::vector<std::pair<int, int>> FP_operations_dimensions_;  // vector of source/sink node sizes
-    std::vector<std::vector<OperationList>> BP_operations_cache_;
+    std::vector<std::vector<OperationList<HDelT, DDelT, TensorT>>> BP_operations_cache_;
   };
 }
 

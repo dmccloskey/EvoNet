@@ -5,6 +5,7 @@
 
 #include <SmartPeak/ml/ActivationFunction.h>
 #include <SmartPeak/ml/IntegrationFunction.h>
+#include <SmartPeak/ml/NodeData.h>
 #include <unsupported/Eigen/CXX11/Tensor>
 #include <memory>
 #include <vector>
@@ -34,17 +35,18 @@ namespace SmartPeak
   /**
     @brief Network Node
   */
+	template<typename HDelT, typename DDelT, typename TensorT>
   class Node
   {
 public:
-    Node(); ///< Default constructor
+    Node() = default; ///< Default constructor
     Node(const Node& other); ///< Copy constructor // [TODO: add test]
     Node(const std::string& name, const SmartPeak::NodeType& type, const SmartPeak::NodeStatus& status, 
-			const std::shared_ptr<ActivationOp<float>>& activation, const std::shared_ptr<ActivationOp<float>>& activation_grad, 
-			const std::shared_ptr<IntegrationOp<float>>& integration,
-			const std::shared_ptr<IntegrationErrorOp<float>>& integration_error,
-			const std::shared_ptr<IntegrationWeightGradOp<float>>& integration_weight_grad); ///< Explicit constructor
-    ~Node(); ///< Default destructor
+			const std::shared_ptr<ActivationOp<TensorT>>& activation, const std::shared_ptr<ActivationOp<TensorT>>& activation_grad, 
+			const std::shared_ptr<IntegrationOp<TensorT>>& integration,
+			const std::shared_ptr<IntegrationErrorOp<TensorT>>& integration_error,
+			const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& integration_weight_grad); ///< Explicit constructor
+    ~Node() = default; ///< Default destructor
 
     inline bool operator==(const Node& other) const
     {
@@ -53,7 +55,7 @@ public:
           id_,
           type_,
           status_,
-     //     activation_->getName(),
+          //activation_->getName(),
 					//activation_grad_->getName(),
 					//integration_->getName(),
 					//integration_error_->getName(),
@@ -65,11 +67,11 @@ public:
           other.id_,
           other.type_,
           other.status_,
- /*         other.activation_->getName(),
-					other.activation_grad_->getName(),
-					other.integration_->getName(),
-					other.integration_error_->getName(),
-					other.integration_weight_grad_->getName(),*/
+          //other.activation_->getName(),
+					//other.activation_grad_->getName(),
+					//other.integration_->getName(),
+					//other.integration_error_->getName(),
+					//other.integration_weight_grad_->getName(),
           other.name_,
 					other.module_id_,
 					other.module_name_
@@ -97,11 +99,7 @@ public:
       status_ = other.status_;
       output_min_ = other.output_min_;
       output_max_ = other.output_max_;
-			input_ = other.input_;
-      output_ = other.output_;
-      error_ = other.error_;
-      derivative_ = other.derivative_;
-      dt_ = other.dt_;
+			node_data_ = other.node_data_;
 			drop_probability_ = other.drop_probability_;
 			drop_ = other.drop_;
       return *this;
@@ -119,26 +117,25 @@ public:
     void setStatus(const SmartPeak::NodeStatus& status); ///< status setter
     SmartPeak::NodeStatus getStatus() const; ///< status getter
 
-    void setActivation(const std::shared_ptr<ActivationOp<float>>& activation); ///< activation setter
-		std::shared_ptr<ActivationOp<float>> getActivationShared() const; // [TODO: add tests]
-		ActivationOp<float>* getActivation() const; ///< activation getter
+    void setActivation(const std::shared_ptr<ActivationOp<TensorT>>& activation); ///< activation setter
+		std::shared_ptr<ActivationOp<TensorT>> getActivationShared() const; // [TODO: add tests]
+		ActivationOp<TensorT>* getActivation() const; ///< activation getter
 
-		void setActivationGrad(const std::shared_ptr<ActivationOp<float>>& activation_grad); ///< activation setter
-		std::shared_ptr<ActivationOp<float>> getActivationGradShared() const; // [TODO: add tests]
-		ActivationOp<float>* getActivationGrad() const; ///< activation getter
+		void setActivationGrad(const std::shared_ptr<ActivationOp<TensorT>>& activation_grad); ///< activation setter
+		std::shared_ptr<ActivationOp<TensorT>> getActivationGradShared() const; // [TODO: add tests]
+		ActivationOp<TensorT>* getActivationGrad() const; ///< activation getter
 
-		void setIntegration(const std::shared_ptr<IntegrationOp<float>>& integration); ///< integration setter
-		std::shared_ptr<IntegrationOp<float>> getIntegrationShared() const; // [TODO: add tests]
-		IntegrationOp<float>* getIntegration() const; ///< integration getter
+		void setIntegration(const std::shared_ptr<IntegrationOp<TensorT>>& integration); ///< integration setter
+		std::shared_ptr<IntegrationOp<TensorT>> getIntegrationShared() const; // [TODO: add tests]
+		IntegrationOp<TensorT>* getIntegration() const; ///< integration getter
 
-		void setIntegrationError(const std::shared_ptr<IntegrationErrorOp<float>>& integration); ///< integration setter
-		std::shared_ptr<IntegrationErrorOp<float>> getIntegrationErrorShared() const; // [TODO: add tests]
-		IntegrationErrorOp<float>* getIntegrationError() const; ///< integration getter
+		void setIntegrationError(const std::shared_ptr<IntegrationErrorOp<TensorT>>& integration); ///< integration setter
+		std::shared_ptr<IntegrationErrorOp<TensorT>> getIntegrationErrorShared() const; // [TODO: add tests]
+		IntegrationErrorOp<TensorT>* getIntegrationError() const; ///< integration getter
 
-		void setIntegrationWeightGrad(const std::shared_ptr<IntegrationWeightGradOp<float>>& integration); ///< integration setter
-		std::shared_ptr<IntegrationWeightGradOp<float>> getIntegrationWeightGradShared() const; // [TODO: add tests]
-		IntegrationWeightGradOp<float>* getIntegrationWeightGrad() const; ///< integration getter
-
+		void setIntegrationWeightGrad(const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& integration); ///< integration setter
+		std::shared_ptr<IntegrationWeightGradOp<TensorT>> getIntegrationWeightGradShared() const; // [TODO: add tests]
+		IntegrationWeightGradOp<TensorT>* getIntegrationWeightGrad() const; ///< integration getter
 
 		void setModuleId(const int& module_id); ///< module id setter
 		int getModuleId() const; ///< module id getter
@@ -146,42 +143,35 @@ public:
 		void setModuleName(const std::string& module_name); ///< module name setter
 		std::string getModuleName() const; ///< module name getter
 
-		void setInput(const Eigen::Tensor<float, 2>& input); ///< input setter
-		Eigen::Tensor<float, 2> getInput() const; ///< input copy getter
-		Eigen::Tensor<float, 2>* getInputMutable(); ///< input copy getter
-		float* getInputPointer(); ///< input pointer getter
+    void setOutputMin(const TensorT& min_output); ///< min output setter
+    void setOutputMax(const TensorT& output_max); ///< max output setter
 
-    void setOutput(const Eigen::Tensor<float, 2>& output); ///< output setter
-    Eigen::Tensor<float, 2> getOutput() const; ///< output copy getter
-    Eigen::Tensor<float, 2>* getOutputMutable(); ///< output copy getter
-    float* getOutputPointer(); ///< output pointer getter
+		void setDropProbability(const TensorT& drop_probability); ///< drop_probability setter
+		TensorT getDropProbability() const; ///< drop_probability getter
 
-    void setError(const Eigen::Tensor<float, 2>& error); ///< error setter
-    Eigen::Tensor<float, 2> getError() const; ///< error copy getter
-    Eigen::Tensor<float, 2>* getErrorMutable(); ///< error copy getter
-    float* getErrorPointer(); ///< error pointer getter
-
-    void setDerivative(const Eigen::Tensor<float, 2>& derivative); ///< derivative setter
-    Eigen::Tensor<float, 2> getDerivative() const; ///< derivative copy getter
-    Eigen::Tensor<float, 2>* getDerivativeMutable(); ///< derivative copy getter
-    float* getDerivativePointer(); ///< derivative pointer getter
-
-    void setDt(const Eigen::Tensor<float, 2>& dt); ///< dt setter
-    Eigen::Tensor<float, 2> getDt() const; ///< dt copy getter
-    Eigen::Tensor<float, 2>* getDtMutable(); ///< dt copy getter
-    float* getDtPointer(); ///< dt pointer getter
-
-    void setOutputMin(const float& min_output); ///< min output setter
-    void setOutputMax(const float& output_max); ///< max output setter
-
-		void setDropProbability(const float& drop_probability); ///< drop_probability setter
-		float getDropProbability() const; ///< drop_probability getter
-
-		void setDrop(const Eigen::Tensor<float, 2>& drop); ///< drop setter
-		Eigen::Tensor<float, 2> getDrop() const; ///< drop copy getter
+		void setDrop(const Eigen::Tensor<TensorT, 2>& drop); ///< drop setter
+		Eigen::Tensor<TensorT, 2> getDrop() const; ///< drop copy getter
 
 		int getBatchSize() const;
 		int getMemorySize() const;
+
+		Eigen::Tensor<TensorT, 2> getInput() const { return node_data_->getInput(); }; ///< input copy getter
+		Eigen::Tensor<TensorT, 2>* getInputMutable() { return node_data_->getInputMutable(); }; ///< input copy getter
+
+		Eigen::Tensor<TensorT, 2> getOutput() const { return node_data_->getOutput(); }; ///< output copy getter
+		Eigen::Tensor<TensorT, 2>* getOutputMutable() { return node_data_->getOutputMutable(); }; ///< output copy getter
+
+		Eigen::Tensor<TensorT, 2> getError() const { return node_data_->getError(); }; ///< error copy getter
+		Eigen::Tensor<TensorT, 2>* getErrorMutable() { return node_data_->getErrorMutable(); }; ///< error copy getter
+
+		Eigen::Tensor<TensorT, 2> getDerivative() const { return node_data_->getDerivative(); }; ///< derivative copy getter
+		Eigen::Tensor<TensorT, 2>* getDerivativeMutable() { return node_data_->getDerivativeMutable(); }; ///< derivative copy getter
+
+		Eigen::Tensor<TensorT, 2> getDt() const { return node_data_->getDt(); }; ///< dt copy getter
+		Eigen::Tensor<TensorT, 2>* getDtMutable() { return node_data_->getDtMutable(); }; ///< dt copy getter
+
+		void setNodeData(const std::shared_ptr<NodeData<HDelT, DDelT, TensorT>>& node_data);
+		std::shared_ptr<NodeData<HDelT, DDelT, TensorT>> getNodeData();
 
     /**
       @brief Initialize node output to zero.
@@ -216,29 +206,18 @@ private:
 		std::string module_name_ = ""; ///<Module Name
 		SmartPeak::NodeType type_; ///< Node Type
     SmartPeak::NodeStatus status_; ///< Node Status   
-    std::shared_ptr<ActivationOp<float>> activation_; ///< Node activation function 
-		std::shared_ptr<ActivationOp<float>> activation_grad_; ///< Node activation function 
-		std::shared_ptr<IntegrationOp<float>> integration_; ///< Node integration function 
-		std::shared_ptr<IntegrationErrorOp<float>> integration_error_; ///< Node integration error function 
-		std::shared_ptr<IntegrationWeightGradOp<float>> integration_weight_grad_; ///< Node integration weight grad function 
-
-    float output_min_ = -1.0e6; ///< Min Node output
-    float output_max_ = 1.0e6; ///< Max Node output
-
-    /**
-      @brief output, error and derivative have the following dimensions:
-        rows: # of samples, cols: # of time steps
-        where the number of samples spans 0 to n samples
-        and the number of time steps spans m time points to 0
-    */
-		Eigen::Tensor<float, 2> input_; ///< Node Net Input (rows: # of samples, cols: # of time steps)
-    Eigen::Tensor<float, 2> output_; ///< Node Output (rows: # of samples, cols: # of time steps)
-    Eigen::Tensor<float, 2> error_; ///< Node Error (rows: # of samples, cols: # of time steps)
-    Eigen::Tensor<float, 2> derivative_; ///< Node Error (rows: # of samples, cols: # of time steps)
-    Eigen::Tensor<float, 2> dt_; ///< Resolution of each time-step (rows: # of samples, cols: # of time steps)
-
-		float drop_probability_ = 0.0;
-		Eigen::Tensor<float, 2> drop_; ///< Node Output drop tensor (initialized once per epoch)
+    std::shared_ptr<ActivationOp<TensorT>> activation_; ///< Node activation function 
+		std::shared_ptr<ActivationOp<TensorT>> activation_grad_; ///< Node activation function 
+		std::shared_ptr<IntegrationOp<TensorT>> integration_; ///< Node integration function 
+		std::shared_ptr<IntegrationErrorOp<TensorT>> integration_error_; ///< Node integration error function 
+		std::shared_ptr<IntegrationWeightGradOp<TensorT>> integration_weight_grad_; ///< Node integration weight grad function 
+    TensorT output_min_ = -1.0e6; ///< Min Node output
+    TensorT output_max_ = 1.0e6; ///< Max Node output
+		size_t batch_size_ = 1; ///< Mini batch size
+		size_t memory_size_ = 2; ///< Memory size
+		std::shared_ptr<NodeData<HDelT, DDelT, TensorT> node_data_; ///< Node data
+		TensorT drop_probability_ = 0.0;
+		Eigen::Tensor<TensorT, 2> drop_; ///< Node Output drop tensor (initialized once per epoch)
   };
 }
 

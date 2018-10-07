@@ -14,6 +14,7 @@ set(sources_list_h
 	ModelReplicator.h
 	ModelTrainer.h
 	Node.h
+	NodeData.h
 	PopulationTrainer.h
 	SharedFunctions.h
 	Solver.h

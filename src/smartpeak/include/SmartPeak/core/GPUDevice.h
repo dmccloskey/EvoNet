@@ -10,7 +10,6 @@
 
 #include <unsupported/Eigen/CXX11/Tensor>
 #include <SmartPeak/core/DeviceManager.h>
-#include <chrono>
 
 namespace SmartPeak
 {

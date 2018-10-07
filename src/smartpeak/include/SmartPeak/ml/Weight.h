@@ -17,16 +17,17 @@ namespace SmartPeak
   /**
     @brief Directed Network Weight
   */
+	template<typename TensorT>
   class Weight
   {
 public:
-    Weight(); ///< Default constructor
+    Weight() = default; ///< Default constructor
     Weight(const Weight& other); ///< Copy constructor // [TODO: add test]
     Weight(const int& id); ///< Explicit constructor 
     Weight(const std::string& name); ///< Explicit constructor 
     Weight(const int& id, const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver); ///< Explicit constructor 
     Weight(const std::string& name, const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver); ///< Explicit constructor 
-    ~Weight(); ///< Default destructor
+    ~Weight() = default; ///< Default destructor
 
     inline bool operator==(const Weight& other) const
     {
@@ -78,9 +79,9 @@ public:
     void setName(const std::string& name); ///< naem setter
     std::string getName() const; ///< name getter
 
-    void setWeight(const float& weight); ///< weight setter
-    float getWeight() const; ///< weight getter
-		float* getWeightMutable(); ///< weight getter
+    void setWeight(const TensorT& weight); ///< weight setter
+    TensorT getWeight() const; ///< weight getter
+		TensorT* getWeightMutable(); ///< weight getter
 
     void setWeightInitOp(const std::shared_ptr<WeightInitOp>& weight_init); ///< weight initialization operator setter
     WeightInitOp* getWeightInitOp() const; ///< weight initialization operator getter
@@ -88,8 +89,8 @@ public:
     void setSolverOp(const std::shared_ptr<SolverOp>& solver); ///< weight update operator setter
     SolverOp* getSolverOp() const; ///< weight update operator getter
 
-    void setWeightMin(const float& weight_min); ///< min weight setter
-    void setWeightMax(const float& weight_max); ///< max weight setter
+    void setWeightMin(const TensorT& weight_min); ///< min weight setter
+    void setWeightMax(const TensorT& weight_max); ///< max weight setter
 
 		void setModuleId(const int& module_id); ///< module id setter
 		int getModuleId() const; ///< module id getter
@@ -97,11 +98,11 @@ public:
 		void setModuleName(const std::string& module_name); ///< module name setter
 		std::string getModuleName() const; ///< module name getter
 
-		void setDropProbability(const float& drop_probability); ///< drop_probability setter
-		float getDropProbability() const; ///< drop_probability getter
+		void setDropProbability(const TensorT& drop_probability); ///< drop_probability setter
+		TensorT getDropProbability() const; ///< drop_probability getter
 
-		void setDrop(const float& drop); ///< drop setter
-		float getDrop() const; ///< drop getter
+		void setDrop(const TensorT& drop); ///< drop setter
+		TensorT getDrop() const; ///< drop getter
 
     /**
       @brief Initializes the weight.  
@@ -113,7 +114,7 @@ public:
 
       @param[in] errpr Weight error   
     */ 
-    void updateWeight(const float& error);
+    void updateWeight(const TensorT& error);
  
     /**
       @brief Check if the weight is within the min/max.  
@@ -125,14 +126,14 @@ private:
     std::string name_ = ""; ///< Weight Name
 		int module_id_ = -1; ///< Module ID
 		std::string module_name_ = ""; ///<Module Name
-    float weight_ = 1.0; ///< Weight weight
+    TensorT weight_ = 1.0; ///< Weight weight
     std::shared_ptr<WeightInitOp> weight_init_; ///< weight initialization operator
     std::shared_ptr<SolverOp> solver_; ///< weight update operator
 
-    float weight_min_ = -1.0e6;
-    float weight_max_ = 1.0e6;
-		float drop_probability_ = 0.0;
-		float drop_ = 1.0;
+    TensorT weight_min_ = -1.0e6;
+    TensorT weight_max_ = 1.0e6;
+		TensorT drop_probability_ = 0.0;
+		TensorT drop_ = 1.0;
   };
 }
 
