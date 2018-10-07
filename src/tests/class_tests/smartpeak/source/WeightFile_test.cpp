@@ -11,22 +11,22 @@ BOOST_AUTO_TEST_SUITE(WeightFile1)
 
 BOOST_AUTO_TEST_CASE(constructor) 
 {
-  WeightFile* ptr = nullptr;
-  WeightFile* nullPointer = nullptr;
-  ptr = new WeightFile();
+  WeightFile<float>* ptr = nullptr;
+  WeightFile<float>* nullPointer = nullptr;
+  ptr = new WeightFile<float>();
   BOOST_CHECK_NE(ptr, nullPointer);
 }
 
 BOOST_AUTO_TEST_CASE(destructor) 
 {
-  WeightFile* ptr = nullptr;
-	ptr = new WeightFile();
+  WeightFile<float>* ptr = nullptr;
+	ptr = new WeightFile<float>();
   delete ptr;
 }
 
 BOOST_AUTO_TEST_CASE(parseParameters)
 {
-  WeightFile data;
+  WeightFile<float> data;
   std::string parameters = "learning_rate:1.0;momentum:0.9;gradient_noise_sigma:1e3";
   std::map<std::string, float> parameter_test = data.parseParameters(parameters);
 
@@ -37,17 +37,17 @@ BOOST_AUTO_TEST_CASE(parseParameters)
 
 BOOST_AUTO_TEST_CASE(storeAndLoadCsv) 
 {
-  WeightFile data;
+  WeightFile<float> data;
 
   std::string filename = "WeightFileTest.csv";
 
   // create list of dummy weights
-  std::vector<Weight> weights;
-  std::shared_ptr<WeightInitOp> weight_init;
+  std::vector<Weight<float>> weights;
+  std::shared_ptr<WeightInitOp<float>> weight_init;
   std::shared_ptr<SolverOp> solver;
   for (int i=0; i<3; ++i)
   {
-    weight_init.reset(new ConstWeightInitOp(1.0));
+    weight_init.reset(new ConstWeightInitOp<float>(1.0));
     solver.reset(new SGDOp(0.01, 0.9));
     Weight weight(
       "Weight_" + std::to_string(i), 
@@ -58,7 +58,7 @@ BOOST_AUTO_TEST_CASE(storeAndLoadCsv)
   }
   data.storeWeightsCsv(filename, weights);
 
-  std::vector<Weight> weights_test;
+  std::vector<Weight<float>> weights_test;
 	data.loadWeightsCsv(filename, weights_test);
 
   for (int i=0; i<3; ++i)

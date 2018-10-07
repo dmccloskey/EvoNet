@@ -66,7 +66,7 @@ public:
     */ 
     bool storeWeightsCsv(const std::string& filename, const std::vector<Weight<TensorT>>& weights);
 
-    std::map<std::string, float> parseParameters(const std::string& parameters);
+    std::map<std::string, TensorT> parseParameters(const std::string& parameters);
   };
 }
 

@@ -333,7 +333,7 @@ public:
 		*/
 		virtual void adaptiveReplicatorScheduler(
 			const int& n_generations,
-			std::vector<Model>& models,
+			std::vector<Model<HDelT, DDelT, TensorT>>& models,
 			std::vector<std::vector<std::pair<int, TensorT>>>& models_errors_per_generations) = 0;
 
 private:

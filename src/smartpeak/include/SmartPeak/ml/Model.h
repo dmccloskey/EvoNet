@@ -546,8 +546,8 @@ public:
 		void setLossFunctionGrad(const std::shared_ptr<LossFunctionGradOp<TensorT>>& loss_function); ///< loss_function grad setter
 		LossFunctionGradOp<TensorT>* getLossFunctionGrad() const; ///< loss_function grad getter
 
-		std::vector<std::shared_ptr<Node>> getInputNodes(); ///< input_node getter
-		std::vector<std::shared_ptr<Node>> getOutputNodes(); ///< output_node getter
+		std::vector<std::shared_ptr<Node<HDelT, DDelT, TensorT>>> getInputNodes(); ///< input_node getter
+		std::vector<std::shared_ptr<Node<HDelT, DDelT, TensorT>>> getOutputNodes(); ///< output_node getter
 		std::vector<std::string> getOutputNodeNames() const;
  
     /**

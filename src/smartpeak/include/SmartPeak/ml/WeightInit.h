@@ -14,13 +14,14 @@ namespace SmartPeak
   /**
     @brief Base class for all weight initialization functions
   */
+	template<typename TensorT>
   class WeightInitOp
   {
 public: 
     WeightInitOp() = default; 
 		~WeightInitOp() = default;
     virtual std::string getName() const = 0;
-    virtual float operator()() const = 0;
+    virtual TensorT operator()() const = 0;
     virtual std::string getParameters() const = 0;
   };  
 
@@ -32,19 +33,20 @@ public:
       Digital selection and analogue amplification coexist in a cortex-inspired silicon circuit. 
       Nature. 405. pp. 947–951.
   */
-  class RandWeightInitOp: public WeightInitOp
+	template<typename TensorT>
+  class RandWeightInitOp: public WeightInitOp<TensorT>
   {
 public: 
-    RandWeightInitOp(float n = 1.0, float f = 1.0): n_(n), f_(f){};
+    RandWeightInitOp(TensorT n = 1.0, TensorT f = 1.0): n_(n), f_(f){};
     std::string getName() const{return "RandWeightInitOp";};
-    float operator()() const {       
+    TensorT operator()() const {       
       std::random_device rd{};
       std::mt19937 gen{rd()};
       std::normal_distribution<> d{0.0, 1.0};
       return d(gen)*std::sqrt(f_/n_); 
     };
-    float getN() const { return n_; }
-		float getF() const { return f_; }
+    TensorT getN() const { return n_; }
+		TensorT getF() const { return f_; }
     std::string getParameters() const
     {
 			std::string params = "n:" + std::to_string(getN()) +
@@ -52,29 +54,30 @@ public:
       return params;
     }
 private:
-    float n_ = 1.0; ///< the denominator (i.e., number of input nodes for He et al, or average input/output nodes for Xavior et al)
-		float f_ = 1.0; ///< the numerator (i.e., 2 for He et al, 1 for Xavior et al)
+    TensorT n_ = 1.0; ///< the denominator (i.e., number of input nodes for He et al, or average input/output nodes for Xavior et al)
+		TensorT f_ = 1.0; ///< the numerator (i.e., 2 for He et al, 1 for Xavior et al)
   };
 
   /**
     @brief Constant weight initialization.
   */
-  class ConstWeightInitOp: public WeightInitOp
+	template<typename TensorT>
+  class ConstWeightInitOp: public WeightInitOp<TensorT>
   {
 public: 
-    ConstWeightInitOp(const float& n):n_(n){};
+    ConstWeightInitOp(const TensorT& n):n_(n){};
     ConstWeightInitOp(){}; 
     ~ConstWeightInitOp(){};
     std::string getName() const{return "ConstWeightInitOp";};
-    float operator()() const { return n_; };
-    float getN() const {return n_;};
+    TensorT operator()() const { return n_; };
+    TensorT getN() const {return n_;};
     std::string getParameters() const
     {
       std::string params = "n:" + std::to_string(getN());
       return params;
     }
 private:
-    float n_ = 1.0; ///< the constant to return
+    TensorT n_ = 1.0; ///< the constant to return
   };  
 }
 #endif //SMARTPEAK_WEIGHTINIT_H

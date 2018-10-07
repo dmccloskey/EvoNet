@@ -215,7 +215,7 @@ private:
     TensorT output_max_ = 1.0e6; ///< Max Node output
 		size_t batch_size_ = 1; ///< Mini batch size
 		size_t memory_size_ = 2; ///< Memory size
-		std::shared_ptr<NodeData<HDelT, DDelT, TensorT> node_data_; ///< Node data
+		std::shared_ptr<NodeData<HDelT, DDelT, TensorT>> node_data_; ///< Node data
 		TensorT drop_probability_ = 0.0;
 		Eigen::Tensor<TensorT, 2> drop_; ///< Node Output drop tensor (initialized once per epoch)
   };

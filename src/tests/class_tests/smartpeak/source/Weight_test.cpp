@@ -1,6 +1,6 @@
 /**TODO:  Add copyright*/
 
-#define BOOST_TEST_MODULE Weight test suite 
+#define BOOST_TEST_MODULE Weight<float> test suite 
 #include <boost/test/included/unit_test.hpp>
 #include <SmartPeak/ml/Weight.h>
 #include <SmartPeak/ml/Solver.h>
@@ -13,34 +13,34 @@ BOOST_AUTO_TEST_SUITE(weight1)
 
 BOOST_AUTO_TEST_CASE(constructor) 
 {
-  Weight* ptr = nullptr;
-  Weight* nullPointer = nullptr;
-	ptr = new Weight();
+  Weight<float>* ptr = nullptr;
+  Weight<float>* nullPointer = nullptr;
+	ptr = new Weight<float>();
   BOOST_CHECK_NE(ptr, nullPointer);
 }
 
 BOOST_AUTO_TEST_CASE(destructor) 
 {
-  Weight* ptr = nullptr;
-	ptr = new Weight();
+  Weight<float>* ptr = nullptr;
+	ptr = new Weight<float>();
   delete ptr;
 }
 
 BOOST_AUTO_TEST_CASE(constructor2) 
 {
-  Weight weight;
+  Weight<float> weight;
   
   // ID constructor
-  weight = Weight(1);
+  weight = Weight<float>(1);
   BOOST_CHECK_EQUAL(weight.getId(), 1);
   BOOST_CHECK_EQUAL(weight.getName(), "1");
 
   // ID and attributes
-  std::shared_ptr<WeightInitOp> weight_init(new ConstWeightInitOp(2.0));
+  std::shared_ptr<WeightInitOp<float>> weight_init(new ConstWeightInitOp<float>(2.0));
   std::shared_ptr<SolverOp> solver(new SGDOp(0.01, 0.9));
-  // ConstWeightInitOp weight_init(2.0);
+  // ConstWeightInitOp<float> weight_init(2.0);
   // SGDOp solver(0.01, 0.9);
-  weight = Weight(1, weight_init, solver);
+  weight = Weight<float>(1, weight_init, solver);
   BOOST_CHECK_EQUAL(weight.getWeightInitOp(), weight_init.get()); //shouldn't this be NE?
   BOOST_CHECK_EQUAL(weight.getSolverOp(), solver.get()); //shouldn't this be NE?
   BOOST_CHECK_EQUAL(weight.getWeightInitOp()->operator()(), 2.0);
@@ -49,18 +49,18 @@ BOOST_AUTO_TEST_CASE(constructor2)
 
 BOOST_AUTO_TEST_CASE(comparison) 
 {
-  Weight weight, weight_test;
-  weight = Weight(1);
-  weight_test = Weight(1);
+  Weight<float> weight, weight_test;
+  weight = Weight<float>(1);
+  weight_test = Weight<float>(1);
   BOOST_CHECK(weight == weight_test);
 
-  weight = Weight(2);
+  weight = Weight<float>(2);
   BOOST_CHECK(weight != weight_test);
 }
 
 BOOST_AUTO_TEST_CASE(gettersAndSetters) 
 {
-  Weight weight;
+  Weight<float> weight;
   weight.setId(1);
   weight.setWeight(4.0);
 	weight.setModuleId(2);
@@ -81,7 +81,7 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   BOOST_CHECK_EQUAL(weight.getName(), "weight1");
 
 	// Check shared_ptr setters and getters
-  std::shared_ptr<WeightInitOp> weight_init(new ConstWeightInitOp(2.0));
+  std::shared_ptr<WeightInitOp<float>> weight_init(new ConstWeightInitOp<float>(2.0));
   std::shared_ptr<SolverOp> solver(new SGDOp(0.01, 0.9));
 
   weight.setWeightInitOp(weight_init);
@@ -99,10 +99,10 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
 
 BOOST_AUTO_TEST_CASE(initWeight) 
 {
-  Weight weight;
+  Weight<float> weight;
   weight.setId(1);
-  std::shared_ptr<WeightInitOp> weight_init(new ConstWeightInitOp(2.0));
-  // ConstWeightInitOp weight_init(5.0);
+  std::shared_ptr<WeightInitOp<float>> weight_init(new ConstWeightInitOp<float>(2.0));
+  // ConstWeightInitOp<float> weight_init(5.0);
   weight.setWeightInitOp(weight_init);
   weight.initWeight();
   BOOST_CHECK_EQUAL(weight.getWeight(), 2.0);
@@ -110,7 +110,7 @@ BOOST_AUTO_TEST_CASE(initWeight)
 
 BOOST_AUTO_TEST_CASE(updateWeight) 
 {
-  Weight weight;
+  Weight<float> weight;
   weight.setId(1);
   weight.setWeight(1.0);
   std::shared_ptr<SolverOp> solver(new SGDOp(0.01, 0.9));
@@ -122,7 +122,7 @@ BOOST_AUTO_TEST_CASE(updateWeight)
 
 BOOST_AUTO_TEST_CASE(updateWeightWithDropConnection)
 {
-	Weight weight;
+	Weight<float> weight;
 	weight.setId(1);
 	weight.setWeight(1.0);
 	weight.setDropProbability(1.0f);
@@ -136,7 +136,7 @@ BOOST_AUTO_TEST_CASE(updateWeightWithDropConnection)
 
 BOOST_AUTO_TEST_CASE(checkWeight) 
 {
-  Weight weight;
+  Weight<float> weight;
   weight.setId(1);
   weight.setWeightMin(0.0);
   weight.setWeightMax(2.0);

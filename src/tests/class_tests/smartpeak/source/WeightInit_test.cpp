@@ -16,34 +16,34 @@ BOOST_AUTO_TEST_SUITE(weightInit)
 */ 
 BOOST_AUTO_TEST_CASE(constructorRandWeightInitOp) 
 {
-  RandWeightInitOp* ptrRandWeightInit = nullptr;
-  RandWeightInitOp* nullPointerRandWeightInit = nullptr;
+  RandWeightInitOp<float>* ptrRandWeightInit = nullptr;
+  RandWeightInitOp<float>* nullPointerRandWeightInit = nullptr;
   BOOST_CHECK_EQUAL(ptrRandWeightInit, nullPointerRandWeightInit);
 }
 
 BOOST_AUTO_TEST_CASE(destructorRandWeightInitOp) 
 {
-  RandWeightInitOp* ptrRandWeightInit = nullptr;
-	ptrRandWeightInit = new RandWeightInitOp();
+  RandWeightInitOp<float>* ptrRandWeightInit = nullptr;
+	ptrRandWeightInit = new RandWeightInitOp<float>();
   delete ptrRandWeightInit;
 }
 
 BOOST_AUTO_TEST_CASE(operationfunctionRandWeightInitOp) 
 {
-  RandWeightInitOp operation(1.0, 2.0);
-  operation = RandWeightInitOp(0);
+  RandWeightInitOp<float> operation(1.0, 2.0);
+  operation = RandWeightInitOp<float>(0);
   BOOST_CHECK_NE(operation(), 0);
-  operation = RandWeightInitOp(1);
+  operation = RandWeightInitOp<float>(1);
   BOOST_CHECK_NE(operation(), 1);
-  operation = RandWeightInitOp(10);
+  operation = RandWeightInitOp<float>(10);
   BOOST_CHECK_NE(operation(), 10);
-  operation = RandWeightInitOp(100);
+  operation = RandWeightInitOp<float>(100);
   BOOST_CHECK_NE(operation(), 100);
 }
 
 BOOST_AUTO_TEST_CASE(settersAndGettersRandWeightInitOp) 
 {
-  RandWeightInitOp operation;
+  RandWeightInitOp<float> operation;
   BOOST_CHECK_EQUAL(operation.getName(), "RandWeightInitOp");
   BOOST_CHECK_EQUAL(operation.getParameters(), "n:1.000000;f:1.000000");
 }
@@ -53,27 +53,27 @@ BOOST_AUTO_TEST_CASE(settersAndGettersRandWeightInitOp)
 */ 
 BOOST_AUTO_TEST_CASE(constructorConstWeightInitOp) 
 {
-  ConstWeightInitOp* ptrConstWeightInit = nullptr;
-  ConstWeightInitOp* nullPointerConstWeightInit = nullptr;
+  ConstWeightInitOp<float>* ptrConstWeightInit = nullptr;
+  ConstWeightInitOp<float>* nullPointerConstWeightInit = nullptr;
   BOOST_CHECK_EQUAL(ptrConstWeightInit, nullPointerConstWeightInit);
 }
 
 BOOST_AUTO_TEST_CASE(destructorConstWeightInitOp) 
 {
-  ConstWeightInitOp* ptrConstWeightInit = nullptr;
-	ptrConstWeightInit = new ConstWeightInitOp();
+  ConstWeightInitOp<float>* ptrConstWeightInit = nullptr;
+	ptrConstWeightInit = new ConstWeightInitOp<float>();
   delete ptrConstWeightInit;
 }
 
 BOOST_AUTO_TEST_CASE(operationfunctionConstWeightInitOp) 
 {
-  ConstWeightInitOp operation(1);
+  ConstWeightInitOp<float> operation(1);
   BOOST_CHECK_CLOSE(operation(), 1, 1e-6);
 }
 
 BOOST_AUTO_TEST_CASE(settersAndGettersConstWeightInitOp) 
 {
-  ConstWeightInitOp operation;
+  ConstWeightInitOp<float> operation;
   BOOST_CHECK_EQUAL(operation.getName(), "ConstWeightInitOp");
   BOOST_CHECK_EQUAL(operation.getParameters(), "n:1.000000");
 }
