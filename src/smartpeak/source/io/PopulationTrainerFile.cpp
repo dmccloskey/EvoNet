@@ -10,11 +10,8 @@
 
 namespace SmartPeak
 {
-
-  PopulationTrainerFile::PopulationTrainerFile(){}
-  PopulationTrainerFile::~PopulationTrainerFile(){}
-
-	void PopulationTrainerFile::sanitizeModelName(std::string& model_name)
+	template<typename HDelT, typename DDelT, typename TensorT>
+	void PopulationTrainerFile<HDelT, DDelT, TensorT>::sanitizeModelName(std::string& model_name)
 	{
 		// sanitize the model name
 		std::string illegalChars = "\\/:?\"<>|";
@@ -26,7 +23,8 @@ namespace SmartPeak
 		}
 	}
 
-	bool PopulationTrainerFile::storeModels(const std::vector<Model>& models,
+	template<typename HDelT, typename DDelT, typename TensorT>
+	bool PopulationTrainerFile<HDelT, DDelT, TensorT>::storeModels(const std::vector<Model<HDelT, DDelT, TensorT>>& models,
 		const std::string& filename)
 	{
 		std::fstream file;
@@ -34,7 +32,7 @@ namespace SmartPeak
 
 		file.open(filename + ".sh", std::ios::out | std::ios::trunc);
 
-		for (const Model& model : models)
+		for (const Model<HDelT, DDelT, TensorT>& model : models)
 		{
 			// write the model to file
 			//std::string model_name = model.getName();
@@ -63,9 +61,10 @@ namespace SmartPeak
 		return true;
 	}
 
-	bool PopulationTrainerFile::storeModelValidations(
+	template<typename HDelT, typename DDelT, typename TensorT>
+	bool PopulationTrainerFile<HDelT, DDelT, TensorT>::storeModelValidations(
 		const std::string& filename,
-		const std::vector<std::pair<int, float>>& models_validation_errors)
+		const std::vector<std::pair<int, TensorT>>& models_validation_errors)
 	{
 		CSVWriter csvwriter(filename);
 
@@ -73,7 +72,7 @@ namespace SmartPeak
 		const std::vector<std::string> headers = { "model_name", "ave_validation_error" };
 		csvwriter.writeDataInRow(headers.begin(), headers.end());
 
-		for (const std::pair<int, float>& model_validation_error : models_validation_errors)
+		for (const std::pair<int, TensorT>& model_validation_error : models_validation_errors)
 		{
 			std::vector<std::string> row;
 			row.push_back(std::to_string(model_validation_error.first));

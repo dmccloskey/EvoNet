@@ -10,12 +10,11 @@
 namespace SmartPeak
 {
 
-  WeightFile::WeightFile(){}
-  WeightFile::~WeightFile(){}
- 
-  bool WeightFile::loadWeightsBinary(const std::string& filename, std::vector<Weight>& weights) { return true; }
+	template<typename TensorT>
+  bool WeightFile<TensorT>::loadWeightsBinary(const std::string& filename, std::vector<Weight<TensorT>>& weights) { return true; }
 
-  bool WeightFile::loadWeightsCsv(const std::string& filename, std::vector<Weight>& weights)
+	template<typename TensorT>
+  bool WeightFile<TensorT>::loadWeightsCsv(const std::string& filename, std::vector<Weight<TensorT>>& weights)
   {
     weights.clear();
 
@@ -27,7 +26,7 @@ namespace SmartPeak
     while(weights_in.read_row(weight_name, weight_init_op_str, weight_init_params_str, solver_op_str, solver_params_str, weight_value_str, module_name_str))
     {
       // parse the weight_init_params
-      std::map<std::string, float> weight_init_params = parseParameters(weight_init_params_str);
+      std::map<std::string, TensorT> weight_init_params = parseParameters(weight_init_params_str);
 
       // parse the weight_init_op
       std::shared_ptr<WeightInitOp> weight_init;
@@ -52,7 +51,7 @@ namespace SmartPeak
       else std::cout<<"WeightInitOp "<<weight_init_op_str<<" for weight_name "<<weight_name<<" was not recognized."<<std::endl;
 
       // parse the solver_params_str
-			std::map<std::string, float> solver_params;
+			std::map<std::string, TensorT> solver_params;
 			if (!solver_params_str.empty())
 				solver_params = parseParameters(solver_params_str);
 
@@ -110,10 +109,10 @@ namespace SmartPeak
 			}
       else std::cout<<"SolverOp "<<solver_op_str<<" for weight_name "<<weight_name<<" was not recognized."<<std::endl;
 
-      Weight weight(weight_name, weight_init, solver);
+      Weight<TensorT> weight(weight_name, weight_init, solver);
 
       // parse the weight value
-      float weight_value = 0;
+      TensorT weight_value = 0;
       try
       {
         weight_value = std::stof(weight_value_str);
@@ -131,7 +130,8 @@ namespace SmartPeak
 	return true;
   }
 
-  std::map<std::string, float> WeightFile::parseParameters(const std::string& parameters)
+	template<typename TensorT>
+  std::map<std::string, TensorT> WeightFile<TensorT>::parseParameters(const std::string& parameters)
   {
     // parse the parameters
     std::regex re(";");
@@ -142,7 +142,7 @@ namespace SmartPeak
       std::back_inserter(str_tokens));
 
     // break into parameter name and value
-    std::map<std::string, float> parameters_map;
+    std::map<std::string, TensorT> parameters_map;
     for (std::string str: str_tokens)
     {
       str.erase(remove_if(str.begin(), str.end(), isspace), str.end());
@@ -153,7 +153,7 @@ namespace SmartPeak
         std::sregex_token_iterator(),
         std::back_inserter(params));
       std::string param_name = params[0];
-      float param_value = 0.0;
+      TensorT param_value = 0.0;
       try
       {
         param_value = std::stof(params[1]);
@@ -169,9 +169,11 @@ namespace SmartPeak
   }
   
 
-  bool WeightFile::storeWeightsBinary(const std::string& filename, const std::vector<Weight>& weights) { return true; }
+	template<typename TensorT>
+  bool WeightFile<TensorT>::storeWeightsBinary(const std::string& filename, const std::vector<Weight<TensorT>>& weights) { return true; }
 
-  bool WeightFile::storeWeightsCsv(const std::string& filename, const std::vector<Weight>& weights)
+	template<typename TensorT>
+  bool WeightFile<TensorT>::storeWeightsCsv(const std::string& filename, const std::vector<Weight<TensorT>>& weights)
   {
     CSVWriter csvwriter(filename);
 
@@ -179,7 +181,7 @@ namespace SmartPeak
     const std::vector<std::string> headers = {"weight_name", "weight_init_op", "weight_init_params", "solver_op", "solver_params", "weight_value", "module_name"};
     csvwriter.writeDataInRow(headers.begin(), headers.end());
 
-    for (const Weight& weight: weights)
+    for (const Weight<TensorT>& weight: weights)
     {
       std::vector<std::string> row;
 

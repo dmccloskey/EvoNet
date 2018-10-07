@@ -19,11 +19,12 @@ namespace SmartPeak
   /**
     @brief WeightFile
   */
+	template<typename TensorT>
   class WeightFile
   {
 public:
-    WeightFile(); ///< Default constructor
-    ~WeightFile(); ///< Default destructor
+    WeightFile() = default; ///< Default constructor
+    ~WeightFile() = default; ///< Default destructor
  
     /**
       @brief Load weights from binary file
@@ -33,7 +34,7 @@ public:
 
       @returns Status True on success, False if not
     */ 
-    bool loadWeightsBinary(const std::string& filename, std::vector<Weight>& weights);
+    bool loadWeightsBinary(const std::string& filename, std::vector<Weight<TensorT>>& weights);
  
     /**
       @brief Load weights from csv file
@@ -43,7 +44,7 @@ public:
 
       @returns Status True on success, False if not
     */ 
-    bool loadWeightsCsv(const std::string& filename, std::vector<Weight>& weights);
+    bool loadWeightsCsv(const std::string& filename, std::vector<Weight<TensorT>>& weights);
  
     /**
       @brief Stores weights from binary file
@@ -53,7 +54,7 @@ public:
 
       @returns Status True on success, False if not
     */ 
-    bool storeWeightsBinary(const std::string& filename, const std::vector<Weight>& weights);
+    bool storeWeightsBinary(const std::string& filename, const std::vector<Weight<TensorT>>& weights);
  
     /**
       @brief Stores weights from binary file
@@ -63,7 +64,7 @@ public:
 
       @returns Status True on success, False if not
     */ 
-    bool storeWeightsCsv(const std::string& filename, const std::vector<Weight>& weights);
+    bool storeWeightsCsv(const std::string& filename, const std::vector<Weight<TensorT>>& weights);
 
     std::map<std::string, float> parseParameters(const std::string& parameters);
   };

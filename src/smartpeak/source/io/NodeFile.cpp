@@ -6,13 +6,11 @@
 
 namespace SmartPeak
 {
+	template<typename HDelT, typename DDelT, typename TensorT>
+  bool NodeFile<HDelT, DDelT, TensorT>::loadNodesBinary(const std::string& filename, std::vector<Node<HDelT, DDelT, TensorT>>& nodes) { return true; }
 
-  NodeFile::NodeFile(){}
-  NodeFile::~NodeFile(){}
- 
-  bool NodeFile::loadNodesBinary(const std::string& filename, std::vector<Node>& nodes) { return true; }
-
-  bool NodeFile::loadNodesCsv(const std::string& filename, std::vector<Node>& nodes)
+	template<typename HDelT, typename DDelT, typename TensorT>
+  bool NodeFile<HDelT, DDelT, TensorT>::loadNodesCsv(const std::string& filename, std::vector<Node<HDelT, DDelT, TensorT>>& nodes)
   {
     nodes.clear();
 
@@ -41,54 +39,56 @@ namespace SmartPeak
       else std::cout<<"NodeStatus for node_name "<<node_name<<" was not recognized."<<std::endl;
 
       // parse the node_activation
-			std::shared_ptr<ActivationOp<float>> node_activation;
-      if (node_activation_str == "ReLUOp") node_activation.reset(new ReLUOp<float>());
-      else if (node_activation_str == "ELUOp") node_activation.reset(new ELUOp<float>());
-      else if (node_activation_str == "LinearOp") node_activation.reset(new LinearOp<float>());
-      else if (node_activation_str == "SigmoidOp") node_activation.reset(new SigmoidOp<float>());
-      else if (node_activation_str == "TanHOp") node_activation.reset(new TanHOp<float>());
+			std::shared_ptr<ActivationOp<TensorT>> node_activation;
+      if (node_activation_str == "ReLUOp") node_activation.reset(new ReLUOp<TensorT>());
+      else if (node_activation_str == "ELUOp") node_activation.reset(new ELUOp<TensorT>());
+      else if (node_activation_str == "LinearOp") node_activation.reset(new LinearOp<TensorT>());
+      else if (node_activation_str == "SigmoidOp") node_activation.reset(new SigmoidOp<TensorT>());
+      else if (node_activation_str == "TanHOp") node_activation.reset(new TanHOp<TensorT>());
       else std::cout<<"NodeActivation for node_name "<<node_name<<" was not recognized."<<std::endl;
 
 			// parse the node_activation
-			std::shared_ptr<ActivationOp<float>> node_activation_grad;
-			if (node_activation_grad_str == "ReLUGradOp") node_activation_grad.reset(new ReLUGradOp<float>());
-			else if (node_activation_grad_str == "ELUGradOp") node_activation_grad.reset(new ELUGradOp<float>());
-			else if (node_activation_grad_str == "LinearGradOp") node_activation_grad.reset(new LinearGradOp<float>());
-			else if (node_activation_grad_str == "SigmoidGradOp") node_activation_grad.reset(new SigmoidGradOp<float>());
-			else if (node_activation_grad_str == "TanHGradOp") node_activation_grad.reset(new TanHGradOp<float>());
+			std::shared_ptr<ActivationOp<TensorT>> node_activation_grad;
+			if (node_activation_grad_str == "ReLUGradOp") node_activation_grad.reset(new ReLUGradOp<TensorT>());
+			else if (node_activation_grad_str == "ELUGradOp") node_activation_grad.reset(new ELUGradOp<TensorT>());
+			else if (node_activation_grad_str == "LinearGradOp") node_activation_grad.reset(new LinearGradOp<TensorT>());
+			else if (node_activation_grad_str == "SigmoidGradOp") node_activation_grad.reset(new SigmoidGradOp<TensorT>());
+			else if (node_activation_grad_str == "TanHGradOp") node_activation_grad.reset(new TanHGradOp<TensorT>());
 			else std::cout << "NodeActivationGrad for node_name " << node_name << " was not recognized." << std::endl;
 
 			// parse the node_integration
-			std::shared_ptr<IntegrationOp<float>> node_integration;
-			if (node_integration_str == "SumOp") node_integration.reset(new SumOp<float>());
-			else if (node_integration_str == "ProdOp") node_integration.reset(new ProdOp<float>());
-			else if (node_integration_str == "MaxOp") node_integration.reset(new MaxOp<float>());
+			std::shared_ptr<IntegrationOp<TensorT>> node_integration;
+			if (node_integration_str == "SumOp") node_integration.reset(new SumOp<TensorT>());
+			else if (node_integration_str == "ProdOp") node_integration.reset(new ProdOp<TensorT>());
+			else if (node_integration_str == "MaxOp") node_integration.reset(new MaxOp<TensorT>());
 			else std::cout << "NodeIntegration for node_name " << node_name << " was not recognized." << std::endl;
 
 			// parse the node_integration_error
-			std::shared_ptr<IntegrationErrorOp<float>> node_integration_error;
-			if (node_integration_error_str == "SumErrorOp") node_integration_error.reset(new SumErrorOp<float>());
-			else if (node_integration_error_str == "ProdErrorOp") node_integration_error.reset(new ProdErrorOp<float>());
-			else if (node_integration_error_str == "MaxErrorOp") node_integration_error.reset(new MaxErrorOp<float>());
+			std::shared_ptr<IntegrationErrorOp<TensorT>> node_integration_error;
+			if (node_integration_error_str == "SumErrorOp") node_integration_error.reset(new SumErrorOp<TensorT>());
+			else if (node_integration_error_str == "ProdErrorOp") node_integration_error.reset(new ProdErrorOp<TensorT>());
+			else if (node_integration_error_str == "MaxErrorOp") node_integration_error.reset(new MaxErrorOp<TensorT>());
 			else std::cout << "NodeIntegrationError for node_name " << node_name << " was not recognized." << std::endl;
 
 			// parse the node_integration_weight_grad
-			std::shared_ptr<IntegrationWeightGradOp<float>> node_integration_weight_grad;
-			if (node_integration_weight_grad_str == "SumWeightGradOp") node_integration_weight_grad.reset(new SumWeightGradOp<float>());
-			else if (node_integration_weight_grad_str == "ProdWeightGradOp") node_integration_weight_grad.reset(new ProdWeightGradOp<float>());
-			else if (node_integration_weight_grad_str == "MaxWeightGradOp") node_integration_weight_grad.reset(new MaxWeightGradOp<float>());
+			std::shared_ptr<IntegrationWeightGradOp<TensorT>> node_integration_weight_grad;
+			if (node_integration_weight_grad_str == "SumWeightGradOp") node_integration_weight_grad.reset(new SumWeightGradOp<TensorT>());
+			else if (node_integration_weight_grad_str == "ProdWeightGradOp") node_integration_weight_grad.reset(new ProdWeightGradOp<TensorT>());
+			else if (node_integration_weight_grad_str == "MaxWeightGradOp") node_integration_weight_grad.reset(new MaxWeightGradOp<TensorT>());
 			else std::cout << "NodeIntegrationWeightGrad for node_name " << node_name << " was not recognized." << std::endl;
 
-      Node node(node_name, node_type, node_status, node_activation, node_activation_grad, node_integration, node_integration_error, node_integration_weight_grad);
+      Node<HDelT, DDelT, TensorT> node(node_name, node_type, node_status, node_activation, node_activation_grad, node_integration, node_integration_error, node_integration_weight_grad);
 			node.setModuleName(module_name_str);
       nodes.push_back(node);
     }
 	return true;
   }
 
-  bool NodeFile::storeNodesBinary(const std::string& filename, const std::vector<Node>& nodes) { return true; }
+	template<typename HDelT, typename DDelT, typename TensorT>
+  bool NodeFile<HDelT, DDelT, TensorT>::storeNodesBinary(const std::string& filename, const std::vector<Node<HDelT, DDelT, TensorT>>& nodes) { return true; }
 
-  bool NodeFile::storeNodesCsv(const std::string& filename, const std::vector<Node>& nodes)
+	template<typename HDelT, typename DDelT, typename TensorT>
+  bool NodeFile<HDelT, DDelT, TensorT>::storeNodesCsv(const std::string& filename, const std::vector<Node<HDelT, DDelT, TensorT>>& nodes)
   {
     CSVWriter csvwriter(filename);
 

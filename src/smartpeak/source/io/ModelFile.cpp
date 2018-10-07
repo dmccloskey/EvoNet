@@ -9,11 +9,8 @@
 
 namespace SmartPeak
 {
-
-  ModelFile::ModelFile(){}
-  ModelFile::~ModelFile(){}
-
-	bool ModelFile::storeModelBinary(const std::string & filename, const Model & model)
+	template<typename HDelT, typename DDelT, typename TensorT>
+	bool ModelFile<HDelT, DDelT, TensorT>::storeModelBinary(const std::string & filename, const Model<HDelT, DDelT, TensorT>& model)
 	{
 		auto myfile = std::fstream(filename, std::ios::out | std::ios::binary);
 		myfile.write((char*)&model, sizeof(model));
@@ -21,7 +18,8 @@ namespace SmartPeak
 		return true;
 	}
 
-	bool ModelFile::loadModelBinary(const std::string & filename, Model & model)
+	template<typename HDelT, typename DDelT, typename TensorT>
+	bool ModelFile<HDelT, DDelT, TensorT>::loadModelBinary(const std::string & filename, Model<HDelT, DDelT, TensorT>& model)
 	{
 		// C++17
 		//std::uintmax_t file_size = std::filesystem::file_size(filename); 
@@ -42,7 +40,8 @@ namespace SmartPeak
 		return true;
 	}
 
-	bool ModelFile::storeModelCsv(const std::string & filename_nodes, const std::string & filename_links, const std::string & filename_weights, const Model & model)
+	template<typename HDelT, typename DDelT, typename TensorT>
+	bool ModelFile<HDelT, DDelT, TensorT>::storeModelCsv(const std::string & filename_nodes, const std::string & filename_links, const std::string & filename_weights, const Model<HDelT, DDelT, TensorT>& model)
 	{
 		NodeFile node_file;
 		node_file.storeNodesCsv(filename_nodes, model.getNodes());
@@ -53,7 +52,8 @@ namespace SmartPeak
 		return true;
 	}
 
-	bool ModelFile::loadModelCsv(const std::string & filename_nodes, const std::string & filename_links, const std::string & filename_weights, Model& model)
+	template<typename HDelT, typename DDelT, typename TensorT>
+	bool ModelFile<HDelT, DDelT, TensorT>::loadModelCsv(const std::string & filename_nodes, const std::string & filename_links, const std::string & filename_weights, Model<HDelT, DDelT, TensorT>& model)
 	{
 		// load the nodes
 		NodeFile node_file;
@@ -78,7 +78,8 @@ namespace SmartPeak
 		return true;
 	}
 
-	bool ModelFile::storeModelDot(const std::string& filename, const Model& model)
+	template<typename HDelT, typename DDelT, typename TensorT>
+	bool ModelFile<HDelT, DDelT, TensorT>::storeModelDot(const std::string& filename, const Model<HDelT, DDelT, TensorT>& model)
 	{
 		std::fstream file;
 		// Open the file in truncate mode

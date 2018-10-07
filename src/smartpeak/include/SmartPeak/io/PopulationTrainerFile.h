@@ -15,6 +15,7 @@ namespace SmartPeak
   /**
     @brief PopulationTrainerFile
   */
+	template<typename HDelT, typename DDelT, typename TensorT>
 	class PopulationTrainerFile
 	{
 	public:
@@ -42,7 +43,7 @@ namespace SmartPeak
 
 		@returns True if successful, false otherwise
 		*/
-		bool storeModels(const std::vector<Model>& models,
+		bool storeModels(const std::vector<Model<HDelT, DDelT, TensorT>>& models,
 			const std::string& filename);
 
 		/**
@@ -54,7 +55,7 @@ namespace SmartPeak
 		*/
 		bool storeModelValidations(
 			const std::string& filename,
-			const std::vector<std::pair<int, float>>& models_validation_errors);
+			const std::vector<std::pair<int, TensorT>>& models_validation_errors);
 	};
 }
 

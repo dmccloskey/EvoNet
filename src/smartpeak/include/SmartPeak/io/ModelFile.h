@@ -15,11 +15,12 @@ namespace SmartPeak
   /**
     @brief ModelFile
   */
+	template<typename HDelT, typename DDelT, typename TensorT>
   class ModelFile
   {
 public:
-    ModelFile(); ///< Default constructor
-    ~ModelFile(); ///< Default destructor
+    ModelFile() = default; ///< Default constructor
+    ~ModelFile() = default; ///< Default destructor
  
 		/**
 			@brief store Model from file
@@ -31,7 +32,7 @@ public:
 
 			@returns Status True on success, False if not
 		*/
-		bool storeModelBinary(const std::string& filename, const Model& model);
+		bool storeModelBinary(const std::string& filename, const Model<HDelT, DDelT, TensorT>& model);
  
 		/**
 			@brief load Model from file
@@ -43,7 +44,7 @@ public:
 
 			@returns Status True on success, False if not
 		*/
-		bool loadModelBinary(const std::string& filename, Model& model);
+		bool loadModelBinary(const std::string& filename, Model<HDelT, DDelT, TensorT>& model);
 
 		/**
 			@brief store nodes, links, and weights as a .csv file from a Model
@@ -55,7 +56,7 @@ public:
 
 			@returns Status True on success, False if not
 		*/
-		bool storeModelCsv(const std::string& filename_nodes, const std::string& filename_links, const std::string& filename_weights, const Model& model);
+		bool storeModelCsv(const std::string& filename_nodes, const std::string& filename_links, const std::string& filename_weights, const Model<HDelT, DDelT, TensorT>& model);
 
 		/**
 			@brief Load nodes, links, and weights from file and create a Model
@@ -67,7 +68,7 @@ public:
 
 			@returns Status True on success, False if not
 		*/
-		bool loadModelCsv(const std::string& filename_nodes, const std::string& filename_links, const std::string& filename_weights, Model& model);
+		bool loadModelCsv(const std::string& filename_nodes, const std::string& filename_links, const std::string& filename_weights, Model<HDelT, DDelT, TensorT>& model);
 
 		/**
 		@brief save network model to file in dot format for visualization
@@ -86,7 +87,7 @@ public:
 
 		@returns Status True on success, False if not
 		*/
-		bool storeModelDot(const std::string& filename, const Model& model);
+		bool storeModelDot(const std::string& filename, const Model<HDelT, DDelT, TensorT>& model);
   };
 }
 
