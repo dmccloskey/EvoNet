@@ -15,11 +15,12 @@ namespace SmartPeak
   /**
     @brief Class to train a network model
   */
+	template<typename HDelT, typename DDelT, typename TensorT>
   class ModelTrainer
   {
 public:
-    ModelTrainer(); ///< Default constructor
-    ~ModelTrainer(); ///< Default destructor
+    ModelTrainer() = default; ///< Default constructor
+    ~ModelTrainer() = default; ///< Default destructor
 
     void setBatchSize(const int& batch_size); ///< batch_size setter
     void setMemorySize(const int& memory_size); ///< memory_size setter
@@ -29,8 +30,8 @@ public:
 		void setNThreads(const int& n_threads); ///< n_threads setter
 		void setVerbosityLevel(const int& verbosity_level); ///< verbosity_level setter
 		void setLogging(bool log_training = false, bool log_validation = false, bool log_evaluation = false); ///< enable_logging setter
-		void setLossFunctions(const std::vector<std::shared_ptr<LossFunctionOp<float>>>& loss_functions); ///< loss_functions setter [TODO: tests]
-		void setLossFunctionGrads(const std::vector<std::shared_ptr<LossFunctionGradOp<float>>>& loss_function_grads); ///< loss_functions setter [TODO: tests]
+		void setLossFunctions(const std::vector<std::shared_ptr<LossFunctionOp<TensorT>>>& loss_functions); ///< loss_functions setter [TODO: tests]
+		void setLossFunctionGrads(const std::vector<std::shared_ptr<LossFunctionGradOp<TensorT>>>& loss_function_grads); ///< loss_functions setter [TODO: tests]
 		void setOutputNodes(const std::vector<std::vector<std::string>>& output_nodes); ///< output_nodes setter [TODO: tests]
 		void setNTBPTTSteps(const int& n_TBPTT); ///< n_TBPTT setter
 		void setNTETTSteps(const int& n_TETT); ///< n_TETT setter
@@ -42,8 +43,8 @@ public:
 		int getNEpochsEvaluation() const; ///< n_epochs setter
 		int getNThreads() const; ///< n_threads setter
 		int getVerbosityLevel() const; ///< verbosity_level setter
-		std::vector<std::shared_ptr<LossFunctionOp<float>>> getLossFunctions(); ///< loss_functions getter [TODO: tests]
-		std::vector<std::shared_ptr<LossFunctionGradOp<float>>> getLossFunctionGrads(); ///< loss_functions getter [TODO: tests]
+		std::vector<std::shared_ptr<LossFunctionOp<TensorT>>> getLossFunctions(); ///< loss_functions getter [TODO: tests]
+		std::vector<std::shared_ptr<LossFunctionGradOp<TensorT>>> getLossFunctionGrads(); ///< loss_functions getter [TODO: tests]
 		std::vector<std::vector<std::string>> getOutputNodes(); ///< output_nodes getter [TODO: tests]
 		int getNTBPTTSteps() const; ///< n_TBPTT setter
 		int getNTETTSteps() const; ///< n_TETT setter
@@ -60,7 +61,7 @@ public:
       @returns True on success, False if not
     */ 
     bool checkInputData(const int& n_epochs,
-      const Eigen::Tensor<float, 4>& input,
+      const Eigen::Tensor<TensorT, 4>& input,
       const int& batch_size,
       const int& memory_size,
       const std::vector<std::string>& input_nodes);
@@ -76,7 +77,7 @@ public:
       @returns True on success, False if not
     */ 
     bool checkOutputData(const int& n_epochs,
-      const Eigen::Tensor<float, 4>& output,
+      const Eigen::Tensor<TensorT, 4>& output,
       const int& batch_size,
 			const int& memory_size,
       const std::vector<std::string>& output_nodes);
@@ -92,7 +93,7 @@ public:
       @returns True on success, False if not
     */ 
     bool checkTimeSteps(const int& n_epochs,
-      const Eigen::Tensor<float, 3>& time_steps,
+      const Eigen::Tensor<TensorT, 3>& time_steps,
       const int& batch_size,
       const int& memory_size);
  
@@ -108,12 +109,12 @@ public:
 
       @returns vector of average model error scores
     */ 
-		std::vector<float> trainModel(Model& model,
-			const Eigen::Tensor<float, 4>& input,
-			const Eigen::Tensor<float, 4>& output,
-			const Eigen::Tensor<float, 3>& time_steps,
+		std::vector<TensorT> trainModel(Model<HDelT, DDelT, TensorT>& model,
+			const Eigen::Tensor<TensorT, 4>& input,
+			const Eigen::Tensor<TensorT, 4>& output,
+			const Eigen::Tensor<TensorT, 3>& time_steps,
 			const std::vector<std::string>& input_nodes,
-			ModelLogger& model_logger);
+			ModelLogger<HDelT, DDelT, TensorT>& model_logger);
  
     /**
       @brief Entry point for users to code their script
@@ -127,12 +128,12 @@ public:
 
       @returns vector of average model error scores
     */ 
-		std::vector<float> validateModel(Model& model,
-			const Eigen::Tensor<float, 4>& input,
-			const Eigen::Tensor<float, 4>& output,
-			const Eigen::Tensor<float, 3>& time_steps,
+		std::vector<TensorT> validateModel(Model<HDelT, DDelT, TensorT>& model,
+			const Eigen::Tensor<TensorT, 4>& input,
+			const Eigen::Tensor<TensorT, 4>& output,
+			const Eigen::Tensor<TensorT, 3>& time_steps,
 			const std::vector<std::string>& input_nodes,
-			ModelLogger& model_logger);
+			ModelLogger<HDelT, DDelT, TensorT>& model_logger);
 
 		/**
 			@brief Entry point for users to code their script
@@ -145,11 +146,11 @@ public:
 
 			@returns vector of vectors corresponding to output nodes
 		*/
-		std::vector<std::vector<Eigen::Tensor<float, 2>>> evaluateModel(Model& model,
-			const Eigen::Tensor<float, 4>& input,
-			const Eigen::Tensor<float, 3>& time_steps,
+		std::vector<std::vector<Eigen::Tensor<TensorT, 2>>> evaluateModel(Model<HDelT, DDelT, TensorT>& model,
+			const Eigen::Tensor<TensorT, 4>& input,
+			const Eigen::Tensor<TensorT, 3>& time_steps,
 			const std::vector<std::string>& input_nodes,
-			ModelLogger& model_logger);
+			ModelLogger<HDelT, DDelT, TensorT>& model_logger);
  
     /**
       @brief Entry point for users to code their script
@@ -172,8 +173,8 @@ public:
 		virtual void adaptiveTrainerScheduler(
 			const int& n_generations,
 			const int& n_epochs,
-			Model& model,
-			const std::vector<float>& model_errors) = 0;
+			Model<HDelT, DDelT, TensorT>& model,
+			const std::vector<TensorT>& model_errors) = 0;
 
 private:
     int batch_size_;
@@ -191,8 +192,8 @@ private:
 		bool log_validation_ = false;
 		bool log_evaluation_ = false;
 
-		std::vector<std::shared_ptr<LossFunctionOp<float>>> loss_functions_;
-		std::vector<std::shared_ptr<LossFunctionGradOp<float>>> loss_function_grads_;
+		std::vector<std::shared_ptr<LossFunctionOp<TensorT>>> loss_functions_;
+		std::vector<std::shared_ptr<LossFunctionGradOp<TensorT>>> loss_function_grads_;
 		std::vector<std::vector<std::string>> output_nodes_;
 
   };

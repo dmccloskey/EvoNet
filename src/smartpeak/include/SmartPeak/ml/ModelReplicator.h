@@ -14,11 +14,12 @@ namespace SmartPeak
   /**
     @brief Replicates a model with or without modification (i.e., mutation)
   */
+	template<typename HDelT, typename DDelT, typename TensorT>
   class ModelReplicator
   {
 public:
-    ModelReplicator(); ///< Default constructor
-    ~ModelReplicator(); ///< Default destructor
+    ModelReplicator() = default; ///< Default constructor
+    ~ModelReplicator() = default; ///< Default destructor
 
     void setNNodeAdditions(const int& n_node_additions); ///< n_node_additions setter
     void setNLinkAdditions(const int& n_link_additions); ///< n_link_additions setter
@@ -26,8 +27,8 @@ public:
     void setNLinkDeletions(const int& n_link_deletions); ///< n_link_deletions setter
 		void setNNodeActivationChanges(const int& n_node_activation_changes); ///< n_node_activation_changes setter
 		void setNNodeIntegrationChanges(const int& n_node_integration_changes); ///< n_node_integration_changes setter
-		void setNodeActivations(const std::vector<std::pair<std::shared_ptr<ActivationOp<float>>, std::shared_ptr<ActivationOp<float>>>>& node_activations); ///< node_activations setter
-		void setNodeIntegrations(const std::vector<std::tuple<std::shared_ptr<IntegrationOp<float>>, std::shared_ptr<IntegrationErrorOp<float>>, std::shared_ptr<IntegrationWeightGradOp<float>>>>& node_integrations); ///< node_integrations setter
+		void setNodeActivations(const std::vector<std::pair<std::shared_ptr<ActivationOp<TensorT>>, std::shared_ptr<ActivationOp<TensorT>>>>& node_activations); ///< node_activations setter
+		void setNodeIntegrations(const std::vector<std::tuple<std::shared_ptr<IntegrationOp<TensorT>>, std::shared_ptr<IntegrationErrorOp<TensorT>>, std::shared_ptr<IntegrationWeightGradOp<TensorT>>>>& node_integrations); ///< node_integrations setter
 		void setNModuleAdditions(const int& n_module_additions); ///< n_module_additions setter
 		void setNModuleDeletions(const int& n_module_deletions); ///< n_module_deletions setter
 
@@ -37,18 +38,18 @@ public:
     int getNLinkDeletions() const; ///< n_link_deletions setter
 		int getNNodeActivationChanges() const; ///< n_node_activation_changes setter
 		int getNNodeIntegrationChanges() const; ///< n_node_integration_changes setter
-		std::vector<std::pair<std::shared_ptr<ActivationOp<float>>, std::shared_ptr<ActivationOp<float>>>> getNodeActivations() const; ///< node_activations setter
-		std::vector<std::tuple<std::shared_ptr<IntegrationOp<float>>, std::shared_ptr<IntegrationErrorOp<float>>, std::shared_ptr<IntegrationWeightGradOp<float>>>> getNodeIntegrations() const; ///< node_integrations setter
+		std::vector<std::pair<std::shared_ptr<ActivationOp<TensorT>>, std::shared_ptr<ActivationOp<TensorT>>>> getNodeActivations() const; ///< node_activations setter
+		std::vector<std::tuple<std::shared_ptr<IntegrationOp<TensorT>>, std::shared_ptr<IntegrationErrorOp<TensorT>>, std::shared_ptr<IntegrationWeightGradOp<TensorT>>>> getNodeIntegrations() const; ///< node_integrations setter
 		int getNModuleAdditions() const; ///< n_module_additions setter
 		int getNModuleDeletions() const; ///< n_module_deletions setter
 
 		void setNNodeCopies(const int& n_node_copies); ///< n_node_copies setter
 		void setNWeightChanges(const int& n_weight_changes); ///< n_weight_changes setter
-		void setWeightChangeStDev(const float& weight_change_stdev); ///< weight_change_stdev setter
+		void setWeightChangeStDev(const TensorT& weight_change_stdev); ///< weight_change_stdev setter
 
 		int getNNodeCopies() const; ///< n_node_copies setter
 		int getNWeightChanges() const; ///< n_weight_changes setter
-    float getWeightChangeStDev() const; ///< weight_change_stdev setter
+    TensorT getWeightChangeStDev() const; ///< weight_change_stdev setter
  
     /**
       @brief Make a new baseline model where all layers are fully connected
@@ -69,19 +70,19 @@ public:
 
       @returns A baseline model
     */ 
-    Model makeBaselineModel(const int& n_input_nodes, const std::vector<int>& n_hidden_nodes_per_layer, const int& n_output_nodes,
-			const std::shared_ptr<ActivationOp<float>>& hidden_node_activation, 
-			const std::shared_ptr<ActivationOp<float>>& hidden_node_activation_grad,
-			const std::shared_ptr<IntegrationOp<float>>& hidden_node_integration,
-			const std::shared_ptr<IntegrationErrorOp<float>>& hidden_node_integration_error,
-			const std::shared_ptr<IntegrationWeightGradOp<float>>& hidden_node_integration_weight_grad,
-			const std::shared_ptr<ActivationOp<float>>& output_node_activation, 
-			const std::shared_ptr<ActivationOp<float>>& output_node_activation_grad,
-			const std::shared_ptr<IntegrationOp<float>>& output_node_integration,
-			const std::shared_ptr<IntegrationErrorOp<float>>& output_node_integration_error,
-			const std::shared_ptr<IntegrationWeightGradOp<float>>& output_node_integration_weight_grad,
+    Model<HDelT, DDelT, TensorT> makeBaselineModel(const int& n_input_nodes, const std::vector<int>& n_hidden_nodes_per_layer, const int& n_output_nodes,
+			const std::shared_ptr<ActivationOp<TensorT>>& hidden_node_activation, 
+			const std::shared_ptr<ActivationOp<TensorT>>& hidden_node_activation_grad,
+			const std::shared_ptr<IntegrationOp<TensorT>>& hidden_node_integration,
+			const std::shared_ptr<IntegrationErrorOp<TensorT>>& hidden_node_integration_error,
+			const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& hidden_node_integration_weight_grad,
+			const std::shared_ptr<ActivationOp<TensorT>>& output_node_activation, 
+			const std::shared_ptr<ActivationOp<TensorT>>& output_node_activation_grad,
+			const std::shared_ptr<IntegrationOp<TensorT>>& output_node_integration,
+			const std::shared_ptr<IntegrationErrorOp<TensorT>>& output_node_integration_error,
+			const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& output_node_integration_weight_grad,
       const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver,
-			const std::shared_ptr<LossFunctionOp<float>>& loss_function, const std::shared_ptr<LossFunctionGradOp<float>>& loss_function_grad,
+			const std::shared_ptr<LossFunctionOp<TensorT>>& loss_function, const std::shared_ptr<LossFunctionGradOp<TensorT>>& loss_function_grad,
 			std::string unique_str = "");
  
     /**
@@ -89,7 +90,7 @@ public:
 
       @param[in, out] model The model to modify
     */ 
-    void modifyModel(Model& model, std::string unique_str = "");
+    void modifyModel(Model<HDelT, DDelT, TensorT>& model, std::string unique_str = "");
  
     /**
       @brief Select nodes given a set of conditions
@@ -101,7 +102,7 @@ public:
       @returns A node name
     */ 
     std::vector<std::string> selectNodes(
-      const Model& model,
+      const Model<HDelT, DDelT, TensorT>& model,
       const std::vector<NodeType>& node_type_exclude,
       const std::vector<NodeType>& node_type_include);
 
@@ -115,7 +116,7 @@ public:
 		@returns A node name
 		*/
 		std::vector<std::string> selectModules(
-			const Model& model,
+			const Model<HDelT, DDelT, TensorT>& model,
 			const std::vector<NodeType>& node_type_exclude,
 			const std::vector<NodeType>& node_type_include);
  
@@ -132,14 +133,14 @@ public:
       @returns A node name
     */ 
     std::string selectRandomNode(
-      const Model& model,
+      const Model<HDelT, DDelT, TensorT>& model,
       const std::vector<NodeType>& node_type_exclude,
       const std::vector<NodeType>& node_type_include,
-      const Node& node, 
-      const float& distance_weight,
+      const Node<HDelT, DDelT, TensorT>& node, 
+      const TensorT& distance_weight,
       const std::string& direction);
     std::string selectRandomNode(
-      const Model& model,
+      const Model<HDelT, DDelT, TensorT>& model,
       const std::vector<NodeType>& node_type_exclude,
       const std::vector<NodeType>& node_type_include);
  
@@ -156,14 +157,14 @@ public:
       @returns A link name
     */ 
     std::string selectRandomLink(
-      const Model& model,
+      const Model<HDelT, DDelT, TensorT>& model,
       const std::vector<NodeType>& source_node_type_exclude,
       const std::vector<NodeType>& source_node_type_include,
       const std::vector<NodeType>& sink_node_type_exclude,
       const std::vector<NodeType>& sink_node_type_include,
       const std::string& direction);
     std::string selectRandomLink(
-      const Model& model,
+      const Model<HDelT, DDelT, TensorT>& model,
       const std::vector<NodeType>& source_node_type_exclude,
       const std::vector<NodeType>& source_node_type_include,
       const std::vector<NodeType>& sink_node_type_exclude,
@@ -177,7 +178,7 @@ public:
 		@returns A module name
 		*/
 		std::string selectRandomModule(
-			const Model& model,
+			const Model<HDelT, DDelT, TensorT>& model,
 			const std::vector<NodeType>& node_type_exclude,
 			const std::vector<NodeType>& node_type_include);
 		
@@ -186,7 +187,7 @@ public:
 
       @param[in, out] model The model
     */ 
-    void copyNode(Model& model);
+    void copyNode(Model<HDelT, DDelT, TensorT>& model);
 
     /**
       @brief Add node to the model (Layer injection up or down).
@@ -208,21 +209,21 @@ public:
 
       @param[in, out] model The model
     */ 
-    void addNode(Model& model, std::string unique_str = "");
+    void addNode(Model<HDelT, DDelT, TensorT>& model, std::string unique_str = "");
 
     /**
       @brief add link to the model
 
       @param[in, out] model The model
     */ 
-    void addLink(Model& model, std::string unique_str = "");
+    void addLink(Model<HDelT, DDelT, TensorT>& model, std::string unique_str = "");
 
 		/**
 		@brief Add a new module to the model
 
 		@param[in, out] model The model
 		*/
-		void addModule(Model& model, std::string unique_str = "");
+		void addModule(Model<HDelT, DDelT, TensorT>& model, std::string unique_str = "");
 
     /**
       @brief delete node to the model
@@ -230,7 +231,7 @@ public:
       @param[in, out] model The model
       @param[in] prune_iterations The number of model recursive prune iterations
     */ 
-    void deleteNode(Model& model, int prune_iterations = 1e6);
+    void deleteNode(Model<HDelT, DDelT, TensorT>& model, int prune_iterations = 1e6);
 
     /**
       @brief delete link to the model
@@ -238,7 +239,7 @@ public:
       @param[in, out] model The model
       @param[in] prune_iterations The number of model recursive prune iterations
     */ 
-    void deleteLink(Model& model, int prune_iterations = 1e6);
+    void deleteLink(Model<HDelT, DDelT, TensorT>& model, int prune_iterations = 1e6);
 
 		/**
 		@brief delete module in the model
@@ -246,28 +247,28 @@ public:
 		@param[in, out] model The model
 		@param[in] prune_iterations The number of model recursive prune iterations
 		*/
-		void deleteModule(Model& model, int prune_iterations = 1e6);
+		void deleteModule(Model<HDelT, DDelT, TensorT>& model, int prune_iterations = 1e6);
 
 		/**
 		@brief change node activation
 
 		@param[in, out] model The model
 		*/
-		void changeNodeActivation(Model& model, std::string unique_str = "");
+		void changeNodeActivation(Model<HDelT, DDelT, TensorT>& model, std::string unique_str = "");
 
 		/**
 		@brief change node integration
 
 		@param[in, out] model The model
 		*/
-		void changeNodeIntegration(Model& model, std::string unique_str = "");
+		void changeNodeIntegration(Model<HDelT, DDelT, TensorT>& model, std::string unique_str = "");
 
     /**
       @brief modify weights in the model
 
       @param[in, out] model The model
     */ 
-    void modifyWeight(Model& model);
+    void modifyWeight(Model<HDelT, DDelT, TensorT>& model);
 
     /**
       @brief Make a unique time stampped hash of the form
@@ -333,7 +334,7 @@ public:
 		virtual void adaptiveReplicatorScheduler(
 			const int& n_generations,
 			std::vector<Model>& models,
-			std::vector<std::vector<std::pair<int, float>>>& models_errors_per_generations) = 0;
+			std::vector<std::vector<std::pair<int, TensorT>>>& models_errors_per_generations) = 0;
 
 private:
     // modification parameters
@@ -355,14 +356,14 @@ private:
 		std::pair<int, int> node_integration_changes_ = std::make_pair(0, 0);
 		std::pair<int, int> module_additions_ = std::make_pair(0, 0);
 		std::pair<int, int> module_deletions_ = std::make_pair(0, 0);
-		std::vector<std::pair<std::shared_ptr<ActivationOp<float>>, std::shared_ptr<ActivationOp<float>>>> node_activations_;
-		std::vector<std::tuple<std::shared_ptr<IntegrationOp<float>>, std::shared_ptr<IntegrationErrorOp<float>>, std::shared_ptr<IntegrationWeightGradOp<float>>>> node_integrations_;
+		std::vector<std::pair<std::shared_ptr<ActivationOp<TensorT>>, std::shared_ptr<ActivationOp<TensorT>>>> node_activations_;
+		std::vector<std::tuple<std::shared_ptr<IntegrationOp<TensorT>>, std::shared_ptr<IntegrationErrorOp<TensorT>>, std::shared_ptr<IntegrationWeightGradOp<TensorT>>>> node_integrations_;
 		
 
 		// not yet implemented...
 		int n_node_copies_ = 0; ///< nodes to duplicate in the model (with a random source and sink connection) [TODO: names should be swapped at some point]
     int n_weight_changes_ = 0; ///< the number of weights to change in the model
-    float weight_change_stdev_ = 0; ///< the standard deviation to change the weights in the model
+    TensorT weight_change_stdev_ = 0; ///< the standard deviation to change the weights in the model
   };
 }
 

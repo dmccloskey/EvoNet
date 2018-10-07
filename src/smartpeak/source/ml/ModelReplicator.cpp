@@ -12,140 +12,164 @@
 
 namespace SmartPeak
 {
-  ModelReplicator::ModelReplicator(){};
-  ModelReplicator::~ModelReplicator(){};
-
-  void ModelReplicator::setNNodeCopies(const int& n_node_copies)
+	template<typename HDelT, typename DDelT, typename TensorT>
+  void ModelReplicator<HDelT, DDelT, TensorT>::setNNodeCopies(const int& n_node_copies)
   {
     n_node_copies_ = n_node_copies;
   }
 
-  void ModelReplicator::setNNodeAdditions(const int& n_node_additions)
+	template<typename HDelT, typename DDelT, typename TensorT>
+  void ModelReplicator<HDelT, DDelT, TensorT>::setNNodeAdditions(const int& n_node_additions)
   {
     n_node_additions_ = n_node_additions;
   }
 
-  void ModelReplicator::setNLinkAdditions(const int& n_link_additions)
+	template<typename HDelT, typename DDelT, typename TensorT>
+  void ModelReplicator<HDelT, DDelT, TensorT>::setNLinkAdditions(const int& n_link_additions)
   {
     n_link_additions_ = n_link_additions;    
   }
 
-  void ModelReplicator::setNNodeDeletions(const int& n_node_deletions)
+	template<typename HDelT, typename DDelT, typename TensorT>
+  void ModelReplicator<HDelT, DDelT, TensorT>::setNNodeDeletions(const int& n_node_deletions)
   {
     n_node_deletions_ = n_node_deletions;    
   }
 
-  void ModelReplicator::setNLinkDeletions(const int& n_link_deletions)
+	template<typename HDelT, typename DDelT, typename TensorT>
+  void ModelReplicator<HDelT, DDelT, TensorT>::setNLinkDeletions(const int& n_link_deletions)
   {
     n_link_deletions_ = n_link_deletions;
   }
 
-	void ModelReplicator::setNNodeActivationChanges(const int & n_node_activation_changes)
+	template<typename HDelT, typename DDelT, typename TensorT>
+	void ModelReplicator<HDelT, DDelT, TensorT>::setNNodeActivationChanges(const int & n_node_activation_changes)
 	{
 		n_node_activation_changes_ = n_node_activation_changes;
 	}
 
-	void ModelReplicator::setNNodeIntegrationChanges(const int & n_node_integration_changes)
+	template<typename HDelT, typename DDelT, typename TensorT>
+	void ModelReplicator<HDelT, DDelT, TensorT>::setNNodeIntegrationChanges(const int & n_node_integration_changes)
 	{
 		n_node_integration_changes_ = n_node_integration_changes;
 	}
 
-	void ModelReplicator::setNodeActivations(const std::vector<std::pair<std::shared_ptr<ActivationOp<float>>, std::shared_ptr<ActivationOp<float>>>>& node_activations)
+	template<typename HDelT, typename DDelT, typename TensorT>
+	void ModelReplicator<HDelT, DDelT, TensorT>::setNodeActivations(const std::vector<std::pair<std::shared_ptr<ActivationOp<TensorT>>, std::shared_ptr<ActivationOp<TensorT>>>>& node_activations)
 	{
 		node_activations_ = node_activations;
 	}
 
-	void ModelReplicator::setNodeIntegrations(const std::vector<std::tuple<std::shared_ptr<IntegrationOp<float>>, std::shared_ptr<IntegrationErrorOp<float>>, std::shared_ptr<IntegrationWeightGradOp<float>>>>& node_integrations)
+	template<typename HDelT, typename DDelT, typename TensorT>
+	void ModelReplicator<HDelT, DDelT, TensorT>::setNodeIntegrations(const std::vector<std::tuple<std::shared_ptr<IntegrationOp<TensorT>>, std::shared_ptr<IntegrationErrorOp<TensorT>>, std::shared_ptr<IntegrationWeightGradOp<TensorT>>>>& node_integrations)
 	{
 		node_integrations_ = node_integrations;
 	}
 
-	void ModelReplicator::setNModuleAdditions(const int & n_module_additions)
+	template<typename HDelT, typename DDelT, typename TensorT>
+	void ModelReplicator<HDelT, DDelT, TensorT>::setNModuleAdditions(const int & n_module_additions)
 	{
 		n_module_additions_ = n_module_additions;
 	}
 
-	void ModelReplicator::setNModuleDeletions(const int & n_module_deletions)
+	template<typename HDelT, typename DDelT, typename TensorT>
+	void ModelReplicator<HDelT, DDelT, TensorT>::setNModuleDeletions(const int & n_module_deletions)
 	{
 		n_module_deletions_ = n_module_deletions;
 	}
 
-  void ModelReplicator::setNWeightChanges(const int& n_weight_changes)
+	template<typename HDelT, typename DDelT, typename TensorT>
+  void ModelReplicator<HDelT, DDelT, TensorT>::setNWeightChanges(const int& n_weight_changes)
   {
     n_weight_changes_ = n_weight_changes;    
   }
 
-  void ModelReplicator::setWeightChangeStDev(const float& weight_change_stdev)
+	template<typename HDelT, typename DDelT, typename TensorT>
+  void ModelReplicator<HDelT, DDelT, TensorT>::setWeightChangeStDev(const TensorT& weight_change_stdev)
   {
     weight_change_stdev_ = weight_change_stdev;    
   }
 
-  int ModelReplicator::getNNodeCopies() const
+	template<typename HDelT, typename DDelT, typename TensorT>
+  int ModelReplicator<HDelT, DDelT, TensorT>::getNNodeCopies() const
   {
     return n_node_copies_;
   }
 
-  int ModelReplicator::getNNodeAdditions() const
+	template<typename HDelT, typename DDelT, typename TensorT>
+  int ModelReplicator<HDelT, DDelT, TensorT>::getNNodeAdditions() const
   {
     return n_node_additions_;
   }
 
-  int ModelReplicator::getNLinkAdditions() const
+	template<typename HDelT, typename DDelT, typename TensorT>
+  int ModelReplicator<HDelT, DDelT, TensorT>::getNLinkAdditions() const
   {
     return n_link_additions_;
   }
 
-  int ModelReplicator::getNNodeDeletions() const
+	template<typename HDelT, typename DDelT, typename TensorT>
+  int ModelReplicator<HDelT, DDelT, TensorT>::getNNodeDeletions() const
   {
     return n_node_deletions_;
   }
 
-  int ModelReplicator::getNLinkDeletions() const
+	template<typename HDelT, typename DDelT, typename TensorT>
+  int ModelReplicator<HDelT, DDelT, TensorT>::getNLinkDeletions() const
   {
     return n_link_deletions_;
   }
 
-	int ModelReplicator::getNNodeActivationChanges() const
+	template<typename HDelT, typename DDelT, typename TensorT>
+	int ModelReplicator<HDelT, DDelT, TensorT>::getNNodeActivationChanges() const
 	{
 		return n_node_activation_changes_;
 	}
 
-	int ModelReplicator::getNNodeIntegrationChanges() const
+	template<typename HDelT, typename DDelT, typename TensorT>
+	int ModelReplicator<HDelT, DDelT, TensorT>::getNNodeIntegrationChanges() const
 	{
 		return n_node_integration_changes_;
 	}
 
-	std::vector<std::pair<std::shared_ptr<ActivationOp<float>>, std::shared_ptr<ActivationOp<float>>>> ModelReplicator::getNodeActivations() const
+	template<typename HDelT, typename DDelT, typename TensorT>
+	std::vector<std::pair<std::shared_ptr<ActivationOp<TensorT>>, std::shared_ptr<ActivationOp<TensorT>>>> ModelReplicator<HDelT, DDelT, TensorT>::getNodeActivations() const
 	{
 		return node_activations_;
 	}
 
-	std::vector<std::tuple<std::shared_ptr<IntegrationOp<float>>, std::shared_ptr<IntegrationErrorOp<float>>, std::shared_ptr<IntegrationWeightGradOp<float>>>> ModelReplicator::getNodeIntegrations() const
+	template<typename HDelT, typename DDelT, typename TensorT>
+	std::vector<std::tuple<std::shared_ptr<IntegrationOp<TensorT>>, std::shared_ptr<IntegrationErrorOp<TensorT>>, std::shared_ptr<IntegrationWeightGradOp<TensorT>>>> ModelReplicator<HDelT, DDelT, TensorT>::getNodeIntegrations() const
 	{
 		return node_integrations_;
 	}
 
-	int ModelReplicator::getNModuleAdditions() const
+	template<typename HDelT, typename DDelT, typename TensorT>
+	int ModelReplicator<HDelT, DDelT, TensorT>::getNModuleAdditions() const
 	{
 		return n_module_additions_;
 	}
 
-	int ModelReplicator::getNModuleDeletions() const
+	template<typename HDelT, typename DDelT, typename TensorT>
+	int ModelReplicator<HDelT, DDelT, TensorT>::getNModuleDeletions() const
 	{
 		return n_module_deletions_;
 	}
 
-  int ModelReplicator::getNWeightChanges() const
+	template<typename HDelT, typename DDelT, typename TensorT>
+  int ModelReplicator<HDelT, DDelT, TensorT>::getNWeightChanges() const
   {
     return n_weight_changes_;
   }
 
-  float ModelReplicator::getWeightChangeStDev() const
+	template<typename HDelT, typename DDelT, typename TensorT>
+  TensorT ModelReplicator<HDelT, DDelT, TensorT>::getWeightChangeStDev() const
   {
     return weight_change_stdev_;
   }
-  
-  std::string ModelReplicator::makeUniqueHash(const std::string& left_str, const std::string& right_str)
+
+	template<typename HDelT, typename DDelT, typename TensorT>
+  std::string ModelReplicator<HDelT, DDelT, TensorT>::makeUniqueHash(const std::string& left_str, const std::string& right_str)
   {
     std::chrono::time_point<std::chrono::system_clock> time_now = std::chrono::system_clock::now();
     std::time_t time_now_t = std::chrono::system_clock::to_time_t(time_now);
@@ -160,19 +184,20 @@ namespace SmartPeak
     return hash_str;
   }
 
-  Model ModelReplicator::makeBaselineModel(const int& n_input_nodes, const std::vector<int>& n_hidden_nodes_per_layer, const int& n_output_nodes,
-		const std::shared_ptr<ActivationOp<float>>& hidden_node_activation,
-		const std::shared_ptr<ActivationOp<float>>& hidden_node_activation_grad,
-		const std::shared_ptr<IntegrationOp<float>>& hidden_node_integration,
-		const std::shared_ptr<IntegrationErrorOp<float>>& hidden_node_integration_error,
-		const std::shared_ptr<IntegrationWeightGradOp<float>>& hidden_node_integration_weight_grad,
-		const std::shared_ptr<ActivationOp<float>>& output_node_activation,
-		const std::shared_ptr<ActivationOp<float>>& output_node_activation_grad,
-		const std::shared_ptr<IntegrationOp<float>>& output_node_integration,
-		const std::shared_ptr<IntegrationErrorOp<float>>& output_node_integration_error,
-		const std::shared_ptr<IntegrationWeightGradOp<float>>& output_node_integration_weight_grad,
+	template<typename HDelT, typename DDelT, typename TensorT>
+	Model<HDelT, DDelT, TensorT> ModelReplicator<HDelT, DDelT, TensorT>::makeBaselineModel(const int& n_input_nodes, const std::vector<int>& n_hidden_nodes_per_layer, const int& n_output_nodes,
+		const std::shared_ptr<ActivationOp<TensorT>>& hidden_node_activation,
+		const std::shared_ptr<ActivationOp<TensorT>>& hidden_node_activation_grad,
+		const std::shared_ptr<IntegrationOp<TensorT>>& hidden_node_integration,
+		const std::shared_ptr<IntegrationErrorOp<TensorT>>& hidden_node_integration_error,
+		const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& hidden_node_integration_weight_grad,
+		const std::shared_ptr<ActivationOp<TensorT>>& output_node_activation,
+		const std::shared_ptr<ActivationOp<TensorT>>& output_node_activation_grad,
+		const std::shared_ptr<IntegrationOp<TensorT>>& output_node_integration,
+		const std::shared_ptr<IntegrationErrorOp<TensorT>>& output_node_integration_error,
+		const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& output_node_integration_weight_grad,
 		const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver,
-		const std::shared_ptr<LossFunctionOp<float>>& loss_function, const std::shared_ptr<LossFunctionGradOp<float>>& loss_function_grad,
+		const std::shared_ptr<LossFunctionOp<TensorT>>& loss_function, const std::shared_ptr<LossFunctionGradOp<TensorT>>& loss_function_grad,
 		std::string unique_str)
   {
     Model model;
@@ -188,7 +213,7 @@ namespace SmartPeak
       char node_name_char[64];
       sprintf(node_name_char, "Input_%d", i);
       std::string node_name(node_name_char);
-      Node node(node_name, NodeType::input, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+      Node<HDelT, DDelT, TensorT> node(node_name, NodeType::input, NodeStatus::activated, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
       model.addNodes({node});
     }
     // Create the hidden nodes + biases and hidden to bias links
@@ -199,12 +224,12 @@ namespace SmartPeak
 				char node_name_char[64];
 				sprintf(node_name_char, "Hidden_%d-%d", l,i);
 				std::string node_name(node_name_char);
-				Node node(node_name, NodeType::hidden, NodeStatus::deactivated, hidden_node_activation, hidden_node_activation_grad, hidden_node_integration, hidden_node_integration_error, hidden_node_integration_weight_grad);
+				Node<HDelT, DDelT, TensorT> node(node_name, NodeType::hidden, NodeStatus::deactivated, hidden_node_activation, hidden_node_activation_grad, hidden_node_integration, hidden_node_integration_error, hidden_node_integration_weight_grad);
 
 				char bias_name_char[64];
 				sprintf(bias_name_char, "Hidden_bias_%d-%d", l, i);
 				std::string bias_name(bias_name_char);
-				Node bias(bias_name, NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+				Node<HDelT, DDelT, TensorT> bias(bias_name, NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
 				model.addNodes({ node, bias });
 
 				char weight_bias_name_char[64];
@@ -218,7 +243,7 @@ namespace SmartPeak
 				std::shared_ptr<WeightInitOp> bias_weight_init;
 				bias_weight_init.reset(new ConstWeightInitOp(1.0));;
 				std::shared_ptr<SolverOp> bias_solver = solver;
-				Weight weight_bias(weight_bias_name, bias_weight_init, bias_solver);
+				Weight<TensorT> weight_bias(weight_bias_name, bias_weight_init, bias_solver);
 				Link link_bias(link_bias_name, bias_name, node_name, weight_bias_name);
 
 				model.addWeights({ weight_bias });
@@ -250,7 +275,7 @@ namespace SmartPeak
 
 						std::shared_ptr<WeightInitOp> hidden_weight_init = weight_init;
 						std::shared_ptr<SolverOp> hidden_solver = solver;
-						Weight weight(weight_name_char, hidden_weight_init, hidden_solver);
+						Weight<TensorT> weight(weight_name_char, hidden_weight_init, hidden_solver);
 						Link link(link_name, input_name, hidden_name, weight_name);
 
 						model.addWeights({ weight });
@@ -266,12 +291,12 @@ namespace SmartPeak
       char node_name_char[64];
       sprintf(node_name_char, "Output_%d", i);
       std::string node_name(node_name_char);
-      Node node(node_name, NodeType::output, NodeStatus::deactivated, output_node_activation, output_node_activation_grad, output_node_integration, output_node_integration_error, output_node_integration_weight_grad);
+      Node<HDelT, DDelT, TensorT> node(node_name, NodeType::output, NodeStatus::deactivated, output_node_activation, output_node_activation_grad, output_node_integration, output_node_integration_error, output_node_integration_weight_grad);
       
       char bias_name_char[64];
       sprintf(bias_name_char, "Output_bias_%d", i);
       std::string bias_name(bias_name_char);
-      Node bias(bias_name, NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+      Node<HDelT, DDelT, TensorT> bias(bias_name, NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
       model.addNodes({node, bias});
 
       char weight_bias_name_char[64];
@@ -285,7 +310,7 @@ namespace SmartPeak
       std::shared_ptr<WeightInitOp> bias_weight_init;
       bias_weight_init.reset(new ConstWeightInitOp(1.0));
       std::shared_ptr<SolverOp> bias_solver = solver;
-      Weight weight_bias(weight_bias_name, bias_weight_init, bias_solver);
+      Weight<TensorT> weight_bias(weight_bias_name, bias_weight_init, bias_solver);
       Link link_bias(link_bias_name, bias_name, node_name, weight_bias_name);
 
       model.addWeights({weight_bias});
@@ -317,7 +342,7 @@ namespace SmartPeak
 
 					std::shared_ptr<WeightInitOp> hidden_weight_init = weight_init;
 					std::shared_ptr<SolverOp> hidden_solver = solver;
-					Weight weight(weight_name_char, hidden_weight_init, hidden_solver);
+					Weight<TensorT> weight(weight_name_char, hidden_weight_init, hidden_solver);
 					Link link(link_name, input_name, hidden_name, weight_name);
 
 					model.addWeights({ weight });
@@ -348,7 +373,7 @@ namespace SmartPeak
 
 					std::shared_ptr<WeightInitOp> output_weight_init = weight_init;
 					std::shared_ptr<SolverOp> output_solver = solver;
-					Weight weight(weight_name_char, output_weight_init, output_solver);
+					Weight<TensorT> weight(weight_name_char, output_weight_init, output_solver);
 					Link link(link_name, hidden_name, output_name, weight_name);
 
 					model.addWeights({ weight });
@@ -383,7 +408,7 @@ namespace SmartPeak
 
           std::shared_ptr<WeightInitOp> output_weight_init = weight_init;
           std::shared_ptr<SolverOp> output_solver = solver;
-          Weight weight(weight_name_char, output_weight_init, output_solver);
+          Weight<TensorT> weight(weight_name_char, output_weight_init, output_solver);
           Link link(link_name, input_name, output_name, weight_name);
 
           model.addWeights({weight});
@@ -393,9 +418,10 @@ namespace SmartPeak
     }
     return model;
   }
-  
-  std::vector<std::string> ModelReplicator::selectNodes(
-    const Model& model,
+
+	template<typename HDelT, typename DDelT, typename TensorT>
+  std::vector<std::string> ModelReplicator<HDelT, DDelT, TensorT>::selectNodes(
+    const Model<HDelT, DDelT, TensorT>& model,
     const std::vector<NodeType>& node_type_exclude,
     const std::vector<NodeType>& node_type_include)
   {
@@ -436,7 +462,8 @@ namespace SmartPeak
     return node_ids;
   }
 
-	std::vector<std::string> ModelReplicator::selectModules(const Model & model, const std::vector<NodeType>& node_type_exclude, const std::vector<NodeType>& node_type_include)
+	template<typename HDelT, typename DDelT, typename TensorT>
+	std::vector<std::string> ModelReplicator<HDelT, DDelT, TensorT>::selectModules(const Model<HDelT, DDelT, TensorT>& model, const std::vector<NodeType>& node_type_exclude, const std::vector<NodeType>& node_type_include)
 	{
 		// populate our list of modules to select from
 		std::set<std::string> module_name_set;
@@ -477,19 +504,20 @@ namespace SmartPeak
 		return module_ids;
 	}
 
-  //std::string ModelReplicator::selectRandomNode(
-  //  const Model& model,
+  //std::string ModelReplicator<HDelT, DDelT, TensorT>::selectRandomNode(
+  //  const Model<HDelT, DDelT, TensorT>& model,
   //  const std::vector<NodeType>& node_type_exclude,
   //  const std::vector<NodeType>& node_type_include,
   //  const Node& node, 
-  //  const float& distance_weight,
+  //  const TensorT& distance_weight,
   //  const std::string& direction)
   //{
   //  // [TODO: add method body]    
   //}
 
-  std::string ModelReplicator::selectRandomNode(
-    const Model& model,
+	template<typename HDelT, typename DDelT, typename TensorT>
+  std::string ModelReplicator<HDelT, DDelT, TensorT>::selectRandomNode(
+    const Model<HDelT, DDelT, TensorT>& model,
     const std::vector<NodeType>& node_type_exclude,
     const std::vector<NodeType>& node_type_include)
   {
@@ -504,8 +532,9 @@ namespace SmartPeak
     }
   }
 
-  std::string ModelReplicator::selectRandomLink(
-    const Model& model,
+	template<typename HDelT, typename DDelT, typename TensorT>
+  std::string ModelReplicator<HDelT, DDelT, TensorT>::selectRandomLink(
+    const Model<HDelT, DDelT, TensorT>& model,
     const std::vector<NodeType>& source_node_type_exclude,
     const std::vector<NodeType>& source_node_type_include,
     const std::vector<NodeType>& sink_node_type_exclude,
@@ -543,8 +572,9 @@ namespace SmartPeak
     }
   }
 
-  void ModelReplicator::addLink(
-    Model& model, std::string unique_str)
+	template<typename HDelT, typename DDelT, typename TensorT>
+  void ModelReplicator<HDelT, DDelT, TensorT>::addLink(
+    Model<HDelT, DDelT, TensorT>& model, std::string unique_str)
   {
     // define the inclusion/exclusion nodes
     const std::vector<NodeType> source_node_type_exclude = {NodeType::bias, NodeType::output}; // no output can be a source
@@ -582,7 +612,7 @@ namespace SmartPeak
     // create the new weight based on a random link (this can probably be optmized...)
     std::string random_link = selectRandomLink(model, source_node_type_exclude, source_node_type_include, sink_node_type_exclude, sink_node_type_include);
 
-    Weight weight = model.getWeight(model.getLink(random_link).getWeightName()); // copy assignment
+    Weight<TensorT> weight = model.getWeight(model.getLink(random_link).getWeightName()); // copy assignment
     char weight_name_char[128];
 		sprintf(weight_name_char, "Weight_%s_to_%s@addLink#", source_node_name.data(), sink_node_name.data());
     std::string weight_name = makeUniqueHash(weight_name_char, unique_str);
@@ -598,7 +628,8 @@ namespace SmartPeak
     model.addLinks({link});
   }
 
-	void ModelReplicator::addModule(Model & model, std::string unique_str)
+	template<typename HDelT, typename DDelT, typename TensorT>
+	void ModelReplicator<HDelT, DDelT, TensorT>::addModule(Model<HDelT, DDelT, TensorT>& model, std::string unique_str)
 	{
 		// pick a random module from the model
 		std::vector<NodeType> node_exclusion_list = {};
@@ -626,7 +657,7 @@ namespace SmartPeak
 		{
 			if (link.getModuleName() == random_module_name)
 			{ // copy the internal nodes, weights, and links, and give them a new name/id/module_name/module_id
-				Node source_node = model.getNode(link.getSourceNodeName());
+				Node<HDelT, DDelT, TensorT> source_node = model.getNode(link.getSourceNodeName());
 				std::string new_node_name, node_prefix;
 				updateName(source_node.getName(), new_name_format, unique_str, node_prefix, new_node_name);
 				source_node.setName(node_prefix + new_module_suffix);
@@ -634,14 +665,14 @@ namespace SmartPeak
 				if (std::count(new_nodes.begin(), new_nodes.end(), source_node) == 0)
 					new_nodes.push_back(source_node);
 
-				Node sink_node = model.getNode(link.getSinkNodeName());
+				Node<HDelT, DDelT, TensorT> sink_node = model.getNode(link.getSinkNodeName());
 				updateName(sink_node.getName(), new_name_format, unique_str, node_prefix, new_node_name);
 				sink_node.setName(node_prefix + new_module_suffix);
 				sink_node.setModuleName(new_module_name);
 				if (std::count(new_nodes.begin(), new_nodes.end(), sink_node) == 0)
 					new_nodes.push_back(sink_node);
 
-				Weight weight = model.getWeight(link.getWeightName());
+				Weight<TensorT> weight = model.getWeight(link.getWeightName());
 				std::string new_weight_name, weight_prefix;
 				updateName(weight.getName(), new_name_format, unique_str, weight_prefix, new_weight_name);
 				weight.setName(weight_prefix + new_module_suffix);
@@ -663,7 +694,7 @@ namespace SmartPeak
 			{ // copy the connecting links and weights, and give them a new name/id
 				// and update the source node name (i.e., connect to the new module)
 
-				Weight weight = model.getWeight(link.getWeightName());
+				Weight<TensorT> weight = model.getWeight(link.getWeightName());
 				std::string new_weight_name, weight_prefix;
 				updateName(weight.getName(), new_name_format, unique_str, weight_prefix, new_weight_name);
 				weight.setName(weight_prefix + new_module_suffix);
@@ -684,7 +715,7 @@ namespace SmartPeak
 			{ // copy the connecting links and weights, and give them a new name/id
 				// and update the sink node name (i.e., connect to the new module)
 
-				Weight weight = model.getWeight(link.getWeightName());
+				Weight<TensorT> weight = model.getWeight(link.getWeightName());
 				std::string new_weight_name, weight_prefix;
 				updateName(weight.getName(), new_name_format, unique_str, weight_prefix, new_weight_name);
 				weight.setName(weight_prefix + new_module_suffix);
@@ -711,7 +742,8 @@ namespace SmartPeak
 		model.addLinks(connecting_links);
 	}
 
-	std::string ModelReplicator::selectRandomModule(const Model & model, const std::vector<NodeType>& node_type_exclude, const std::vector<NodeType>& node_type_include)
+	template<typename HDelT, typename DDelT, typename TensorT>
+	std::string ModelReplicator<HDelT, DDelT, TensorT>::selectRandomModule(const Model<HDelT, DDelT, TensorT>& model, const std::vector<NodeType>& node_type_exclude, const std::vector<NodeType>& node_type_include)
 	{
 		std::vector<std::string> module_ids = selectModules(model, node_type_exclude, node_type_include);
 
@@ -724,7 +756,8 @@ namespace SmartPeak
 		}
 	}
 
-	void ModelReplicator::copyNode(Model& model)
+	template<typename HDelT, typename DDelT, typename TensorT>
+	void ModelReplicator<HDelT, DDelT, TensorT>::copyNode(Model<HDelT, DDelT, TensorT>& model)
   {
     // [TODO: add method body]
 
@@ -738,7 +771,8 @@ namespace SmartPeak
 
   }
 
-  void ModelReplicator::addNode(Model& model, std::string unique_str)
+	template<typename HDelT, typename DDelT, typename TensorT>
+  void ModelReplicator<HDelT, DDelT, TensorT>::addNode(Model<HDelT, DDelT, TensorT>& model, std::string unique_str)
   {
     // pick a random node from the model
     // that is not an input or bias    
@@ -752,7 +786,7 @@ namespace SmartPeak
     }
 
     // copy the node
-    Node new_node = model.getNode(random_node_name);
+    Node<HDelT, DDelT, TensorT> new_node = model.getNode(random_node_name);
 
     // select a random input link
     // [OPTIMIZATION: refactor to pass back the Link and not just the name]
@@ -782,7 +816,7 @@ namespace SmartPeak
     char new_bias_name_char[128];
     sprintf(new_bias_name_char, "Bias_%s@addNode#", add_node_name.data());
     std::string new_bias_name = makeUniqueHash(new_bias_name_char, unique_str);
-    Node new_bias(new_bias_name, NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+    Node<HDelT, DDelT, TensorT> new_bias(new_bias_name, NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
     new_bias.initNode(new_node.getOutput().dimension(0), new_node.getOutput().dimension(1));
     model.addNodes({new_bias});
 
@@ -797,7 +831,7 @@ namespace SmartPeak
 
     std::shared_ptr<WeightInitOp> bias_weight_init;
     bias_weight_init.reset(new ConstWeightInitOp(1.0));
-    Weight weight_bias = model.getWeight(model.getLink(input_link_name).getWeightName()); // [OPTIMIZATION: use Link.getWeightName() directly]
+    Weight<TensorT> weight_bias = model.getWeight(model.getLink(input_link_name).getWeightName()); // [OPTIMIZATION: use Link.getWeightName() directly]
     weight_bias.setName(weight_bias_name);
     weight_bias.setWeightInitOp(bias_weight_init);
     weight_bias.initWeight();
@@ -817,7 +851,7 @@ namespace SmartPeak
 
     // add a new weight that connects the new copied node
     // to its original node
-    Weight weight = model.getWeight(model.getLink(input_link_name).getWeightName()); // copy assignment
+    Weight<TensorT> weight = model.getWeight(model.getLink(input_link_name).getWeightName()); // copy assignment
     char weight_name_char[512];
     sprintf(weight_name_char, "Weight_%s_to_%s@addNode#", new_node_name.data(), random_node_name.data());
     std::string weight_name = makeUniqueHash(weight_name_char, unique_str);
@@ -838,7 +872,8 @@ namespace SmartPeak
     model.removeLinks({input_link_name});  
   }
 
-  void ModelReplicator::deleteNode(Model& model, int prune_iterations)
+	template<typename HDelT, typename DDelT, typename TensorT>
+  void ModelReplicator<HDelT, DDelT, TensorT>::deleteNode(Model<HDelT, DDelT, TensorT>& model, int prune_iterations)
   {
     // pick a random node from the model
     // that is not an input, bias, nor output
@@ -855,7 +890,8 @@ namespace SmartPeak
     }
   }
 
-  void ModelReplicator::deleteLink(Model& model, int prune_iterations)
+	template<typename HDelT, typename DDelT, typename TensorT>
+  void ModelReplicator<HDelT, DDelT, TensorT>::deleteLink(Model<HDelT, DDelT, TensorT>& model, int prune_iterations)
   {
     // pick a random link from the model
     // that does not connect from a bias or input
@@ -875,7 +911,8 @@ namespace SmartPeak
     }
   }
 
-	void ModelReplicator::deleteModule(Model & model, int prune_iterations)
+	template<typename HDelT, typename DDelT, typename TensorT>
+	void ModelReplicator<HDelT, DDelT, TensorT>::deleteModule(Model<HDelT, DDelT, TensorT>& model, int prune_iterations)
 	{
 		// pick a random module from the model
 		std::vector<NodeType> node_exclusion_list = {};
@@ -909,7 +946,8 @@ namespace SmartPeak
 		model.pruneModel(prune_iterations);  // this action can remove additional nodes including inputs, biases, and outputs
 	}
 
-	void ModelReplicator::changeNodeActivation(Model & model, std::string unique_str)
+	template<typename HDelT, typename DDelT, typename TensorT>
+	void ModelReplicator<HDelT, DDelT, TensorT>::changeNodeActivation(Model<HDelT, DDelT, TensorT>& model, std::string unique_str)
 	{
 		// pick a random node from the model
 		// that is not an input or bias or output
@@ -922,15 +960,16 @@ namespace SmartPeak
 			return;
 		}
 
-		Node new_node = model.getNode(random_node_name); // copy the node		
-		std::pair<std::shared_ptr<ActivationOp<float>>, std::shared_ptr<ActivationOp<float>>> new_activation = selectRandomElement(node_activations_); // pick a random activation
+		Node<HDelT, DDelT, TensorT> new_node = model.getNode(random_node_name); // copy the node		
+		std::pair<std::shared_ptr<ActivationOp<TensorT>>, std::shared_ptr<ActivationOp<TensorT>>> new_activation = selectRandomElement(node_activations_); // pick a random activation
 		new_node.setActivation(new_activation.first); // change the activation
 		new_node.setActivationGrad(new_activation.second); // change the activation
 		model.removeNodes({new_node.getName()}); // delete the original node
 		model.addNodes({new_node}); // add in the new node
 	}
 
-	void ModelReplicator::changeNodeIntegration(Model & model, std::string unique_str)
+	template<typename HDelT, typename DDelT, typename TensorT>
+	void ModelReplicator<HDelT, DDelT, TensorT>::changeNodeIntegration(Model<HDelT, DDelT, TensorT>& model, std::string unique_str)
 	{
 		// pick a random node from the model
 		// that is not an input or bias or output
@@ -943,8 +982,8 @@ namespace SmartPeak
 			return;
 		}
 
-		Node new_node = model.getNode(random_node_name); // copy the node		
-		std::tuple<std::shared_ptr<IntegrationOp<float>>, std::shared_ptr<IntegrationErrorOp<float>>, std::shared_ptr<IntegrationWeightGradOp<float>>> new_integration = selectRandomElement(node_integrations_); // pick a random integration
+		Node<HDelT, DDelT, TensorT> new_node = model.getNode(random_node_name); // copy the node		
+		std::tuple<std::shared_ptr<IntegrationOp<TensorT>>, std::shared_ptr<IntegrationErrorOp<TensorT>>, std::shared_ptr<IntegrationWeightGradOp<TensorT>>> new_integration = selectRandomElement(node_integrations_); // pick a random integration
 		new_node.setIntegration(std::get<0>(new_integration)); // change the integration
 		new_node.setIntegrationError(std::get<1>(new_integration)); // change the integration
 		new_node.setIntegrationWeightGrad(std::get<2>(new_integration)); // change the integration
@@ -952,7 +991,8 @@ namespace SmartPeak
 		model.addNodes({ new_node }); // add in the new node
 	}
 
-  void ModelReplicator::modifyWeight(Model& model)
+	template<typename HDelT, typename DDelT, typename TensorT>
+  void ModelReplicator<HDelT, DDelT, TensorT>::modifyWeight(Model<HDelT, DDelT, TensorT>& model)
   {
     // [TODO: add method body]    
 
@@ -966,8 +1006,9 @@ namespace SmartPeak
     // delete the previous weight
 
   }
-  
-	void ModelReplicator::updateName(const std::string & name, const std::string & new_name_format, std::string unique_str,
+
+	template<typename HDelT, typename DDelT, typename TensorT>
+	void ModelReplicator<HDelT, DDelT, TensorT>::updateName(const std::string & name, const std::string & new_name_format, std::string unique_str,
 		std::string& name_prefix, std::string& new_name)
 	{
 		std::regex re("@");
@@ -986,7 +1027,8 @@ namespace SmartPeak
 		new_name = makeUniqueHash(new_name_char, unique_str);
 	}
 
-	std::vector<std::string> ModelReplicator::makeRandomModificationOrder()
+	template<typename HDelT, typename DDelT, typename TensorT>
+	std::vector<std::string> ModelReplicator<HDelT, DDelT, TensorT>::makeRandomModificationOrder()
   {
     // create the list of modifications
     std::vector<std::string> modifications;
@@ -1007,7 +1049,8 @@ namespace SmartPeak
     return modifications;
   }
 
-	void ModelReplicator::setRandomModifications(
+	template<typename HDelT, typename DDelT, typename TensorT>
+	void ModelReplicator<HDelT, DDelT, TensorT>::setRandomModifications(
 		const std::pair<int, int>& node_additions,
 		const std::pair<int, int>& link_additions,
 		const std::pair<int, int>& node_deletions,
@@ -1028,7 +1071,8 @@ namespace SmartPeak
 		module_deletions_ = module_deletions;
 	}
 
-	void ModelReplicator::makeRandomModifications()
+	template<typename HDelT, typename DDelT, typename TensorT>
+	void ModelReplicator<HDelT, DDelT, TensorT>::makeRandomModifications()
 	{
 		// random generator for model modifications
 		std::random_device rd;
@@ -1053,7 +1097,8 @@ namespace SmartPeak
 		setNModuleDeletions(module_deletion_gen(gen));
 	}
 
-  void ModelReplicator::modifyModel(Model& model, std::string unique_str)
+	template<typename HDelT, typename DDelT, typename TensorT>
+  void ModelReplicator<HDelT, DDelT, TensorT>::modifyModel(Model<HDelT, DDelT, TensorT>& model, std::string unique_str)
   {
     // randomly order the modifications
     std::vector<std::string> modifications = makeRandomModificationOrder();

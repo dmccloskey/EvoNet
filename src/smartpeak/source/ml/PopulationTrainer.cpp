@@ -22,43 +22,52 @@ static std::mutex evalModel_mutex;
 
 namespace SmartPeak
 {
-	void PopulationTrainer::setNTop(const int & n_top)
+	template<typename HDelT, typename DDelT, typename TensorT>
+	void PopulationTrainer<HDelT, DDelT, TensorT>::setNTop(const int & n_top)
 	{
 		n_top_ = n_top;
 	}
-	void PopulationTrainer::setNRandom(const int & n_random)
+	template<typename HDelT, typename DDelT, typename TensorT>
+	void PopulationTrainer<HDelT, DDelT, TensorT>::setNRandom(const int & n_random)
 	{
 		n_random_ = n_random;
 	}
-	void PopulationTrainer::setNReplicatesPerModel(const int & n_replicates_per_model)
+	template<typename HDelT, typename DDelT, typename TensorT>
+	void PopulationTrainer<HDelT, DDelT, TensorT>::setNReplicatesPerModel(const int & n_replicates_per_model)
 	{
 		n_replicates_per_model_ = n_replicates_per_model;
 	}
-	void PopulationTrainer::setNGenerations(const int & n_generations)
+	template<typename HDelT, typename DDelT, typename TensorT>
+	void PopulationTrainer<HDelT, DDelT, TensorT>::setNGenerations(const int & n_generations)
 	{
 		n_generations_ = n_generations;
 	}
-	int PopulationTrainer::getNTop() const
+	template<typename HDelT, typename DDelT, typename TensorT>
+	int PopulationTrainer<HDelT, DDelT, TensorT>::getNTop() const
 	{
 		return n_top_;
 	}
-	int PopulationTrainer::getNRandom() const
+	template<typename HDelT, typename DDelT, typename TensorT>
+	int PopulationTrainer<HDelT, DDelT, TensorT>::getNRandom() const
 	{
 		return n_random_;
 	}
-	int PopulationTrainer::getNReplicatesPerModel() const
+	template<typename HDelT, typename DDelT, typename TensorT>
+	int PopulationTrainer<HDelT, DDelT, TensorT>::getNReplicatesPerModel() const
 	{
 		return n_replicates_per_model_;
 	}
-	int PopulationTrainer::getNGenerations() const
+	template<typename HDelT, typename DDelT, typename TensorT>
+	int PopulationTrainer<HDelT, DDelT, TensorT>::getNGenerations() const
 	{
 		return n_generations_;
 	}
 
-  void PopulationTrainer::removeDuplicateModels(std::vector<Model>& models)
+	template<typename HDelT, typename DDelT, typename TensorT>
+  void PopulationTrainer<HDelT, DDelT, TensorT>::removeDuplicateModels(std::vector<Model<HDelT, DDelT, TensorT>>& models)
   {
-    std::map<std::string, Model> unique_models;
-    for (const Model& model: models)
+    std::map<std::string, Model<HDelT, DDelT, TensorT>> unique_models;
+    for (const Model<HDelT, DDelT, TensorT>& model: models)
       unique_models.emplace(model.getName(), model);    
     
     if (unique_models.size() < models.size())
@@ -71,9 +80,9 @@ namespace SmartPeak
     }
     
     // models.erase(std::unique(models.begin(), models.end(), 
-    //   [=](const Model& a, const Model& b)
+    //   [=](const Model<HDelT, DDelT, TensorT>& a, const Model<HDelT, DDelT, TensorT>& b)
     //     {
-    //       printf("Model a %s Model b %s are equal? ", a.getName().data(), b.getName().data());
+    //       printf("Modela %s Model*b %s are equal? ", a.getName().data(), b.getName().data());
     //       bool areequal = a.getName() == b.getName();
     //       std::cout<<areequal<<std::endl;
     //       return a.getName() == b.getName();
@@ -82,38 +91,39 @@ namespace SmartPeak
     // );
   }
 
-	std::vector<std::pair<int, float>> PopulationTrainer::selectModels(
-    std::vector<Model>& models,
-    ModelTrainer& model_trainer,
-		ModelLogger& model_logger,
-    const Eigen::Tensor<float, 4>& input,
-    const Eigen::Tensor<float, 4>& output,
-    const Eigen::Tensor<float, 3>& time_steps,
+	template<typename HDelT, typename DDelT, typename TensorT>
+	std::vector<std::pair<int, TensorT>> PopulationTrainer<HDelT, DDelT, TensorT>::selectModels(
+    std::vector<Model<HDelT, DDelT, TensorT>>& models,
+    ModelTrainer<HDelT, DDelT, TensorT>& model_trainer,
+		ModelLogger<HDelT, DDelT, TensorT>& model_logger,
+    const Eigen::Tensor<TensorT, 4>& input,
+    const Eigen::Tensor<TensorT, 4>& output,
+    const Eigen::Tensor<TensorT, 3>& time_steps,
     const std::vector<std::string>& input_nodes,
     int n_threads)
   {
-    // printf("PopulationTrainer::selectModels, Models size: %i\n", models.size());
+    // printf("PopulationTrainer<HDelT, DDelT, TensorT>::selectModels, Models size: %i\n", models.size());
     // score the models
-    std::vector<std::pair<int, float>> models_validation_errors;
+    std::vector<std::pair<int, TensorT>> models_validation_errors;
 
     // models_validation_errors = validateModels_(
     //   models, model_trainer, input, output, time_steps, input_nodes, output_nodes
     // );
 
-    std::vector<std::future<std::pair<int, float>>> task_results;
+    std::vector<std::future<std::pair<int, TensorT>>> task_results;
     int thread_cnt = 0;
     for (int i=0; i<models.size(); ++i)
     {
 
-      std::packaged_task<std::pair<int, float> // encapsulate in a packaged_task
-        (Model*,
-          ModelTrainer*,
-					ModelLogger*,
-          Eigen::Tensor<float, 4>,
-          Eigen::Tensor<float, 4>,
-          Eigen::Tensor<float, 3>,
+      std::packaged_task<std::pair<int, TensorT> // encapsulate in a packaged_task
+        (Model<HDelT, DDelT, TensorT>*,
+          ModelTrainer<HDelT, DDelT, TensorT>*,
+					ModelLogger<HDelT, DDelT, TensorT>*,
+          Eigen::Tensor<TensorT, 4>,
+          Eigen::Tensor<TensorT, 4>,
+          Eigen::Tensor<TensorT, 3>,
           std::vector<std::string>
-        )> task(PopulationTrainer::validateModel_);
+        )> task(PopulationTrainer<HDelT, DDelT, TensorT>::validateModel_);
       
       // launch the thread
       task_results.push_back(task.get_future());
@@ -148,22 +158,22 @@ namespace SmartPeak
         ++thread_cnt;
       }      
     }
-    // printf("PopulationTrainer::selectModels, models_validation_errors1 size: %i\n", models_validation_errors.size());
+    // printf("PopulationTrainer<HDelT, DDelT, TensorT>::selectModels, models_validation_errors1 size: %i\n", models_validation_errors.size());
     
     // sort each model based on their scores in ascending order
     models_validation_errors = getTopNModels_(
       models_validation_errors, getNTop()
     );
-    // printf("PopulationTrainer::selectModels, models_validation_errors2 size: %i\n", models_validation_errors.size());
+    // printf("PopulationTrainer<HDelT, DDelT, TensorT>::selectModels, models_validation_errors2 size: %i\n", models_validation_errors.size());
 
     // select a random subset of the top N
     models_validation_errors = getRandomNModels_(
       models_validation_errors, getNRandom()
     );
-    // printf("PopulationTrainer::selectModels, models_validation_errors3 size: %i\n", models_validation_errors.size());
+    // printf("PopulationTrainer<HDelT, DDelT, TensorT>::selectModels, models_validation_errors3 size: %i\n", models_validation_errors.size());
     
     std::vector<int> selected_models;
-    for (const std::pair<int, float>& model_error: models_validation_errors)
+    for (const std::pair<int, TensorT>& model_error: models_validation_errors)
       selected_models.push_back(model_error.first);
 
     // purge non-selected models
@@ -171,47 +181,48 @@ namespace SmartPeak
     {
       models.erase(
         std::remove_if(models.begin(), models.end(),
-          [=](const Model& model)
+          [=](const Model<HDelT, DDelT, TensorT>& model)
           {
             return std::count(selected_models.begin(), selected_models.end(), model.getId()) == 0;
           }
         ),
         models.end()
       );
-      // printf("PopulationTrainer::selectModels, Models size: %i\n", models.size());
+      // printf("PopulationTrainer<HDelT, DDelT, TensorT>::selectModels, Models size: %i\n", models.size());
     }
 
     if (models.size() > getNRandom())
       removeDuplicateModels(models);
-    // printf("PopulationTrainer::selectModels, Models size: %i\n", models.size());
+    // printf("PopulationTrainer<HDelT, DDelT, TensorT>::selectModels, Models size: %i\n", models.size());
 
 		return models_validation_errors;
   }
 
-  std::pair<int, float> PopulationTrainer::validateModel_(
-    Model* model,
-    ModelTrainer* model_trainer,
-		ModelLogger* model_logger,
-    const Eigen::Tensor<float, 4>& input,
-    const Eigen::Tensor<float, 4>& output,
-    const Eigen::Tensor<float, 3>& time_steps,
+	template<typename HDelT, typename DDelT, typename TensorT>
+  std::pair<int, TensorT> PopulationTrainer<HDelT, DDelT, TensorT>::validateModel_(
+    Model<HDelT, DDelT, TensorT>* model,
+    ModelTrainer<HDelT, DDelT, TensorT>* model_trainer,
+		ModelLogger<HDelT, DDelT, TensorT>* model_logger,
+    const Eigen::Tensor<TensorT, 4>& input,
+    const Eigen::Tensor<TensorT, 4>& output,
+    const Eigen::Tensor<TensorT, 3>& time_steps,
     const std::vector<std::string>& input_nodes)
   {
     std::lock_guard<std::mutex> lock(validateModel_mutex);
     // score the model
     try
     {
-      std::vector<float> model_errors = model_trainer->validateModel(
+      std::vector<TensorT> model_errors = model_trainer->validateModel(
         *model, input, output, time_steps,
         input_nodes, *model_logger);
-      float model_ave_error = 1e6;
+      TensorT model_ave_error = 1e6;
       if (model_errors.size()>0)
         model_ave_error = std::accumulate(model_errors.begin(), model_errors.end(), 0.0)/model_errors.size();
       if (isnan(model_ave_error))
         model_ave_error = 1e32; // a large number
 
       char cout_char[512];
-      sprintf(cout_char, "Model %s (Nodes: %d, Links: %d) error: %.6f\n", 
+      sprintf(cout_char, "Model%s (Nodes: %d, Links: %d) error: %.6f\n", 
         model->getName().data(), model->getNodes().size(), model->getLinks().size(), model_ave_error);
       std::cout<<cout_char;
 
@@ -225,14 +236,15 @@ namespace SmartPeak
     }  
   }
 
-  std::vector<std::pair<int, float>> PopulationTrainer::getTopNModels_(
-    std::vector<std::pair<int, float>> model_validation_scores,
+	template<typename HDelT, typename DDelT, typename TensorT>
+  std::vector<std::pair<int, TensorT>> PopulationTrainer<HDelT, DDelT, TensorT>::getTopNModels_(
+    std::vector<std::pair<int, TensorT>> model_validation_scores,
     const int& n_top)
   {
     // sort each model based on their scores in ascending order
     std::sort(
       model_validation_scores.begin(), model_validation_scores.end(), 
-      [=](std::pair<int, float>& a, std::pair<int, float>& b)
+      [=](std::pair<int, TensorT>& a, std::pair<int, TensorT>& b)
       {
         return a.second < b.second;
       }
@@ -243,14 +255,15 @@ namespace SmartPeak
     if (n_ > model_validation_scores.size())
       n_ = model_validation_scores.size();
       
-    std::vector<std::pair<int, float>> top_n_models;
+    std::vector<std::pair<int, TensorT>> top_n_models;
     for (int i=0; i<n_; ++i) {top_n_models.push_back(model_validation_scores[i]);}
 
     return top_n_models;
   }
 
-  std::vector<std::pair<int, float>> PopulationTrainer::getRandomNModels_(
-    std::vector<std::pair<int, float>> model_validation_scores,
+	template<typename HDelT, typename DDelT, typename TensorT>
+  std::vector<std::pair<int, TensorT>> PopulationTrainer<HDelT, DDelT, TensorT>::getRandomNModels_(
+    std::vector<std::pair<int, TensorT>> model_validation_scores,
     const int& n_random)
   {
     int n_ = n_random;
@@ -261,31 +274,32 @@ namespace SmartPeak
     std::random_device seed;
     std::mt19937 engine(seed());
     std::shuffle(model_validation_scores.begin(), model_validation_scores.end(), engine);
-    std::vector<std::pair<int, float>> random_n_models;
+    std::vector<std::pair<int, TensorT>> random_n_models;
     for (int i=0; i<n_; ++i) {random_n_models.push_back(model_validation_scores[i]);}
 
     return random_n_models;
   }
 
-  void PopulationTrainer::replicateModels(
-    std::vector<Model>& models,
-    ModelReplicator& model_replicator,
+	template<typename HDelT, typename DDelT, typename TensorT>
+  void PopulationTrainer<HDelT, DDelT, TensorT>::replicateModels(
+    std::vector<Model<HDelT, DDelT, TensorT>>& models,
+    ModelReplicator<HDelT, DDelT, TensorT>& model_replicator,
     std::string unique_str,
     int n_threads)
   {
     // replicate and modify
-    std::vector<Model> models_copy = models;
+    std::vector<Model<HDelT, DDelT, TensorT>> models_copy = models;
     int cnt = 0;
-    std::vector<std::future<Model>> task_results;
+    std::vector<std::future<Model<HDelT, DDelT, TensorT>>> task_results;
     int thread_cnt = 0;
-    for (Model& model: models_copy)
+    for (Model<HDelT, DDelT, TensorT>& model: models_copy)
     {
       for (int i=0; i<getNReplicatesPerModel(); ++i)
       {
-        std::packaged_task<Model // encapsulate in a packaged_task
-          (Model*, ModelReplicator*, 
+        std::packaged_task<Model<HDelT, DDelT, TensorT>// encapsulate in a packaged_task
+          (Model<HDelT, DDelT, TensorT>*, ModelReplicator<HDelT, DDelT, TensorT>*, 
 						std::string, int
-          )> task(PopulationTrainer::replicateModel_);
+          )> task(PopulationTrainer<HDelT, DDelT, TensorT>::replicateModel_);
         
         // launch the thread
         task_results.push_back(task.get_future());
@@ -303,7 +317,7 @@ namespace SmartPeak
             {
               try
               {
-								Model model_task_result = task_result.get();
+								Model<HDelT, DDelT, TensorT> model_task_result = task_result.get();
 								model_task_result.setId(getNextID());
                 models.push_back(model_task_result);
               }              
@@ -328,9 +342,10 @@ namespace SmartPeak
     // removeDuplicateModels(models);  // safer to use, but does hurt performance
   }
 
-  Model PopulationTrainer::replicateModel_(
-    Model* model,
-    ModelReplicator* model_replicator,
+	template<typename HDelT, typename DDelT, typename TensorT>
+  Model<HDelT, DDelT, TensorT> PopulationTrainer<HDelT, DDelT, TensorT>::replicateModel_(
+    Model<HDelT, DDelT, TensorT>* model,
+    ModelReplicator<HDelT, DDelT, TensorT>* model_replicator,
     std::string unique_str, int cnt)
   {    
     std::lock_guard<std::mutex> lock(replicateModel_mutex);
@@ -353,7 +368,7 @@ namespace SmartPeak
 		int max_iters = 5;
 		for (int iter=0; iter<max_iters; ++iter)
 		{
-			Model model_copy(*model);
+			Model<HDelT, DDelT, TensorT> model_copy(*model);
 			model_copy.setName(model_name);
 
 			model_replicator->makeRandomModifications();
@@ -364,7 +379,7 @@ namespace SmartPeak
 			model_copy.pruneModel(10);
 
 			// additional model checks
-			Model model_check(model_copy);
+			Model<HDelT, DDelT, TensorT> model_check(model_copy);
 			bool complete_model = model_check.checkCompleteInputToOutput();
 
 			if (complete_model)
@@ -374,33 +389,34 @@ namespace SmartPeak
 		throw std::runtime_error("All modified models were broken!");
   }
 
-  void PopulationTrainer::trainModels(
-    std::vector<Model>& models,
-    ModelTrainer& model_trainer,
-		ModelLogger& model_logger,
-    const Eigen::Tensor<float, 4>& input,
-    const Eigen::Tensor<float, 4>& output,
-    const Eigen::Tensor<float, 3>& time_steps,
+	template<typename HDelT, typename DDelT, typename TensorT>
+  void PopulationTrainer<HDelT, DDelT, TensorT>::trainModels(
+    std::vector<Model<HDelT, DDelT, TensorT>>& models,
+    ModelTrainer<HDelT, DDelT, TensorT>& model_trainer,
+		ModelLogger<HDelT, DDelT, TensorT>& model_logger,
+    const Eigen::Tensor<TensorT, 4>& input,
+    const Eigen::Tensor<TensorT, 4>& output,
+    const Eigen::Tensor<TensorT, 3>& time_steps,
     const std::vector<std::string>& input_nodes,
     int n_threads)
   {
     // std::vector<std::string> broken_model_names;
-    std::vector<Model> trained_models;
-    std::vector<std::future<std::pair<bool, Model>>> task_results;
+    std::vector<Model<HDelT, DDelT, TensorT>> trained_models;
+    std::vector<std::future<std::pair<bool, Model<HDelT, DDelT, TensorT>>>> task_results;
     int thread_cnt = 0;
 
     // train the models
     for (int i=0; i<models.size(); ++i)
     {
-      std::packaged_task<std::pair<bool, Model> // encapsulate in a packaged_task
-        (Model*,
-          ModelTrainer*,
-					ModelLogger*,
-          Eigen::Tensor<float, 4>,
-          Eigen::Tensor<float, 4>,
-          Eigen::Tensor<float, 3>,
+      std::packaged_task<std::pair<bool, Model<HDelT, DDelT, TensorT>> // encapsulate in a packaged_task
+        (Model<HDelT, DDelT, TensorT>*,
+          ModelTrainer<HDelT, DDelT, TensorT>*,
+					ModelLogger<HDelT, DDelT, TensorT>*,
+          Eigen::Tensor<TensorT, 4>,
+          Eigen::Tensor<TensorT, 4>,
+          Eigen::Tensor<TensorT, 3>,
           std::vector<std::string>
-        )> task(PopulationTrainer::trainModel_);
+        )> task(PopulationTrainer<HDelT, DDelT, TensorT>::trainModel_);
       
       // launch the thread
       task_results.push_back(task.get_future());
@@ -420,8 +436,8 @@ namespace SmartPeak
           {
             try
             {
-              std::pair<bool, Model> status = task_result.get();  
-              // std::pair<bool, Model> status status = task_results[j].get();         
+              std::pair<bool, Model<HDelT, DDelT, TensorT>> status = task_result.get();  
+              // std::pair<bool, Model<HDelT, DDelT, TensorT>> status status = task_results[j].get();         
               if (status.first)
               {
                 trained_models.push_back(status.second);
@@ -450,7 +466,7 @@ namespace SmartPeak
     // {
     //   models.erase(
     //     std::remove_if(models.begin(), models.end(),
-    //       [=](const Model& model)
+    //       [=](const Model<HDelT, DDelT, TensorT>& model)
     //       {
     //         return std::count(broken_model_names.begin(), broken_model_names.end(), model.getName()) != 0;
     //       }
@@ -459,19 +475,20 @@ namespace SmartPeak
     //   );
     // }
   }
-  
-  std::pair<bool, Model> PopulationTrainer::trainModel_(
-    Model* model,
-    ModelTrainer* model_trainer,
-		ModelLogger* model_logger,
-    const Eigen::Tensor<float, 4>& input,
-    const Eigen::Tensor<float, 4>& output,
-    const Eigen::Tensor<float, 3>& time_steps,
+
+	template<typename HDelT, typename DDelT, typename TensorT>
+  std::pair<bool, Model<HDelT, DDelT, TensorT>> PopulationTrainer<HDelT, DDelT, TensorT>::trainModel_(
+    Model<HDelT, DDelT, TensorT>* model,
+    ModelTrainer<HDelT, DDelT, TensorT>* model_trainer,
+		ModelLogger<HDelT, DDelT, TensorT>* model_logger,
+    const Eigen::Tensor<TensorT, 4>& input,
+    const Eigen::Tensor<TensorT, 4>& output,
+    const Eigen::Tensor<TensorT, 3>& time_steps,
     const std::vector<std::string>& input_nodes)
   {
     std::lock_guard<std::mutex> lock(trainModel_mutex);
 
-    //Model model_copy(*model);
+    //Model<HDelT, DDelT, TensorT> model_copy(*model);
     try
     {
       model_trainer->trainModel(
@@ -489,12 +506,13 @@ namespace SmartPeak
     }
   }
 
-	void PopulationTrainer::evalModels(
-		std::vector<Model>& models,
-		ModelTrainer& model_trainer,
-		ModelLogger& model_logger,
-		const Eigen::Tensor<float, 4>& input,
-		const Eigen::Tensor<float, 3>& time_steps,
+	template<typename HDelT, typename DDelT, typename TensorT>
+	void PopulationTrainer<HDelT, DDelT, TensorT>::evalModels(
+		std::vector<Model<HDelT, DDelT, TensorT>>& models,
+		ModelTrainer<HDelT, DDelT, TensorT>& model_trainer,
+		ModelLogger<HDelT, DDelT, TensorT>& model_logger,
+		const Eigen::Tensor<TensorT, 4>& input,
+		const Eigen::Tensor<TensorT, 3>& time_steps,
 		const std::vector<std::string>& input_nodes,
 		int n_threads)
 	{
@@ -506,13 +524,13 @@ namespace SmartPeak
 		for (int i = 0; i < models.size(); ++i)
 		{
 			std::packaged_task<bool // encapsulate in a packaged_task
-				(Model*,
-					ModelTrainer*,
-					ModelLogger*,
-					Eigen::Tensor<float, 4>,
-					Eigen::Tensor<float, 3>,
+				(Model<HDelT, DDelT, TensorT>*,
+					ModelTrainer<HDelT, DDelT, TensorT>*,
+					ModelLogger<HDelT, DDelT, TensorT>*,
+					Eigen::Tensor<TensorT, 4>,
+					Eigen::Tensor<TensorT, 3>,
 					std::vector<std::string>
-					)> task(PopulationTrainer::evalModel_);
+					)> task(PopulationTrainer<HDelT, DDelT, TensorT>::evalModel_);
 
 			// launch the thread
 			task_results.push_back(task.get_future());
@@ -549,12 +567,13 @@ namespace SmartPeak
 		}
 	}
 
-	bool PopulationTrainer::evalModel_(
-		Model* model,
-		ModelTrainer* model_trainer,
-		ModelLogger* model_logger,
-		const Eigen::Tensor<float, 4>& input,
-		const Eigen::Tensor<float, 3>& time_steps,
+	template<typename HDelT, typename DDelT, typename TensorT>
+	bool PopulationTrainer<HDelT, DDelT, TensorT>::evalModel_(
+		Model<HDelT, DDelT, TensorT>* model,
+		ModelTrainer<HDelT, DDelT, TensorT>* model_trainer,
+		ModelLogger<HDelT, DDelT, TensorT>* model_logger,
+		const Eigen::Tensor<TensorT, 4>& input,
+		const Eigen::Tensor<TensorT, 3>& time_steps,
 		const std::vector<std::string>& input_nodes)
 	{
 		std::lock_guard<std::mutex> lock(evalModel_mutex);
@@ -574,26 +593,29 @@ namespace SmartPeak
 		}
 	}
 
-	int PopulationTrainer::getNextID()
+	template<typename HDelT, typename DDelT, typename TensorT>
+	int PopulationTrainer<HDelT, DDelT, TensorT>::getNextID()
 	{
 		return ++unique_id_;
 	}
 
-	void PopulationTrainer::setID(const int & id)
+	template<typename HDelT, typename DDelT, typename TensorT>
+	void PopulationTrainer<HDelT, DDelT, TensorT>::setID(const int & id)
 	{
 		unique_id_ = id;
 	}
 
-	std::vector<std::vector<std::pair<int, float>>> PopulationTrainer::evolveModels(
-		std::vector<Model>& models,
-		ModelTrainer & model_trainer,
-		ModelReplicator & model_replicator,
+	template<typename HDelT, typename DDelT, typename TensorT>
+	std::vector<std::vector<std::pair<int, TensorT>>> PopulationTrainer<HDelT, DDelT, TensorT>::evolveModels(
+		std::vector<Model<HDelT, DDelT, TensorT>>& models,
+		ModelTrainer<HDelT, DDelT, TensorT>& model_trainer,
+		ModelReplicator<HDelT, DDelT, TensorT>& model_replicator,
 		DataSimulator& data_simulator,
-		ModelLogger& model_logger,
+		ModelLogger<HDelT, DDelT, TensorT>& model_logger,
 		const std::vector<std::string>& input_nodes,
 		int n_threads)
 	{
-		std::vector<std::vector<std::pair<int, float>>> models_validation_errors_per_generation;
+		std::vector<std::vector<std::pair<int, TensorT>>> models_validation_errors_per_generation;
 
 		std::vector<std::string> output_nodes;
 		for (const std::vector<std::string>& output_nodes_vec : model_trainer.getOutputNodes())
@@ -602,9 +624,9 @@ namespace SmartPeak
 
 		// generate the input/output data for validation		
 		std::cout << "Generating the input/output data for validation..." << std::endl;
-		Eigen::Tensor<float, 4> input_data_validation(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)input_nodes.size(), model_trainer.getNEpochsValidation());
-		Eigen::Tensor<float, 4> output_data_validation(model_trainer.getBatchSize(), model_trainer.getMemorySize(),(int)output_nodes.size(), model_trainer.getNEpochsValidation());
-		Eigen::Tensor<float, 3> time_steps_validation(model_trainer.getBatchSize(), model_trainer.getMemorySize(), model_trainer.getNEpochsValidation());
+		Eigen::Tensor<TensorT, 4> input_data_validation(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)input_nodes.size(), model_trainer.getNEpochsValidation());
+		Eigen::Tensor<TensorT, 4> output_data_validation(model_trainer.getBatchSize(), model_trainer.getMemorySize(),(int)output_nodes.size(), model_trainer.getNEpochsValidation());
+		Eigen::Tensor<TensorT, 3> time_steps_validation(model_trainer.getBatchSize(), model_trainer.getMemorySize(), model_trainer.getNEpochsValidation());
 		data_simulator.simulateValidationData(input_data_validation, output_data_validation, time_steps_validation);
 
 		// Population initial conditions
@@ -619,9 +641,9 @@ namespace SmartPeak
 
 			// Generate the input and output data for training [BUG FREE]
 			std::cout << "Generating the input/output data for training..." << std::endl;
-			Eigen::Tensor<float, 4> input_data_training(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)input_nodes.size(), model_trainer.getNEpochsTraining());
-			Eigen::Tensor<float, 4> output_data_training(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)output_nodes.size(), model_trainer.getNEpochsTraining());
-			Eigen::Tensor<float, 3> time_steps_training(model_trainer.getBatchSize(), model_trainer.getMemorySize(), model_trainer.getNEpochsTraining());
+			Eigen::Tensor<TensorT, 4> input_data_training(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)input_nodes.size(), model_trainer.getNEpochsTraining());
+			Eigen::Tensor<TensorT, 4> output_data_training(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)output_nodes.size(), model_trainer.getNEpochsTraining());
+			Eigen::Tensor<TensorT, 3> time_steps_training(model_trainer.getBatchSize(), model_trainer.getMemorySize(), model_trainer.getNEpochsTraining());
 			data_simulator.simulateTrainingData(input_data_training, output_data_training, time_steps_training);
 
 			// train the population
@@ -631,7 +653,7 @@ namespace SmartPeak
 
 			// select the top N from the population
 			std::cout << "Selecting the models..." << std::endl;
-			std::vector<std::pair<int, float>> models_validation_errors = selectModels(
+			std::vector<std::pair<int, TensorT>> models_validation_errors = selectModels(
 				models, model_trainer, model_logger,
 				input_data_validation, output_data_validation, time_steps_validation, input_nodes, n_threads);
 			models_validation_errors_per_generation.push_back(models_validation_errors);
@@ -652,19 +674,20 @@ namespace SmartPeak
 		return models_validation_errors_per_generation;
 	}
 
-	void PopulationTrainer::evaluateModels(
-		std::vector<Model>& models,
-		ModelTrainer & model_trainer,
-		ModelReplicator & model_replicator,
+	template<typename HDelT, typename DDelT, typename TensorT>
+	void PopulationTrainer<HDelT, DDelT, TensorT>::evaluateModels(
+		std::vector<Model<HDelT, DDelT, TensorT>>& models,
+		ModelTrainer<HDelT, DDelT, TensorT>& model_trainer,
+		ModelReplicator<HDelT, DDelT, TensorT>& model_replicator,
 		DataSimulator& data_simulator,
-		ModelLogger& model_logger,
+		ModelLogger<HDelT, DDelT, TensorT>& model_logger,
 		const std::vector<std::string>& input_nodes,
 		int n_threads)
 	{
 		// generate the input/output data for evaluation		
 		std::cout << "Generating the input/output data for evaluation..." << std::endl;
-		Eigen::Tensor<float, 4> input_data_evaluation(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)input_nodes.size(), model_trainer.getNEpochsEvaluation());
-		Eigen::Tensor<float, 3> time_steps_evaluation(model_trainer.getBatchSize(), model_trainer.getMemorySize(), model_trainer.getNEpochsEvaluation());
+		Eigen::Tensor<TensorT, 4> input_data_evaluation(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)input_nodes.size(), model_trainer.getNEpochsEvaluation());
+		Eigen::Tensor<TensorT, 3> time_steps_evaluation(model_trainer.getBatchSize(), model_trainer.getMemorySize(), model_trainer.getNEpochsEvaluation());
 		data_simulator.simulateEvaluationData(input_data_evaluation, time_steps_evaluation);
 
 		// Population initial conditions
@@ -676,23 +699,23 @@ namespace SmartPeak
 			input_data_evaluation, time_steps_evaluation, input_nodes, n_threads);
 	}
 
-  // float PopulationTrainer::calculateMean(std::vector<float> values)
+  // TensorT PopulationTrainer<HDelT, DDelT, TensorT>::calculateMean(std::vector<TensorT> values)
   // {
   //   if (values.empty())
   //     return 0;
   //   return std::accumulate(values.begin(), values.end(), 0.0) / values.size();
   // }
 
-  // float PopulationTrainer::calculateStdDev(std::vector<float> values)
+  // TensorT PopulationTrainer<HDelT, DDelT, TensorT>::calculateStdDev(std::vector<TensorT> values)
   // {
   //   if (numbers.size() <= 1u)
   //     return 0;
-  //   auto const add_square = [mean](float sum, float i)
+  //   auto const add_square = [mean](TensorT sum, TensorT i)
   //   {
   //     auto d = i - mean;
   //     return sum + d*d;
   //   };
-  //   float total = std::accumulate(numbers.begin(), numbers.end(), 0.0, add_square);
+  //   TensorT total = std::accumulate(numbers.begin(), numbers.end(), 0.0, add_square);
   //   return total / (numbers.size() - 1);
   // }
 
