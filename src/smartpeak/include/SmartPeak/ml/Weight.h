@@ -25,8 +25,8 @@ public:
     Weight(const Weight& other); ///< Copy constructor // [TODO: add test]
     Weight(const int& id); ///< Explicit constructor 
     Weight(const std::string& name); ///< Explicit constructor 
-    Weight(const int& id, const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver); ///< Explicit constructor 
-    Weight(const std::string& name, const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver); ///< Explicit constructor 
+    Weight(const int& id, const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver); ///< Explicit constructor 
+    Weight(const std::string& name, const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver); ///< Explicit constructor 
     ~Weight() = default; ///< Default destructor
 
     inline bool operator==(const Weight& other) const
@@ -83,11 +83,11 @@ public:
     TensorT getWeight() const; ///< weight getter
 		TensorT* getWeightMutable(); ///< weight getter
 
-    void setWeightInitOp(const std::shared_ptr<WeightInitOp>& weight_init); ///< weight initialization operator setter
-    WeightInitOp* getWeightInitOp() const; ///< weight initialization operator getter
+    void setWeightInitOp(const std::shared_ptr<WeightInitOp<TensorT>>& weight_init); ///< weight initialization operator setter
+    WeightInitOp<TensorT>* getWeightInitOp() const; ///< weight initialization operator getter
 
-    void setSolverOp(const std::shared_ptr<SolverOp>& solver); ///< weight update operator setter
-    SolverOp* getSolverOp() const; ///< weight update operator getter
+    void setSolverOp(const std::shared_ptr<SolverOp<TensorT>>& solver); ///< weight update operator setter
+    SolverOp<TensorT>* getSolverOp() const; ///< weight update operator getter
 
     void setWeightMin(const TensorT& weight_min); ///< min weight setter
     void setWeightMax(const TensorT& weight_max); ///< max weight setter
@@ -127,8 +127,8 @@ private:
 		int module_id_ = -1; ///< Module ID
 		std::string module_name_ = ""; ///<Module Name
     TensorT weight_ = 1.0; ///< Weight weight
-    std::shared_ptr<WeightInitOp> weight_init_; ///< weight initialization operator
-    std::shared_ptr<SolverOp> solver_; ///< weight update operator
+    std::shared_ptr<WeightInitOp<TensorT>> weight_init_; ///< weight initialization operator
+    std::shared_ptr<SolverOp<TensorT>> > solver_; ///< weight update operator
 
     TensorT weight_min_ = -1.0e6;
     TensorT weight_max_ = 1.0e6;

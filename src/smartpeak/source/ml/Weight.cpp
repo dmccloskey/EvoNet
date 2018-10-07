@@ -45,7 +45,7 @@ namespace SmartPeak
   }
 
 	template<typename TensorT>
-  Weight<TensorT>::Weight(const int& id, const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver):
+  Weight<TensorT>::Weight(const int& id, const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver):
     id_(id)
   {
     if (name_ == "")
@@ -57,7 +57,7 @@ namespace SmartPeak
   }
 
 	template<typename TensorT>
-  Weight<TensorT>::Weight(const std::string& name, const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver):
+  Weight<TensorT>::Weight(const std::string& name, const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver):
     name_(name)
   {
     setWeightInitOp(weight_init);
@@ -109,25 +109,25 @@ namespace SmartPeak
 	}
 
 	template<typename TensorT>
-  void Weight<TensorT>::setWeightInitOp(const std::shared_ptr<WeightInitOp>& weight_init)
+  void Weight<TensorT>::setWeightInitOp(const std::shared_ptr<WeightInitOp<TensorT>>& weight_init)
   {
     weight_init_.reset();
     weight_init_ = std::move(weight_init);
   }
 	template<typename TensorT>
-  WeightInitOp* Weight<TensorT>::getWeightInitOp() const
+  WeightInitOp<TensorT>* Weight<TensorT>::getWeightInitOp() const
   {
     return weight_init_.get();
   }
 
 	template<typename TensorT>
-  void Weight<TensorT>::setSolverOp(const std::shared_ptr<SolverOp>& solver)
+  void Weight<TensorT>::setSolverOp(const std::shared_ptr<SolverOp<TensorT>>& solver)
   {
     solver_.reset();
     solver_ = std::move(solver);
   }
 	template<typename TensorT>
-  SolverOp* Weight<TensorT>::getSolverOp() const
+  SolverOp<TensorT>* Weight<TensorT>::getSolverOp() const
   {
     return solver_.get();
   }
