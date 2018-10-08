@@ -16,7 +16,7 @@ namespace SmartPeak
   /**
     @brief Trains a vector of models
   */
-	template<typename HDelT, typename DDelT, typename TensorT>
+	template<typename TensorT>
   class PopulationTrainer
   {
 public:
@@ -38,7 +38,7 @@ public:
 
       @param[in, out] models The vector (i.e., population) of models to select from
     */ 
-    void removeDuplicateModels(std::vector<Model<HDelT, DDelT, TensorT>>& models);
+    void removeDuplicateModels(std::vector<Model<TensorT>>& models);
  
     /**
       @brief Select the top N models with the least error
@@ -56,9 +56,9 @@ public:
 			@returns a list of pairs of model_name to average validation error
     */ 
 		std::vector<std::pair<int, TensorT>> selectModels(
-      std::vector<Model<HDelT, DDelT, TensorT>>& models,
-      ModelTrainer<HDelT, DDelT, TensorT>& model_trainer,
-			ModelLogger<HDelT, DDelT, TensorT>& model_logger,
+      std::vector<Model<TensorT>>& models,
+      ModelTrainer<TensorT>& model_trainer,
+			ModelLogger<TensorT>& model_logger,
       const Eigen::Tensor<TensorT, 4>& input,
       const Eigen::Tensor<TensorT, 4>& output,
       const Eigen::Tensor<TensorT, 3>& time_steps,
@@ -71,9 +71,9 @@ public:
       @returns key value pair of model_name and model_error
     */ 
     static std::pair<int, TensorT> validateModel_(
-      Model<HDelT, DDelT, TensorT>* model,
-      ModelTrainer<HDelT, DDelT, TensorT>* model_trainer,
-			ModelLogger<HDelT, DDelT, TensorT>* model_logger,
+      Model<TensorT>* model,
+      ModelTrainer<TensorT>* model_trainer,
+			ModelLogger<TensorT>* model_logger,
       const Eigen::Tensor<TensorT, 4>& input,
       const Eigen::Tensor<TensorT, 4>& output,
       const Eigen::Tensor<TensorT, 3>& time_steps,
@@ -114,14 +114,14 @@ public:
       @returns A vector of models
     */ 
     void replicateModels(
-      std::vector<Model<HDelT, DDelT, TensorT>>& models,
-      ModelReplicator<HDelT, DDelT, TensorT>& model_replicator,
+      std::vector<Model<TensorT>>& models,
+      ModelReplicator<TensorT>& model_replicator,
       std::string unique_str = "",
       int n_threads = 1);
 
     static Model replicateModel_(
-      Model<HDelT, DDelT, TensorT>* model,
-      ModelReplicator<HDelT, DDelT, TensorT>* model_replicator,
+      Model<TensorT>* model,
+      ModelReplicator<TensorT>* model_replicator,
       std::string unique_str, int cnt);
  
     /**
@@ -134,19 +134,19 @@ public:
       @param[in] model_trainer The trainer to use
     */ 
     void trainModels(
-      std::vector<Model<HDelT, DDelT, TensorT>>& models,
-      ModelTrainer<HDelT, DDelT, TensorT>& model_trainer,
-			ModelLogger<HDelT, DDelT, TensorT>& model_logger,
+      std::vector<Model<TensorT>>& models,
+      ModelTrainer<TensorT>& model_trainer,
+			ModelLogger<TensorT>& model_logger,
       const Eigen::Tensor<TensorT, 4>& input,
       const Eigen::Tensor<TensorT, 4>& output,
       const Eigen::Tensor<TensorT, 3>& time_steps,
       const std::vector<std::string>& input_nodes,
       int n_threads = 1);
 
-    static std::pair<bool, Model<HDelT, DDelT, TensorT>> trainModel_(
-      Model<HDelT, DDelT, TensorT>* model,
-      ModelTrainer<HDelT, DDelT, TensorT>* model_trainer,
-			ModelLogger<HDelT, DDelT, TensorT>* model_logger,
+    static std::pair<bool, Model<TensorT>> trainModel_(
+      Model<TensorT>* model,
+      ModelTrainer<TensorT>* model_trainer,
+			ModelLogger<TensorT>* model_logger,
       const Eigen::Tensor<TensorT, 4>& input,
       const Eigen::Tensor<TensorT, 4>& output,
       const Eigen::Tensor<TensorT, 3>& time_steps,
@@ -162,18 +162,18 @@ public:
 			@param[in] model_trainer The trainer to use
 		*/
 		void evalModels(
-			std::vector<Model<HDelT, DDelT, TensorT>>& models,
-			ModelTrainer<HDelT, DDelT, TensorT>& model_trainer,
-			ModelLogger<HDelT, DDelT, TensorT>& model_logger,
+			std::vector<Model<TensorT>>& models,
+			ModelTrainer<TensorT>& model_trainer,
+			ModelLogger<TensorT>& model_logger,
 			const Eigen::Tensor<TensorT, 4>& input,
 			const Eigen::Tensor<TensorT, 3>& time_steps,
 			const std::vector<std::string>& input_nodes,
 			int n_threads = 1);
 
 		static bool evalModel_(
-			Model<HDelT, DDelT, TensorT>* model,
-			ModelTrainer<HDelT, DDelT, TensorT>* model_trainer,
-			ModelLogger<HDelT, DDelT, TensorT>* model_logger,
+			Model<TensorT>* model,
+			ModelTrainer<TensorT>* model_trainer,
+			ModelLogger<TensorT>* model_logger,
 			const Eigen::Tensor<TensorT, 4>& input,
 			const Eigen::Tensor<TensorT, 3>& time_steps,
 			const std::vector<std::string>& input_nodes);
@@ -190,11 +190,11 @@ public:
 		@param[in] data_simulator The data simulate/generator to use
 		*/
 		std::vector<std::vector<std::pair<int, TensorT>>> evolveModels(
-			std::vector<Model<HDelT, DDelT, TensorT>>& models,
-			ModelTrainer<HDelT, DDelT, TensorT>& model_trainer,
-			ModelReplicator<HDelT, DDelT, TensorT>& model_replicator,
+			std::vector<Model<TensorT>>& models,
+			ModelTrainer<TensorT>& model_trainer,
+			ModelReplicator<TensorT>& model_replicator,
 			DataSimulator& data_simulator,
-			ModelLogger<HDelT, DDelT, TensorT>& model_logger,
+			ModelLogger<TensorT>& model_logger,
 			const std::vector<std::string>& input_nodes,
 			int n_threads = 1);
 
@@ -207,11 +207,11 @@ public:
 		@param[in] data_simulator The data simulate/generator to use
 		*/
 		void evaluateModels(
-			std::vector<Model<HDelT, DDelT, TensorT>>& models,
-			ModelTrainer<HDelT, DDelT, TensorT>& model_trainer,
-			ModelReplicator<HDelT, DDelT, TensorT>& model_replicator,
+			std::vector<Model<TensorT>>& models,
+			ModelTrainer<TensorT>& model_trainer,
+			ModelReplicator<TensorT>& model_replicator,
 			DataSimulator& data_simulator,
-			ModelLogger<HDelT, DDelT, TensorT>& model_logger,
+			ModelLogger<TensorT>& model_logger,
 			const std::vector<std::string>& input_nodes,
 			int n_threads = 1);
 
@@ -225,7 +225,7 @@ public:
 		*/
 		virtual void adaptivePopulationScheduler(
 			const int& n_generations,
-			std::vector<Model<HDelT, DDelT, TensorT>>& models,
+			std::vector<Model<TensorT>>& models,
 			std::vector<std::vector<std::pair<int, TensorT>>>& models_errors_per_generations) = 0;
 
 private:

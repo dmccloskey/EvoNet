@@ -128,7 +128,7 @@ private:
 		std::string module_name_ = ""; ///<Module Name
     TensorT weight_ = 1.0; ///< Weight weight
     std::shared_ptr<WeightInitOp<TensorT>> weight_init_; ///< weight initialization operator
-    std::shared_ptr<SolverOp<TensorT>> > solver_; ///< weight update operator
+    std::shared_ptr<SolverOp<TensorT>> solver_; ///< weight update operator
 
     TensorT weight_min_ = -1.0e6;
     TensorT weight_max_ = 1.0e6;

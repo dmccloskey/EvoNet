@@ -17,7 +17,7 @@ namespace SmartPeak
   /**
     @brief NodeFile
   */
-	template<typename HDelT, typename DDelT, typename TensorT>
+	template<typename TensorT>
   class NodeFile
   {
 public:
@@ -32,8 +32,8 @@ public:
 
       @returns Status True on success, False if not
     */ 
-    bool loadNodesBinary(const std::string& filename, std::vector<Node<HDelT, DDelT, TensorT>>& nodes);
-    bool loadNodesCsv(const std::string& filename, std::vector<Node<HDelT, DDelT, TensorT>>& nodes);
+    bool loadNodesBinary(const std::string& filename, std::vector<Node<TensorT>>& nodes);
+    bool loadNodesCsv(const std::string& filename, std::vector<Node<TensorT>>& nodes);
  
     /**
       @brief Load nodes from file
@@ -43,8 +43,8 @@ public:
 
       @returns Status True on success, False if not
     */ 
-    bool storeNodesBinary(const std::string& filename, const std::vector<Node<HDelT, DDelT, TensorT>>& nodes);
-    bool storeNodesCsv(const std::string& filename, const std::vector<Node<HDelT, DDelT, TensorT>>& nodes);
+    bool storeNodesBinary(const std::string& filename, const std::vector<Node<TensorT>>& nodes);
+    bool storeNodesCsv(const std::string& filename, const std::vector<Node<TensorT>>& nodes);
   };
 }
 

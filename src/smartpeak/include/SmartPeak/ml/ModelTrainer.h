@@ -15,7 +15,7 @@ namespace SmartPeak
   /**
     @brief Class to train a network model
   */
-	template<typename HDelT, typename DDelT, typename TensorT>
+	template<typename TensorT>
   class ModelTrainer
   {
 public:
@@ -109,12 +109,12 @@ public:
 
       @returns vector of average model error scores
     */ 
-		std::vector<TensorT> trainModel(Model<HDelT, DDelT, TensorT>& model,
+		std::vector<TensorT> trainModel(Model<TensorT>& model,
 			const Eigen::Tensor<TensorT, 4>& input,
 			const Eigen::Tensor<TensorT, 4>& output,
 			const Eigen::Tensor<TensorT, 3>& time_steps,
 			const std::vector<std::string>& input_nodes,
-			ModelLogger<HDelT, DDelT, TensorT>& model_logger);
+			ModelLogger<TensorT>& model_logger);
  
     /**
       @brief Entry point for users to code their script
@@ -128,12 +128,12 @@ public:
 
       @returns vector of average model error scores
     */ 
-		std::vector<TensorT> validateModel(Model<HDelT, DDelT, TensorT>& model,
+		std::vector<TensorT> validateModel(Model<TensorT>& model,
 			const Eigen::Tensor<TensorT, 4>& input,
 			const Eigen::Tensor<TensorT, 4>& output,
 			const Eigen::Tensor<TensorT, 3>& time_steps,
 			const std::vector<std::string>& input_nodes,
-			ModelLogger<HDelT, DDelT, TensorT>& model_logger);
+			ModelLogger<TensorT>& model_logger);
 
 		/**
 			@brief Entry point for users to code their script
@@ -146,11 +146,11 @@ public:
 
 			@returns vector of vectors corresponding to output nodes
 		*/
-		std::vector<std::vector<Eigen::Tensor<TensorT, 2>>> evaluateModel(Model<HDelT, DDelT, TensorT>& model,
+		std::vector<std::vector<Eigen::Tensor<TensorT, 2>>> evaluateModel(Model<TensorT>& model,
 			const Eigen::Tensor<TensorT, 4>& input,
 			const Eigen::Tensor<TensorT, 3>& time_steps,
 			const std::vector<std::string>& input_nodes,
-			ModelLogger<HDelT, DDelT, TensorT>& model_logger);
+			ModelLogger<TensorT>& model_logger);
  
     /**
       @brief Entry point for users to code their script
@@ -173,7 +173,7 @@ public:
 		virtual void adaptiveTrainerScheduler(
 			const int& n_generations,
 			const int& n_epochs,
-			Model<HDelT, DDelT, TensorT>& model,
+			Model<TensorT>& model,
 			const std::vector<TensorT>& model_errors) = 0;
 
 private:

@@ -6,11 +6,11 @@
 
 namespace SmartPeak
 {
-	template<typename HDelT, typename DDelT, typename TensorT>
-  bool NodeFile<HDelT, DDelT, TensorT>::loadNodesBinary(const std::string& filename, std::vector<Node<HDelT, DDelT, TensorT>>& nodes) { return true; }
+	template<typename TensorT>
+  bool NodeFile<TensorT>::loadNodesBinary(const std::string& filename, std::vector<Node<TensorT>>& nodes) { return true; }
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-  bool NodeFile<HDelT, DDelT, TensorT>::loadNodesCsv(const std::string& filename, std::vector<Node<HDelT, DDelT, TensorT>>& nodes)
+	template<typename TensorT>
+  bool NodeFile<TensorT>::loadNodesCsv(const std::string& filename, std::vector<Node<TensorT>>& nodes)
   {
     nodes.clear();
 
@@ -77,18 +77,18 @@ namespace SmartPeak
 			else if (node_integration_weight_grad_str == "MaxWeightGradOp") node_integration_weight_grad.reset(new MaxWeightGradOp<TensorT>());
 			else std::cout << "NodeIntegrationWeightGrad for node_name " << node_name << " was not recognized." << std::endl;
 
-      Node<HDelT, DDelT, TensorT> node(node_name, node_type, node_status, node_activation, node_activation_grad, node_integration, node_integration_error, node_integration_weight_grad);
+      Node<TensorT> node(node_name, node_type, node_status, node_activation, node_activation_grad, node_integration, node_integration_error, node_integration_weight_grad);
 			node.setModuleName(module_name_str);
       nodes.push_back(node);
     }
 	return true;
   }
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-  bool NodeFile<HDelT, DDelT, TensorT>::storeNodesBinary(const std::string& filename, const std::vector<Node<HDelT, DDelT, TensorT>>& nodes) { return true; }
+	template<typename TensorT>
+  bool NodeFile<TensorT>::storeNodesBinary(const std::string& filename, const std::vector<Node<TensorT>>& nodes) { return true; }
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-  bool NodeFile<HDelT, DDelT, TensorT>::storeNodesCsv(const std::string& filename, const std::vector<Node<HDelT, DDelT, TensorT>>& nodes)
+	template<typename TensorT>
+  bool NodeFile<TensorT>::storeNodesCsv(const std::string& filename, const std::vector<Node<TensorT>>& nodes)
   {
     CSVWriter csvwriter(filename);
 

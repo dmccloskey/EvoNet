@@ -4,160 +4,160 @@
 
 namespace SmartPeak
 {
-	template<typename HDelT, typename DDelT, typename TensorT>
-  void ModelTrainer<HDelT, DDelT, TensorT>::setBatchSize(const int& batch_size)
+	template<typename TensorT>
+  void ModelTrainer<TensorT>::setBatchSize(const int& batch_size)
   {
     batch_size_ = batch_size;
   }
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-  void ModelTrainer<HDelT, DDelT, TensorT>::setMemorySize(const int& memory_size)
+	template<typename TensorT>
+  void ModelTrainer<TensorT>::setMemorySize(const int& memory_size)
   {
     memory_size_ = memory_size;    
   }
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-  void ModelTrainer<HDelT, DDelT, TensorT>::setNEpochsTraining(const int& n_epochs)
+	template<typename TensorT>
+  void ModelTrainer<TensorT>::setNEpochsTraining(const int& n_epochs)
   {
     n_epochs_training_ = n_epochs;    
   }
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-	void ModelTrainer<HDelT, DDelT, TensorT>::setNEpochsValidation(const int & n_epochs)
+	template<typename TensorT>
+	void ModelTrainer<TensorT>::setNEpochsValidation(const int & n_epochs)
 	{
 		n_epochs_validation_ = n_epochs;
 	}
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-	void ModelTrainer<HDelT, DDelT, TensorT>::setNEpochsEvaluation(const int & n_epochs)
+	template<typename TensorT>
+	void ModelTrainer<TensorT>::setNEpochsEvaluation(const int & n_epochs)
 	{
 		n_epochs_evaluation_ = n_epochs;
 	}
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-	void ModelTrainer<HDelT, DDelT, TensorT>::setNThreads(const int & n_threads)
+	template<typename TensorT>
+	void ModelTrainer<TensorT>::setNThreads(const int & n_threads)
 	{
 		n_threads_ = n_threads;
 	}
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-	void ModelTrainer<HDelT, DDelT, TensorT>::setVerbosityLevel(const int & verbosity_level)
+	template<typename TensorT>
+	void ModelTrainer<TensorT>::setVerbosityLevel(const int & verbosity_level)
 	{
 		verbosity_level_ = verbosity_level;
 	}
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-	void ModelTrainer<HDelT, DDelT, TensorT>::setLogging(bool log_training, bool log_validation, bool log_evaluation)
+	template<typename TensorT>
+	void ModelTrainer<TensorT>::setLogging(bool log_training, bool log_validation, bool log_evaluation)
 	{
 		log_training_ = log_training;
 		log_validation_ = log_validation;
 		log_evaluation_ = log_evaluation;
 	}
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-	void ModelTrainer<HDelT, DDelT, TensorT>::setLossFunctions(const std::vector<std::shared_ptr<LossFunctionOp<TensorT>>>& loss_functions)
+	template<typename TensorT>
+	void ModelTrainer<TensorT>::setLossFunctions(const std::vector<std::shared_ptr<LossFunctionOp<TensorT>>>& loss_functions)
 	{
 		loss_functions_ = loss_functions;
 	}
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-	void ModelTrainer<HDelT, DDelT, TensorT>::setLossFunctionGrads(const std::vector<std::shared_ptr<LossFunctionGradOp<TensorT>>>& loss_function_grads)
+	template<typename TensorT>
+	void ModelTrainer<TensorT>::setLossFunctionGrads(const std::vector<std::shared_ptr<LossFunctionGradOp<TensorT>>>& loss_function_grads)
 	{
 		loss_function_grads_ = loss_function_grads;
 	}
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-	void ModelTrainer<HDelT, DDelT, TensorT>::setOutputNodes(const std::vector<std::vector<std::string>>& output_nodes)
+	template<typename TensorT>
+	void ModelTrainer<TensorT>::setOutputNodes(const std::vector<std::vector<std::string>>& output_nodes)
 	{
 		output_nodes_ = output_nodes;
 	}
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-	void ModelTrainer<HDelT, DDelT, TensorT>::setNTBPTTSteps(const int & n_TBPTT)
+	template<typename TensorT>
+	void ModelTrainer<TensorT>::setNTBPTTSteps(const int & n_TBPTT)
 	{
 		n_TBPTT_steps_ = n_TBPTT;
 	}
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-	void ModelTrainer<HDelT, DDelT, TensorT>::setNTETTSteps(const int & n_TETT)
+	template<typename TensorT>
+	void ModelTrainer<TensorT>::setNTETTSteps(const int & n_TETT)
 	{
 		n_TETT_steps_ = n_TETT;
 	}
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-  int ModelTrainer<HDelT, DDelT, TensorT>::getBatchSize() const
+	template<typename TensorT>
+  int ModelTrainer<TensorT>::getBatchSize() const
   {
     return batch_size_;
   }
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-  int ModelTrainer<HDelT, DDelT, TensorT>::getMemorySize() const
+	template<typename TensorT>
+  int ModelTrainer<TensorT>::getMemorySize() const
   {
     return memory_size_;
   }
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-  int ModelTrainer<HDelT, DDelT, TensorT>::getNEpochsTraining() const
+	template<typename TensorT>
+  int ModelTrainer<TensorT>::getNEpochsTraining() const
   {
     return n_epochs_training_;
   }
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-	int ModelTrainer<HDelT, DDelT, TensorT>::getNEpochsValidation() const
+	template<typename TensorT>
+	int ModelTrainer<TensorT>::getNEpochsValidation() const
 	{
 		return n_epochs_validation_;
 	}
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-	int ModelTrainer<HDelT, DDelT, TensorT>::getNEpochsEvaluation() const
+	template<typename TensorT>
+	int ModelTrainer<TensorT>::getNEpochsEvaluation() const
 	{
 		return n_epochs_evaluation_;
 	}
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-	int ModelTrainer<HDelT, DDelT, TensorT>::getNThreads() const
+	template<typename TensorT>
+	int ModelTrainer<TensorT>::getNThreads() const
 	{
 		return n_threads_;
 	}
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-	int ModelTrainer<HDelT, DDelT, TensorT>::getVerbosityLevel() const
+	template<typename TensorT>
+	int ModelTrainer<TensorT>::getVerbosityLevel() const
 	{
 		return verbosity_level_;
 	}
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-	std::vector<std::shared_ptr<LossFunctionOp<TensorT>>> ModelTrainer<HDelT, DDelT, TensorT>::getLossFunctions()
+	template<typename TensorT>
+	std::vector<std::shared_ptr<LossFunctionOp<TensorT>>> ModelTrainer<TensorT>::getLossFunctions()
 	{
 		return loss_functions_;
 	}
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-	std::vector<std::shared_ptr<LossFunctionGradOp<TensorT>>> ModelTrainer<HDelT, DDelT, TensorT>::getLossFunctionGrads()
+	template<typename TensorT>
+	std::vector<std::shared_ptr<LossFunctionGradOp<TensorT>>> ModelTrainer<TensorT>::getLossFunctionGrads()
 	{
 		return loss_function_grads_;
 	}
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-	std::vector<std::vector<std::string>> ModelTrainer<HDelT, DDelT, TensorT>::getOutputNodes()
+	template<typename TensorT>
+	std::vector<std::vector<std::string>> ModelTrainer<TensorT>::getOutputNodes()
 	{
 		return output_nodes_;
 	}
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-	int ModelTrainer<HDelT, DDelT, TensorT>::getNTBPTTSteps() const
+	template<typename TensorT>
+	int ModelTrainer<TensorT>::getNTBPTTSteps() const
 	{
 		return n_TBPTT_steps_;
 	}
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-	int ModelTrainer<HDelT, DDelT, TensorT>::getNTETTSteps() const
+	template<typename TensorT>
+	int ModelTrainer<TensorT>::getNTETTSteps() const
 	{
 		return n_TETT_steps_;
 	}
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-  bool ModelTrainer<HDelT, DDelT, TensorT>::checkInputData(const int& n_epochs,
+	template<typename TensorT>
+  bool ModelTrainer<TensorT>::checkInputData(const int& n_epochs,
     const Eigen::Tensor<TensorT, 4>& input,
     const int& batch_size,
     const int& memory_size,
@@ -189,8 +189,8 @@ namespace SmartPeak
     }
   }
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-  bool ModelTrainer<HDelT, DDelT, TensorT>::checkOutputData(const int& n_epochs,
+	template<typename TensorT>
+  bool ModelTrainer<TensorT>::checkOutputData(const int& n_epochs,
     const Eigen::Tensor<TensorT, 4>& output,
     const int& batch_size,
 		const int& memory_size,
@@ -222,8 +222,8 @@ namespace SmartPeak
 		}
   }
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-	bool ModelTrainer<HDelT, DDelT, TensorT>::checkTimeSteps(const int & n_epochs, const Eigen::Tensor<TensorT, 3>& time_steps, const int & batch_size, const int & memory_size)
+	template<typename TensorT>
+	bool ModelTrainer<TensorT>::checkTimeSteps(const int & n_epochs, const Eigen::Tensor<TensorT, 3>& time_steps, const int & batch_size, const int & memory_size)
 	{
 		if (time_steps.dimension(0) != batch_size)
 		{
@@ -246,10 +246,10 @@ namespace SmartPeak
 		}
 	}
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-	std::vector<TensorT> ModelTrainer<HDelT, DDelT, TensorT>::trainModel(Model<HDelT, DDelT, TensorT>& model, const Eigen::Tensor<TensorT, 4>& input, const Eigen::Tensor<TensorT, 4>& output, const Eigen::Tensor<TensorT, 3>& time_steps, 
+	template<typename TensorT>
+	std::vector<TensorT> ModelTrainer<TensorT>::trainModel(Model<TensorT>& model, const Eigen::Tensor<TensorT, 4>& input, const Eigen::Tensor<TensorT, 4>& output, const Eigen::Tensor<TensorT, 3>& time_steps, 
 		const std::vector<std::string>& input_nodes,
-		ModelLogger<HDelT, DDelT, TensorT>& model_logger)
+		ModelLogger<TensorT>& model_logger)
 	{
 		std::vector<TensorT> model_error;
 
@@ -367,10 +367,10 @@ namespace SmartPeak
 		return model_error;
 	}
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-	std::vector<TensorT> ModelTrainer<HDelT, DDelT, TensorT>::validateModel(Model<HDelT, DDelT, TensorT>& model, const Eigen::Tensor<TensorT, 4>& input, const Eigen::Tensor<TensorT, 4>& output, const Eigen::Tensor<TensorT, 3>& time_steps,
+	template<typename TensorT>
+	std::vector<TensorT> ModelTrainer<TensorT>::validateModel(Model<TensorT>& model, const Eigen::Tensor<TensorT, 4>& input, const Eigen::Tensor<TensorT, 4>& output, const Eigen::Tensor<TensorT, 3>& time_steps,
 		const std::vector<std::string>& input_nodes,
-		ModelLogger<HDelT, DDelT, TensorT>& model_logger)
+		ModelLogger<TensorT>& model_logger)
 	{
 		std::vector<TensorT> model_error;
 
@@ -458,9 +458,9 @@ namespace SmartPeak
 		return model_error;
 	}
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-	std::vector<std::vector<Eigen::Tensor<TensorT, 2>>> ModelTrainer<HDelT, DDelT, TensorT>::evaluateModel(Model<HDelT, DDelT, TensorT>& model, const Eigen::Tensor<TensorT, 4>& input, const Eigen::Tensor<TensorT, 3>& time_steps, const std::vector<std::string>& input_nodes,
-		ModelLogger<HDelT, DDelT, TensorT>& model_logger)
+	template<typename TensorT>
+	std::vector<std::vector<Eigen::Tensor<TensorT, 2>>> ModelTrainer<TensorT>::evaluateModel(Model<TensorT>& model, const Eigen::Tensor<TensorT, 4>& input, const Eigen::Tensor<TensorT, 3>& time_steps, const std::vector<std::string>& input_nodes,
+		ModelLogger<TensorT>& model_logger)
 	{
 		std::vector<std::vector<Eigen::Tensor<TensorT, 2>>> model_output;
 

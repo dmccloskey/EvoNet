@@ -37,7 +37,7 @@ BOOST_AUTO_TEST_CASE(constructor2)
 
   // ID and attributes
   std::shared_ptr<WeightInitOp<float>> weight_init(new ConstWeightInitOp<float>(2.0));
-  std::shared_ptr<SolverOp> solver(new SGDOp(0.01, 0.9));
+  std::shared_ptr<SolverOp<float>> solver(new SGDOp<float>(0.01, 0.9));
   // ConstWeightInitOp<float> weight_init(2.0);
   // SGDOp solver(0.01, 0.9);
   weight = Weight<float>(1, weight_init, solver);
@@ -82,7 +82,7 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
 
 	// Check shared_ptr setters and getters
   std::shared_ptr<WeightInitOp<float>> weight_init(new ConstWeightInitOp<float>(2.0));
-  std::shared_ptr<SolverOp> solver(new SGDOp(0.01, 0.9));
+  std::shared_ptr<SolverOp<float>> solver(new SGDOp<float>(0.01, 0.9));
 
   weight.setWeightInitOp(weight_init);
   weight.setSolverOp(solver);
@@ -113,7 +113,7 @@ BOOST_AUTO_TEST_CASE(updateWeight)
   Weight<float> weight;
   weight.setId(1);
   weight.setWeight(1.0);
-  std::shared_ptr<SolverOp> solver(new SGDOp(0.01, 0.9));
+  std::shared_ptr<SolverOp<float>> solver(new SGDOp<float>(0.01, 0.9));
   // SGDOp solver(0.01, 0.9);
   weight.setSolverOp(solver);
   weight.updateWeight(2.0);
@@ -126,7 +126,7 @@ BOOST_AUTO_TEST_CASE(updateWeightWithDropConnection)
 	weight.setId(1);
 	weight.setWeight(1.0);
 	weight.setDropProbability(1.0f);
-	std::shared_ptr<SolverOp> solver(new SGDOp(0.01, 0.9));
+	std::shared_ptr<SolverOp<float>> solver(new SGDOp<float>(0.01, 0.9));
 	// SGDOp solver(0.01, 0.9);
 	weight.setSolverOp(solver);
 	weight.updateWeight(2.0);
@@ -146,7 +146,7 @@ BOOST_AUTO_TEST_CASE(checkWeight)
   weight.setWeight(3.0);
   BOOST_CHECK_EQUAL(weight.getWeight(), 2.0);
 
-  std::shared_ptr<SolverOp> solver(new SGDOp(0.01, 0.9));
+  std::shared_ptr<SolverOp<float>> solver(new SGDOp<float>(0.01, 0.9));
   // SGDOp solver(0.01, 0.9);
   weight.setSolverOp(solver);
   weight.setWeightMin(1.0);

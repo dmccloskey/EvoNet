@@ -14,7 +14,7 @@ namespace SmartPeak
   /**
     @brief Replicates a model with or without modification (i.e., mutation)
   */
-	template<typename HDelT, typename DDelT, typename TensorT>
+	template<typename TensorT>
   class ModelReplicator
   {
 public:
@@ -70,7 +70,7 @@ public:
 
       @returns A baseline model
     */ 
-    Model<HDelT, DDelT, TensorT> makeBaselineModel(const int& n_input_nodes, const std::vector<int>& n_hidden_nodes_per_layer, const int& n_output_nodes,
+    Model<TensorT> makeBaselineModel(const int& n_input_nodes, const std::vector<int>& n_hidden_nodes_per_layer, const int& n_output_nodes,
 			const std::shared_ptr<ActivationOp<TensorT>>& hidden_node_activation, 
 			const std::shared_ptr<ActivationOp<TensorT>>& hidden_node_activation_grad,
 			const std::shared_ptr<IntegrationOp<TensorT>>& hidden_node_integration,
@@ -81,7 +81,7 @@ public:
 			const std::shared_ptr<IntegrationOp<TensorT>>& output_node_integration,
 			const std::shared_ptr<IntegrationErrorOp<TensorT>>& output_node_integration_error,
 			const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& output_node_integration_weight_grad,
-      const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver,
+      const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver,
 			const std::shared_ptr<LossFunctionOp<TensorT>>& loss_function, const std::shared_ptr<LossFunctionGradOp<TensorT>>& loss_function_grad,
 			std::string unique_str = "");
  
@@ -90,7 +90,7 @@ public:
 
       @param[in, out] model The model to modify
     */ 
-    void modifyModel(Model<HDelT, DDelT, TensorT>& model, std::string unique_str = "");
+    void modifyModel(Model<TensorT>& model, std::string unique_str = "");
  
     /**
       @brief Select nodes given a set of conditions
@@ -102,7 +102,7 @@ public:
       @returns A node name
     */ 
     std::vector<std::string> selectNodes(
-      const Model<HDelT, DDelT, TensorT>& model,
+      const Model<TensorT>& model,
       const std::vector<NodeType>& node_type_exclude,
       const std::vector<NodeType>& node_type_include);
 
@@ -116,7 +116,7 @@ public:
 		@returns A node name
 		*/
 		std::vector<std::string> selectModules(
-			const Model<HDelT, DDelT, TensorT>& model,
+			const Model<TensorT>& model,
 			const std::vector<NodeType>& node_type_exclude,
 			const std::vector<NodeType>& node_type_include);
  
@@ -133,14 +133,14 @@ public:
       @returns A node name
     */ 
     std::string selectRandomNode(
-      const Model<HDelT, DDelT, TensorT>& model,
+      const Model<TensorT>& model,
       const std::vector<NodeType>& node_type_exclude,
       const std::vector<NodeType>& node_type_include,
-      const Node<HDelT, DDelT, TensorT>& node, 
+      const Node<TensorT>& node, 
       const TensorT& distance_weight,
       const std::string& direction);
     std::string selectRandomNode(
-      const Model<HDelT, DDelT, TensorT>& model,
+      const Model<TensorT>& model,
       const std::vector<NodeType>& node_type_exclude,
       const std::vector<NodeType>& node_type_include);
  
@@ -157,14 +157,14 @@ public:
       @returns A link name
     */ 
     std::string selectRandomLink(
-      const Model<HDelT, DDelT, TensorT>& model,
+      const Model<TensorT>& model,
       const std::vector<NodeType>& source_node_type_exclude,
       const std::vector<NodeType>& source_node_type_include,
       const std::vector<NodeType>& sink_node_type_exclude,
       const std::vector<NodeType>& sink_node_type_include,
       const std::string& direction);
     std::string selectRandomLink(
-      const Model<HDelT, DDelT, TensorT>& model,
+      const Model<TensorT>& model,
       const std::vector<NodeType>& source_node_type_exclude,
       const std::vector<NodeType>& source_node_type_include,
       const std::vector<NodeType>& sink_node_type_exclude,
@@ -178,7 +178,7 @@ public:
 		@returns A module name
 		*/
 		std::string selectRandomModule(
-			const Model<HDelT, DDelT, TensorT>& model,
+			const Model<TensorT>& model,
 			const std::vector<NodeType>& node_type_exclude,
 			const std::vector<NodeType>& node_type_include);
 		
@@ -187,7 +187,7 @@ public:
 
       @param[in, out] model The model
     */ 
-    void copyNode(Model<HDelT, DDelT, TensorT>& model);
+    void copyNode(Model<TensorT>& model);
 
     /**
       @brief Add node to the model (Layer injection up or down).
@@ -209,21 +209,21 @@ public:
 
       @param[in, out] model The model
     */ 
-    void addNode(Model<HDelT, DDelT, TensorT>& model, std::string unique_str = "");
+    void addNode(Model<TensorT>& model, std::string unique_str = "");
 
     /**
       @brief add link to the model
 
       @param[in, out] model The model
     */ 
-    void addLink(Model<HDelT, DDelT, TensorT>& model, std::string unique_str = "");
+    void addLink(Model<TensorT>& model, std::string unique_str = "");
 
 		/**
 		@brief Add a new module to the model
 
 		@param[in, out] model The model
 		*/
-		void addModule(Model<HDelT, DDelT, TensorT>& model, std::string unique_str = "");
+		void addModule(Model<TensorT>& model, std::string unique_str = "");
 
     /**
       @brief delete node to the model
@@ -231,7 +231,7 @@ public:
       @param[in, out] model The model
       @param[in] prune_iterations The number of model recursive prune iterations
     */ 
-    void deleteNode(Model<HDelT, DDelT, TensorT>& model, int prune_iterations = 1e6);
+    void deleteNode(Model<TensorT>& model, int prune_iterations = 1e6);
 
     /**
       @brief delete link to the model
@@ -239,7 +239,7 @@ public:
       @param[in, out] model The model
       @param[in] prune_iterations The number of model recursive prune iterations
     */ 
-    void deleteLink(Model<HDelT, DDelT, TensorT>& model, int prune_iterations = 1e6);
+    void deleteLink(Model<TensorT>& model, int prune_iterations = 1e6);
 
 		/**
 		@brief delete module in the model
@@ -247,28 +247,28 @@ public:
 		@param[in, out] model The model
 		@param[in] prune_iterations The number of model recursive prune iterations
 		*/
-		void deleteModule(Model<HDelT, DDelT, TensorT>& model, int prune_iterations = 1e6);
+		void deleteModule(Model<TensorT>& model, int prune_iterations = 1e6);
 
 		/**
 		@brief change node activation
 
 		@param[in, out] model The model
 		*/
-		void changeNodeActivation(Model<HDelT, DDelT, TensorT>& model, std::string unique_str = "");
+		void changeNodeActivation(Model<TensorT>& model, std::string unique_str = "");
 
 		/**
 		@brief change node integration
 
 		@param[in, out] model The model
 		*/
-		void changeNodeIntegration(Model<HDelT, DDelT, TensorT>& model, std::string unique_str = "");
+		void changeNodeIntegration(Model<TensorT>& model, std::string unique_str = "");
 
     /**
       @brief modify weights in the model
 
       @param[in, out] model The model
     */ 
-    void modifyWeight(Model<HDelT, DDelT, TensorT>& model);
+    void modifyWeight(Model<TensorT>& model);
 
     /**
       @brief Make a unique time stampped hash of the form
@@ -333,7 +333,7 @@ public:
 		*/
 		virtual void adaptiveReplicatorScheduler(
 			const int& n_generations,
-			std::vector<Model<HDelT, DDelT, TensorT>>& models,
+			std::vector<Model<TensorT>>& models,
 			std::vector<std::vector<std::pair<int, TensorT>>>& models_errors_per_generations) = 0;
 
 private:

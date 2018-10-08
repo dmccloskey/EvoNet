@@ -23,8 +23,8 @@ static std::mutex calculateOutputNodeError_mutex;
 namespace SmartPeak
 {
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-  Model<HDelT, DDelT, TensorT>::Model(const Model<HDelT, DDelT, TensorT>& other)
+	template<typename TensorT>
+  Model<TensorT>::Model(const Model<TensorT>& other)
   {
     id_ = other.id_;
     name_ = other.name_;
@@ -37,83 +37,83 @@ namespace SmartPeak
 		cyclic_pairs_ = other.cyclic_pairs_;
   }
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-  Model<HDelT, DDelT, TensorT>::Model(const int& id):
+	template<typename TensorT>
+  Model<TensorT>::Model(const int& id):
     id_(id)
   {
   }
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-  void Model<HDelT, DDelT, TensorT>::setId(const int& id)
+	template<typename TensorT>
+  void Model<TensorT>::setId(const int& id)
   {
     id_ = id;
   }
-	template<typename HDelT, typename DDelT, typename TensorT>
-  int Model<HDelT, DDelT, TensorT>::getId() const
+	template<typename TensorT>
+  int Model<TensorT>::getId() const
   {
     return id_;
   }
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-  void Model<HDelT, DDelT, TensorT>::setName(const std::string& name)
+	template<typename TensorT>
+  void Model<TensorT>::setName(const std::string& name)
   {
     name_ = name;    
   }
-	template<typename HDelT, typename DDelT, typename TensorT>
-  std::string Model<HDelT, DDelT, TensorT>::getName() const
+	template<typename TensorT>
+  std::string Model<TensorT>::getName() const
   {
     return name_;
   }
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-  void Model<HDelT, DDelT, TensorT>::setError(const Eigen::Tensor<TensorT, 2>& error)
+	template<typename TensorT>
+  void Model<TensorT>::setError(const Eigen::Tensor<TensorT, 2>& error)
   {
     error_ = error;
   }
-	template<typename HDelT, typename DDelT, typename TensorT>
-  Eigen::Tensor<TensorT, 2> Model<HDelT, DDelT, TensorT>::getError() const
+	template<typename TensorT>
+  Eigen::Tensor<TensorT, 2> Model<TensorT>::getError() const
   {
     return error_;
   }
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-  void Model<HDelT, DDelT, TensorT>::setLossFunction(const std::shared_ptr<LossFunctionOp<TensorT>>& loss_function)
+	template<typename TensorT>
+  void Model<TensorT>::setLossFunction(const std::shared_ptr<LossFunctionOp<TensorT>>& loss_function)
   {
 		loss_function_.reset();
 		loss_function_ = std::move(loss_function);
   }
-	template<typename HDelT, typename DDelT, typename TensorT>
-	LossFunctionOp<TensorT>* Model<HDelT, DDelT, TensorT>::getLossFunction() const
+	template<typename TensorT>
+	LossFunctionOp<TensorT>* Model<TensorT>::getLossFunction() const
   {
 		return loss_function_.get();
   }
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-	void Model<HDelT, DDelT, TensorT>::setLossFunctionGrad(const std::shared_ptr<LossFunctionGradOp<TensorT>>& loss_function)
+	template<typename TensorT>
+	void Model<TensorT>::setLossFunctionGrad(const std::shared_ptr<LossFunctionGradOp<TensorT>>& loss_function)
 	{
 		loss_function_grad_.reset();
 		loss_function_grad_ = std::move(loss_function);
 	}
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-	LossFunctionGradOp<TensorT>* Model<HDelT, DDelT, TensorT>::getLossFunctionGrad() const
+	template<typename TensorT>
+	LossFunctionGradOp<TensorT>* Model<TensorT>::getLossFunctionGrad() const
 	{
 		return loss_function_grad_.get();
 	}
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-	std::vector<std::shared_ptr<Node<HDelT, DDelT, TensorT>>> Model<HDelT, DDelT, TensorT>::getInputNodes()
+	template<typename TensorT>
+	std::vector<std::shared_ptr<Node<TensorT>>> Model<TensorT>::getInputNodes()
 	{
 		return input_nodes_;
 	}
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-	std::vector<std::shared_ptr<Node<HDelT, DDelT, TensorT>>> Model<HDelT, DDelT, TensorT>::getOutputNodes()
+	template<typename TensorT>
+	std::vector<std::shared_ptr<Node<TensorT>>> Model<TensorT>::getOutputNodes()
 	{
 		return output_nodes_;
 	}
-	template<typename HDelT, typename DDelT, typename TensorT>
-	std::vector<std::string> Model<HDelT, DDelT, TensorT>::getOutputNodeNames() const
+	template<typename TensorT>
+	std::vector<std::string> Model<TensorT>::getOutputNodeNames() const
 	{
 		std::vector<std::string> nodes;
 		for (const auto& node : output_nodes_)
@@ -123,13 +123,13 @@ namespace SmartPeak
 		return nodes;
 	}
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-  void Model<HDelT, DDelT, TensorT>::addNodes(const std::vector<Node<HDelT, DDelT, TensorT>>& nodes)
+	template<typename TensorT>
+  void Model<TensorT>::addNodes(const std::vector<Node<TensorT>>& nodes)
   { 
-    for (const Node<HDelT, DDelT, TensorT>& node: nodes)
+    for (const Node<TensorT>& node: nodes)
     {
-      std::shared_ptr<Node<HDelT, DDelT, TensorT>> node_ptr;
-      node_ptr.reset(new Node<HDelT, DDelT, TensorT>(node));
+      std::shared_ptr<Node<TensorT>> node_ptr;
+      node_ptr.reset(new Node<TensorT>(node));
       auto found = nodes_.emplace(node.getName(), node_ptr);
       if (!found.second)
       {
@@ -138,19 +138,19 @@ namespace SmartPeak
       }
 			else {
 				if (node.getType() == NodeType::input) {
-					std::shared_ptr<Node<HDelT, DDelT, TensorT>> node_ptr_cpy = node_ptr;
+					std::shared_ptr<Node<TensorT>> node_ptr_cpy = node_ptr;
 					input_nodes_.push_back(node_ptr_cpy);
 				}
 				else if (node.getType() == NodeType::output) {
-					std::shared_ptr<Node<HDelT, DDelT, TensorT>> node_ptr_cpy = node_ptr;
+					std::shared_ptr<Node<TensorT>> node_ptr_cpy = node_ptr;
 					output_nodes_.push_back(node_ptr);
 				}
 			}
     }
   }
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-  Node<HDelT, DDelT, TensorT> Model<HDelT, DDelT, TensorT>::getNode(const std::string& node_name) const
+	template<typename TensorT>
+  Node<TensorT> Model<TensorT>::getNode(const std::string& node_name) const
   {
     if (!nodes_.empty() && nodes_.count(node_name) != 0)
     {
@@ -163,10 +163,10 @@ namespace SmartPeak
     }
   }
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-  std::vector<Node<HDelT, DDelT, TensorT>> Model<HDelT, DDelT, TensorT>::getNodes() const
+	template<typename TensorT>
+  std::vector<Node<TensorT>> Model<TensorT>::getNodes() const
   {
-    std::vector<Node<HDelT, DDelT, TensorT>> nodes;
+    std::vector<Node<TensorT>> nodes;
     for (const auto& node: nodes_)
     {
       nodes.push_back(*node.second);
@@ -174,14 +174,14 @@ namespace SmartPeak
     return nodes;
   }
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-	std::map<std::string, std::shared_ptr<Node<HDelT, DDelT, TensorT>>> Model<HDelT, DDelT, TensorT>::getNodesMap()
+	template<typename TensorT>
+	std::map<std::string, std::shared_ptr<Node<TensorT>>> Model<TensorT>::getNodesMap()
 	{
 		return nodes_;
 	}
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-	std::map<std::string, std::vector<std::string>> Model<HDelT, DDelT, TensorT>::getModuleNodeNameMap() const
+	template<typename TensorT>
+	std::map<std::string, std::vector<std::string>> Model<TensorT>::getModuleNodeNameMap() const
 	{
 		std::map<std::string, std::vector<std::string>> module_to_node_names;
 		for (const auto& node_map : nodes_) {
@@ -194,8 +194,8 @@ namespace SmartPeak
 		return module_to_node_names;
 	}
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-  void Model<HDelT, DDelT, TensorT>::removeNodes(const std::vector<std::string>& node_names)
+	template<typename TensorT>
+  void Model<TensorT>::removeNodes(const std::vector<std::string>& node_names)
   { 
     for (const std::string& node_name: node_names)
     {
@@ -208,8 +208,8 @@ namespace SmartPeak
     // pruneLinks(); // Allow for dangling links
   }
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-  void Model<HDelT, DDelT, TensorT>::addWeights(const std::vector<Weight<TensorT>>& weights)
+	template<typename TensorT>
+  void Model<TensorT>::addWeights(const std::vector<Weight<TensorT>>& weights)
   { 
     for (const Weight& weight: weights)
     {
@@ -224,8 +224,8 @@ namespace SmartPeak
     }
   }
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-	Weight<TensorT> Model<HDelT, DDelT, TensorT>::getWeight(const std::string& weight_name) const
+	template<typename TensorT>
+	Weight<TensorT> Model<TensorT>::getWeight(const std::string& weight_name) const
   {
     if (!weights_.empty() && weights_.count(weight_name) != 0)
     {
@@ -239,8 +239,8 @@ namespace SmartPeak
     }
   }
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-  std::vector<Weight<TensorT>> Model<HDelT, DDelT, TensorT>::getWeights() const
+	template<typename TensorT>
+  std::vector<Weight<TensorT>> Model<TensorT>::getWeights() const
   {
     std::vector<Weight<TensorT>> weights;
     for (const auto& weight: weights_)
@@ -250,14 +250,14 @@ namespace SmartPeak
     return weights;
   }
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-	std::map<std::string, std::shared_ptr<Weight<TensorT>>> Model<HDelT, DDelT, TensorT>::getWeightsMap()
+	template<typename TensorT>
+	std::map<std::string, std::shared_ptr<Weight<TensorT>>> Model<TensorT>::getWeightsMap()
 	{
 		return weights_;
 	}
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-  void Model<HDelT, DDelT, TensorT>::removeWeights(const std::vector<std::string>& weight_names)
+	template<typename TensorT>
+  void Model<TensorT>::removeWeights(const std::vector<std::string>& weight_names)
   { 
     for (std::string const& weight_name: weight_names)
     {
@@ -270,8 +270,8 @@ namespace SmartPeak
     pruneLinks();
   }
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-  void Model<HDelT, DDelT, TensorT>::addLinks(const std::vector<Link>& links)
+	template<typename TensorT>
+  void Model<TensorT>::addLinks(const std::vector<Link>& links)
   { 
     for (const Link& link: links)
     {
@@ -286,8 +286,8 @@ namespace SmartPeak
     }
   }
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-  void Model<HDelT, DDelT, TensorT>::removeLinks(const std::vector<std::string>& link_names)
+	template<typename TensorT>
+  void Model<TensorT>::removeLinks(const std::vector<std::string>& link_names)
   { 
     for (const std::string& link_name: link_names)
     {
@@ -301,8 +301,8 @@ namespace SmartPeak
     //pruneWeights();  // testing
   }
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-  Link Model<HDelT, DDelT, TensorT>::getLink(const std::string& link_name) const
+	template<typename TensorT>
+  Link Model<TensorT>::getLink(const std::string& link_name) const
   {
     if (!links_.empty() && links_.count(link_name) != 0)
     {
@@ -315,8 +315,8 @@ namespace SmartPeak
     }
   }
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-  std::vector<Link> Model<HDelT, DDelT, TensorT>::getLinks() const
+	template<typename TensorT>
+  std::vector<Link> Model<TensorT>::getLinks() const
   {
     std::vector<Link> links;
     for (const auto& link: links_)
@@ -326,8 +326,8 @@ namespace SmartPeak
     return links;
   }
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-  bool Model<HDelT, DDelT, TensorT>::pruneNodes()
+	template<typename TensorT>
+  bool Model<TensorT>::pruneNodes()
   {
     std::vector<std::string> node_names;
     if (nodes_.empty()) { return false; }
@@ -358,8 +358,8 @@ namespace SmartPeak
       return false;  
   }
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-  bool Model<HDelT, DDelT, TensorT>::pruneWeights()
+	template<typename TensorT>
+  bool Model<TensorT>::pruneWeights()
   {
     std::vector<std::string> weight_names;
     if (weights_.empty()) { return false; }
@@ -389,8 +389,8 @@ namespace SmartPeak
       return false;     
   }
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-  bool Model<HDelT, DDelT, TensorT>::pruneLinks()
+	template<typename TensorT>
+  bool Model<TensorT>::pruneLinks()
   {
     std::vector<std::string> link_names;
     if (links_.empty()) { return false; }
@@ -436,8 +436,8 @@ namespace SmartPeak
       return false; 
   }
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-  void Model<HDelT, DDelT, TensorT>::pruneModel(int iterations)
+	template<typename TensorT>
+  void Model<TensorT>::pruneModel(int iterations)
   {
     try
     {
@@ -455,8 +455,8 @@ namespace SmartPeak
     }
   }
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-  void Model<HDelT, DDelT, TensorT>::initNodes(const int& batch_size, const int& memory_size, bool train)
+	template<typename TensorT>
+  void Model<TensorT>::initNodes(const int& batch_size, const int& memory_size, bool train)
   {
     for (auto& node_map : nodes_)
     {
@@ -464,16 +464,16 @@ namespace SmartPeak
     }
   }
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-	void Model<HDelT, DDelT, TensorT>::initError(const int & batch_size, const int & memory_size)
+	template<typename TensorT>
+	void Model<TensorT>::initError(const int & batch_size, const int & memory_size)
 	{
 		Eigen::Tensor<TensorT, 2> init_values(batch_size, memory_size);
 		init_values.setConstant(0.0f);
 		setError(init_values);
 	}
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-	std::pair<int, int> Model<HDelT, DDelT, TensorT>::getBatchAndMemorySizes() const
+	template<typename TensorT>
+	std::pair<int, int> Model<TensorT>::getBatchAndMemorySizes() const
 	{
 		int batch_size = 0;
 		int memory_size = 0;
@@ -485,8 +485,8 @@ namespace SmartPeak
 		return std::make_pair(batch_size, memory_size);
 	}
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-  void Model<HDelT, DDelT, TensorT>::initWeights()
+	template<typename TensorT>
+  void Model<TensorT>::initWeights()
   {
     for (auto& weight_map : weights_)
     {
@@ -494,8 +494,8 @@ namespace SmartPeak
     }
   }
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-	void Model<HDelT, DDelT, TensorT>::initWeightsDropProbability(bool train)
+	template<typename TensorT>
+	void Model<TensorT>::initWeightsDropProbability(bool train)
 	{
 		if (train)
 			for (auto& weight_map : weights_)
@@ -505,8 +505,8 @@ namespace SmartPeak
 				weight_map.second->setDrop(1.0f);
 	}
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-  void Model<HDelT, DDelT, TensorT>::mapValuesToNodes(
+	template<typename TensorT>
+  void Model<TensorT>::mapValuesToNodes(
     const Eigen::Tensor<TensorT, 1>& values,
     const int& memory_step,
     const NodeStatus& status_update,
@@ -536,8 +536,8 @@ namespace SmartPeak
     }
   }
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-  void Model<HDelT, DDelT, TensorT>::mapValuesToNodes(
+	template<typename TensorT>
+  void Model<TensorT>::mapValuesToNodes(
     const Eigen::Tensor<TensorT, 2>& values,
     const int& memory_step,
     const std::vector<std::string>& node_names,
@@ -593,8 +593,8 @@ namespace SmartPeak
     }
   }
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-  void Model<HDelT, DDelT, TensorT>::mapValuesToNode(
+	template<typename TensorT>
+  void Model<TensorT>::mapValuesToNode(
     const Eigen::Tensor<TensorT, 1>& values,
     const int& memory_step,
     const std::string& node_name,
@@ -653,8 +653,8 @@ namespace SmartPeak
 			nodes_.at(node_name)->setStatus(status_update);
   }
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-  void Model<HDelT, DDelT, TensorT>::mapValuesToNodes(
+	template<typename TensorT>
+  void Model<TensorT>::mapValuesToNodes(
     const Eigen::Tensor<TensorT, 3>& values,
     const std::vector<std::string>& node_names,
     const NodeStatus& status_update,
@@ -709,10 +709,10 @@ namespace SmartPeak
     }
   }
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-  void Model<HDelT, DDelT, TensorT>::getNextInactiveLayer(
+	template<typename TensorT>
+  void Model<TensorT>::getNextInactiveLayer(
       std::map<std::string, int>& FP_operations_map,
-      std::vector<OperationList<HDelT, DDelT, TensorT>>& FP_operations)
+      std::vector<OperationList<TensorT>>& FP_operations)
   {
 
     // get all links where the source node is active and the sink node is inactive
@@ -723,7 +723,7 @@ namespace SmartPeak
         nodes_.at(link_map.second->getSourceNodeName())->getStatus() == NodeStatus::activated && 
         nodes_.at(link_map.second->getSinkNodeName())->getStatus() == NodeStatus::initialized)
       {
-        OperationArguments<HDelT, DDelT, TensorT> arguments;
+        OperationArguments<TensorT> arguments;
 				//std::cout<<"Link source node name: "<< link_map.second->getSourceNodeName() <<std::endl
         arguments.source_node = nodes_.at(link_map.second->getSourceNodeName());
 				//std::cout << "Link weight name: " << link_map.second->getWeightName() << std::endl;
@@ -744,8 +744,8 @@ namespace SmartPeak
         }
         else
         {
-          OperationList<HDelT, DDelT, TensorT> operation_list;
-          OperationResult<HDelT, DDelT, TensorT> result;
+          OperationList<TensorT> operation_list;
+          OperationResult<TensorT> result;
           result.sink_node = nodes_.at(link_map.second->getSinkNodeName());
           operation_list.result = result;
           operation_list.arguments.push_back(arguments);
@@ -755,10 +755,10 @@ namespace SmartPeak
     }
   }
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-  void Model<HDelT, DDelT, TensorT>::getNextInactiveLayerBiases(
+	template<typename TensorT>
+  void Model<TensorT>::getNextInactiveLayerBiases(
     std::map<std::string, int>& FP_operations_map,
-    std::vector<OperationList<HDelT, DDelT, TensorT>>& FP_operations,
+    std::vector<OperationList<TensorT>>& FP_operations,
     std::vector<std::string>& sink_nodes_with_biases)
   {
 
@@ -777,7 +777,7 @@ namespace SmartPeak
         FP_operations_map.count(ops_key) != 0 // sink node has already been identified
       )
       {
-        OperationArguments<HDelT, DDelT, TensorT> arguments;
+        OperationArguments<TensorT> arguments;
         arguments.source_node = nodes_.at(link_map.second->getSourceNodeName());
         arguments.weight = weights_.at(link_map.second->getWeightName());
         arguments.time_step = 0;
@@ -791,10 +791,10 @@ namespace SmartPeak
     }
   }
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-  void Model<HDelT, DDelT, TensorT>::getNextInactiveLayerCycles(
+	template<typename TensorT>
+  void Model<TensorT>::getNextInactiveLayerCycles(
     std::map<std::string, int>& FP_operations_map,
-    std::vector<OperationList<HDelT, DDelT, TensorT>>& FP_operations,
+    std::vector<OperationList<TensorT>>& FP_operations,
     std::vector<std::string>& sink_nodes_with_cycles)
   {
 
@@ -811,7 +811,7 @@ namespace SmartPeak
         FP_operations_map.count(ops_key) != 0 // sink node has already been identified
       )
       {
-        OperationArguments<HDelT, DDelT, TensorT> arguments;
+        OperationArguments<TensorT> arguments;
         arguments.source_node = nodes_.at(link_map.second->getSourceNodeName());
         arguments.weight = weights_.at(link_map.second->getWeightName());
 
@@ -828,10 +828,10 @@ namespace SmartPeak
     }
   }
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-  bool Model<HDelT, DDelT, TensorT>::calculateNodeInput_(
-		OperationResult<HDelT, DDelT, TensorT>* result,
-    OperationArguments<HDelT, DDelT, TensorT>* arguments, 
+	template<typename TensorT>
+  bool Model<TensorT>::calculateNodeInput_(
+		OperationResult<TensorT>* result,
+    OperationArguments<TensorT>* arguments, 
     const int& batch_size,
     const int& memory_size,
     const int& time_step)
@@ -847,9 +847,9 @@ namespace SmartPeak
     return true;
   }
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-  bool Model<HDelT, DDelT, TensorT>::calculateNetNodeInput_(
-    OperationList<HDelT, DDelT, TensorT>* operations,  
+	template<typename TensorT>
+  bool Model<TensorT>::calculateNetNodeInput_(
+    OperationList<TensorT>* operations,  
     const int& batch_size,
     const int& memory_size,
     const int& time_step,
@@ -865,8 +865,8 @@ namespace SmartPeak
     for (int i=0; i<operations->arguments.size(); ++i)
     {
       std::packaged_task<bool // encapsulate in a packaged_task
-        (OperationResult<HDelT, DDelT, TensorT>*, OperationArguments<HDelT, DDelT, TensorT>*, int, int, int
-        )> task(Model<HDelT, DDelT, TensorT>::calculateNodeInput_);
+        (OperationResult<TensorT>*, OperationArguments<TensorT>*, int, int, int
+        )> task(Model<TensorT>::calculateNodeInput_);
       
       // launch the thread
       task_results.push_back(task.get_future());
@@ -916,9 +916,9 @@ namespace SmartPeak
     return true;
   }
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-  void Model<HDelT, DDelT, TensorT>::forwardPropogateLayerNetInput(
-      std::vector<OperationList<HDelT, DDelT, TensorT>>& FP_operations,
+	template<typename TensorT>
+  void Model<TensorT>::forwardPropogateLayerNetInput(
+      std::vector<OperationList<TensorT>>& FP_operations,
     const int& time_step, int n_threads)
   {
 
@@ -936,8 +936,8 @@ namespace SmartPeak
     for (auto& FP_operation : FP_operations)
     {
       std::packaged_task<bool // encapsulate in a packaged_task
-        (OperationList<HDelT, DDelT, TensorT>*, int, int, int, int
-        )> task(Model<HDelT, DDelT, TensorT>::calculateNetNodeInput_);      
+        (OperationList<TensorT>*, int, int, int, int
+        )> task(Model<TensorT>::calculateNetNodeInput_);      
 
       // launch the thread
       task_results.push_back(task.get_future());
@@ -976,8 +976,8 @@ namespace SmartPeak
     }
   }
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-  void Model<HDelT, DDelT, TensorT>::forwardPropogate(const int& time_step, bool cache_FP_steps, bool use_cache, int n_threads)
+	template<typename TensorT>
+  void Model<TensorT>::forwardPropogate(const int& time_step, bool cache_FP_steps, bool use_cache, int n_threads)
   { 
     if (use_cache)
     {
@@ -991,7 +991,7 @@ namespace SmartPeak
       { 
         // get the next hidden layer
         std::map<std::string, int> FP_operations_map;
-        std::vector<OperationList<HDelT, DDelT, TensorT>> FP_operations_list;
+        std::vector<OperationList<TensorT>> FP_operations_list;
         getNextInactiveLayer(FP_operations_map, FP_operations_list);
 
         // get biases,
@@ -1000,7 +1000,7 @@ namespace SmartPeak
         
         // get cycles
 				std::map<std::string, int> FP_operations_map_cycles = FP_operations_map;
-				std::vector<OperationList<HDelT, DDelT, TensorT>> FP_operations_list_cycles = FP_operations_list;
+				std::vector<OperationList<TensorT>> FP_operations_list_cycles = FP_operations_list;
         std::vector<std::string> sink_nodes_cycles;
         getNextInactiveLayerCycles(FP_operations_map_cycles, FP_operations_list_cycles, sink_nodes_cycles);
 
@@ -1009,7 +1009,7 @@ namespace SmartPeak
         if (sink_nodes_cycles.size() > 0)
         {
 					std::vector<std::string> sink_nodes_remove;
-					std::vector<OperationList<HDelT, DDelT, TensorT>> FP_operations_list_copy = FP_operations_list;
+					std::vector<OperationList<TensorT>> FP_operations_list_copy = FP_operations_list;
 					for (const std::string& sink_node : sink_nodes_cycles) {
 						for (size_t i = FP_operations_list[FP_operations_map.at(sink_node)].arguments.size();
 							i < FP_operations_list_cycles[FP_operations_map_cycles.at(sink_node)].arguments.size(); ++i) {
@@ -1058,22 +1058,22 @@ namespace SmartPeak
     }
   }
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-	std::string Model<HDelT, DDelT, TensorT>::makeFPOpsKey(const std::string & node_name, const int & time_step, const std::string & node_integration, const std::string & node_activation)
+	template<typename TensorT>
+	std::string Model<TensorT>::makeFPOpsKey(const std::string & node_name, const int & time_step, const std::string & node_integration, const std::string & node_activation)
 	{
 		std::string ops_key = node_name + "/" + std::to_string(time_step) + "/" + node_integration + "/" + node_activation;
 		return ops_key;
 	}
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-	void Model<HDelT, DDelT, TensorT>::getFPOperations()
+	template<typename TensorT>
+	void Model<TensorT>::getFPOperations()
 	{
 		const int max_iters = 1e6;
 		for (int iter = 0; iter < max_iters; ++iter)
 		{
 			// get the next hidden layer
 			std::map<std::string, int> FP_operations_map;
-			std::vector<OperationList<HDelT, DDelT, TensorT>> FP_operations_list;
+			std::vector<OperationList<TensorT>> FP_operations_list;
 			getNextInactiveLayer(FP_operations_map, FP_operations_list);
 
 			// get biases,
@@ -1082,7 +1082,7 @@ namespace SmartPeak
 
 			// get cycles
 			std::map<std::string, int> FP_operations_map_cycles = FP_operations_map;
-			std::vector<OperationList<HDelT, DDelT, TensorT>> FP_operations_list_cycles = FP_operations_list;
+			std::vector<OperationList<TensorT>> FP_operations_list_cycles = FP_operations_list;
 			std::vector<std::string> sink_nodes_cycles;
 			getNextInactiveLayerCycles(FP_operations_map_cycles, FP_operations_list_cycles, sink_nodes_cycles);
 
@@ -1091,7 +1091,7 @@ namespace SmartPeak
 			if (sink_nodes_cycles.size() > 0)
 			{
 				std::vector<std::string> sink_nodes_remove;
-				std::vector<OperationList<HDelT, DDelT, TensorT>> FP_operations_list_copy = FP_operations_list;
+				std::vector<OperationList<TensorT>> FP_operations_list_copy = FP_operations_list;
 				for (const std::string& sink_node : sink_nodes_cycles) {
 					for (size_t i = FP_operations_list[FP_operations_map.at(sink_node)].arguments.size();
 						i < FP_operations_list_cycles[FP_operations_map_cycles.at(sink_node)].arguments.size(); ++i) {
@@ -1144,8 +1144,8 @@ namespace SmartPeak
 		}
 	}
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-	void Model<HDelT, DDelT, TensorT>::executeFPOperations(const int& time_step)
+	template<typename TensorT>
+	void Model<TensorT>::executeFPOperations(const int& time_step)
 	{
 		// get all the information needed to construct the tensors
 		std::pair<int, int> bmsizes = getBatchAndMemorySizes();
@@ -1191,8 +1191,8 @@ namespace SmartPeak
 		}
 	}
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-  void Model<HDelT, DDelT, TensorT>::FPTT(const int& time_steps, 
+	template<typename TensorT>
+  void Model<TensorT>::FPTT(const int& time_steps, 
     const Eigen::Tensor<TensorT, 3>& values,
     const std::vector<std::string> node_names,
     const Eigen::Tensor<TensorT, 2>& dt,
@@ -1210,7 +1210,7 @@ namespace SmartPeak
     {
 			const int time_step_cur = max_steps - 1 - time_step;
 
-      // std::cout<<"Model<HDelT, DDelT, TensorT>::FPTT() time_step: "<<time_step<<std::endl;
+      // std::cout<<"Model<TensorT>::FPTT() time_step: "<<time_step<<std::endl;
       if (time_step>0)
       {
         // move to the next memory step
@@ -1220,7 +1220,7 @@ namespace SmartPeak
           {
             node_map.second->setStatus(NodeStatus::initialized); // reinitialize non-input nodes
           }   
-          // std::cout<<"Model<HDelT, DDelT, TensorT>::FPTT() output: "<<node_map.second->getOutput()<<" for node_name: "<<node_map.first<<std::endl;
+          // std::cout<<"Model<TensorT>::FPTT() output: "<<node_map.second->getOutput()<<" for node_name: "<<node_map.first<<std::endl;
         }
       }
 
@@ -1228,7 +1228,7 @@ namespace SmartPeak
       const Eigen::Tensor<TensorT, 1> dt_values = dt.chip(time_step, 1);
       mapValuesToNodes(dt_values, time_step_cur, NodeStatus::deactivated, "dt"); // [TESTS: setting this to "initialized" caused one hell of a headache to debug...]
       const Eigen::Tensor<TensorT, 2> active_values = values.chip(time_step, 1);
-       //std::cout<<"Model<HDelT, DDelT, TensorT>::FPTT() active_values: "<<active_values<<std::endl;
+       //std::cout<<"Model<TensorT>::FPTT() active_values: "<<active_values<<std::endl;
       mapValuesToNodes(active_values, time_step_cur, node_names, NodeStatus::activated, "output");
 
       if (cache_FP_steps && time_step == 0)
@@ -1240,9 +1240,9 @@ namespace SmartPeak
     }
   }
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-	Eigen::Tensor<TensorT, 1> Model<HDelT, DDelT, TensorT>::calculateModelError_(
-		Node<HDelT, DDelT, TensorT>* output_node,
+	template<typename TensorT>
+	Eigen::Tensor<TensorT, 1> Model<TensorT>::calculateModelError_(
+		Node<TensorT>* output_node,
 		const Eigen::Tensor<TensorT, 1>& expected,
 		LossFunctionOp<TensorT>* loss_function,
 		const int& batch_size,
@@ -1255,9 +1255,9 @@ namespace SmartPeak
 		return model_error;
 	};
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-	bool Model<HDelT, DDelT, TensorT>::calculateOutputNodeError_(
-		Node<HDelT, DDelT, TensorT>* output_node,
+	template<typename TensorT>
+	bool Model<TensorT>::calculateOutputNodeError_(
+		Node<TensorT>* output_node,
 		const Eigen::Tensor<TensorT, 1>& expected,
 		LossFunctionGradOp<TensorT>* loss_function_grad,
 		const int& time_step
@@ -1271,8 +1271,8 @@ namespace SmartPeak
 		return true;
 	};
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-	void Model<HDelT, DDelT, TensorT>::calculateError(
+	template<typename TensorT>
+	void Model<TensorT>::calculateError(
 		const Eigen::Tensor<TensorT, 2>& values, const std::vector<std::string>& node_names,
 		const int& time_step, int n_threads)
 	{
@@ -1300,10 +1300,10 @@ namespace SmartPeak
 		std::shared_ptr<LossFunctionGradOp<TensorT>> loss_function_grad = loss_function_grad_;
 
 		// collect the output nodes
-		std::vector<std::shared_ptr<Node<HDelT, DDelT, TensorT>>> output_nodes;
+		std::vector<std::shared_ptr<Node<TensorT>>> output_nodes;
 		for (int i = 0; i < node_names.size(); ++i)
 		{
-			std::shared_ptr<Node<HDelT, DDelT, TensorT>> output_node = nodes_.at(node_names[i]);
+			std::shared_ptr<Node<TensorT>> output_node = nodes_.at(node_names[i]);
 			output_nodes.push_back(output_node);
 		}
 		
@@ -1316,9 +1316,9 @@ namespace SmartPeak
 		{
 			// encapsulate in a packaged_task
 			std::packaged_task<Eigen::Tensor<TensorT, 1> 
-				(Node<HDelT, DDelT, TensorT>*, Eigen::Tensor<TensorT, 1>, LossFunctionOp<TensorT>*,
+				(Node<TensorT>*, Eigen::Tensor<TensorT, 1>, LossFunctionOp<TensorT>*,
 					int, int
-					)> task(Model<HDelT, DDelT, TensorT>::calculateModelError_);
+					)> task(Model<TensorT>::calculateModelError_);
 
 			// launch the thread
 			model_error_task_results.push_back(task.get_future());
@@ -1360,9 +1360,9 @@ namespace SmartPeak
 		{
 			// encapsulate in a packaged_task
 			std::packaged_task<bool
-			(Node<HDelT, DDelT, TensorT>*, Eigen::Tensor<TensorT, 1>, LossFunctionGradOp<TensorT>*,
+			(Node<TensorT>*, Eigen::Tensor<TensorT, 1>, LossFunctionGradOp<TensorT>*,
 				int
-				)> task(Model<HDelT, DDelT, TensorT>::calculateOutputNodeError_);
+				)> task(Model<TensorT>::calculateOutputNodeError_);
 
 			// launch the thread
 			output_node_error_task_results.push_back(task.get_future());
@@ -1397,8 +1397,8 @@ namespace SmartPeak
 		}
 	}
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-  void Model<HDelT, DDelT, TensorT>::CETT(const Eigen::Tensor<TensorT, 3>& values, const std::vector<std::string>& node_names, const int & time_steps, int n_threads)
+	template<typename TensorT>
+  void Model<TensorT>::CETT(const Eigen::Tensor<TensorT, 3>& values, const std::vector<std::string>& node_names, const int & time_steps, int n_threads)
   {
 		// check time_steps vs memory_size
 		// [NOTE: was changed form memory_size to memory_size - 1]
@@ -1430,10 +1430,10 @@ namespace SmartPeak
 		}
   }
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-  void Model<HDelT, DDelT, TensorT>::getNextUncorrectedLayer(
+	template<typename TensorT>
+  void Model<TensorT>::getNextUncorrectedLayer(
     std::map<std::string, int>& BP_operations_map,
-    std::vector<OperationList<HDelT, DDelT, TensorT>>& BP_operations,
+    std::vector<OperationList<TensorT>>& BP_operations,
     std::vector<std::string>& source_nodes)
   {
     // get all links where the source node is corrected and the sink node is active
@@ -1443,7 +1443,7 @@ namespace SmartPeak
       if (nodes_.at(link_map.second->getSinkNodeName())->getStatus() == NodeStatus::corrected && 
         nodes_.at(link_map.second->getSourceNodeName())->getStatus() == NodeStatus::activated)
       {        
-        OperationArguments<HDelT, DDelT, TensorT> arguments;
+        OperationArguments<TensorT> arguments;
         arguments.source_node = nodes_.at(link_map.second->getSinkNodeName());
         arguments.weight = weights_.at(link_map.second->getWeightName());
         arguments.time_step = 0;
@@ -1459,8 +1459,8 @@ namespace SmartPeak
         }
         else
         {
-          OperationList<HDelT, DDelT, TensorT> operation_list;
-          OperationResult<HDelT, DDelT, TensorT> result;
+          OperationList<TensorT> operation_list;
+          OperationResult<TensorT> result;
           result.sink_node = nodes_.at(link_map.second->getSourceNodeName());
           operation_list.result = result;
           operation_list.arguments.push_back(arguments);
@@ -1475,10 +1475,10 @@ namespace SmartPeak
     }
   }
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-	void Model<HDelT, DDelT, TensorT>::getNextUncorrectedLayerBiases(
+	template<typename TensorT>
+	void Model<TensorT>::getNextUncorrectedLayerBiases(
 		std::map<std::string, int>& BP_operations_map,
-		std::vector<OperationList<HDelT, DDelT, TensorT>>& BP_operations,
+		std::vector<OperationList<TensorT>>& BP_operations,
 		std::vector<std::string>& source_nodes,
 		std::vector<std::string>& sink_nodes_with_biases)
 	{
@@ -1491,7 +1491,7 @@ namespace SmartPeak
 				BP_operations_map.count(link_map.second->getSourceNodeName()) != 0 // sink node has already been identified
 				)
 			{
-				OperationArguments<HDelT, DDelT, TensorT> arguments;
+				OperationArguments<TensorT> arguments;
 				arguments.source_node = nodes_.at(link_map.second->getSinkNodeName());
 				arguments.weight = weights_.at(link_map.second->getWeightName());
 				arguments.time_step = 0;
@@ -1507,10 +1507,10 @@ namespace SmartPeak
 		}
 	}
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-  void Model<HDelT, DDelT, TensorT>::getNextUncorrectedLayerCycles(
+	template<typename TensorT>
+  void Model<TensorT>::getNextUncorrectedLayerCycles(
     std::map<std::string, int>& BP_operations_map,
-    std::vector<OperationList<HDelT, DDelT, TensorT>>& BP_operations,
+    std::vector<OperationList<TensorT>>& BP_operations,
     std::vector<std::string>& source_nodes,
     std::vector<std::string>& sink_nodes_with_cycles)
   {
@@ -1531,7 +1531,7 @@ namespace SmartPeak
         nodes_.at(link_map.second->getSinkNodeName())->getStatus() == NodeStatus::corrected
       ) 
       {
-        OperationArguments<HDelT, DDelT, TensorT> arguments;
+        OperationArguments<TensorT> arguments;
         arguments.source_node = nodes_.at(link_map.second->getSinkNodeName());
         arguments.weight = weights_.at(link_map.second->getWeightName());
         arguments.time_step = 0;
@@ -1544,8 +1544,8 @@ namespace SmartPeak
         }
         else
         {
-          OperationList<HDelT, DDelT, TensorT> operation_list;
-          OperationResult<HDelT, DDelT, TensorT> result;
+          OperationList<TensorT> operation_list;
+          OperationResult<TensorT> result;
           result.sink_node = nodes_.at(link_map.second->getSourceNodeName());
           result.time_step = 1;
           operation_list.result = result;
@@ -1561,10 +1561,10 @@ namespace SmartPeak
     }
   }
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-  bool Model<HDelT, DDelT, TensorT>::calculateNodeError_(
-		OperationResult<HDelT, DDelT, TensorT>* result,
-    OperationArguments<HDelT, DDelT, TensorT>* arguments, 
+	template<typename TensorT>
+  bool Model<TensorT>::calculateNodeError_(
+		OperationResult<TensorT>* result,
+    OperationArguments<TensorT>* arguments, 
     const int& batch_size,
     const int& memory_size,
     const int& time_step)
@@ -1589,9 +1589,9 @@ namespace SmartPeak
     return true;
   }
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-  bool Model<HDelT, DDelT, TensorT>::calculateNetNodeError_(
-    OperationList<HDelT, DDelT, TensorT>* operations, 
+	template<typename TensorT>
+  bool Model<TensorT>::calculateNetNodeError_(
+    OperationList<TensorT>* operations, 
     const int& batch_size,
     const int& memory_size,
     const int& time_step,
@@ -1606,8 +1606,8 @@ namespace SmartPeak
     for (int i=0; i<operations->arguments.size(); ++i)
     {
       std::packaged_task<bool // encapsulate in a packaged_task
-        (OperationResult<HDelT, DDelT, TensorT>*, OperationArguments<HDelT, DDelT, TensorT>*, int, int, int
-        )> task(Model<HDelT, DDelT, TensorT>::calculateNodeError_);
+        (OperationResult<TensorT>*, OperationArguments<TensorT>*, int, int, int
+        )> task(Model<TensorT>::calculateNodeError_);
       
       // launch the thread
       task_results.push_back(task.get_future());
@@ -1646,9 +1646,9 @@ namespace SmartPeak
     return true;
   }
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-  void Model<HDelT, DDelT, TensorT>::backPropogateLayerError(
-    std::vector<OperationList<HDelT, DDelT, TensorT>>& BP_operations,
+	template<typename TensorT>
+  void Model<TensorT>::backPropogateLayerError(
+    std::vector<OperationList<TensorT>>& BP_operations,
     const int& time_step, int n_threads)
   {
     // get all the information needed to construct the tensors
@@ -1670,8 +1670,8 @@ namespace SmartPeak
     for (auto& BP_operation : BP_operations)
     {
       std::packaged_task<bool // encapsulate in a packaged_task
-        (OperationList<HDelT, DDelT, TensorT>*, int, int, int, int
-        )> task(Model<HDelT, DDelT, TensorT>::calculateNetNodeError_);
+        (OperationList<TensorT>*, int, int, int, int
+        )> task(Model<TensorT>::calculateNetNodeError_);
       
       // launch the thread
       task_results.push_back(task.get_future());
@@ -1710,8 +1710,8 @@ namespace SmartPeak
     }
   }
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-  void Model<HDelT, DDelT, TensorT>::backPropogate(const int& time_step, bool cache_BP_steps, bool use_cache, int n_threads)
+	template<typename TensorT>
+  void Model<TensorT>::backPropogate(const int& time_step, bool cache_BP_steps, bool use_cache, int n_threads)
   {
     if (use_cache)
     {
@@ -1726,13 +1726,13 @@ namespace SmartPeak
       {
         // get the next uncorrected layer
         std::map<std::string, int> BP_operations_map;
-        std::vector<OperationList<HDelT, DDelT, TensorT>> BP_operations_list;
+        std::vector<OperationList<TensorT>> BP_operations_list;
         std::vector<std::string> source_nodes;
         getNextUncorrectedLayer(BP_operations_map, BP_operations_list, source_nodes); 
 
 				// get biases (not a good name...these are just sinks with other sources that have not yet been corrected)
 				std::map<std::string, int> BP_operations_map_biases = BP_operations_map;
-				std::vector<OperationList<HDelT, DDelT, TensorT>> BP_operations_list_biases = BP_operations_list;
+				std::vector<OperationList<TensorT>> BP_operations_list_biases = BP_operations_list;
 				std::vector<std::string> sink_nodes_biases;
 				getNextUncorrectedLayerBiases(BP_operations_map_biases, BP_operations_list_biases, source_nodes, sink_nodes_biases);
 
@@ -1741,7 +1741,7 @@ namespace SmartPeak
 				if (sink_nodes_biases.size() > 0)
 				{
 					std::vector<std::string> sink_nodes_remove;
-					std::vector<OperationList<HDelT, DDelT, TensorT>> BP_operations_list_copy = BP_operations_list;
+					std::vector<OperationList<TensorT>> BP_operations_list_copy = BP_operations_list;
 					for (const std::string& sink_node : sink_nodes_biases) {
 						for (size_t i = BP_operations_list[BP_operations_map.at(sink_node)].arguments.size();
 							i < BP_operations_list_biases[BP_operations_map_biases.at(sink_node)].arguments.size(); ++i) {
@@ -1804,8 +1804,8 @@ namespace SmartPeak
     }
   }
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-  void Model<HDelT, DDelT, TensorT>::TBPTT(const int& time_steps, bool cache_BP_steps, bool use_cache, int n_threads)
+	template<typename TensorT>
+  void Model<TensorT>::TBPTT(const int& time_steps, bool cache_BP_steps, bool use_cache, int n_threads)
   {
     // check time_steps vs memory_size
     int max_steps = time_steps;
@@ -1834,12 +1834,12 @@ namespace SmartPeak
     }
     // for (auto& node_map: nodes_)
     // {
-    //   std::cout<<"Model<HDelT, DDelT, TensorT>::TBPTT() error: "<<node_map.second->getError()<<" for node_name: "<<node_map.first<<std::endl;
+    //   std::cout<<"Model<TensorT>::TBPTT() error: "<<node_map.second->getError()<<" for node_name: "<<node_map.first<<std::endl;
     // }
   }
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-  void Model<HDelT, DDelT, TensorT>::updateWeights(const int& time_steps, std::vector<std::string> weight_names)
+	template<typename TensorT>
+  void Model<TensorT>::updateWeights(const int& time_steps, std::vector<std::string> weight_names)
   {
     // check time_steps vs memory_size
 		// [TODO: changed from memory_size to memory_size - 1]
@@ -1863,13 +1863,13 @@ namespace SmartPeak
 				std::count(weight_names.begin(), weight_names.end(), link_map.second->getWeightName()) == 0)
 				continue;
 
-			std::shared_ptr<Node<HDelT, DDelT, TensorT>> sink_node = nodes_.at(link_map.second->getSinkNodeName()); // which IntegrationWeightGradOp is determined by the sink node
+			std::shared_ptr<Node<TensorT>> sink_node = nodes_.at(link_map.second->getSinkNodeName()); // which IntegrationWeightGradOp is determined by the sink node
 			sink_node->getIntegrationWeightGradShared()->initNetWeightError();
       if (sink_node->getStatus() == NodeStatus::corrected) // [TODO: Skip dummy nodes?]
       {
         // Sum the error from current and previous time-steps
         // [PARALLEL: implement threads here]
-				std::shared_ptr<Node<HDelT, DDelT, TensorT>> source_node = nodes_.at(link_map.second->getSourceNodeName());
+				std::shared_ptr<Node<TensorT>> source_node = nodes_.at(link_map.second->getSourceNodeName());
 				Eigen::Tensor<TensorT, 1> weights(source_node->getOutput().dimension(0));
 				weights.setConstant(weights_.at(link_map.second->getWeightName())->getWeight());
 				Eigen::Tensor<TensorT, 1> n_input_nodes(sink_node->getOutput().dimension(0));
@@ -1900,8 +1900,8 @@ namespace SmartPeak
       weights_.at(weight_derivative.first)->updateWeight(weight_derivative.second);
   }
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-  void Model<HDelT, DDelT, TensorT>::reInitializeNodeStatuses()
+	template<typename TensorT>
+  void Model<TensorT>::reInitializeNodeStatuses()
   {
     for (auto& node_map : nodes_)
     {
@@ -1909,8 +1909,8 @@ namespace SmartPeak
     }
   }
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-  bool Model<HDelT, DDelT, TensorT>::checkNodeNames(const std::vector<std::string> node_names)
+	template<typename TensorT>
+  bool Model<TensorT>::checkNodeNames(const std::vector<std::string> node_names)
   {
     bool nodes_found = true;
     for (const std::string& node_name: node_names)
@@ -1924,8 +1924,8 @@ namespace SmartPeak
     return nodes_found;
   }
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-  bool Model<HDelT, DDelT, TensorT>::checkLinkNames(const std::vector<std::string> link_names)
+	template<typename TensorT>
+  bool Model<TensorT>::checkLinkNames(const std::vector<std::string> link_names)
   {
     bool links_found = true;
     for (const std::string& link_name: link_names)
@@ -1939,8 +1939,8 @@ namespace SmartPeak
     return links_found;
   }
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-  bool Model<HDelT, DDelT, TensorT>::checkWeightNames(const std::vector<std::string> weight_names)
+	template<typename TensorT>
+  bool Model<TensorT>::checkWeightNames(const std::vector<std::string> weight_names)
   {
     bool weights_found = true;
     for (const std::string& weight_name: weight_names)
@@ -1954,8 +1954,8 @@ namespace SmartPeak
     return weights_found;
   }
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-	bool Model<HDelT, DDelT, TensorT>::checkCompleteInputToOutput(
+	template<typename TensorT>
+	bool Model<TensorT>::checkCompleteInputToOutput(
 		//const std::vector<std::string>& input_nodes, 
 		//const std::vector<std::string>& output_nodes,
 		int n_threads)
@@ -2067,8 +2067,8 @@ namespace SmartPeak
 		return true;
 	}
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-	bool Model<HDelT, DDelT, TensorT>::checkLinksNodeAndWeightNames(std::vector<std::string>& nodes_not_found, std::vector<std::string>& weights_not_found)
+	template<typename TensorT>
+	bool Model<TensorT>::checkLinksNodeAndWeightNames(std::vector<std::string>& nodes_not_found, std::vector<std::string>& weights_not_found)
 	{
 		bool link_names_check = true;
 		for (const auto& link_map : links_)
@@ -2092,8 +2092,8 @@ namespace SmartPeak
 		return link_names_check;
 	}
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-	bool Model<HDelT, DDelT, TensorT>::removeIsolatedNodes()
+	template<typename TensorT>
+	bool Model<TensorT>::removeIsolatedNodes()
 	{
 		// key/value pair of node name and source/sink count pair
 		std::map<std::string, std::pair<int, int>> node_counts;
@@ -2135,16 +2135,16 @@ namespace SmartPeak
 		return dead_end_node_found;
 	}
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-	void Model<HDelT, DDelT, TensorT>::clearCache()
+	template<typename TensorT>
+	void Model<TensorT>::clearCache()
   {
     FP_operations_cache_.clear();
     BP_operations_cache_.clear();
 		cyclic_pairs_.clear();
   }
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-	std::list<int>* Model<HDelT, DDelT, TensorT>::convertToAdjacencyList(std::map<int, std::string>& node_id_map, int& node_cnt)
+	template<typename TensorT>
+	std::list<int>* Model<TensorT>::convertToAdjacencyList(std::map<int, std::string>& node_id_map, int& node_cnt)
 	{
 		// create a map of node id to node name (excluding bias nodes)
 		node_id_map.clear();
@@ -2172,8 +2172,8 @@ namespace SmartPeak
 		return adj;
 	}
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-	void Model<HDelT, DDelT, TensorT>::findCycles()
+	template<typename TensorT>
+	void Model<TensorT>::findCycles()
 	{
 		std::map<int, std::string> node_id_map;
 		int node_cnt;
@@ -2191,8 +2191,8 @@ namespace SmartPeak
 		}
 	}
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-	std::vector<std::pair<std::string, std::string>> Model<HDelT, DDelT, TensorT>::getCyclicPairs()
+	template<typename TensorT>
+	std::vector<std::pair<std::string, std::string>> Model<TensorT>::getCyclicPairs()
 	{
 		return cyclic_pairs_;
 	}

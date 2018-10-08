@@ -7,16 +7,16 @@
 
 namespace SmartPeak
 {
-	template<typename HDelT, typename DDelT, typename TensorT>
-	ModelLogger<HDelT, DDelT, TensorT>::ModelLogger(bool log_time_epoch, bool log_train_val_metric_epoch, bool log_expected_predicted_epoch, bool log_weights_epoch, bool log_node_errors_epoch, bool log_module_variance_epoch, bool log_node_outputs_epoch, bool log_node_derivatives_epoch):
+	template<typename TensorT>
+	ModelLogger<TensorT>::ModelLogger(bool log_time_epoch, bool log_train_val_metric_epoch, bool log_expected_predicted_epoch, bool log_weights_epoch, bool log_node_errors_epoch, bool log_module_variance_epoch, bool log_node_outputs_epoch, bool log_node_derivatives_epoch):
 		log_time_epoch_(log_time_epoch), log_train_val_metric_epoch_(log_train_val_metric_epoch), log_expected_predicted_epoch_(log_expected_predicted_epoch),
 		log_weights_epoch_(log_weights_epoch), log_node_errors_epoch_(log_node_errors_epoch), log_module_variance_epoch_(log_module_variance_epoch), log_node_outputs_epoch_(log_node_outputs_epoch),
 		log_node_derivatives_epoch_(log_node_derivatives_epoch)
 	{
 	}
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-	bool ModelLogger<HDelT, DDelT, TensorT>::initLogs(const Model<HDelT, DDelT, TensorT>& model)
+	template<typename TensorT>
+	bool ModelLogger<TensorT>::initLogs(const Model<TensorT>& model)
 	{
 		if (log_time_epoch_) {
 			std::string filename = model.getName() + "_TimePerEpoch.csv";
@@ -61,8 +61,8 @@ namespace SmartPeak
 		return true;
 	}
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-	bool ModelLogger<HDelT, DDelT, TensorT>::writeLogs(const Model<HDelT, DDelT, TensorT>& model, const int & n_epochs, const std::vector<std::string>& training_metric_names, const std::vector<std::string>& validation_metric_names, const std::vector<TensorT>& training_metrics, const std::vector<TensorT>& validation_metrics, const std::vector<std::string>& output_node_names, const Eigen::Tensor<TensorT, 3>& expected_values,
+	template<typename TensorT>
+	bool ModelLogger<TensorT>::writeLogs(const Model<TensorT>& model, const int & n_epochs, const std::vector<std::string>& training_metric_names, const std::vector<std::string>& validation_metric_names, const std::vector<TensorT>& training_metrics, const std::vector<TensorT>& validation_metrics, const std::vector<std::string>& output_node_names, const Eigen::Tensor<TensorT, 3>& expected_values,
 		std::vector<std::string> node_names, std::vector<std::string> weight_names, std::vector<std::string> module_names)
 	{
 		if (log_time_epoch_) {
@@ -92,8 +92,8 @@ namespace SmartPeak
 		return true;
 	}
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-	bool ModelLogger<HDelT, DDelT, TensorT>::logTimePerEpoch(const Model<HDelT, DDelT, TensorT>& model, const int & n_epoch)
+	template<typename TensorT>
+	bool ModelLogger<TensorT>::logTimePerEpoch(const Model<TensorT>& model, const int & n_epoch)
 	{
 		// writer header
 		if (log_time_epoch_csvwriter_.getLineCount() == 0) {
@@ -113,8 +113,8 @@ namespace SmartPeak
 		return true;
 	}
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-	bool ModelLogger<HDelT, DDelT, TensorT>::logTrainValMetricsPerEpoch(const Model<HDelT, DDelT, TensorT>& model, const std::vector<std::string>& training_metric_names, const std::vector<std::string>& validation_metric_names, 
+	template<typename TensorT>
+	bool ModelLogger<TensorT>::logTrainValMetricsPerEpoch(const Model<TensorT>& model, const std::vector<std::string>& training_metric_names, const std::vector<std::string>& validation_metric_names, 
 		const std::vector<TensorT>& training_metrics, const std::vector<TensorT>& validation_metrics, const int & n_epoch)
 	{
 		// writer header
@@ -143,8 +143,8 @@ namespace SmartPeak
 		return true;
 	}
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-	bool ModelLogger<HDelT, DDelT, TensorT>::logExpectedAndPredictedOutputPerEpoch(const Model<HDelT, DDelT, TensorT>& model, const std::vector<std::string>& output_node_names, const Eigen::Tensor<TensorT, 3>& expected_values, const int & n_epoch)
+	template<typename TensorT>
+	bool ModelLogger<TensorT>::logExpectedAndPredictedOutputPerEpoch(const Model<TensorT>& model, const std::vector<std::string>& output_node_names, const Eigen::Tensor<TensorT, 3>& expected_values, const int & n_epoch)
 	{
 		std::pair<int, int> bmsizes = model.getBatchAndMemorySizes();
 		int batch_size = bmsizes.first;
@@ -183,8 +183,8 @@ namespace SmartPeak
 		return true;
 	}
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-	bool ModelLogger<HDelT, DDelT, TensorT>::logWeightsPerEpoch(const Model<HDelT, DDelT, TensorT>& model, const int & n_epoch, std::vector<std::string> weight_names)
+	template<typename TensorT>
+	bool ModelLogger<TensorT>::logWeightsPerEpoch(const Model<TensorT>& model, const int & n_epoch, std::vector<std::string> weight_names)
 	{
 		std::vector<Weight> weights;
 		if (weight_names.size() == 0) {
@@ -215,8 +215,8 @@ namespace SmartPeak
 		return true;
 	}
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-	bool ModelLogger<HDelT, DDelT, TensorT>::logNodeErrorsPerEpoch(const Model<HDelT, DDelT, TensorT>& model, const int & n_epoch, std::vector<std::string> node_names)
+	template<typename TensorT>
+	bool ModelLogger<TensorT>::logNodeErrorsPerEpoch(const Model<TensorT>& model, const int & n_epoch, std::vector<std::string> node_names)
 	{
 
 		std::pair<int, int> bmsizes = model.getBatchAndMemorySizes();
@@ -267,8 +267,8 @@ namespace SmartPeak
 		return true;
 	}
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-	bool ModelLogger<HDelT, DDelT, TensorT>::logModuleMeanAndVariancePerEpoch(const Model<HDelT, DDelT, TensorT>& model, const int & n_epoch, std::vector<std::string> module_name)
+	template<typename TensorT>
+	bool ModelLogger<TensorT>::logModuleMeanAndVariancePerEpoch(const Model<TensorT>& model, const int & n_epoch, std::vector<std::string> module_name)
 	{
 		// make a map of all modules/nodes in the model
 		if (module_to_node_names_.size() == 0) {
@@ -349,8 +349,8 @@ namespace SmartPeak
 		return true;
 	}
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-	bool ModelLogger<HDelT, DDelT, TensorT>::logNodeOutputsPerEpoch(const Model<HDelT, DDelT, TensorT>& model, const int & n_epoch, std::vector<std::string> node_names)
+	template<typename TensorT>
+	bool ModelLogger<TensorT>::logNodeOutputsPerEpoch(const Model<TensorT>& model, const int & n_epoch, std::vector<std::string> node_names)
 	{
 
 		std::pair<int, int> bmsizes = model.getBatchAndMemorySizes();
@@ -395,8 +395,8 @@ namespace SmartPeak
 		return true;
 	}
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-	bool ModelLogger<HDelT, DDelT, TensorT>::logNodeDerivativesPerEpoch(const Model<HDelT, DDelT, TensorT>& model, const int & n_epoch, std::vector<std::string> node_names)
+	template<typename TensorT>
+	bool ModelLogger<TensorT>::logNodeDerivativesPerEpoch(const Model<TensorT>& model, const int & n_epoch, std::vector<std::string> node_names)
 	{
 
 		std::pair<int, int> bmsizes = model.getBatchAndMemorySizes();

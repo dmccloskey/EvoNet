@@ -16,7 +16,7 @@ namespace SmartPeak
   /**
     @brief Class to help create complex network models
   */
-	template<typename HDelT, typename DDelT, typename TensorT>
+	template<typename TensorT>
   class ModelBuilder
   {
 public:
@@ -32,7 +32,7 @@ public:
 
 		@returns vector of output node names
 		*/
-		std::vector<std::string> addInputNodes(Model<HDelT, DDelT, TensorT>& model, const std::string& name, const int& n_nodes);
+		std::vector<std::string> addInputNodes(Model<TensorT>& model, const std::string& name, const int& n_nodes);
 
 		/**
 		@brief Add a fully connected layer to a model
@@ -49,18 +49,18 @@ public:
 
 		@returns vector of output node names
 		*/
-		std::vector<std::string> addFullyConnected(Model<HDelT, DDelT, TensorT>& model, const std::string& name, const std::string& module_name, 
+		std::vector<std::string> addFullyConnected(Model<TensorT>& model, const std::string& name, const std::string& module_name, 
 			const std::vector<std::string>& source_node_names, const int& n_nodes,
 			const std::shared_ptr<ActivationOp<TensorT>>& node_activation,
 			const std::shared_ptr<ActivationOp<TensorT>>& node_activation_grad,
 			const std::shared_ptr<IntegrationOp<TensorT>>& node_integration,
 			const std::shared_ptr<IntegrationErrorOp<TensorT>>& node_integration_error,
 			const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& node_integration_weight_grad,
-			const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver,
+			const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver,
 			TensorT drop_out_prob = 0.0f, TensorT drop_connection_prob = 0.0f, bool biases = true);
-		void addFullyConnected(Model<HDelT, DDelT, TensorT>& model, const std::string& module_name,
+		void addFullyConnected(Model<TensorT>& model, const std::string& module_name,
 			const std::vector<std::string>& source_node_names, const std::vector<std::string>& sink_node_names,
-			const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver, 
+			const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver, 
 			TensorT drop_connection_prob = 0.0f);
 
 		/**
@@ -70,12 +70,12 @@ public:
 		exps = np.exp(X)
 		return exps / np.sum(exps)
 
-		@param[in, out] Model<HDelT, DDelT, TensorT>
+		@param[in, out] Model<TensorT>
 		@param[in] source_node_names Node_names to add the layer to
 
 		@returns vector of output node names
 		*/
-		std::vector<std::string> addSoftMax(Model<HDelT, DDelT, TensorT>& model, const std::string& name, const std::string& module_name, const std::vector<std::string>& source_node_names);
+		std::vector<std::string> addSoftMax(Model<TensorT>& model, const std::string& name, const std::string& module_name, const std::vector<std::string>& source_node_names);
 
 		/**
 		@brief Add a Stable Soft Max
@@ -89,7 +89,7 @@ public:
 
 		@returns vector of output node names
 		*/
-		std::vector<std::string> addStableSoftMax(Model<HDelT, DDelT, TensorT>& model, const std::string& name, const std::string& module_name, const std::vector<std::string>& source_node_names);
+		std::vector<std::string> addStableSoftMax(Model<TensorT>& model, const std::string& name, const std::string& module_name, const std::vector<std::string>& source_node_names);
 
 		/**
 		@brief Add a Convolution layer or Pooling layer
@@ -112,7 +112,7 @@ public:
 
 		@returns vector of output node names
 		*/
-		std::vector<std::string> addConvolution(Model<HDelT, DDelT, TensorT> & model, const std::string & name, const std::string& module_name, const std::vector<std::string>& source_node_names,
+		std::vector<std::string> addConvolution(Model<TensorT> & model, const std::string & name, const std::string& module_name, const std::vector<std::string>& source_node_names,
 			const int & input_width, const int & input_height, const int& input_width_zero_padding, const int& input_height_zero_padding,
 			const int & extent_width, const int & extent_height, const int & stride,
 			const int & output_width_zero_padding, const int& output_height_zero_padding,
@@ -121,7 +121,7 @@ public:
 			const std::shared_ptr<IntegrationOp<TensorT>>& node_integration,
 			const std::shared_ptr<IntegrationErrorOp<TensorT>>& node_integration_error,
 			const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& node_integration_weight_grad,
-			const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver,
+			const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver,
 			TensorT drop_out_prob = 0.0f, TensorT drop_connection_prob = 0.0f, bool biases = true);
 
 		/**
@@ -139,11 +139,11 @@ public:
 
 		@returns vector of output node names
 		*/
-		std::vector<std::string> addNormalization(Model<HDelT, DDelT, TensorT>& model, const std::string& name, const std::string& module_name,
+		std::vector<std::string> addNormalization(Model<TensorT>& model, const std::string& name, const std::string& module_name,
 			const std::vector<std::string>& source_node_names,
 			const std::shared_ptr<ActivationOp<TensorT>>& node_activation,
 			const std::shared_ptr<ActivationOp<TensorT>>& node_activation_grad,
-			const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver,
+			const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver,
 			TensorT drop_out_prob = 0.0f, TensorT drop_connection_prob = 0.0f, bool biases = true);
 
 		/**
@@ -155,7 +155,7 @@ public:
 
 		@returns vector of output node names
 		*/
-		std::vector<std::string> addVAEEncoding(Model<HDelT, DDelT, TensorT>& model, const std::string& name, const std::string& module_name,
+		std::vector<std::string> addVAEEncoding(Model<TensorT>& model, const std::string& name, const std::string& module_name,
 			const std::vector<std::string>& mu_node_names, const std::vector<std::string>& logvar_node_names);
 
 		/**
@@ -166,7 +166,7 @@ public:
 
 		@returns vector of output node names
 		*/
-		std::vector<std::string> addDiscriminator(Model<HDelT, DDelT, TensorT>& model, const std::string& name, const std::string& module_name,
+		std::vector<std::string> addDiscriminator(Model<TensorT>& model, const std::string& name, const std::string& module_name,
 			const std::vector<std::string>& encoding_node_names);
 
 		/**
@@ -196,7 +196,7 @@ public:
 
 		@returns vector of output node names
 		*/
-		std::vector<std::string> addLSTM(Model<HDelT, DDelT, TensorT>& model, const std::string& name, const std::string& module_name,
+		std::vector<std::string> addLSTM(Model<TensorT>& model, const std::string& name, const std::string& module_name,
 			const std::vector<std::string>& source_node_names,
 			const int& n_blocks, const int& n_cells,
 			const std::shared_ptr<ActivationOp<TensorT>>& node_activation,
@@ -204,10 +204,10 @@ public:
 			const std::shared_ptr<IntegrationOp<TensorT>>& node_integration,
 			const std::shared_ptr<IntegrationErrorOp<TensorT>>& node_integration_error,
 			const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& node_integration_weight_grad,
-			const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver,
+			const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver,
 			TensorT drop_out_prob = 0.0f, TensorT drop_connection_prob = 0.0f, bool biases = true,
 			bool forget_gate = true, int block_version = 1);
-		std::vector<std::string> addLSTMBlock1(Model<HDelT, DDelT, TensorT>& model, const std::string& name, const std::string& module_name,
+		std::vector<std::string> addLSTMBlock1(Model<TensorT>& model, const std::string& name, const std::string& module_name,
 			const std::vector<std::string>& source_node_names,
 			const int& n_cells,
 			const std::shared_ptr<ActivationOp<TensorT>>& node_activation,
@@ -215,10 +215,10 @@ public:
 			const std::shared_ptr<IntegrationOp<TensorT>>& node_integration,
 			const std::shared_ptr<IntegrationErrorOp<TensorT>>& node_integration_error,
 			const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& node_integration_weight_grad,
-			const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver,
+			const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver,
 			TensorT drop_out_prob = 0.0f, TensorT drop_connection_prob = 0.0f, bool biases = true,
 			bool forget_gate = true);
-		std::vector<std::string> addLSTMBlock2(Model<HDelT, DDelT, TensorT>& model, const std::string& name, const std::string& module_name,
+		std::vector<std::string> addLSTMBlock2(Model<TensorT>& model, const std::string& name, const std::string& module_name,
 			const std::vector<std::string>& source_node_names,
 			const int& n_cells,
 			const std::shared_ptr<ActivationOp<TensorT>>& node_activation,
@@ -226,7 +226,7 @@ public:
 			const std::shared_ptr<IntegrationOp<TensorT>>& node_integration,
 			const std::shared_ptr<IntegrationErrorOp<TensorT>>& node_integration_error,
 			const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& node_integration_weight_grad,
-			const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver,
+			const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver,
 			TensorT drop_out_prob = 0.0f, TensorT drop_connection_prob = 0.0f, bool biases = true,
 			bool forget_gate = true);
 
@@ -255,7 +255,7 @@ public:
 
 		@returns vector of output node names
 		*/
-		std::vector<std::string> addGRU(Model<HDelT, DDelT, TensorT>& model, const std::string& name, const std::string& module_name,
+		std::vector<std::string> addGRU(Model<TensorT>& model, const std::string& name, const std::string& module_name,
 			const std::vector<std::string>& source_node_names,
 			const int& n_blocks, 
 			const std::shared_ptr<ActivationOp<TensorT>>& node_activation,
@@ -263,26 +263,26 @@ public:
 			const std::shared_ptr<IntegrationOp<TensorT>>& node_integration,
 			const std::shared_ptr<IntegrationErrorOp<TensorT>>& node_integration_error,
 			const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& node_integration_weight_grad,
-			const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver,
+			const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver,
 			TensorT drop_out_prob = 0.0f, TensorT drop_connection_prob = 0.0f, bool biases = true,
 			bool forget_gate = true, int block_version = 1);
-		std::vector<std::string> addGRU1(Model<HDelT, DDelT, TensorT>& model, const std::string& name, const std::string& module_name,
+		std::vector<std::string> addGRU1(Model<TensorT>& model, const std::string& name, const std::string& module_name,
 			const std::vector<std::string>& source_node_names,
 			const std::shared_ptr<ActivationOp<TensorT>>& node_activation,
 			const std::shared_ptr<ActivationOp<TensorT>>& node_activation_grad,
 			const std::shared_ptr<IntegrationOp<TensorT>>& node_integration,
 			const std::shared_ptr<IntegrationErrorOp<TensorT>>& node_integration_error,
 			const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& node_integration_weight_grad,
-			const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver,
+			const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver,
 			TensorT drop_out_prob = 0.0f, TensorT drop_connection_prob = 0.0f, bool biases = true, bool input_gate_connection = true);
-		std::vector<std::string> addGRU2(Model<HDelT, DDelT, TensorT>& model, const std::string& name, const std::string& module_name,
+		std::vector<std::string> addGRU2(Model<TensorT>& model, const std::string& name, const std::string& module_name,
 			const std::vector<std::string>& source_node_names,
 			const std::shared_ptr<ActivationOp<TensorT>>& node_activation,
 			const std::shared_ptr<ActivationOp<TensorT>>& node_activation_grad,
 			const std::shared_ptr<IntegrationOp<TensorT>>& node_integration,
 			const std::shared_ptr<IntegrationErrorOp<TensorT>>& node_integration_error,
 			const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& node_integration_weight_grad,
-			const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver,
+			const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver,
 			TensorT drop_out_prob = 0.0f, TensorT drop_connection_prob = 0.0f, bool biases = true, bool input_gate_connection = true);
 
 		/**
@@ -295,8 +295,8 @@ public:
 
 		@returns vector of output node names
 		*/
-		std::vector<std::string> addModel(Model<HDelT, DDelT, TensorT>& model, const std::vector<std::string>& source_node_names,
-			const std::vector<std::string>& sink_node_names, const Model<HDelT, DDelT, TensorT>& model_rh);
+		std::vector<std::string> addModel(Model<TensorT>& model, const std::vector<std::string>& source_node_names,
+			const std::vector<std::string>& sink_node_names, const Model<TensorT>& model_rh);
   };
 }
 

@@ -12,7 +12,7 @@ namespace SmartPeak
   /**
     @brief Class to log model training metrics
   */
-	template<typename HDelT, typename DDelT, typename TensorT>
+	template<typename TensorT>
   class ModelLogger
   {
 public:
@@ -45,7 +45,7 @@ public:
 
 		@returns True for a successfull write operation
 		*/
-		bool initLogs(const Model<HDelT, DDelT, TensorT> & model);
+		bool initLogs(const Model<TensorT> & model);
 
 		/**
 		@brief Initialize the log files
@@ -54,7 +54,7 @@ public:
 
 		@returns True for a successfull write operation
 		*/
-		bool writeLogs(const Model<HDelT, DDelT, TensorT> & model, const int& n_epochs, const std::vector<std::string>& training_metric_names, const std::vector<std::string>& validation_metric_names,
+		bool writeLogs(const Model<TensorT> & model, const int& n_epochs, const std::vector<std::string>& training_metric_names, const std::vector<std::string>& validation_metric_names,
 			const std::vector<TensorT>& training_metrics, const std::vector<TensorT>& validation_metrics, const std::vector<std::string>& output_node_names, const Eigen::Tensor<TensorT, 3>& expected_values,
 			std::vector<std::string> node_names = {}, std::vector<std::string> weight_names = {}, std::vector<std::string> module_names = {});
 
@@ -66,7 +66,7 @@ public:
 
 		@returns True for a successfull write operation
 		*/
-		bool logTimePerEpoch(const Model<HDelT, DDelT, TensorT> & model, const int& n_epoch);
+		bool logTimePerEpoch(const Model<TensorT> & model, const int& n_epoch);
 
 		/**
 		@brief Log training/validation metrics per epoch
@@ -78,11 +78,11 @@ public:
 
 		@returns True for a successfull write operation
 		*/
-		bool logTrainValMetricsPerEpoch(const Model<HDelT, DDelT, TensorT>& model, const std::vector<std::string>& training_metric_names, const std::vector<std::string>& validation_metric_names,
+		bool logTrainValMetricsPerEpoch(const Model<TensorT>& model, const std::vector<std::string>& training_metric_names, const std::vector<std::string>& validation_metric_names,
 			const std::vector<TensorT>& training_metrics, const std::vector<TensorT>& validation_metrics, const int& n_epoch);
 
 		/**
-		@brief Model<HDelT, DDelT, TensorT> predicted output and expected output for each batch for each time step per epoch
+		@brief Model<TensorT> predicted output and expected output for each batch for each time step per epoch
 
 		@param[in] model
 		@param[in] output_node_names Names of the output nodes
@@ -90,27 +90,27 @@ public:
 
 		@returns True for a successfull write operation
 		*/
-		bool logExpectedAndPredictedOutputPerEpoch(const Model<HDelT, DDelT, TensorT>& model, const std::vector<std::string>& output_node_names, const Eigen::Tensor<TensorT, 3>& expected_values, const int& n_epoch);
+		bool logExpectedAndPredictedOutputPerEpoch(const Model<TensorT>& model, const std::vector<std::string>& output_node_names, const Eigen::Tensor<TensorT, 3>& expected_values, const int& n_epoch);
 
 		/**
-		@brief Model<HDelT, DDelT, TensorT> weight update ratio for each link for each time step per epoch
+		@brief Model<TensorT> weight update ratio for each link for each time step per epoch
 
 		@param[in] model
 		@param[in] n_epoch
 
 		@returns True for a successfull write operation
 		*/
-		bool logWeightsPerEpoch(const Model<HDelT, DDelT, TensorT>& model, const int& n_epoch, std::vector<std::string> weight_names = {});
+		bool logWeightsPerEpoch(const Model<TensorT>& model, const int& n_epoch, std::vector<std::string> weight_names = {});
 
 		/**
-		@brief Model<HDelT, DDelT, TensorT> node errors for each time step per epoch
+		@brief Model<TensorT> node errors for each time step per epoch
 
 		@param[in] model
 		@param[in] n_epoch
 
 		@returns True for a successfull write operation
 		*/
-		bool logNodeErrorsPerEpoch(const Model<HDelT, DDelT, TensorT>& model, const int& n_epoch, std::vector<std::string> node_names = {});
+		bool logNodeErrorsPerEpoch(const Model<TensorT>& model, const int& n_epoch, std::vector<std::string> node_names = {});
 
 		/**
 		@brief The mean and variance of each module output and error for each time step for each mini batch per epoch
@@ -120,27 +120,27 @@ public:
 
 		@returns True for a successfull write operation
 		*/
-		bool logModuleMeanAndVariancePerEpoch(const Model<HDelT, DDelT, TensorT>& model, const int& n_epoch, std::vector<std::string> module_names = {});
+		bool logModuleMeanAndVariancePerEpoch(const Model<TensorT>& model, const int& n_epoch, std::vector<std::string> module_names = {});
 
 		/**
-		@brief Model<HDelT, DDelT, TensorT> node outputs for each time step per epoch
+		@brief Model<TensorT> node outputs for each time step per epoch
 
 		@param[in] model
 		@param[in] n_epoch
 
 		@returns True for a successfull write operation
 		*/
-		bool logNodeOutputsPerEpoch(const Model<HDelT, DDelT, TensorT>& model, const int& n_epoch, std::vector<std::string> node_names = {});
+		bool logNodeOutputsPerEpoch(const Model<TensorT>& model, const int& n_epoch, std::vector<std::string> node_names = {});
 
 		/**
-		@brief Model<HDelT, DDelT, TensorT> node derivatives for each time step per epoch
+		@brief Model<TensorT> node derivatives for each time step per epoch
 
 		@param[in] model
 		@param[in] n_epoch
 
 		@returns True for a successfull write operation
 		*/
-		bool logNodeDerivativesPerEpoch(const Model<HDelT, DDelT, TensorT>& model, const int& n_epoch, std::vector<std::string> node_names = {});
+		bool logNodeDerivativesPerEpoch(const Model<TensorT>& model, const int& n_epoch, std::vector<std::string> node_names = {});
 
 	private:
 		bool log_time_epoch_ = false; ///< log ...

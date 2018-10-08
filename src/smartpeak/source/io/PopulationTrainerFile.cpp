@@ -10,8 +10,8 @@
 
 namespace SmartPeak
 {
-	template<typename HDelT, typename DDelT, typename TensorT>
-	void PopulationTrainerFile<HDelT, DDelT, TensorT>::sanitizeModelName(std::string& model_name)
+	template<typename TensorT>
+	void PopulationTrainerFile<TensorT>::sanitizeModelName(std::string& model_name)
 	{
 		// sanitize the model name
 		std::string illegalChars = "\\/:?\"<>|";
@@ -23,8 +23,8 @@ namespace SmartPeak
 		}
 	}
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-	bool PopulationTrainerFile<HDelT, DDelT, TensorT>::storeModels(const std::vector<Model<HDelT, DDelT, TensorT>>& models,
+	template<typename TensorT>
+	bool PopulationTrainerFile<TensorT>::storeModels(const std::vector<Model<TensorT>>& models,
 		const std::string& filename)
 	{
 		std::fstream file;
@@ -32,7 +32,7 @@ namespace SmartPeak
 
 		file.open(filename + ".sh", std::ios::out | std::ios::trunc);
 
-		for (const Model<HDelT, DDelT, TensorT>& model : models)
+		for (const Model<TensorT>& model : models)
 		{
 			// write the model to file
 			//std::string model_name = model.getName();
@@ -61,8 +61,8 @@ namespace SmartPeak
 		return true;
 	}
 
-	template<typename HDelT, typename DDelT, typename TensorT>
-	bool PopulationTrainerFile<HDelT, DDelT, TensorT>::storeModelValidations(
+	template<typename TensorT>
+	bool PopulationTrainerFile<TensorT>::storeModelValidations(
 		const std::string& filename,
 		const std::vector<std::pair<int, TensorT>>& models_validation_errors)
 	{

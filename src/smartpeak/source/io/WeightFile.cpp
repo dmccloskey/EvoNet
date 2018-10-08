@@ -29,23 +29,23 @@ namespace SmartPeak
       std::map<std::string, TensorT> weight_init_params = parseParameters(weight_init_params_str);
 
       // parse the weight_init_op
-      std::shared_ptr<WeightInitOp> weight_init;
+      std::shared_ptr<WeightInitOp<TensorT>> weight_init;
       if (weight_init_op_str == "ConstWeightInitOp")
       {
-        ConstWeightInitOp* ptr = nullptr;
+        ConstWeightInitOp<TensorT>* ptr = nullptr;
         if (weight_init_params.count("n"))
-          ptr = new ConstWeightInitOp(weight_init_params.at("n"));
+          ptr = new ConstWeightInitOp<TensorT>(weight_init_params.at("n"));
         else
-          ptr = new ConstWeightInitOp(1.0);
+          ptr = new ConstWeightInitOp<TensorT>(1.0);
         weight_init.reset(ptr);
       }
       else if (weight_init_op_str == "RandWeightInitOp")
       {
-        RandWeightInitOp* ptr = nullptr;
+        RandWeightInitOp<TensorT>* ptr = nullptr;
         if (weight_init_params.count("n"))
-          ptr = new RandWeightInitOp(weight_init_params.at("n"));
+          ptr = new RandWeightInitOp<TensorT>(weight_init_params.at("n"));
         else
-          ptr = new RandWeightInitOp(1.0);
+          ptr = new RandWeightInitOp<TensorT>(1.0);
         weight_init.reset(ptr);
       }
       else std::cout<<"WeightInitOp "<<weight_init_op_str<<" for weight_name "<<weight_name<<" was not recognized."<<std::endl;
@@ -56,10 +56,10 @@ namespace SmartPeak
 				solver_params = parseParameters(solver_params_str);
 
       // parse the solver_op
-      std::shared_ptr<SolverOp> solver;
+      std::shared_ptr<SolverOp<TensorT>> solver;
       if (solver_op_str == "SGDOp")
       {
-        SGDOp* ptr = new SGDOp();
+        SGDOp<TensorT>* ptr = new SGDOp<TensorT>();
         ptr->setLearningRate(0.01);
         if (solver_params.count("learning_rate"))
           ptr->setLearningRate(solver_params.at("learning_rate"));
@@ -79,7 +79,7 @@ namespace SmartPeak
       }
       else if (solver_op_str == "AdamOp")
       {
-        AdamOp* ptr = new AdamOp();
+        AdamOp<TensorT>* ptr = new AdamOp<TensorT>();
         if (solver_params.count("learning_rate"))
           ptr->setLearningRate(solver_params.at("learning_rate"));
         ptr->setMomentum(0.9);
@@ -104,7 +104,7 @@ namespace SmartPeak
       }
 			else if (solver_op_str == "DummySolverOp")
 			{
-				DummySolverOp* ptr = new DummySolverOp();
+				DummySolverOp<TensorT>* ptr = new DummySolverOp<TensorT>();
 				solver.reset(ptr);
 			}
       else std::cout<<"SolverOp "<<solver_op_str<<" for weight_name "<<weight_name<<" was not recognized."<<std::endl;
