@@ -10,6 +10,7 @@ namespace SmartPeak
   /**
     @brief Base class to implement a data generator or simulator
   */
+	template<typename TensorT>
 	class DataSimulator
 	{
 	public:
@@ -23,7 +24,7 @@ namespace SmartPeak
 			@param[in, out] output Output Tensor for the model
 			@param[in, out] time_steps Time step tensor for the model
 		*/
-		virtual void simulateTrainingData(Eigen::Tensor<float, 4>& input_data, Eigen::Tensor<float, 4>& output_data, Eigen::Tensor<float, 3>& time_steps) = 0;
+		virtual void simulateTrainingData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps) = 0;
 
 		/**
 		@brief Entry point to define the simulated data for testing/validation
@@ -32,7 +33,7 @@ namespace SmartPeak
 		@param[in, out] output Output Tensor for the model
 		@param[in, out] time_steps Time step tensor for the model
 		*/
-		virtual void simulateValidationData(Eigen::Tensor<float, 4>& input_data, Eigen::Tensor<float, 4>& output_data, Eigen::Tensor<float, 3>& time_steps) = 0;
+		virtual void simulateValidationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps) = 0;
 
 		/**
 		@brief Entry point to define the simulation data for evaluation
@@ -41,7 +42,7 @@ namespace SmartPeak
 		@param[in, out] output Output Tensor for the model
 		@param[in, out] time_steps Time step tensor for the model
 		*/
-		virtual void simulateEvaluationData(Eigen::Tensor<float, 4>& input_data, Eigen::Tensor<float, 3>& time_steps) = 0;
+		virtual void simulateEvaluationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 3>& time_steps) = 0;
 	};
 }
 

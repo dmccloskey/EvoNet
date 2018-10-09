@@ -15,23 +15,25 @@ using namespace SmartPeak;
 using namespace std;
 
 // Extended classes used for testing
-class ModelTrainerExt : public ModelTrainer
+template<typename TensorT>
+class ModelTrainerExt : public ModelTrainer<TensorT>
 {
 public:
-	Model makeModel() { return Model(); }
+	Model<TensorT> makeModel() { return Model<TensorT>(); }
 	void adaptiveTrainerScheduler(
 		const int& n_generations,
 		const int& n_epochs,
-		Model& model,
+		Model<TensorT>& model,
 		const std::vector<float>& model_errors) {}
 };
 
-class ModelReplicatorExt : public ModelReplicator
+template<typename TensorT>
+class ModelReplicatorExt : public ModelReplicator<TensorT>
 {
 public:
 	void adaptiveReplicatorScheduler(
 		const int& n_generations,
-		std::vector<Model>& models,
+		std::vector<Model<TensorT>>& models,
 		std::vector<std::vector<std::pair<int, float>>>& models_errors_per_generations)
 	{
 		if (n_generations >= 0)
@@ -49,12 +51,13 @@ public:
 	}
 };
 
-class PopulationTrainerExt : public PopulationTrainer
+template<typename TensorT>
+class PopulationTrainerExt : public PopulationTrainer<TensorT>
 {
 public:
 	void adaptivePopulationScheduler(
 		const int& n_generations,
-		std::vector<Model>& models,
+		std::vector<Model<TensorT>>& models,
 		std::vector<std::vector<std::pair<int, float>>>& models_errors_per_generations)
 	{
 		if (n_generations == getNGenerations() - 1)
@@ -72,10 +75,11 @@ public:
 	}
 };
 
-class DataSimulatorExt : public DataSimulator
+template<typename TensorT>
+class DataSimulatorExt : public DataSimulator<TensorT>
 {
 public:
-	void simulateEvaluationData(Eigen::Tensor<float, 4>& input_data, Eigen::Tensor<float, 3>& time_steps)
+	void simulateEvaluationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 3>& time_steps)
 	{
 		// infer data dimensions based on the input tensors
 		const int batch_size = input_data.dimension(0);
@@ -83,7 +87,7 @@ public:
 		const int n_input_nodes = input_data.dimension(2);
 		const int n_epochs = input_data.dimension(3);
 
-		Eigen::Tensor<float, 3> input_tmp(batch_size, memory_size, n_input_nodes);
+		Eigen::Tensor<TensorT, 3> input_tmp(batch_size, memory_size, n_input_nodes);
 		input_tmp.setValues(
 			{ { { 1 },{ 2 },{ 3 },{ 4 },{ 5 },{ 6 },{ 7 },{ 8 } },
 			{ { 2 },{ 3 },{ 4 },{ 5 },{ 6 },{ 7 },{ 8 },{ 9 } },
@@ -100,7 +104,7 @@ public:
 		// update the time_steps
 		time_steps.setConstant(1.0f);
 	}
-	void simulateData(Eigen::Tensor<float, 4>& input_data, Eigen::Tensor<float, 4>& output_data, Eigen::Tensor<float, 3>& time_steps)
+	void simulateData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
 	{
 		// infer data dimensions based on the input tensors
 		const int batch_size = input_data.dimension(0);
@@ -109,7 +113,7 @@ public:
 		const int n_output_nodes = output_data.dimension(2);
 		const int n_epochs = input_data.dimension(3);
 
-		Eigen::Tensor<float, 3> input_tmp(batch_size, memory_size, n_input_nodes);
+		Eigen::Tensor<TensorT, 3> input_tmp(batch_size, memory_size, n_input_nodes);
 		input_tmp.setValues(
 			{ { { 1 },{ 2 },{ 3 },{ 4 },{ 5 },{ 6 },{ 7 },{ 8 } },
 			{ { 2 },{ 3 },{ 4 },{ 5 },{ 6 },{ 7 },{ 8 },{ 9 } },
@@ -122,7 +126,7 @@ public:
 				for (int nodes_iter = 0; nodes_iter<n_input_nodes; ++nodes_iter)
 					for (int epochs_iter = 0; epochs_iter<n_epochs; ++epochs_iter)
 						input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = input_tmp(batch_iter, memory_iter, nodes_iter);
-		Eigen::Tensor<float, 3> output_tmp(batch_size, memory_size, n_output_nodes);
+		Eigen::Tensor<TensorT, 3> output_tmp(batch_size, memory_size, n_output_nodes);
 		output_tmp.setValues(
 			{ { { 1 },{ 1 },{ 2 },{ 2 },{ 3 },{ 3 },{ 4 },{ 4 } },
 			{ { 1 },{ 2 },{ 2 },{ 3 },{ 3 },{ 4 },{ 4 },{ 5 } },
@@ -139,11 +143,11 @@ public:
 		time_steps.setConstant(1.0f);
 	}
 
-	void simulateTrainingData(Eigen::Tensor<float, 4>& input_data, Eigen::Tensor<float, 4>& output_data, Eigen::Tensor<float, 3>& time_steps)
+	void simulateTrainingData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
 	{
 		simulateData(input_data, output_data, time_steps);
 	}
-	void simulateValidationData(Eigen::Tensor<float, 4>& input_data, Eigen::Tensor<float, 4>& output_data, Eigen::Tensor<float, 3>& time_steps)
+	void simulateValidationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
 	{
 		simulateData(input_data, output_data, time_steps);
 	}
@@ -153,22 +157,22 @@ BOOST_AUTO_TEST_SUITE(populationTrainer)
 
 BOOST_AUTO_TEST_CASE(constructor) 
 {
-  PopulationTrainerExt* ptr = nullptr;
-  PopulationTrainerExt* nullPointer = nullptr;
-	ptr = new PopulationTrainerExt();
+  PopulationTrainerExt<float>* ptr = nullptr;
+  PopulationTrainerExt<float>* nullPointer = nullptr;
+	ptr = new PopulationTrainerExt<float>();
   BOOST_CHECK_NE(ptr, nullPointer);
 }
 
 BOOST_AUTO_TEST_CASE(destructor) 
 {
-  PopulationTrainerExt* ptr = nullptr;
-	ptr = new PopulationTrainerExt();
+  PopulationTrainerExt<float>* ptr = nullptr;
+	ptr = new PopulationTrainerExt<float>();
   delete ptr;
 }
 
 BOOST_AUTO_TEST_CASE(gettersAndSetters)
 {
-	PopulationTrainerExt population_trainer;
+	PopulationTrainerExt<float> population_trainer;
 	population_trainer.setNTop(4);
 	population_trainer.setNRandom(1);
 	population_trainer.setNReplicatesPerModel(2);
@@ -182,15 +186,15 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
 
 BOOST_AUTO_TEST_CASE(removeDuplicateModels) 
 {
-  PopulationTrainerExt population_trainer;
+  PopulationTrainerExt<float> population_trainer;
 
   // make a vector of models to use for testing
-  std::vector<Model> models;
+  std::vector<Model<float>> models;
   for (int i=0; i<2; ++i)
   {
     for (int j=0; j<4; ++j)
     {
-      Model model;
+      Model<float> model;
       model.setName(std::to_string(j));
 			model.setId(i*j+j);
       models.push_back(model);
@@ -205,7 +209,7 @@ BOOST_AUTO_TEST_CASE(removeDuplicateModels)
 
 BOOST_AUTO_TEST_CASE(getTopNModels_) 
 {
-  PopulationTrainerExt population_trainer;
+  PopulationTrainerExt<float> population_trainer;
 
   // make dummy data
   std::vector<std::pair<int, float>> models_validation_errors;
@@ -226,7 +230,7 @@ BOOST_AUTO_TEST_CASE(getTopNModels_)
 
 BOOST_AUTO_TEST_CASE(getRandomNModels_) 
 {
-  PopulationTrainerExt population_trainer;
+  PopulationTrainerExt<float> population_trainer;
 
   // make dummy data
   std::vector<std::pair<int, float>> models_validation_errors;
@@ -247,18 +251,18 @@ BOOST_AUTO_TEST_CASE(getRandomNModels_)
 
 BOOST_AUTO_TEST_CASE(validateModels_) 
 {
-  // PopulationTrainerExt population_trainer;
+  // PopulationTrainerExt<float> population_trainer;
   
   // model_trainer_validateModels_.setBatchSize(5);
   // model_trainer_validateModels_.setMemorySize(8);
   // model_trainer_validateModels_.setNEpochs(100);
 
   // // make a vector of models to use for testing
-  // std::vector<Model> models;
+  // std::vector<Model<float>> models;
   // Eigen::Tensor<float, 1> model_error(model_trainer_validateModels_.setBatchSize(5));
   // for (int i=0; i<4; ++i)
   // {
-  //   Model model;
+  //   Model<float> model;
   //   model.setName(std::to_string(i));
   //   float values = (float)(4-i);
   //   model_error.setValues({values, values, values, values, values});
@@ -270,30 +274,30 @@ BOOST_AUTO_TEST_CASE(validateModels_)
 
 BOOST_AUTO_TEST_CASE(selectModels) 
 {
-  PopulationTrainerExt population_trainer;
+  PopulationTrainerExt<float> population_trainer;
 
   // [TODO: add tests]
 }
 
 BOOST_AUTO_TEST_CASE(replicateModels) 
 {
-  PopulationTrainerExt population_trainer;
+  PopulationTrainerExt<float> population_trainer;
 	population_trainer.setNReplicatesPerModel(2);
 
-  ModelReplicatorExt model_replicator;
+  ModelReplicatorExt<float> model_replicator;
 
   // create an initial population
-  std::vector<Model> population1, population2, population3;
+  std::vector<Model<float>> population1, population2, population3;
 	for (int i = 0; i < 2; ++i)
 	{
 		// baseline model
-		std::shared_ptr<WeightInitOp> weight_init;
-		std::shared_ptr<SolverOp> solver;
-		weight_init.reset(new ConstWeightInitOp(1.0));
-		solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
+		std::shared_ptr<WeightInitOp<float>> weight_init;
+		std::shared_ptr<SolverOp<float>> solver;
+		weight_init.reset(new ConstWeightInitOp<float>(1.0));
+		solver.reset(new AdamOp<float>(0.01, 0.9, 0.999, 1e-8));
 		std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>());
 		std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
-		Model model = model_replicator.makeBaselineModel(
+		Model<float> model = model_replicator.makeBaselineModel(
 			1, { 1 }, 1,
 			std::shared_ptr<ActivationOp<float>>(new ELUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ELUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()), std::shared_ptr<ActivationOp<float>>(new ELUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ELUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
 			weight_init, solver,
@@ -306,7 +310,7 @@ BOOST_AUTO_TEST_CASE(replicateModels)
 		// modify the models
 		model_replicator.modifyModel(model, std::to_string(i));
 
-		Model model1(model), model2(model), model3(model); // copy the models
+		Model<float> model1(model), model2(model), model3(model); // copy the models
 		population1.push_back(model1); // push the copies to the different test populations
 		population2.push_back(model2);
 		population3.push_back(model3);
@@ -377,32 +381,32 @@ BOOST_AUTO_TEST_CASE(replicateModels)
 
 BOOST_AUTO_TEST_CASE(trainModels) 
 {
-  PopulationTrainerExt population_trainer;
+  PopulationTrainerExt<float> population_trainer;
 
-  ModelTrainerExt model_trainer;
+  ModelTrainerExt<float> model_trainer;
   model_trainer.setBatchSize(5);
   model_trainer.setMemorySize(8);
   model_trainer.setNEpochsTraining(5);
 	model_trainer.setNEpochsValidation(5);
 
-  ModelReplicatorExt model_replicator;
+  ModelReplicatorExt<float> model_replicator;
   model_replicator.setNNodeAdditions(1);
   model_replicator.setNLinkAdditions(1);
   model_replicator.setNNodeDeletions(0);
   model_replicator.setNLinkDeletions(0);
 
   // create an initial population
-  std::vector<Model> population;
+  std::vector<Model<float>> population;
   for (int i=0; i<4; ++i)
   {
     // baseline model
-    std::shared_ptr<WeightInitOp> weight_init;
-    std::shared_ptr<SolverOp> solver;
-    weight_init.reset(new ConstWeightInitOp(1.0));
-    solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
+    std::shared_ptr<WeightInitOp<float>> weight_init;
+    std::shared_ptr<SolverOp<float>> solver;
+    weight_init.reset(new ConstWeightInitOp<float>(1.0));
+    solver.reset(new AdamOp<float>(0.01, 0.9, 0.999, 1e-8));
 		std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>());
 		std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
-    Model model = model_replicator.makeBaselineModel(
+    Model<float> model = model_replicator.makeBaselineModel(
 			1, {}, 1,
       std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
       weight_init, solver,
@@ -476,7 +480,7 @@ BOOST_AUTO_TEST_CASE(trainModels)
 	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
 	model_trainer.setOutputNodes({ output_nodes });
 
-  population_trainer.trainModels(population, model_trainer, ModelLogger(),
+  population_trainer.trainModels(population, model_trainer, ModelLogger<float>(),
     input_data, output_data, time_steps, input_nodes);
 
   BOOST_CHECK_EQUAL(population.size(), 4); // broken models should still be there
@@ -493,33 +497,33 @@ BOOST_AUTO_TEST_CASE(trainModels)
 
 BOOST_AUTO_TEST_CASE(evalModels)
 {
-	PopulationTrainerExt population_trainer;
+	PopulationTrainerExt<float> population_trainer;
 
-	ModelTrainerExt model_trainer;
+	ModelTrainerExt<float> model_trainer;
 	model_trainer.setBatchSize(5);
 	model_trainer.setMemorySize(8);
 	model_trainer.setNEpochsTraining(5);
 	model_trainer.setNEpochsValidation(5);
 	model_trainer.setNEpochsEvaluation(5);
 
-	ModelReplicatorExt model_replicator;
+	ModelReplicatorExt<float> model_replicator;
 	model_replicator.setNNodeAdditions(1);
 	model_replicator.setNLinkAdditions(1);
 	model_replicator.setNNodeDeletions(0);
 	model_replicator.setNLinkDeletions(0);
 
 	// create an initial population
-	std::vector<Model> population;
+	std::vector<Model<float>> population;
 	for (int i = 0; i < 4; ++i)
 	{
 		// baseline model
-		std::shared_ptr<WeightInitOp> weight_init;
-		std::shared_ptr<SolverOp> solver;
-		weight_init.reset(new ConstWeightInitOp(1.0));
-		solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
+		std::shared_ptr<WeightInitOp<float>> weight_init;
+		std::shared_ptr<SolverOp<float>> solver;
+		weight_init.reset(new ConstWeightInitOp<float>(1.0));
+		solver.reset(new AdamOp<float>(0.01, 0.9, 0.999, 1e-8));
 		std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>());
 		std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
-		Model model = model_replicator.makeBaselineModel(
+		Model<float> model = model_replicator.makeBaselineModel(
 			1, {}, 1,
 			std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
 			weight_init, solver,
@@ -580,7 +584,7 @@ BOOST_AUTO_TEST_CASE(evalModels)
 	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
 	model_trainer.setOutputNodes({ output_nodes });
 
-	population_trainer.evalModels(population, model_trainer, ModelLogger(),
+	population_trainer.evalModels(population, model_trainer, ModelLogger<float>(),
 		input_data, time_steps, input_nodes);
 
 	BOOST_CHECK_EQUAL(population.size(), 4); // broken models should still be there
@@ -596,22 +600,22 @@ BOOST_AUTO_TEST_CASE(evalModels)
 
 BOOST_AUTO_TEST_CASE(exampleUsage) 
 {
-	PopulationTrainerExt population_trainer;
+	PopulationTrainerExt<float> population_trainer;
 	population_trainer.setNTop(2);
 	population_trainer.setNRandom(2);
 	population_trainer.setNReplicatesPerModel(3);
 	population_trainer.setNGenerations(5);
 
 	// define the model logger
-	ModelLogger model_logger;
+	ModelLogger<float> model_logger;
 
   // Toy data set used for all tests
-	DataSimulatorExt data_simulator;
+	DataSimulatorExt<float> data_simulator;
   const std::vector<std::string> input_nodes = {"Input_0"}; // true inputs + biases
   const std::vector<std::string> output_nodes = {"Output_0"};
 	
 	// define the model trainer
-	ModelTrainerExt model_trainer;
+	ModelTrainerExt<float> model_trainer;
 	model_trainer.setBatchSize(5);
 	model_trainer.setMemorySize(8);
 	model_trainer.setNEpochsTraining(500);
@@ -623,7 +627,7 @@ BOOST_AUTO_TEST_CASE(exampleUsage)
 	model_trainer.setOutputNodes({ output_nodes });
 
   // define the model replicator for growth mode
-	ModelReplicatorExt model_replicator;
+	ModelReplicatorExt<float> model_replicator;
   model_replicator.setNNodeAdditions(1);
   model_replicator.setNLinkAdditions(1);
   model_replicator.setNNodeDeletions(0);
@@ -631,18 +635,18 @@ BOOST_AUTO_TEST_CASE(exampleUsage)
 
 	// define the initial population of 10 baseline models
 	std::cout << "Making the initial population..." << std::endl;
-	std::vector<Model> population;
+	std::vector<Model<float>> population;
 	const int population_size = 8;
 	for (int i = 0; i<population_size; ++i)
 	{
 		// baseline model
-		std::shared_ptr<WeightInitOp> weight_init;
-		std::shared_ptr<SolverOp> solver;
-		weight_init.reset(new RandWeightInitOp(1.0));
-		solver.reset(new AdamOp(0.1, 0.9, 0.999, 1e-8));
+		std::shared_ptr<WeightInitOp<float>> weight_init;
+		std::shared_ptr<SolverOp<float>> solver;
+		weight_init.reset(new RandWeightInitOp<float>(1.0));
+		solver.reset(new AdamOp<float>(0.1, 0.9, 0.999, 1e-8));
 		std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>());
 		std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
-		Model model = model_replicator.makeBaselineModel(
+		Model<float> model = model_replicator.makeBaselineModel(
 			(int)input_nodes.size(), { 1 }, (int)output_nodes.size(),
 			std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
 			std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
@@ -660,7 +664,7 @@ BOOST_AUTO_TEST_CASE(exampleUsage)
 	std::vector<std::vector<std::pair<int, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
 		population, model_trainer, model_replicator, data_simulator, model_logger, input_nodes, 2);
 
-	PopulationTrainerFile population_trainer_file;
+	PopulationTrainerFile<float> population_trainer_file;
 	population_trainer_file.storeModels(population, "populationTrainer");
 	population_trainer_file.storeModelValidations("populationTrainerValidationErrors.csv", models_validation_errors_per_generation.back());
 

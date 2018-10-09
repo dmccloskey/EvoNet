@@ -409,7 +409,7 @@ void main_AAELabelStyleTrain() {
 	const int n_hard_threads = std::thread::hardware_concurrency();
 
 	// define the populatin trainer
-	PopulationTrainerExt population_trainer;
+	PopulationTrainerExt<float> population_trainer;
 	population_trainer.setNGenerations(1);
 	population_trainer.setNTop(1);
 	population_trainer.setNRandom(1);
@@ -426,7 +426,7 @@ void main_AAELabelStyleTrain() {
 	const std::size_t hidden_size = 25;
 	const std::size_t training_data_size = 6000; //60000;
 	const std::size_t validation_data_size = 100; //10000;
-	DataSimulatorExt data_simulator;
+	DataSimulatorExt<float> data_simulator;
 
 	// read in the training data
 	const std::string training_data_filename = "C:/Users/domccl/GitHub/mnist/train-images.idx3-ubyte";
@@ -476,7 +476,7 @@ void main_AAELabelStyleTrain() {
 		discriminator_label_output_nodes.push_back("DSLabels-Output-" + std::to_string(i));
 
 	// define the model trainer
-	ModelTrainerExt model_trainer;
+	ModelTrainerExt<float> model_trainer;
 	model_trainer.setBatchSize(1);
 	model_trainer.setMemorySize(1);
 	model_trainer.setNEpochsTraining(1);
@@ -495,7 +495,7 @@ void main_AAELabelStyleTrain() {
 	model_trainer.setOutputNodes({ decoder_output_nodes, discriminator_style_output_nodes, discriminator_label_output_nodes });
 
 	// define the model replicator for growth mode
-	ModelReplicatorExt model_replicator;
+	ModelReplicatorExt<float> model_replicator;
 
 	// define the initial population [BUG FREE]
 	std::cout << "Initializing the population..." << std::endl;
@@ -505,7 +505,7 @@ void main_AAELabelStyleTrain() {
 	std::vector<std::vector<std::pair<int, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
 		population, model_trainer, model_replicator, data_simulator, model_logger, input_nodes, 1);
 
-	PopulationTrainerFile population_trainer_file;
+	PopulationTrainerFile<float> population_trainer_file;
 	population_trainer_file.storeModels(population, "MNIST");
 	population_trainer_file.storeModelValidations("MNISTErrors.csv", models_validation_errors_per_generation.back());
 }
@@ -514,7 +514,7 @@ void main_AAELabelStyleEvaluate() {
 	const int n_hard_threads = std::thread::hardware_concurrency();
 
 	// define the populatin trainer
-	PopulationTrainerExt population_trainer;
+	PopulationTrainerExt<float> population_trainer;
 	population_trainer.setNGenerations(1);
 	population_trainer.setNTop(1);
 	population_trainer.setNRandom(1);
@@ -527,7 +527,7 @@ void main_AAELabelStyleEvaluate() {
 	const std::size_t hidden_size = 25;
 	const std::size_t training_data_size = 10000; //60000;
 	const std::size_t validation_data_size = 100; //10000;
-	DataSimulatorExt data_simulator;
+	DataSimulatorExt<float> data_simulator;
 
 	// define the model logger
 	ModelLogger model_logger(false, false, false, false, false, false, true, false);
@@ -580,7 +580,7 @@ void main_AAELabelStyleEvaluate() {
 		discriminator_label_output_nodes.push_back("DSLabels-Output-" + std::to_string(i));
 
 	// define the model trainer
-	ModelTrainerExt model_trainer;
+	ModelTrainerExt<float> model_trainer;
 	model_trainer.setBatchSize(1);
 	model_trainer.setMemorySize(1);
 	model_trainer.setNEpochsTraining(0);
@@ -601,7 +601,7 @@ void main_AAELabelStyleEvaluate() {
 
 
 	// define the model replicator for growth mode
-	ModelReplicatorExt model_replicator;
+	ModelReplicatorExt<float> model_replicator;
 
 	// read in the trained model
 	std::cout << "Reading in the model..." << std::endl;

@@ -11,11 +11,11 @@ using namespace std;
 
 BOOST_AUTO_TEST_SUITE(datasimulator)
 
-
-class DataSimulatorExt : public DataSimulator
+template<typename TensorT>
+class DataSimulatorExt : public DataSimulator<TensorT>
 {
 public:
-	void simulateTrainingData(Eigen::Tensor<float, 4>& input_data, Eigen::Tensor<float, 4>& output_data, Eigen::Tensor<float, 3>& time_steps)
+	void simulateTrainingData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
 	{
 		// infer data dimensions based on the input tensors
 		const int batch_size = input_data.dimension(0);
@@ -42,7 +42,7 @@ public:
 		// update the time_steps
 		time_steps.setConstant(1.0f); // TODO
 	}
-	void simulateValidationData(Eigen::Tensor<float, 4>& input_data, Eigen::Tensor<float, 4>& output_data, Eigen::Tensor<float, 3>& time_steps)
+	void simulateValidationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
 	{
 		// infer data dimensions based on the input tensors
 		const int batch_size = input_data.dimension(0);
@@ -69,7 +69,7 @@ public:
 		// update the time_steps
 		time_steps.setConstant(1.0f); // TODO
 	}
-	void simulateEvaluationData(Eigen::Tensor<float, 4>& input_data, Eigen::Tensor<float, 3>& time_steps)
+	void simulateEvaluationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 3>& time_steps)
 	{
 		// infer data dimensions based on the input tensors
 		const int batch_size = input_data.dimension(0);
@@ -95,22 +95,22 @@ public:
 
 BOOST_AUTO_TEST_CASE(constructor) 
 {
-	DataSimulatorExt* ptr = nullptr;
-	DataSimulatorExt* nullPointer = nullptr;
-	ptr = new DataSimulatorExt();
+	DataSimulatorExt<float>* ptr = nullptr;
+	DataSimulatorExt<float>* nullPointer = nullptr;
+	ptr = new DataSimulatorExt<float>();
   BOOST_CHECK_NE(ptr, nullPointer);
 }
 
 BOOST_AUTO_TEST_CASE(destructor) 
 {
-	DataSimulatorExt* ptr = nullptr;
-	ptr = new DataSimulatorExt();
+	DataSimulatorExt<float>* ptr = nullptr;
+	ptr = new DataSimulatorExt<float>();
   delete ptr;
 }
 
 BOOST_AUTO_TEST_CASE(simulateTrainingData)
 {
-	DataSimulatorExt datasimulator;
+	DataSimulatorExt<float> datasimulator;
 
 	Eigen::Tensor<float, 4> input_data(1, 1, 1, 1);
 	Eigen::Tensor<float, 4> output_data(1, 1, 1, 1);
@@ -125,7 +125,7 @@ BOOST_AUTO_TEST_CASE(simulateTrainingData)
 
 BOOST_AUTO_TEST_CASE(simulateValidationData)
 {
-	DataSimulatorExt datasimulator;
+	DataSimulatorExt<float> datasimulator;
 
 	Eigen::Tensor<float, 4> input_data(1, 1, 1, 1);
 	Eigen::Tensor<float, 4> output_data(1, 1, 1, 1);
@@ -140,7 +140,7 @@ BOOST_AUTO_TEST_CASE(simulateValidationData)
 
 BOOST_AUTO_TEST_CASE(simulateEvaluationData)
 {
-	DataSimulatorExt datasimulator;
+	DataSimulatorExt<float> datasimulator;
 
 	Eigen::Tensor<float, 4> input_data(1, 1, 1, 1);
 	Eigen::Tensor<float, 3> time_steps(1, 1, 1);

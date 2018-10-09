@@ -252,7 +252,7 @@ void main_LSTMTrain() {
 	const int n_hard_threads = std::thread::hardware_concurrency();
 
 	// define the populatin trainer
-	PopulationTrainerExt population_trainer;
+	PopulationTrainerExt<float> population_trainer;
 	population_trainer.setNGenerations(1);
 	population_trainer.setNTop(1);
 	population_trainer.setNRandom(1);
@@ -267,7 +267,7 @@ void main_LSTMTrain() {
 	const std::size_t n_hidden = 4; //128;
 	const std::size_t training_data_size = 10000; //60000;
 	const std::size_t validation_data_size = 100; //10000;
-	DataSimulatorExt data_simulator;
+	DataSimulatorExt<float> data_simulator;
 
 	// read in the training data
 	const std::string training_data_filename = "C:/Users/domccl/GitHub/mnist/train-images.idx3-ubyte";
@@ -299,7 +299,7 @@ void main_LSTMTrain() {
 		output_nodes.push_back("Output_" + std::to_string(i));
 
 	// define the model trainer
-	ModelTrainerExt model_trainer;
+	ModelTrainerExt<float> model_trainer;
 	model_trainer.setBatchSize(8);
 	model_trainer.setMemorySize(input_size);
 	model_trainer.setNEpochsTraining(5000);
@@ -316,7 +316,7 @@ void main_LSTMTrain() {
 	model_trainer.setNTBPTTSteps(100);
 
 	// define the model replicator for growth mode
-	ModelReplicatorExt model_replicator;
+	ModelReplicatorExt<float> model_replicator;
 
 	// define the initial population [BUG FREE]
 	std::cout << "Initializing the population..." << std::endl;
@@ -326,7 +326,7 @@ void main_LSTMTrain() {
 	std::vector<std::vector<std::pair<int, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
 		population, model_trainer, model_replicator, data_simulator, model_logger, input_nodes, 1);
 
-	PopulationTrainerFile population_trainer_file;
+	PopulationTrainerFile<float> population_trainer_file;
 	population_trainer_file.storeModels(population, "MNIST");
 	population_trainer_file.storeModelValidations("MNISTErrors.csv", models_validation_errors_per_generation.back());
 }

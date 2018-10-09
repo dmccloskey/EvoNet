@@ -753,7 +753,7 @@ public:
 int main(int argc, char** argv)
 {
 	// define the population trainer parameters
-	PopulationTrainerExt population_trainer;
+	PopulationTrainerExt<float> population_trainer;
 	population_trainer.setNGenerations(1);
 	//population_trainer.setNGenerations(20);
 	population_trainer.setNTop(3);
@@ -774,12 +774,12 @@ int main(int argc, char** argv)
 	std::vector<std::string> output_nodes = { "Output_0" };
 
 	// define the data simulator
-	DataSimulatorExt data_simulator;
+	DataSimulatorExt<float> data_simulator;
 	data_simulator.n_mask_ = 5;
 	data_simulator.sequence_length_ = 25;
 
 	// define the model replicator for growth mode
-	ModelTrainerExt model_trainer;
+	ModelTrainerExt<float> model_trainer;
 	model_trainer.setBatchSize(1);
 	model_trainer.setMemorySize(data_simulator.sequence_length_);
 	model_trainer.setNEpochsTraining(10000);
@@ -795,7 +795,7 @@ int main(int argc, char** argv)
 	ModelLogger model_logger(true, true, true, true, true, true, false, true);
 
 	// define the model replicator for growth mode
-	ModelReplicatorExt model_replicator;
+	ModelReplicatorExt<float> model_replicator;
 	model_replicator.setNodeActivations({std::make_pair(std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>())),
 		std::make_pair(std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>())), 
 		std::make_pair(std::shared_ptr<ActivationOp<float>>(new ELUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ELUGradOp<float>())), 
@@ -806,7 +806,7 @@ int main(int argc, char** argv)
 
 	// define the initial population [BUG FREE]
 	std::cout << "Initializing the population..." << std::endl;
-	std::vector<Model> population;
+	std::vector<Model<float>> population;
 
 	// make the model name
 	//Model model = model_trainer.makeModelSolution();
@@ -822,14 +822,14 @@ int main(int argc, char** argv)
 	model.setId(0);
 	population.push_back(model);
 
-	PopulationTrainerFile population_trainer_file;
+	PopulationTrainerFile<float> population_trainer_file;
 	population_trainer_file.storeModels(population, "AddProb");
 
 	// Evolve the population
 	std::vector<std::vector<std::pair<int, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
 		population, model_trainer, model_replicator, data_simulator, model_logger, input_nodes, n_threads);
 
-	//PopulationTrainerFile population_trainer_file;
+	//PopulationTrainerFile<float> population_trainer_file;
 	population_trainer_file.storeModels(population, "AddProb");
 	population_trainer_file.storeModelValidations("AddProbValidationErrors.csv", models_validation_errors_per_generation.back());
 

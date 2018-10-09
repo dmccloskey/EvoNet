@@ -43,11 +43,11 @@ namespace SmartPeak
 	template<typename TensorT>
 	bool ModelFile<TensorT>::storeModelCsv(const std::string & filename_nodes, const std::string & filename_links, const std::string & filename_weights, const Model<TensorT>& model)
 	{
-		NodeFile node_file;
+		NodeFile<TensorT> node_file;
 		node_file.storeNodesCsv(filename_nodes, model.getNodes());
 		LinkFile link_file;
 		link_file.storeLinksCsv(filename_links, model.getLinks());
-		WeightFile weight_file;
+		WeightFile<TensorT> weight_file;
 		weight_file.storeWeightsCsv(filename_weights, model.getWeights());
 		return true;
 	}
@@ -56,8 +56,8 @@ namespace SmartPeak
 	bool ModelFile<TensorT>::loadModelCsv(const std::string & filename_nodes, const std::string & filename_links, const std::string & filename_weights, Model<TensorT>& model)
 	{
 		// load the nodes
-		NodeFile node_file;
-		std::vector<Node> nodes;
+		NodeFile<TensorT> node_file;
+		std::vector<Node<TensorT>> nodes;
 		node_file.loadNodesCsv(filename_nodes, nodes);
 
 		// load the links
@@ -66,8 +66,8 @@ namespace SmartPeak
 		link_file.loadLinksCsv(filename_links, links);
 
 		// load the weights
-		WeightFile weight_file;
-		std::vector<Weight> weights;
+		WeightFile<TensorT> weight_file;
+		std::vector<Weight<TensorT>> weights;
 		weight_file.loadWeightsCsv(filename_weights, weights);
 
 		// make the model
@@ -88,7 +88,7 @@ namespace SmartPeak
 		file << "digraph G {\n"; // first line
 
 		// write node formating to file
-		for (const Node& node : model.getNodes())
+		for (const Node<TensorT>& node : model.getNodes())
 		{
 			if (node.getType() == NodeType::input)
 			{

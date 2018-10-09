@@ -241,20 +241,19 @@ namespace SmartPeak
 	template<typename TensorT>
 	size_t Node<TensorT>::getBatchSize() const
 	{
-		return batch_size_;
+		return node_data_.getBatchSize();
 	}
 
 	template<typename TensorT>
 	size_t Node<TensorT>::getMemorySize() const
 	{
-		return memory_size_;
+		return node_data_.getMemorySize();
 	}
 
 	template<typename TensorT>
 	void Node<TensorT>::setNodeData(const std::shared_ptr<NodeData<TensorT>>& node_data)
 	{
-		node_data_.reset();
-		node_data_ = std::move(node_data);
+		node_data_.reset(std::move(node_data));
 	}
 
 	template<typename TensorT>
@@ -266,57 +265,67 @@ namespace SmartPeak
 	template<typename TensorT>
   void Node<TensorT>::initNode(const int& batch_size, const int& memory_size, bool train)
   {
-		batch_size_ = batch_size;
-		memory_size_ = memory_size;
 
-    Eigen::Tensor<TensorT, 2> init_values(batch_size, memory_size);
-    init_values.setConstant(0.0f);
-		node_data_->setInput(init_values);
-		node_data_->setError(init_values);
-		node_data_->setDerivative(init_values);
+#ifndef EVONET_CUDA
+		node_data_.reset(new NodeDataGpu<TensorT>());
+#else
+		node_data_.reset(new NodeDataCpu<TensorT>());
+#endif
+		node_data_.getBatchSize(batch_size);
+		node_data_.getMemorySize(memory_size);
+
+		// Template zero and one tensor
+    Eigen::Tensor<TensorT, 2> zero_values(batch_size, memory_size); zero_values.setConstant(0);
+		Eigen::Tensor<TensorT, 2> one_values(batch_size, memory_size); one_values.setConstant(1);
+		Eigen::Tensor<TensorT, 2> init_values;
+
+		// set the input, error, and derivatives
+		init_values = zero_values;
+		node_data_->setInput(init_values.data());
+		init_values = zero_values;
+		node_data_->setError(init_values.data());
+		init_values = zero_values;
+		node_data_->setDerivative(init_values.data());
 
 		// set Dt
-    init_values.setConstant(1.0f);
-		node_data_->setDt(init_values);
+		init_values = one_values;
+		node_data_->setDt(init_values.data());
 
-		// set Drop probabilities
+		// set Drop probabilities [TODO: broke when adding NodeData...]
 		if (train) {
 			init_values.unaryExpr(RandBinaryOp<TensorT>(getDropProbability()));
-			setDrop(init_values);
+			init_values = one_values;
+			setDrop(one_values);
 		}
 		else {
-			setDrop(init_values);
+			init_values = one_values;
+			setDrop(one_values);
 		}
     
 		// corections for specific node types
     if (type_ == NodeType::bias)
     {
-      init_values.setConstant(1.0f);
       setStatus(NodeStatus::activated);
-			node_data_->setOutput(init_values);
-			//node_data_->setDerivative(init_values);
+			init_values = one_values;
+			node_data_->setOutput(init_values.data());
 		}
 		else if (type_ == NodeType::input)
 		{
-			//init_values.setConstant(1.0f);
-			//node_data_->setDerivative(init_values);
-			init_values.setConstant(0.0f);
 			setStatus(NodeStatus::initialized);
-			node_data_->setOutput(init_values);
+			init_values = zero_values;
+			node_data_->setOutput(init_values.data());
 		}
 		else if (type_ == NodeType::zero)
 		{
-			//init_values.setConstant(1.0f);
-			//setDerivative(init_values);
-			init_values.setConstant(0.0f);
 			setStatus(NodeStatus::activated);
-			node_data_->setOutput(init_values);
+			init_values = zero_values;
+			node_data_->setOutput(init_values.data());
 		}
     else
     {
-      init_values.setConstant(0.0f);
       setStatus(NodeStatus::initialized);
-			node_data_->setOutput(init_values);
+			init_values = zero_values;
+			node_data_->setOutput(init_values.data());
     }
   }
 
@@ -347,9 +356,9 @@ namespace SmartPeak
       for (int j=0; j<memory_size_ ; ++j)
       {
         if (node_data_->getOutput()(i,j) < output_min_)
-					node_data_->getOutputMutable()->operator()(i,j) = output_min_;
+					node_data_->getOutput()(i,j) = output_min_;
         else if (node_data_->getOutput()(i,j) > output_max_)
-					node_data_->getOutputMutable()->operator()(i,j) = output_max_;
+					node_data_->getOutput()(i,j) = output_max_;
       }
     }
   }

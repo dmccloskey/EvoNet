@@ -196,7 +196,7 @@ namespace SmartPeak
 		const std::shared_ptr<IntegrationOp<TensorT>>& output_node_integration,
 		const std::shared_ptr<IntegrationErrorOp<TensorT>>& output_node_integration_error,
 		const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& output_node_integration_weight_grad,
-		const std::shared_ptr<WeightInitOp>& weight_init, const std::shared_ptr<SolverOp>& solver,
+		const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver,
 		const std::shared_ptr<LossFunctionOp<TensorT>>& loss_function, const std::shared_ptr<LossFunctionGradOp<TensorT>>& loss_function_grad,
 		std::string unique_str)
   {
@@ -240,9 +240,9 @@ namespace SmartPeak
 				sprintf(link_bias_name_char, "Bias_%d-%d_to_Hidden_%d-%d", l, i, l, i);
 				std::string link_bias_name(link_bias_name_char);
 
-				std::shared_ptr<WeightInitOp> bias_weight_init;
+				std::shared_ptr<WeightInitOp<TensorT>> bias_weight_init;
 				bias_weight_init.reset(new ConstWeightInitOp(1.0));;
-				std::shared_ptr<SolverOp> bias_solver = solver;
+				std::shared_ptr<SolverOp<TensorT>> bias_solver = solver;
 				Weight<TensorT> weight_bias(weight_bias_name, bias_weight_init, bias_solver);
 				Link link_bias(link_bias_name, bias_name, node_name, weight_bias_name);
 
@@ -273,8 +273,8 @@ namespace SmartPeak
 						sprintf(weight_name_char, "Hidden_%d-%d_to_Hidden_%d-%d", l - 1, i, l, j);
 						std::string weight_name(weight_name_char);
 
-						std::shared_ptr<WeightInitOp> hidden_weight_init = weight_init;
-						std::shared_ptr<SolverOp> hidden_solver = solver;
+						std::shared_ptr<WeightInitOp<TensorT>> hidden_weight_init = weight_init;
+						std::shared_ptr<SolverOp<TensorT>> hidden_solver = solver;
 						Weight<TensorT> weight(weight_name_char, hidden_weight_init, hidden_solver);
 						Link link(link_name, input_name, hidden_name, weight_name);
 
@@ -307,9 +307,9 @@ namespace SmartPeak
       sprintf(link_bias_name_char, "Bias_%d_to_Output_%d", i, i);
       std::string link_bias_name(link_bias_name_char);
 
-      std::shared_ptr<WeightInitOp> bias_weight_init;
+      std::shared_ptr<WeightInitOp<TensorT>> bias_weight_init;
       bias_weight_init.reset(new ConstWeightInitOp(1.0));
-      std::shared_ptr<SolverOp> bias_solver = solver;
+      std::shared_ptr<SolverOp<TensorT>> bias_solver = solver;
       Weight<TensorT> weight_bias(weight_bias_name, bias_weight_init, bias_solver);
       Link link_bias(link_bias_name, bias_name, node_name, weight_bias_name);
 
@@ -340,8 +340,8 @@ namespace SmartPeak
 					sprintf(weight_name_char, "Input_%d_to_Hidden_%d-%d", i, 0, j);
 					std::string weight_name(weight_name_char);
 
-					std::shared_ptr<WeightInitOp> hidden_weight_init = weight_init;
-					std::shared_ptr<SolverOp> hidden_solver = solver;
+					std::shared_ptr<WeightInitOp<TensorT>> hidden_weight_init = weight_init;
+					std::shared_ptr<SolverOp<TensorT>> hidden_solver = solver;
 					Weight<TensorT> weight(weight_name_char, hidden_weight_init, hidden_solver);
 					Link link(link_name, input_name, hidden_name, weight_name);
 
@@ -371,8 +371,8 @@ namespace SmartPeak
 					sprintf(weight_name_char, "Hidden_%d-%d_to_Output_%d", n_hidden_nodes_per_layer.size() - 1, i, j);
 					std::string weight_name(weight_name_char);
 
-					std::shared_ptr<WeightInitOp> output_weight_init = weight_init;
-					std::shared_ptr<SolverOp> output_solver = solver;
+					std::shared_ptr<WeightInitOp<TensorT>> output_weight_init = weight_init;
+					std::shared_ptr<SolverOp<TensorT>> output_solver = solver;
 					Weight<TensorT> weight(weight_name_char, output_weight_init, output_solver);
 					Link link(link_name, hidden_name, output_name, weight_name);
 
@@ -406,8 +406,8 @@ namespace SmartPeak
           sprintf(weight_name_char, "Input_%d_to_Output_%d", i, j);
           std::string weight_name(weight_name_char);
 
-          std::shared_ptr<WeightInitOp> output_weight_init = weight_init;
-          std::shared_ptr<SolverOp> output_solver = solver;
+          std::shared_ptr<WeightInitOp<TensorT>> output_weight_init = weight_init;
+          std::shared_ptr<SolverOp<TensorT>> output_solver = solver;
           Weight<TensorT> weight(weight_name_char, output_weight_init, output_solver);
           Link link(link_name, input_name, output_name, weight_name);
 
@@ -829,7 +829,7 @@ namespace SmartPeak
     sprintf(link_bias_name_char, "%s_to_%s@addNode#", new_bias_name.data(), new_node_name.data());
     std::string link_bias_name = makeUniqueHash(link_bias_name_char, unique_str);
 
-    std::shared_ptr<WeightInitOp> bias_weight_init;
+    std::shared_ptr<WeightInitOp<TensorT>> bias_weight_init;
     bias_weight_init.reset(new ConstWeightInitOp(1.0));
     Weight<TensorT> weight_bias = model.getWeight(model.getLink(input_link_name).getWeightName()); // [OPTIMIZATION: use Link.getWeightName() directly]
     weight_bias.setName(weight_bias_name);

@@ -155,20 +155,11 @@ public:
 		size_t getBatchSize() const;
 		size_t getMemorySize() const;
 
-		Eigen::Tensor<TensorT, 2> getInput() const { return node_data_->getInput(); }; ///< input copy getter
-		Eigen::Tensor<TensorT, 2>* getInputMutable() { return node_data_->getInputMutable(); }; ///< input copy getter
-
-		Eigen::Tensor<TensorT, 2> getOutput() const { return node_data_->getOutput(); }; ///< output copy getter
-		Eigen::Tensor<TensorT, 2>* getOutputMutable() { return node_data_->getOutputMutable(); }; ///< output copy getter
-
-		Eigen::Tensor<TensorT, 2> getError() const { return node_data_->getError(); }; ///< error copy getter
-		Eigen::Tensor<TensorT, 2>* getErrorMutable() { return node_data_->getErrorMutable(); }; ///< error copy getter
-
-		Eigen::Tensor<TensorT, 2> getDerivative() const { return node_data_->getDerivative(); }; ///< derivative copy getter
-		Eigen::Tensor<TensorT, 2>* getDerivativeMutable() { return node_data_->getDerivativeMutable(); }; ///< derivative copy getter
-
-		Eigen::Tensor<TensorT, 2> getDt() const { return node_data_->getDt(); }; ///< dt copy getter
-		Eigen::Tensor<TensorT, 2>* getDtMutable() { return node_data_->getDtMutable(); }; ///< dt copy getter
+		Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> getInput() { return node_data_->getInput(); }; ///< input copy getter
+		Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> getOutput() { return node_data_->getOutput(); }; ///< output copy getter
+		Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> getError() { return node_data_->getError(); }; ///< error copy getter
+		Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> getDerivative() { return node_data_->getDerivative(); }; ///< derivative copy getter
+		Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> getDt() { return node_data_->getDt(); }; ///< dt copy getter
 
 		void setNodeData(const std::shared_ptr<NodeData<TensorT>>& node_data);
 		std::shared_ptr<NodeData<TensorT>> getNodeData();
@@ -213,8 +204,6 @@ private:
 		std::shared_ptr<IntegrationWeightGradOp<TensorT>> integration_weight_grad_; ///< Node integration weight grad function 
     TensorT output_min_ = -1.0e6; ///< Min Node output
     TensorT output_max_ = 1.0e6; ///< Max Node output
-		size_t batch_size_ = 1; ///< Mini batch size
-		size_t memory_size_ = 2; ///< Memory size
 		std::shared_ptr<NodeData<TensorT>> node_data_; ///< Node data
 		TensorT drop_probability_ = 0.0;
 		Eigen::Tensor<TensorT, 2> drop_; ///< Node Output drop tensor (initialized once per epoch)

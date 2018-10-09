@@ -199,12 +199,12 @@ public:
 };
 
 void main_EvoNet() {
-	PopulationTrainerExt population_trainer;
+	PopulationTrainerExt<float> population_trainer;
 	population_trainer.setNGenerations(5);
 	const int n_threads = 8;
 
 	// define the model trainer
-	ModelTrainerExt model_trainer;
+	ModelTrainerExt<float> model_trainer;
 	model_trainer.setBatchSize(8);
 	model_trainer.setMemorySize(1);
 	model_trainer.setNEpochsTraining(50);
@@ -212,13 +212,13 @@ void main_EvoNet() {
 	model_trainer.setLogging(false, false);
 
 	// define the model logger
-	ModelLogger model_logger;
+	ModelLogger<float> model_logger;
 
 	// define the data simulator
 	const std::size_t input_size = 784;
 	const std::size_t training_data_size = 1000; //60000;
 	const std::size_t validation_data_size = 100; //10000;
-	DataSimulatorExt data_simulator;
+	DataSimulatorExt<float> data_simulator;
 
 	// read in the training data
 	// const std::string training_data_filename = "C:/Users/domccl/GitHub/mnist/train-images.idx3-ubyte";
@@ -246,11 +246,11 @@ void main_EvoNet() {
 		output_nodes.push_back("Output_" + std::to_string(i));
 
 	// define the model replicator for growth mode
-	ModelReplicatorExt model_replicator;
+	ModelReplicatorExt<float> model_replicator;
 
 	// define the initial population [BUG FREE]
 	std::cout << "Initializing the population..." << std::endl;
-	std::vector<Model> population;
+	std::vector<Model<float>> population;
 	const int population_size = 1;
 	for (int i = 0; i < population_size; ++i)
 	{
@@ -276,7 +276,7 @@ void main_EvoNet() {
 	std::vector<std::vector<std::pair<int, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
 		population, model_trainer, model_replicator, data_simulator, model_logger, input_nodes, n_threads);
 
-	PopulationTrainerFile population_trainer_file;
+	PopulationTrainerFile<float> population_trainer_file;
 	population_trainer_file.storeModels(population, "SequencialMNIST");
 	population_trainer_file.storeModelValidations("SequencialMNISTErrors.csv", models_validation_errors_per_generation.back());
 

@@ -12,35 +12,36 @@
 using namespace SmartPeak;
 using namespace std;
 
-class ModelReplicatorExt : public ModelReplicator
+template<typename TensorT>
+class ModelReplicatorExt : public ModelReplicator<TensorT>
 {
 public:
 	void adaptiveReplicatorScheduler(
 		const int& n_generations,
-		std::vector<Model>& models,
-		std::vector<std::vector<std::pair<int, float>>>& models_errors_per_generations)	{	}
+		std::vector<Model<TensorT>>& models,
+		std::vector<std::vector<std::pair<int, TensorT>>>& models_errors_per_generations)	{	}
 };
 
 BOOST_AUTO_TEST_SUITE(ModelReplicator1)
 
 BOOST_AUTO_TEST_CASE(constructor) 
 {
-  ModelReplicatorExt* ptr = nullptr;
-  ModelReplicatorExt* nullPointer = nullptr;
-	ptr = new ModelReplicatorExt();
+  ModelReplicatorExt<float>* ptr = nullptr;
+  ModelReplicatorExt<float>* nullPointer = nullptr;
+	ptr = new ModelReplicatorExt<float>();
   BOOST_CHECK_NE(ptr, nullPointer);
 }
 
 BOOST_AUTO_TEST_CASE(destructor) 
 {
-  ModelReplicatorExt* ptr = nullptr;
-	ptr = new ModelReplicatorExt();
+  ModelReplicatorExt<float>* ptr = nullptr;
+	ptr = new ModelReplicatorExt<float>();
   delete ptr;
 }
 
 BOOST_AUTO_TEST_CASE(gettersAndSetters) 
 {
-  ModelReplicatorExt model_replicator;
+  ModelReplicatorExt<float> model_replicator;
   model_replicator.setNNodeAdditions(1);
   model_replicator.setNLinkAdditions(2);
   model_replicator.setNNodeDeletions(3);
@@ -70,7 +71,7 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
 
 BOOST_AUTO_TEST_CASE(setAndMakeRandomModifications)
 {
-	ModelReplicatorExt model_replicator;
+	ModelReplicatorExt<float> model_replicator;
 
 	// node additions
   model_replicator.setRandomModifications(
@@ -235,7 +236,7 @@ BOOST_AUTO_TEST_CASE(setAndMakeRandomModifications)
 
 BOOST_AUTO_TEST_CASE(makeUniqueHash) 
 {
-  ModelReplicatorExt model_replicator;
+  ModelReplicatorExt<float> model_replicator;
 
   std::string unique_str, left_str, right_str;
   left_str = "hello";
@@ -267,7 +268,7 @@ BOOST_AUTO_TEST_CASE(makeUniqueHash)
 
 BOOST_AUTO_TEST_CASE(updateName)
 {
-	ModelReplicatorExt model_replicator;
+	ModelReplicatorExt<float> model_replicator;
 
 	std::string new_node_name, node_prefix;
 
@@ -284,17 +285,17 @@ BOOST_AUTO_TEST_CASE(updateName)
 
 BOOST_AUTO_TEST_CASE(makeBaselineModel) 
 {
-  ModelReplicatorExt model_replicator;
-  Model model;
+  ModelReplicatorExt<float> model_replicator;
+  Model<float> model;
   std::vector<std::string> node_names, link_names, source_node_names, sink_node_names;
 
-  std::shared_ptr<WeightInitOp> weight_init;
-  std::shared_ptr<SolverOp> solver;
+  std::shared_ptr<WeightInitOp<float>> weight_init;
+  std::shared_ptr<SolverOp<float>> solver;
 	std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>());
 	std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
 
-  weight_init.reset(new ConstWeightInitOp(1.0));
-  solver.reset(new SGDOp(0.01, 0.9));
+  weight_init.reset(new ConstWeightInitOp<float>(1.0));
+  solver.reset(new SGDOp<float>(0.01, 0.9));
   model = model_replicator.makeBaselineModel(
 		2, { 1 }, 2,
     std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
@@ -359,48 +360,48 @@ BOOST_AUTO_TEST_CASE(makeBaselineModel)
   }
 }
 
-Model makeModel1()
+Model<float> makeModel1()
 {
   /**
    * Directed Acyclic Graph Toy Network Model
   */
-  Node i1, i2, h1, h2, o1, o2, b1, b2;
+  Node<float> i1, i2, h1, h2, o1, o2, b1, b2;
   Link l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4;
-  Weight w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4;
-  Model model1;
+  Weight<float> w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4;
+  Model<float> model1;
 
   // Toy network: 1 hidden layer, fully connected, DAG
-  i1 = Node("0", NodeType::input, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-  i2 = Node("1", NodeType::input, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-  h1 = Node("2", NodeType::hidden, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-  h2 = Node("3", NodeType::hidden, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-  o1 = Node("4", NodeType::output, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-  o2 = Node("5", NodeType::output, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-  b1 = Node("6", NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-  b2 = Node("7", NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+  i1 = Node<float>("0", NodeType::input, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+  i2 = Node<float>("1", NodeType::input, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+  h1 = Node<float>("2", NodeType::hidden, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+  h2 = Node<float>("3", NodeType::hidden, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+  o1 = Node<float>("4", NodeType::output, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+  o2 = Node<float>("5", NodeType::output, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+  b1 = Node<float>("6", NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+  b2 = Node<float>("7", NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
 
   // weights  
-  std::shared_ptr<WeightInitOp> weight_init;
-  std::shared_ptr<SolverOp> solver;
+  std::shared_ptr<WeightInitOp<float>> weight_init;
+  std::shared_ptr<SolverOp<float>> solver;
   // weight_init.reset(new RandWeightInitOp(1.0)); // No random init for testing
-  weight_init.reset(new ConstWeightInitOp(1.0));
-  solver.reset(new SGDOp(0.01, 0.9));
-  w1 = Weight("0", weight_init, solver);
-  weight_init.reset(new ConstWeightInitOp(1.0));
-  solver.reset(new SGDOp(0.01, 0.9));
-  w2 = Weight("1", weight_init, solver);
-  weight_init.reset(new ConstWeightInitOp(1.0));
-  solver.reset(new SGDOp(0.01, 0.9));
-  w3 = Weight("2", weight_init, solver);
-  weight_init.reset(new ConstWeightInitOp(1.0));
-  solver.reset(new SGDOp(0.01, 0.9));
-  w4 = Weight("3", weight_init, solver);
-  weight_init.reset(new ConstWeightInitOp(1.0));
-  solver.reset(new SGDOp(0.01, 0.9));
-  wb1 = Weight("4", weight_init, solver);
-  weight_init.reset(new ConstWeightInitOp(1.0));
-  solver.reset(new SGDOp(0.01, 0.9));
-  wb2 = Weight("5", weight_init, solver);
+  weight_init.reset(new ConstWeightInitOp<float>(1.0));
+  solver.reset(new SGDOp<float>(0.01, 0.9));
+  w1 = Weight<float>("0", weight_init, solver);
+  weight_init.reset(new ConstWeightInitOp<float>(1.0));
+  solver.reset(new SGDOp<float>(0.01, 0.9));
+  w2 = Weight<float>("1", weight_init, solver);
+  weight_init.reset(new ConstWeightInitOp<float>(1.0));
+  solver.reset(new SGDOp<float>(0.01, 0.9));
+  w3 = Weight<float>("2", weight_init, solver);
+  weight_init.reset(new ConstWeightInitOp<float>(1.0));
+  solver.reset(new SGDOp<float>(0.01, 0.9));
+  w4 = Weight<float>("3", weight_init, solver);
+  weight_init.reset(new ConstWeightInitOp<float>(1.0));
+  solver.reset(new SGDOp<float>(0.01, 0.9));
+  wb1 = Weight<float>("4", weight_init, solver);
+  weight_init.reset(new ConstWeightInitOp<float>(1.0));
+  solver.reset(new SGDOp<float>(0.01, 0.9));
+  wb2 = Weight<float>("5", weight_init, solver);
   // input layer + bias
   l1 = Link("0_to_2", "0", "2", "0");
   l2 = Link("0_to_3", "0", "3", "1");
@@ -409,24 +410,24 @@ Model makeModel1()
   lb1 = Link("6_to_2", "6", "2", "4");
   lb2 = Link("6_to_3", "6", "3", "5");
   // weights
-  weight_init.reset(new ConstWeightInitOp(1.0));
-  solver.reset(new SGDOp(0.01, 0.9));
-  w5 = Weight("6", weight_init, solver);
-  weight_init.reset(new ConstWeightInitOp(1.0));
-  solver.reset(new SGDOp(0.01, 0.9));
-  w6 = Weight("7", weight_init, solver);
-  weight_init.reset(new ConstWeightInitOp(1.0));
-  solver.reset(new SGDOp(0.01, 0.9));
-  w7 = Weight("8", weight_init, solver);
-  weight_init.reset(new ConstWeightInitOp(1.0));
-  solver.reset(new SGDOp(0.01, 0.9));
-  w8 = Weight("9", weight_init, solver);
-  weight_init.reset(new ConstWeightInitOp(1.0));
-  solver.reset(new SGDOp(0.01, 0.9));
-  wb3 = Weight("10", weight_init, solver);
-  weight_init.reset(new ConstWeightInitOp(1.0));
-  solver.reset(new SGDOp(0.01, 0.9));
-  wb4 = Weight("11", weight_init, solver);
+  weight_init.reset(new ConstWeightInitOp<float>(1.0));
+  solver.reset(new SGDOp<float>(0.01, 0.9));
+  w5 = Weight<float>("6", weight_init, solver);
+  weight_init.reset(new ConstWeightInitOp<float>(1.0));
+  solver.reset(new SGDOp<float>(0.01, 0.9));
+  w6 = Weight<float>("7", weight_init, solver);
+  weight_init.reset(new ConstWeightInitOp<float>(1.0));
+  solver.reset(new SGDOp<float>(0.01, 0.9));
+  w7 = Weight<float>("8", weight_init, solver);
+  weight_init.reset(new ConstWeightInitOp<float>(1.0));
+  solver.reset(new SGDOp<float>(0.01, 0.9));
+  w8 = Weight<float>("9", weight_init, solver);
+  weight_init.reset(new ConstWeightInitOp<float>(1.0));
+  solver.reset(new SGDOp<float>(0.01, 0.9));
+  wb3 = Weight<float>("10", weight_init, solver);
+  weight_init.reset(new ConstWeightInitOp<float>(1.0));
+  solver.reset(new SGDOp<float>(0.01, 0.9));
+  wb4 = Weight<float>("11", weight_init, solver);
   // hidden layer + bias
   l5 = Link("2_to_4", "2", "4", "6");
   l6 = Link("2_to_5", "2", "5", "7");
@@ -456,10 +457,10 @@ BOOST_AUTO_TEST_CASE(selectNodes)
 	// [TODO: make test; currenlty, combined with selectRandomNode1]
 }
 
-Model model_selectRandomNode1 = makeModel1();
+Model<float> model_selectRandomNode1 = makeModel1();
 BOOST_AUTO_TEST_CASE(selectRandomNode1) 
 {
-  ModelReplicatorExt model_replicator;
+  ModelReplicatorExt<float> model_replicator;
   std::vector<NodeType> exclusion_list, inclusion_list;
   std::string random_node;
   bool test_passed;
@@ -486,10 +487,10 @@ BOOST_AUTO_TEST_CASE(selectRandomNode1)
   BOOST_CHECK(test_passed);
 }
 
-Model model_selectRandomLink1 = makeModel1();
+Model<float> model_selectRandomLink1 = makeModel1();
 BOOST_AUTO_TEST_CASE(selectRandomLink1) 
 {
-  ModelReplicatorExt model_replicator;
+  ModelReplicatorExt<float> model_replicator;
   std::vector<NodeType> source_exclusion_list, source_inclusion_list, sink_exclusion_list, sink_inclusion_list;
   std::string random_link;
   bool test_passed;
@@ -522,10 +523,10 @@ BOOST_AUTO_TEST_CASE(selectRandomLink1)
   BOOST_CHECK(test_passed);
 }
 
-Model model_selectModules1 = makeModel1();
+Model<float> model_selectModules1 = makeModel1();
 BOOST_AUTO_TEST_CASE(selectModules)
 {
-	ModelReplicatorExt model_replicator;
+	ModelReplicatorExt<float> model_replicator;
 	std::vector<std::string> test1 = model_replicator.selectModules(model_selectModules1, {}, {});
 	BOOST_CHECK_EQUAL(test1[0], "Module1");
 
@@ -539,10 +540,10 @@ BOOST_AUTO_TEST_CASE(selectModules)
 	BOOST_CHECK_EQUAL(test4[0], "Module1");
 }
 
-Model model_selectRandomModule1 = makeModel1();
+Model<float> model_selectRandomModule1 = makeModel1();
 BOOST_AUTO_TEST_CASE(selectRandomModule1)
 {
-	ModelReplicatorExt model_replicator;
+	ModelReplicatorExt<float> model_replicator;
 	std::vector<NodeType> exclusion_list, inclusion_list;
 	std::string random_module;
 
@@ -552,10 +553,10 @@ BOOST_AUTO_TEST_CASE(selectRandomModule1)
 	BOOST_CHECK_EQUAL(random_module, "Module1");
 }
 
-Model model_addLink = makeModel1();
+Model<float> model_addLink = makeModel1();
 BOOST_AUTO_TEST_CASE(addLink) 
 {
-  ModelReplicatorExt model_replicator;
+  ModelReplicatorExt<float> model_replicator;
   model_replicator.addLink(model_addLink);
   std::vector<std::string> link_names = {
     "Link_0_to_2", "Link_0_to_3", "Link_1_to_2", "Link_1_to_3", // existing links
@@ -604,10 +605,10 @@ BOOST_AUTO_TEST_CASE(addLink)
   BOOST_CHECK(weight_found);
 }
 
-Model model_addNode = makeModel1();
+Model<float> model_addNode = makeModel1();
 BOOST_AUTO_TEST_CASE(addNode) 
 {
-  ModelReplicatorExt model_replicator;
+  ModelReplicatorExt<float> model_replicator;
   model_replicator.addNode(model_addNode);
   std::vector<std::string> node_names = {
     "2", "3", "4", "5" // existing nodes
@@ -619,7 +620,7 @@ BOOST_AUTO_TEST_CASE(addNode)
   // check that the node was found
   bool node_found = false;
   std::string node_name = "";
-  for (const Node& node: model_addNode.getNodes())
+  for (const Node<float>& node: model_addNode.getNodes())
   {
     node_name = node.getName();
     std::vector<std::string> node_name_tokens;
@@ -659,10 +660,10 @@ BOOST_AUTO_TEST_CASE(addNode)
   // [TODO: check that the new weight was found]
 }
 
-Model model_deleteNode = makeModel1();
+Model<float> model_deleteNode = makeModel1();
 BOOST_AUTO_TEST_CASE(deleteNode) 
 {
-  ModelReplicatorExt model_replicator;
+  ModelReplicatorExt<float> model_replicator;
 
   model_replicator.deleteNode(model_deleteNode, 10);
   BOOST_CHECK_EQUAL(model_deleteNode.getNodes().size(), 7);
@@ -680,10 +681,10 @@ BOOST_AUTO_TEST_CASE(deleteNode)
   BOOST_CHECK_EQUAL(model_deleteNode.getWeights().size(), 2);
 }
 
-Model model_deleteLink = makeModel1();
+Model<float> model_deleteLink = makeModel1();
 BOOST_AUTO_TEST_CASE(deleteLink) 
 {
-  ModelReplicatorExt model_replicator;
+  ModelReplicatorExt<float> model_replicator;
 
   model_replicator.deleteLink(model_deleteLink, 10);
   BOOST_CHECK_EQUAL(model_deleteLink.getNodes().size(), 8);
@@ -692,10 +693,10 @@ BOOST_AUTO_TEST_CASE(deleteLink)
   // [TODO: additional tests needed?]
 }
 
-Model model_changeNodeActivation = makeModel1();
+Model<float> model_changeNodeActivation = makeModel1();
 BOOST_AUTO_TEST_CASE(changeNodeActivation)
 {
-	ModelReplicatorExt model_replicator;
+	ModelReplicatorExt<float> model_replicator;
 	model_replicator.setNodeActivations({
 		std::make_pair(std::shared_ptr<ActivationOp<float>>(new ELUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ELUGradOp<float>()))});
 	std::vector<std::string> node_names = { "0", "1", "2", "3", "4", "5", "6", "7" };
@@ -708,7 +709,7 @@ BOOST_AUTO_TEST_CASE(changeNodeActivation)
 	int elu_cnt = 0;
 	for (const std::string& node_name : node_names)
 	{
-		const Node node = model_changeNodeActivation.getNode(node_name);
+		const Node<float> node = model_changeNodeActivation.getNode(node_name);
 		if (node.getActivation()->getName() == "LinearOp")
 			++linear_cnt;
 		else if (node.getActivation()->getName() == "ReLUOp")
@@ -722,10 +723,10 @@ BOOST_AUTO_TEST_CASE(changeNodeActivation)
 	BOOST_CHECK_EQUAL(elu_cnt, 1);
 }
 
-Model model_changeNodeIntegration = makeModel1();
+Model<float> model_changeNodeIntegration = makeModel1();
 BOOST_AUTO_TEST_CASE(changeNodeIntegration)
 {
-	ModelReplicatorExt model_replicator;
+	ModelReplicatorExt<float> model_replicator;
 	model_replicator.setNodeIntegrations({ std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new ProdOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new ProdErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new ProdWeightGradOp<float>())) });
 	std::vector<std::string> node_names = { "0", "1", "2", "3", "4", "5", "6", "7" };
 	model_replicator.changeNodeIntegration(model_changeNodeIntegration);
@@ -736,7 +737,7 @@ BOOST_AUTO_TEST_CASE(changeNodeIntegration)
 	int product_cnt = 0;
 	for (const std::string& node_name : node_names)
 	{
-		const Node node = model_changeNodeIntegration.getNode(node_name);
+		const Node<float> node = model_changeNodeIntegration.getNode(node_name);
 		if (node.getIntegration()->getName() == "SumOp")
 			++sum_cnt;
 		else if (node.getIntegration()->getName() == "ProdOp")
@@ -747,10 +748,10 @@ BOOST_AUTO_TEST_CASE(changeNodeIntegration)
 	BOOST_CHECK_EQUAL(product_cnt, 1);
 }
 
-Model model_addModule = makeModel1();
+Model<float> model_addModule = makeModel1();
 BOOST_AUTO_TEST_CASE(addModule)
 {
-	ModelReplicatorExt model_replicator;
+	ModelReplicatorExt<float> model_replicator;
 	model_replicator.addModule(model_addModule);
 
 	// new module components
@@ -773,7 +774,7 @@ BOOST_AUTO_TEST_CASE(addModule)
 		link_names_map.emplace(name, 0);
 	for (const std::string& name : weight_names_prefix)
 		weight_names_map.emplace(name, 0);
-	for (const Node& node : model_addModule.getNodes())
+	for (const Node<float>& node : model_addModule.getNodes())
 	{
 		std::string name_prefix, new_name;
 		model_replicator.updateName(node.getName(), "", "", name_prefix, new_name);
@@ -787,7 +788,7 @@ BOOST_AUTO_TEST_CASE(addModule)
 		if (std::count(link_names_prefix.begin(), link_names_prefix.end(), name_prefix) > 0)
 			link_names_map.at(name_prefix) += 1;
 	}
-	for (const Weight& weight : model_addModule.getWeights())
+	for (const Weight<float>& weight : model_addModule.getWeights())
 	{
 		std::string name_prefix, new_name;
 		model_replicator.updateName(weight.getName(), "", "", name_prefix, new_name);
@@ -814,10 +815,10 @@ BOOST_AUTO_TEST_CASE(addModule)
 	// [TODO: check that the new weight was found]
 }
 
-Model model_deleteModule = makeModel1();
+Model<float> model_deleteModule = makeModel1();
 BOOST_AUTO_TEST_CASE(deleteModule)
 {
-	ModelReplicatorExt model_replicator;
+	ModelReplicatorExt<float> model_replicator;
 	model_replicator.deleteModule(model_deleteModule, 0);
 
 	// remaining
@@ -832,7 +833,7 @@ BOOST_AUTO_TEST_CASE(deleteModule)
 
 	// check for the expected nodes/links/weights
 	int nodes_cnt = 0;
-	for (const Node& node : model_deleteModule.getNodes())
+	for (const Node<float>& node : model_deleteModule.getNodes())
 		if (std::count(node_names.begin(), node_names.end(), node.getName()) > 0)
 			++nodes_cnt;
 	BOOST_CHECK_EQUAL(nodes_cnt, 5);
@@ -842,7 +843,7 @@ BOOST_AUTO_TEST_CASE(deleteModule)
 			++links_cnt;
 	BOOST_CHECK_EQUAL(links_cnt, 2);
 	int weights_cnt = 0;
-	for (const Weight& weight : model_deleteModule.getWeights())
+	for (const Weight<float>& weight : model_deleteModule.getWeights())
 		if (std::count(weight_names.begin(), weight_names.end(), weight.getName()) > 0)
 			++weights_cnt;
 	BOOST_CHECK_EQUAL(weights_cnt, 2);
@@ -850,7 +851,7 @@ BOOST_AUTO_TEST_CASE(deleteModule)
 
 BOOST_AUTO_TEST_CASE(makeRandomModificationOrder) 
 {
-  ModelReplicatorExt model_replicator;
+  ModelReplicatorExt<float> model_replicator;
 
   model_replicator.setNNodeAdditions(1);
   model_replicator.setNLinkAdditions(0);
@@ -924,23 +925,23 @@ BOOST_AUTO_TEST_CASE(makeRandomModificationOrder)
 	BOOST_CHECK(change_node_integration_found);
 }
 
-Model model_modifyModel1 = makeModel1();
-Model model_modifyModel2 = makeModel1();
-Model model_modifyModel3 = makeModel1();
-Model model_modifyModel4 = makeModel1();
-Model model_modifyModel5 = makeModel1();
-Model model_modifyModel6 = makeModel1();
-Model model_modifyModel7 = makeModel1();
+Model<float> model_modifyModel1 = makeModel1();
+Model<float> model_modifyModel2 = makeModel1();
+Model<float> model_modifyModel3 = makeModel1();
+Model<float> model_modifyModel4 = makeModel1();
+Model<float> model_modifyModel5 = makeModel1();
+Model<float> model_modifyModel6 = makeModel1();
+Model<float> model_modifyModel7 = makeModel1();
 BOOST_AUTO_TEST_CASE(modifyModel) 
 {
-  ModelReplicatorExt model_replicator;
+  ModelReplicatorExt<float> model_replicator;
 
   // No change with defaults
   model_replicator.modifyModel(model_modifyModel1);
   BOOST_CHECK_EQUAL(model_modifyModel1.getNodes().size(), 8);
 	int node_activation_changes = 0;
 	int node_integration_changes = 0;
-	for (const Node& node : model_modifyModel1.getNodes())
+	for (const Node<float>& node : model_modifyModel1.getNodes())
 	{
 		if (node.getActivation()->getName() == "ELUOp") ++node_activation_changes;
 		if (node.getIntegration()->getName() == "ProdOp") ++node_integration_changes;
@@ -986,7 +987,7 @@ BOOST_AUTO_TEST_CASE(modifyModel)
 	BOOST_CHECK_EQUAL(model_modifyModel4.getNodes().size(), 8);
 	node_activation_changes = 0;
 	node_integration_changes = 0;
-	for (const Node& node : model_modifyModel4.getNodes())
+	for (const Node<float>& node : model_modifyModel4.getNodes())
 	{
 		if (node.getActivation()->getName() == "ELUOp") ++node_activation_changes;
 		if (node.getIntegration()->getName() == "ProdOp") ++node_integration_changes;
@@ -1008,7 +1009,7 @@ BOOST_AUTO_TEST_CASE(modifyModel)
 	BOOST_CHECK_EQUAL(model_modifyModel5.getNodes().size(), 8);
 	node_activation_changes = 0;
 	node_integration_changes = 0;
-	for (const Node& node : model_modifyModel5.getNodes())
+	for (const Node<float>& node : model_modifyModel5.getNodes())
 	{
 		if (node.getActivation()->getName() == "ELUOp") ++node_activation_changes;
 		if (node.getIntegration()->getName() == "ProdOp") ++node_integration_changes;

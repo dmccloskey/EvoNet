@@ -14,28 +14,28 @@ BOOST_AUTO_TEST_SUITE(ModelBuilder1)
 
 BOOST_AUTO_TEST_CASE(constructor) 
 {
-  ModelBuilder* ptr = nullptr;
-  ModelBuilder* nullPointer = nullptr;
-	ptr = new ModelBuilder();
+  ModelBuilder<float>* ptr = nullptr;
+  ModelBuilder<float>* nullPointer = nullptr;
+	ptr = new ModelBuilder<float>();
   BOOST_CHECK_NE(ptr, nullPointer);
 }
 
 BOOST_AUTO_TEST_CASE(destructor) 
 {
-  ModelBuilder* ptr = nullptr;
-	ptr = new ModelBuilder();
+  ModelBuilder<float>* ptr = nullptr;
+	ptr = new ModelBuilder<float>();
   delete ptr;
 }
 
 BOOST_AUTO_TEST_CASE(gettersAndSetters) 
 {
-  ModelBuilder model_builder;
+  ModelBuilder<float> model_builder;
 }
 
 BOOST_AUTO_TEST_CASE(addInputNodes) 
 {
-  ModelBuilder model_builder;
-  Model model;
+  ModelBuilder<float> model_builder;
+  Model<float> model;
   
 	std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input", 2);
 
@@ -49,8 +49,8 @@ BOOST_AUTO_TEST_CASE(addInputNodes)
 
 BOOST_AUTO_TEST_CASE(addFullyConnected1)
 {
-	ModelBuilder model_builder;
-	Model model;
+	ModelBuilder<float> model_builder;
+	Model<float> model;
 	std::vector<std::string> node_names;
 
 	// make the input
@@ -60,7 +60,7 @@ BOOST_AUTO_TEST_CASE(addFullyConnected1)
 	node_names = model_builder.addFullyConnected(model, "Hidden", "Mod1", node_names,
 		2, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
 		std::shared_ptr<IntegrationOp<float>>(new ProdOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new ProdErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new ProdWeightGradOp<float>()),
-		std::shared_ptr<WeightInitOp>(new ConstWeightInitOp(1.0)), std::shared_ptr<SolverOp>(new SGDOp(0.1, 0.9)), 0.2f, 0.8f);
+		std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new SGDOp<float>(0.1, 0.9)), 0.2f, 0.8f);
 
 	std::vector<std::string> node_names_test = { "Hidden_0", "Hidden-bias_0", "Hidden_1", "Hidden-bias_1"};
 	std::vector<std::string> link_names_test = { "Hidden-bias_0_to_Hidden_0", "Hidden-bias_1_to_Hidden_1",
@@ -118,8 +118,8 @@ BOOST_AUTO_TEST_CASE(addFullyConnected1)
 
 BOOST_AUTO_TEST_CASE(addFullyConnected2)
 {
-	ModelBuilder model_builder;
-	Model model;
+	ModelBuilder<float> model_builder;
+	Model<float> model;
 	std::vector<std::string> node_names;
 
 	// make the input
@@ -129,14 +129,14 @@ BOOST_AUTO_TEST_CASE(addFullyConnected2)
 	node_names = model_builder.addFullyConnected(model, "Hidden", "Mod1", node_names,
 		2, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
 		std::shared_ptr<IntegrationOp<float>>(new ProdOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new ProdErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new ProdWeightGradOp<float>()),
-		std::shared_ptr<WeightInitOp>(new ConstWeightInitOp(1.0)), std::shared_ptr<SolverOp>(new SGDOp(0.1, 0.9)), 0.2f, 0.8f);
+		std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new SGDOp<float>(0.1, 0.9)), 0.2f, 0.8f);
 
 	// make the input
 	std::vector<std::string> node_names_encoding = model_builder.addInputNodes(model, "Encoding", 2);
 
 	// make the fully connected 
 	model_builder.addFullyConnected(model, "Mod1", node_names_encoding, node_names,
-		std::shared_ptr<WeightInitOp>(new ConstWeightInitOp(1.0)), std::shared_ptr<SolverOp>(new SGDOp(0.1, 0.9)), 0.8f);
+		std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new SGDOp<float>(0.1, 0.9)), 0.8f);
 
 	std::vector<std::string> node_names_test = { "Hidden_0", "Hidden-bias_0", "Hidden_1", "Hidden-bias_1", "Encoding_0", "Encoding_1" };
 	std::vector<std::string> link_names_test = { "Hidden-bias_0_to_Hidden_0", "Hidden-bias_1_to_Hidden_1",
@@ -205,8 +205,8 @@ BOOST_AUTO_TEST_CASE(addFullyConnected2)
 
 BOOST_AUTO_TEST_CASE(addSoftMax)
 {
-	ModelBuilder model_builder;
-	Model model;
+	ModelBuilder<float> model_builder;
+	Model<float> model;
 	std::vector<std::string> node_names;
 
 	// make the input
@@ -274,7 +274,7 @@ BOOST_AUTO_TEST_CASE(addSoftMax)
 	}
 
 	// check the weights
-	for (const Weight& weight : model.getWeights())
+	for (const Weight<float>& weight : model.getWeights())
 	{
 		int count = std::count(weight_names_test.begin(), weight_names_test.end(), weight.getName());
 		BOOST_CHECK_EQUAL(count, 1);
@@ -286,8 +286,8 @@ BOOST_AUTO_TEST_CASE(addSoftMax)
 
 BOOST_AUTO_TEST_CASE(addStableSoftMax)
 {
-	ModelBuilder model_builder;
-	Model model;
+	ModelBuilder<float> model_builder;
+	Model<float> model;
 	std::vector<std::string> node_names;
 
 	// make the input
@@ -355,7 +355,7 @@ BOOST_AUTO_TEST_CASE(addStableSoftMax)
 	}
 
 	// check the weights
-	for (const Weight& weight : model.getWeights())
+	for (const Weight<float>& weight : model.getWeights())
 	{
 		int count = std::count(weight_names_test.begin(), weight_names_test.end(), weight.getName());
 		BOOST_CHECK_EQUAL(count, 1);
@@ -367,8 +367,8 @@ BOOST_AUTO_TEST_CASE(addStableSoftMax)
 
 BOOST_AUTO_TEST_CASE(addConvolution)
 {
-	ModelBuilder model_builder;
-	Model model;
+	ModelBuilder<float> model_builder;
+	Model<float> model;
 	std::vector<std::string> node_names;
 
 	// make the input
@@ -380,7 +380,7 @@ BOOST_AUTO_TEST_CASE(addConvolution)
 		2, 2, 1, 1, 1,
 		std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), 
 		std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-		std::shared_ptr<WeightInitOp>(new ConstWeightInitOp(1.0)), std::shared_ptr<SolverOp>(new SGDOp(0.1, 0.9)), 0.2f, 0.8f);
+		std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new SGDOp<float>(0.1, 0.9)), 0.2f, 0.8f);
 
 	std::vector<std::string> node_names_test = { "Filter-bias" };
 	std::vector<std::string> weight_names_test = { "Filter-bias_to_out",
@@ -388,7 +388,7 @@ BOOST_AUTO_TEST_CASE(addConvolution)
 
 	// check the nodes
 	size_t node_cnt = 0;
-	for (const Node& node: model.getNodes())
+	for (const Node<float>& node: model.getNodes())
 	{
 		if (node_cnt == 0) {
 			BOOST_CHECK_EQUAL(node.getName(), node_names_test[node_cnt]);
@@ -435,8 +435,8 @@ BOOST_AUTO_TEST_CASE(addConvolution)
 
 BOOST_AUTO_TEST_CASE(addNormlization)
 {
-	ModelBuilder model_builder;
-	Model model;
+	ModelBuilder<float> model_builder;
+	Model<float> model;
 	std::vector<std::string> node_names;
 
 	// make the input
@@ -445,7 +445,7 @@ BOOST_AUTO_TEST_CASE(addNormlization)
 	// make the normalization 
 	node_names = model_builder.addNormalization(model, "Norm", "Mod1", node_names,
 		std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
-		std::shared_ptr<WeightInitOp>(new RandWeightInitOp(1.0)), std::shared_ptr<SolverOp>(new SGDOp(0.1, 0.9)), 0.2f, 0.8f);
+		std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new SGDOp<float>(0.1, 0.9)), 0.2f, 0.8f);
 
 	std::vector<std::string> node_names_test = { "Norm-Mean", "Norm-Variance", "Input_0-Normalized",
 		"Input_1-Normalized", "Input_0-Normalized-bias", "Input_1-Normalized-bias", "Input_0-SourceMinMean", "Input_1-SourceMinMean" };
@@ -547,8 +547,8 @@ BOOST_AUTO_TEST_CASE(addNormlization)
 
 BOOST_AUTO_TEST_CASE(addVAEEncoding)
 {
-	ModelBuilder model_builder;
-	Model model;
+	ModelBuilder<float> model_builder;
+	Model<float> model;
 	std::vector<std::string> node_names;
 
 	// make the input
@@ -639,8 +639,8 @@ BOOST_AUTO_TEST_CASE(addVAEEncoding)
 
 BOOST_AUTO_TEST_CASE(addDiscriminator)
 {
-	ModelBuilder model_builder;
-	Model model;
+	ModelBuilder<float> model_builder;
+	Model<float> model;
 	std::vector<std::string> node_names;
 
 	// make the input
@@ -716,8 +716,8 @@ BOOST_AUTO_TEST_CASE(addDiscriminator)
 
 BOOST_AUTO_TEST_CASE(addLSTMBlock1)
 {
-	ModelBuilder model_builder;
-	Model model;
+	ModelBuilder<float> model_builder;
+	Model<float> model;
 	std::vector<std::string> node_names;
 
 	// make the input
@@ -727,7 +727,7 @@ BOOST_AUTO_TEST_CASE(addLSTMBlock1)
 	node_names = model_builder.addLSTMBlock1(model, "LSTM", "Mod1", node_names, 2,
 		std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
 		std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-		std::shared_ptr<WeightInitOp>(new RandWeightInitOp(1.0)), std::shared_ptr<SolverOp>(new SGDOp(0.1, 0.9)), 0.2f, 0.8f, true);
+		std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new SGDOp<float>(0.1, 0.9)), 0.2f, 0.8f, true);
 
 	std::vector<std::string> node_names_test = {
 		"LSTM-BlockGateForget","LSTM-BlockGateForget-bias","LSTM-BlockGateInput","LSTM-BlockGateInput-bias","LSTM-BlockGateOutput","LSTM-BlockGateOutput-bias",
@@ -889,8 +889,8 @@ BOOST_AUTO_TEST_CASE(addLSTMBlock1)
 	
 BOOST_AUTO_TEST_CASE(addLSTM)
 {
-	ModelBuilder model_builder;
-	Model model;
+	ModelBuilder<float> model_builder;
+	Model<float> model;
 	std::vector<std::string> node_names;
 
 	// make the input
@@ -900,7 +900,7 @@ BOOST_AUTO_TEST_CASE(addLSTM)
 	node_names = model_builder.addLSTM(model, "LSTM", "Mod1", node_names, 2, 2,
 		std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
 		std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-		std::shared_ptr<WeightInitOp>(new RandWeightInitOp(1.0)), std::shared_ptr<SolverOp>(new SGDOp(0.1, 0.9)), 0.2f, 0.8f, true, true, 1);
+		std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new SGDOp<float>(0.1, 0.9)), 0.2f, 0.8f, true, true, 1);
 
 	std::vector<std::string> node_names_test = { 
 		"LSTM-0-BlockMultOutput-0","LSTM-0-BlockMultOutput-1",

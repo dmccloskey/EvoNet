@@ -119,7 +119,7 @@ public:
       std::string unique_str = "",
       int n_threads = 1);
 
-    static Model replicateModel_(
+    static Model<TensorT> replicateModel_(
       Model<TensorT>* model,
       ModelReplicator<TensorT>* model_replicator,
       std::string unique_str, int cnt);
@@ -193,7 +193,7 @@ public:
 			std::vector<Model<TensorT>>& models,
 			ModelTrainer<TensorT>& model_trainer,
 			ModelReplicator<TensorT>& model_replicator,
-			DataSimulator& data_simulator,
+			DataSimulator<TensorT>& data_simulator,
 			ModelLogger<TensorT>& model_logger,
 			const std::vector<std::string>& input_nodes,
 			int n_threads = 1);
@@ -210,7 +210,7 @@ public:
 			std::vector<Model<TensorT>>& models,
 			ModelTrainer<TensorT>& model_trainer,
 			ModelReplicator<TensorT>& model_replicator,
-			DataSimulator& data_simulator,
+			DataSimulator<TensorT>& data_simulator,
 			ModelLogger<TensorT>& model_logger,
 			const std::vector<std::string>& input_nodes,
 			int n_threads = 1);

@@ -11,7 +11,8 @@ namespace SmartPeak
   /**
     @brief A class to generate data using the MNIST data set
   */
-  class MNISTSimulator: public DataSimulator
+	template<typename T>
+  class MNISTSimulator: public DataSimulator<T>
   {
 public:
 		int ReverseInt(int i)
@@ -41,8 +42,7 @@ public:
 		@param[in, out] data The tensor to hold the data
 		@param[in] is_labels True if the file corresponds to class labels, False otherwise
 		*/
-		template<typename T>
-		void ReadMNIST(const std::string& filename, Eigen::Tensor<T, 2>& data, const bool& is_labels)
+		void ReadMNIST(const std::string& filename, Eigen::Tensor<TensorT, 2>& data, const bool& is_labels)
 		{
 			// dims: sample, pixel intensity or sample, label
 			// e.g., pixel data dims: 1000 x (28x28) (stored row-wise; returned col-wise)
@@ -102,15 +102,15 @@ public:
 			const int& data_size, const int& input_size)
 		{
 			// Read input images [BUG FREE]
-			Eigen::Tensor<float, 2> input_data(data_size, input_size);
-			ReadMNIST<float>(filename_data, input_data, false);
+			Eigen::Tensor<TensorT, 2> input_data(data_size, input_size);
+			ReadMNIST<TensorT>(filename_data, input_data, false);
 
 			// Read input label [BUG FREE]
-			Eigen::Tensor<float, 2> labels(data_size, 1);
-			ReadMNIST<float>(filename_labels, labels, true);
+			Eigen::Tensor<TensorT, 2> labels(data_size, 1);
+			ReadMNIST<TensorT>(filename_labels, labels, true);
 
 			// Convert labels to 1 hot encoding [BUG FREE]
-			Eigen::Tensor<float, 2> labels_encoded = OneHotEncoder<float, float>(labels, mnist_labels);
+			Eigen::Tensor<TensorT, 2> labels_encoded = OneHotEncoder<TensorT, TensorT>(labels, mnist_labels);
 
 			if (is_training)
 			{
@@ -124,29 +124,29 @@ public:
 			}
 		}
 
-		void smoothLabels(const float& zero_offset, const float& one_offset) {
-			training_labels = training_labels.unaryExpr(LabelSmoother<float>(zero_offset, one_offset));
-			validation_labels = validation_labels.unaryExpr(LabelSmoother<float>(zero_offset, one_offset));
+		void smoothLabels(const TensorT& zero_offset, const TensorT& one_offset) {
+			training_labels = training_labels.unaryExpr(LabelSmoother<TensorT>(zero_offset, one_offset));
+			validation_labels = validation_labels.unaryExpr(LabelSmoother<TensorT>(zero_offset, one_offset));
 		};
 
 		void unitScaleData() {
-			training_data = training_data.unaryExpr(UnitScale<float>(training_data));
-			validation_data = validation_data.unaryExpr(UnitScale<float>(validation_data));
+			training_data = training_data.unaryExpr(UnitScale<TensorT>(training_data));
+			validation_data = validation_data.unaryExpr(UnitScale<TensorT>(validation_data));
 		};
 
 		void centerUnitScaleData() {
-			training_data = training_data.unaryExpr(LinearScale<float>(0, 255, -1, 1));
-			validation_data = validation_data.unaryExpr(LinearScale<float>(0, 255, -1, 1));
+			training_data = training_data.unaryExpr(LinearScale<TensorT>(0, 255, -1, 1));
+			validation_data = validation_data.unaryExpr(LinearScale<TensorT>(0, 255, -1, 1));
 		};
 
 		// Data attributes
-		std::vector<float> mnist_labels = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+		std::vector<TensorT> mnist_labels = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 
 		// Data
-		Eigen::Tensor<float, 2> training_data;
-		Eigen::Tensor<float, 2> validation_data;
-		Eigen::Tensor<float, 2> training_labels;
-		Eigen::Tensor<float, 2> validation_labels;
+		Eigen::Tensor<TensorT, 2> training_data;
+		Eigen::Tensor<TensorT, 2> validation_data;
+		Eigen::Tensor<TensorT, 2> training_labels;
+		Eigen::Tensor<TensorT, 2> validation_labels;
 
 		// Internal iterators
 		int mnist_sample_start_training = 0;

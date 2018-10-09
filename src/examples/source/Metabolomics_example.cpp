@@ -2057,7 +2057,7 @@ void main_classification(std::string blood_fraction = "PLT")
 {
 
 	// define the population trainer parameters
-	PopulationTrainerExt population_trainer;
+	PopulationTrainerExt<float> population_trainer;
 	population_trainer.setNGenerations(1);
 	population_trainer.setNTop(3);
 	population_trainer.setNRandom(3);
@@ -2117,7 +2117,7 @@ void main_classification(std::string blood_fraction = "PLT")
 	}
 
 	// innitialize the model trainer
-	ModelTrainerExt model_trainer;
+	ModelTrainerExt<float> model_trainer;
 	model_trainer.setBatchSize(1);
 	model_trainer.setMemorySize(1);
 	model_trainer.setNEpochsTraining(100000);
@@ -2146,7 +2146,7 @@ void main_classification(std::string blood_fraction = "PLT")
 	ModelLogger model_logger(true, true, true, true, true, false, true, true);
 
 	// initialize the model replicator
-	ModelReplicatorExt model_replicator;
+	ModelReplicatorExt<float> model_replicator;
 	model_replicator.setNodeActivations({ std::make_pair(std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>())),
 		std::make_pair(std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>())),
 		std::make_pair(std::shared_ptr<ActivationOp<float>>(new ELUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ELUGradOp<float>())),
@@ -2163,7 +2163,7 @@ void main_classification(std::string blood_fraction = "PLT")
 	std::vector<std::vector<std::pair<int, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
 		population, model_trainer, model_replicator, metabolomics_data, model_logger, input_nodes, n_threads);
 
-	PopulationTrainerFile population_trainer_file;
+	PopulationTrainerFile<float> population_trainer_file;
 	population_trainer_file.storeModels(population, "Metabolomics");
 	population_trainer_file.storeModelValidations("MetabolomicsValidationErrors.csv", models_validation_errors_per_generation.back());
 }
@@ -2179,7 +2179,7 @@ void main_reconstruction()
 	const int n_threads = 1;
 
 	// define the population trainer parameters
-	PopulationTrainerExt population_trainer;
+	PopulationTrainerExt<float> population_trainer;
 	population_trainer.setNGenerations(1);
 	population_trainer.setNTop(3);
 	population_trainer.setNRandom(3);
@@ -2209,7 +2209,7 @@ void main_reconstruction()
 		output_nodes.push_back("Output_" + std::to_string(i));
 
 	// innitialize the model trainer
-	ModelTrainerExt model_trainer;
+	ModelTrainerExt<float> model_trainer;
 	model_trainer.setBatchSize(8);
 	model_trainer.setMemorySize(1);
 	model_trainer.setNEpochsTraining(1000);
@@ -2222,10 +2222,10 @@ void main_reconstruction()
 	model_trainer.setOutputNodes({ output_nodes });
 
 	// define the model logger
-	ModelLogger model_logger;
+	ModelLogger<float> model_logger;
 
 	// initialize the model replicator
-	ModelReplicatorExt model_replicator;
+	ModelReplicatorExt<float> model_replicator;
 	model_replicator.setNodeActivations({ std::make_pair(std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>())),
 		std::make_pair(std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>())),
 		std::make_pair(std::shared_ptr<ActivationOp<float>>(new ELUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ELUGradOp<float>())),
@@ -2236,7 +2236,7 @@ void main_reconstruction()
 
 	// define the initial population
 	std::cout << "Initializing the population..." << std::endl;
-	std::vector<Model> population;
+	std::vector<Model<float>> population;
 	const int population_size = 1;
 	for (int i = 0; i<population_size; ++i)
 	{
@@ -2262,7 +2262,7 @@ void main_reconstruction()
 	std::vector<std::vector<std::pair<int, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
 		population, model_trainer, model_replicator, metabolomics_data, model_logger, input_nodes, n_threads);
 
-	PopulationTrainerFile population_trainer_file;
+	PopulationTrainerFile<float> population_trainer_file;
 	population_trainer_file.storeModels(population, "Metabolomics");
 	population_trainer_file.storeModelValidations("MetabolomicsValidationErrors.csv", models_validation_errors_per_generation.back());
 }

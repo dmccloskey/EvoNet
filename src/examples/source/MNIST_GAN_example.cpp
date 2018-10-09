@@ -322,7 +322,7 @@ void main_GAN() {
 	const int n_hard_threads = std::thread::hardware_concurrency();
 
 	// define the populatin trainer
-	PopulationTrainerExt population_trainer;
+	PopulationTrainerExt<float> population_trainer;
 	population_trainer.setNGenerations(1);
 	population_trainer.setNTop(1);
 	population_trainer.setNRandom(1);
@@ -336,7 +336,7 @@ void main_GAN() {
 	const std::size_t encoding_size = 100;
 	const std::size_t training_data_size = 10000; //60000;
 	const std::size_t validation_data_size = 100; //10000;
-	DataSimulatorExt data_simulator;
+	DataSimulatorExt<float> data_simulator;
 
 	// read in the training data
 	const std::string training_data_filename = "C:/Users/domccl/GitHub/mnist/train-images.idx3-ubyte";
@@ -379,7 +379,7 @@ void main_GAN() {
 		encoding_nodes_gen.push_back("GenOut_" + std::to_string(i));
 
 	// define the model trainer
-	ModelTrainerExt model_trainer;
+	ModelTrainerExt<float> model_trainer;
 	model_trainer.setBatchSize(1);
 	model_trainer.setMemorySize(1);
 	model_trainer.setNEpochsTraining(500);
@@ -398,7 +398,7 @@ void main_GAN() {
 	model_trainer.setOutputNodes({ output_nodes_dec, output_nodes_dec, output_nodes_dec });
 
 	// define the model replicator for growth mode
-	ModelReplicatorExt model_replicator;
+	ModelReplicatorExt<float> model_replicator;
 
 	// define the initial population [BUG FREE]
 	std::cout << "Initializing the population..." << std::endl;
@@ -408,7 +408,7 @@ void main_GAN() {
 	std::vector<std::vector<std::pair<int, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
 		population, model_trainer, model_replicator, data_simulator, model_logger, input_nodes, 1);
 
-	PopulationTrainerFile population_trainer_file;
+	PopulationTrainerFile<float> population_trainer_file;
 	population_trainer_file.storeModels(population, "MNIST");
 	population_trainer_file.storeModelValidations("MNISTErrors.csv", models_validation_errors_per_generation.back());
 }

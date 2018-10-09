@@ -24,40 +24,40 @@ BOOST_AUTO_TEST_SUITE(modelDCG)
  * TODO: refactor to use updated Model FP methods
 */
 
-Model makeModel2()
+Model<float> makeModel2()
 {
   /**
    * Directed Cyclic Graph Toy Network Model
   */
-  Node i1, h1, o1, b1, b2;
+  Node<float> i1, h1, o1, b1, b2;
   Link l1, l2, l3, lb1, lb2;
-  Weight w1, w2, w3, wb1, wb2;
-  Model model2;
+  Weight<float> w1, w2, w3, wb1, wb2;
+  Model<float> model2;
   // Toy network: 1 hidden layer, fully connected, DCG
-  i1 = Node("0", NodeType::input, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-  h1 = Node("1", NodeType::hidden, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-  o1 = Node("2", NodeType::output, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-  b1 = Node("3", NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-  b2 = Node("4", NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+  i1 = Node<float>("0", NodeType::input, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+  h1 = Node<float>("1", NodeType::hidden, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+  o1 = Node<float>("2", NodeType::output, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+  b1 = Node<float>("3", NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+  b2 = Node<float>("4", NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
   // weights  
-  std::shared_ptr<WeightInitOp> weight_init;
-  std::shared_ptr<SolverOp> solver;
+  std::shared_ptr<WeightInitOp<float>> weight_init;
+  std::shared_ptr<SolverOp<float>> solver;
   // weight_init.reset(new RandWeightInitOp(1.0)); // No random init for testing
-  weight_init.reset(new ConstWeightInitOp(1.0));
-  solver.reset(new SGDOp(0.01, 0.9));
-  w1 = Weight("0", weight_init, solver);
-  weight_init.reset(new ConstWeightInitOp(1.0));
-  solver.reset(new SGDOp(0.01, 0.9));
-  w2 = Weight("1", weight_init, solver);
-  weight_init.reset(new ConstWeightInitOp(1.0));
-  solver.reset(new SGDOp(0.01, 0.9));
-  w3 = Weight("2", weight_init, solver);
-  weight_init.reset(new ConstWeightInitOp(1.0));
-  solver.reset(new SGDOp(0.01, 0.9));
-  wb1 = Weight("3", weight_init, solver);
-  weight_init.reset(new ConstWeightInitOp(1.0));
-  solver.reset(new SGDOp(0.01, 0.9));
-  wb2 = Weight("4", weight_init, solver);
+  weight_init.reset(new ConstWeightInitOp<float>(1.0));
+  solver.reset(new SGDOp<float>(0.01, 0.9));
+  w1 = Weight<float>("0", weight_init, solver);
+  weight_init.reset(new ConstWeightInitOp<float>(1.0));
+  solver.reset(new SGDOp<float>(0.01, 0.9));
+  w2 = Weight<float>("1", weight_init, solver);
+  weight_init.reset(new ConstWeightInitOp<float>(1.0));
+  solver.reset(new SGDOp<float>(0.01, 0.9));
+  w3 = Weight<float>("2", weight_init, solver);
+  weight_init.reset(new ConstWeightInitOp<float>(1.0));
+  solver.reset(new SGDOp<float>(0.01, 0.9));
+  wb1 = Weight<float>("3", weight_init, solver);
+  weight_init.reset(new ConstWeightInitOp<float>(1.0));
+  solver.reset(new SGDOp<float>(0.01, 0.9));
+  wb2 = Weight<float>("4", weight_init, solver);
   weight_init.reset();
   solver.reset();
   // links
@@ -76,12 +76,12 @@ Model makeModel2()
 	model2.setLossFunctionGrad(loss_function_grad);
   return model2;
 }
-Model model2 = makeModel2();
+Model<float> model2 = makeModel2();
 
 BOOST_AUTO_TEST_CASE(findCycles)
 {
 	// Toy network: 1 hidden layer, fully connected, DCG
-	// Model model2 = makeModel2();
+	// Model<float> model2 = makeModel2();
 
 	// initialize nodes
 	const int batch_size = 5;
@@ -101,7 +101,7 @@ BOOST_AUTO_TEST_CASE(findCycles)
 BOOST_AUTO_TEST_CASE(getNextInactiveLayer2) 
 {
   // Toy network: 1 hidden layer, fully connected, DCG
-  // Model model2 = makeModel2(); // memory leaks when calling global functions in BOOST_AUTO_TEST_CASE
+  // Model<float> model2 = makeModel2(); // memory leaks when calling global functions in BOOST_AUTO_TEST_CASE
 
   // initialize nodes
   const int batch_size = 5;
@@ -129,7 +129,7 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayer2)
 
 	// get the next hidden layer
 	std::map<std::string, int> FP_operations_map;
-	std::vector<OperationList> FP_operations_list;
+	std::vector<OperationList<float>> FP_operations_list;
 	model2.getNextInactiveLayer(FP_operations_map, FP_operations_list);
 
 	BOOST_CHECK_EQUAL(FP_operations_map.size(), 1);
@@ -146,7 +146,7 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayer2)
 BOOST_AUTO_TEST_CASE(getNextInactiveLayerBiases2) 
 {
   // Toy network: 1 hidden layer, fully connected, DCG
-  // Model model2 = makeModel2();
+  // Model<float> model2 = makeModel2();
 
   // initialize nodes
   const int batch_size = 5;
@@ -174,7 +174,7 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayerBiases2)
 
 	// get the next hidden layer
 	std::map<std::string, int> FP_operations_map;
-	std::vector<OperationList> FP_operations_list;
+	std::vector<OperationList<float>> FP_operations_list;
 	model2.getNextInactiveLayer(FP_operations_map, FP_operations_list);
 
 	std::vector<std::string> sink_nodes_with_biases2;
@@ -199,7 +199,7 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayerBiases2)
 BOOST_AUTO_TEST_CASE(getNextInactiveLayerCycles2) 
 {
   // Toy network: 1 hidden layer, fully connected, DCG
-  // Model model2 = makeModel2();
+  // Model<float> model2 = makeModel2();
 
   // initialize nodes
   const int batch_size = 5;
@@ -227,7 +227,7 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayerCycles2)
 
 	// get the next hidden layer
 	std::map<std::string, int> FP_operations_map;
-	std::vector<OperationList> FP_operations_list;
+	std::vector<OperationList<float>> FP_operations_list;
 	model2.getNextInactiveLayer(FP_operations_map, FP_operations_list);
 
 	std::vector<std::string> sink_nodes_with_biases2;
@@ -258,7 +258,7 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayerCycles2)
 BOOST_AUTO_TEST_CASE(FPTT) 
 {
   // Toy network: 1 hidden layer, fully connected, DCG
-  // Model model2 = makeModel2();
+  // Model<float> model2 = makeModel2();
 
   // initialize nodes
   const int batch_size = 5;
@@ -325,7 +325,7 @@ BOOST_AUTO_TEST_CASE(FPTT)
 BOOST_AUTO_TEST_CASE(CETT)
 {
 	// Toy network: 1 hidden layer, fully connected, DCG
-	// Model model2 = makeModel2();
+	// Model<float> model2 = makeModel2();
 
 	// initialize nodes
 	const int batch_size = 5;
@@ -398,7 +398,7 @@ BOOST_AUTO_TEST_CASE(CETT)
 BOOST_AUTO_TEST_CASE(getNextUncorrectedLayer2) 
 {
   // Toy network: 1 hidden layer, fully connected, DCG
-  // Model model2 = makeModel2();
+  // Model<float> model2 = makeModel2();
 
   // initialize nodes
   const int batch_size = 5;
@@ -440,7 +440,7 @@ BOOST_AUTO_TEST_CASE(getNextUncorrectedLayer2)
 
 	// get the next hidden layer
 	std::map<std::string, int> BP_operations_map;
-	std::vector<OperationList> BP_operations_list;
+	std::vector<OperationList<float>> BP_operations_list;
 	std::vector<std::string> source_nodes;
 	model2.getNextUncorrectedLayer(BP_operations_map, BP_operations_list, source_nodes);
 
@@ -465,7 +465,7 @@ BOOST_AUTO_TEST_CASE(getNextUncorrectedLayer2)
 BOOST_AUTO_TEST_CASE(getNextUncorrectedLayerCycles2) 
 {
   // Toy network: 1 hidden layer, fully connected, DCG
-  // Model model2 = makeModel2();
+  // Model<float> model2 = makeModel2();
 
   // initialize nodes
   const int batch_size = 5;
@@ -508,7 +508,7 @@ BOOST_AUTO_TEST_CASE(getNextUncorrectedLayerCycles2)
 
 	// get the next hidden layer
 	std::map<std::string, int> BP_operations_map;
-	std::vector<OperationList> BP_operations_list;
+	std::vector<OperationList<float>> BP_operations_list;
 	std::vector<std::string> source_nodes;
 	model2.getNextUncorrectedLayer(BP_operations_map, BP_operations_list, source_nodes);
 
@@ -550,7 +550,7 @@ BOOST_AUTO_TEST_CASE(getNextUncorrectedLayerCycles2)
 BOOST_AUTO_TEST_CASE(BPTT1) 
 {
   // Toy network: 1 hidden layer, fully connected, DCG
-  // Model model2 = makeModel2();
+  // Model<float> model2 = makeModel2();
 
   // initialize nodes
   const int batch_size = 5;
@@ -627,7 +627,7 @@ BOOST_AUTO_TEST_CASE(BPTT1)
 BOOST_AUTO_TEST_CASE(BPTT2)
 {
 	// Toy network: 1 hidden layer, fully connected, DCG
-	// Model model2 = makeModel2();
+	// Model<float> model2 = makeModel2();
 
 	// initialize nodes
 	const int batch_size = 5;
@@ -704,7 +704,7 @@ BOOST_AUTO_TEST_CASE(BPTT2)
 BOOST_AUTO_TEST_CASE(updateWeights2) 
 {
   // Toy network: 1 hidden layer, fully connected, DCG
-  // Model model2 = makeModel2();
+  // Model<float> model2 = makeModel2();
 
   // initialize nodes
   const int batch_size = 5;
@@ -770,7 +770,7 @@ BOOST_AUTO_TEST_CASE(updateWeights2)
 BOOST_AUTO_TEST_CASE(updateWeights3)
 {
 	// Toy network: 1 hidden layer, fully connected, DCG
-	// Model model2 = makeModel2();
+	// Model<float> model2 = makeModel2();
 
 	// initialize nodes
 	const int batch_size = 5;
@@ -839,42 +839,42 @@ BOOST_AUTO_TEST_CASE(updateWeights3)
 	}
 }
 
-Model makeModel2a()
+Model<float> makeModel2a()
 {
-  Node i1, h1, o1, b1, b2;
+  Node<float> i1, h1, o1, b1, b2;
   Link l1, l2, l3, lb1, lb2;
-  Weight w1, w2, w3, wb1, wb2;
-  Model model2;
+  Weight<float> w1, w2, w3, wb1, wb2;
+  Model<float> model2;
   // Toy network: 1 hidden layer, fully connected, DCG
-  i1 = Node("0", NodeType::input, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-  h1 = Node("1", NodeType::hidden, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-  o1 = Node("2", NodeType::output, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-  b1 = Node("3", NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-  b2 = Node("4", NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+  i1 = Node<float>("0", NodeType::input, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+  h1 = Node<float>("1", NodeType::hidden, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+  o1 = Node<float>("2", NodeType::output, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+  b1 = Node<float>("3", NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+  b2 = Node<float>("4", NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
   // weights  
-  std::shared_ptr<WeightInitOp> weight_init;
-  std::shared_ptr<SolverOp> solver;
+  std::shared_ptr<WeightInitOp<float>> weight_init;
+  std::shared_ptr<SolverOp<float>> solver;
   // weight_init.reset(new RandWeightInitOp(1.0)); // No random init for testing
-  weight_init.reset(new ConstWeightInitOp(1.0));
-  solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
+  weight_init.reset(new ConstWeightInitOp<float>(1.0));
+  solver.reset(new AdamOp<float>(0.01, 0.9, 0.999, 1e-8));
 	solver->setGradientThreshold(1000.0f);
-  w1 = Weight("0", weight_init, solver);
-  weight_init.reset(new ConstWeightInitOp(1.0));
-  solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
+  w1 = Weight<float>("0", weight_init, solver);
+  weight_init.reset(new ConstWeightInitOp<float>(1.0));
+  solver.reset(new AdamOp<float>(0.01, 0.9, 0.999, 1e-8));
 	solver->setGradientThreshold(1000.0f);
-  w2 = Weight("1", weight_init, solver);
-  weight_init.reset(new ConstWeightInitOp(1.0));
-  solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
+  w2 = Weight<float>("1", weight_init, solver);
+  weight_init.reset(new ConstWeightInitOp<float>(1.0));
+  solver.reset(new AdamOp<float>(0.01, 0.9, 0.999, 1e-8));
 	solver->setGradientThreshold(1000.0f);
-  w3 = Weight("2", weight_init, solver);
-  weight_init.reset(new ConstWeightInitOp(1.0));
-  solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
+  w3 = Weight<float>("2", weight_init, solver);
+  weight_init.reset(new ConstWeightInitOp<float>(1.0));
+  solver.reset(new AdamOp<float>(0.01, 0.9, 0.999, 1e-8));
 	solver->setGradientThreshold(1000.0f);
-  wb1 = Weight("3", weight_init, solver);
-  weight_init.reset(new ConstWeightInitOp(1.0));
-  solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
+  wb1 = Weight<float>("3", weight_init, solver);
+  weight_init.reset(new ConstWeightInitOp<float>(1.0));
+  solver.reset(new AdamOp<float>(0.01, 0.9, 0.999, 1e-8));
 	solver->setGradientThreshold(1000.0f);
-  wb2 = Weight("4", weight_init, solver);
+  wb2 = Weight<float>("4", weight_init, solver);
   weight_init.reset();
   solver.reset();
   // links
@@ -893,12 +893,12 @@ Model makeModel2a()
 	model2.setLossFunctionGrad(loss_function_grad);
   return model2;
 }
-Model model2a = makeModel2a(); // requires ADAM
+Model<float> model2a = makeModel2a(); // requires ADAM
 
 BOOST_AUTO_TEST_CASE(modelTrainer2) 
 {
   // Toy network: 1 hidden layer, fully connected, DCG
-  // Model model2a = makeModel2a(); // requires ADAM
+  // Model<float> model2a = makeModel2a(); // requires ADAM
 
   // initialize nodes
   const int batch_size = 5;

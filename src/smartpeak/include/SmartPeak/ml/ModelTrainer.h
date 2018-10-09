@@ -158,7 +158,7 @@ public:
 
       @returns The constructed model
     */ 
-    virtual Model makeModel() = 0;
+    virtual Model<TensorT> makeModel() = 0;
 
 		/**
 		@brief Entry point for users to code their adaptive scheduler

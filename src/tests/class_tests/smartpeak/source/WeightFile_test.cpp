@@ -44,12 +44,12 @@ BOOST_AUTO_TEST_CASE(storeAndLoadCsv)
   // create list of dummy weights
   std::vector<Weight<float>> weights;
   std::shared_ptr<WeightInitOp<float>> weight_init;
-  std::shared_ptr<SolverOp> solver;
+  std::shared_ptr<SolverOp<float>> solver;
   for (int i=0; i<3; ++i)
   {
     weight_init.reset(new ConstWeightInitOp<float>(1.0));
-    solver.reset(new SGDOp(0.01, 0.9));
-    Weight weight(
+    solver.reset(new SGDOp<float>(0.01, 0.9));
+    Weight<float> weight(
       "Weight_" + std::to_string(i), 
       weight_init,
       solver);
