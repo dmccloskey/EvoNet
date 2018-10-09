@@ -14,22 +14,22 @@ BOOST_AUTO_TEST_SUITE(populationTrainerFile)
 
 BOOST_AUTO_TEST_CASE(constructor) 
 {
-  PopulationTrainerFile* ptr = nullptr;
-  PopulationTrainerFile* nullPointer = nullptr;
-	ptr = new PopulationTrainerFile();
+  PopulationTrainerFile<float>*ptr = nullptr;
+  PopulationTrainerFile<float>*nullPointer = nullptr;
+	ptr = new PopulationTrainerFile<float>();
   BOOST_CHECK_NE(ptr, nullPointer);
 }
 
 BOOST_AUTO_TEST_CASE(destructor) 
 {
-  PopulationTrainerFile* ptr = nullptr;
-	ptr = new PopulationTrainerFile();
+  PopulationTrainerFile<float>*ptr = nullptr;
+	ptr = new PopulationTrainerFile<float>();
   delete ptr;
 }
 
 BOOST_AUTO_TEST_CASE(sanitizeModelName)
 {
-	PopulationTrainerFile data;
+	PopulationTrainerFile<float> data;
 
 	std::string model_name = "model2_0-12-1@:Model_2 ";
 
@@ -39,13 +39,13 @@ BOOST_AUTO_TEST_CASE(sanitizeModelName)
 
 BOOST_AUTO_TEST_CASE(storeModels)
 {
-  PopulationTrainerFile data;
+  PopulationTrainerFile<float> data;
 
   // make a vector of models to use for testing
-  std::vector<Model> models;
+  std::vector<Model<float>> models;
   for (int i=0; i<4; ++i)
   {
-    Model model;
+    Model<float> model;
     model.setName(std::to_string(i) + ":" + "." + ";");
 		model.setId(i);
     models.push_back(model);
@@ -58,7 +58,7 @@ BOOST_AUTO_TEST_CASE(storeModels)
 
 BOOST_AUTO_TEST_CASE(storeModelValidations)
 {
-	PopulationTrainerFile data;
+	PopulationTrainerFile<float> data;
 
 	// make a vector of models to use for testing
 	std::vector<std::pair<int, float>> models_validation_errors;

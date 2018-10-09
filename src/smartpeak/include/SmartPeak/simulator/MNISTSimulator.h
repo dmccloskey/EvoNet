@@ -11,8 +11,8 @@ namespace SmartPeak
   /**
     @brief A class to generate data using the MNIST data set
   */
-	template<typename T>
-  class MNISTSimulator: public DataSimulator<T>
+	template<typename TensorT>
+  class MNISTSimulator: public DataSimulator<TensorT>
   {
 public:
 		int ReverseInt(int i)
@@ -90,8 +90,8 @@ public:
 						{
 							unsigned char temp = 0;
 							file.read((char*)&temp, sizeof(temp));
-							//data(i, (n_rows*r) + c) = (T)temp; // row-wise return
-							data(i, (n_cols*c) + r) = (T)temp; // col-wise return
+							//data(i, (n_rows*r) + c) = (TensorT)temp; // row-wise return
+							data(i, (n_cols*c) + r) = (TensorT)temp; // col-wise return
 						}
 					}
 				}
@@ -103,11 +103,11 @@ public:
 		{
 			// Read input images [BUG FREE]
 			Eigen::Tensor<TensorT, 2> input_data(data_size, input_size);
-			ReadMNIST<TensorT>(filename_data, input_data, false);
+			ReadMNIST(filename_data, input_data, false);
 
 			// Read input label [BUG FREE]
 			Eigen::Tensor<TensorT, 2> labels(data_size, 1);
-			ReadMNIST<TensorT>(filename_labels, labels, true);
+			ReadMNIST(filename_labels, labels, true);
 
 			// Convert labels to 1 hot encoding [BUG FREE]
 			Eigen::Tensor<TensorT, 2> labels_encoded = OneHotEncoder<TensorT, TensorT>(labels, mnist_labels);

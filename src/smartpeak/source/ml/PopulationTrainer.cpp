@@ -610,7 +610,7 @@ namespace SmartPeak
 		std::vector<Model<TensorT>>& models,
 		ModelTrainer<TensorT>& model_trainer,
 		ModelReplicator<TensorT>& model_replicator,
-		DataSimulator& data_simulator,
+		DataSimulator<TensorT> &data_simulator,
 		ModelLogger<TensorT>& model_logger,
 		const std::vector<std::string>& input_nodes,
 		int n_threads)
@@ -679,7 +679,7 @@ namespace SmartPeak
 		std::vector<Model<TensorT>>& models,
 		ModelTrainer<TensorT>& model_trainer,
 		ModelReplicator<TensorT>& model_replicator,
-		DataSimulator& data_simulator,
+		DataSimulator<TensorT>& data_simulator,
 		ModelLogger<TensorT>& model_logger,
 		const std::vector<std::string>& input_nodes,
 		int n_threads)

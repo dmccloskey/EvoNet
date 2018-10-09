@@ -24,7 +24,8 @@ using namespace SmartPeak;
  */
 
 // Extended classes
-class ModelTrainerExt : public ModelTrainer
+template<typename TensorT>
+class ModelTrainerExt : public ModelTrainer<TensorT>
 {
 public:
 	/*
@@ -38,14 +39,14 @@ public:
 	References:
 	Network based on: https://github.com/diegoalejogm/gans/blob/master/1.%20Vanilla%20GAN%20PyTorch.ipynb
 	*/
-	Model makeGAN(const int& n_inputs, int n_encodings = 20, int n_hidden_0 = 256, int n_hidden_1 = 512) {
-		Model model;
+	Model<TensorT> makeGAN(const int& n_inputs, int n_encodings = 20, int n_hidden_0 = 256, int n_hidden_1 = 512) {
+		Model<TensorT> model;
 		model.setId(0);
 		model.setName("GAN");
 		model.setLossFunction(std::shared_ptr<LossFunctionOp<float>>(new BCEOp<float>()));
 		model.setLossFunctionGrad(std::shared_ptr<LossFunctionGradOp<float>>(new BCEGradOp<float>()));
 
-		ModelBuilder model_builder;
+		ModelBuilder<TensorT> model_builder;
 
 		// Add the Generator inputs
 		std::vector<std::string> node_names_encoding = model_builder.addInputNodes(model, "Encoding", n_encodings);
@@ -53,29 +54,29 @@ public:
 		// Add the generator FC layers
 		std::vector<std::string> node_names, node_names_gen, node_names_logvar;	
 		node_names = model_builder.addFullyConnected(model, "GenFC0", "GenFC0", node_names_encoding, n_hidden_0,
-			std::shared_ptr<ActivationOp<float>>(new LeakyReLUOp<float>()),
-			std::shared_ptr<ActivationOp<float>>(new LeakyReLUGradOp<float>()),
-			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
-			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
-			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names_encoding.size() + n_hidden_0)/2, 1)),
-			std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+			std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<float>()),
+			std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<float>()),
+			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
+			std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
+			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
+			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_encoding.size() + n_hidden_0)/2, 1)),
+			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 		node_names = model_builder.addFullyConnected(model, "GenFC1", "GenFC1", node_names, n_hidden_1,
-			std::shared_ptr<ActivationOp<float>>(new LeakyReLUOp<float>()),
-			std::shared_ptr<ActivationOp<float>>(new LeakyReLUGradOp<float>()),
-			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
-			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
-			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names.size() + n_hidden_1)/2, 1)),
-			std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+			std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<float>()),
+			std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<float>()),
+			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
+			std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
+			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
+			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_hidden_1)/2, 1)),
+			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 		node_names_gen = model_builder.addFullyConnected(model, "GenOut", "GenOut", node_names, n_inputs,
-			std::shared_ptr<ActivationOp<float>>(new TanHOp<float>()),
-			std::shared_ptr<ActivationOp<float>>(new TanHGradOp<float>()),
-			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
-			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
-			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names.size() + n_inputs)/2, 1)),
-			std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+			std::shared_ptr<ActivationOp<TensorT>>(new TanHOp<float>()),
+			std::shared_ptr<ActivationOp<TensorT>>(new TanHGradOp<float>()),
+			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
+			std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
+			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
+			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_inputs)/2, 1)),
+			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 
 		// Specify the output node types manually
 		for (const std::string& node_name : node_names_gen)
@@ -88,32 +89,32 @@ public:
 
 		// Add the Disoder FC layers
 		node_names = model_builder.addFullyConnected(model, "DisFC0", "DisFC0", node_names_gen, n_hidden_0,
-			std::shared_ptr<ActivationOp<float>>(new LeakyReLUOp<float>()),
-			std::shared_ptr<ActivationOp<float>>(new LeakyReLUGradOp<float>()),
-			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
-			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
-			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names_gen.size() + n_hidden_0)/2, 1)),
-			std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+			std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<float>()),
+			std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<float>()),
+			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
+			std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
+			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
+			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_gen.size() + n_hidden_0)/2, 1)),
+			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 		model_builder.addFullyConnected(model, "DisFC0", node_names_input, node_names,
-			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names_input.size() + node_names.size()) / 2, 1)),
-			std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f);
+			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_input.size() + node_names.size()) / 2, 1)),
+			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.1, 0.9, 0.999, 1e-8)), 0.0f);
 		node_names = model_builder.addFullyConnected(model, "DisFC1", "DisFC1", node_names, n_hidden_1,
-			std::shared_ptr<ActivationOp<float>>(new LeakyReLUOp<float>()),
-			std::shared_ptr<ActivationOp<float>>(new LeakyReLUGradOp<float>()),
-			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
-			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
-			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names.size() + n_hidden_1) / 2, 1)),
-			std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+			std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<float>()),
+			std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<float>()),
+			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
+			std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
+			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
+			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_hidden_1) / 2, 1)),
+			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 		node_names = model_builder.addFullyConnected(model, "DisOut", "DisOut", node_names, 1,
-			std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()),
-			std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()),
-			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
-			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
-			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-			std::shared_ptr<WeightInitOp>(new RandWeightInitOp(node_names.size(), 1)),
-			std::shared_ptr<SolverOp>(new AdamOp(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+			std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<float>()),
+			std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<float>()),
+			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
+			std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
+			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
+			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 1)),
+			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 
 		// Specify the output node types manually
 		for (const std::string& node_name : node_names)
@@ -122,28 +123,29 @@ public:
 		model.initWeights();
 		return model;
 	}
-	Model makeModel() { return Model(); }
+	Model<TensorT> makeModel() { return Model<TensorT>(); }
 	void adaptiveTrainerScheduler(
 		const int& n_generations,
 		const int& n_epochs,
-		Model& model,
+		Model<TensorT>& model,
 		const std::vector<float>& model_errors) {
 		if (n_epochs > 10000) {
 			// update the solver parameters
-			std::shared_ptr<SolverOp> solver;
-			solver.reset(new AdamOp(0.001, 0.9, 0.999, 1e-8));
+			std::shared_ptr<SolverOp<TensorT>> solver;
+			solver.reset(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8));
 			for (auto& weight_map : model.getWeightsMap())
-				if (weight_map.second->getSolverOp()->getName() == "AdamOp")
+				if (weight_map.second->getSolverOp()->getName() == "AdamOp<TensorT>")
 					weight_map.second->setSolverOp(solver);
 		}
 	}
 };
 
-class DataSimulatorExt : public MNISTSimulator
+template<typename TensorT>
+class DataSimulatorExt : public MNISTSimulator<TensorT>
 {
 public:
-	void simulateEvaluationData(Eigen::Tensor<float, 4>& input_data, Eigen::Tensor<float, 3>& time_steps) {};
-	void simulateTrainingData(Eigen::Tensor<float, 4>& input_data, Eigen::Tensor<float, 4>& output_data, Eigen::Tensor<float, 3>& time_steps)
+	void simulateEvaluationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 3>& time_steps) {};
+	void simulateTrainingData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
 	{
 		// infer data dimensions based on the input tensors
 		const int batch_size = input_data.dimension(0);
@@ -203,7 +205,7 @@ public:
 
 		time_steps.setConstant(1.0f);
 	}
-	void simulateValidationData(Eigen::Tensor<float, 4>& input_data, Eigen::Tensor<float, 4>& output_data, Eigen::Tensor<float, 3>& time_steps)
+	void simulateValidationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
 	{
 		// infer data dimensions based on the input tensors
 		const int batch_size = input_data.dimension(0);
@@ -261,13 +263,14 @@ public:
 	}
 };
 
-class ModelReplicatorExt : public ModelReplicator
+template<typename TensorT>
+class ModelReplicatorExt : public ModelReplicator<TensorT>
 {
 public:
 	void adaptiveReplicatorScheduler(
 		const int& n_generations,
-		std::vector<Model>& models,
-		std::vector<std::vector<std::pair<int, float>>>& models_errors_per_generations)
+		std::vector<Model<TensorT>>& models,
+		std::vector<std::vector<std::pair<int, TensorT>>>& models_errors_per_generations)
 	{
 		if (n_generations > 100)
 		{
@@ -293,13 +296,14 @@ public:
 	}
 };
 
-class PopulationTrainerExt : public PopulationTrainer
+template<typename TensorT>
+class PopulationTrainerExt : public PopulationTrainer<TensorT>
 {
 public:
 	void adaptivePopulationScheduler(
 		const int& n_generations,
-		std::vector<Model>& models,
-		std::vector<std::vector<std::pair<int, float>>>& models_errors_per_generations)
+		std::vector<Model<TensorT>>& models,
+		std::vector<std::vector<std::pair<int, TensorT>>>& models_errors_per_generations)
 	{
 		// Population size of 16
 		if (n_generations == 0)
@@ -329,7 +333,7 @@ void main_GAN() {
 	population_trainer.setNReplicatesPerModel(1);
 
 	// define the model logger
-	ModelLogger model_logger(true, true, true, false, false, false, false, false);
+	ModelLogger<float> model_logger(true, true, true, false, false, false, false, false);
 
 	// define the data simulator
 	const std::size_t input_size = 784;
@@ -402,7 +406,7 @@ void main_GAN() {
 
 	// define the initial population [BUG FREE]
 	std::cout << "Initializing the population..." << std::endl;
-	std::vector<Model> population = { model_trainer.makeGAN(input_size, encoding_size) };
+	std::vector<Model<float>> population = { model_trainer.makeGAN(input_size, encoding_size) };
 
 	// Evolve the population
 	std::vector<std::vector<std::pair<int, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(

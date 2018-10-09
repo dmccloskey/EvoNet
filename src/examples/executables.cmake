@@ -7,7 +7,6 @@ set(ml_executables_list
   MNIST_LSTM_example
   MNIST_VAE_example
   AdditionProblem_example
-  MemoryCell_example
   Metabolomics_example
 )
 

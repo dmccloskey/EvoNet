@@ -22,31 +22,33 @@ using namespace SmartPeak;
  */
 
 // Extended classes
-class ModelTrainerExt : public ModelTrainer
+template<typename TensorT>
+class ModelTrainerExt : public ModelTrainer<TensorT>
 {
 public:
-	Model makeModel() { return Model(); }
+	Model<TensorT> makeModel() { return Model<TensorT>(); }
 	void adaptiveTrainerScheduler(
 		const int& n_generations,
 		const int& n_epochs,
-		Model& model,
+		Model<TensorT>& model,
 		const std::vector<float>& model_errors) {
 		if (n_epochs > 10000) {
 			// update the solver parameters
-			std::shared_ptr<SolverOp> solver;
-			solver.reset(new AdamOp(0.001, 0.9, 0.999, 1e-8));
+			std::shared_ptr<SolverOp<TensorT>> solver;
+			solver.reset(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8));
 			for (auto& weight_map : model.getWeightsMap())
-				if (weight_map.second->getSolverOp()->getName() == "AdamOp")
+				if (weight_map.second->getSolverOp()->getName() == "AdamOp<TensorT>")
 					weight_map.second->setSolverOp(solver);
 		}
 	}
 };
 
-class DataSimulatorExt : public MNISTSimulator
+template<typename TensorT>
+class DataSimulatorExt : public MNISTSimulator<TensorT>
 {
 public:
-	void simulateEvaluationData(Eigen::Tensor<float, 4>& input_data, Eigen::Tensor<float, 3>& time_steps) {};
-	void simulateTrainingData(Eigen::Tensor<float, 4>& input_data, Eigen::Tensor<float, 4>& output_data, Eigen::Tensor<float, 3>& time_steps)
+	void simulateEvaluationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 3>& time_steps) {};
+	void simulateTrainingData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
 	{
 		// infer data dimensions based on the input tensors
 		const int batch_size = input_data.dimension(0);
@@ -89,12 +91,12 @@ public:
 			for (int memory_iter = 0; memory_iter<memory_size; ++memory_iter)
 				for (int nodes_iter = 0; nodes_iter<training_labels.dimension(1); ++nodes_iter)
 					for (int epochs_iter = 0; epochs_iter<n_epochs; ++epochs_iter)
-						output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = (float)training_labels(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
-						//output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = (float)training_labels(sample_indices[0], nodes_iter); // test on only 1 sample
+						output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = (TensorT)training_labels(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
+						//output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = (TensorT)training_labels(sample_indices[0], nodes_iter); // test on only 1 sample
 
 		time_steps.setConstant(1.0f);
 	}
-	void simulateValidationData(Eigen::Tensor<float, 4>& input_data, Eigen::Tensor<float, 4>& output_data, Eigen::Tensor<float, 3>& time_steps)
+	void simulateValidationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
 	{
 		// infer data dimensions based on the input tensors
 		const int batch_size = input_data.dimension(0);
@@ -136,19 +138,20 @@ public:
 			for (int memory_iter = 0; memory_iter<memory_size; ++memory_iter)
 				for (int nodes_iter = 0; nodes_iter<validation_labels.dimension(1); ++nodes_iter)
 					for (int epochs_iter = 0; epochs_iter<n_epochs; ++epochs_iter)
-						output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = (float)validation_labels(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
+						output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = (TensorT)validation_labels(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
 
 		time_steps.setConstant(1.0f);
 	}
 };
 
-class ModelReplicatorExt : public ModelReplicator
+template<typename TensorT>
+class ModelReplicatorExt : public ModelReplicator<TensorT>
 {
 public:
 	void adaptiveReplicatorScheduler(
 		const int& n_generations,
-		std::vector<Model>& models,
-		std::vector<std::vector<std::pair<int, float>>>& models_errors_per_generations)
+		std::vector<Model<TensorT>>& models,
+		std::vector<std::vector<std::pair<int, TensorT>>>& models_errors_per_generations)
 	{
 		if (n_generations > 100)
 		{
@@ -174,13 +177,14 @@ public:
 	}
 };
 
-class PopulationTrainerExt : public PopulationTrainer
+template<typename TensorT>
+class PopulationTrainerExt : public PopulationTrainer<TensorT>
 {
 public:
 	void adaptivePopulationScheduler(
 		const int& n_generations,
-		std::vector<Model>& models,
-		std::vector<std::vector<std::pair<int, float>>>& models_errors_per_generations)
+		std::vector<Model<TensorT>>& models,
+		std::vector<std::vector<std::pair<int, TensorT>>>& models_errors_per_generations)
 	{
 		// Population size of 16
 		if (n_generations == 0)
@@ -255,13 +259,13 @@ void main_EvoNet() {
 	for (int i = 0; i < population_size; ++i)
 	{
 		// baseline model
-		std::shared_ptr<WeightInitOp> weight_init;
-		std::shared_ptr<SolverOp> solver;
-		weight_init.reset(new RandWeightInitOp(input_nodes.size()));
-		solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
+		std::shared_ptr<WeightInitOp<float>> weight_init;
+		std::shared_ptr<SolverOp<float>> solver;
+		weight_init.reset(new RandWeightInitOp<float>(input_nodes.size()));
+		solver.reset(new AdamOp<float>(0.01, 0.9, 0.999, 1e-8));
 		std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>());
 		std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
-		Model model = model_replicator.makeBaselineModel(
+		Model<float> model = model_replicator.makeBaselineModel(
 			input_nodes.size(), { 100 }, output_nodes.size(),
 			std::shared_ptr<ActivationOp<float>>(new ELUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ELUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
 			std::shared_ptr<ActivationOp<float>>(new ELUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ELUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),

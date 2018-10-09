@@ -11,30 +11,30 @@ BOOST_AUTO_TEST_SUITE(NodeFile1)
 
 BOOST_AUTO_TEST_CASE(constructor) 
 {
-  NodeFile* ptr = nullptr;
-  NodeFile* nullPointer = nullptr;
-  ptr = new NodeFile();
+  NodeFile<float>* ptr = nullptr;
+  NodeFile<float>* nullPointer = nullptr;
+  ptr = new NodeFile<float>();
   BOOST_CHECK_NE(ptr, nullPointer);
 }
 
 BOOST_AUTO_TEST_CASE(destructor) 
 {
-  NodeFile* ptr = nullptr;
-	ptr = new NodeFile();
+  NodeFile<float>* ptr = nullptr;
+	ptr = new NodeFile<float>();
   delete ptr;
 }
 
 BOOST_AUTO_TEST_CASE(storeAndLoadCsv) 
 {
-  NodeFile data;
+  NodeFile<float> data;
 
   std::string filename = "NodeFileTest.csv";
 
   // create list of dummy nodes
-  std::vector<Node> nodes;
+  std::vector<Node<float>> nodes;
   for (int i=0; i<3; ++i)
   {
-    const Node node(
+    const Node<float> node(
       "Node_" + std::to_string(i), 
       NodeType::hidden,
       NodeStatus::initialized,
@@ -47,7 +47,7 @@ BOOST_AUTO_TEST_CASE(storeAndLoadCsv)
   }
   data.storeNodesCsv(filename, nodes);
 
-  std::vector<Node> nodes_test;
+  std::vector<Node<float>> nodes_test;
   data.loadNodesCsv(filename, nodes_test);
 
   for (int i=0; i<3; ++i)

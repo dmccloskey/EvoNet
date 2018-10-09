@@ -101,7 +101,8 @@ struct MetaDatum {
 typedef std::map<std::string, MetaDatum> MetaData;
 
 // Extended data classes
-class MetDataSimClassification: public DataSimulator
+template<typename TensorT>
+class MetDataSimClassification: public DataSimulator<TensorT>
 {
 public:
 	MetDataSimClassification() = default;
@@ -264,7 +265,7 @@ public:
 	void readBiochemicalReactions(std::string& filename) { ReadBiochemicalReactions(filename, biochemicalReactions_); }
 	void readMetaData(std::string& filename) { ReadMetaData(filename, metaData_); }
 
-	void simulateData(Eigen::Tensor<float, 4>& input_data, Eigen::Tensor<float, 4>& output_data, Eigen::Tensor<float, 3>& time_steps)
+	void simulateData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
 	{
 		// infer data dimensions based on the input tensors
 		const int batch_size = input_data.dimension(0);
@@ -298,8 +299,8 @@ public:
 					}
 
 					// convert the label to a one hot vector
-					Eigen::Tensor<float, 1> one_hot_vec = OneHotEncoder<std::string, float>(metaData_.at(sample_group_name).condition, labels_);
-					Eigen::Tensor<float, 1> one_hot_vec_smoothed = one_hot_vec.unaryExpr(LabelSmoother<float>(0.01, 0.01));
+					Eigen::Tensor<TensorT, 1> one_hot_vec = OneHotEncoder<std::string, TensorT>(metaData_.at(sample_group_name).condition, labels_);
+					Eigen::Tensor<TensorT, 1> one_hot_vec_smoothed = one_hot_vec.unaryExpr(LabelSmoother<TensorT>(0.01, 0.01));
 
 					for (int nodes_iter = 0; nodes_iter < n_output_nodes/2; ++nodes_iter) {
 						output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = one_hot_vec(nodes_iter);
@@ -313,15 +314,15 @@ public:
 		// update the time_steps
 		time_steps.setConstant(1.0f);
 	}
-	void simulateTrainingData(Eigen::Tensor<float, 4>& input_data, Eigen::Tensor<float, 4>& output_data, Eigen::Tensor<float, 3>& time_steps)
+	void simulateTrainingData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
 	{
 		simulateData(input_data, output_data, time_steps);
 	}
-	void simulateValidationData(Eigen::Tensor<float, 4>& input_data, Eigen::Tensor<float, 4>& output_data, Eigen::Tensor<float, 3>& time_steps)
+	void simulateValidationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
 	{
 		simulateData(input_data, output_data, time_steps);
 	}
-	void simulateEvaluationData(Eigen::Tensor<float, 4>& input_data, Eigen::Tensor<float, 3>& time_steps) {};
+	void simulateEvaluationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 3>& time_steps) {};
 
 	/*
 	@brief Find candidate reactions that can be used to calculate the MAR
@@ -367,7 +368,7 @@ public:
 				if (std::count(ignore_mets.begin(), ignore_mets.end(), met_id) == 0)
 					++total_cnt;
 			}
-			if (((float)data_cnt) / ((float)total_cnt) < 0.75f)
+			if (((TensorT)data_cnt) / ((TensorT)total_cnt) < 0.75f)
 				continue;
 
 			reaction_ids_.push_back(biochem_rxn_map.first);
@@ -495,11 +496,11 @@ public:
 		const BiochemicalReaction& biochemicalReaction)
 	{
 		// calculate MAR
-		float mar = 1.0f;
+		TensorT mar = 1;
 		for (int i = 0; i < biochemicalReaction.products_ids.size(); ++i) {
 			std::string met_id = biochemicalReaction.products_ids[i];
 			int met_stoich = biochemicalReaction.products_stoichiometry[i];
-			float met_conc = 1.0f;
+			TensorT met_conc = 1;
 			if (metabolomicsData.count(met_id) > 0)
 			{
 				MetabolomicsDatum metabolomics_datum = selectRandomElement(metabolomicsData.at(met_id));
@@ -512,7 +513,7 @@ public:
 		for (int i = 0; i < biochemicalReaction.reactants_ids.size(); ++i) {
 			std::string met_id = biochemicalReaction.reactants_ids[i];
 			int met_stoich = biochemicalReaction.reactants_stoichiometry[i];
-			float met_conc = 1.0f;
+			TensorT met_conc = 1;
 			if (metabolomicsData.count(met_id) > 0)
 			{
 				MetabolomicsDatum metabolomics_datum = selectRandomElement(metabolomicsData.at(met_id));
@@ -539,10 +540,11 @@ public:
 	std::vector<std::string> component_group_names_;
 };
 
-class MetDataSimReconstruction : public MetDataSimClassification
+template<typename TensorT>
+class MetDataSimReconstruction : public MetDataSimClassification<TensorT>
 {
 public:
-	void simulateData(Eigen::Tensor<float, 4>& input_data, Eigen::Tensor<float, 4>& output_data, Eigen::Tensor<float, 3>& time_steps)
+	void simulateData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
 	{
 		// infer data dimensions based on the input tensors
 		const int batch_size = input_data.dimension(0);
@@ -560,7 +562,7 @@ public:
 					std::string sample_group_name = sample_group_names_[0];
 
 					for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
-						const float mar = calculateMAR(
+						const TensorT mar = calculateMAR(
 							metabolomicsData_.at(sample_group_name),
 							biochemicalReactions_.at(reaction_ids_[nodes_iter]));
 						input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = mar;
@@ -570,24 +572,25 @@ public:
 			}
 		}
 	}
-	void simulateTrainingData(Eigen::Tensor<float, 4>& input_data, Eigen::Tensor<float, 4>& output_data, Eigen::Tensor<float, 3>& time_steps)
+	void simulateTrainingData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
 	{
 		simulateData(input_data, output_data, time_steps);
 	}
-	void simulateValidationData(Eigen::Tensor<float, 4>& input_data, Eigen::Tensor<float, 4>& output_data, Eigen::Tensor<float, 3>& time_steps)
+	void simulateValidationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
 	{
 		simulateData(input_data, output_data, time_steps);
 	}
 };
 
 // Other extended classes
-class ModelReplicatorExt : public ModelReplicator
+template<typename TensorT>
+class ModelReplicatorExt : public ModelReplicator<TensorT>
 {
 public:
 	void adaptiveReplicatorScheduler(
 		const int& n_generations,
-		std::vector<Model>& models,
-		std::vector<std::vector<std::pair<int, float>>>& models_errors_per_generations)
+		std::vector<Model<TensorT>>& models,
+		std::vector<std::vector<std::pair<int, TensorT>>>& models_errors_per_generations)
 	{
 		if (n_generations >= 0)
 		{
@@ -604,13 +607,14 @@ public:
 	}
 };
 
-class PopulationTrainerExt : public PopulationTrainer
+template<typename TensorT>
+class PopulationTrainerExt : public PopulationTrainer<TensorT>
 {
 public:
 	void adaptivePopulationScheduler(
 		const int& n_generations,
-		std::vector<Model>& models,
-		std::vector<std::vector<std::pair<int, float>>>& models_errors_per_generations)
+		std::vector<Model<TensorT>>& models,
+		std::vector<std::vector<std::pair<int, TensorT>>>& models_errors_per_generations)
 	{
 		// Population size of 16
 		if (n_generations == 0)
@@ -628,70 +632,69 @@ public:
 	}
 };
 
-class ModelTrainerExt : public ModelTrainer
+template<typename TensorT>
+class ModelTrainerExt : public ModelTrainer<TensorT>
 {
 public:
-	Model makeModel() { return Model(); }
-	Model makeModelClassification(const int& n_inputs, const int& n_outputs) {
-		Model model;
+	Model<TensorT> makeModel() { return Model<TensorT>(); }
+	Model<TensorT> makeModelClassification(const int& n_inputs, const int& n_outputs) {
+		Model<TensorT> model;
 		model.setId(0);
 		model.setName("Classifier");
-		model.setLossFunction(std::shared_ptr<LossFunctionOp<float>>(new NegativeLogLikelihoodOp<float>(n_outputs)));
-		model.setLossFunctionGrad(std::shared_ptr<LossFunctionGradOp<float>>(new NegativeLogLikelihoodGradOp<float>(n_outputs)));
 
 		const int n_hidden_0 = 200;
 		const int n_hidden_1 = 100;
 		const int n_hidden_2 = 50;
 		const int n_hidden_3 = 10;
 
-		ModelBuilder model_builder;
+		ModelBuilder<TensorT> model_builder;
 
 		// Add the inputs
 		std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input", n_inputs);
 
 		// Add the hidden layers
 		//node_names = model_builder.addFullyConnected(model, "FC0", "FC0", node_names, n_hidden_0,
-		//	std::shared_ptr<ActivationOp<float>>(new LeakyReLUOp<float>()),
-		//	std::shared_ptr<ActivationOp<float>>(new LeakyReLUGradOp<float>()),
-		//	std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
-		//	std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
-		//	std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-		//	std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names.size() + n_hidden_1) / 2, 1)),
-		//	std::shared_ptr<SolverOp>(new AdamOp(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+		//	std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
+		//	std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
+		//	std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
+		//	std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
+		//	std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
+		//	std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_hidden_1) / 2, 1)),
+		//	std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 		node_names = model_builder.addFullyConnected(model, "FC1", "FC1", node_names, n_hidden_1,
-			std::shared_ptr<ActivationOp<float>>(new LeakyReLUOp<float>()),
-			std::shared_ptr<ActivationOp<float>>(new LeakyReLUGradOp<float>()),
-			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
-			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
-			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names.size() + n_hidden_1) / 2, 1)),
-			std::shared_ptr<SolverOp>(new AdamOp(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+			std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
+			std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
+			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
+			std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
+			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
+			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_hidden_1) / 2, 1)),
+			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 		node_names = model_builder.addFullyConnected(model, "FC2", "FC2", node_names, n_hidden_2,
-			std::shared_ptr<ActivationOp<float>>(new LeakyReLUOp<float>()),
-			std::shared_ptr<ActivationOp<float>>(new LeakyReLUGradOp<float>()),
-			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
-			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
-			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names.size() + n_hidden_2) / 2, 1)),
-			std::shared_ptr<SolverOp>(new AdamOp(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+			std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
+			std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
+			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
+			std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
+			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
+			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_hidden_2) / 2, 1)),
+			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 		node_names = model_builder.addFullyConnected(model, "FC3", "FC3", node_names, n_hidden_3,
-			std::shared_ptr<ActivationOp<float>>(new LeakyReLUOp<float>()),
-			std::shared_ptr<ActivationOp<float>>(new LeakyReLUGradOp<float>()),
-			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
-			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
-			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names.size() + n_hidden_3) / 2, 1)),
-			std::shared_ptr<SolverOp>(new AdamOp(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+			std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
+			std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
+			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
+			std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
+			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
+			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_hidden_3) / 2, 1)),
+			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 		node_names = model_builder.addFullyConnected(model, "Output", "Output", node_names, n_outputs,
-			//std::shared_ptr<ActivationOp<float>>(new SigmoidOp<float>()),
-			//std::shared_ptr<ActivationOp<float>>(new SigmoidGradOp<float>()),
-			std::shared_ptr<ActivationOp<float>>(new LeakyReLUOp<float>()),
-			std::shared_ptr<ActivationOp<float>>(new LeakyReLUGradOp<float>()),
-			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()),
-			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()),
-			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-			std::shared_ptr<WeightInitOp>(new RandWeightInitOp((int)(node_names.size() + n_outputs) / 2, 1)),
-			std::shared_ptr<SolverOp>(new AdamOp(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+			//std::shared_ptr<ActivationOp<TensorT>>(new SigmoidOp<TensorT>()),
+			//std::shared_ptr<ActivationOp<TensorT>>(new SigmoidGradOp<TensorT>()),
+			std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
+			std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
+			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
+			std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
+			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
+			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_outputs) / 2, 1)),
+			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 
 		// Add the final softmax layer
 		node_names = model_builder.addStableSoftMax(model, "SoftMax", "SoftMax", node_names);
@@ -706,14 +709,14 @@ public:
 	void adaptiveTrainerScheduler(
 		const int& n_generations,
 		const int& n_epochs,
-		Model& model,
+		Model<TensorT>& model,
 		const std::vector<float>& model_errors)
 	{
 		//if (n_epochs > 100)
 		//{
 		//	// update the solver parameters
-		//	std::shared_ptr<SolverOp> solver;
-		//	solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
+		//	std::shared_ptr<SolverOp<TensorT>> solver;
+		//	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));
 		//	for (auto& weight_map : model.getWeightsMap())
 		//		weight_map.second->setSolverOp(solver);
 		//}
@@ -723,7 +726,7 @@ public:
 /*
 @brief Find significant pair-wise MARS between samples (one pre/post vs. all pre/post)
 */
-PWData PWComparison(MetDataSimClassification& metabolomics_data, const std::vector<std::string>& sample_names, int n_samples = 10000, float alpha = 0.05, float fc = 1.0) {
+PWData PWComparison(MetDataSimClassification<float>& metabolomics_data, const std::vector<std::string>& sample_names, int n_samples = 10000, float alpha = 0.05, float fc = 1.0) {
 	PWData pw_data;
 	for (const std::string& mar : metabolomics_data.reaction_ids_) {
 		for (size_t sgn1_iter = 0; sgn1_iter < sample_names.size(); ++sgn1_iter) {
@@ -799,7 +802,7 @@ PWData PWComparison(MetDataSimClassification& metabolomics_data, const std::vect
 /*
 @brief Find significant pair-wise MARS between pre/post samples (one pre vs one post)
 */
-PWData PWPrePostComparison(MetDataSimClassification& metabolomics_data, 
+PWData PWPrePostComparison(MetDataSimClassification<float>& metabolomics_data, 
 	std::vector<std::string>& pre_samples, std::vector<std::string>& post_samples, const int& n_pairs,
 	int n_samples = 10000, float alpha = 0.05, float fc = 1.0) {
 	PWData pw_data;
@@ -867,7 +870,7 @@ PWData PWPrePostComparison(MetDataSimClassification& metabolomics_data,
 /*
 @brief Find significant pair-wise MARS between pre/post samples (one pre vs one post)
 */
-PWData PWPrePostDifference(MetDataSimClassification& metabolomics_data,
+PWData PWPrePostDifference(MetDataSimClassification<float>& metabolomics_data,
 	std::vector<std::string>& pre_samples, std::vector<std::string>& post_samples, const int& n_pairs,
 	int n_samples = 10000, float alpha = 0.05, float fc = 0.43229) {
 
@@ -1095,7 +1098,7 @@ void main_statistics_timecourseSummary(std::string blood_fraction = "PLT",
 	bool run_timeCourse_S02D01vsS02D02 = false, bool run_timeCourse_S02D01vsS02D03 = false, bool run_timeCourse_S02D01vsS02D04 = false, bool run_timeCourse_S02D01vsS02D05 = false)
 {
 	// define the data simulator
-	MetDataSimClassification metabolomics_data;
+	MetDataSimClassification<float> metabolomics_data;
 
 	// data dirs
 	//std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
@@ -1582,7 +1585,7 @@ void main_statistics_timecourse(std::string blood_fraction = "PLT",
 	bool run_timeCourse_S02D01vsS02D02 = false, bool run_timeCourse_S02D01vsS02D03 = false, bool run_timeCourse_S02D01vsS02D04 = false, bool run_timeCourse_S02D01vsS02D05 = false)
 {
 	// define the data simulator
-	MetDataSimClassification metabolomics_data;
+	MetDataSimClassification<float> metabolomics_data;
 
 	// data dirs
 	//std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
@@ -1866,7 +1869,7 @@ void main_statistics_timecourse(std::string blood_fraction = "PLT",
 void main_statistics_controlsSummary(std::string blood_fraction = "PLT", bool run_controls = false)
 {
 	// define the data simulator
-	MetDataSimClassification metabolomics_data;
+	MetDataSimClassification<float> metabolomics_data;
 
 	// data dirs
 	//std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
@@ -1913,7 +1916,7 @@ void main_statistics_controlsSummary(std::string blood_fraction = "PLT", bool ru
 void main_statistics_controls(std::string blood_fraction = "PLT", bool run_controls = false)
 {
 	// define the data simulator
-	MetDataSimClassification metabolomics_data;
+	MetDataSimClassification<float> metabolomics_data;
 
 	// data dirs
 	//std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
@@ -1969,7 +1972,7 @@ void main_statistics_controls(std::string blood_fraction = "PLT", bool run_contr
 void main_statistics_preVsPost(std::string blood_fraction = "PLT", bool run_oneVSone = true, bool run_preVSpost = true, bool run_postMinPre = false)
 {
 	// define the data simulator
-	MetDataSimClassification metabolomics_data;
+	MetDataSimClassification<float> metabolomics_data;
 
 	// data dirs
 	//std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
@@ -2073,7 +2076,7 @@ void main_classification(std::string blood_fraction = "PLT")
 	const int n_threads = 1;
 
 	// define the data simulator
-	MetDataSimClassification metabolomics_data;
+	MetDataSimClassification<float> metabolomics_data;
 	//std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
 	std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
 	//std::string data_dir = "/home/user/Data/";
@@ -2143,7 +2146,7 @@ void main_classification(std::string blood_fraction = "PLT")
 		});
 
 	// define the model logger
-	ModelLogger model_logger(true, true, true, true, true, false, true, true);
+	ModelLogger<float> model_logger(true, true, true, true, true, false, true, true);
 
 	// initialize the model replicator
 	ModelReplicatorExt<float> model_replicator;
@@ -2157,7 +2160,7 @@ void main_classification(std::string blood_fraction = "PLT")
 
 	// define the initial population
 	std::cout << "Initializing the population..." << std::endl;
-	std::vector<Model> population = {model_trainer.makeModelClassification(n_input_nodes, n_output_nodes)};
+	std::vector<Model<float>> population = {model_trainer.makeModelClassification(n_input_nodes, n_output_nodes)};
 
 	// Evolve the population
 	std::vector<std::vector<std::pair<int, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
@@ -2186,7 +2189,7 @@ void main_reconstruction()
 	population_trainer.setNReplicatesPerModel(3);
 
 	// define the data simulator
-	MetDataSimReconstruction metabolomics_data;
+	MetDataSimReconstruction<float> metabolomics_data;
 	//std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
 	//std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
 	std::string data_dir = "/home/user/Data/";
@@ -2241,13 +2244,13 @@ void main_reconstruction()
 	for (int i = 0; i<population_size; ++i)
 	{
 		// baseline model
-		std::shared_ptr<WeightInitOp> weight_init;
-		std::shared_ptr<SolverOp> solver;
-		weight_init.reset(new RandWeightInitOp(n_input_nodes));
-		solver.reset(new AdamOp(0.01, 0.9, 0.999, 1e-8));
+		std::shared_ptr<WeightInitOp<float>> weight_init;
+		std::shared_ptr<SolverOp<float>> solver;
+		weight_init.reset(new RandWeightInitOp<float>(n_input_nodes));
+		solver.reset(new AdamOp<float>(0.01, 0.9, 0.999, 1e-8));
 		std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>());
 		std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
-		Model model = model_replicator.makeBaselineModel(
+		Model<float> model = model_replicator.makeBaselineModel(
 			n_input_nodes, { 100, 50, 25, 50, 100 }, n_output_nodes,
 			std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
 			std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
