@@ -11,16 +11,6 @@ using namespace std;
 
 BOOST_AUTO_TEST_SUITE(nodeData)
 
-template<typename TensorT>
-class NodeDataCpu : public NodeData<TensorT> {
-public:
-	void setInput(TensorT* input) { h_input_.reset(std::move(input), std::default_delete<TensorT>()); }; ///< input setter
-	void setOutput(TensorT* output) { h_output_.reset(std::move(output), std::default_delete<TensorT>()); }; ///< output setter
-	void setError(TensorT* error) { h_error_.reset(std::move(error), std::default_delete<TensorT>()); }; ///< error setter
-	void setDerivative(TensorT* derivative) { h_derivative_.reset(std::move(derivative), std::default_delete<TensorT>()); }; ///< derivative setter
-	void setDt(TensorT* dt) { h_dt_.reset(std::move(dt), std::default_delete<TensorT>()); }; ///< dt setter
-};
-
 BOOST_AUTO_TEST_CASE(constructor) 
 {
 	NodeDataCpu<float>* ptr = nullptr;
@@ -43,7 +33,55 @@ BOOST_AUTO_TEST_CASE(comparison)
 	BOOST_CHECK(node == node_test);
 }
 
+#ifndef EVONET_CUDA
+BOOST_AUTO_TEST_CASE(gettersAndSetters2)
+{
+	NodeDataGpu<float> node;
+	node.setBatchSize(2);
+	node.setMemorySize(3);
+
+	Eigen::Tensor<float, 2> input(2, 3), output(2, 3), derivative(2, 3), error(2, 3), dt(2, 3);
+	input.setConstant(0.5); output.setConstant(1); derivative.setConstant(2); error.setConstant(3); dt.setConstant(4);
+
+	node.setInput(input.data());
+	node.setOutput(output.data());
+	node.setDerivative(derivative.data());
+	node.setError(error.data());
+	node.setDt(dt.data());
+
+	BOOST_CHECK_EQUAL(node.getBatchSize(), 2);
+	BOOST_CHECK_EQUAL(node.getMemorySize(), 3);
+	BOOST_CHECK_EQUAL(node.getInput()(1, 2), 0.5);
+	BOOST_CHECK_EQUAL(node.getOutput()(0, 0), 1);
+	BOOST_CHECK_EQUAL(node.getDerivative()(0, 0), 2);
+	BOOST_CHECK_EQUAL(node.getError()(0, 0), 3);
+	BOOST_CHECK_EQUAL(node.getDt()(0, 0), 4);
+
+	// Test mutability
+	node.getInput()(0, 0) = 5;
+	node.getOutput()(0, 0) = 6;
+	node.getDerivative()(0, 0) = 7;
+	node.getError()(0, 0) = 8;
+	node.getDt()(0, 0) = 9;
+
+	BOOST_CHECK_EQUAL(node.getInput()(0, 0), 5);
+	BOOST_CHECK_EQUAL(node.getOutput()(0, 0), 6);
+	BOOST_CHECK_EQUAL(node.getDerivative()(0, 0), 7);
+	BOOST_CHECK_EQUAL(node.getError()(0, 0), 8);
+	BOOST_CHECK_EQUAL(node.getDt()(0, 0), 9);
+}
+#endif
+
 BOOST_AUTO_TEST_CASE(gettersAndSetters)
+{
+	NodeDataCpu<float> node;
+	node.setBatchSize(2);
+	node.setMemorySize(3);
+	size_t test = 2 * 3 * sizeof(float);
+	BOOST_CHECK_EQUAL(node.getTensorSize(), test);
+}
+
+BOOST_AUTO_TEST_CASE(gettersAndSetters1)
 {
 	NodeDataCpu<float> node;
 	node.setBatchSize(2);
