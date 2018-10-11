@@ -4,15 +4,15 @@ set(directory source/ml)
 ### list all filenames of the directory here
 set(sources_list
 	Link.cpp
-	Model.cpp
-	ModelBuilder.cpp
-	ModelLogger.cpp
+	#Model.cpp
+	#ModelBuilder.cpp
+	#ModelLogger.cpp
 	ModelReplicator.cpp
 	ModelTrainer.cpp
-	Node.cpp
+	#Node.cpp
 	PopulationTrainer.cpp
-	SharedFunctions.cpp
-	Weight.cpp
+	#SharedFunctions.cpp
+	#Weight.cpp
 )
 
 ### add path to the filenames

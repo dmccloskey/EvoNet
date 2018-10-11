@@ -7,6 +7,8 @@
 #include <vector>
 #include <limits>
 #include <random>
+#include <cmath>
+#include <iostream>
 
 #define EIGEN_USE_THREADS
 #include <unsupported/Eigen/CXX11/Tensor>
@@ -42,7 +44,23 @@ namespace SmartPeak
   Eigen::Tensor<TensorT, 1> calculateActivation(
     ActivationOp<TensorT>* node_activation,
     const Eigen::Tensor<TensorT, 1>& net_input, const Eigen::Tensor<TensorT, 1>& dt,
-    int n_threads = 1);
+    int n_threads = 1)
+	{
+		Eigen::Tensor<TensorT, 1> output(net_input.dimension(0));
+		Eigen::DefaultDevice threadPoolDevice;
+		if (n_threads > 1)
+		{  // transfer incurs a significant cost
+			 // create the ThreadPoolDevice only if > 1 threads are available!
+			Eigen::ThreadPool threadPool(n_threads);
+			Eigen::ThreadPoolDevice threadPoolDevice(&threadPool, n_threads);
+		}
+
+		// Scale the current output by the designated non-linearity
+		// Scale the activated output by the time scale
+		output.device(threadPoolDevice) = net_input.unaryExpr(FunctorOp<TensorT>(node_activation)) * dt;
+
+		return output;
+	};
 
   /**
   @brief Calculate the derivative from the output.
@@ -56,7 +74,20 @@ namespace SmartPeak
   Eigen::Tensor<TensorT, 1> calculateDerivative(
     ActivationOp<TensorT>* node_activation_grad,
     const Eigen::Tensor<TensorT, 1>& output,
-    int n_threads = 1);
+    int n_threads = 1)
+	{
+		Eigen::Tensor<TensorT, 1> derivative(output.dimension(0));
+		Eigen::DefaultDevice threadPoolDevice;
+		if (n_threads > 1)
+		{  // transfer incurs a significant cost
+			 // create the ThreadPoolDevice only if > 1 threads are available!
+			Eigen::ThreadPool threadPool(n_threads);
+			Eigen::ThreadPoolDevice threadPoolDevice(&threadPool, n_threads);
+		}
+
+		derivative.device(threadPoolDevice) = output.unaryExpr(FunctorOp<TensorT>(node_activation_grad));
+		return derivative;
+	};
 
 	/**
 	@brief Replaces NaN and Inf with 0
