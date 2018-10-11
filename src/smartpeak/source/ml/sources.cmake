@@ -7,8 +7,8 @@ set(sources_list
 	#Model.cpp
 	#ModelBuilder.cpp
 	#ModelLogger.cpp
-	ModelReplicator.cpp
-	ModelTrainer.cpp
+	#ModelReplicator.cpp
+	#ModelTrainer.cpp
 	#Node.cpp
 	PopulationTrainer.cpp
 	#SharedFunctions.cpp
