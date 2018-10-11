@@ -43,11 +43,11 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters2)
 	Eigen::Tensor<float, 2> input(2, 3), output(2, 3), derivative(2, 3), error(2, 3), dt(2, 3);
 	input.setConstant(0.5); output.setConstant(1); derivative.setConstant(2); error.setConstant(3); dt.setConstant(4);
 
-	node.setInput(input.data());
-	node.setOutput(output.data());
-	node.setDerivative(derivative.data());
-	node.setError(error.data());
-	node.setDt(dt.data());
+	node.setInput(input);
+	node.setOutput(output);
+	node.setDerivative(derivative);
+	node.setError(error);
+	node.setDt(dt);
 
 	BOOST_CHECK_EQUAL(node.getBatchSize(), 2);
 	BOOST_CHECK_EQUAL(node.getMemorySize(), 3);
@@ -90,11 +90,11 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters1)
 	Eigen::Tensor<float, 2> input(2, 3), output(2, 3), derivative(2, 3), error(2, 3), dt(2, 3);
 	input.setConstant(0); output.setConstant(1); derivative.setConstant(2); error.setConstant(3); dt.setConstant(4);
 
-	node.setInput(input.data());
-	node.setOutput(output.data());
-	node.setDerivative(derivative.data());
-	node.setError(error.data());
-	node.setDt(dt.data());
+	node.setInput(input);
+	node.setOutput(output);
+	node.setDerivative(derivative);
+	node.setError(error);
+	node.setDt(dt);
 
 	BOOST_CHECK_EQUAL(node.getBatchSize(), 2);
 	BOOST_CHECK_EQUAL(node.getMemorySize(), 3);
