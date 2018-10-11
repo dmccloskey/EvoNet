@@ -151,12 +151,12 @@ protected:
 			// allocate cuda and pinned host memory
 			TensorT* d_input;
 			TensorT* h_input;
+			h_input = std::move(input);
 			assert(cudaMalloc((void**)(&d_input), getTensorSize()) == cudaSuccess);
 			assert(cudaHostAlloc((void**)(&h_input), getTensorSize(), cudaHostAllocDefault) == cudaSuccess);
 			// define the deleters
 			auto h_deleter = [&](TensorT* ptr) { cudaFreeHost(ptr); };
 			auto d_deleter = [&](TensorT* ptr) { cudaFree(ptr); };
-			h_input = std::move(input);
 			h_input_.reset(h_input, h_deleter); 
 			d_input_.reset(d_input, d_deleter);
 		}; ///< input setter
@@ -164,12 +164,12 @@ protected:
 			// allocate cuda and pinned host memory
 			TensorT* d_output;
 			TensorT* h_output;
+			h_output = std::move(output);
 			assert(cudaMalloc((void**)(&d_output), getTensorSize()) == cudaSuccess);
 			assert(cudaHostAlloc((void**)(&h_output), getTensorSize(), cudaHostAllocDefault) == cudaSuccess);
 			// define the deleters
 			auto h_deleter = [&](TensorT* ptr) { cudaFreeHost(ptr); };
 			auto d_deleter = [&](TensorT* ptr) { cudaFree(ptr); };
-			h_output = std::move(output);
 			h_output_.reset(h_output, h_deleter);
 			d_output_.reset(d_output, d_deleter);
 		}; ///< output setter
@@ -177,12 +177,12 @@ protected:
 			// allocate cuda and pinned host memory
 			TensorT* d_error;
 			TensorT* h_error;
+			h_error = std::move(error);
 			assert(cudaMalloc((void**)(&d_error), getTensorSize()) == cudaSuccess);
 			assert(cudaHostAlloc((void**)(&h_error), getTensorSize(), cudaHostAllocDefault) == cudaSuccess);
 			// define the deleters
 			auto h_deleter = [&](TensorT* ptr) { cudaFreeHost(ptr); };
 			auto d_deleter = [&](TensorT* ptr) { cudaFree(ptr); };
-			h_error = std::move(error);
 			h_error_.reset(h_error, h_deleter);
 			d_error_.reset(d_error, d_deleter);
 		}; ///< error setter
@@ -190,12 +190,12 @@ protected:
 			// allocate cuda and pinned host memory
 			TensorT* d_derivative;
 			TensorT* h_derivative;
+			h_derivative = std::move(derivative);
 			assert(cudaMalloc((void**)(&d_derivative), getTensorSize()) == cudaSuccess);
 			assert(cudaHostAlloc((void**)(&h_derivative), getTensorSize(), cudaHostAllocDefault) == cudaSuccess);
 			// define the deleters
 			auto h_deleter = [&](TensorT* ptr) { cudaFreeHost(ptr); };
 			auto d_deleter = [&](TensorT* ptr) { cudaFree(ptr); };
-			h_derivative = std::move(derivative);
 			h_derivative_.reset(h_derivative, h_deleter);
 			d_derivative_.reset(d_derivative, d_deleter);
 		}; ///< derivative setter
@@ -203,12 +203,12 @@ protected:
 			// allocate cuda and pinned host memory
 			TensorT* d_dt;
 			TensorT* h_dt;
+			h_dt = std::move(dt);  // order matter!
 			assert(cudaMalloc((void**)(&d_dt), getTensorSize()) == cudaSuccess);
 			assert(cudaHostAlloc((void**)(&h_dt), getTensorSize(), cudaHostAllocDefault) == cudaSuccess);
 			// define the deleters
 			auto h_deleter = [&](TensorT* ptr) { cudaFreeHost(ptr); };
 			auto d_deleter = [&](TensorT* ptr) { cudaFree(ptr); };
-			h_dt = std::move(dt);
 			h_dt_.reset(h_dt, h_deleter);
 			d_dt_.reset(d_dt, d_deleter);
 		}; ///< dt setter

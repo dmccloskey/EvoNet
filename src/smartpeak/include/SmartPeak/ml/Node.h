@@ -467,8 +467,8 @@ private:
 		node_data_->setMemorySize(memory_size);
 
 		// Template zero and one tensor
-		auto zero = [&](const int& batch_size, const int& memory_size) { Eigen::Tensor<TensorT, 2> zero_values(batch_size, memory_size); zero_values.setConstant(0); return zero_values; };
-		auto one = [&](const int& batch_size, const int& memory_size) { Eigen::Tensor<TensorT, 2> one_values(batch_size, memory_size); one_values.setConstant(1); return one_values; };
+		const auto zero = [&](const int& batch_size, const int& memory_size) { Eigen::Tensor<TensorT, 2> zero_values(batch_size, memory_size); zero_values.setConstant(0); return zero_values; };
+		const auto one = [&](const int& batch_size, const int& memory_size) { Eigen::Tensor<TensorT, 2> one_values(batch_size, memory_size); one_values.setConstant(1); return one_values; };
 
 		// set the input, error, and derivatives
 		node_data_->setInput(zero(batch_size, memory_size).data());
