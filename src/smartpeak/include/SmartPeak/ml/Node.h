@@ -480,10 +480,10 @@ private:
 
 		// set Drop probabilities [TODO: broke when adding NodeData...]
 		if (train) {
-			setDrop(one(batch_size, memory_size).unaryExpr(RandBinaryOp<TensorT>(getDropProbability())).data());
+			setDrop(one(batch_size, memory_size).unaryExpr(RandBinaryOp<TensorT>(getDropProbability())));
 		}
 		else {
-			setDrop(one(batch_size, memory_size).data());
+			setDrop(one(batch_size, memory_size));
 		}
 
 		// corections for specific node types
