@@ -1233,15 +1233,15 @@ private:
 			{
 				if (value_type == "output")
 				{
-					node_map.second->getOutput()->operator()(j, memory_step) = values(j);
+					node_map.second->getOutput()(j, memory_step) = values(j);
 				}
 				else if (value_type == "error")
 				{
-					node_map.second->getError()->operator()(j, memory_step) = values(j);
+					node_map.second->getError()(j, memory_step) = values(j);
 				}
 				else if (value_type == "dt")
 				{
-					node_map.second->getDt()->operator()(j, memory_step) = values(j);
+					node_map.second->getDt()(j, memory_step) = values(j);
 				}
 				if (status_update != NodeStatus::deactivated) // [TESTS:  add tests]
 					node_map.second->setStatus(status_update);
@@ -1286,19 +1286,15 @@ private:
 			{
 				if (value_type == "output")
 				{
-					// SANITY CHECK:
-					// std::cout << "i" << i << " j" << j << " values: " << values.data()[i*values.dimension(0) + j] << std::endl;
-					// nodes_.at(node_names[i])->getOutputPointer()[j + values.dimension(0)*memory_step] = std::move(values.data()[i*values.dimension(0) + j]);
-					// nodes_.at(node_names[i])->getOutputPointer()[j + values.dimension(0)*memory_step] = values(j, i);
-					nodes_.at(node_names[i])->getOutput()->operator()(j, memory_step) = values(j, i);
+					nodes_.at(node_names[i])->getOutput()(j, memory_step) = values(j, i);
 				}
 				else if (value_type == "error")
 				{
-					nodes_.at(node_names[i])->getError()->operator()(j, memory_step) = values(j, i);
+					nodes_.at(node_names[i])->getError()(j, memory_step) = values(j, i);
 				}
 				else if (value_type == "dt")
 				{
-					nodes_.at(node_names[i])->getDt()->operator()(j, memory_step) = values(j, i);
+					nodes_.at(node_names[i])->getDt()(j, memory_step) = values(j, i);
 				}
 				if (status_update != NodeStatus::deactivated) // [TESTS:  add tests]
 					nodes_.at(node_names[i])->setStatus(status_update);
@@ -1346,19 +1342,19 @@ private:
 		// copy over the input values
 		if (value_type == "output")
 		{
-			nodes_.at(node_name)->getOutput()->chip(memory_step, 1) = values;
+			nodes_.at(node_name)->getOutput().chip(memory_step, 1) = values;
 		}
 		else if (value_type == "error")
 		{
-			nodes_.at(node_name)->getError()->chip(memory_step, 1) = values;
+			nodes_.at(node_name)->getError().chip(memory_step, 1) = values;
 		}
 		else if (value_type == "derivative")
 		{
-			nodes_.at(node_name)->getDerivative()->chip(memory_step, 1) = values;
+			nodes_.at(node_name)->getDerivative().chip(memory_step, 1) = values;
 		}
 		else if (value_type == "dt")
 		{
-			nodes_.at(node_name)->getDt()->chip(memory_step, 1) = values;
+			nodes_.at(node_name)->getDt().chip(memory_step, 1) = values;
 		}
 
 		// update the status
@@ -1401,19 +1397,19 @@ private:
 					if (value_type == "output")
 					{
 						// nodes_.at(node_names[i])->getOutputPointer()[k*values.dimension(0) + j] = values(j, k, i);
-						nodes_.at(node_names[i])->getOutput()->operator()(j, k) = values(j, k, i);
+						nodes_.at(node_names[i])->getOutput()(j, k) = values(j, k, i);
 					}
 					else if (value_type == "error")
 					{
-						nodes_.at(node_names[i])->getError()->operator()(j, k) = values(j, k, i);
+						nodes_.at(node_names[i])->getError()(j, k) = values(j, k, i);
 					}
 					else if (value_type == "derivative")
 					{
-						nodes_.at(node_names[i])->getDerivative()->operator()(j, k) = values(j, k, i);
+						nodes_.at(node_names[i])->getDerivative()(j, k) = values(j, k, i);
 					}
 					else if (value_type == "dt")
 					{
-						nodes_.at(node_names[i])->getDt()->operator()(j, k) = values(j, k, i);
+						nodes_.at(node_names[i])->getDt()(j, k) = values(j, k, i);
 					}
 					if (status_update != NodeStatus::deactivated) // [TESTS:  add tests]
 						nodes_.at(node_names[i])->setStatus(status_update);
@@ -1977,7 +1973,7 @@ private:
 	) {
 		std::lock_guard<std::mutex> lock(calculateOutputNodeError_mutex);
 
-		output_node->getError()->chip(time_step, 1) += loss_function_grad->operator()(
+		output_node->getError().chip(time_step, 1) += loss_function_grad->operator()(
 			output_node->getOutput().chip(time_step, 1), expected) *
 			output_node->getDerivative().chip(time_step, 1);
 		//output_node->setStatus(NodeStatus::corrected); // corrected status will be updated in CETT based on the tagged NodeType

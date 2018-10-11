@@ -467,57 +467,45 @@ private:
 		node_data_->setMemorySize(memory_size);
 
 		// Template zero and one tensor
-		Eigen::Tensor<TensorT, 2> zero_values(batch_size, memory_size); zero_values.setConstant(0);
-		Eigen::Tensor<TensorT, 2> one_values(batch_size, memory_size); one_values.setConstant(1);
-		Eigen::Tensor<TensorT, 2> init_values;
+		auto zero = [&](const int& batch_size, const int& memory_size) { Eigen::Tensor<TensorT, 2> zero_values(batch_size, memory_size); zero_values.setConstant(0); return zero_values; };
+		auto one = [&](const int& batch_size, const int& memory_size) { Eigen::Tensor<TensorT, 2> one_values(batch_size, memory_size); one_values.setConstant(1); return one_values; };
 
 		// set the input, error, and derivatives
-		init_values = zero_values;
-		node_data_->setInput(init_values.data());
-		init_values = zero_values;
-		node_data_->setError(init_values.data());
-		init_values = zero_values;
-		node_data_->setDerivative(init_values.data());
+		node_data_->setInput(zero(batch_size, memory_size).data());
+		node_data_->setError(zero(batch_size, memory_size).data());
+		node_data_->setDerivative(zero(batch_size, memory_size).data());
 
 		// set Dt
-		init_values = one_values;
-		node_data_->setDt(init_values.data());
+		node_data_->setDt(one(batch_size, memory_size).data());
 
 		// set Drop probabilities [TODO: broke when adding NodeData...]
 		if (train) {
-			init_values.unaryExpr(RandBinaryOp<TensorT>(getDropProbability()));
-			init_values = one_values;
-			setDrop(one_values);
+			setDrop(one(batch_size, memory_size).unaryExpr(RandBinaryOp<TensorT>(getDropProbability())).data());
 		}
 		else {
-			init_values = one_values;
-			setDrop(one_values);
+			setDrop(one(batch_size, memory_size).data());
 		}
 
 		// corections for specific node types
 		if (type_ == NodeType::bias)
 		{
 			setStatus(NodeStatus::activated);
-			init_values = one_values;
-			node_data_->setOutput(init_values.data());
+			node_data_->setOutput(one(batch_size, memory_size).data());
 		}
 		else if (type_ == NodeType::input)
 		{
 			setStatus(NodeStatus::initialized);
-			init_values = zero_values;
-			node_data_->setOutput(init_values.data());
+			node_data_->setOutput(zero(batch_size, memory_size).data());
 		}
 		else if (type_ == NodeType::zero)
 		{
 			setStatus(NodeStatus::activated);
-			init_values = zero_values;
-			node_data_->setOutput(init_values.data());
+			node_data_->setOutput(zero(batch_size, memory_size).data());
 		}
 		else
 		{
 			setStatus(NodeStatus::initialized);
-			init_values = zero_values;
-			node_data_->setOutput(init_values.data());
+			node_data_->setOutput(zero(batch_size, memory_size).data());
 		}
 	}
 

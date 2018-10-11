@@ -139,7 +139,7 @@ public:
 		const std::vector<std::string> headers = { "node_name", "node_type", "node_status", "node_activation", "node_activation_grad", "node_integration", "node_integration_error", "node_integration_weight_grad", "module_name" };
 		csvwriter.writeDataInRow(headers.begin(), headers.end());
 
-		for (const Node& node : nodes)
+		for (const Node<TensorT>& node : nodes)
 		{
 			std::vector<std::string> row;
 			row.push_back(node.getName());

@@ -128,7 +128,7 @@ BOOST_AUTO_TEST_CASE(initNode)
 
 	// Test the batch and memory sizes
 	BOOST_CHECK_EQUAL(node.getBatchSize(), 2);
-	BOOST_CHECK_EQUAL(node.getMemorySize(), 3);
+	BOOST_CHECK_EQUAL(node.getMemorySize(), 5);
 
 	BOOST_CHECK_EQUAL(node.getInput()(0, 0), 0.0);
 	BOOST_CHECK_EQUAL(node.getInput()(1, 4), 0.0);
