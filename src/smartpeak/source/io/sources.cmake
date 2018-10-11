@@ -6,10 +6,10 @@ set(sources_list
 	CSVWriter.cpp
 	DataFile.cpp
 	LinkFile.cpp
-	ModelFile.cpp
-	NodeFile.cpp
-	PopulationTrainerFile.cpp
-	WeightFile.cpp
+	#ModelFile.cpp
+	#NodeFile.cpp
+	#PopulationTrainerFile.cpp
+	#WeightFile.cpp
 )
 
 ### add path to the filenames

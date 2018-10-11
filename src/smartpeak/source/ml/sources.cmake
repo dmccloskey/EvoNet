@@ -10,7 +10,7 @@ set(sources_list
 	#ModelReplicator.cpp
 	#ModelTrainer.cpp
 	#Node.cpp
-	PopulationTrainer.cpp
+	#PopulationTrainer.cpp
 	#SharedFunctions.cpp
 	#Weight.cpp
 )
