@@ -2694,51 +2694,35 @@ private:
 		// set all node outputs to zero except for the input
 		// set all node derivatives to one
 		// set all node errors to zero except for the output
-		Eigen::Tensor<TensorT, 2> zero_values(batch_size, memory_size);
-		zero_values.setConstant(0.0f);
-		Eigen::Tensor<TensorT, 2> one_values(batch_size, memory_size);
-		one_values.setConstant(1.0f);
-		Eigen::Tensor<TensorT, 2> one(batch_size, memory_size), zero(batch_size, memory_size);
+		Eigen::Tensor<TensorT, 2> zero(batch_size, memory_size);
+		zero.setConstant(0.0f);
+		Eigen::Tensor<TensorT, 2> one(batch_size, memory_size);
+		one.setConstant(1.0f);
 		for (auto& node : input_nodes_)
 		{
-			one = one_values;
-			node->getNodeData()->setOutput(one.data());
-			one = one_values;
-			node->getNodeData()->setInput(one.data());
-			zero = zero_values;
-			node->getNodeData()->setError(zero.data());
-			one = one_values;
-			node->getNodeData()->setDerivative(one.data());
-			one = one_values;
-			node->getNodeData()->setDt(one.data());
+			node->getNodeData()->setOutput(one);
+			node->getNodeData()->setInput(one);
+			node->getNodeData()->setError(zero);
+			node->getNodeData()->setDerivative(one);
+			node->getNodeData()->setDt(one);
 		}
 		for (auto& node : output_nodes_)
 		{
-			zero = zero_values;
-			node->getNodeData()->setOutput(zero.data());
-			zero = zero_values;
-			node->getNodeData()->setInput(zero.data());
-			one = one_values;
-			node->getNodeData()->setError(one.data());
-			one = one_values;
-			node->getNodeData()->setDerivative(one.data());
-			one = one_values;
-			node->getNodeData()->setDt(one.data());
+			node->getNodeData()->setOutput(zero);
+			node->getNodeData()->setInput(zero);
+			node->getNodeData()->setError(one);
+			node->getNodeData()->setDerivative(one);
+			node->getNodeData()->setDt(one);
 		}
 		for (auto& node_map : nodes_)
 		{
 			if (node_map.second->getType() != NodeType::input && node_map.second->getType() != NodeType::output)
 			{
-				zero = zero_values;
-				node_map.second->getNodeData()->setOutput(zero.data());
-				zero = zero_values;
-				node_map.second->getNodeData()->setInput(zero.data());
-				zero = zero_values;
-				node_map.second->getNodeData()->setError(zero.data());
-				one = one_values;
-				node_map.second->getNodeData()->setDerivative(one.data());
-				one = one_values;
-				node_map.second->getNodeData()->setDt(one.data());
+				node_map.second->getNodeData()->setOutput(zero);
+				node_map.second->getNodeData()->setInput(zero);
+				node_map.second->getNodeData()->setError(zero);
+				node_map.second->getNodeData()->setDerivative(one);
+				node_map.second->getNodeData()->setDt(one);
 				node_map.second->setStatus(NodeStatus::initialized);
 			}
 			if (node_map.second->getType() == NodeType::input || node_map.second->getType() == NodeType::bias)
