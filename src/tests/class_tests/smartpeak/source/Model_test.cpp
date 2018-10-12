@@ -673,6 +673,7 @@ BOOST_AUTO_TEST_CASE(checkCompleteInputToOutput)
 	model1.addLinks({ l_i1_h1, l_i2_h1, l_h1_o1, l_h1_o2 });
 	model1.initNodes(batch_size, memory_size);
 	model1.initError(batch_size, memory_size);
+	model1.initWeights();
 
 	BOOST_CHECK(model1.checkCompleteInputToOutput(2));
 
@@ -683,6 +684,7 @@ BOOST_AUTO_TEST_CASE(checkCompleteInputToOutput)
 	model2.addLinks({ l_i1_h1, l_i2_h1, l_h1_o2 });
 	model2.initNodes(batch_size, memory_size);
 	model2.initError(batch_size, memory_size);
+	model2.initWeights();
 
 	BOOST_CHECK(!model2.checkCompleteInputToOutput(2));
 
@@ -693,6 +695,7 @@ BOOST_AUTO_TEST_CASE(checkCompleteInputToOutput)
 	model3.addLinks({ l_i1_h1, l_h1_o1, l_h1_o2 });
 	model3.initNodes(batch_size, memory_size);
 	model3.initError(batch_size, memory_size);
+	model3.initWeights();
 
 	BOOST_CHECK(!model3.checkCompleteInputToOutput(2));
 
@@ -703,6 +706,7 @@ BOOST_AUTO_TEST_CASE(checkCompleteInputToOutput)
 	model4.addLinks({ l_i1_h1, l_i2_h1, l_h1_o1, l_h1_o2 });
 	model4.initNodes(batch_size, memory_size);
 	model4.initError(batch_size, memory_size);
+	model4.initWeights();
 
 	BOOST_CHECK(!model4.checkCompleteInputToOutput(2));
 
@@ -713,6 +717,7 @@ BOOST_AUTO_TEST_CASE(checkCompleteInputToOutput)
 	model5.addLinks({ l_i1_h1, l_i2_h1, l_h1_o1, l_h1_o2 });
 	model5.initNodes(batch_size, memory_size);
 	model5.initError(batch_size, memory_size);
+	model5.initWeights();
 
 	BOOST_CHECK(!model5.checkCompleteInputToOutput(2));
 }

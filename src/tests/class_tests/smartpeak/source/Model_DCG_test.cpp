@@ -74,6 +74,7 @@ Model<float> makeModel2()
 	model2.setLossFunction(loss_function);
 	std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
 	model2.setLossFunctionGrad(loss_function_grad);
+	model2.initWeights();
   return model2;
 }
 Model<float> model2 = makeModel2();

@@ -96,6 +96,7 @@ Model<float> makeModel1()
 	model1.setLossFunction(loss_function);
 	std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
 	model1.setLossFunctionGrad(loss_function_grad);
+	model1.initWeights();
 	return model1;
 }
 Model<float> model1 = makeModel1();
@@ -185,6 +186,7 @@ Model<float> makeModel2()
 	model2.setLossFunction(loss_function);
 	std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
 	model2.setLossFunctionGrad(loss_function_grad);
+	model2.initWeights();
 	return model2;
 }
 Model<float> model2 = makeModel2();
@@ -274,6 +276,7 @@ Model<float> makeModel3()
 	model3.setLossFunction(loss_function);
 	std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
 	model3.setLossFunctionGrad(loss_function_grad);
+	model3.initWeights();
 	return model3;
 }
 Model<float> model3 = makeModel3();
