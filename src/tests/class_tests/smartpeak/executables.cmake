@@ -38,6 +38,7 @@ set(ml_executables_list
   SharedFunctions_test
   Solver_test
   Weight_test
+  WeightData_test
   WeightInit_test
 )
 

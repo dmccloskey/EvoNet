@@ -1218,6 +1218,8 @@ private:
 				weight_map.second->setDrop(1.0f);
 	}
 
+	// Method used by FPTT
+	// [TODO: remove all other mapValuesToNodes or change the name of this method]
 	template<typename TensorT>
 	void Model<TensorT>::mapValuesToNodes(
 		const Eigen::Tensor<TensorT, 1>& values,

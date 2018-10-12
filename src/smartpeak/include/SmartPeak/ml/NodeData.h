@@ -25,11 +25,6 @@ public:
     NodeData() = default; ///< Default constructor
     NodeData(const NodeData& other)
 		{
-			input_ = other.input_;
-			output_ = other.output_;
-			error_ = other.error_;
-			derivative_ = other.derivative_;
-			dt_ = other.dt_;
 			h_input_ = other.h_input_;
 			h_output_ = other.h_output_;
 			h_error_ = other.h_error_;
@@ -61,11 +56,6 @@ public:
 
     inline NodeData& operator=(const NodeData& other)
     { 
-			input_ = other.input_;
-      output_ = other.output_;
-      error_ = other.error_;
-      derivative_ = other.derivative_;
-      dt_ = other.dt_;
 			h_input_ = other.h_input_;
 			h_output_ = other.h_output_;
 			h_error_ = other.h_error_;

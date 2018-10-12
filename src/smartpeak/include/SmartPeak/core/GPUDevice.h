@@ -6,7 +6,6 @@
 #define EIGEN_USE_GPU
 #include <cuda.h>
 #include <cuda_runtime.h>
-#endif
 
 #include <unsupported/Eigen/CXX11/Tensor>
 #include <SmartPeak/core/DeviceManager.h>
@@ -34,5 +33,5 @@ namespace SmartPeak
 		cudaStream_t stream_;
 	};
 }
-
+#endif //EVONET_CUDA
 #endif //SMARTPEAK_GPUDEVICE_H

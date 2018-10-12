@@ -263,7 +263,7 @@ public:
 			row.push_back(weight.getSolverOp()->getParameters());
 
 			// parse the weight value
-			row.push_back(std::to_string(weight.getWeight()));
+			row.push_back(std::to_string(weight.getWeightView()));
 
 			// parse the module name
 			row.push_back(weight.getModuleName());

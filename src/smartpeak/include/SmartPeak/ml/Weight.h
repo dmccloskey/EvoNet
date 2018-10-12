@@ -6,6 +6,7 @@
 // .h
 #include <SmartPeak/ml/Solver.h>
 #include <SmartPeak/ml/WeightInit.h>
+#include <SmartPeak/ml/WeightData.h>
 
 #include <unsupported/Eigen/CXX11/Tensor>
 #include <memory>
@@ -42,7 +43,7 @@ public:
         std::tie(
           id_,
           name_,
-					weight_,
+					weight_data_,
 					//weight_init_->getName(),
 					//solver_->getName(),
 					module_id_,
@@ -50,7 +51,7 @@ public:
         ) == std::tie(
           other.id_,
           other.name_,
-					other.weight_,
+					other.weight_data_,
 					//other.weight_init_->getName(),
 					//other.solver_->getName(),
 					other.module_id_,
@@ -70,7 +71,7 @@ public:
       name_  = other.name_;
 			module_id_ = other.module_id_;
 			module_name_ = other.module_name_;
-      weight_  = other.weight_;
+      weight_data_  = other.weight_data_;
       weight_init_ = other.weight_init_;
       solver_ = other.solver_;
       weight_min_ = other.weight_min_;
@@ -86,9 +87,9 @@ public:
     void setName(const std::string& name); ///< naem setter
     std::string getName() const; ///< name getter
 
-    void setWeight(const TensorT& weight); ///< weight setter
-    TensorT getWeight() const; ///< weight getter
-		TensorT* getWeightMutable(); ///< weight getter
+		void setWeight(const TensorT& weight); ///< weight setter
+    TensorT getWeightView() const; ///< weight getter
+		TensorT getWeight(); ///< weight getter
 
     void setWeightInitOp(const std::shared_ptr<WeightInitOp<TensorT>>& weight_init); ///< weight initialization operator setter
     WeightInitOp<TensorT>* getWeightInitOp() const; ///< weight initialization operator getter
@@ -133,7 +134,7 @@ private:
     std::string name_ = ""; ///< Weight Name
 		int module_id_ = -1; ///< Module ID
 		std::string module_name_ = ""; ///<Module Name
-    TensorT weight_ = 1.0; ///< Weight weight
+		std::shared_ptr<WeightData<TensorT>> weight_data_; ///< Weight weight
     std::shared_ptr<WeightInitOp<TensorT>> weight_init_; ///< weight initialization operator
     std::shared_ptr<SolverOp<TensorT>> solver_; ///< weight update operator
 
@@ -147,7 +148,7 @@ private:
 	{
 		id_ = other.id_;
 		name_ = other.name_;
-		weight_ = other.weight_;
+		weight_data_ = other.weight_data_;
 		module_id_ = other.module_id_;
 		module_name_ = other.module_name_;
 		weight_init_ = other.weight_init_;
@@ -223,19 +224,21 @@ private:
 	template<typename TensorT>
 	void Weight<TensorT>::setWeight(const TensorT& weight)
 	{
-		weight_ = weight;
-		checkWeight();
-	}
-	template<typename TensorT>
-	TensorT Weight<TensorT>::getWeight() const
-	{
-		return weight_ * getDrop();
+		weight_data_->setWeight(weight);
 	}
 
 	template<typename TensorT>
-	TensorT* Weight<TensorT>::getWeightMutable()
+	TensorT Weight<TensorT>::getWeightView() const
 	{
-		return &weight_;
+		return weight_data_->getWeight()(0);
+		//return weight_ * getDrop();
+	}
+
+	template<typename TensorT>
+	TensorT Weight<TensorT>::getWeight()
+	{
+		return weight_data_->getWeight()(0);
+		//return weight_ * getDrop();
 	}
 
 	template<typename TensorT>
@@ -326,9 +329,13 @@ private:
 	template<typename TensorT>
 	void Weight<TensorT>::initWeight()
 	{
-		// weight_ = weight_init_();
-		weight_ = weight_init_->operator()();
-		checkWeight();
+#ifndef EVONET_CUDA
+		weight_data_.reset(new WeightDataGpu<TensorT>());
+#else
+		weight_data_.reset(new WeightDataCpu<TensorT>());
+#endif
+		weight_data_->setWeight(weight_init_->operator()());
+		//checkWeight(); // Nice to have
 	}
 
 	template<typename TensorT>
@@ -336,18 +343,18 @@ private:
 	{
 		if (solver_->getName() == "DummySolverOp")
 			return;
-		const TensorT new_weight = solver_->operator()(weight_, getDrop()*error);
-		weight_ = solver_->clipGradient(new_weight);
-		checkWeight();
+		const TensorT new_weight = solver_->operator()(weight_data_->getWeight()(0), getDrop()*error);
+		weight_data_->setWeight(solver_->clipGradient(new_weight)); // [TODO: move to GPU/CPU device]
+		//checkWeight(); // Nice to have
 	}
 
 	template<typename TensorT>
 	void Weight<TensorT>::checkWeight()
 	{
-		if (weight_ < weight_min_)
-			weight_ = weight_min_;
-		else if (weight_ > weight_max_)
-			weight_ = weight_max_;
+		if (weight_data_->getWeight()(0) < weight_min_)
+			weight_data_->getWeight()(0) = weight_min_;
+		else if (weight_data_->getWeight()(0) > weight_max_)
+			weight_data_->getWeight()(0) = weight_max_;
 	}
 }
 

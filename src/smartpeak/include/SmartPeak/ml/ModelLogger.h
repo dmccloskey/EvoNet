@@ -371,7 +371,7 @@ public:
 		// write the next entry
 		std::vector<std::string> line = { std::to_string(n_epoch) };
 		for (const Weight<TensorT>& weight : weights) {
-			line.push_back(std::to_string(weight.getWeight()));
+			line.push_back(std::to_string(weight.getWeightView()));
 		}
 		log_weights_epoch_csvwriter_.writeDataInRow(line.begin(), line.end());
 

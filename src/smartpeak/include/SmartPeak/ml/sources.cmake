@@ -19,6 +19,7 @@ set(sources_list_h
 	SharedFunctions.h
 	Solver.h
 	Weight.h
+	WeightData.h
 	WeightInit.h
 )
 
