@@ -6,6 +6,7 @@
 namespace SmartPeak
 {
 	//template <typename DeviceType>
+	template <typename TensorT>
 	class KernalManager 
 	{
 	public:

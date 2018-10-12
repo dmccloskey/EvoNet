@@ -9,10 +9,15 @@
 
 #include <unsupported/Eigen/CXX11/Tensor>
 #include <SmartPeak/core/DeviceManager.h>
+#include <SmartPeak/ml/ActivationFunction.h>
+#include <SmartPeak/ml/IntegrationFunction.h>
+#include <SmartPeak/ml/LossFunction.h>
+#include <SmartPeak/ml/Solver.h>
 
 namespace SmartPeak
 {
-	class GPUDevice: public KernalManager
+	template <typename TensorT>
+	class GPUDevice: public KernalManager<TensorT>
 	{
 	public:
 		using KernalManager::KernalManager;
@@ -25,11 +30,59 @@ namespace SmartPeak
 		void syncKernal() { assert(cudaStreamSynchronize(stream_) == cudaSuccess);} ;
 		void destroyKernal() { assert(cudaStreamDestroy(stream_) == cudaSuccess);	};
 
-		void executeForwardPropogationOp() {}
-		void executeBackwardPropogationOp() {};
-		void executeCalcError() {};
-		void executeUpdateWeights() {};
+		void executeForwardPropogationOp(
+			std::vector<TensorT*> h_source_outputs, 
+			std::vector<TensorT*> d_source_outputs,
+			TensorT* h_weight,
+			TensorT* d_weight,
+			TensorT* d_sink_input,
+			TensorT* h_sink_input,
+			TensorT* d_sink_output,
+			TensorT* h_sink_output,
+			TensorT* d_sink_derivative,
+			TensorT* h_sink_derivative,
+			ActivationFunction<TensorT>* activation_function,
+			IntegrationFunction<TensorT>* integration_function,
+			const int& time_step) {}
+		void executeBackwardPropogationOp(
+			std::vector<TensorT*> h_source_errors,
+			std::vector<TensorT*> d_source_errors,
+			std::vector<TensorT*> h_source_inputs,
+			std::vector<TensorT*> d_source_inputs,
+			TensorT* d_sink_output,
+			TensorT* h_sink_output,
+			TensorT* h_weight,
+			TensorT* d_weight,
+			TensorT* d_sink_error,
+			TensorT* h_sink_error,
+			IntegrationFunction<TensorT>* integration_function,
+			const int& time_step) {};
+		void executeCalcError(
+			std::vector<TensorT*> expected,
+			std::vector<TensorT*> h_predicted,
+			std::vector<TensorT*> d_predicted,
+			std::vector<TensorT*> h_node_errors,
+			std::vector<TensorT*> d_node_errors,
+			LossFunctionOp<TensorT>* loss_function,
+			const int& time_step
+		) {};
+		void executeUpdateWeights(
+			std::vector<TensorT*> h_source_errors,
+			std::vector<TensorT*> d_source_errors,
+			std::vector<TensorT*> h_source_inputs,
+			std::vector<TensorT*> d_source_inputs,
+			std::vector<TensorT*> d_sink_error,
+			std::vector<TensorT*> h_sink_error,
+			std::vector<IntegrationFunction<TensorT>*> integration_function,
+			TensorT* h_weight,
+			TensorT* d_weight,
+			SolverFunction<TensorT>* solver_function,
+			const int& time_step) {};
 	private:
+		bool d_weights_sync_ = false;
+		bool h_weights_sync_ = false;
+		bool d_nodes_sync_ = false;
+		bool h_nodes_sync_ = false;
 		cudaStream_t stream_;
 	};
 }
