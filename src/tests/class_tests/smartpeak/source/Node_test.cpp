@@ -61,7 +61,7 @@ BOOST_AUTO_TEST_CASE(comparison)
   node.setId(1);
   node_test = Node<float>("1", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
   node_test.setId(1);
-  BOOST_CHECK(node != node_test);
+  BOOST_CHECK(node == node_test);
 
   node.setId(2);
   BOOST_CHECK(node != node_test);
