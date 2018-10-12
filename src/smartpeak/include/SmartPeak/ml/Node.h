@@ -471,12 +471,12 @@ private:
 		const auto one = [&](const int& batch_size, const int& memory_size) { Eigen::Tensor<TensorT, 2> one_values(batch_size, memory_size); one_values.setConstant(1); return one_values; };
 
 		// set the input, error, and derivatives
-		node_data_->setInput(zero(batch_size, memory_size).data());
-		node_data_->setError(zero(batch_size, memory_size).data());
-		node_data_->setDerivative(zero(batch_size, memory_size).data());
+		node_data_->setInput(zero(batch_size, memory_size));
+		node_data_->setError(zero(batch_size, memory_size));
+		node_data_->setDerivative(zero(batch_size, memory_size));
 
 		// set Dt
-		node_data_->setDt(one(batch_size, memory_size).data());
+		node_data_->setDt(one(batch_size, memory_size));
 
 		// set Drop probabilities [TODO: broke when adding NodeData...]
 		if (train) {
@@ -490,22 +490,22 @@ private:
 		if (type_ == NodeType::bias)
 		{
 			setStatus(NodeStatus::activated);
-			node_data_->setOutput(one(batch_size, memory_size).data());
+			node_data_->setOutput(one(batch_size, memory_size));
 		}
 		else if (type_ == NodeType::input)
 		{
 			setStatus(NodeStatus::initialized);
-			node_data_->setOutput(zero(batch_size, memory_size).data());
+			node_data_->setOutput(zero(batch_size, memory_size));
 		}
 		else if (type_ == NodeType::zero)
 		{
 			setStatus(NodeStatus::activated);
-			node_data_->setOutput(zero(batch_size, memory_size).data());
+			node_data_->setOutput(zero(batch_size, memory_size));
 		}
 		else
 		{
 			setStatus(NodeStatus::initialized);
-			node_data_->setOutput(zero(batch_size, memory_size).data());
+			node_data_->setOutput(zero(batch_size, memory_size));
 		}
 	}
 

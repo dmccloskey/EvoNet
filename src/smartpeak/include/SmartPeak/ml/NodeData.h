@@ -136,34 +136,39 @@ protected:
 	class NodeDataCpu : public NodeData<TensorT> {
 	public:
 		void setInput(const Eigen::Tensor<TensorT, 2>& input) {
+			TensorT* h_input = new TensorT[batch_size_*memory_size_];
 			// copy the tensor
-			Eigen::Tensor<TensorT, 2> input_copy(batch_size_, memory_size_);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> input_copy(h_input, batch_size_, memory_size_);
 			input_copy = input;
-			h_input_.reset(input_copy.data());
+			h_input_.reset(std::move(h_input));
 		}; ///< input setter
 		void setOutput(const Eigen::Tensor<TensorT, 2>& output) {
+			TensorT* h_output = new TensorT[batch_size_*memory_size_];
 			// copy the tensor
-			Eigen::Tensor<TensorT, 2> output_copy(batch_size_, memory_size_);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> output_copy(h_output, batch_size_, memory_size_);
 			output_copy = output;
-			h_output_.reset(output_copy.data());
+			h_output_.reset(h_output);
 		}; ///< output setter
 		void setError(const Eigen::Tensor<TensorT, 2>& error) {
+			TensorT* h_error = new TensorT[batch_size_*memory_size_];
 			// copy the tensor
-			Eigen::Tensor<TensorT, 2> error_copy(batch_size_, memory_size_);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_copy(h_error, batch_size_, memory_size_);
 			error_copy = error;
-			h_error_.reset(error_copy.data());
+			h_error_.reset(h_error);
 		}; ///< error setter
 		void setDerivative(const Eigen::Tensor<TensorT, 2>& derivative) {
+			TensorT* h_derivative = new TensorT[batch_size_*memory_size_];
 			// copy the tensor
-			Eigen::Tensor<TensorT, 2> derivative_copy(batch_size_, memory_size_);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> derivative_copy(h_derivative, batch_size_, memory_size_);
 			derivative_copy = derivative;
-			h_derivative_.reset(derivative_copy.data());
+			h_derivative_.reset(h_derivative);
 		}; ///< derivative setter
 		void setDt(const Eigen::Tensor<TensorT, 2>& dt) {
+			TensorT* h_dt = new TensorT[batch_size_*memory_size_];
 			// copy the tensor
-			Eigen::Tensor<TensorT, 2> dt_copy(batch_size_, memory_size_);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> dt_copy(h_dt, batch_size_, memory_size_);
 			dt_copy = dt;
-			h_dt_.reset(dt_copy.data());
+			h_dt_.reset(h_dt);
 		}; ///< dt setter
 	};
 
