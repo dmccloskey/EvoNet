@@ -154,6 +154,16 @@ elseif (CMAKE_BUILD_TYPE EQUAL Release)
   set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall")
 endif()
 
+# Handle large template libraries with WIN32
+IF(WIN32)
+  ADD_DEFINITIONS(/bigobj)
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /bigobj")
+  SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /bigobj")
+  SET(CMAKE_CXX_FLAGS_MINSIZEREL "${CMAKE_CXX_FLAGS_MINSIZEREL} /bigobj")
+  SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /bigobj")
+  SET(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} /bigobj")
+ENDIF(WIN32)
+
 #------------------------------------------------------------------------------
 # Enable STL debug mode (GCC only)
 #------------------------------------------------------------------------------

@@ -133,7 +133,7 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayer2)
 	model2.getNextInactiveLayer(FP_operations_map, FP_operations_list);
 
 	BOOST_CHECK_EQUAL(FP_operations_map.size(), 1);
-	BOOST_CHECK_EQUAL(FP_operations_map.at("1"), 0);
+	BOOST_CHECK_EQUAL(FP_operations_map.at("1/0/SumOp/ReLUOp"), 0);
 	BOOST_CHECK_EQUAL(FP_operations_list.size(), 1);
 	BOOST_CHECK_EQUAL(FP_operations_list[0].result.time_step, 0);
 	BOOST_CHECK_EQUAL(FP_operations_list[0].result.sink_node->getName(), "1");
@@ -181,7 +181,7 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayerBiases2)
 	model2.getNextInactiveLayerBiases(FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
 
 	BOOST_CHECK_EQUAL(FP_operations_map.size(), 1);
-	BOOST_CHECK_EQUAL(FP_operations_map.at("1"), 0);
+	BOOST_CHECK_EQUAL(FP_operations_map.at("1/0/SumOp/ReLUOp"), 0);
 	BOOST_CHECK_EQUAL(FP_operations_list.size(), 1);
 	BOOST_CHECK_EQUAL(FP_operations_list[0].result.time_step, 0);
 	BOOST_CHECK_EQUAL(FP_operations_list[0].result.sink_node->getName(), "1");
@@ -193,7 +193,7 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayerBiases2)
 	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[1].source_node->getName(), "3");
 	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[1].weight->getName(), "3");
 	BOOST_CHECK_EQUAL(sink_nodes_with_biases2.size(), 1);
-	BOOST_CHECK_EQUAL(sink_nodes_with_biases2[0], "1");
+	BOOST_CHECK_EQUAL(sink_nodes_with_biases2[0], "1/0/SumOp/ReLUOp");
 }
 
 BOOST_AUTO_TEST_CASE(getNextInactiveLayerCycles2) 
@@ -237,7 +237,7 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayerCycles2)
 	model2.getNextInactiveLayerCycles(FP_operations_map, FP_operations_list, sink_nodes_with_cycles);
 
 	BOOST_CHECK_EQUAL(FP_operations_map.size(), 1);
-	BOOST_CHECK_EQUAL(FP_operations_map.at("1"), 0);
+	BOOST_CHECK_EQUAL(FP_operations_map.at("1/0/SumOp/ReLUOp"), 0);
 	BOOST_CHECK_EQUAL(FP_operations_list.size(), 1);
 	BOOST_CHECK_EQUAL(FP_operations_list[0].result.time_step, 0);
 	BOOST_CHECK_EQUAL(FP_operations_list[0].result.sink_node->getName(), "1");
@@ -252,7 +252,7 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayerCycles2)
 	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[2].source_node->getName(), "2");
 	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[2].weight->getName(), "2");
 	BOOST_CHECK_EQUAL(sink_nodes_with_cycles.size(), 1);
-	BOOST_CHECK_EQUAL(sink_nodes_with_cycles[0], "1");
+	BOOST_CHECK_EQUAL(sink_nodes_with_cycles[0], "1/0/SumOp/ReLUOp");
 }
 
 BOOST_AUTO_TEST_CASE(FPTT) 
@@ -769,6 +769,8 @@ BOOST_AUTO_TEST_CASE(updateWeights2)
 
 BOOST_AUTO_TEST_CASE(updateWeights3)
 {
+	// NOTE: test will fail when ran concurrently!
+
 	// Toy network: 1 hidden layer, fully connected, DCG
 	// Model<float> model2 = makeModel2();
 

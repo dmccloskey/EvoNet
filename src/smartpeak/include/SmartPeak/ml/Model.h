@@ -1449,7 +1449,7 @@ private:
 				auto found = FP_operations_map.emplace(ops_key, (int)FP_operations.size());
 				if (!found.second)
 				{
-					FP_operations[FP_operations_map.at(link_map.second->getSinkNodeName())].arguments.push_back(arguments);
+					FP_operations[FP_operations_map.at(ops_key)].arguments.push_back(arguments);
 				}
 				else
 				{
