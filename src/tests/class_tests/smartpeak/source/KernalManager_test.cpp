@@ -9,41 +9,6 @@ using namespace std;
 
 BOOST_AUTO_TEST_SUITE(KernalManager1)
 
-BOOST_AUTO_TEST_CASE(constructorDefault)
-{
-	DefaultKernal* ptr = nullptr;
-	DefaultKernal* nullPointer = nullptr;
-	ptr = new DefaultKernal();
-	BOOST_CHECK_NE(ptr, nullPointer);
-}
-
-BOOST_AUTO_TEST_CASE(destructorDefault)
-{
-	DefaultKernal* ptr = nullptr;
-	ptr = new DefaultKernal();
-	delete ptr;
-}
-
-BOOST_AUTO_TEST_CASE(usageDefault)
-{
-	DefaultKernal kernal;
-	kernal.initKernal();
-
-	Eigen::Tensor<float, 1> in1(2);
-	Eigen::Tensor<float, 1> in2(2);
-	Eigen::Tensor<float, 1> out(2);
-	in1.setConstant(10.0f);
-	in2.setConstant(10.0f);
-
-	out.device(*kernal.getDevice()) = in1 + in2;
-
-	BOOST_CHECK_CLOSE(out(0), 20.0f, 1e-4);
-	BOOST_CHECK_CLOSE(out(1), 20.0f, 1e-4);
-
-	kernal.syncKernal();
-	kernal.destroyKernal();
-}
-
 BOOST_AUTO_TEST_CASE(constructorCpu)
 {
 	CpuKernal* ptr = nullptr;
@@ -70,12 +35,15 @@ BOOST_AUTO_TEST_CASE(usageCpu)
 	in1.setConstant(10.0f);
 	in2.setConstant(10.0f);
 
-	out.device(*kernal.getDevice()) = in1 + in2;
+	Eigen::ThreadPool threadPool(kernal.getNThreads());
+	Eigen::ThreadPoolDevice device(&threadPool, kernal.getNThreads());
 
+	out.device(device) = in1 + in2;
+
+	kernal.syncKernal();
 	BOOST_CHECK_CLOSE(out(0), 20.0f, 1e-4);
 	BOOST_CHECK_CLOSE(out(1), 20.0f, 1e-4);
 
-	kernal.syncKernal();
 	kernal.destroyKernal();
 }
 

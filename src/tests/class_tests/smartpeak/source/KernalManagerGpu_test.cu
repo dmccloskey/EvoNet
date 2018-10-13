@@ -12,7 +12,7 @@
 using namespace SmartPeak;
 using namespace std;
 
-void test_exampleGpu() {
+void test_exampleGpu1() {
 	GpuKernal kernal(0, 1);
 
 	std::size_t bytes = 2 * sizeof(float);
@@ -41,18 +41,26 @@ void test_exampleGpu() {
 	in2.setConstant(10.0f);
 
 	kernal.initKernal();
+	cudaStream_t stream = kernal.getStream();
+	Eigen::GpuStreamDevice stream_device(&stream, 0);
+	Eigen::GpuDevice device(&stream_device);
 
-	kernal.getDevice()->memcpyHostToDevice(d_in1, in1.data(), bytes);
-	kernal.getDevice()->memcpyHostToDevice(d_in2, in2.data(), bytes);
+	device.memcpyHostToDevice(d_in1, in1.data(), bytes);
+	device.memcpyHostToDevice(d_in2, in2.data(), bytes);
 
-	Eigen::TensorMap<Eigen::Tensor<float, 1>> gpu_in1(d_in1, 2);
-	Eigen::TensorMap<Eigen::Tensor<float, 1>> gpu_in2(d_in2, 2);
-	Eigen::TensorMap<Eigen::Tensor<float, 1>> gpu_out(d_out, 2);
+	auto test = [&](float* d_in1, float* d_in2, float* d_out, Eigen::GpuDevice& device) {
+		Eigen::TensorMap<Eigen::Tensor<float, 1>> gpu_in1(d_in1, 2);
+		Eigen::TensorMap<Eigen::Tensor<float, 1>> gpu_in2(d_in2, 2);
+		Eigen::TensorMap<Eigen::Tensor<float, 1>> gpu_out(d_out, 2);
 
-	gpu_out.device(*kernal.getDevice()) = gpu_in1 + gpu_in2;
+		gpu_out.device(device) = gpu_in1 + gpu_in2;
+	};
 
-	kernal.getDevice()->memcpyDeviceToHost(h_out, d_out, bytes);
+	test(d_in1, d_in2, d_out, device);
 
+	device.memcpyDeviceToHost(h_out, d_out, bytes);
+
+	kernal.syncKernal();
 	Eigen::TensorMap<Eigen::Tensor<float, 1>> out(h_out, 2);
 	assert(out(0) == 20.0f);
 	assert(out(1) == 20.0f);
@@ -65,13 +73,12 @@ void test_exampleGpu() {
 	assert(cudaFreeHost(h_in2) == cudaSuccess);
 	assert(cudaFreeHost(h_out) == cudaSuccess);
 
-	kernal.syncKernal();
 	kernal.destroyKernal();
 }
 
 int main(int argc, char** argv)
 {
-	test_exampleGpu();
+	test_exampleGpu1();
 	return 0;
 }
 #endif

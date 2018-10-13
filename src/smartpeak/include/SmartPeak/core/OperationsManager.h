@@ -12,8 +12,8 @@
 
 #include <unsupported/Eigen/CXX11/Tensor>
 #include <SmartPeak/core/KernalManager.h>
-#include <SmartPeak/ml/ActivationOp.h>
-#include <SmartPeak/ml/IntegrationOp2.h>
+#include <SmartPeak/ml/ActivationFunction.h>
+#include <SmartPeak/ml/IntegrationFunction2.h>
 #include <SmartPeak/ml/LossFunction.h>
 #include <SmartPeak/ml/Solver.h>
 
@@ -41,6 +41,7 @@ namespace SmartPeak
 	{
 	public:
 		OperationsManager() = default;
+		explicit OperationsManager(const KernalT& kernal) :kernal_(kernal) {};
 		~OperationsManager() = default;
 
 		virtual bool executeForwardPropogation(
@@ -63,7 +64,6 @@ namespace SmartPeak
 			const int& memory_size,
 			const std::vector<int>& source_time_steps,
 			const int& sink_time_step,
-			KernalT* kernal,
 			bool copyHostToDevice = false,
 			bool copyDeviceToHost = false) = 0;
 		virtual bool executeBackwardPropogation(
@@ -81,8 +81,7 @@ namespace SmartPeak
 			const int& batch_size,
 			const int& memory_size,
 			const std::vector<int>& source_time_steps,
-			const int& sink_time_step,
-			KernalT* kernal) = 0 ;
+			const int& sink_time_step) = 0 ;
 		virtual bool executeCalcError(
 			std::vector<TensorT*> expected,
 			std::vector<TensorT*> h_predicted,
@@ -92,8 +91,7 @@ namespace SmartPeak
 			LossFunctionOp<TensorT>* loss_function,
 			const int& batch_size,
 			const int& memory_size,
-			const int& time_step,
-			KernalT* kernal) = 0;
+			const int& time_step) = 0;
 		virtual bool executeUpdateWeights(
 			std::vector<TensorT*> h_source_errors,
 			std::vector<TensorT*> d_source_errors,
@@ -107,13 +105,12 @@ namespace SmartPeak
 			SolverFunction<TensorT>* solver_function,
 			const int& batch_size,
 			const int& memory_size,
-			const int& time_step,
-			KernalT* kernal) = 0 ;
+			const int& time_step) = 0 ;
+
+		KernalT getKernal() { return kernal_; };
+
 	private:
-		bool d_weights_sync_ = false;
-		bool h_weights_sync_ = false;
-		bool d_nodes_sync_ = false;
-		bool h_nodes_sync_ = false;
+		KernalT kernal_;
 	};
 
 #ifndef EVONET_CUDA
@@ -121,6 +118,7 @@ namespace SmartPeak
 	class GpuOperations: OperationsManager<GpuKernal>
 	{
 	public:
+		using OperationsManager::OperationsManager;
 		bool executeForwardPropogation(
 			std::vector<TensorT*> h_source_outputs,
 			std::vector<TensorT*> d_source_outputs,
@@ -141,40 +139,44 @@ namespace SmartPeak
 			const int& memory_size,
 			const std::vector<int>& source_time_steps,
 			const int& sink_time_step,
-			GpuKernal* kernal,
 			bool copyHostToDevice = false,
 			bool copyDeviceToHost = false) {
 			// check that source and weights lengths match
+
+			// Set up the device
+			cudaStream_t stream = kernal.getStream();
+			Eigen::GpuStreamDevice stream_device(&stream, 0);
+			Eigen::GpuDevice device(&stream_device);
 
 			// Copy host to device
 			if (copyHostToDevice) {
 				size_t bytes = batch_size * memory_size * TensorT;
 				for (size_t i = 0; i < h_source_outputs.size(); ++i) {
-					kernal->getDevice().memcpyHostToDevice(d_source_outputs[i], h_source_outputs,[i] bytes);
-					kernal->getDevice().memcpyHostToDevice(d_weights[i], h_weights[i], bytes);
+					device.memcpyHostToDevice(d_source_outputs[i], h_source_outputs,[i] bytes);
+					device.memcpyHostToDevice(d_weights[i], h_weights[i], bytes);
 				}
 			}
 
 			// Integrate sink node input
-			 integration_function(d_source_outputs, d_weights, d_sink_input, batch_size, memory_size, source_time_steps, sink_time_step, kernal);
+			 integration_function(d_source_outputs, d_weights, d_sink_input, batch_size, memory_size, source_time_steps, sink_time_step, device);
 	
 			// Activate sink node net input
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> sink_input(d_sink_input, batch_size, memory_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> sink_output(d_sink_output, batch_size, memory_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> sink_dt(d_sink_dt, batch_size, memory_size);
-			sink_output(kernal->getDevice()).chip(time_step, 1) = sink_input.chip(time_step, 1).unaryExpr(FunctorOp<TensorT>(activation_function)) * sink_dt.chip(time_step, 1);
+			sink_output.device(device).chip(time_step, 1) = sink_input.chip(time_step, 1).unaryExpr(FunctorOp<TensorT>(activation_function)) * sink_dt.chip(time_step, 1);
 
 			// Calculate the derivative of the sink node activation
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> sink_derivative(d_sink_derivative, batch_size, memory_size);
-			sink_derivative.device(kernal->getDevice()).chip(time_step, 1) = sink_output.chip(time_step, 1).unaryExpr(FunctorOp<TensorT>(activation_grad_function));
+			sink_derivative.device(device).chip(time_step, 1) = sink_output.chip(time_step, 1).unaryExpr(FunctorOp<TensorT>(activation_grad_function));
 
 			// Copy device to host
 			if (copyDeviceToHost) {
 				size_t bytes = batch_size * memory_size * TensorT;
-				kernal->getDevice().memcpyDeviceToHost(h_sink_input, d_sink_input, bytes);
-				kernal->getDevice().memcpyDeviceToHost(h_sink_output, d_sink_output, bytes);
-				kernal->getDevice().memcpyDeviceToHost(h_sink_derivative, d_sink_derivative, bytes);
-				kernal->getDevice().memcpyDeviceToHost(h_sink_dt, d_sink_dt, bytes);
+				device.memcpyDeviceToHost(h_sink_input, d_sink_input, bytes);
+				device.memcpyDeviceToHost(h_sink_output, d_sink_output, bytes);
+				device.memcpyDeviceToHost(h_sink_derivative, d_sink_derivative, bytes);
+				device.memcpyDeviceToHost(h_sink_dt, d_sink_dt, bytes);
 			}
 			return true;
 		};
@@ -192,8 +194,7 @@ namespace SmartPeak
 			IntegrationOp<TensorT>* integration_function,
 			const int& batch_size,
 			const int& memory_size,
-			const int& time_step,
-			GpuKernal* kernal) {
+			const int& time_step) {
 			// Check that vector dimensions match
 
 			// Integrate sink node error
@@ -211,8 +212,7 @@ namespace SmartPeak
 			LossFunctionOp<TensorT>* loss_function,
 			const int& batch_size,
 			const int& memory_size,
-			const int& time_step,
-			GpuKernal* kernal) {
+			const int& time_step) {
 			// Check that vectors lengths match
 
 			// Calculate the loss
@@ -232,8 +232,7 @@ namespace SmartPeak
 			SolverFunction<TensorT>* solver_function,
 			const int& batch_size,
 			const int& memory_size,
-			const int& time_step,
-			GpuKernal* kernal) {
+			const int& time_step) {
 			// Check that the vector lengths match
 
 			// Sum the weights across the time axis
@@ -249,11 +248,6 @@ namespace SmartPeak
 
 			return true;
 		};
-	private:
-		bool d_weights_sync_ = false;
-		bool h_weights_sync_ = false;
-		bool d_nodes_sync_ = false;
-		bool h_nodes_sync_ = false;
 	};
 #endif
 }

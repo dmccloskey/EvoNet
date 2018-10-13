@@ -16,7 +16,6 @@ namespace SmartPeak
 {
 	/*@brief Base class for all default, cpu, and gpu kernals
 	*/
-	template<typename DeviceT>
 	class KernalManager 
 	{
 	public:
@@ -27,7 +26,6 @@ namespace SmartPeak
 		virtual void initKernal() = 0;
 		virtual void syncKernal() = 0;
 		virtual void destroyKernal() = 0;
-		virtual DeviceT* getDevice() = 0;
 		int getDeviceID() const { return device_id_; };
 		int getNThreads() const { return n_threads_; };
 
@@ -35,45 +33,19 @@ namespace SmartPeak
 		int device_id_;
 		int n_threads_;
 	};
-
-	class DefaultKernal : public KernalManager<Eigen::DefaultDevice>
-	{
-	public:
-		using KernalManager::KernalManager;
-
-		void initKernal() {
-			Eigen::DefaultDevice device;
-			device_ = &device;
-		};
-		void syncKernal() {};
-		void destroyKernal() {};
-		Eigen::DefaultDevice* getDevice() { return device_; }
-
-	private:
-		Eigen::DefaultDevice* device_ = nullptr;
-	};
 	
-	class CpuKernal : public KernalManager<Eigen::ThreadPoolDevice>
+	class CpuKernal : public KernalManager
 	{
 	public:
 		using KernalManager::KernalManager;
 
-		void initKernal() {
-			Eigen::ThreadPool threadPool(n_threads_);
-			Eigen::ThreadPoolDevice threadPoolDevice(&threadPool, n_threads_);
-			device_ = &threadPoolDevice;
-		};
+		void initKernal() {};
 		void syncKernal() {};
 		void destroyKernal() {};
-		Eigen::ThreadPoolDevice* getDevice() {
-			return device_;
-		}
-	private:
-		Eigen::ThreadPoolDevice* device_ = nullptr;
 	};
 
 #ifndef EVONET_CUDA
-	class GpuKernal : public KernalManager<Eigen::GpuDevice>
+	class GpuKernal : public KernalManager
 	{
 	public:
 		using KernalManager::KernalManager;
@@ -82,18 +54,13 @@ namespace SmartPeak
 			cudaStream_t stream;
 			assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess);
 			stream_ = stream;
-			Eigen::GpuStreamDevice stream_device(&stream, device_id_);
-			Eigen::GpuDevice device(&stream_device);
-			device_ = &device;
 		};
 		void syncKernal() { assert(cudaStreamSynchronize(stream_) == cudaSuccess); };
 		void destroyKernal() { assert(cudaStreamDestroy(stream_) == cudaSuccess); };
-		Eigen::GpuDevice* getDevice() {	return device_;	}
 		cudaStream_t getStream() { return stream_; }
 		
 	private:
 		cudaStream_t stream_;
-		Eigen::GpuDevice* device_ = nullptr;
 	};
 #endif //EVONET_CUDA
 

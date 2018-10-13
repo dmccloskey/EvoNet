@@ -11,7 +11,7 @@ namespace SmartPeak
   /**
     @brief Base class for all integration functions.
   */
-	template<typename TensorT, typename KernalT>
+	template<typename TensorT>
   class IntegrationOp
   {
 public: 
@@ -19,7 +19,8 @@ public:
 		IntegrationOp(const TensorT& eps) : eps_(eps) {};
     ~IntegrationOp() = default;
     virtual std::string getName() const = 0;
-    virtual void operator()(std::vector<TensorT*> source_outputs, std::vector<TensorT*> weights, TensorT* sink_input, const int& batch_size, const int& memory_size, const std::vector<int>& source_time_steps, const int& sink_time_step, KernalT* kernal) = 0;
+		template<typename DeviceT>
+    virtual void operator()(std::vector<TensorT*> source_outputs, std::vector<TensorT*> weights, TensorT* sink_input, const int& batch_size, const int& memory_size, const std::vector<int>& source_time_steps, const int& sink_time_step, DeviceT& device) = 0;
 	protected:
 		TensorT eps_ = 1e-9;
   };
@@ -33,7 +34,8 @@ public:
 public: 
 		SumOp(){};
     ~SumOp(){};
-    void operator()(std::vector<TensorT*> source_outputs, std::vector<TensorT*> weights, TensorT* sink_input, const int& batch_size, const int& memory_size, const std::vector<int>& source_time_steps, const int& sink_time_step, KernalT* kernal) {
+		template<typename DeviceT>
+    void operator()(std::vector<TensorT*> source_outputs, std::vector<TensorT*> weights, TensorT* sink_input, const int& batch_size, const int& memory_size, const std::vector<int>& source_time_steps, const int& sink_time_step, DeviceT& device) {
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> sink_input(sink_input, batch_size, memory_size);
 			sink_input.device(kernal->getDevice()).chip(sink_time_step, 1).setConstant(0);
 			for (int i = 0; i < source_outputs.size(); ++i) {
@@ -54,7 +56,8 @@ public:
 	public:
 		ProdOp() {};
 		~ProdOp() {};
-		void operator()(std::vector<TensorT*> source_outputs, std::vector<TensorT*> weights, TensorT* sink_input, const int& batch_size, const int& memory_size, const std::vector<int>& source_time_steps, const int& sink_time_step, KernalT* kernal) {
+		template<typename DeviceT>
+		void operator()(std::vector<TensorT*> source_outputs, std::vector<TensorT*> weights, TensorT* sink_input, const int& batch_size, const int& memory_size, const std::vector<int>& source_time_steps, const int& sink_time_step, DeviceT& device) {
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> sink_input(sink_input, batch_size, memory_size);
 			sink_input.device(kernal->getDevice()).chip(sink_time_step, 1).setConstant(1);
 			for (int i = 0; i < source_outputs.size(); ++i) {
