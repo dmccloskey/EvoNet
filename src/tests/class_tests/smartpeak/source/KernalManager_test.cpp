@@ -27,6 +27,7 @@ BOOST_AUTO_TEST_CASE(destructorDefault)
 BOOST_AUTO_TEST_CASE(usageDefault)
 {
 	DefaultKernal kernal;
+	kernal.initKernal();
 
 	Eigen::Tensor<float, 1> in1(2);
 	Eigen::Tensor<float, 1> in2(2);
@@ -34,12 +35,11 @@ BOOST_AUTO_TEST_CASE(usageDefault)
 	in1.setConstant(10.0f);
 	in2.setConstant(10.0f);
 
-	out.device(kernal.getDevice()) = in1 + in2;
+	out.device(*kernal.getDevice()) = in1 + in2;
 
 	BOOST_CHECK_CLOSE(out(0), 20.0f, 1e-4);
 	BOOST_CHECK_CLOSE(out(1), 20.0f, 1e-4);
 
-	kernal.initKernal();
 	kernal.syncKernal();
 	kernal.destroyKernal();
 }
@@ -62,6 +62,7 @@ BOOST_AUTO_TEST_CASE(destructorCpu)
 BOOST_AUTO_TEST_CASE(usageCpu)
 {
 	CpuKernal kernal(0, 1);
+	kernal.initKernal();
 
 	Eigen::Tensor<float, 1> in1(2);
 	Eigen::Tensor<float, 1> in2(2);
@@ -69,12 +70,11 @@ BOOST_AUTO_TEST_CASE(usageCpu)
 	in1.setConstant(10.0f);
 	in2.setConstant(10.0f);
 
-	out.device(kernal.getDevice()) = in1 + in2;
+	out.device(*kernal.getDevice()) = in1 + in2;
 
 	BOOST_CHECK_CLOSE(out(0), 20.0f, 1e-4);
 	BOOST_CHECK_CLOSE(out(1), 20.0f, 1e-4);
 
-	kernal.initKernal();
 	kernal.syncKernal();
 	kernal.destroyKernal();
 }
