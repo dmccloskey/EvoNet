@@ -5,34 +5,6 @@
 
 namespace SmartPeak
 {
-	//template <typename DeviceType>
-	template <typename TensorT>
-	class KernalManager 
-	{
-	public:
-		KernalManager() = default; ///< Default constructor  
-		explicit KernalManager(int device_id = -1, int n_threads = 1) : device_id_(device_id), n_threads_(n_threads) {};
-		~KernalManager() = default; ///< Destructor
-
-		virtual void initKernal() = 0;
-		virtual void syncKernal() = 0;
-		virtual void destroyKernal() = 0;
-
-		virtual void executeForwardPropogationOp() = 0; ///< GPU/CPU specific FP operations
-		virtual void executeBackwardPropogationOp() = 0;
-		virtual void executeCalcError() = 0;
-		virtual void executeUpdateWeights() = 0;
-
-		//DeviceType getDevice() { return device_; };
-		int getDeviceID() const { return device_id_; };
-		int getNThreads() const { return n_threads_; };
-
-	protected:
-		int device_id_;
-		int n_threads_;
-		//DeviceType device_; 
-	};
-
   class DeviceManager
   {
 	public:    

@@ -155,7 +155,7 @@ elseif (CMAKE_BUILD_TYPE EQUAL Release)
 endif()
 
 # Handle large template libraries with WIN32
-IF(WIN32)
+IF(WIN32 AND FALSE)
   ADD_DEFINITIONS(/bigobj)
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /bigobj")
   SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /bigobj")

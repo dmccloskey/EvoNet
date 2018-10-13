@@ -5,6 +5,7 @@ set(directory include/SmartPeak/ml)
 set(sources_list_h
 	ActivationFunction.h
 	IntegrationFunction.h
+	IntegrationFunction2.h
 	Interpreter.h
 	LossFunction.h
 	Link.h

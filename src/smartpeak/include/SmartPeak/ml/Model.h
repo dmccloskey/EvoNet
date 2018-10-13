@@ -350,11 +350,11 @@ public:
     void forwardPropogate(const int& time_step, bool cache_FP_steps = false, bool use_cache = false,
       int n_threads = 1);
 				
-		static std::string makeFPOpsKey(const std::string& node_name, const int& time_step,
+		static std::string makeForwardPropogationOperationsKey(const std::string& node_name, const int& time_step,
 			const std::string& node_integration, const std::string& node_activation);
-		void getFPOperations();
+		void getForwardPropogationOperations();
 		void convertFPOpsToTensorOps();
-		void executeFPOperations(const int& time_step);
+		void executeForwardPropogationOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false);
  
     /**
     @brief Foward propogation through time (FPTT) of the network model.
@@ -1445,7 +1445,7 @@ private:
 				// std::cout<<"Addres of model source node: "<<&nodes_.at(link_map.second->getSourceNodeName())<<std::endl;
 				// std::cout<<"Addres of arguments source node: "<<arguments.source_node<<std::endl;
 
-				std::string ops_key = makeFPOpsKey(link_map.second->getSinkNodeName(), 0,
+				std::string ops_key = makeForwardPropogationOperationsKey(link_map.second->getSinkNodeName(), 0,
 					nodes_.at(link_map.second->getSinkNodeName())->getIntegration()->getName(),
 					nodes_.at(link_map.second->getSinkNodeName())->getActivation()->getName());
 				auto found = FP_operations_map.emplace(ops_key, (int)FP_operations.size());
@@ -1476,7 +1476,7 @@ private:
 		// get all the biases for the sink nodes
 		for (auto& link_map : links_)
 		{
-			std::string ops_key = makeFPOpsKey(link_map.second->getSinkNodeName(), 0,
+			std::string ops_key = makeForwardPropogationOperationsKey(link_map.second->getSinkNodeName(), 0,
 				nodes_.at(link_map.second->getSinkNodeName())->getIntegration()->getName(),
 				nodes_.at(link_map.second->getSinkNodeName())->getActivation()->getName());
 			if (
@@ -1512,7 +1512,7 @@ private:
 		// get cyclic source nodes
 		for (auto& link_map : links_)
 		{
-			std::string ops_key = makeFPOpsKey(link_map.second->getSinkNodeName(), 0,
+			std::string ops_key = makeForwardPropogationOperationsKey(link_map.second->getSinkNodeName(), 0,
 				nodes_.at(link_map.second->getSinkNodeName())->getIntegration()->getName(),
 				nodes_.at(link_map.second->getSinkNodeName())->getActivation()->getName());
 			if (
@@ -1770,14 +1770,14 @@ private:
 	}
 
 	template<typename TensorT>
-	std::string Model<TensorT>::makeFPOpsKey(const std::string & node_name, const int & time_step, const std::string & node_integration, const std::string & node_activation)
+	std::string Model<TensorT>::makeForwardPropogationOperationsKey(const std::string & node_name, const int & time_step, const std::string & node_integration, const std::string & node_activation)
 	{
 		std::string ops_key = node_name + "/" + std::to_string(time_step) + "/" + node_integration + "/" + node_activation;
 		return ops_key;
 	}
 
 	template<typename TensorT>
-	void Model<TensorT>::getFPOperations()
+	void Model<TensorT>::getForwardPropogationOperations()
 	{
 		const int max_iters = 1e6;
 		for (int iter = 0; iter < max_iters; ++iter)
@@ -1856,7 +1856,7 @@ private:
 	}
 
 	template<typename TensorT>
-	void Model<TensorT>::executeFPOperations(const int& time_step)
+	void Model<TensorT>::executeForwardPropogationOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false)
 	{
 		// get all the information needed to construct the tensors
 		std::pair<int, int> bmsizes = getBatchAndMemorySizes();
@@ -1867,36 +1867,30 @@ private:
 
 		int FP_operations_cnt = 0;
 		for (auto& FP_operations : FP_operations_cache_) {
-			// Special case if all FP_operations with sink node of Sum IntegrationType and the same activation function
-			//Eigen::Tensor<TensorT, 2> source_tensor(batch_size, FP_operations_dimensions_[FP_operations_cnt].first);
-			//Eigen::Tensor<TensorT, 2> weight_tensor(FP_operations_dimensions_[FP_operations_cnt].first, FP_operations_dimensions_[FP_operations_cnt].second);
-			//Eigen::Tensor<TensorT, 2> sink_tensor_output(batch_size, FP_operations_dimensions_[FP_operations_cnt].second);
-			//Eigen::Tensor<TensorT, 2> sink_tensor_derivative(batch_size, FP_operations_dimensions_[FP_operations_cnt].second);
-
 			for (auto& FP_operation : FP_operations) {
-				// Create the source, weight, and sink tensors
-				Eigen::Tensor<TensorT, 2> source_tensor(batch_size, FP_operation.arguments.size());
-				Eigen::Tensor<TensorT, 2> weight_tensor(batch_size, FP_operation.arguments.size());
-				Eigen::Tensor<TensorT, 1> sink_tensor_output(batch_size);
-				Eigen::Tensor<TensorT, 1> sink_tensor_derivative(batch_size);
-				int arguments_cnt = 0;
-				for (auto& FP_argument : FP_operation.arguments) {
-					// Fill the source and weight tensors
-					source_tensor.chip(arguments_cnt, 1) = FP_argument.source_node->getOutput()->chip(time_step + FP_argument.time_step, 1);
-					weight_tensor.chip(arguments_cnt, 0).setConstant(FP_argument.weight->getWeight());
-					++arguments_cnt;
-				}
-				// Offload memory to device
-				// executeFPOpsDevice(source_tensor, weight_tensor, sink_tensor, derivative_tensor);
-				// sink_tensor.device(...) = 
+				// initialize streams
 
+				// copy resources to the device
+				if (sync_HToD) {}
+
+				// get the source node resources and time steps
+				std::vector<TensorT*> h_source_outputs, d_source_outputs, h_weights, d_weights;
+				std::vector<int> source_time_steps;
+				for (auto& FP_argument : FP_operation.arguments) {
+					h_source_outputs.push_back(FP_argument.source_node->getNodeData()->getHOutputPointer().get());
+					d_source_outputs.push_back(FP_argument.source_node->getNodeData()->getDOutputPointer().get());
+					h_weights.push_back(FP_argument.weight->getWeightData()->getHWeightPointer().get());
+					d_weights.push_back(FP_argument.weight->getWeightData()->getDWeightPointer().get());
+					source_time_steps.push_back(FP_argument.time_step + time_step);
+				}
 				// Execute operations (i.e., integration, activation, and derivative)
 
-				// Retrieve results
+				// copy resources from the device
+				if (sync_DToH) {}
 
-				// Update sink nodes
-				FP_operation.result.sink_node->getOutput()->chip(time_step + FP_operation.result.time_step, 1) = sink_tensor_output;
-				FP_operation.result.sink_node->getDerivative()->chip(time_step + FP_operation.result.time_step, 1) = sink_tensor_output;
+				// Sync the streams
+
+				// Destroy the streams
 			}
 			++FP_operations_cnt;
 		}

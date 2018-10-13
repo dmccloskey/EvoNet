@@ -4,12 +4,11 @@
 #define EIGEN_USE_THREADS
 #include <unsupported/Eigen/CXX11/Tensor>
 #include <SmartPeak/core/DeviceManager.h>
-#include <chrono>
 
 namespace SmartPeak
 {
 	template <typename TensorT>
-	class CPUDevice : public KernalManager<TensorT>
+	class CPUKernal : public KernalManager<TensorT>
 	{
 	public:
 		using KernalManager::KernalManager;
@@ -17,10 +16,6 @@ namespace SmartPeak
 		void initKernal() {};
 		void syncKernal() {};
 		void destroyKernal() {};
-		void executeForwardPropogationOp() {}
-		void executeBackwardPropogationOp() {};
-		void executeCalcError() {};
-		void executeUpdateWeights() {};
 	};
 }
 
