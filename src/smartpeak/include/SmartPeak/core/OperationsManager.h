@@ -23,12 +23,12 @@ namespace SmartPeak
 	@brief Functor for use with calculate activation/derivative.
 	*/
 	template<typename TensorT>
-	class FunctorOp
+	class ActivationFunctorOp
 	{
 	public:
-		FunctorOp() {};
-		FunctorOp(ActivationOp<TensorT>* activation) : activation_(activation) {};
-		~FunctorOp() {};
+		ActivationFunctorOp() {};
+		ActivationFunctorOp(ActivationOp<TensorT>* activation) : activation_(activation) {};
+		~ActivationFunctorOp() {};
 		TensorT operator()(const TensorT& x_I) const {
 			return (*activation_)(x_I);
 		}
@@ -36,12 +36,11 @@ namespace SmartPeak
 		ActivationOp<TensorT>* activation_;
 	};
 
-	template <typename TensorT, typename KernalT>
+	template <typename TensorT, typename DeviceT>
 	class OperationsManager
 	{
 	public:
 		OperationsManager() = default;
-		explicit OperationsManager(const KernalT& kernal) :kernal_(kernal) {};
 		~OperationsManager() = default;
 
 		virtual bool executeForwardPropogation(
@@ -59,11 +58,12 @@ namespace SmartPeak
 			TensorT* d_sink_derivative,
 			ActivationOp<TensorT>* activation_function,
 			ActivationOp<TensorT>* activation_grad_function,
-			IntegrationOp<TensorT>* integration_function,
+			IntegrationOp<TensorT, DeviceT>* integration_function,
 			const int& batch_size,
 			const int& memory_size,
 			const std::vector<int>& source_time_steps,
 			const int& sink_time_step,
+			DeviceT& device,
 			bool copyHostToDevice = false,
 			bool copyDeviceToHost = false) = 0;
 		virtual bool executeBackwardPropogation(
@@ -77,7 +77,7 @@ namespace SmartPeak
 			std::vector<TensorT*> d_weights,
 			TensorT* h_sink_error,
 			TensorT* d_sink_error,
-			IntegrationOp<TensorT>* integration_function,
+			IntegrationOp<TensorT, DeviceT>* integration_function,
 			const int& batch_size,
 			const int& memory_size,
 			const std::vector<int>& source_time_steps,
@@ -99,23 +99,18 @@ namespace SmartPeak
 			std::vector<TensorT*> d_source_inputs,
 			std::vector<TensorT*> h_sink_error,
 			std::vector<TensorT*> d_sink_error,
-			std::vector<IntegrationOp<TensorT>*> integration_function,
+			std::vector<IntegrationOp<TensorT, DeviceT>*> integration_function,
 			TensorT* h_weight,
 			TensorT* d_weight,
-			SolverFunction<TensorT>* solver_function,
+			SolverOp<TensorT>* solver_function,
 			const int& batch_size,
 			const int& memory_size,
 			const int& time_step) = 0 ;
-
-		KernalT getKernal() { return kernal_; };
-
-	private:
-		KernalT kernal_;
 	};
 
 #ifndef EVONET_CUDA
 	template <typename TensorT>
-	class GpuOperations: OperationsManager<GpuKernal>
+	class GpuOperations: OperationsManager<TensorT, Eigen::GpuDevice>
 	{
 	public:
 		using OperationsManager::OperationsManager;
@@ -134,50 +129,62 @@ namespace SmartPeak
 			TensorT* d_sink_derivative,
 			ActivationOp<TensorT>* activation_function,
 			ActivationOp<TensorT>* activation_grad_function,
-			IntegrationOp<TensorT>* integration_function,
+			IntegrationOp<TensorT, Eigen::GpuDevice>* integration_function,
 			const int& batch_size,
 			const int& memory_size,
 			const std::vector<int>& source_time_steps,
 			const int& sink_time_step,
+			Eigen::GpuDevice& device,
 			bool copyHostToDevice = false,
 			bool copyDeviceToHost = false) {
 			// check that source and weights lengths match
 
-			// Set up the device
-			cudaStream_t stream = kernal.getStream();
-			Eigen::GpuStreamDevice stream_device(&stream, 0);
-			Eigen::GpuDevice device(&stream_device);
-
+			const size_t bytes = batch_size * memory_size * sizeof(TensorT);
 			// Copy host to device
 			if (copyHostToDevice) {
-				size_t bytes = batch_size * memory_size * TensorT;
 				for (size_t i = 0; i < h_source_outputs.size(); ++i) {
-					device.memcpyHostToDevice(d_source_outputs[i], h_source_outputs,[i] bytes);
-					device.memcpyHostToDevice(d_weights[i], h_weights[i], bytes);
+					device.memcpyHostToDevice(d_source_outputs[i], h_source_outputs[i], bytes);
+					device.memcpyHostToDevice(d_weights[i], h_weights[i], sizeof(TensorT));
+
+					//// Check [Passing]:
+					//device.memcpyDeviceToHost(h_source_outputs[i], d_source_outputs[i], bytes);
+					//Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> source_output_check(h_source_outputs[i], batch_size, memory_size);
+					//std::cout << source_output_check << std::endl;
+					//device.memcpyDeviceToHost(h_weights[i], d_weights[i], sizeof(TensorT));
+					//Eigen::TensorMap<Eigen::Tensor<TensorT, 0>> weight_check(h_weights[i]);
+					//std::cout << weight_check << std::endl;
 				}
+				device.memcpyHostToDevice(d_sink_dt, h_sink_dt, bytes);
 			}
 
 			// Integrate sink node input
-			 integration_function(d_source_outputs, d_weights, d_sink_input, batch_size, memory_size, source_time_steps, sink_time_step, device);
+			integration_function->operator()(d_source_outputs, d_weights, d_sink_input, batch_size, memory_size, source_time_steps, sink_time_step, device);
+
+			//// Check [Passing]:
+			//device.memcpyDeviceToHost(h_sink_input, d_sink_input, bytes);
+			//assert(cudaStreamSynchronize(stream) == cudaSuccess);
+			//Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> sink_input_check(h_sink_input, batch_size, memory_size);
+			//std::cout << sink_input_check << std::endl;
 	
 			// Activate sink node net input
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> sink_input(d_sink_input, batch_size, memory_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> sink_output(d_sink_output, batch_size, memory_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> sink_dt(d_sink_dt, batch_size, memory_size);
-			sink_output.device(device).chip(time_step, 1) = sink_input.chip(time_step, 1).unaryExpr(FunctorOp<TensorT>(activation_function)) * sink_dt.chip(time_step, 1);
-
+			// unaryExpr is blocking the stream...
+			sink_output.chip(sink_time_step, 1).device(device) = sink_input.chip(sink_time_step, 1).unaryExpr(ActivationFunctorOp<TensorT>(activation_function)) * sink_dt.chip(sink_time_step, 1);
+			
 			// Calculate the derivative of the sink node activation
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> sink_derivative(d_sink_derivative, batch_size, memory_size);
-			sink_derivative.device(device).chip(time_step, 1) = sink_output.chip(time_step, 1).unaryExpr(FunctorOp<TensorT>(activation_grad_function));
+			// unaryExpr is blocking the stream...
+			sink_derivative.chip(sink_time_step, 1).device(device) = sink_output.chip(sink_time_step, 1).unaryExpr(ActivationFunctorOp<TensorT>(activation_grad_function));
 
 			// Copy device to host
 			if (copyDeviceToHost) {
-				size_t bytes = batch_size * memory_size * TensorT;
 				device.memcpyDeviceToHost(h_sink_input, d_sink_input, bytes);
 				device.memcpyDeviceToHost(h_sink_output, d_sink_output, bytes);
 				device.memcpyDeviceToHost(h_sink_derivative, d_sink_derivative, bytes);
-				device.memcpyDeviceToHost(h_sink_dt, d_sink_dt, bytes);
 			}
+
 			return true;
 		};
 		bool executeBackwardPropogation(
@@ -187,14 +194,15 @@ namespace SmartPeak
 			std::vector<TensorT*> d_source_inputs,
 			TensorT* h_sink_output,
 			TensorT* d_sink_output,
-			std::vector<TensorT*> h_weight,
-			std::vector<TensorT*> d_weight,
+			std::vector<TensorT*> h_weights,
+			std::vector<TensorT*> d_weights,
 			TensorT* h_sink_error,
 			TensorT* d_sink_error,
-			IntegrationOp<TensorT>* integration_function,
+			IntegrationOp<TensorT, Eigen::GpuDevice>* integration_function,
 			const int& batch_size,
 			const int& memory_size,
-			const int& time_step) {
+			const std::vector<int>& source_time_steps,
+			const int& sink_time_step) {
 			// Check that vector dimensions match
 
 			// Integrate sink node error
@@ -226,10 +234,10 @@ namespace SmartPeak
 			std::vector<TensorT*> d_source_inputs,
 			std::vector<TensorT*> h_sink_error,
 			std::vector<TensorT*> d_sink_error,
-			std::vector<IntegrationOp<TensorT>*> integration_function,
+			std::vector<IntegrationOp<TensorT, Eigen::GpuDevice>*> integration_function,
 			TensorT* h_weight,
 			TensorT* d_weight,
-			SolverFunction<TensorT>* solver_function,
+			SolverOp<TensorT>* solver_function,
 			const int& batch_size,
 			const int& memory_size,
 			const int& time_step) {

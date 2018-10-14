@@ -13,26 +13,42 @@ using namespace SmartPeak;
 using namespace std;
 
 void test_executeForwardPropogation() {
-	GpuKernal kernal(0, 1);
-	GpuOperations<float> operations(kernal);
+	const int device_id = 0;
+	GpuOperations<float> operations;
 
 	std::vector<float*> h_source_outputs, d_source_outputs, h_weights, d_weights;
-	float* h_sink_input, d_sink_input, h_sink_output, d_sink_output, h_sink_dt, d_sink_dt, h_sink_derivative, d_sink_derivative;
 	ActivationOp<float>* activation_function = new ReLUOp<float>();
 	ActivationOp<float>* activation_grad_function = new ReLUGradOp<float>();
-	IntegrationOp<float>* integration_function = new SumOp<float>();
+	IntegrationOp<float, Eigen::GpuDevice>* integration_function = new SumOp<float, Eigen::GpuDevice>();
 	const int batch_size = 4;
 	const int memory_size = 2;
 	const std::vector<int> source_time_steps = { 0, 0 };
 	const int sink_time_step = 0;
 
-	std::size_t bytes = batch_size * memory_size * sizeof(float);
+	//const int byte_size = batch_size * memory_size;
+	float* h_sink_input;
+	float* d_sink_input; 
+	float* h_sink_output; 
+	float* d_sink_output; 
+	float* h_sink_dt; 
+	float* d_sink_dt; 
+	float* h_sink_derivative; 
+	float* d_sink_derivative;
 
-	assert(cudaSetDevice(operations.getKernal().getDeviceID()) == cudaSuccess); // is this needed?
+	assert(cudaSetDevice(device_id) == cudaSuccess); // is this needed?
 
 	// allocate memory
 	const int n_source_nodes = 2;
+	std::size_t bytes = batch_size * memory_size * sizeof(float);
 	for (int i = 0; i < n_source_nodes; ++i) {
+		float *h_source_output;
+		h_source_outputs.push_back(h_source_output);
+		float* d_source_output;
+		d_source_outputs.push_back(d_source_output);
+		float* h_weight;
+		h_weights.push_back(h_weight);
+		float* d_weight;
+		d_weights.push_back(d_weight);
 		assert(cudaHostAlloc((void**)(&h_source_outputs[i]), bytes, cudaHostAllocDefault) == cudaSuccess);
 		assert(cudaMalloc((void**)(&d_source_outputs[i]), bytes) == cudaSuccess);
 		assert(cudaHostAlloc((void**)(&h_weights[i]), sizeof(float), cudaHostAllocDefault) == cudaSuccess);
@@ -49,10 +65,18 @@ void test_executeForwardPropogation() {
 
 	for (int i = 0; i < n_source_nodes; ++i) {
 		Eigen::TensorMap<Eigen::Tensor<float, 2>> source_output(h_source_outputs[i], batch_size, memory_size);
-		source_outupt.setValues({ {1, 0}, {2, 0}, {3, 0}, {4, 0} });
+		source_output.setValues({ {1, 0}, {2, 0}, {3, 0}, {4, 0} });
 		Eigen::TensorMap<Eigen::Tensor<float, 0>> weight(h_weights[i]);
 		weight.setConstant(1);
 	}
+	Eigen::TensorMap<Eigen::Tensor<float, 2>> sink_dt(h_sink_dt, batch_size, memory_size);
+	sink_dt.setConstant(1);
+
+	// Set up the device
+	cudaStream_t stream; // The stream will be destroyed by GpuStreamDevice once the function goes out of scope!
+	assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess);
+	Eigen::GpuStreamDevice stream_device(&stream, 0);
+	Eigen::GpuDevice device(&stream_device);
 
 	bool success = operations.executeForwardPropogation(
 		h_source_outputs,
@@ -74,19 +98,33 @@ void test_executeForwardPropogation() {
 		memory_size,
 		source_time_steps,
 		sink_time_step,
+		device,
 		true,
 		true);
 
-	operations.getKernal().syncKernal();
+	// Synchronize the stream
+	cudaError_t err = cudaStreamQuery(stream);
+	assert(cudaStreamSynchronize(stream) == cudaSuccess);
+	assert(cudaStreamDestroy(stream) == cudaSuccess);
+
 	Eigen::TensorMap<Eigen::Tensor<float, 2>> sink_input(h_sink_input, batch_size, memory_size);
 	Eigen::TensorMap<Eigen::Tensor<float, 2>> sink_output(h_sink_output, batch_size, memory_size);
 	Eigen::TensorMap<Eigen::Tensor<float, 2>> sink_derivative(h_sink_derivative, batch_size, memory_size);
+	Eigen::Tensor<float, 2> expected_input(batch_size, memory_size);
+	expected_input.setValues({ {2, 0}, {4, 0}, {6, 0}, {8, 0} });
+	Eigen::Tensor<float, 2> expected_output(batch_size, memory_size);
+	expected_output.setValues({ {2, 0}, {4, 0}, {6, 0}, {8, 0} });
+	Eigen::Tensor<float, 2> expected_derivative(batch_size, memory_size);
+	expected_derivative.setValues({ {1, 0}, {1, 0}, {1, 0}, {1, 0} });
 
 	for (size_t batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
 		for (size_t memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
-			assert(sink_input(batch_iter, memory_iter) == 0.0f);
-			assert(sink_output(batch_iter, memory_iter) == 0.0f);
-			assert(sink_derivative(batch_iter, memory_iter) == 0.0f);
+			//std::cout << "[Sink Input] Batch iter: " << batch_iter << ", Memory Iter: " << memory_iter << " = " << sink_input(batch_iter, memory_iter) << std::endl;
+			std::cout << "[Sink Output] Batch iter: " << batch_iter << ", Memory Iter: " << memory_iter << " = " << sink_output(batch_iter, memory_iter) << std::endl;
+			std::cout << "[Sink Derivative] Batch iter: " << batch_iter << ", Memory Iter: " << memory_iter << " = " << sink_derivative(batch_iter, memory_iter) << std::endl;
+			assert(sink_input(batch_iter, memory_iter) == expected_input(batch_iter, memory_iter));
+			//assert(sink_output(batch_iter, memory_iter) == expected_output(batch_iter, memory_iter));
+			//assert(sink_derivative(batch_iter, memory_iter) == expected_derivative(batch_iter, memory_iter));
 		}
 	}
 
@@ -104,13 +142,11 @@ void test_executeForwardPropogation() {
 	assert(cudaFree(d_sink_dt) == cudaSuccess);
 	assert(cudaFreeHost(h_sink_derivative) == cudaSuccess);
 	assert(cudaFree(d_sink_derivative) == cudaSuccess);
-
-	kernal.destroyKernal();
 }
 
 int main(int argc, char** argv)
 {
-	test_exampleGpu1();
+	test_executeForwardPropogation();
 	return 0;
 }
 #endif

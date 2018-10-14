@@ -55,9 +55,13 @@ namespace SmartPeak
 			assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess);
 			stream_ = stream;
 		};
-		void syncKernal() { assert(cudaStreamSynchronize(stream_) == cudaSuccess); };
-		void destroyKernal() { assert(cudaStreamDestroy(stream_) == cudaSuccess); };
-		cudaStream_t getStream() { return stream_; }
+		void syncKernal() { 
+			assert(cudaStreamSynchronize(stream_) == cudaSuccess); 
+		};
+		void destroyKernal() { 
+			assert(cudaStreamDestroy(stream_) == cudaSuccess);
+		};
+		cudaStream_t getStream() const { return stream_; }
 		
 	private:
 		cudaStream_t stream_;

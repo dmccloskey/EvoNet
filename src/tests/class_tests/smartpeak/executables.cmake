@@ -3,6 +3,7 @@ set(core_executables_list
   Helloworld_test
   KernalManager_test
   KernalManagerGpu_test
+  OperationsManagerGpu_test
   Preprocessing_test
   Statistics_test
   StringParsing_test
@@ -25,6 +26,7 @@ set(graph_executables_list
 set(ml_executables_list
   ActivationFunction_test
   IntegrationFunction_test
+  IntegrationFunction2_test
   Link_test
   Lossfunction_test
   ModelBuilder_test
