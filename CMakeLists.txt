@@ -121,6 +121,7 @@ if (EVONET_CUDA)
     message(STATUS "Found CUDA Toolkit version ${CUDA_VERSION_MAJOR}.${CUDA_VERSION_MINOR}" )
   endif()
   enable_language(CUDA)
+  set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} --expt-relaxed-constexpr" )
 endif()
 
 #------------------------------------------------------------------------------

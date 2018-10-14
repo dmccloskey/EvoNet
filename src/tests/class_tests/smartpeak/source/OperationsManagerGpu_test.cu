@@ -17,8 +17,8 @@ void test_executeForwardPropogation() {
 	GpuOperations<float> operations;
 
 	std::vector<float*> h_source_outputs, d_source_outputs, h_weights, d_weights;
-	ActivationOp<float>* activation_function = new ReLUOp<float>();
-	ActivationOp<float>* activation_grad_function = new ReLUGradOp<float>();
+	ActivationOpWrapper<float, Eigen::GpuDevice>* activation_function = new ReLUOpWrapper<float, Eigen::GpuDevice>();
+	ActivationOpWrapper<float, Eigen::GpuDevice>* activation_grad_function = new ReLUGradOpWrapper<float, Eigen::GpuDevice>();
 	IntegrationOp<float, Eigen::GpuDevice>* integration_function = new SumOp<float, Eigen::GpuDevice>();
 	const int batch_size = 4;
 	const int memory_size = 2;
@@ -123,8 +123,8 @@ void test_executeForwardPropogation() {
 			std::cout << "[Sink Output] Batch iter: " << batch_iter << ", Memory Iter: " << memory_iter << " = " << sink_output(batch_iter, memory_iter) << std::endl;
 			std::cout << "[Sink Derivative] Batch iter: " << batch_iter << ", Memory Iter: " << memory_iter << " = " << sink_derivative(batch_iter, memory_iter) << std::endl;
 			assert(sink_input(batch_iter, memory_iter) == expected_input(batch_iter, memory_iter));
-			//assert(sink_output(batch_iter, memory_iter) == expected_output(batch_iter, memory_iter));
-			//assert(sink_derivative(batch_iter, memory_iter) == expected_derivative(batch_iter, memory_iter));
+			assert(sink_output(batch_iter, memory_iter) == expected_output(batch_iter, memory_iter));
+			assert(sink_derivative(batch_iter, memory_iter) == expected_derivative(batch_iter, memory_iter));
 		}
 	}
 

@@ -12,30 +12,13 @@
 
 #include <unsupported/Eigen/CXX11/Tensor>
 #include <SmartPeak/core/KernalManager.h>
-#include <SmartPeak/ml/ActivationFunction.h>
+#include <SmartPeak/ml/ActivationFunctionWrapper.h>
 #include <SmartPeak/ml/IntegrationFunction2.h>
 #include <SmartPeak/ml/LossFunction.h>
 #include <SmartPeak/ml/Solver.h>
 
 namespace SmartPeak
 {
-	/**
-	@brief Functor for use with calculate activation/derivative.
-	*/
-	template<typename TensorT>
-	class ActivationFunctorOp
-	{
-	public:
-		ActivationFunctorOp() {};
-		ActivationFunctorOp(ActivationOp<TensorT>* activation) : activation_(activation) {};
-		~ActivationFunctorOp() {};
-		TensorT operator()(const TensorT& x_I) const {
-			return (*activation_)(x_I);
-		}
-	private:
-		ActivationOp<TensorT>* activation_;
-	};
-
 	template <typename TensorT, typename DeviceT>
 	class OperationsManager
 	{
@@ -56,8 +39,8 @@ namespace SmartPeak
 			TensorT* d_sink_dt,
 			TensorT* h_sink_derivative,
 			TensorT* d_sink_derivative,
-			ActivationOp<TensorT>* activation_function,
-			ActivationOp<TensorT>* activation_grad_function,
+			ActivationOpWrapper<TensorT, DeviceT>* activation_function,
+			ActivationOpWrapper<TensorT, DeviceT>* activation_grad_function,
 			IntegrationOp<TensorT, DeviceT>* integration_function,
 			const int& batch_size,
 			const int& memory_size,
@@ -127,8 +110,8 @@ namespace SmartPeak
 			TensorT* d_sink_dt,
 			TensorT* h_sink_derivative,
 			TensorT* d_sink_derivative,
-			ActivationOp<TensorT>* activation_function,
-			ActivationOp<TensorT>* activation_grad_function,
+			ActivationOpWrapper<TensorT, Eigen::GpuDevice>* activation_function,
+			ActivationOpWrapper<TensorT, Eigen::GpuDevice>* activation_grad_function,
 			IntegrationOp<TensorT, Eigen::GpuDevice>* integration_function,
 			const int& batch_size,
 			const int& memory_size,
@@ -167,16 +150,13 @@ namespace SmartPeak
 			//std::cout << sink_input_check << std::endl;
 	
 			// Activate sink node net input
-			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> sink_input(d_sink_input, batch_size, memory_size);
+			activation_function->operator()(d_sink_input, d_sink_output, batch_size, memory_size, sink_time_step, device);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> sink_output(d_sink_output, batch_size, memory_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> sink_dt(d_sink_dt, batch_size, memory_size);
-			// unaryExpr is blocking the stream...
-			sink_output.chip(sink_time_step, 1).device(device) = sink_input.chip(sink_time_step, 1).unaryExpr(ActivationFunctorOp<TensorT>(activation_function)) * sink_dt.chip(sink_time_step, 1);
+			sink_output.chip(sink_time_step, 1).device(device) = sink_output.chip(sink_time_step, 1) * sink_dt.chip(sink_time_step, 1);
 			
 			// Calculate the derivative of the sink node activation
-			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> sink_derivative(d_sink_derivative, batch_size, memory_size);
-			// unaryExpr is blocking the stream...
-			sink_derivative.chip(sink_time_step, 1).device(device) = sink_output.chip(sink_time_step, 1).unaryExpr(ActivationFunctorOp<TensorT>(activation_grad_function));
+			activation_grad_function->operator()(d_sink_output, d_sink_derivative, batch_size, memory_size, sink_time_step, device);
 
 			// Copy device to host
 			if (copyDeviceToHost) {

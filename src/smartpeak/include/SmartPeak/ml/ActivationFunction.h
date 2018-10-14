@@ -14,31 +14,34 @@ namespace SmartPeak
   /**
     @brief Base class for all activation functions.
   */
- template<typename T>
+ template<typename TensorT>
   class ActivationOp
   {
 public: 
 	ActivationOp() {};
-		//ActivationOp(const T& eps, const T& min, const T& max) : eps_(eps), min_(min), max_(max) {};
-	ActivationOp(const T& eps, const T& min, const T& max) {
+		//ActivationOp(const TensorT& eps, const TensorT& min, const TensorT& max) : eps_(eps), min_(min), max_(max) {};
+	ActivationOp(const TensorT& eps, const TensorT& min, const TensorT& max) {
 		setEps(eps);
 		setMin(min);
 		setMax(max);
 	};
 		~ActivationOp() {};
-		void setEps(const T& eps) { eps_ = eps; }
-		void setMin(const T& min) { min_ = min; }
-		void setMax(const T& max) { max_ = max; }
-    //virtual std::string getName() const = 0;
-    //virtual T operator()(const T& x_I) const = 0;
+		void setEps(const TensorT& eps) { eps_ = eps; }
+		void setMin(const TensorT& min) { min_ = min; }
+		void setMax(const TensorT& max) { max_ = max; }
+#ifndef EVONET_CUDA
 		std::string getName() const { return ""; }; // No Virtual Functions Allowed when using Cuda!
-		T operator()(const T& x_I) const { return 0; }; // No Virtual Functions Allowed when using Cuda!
-		T substituteNan(const T& x) const		
+		TensorT operator()(const TensorT& x_I) const { return 0; }; // No Virtual Functions Allowed when using Cuda!
+#else
+		virtual std::string getName() const = 0;
+		virtual TensorT operator()(const TensorT& x_I) const = 0;
+#endif // !EVONET_CUDA
+		TensorT substituteNan(const TensorT& x) const		
 		{
-			if (std::isnan(x)) { return T(0); }
+			if (std::isnan(x)) { return TensorT(0); }
 			else { return x; }			
 		}
-		T clip(const T& x) const
+		TensorT clip(const TensorT& x) const
 		{
 			if (x < min_ + eps_)
 				return min_ + eps_;
@@ -50,9 +53,9 @@ public:
 				return x;
 		}
 	protected:
-		T eps_ = 1e-12; ///< threshold to clip between min and max
-		T min_ = -1e9;
-		T max_ = 1e9;
+		TensorT eps_ = 1e-12; ///< threshold to clip between min and max
+		TensorT min_ = -1e9;
+		TensorT max_ = 1e9;
   };
 
   /**
@@ -63,13 +66,14 @@ public:
       Digital selection and analogue amplification coexist in a cortex-inspired silicon circuit. 
       Nature. 405. pp. 947–951.
   */
-  template<typename T>
-  class ReLUOp: public ActivationOp<T>
+  template<typename TensorT>
+  class ReLUOp: public ActivationOp<TensorT>
   {
 public: 
     ReLUOp(){}; 
     ~ReLUOp(){};
-    T operator()(const T& x_I) const { return this->clip((x_I > 0.0) ? x_I: 0.0); };
+    //TensorT operator()(const TensorT& x_I) const { return this->clip((x_I > 0.0) ? x_I: 0.0); };
+		TensorT operator()(const TensorT& x_I) const { return (x_I > 0.0) ? x_I : 0.0; };
     std::string getName() const{return "ReLUOp";};
   };
 
@@ -81,13 +85,13 @@ public:
       Digital selection and analogue amplification coexist in a cortex-inspired silicon circuit. 
       Nature. 405. pp. 947–951.
   */
-  template<typename T>
-  class ReLUGradOp: public ActivationOp<T>
+  template<typename TensorT>
+  class ReLUGradOp: public ActivationOp<TensorT>
   {
 public: 
     ReLUGradOp(){}; 
     ~ReLUGradOp(){};
-    T operator()(const T& x_I) const { return (x_I > 0.0) ? 1.0: 0.0; };
+    TensorT operator()(const TensorT& x_I) const { return (x_I > 0.0) ? 1.0: 0.0; };
     std::string getName() const{return "ReLUGradOp";};
   };
 
@@ -99,19 +103,19 @@ public:
       "Fast and Accurate Deep Network Learning by Exponential Linear Units (ELUs)".
       arXiv:1511.07289
   */
-  template<typename T>
-  class ELUOp: public ActivationOp<T>
+  template<typename TensorT>
+  class ELUOp: public ActivationOp<TensorT>
   {
 public: 
     ELUOp(){}; 
-    ELUOp(const T& alpha): alpha_(alpha){}; 
+    ELUOp(const TensorT& alpha): alpha_(alpha){}; 
     ~ELUOp(){};
-    T operator()(const T& x_I) const { return this->clip((x_I > 0.0) ? x_I : alpha_ * (std::exp(x_I) - 1)); };
-    void setAlpha(const T& alpha) { alpha_ = alpha; };
-    T getAlpha() const { return alpha_; };
+    TensorT operator()(const TensorT& x_I) const { return this->clip((x_I > 0.0) ? x_I : alpha_ * (std::exp(x_I) - 1)); };
+    void setAlpha(const TensorT& alpha) { alpha_ = alpha; };
+    TensorT getAlpha() const { return alpha_; };
     std::string getName() const{return "ELUOp";};
 private:
-    T alpha_ = 1;
+    TensorT alpha_ = 1;
   };
 
   /**
@@ -122,50 +126,50 @@ private:
       "Fast and Accurate Deep Network Learning by Exponential Linear Units (ELUs)".
       arXiv:1511.07289
   */
-  template<typename T>
-  class ELUGradOp: public ActivationOp<T>
+  template<typename TensorT>
+  class ELUGradOp: public ActivationOp<TensorT>
   {
 public: 
     ELUGradOp(){}; 
-    ELUGradOp(const T& alpha): alpha_(alpha){}; 
+    ELUGradOp(const TensorT& alpha): alpha_(alpha){}; 
     ~ELUGradOp(){};
-    T operator()(const T& x_I) const
+    TensorT operator()(const TensorT& x_I) const
     {
-      SmartPeak::ELUOp<T> eluop(alpha_);
+      SmartPeak::ELUOp<TensorT> eluop(alpha_);
       return (x_I > 0.0) ? 1.0: eluop(x_I) + alpha_;
     };
-    void setAlpha(const T& alpha) { alpha_ = alpha; };
-    T getAlpha() const { return alpha_; };
+    void setAlpha(const TensorT& alpha) { alpha_ = alpha; };
+    TensorT getAlpha() const { return alpha_; };
     std::string getName() const{return "ELUGradOp";};
 private:
-    T alpha_ = 1;
+    TensorT alpha_ = 1;
   };
 
   /**
     @brief Sigmoid activation function
   */
-  template<typename T>
-  class SigmoidOp: public ActivationOp<T>
+  template<typename TensorT>
+  class SigmoidOp: public ActivationOp<TensorT>
   {
 public: 
     SigmoidOp(){}; 
     ~SigmoidOp(){};
-    T operator()(const T& x_I) const { return this->clip(1 / (1 + std::exp(-x_I))); };
+    TensorT operator()(const TensorT& x_I) const { return this->clip(1 / (1 + std::exp(-x_I))); };
     std::string getName() const{return "SigmoidOp";};
   };
 
   /**
     @brief Sigmoid gradient
   */
-  template<typename T>
-  class SigmoidGradOp: public ActivationOp<T>
+  template<typename TensorT>
+  class SigmoidGradOp: public ActivationOp<TensorT>
   {
 public: 
     SigmoidGradOp(){}; 
     ~SigmoidGradOp(){};
-    T operator()(const T& x_I) const
+    TensorT operator()(const TensorT& x_I) const
     {
-      SmartPeak::SigmoidOp<T> sigmoidop;
+      SmartPeak::SigmoidOp<TensorT> sigmoidop;
       return sigmoidop(x_I) * (1 - sigmoidop(x_I));
     };
     std::string getName() const{return "SigmoidGradOp";};
@@ -174,28 +178,28 @@ public:
   /**
     @brief Hyperbolic Tangent activation function
   */
-  template<typename T>
-  class TanHOp: public ActivationOp<T>
+  template<typename TensorT>
+  class TanHOp: public ActivationOp<TensorT>
   {
 public: 
     TanHOp(){}; 
     ~TanHOp(){};
-    T operator()(const T& x_I) const { return std::tanh(x_I); };
+    TensorT operator()(const TensorT& x_I) const { return std::tanh(x_I); };
     std::string getName() const{return "TanHOp";};
   };
 
   /**
     @brief Hyperbolic Tangent gradient
   */
-  template<typename T>
-  class TanHGradOp: public ActivationOp<T>
+  template<typename TensorT>
+  class TanHGradOp: public ActivationOp<TensorT>
   {
 public: 
     TanHGradOp(){}; 
     ~TanHGradOp(){};
-    T operator()(const T& x_I) const
+    TensorT operator()(const TensorT& x_I) const
     {
-			const T x_new = 1 - std::pow(std::tanh(x_I), 2);
+			const TensorT x_new = 1 - std::pow(std::tanh(x_I), 2);
       return this->clip(x_new);
     };
     std::string getName() const{return "TanHGradOp";};
@@ -204,13 +208,13 @@ public:
   /**
     @brief Rectified Hyperbolic Tangent activation function
   */
-  template<typename T>
-  class ReTanHOp: public ActivationOp<T>
+  template<typename TensorT>
+  class ReTanHOp: public ActivationOp<TensorT>
   {
 public: 
     ReTanHOp(){}; 
     ~ReTanHOp(){};
-    T operator()(const T& x_I) const
+    TensorT operator()(const TensorT& x_I) const
     { 
       return this->clip((x_I > 0.0) ? (std::exp(x_I) - std::exp(-x_I)) / (std::exp(x_I) + std::exp(-x_I)) : 0.0);
     };
@@ -220,16 +224,16 @@ public:
   /**
     @brief Rectified Hyperbolic Tangent gradient
   */
-  template<typename T>
-  class ReTanHGradOp: public ActivationOp<T>
+  template<typename TensorT>
+  class ReTanHGradOp: public ActivationOp<TensorT>
   {
 public: 
     ReTanHGradOp(){}; 
     ~ReTanHGradOp(){};
-    T operator()(const T& x_I) const
+    TensorT operator()(const TensorT& x_I) const
     {
-      SmartPeak::ReTanHOp<T> tanhop;
-			T x_new = (x_I > 0.0) ? 1 - std::pow(tanhop(x_I), 2) : 0.0;
+      SmartPeak::ReTanHOp<TensorT> tanhop;
+			TensorT x_new = (x_I > 0.0) ? 1 - std::pow(tanhop(x_I), 2) : 0.0;
       return this->clip(x_new);
     };
     std::string getName() const{return "ReTanHGradOp";};
@@ -238,13 +242,13 @@ public:
 	/**
 	@brief Linear activation function
 	*/
-	template<typename T>
-	class LinearOp : public ActivationOp<T>
+	template<typename TensorT>
+	class LinearOp : public ActivationOp<TensorT>
 	{
 	public:
 		LinearOp() {};
 		~LinearOp() {};
-		T operator()(const T& x_I) const
+		TensorT operator()(const TensorT& x_I) const
 		{
 			return x_I;
 		};
@@ -254,13 +258,13 @@ public:
 	/**
 	@brief Linear gradient
 	*/
-	template<typename T>
-	class LinearGradOp : public ActivationOp<T>
+	template<typename TensorT>
+	class LinearGradOp : public ActivationOp<TensorT>
 	{
 	public:
 		LinearGradOp() {};
 		~LinearGradOp() {};
-		T operator()(const T& x_I) const
+		TensorT operator()(const TensorT& x_I) const
 		{
 			return 1.0;
 		};
@@ -270,13 +274,13 @@ public:
 	/**
 	@brief Inverse activation function
 	*/
-	template<typename T>
-	class InverseOp : public ActivationOp<T>
+	template<typename TensorT>
+	class InverseOp : public ActivationOp<TensorT>
 	{
 	public:
 		InverseOp() {};
 		~InverseOp() {};
-		T operator()(const T& x_I) const
+		TensorT operator()(const TensorT& x_I) const
 		{
 			return this->clip(x_I != 0.0 ? 1 / x_I : 0.0);
 		};
@@ -286,13 +290,13 @@ public:
 	/**
 	@brief Inverse gradient
 	*/
-	template<typename T>
-	class InverseGradOp : public ActivationOp<T>
+	template<typename TensorT>
+	class InverseGradOp : public ActivationOp<TensorT>
 	{
 	public:
 		InverseGradOp() {};
 		~InverseGradOp() {};
-		T operator()(const T& x_I) const
+		TensorT operator()(const TensorT& x_I) const
 		{
 			return this->clip(x_I != 0.0 ? -1 / std::pow(x_I, 2) : 0.0);
 		};
@@ -302,18 +306,18 @@ public:
 	/**
 	@brief Exponential activation function
 	*/
-	template<typename T>
-	class ExponentialOp : public ActivationOp<T>
+	template<typename TensorT>
+	class ExponentialOp : public ActivationOp<TensorT>
 	{
 	public:
 		ExponentialOp() {};
-		ExponentialOp(const T& eps, const T& min, const T& max) {
+		ExponentialOp(const TensorT& eps, const TensorT& min, const TensorT& max) {
 			this->setEps(eps);
 			this->setMin(min);
 			this->setMax(max);
 		};
 		~ExponentialOp() {};
-		T operator()(const T& x_I) const
+		TensorT operator()(const TensorT& x_I) const
 		{
 			return this->clip(std::exp(x_I));
 		};
@@ -323,13 +327,13 @@ public:
 	/**
 	@brief Exponential gradient
 	*/
-	template<typename T>
-	class ExponentialGradOp : public ActivationOp<T>
+	template<typename TensorT>
+	class ExponentialGradOp : public ActivationOp<TensorT>
 	{
 	public:
 		ExponentialGradOp() {};
 		~ExponentialGradOp() {};
-		T operator()(const T& x_I) const
+		TensorT operator()(const TensorT& x_I) const
 		{
 			return this->clip(std::exp(x_I));
 		};
@@ -339,13 +343,13 @@ public:
 	/**
 	@brief Log activation function
 	*/
-	template<typename T>
-	class LogOp : public ActivationOp<T>
+	template<typename TensorT>
+	class LogOp : public ActivationOp<TensorT>
 	{
 	public:
 		LogOp() {};
 		~LogOp() {};
-		T operator()(const T& x_I) const
+		TensorT operator()(const TensorT& x_I) const
 		{
 			return this->clip(std::log(x_I));
 		};
@@ -355,13 +359,13 @@ public:
 	/**
 	@brief Log gradient
 	*/
-	template<typename T>
-	class LogGradOp : public ActivationOp<T>
+	template<typename TensorT>
+	class LogGradOp : public ActivationOp<TensorT>
 	{
 	public:
 		LogGradOp() {};
 		~LogGradOp() {};
-		T operator()(const T& x_I) const
+		TensorT operator()(const TensorT& x_I) const
 		{
 			return this->clip(1/x_I);
 		};
@@ -371,37 +375,37 @@ public:
 	/**
 	@brief Pow activation function
 	*/
-	template<typename T>
-	class PowOp : public ActivationOp<T>
+	template<typename TensorT>
+	class PowOp : public ActivationOp<TensorT>
 	{
 	public:
-		PowOp(const T& base): base_(base){};
+		PowOp(const TensorT& base): base_(base){};
 		~PowOp() {};
-		T operator()(const T& x_I) const
+		TensorT operator()(const TensorT& x_I) const
 		{
 			return this->clip(std::pow(x_I, base_));
 		};
 		std::string getName() const { return "PowOp"; };
 	private:
-		T base_;
+		TensorT base_;
 	};
 
 	/**
 	@brief Pow gradient
 	*/
-	template<typename T>
-	class PowGradOp : public ActivationOp<T>
+	template<typename TensorT>
+	class PowGradOp : public ActivationOp<TensorT>
 	{
 	public:
-		PowGradOp(const T& base) : base_(base) {};
+		PowGradOp(const TensorT& base) : base_(base) {};
 		~PowGradOp() {};
-		T operator()(const T& x_I) const
+		TensorT operator()(const TensorT& x_I) const
 		{
 			return this->clip(base_ * std::pow(x_I, base_ - 1));
 		};
 		std::string getName() const { return "PowGradOp"; };
 	private:
-		T base_;
+		TensorT base_;
 	};
 
 	/**
@@ -409,40 +413,40 @@ public:
 
 		default alpha = 1e-2
 	*/
-	template<typename T>
-	class LeakyReLUOp : public ActivationOp<T>
+	template<typename TensorT>
+	class LeakyReLUOp : public ActivationOp<TensorT>
 	{
 	public:
 		LeakyReLUOp() {};
-		LeakyReLUOp(const T& alpha) : alpha_(alpha) {};
+		LeakyReLUOp(const TensorT& alpha) : alpha_(alpha) {};
 		~LeakyReLUOp() {};
-		T operator()(const T& x_I) const { return this->clip((x_I >= 0.0) ? x_I : alpha_ * x_I); };
-		void setAlpha(const T& alpha) { alpha_ = alpha; };
-		T getAlpha() const { return alpha_; };
+		TensorT operator()(const TensorT& x_I) const { return this->clip((x_I >= 0.0) ? x_I : alpha_ * x_I); };
+		void setAlpha(const TensorT& alpha) { alpha_ = alpha; };
+		TensorT getAlpha() const { return alpha_; };
 		std::string getName() const { return "LeakyReLUOp"; };
 	private:
-		T alpha_ = 1e-2;
+		TensorT alpha_ = 1e-2;
 	};
 
 	/**
 		@brief LeakyReLU gradient
 	*/
-	template<typename T>
-	class LeakyReLUGradOp : public ActivationOp<T>
+	template<typename TensorT>
+	class LeakyReLUGradOp : public ActivationOp<TensorT>
 	{
 	public:
 		LeakyReLUGradOp() {};
-		LeakyReLUGradOp(const T& alpha) : alpha_(alpha) {};
+		LeakyReLUGradOp(const TensorT& alpha) : alpha_(alpha) {};
 		~LeakyReLUGradOp() {};
-		T operator()(const T& x_I) const
+		TensorT operator()(const TensorT& x_I) const
 		{
 			return (x_I >= 0.0) ? 1.0 : alpha_;
 		};
-		void setAlpha(const T& alpha) { alpha_ = alpha; };
-		T getAlpha() const { return alpha_; };
+		void setAlpha(const TensorT& alpha) { alpha_ = alpha; };
+		TensorT getAlpha() const { return alpha_; };
 		std::string getName() const { return "LeakyReLUGradOp"; };
 	private:
-		T alpha_ = 1e-2;
+		TensorT alpha_ = 1e-2;
 	};
 }
 #endif //SMARTPEAK_ACTIVATIONFUNCTION_H
