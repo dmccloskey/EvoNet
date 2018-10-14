@@ -29,8 +29,10 @@ public:
 		void setEps(const T& eps) { eps_ = eps; }
 		void setMin(const T& min) { min_ = min; }
 		void setMax(const T& max) { max_ = max; }
-    virtual std::string getName() const = 0;
-    virtual T operator()(const T& x_I) const = 0;
+    //virtual std::string getName() const = 0;
+    //virtual T operator()(const T& x_I) const = 0;
+		std::string getName() const { return ""; }; // No Virtual Functions Allowed when using Cuda!
+		T operator()(const T& x_I) const { return 0; }; // No Virtual Functions Allowed when using Cuda!
 		T substituteNan(const T& x) const		
 		{
 			if (std::isnan(x)) { return T(0); }
