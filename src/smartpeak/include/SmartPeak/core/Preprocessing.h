@@ -343,6 +343,40 @@ namespace SmartPeak
 	private:
 		T p_ = 1; ///< probablity of 0
 	};
+
+	/**
+	@brief Scale a tensor by a specified value
+	*/
+	template<typename TensorT>
+	class ScaleOp
+	{
+	public:
+		ScaleOp() = default;
+		ScaleOp(const TensorT& scale) : scale_(scale) {};
+		~ScaleOp() = default;
+		TensorT operator()(const TensorT& x_I) const {
+			return x_I * scale_;
+		}
+	private:
+		TensorT scale_ = 1;
+	};
+
+	/**
+	@brief Offset a tensor by a specified value implemented as new_value = value + offset
+	*/
+	template<typename TensorT>
+	class OffsetOp
+	{
+	public:
+		OffsetOp() = default;
+		OffsetOp(const TensorT& offset) : offset_(offset) {};
+		~OffsetOp() = default;
+		TensorT operator()(const TensorT& x_I) const {
+			return x_I + offset_;
+		}
+	private:
+		TensorT offset_ = 0;
+	};
 }
 
 #endif //SMARTPEAK_PREPROCESSING_H

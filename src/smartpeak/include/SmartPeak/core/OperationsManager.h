@@ -71,15 +71,20 @@ namespace SmartPeak
 			bool copyHostToDevice = false,
 			bool copyDeviceToHost = false) = 0 ;
 		virtual bool executeCalcError(
-			std::vector<TensorT*> expected,
+			std::vector<TensorT*> h_expected,
+			std::vector<TensorT*> d_expected,
 			std::vector<TensorT*> h_predicted,
 			std::vector<TensorT*> d_predicted,
+			TensorT* h_model_error,
+			TensorT* d_model_error,
 			std::vector<TensorT*> h_node_errors,
 			std::vector<TensorT*> d_node_errors,
 			LossFunctionOp<TensorT>* loss_function,
+			LossFunctionGradOp<TensorT>* loss_grad_function,
 			const int& batch_size,
 			const int& memory_size,
 			const int& time_step,
+			DeviceT& device,
 			bool copyHostToDevice = false,
 			bool copyDeviceToHost = false) = 0;
 		virtual bool executeUpdateWeights(

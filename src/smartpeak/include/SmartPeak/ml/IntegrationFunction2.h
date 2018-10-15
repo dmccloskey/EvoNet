@@ -64,28 +64,29 @@ public:
 	public:
 		SumOp() {};
 		~SumOp() {};
+		//void operator()(std::vector<TensorT*> source_outputs, std::vector<TensorT*> weights, TensorT* sink_input, const int& batch_size, const int& memory_size, const std::vector<int>& source_time_steps, const int& sink_time_step, DeviceT& device) {
+		//	Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> sink_input_tensor(sink_input, batch_size, memory_size);
+		//	Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> source_output(source_outputs[0], batch_size, memory_size);
+		//	Eigen::TensorMap<Eigen::Tensor<TensorT, 0>> weight(weights[0]);
+		//	sink_input_tensor.chip(sink_time_step, 1).device(device) = source_output.chip(source_time_steps[0], 1).unaryExpr(TensorMultOp<TensorT>(weights[0]));
+		//	for (int i = 1; i < source_outputs.size(); ++i) {
+		//		Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> source_output(source_outputs[i], batch_size, memory_size);
+		//		Eigen::TensorMap<Eigen::Tensor<TensorT, 0>> weight(weights[i]);
+		//		sink_input_tensor.chip(sink_time_step, 1).device(device) += source_output.chip(source_time_steps[i], 1).unaryExpr(TensorMultOp<TensorT>(weights[i]));
+		//	}
+		//};
 		void operator()(std::vector<TensorT*> source_outputs, std::vector<TensorT*> weights, TensorT* sink_input, const int& batch_size, const int& memory_size, const std::vector<int>& source_time_steps, const int& sink_time_step, DeviceT& device) {
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> sink_input_tensor(sink_input, batch_size, memory_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> source_output(source_outputs[0], batch_size, memory_size);
-			Eigen::TensorMap<Eigen::Tensor<TensorT, 0>> weight(weights[0]);
-			sink_input_tensor.chip(sink_time_step, 1).device(device) = source_output.chip(source_time_steps[0], 1).unaryExpr(TensorMultOp<TensorT>(weights[0]));
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 1>> weight(weights[0], 1);
+			Eigen::array<int, 2> bcast = { batch_size, 1 };
+			sink_input_tensor.chip(sink_time_step, 1).device(device) = source_output.chip(source_time_steps[0], 1) * weight.broadcast(bcast);
 			for (int i = 1; i < source_outputs.size(); ++i) {
 				Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> source_output(source_outputs[i], batch_size, memory_size);
-				Eigen::TensorMap<Eigen::Tensor<TensorT, 0>> weight(weights[i]);
-				sink_input_tensor.chip(sink_time_step, 1).device(device) += source_output.chip(source_time_steps[i], 1).unaryExpr(TensorMultOp<TensorT>(weights[i]));
+				Eigen::TensorMap<Eigen::Tensor<TensorT, 1>> weight(weights[i], 1);
+				sink_input_tensor.chip(sink_time_step, 1).device(device) += source_output.chip(source_time_steps[i], 1) * weight.broadcast(bcast);
 			}
 		};
-		//// Note that the use of broadcast appears not to work!
-		//void operator()(std::vector<TensorT*> source_outputs, std::vector<TensorT*> weights, TensorT* sink_input, const int& batch_size, const int& memory_size, const std::vector<int>& source_time_steps, const int& sink_time_step, DeviceT& device) {
-		//	Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> sink_input_tensor(sink_input, batch_size, memory_size);
-		//	sink_input_tensor.chip(sink_time_step, 1).setConstant(0).device(device);
-		//	Eigen::array<int, 2> bcast = { batch_size, 1 };
-		//	for (int i = 0; i < source_outputs.size(); ++i) {
-		//		Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> source_output(source_outputs[i], batch_size, memory_size);
-		//		Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weight(weights[i], 1, 1);
-		//		sink_input_tensor.chip(sink_time_step, 1).device(device) += source_output.chip(source_time_steps[i], 1) * weight.broadcast(bcast);
-		//	}
-		//};
 		std::string getName() const { return "SumOp"; };
 	};
 
@@ -245,7 +246,10 @@ public:
 		void operator()(TensorT* source_error, TensorT *source_input, TensorT* weight, TensorT* sink_output, TensorT* sink_error, const int& batch_size, const int& memory_size, const int& source_time_step, const int& sink_time_step, const int& n, DeviceT& device)  {
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> sink_error_tensor(sink_error, batch_size, memory_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> source_error_tensor(source_error, batch_size, memory_size);
-			sink_error_tensor.chip(sink_time_step, 1).device(device) += source_error_tensor.chip(source_time_step, 1).unaryExpr(TensorMultOp<TensorT>(weight));
+			//sink_error_tensor.chip(sink_time_step, 1).device(device) += source_error_tensor.chip(source_time_step, 1).unaryExpr(TensorMultOp<TensorT>(weight));
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 1>> weight_tensor(weight, 1);
+			Eigen::array<int, 2> bcast = { batch_size, 1 };
+			sink_error_tensor.chip(sink_time_step, 1).device(device) += source_error_tensor.chip(source_time_step, 1) * weight_tensor.broadcast(bcast);
 		};
 		std::string getName() const { return "SumErrorOp"; };
 	};
