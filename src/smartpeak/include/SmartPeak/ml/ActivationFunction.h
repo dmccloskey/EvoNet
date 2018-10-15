@@ -3,8 +3,17 @@
 #ifndef SMARTPEAK_ACTIVATIONFUNCTION_H
 #define SMARTPEAK_ACTIVATIONFUNCTION_H
 
-#include <unsupported/Eigen/CXX11/Tensor>
+#ifndef EVONET_CUDA
+#include <math.h>
+#else
 #include <cmath>
+using exp = std::exp;
+using pow = std::pow;
+using log = std::log;
+using tanh = std::tanh;
+#endif
+
+#include <unsupported/Eigen/CXX11/Tensor>
 #include <random>
 #include <iostream>
 #include <limits>
@@ -110,7 +119,7 @@ public:
     ELUOp(){}; 
     ELUOp(const TensorT& alpha): alpha_(alpha){}; 
     ~ELUOp(){};
-    TensorT operator()(const TensorT& x_I) const { return this->clip((x_I > 0.0) ? x_I : alpha_ * (std::exp(x_I) - 1)); };
+    TensorT operator()(const TensorT& x_I) const { return this->clip((x_I > 0.0) ? x_I : alpha_ * (exp(x_I) - 1)); };
     void setAlpha(const TensorT& alpha) { alpha_ = alpha; };
     TensorT getAlpha() const { return alpha_; };
     std::string getName() const{return "ELUOp";};
@@ -154,7 +163,7 @@ private:
 public: 
     SigmoidOp(){}; 
     ~SigmoidOp(){};
-    TensorT operator()(const TensorT& x_I) const { return this->clip(1 / (1 + std::exp(-x_I))); };
+    TensorT operator()(const TensorT& x_I) const { return this->clip(1 / (1 + exp(-x_I))); };
     std::string getName() const{return "SigmoidOp";};
   };
 
@@ -184,7 +193,7 @@ public:
 public: 
     TanHOp(){}; 
     ~TanHOp(){};
-    TensorT operator()(const TensorT& x_I) const { return std::tanh(x_I); };
+    TensorT operator()(const TensorT& x_I) const { return tanh(x_I); };
     std::string getName() const{return "TanHOp";};
   };
 
@@ -199,7 +208,7 @@ public:
     ~TanHGradOp(){};
     TensorT operator()(const TensorT& x_I) const
     {
-			const TensorT x_new = 1 - std::pow(std::tanh(x_I), 2);
+			const TensorT x_new = 1 - pow(tanh(x_I), 2);
       return this->clip(x_new);
     };
     std::string getName() const{return "TanHGradOp";};
@@ -216,7 +225,7 @@ public:
     ~ReTanHOp(){};
     TensorT operator()(const TensorT& x_I) const
     { 
-      return this->clip((x_I > 0.0) ? (std::exp(x_I) - std::exp(-x_I)) / (std::exp(x_I) + std::exp(-x_I)) : 0.0);
+      return this->clip((x_I > 0.0) ? (exp(x_I) - exp(-x_I)) / (exp(x_I) + exp(-x_I)) : 0.0);
     };
     std::string getName() const{return "ReTanHOp";};
   };
@@ -233,7 +242,7 @@ public:
     TensorT operator()(const TensorT& x_I) const
     {
       SmartPeak::ReTanHOp<TensorT> tanhop;
-			TensorT x_new = (x_I > 0.0) ? 1 - std::pow(tanhop(x_I), 2) : 0.0;
+			TensorT x_new = (x_I > 0.0) ? 1 - pow(tanhop(x_I), 2) : 0.0;
       return this->clip(x_new);
     };
     std::string getName() const{return "ReTanHGradOp";};
@@ -298,7 +307,7 @@ public:
 		~InverseGradOp() {};
 		TensorT operator()(const TensorT& x_I) const
 		{
-			return this->clip(x_I != 0.0 ? -1 / std::pow(x_I, 2) : 0.0);
+			return this->clip(x_I != 0.0 ? -1 / pow(x_I, 2) : 0.0);
 		};
 		std::string getName() const { return "InverseGradOp"; };
 	};
@@ -319,7 +328,7 @@ public:
 		~ExponentialOp() {};
 		TensorT operator()(const TensorT& x_I) const
 		{
-			return this->clip(std::exp(x_I));
+			return this->clip(exp(x_I));
 		};
 		std::string getName() const { return "ExponentialOp"; };
 	};
@@ -335,7 +344,7 @@ public:
 		~ExponentialGradOp() {};
 		TensorT operator()(const TensorT& x_I) const
 		{
-			return this->clip(std::exp(x_I));
+			return this->clip(exp(x_I));
 		};
 		std::string getName() const { return "ExponentialGradOp"; };
 	};
@@ -351,7 +360,7 @@ public:
 		~LogOp() {};
 		TensorT operator()(const TensorT& x_I) const
 		{
-			return this->clip(std::log(x_I));
+			return this->clip(log(x_I));
 		};
 		std::string getName() const { return "LogOp"; };
 	};
@@ -383,7 +392,7 @@ public:
 		~PowOp() {};
 		TensorT operator()(const TensorT& x_I) const
 		{
-			return this->clip(std::pow(x_I, base_));
+			return this->clip(pow(x_I, base_));
 		};
 		std::string getName() const { return "PowOp"; };
 	private:
@@ -401,7 +410,7 @@ public:
 		~PowGradOp() {};
 		TensorT operator()(const TensorT& x_I) const
 		{
-			return this->clip(base_ * std::pow(x_I, base_ - 1));
+			return this->clip(base_ * pow(x_I, base_ - 1));
 		};
 		std::string getName() const { return "PowGradOp"; };
 	private:
