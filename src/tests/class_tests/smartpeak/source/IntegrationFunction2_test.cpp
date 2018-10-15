@@ -253,6 +253,8 @@ BOOST_AUTO_TEST_CASE(getNameMeanOp)
 
 /**
  VarModOp Tests
+
+ [TODO: Fix broken method]
 */
 BOOST_AUTO_TEST_CASE(constructorVarModOp)
 {
@@ -371,66 +373,88 @@ BOOST_AUTO_TEST_CASE(getNameCountOp)
 	BOOST_CHECK_EQUAL(operation.getName(), "CountOp");
 }
 
-///**
-//SumErrorOp Tests
-//*/
-//BOOST_AUTO_TEST_CASE(constructorSumErrorOp)
-//{
-//	SumErrorOp<float>* ptrReLU = nullptr;
-//	SumErrorOp<float>* nullPointerReLU = nullptr;
-//	BOOST_CHECK_EQUAL(ptrReLU, nullPointerReLU);
-//}
-//
-//BOOST_AUTO_TEST_CASE(destructorSumErrorOp)
-//{
-//	SumErrorOp<float>* ptrReLU = nullptr;
-//	ptrReLU = new SumErrorOp<float>();
-//	delete ptrReLU;
-//}
-//
-//BOOST_AUTO_TEST_CASE(operationfunctionSumErrorOp)
-//{
-//	const int batch_size = 3;
-//	Eigen::Tensor<float, 1> source_error1(batch_size), source_error2(batch_size), source_error3(batch_size);
-//	source_error1.setValues({ 1, 2, 4 }); source_error2.setValues({ 2, 4, 1 }); source_error3.setValues({ 4, 1, 2 });
-//	Eigen::Tensor<float, 1> weight1(batch_size), weight2(batch_size), weight3(batch_size);
-//	weight1.setValues({ 1, 1, 1 }); weight2.setValues({ 2, 2, 2 }); weight3.setValues({ 2, 2, 2 });
-//	Eigen::Tensor<float, 1> dummy1(batch_size), dummy2(batch_size), dummy3(batch_size);
-//	dummy1.setZero(); dummy2.setZero(); dummy3.setZero();
-//
-//	SumErrorOp<float> operation;
-//	Eigen::Tensor<float, 1> test(batch_size);
-//	test.setConstant(0.0f);
-//	test += operation(weight1, source_error1, dummy1, dummy1, dummy1);
-//	test += operation(weight2, source_error2, dummy2, dummy2, dummy2);
-//	test += operation(weight3, source_error3, dummy3, dummy3, dummy3);
-//
-//	BOOST_CHECK_CLOSE(test(0), 13.0, 1e-4);
-//	BOOST_CHECK_CLOSE(test(1), 12.0, 1e-4);
-//	BOOST_CHECK_CLOSE(test(2), 10.0, 1e-4);
-//}
-//
-//BOOST_AUTO_TEST_CASE(getNameSumErrorOp)
-//{
-//	SumErrorOp<float> operation;
-//
-//	BOOST_CHECK_EQUAL(operation.getName(), "SumErrorOp");
-//}
-//
+/**
+SumErrorOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorSumErrorOp)
+{
+	SumErrorOp<float, Eigen::DefaultDevice>* ptrReLU = nullptr;
+	SumErrorOp<float, Eigen::DefaultDevice>* nullPointerReLU = nullptr;
+	BOOST_CHECK_EQUAL(ptrReLU, nullPointerReLU);
+}
+
+BOOST_AUTO_TEST_CASE(destructorSumErrorOp)
+{
+	SumErrorOp<float, Eigen::DefaultDevice>* ptrReLU = nullptr;
+	ptrReLU = new SumErrorOp<float, Eigen::DefaultDevice>();
+	delete ptrReLU;
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionSumErrorOp)
+{
+	const int batch_size = 3;
+	const int memory_size = 2;
+	const int byte_size = batch_size * memory_size;
+	Eigen::Tensor<float, 2> source_error1(batch_size, memory_size), source_error2(batch_size, memory_size), source_error3(batch_size, memory_size);
+	source_error1.setValues({ {1, 0}, {2, 0}, {4, 0} });
+	source_error2.setValues({ {2, 0}, {4, 0}, {1, 0} });
+	source_error3.setValues({ {4, 0}, {1, 0}, {2, 0} });
+	Eigen::Tensor<float, 2> source_input1(batch_size, memory_size), source_input2(batch_size, memory_size), source_input3(batch_size, memory_size);
+	source_input1.setValues({ {1, 0}, {1, 0}, {1, 0} });
+	source_input2.setValues({ {2, 0}, {2, 0}, {2, 0} });
+	source_input3.setValues({ {2, 0}, {2, 0}, {2, 0} });
+	Eigen::Tensor<float, 0> weight1, weight2, weight3;
+	weight1.setConstant(1); weight2.setConstant(2); weight3.setConstant(2);
+
+	std::vector<float*> source_errors = { source_error1.data(), source_error2.data(), source_error3.data() };
+	std::vector<float*> source_inputs = { source_input1.data(), source_input2.data(), source_input3.data() };
+	std::vector<float*> weights = { weight1.data(), weight2.data(), weight3.data() };
+	std::vector<int> source_time_steps = { 0, 0, 0 };
+	
+	Eigen::Tensor<float, 2> sink_output(batch_size, memory_size);
+	sink_output.setValues({ {0, 1}, {0, 2}, {0, 1} });
+	float h_sink_error[] = { 0, 0, 0, 0, 0, 0 };
+	const int sink_time_step = 1;
+
+	Eigen::DefaultDevice device;
+
+	SumErrorOp<float, Eigen::DefaultDevice> operation;
+	for (size_t node_iter = 0; node_iter<3; ++node_iter)
+		operation(source_errors[node_iter], source_inputs[node_iter], weights[node_iter], sink_output.data(), h_sink_error, batch_size, memory_size, source_time_steps[node_iter], sink_time_step, 3, device);
+
+	Eigen::TensorMap<Eigen::Tensor<float, 2>> sink_error(h_sink_error, batch_size, memory_size);
+	Eigen::Tensor<float, 2> expected(batch_size, memory_size);
+	expected.setValues({ {0, 13}, {0, 12}, {0, 10} });
+
+	for (size_t batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
+		for (size_t memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
+			std::cout << "Batch iter: " << batch_iter << ", Memory Iter: " << memory_iter << "= " << sink_error(batch_iter, memory_iter) << std::endl;
+			BOOST_CHECK_CLOSE(sink_error(batch_iter, memory_iter), expected(batch_iter, memory_iter), 1e-4);
+		}
+	}
+}
+
+BOOST_AUTO_TEST_CASE(getNameSumErrorOp)
+{
+	SumErrorOp<float, Eigen::DefaultDevice> operation;
+
+	BOOST_CHECK_EQUAL(operation.getName(), "SumErrorOp");
+}
+
 ///**
 //ProdErrorOp Tests
 //*/
 //BOOST_AUTO_TEST_CASE(constructorProdErrorOp)
 //{
-//	ProdErrorOp<float>* ptrReLU = nullptr;
-//	ProdErrorOp<float>* nullPointerReLU = nullptr;
+//	ProdErrorOp<float, Eigen::DefaultDevice>* ptrReLU = nullptr;
+//	ProdErrorOp<float, Eigen::DefaultDevice>* nullPointerReLU = nullptr;
 //	BOOST_CHECK_EQUAL(ptrReLU, nullPointerReLU);
 //}
 //
 //BOOST_AUTO_TEST_CASE(destructorProdErrorOp)
 //{
-//	ProdErrorOp<float>* ptrReLU = nullptr;
-//	ptrReLU = new ProdErrorOp<float>();
+//	ProdErrorOp<float, Eigen::DefaultDevice>* ptrReLU = nullptr;
+//	ptrReLU = new ProdErrorOp<float, Eigen::DefaultDevice>();
 //	delete ptrReLU;
 //}
 //
@@ -446,7 +470,7 @@ BOOST_AUTO_TEST_CASE(getNameCountOp)
 //	Eigen::Tensor<float, 1> dummy1(batch_size), dummy2(batch_size), dummy3(batch_size);
 //	dummy1.setZero(); dummy2.setZero(); dummy3.setZero();
 //
-//	ProdErrorOp<float> operation;
+//	ProdErrorOp<float, Eigen::DefaultDevice> operation;
 //	Eigen::Tensor<float, 1> test(batch_size);
 //	test.setConstant(0.0f);
 //	test += operation(dummy1, source_error1, source_net_input1, sink_output1, dummy1);
@@ -460,7 +484,7 @@ BOOST_AUTO_TEST_CASE(getNameCountOp)
 //
 //BOOST_AUTO_TEST_CASE(getNameProdErrorOp)
 //{
-//	ProdErrorOp<float> operation;
+//	ProdErrorOp<float, Eigen::DefaultDevice> operation;
 //
 //	BOOST_CHECK_EQUAL(operation.getName(), "ProdErrorOp");
 //}
@@ -470,15 +494,15 @@ BOOST_AUTO_TEST_CASE(getNameCountOp)
 //*/
 //BOOST_AUTO_TEST_CASE(constructorMaxErrorOp)
 //{
-//	MaxErrorOp<float>* ptrReLU = nullptr;
-//	MaxErrorOp<float>* nullPointerReLU = nullptr;
+//	MaxErrorOp<float, Eigen::DefaultDevice>* ptrReLU = nullptr;
+//	MaxErrorOp<float, Eigen::DefaultDevice>* nullPointerReLU = nullptr;
 //	BOOST_CHECK_EQUAL(ptrReLU, nullPointerReLU);
 //}
 //
 //BOOST_AUTO_TEST_CASE(destructorMaxErrorOp)
 //{
-//	MaxErrorOp<float>* ptrReLU = nullptr;
-//	ptrReLU = new MaxErrorOp<float>();
+//	MaxErrorOp<float, Eigen::DefaultDevice>* ptrReLU = nullptr;
+//	ptrReLU = new MaxErrorOp<float, Eigen::DefaultDevice>();
 //	delete ptrReLU;
 //}
 //
@@ -496,7 +520,7 @@ BOOST_AUTO_TEST_CASE(getNameCountOp)
 //	Eigen::Tensor<float, 1> dummy1(batch_size), dummy2(batch_size), dummy3(batch_size);
 //	dummy1.setZero(); dummy2.setZero(); dummy3.setZero();
 //
-//	MaxErrorOp<float> operation;
+//	MaxErrorOp<float, Eigen::DefaultDevice> operation;
 //	Eigen::Tensor<float, 1> test(batch_size);
 //	test.setConstant(0.0f);
 //	test += operation(weight1, source_error1, source_net_source_error1, sink_output1, dummy1);
@@ -510,7 +534,7 @@ BOOST_AUTO_TEST_CASE(getNameCountOp)
 //
 //BOOST_AUTO_TEST_CASE(getNameMaxErrorOp)
 //{
-//	MaxErrorOp<float> operation;
+//	MaxErrorOp<float, Eigen::DefaultDevice> operation;
 //
 //	BOOST_CHECK_EQUAL(operation.getName(), "MaxErrorOp");
 //}
@@ -520,15 +544,15 @@ BOOST_AUTO_TEST_CASE(getNameCountOp)
 //*/
 //BOOST_AUTO_TEST_CASE(constructorMeanErrorOp)
 //{
-//	MeanErrorOp<float>* ptrReLU = nullptr;
-//	MeanErrorOp<float>* nullPointerReLU = nullptr;
+//	MeanErrorOp<float, Eigen::DefaultDevice>* ptrReLU = nullptr;
+//	MeanErrorOp<float, Eigen::DefaultDevice>* nullPointerReLU = nullptr;
 //	BOOST_CHECK_EQUAL(ptrReLU, nullPointerReLU);
 //}
 //
 //BOOST_AUTO_TEST_CASE(destructorMeanErrorOp)
 //{
-//	MeanErrorOp<float>* ptrReLU = nullptr;
-//	ptrReLU = new MeanErrorOp<float>();
+//	MeanErrorOp<float, Eigen::DefaultDevice>* ptrReLU = nullptr;
+//	ptrReLU = new MeanErrorOp<float, Eigen::DefaultDevice>();
 //	delete ptrReLU;
 //}
 //
@@ -544,7 +568,7 @@ BOOST_AUTO_TEST_CASE(getNameCountOp)
 //	Eigen::Tensor<float, 1> dummy1(batch_size), dummy2(batch_size), dummy3(batch_size);
 //	dummy1.setZero(); dummy2.setZero(); dummy3.setZero();
 //
-//	MeanErrorOp<float> operation;
+//	MeanErrorOp<float, Eigen::DefaultDevice> operation;
 //	Eigen::Tensor<float, 1> test(batch_size);
 //	test.setConstant(0.0f);
 //	test += operation(weight1, source_error1, dummy1, dummy1, n1);
@@ -558,7 +582,7 @@ BOOST_AUTO_TEST_CASE(getNameCountOp)
 //
 //BOOST_AUTO_TEST_CASE(getNameMeanErrorOp)
 //{
-//	MeanErrorOp<float> operation;
+//	MeanErrorOp<float, Eigen::DefaultDevice> operation;
 //
 //	BOOST_CHECK_EQUAL(operation.getName(), "MeanErrorOp");
 //}
@@ -568,15 +592,15 @@ BOOST_AUTO_TEST_CASE(getNameCountOp)
 //*/
 //BOOST_AUTO_TEST_CASE(constructorVarModErrorOp)
 //{
-//	VarModErrorOp<float>* ptrReLU = nullptr;
-//	VarModErrorOp<float>* nullPointerReLU = nullptr;
+//	VarModErrorOp<float, Eigen::DefaultDevice>* ptrReLU = nullptr;
+//	VarModErrorOp<float, Eigen::DefaultDevice>* nullPointerReLU = nullptr;
 //	BOOST_CHECK_EQUAL(ptrReLU, nullPointerReLU);
 //}
 //
 //BOOST_AUTO_TEST_CASE(destructorVarModErrorOp)
 //{
-//	VarModErrorOp<float>* ptrReLU = nullptr;
-//	ptrReLU = new VarModErrorOp<float>();
+//	VarModErrorOp<float, Eigen::DefaultDevice>* ptrReLU = nullptr;
+//	ptrReLU = new VarModErrorOp<float, Eigen::DefaultDevice>();
 //	delete ptrReLU;
 //}
 //
@@ -592,7 +616,7 @@ BOOST_AUTO_TEST_CASE(getNameCountOp)
 //	Eigen::Tensor<float, 1> dummy1(batch_size), dummy2(batch_size), dummy3(batch_size);
 //	dummy1.setZero(); dummy2.setZero(); dummy3.setZero();
 //
-//	VarModErrorOp<float> operation;
+//	VarModErrorOp<float, Eigen::DefaultDevice> operation;
 //	Eigen::Tensor<float, 1> test(batch_size);
 //	test.setConstant(0.0f);
 //	test += operation(weight1, source_error1, dummy1, dummy1, n1);
@@ -606,7 +630,7 @@ BOOST_AUTO_TEST_CASE(getNameCountOp)
 //
 //BOOST_AUTO_TEST_CASE(getNameVarModErrorOp)
 //{
-//	VarModErrorOp<float> operation;
+//	VarModErrorOp<float, Eigen::DefaultDevice> operation;
 //
 //	BOOST_CHECK_EQUAL(operation.getName(), "VarModErrorOp");
 //}
@@ -616,15 +640,15 @@ BOOST_AUTO_TEST_CASE(getNameCountOp)
 //*/
 //BOOST_AUTO_TEST_CASE(constructorCountErrorOp)
 //{
-//	CountErrorOp<float>* ptrReLU = nullptr;
-//	CountErrorOp<float>* nullPointerReLU = nullptr;
+//	CountErrorOp<float, Eigen::DefaultDevice>* ptrReLU = nullptr;
+//	CountErrorOp<float, Eigen::DefaultDevice>* nullPointerReLU = nullptr;
 //	BOOST_CHECK_EQUAL(ptrReLU, nullPointerReLU);
 //}
 //
 //BOOST_AUTO_TEST_CASE(destructorCountErrorOp)
 //{
-//	CountErrorOp<float>* ptrReLU = nullptr;
-//	ptrReLU = new CountErrorOp<float>();
+//	CountErrorOp<float, Eigen::DefaultDevice>* ptrReLU = nullptr;
+//	ptrReLU = new CountErrorOp<float, Eigen::DefaultDevice>();
 //	delete ptrReLU;
 //}
 //
@@ -638,7 +662,7 @@ BOOST_AUTO_TEST_CASE(getNameCountOp)
 //	Eigen::Tensor<float, 1> dummy1(batch_size), dummy2(batch_size), dummy3(batch_size);
 //	dummy1.setZero(); dummy2.setZero(); dummy3.setZero();
 //
-//	CountErrorOp<float> operation;
+//	CountErrorOp<float, Eigen::DefaultDevice> operation;
 //	Eigen::Tensor<float, 1> test(batch_size);
 //	test.setConstant(0.0f);
 //	test += operation(weight1, source_error1, dummy1, dummy1, dummy1);
@@ -652,7 +676,7 @@ BOOST_AUTO_TEST_CASE(getNameCountOp)
 //
 //BOOST_AUTO_TEST_CASE(getNameCountErrorOp)
 //{
-//	CountErrorOp<float> operation;
+//	CountErrorOp<float, Eigen::DefaultDevice> operation;
 //
 //	BOOST_CHECK_EQUAL(operation.getName(), "CountErrorOp");
 //}
@@ -662,15 +686,15 @@ BOOST_AUTO_TEST_CASE(getNameCountOp)
 //*/
 //BOOST_AUTO_TEST_CASE(constructorSumWeightGradOp)
 //{
-//	SumWeightGradOp<float>* ptrReLU = nullptr;
-//	SumWeightGradOp<float>* nullPointerReLU = nullptr;
+//	SumWeightGradOp<float, Eigen::DefaultDevice>* ptrReLU = nullptr;
+//	SumWeightGradOp<float, Eigen::DefaultDevice>* nullPointerReLU = nullptr;
 //	BOOST_CHECK_EQUAL(ptrReLU, nullPointerReLU);
 //}
 //
 //BOOST_AUTO_TEST_CASE(destructorSumWeightGradOp)
 //{
-//	SumWeightGradOp<float>* ptrReLU = nullptr;
-//	ptrReLU = new SumWeightGradOp<float>();
+//	SumWeightGradOp<float, Eigen::DefaultDevice>* ptrReLU = nullptr;
+//	ptrReLU = new SumWeightGradOp<float, Eigen::DefaultDevice>();
 //	delete ptrReLU;
 //}
 //
@@ -688,7 +712,7 @@ BOOST_AUTO_TEST_CASE(getNameCountOp)
 //	Eigen::Tensor<float, 1> dummy1(batch_size), dummy2(batch_size), dummy3(batch_size);
 //	dummy1.setZero(); dummy2.setZero(); dummy3.setZero();
 //
-//	SumWeightGradOp<float> operation;
+//	SumWeightGradOp<float, Eigen::DefaultDevice> operation;
 //	operation(source_output1, sink_error1, weight1, source_net_input1, dummy1);
 //	operation(source_output2, sink_error2, weight2, source_net_input2, dummy2);
 //	operation(source_output3, sink_error3, weight3, source_net_input3, dummy3);
@@ -698,7 +722,7 @@ BOOST_AUTO_TEST_CASE(getNameCountOp)
 //
 //BOOST_AUTO_TEST_CASE(getNameSumWeightGradOp)
 //{
-//	SumWeightGradOp<float> operation;
+//	SumWeightGradOp<float, Eigen::DefaultDevice> operation;
 //
 //	BOOST_CHECK_EQUAL(operation.getName(), "SumWeightGradOp");
 //}
@@ -708,15 +732,15 @@ BOOST_AUTO_TEST_CASE(getNameCountOp)
 //*/
 //BOOST_AUTO_TEST_CASE(constructorProdWeightGradOp)
 //{
-//	ProdWeightGradOp<float>* ptrReLU = nullptr;
-//	ProdWeightGradOp<float>* nullPointerReLU = nullptr;
+//	ProdWeightGradOp<float, Eigen::DefaultDevice>* ptrReLU = nullptr;
+//	ProdWeightGradOp<float, Eigen::DefaultDevice>* nullPointerReLU = nullptr;
 //	BOOST_CHECK_EQUAL(ptrReLU, nullPointerReLU);
 //}
 //
 //BOOST_AUTO_TEST_CASE(destructorProdWeightGradOp)
 //{
-//	ProdWeightGradOp<float>* ptrReLU = nullptr;
-//	ptrReLU = new ProdWeightGradOp<float>();
+//	ProdWeightGradOp<float, Eigen::DefaultDevice>* ptrReLU = nullptr;
+//	ptrReLU = new ProdWeightGradOp<float, Eigen::DefaultDevice>();
 //	delete ptrReLU;
 //}
 //
@@ -734,7 +758,7 @@ BOOST_AUTO_TEST_CASE(getNameCountOp)
 //	Eigen::Tensor<float, 1> dummy1(batch_size), dummy2(batch_size), dummy3(batch_size);
 //	dummy1.setZero(); dummy2.setZero(); dummy3.setZero();
 //
-//	ProdWeightGradOp<float> operation;
+//	ProdWeightGradOp<float, Eigen::DefaultDevice> operation;
 //	operation(source_output1, sink_error1, weight1, source_net_input1, dummy1);
 //	operation(source_output2, sink_error2, weight2, source_net_input2, dummy2);
 //	operation(source_output3, sink_error3, weight3, source_net_input3, dummy3);
@@ -744,7 +768,7 @@ BOOST_AUTO_TEST_CASE(getNameCountOp)
 //
 //BOOST_AUTO_TEST_CASE(getNameProdWeightGradOp)
 //{
-//	ProdWeightGradOp<float> operation;
+//	ProdWeightGradOp<float, Eigen::DefaultDevice> operation;
 //
 //	BOOST_CHECK_EQUAL(operation.getName(), "ProdWeightGradOp");
 //}
@@ -754,15 +778,15 @@ BOOST_AUTO_TEST_CASE(getNameCountOp)
 //*/
 //BOOST_AUTO_TEST_CASE(constructorMaxWeightGradOp)
 //{
-//	MaxWeightGradOp<float>* ptrReLU = nullptr;
-//	MaxWeightGradOp<float>* nullPointerReLU = nullptr;
+//	MaxWeightGradOp<float, Eigen::DefaultDevice>* ptrReLU = nullptr;
+//	MaxWeightGradOp<float, Eigen::DefaultDevice>* nullPointerReLU = nullptr;
 //	BOOST_CHECK_EQUAL(ptrReLU, nullPointerReLU);
 //}
 //
 //BOOST_AUTO_TEST_CASE(destructorMaxWeightGradOp)
 //{
-//	MaxWeightGradOp<float>* ptrReLU = nullptr;
-//	ptrReLU = new MaxWeightGradOp<float>();
+//	MaxWeightGradOp<float, Eigen::DefaultDevice>* ptrReLU = nullptr;
+//	ptrReLU = new MaxWeightGradOp<float, Eigen::DefaultDevice>();
 //	delete ptrReLU;
 //}
 //
@@ -780,7 +804,7 @@ BOOST_AUTO_TEST_CASE(getNameCountOp)
 //	Eigen::Tensor<float, 1> dummy1(batch_size), dummy2(batch_size), dummy3(batch_size);
 //	dummy1.setZero(); dummy2.setZero(); dummy3.setZero();
 //
-//	MaxWeightGradOp<float> operation;
+//	MaxWeightGradOp<float, Eigen::DefaultDevice> operation;
 //	operation(source_output1, sink_error1, weight1, source_net_input1, dummy1);
 //	operation(source_output2, sink_error2, weight2, source_net_input2, dummy2);
 //	operation(source_output3, sink_error3, weight3, source_net_input3, dummy3);
@@ -790,7 +814,7 @@ BOOST_AUTO_TEST_CASE(getNameCountOp)
 //
 //BOOST_AUTO_TEST_CASE(getNameMaxWeightGradOp)
 //{
-//	MaxWeightGradOp<float> operation;
+//	MaxWeightGradOp<float, Eigen::DefaultDevice> operation;
 //
 //	BOOST_CHECK_EQUAL(operation.getName(), "MaxWeightGradOp");
 //}
@@ -800,15 +824,15 @@ BOOST_AUTO_TEST_CASE(getNameCountOp)
 //*/
 //BOOST_AUTO_TEST_CASE(constructorMeanWeightGradOp)
 //{
-//	MeanWeightGradOp<float>* ptrReLU = nullptr;
-//	MeanWeightGradOp<float>* nullPointerReLU = nullptr;
+//	MeanWeightGradOp<float, Eigen::DefaultDevice>* ptrReLU = nullptr;
+//	MeanWeightGradOp<float, Eigen::DefaultDevice>* nullPointerReLU = nullptr;
 //	BOOST_CHECK_EQUAL(ptrReLU, nullPointerReLU);
 //}
 //
 //BOOST_AUTO_TEST_CASE(destructorMeanWeightGradOp)
 //{
-//	MeanWeightGradOp<float>* ptrReLU = nullptr;
-//	ptrReLU = new MeanWeightGradOp<float>();
+//	MeanWeightGradOp<float, Eigen::DefaultDevice>* ptrReLU = nullptr;
+//	ptrReLU = new MeanWeightGradOp<float, Eigen::DefaultDevice>();
 //	delete ptrReLU;
 //}
 //
@@ -826,7 +850,7 @@ BOOST_AUTO_TEST_CASE(getNameCountOp)
 //	Eigen::Tensor<float, 1> n1(batch_size), n2(batch_size), n3(batch_size);
 //	n1.setConstant(3); n2.setConstant(3); n3.setConstant(3);
 //
-//	MeanWeightGradOp<float> operation;
+//	MeanWeightGradOp<float, Eigen::DefaultDevice> operation;
 //	operation(source_output1, sink_error1, weight1, source_net_input1, n1);
 //	operation(source_output2, sink_error2, weight2, source_net_input2, n2);
 //	operation(source_output3, sink_error3, weight3, source_net_input3, n3);
@@ -836,7 +860,7 @@ BOOST_AUTO_TEST_CASE(getNameCountOp)
 //
 //BOOST_AUTO_TEST_CASE(getNameMeanWeightGradOp)
 //{
-//	MeanWeightGradOp<float> operation;
+//	MeanWeightGradOp<float, Eigen::DefaultDevice> operation;
 //
 //	BOOST_CHECK_EQUAL(operation.getName(), "MeanWeightGradOp");
 //}
@@ -846,15 +870,15 @@ BOOST_AUTO_TEST_CASE(getNameCountOp)
 //*/
 //BOOST_AUTO_TEST_CASE(constructorVarModWeightGradOp)
 //{
-//	VarModWeightGradOp<float>* ptrReLU = nullptr;
-//	VarModWeightGradOp<float>* nullPointerReLU = nullptr;
+//	VarModWeightGradOp<float, Eigen::DefaultDevice>* ptrReLU = nullptr;
+//	VarModWeightGradOp<float, Eigen::DefaultDevice>* nullPointerReLU = nullptr;
 //	BOOST_CHECK_EQUAL(ptrReLU, nullPointerReLU);
 //}
 //
 //BOOST_AUTO_TEST_CASE(destructorVarModWeightGradOp)
 //{
-//	VarModWeightGradOp<float>* ptrReLU = nullptr;
-//	ptrReLU = new VarModWeightGradOp<float>();
+//	VarModWeightGradOp<float, Eigen::DefaultDevice>* ptrReLU = nullptr;
+//	ptrReLU = new VarModWeightGradOp<float, Eigen::DefaultDevice>();
 //	delete ptrReLU;
 //}
 //
@@ -872,7 +896,7 @@ BOOST_AUTO_TEST_CASE(getNameCountOp)
 //	Eigen::Tensor<float, 1> n1(batch_size), n2(batch_size), n3(batch_size);
 //	n1.setConstant(3); n2.setConstant(3); n3.setConstant(3);
 //
-//	VarModWeightGradOp<float> operation;
+//	VarModWeightGradOp<float, Eigen::DefaultDevice> operation;
 //	operation(source_output1, sink_error1, weight1, source_net_input1, n1);
 //	operation(source_output2, sink_error2, weight2, source_net_input2, n2);
 //	operation(source_output3, sink_error3, weight3, source_net_input3, n3);
@@ -882,7 +906,7 @@ BOOST_AUTO_TEST_CASE(getNameCountOp)
 //
 //BOOST_AUTO_TEST_CASE(getNameVarModWeightGradOp)
 //{
-//	VarModWeightGradOp<float> operation;
+//	VarModWeightGradOp<float, Eigen::DefaultDevice> operation;
 //
 //	BOOST_CHECK_EQUAL(operation.getName(), "VarModWeightGradOp");
 //}
@@ -892,15 +916,15 @@ BOOST_AUTO_TEST_CASE(getNameCountOp)
 //*/
 //BOOST_AUTO_TEST_CASE(constructorCountWeightGradOp)
 //{
-//	CountWeightGradOp<float>* ptrReLU = nullptr;
-//	CountWeightGradOp<float>* nullPointerReLU = nullptr;
+//	CountWeightGradOp<float, Eigen::DefaultDevice>* ptrReLU = nullptr;
+//	CountWeightGradOp<float, Eigen::DefaultDevice>* nullPointerReLU = nullptr;
 //	BOOST_CHECK_EQUAL(ptrReLU, nullPointerReLU);
 //}
 //
 //BOOST_AUTO_TEST_CASE(destructorCountWeightGradOp)
 //{
-//	CountWeightGradOp<float>* ptrReLU = nullptr;
-//	ptrReLU = new CountWeightGradOp<float>();
+//	CountWeightGradOp<float, Eigen::DefaultDevice>* ptrReLU = nullptr;
+//	ptrReLU = new CountWeightGradOp<float, Eigen::DefaultDevice>();
 //	delete ptrReLU;
 //}
 //
@@ -918,7 +942,7 @@ BOOST_AUTO_TEST_CASE(getNameCountOp)
 //	Eigen::Tensor<float, 1> dummy1(batch_size), dummy2(batch_size), dummy3(batch_size);
 //	dummy1.setZero(); dummy2.setZero(); dummy3.setZero();
 //
-//	CountWeightGradOp<float> operation;
+//	CountWeightGradOp<float, Eigen::DefaultDevice> operation;
 //	operation(source_output1, sink_error1, weight1, source_net_input1, dummy1);
 //	operation(source_output2, sink_error2, weight2, source_net_input2, dummy2);
 //	operation(source_output3, sink_error3, weight3, source_net_input3, dummy3);
@@ -928,7 +952,7 @@ BOOST_AUTO_TEST_CASE(getNameCountOp)
 //
 //BOOST_AUTO_TEST_CASE(getNameCountWeightGradOp)
 //{
-//	CountWeightGradOp<float> operation;
+//	CountWeightGradOp<float, Eigen::DefaultDevice> operation;
 //
 //	BOOST_CHECK_EQUAL(operation.getName(), "CountWeightGradOp");
 //}

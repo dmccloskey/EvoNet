@@ -60,11 +60,16 @@ namespace SmartPeak
 			std::vector<TensorT*> d_weights,
 			TensorT* h_sink_error,
 			TensorT* d_sink_error,
-			IntegrationOp<TensorT, DeviceT>* integration_function,
+			TensorT* h_sink_derivative,
+			TensorT* d_sink_derivative,
+			std::vector<IntegrationErrorOp<TensorT, Eigen::GpuDevice>*> integration_functions,
 			const int& batch_size,
 			const int& memory_size,
 			const std::vector<int>& source_time_steps,
-			const int& sink_time_step) = 0 ;
+			const int& sink_time_step,
+			DeviceT& device,
+			bool copyHostToDevice = false,
+			bool copyDeviceToHost = false) = 0 ;
 		virtual bool executeCalcError(
 			std::vector<TensorT*> expected,
 			std::vector<TensorT*> h_predicted,
@@ -74,7 +79,9 @@ namespace SmartPeak
 			LossFunctionOp<TensorT>* loss_function,
 			const int& batch_size,
 			const int& memory_size,
-			const int& time_step) = 0;
+			const int& time_step,
+			bool copyHostToDevice = false,
+			bool copyDeviceToHost = false) = 0;
 		virtual bool executeUpdateWeights(
 			std::vector<TensorT*> h_source_errors,
 			std::vector<TensorT*> d_source_errors,
@@ -88,7 +95,9 @@ namespace SmartPeak
 			SolverOp<TensorT>* solver_function,
 			const int& batch_size,
 			const int& memory_size,
-			const int& time_step) = 0 ;
+			const int& time_step,
+			bool copyHostToDevice = false,
+			bool copyDeviceToHost = false) = 0 ;
 	};
 
 #ifndef EVONET_CUDA
@@ -128,16 +137,9 @@ namespace SmartPeak
 				for (size_t i = 0; i < h_source_outputs.size(); ++i) {
 					device.memcpyHostToDevice(d_source_outputs[i], h_source_outputs[i], bytes);
 					device.memcpyHostToDevice(d_weights[i], h_weights[i], sizeof(TensorT));
-
-					//// Check [Passing]:
-					//device.memcpyDeviceToHost(h_source_outputs[i], d_source_outputs[i], bytes);
-					//Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> source_output_check(h_source_outputs[i], batch_size, memory_size);
-					//std::cout << source_output_check << std::endl;
-					//device.memcpyDeviceToHost(h_weights[i], d_weights[i], sizeof(TensorT));
-					//Eigen::TensorMap<Eigen::Tensor<TensorT, 0>> weight_check(h_weights[i]);
-					//std::cout << weight_check << std::endl;
 				}
 				device.memcpyHostToDevice(d_sink_dt, h_sink_dt, bytes);
+				// [NOTE: sink input, output, and derivatives will be assigned new values]
 			}
 
 			// Integrate sink node input
@@ -178,32 +180,99 @@ namespace SmartPeak
 			std::vector<TensorT*> d_weights,
 			TensorT* h_sink_error,
 			TensorT* d_sink_error,
-			IntegrationOp<TensorT, Eigen::GpuDevice>* integration_function,
+			TensorT* h_sink_derivative,
+			TensorT* d_sink_derivative,
+			std::vector<IntegrationErrorOp<TensorT, Eigen::GpuDevice>*> integration_functions,
 			const int& batch_size,
 			const int& memory_size,
 			const std::vector<int>& source_time_steps,
-			const int& sink_time_step) {
+			const int& sink_time_step,
+			Eigen::GpuDevice& device,
+			bool copyHostToDevice = false,
+			bool copyDeviceToHost = false) {
 			// Check that vector dimensions match
 
+			const size_t bytes = batch_size * memory_size * sizeof(TensorT);
+			// Copy host to device
+			if (copyHostToDevice) {
+				for (size_t i = 0; i < h_source_errors.size(); ++i) {
+					device.memcpyHostToDevice(d_source_errors[i], h_source_errors[i], bytes);
+					device.memcpyHostToDevice(d_source_inputs[i], h_source_inputs[i], bytes);
+					device.memcpyHostToDevice(d_weights[i], h_weights[i], sizeof(TensorT));
+				}
+				device.memcpyHostToDevice(d_sink_output, h_sink_output, bytes);
+				device.memcpyHostToDevice(d_sink_derivative, h_sink_derivative, bytes);
+				device.memcpyHostToDevice(d_sink_error, h_sink_error, bytes);
+				// [NOTE: values will be added to sink error, output, and derivatives existing values]
+			}
+
 			// Integrate sink node error
+			for (size_t i = 0; i < integration_functions.size(); ++i) {
+				integration_functions[i]->operator()(
+					d_source_errors[i], d_source_inputs[i], d_weights[i], 
+					d_sink_output, d_sink_error, batch_size, memory_size, 
+					source_time_steps[i], sink_time_step, integration_functions.size(), 
+					device);
+			}
 
 			// Calculate sink node error
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> sink_error(d_sink_error, batch_size, memory_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> sink_derivative(d_sink_derivative, batch_size, memory_size);
+			sink_error.chip(sink_time_step, 1).device(device) = sink_error.chip(sink_time_step, 1) * sink_derivative.chip(sink_time_step, 1);
+
+			// Copy device to host
+			if (copyDeviceToHost) {
+				device.memcpyDeviceToHost(h_sink_error, d_sink_error, bytes);
+			}
 
 			return true;
 		};
 		bool executeCalcError(
-			std::vector<TensorT*> expected,
+			std::vector<TensorT*> h_expected,
+			std::vector<TensorT*> d_expected,
 			std::vector<TensorT*> h_predicted,
 			std::vector<TensorT*> d_predicted,
+			TensorT* h_model_error,
+			TensorT* d_model_error,
 			std::vector<TensorT*> h_node_errors,
 			std::vector<TensorT*> d_node_errors,
 			LossFunctionOp<TensorT>* loss_function,
+			LossFunctionGradOp<TensorT>* loss_grad_function,
 			const int& batch_size,
 			const int& memory_size,
-			const int& time_step) {
+			const int& time_step,
+			Eigen::GpuDevice& device,
+			bool copyHostToDevice = false,
+			bool copyDeviceToHost = false) {
 			// Check that vectors lengths match
 
-			// Calculate the loss
+			const size_t bytes = batch_size * memory_size * sizeof(TensorT);
+			// Copy host to device
+			if (copyHostToDevice) {
+				for (size_t i = 0; i < h_expected.size(); ++i) {
+					device.memcpyHostToDevice(d_expected[i], h_expected[i], bytes);
+					device.memcpyHostToDevice(d_predicted[i], h_predicted[i], bytes);
+					device.memcpyHostToDevice(d_node_errors[i], h_node_errors[i], bytes);
+				}
+				device.memcpyHostToDevice(d_model_error, h_model_error, bytes);
+				// [NOTE: values will be added to model error and node error existing values]
+			}
+
+			// Calculate the model error
+			//model_error = loss_function->operator()(output_node->getOutput().chip(time_step, 1), expected);
+
+			// Calculate the node errors		
+			//output_node->getError().chip(time_step, 1) += loss_function_grad->operator()(
+			//	output_node->getOutput().chip(time_step, 1), expected) *
+			//	output_node->getDerivative().chip(time_step, 1);
+
+			// Copy device to host
+			if (copyDeviceToHost) {
+				for (size_t i = 0; i < h_expected.size(); ++i) {
+					device.memcpyDeviceToHost(h_node_errors[i], d_node_errors[i], bytes);
+				}
+				device.memcpyDeviceToHost(h_model_error, d_model_error, bytes);
+			}
 
 			return true;
 		};
@@ -220,7 +289,9 @@ namespace SmartPeak
 			SolverOp<TensorT>* solver_function,
 			const int& batch_size,
 			const int& memory_size,
-			const int& time_step) {
+			const int& time_step,
+			bool copyHostToDevice = false,
+			bool copyDeviceToHost = false) {
 			// Check that the vector lengths match
 
 			// Sum the weights across the time axis

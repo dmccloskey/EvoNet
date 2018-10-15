@@ -13,6 +13,7 @@ using log = std::log;
 using tanh = std::tanh;
 #endif
 
+#include <SmartPeak/core/Preprocessing.h>
 #include <unsupported/Eigen/CXX11/Tensor>
 #include <random>
 #include <iostream>
@@ -45,22 +46,6 @@ public:
 		virtual std::string getName() const = 0;
 		virtual TensorT operator()(const TensorT& x_I) const = 0;
 #endif // !EVONET_CUDA
-		TensorT substituteNan(const TensorT& x) const		
-		{
-			if (std::isnan(x)) { return TensorT(0); }
-			else { return x; }			
-		}
-		TensorT clip(const TensorT& x) const
-		{
-			if (x < min_ + eps_)
-				return min_ + eps_;
-			else if (x > max_ - eps_)
-				return max_ - eps_;
-			else if (std::isnan(x))
-				return min_ + eps_;
-			else
-				return x;
-		}
 	protected:
 		TensorT eps_ = 1e-12; ///< threshold to clip between min and max
 		TensorT min_ = -1e9;
@@ -81,8 +66,12 @@ public:
 public: 
     ReLUOp(){}; 
     ~ReLUOp(){};
-    //TensorT operator()(const TensorT& x_I) const { return this->clip((x_I > 0.0) ? x_I: 0.0); };
-		TensorT operator()(const TensorT& x_I) const { return (x_I > 0.0) ? x_I : 0.0; };
+    TensorT operator()(const TensorT& x_I) const {
+			TensorT result = (x_I > 0.0) ? x_I : 0.0;
+			return result;
+			//ClipOp<TensorT> clip(eps_, min_, max_); // not compatible with CUDA
+			//return clip(result); 
+		};
     std::string getName() const{return "ReLUOp";};
   };
 
@@ -119,7 +108,13 @@ public:
     ELUOp(){}; 
     ELUOp(const TensorT& alpha): alpha_(alpha){}; 
     ~ELUOp(){};
-    TensorT operator()(const TensorT& x_I) const { return this->clip((x_I > 0.0) ? x_I : alpha_ * (exp(x_I) - 1)); };
+    TensorT operator()(const TensorT& x_I) const {
+			TensorT result = (x_I > 0.0) ? x_I : alpha_ * (exp(x_I) - 1);
+			return result;
+			//ClipOp<TensorT> clip(eps_, min_, max_); // Not compatible with CUDA
+			//return clip(result); 
+
+		};
     void setAlpha(const TensorT& alpha) { alpha_ = alpha; };
     TensorT getAlpha() const { return alpha_; };
     std::string getName() const{return "ELUOp";};
@@ -142,8 +137,7 @@ public:
     ELUGradOp(){}; 
     ELUGradOp(const TensorT& alpha): alpha_(alpha){}; 
     ~ELUGradOp(){};
-    TensorT operator()(const TensorT& x_I) const
-    {
+    TensorT operator()(const TensorT& x_I) const {
       SmartPeak::ELUOp<TensorT> eluop(alpha_);
       return (x_I > 0.0) ? 1.0: eluop(x_I) + alpha_;
     };
@@ -163,7 +157,12 @@ private:
 public: 
     SigmoidOp(){}; 
     ~SigmoidOp(){};
-    TensorT operator()(const TensorT& x_I) const { return this->clip(1 / (1 + exp(-x_I))); };
+    TensorT operator()(const TensorT& x_I) const {
+			TensorT result = 1 / (1 + exp(-x_I));
+			return result;
+			//ClipOp<TensorT> clip(eps_, min_, max_); // Not compatible with CUDA
+			//return clip(result); 
+		};
     std::string getName() const{return "SigmoidOp";};
   };
 
@@ -176,8 +175,7 @@ public:
 public: 
     SigmoidGradOp(){}; 
     ~SigmoidGradOp(){};
-    TensorT operator()(const TensorT& x_I) const
-    {
+    TensorT operator()(const TensorT& x_I) const {
       SmartPeak::SigmoidOp<TensorT> sigmoidop;
       return sigmoidop(x_I) * (1 - sigmoidop(x_I));
     };
@@ -206,10 +204,11 @@ public:
 public: 
     TanHGradOp(){}; 
     ~TanHGradOp(){};
-    TensorT operator()(const TensorT& x_I) const
-    {
+    TensorT operator()(const TensorT& x_I) const    {
 			const TensorT x_new = 1 - pow(tanh(x_I), 2);
-      return this->clip(x_new);
+			return x_new;
+			//ClipOp<TensorT> clip(eps_, min_, max_); // Not compatible with CUDA
+   //   return clip(x_new);
     };
     std::string getName() const{return "TanHGradOp";};
   };
@@ -223,9 +222,11 @@ public:
 public: 
     ReTanHOp(){}; 
     ~ReTanHOp(){};
-    TensorT operator()(const TensorT& x_I) const
-    { 
-      return this->clip((x_I > 0.0) ? (exp(x_I) - exp(-x_I)) / (exp(x_I) + exp(-x_I)) : 0.0);
+    TensorT operator()(const TensorT& x_I) const { 
+			const TensorT result = (x_I > 0.0) ? (exp(x_I) - exp(-x_I)) / (exp(x_I) + exp(-x_I)) : 0.0;
+			return result;
+			//ClipOp<TensorT> clip(eps_, min_, max_);  // Not compatible with CUDA
+   //   return clip(result);
     };
     std::string getName() const{return "ReTanHOp";};
   };
@@ -239,11 +240,12 @@ public:
 public: 
     ReTanHGradOp(){}; 
     ~ReTanHGradOp(){};
-    TensorT operator()(const TensorT& x_I) const
-    {
-      SmartPeak::ReTanHOp<TensorT> tanhop;
+    TensorT operator()(const TensorT& x_I) const {
+      ReTanHOp<TensorT> tanhop;
 			TensorT x_new = (x_I > 0.0) ? 1 - pow(tanhop(x_I), 2) : 0.0;
-      return this->clip(x_new);
+			return x_new;
+			//ClipOp<TensorT> clip(eps_, min_, max_); // Not compatible with CUDA
+   //   return clip(x_new);
     };
     std::string getName() const{return "ReTanHGradOp";};
   };
@@ -257,10 +259,7 @@ public:
 	public:
 		LinearOp() {};
 		~LinearOp() {};
-		TensorT operator()(const TensorT& x_I) const
-		{
-			return x_I;
-		};
+		TensorT operator()(const TensorT& x_I) const { return x_I; };
 		std::string getName() const { return "LinearOp"; };
 	};
 
@@ -273,10 +272,7 @@ public:
 	public:
 		LinearGradOp() {};
 		~LinearGradOp() {};
-		TensorT operator()(const TensorT& x_I) const
-		{
-			return 1.0;
-		};
+		TensorT operator()(const TensorT& x_I) const { return 1.0; };
 		std::string getName() const { return "LinearGradOp"; };
 	};
 
@@ -289,9 +285,11 @@ public:
 	public:
 		InverseOp() {};
 		~InverseOp() {};
-		TensorT operator()(const TensorT& x_I) const
-		{
-			return this->clip(x_I != 0.0 ? 1 / x_I : 0.0);
+		TensorT operator()(const TensorT& x_I) const {
+			const TensorT result = x_I != 0.0 ? 1 / x_I : 0.0;
+			return result;
+			//ClipOp<TensorT> clip(eps_, min_, max_);  // Not compatible with CUDA
+			//return clip(result);
 		};
 		std::string getName() const { return "InverseOp"; };
 	};
@@ -305,9 +303,11 @@ public:
 	public:
 		InverseGradOp() {};
 		~InverseGradOp() {};
-		TensorT operator()(const TensorT& x_I) const
-		{
-			return this->clip(x_I != 0.0 ? -1 / pow(x_I, 2) : 0.0);
+		TensorT operator()(const TensorT& x_I) const {
+			const TensorT result = x_I != 0.0 ? -1 / pow(x_I, 2) : 0.0;
+			return result;
+			//ClipOp<TensorT> clip(eps_, min_, max_); // Not compatible with CUDA
+			//return clip(result);
 		};
 		std::string getName() const { return "InverseGradOp"; };
 	};
@@ -326,9 +326,10 @@ public:
 			this->setMax(max);
 		};
 		~ExponentialOp() {};
-		TensorT operator()(const TensorT& x_I) const
-		{
-			return this->clip(exp(x_I));
+		TensorT operator()(const TensorT& x_I) const {
+			return exp(x_I);
+			//ClipOp<TensorT> clip(eps_, min_, max_);  // Not compatible with CUDA
+			//return clip(exp(x_I));
 		};
 		std::string getName() const { return "ExponentialOp"; };
 	};
@@ -342,9 +343,10 @@ public:
 	public:
 		ExponentialGradOp() {};
 		~ExponentialGradOp() {};
-		TensorT operator()(const TensorT& x_I) const
-		{
-			return this->clip(exp(x_I));
+		TensorT operator()(const TensorT& x_I) const {
+			return exp(x_I);
+			//ClipOp<TensorT> clip(eps_, min_, max_);  // Not compatible with CUDA
+			//return clip(exp(x_I));
 		};
 		std::string getName() const { return "ExponentialGradOp"; };
 	};
@@ -358,9 +360,10 @@ public:
 	public:
 		LogOp() {};
 		~LogOp() {};
-		TensorT operator()(const TensorT& x_I) const
-		{
-			return this->clip(log(x_I));
+		TensorT operator()(const TensorT& x_I) const {
+			return log(x_I);
+			//ClipOp<TensorT> clip(eps_, min_, max_);  // Not compatible with CUDA
+			//return clip(log(x_I));
 		};
 		std::string getName() const { return "LogOp"; };
 	};
@@ -374,9 +377,10 @@ public:
 	public:
 		LogGradOp() {};
 		~LogGradOp() {};
-		TensorT operator()(const TensorT& x_I) const
-		{
-			return this->clip(1/x_I);
+		TensorT operator()(const TensorT& x_I) const {
+			return 1 / x_I; 
+			//ClipOp<TensorT> clip(eps_, min_, max_); // Not compatible with CUDA
+			//return clip(1/x_I);
 		};
 		std::string getName() const { return "LogGradOp"; };
 	};
@@ -390,9 +394,10 @@ public:
 	public:
 		PowOp(const TensorT& base): base_(base){};
 		~PowOp() {};
-		TensorT operator()(const TensorT& x_I) const
-		{
-			return this->clip(pow(x_I, base_));
+		TensorT operator()(const TensorT& x_I) const {
+			return pow(x_I, base_);
+			//ClipOp<TensorT> clip(eps_, min_, max_); // Not compatible with CUDA
+			//return clip(pow(x_I, base_));
 		};
 		std::string getName() const { return "PowOp"; };
 	private:
@@ -408,9 +413,11 @@ public:
 	public:
 		PowGradOp(const TensorT& base) : base_(base) {};
 		~PowGradOp() {};
-		TensorT operator()(const TensorT& x_I) const
-		{
-			return this->clip(base_ * pow(x_I, base_ - 1));
+		TensorT operator()(const TensorT& x_I) const {
+			const TensorT result = base_ * pow(x_I, base_ - 1);
+			return result;
+			//ClipOp<TensorT> clip(eps_, min_, max_);  // Not compatible with CUDA
+			//return clip(result);
 		};
 		std::string getName() const { return "PowGradOp"; };
 	private:
@@ -429,7 +436,12 @@ public:
 		LeakyReLUOp() {};
 		LeakyReLUOp(const TensorT& alpha) : alpha_(alpha) {};
 		~LeakyReLUOp() {};
-		TensorT operator()(const TensorT& x_I) const { return this->clip((x_I >= 0.0) ? x_I : alpha_ * x_I); };
+		TensorT operator()(const TensorT& x_I) const {
+			const TensorT result = (x_I >= 0.0) ? x_I : alpha_ * x_I;
+			return result;
+			//ClipOp<TensorT> clip(eps_, min_, max_);  // Not compatible with CUDA
+			//return clip(result);
+		};
 		void setAlpha(const TensorT& alpha) { alpha_ = alpha; };
 		TensorT getAlpha() const { return alpha_; };
 		std::string getName() const { return "LeakyReLUOp"; };
@@ -447,8 +459,7 @@ public:
 		LeakyReLUGradOp() {};
 		LeakyReLUGradOp(const TensorT& alpha) : alpha_(alpha) {};
 		~LeakyReLUGradOp() {};
-		TensorT operator()(const TensorT& x_I) const
-		{
+		TensorT operator()(const TensorT& x_I) const {
 			return (x_I >= 0.0) ? 1.0 : alpha_;
 		};
 		void setAlpha(const TensorT& alpha) { alpha_ = alpha; };

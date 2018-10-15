@@ -272,6 +272,77 @@ namespace SmartPeak
 
 		return swiss_roll;
 	}
+
+	/**
+	@brief Replaces NaN and Inf with 0
+	*/
+	template<typename T>
+	T checkNan( const T& x)	{
+		if (std::isnan(x))
+			return T(0);
+		else
+			return x;
+	}
+
+	/**
+	@brief Replaces NaN and Inf with 0 or 1e9 respectively
+	*/
+	template<typename T>
+	T substituteNanInf(const T& x)
+	{
+		if (x == std::numeric_limits<T>::infinity())
+			return T(1e9);
+		else if (x == -std::numeric_limits<T>::infinity())
+			return T(-1e9);
+		else if (std::isnan(x))
+			return T(0);
+		else
+			return x;
+	}
+
+	/**
+	@brief Clip
+	*/
+	template<typename T>
+	class ClipOp
+	{
+	public:
+		ClipOp() = default;
+		ClipOp(const T& eps, const T& min, const T& max) : eps_(eps), min_(min), max_(max) {};
+		~ClipOp() = default;
+		T operator()(const T& x) const {
+			if (x < min_ + eps_)
+				return min_ + eps_;
+			else if (x > max_ - eps_)
+				return max_ - eps_;
+			else
+				return x;
+		}
+	private:
+		T eps_ = 1e-12; ///< threshold to clip between min and max
+		T min_ = 0;
+		T max_ = 1;
+	};
+
+	/**
+	@brief return x or 0 with a specified probability
+	*/
+	template<typename T>
+	class RandBinaryOp
+	{
+	public:
+		RandBinaryOp() = default;
+		RandBinaryOp(const T& p) : p_(p) {};
+		~RandBinaryOp() = default;
+		T operator()(const T& x) const {
+			std::random_device rd;
+			std::mt19937 gen(rd());
+			std::discrete_distribution<> distrib({ p_, 1 - p_ });
+			return x * distrib(gen);
+		}
+	private:
+		T p_ = 1; ///< probablity of 0
+	};
 }
 
 #endif //SMARTPEAK_PREPROCESSING_H
