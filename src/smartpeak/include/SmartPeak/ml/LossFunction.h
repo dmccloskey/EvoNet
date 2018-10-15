@@ -3,7 +3,7 @@
 #ifndef SMARTPEAK_LOSSFUNCTION_H
 #define SMARTPEAK_LOSSFUNCTION_H
 
-#include <SmartPeak/ml/SharedFunctions.h>
+#include <SmartPeak/core/Preprocessing.h>
 #include <unsupported/Eigen/CXX11/Tensor>
 #include <cmath>
 #include <random>
