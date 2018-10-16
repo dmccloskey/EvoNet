@@ -344,6 +344,7 @@ void asyncResidualExample() {
 	}
 };
 
+// Concatenation tests
 void concat1Example() {
 	assert(cudaSetDevice(0) == cudaSuccess); // is this needed?
 
@@ -492,6 +493,80 @@ void stack1Example() {
 	assert(cudaStreamDestroy(stream) == cudaSuccess);
 };
 
+void tensorMapExample() {
+	assert(cudaSetDevice(0) == cudaSuccess); // is this needed?
+
+	cudaStream_t stream;
+
+	std::size_t in_bytes = 2 * 2 * 2 * sizeof(float);
+	std::size_t in1_bytes = 2 * 2 * 1 * sizeof(float);
+	std::size_t in2_bytes = 2 * 2 * 1 * sizeof(float);
+	std::size_t out_bytes = 2 * 2 * 2 * sizeof(float);
+
+	float* h_in;
+	float* h_in1;
+	float* h_in2;
+	float* h_out;
+
+	float* d_in;
+	float* d_in1;
+	float* d_in2;
+	float* d_out;
+
+	// initialize the streams
+	assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess);
+
+	// initialize the GpuDevice
+	Eigen::GpuStreamDevice stream_device(&stream, 0);
+	Eigen::GpuDevice device_(&stream_device);
+
+	// allocate memory
+	assert(cudaHostAlloc((void**)(&h_in1), in1_bytes, cudaHostAllocDefault) == cudaSuccess);
+	assert(cudaHostAlloc((void**)(&h_in2), in2_bytes, cudaHostAllocDefault) == cudaSuccess);
+	assert(cudaMalloc((void**)(&d_in1), in1_bytes) == cudaSuccess);
+	assert(cudaMalloc((void**)(&d_in2), in2_bytes) == cudaSuccess);
+
+	Eigen::TensorMap<Eigen::Tensor<float, 3> > in1(h_in1, 40, 50, 70);
+	Eigen::TensorMap<Eigen::Tensor<float, 3> > in2(h_in2, 40, 50, 70);
+	in1 = in1.random() + in1.constant(10.0f);
+	in2 = in2.random() + in2.constant(10.0f);
+
+	device_.memcpyHostToDevice(d_in1, in1.data(), in1_bytes);
+	device_.memcpyHostToDevice(d_in2, in2.data(), in2_bytes);
+
+	// allocate memory
+	assert(cudaHostAlloc((void**)(&h_out), out_bytes, cudaHostAllocDefault) == cudaSuccess);
+	assert(cudaMalloc((void**)(&d_out), out_bytes) == cudaSuccess);
+
+	auto startTime = std::chrono::high_resolution_clock::now();
+
+	Eigen::TensorMap<Eigen::Tensor<float, 3> > gpu_out(d_out, 500 * 40, 50, 70);
+	Eigen::TensorMap<Eigen::Tensor<float, 3> > gpu_in1(d_in1, 40, 50, 70);
+	Eigen::TensorMap<Eigen::Tensor<float, 3> > gpu_in2(d_in2, 40, 50, 70);
+	gpu_out.device(device_) = gpu_out.concatenate(gpu_in1, 0);
+	gpu_out.device(device_) = gpu_out.concatenate(gpu_in2, 0);
+
+	gpu_out.device(device_) = gpu_out.sum();
+
+	Eigen::TensorMap<Eigen::Tensor<float, 3> > out(h_out, 500 * 40, 50, 70);
+	device_.memcpyDeviceToHost(h_out, d_out, out_bytes);
+
+	auto endTime = std::chrono::high_resolution_clock::now();
+	int time_to_run = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count();
+	std::cout << "took: " << time_to_run << " ms." << std::endl;
+
+	// free all resources
+	assert(cudaFree(d_in1) == cudaSuccess);
+	assert(cudaFree(d_in2) == cudaSuccess);
+	assert(cudaFreeHost(h_in1) == cudaSuccess);
+	assert(cudaFreeHost(h_in2) == cudaSuccess);
+	assert(cudaFree(d_out) == cudaSuccess);
+	assert(cudaFreeHost(h_out) == cudaSuccess);
+	assert(cudaStreamSynchronize(stream) == cudaSuccess);
+	assert(cudaStreamDestroy(stream) == cudaSuccess);
+};
+
+// Unary expression tests
 void unaryExprNoBaseClassExample() {
 	assert(cudaSetDevice(0) == cudaSuccess); // is this needed?
 
