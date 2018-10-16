@@ -47,7 +47,7 @@ BOOST_AUTO_TEST_CASE(usageCpu)
 	kernal.destroyKernal();
 }
 
-#ifndef EVONET_CUDA
+#if EVONET_CUDA
 BOOST_AUTO_TEST_CASE(constructorGpu)
 {
 	GpuKernal* ptr = nullptr;

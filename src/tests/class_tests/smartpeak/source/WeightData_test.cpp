@@ -33,7 +33,7 @@ BOOST_AUTO_TEST_CASE(comparison)
 	BOOST_CHECK(weight == weight_test);
 }
 
-#ifndef EVONET_CUDA
+#ifdef EVONET_CUDA
 BOOST_AUTO_TEST_CASE(gettersAndSetters2)
 {
 	WeightDataGpu<float> weight;
@@ -56,7 +56,7 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
 
 BOOST_AUTO_TEST_CASE(gettersAndSetters1)
 {
-	WeightDataGpu<float> weight;
+	WeightDataCpu<float> weight;
 
 	weight.setWeight(0.5f);
 	BOOST_CHECK_EQUAL(weight.getWeight()(0), 0.5);

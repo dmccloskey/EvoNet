@@ -1,7 +1,7 @@
 #ifndef SMARTPEAK_GPUDEVICE_H
 #define SMARTPEAK_GPUDEVICE_H
 
-#ifndef EVONET_CUDA
+#if EVONET_CUDA_CUDA
 #define EIGEN_DEFAULT_DENSE_INDEX_TYPE int
 #define EIGEN_USE_GPU
 #include <cuda.h>
@@ -105,7 +105,7 @@ namespace SmartPeak
 			bool copyDeviceToHost = false) = 0 ;
 	};
 
-#ifndef EVONET_CUDA
+#if EVONET_CUDA_CUDA
 	template <typename TensorT>
 	class GpuOperations: OperationsManager<TensorT, Eigen::GpuDevice>
 	{

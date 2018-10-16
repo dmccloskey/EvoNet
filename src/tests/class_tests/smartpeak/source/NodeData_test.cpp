@@ -33,7 +33,7 @@ BOOST_AUTO_TEST_CASE(comparison)
 	BOOST_CHECK(node == node_test);
 }
 
-#ifndef EVONET_CUDA
+#if EVONET_CUDA
 BOOST_AUTO_TEST_CASE(gettersAndSetters2)
 {
 	NodeDataGpu<float> node;

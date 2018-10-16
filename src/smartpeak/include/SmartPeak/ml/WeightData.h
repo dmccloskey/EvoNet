@@ -3,7 +3,7 @@
 #ifndef SMARTPEAK_WEIGHTDATA_H
 #define SMARTPEAK_WEIGHTDATA_H
 
-#ifndef EVONET_CUDA
+#if EVONET_CUDA_CUDA
 #define EIGEN_DEFAULT_DENSE_INDEX_TYPE int
 #define EIGEN_USE_GPU
 #include <cuda.h>
@@ -78,7 +78,7 @@ protected:
 		}; ///< weight setter
 	};
 
-#ifndef EVONET_CUDA
+#if EVONET_CUDA_CUDA
 
 	template<typename TensorT>
 	class WeightDataGpu : public WeightData<TensorT> {

@@ -458,7 +458,7 @@ private:
 	void Node<TensorT>::initNode(const int& batch_size, const int& memory_size, bool train)
 	{
 
-#ifndef EVONET_CUDA
+#if EVONET_CUDA_CUDA
 		node_data_.reset(new NodeDataGpu<TensorT>());
 #else
 		node_data_.reset(new NodeDataCpu<TensorT>());

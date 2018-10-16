@@ -3,14 +3,14 @@
 #ifndef SMARTPEAK_ACTIVATIONFUNCTION_H
 #define SMARTPEAK_ACTIVATIONFUNCTION_H
 
-#ifndef EVONET_CUDA
+#if EVONET_CUDA_CUDA
 #include <math.h>
 #else
 #include <cmath>
-using exp = std::exp;
-using pow = std::pow;
-using log = std::log;
-using tanh = std::tanh;
+using std::exp;
+using std::pow;
+using std::log;
+using std::tanh;
 #endif
 
 #include <SmartPeak/core/Preprocessing.h>
@@ -39,7 +39,7 @@ public:
 		void setEps(const TensorT& eps) { eps_ = eps; }
 		void setMin(const TensorT& min) { min_ = min; }
 		void setMax(const TensorT& max) { max_ = max; }
-#ifndef EVONET_CUDA
+#if EVONET_CUDA_CUDA
 		std::string getName() const { return ""; }; // No Virtual Functions Allowed when using Cuda!
 		TensorT operator()(const TensorT& x_I) const { return 0; }; // No Virtual Functions Allowed when using Cuda!
 #else
