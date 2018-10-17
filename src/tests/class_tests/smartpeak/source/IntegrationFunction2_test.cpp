@@ -300,7 +300,7 @@ BOOST_AUTO_TEST_CASE(operationfunctionVarModOp)
 
 	for (size_t batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
 		for (size_t memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
-			std::cout << "Batch iter: " << batch_iter << ", Memory Iter: " << memory_iter << "= " << sink_input(batch_iter, memory_iter) << std::endl;
+			//std::cout << "Batch iter: " << batch_iter << ", Memory Iter: " << memory_iter << "= " << sink_input(batch_iter, memory_iter) << std::endl;
 			BOOST_CHECK_CLOSE(sink_input(batch_iter, memory_iter), expected(batch_iter, memory_iter), 1e-4);
 		}
 	}
@@ -428,7 +428,7 @@ BOOST_AUTO_TEST_CASE(operationfunctionSumErrorOp)
 
 	for (size_t batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
 		for (size_t memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
-			std::cout << "Batch iter: " << batch_iter << ", Memory Iter: " << memory_iter << "= " << sink_error(batch_iter, memory_iter) << std::endl;
+			//std::cout << "Batch iter: " << batch_iter << ", Memory Iter: " << memory_iter << "= " << sink_error(batch_iter, memory_iter) << std::endl;
 			BOOST_CHECK_CLOSE(sink_error(batch_iter, memory_iter), expected(batch_iter, memory_iter), 1e-4);
 		}
 	}

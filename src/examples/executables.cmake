@@ -8,6 +8,7 @@ set(ml_executables_list
   MNIST_VAE_example
   AdditionProblem_example
   Metabolomics_example
+  #cxx11_tensor_multi_map
 )
 
 set(cuda_executables_list

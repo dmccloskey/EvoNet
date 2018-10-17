@@ -3,7 +3,7 @@
 #ifndef SMARTPEAK_ACTIVATIONFUNCTION_H
 #define SMARTPEAK_ACTIVATIONFUNCTION_H
 
-#if EVONET_CUDA_CUDA
+#if COMPILE_WITH_CUDA
 #include <math.h>
 #else
 #include <cmath>
@@ -39,7 +39,7 @@ public:
 		void setEps(const TensorT& eps) { eps_ = eps; }
 		void setMin(const TensorT& min) { min_ = min; }
 		void setMax(const TensorT& max) { max_ = max; }
-#if EVONET_CUDA_CUDA
+#if COMPILE_WITH_CUDA
 		std::string getName() const { return ""; }; // No Virtual Functions Allowed when using Cuda!
 		TensorT operator()(const TensorT& x_I) const { return 0; }; // No Virtual Functions Allowed when using Cuda!
 #else

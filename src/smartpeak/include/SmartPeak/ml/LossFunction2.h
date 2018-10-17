@@ -129,7 +129,9 @@ public:
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 2> error_tensor(error, batch_size, memory_size);
 			Eigen::Tensor<TensorT, 1> ones(batch_size);
 			ones.setConstant(1.0);
-			error.chip(time_step, 1).device(device) = (-(expected_tensor * (predicted_tensor.chip(time_step, 1) + this->eps_).log() + (ones - expected_tensor) * (ones - (predicted_tensor.chip(time_step, 1) - this->eps_)).log())).unaryExpr(ClipOp<TensorT>(1e-6, -1e9, 1e9));
+			error.chip(time_step, 1).device(device) = (-(
+				expected_tensor * (predicted_tensor.chip(time_step, 1) + expected_tensor.constant(this->eps_)).log() + 
+				(expected_tensor.constant(ones) - expected_tensor) * (expected_tensor.constant(ones) - (predicted_tensor.chip(time_step, 1) - expected_tensor.constant(this->eps_))).log())).unaryExpr(ClipOp<TensorT>(1e-6, -1e9, 1e9));
 		};
   };
 
@@ -224,11 +226,7 @@ public:
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 1> expected_tensor(expected, batch_size);
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 2> predicted_tensor(predicted, batch_size, memory_size);
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 2> error_tensor(error, batch_size, memory_size);
-			Eigen::Tensor<TensorT, 1> n(batch_size);
-			n.setConstant(batch_size);
-			Eigen::Tensor<TensorT, 1> c(batch_size);
-			c.setConstant(0.5);
-			error.chip(time_step, 1).device(device) = ((expected_tensor - predicted_tensor.chip(time_step, 1)).pow(2) * c / n).unaryExpr(ClipOp<TensorT>(1e-6, -1e9, 1e9));
+			error.chip(time_step, 1).device(device) = ((expected_tensor - predicted_tensor.chip(time_step, 1)).pow(2) * expected_tensor.constant(0.5) / expected_tensor.constant(batch_size)).unaryExpr(ClipOp<TensorT>(1e-6, -1e9, 1e9));
 		};
   };
 
@@ -246,10 +244,7 @@ public:
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 1> expected_tensor(expected, batch_size);
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 2> predicted_tensor(predicted, batch_size, memory_size);
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 2> error_tensor(error, batch_size, memory_size);
-			Eigen::Tensor<TensorT, 1> n(batch_size);
-			n.setConstant(batch_size);
-			Eigen::Tensor<TensorT, 1> result = (expected_tensor - predicted_tensor.chip(time_step, 1)) / n;
-			error.chip(time_step, 1).device(device) = result.unaryExpr(ClipOp<TensorT>(1e-6, -1e9, 1e9));
+			error.chip(time_step, 1).device(device) = ((expected_tensor - predicted_tensor.chip(time_step, 1)) / expected_tensor.constant(n)).result.unaryExpr(ClipOp<TensorT>(1e-6, -1e9, 1e9));
 		};
   };
 
@@ -272,9 +267,7 @@ public:
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 1> expected_tensor(expected, batch_size);
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 2> predicted_tensor(predicted, batch_size, memory_size);
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 2> error_tensor(error, batch_size, memory_size);
-			Eigen::Tensor<TensorT, 1> c(batch_size);
-			c.setConstant(0.5);
-			error.chip(time_step, 1).device(device) = (-c + c*predicted_tensor.chip(time_step, 1).pow(2)).unaryExpr(ClipOp<TensorT>(1e-6, -1e9, 1e9));
+			error.chip(time_step, 1).device(device) = (-expected_tensor.constant(0.5) + expected_tensor.constant(0.5)*predicted_tensor.chip(time_step, 1).pow(2)).unaryExpr(ClipOp<TensorT>(1e-6, -1e9, 1e9));
 		};
 	};
 
@@ -292,9 +285,7 @@ public:
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 1> expected_tensor(expected, batch_size);
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 2> predicted_tensor(predicted, batch_size, memory_size);
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 2> error_tensor(error, batch_size, memory_size);
-			Eigen::Tensor<TensorT, 1> c(batch_size);
-			c.setConstant(2.0);
-			error.chip(time_step, 1).device(device) = c * predicted_tensor.chip(time_step, 1);
+			error.chip(time_step, 1).device(device) = expected_tensor.constant(2) * predicted_tensor.chip(time_step, 1);
 		};
 	};
 
@@ -317,9 +308,7 @@ public:
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 1> expected_tensor(expected, batch_size);
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 2> predicted_tensor(predicted, batch_size, memory_size);
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 2> error_tensor(error, batch_size, memory_size);
-			Eigen::Tensor<TensorT, 1> c(batch_size);
-			c.setConstant(0.5);
-			error.chip(time_step, 1).device(device) = (-c -c*predicted_tensor.chip(time_step, 1) + c*predicted_tensor.chip(time_step, 1).exp()).unaryExpr(ClipOp<TensorT>(1e-6, -1e9, 1e9));
+			error.chip(time_step, 1).device(device) = (-expected_tensor.constant(0.5) - expected_tensor.constant(0.5)*predicted_tensor.chip(time_step, 1) + expected_tensor.constant(0.5)*predicted_tensor.chip(time_step, 1).exp()).unaryExpr(ClipOp<TensorT>(1e-6, -1e9, 1e9));
 		};
 	};
 
@@ -337,9 +326,7 @@ public:
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 1> expected_tensor(expected, batch_size);
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 2> predicted_tensor(predicted, batch_size, memory_size);
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 2> error_tensor(error, batch_size, memory_size);
-			Eigen::Tensor<TensorT, 1> c(batch_size);
-			c.setConstant(0.5);
-			error.chip(time_step, 1).device(device) = (-c + c*predicted_tensor.chip(time_step, 1).exp()).unaryExpr(ClipOp<TensorT>(1e-6, -1e9, 1e9));
+			error.chip(time_step, 1).device(device) = (-expected_tensor.constant(0.5) + expected_tensor.constant(0.5)*predicted_tensor.chip(time_step, 1).exp()).unaryExpr(ClipOp<TensorT>(1e-6, -1e9, 1e9));
 		};
 	};
 
@@ -377,12 +364,8 @@ public:
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 2> predicted_tensor(predicted, batch_size, memory_size);
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 2> error_tensor(error, batch_size, memory_size);
 			// Step 1
-			Eigen::Tensor<TensorT, 1> zero(batch_size);
-			zero.setConstant(0.0);
-			auto max_values = (-predicted_tensor.chip(time_step, 1)).cwiseMax(zero);
+			auto max_values = (-predicted_tensor.chip(time_step, 1)).cwiseMax(expected_tensor.constant(0));
 			// Step 2
-			Eigen::Tensor<TensorT, 1> ones(batch_size);
-			ones.setConstant(1.0);
 			error.chip(time_step, 1).device(device) = predicted_tensor.chip(time_step, 1) - predicted_tensor.chip(time_step, 1) * expected_tensor + max_values + ((-max_values).exp() + (-predicted_tensor.chip(time_step, 1) - max_values).exp()).log();
 		};
 	};
@@ -408,9 +391,7 @@ public:
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 1> expected_tensor(expected, batch_size);
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 2> predicted_tensor(predicted, batch_size, memory_size);
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 2> error_tensor(error, batch_size, memory_size);
-			Eigen::Tensor<TensorT, 1> ones(batch_size);
-			ones.setConstant(1.0);
-			error.chip(time_step, 1).device(device) = -((expected_tensor - ones)*predicted_tensor.chip(time_step, 1).exp().unaryExpr(ClipOp<TensorT>(1e-6, 0, 1e9)) + expected_tensor)/(predicted_tensor.chip(time_step, 1).exp().unaryExpr(ClipOp<TensorT>(1e-6, 0, 1e9)) + ones);
+			error.chip(time_step, 1).device(device) = -((expected_tensor - expected_tensor.constant(1))*predicted_tensor.chip(time_step, 1).exp().unaryExpr(ClipOp<TensorT>(1e-6, 0, 1e9)) + expected_tensor)/(predicted_tensor.chip(time_step, 1).exp().unaryExpr(ClipOp<TensorT>(1e-6, 0, 1e9)) + expected_tensor.constant(1));
 		};
 	};
 

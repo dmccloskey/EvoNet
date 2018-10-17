@@ -329,7 +329,7 @@ private:
 	template<typename TensorT>
 	void Weight<TensorT>::initWeight()
 	{
-#if EVONET_CUDA
+#if COMPILE_WITH_CUDA
 		weight_data_.reset(new WeightDataGpu<TensorT>());
 #else
 		weight_data_.reset(new WeightDataCpu<TensorT>());

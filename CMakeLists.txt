@@ -122,6 +122,7 @@ if (EVONET_CUDA)
   endif()
   enable_language(CUDA)
   set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} --expt-relaxed-constexpr" )
+  add_compile_definitions(COMPILE_WITH_CUDA=true)
 endif()
 
 #------------------------------------------------------------------------------

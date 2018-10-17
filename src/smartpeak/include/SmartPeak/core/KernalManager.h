@@ -1,7 +1,7 @@
 #ifndef SMARTPEAK_DEVICEMANAGER_H
 #define SMARTPEAK_DEVICEMANAGER_H
 
-#if EVONET_CUDA_CUDA
+#if COMPILE_WITH_CUDA
 #define EIGEN_DEFAULT_DENSE_INDEX_TYPE int
 #define EIGEN_USE_GPU
 #include <cuda.h>
@@ -44,7 +44,7 @@ namespace SmartPeak
 		void destroyKernal() {};
 	};
 
-#if EVONET_CUDA_CUDA
+#if COMPILE_WITH_CUDA
 	class GpuKernal : public KernalManager
 	{
 	public:

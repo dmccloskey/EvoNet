@@ -1,6 +1,6 @@
 /**TODO:  Add copyright*/
 
-#ifndef EVONET_CUDA
+#if COMPILE_WITH_CUDA
 #define EIGEN_DEFAULT_DENSE_INDEX_TYPE int
 #define EIGEN_USE_GPU
 #include <cuda.h>
@@ -86,6 +86,70 @@ public:
 	std::string getName() const { return "ReLUOp"; };
 };
 
+template<typename TensorT, typename DeviceT>
+class ThrustAddOp
+{
+public:
+	ThrustAddOp(const DeviceT& device, TensorT* output) : device_(device), output_(output) {};
+	~ThrustAddOp() {};
+	std::string getName() const { return ""; };
+	void operator()(std::pair<TensorT*, TensorT*> args) {
+		Eigen::TensorMap<Eigen::Tensor<TensorT, 3> > gpu_in1(args.first, 2, 2, 2);
+		Eigen::TensorMap<Eigen::Tensor<TensorT, 3> > gpu_in2(args.second, 2, 2, 2);
+		Eigen::TensorMap<Eigen::Tensor<TensorT, 3> > output(output_, 2, 2, 2);
+		output.device(device_) += gpu_in1 + gpu_in2;
+	};
+protected:
+	DeviceT device_;
+	TensorT* output_;
+};
+
+template<typename TensorT, typename DeviceT>
+class ThrustAddOp2
+{
+public:
+	ThrustAddOp2(const DeviceT& device, TensorT* output) : device_(device), output_(output) {};
+	~ThrustAddOp2() {};
+	std::string getName() const { return ""; };
+	void operator()(TensorT** args) {
+		for (size_t i = 0; i < 2 * 2 * 2; ++i)
+			output_[i] +=
+			args[0][i] +
+			args[1][i];
+	};
+protected:
+	DeviceT device_;
+	TensorT* output_;
+};
+
+template<typename TensorT, typename DeviceT>
+class RecurseAddOp
+{
+public:
+	RecurseAddOp(const DeviceT& device) : device_(device) {};
+	~RecurseAddOp() {};
+	std::string getName() const { return ""; };
+	void AddOp(std::vector<TensorT*>& lhs, std::vector<TensorT*>& rhs, const int& iter, const int& max_iter, TensorT* out) {
+		auto sum = [](std::vector<TensorT*>& lhs, std::vector<TensorT*>& rhs, const int& iter, const int& max_iter, auto& sum_ref) mutable {
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3> > gpu_in1(lhs[iter], 2, 2, 2);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3> > gpu_in2(rhs[iter], 2, 2, 2);
+			auto tmp1 = gpu_in1 + gpu_in2;
+			if (iter == max_iter) {
+				return tmp1;
+			}
+			else {
+				return tmp1;
+				//sum_ref(lhs, rhs, iter + 1, max_iter, sum_ref);
+			}
+		};
+		Eigen::TensorMap<Eigen::Tensor<TensorT, 3> > result(out, 2, 2, 2);
+		auto tmp = result;
+		result.device(device_) = sum(lhs, rhs, iter, max_iter, sum);
+	};
+protected:
+	DeviceT device_;
+};
+
 void threadPoolExample() {
 
 	auto startTime = std::chrono::high_resolution_clock::now();
@@ -131,71 +195,7 @@ void defaultDeviceExample(){
 	std::cout << "took: " << time_to_run << " ms." << std::endl;
 }
 
-template<typename TensorT, typename DeviceT>
-class ThrustAddOp
-{
-public:
-	ThrustAddOp(const DeviceT& device, TensorT* output): device_(device), output_(output){};
-	~ThrustAddOp() {};
-	std::string getName() const { return ""; };
-	void operator()(std::pair<TensorT*, TensorT*> args) {
-		Eigen::TensorMap<Eigen::Tensor<TensorT, 3> > gpu_in1(args.first, 2, 2, 2);
-		Eigen::TensorMap<Eigen::Tensor<TensorT, 3> > gpu_in2(args.second, 2, 2, 2);
-		Eigen::TensorMap<Eigen::Tensor<TensorT, 3> > output(output_, 2, 2, 2);
-		output.device(device_) += gpu_in1 + gpu_in2;
-	};
-protected:	
-	DeviceT device_;
-	TensorT* output_;
-};
-
-template<typename TensorT, typename DeviceT>
-class ThrustAddOp2
-{
-public:
-	ThrustAddOp2(const DeviceT& device, TensorT* output) : device_(device), output_(output) {};
-	~ThrustAddOp2() {};
-	std::string getName() const { return ""; };
-	void operator()(TensorT** args) {
-		for (size_t i = 0; i < 2 * 2 * 2; ++i)
-			output_[i] += 
-			args[0][i] + 
-			args[1][i];
-	};
-protected:
-	DeviceT device_;
-	TensorT* output_;
-};
-
-template<typename TensorT, typename DeviceT>
-class RecurseAddOp
-{
-public:
-	RecurseAddOp(const DeviceT& device) : device_(device) {};
-	~RecurseAddOp() {};
-	std::string getName() const { return ""; };
-  void AddOp(std::vector<TensorT*>& lhs, std::vector<TensorT*>& rhs, const int& iter, const int& max_iter, TensorT* out) {
-		auto sum = [](std::vector<TensorT*>& lhs, std::vector<TensorT*>& rhs, const int& iter, const int& max_iter, auto& sum_ref) mutable {
-			Eigen::TensorMap<Eigen::Tensor<TensorT, 3> > gpu_in1(lhs[iter], 2, 2, 2);
-			Eigen::TensorMap<Eigen::Tensor<TensorT, 3> > gpu_in2(rhs[iter], 2, 2, 2);
-			auto tmp1 = gpu_in1 + gpu_in2;
-			if (iter == max_iter) {
-				return tmp1;
-			}
-			else {
-				return tmp1;
-			  //sum_ref(lhs, rhs, iter + 1, max_iter, sum_ref);
-			}
-		};
-		Eigen::TensorMap<Eigen::Tensor<TensorT, 3> > result(out, 2, 2, 2);
-		auto tmp = result;
-		result.device(device_) = sum(lhs, rhs, iter, max_iter, sum);
-	};
-protected:
-	DeviceT device_;
-};
-
-#ifndef EVONET_CUDA
+#if COMPILE_WITH_CUDA
 // adapted from "eigen / unsupported / test / cxx11_tensor_cuda.cu"
 void asyncExample() {
 	assert(cudaSetDevice(0) == cudaSuccess); // is this needed?
@@ -1185,6 +1185,8 @@ int main(int argc, char** argv)
 {
 #ifndef EVONET_CUDA
 	cudaError_t err = cudaDeviceReset();
+	defaultDeviceExample();
+
 	// Async optimization tests
 	//asyncExample();
 	//syncExample();
@@ -1193,9 +1195,9 @@ int main(int argc, char** argv)
 	// Node integration tests
 	stack1Example();
 	//stack2Example();
-	//concat1Example(); //bug
+	concat1Example(); //bug
 	transform1Example();
-	transform2Example();
+	//transform2Example();
 	//recurseive1Example(); //will not work with CUDA!
 	control1Example();
 	
