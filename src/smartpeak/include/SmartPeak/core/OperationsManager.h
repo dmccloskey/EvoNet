@@ -14,7 +14,7 @@
 #include <SmartPeak/core/KernalManager.h>
 #include <SmartPeak/ml/ActivationFunctionWrapper.h>
 #include <SmartPeak/ml/IntegrationFunction2.h>
-#include <SmartPeak/ml/LossFunction.h>
+#include <SmartPeak/ml/LossFunction2.h>
 #include <SmartPeak/ml/Solver.h>
 
 namespace SmartPeak
@@ -62,7 +62,7 @@ namespace SmartPeak
 			TensorT* d_sink_error,
 			TensorT* h_sink_derivative,
 			TensorT* d_sink_derivative,
-			std::vector<IntegrationErrorOp<TensorT, Eigen::GpuDevice>*> integration_functions,
+			std::vector<IntegrationErrorOp<TensorT, DeviceT>*> integration_functions,
 			const int& batch_size,
 			const int& memory_size,
 			const std::vector<int>& source_time_steps,
@@ -71,16 +71,15 @@ namespace SmartPeak
 			bool copyHostToDevice = false,
 			bool copyDeviceToHost = false) = 0 ;
 		virtual bool executeCalcError(
-			std::vector<TensorT*> h_expected,
-			std::vector<TensorT*> d_expected,
+			Eigen::Tensor<TensorT, 2>& expected,
 			std::vector<TensorT*> h_predicted,
 			std::vector<TensorT*> d_predicted,
 			TensorT* h_model_error,
 			TensorT* d_model_error,
 			std::vector<TensorT*> h_node_errors,
 			std::vector<TensorT*> d_node_errors,
-			LossFunctionOp<TensorT>* loss_function,
-			LossFunctionGradOp<TensorT>* loss_grad_function,
+			LossFunctionOp<TensorT, DeviceT>* loss_function,
+			LossFunctionGradOp<TensorT, DeviceT>* loss_grad_function,
 			const int& batch_size,
 			const int& memory_size,
 			const int& time_step,
@@ -92,15 +91,16 @@ namespace SmartPeak
 			std::vector<TensorT*> d_source_errors,
 			std::vector<TensorT*> h_source_inputs,
 			std::vector<TensorT*> d_source_inputs,
-			std::vector<TensorT*> h_sink_error,
-			std::vector<TensorT*> d_sink_error,
-			std::vector<IntegrationOp<TensorT, DeviceT>*> integration_function,
+			std::vector<TensorT*> h_sink_errors,
+			std::vector<TensorT*> d_sink_errors,
+			std::vector<IntegrationWeightGradOp<TensorT, DeviceT>*> integration_function,
 			TensorT* h_weight,
 			TensorT* d_weight,
 			SolverOp<TensorT>* solver_function,
 			const int& batch_size,
 			const int& memory_size,
 			const int& time_step,
+			DeviceT& device,
 			bool copyHostToDevice = false,
 			bool copyDeviceToHost = false) = 0 ;
 	};
@@ -233,16 +233,15 @@ namespace SmartPeak
 			return true;
 		};
 		bool executeCalcError(
-			std::vector<TensorT*> h_expected,
-			std::vector<TensorT*> d_expected,
+			Eigen::Tensor<TensorT, 2>& expected,
 			std::vector<TensorT*> h_predicted,
 			std::vector<TensorT*> d_predicted,
 			TensorT* h_model_error,
 			TensorT* d_model_error,
 			std::vector<TensorT*> h_node_errors,
 			std::vector<TensorT*> d_node_errors,
-			LossFunctionOp<TensorT>* loss_function,
-			LossFunctionGradOp<TensorT>* loss_grad_function,
+			LossFunctionOp<TensorT, Eigen::GpuDevice>* loss_function,
+			LossFunctionGradOp<TensorT, Eigen::GpuDevice>* loss_grad_function,
 			const int& batch_size,
 			const int& memory_size,
 			const int& time_step,
@@ -251,35 +250,46 @@ namespace SmartPeak
 			bool copyDeviceToHost = false) {
 			// Check that vectors lengths match
 
-			const size_t bytes = batch_size * memory_size * sizeof(TensorT);
 			// Allocate memory for the expected and predicted
+			const size_t expected_bytes = expected.size() * sizeof(TensorT);
+			float* h_expected;
+			float* d_expected;
+			assert(cudaHostAlloc((void**)(&h_expected), expected_bytes, cudaHostAllocDefault) == cudaSuccess);
+			assert(cudaMalloc((void**)(&d_expected), expected_bytes) == cudaSuccess);
+			h_expected = expected.data();
 
 			// Copy host to device
+			const size_t bytes = batch_size * memory_size * sizeof(TensorT);
 			if (copyHostToDevice) {
-				for (size_t i = 0; i < h_expected.size(); ++i) {
-					device.memcpyHostToDevice(d_expected[i], h_expected[i], bytes);
+				for (size_t i = 0; i < h_predicted.size(); ++i) {
 					device.memcpyHostToDevice(d_predicted[i], h_predicted[i], bytes);
 					device.memcpyHostToDevice(d_node_errors[i], h_node_errors[i], bytes);
 				}
+				device.memcpyHostToDevice(d_expected, h_expected, expected_bytes);
 				device.memcpyHostToDevice(d_model_error, h_model_error, bytes);
 				// [NOTE: values will be added to model error and node error existing values]
 			}
 
-			// Calculate the model error
-			//model_error = loss_function->operator()(output_node->getOutput().chip(time_step, 1), expected);
+			// [TODO: replace after implementing TensorMultiMap]
+			for (int i = 0; i < h_predicted.size(); ++i) {
+				// Calculate the model error
+				loss_function->operator()(d_predicted[i], d_expected, d_model_error, batch_size, memory_size, time_step, h_predicted.size(), i, device);
 
-			// Calculate the node errors		
-			//output_node->getError().chip(time_step, 1) += loss_function_grad->operator()(
-			//	output_node->getOutput().chip(time_step, 1), expected) *
-			//	output_node->getDerivative().chip(time_step, 1);
+				// Calculate the node errors		
+				loss_grad_function->operator()(d_predicted[i], d_expected, d_node_errors[i], batch_size, memory_size, time_step, h_predicted.size(), i, device);
+			}
 
 			// Copy device to host
 			if (copyDeviceToHost) {
-				for (size_t i = 0; i < h_expected.size(); ++i) {
+				for (size_t i = 0; i < h_predicted.size(); ++i) {
 					device.memcpyDeviceToHost(h_node_errors[i], d_node_errors[i], bytes);
 				}
 				device.memcpyDeviceToHost(h_model_error, d_model_error, bytes);
 			}
+
+			// Deallocate the memory
+			//assert(cudaFreeHost(h_expected) == cudaSuccess); // still owned by expected
+			assert(cudaFree(d_expected) == cudaSuccess);
 
 			return true;
 		};
@@ -288,29 +298,63 @@ namespace SmartPeak
 			std::vector<TensorT*> d_source_errors,
 			std::vector<TensorT*> h_source_inputs,
 			std::vector<TensorT*> d_source_inputs,
-			std::vector<TensorT*> h_sink_error,
-			std::vector<TensorT*> d_sink_error,
-			std::vector<IntegrationOp<TensorT, Eigen::GpuDevice>*> integration_function,
+			std::vector<TensorT*> h_sink_errors,
+			std::vector<TensorT*> d_sink_errors,
+			std::vector<int> n_input_nodes,
+			std::vector<IntegrationWeightGradOp<TensorT, Eigen::GpuDevice>*> integration_function,
 			TensorT* h_weight,
 			TensorT* d_weight,
+			TensorT* h_weight_error,
+			TensorT* d_weight_error,
 			SolverOp<TensorT>* solver_function,
 			const int& batch_size,
 			const int& memory_size,
 			const int& time_step,
+			Eigen::GpuDevice& device,
 			bool copyHostToDevice = false,
 			bool copyDeviceToHost = false) {
 			// Check that the vector lengths match
 
-			// Sum the weights across the time axis
-
-			// Sum shared weights
+			// Copy host to device
+			const size_t bytes = batch_size * memory_size * sizeof(TensorT);
+			if (copyHostToDevice) {
+				for (size_t i = 0; i < h_predicted.size(); ++i) {
+					device.memcpyHostToDevice(d_source_errors[i], h_source_errors[i], bytes);
+					device.memcpyHostToDevice(d_source_inputs[i], h_source_inputs[i], bytes);
+					device.memcpyHostToDevice(d_sink_errors[i], h_sink_errors[i], bytes);
+				}
+				device.memcpyHostToDevice(d_weight_error, h_weight_error, sizeof(TensorT));
+				device.memcpyHostToDevice(d_weight, h_weight, sizeof(TensorT)); // only needed when testing...
+				// [NOTE: values will be added to model error and node error existing values]
+			}
 
 			// Update the weights
-			//if (solver_->getName() == "DummySolverOp")
-			//	return;
-			//const TensorT new_weight = solver_->operator()(weight_data_->getWeight()(0), getDrop()*error);
-			//weight_data_->setWeight(solver_->clipGradient(new_weight)); // [TODO: move to GPU/CPU device]
+			if (solver->getName() == "DummySolverOp")
+				return;
+
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> sink_error_tensor(sink_error, batch_size, memory_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> source_output_tensor(source_output, batch_size, memory_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> source_input_tensor(source_input, batch_size, memory_size);
+
+			auto tmp = ((-sink_error_tensor * source_output_tensor).sum(1)).mean(0); // Sum across time; average across batch
+			
+			// Accumulate the error for all links involving the same weight
+			for (int i = 0; i < h_source_errors.size(); ++i){
+				integration_function->operator()(d_sink_errors[i], d_source_errors[i], d_weight, d_source_inputs[i], d_weight_error, n_input_nodes[i], batch_size, memory_size, device);
+			}
+
+			// Update the weights
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 0>> weight_tensor(d_weight);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 0>> weight_tensor_error(d_weight_error);
+			auto new_weight = solver->operator()(weight_tensor(0), tmp(0));
+			weight_tensor.device(device) = solver->clipGradient(new_weight));
+			//getDrop()*error);
 			//checkWeight(); // Nice to have
+
+			// Copy device to host
+			if (copyDeviceToHost) {
+				device.memcpyDeviceToHost(h_weight, d_weight, sizeof(TensorT));
+			}
 
 			return true;
 		};

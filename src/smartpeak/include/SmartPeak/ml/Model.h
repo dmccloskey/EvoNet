@@ -2577,7 +2577,7 @@ private:
 				std::shared_ptr<Node<TensorT>> source_node = nodes_.at(link_map.second->getSourceNodeName());
 				Eigen::Tensor<TensorT, 1> weights(source_node->getOutput().dimension(0));
 				weights.setConstant(weights_.at(link_map.second->getWeightName())->getWeight());
-				Eigen::Tensor<TensorT, 1> n_input_nodes(sink_node->getOutput().dimension(0));
+				Eigen::Tensor<TensorT, 1> n_input_nodes(sink_node->getOutput().dimension(0));  // This is not correct!
 				n_input_nodes.setConstant(sink_node->getIntegrationShared()->getN());
 				for (int i = 0; i <= max_steps; ++i)
 				{

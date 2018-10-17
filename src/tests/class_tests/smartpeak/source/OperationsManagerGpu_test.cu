@@ -267,11 +267,116 @@ void test_executeBackwardPropogation() {
 	assert(cudaFreeHost(h_sink_output) == cudaSuccess);
 	assert(cudaFree(d_sink_output) == cudaSuccess);
 }
+void test_executeCalcError() {
+	const int device_id = 0;
+	GpuOperations<float> operations;
+
+	std::vector<float*> h_predicted, d_predicted, h_node_errors, d_node_errors;
+	MSEOp<float, Eigen::GpuDevice>* loss_function = new MSEOp<float, Eigen::GpuDevice>;
+	MSEGradOp<float, Eigen::GpuDevice>* loss_grad_function = new MSEGradOp<float, Eigen::GpuDevice>;
+	const int batch_size = 4;
+	const int memory_size = 2;
+	const int time_step = 0;
+
+	float* h_model_error;
+	float* d_model_error;
+
+	assert(cudaSetDevice(device_id) == cudaSuccess); // is this needed?
+
+	// allocate memory
+	const int n_source_nodes = 2;
+	std::size_t bytes = batch_size * memory_size * sizeof(float);
+	for (int i = 0; i < n_source_nodes; ++i) {
+		float *h_source_error;
+		h_predicted.push_back(h_source_error);
+		float* d_source_error;
+		d_predicted.push_back(d_source_error);
+		float *h_source_input;
+		h_node_errors.push_back(h_source_input);
+		float* d_source_input;
+		d_node_errors.push_back(d_source_input);
+		assert(cudaHostAlloc((void**)(&h_predicted[i]), bytes, cudaHostAllocDefault) == cudaSuccess);
+		assert(cudaMalloc((void**)(&d_predicted[i]), bytes) == cudaSuccess);
+		assert(cudaHostAlloc((void**)(&h_node_errors[i]), bytes, cudaHostAllocDefault) == cudaSuccess);
+		assert(cudaMalloc((void**)(&d_node_errors[i]), bytes) == cudaSuccess);
+	}
+	assert(cudaHostAlloc((void**)(&h_model_error), bytes, cudaHostAllocDefault) == cudaSuccess);
+	assert(cudaMalloc((void**)(&d_model_error), bytes) == cudaSuccess);
+
+	for (int i = 0; i < n_source_nodes; ++i) {
+		Eigen::TensorMap<Eigen::Tensor<float, 2>> source_error(h_predicted[i], batch_size, memory_size);
+		source_error.setValues({ {1, 0}, {2, 0}, {3, 0}, {4, 0} });
+	}
+	Eigen::TensorMap<Eigen::Tensor<float, 2>> model_error(h_model_error, batch_size, memory_size);
+	model_error.setConstant(0);
+
+	Eigen::Tensor<float, 2> expected(batch_size, n_source_nodes);
+	expected.setConstant(1);
+
+	// Set up the device
+	cudaStream_t stream; // The stream will be destroyed by GpuStreamDevice once the function goes out of scope!
+	assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess);
+	Eigen::GpuStreamDevice stream_device(&stream, 0);
+	Eigen::GpuDevice device(&stream_device);
+
+	bool success = operations.executeCalcError(
+		expected,
+		h_predicted,
+		d_predicted,
+		h_model_error,
+		d_model_error,
+		h_node_errors,
+		d_node_errors,
+		loss_function,
+		loss_grad_function,
+		batch_size,
+		memory_size,
+		time_step,
+		device,
+		true,
+		true);
+
+	// Synchronize the stream
+	cudaError_t err = cudaStreamQuery(stream);
+	assert(cudaStreamSynchronize(stream) == cudaSuccess);
+	assert(cudaStreamDestroy(stream) == cudaSuccess);
+
+	Eigen::Tensor<float, 2> expected_model_error(batch_size, memory_size);
+	expected_model_error.setValues({ {0, 0}, {0.25, 0}, {1.0, 0}, {2.25, 0} });
+	Eigen::Tensor<float, 3> expected_node_error(batch_size, memory_size, n_source_nodes);
+	expected_node_error.setValues({
+		{ {0, 0 }, { 0, 0 } },
+		{ {-0.25, -0.25 }, { 0, 0 } },
+		{ {-0.5, -0.5 }, { 0, 0 } },
+		{ {-0.75, -0.75 }, { 0, 0 } } });
+
+	for (size_t batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
+		for (size_t memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
+			//std::cout << "[Model Error] Batch iter: " << batch_iter << ", Memory Iter: " << memory_iter << " = " << model_error(batch_iter, memory_iter) << std::endl;
+			assert(model_error(batch_iter, memory_iter) == expected_model_error(batch_iter, memory_iter));
+			for (size_t node_iter = 0; node_iter < n_source_nodes; ++node_iter) {
+				Eigen::TensorMap<Eigen::Tensor<float, 2>> node_error(h_node_errors[node_iter], batch_size, memory_size);
+				//std::cout << "[Node Error] Batch iter: " << batch_iter << ", Memory Iter: " << memory_iter << ", Node Iter: " << node_iter << " = " << node_error(batch_iter, memory_iter) << std::endl;
+				assert(node_error(batch_iter, memory_iter) == expected_node_error(batch_iter, memory_iter, (int)node_iter));
+			}
+		}
+	}
+
+	for (int i = 0; i < n_source_nodes; ++i) {
+		assert(cudaFreeHost(h_predicted[i]) == cudaSuccess);
+		assert(cudaFree(d_predicted[i]) == cudaSuccess);
+		assert(cudaFreeHost(h_node_errors[i]) == cudaSuccess);
+		assert(cudaFree(d_node_errors[i]) == cudaSuccess);
+	}
+	assert(cudaFreeHost(h_model_error) == cudaSuccess);
+	assert(cudaFree(d_model_error) == cudaSuccess);
+}
 
 int main(int argc, char** argv)
 {
 	test_executeForwardPropogation();
 	test_executeBackwardPropogation();
+	test_executeCalcError();
 	return 0;
 }
 #endif

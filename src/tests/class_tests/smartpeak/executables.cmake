@@ -29,6 +29,7 @@ set(ml_executables_list
   IntegrationFunction2_test
   Link_test
   Lossfunction_test
+  Lossfunction2_test
   ModelBuilder_test
   ModelLogger_test
   ModelReplicator_test

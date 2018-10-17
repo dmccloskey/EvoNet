@@ -681,52 +681,68 @@ BOOST_AUTO_TEST_CASE(getNameSumErrorOp)
 //	BOOST_CHECK_EQUAL(operation.getName(), "CountErrorOp");
 //}
 //
-///**
-//SumWeightGradOp Tests
-//*/
-//BOOST_AUTO_TEST_CASE(constructorSumWeightGradOp)
-//{
-//	SumWeightGradOp<float, Eigen::DefaultDevice>* ptrReLU = nullptr;
-//	SumWeightGradOp<float, Eigen::DefaultDevice>* nullPointerReLU = nullptr;
-//	BOOST_CHECK_EQUAL(ptrReLU, nullPointerReLU);
-//}
-//
-//BOOST_AUTO_TEST_CASE(destructorSumWeightGradOp)
-//{
-//	SumWeightGradOp<float, Eigen::DefaultDevice>* ptrReLU = nullptr;
-//	ptrReLU = new SumWeightGradOp<float, Eigen::DefaultDevice>();
-//	delete ptrReLU;
-//}
-//
-//BOOST_AUTO_TEST_CASE(operationfunctionSumWeightGradOp)
-//{
-//	const int batch_size = 3;
-//	Eigen::Tensor<float, 1> sink_error1(batch_size), sink_error2(batch_size), sink_error3(batch_size);
-//	sink_error1.setValues({ 1, 2, 4 }); sink_error2.setValues({ 2, 4, 1 }); sink_error3.setValues({ 4, 1, 2 });
-//	Eigen::Tensor<float, 1> source_output1(batch_size), source_output2(batch_size), source_output3(batch_size);
-//	source_output1.setValues({ 1, 1, 1 }); source_output2.setValues({ 2, 2, 2 }); source_output3.setValues({ 2, 2, 2 });
-//	Eigen::Tensor<float, 1> weight1(batch_size), weight2(batch_size), weight3(batch_size);
-//	weight1.setValues({ 1, 2, 4 }); weight2.setValues({ 2, 4, 1 }); weight3.setValues({ 4, 1, 0 });
-//	Eigen::Tensor<float, 1> source_net_input1(batch_size), source_net_input2(batch_size), source_net_input3(batch_size);
-//	source_net_input1.setValues({ 1, 1, 1 }); source_net_input2.setValues({ 2, 2, 2 }); source_net_input3.setValues({ 1, 1, 1 });
-//	Eigen::Tensor<float, 1> dummy1(batch_size), dummy2(batch_size), dummy3(batch_size);
-//	dummy1.setZero(); dummy2.setZero(); dummy3.setZero();
-//
-//	SumWeightGradOp<float, Eigen::DefaultDevice> operation;
-//	operation(source_output1, sink_error1, weight1, source_net_input1, dummy1);
-//	operation(source_output2, sink_error2, weight2, source_net_input2, dummy2);
-//	operation(source_output3, sink_error3, weight3, source_net_input3, dummy3);
-//
-//	BOOST_CHECK_CLOSE(operation.getNetWeightError(), -11.66666666667, 1e-4);
-//}
-//
-//BOOST_AUTO_TEST_CASE(getNameSumWeightGradOp)
-//{
-//	SumWeightGradOp<float, Eigen::DefaultDevice> operation;
-//
-//	BOOST_CHECK_EQUAL(operation.getName(), "SumWeightGradOp");
-//}
-//
+/**
+SumWeightGradOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorSumWeightGradOp)
+{
+	SumWeightGradOp<float, Eigen::DefaultDevice>* ptrReLU = nullptr;
+	SumWeightGradOp<float, Eigen::DefaultDevice>* nullPointerReLU = nullptr;
+	BOOST_CHECK_EQUAL(ptrReLU, nullPointerReLU);
+}
+
+BOOST_AUTO_TEST_CASE(destructorSumWeightGradOp)
+{
+	SumWeightGradOp<float, Eigen::DefaultDevice>* ptrReLU = nullptr;
+	ptrReLU = new SumWeightGradOp<float, Eigen::DefaultDevice>();
+	delete ptrReLU;
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionSumWeightGradOp)
+{
+	const int batch_size = 3;
+	const int memory_size = 2;
+	const int byte_size = batch_size * memory_size;
+	Eigen::Tensor<float, 2> sink_error1(batch_size, memory_size), sink_error2(batch_size, memory_size), sink_error3(batch_size, memory_size);
+	sink_error1.setValues({ {1, 0}, {2, 0}, {4, 0} });
+	sink_error2.setValues({ {2, 0}, {4, 0}, {1, 0} });
+	sink_error3.setValues({ {4, 0}, {1, 0}, {2, 0} });
+	Eigen::Tensor<float, 2> source_input1(batch_size, memory_size), source_input2(batch_size, memory_size), source_input3(batch_size, memory_size);
+	source_input1.setValues({ {1, 0}, {1, 0}, {1, 0} });
+	source_input2.setValues({ {2, 0}, {2, 0}, {2, 0} });
+	source_input3.setValues({ {2, 0}, {2, 0}, {2, 0} });
+	Eigen::Tensor<float, 2> source_output1(batch_size, memory_size), source_output2(batch_size, memory_size), source_output3(batch_size, memory_size);
+	source_output1.setValues({ {1, 0}, {1, 0}, {1, 0} });
+	source_output2.setValues({ {2, 0}, {2, 0}, {2, 0} });
+	source_output3.setValues({ {2, 0}, {2, 0}, {2, 0} });
+	Eigen::Tensor<float, 0> weight;
+	weight.setConstant(1);
+
+	std::vector<float*> sink_errors = { sink_error1.data(), sink_error2.data(), sink_error3.data() };
+	std::vector<float*> source_inputs = { source_input1.data(), source_input2.data(), source_input3.data() };
+	std::vector<float*> source_outputs = { source_output1.data(), source_output2.data(), source_output3.data() };
+	std::vector<int> n_inputs_source = { 1, 1, 1 };
+
+	float* h_weight_error = new float[1];
+	Eigen::TensorMap<Eigen::Tensor<float, 0>> weight_error(h_weight_error);
+	weight_error.setConstant(1);
+
+	Eigen::DefaultDevice device;
+
+	SumWeightGradOp<float, Eigen::DefaultDevice> operation;
+	for (size_t node_iter = 0; node_iter < 3; ++node_iter)
+		operation(sink_errors[node_iter], source_outputs[node_iter], weight.data(), source_inputs[node_iter], h_weight_error, n_inputs_source[node_iter], batch_size, memory_size, device);
+	
+	BOOST_CHECK_CLOSE(weight_error(0), 0.0f, 1e-4);
+}
+
+BOOST_AUTO_TEST_CASE(getNameSumWeightGradOp)
+{
+	SumWeightGradOp<float, Eigen::DefaultDevice> operation;
+
+	BOOST_CHECK_EQUAL(operation.getName(), "SumWeightGradOp");
+}
+
 ///**
 //ProdWeightGradOp Tests
 //*/
