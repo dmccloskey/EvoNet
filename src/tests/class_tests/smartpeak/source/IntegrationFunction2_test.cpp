@@ -733,7 +733,7 @@ BOOST_AUTO_TEST_CASE(operationfunctionSumWeightGradOp)
 	for (size_t node_iter = 0; node_iter < 3; ++node_iter)
 		operation(sink_errors[node_iter], source_outputs[node_iter], weight.data(), source_inputs[node_iter], h_weight_error, n_inputs_source[node_iter], batch_size, memory_size, device);
 	
-	BOOST_CHECK_CLOSE(weight_error(0), 0.0f, 1e-4);
+	BOOST_CHECK_CLOSE(weight_error(0), -10.66666f, 1e-4);
 }
 
 BOOST_AUTO_TEST_CASE(getNameSumWeightGradOp)

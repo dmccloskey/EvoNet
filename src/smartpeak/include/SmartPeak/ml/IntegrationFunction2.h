@@ -376,7 +376,8 @@ public:
 			//Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> source_input_tensor(source_input, batch_size, memory_size);
 			//Eigen::TensorMap<Eigen::Tensor<TensorT, 0>> weight_tensor(weight);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 0>> weight_error_tensor(weight_error);
-			weight_error_tensor.device(device) += ((-sink_error_tensor * source_output_tensor).sum(Eigen::array<int, 2>({ 1 }))).mean({ 0 }); // sum across time; average across batches			
+			auto tmp = (-sink_error_tensor * source_output_tensor).sum(Eigen::array<int, 1>({ 1 }));
+			weight_error_tensor.device(device) += tmp.mean(Eigen::array<int, 1>({ 0 })); // sum across time; average across batches
 		};
 		std::string getName() const { return "SumWeightGradOp"; };
 	};

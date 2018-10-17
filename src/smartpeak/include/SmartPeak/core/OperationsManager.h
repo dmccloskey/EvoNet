@@ -87,19 +87,21 @@ namespace SmartPeak
 			bool copyHostToDevice = false,
 			bool copyDeviceToHost = false) = 0;
 		virtual bool executeUpdateWeights(
-			std::vector<TensorT*> h_source_errors,
-			std::vector<TensorT*> d_source_errors,
-			std::vector<TensorT*> h_source_inputs,
-			std::vector<TensorT*> d_source_inputs,
 			std::vector<TensorT*> h_sink_errors,
 			std::vector<TensorT*> d_sink_errors,
-			std::vector<IntegrationWeightGradOp<TensorT, DeviceT>*> integration_function,
+			std::vector<TensorT*> h_source_outputs,
+			std::vector<TensorT*> d_source_outputs,
+			std::vector<TensorT*> h_source_inputs,
+			std::vector<TensorT*> d_source_inputs,
+			std::vector<int> n_input_nodes,
+			std::vector<IntegrationWeightGradOp<TensorT, DeviceT>*> integration_functions,
 			TensorT* h_weight,
 			TensorT* d_weight,
+			TensorT* h_weight_error,
+			TensorT* d_weight_error,
 			SolverOp<TensorT>* solver_function,
 			const int& batch_size,
 			const int& memory_size,
-			const int& time_step,
 			DeviceT& device,
 			bool copyHostToDevice = false,
 			bool copyDeviceToHost = false) = 0 ;
@@ -294,14 +296,14 @@ namespace SmartPeak
 			return true;
 		};
 		bool executeUpdateWeights(
-			std::vector<TensorT*> h_source_errors,
-			std::vector<TensorT*> d_source_errors,
-			std::vector<TensorT*> h_source_inputs,
-			std::vector<TensorT*> d_source_inputs,
 			std::vector<TensorT*> h_sink_errors,
 			std::vector<TensorT*> d_sink_errors,
+			std::vector<TensorT*> h_source_outputs,
+			std::vector<TensorT*> d_source_outputs,
+			std::vector<TensorT*> h_source_inputs,
+			std::vector<TensorT*> d_source_inputs,
 			std::vector<int> n_input_nodes,
-			std::vector<IntegrationWeightGradOp<TensorT, Eigen::GpuDevice>*> integration_function,
+			std::vector<IntegrationWeightGradOp<TensorT, Eigen::GpuDevice>*> integration_functions,
 			TensorT* h_weight,
 			TensorT* d_weight,
 			TensorT* h_weight_error,
@@ -309,17 +311,18 @@ namespace SmartPeak
 			SolverOp<TensorT>* solver_function,
 			const int& batch_size,
 			const int& memory_size,
-			const int& time_step,
 			Eigen::GpuDevice& device,
 			bool copyHostToDevice = false,
 			bool copyDeviceToHost = false) {
 			// Check that the vector lengths match
+			if (solver_function->getName() == "DummySolverOp")
+				return true;
 
 			// Copy host to device
 			const size_t bytes = batch_size * memory_size * sizeof(TensorT);
 			if (copyHostToDevice) {
-				for (size_t i = 0; i < h_predicted.size(); ++i) {
-					device.memcpyHostToDevice(d_source_errors[i], h_source_errors[i], bytes);
+				for (size_t i = 0; i < h_source_outputs.size(); ++i) {
+					device.memcpyHostToDevice(d_source_outputs[i], h_source_outputs[i], bytes);
 					device.memcpyHostToDevice(d_source_inputs[i], h_source_inputs[i], bytes);
 					device.memcpyHostToDevice(d_sink_errors[i], h_sink_errors[i], bytes);
 				}
@@ -327,28 +330,17 @@ namespace SmartPeak
 				device.memcpyHostToDevice(d_weight, h_weight, sizeof(TensorT)); // only needed when testing...
 				// [NOTE: values will be added to model error and node error existing values]
 			}
-
-			// Update the weights
-			if (solver->getName() == "DummySolverOp")
-				return;
-
-			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> sink_error_tensor(sink_error, batch_size, memory_size);
-			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> source_output_tensor(source_output, batch_size, memory_size);
-			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> source_input_tensor(source_input, batch_size, memory_size);
-
-			auto tmp = ((-sink_error_tensor * source_output_tensor).sum(1)).mean(0); // Sum across time; average across batch
 			
 			// Accumulate the error for all links involving the same weight
-			for (int i = 0; i < h_source_errors.size(); ++i){
-				integration_function->operator()(d_sink_errors[i], d_source_errors[i], d_weight, d_source_inputs[i], d_weight_error, n_input_nodes[i], batch_size, memory_size, device);
+			for (int i = 0; i < h_source_outputs.size(); ++i){
+				integration_functions[i]->operator()(d_sink_errors[i], d_source_outputs[i], d_weight, d_source_inputs[i], d_weight_error, n_input_nodes[i], batch_size, memory_size, device);
 			}
 
 			// Update the weights
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 0>> weight_tensor(d_weight);
-			Eigen::TensorMap<Eigen::Tensor<TensorT, 0>> weight_tensor_error(d_weight_error);
-			auto new_weight = solver->operator()(weight_tensor(0), tmp(0));
-			weight_tensor.device(device) = solver->clipGradient(new_weight));
-			//getDrop()*error);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 0>> weight_error_tensor(d_weight_error);
+			//auto new_weight = solver_function->operator()(weight_tensor(0), weight_error_tensor(0));//getDrop()*error);
+			//weight_tensor.device(device) = solver_function->clipGradient(new_weight));
 			//checkWeight(); // Nice to have
 
 			// Copy device to host

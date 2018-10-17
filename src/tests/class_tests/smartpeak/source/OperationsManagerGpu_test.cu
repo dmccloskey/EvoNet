@@ -371,12 +371,124 @@ void test_executeCalcError() {
 	assert(cudaFreeHost(h_model_error) == cudaSuccess);
 	assert(cudaFree(d_model_error) == cudaSuccess);
 }
+void test_executeUpdateWeights() {
+	const int device_id = 0;
+	GpuOperations<float> operations;
+
+	std::vector<float*> h_sink_errors, d_sink_errors, h_source_outputs, d_source_outputs, h_source_inputs, d_source_inputs;
+	SolverOp<float>* solver_function = new SGDOp<float>();
+	std::vector<IntegrationWeightGradOp<float, Eigen::GpuDevice>*> integration_functions;
+	const int batch_size = 4;
+	const int memory_size = 2;
+
+	//const int byte_size = batch_size * memory_size;
+	float* h_weight;
+	float* d_weight;
+	float* h_weight_error;
+	float* d_weight_error;
+
+	assert(cudaSetDevice(device_id) == cudaSuccess); // is this needed?
+
+	// allocate memory
+	const int n_source_nodes = 2;
+	std::size_t bytes = batch_size * memory_size * sizeof(float);
+	for (int i = 0; i < n_source_nodes; ++i) {
+		float *h_sink_error;
+		h_sink_errors.push_back(h_sink_error);
+		float* d_sink_error;
+		d_sink_errors.push_back(d_sink_error);
+		float *h_source_output;
+		h_source_outputs.push_back(h_source_output);
+		float* d_source_output;
+		d_source_outputs.push_back(d_source_output);
+		float* h_source_input;
+		h_source_inputs.push_back(h_source_input);
+		float* d_source_input;
+		d_source_inputs.push_back(d_source_input);
+		assert(cudaHostAlloc((void**)(&h_sink_errors[i]), bytes, cudaHostAllocDefault) == cudaSuccess);
+		assert(cudaMalloc((void**)(&d_sink_errors[i]), bytes) == cudaSuccess);
+		assert(cudaHostAlloc((void**)(&h_source_outputs[i]), bytes, cudaHostAllocDefault) == cudaSuccess);
+		assert(cudaMalloc((void**)(&d_source_outputs[i]), bytes) == cudaSuccess);
+		assert(cudaHostAlloc((void**)(&h_source_inputs[i]), sizeof(float), cudaHostAllocDefault) == cudaSuccess);
+		assert(cudaMalloc((void**)(&d_source_inputs[i]), sizeof(float)) == cudaSuccess);
+		IntegrationWeightGradOp<float, Eigen::GpuDevice>* integration_function = new SumWeightGradOp<float, Eigen::GpuDevice>();
+		integration_functions.push_back(integration_function);
+	}
+	assert(cudaHostAlloc((void**)(&h_weight), bytes, cudaHostAllocDefault) == cudaSuccess);
+	assert(cudaMalloc((void**)(&d_weight), bytes) == cudaSuccess);
+	assert(cudaHostAlloc((void**)(&h_weight_error), bytes, cudaHostAllocDefault) == cudaSuccess);
+	assert(cudaMalloc((void**)(&d_weight_error), bytes) == cudaSuccess);
+
+	for (int i = 0; i < n_source_nodes; ++i) {
+		Eigen::TensorMap<Eigen::Tensor<float, 2>> sink_error(h_sink_errors[i], batch_size, memory_size);
+		sink_error.setValues({ {1, 1}, {2, 2}, {3, 0}, {4, 0} });
+		Eigen::TensorMap<Eigen::Tensor<float, 2>> source_output(h_source_outputs[i], batch_size, memory_size);
+		source_output.setValues({ {1, 1}, {2, 2}, {1, 0}, {2, 0} });
+		Eigen::TensorMap<Eigen::Tensor<float, 2>> source_input(h_source_inputs[i], batch_size, memory_size);
+		source_input.setValues({ {2, 0}, {4, 0}, {2, 0}, {4, 0} });
+	}
+	std::vector<int> n_input_nodes = {1,1,1};
+	Eigen::TensorMap<Eigen::Tensor<float, 0>> weight(h_weight);
+	weight.setConstant(1);
+	Eigen::TensorMap<Eigen::Tensor<float, 0>> weight_error(h_weight_error);
+	weight_error.setConstant(0);
+
+	// Set up the device
+	cudaStream_t stream; // The stream will be destroyed by GpuStreamDevice once the function goes out of scope!
+	assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess);
+	Eigen::GpuStreamDevice stream_device(&stream, 0);
+	Eigen::GpuDevice device(&stream_device);
+
+	bool success = operations.executeUpdateWeights(
+		h_sink_errors,
+		d_sink_errors,
+		h_source_outputs,
+		d_source_outputs,
+		h_source_inputs,
+		d_source_inputs,
+		n_input_nodes,
+		integration_functions,
+		h_weight,
+		d_weight,
+		h_weight_error,
+		d_weight_error,
+		solver_function,
+		batch_size,
+		memory_size,
+		device,
+		true,
+		true);
+
+	// Synchronize the stream
+	cudaError_t err = cudaStreamQuery(stream);
+	assert(cudaStreamSynchronize(stream) == cudaSuccess);
+	assert(cudaStreamDestroy(stream) == cudaSuccess);
+
+	std::cout << "Weight = " << weight(0) << std::endl;
+	std::cout << "Weight Error = " << weight_error(0) << std::endl;
+	assert(weight(0) == 0);
+	assert(weight_error(0) == 0);
+
+	for (int i = 0; i < n_source_nodes; ++i) {
+		assert(cudaFreeHost(h_sink_errors[i]) == cudaSuccess);
+		assert(cudaFree(d_sink_errors[i]) == cudaSuccess);
+		assert(cudaFreeHost(h_source_outputs[i]) == cudaSuccess);
+		assert(cudaFree(d_source_outputs[i]) == cudaSuccess);
+		assert(cudaFreeHost(h_source_inputs[i]) == cudaSuccess);
+		assert(cudaFree(d_source_inputs[i]) == cudaSuccess);
+	}
+	assert(cudaFreeHost(h_weight) == cudaSuccess);
+	assert(cudaFree(d_weight) == cudaSuccess);
+	assert(cudaFreeHost(h_weight_error) == cudaSuccess);
+	assert(cudaFree(d_weight_error) == cudaSuccess);
+}
 
 int main(int argc, char** argv)
 {
 	test_executeForwardPropogation();
 	test_executeBackwardPropogation();
 	test_executeCalcError();
+	test_executeUpdateWeights();
 	return 0;
 }
 #endif
