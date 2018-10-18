@@ -606,6 +606,8 @@ void recurseive1Example() {
 
 	auto startTime = std::chrono::high_resolution_clock::now();
 
+	auto AddOp = []()
+
 	Eigen::TensorMap<Eigen::Tensor<float, 3> > gpu_out(d_out, 2, 2, 2);
 	RecurseAddOp<float, Eigen::GpuDevice> recursiveOp(device_);
 	recursiveOp.AddOp(d_in1, d_in2, 0, 499, d_out);

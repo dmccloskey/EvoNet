@@ -420,7 +420,7 @@ public:
 		for (const auto& node : nodes) {
 			for (size_t batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
 				for (size_t memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
-					//line.push_back(std::to_string(node.getErrorView()(batch_iter, memory_iter))); // [TODO: "cannot convert 'this' pointer from 'const...' to '...&'
+					line.push_back(std::to_string(node.getErrorView()(batch_iter, memory_iter))); // [TODO: "cannot convert 'this' pointer from 'const...' to '...&'
 				}
 			}
 		}
@@ -548,7 +548,7 @@ public:
 		for (const auto& node : nodes) {
 			for (size_t batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
 				for (size_t memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
-					//line.push_back(std::to_string(node.getOutputView()(batch_iter, memory_iter))); // [TODO: "cannot convert 'this' pointer from 'const...' to '...&'
+					line.push_back(std::to_string(node.getOutputView()(batch_iter, memory_iter))); // [TODO: "cannot convert 'this' pointer from 'const...' to '...&'
 				}
 			}
 		}
@@ -594,7 +594,7 @@ public:
 		for (const auto& node : nodes) {
 			for (size_t batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
 				for (size_t memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
-					//line.push_back(std::to_string(node.getDerivativeView()(batch_iter, memory_iter))); // [TODO: "cannot convert 'this' pointer from 'const...' to '...&'
+					line.push_back(std::to_string(node.getDerivativeView()(batch_iter, memory_iter))); // [TODO: "cannot convert 'this' pointer from 'const...' to '...&'
 				}
 			}
 		}

@@ -105,11 +105,21 @@ endif()
 message(STATUS "Building SmartPeak ${SMARTPEAK_PACKAGE_VERSION_MAJOR}.${SMARTPEAK_PACKAGE_VERSION_MINOR}.${SMARTPEAK_PACKAGE_VERSION_PATCH}")
 
 #------------------------------------------------------------------------------
-# Unsupported systems
+# Unsupported systems and other nuances
 #------------------------------------------------------------------------------
 if (MINGW OR MSYS)
   message(FATAL_ERROR "MSYS and/or MinGW are not supported! Please use a Visual Studio environment! See Windows build instructions for further information!")
 endif()
+
+# Handle large template libraries with WIN32
+IF(WIN32)
+  ADD_DEFINITIONS(/bigobj)
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /bigobj")
+  SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /bigobj")
+  SET(CMAKE_CXX_FLAGS_MINSIZEREL "${CMAKE_CXX_FLAGS_MINSIZEREL} /bigobj")
+  SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /bigobj")
+  SET(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} /bigobj")
+ENDIF(WIN32)
 
 #------------------------------------------------------------------------------
 # Multi-threading stuff (OpenMP, CUDA, TBB)
@@ -122,6 +132,9 @@ if (EVONET_CUDA)
   endif()
   enable_language(CUDA)
   set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} --expt-relaxed-constexpr" )
+  if(WIN32)
+    list(APPEND CUDA_NVCC_FLAGS "--compiler-options;/bigobj")
+  endif()
   add_compile_definitions(COMPILE_WITH_CUDA=true)
 endif()
 
@@ -155,16 +168,6 @@ if (CMAKE_BUILD_TYPE EQUAL Debug)
 elseif (CMAKE_BUILD_TYPE EQUAL Release)
   set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall")
 endif()
-
-# Handle large template libraries with WIN32
-IF(WIN32 AND FALSE)
-  ADD_DEFINITIONS(/bigobj)
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /bigobj")
-  SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /bigobj")
-  SET(CMAKE_CXX_FLAGS_MINSIZEREL "${CMAKE_CXX_FLAGS_MINSIZEREL} /bigobj")
-  SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /bigobj")
-  SET(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} /bigobj")
-ENDIF(WIN32)
 
 #------------------------------------------------------------------------------
 # Enable STL debug mode (GCC only)

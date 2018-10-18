@@ -34,10 +34,14 @@ public:
 	/*
 	@brief Convolution classifier
 
+	@param n_depth_1 32 (32 filters)
+	@param n_depth_2 2 (total of 64 filters)
+	@param n_fc 1024 
+
 	References:
 	https://github.com/pytorch/examples/blob/master/mnist/main.py
 	*/
-	Model<TensorT> makeCovNet(const int& n_inputs, const int& n_outputs) {
+	Model<TensorT> makeCovNet(const int& n_inputs, const int& n_outputs, int n_depth_1 = 10, int n_depth_2 = 2, int n_fc = 10) {
 		Model<TensorT> model;
 		model.setId(0);
 		model.setName("CovNet");
@@ -50,9 +54,8 @@ public:
 		std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", n_inputs);
 
 		// Add the first convolution -> max pool -> ReLU layers
-		int depth = 10; //32
 		std::vector<std::vector<std::string>> node_names_l0;
-		for (size_t d = 0; d < depth; ++d) {
+		for (size_t d = 0; d < n_depth_1; ++d) {
 			std::vector<std::string> node_names;
 			std::string conv_name = "Conv0-" + std::to_string(d);
 			node_names = model_builder.addConvolution(model, conv_name, conv_name, node_names_input, 
@@ -64,7 +67,7 @@ public:
 				std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
 				std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
 				std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(n_inputs, 2)),
-				std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+				std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 			std::string pool_name = "Pool0-" + std::to_string(d);
 			node_names = model_builder.addConvolution(model, pool_name, pool_name, node_names, 
 				sqrt(node_names.size()), sqrt(node_names.size()), 1, 1,
@@ -82,9 +85,8 @@ public:
 		// Add the second convolution -> max pool -> ReLU layers
 		std::vector<std::vector<std::string>> node_names_l1;
 		int l_cnt = 0;
-		depth = 2;
 		for (const std::vector<std::string> &node_names_l : node_names_l0) {
-			for (size_t d = 0; d < depth; ++d) {
+			for (size_t d = 0; d < n_depth_2; ++d) {
 				std::vector<std::string> node_names;
 				std::string conv_name = "Conv1-" + std::to_string(l_cnt) + "-" + std::to_string(d);
 				node_names = model_builder.addConvolution(model, conv_name, conv_name, node_names_l, 
@@ -96,7 +98,7 @@ public:
 					std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
 					std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
 					std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(n_inputs, 2)),
-					std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+					std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 				std::string pool_name = "Pool1-" + std::to_string(l_cnt) + "-" + std::to_string(d);
 				node_names = model_builder.addConvolution(model, pool_name, pool_name, node_names, 
 					sqrt(node_names.size()), sqrt(node_names.size()), 1, 1,
@@ -124,25 +126,25 @@ public:
 
 		// Add the FC layers
 		//assert(node_names.size() == 320);
-		node_names = model_builder.addFullyConnected(model, "FC0", "FC0", node_names, 50,
+		node_names = model_builder.addFullyConnected(model, "FC0", "FC0", node_names, n_fc,
 			std::shared_ptr<ActivationOp<TensorT>>(new ReLUOp<TensorT>()),
 			std::shared_ptr<ActivationOp<TensorT>>(new ReLUGradOp<TensorT>()),
 			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
 			std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
 			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
 			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(180, 2)),
-			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 		node_names = model_builder.addFullyConnected(model, "FC1", "FC1", node_names, n_outputs,
 			std::shared_ptr<ActivationOp<TensorT>>(new ReLUOp<TensorT>()),
 			std::shared_ptr<ActivationOp<TensorT>>(new ReLUGradOp<TensorT>()),
 			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
 			std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
 			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(50, 2)), 
-			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.1, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(n_fc, 2)),
+			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 
 		// Add the final softmax layer
-		node_names = model_builder.addStableSoftMax(model, "SoftMax", "SoftMax", node_names);
+		//node_names = model_builder.addStableSoftMax(model, "SoftMax", "SoftMax", node_names);
 
 		for (const std::string& node_name : node_names)
 			model.getNodesMap().at(node_name)->setType(NodeType::output);
@@ -293,10 +295,17 @@ public:
 		if (n_epochs > 10000) {
 			// update the solver parameters
 			std::shared_ptr<SolverOp<TensorT>> solver;
-			solver.reset(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8));
+			solver.reset(new AdamOp<TensorT>(0.0001, 0.9, 0.999, 1e-8));
 			for (auto& weight_map : model.getWeightsMap())
 				if (weight_map.second->getSolverOp()->getName() == "AdamOp")
 					weight_map.second->setSolverOp(solver);
+		}
+		if (n_epochs % 100 == 0 && n_epochs != 0) {
+			// save the model every 100 epochs
+			ModelFile<TensorT> data;
+			data.storeModelCsv(model.getName() + "_" + std::to_string(n_epochs) + "_nodes.csv",
+				model.getName() + "_" + std::to_string(n_epochs) + "_links.csv",
+				model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model);
 		}
 	}
 };
@@ -472,7 +481,7 @@ void main_CovNet() {
 	population_trainer.setNReplicatesPerModel(1);
 
 	// define the model logger
-	ModelLogger<float> model_logger(true, true, true, true, false, false, false, false);
+	ModelLogger<float> model_logger(true, true, true, true, true, false, true, true);
 
 	// define the data simulator
 	const std::size_t input_size = 784;
@@ -505,6 +514,11 @@ void main_CovNet() {
 		input_nodes.push_back("Input_" + std::to_string(i));
 
 	// Make the output nodes
+	std::vector<std::string> output_FC_nodes;
+	for (int i = 0; i < data_simulator.mnist_labels.size(); ++i)
+		output_FC_nodes.push_back("FC1_" + std::to_string(i));
+
+	// Make the output nodes
 	std::vector<std::string> output_nodes;
 	for (int i = 0; i < data_simulator.mnist_labels.size(); ++i)
 		output_nodes.push_back("SoftMax-Out_" + std::to_string(i));
@@ -515,20 +529,25 @@ void main_CovNet() {
 	model_trainer.setMemorySize(1);
 	model_trainer.setNEpochsTraining(500);
 	model_trainer.setNEpochsValidation(10);
-	model_trainer.setVerbosityLevel(1);
+	model_trainer.setVerbosityLevel(3);
 	model_trainer.setNThreads(n_hard_threads);
 	model_trainer.setLogging(true, false);
-	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new NegativeLogLikelihoodOp<float>()) });
-	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new NegativeLogLikelihoodGradOp<float>()) });
-	model_trainer.setOutputNodes({ output_nodes });
+	model_trainer.setLossFunctions({
+		std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>())//,std::shared_ptr<LossFunctionOp<float>>(new NegativeLogLikelihoodOp<float>()),
+		});
+	model_trainer.setLossFunctionGrads({
+		std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>())//,	std::shared_ptr<LossFunctionGradOp<float>>(new NegativeLogLikelihoodGradOp<float>())
+		});
+	model_trainer.setOutputNodes({ output_FC_nodes//, output_nodes 
+		});
 
 	// define the model replicator for growth mode
 	ModelReplicatorExt<float> model_replicator;
 
 	// define the initial population [BUG FREE]
 	std::cout << "Initializing the population..." << std::endl;
-	//std::vector<Model<float>> population = { model_trainer.makeCovNet(input_nodes.size(), output_nodes.size()) }; 
-		std::vector<Model<float>> population = { model_trainer.makeCovNetFeatureNorm(input_nodes.size(), output_nodes.size()) };
+	std::vector<Model<float>> population = { model_trainer.makeCovNet(input_nodes.size(), output_nodes.size()) }; 
+	//std::vector<Model<float>> population = { model_trainer.makeCovNetFeatureNorm(input_nodes.size(), output_nodes.size()) };
 
 	// Evolve the population
 	std::vector<std::vector<std::pair<int, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(

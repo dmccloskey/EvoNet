@@ -156,15 +156,15 @@ public:
 		size_t getMemorySize() const { return node_data_->getMemorySize(); };
 
 		Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> getInput() { return node_data_->getInput(); }; ///< input copy getter
-		Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> const getInputView() { return node_data_->getInput(); }; ///< input copy getter
+		Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> getInputView() const { return node_data_->getInput(); }; ///< input copy getter
 		Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> getOutput() { return node_data_->getOutput(); }; ///< output copy getter
-		Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> const getOutputView() { return node_data_->getOutput(); }; ///< output copy getter
+		Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> getOutputView() const { return node_data_->getOutput(); }; ///< output copy getter
 		Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> getError() { return node_data_->getError(); }; ///< error copy getter
-		Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> const getErrorView() { return node_data_->getError(); }; ///< error copy getter
+		Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> getErrorView() const { return node_data_->getError(); }; ///< error copy getter
 		Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> getDerivative() { return node_data_->getDerivative(); }; ///< derivative copy getter
-		Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> const getDerivativeView() { return node_data_->getDerivative(); }; ///< derivative copy getter
+		Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> getDerivativeView() const { return node_data_->getDerivative(); }; ///< derivative copy getter
 		Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> getDt() { return node_data_->getDt(); }; ///< dt copy getter
-		Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> const getDtView() { return node_data_->getDt(); }; ///< dt copy getter
+		Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> getDtView() const { return node_data_->getDt(); }; ///< dt copy getter
 
 		void setNodeData(const std::shared_ptr<NodeData<TensorT>>& node_data);
 		std::shared_ptr<NodeData<TensorT>> getNodeData();
