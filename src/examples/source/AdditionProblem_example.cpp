@@ -689,7 +689,23 @@ public:
 		const int& n_generations,
 		const int& n_epochs,
 		Model<TensorT>& model,
-		const std::vector<float>& model_errors) {}
+		const std::vector<float>& model_errors) {
+		if (n_epochs > 10000) {
+			// update the solver parameters
+			std::shared_ptr<SolverOp<TensorT>> solver;
+			solver.reset(new AdamOp<TensorT>(0.0001, 0.9, 0.999, 1e-8));
+			for (auto& weight_map : model.getWeightsMap())
+				if (weight_map.second->getSolverOp()->getName() == "AdamOp")
+					weight_map.second->setSolverOp(solver);
+		}
+		if (n_epochs % 100 == 0 && n_epochs != 0) {
+			// save the model every 100 epochs
+			ModelFile<TensorT> data;
+			data.storeModelCsv(model.getName() + "_" + std::to_string(n_epochs) + "_nodes.csv",
+				model.getName() + "_" + std::to_string(n_epochs) + "_links.csv",
+				model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model);
+		}
+	}
 };
 
 template<typename TensorT>
@@ -779,7 +795,7 @@ int main(int argc, char** argv)
 
 	// define the data simulator
 	DataSimulatorExt<float> data_simulator;
-	data_simulator.n_mask_ = 5;
+	data_simulator.n_mask_ = 2;
 	data_simulator.sequence_length_ = 25;
 
 	// define the model replicator for growth mode
@@ -796,7 +812,8 @@ int main(int argc, char** argv)
 	model_trainer.setOutputNodes({ output_nodes });
 
 	// define the model logger
-	ModelLogger<float> model_logger(true, true, true, true, true, true, false, true);
+	//ModelLogger<float> model_logger(true, true, true, false, false, false, false, false);
+	ModelLogger<float> model_logger(true, true, true, true, true, false, true, true);
 
 	// define the model replicator for growth mode
 	ModelReplicatorExt<float> model_replicator;
@@ -826,14 +843,14 @@ int main(int argc, char** argv)
 	model.setId(0);
 	population.push_back(model);
 
-	PopulationTrainerFile<float> population_trainer_file;
-	population_trainer_file.storeModels(population, "AddProb");
+	//PopulationTrainerFile<float> population_trainer_file;
+	//population_trainer_file.storeModels(population, "AddProb");
 
 	// Evolve the population
 	std::vector<std::vector<std::pair<int, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
 		population, model_trainer, model_replicator, data_simulator, model_logger, input_nodes, n_threads);
 
-	//PopulationTrainerFile<float> population_trainer_file;
+	PopulationTrainerFile<float> population_trainer_file;
 	population_trainer_file.storeModels(population, "AddProb");
 	population_trainer_file.storeModelValidations("AddProbValidationErrors.csv", models_validation_errors_per_generation.back());
 

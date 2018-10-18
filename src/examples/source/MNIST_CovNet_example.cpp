@@ -41,7 +41,7 @@ public:
 	References:
 	https://github.com/pytorch/examples/blob/master/mnist/main.py
 	*/
-	Model<TensorT> makeCovNet(const int& n_inputs, const int& n_outputs, int n_depth_1 = 10, int n_depth_2 = 2, int n_fc = 10) {
+	Model<TensorT> makeCovNet(const int& n_inputs, const int& n_outputs, int n_depth_1 = 32, int n_depth_2 = 2, int n_fc = 128) {
 		Model<TensorT> model;
 		model.setId(0);
 		model.setName("CovNet");
@@ -481,12 +481,13 @@ void main_CovNet() {
 	population_trainer.setNReplicatesPerModel(1);
 
 	// define the model logger
-	ModelLogger<float> model_logger(true, true, true, true, true, false, true, true);
+	ModelLogger<float> model_logger(true, true, true, false, false, false, false, false);
+	//ModelLogger<float> model_logger(true, true, true, true, true, false, true, true);
 
 	// define the data simulator
 	const std::size_t input_size = 784;
-	const std::size_t training_data_size = 10000; //60000;
-	const std::size_t validation_data_size = 100; //10000;
+	const std::size_t training_data_size = 60000; //60000;
+	const std::size_t validation_data_size = 10000; //10000;
 	DataSimulatorExt<float> data_simulator;
 
 	// read in the training data
@@ -525,12 +526,12 @@ void main_CovNet() {
 
 	// define the model trainer
 	ModelTrainerExt<float> model_trainer;
-	model_trainer.setBatchSize(1);
+	model_trainer.setBatchSize(64);
 	model_trainer.setMemorySize(1);
 	model_trainer.setNEpochsTraining(500);
 	model_trainer.setNEpochsValidation(10);
-	model_trainer.setVerbosityLevel(3);
-	model_trainer.setNThreads(n_hard_threads);
+	model_trainer.setVerbosityLevel(1);
+	model_trainer.setNThreads(n_hard_threads * 2);
 	model_trainer.setLogging(true, false);
 	model_trainer.setLossFunctions({
 		std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>())//,std::shared_ptr<LossFunctionOp<float>>(new NegativeLogLikelihoodOp<float>()),
@@ -546,7 +547,7 @@ void main_CovNet() {
 
 	// define the initial population [BUG FREE]
 	std::cout << "Initializing the population..." << std::endl;
-	std::vector<Model<float>> population = { model_trainer.makeCovNet(input_nodes.size(), output_nodes.size()) }; 
+	std::vector<Model<float>> population = { model_trainer.makeCovNet(input_nodes.size(), output_nodes.size(), 10, 2, 10) }; 
 	//std::vector<Model<float>> population = { model_trainer.makeCovNetFeatureNorm(input_nodes.size(), output_nodes.size()) };
 
 	// Evolve the population
