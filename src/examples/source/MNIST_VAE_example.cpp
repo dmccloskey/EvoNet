@@ -280,24 +280,24 @@ public:
 	{
 		if (n_generations > 100)
 		{
-			setNNodeAdditions(1);
-			setNLinkAdditions(2);
-			setNNodeDeletions(1);
-			setNLinkDeletions(2);
+			this->setNNodeAdditions(1);
+			this->setNLinkAdditions(2);
+			this->setNNodeDeletions(1);
+			this->setNLinkDeletions(2);
 		}
 		else if (n_generations > 1 && n_generations < 100)
 		{
-			setNNodeAdditions(1);
-			setNLinkAdditions(2);
-			setNNodeDeletions(1);
-			setNLinkDeletions(2);
+			this->setNNodeAdditions(1);
+			this->setNLinkAdditions(2);
+			this->setNNodeDeletions(1);
+			this->setNLinkDeletions(2);
 		}
 		else if (n_generations == 0)
 		{
-			setNNodeAdditions(10);
-			setNLinkAdditions(20);
-			setNNodeDeletions(0);
-			setNLinkDeletions(0);
+			this->setNNodeAdditions(10);
+			this->setNLinkAdditions(20);
+			this->setNNodeDeletions(0);
+			this->setNLinkDeletions(0);
 		}
 	}
 };
@@ -314,15 +314,15 @@ public:
 		// Population size of 16
 		if (n_generations == 0)
 		{
-			setNTop(3);
-			setNRandom(3);
-			setNReplicatesPerModel(15);
+			this->setNTop(3);
+			this->setNRandom(3);
+			this->setNReplicatesPerModel(15);
 		}
 		else
 		{
-			setNTop(3);
-			setNRandom(3);
-			setNReplicatesPerModel(3);
+			this->setNTop(3);
+			this->setNRandom(3);
+			this->setNReplicatesPerModel(3);
 		}
 	}
 };

@@ -594,7 +594,7 @@ public:
 	{
 		if (n_generations >= 0)
 		{
-			setRandomModifications(
+			this->setRandomModifications(
 				std::make_pair(0, 5),
 				std::make_pair(0, 10),
 				std::make_pair(0, 5),
@@ -619,15 +619,15 @@ public:
 		// Population size of 16
 		if (n_generations == 0)
 		{
-			setNTop(3);
-			setNRandom(3);
-			setNReplicatesPerModel(15);
+			this->setNTop(3);
+			this->setNRandom(3);
+			this->setNReplicatesPerModel(15);
 		}
 		else
 		{
-			setNTop(3);
-			setNRandom(3);
-			setNReplicatesPerModel(3);
+			this->setNTop(3);
+			this->setNRandom(3);
+			this->setNReplicatesPerModel(3);
 		}
 	}
 };
