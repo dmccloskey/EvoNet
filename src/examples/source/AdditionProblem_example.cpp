@@ -179,7 +179,7 @@ public:
 			Weight_i_rand_to_oGate_SSig, Weight_i_mask_to_oGate_SSig, Weight_oGate_SSig_bias_to_oGate_SSig,
 			Weight_oGate_SSig_to_oGate_PLin, Weight_MC_to_oGate_PLin, Weight_MC_to_oGate_SLin, Weight_oGate_SLin_to_o,
 			Weight_oGate_PLin_to_oGate_SLin;
-		Model model;
+		Model<TensorT> model;
 
 		// Nodes
 		i_rand = Node<TensorT>("Input_0", NodeType::input, NodeStatus::activated, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
@@ -206,70 +206,70 @@ public:
 		std::shared_ptr<WeightInitOp<TensorT>> weight_init;
 		std::shared_ptr<SolverOp<TensorT>> solver;
 		weight_init.reset(new RandWeightInitOp<TensorT>(2.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8)); solver->setGradientThreshold(10.0f);
-		//weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
+		//weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
 		Weight_i_rand_to_fGate_SSig = Weight<TensorT>("Weight_i_rand_to_fGate_SSig", weight_init, solver);
 		weight_init.reset(new RandWeightInitOp<TensorT>(2.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8)); solver->setGradientThreshold(10.0f);
-		//weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
+		//weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
 		Weight_i_mask_to_fGate_SSig = Weight<TensorT>("Weight_i_mask_to_fGate_SSig", weight_init, solver);
-		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8)); solver->setGradientThreshold(10.0f);
+		weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8)); solver->setGradientThreshold(10.0f);
 		Weight_fGate_SSig_bias_to_fGate_SSig = Weight<TensorT>("Weight_fGate_SSig_bias_to_fGate_SSig", weight_init, solver); Weight_fGate_SSig_bias_to_fGate_SSig.setModuleName("MC1");
 
-		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new DummySolverOp());	solver->setGradientThreshold(100000.0f);
+		weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));	solver.reset(new DummySolverOp<TensorT>());	solver->setGradientThreshold(100000.0f);
 		Weight_MC_to_fGate_PLin = Weight<TensorT>("Weight_MC_to_fGate_PLin", weight_init, solver); Weight_MC_to_fGate_PLin.setModuleName("MC1");
-		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new DummySolverOp());	solver->setGradientThreshold(100000.0f);
+		weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));	solver.reset(new DummySolverOp<TensorT>());	solver->setGradientThreshold(100000.0f);
 		Weight_fGate_SSig_to_fGate_PLin = Weight<TensorT>("Weight_fGate_SSig_to_fGate_PLin", weight_init, solver); Weight_fGate_SSig_to_fGate_PLin.setModuleName("MC1");
 
 		weight_init.reset(new RandWeightInitOp<TensorT>(2.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8)); solver->setGradientThreshold(10.0f);
-		//weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
+		//weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
 		Weight_i_rand_to_uGate_SSig = Weight<TensorT>("Weight_i_rand_to_uGate_SSig", weight_init, solver);
 		weight_init.reset(new RandWeightInitOp<TensorT>(2.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8)); solver->setGradientThreshold(10.0f);
-		//weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
+		//weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
 		Weight_i_mask_to_uGate_SSig = Weight<TensorT>("Weight_i_mask_to_uGate_SSig", weight_init, solver);
-		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8)); solver->setGradientThreshold(10.0f);
+		weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8)); solver->setGradientThreshold(10.0f);
 		Weight_uGate_SSig_bias_to_uGate_SSig = Weight<TensorT>("Weight_uGate_SSig_bias_to_uGate_SSig", weight_init, solver); Weight_uGate_SSig_bias_to_uGate_SSig.setModuleName("MC1");
 
 		weight_init.reset(new RandWeightInitOp<TensorT>(2.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8)); solver->setGradientThreshold(10.0f);
-		//weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
+		//weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
 		Weight_i_rand_to_uGate_SLin = Weight<TensorT>("Weight_i_rand_to_uGate_SLin", weight_init, solver);
 		weight_init.reset(new RandWeightInitOp<TensorT>(2.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8)); solver->setGradientThreshold(10.0f);
-		//weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
+		//weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
 		Weight_i_mask_to_uGate_SLin = Weight<TensorT>("Weight_i_mask_to_uGate_SLin", weight_init, solver);
-		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8)); solver->setGradientThreshold(10.0f);
+		weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8)); solver->setGradientThreshold(10.0f);
 		Weight_uGate_SLin_bias_to_uGate_SLin = Weight<TensorT>("Weight_uGate_SLin_bias_to_uGate_SLin", weight_init, solver); Weight_uGate_SLin_bias_to_uGate_SLin.setModuleName("MC1");
 
-		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new DummySolverOp());	solver->setGradientThreshold(100000.0f);
+		weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));	solver.reset(new DummySolverOp<TensorT>());	solver->setGradientThreshold(100000.0f);
 		Weight_uGate_SLin_to_MC = Weight<TensorT>("Weight_uGate_SLin_to_MC", weight_init, solver); Weight_uGate_SLin_to_MC.setModuleName("MC1");
-		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new DummySolverOp());	solver->setGradientThreshold(100000.0f);
+		weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));	solver.reset(new DummySolverOp<TensorT>());	solver->setGradientThreshold(100000.0f);
 		Weight_uGate_SLin_to_uGate_PLin = Weight<TensorT>("Weight_uGate_SLin_to_uGate_PLin", weight_init, solver); Weight_uGate_SLin_to_uGate_PLin.setModuleName("MC1");
-		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new DummySolverOp());	solver->setGradientThreshold(100000.0f);
+		weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));	solver.reset(new DummySolverOp<TensorT>());	solver->setGradientThreshold(100000.0f);
 		Weight_uGate_SSig_to_uGate_PLin = Weight<TensorT>("Weight_uGate_SSig_to_uGate_PLin", weight_init, solver); Weight_uGate_SSig_to_uGate_PLin.setModuleName("MC1");
 
-		weight_init.reset(new ConstWeightInitOp(-1.0));	solver.reset(new DummySolverOp());	solver->setGradientThreshold(100000.0f);
+		weight_init.reset(new ConstWeightInitOp<TensorT>(-1.0));	solver.reset(new DummySolverOp<TensorT>());	solver->setGradientThreshold(100000.0f);
 		Weight_fGate_PLin_to_MC = Weight<TensorT>("Weight_fGate_PLin_to_MC", weight_init, solver); Weight_fGate_PLin_to_MC.setModuleName("MC1");
-		weight_init.reset(new ConstWeightInitOp(-1.0));	solver.reset(new DummySolverOp());	solver->setGradientThreshold(100000.0f);
+		weight_init.reset(new ConstWeightInitOp<TensorT>(-1.0));	solver.reset(new DummySolverOp<TensorT>());	solver->setGradientThreshold(100000.0f);
 		Weight_uGate_PLin_to_MC = Weight<TensorT>("Weight_uGate_PLin_to_MC", weight_init, solver); Weight_uGate_PLin_to_MC.setModuleName("MC1");
-		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new DummySolverOp());	solver->setGradientThreshold(100000.0f);
+		weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));	solver.reset(new DummySolverOp<TensorT>());	solver->setGradientThreshold(100000.0f);
 		Weight_MC_to_MC = Weight<TensorT>("Weight_MC_to_MC", weight_init, solver); Weight_MC_to_MC.setModuleName("MC1");
 
 		weight_init.reset(new RandWeightInitOp<TensorT>(2.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8)); solver->setGradientThreshold(10.0f);
-		//weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
+		//weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
 		Weight_i_rand_to_oGate_SSig = Weight<TensorT>("Weight_i_rand_to_oGate_SSig", weight_init, solver);
 		weight_init.reset(new RandWeightInitOp<TensorT>(2.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8)); solver->setGradientThreshold(10.0f);
-		//weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
+		//weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
 		Weight_i_mask_to_oGate_SSig = Weight<TensorT>("Weight_i_mask_to_oGate_SSig", weight_init, solver);
-		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8)); solver->setGradientThreshold(10.0f);
+		weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8)); solver->setGradientThreshold(10.0f);
 		Weight_oGate_SSig_bias_to_oGate_SSig = Weight<TensorT>("Weight_oGate_SSig_bias_to_oGate_SSig", weight_init, solver); Weight_oGate_SSig_bias_to_oGate_SSig.setModuleName("MC1");
 
-		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new DummySolverOp());	solver->setGradientThreshold(100000.0f); //
+		weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));	solver.reset(new DummySolverOp<TensorT>());	solver->setGradientThreshold(100000.0f); //
 		Weight_oGate_SSig_to_oGate_PLin = Weight<TensorT>("Weight_oGate_SSig_to_oGate_PLin", weight_init, solver); Weight_oGate_SSig_to_oGate_PLin.setModuleName("MC1");
-		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new DummySolverOp());	solver->setGradientThreshold(100000.0f);
+		weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));	solver.reset(new DummySolverOp<TensorT>());	solver->setGradientThreshold(100000.0f);
 		Weight_MC_to_oGate_PLin = Weight<TensorT>("Weight_MC_to_oGate_PLin", weight_init, solver); Weight_MC_to_oGate_PLin.setModuleName("MC1");
 
-		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new DummySolverOp());	solver->setGradientThreshold(100000.0f);
+		weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));	solver.reset(new DummySolverOp<TensorT>());	solver->setGradientThreshold(100000.0f);
 		Weight_MC_to_oGate_SLin = Weight<TensorT>("Weight_MC_to_oGate_SLin", weight_init, solver); Weight_MC_to_oGate_SLin.setModuleName("MC1");
-		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new DummySolverOp());	solver->setGradientThreshold(100000.0f);
+		weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));	solver.reset(new DummySolverOp<TensorT>());	solver->setGradientThreshold(100000.0f);
 		Weight_oGate_SLin_to_o = Weight<TensorT>("Weight_oGate_SLin_to_o", weight_init, solver);
-		weight_init.reset(new ConstWeightInitOp(-1.0));	solver.reset(new DummySolverOp());	solver->setGradientThreshold(100000.0f);
+		weight_init.reset(new ConstWeightInitOp<TensorT>(-1.0));	solver.reset(new DummySolverOp<TensorT>());	solver->setGradientThreshold(100000.0f);
 		Weight_oGate_PLin_to_oGate_SLin = Weight<TensorT>("Weight_oGate_PLin_to_oGate_SLin", weight_init, solver); Weight_oGate_PLin_to_oGate_SLin.setModuleName("MC1");
 
 		weight_init.reset();
@@ -392,62 +392,62 @@ public:
 		std::shared_ptr<WeightInitOp<TensorT>> weight_init;
 		std::shared_ptr<SolverOp<TensorT>> solver;
 		weight_init.reset(new RandWeightInitOp<TensorT>(20.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
-		//weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
+		//weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
 		Weight_i_rand_to_fGate_SSig = Weight<TensorT>("Weight_i_rand_to_fGate_SSig", weight_init, solver);
 		weight_init.reset(new RandWeightInitOp<TensorT>(20.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
-		//weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
+		//weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
 		Weight_i_mask_to_fGate_SSig = Weight<TensorT>("Weight_i_mask_to_fGate_SSig", weight_init, solver);
-		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
+		weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
 		Weight_fGate_SSig_bias_to_fGate_SSig = Weight<TensorT>("Weight_fGate_SSig_bias_to_fGate_SSig", weight_init, solver);
 
-		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new DummySolverOp());	solver->setGradientThreshold(100000.0f);
+		weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));	solver.reset(new DummySolverOp<TensorT>());	solver->setGradientThreshold(100000.0f);
 		Weight_MC_to_fGate_PLin = Weight<TensorT>("Weight_MC_to_fGate_PLin", weight_init, solver);
-		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new DummySolverOp());	solver->setGradientThreshold(100000.0f);
+		weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));	solver.reset(new DummySolverOp<TensorT>());	solver->setGradientThreshold(100000.0f);
 		Weight_fGate_SSig_to_fGate_PLin = Weight<TensorT>("Weight_fGate_SSig_to_fGate_PLin", weight_init, solver);
 
 		weight_init.reset(new RandWeightInitOp<TensorT>(20.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
-		//weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
+		//weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
 		Weight_i_rand_to_uGate_SSig = Weight<TensorT>("Weight_i_rand_to_uGate_SSig", weight_init, solver);
 		weight_init.reset(new RandWeightInitOp<TensorT>(20.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
-		//weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
+		//weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
 		Weight_i_mask_to_uGate_SSig = Weight<TensorT>("Weight_i_mask_to_uGate_SSig", weight_init, solver);
-		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
+		weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
 		Weight_uGate_SSig_bias_to_uGate_SSig = Weight<TensorT>("Weight_uGate_SSig_bias_to_uGate_SSig", weight_init, solver);
 
 		weight_init.reset(new RandWeightInitOp<TensorT>(20.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
-		//weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
+		//weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
 		Weight_i_rand_to_uGate_SLin = Weight<TensorT>("Weight_i_rand_to_uGate_SLin", weight_init, solver);
 		weight_init.reset(new RandWeightInitOp<TensorT>(20.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
-		//weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
+		//weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
 		Weight_i_mask_to_uGate_SLin = Weight<TensorT>("Weight_i_mask_to_uGate_SLin", weight_init, solver);
-		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
+		weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
 		Weight_uGate_SLin_bias_to_uGate_SLin = Weight<TensorT>("Weight_uGate_SLin_bias_to_uGate_SLin", weight_init, solver);
 
-		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new DummySolverOp());	solver->setGradientThreshold(100000.0f);
+		weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));	solver.reset(new DummySolverOp<TensorT>());	solver->setGradientThreshold(100000.0f);
 		Weight_uGate_SLin_to_uGate_PLin = Weight<TensorT>("Weight_uGate_SLin_to_uGate_PLin", weight_init, solver);
-		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new DummySolverOp());	solver->setGradientThreshold(100000.0f);
+		weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));	solver.reset(new DummySolverOp<TensorT>());	solver->setGradientThreshold(100000.0f);
 		Weight_uGate_SSig_to_uGate_PLin = Weight<TensorT>("Weight_uGate_SSig_to_uGate_PLin", weight_init, solver);
 
-		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new DummySolverOp());	solver->setGradientThreshold(100000.0f);
+		weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));	solver.reset(new DummySolverOp<TensorT>());	solver->setGradientThreshold(100000.0f);
 		Weight_fGate_PLin_to_MC = Weight<TensorT>("Weight_fGate_PLin_to_MC", weight_init, solver);
-		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new DummySolverOp());	solver->setGradientThreshold(100000.0f);
+		weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));	solver.reset(new DummySolverOp<TensorT>());	solver->setGradientThreshold(100000.0f);
 		Weight_uGate_PLin_to_MC = Weight<TensorT>("Weight_uGate_PLin_to_MC", weight_init, solver);
 
 		weight_init.reset(new RandWeightInitOp<TensorT>(20.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
-		//weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
+		//weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
 		Weight_i_rand_to_oGate_SSig = Weight<TensorT>("Weight_i_rand_to_oGate_SSig", weight_init, solver);
 		weight_init.reset(new RandWeightInitOp<TensorT>(20.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
-		//weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
+		//weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
 		Weight_i_mask_to_oGate_SSig = Weight<TensorT>("Weight_i_mask_to_oGate_SSig", weight_init, solver);
-		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
+		weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
 		Weight_oGate_SSig_bias_to_oGate_SSig = Weight<TensorT>("Weight_oGate_SSig_bias_to_oGate_SSig", weight_init, solver);
 
-		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new DummySolverOp());	solver->setGradientThreshold(100000.0f); //
+		weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));	solver.reset(new DummySolverOp<TensorT>());	solver->setGradientThreshold(100000.0f); //
 		Weight_oGate_SSig_to_oGate_PLin = Weight<TensorT>("Weight_oGate_SSig_to_oGate_PLin", weight_init, solver);
-		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new DummySolverOp());	solver->setGradientThreshold(100000.0f);
+		weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));	solver.reset(new DummySolverOp<TensorT>());	solver->setGradientThreshold(100000.0f);
 		Weight_MC_to_oGate_PLin = Weight<TensorT>("Weight_MC_to_oGate_PLin", weight_init, solver);
 
-		weight_init.reset(new ConstWeightInitOp(1.0));	solver.reset(new DummySolverOp());	solver->setGradientThreshold(100000.0f); //
+		weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));	solver.reset(new DummySolverOp<TensorT>());	solver->setGradientThreshold(100000.0f); //
 		//weight_init.reset(new RandWeightInitOp<TensorT>(20.0));	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));	solver->setGradientThreshold(100000.0f);
 		Weight_oGate_PLin_to_o = Weight<TensorT>("Weight_oGate_PLin_to_o", weight_init, solver);
 
@@ -553,51 +553,51 @@ public:
 		// weights  
 		std::shared_ptr<WeightInitOp<TensorT>> weight_init;
 		std::shared_ptr<SolverOp<TensorT>> solver;
-		weight_init.reset(new ConstWeightInitOp(1.0)); //solution
+		weight_init.reset(new ConstWeightInitOp<TensorT>(1.0)); //solution
 		//solver.reset(new SGDOp(0.01, 0.9));
 		weight_init.reset(new RandWeightInitOp<TensorT>(2.0));
 		solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));
 		solver->setGradientThreshold(10.0f);
 		Weight_i_rand_to_h = Weight<TensorT>("Weight_i_rand_to_h", weight_init, solver);
-		weight_init.reset(new ConstWeightInitOp(100.0)); //solution (large weight magnituted will need to an explosion of even a small error!)
+		weight_init.reset(new ConstWeightInitOp<TensorT>(100.0)); //solution (large weight magnituted will need to an explosion of even a small error!)
 		//solver.reset(new SGDOp(0.01, 0.9));
 		weight_init.reset(new RandWeightInitOp<TensorT>(2.0));
 		solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));
 		solver->setGradientThreshold(10.0f);
 		Weight_i_mask_to_h = Weight<TensorT>("Weight_i_mask_to_h", weight_init, solver);
-		weight_init.reset(new ConstWeightInitOp(1.0)); //solution
+		weight_init.reset(new ConstWeightInitOp<TensorT>(1.0)); //solution
 		//solver.reset(new SGDOp(0.01, 0.9));
 		weight_init.reset(new RandWeightInitOp<TensorT>(2.0));
 		solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));
 		solver->setGradientThreshold(10.0f);
 		Weight_h_to_m = Weight<TensorT>("Weight_h_to_m", weight_init, solver);
-		weight_init.reset(new ConstWeightInitOp(1.0)); //solution
+		weight_init.reset(new ConstWeightInitOp<TensorT>(1.0)); //solution
 		//solver.reset(new SGDOp(0.01, 0.9));
 		weight_init.reset(new RandWeightInitOp<TensorT>(2.0));
 		solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));
 		solver->setGradientThreshold(10.0f);
 		Weight_m_to_m = Weight<TensorT>("Weight_m_to_m", weight_init, solver);
-		weight_init.reset(new ConstWeightInitOp(1.0)); //solution
+		weight_init.reset(new ConstWeightInitOp<TensorT>(1.0)); //solution
 		//solver.reset(new SGDOp(0.01, 0.9));
 		weight_init.reset(new RandWeightInitOp<TensorT>(2.0));
 		solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));
 		solver->setGradientThreshold(10.0f);
 		Weight_m_to_o = Weight<TensorT>("Weight_m_to_o", weight_init, solver);
-		weight_init.reset(new ConstWeightInitOp(-100.0)); //solution (large weight magnituted will need to an explosion of even a small error!)
+		weight_init.reset(new ConstWeightInitOp<TensorT>(-100.0)); //solution (large weight magnituted will need to an explosion of even a small error!)
 		//solver.reset(new SGDOp(0.01, 0.9));
-		weight_init.reset(new ConstWeightInitOp(1.0));
+		weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));
 		solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));
 		solver->setGradientThreshold(10.0f);
 		Weight_h_bias_to_h = Weight<TensorT>("Weight_h_bias_to_h", weight_init, solver);
-		weight_init.reset(new ConstWeightInitOp(0.0)); //solution
+		weight_init.reset(new ConstWeightInitOp<TensorT>(0.0)); //solution
 		//solver.reset(new SGDOp(0.01, 0.9));
-		weight_init.reset(new ConstWeightInitOp(1.0));
+		weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));
 		solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));
 		solver->setGradientThreshold(10.0f);
 		Weight_m_bias_to_m = Weight<TensorT>("Weight_m_bias_to_m", weight_init, solver);
-		weight_init.reset(new ConstWeightInitOp(0.0)); //solution
+		weight_init.reset(new ConstWeightInitOp<TensorT>(0.0)); //solution
 		//solver.reset(new SGDOp(0.01, 0.9));
-		weight_init.reset(new ConstWeightInitOp(1.0));
+		weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));
 		solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));
 		solver->setGradientThreshold(10.0f);
 		Weight_o_bias_to_o = Weight<TensorT>("Weight_o_bias_to_o", weight_init, solver);
