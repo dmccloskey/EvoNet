@@ -144,7 +144,8 @@ public:
 			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 
 		// Add the final softmax layer
-		node_names = model_builder.addStableSoftMax(model, "SoftMax", "SoftMax", node_names);
+		//node_names = model_builder.addStableSoftMax(model, "SoftMax", "SoftMax", node_names);
+		node_names = model_builder.addSoftMax(model, "SoftMax", "SoftMax", node_names);
 
 		for (const std::string& node_name : node_names)
 			model.getNodesMap().at(node_name)->setType(NodeType::output);
