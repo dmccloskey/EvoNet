@@ -144,7 +144,7 @@ protected:
 			// copy the tensor
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_copy(h_error, this->batch_size_, this->memory_size_);
 			error_copy = error;
-			h_error_.reset(h_error);
+			this->h_error_.reset(h_error);
 		}; ///< error setter
 		void setDerivative(const Eigen::Tensor<TensorT, 2>& derivative) {
 			TensorT* h_derivative = new TensorT[this->batch_size_*this->memory_size_];
@@ -209,8 +209,8 @@ protected:
 			// define the deleters
 			auto h_deleter = [&](TensorT* ptr) { cudaFreeHost(ptr); };
 			auto d_deleter = [&](TensorT* ptr) { cudaFree(ptr); };
-			h_error_.reset(h_error, h_deleter);
-			d_error_.reset(d_error, d_deleter);
+			this->h_error_.reset(h_error, h_deleter);
+			this->d_error_.reset(d_error, d_deleter);
 		}; ///< error setter
 		void setDerivative(const Eigen::Tensor<TensorT, 2>& derivative) {
 			// allocate cuda and pinned host memory
