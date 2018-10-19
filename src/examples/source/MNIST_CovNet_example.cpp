@@ -325,7 +325,7 @@ public:
 		const int n_output_nodes = output_data.dimension(2);
 		const int n_epochs = input_data.dimension(3);
 
-		assert(n_output_nodes == 2*this->validation_labels.dimension(1));
+		assert(n_output_nodes == this->validation_labels.dimension(1));
 		assert(n_input_nodes == this->validation_data.dimension(1));
 
 		// make the start and end sample indices [BUG FREE]
@@ -357,8 +357,8 @@ public:
 					for (int nodes_iter = 0; nodes_iter < this->training_labels.dimension(1); ++nodes_iter) {
 						output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = (TensorT)this->training_labels(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
 						//output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = (TensorT)this->training_labels(sample_indices[0], nodes_iter); // test on only 1 sample
-						output_data(batch_iter, memory_iter, nodes_iter + this->training_labels.dimension(1), epochs_iter) = (TensorT)this->training_labels(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
-						//output_data(batch_iter, memory_iter, nodes_iter + this->training_labels.dimension(1), epochs_iter) = (TensorT)this->training_labels(sample_indices[0], nodes_iter); // test on only 1 sample
+						//output_data(batch_iter, memory_iter, nodes_iter + this->training_labels.dimension(1), epochs_iter) = (TensorT)this->training_labels(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
+						////output_data(batch_iter, memory_iter, nodes_iter + this->training_labels.dimension(1), epochs_iter) = (TensorT)this->training_labels(sample_indices[0], nodes_iter); // test on only 1 sample
 					}
 				}
 			}
@@ -375,7 +375,7 @@ public:
 		const int n_output_nodes = output_data.dimension(2);
 		const int n_epochs = input_data.dimension(3);
 
-		assert(n_output_nodes == 2*this->validation_labels.dimension(1));
+		assert(n_output_nodes == this->validation_labels.dimension(1));
 		assert(n_input_nodes == this->validation_data.dimension(1));
 
 		// make the start and end sample indices [BUG FREE]
@@ -403,9 +403,9 @@ public:
 					for (int nodes_iter = 0; nodes_iter < this->validation_data.dimension(1); ++nodes_iter) {
 						input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = this->validation_data(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
 					}
-					for (int nodes_iter = 0; nodes_iter < this->validation_labels.dimension(1); ++nodes_iter) {
+	  		  for (int nodes_iter = 0; nodes_iter < this->validation_labels.dimension(1); ++nodes_iter) {
 						output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = (TensorT)this->validation_labels(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
-						output_data(batch_iter, memory_iter, nodes_iter + this->validation_labels.dimension(1), epochs_iter) = (TensorT)this->validation_labels(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
+						//output_data(batch_iter, memory_iter, nodes_iter + this->validation_labels.dimension(1), epochs_iter) = (TensorT)this->validation_labels(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
 					}
 				}
 			}
@@ -538,12 +538,12 @@ void main_CovNet() {
 	model_trainer.setNThreads(n_hard_threads * 2);
 	model_trainer.setLogging(true, false);
 	model_trainer.setLossFunctions({
-		std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()),std::shared_ptr<LossFunctionOp<float>>(new NegativeLogLikelihoodOp<float>()),
+		std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>())//,std::shared_ptr<LossFunctionOp<float>>(new NegativeLogLikelihoodOp<float>()),
 		});
 	model_trainer.setLossFunctionGrads({
-		std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()),	std::shared_ptr<LossFunctionGradOp<float>>(new NegativeLogLikelihoodGradOp<float>())
+		std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>())//,	std::shared_ptr<LossFunctionGradOp<float>>(new NegativeLogLikelihoodGradOp<float>())
 		});
-	model_trainer.setOutputNodes({ output_FC_nodes, output_nodes 
+	model_trainer.setOutputNodes({ output_FC_nodes//, output_nodes 
 		});
 
 	// define the model replicator for growth mode
