@@ -1856,7 +1856,7 @@ private:
 	}
 
 	template<typename TensorT>
-	void Model<TensorT>::executeForwardPropogationOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false)
+	void Model<TensorT>::executeForwardPropogationOperations(const int& time_step, bool sync_HToD, bool sync_DToH)
 	{
 		// get all the information needed to construct the tensors
 		std::pair<int, int> bmsizes = getBatchAndMemorySizes();

@@ -74,7 +74,7 @@ protected:
 			// copy the tensor
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 0>> weight_copy(h_weight);
 			weight_copy.setConstant(weight);
-			h_weight_.reset(std::move(h_weight));
+			this->h_weight_.reset(std::move(h_weight));
 		}; ///< weight setter
 	};
 
@@ -95,8 +95,8 @@ protected:
 			// define the deleters
 			auto h_deleter = [&](TensorT* ptr) { cudaFreeHost(ptr); };
 			auto d_deleter = [&](TensorT* ptr) { cudaFree(ptr); };
-			h_weight_.reset(h_weight, h_deleter); 
-			d_weight_.reset(d_weight, d_deleter);
+			this->h_weight_.reset(h_weight, h_deleter);
+			this->d_weight_.reset(d_weight, d_deleter);
 		}; ///< weight setter
 	};
 #endif

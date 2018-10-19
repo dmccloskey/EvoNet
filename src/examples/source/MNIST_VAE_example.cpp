@@ -159,24 +159,24 @@ public:
 		const int n_input_nodes = input_data.dimension(2);
 		const int n_output_nodes = output_data.dimension(2);
 		const int n_epochs = input_data.dimension(3);
-		const int n_input_pixels = validation_data.dimension(1);
+		const int n_input_pixels = this->validation_data.dimension(1);
 		const int n_encodings = 20; // not ideal to have this hard coded...
 
 		assert(n_output_nodes == n_input_pixels + 2*n_encodings);
 		assert(n_input_nodes == n_input_pixels + n_encodings);
 
 		// make the start and end sample indices [BUG FREE]
-		mnist_sample_start_training = mnist_sample_end_training;
-		mnist_sample_end_training = mnist_sample_start_training + batch_size*n_epochs;
-		if (mnist_sample_end_training > training_data.dimension(0) - 1)
-			mnist_sample_end_training = mnist_sample_end_training - batch_size*n_epochs;
+		this->mnist_sample_start_training = this->mnist_sample_end_training;
+		this->mnist_sample_end_training = this->mnist_sample_start_training + batch_size*n_epochs;
+		if (this->mnist_sample_end_training > this->training_data.dimension(0) - 1)
+			this->mnist_sample_end_training = this->mnist_sample_end_training - batch_size*n_epochs;
 
 		// make a vector of sample_indices [BUG FREE]
 		std::vector<int> sample_indices;
 		for (int i = 0; i<batch_size*n_epochs; ++i)
 		{
-			int sample_index = i + mnist_sample_start_training;
-			if (sample_index > training_data.dimension(0) - 1)
+			int sample_index = i + this->mnist_sample_start_training;
+			if (sample_index > this->training_data.dimension(0) - 1)
 			{
 				sample_index = sample_index - batch_size*n_epochs;
 			}
@@ -192,10 +192,10 @@ public:
 				for (int nodes_iter = 0; nodes_iter < n_input_pixels + 2*n_encodings; ++nodes_iter) {
 					for (int epochs_iter = 0; epochs_iter < n_epochs; ++epochs_iter) {
 						if (nodes_iter < n_input_pixels) {
-							input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
-							output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
-							//output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[0], nodes_iter); // test on only 1 sample
-							//input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = training_data(sample_indices[0], nodes_iter);  // test on only 1 sample
+							input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = this->training_data(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
+							output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = this->training_data(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
+							//output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = this->training_data(sample_indices[0], nodes_iter); // test on only 1 sample
+							//input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = this->training_data(sample_indices[0], nodes_iter);  // test on only 1 sample
 						}
 						else if (nodes_iter >= n_input_pixels && nodes_iter < n_encodings) {
 							input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = d(gen); // sample from a normal distribution
@@ -219,24 +219,24 @@ public:
 		const int n_input_nodes = input_data.dimension(2);
 		const int n_output_nodes = output_data.dimension(2);
 		const int n_epochs = input_data.dimension(3);
-		const int n_input_pixels = validation_data.dimension(1);
+		const int n_input_pixels = this->validation_data.dimension(1);
 		const int n_encodings = 20; // not ideal to have this hard coded...
 
 		assert(n_output_nodes == n_input_pixels + 2 * n_encodings);
 		assert(n_input_nodes == n_input_pixels + n_encodings);
 
 		// make the start and end sample indices [BUG FREE]
-		mnist_sample_start_training = mnist_sample_end_training;
-		mnist_sample_end_training = mnist_sample_start_training + batch_size * n_epochs;
-		if (mnist_sample_end_training > training_data.dimension(0) - 1)
-			mnist_sample_end_training = mnist_sample_end_training - batch_size * n_epochs;
+		this->mnist_sample_start_training = this->mnist_sample_end_training;
+		this->mnist_sample_end_training = this->mnist_sample_start_training + batch_size * n_epochs;
+		if (this->mnist_sample_end_training > this->training_data.dimension(0) - 1)
+			this->mnist_sample_end_training = this->mnist_sample_end_training - batch_size * n_epochs;
 
 		// make a vector of sample_indices [BUG FREE]
 		std::vector<int> sample_indices;
 		for (int i = 0; i < batch_size*n_epochs; ++i)
 		{
-			int sample_index = i + mnist_sample_start_training;
-			if (sample_index > training_data.dimension(0) - 1)
+			int sample_index = i + this->mnist_sample_start_training;
+			if (sample_index > this->training_data.dimension(0) - 1)
 			{
 				sample_index = sample_index - batch_size * n_epochs;
 			}
@@ -249,10 +249,10 @@ public:
 				for (int nodes_iter = 0; nodes_iter < n_input_pixels + 2 * n_encodings; ++nodes_iter) {
 					for (int epochs_iter = 0; epochs_iter < n_epochs; ++epochs_iter) {
 						if (nodes_iter < n_input_pixels) {
-							input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = validation_data(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
-							output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = validation_data(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
-							//output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = validation_data(sample_indices[0], nodes_iter); // test on only 1 sample
-							//input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = validation_data(sample_indices[0], nodes_iter);  // test on only 1 sample
+							input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = this->validation_data(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
+							output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = this->validation_data(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
+							//output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = this->validation_data(sample_indices[0], nodes_iter); // test on only 1 sample
+							//input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = this->validation_data(sample_indices[0], nodes_iter);  // test on only 1 sample
 						}
 						else if (nodes_iter >= n_input_pixels && nodes_iter < n_encodings) {
 							input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 0; // sample from a normal distribution

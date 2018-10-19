@@ -126,39 +126,39 @@ protected:
 	class NodeDataCpu : public NodeData<TensorT> {
 	public:
 		void setInput(const Eigen::Tensor<TensorT, 2>& input) {
-			TensorT* h_input = new TensorT[batch_size_*memory_size_];
+			TensorT* h_input = new TensorT[this->batch_size_*this->memory_size_];
 			// copy the tensor
-			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> input_copy(h_input, batch_size_, memory_size_);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> input_copy(h_input, this->batch_size_, this->memory_size_);
 			input_copy = input;
-			h_input_.reset(std::move(h_input));
+			this->h_input_.reset(std::move(h_input));
 		}; ///< input setter
 		void setOutput(const Eigen::Tensor<TensorT, 2>& output) {
-			TensorT* h_output = new TensorT[batch_size_*memory_size_];
+			TensorT* h_output = new TensorT[this->batch_size_*this->memory_size_];
 			// copy the tensor
-			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> output_copy(h_output, batch_size_, memory_size_);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> output_copy(h_output, this->batch_size_, this->memory_size_);
 			output_copy = output;
-			h_output_.reset(h_output);
+			this->h_output_.reset(h_output);
 		}; ///< output setter
 		void setError(const Eigen::Tensor<TensorT, 2>& error) {
-			TensorT* h_error = new TensorT[batch_size_*memory_size_];
+			TensorT* h_error = new TensorT[this->batch_size_*this->memory_size_];
 			// copy the tensor
-			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_copy(h_error, batch_size_, memory_size_);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_copy(h_error, this->batch_size_, this->memory_size_);
 			error_copy = error;
 			h_error_.reset(h_error);
 		}; ///< error setter
 		void setDerivative(const Eigen::Tensor<TensorT, 2>& derivative) {
-			TensorT* h_derivative = new TensorT[batch_size_*memory_size_];
+			TensorT* h_derivative = new TensorT[this->batch_size_*this->memory_size_];
 			// copy the tensor
-			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> derivative_copy(h_derivative, batch_size_, memory_size_);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> derivative_copy(h_derivative, this->batch_size_, this->memory_size_);
 			derivative_copy = derivative;
-			h_derivative_.reset(h_derivative);
+			this->h_derivative_.reset(h_derivative);
 		}; ///< derivative setter
 		void setDt(const Eigen::Tensor<TensorT, 2>& dt) {
-			TensorT* h_dt = new TensorT[batch_size_*memory_size_];
+			TensorT* h_dt = new TensorT[this->batch_size_*this->memory_size_];
 			// copy the tensor
-			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> dt_copy(h_dt, batch_size_, memory_size_);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> dt_copy(h_dt, this->batch_size_, this->memory_size_);
 			dt_copy = dt;
-			h_dt_.reset(h_dt);
+			this->h_dt_.reset(h_dt);
 		}; ///< dt setter
 	};
 
@@ -174,13 +174,13 @@ protected:
 			assert(cudaMalloc((void**)(&d_input), getTensorSize()) == cudaSuccess);
 			assert(cudaHostAlloc((void**)(&h_input), getTensorSize(), cudaHostAllocDefault) == cudaSuccess);
 			// copy the tensor
-			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> input_copy(h_input, batch_size_, memory_size_);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> input_copy(h_input, this->batch_size_, this->memory_size_);
 			input_copy = input;
 			// define the deleters
 			auto h_deleter = [&](TensorT* ptr) { cudaFreeHost(ptr); };
 			auto d_deleter = [&](TensorT* ptr) { cudaFree(ptr); };
-			h_input_.reset(h_input, h_deleter); 
-			d_input_.reset(d_input, d_deleter);
+			this->h_input_.reset(h_input, h_deleter); 
+			this->d_input_.reset(d_input, d_deleter);
 		}; ///< input setter
 		void setOutput(const Eigen::Tensor<TensorT, 2>& output) {
 			// allocate cuda and pinned host memory
@@ -189,13 +189,13 @@ protected:
 			assert(cudaMalloc((void**)(&d_output), getTensorSize()) == cudaSuccess);
 			assert(cudaHostAlloc((void**)(&h_output), getTensorSize(), cudaHostAllocDefault) == cudaSuccess);
 			// copy the tensor
-			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> output_copy(h_output, batch_size_, memory_size_);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> output_copy(h_output, this->batch_size_, this->memory_size_);
 			output_copy = output;
 			// define the deleters
 			auto h_deleter = [&](TensorT* ptr) { cudaFreeHost(ptr); };
 			auto d_deleter = [&](TensorT* ptr) { cudaFree(ptr); };
-			h_output_.reset(h_output, h_deleter);
-			d_output_.reset(d_output, d_deleter);
+			this->h_output_.reset(h_output, h_deleter);
+			this->d_output_.reset(d_output, d_deleter);
 		}; ///< output setter
 		void setError(const Eigen::Tensor<TensorT, 2>& error) {
 			// allocate cuda and pinned host memory
@@ -204,7 +204,7 @@ protected:
 			assert(cudaMalloc((void**)(&d_error), getTensorSize()) == cudaSuccess);
 			assert(cudaHostAlloc((void**)(&h_error), getTensorSize(), cudaHostAllocDefault) == cudaSuccess);
 			// copy the tensor
-			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_copy(h_error, batch_size_, memory_size_);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_copy(h_error, this->batch_size_, this->memory_size_);
 			error_copy = error;
 			// define the deleters
 			auto h_deleter = [&](TensorT* ptr) { cudaFreeHost(ptr); };
@@ -219,13 +219,13 @@ protected:
 			assert(cudaMalloc((void**)(&d_derivative), getTensorSize()) == cudaSuccess);
 			assert(cudaHostAlloc((void**)(&h_derivative), getTensorSize(), cudaHostAllocDefault) == cudaSuccess);
 			// copy the tensor
-			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> derivative_copy(h_derivative, batch_size_, memory_size_);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> derivative_copy(h_derivative, this->batch_size_, this->memory_size_);
 			derivative_copy = derivative;
 			// define the deleters
 			auto h_deleter = [&](TensorT* ptr) { cudaFreeHost(ptr); };
 			auto d_deleter = [&](TensorT* ptr) { cudaFree(ptr); };
-			h_derivative_.reset(h_derivative, h_deleter);
-			d_derivative_.reset(d_derivative, d_deleter);
+			this->h_derivative_.reset(h_derivative, h_deleter);
+			this->d_derivative_.reset(d_derivative, d_deleter);
 		}; ///< derivative setter
 		void setDt(const Eigen::Tensor<TensorT, 2>& dt) {
 			// allocate cuda and pinned host memory
@@ -234,13 +234,13 @@ protected:
 			assert(cudaMalloc((void**)(&d_dt), getTensorSize()) == cudaSuccess);
 			assert(cudaHostAlloc((void**)(&h_dt), getTensorSize(), cudaHostAllocDefault) == cudaSuccess);
 			// copy the tensor
-			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> dt_copy(h_dt, batch_size_, memory_size_);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> dt_copy(h_dt, this->batch_size_, this->memory_size_);
 			dt_copy = dt;
 			// define the deleters
 			auto h_deleter = [&](TensorT* ptr) { cudaFreeHost(ptr); };
 			auto d_deleter = [&](TensorT* ptr) { cudaFree(ptr); };
-			h_dt_.reset(h_dt, h_deleter);
-			d_dt_.reset(d_dt, d_deleter);
+			this->h_dt_.reset(h_dt, h_deleter);
+			this->d_dt_.reset(d_dt, d_deleter);
 		}; ///< dt setter
 	};
 #endif

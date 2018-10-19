@@ -531,9 +531,9 @@ private:
 	template<typename TensorT>
 	void Node<TensorT>::checkOutput()
 	{
-		for (int i = 0; i < batch_size_; ++i)
+		for (int i = 0; i < this->batch_size_; ++i)
 		{
-			for (int j = 0; j < memory_size_; ++j)
+			for (int j = 0; j < this->memory_size_; ++j)
 			{
 				if (node_data_->getOutput()(i, j) < output_min_)
 					node_data_->getOutput()(i, j) = output_min_;

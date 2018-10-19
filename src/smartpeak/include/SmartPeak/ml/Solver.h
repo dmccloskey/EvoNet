@@ -115,15 +115,15 @@ public:
     {
       std::string params = "";
       params += "gradient_threshold:" + 
-        std::to_string(getGradientThreshold()) + 
+        std::to_string(this->getGradientThreshold()) + 
         ";gradient_noise_sigma:" + 
-        std::to_string(getGradientNoiseSigma()) + 
+        std::to_string(this->getGradientNoiseSigma()) +
         ";gradient_noise_gamma:" + 
-        std::to_string(getGradientNoiseGamma()) +
+        std::to_string(this->getGradientNoiseGamma()) +
         ";learning_rate:" + 
-        std::to_string(getLearningRate()) + 
+        std::to_string(getLearningRate()) +
         ";momentum:" + 
-        std::to_string(getMomentum()) + 
+        std::to_string(getMomentum()) +
         ";momentum_prev:" + 
         std::to_string(getMomentumPrev());
       return params;
@@ -170,18 +170,18 @@ public:
       const TensorT unbiased_adam1 = adam1/ (1 - momentum_);
       const TensorT unbiased_adam2 = adam2/ (1 - momentum2_);
       const TensorT new_weight = weight - learning_rate_ * unbiased_adam1 / (std::sqrt(unbiased_adam2) + delta_);
-      return checkWeight(weight, new_weight);
+      return this->checkWeight(weight, new_weight);
     };
     std::string getName() const{return "AdamOp";};
     std::string getParameters() const
     {
       std::string params = "";
       params += "gradient_threshold:" + 
-        std::to_string(getGradientThreshold()) + 
+        std::to_string(this->getGradientThreshold()) +
         ";gradient_noise_sigma:" + 
-        std::to_string(getGradientNoiseSigma()) + 
+        std::to_string(this->getGradientNoiseSigma()) +
         ";gradient_noise_gamma:" + 
-        std::to_string(getGradientNoiseGamma()) +
+        std::to_string(this->getGradientNoiseGamma()) +
         ";learning_rate:" + 
         std::to_string(getLearningRate()) + 
         ";momentum:" + 
@@ -257,11 +257,11 @@ private:
 		{
 			std::string params = "";
 			params += "gradient_threshold:" +
-				std::to_string(getGradientThreshold()) +
+				std::to_string(this->getGradientThreshold()) +
 				";gradient_noise_sigma:" +
-				std::to_string(getGradientNoiseSigma()) +
+				std::to_string(this->getGradientNoiseSigma()) +
 				";gradient_noise_gamma:" +
-				std::to_string(getGradientNoiseGamma()) +
+				std::to_string(this->getGradientNoiseGamma()) +
 				";learning_rate:" +
 				std::to_string(getLearningRate()) +
 				";momentum:" +
