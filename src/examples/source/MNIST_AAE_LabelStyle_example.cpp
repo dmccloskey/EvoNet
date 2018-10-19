@@ -200,8 +200,8 @@ public:
 			for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
 				for (int epochs_iter = 0; epochs_iter < n_epochs; ++epochs_iter) {
 
-					Eigen::Tensor<TensorT, 1> one_hot_vec = OneHotEncoder<TensorT, TensorT>(TensorT(sample_indices[epochs_iter*batch_size + batch_iter]), mnist_labels);
-					//Eigen::Tensor<float, 1> one_hot_vec = OneHotEncoder<std::string, float>(sample_indices[0], mnist_labels); // test on only 1 sample
+					Eigen::Tensor<TensorT, 1> one_hot_vec = OneHotEncoder<TensorT, TensorT>(TensorT(sample_indices[epochs_iter*batch_size + batch_iter]), this->mnist_labels);
+					//Eigen::Tensor<float, 1> one_hot_vec = OneHotEncoder<std::string, float>(sample_indices[0], this->mnist_labels); // test on only 1 sample
 					Eigen::Tensor<TensorT, 1> one_hot_vec_smoothed = one_hot_vec.unaryExpr(LabelSmoother<TensorT>(0.01, 0.01));
 
 					for (int nodes_iter = 0; nodes_iter < n_input_pixels + n_encodings + n_labels; ++nodes_iter) {
@@ -269,8 +269,8 @@ public:
 			for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
 				for (int epochs_iter = 0; epochs_iter < n_epochs; ++epochs_iter) {
 
-					Eigen::Tensor<TensorT, 1> one_hot_vec = OneHotEncoder<TensorT, TensorT>(TensorT(sample_indices[epochs_iter*batch_size + batch_iter]), mnist_labels);
-					//Eigen::Tensor<float, 1> one_hot_vec = OneHotEncoder<std::string, float>(sample_indices[0], mnist_labels); // test on only 1 sample
+					Eigen::Tensor<TensorT, 1> one_hot_vec = OneHotEncoder<TensorT, TensorT>(TensorT(sample_indices[epochs_iter*batch_size + batch_iter]), this->mnist_labels);
+					//Eigen::Tensor<float, 1> one_hot_vec = OneHotEncoder<std::string, float>(sample_indices[0], this->mnist_labels); // test on only 1 sample
 					Eigen::Tensor<TensorT, 1> one_hot_vec_smoothed = one_hot_vec.unaryExpr(LabelSmoother<TensorT>(0.01, 0.01));
 
 					for (int nodes_iter = 0; nodes_iter < n_input_pixels + n_encodings + n_labels; ++nodes_iter) {
