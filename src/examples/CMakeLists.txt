@@ -29,9 +29,9 @@ endif()
 add_custom_target(ML_EXAMPLES)
 add_dependencies(ML_EXAMPLES ${ml_executables_list})
 
-# cuda examples
-add_custom_target(CUDA_EXAMPLES)
-add_dependencies(CUDA_EXAMPLES ${cuda_executables_list})
+## cuda examples
+#add_custom_target(CUDA_EXAMPLES)
+#add_dependencies(CUDA_EXAMPLES ${cuda_executables_list})
 
 #------------------------------------------------------------------------------
 # Add the actual examples
