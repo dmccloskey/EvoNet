@@ -327,9 +327,9 @@ public:
 		};
 		~ExponentialOp() {};
 		TensorT operator()(const TensorT& x_I) const {
-			return exp(x_I);
-			//ClipOp<TensorT> clip(eps_, min_, max_);  // Not compatible with CUDA
-			//return clip(exp(x_I));
+			//return exp(x_I);
+			ClipOp<TensorT> clip(eps_, min_, max_);  // Not compatible with CUDA
+			return clip(exp(x_I));
 		};
 		std::string getName() const { return "ExponentialOp"; };
 	};
@@ -344,9 +344,9 @@ public:
 		ExponentialGradOp() {};
 		~ExponentialGradOp() {};
 		TensorT operator()(const TensorT& x_I) const {
-			return exp(x_I);
-			//ClipOp<TensorT> clip(eps_, min_, max_);  // Not compatible with CUDA
-			//return clip(exp(x_I));
+			//return exp(x_I);
+			ClipOp<TensorT> clip(eps_, min_, max_);  // Not compatible with CUDA
+			return clip(exp(x_I));
 		};
 		std::string getName() const { return "ExponentialGradOp"; };
 	};
