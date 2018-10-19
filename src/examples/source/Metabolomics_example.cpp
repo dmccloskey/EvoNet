@@ -559,12 +559,12 @@ public:
 
 					// pick a random sample group name
 					//std::string sample_group_name = selectRandomElement(sample_group_names_);
-					std::string sample_group_name = sample_group_names_[0];
+					std::string sample_group_name = this->sample_group_names_[0];
 
 					for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
-						const TensorT mar = calculateMAR(
-							metabolomicsData_.at(sample_group_name),
-							biochemicalReactions_.at(reaction_ids_[nodes_iter]));
+						const TensorT mar = this->calculateMAR(
+							this->metabolomicsData_.at(sample_group_name),
+							this->biochemicalReactions_.at(this->reaction_ids_[nodes_iter]));
 						input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = mar;
 						output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = mar;
 					}
