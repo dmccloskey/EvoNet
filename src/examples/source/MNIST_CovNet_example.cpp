@@ -530,7 +530,7 @@ void main_CovNet() {
 
 	// define the model trainer
 	ModelTrainerExt<float> model_trainer;
-	model_trainer.setBatchSize(64);
+	model_trainer.setBatchSize(1);
 	model_trainer.setMemorySize(1);
 	model_trainer.setNEpochsTraining(501);
 	model_trainer.setNEpochsValidation(10);
