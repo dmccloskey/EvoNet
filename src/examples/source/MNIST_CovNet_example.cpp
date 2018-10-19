@@ -144,8 +144,8 @@ public:
 			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 
 		// Add the final softmax layer
-		//node_names = model_builder.addStableSoftMax(model, "SoftMax", "SoftMax", node_names);
-		node_names = model_builder.addSoftMax(model, "SoftMax", "SoftMax", node_names);
+		node_names = model_builder.addStableSoftMax(model, "SoftMax", "SoftMax", node_names);
+		//node_names = model_builder.addSoftMax(model, "SoftMax", "SoftMax", node_names);
 
 		for (const std::string& node_name : node_names)
 			model.getNodesMap().at(node_name)->setType(NodeType::output);
@@ -485,8 +485,8 @@ void main_CovNet() {
 	population_trainer.setNReplicatesPerModel(1);
 
 	// define the model logger
-	ModelLogger<float> model_logger(true, true, true, false, false, false, false, false);
-	//ModelLogger<float> model_logger(true, true, true, true, true, false, true, true);
+	//ModelLogger<float> model_logger(true, true, true, false, false, false, false, false);
+	ModelLogger<float> model_logger(true, true, true, true, true, false, true, true);
 
 	// define the data simulator
 	const std::size_t input_size = 784;
