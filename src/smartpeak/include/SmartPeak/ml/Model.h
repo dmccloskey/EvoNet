@@ -1772,7 +1772,9 @@ private:
 	template<typename TensorT>
 	std::string Model<TensorT>::makeForwardPropogationOperationsKey(const std::string & node_name, const int & time_step, const std::string & node_integration, const std::string & node_activation)
 	{
-		std::string ops_key = node_name + "/" + std::to_string(time_step) + "/" + node_integration + "/" + node_activation;
+		// [TODO: make tests; this appears to break the forward propogation algorithm because it does not match the cyclic node name
+		//std::string ops_key = node_name + "/" + std::to_string(time_step) + "/" + node_integration + "/" + node_activation;
+		std::string ops_key = node_name;
 		return ops_key;
 	}
 

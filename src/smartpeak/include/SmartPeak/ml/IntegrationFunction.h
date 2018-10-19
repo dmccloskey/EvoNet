@@ -267,8 +267,8 @@ public:
 		Eigen::Tensor<T, 1> operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_error, const Eigen::Tensor<T, 1>& source_net_input, const Eigen::Tensor<T, 1>& sink_output, const Eigen::Tensor<T, 1>& n) {
 			Eigen::Tensor<T, 1> eps(weight.dimension(0));
 			eps.setConstant(this->eps_);
-			return (source_net_input * source_error / (sink_output + eps)).unaryExpr(ClipOp<T>(1e-6, -1e9, 1e9)); // .unaryExpr(std::ptr_fun(checkNan<T>));
-			//return (source_net_input * source_error / sink_output).unaryExpr(ClipOp<T>(1e-6, -1e9, 1e9)).unaryExpr(std::ptr_fun(checkNan<T>));
+			//return (source_net_input * source_error / (sink_output + eps)).unaryExpr(ClipOp<T>(1e-6, -1e9, 1e9)).unaryExpr(std::ptr_fun(checkNan<T>));
+			return (source_net_input * source_error / sink_output).unaryExpr(ClipOp<T>(1e-6, -1e9, 1e9)).unaryExpr(std::ptr_fun(checkNan<T>));
 		};
 		std::string getName() const { return "ProdErrorOp"; };
 	};

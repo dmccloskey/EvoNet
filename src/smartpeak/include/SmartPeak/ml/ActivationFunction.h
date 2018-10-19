@@ -287,9 +287,9 @@ public:
 		~InverseOp() {};
 		TensorT operator()(const TensorT& x_I) const {
 			const TensorT result = x_I != 0.0 ? 1 / x_I : 0.0;
-			return result;
-			//ClipOp<TensorT> clip(this->eps_, this->min_, this->max_);  // Not compatible with CUDA
-			//return clip(result);
+			//return result;
+			ClipOp<TensorT> clip(this->eps_, this->min_, this->max_);  // Not compatible with CUDA
+			return clip(result);
 		};
 		std::string getName() const { return "InverseOp"; };
 	};
@@ -305,9 +305,9 @@ public:
 		~InverseGradOp() {};
 		TensorT operator()(const TensorT& x_I) const {
 			const TensorT result = x_I != 0.0 ? -1 / pow(x_I, 2) : 0.0;
-			return result;
-			//ClipOp<TensorT> clip(this->eps_, this->min_, this->max_); // Not compatible with CUDA
-			//return clip(result);
+			//return result;
+			ClipOp<TensorT> clip(this->eps_, this->min_, this->max_); // Not compatible with CUDA
+			return clip(result);
 		};
 		std::string getName() const { return "InverseGradOp"; };
 	};

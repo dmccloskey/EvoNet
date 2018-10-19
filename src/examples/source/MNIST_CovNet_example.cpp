@@ -495,21 +495,21 @@ void main_CovNet() {
 	DataSimulatorExt<float> data_simulator;
 
 	// read in the training data
-	//const std::string training_data_filename = "C:/Users/domccl/GitHub/mnist/train-images.idx3-ubyte";
-	//const std::string training_labels_filename = "C:/Users/domccl/GitHub/mnist/train-labels.idx1-ubyte";
+	const std::string training_data_filename = "C:/Users/domccl/GitHub/mnist/train-images.idx3-ubyte";
+	const std::string training_labels_filename = "C:/Users/domccl/GitHub/mnist/train-labels.idx1-ubyte";
 	//const std::string training_data_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/train-images-idx3-ubyte";
 	//const std::string training_labels_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/train-labels-idx1-ubyte";
-	const std::string training_data_filename = "/home/user/data/train-images-idx3-ubyte";
-	const std::string training_labels_filename = "/home/user/data/train-labels-idx1-ubyte";
+	//const std::string training_data_filename = "/home/user/data/train-images-idx3-ubyte";
+	//const std::string training_labels_filename = "/home/user/data/train-labels-idx1-ubyte";
 	data_simulator.readData(training_data_filename, training_labels_filename, true, training_data_size, input_size);
 
 	// read in the validation data
-	//const std::string validation_data_filename = "C:/Users/domccl/GitHub/mnist/t10k-images.idx3-ubyte";
-	//const std::string validation_labels_filename = "C:/Users/domccl/GitHub/mnist/t10k-labels.idx1-ubyte";
+	const std::string validation_data_filename = "C:/Users/domccl/GitHub/mnist/t10k-images.idx3-ubyte";
+	const std::string validation_labels_filename = "C:/Users/domccl/GitHub/mnist/t10k-labels.idx1-ubyte";
 	//const std::string validation_data_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/t10k-images-idx3-ubyte";
 	//const std::string validation_labels_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/t10k-labels-idx1-ubyte";
-	const std::string validation_data_filename = "/home/user/data/t10k-images-idx3-ubyte";
-	const std::string validation_labels_filename = "/home/user/data/t10k-labels-idx1-ubyte";
+	//const std::string validation_data_filename = "/home/user/data/t10k-images-idx3-ubyte";
+	//const std::string validation_labels_filename = "/home/user/data/t10k-labels-idx1-ubyte";
 	data_simulator.readData(validation_data_filename, validation_labels_filename, false, validation_data_size, input_size);
 	data_simulator.unitScaleData();
 
@@ -532,7 +532,7 @@ void main_CovNet() {
 	ModelTrainerExt<float> model_trainer;
 	model_trainer.setBatchSize(1);
 	model_trainer.setMemorySize(1);
-	model_trainer.setNEpochsTraining(501);
+	model_trainer.setNEpochsTraining(1);
 	model_trainer.setNEpochsValidation(10);
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setNThreads(n_hard_threads * 2);
