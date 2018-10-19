@@ -12,7 +12,7 @@ set(ml_executables_list
 )
 
 set(cuda_executables_list
-  CUDA_example
+  #CUDA_example
 )
 
 ### collect example executables
