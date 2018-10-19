@@ -18,5 +18,5 @@ set(cuda_executables_list
 ### collect example executables
 set(EXAMPLE_executables
   ${ml_executables_list}
-  ${cuda_executables_list}
+  #${cuda_executables_list}
 )
