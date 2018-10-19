@@ -158,10 +158,10 @@ public:
 		assert(n_input_nodes == 1);
 
 		// make the start and end sample indices [BUG FREE]
-		mnist_sample_start_validation = this->mnist_sample_end_validation;
-		mnist_sample_end_validation = this->mnist_sample_start_validation + batch_size * n_epochs;
-		if (mnist_sample_end_validation > this->validation_data.dimension(0) - 1)
-			mnist_sample_end_validation = this->mnist_sample_end_validation - batch_size * n_epochs;
+		this->mnist_sample_start_validation = this->mnist_sample_end_validation;
+		this->mnist_sample_end_validation = this->mnist_sample_start_validation + batch_size * n_epochs;
+		if (this->mnist_sample_end_validation > this->validation_data.dimension(0) - 1)
+			this->mnist_sample_end_validation = this->mnist_sample_end_validation - batch_size * n_epochs;
 
 		// make a vector of sample_indices [BUG FREE]
 		std::vector<int> sample_indices;
