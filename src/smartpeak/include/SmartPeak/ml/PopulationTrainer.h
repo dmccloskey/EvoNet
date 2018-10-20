@@ -347,7 +347,6 @@ private:
 		int thread_cnt = 0;
 		for (int i = 0; i < models.size(); ++i)
 		{
-
 			std::packaged_task<std::pair<int, TensorT> // encapsulate in a packaged_task
 				(Model<TensorT>*,
 					ModelTrainer<TensorT>*,
@@ -358,10 +357,13 @@ private:
 					std::vector<std::string>
 					)> task(PopulationTrainer<TensorT>::validateModel_);
 
+			// create a copy of the model logger
+			ModelLogger<TensorT> model_logger_copy = model_logger;
+
 			// launch the thread
 			task_results.push_back(task.get_future());
 			std::thread task_thread(std::move(task),
-				&models[i], &model_trainer, &model_logger,
+				&models[i], &model_trainer, &model_logger_copy,
 				std::ref(input), std::ref(output), std::ref(time_steps),
 				std::ref(input_nodes));
 			task_thread.detach();
@@ -651,10 +653,13 @@ private:
 					std::vector<std::string>
 					)> task(PopulationTrainer<TensorT>::trainModel_);
 
+			// create a copy of the model logger
+			ModelLogger<TensorT> model_logger_copy = model_logger;
+
 			// launch the thread
 			task_results.push_back(task.get_future());
 			std::thread task_thread(std::move(task),
-				&models[i], &model_trainer, &model_logger,
+				&models[i], &model_trainer, &model_logger_copy,
 				std::ref(input), std::ref(output), std::ref(time_steps),
 				std::ref(input_nodes));
 			task_thread.detach();
@@ -763,12 +768,15 @@ private:
 				Eigen::Tensor<TensorT, 4>,
 				Eigen::Tensor<TensorT, 3>,
 				std::vector<std::string>
-				)> task(PopulationTrainer<TensorT>::evalModel_);
+				)> task(PopulationTrainer<TensorT>::evalModel_); 
+			
+			// create a copy of the model trainer and logger
+			ModelLogger<TensorT> model_logger_copy = model_logger;
 
 			// launch the thread
 			task_results.push_back(task.get_future());
 			std::thread task_thread(std::move(task),
-				&models[i], &model_trainer, &model_logger,
+				&models[i], &model_trainer, &model_logger_copy,
 				std::ref(input), std::ref(time_steps),
 				std::ref(input_nodes));
 			task_thread.detach();

@@ -2689,6 +2689,11 @@ private:
 		if (memory_size_cur != 0)
 			memory_size = memory_size_cur;
 
+		// initialize the model
+		initNodes(batch_size, memory_size);
+		initError(batch_size, memory_size);
+		initWeights();
+
 		// set all node outputs to zero except for the input
 		// set all node derivatives to one
 		// set all node errors to zero except for the output
