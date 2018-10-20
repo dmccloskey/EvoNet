@@ -798,7 +798,7 @@ int main(int argc, char** argv)
 
 	// define the model replicator for growth mode
 	ModelTrainerExt<float> model_trainer;
-	model_trainer.setBatchSize(1);
+	model_trainer.setBatchSize(8);
 	model_trainer.setMemorySize(data_simulator.sequence_length_);
 	model_trainer.setNEpochsTraining(1000);
 	model_trainer.setNEpochsValidation(25);
