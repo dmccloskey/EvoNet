@@ -82,7 +82,7 @@ public:
           name_,
           links_,
           nodes_,
-          weights_
+					weights_
         ) == std::tie(
           other.id_,
           other.name_,
@@ -676,6 +676,10 @@ public:
 
 		/**
 		@brief Check that the path from input to output is not broken
+
+		Note: The method will modify the model weights, nodes, and errors
+			It is recommended to first create a copy of the model that will be later discarded
+			Or re-initialize the model after.
 
 		[DEPRECATED: params no longer needed]
 		@param[in] input_nodes
@@ -2673,33 +2677,33 @@ private:
 		//if (!checkNodeNames(input_nodes) || !checkNodeNames(output_nodes))
 		//	return false;
 
-		// infer the batch and memory size
-		// [BUG: modifying the batch_size or memory_size causes a memory corruption error when
-		//			 using the training the population after replicating and modifying the models
-		//			 potential cause: the batch/memory sizes are not updated during training?]
-		std::pair<int, int> bmsizes = getBatchAndMemorySizes();
-		int batch_size_cur = bmsizes.first;
-		int memory_size_cur = bmsizes.second;
+		//// infer the batch and memory size
+		//// [BUG: modifying the batch_size or memory_size causes a memory corruption error when
+		////			 using the training the population after replicating and modifying the models
+		////			 potential cause: the batch/memory sizes are not updated during training?]
+		//std::pair<int, int> bmsizes = getBatchAndMemorySizes();
+		//int batch_size_cur = bmsizes.first;
+		//int memory_size_cur = bmsizes.second;
 
 		// check for uninitialized nodes
-		int batch_size = 2;
-		int memory_size = 2;
-		if (batch_size_cur != 0)
-			batch_size = batch_size_cur;
-		if (memory_size_cur != 0)
-			memory_size = memory_size_cur;
+		int batch_size = 1;
+		int memory_size = 1;
 
 		// initialize the model
 		initNodes(batch_size, memory_size);
 		initError(batch_size, memory_size);
 		initWeights();
 
+		std::pair<int, int> bmsizes = getBatchAndMemorySizes();
+		int batch_size_cur = bmsizes.first;
+		int memory_size_cur = bmsizes.second;
+
 		// set all node outputs to zero except for the input
 		// set all node derivatives to one
 		// set all node errors to zero except for the output
-		Eigen::Tensor<TensorT, 2> zero(batch_size, memory_size);
+		Eigen::Tensor<TensorT, 2> zero(batch_size_cur, memory_size_cur);
 		zero.setConstant(0.0f);
-		Eigen::Tensor<TensorT, 2> one(batch_size, memory_size);
+		Eigen::Tensor<TensorT, 2> one(batch_size_cur, memory_size_cur);
 		one.setConstant(1.0f);
 		for (auto& node : input_nodes_)
 		{
@@ -2852,7 +2856,7 @@ private:
 	{
 		FP_operations_cache_.clear();
 		BP_operations_cache_.clear();
-		cyclic_pairs_.clear();
+		//cyclic_pairs_.clear();
 	}
 
 	template<typename TensorT>

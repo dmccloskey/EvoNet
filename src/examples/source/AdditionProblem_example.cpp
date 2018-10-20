@@ -732,10 +732,10 @@ public:
 		else
 		{
 			this->setRandomModifications(
-				std::make_pair(0, 0),
-				std::make_pair(0, 0),
-				std::make_pair(0, 0),
-				std::make_pair(0, 0),
+				std::make_pair(0, 1),
+				std::make_pair(0, 1),
+				std::make_pair(0, 1),
+				std::make_pair(0, 1),
 				std::make_pair(0, 0),
 				std::make_pair(0, 0),
 				std::make_pair(0, 0),
@@ -786,7 +786,7 @@ int main(int argc, char** argv)
 	//sprintf(threads_cout, "Threads for population training: %d, Threads for model training/validation: %d\n",
 	//	n_hard_threads, 2);
 	//std::cout << threads_cout;
-	const int n_threads = 1;
+	const int n_threads = n_hard_threads;
 
 	// define the input/output nodes
 	std::vector<std::string> input_nodes = { "Input_0", "Input_1" };
@@ -801,8 +801,8 @@ int main(int argc, char** argv)
 	ModelTrainerExt<float> model_trainer;
 	model_trainer.setBatchSize(1);
 	model_trainer.setMemorySize(data_simulator.sequence_length_);
-	model_trainer.setNEpochsTraining(10);
-	model_trainer.setNEpochsValidation(25);
+	model_trainer.setNEpochsTraining(1000);
+	model_trainer.setNEpochsValidation(50);
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setNThreads(2);
 	model_trainer.setLogging(true, false);
@@ -811,8 +811,8 @@ int main(int argc, char** argv)
 	model_trainer.setOutputNodes({ output_nodes });
 
 	// define the model logger
-	//ModelLogger<float> model_logger(true, true, true, false, false, false, false, false);
-	ModelLogger<float> model_logger(true, true, true, true, true, false, true, true);
+	ModelLogger<float> model_logger(true, true, true, false, false, false, false, false);
+	//ModelLogger<float> model_logger(true, true, true, true, true, false, true, true);
 
 	// define the model replicator for growth mode
 	ModelReplicatorExt<float> model_replicator;
@@ -831,15 +831,6 @@ int main(int argc, char** argv)
 		std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new VarModOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new VarModErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new VarModWeightGradOp<float>())),
 		std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new CountOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new CountErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new CountWeightGradOp<float>()))
 	});
-	model_replicator.setRandomModifications(
-		std::make_pair(0, 0),
-		std::make_pair(0, 0),
-		std::make_pair(0, 0),
-		std::make_pair(0, 0),
-		std::make_pair(0, 0),
-		std::make_pair(0, 0),
-		std::make_pair(0, 0),
-		std::make_pair(0, 0));
 
 	// define the initial population [BUG FREE]
 	std::cout << "Initializing the population..." << std::endl;
