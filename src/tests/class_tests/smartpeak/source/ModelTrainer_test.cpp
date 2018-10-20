@@ -204,6 +204,7 @@ public:
 		model1.setLossFunction(loss_function);
 		std::shared_ptr<LossFunctionGradOp<TensorT>> loss_function_grad(new MSEGradOp<TensorT>());
 		model1.setLossFunctionGrad(loss_function_grad);
+		model1.initWeights();
 		return model1;
 	}
 	void adaptiveTrainerScheduler(
@@ -334,6 +335,7 @@ public:
 		model2.addNodes({ i1, h1, o1, b1, b2 });
 		model2.addWeights({ w1, w2, w3, wb1, wb2 });
 		model2.addLinks({ l1, l2, l3, lb1, lb2 });
+		model2.initWeights();
 		return model2;
 	}
 	void adaptiveTrainerScheduler(

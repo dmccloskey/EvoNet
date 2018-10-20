@@ -781,12 +781,11 @@ int main(int argc, char** argv)
 
 	// define the multithreading parameters
 	const int n_hard_threads = std::thread::hardware_concurrency();
-	//const int n_threads = n_hard_threads / 2; // the number of threads
-	//char threads_cout[512];
-	//sprintf(threads_cout, "Threads for population training: %d, Threads for model training/validation: %d\n",
-	//	n_hard_threads, 2);
-	//std::cout << threads_cout;
-	const int n_threads = n_hard_threads;
+	const int n_threads = n_hard_threads / 2; // the number of threads
+	char threads_cout[512];
+	sprintf(threads_cout, "Threads for population training: %d, Threads for model training/validation: %d\n",
+		n_threads, 2);
+	std::cout << threads_cout;
 
 	// define the input/output nodes
 	std::vector<std::string> input_nodes = { "Input_0", "Input_1" };
@@ -801,8 +800,8 @@ int main(int argc, char** argv)
 	ModelTrainerExt<float> model_trainer;
 	model_trainer.setBatchSize(1);
 	model_trainer.setMemorySize(data_simulator.sequence_length_);
-	model_trainer.setNEpochsTraining(1000);
-	model_trainer.setNEpochsValidation(50);
+	model_trainer.setNEpochsTraining(5);
+	model_trainer.setNEpochsValidation(5);
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setNThreads(2);
 	model_trainer.setLogging(true, false);

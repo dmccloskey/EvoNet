@@ -544,7 +544,7 @@ private:
 				task_thread.detach();
 
 				// retreive the results
-				if (thread_cnt == n_threads - 1 || cnt == models_copy.size() - 1)
+				if (thread_cnt == n_threads - 1 || cnt == models_copy.size()*getNReplicatesPerModel() - 1)
 				{
 					for (auto& task_result : task_results)
 					{

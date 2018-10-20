@@ -975,7 +975,7 @@ private:
 		std::string random_link = selectRandomLink(model, source_node_type_exclude, source_node_type_include, sink_node_type_exclude, sink_node_type_include);
 
 		Weight<TensorT> weight = model.getWeight(model.getLink(random_link).getWeightName()); // copy assignment
-		char weight_name_char[128];
+		char weight_name_char[512];
 		sprintf(weight_name_char, "Weight_%s_to_%s@addLink#", source_node_name.data(), sink_node_name.data());
 		std::string weight_name = makeUniqueHash(weight_name_char, unique_str);
 		weight.setName(weight_name);
@@ -983,7 +983,7 @@ private:
 		model.addWeights({ weight });
 
 		// create the new link
-		char link_name_char[128];
+		char link_name_char[512];
 		sprintf(link_name_char, "Link_%s_to_%s@addLink#", source_node_name.data(), sink_node_name.data());
 		std::string link_name = makeUniqueHash(link_name_char, unique_str);
 		Link link(link_name, source_node_name, sink_node_name, weight_name);
@@ -1176,7 +1176,7 @@ private:
 		model.addNodes({ new_node });
 
 		// create a new bias
-		char new_bias_name_char[128];
+		char new_bias_name_char[512];
 		sprintf(new_bias_name_char, "Bias_%s@addNode#", add_node_name.data());
 		std::string new_bias_name = makeUniqueHash(new_bias_name_char, unique_str);
 		Node<TensorT> new_bias(new_bias_name, NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
@@ -1385,7 +1385,7 @@ private:
 			name_prefix = str_tokens[0]; // only retain the last timestamp
 																		 // printf("New node name: %s\n", add_name.data());
 
-		char new_name_char[128];
+		char new_name_char[512];
 		sprintf(new_name_char, new_name_format.data(), name_prefix.data());
 		new_name = makeUniqueHash(new_name_char, unique_str);
 	}
