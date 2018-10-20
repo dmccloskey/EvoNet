@@ -600,7 +600,7 @@ private:
 		sprintf(model_name_char, "%s@replicateModel#%s", model_name_new.data(), unique_str.data());
 		std::string model_name = model_replicator->makeUniqueHash(model_name_char, std::to_string(cnt));
 
-		int max_iters = 5;
+		int max_iters = 1e6;
 		for (int iter = 0; iter < max_iters; ++iter)
 		{
 			Model<TensorT> model_copy(*model);
