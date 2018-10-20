@@ -479,7 +479,7 @@ private:
 		model.clearCache();
 		model.initNodes(getBatchSize(), getMemorySize(), true); // The first time point = 0
 		model.initWeightsDropProbability(true);
-		//model.findCycles(); // [TODO: add method to model to flag when to find cycles]
+		model.findCycles(); // [TODO: add method to model to flag when to find cycles]
 
 		// Initialize the logger
 		if (log_training_)
