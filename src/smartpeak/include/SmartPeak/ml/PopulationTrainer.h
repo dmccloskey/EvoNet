@@ -73,7 +73,7 @@ public:
 
 			@returns a list of pairs of model_name to average validation error
     */ 
-		std::vector<std::pair<int, TensorT>> selectModels(
+		std::vector<std::tuple<int, std::string, TensorT>> selectModels(
       std::vector<Model<TensorT>>& models,
       ModelTrainer<TensorT>& model_trainer,
 			ModelLogger<TensorT>& model_logger,
@@ -88,7 +88,7 @@ public:
 
       @returns key value pair of model_name and model_error
     */ 
-    static std::pair<int, TensorT> validateModel_(
+    static std::tuple<int, std::string, TensorT> validateModel_(
       Model<TensorT>* model,
       ModelTrainer<TensorT>* model_trainer,
 			ModelLogger<TensorT>* model_logger,
@@ -102,8 +102,8 @@ public:
 
       @returns key value pair of model_name and model_error
     */ 
-    static std::vector<std::pair<int, TensorT>> getTopNModels_(
-      std::vector<std::pair<int, TensorT>> model_validation_scores,
+    static std::vector<std::tuple<int, std::string, TensorT>> getTopNModels_(
+      std::vector<std::tuple<int, std::string, TensorT>> model_validation_scores,
       const int& n_top);
  
     /**
@@ -111,8 +111,8 @@ public:
 
       @returns key value pair of model_name and model_error
     */ 
-    static std::vector<std::pair<int, TensorT>> getRandomNModels_(
-      std::vector<std::pair<int, TensorT>> model_validation_scores,
+    static std::vector<std::tuple<int, std::string, TensorT>> getRandomNModels_(
+      std::vector<std::tuple<int, std::string, TensorT>> model_validation_scores,
       const int& n_random);
  
     /**
@@ -137,7 +137,7 @@ public:
       std::string unique_str = "",
       int n_threads = 1);
 
-    static Model<TensorT> replicateModel_(
+    static std::pair<bool, Model<TensorT>> replicateModel_(
       Model<TensorT>* model,
       ModelReplicator<TensorT>* model_replicator,
       std::string unique_str, int cnt);
@@ -207,7 +207,7 @@ public:
 		@param[in] model_replicator The replicator to use
 		@param[in] data_simulator The data simulate/generator to use
 		*/
-		std::vector<std::vector<std::pair<int, TensorT>>> evolveModels(
+		std::vector<std::vector<std::tuple<int, std::string, TensorT>>> evolveModels(
 			std::vector<Model<TensorT>>& models,
 			ModelTrainer<TensorT>& model_trainer,
 			ModelReplicator<TensorT>& model_replicator,
@@ -244,7 +244,7 @@ public:
 		virtual void adaptivePopulationScheduler(
 			const int& n_generations,
 			std::vector<Model<TensorT>>& models,
-			std::vector<std::vector<std::pair<int, TensorT>>>& models_errors_per_generations) = 0;
+			std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations) = 0;
 
 private:
 		int unique_id_ = 0;
@@ -325,7 +325,7 @@ private:
 	}
 
 	template<typename TensorT>
-	std::vector<std::pair<int, TensorT>> PopulationTrainer<TensorT>::selectModels(
+	std::vector<std::tuple<int, std::string, TensorT>> PopulationTrainer<TensorT>::selectModels(
 		std::vector<Model<TensorT>>& models,
 		ModelTrainer<TensorT>& model_trainer,
 		ModelLogger<TensorT>& model_logger,
@@ -337,17 +337,17 @@ private:
 	{
 		// printf("PopulationTrainer<TensorT>::selectModels, Models size: %i\n", models.size());
 		// score the models
-		std::vector<std::pair<int, TensorT>> models_validation_errors;
+		std::vector<std::tuple<int, std::string, TensorT>> models_validation_errors;
 
 		// models_validation_errors = validateModels_(
 		//   models, model_trainer, input, output, time_steps, input_nodes, output_nodes
 		// );
 
-		std::vector<std::future<std::pair<int, TensorT>>> task_results;
+		std::vector<std::future<std::tuple<int, std::string, TensorT>>> task_results;
 		int thread_cnt = 0;
 		for (int i = 0; i < models.size(); ++i)
 		{
-			std::packaged_task<std::pair<int, TensorT> // encapsulate in a packaged_task
+			std::packaged_task<std::tuple<int, std::string, TensorT> // encapsulate in a packaged_task
 				(Model<TensorT>*,
 					ModelTrainer<TensorT>*,
 					ModelLogger<TensorT>*,
@@ -408,8 +408,8 @@ private:
 		// printf("PopulationTrainer<TensorT>::selectModels, models_validation_errors3 size: %i\n", models_validation_errors.size());
 
 		std::vector<int> selected_models;
-		for (const std::pair<int, TensorT>& model_error : models_validation_errors)
-			selected_models.push_back(model_error.first);
+		for (const std::tuple<int, std::string, TensorT>& model_error : models_validation_errors)
+			selected_models.push_back(std::get<0>(model_error));
 
 		// purge non-selected models
 		if (selected_models.size() != models.size())
@@ -434,7 +434,7 @@ private:
 	}
 
 	template<typename TensorT>
-	std::pair<int, TensorT> PopulationTrainer<TensorT>::validateModel_(
+	std::tuple<int, std::string, TensorT> PopulationTrainer<TensorT>::validateModel_(
 		Model<TensorT>* model,
 		ModelTrainer<TensorT>* model_trainer,
 		ModelLogger<TensorT>* model_logger,
@@ -461,27 +461,27 @@ private:
 				model->getName().data(), model->getNodes().size(), model->getLinks().size(), model_ave_error);
 			std::cout << cout_char;
 
-			return std::make_pair(model->getId(), model_ave_error);
+			return std::make_tuple(model->getId(), model->getName(), model_ave_error);
 		}
 		catch (std::exception& e)
 		{
 			printf("The model %s is broken.\n", model->getName().data());
 			printf("Error: %s.\n", e.what());
-			return std::make_pair(model->getId(), 1e6f);
+			return std::make_tuple(model->getId(), model->getName(), 1e6f);
 		}
 	}
 
 	template<typename TensorT>
-	std::vector<std::pair<int, TensorT>> PopulationTrainer<TensorT>::getTopNModels_(
-		std::vector<std::pair<int, TensorT>> model_validation_scores,
+	std::vector<std::tuple<int, std::string, TensorT>> PopulationTrainer<TensorT>::getTopNModels_(
+		std::vector<std::tuple<int, std::string, TensorT>> model_validation_scores,
 		const int& n_top)
 	{
 		// sort each model based on their scores in ascending order
 		std::sort(
 			model_validation_scores.begin(), model_validation_scores.end(),
-			[=](std::pair<int, TensorT>& a, std::pair<int, TensorT>& b)
+			[=](std::tuple<int, std::string, TensorT>& a, std::tuple<int, std::string, TensorT>& b)
 		{
-			return a.second < b.second;
+			return std::get<2>(a) < std::get<2>(b);
 		}
 		);
 
@@ -490,15 +490,15 @@ private:
 		if (n_ > model_validation_scores.size())
 			n_ = model_validation_scores.size();
 
-		std::vector<std::pair<int, TensorT>> top_n_models;
+		std::vector<std::tuple<int, std::string, TensorT>> top_n_models;
 		for (int i = 0; i < n_; ++i) { top_n_models.push_back(model_validation_scores[i]); }
 
 		return top_n_models;
 	}
 
 	template<typename TensorT>
-	std::vector<std::pair<int, TensorT>> PopulationTrainer<TensorT>::getRandomNModels_(
-		std::vector<std::pair<int, TensorT>> model_validation_scores,
+	std::vector<std::tuple<int, std::string, TensorT>> PopulationTrainer<TensorT>::getRandomNModels_(
+		std::vector<std::tuple<int, std::string, TensorT>> model_validation_scores,
 		const int& n_random)
 	{
 		int n_ = n_random;
@@ -509,7 +509,7 @@ private:
 		std::random_device seed;
 		std::mt19937 engine(seed());
 		std::shuffle(model_validation_scores.begin(), model_validation_scores.end(), engine);
-		std::vector<std::pair<int, TensorT>> random_n_models;
+		std::vector<std::tuple<int, std::string, TensorT>> random_n_models;
 		for (int i = 0; i < n_; ++i) { random_n_models.push_back(model_validation_scores[i]); }
 
 		return random_n_models;
@@ -525,13 +525,13 @@ private:
 		// replicate and modify
 		std::vector<Model<TensorT>> models_copy = models;
 		int cnt = 0;
-		std::vector<std::future<Model<TensorT>>> task_results;
+		std::vector<std::future<std::pair<bool, Model<TensorT>>>> task_results;
 		int thread_cnt = 0;
 		for (Model<TensorT>& model : models_copy)
 		{
 			for (int i = 0; i < getNReplicatesPerModel(); ++i)
 			{
-				std::packaged_task<Model<TensorT>// encapsulate in a packaged_task
+				std::packaged_task<std::pair<bool, Model<TensorT>>// encapsulate in a packaged_task
 					(Model<TensorT>*, ModelReplicator<TensorT>*,
 						std::string, int
 						)> task(PopulationTrainer<TensorT>::replicateModel_);
@@ -552,9 +552,13 @@ private:
 						{
 							try
 							{
-								Model<TensorT> model_task_result = task_result.get();
-								model_task_result.setId(getNextID());
-								models.push_back(model_task_result);
+								std::pair<bool, Model<TensorT>> model_task_result = task_result.get();
+								if (model_task_result.first) {
+									model_task_result.second.setId(getNextID());
+									models.push_back(model_task_result.second);
+								}
+								else
+									std::cout << "All models were broken." << std::endl;
 							}
 							catch (std::exception& e)
 							{
@@ -578,7 +582,7 @@ private:
 	}
 
 	template<typename TensorT>
-	Model<TensorT> PopulationTrainer<TensorT>::replicateModel_(
+	std::pair<bool, Model<TensorT>> PopulationTrainer<TensorT>::replicateModel_(
 		Model<TensorT>* model,
 		ModelReplicator<TensorT>* model_replicator,
 		std::string unique_str, int cnt)
@@ -600,7 +604,7 @@ private:
 		sprintf(model_name_char, "%s@replicateModel#%s", model_name_new.data(), unique_str.data());
 		std::string model_name = model_replicator->makeUniqueHash(model_name_char, std::to_string(cnt));
 
-		int max_iters = 1e6;
+		int max_iters = 32;
 		for (int iter = 0; iter < max_iters; ++iter)
 		{
 			Model<TensorT> model_copy(*model);
@@ -618,10 +622,10 @@ private:
 			bool complete_model = model_check.checkCompleteInputToOutput();
 
 			if (complete_model)
-				return model_copy;
+				return std::make_pair(true, model_copy);
 		}
-
-		throw std::runtime_error("All modified models were broken!");
+		return std::make_pair(false, Model<TensorT>());
+		//throw std::runtime_error("All modified models were broken!");
 	}
 
 	template<typename TensorT>
@@ -847,7 +851,7 @@ private:
 	}
 
 	template<typename TensorT>
-	std::vector<std::vector<std::pair<int, TensorT>>> PopulationTrainer<TensorT>::evolveModels(
+	std::vector<std::vector<std::tuple<int, std::string, TensorT>>> PopulationTrainer<TensorT>::evolveModels(
 		std::vector<Model<TensorT>>& models,
 		ModelTrainer<TensorT>& model_trainer,
 		ModelReplicator<TensorT>& model_replicator,
@@ -856,7 +860,7 @@ private:
 		const std::vector<std::string>& input_nodes,
 		int n_threads)
 	{
-		std::vector<std::vector<std::pair<int, TensorT>>> models_validation_errors_per_generation;
+		std::vector<std::vector<std::tuple<int, std::string, TensorT>>> models_validation_errors_per_generation;
 
 		std::vector<std::string> output_nodes;
 		for (const std::vector<std::string>& output_nodes_vec : model_trainer.getOutputNodes())
@@ -894,7 +898,7 @@ private:
 
 			// select the top N from the population
 			std::cout << "Selecting the models..." << std::endl;
-			std::vector<std::pair<int, TensorT>> models_validation_errors = selectModels(
+			std::vector<std::tuple<int, std::string, TensorT>> models_validation_errors = selectModels(
 				models, model_trainer, model_logger,
 				input_data_validation, output_data_validation, time_steps_validation, input_nodes, n_threads);
 			models_validation_errors_per_generation.push_back(models_validation_errors);

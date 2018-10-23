@@ -92,7 +92,7 @@ namespace SmartPeak
   }
 
 	template<typename TensorT>
-	std::vector<std::pair<int, TensorT>> PopulationTrainer<TensorT>::selectModels(
+	std::vector<std::tuple<int, std::string, TensorT>> PopulationTrainer<TensorT>::selectModels(
     std::vector<Model<TensorT>>& models,
     ModelTrainer<TensorT>& model_trainer,
 		ModelLogger<TensorT>& model_logger,
@@ -104,18 +104,18 @@ namespace SmartPeak
   {
     // printf("PopulationTrainer<TensorT>::selectModels, Models size: %i\n", models.size());
     // score the models
-    std::vector<std::pair<int, TensorT>> models_validation_errors;
+    std::vector<std::tuple<int, std::string, TensorT>> models_validation_errors;
 
     // models_validation_errors = validateModels_(
     //   models, model_trainer, input, output, time_steps, input_nodes, output_nodes
     // );
 
-    std::vector<std::future<std::pair<int, TensorT>>> task_results;
+    std::vector<std::future<std::tuple<int, std::string, TensorT>>> task_results;
     int thread_cnt = 0;
     for (int i=0; i<models.size(); ++i)
     {
 
-      std::packaged_task<std::pair<int, TensorT> // encapsulate in a packaged_task
+      std::packaged_task<std::tuple<int, std::string, TensorT> // encapsulate in a packaged_task
         (Model<TensorT>*,
           ModelTrainer<TensorT>*,
 					ModelLogger<TensorT>*,
@@ -173,7 +173,7 @@ namespace SmartPeak
     // printf("PopulationTrainer<TensorT>::selectModels, models_validation_errors3 size: %i\n", models_validation_errors.size());
     
     std::vector<int> selected_models;
-    for (const std::pair<int, TensorT>& model_error: models_validation_errors)
+    for (const std::tuple<int, std::string, TensorT>& model_error: models_validation_errors)
       selected_models.push_back(model_error.first);
 
     // purge non-selected models
@@ -199,7 +199,7 @@ namespace SmartPeak
   }
 
 	template<typename TensorT>
-  std::pair<int, TensorT> PopulationTrainer<TensorT>::validateModel_(
+  std::tuple<int, std::string, TensorT> PopulationTrainer<TensorT>::validateModel_(
     Model<TensorT>* model,
     ModelTrainer<TensorT>* model_trainer,
 		ModelLogger<TensorT>* model_logger,
@@ -226,25 +226,25 @@ namespace SmartPeak
         model->getName().data(), model->getNodes().size(), model->getLinks().size(), model_ave_error);
       std::cout<<cout_char;
 
-      return std::make_pair(model->getId(), model_ave_error);
+      return std::make_tuple(model->getId(), model->getName(), model_ave_error);
     }
     catch (std::exception& e)
     {
       printf("The model %s is broken.\n", model->getName().data());
       printf("Error: %s.\n", e.what());
-      return std::make_pair(model->getId(),1e6f);
+      return std::make_pair(model->getId(), model->getName(), 1e6f);
     }  
   }
 
 	template<typename TensorT>
-  std::vector<std::pair<int, TensorT>> PopulationTrainer<TensorT>::getTopNModels_(
-    std::vector<std::pair<int, TensorT>> model_validation_scores,
+  std::vector<std::tuple<int, std::string, TensorT>> PopulationTrainer<TensorT>::getTopNModels_(
+    std::vector<std::tuple<int, std::string, TensorT>> model_validation_scores,
     const int& n_top)
   {
     // sort each model based on their scores in ascending order
     std::sort(
       model_validation_scores.begin(), model_validation_scores.end(), 
-      [=](std::pair<int, TensorT>& a, std::pair<int, TensorT>& b)
+      [=](std::tuple<int, std::string, TensorT>& a, std::tuple<int, std::string, TensorT>& b)
       {
         return a.second < b.second;
       }
@@ -255,15 +255,15 @@ namespace SmartPeak
     if (n_ > model_validation_scores.size())
       n_ = model_validation_scores.size();
       
-    std::vector<std::pair<int, TensorT>> top_n_models;
+    std::vector<std::tuple<int, std::string, TensorT>> top_n_models;
     for (int i=0; i<n_; ++i) {top_n_models.push_back(model_validation_scores[i]);}
 
     return top_n_models;
   }
 
 	template<typename TensorT>
-  std::vector<std::pair<int, TensorT>> PopulationTrainer<TensorT>::getRandomNModels_(
-    std::vector<std::pair<int, TensorT>> model_validation_scores,
+  std::vector<std::tuple<int, std::string, TensorT>> PopulationTrainer<TensorT>::getRandomNModels_(
+    std::vector<std::tuple<int, std::string, TensorT>> model_validation_scores,
     const int& n_random)
   {
     int n_ = n_random;
@@ -274,7 +274,7 @@ namespace SmartPeak
     std::random_device seed;
     std::mt19937 engine(seed());
     std::shuffle(model_validation_scores.begin(), model_validation_scores.end(), engine);
-    std::vector<std::pair<int, TensorT>> random_n_models;
+    std::vector<std::tuple<int, std::string, TensorT>> random_n_models;
     for (int i=0; i<n_; ++i) {random_n_models.push_back(model_validation_scores[i]);}
 
     return random_n_models;
@@ -606,7 +606,7 @@ namespace SmartPeak
 	}
 
 	template<typename TensorT>
-	std::vector<std::vector<std::pair<int, TensorT>>> PopulationTrainer<TensorT>::evolveModels(
+	std::vector<std::vector<std::tuple<int, std::string, TensorT>>> PopulationTrainer<TensorT>::evolveModels(
 		std::vector<Model<TensorT>>& models,
 		ModelTrainer<TensorT>& model_trainer,
 		ModelReplicator<TensorT>& model_replicator,
@@ -615,7 +615,7 @@ namespace SmartPeak
 		const std::vector<std::string>& input_nodes,
 		int n_threads)
 	{
-		std::vector<std::vector<std::pair<int, TensorT>>> models_validation_errors_per_generation;
+		std::vector<std::vector<std::tuple<int, std::string, TensorT>>> models_validation_errors_per_generation;
 
 		std::vector<std::string> output_nodes;
 		for (const std::vector<std::string>& output_nodes_vec : model_trainer.getOutputNodes())
@@ -653,7 +653,7 @@ namespace SmartPeak
 
 			// select the top N from the population
 			std::cout << "Selecting the models..." << std::endl;
-			std::vector<std::pair<int, TensorT>> models_validation_errors = selectModels(
+			std::vector<std::tuple<int, std::string, TensorT>> models_validation_errors = selectModels(
 				models, model_trainer, model_logger,
 				input_data_validation, output_data_validation, time_steps_validation, input_nodes, n_threads);
 			models_validation_errors_per_generation.push_back(models_validation_errors);

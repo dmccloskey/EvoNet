@@ -34,7 +34,7 @@ public:
 	void adaptiveReplicatorScheduler(
 		const int& n_generations,
 		std::vector<Model<TensorT>>& models,
-		std::vector<std::vector<std::pair<int, float>>>& models_errors_per_generations)
+		std::vector<std::vector<std::tuple<int, std::string, float>>>& models_errors_per_generations)
 	{
 		if (n_generations >= 0)
 		{
@@ -58,7 +58,7 @@ public:
 	void adaptivePopulationScheduler(
 		const int& n_generations,
 		std::vector<Model<TensorT>>& models,
-		std::vector<std::vector<std::pair<int, float>>>& models_errors_per_generations)
+		std::vector<std::vector<std::tuple<int, std::string, float>>>& models_errors_per_generations)
 	{
 		if (n_generations == getNGenerations() - 1)
 		{
@@ -212,19 +212,20 @@ BOOST_AUTO_TEST_CASE(getTopNModels_)
   PopulationTrainerExt<float> population_trainer;
 
   // make dummy data
-  std::vector<std::pair<int, float>> models_validation_errors;
+  std::vector<std::tuple<int, std::string, float>> models_validation_errors;
   const int n_models = 4;
   for (int i=0; i<n_models; ++i)
-    models_validation_errors.push_back(std::make_pair(i+1, (float)(n_models-i)));
+    models_validation_errors.push_back(std::make_tuple(i+1, std::to_string(i+1), (float)(n_models-i)));
 
   const int n_top_models = 2;
-  std::vector<std::pair<int, float>> top_n_models = population_trainer.getTopNModels_(
+  std::vector<std::tuple<int, std::string, float>> top_n_models = population_trainer.getTopNModels_(
     models_validation_errors, n_top_models);
   
   for (int i=0; i<n_top_models; ++i)
   {
-    BOOST_CHECK_EQUAL(top_n_models[i].first, n_models-i);
-    BOOST_CHECK_EQUAL(top_n_models[i].second, (float)(i+1));
+    BOOST_CHECK_EQUAL(std::get<0>(top_n_models[i]), n_models-i);
+		BOOST_CHECK_EQUAL(std::get<1>(top_n_models[i]), std::to_string(n_models - i));
+    BOOST_CHECK_EQUAL(std::get<2>(top_n_models[i]), (float)(i+1));
   }
 }
 
@@ -233,13 +234,13 @@ BOOST_AUTO_TEST_CASE(getRandomNModels_)
   PopulationTrainerExt<float> population_trainer;
 
   // make dummy data
-  std::vector<std::pair<int, float>> models_validation_errors;
+  std::vector<std::tuple<int, std::string, float>> models_validation_errors;
   const int n_models = 4;
   for (int i=0; i<n_models; ++i)
-    models_validation_errors.push_back(std::make_pair(i+1, (float)(n_models-i)));
+		models_validation_errors.push_back(std::make_tuple(i + 1, std::to_string(i + 1), (float)(n_models - i)));
   
   const int n_random_models = 2;
-  std::vector<std::pair<int, float>> random_n_models = population_trainer.getRandomNModels_(
+  std::vector<std::tuple<int, std::string, float>> random_n_models = population_trainer.getRandomNModels_(
     models_validation_errors, n_random_models);
   
   BOOST_CHECK_EQUAL(random_n_models.size(), 2);  
@@ -306,9 +307,6 @@ BOOST_AUTO_TEST_CASE(replicateModels)
 		model.initNodes(4, 4);
 		model.initError(4, 4);
 		model.findCycles();
-
-		// modify the models
-		model_replicator.modifyModel(model, std::to_string(i));
 
 		Model<float> model1(model), model2(model), model3(model); // copy the models
 		population1.push_back(model1); // push the copies to the different test populations
@@ -654,7 +652,7 @@ BOOST_AUTO_TEST_CASE(exampleUsage)
 	}
 
 	// Evolve the population
-	std::vector<std::vector<std::pair<int, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
+	std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
 		population, model_trainer, model_replicator, data_simulator, model_logger, input_nodes, 2);
 
 	PopulationTrainerFile<float> population_trainer_file;

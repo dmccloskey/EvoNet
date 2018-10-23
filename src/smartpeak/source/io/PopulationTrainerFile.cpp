@@ -64,7 +64,7 @@ namespace SmartPeak
 	template<typename TensorT>
 	bool PopulationTrainerFile<TensorT>::storeModelValidations(
 		const std::string& filename,
-		const std::vector<std::pair<int, TensorT>>& models_validation_errors)
+		const std::vector<std::tuple<int, std::string, TensorT>>& models_validation_errors)
 	{
 		CSVWriter csvwriter(filename);
 
@@ -72,7 +72,7 @@ namespace SmartPeak
 		const std::vector<std::string> headers = { "model_name", "ave_validation_error" };
 		csvwriter.writeDataInRow(headers.begin(), headers.end());
 
-		for (const std::pair<int, TensorT>& model_validation_error : models_validation_errors)
+		for (const std::tuple<int, std::string, TensorT>& model_validation_error : models_validation_errors)
 		{
 			std::vector<std::string> row;
 			row.push_back(std::to_string(model_validation_error.first));

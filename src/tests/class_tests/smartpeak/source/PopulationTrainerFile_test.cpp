@@ -61,9 +61,9 @@ BOOST_AUTO_TEST_CASE(storeModelValidations)
 	PopulationTrainerFile<float> data;
 
 	// make a vector of models to use for testing
-	std::vector<std::pair<int, float>> models_validation_errors;
+	std::vector<std::tuple<int, std::string, float>> models_validation_errors;
 	for (int i = 0; i<4; ++i)
-		models_validation_errors.push_back(std::make_pair(i, float(i)));
+		models_validation_errors.push_back(std::make_tuple(i, std::to_string(i), float(i)));
 
 	bool success = data.storeModelValidations("StoreModelValidationsTest.csv", models_validation_errors);
 

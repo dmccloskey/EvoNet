@@ -590,7 +590,7 @@ public:
 	void adaptiveReplicatorScheduler(
 		const int& n_generations,
 		std::vector<Model<TensorT>>& models,
-		std::vector<std::vector<std::pair<int, TensorT>>>& models_errors_per_generations)
+		std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations)
 	{
 		if (n_generations >= 0)
 		{
@@ -614,7 +614,7 @@ public:
 	void adaptivePopulationScheduler(
 		const int& n_generations,
 		std::vector<Model<TensorT>>& models,
-		std::vector<std::vector<std::pair<int, TensorT>>>& models_errors_per_generations)
+		std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations)
 	{
 		// Population size of 16
 		if (n_generations == 0)
@@ -2163,7 +2163,7 @@ void main_classification(std::string blood_fraction = "PLT")
 	std::vector<Model<float>> population = {model_trainer.makeModelClassification(n_input_nodes, n_output_nodes)};
 
 	// Evolve the population
-	std::vector<std::vector<std::pair<int, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
+	std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
 		population, model_trainer, model_replicator, metabolomics_data, model_logger, input_nodes, n_threads);
 
 	PopulationTrainerFile<float> population_trainer_file;
@@ -2262,7 +2262,7 @@ void main_reconstruction()
 	}
 
 	// Evolve the population
-	std::vector<std::vector<std::pair<int, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
+	std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
 		population, model_trainer, model_replicator, metabolomics_data, model_logger, input_nodes, n_threads);
 
 	PopulationTrainerFile<float> population_trainer_file;

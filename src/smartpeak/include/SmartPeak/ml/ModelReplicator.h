@@ -343,7 +343,7 @@ public:
 		virtual void adaptiveReplicatorScheduler(
 			const int& n_generations,
 			std::vector<Model<TensorT>>& models,
-			std::vector<std::vector<std::pair<int, TensorT>>>& models_errors_per_generations) = 0;
+			std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations) = 0;
 
 private:
     // modification parameters
