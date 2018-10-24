@@ -2130,7 +2130,7 @@ void main_classification(std::string blood_fraction = "PLT")
 	ModelTrainerExt<float> model_trainer;
 	model_trainer.setBatchSize(64);
 	model_trainer.setMemorySize(1);
-	model_trainer.setNEpochsTraining(1000);
+	model_trainer.setNEpochsTraining(1001);
 	model_trainer.setNEpochsValidation(100);
 	model_trainer.setNThreads(n_hard_threads); // [TODO: change back to 2!]
 	model_trainer.setVerbosityLevel(1);
@@ -2152,7 +2152,8 @@ void main_classification(std::string blood_fraction = "PLT")
 		});
 
 	// define the model logger
-	ModelLogger<float> model_logger(true, true, true, true, true, false, true, true);
+	ModelLogger<float> model_logger(true, true, true, false, false, false, false, false);
+	//ModelLogger<float> model_logger(true, true, true, true, true, false, true, true);
 
 	// initialize the model replicator
 	ModelReplicatorExt<float> model_replicator;
@@ -2221,7 +2222,7 @@ void main_reconstruction()
 	ModelTrainerExt<float> model_trainer;
 	model_trainer.setBatchSize(8);
 	model_trainer.setMemorySize(1);
-	model_trainer.setNEpochsTraining(1000);
+	model_trainer.setNEpochsTraining(1001);
 	model_trainer.setNEpochsValidation(10);
 	model_trainer.setNThreads(n_hard_threads); // [TODO: change back to 2!]
 	model_trainer.setVerbosityLevel(1);
@@ -2318,7 +2319,7 @@ int main(int argc, char** argv)
 	//main_statistics_preVsPost("PLT", false, false, false);
 	//main_statistics_preVsPost("RBC", false, false, false);
 	//main_statistics_preVsPost("P", false, false, false);
-	main_classification("PLT");
+	main_classification("RBC");
 	//main_reconstruction();
 	return 0;
 }
