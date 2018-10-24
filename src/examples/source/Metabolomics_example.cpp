@@ -2319,7 +2319,7 @@ int main(int argc, char** argv)
 	//main_statistics_preVsPost("PLT", false, false, false);
 	//main_statistics_preVsPost("RBC", false, false, false);
 	//main_statistics_preVsPost("P", false, false, false);
-	main_classification("RBC");
+	main_classification("P");
 	//main_reconstruction();
 	return 0;
 }
