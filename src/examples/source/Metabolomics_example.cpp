@@ -302,9 +302,16 @@ public:
 					Eigen::Tensor<TensorT, 1> one_hot_vec = OneHotEncoder<std::string, TensorT>(metaData_.at(sample_group_name).condition, labels_);
 					Eigen::Tensor<TensorT, 1> one_hot_vec_smoothed = one_hot_vec.unaryExpr(LabelSmoother<TensorT>(0.01, 0.01));
 
-					for (int nodes_iter = 0; nodes_iter < n_output_nodes/2; ++nodes_iter) {
+					//// MSE + LogLoss
+					//for (int nodes_iter = 0; nodes_iter < n_output_nodes/2; ++nodes_iter) {
+					//	output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = one_hot_vec(nodes_iter);
+					//	output_data(batch_iter, memory_iter, nodes_iter + n_output_nodes/2, epochs_iter) = one_hot_vec(nodes_iter);
+					//	//output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = one_hot_vec_smoothed(nodes_iter);
+					//}
+
+					// MSE or LogLoss only
+					for (int nodes_iter = 0; nodes_iter < n_output_nodes; ++nodes_iter) {
 						output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = one_hot_vec(nodes_iter);
-						output_data(batch_iter, memory_iter, nodes_iter + n_output_nodes/2, epochs_iter) = one_hot_vec(nodes_iter);
 						//output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = one_hot_vec_smoothed(nodes_iter);
 					}
 				}
@@ -696,12 +703,16 @@ public:
 			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_outputs) / 2, 1)),
 			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 
-		// Add the final softmax layer
-		node_names = model_builder.addStableSoftMax(model, "SoftMax", "SoftMax", node_names);
-
 		// Specify the output node types manually
 		for (const std::string& node_name : node_names)
 			model.getNodesMap().at(node_name)->setType(NodeType::output);
+
+		// Add the final softmax layer
+		node_names = model_builder.addStableSoftMax(model, "SoftMax", "SoftMax", node_names);
+
+		//// Specify the output node types manually
+		//for (const std::string& node_name : node_names)
+		//	model.getNodesMap().at(node_name)->setType(NodeType::output);
 
 		model.initWeights();
 		return model; 
@@ -2135,10 +2146,10 @@ void main_classification(std::string blood_fraction = "PLT")
 	model_trainer.setNThreads(n_hard_threads); // [TODO: change back to 2!]
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setLogging(true, false);
-	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()),
-		std::shared_ptr<LossFunctionOp<float>>(new NegativeLogLikelihoodOp<float>(2)) });
-	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()),
-		std::shared_ptr<LossFunctionGradOp<float>>(new NegativeLogLikelihoodGradOp<float>(2)) });
+	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>())//, std::shared_ptr<LossFunctionOp<float>>(new NegativeLogLikelihoodOp<float>(2)) 
+	});
+	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>())//, std::shared_ptr<LossFunctionGradOp<float>>(new NegativeLogLikelihoodGradOp<float>(2)) 
+	});
 	//model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new NegativeLogLikelihoodOp<float>(2)) });
 	//model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new NegativeLogLikelihoodGradOp<float>(2)) });
 	//model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new BCEWithLogitsOp<float>()) });
@@ -2146,10 +2157,8 @@ void main_classification(std::string blood_fraction = "PLT")
 	//model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new BCEOp<float>()) });
 	//model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new BCEGradOp<float>()) });
 	//model_trainer.setOutputNodes({output_nodes_softmax});
-	model_trainer.setOutputNodes({ 
-		output_nodes,
-		output_nodes_softmax
-		});
+	model_trainer.setOutputNodes({ output_nodes//, output_nodes_softmax
+	});
 
 	// define the model logger
 	ModelLogger<float> model_logger(true, true, true, false, false, false, false, false);
