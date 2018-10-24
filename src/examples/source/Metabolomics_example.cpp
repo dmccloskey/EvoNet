@@ -712,14 +712,21 @@ public:
 		Model<TensorT>& model,
 		const std::vector<float>& model_errors)
 	{
-		//if (n_epochs > 100)
-		//{
-		//	// update the solver parameters
-		//	std::shared_ptr<SolverOp<TensorT>> solver;
-		//	solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));
-		//	for (auto& weight_map : model.getWeightsMap())
-		//		weight_map.second->setSolverOp(solver);
-		//}
+		if (n_epochs > 10000) {
+			// update the solver parameters
+			std::shared_ptr<SolverOp<TensorT>> solver;
+			solver.reset(new AdamOp<TensorT>(0.0001, 0.9, 0.999, 1e-8));
+			for (auto& weight_map : model.getWeightsMap())
+				if (weight_map.second->getSolverOp()->getName() == "AdamOp")
+					weight_map.second->setSolverOp(solver);
+		}
+		if (n_epochs % 100 == 0 && n_epochs != 0) {
+			// save the model every 100 epochs
+			ModelFile<TensorT> data;
+			data.storeModelCsv(model.getName() + "_" + std::to_string(n_epochs) + "_nodes.csv",
+				model.getName() + "_" + std::to_string(n_epochs) + "_links.csv",
+				model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model);
+		}
 	}
 };
 
@@ -2078,8 +2085,8 @@ void main_classification(std::string blood_fraction = "PLT")
 	// define the data simulator
 	MetDataSimClassification<float> metabolomics_data;
 	//std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
-	std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
-	//std::string data_dir = "/home/user/Data/";
+	//std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
+	std::string data_dir = "/home/user/Data/";
 
 	std::string biochem_rxns_filename, metabo_data_filename, meta_data_filename;
 	if (blood_fraction == "RBC") {
@@ -2121,11 +2128,10 @@ void main_classification(std::string blood_fraction = "PLT")
 
 	// innitialize the model trainer
 	ModelTrainerExt<float> model_trainer;
-	model_trainer.setBatchSize(1);
+	model_trainer.setBatchSize(64);
 	model_trainer.setMemorySize(1);
-	model_trainer.setNEpochsTraining(100000);
+	model_trainer.setNEpochsTraining(1000);
 	model_trainer.setNEpochsValidation(100);
-	//model_trainer.setNThreads(1); // [TODO: change back to 2!]
 	model_trainer.setNThreads(n_hard_threads); // [TODO: change back to 2!]
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setLogging(true, false);
