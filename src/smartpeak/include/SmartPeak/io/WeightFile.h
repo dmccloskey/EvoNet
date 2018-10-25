@@ -182,6 +182,7 @@ public:
 			{
 				printf("Exception: %s", e.what());
 			}
+			weight.initWeight();
 			weight.setWeight(weight_value);
 
 			weight.setModuleName(module_name_str);

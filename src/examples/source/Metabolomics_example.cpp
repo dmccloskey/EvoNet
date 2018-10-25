@@ -2079,7 +2079,7 @@ void main_statistics_preVsPost(std::string blood_fraction = "PLT", bool run_oneV
 		WritePWData(postMinPre_filename, postMinPre);
 	}
 }
-void main_classification(std::string blood_fraction = "PLT")
+void main_classification(std::string blood_fraction = "PLT", bool make_model = true)
 {
 
 	// define the population trainer parameters
@@ -2103,6 +2103,7 @@ void main_classification(std::string blood_fraction = "PLT")
 	//std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
 	//std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
 	std::string data_dir = "/home/user/Data/";
+	std::string model_name = "0_Metabolomics";
 
 	std::string biochem_rxns_filename, metabo_data_filename, meta_data_filename;
 	if (blood_fraction == "RBC") {
@@ -2181,7 +2182,16 @@ void main_classification(std::string blood_fraction = "PLT")
 
 	// define the initial population
 	std::cout << "Initializing the population..." << std::endl;
-	std::vector<Model<float>> population = {model_trainer.makeModelClassification(n_input_nodes, n_output_nodes)};
+	std::vector<Model<float>> population;
+	if (make_model) {
+		population = { model_trainer.makeModelClassification(n_input_nodes, n_output_nodes) };
+	}
+	else {
+		ModelFile<float> model_file;
+		Model<float> model;
+		model_file.loadModelCsv(data_dir + model_name + "_Nodes.csv", data_dir + model_name + "_Links.csv", data_dir + model_name + "_Weights.csv", model);
+		population = { model };
+	}
 
 	// Evolve the population
 	std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
@@ -2333,7 +2343,7 @@ int main(int argc, char** argv)
 	//main_statistics_preVsPost("PLT", false, false, false);
 	//main_statistics_preVsPost("RBC", false, false, false);
 	//main_statistics_preVsPost("P", false, false, false);
-	main_classification("PLT");
+	main_classification("PLT", false);
 	//main_reconstruction();
 	return 0;
 }

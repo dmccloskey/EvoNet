@@ -43,7 +43,7 @@ public:
         std::tie(
           id_,
           name_,
-					weight_data_,
+					//weight_data_,
 					//weight_init_->getName(),
 					//solver_->getName(),
 					module_id_,
@@ -51,7 +51,7 @@ public:
         ) == std::tie(
           other.id_,
           other.name_,
-					other.weight_data_,
+					//other.weight_data_,
 					//other.weight_init_->getName(),
 					//other.solver_->getName(),
 					other.module_id_,

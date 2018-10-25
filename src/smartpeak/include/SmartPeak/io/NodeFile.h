@@ -88,6 +88,11 @@ public:
 			else if (node_activation_str == "LinearOp") node_activation.reset(new LinearOp<TensorT>());
 			else if (node_activation_str == "SigmoidOp") node_activation.reset(new SigmoidOp<TensorT>());
 			else if (node_activation_str == "TanHOp") node_activation.reset(new TanHOp<TensorT>());
+			else if (node_activation_str == "ExponentialOp") node_activation.reset(new ExponentialOp<TensorT>());
+			else if (node_activation_str == "InverseOp") node_activation.reset(new InverseOp<TensorT>());
+			else if (node_activation_str == "LinearOp") node_activation.reset(new LinearOp<TensorT>());
+			else if (node_activation_str == "LeakyReLUOp") node_activation.reset(new LeakyReLUOp<TensorT>()); // TODO define values
+			else if (node_activation_str == "PowOp") node_activation.reset(new PowOp<TensorT>(-0.5));  // TODO define values
 			else std::cout << "NodeActivation for node_name " << node_name << " was not recognized." << std::endl;
 
 			// parse the node_activation
@@ -97,6 +102,11 @@ public:
 			else if (node_activation_grad_str == "LinearGradOp") node_activation_grad.reset(new LinearGradOp<TensorT>());
 			else if (node_activation_grad_str == "SigmoidGradOp") node_activation_grad.reset(new SigmoidGradOp<TensorT>());
 			else if (node_activation_grad_str == "TanHGradOp") node_activation_grad.reset(new TanHGradOp<TensorT>());
+			else if (node_activation_grad_str == "ExponentialGradOp") node_activation_grad.reset(new ExponentialGradOp<TensorT>());
+			else if (node_activation_grad_str == "InverseGradOp") node_activation_grad.reset(new InverseGradOp<TensorT>());
+			else if (node_activation_grad_str == "LinearGradOp") node_activation_grad.reset(new LinearGradOp<TensorT>());
+			else if (node_activation_grad_str == "LeakyReLUGradOp") node_activation_grad.reset(new LeakyReLUGradOp<TensorT>());
+			else if (node_activation_grad_str == "PowGradOp") node_activation_grad.reset(new PowGradOp<TensorT>(-0.5));
 			else std::cout << "NodeActivationGrad for node_name " << node_name << " was not recognized." << std::endl;
 
 			// parse the node_integration
@@ -104,6 +114,9 @@ public:
 			if (node_integration_str == "SumOp") node_integration.reset(new SumOp<TensorT>());
 			else if (node_integration_str == "ProdOp") node_integration.reset(new ProdOp<TensorT>());
 			else if (node_integration_str == "MaxOp") node_integration.reset(new MaxOp<TensorT>());
+			else if (node_integration_str == "MeanOp") node_integration.reset(new MeanOp<TensorT>());
+			else if (node_integration_str == "VarModOp") node_integration.reset(new VarModOp<TensorT>());
+			else if (node_integration_str == "CountOp") node_integration.reset(new CountOp<TensorT>());
 			else std::cout << "NodeIntegration for node_name " << node_name << " was not recognized." << std::endl;
 
 			// parse the node_integration_error
@@ -111,6 +124,9 @@ public:
 			if (node_integration_error_str == "SumErrorOp") node_integration_error.reset(new SumErrorOp<TensorT>());
 			else if (node_integration_error_str == "ProdErrorOp") node_integration_error.reset(new ProdErrorOp<TensorT>());
 			else if (node_integration_error_str == "MaxErrorOp") node_integration_error.reset(new MaxErrorOp<TensorT>());
+			else if (node_integration_error_str == "MeanErrorOp") node_integration_error.reset(new MeanErrorOp<TensorT>());
+			else if (node_integration_error_str == "VarModErrorOp") node_integration_error.reset(new VarModErrorOp<TensorT>());
+			else if (node_integration_error_str == "CountErrorOp") node_integration_error.reset(new CountErrorOp<TensorT>());
 			else std::cout << "NodeIntegrationError for node_name " << node_name << " was not recognized." << std::endl;
 
 			// parse the node_integration_weight_grad
@@ -118,6 +134,9 @@ public:
 			if (node_integration_weight_grad_str == "SumWeightGradOp") node_integration_weight_grad.reset(new SumWeightGradOp<TensorT>());
 			else if (node_integration_weight_grad_str == "ProdWeightGradOp") node_integration_weight_grad.reset(new ProdWeightGradOp<TensorT>());
 			else if (node_integration_weight_grad_str == "MaxWeightGradOp") node_integration_weight_grad.reset(new MaxWeightGradOp<TensorT>());
+			else if (node_integration_weight_grad_str == "MeanWeightGradOp") node_integration_weight_grad.reset(new MeanWeightGradOp<TensorT>());
+			else if (node_integration_weight_grad_str == "VarModWeightGradOp") node_integration_weight_grad.reset(new VarModWeightGradOp<TensorT>());
+			else if (node_integration_weight_grad_str == "CountWeightGradOp") node_integration_weight_grad.reset(new CountWeightGradOp<TensorT>());
 			else std::cout << "NodeIntegrationWeightGrad for node_name " << node_name << " was not recognized." << std::endl;
 
 			Node<TensorT> node(node_name, node_type, node_status, node_activation, node_activation_grad, node_integration, node_integration_error, node_integration_weight_grad);
