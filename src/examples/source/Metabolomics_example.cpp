@@ -2147,8 +2147,8 @@ void main_classification(std::string blood_fraction = "PLT", bool make_model = t
 	ModelTrainerExt<float> model_trainer;
 	model_trainer.setBatchSize(64);
 	model_trainer.setMemorySize(1);
-	model_trainer.setNEpochsTraining(100001);
-	model_trainer.setNEpochsValidation(100);
+	model_trainer.setNEpochsTraining(1001);
+	model_trainer.setNEpochsValidation(25);
 	model_trainer.setNThreads(n_hard_threads); // [TODO: change back to 2!]
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setLogging(true, false);
