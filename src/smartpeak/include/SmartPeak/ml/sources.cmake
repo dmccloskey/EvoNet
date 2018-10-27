@@ -7,6 +7,7 @@ set(sources_list_h
 	ActivationFunctionWrapper.h
 	IntegrationFunction.h
 	IntegrationFunction2.h
+	IntegrationFunction3.h
 	Interpreter.h
 	LossFunction.h
 	Link.h

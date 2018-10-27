@@ -4,6 +4,7 @@
 #define SMARTPEAK_INTEGRATIONFUNCTION_H
 
 #include <SmartPeak/core/preprocessing.h>
+#include <SmartPeak/ml/ActivationFunctionWrapper.h>
 #include <unsupported/Eigen/CXX11/Tensor>
 
 namespace SmartPeak
@@ -37,7 +38,7 @@ public:
 		IntegrationOp(const TensorT& eps) : eps_(eps) {};
     ~IntegrationOp() = default;
     virtual std::string getName() const = 0;
-    virtual void operator()(TensorT* source_output, TensorT* weights, TensorT* sink_input, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, const int& source_time_step, const int& sink_time_step, DeviceT& device) = 0;
+    virtual void operator()(TensorT* source_input, TensorT* weights, TensorT* sink_input, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, const int& source_time_step, const int& sink_time_step, DeviceT& device) = 0;
 	protected:
 		TensorT eps_ = 1e-9;
   };
@@ -51,12 +52,12 @@ public:
 	public:
 		FullyConnectedSumOp() {};
 		~FullyConnectedSumOp() {};
-		void operator()(TensorT* source_output, TensorT* weights, TensorT* sink_input, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, const int& source_time_step, const int& sink_time_step, DeviceT& device) {
+		void operator()(TensorT* source_input, TensorT* weights, TensorT* sink_input, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, const int& source_time_step, const int& sink_time_step, DeviceT& device) {
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> sink_input_tensor(sink_input, batch_size, memory_size, source_layer_size);
-			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> source_output_tensor(source_output, batch_size, memory_size, sink_layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> source_input_tensor(source_input, batch_size, memory_size, sink_layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weight(weights, source_layer_size, sink_layer_size);
 			Eigen::array<Eigen::IndexPair<int>, 1> product_dims = { Eigen::IndexPair<int>(1, 0) };
-			sink_input_tensor.chip(sink_time_step, 1).device(device) = source_output_tensor.chip(source_time_step, 1).contract(weight, product_dims);
+			sink_input_tensor.chip(sink_time_step, 1).device(device) = source_input_tensor.chip(source_time_step, 1).contract(weight, product_dims);
 			}
 		};
 		std::string getName() const { return "FullyConnectedSumOp"; };
@@ -71,13 +72,13 @@ public:
 	public:
 		SinglyConnectedSumOp() {};
 		~SinglyConnectedSumOp() {};
-		void operator()(TensorT* source_output, TensorT* weights, TensorT* sink_input, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, const int& source_time_step, const int& sink_time_step, DeviceT& device) {
+		void operator()(TensorT* source_input, TensorT* weights, TensorT* sink_input, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, const int& source_time_step, const int& sink_time_step, DeviceT& device) {
 			assert(source_layer_size == sink_layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> sink_input_tensor(sink_input, batch_size, memory_size, source_layer_size);
-			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> source_output_tensor(source_output, batch_size, memory_size, sink_layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> source_input_tensor(source_input, batch_size, memory_size, sink_layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weight(weights, 1, source_layer_size);
 			Eigen::array<int, 2> bcast = { batch_size, 0 };
-			sink_input_tensor.chip(sink_time_step, 1).device(device) += source_output_tensor.chip(source_time_step, 1) * weight.broadcast(bcast);
+			sink_input_tensor.chip(sink_time_step, 1).device(device) += source_input_tensor.chip(source_time_step, 1) * weight.broadcast(bcast);
 		}
 		std::string getName() const { return "SinglyConnectedSumOp"; };
 	};
@@ -91,14 +92,14 @@ public:
 	public:
 		FanInSumOp() {};
 		~FanInSumOp() {};
-		void operator()(TensorT* source_output, TensorT* weights, TensorT* sink_input, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, const int& source_time_step, const int& sink_time_step, DeviceT& device) {
+		void operator()(TensorT* source_input, TensorT* weights, TensorT* sink_input, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, const int& source_time_step, const int& sink_time_step, DeviceT& device) {
 			assert(sink_layer_size == 1);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> sink_input_tensor(sink_input, batch_size, memory_size, source_layer_size);
-			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> source_output_tensor(source_output, batch_size, memory_size, sink_layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> source_input_tensor(source_input, batch_size, memory_size, sink_layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weight(weights, 1, source_layer_size);
 			Eigen::array<int, 2> bcast = { batch_size, 1 };
 			Eigen::array<int, 1> dims({ 1 });
-			sink_input_tensor.chip(sink_time_step, 1).device(device) += (source_output_tensor.chip(source_time_step, 1) * weight.broadcast(bcast)).sum(dims);
+			sink_input_tensor.chip(sink_time_step, 1).device(device) += (source_input_tensor.chip(source_time_step, 1) * weight.broadcast(bcast)).sum(dims);
 		}
 		std::string getName() const { return "FanInSumOp"; };
 	};
@@ -112,13 +113,13 @@ public:
 	public:
 		SinglyConnectedProdOp() {};
 		~SinglyConnectedProdOp() {};
-		void operator()(TensorT* source_output, TensorT* weights, TensorT* sink_input, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, const int& source_time_step, const int& sink_time_step, DeviceT& device) {
+		void operator()(TensorT* source_input, TensorT* weights, TensorT* sink_input, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, const int& source_time_step, const int& sink_time_step, DeviceT& device) {
 			assert(source_layer_size == sink_layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> sink_input_tensor(sink_input, batch_size, memory_size, source_layer_size);
-			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> source_output_tensor(source_output, batch_size, memory_size, sink_layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> source_input_tensor(source_input, batch_size, memory_size, sink_layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weight(weights, 1, source_layer_size);
 			Eigen::array<int, 2> bcast = { batch_size, 0 };
-			sink_input_tensor.chip(sink_time_step, 1).device(device) = sink_input_tensor.chip(sink_time_step, 1) * source_output_tensor.chip(source_time_step, 1) * weight.broadcast(bcast);
+			sink_input_tensor.chip(sink_time_step, 1).device(device) = sink_input_tensor.chip(sink_time_step, 1) * source_input_tensor.chip(source_time_step, 1) * weight.broadcast(bcast);
 		}
 		std::string getName() const { return "SinglyConnectedProdOp"; };
 	};
@@ -132,14 +133,14 @@ public:
 	public:
 		FanInProdOp() {};
 		~FanInProdOp() {};
-		void operator()(TensorT* source_output, TensorT* weights, TensorT* sink_input, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, const int& source_time_step, const int& sink_time_step, DeviceT& device) {
+		void operator()(TensorT* source_input, TensorT* weights, TensorT* sink_input, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, const int& source_time_step, const int& sink_time_step, DeviceT& device) {
 			assert(sink_layer_size == 1);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> sink_input_tensor(sink_input, batch_size, memory_size, source_layer_size);
-			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> source_output_tensor(source_output, batch_size, memory_size, sink_layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> source_input_tensor(source_input, batch_size, memory_size, sink_layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weight(weights, 1, source_layer_size);
 			Eigen::array<int, 2> bcast = { batch_size, 1 };
 			Eigen::array<int, 1> dims({ 1 });
-			sink_input_tensor.chip(sink_time_step, 1).device(device) = sink_input_tensor.chip(sink_time_step, 1) * (source_output_tensor.chip(source_time_step, 1) * weight.broadcast(bcast)).prod(dims);
+			sink_input_tensor.chip(sink_time_step, 1).device(device) = sink_input_tensor.chip(sink_time_step, 1) * (source_input_tensor.chip(source_time_step, 1) * weight.broadcast(bcast)).prod(dims);
 		}
 		std::string getName() const { return "FanInProdOp"; };
 	};
@@ -153,13 +154,13 @@ public:
 	public:
 		SinglyConnectedMaxOp() {};
 		~SinglyConnectedMaxOp() {};
-		void operator()(TensorT* source_output, TensorT* weights, TensorT* sink_input, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, const int& source_time_step, const int& sink_time_step, DeviceT& device) {
+		void operator()(TensorT* source_input, TensorT* weights, TensorT* sink_input, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, const int& source_time_step, const int& sink_time_step, DeviceT& device) {
 			assert(source_layer_size == sink_layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> sink_input_tensor(sink_input, batch_size, memory_size, source_layer_size);
-			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> source_output_tensor(source_output, batch_size, memory_size, sink_layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> source_input_tensor(source_input, batch_size, memory_size, sink_layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weight(weights, 1, source_layer_size);
 			Eigen::array<int, 2> bcast = { batch_size, 0 };
-			sink_input_tensor.chip(sink_time_step, 1).device(device) = sink_input_tensor.chip(sink_time_step, 1).cwiseMax(source_output_tensor.chip(source_time_step, 1) * weight.broadcast(bcast));
+			sink_input_tensor.chip(sink_time_step, 1).device(device) = sink_input_tensor.chip(sink_time_step, 1).cwiseMax(source_input_tensor.chip(source_time_step, 1) * weight.broadcast(bcast));
 		}
 		std::string getName() const { return "SinglyConnectedMaxOp"; };
 	};
@@ -173,14 +174,14 @@ public:
 	public:
 		FanInMaxOp() {};
 		~FanInMaxOp() {};
-		void operator()(TensorT* source_output, TensorT* weights, TensorT* sink_input, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, const int& source_time_step, const int& sink_time_step, DeviceT& device) {
+		void operator()(TensorT* source_input, TensorT* weights, TensorT* sink_input, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, const int& source_time_step, const int& sink_time_step, DeviceT& device) {
 			assert(sink_layer_size == 1);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> sink_input_tensor(sink_input, batch_size, memory_size, source_layer_size);
-			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> source_output_tensor(source_output, batch_size, memory_size, sink_layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> source_input_tensor(source_input, batch_size, memory_size, sink_layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weight(weights, 1, source_layer_size);
 			Eigen::array<int, 2> bcast = { batch_size, 1 };
 			Eigen::array<int, 1> dims({ 1 });
-			sink_input_tensor.chip(sink_time_step, 1).device(device) = sink_input_tensor.chip(sink_time_step, 1).cwiseMax((source_output_tensor.chip(source_time_step, 1) * weight.broadcast(bcast)).maximum(dims));
+			sink_input_tensor.chip(sink_time_step, 1).device(device) = sink_input_tensor.chip(sink_time_step, 1).cwiseMax((source_input_tensor.chip(source_time_step, 1) * weight.broadcast(bcast)).maximum(dims));
 		}
 		std::string getName() const { return "FanInMaxOp"; };
 	};
@@ -194,14 +195,14 @@ public:
 	public:
 		FanInMeanOp() {};
 		~FanInMeanOp() {};
-		void operator()(TensorT* source_output, TensorT* weights, TensorT* sink_input, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, const int& source_time_step, const int& sink_time_step, DeviceT& device) {
+		void operator()(TensorT* source_input, TensorT* weights, TensorT* sink_input, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, const int& source_time_step, const int& sink_time_step, DeviceT& device) {
 			assert(sink_layer_size == 1);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> sink_input_tensor(sink_input, batch_size, memory_size, source_layer_size);
-			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> source_output_tensor(source_output, batch_size, memory_size, sink_layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> source_input_tensor(source_input, batch_size, memory_size, sink_layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weight(weights, 1, source_layer_size);
 			Eigen::array<int, 2> bcast = { batch_size, 1 };
 			Eigen::array<int, 1> dims({ 1 });
-			sink_input_tensor.chip(sink_time_step, 1).device(device) = (source_output_tensor.chip(source_time_step, 1) * weight.broadcast(bcast)).mean(dims);
+			sink_input_tensor.chip(sink_time_step, 1).device(device) = (source_input_tensor.chip(source_time_step, 1) * weight.broadcast(bcast)).mean(dims);
 		}
 		std::string getName() const { return "FanInMeanOp"; };
 	};
@@ -215,15 +216,15 @@ public:
 	public:
 		FanInVarOp() {};
 		~FanInVarOp() {};
-		void operator()(TensorT* source_output, TensorT* weights, TensorT* sink_input, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, const int& source_time_step, const int& sink_time_step, DeviceT& device) {
+		void operator()(TensorT* source_input, TensorT* weights, TensorT* sink_input, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, const int& source_time_step, const int& sink_time_step, DeviceT& device) {
 			assert(sink_layer_size == 1);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> sink_input_tensor(sink_input, batch_size, memory_size, source_layer_size);
-			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> source_output_tensor(source_output, batch_size, memory_size, sink_layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> source_input_tensor(source_input, batch_size, memory_size, sink_layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weight(weights, 1, source_layer_size);
 			Eigen::array<int, 2> bcast = { batch_size, 1 };
 			Eigen::array<int, 1> dims({ 1 });
-			auto mean = (source_output_tensor.chip(source_time_step, 1) * weight.broadcast(bcast)).mean(dims);
-			auto input = (source_output_tensor.chip(source_time_step, 1) * weight.broadcast(bcast)) - mean;
+			auto mean = (source_input_tensor.chip(source_time_step, 1) * weight.broadcast(bcast)).mean(dims);
+			auto input = (source_input_tensor.chip(source_time_step, 1) * weight.broadcast(bcast)) - mean;
 			sink_input_tensor.chip(sink_time_step, 1).device(device) = (input * input)*input.constant(1 / (TensorT)source_layer_size);
 		}
 		std::string getName() const { return "FanInVarOp"; };
@@ -238,7 +239,7 @@ public:
 	public:
 		FanInCountOp() {};
 		~FanInCountOp() {};
-		void operator()(TensorT* source_output, TensorT* weights, TensorT* sink_input, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, const int& source_time_step, const int& sink_time_step, DeviceT& device) {
+		void operator()(TensorT* source_input, TensorT* weights, TensorT* sink_input, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, const int& source_time_step, const int& sink_time_step, DeviceT& device) {
 			assert(sink_layer_size == 1);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> sink_input_tensor(sink_input, batch_size, memory_size, source_layer_size);
 			sink_input_tensor.chip(sink_time_step, 1).device(device) = sink_input_tensor.chip(sink_time_step, 1).constant(source_layer_size);
@@ -260,9 +261,9 @@ public:
 			this->setNetNodeInput(net_node_input);
 		}
 		~CountOp() {};
-		void operator()(TensorT* source_output, TensorT* weights, TensorT* sink_input, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, const int& source_time_step, const int& sink_time_step, DeviceT& device) {
+		void operator()(TensorT* source_input, TensorT* weights, TensorT* sink_input, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, const int& source_time_step, const int& sink_time_step, DeviceT& device) {
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> sink_input_tensor(sink_input, batch_size, memory_size);
-			sink_input_tensor.chip(sink_time_step, 1).device(device) = sink_input_tensor.chip(sink_time_step, 1).constant(source_outputs.size());
+			sink_input_tensor.chip(sink_time_step, 1).device(device) = sink_input_tensor.chip(sink_time_step, 1).constant(source_inputs.size());
 		};
 		std::string getName() const { return "CountOp"; };
 	};
