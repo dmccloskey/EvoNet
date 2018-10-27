@@ -10,6 +10,8 @@ set(sources_list_h
 	IntegrationFunction3.h
 	Interpreter.h
 	LossFunction.h
+	LossFunction2.h
+	LossFunction3.h
 	Link.h
 	Model.h
 	ModelBuilder.h

@@ -2,8 +2,8 @@ set(core_executables_list
   DeviceManager_test
   Helloworld_test
   KernalManager_test
-  KernalManagerGpu_test
-  OperationsManagerGpu_test
+  #KernalManagerGpu_test
+  #OperationsManagerGpu_test
   Preprocessing_test
   Statistics_test
   StringParsing_test

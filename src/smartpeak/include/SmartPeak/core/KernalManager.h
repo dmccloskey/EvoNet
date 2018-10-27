@@ -13,7 +13,7 @@
 #include <unsupported/Eigen/CXX11/Tensor>
 #include <SmartPeak/ml/ActivationFunctionWrapper.h>
 #include <SmartPeak/ml/IntegrationFunction3.h>
-#include <SmartPeak/ml/LossFunction2.h>
+#include <SmartPeak/ml/LossFunction3.h>
 #include <SmartPeak/ml/Solver.h>
 
 namespace SmartPeak
@@ -70,8 +70,6 @@ namespace SmartPeak
 			TensorT* d_weights,
 			TensorT* h_sink_inputs,
 			TensorT* d_sink_inputs,
-			TensorT* h_sink_dt,
-			TensorT* d_sink_dt,
 			IntegrationOp<TensorT, DeviceT>* sink_integration_function,
 			const int& batch_size,
 			const int& memory_size,
@@ -93,6 +91,8 @@ namespace SmartPeak
 			TensorT* d_weights,
 			TensorT* h_sink_error,
 			TensorT* d_sink_error,
+			TensorT* h_sink_derivative,
+			TensorT* d_sink_derivative,
 			const int& n_input_nodes,
 			IntegrationErrorOp<TensorT, DeviceT>* source_integration_functions,
 			const int& batch_size,
@@ -124,10 +124,11 @@ namespace SmartPeak
 		virtual bool executeWeightErrors(
 			TensorT* h_sink_errors,
 			TensorT* d_sink_errors,
-			TensorT* h_source_inputs,
-			TensorT* d_source_inputs,
 			TensorT* h_source_outputs,
 			TensorT* d_source_outputs,
+			TensorT* h_source_inputs,
+			TensorT* d_source_inputs,
+			const int& n_input_nodes,
 			IntegrationWeightGradOp<TensorT, DeviceT>* sink_integration_function,
 			TensorT* h_weight,
 			TensorT* d_weight,
@@ -157,7 +158,7 @@ namespace SmartPeak
 			bool copyDeviceToHost = false) = 0;
 	};
 	template <typename TensorT>
-	class DefaultDeviceOperations : KernalManager<TensorT, Eigen::DefaultDevice>
+	class DefaultDeviceKernal : KernalManager<TensorT, Eigen::DefaultDevice>
 	{
 	public:
 		using KernalManager::KernalManager;
@@ -168,12 +169,12 @@ namespace SmartPeak
 			TensorT* d_node_outputs,
 			TensorT* h_sink_dt,
 			TensorT* d_sink_dt,
-			ActivationOpWrapper<TensorT, DeviceT>* activation_function,
+			ActivationOpWrapper<TensorT, Eigen::DefaultDevice>* activation_function,
 			const int& batch_size,
 			const int& memory_size,
 			const int& layer_size,
 			const int& time_step,
-			DeviceT& device,
+			Eigen::DefaultDevice& device,
 			bool copyHostToDevice = false,
 			bool copyDeviceToHost = false) {
 			// Activate the node net input
@@ -185,12 +186,12 @@ namespace SmartPeak
 			TensorT* d_node_outputs,
 			TensorT* h_node_derivative,
 			TensorT* d_node_derivative,
-			ActivationOpWrapper<TensorT, DeviceT>* activation_grad_function,
+			ActivationOpWrapper<TensorT, Eigen::DefaultDevice>* activation_grad_function,
 			const int& batch_size,
 			const int& memory_size,
 			const int& layer_size,
 			const int& time_step,
-			DeviceT& device,
+			Eigen::DefaultDevice& device,
 			bool copyHostToDevice = false,
 			bool copyDeviceToHost = false) {
 			// Calculate the derivative of the sink node activation
@@ -204,10 +205,6 @@ namespace SmartPeak
 			TensorT* d_weights,
 			TensorT* h_sink_inputs,
 			TensorT* d_sink_inputs,
-			TensorT* h_sink_dt,
-			TensorT* d_sink_dt,
-			TensorT* h_sink_derivative,
-			TensorT* d_sink_derivative,
 			IntegrationOp<TensorT, Eigen::DefaultDevice>* sink_integration_function,
 			const int& batch_size,
 			const int& memory_size,
@@ -236,7 +233,7 @@ namespace SmartPeak
 			TensorT* h_sink_derivative,
 			TensorT* d_sink_derivative,
 			const int& n_input_nodes,
-			std::vector<IntegrationErrorOp<TensorT, Eigen::DefaultDevice>*> source_integration_functions,
+			IntegrationErrorOp<TensorT, Eigen::DefaultDevice>* source_integration_functions,
 			const int& batch_size,
 			const int& memory_size,
 			const int& source_layer_size,
@@ -249,7 +246,7 @@ namespace SmartPeak
 			// Integrate sink node error
 			source_integration_functions->operator()(
 				h_source_errors, h_source_inputs, h_weights, 
-				h_sink_output, h_sink_error, h_sink_derivative, // [NOTE: need to add h_sink_derivative to integration_function method]
+				h_sink_output, h_sink_error, h_sink_derivative,
 				n_input_nodes,
 				batch_size, memory_size, source_layer_size, sink_layer_size,
 				source_time_step, sink_time_step,	device);
@@ -263,7 +260,6 @@ namespace SmartPeak
 			TensorT* d_model_error,
 			TensorT* h_node_errors,
 			TensorT* d_node_errors,
-			ActivationOpWrapper<TensorT, Eigen::DefaultDevice>* activation_function,
 			LossFunctionOp<TensorT, Eigen::DefaultDevice>* loss_function,
 			LossFunctionGradOp<TensorT, Eigen::DefaultDevice>* loss_grad_function,
 			const int& batch_size,
@@ -277,10 +273,10 @@ namespace SmartPeak
 			float* h_expected = expected.data();
 
 			// Calculate the model error
-			loss_function->operator()(h_node_outputs, h_expected, d_model_error, batch_size, memory_size, layer_size, time_step, device);
+			loss_function->operator()(h_node_outputs, h_expected, h_model_error, batch_size, memory_size, layer_size, time_step, device);
 
 			// Calculate the node errors		
-			loss_grad_function->operator()(h_node_outputs, h_expected, d_node_errors, batch_size, memory_size, layer_size, time_step, device);
+			loss_grad_function->operator()(h_node_outputs, h_expected, h_node_errors, batch_size, memory_size, layer_size, time_step, device);
 
 			return true;
 		};
@@ -297,7 +293,6 @@ namespace SmartPeak
 			TensorT* d_weight,
 			TensorT* h_weight_error,
 			TensorT* d_weight_error,
-			SolverOp<TensorT>* solver_function,
 			const int& batch_size,
 			const int& memory_size,
 			const int& source_layer_size,
@@ -306,8 +301,8 @@ namespace SmartPeak
 			bool copyHostToDevice = false,
 			bool copyDeviceToHost = false) {
 			// Accumulate the error for all links involving the same weight
-			sink_integration_function->operator()(h_sink_errors, h_source_inputs, h_weight, h_source_inputs, h_weight_error, n_input_nodes, 
-				batch_size, memory_size, source_layer_size, sink_layer_size, device);
+			//sink_integration_function->operator()(h_sink_errors, h_source_outputs, h_weight, h_source_inputs, h_weight_error, n_input_nodes, 
+			//	batch_size, memory_size, source_layer_size, sink_layer_size, device);
 
 			return true;
 		};
@@ -323,11 +318,11 @@ namespace SmartPeak
 			const int& memory_size,
 			const int& source_layer_size,
 			const int& sink_layer_size,
-			DeviceT& device,
+			Eigen::DefaultDevice& device,
 			bool copyHostToDevice = false,
 			bool copyDeviceToHost = false) {
 			// Update the weights
-			solver_function->operator()(h_weight, h_weight_error, h_solver_params);//getDrop()*error);
+			//solver_function->operator()(h_weight, h_weight_error, h_solver_params);//getDrop()*error);
 
 			return true;
 		}
@@ -335,7 +330,7 @@ namespace SmartPeak
 
 #if COMPILE_WITH_CUDA
 	template <typename TensorT>
-	class GpuOperations : KernalManager<TensorT, Eigen::GpuDevice>
+	class GpuKernal : KernalManager<TensorT, Eigen::GpuDevice>
 	{
 	public:
 		using KernalManager::KernalManager;
