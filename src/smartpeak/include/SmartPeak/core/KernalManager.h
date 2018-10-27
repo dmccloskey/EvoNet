@@ -301,8 +301,8 @@ namespace SmartPeak
 			bool copyHostToDevice = false,
 			bool copyDeviceToHost = false) {
 			// Accumulate the error for all links involving the same weight
-			//sink_integration_function->operator()(h_sink_errors, h_source_outputs, h_weight, h_source_inputs, h_weight_error, n_input_nodes, 
-			//	batch_size, memory_size, source_layer_size, sink_layer_size, device);
+			sink_integration_function->operator()(h_sink_errors, h_source_outputs, h_weight, h_source_inputs, h_weight_error, n_input_nodes, 
+				batch_size, memory_size, source_layer_size, sink_layer_size, device);
 
 			return true;
 		};

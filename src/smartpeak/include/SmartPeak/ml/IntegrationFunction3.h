@@ -492,29 +492,26 @@ public:
 		IntegrationWeightGradOp(const TensorT& eps) : eps_(eps) {};
 		~IntegrationWeightGradOp() = default;
 		virtual std::string getName() const = 0;
-		virtual void operator()(TensorT* sink_error, TensorT* source_output, TensorT* weight, TensorT* source_input, TensorT* weight_error, const int& n, const int& batch_size, const int& memory_size, DeviceT& device) = 0;
+		virtual void operator()(TensorT* sink_error, TensorT* source_output, TensorT* weight, TensorT* source_input, TensorT* weight_error, const int& n_input_nodes, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, DeviceT& device) = 0;
 	protected:
 		TensorT eps_ = 1e-6;
-		//std::atomic<TensorT, DeviceT> net_weight_error_ = 0; ///< 
 	};
 
 	/**
-	@brief Sum integration error function
+	@brief Fully Connected Sum integration error function
 	*/
 	template<typename TensorT, typename DeviceT>
-	class SumWeightGradOp : public IntegrationWeightGradOp<TensorT, DeviceT>
+	class FullyConnectedSumWeightGradOp : public IntegrationWeightGradOp<TensorT, DeviceT>
 	{
 	public:
-		void operator()(TensorT* sink_error, TensorT* source_output, TensorT* weight, TensorT* source_input, TensorT* weight_error, const int& n, const int& batch_size, const int& memory_size, DeviceT& device){
-			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> sink_error_tensor(sink_error, batch_size, memory_size);
-			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> source_output_tensor(source_output, batch_size, memory_size);
-			//Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> source_input_tensor(source_input, batch_size, memory_size);
-			//Eigen::TensorMap<Eigen::Tensor<TensorT, 0>> weight_tensor(weight);
-			Eigen::TensorMap<Eigen::Tensor<TensorT, 0>> weight_error_tensor(weight_error);
-			auto tmp = (-sink_error_tensor * source_output_tensor).sum(Eigen::array<int, 1>({ 1 }));
-			weight_error_tensor.device(device) += tmp.mean(Eigen::array<int, 1>({ 0 })); // sum across time; average across batches
+		void operator()(TensorT* sink_error, TensorT* source_output, TensorT* weight, TensorT* source_input, TensorT* weight_error, const int& n_input_nodes, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, DeviceT& device){
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> sink_error_tensor(sink_error, batch_size, memory_size, sink_layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> source_output_tensor(source_output, batch_size, memory_size, source_layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weight_error_tensor(weight_error, source_layer_size, sink_layer_size);
+			Eigen::array<Eigen::IndexPair<int>, 1> product_dims = { Eigen::IndexPair<int>(0, 1) };
+			weight_error_tensor.device(device) += (-source_output_tensor.contract(sink_error_tensor, product_dims).sum(Eigen::array<int, 1>({ 1 })).mean(Eigen::array<int, 1>({ 0 })); // sum across time; average across batches
 		};
-		std::string getName() const { return "SumWeightGradOp"; };
+		std::string getName() const { return "FullyConnectedSumWeightGradOp"; };
 	};
 
 	///**
@@ -526,7 +523,7 @@ public:
 	//public:
 	//	ProdWeightGradOp() { this->setNetWeightError(TensorT(0)); };
 	//	~ProdWeightGradOp() {};
-	//	void operator()(const Eigen::Tensor<TensorT, 1>& sink_error, const Eigen::Tensor<TensorT, 1>& source_output, const Eigen::Tensor<TensorT, 1>& weight, const Eigen::Tensor<TensorT, 1>& source_net_input, const Eigen::Tensor<TensorT, 1>& n) {
+	//	void operator()(TensorT* sink_error, TensorT* source_output, TensorT* weight, TensorT* source_input, TensorT* weight_error, const int& n_input_nodes, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, DeviceT& device) {
 	//		Eigen::Tensor<TensorT, 0> derivative_mean_tensor = ((-sink_error * source_net_input / weight).unaryExpr(ClipOp<TensorT>(1e-6, -1e9, 1e9))).mean(); // average derivative
 	//		this->net_weight_error_ += derivative_mean_tensor(0);
 	//	};
@@ -542,7 +539,7 @@ public:
 	//public:
 	//	MaxWeightGradOp() { this->setNetWeightError(TensorT(0)); };
 	//	~MaxWeightGradOp() {};
-	//	void operator()(const Eigen::Tensor<TensorT, 1>& sink_error, const Eigen::Tensor<TensorT, 1>& source_output, const Eigen::Tensor<TensorT, 1>& weight, const Eigen::Tensor<TensorT, 1>& source_net_input, const Eigen::Tensor<TensorT, 1>& n) {
+	//	void operator()(TensorT* sink_error, TensorT* source_output, TensorT* weight, TensorT* source_input, TensorT* weight_error, const int& n_input_nodes, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, DeviceT& device) {
 	//		Eigen::Tensor<TensorT, 0> derivative_mean_tensor = (-sink_error * source_output).mean(); // average derivative
 	//		this->net_weight_error_ += derivative_mean_tensor(0);
 	//	};
@@ -558,7 +555,7 @@ public:
 	//public:
 	//	CountWeightGradOp() { this->setNetWeightError(TensorT(0)); };
 	//	~CountWeightGradOp() {};
-	//	void operator()(const Eigen::Tensor<TensorT, 1>& sink_error, const Eigen::Tensor<TensorT, 1>& source_output, const Eigen::Tensor<TensorT, 1>& weight, const Eigen::Tensor<TensorT, 1>& source_net_input, const Eigen::Tensor<TensorT, 1>& n) {
+	//	void operator()(TensorT* sink_error, TensorT* source_output, TensorT* weight, TensorT* source_input, TensorT* weight_error, const int& n_input_nodes, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, DeviceT& device) {
 	//		this->net_weight_error_ += 0;
 	//	};
 	//	std::string getName() const { return "CountWeightGradOp"; };
@@ -573,7 +570,7 @@ public:
 	//public:
 	//	MeanWeightGradOp() { this->setNetWeightError(TensorT(0)); };
 	//	~MeanWeightGradOp() {};
-	//	void operator()(const Eigen::Tensor<TensorT, 1>& sink_error, const Eigen::Tensor<TensorT, 1>& source_output, const Eigen::Tensor<TensorT, 1>& weight, const Eigen::Tensor<TensorT, 1>& source_net_input, const Eigen::Tensor<TensorT, 1>& n) {
+	//	void operator()(TensorT* sink_error, TensorT* source_output, TensorT* weight, TensorT* source_input, TensorT* weight_error, const int& n_input_nodes, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, DeviceT& device) {
 	//		Eigen::Tensor<TensorT, 0> derivative_mean_tensor = (-sink_error * source_output / n).mean(); // average derivative
 	//		this->net_weight_error_ += derivative_mean_tensor(0);
 	//	};
@@ -589,7 +586,7 @@ public:
 	//public:
 	//	VarModWeightGradOp() { this->setNetWeightError(TensorT(0)); };
 	//	~VarModWeightGradOp() {};
-	//	void operator()(const Eigen::Tensor<TensorT, 1>& sink_error, const Eigen::Tensor<TensorT, 1>& source_output, const Eigen::Tensor<TensorT, 1>& weight, const Eigen::Tensor<TensorT, 1>& source_net_input, const Eigen::Tensor<TensorT, 1>& n) {
+	//	void operator()(TensorT* sink_error, TensorT* source_output, TensorT* weight, TensorT* source_input, TensorT* weight_error, const int& n_input_nodes, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, DeviceT& device) {
 	//		Eigen::Tensor<TensorT, 1> constant(weight.dimension(0));
 	//		constant.setConstant(2);
 	//		Eigen::Tensor<TensorT, 0> derivative_mean_tensor = (-sink_error * source_output * constant / n).mean(); // average derivative
