@@ -14,7 +14,7 @@
 #include <SmartPeak/ml/ActivationFunctionWrapper.h>
 #include <SmartPeak/ml/IntegrationFunction3.h>
 #include <SmartPeak/ml/LossFunction3.h>
-#include <SmartPeak/ml/Solver.h>
+#include <SmartPeak/ml/Solver3.h>
 
 namespace SmartPeak
 {
@@ -148,9 +148,7 @@ namespace SmartPeak
 			TensorT* d_solver_params,
 			TensorT* h_weight_error,
 			TensorT* d_weight_error,
-			SolverOp<TensorT>* solver_function,
-			const int& batch_size,
-			const int& memory_size,
+			SolverOp<TensorT, DeviceT>* solver_function,
 			const int& source_layer_size,
 			const int& sink_layer_size,
 			DeviceT& device,
@@ -313,16 +311,14 @@ namespace SmartPeak
 			TensorT* d_solver_params,
 			TensorT* h_weight_error,
 			TensorT* d_weight_error,
-			SolverOp<TensorT>* solver_function,
-			const int& batch_size,
-			const int& memory_size,
+			SolverOp<TensorT, Eigen::DefaultDevice>* solver_function,
 			const int& source_layer_size,
 			const int& sink_layer_size,
 			Eigen::DefaultDevice& device,
 			bool copyHostToDevice = false,
 			bool copyDeviceToHost = false) {
 			// Update the weights
-			//solver_function->operator()(h_weight, h_weight_error, h_solver_params);//getDrop()*error);
+			solver_function->operator()(h_weight, h_weight_error, h_solver_params, source_layer_size, sink_layer_size, device);//getDrop()*error);
 
 			return true;
 		}

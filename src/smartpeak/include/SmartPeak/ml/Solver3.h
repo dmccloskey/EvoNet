@@ -3,8 +3,17 @@
 #ifndef SMARTPEAK_SOLVER_H
 #define SMARTPEAK_SOLVER_H
 
-#include <unsupported/Eigen/CXX11/Tensor>
+#if COMPILE_WITH_CUDA
+#include <math.h>
+#else
 #include <cmath>
+using std::exp;
+using std::pow;
+using std::log;
+using std::tanh;
+#endif
+
+#include <unsupported/Eigen/CXX11/Tensor>
 #include <random>
 #include <iostream>
 
@@ -29,7 +38,7 @@ namespace SmartPeak
     [TODO: add tests for clipGradient and addGradientNoise]
     
   */
-	template<typename TensorT>
+	template<typename TensorT, typename DeviceT>
   class SolverOp
   {
 public: 
@@ -39,47 +48,37 @@ public:
     virtual std::string getName() const = 0;
     void setGradientThreshold(const TensorT& gradient_threshold){gradient_threshold_ = gradient_threshold;};
     TensorT getGradientThreshold() const{return gradient_threshold_;};
-    virtual TensorT operator()(const TensorT& weight, const TensorT& error) = 0;
+    virtual void operator()(TensorT* weights, TensorT* errors, TensorT* solver_params, const int& source_layer_size, const int& sink_layer_size, DeviceT& device) = 0;
     TensorT clipGradient(const TensorT& gradient)
     {
 			TensorT new_gradient = gradient;
       if (std::abs(gradient) >= gradient_threshold_)
 				new_gradient = gradient * gradient_threshold_/std::abs(gradient);
-			return checkWeight(gradient, new_gradient);
+			return new_gradient;
     }
     void setGradientNoiseSigma(const TensorT& gradient_noise_sigma){gradient_noise_sigma_ = gradient_noise_sigma;};
     TensorT getGradientNoiseSigma() const{return gradient_noise_sigma_;};
     void setGradientNoiseGamma(const TensorT& gradient_noise_gamma){gradient_noise_gamma_ = gradient_noise_gamma;};
     TensorT getGradientNoiseGamma() const{return gradient_noise_gamma_;};
-    TensorT addGradientNoiseAnnealed(const TensorT& gradient, const TensorT& time)
+    TensorT addGradientNoiseAnnealed(const TensorT& time)
     {
       const TensorT sigma_annealed = gradient_noise_sigma_ / std::pow((1 + time), gradient_noise_gamma_); // annealed variance
       std::random_device rd{};
       std::mt19937 gen{rd()};
       std::normal_distribution<> d{0.0f, sigma_annealed};
-      return gradient + d(gen);
+      return d(gen);
     }
-		TensorT addGradientNoise(const TensorT& gradient)
+		TensorT addGradientNoise()
 		{
 			std::random_device rd{};
 			std::mt19937 gen{ rd() };
 			std::normal_distribution<> d{ 0.0f, gradient_noise_sigma_ };
 			return d(gen);
 		}
-		void setLearningRate(const TensorT& learning_rate) { learning_rate_ = learning_rate; };
-		TensorT getLearningRate() const { return learning_rate_; };
-    virtual std::string getParameters() const = 0;
-		TensorT checkWeight(const TensorT& weight, const TensorT& new_weight)
-		{
-			if (std::isinf(new_weight) || std::isnan(new_weight))
-				return weight;
-			else
-				return new_weight;
-		}
+    //virtual std::string getParameters() const = 0;
 private:
     // clipping parameters
     TensorT gradient_threshold_ = 1e6; ///< maximum gradient magnitude
-		TensorT learning_rate_ = 1e-3; ///< the learning rate
 
     // gradient noise with annealed variance parameters
     TensorT gradient_noise_sigma_ = 1.0; ///< variance before annealing
@@ -89,49 +88,31 @@ private:
   /**
     @brief SGD Stochastic Gradient Descent Solver.
   */
-	template<typename TensorT>
-  class SGDOp: public SolverOp<TensorT>
+	template<typename TensorT, typename DeviceT>
+  class SGDOp: public SolverOp<TensorT, DeviceT>
   {
 public: 
     SGDOp(){}; 
     ~SGDOp(){};
-    SGDOp(const TensorT& learning_rate, const TensorT& momentum):
-      learning_rate_(learning_rate), momentum_(momentum){}
-    void setLearningRate(const TensorT& learning_rate){learning_rate_ = learning_rate;};
-    TensorT getLearningRate() const{return learning_rate_;};
-    void setMomentum(const TensorT& momentum){momentum_ = momentum;};
-    TensorT getMomentum() const{return momentum_;};
-    void setMomentumPrev(const TensorT& momentum_prev){momentum_prev_ = momentum_prev;};
-    TensorT getMomentumPrev() const{return momentum_prev_;};
-    TensorT operator()(const TensorT& weight, const TensorT& error) 
+		/*
+		@brief SGD solver operator
+
+		@params weights Data for the weight tensor
+		@params errorr Data for the weight tensor errors
+		@params solver_params Data for the solver params (Dim 2, size 3: learning rate, momentum, momentum_prev)
+		@param source_layer_size Dim 0
+		@param sink_layer_size Dim 1
+		*/
+    void operator()(TensorT* weights, TensorT* errors, TensorT* solver_params, const int& source_layer_size, const int& sink_layer_size, DeviceT& device) 
     {
-      const TensorT weight_update = momentum_ * momentum_prev_ - learning_rate_ * weight * error;
-      momentum_prev_ = weight_update;
-      const TensorT new_weight = weight + weight_update;
-      return new_weight;
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weights_tensor(weights, source_layer_size, sink_layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> errors_tensor(errors, source_layer_size, sink_layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> solver_params_tensor(solver_params, source_layer_size, sink_layer_size, 3);
+      auto weight_update = solver_params_tensor.chip(1, 2) * solver_params_tensor.chip(2,2) - solver_params_tensor.chip(0, 2) * weights_tensor * errors_tensor;
+			solver_params_tensor.chip(2, 2).device(device) = weight_update;
+			weights_tensor.device(device) = weights_tensor + weight_update;
     };
     std::string getName() const{return "SGDOp";};
-    std::string getParameters() const
-    {
-      std::string params = "";
-      params += "gradient_threshold:" + 
-        std::to_string(this->getGradientThreshold()) + 
-        ";gradient_noise_sigma:" + 
-        std::to_string(this->getGradientNoiseSigma()) +
-        ";gradient_noise_gamma:" + 
-        std::to_string(this->getGradientNoiseGamma()) +
-        ";learning_rate:" + 
-        std::to_string(getLearningRate()) +
-        ";momentum:" + 
-        std::to_string(getMomentum()) +
-        ";momentum_prev:" + 
-        std::to_string(getMomentumPrev());
-      return params;
-    }
-private:
-    TensorT learning_rate_ = 0.01; ///< Learning rate
-    TensorT momentum_ = 0.9; ///< Momentum
-    TensorT momentum_prev_ = 0.0;
   };
 
   /**
@@ -141,139 +122,69 @@ private:
       D. Kingma, J. Ba. Adam: A Method for Stochastic Optimization. 
       International Conference for Learning Representations, 2015.
   */
-	template<typename TensorT>
-  class AdamOp: public SolverOp<TensorT>
+	template<typename TensorT, typename DeviceT>
+  class AdamOp: public SolverOp<TensorT, DeviceT>
   {
 public: 
     AdamOp(){}; 
     ~AdamOp(){};
-    AdamOp(const TensorT& learning_rate, const TensorT& momentum, const TensorT& momentum2, const TensorT& delta):
-      learning_rate_(learning_rate), momentum_(momentum), momentum2_(momentum2), delta_(delta){}
-    void setLearningRate(const TensorT& learning_rate){learning_rate_ = learning_rate;};
-    TensorT getLearningRate() const{return learning_rate_;};
-    void setMomentum(const TensorT& momentum){momentum_ = momentum;};
-    TensorT getMomentum() const{return momentum_;};
-    void setMomentum2(const TensorT& momentum2){momentum2_ = momentum2;};
-    TensorT getMomentum2() const{return momentum2_;};
-    void setDelta(const TensorT& delta){delta_ = delta;};
-    TensorT getDelta() const{return delta_;};
-    void setMomentumPrev(const TensorT& momentum_prev){momentum_prev_ = momentum_prev;};
-    TensorT getMomentumPrev() const{return momentum_prev_;};
-    void setMomentum2Prev(const TensorT& momentum2_prev){momentum2_prev_ = momentum2_prev;};
-    TensorT getMomentum2Prev() const{return momentum2_prev_;};
-    TensorT operator()(const TensorT& weight, const TensorT& error) 
+		/*
+		@brief SGD solver operator
+
+		@params weights Data for the weight tensor
+		@params errorr Data for the weight tensor errors
+		@params solver_params Data for the solver params (Dim 2, size 6: learning rate, momentum, mementum2, delta, momentum_prev, momentum2_prev)
+		@param source_layer_size Dim 0
+		@param sink_layer_size Dim 1
+		*/
+    void operator()(TensorT* weights, TensorT* errors, TensorT* solver_params, const int& source_layer_size, const int& sink_layer_size, DeviceT& device) 
     {
-      const TensorT adam1 = momentum_ * momentum_prev_ + (1 - momentum_) * weight * error;
-      const TensorT adam2 = momentum2_ * momentum2_prev_ + (1 - momentum2_) * std::pow(weight * error, 2);
-      momentum_prev_= adam1;
-      momentum2_prev_ = adam2;
-      const TensorT unbiased_adam1 = adam1/ (1 - momentum_);
-      const TensorT unbiased_adam2 = adam2/ (1 - momentum2_);
-      const TensorT new_weight = weight - learning_rate_ * unbiased_adam1 / (std::sqrt(unbiased_adam2) + delta_);
-      return this->checkWeight(weight, new_weight);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weights_tensor(weights, source_layer_size, sink_layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> errors_tensor(errors, source_layer_size, sink_layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> solver_params_tensor(solver_params, source_layer_size, sink_layer_size, 5);
+			auto tmp = weights_tensor * errors_tensor;
+      auto adam1 = solver_params_tensor.chip(1, 2) * solver_params_tensor.chip(4, 2) + (weights_tensor.constant(1) - solver_params_tensor.chip(1, 2)) * tmp;
+      auto adam2 = solver_params_tensor.chip(2, 2) * solver_params_tensor.chip(5, 2) + (weights_tensor.constant(1) - solver_params_tensor.chip(2, 2)) * tmp * tmp;
+			solver_params_tensor.chip(4, 2).device(device) = adam1;
+			solver_params_tensor.chip(5, 2).device(device) = adam2;
+      auto unbiased_adam1 = adam1/ (weights_tensor.constant(1) - solver_params_tensor.chip(1, 2));
+      auto unbiased_adam2 = adam2/ (weights_tensor.constant(1) - solver_params_tensor.chip(2, 2));
+			weights_tensor.device(device) = weights_tensor - solver_params_tensor.chip(0, 2) * unbiased_adam1 / (sqrt(unbiased_adam2) + solver_params_tensor.chip(3, 2));
     };
     std::string getName() const{return "AdamOp";};
-    std::string getParameters() const
-    {
-      std::string params = "";
-      params += "gradient_threshold:" + 
-        std::to_string(this->getGradientThreshold()) +
-        ";gradient_noise_sigma:" + 
-        std::to_string(this->getGradientNoiseSigma()) +
-        ";gradient_noise_gamma:" + 
-        std::to_string(this->getGradientNoiseGamma()) +
-        ";learning_rate:" + 
-        std::to_string(getLearningRate()) + 
-        ";momentum:" + 
-        std::to_string(getMomentum()) + 
-        ";momentum2:" + 
-        std::to_string(getMomentum2()) + 
-        ";delta:" + 
-        std::to_string(getDelta()) + 
-        ";momentum_prev:" + 
-        std::to_string(getMomentumPrev()) + 
-        ";momentum2_prev:" + 
-        std::to_string(getMomentum2Prev());
-      return params;
-    }
-private:
-    TensorT learning_rate_ = 0.01; ///< Learning rate
-    TensorT momentum_ = 0.9; ///< Momentum
-    TensorT momentum2_ = 0.999; ///< Momentum2
-    TensorT delta_ = 1e-8; ///< Delta
-    TensorT momentum_prev_ = 0.0;
-    TensorT momentum2_prev_ = 0.0;
   };
 
 	/**
 	@brief Dummy solver that prevents weight update.
 	*/
-	template<typename TensorT>
-	class DummySolverOp : public SolverOp<TensorT>
+	template<typename TensorT, typename DeviceT>
+	class DummySolverOp : public SolverOp<TensorT, DeviceT>
 	{
 	public:
 		DummySolverOp() {};
 		~DummySolverOp() {};
-		TensorT operator()(const TensorT& weight, const TensorT& error)
-		{
-			return weight;
-		};
+		void operator()(TensorT* weights, TensorT* errors, TensorT* solver_params, const int& source_layer_size, const int& sink_layer_size, DeviceT& device)	{	};
 		std::string getName() const { return "DummySolverOp"; };
-		std::string getParameters() const
-		{
-			std::string params = "";
-			return params;
-		}
 	};
 
 	/**
 	@brief SGD Stochastic Gradient Descent with Noise Solver.
 	*/
-	template<typename TensorT>
-	class SGDNoiseOp : public SolverOp<TensorT>
+	template<typename TensorT, typename DeviceT>
+	class SGDNoiseOp : public SolverOp<TensorT, DeviceT>
 	{
 	public:
 		SGDNoiseOp() {};
 		~SGDNoiseOp() {};
-		SGDNoiseOp(const TensorT& learning_rate, const TensorT& momentum, const TensorT& gradient_noise_sigma):
-			learning_rate_(learning_rate), momentum_(momentum) {
-			setGradientNoiseSigma(gradient_noise_sigma);
-		}
-		void setLearningRate(const TensorT& learning_rate) { learning_rate_ = learning_rate; };
-		TensorT getLearningRate() const { return learning_rate_; };
-		void setMomentum(const TensorT& momentum) { momentum_ = momentum; };
-		TensorT getMomentum() const { return momentum_; };
-		void setMomentumPrev(const TensorT& momentum_prev) { momentum_prev_ = momentum_prev; };
-		TensorT getMomentumPrev() const { return momentum_prev_; };
-		TensorT operator()(const TensorT& weight, const TensorT& error)
+		TensorT operator()(TensorT* weights, TensorT* errors, TensorT* solver_params, const int& source_layer_size, const int& sink_layer_size, DeviceT& device)
 		{
-			const TensorT weight_update = momentum_ * momentum_prev_ - learning_rate_ * weight * error;
-			momentum_prev_ = weight_update;
-			const TensorT new_weight = weight + weight_update;
-			return addGradientNoise(new_weight);
+			// [TODO]
+			//const TensorT weight_update = momentum_ * momentum_prev_ - learning_rate_ * weight * error;
+			//momentum_prev_ = weight_update;
+			//const TensorT new_weight = weight + weight_update;
+			//return addGradientNoise(new_weight);
 		};
 		std::string getName() const { return "SGDNoiseOp"; };
-		std::string getParameters() const
-		{
-			std::string params = "";
-			params += "gradient_threshold:" +
-				std::to_string(this->getGradientThreshold()) +
-				";gradient_noise_sigma:" +
-				std::to_string(this->getGradientNoiseSigma()) +
-				";gradient_noise_gamma:" +
-				std::to_string(this->getGradientNoiseGamma()) +
-				";learning_rate:" +
-				std::to_string(getLearningRate()) +
-				";momentum:" +
-				std::to_string(getMomentum()) +
-				";momentum_prev:" +
-				std::to_string(getMomentumPrev());
-			return params;
-		}
-	private:
-		TensorT learning_rate_ = 0.01; ///< Learning rate
-		TensorT momentum_ = 0.9; ///< Momentum
-		TensorT momentum_prev_ = 0.0;
 	};
 
   /**

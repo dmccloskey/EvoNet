@@ -548,7 +548,6 @@ BOOST_AUTO_TEST_CASE(weightErrorDefaultDevice)
 	const int device_id = 0;
 	DefaultDeviceKernal<float> kernal;
 
-	SolverOp<float>* solver_function = new SGDOp<float>();
 	IntegrationWeightGradOp<float, Eigen::DefaultDevice>* integration_function = new FullyConnectedSumWeightGradOp<float, Eigen::DefaultDevice>();
 	const int batch_size = 4;
 	const int memory_size = 2;
@@ -598,9 +597,6 @@ BOOST_AUTO_TEST_CASE(weightErrorDefaultDevice)
 		{{4, 4}, {0, 0}},
 		{{2, 2}, {0, 0}},
 		{{4, 4}, {0, 0}} });
-	std::cout << "sink tensor " << sink_error << std::endl;
-	std::cout << "source tensor " << source_output << std::endl;
-	std::cout << "source tensor " << source_output.chip(0,2) << std::endl;
 
 	Eigen::TensorMap<Eigen::Tensor<float, 2>> weight(h_weight, source_layer_size, sink_layer_size);
 	weight.setConstant(1);
@@ -660,6 +656,95 @@ BOOST_AUTO_TEST_CASE(weightErrorDefaultDevice)
 	//assert(cudaFree(d_weight) == cudaSuccess);
 	//assert(cudaFreeHost(h_weight_error) == cudaSuccess);
 	//assert(cudaFree(d_weight_error) == cudaSuccess);
+}
+
+BOOST_AUTO_TEST_CASE(weightUpdateDefaultDevice)
+{
+	const int device_id = 0;
+	DefaultDeviceKernal<float> kernal;
+
+	SolverOp<float, Eigen::DefaultDevice>* solver_function = new SGDOp<float, Eigen::DefaultDevice>();
+	const int source_layer_size = 2;
+	const int sink_layer_size = 1;
+
+	float* h_solver_params = new float[source_layer_size * sink_layer_size * 3];
+	float* d_solver_params = new float[source_layer_size * sink_layer_size * 3];
+	float* h_weight = new float[source_layer_size, sink_layer_size];
+	float* d_weight = new float[source_layer_size, sink_layer_size];
+	float* h_weight_error = new float[source_layer_size, sink_layer_size];
+	float* d_weight_error = new float[source_layer_size, sink_layer_size];
+
+	//assert(cudaSetDevice(device_id) == cudaSuccess); // is this needed?
+
+	// allocate memory
+	//std::size_t solver_bytes = source_layer_size * sink_layer_size * 3 * sizeof(float);
+	//std::size_t weight_bytes = source_layer_size * sink_layer_size * sizeof(float);
+	//assert(cudaHostAlloc((void**)(&h_solver_params), solver_bytes, cudaHostAllocDefault) == cudaSuccess);
+	//assert(cudaMalloc((void**)(&d_solver_params), solver_bytes) == cudaSuccess);
+	//assert(cudaHostAlloc((void**)(&h_weight), weight_bytes, cudaHostAllocDefault) == cudaSuccess);
+	//assert(cudaMalloc((void**)(&d_weight), weight_bytes) == cudaSuccess);
+	//assert(cudaHostAlloc((void**)(&h_weight_error), weight_bytes, cudaHostAllocDefault) == cudaSuccess);
+	//assert(cudaMalloc((void**)(&d_weight_error), weight_bytes) == cudaSuccess);
+
+	Eigen::TensorMap<Eigen::Tensor<float, 3>> solver_params(h_solver_params, source_layer_size, sink_layer_size, 3);
+	solver_params.setValues({ {{0.01, 0.99, 0.0}},
+		{{0.01, 0.99, 0.0}} });
+	Eigen::TensorMap<Eigen::Tensor<float, 2>> weight(h_weight, source_layer_size, sink_layer_size);
+	weight.setConstant(1);
+	Eigen::TensorMap<Eigen::Tensor<float, 2>> weight_error(h_weight_error, source_layer_size, sink_layer_size);
+	weight_error.setValues({ {-0.2},	{-20} });
+
+	// Set up the device
+	Eigen::DefaultDevice device;
+	//cudaStream_t stream; // The stream will be destroyed by GpuStreamDevice once the function goes out of scope!
+	//assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess);
+	//Eigen::GpuStreamDevice stream_device(&stream, 0);
+	//Eigen::GpuDevice device(&stream_device);
+
+	bool success = kernal.executeWeightUpdate(
+		h_weight,
+		d_weight,
+		h_solver_params,
+		d_solver_params,
+		h_weight_error,
+		d_weight_error,
+		solver_function,
+		source_layer_size,
+		sink_layer_size,
+		device,
+		true,
+		true);
+
+	//// Synchronize the stream
+	//cudaError_t err = cudaStreamQuery(stream);
+	//assert(cudaStreamSynchronize(stream) == cudaSuccess);
+	//assert(cudaStreamDestroy(stream) == cudaSuccess);
+
+	Eigen::Tensor<float, 2> expected_weights(source_layer_size, sink_layer_size);
+	expected_weights.setValues({ {1.00398}, {1.398} });
+
+	Eigen::Tensor<float, 3> expected_params(source_layer_size, sink_layer_size, 3);
+	expected_params.setValues({ {{0.01, 0.99, 0.002}},
+		{{0.01, 0.99, 0.2}} });
+
+	for (int source_iter = 0; source_iter < source_layer_size; ++source_iter) {
+		for (int sink_iter = 0; sink_iter < sink_layer_size; ++sink_iter) {
+			std::cout << "[Weight] Source iter: " << source_iter << ", Sink Iter: " << sink_iter << " = " << weight(source_iter, sink_iter) << std::endl;
+			BOOST_CHECK_CLOSE(weight(source_iter, sink_iter), expected_weights(source_iter, sink_iter), 1e-4);
+			for (int param_iter = 0; param_iter < 3; ++param_iter) {
+				std::cout << "[Params] Source iter: " << source_iter << ", Sink Iter: " << sink_iter << ", Param Iter: " << param_iter << " = " << solver_params(source_iter, sink_iter, param_iter) << std::endl;
+				BOOST_CHECK_CLOSE(solver_params(source_iter, sink_iter, param_iter), expected_params(source_iter, sink_iter, param_iter), 1e-4);
+			}
+		}
+	}
+
+	//assert(cudaFreeHost(h_solver_params) == cudaSuccess);
+	//assert(cudaFree(d_solver_params) == cudaSuccess);
+	//assert(cudaFreeHost(h_weight) == cudaSuccess);
+	//assert(cudaFree(d_weight) == cudaSuccess);
+	//assert(cudaFreeHost(h_weight_error) == cudaSuccess);
+	//assert(cudaFree(d_weight_error) == cudaSuccess);
+
 }
 
 #if COMPILE_WITH_CUDA

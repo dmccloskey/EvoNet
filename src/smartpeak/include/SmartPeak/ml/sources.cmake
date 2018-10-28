@@ -23,6 +23,7 @@ set(sources_list_h
 	PopulationTrainer.h
 	SharedFunctions.h
 	Solver.h
+	Solver3.h
 	Weight.h
 	WeightData.h
 	WeightInit.h
