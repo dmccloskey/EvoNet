@@ -598,6 +598,9 @@ BOOST_AUTO_TEST_CASE(weightErrorDefaultDevice)
 		{{4, 4}, {0, 0}},
 		{{2, 2}, {0, 0}},
 		{{4, 4}, {0, 0}} });
+	std::cout << "sink tensor " << sink_error << std::endl;
+	std::cout << "source tensor " << source_output << std::endl;
+	std::cout << "source tensor " << source_output.chip(0,2) << std::endl;
 
 	Eigen::TensorMap<Eigen::Tensor<float, 2>> weight(h_weight, source_layer_size, sink_layer_size);
 	weight.setConstant(1);
@@ -637,8 +640,8 @@ BOOST_AUTO_TEST_CASE(weightErrorDefaultDevice)
 	//assert(cudaStreamSynchronize(stream) == cudaSuccess);
 	//assert(cudaStreamDestroy(stream) == cudaSuccess);
 
-	Eigen::Tensor<float, 2> expected_weight_error(batch_size, memory_size);
-	expected_weight_error.setValues({ {0, 0}, {0, 0}, {0, 0}, {0, 0} });
+	Eigen::Tensor<float, 2> expected_weight_error(source_layer_size, sink_layer_size);
+	expected_weight_error.setValues({ {-4.75}, {-4.75} });
 
 	for (int source_iter = 0; source_iter < source_layer_size; ++source_iter) {
 		for (int sink_iter = 0; sink_iter < sink_layer_size; ++sink_iter) {
