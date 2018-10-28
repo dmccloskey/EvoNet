@@ -641,7 +641,7 @@ BOOST_AUTO_TEST_CASE(weightErrorDefaultDevice)
 
 	for (int source_iter = 0; source_iter < source_layer_size; ++source_iter) {
 		for (int sink_iter = 0; sink_iter < sink_layer_size; ++sink_iter) {
-			std::cout << "[Weight Error] Source iter: " << source_iter << ", Sink Iter: " << sink_iter << " = " << weight_error(source_iter, sink_iter) << std::endl;
+			//std::cout << "[Weight Error] Source iter: " << source_iter << ", Sink Iter: " << sink_iter << " = " << weight_error(source_iter, sink_iter) << std::endl;
 			BOOST_CHECK_CLOSE(weight_error(source_iter, sink_iter), expected_weight_error(source_iter, sink_iter), 1e-4);
 		}
 	}
@@ -729,10 +729,10 @@ BOOST_AUTO_TEST_CASE(weightUpdateDefaultDevice)
 
 	for (int source_iter = 0; source_iter < source_layer_size; ++source_iter) {
 		for (int sink_iter = 0; sink_iter < sink_layer_size; ++sink_iter) {
-			std::cout << "[Weight] Source iter: " << source_iter << ", Sink Iter: " << sink_iter << " = " << weight(source_iter, sink_iter) << std::endl;
+			//std::cout << "[Weight] Source iter: " << source_iter << ", Sink Iter: " << sink_iter << " = " << weight(source_iter, sink_iter) << std::endl;
 			BOOST_CHECK_CLOSE(weight(source_iter, sink_iter), expected_weights(source_iter, sink_iter), 1e-4);
 			for (int param_iter = 0; param_iter < 3; ++param_iter) {
-				std::cout << "[Params] Source iter: " << source_iter << ", Sink Iter: " << sink_iter << ", Param Iter: " << param_iter << " = " << solver_params(source_iter, sink_iter, param_iter) << std::endl;
+				//std::cout << "[Params] Source iter: " << source_iter << ", Sink Iter: " << sink_iter << ", Param Iter: " << param_iter << " = " << solver_params(source_iter, sink_iter, param_iter) << std::endl;
 				BOOST_CHECK_CLOSE(solver_params(source_iter, sink_iter, param_iter), expected_params(source_iter, sink_iter, param_iter), 1e-4);
 			}
 		}
