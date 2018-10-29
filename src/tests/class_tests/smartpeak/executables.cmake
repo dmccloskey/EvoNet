@@ -2,7 +2,7 @@ set(core_executables_list
   DeviceManager_test
   Helloworld_test
   KernalManager_test
-  #KernalManagerGpu_test
+  KernalManagerGpu_test
   #OperationsManagerGpu_test
   Preprocessing_test
   Statistics_test
@@ -27,9 +27,11 @@ set(ml_executables_list
   ActivationFunction_test
   IntegrationFunction_test
   IntegrationFunction2_test
+  #IntegrationFunction3_test
   Link_test
   Lossfunction_test
   Lossfunction2_test
+  #Lossfunction3_test
   ModelBuilder_test
   ModelLogger_test
   ModelReplicator_test
@@ -42,6 +44,7 @@ set(ml_executables_list
   PopulationTrainer_test
   SharedFunctions_test
   Solver_test
+  #Solver3_test
   Weight_test
   WeightData_test
   WeightInit_test
