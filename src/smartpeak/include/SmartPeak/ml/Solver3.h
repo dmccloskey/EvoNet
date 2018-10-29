@@ -141,7 +141,7 @@ public:
     {
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weights_tensor(weights, source_layer_size, sink_layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> errors_tensor(errors, source_layer_size, sink_layer_size);
-			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> solver_params_tensor(solver_params, source_layer_size, sink_layer_size, 5);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> solver_params_tensor(solver_params, source_layer_size, sink_layer_size, 6);
 			auto tmp = weights_tensor * errors_tensor;
       auto adam1 = solver_params_tensor.chip(1, 2) * solver_params_tensor.chip(4, 2) + (weights_tensor.constant(1) - solver_params_tensor.chip(1, 2)) * tmp;
       auto adam2 = solver_params_tensor.chip(2, 2) * solver_params_tensor.chip(5, 2) + (weights_tensor.constant(1) - solver_params_tensor.chip(2, 2)) * tmp * tmp;
@@ -149,7 +149,7 @@ public:
 			solver_params_tensor.chip(5, 2).device(device) = adam2;
       auto unbiased_adam1 = adam1/ (weights_tensor.constant(1) - solver_params_tensor.chip(1, 2));
       auto unbiased_adam2 = adam2/ (weights_tensor.constant(1) - solver_params_tensor.chip(2, 2));
-			weights_tensor.device(device) = weights_tensor - solver_params_tensor.chip(0, 2) * unbiased_adam1 / (sqrt(unbiased_adam2) + solver_params_tensor.chip(3, 2));
+			weights_tensor.device(device) = weights_tensor - solver_params_tensor.chip(0, 2) * unbiased_adam1 / (unbiased_adam2.sqrt() + solver_params_tensor.chip(3, 2));
     };
     std::string getName() const{return "AdamOp";};
   };
@@ -176,7 +176,7 @@ public:
 	public:
 		SGDNoiseOp() {};
 		~SGDNoiseOp() {};
-		TensorT operator()(TensorT* weights, TensorT* errors, TensorT* solver_params, const int& source_layer_size, const int& sink_layer_size, DeviceT& device)
+		void operator()(TensorT* weights, TensorT* errors, TensorT* solver_params, const int& source_layer_size, const int& sink_layer_size, DeviceT& device)
 		{
 			// [TODO]
 			//const TensorT weight_update = momentum_ * momentum_prev_ - learning_rate_ * weight * error;

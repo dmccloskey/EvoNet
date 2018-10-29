@@ -9,24 +9,6 @@
 
 namespace SmartPeak
 {
-	/**
-	@brief Functor for use with calculate activation/derivative.
-	*/
-
-	template<typename TensorT>
-	class TensorMultOp
-	{
-	public:
-		TensorMultOp() = default;
-		TensorMultOp(TensorT* weight) : weight_(weight) {};
-		~TensorMultOp() = default;
-		TensorT operator()(const TensorT& x_I) const {
-			return x_I * (*weight_);
-		}
-	private:
-		TensorT* weight_;
-	};
-
   /**
     @brief Base class for all integration functions.
   */
