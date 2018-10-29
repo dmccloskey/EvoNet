@@ -88,7 +88,7 @@ void test_nodeActivationGpuDevice()
 	for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
 		for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
 			for (int node_iter = 0; node_iter < layer_size; ++node_iter) {
-				std::cout << "[Output] Batch iter: " << batch_iter << ", Memory Iter: " << memory_iter << ", Node Iter: " << node_iter << " = " << node_output(batch_iter, memory_iter, node_iter) << std::endl;
+				//std::cout << "[Output] Batch iter: " << batch_iter << ", Memory Iter: " << memory_iter << ", Node Iter: " << node_iter << " = " << node_output(batch_iter, memory_iter, node_iter) << std::endl;
 				assert(node_output(batch_iter, memory_iter, node_iter) == expected_output(batch_iter, memory_iter, node_iter));
 			}
 		}
@@ -171,7 +171,7 @@ void test_nodeDerivativeGpuDevice()
 	for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
 		for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
 			for (int node_iter = 0; node_iter < layer_size; ++node_iter) {
-				std::cout << "[Derivative] Batch iter: " << batch_iter << ", Memory Iter: " << memory_iter << ", Node Iter: " << node_iter << " = " << node_derivative(batch_iter, memory_iter, node_iter) << std::endl;
+				//std::cout << "[Derivative] Batch iter: " << batch_iter << ", Memory Iter: " << memory_iter << ", Node Iter: " << node_iter << " = " << node_derivative(batch_iter, memory_iter, node_iter) << std::endl;
 				assert(node_derivative(batch_iter, memory_iter, node_iter) == expected_derivative(batch_iter, memory_iter, node_iter));
 			}
 		}
@@ -265,7 +265,7 @@ void test_forwardPropogationGpuDevice()
 	for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
 		for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
 			for (int node_iter = 0; node_iter < sink_layer_size; ++node_iter) {
-				std::cout << "[Input] Batch iter: " << batch_iter << ", Memory Iter: " << memory_iter << ", Node Iter: " << node_iter << " = " << sink_input(batch_iter, memory_iter, node_iter) << std::endl;
+				//std::cout << "[Input] Batch iter: " << batch_iter << ", Memory Iter: " << memory_iter << ", Node Iter: " << node_iter << " = " << sink_input(batch_iter, memory_iter, node_iter) << std::endl;
 				assert(sink_input(batch_iter, memory_iter, node_iter) == expected_input(batch_iter, memory_iter, node_iter));
 			}
 		}
@@ -389,7 +389,7 @@ void test_backwardPropogationGpuDevice()
 	for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
 		for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
 			for (int node_iter = 0; node_iter < sink_layer_size; ++node_iter) {
-				std::cout << "[Sink Error] Batch iter: " << batch_iter << ", Memory Iter: " << memory_iter << ", Node Iter: " << node_iter << " = " << sink_error(batch_iter, memory_iter, node_iter) << std::endl;
+				//std::cout << "[Sink Error] Batch iter: " << batch_iter << ", Memory Iter: " << memory_iter << ", Node Iter: " << node_iter << " = " << sink_error(batch_iter, memory_iter, node_iter) << std::endl;
 				assert(sink_error(batch_iter, memory_iter, node_iter) == expected_error(batch_iter, memory_iter, node_iter));
 			}
 		}
@@ -492,10 +492,10 @@ void test_modelErrorGpuDevice()
 
 	for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
 		for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
-			std::cout << "[Model Error] Batch iter: " << batch_iter << ", Memory Iter: " << memory_iter << " = " << model_error(batch_iter, memory_iter) << std::endl;
+			//std::cout << "[Model Error] Batch iter: " << batch_iter << ", Memory Iter: " << memory_iter << " = " << model_error(batch_iter, memory_iter) << std::endl;
 			assert(model_error(batch_iter, memory_iter) == expected_model_error(batch_iter, memory_iter));
 			for (int node_iter = 0; node_iter < layer_size; ++node_iter) {
-				std::cout << "[Node Error] Batch iter: " << batch_iter << ", Memory Iter: " << memory_iter << ", Node Iter: " << node_iter << " = " << node_error(batch_iter, memory_iter, node_iter) << std::endl;
+				//std::cout << "[Node Error] Batch iter: " << batch_iter << ", Memory Iter: " << memory_iter << ", Node Iter: " << node_iter << " = " << node_error(batch_iter, memory_iter, node_iter) << std::endl;
 				assert(node_error(batch_iter, memory_iter, node_iter) == expected_node_error(batch_iter, memory_iter, node_iter));
 			}
 		}
@@ -606,7 +606,7 @@ void test_weightErrorGpuDevice()
 
 	for (int source_iter = 0; source_iter < source_layer_size; ++source_iter) {
 		for (int sink_iter = 0; sink_iter < sink_layer_size; ++sink_iter) {
-			std::cout << "[Weight Error] Source iter: " << source_iter << ", Sink Iter: " << sink_iter << " = " << weight_error(source_iter, sink_iter) << std::endl;
+			//std::cout << "[Weight Error] Source iter: " << source_iter << ", Sink Iter: " << sink_iter << " = " << weight_error(source_iter, sink_iter) << std::endl;
 			assert(weight_error(source_iter, sink_iter) == expected_weight_error(source_iter, sink_iter));
 		}
 	}
@@ -692,11 +692,11 @@ void test_weightUpdateGpuDevice(){
 
 	for (int source_iter = 0; source_iter < source_layer_size; ++source_iter) {
 		for (int sink_iter = 0; sink_iter < sink_layer_size; ++sink_iter) {
-			std::cout << "[Weight] Source iter: " << source_iter << ", Sink Iter: " << sink_iter << " = " << weight(source_iter, sink_iter) << std::endl;
+			//std::cout << "[Weight] Source iter: " << source_iter << ", Sink Iter: " << sink_iter << " = " << weight(source_iter, sink_iter) << std::endl;
 			assert(weight(source_iter, sink_iter) == expected_weights(source_iter, sink_iter));
 			for (int param_iter = 0; param_iter < 3; ++param_iter) {
-				std::cout << "[Params] Source iter: " << source_iter << ", Sink Iter: " << sink_iter << ", Param Iter: " << param_iter << " = " << solver_params(source_iter, sink_iter, param_iter) << std::endl;
-				assert(solver_params(source_iter, sink_iter, param_iter) == expected_params(source_iter, sink_iter, param_iter));
+				//std::cout << "[Params] Source iter: " << source_iter << ", Sink Iter: " << sink_iter << ", Param Iter: " << param_iter << " = " << solver_params(source_iter, sink_iter, param_iter) << std::endl;
+				assert(solver_params(source_iter, sink_iter, param_iter) == expected_params(source_iter, sink_iter, param_iter)); // Not sure why the last param does not pass...
 			}
 		}
 	}

@@ -269,7 +269,7 @@ namespace SmartPeak
 			bool copyHostToDevice = false,
 			bool copyDeviceToHost = false) {
 			// Allocate memory for the expected and predicted
-			float* h_expected = expected.data();
+			TensorT* h_expected = expected.data();
 
 			// Calculate the model error
 			loss_function->operator()(h_node_outputs, h_expected, h_model_error, batch_size, memory_size, layer_size, time_step, device);
@@ -415,9 +415,9 @@ namespace SmartPeak
 			bool copyHostToDevice = false,
 			bool copyDeviceToHost = false) {
 			// Copy host to device
-			std::size_t source_bytes = batch_size * memory_size * source_layer_size * sizeof(float);
-			std::size_t sink_bytes = batch_size * memory_size * sink_layer_size * sizeof(float);
-			std::size_t weight_bytes = source_layer_size * sink_layer_size * sizeof(float);
+			std::size_t source_bytes = batch_size * memory_size * source_layer_size * sizeof(TensorT);
+			std::size_t sink_bytes = batch_size * memory_size * sink_layer_size * sizeof(TensorT);
+			std::size_t weight_bytes = source_layer_size * sink_layer_size * sizeof(TensorT);
 			if (copyHostToDevice) {
 				device.memcpyHostToDevice(d_source_outputs, h_source_outputs, source_bytes);
 				device.memcpyHostToDevice(d_weights, h_weights, weight_bytes);
@@ -459,9 +459,9 @@ namespace SmartPeak
 			bool copyHostToDevice = false,
 			bool copyDeviceToHost = false) {
 			// Copy host to device
-			std::size_t source_bytes = batch_size * memory_size * source_layer_size * sizeof(float);
-			std::size_t sink_bytes = batch_size * memory_size * sink_layer_size * sizeof(float);
-			std::size_t weight_bytes = source_layer_size * sink_layer_size * sizeof(float);
+			std::size_t source_bytes = batch_size * memory_size * source_layer_size * sizeof(TensorT);
+			std::size_t sink_bytes = batch_size * memory_size * sink_layer_size * sizeof(TensorT);
+			std::size_t weight_bytes = source_layer_size * sink_layer_size * sizeof(TensorT);
 			if (copyHostToDevice) {
 				device.memcpyHostToDevice(d_source_errors, h_source_errors, source_bytes);
 				device.memcpyHostToDevice(d_source_inputs, h_source_inputs, source_bytes);
@@ -504,20 +504,23 @@ namespace SmartPeak
 			bool copyHostToDevice = false,
 			bool copyDeviceToHost = false) {
 			// Allocate memory for the expected and predicted
-			const size_t expected_bytes = expected.size() * sizeof(TensorT);
-			float* h_expected;
-			float* d_expected;
+			assert(expected.size() == batch_size * layer_size);
+			const size_t expected_bytes = batch_size * layer_size * sizeof(TensorT);
+			//const size_t expected_bytes = expected.size() * sizeof(TensorT);
+			TensorT* h_expected;
+			TensorT* d_expected;
 			assert(cudaHostAlloc((void**)(&h_expected), expected_bytes, cudaHostAllocDefault) == cudaSuccess);
 			assert(cudaMalloc((void**)(&d_expected), expected_bytes) == cudaSuccess);
 			h_expected = expected.data();
 
 			// Copy host to device
-			std::size_t bytes = batch_size * memory_size * layer_size * sizeof(float);
+			std::size_t bytes = batch_size * memory_size * layer_size * sizeof(TensorT);
+			std::size_t model_bytes = batch_size * memory_size * sizeof(TensorT);
 			if (copyHostToDevice) {
 				device.memcpyHostToDevice(d_node_outputs, h_node_outputs, bytes);
 				device.memcpyHostToDevice(d_node_errors, h_node_errors, bytes);
 				device.memcpyHostToDevice(d_expected, h_expected, expected_bytes);
-				device.memcpyHostToDevice(d_model_error, h_model_error, bytes);
+				device.memcpyHostToDevice(d_model_error, h_model_error, model_bytes);
 			}
 
 			// Calculate the model error
@@ -529,7 +532,7 @@ namespace SmartPeak
 			// Copy device to host
 			if (copyDeviceToHost) {
 				device.memcpyDeviceToHost(h_node_errors, d_node_errors, bytes);
-				device.memcpyDeviceToHost(h_model_error, d_model_error, bytes);
+				device.memcpyDeviceToHost(h_model_error, d_model_error, model_bytes);
 			}
 
 			// Deallocate the memory
@@ -559,9 +562,9 @@ namespace SmartPeak
 			bool copyHostToDevice = false,
 			bool copyDeviceToHost = false) {
 			// Copy host to device
-			std::size_t source_bytes = batch_size * memory_size * source_layer_size * sizeof(float);
-			std::size_t sink_bytes = batch_size * memory_size * sink_layer_size * sizeof(float);
-			std::size_t weight_bytes = source_layer_size * sink_layer_size * sizeof(float);
+			std::size_t source_bytes = batch_size * memory_size * source_layer_size * sizeof(TensorT);
+			std::size_t sink_bytes = batch_size * memory_size * sink_layer_size * sizeof(TensorT);
+			std::size_t weight_bytes = source_layer_size * sink_layer_size * sizeof(TensorT);
 			if (copyHostToDevice) {
 				device.memcpyHostToDevice(d_source_inputs, h_source_inputs, source_bytes); // only needed when testing...
 				device.memcpyHostToDevice(d_source_outputs, h_source_outputs, source_bytes); // only needed when testing...
@@ -612,7 +615,8 @@ namespace SmartPeak
 
 			// Copy device to host
 			if (copyDeviceToHost) {
-				device.memcpyDeviceToHost(h_weight, d_weight, bytes);
+				device.memcpyDeviceToHost(h_weight, d_weight, bytes); // only needed at the end of training...
+				device.memcpyDeviceToHost(h_solver_params, d_solver_params, solver_params_bytes); // only needed at the end of training...
 			}
 
 			return true;
