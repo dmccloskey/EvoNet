@@ -377,12 +377,12 @@ public:
 		std::map<std::string, std::vector<int>> getFanInOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes);
 
     /**
-    @brief Allocate tensor memory for all forward
-      propogation tensors.
+    @brief Allocate Node and Weight tensor memory for all model operations.
+			Node and weight tensors indices are registered.
+			Weight solver params tensors are created using the first weight in the layer.
+			Weight matrix is initialized using the first weight in the layer
 
-    Note that nodes need not be the same type.
-
-    @param[in] time_step Time step to activate.
+		@param[in] FP_operations
     */
     void allocateForwardPropogationLayerTensors(const std::vector<OperationList<TensorT>>& FP_operations,
 			const std::map<std::string, std::vector<int>>& FC_ops,
@@ -1924,6 +1924,12 @@ private:
 	template<typename TensorT>
 	inline void Model<TensorT>::allocateForwardPropogationLayerTensors(const std::vector<OperationList<TensorT>>& FP_operations, const std::map<std::string, std::vector<int>>& FC_ops, const std::map<std::string, std::vector<int>>& SC_ops, const std::map<std::string, std::vector<int>>& Conv_ops, const std::map<std::string, std::vector<int>>& custom_ops, const std::map<std::string, std::vector<int>>& fanOut_ops, const std::map<std::string, std::vector<int>>& fanIn_ops)
 	{
+		// allocate source node tensor (if it does not yet exist)
+
+		// allocate weight tensors
+
+		// allocate sink node tensors
+		// set the tensor integration operations
 	}
 
 	template<typename TensorT>
