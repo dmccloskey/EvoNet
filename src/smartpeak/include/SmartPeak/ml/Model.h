@@ -350,7 +350,13 @@ public:
 
 			@param[in, out] FP_operations
 		*/
-		void optimizeForwardPropogationLayers(const std::vector<OperationList<TensorT>>& FP_operations);
+		void optimizeForwardPropogationLayers(const std::vector<OperationList<TensorT>>& FP_operations,
+			const std::map<std::string, std::vector<int>>& FC_ops,
+			const std::map<std::string, std::vector<int>>& SC_ops,
+			const std::map<std::string, std::vector<int>>& Conv_ops,
+			const std::map<std::string, std::vector<int>>& custom_ops,
+			const std::map<std::string, std::vector<int>>& fanOut_ops,
+			const std::map<std::string, std::vector<int>>& fanIn_ops);
 
 		/**
 			@brief Identify layer operations
@@ -378,7 +384,14 @@ public:
 
     @param[in] time_step Time step to activate.
     */
-    void allocateForwardPropogationLayerTensors(const int& time_step);
+    void allocateForwardPropogationLayerTensors(const std::vector<OperationList<TensorT>>& FP_operations,
+			const std::map<std::string, std::vector<int>>& FC_ops,
+			const std::map<std::string, std::vector<int>>& SC_ops,
+			const std::map<std::string, std::vector<int>>& Conv_ops,
+			const std::map<std::string, std::vector<int>>& custom_ops,
+			const std::map<std::string, std::vector<int>>& fanOut_ops,
+			const std::map<std::string, std::vector<int>>& fanIn_ops
+			);
  
     /**
     @brief A prelude to a forward propogation step. Computes the net
@@ -1753,28 +1766,6 @@ private:
 	}
 
 	template<typename TensorT>
-	inline void Model<TensorT>::optimizeForwardPropogationLayers(const std::vector<OperationList<TensorT>>& FP_operations)
-	{		
-		// Known limitations:
-		// 1. "Final" output nodes cannot act as source nodes
-		// 2. "Input" nodes cannot act as sink nodes
-		// 3. All nodes in a layer must be a part of the same operations
-
-		// identify compatible source nodes, links, and sink nodes
-		std::set<std::string> identified_sink_nodes;
-
-		std::map<std::string, std::vector<int>> custom_layers = getCustomOperations(FP_operations, identified_sink_nodes);
-		std::map<std::string, std::vector<int>> FC_layers = getFullyConnectedOperations(FP_operations, identified_sink_nodes);
-		std::map<std::string, std::vector<int>> SC_layers = GetSinglyConnectedOperations(FP_operations, identified_sink_nodes);
-		std::map<std::string, std::vector<int>> Conv_layers = getConvOperations(FP_operations, identified_sink_nodes);
-		std::map<std::string, std::vector<int>> FIn_layers = getFanOutOperations(FP_operations, identified_sink_nodes);
-		std::map<std::string, std::vector<int>> FOut_layers = getFanInOperations(FP_operations, identified_sink_nodes);
-
-		// ensure all sink nodes are accounted for
-		// [TODO]
-	}
-
-	template<typename TensorT>
 	inline std::map<std::string, std::vector<int>> Model<TensorT>::getCustomOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes)
 	{
 		std::set<std::string> supported_custom_module_names = { "SoftMax" }; // [TODO: add support for ModuleType]
@@ -1871,7 +1862,7 @@ private:
 				// update the maps
 				std::string sink_node_key = FP_operations[operations_iter1].result.sink_node->getName() + std::string(operations_iter1);
 				identified_sink_nodes.insert(sink_node_key);
-				auto found = FC_layers.emplace(sink_node_key, std::vector<int>({ operations_iter1 }));
+				auto found = SC_layers.emplace(sink_node_key, std::vector<int>({ operations_iter1 }));
 				SC_layers.at(sink_node_key).push_back(operations_iter2);
 			}
 		}
@@ -1898,17 +1889,20 @@ private:
 				if (ops_key_1 != ops_key_2) continue;
 
 				// check for shared weights
-				std::set<std::string> argument_weights;
+				std::set<std::string> argument_weights, argument_weights_1, argument_weights_2;
 				for (const auto& argument : FP_operations[operations_iter1].arguments) {
-					argument_nodes.insert(argument.weight->getName());
+					argument_weights.insert(argument.weight->getName());
+					argument_weights_1.insert(argument.weight->getName());
 				}
 				for (const auto& argument : FP_operations[operations_iter2].arguments) {
-					argument_nodes.insert(argument.weight->getName());
+					argument_weights.insert(argument.weight->getName());
+					argument_weights_2.insert(argument.weight->getName());
 				}
+				if (argument_weights.size() != argument_weights_1.size() || argument_weights.size() != argument_weights_2.size()) continue;
 
 				// update the maps
 				identified_sink_nodes.insert(FP_operations[operations_iter1].result.sink_node->getName());
-				auto found = FC_layers.emplace(FP_operations[operations_iter1].result.sink_node->getName(), std::vector<int>({ operations_iter1 }));
+				auto found = Conv_layers.emplace(FP_operations[operations_iter1].result.sink_node->getName(), std::vector<int>({ operations_iter1 }));
 				Conv_layers.at(FP_operations[operations_iter1].result.sink_node->getName()).push_back(operations_iter2);
 			}
 		}
@@ -1925,6 +1919,11 @@ private:
 	inline std::map<std::string, std::vector<int>> Model<TensorT>::getFanInOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes)
 	{
 		return std::map<std::string, std::vector<int>>();
+	}
+
+	template<typename TensorT>
+	inline void Model<TensorT>::allocateForwardPropogationLayerTensors(const std::vector<OperationList<TensorT>>& FP_operations, const std::map<std::string, std::vector<int>>& FC_ops, const std::map<std::string, std::vector<int>>& SC_ops, const std::map<std::string, std::vector<int>>& Conv_ops, const std::map<std::string, std::vector<int>>& custom_ops, const std::map<std::string, std::vector<int>>& fanOut_ops, const std::map<std::string, std::vector<int>>& fanIn_ops)
+	{
 	}
 
 	template<typename TensorT>
@@ -2164,8 +2163,21 @@ private:
 
 			// STEP 2: optimized the operations set for hardware acceleration
 			// re-organize into tensors
+			std::vector<OperationList<TensorT>> FP_operations_expanded;
+			expandForwardPropogationOperations(FP_operations_list, FP_operations_expanded);
+
+			// identify tensor operation motifs
+			std::set<std::string> identified_sink_nodes;
+			std::map<std::string, std::vector<int>> custom_ops = getCustomOperations(FP_operations, identified_sink_nodes);
+			std::map<std::string, std::vector<int>> FC_ops = getFullyConnectedOperations(FP_operations, identified_sink_nodes);
+			std::map<std::string, std::vector<int>> SC_ops = GetSinglyConnectedOperations(FP_operations, identified_sink_nodes);
+			std::map<std::string, std::vector<int>> Conv_ops = getConvOperations(FP_operations, identified_sink_nodes);
+			std::map<std::string, std::vector<int>> FIn_ops = getFanOutOperations(FP_operations, identified_sink_nodes);
+			std::map<std::string, std::vector<int>> FOut_ops = getFanInOperations(FP_operations, identified_sink_nodes);
 
 			// allocate memory for tensors
+			allocateForwardPropogationLayerTensors(FP_operations,
+				FC_ops, SC_ops, Conv_ops, custom_ops, fanOut_ops, fanIn_ops);
 
 			// add operations to the cache
 			FP_operations_cache_.push_back(FP_operations_list);
