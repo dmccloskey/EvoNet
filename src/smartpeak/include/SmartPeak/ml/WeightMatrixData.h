@@ -11,7 +11,6 @@
 #endif
 
 #include <unsupported/Eigen/CXX11/Tensor>
-#include <layer2>
 
 namespace SmartPeak
 {

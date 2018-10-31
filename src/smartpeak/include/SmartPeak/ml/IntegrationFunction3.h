@@ -1,7 +1,7 @@
 /**TODO:  Add copyright*/
 
-#ifndef SMARTPEAK_INTEGRATIONFUNCTION_H
-#define SMARTPEAK_INTEGRATIONFUNCTION_H
+#ifndef SMARTPEAK_LAYERINTEGRATIONFUNCTION_H
+#define SMARTPEAK_LAYERINTEGRATIONFUNCTION_H
 
 #include <SmartPeak/core/preprocessing.h>
 #include <SmartPeak/ml/ActivationFunctionWrapper.h>
@@ -13,12 +13,12 @@ namespace SmartPeak
     @brief Base class for all integration functions.
   */
 	template<typename TensorT, typename DeviceT>
-  class IntegrationOp
+  class LayerIntegrationOp
   {
 public: 
-    IntegrationOp() = default;
-		IntegrationOp(const TensorT& eps) : eps_(eps) {};
-    ~IntegrationOp() = default;
+    LayerIntegrationOp() = default;
+		LayerIntegrationOp(const TensorT& eps) : eps_(eps) {};
+    ~LayerIntegrationOp() = default;
     virtual std::string getName() const = 0;
     virtual void operator()(TensorT* source_output, TensorT* weights, TensorT* sink_input, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, const int& source_time_step, const int& sink_time_step, DeviceT& device) = 0;
 	protected:
@@ -29,7 +29,7 @@ public:
 		@brief Fully Connected Sum integration function
 	*/
 	template<typename TensorT, typename DeviceT>
-	class FullyConnectedSumOp : public IntegrationOp<TensorT, DeviceT>
+	class FullyConnectedSumOp : public LayerIntegrationOp<TensorT, DeviceT>
 	{
 	public:
 		FullyConnectedSumOp() {};
@@ -48,7 +48,7 @@ public:
 		@brief Singly Connected Sum integration function
 	*/
 	template<typename TensorT, typename DeviceT>
-	class SinglyConnectedSumOp : public IntegrationOp<TensorT, DeviceT>
+	class SinglyConnectedSumOp : public LayerIntegrationOp<TensorT, DeviceT>
 	{
 	public:
 		SinglyConnectedSumOp() {};
@@ -68,7 +68,7 @@ public:
 		@brief Fan In Sum integration function
 	*/
 	template<typename TensorT, typename DeviceT>
-	class FanInSumOp : public IntegrationOp<TensorT, DeviceT>
+	class FanInSumOp : public LayerIntegrationOp<TensorT, DeviceT>
 	{
 	public:
 		FanInSumOp() {};
@@ -89,7 +89,7 @@ public:
 		@brief Fan out Sum integration function
 	*/
 	template<typename TensorT, typename DeviceT>
-	class FanOutSumOp : public IntegrationOp<TensorT, DeviceT>
+	class FanOutSumOp : public LayerIntegrationOp<TensorT, DeviceT>
 	{
 	public:
 		FanOutSumOp() {};
@@ -110,7 +110,7 @@ public:
 		@brief Singly Connected Prod integration function
 	*/
 	template<typename TensorT, typename DeviceT>
-	class SinglyConnectedProdOp : public IntegrationOp<TensorT, DeviceT>
+	class SinglyConnectedProdOp : public LayerIntegrationOp<TensorT, DeviceT>
 	{
 	public:
 		SinglyConnectedProdOp() {};
@@ -130,7 +130,7 @@ public:
 		@brief Fan In Prod integration function
 	*/
 	template<typename TensorT, typename DeviceT>
-	class FanInProdOp : public IntegrationOp<TensorT, DeviceT>
+	class FanInProdOp : public LayerIntegrationOp<TensorT, DeviceT>
 	{
 	public:
 		FanInProdOp() {};
@@ -151,7 +151,7 @@ public:
 		@brief Singly Connected Max integration function
 	*/
 	template<typename TensorT, typename DeviceT>
-	class SinglyConnectedMaxOp : public IntegrationOp<TensorT, DeviceT>
+	class SinglyConnectedMaxOp : public LayerIntegrationOp<TensorT, DeviceT>
 	{
 	public:
 		SinglyConnectedMaxOp() {};
@@ -171,7 +171,7 @@ public:
 		@brief Fan In Max integration function
 	*/
 	template<typename TensorT, typename DeviceT>
-	class FanInMaxOp : public IntegrationOp<TensorT, DeviceT>
+	class FanInMaxOp : public LayerIntegrationOp<TensorT, DeviceT>
 	{
 	public:
 		FanInMaxOp() {};
@@ -192,7 +192,7 @@ public:
 		@brief Fan In Mean integration function
 	*/
 	template<typename TensorT, typename DeviceT>
-	class FanInMeanOp : public IntegrationOp<TensorT, DeviceT>
+	class FanInMeanOp : public LayerIntegrationOp<TensorT, DeviceT>
 	{
 	public:
 		FanInMeanOp() {};
@@ -213,7 +213,7 @@ public:
 		@brief Fan In Var integration function
 	*/
 	template<typename TensorT, typename DeviceT>
-	class FanInVarOp : public IntegrationOp<TensorT, DeviceT>
+	class FanInVarOp : public LayerIntegrationOp<TensorT, DeviceT>
 	{
 	public:
 		FanInVarOp() {};
@@ -236,7 +236,7 @@ public:
 		@brief Fan In Count integration function
 	*/
 	template<typename TensorT, typename DeviceT>
-	class FanInCountOp : public IntegrationOp<TensorT, DeviceT>
+	class FanInCountOp : public LayerIntegrationOp<TensorT, DeviceT>
 	{
 	public:
 		FanInCountOp() {};
@@ -253,7 +253,7 @@ public:
 		@brief Count integration function
 	*/
 	template<typename TensorT, typename DeviceT>
-	class CountOp : public IntegrationOp<TensorT, DeviceT>
+	class CountOp : public LayerIntegrationOp<TensorT, DeviceT>
 	{
 	public:
 		CountOp() {};
@@ -274,12 +274,12 @@ public:
 	@brief Base class for all integration error functions.
 	*/
 	template<typename TensorT, typename DeviceT>
-	class IntegrationErrorOp
+	class LayerIntegrationErrorOp
 	{
 	public:
-		IntegrationErrorOp() = default;
-		IntegrationErrorOp(const TensorT& eps) : eps_(eps) {};
-		~IntegrationErrorOp() = default;
+		LayerIntegrationErrorOp() = default;
+		LayerIntegrationErrorOp(const TensorT& eps) : eps_(eps) {};
+		~LayerIntegrationErrorOp() = default;
 		virtual std::string getName() const = 0;
 		/*
 		@brief Integration error void operator
@@ -293,7 +293,7 @@ public:
 	@brief Fully Connected Sum integration error function
 	*/
 	template<typename TensorT, typename DeviceT>
-	class FullyConnectedSumErrorOp : public IntegrationErrorOp<TensorT, DeviceT>
+	class FullyConnectedSumErrorOp : public LayerIntegrationErrorOp<TensorT, DeviceT>
 	{
 	public:
 		FullyConnectedSumErrorOp() {};
@@ -313,7 +313,7 @@ public:
 	@brief Sum integration error function
 	*/
 	template<typename TensorT, typename DeviceT>
-	class SinglyConnectedSumErrorOp : public IntegrationErrorOp<TensorT, DeviceT>
+	class SinglyConnectedSumErrorOp : public LayerIntegrationErrorOp<TensorT, DeviceT>
 	{
 	public:
 		SinglyConnectedSumErrorOp() {};
@@ -334,7 +334,7 @@ public:
 	@brief Fan In Sum integration error function
 	*/
 	template<typename TensorT, typename DeviceT>
-	class FanInSumErrorOp : public IntegrationErrorOp<TensorT, DeviceT>
+	class FanInSumErrorOp : public LayerIntegrationErrorOp<TensorT, DeviceT>
 	{
 	public:
 		FanInSumErrorOp() {};
@@ -357,7 +357,7 @@ public:
 	@brief Fan Out Sum integration error function
 	*/
 	template<typename TensorT, typename DeviceT>
-	class FanOutSumErrorOp : public IntegrationErrorOp<TensorT, DeviceT>
+	class FanOutSumErrorOp : public LayerIntegrationErrorOp<TensorT, DeviceT>
 	{
 	public:
 		FanOutSumErrorOp() {};
@@ -379,7 +379,7 @@ public:
 	//@brief Product integration error function
 	//*/
 	//template<typename TensorT, typename DeviceT>
-	//class ProdErrorOp : public IntegrationErrorOp<TensorT, DeviceT>
+	//class ProdErrorOp : public LayerIntegrationErrorOp<TensorT, DeviceT>
 	//{
 	//public:
 	//	ProdErrorOp() {};
@@ -396,7 +396,7 @@ public:
 	//@brief Max integration error function
 	//*/
 	//template<typename TensorT, typename DeviceT>
-	//class MaxErrorOp : public IntegrationErrorOp<TensorT, DeviceT>
+	//class MaxErrorOp : public LayerIntegrationErrorOp<TensorT, DeviceT>
 	//{
 	//public:
 	//	MaxErrorOp() {};
@@ -418,7 +418,7 @@ public:
 	//@brief Mean integration error function
 	//*/
 	//template<typename TensorT, typename DeviceT>
-	//class MeanErrorOp : public IntegrationErrorOp<TensorT, DeviceT>
+	//class MeanErrorOp : public LayerIntegrationErrorOp<TensorT, DeviceT>
 	//{
 	//public:
 	//	MeanErrorOp() {};
@@ -433,7 +433,7 @@ public:
 	//@brief VarMod integration error function
 	//*/
 	//template<typename TensorT, typename DeviceT>
-	//class VarModErrorOp : public IntegrationErrorOp<TensorT, DeviceT>
+	//class VarModErrorOp : public LayerIntegrationErrorOp<TensorT, DeviceT>
 	//{
 	//public:
 	//	VarModErrorOp() {};
@@ -450,7 +450,7 @@ public:
 	//@brief Count integration error function
 	//*/
 	//template<typename TensorT, typename DeviceT>
-	//class CountErrorOp : public IntegrationErrorOp<TensorT, DeviceT>
+	//class CountErrorOp : public LayerIntegrationErrorOp<TensorT, DeviceT>
 	//{
 	//public:
 	//	CountErrorOp() {};
@@ -467,12 +467,12 @@ public:
 	@brief Base class for all integration error functions.
 	*/
 	template<typename TensorT, typename DeviceT>
-	class IntegrationWeightGradOp
+	class LayerIntegrationWeightGradOp
 	{
 	public:
-		IntegrationWeightGradOp() = default;
-		IntegrationWeightGradOp(const TensorT& eps) : eps_(eps) {};
-		~IntegrationWeightGradOp() = default;
+		LayerIntegrationWeightGradOp() = default;
+		LayerIntegrationWeightGradOp(const TensorT& eps) : eps_(eps) {};
+		~LayerIntegrationWeightGradOp() = default;
 		virtual std::string getName() const = 0;
 		virtual void operator()(TensorT* sink_error, TensorT* source_output, TensorT* weight, TensorT* source_input, TensorT* weight_error, const int& n_input_nodes, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, DeviceT& device) = 0;
 	protected:
@@ -483,7 +483,7 @@ public:
 	@brief Fully Connected Sum integration error function
 	*/
 	template<typename TensorT, typename DeviceT>
-	class FullyConnectedSumWeightGradOp : public IntegrationWeightGradOp<TensorT, DeviceT>
+	class FullyConnectedSumWeightGradOp : public LayerIntegrationWeightGradOp<TensorT, DeviceT>
 	{
 	public:
 		void operator()(TensorT* sink_error, TensorT* source_output, TensorT* weight, TensorT* source_input, TensorT* weight_error, const int& n_input_nodes, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, DeviceT& device){
@@ -504,7 +504,7 @@ public:
 	@brief Singly Connected Sum integration error function
 	*/
 	template<typename TensorT, typename DeviceT>
-	class SinglyConnectedSumWeightGradOp : public IntegrationWeightGradOp<TensorT, DeviceT>
+	class SinglyConnectedSumWeightGradOp : public LayerIntegrationWeightGradOp<TensorT, DeviceT>
 	{
 	public:
 		void operator()(TensorT* sink_error, TensorT* source_output, TensorT* weight, TensorT* source_input, TensorT* weight_error, const int& n_input_nodes, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, DeviceT& device) {
@@ -522,7 +522,7 @@ public:
 	//@brief Product integration error function
 	//*/
 	//template<typename TensorT, typename DeviceT>
-	//class ProdWeightGradOp : public IntegrationWeightGradOp<TensorT, DeviceT>
+	//class ProdWeightGradOp : public LayerIntegrationWeightGradOp<TensorT, DeviceT>
 	//{
 	//public:
 	//	ProdWeightGradOp() { this->setNetWeightError(TensorT(0)); };
@@ -538,7 +538,7 @@ public:
 	//@brief Max integration error function
 	//*/
 	//template<typename TensorT, typename DeviceT>
-	//class MaxWeightGradOp : public IntegrationWeightGradOp<TensorT, DeviceT>
+	//class MaxWeightGradOp : public LayerIntegrationWeightGradOp<TensorT, DeviceT>
 	//{
 	//public:
 	//	MaxWeightGradOp() { this->setNetWeightError(TensorT(0)); };
@@ -554,7 +554,7 @@ public:
 	//@brief Count integration error function
 	//*/
 	//template<typename TensorT, typename DeviceT>
-	//class CountWeightGradOp : public IntegrationWeightGradOp<TensorT, DeviceT>
+	//class CountWeightGradOp : public LayerIntegrationWeightGradOp<TensorT, DeviceT>
 	//{
 	//public:
 	//	CountWeightGradOp() { this->setNetWeightError(TensorT(0)); };
@@ -569,7 +569,7 @@ public:
 	//@brief Mean integration error function
 	//*/
 	//template<typename TensorT, typename DeviceT>
-	//class MeanWeightGradOp : public IntegrationWeightGradOp<TensorT, DeviceT>
+	//class MeanWeightGradOp : public LayerIntegrationWeightGradOp<TensorT, DeviceT>
 	//{
 	//public:
 	//	MeanWeightGradOp() { this->setNetWeightError(TensorT(0)); };
@@ -585,7 +585,7 @@ public:
 	//@brief VarMod integration error function
 	//*/
 	//template<typename TensorT, typename DeviceT>
-	//class VarModWeightGradOp : public IntegrationWeightGradOp<TensorT, DeviceT>
+	//class VarModWeightGradOp : public LayerIntegrationWeightGradOp<TensorT, DeviceT>
 	//{
 	//public:
 	//	VarModWeightGradOp() { this->setNetWeightError(TensorT(0)); };
@@ -599,4 +599,4 @@ public:
 	//	std::string getName() const { return "VarModWeightGradOp"; };
 	//};
 }
-#endif //SMARTPEAK_INTEGRATIONFUNCTION_H
+#endif //SMARTPEAK_LAYERINTEGRATIONFUNCTION_H

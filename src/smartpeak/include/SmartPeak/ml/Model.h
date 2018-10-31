@@ -8,6 +8,9 @@
 #include <SmartPeak/ml/Node.h>
 #include <SmartPeak/ml/Weight.h>
 #include <SmartPeak/ml/LossFunction.h>
+#include <SmartPeak/ml/NodeMatrixData.h>
+#include <SmartPeak/ml/WeightMatrixData.h>
+#include <SmartPeak/ml/IntegrationFunction3.h>
 
 #include <unsupported/Eigen/CXX11/Tensor>
 #include <vector>
@@ -19,6 +22,7 @@
 // .cpp
 #include <SmartPeak/ml/SharedFunctions.h>
 #include <SmartPeak/graph/CircuitFinder.h>
+#include <SmartPeak/ml/ModelErrorData.h>
 
 #include <iostream>
 #include <algorithm>
@@ -58,6 +62,22 @@ namespace SmartPeak
     OperationResult<TensorT> result;
     std::vector<OperationArguments<TensorT>> arguments;
   };
+
+	template<typename TensorT>
+	struct OperationTensorStep
+	{
+		std::shared_ptr<NodeMatrixData<TensorT>> sink_layer;
+		int sink_time_step = 0;
+		//std::shared_ptr<LayerIntegrationOp<TensorT, DeviceT>> sink_integration_function;
+		//std::shared_ptr<LayerIntegrationErrorOp<TensorT, DeviceT>> sink_integration_error;
+		//std::shared_ptr<LayerIntegrationWeightGradOp<TensorT, DeviceT>> sink_integration_weight_grad_error;
+		std::shared_ptr<NodeMatrixData<TensorT>> source_node;
+		std::shared_ptr<WeightMatrixData<TensorT>> weight;
+		int source_time_step = 0;
+		//std::shared_ptr<LayerIntegrationOp<TensorT, DeviceT>> source_integration_function;
+		//std::shared_ptr<LayerIntegrationErrorOp<TensorT, DeviceT>> source_integration_error;
+		//std::shared_ptr<LayerIntegrationWeightGradOp<TensorT, DeviceT>> source_integration_weight_grad_error;
+	};
 
   /**
     @brief Directed Network Model
@@ -385,12 +405,7 @@ public:
 		@param[in] FP_operations
     */
     void allocateForwardPropogationLayerTensors(const std::vector<OperationList<TensorT>>& FP_operations,
-			const std::map<std::string, std::vector<int>>& FC_ops,
-			const std::map<std::string, std::vector<int>>& SC_ops,
-			const std::map<std::string, std::vector<int>>& Conv_ops,
-			const std::map<std::string, std::vector<int>>& custom_ops,
-			const std::map<std::string, std::vector<int>>& fanOut_ops,
-			const std::map<std::string, std::vector<int>>& fanIn_ops
+			const std::map<std::string, std::vector<int>>& operations_map
 			);
  
     /**
@@ -833,8 +848,8 @@ private:
     // Internal structures to allow for efficient multi-threading
     // and off-loading of computation from host to devices
     std::vector<std::vector<OperationList<TensorT>>> FP_operations_cache_;
-		std::vector<std::pair<int, int>> FP_operations_dimensions_;  // vector of source/sink node sizes
     std::vector<std::vector<OperationList<TensorT>>> BP_operations_cache_;
+		std::vector<std::vector<OperationTensorStep<TensorT>>> operations_cache_;
   };
 	template<typename TensorT>
 	Model<TensorT>::Model(const Model<TensorT>& other)
@@ -1935,14 +1950,97 @@ private:
 	}
 
 	template<typename TensorT>
-	inline void Model<TensorT>::allocateForwardPropogationLayerTensors(const std::vector<OperationList<TensorT>>& FP_operations, const std::map<std::string, std::vector<int>>& FC_ops, const std::map<std::string, std::vector<int>>& SC_ops, const std::map<std::string, std::vector<int>>& Conv_ops, const std::map<std::string, std::vector<int>>& custom_ops, const std::map<std::string, std::vector<int>>& fanOut_ops, const std::map<std::string, std::vector<int>>& fanIn_ops)
+	inline void Model<TensorT>::allocateForwardPropogationLayerTensors(const std::vector<OperationList<TensorT>>& FP_operations, 
+		const std::map<std::string, std::vector<int>>& operations_map)
 	{
-		// allocate source node tensor (if it does not yet exist)
+		// ISSUES:
+		// 1. need to update the time-steps
+		// 2. need to add in the integration functions
+		// 3. 
+		std::vector<OperationTensorStep<TensorT>> Operation_step_list;
+		for (const auto& operations : FC_ops) {
+			// determine the tensor sizes
+			const int layer_index = FP_operations_cache_.size();
+			int sink_layer_size = 0;
+			int source_layer_size = 0;
 
-		// allocate weight tensors
+			for (const int& ops_index: operations.second) {
+				// allocate sink node tensors (if it does not yet exist)
+				if (FP_operations[ops_index].result.sink_node->getLayerId().first == -1) {
+					FP_operations[ops_index].result.sink_node->getLayerId().first = layer_index;
+					FP_operations[ops_index].result.sink_node->getLayerId().second = sink_layer_size;
+				}
 
-		// allocate sink node tensors
-		// set the tensor integration operations
+				// allocate source node tensor (if it does not yet exist)
+				for (const OperationArgument& argument : FP_operations[ops_index].arguments) {
+					if (argument.source_node->getLayerId().first == -1) {
+						argument.source_node->getLayerId().first = layer_index;
+						argument.source_node->getLayerId().second = source_layer_size;
+					}
+
+					// allocate weight tensors
+					std::get<0>(argument.weight->getLayerId()) = layer_index;
+					std::get<1>(argument.weight->getLayerId()) = source_layer_size;
+					std::get<2>(argument.weight->getLayerId()) = sink_layer_size;
+
+					++source_layer_size;
+				}
+
+				++sink_layer_size;
+			}
+
+			// make the tensors
+			OperationTensorStep<TensorT> operation_step;
+			batch_memory_size = getBatchAndMemorySizes();
+
+			// make the source layer tensor
+#if COMPILE_WITH_CUDA
+			NodeMatrixDataGpu<TensorT> source_node_data;
+#else
+			NodeMatrixDataCpu<TensorT> source_node_data;
+#endif
+			source_node_data.setBatchSize(batch_memory_size.first);
+			source_node_data.setMemorySize(batch_memory_size.second);
+			source_node_data.setLayerSize(source_layer_size);
+			// [TODO: how best to set input, output, derivative, error, dt?]
+
+			operation_step.source_layer.reset(&source_node_data);
+			operation_step.source_time_step = FP_operations[operations.second[0]].arguments[0].time_step;
+			// [TODO: set the integration functions]
+
+			// make the sink layer tensor
+#if COMPILE_WITH_CUDA
+			NodeMatrixDataGpu<TensorT> sink_node_data;
+#else
+			NodeMatrixDataCpu<TensorT> sink_node_data;
+#endif
+			// [TODO: copy out the sink_node_data if it already exists]
+			sink_node_data.setBatchSize(batch_memory_size.first);
+			sink_node_data.setMemorySize(batch_memory_size.second);
+			sink_node_data.setLayerSize(sink_layer_size);
+			// [TODO: how best to set input, output, derivative, error, dt?]
+
+			operation_step.sink_layer.reset(&sink_node_data);
+			operation_step.sink_time_step = FP_operations[operations.second[0]].result.time_step;
+			// [TODO: set the integration functions]
+
+			// make the weight tensor
+#if COMPILE_WITH_CUDA
+			WeightMatrixDataGpu<TensorT> weight_data;
+#else
+			WeightMatrixDataCpu<TensorT> weight_data;
+#endif
+			weight_data.setLayer1Size(source_layer_size);
+			weight_data.setLayer2Size(sink_layer_size);
+			weight_data.setNSolverParams(operation_step.source_time_step = FP_operations[operations.second[0]].arguments[0].weight->getSolverOp()->getNParameters());
+			// [TODO: how to initialize the weights? use the first weight init function?]
+
+			operation_step.weight.reset(&weight_data);
+
+			Operation_step_list.push_back(operation_step);
+			// add the tensors to the cache
+			
+		}
 	}
 
 	template<typename TensorT>
@@ -2195,15 +2293,24 @@ private:
 			std::map<std::string, std::vector<int>> FOut_ops = getFanInOperations(FP_operations, identified_sink_nodes);
 
 			// allocate memory for tensors
-			allocateForwardPropogationLayerTensors(FP_operations,
-				FC_ops, SC_ops, Conv_ops, custom_ops, fanOut_ops, fanIn_ops);
+			if (custom_ops.size() != 0)
+				allocateForwardPropogationLayerTensors(FP_operations, custom_ops);
+			if (FC_ops.size() != 0)
+				allocateForwardPropogationLayerTensors(FP_operations, FC_ops);
+			if (SC_ops.size() != 0)
+				allocateForwardPropogationLayerTensors(FP_operations, SC_ops);
+			if (Conv_ops.size() != 0)
+				allocateForwardPropogationLayerTensors(FP_operations, Conv_ops);
+			if (FIn_ops.size() != 0)
+				allocateForwardPropogationLayerTensors(FP_operations, FIn_ops);
+			if (FOut_ops.size() != 0)
+				allocateForwardPropogationLayerTensors(FP_operations, FOut_ops);
 
 			// add operations to the cache
 			FP_operations_cache_.push_back(FP_operations_list);
 			int source_nodes = 0;
 			for (auto& FP_operation : FP_operations_list)
 				source_nodes += FP_operation.arguments.size();
-			FP_operations_dimensions_.push_back(std::make_pair(source_nodes, FP_operations_list.size()));
 
 			// activate sink nodes
 			for (auto& FP_operation : FP_operations_list)
@@ -3206,6 +3313,7 @@ private:
 	{
 		FP_operations_cache_.clear();
 		BP_operations_cache_.clear();
+		operations_cache_.clear();
 		//cyclic_pairs_.clear();
 	}
 

@@ -69,6 +69,7 @@ public:
 		void setLearningRate(const TensorT& learning_rate) { learning_rate_ = learning_rate; };
 		TensorT getLearningRate() const { return learning_rate_; };
     virtual std::string getParameters() const = 0;
+		virtual int getNParameters() const = 0;
 		TensorT checkWeight(const TensorT& weight, const TensorT& new_weight)
 		{
 			if (std::isinf(new_weight) || std::isnan(new_weight))
@@ -128,6 +129,7 @@ public:
         std::to_string(getMomentumPrev());
       return params;
     }
+		int getNParameters() const { return 3; };
 private:
     TensorT learning_rate_ = 0.01; ///< Learning rate
     TensorT momentum_ = 0.9; ///< Momentum
@@ -196,6 +198,7 @@ public:
         std::to_string(getMomentum2Prev());
       return params;
     }
+		int getNParameters() const { return 6; };
 private:
     TensorT learning_rate_ = 0.01; ///< Learning rate
     TensorT momentum_ = 0.9; ///< Momentum
@@ -224,6 +227,7 @@ private:
 			std::string params = "";
 			return params;
 		}
+		int getNParameters() const { return 0; };
 	};
 
 	/**
@@ -270,6 +274,7 @@ private:
 				std::to_string(getMomentumPrev());
 			return params;
 		}
+		int getNParameters() const { return 5; };
 	private:
 		TensorT learning_rate_ = 0.01; ///< Learning rate
 		TensorT momentum_ = 0.9; ///< Momentum
