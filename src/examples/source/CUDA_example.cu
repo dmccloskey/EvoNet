@@ -411,6 +411,72 @@ void asyncResidualExample() {
 };
 
 // Concatenation tests
+void matrix1Example() {
+	assert(cudaSetDevice(0) == cudaSuccess); // is this needed?
+
+	cudaStream_t stream;
+
+	std::size_t in1_bytes = 5000 * 2 * 2 * 2 * sizeof(float);
+	std::size_t in2_bytes = 5000 * 2 * 2 * 2 * sizeof(float);
+	std::size_t out_bytes = 5000 * 2 * 2 * 2 * sizeof(float);
+
+	float* h_in1;
+	float* h_in2;
+	float* h_out;
+
+	float* d_in1;
+	float* d_in2;
+	float* d_out;
+
+	// initialize the streams
+	assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess);
+
+	// initialize the GpuDevice
+	Eigen::GpuStreamDevice stream_device(&stream, 0);
+	Eigen::GpuDevice device_(&stream_device);
+
+	// allocate memory
+	assert(cudaHostAlloc((void**)(&h_in1), in1_bytes, cudaHostAllocDefault) == cudaSuccess);
+	assert(cudaHostAlloc((void**)(&h_in2), in2_bytes, cudaHostAllocDefault) == cudaSuccess);
+	assert(cudaMalloc((void**)(&d_in1), in1_bytes) == cudaSuccess);
+	assert(cudaMalloc((void**)(&d_in2), in2_bytes) == cudaSuccess);
+
+	Eigen::TensorMap<Eigen::Tensor<float, 3> > in1(h_in1, 2, 2, 2);
+	Eigen::TensorMap<Eigen::Tensor<float, 3> > in2(h_in2, 2, 2, 2);
+	in1 = in1.constant(1.0f);
+	in2 = in2.constant(2.0f);
+
+	device_.memcpyHostToDevice(d_in1, in1.data(), in1_bytes);
+	device_.memcpyHostToDevice(d_in2, in2.data(), in2_bytes);
+
+	// allocate memory
+	assert(cudaHostAlloc((void**)(&h_out), out_bytes, cudaHostAllocDefault) == cudaSuccess);
+	assert(cudaMalloc((void**)(&d_out), out_bytes) == cudaSuccess);
+
+	auto startTime = std::chrono::high_resolution_clock::now();
+
+	Eigen::TensorMap<Eigen::Tensor<float, 4> > gpu_out(d_out, 2, 2, 2, 5000);
+	Eigen::TensorMap<Eigen::Tensor<float, 4> > gpu_in1(d_in1, 2, 2, 2, 5000);
+	Eigen::TensorMap<Eigen::Tensor<float, 4> > gpu_in2(d_in2, 2, 2, 2, 5000);
+	gpu_out.device(device_) = (gpu_in1 + gpu_in2).sum();
+
+	auto endTime = std::chrono::high_resolution_clock::now();
+	int time_to_run = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count();
+	std::cout << "took: " << time_to_run << " ms." << std::endl;
+
+	Eigen::TensorMap<Eigen::Tensor<float, 0> > out(h_out);
+	device_.memcpyDeviceToHost(h_out, d_out, out_bytes);
+	assert(cudaStreamSynchronize(stream) == cudaSuccess);
+	assert(cudaStreamDestroy(stream) == cudaSuccess);
+
+	// free all resources
+	assert(cudaFree(d_in1) == cudaSuccess);
+	assert(cudaFree(d_in2) == cudaSuccess);
+	assert(cudaFreeHost(h_in1) == cudaSuccess);
+	assert(cudaFreeHost(h_in2) == cudaSuccess);
+	assert(cudaFree(d_out) == cudaSuccess);
+	assert(cudaFreeHost(h_out) == cudaSuccess);
+};
 void concat1Example() {
 	assert(cudaSetDevice(0) == cudaSuccess); // is this needed?
 
@@ -474,7 +540,6 @@ void concat1Example() {
 	device_.memcpyDeviceToHost(h_out, d_out, out_bytes);
 	assert(cudaStreamSynchronize(stream) == cudaSuccess);
 	assert(cudaStreamDestroy(stream) == cudaSuccess);
-	std::cout << out << std::endl;
 
 	// free all resources
 	for (int i = 0; i < 5000; ++i) {
@@ -538,7 +603,7 @@ void stack1Example() {
 		Eigen::TensorMap<Eigen::Tensor<float, 3> > gpu_in2(d_in2[i], 2, 2, 2);
 		gpu_out.device(device_) += gpu_in1 + gpu_in2;
 	}
-	//gpu_out.device(device_) = gpu_out.sum();
+	gpu_out.device(device_) = gpu_out.sum();
 
 	auto endTime = std::chrono::high_resolution_clock::now();
 	int time_to_run = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count();
@@ -548,7 +613,6 @@ void stack1Example() {
 	device_.memcpyDeviceToHost(h_out, d_out, out_bytes);
 	assert(cudaStreamSynchronize(stream) == cudaSuccess);
 	assert(cudaStreamDestroy(stream) == cudaSuccess);
-	std::cout << out << std::endl;
 
 	// free all resources
 	for (int i = 0; i < 5000; ++i) {
@@ -606,8 +670,6 @@ void recurseive1Example() {
 
 	auto startTime = std::chrono::high_resolution_clock::now();
 
-	auto AddOp = []()
-
 	Eigen::TensorMap<Eigen::Tensor<float, 3> > gpu_out(d_out, 2, 2, 2);
 	RecurseAddOp<float, Eigen::GpuDevice> recursiveOp(device_);
 	recursiveOp.AddOp(d_in1, d_in2, 0, 499, d_out);
@@ -621,7 +683,6 @@ void recurseive1Example() {
 	device_.memcpyDeviceToHost(h_out, d_out, out_bytes);
 	assert(cudaStreamSynchronize(stream) == cudaSuccess);
 	assert(cudaStreamDestroy(stream) == cudaSuccess);
-	std::cout << out << std::endl;
 
 	// free all resources
 	for (int i = 0; i < 5000; ++i) {
@@ -700,7 +761,6 @@ void stack2Example() {
 		assert(cudaStreamSynchronize(streams[i]) == cudaSuccess);
 		assert(cudaStreamDestroy(streams[i]) == cudaSuccess);
 	}
-	std::cout << out << std::endl;
 
 	// free all resources
 	for (int i = 0; i < 5000; ++i) {
@@ -773,7 +833,6 @@ void transform1Example() {
 
 	assert(cudaStreamSynchronize(stream) == cudaSuccess);
 	assert(cudaStreamDestroy(stream) == cudaSuccess);
-	std::cout << out << std::endl;
 
 	// free all resources
 	for (int i = 0; i < 5000; ++i) {
@@ -853,7 +912,6 @@ void transform2Example() {
 
 	assert(cudaStreamSynchronize(stream) == cudaSuccess);
 	assert(cudaStreamDestroy(stream) == cudaSuccess);
-	std::cout << out << std::endl;
 
 	// free all resources
 	for (int i = 0; i < 5000; ++i) {
@@ -895,11 +953,11 @@ void control1Example() {
 		Eigen::TensorMap<Eigen::Tensor<float, 3> > gpu_in2(h_in2[i], 2, 2, 2);
 		out += gpu_in1 + gpu_in2;
 	}
+	out = out.sum();
 
 	auto endTime = std::chrono::high_resolution_clock::now();
 	int time_to_run = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count();
 	std::cout << "took: " << time_to_run << " ms." << std::endl;
-	std::cout << out << std::endl;
 };
 
 // Unary expression tests
@@ -963,7 +1021,7 @@ void unaryExprNoBaseClassExample() {
 	assert(cudaStreamSynchronize(stream) == cudaSuccess);
 	assert(cudaStreamDestroy(stream) == cudaSuccess);
 
-	std::cout << out(0, 0, 0) << std::endl;
+	//std::cout << out(0, 0, 0) << std::endl;
 
 	// free all resources
 	assert(cudaFree(d_in1) == cudaSuccess);
@@ -1187,7 +1245,7 @@ int main(int argc, char** argv)
 {
 #ifndef EVONET_CUDA
 	cudaError_t err = cudaDeviceReset();
-	defaultDeviceExample();
+	//defaultDeviceExample();
 
 	// Async optimization tests
 	//asyncExample();
@@ -1195,6 +1253,7 @@ int main(int argc, char** argv)
 	//asyncResidualExample();
 
 	// Node integration tests
+	matrix1Example();
 	stack1Example();
 	//stack2Example();
 	concat1Example(); //bug
@@ -1210,36 +1269,33 @@ int main(int argc, char** argv)
 	//unaryExpr2Example(activation_function); // will block the stream with virtual
 	//ActivationTensorOp<float, Eigen::GpuDevice>* activation_function_t = new ReLUTensorOp<float, Eigen::GpuDevice>();
 	//unaryExpr3Example(activation_function_t);  // will block the stream with virtual
+	 	
+	//// get the number of async engines
+	//cudaDeviceProp prop;
+	//int whichDevice;
+	//int deviceOverlap;
+	//cudaGetDevice(&whichDevice);
+	//cudaGetDeviceProperties(&prop, whichDevice);
+	//std::cout << prop.asyncEngineCount << std::endl;
+	//std::cout << prop.multiProcessorCount << std::endl;
 
-	// Matrix mult vs. dot products
+	//// get the device memory
+	//size_t free_byte, total_byte;
+	//cudaMemGetInfo(&free_byte, &total_byte);
+	//std::cout << "Free memory: " << free_byte << "; Total memory: " << total_byte << std::endl;
 
-	
-	// get the number of async engines
-	cudaDeviceProp prop;
-	int whichDevice;
-	int deviceOverlap;
-	cudaGetDevice(&whichDevice);
-	cudaGetDeviceProperties(&prop, whichDevice);
-	std::cout << prop.asyncEngineCount << std::endl;
-	std::cout << prop.multiProcessorCount << std::endl;
+	//// model memory
+	//size_t node_mem = 64 * 1 * 4 * 6000 * sizeof(float);
+	//size_t weight_mem = 100000 * sizeof(float);
+	//std::cout << "Node memory: " << node_mem << "; Weight memory: " << weight_mem << std::endl;
 
-	// get the device memory
-	size_t free_byte, total_byte;
-	cudaMemGetInfo(&free_byte, &total_byte);
-	std::cout << "Free memory: " << free_byte << "; Total memory: " << total_byte << std::endl;
-
-	// model memory
-	size_t node_mem = 64 * 1 * 4 * 6000 * sizeof(float);
-	size_t weight_mem = 100000 * sizeof(float);
-	std::cout << "Node memory: " << node_mem << "; Weight memory: " << weight_mem << std::endl;
-
-	// get the number of gpus
-	int n_gpus = 0;
-	cudaGetDeviceCount(&n_gpus);
-  if (n_gpus > 0)
-  {
-	std::cout << n_gpus <<" were found." << std::endl;
-  }
+	//// get the number of gpus
+	//int n_gpus = 0;
+	//cudaGetDeviceCount(&n_gpus);
+ // if (n_gpus > 0)
+ // {
+	//std::cout << n_gpus <<" were found." << std::endl;
+ // }
 #endif
 
   return 0;

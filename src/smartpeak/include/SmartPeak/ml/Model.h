@@ -1960,9 +1960,11 @@ private:
 		std::vector<OperationTensorStep<TensorT>> operation_step_list;
 		for (const auto& operations : FC_ops) {
 			// determine the tensor sizes
-			const int layer_index = FP_operations_cache_.size();
+			const int layer_index = operations_cache_.size();
 			int sink_layer_size = 0;
 			int source_layer_size = 0;
+			bool make_sink_tensor = true;
+			bool make_source_tensor = true;
 
 			for (const int& ops_index: operations.second) {
 				// allocate sink node tensors (if it does not yet exist)
@@ -1970,6 +1972,8 @@ private:
 					FP_operations[ops_index].result.sink_node->getLayerId().first = layer_index;
 					FP_operations[ops_index].result.sink_node->getLayerId().second = sink_layer_size;
 				}
+				else
+					make_sink_tensor = false;
 
 				// allocate source node tensor (if it does not yet exist)
 				for (const OperationArgument& argument : FP_operations[ops_index].arguments) {
@@ -1977,6 +1981,8 @@ private:
 						argument.source_node->getLayerId().first = layer_index;
 						argument.source_node->getLayerId().second = source_layer_size;
 					}
+					else
+						make_source_tensor = false;
 
 					// allocate weight tensors
 					std::get<0>(argument.weight->getLayerId()) = layer_index;
@@ -1985,7 +1991,6 @@ private:
 
 					++source_layer_size;
 				}
-
 				++sink_layer_size;
 			}
 
@@ -1999,10 +2004,15 @@ private:
 #else
 			NodeMatrixDataCpu<TensorT> source_node_data;
 #endif
-			source_node_data.setBatchSize(batch_memory_size.first);
-			source_node_data.setMemorySize(batch_memory_size.second);
-			source_node_data.setLayerSize(source_layer_size);
-			// [TODO: how best to set input, output, derivative, error, dt?]
+			if (make_source_tensor) {
+				source_node_data.setBatchSize(batch_memory_size.first);
+				source_node_data.setMemorySize(batch_memory_size.second);
+				source_node_data.setLayerSize(source_layer_size);
+				// [TODO: how best to set input, output, derivative, error, dt?]
+			}
+			else {
+				// [TODO: copy out the sink_node_data if it already exists]
+			}
 
 			operation_step.source_layer.reset(&source_node_data);
 			operation_step.source_time_step = FP_operations[operations.second[0]].arguments[0].time_step;
@@ -2014,17 +2024,22 @@ private:
 #else
 			NodeMatrixDataCpu<TensorT> sink_node_data;
 #endif
-			// [TODO: copy out the sink_node_data if it already exists]
-			sink_node_data.setBatchSize(batch_memory_size.first);
-			sink_node_data.setMemorySize(batch_memory_size.second);
-			sink_node_data.setLayerSize(sink_layer_size);
-			// [TODO: how best to set input, output, derivative, error, dt?]
+			if (make_sink_tensor) {
+				sink_node_data.setBatchSize(batch_memory_size.first);
+				sink_node_data.setMemorySize(batch_memory_size.second);
+				sink_node_data.setLayerSize(sink_layer_size);
+				// [TODO: how best to set input, output, derivative, error, dt?]
+			}
+			else {
+				// [TODO: copy out the sink_node_data if it already exists]
+			}
 
 			operation_step.sink_layer.reset(&sink_node_data);
 			operation_step.sink_time_step = FP_operations[operations.second[0]].result.time_step;
 			// [TODO: set the integration functions]
 
 			// make the weight tensor
+			// [TODO: there are differences between FC, SC, FanIn, FanOut, and Conv that need to be accounted for!]
 #if COMPILE_WITH_CUDA
 			WeightMatrixDataGpu<TensorT> weight_data;
 #else
