@@ -140,7 +140,7 @@ private:
     std::string name_ = ""; ///< Weight Name
 		int module_id_ = -1; ///< Module ID
 		std::string module_name_ = ""; ///<Module Name
-		std::tuple<int, int, int> layer_id_ = std::make_pair(-1, -1); ///< Layer ID: tuple consisting of OperationsList index and source/sink Layer index(used internally by Model)
+		std::tuple<int, int, int> layer_id_ = std::make_tuple(-1, -1, -1); ///< Layer ID: tuple consisting of OperationsList index and source/sink Layer index(used internally by Model)
 		std::shared_ptr<WeightData<TensorT>> weight_data_; ///< Weight weight
     std::shared_ptr<WeightInitOp<TensorT>> weight_init_; ///< weight initialization operator
     std::shared_ptr<SolverOp<TensorT>> solver_; ///< weight update operator

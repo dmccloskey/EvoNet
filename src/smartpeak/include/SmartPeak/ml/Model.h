@@ -1957,7 +1957,7 @@ private:
 		// 1. need to update the time-steps
 		// 2. need to add in the integration functions
 		// 3. 
-		std::vector<OperationTensorStep<TensorT>> Operation_step_list;
+		std::vector<OperationTensorStep<TensorT>> operation_step_list;
 		for (const auto& operations : FC_ops) {
 			// determine the tensor sizes
 			const int layer_index = FP_operations_cache_.size();
@@ -2034,13 +2034,14 @@ private:
 			weight_data.setLayer2Size(sink_layer_size);
 			weight_data.setNSolverParams(operation_step.source_time_step = FP_operations[operations.second[0]].arguments[0].weight->getSolverOp()->getNParameters());
 			// [TODO: how to initialize the weights? use the first weight init function?]
+			// [TODO: how to initialize the solver_params? use the first solver op?]
 
 			operation_step.weight.reset(&weight_data);
 
-			Operation_step_list.push_back(operation_step);
-			// add the tensors to the cache
-			
+			operation_step_list.push_back(operation_step);			
 		}
+		// add the tensors to the cache
+		operations_cache_.push_back(operation_step_list);
 	}
 
 	template<typename TensorT>

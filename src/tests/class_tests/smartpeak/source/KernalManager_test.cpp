@@ -215,7 +215,7 @@ BOOST_AUTO_TEST_CASE(forwardPropogationDefaultDevice)
 	DefaultDeviceKernal<float> kernal;
 	const int device_id = 0;
 
-	IntegrationOp<float, Eigen::DefaultDevice>* integration_function = new FullyConnectedSumOp<float, Eigen::DefaultDevice>();
+	LayerIntegrationOp<float, Eigen::DefaultDevice>* integration_function = new FullyConnectedSumOp<float, Eigen::DefaultDevice>();
 	const int batch_size = 4;
 	const int memory_size = 2;
 	const int source_layer_size = 2;
@@ -318,7 +318,7 @@ BOOST_AUTO_TEST_CASE(backwardPropogationDefaultDevice)
 	const int device_id = 0;
 	DefaultDeviceKernal<float> kernal;
 
-	IntegrationErrorOp<float, Eigen::DefaultDevice>* integration_function = new FullyConnectedSumErrorOp<float, Eigen::DefaultDevice>();
+	LayerIntegrationErrorOp<float, Eigen::DefaultDevice>* integration_function = new FullyConnectedSumErrorOp<float, Eigen::DefaultDevice>();
 	const int batch_size = 4;
 	const int memory_size = 2;
 	const int source_layer_size = 2;
@@ -548,7 +548,7 @@ BOOST_AUTO_TEST_CASE(weightErrorDefaultDevice)
 	const int device_id = 0;
 	DefaultDeviceKernal<float> kernal;
 
-	IntegrationWeightGradOp<float, Eigen::DefaultDevice>* integration_function = new FullyConnectedSumWeightGradOp<float, Eigen::DefaultDevice>();
+	LayerIntegrationWeightGradOp<float, Eigen::DefaultDevice>* integration_function = new FullyConnectedSumWeightGradOp<float, Eigen::DefaultDevice>();
 	const int batch_size = 4;
 	const int memory_size = 2;
 	const int source_layer_size = 2;

@@ -250,27 +250,6 @@ public:
 	};
 
 	/**
-		@brief Count integration function
-	*/
-	template<typename TensorT, typename DeviceT>
-	class CountOp : public LayerIntegrationOp<TensorT, DeviceT>
-	{
-	public:
-		CountOp() {};
-		void initNetNodeInput(const int& batch_size) {
-			Eigen::Tensor<TensorT, 1> net_node_input(batch_size);
-			net_node_input.setConstant(0);
-			this->setNetNodeInput(net_node_input);
-		}
-		~CountOp() {};
-		void operator()(TensorT* source_output, TensorT* weights, TensorT* sink_input, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, const int& source_time_step, const int& sink_time_step, DeviceT& device) {
-			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> sink_input_tensor(sink_input, batch_size, memory_size);
-			sink_input_tensor.chip(sink_time_step, 1).device(device) = sink_input_tensor.chip(sink_time_step, 1).constant(source_outputs.size());
-		};
-		std::string getName() const { return "CountOp"; };
-	};
-
-	/**
 	@brief Base class for all integration error functions.
 	*/
 	template<typename TensorT, typename DeviceT>
