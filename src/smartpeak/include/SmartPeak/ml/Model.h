@@ -446,7 +446,7 @@ public:
     void forwardPropogate(const int& time_step, bool cache_FP_steps = false, bool use_cache = false,
       int n_threads = 1);
 				
-		static std::string makeForwardPropogationOperationsKey(const int& time_step,
+		static std::string makeForwardPropogationOperationsKey(const int& time_step, const NodeType& node_type,
 			const std::string& node_integration, const std::string& node_activation);
 		void getForwardPropogationOperations();
 		void convertFPOpsToTensorOps();
@@ -1695,6 +1695,7 @@ private:
 			std::set<std::string> unique_node_types;
 			for (const OperationArguments<TensorT>& argument : FP_operation.arguments) {
 				std::string ops_key = makeForwardPropogationOperationsKey(argument.time_step,
+					argument.sink_node->getType(),
 					argument.sink_node->getIntegration()->getName(),
 					argument.sink_node->getActivation()->getName());
 				unique_node_types.insert(ops_key);
@@ -1704,6 +1705,7 @@ private:
 				operations_list.result = FP_operation.result;
 				for (const OperationArguments<TensorT>& argument : FP_operation.arguments) {
 					std::string ops_key = makeForwardPropogationOperationsKey(argument.time_step,
+						argument.sink_node->getType(),
 						argument.sink_node->getIntegration()->getName(),
 						argument.sink_node->getActivation()->getName());
 					if (node_types == ops_key) {
@@ -1795,9 +1797,11 @@ private:
 
 				// check if the sink nodes are compatible
 				std::string ops_key_1 = makeForwardPropogationOperationsKey(FP_operations[operations_iter1].result.time_step,
+					FP_operations[operations_iter1].result.sink_node->getType(),
 					FP_operations[operations_iter1].result.sink_node->getIntegration()->getName(),
 					FP_operations[operations_iter1].result.sink_node->getActivation()->getName());
 				std::string ops_key_2 = makeForwardPropogationOperationsKey(FP_operations[operations_iter2].result.time_step,
+					FP_operations[operations_iter2].result.sink_node->getType(),
 					FP_operations[operations_iter2].result.sink_node->getIntegration()->getName(),
 					FP_operations[operations_iter2].result.sink_node->getActivation()->getName());
 				if (ops_key_1 != ops_key_2) continue;
@@ -1806,6 +1810,7 @@ private:
 				std::set<std::string> argument_nodes;
 				for (const auto& argument : FP_operations[operations_iter1].arguments) {
 					std::string ops_key = makeForwardPropogationOperationsKey(argument.time_step,
+						argument.sink_node->getType(),
 						argument.sink_node->getIntegration()->getName(),
 						argument.sink_node->getActivation()->getName());
 					std::string ops_key_id = argument.sink_node->getNodeName() + "/" + ops_key;
@@ -1813,6 +1818,7 @@ private:
 				}
 				for (const auto& argument : FP_operations[operations_iter2].arguments) {
 					std::string ops_key = makeForwardPropogationOperationsKey(argument.time_step,
+						argument.sink_node->getType(),
 						argument.sink_node->getIntegration()->getName(),
 						argument.sink_node->getActivation()->getName());
 					std::string ops_key_id = argument.sink_node->getNodeName() + "/" + ops_key;
@@ -1843,18 +1849,22 @@ private:
 
 				// check if the sink nodes are compatible
 				std::string ops_key_1 = makeForwardPropogationOperationsKey(FP_operations[operations_iter1].result.time_step,
+					FP_operations[operations_iter1].result.sink_node->getType(),
 					FP_operations[operations_iter1].result.sink_node->getIntegration()->getName(),
 					FP_operations[operations_iter1].result.sink_node->getActivation()->getName());
 				std::string ops_key_2 = makeForwardPropogationOperationsKey(FP_operations[operations_iter2].result.time_step,
+					FP_operations[operations_iter2].result.sink_node->getType(),
 					FP_operations[operations_iter2].result.sink_node->getIntegration()->getName(),
 					FP_operations[operations_iter2].result.sink_node->getActivation()->getName());
 				if (ops_key_1 != ops_key_2) continue;
 
 				// check if the source nodes are compatible
 				ops_key_1 = makeForwardPropogationOperationsKey(FP_operations[operations_iter1].arguments[0].time_step,
+					FP_operations[operations_iter1].arguments[0].source_node->getType(),
 					FP_operations[operations_iter1].arguments[0].source_node->getIntegration()->getName(),
 					FP_operations[operations_iter1].arguments[0].source_node->getActivation()->getName());
 				ops_key_2 = makeForwardPropogationOperationsKey(FP_operations[operations_iter2].arguments[0].time_step,
+					FP_operations[operations_iter2].arguments[0].source_node->getType(),
 					FP_operations[operations_iter2].arguments[0].source_node->getIntegration()->getName(),
 					FP_operations[operations_iter2].arguments[0].source_node->getActivation()->getName());
 				if (ops_key_1 != ops_key_2) continue;
@@ -1881,9 +1891,11 @@ private:
 
 				// check if the sink nodes are compatible
 				std::string ops_key_1 = makeForwardPropogationOperationsKey(FP_operations[operations_iter1].result.time_step,
+					FP_operations[operations_iter1].result.sink_node->getType(),
 					FP_operations[operations_iter1].result.sink_node->getIntegration()->getName(),
 					FP_operations[operations_iter1].result.sink_node->getActivation()->getName());
 				std::string ops_key_2 = makeForwardPropogationOperationsKey(FP_operations[operations_iter2].result.time_step,
+					FP_operations[operations_iter2].result.sink_node->getType(),
 					FP_operations[operations_iter2].result.sink_node->getIntegration()->getName(),
 					FP_operations[operations_iter2].result.sink_node->getActivation()->getName());
 				if (ops_key_1 != ops_key_2) continue;
@@ -1918,6 +1930,7 @@ private:
 	template<typename TensorT>
 	inline std::map<std::string, std::vector<int>> Model<TensorT>::getFanInOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes)
 	{
+		// Default of what is left...
 		return std::map<std::string, std::vector<int>>();
 	}
 
@@ -2128,10 +2141,10 @@ private:
 	}
 
 	template<typename TensorT>
-	std::string Model<TensorT>::makeForwardPropogationOperationsKey(const int & time_step, const std::string & node_integration, const std::string & node_activation)
+	std::string Model<TensorT>::makeForwardPropogationOperationsKey(const int & time_step, const NodeType& node_type, const std::string & node_integration, const std::string & node_activation)
 	{
 		// [TODO: make tests; this appears to break the forward propogation algorithm because it does not match the cyclic node name
-		std::string ops_key = std::to_string(time_step) + "/" + node_integration + "/" + node_activation;
+		std::string ops_key = std::to_string(time_step) + "/" + std::to_string(node_type) + "/" + node_integration + "/" + node_activation;
 		return ops_key;
 	}
 
