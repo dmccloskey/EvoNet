@@ -23,6 +23,7 @@
 #include <SmartPeak/ml/SharedFunctions.h>
 #include <SmartPeak/graph/CircuitFinder.h>
 #include <SmartPeak/ml/ModelErrorData.h>
+#include <SmartPeak/ml/ModelKernal.h>
 
 #include <iostream>
 #include <algorithm>
@@ -1965,6 +1966,7 @@ private:
 			int source_layer_size = 0;
 			bool make_sink_tensor = true;
 			bool make_source_tensor = true;
+			bool make_weight_tensor = true;
 
 			for (const int& ops_index: operations.second) {
 				// allocate sink node tensors (if it does not yet exist)
@@ -1985,13 +1987,17 @@ private:
 						make_source_tensor = false;
 
 					// allocate weight tensors
-					std::get<0>(argument.weight->getLayerId()) = layer_index;
-					std::get<1>(argument.weight->getLayerId()) = source_layer_size;
-					std::get<2>(argument.weight->getLayerId()) = sink_layer_size;
+					if (std::get<0>(argument.weight->getLayerId()) == -1) {
+						std::get<0>(argument.weight->getLayerId()) = layer_index;
+						std::get<1>(argument.weight->getLayerId()) = source_layer_size;
+						std::get<2>(argument.weight->getLayerId()) = sink_layer_size;
+					}
+					else
+						make_weight_tensor = false;
 
-					++source_layer_size;
+					++source_layer_size; //?
 				}
-				++sink_layer_size;
+				++sink_layer_size; //?
 			}
 
 			// make the tensors
@@ -2045,11 +2051,16 @@ private:
 #else
 			WeightMatrixDataCpu<TensorT> weight_data;
 #endif
-			weight_data.setLayer1Size(source_layer_size);
-			weight_data.setLayer2Size(sink_layer_size);
-			weight_data.setNSolverParams(operation_step.source_time_step = FP_operations[operations.second[0]].arguments[0].weight->getSolverOp()->getNParameters());
-			// [TODO: how to initialize the weights? use the first weight init function?]
-			// [TODO: how to initialize the solver_params? use the first solver op?]
+			if (make_weight_tensor) {
+				weight_data.setLayer1Size(source_layer_size);
+				weight_data.setLayer2Size(sink_layer_size);
+				weight_data.setNSolverParams(operation_step.source_time_step = FP_operations[operations.second[0]].arguments[0].weight->getSolverOp()->getNParameters());
+				// [TODO: how to initialize the weights? use the first weight init function?]
+				// [TODO: how to initialize the solver_params? use the first solver op?]
+			}
+			else {
+				// [TODO: copy out the sink_node_data if it already exists]
+			}
 
 			operation_step.weight.reset(&weight_data);
 
@@ -2337,41 +2348,43 @@ private:
 	template<typename TensorT>
 	void Model<TensorT>::executeForwardPropogationOperations(const int& time_step, bool sync_HToD, bool sync_DToH)
 	{
-		// get all the information needed to construct the tensors
-		std::pair<int, int> bmsizes = getBatchAndMemorySizes();
-		int batch_size = bmsizes.first;
-		int memory_size = bmsizes.second;
-
-		// pre-allocate all host and device tensor memory
-
 		int FP_operations_cnt = 0;
-		for (auto& FP_operations : FP_operations_cache_) {
-			for (auto& FP_operation : FP_operations) {
-				// initialize streams
+		for (auto& operations_list : operations_cache_) {
 
-				// copy resources to the device
-				if (sync_HToD) {}
-
-				// get the source node resources and time steps
-				std::vector<TensorT*> h_source_outputs, d_source_outputs, h_weights, d_weights;
-				std::vector<int> source_time_steps;
-				for (auto& FP_argument : FP_operation.arguments) {
-					h_source_outputs.push_back(FP_argument.source_node->getNodeData()->getHOutputPointer().get());
-					d_source_outputs.push_back(FP_argument.source_node->getNodeData()->getDOutputPointer().get());
-					h_weights.push_back(FP_argument.weight->getWeightData()->getHWeightPointer().get());
-					d_weights.push_back(FP_argument.weight->getWeightData()->getDWeightPointer().get());
-					source_time_steps.push_back(FP_argument.time_step + time_step);
-				}
-				// Execute operations (i.e., integration, activation, and derivative)
-
-				// copy resources from the device
-				if (sync_DToH) {}
-
-				// Sync the streams
-
-				// Destroy the streams
+			// Set up the device, streams, and kernals
+#if COMPILE_WITH_CUDA
+			GpuKernal<TensorT> model_kernal;
+			const int device_id = 0;
+			assert(cudaSetDevice(device_id) == cudaSuccess); // is this needed?
+			std::vector<cudaStream_t> streams;
+			std::vector<Eigen::GpuStreamDevice> stream_devices;
+			std::vector<Eigen::GpuDevice> devices;
+			for (auto& operation : operations_list) {
+				cudaStream_t stream; // The stream will be destroyed by GpuStreamDevice once the function goes out of scope!
+				assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess);
+				streams.push_back(stream);
+				Eigen::GpuStreamDevice stream_device(&stream, 0);
+				stream_devices.push_back(stream_device);
+				Eigen::GpuDevice device(&stream_device);
+				devices.push_back(device);
 			}
-			++FP_operations_cnt;
+#else
+			CpuKernal<TensorT> model_kernal;
+			Eigen::DefaultDevice device;
+#endif
+
+			// execute the forward propogation steps
+			for (auto& operation : operations_list) {
+				// 
+
+				// activate the net input
+			}
+
+			// sync and destroy the streams
+			for (auto& operation : operations_list) {
+				assert(cudaStreamSynchronize(stream) == cudaSuccess);
+				assert(cudaStreamDestroy(stream) == cudaSuccess);
+			}
 		}
 	}
 

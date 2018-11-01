@@ -1,8 +1,6 @@
 set(core_executables_list
   DeviceManager_test
   Helloworld_test
-  KernalManager_test
-  KernalManagerGpu_test
   #OperationsManagerGpu_test
   Preprocessing_test
   Statistics_test
@@ -33,6 +31,8 @@ set(ml_executables_list
   Lossfunction2_test
   Lossfunction3_test
   ModelBuilder_test
+  ModelKernal_test
+  ModelKernalGpu_test
   ModelLogger_test
   ModelReplicator_test
   ModelTrainer_test

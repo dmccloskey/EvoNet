@@ -1256,7 +1256,7 @@ int main(int argc, char** argv)
 	matrix1Example();
 	stack1Example();
 	//stack2Example();
-	concat1Example(); //bug
+	//concat1Example(); //bug
 	transform1Example();
 	//transform2Example();
 	//recurseive1Example(); //will not work with CUDA!

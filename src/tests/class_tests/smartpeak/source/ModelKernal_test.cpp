@@ -1,13 +1,13 @@
 /**TODO:  Add copyright*/
 
-#define BOOST_TEST_MODULE KernalManager test suite 
+#define BOOST_TEST_MODULE ModelKernal test suite 
 #include <boost/test/included/unit_test.hpp>
-#include <SmartPeak/core/KernalManager.h>
+#include <SmartPeak/ml/ModelKernal.h>
 
 using namespace SmartPeak;
 using namespace std;
 
-BOOST_AUTO_TEST_SUITE(KernalManager1)
+BOOST_AUTO_TEST_SUITE(ModelKernal1)
 
 BOOST_AUTO_TEST_CASE(constructorDefaultDevice)
 {

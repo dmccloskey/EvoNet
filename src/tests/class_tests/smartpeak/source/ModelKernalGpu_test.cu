@@ -7,7 +7,7 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 
-#include <SmartPeak/core/KernalManager.h>
+#include <SmartPeak/ml/ModelKernal.h>
 
 using namespace SmartPeak;
 using namespace std;

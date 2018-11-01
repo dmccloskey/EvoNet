@@ -1,5 +1,5 @@
-#ifndef SMARTPEAK_KERNALMANAGER_H
-#define SMARTPEAK_KERNALMANAGER_H
+#ifndef SMARTPEAK_MODELKERNAL_H
+#define SMARTPEAK_MODELKERNAL_H
 
 #if COMPILE_WITH_CUDA
 #define EIGEN_DEFAULT_DENSE_INDEX_TYPE int
@@ -20,20 +20,20 @@ namespace SmartPeak
 {
 	/*
 	@brief Device Kernal manager class.
-	
+
 	A single kernal is generated per method (i.e., the device is called
 	only once per kernal method).  The only except is executeModelErrors
 	where a kernal is generated for both the calculation of the model error
 	and node errors in order to use only a host to device memcopy of the
 	predicted node values.
-	
+
 	*/
 	template <typename TensorT, typename DeviceT>
-	class KernalManager
+	class ModelKernal
 	{
 	public:
-		KernalManager() = default;
-		~KernalManager() = default;
+		ModelKernal() = default;
+		~ModelKernal() = default;
 
 		virtual bool executeNodeActivation(
 			TensorT* h_node_inputs,
@@ -157,10 +157,10 @@ namespace SmartPeak
 	};
 
 	template <typename TensorT>
-	class DefaultDeviceKernal : KernalManager<TensorT, Eigen::DefaultDevice>
+	class DefaultDeviceKernal : ModelKernal<TensorT, Eigen::DefaultDevice>
 	{
 	public:
-		using KernalManager::KernalManager;
+		using ModelKernal::ModelKernal;
 		bool executeNodeActivation(
 			TensorT* h_node_inputs,
 			TensorT* d_node_inputs,
@@ -244,11 +244,11 @@ namespace SmartPeak
 			bool copyDeviceToHost = false) {
 			// Integrate sink node error
 			source_integration_functions->operator()(
-				h_source_errors, h_source_inputs, h_weights, 
+				h_source_errors, h_source_inputs, h_weights,
 				h_sink_output, h_sink_error, h_sink_derivative,
 				n_input_nodes,
 				batch_size, memory_size, source_layer_size, sink_layer_size,
-				source_time_step, sink_time_step,	device);
+				source_time_step, sink_time_step, device);
 			return true;
 		};
 		bool executeModelErrors(
@@ -300,7 +300,7 @@ namespace SmartPeak
 			bool copyHostToDevice = false,
 			bool copyDeviceToHost = false) {
 			// Accumulate the error for all links involving the same weight
-			sink_integration_function->operator()(h_sink_errors, h_source_outputs, h_weight, h_source_inputs, h_weight_error, n_input_nodes, 
+			sink_integration_function->operator()(h_sink_errors, h_source_outputs, h_weight, h_source_inputs, h_weight_error, n_input_nodes,
 				batch_size, memory_size, source_layer_size, sink_layer_size, device);
 
 			return true;
@@ -327,10 +327,10 @@ namespace SmartPeak
 
 #if COMPILE_WITH_CUDA
 	template <typename TensorT>
-	class GpuKernal : KernalManager<TensorT, Eigen::GpuDevice>
+	class GpuKernal : ModelKernal<TensorT, Eigen::GpuDevice>
 	{
 	public:
-		using KernalManager::KernalManager;
+		using ModelKernal::ModelKernal;
 		bool executeNodeActivation(
 			TensorT* h_node_inputs,
 			TensorT* d_node_inputs,
@@ -624,4 +624,4 @@ namespace SmartPeak
 	};
 #endif
 }
-#endif //SMARTPEAK_KERNALMANAGER_H
+#endif //SMARTPEAK_MODELKERNAL_H

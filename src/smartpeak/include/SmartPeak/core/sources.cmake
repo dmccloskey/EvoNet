@@ -6,7 +6,6 @@ set(sources_list_h
 	DeviceManager.h
 	HardwareManager.h
 	Helloworld.h
-	KernalManager.h
 	OperationsManager.h
 	Preprocessing.h
 	Statistics.h
