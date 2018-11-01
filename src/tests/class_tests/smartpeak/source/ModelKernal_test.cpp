@@ -11,22 +11,22 @@ BOOST_AUTO_TEST_SUITE(ModelKernal1)
 
 BOOST_AUTO_TEST_CASE(constructorDefaultDevice)
 {
-	DefaultDeviceKernal<float>* ptr = nullptr;
-	DefaultDeviceKernal<float>* nullPointer = nullptr;
-	ptr = new DefaultDeviceKernal<float>();
+	ModelKernalDefaultDevice<float>* ptr = nullptr;
+	ModelKernalDefaultDevice<float>* nullPointer = nullptr;
+	ptr = new ModelKernalDefaultDevice<float>();
 	BOOST_CHECK_NE(ptr, nullPointer);
 }
 
 BOOST_AUTO_TEST_CASE(destructorDefaultDevice)
 {
-	DefaultDeviceKernal<float>* ptr = nullptr;
-	ptr = new DefaultDeviceKernal<float>();
+	ModelKernalDefaultDevice<float>* ptr = nullptr;
+	ptr = new ModelKernalDefaultDevice<float>();
 	delete ptr;
 }
 
 BOOST_AUTO_TEST_CASE(nodeActivationDefaultDevice)
 {
-	DefaultDeviceKernal<float> kernal;
+	ModelKernalDefaultDevice<float> kernal;
 	const int device_id = 0;
 
 	ActivationOpWrapper<float, Eigen::DefaultDevice>* activation_function = new ReLUOpWrapper<float, Eigen::DefaultDevice>();
@@ -125,7 +125,7 @@ BOOST_AUTO_TEST_CASE(nodeActivationDefaultDevice)
 
 BOOST_AUTO_TEST_CASE(nodeDerivativeDefaultDevice)
 {
-	DefaultDeviceKernal<float> kernal;
+	ModelKernalDefaultDevice<float> kernal;
 	const int device_id = 0;
 
 	ActivationOpWrapper<float, Eigen::DefaultDevice>* activation_grad_function = new ReLUGradOpWrapper<float, Eigen::DefaultDevice>();
@@ -212,7 +212,7 @@ BOOST_AUTO_TEST_CASE(nodeDerivativeDefaultDevice)
 
 BOOST_AUTO_TEST_CASE(forwardPropogationDefaultDevice)
 {
-	DefaultDeviceKernal<float> kernal;
+	ModelKernalDefaultDevice<float> kernal;
 	const int device_id = 0;
 
 	LayerIntegrationOp<float, Eigen::DefaultDevice>* integration_function = new FullyConnectedSumOp<float, Eigen::DefaultDevice>();
@@ -316,7 +316,7 @@ BOOST_AUTO_TEST_CASE(forwardPropogationDefaultDevice)
 BOOST_AUTO_TEST_CASE(backwardPropogationDefaultDevice)
 {
 	const int device_id = 0;
-	DefaultDeviceKernal<float> kernal;
+	ModelKernalDefaultDevice<float> kernal;
 
 	LayerIntegrationErrorOp<float, Eigen::DefaultDevice>* integration_function = new FullyConnectedSumErrorOp<float, Eigen::DefaultDevice>();
 	const int batch_size = 4;
@@ -446,7 +446,7 @@ BOOST_AUTO_TEST_CASE(backwardPropogationDefaultDevice)
 BOOST_AUTO_TEST_CASE(modelErrorDefaultDevice)
 {
 	const int device_id = 0;
-	DefaultDeviceKernal<float> kernal;
+	ModelKernalDefaultDevice<float> kernal;
 
 	MSEOp<float, Eigen::DefaultDevice>* loss_function = new MSEOp<float, Eigen::DefaultDevice>;
 	MSEGradOp<float, Eigen::DefaultDevice>* loss_grad_function = new MSEGradOp<float, Eigen::DefaultDevice>;
@@ -546,7 +546,7 @@ BOOST_AUTO_TEST_CASE(modelErrorDefaultDevice)
 BOOST_AUTO_TEST_CASE(weightErrorDefaultDevice)
 {
 	const int device_id = 0;
-	DefaultDeviceKernal<float> kernal;
+	ModelKernalDefaultDevice<float> kernal;
 
 	LayerIntegrationWeightGradOp<float, Eigen::DefaultDevice>* integration_function = new FullyConnectedSumWeightGradOp<float, Eigen::DefaultDevice>();
 	const int batch_size = 4;
@@ -661,7 +661,7 @@ BOOST_AUTO_TEST_CASE(weightErrorDefaultDevice)
 BOOST_AUTO_TEST_CASE(weightUpdateDefaultDevice)
 {
 	const int device_id = 0;
-	DefaultDeviceKernal<float> kernal;
+	ModelKernalDefaultDevice<float> kernal;
 
 	SolverOp<float, Eigen::DefaultDevice>* solver_function = new SGDOp<float, Eigen::DefaultDevice>();
 	const int source_layer_size = 2;
@@ -750,16 +750,16 @@ BOOST_AUTO_TEST_CASE(weightUpdateDefaultDevice)
 #if COMPILE_WITH_CUDA
 BOOST_AUTO_TEST_CASE(constructorGpu)
 {
-	GpuKernal<float>* ptr = nullptr;
-	GpuKernal<float>* nullPointer = nullptr;
-	ptr = new GpuKernal<float>();
+	ModelKernalGpu<float>* ptr = nullptr;
+	ModelKernalGpu<float>* nullPointer = nullptr;
+	ptr = new ModelKernalGpu<float>();
 	BOOST_CHECK_NE(ptr, nullPointer);
 }
 
 BOOST_AUTO_TEST_CASE(destructorGpu)
 {
-	GpuKernal<float>* ptr = nullptr;
-	ptr = new GpuKernal<float>();
+	ModelKernalGpu<float>* ptr = nullptr;
+	ptr = new ModelKernalGpu<float>();
 	delete ptr;
 }
 #endif

@@ -14,7 +14,7 @@ using namespace std;
 
 void test_nodeActivationGpuDevice()
 {
-	GpuKernal<float> kernal;
+	ModelKernalGpu<float> kernal;
 	const int device_id = 0;
 
 	ActivationOpWrapper<float, Eigen::GpuDevice>* activation_function = new ReLUOpWrapper<float, Eigen::GpuDevice>();
@@ -105,7 +105,7 @@ void test_nodeActivationGpuDevice()
 
 void test_nodeDerivativeGpuDevice()
 {
-	GpuKernal<float> kernal;
+	ModelKernalGpu<float> kernal;
 	const int device_id = 0;
 
 	ActivationOpWrapper<float, Eigen::GpuDevice>* activation_grad_function = new ReLUGradOpWrapper<float, Eigen::GpuDevice>();
@@ -186,7 +186,7 @@ void test_nodeDerivativeGpuDevice()
 
 void test_forwardPropogationGpuDevice()
 {
-	GpuKernal<float> kernal;
+	ModelKernalGpu<float> kernal;
 	const int device_id = 0;
 
 	LayerIntegrationOp<float, Eigen::GpuDevice>* integration_function = new FullyConnectedSumOp<float, Eigen::GpuDevice>();
@@ -283,7 +283,7 @@ void test_forwardPropogationGpuDevice()
 void test_backwardPropogationGpuDevice()
 {
 	const int device_id = 0;
-	GpuKernal<float> kernal;
+	ModelKernalGpu<float> kernal;
 
 	LayerIntegrationErrorOp<float, Eigen::GpuDevice>* integration_function = new FullyConnectedSumErrorOp<float, Eigen::GpuDevice>();
 	const int batch_size = 4;
@@ -412,7 +412,7 @@ void test_backwardPropogationGpuDevice()
 void test_modelErrorGpuDevice()
 {
 	const int device_id = 0;
-	GpuKernal<float> kernal;
+	ModelKernalGpu<float> kernal;
 
 	MSEOp<float, Eigen::GpuDevice>* loss_function = new MSEOp<float, Eigen::GpuDevice>;
 	MSEGradOp<float, Eigen::GpuDevice>* loss_grad_function = new MSEGradOp<float, Eigen::GpuDevice>;
@@ -512,7 +512,7 @@ void test_modelErrorGpuDevice()
 void test_weightErrorGpuDevice()
 {
 	const int device_id = 0;
-	GpuKernal<float> kernal;
+	ModelKernalGpu<float> kernal;
 
 	LayerIntegrationWeightGradOp<float, Eigen::GpuDevice>* integration_function = new FullyConnectedSumWeightGradOp<float, Eigen::GpuDevice>();
 	const int batch_size = 4;
@@ -625,7 +625,7 @@ void test_weightErrorGpuDevice()
 
 void test_weightUpdateGpuDevice(){
 	const int device_id = 0;
-	GpuKernal<float> kernal;
+	ModelKernalGpu<float> kernal;
 
 	SolverOp<float, Eigen::GpuDevice>* solver_function = new SGDOp<float, Eigen::GpuDevice>();
 	const int source_layer_size = 2;

@@ -15,8 +15,9 @@ set(sources_list_h
 	Link.h
 	Model.h
 	ModelBuilder.h
-	ModelLogger.h
+	ModelInterpreter.h
 	ModelKernal.h
+	ModelLogger.h
 	ModelReplicator.h
 	ModelTrainer.h
 	Node.h

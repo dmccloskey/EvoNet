@@ -157,7 +157,7 @@ namespace SmartPeak
 	};
 
 	template <typename TensorT>
-	class DefaultDeviceKernal : ModelKernal<TensorT, Eigen::DefaultDevice>
+	class ModelKernalDefaultDevice : ModelKernal<TensorT, Eigen::DefaultDevice>
 	{
 	public:
 		using ModelKernal::ModelKernal;
@@ -327,7 +327,7 @@ namespace SmartPeak
 
 #if COMPILE_WITH_CUDA
 	template <typename TensorT>
-	class GpuKernal : ModelKernal<TensorT, Eigen::GpuDevice>
+	class ModelKernalGpu : ModelKernal<TensorT, Eigen::GpuDevice>
 	{
 	public:
 		using ModelKernal::ModelKernal;

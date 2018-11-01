@@ -896,16 +896,16 @@ namespace SmartPeak
 		void allocateForwardPropogationLayerTensors(const std::vector<OperationList<TensorT>>& FP_operations,
 			const std::map<std::string, std::vector<int>>& operations_map,
 			std::vector<int>& source_layer_sizes, std::vector<int>& sink_layer_sizes,
-			std::vector<bool>& make_source_tensor, std::vector<bool>& make_sink_tensor, std::vector<bool>& make_weight_tensor) = 0;
-		void executeForwardPropogationOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false) = 0;
-		void executeModelErrorOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false) = 0;
-		void executeBackwardPropogationOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false) = 0;
-		void executeWeightErrorOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false) = 0;
-		void executeWeightUpdateOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false) = 0;
+			std::vector<bool>& make_source_tensor, std::vector<bool>& make_sink_tensor, std::vector<bool>& make_weight_tensor);
+		void executeForwardPropogationOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false);
+		void executeModelErrorOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false);
+		void executeBackwardPropogationOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false);
+		void executeWeightErrorOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false);
+		void executeWeightUpdateOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false);
 	};
 
-	template<typename TensorT, typename DeviceT>
-	inline void ModelInterpreter<TensorT>::allocateForwardPropogationLayerTensors(const std::vector<OperationList<TensorT>>& FP_operations,
+	template<typename TensorT>
+	inline void ModelInterpreterDefaultDevice<TensorT>::allocateForwardPropogationLayerTensors(const std::vector<OperationList<TensorT>>& FP_operations,
 		const std::map<std::string, std::vector<int>>& operations_map,
 		std::vector<int>& source_layer_sizes, std::vector<int>& sink_layer_sizes,
 		std::vector<bool>& make_source_tensors, std::vector<bool>& make_sink_tensors, std::vector<bool>& make_weight_tensors)
@@ -975,16 +975,46 @@ namespace SmartPeak
 	template<typename TensorT>
 	void ModelInterpreterDefaultDevice<TensorT>::executeForwardPropogationOperations(const int& time_step, bool sync_HToD, bool sync_DToH)
 	{
-		int FP_operations_cnt = 0;
 		for (auto& operations_list : operations_cache_) {
-			CpuKernal<TensorT> model_kernal;
+			ModelKernalDefaultDevice<TensorT> model_kernal;
 			Eigen::DefaultDevice device;
 
 			// execute the forward propogation steps
 			for (auto& operation : operations_list) {
-				// 
 
-				// activate the net input
+				bool success = model_kernal.executeForwardPropogation(
+					operation.source_layer->,
+					d_source_outputs,
+					h_weights,
+					d_weights,
+					h_sink_input,
+					d_sink_input,
+					integration_function,
+					batch_size,
+					memory_size,
+					source_layer_size,
+					sink_layer_size,
+					source_time_steps,
+					sink_time_step,
+					device,
+					true,
+					true);
+
+				bool success = model_kernal.executeNodeActivation(
+					h_node_input,
+					d_node_input,
+					h_node_output,
+					d_node_output,
+					h_node_dt,
+					d_node_dt,
+					activation_function,
+					batch_size,
+					memory_size,
+					layer_size,
+					node_time_step,
+					device,
+					true,
+					true);
 			}
 		}
 	}
@@ -997,16 +1027,16 @@ namespace SmartPeak
 		void allocateForwardPropogationLayerTensors(const std::vector<OperationList<TensorT>>& FP_operations,
 			const std::map<std::string, std::vector<int>>& operations_map,
 			std::vector<int>& source_layer_sizes, std::vector<int>& sink_layer_sizes,
-			std::vector<bool>& make_source_tensor, std::vector<bool>& make_sink_tensor, std::vector<bool>& make_weight_tensor) = 0;
-		void executeForwardPropogationOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false) = 0;
-		void executeModelErrorOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false) = 0;
-		void executeBackwardPropogationOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false) = 0;
-		void executeWeightErrorOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false) = 0;
-		void executeWeightUpdateOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false) = 0;
+			std::vector<bool>& make_source_tensor, std::vector<bool>& make_sink_tensor, std::vector<bool>& make_weight_tensor);
+		void executeForwardPropogationOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false);
+		void executeModelErrorOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false);
+		void executeBackwardPropogationOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false);
+		void executeWeightErrorOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false);
+		void executeWeightUpdateOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false);
 	};
 
-	template<typename TensorT, typename DeviceT>
-	inline void ModelInterpreter<TensorT>::allocateForwardPropogationLayerTensors(const std::vector<OperationList<TensorT>>& FP_operations,
+	template<typename TensorT>
+	inline void ModelInterpreterGpu<TensorT>::allocateForwardPropogationLayerTensors(const std::vector<OperationList<TensorT>>& FP_operations,
 		const std::map<std::string, std::vector<int>>& operations_map,
 		std::vector<int>& source_layer_sizes, std::vector<int>& sink_layer_sizes,
 		std::vector<bool>& make_source_tensors, std::vector<bool>& make_sink_tensors, std::vector<bool>& make_weight_tensors)
@@ -1073,14 +1103,14 @@ namespace SmartPeak
 		operations_cache_.push_back(operation_step_list);
 	}
 
-	template<typename TensorT, typename DeviceT>
+	template<typename TensorT>
 	void ModelInterpreterGpu<TensorT>::executeForwardPropogationOperations(const int& time_step, bool sync_HToD, bool sync_DToH)
 	{
 		int FP_operations_cnt = 0;
 		for (auto& operations_list : operations_cache_) {
 
 			// Set up the device, streams, and kernals
-			GpuKernal<TensorT> model_kernal;
+			ModelKernalGpu<TensorT> model_kernal;
 			const int device_id = 0;
 			assert(cudaSetDevice(device_id) == cudaSuccess); // is this needed?
 			std::vector<cudaStream_t> streams;
