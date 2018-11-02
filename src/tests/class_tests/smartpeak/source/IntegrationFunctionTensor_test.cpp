@@ -1,15 +1,15 @@
 /**TODO:  Add copyright*/
 
-#define BOOST_TEST_MODULE IntegrationFunction3 test suite 
+#define BOOST_TEST_MODULE IntegrationFunctionTensor test suite 
 #include <boost/test/included/unit_test.hpp>
-#include <SmartPeak/ml/IntegrationFunction3.h>
+#include <SmartPeak/ml/IntegrationFunctionTensor.h>
 
 #include <iostream>
 
 using namespace SmartPeak;
 using namespace std;
 
-BOOST_AUTO_TEST_SUITE(integrationFunction3)
+BOOST_AUTO_TEST_SUITE(integrationFunctionTensor)
 
 /**
  FullyConnectedSumOp Tests

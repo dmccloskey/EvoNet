@@ -1,7 +1,7 @@
 /**TODO:  Add copyright*/
 
-#ifndef SMARTPEAK_SOLVER3_H
-#define SMARTPEAK_SOLVER3_H
+#ifndef SMARTPEAK_SOLVERTENSOR_H
+#define SMARTPEAK_SOLVERTENSOR_H
 
 #if COMPILE_WITH_CUDA
 #include <math.h>
@@ -39,12 +39,12 @@ namespace SmartPeak
     
   */
 	template<typename TensorT, typename DeviceT>
-  class SolverOp
+  class SolverTensorOp
   {
 public: 
-    SolverOp(){}; 
-    SolverOp(const TensorT& gradient_threshold){setGradientThreshold(gradient_threshold);}; 
-    ~SolverOp(){};
+    SolverTensorOp(){}; 
+    SolverTensorOp(const TensorT& gradient_threshold){setGradientThreshold(gradient_threshold);}; 
+    ~SolverTensorOp(){};
     virtual std::string getName() const = 0;
     void setGradientThreshold(const TensorT& gradient_threshold){gradient_threshold_ = gradient_threshold;};
     TensorT getGradientThreshold() const{return gradient_threshold_;};
@@ -89,11 +89,11 @@ private:
     @brief SGD Stochastic Gradient Descent Solver.
   */
 	template<typename TensorT, typename DeviceT>
-  class SGDOp: public SolverOp<TensorT, DeviceT>
+  class SGDTensorOp: public SolverTensorOp<TensorT, DeviceT>
   {
 public: 
-    SGDOp(){}; 
-    ~SGDOp(){};
+    SGDTensorOp(){}; 
+    ~SGDTensorOp(){};
 		/*
 		@brief SGD solver operator
 
@@ -112,22 +112,22 @@ public:
 			solver_params_tensor.chip(2, 2).device(device) = weight_update;
 			weights_tensor.device(device) = weights_tensor + weight_update;
     };
-    std::string getName() const{return "SGDOp";};
+    std::string getName() const{return "SGDTensorOp";};
   };
 
   /**
     @brief Adam Solver.
 
     References:
-      D. Kingma, J. Ba. Adam: A Method for Stochastic Optimization. 
+      D. Kingma, J. Ba. Adam: A Method for Stochastic TensorOptimization. 
       International Conference for Learning Representations, 2015.
   */
 	template<typename TensorT, typename DeviceT>
-  class AdamOp: public SolverOp<TensorT, DeviceT>
+  class AdamTensorOp: public SolverTensorOp<TensorT, DeviceT>
   {
 public: 
-    AdamOp(){}; 
-    ~AdamOp(){};
+    AdamTensorOp(){}; 
+    ~AdamTensorOp(){};
 		/*
 		@brief SGD solver operator
 
@@ -151,31 +151,31 @@ public:
       auto unbiased_adam2 = adam2/ (weights_tensor.constant(1) - solver_params_tensor.chip(2, 2));
 			weights_tensor.device(device) = weights_tensor - solver_params_tensor.chip(0, 2) * unbiased_adam1 / (unbiased_adam2.sqrt() + solver_params_tensor.chip(3, 2));
     };
-    std::string getName() const{return "AdamOp";};
+    std::string getName() const{return "AdamTensorOp";};
   };
 
 	/**
 	@brief Dummy solver that prevents weight update.
 	*/
 	template<typename TensorT, typename DeviceT>
-	class DummySolverOp : public SolverOp<TensorT, DeviceT>
+	class DummySolverTensorOp : public SolverTensorOp<TensorT, DeviceT>
 	{
 	public:
-		DummySolverOp() {};
-		~DummySolverOp() {};
+		DummySolverTensorOp() {};
+		~DummySolverTensorOp() {};
 		void operator()(TensorT* weights, TensorT* errors, TensorT* solver_params, const int& source_layer_size, const int& sink_layer_size, DeviceT& device)	{	};
-		std::string getName() const { return "DummySolverOp"; };
+		std::string getName() const { return "DummySolverTensorOp"; };
 	};
 
 	/**
 	@brief SGD Stochastic Gradient Descent with Noise Solver.
 	*/
 	template<typename TensorT, typename DeviceT>
-	class SGDNoiseOp : public SolverOp<TensorT, DeviceT>
+	class SGDNoiseTensorOp : public SolverTensorOp<TensorT, DeviceT>
 	{
 	public:
-		SGDNoiseOp() {};
-		~SGDNoiseOp() {};
+		SGDNoiseTensorOp() {};
+		~SGDNoiseTensorOp() {};
 		void operator()(TensorT* weights, TensorT* errors, TensorT* solver_params, const int& source_layer_size, const int& sink_layer_size, DeviceT& device)
 		{
 			// [TODO]
@@ -184,7 +184,7 @@ public:
 			//const TensorT new_weight = weight + weight_update;
 			//return addGradientNoise(new_weight);
 		};
-		std::string getName() const { return "SGDNoiseOp"; };
+		std::string getName() const { return "SGDNoiseTensorOp"; };
 	};
 
   /**
@@ -209,4 +209,4 @@ public:
       arXiv:1712.06563
   */
 }
-#endif //SMARTPEAK_SOLVER3_H
+#endif //SMARTPEAK_SOLVERTENSOR_H

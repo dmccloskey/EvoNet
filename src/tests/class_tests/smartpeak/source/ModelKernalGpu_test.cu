@@ -189,7 +189,7 @@ void test_forwardPropogationGpuDevice()
 	ModelKernalGpu<float> kernal;
 	const int device_id = 0;
 
-	TensorIntegrationOp<float, Eigen::GpuDevice>* integration_function = new FullyConnectedSumOp<float, Eigen::GpuDevice>();
+	IntegrationTensorOp<float, Eigen::GpuDevice>* integration_function = new FullyConnectedSumOp<float, Eigen::GpuDevice>();
 	const int batch_size = 4;
 	const int memory_size = 2;
 	const int source_layer_size = 2;
@@ -285,7 +285,7 @@ void test_backwardPropogationGpuDevice()
 	const int device_id = 0;
 	ModelKernalGpu<float> kernal;
 
-	TensorIntegrationErrorOp<float, Eigen::GpuDevice>* integration_function = new FullyConnectedSumErrorOp<float, Eigen::GpuDevice>();
+	IntegrationErrorTensorOp<float, Eigen::GpuDevice>* integration_function = new FullyConnectedSumErrorOp<float, Eigen::GpuDevice>();
 	const int batch_size = 4;
 	const int memory_size = 2;
 	const int source_layer_size = 2;
@@ -414,8 +414,8 @@ void test_modelErrorGpuDevice()
 	const int device_id = 0;
 	ModelKernalGpu<float> kernal;
 
-	MSEOp<float, Eigen::GpuDevice>* loss_function = new MSEOp<float, Eigen::GpuDevice>;
-	MSEGradOp<float, Eigen::GpuDevice>* loss_grad_function = new MSEGradOp<float, Eigen::GpuDevice>;
+	MSETensorOp<float, Eigen::GpuDevice>* loss_function = new MSETensorOp<float, Eigen::GpuDevice>;
+	MSEGradTensorOp<float, Eigen::GpuDevice>* loss_grad_function = new MSEGradTensorOp<float, Eigen::GpuDevice>;
 	const int batch_size = 4;
 	const int memory_size = 2;
 	const int layer_size = 2;
@@ -514,7 +514,7 @@ void test_weightErrorGpuDevice()
 	const int device_id = 0;
 	ModelKernalGpu<float> kernal;
 
-	TensorIntegrationWeightGradOp<float, Eigen::GpuDevice>* integration_function = new FullyConnectedSumWeightGradOp<float, Eigen::GpuDevice>();
+	IntegrationWeightGradTensorOp<float, Eigen::GpuDevice>* integration_function = new FullyConnectedSumWeightGradOp<float, Eigen::GpuDevice>();
 	const int batch_size = 4;
 	const int memory_size = 2;
 	const int source_layer_size = 2;
@@ -627,7 +627,7 @@ void test_weightUpdateGpuDevice(){
 	const int device_id = 0;
 	ModelKernalGpu<float> kernal;
 
-	SolverOp<float, Eigen::GpuDevice>* solver_function = new SGDOp<float, Eigen::GpuDevice>();
+	SolverTensorOp<float, Eigen::GpuDevice>* solver_function = new SGDTensorOp<float, Eigen::GpuDevice>();
 	const int source_layer_size = 2;
 	const int sink_layer_size = 1;
 

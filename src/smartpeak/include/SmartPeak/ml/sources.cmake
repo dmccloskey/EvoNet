@@ -7,11 +7,11 @@ set(sources_list_h
 	ActivationFunctionWrapper.h
 	IntegrationFunction.h
 	IntegrationFunction2.h
-	IntegrationFunction3.h
+	IntegrationFunctionTensor.h
 	Interpreter.h
 	LossFunction.h
 	LossFunction2.h
-	LossFunction3.h
+	LossFunctionTensor.h
 	Link.h
 	Model.h
 	Model3.h
@@ -27,7 +27,7 @@ set(sources_list_h
 	PopulationTrainer.h
 	SharedFunctions.h
 	Solver.h
-	Solver3.h
+	SolverTensor.h
 	Weight.h
 	WeightData.h
 	WeightInit.h

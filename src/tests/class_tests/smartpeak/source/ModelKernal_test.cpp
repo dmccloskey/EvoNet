@@ -215,7 +215,7 @@ BOOST_AUTO_TEST_CASE(forwardPropogationDefaultDevice)
 	ModelKernalDefaultDevice<float> kernal;
 	const int device_id = 0;
 
-	TensorIntegrationOp<float, Eigen::DefaultDevice>* integration_function = new FullyConnectedSumOp<float, Eigen::DefaultDevice>();
+	IntegrationTensorOp<float, Eigen::DefaultDevice>* integration_function = new FullyConnectedSumOp<float, Eigen::DefaultDevice>();
 	const int batch_size = 4;
 	const int memory_size = 2;
 	const int source_layer_size = 2;
@@ -318,7 +318,7 @@ BOOST_AUTO_TEST_CASE(backwardPropogationDefaultDevice)
 	const int device_id = 0;
 	ModelKernalDefaultDevice<float> kernal;
 
-	TensorIntegrationErrorOp<float, Eigen::DefaultDevice>* integration_function = new FullyConnectedSumErrorOp<float, Eigen::DefaultDevice>();
+	IntegrationErrorTensorOp<float, Eigen::DefaultDevice>* integration_function = new FullyConnectedSumErrorOp<float, Eigen::DefaultDevice>();
 	const int batch_size = 4;
 	const int memory_size = 2;
 	const int source_layer_size = 2;
@@ -448,8 +448,8 @@ BOOST_AUTO_TEST_CASE(modelErrorDefaultDevice)
 	const int device_id = 0;
 	ModelKernalDefaultDevice<float> kernal;
 
-	MSEOp<float, Eigen::DefaultDevice>* loss_function = new MSEOp<float, Eigen::DefaultDevice>;
-	MSEGradOp<float, Eigen::DefaultDevice>* loss_grad_function = new MSEGradOp<float, Eigen::DefaultDevice>;
+	MSETensorOp<float, Eigen::DefaultDevice>* loss_function = new MSETensorOp<float, Eigen::DefaultDevice>;
+	MSEGradTensorOp<float, Eigen::DefaultDevice>* loss_grad_function = new MSEGradTensorOp<float, Eigen::DefaultDevice>;
 	const int batch_size = 4;
 	const int memory_size = 2;
 	const int layer_size = 2;
@@ -548,7 +548,7 @@ BOOST_AUTO_TEST_CASE(weightErrorDefaultDevice)
 	const int device_id = 0;
 	ModelKernalDefaultDevice<float> kernal;
 
-	TensorIntegrationWeightGradOp<float, Eigen::DefaultDevice>* integration_function = new FullyConnectedSumWeightGradOp<float, Eigen::DefaultDevice>();
+	IntegrationWeightGradTensorOp<float, Eigen::DefaultDevice>* integration_function = new FullyConnectedSumWeightGradOp<float, Eigen::DefaultDevice>();
 	const int batch_size = 4;
 	const int memory_size = 2;
 	const int source_layer_size = 2;
@@ -663,7 +663,7 @@ BOOST_AUTO_TEST_CASE(weightUpdateDefaultDevice)
 	const int device_id = 0;
 	ModelKernalDefaultDevice<float> kernal;
 
-	SolverOp<float, Eigen::DefaultDevice>* solver_function = new SGDOp<float, Eigen::DefaultDevice>();
+	SolverTensorOp<float, Eigen::DefaultDevice>* solver_function = new SGDTensorOp<float, Eigen::DefaultDevice>();
 	const int source_layer_size = 2;
 	const int sink_layer_size = 1;
 

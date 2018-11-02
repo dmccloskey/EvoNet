@@ -25,11 +25,11 @@ set(ml_executables_list
   ActivationFunction_test
   IntegrationFunction_test
   IntegrationFunction2_test
-  IntegrationFunction3_test
+  IntegrationFunctionTensor_test
   Link_test
   Lossfunction_test
   Lossfunction2_test
-  Lossfunction3_test
+  LossfunctionTensor_test
   ModelBuilder_test
   ModelInterpreter_DAG_test
   ModelKernal_test
@@ -45,7 +45,7 @@ set(ml_executables_list
   PopulationTrainer_test
   SharedFunctions_test
   Solver_test
-  Solver3_test
+  SolverTensor_test
   Weight_test
   WeightData_test
   WeightInit_test

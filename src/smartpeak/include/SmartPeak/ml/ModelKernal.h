@@ -12,9 +12,9 @@
 
 #include <unsupported/Eigen/CXX11/Tensor>
 #include <SmartPeak/ml/ActivationFunctionWrapper.h>
-#include <SmartPeak/ml/IntegrationFunction3.h>
-#include <SmartPeak/ml/LossFunction3.h>
-#include <SmartPeak/ml/Solver3.h>
+#include <SmartPeak/ml/IntegrationFunctionTensor.h>
+#include <SmartPeak/ml/LossFunctionTensor.h>
+#include <SmartPeak/ml/SolverTensor.h>
 
 namespace SmartPeak
 {
@@ -70,7 +70,7 @@ namespace SmartPeak
 			TensorT* d_weights,
 			TensorT* h_sink_inputs,
 			TensorT* d_sink_inputs,
-			TensorIntegrationOp<TensorT, DeviceT>* sink_integration_function,
+			IntegrationTensorOp<TensorT, DeviceT>* sink_integration_function,
 			const int& batch_size,
 			const int& memory_size,
 			const int& source_layer_size,
@@ -94,7 +94,7 @@ namespace SmartPeak
 			TensorT* h_sink_derivative,
 			TensorT* d_sink_derivative,
 			const int& n_input_nodes,
-			TensorIntegrationErrorOp<TensorT, DeviceT>* source_integration_functions,
+			IntegrationErrorTensorOp<TensorT, DeviceT>* source_integration_functions,
 			const int& batch_size,
 			const int& memory_size,
 			const int& source_layer_size,
@@ -112,8 +112,8 @@ namespace SmartPeak
 			TensorT* d_model_error,
 			TensorT* h_node_errors,
 			TensorT* d_node_errors,
-			TensorLossFunctionOp<TensorT, DeviceT>* loss_function,
-			TensorLossFunctionGradOp<TensorT, DeviceT>* loss_grad_function,
+			LossFunctionTensorOp<TensorT, DeviceT>* loss_function,
+			LossFunctionGradTensorOp<TensorT, DeviceT>* loss_grad_function,
 			const int& batch_size,
 			const int& memory_size,
 			const int& layer_size,
@@ -129,7 +129,7 @@ namespace SmartPeak
 			TensorT* h_source_inputs,
 			TensorT* d_source_inputs,
 			const int& n_input_nodes,
-			TensorIntegrationWeightGradOp<TensorT, DeviceT>* sink_integration_function,
+			IntegrationWeightGradTensorOp<TensorT, DeviceT>* sink_integration_function,
 			TensorT* h_weight,
 			TensorT* d_weight,
 			TensorT* h_weight_error,
@@ -148,7 +148,7 @@ namespace SmartPeak
 			TensorT* d_solver_params,
 			TensorT* h_weight_error,
 			TensorT* d_weight_error,
-			SolverOp<TensorT, DeviceT>* solver_function,
+			SolverTensorOp<TensorT, DeviceT>* solver_function,
 			const int& source_layer_size,
 			const int& sink_layer_size,
 			DeviceT& device,
@@ -204,7 +204,7 @@ namespace SmartPeak
 			TensorT* d_weights,
 			TensorT* h_sink_inputs,
 			TensorT* d_sink_inputs,
-			TensorIntegrationOp<TensorT, Eigen::DefaultDevice>* sink_integration_function,
+			IntegrationTensorOp<TensorT, Eigen::DefaultDevice>* sink_integration_function,
 			const int& batch_size,
 			const int& memory_size,
 			const int& source_layer_size,
@@ -232,7 +232,7 @@ namespace SmartPeak
 			TensorT* h_sink_derivative,
 			TensorT* d_sink_derivative,
 			const int& n_input_nodes,
-			TensorIntegrationErrorOp<TensorT, Eigen::DefaultDevice>* source_integration_functions,
+			IntegrationErrorTensorOp<TensorT, Eigen::DefaultDevice>* source_integration_functions,
 			const int& batch_size,
 			const int& memory_size,
 			const int& source_layer_size,
@@ -259,8 +259,8 @@ namespace SmartPeak
 			TensorT* d_model_error,
 			TensorT* h_node_errors,
 			TensorT* d_node_errors,
-			TensorLossFunctionOp<TensorT, Eigen::DefaultDevice>* loss_function,
-			TensorLossFunctionGradOp<TensorT, Eigen::DefaultDevice>* loss_grad_function,
+			LossFunctionTensorOp<TensorT, Eigen::DefaultDevice>* loss_function,
+			LossFunctionGradTensorOp<TensorT, Eigen::DefaultDevice>* loss_grad_function,
 			const int& batch_size,
 			const int& memory_size,
 			const int& layer_size,
@@ -287,7 +287,7 @@ namespace SmartPeak
 			TensorT* h_source_inputs,
 			TensorT* d_source_inputs,
 			const int& n_input_nodes,
-			TensorIntegrationWeightGradOp<TensorT, Eigen::DefaultDevice>* sink_integration_function,
+			IntegrationWeightGradTensorOp<TensorT, Eigen::DefaultDevice>* sink_integration_function,
 			TensorT* h_weight,
 			TensorT* d_weight,
 			TensorT* h_weight_error,
@@ -312,7 +312,7 @@ namespace SmartPeak
 			TensorT* d_solver_params,
 			TensorT* h_weight_error,
 			TensorT* d_weight_error,
-			SolverOp<TensorT, Eigen::DefaultDevice>* solver_function,
+			SolverTensorOp<TensorT, Eigen::DefaultDevice>* solver_function,
 			const int& source_layer_size,
 			const int& sink_layer_size,
 			Eigen::DefaultDevice& device,
@@ -404,7 +404,7 @@ namespace SmartPeak
 			TensorT* d_weights,
 			TensorT* h_sink_inputs,
 			TensorT* d_sink_inputs,
-			TensorIntegrationOp<TensorT, Eigen::GpuDevice>* sink_integration_function,
+			IntegrationTensorOp<TensorT, Eigen::GpuDevice>* sink_integration_function,
 			const int& batch_size,
 			const int& memory_size,
 			const int& source_layer_size,
@@ -448,7 +448,7 @@ namespace SmartPeak
 			TensorT* h_sink_derivative,
 			TensorT* d_sink_derivative,
 			const int& n_input_nodes,
-			TensorIntegrationErrorOp<TensorT, Eigen::GpuDevice>* source_integration_functions,
+			IntegrationErrorTensorOp<TensorT, Eigen::GpuDevice>* source_integration_functions,
 			const int& batch_size,
 			const int& memory_size,
 			const int& source_layer_size,
@@ -494,8 +494,8 @@ namespace SmartPeak
 			TensorT* d_model_error,
 			TensorT* h_node_errors,
 			TensorT* d_node_errors,
-			TensorLossFunctionOp<TensorT, Eigen::GpuDevice>* loss_function,
-			TensorLossFunctionGradOp<TensorT, Eigen::GpuDevice>* loss_grad_function,
+			LossFunctionTensorOp<TensorT, Eigen::GpuDevice>* loss_function,
+			LossFunctionGradTensorOp<TensorT, Eigen::GpuDevice>* loss_grad_function,
 			const int& batch_size,
 			const int& memory_size,
 			const int& layer_size,
@@ -549,7 +549,7 @@ namespace SmartPeak
 			TensorT* h_source_inputs,
 			TensorT* d_source_inputs,
 			const int& n_input_nodes,
-			TensorIntegrationWeightGradOp<TensorT, Eigen::GpuDevice>* sink_integration_function,
+			IntegrationWeightGradTensorOp<TensorT, Eigen::GpuDevice>* sink_integration_function,
 			TensorT* h_weight,
 			TensorT* d_weight,
 			TensorT* h_weight_error,
@@ -591,14 +591,14 @@ namespace SmartPeak
 			TensorT* d_solver_params,
 			TensorT* h_weight_error,
 			TensorT* d_weight_error,
-			SolverOp<TensorT, Eigen::GpuDevice>* solver_function,
+			SolverTensorOp<TensorT, Eigen::GpuDevice>* solver_function,
 			const int& source_layer_size,
 			const int& sink_layer_size,
 			Eigen::GpuDevice& device,
 			bool copyHostToDevice = false,
 			bool copyDeviceToHost = false) {
 			// Check for a dummy solver
-			if (solver_function->getName() == "DummySolverOp")
+			if (solver_function->getName() == "DummySolverTensorOp")
 				return true;
 
 			// Copy host to device

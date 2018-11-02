@@ -2,7 +2,7 @@
 
 #define BOOST_TEST_MODULE Solver3 test suite 
 #include <boost/test/included/unit_test.hpp>
-#include <SmartPeak/ml/Solver3.h>
+#include <SmartPeak/ml/SolverTensor.h>
 
 #include <iostream>
 
@@ -16,36 +16,36 @@ BOOST_AUTO_TEST_SUITE(solver3)
 */ 
 BOOST_AUTO_TEST_CASE(constructorSGDOp) 
 {
-  SGDOp<float, Eigen::DefaultDevice>* ptrSGD = nullptr;
-  SGDOp<float, Eigen::DefaultDevice>* nullPointerSGD = nullptr;
+  SGDTensorOp<float, Eigen::DefaultDevice>* ptrSGD = nullptr;
+  SGDTensorOp<float, Eigen::DefaultDevice>* nullPointerSGD = nullptr;
   BOOST_CHECK_EQUAL(ptrSGD, nullPointerSGD);
 }
 
 BOOST_AUTO_TEST_CASE(destructorSGDOp) 
 {
-  SGDOp<float, Eigen::DefaultDevice>* ptrSGD = nullptr;
-	ptrSGD = new SGDOp<float, Eigen::DefaultDevice>();
+  SGDTensorOp<float, Eigen::DefaultDevice>* ptrSGD = nullptr;
+	ptrSGD = new SGDTensorOp<float, Eigen::DefaultDevice>();
   delete ptrSGD;
 }
 
 BOOST_AUTO_TEST_CASE(settersAndGetters) 
 {
-  SGDOp<float, Eigen::DefaultDevice> operation;
+  SGDTensorOp<float, Eigen::DefaultDevice> operation;
   BOOST_CHECK_EQUAL(operation.getName(), "SGDOp");
   //BOOST_CHECK_EQUAL(operation.getParameters(), "gradient_threshold:1000000.000000;gradient_noise_sigma:1.000000;gradient_noise_gamma:0.550000;learning_rate:0.900000;momentum:0.100000;momentum_prev:0.000000");
 
-  AdamOp<float, Eigen::DefaultDevice> adam_op;
+  AdamTensorOp<float, Eigen::DefaultDevice> adam_op;
   BOOST_CHECK_EQUAL(adam_op.getName(), "AdamOp");
   //BOOST_CHECK_EQUAL(adam_op.getParameters(), "gradient_threshold:1000000.000000;gradient_noise_sigma:1.000000;gradient_noise_gamma:0.550000;learning_rate:0.010000;momentum:0.900000;momentum2:0.999000;delta:0.000000;momentum_prev:0.000000;momentum2_prev:0.000000");
 
-	DummySolverOp<float, Eigen::DefaultDevice> dummy_solver_op;
+	DummySolverTensorOp<float, Eigen::DefaultDevice> dummy_solver_op;
 	BOOST_CHECK_EQUAL(dummy_solver_op.getName(), "DummySolverOp");
 	//BOOST_CHECK_EQUAL(dummy_solver_op.getParameters(), "");
 }
 
 BOOST_AUTO_TEST_CASE(operationfunctionSGDOp) 
 {
-  SGDOp<float, Eigen::DefaultDevice> operation;
+  SGDTensorOp<float, Eigen::DefaultDevice> operation;
 
 	const int sink_layer_size = 1;
 	const int source_layer_size = 2;
@@ -74,7 +74,7 @@ BOOST_AUTO_TEST_CASE(operationfunctionSGDOp)
 
 BOOST_AUTO_TEST_CASE(operationfunctionAdamOp)
 {
-	AdamOp<float, Eigen::DefaultDevice> operation;
+	AdamTensorOp<float, Eigen::DefaultDevice> operation;
 
 	const int sink_layer_size = 1;
 	const int source_layer_size = 2;
@@ -109,7 +109,7 @@ BOOST_AUTO_TEST_CASE(operationfunctionAdamOp)
 
 BOOST_AUTO_TEST_CASE(operationfunctionDummySolverOp)
 {
-	DummySolverOp<float, Eigen::DefaultDevice> operation;
+	DummySolverTensorOp<float, Eigen::DefaultDevice> operation;
 
 	const int sink_layer_size = 1;
 	const int source_layer_size = 2;
@@ -138,7 +138,7 @@ BOOST_AUTO_TEST_CASE(operationfunctionDummySolverOp)
 
 BOOST_AUTO_TEST_CASE(operationfunctionSGDNoiseOp)
 {
-	SGDNoiseOp<float, Eigen::DefaultDevice> operation;
+	SGDNoiseTensorOp<float, Eigen::DefaultDevice> operation;
 
 	const int sink_layer_size = 1;
 	const int source_layer_size = 2;
@@ -168,7 +168,7 @@ BOOST_AUTO_TEST_CASE(operationfunctionSGDNoiseOp)
 
 BOOST_AUTO_TEST_CASE(clipGradient) 
 {
-  SGDOp<float, Eigen::DefaultDevice> operation;
+  SGDTensorOp<float, Eigen::DefaultDevice> operation;
   operation.setGradientThreshold(1000);
   BOOST_CHECK_CLOSE(operation.clipGradient(1.0), 1.0, 1e-3);
   BOOST_CHECK_CLOSE(operation.clipGradient(1000.0), 1000.0, 1e-3);
