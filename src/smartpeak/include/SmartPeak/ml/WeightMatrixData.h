@@ -72,10 +72,10 @@ public:
 		size_t getLayer2Size() const	{ return layer2_size_; }
 		size_t getNSolverParams() const { return n_solver_params_; }
 
-		virtual void setInput(const Eigen::Tensor<TensorT, 2>& weight) = 0; ///< weight setter
-		Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> getInput() { std::shared_ptr<TensorT> h_weight = h_weight_; Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weight(h_weight.get(), layer1_size_, layer2_size_); return weight; }; ///< weight copy getter
-		std::shared_ptr<TensorT> getHInputPointer() { return h_weight_; }; ///< weight pointer getter
-		std::shared_ptr<TensorT> getDInputPointer() { return d_weight_; }; ///< weight pointer getter
+		virtual void setWeight(const Eigen::Tensor<TensorT, 2>& weight) = 0; ///< weight setter
+		Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> getWeight() { std::shared_ptr<TensorT> h_weight = h_weight_; Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weight(h_weight.get(), layer1_size_, layer2_size_); return weight; }; ///< weight copy getter
+		std::shared_ptr<TensorT> getHWeightPointer() { return h_weight_; }; ///< weight pointer getter
+		std::shared_ptr<TensorT> getDWeightPointer() { return d_weight_; }; ///< weight pointer getter
 
     virtual void setSolverParams(const Eigen::Tensor<TensorT, 3>& solver_params) = 0; ///< solver_params setter
 		Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> getSolverParams() { Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> solver_params(h_solver_params_.get(), layer1_size_, layer2_size_); return solver_params; }; ///< solver_params copy getter
@@ -116,7 +116,7 @@ protected:
 	template<typename TensorT>
 	class WeightMatrixDataCpu : public WeightMatrixData<TensorT> {
 	public:
-		void setInput(const Eigen::Tensor<TensorT, 2>& weight) {
+		void setWeight(const Eigen::Tensor<TensorT, 2>& weight) {
 			TensorT* h_weight = new TensorT[this->layer1_size_*this->layer2_size_];
 			// copy the tensor
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weight_copy(h_weight, this->layer1_size_, this->layer2_size_);
@@ -144,7 +144,7 @@ protected:
 	template<typename TensorT>
 	class WeightMatrixDataGpu : public WeightMatrixData<TensorT> {
 	public:
-		void setInput(const Eigen::Tensor<TensorT, 2>& weight) {
+		void setWeight(const Eigen::Tensor<TensorT, 2>& weight) {
 			// allocate cuda and pinned host layer2
 			TensorT* d_weight;
 			TensorT* h_weight;

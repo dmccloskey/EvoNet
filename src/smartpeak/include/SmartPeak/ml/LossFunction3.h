@@ -15,12 +15,12 @@ namespace SmartPeak
 	@brief Base class loss function.
 	*/
 	template<typename TensorT, typename DeviceT>
-	class LossFunctionOp
+	class TensorLossFunctionOp
 	{
 	public:
-		LossFunctionOp() = default;
-		LossFunctionOp(const TensorT& eps) : eps_(eps) {};
-		~LossFunctionOp() = default;
+		TensorLossFunctionOp() = default;
+		TensorLossFunctionOp(const TensorT& eps) : eps_(eps) {};
+		~TensorLossFunctionOp() = default;
 		virtual void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const = 0;
 	protected:
 		TensorT eps_ = 1e-6;
@@ -30,12 +30,12 @@ namespace SmartPeak
 	@brief Base class loss function gradient.
 	*/
 	template<typename TensorT, typename DeviceT>
-	class LossFunctionGradOp
+	class TensorLossFunctionGradOp
 	{
 	public:
-		LossFunctionGradOp() = default;
-		LossFunctionGradOp(const TensorT& eps) : eps_(eps) {};
-		~LossFunctionGradOp() = default;
+		TensorLossFunctionGradOp() = default;
+		TensorLossFunctionGradOp(const TensorT& eps) : eps_(eps) {};
+		~TensorLossFunctionGradOp() = default;
 		virtual void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const = 0;
 	protected:
 		TensorT eps_ = 1e-6;
@@ -45,7 +45,7 @@ namespace SmartPeak
     @brief EuclideanDistance loss function.
   */
   template<typename TensorT, typename DeviceT>
-  class EuclideanDistanceOp : public LossFunctionOp<TensorT, DeviceT>
+  class EuclideanDistanceOp : public TensorLossFunctionOp<TensorT, DeviceT>
   {
 public: 
     EuclideanDistanceOp(){}; 
@@ -65,7 +65,7 @@ public:
     @brief EuclideanDistance loss function gradient.
   */
   template<typename TensorT, typename DeviceT>
-  class EuclideanDistanceGradOp : public LossFunctionGradOp<TensorT, DeviceT>
+  class EuclideanDistanceGradOp : public TensorLossFunctionGradOp<TensorT, DeviceT>
   {
 public: 
     EuclideanDistanceGradOp(){}; 
@@ -85,7 +85,7 @@ public:
     @brief L2Norm loss function.
   */
   template<typename TensorT, typename DeviceT>
-  class L2NormOp : public LossFunctionOp<TensorT, DeviceT>
+  class L2NormOp : public TensorLossFunctionOp<TensorT, DeviceT>
   {
 public: 
     L2NormOp(){}; 
@@ -105,7 +105,7 @@ public:
     @brief L2Norm loss function gradient.
   */
   template<typename TensorT, typename DeviceT>
-  class L2NormGradOp : public LossFunctionGradOp<TensorT, DeviceT>
+  class L2NormGradOp : public TensorLossFunctionGradOp<TensorT, DeviceT>
   {
 public: 
     L2NormGradOp(){}; 
@@ -125,7 +125,7 @@ public:
     @brief Binary Cross Entropy loss function.
   */
   template<typename TensorT, typename DeviceT>
-  class BCEOp : public LossFunctionOp<TensorT, DeviceT>
+  class BCEOp : public TensorLossFunctionOp<TensorT, DeviceT>
   {
 public: 
     BCEOp(){}; 
@@ -152,7 +152,7 @@ public:
 		= -(x-z)/((x-1)*x)
   */
   template<typename TensorT, typename DeviceT>
-  class BCEGradOp : public LossFunctionGradOp<TensorT, DeviceT>
+  class BCEGradOp : public TensorLossFunctionGradOp<TensorT, DeviceT>
   {
 public: 
     BCEGradOp(){}; 
@@ -181,7 +181,7 @@ public:
 				error_tensor.chip(time_step, 1).device(device) += -log(1 - yHat)
   */
   template<typename TensorT, typename DeviceT>
-  class NegativeLogLikelihoodOp : public LossFunctionOp<TensorT, DeviceT>
+  class NegativeLogLikelihoodOp : public TensorLossFunctionOp<TensorT, DeviceT>
   {
 public: 
     NegativeLogLikelihoodOp() = default;
@@ -207,7 +207,7 @@ public:
     @brief NegativeLogLikelihood loss function gradient.
   */
   template<typename TensorT, typename DeviceT>
-  class NegativeLogLikelihoodGradOp : public LossFunctionGradOp<TensorT, DeviceT>
+  class NegativeLogLikelihoodGradOp : public TensorLossFunctionGradOp<TensorT, DeviceT>
   {
 public: 
     NegativeLogLikelihoodGradOp(){};
@@ -232,7 +232,7 @@ public:
     @brief MSE Mean Squared Error loss function.
   */
   template<typename TensorT, typename DeviceT>
-  class MSEOp : public LossFunctionOp<TensorT, DeviceT>
+  class MSEOp : public TensorLossFunctionOp<TensorT, DeviceT>
   {
 public: 
     MSEOp(){}; 
@@ -253,7 +253,7 @@ public:
     @brief MSE Mean Squared Error loss function gradient.
   */
   template<typename TensorT, typename DeviceT>
-  class MSEGradOp : public LossFunctionGradOp<TensorT, DeviceT>
+  class MSEGradOp : public TensorLossFunctionGradOp<TensorT, DeviceT>
   {
 public: 
     MSEGradOp(){}; 
@@ -278,7 +278,7 @@ public:
 		KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
 	*/
 	template<typename TensorT, typename DeviceT>
-	class KLDivergenceMuOp : public LossFunctionOp<TensorT, DeviceT>
+	class KLDivergenceMuOp : public TensorLossFunctionOp<TensorT, DeviceT>
 	{
 	public:
 		KLDivergenceMuOp() {};
@@ -299,7 +299,7 @@ public:
 		@brief KLDivergenceMu  loss function gradient.
 	*/
 	template<typename TensorT, typename DeviceT>
-	class KLDivergenceMuGradOp : public LossFunctionGradOp<TensorT, DeviceT>
+	class KLDivergenceMuGradOp : public TensorLossFunctionGradOp<TensorT, DeviceT>
 	{
 	public:
 		KLDivergenceMuGradOp() {};
@@ -324,7 +324,7 @@ public:
 		KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
 	*/
 	template<typename TensorT, typename DeviceT>
-	class KLDivergenceLogVarOp : public LossFunctionOp<TensorT, DeviceT>
+	class KLDivergenceLogVarOp : public TensorLossFunctionOp<TensorT, DeviceT>
 	{
 	public:
 		KLDivergenceLogVarOp() {};
@@ -345,7 +345,7 @@ public:
 		@brief KLDivergenceLogVar  loss function gradient.
 	*/
 	template<typename TensorT, typename DeviceT>
-	class KLDivergenceLogVarGradOp : public LossFunctionGradOp<TensorT, DeviceT>
+	class KLDivergenceLogVarGradOp : public TensorLossFunctionGradOp<TensorT, DeviceT>
 	{
 	public:
 		KLDivergenceLogVarGradOp() {};
@@ -384,7 +384,7 @@ public:
 	max(x, 0) - x * z + log(1 + exp(-abs(x)))
 	*/
 	template<typename TensorT, typename DeviceT>
-	class BCEWithLogitsOp : public LossFunctionOp<TensorT, DeviceT>
+	class BCEWithLogitsOp : public TensorLossFunctionOp<TensorT, DeviceT>
 	{
 	public:
 		BCEWithLogitsOp() {};
@@ -415,7 +415,7 @@ public:
 	= -((z - 1)*exp(x) + z)/(exp(x) + 1)
 	*/
 	template<typename TensorT, typename DeviceT>
-	class BCEWithLogitsGradOp : public LossFunctionGradOp<TensorT, DeviceT>
+	class BCEWithLogitsGradOp : public TensorLossFunctionGradOp<TensorT, DeviceT>
 	{
 	public:
 		BCEWithLogitsGradOp() {};

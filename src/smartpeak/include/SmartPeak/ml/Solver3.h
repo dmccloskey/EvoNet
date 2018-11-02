@@ -1,7 +1,7 @@
 /**TODO:  Add copyright*/
 
-#ifndef SMARTPEAK_SOLVER_H
-#define SMARTPEAK_SOLVER_H
+#ifndef SMARTPEAK_SOLVER3_H
+#define SMARTPEAK_SOLVER3_H
 
 #if COMPILE_WITH_CUDA
 #include <math.h>
@@ -209,4 +209,4 @@ public:
       arXiv:1712.06563
   */
 }
-#endif //SMARTPEAK_SOLVER_H
+#endif //SMARTPEAK_SOLVER3_H

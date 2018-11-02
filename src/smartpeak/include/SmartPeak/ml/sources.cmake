@@ -14,8 +14,10 @@ set(sources_list_h
 	LossFunction3.h
 	Link.h
 	Model.h
+	Model3.h
 	ModelBuilder.h
 	ModelInterpreter.h
+	ModelInterpreter3.h
 	ModelKernal.h
 	ModelLogger.h
 	ModelReplicator.h

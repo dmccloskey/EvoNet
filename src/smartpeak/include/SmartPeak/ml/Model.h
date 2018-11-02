@@ -2007,6 +2007,7 @@ private:
 			//std::cout<<"Expected output for time point "<< i << " is " << values.chip(next_time_step, 1)<<std::endl;
 
 			// calculate the error for each batch of memory
+			// [TODO: refactor to pass a pair of OperationList index and Layer index]
 			calculateError(values.chip(next_time_step, 1), node_names, i, n_threads);
 			//calculateError(values.chip(i, 1), node_names, i);
 
