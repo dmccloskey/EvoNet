@@ -103,6 +103,8 @@ public:
 
 		size_t getTensorSize() { return batch_size_ * memory_size_ * layer_size_ * sizeof(TensorT); }; ///< Get the size of each tensor in bytes
 
+		void initNodeMatrixData(const int& batch_size, const int& memory_size, const int& layer_size, const NodeType& node_type, const bool& train); ///< initialize the node according to node type
+
 protected:
 		size_t batch_size_ = 1; ///< Mini batch size
 		size_t memory_size_ = 2; ///< Memory size
@@ -117,13 +119,43 @@ protected:
 		std::shared_ptr<TensorT> h_output_ = nullptr;
 		std::shared_ptr<TensorT> h_error_ = nullptr;
 		std::shared_ptr<TensorT> h_derivative_ = nullptr;
-		std::shared_ptr<TensorT> h_dt_ = nullptr;
+		std::shared_ptr<TensorT> h_dt_ = nullptr; // [TODO: change to drop probability]
 		std::shared_ptr<TensorT> d_input_ = nullptr;
 		std::shared_ptr<TensorT> d_output_ = nullptr;
 		std::shared_ptr<TensorT> d_error_ = nullptr;
 		std::shared_ptr<TensorT> d_derivative_ = nullptr;
 		std::shared_ptr<TensorT> d_dt_ = nullptr;
   };
+
+	template<typename TensorT>
+	inline void NodeMatrixData<TensorT>::initNodeMatrixData(const int& batch_size, const int& memory_size, const int& layer_size, const NodeType& node_type, const bool& train)
+	{
+		setBatchSize(batch_size);	setMemorySize(memory_size);	setLayerSize(layer_size);
+		// Template zero and one tensor
+		Eigen::Tensor<TensorT, 2> zero(batch_size, memory_size); zero.setConstant(0);
+		Eigen::Tensor<TensorT, 2> one(batch_size, memory_size);	one.setConstant(1);
+		// set the input, error, and derivatives
+		setInput(zero);	setError(zero);	setDerivative(zero);
+		//// set Drop probabilities [TODO: broke when adding NodeData...]
+		//if (train) {
+		//	setDt(one.unaryExpr(RandBinaryOp<TensorT>(getDropProbability())));
+		//} else {
+		//	setDt(one);
+		//}
+		// corections for specific node types
+		if (node_type == NodeType::bias) {
+			setOutput(one);
+		}
+		else if (node_type == NodeType::input) {
+			setOutput(zero);
+		}
+		else if (node_type == NodeType::zero) {
+			setOutput(zero);
+		}
+		else {
+			setOutput(zero);
+		}
+	}
 
 	template<typename TensorT>
 	class NodeMatrixDataCpu : public NodeMatrixData<TensorT> {

@@ -142,9 +142,9 @@ namespace SmartPeak
 		{
 			return
 				std::tie(
-					operations_cache_
+					operation_steps_
 				) == std::tie(
-					other.operations_cache_
+					other.operation_steps_
 				);
 		}
 
@@ -159,7 +159,7 @@ namespace SmartPeak
 		*/
 		inline ModelInterpreter& operator=(const ModelInterpreter& other)
 		{
-			operations_cache_ = other.operations_cache_;
+			operation_steps_ = other.operation_steps_;
 			return *this;
 		}
 
@@ -327,7 +327,7 @@ namespace SmartPeak
 		static std::string makeForwardPropogationOperationsKey(const int& time_step, const NodeType& node_type,
 			const std::string& node_integration, const std::string& node_activation);
 
-		void getForwardPropogationOperations(Model<TensorT>& model, const int& batch_size, const int& memory_size);
+		void getForwardPropogationOperations(Model<TensorT>& model, const int& batch_size, const int& memory_size, const bool& train);
 
 		/**
 		@brief Allocate Node and Weight tensor memory for all model operations.
@@ -341,20 +341,20 @@ namespace SmartPeak
 			const std::map<std::string, std::vector<int>>& operations_map,
 			const std::vector<int>& source_layer_sizes, const std::vector<int>& sink_layer_sizes,
 			const std::vector<bool>& make_source_tensors, const std::vector<bool>& make_sink_tensors, const std::vector<bool>& make_weight_tensors,
-			const int& batch_size, const int& memory_size) = 0;
+			const int& batch_size, const int& memory_size, const bool& train) = 0;
 		virtual void executeForwardPropogationOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false) = 0;
 		virtual void executeModelErrorOperations(Eigen::Tensor<TensorT, 2>& expected, const std::pair<int, int>& layer_id, LossFunctionTensorOp<TensorT, DeviceT>* loss_function, LossFunctionGradTensorOp<TensorT, DeviceT>* loss_function_grad, const int& time_step, bool sync_HToD = false, bool sync_DToH = false) = 0;
 		virtual void executeBackwardPropogationOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false) = 0;
 		virtual void executeWeightErrorOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false) = 0;
 		virtual void executeWeightUpdateOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false) = 0;
 		
-		virtual void clearCache(); ///< clear the operations caches
+		virtual void clearOperationSteps() = 0; ///< clear the operations caches
 	};
 
 	template<typename TensorT, typename DeviceT>
 	ModelInterpreter<TensorT, DeviceT>::ModelInterpreter(const ModelInterpreter<TensorT, DeviceT>& other)
 	{
-		operations_cache_ = other.operations_cache_;
+		operation_steps_ = other.operation_steps_;
 	}
 
 	template<typename TensorT, typename DeviceT>
@@ -367,18 +367,18 @@ namespace SmartPeak
 			return;
 		}
 		// assumes the tensor operations have been cached
-		else if (operations_cache_[0][0].source_layer.tensor->getBatchSize() != values.dimension(0))
+		else if (operation_steps_[0][0].source_layer.tensor->getBatchSize() != values.dimension(0))
 		{
-			printf("The number of input samples %d and the batch size %d does not match.\n", (int)values.dimension(0), (int)operations_cache_[0][0].source_layer.tensor->getBatchSize());
+			printf("The number of input samples %d and the batch size %d does not match.\n", (int)values.dimension(0), (int)operation_steps_[0][0].source_layer.tensor->getBatchSize());
 			return;
 		}
-		else if (operations_cache_[0][0].source_layer.tensor->getMemorySize() != values.dimension(1))
+		else if (operation_steps_[0][0].source_layer.tensor->getMemorySize() != values.dimension(1))
 		{
-			printf("The number of input time steps %d and the memory size %d does not match.\n", (int)values.dimension(1), (int)operations_cache_[0][0].source_layer.tensor->getMemorySize());
+			printf("The number of input time steps %d and the memory size %d does not match.\n", (int)values.dimension(1), (int)operation_steps_[0][0].source_layer.tensor->getMemorySize());
 			return;
 		}
 
-		for (std::vector<OperationTensorStep<TensorT, DeviceT>>& operations_list : operations_cache_) {
+		for (std::vector<OperationTensorStep<TensorT, DeviceT>>& operations_list : operation_steps_) {
 			for (OperationTensorStep<TensorT, DeviceT>& operation : operations_list) {
 				int layer_size = 0;
 				// check that all nodes are in the layer
@@ -807,7 +807,7 @@ namespace SmartPeak
 		std::vector<bool>& make_source_tensors, std::vector<bool>& make_sink_tensors, std::vector<bool>& make_weight_tensors) {
 		for (const auto& operations : FC_ops) {
 			// determine the tensor sizes
-			const int layer_index = operations_cache_.size();
+			const int layer_index = operation_steps_.size();
 			int sink_layer_size = 0;
 			int source_layer_size = 0;
 			bool make_sink_tensor = true;
@@ -862,7 +862,7 @@ namespace SmartPeak
 	}
 
 	template<typename TensorT, typename DeviceT>
-	void ModelInterpreter<TensorT, DeviceT>::getForwardPropogationOperations(Model<TensorT>& model, const int& batch_size, const int& memory_size)
+	void ModelInterpreter<TensorT, DeviceT>::getForwardPropogationOperations(Model<TensorT>& model, const int& batch_size, const int& memory_size, const bool& train)
 	{
 		// initialize the input nodes to active
 		for (auto& input_node : model.getInputNodes()) {
@@ -917,37 +917,37 @@ namespace SmartPeak
 				std::vector<int> source_layer_sizes, sink_layer_sizes;
 				std::vector<bool> make_source_tensors, make_sink_tensors, make_weight_tensors;
 				getForwardPropogationLayerTensorDimensions(FP_operations, custom_ops, source_layer_sizes, sink_layer_sizes, make_source_tensors, make_sink_tensors, make_weight_tensors);
-				allocateForwardPropogationLayerTensors(FP_operations, custom_ops, source_layer_sizes, sink_layer_sizes, make_source_tensors, make_sink_tensors, make_weight_tensors, batch_size, memory_size);
+				allocateForwardPropogationLayerTensors(FP_operations, custom_ops, source_layer_sizes, sink_layer_sizes, make_source_tensors, make_sink_tensors, make_weight_tensors, batch_size, memory_size, train);
 			}
 			if (FC_ops.size() != 0) {
 				std::vector<int> source_layer_sizes, sink_layer_sizes;
 				std::vector<bool> make_source_tensors, make_sink_tensors, make_weight_tensors;
 				getForwardPropogationLayerTensorDimensions(FP_operations, custom_ops, source_layer_sizes, sink_layer_sizes, make_source_tensors, make_sink_tensors, make_weight_tensors);
-				allocateForwardPropogationLayerTensors(FP_operations, FC_ops, source_layer_sizes, sink_layer_sizes, make_source_tensors, make_sink_tensors, make_weight_tensors, batch_size, memory_size);
+				allocateForwardPropogationLayerTensors(FP_operations, FC_ops, source_layer_sizes, sink_layer_sizes, make_source_tensors, make_sink_tensors, make_weight_tensors, batch_size, memory_size, train);
 			}
 			if (SC_ops.size() != 0) {
 				std::vector<int> source_layer_sizes, sink_layer_sizes;
 				std::vector<bool> make_source_tensors, make_sink_tensors, make_weight_tensors;
 				getForwardPropogationLayerTensorDimensions(FP_operations, custom_ops, source_layer_sizes, sink_layer_sizes, make_source_tensors, make_sink_tensors, make_weight_tensors);
-				allocateForwardPropogationLayerTensors(FP_operations, SC_ops, source_layer_sizes, sink_layer_sizes, make_source_tensors, make_sink_tensors, make_weight_tensors, batch_size, memory_size);
+				allocateForwardPropogationLayerTensors(FP_operations, SC_ops, source_layer_sizes, sink_layer_sizes, make_source_tensors, make_sink_tensors, make_weight_tensors, batch_size, memory_size, train);
 			}
 			if (Conv_ops.size() != 0) {
 				std::vector<int> source_layer_sizes, sink_layer_sizes;
 				std::vector<bool> make_source_tensors, make_sink_tensors, make_weight_tensors;
 				getForwardPropogationLayerTensorDimensions(FP_operations, custom_ops, source_layer_sizes, sink_layer_sizes, make_source_tensors, make_sink_tensors, make_weight_tensors);
-				allocateForwardPropogationLayerTensors(FP_operations, Conv_ops, source_layer_sizes, sink_layer_sizes, make_source_tensors, make_sink_tensors, make_weight_tensors, batch_size, memory_size);
+				allocateForwardPropogationLayerTensors(FP_operations, Conv_ops, source_layer_sizes, sink_layer_sizes, make_source_tensors, make_sink_tensors, make_weight_tensors, batch_size, memory_size, train);
 			}
 			if (FIn_ops.size() != 0) {
 				std::vector<int> source_layer_sizes, sink_layer_sizes;
 				std::vector<bool> make_source_tensors, make_sink_tensors, make_weight_tensors;
 				getForwardPropogationLayerTensorDimensions(FP_operations, custom_ops, source_layer_sizes, sink_layer_sizes, make_source_tensors, make_sink_tensors, make_weight_tensors);
-				allocateForwardPropogationLayerTensors(FP_operations, FIn_ops, source_layer_sizes, sink_layer_sizes, make_source_tensors, make_sink_tensors, make_weight_tensors, batch_size, memory_size);
+				allocateForwardPropogationLayerTensors(FP_operations, FIn_ops, source_layer_sizes, sink_layer_sizes, make_source_tensors, make_sink_tensors, make_weight_tensors, batch_size, memory_size, train);
 			}
 			if (FOut_ops.size() != 0) {
 				std::vector<int> source_layer_sizes, sink_layer_sizes;
 				std::vector<bool> make_source_tensors, make_sink_tensors, make_weight_tensors;
 				getForwardPropogationLayerTensorDimensions(FP_operations, custom_ops, source_layer_sizes, sink_layer_sizes, make_source_tensors, make_sink_tensors, make_weight_tensors);
-				allocateForwardPropogationLayerTensors(FP_operations, FOut_ops, source_layer_sizes, sink_layer_sizes, make_source_tensors, make_sink_tensors, make_weight_tensors, batch_size, memory_size);
+				allocateForwardPropogationLayerTensors(FP_operations, FOut_ops, source_layer_sizes, sink_layer_sizes, make_source_tensors, make_sink_tensors, make_weight_tensors, batch_size, memory_size, train);
 			}
 
 			// activate sink nodes
@@ -964,15 +964,16 @@ namespace SmartPeak
 			const std::map<std::string, std::vector<int>>& operations_map,
 			const std::vector<int>& source_layer_sizes, const std::vector<int>& sink_layer_sizes,
 			const std::vector<bool>& make_source_tensors, const std::vector<bool>& make_sink_tensors, const std::vector<bool>& make_weight_tensors,
-			const int& batch_size, const int& memory_size);
+			const int& batch_size, const int& memory_size, const bool& train);
 		void executeForwardPropogationOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false);
 		void executeBackwardPropogationOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false);
 		void executeModelErrorOperations(Eigen::Tensor<TensorT, 2>& expected, const std::pair<int, int>& layer_id, LossFunctionTensorOp<TensorT, Eigen::DefaultDevice>* loss_function, LossFunctionGradTensorOp<TensorT, Eigen::DefaultDevice>* loss_function_grad, const int& time_step, bool sync_HToD = false, bool sync_DToH = false);
 		void executeWeightErrorOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false);
 		void executeWeightUpdateOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false);
-		void clearCache();
+		void addOperationSteps(const std::vector<OperationTensorStepDefaultDevice<TensorT>>& operation_steps);
+		void clearOperationSteps();
 	protected:
-		std::vector<std::vector<OperationTensorStepDefaultDevice<TensorT>>> operations_cache_;
+		std::vector<std::vector<OperationTensorStepDefaultDevice<TensorT>>> operation_steps_;
 		ModelErrorDataCpu<TensorT> model_error_;
 	};
 
@@ -981,7 +982,7 @@ namespace SmartPeak
 		const std::map<std::string, std::vector<int>>& operations_map,
 		const std::vector<int>& source_layer_sizes, const std::vector<int>& sink_layer_sizes,
 		const std::vector<bool>& make_source_tensors, const std::vector<bool>& make_sink_tensors, const std::vector<bool>& make_weight_tensors,
-		const int& batch_size, const int& memory_size)
+		const int& batch_size, const int& memory_size, const bool& train)
 	{
 		std::vector<OperationTensorStepDefaultDevice<TensorT>> operation_step_list;
 		int iter = 0;
@@ -993,9 +994,7 @@ namespace SmartPeak
 			// make the source layer tensor
 			NodeMatrixDataCpu<TensorT> source_node_data;
 			if (make_source_tensors[iter]) {
-				source_node_data.setBatchSize(batch_size);
-				source_node_data.setMemorySize(memory_size);
-				source_node_data.setLayerSize(source_layer_sizes[iter]);
+				source_node_data.initNodeMatrixData(batch_size, memory_size, source_layer_sizes[iter], FP_operations[operations.second[0]].arguments[0].source_node->getType(), train);
 				// [TODO: how best to set input, output, derivative, error, dt?]
 				// [TODO: implement initNodeData?]
 				operation_step.source_layer.tensor.reset(&source_node_data);
@@ -1017,9 +1016,7 @@ namespace SmartPeak
 			// make the sink layer tensor
 			NodeMatrixDataCpu<TensorT> sink_node_data;
 			if (make_sink_tensors[iter]) {
-				sink_node_data.setBatchSize(batch_size);
-				sink_node_data.setMemorySize(memory_size);
-				sink_node_data.setLayerSize(sink_layer_sizes[iter]);
+				sink_node_data.initNodeMatrixData(batch_size, memory_size, sink_layer_sizes[iter], FP_operations[operations.second[0]].result.sink_node->getType(), train);
 				// [TODO: how best to set input, output, derivative, error, dt?]
 				operation_step.sink_layer.time_step = FP_operations[operations.second[0]].result.time_step;
 				operation_step.sink_layer.tensor.reset(&sink_node_data);
@@ -1033,16 +1030,12 @@ namespace SmartPeak
 
 			// make the weight tensor
 			// [TODO: there are differences between FC, SC, FanIn, FanOut, and Conv that need to be accounted for!]
-
 			WeightMatrixDataCpu<TensorT> weight_data;
 			if (make_weight_tensors[iter]) {
-				weight_data.setLayer1Size(source_layer_sizes[iter]);
-				weight_data.setLayer2Size(sink_layer_sizes[iter]);
-				weight_data.setNSolverParams(FP_operations[operations.second[0]].arguments[0].weight->getSolverOp()->getNParameters());
-				Eigen::Tensor<TensorT, 2> weight_tensor(source_layer_sizes[iter], sink_layer_sizes[iter]);
-				// [TODO: implemented initWeight (init values and solver params)
-				//weight_tensor.unaryExpr(*(FP_operations[operations.second[0]].arguments[0].weight->getWeightInitOp()));
-				// [TODO: how to initialize the solver_params? use the first solver op?]
+				std::vector<TensorT> solver_params; // [TODO: how best to extract out?]
+				weight_data.initWeightMatrixData(source_layer_sizes[iter], sink_layer_sizes[iter], train,
+					FP_operations[operations.second[0]].arguments[0].weight->getWeightInitOp(),
+					solver_params);
 				operation_step.weight.tensor.reset(&weight_data);
 			}
 			else {
@@ -1055,13 +1048,13 @@ namespace SmartPeak
 			++iter;
 		}
 		// add the tensors to the cache
-		operations_cache_.push_back(operation_step_list);
+		operation_steps_.push_back(operation_step_list);
 	}
 
 	template<typename TensorT>
 	inline void ModelInterpreterDefaultDevice<TensorT>::executeForwardPropogationOperations(const int& time_step, bool sync_HToD, bool sync_DToH)
 	{
-		for (std::vector<OperationTensorStepDefaultDevice<TensorT>>& operations_list : operations_cache_) {
+		for (std::vector<OperationTensorStepDefaultDevice<TensorT>>& operations_list : operation_steps_) {
 			ModelKernalDefaultDevice<TensorT> model_kernal;
 			Eigen::DefaultDevice device;
 
@@ -1103,12 +1096,12 @@ namespace SmartPeak
 	template<typename TensorT>
 	inline void ModelInterpreterDefaultDevice<TensorT>::executeBackwardPropogationOperations(const int & time_step, bool sync_HToD, bool sync_DToH)
 	{
-		for (size_t i = operations_cache_.size() - 1; i >= 0; --i) { //iterate backwards
+		for (size_t i = operation_steps_.size() - 1; i >= 0; --i) { //iterate backwards
 			ModelKernalDefaultDevice<TensorT> model_kernal;
 			Eigen::DefaultDevice device;
 
 			// execute the forward propogation steps
-			for (OperationTensorStepDefaultDevice<TensorT>& operation : operations_cache_[i]) { //reverse source/sink
+			for (OperationTensorStepDefaultDevice<TensorT>& operation : operation_steps_[i]) { //reverse source/sink
 
 				model_kernal.executeNodeDerivative(
 					operation.source_layer.tensor->getHOutputPointer().get(),
@@ -1153,7 +1146,7 @@ namespace SmartPeak
 	{
 		ModelKernalDefaultDevice<TensorT> model_kernal;
 		Eigen::DefaultDevice device;
-		OperationTensorStepDefaultDevice<TensorT> operation = operations_cache_[layer_id.first][layer_id.second];
+		OperationTensorStepDefaultDevice<TensorT> operation = operation_steps_[layer_id.first][layer_id.second];
 		model_kernal.executeModelErrors(
 			expected,
 			operation.sink_layer.tensor->getHOutputPointer().get(),
@@ -1174,7 +1167,7 @@ namespace SmartPeak
 	template<typename TensorT>
 	inline void ModelInterpreterDefaultDevice<TensorT>::executeWeightErrorOperations(const int & time_step, bool sync_HToD, bool sync_DToH)
 	{
-		for (std::vector<OperationTensorStepDefaultDevice<TensorT>>& operations_list : operations_cache_) {
+		for (std::vector<OperationTensorStepDefaultDevice<TensorT>>& operations_list : operation_steps_) {
 			ModelKernalDefaultDevice<TensorT> model_kernal;
 			Eigen::DefaultDevice device;
 
@@ -1206,7 +1199,7 @@ namespace SmartPeak
 	template<typename TensorT>
 	inline void ModelInterpreterDefaultDevice<TensorT>::executeWeightUpdateOperations(const int & time_step, bool sync_HToD, bool sync_DToH)
 	{
-		for (std::vector<OperationTensorStepDefaultDevice<TensorT>>& operations_list : operations_cache_) {
+		for (std::vector<OperationTensorStepDefaultDevice<TensorT>>& operations_list : operation_steps_) {
 			ModelKernalDefaultDevice<TensorT> model_kernal;
 			Eigen::DefaultDevice device;
 
@@ -1229,9 +1222,14 @@ namespace SmartPeak
 	}
 
 	template<typename TensorT>
-	void ModelInterpreterDefaultDevice<TensorT>::clearCache()
+	inline void ModelInterpreterDefaultDevice<TensorT>::addOperationSteps(const std::vector<OperationTensorStepDefaultDevice<TensorT>>& operation_steps) {
+		operations_steps_.push_back(operation_steps);
+	}
+
+	template<typename TensorT>
+	inline void ModelInterpreterDefaultDevice<TensorT>::clearOperationSteps()
 	{
-		operations_cache_.clear();
+		operation_steps_.clear();
 	}
 
 #if COMPILE_WITH_CUDA
@@ -1243,22 +1241,23 @@ namespace SmartPeak
 			const std::map<std::string, std::vector<int>>& operations_map,
 			const std::vector<int>& source_layer_sizes, const std::vector<int>& sink_layer_sizes,
 			const std::vector<bool>& make_source_tensors, const std::vector<bool>& make_sink_tensors, const std::vector<bool>& make_weight_tensors,
-			const int& batch_size, const int& memory_size);
+			const int& batch_size, const int& memory_size, const bool& train);
 		void executeForwardPropogationOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false);
 		void executeModelErrorOperations(Eigen::Tensor<TensorT, 2>& expected, const std::pair<int, int>& layer_id, LossFunctionTensorOp<TensorT, Eigen::GpuDevice>* loss_function, LossFunctionGradTensorOp<TensorT, Eigen::GpuDevice>* loss_function_grad, const int& time_step, bool sync_HToD = false, bool sync_DToH = false);
 		void executeBackwardPropogationOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false);
 		void executeWeightErrorOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false);
 		void executeWeightUpdateOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false);
-		void clearCache();
+		void addOperationSteps(const std::vector<OperationTensorStepGpu<TensorT>>& operation_steps);
+		void clearOperationSteps();
 	protected:
-		std::vector<std::vector<OperationTensorStepGpu<TensorT>>> operations_cache_;
+		std::vector<std::vector<OperationTensorStepGpu<TensorT>>> operation_steps_;
 		ModelErrorDataGpu<TensorT> model_error_;
 	};
 
 	template<typename TensorT>
 	void ModelInterpreterGpu<TensorT>::executeForwardPropogationOperations(const int& time_step, bool sync_HToD, bool sync_DToH)
 	{
-		for (auto& operations_list : operations_cache_) {
+		for (auto& operations_list : operation_steps_) {
 
 			// Set up the device, streams, and kernals
 			ModelKernalGpu<TensorT> model_kernal;
@@ -1323,7 +1322,7 @@ namespace SmartPeak
 	template<typename TensorT>
 	inline void ModelInterpreterGpu<TensorT>::executeBackwardPropogationOperations(const int & time_step, bool sync_HToD, bool sync_DToH)
 	{
-		for (size_t iter = operations_cache_.size() - 1; iter >= 0; --iter) { //iterate backwards
+		for (size_t iter = operation_steps_.size() - 1; iter >= 0; --iter) { //iterate backwards
 
 			// Set up the device, streams, and kernals
 			ModelKernalGpu<TensorT> model_kernal;
@@ -1332,7 +1331,7 @@ namespace SmartPeak
 			std::vector<cudaStream_t> streams;
 			std::vector<Eigen::GpuStreamDevice> stream_devices;
 			std::vector<Eigen::GpuDevice> devices;
-			for (size_t i = 0; i < operations_cache_[iter].size(); ++i) {
+			for (size_t i = 0; i < operation_steps_[iter].size(); ++i) {
 				cudaStream_t stream; // The stream will be destroyed by GpuStreamDevice once the function goes out of scope!
 				assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess);
 				streams.push_back(stream);
@@ -1344,7 +1343,7 @@ namespace SmartPeak
 
 			// execute the forward propogation steps
 			int device_iter = 0;
-			for (OperationTensorStepGpu<TensorT>& operation : operations_cache_[iter]) { //reverse source/sink
+			for (OperationTensorStepGpu<TensorT>& operation : operation_steps_[iter]) { //reverse source/sink
 
 				model_kernal.executeNodeDerivative(
 					operation.source_layer.tensor->getHOutputPointer().get(),
@@ -1385,7 +1384,7 @@ namespace SmartPeak
 			}
 
 			// sync and destroy the streams
-			for (size_t i = 0; i < operations_cache_[iter].size(); ++i) {
+			for (size_t i = 0; i < operation_steps_[iter].size(); ++i) {
 				assert(cudaStreamSynchronize(streams[i]) == cudaSuccess);
 				assert(cudaStreamDestroy(streams[i]) == cudaSuccess);
 			}
@@ -1404,7 +1403,7 @@ namespace SmartPeak
 		stream_devices.push_back(stream_device);
 		Eigen::GpuDevice device(&stream_device);
 
-		OperationTensorStepDefaultDevice<TensorT> operation = operations_cache_[layer_id.first][layer_id.second];
+		OperationTensorStepDefaultDevice<TensorT> operation = operation_steps_[layer_id.first][layer_id.second];
 		model_kernal.executeModelErrors(
 			expected,
 			operation.sink_layer.tensor->getHOutputPointer().get(),
@@ -1428,7 +1427,7 @@ namespace SmartPeak
 	template<typename TensorT>
 	inline void ModelInterpreterGpu<TensorT>::executeWeightErrorOperations(const int & time_step, bool sync_HToD, bool sync_DToH)
 	{
-		for (std::vector<OperationTensorStepDefaultDevice<TensorT>>& operations_list : operations_cache_) {
+		for (std::vector<OperationTensorStepDefaultDevice<TensorT>>& operations_list : operation_steps_) {
 
 			// Set up the device, streams, and kernals
 			ModelKernalGpu<TensorT> model_kernal;
@@ -1483,7 +1482,7 @@ namespace SmartPeak
 	template<typename TensorT>
 	inline void ModelInterpreterGpu<TensorT>::executeWeightUpdateOperations(const int & time_step, bool sync_HToD, bool sync_DToH)
 	{
-		for (std::vector<OperationTensorStepDefaultDevice<TensorT>>& operations_list : operations_cache_) {
+		for (std::vector<OperationTensorStepDefaultDevice<TensorT>>& operations_list : operation_steps_) {
 
 			// Set up the device, streams, and kernals
 			ModelKernalGpu<TensorT> model_kernal;
@@ -1529,9 +1528,14 @@ namespace SmartPeak
 	}
 
 	template<typename TensorT>
-	void ModelInterpreterGpu<TensorT>::clearCache()
+	inline void ModelInterpreterGpu<TensorT>::addOperationSteps(const std::vector<OperationTensorStepGpu<TensorT>>& operation_steps) {
+		operations_steps_.push_back(operation_steps);
+	}
+
+	template<typename TensorT>
+	void ModelInterpreterGpu<TensorT>::clearOperationSteps()
 	{
-		operations_cache_.clear();
+		operation_steps_.clear();
 	}
 #endif
 

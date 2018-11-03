@@ -11,9 +11,27 @@
 #endif
 
 #include <unsupported/Eigen/CXX11/Tensor>
+#include <SmartPeak/ml/WeightInit.h>
 
 namespace SmartPeak
 {
+
+	/**
+	@brief Functor for use with calculate activation/derivative.
+	*/
+	template<typename T>
+	class WeightInitFunctorOp
+	{
+	public:
+		WeightInitFunctorOp() {};
+		WeightInitFunctorOp(WeightInitOp<T>* weight_init) : weight_init_(weight_init) {};
+		~WeightInitFunctorOp() {};
+		T operator()(const T& x_I) const {
+			return (*weight_init_)(x_I);
+		}
+	private:
+		WeightInitOp<T>* weight_init_;
+	};
   /**
     @brief Network WeightMatrixData
 
@@ -90,6 +108,8 @@ public:
 		size_t getTensorSize() { return layer1_size_ * layer2_size_ * sizeof(TensorT); }; ///< Get the size of each tensor in bytes
 		size_t getSolverParamsSize() { return layer1_size_ * layer2_size_ * n_solver_params_ * sizeof(TensorT); }; ///< Get the size of each tensor in bytes
 
+		void initWeightMatrixData(const int& layer1_size, const int&layer2_size, const bool& train, WeightInitOp<TensorT>* weight_init, std::vector<TensorT>& solver_params);
+
 protected:
 		size_t layer1_size_ = 1; ///< Layer1 size
 		size_t layer2_size_ = 2; ///< Layer2 size
@@ -111,7 +131,29 @@ protected:
 		std::shared_ptr<TensorT> d_weight_ = nullptr;
 		std::shared_ptr<TensorT> d_solver_params_ = nullptr;
 		std::shared_ptr<TensorT> d_error_ = nullptr;
+		// [TODO: add drop probability]
   };
+
+	template<typename TensorT>
+	inline void WeightMatrixData<TensorT>::initWeightMatrixData(const int & layer1_size, const int & layer2_size, const bool & train, WeightInitOp<TensorT>* weight_init, std::vector<TensorT>& solver_params)
+	{
+		setLayer1Size(layer1_size);
+		setLayer2Size(layer2_size);
+
+		// make the weight and error tensors
+		Eigen::Tensor<TensorT, 2> zero(layer1_size, layer2_size); zero.setConstant(0);
+		Eigen::Tensor<TensorT, 2> one(layer1_size, layer2_size);	one.setConstant(1);
+		setWeight(one.unaryExpr(WeightInitFunctorOp<TensorT>(weight_init)));
+		setError(zero);
+
+		// make the parameters
+		setNSolverParams(solver_params.size());
+		Eigen::Tensor<TensorT, 3> params(layer1_size, layer2_size, (int)solver_params.size());
+		for (int i = 0; i < solver_params.size(); ++i) {
+			params.chip(i, 2).constant(solver_params[i]);
+		}
+		setSolverParams(params);
+	}
 
 	template<typename TensorT>
 	class WeightMatrixDataCpu : public WeightMatrixData<TensorT> {

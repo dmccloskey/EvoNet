@@ -11,7 +11,7 @@
 using namespace SmartPeak;
 using namespace std;
 
-Model<float> makeModel1()
+Model<float> makeModelFCSum()
 {
 	/**
 	* Directed Acyclic Graph Toy Network Model
@@ -19,15 +19,15 @@ Model<float> makeModel1()
 	Node<float> i1, i2, h1, h2, o1, o2, b1, b2;
 	Link l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4;
 	Weight<float> w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4;
-	Model<float> model1;
+	Model<float> model_FC_Sum;
 
 	// Toy network: 1 hidden layer, fully connected, DAG
 	i1 = Node<float>("0", NodeType::input, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
 	i2 = Node<float>("1", NodeType::input, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-	h1 = Node<float>("2", NodeType::hidden, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-	h2 = Node<float>("3", NodeType::hidden, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-	o1 = Node<float>("4", NodeType::output, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-	o2 = Node<float>("5", NodeType::output, NodeStatus::deactivated, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+	h1 = Node<float>("2", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+	h2 = Node<float>("3", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+	o1 = Node<float>("4", NodeType::output, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+	o2 = Node<float>("5", NodeType::output, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
 	b1 = Node<float>("6", NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
 	b2 = Node<float>("7", NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
 
@@ -86,13 +86,13 @@ Model<float> makeModel1()
 	l8 = Link("9", "3", "5", "9");
 	lb3 = Link("10", "7", "4", "10");
 	lb4 = Link("11", "7", "5", "11");
-	model1.setId(1);
-	model1.addNodes({ i1, i2, h1, h2, o1, o2, b1, b2 });
-	model1.addWeights({ w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4 });
-	model1.addLinks({ l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4 });
-	return model1;
+	model_FC_Sum.setId(1);
+	model_FC_Sum.addNodes({ i1, i2, h1, h2, o1, o2, b1, b2 });
+	model_FC_Sum.addWeights({ w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4 });
+	model_FC_Sum.addLinks({ l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4 });
+	return model_FC_Sum;
 }
-Model<float> model1 = makeModel1();
+Model<float> model_FC_Sum = makeModelFCSum();
 
 BOOST_AUTO_TEST_SUITE(modelInterpreter_DAG)
 
@@ -106,24 +106,24 @@ BOOST_AUTO_TEST_SUITE(modelInterpreter_DAG)
 BOOST_AUTO_TEST_CASE(getNextInactiveLayer1) 
 {
   // Toy network: 1 hidden layer, fully connected, DAG
-  // Model<float> model1 = makeModel1();
+  // Model<float> model_FC_Sum = makeModelFCSum();
 	ModelInterpreterDefaultDevice<float> model_interpreter;
 
   // initialize nodes
   const int batch_size = 4;
   const int memory_size = 2;
-  model1.clearCache();
-	model1.findCycles();
+  model_FC_Sum.clearCache();
+	model_FC_Sum.findCycles();
 
 	// initialize the input nodes to active
-	for (auto& input_node : model1.getInputNodes()) {
+	for (auto& input_node : model_FC_Sum.getInputNodes()) {
 		input_node->setStatus(NodeStatus::activated);
 	}
 
 	// get the next hidden layer
 	std::map<std::string, int> FP_operations_map;
 	std::vector<OperationList<float>> FP_operations_list;
-	model_interpreter.getNextInactiveLayer(model1, FP_operations_map, FP_operations_list);
+	model_interpreter.getNextInactiveLayer(model_FC_Sum, FP_operations_map, FP_operations_list);
 
 	BOOST_CHECK_EQUAL(FP_operations_map.size(), 2);
 	BOOST_CHECK_EQUAL(FP_operations_map.at("2"), 0);
@@ -152,27 +152,27 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayer1)
 BOOST_AUTO_TEST_CASE(getNextInactiveLayerBiases1) 
 {
   // Toy network: 1 hidden layer, fully connected, DAG
-  // Model<float> model1 = makeModel1();
+  // Model<float> model_FC_Sum = makeModelFCSum();
 	ModelInterpreterDefaultDevice<float> model_interpreter;
 
   // initialize nodes
   const int batch_size = 4;
   const int memory_size = 2;
-  model1.clearCache();
-	model1.findCycles();
+  model_FC_Sum.clearCache();
+	model_FC_Sum.findCycles();
 
 	// initialize the input nodes to active
-	for (auto& input_node : model1.getInputNodes()) {
+	for (auto& input_node : model_FC_Sum.getInputNodes()) {
 		input_node->setStatus(NodeStatus::activated);
 	}
 
 	// get the next hidden layer
 	std::map<std::string, int> FP_operations_map;
 	std::vector<OperationList<float>> FP_operations_list;
-	model_interpreter.getNextInactiveLayer(model1, FP_operations_map, FP_operations_list);
+	model_interpreter.getNextInactiveLayer(model_FC_Sum, FP_operations_map, FP_operations_list);
 
 	std::vector<std::string> sink_nodes_with_biases2;
-	model_interpreter.getNextInactiveLayerBiases(model1, FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
+	model_interpreter.getNextInactiveLayerBiases(model_FC_Sum, FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
 
 	BOOST_CHECK_EQUAL(FP_operations_map.size(), 2);
 	BOOST_CHECK_EQUAL(FP_operations_map.at("2"), 0);
