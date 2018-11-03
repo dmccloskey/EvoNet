@@ -311,6 +311,7 @@ namespace SmartPeak
 		std::map<std::string, std::vector<int>> getConvOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes);
 		std::map<std::string, std::vector<int>> getFanOutOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes);
 		std::map<std::string, std::vector<int>> getFanInOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes);
+		std::map<std::string, std::vector<int>> getTensorOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes);
 
 		/**
 		@brief Allocate Node and Weight tensor memory for all model operations.
@@ -321,7 +322,7 @@ namespace SmartPeak
 		*/
 		void getForwardPropogationLayerTensorDimensions(const std::vector<OperationList<TensorT>>& FP_operations,
 			const std::map<std::string, std::vector<int>>& operations_map,
-			std::vector<int>& source_layer_sizes, std::vector<int>& sink_layer_sizes, 
+			std::vector<int>& source_layer_sizes, std::vector<int>& sink_layer_sizes, std::vector<std::pair<int, int>> weight_indices,
 			std::vector<bool>& make_source_tensor, std::vector<bool>& make_sink_tensor, std::vector<bool>& make_weight_tensor);
 
 		static std::string makeForwardPropogationOperationsKey(const int& time_step, const NodeType& node_type,
@@ -799,44 +800,100 @@ namespace SmartPeak
 		// Default of what is left...
 		return std::map<std::string, std::vector<int>>();
 	}
+	template<typename TensorT, typename DeviceT>
+	inline std::map<std::string, std::vector<int>> ModelInterpreter<TensorT, DeviceT>::getTensorOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes)
+	{
+		std::map<std::string, std::vector<int>> FC_layers;
+		for (size_t operations_iter1 = 0; operations_iter1 < FP_operations.size(); ++operations_iter1) {
+			if (identified_sink_nodes.count(FP_operations[operations_iter1].result.sink_node->getName())) continue; // Skip identified sink nodes
+			for (size_t operations_iter2 = operations_iter1 + 1; operations_iter2 < FP_operations.size(); ++operations_iter2) {
+				if (identified_sink_nodes.count(FP_operations[operations_iter2].result.sink_node->getName())) continue; // Skip identified sink nodes
+
+				// check if the sink nodes are compatible
+				std::string ops_key_1 = makeForwardPropogationOperationsKey(FP_operations[operations_iter1].result.time_step,
+					FP_operations[operations_iter1].result.sink_node->getType(),
+					FP_operations[operations_iter1].result.sink_node->getIntegration()->getName(),
+					FP_operations[operations_iter1].result.sink_node->getActivation()->getName());
+				std::string ops_key_2 = makeForwardPropogationOperationsKey(FP_operations[operations_iter2].result.time_step,
+					FP_operations[operations_iter2].result.sink_node->getType(),
+					FP_operations[operations_iter2].result.sink_node->getIntegration()->getName(),
+					FP_operations[operations_iter2].result.sink_node->getActivation()->getName());
+				if (ops_key_1 != ops_key_2) continue;
+
+				// check if the source nodes are compatible
+				std::set<std::string> argument_nodes;
+				for (const auto& argument : FP_operations[operations_iter1].arguments) {
+					std::string ops_key = makeForwardPropogationOperationsKey(argument.time_step,
+						argument.sink_node->getType(),
+						argument.sink_node->getIntegration()->getName(),
+						argument.sink_node->getActivation()->getName());
+					argument_nodes.insert(ops_key);
+				}
+				for (const auto& argument : FP_operations[operations_iter2].arguments) {
+					std::string ops_key = makeForwardPropogationOperationsKey(argument.time_step,
+						argument.sink_node->getType(),
+						argument.sink_node->getIntegration()->getName(),
+						argument.sink_node->getActivation()->getName());
+					argument_nodes.insert(ops_key);
+				}
+				if (argument_nodes.size() != FP_operations[operations_iter1].arguments.size() || argument_nodes.size() != FP_operations[operations_iter2].arguments.size()) continue;
+
+				// update the maps
+				std::string sink_node_key = FP_operations[operations_iter1].result.sink_node->getName() + std::string(operations_iter1);
+				identified_sink_nodes.insert(sink_node_key);
+				auto found = FC_layers.emplace(sink_node_key, std::vector<int>({ operations_iter1 }));
+				FC_layers.at(sink_node_key).push_back(operations_iter2);
+			}
+		}
+		return FC_layers;
+	}
 
 	template<typename TensorT, typename DeviceT>
 	inline void ModelInterpreter<TensorT, DeviceT>::getForwardPropogationLayerTensorDimensions(const std::vector<OperationList<TensorT>>& FP_operations,
 		const std::map<std::string, std::vector<int>>& operations_map,
-		std::vector<int>& source_layer_sizes, std::vector<int>& sink_layer_sizes,
+		std::vector<int>& source_layer_sizes, std::vector<int>& sink_layer_sizes, std::vector<std::pair<int, int>> weight_indices,
 		std::vector<bool>& make_source_tensors, std::vector<bool>& make_sink_tensors, std::vector<bool>& make_weight_tensors) {
-		for (const auto& operations : FC_ops) {
+		for (const auto& operations : operations_map) {
 			// determine the tensor sizes
 			const int layer_index = operation_steps_.size();
 			int sink_layer_size = 0;
 			int source_layer_size = 0;
+			std::vector<std::pair<int, int>> weight_indices;
 			bool make_sink_tensor = true;
 			bool make_source_tensor = true;
 			bool make_weight_tensor = true;
 
 			for (const int& ops_index : operations.second) {
-				// allocate sink node tensors (if it does not yet exist)
-				if (FP_operations[ops_index].result.sink_node->getLayerId().first == -1) {
-					FP_operations[ops_index].result.sink_node->getLayerId().first = layer_index;
-					FP_operations[ops_index].result.sink_node->getLayerId().second = sink_layer_size;
+				// index sink node tensors (if it does not yet exist)
+				int sink_layer_index;
+				if (FP_operations[ops_index].result.sink_node->getTensorIndex().first == -1) {
+					FP_operations[ops_index].result.sink_node->getTensorIndex().first = layer_index;
+					FP_operations[ops_index].result.sink_node->getTensorIndex().second = sink_layer_size;
+					sink_layer_index = sink_layer_size;
 				}
-				else
+				else {
+					sink_layer_index = FP_operations[ops_index].result.sink_node->getTensorIndex().second;
 					make_sink_tensor = false;
+				}
 
-				// allocate source node tensor (if it does not yet exist)
+				// index source node tensor (if it does not yet exist)
 				for (const OperationArgument& argument : FP_operations[ops_index].arguments) {
-					if (argument.source_node->getLayerId().first == -1) {
-						argument.source_node->getLayerId().first = layer_index;
-						argument.source_node->getLayerId().second = source_layer_size;
+					int source_layer_index;
+					if (argument.source_node->getTensorIndex().first == -1) {
+						argument.source_node->getTensorIndex().first = layer_index;
+						argument.source_node->getTensorIndex().second = source_layer_size;
+						source_layer_index = source_layer_size;
 					}
-					else
+					else {
+						source_layer_index = argument.source_node->getTensorIndex().second;
 						make_source_tensor = false;
+					}
 
-					// allocate weight tensors
-					if (std::get<0>(argument.weight->getLayerId()) == -1) {
-						std::get<0>(argument.weight->getLayerId()) = layer_index;
-						std::get<1>(argument.weight->getLayerId()) = source_layer_size;
-						std::get<2>(argument.weight->getLayerId()) = sink_layer_size;
+					// index weight tensors
+					if (std::get<0>(argument.weight->getTensorIndex()) == -1) {
+						std::get<0>(argument.weight->getTensorIndex()) = layer_index;
+						std::get<1>(argument.weight->getTensorIndex()) = source_layer_index;
+						std::get<2>(argument.weight->getTensorIndex()) = sink_layer_index;
 					}
 					else
 						make_weight_tensor = false;

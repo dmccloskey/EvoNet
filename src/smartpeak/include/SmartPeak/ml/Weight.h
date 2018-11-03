@@ -48,7 +48,7 @@ public:
 					//solver_->getName(),
 					module_id_,
 					module_name_,
-					layer_id_
+					tensor_index_
         ) == std::tie(
           other.id_,
           other.name_,
@@ -57,7 +57,7 @@ public:
 					//other.solver_->getName(),
 					other.module_id_,
 					other.module_name_,
-					other.layer_id_
+					other.tensor_index_
         )
       ;
     }
@@ -73,7 +73,7 @@ public:
       name_  = other.name_;
 			module_id_ = other.module_id_;
 			module_name_ = other.module_name_;
-			layer_id_ = other.layer_id_;
+			tensor_index_ = other.tensor_index_;
       weight_data_  = other.weight_data_;
       weight_init_ = other.weight_init_;
       solver_ = other.solver_;
@@ -115,8 +115,9 @@ public:
 		void setDrop(const TensorT& drop); ///< drop setter
 		TensorT getDrop() const; ///< drop getter
 
-		void setLayerId(const std::tuple<int, int, int>& layer_id); ///< layer id setter
-		std::tuple<int, int, int> getLayerId() const; ///< layer id getter
+		void addTensorIndex(const std::tuple<int, int, int>& layer_id); ///< layer id setter
+		std::vector<std::tuple<int, int, int>> getTensorIndex() const; ///< layer id getter
+		void clearTensorIndex();
 
     /**
       @brief Initializes the weight.  
@@ -140,7 +141,7 @@ private:
     std::string name_ = ""; ///< Weight Name
 		int module_id_ = -1; ///< Module ID
 		std::string module_name_ = ""; ///<Module Name
-		std::tuple<int, int, int> layer_id_ = std::make_tuple(-1, -1, -1); ///< Layer ID: tuple consisting of OperationsList index and source/sink Layer index(used internally by Model)
+		std::vector<std::tuple<int, int, int>> tensor_index_; ///< Layer ID: tuple consisting of OperationsList index and source/sink Layer index(used internally by Model)
 		std::shared_ptr<WeightData<TensorT>> weight_data_; ///< Weight weight
     std::shared_ptr<WeightInitOp<TensorT>> weight_init_; ///< weight initialization operator
     std::shared_ptr<SolverOp<TensorT>> solver_; ///< weight update operator
@@ -158,7 +159,7 @@ private:
 		weight_data_ = other.weight_data_;
 		module_id_ = other.module_id_;
 		module_name_ = other.module_name_;
-		layer_id_ = other.layer_id_;
+		tensor_index_ = other.tensor_index_;
 		weight_init_ = other.weight_init_;
 		solver_ = other.solver_;
 		weight_min_ = other.weight_min_;
@@ -335,15 +336,15 @@ private:
 	}
 
 	template<typename TensorT>
-	void Weight<TensorT>::setLayerId(const std::tuple<int, int, int>& layer_id)
+	void Weight<TensorT>::addTensorIndex(const std::tuple<int, int, int>& layer_id)
 	{
-		layer_id_ = layer_id;
+		tensor_index_.push_back(layer_id);
 	}
 
 	template<typename TensorT>
-	std::tuple<int, int, int> Weight<TensorT>::getLayerId() const
+	std::vector<std::tuple<int, int, int>> Weight<TensorT>::getTensorIndex() const
 	{
-		return layer_id_;
+		return tensor_index_;
 	}
 
 	template<typename TensorT>

@@ -63,7 +63,7 @@ public:
           name_,
 					module_id_,
 					module_name_,
-					layer_id_
+					tensor_index_
         ) == std::tie(
           other.id_,
           other.type_,
@@ -76,7 +76,7 @@ public:
           other.name_,
 					other.module_id_,
 					other.module_name_,
-					other.layer_id_
+					other.tensor_index_
         )
       ;
     }
@@ -92,7 +92,7 @@ public:
       name_ = other.name_;
 			module_id_ = other.module_id_;
 			module_name_ = other.module_name_;
-			layer_id_ = other.layer_id_;
+			tensor_index_ = other.tensor_index_;
       type_ = other.type_;
       activation_ = other.activation_;
 			activation_grad_ = other.activation_grad_;
@@ -143,8 +143,8 @@ public:
 		void setModuleId(const int& module_id); ///< module id setter
 		int getModuleId() const; ///< module id getter
 
-		void setLayerId(const std::pair<int, int>& layer_id); ///< layer id setter
-		std::pair<int, int> getLayerId() const; ///< layer id getter
+		void setTensorIndex(const std::pair<int, int>& layer_id); ///< layer id setter
+		std::pair<int, int> getTensorIndex() const; ///< layer id getter
 
 		void setModuleName(const std::string& module_name); ///< module name setter
 		std::string getModuleName() const; ///< module name getter
@@ -206,7 +206,7 @@ private:
     std::string name_ = ""; ///< Node Name
 		int module_id_ = -1; ///< Module ID (used internally by Model)
 		std::string module_name_ = ""; ///<Module Name
-		std::pair<int, int> layer_id_ = std::make_pair(-1,-1); ///< Layer ID: pair consisting of OperationsList index and Layer index(used internally by Model)
+		std::pair<int, int> tensor_index_ = std::make_pair(-1,-1); ///< Layer ID: pair consisting of OperationsList index and Layer index(used internally by Model)
 		SmartPeak::NodeType type_; ///< Node Type
     SmartPeak::NodeStatus status_; ///< Node Status   
     std::shared_ptr<ActivationOp<TensorT>> activation_; ///< Node activation function 
@@ -404,15 +404,15 @@ private:
 	}
 
 	template<typename TensorT>
-	void Node<TensorT>::setLayerId(const std::pair<int, int>& layer_id)
+	void Node<TensorT>::setTensorIndex(const std::pair<int, int>& layer_id)
 	{
-		layer_id_ = layer_id;
+		tensor_index_ = layer_id;
 	}
 
 	template<typename TensorT>
-	std::pair<int, int> Node<TensorT>::getLayerId() const
+	std::pair<int, int> Node<TensorT>::getTensorIndex() const
 	{
-		return layer_id_;
+		return tensor_index_;
 	}
 
 	template<typename TensorT>
