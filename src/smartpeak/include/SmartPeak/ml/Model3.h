@@ -166,6 +166,7 @@ public:
     void addLinks(const std::vector<Link>& links);
     Link getLink(const std::string& link_name) const; ///< link getter
     std::vector<Link> getLinks() const;  ///< links getter
+		std::map<std::string, std::shared_ptr<Link>> getLinksMap();  ///< return a modifiable version of weights
  
     /**
       @brief Remove existing links from the model.
@@ -583,6 +584,12 @@ private:
 			links.push_back(*link.second);
 		}
 		return links;
+	}
+	
+	template<typename TensorT>
+	std::map<std::string, std::shared_ptr<Link>> Model<TensorT>::getLinksMap()
+	{
+		return links_;
 	}
 
 	template<typename TensorT>
