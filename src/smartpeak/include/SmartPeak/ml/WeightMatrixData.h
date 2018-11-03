@@ -11,27 +11,9 @@
 #endif
 
 #include <unsupported/Eigen/CXX11/Tensor>
-#include <SmartPeak/ml/WeightInit.h>
 
 namespace SmartPeak
 {
-
-	/**
-	@brief Functor for use with calculate activation/derivative.
-	*/
-	template<typename T>
-	class WeightInitFunctorOp
-	{
-	public:
-		WeightInitFunctorOp() {};
-		WeightInitFunctorOp(WeightInitOp<T>* weight_init) : weight_init_(weight_init) {};
-		~WeightInitFunctorOp() {};
-		T operator()(const T& x_I) const {
-			return (*weight_init_)(x_I);
-		}
-	private:
-		WeightInitOp<T>* weight_init_;
-	};
   /**
     @brief Network WeightMatrixData
 
@@ -108,7 +90,7 @@ public:
 		size_t getTensorSize() { return layer1_size_ * layer2_size_ * sizeof(TensorT); }; ///< Get the size of each tensor in bytes
 		size_t getSolverParamsSize() { return layer1_size_ * layer2_size_ * n_solver_params_ * sizeof(TensorT); }; ///< Get the size of each tensor in bytes
 
-		void initWeightMatrixData(const int& layer1_size, const int&layer2_size, const bool& train, WeightInitOp<TensorT>* weight_init, std::vector<TensorT>& solver_params);
+		void initWeightMatrixData(const int& layer1_size, const int&layer2_size, const std::vector<std::pair<int, int>>& weight_indices, const std::vector<TensorT>& weight_values, const bool& train, std::vector<TensorT>& solver_params);
 
 protected:
 		size_t layer1_size_ = 1; ///< Layer1 size
@@ -135,15 +117,18 @@ protected:
   };
 
 	template<typename TensorT>
-	inline void WeightMatrixData<TensorT>::initWeightMatrixData(const int & layer1_size, const int & layer2_size, const bool & train, WeightInitOp<TensorT>* weight_init, std::vector<TensorT>& solver_params)
+	inline void WeightMatrixData<TensorT>::initWeightMatrixData(const int & layer1_size, const int & layer2_size, const std::vector<std::pair<int, int>>& weight_indices, const std::vector<TensorT>& weight_values, const bool & train, std::vector<TensorT>& solver_params)
 	{
+		assert(weight_indices.size() == weight_values.size());
 		setLayer1Size(layer1_size);
 		setLayer2Size(layer2_size);
 
 		// make the weight and error tensors
-		Eigen::Tensor<TensorT, 2> zero(layer1_size, layer2_size); zero.setConstant(0);
-		Eigen::Tensor<TensorT, 2> one(layer1_size, layer2_size);	one.setConstant(1);
-		setWeight(one.unaryExpr(WeightInitFunctorOp<TensorT>(weight_init)));
+		Eigen::Tensor<TensorT, 2> zero(layer1_size, layer2_size); zero.setZero();
+		Eigen::Tensor<TensorT, 2> weights(layer1_size, layer2_size); weights.setZero();
+		for (size_t i = 0; i < weight_indices.size(); ++i) {
+			weights(weight_indices[i].first, weight_indices[i].second) = weight_values[i];
+		}
 		setError(zero);
 
 		// make the parameters

@@ -94,6 +94,9 @@ public:
     TensorT getWeightView() const; ///< weight getter
 		TensorT getWeight(); ///< weight getter
 
+		void setWeight_(const TensorT& weight); ///< weight setter
+		TensorT getWeight_(); ///< weight getter
+
     void setWeightInitOp(const std::shared_ptr<WeightInitOp<TensorT>>& weight_init); ///< weight initialization operator setter
     WeightInitOp<TensorT>* getWeightInitOp() const; ///< weight initialization operator getter
 
@@ -145,7 +148,7 @@ private:
 		std::shared_ptr<WeightData<TensorT>> weight_data_; ///< Weight weight
     std::shared_ptr<WeightInitOp<TensorT>> weight_init_; ///< weight initialization operator
     std::shared_ptr<SolverOp<TensorT>> solver_; ///< weight update operator
-
+		TensorT weight_ = 1;
     TensorT weight_min_ = -1.0e6;
     TensorT weight_max_ = 1.0e6;
 		TensorT drop_probability_ = 0.0;
@@ -251,6 +254,18 @@ private:
 	}
 
 	template<typename TensorT>
+	void Weight<TensorT>::setWeight_(const TensorT& weight)
+	{
+		weight_ = weight;
+	}
+
+	template<typename TensorT>
+	TensorT Weight<TensorT>::getWeight_()
+	{
+		return weight_;
+	}
+
+	template<typename TensorT>
 	void Weight<TensorT>::setWeightInitOp(const std::shared_ptr<WeightInitOp<TensorT>>& weight_init)
 	{
 		weight_init_.reset();
@@ -345,6 +360,12 @@ private:
 	std::vector<std::tuple<int, int, int>> Weight<TensorT>::getTensorIndex() const
 	{
 		return tensor_index_;
+	}
+
+	template<typename TensorT>
+	inline void Weight<TensorT>::clearTensorIndex()
+	{
+		tensor_index_.clear();
 	}
 
 	template<typename TensorT>

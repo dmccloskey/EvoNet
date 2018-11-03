@@ -377,6 +377,23 @@ namespace SmartPeak
 	private:
 		TensorT offset_ = 0;
 	};
+
+	///**
+	//@brief Functor for use with base classes.
+	//*/
+	//template<typename TensorT, typename FunctorT>
+	//class BaseClassFunctor
+	//{
+	//public:
+	//	BaseClassFunctor() {};
+	//	BaseClassFunctor(FunctorT<TensorT>* functor) : functor_(functor) {};
+	//	~BaseClassFunctor() {};
+	//	TensorT operator()(const TensorT& x_I) const {
+	//		return (*functor_)(x_I);
+	//	}
+	//private:
+	//	FunctorT<TensorT>* functor_;
+	//};
 }
 
 #endif //SMARTPEAK_PREPROCESSING_H
