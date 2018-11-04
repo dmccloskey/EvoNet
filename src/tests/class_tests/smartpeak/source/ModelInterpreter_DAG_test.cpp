@@ -341,9 +341,6 @@ BOOST_AUTO_TEST_CASE(expandForwardPropogationOperationsBySourceNodeKey)
 	BOOST_CHECK_EQUAL(FP_operations_expanded[1].arguments[1].time_step, 0);
 	BOOST_CHECK_EQUAL(FP_operations_expanded[1].arguments[1].source_node->getName(), "1");
 	BOOST_CHECK_EQUAL(FP_operations_expanded[1].arguments[1].weight->getName(), "3");
-	BOOST_CHECK_EQUAL(FP_operations_expanded[1].arguments[2].time_step, 0);
-	BOOST_CHECK_EQUAL(FP_operations_expanded[1].arguments[2].source_node->getName(), "6");
-	BOOST_CHECK_EQUAL(FP_operations_expanded[1].arguments[2].weight->getName(), "5");
 
 	BOOST_CHECK_EQUAL(FP_operations_expanded[2].result.time_step, 0);
 	BOOST_CHECK_EQUAL(FP_operations_expanded[2].result.sink_node->getName(), "3");
