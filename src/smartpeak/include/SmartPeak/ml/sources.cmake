@@ -24,6 +24,7 @@ set(sources_list_h
 	ModelTrainer.h
 	Node.h
 	NodeData.h
+	NodeTensorData.h
 	PopulationTrainer.h
 	SharedFunctions.h
 	Solver.h
@@ -31,6 +32,7 @@ set(sources_list_h
 	Weight.h
 	WeightData.h
 	WeightInit.h
+	WeightTensorData.h
 )
 
 ### add path to the filenames

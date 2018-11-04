@@ -1,7 +1,7 @@
 /**TODO:  Add copyright*/
 
-#ifndef SMARTPEAK_WEIGHTMATRIXDATA_H
-#define SMARTPEAK_WEIGHTMATRIXDATA_H
+#ifndef SMARTPEAK_WEIGHTTENSORDATA_H
+#define SMARTPEAK_WEIGHTTENSORDATA_H
 
 #if COMPILE_WITH_CUDA
 #define EIGEN_DEFAULT_DENSE_INDEX_TYPE int
@@ -23,11 +23,11 @@ namespace SmartPeak
 		- initialize tensors
   */
 	template<typename TensorT>
-  class WeightMatrixData
+  class WeightTensorData
   {
 public:
-    WeightMatrixData() = default; ///< Default constructor
-    WeightMatrixData(const WeightMatrixData& other)
+    WeightTensorData() = default; ///< Default constructor
+    WeightTensorData(const WeightTensorData& other)
 		{
 			h_weight_ = other.h_weight_;
 			h_solver_params_ = other.h_solver_params_;
@@ -36,9 +36,9 @@ public:
 			d_solver_params_ = other.d_solver_params_;
 			d_error_ = other.d_error_;
 		};
-    ~WeightMatrixData() = default; ///< Default destructor
+    ~WeightTensorData() = default; ///< Default destructor
 
-    inline bool operator==(const WeightMatrixData& other) const
+    inline bool operator==(const WeightTensorData& other) const
     {
       return
         std::tie(
@@ -49,12 +49,12 @@ public:
       ;
     }
 
-    inline bool operator!=(const WeightMatrixData& other) const
+    inline bool operator!=(const WeightTensorData& other) const
     {
       return !(*this == other);
     }
 
-    inline WeightMatrixData& operator=(const WeightMatrixData& other)
+    inline WeightTensorData& operator=(const WeightTensorData& other)
     { 
 			h_weight_ = other.h_weight_;
 			h_solver_params_ = other.h_solver_params_;
@@ -65,12 +65,12 @@ public:
       return *this;
     }
 
-		void setLayer1Size(const size_t& layer1_size) { layer1_size_ = layer1_size; }
-		void setLayer2Size(const size_t& layer2_size) { layer2_size_ = layer2_size; }
-		void setNSolverParams(const size_t& n_solver_params) { n_solver_params_ = n_solver_params; }
-		size_t getLayer1Size() const { return layer1_size_; }
-		size_t getLayer2Size() const	{ return layer2_size_; }
-		size_t getNSolverParams() const { return n_solver_params_; }
+		void setLayer1Size(const int& layer1_size) { layer1_size_ = layer1_size; }
+		void setLayer2Size(const int& layer2_size) { layer2_size_ = layer2_size; }
+		void setNSolverParams(const int& n_solver_params) { n_solver_params_ = n_solver_params; }
+		int getLayer1Size() const { return layer1_size_; }
+		int getLayer2Size() const	{ return layer2_size_; }
+		int getNSolverParams() const { return n_solver_params_; }
 
 		virtual void setWeight(const Eigen::Tensor<TensorT, 2>& weight) = 0; ///< weight setter
 		Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> getWeight() { std::shared_ptr<TensorT> h_weight = h_weight_; Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weight(h_weight.get(), layer1_size_, layer2_size_); return weight; }; ///< weight copy getter
@@ -78,7 +78,7 @@ public:
 		std::shared_ptr<TensorT> getDWeightPointer() { return d_weight_; }; ///< weight pointer getter
 
     virtual void setSolverParams(const Eigen::Tensor<TensorT, 3>& solver_params) = 0; ///< solver_params setter
-		Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> getSolverParams() { Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> solver_params(h_solver_params_.get(), layer1_size_, layer2_size_); return solver_params; }; ///< solver_params copy getter
+		Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> getSolverParams() { Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> solver_params(h_solver_params_.get(), layer1_size_, layer2_size_, n_solver_params_); return solver_params; }; ///< solver_params copy getter
 		std::shared_ptr<TensorT> getHSolverParamsPointer() { return h_solver_params_; }; ///< solver_params pointer getter
 		std::shared_ptr<TensorT> getDSolverParamsPointer() { return d_solver_params_; }; ///< solver_params pointer getter
 
@@ -117,7 +117,7 @@ protected:
   };
 
 	template<typename TensorT>
-	inline void WeightMatrixData<TensorT>::initWeightMatrixData(const int & layer1_size, const int & layer2_size, const std::vector<std::pair<int, int>>& weight_indices, const std::vector<TensorT>& weight_values, const bool & train, std::vector<TensorT>& solver_params)
+	inline void WeightTensorData<TensorT>::initWeightMatrixData(const int & layer1_size, const int & layer2_size, const std::vector<std::pair<int, int>>& weight_indices, const std::vector<TensorT>& weight_values, const bool & train, std::vector<TensorT>& solver_params)
 	{
 		assert(weight_indices.size() == weight_values.size());
 		setLayer1Size(layer1_size);
@@ -141,7 +141,7 @@ protected:
 	}
 
 	template<typename TensorT>
-	class WeightMatrixDataCpu : public WeightMatrixData<TensorT> {
+	class WeightTensorDataCpu : public WeightTensorData<TensorT> {
 	public:
 		void setWeight(const Eigen::Tensor<TensorT, 2>& weight) {
 			TensorT* h_weight = new TensorT[this->layer1_size_*this->layer2_size_];
@@ -169,7 +169,7 @@ protected:
 #if COMPILE_WITH_CUDA
 
 	template<typename TensorT>
-	class WeightMatrixDataGpu : public WeightMatrixData<TensorT> {
+	class WeightTensorDataGpu : public WeightTensorData<TensorT> {
 	public:
 		void setWeight(const Eigen::Tensor<TensorT, 2>& weight) {
 			// allocate cuda and pinned host layer2
@@ -220,4 +220,4 @@ protected:
 #endif
 }
 
-#endif //SMARTPEAK_WEIGHTMATRIXDATA_H
+#endif //SMARTPEAK_WEIGHTTENSORDATA_H

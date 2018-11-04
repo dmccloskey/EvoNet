@@ -15,8 +15,8 @@
 // .h
 #include <SmartPeak/ml/Model3.h>
 #include <SmartPeak/ml/LossFunctionTensor.h>
-#include <SmartPeak/ml/NodeMatrixData.h>
-#include <SmartPeak/ml/WeightMatrixData.h>
+#include <SmartPeak/ml/NodeTensorData.h>
+#include <SmartPeak/ml/WeightTensorData.h>
 #include <SmartPeak/ml/IntegrationFunctionTensor.h>
 #include <SmartPeak/ml/ActivationFunctionWrapper.h>
 #include <SmartPeak/ml/SolverTensor.h>
@@ -66,7 +66,7 @@ namespace SmartPeak
 	class OperationLayer
 	{
 	public:
-		std::shared_ptr<NodeMatrixData<TensorT>> tensor = nullptr;
+		std::shared_ptr<NodeTensorData<TensorT>> tensor = nullptr;
 		int time_step = 0;
 		std::shared_ptr<IntegrationTensorOp<TensorT, DeviceT>> integration = nullptr;
 		std::shared_ptr<IntegrationErrorTensorOp<TensorT, DeviceT>> integration_error = nullptr;
@@ -79,7 +79,7 @@ namespace SmartPeak
 	class OperationWeight
 	{
 	public:
-		std::shared_ptr<WeightMatrixData<TensorT>> tensor = nullptr;
+		std::shared_ptr<WeightTensorData<TensorT>> tensor = nullptr;
 		std::shared_ptr<WeightInitOp<TensorT>> weight_init = nullptr;
 		std::shared_ptr<SolverTensorOp<TensorT, DeviceT>> solver = nullptr;
 	};
@@ -349,7 +349,18 @@ namespace SmartPeak
 		virtual void executeWeightErrorOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false) = 0;
 		virtual void executeWeightUpdateOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false) = 0;
 		
+		void addLayerTensor(NodeTensorData<TensorT>& layer); ///< add a layer to the cache
+		void clearLayerTensors(); ///< clear all layers from the cache
+		std::shared_ptr<NodeTensorData<TensorT>> getLayerTensor(const int& layer_index); ///< get a layer from the cache
+
+		void addWeightTensor(WeightTensorData<TensorT>& weight); ///< add a weight to the cache
+		void clearWeightTensors(); ///< clear all weights from the cache
+		std::shared_ptr<WeightTensorData<TensorT>> getWeightTensors(const int& weight_index); ///< get a weight from the cache
+
 		virtual void clearOperationSteps() = 0; ///< clear the operations caches
+	protected:
+		std::vector<std::shared_ptr<NodeTensorData<TensorT>>> layer_tensors_;
+		std::vector<std::shared_ptr<WeightTensorData<TensorT>>> weight_tensors_;
 	};
 
 	template<typename TensorT, typename DeviceT>
@@ -367,33 +378,31 @@ namespace SmartPeak
 			printf("The number of input features %d and the number of nodes %d do not match.\n", (int)values.dimension(2), node_names.size());
 			return;
 		}
-		// assumes the tensor operations have been cached
-		else if (operation_steps_[0][0].source_layer.tensor->getBatchSize() != values.dimension(0))
+		// assumes the tensors have been cached
+		else if (layer_tensors_[0]->getBatchSize() != values.dimension(0))
 		{
-			printf("The number of input samples %d and the batch size %d does not match.\n", (int)values.dimension(0), (int)operation_steps_[0][0].source_layer.tensor->getBatchSize());
+			printf("The number of input samples %d and the batch size %d does not match.\n", (int)values.dimension(0), (int)layer_tensors_[0]->getBatchSize());
 			return;
 		}
-		else if (operation_steps_[0][0].source_layer.tensor->getMemorySize() != values.dimension(1))
+		else if (layer_tensors_[0]->getMemorySize() != values.dimension(1))
 		{
-			printf("The number of input time steps %d and the memory size %d does not match.\n", (int)values.dimension(1), (int)operation_steps_[0][0].source_layer.tensor->getMemorySize());
+			printf("The number of input time steps %d and the memory size %d does not match.\n", (int)values.dimension(1), (int)layer_tensors_[0]->getMemorySize());
 			return;
 		}
 
-		for (std::vector<OperationTensorStep<TensorT, DeviceT>>& operations_list : operation_steps_) {
-			for (OperationTensorStep<TensorT, DeviceT>& operation : operations_list) {
-				int layer_size = 0;
-				// check that all nodes are in the layer
-				// check that the # of nodes matches the tensor layer size
-				// copy over the values
-				if (value_type == "output")
-					operation.source_layer.tensor->setOutput(values);
-				else if (value_type == "error")
-					operation.source_layer.tensor->setError(values);
-				else if (value_type == "derivative")
-					operation.source_layer.tensor->setDerivative(values);
-				else if (value_type == "dt")
-					operation.source_layer.tensor->setDt(values);
-			}
+		for (std::shared_ptr<NodeTensorData<TensorT>>& layer_tensor : layer_tensors_) {
+			int layer_size = 0;
+			// check that all nodes are in the layer
+			// check that the # of nodes matches the tensor layer size
+			// copy over the values
+			if (value_type == "output")
+				layer_tensor->setOutput(values);
+			else if (value_type == "error")
+				layer_tensor->setError(values);
+			else if (value_type == "derivative")
+				layer_tensor->setDerivative(values);
+			else if (value_type == "dt")
+				layer_tensor->setDt(values);
 		}
 	}
 
@@ -562,9 +571,9 @@ namespace SmartPeak
 			std::set<std::string> unique_node_types;
 			for (const OperationArguments<TensorT>& argument : FP_operation.arguments) {
 				std::string ops_key = makeForwardPropogationOperationsKey(argument.time_step,
-					argument.sink_node->getType(),
-					argument.sink_node->getIntegration()->getName(),
-					argument.sink_node->getActivation()->getName());
+					argument.source_node->getType(),
+					argument.source_node->getIntegration()->getName(),
+					argument.source_node->getActivation()->getName());
 				unique_node_types.insert(ops_key);
 			}
 			for (const std::string& node_types : unique_node_types) {
@@ -572,9 +581,9 @@ namespace SmartPeak
 				operations_list.result = FP_operation.result;
 				for (const OperationArguments<TensorT>& argument : FP_operation.arguments) {
 					std::string ops_key = makeForwardPropogationOperationsKey(argument.time_step,
-						argument.sink_node->getType(),
-						argument.sink_node->getIntegration()->getName(),
-						argument.sink_node->getActivation()->getName());
+						argument.source_node->getType(),
+						argument.source_node->getIntegration()->getName(),
+						argument.source_node->getActivation()->getName());
 					if (node_types == ops_key) {
 						operations_list.arguments.push_back(argument);
 					}
@@ -588,7 +597,7 @@ namespace SmartPeak
 	inline void ModelInterpreter<TensorT, DeviceT>::expandForwardPropogationOperationsByWeightKey(const std::vector<OperationList<TensorT>>& FP_operations, std::vector<OperationList<TensorT>>& FP_operations_expanded)
 	{
 		FP_operations_expanded.clear();
-		for (const OperationList<TensorT>& FP_operation : FP_operations_1) {
+		for (const OperationList<TensorT>& FP_operation : FP_operations) {
 			// check that all links have the same solver/weight_init operator
 			std::set<std::string> unique_weight_types;
 			for (const OperationArguments<TensorT>& argument : FP_operation.arguments) {
@@ -614,13 +623,13 @@ namespace SmartPeak
 	inline void ModelInterpreter<TensorT, DeviceT>::expandForwardPropogationOperationsByCachedNodes(const std::vector<OperationList<TensorT>>& FP_operations, std::vector<OperationList<TensorT>>& FP_operations_expanded)
 	{
 		FP_operations_expanded.clear();
-		for (const OperationList<TensorT>& FP_operation : FP_operations_2) {
+		for (const OperationList<TensorT>& FP_operation : FP_operations) {
 			// check that all nodes are either cached or not yet cached into a layer
 			OperationList<TensorT> operations_list_cached, operations_list;
 			operations_list.result = FP_operation.result;
 			operations_list_cached.result = FP_operation.result;
 			for (const OperationArguments<TensorT>& argument : FP_operation.arguments) {
-				if (argument.source_node->getLayerID().first == -1) {
+				if (argument.source_node->getTensorIndex().first == -1) {
 					operations_list.arguments.push_back(argument);
 				}
 				else {
@@ -853,9 +862,14 @@ namespace SmartPeak
 		const std::map<std::string, std::vector<int>>& operations_map,
 		std::vector<int>& source_layer_sizes, std::vector<int>& sink_layer_sizes, std::vector<std::vector<std::pair<int, int>>> weight_indices, std::vector<std::vector<TensorT>>& weight_values,
 		std::vector<bool>& make_source_tensors, std::vector<bool>& make_sink_tensors, std::vector<bool>& make_weight_tensors) {
+		// track the layer_tensor positions for the source and sink nodes
+		// as well as the weight_tensor positions
+		int sink_layer_pos = layer_tensors_.size();
+		int source_layer_pos = layer_tensors_.size() + 1;
+		int weight_pos = weight_tensors_.size();
+
 		for (const auto& operations : operations_map) {
 			// determine the tensor sizes
-			const int layer_index = operation_steps_.size();
 			int sink_layer_size = 0;
 			int source_layer_size = 0;
 			std::vector<std::pair<int, int>> weight_index;
@@ -864,11 +878,14 @@ namespace SmartPeak
 			bool make_source_tensor = true;
 			bool make_weight_tensor = true;
 
+			// inernal variables to track changes in source/sink layer positions
+			bool updated_source_layer_pos = false;
+
 			for (const int& ops_index : operations.second) {
 				// index sink node tensors (if it does not yet exist)
 				int sink_layer_index;
 				if (FP_operations[ops_index].result.sink_node->getTensorIndex().first == -1) {
-					FP_operations[ops_index].result.sink_node->getTensorIndex().first = layer_index;
+					FP_operations[ops_index].result.sink_node->getTensorIndex().first = sink_layer_pos;
 					FP_operations[ops_index].result.sink_node->getTensorIndex().second = sink_layer_size;
 					sink_layer_index = sink_layer_size;
 				}
@@ -877,11 +894,16 @@ namespace SmartPeak
 					make_sink_tensor = false;
 				}
 
+				if (!updated_source_layer_pos && !make_sink_tensor) {
+					source_layer_pos = sink_layer_pos;
+					updated_source_layer_pos = true;
+				}
+
 				// index source node tensor (if it does not yet exist)
 				for (const OperationArgument& argument : FP_operations[ops_index].arguments) {
 					int source_layer_index;
 					if (argument.source_node->getTensorIndex().first == -1) {
-						argument.source_node->getTensorIndex().first = layer_index;
+						argument.source_node->getTensorIndex().first = source_layer_pos;
 						argument.source_node->getTensorIndex().second = source_layer_size;
 						source_layer_index = source_layer_size;
 					}
@@ -892,23 +914,25 @@ namespace SmartPeak
 
 					// index weight tensors
 					if (argument.weight->getTensorIndex().size() == 0) {
-						argument.weight->addTensorIndex(std::make_tuple(layer_index, source_layer_index, sink_layer_index));
+						argument.weight->addTensorIndex(std::make_tuple(weight_pos, source_layer_index, sink_layer_index));
 						weight_index.push_back(std::make_pair(source_layer_index, sink_layer_index));
 						TensorT tmp = argument.weight->getWeightInitOp()->operator()();
 						argument.weight->setWeight(tmp);
 						weight_value.push_back(tmp);
 					}
 					else {
-						argument.weight->addTensorIndex(std::make_tuple(layer_index, source_layer_index, sink_layer_index));
+						argument.weight->addTensorIndex(std::make_tuple(weight_pos, source_layer_index, sink_layer_index));
 						weight_index.push_back(std::make_pair(source_layer_index, sink_layer_index));
 						weight_value.push_back(argument.weight->getWeight());
-						make_weight_tensor = false;
+						//make_weight_tensor = false; // a weight tensor will always be made!
 					}
 
 					++source_layer_size; //?
 				}
 				++sink_layer_size; //?
 			}
+
+			// store the tensor sizes
 			sink_layer_sizes.push_back(sink_layer_size);
 			source_layer_sizes.push_back(source_layer_size);
 			make_source_tensors.push_back(make_source_tensor);
@@ -916,23 +940,48 @@ namespace SmartPeak
 			make_weight_tensors.push_back(make_weight_tensor);
 			weight_indices.push_back(weight_index);
 			weight_values.push_back(weight_value);
+
+			// update the layer positions
+			if (make_sink_tensor && make_source_tensor) {
+				sink_layer_pos += 2
+				source_layer_pos = sink_layer_pos + 1;
+			}
+			else if (make_sink_tensor || make_source_tensor) {
+				sink_layer_pos += 1;
+				source_layer_pos = sink_layer_pos + 1;
+			}
+
+			// update the weight positions
+			if (make_weight_tensor) {
+				weight_pos += 1;
+			}
 		}
 	}
 
 	template<typename TensorT, typename DeviceT>
 	std::string ModelInterpreter<TensorT, DeviceT>::makeForwardPropogationOperationsKey(const int & time_step, const NodeType& node_type, const std::string & node_integration, const std::string & node_activation)
 	{
-		// [TODO: make tests; this appears to break the forward propogation algorithm because it does not match the cyclic node name
-		std::string ops_key = std::to_string(time_step) + "/" + std::to_string(node_type) + "/" + node_integration + "/" + node_activation;
+		// [TODO: may not need to add in node type
+		//std::string ops_key = std::to_string(time_step) + "/" + std::to_string(node_type) + "/" + node_integration + "/" + node_activation;
+		std::string ops_key = std::to_string(time_step) + "/" + node_integration + "/" + node_activation;
 		return ops_key;
 	}
 
 	template<typename TensorT, typename DeviceT>
 	void ModelInterpreter<TensorT, DeviceT>::getForwardPropogationOperations(Model<TensorT>& model, const int& batch_size, const int& memory_size, const bool& train)
 	{
-		// initialize the input nodes to active
-		for (auto& input_node : model.getInputNodes()) {
-			input_node->setStatus(NodeStatus::activated);
+		// initialize the node statuses to determine the FP propogation steps
+		// [NOTE: is this needed?]
+		//// initialize the input nodes to active (if not activated already)
+		//for (auto& input_node : model.getInputNodes()) {
+		//	input_node->setStatus(NodeStatus::activated);
+		//}
+		// [OR]
+		for (auto& nodes_map : model.getNodesMap()) {
+			if (nodes_map.second->getType() == NodeType::input || nodes_map.second->getType() == NodeType::bias)
+				nodes_map.second->setStatus(NodeStatus::activated);
+			else
+				nodes_map.second->setStatus(NodeStatus::initialized);
 		}
 
 		const int max_iters = 1e6;
@@ -965,7 +1014,7 @@ namespace SmartPeak
 			}
 
 			// STEP 2: optimized the operations set for hardware acceleration
-			// re-organize into tensors
+			// re-organize into tensors with compatible source nodes, sink nodes, and weights
 			std::vector<OperationList<TensorT>> FP_operations_expanded;
 			expandForwardPropogationOperations(FP_operations_list, FP_operations_expanded);
 
@@ -1000,6 +1049,45 @@ namespace SmartPeak
 			for (auto& FP_operation : FP_operations_list)
 				FP_operation.result.sink_node->setStatus(NodeStatus::activated);
 		}
+	}
+
+
+	template<typename TensorT, typename DeviceT>
+	inline void ModelInterpreter<TensorT, DeviceT>::addLayerTensor(NodeTensorData<TensorT>& layer)
+	{
+		std::shared_ptr<NodeTensorData<TensorT>> layer_ptr(&layer);
+		layer_tensors_.push_back(layer_ptr);
+	}
+
+	template<typename TensorT, typename DeviceT>
+	inline void ModelInterpreter<TensorT, DeviceT>::clearLayerTensors()
+	{
+		layer_tensors_.clear();
+	}
+
+	template<typename TensorT, typename DeviceT>
+	inline std::shared_ptr<NodeTensorData<TensorT>> ModelInterpreter<TensorT, DeviceT>::getLayerTensor(const int & layer_index)
+	{
+		return layer_tensors_[layer_index];
+	}
+
+	template<typename TensorT, typename DeviceT>
+	inline void ModelInterpreter<TensorT, DeviceT>::addWeightTensor(WeightTensorData<TensorT>& weight)
+	{
+		std::shared_ptr<WeightTensorData<TensorT>> weight_ptr(&weight);
+		weight_tensors_.push_back(weight_ptr);
+	}
+
+	template<typename TensorT, typename DeviceT>
+	inline void ModelInterpreter<TensorT, DeviceT>::clearWeightTensors()
+	{
+		weight_tensors_.clear();
+	}
+
+	template<typename TensorT, typename DeviceT>
+	inline std::shared_ptr<WeightTensorData<TensorT>> ModelInterpreter<TensorT, DeviceT>::getWeightTensors(const int & weight_index)
+	{
+		return weight_tensors_[weight_index];
 	}
 
 	template<typename TensorT>
@@ -1037,13 +1125,27 @@ namespace SmartPeak
 			// make the tensors
 			OperationTensorStepDefaultDevice<TensorT> operation_step;
 
-			// make the source layer tensor
-			NodeMatrixDataCpu<TensorT> source_node_data;
+			// make the sink layer tensor and add it to the cache and operation step
+			// [NOTE: order matters!  sink layer should come before the source layer to keep with
+			//  the ordering generated in getForwardPropogationTensorDimensions.]
+			NodeTensorDataCpu<TensorT> sink_node_data;
+			if (make_sink_tensors[iter]) {
+				sink_node_data.initNodeTensorData(batch_size, memory_size, sink_layer_sizes[iter], FP_operations[operations.second[0]].result.sink_node->getType(), train);
+				operation_step.sink_layer.time_step = FP_operations[operations.second[0]].result.time_step;
+				// [TODO: set the integration functions]
+				addLayerTensor(sink_node_data);
+				operation_step.sink_layer.tensor = layer_tensors_[FP_operations[operations.second[0]].result.sink_node->getTensorIndex().first];
+			}
+			else {
+				operation_step.sink_layer.tensor = layer_tensors_[FP_operations[operations.second[0]].result.sink_node->getTensorIndex().first];
+				// [TODO: set the integration functions]
+				operation_step.sink_layer.time_step = FP_operations[operations.second[0]].result.time_step;
+			}
+
+			// make the source layer tensor and add it to the cache and operation step
+			NodeTensorDataCpu<TensorT> source_node_data;
 			if (make_source_tensors[iter]) {
-				source_node_data.initNodeMatrixData(batch_size, memory_size, source_layer_sizes[iter], FP_operations[operations.second[0]].arguments[0].source_node->getType(), train);
-				// [TODO: how best to set input, output, derivative, error, dt?]
-				// [TODO: implement initNodeData?]
-				operation_step.source_layer.tensor.reset(&source_node_data);
+				source_node_data.initNodeTensorData(batch_size, memory_size, source_layer_sizes[iter], FP_operations[operations.second[0]].arguments[0].source_node->getType(), train);
 				operation_step.source_layer.time_step = FP_operations[operations.second[0]].arguments[0].time_step;
 				// [TODO: how to copy out the node integration and activation classes 
 				// - integration functions can be parameters of the class based on the motif
@@ -1053,46 +1155,35 @@ namespace SmartPeak
 				//operation_step.source_layer.integration = FP_operations[operations.second[0]].arguments[0].source_node->getIntegrationShared();
 				//operation_step.source_layer.integration_error = FP_operations[operations.second[0]].arguments[0].source_node->getIntegrationErrorShared();
 				//operation_step.source_layer.integration_weight_grad = FP_operations[operations.second[0]].arguments[0].source_node->getIntegrationWeightGradShared();
+				addLayerTensor(source_node_data);
+				operation_step.source_layer.tensor = layer_tensors_[FP_operations[operations.second[0]].arguments[0].source_node->getTensorIndex().first];
 			}
 			else {
-				// [TODO: copy out the sink_node_data if it already exists]
-				// [TODO: update the time step]
-			}
-			
-			// make the sink layer tensor
-			NodeMatrixDataCpu<TensorT> sink_node_data;
-			if (make_sink_tensors[iter]) {
-				sink_node_data.initNodeMatrixData(batch_size, memory_size, sink_layer_sizes[iter], FP_operations[operations.second[0]].result.sink_node->getType(), train);
-				// [TODO: how best to set input, output, derivative, error, dt?]
-				operation_step.sink_layer.time_step = FP_operations[operations.second[0]].result.time_step;
-				operation_step.sink_layer.tensor.reset(&sink_node_data);
-				// [TODO: set the integration functions]
-			}
-			else {
-				// [TODO: copy out the sink_node_data if it already exists]
-				// [TODO: update the time step]
+				operation_step.source_layer.tensor = layer_tensors_[FP_operations[operations.second[0]].arguments[0].source_node->getTensorIndex().first];
+				// [TODO: how to copy out the node integration and activation classes 
+				// - integration functions can be parameters of the class based on the motif
+				// - look up dictionary for activation and activation_grad functions?]
+				operation_step.source_layer.time_step = FP_operations[operations.second[0]].arguments[0].time_step;
 			}
 
-
-			// make the weight tensor
-			// [TODO: there are differences between FC, SC, FanIn, FanOut, and Conv that need to be accounted for!]
-			WeightMatrixDataCpu<TensorT> weight_data;
+			// make the weight tensor and add it to the cache and operation step
+			WeightTensorDataCpu<TensorT> weight_data;
 			if (make_weight_tensors[iter]) {
 				std::vector<TensorT> solver_params; // [TODO: how best to extract out?]
 				weight_data.initWeightMatrixData(source_layer_sizes[iter], sink_layer_sizes[iter], weight_indices[iter], weight_values[iter], train,
 					solver_params);
-				operation_step.weight.tensor.reset(&weight_data);
+				addWeightTensor(weight_data);
+				operation_step.weight.tensor = weight_tensors_[std::get<0>(FP_operations[operations.second[0]].arguments[0].weight->getTensorIndex()[0])];
+				// [TODO: set the solver]
 			}
 			else {
-				// [TODO: copy out the sink_node_data if it already exists]
+				std::cout << "Weight tensor is not being created...Check!" << std::endl;
 			}
 
-
 			operation_step_list.push_back(operation_step);
-
 			++iter;
 		}
-		// add the tensors to the cache
+		// add the operations to the cache
 		operation_steps_.push_back(operation_step_list);
 	}
 

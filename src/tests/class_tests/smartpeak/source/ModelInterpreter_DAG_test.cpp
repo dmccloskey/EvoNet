@@ -103,22 +103,14 @@ BOOST_AUTO_TEST_SUITE(modelInterpreter_DAG)
  * required of a standard feed forward neural network
 */
 
-BOOST_AUTO_TEST_CASE(getNextInactiveLayer1) 
+BOOST_AUTO_TEST_CASE(getNextInactiveLayer) 
 {
   // Toy network: 1 hidden layer, fully connected, DAG
   // Model<float> model_FC_Sum = makeModelFCSum();
 	ModelInterpreterDefaultDevice<float> model_interpreter;
 
   // initialize nodes
-  const int batch_size = 4;
-  const int memory_size = 2;
-  model_FC_Sum.clearCache();
-	model_FC_Sum.findCycles();
-
-	// initialize the input nodes to active
-	for (auto& input_node : model_FC_Sum.getInputNodes()) {
-		input_node->setStatus(NodeStatus::activated);
-	}
+	// NOTE: input and biases have been activated when the model was created
 
 	// get the next hidden layer
 	std::map<std::string, int> FP_operations_map;
@@ -149,22 +141,14 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayer1)
 	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[1].weight->getName(), "3");
 }
 
-BOOST_AUTO_TEST_CASE(getNextInactiveLayerBiases1) 
+BOOST_AUTO_TEST_CASE(getNextInactiveLayerBiases) 
 {
   // Toy network: 1 hidden layer, fully connected, DAG
   // Model<float> model_FC_Sum = makeModelFCSum();
 	ModelInterpreterDefaultDevice<float> model_interpreter;
 
   // initialize nodes
-  const int batch_size = 4;
-  const int memory_size = 2;
-  model_FC_Sum.clearCache();
-	model_FC_Sum.findCycles();
-
-	// initialize the input nodes to active
-	for (auto& input_node : model_FC_Sum.getInputNodes()) {
-		input_node->setStatus(NodeStatus::activated);
-	}
+	// NOTE: input and biases have been activated when the model was created
 
 	// get the next hidden layer
 	std::map<std::string, int> FP_operations_map;
@@ -209,49 +193,223 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayerBiases1)
 
 BOOST_AUTO_TEST_CASE(getNextInactiveLayerCycles)
 {
+	// Toy network: 1 hidden layer, fully connected, DAG
+	// Model<float> model_FC_Sum = makeModelFCSum();
+	ModelInterpreterDefaultDevice<float> model_interpreter;
+
+	// initialize nodes
+	// NOTE: input and biases have been activated when the model was created
+
+	// get the next hidden layer
+	std::map<std::string, int> FP_operations_map;
+	std::vector<OperationList<float>> FP_operations_list;
+	model_interpreter.getNextInactiveLayer(model_FC_Sum, FP_operations_map, FP_operations_list);
+
+	std::vector<std::string> sink_nodes_with_biases2;
+	model_interpreter.getNextInactiveLayerBiases(model_FC_Sum, FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
+
+	std::vector<std::string> sink_nodes_with_cycles;
+	model_interpreter.getNextInactiveLayerCycles(model_FC_Sum, FP_operations_map, FP_operations_list, sink_nodes_with_cycles);
+
+	BOOST_CHECK_EQUAL(FP_operations_map.size(), 2);
+	BOOST_CHECK_EQUAL(FP_operations_map.at("2"), 0);
+	BOOST_CHECK_EQUAL(FP_operations_map.at("3"), 1);
+	BOOST_CHECK_EQUAL(FP_operations_list.size(), 2);
+	BOOST_CHECK_EQUAL(FP_operations_list[0].result.time_step, 0);
+	BOOST_CHECK_EQUAL(FP_operations_list[0].result.sink_node->getName(), "2");
+	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments.size(), 3);
+	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[0].time_step, 0);
+	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[0].source_node->getName(), "0");
+	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[0].weight->getName(), "0");
+	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[1].time_step, 0);
+	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[1].source_node->getName(), "1");
+	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[1].weight->getName(), "2");
+	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[2].time_step, 0);
+	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[2].source_node->getName(), "6");
+	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[2].weight->getName(), "4");
+	BOOST_CHECK_EQUAL(FP_operations_list[1].result.time_step, 0);
+	BOOST_CHECK_EQUAL(FP_operations_list[1].result.sink_node->getName(), "3");
+	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments.size(), 3);
+	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[0].time_step, 0);
+	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[0].source_node->getName(), "0");
+	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[0].weight->getName(), "1");
+	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[1].time_step, 0);
+	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[1].source_node->getName(), "1");
+	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[1].weight->getName(), "3");
+	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[2].time_step, 0);
+	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[2].source_node->getName(), "6");
+	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[2].weight->getName(), "5");
+	BOOST_CHECK_EQUAL(sink_nodes_with_cycles.size(), 0);
 }
 
 BOOST_AUTO_TEST_CASE(pruneInactiveLayerCycles)
 {
+	// Toy network: 1 hidden layer, fully connected, DAG
+	// Model<float> model_FC_Sum = makeModelFCSum();
+	ModelInterpreterDefaultDevice<float> model_interpreter;
+
+	// initialize nodes
+	// NOTE: input and biases have been activated when the model was created
+
+	// get the next hidden layer
+	std::map<std::string, int> FP_operations_map;
+	std::vector<OperationList<float>> FP_operations_list;
+	model_interpreter.getNextInactiveLayer(model_FC_Sum, FP_operations_map, FP_operations_list);
+
+	std::vector<std::string> sink_nodes_with_biases2;
+	model_interpreter.getNextInactiveLayerBiases(model_FC_Sum, FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
+
+	std::vector<std::string> sink_nodes_with_cycles;
+	std::map<std::string, int> FP_operations_map_cycles = FP_operations_map;
+	std::vector<OperationList<float>> FP_operations_list_cycles = FP_operations_list;
+	model_interpreter.getNextInactiveLayerCycles(model_FC_Sum, FP_operations_map_cycles, FP_operations_list_cycles, sink_nodes_with_cycles);
+
+	model_interpreter.pruneInactiveLayerCycles(model_FC_Sum, FP_operations_map, FP_operations_map_cycles, FP_operations_list, FP_operations_list_cycles, sink_nodes_with_cycles);
+
+	BOOST_CHECK_EQUAL(FP_operations_map.size(), 2);
+	BOOST_CHECK_EQUAL(FP_operations_map.at("2"), 0);
+	BOOST_CHECK_EQUAL(FP_operations_map.at("3"), 1);
+	BOOST_CHECK_EQUAL(FP_operations_list.size(), 2);
+	BOOST_CHECK_EQUAL(FP_operations_list[0].result.time_step, 0);
+	BOOST_CHECK_EQUAL(FP_operations_list[0].result.sink_node->getName(), "2");
+	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments.size(), 3);
+	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[0].time_step, 0);
+	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[0].source_node->getName(), "0");
+	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[0].weight->getName(), "0");
+	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[1].time_step, 0);
+	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[1].source_node->getName(), "1");
+	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[1].weight->getName(), "2");
+	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[2].time_step, 0);
+	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[2].source_node->getName(), "6");
+	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[2].weight->getName(), "4");
+	BOOST_CHECK_EQUAL(FP_operations_list[1].result.time_step, 0);
+	BOOST_CHECK_EQUAL(FP_operations_list[1].result.sink_node->getName(), "3");
+	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments.size(), 3);
+	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[0].time_step, 0);
+	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[0].source_node->getName(), "0");
+	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[0].weight->getName(), "1");
+	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[1].time_step, 0);
+	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[1].source_node->getName(), "1");
+	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[1].weight->getName(), "3");
+	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[2].time_step, 0);
+	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[2].source_node->getName(), "6");
+	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[2].weight->getName(), "5");
 }
 
 BOOST_AUTO_TEST_CASE(expandForwardPropogationOperationsBySourceNodeKey)
 {
+	ModelInterpreterDefaultDevice<float> model_interpreter;
+
+	// initialize nodes
+	// NOTE: input and biases have been activated when the model was created
+
+	std::map<std::string, int> FP_operations_map;
+	std::vector<OperationList<float>> FP_operations_list;
+	model_interpreter.getNextInactiveLayer(model_FC_Sum, FP_operations_map, FP_operations_list);
+
+	std::vector<std::string> sink_nodes_with_biases2;
+	model_interpreter.getNextInactiveLayerBiases(model_FC_Sum, FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
+
+	std::vector<OperationList<float>> FP_operations_expanded;
+	model_interpreter.expandForwardPropogationOperationsBySourceNodeKey(FP_operations_list, FP_operations_expanded);
+
+	// TODO
+
 }
 
 BOOST_AUTO_TEST_CASE(expandForwardPropogationOperationsByWeightKey)
 {
+	ModelInterpreterDefaultDevice<float> model_interpreter;
+
+	// initialize nodes
+	// NOTE: input and biases have been activated when the model was created
+
+	std::map<std::string, int> FP_operations_map;
+	std::vector<OperationList<float>> FP_operations_list;
+	model_interpreter.getNextInactiveLayer(model_FC_Sum, FP_operations_map, FP_operations_list);
+
+	std::vector<std::string> sink_nodes_with_biases2;
+	model_interpreter.getNextInactiveLayerBiases(model_FC_Sum, FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
+
+	std::vector<OperationList<float>> FP_operations_expanded;
+	model_interpreter.expandForwardPropogationOperationsByWeightKey(FP_operations_list, FP_operations_expanded);
+
+	// TODO [check biases have been differentiated]
 }
 
 BOOST_AUTO_TEST_CASE(expandForwardPropogationOperationsByCachedNodes)
 {
+	ModelInterpreterDefaultDevice<float> model_interpreter;
+
+	// initialize nodes
+	// NOTE: input and biases have been activated when the model was created
+
+	std::map<std::string, int> FP_operations_map;
+	std::vector<OperationList<float>> FP_operations_list;
+	model_interpreter.getNextInactiveLayer(model_FC_Sum, FP_operations_map, FP_operations_list);
+
+	std::vector<std::string> sink_nodes_with_biases2;
+	model_interpreter.getNextInactiveLayerBiases(model_FC_Sum, FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
+
+	std::vector<OperationList<float>> FP_operations_expanded;
+	model_interpreter.expandForwardPropogationOperationsByCachedNodes(FP_operations_list, FP_operations_expanded);
+
+	// BOOST CHECK
+
+	// set layer tensor indices for bias nodes
+
+	FP_operations_expanded.clear();
+	model_interpreter.expandForwardPropogationOperationsByCachedNodes(FP_operations_list, FP_operations_expanded);
+
+	// BOOST CHECK
+
 }
 
 BOOST_AUTO_TEST_CASE(expandForwardPropogationOperations)
 {
+	ModelInterpreterDefaultDevice<float> model_interpreter;
+
+	// initialize nodes
+	// NOTE: input and biases have been activated when the model was created
+
+	std::map<std::string, int> FP_operations_map;
+	std::vector<OperationList<float>> FP_operations_list;
+	model_interpreter.getNextInactiveLayer(model_FC_Sum, FP_operations_map, FP_operations_list);
+
+	std::vector<std::string> sink_nodes_with_biases2;
+	model_interpreter.getNextInactiveLayerBiases(model_FC_Sum, FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
+
+	std::vector<OperationList<float>> FP_operations_expanded;
+	model_interpreter.expandForwardPropogationOperations(FP_operations_list, FP_operations_expanded);
+
+	// TODO
 }
 
 BOOST_AUTO_TEST_CASE(getCustomOperations)
-{
+{ //TODO
 }
 
 BOOST_AUTO_TEST_CASE(getFullyConnectedOperations)
-{
+{ //TODO
 }
 
 BOOST_AUTO_TEST_CASE(GetSinglyConnectedOperations)
-{
+{ //TODO
 }
 
 BOOST_AUTO_TEST_CASE(getConvOperations)
-{
+{ //TODO
 }
 
 BOOST_AUTO_TEST_CASE(getFanOutOperations)
-{
+{ //TODO
 }
 
 BOOST_AUTO_TEST_CASE(getFanInOperations)
+{ //TODO
+}
+
+BOOST_AUTO_TEST_CASE(getTensorOperations)
 {
 }
 
@@ -259,6 +417,9 @@ BOOST_AUTO_TEST_CASE(getForwardPropogationLayerTensorDimensions)
 {
 }
 
+// TODO: move to seperate test suite (ModelInterpreterDefaultDevice and ModelInterpreterGpu)
+// with DAG model only for all non execute tests
+// and DAG/DCG model for all execute tests
 BOOST_AUTO_TEST_CASE(allocateForwardPropogationLayerTensors)
 {
 }

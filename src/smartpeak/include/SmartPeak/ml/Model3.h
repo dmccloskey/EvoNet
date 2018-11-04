@@ -296,8 +296,6 @@ public:
 		*/
 		bool removeIsolatedNodes();
 
-    void clearCache(); ///< clear the FP and BP caches
-
 		/**
 		@brief Convert model to adjacency list
 		TODO: Implement tests

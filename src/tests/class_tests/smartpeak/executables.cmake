@@ -42,6 +42,7 @@ set(ml_executables_list
   Model_DCG_test
   Node_test
   NodeData_test
+  NodeTensorData_test
   PopulationTrainer_test
   SharedFunctions_test
   Solver_test
@@ -49,6 +50,7 @@ set(ml_executables_list
   Weight_test
   WeightData_test
   WeightInit_test
+  WeightTensorData_test
 )
 
 set(simulator_executables_list
