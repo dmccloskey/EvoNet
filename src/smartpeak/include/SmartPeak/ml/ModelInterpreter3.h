@@ -1170,7 +1170,7 @@ namespace SmartPeak
 			WeightTensorDataCpu<TensorT> weight_data;
 			if (make_weight_tensors[iter]) {
 				std::vector<TensorT> solver_params; // [TODO: how best to extract out?]
-				weight_data.initWeightMatrixData(source_layer_sizes[iter], sink_layer_sizes[iter], weight_indices[iter], weight_values[iter], train,
+				weight_data.initWeightTensorData(source_layer_sizes[iter], sink_layer_sizes[iter], weight_indices[iter], weight_values[iter], train,
 					solver_params);
 				addWeightTensor(weight_data);
 				operation_step.weight.tensor = weight_tensors_[std::get<0>(FP_operations[operations.second[0]].arguments[0].weight->getTensorIndex()[0])];

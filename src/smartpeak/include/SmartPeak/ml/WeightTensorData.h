@@ -90,12 +90,12 @@ public:
 		size_t getTensorSize() { return layer1_size_ * layer2_size_ * sizeof(TensorT); }; ///< Get the size of each tensor in bytes
 		size_t getSolverParamsSize() { return layer1_size_ * layer2_size_ * n_solver_params_ * sizeof(TensorT); }; ///< Get the size of each tensor in bytes
 
-		void initWeightMatrixData(const int& layer1_size, const int&layer2_size, const std::vector<std::pair<int, int>>& weight_indices, const std::vector<TensorT>& weight_values, const bool& train, std::vector<TensorT>& solver_params);
+		void initWeightTensorData(const int& layer1_size, const int&layer2_size, const std::vector<std::pair<int, int>>& weight_indices, const std::vector<TensorT>& weight_values, const bool& train, std::vector<TensorT>& solver_params);
 
 protected:
-		size_t layer1_size_ = 1; ///< Layer1 size
-		size_t layer2_size_ = 2; ///< Layer2 size
-		size_t n_solver_params_ = 1; ///< The number of solver params
+		int layer1_size_ = 1; ///< Layer1 size
+		int layer2_size_ = 2; ///< Layer2 size
+		int n_solver_params_ = 1; ///< The number of solver params
 
 		// [TODO: move to weight]
 		std::map<std::string, int> solver_params_indices_; ///< Map from solver params to weight matrix indices
@@ -117,7 +117,7 @@ protected:
   };
 
 	template<typename TensorT>
-	inline void WeightTensorData<TensorT>::initWeightMatrixData(const int & layer1_size, const int & layer2_size, const std::vector<std::pair<int, int>>& weight_indices, const std::vector<TensorT>& weight_values, const bool & train, std::vector<TensorT>& solver_params)
+	inline void WeightTensorData<TensorT>::initWeightTensorData(const int & layer1_size, const int & layer2_size, const std::vector<std::pair<int, int>>& weight_indices, const std::vector<TensorT>& weight_values, const bool & train, std::vector<TensorT>& solver_params)
 	{
 		assert(weight_indices.size() == weight_values.size());
 		setLayer1Size(layer1_size);
@@ -129,13 +129,14 @@ protected:
 		for (size_t i = 0; i < weight_indices.size(); ++i) {
 			weights(weight_indices[i].first, weight_indices[i].second) = weight_values[i];
 		}
+		setWeight(weights);
 		setError(zero);
 
 		// make the parameters
 		setNSolverParams(solver_params.size());
 		Eigen::Tensor<TensorT, 3> params(layer1_size, layer2_size, (int)solver_params.size());
 		for (int i = 0; i < solver_params.size(); ++i) {
-			params.chip(i, 2).constant(solver_params[i]);
+			params.chip(i, 2).setConstant(solver_params[i]);
 		}
 		setSolverParams(params);
 	}
@@ -186,14 +187,14 @@ protected:
 			this->h_weight_.reset(h_weight, h_deleter); 
 			this->d_weight_.reset(d_weight, d_deleter);
 		}; ///< weight setter
-		void setSolverParams(const Eigen::Tensor<TensorT, 2>& solver_params) {
+		void setSolverParams(const Eigen::Tensor<TensorT, 3>& solver_params) {
 			// allocate cuda and pinned host layer2
 			TensorT* d_solver_params;
 			TensorT* h_solver_params;
 			assert(cudaMalloc((void**)(&d_solver_params), getSolverParamsSize()) == cudaSuccess);
 			assert(cudaHostAlloc((void**)(&h_solver_params), getSolverParamsSize(), cudaHostAllocDefault) == cudaSuccess);
 			// copy the tensor
-			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> solver_params_copy(h_solver_params, this->layer1_size_, this->layer2_size_, this->n_solver_params_);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> solver_params_copy(h_solver_params, this->layer1_size_, this->layer2_size_, this->n_solver_params_);
 			solver_params_copy = solver_params;
 			// define the deleters
 			auto h_deleter = [&](TensorT* ptr) { cudaFreeHost(ptr); };
