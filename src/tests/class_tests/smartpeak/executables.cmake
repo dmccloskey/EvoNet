@@ -32,6 +32,7 @@ set(ml_executables_list
   LossfunctionTensor_test
   ModelBuilder_test
   ModelInterpreter_DAG_test
+  ModelInterpreterCpu_test
   ModelKernal_test
   ModelKernalGpu_test
   ModelLogger_test

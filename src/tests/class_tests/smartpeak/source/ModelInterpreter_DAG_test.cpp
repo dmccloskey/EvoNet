@@ -96,8 +96,23 @@ Model<float> model_FC_Sum = makeModelFCSum();
 
 BOOST_AUTO_TEST_SUITE(modelInterpreter_DAG)
 
+BOOST_AUTO_TEST_CASE(constructor)
+{
+	ModelInterpreterDefaultDevice<float>* ptr = nullptr;
+	ModelInterpreterDefaultDevice<float>* nullPointer = nullptr;
+	ptr = new ModelInterpreterDefaultDevice<float>();
+	BOOST_CHECK_NE(ptr, nullPointer);
+}
+
+BOOST_AUTO_TEST_CASE(destructor)
+{
+	ModelInterpreterDefaultDevice<float>* ptr = nullptr;
+	ptr = new ModelInterpreterDefaultDevice<float>();
+	delete ptr;
+}
+
 /**
- * Part 2 test suit for the Model class
+ * Part 1 test suit for the Model class
  * 
  * The following test methods that are
  * required of a standard feed forward neural network
@@ -640,6 +655,69 @@ BOOST_AUTO_TEST_CASE(getForwardPropogationLayerTensorDimensions)
 	BOOST_CHECK(make_sink_tensors[0]);
 	BOOST_CHECK_EQUAL(make_weight_tensors.size(), 1);
 	BOOST_CHECK(make_weight_tensors[0]);
+
+	// Check iteration two
+	model_getForwardPropogationLayerTensorDimensions.getNodesMap().at("2")->setStatus(NodeStatus::activated);
+	model_getForwardPropogationLayerTensorDimensions.getNodesMap().at("3")->setStatus(NodeStatus::activated);
+	FP_operations_map.clear();
+	FP_operations_list.clear();
+	model_interpreter.getNextInactiveLayer(model_getForwardPropogationLayerTensorDimensions, FP_operations_map, FP_operations_list);
+
+	sink_nodes_with_biases2.clear();
+	model_interpreter.getNextInactiveLayerBiases(model_getForwardPropogationLayerTensorDimensions, FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
+
+	FP_operations_expanded.clear();
+	model_interpreter.expandForwardPropogationOperations(FP_operations_list, FP_operations_expanded);
+
+	identified_sink_nodes.clear();
+	tensor_ops = model_interpreter.getTensorOperations(FP_operations_expanded, identified_sink_nodes);
+
+	source_layer_sizes.clear(), sink_layer_sizes.clear();
+	weight_indices.clear();
+	weight_values.clear();
+	make_source_tensors.clear(), make_sink_tensors.clear(), make_weight_tensors.clear();
+	model_interpreter.getForwardPropogationLayerTensorDimensions(FP_operations_expanded, tensor_ops, source_layer_sizes, sink_layer_sizes, weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors);
+
+	BOOST_CHECK_EQUAL(source_layer_sizes.size(), 2);
+	BOOST_CHECK_EQUAL(source_layer_sizes[0], 1);
+	BOOST_CHECK_EQUAL(source_layer_sizes[1], 0);
+	BOOST_CHECK_EQUAL(sink_layer_sizes.size(), 2);
+	BOOST_CHECK_EQUAL(sink_layer_sizes[0], 2);
+	BOOST_CHECK_EQUAL(sink_layer_sizes[1], 0);
+
+	BOOST_CHECK_EQUAL(weight_indices.size(), 2);
+	BOOST_CHECK_EQUAL(weight_indices[0].size(), 2);
+	BOOST_CHECK_EQUAL(weight_indices[1].size(), 4);
+	std::vector<std::vector<std::pair<int,int>>> weight_indices_test2 = { 
+		{std::make_pair(0,0),std::make_pair(0,1)},
+		{std::make_pair(0,0),std::make_pair(1,0),	std::make_pair(0,1),std::make_pair(1,1)}
+	};
+	for (int tensor_iter = 0; tensor_iter < weight_indices_test2.size(); ++tensor_iter) {
+		for (int i = 0; i < weight_indices_test2[tensor_iter].size(); ++i) {
+			BOOST_CHECK_EQUAL(weight_indices[tensor_iter][i].first, weight_indices_test2[tensor_iter][i].first);
+			BOOST_CHECK_EQUAL(weight_indices[tensor_iter][i].second, weight_indices_test2[tensor_iter][i].second);
+		}
+	}
+
+	BOOST_CHECK_EQUAL(weight_values.size(), 2);
+	BOOST_CHECK_EQUAL(weight_values[0].size(), 2);
+	BOOST_CHECK_EQUAL(weight_values[1].size(), 4);
+	std::vector<std::vector<float>> weight_values_test2 = { {1, 1}, { 1, 1, 1, 1} };
+	for (int tensor_iter = 0; tensor_iter < weight_values_test2.size(); ++tensor_iter) {
+		for (int i = 0; i < weight_values_test2[tensor_iter].size(); ++i) {
+			BOOST_CHECK_EQUAL(weight_values[tensor_iter][i], weight_values_test2[tensor_iter][i]);
+		}
+	}
+
+	BOOST_CHECK_EQUAL(make_source_tensors.size(), 2);
+	BOOST_CHECK(make_source_tensors[0]);
+	BOOST_CHECK(!make_source_tensors[1]);
+	BOOST_CHECK_EQUAL(make_sink_tensors.size(), 2);
+	BOOST_CHECK(make_sink_tensors[0]);
+	BOOST_CHECK(!make_sink_tensors[1]);
+	BOOST_CHECK_EQUAL(make_weight_tensors.size(), 2);
+	BOOST_CHECK(make_weight_tensors[0]);
+	BOOST_CHECK(make_weight_tensors[1]);
 }
 
 // TODO: move to seperate test suite (ModelInterpreterDefaultDevice and ModelInterpreterGpu)

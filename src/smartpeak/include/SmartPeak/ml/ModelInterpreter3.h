@@ -142,9 +142,7 @@ namespace SmartPeak
 		{
 			return
 				std::tie(
-					operation_steps_
 				) == std::tie(
-					other.operation_steps_
 				);
 		}
 
@@ -159,7 +157,6 @@ namespace SmartPeak
 		*/
 		inline ModelInterpreter& operator=(const ModelInterpreter& other)
 		{
-			operation_steps_ = other.operation_steps_;
 			return *this;
 		}
 
@@ -355,7 +352,7 @@ namespace SmartPeak
 
 		void addWeightTensor(WeightTensorData<TensorT>& weight); ///< add a weight to the cache
 		void clearWeightTensors(); ///< clear all weights from the cache
-		std::shared_ptr<WeightTensorData<TensorT>> getWeightTensors(const int& weight_index); ///< get a weight from the cache
+		std::shared_ptr<WeightTensorData<TensorT>> getWeightTensor(const int& weight_index); ///< get a weight from the cache
 
 		virtual void clearOperationSteps() = 0; ///< clear the operations caches
 	protected:
@@ -366,7 +363,6 @@ namespace SmartPeak
 	template<typename TensorT, typename DeviceT>
 	ModelInterpreter<TensorT, DeviceT>::ModelInterpreter(const ModelInterpreter<TensorT, DeviceT>& other)
 	{
-		operation_steps_ = other.operation_steps_;
 	}
 
 	template<typename TensorT, typename DeviceT>
@@ -1071,7 +1067,7 @@ namespace SmartPeak
 	template<typename TensorT, typename DeviceT>
 	inline std::shared_ptr<NodeTensorData<TensorT>> ModelInterpreter<TensorT, DeviceT>::getLayerTensor(const int & layer_index)
 	{
-		return layer_tensors_[layer_index];
+		return layer_tensors_.at(layer_index);
 	}
 
 	template<typename TensorT, typename DeviceT>
@@ -1088,7 +1084,7 @@ namespace SmartPeak
 	}
 
 	template<typename TensorT, typename DeviceT>
-	inline std::shared_ptr<WeightTensorData<TensorT>> ModelInterpreter<TensorT, DeviceT>::getWeightTensors(const int & weight_index)
+	inline std::shared_ptr<WeightTensorData<TensorT>> ModelInterpreter<TensorT, DeviceT>::getWeightTensor(const int & weight_index)
 	{
 		return weight_tensors_[weight_index];
 	}
@@ -1108,6 +1104,7 @@ namespace SmartPeak
 		void executeWeightErrorOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false);
 		void executeWeightUpdateOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false);
 		void addOperationSteps(const std::vector<OperationTensorStepDefaultDevice<TensorT>>& operation_steps);
+		std::vector<OperationTensorStepDefaultDevice<TensorT>> getOperationSteps(const int& operation_index);
 		void clearOperationSteps();
 	protected:
 		std::vector<std::vector<OperationTensorStepDefaultDevice<TensorT>>> operation_steps_;
@@ -1362,7 +1359,12 @@ namespace SmartPeak
 
 	template<typename TensorT>
 	inline void ModelInterpreterDefaultDevice<TensorT>::addOperationSteps(const std::vector<OperationTensorStepDefaultDevice<TensorT>>& operation_steps) {
-		operations_steps_.push_back(operation_steps);
+		operation_steps_.push_back(operation_steps);
+	}
+
+	template<typename TensorT>
+	inline std::vector<OperationTensorStepDefaultDevice<TensorT>> ModelInterpreterDefaultDevice<TensorT>::getOperationSteps(const int& operation_index) {
+		return operation_steps_[operation_index];
 	}
 
 	template<typename TensorT>
