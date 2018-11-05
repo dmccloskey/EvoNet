@@ -11,7 +11,7 @@
 #define EIGEN_USE_THREADS
 
 #include <unsupported/Eigen/CXX11/Tensor>
-#include <SmartPeak/ml/ActivationFunctionWrapper.h>
+#include <SmartPeak/ml/ActivationFunctionTensor.h>
 #include <SmartPeak/ml/IntegrationFunctionTensor.h>
 #include <SmartPeak/ml/LossFunctionTensor.h>
 #include <SmartPeak/ml/SolverTensor.h>
@@ -42,7 +42,7 @@ namespace SmartPeak
 			TensorT* d_node_outputs,
 			TensorT* h_sink_dt,
 			TensorT* d_sink_dt,
-			ActivationOpWrapper<TensorT, DeviceT>* activation_function,
+			ActivationTensorOp<TensorT, DeviceT>* activation_function,
 			const int& batch_size,
 			const int& memory_size,
 			const int& layer_size,
@@ -55,7 +55,7 @@ namespace SmartPeak
 			TensorT* d_node_outputs,
 			TensorT* h_node_derivative,
 			TensorT* d_node_derivative,
-			ActivationOpWrapper<TensorT, DeviceT>* activation_grad_function,
+			ActivationTensorOp<TensorT, DeviceT>* activation_grad_function,
 			const int& batch_size,
 			const int& memory_size,
 			const int& layer_size,
@@ -168,7 +168,7 @@ namespace SmartPeak
 			TensorT* d_node_outputs,
 			TensorT* h_sink_dt,
 			TensorT* d_sink_dt,
-			ActivationOpWrapper<TensorT, Eigen::DefaultDevice>* activation_function,
+			ActivationTensorOp<TensorT, Eigen::DefaultDevice>* activation_function,
 			const int& batch_size,
 			const int& memory_size,
 			const int& layer_size,
@@ -185,7 +185,7 @@ namespace SmartPeak
 			TensorT* d_node_outputs,
 			TensorT* h_node_derivative,
 			TensorT* d_node_derivative,
-			ActivationOpWrapper<TensorT, Eigen::DefaultDevice>* activation_grad_function,
+			ActivationTensorOp<TensorT, Eigen::DefaultDevice>* activation_grad_function,
 			const int& batch_size,
 			const int& memory_size,
 			const int& layer_size,
@@ -338,7 +338,7 @@ namespace SmartPeak
 			TensorT* d_node_outputs,
 			TensorT* h_sink_dt,
 			TensorT* d_sink_dt,
-			ActivationOpWrapper<TensorT, Eigen::GpuDevice>* activation_function,
+			ActivationTensorOp<TensorT, Eigen::GpuDevice>* activation_function,
 			const int& batch_size,
 			const int& memory_size,
 			const int& layer_size,
@@ -371,7 +371,7 @@ namespace SmartPeak
 			TensorT* d_node_outputs,
 			TensorT* h_node_derivative,
 			TensorT* d_node_derivative,
-			ActivationOpWrapper<TensorT, Eigen::GpuDevice>* activation_grad_function,
+			ActivationTensorOp<TensorT, Eigen::GpuDevice>* activation_grad_function,
 			const int& batch_size,
 			const int& memory_size,
 			const int& layer_size,

@@ -17,8 +17,8 @@ void test_executeForwardPropogation() {
 	GpuOperations<float> operations;
 
 	std::vector<float*> h_source_outputs, d_source_outputs, h_weights, d_weights;
-	ActivationOpWrapper<float, Eigen::GpuDevice>* activation_function = new ReLUOpWrapper<float, Eigen::GpuDevice>();
-	ActivationOpWrapper<float, Eigen::GpuDevice>* activation_grad_function = new ReLUGradOpWrapper<float, Eigen::GpuDevice>();
+	ActivationTensorOp<float, Eigen::GpuDevice>* activation_function = new ReLUTensorOp<float, Eigen::GpuDevice>();
+	ActivationTensorOp<float, Eigen::GpuDevice>* activation_grad_function = new ReLUGradTensorOp<float, Eigen::GpuDevice>();
 	IntegrationOp<float, Eigen::GpuDevice>* integration_function = new SumOp<float, Eigen::GpuDevice>();
 	const int batch_size = 4;
 	const int memory_size = 2;

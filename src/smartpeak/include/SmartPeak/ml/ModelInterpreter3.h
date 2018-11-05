@@ -18,7 +18,7 @@
 #include <SmartPeak/ml/NodeTensorData.h>
 #include <SmartPeak/ml/WeightTensorData.h>
 #include <SmartPeak/ml/IntegrationFunctionTensor.h>
-#include <SmartPeak/ml/ActivationFunctionWrapper.h>
+#include <SmartPeak/ml/ActivationFunctionTensor.h>
 #include <SmartPeak/ml/SolverTensor.h>
 #include <SmartPeak/ml/WeightInit.h>
 
@@ -71,8 +71,8 @@ namespace SmartPeak
 		std::shared_ptr<IntegrationTensorOp<TensorT, DeviceT>> integration = nullptr;
 		std::shared_ptr<IntegrationErrorTensorOp<TensorT, DeviceT>> integration_error = nullptr;
 		std::shared_ptr<IntegrationWeightGradTensorOp<TensorT, DeviceT>> integration_weight_grad = nullptr;
-		std::shared_ptr<ActivationOpWrapper<TensorT, DeviceT>> activation = nullptr;
-		std::shared_ptr<ActivationOpWrapper<TensorT, DeviceT>> activation_grad = nullptr;
+		std::shared_ptr<ActivationTensorOp<TensorT, DeviceT>> activation = nullptr;
+		std::shared_ptr<ActivationTensorOp<TensorT, DeviceT>> activation_grad = nullptr;
 	};
 
 	template<typename TensorT, typename DeviceT>

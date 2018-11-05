@@ -4,7 +4,7 @@ set(directory include/SmartPeak/ml)
 ### list all header files of the directory here
 set(sources_list_h
 	ActivationFunction.h
-	ActivationFunctionWrapper.h
+	ActivationFunctionTensor.h
 	IntegrationFunction.h
 	IntegrationFunction2.h
 	IntegrationFunctionTensor.h
@@ -25,6 +25,7 @@ set(sources_list_h
 	Node.h
 	NodeData.h
 	NodeTensorData.h
+	OpToTensorOp.h
 	PopulationTrainer.h
 	SharedFunctions.h
 	Solver.h

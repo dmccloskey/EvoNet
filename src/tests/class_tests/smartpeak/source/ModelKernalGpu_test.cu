@@ -17,7 +17,7 @@ void test_nodeActivationGpuDevice()
 	ModelKernalGpu<float> kernal;
 	const int device_id = 0;
 
-	ActivationOpWrapper<float, Eigen::GpuDevice>* activation_function = new ReLUOpWrapper<float, Eigen::GpuDevice>();
+	ActivationTensorOp<float, Eigen::GpuDevice>* activation_function = new ReLUTensorOp<float, Eigen::GpuDevice>();
 	const int batch_size = 4;
 	const int memory_size = 2;
 	const int layer_size = 2;
@@ -108,7 +108,7 @@ void test_nodeDerivativeGpuDevice()
 	ModelKernalGpu<float> kernal;
 	const int device_id = 0;
 
-	ActivationOpWrapper<float, Eigen::GpuDevice>* activation_grad_function = new ReLUGradOpWrapper<float, Eigen::GpuDevice>();
+	ActivationTensorOp<float, Eigen::GpuDevice>* activation_grad_function = new ReLUGradTensorOp<float, Eigen::GpuDevice>();
 	const int batch_size = 4;
 	const int memory_size = 2;
 	const int layer_size = 2;

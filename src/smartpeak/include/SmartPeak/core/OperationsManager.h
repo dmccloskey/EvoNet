@@ -12,7 +12,7 @@
 
 #include <unsupported/Eigen/CXX11/Tensor>
 #include <SmartPeak/core/KernalManager.h>
-#include <SmartPeak/ml/ActivationFunctionWrapper.h>
+#include <SmartPeak/ml/ActivationFunctionTensor.h>
 #include <SmartPeak/ml/IntegrationFunction2.h>
 #include <SmartPeak/ml/LossFunction2.h>
 #include <SmartPeak/ml/Solver.h>
@@ -39,8 +39,8 @@ namespace SmartPeak
 			TensorT* d_sink_dt,
 			TensorT* h_sink_derivative,
 			TensorT* d_sink_derivative,
-			ActivationOpWrapper<TensorT, DeviceT>* activation_function,
-			ActivationOpWrapper<TensorT, DeviceT>* activation_grad_function,
+			ActivationTensorOp<TensorT, DeviceT>* activation_function,
+			ActivationTensorOp<TensorT, DeviceT>* activation_grad_function,
 			IntegrationOp<TensorT, DeviceT>* integration_function,
 			const int& batch_size,
 			const int& memory_size,
@@ -126,8 +126,8 @@ namespace SmartPeak
 			TensorT* d_sink_dt,
 			TensorT* h_sink_derivative,
 			TensorT* d_sink_derivative,
-			ActivationOpWrapper<TensorT, Eigen::GpuDevice>* activation_function,
-			ActivationOpWrapper<TensorT, Eigen::GpuDevice>* activation_grad_function,
+			ActivationTensorOp<TensorT, Eigen::GpuDevice>* activation_function,
+			ActivationTensorOp<TensorT, Eigen::GpuDevice>* activation_grad_function,
 			IntegrationOp<TensorT, Eigen::GpuDevice>* integration_function,
 			const int& batch_size,
 			const int& memory_size,

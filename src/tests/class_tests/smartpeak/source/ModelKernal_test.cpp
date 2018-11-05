@@ -29,7 +29,7 @@ BOOST_AUTO_TEST_CASE(nodeActivationDefaultDevice)
 	ModelKernalDefaultDevice<float> kernal;
 	const int device_id = 0;
 
-	ActivationOpWrapper<float, Eigen::DefaultDevice>* activation_function = new ReLUOpWrapper<float, Eigen::DefaultDevice>();
+	ActivationTensorOp<float, Eigen::DefaultDevice>* activation_function = new ReLUTensorOp<float, Eigen::DefaultDevice>();
 	const int batch_size = 4;
 	const int memory_size = 2;
 	const int layer_size = 2;
@@ -128,7 +128,7 @@ BOOST_AUTO_TEST_CASE(nodeDerivativeDefaultDevice)
 	ModelKernalDefaultDevice<float> kernal;
 	const int device_id = 0;
 
-	ActivationOpWrapper<float, Eigen::DefaultDevice>* activation_grad_function = new ReLUGradOpWrapper<float, Eigen::DefaultDevice>();
+	ActivationTensorOp<float, Eigen::DefaultDevice>* activation_grad_function = new ReLUGradTensorOp<float, Eigen::DefaultDevice>();
 	const int batch_size = 4;
 	const int memory_size = 2;
 	const int layer_size = 2;

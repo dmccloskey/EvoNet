@@ -4,7 +4,7 @@
 #define SMARTPEAK_TENSORINTEGRATIONFUNCTION_H
 
 #include <SmartPeak/core/preprocessing.h>
-#include <SmartPeak/ml/ActivationFunctionWrapper.h>
+#include <SmartPeak/ml/ActivationFunctionTensor.h>
 #include <unsupported/Eigen/CXX11/Tensor>
 
 namespace SmartPeak
