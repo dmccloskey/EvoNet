@@ -103,6 +103,7 @@ BOOST_AUTO_TEST_SUITE(modelInterpreter_DAG)
  * required of a standard feed forward neural network
 */
 
+Model<float> model_getNextInactiveLayer = makeModelFCSum();
 BOOST_AUTO_TEST_CASE(getNextInactiveLayer) 
 {
   // Toy network: 1 hidden layer, fully connected, DAG
@@ -115,7 +116,7 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayer)
 	// get the next hidden layer
 	std::map<std::string, int> FP_operations_map;
 	std::vector<OperationList<float>> FP_operations_list;
-	model_interpreter.getNextInactiveLayer(model_FC_Sum, FP_operations_map, FP_operations_list);
+	model_interpreter.getNextInactiveLayer(model_getNextInactiveLayer, FP_operations_map, FP_operations_list);
 
 	BOOST_CHECK_EQUAL(FP_operations_map.size(), 2);
 	BOOST_CHECK_EQUAL(FP_operations_map.at("2"), 0);
@@ -141,6 +142,7 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayer)
 	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[1].weight->getName(), "3");
 }
 
+Model<float> model_getNextInactiveLayerBiases = makeModelFCSum();
 BOOST_AUTO_TEST_CASE(getNextInactiveLayerBiases) 
 {
   // Toy network: 1 hidden layer, fully connected, DAG
@@ -153,10 +155,10 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayerBiases)
 	// get the next hidden layer
 	std::map<std::string, int> FP_operations_map;
 	std::vector<OperationList<float>> FP_operations_list;
-	model_interpreter.getNextInactiveLayer(model_FC_Sum, FP_operations_map, FP_operations_list);
+	model_interpreter.getNextInactiveLayer(model_getNextInactiveLayerBiases, FP_operations_map, FP_operations_list);
 
 	std::vector<std::string> sink_nodes_with_biases2;
-	model_interpreter.getNextInactiveLayerBiases(model_FC_Sum, FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
+	model_interpreter.getNextInactiveLayerBiases(model_getNextInactiveLayerBiases, FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
 
 	BOOST_CHECK_EQUAL(FP_operations_map.size(), 2);
 	BOOST_CHECK_EQUAL(FP_operations_map.at("2"), 0);
@@ -191,6 +193,7 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayerBiases)
 	BOOST_CHECK_EQUAL(sink_nodes_with_biases2[1], "3");
 }
 
+Model<float> model_getNextInactiveLayerCycles = makeModelFCSum();
 BOOST_AUTO_TEST_CASE(getNextInactiveLayerCycles)
 {
 	// Toy network: 1 hidden layer, fully connected, DAG
@@ -203,13 +206,13 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayerCycles)
 	// get the next hidden layer
 	std::map<std::string, int> FP_operations_map;
 	std::vector<OperationList<float>> FP_operations_list;
-	model_interpreter.getNextInactiveLayer(model_FC_Sum, FP_operations_map, FP_operations_list);
+	model_interpreter.getNextInactiveLayer(model_getNextInactiveLayerCycles, FP_operations_map, FP_operations_list);
 
 	std::vector<std::string> sink_nodes_with_biases2;
-	model_interpreter.getNextInactiveLayerBiases(model_FC_Sum, FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
+	model_interpreter.getNextInactiveLayerBiases(model_getNextInactiveLayerCycles, FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
 
 	std::vector<std::string> sink_nodes_with_cycles;
-	model_interpreter.getNextInactiveLayerCycles(model_FC_Sum, FP_operations_map, FP_operations_list, sink_nodes_with_cycles);
+	model_interpreter.getNextInactiveLayerCycles(model_getNextInactiveLayerCycles, FP_operations_map, FP_operations_list, sink_nodes_with_cycles);
 
 	BOOST_CHECK_EQUAL(FP_operations_map.size(), 2);
 	BOOST_CHECK_EQUAL(FP_operations_map.at("2"), 0);
@@ -242,6 +245,7 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayerCycles)
 	BOOST_CHECK_EQUAL(sink_nodes_with_cycles.size(), 0);
 }
 
+Model<float> model_pruneInactiveLayerCycles = makeModelFCSum();
 BOOST_AUTO_TEST_CASE(pruneInactiveLayerCycles)
 {
 	// Toy network: 1 hidden layer, fully connected, DAG
@@ -254,17 +258,17 @@ BOOST_AUTO_TEST_CASE(pruneInactiveLayerCycles)
 	// get the next hidden layer
 	std::map<std::string, int> FP_operations_map;
 	std::vector<OperationList<float>> FP_operations_list;
-	model_interpreter.getNextInactiveLayer(model_FC_Sum, FP_operations_map, FP_operations_list);
+	model_interpreter.getNextInactiveLayer(model_pruneInactiveLayerCycles, FP_operations_map, FP_operations_list);
 
 	std::vector<std::string> sink_nodes_with_biases2;
-	model_interpreter.getNextInactiveLayerBiases(model_FC_Sum, FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
+	model_interpreter.getNextInactiveLayerBiases(model_pruneInactiveLayerCycles, FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
 
 	std::vector<std::string> sink_nodes_with_cycles;
 	std::map<std::string, int> FP_operations_map_cycles = FP_operations_map;
 	std::vector<OperationList<float>> FP_operations_list_cycles = FP_operations_list;
-	model_interpreter.getNextInactiveLayerCycles(model_FC_Sum, FP_operations_map_cycles, FP_operations_list_cycles, sink_nodes_with_cycles);
+	model_interpreter.getNextInactiveLayerCycles(model_pruneInactiveLayerCycles, FP_operations_map_cycles, FP_operations_list_cycles, sink_nodes_with_cycles);
 
-	model_interpreter.pruneInactiveLayerCycles(model_FC_Sum, FP_operations_map, FP_operations_map_cycles, FP_operations_list, FP_operations_list_cycles, sink_nodes_with_cycles);
+	model_interpreter.pruneInactiveLayerCycles(model_pruneInactiveLayerCycles, FP_operations_map, FP_operations_map_cycles, FP_operations_list, FP_operations_list_cycles, sink_nodes_with_cycles);
 
 	BOOST_CHECK_EQUAL(FP_operations_map.size(), 2);
 	BOOST_CHECK_EQUAL(FP_operations_map.at("2"), 0);
@@ -296,6 +300,7 @@ BOOST_AUTO_TEST_CASE(pruneInactiveLayerCycles)
 	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[2].weight->getName(), "5");
 }
 
+Model<float> model_expandForwardPropogationOperationsBySourceNodeKey = makeModelFCSum();
 BOOST_AUTO_TEST_CASE(expandForwardPropogationOperationsBySourceNodeKey)
 {
 	ModelInterpreterDefaultDevice<float> model_interpreter;
@@ -305,10 +310,10 @@ BOOST_AUTO_TEST_CASE(expandForwardPropogationOperationsBySourceNodeKey)
 
 	std::map<std::string, int> FP_operations_map;
 	std::vector<OperationList<float>> FP_operations_list;
-	model_interpreter.getNextInactiveLayer(model_FC_Sum, FP_operations_map, FP_operations_list);
+	model_interpreter.getNextInactiveLayer(model_expandForwardPropogationOperationsBySourceNodeKey, FP_operations_map, FP_operations_list);
 
 	std::vector<std::string> sink_nodes_with_biases2;
-	model_interpreter.getNextInactiveLayerBiases(model_FC_Sum, FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
+	model_interpreter.getNextInactiveLayerBiases(model_expandForwardPropogationOperationsBySourceNodeKey, FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
 
 	std::vector<OperationList<float>> FP_operations_expanded;
 	model_interpreter.expandForwardPropogationOperationsBySourceNodeKey(FP_operations_list, FP_operations_expanded);
@@ -318,39 +323,44 @@ BOOST_AUTO_TEST_CASE(expandForwardPropogationOperationsBySourceNodeKey)
 	FP_operations_expanded.clear();
 	model_interpreter.expandForwardPropogationOperationsBySourceNodeKey(FP_operations_list, FP_operations_expanded);
 
-	BOOST_CHECK_EQUAL(FP_operations_expanded.size(), 3);
+	BOOST_CHECK_EQUAL(FP_operations_expanded.size(), 4);
 	BOOST_CHECK_EQUAL(FP_operations_expanded[0].result.time_step, 0);
 	BOOST_CHECK_EQUAL(FP_operations_expanded[0].result.sink_node->getName(), "2");
-	BOOST_CHECK_EQUAL(FP_operations_expanded[0].arguments.size(), 3);
+	BOOST_CHECK_EQUAL(FP_operations_expanded[0].arguments.size(), 1);
 	BOOST_CHECK_EQUAL(FP_operations_expanded[0].arguments[0].time_step, 0);
-	BOOST_CHECK_EQUAL(FP_operations_expanded[0].arguments[0].source_node->getName(), "0");
-	BOOST_CHECK_EQUAL(FP_operations_expanded[0].arguments[0].weight->getName(), "0");
-	BOOST_CHECK_EQUAL(FP_operations_expanded[0].arguments[1].time_step, 0);
-	BOOST_CHECK_EQUAL(FP_operations_expanded[0].arguments[1].source_node->getName(), "1");
-	BOOST_CHECK_EQUAL(FP_operations_expanded[0].arguments[1].weight->getName(), "2");
-	BOOST_CHECK_EQUAL(FP_operations_expanded[0].arguments[2].time_step, 0);
-	BOOST_CHECK_EQUAL(FP_operations_expanded[0].arguments[2].source_node->getName(), "6");
-	BOOST_CHECK_EQUAL(FP_operations_expanded[0].arguments[2].weight->getName(), "4");
+	BOOST_CHECK_EQUAL(FP_operations_expanded[0].arguments[0].source_node->getName(), "6");
+	BOOST_CHECK_EQUAL(FP_operations_expanded[0].arguments[0].weight->getName(), "4");
 
 	BOOST_CHECK_EQUAL(FP_operations_expanded[1].result.time_step, 0);
-	BOOST_CHECK_EQUAL(FP_operations_expanded[1].result.sink_node->getName(), "3");
+	BOOST_CHECK_EQUAL(FP_operations_expanded[1].result.sink_node->getName(), "2");
 	BOOST_CHECK_EQUAL(FP_operations_expanded[1].arguments.size(), 2);
 	BOOST_CHECK_EQUAL(FP_operations_expanded[1].arguments[0].time_step, 0);
 	BOOST_CHECK_EQUAL(FP_operations_expanded[1].arguments[0].source_node->getName(), "0");
-	BOOST_CHECK_EQUAL(FP_operations_expanded[1].arguments[0].weight->getName(), "1");
+	BOOST_CHECK_EQUAL(FP_operations_expanded[1].arguments[0].weight->getName(), "0");
 	BOOST_CHECK_EQUAL(FP_operations_expanded[1].arguments[1].time_step, 0);
 	BOOST_CHECK_EQUAL(FP_operations_expanded[1].arguments[1].source_node->getName(), "1");
-	BOOST_CHECK_EQUAL(FP_operations_expanded[1].arguments[1].weight->getName(), "3");
+	BOOST_CHECK_EQUAL(FP_operations_expanded[1].arguments[1].weight->getName(), "2");
 
 	BOOST_CHECK_EQUAL(FP_operations_expanded[2].result.time_step, 0);
 	BOOST_CHECK_EQUAL(FP_operations_expanded[2].result.sink_node->getName(), "3");
-	BOOST_CHECK_EQUAL(FP_operations_expanded[2].arguments.size(), 3);
+	BOOST_CHECK_EQUAL(FP_operations_expanded[2].arguments.size(), 1);
 	BOOST_CHECK_EQUAL(FP_operations_expanded[2].arguments[0].time_step, 0);
 	BOOST_CHECK_EQUAL(FP_operations_expanded[2].arguments[0].source_node->getName(), "6");
 	BOOST_CHECK_EQUAL(FP_operations_expanded[2].arguments[0].weight->getName(), "5");
 
+	BOOST_CHECK_EQUAL(FP_operations_expanded[3].result.time_step, 0);
+	BOOST_CHECK_EQUAL(FP_operations_expanded[3].result.sink_node->getName(), "3");
+	BOOST_CHECK_EQUAL(FP_operations_expanded[3].arguments.size(), 2);
+	BOOST_CHECK_EQUAL(FP_operations_expanded[3].arguments[0].time_step, 0);
+	BOOST_CHECK_EQUAL(FP_operations_expanded[3].arguments[0].source_node->getName(), "0");
+	BOOST_CHECK_EQUAL(FP_operations_expanded[3].arguments[0].weight->getName(), "1");
+	BOOST_CHECK_EQUAL(FP_operations_expanded[3].arguments[1].time_step, 0);
+	BOOST_CHECK_EQUAL(FP_operations_expanded[3].arguments[1].source_node->getName(), "1");
+	BOOST_CHECK_EQUAL(FP_operations_expanded[3].arguments[1].weight->getName(), "3");
+
 }
 
+Model<float> model_expandForwardPropogationOperationsByWeightKey = makeModelFCSum();
 BOOST_AUTO_TEST_CASE(expandForwardPropogationOperationsByWeightKey)
 {
 	ModelInterpreterDefaultDevice<float> model_interpreter;
@@ -360,10 +370,10 @@ BOOST_AUTO_TEST_CASE(expandForwardPropogationOperationsByWeightKey)
 
 	std::map<std::string, int> FP_operations_map;
 	std::vector<OperationList<float>> FP_operations_list;
-	model_interpreter.getNextInactiveLayer(model_FC_Sum, FP_operations_map, FP_operations_list);
+	model_interpreter.getNextInactiveLayer(model_expandForwardPropogationOperationsByWeightKey, FP_operations_map, FP_operations_list);
 
 	std::vector<std::string> sink_nodes_with_biases2;
-	model_interpreter.getNextInactiveLayerBiases(model_FC_Sum, FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
+	model_interpreter.getNextInactiveLayerBiases(model_expandForwardPropogationOperationsByWeightKey, FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
 
 	std::vector<OperationList<float>> FP_operations_expanded;
 	model_interpreter.expandForwardPropogationOperationsByWeightKey(FP_operations_list, FP_operations_expanded);
@@ -412,6 +422,7 @@ BOOST_AUTO_TEST_CASE(expandForwardPropogationOperationsByWeightKey)
 	BOOST_CHECK_EQUAL(FP_operations_expanded[3].arguments[0].weight->getName(), "1");
 }
 
+Model<float> model_expandForwardPropogationOperationsByCachedNodes = makeModelFCSum();
 BOOST_AUTO_TEST_CASE(expandForwardPropogationOperationsByCachedNodes)
 {
 	ModelInterpreterDefaultDevice<float> model_interpreter;
@@ -421,10 +432,10 @@ BOOST_AUTO_TEST_CASE(expandForwardPropogationOperationsByCachedNodes)
 
 	std::map<std::string, int> FP_operations_map;
 	std::vector<OperationList<float>> FP_operations_list;
-	model_interpreter.getNextInactiveLayer(model_FC_Sum, FP_operations_map, FP_operations_list);
+	model_interpreter.getNextInactiveLayer(model_expandForwardPropogationOperationsByCachedNodes, FP_operations_map, FP_operations_list);
 
 	std::vector<std::string> sink_nodes_with_biases2;
-	model_interpreter.getNextInactiveLayerBiases(model_FC_Sum, FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
+	model_interpreter.getNextInactiveLayerBiases(model_expandForwardPropogationOperationsByCachedNodes, FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
 
 	std::vector<OperationList<float>> FP_operations_expanded;
 	model_interpreter.expandForwardPropogationOperationsByCachedNodes(FP_operations_list, FP_operations_expanded);
@@ -475,6 +486,7 @@ BOOST_AUTO_TEST_CASE(expandForwardPropogationOperationsByCachedNodes)
 
 }
 
+Model<float> model_expandForwardPropogationOperations = makeModelFCSum();
 BOOST_AUTO_TEST_CASE(expandForwardPropogationOperations)
 {
 	ModelInterpreterDefaultDevice<float> model_interpreter;
@@ -484,15 +496,39 @@ BOOST_AUTO_TEST_CASE(expandForwardPropogationOperations)
 
 	std::map<std::string, int> FP_operations_map;
 	std::vector<OperationList<float>> FP_operations_list;
-	model_interpreter.getNextInactiveLayer(model_FC_Sum, FP_operations_map, FP_operations_list);
+	model_interpreter.getNextInactiveLayer(model_expandForwardPropogationOperations, FP_operations_map, FP_operations_list);
 
 	std::vector<std::string> sink_nodes_with_biases2;
-	model_interpreter.getNextInactiveLayerBiases(model_FC_Sum, FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
+	model_interpreter.getNextInactiveLayerBiases(model_expandForwardPropogationOperations, FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
 
 	std::vector<OperationList<float>> FP_operations_expanded;
 	model_interpreter.expandForwardPropogationOperations(FP_operations_list, FP_operations_expanded);
 
-	// TODO
+	BOOST_CHECK_EQUAL(FP_operations_expanded.size(), 2);
+	BOOST_CHECK_EQUAL(FP_operations_expanded[0].result.time_step, 0);
+	BOOST_CHECK_EQUAL(FP_operations_expanded[0].result.sink_node->getName(), "2");
+	BOOST_CHECK_EQUAL(FP_operations_expanded[0].arguments.size(), 3);
+	BOOST_CHECK_EQUAL(FP_operations_expanded[0].arguments[0].time_step, 0);
+	BOOST_CHECK_EQUAL(FP_operations_expanded[0].arguments[0].source_node->getName(), "0");
+	BOOST_CHECK_EQUAL(FP_operations_expanded[0].arguments[0].weight->getName(), "0");
+	BOOST_CHECK_EQUAL(FP_operations_expanded[0].arguments[1].time_step, 0);
+	BOOST_CHECK_EQUAL(FP_operations_expanded[0].arguments[1].source_node->getName(), "1");
+	BOOST_CHECK_EQUAL(FP_operations_expanded[0].arguments[1].weight->getName(), "2");
+	BOOST_CHECK_EQUAL(FP_operations_expanded[0].arguments[2].time_step, 0);
+	BOOST_CHECK_EQUAL(FP_operations_expanded[0].arguments[2].source_node->getName(), "6");
+	BOOST_CHECK_EQUAL(FP_operations_expanded[0].arguments[2].weight->getName(), "4");
+	BOOST_CHECK_EQUAL(FP_operations_expanded[1].result.time_step, 0);
+	BOOST_CHECK_EQUAL(FP_operations_expanded[1].result.sink_node->getName(), "3");
+	BOOST_CHECK_EQUAL(FP_operations_expanded[1].arguments.size(), 3);
+	BOOST_CHECK_EQUAL(FP_operations_expanded[1].arguments[0].time_step, 0);
+	BOOST_CHECK_EQUAL(FP_operations_expanded[1].arguments[0].source_node->getName(), "0");
+	BOOST_CHECK_EQUAL(FP_operations_expanded[1].arguments[0].weight->getName(), "1");
+	BOOST_CHECK_EQUAL(FP_operations_expanded[1].arguments[1].time_step, 0);
+	BOOST_CHECK_EQUAL(FP_operations_expanded[1].arguments[1].source_node->getName(), "1");
+	BOOST_CHECK_EQUAL(FP_operations_expanded[1].arguments[1].weight->getName(), "3");
+	BOOST_CHECK_EQUAL(FP_operations_expanded[1].arguments[2].time_step, 0);
+	BOOST_CHECK_EQUAL(FP_operations_expanded[1].arguments[2].source_node->getName(), "6");
+	BOOST_CHECK_EQUAL(FP_operations_expanded[1].arguments[2].weight->getName(), "5");
 }
 
 BOOST_AUTO_TEST_CASE(getCustomOperations)
@@ -519,12 +555,91 @@ BOOST_AUTO_TEST_CASE(getFanInOperations)
 { //TODO
 }
 
+Model<float> model_getTensorOperations = makeModelFCSum();
 BOOST_AUTO_TEST_CASE(getTensorOperations)
 {
+	ModelInterpreterDefaultDevice<float> model_interpreter;
+
+	// initialize nodes
+	// NOTE: input and biases have been activated when the model was created
+
+	std::map<std::string, int> FP_operations_map;
+	std::vector<OperationList<float>> FP_operations_list;
+	model_interpreter.getNextInactiveLayer(model_getTensorOperations, FP_operations_map, FP_operations_list);
+
+	std::vector<std::string> sink_nodes_with_biases2;
+	model_interpreter.getNextInactiveLayerBiases(model_getTensorOperations, FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
+
+	std::vector<OperationList<float>> FP_operations_expanded;
+	model_interpreter.expandForwardPropogationOperations(FP_operations_list, FP_operations_expanded);
+
+	std::set<std::string> identified_sink_nodes;
+	std::map<std::string, std::vector<int>> tensor_ops = model_interpreter.getTensorOperations(FP_operations_expanded, identified_sink_nodes);
+
+	BOOST_CHECK_EQUAL(identified_sink_nodes.size(), 1);
+	BOOST_CHECK_EQUAL(identified_sink_nodes.count("2/0"), 1);
+	BOOST_CHECK_EQUAL(tensor_ops.size(), 1);
+	BOOST_CHECK_EQUAL(tensor_ops.at("2/0")[0], 0);
+	BOOST_CHECK_EQUAL(tensor_ops.at("2/0")[1], 1);
 }
 
+Model<float> model_getForwardPropogationLayerTensorDimensions = makeModelFCSum();
 BOOST_AUTO_TEST_CASE(getForwardPropogationLayerTensorDimensions)
 {
+	ModelInterpreterDefaultDevice<float> model_interpreter;
+
+	// initialize nodes
+	// NOTE: input and biases have been activated when the model was created
+
+  // Check iteration one with no source/sink/weight tensors already allocated
+	std::map<std::string, int> FP_operations_map;
+	std::vector<OperationList<float>> FP_operations_list;
+	model_interpreter.getNextInactiveLayer(model_getForwardPropogationLayerTensorDimensions, FP_operations_map, FP_operations_list);
+
+	std::vector<std::string> sink_nodes_with_biases2;
+	model_interpreter.getNextInactiveLayerBiases(model_getForwardPropogationLayerTensorDimensions, FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
+
+	std::vector<OperationList<float>> FP_operations_expanded;
+	model_interpreter.expandForwardPropogationOperations(FP_operations_list, FP_operations_expanded);
+
+	std::set<std::string> identified_sink_nodes;
+	std::map<std::string, std::vector<int>> tensor_ops = model_interpreter.getTensorOperations(FP_operations_expanded, identified_sink_nodes);
+
+	std::vector<int> source_layer_sizes, sink_layer_sizes;
+	std::vector<std::vector<std::pair<int, int>>> weight_indices;
+	std::vector<std::vector<float>> weight_values;
+	std::vector<bool> make_source_tensors, make_sink_tensors, make_weight_tensors;
+	model_interpreter.getForwardPropogationLayerTensorDimensions(FP_operations_expanded, tensor_ops, source_layer_sizes, sink_layer_sizes, weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors);
+
+	BOOST_CHECK_EQUAL(source_layer_sizes.size(), 1);
+	BOOST_CHECK_EQUAL(source_layer_sizes[0], 3);
+	BOOST_CHECK_EQUAL(sink_layer_sizes.size(), 1);
+	BOOST_CHECK_EQUAL(sink_layer_sizes[0], 2);
+
+	BOOST_CHECK_EQUAL(weight_indices.size(), 1);
+	BOOST_CHECK_EQUAL(weight_indices[0].size(), 6);
+	std::vector<std::pair<int, int>> weight_indices_test = {
+		std::make_pair(0,0),std::make_pair(1,0),std::make_pair(2,0),std::make_pair(0,1),
+		std::make_pair(1,1),std::make_pair(2,1)
+	};
+	for (int i = 0; i < weight_indices_test.size(); ++i) {
+		BOOST_CHECK_EQUAL(weight_indices[0][i].first, weight_indices_test[i].first);
+		BOOST_CHECK_EQUAL(weight_indices[0][i].second, weight_indices_test[i].second);
+	}
+
+	BOOST_CHECK_EQUAL(weight_values.size(), 1);
+	BOOST_CHECK_EQUAL(weight_values[0].size(), 6);
+	std::vector<float> weight_values_test = { 1, 1, 1, 1, 1, 1 };
+	for (int i = 0; i < weight_values_test.size(); ++i) {
+		BOOST_CHECK_EQUAL(weight_values[0][i], weight_values_test[i]);
+	}
+
+	BOOST_CHECK_EQUAL(make_source_tensors.size(), 1);
+	BOOST_CHECK(make_source_tensors[0]);
+	BOOST_CHECK_EQUAL(make_sink_tensors.size(), 1);
+	BOOST_CHECK(make_sink_tensors[0]);
+	BOOST_CHECK_EQUAL(make_weight_tensors.size(), 1);
+	BOOST_CHECK(make_weight_tensors[0]);
 }
 
 // TODO: move to seperate test suite (ModelInterpreterDefaultDevice and ModelInterpreterGpu)

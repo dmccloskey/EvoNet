@@ -39,13 +39,13 @@ public:
 		void setEps(const TensorT& eps) { eps_ = eps; }
 		void setMin(const TensorT& min) { min_ = min; }
 		void setMax(const TensorT& max) { max_ = max; }
-#if COMPILE_WITH_CUDA
-		std::string getName() const { return ""; }; // No Virtual Functions Allowed when using Cuda!
-		TensorT operator()(const TensorT& x_I) const { return 0; }; // No Virtual Functions Allowed when using Cuda!
-#else
+//#if COMPILE_WITH_CUDA
+//		std::string getName() const { return ""; }; // No Virtual Functions Allowed when using Cuda!
+//		TensorT operator()(const TensorT& x_I) const { return 0; }; // No Virtual Functions Allowed when using Cuda!
+//#else
 		virtual std::string getName() const = 0;
 		virtual TensorT operator()(const TensorT& x_I) const = 0;
-#endif // !EVONET_CUDA
+//#endif // !EVONET_CUDA
 	protected:
 		TensorT eps_ = 1e-12; ///< threshold to clip between min and max
 		TensorT min_ = -1e9;
