@@ -44,6 +44,7 @@ set(ml_executables_list
   Node_test
   NodeData_test
   NodeTensorData_test
+  OpToTensorOp_test
   PopulationTrainer_test
   SharedFunctions_test
   Solver_test

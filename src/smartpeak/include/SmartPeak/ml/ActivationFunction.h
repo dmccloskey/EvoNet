@@ -45,6 +45,7 @@ public:
 //#else
 		virtual std::string getName() const = 0;
 		virtual TensorT operator()(const TensorT& x_I) const = 0;
+		virtual std::vector<TensorT> getParams() const = 0;
 //#endif // !EVONET_CUDA
 	protected:
 		TensorT eps_ = 1e-12; ///< threshold to clip between min and max
@@ -73,6 +74,7 @@ public:
 			//return clip(result); 
 		};
     std::string getName() const{return "ReLUOp";};
+		std::vector<TensorT> getParams() const { return std::vector<TensorT>(); }
   };
 
   /**
@@ -91,6 +93,7 @@ public:
     ~ReLUGradOp(){};
     TensorT operator()(const TensorT& x_I) const { return (x_I > 0.0) ? 1.0: 0.0; };
     std::string getName() const{return "ReLUGradOp";};
+		std::vector<TensorT> getParams() const { return std::vector<TensorT>(); }
   };
 
   /**
@@ -118,6 +121,7 @@ public:
     void setAlpha(const TensorT& alpha) { alpha_ = alpha; };
     TensorT getAlpha() const { return alpha_; };
     std::string getName() const{return "ELUOp";};
+		std::vector<TensorT> getParams() const { return std::vector<TensorT>({ alpha_ }); }
 private:
     TensorT alpha_ = 1;
   };
@@ -144,6 +148,7 @@ public:
     void setAlpha(const TensorT& alpha) { alpha_ = alpha; };
     TensorT getAlpha() const { return alpha_; };
     std::string getName() const{return "ELUGradOp";};
+		std::vector<TensorT> getParams() const { return std::vector<TensorT>({ alpha_ }); }
 private:
     TensorT alpha_ = 1;
   };
@@ -164,6 +169,7 @@ public:
 			//return clip(result); 
 		};
     std::string getName() const{return "SigmoidOp";};
+		std::vector<TensorT> getParams() const { return std::vector<TensorT>(); }
   };
 
   /**
@@ -180,6 +186,7 @@ public:
       return sigmoidop(x_I) * (1 - sigmoidop(x_I));
     };
     std::string getName() const{return "SigmoidGradOp";};
+		std::vector<TensorT> getParams() const { return std::vector<TensorT>(); }
   };
   
   /**
@@ -193,6 +200,7 @@ public:
     ~TanHOp(){};
     TensorT operator()(const TensorT& x_I) const { return tanh(x_I); };
     std::string getName() const{return "TanHOp";};
+		std::vector<TensorT> getParams() const { return std::vector<TensorT>(); }
   };
 
   /**
@@ -211,6 +219,7 @@ public:
    //   return clip(x_new);
     };
     std::string getName() const{return "TanHGradOp";};
+		std::vector<TensorT> getParams() const { return std::vector<TensorT>(); }
   };
   
   /**
@@ -229,6 +238,7 @@ public:
    //   return clip(result);
     };
     std::string getName() const{return "ReTanHOp";};
+		std::vector<TensorT> getParams() const { return std::vector<TensorT>(); }
   };
 
   /**
@@ -248,6 +258,7 @@ public:
    //   return clip(x_new);
     };
     std::string getName() const{return "ReTanHGradOp";};
+		std::vector<TensorT> getParams() const { return std::vector<TensorT>(); }
   };
 
 	/**
@@ -261,6 +272,7 @@ public:
 		~LinearOp() {};
 		TensorT operator()(const TensorT& x_I) const { return x_I; };
 		std::string getName() const { return "LinearOp"; };
+		std::vector<TensorT> getParams() const { return std::vector<TensorT>(); }
 	};
 
 	/**
@@ -274,6 +286,7 @@ public:
 		~LinearGradOp() {};
 		TensorT operator()(const TensorT& x_I) const { return 1.0; };
 		std::string getName() const { return "LinearGradOp"; };
+		std::vector<TensorT> getParams() const { return std::vector<TensorT>(); }
 	};
 
 	/**
@@ -292,6 +305,7 @@ public:
 			return clip(result);
 		};
 		std::string getName() const { return "InverseOp"; };
+		std::vector<TensorT> getParams() const { return std::vector<TensorT>(); }
 	};
 
 	/**
@@ -310,6 +324,7 @@ public:
 			return clip(result);
 		};
 		std::string getName() const { return "InverseGradOp"; };
+		std::vector<TensorT> getParams() const { return std::vector<TensorT>(); }
 	};
 
 	/**
@@ -332,6 +347,7 @@ public:
 			return clip(exp(x_I));
 		};
 		std::string getName() const { return "ExponentialOp"; };
+		std::vector<TensorT> getParams() const { return std::vector<TensorT>(); }
 	};
 
 	/**
@@ -349,6 +365,7 @@ public:
 			return clip(exp(x_I));
 		};
 		std::string getName() const { return "ExponentialGradOp"; };
+		std::vector<TensorT> getParams() const { return std::vector<TensorT>(); }
 	};
 
 	/**
@@ -366,6 +383,7 @@ public:
 			//return clip(log(x_I));
 		};
 		std::string getName() const { return "LogOp"; };
+		std::vector<TensorT> getParams() const { return std::vector<TensorT>(); }
 	};
 
 	/**
@@ -383,6 +401,7 @@ public:
 			//return clip(1/x_I);
 		};
 		std::string getName() const { return "LogGradOp"; };
+		std::vector<TensorT> getParams() const { return std::vector<TensorT>(); }
 	};
 
 	/**
@@ -400,6 +419,7 @@ public:
 			//return clip(pow(x_I, base_));
 		};
 		std::string getName() const { return "PowOp"; };
+		std::vector<TensorT> getParams() const { return std::vector<TensorT>({ base_ }); }
 	private:
 		TensorT base_;
 	};
@@ -420,6 +440,7 @@ public:
 			//return clip(result);
 		};
 		std::string getName() const { return "PowGradOp"; };
+		std::vector<TensorT> getParams() const { return std::vector<TensorT>({ base_ }); }
 	private:
 		TensorT base_;
 	};
@@ -445,6 +466,7 @@ public:
 		void setAlpha(const TensorT& alpha) { alpha_ = alpha; };
 		TensorT getAlpha() const { return alpha_; };
 		std::string getName() const { return "LeakyReLUOp"; };
+		std::vector<TensorT> getParams() const { return std::vector<TensorT>({ alpha_ }); }
 	private:
 		TensorT alpha_ = 1e-2;
 	};
@@ -465,6 +487,7 @@ public:
 		void setAlpha(const TensorT& alpha) { alpha_ = alpha; };
 		TensorT getAlpha() const { return alpha_; };
 		std::string getName() const { return "LeakyReLUGradOp"; };
+		std::vector<TensorT> getParams() const { return std::vector<TensorT>({ alpha_ }); }
 	private:
 		TensorT alpha_ = 1e-2;
 	};
