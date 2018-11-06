@@ -1139,19 +1139,19 @@ namespace SmartPeak
 				sink_node_data.initNodeTensorData(batch_size, memory_size, sink_layer_sizes[iter], FP_operations[operations.second[0]].result.sink_node->getType(), train);
 				addLayerTensor(sink_node_data);
 				operation_step.sink_layer.time_step = FP_operations[operations.second[0]].result.time_step;
-				ActivationTensorOp<TensorT, Eigen::DefaultDevice>* activation;
+				ActivationTensorOp<TensorT, Eigen::DefaultDevice>* activation = nullptr;
 				activation_conv(FP_operations[operations.second[0]].result.sink_node->getActivation(), activation, std::vector<TensorT>());
 				operation_step.sink_layer.activation.reset(activation);
-				ActivationTensorOp<TensorT, Eigen::DefaultDevice>* activation_grad;
+				ActivationTensorOp<TensorT, Eigen::DefaultDevice>* activation_grad = nullptr;
 				activation_conv(FP_operations[operations.second[0]].result.sink_node->getActivationGrad(), activation_grad, std::vector<TensorT>());
 				operation_step.sink_layer.activation_grad.reset(activation_grad);
-				IntegrationTensorOp<TensorT, Eigen::DefaultDevice>* integration;
+				IntegrationTensorOp<TensorT, Eigen::DefaultDevice>* integration = nullptr;
 				integration_conv(FP_operations[operations.second[0]].result.sink_node->getIntegration(), integration, std::vector<TensorT>());
 				operation_step.sink_layer.integration.reset(integration);
-				IntegrationErrorTensorOp<TensorT, Eigen::DefaultDevice>* integration_error;
+				IntegrationErrorTensorOp<TensorT, Eigen::DefaultDevice>* integration_error = nullptr;
 				integration_error_conv(FP_operations[operations.second[0]].result.sink_node->getIntegrationError(), integration_error, std::vector<TensorT>());
 				operation_step.sink_layer.integration_error.reset(integration_error);
-				IntegrationWeightGradTensorOp<TensorT, Eigen::DefaultDevice>* integration_weight_grad;
+				IntegrationWeightGradTensorOp<TensorT, Eigen::DefaultDevice>* integration_weight_grad = nullptr;
 				integration_weight_grad_conv(FP_operations[operations.second[0]].result.sink_node->getIntegrationWeightGrad(), integration_weight_grad, std::vector<TensorT>());
 				operation_step.sink_layer.integration_weight_grad.reset(integration_weight_grad);
 				operation_step.sink_layer.tensor = layer_tensors_[FP_operations[operations.second[0]].result.sink_node->getTensorIndex().first];
@@ -1159,19 +1159,19 @@ namespace SmartPeak
 			else {
 				operation_step.sink_layer.tensor = layer_tensors_[FP_operations[operations.second[0]].result.sink_node->getTensorIndex().first];
 				operation_step.sink_layer.time_step = FP_operations[operations.second[0]].result.time_step;
-				ActivationTensorOp<TensorT, Eigen::DefaultDevice>* activation;
+				ActivationTensorOp<TensorT, Eigen::DefaultDevice>* activation = nullptr;
 				activation_conv(FP_operations[operations.second[0]].result.sink_node->getActivation(), activation, std::vector<TensorT>());
 				operation_step.sink_layer.activation.reset(activation);
-				ActivationTensorOp<TensorT, Eigen::DefaultDevice>* activation_grad;
+				ActivationTensorOp<TensorT, Eigen::DefaultDevice>* activation_grad = nullptr;
 				activation_conv(FP_operations[operations.second[0]].result.sink_node->getActivationGrad(), activation_grad, std::vector<TensorT>());
 				operation_step.sink_layer.activation_grad.reset(activation_grad);
-				IntegrationTensorOp<TensorT, Eigen::DefaultDevice>* integration;
+				IntegrationTensorOp<TensorT, Eigen::DefaultDevice>* integration = nullptr;
 				integration_conv(FP_operations[operations.second[0]].result.sink_node->getIntegration(), integration, std::vector<TensorT>());
 				operation_step.sink_layer.integration.reset(integration);
-				IntegrationErrorTensorOp<TensorT, Eigen::DefaultDevice>* integration_error;
+				IntegrationErrorTensorOp<TensorT, Eigen::DefaultDevice>* integration_error = nullptr;
 				integration_error_conv(FP_operations[operations.second[0]].result.sink_node->getIntegrationError(), integration_error, std::vector<TensorT>());
 				operation_step.sink_layer.integration_error.reset(integration_error);
-				IntegrationWeightGradTensorOp<TensorT, Eigen::DefaultDevice>* integration_weight_grad;
+				IntegrationWeightGradTensorOp<TensorT, Eigen::DefaultDevice>* integration_weight_grad = nullptr;
 				integration_weight_grad_conv(FP_operations[operations.second[0]].result.sink_node->getIntegrationWeightGrad(), integration_weight_grad, std::vector<TensorT>());
 				operation_step.sink_layer.time_step = FP_operations[operations.second[0]].result.time_step;
 			}
@@ -1183,45 +1183,45 @@ namespace SmartPeak
 				operation_step.source_layer.time_step = FP_operations[operations.second[0]].arguments[0].time_step;
 				addLayerTensor(source_node_data);
 				operation_step.sink_layer.time_step = FP_operations[operations.second[0]].result.time_step;
-				ActivationTensorOp<TensorT, Eigen::DefaultDevice>* activation;
+				ActivationTensorOp<TensorT, Eigen::DefaultDevice>* activation = nullptr;
 				activation_conv(FP_operations[operations.second[0]].arguments[0].source_node->getActivation(), activation, std::vector<TensorT>());
 				operation_step.sink_layer.activation.reset(activation);
-				ActivationTensorOp<TensorT, Eigen::DefaultDevice>* activation_grad;
+				ActivationTensorOp<TensorT, Eigen::DefaultDevice>* activation_grad = nullptr;
 				activation_conv(FP_operations[operations.second[0]].arguments[0].source_node->getActivationGrad(), activation_grad, std::vector<TensorT>());
 				operation_step.sink_layer.activation_grad.reset(activation_grad);
-				IntegrationTensorOp<TensorT, Eigen::DefaultDevice>* integration;
+				IntegrationTensorOp<TensorT, Eigen::DefaultDevice>* integration = nullptr;
 				integration_conv(FP_operations[operations.second[0]].arguments[0].source_node->getIntegration(), integration, std::vector<TensorT>());
 				operation_step.sink_layer.integration.reset(integration);
-				IntegrationErrorTensorOp<TensorT, Eigen::DefaultDevice>* integration_error;
+				IntegrationErrorTensorOp<TensorT, Eigen::DefaultDevice>* integration_error = nullptr;
 				integration_error_conv(FP_operations[operations.second[0]].arguments[0].source_node->getIntegrationError(), integration_error, std::vector<TensorT>());
 				operation_step.sink_layer.integration_error.reset(integration_error);
-				IntegrationWeightGradTensorOp<TensorT, Eigen::DefaultDevice>* integration_weight_grad;
+				IntegrationWeightGradTensorOp<TensorT, Eigen::DefaultDevice>* integration_weight_grad = nullptr;
 				integration_weight_grad_conv(FP_operations[operations.second[0]].arguments[0].source_node->getIntegrationWeightGrad(), integration_weight_grad, std::vector<TensorT>());
 				operation_step.source_layer.tensor = layer_tensors_[FP_operations[operations.second[0]].arguments[0].source_node->getTensorIndex().first];
 			}
 			else {
 				operation_step.source_layer.tensor = layer_tensors_[FP_operations[operations.second[0]].arguments[0].source_node->getTensorIndex().first];
 				operation_step.source_layer.time_step = FP_operations[operations.second[0]].arguments[0].time_step;
-				ActivationTensorOp<TensorT, Eigen::DefaultDevice>* activation;
+				ActivationTensorOp<TensorT, Eigen::DefaultDevice>* activation = nullptr;
 				activation_conv(FP_operations[operations.second[0]].arguments[0].source_node->getActivation(), activation, std::vector<TensorT>());
 				operation_step.sink_layer.activation.reset(activation);
-				ActivationTensorOp<TensorT, Eigen::DefaultDevice>* activation_grad;
+				ActivationTensorOp<TensorT, Eigen::DefaultDevice>* activation_grad = nullptr;
 				activation_conv(FP_operations[operations.second[0]].arguments[0].source_node->getActivationGrad(), activation_grad, std::vector<TensorT>());
 				operation_step.sink_layer.activation_grad.reset(activation_grad);
-				IntegrationTensorOp<TensorT, Eigen::DefaultDevice>* integration;
+				IntegrationTensorOp<TensorT, Eigen::DefaultDevice>* integration = nullptr;
 				integration_conv(FP_operations[operations.second[0]].arguments[0].source_node->getIntegration(), integration, std::vector<TensorT>());
 				operation_step.sink_layer.integration.reset(integration);
-				IntegrationErrorTensorOp<TensorT, Eigen::DefaultDevice>* integration_error;
+				IntegrationErrorTensorOp<TensorT, Eigen::DefaultDevice>* integration_error = nullptr;
 				integration_error_conv(FP_operations[operations.second[0]].arguments[0].source_node->getIntegrationError(), integration_error, std::vector<TensorT>());
 				operation_step.sink_layer.integration_error.reset(integration_error);
-				IntegrationWeightGradTensorOp<TensorT, Eigen::DefaultDevice>* integration_weight_grad;
+				IntegrationWeightGradTensorOp<TensorT, Eigen::DefaultDevice>* integration_weight_grad = nullptr;
 				integration_weight_grad_conv(FP_operations[operations.second[0]].arguments[0].source_node->getIntegrationWeightGrad(), integration_weight_grad, std::vector<TensorT>());
 			}
 
 			// make the weight tensor and add it to the cache and operation step
 			WeightTensorDataCpu<TensorT> weight_data;
 			if (make_weight_tensors[iter]) {
-				SolverTensorOp<TensorT, Eigen::DefaultDevice>* solver;
+				SolverTensorOp<TensorT, Eigen::DefaultDevice>* solver = nullptr;
 				std::vector<TensorT> solver_params;
 				solver_conv(FP_operations[operations.second[0]].arguments[0].weight->getSolverOp(), solver, solver_params);
 				weight_data.initWeightTensorData(source_layer_sizes[iter], sink_layer_sizes[iter], weight_indices[iter], weight_values[iter], train,
@@ -1417,7 +1417,7 @@ namespace SmartPeak
 
 	template<typename TensorT>
 	inline std::vector<OperationTensorStepDefaultDevice<TensorT>> ModelInterpreterDefaultDevice<TensorT>::getOperationSteps(const int& operation_index) {
-		return operation_steps_[operation_index];
+		return operation_steps_.at(operation_index);
 	}
 
 	template<typename TensorT>

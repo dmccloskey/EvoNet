@@ -145,11 +145,19 @@ BOOST_AUTO_TEST_CASE(allocateForwardPropogationLayerTensors)
 	assert(model_interpreter.getWeightTensor(0)->getLayer1Size() == 3);
 	assert(model_interpreter.getWeightTensor(0)->getLayer2Size() == 2);
 	assert(model_interpreter.getWeightTensor(0)->getNSolverParams() == 3);
-	// TODO: check for the solver
 	assert(model_interpreter.getOperationSteps(0)[0].source_layer.time_step == 0);
-	// TODO (check for the correct activation (2) and integration (3) 
+	assert(model_interpreter.getOperationSteps(0)[0].source_layer.integration->getName() == "SumTensorOp");
+	assert(model_interpreter.getOperationSteps(0)[0].source_layer.integration_error->getName() == "SumErrorTensorOp");
+	assert(model_interpreter.getOperationSteps(0)[0].source_layer.integration_weight_grad->getName() == "SumWeightGradTensorOp");
+	assert(model_interpreter.getOperationSteps(0)[0].source_layer.activation->getName() == "ReLUTensorOp");
+	assert(model_interpreter.getOperationSteps(0)[0].source_layer.activation_grad->getName() == "ReLUGradTensorOp");
 	assert(model_interpreter.getOperationSteps(0)[0].sink_layer.time_step == 0);
-	// TODO (check for the correct activation (2) and integration (3) 
+	assert(model_interpreter.getOperationSteps(0)[0].sink_layer.integration->getName() == "SumTensorOp");
+	assert(model_interpreter.getOperationSteps(0)[0].sink_layer.integration_error->getName() == "SumErrorTensorOp");
+	assert(model_interpreter.getOperationSteps(0)[0].sink_layer.integration_weight_grad->getName() == "SumWeightGradTensorOp");
+	assert(model_interpreter.getOperationSteps(0)[0].sink_layer.activation->getName() == "ReLUTensorOp");
+	assert(model_interpreter.getOperationSteps(0)[0].sink_layer.activation_grad->getName() == "ReLUGradTensorOp");
+	assert(model_interpreter.getOperationSteps(0)[0].weight.solver->getName() == "SGDTensorOp");
 }
 
 BOOST_AUTO_TEST_CASE(getForwardPropogationOperations)

@@ -26,7 +26,7 @@ namespace SmartPeak
 		~OpToTensorOp() {};
 		virtual OperatorTensorT* convertOpToTensorOp(OperatorT* op_class) const = 0;
 		virtual std::vector<TensorT> getTensorParams(OperatorT* op_class) const = 0;
-		void operator()(OperatorT* op_class, OperatorTensorT* op_tensor_class, std::vector<TensorT>& op_params) const {
+		void operator()(OperatorT* op_class, OperatorTensorT*& op_tensor_class, std::vector<TensorT>& op_params) const {
 			op_tensor_class = convertOpToTensorOp(op_class);
 			op_params = getTensorParams(op_class);
 		}
