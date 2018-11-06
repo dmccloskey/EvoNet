@@ -69,6 +69,7 @@ public:
 		void setLearningRate(const TensorT& learning_rate) { learning_rate_ = learning_rate; };
 		TensorT getLearningRate() const { return learning_rate_; };
     virtual std::string getParameters() const = 0;
+		virtual std::vector<TensorT> getParameters() const = 0;
 		virtual int getNParameters() const = 0;
 		TensorT checkWeight(const TensorT& weight, const TensorT& new_weight)
 		{
@@ -129,6 +130,9 @@ public:
         std::to_string(getMomentumPrev());
       return params;
     }
+		std::vector<TensorT> getParameters() const {
+			return std::vector<Tensor>({learning_rate_, momentum_, momentum_prev_});
+		}
 		int getNParameters() const { return 3; };
 private:
     TensorT learning_rate_ = 0.01; ///< Learning rate
@@ -199,6 +203,9 @@ public:
       return params;
     }
 		int getNParameters() const { return 6; };
+		std::vector<TensorT> getParameters() const {
+			return std::vector<Tensor>({ learning_rate_, momentum_, momentum2_, delta_, momentum_prev_, momentum2_prev_ });
+		}
 private:
     TensorT learning_rate_ = 0.01; ///< Learning rate
     TensorT momentum_ = 0.9; ///< Momentum
@@ -226,6 +233,9 @@ private:
 		{
 			std::string params = "";
 			return params;
+		}
+		std::vector<TensorT> getParameters() const {
+			return std::vector<Tensor>();
 		}
 		int getNParameters() const { return 0; };
 	};
@@ -273,6 +283,9 @@ private:
 				";momentum_prev:" +
 				std::to_string(getMomentumPrev());
 			return params;
+		}
+		std::vector<TensorT> getParameters() const {
+			return std::vector<Tensor>({ learning_rate_, momentum_, momentum_prev_, this->getGradientNoiseSigma(),this->getGradientNoiseGamma() });
 		}
 		int getNParameters() const { return 5; };
 	private:
