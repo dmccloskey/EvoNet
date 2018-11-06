@@ -68,7 +68,7 @@ public:
 		}
 		void setLearningRate(const TensorT& learning_rate) { learning_rate_ = learning_rate; };
 		TensorT getLearningRate() const { return learning_rate_; };
-    virtual std::string getParameters() const = 0;
+    virtual std::string getParamsAsStr() const = 0;
 		virtual std::vector<TensorT> getParameters() const = 0;
 		virtual int getNParameters() const = 0;
 		TensorT checkWeight(const TensorT& weight, const TensorT& new_weight)
@@ -113,7 +113,7 @@ public:
       return new_weight;
     };
     std::string getName() const{return "SGDOp";};
-    std::string getParameters() const
+    std::string getParamsAsStr() const
     {
       std::string params = "";
       params += "gradient_threshold:" + 
@@ -131,7 +131,8 @@ public:
       return params;
     }
 		std::vector<TensorT> getParameters() const {
-			return std::vector<Tensor>({learning_rate_, momentum_, momentum_prev_});
+			std::vector<TensorT> parameters = {learning_rate_, momentum_, momentum_prev_};
+			return parameters;
 		}
 		int getNParameters() const { return 3; };
 private:
@@ -179,7 +180,7 @@ public:
       return this->checkWeight(weight, new_weight);
     };
     std::string getName() const{return "AdamOp";};
-    std::string getParameters() const
+    std::string getParamsAsStr() const
     {
       std::string params = "";
       params += "gradient_threshold:" + 
@@ -204,7 +205,8 @@ public:
     }
 		int getNParameters() const { return 6; };
 		std::vector<TensorT> getParameters() const {
-			return std::vector<Tensor>({ learning_rate_, momentum_, momentum2_, delta_, momentum_prev_, momentum2_prev_ });
+			std::vector<TensorT> parameters = { learning_rate_, momentum_, momentum2_, delta_, momentum_prev_, momentum2_prev_ };
+			return parameters;
 		}
 private:
     TensorT learning_rate_ = 0.01; ///< Learning rate
@@ -229,13 +231,13 @@ private:
 			return weight;
 		};
 		std::string getName() const { return "DummySolverOp"; };
-		std::string getParameters() const
+		std::string getParamsAsStr() const
 		{
 			std::string params = "";
 			return params;
 		}
 		std::vector<TensorT> getParameters() const {
-			return std::vector<Tensor>();
+			return std::vector<TensorT>();
 		}
 		int getNParameters() const { return 0; };
 	};
@@ -267,7 +269,7 @@ private:
 			return addGradientNoise(new_weight);
 		};
 		std::string getName() const { return "SGDNoiseOp"; };
-		std::string getParameters() const
+		std::string getParamsAsStr() const
 		{
 			std::string params = "";
 			params += "gradient_threshold:" +
@@ -285,9 +287,10 @@ private:
 			return params;
 		}
 		std::vector<TensorT> getParameters() const {
-			return std::vector<Tensor>({ learning_rate_, momentum_, momentum_prev_, this->getGradientNoiseSigma(),this->getGradientNoiseGamma() });
+			std::vector<TensorT> parameters = { learning_rate_, momentum_, momentum_prev_, this->getGradientNoiseSigma() };
+			return parameters;
 		}
-		int getNParameters() const { return 5; };
+		int getNParameters() const { return 4; };
 	private:
 		TensorT learning_rate_ = 0.01; ///< Learning rate
 		TensorT momentum_ = 0.9; ///< Momentum

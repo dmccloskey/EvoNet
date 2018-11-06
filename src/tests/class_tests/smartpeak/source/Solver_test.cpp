@@ -36,7 +36,7 @@ BOOST_AUTO_TEST_CASE(settersAndGetters)
   BOOST_CHECK_CLOSE(operation.getLearningRate(), 0.9, 1e-3);
   BOOST_CHECK_CLOSE(operation.getMomentum(), 0.1, 1e-3);
   BOOST_CHECK_CLOSE(operation.getMomentumPrev(), 0.0, 1e-3);
-  BOOST_CHECK_EQUAL(operation.getParameters(), "gradient_threshold:1000000.000000;gradient_noise_sigma:1.000000;gradient_noise_gamma:0.550000;learning_rate:0.900000;momentum:0.100000;momentum_prev:0.000000");
+  BOOST_CHECK_EQUAL(operation.getParamsAsStr(), "gradient_threshold:1000000.000000;gradient_noise_sigma:1.000000;gradient_noise_gamma:0.550000;learning_rate:0.900000;momentum:0.100000;momentum_prev:0.000000");
 
   operation.setLearningRate(0.8);
   operation.setMomentum(0.2);
@@ -47,11 +47,11 @@ BOOST_AUTO_TEST_CASE(settersAndGetters)
 
   AdamOp<float> adam_op;
   BOOST_CHECK_EQUAL(adam_op.getName(), "AdamOp");
-  BOOST_CHECK_EQUAL(adam_op.getParameters(), "gradient_threshold:1000000.000000;gradient_noise_sigma:1.000000;gradient_noise_gamma:0.550000;learning_rate:0.010000;momentum:0.900000;momentum2:0.999000;delta:0.000000;momentum_prev:0.000000;momentum2_prev:0.000000");
+  BOOST_CHECK_EQUAL(adam_op.getParamsAsStr(), "gradient_threshold:1000000.000000;gradient_noise_sigma:1.000000;gradient_noise_gamma:0.550000;learning_rate:0.010000;momentum:0.900000;momentum2:0.999000;delta:0.000000;momentum_prev:0.000000;momentum2_prev:0.000000");
 
 	DummySolverOp<float> dummy_solver_op;
 	BOOST_CHECK_EQUAL(dummy_solver_op.getName(), "DummySolverOp");
-	BOOST_CHECK_EQUAL(dummy_solver_op.getParameters(), "");
+	BOOST_CHECK_EQUAL(dummy_solver_op.getParamsAsStr(), "");
 }
 
 BOOST_AUTO_TEST_CASE(operationfunctionSGDOp) 

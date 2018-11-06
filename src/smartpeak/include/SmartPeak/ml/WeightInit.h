@@ -22,7 +22,7 @@ public:
 		~WeightInitOp() = default;
     virtual std::string getName() const = 0;
     virtual TensorT operator()() const = 0;
-    virtual std::string getParameters() const = 0;
+    virtual std::string getParamsAsStr() const = 0;
   };  
 
   /**
@@ -47,7 +47,7 @@ public:
     };
     TensorT getN() const { return n_; }
 		TensorT getF() const { return f_; }
-    std::string getParameters() const
+    std::string getParamsAsStr() const
     {
 			std::string params = "n:" + std::to_string(getN()) +
 				";f:" + std::to_string(getF());
@@ -71,7 +71,7 @@ public:
     std::string getName() const{return "ConstWeightInitOp";};
     TensorT operator()() const { return n_; };
     TensorT getN() const {return n_;};
-    std::string getParameters() const
+    std::string getParamsAsStr() const
     {
       std::string params = "n:" + std::to_string(getN());
       return params;

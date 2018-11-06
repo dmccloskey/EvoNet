@@ -92,25 +92,26 @@ BOOST_AUTO_TEST_CASE(getTensorParamsSolverOpToSolverTensorOp)
 {
 	SolverOpToSolverTensorOp<float, Eigen::DefaultDevice> op_to_tensor_op;
 
-	SolverOp<float>* op_class = new SGDOp<float>(0, 1);
+	SolverOp<float>* op_class = new SGDOp<float>(1, 2);
 	std::vector<float> params = op_to_tensor_op.getTensorParams(op_class);
-	BOOST_CHECK_EQUAL(params.size(), 2);
-	BOOST_CHECK_EQUAL(params[0], 0); BOOST_CHECK_EQUAL(params[1], 1);
+	BOOST_CHECK_EQUAL(params.size(), 3);
+	BOOST_CHECK_EQUAL(params[0], 1); BOOST_CHECK_EQUAL(params[1], 2); BOOST_CHECK_EQUAL(params[2], 0);
 
-	op_class = new AdamOp<float>(0, 1, 2, 3);
-	std::vector<float> params = op_to_tensor_op.getTensorParams(op_class);
-	BOOST_CHECK_EQUAL(params.size(), 2);
-	BOOST_CHECK_EQUAL(params[0], 0); BOOST_CHECK_EQUAL(params[1], 1);
+	op_class = new AdamOp<float>(1, 2, 3, 4);
+	params = op_to_tensor_op.getTensorParams(op_class);
+	BOOST_CHECK_EQUAL(params.size(), 6);
+	BOOST_CHECK_EQUAL(params[0], 1); BOOST_CHECK_EQUAL(params[1], 2); BOOST_CHECK_EQUAL(params[2], 3); 
+	BOOST_CHECK_EQUAL(params[3], 4); BOOST_CHECK_EQUAL(params[4], 0); BOOST_CHECK_EQUAL(params[5], 0);
 
 	op_class = new DummySolverOp<float>();
-	std::vector<float> params = op_to_tensor_op.getTensorParams(op_class);
-	BOOST_CHECK_EQUAL(params.size(), 2);
-	BOOST_CHECK_EQUAL(params[0], 0); BOOST_CHECK_EQUAL(params[1], 1);
+	params = op_to_tensor_op.getTensorParams(op_class);
+	BOOST_CHECK_EQUAL(params.size(), 0);
 
-	op_class = new SGDNoiseOp<float>(0, 1, 2);
-	std::vector<float> params = op_to_tensor_op.getTensorParams(op_class);
-	BOOST_CHECK_EQUAL(params.size(), 2);
-	BOOST_CHECK_EQUAL(params[0], 0); BOOST_CHECK_EQUAL(params[1], 1);
+	op_class = new SGDNoiseOp<float>(1, 2, 3);
+	params = op_to_tensor_op.getTensorParams(op_class);
+	BOOST_CHECK_EQUAL(params.size(), 4);
+	BOOST_CHECK_EQUAL(params[0], 1); BOOST_CHECK_EQUAL(params[1], 2); BOOST_CHECK_EQUAL(params[2], 0);
+	BOOST_CHECK_EQUAL(params[3], 3); 
 }
 
 BOOST_AUTO_TEST_SUITE_END()

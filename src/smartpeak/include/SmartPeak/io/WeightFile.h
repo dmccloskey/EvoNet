@@ -254,14 +254,14 @@ public:
 			row.push_back(weight_init_op_name);
 
 			// parse the weight_init_params
-			row.push_back(weight.getWeightInitOp()->getParameters());
+			row.push_back(weight.getWeightInitOp()->getParamsAsStr());
 
 			// parse the solver_op
 			const std::string solver_op_name = weight.getSolverOp()->getName();
 			row.push_back(solver_op_name);
 
 			// parse the solver_op_params
-			row.push_back(weight.getSolverOp()->getParameters());
+			row.push_back(weight.getSolverOp()->getParamsAsStr());
 
 			// parse the weight value
 			row.push_back(std::to_string(weight.getWeightView()));

@@ -45,7 +45,7 @@ BOOST_AUTO_TEST_CASE(settersAndGettersRandWeightInitOp)
 {
   RandWeightInitOp<float> operation;
   BOOST_CHECK_EQUAL(operation.getName(), "RandWeightInitOp");
-  BOOST_CHECK_EQUAL(operation.getParameters(), "n:1.000000;f:1.000000");
+  BOOST_CHECK_EQUAL(operation.getParamsAsStr(), "n:1.000000;f:1.000000");
 }
 
 /**
@@ -75,7 +75,7 @@ BOOST_AUTO_TEST_CASE(settersAndGettersConstWeightInitOp)
 {
   ConstWeightInitOp<float> operation;
   BOOST_CHECK_EQUAL(operation.getName(), "ConstWeightInitOp");
-  BOOST_CHECK_EQUAL(operation.getParameters(), "n:1.000000");
+  BOOST_CHECK_EQUAL(operation.getParamsAsStr(), "n:1.000000");
 }
 
 BOOST_AUTO_TEST_SUITE_END()
