@@ -369,6 +369,7 @@ public:
 	class PowTensorOp : public ActivationTensorOp<TensorT, DeviceT>
 	{
 	public:
+		PowTensorOp() {};
 		PowTensorOp(const TensorT& base): base_(base){};
 		~PowTensorOp() {};
 		void operator()(TensorT* x_I, TensorT* x_O, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
@@ -388,6 +389,7 @@ public:
 	class PowGradTensorOp : public ActivationTensorOp<TensorT, DeviceT>
 	{
 	public:
+		PowGradTensorOp() {};
 		PowGradTensorOp(const TensorT& base) : base_(base) {};
 		~PowGradTensorOp() {};
 		void operator()(TensorT* x_I, TensorT* x_O, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
