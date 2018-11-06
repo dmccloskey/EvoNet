@@ -144,11 +144,12 @@ BOOST_AUTO_TEST_CASE(allocateForwardPropogationLayerTensors)
 	assert(model_interpreter.getLayerTensor(1)->getLayerSize() == 3); // sources
 	assert(model_interpreter.getWeightTensor(0)->getLayer1Size() == 3);
 	assert(model_interpreter.getWeightTensor(0)->getLayer2Size() == 2);
-	//assert(model_interpreter.getWeightTensor(0)->getNSolverParams() == 2);
+	assert(model_interpreter.getWeightTensor(0)->getNSolverParams() == 3);
+	// TODO: check for the solver
 	assert(model_interpreter.getOperationSteps(0)[0].source_layer.time_step == 0);
-	// TODO
+	// TODO (check for the correct activation (2) and integration (3) 
 	assert(model_interpreter.getOperationSteps(0)[0].sink_layer.time_step == 0);
-	// TODO
+	// TODO (check for the correct activation (2) and integration (3) 
 }
 
 BOOST_AUTO_TEST_CASE(getForwardPropogationOperations)

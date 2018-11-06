@@ -214,7 +214,7 @@ namespace SmartPeak
 	class LossFunctionGradOpToLossFunctionGradTensorOp : public OpToTensorOp<TensorT, DeviceT, LossFunctionGradOp<TensorT>, LossFunctionGradTensorOp<TensorT, DeviceT>>
 	{
 	public:
-		LossFunctionGradTensorOp<TensorT, DeviceT>* convertOpToTensorOp(LossFunctionOp<TensorT>* op_class) const {
+		LossFunctionGradTensorOp<TensorT, DeviceT>* convertOpToTensorOp(LossFunctionGradOp<TensorT>* op_class) const {
 			if (op_class->getName() == "EuclideanDistanceGradOp") {
 				LossFunctionGradTensorOp<TensorT, DeviceT>* op_tensor_class = new EuclideanDistanceGradTensorOp<TensorT, DeviceT>();
 				return op_tensor_class;
@@ -256,120 +256,119 @@ namespace SmartPeak
 		std::vector<TensorT> getTensorParams(SolverOp<TensorT>* op_class) const { return std::vector<TensorT>(); }
 	};
 
-	// TODO...
-	//template<typename TensorT, typename DeviceT>
-	//class IntegrationOpToIntegrationTensorOp : public OpToTensorOp<TensorT, DeviceT, IntegrationOp<TensorT>, IntegrationTensorOp<TensorT, DeviceT>>
-	//{
-	//public:
-	//	IntegrationTensorOp<TensorT, DeviceT>* convertOpToTensorOp(IntegrationOp<TensorT>* op_class) const {
-	//		if (op_class->getName() == "SumOp") {
-	//			IntegrationTensorOp<TensorT, DeviceT>* op_tensor_class = new SumTensorOp<TensorT, DeviceT>();
-	//			return op_tensor_class;
-	//		}
-	//		else if (op_class->getName() == "ProdOp") {
-	//			IntegrationTensorOp<TensorT, DeviceT>* op_tensor_class = new ProdTensorOp<TensorT, DeviceT>();
-	//			return op_tensor_class;
-	//		}
-	//		else if (op_class->getName() == "MeanOp") {
-	//			IntegrationTensorOp<TensorT, DeviceT>* op_tensor_class = new MeanTensorOp<TensorT, DeviceT>();
-	//			return op_tensor_class;
-	//		}
-	//		else if (op_class->getName() == "MaxOp") {
-	//			IntegrationTensorOp<TensorT, DeviceT>* op_tensor_class = new MaxTensorOp<TensorT, DeviceT>();
-	//			return op_tensor_class;
-	//		}
-	//		else if (op_class->getName() == "VarModOp") {
-	//			IntegrationTensorOp<TensorT, DeviceT>* op_tensor_class = new VarModTensorOp<TensorT, DeviceT>();
-	//			return op_tensor_class;
-	//		}
-	//		else if (op_class->getName() == "CountOp") {
-	//			IntegrationTensorOp<TensorT, DeviceT>* op_tensor_class = new CountTensorOp<TensorT, DeviceT>();
-	//			return op_tensor_class;
-	//		}
-	//		else {
-	//			std::cout << "No conversion available for " << op_class->getName() << "." << std::endl;
-	//			IntegrationTensorOp<TensorT, DeviceT>* op_tensor_class = new SumTensorOp<TensorT, DeviceT>();
-	//			return op_tensor_class;
-	//		}
-	//	}
-	//	std::vector<TensorT> getTensorParams(IntegrationOp<TensorT>* op_class) const { return std::vector<TensorT>(); }
-	//};
+	template<typename TensorT, typename DeviceT>
+	class IntegrationOpToIntegrationTensorOp : public OpToTensorOp<TensorT, DeviceT, IntegrationOp<TensorT>, IntegrationTensorOp<TensorT, DeviceT>>
+	{
+	public:
+		IntegrationTensorOp<TensorT, DeviceT>* convertOpToTensorOp(IntegrationOp<TensorT>* op_class) const {
+			if (op_class->getName() == "SumOp") {
+				IntegrationTensorOp<TensorT, DeviceT>* op_tensor_class = new SumTensorOp<TensorT, DeviceT>();
+				return op_tensor_class;
+			}
+			//else if (op_class->getName() == "ProdOp") {
+			//	IntegrationTensorOp<TensorT, DeviceT>* op_tensor_class = new ProdTensorOp<TensorT, DeviceT>();
+			//	return op_tensor_class;
+			//}
+			//else if (op_class->getName() == "MeanOp") {
+			//	IntegrationTensorOp<TensorT, DeviceT>* op_tensor_class = new MeanTensorOp<TensorT, DeviceT>();
+			//	return op_tensor_class;
+			//}
+			//else if (op_class->getName() == "MaxOp") {
+			//	IntegrationTensorOp<TensorT, DeviceT>* op_tensor_class = new MaxTensorOp<TensorT, DeviceT>();
+			//	return op_tensor_class;
+			//}
+			//else if (op_class->getName() == "VarModOp") {
+			//	IntegrationTensorOp<TensorT, DeviceT>* op_tensor_class = new VarModTensorOp<TensorT, DeviceT>();
+			//	return op_tensor_class;
+			//}
+			//else if (op_class->getName() == "CountOp") {
+			//	IntegrationTensorOp<TensorT, DeviceT>* op_tensor_class = new CountTensorOp<TensorT, DeviceT>();
+			//	return op_tensor_class;
+			//}
+			else {
+				std::cout << "No conversion available for " << op_class->getName() << "." << std::endl;
+				IntegrationTensorOp<TensorT, DeviceT>* op_tensor_class = new SumTensorOp<TensorT, DeviceT>();
+				return op_tensor_class;
+			}
+		}
+		std::vector<TensorT> getTensorParams(IntegrationOp<TensorT>* op_class) const { return std::vector<TensorT>(); }
+	};
 
-	//template<typename TensorT, typename DeviceT>
-	//class IntegrationErrorOpToIntegrationErrorTensorOp : public OpToTensorOp<TensorT, DeviceT, IntegrationErrorOp<TensorT>, IntegrationErrorTensorOp<TensorT, DeviceT>>
-	//{
-	//public:
-	//	IntegrationErrorTensorOp<TensorT, DeviceT>* convertOpToTensorOp(IntegrationErrorOp<TensorT>* op_class) const {
-	//		if (op_class->getName() == "SumErrorOp") {
-	//			IntegrationErrorTensorOp<TensorT, DeviceT>* op_tensor_class = new SumErrorTensorOp<TensorT, DeviceT>();
-	//			return op_tensor_class;
-	//		}
-	//		else if (op_class->getName() == "ProdErrorOp") {
-	//			IntegrationErrorTensorOp<TensorT, DeviceT>* op_tensor_class = new ProdErrorTensorOp<TensorT, DeviceT>();
-	//			return op_tensor_class;
-	//		}
-	//		else if (op_class->getName() == "MeanErrorErrorOp") {
-	//			IntegrationErrorTensorOp<TensorT, DeviceT>* op_tensor_class = new MeanErrorTensorOp<TensorT, DeviceT>();
-	//			return op_tensor_class;
-	//		}
-	//		else if (op_class->getName() == "MaxErrorOp") {
-	//			IntegrationErrorTensorOp<TensorT, DeviceT>* op_tensor_class = new MaxErrorTensorOp<TensorT, DeviceT>();
-	//			return op_tensor_class;
-	//		}
-	//		else if (op_class->getName() == "VarModErrorOp") {
-	//			IntegrationErrorTensorOp<TensorT, DeviceT>* op_tensor_class = new VarModErrorTensorOp<TensorT, DeviceT>();
-	//			return op_tensor_class;
-	//		}
-	//		else if (op_class->getName() == "CountErrorOp") {
-	//			IntegrationErrorTensorOp<TensorT, DeviceT>* op_tensor_class = new CountErrorTensorOp<TensorT, DeviceT>();
-	//			return op_tensor_class;
-	//		}
-	//		else {
-	//			std::cout << "No conversion available for " << op_class->getName() << "." << std::endl;
-	//			IntegrationErrorTensorOp<TensorT, DeviceT>* op_tensor_class = new SumErrorTensorOp<TensorT, DeviceT>();
-	//			return op_tensor_class;
-	//		}
-	//	}
-	//	std::vector<TensorT> getTensorParams(IntegrationErrorOp<TensorT>* op_class) const { return std::vector<TensorT>(); }
-	//};
+	template<typename TensorT, typename DeviceT>
+	class IntegrationErrorOpToIntegrationErrorTensorOp : public OpToTensorOp<TensorT, DeviceT, IntegrationErrorOp<TensorT>, IntegrationErrorTensorOp<TensorT, DeviceT>>
+	{
+	public:
+		IntegrationErrorTensorOp<TensorT, DeviceT>* convertOpToTensorOp(IntegrationErrorOp<TensorT>* op_class) const {
+			if (op_class->getName() == "SumErrorOp") {
+				IntegrationErrorTensorOp<TensorT, DeviceT>* op_tensor_class = new SumErrorTensorOp<TensorT, DeviceT>();
+				return op_tensor_class;
+			}
+			//else if (op_class->getName() == "ProdErrorOp") {
+			//	IntegrationErrorTensorOp<TensorT, DeviceT>* op_tensor_class = new ProdErrorTensorOp<TensorT, DeviceT>();
+			//	return op_tensor_class;
+			//}
+			//else if (op_class->getName() == "MeanErrorErrorOp") {
+			//	IntegrationErrorTensorOp<TensorT, DeviceT>* op_tensor_class = new MeanErrorTensorOp<TensorT, DeviceT>();
+			//	return op_tensor_class;
+			//}
+			//else if (op_class->getName() == "MaxErrorOp") {
+			//	IntegrationErrorTensorOp<TensorT, DeviceT>* op_tensor_class = new MaxErrorTensorOp<TensorT, DeviceT>();
+			//	return op_tensor_class;
+			//}
+			//else if (op_class->getName() == "VarModErrorOp") {
+			//	IntegrationErrorTensorOp<TensorT, DeviceT>* op_tensor_class = new VarModErrorTensorOp<TensorT, DeviceT>();
+			//	return op_tensor_class;
+			//}
+			//else if (op_class->getName() == "CountErrorOp") {
+			//	IntegrationErrorTensorOp<TensorT, DeviceT>* op_tensor_class = new CountErrorTensorOp<TensorT, DeviceT>();
+			//	return op_tensor_class;
+			//}
+			else {
+				std::cout << "No conversion available for " << op_class->getName() << "." << std::endl;
+				IntegrationErrorTensorOp<TensorT, DeviceT>* op_tensor_class = new SumErrorTensorOp<TensorT, DeviceT>();
+				return op_tensor_class;
+			}
+		}
+		std::vector<TensorT> getTensorParams(IntegrationErrorOp<TensorT>* op_class) const { return std::vector<TensorT>(); }
+	};
 
-	//template<typename TensorT, typename DeviceT>
-	//class IntegrationWeightGradOpToIntegrationWeightGradTensorOp : public OpToTensorOp<TensorT, DeviceT, IntegrationWeightGradOp<TensorT>, IntegrationWeightGradTensorOp<TensorT, DeviceT>>
-	//{
-	//public:
-	//	IntegrationWeightGradTensorOp<TensorT, DeviceT>* convertOpToTensorOp(IntegrationWeightGradOp<TensorT>* op_class) const {
-	//		if (op_class->getName() == "SumWeightGradOp") {
-	//			IntegrationWeightGradTensorOp<TensorT, DeviceT>* op_tensor_class = new SumWeightGradTensorOp<TensorT, DeviceT>();
-	//			return op_tensor_class;
-	//		}
-	//		else if (op_class->getName() == "ProdWeightGradOp") {
-	//			IntegrationWeightGradTensorOp<TensorT, DeviceT>* op_tensor_class = new ProdWeightGradTensorOp<TensorT, DeviceT>();
-	//			return op_tensor_class;
-	//		}
-	//		else if (op_class->getName() == "MeanWeightGradWeightGradOp") {
-	//			IntegrationWeightGradTensorOp<TensorT, DeviceT>* op_tensor_class = new MeanWeightGradTensorOp<TensorT, DeviceT>();
-	//			return op_tensor_class;
-	//		}
-	//		else if (op_class->getName() == "MaxWeightGradOp") {
-	//			IntegrationWeightGradTensorOp<TensorT, DeviceT>* op_tensor_class = new MaxWeightGradTensorOp<TensorT, DeviceT>();
-	//			return op_tensor_class;
-	//		}
-	//		else if (op_class->getName() == "VarModWeightGradOp") {
-	//			IntegrationWeightGradTensorOp<TensorT, DeviceT>* op_tensor_class = new VarModWeightGradTensorOp<TensorT, DeviceT>();
-	//			return op_tensor_class;
-	//		}
-	//		else if (op_class->getName() == "CountWeightGradOp") {
-	//			IntegrationWeightGradTensorOp<TensorT, DeviceT>* op_tensor_class = new CountWeightGradTensorOp<TensorT, DeviceT>();
-	//			return op_tensor_class;
-	//		}
-	//		else {
-	//			std::cout << "No conversion available for " << op_class->getName() << "." << std::endl;
-	//			IntegrationWeightGradTensorOp<TensorT, DeviceT>* op_tensor_class = new SumWeightGradTensorOp<TensorT, DeviceT>();
-	//			return op_tensor_class;
-	//		}
-	//	}
-	//	std::vector<TensorT> getTensorParams(IntegrationWeightGradOp<TensorT>* op_class) const { return std::vector<TensorT>(); }
-	//};
+	template<typename TensorT, typename DeviceT>
+	class IntegrationWeightGradOpToIntegrationWeightGradTensorOp : public OpToTensorOp<TensorT, DeviceT, IntegrationWeightGradOp<TensorT>, IntegrationWeightGradTensorOp<TensorT, DeviceT>>
+	{
+	public:
+		IntegrationWeightGradTensorOp<TensorT, DeviceT>* convertOpToTensorOp(IntegrationWeightGradOp<TensorT>* op_class) const {
+			if (op_class->getName() == "SumWeightGradOp") {
+				IntegrationWeightGradTensorOp<TensorT, DeviceT>* op_tensor_class = new SumWeightGradTensorOp<TensorT, DeviceT>();
+				return op_tensor_class;
+			}
+			//else if (op_class->getName() == "ProdWeightGradOp") {
+			//	IntegrationWeightGradTensorOp<TensorT, DeviceT>* op_tensor_class = new ProdWeightGradTensorOp<TensorT, DeviceT>();
+			//	return op_tensor_class;
+			//}
+			//else if (op_class->getName() == "MeanWeightGradWeightGradOp") {
+			//	IntegrationWeightGradTensorOp<TensorT, DeviceT>* op_tensor_class = new MeanWeightGradTensorOp<TensorT, DeviceT>();
+			//	return op_tensor_class;
+			//}
+			//else if (op_class->getName() == "MaxWeightGradOp") {
+			//	IntegrationWeightGradTensorOp<TensorT, DeviceT>* op_tensor_class = new MaxWeightGradTensorOp<TensorT, DeviceT>();
+			//	return op_tensor_class;
+			//}
+			//else if (op_class->getName() == "VarModWeightGradOp") {
+			//	IntegrationWeightGradTensorOp<TensorT, DeviceT>* op_tensor_class = new VarModWeightGradTensorOp<TensorT, DeviceT>();
+			//	return op_tensor_class;
+			//}
+			//else if (op_class->getName() == "CountWeightGradOp") {
+			//	IntegrationWeightGradTensorOp<TensorT, DeviceT>* op_tensor_class = new CountWeightGradTensorOp<TensorT, DeviceT>();
+			//	return op_tensor_class;
+			//}
+			else {
+				std::cout << "No conversion available for " << op_class->getName() << "." << std::endl;
+				IntegrationWeightGradTensorOp<TensorT, DeviceT>* op_tensor_class = new SumWeightGradTensorOp<TensorT, DeviceT>();
+				return op_tensor_class;
+			}
+		}
+		std::vector<TensorT> getTensorParams(IntegrationWeightGradOp<TensorT>* op_class) const { return std::vector<TensorT>(); }
+	};
 
 }
 #endif //SMARTPEAK_OPTOTENSOROP_H
