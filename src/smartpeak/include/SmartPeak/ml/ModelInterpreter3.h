@@ -1233,6 +1233,7 @@ namespace SmartPeak
 				ActivationTensorOp<TensorT, Eigen::DefaultDevice>* activation = nullptr;
 				activation_conv(FP_operations[operations.second[0]].arguments[0].source_node->getActivation(), activation, std::vector<TensorT>());
 				operation_step.source_layer.activation.reset(std::move(activation));
+				delete activation;
 				ActivationTensorOp<TensorT, Eigen::DefaultDevice>* activation_grad = nullptr;
 				activation_conv(FP_operations[operations.second[0]].arguments[0].source_node->getActivationGrad(), activation_grad, std::vector<TensorT>());
 				operation_step.source_layer.activation_grad.reset(activation_grad);
