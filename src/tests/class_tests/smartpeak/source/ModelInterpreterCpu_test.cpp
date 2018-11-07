@@ -133,35 +133,122 @@ BOOST_AUTO_TEST_CASE(allocateForwardPropogationLayerTensors)
 	std::vector<std::vector<float>> weight_values;
 	std::vector<bool> make_source_tensors, make_sink_tensors, make_weight_tensors;
 	model_interpreter.getForwardPropogationLayerTensorDimensions(FP_operations_expanded, tensor_ops, source_layer_sizes, sink_layer_sizes, weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors);
-	model_interpreter.allocateForwardPropogationLayerTensors(FP_operations_expanded, tensor_ops, source_layer_sizes, sink_layer_sizes, weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors, batch_size, memory_size, train);
+	//model_interpreter.allocateForwardPropogationLayerTensors(FP_operations_expanded, tensor_ops, source_layer_sizes, sink_layer_sizes, weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors, batch_size, memory_size, train);
 
-	// asserts are needed because boost deallocates the pointer memory after being called...
-	assert(model_interpreter.getLayerTensor(0)->getBatchSize()==batch_size); // sinks
-	assert(model_interpreter.getLayerTensor(0)->getMemorySize() == memory_size); // sinks
-	assert(model_interpreter.getLayerTensor(0)->getLayerSize() == 2); // sinks
-	assert(model_interpreter.getLayerTensor(1)->getBatchSize() == batch_size); // sources
-	assert(model_interpreter.getLayerTensor(1)->getMemorySize() == memory_size); // sources
-	assert(model_interpreter.getLayerTensor(1)->getLayerSize() == 3); // sources
-	assert(model_interpreter.getWeightTensor(0)->getLayer1Size() == 3);
-	assert(model_interpreter.getWeightTensor(0)->getLayer2Size() == 2);
-	assert(model_interpreter.getWeightTensor(0)->getNSolverParams() == 3);
-	assert(model_interpreter.getOperationSteps(0)[0].source_layer.time_step == 0);
-	assert(model_interpreter.getOperationSteps(0)[0].source_layer.integration->getName() == "SumTensorOp");
-	assert(model_interpreter.getOperationSteps(0)[0].source_layer.integration_error->getName() == "SumErrorTensorOp");
-	assert(model_interpreter.getOperationSteps(0)[0].source_layer.integration_weight_grad->getName() == "SumWeightGradTensorOp");
-	assert(model_interpreter.getOperationSteps(0)[0].source_layer.activation->getName() == "ReLUTensorOp");
-	assert(model_interpreter.getOperationSteps(0)[0].source_layer.activation_grad->getName() == "ReLUGradTensorOp");
-	assert(model_interpreter.getOperationSteps(0)[0].sink_layer.time_step == 0);
-	assert(model_interpreter.getOperationSteps(0)[0].sink_layer.integration->getName() == "SumTensorOp");
-	assert(model_interpreter.getOperationSteps(0)[0].sink_layer.integration_error->getName() == "SumErrorTensorOp");
-	assert(model_interpreter.getOperationSteps(0)[0].sink_layer.integration_weight_grad->getName() == "SumWeightGradTensorOp");
-	assert(model_interpreter.getOperationSteps(0)[0].sink_layer.activation->getName() == "ReLUTensorOp");
-	assert(model_interpreter.getOperationSteps(0)[0].sink_layer.activation_grad->getName() == "ReLUGradTensorOp");
-	assert(model_interpreter.getOperationSteps(0)[0].weight.solver->getName() == "SGDTensorOp");
+	//// asserts are needed because boost deallocates the pointer memory after being called...
+	//assert(model_interpreter.getLayerTensor(0)->getBatchSize()==batch_size); // sinks
+	//assert(model_interpreter.getLayerTensor(0)->getMemorySize() == memory_size); // sinks
+	//assert(model_interpreter.getLayerTensor(0)->getLayerSize() == 2); // sinks
+	//assert(model_interpreter.getLayerTensor(1)->getBatchSize() == batch_size); // sources
+	//assert(model_interpreter.getLayerTensor(1)->getMemorySize() == memory_size); // sources
+	//assert(model_interpreter.getLayerTensor(1)->getLayerSize() == 3); // sources
+	//assert(model_interpreter.getWeightTensor(0)->getLayer1Size() == 3);
+	//assert(model_interpreter.getWeightTensor(0)->getLayer2Size() == 2);
+	//assert(model_interpreter.getWeightTensor(0)->getNSolverParams() == 3);
+	//assert(model_interpreter.getOperationSteps(0)[0].source_layer.time_step == 0);
+	//assert(model_interpreter.getOperationSteps(0)[0].source_layer.integration->getName() == "SumTensorOp");
+	//assert(model_interpreter.getOperationSteps(0)[0].source_layer.integration_error->getName() == "SumErrorTensorOp");
+	//assert(model_interpreter.getOperationSteps(0)[0].source_layer.integration_weight_grad->getName() == "SumWeightGradTensorOp");
+	//assert(model_interpreter.getOperationSteps(0)[0].source_layer.activation->getName() == "LinearTensorOp");
+	//assert(model_interpreter.getOperationSteps(0)[0].source_layer.activation_grad->getName() == "LinearGradTensorOp");
+	//assert(model_interpreter.getOperationSteps(0)[0].sink_layer.time_step == 0);
+	//assert(model_interpreter.getOperationSteps(0)[0].sink_layer.integration->getName() == "SumTensorOp");
+	//assert(model_interpreter.getOperationSteps(0)[0].sink_layer.integration_error->getName() == "SumErrorTensorOp");
+	//assert(model_interpreter.getOperationSteps(0)[0].sink_layer.integration_weight_grad->getName() == "SumWeightGradTensorOp");
+	//assert(model_interpreter.getOperationSteps(0)[0].sink_layer.activation->getName() == "ReLUTensorOp");
+	//assert(model_interpreter.getOperationSteps(0)[0].sink_layer.activation_grad->getName() == "ReLUGradTensorOp");
+	//assert(model_interpreter.getOperationSteps(0)[0].weight.solver->getName() == "SGDTensorOp");
 }
 
+Model<float> model_getForwardPropogationOperations = makeModelFCSum();
 BOOST_AUTO_TEST_CASE(getForwardPropogationOperations)
 {
+	ModelInterpreterDefaultDevice<float> model_interpreter;
+	const int batch_size = 4;
+	const int memory_size = 2;
+	const bool train = true;
+
+	// initialize nodes
+	// NOTE: input and biases have been activated when the model was created
+
+	model_interpreter.getForwardPropogationOperations(model_getForwardPropogationOperations, batch_size, memory_size, train);
+
+	// asserts are needed because boost deallocates the pointer memory after being called...
+	int expected_layer_tensors = 4;
+	for (int i = 0; i < expected_layer_tensors; ++i) {
+		std::cout << "Layer batch size (" << i << "): " << model_interpreter.getLayerTensor(i)->getBatchSize() << std::endl;
+		std::cout << "Layer memory size (" << i << "): " << model_interpreter.getLayerTensor(i)->getMemorySize() << std::endl;
+		std::cout << "Layer memory size (" << i << "): " << model_interpreter.getLayerTensor(i)->getLayerSize() << std::endl;
+		assert(model_interpreter.getLayerTensor(i)->getBatchSize() == batch_size); // sinks
+		assert(model_interpreter.getLayerTensor(i)->getMemorySize() == memory_size); // sinks
+		if (i == 0) {
+			assert(model_interpreter.getLayerTensor(i)->getLayerSize() == 2); // sinks
+		}
+		else if (i == 1) {
+			assert(model_interpreter.getLayerTensor(i)->getLayerSize() == 3); // sources
+		}
+		else if (i == 2) {
+			assert(model_interpreter.getLayerTensor(i)->getLayerSize() == 2); // sink
+		}
+		else if (i == 3) {
+			assert(model_interpreter.getLayerTensor(i)->getLayerSize() == 1); // sources
+		}
+	}
+	int expected_weight_tensors = 3;
+	for (int i = 0; i < expected_weight_tensors; ++i) {
+		std::cout << "Weight Layer1 size (" << i << "): " << model_interpreter.getWeightTensor(i)->getLayer1Size() << std::endl;
+		std::cout << "Weight Layer1 size (" << i << "): " << model_interpreter.getWeightTensor(i)->getLayer2Size() << std::endl;
+		std::cout << "Weight NParams size (" << i << "): " << model_interpreter.getWeightTensor(i)->getNSolverParams() << std::endl;
+		assert(model_interpreter.getWeightTensor(i)->getNSolverParams() == 3);
+		if (i == 0) {
+			assert(model_interpreter.getWeightTensor(i)->getLayer1Size() == 3);
+			assert(model_interpreter.getWeightTensor(i)->getLayer2Size() == 2);
+		}
+		else if (i == 1) {
+			assert(model_interpreter.getWeightTensor(i)->getLayer1Size() == 1);
+			assert(model_interpreter.getWeightTensor(i)->getLayer2Size() == 2);
+		}
+		else if (i == 2) {
+			assert(model_interpreter.getWeightTensor(i)->getLayer1Size() == 2);
+			assert(model_interpreter.getWeightTensor(i)->getLayer2Size() == 2);
+		}
+	}
+	std::vector<int> expected_operation_steps = {1, 2};
+	for (int i = 0; i < expected_operation_steps.size(); ++i) {
+		for (int j = 0; j < expected_operation_steps[i]; ++j) {
+			std::cout << "Source Layer Time Step (" << i << "): " << model_interpreter.getOperationSteps(i)[j].source_layer.time_step << std::endl;
+			std::cout << "Sink Layer Time Step (" << i << "): " << model_interpreter.getOperationSteps(i)[j].sink_layer.time_step << std::endl;
+			assert(model_interpreter.getOperationSteps(i)[j].source_layer.time_step == 0);
+			assert(model_interpreter.getOperationSteps(i)[j].sink_layer.time_step == 0);
+			assert(model_interpreter.getOperationSteps(i)[j].sink_layer.integration->getName() == "SumTensorOp");
+			assert(model_interpreter.getOperationSteps(i)[j].sink_layer.integration_error->getName() == "SumErrorTensorOp");
+			assert(model_interpreter.getOperationSteps(i)[j].sink_layer.integration_weight_grad->getName() == "SumWeightGradTensorOp");
+			assert(model_interpreter.getOperationSteps(i)[j].sink_layer.activation->getName() == "ReLUTensorOp");
+			assert(model_interpreter.getOperationSteps(i)[j].sink_layer.activation_grad->getName() == "ReLUGradTensorOp");
+			assert(model_interpreter.getOperationSteps(i)[j].weight.solver->getName() == "SGDTensorOp");
+			if (j == 0) {
+				assert(model_interpreter.getOperationSteps(i)[j].source_layer.integration->getName() == "SumTensorOp");
+				assert(model_interpreter.getOperationSteps(i)[j].source_layer.integration_error->getName() == "SumErrorTensorOp");
+				assert(model_interpreter.getOperationSteps(i)[j].source_layer.integration_weight_grad->getName() == "SumWeightGradTensorOp");
+				assert(model_interpreter.getOperationSteps(i)[j].source_layer.activation->getName() == "LinearTensorOp");
+				assert(model_interpreter.getOperationSteps(i)[j].source_layer.activation_grad->getName() == "LinearGradTensorOp");
+			}
+			else if (i == 1 && j == 1) {
+				assert(model_interpreter.getOperationSteps(i)[j].source_layer.integration->getName() == "SumTensorOp");
+				assert(model_interpreter.getOperationSteps(i)[j].source_layer.integration_error->getName() == "SumErrorTensorOp");
+				assert(model_interpreter.getOperationSteps(i)[j].source_layer.integration_weight_grad->getName() == "SumWeightGradTensorOp");
+				assert(model_interpreter.getOperationSteps(i)[j].source_layer.activation->getName() == "ReLUTensorOp");
+				assert(model_interpreter.getOperationSteps(i)[j].source_layer.activation_grad->getName() == "ReLUGradTensorOp");
+			}
+			else {
+				assert(model_interpreter.getOperationSteps(i)[j].source_layer.integration->getName() == "SumTensorOp");
+				assert(model_interpreter.getOperationSteps(i)[j].source_layer.integration_error->getName() == "SumErrorTensorOp");
+				assert(model_interpreter.getOperationSteps(i)[j].source_layer.integration_weight_grad->getName() == "SumWeightGradTensorOp");
+				assert(model_interpreter.getOperationSteps(i)[j].source_layer.activation->getName() == "LinearTensorOp");
+				assert(model_interpreter.getOperationSteps(i)[j].source_layer.activation_grad->getName() == "LinearGradTensorOp");
+			}
+		}
+	}
 }
 
 BOOST_AUTO_TEST_CASE(mapValuesToLayers)

@@ -680,10 +680,10 @@ BOOST_AUTO_TEST_CASE(getForwardPropogationLayerTensorDimensions)
 
 	BOOST_CHECK_EQUAL(source_layer_sizes.size(), 2);
 	BOOST_CHECK_EQUAL(source_layer_sizes[0], 1);
-	BOOST_CHECK_EQUAL(source_layer_sizes[1], 0);
+	BOOST_CHECK_EQUAL(source_layer_sizes[1], 2);
 	BOOST_CHECK_EQUAL(sink_layer_sizes.size(), 2);
 	BOOST_CHECK_EQUAL(sink_layer_sizes[0], 2);
-	BOOST_CHECK_EQUAL(sink_layer_sizes[1], 0);
+	BOOST_CHECK_EQUAL(sink_layer_sizes[1], 2);
 
 	BOOST_CHECK_EQUAL(weight_indices.size(), 2);
 	BOOST_CHECK_EQUAL(weight_indices[0].size(), 2);

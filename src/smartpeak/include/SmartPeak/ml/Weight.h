@@ -101,6 +101,7 @@ public:
     WeightInitOp<TensorT>* getWeightInitOp() const; ///< weight initialization operator getter
 
     void setSolverOp(const std::shared_ptr<SolverOp<TensorT>>& solver); ///< weight update operator setter
+		std::shared_ptr<SolverOp<TensorT>> getSolverOpShared() const; ///< weight update operator getter
     SolverOp<TensorT>* getSolverOp() const; ///< weight update operator getter
 
     void setWeightMin(const TensorT& weight_min); ///< min weight setter
@@ -282,6 +283,11 @@ private:
 	{
 		solver_.reset();
 		solver_ = std::move(solver);
+	}
+	template<typename TensorT>
+	inline std::shared_ptr<SolverOp<TensorT>> Weight<TensorT>::getSolverOpShared() const
+	{
+		return solver_;
 	}
 	template<typename TensorT>
 	SolverOp<TensorT>* Weight<TensorT>::getSolverOp() const
