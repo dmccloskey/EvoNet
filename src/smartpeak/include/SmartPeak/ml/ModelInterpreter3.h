@@ -397,7 +397,7 @@ namespace SmartPeak
 			return;
 		}
 
-		for (std::shared_ptr<NodeTensorData<TensorT>>& layer_tensor : layer_tensors_) {
+		for (int i = 0; i < node_names.size(); ++i){
 			int layer_size = 0;
 			// check that all nodes are in the layer
 			// check that the # of nodes matches the tensor layer size
