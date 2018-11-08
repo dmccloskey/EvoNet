@@ -1464,9 +1464,9 @@ namespace SmartPeak
 
 	template<typename TensorT>
 	inline void ModelInterpreterDefaultDevice<TensorT>::allocateModelErrorTensor(const int& batch_size, const int& memory_size) {
-		ModelErrorDataCpu<TensorT> model_error_data;
-		model_error_data.initModelErrorData(batch_size, memory_size);
-		model_error_.reset(&model_error_data);
+		std::shared_ptr<ModelErrorData<TensorT>> model_error_data(new ModelErrorDataCpu<TensorT>());
+		model_error_data->initModelErrorData(batch_size, memory_size);
+		model_error_ = model_error_data;
 	}
 
 	//template<typename TensorT>
@@ -1832,9 +1832,9 @@ namespace SmartPeak
 
 	template<typename TensorT>
 	inline void ModelInterpreterGpu<TensorT>::allocateModelErrorTensor(const int& batch_size, const int& memory_size) {
-		ModelErrorDataGpu<TensorT> model_error_data;
-		model_error_data.initModelErrorData(batch_size, memory_size);
-		model_error_.reset(&model_error_data);
+		std::shared_ptr<ModelErrorData<TensorT>> model_error_data(new ModelErrorDataGpu<TensorT>());
+		model_error_data->initModelErrorData(batch_size, memory_size);
+		model_error_ = model_error_data;
 	}
 
 	template<typename TensorT>

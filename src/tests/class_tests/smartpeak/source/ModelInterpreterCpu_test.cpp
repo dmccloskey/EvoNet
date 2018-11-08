@@ -251,6 +251,16 @@ BOOST_AUTO_TEST_CASE(getForwardPropogationOperations)
 	}
 }
 
+BOOST_AUTO_TEST_CASE(allocateModelErrorTensor)
+{
+	ModelInterpreterDefaultDevice<float> model_interpreter;
+	const int batch_size = 4;
+	const int memory_size = 2;
+
+	BOOST_CHECK_EQUAL(model_interpreter.getModelError()->getBatchSize(), 4);
+	BOOST_CHECK_EQUAL(model_interpreter.getModelError()->getMemorySize(), 2);
+}
+
 BOOST_AUTO_TEST_CASE(mapValuesToLayers)
 {
 }
