@@ -1,6 +1,6 @@
 /**TODO:  Add copyright*/
 
-#define BOOST_TEST_MODULE ModelInterpreter DAG test suite 
+#define BOOST_TEST_MODULE ModelInterpreterCpu test suite 
 #include <boost/test/included/unit_test.hpp>
 #include <SmartPeak/ml/ModelInterpreter3.h>
 #include <SmartPeak/ml/Model3.h>
@@ -146,17 +146,17 @@ BOOST_AUTO_TEST_CASE(allocateForwardPropogationLayerTensors)
 	assert(model_interpreter.getWeightTensor(0)->getLayer2Size() == 2);
 	assert(model_interpreter.getWeightTensor(0)->getNSolverParams() == 3);
 	assert(model_interpreter.getOperationSteps(0)[0].source_layer.time_step == 0);
+	assert(model_interpreter.getOperationSteps(0)[0].source_layer.activation->getName() == "LinearTensorOp");
+	assert(model_interpreter.getOperationSteps(0)[0].source_layer.activation_grad->getName() == "LinearGradTensorOp");
 	assert(model_interpreter.getOperationSteps(0)[0].source_layer.integration->getName() == "SumTensorOp");
 	assert(model_interpreter.getOperationSteps(0)[0].source_layer.integration_error->getName() == "SumErrorTensorOp");
 	assert(model_interpreter.getOperationSteps(0)[0].source_layer.integration_weight_grad->getName() == "SumWeightGradTensorOp");
-	assert(model_interpreter.getOperationSteps(0)[0].source_layer.activation->getName() == "LinearTensorOp");
-	assert(model_interpreter.getOperationSteps(0)[0].source_layer.activation_grad->getName() == "LinearGradTensorOp");
 	assert(model_interpreter.getOperationSteps(0)[0].sink_layer.time_step == 0);
+	assert(model_interpreter.getOperationSteps(0)[0].sink_layer.activation->getName() == "ReLUTensorOp");
+	assert(model_interpreter.getOperationSteps(0)[0].sink_layer.activation_grad->getName() == "ReLUGradTensorOp");
 	assert(model_interpreter.getOperationSteps(0)[0].sink_layer.integration->getName() == "SumTensorOp");
 	assert(model_interpreter.getOperationSteps(0)[0].sink_layer.integration_error->getName() == "SumErrorTensorOp");
 	assert(model_interpreter.getOperationSteps(0)[0].sink_layer.integration_weight_grad->getName() == "SumWeightGradTensorOp");
-	assert(model_interpreter.getOperationSteps(0)[0].sink_layer.activation->getName() == "ReLUTensorOp");
-	assert(model_interpreter.getOperationSteps(0)[0].sink_layer.activation_grad->getName() == "ReLUGradTensorOp");
 	assert(model_interpreter.getOperationSteps(0)[0].weight.solver->getName() == "SGDTensorOp");
 }
 
