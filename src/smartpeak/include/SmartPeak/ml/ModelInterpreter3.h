@@ -174,14 +174,12 @@ namespace SmartPeak
 
 			@param[in] values Values to assign to the node
 			@param[in] node_names
-			@param[in] status_update
 			@param[in] value_type ("output", "derivative", "error", or "dt")
 		*/
 		void mapValuesToLayers(
 			Model<TensorT>& model,
 			const Eigen::Tensor<TensorT, 3>& values,
 			const std::vector<std::string>& node_names,
-			const NodeStatus& status_update,
 			const std::string& value_type);
 
 		/**
@@ -377,7 +375,7 @@ namespace SmartPeak
 	}
 
 	template<typename TensorT, typename DeviceT>
-	inline void ModelInterpreter<TensorT, DeviceT>::mapValuesToLayers(Model<TensorT>& model, const Eigen::Tensor<TensorT, 3>& values, const std::vector<std::string>& node_names, const NodeStatus & status_update, const std::string & value_type)
+	inline void ModelInterpreter<TensorT, DeviceT>::mapValuesToLayers(Model<TensorT>& model, const Eigen::Tensor<TensorT, 3>& values, const std::vector<std::string>& node_names, const std::string & value_type)
 	{
 		// check dimension mismatches
 		if (node_names.size() != values.dimension(2))
@@ -398,18 +396,16 @@ namespace SmartPeak
 		}
 
 		for (int i = 0; i < node_names.size(); ++i){
-			int layer_size = 0;
-			// check that all nodes are in the layer
-			// check that the # of nodes matches the tensor layer size
+			auto node = model.getNodesMap().at(node_names[i]);
 			// copy over the values
 			if (value_type == "output")
-				layer_tensor->setOutput(values);
+				getLayerTensor(node->getTensorIndex().first)->getOutput().chip(node->getTensorIndex().second, 2) = values.chip(i, 2);
 			else if (value_type == "error")
-				layer_tensor->setError(values);
+				getLayerTensor(node->getTensorIndex().first)->getError().chip(node->getTensorIndex().second, 2) = values.chip(i, 2);
 			else if (value_type == "derivative")
-				layer_tensor->setDerivative(values);
+				getLayerTensor(node->getTensorIndex().first)->getDerivative().chip(node->getTensorIndex().second, 2) = values.chip(i, 2);
 			else if (value_type == "dt")
-				layer_tensor->setDt(values);
+				getLayerTensor(node->getTensorIndex().first)->getDt().chip(node->getTensorIndex().second, 2) = values.chip(i, 2);
 		}
 	}
 

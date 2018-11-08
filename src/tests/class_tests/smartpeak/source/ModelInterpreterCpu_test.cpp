@@ -176,9 +176,9 @@ BOOST_AUTO_TEST_CASE(getForwardPropogationOperations)
 	// asserts are needed because boost deallocates the pointer memory after being called...
 	int expected_layer_tensors = 4;
 	for (int i = 0; i < expected_layer_tensors; ++i) {
-		std::cout << "Layer batch size (" << i << "): " << model_interpreter.getLayerTensor(i)->getBatchSize() << std::endl;
-		std::cout << "Layer memory size (" << i << "): " << model_interpreter.getLayerTensor(i)->getMemorySize() << std::endl;
-		std::cout << "Layer memory size (" << i << "): " << model_interpreter.getLayerTensor(i)->getLayerSize() << std::endl;
+		//std::cout << "Layer batch size (" << i << "): " << model_interpreter.getLayerTensor(i)->getBatchSize() << std::endl;
+		//std::cout << "Layer memory size (" << i << "): " << model_interpreter.getLayerTensor(i)->getMemorySize() << std::endl;
+		//std::cout << "Layer memory size (" << i << "): " << model_interpreter.getLayerTensor(i)->getLayerSize() << std::endl;
 		assert(model_interpreter.getLayerTensor(i)->getBatchSize() == batch_size); // sinks
 		assert(model_interpreter.getLayerTensor(i)->getMemorySize() == memory_size); // sinks
 		if (i == 0) {
@@ -196,9 +196,9 @@ BOOST_AUTO_TEST_CASE(getForwardPropogationOperations)
 	}
 	int expected_weight_tensors = 3;
 	for (int i = 0; i < expected_weight_tensors; ++i) {
-		std::cout << "Weight Layer1 size (" << i << "): " << model_interpreter.getWeightTensor(i)->getLayer1Size() << std::endl;
-		std::cout << "Weight Layer1 size (" << i << "): " << model_interpreter.getWeightTensor(i)->getLayer2Size() << std::endl;
-		std::cout << "Weight NParams size (" << i << "): " << model_interpreter.getWeightTensor(i)->getNSolverParams() << std::endl;
+		//std::cout << "Weight Layer1 size (" << i << "): " << model_interpreter.getWeightTensor(i)->getLayer1Size() << std::endl;
+		//std::cout << "Weight Layer1 size (" << i << "): " << model_interpreter.getWeightTensor(i)->getLayer2Size() << std::endl;
+		//std::cout << "Weight NParams size (" << i << "): " << model_interpreter.getWeightTensor(i)->getNSolverParams() << std::endl;
 		assert(model_interpreter.getWeightTensor(i)->getNSolverParams() == 3);
 		if (i == 0) {
 			assert(model_interpreter.getWeightTensor(i)->getLayer1Size() == 3);
@@ -216,8 +216,8 @@ BOOST_AUTO_TEST_CASE(getForwardPropogationOperations)
 	std::vector<int> expected_operation_steps = {1, 2};
 	for (int i = 0; i < expected_operation_steps.size(); ++i) {
 		for (int j = 0; j < expected_operation_steps[i]; ++j) {
-			std::cout << "Source Layer Time Step (" << i << "): " << model_interpreter.getOperationSteps(i)[j].source_layer.time_step << std::endl;
-			std::cout << "Sink Layer Time Step (" << i << "): " << model_interpreter.getOperationSteps(i)[j].sink_layer.time_step << std::endl;
+			//std::cout << "Source Layer Time Step (" << i << "): " << model_interpreter.getOperationSteps(i)[j].source_layer.time_step << std::endl;
+			//std::cout << "Sink Layer Time Step (" << i << "): " << model_interpreter.getOperationSteps(i)[j].sink_layer.time_step << std::endl;
 			assert(model_interpreter.getOperationSteps(i)[j].source_layer.time_step == 0);
 			assert(model_interpreter.getOperationSteps(i)[j].sink_layer.time_step == 0);
 			assert(model_interpreter.getOperationSteps(i)[j].sink_layer.integration->getName() == "SumTensorOp");
@@ -257,16 +257,117 @@ BOOST_AUTO_TEST_CASE(allocateModelErrorTensor)
 	const int batch_size = 4;
 	const int memory_size = 2;
 
+	model_interpreter.allocateModelErrorTensor(batch_size, memory_size);
+
 	BOOST_CHECK_EQUAL(model_interpreter.getModelError()->getBatchSize(), 4);
 	BOOST_CHECK_EQUAL(model_interpreter.getModelError()->getMemorySize(), 2);
 }
 
+Model<float> model_mapValuesToLayers = makeModelFCSum();
 BOOST_AUTO_TEST_CASE(mapValuesToLayers)
 {
+	ModelInterpreterDefaultDevice<float> model_interpreter;
+	const int batch_size = 4;
+	const int memory_size = 2;
+	const bool train = true;
+
+	// initialize nodes
+	// NOTE: input and biases have been activated when the model was created
+
+	model_interpreter.getForwardPropogationOperations(model_mapValuesToLayers, batch_size, memory_size, train);
+
+	// create the input
+	const std::vector<std::string> node_ids = { "0", "1" };
+	Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)node_ids.size());
+	input.setValues({
+		{{1, 5}, {0, 0}},
+		{{2, 6}, {0, 0}},
+		{{3, 7}, {0, 0}},
+		{{4, 8}, {0, 0}} });
+
+	auto node0 = model_mapValuesToLayers.getNode("0");
+	auto node1 = model_mapValuesToLayers.getNode("1");
+
+	model_interpreter.mapValuesToLayers(model_mapValuesToLayers, input, node_ids, "output");
+	for (int i = 0; i < batch_size; ++i){
+		for (int j = 0; j < memory_size; ++j){
+			BOOST_CHECK_EQUAL(model_interpreter.getLayerTensor(node0.getTensorIndex().first)->getOutput()(i, j, node0.getTensorIndex().second), input(i, j, 0));
+			BOOST_CHECK_EQUAL(model_interpreter.getLayerTensor(node1.getTensorIndex().first)->getOutput()(i, j, node1.getTensorIndex().second), input(i, j, 1));
+		}
+	}
+
+	model_interpreter.mapValuesToLayers(model_mapValuesToLayers, input, node_ids, "derivative");
+	for (int i = 0; i < batch_size; ++i) {
+		for (int j = 0; j < memory_size; ++j) {
+			BOOST_CHECK_EQUAL(model_interpreter.getLayerTensor(node0.getTensorIndex().first)->getDerivative()(i, j, node0.getTensorIndex().second), input(i, j, 0));
+			BOOST_CHECK_EQUAL(model_interpreter.getLayerTensor(node1.getTensorIndex().first)->getDerivative()(i, j, node1.getTensorIndex().second), input(i, j, 1));
+		}
+	}
+
+	model_interpreter.mapValuesToLayers(model_mapValuesToLayers, input, node_ids, "error");
+	for (int i = 0; i < batch_size; ++i) {
+		for (int j = 0; j < memory_size; ++j) {
+			BOOST_CHECK_EQUAL(model_interpreter.getLayerTensor(node0.getTensorIndex().first)->getError()(i, j, node0.getTensorIndex().second), input(i, j, 0));
+			BOOST_CHECK_EQUAL(model_interpreter.getLayerTensor(node1.getTensorIndex().first)->getError()(i, j, node1.getTensorIndex().second), input(i, j, 1));
+		}
+	}
+
+	model_interpreter.mapValuesToLayers(model_mapValuesToLayers, input, node_ids, "dt");
+	for (int i = 0; i < batch_size; ++i) {
+		for (int j = 0; j < memory_size; ++j) {
+			BOOST_CHECK_EQUAL(model_interpreter.getLayerTensor(node0.getTensorIndex().first)->getDt()(i, j, node0.getTensorIndex().second), input(i, j, 0));
+			BOOST_CHECK_EQUAL(model_interpreter.getLayerTensor(node1.getTensorIndex().first)->getDt()(i, j, node1.getTensorIndex().second), input(i, j, 1));
+		}
+	}
 }
 
+Model<float> model_executeForwardPropogationOperations = makeModelFCSum();
 BOOST_AUTO_TEST_CASE(executeForwardPropogationOperations)
 {
+	ModelInterpreterDefaultDevice<float> model_interpreter;
+	const int batch_size = 4;
+	const int memory_size = 2;
+	const bool train = true;
+
+	// compile the graph into a set of operations
+	model_interpreter.getForwardPropogationOperations(model_executeForwardPropogationOperations, batch_size, memory_size, train);
+
+	// create the input
+	const std::vector<std::string> node_ids = { "0", "1" };
+	Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)node_ids.size());
+	input.setValues({
+		{{1, 5}, {0, 0}},
+		{{2, 6}, {0, 0}},
+		{{3, 7}, {0, 0}},
+		{{4, 8}, {0, 0}} });
+	model_interpreter.mapValuesToLayers(model_mapValuesToLayers, input, node_ids, "output");
+
+	model_interpreter.executeForwardPropogationOperations(0, true, true);
+
+	// test values of output nodes
+	Eigen::Tensor<float, 2> output(batch_size, 2);
+	output.setValues({ {15, 15}, {19, 19}, {23, 23}, {27, 27} });
+	Eigen::Tensor<float, 2> net_input(batch_size, 2);
+	net_input.setValues({ { 15, 15 },{ 19, 19 },{ 23, 23 },{ 27, 27 } });
+
+	const std::vector<std::string> output_nodes = { "4", "5" };
+	for (int i = 0; i < (int)output_nodes.size(); ++i)
+	{
+		BOOST_CHECK_EQUAL(model1.getNode(output_nodes[i]).getOutput().size(), batch_size*memory_size);
+		BOOST_CHECK_EQUAL(model1.getNode(output_nodes[i]).getDerivative().size(), batch_size*memory_size);
+		BOOST_CHECK(model1.getNode(output_nodes[i]).getStatus() == NodeStatus::activated);
+		for (int j = 0; j < batch_size; ++j) {
+			for (int k = 0; k < memory_size - 1; ++k)	{
+				//std::cout << "Node: " << i << "; Batch: " << j << "; Memory: " << k << std::endl;
+				//std::cout << "Calc Output: " << model1.getNode(output_nodes[i]).getOutput()(j, k) << ", Expected Output: " << output(j, i) << std::endl;
+				//std::cout << "Calc Net Input: " << model1.getNode(output_nodes[i]).getInput()(j, k) << ", Expected Net Input: " << net_input(j, i) << std::endl;
+				BOOST_CHECK_CLOSE(model1.getNode(output_nodes[i]).getInput()(j, k), net_input(j, i), 1e-3);
+				BOOST_CHECK_CLOSE(model1.getNode(output_nodes[i]).getOutput()(j, k), output(j, i), 1e-3);
+				BOOST_CHECK_CLOSE(model1.getNode(output_nodes[i]).getDerivative()(j, k), derivative(j, i), 1e-3);
+			}
+		}
+	}
+
 }
 
 BOOST_AUTO_TEST_CASE(executeModelErrorOperations)

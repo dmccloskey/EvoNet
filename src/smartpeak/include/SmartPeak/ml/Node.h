@@ -227,6 +227,7 @@ private:
 		name_ = other.name_;
 		module_id_ = other.module_id_;
 		module_name_ = other.module_name_;
+		tensor_index_ = other.tensor_index_;
 		type_ = other.type_;
 		status_ = other.status_;
 		activation_ = other.activation_;
