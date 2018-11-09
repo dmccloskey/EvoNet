@@ -96,36 +96,6 @@ namespace SmartPeak
 		OperationWeight<TensorT, DeviceT> weight;
 	};
 
-	///*
-	//Class specializations needed to operate with specific data specializations
-	//*/
-	//template<typename TensorT>
-	//class OperationTensorStepDefaultDevice : public OperationTensorStep<TensorT, Eigen::DefaultDevice>
-	//{
-	//public:
-	//	OperationLayer<TensorT, Eigen::DefaultDevice> sink_layer;
-	//	OperationLayer<TensorT, Eigen::DefaultDevice> source_layer;
-	//	OperationWeight<TensorT, Eigen::DefaultDevice> weight;
-	//};
-
-	//template<typename TensorT>
-	//class OperationTensorStepCpu : public OperationTensorStep<TensorT, Eigen::ThreadPool>
-	//{
-	//public:
-	//	OperationLayer<TensorT, Eigen::ThreadPool> sink_layer;
-	//	OperationLayer<TensorT, Eigen::ThreadPool> source_layer;
-	//	OperationWeight<TensorT, Eigen::ThreadPool> weight;
-	//};
-
-	template<typename TensorT>
-	class OperationTensorStepGpu : public OperationTensorStep<TensorT, Eigen::GpuDevice>
-	{
-	public:
-		OperationLayer<TensorT, Eigen::GpuDevice> sink_layer;
-		OperationLayer<TensorT, Eigen::GpuDevice> source_layer;
-		OperationWeight<TensorT, Eigen::GpuDevice> weight;
-	};
-
 	/**
 		@brief Directed Network Model Interpreter
 
@@ -1566,11 +1536,6 @@ namespace SmartPeak
 		void executeWeightErrorOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false);
 		void executeWeightUpdateOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false);
 		void allocateModelErrorTensor(const int& batch_size, const int& memory_size);
-		void addOperationSteps(const std::vector<OperationTensorStepGpu<TensorT>>& operation_steps);
-		void clearOperationSteps();
-	protected:
-		std::vector<std::vector<OperationTensorStepGpu<TensorT>>> operation_steps_;
-		ModelErrorDataGpu<TensorT> model_error_;
 	};
 
 	template<typename TensorT>
@@ -1717,7 +1682,7 @@ namespace SmartPeak
 
 			// execute the forward propogation steps
 			int device_iter = 0;
-			for (OperationTensorStepGpu<TensorT>& operation : operations_list) {
+			for (OperationTensorStep<TensorT, Eigen::GpuDevice>& operation : operations_list) {
 				model_kernal.executeForwardPropogation(
 					operation.source_layer.tensor->getHOutputPointer().get(),
 					operation.source_layer.tensor->getDOutputPointer().get(),
@@ -1782,7 +1747,7 @@ namespace SmartPeak
 
 			// execute the forward propogation steps
 			int device_iter = 0;
-			for (OperationTensorStepGpu<TensorT>& operation : operation_steps_[iter]) { //reverse source/sink
+			for (OperationTensorStep<TensorT, Eigen::GpuDevice>& operation : operation_steps_[iter]) { //reverse source/sink
 
 				model_kernal.executeNodeDerivative(
 					operation.source_layer.tensor->getHOutputPointer().get(),
@@ -1817,7 +1782,7 @@ namespace SmartPeak
 					operation.source_layer.tensor->getLayerSize(),
 					operation.sink_layer.time_step + time_step,
 					operation.source_layer.time_step + time_step,
-					device[device_iter], sync_HToD, sync_DToH);
+					devices[device_iter], sync_HToD, sync_DToH);
 
 				++device_iter;
 			}
@@ -1837,9 +1802,7 @@ namespace SmartPeak
 		ModelKernalGpu<TensorT> model_kernal;
 		cudaStream_t stream; // The stream will be destroyed by GpuStreamDevice once the function goes out of scope!
 		assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess);
-		streams.push_back(stream);
 		Eigen::GpuStreamDevice stream_device(&stream, 0);
-		stream_devices.push_back(stream_device);
 		Eigen::GpuDevice device(&stream_device);
 
 		auto layer_tensor_data = getLayerTensor(layer_id);
@@ -1859,14 +1822,14 @@ namespace SmartPeak
 			time_step,
 			device, sync_HToD, sync_DToH);
 
-		assert(cudaStreamSynchronize(streams) == cudaSuccess);
-		assert(cudaStreamDestroy(streams) == cudaSuccess);
+		assert(cudaStreamSynchronize(stream) == cudaSuccess);
+		assert(cudaStreamDestroy(stream) == cudaSuccess);
 	}
 
 	template<typename TensorT>
 	inline void ModelInterpreterGpu<TensorT>::executeWeightErrorOperations(const int & time_step, bool sync_HToD, bool sync_DToH)
 	{
-		for (std::vector<OperationTensorStepDefaultDevice<TensorT>>& operations_list : operation_steps_) {
+		for (std::vector<OperationTensorStep<TensorT, Eigen::GpuDevice>>& operations_list : operation_steps_) {
 
 			// Set up the device, streams, and kernals
 			ModelKernalGpu<TensorT> model_kernal;
@@ -1887,7 +1850,7 @@ namespace SmartPeak
 
 			// execute the forward propogation steps
 			int device_iter = 0;
-			for (OperationTensorStepGpu<TensorT>& operation : operations_list) {
+			for (OperationTensorStep<TensorT, Eigen::GpuDevice>& operation : operations_list) {
 
 				model_kernal.executeWeightErrors(
 					operation.sink_layer.tensor->getHErrorPointer().get(),
@@ -1906,7 +1869,7 @@ namespace SmartPeak
 					operation.sink_layer.tensor->getMemorySize(),
 					operation.source_layer.tensor->getLayerSize(),
 					operation.sink_layer.tensor->getLayerSize(),
-					device[device_iter], sync_HToD, sync_DToH);
+					devices[device_iter], sync_HToD, sync_DToH);
 				++device_iter;
 			}
 
@@ -1921,7 +1884,7 @@ namespace SmartPeak
 	template<typename TensorT>
 	inline void ModelInterpreterGpu<TensorT>::executeWeightUpdateOperations(const int & time_step, bool sync_HToD, bool sync_DToH)
 	{
-		for (std::vector<OperationTensorStepDefaultDevice<TensorT>>& operations_list : operation_steps_) {
+		for (std::vector<OperationTensorStep<TensorT, Eigen::GpuDevice>>& operations_list : operation_steps_) {
 
 			// Set up the device, streams, and kernals
 			ModelKernalGpu<TensorT> model_kernal;
@@ -1942,7 +1905,7 @@ namespace SmartPeak
 
 			// execute the forward propogation steps
 			int device_iter = 0;
-			for (OperationTensorStepGpu<TensorT>& operation : operations_list) {
+			for (OperationTensorStep<TensorT, Eigen::GpuDevice>& operation : operations_list) {
 
 				model_kernal.executeWeightUpdate(
 					operation.weight.tensor->getHWeightPointer().get(),
@@ -1954,7 +1917,7 @@ namespace SmartPeak
 					operation.weight.solver.get(),
 					operation.source_layer.tensor->getLayerSize(),
 					operation.sink_layer.tensor->getLayerSize(),
-					device[device_iter], sync_HToD, sync_DToH);
+					devices[device_iter], sync_HToD, sync_DToH);
 				++device_iter;
 			}
 
@@ -1967,21 +1930,10 @@ namespace SmartPeak
 	}
 
 	template<typename TensorT>
-	inline void ModelInterpreterGpu<TensorT>::addOperationSteps(const std::vector<OperationTensorStepGpu<TensorT>>& operation_steps) {
-		operations_steps_.push_back(operation_steps);
-	}
-
-	template<typename TensorT>
 	inline void ModelInterpreterGpu<TensorT>::allocateModelErrorTensor(const int& batch_size, const int& memory_size) {
 		std::shared_ptr<ModelErrorData<TensorT>> model_error_data(new ModelErrorDataGpu<TensorT>());
 		model_error_data->initModelErrorData(batch_size, memory_size);
 		model_error_ = model_error_data;
-	}
-
-	template<typename TensorT>
-	void ModelInterpreterGpu<TensorT>::clearOperationSteps()
-	{
-		operation_steps_.clear();
 	}
 #endif
 

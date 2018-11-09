@@ -1,12 +1,9 @@
 /**TODO:  Add copyright*/
 
-#define BOOST_TEST_MODULE ModelInterpreterGpu test suite 
-#include <boost/test/included/unit_test.hpp>
+#ifndef EVONET_CUDA
+
 #include <SmartPeak/ml/ModelInterpreter3.h>
 #include <SmartPeak/ml/Model3.h>
-
-#include <vector>
-#include <iostream>
 
 using namespace SmartPeak;
 using namespace std;
@@ -92,9 +89,6 @@ Model<float> makeModelFCSum()
 	model_FC_Sum.addLinks({ l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4 });
 	return model_FC_Sum;
 }
-Model<float> model_FC_Sum = makeModelFCSum();
-
-BOOST_AUTO_TEST_SUITE(modelInterpreterGpu)
 
 /**
  * Part 2 test suit for the ModelInterpreter class
@@ -103,9 +97,9 @@ BOOST_AUTO_TEST_SUITE(modelInterpreterGpu)
  * required of a standard feed forward neural network and recurrent neural network
 */
 
-Model<float> model_allocateForwardPropogationLayerTensors = makeModelFCSum();
-BOOST_AUTO_TEST_CASE(allocateForwardPropogationLayerTensors)
+void test_allocateForwardPropogationLayerTensors()
 {
+	Model<float> model_allocateForwardPropogationLayerTensors = makeModelFCSum();
 	ModelInterpreterGpu<float> model_interpreter;
 	const int batch_size = 4;
 	const int memory_size = 2;
@@ -160,9 +154,9 @@ BOOST_AUTO_TEST_CASE(allocateForwardPropogationLayerTensors)
 	assert(model_interpreter.getOperationSteps(0)[0].weight.solver->getName() == "SGDTensorOp");
 }
 
-Model<float> model_getForwardPropogationOperations = makeModelFCSum();
-BOOST_AUTO_TEST_CASE(getForwardPropogationOperations)
+void test_getForwardPropogationOperations()
 {
+	Model<float> model_getForwardPropogationOperations = makeModelFCSum();
 	ModelInterpreterGpu<float> model_interpreter;
 	const int batch_size = 4;
 	const int memory_size = 2;
@@ -251,7 +245,7 @@ BOOST_AUTO_TEST_CASE(getForwardPropogationOperations)
 	}
 }
 
-BOOST_AUTO_TEST_CASE(allocateModelErrorTensor)
+void test_allocateModelErrorTensor()
 {
 	ModelInterpreterGpu<float> model_interpreter;
 	const int batch_size = 4;
@@ -259,13 +253,13 @@ BOOST_AUTO_TEST_CASE(allocateModelErrorTensor)
 
 	model_interpreter.allocateModelErrorTensor(batch_size, memory_size);
 
-	BOOST_CHECK_EQUAL(model_interpreter.getModelError()->getBatchSize(), 4);
-	BOOST_CHECK_EQUAL(model_interpreter.getModelError()->getMemorySize(), 2);
+	assert(model_interpreter.getModelError()->getBatchSize() == 4);
+	assert(model_interpreter.getModelError()->getMemorySize() == 2);
 }
 
-Model<float> model_mapValuesToLayers = makeModelFCSum();
-BOOST_AUTO_TEST_CASE(mapValuesToLayers)
+void test_mapValuesToLayers()
 {
+	Model<float> model_mapValuesToLayers = makeModelFCSum();
 	ModelInterpreterGpu<float> model_interpreter;
 	const int batch_size = 4;
 	const int memory_size = 2;
@@ -291,39 +285,39 @@ BOOST_AUTO_TEST_CASE(mapValuesToLayers)
 	model_interpreter.mapValuesToLayers(model_mapValuesToLayers, input, node_ids, "output");
 	for (int i = 0; i < batch_size; ++i){
 		for (int j = 0; j < memory_size; ++j){
-			BOOST_CHECK_EQUAL(model_interpreter.getLayerTensor(node0.getTensorIndex().first)->getOutput()(i, j, node0.getTensorIndex().second), input(i, j, 0));
-			BOOST_CHECK_EQUAL(model_interpreter.getLayerTensor(node1.getTensorIndex().first)->getOutput()(i, j, node1.getTensorIndex().second), input(i, j, 1));
+			assert(model_interpreter.getLayerTensor(node0.getTensorIndex().first)->getOutput()(i, j, node0.getTensorIndex().second) == input(i, j, 0));
+			assert(model_interpreter.getLayerTensor(node1.getTensorIndex().first)->getOutput()(i, j, node1.getTensorIndex().second) == input(i, j, 1));
 		}
 	}
 
 	model_interpreter.mapValuesToLayers(model_mapValuesToLayers, input, node_ids, "derivative");
 	for (int i = 0; i < batch_size; ++i) {
 		for (int j = 0; j < memory_size; ++j) {
-			BOOST_CHECK_EQUAL(model_interpreter.getLayerTensor(node0.getTensorIndex().first)->getDerivative()(i, j, node0.getTensorIndex().second), input(i, j, 0));
-			BOOST_CHECK_EQUAL(model_interpreter.getLayerTensor(node1.getTensorIndex().first)->getDerivative()(i, j, node1.getTensorIndex().second), input(i, j, 1));
+			assert(model_interpreter.getLayerTensor(node0.getTensorIndex().first)->getDerivative()(i, j, node0.getTensorIndex().second) == input(i, j, 0));
+			assert(model_interpreter.getLayerTensor(node1.getTensorIndex().first)->getDerivative()(i, j, node1.getTensorIndex().second) == input(i, j, 1));
 		}
 	}
 
 	model_interpreter.mapValuesToLayers(model_mapValuesToLayers, input, node_ids, "error");
 	for (int i = 0; i < batch_size; ++i) {
 		for (int j = 0; j < memory_size; ++j) {
-			BOOST_CHECK_EQUAL(model_interpreter.getLayerTensor(node0.getTensorIndex().first)->getError()(i, j, node0.getTensorIndex().second), input(i, j, 0));
-			BOOST_CHECK_EQUAL(model_interpreter.getLayerTensor(node1.getTensorIndex().first)->getError()(i, j, node1.getTensorIndex().second), input(i, j, 1));
+			assert(model_interpreter.getLayerTensor(node0.getTensorIndex().first)->getError()(i, j, node0.getTensorIndex().second) == input(i, j, 0));
+			assert(model_interpreter.getLayerTensor(node1.getTensorIndex().first)->getError()(i, j, node1.getTensorIndex().second) == input(i, j, 1));
 		}
 	}
 
 	model_interpreter.mapValuesToLayers(model_mapValuesToLayers, input, node_ids, "dt");
 	for (int i = 0; i < batch_size; ++i) {
 		for (int j = 0; j < memory_size; ++j) {
-			BOOST_CHECK_EQUAL(model_interpreter.getLayerTensor(node0.getTensorIndex().first)->getDt()(i, j, node0.getTensorIndex().second), input(i, j, 0));
-			BOOST_CHECK_EQUAL(model_interpreter.getLayerTensor(node1.getTensorIndex().first)->getDt()(i, j, node1.getTensorIndex().second), input(i, j, 1));
+			assert(model_interpreter.getLayerTensor(node0.getTensorIndex().first)->getDt()(i, j, node0.getTensorIndex().second) == input(i, j, 0));
+			assert(model_interpreter.getLayerTensor(node1.getTensorIndex().first)->getDt()(i, j, node1.getTensorIndex().second) == input(i, j, 1));
 		}
 	}
 }
 
-Model<float> model_executeForwardPropogationOperations = makeModelFCSum();
-BOOST_AUTO_TEST_CASE(executeForwardPropogationOperations)
+void test_executeForwardPropogationOperations()
 {
+	Model<float> model_executeForwardPropogationOperations = makeModelFCSum();
 	ModelInterpreterGpu<float> model_interpreter;
 	const int batch_size = 4;
 	const int memory_size = 2;
@@ -367,17 +361,16 @@ BOOST_AUTO_TEST_CASE(executeForwardPropogationOperations)
 				//std::cout << "Node: " << node_name << "; Batch: " << j << "; Memory: " << k << std::endl;
 				//std::cout << "Calc Output: " << model_interpreter.getLayerTensor(nodes_map.at(node_name)->getTensorIndex().first)->getOutput()(j, k, nodes_map.at(node_name)->getTensorIndex().second) << ", Expected Output: " << output(j, i) << std::endl;
 				//std::cout << "Calc Net Input: " << model_interpreter.getLayerTensor(nodes_map.at(node_name)->getTensorIndex().first)->getInput()(j, k, nodes_map.at(node_name)->getTensorIndex().second) << ", Expected Net Input: " << net_input(j, i) << std::endl;
-				BOOST_CHECK_CLOSE(model_interpreter.getLayerTensor(nodes_map.at(node_name)->getTensorIndex().first)->getInput()(j, k, nodes_map.at(node_name)->getTensorIndex().second), net_input(j, i), 1e-3);
-				BOOST_CHECK_CLOSE(model_interpreter.getLayerTensor(nodes_map.at(node_name)->getTensorIndex().first)->getOutput()(j, k, nodes_map.at(node_name)->getTensorIndex().second), output(j, i), 1e-3);
+				assert(model_interpreter.getLayerTensor(nodes_map.at(node_name)->getTensorIndex().first)->getInput()(j, k, nodes_map.at(node_name)->getTensorIndex().second) == net_input(j, i));
+				assert(model_interpreter.getLayerTensor(nodes_map.at(node_name)->getTensorIndex().first)->getOutput()(j, k, nodes_map.at(node_name)->getTensorIndex().second) == output(j, i));
 			}
 		}
 	}
 
 }
-
-Model<float> model_executeModelErrorOperations = makeModelFCSum();
-BOOST_AUTO_TEST_CASE(executeModelErrorOperations)
+void test_executeModelErrorOperations()
 {
+	Model<float> model_executeModelErrorOperations = makeModelFCSum();
 	ModelInterpreterGpu<float> model_interpreter;
 	const int batch_size = 4;
 	const int memory_size = 2;
@@ -413,7 +406,7 @@ BOOST_AUTO_TEST_CASE(executeModelErrorOperations)
 	error.setValues({ {105.25, 0 }, {171.25, 0}, {253.25, 0}, {351.25, 0} });
 	for (int j = 0; j < batch_size; ++j){
 		for (int k = 0; k < memory_size; ++k) {
-			BOOST_CHECK_CLOSE(model_interpreter.getModelError()->getError()(j, k), error(j, k), 1e-6);
+			assert(model_interpreter.getModelError()->getError()(j, k) == error(j, k));
 		}
 	}
 
@@ -425,15 +418,15 @@ BOOST_AUTO_TEST_CASE(executeModelErrorOperations)
 		const std::string node_name = output_nodes[i];
 		for (int j = 0; j < batch_size; ++j){
 			for (int k = 0; k < memory_size - 1; ++k)	{ 
-				BOOST_CHECK_CLOSE(model_interpreter.getLayerTensor(nodes_map.at(node_name)->getTensorIndex().first)->getError()(j, k, nodes_map.at(node_name)->getTensorIndex().second), node_error(j, i), 1e-3);
+				assert(model_interpreter.getLayerTensor(nodes_map.at(node_name)->getTensorIndex().first)->getError()(j, k, nodes_map.at(node_name)->getTensorIndex().second) == node_error(j, i));
 			}
 		}
 	}
 }
 
-Model<float> model_executeBackwardPropogationOperations = makeModelFCSum();
-BOOST_AUTO_TEST_CASE(executeBackwardPropogationOperations)
+void test_executeBackwardPropogationOperations()
 {
+	Model<float> model_executeBackwardPropogationOperations = makeModelFCSum();
 	ModelInterpreterGpu<float> model_interpreter;
 	const int batch_size = 4;
 	const int memory_size = 2;
@@ -475,15 +468,15 @@ BOOST_AUTO_TEST_CASE(executeBackwardPropogationOperations)
 		const std::string node_name = error_nodes[i];
 		for (int j = 0; j < batch_size; ++j) {
 			for (int k = 0; k < memory_size - 1; ++k) {
-				BOOST_CHECK_CLOSE(model_interpreter.getLayerTensor(nodes_map.at(node_name)->getTensorIndex().first)->getError()(j, k, nodes_map.at(node_name)->getTensorIndex().second), error(j, i), 1e-3);
+				assert(model_interpreter.getLayerTensor(nodes_map.at(node_name)->getTensorIndex().first)->getError()(j, k, nodes_map.at(node_name)->getTensorIndex().second) == error(j, i));
 			}
 		}
 	}
 }
 
-Model<float> model_executeWeightErrorOperations = makeModelFCSum();
-BOOST_AUTO_TEST_CASE(executeWeightErrorOperations)
+void test_executeWeightErrorOperations()
 {
+  Model<float> model_executeWeightErrorOperations = makeModelFCSum();
 	ModelInterpreterGpu<float> model_interpreter;
 	const int batch_size = 4;
 	const int memory_size = 2;
@@ -523,21 +516,21 @@ BOOST_AUTO_TEST_CASE(executeWeightErrorOperations)
 	Eigen::Tensor<float, 1> weights((int)weight_ids.size());
 	weights.setValues({56.25f, 56.25f, 138.25f, 138.25f, 20.5f, 20.5f,
 		110.0f, 105.0f, 110.0f, 105.0f, 10.5f, 10.0f });
-	auto weights_map = model_executeBackwardPropogationOperations.getWeightsMap();
+	auto weights_map = model_executeWeightErrorOperations.getWeightsMap();
 	for (int i = 0; i < weight_ids.size(); ++i)
 	{
 		//std::cout << "Weight Error: " << weight_ids[i] << "; Calculated: " << model_interpreter.getWeightTensor(
 		//	std::get<0>(weights_map.at(weight_ids[i])->getTensorIndex()[0]))->getError()(
 		//		std::get<1>(weights_map.at(weight_ids[i])->getTensorIndex()[0]), std::get<2>(weights_map.at(weight_ids[i])->getTensorIndex()[0])) << ", Expected: " << weights(i) << std::endl;
-		BOOST_CHECK_CLOSE(model_interpreter.getWeightTensor(
+		assert(model_interpreter.getWeightTensor(
 			std::get<0>(weights_map.at(weight_ids[i])->getTensorIndex()[0]))->getError()(
-				std::get<1>(weights_map.at(weight_ids[i])->getTensorIndex()[0]), std::get<2>(weights_map.at(weight_ids[i])->getTensorIndex()[0])), weights(i), 1e-3);
+				std::get<1>(weights_map.at(weight_ids[i])->getTensorIndex()[0]), std::get<2>(weights_map.at(weight_ids[i])->getTensorIndex()[0])) == weights(i));
 	}
 }
 
-Model<float> model_executeWeightUpdateOperations = makeModelFCSum();
-BOOST_AUTO_TEST_CASE(executeWeightUpdateOperations)
+void test_executeWeightUpdateOperations()
 {
+	Model<float> model_executeWeightUpdateOperations = makeModelFCSum();
 	ModelInterpreterGpu<float> model_interpreter;
 	const int batch_size = 4;
 	const int memory_size = 2;
@@ -578,16 +571,29 @@ BOOST_AUTO_TEST_CASE(executeWeightUpdateOperations)
 	Eigen::Tensor<float, 1> weights((int)weight_ids.size());
 	weights.setValues({ 0.4375f, 0.4375f, -0.382499933f, -0.382499933f, 0.795000017f, 0.795000017f,
 		-0.100000024f, -0.0499999523f, -0.100000024, -0.0499999523f, 0.894999981f, 0.899999976f });
-	auto weights_map = model_executeBackwardPropogationOperations.getWeightsMap();
+	auto weights_map = model_executeWeightUpdateOperations.getWeightsMap();
 	for (int i = 0; i < weight_ids.size(); ++i)
 	{
 		//std::cout<<"Weight: "<< weight_ids[i] <<"; Calculated: "<<model_interpreter.getWeightTensor(
 		//	std::get<0>(weights_map.at(weight_ids[i])->getTensorIndex()[0]))->getWeight()(
 		//	std::get<1>(weights_map.at(weight_ids[i])->getTensorIndex()[0]), std::get<2>(weights_map.at(weight_ids[i])->getTensorIndex()[0])) <<", Expected: "<<weights(i)<<std::endl;
-		BOOST_CHECK_CLOSE(model_interpreter.getWeightTensor(
+		assert(model_interpreter.getWeightTensor(
 			std::get<0>(weights_map.at(weight_ids[i])->getTensorIndex()[0]))->getWeight()(
-			std::get<1>(weights_map.at(weight_ids[i])->getTensorIndex()[0]), std::get<2>(weights_map.at(weight_ids[i])->getTensorIndex()[0])), weights(i), 1e-3);
+			std::get<1>(weights_map.at(weight_ids[i])->getTensorIndex()[0]), std::get<2>(weights_map.at(weight_ids[i])->getTensorIndex()[0])) == weights(i));
 	}
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+int main(int argc, char** argv)
+{
+	test_allocateForwardPropogationLayerTensors();
+	test_getForwardPropogationOperations();
+	test_allocateModelErrorTensor();
+	test_mapValuesToLayers();
+	test_executeForwardPropogationOperations();
+	test_executeModelErrorOperations();
+	test_executeBackwardPropogationOperations();
+	test_executeWeightErrorOperations();
+	test_executeWeightUpdateOperations();
+	return 0;
+}
+#endif
