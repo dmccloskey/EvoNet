@@ -1358,7 +1358,7 @@ namespace SmartPeak
 	template<typename TensorT>
 	inline void ModelInterpreterDefaultDevice<TensorT>::executeBackwardPropogationOperations(const int & time_step, bool sync_HToD, bool sync_DToH)
 	{
-		for (size_t i = operation_steps_.size() - 1; i >= 0; --i) { //iterate backwards
+		for (int i = operation_steps_.size() - 1; i >= 0; --i) { //iterate backwards
 			ModelKernalDefaultDevice<TensorT> model_kernal;
 			Eigen::DefaultDevice device;
 

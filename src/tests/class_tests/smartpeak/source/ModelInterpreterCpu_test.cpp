@@ -361,7 +361,7 @@ BOOST_AUTO_TEST_CASE(executeForwardPropogationOperations)
 	const std::vector<std::string> output_nodes = { "4", "5" };
 	auto nodes_map = model_executeForwardPropogationOperations.getNodesMap();
 	for (int i = 0; i < (int)output_nodes.size(); ++i) {
-		const std::string node_name = std::to_string(i + 4);
+		const std::string node_name = output_nodes[i];
 		for (int j = 0; j < batch_size; ++j) {
 			for (int k = 0; k < memory_size - 1; ++k)	{
 				//std::cout << "Node: " << node_name << "; Batch: " << j << "; Memory: " << k << std::endl;
@@ -422,7 +422,7 @@ BOOST_AUTO_TEST_CASE(executeModelErrorOperations)
 	node_error.setValues({ {-7.5, -7}, {-9.5, -9}, {-11.5, -11}, {-13.5, -13} });
 	auto nodes_map = model_executeModelErrorOperations.getNodesMap();
 	for (int i = 0; i < (int)output_nodes.size(); ++i){
-		const std::string node_name = std::to_string(i + 4);
+		const std::string node_name = output_nodes[i];
 		for (int j = 0; j < batch_size; ++j){
 			for (int k = 0; k < memory_size - 1; ++k)	{ 
 				BOOST_CHECK_CLOSE(model_interpreter.getLayerTensor(nodes_map.at(node_name)->getTensorIndex().first)->getError()(j, k, nodes_map.at(node_name)->getTensorIndex().second), node_error(j, i), 1e-3);
@@ -431,7 +431,7 @@ BOOST_AUTO_TEST_CASE(executeModelErrorOperations)
 	}
 }
 
-Model<float> model_executeModelErrorOperations = makeModelFCSum();
+Model<float> model_executeBackwardPropogationOperations = makeModelFCSum();
 BOOST_AUTO_TEST_CASE(executeBackwardPropogationOperations)
 {
 	ModelInterpreterDefaultDevice<float> model_interpreter;
@@ -440,7 +440,7 @@ BOOST_AUTO_TEST_CASE(executeBackwardPropogationOperations)
 	const bool train = true;
 
 	// compile the graph into a set of operations
-	model_interpreter.getForwardPropogationOperations(model_executeModelErrorOperations, batch_size, memory_size, train);
+	model_interpreter.getForwardPropogationOperations(model_executeBackwardPropogationOperations, batch_size, memory_size, train);
 
 	// create the input
 	const std::vector<std::string> node_ids = { "0", "1" };
@@ -450,9 +450,9 @@ BOOST_AUTO_TEST_CASE(executeBackwardPropogationOperations)
 		{{2, 6}, {0, 0}},
 		{{3, 7}, {0, 0}},
 		{{4, 8}, {0, 0}} });
-	model_interpreter.mapValuesToLayers(model_executeModelErrorOperations, input, node_ids, "output");
+	model_interpreter.mapValuesToLayers(model_executeBackwardPropogationOperations, input, node_ids, "output");
 
-	model_interpreter.initBiases(model_executeModelErrorOperations); // create the bias	
+	model_interpreter.initBiases(model_executeBackwardPropogationOperations); // create the bias	
 	model_interpreter.executeForwardPropogationOperations(0, true, true); // FP
 	model_interpreter.allocateModelErrorTensor(batch_size, memory_size); // allocate the memory
 
@@ -462,30 +462,132 @@ BOOST_AUTO_TEST_CASE(executeBackwardPropogationOperations)
 	expected.setValues({ {0, 1}, {0, 1}, {0, 1}, {0, 1} });
 	LossFunctionTensorOp<float, Eigen::DefaultDevice>* solver = new MSETensorOp<float, Eigen::DefaultDevice>();
 	LossFunctionGradTensorOp<float, Eigen::DefaultDevice>* solver_grad = new MSEGradTensorOp<float, Eigen::DefaultDevice>();
-	const int layer_id = model_executeModelErrorOperations.getNode("4").getTensorIndex().first;
+	const int layer_id = model_executeBackwardPropogationOperations.getNode("4").getTensorIndex().first;
 	model_interpreter.executeModelErrorOperations(expected, layer_id, solver, solver_grad, 0, true, true);
 
 	model_interpreter.executeBackwardPropogationOperations(0, true, true); // BP
 
-	Eigen::Tensor<float, 2> error(batch_size, (int)BP_operations_list.size());
-	error.setValues({ {0.0, -7.25, -7.25}, {0.0, -9.25, -9.25}, {0.0, -11.25, -11.25}, {0.0, -13.25, -13.25} });
-	auto nodes_map = model_executeModelErrorOperations.getNodesMap();
-	for (int i = 0; i < (int)output_nodes.size(); ++i) {
-		const std::string node_name = std::to_string(i + 4);
+	std::vector<std::string> error_nodes = { "6", "2", "3" };
+	Eigen::Tensor<float, 2> error(batch_size, (int)error_nodes.size());
+	error.setValues({ {-29, -14.5, -14.5}, {-37, -18.5, -18.5}, {-45, -22.5, -22.5}, {-53, -26.5, -26.5} });
+	auto nodes_map = model_executeBackwardPropogationOperations.getNodesMap();
+	for (int i = 0; i < (int)error_nodes.size(); ++i) {
+		const std::string node_name = error_nodes[i];
 		for (int j = 0; j < batch_size; ++j) {
 			for (int k = 0; k < memory_size - 1; ++k) {
-				BOOST_CHECK_CLOSE(model_interpreter.getLayerTensor(nodes_map.at(node_name)->getTensorIndex().first)->getError()(j, k, nodes_map.at(node_name)->getTensorIndex().second), node_error(j, i), 1e-3);
+				BOOST_CHECK_CLOSE(model_interpreter.getLayerTensor(nodes_map.at(node_name)->getTensorIndex().first)->getError()(j, k, nodes_map.at(node_name)->getTensorIndex().second), error(j, i), 1e-3);
 			}
 		}
 	}
 }
 
+Model<float> model_executeWeightErrorOperations = makeModelFCSum();
 BOOST_AUTO_TEST_CASE(executeWeightErrorOperations)
 {
+	ModelInterpreterDefaultDevice<float> model_interpreter;
+	const int batch_size = 4;
+	const int memory_size = 2;
+	const bool train = true;
+
+	// compile the graph into a set of operations
+	model_interpreter.getForwardPropogationOperations(model_executeWeightErrorOperations, batch_size, memory_size, train);
+
+	// create the input
+	const std::vector<std::string> node_ids = { "0", "1" };
+	Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)node_ids.size());
+	input.setValues({
+		{{1, 5}, {0, 0}},
+		{{2, 6}, {0, 0}},
+		{{3, 7}, {0, 0}},
+		{{4, 8}, {0, 0}} });
+	model_interpreter.mapValuesToLayers(model_executeWeightErrorOperations, input, node_ids, "output");
+
+	model_interpreter.initBiases(model_executeWeightErrorOperations); // create the bias	
+	model_interpreter.executeForwardPropogationOperations(0, true, true); // FP
+	model_interpreter.allocateModelErrorTensor(batch_size, memory_size); // allocate the memory
+
+	// calculate the model error
+	std::vector<std::string> output_nodes = { "4", "5" };
+	Eigen::Tensor<float, 2> expected(batch_size, (int)output_nodes.size());
+	expected.setValues({ {0, 1}, {0, 1}, {0, 1}, {0, 1} });
+	LossFunctionTensorOp<float, Eigen::DefaultDevice>* solver = new MSETensorOp<float, Eigen::DefaultDevice>();
+	LossFunctionGradTensorOp<float, Eigen::DefaultDevice>* solver_grad = new MSEGradTensorOp<float, Eigen::DefaultDevice>();
+	const int layer_id = model_executeWeightErrorOperations.getNode("4").getTensorIndex().first;
+	model_interpreter.executeModelErrorOperations(expected, layer_id, solver, solver_grad, 0, true, true);
+
+	model_interpreter.executeBackwardPropogationOperations(0, true, true); // BP
+	model_interpreter.executeWeightErrorOperations(0, true, true); // Weight error
+
+  // test values of input and hidden layers
+	const std::vector<std::string> weight_ids = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11" };
+	Eigen::Tensor<float, 1> weights((int)weight_ids.size());
+	weights.setValues({56.25f, 56.25f, 138.25f, 138.25f, 20.5f, 20.5f,
+		110.0f, 105.0f, 110.0f, 105.0f, 10.5f, 10.0f });
+	auto weights_map = model_executeBackwardPropogationOperations.getWeightsMap();
+	for (int i = 0; i < weight_ids.size(); ++i)
+	{
+		//std::cout << "Weight Error: " << weight_ids[i] << "; Calculated: " << model_interpreter.getWeightTensor(
+		//	std::get<0>(weights_map.at(weight_ids[i])->getTensorIndex()[0]))->getError()(
+		//		std::get<1>(weights_map.at(weight_ids[i])->getTensorIndex()[0]), std::get<2>(weights_map.at(weight_ids[i])->getTensorIndex()[0])) << ", Expected: " << weights(i) << std::endl;
+		BOOST_CHECK_CLOSE(model_interpreter.getWeightTensor(
+			std::get<0>(weights_map.at(weight_ids[i])->getTensorIndex()[0]))->getError()(
+				std::get<1>(weights_map.at(weight_ids[i])->getTensorIndex()[0]), std::get<2>(weights_map.at(weight_ids[i])->getTensorIndex()[0])), weights(i), 1e-3);
+	}
 }
 
+Model<float> model_executeWeightUpdateOperations = makeModelFCSum();
 BOOST_AUTO_TEST_CASE(executeWeightUpdateOperations)
 {
+	ModelInterpreterDefaultDevice<float> model_interpreter;
+	const int batch_size = 4;
+	const int memory_size = 2;
+	const bool train = true;
+
+	// compile the graph into a set of operations
+	model_interpreter.getForwardPropogationOperations(model_executeWeightUpdateOperations, batch_size, memory_size, train);
+
+	// create the input
+	const std::vector<std::string> node_ids = { "0", "1" };
+	Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)node_ids.size());
+	input.setValues({
+		{{1, 5}, {0, 0}},
+		{{2, 6}, {0, 0}},
+		{{3, 7}, {0, 0}},
+		{{4, 8}, {0, 0}} });
+	model_interpreter.mapValuesToLayers(model_executeWeightUpdateOperations, input, node_ids, "output");
+
+	model_interpreter.initBiases(model_executeWeightUpdateOperations); // create the bias	
+	model_interpreter.executeForwardPropogationOperations(0, true, true); // FP
+	model_interpreter.allocateModelErrorTensor(batch_size, memory_size); // allocate the memory
+
+	// calculate the model error
+	std::vector<std::string> output_nodes = { "4", "5" };
+	Eigen::Tensor<float, 2> expected(batch_size, (int)output_nodes.size());
+	expected.setValues({ {0, 1}, {0, 1}, {0, 1}, {0, 1} });
+	LossFunctionTensorOp<float, Eigen::DefaultDevice>* solver = new MSETensorOp<float, Eigen::DefaultDevice>();
+	LossFunctionGradTensorOp<float, Eigen::DefaultDevice>* solver_grad = new MSEGradTensorOp<float, Eigen::DefaultDevice>();
+	const int layer_id = model_executeWeightUpdateOperations.getNode("4").getTensorIndex().first;
+	model_interpreter.executeModelErrorOperations(expected, layer_id, solver, solver_grad, 0, true, true);
+
+	model_interpreter.executeBackwardPropogationOperations(0, true, true); // BP
+	model_interpreter.executeWeightErrorOperations(0, true, true); // Weight error
+	model_interpreter.executeWeightUpdateOperations(0, true, true); // Weight update
+
+  // test values of input and hidden layers
+	const std::vector<std::string> weight_ids = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11" };
+	Eigen::Tensor<float, 1> weights((int)weight_ids.size());
+	weights.setValues({ 0.4375f, 0.4375f, -0.382499933f, -0.382499933f, 0.795000017f, 0.795000017f,
+		-0.100000024f, -0.0499999523f, -0.100000024, -0.0499999523f, 0.894999981f, 0.899999976f });
+	auto weights_map = model_executeBackwardPropogationOperations.getWeightsMap();
+	for (int i = 0; i < weight_ids.size(); ++i)
+	{
+		//std::cout<<"Weight: "<< weight_ids[i] <<"; Calculated: "<<model_interpreter.getWeightTensor(
+		//	std::get<0>(weights_map.at(weight_ids[i])->getTensorIndex()[0]))->getWeight()(
+		//	std::get<1>(weights_map.at(weight_ids[i])->getTensorIndex()[0]), std::get<2>(weights_map.at(weight_ids[i])->getTensorIndex()[0])) <<", Expected: "<<weights(i)<<std::endl;
+		BOOST_CHECK_CLOSE(model_interpreter.getWeightTensor(
+			std::get<0>(weights_map.at(weight_ids[i])->getTensorIndex()[0]))->getWeight()(
+			std::get<1>(weights_map.at(weight_ids[i])->getTensorIndex()[0]), std::get<2>(weights_map.at(weight_ids[i])->getTensorIndex()[0])), weights(i), 1e-3);
+	}
 }
 
 BOOST_AUTO_TEST_SUITE_END()

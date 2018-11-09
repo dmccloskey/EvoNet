@@ -61,6 +61,13 @@ BOOST_AUTO_TEST_CASE(operationfunctionSGDOp)
   BOOST_CHECK_CLOSE(operation(0.99, 1.0), 0.971100032, 1e-3);
 }
 
+BOOST_AUTO_TEST_CASE(operationfunctionAdamOp)
+{
+	AdamOp<float> operation(0.01, 0.9, 0.999, 1e-8);
+	BOOST_CHECK_CLOSE(operation(1.0, 1.0), 0.99, 1e-3);  // weight update = -0.01
+	BOOST_CHECK_CLOSE(operation(0.99, 1.0), 0.976565301, 1e-3);
+}
+
 BOOST_AUTO_TEST_CASE(operationfunctionDummySolverOp)
 {
 	DummySolverOp<float> operation;

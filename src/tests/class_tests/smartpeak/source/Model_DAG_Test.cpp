@@ -92,9 +92,9 @@ Model<float> makeModel1()
 	model1.addNodes({ i1, i2, h1, h2, o1, o2, b1, b2 });
 	model1.addWeights({ w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4 });
 	model1.addLinks({ l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4 });
-	std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>());
+	std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>(2));
 	model1.setLossFunction(loss_function);
-	std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
+	std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>(2));
 	model1.setLossFunctionGrad(loss_function_grad);
 	model1.initWeights();
 	return model1;
@@ -182,9 +182,9 @@ Model<float> makeModel2()
 	model2.addNodes({ i1, i2, h1, h2, o1, o2, b1, b2 });
 	model2.addWeights({ w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4 });
 	model2.addLinks({ l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4 });
-	std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>());
+	std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>(2));
 	model2.setLossFunction(loss_function);
-	std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
+	std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>(2));
 	model2.setLossFunctionGrad(loss_function_grad);
 	model2.initWeights();
 	return model2;
@@ -272,9 +272,9 @@ Model<float> makeModel3()
 	model3.addNodes({ i1, i2, h1, h2, o1, o2, b1, b2 });
 	model3.addWeights({ w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4 });
 	model3.addLinks({ l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4 });
-	std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>());
+	std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>(2));
 	model3.setLossFunction(loss_function);
-	std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
+	std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>(2));
 	model3.setLossFunctionGrad(loss_function_grad);
 	model3.initWeights();
 	return model3;
@@ -1440,8 +1440,8 @@ BOOST_AUTO_TEST_CASE(updateWeights_Sum)
   const std::vector<std::string> weight_ids = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"};
   Eigen::Tensor<float, 1> weights((int)weight_ids.size());
   weights.setValues({
-    0.71875f, 0.71875f, 0.308750033f, 0.308750033f, 0.897499978f, 0.897499978f,
-    0.449999988f, 0.475000023f, 0.449999988f, 0.475000023f, 0.94749999f, 0.949999988f});
+		0.4375f, 0.4375f, -0.382499933f, -0.382499933f, 0.795000017f, 0.795000017f,
+		-0.100000024f, -0.0499999523f, -0.100000024, -0.0499999523f, 0.894999981f, 0.899999976f});
   for (int i=0; i<weight_ids.size(); ++i)
   {
      //std::cout<<"Weight: "<<i<<"; Calculated: "<<model1.getWeight(weight_ids[i]).getWeight()<<", Expected: "<<weights(i)<<std::endl;
@@ -1454,7 +1454,7 @@ BOOST_AUTO_TEST_CASE(updateWeights_Sum)
 	// update the weights (The difference is due to the momentum term)
 	model1.updateWeights(1, { "2" });
 	weights.setValues({
-		1.0f, 1.0f, -0.313374996f, 1.0f, 1.0f, 1.0f,
+		1.0f, 1.0f, -1.62674999f, 1.0f, 1.0f, 1.0f,
 		1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f });
 	for (int i = 0; i < weight_ids.size(); ++i)
 	{
