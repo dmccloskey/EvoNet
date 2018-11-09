@@ -1574,6 +1574,126 @@ namespace SmartPeak
 	};
 
 	template<typename TensorT>
+	inline void ModelInterpreterGpu<TensorT>::allocateForwardPropogationLayerTensors(const std::vector<OperationList<TensorT>>& FP_operations, const std::map<std::string, std::vector<int>>& operations_map, const std::vector<int>& source_layer_sizes, const std::vector<int>& sink_layer_sizes, const std::vector<std::vector<std::pair<int, int>>> weight_indices, const std::vector<std::vector<TensorT>>& weight_values, const std::vector<bool>& make_source_tensors, const std::vector<bool>& make_sink_tensors, const std::vector<bool>& make_weight_tensors, const int & batch_size, const int & memory_size, const bool & train)
+	{
+		std::vector<OperationTensorStep<TensorT, Eigen::GpuDevice>> operation_step_list;
+
+		ActivationOpToActivationTensorOp<TensorT, Eigen::GpuDevice> activation_conv;
+		SolverOpToSolverTensorOp<TensorT, Eigen::GpuDevice> solver_conv;
+		IntegrationOpToIntegrationTensorOp<TensorT, Eigen::GpuDevice> integration_conv;
+		IntegrationErrorOpToIntegrationErrorTensorOp<TensorT, Eigen::GpuDevice> integration_error_conv;
+		IntegrationWeightGradOpToIntegrationWeightGradTensorOp<TensorT, Eigen::GpuDevice> integration_weight_grad_conv;
+		int iter = 0;
+		for (const auto& operations : operations_map) {
+
+			// make the tensors
+			OperationTensorStep<TensorT, Eigen::GpuDevice> operation_step;
+
+			// [NOTE: order matters!  sink layer should come before the source layer to keep with
+			//  the ordering generated in getForwardPropogationTensorDimensions.]
+			std::shared_ptr<NodeTensorData<TensorT>> sink_node_data(new NodeTensorDataGpu<TensorT>());
+			{ // make the sink layer tensor and add it to the cache and operation step
+				ActivationTensorOp<TensorT, Eigen::GpuDevice>* activation = nullptr;
+				ActivationTensorOp<TensorT, Eigen::GpuDevice>* activation_grad = nullptr;
+				IntegrationTensorOp<TensorT, Eigen::GpuDevice>* integration = nullptr;
+				IntegrationErrorTensorOp<TensorT, Eigen::GpuDevice>* integration_error = nullptr;
+				IntegrationWeightGradTensorOp<TensorT, Eigen::GpuDevice>* integration_weight_grad = nullptr;
+				if (make_sink_tensors[iter]) {
+					sink_node_data->initNodeTensorData(batch_size, memory_size, sink_layer_sizes[iter], FP_operations[operations.second[0]].result.sink_node->getType(), train);
+					layer_tensors_.push_back(sink_node_data);
+					operation_step.sink_layer.time_step = FP_operations[operations.second[0]].result.time_step;
+					activation_conv(FP_operations[operations.second[0]].result.sink_node->getActivation(), activation, std::vector<TensorT>());
+					operation_step.sink_layer.activation.reset(activation);
+					activation_conv(FP_operations[operations.second[0]].result.sink_node->getActivationGrad(), activation_grad, std::vector<TensorT>());
+					operation_step.sink_layer.activation_grad.reset(activation_grad);
+					integration_conv(FP_operations[operations.second[0]].result.sink_node->getIntegration(), integration, std::vector<TensorT>());
+					operation_step.sink_layer.integration.reset(integration);
+					integration_error_conv(FP_operations[operations.second[0]].result.sink_node->getIntegrationError(), integration_error, std::vector<TensorT>());
+					operation_step.sink_layer.integration_error.reset(integration_error);
+					integration_weight_grad_conv(FP_operations[operations.second[0]].result.sink_node->getIntegrationWeightGrad(), integration_weight_grad, std::vector<TensorT>());
+					operation_step.sink_layer.integration_weight_grad.reset(integration_weight_grad);
+					operation_step.sink_layer.tensor = layer_tensors_[FP_operations[operations.second[0]].result.sink_node->getTensorIndex().first];
+				}
+				else {
+					operation_step.sink_layer.tensor = layer_tensors_[FP_operations[operations.second[0]].result.sink_node->getTensorIndex().first];
+					operation_step.sink_layer.time_step = FP_operations[operations.second[0]].result.time_step;
+					activation_conv(FP_operations[operations.second[0]].result.sink_node->getActivation(), activation, std::vector<TensorT>());
+					operation_step.sink_layer.activation.reset(std::move(activation));
+					activation_conv(FP_operations[operations.second[0]].result.sink_node->getActivationGrad(), activation_grad, std::vector<TensorT>());
+					operation_step.sink_layer.activation_grad.reset(std::move(activation_grad));
+					integration_conv(FP_operations[operations.second[0]].result.sink_node->getIntegration(), integration, std::vector<TensorT>());
+					operation_step.sink_layer.integration.reset(std::move(integration));
+					integration_error_conv(FP_operations[operations.second[0]].result.sink_node->getIntegrationError(), integration_error, std::vector<TensorT>());
+					operation_step.sink_layer.integration_error.reset(std::move(integration_error));
+					integration_weight_grad_conv(FP_operations[operations.second[0]].result.sink_node->getIntegrationWeightGrad(), integration_weight_grad, std::vector<TensorT>());
+					operation_step.sink_layer.integration_weight_grad.reset(std::move(integration_weight_grad));
+					operation_step.sink_layer.time_step = FP_operations[operations.second[0]].result.time_step;
+				}
+			}
+
+			std::shared_ptr<NodeTensorData<TensorT>> source_node_data(new NodeTensorDataGpu<TensorT>());
+			{ // make the source layer tensor and add it to the cache and operation step
+				ActivationTensorOp<TensorT, Eigen::GpuDevice>* activation = nullptr;
+				ActivationTensorOp<TensorT, Eigen::GpuDevice>* activation_grad = nullptr;
+				IntegrationTensorOp<TensorT, Eigen::GpuDevice>* integration = nullptr;
+				IntegrationErrorTensorOp<TensorT, Eigen::GpuDevice>* integration_error = nullptr;
+				IntegrationWeightGradTensorOp<TensorT, Eigen::GpuDevice>* integration_weight_grad = nullptr;
+				if (make_source_tensors[iter]) {
+					source_node_data->initNodeTensorData(batch_size, memory_size, source_layer_sizes[iter], FP_operations[operations.second[0]].arguments[0].source_node->getType(), train);
+					operation_step.source_layer.time_step = FP_operations[operations.second[0]].arguments[0].time_step;
+					layer_tensors_.push_back(source_node_data);
+					activation_conv(FP_operations[operations.second[0]].arguments[0].source_node->getActivation(), activation, std::vector<TensorT>());
+					operation_step.source_layer.activation.reset(activation);
+					activation_conv(FP_operations[operations.second[0]].arguments[0].source_node->getActivationGrad(), activation_grad, std::vector<TensorT>());
+					operation_step.source_layer.activation_grad.reset(activation_grad);
+					integration_conv(FP_operations[operations.second[0]].arguments[0].source_node->getIntegration(), integration, std::vector<TensorT>());
+					operation_step.source_layer.integration.reset(integration);
+					integration_error_conv(FP_operations[operations.second[0]].arguments[0].source_node->getIntegrationError(), integration_error, std::vector<TensorT>());
+					operation_step.source_layer.integration_error.reset(integration_error);
+					integration_weight_grad_conv(FP_operations[operations.second[0]].arguments[0].source_node->getIntegrationWeightGrad(), integration_weight_grad, std::vector<TensorT>());
+					operation_step.source_layer.integration_weight_grad.reset(integration_weight_grad);
+					operation_step.source_layer.tensor = getLayerTensor(FP_operations[operations.second[0]].arguments[0].source_node->getTensorIndex().first);
+				}
+				else {
+					operation_step.source_layer.tensor = getLayerTensor(FP_operations[operations.second[0]].arguments[0].source_node->getTensorIndex().first);
+					operation_step.source_layer.time_step = FP_operations[operations.second[0]].arguments[0].time_step;
+					activation_conv(FP_operations[operations.second[0]].arguments[0].source_node->getActivation(), activation, std::vector<TensorT>());
+					operation_step.source_layer.activation.reset(activation);
+					activation_conv(FP_operations[operations.second[0]].arguments[0].source_node->getActivationGrad(), activation_grad, std::vector<TensorT>());
+					operation_step.source_layer.activation_grad.reset(activation_grad);
+					integration_conv(FP_operations[operations.second[0]].arguments[0].source_node->getIntegration(), integration, std::vector<TensorT>());
+					operation_step.source_layer.integration.reset(integration);
+					integration_error_conv(FP_operations[operations.second[0]].arguments[0].source_node->getIntegrationError(), integration_error, std::vector<TensorT>());
+					operation_step.source_layer.integration_error.reset(integration_error);
+					integration_weight_grad_conv(FP_operations[operations.second[0]].arguments[0].source_node->getIntegrationWeightGrad(), integration_weight_grad, std::vector<TensorT>());
+					operation_step.source_layer.integration_weight_grad.reset(integration_weight_grad);
+				}
+			}
+
+			// make the weight tensor and add it to the cache and operation step
+			std::shared_ptr<WeightTensorData<TensorT>> weight_data(new WeightTensorDataGpu<TensorT>());
+			if (make_weight_tensors[iter]) {
+				SolverTensorOp<TensorT, Eigen::GpuDevice>* solver = nullptr;
+				std::vector<TensorT> solver_params;
+				solver_conv(FP_operations[operations.second[0]].arguments[0].weight->getSolverOp(), solver, solver_params);
+				weight_data->initWeightTensorData(source_layer_sizes[iter], sink_layer_sizes[iter], weight_indices[iter], weight_values[iter], train,
+					solver_params);
+				weight_tensors_.push_back(weight_data);
+				operation_step.weight.tensor = weight_tensors_.at(std::get<0>(FP_operations[operations.second[0]].arguments[0].weight->getTensorIndex()[0]));
+				operation_step.weight.solver.reset(solver);
+			}
+			else {
+				std::cout << "Weight tensor is not being created...Check!" << std::endl;
+			}
+
+			operation_step_list.push_back(operation_step);
+			++iter;
+		}
+		// add the operations to the cache
+		operation_steps_.push_back(operation_step_list);
+	}
+
+	template<typename TensorT>
 	void ModelInterpreterGpu<TensorT>::executeForwardPropogationOperations(const int& time_step, bool sync_HToD, bool sync_DToH)
 	{
 		for (auto& operations_list : operation_steps_) {
@@ -1641,7 +1761,7 @@ namespace SmartPeak
 	template<typename TensorT>
 	inline void ModelInterpreterGpu<TensorT>::executeBackwardPropogationOperations(const int & time_step, bool sync_HToD, bool sync_DToH)
 	{
-		for (size_t iter = operation_steps_.size() - 1; iter >= 0; --iter) { //iterate backwards
+		for (int iter = operation_steps_.size() - 1; iter >= 0; --iter) { //iterate backwards
 
 			// Set up the device, streams, and kernals
 			ModelKernalGpu<TensorT> model_kernal;

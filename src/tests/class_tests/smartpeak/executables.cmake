@@ -33,6 +33,7 @@ set(ml_executables_list
   ModelBuilder_test
   ModelInterpreter_DAG_test
   ModelInterpreterCpu_test
+  ModelInterpreterGpu_test
   ModelKernal_test
   ModelKernalGpu_test
   ModelLogger_test
