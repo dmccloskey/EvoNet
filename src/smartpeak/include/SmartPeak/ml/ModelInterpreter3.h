@@ -183,6 +183,20 @@ namespace SmartPeak
 			const std::string& value_type);
 
 		/**
+			@brief Initializes the bias nodes to an output of 1
+
+			The reason this is currently required is that layers are not seperated
+			by NodeType.  This optimization has the side-effect
+			that bias nodes may not be initialized to 1, but instead 0.
+			To correct for this, we seperately initialize them here.
+
+			dimensions of batch size by memory size by nodes
+
+			@param[in] model
+		*/
+		void initBiases(Model<TensorT>& model);
+
+		/**
 			@brief A prelude to a forward propogation step. Returns a vector of links
 				and associated nodes that satisfy the following conditions:
 				1. all sink output values are unknown (i.e. inactive),
@@ -342,7 +356,7 @@ namespace SmartPeak
 			const std::vector<bool>& make_source_tensors, const std::vector<bool>& make_sink_tensors, const std::vector<bool>& make_weight_tensors,
 			const int& batch_size, const int& memory_size, const bool& train) = 0;
 		virtual void executeForwardPropogationOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false) = 0;
-		virtual void executeModelErrorOperations(Eigen::Tensor<TensorT, 2>& expected, const std::pair<int, int>& layer_id, LossFunctionTensorOp<TensorT, DeviceT>* loss_function, LossFunctionGradTensorOp<TensorT, DeviceT>* loss_function_grad, const int& time_step, bool sync_HToD = false, bool sync_DToH = false) = 0;
+		virtual void executeModelErrorOperations(Eigen::Tensor<TensorT, 2>& expected, const int& layer_id, LossFunctionTensorOp<TensorT, DeviceT>* loss_function, LossFunctionGradTensorOp<TensorT, DeviceT>* loss_function_grad, const int& time_step, bool sync_HToD = false, bool sync_DToH = false) = 0;
 		virtual void executeBackwardPropogationOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false) = 0;
 		virtual void executeWeightErrorOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false) = 0;
 		virtual void executeWeightUpdateOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false) = 0;
@@ -406,6 +420,17 @@ namespace SmartPeak
 				getLayerTensor(node->getTensorIndex().first)->getDerivative().chip(node->getTensorIndex().second, 2) = values.chip(i, 2);
 			else if (value_type == "dt")
 				getLayerTensor(node->getTensorIndex().first)->getDt().chip(node->getTensorIndex().second, 2) = values.chip(i, 2);
+		}
+	}
+
+	template<typename TensorT, typename DeviceT>
+	inline void ModelInterpreter<TensorT, DeviceT>::initBiases(Model<TensorT>& model)
+	{
+		Eigen::Tensor<TensorT, 2> one((int)layer_tensors_[0]->getBatchSize(), (int)layer_tensors_[0]->getMemorySize());	one.setConstant(1);
+		for (auto& node_map : model.getNodesMap()) {
+			if (node_map.second->getType() == NodeType::bias) {
+				getLayerTensor(node_map.second->getTensorIndex().first)->getOutput().chip(node_map.second->getTensorIndex().second, 2) = one;
+			}
 		}
 	}
 
@@ -1138,7 +1163,7 @@ namespace SmartPeak
 			const int& batch_size, const int& memory_size, const bool& train);
 		void executeForwardPropogationOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false);
 		void executeBackwardPropogationOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false);
-		void executeModelErrorOperations(Eigen::Tensor<TensorT, 2>& expected, const std::pair<int, int>& layer_id, LossFunctionTensorOp<TensorT, Eigen::DefaultDevice>* loss_function, LossFunctionGradTensorOp<TensorT, Eigen::DefaultDevice>* loss_function_grad, const int& time_step, bool sync_HToD = false, bool sync_DToH = false);
+		void executeModelErrorOperations(Eigen::Tensor<TensorT, 2>& expected, const int& layer_id, LossFunctionTensorOp<TensorT, Eigen::DefaultDevice>* loss_function, LossFunctionGradTensorOp<TensorT, Eigen::DefaultDevice>* loss_function_grad, const int& time_step, bool sync_HToD = false, bool sync_DToH = false);
 		void executeWeightErrorOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false);
 		void executeWeightUpdateOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false);
 		void allocateModelErrorTensor(const int& batch_size, const int& memory_size);
@@ -1379,24 +1404,24 @@ namespace SmartPeak
 	}
 
 	template<typename TensorT>
-	inline void ModelInterpreterDefaultDevice<TensorT>::executeModelErrorOperations(Eigen::Tensor<TensorT, 2>& expected, const std::pair<int, int>& layer_id,	LossFunctionTensorOp<TensorT, Eigen::DefaultDevice>* loss_function,	LossFunctionGradTensorOp<TensorT, Eigen::DefaultDevice>* loss_function_grad, const int& time_step, bool sync_HToD, bool sync_DToH)
+	inline void ModelInterpreterDefaultDevice<TensorT>::executeModelErrorOperations(Eigen::Tensor<TensorT, 2>& expected, const int& layer_id,	LossFunctionTensorOp<TensorT, Eigen::DefaultDevice>* loss_function,	LossFunctionGradTensorOp<TensorT, Eigen::DefaultDevice>* loss_function_grad, const int& time_step, bool sync_HToD, bool sync_DToH)
 	{
 		ModelKernalDefaultDevice<TensorT> model_kernal;
 		Eigen::DefaultDevice device;
-		OperationTensorStep<TensorT, Eigen::DefaultDevice> operation = operation_steps_[layer_id.first][layer_id.second];
+		auto layer_tensor_data = getLayerTensor(layer_id);
 		model_kernal.executeModelErrors(
 			expected,
-			operation.sink_layer.tensor->getHOutputPointer().get(),
-			operation.sink_layer.tensor->getDOutputPointer().get(),
+			layer_tensor_data->getHOutputPointer().get(),
+			layer_tensor_data->getDOutputPointer().get(),
 			model_error_->getHErrorPointer().get(),
 			model_error_->getDErrorPointer().get(),
-			operation.sink_layer.tensor->getHErrorPointer().get(),
-			operation.sink_layer.tensor->getDErrorPointer().get(),
+			layer_tensor_data->getHErrorPointer().get(),
+			layer_tensor_data->getDErrorPointer().get(),
 			loss_function,
 			loss_function_grad,
-			operation.sink_layer.tensor->getBatchSize(),
-			operation.sink_layer.tensor->getMemorySize(),
-			operation.sink_layer.tensor->getLayerSize(),
+			layer_tensor_data->getBatchSize(),
+			layer_tensor_data->getMemorySize(),
+			layer_tensor_data->getLayerSize(),
 			time_step,
 			device, sync_HToD, sync_DToH);
 	}
@@ -1536,7 +1561,7 @@ namespace SmartPeak
 			const std::vector<bool>& make_source_tensors, const std::vector<bool>& make_sink_tensors, const std::vector<bool>& make_weight_tensors,
 			const int& batch_size, const int& memory_size, const bool& train);
 		void executeForwardPropogationOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false);
-		void executeModelErrorOperations(Eigen::Tensor<TensorT, 2>& expected, const std::pair<int, int>& layer_id, LossFunctionTensorOp<TensorT, Eigen::GpuDevice>* loss_function, LossFunctionGradTensorOp<TensorT, Eigen::GpuDevice>* loss_function_grad, const int& time_step, bool sync_HToD = false, bool sync_DToH = false);
+		void executeModelErrorOperations(Eigen::Tensor<TensorT, 2>& expected, const int& layer_id, LossFunctionTensorOp<TensorT, Eigen::GpuDevice>* loss_function, LossFunctionGradTensorOp<TensorT, Eigen::GpuDevice>* loss_function_grad, const int& time_step, bool sync_HToD = false, bool sync_DToH = false);
 		void executeBackwardPropogationOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false);
 		void executeWeightErrorOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false);
 		void executeWeightUpdateOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false);
@@ -1686,7 +1711,7 @@ namespace SmartPeak
 	}
 
 	template<typename TensorT>
-	inline void ModelInterpreterGpu<TensorT>::executeModelErrorOperations(Eigen::Tensor<TensorT, 2>& expected, const std::pair<int, int>& layer_id, LossFunctionTensorOp<TensorT, Eigen::GpuDevice>* loss_function, LossFunctionGradTensorOp<TensorT, Eigen::GpuDevice>* loss_function_grad, const int& time_step, bool sync_HToD, bool sync_DToH)
+	inline void ModelInterpreterGpu<TensorT>::executeModelErrorOperations(Eigen::Tensor<TensorT, 2>& expected, const int& layer_id, LossFunctionTensorOp<TensorT, Eigen::GpuDevice>* loss_function, LossFunctionGradTensorOp<TensorT, Eigen::GpuDevice>* loss_function_grad, const int& time_step, bool sync_HToD, bool sync_DToH)
 	{
 		// More performant if all model error calculations were passed at the same time
 		ModelKernalGpu<TensorT> model_kernal;
@@ -1697,20 +1722,20 @@ namespace SmartPeak
 		stream_devices.push_back(stream_device);
 		Eigen::GpuDevice device(&stream_device);
 
-		OperationTensorStepDefaultDevice<TensorT> operation = operation_steps_[layer_id.first][layer_id.second];
+		auto layer_tensor_data = getLayerTensor(layer_id);
 		model_kernal.executeModelErrors(
 			expected,
-			operation.sink_layer.tensor->getHOutputPointer().get(),
-			operation.sink_layer.tensor->getDOutputPointer().get(),
+			layer_tensor_data->getHOutputPointer().get(),
+			layer_tensor_data->getDOutputPointer().get(),
 			model_error_->getHErrorPointer().get(),
 			model_error_->getDErrorPointer().get(),
-			operation.sink_layer.tensor->getHErrorPointer().get(),
-			operation.sink_layer.tensor->getDErrorPointer().get(),
+			layer_tensor_data->getHErrorPointer().get(),
+			layer_tensor_data->getDErrorPointer().get(),
 			loss_function,
 			loss_function_grad,
-			operation.sink_layer.tensor->getBatchSize(),
-			operation.sink_layer.tensor->getMemorySize(),
-			operation.sink_layer.tensor->getLayerSize(),
+			layer_tensor_data->getBatchSize(),
+			layer_tensor_data->getMemorySize(),
+			layer_tensor_data->getLayerSize(),
 			time_step,
 			device, sync_HToD, sync_DToH);
 

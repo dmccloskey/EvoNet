@@ -237,8 +237,7 @@ public:
 public: 
     MSETensorOp(){}; 
     ~MSETensorOp(){};
-		void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const
-		{
+		void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const	{
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 2>> error_tensor(error, batch_size, memory_size);

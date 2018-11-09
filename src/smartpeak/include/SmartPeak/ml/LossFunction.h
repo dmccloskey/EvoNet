@@ -301,7 +301,8 @@ public:
   class MSEOp : public LossFunctionOp<T>
   {
 public: 
-    MSEOp(){}; 
+    MSEOp(){};
+		MSEOp(const T& n): n_(n){};
     ~MSEOp(){};
     Eigen::Tensor<T, 1> operator()(
       const Eigen::Tensor<T, 2>& y_pred, 
@@ -309,7 +310,7 @@ public:
     {
       const Eigen::Tensor<float, 1>::Dimensions dims1({1}); // sum along nodes
       Eigen::Tensor<T, 1> n(y_pred.dimensions()[0]);
-      n.setConstant(y_pred.dimensions()[0]);
+      n.setConstant(n_);
       Eigen::Tensor<T, 1> c(y_pred.dimensions()[0]);
       c.setConstant(0.5);
       return (y_true - y_pred).pow(2).sum(dims1) * c / n;
@@ -319,11 +320,13 @@ public:
 			const Eigen::Tensor<T, 1>& y_true) const
 		{
 			Eigen::Tensor<T, 1> n((int)y_pred.size());
-			n.setConstant((int)y_pred.size());
+			n.setConstant(n_);
 			Eigen::Tensor<T, 1> c((int)y_pred.size());
 			c.setConstant(0.5);
 			return ((y_true - y_pred).pow(2) * c / n).unaryExpr(ClipOp<T>(1e-6, -1e9, 1e9));
 		};
+private:
+		T n_ = 1;
   };
 
   /**
@@ -333,14 +336,15 @@ public:
   class MSEGradOp : public LossFunctionGradOp<T>
   {
 public: 
-    MSEGradOp(){}; 
+    MSEGradOp(){};
+		MSEGradOp(const T& n) : n_(n) {};
     ~MSEGradOp(){};
     Eigen::Tensor<T, 2> operator()(
       const Eigen::Tensor<T, 2>& y_pred, 
       const Eigen::Tensor<T, 2>& y_true) const 
     {
       Eigen::Tensor<T, 2> n(y_pred.dimensions()[0], y_pred.dimensions()[1]);
-      n.setConstant(y_pred.dimensions()[0]);
+      n.setConstant(n_);
       return (y_true - y_pred) / n;
     };
 		Eigen::Tensor<T, 1> operator()(
@@ -348,10 +352,12 @@ public:
 			const Eigen::Tensor<T, 1>& y_true) const
 		{
 			Eigen::Tensor<T, 1> n((int)y_pred.size());
-			n.setConstant((int)y_pred.size());
+			n.setConstant(n_);
 			Eigen::Tensor<T, 1> result = (y_true - y_pred) / n;
 			return result.unaryExpr(ClipOp<T>(1e-6, -1e9, 1e9));
 		};
+	private:
+		T n_ = 1;
   };
 
 	/**
