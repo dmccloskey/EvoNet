@@ -42,6 +42,7 @@ public:
 //#if COMPILE_WITH_CUDA
 //		std::string getName() const { return ""; }; // No Virtual Functions Allowed when using Cuda!
 //		TensorT operator()(const TensorT& x_I) const { return 0; }; // No Virtual Functions Allowed when using Cuda!
+//		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }; // No Virtual Functions Allowed when using Cuda!
 //#else
 		virtual std::string getName() const = 0;
 		virtual TensorT operator()(const TensorT& x_I) const = 0;

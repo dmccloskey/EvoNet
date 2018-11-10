@@ -39,6 +39,7 @@ public:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
 			out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(ReLUOp<TensorT>());
+			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr([](const TensorT& x_I) -> TensorT { return (x_I > 0.0) ? x_I : 0.0; });
 		};
     std::string getName() const{return "ReLUTensorOp";};
   };
