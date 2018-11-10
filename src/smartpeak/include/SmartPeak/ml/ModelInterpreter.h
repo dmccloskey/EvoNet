@@ -158,6 +158,16 @@ namespace SmartPeak
 		void initBiases(Model<TensorT>& model);
 
 		/**
+			@brief Initializes Node Output, Input, Derivative, and Error tensors to 0
+		*/
+		void reInitNodes();
+
+		/**
+			@brief Initializes Model Error to 0
+		*/
+		void reInitModelError();
+
+		/**
 			@brief A prelude to a forward propogation step. Returns a vector of links
 				and associated nodes that satisfy the following conditions:
 				1. all sink output values are unknown (i.e. inactive),
@@ -279,11 +289,11 @@ namespace SmartPeak
 				for the operation and a list of indices corresponding to the operations in FP_operations
 		*/
 		std::map<std::string, std::vector<int>> getCustomOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes);
-		std::map<std::string, std::vector<int>> getFullyConnectedOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes);
-		std::map<std::string, std::vector<int>> GetSinglyConnectedOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes);
-		std::map<std::string, std::vector<int>> getConvOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes);
-		std::map<std::string, std::vector<int>> getFanOutOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes);
-		std::map<std::string, std::vector<int>> getFanInOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes);
+		//std::map<std::string, std::vector<int>> getFullyConnectedOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes);
+		//std::map<std::string, std::vector<int>> GetSinglyConnectedOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes);
+		//std::map<std::string, std::vector<int>> getConvOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes);
+		//std::map<std::string, std::vector<int>> getFanOutOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes);
+		//std::map<std::string, std::vector<int>> getFanInOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes);
 		std::map<std::string, std::vector<int>> getTensorOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes);
 
 		/**
@@ -336,6 +346,51 @@ namespace SmartPeak
 		void addOperationSteps(const std::vector<OperationTensorStep<TensorT, DeviceT>>& operation_steps);
 		std::vector<OperationTensorStep<TensorT, DeviceT>> getOperationSteps(const int& operation_index);
 		void clearOperationSteps(); ///< clear the operations caches
+ 
+		/**
+		@brief Foward propogation through time (FPTT) of the network model.
+
+		@param[in] time_steps The number of time_steps forward to
+			continuously calculate node outputs.
+		@param[in] values Input values at each time step where
+			dim0: batch_size, dim1: time_step, and dim2: nodes.
+		@param[in] node_names
+		@param[in] dt Node time resolution
+		*/
+		void FPTT(const int& time_steps, bool sync_HToD = false, bool sync_DToH = false);
+
+		/**
+		@brief Calculates the error of the model through time (CETT)
+			with respect to the expected values
+
+		@param[in] values Expected node output values
+			(dim0: batch_size, dim1: memory_size, dim2: output nodes)
+			where t=n to t=0
+		@param[in] node_names Output nodes
+		*/
+		void CETT(Model<TensorT>& model, const Eigen::Tensor<TensorT, 3>& values, const std::vector<std::string>& node_names, LossFunctionTensorOp<TensorT, DeviceT> loss_function, LossFunctionGradTensorOp<TensorT, DeviceT> loss_function_grad, const int& time_steps, bool sync_HToD = false, bool sync_DToH = false);
+
+		/**
+		@brief Truncated Back Propogation Through Time (TBPTT) of the network model.
+
+		@param[in] time_steps The number of time_steps backwards to
+			unfold the network model.
+		*/
+		void TBPTT(const int& time_steps, bool sync_HToD = false, bool sync_DToH = false);
+
+		/**
+		@brief Recurrent Real Time Learning (RTRL) of the network model.
+
+		@param[in] time_steps The number of time_steps backwards to
+			unfold the network model.
+		*/
+		void RTRL(const int& time_steps, bool sync_HToD = false, bool sync_DToH = false);
+
+		/**
+		@brief Update the weights
+
+		*/
+		void updateWeights(bool sync_HToD = false, bool sync_DToH = false);
 
 	protected:
 		std::vector<std::vector<OperationTensorStep<TensorT, DeviceT>>> operation_steps_;
@@ -393,6 +448,25 @@ namespace SmartPeak
 				getLayerTensor(node_map.second->getTensorIndex().first)->getOutput().chip(node_map.second->getTensorIndex().second, 2) = one;
 			}
 		}
+	}
+
+	template<typename TensorT, typename DeviceT>
+	inline void ModelInterpreter<TensorT, DeviceT>::reInitNodes()
+	{
+		for (auto& layer_tensor: layer_tensors_) {
+			Eigen::Tensor<TensorT, 3> zero((int)layer_tensor->getBatchSize(), (int)layer_tensor->getMemorySize(), (int)layer_tensor->getLayerSize());	zero.setConstant(0);
+			layer_tensor->getInput() = zero;
+			layer_tensor->getOutput() = zero;
+			layer_tensor->getDerivative() = zero;
+			layer_tensor->getError() = zero;
+		}
+	}
+
+	template<typename TensorT, typename DeviceT>
+	inline void ModelInterpreter<TensorT, DeviceT>::reInitModelError()
+	{
+		Eigen::Tensor<TensorT, 2> zero((int)layer_tensors_[0]->getBatchSize(), (int)layer_tensors_[0]->getMemorySize());	zero.setConstant(0);
+		model_error_->getError() = zero;
 	}
 
 	template<typename TensorT, typename DeviceT>
@@ -651,164 +725,166 @@ namespace SmartPeak
 		return custom_layers;
 	}
 
-	template<typename TensorT, typename DeviceT>
-	inline std::map<std::string, std::vector<int>> ModelInterpreter<TensorT, DeviceT>::getFullyConnectedOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes)
-	{
-		std::map<std::string, std::vector<int>> FC_layers;
-		for (size_t operations_iter1 = 0; operations_iter1 < FP_operations.size(); ++operations_iter1) {
-			if (identified_sink_nodes.count(FP_operations[operations_iter1].result.sink_node->getName())) continue; // Skip identified sink nodes
-			for (size_t operations_iter2 = operations_iter1 + 1; operations_iter2 < FP_operations.size(); ++operations_iter2) {
-				if (identified_sink_nodes.count(FP_operations[operations_iter2].result.sink_node->getName())) continue; // Skip identified sink nodes
+	//template<typename TensorT, typename DeviceT>
+	//inline std::map<std::string, std::vector<int>> ModelInterpreter<TensorT, DeviceT>::getFullyConnectedOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes)
+	//{
+	//	std::map<std::string, std::vector<int>> FC_layers;
+	//	for (size_t operations_iter1 = 0; operations_iter1 < FP_operations.size(); ++operations_iter1) {
+	//		if (identified_sink_nodes.count(FP_operations[operations_iter1].result.sink_node->getName())) continue; // Skip identified sink nodes
+	//		for (size_t operations_iter2 = operations_iter1 + 1; operations_iter2 < FP_operations.size(); ++operations_iter2) {
+	//			if (identified_sink_nodes.count(FP_operations[operations_iter2].result.sink_node->getName())) continue; // Skip identified sink nodes
 
-				// check if the sink nodes are compatible
-				std::string ops_key_1 = makeForwardPropogationOperationsKey(FP_operations[operations_iter1].result.time_step,
-					FP_operations[operations_iter1].result.sink_node->getType(),
-					FP_operations[operations_iter1].result.sink_node->getIntegration()->getName(),
-					FP_operations[operations_iter1].result.sink_node->getActivation()->getName());
-				std::string ops_key_2 = makeForwardPropogationOperationsKey(FP_operations[operations_iter2].result.time_step,
-					FP_operations[operations_iter2].result.sink_node->getType(),
-					FP_operations[operations_iter2].result.sink_node->getIntegration()->getName(),
-					FP_operations[operations_iter2].result.sink_node->getActivation()->getName());
-				if (ops_key_1 != ops_key_2) continue;
+	//			// check if the sink nodes are compatible
+	//			std::string ops_key_1 = makeForwardPropogationOperationsKey(FP_operations[operations_iter1].result.time_step,
+	//				FP_operations[operations_iter1].result.sink_node->getType(),
+	//				FP_operations[operations_iter1].result.sink_node->getIntegration()->getName(),
+	//				FP_operations[operations_iter1].result.sink_node->getActivation()->getName());
+	//			std::string ops_key_2 = makeForwardPropogationOperationsKey(FP_operations[operations_iter2].result.time_step,
+	//				FP_operations[operations_iter2].result.sink_node->getType(),
+	//				FP_operations[operations_iter2].result.sink_node->getIntegration()->getName(),
+	//				FP_operations[operations_iter2].result.sink_node->getActivation()->getName());
+	//			if (ops_key_1 != ops_key_2) continue;
 
-				// check if the node names are all the same and compatible
-				std::set<std::string> argument_nodes;
-				for (const auto& argument : FP_operations[operations_iter1].arguments) {
-					std::string ops_key = makeForwardPropogationOperationsKey(argument.time_step,
-						argument.sink_node->getType(),
-						argument.sink_node->getIntegration()->getName(),
-						argument.sink_node->getActivation()->getName());
-					std::string ops_key_id = argument.sink_node->getNodeName() + "/" + ops_key;
-					argument_nodes.insert(ops_key_id);
-				}
-				for (const auto& argument : FP_operations[operations_iter2].arguments) {
-					std::string ops_key = makeForwardPropogationOperationsKey(argument.time_step,
-						argument.sink_node->getType(),
-						argument.sink_node->getIntegration()->getName(),
-						argument.sink_node->getActivation()->getName());
-					std::string ops_key_id = argument.sink_node->getNodeName() + "/" + ops_key;
-					argument_nodes.insert(ops_key_id);
-				}
-				if (argument_nodes.size() != FP_operations[operations_iter1].arguments.size() || argument_nodes.size() != FP_operations[operations_iter2].arguments.size()) continue;
+	//			// check if the node names are all the same and compatible
+	//			std::set<std::string> argument_nodes;
+	//			for (const auto& argument : FP_operations[operations_iter1].arguments) {
+	//				std::string ops_key = makeForwardPropogationOperationsKey(argument.time_step,
+	//					argument.sink_node->getType(),
+	//					argument.sink_node->getIntegration()->getName(),
+	//					argument.sink_node->getActivation()->getName());
+	//				std::string ops_key_id = argument.sink_node->getNodeName() + "/" + ops_key;
+	//				argument_nodes.insert(ops_key_id);
+	//			}
+	//			for (const auto& argument : FP_operations[operations_iter2].arguments) {
+	//				std::string ops_key = makeForwardPropogationOperationsKey(argument.time_step,
+	//					argument.sink_node->getType(),
+	//					argument.sink_node->getIntegration()->getName(),
+	//					argument.sink_node->getActivation()->getName());
+	//				std::string ops_key_id = argument.sink_node->getNodeName() + "/" + ops_key;
+	//				argument_nodes.insert(ops_key_id);
+	//			}
+	//			if (argument_nodes.size() != FP_operations[operations_iter1].arguments.size() || argument_nodes.size() != FP_operations[operations_iter2].arguments.size()) continue;
 
-				// update the maps
-				std::string sink_node_key = FP_operations[operations_iter1].result.sink_node->getName() + std::string(operations_iter1);
-				identified_sink_nodes.insert(sink_node_key);
-				auto found = FC_layers.emplace(sink_node_key, std::vector<int>({ operations_iter1 }));
-				FC_layers.at(sink_node_key).push_back(operations_iter2);
-			}
-		}
-		return FC_layers;
-	}
+	//			// update the maps
+	//			std::string sink_node_key = FP_operations[operations_iter1].result.sink_node->getName() + std::string(operations_iter1);
+	//			identified_sink_nodes.insert(sink_node_key);
+	//			auto found = FC_layers.emplace(sink_node_key, std::vector<int>({ operations_iter1 }));
+	//			FC_layers.at(sink_node_key).push_back(operations_iter2);
+	//		}
+	//	}
+	//	return FC_layers;
+	//}
 
-	template<typename TensorT, typename DeviceT>
-	inline std::map<std::string, std::vector<int>> ModelInterpreter<TensorT, DeviceT>::GetSinglyConnectedOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes)
-	{
-		std::map<std::string, std::vector<int>> SC_layers
-			for (size_t operations_iter1 = 0; operations_iter1 < FP_operations.size(); ++operations_iter1) {
-				if (identified_sink_nodes.count(FP_operations[operations_iter1].result.sink_node->getName())) continue; // Skip identified sink nodes
-				if (FP_operations[operations_iter1].arguments.size() != 1) continue; // Not singly connected
-				for (size_t operations_iter2 = operations_iter1 + 1; operations_iter2 < FP_operations.size(); ++operations_iter2) {
-					if (identified_sink_nodes.count(FP_operations[operations_iter2].result.sink_node->getName())) continue; // Skip identified sink nodes
-					if (FP_operations[operations_iter2].arguments.size() != 1) continue; // Not singly connected
+	//template<typename TensorT, typename DeviceT>
+	//inline std::map<std::string, std::vector<int>> ModelInterpreter<TensorT, DeviceT>::GetSinglyConnectedOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes)
+	//{
+	//	std::map<std::string, std::vector<int>> SC_layers
+	//		for (size_t operations_iter1 = 0; operations_iter1 < FP_operations.size(); ++operations_iter1) {
+	//			if (identified_sink_nodes.count(FP_operations[operations_iter1].result.sink_node->getName())) continue; // Skip identified sink nodes
+	//			if (FP_operations[operations_iter1].arguments.size() != 1) continue; // Not singly connected
+	//			for (size_t operations_iter2 = operations_iter1 + 1; operations_iter2 < FP_operations.size(); ++operations_iter2) {
+	//				if (identified_sink_nodes.count(FP_operations[operations_iter2].result.sink_node->getName())) continue; // Skip identified sink nodes
+	//				if (FP_operations[operations_iter2].arguments.size() != 1) continue; // Not singly connected
 
-					// check if the sink nodes are compatible
-					std::string ops_key_1 = makeForwardPropogationOperationsKey(FP_operations[operations_iter1].result.time_step,
-						FP_operations[operations_iter1].result.sink_node->getType(),
-						FP_operations[operations_iter1].result.sink_node->getIntegration()->getName(),
-						FP_operations[operations_iter1].result.sink_node->getActivation()->getName());
-					std::string ops_key_2 = makeForwardPropogationOperationsKey(FP_operations[operations_iter2].result.time_step,
-						FP_operations[operations_iter2].result.sink_node->getType(),
-						FP_operations[operations_iter2].result.sink_node->getIntegration()->getName(),
-						FP_operations[operations_iter2].result.sink_node->getActivation()->getName());
-					if (ops_key_1 != ops_key_2) continue;
+	//				// check if the sink nodes are compatible
+	//				std::string ops_key_1 = makeForwardPropogationOperationsKey(FP_operations[operations_iter1].result.time_step,
+	//					FP_operations[operations_iter1].result.sink_node->getType(),
+	//					FP_operations[operations_iter1].result.sink_node->getIntegration()->getName(),
+	//					FP_operations[operations_iter1].result.sink_node->getActivation()->getName());
+	//				std::string ops_key_2 = makeForwardPropogationOperationsKey(FP_operations[operations_iter2].result.time_step,
+	//					FP_operations[operations_iter2].result.sink_node->getType(),
+	//					FP_operations[operations_iter2].result.sink_node->getIntegration()->getName(),
+	//					FP_operations[operations_iter2].result.sink_node->getActivation()->getName());
+	//				if (ops_key_1 != ops_key_2) continue;
 
-					// check if the source nodes are compatible
-					ops_key_1 = makeForwardPropogationOperationsKey(FP_operations[operations_iter1].arguments[0].time_step,
-						FP_operations[operations_iter1].arguments[0].source_node->getType(),
-						FP_operations[operations_iter1].arguments[0].source_node->getIntegration()->getName(),
-						FP_operations[operations_iter1].arguments[0].source_node->getActivation()->getName());
-					ops_key_2 = makeForwardPropogationOperationsKey(FP_operations[operations_iter2].arguments[0].time_step,
-						FP_operations[operations_iter2].arguments[0].source_node->getType(),
-						FP_operations[operations_iter2].arguments[0].source_node->getIntegration()->getName(),
-						FP_operations[operations_iter2].arguments[0].source_node->getActivation()->getName());
-					if (ops_key_1 != ops_key_2) continue;
+	//				// check if the source nodes are compatible
+	//				ops_key_1 = makeForwardPropogationOperationsKey(FP_operations[operations_iter1].arguments[0].time_step,
+	//					FP_operations[operations_iter1].arguments[0].source_node->getType(),
+	//					FP_operations[operations_iter1].arguments[0].source_node->getIntegration()->getName(),
+	//					FP_operations[operations_iter1].arguments[0].source_node->getActivation()->getName());
+	//				ops_key_2 = makeForwardPropogationOperationsKey(FP_operations[operations_iter2].arguments[0].time_step,
+	//					FP_operations[operations_iter2].arguments[0].source_node->getType(),
+	//					FP_operations[operations_iter2].arguments[0].source_node->getIntegration()->getName(),
+	//					FP_operations[operations_iter2].arguments[0].source_node->getActivation()->getName());
+	//				if (ops_key_1 != ops_key_2) continue;
 
-					// update the maps
-					std::string sink_node_key = FP_operations[operations_iter1].result.sink_node->getName() + std::string(operations_iter1);
-					identified_sink_nodes.insert(sink_node_key);
-					auto found = SC_layers.emplace(sink_node_key, std::vector<int>({ operations_iter1 }));
-					SC_layers.at(sink_node_key).push_back(operations_iter2);
-				}
-			}
-		return SC_layers;
-	}
+	//				// update the maps
+	//				std::string sink_node_key = FP_operations[operations_iter1].result.sink_node->getName() + std::string(operations_iter1);
+	//				identified_sink_nodes.insert(sink_node_key);
+	//				auto found = SC_layers.emplace(sink_node_key, std::vector<int>({ operations_iter1 }));
+	//				SC_layers.at(sink_node_key).push_back(operations_iter2);
+	//			}
+	//		}
+	//	return SC_layers;
+	//}
 
-	template<typename TensorT, typename DeviceT>
-	inline std::map<std::string, std::vector<int>> ModelInterpreter<TensorT, DeviceT>::getConvOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes)
-	{
-		std::map<std::string, std::vector<int>> Conv_layers;
-		// getConvOperations (special case of multiple FanIn with shared weights)
-		for (size_t operations_iter1 = 0; operations_iter1 < FP_operations.size(); ++operations_iter1) {
-			if (identified_sink_nodes.count(FP_operations[operations_iter1].result.sink_node->getName())) continue; // Skip identified sink nodes
-			for (size_t operations_iter2 = operations_iter1 + 1; operations_iter2 < FP_operations.size(); ++operations_iter2) {
-				if (identified_sink_nodes.count(FP_operations[operations_iter2].result.sink_node->getName())) continue; // Skip identified sink nodes
+	//template<typename TensorT, typename DeviceT>
+	//inline std::map<std::string, std::vector<int>> ModelInterpreter<TensorT, DeviceT>::getConvOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes)
+	//{
+	//	std::map<std::string, std::vector<int>> Conv_layers;
+	//	// getConvOperations (special case of multiple FanIn with shared weights)
+	//	for (size_t operations_iter1 = 0; operations_iter1 < FP_operations.size(); ++operations_iter1) {
+	//		if (identified_sink_nodes.count(FP_operations[operations_iter1].result.sink_node->getName())) continue; // Skip identified sink nodes
+	//		for (size_t operations_iter2 = operations_iter1 + 1; operations_iter2 < FP_operations.size(); ++operations_iter2) {
+	//			if (identified_sink_nodes.count(FP_operations[operations_iter2].result.sink_node->getName())) continue; // Skip identified sink nodes
 
-				// check if the sink nodes are compatible
-				std::string ops_key_1 = makeForwardPropogationOperationsKey(FP_operations[operations_iter1].result.time_step,
-					FP_operations[operations_iter1].result.sink_node->getType(),
-					FP_operations[operations_iter1].result.sink_node->getIntegration()->getName(),
-					FP_operations[operations_iter1].result.sink_node->getActivation()->getName());
-				std::string ops_key_2 = makeForwardPropogationOperationsKey(FP_operations[operations_iter2].result.time_step,
-					FP_operations[operations_iter2].result.sink_node->getType(),
-					FP_operations[operations_iter2].result.sink_node->getIntegration()->getName(),
-					FP_operations[operations_iter2].result.sink_node->getActivation()->getName());
-				if (ops_key_1 != ops_key_2) continue;
+	//			// check if the sink nodes are compatible
+	//			std::string ops_key_1 = makeForwardPropogationOperationsKey(FP_operations[operations_iter1].result.time_step,
+	//				FP_operations[operations_iter1].result.sink_node->getType(),
+	//				FP_operations[operations_iter1].result.sink_node->getIntegration()->getName(),
+	//				FP_operations[operations_iter1].result.sink_node->getActivation()->getName());
+	//			std::string ops_key_2 = makeForwardPropogationOperationsKey(FP_operations[operations_iter2].result.time_step,
+	//				FP_operations[operations_iter2].result.sink_node->getType(),
+	//				FP_operations[operations_iter2].result.sink_node->getIntegration()->getName(),
+	//				FP_operations[operations_iter2].result.sink_node->getActivation()->getName());
+	//			if (ops_key_1 != ops_key_2) continue;
 
-				// check for shared weights
-				std::set<std::string> argument_weights, argument_weights_1, argument_weights_2;
-				for (const auto& argument : FP_operations[operations_iter1].arguments) {
-					argument_weights.insert(argument.weight->getName());
-					argument_weights_1.insert(argument.weight->getName());
-				}
-				for (const auto& argument : FP_operations[operations_iter2].arguments) {
-					argument_weights.insert(argument.weight->getName());
-					argument_weights_2.insert(argument.weight->getName());
-				}
-				if (argument_weights.size() != argument_weights_1.size() || argument_weights.size() != argument_weights_2.size()) continue;
+	//			// check for shared weights
+	//			std::set<std::string> argument_weights, argument_weights_1, argument_weights_2;
+	//			for (const auto& argument : FP_operations[operations_iter1].arguments) {
+	//				argument_weights.insert(argument.weight->getName());
+	//				argument_weights_1.insert(argument.weight->getName());
+	//			}
+	//			for (const auto& argument : FP_operations[operations_iter2].arguments) {
+	//				argument_weights.insert(argument.weight->getName());
+	//				argument_weights_2.insert(argument.weight->getName());
+	//			}
+	//			if (argument_weights.size() != argument_weights_1.size() || argument_weights.size() != argument_weights_2.size()) continue;
 
-				// update the maps
-				identified_sink_nodes.insert(FP_operations[operations_iter1].result.sink_node->getName());
-				auto found = Conv_layers.emplace(FP_operations[operations_iter1].result.sink_node->getName(), std::vector<int>({ operations_iter1 }));
-				Conv_layers.at(FP_operations[operations_iter1].result.sink_node->getName()).push_back(operations_iter2);
-			}
-		}
-		return Conv_layers;
-	}
+	//			// update the maps
+	//			identified_sink_nodes.insert(FP_operations[operations_iter1].result.sink_node->getName());
+	//			auto found = Conv_layers.emplace(FP_operations[operations_iter1].result.sink_node->getName(), std::vector<int>({ operations_iter1 }));
+	//			Conv_layers.at(FP_operations[operations_iter1].result.sink_node->getName()).push_back(operations_iter2);
+	//		}
+	//	}
+	//	return Conv_layers;
+	//}
 
-	template<typename TensorT, typename DeviceT>
-	inline std::map<std::string, std::vector<int>> ModelInterpreter<TensorT, DeviceT>::getFanOutOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes)
-	{
-		return std::map<std::string, std::vector<int>>();
-	}
+	//template<typename TensorT, typename DeviceT>
+	//inline std::map<std::string, std::vector<int>> ModelInterpreter<TensorT, DeviceT>::getFanOutOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes)
+	//{
+	//	return std::map<std::string, std::vector<int>>();
+	//}
 
-	template<typename TensorT, typename DeviceT>
-	inline std::map<std::string, std::vector<int>> ModelInterpreter<TensorT, DeviceT>::getFanInOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes)
-	{
-		// Default of what is left...
-		return std::map<std::string, std::vector<int>>();
-	}
+	//template<typename TensorT, typename DeviceT>
+	//inline std::map<std::string, std::vector<int>> ModelInterpreter<TensorT, DeviceT>::getFanInOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes)
+	//{
+	//	// Default of what is left...
+	//	return std::map<std::string, std::vector<int>>();
+	//}
+
 	template<typename TensorT, typename DeviceT>
 	inline std::map<std::string, std::vector<int>> ModelInterpreter<TensorT, DeviceT>::getTensorOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes)
 	{
 		std::map<std::string, std::vector<int>> FC_layers;
 		for (size_t operations_iter1 = 0; operations_iter1 < FP_operations.size(); ++operations_iter1) {
-			if (identified_sink_nodes.count(FP_operations[operations_iter1].result.sink_node->getName())) continue; // Skip identified sink nodes
-			std::string sink_node_key = FP_operations[operations_iter1].result.sink_node->getName() + "/" + std::to_string(operations_iter1);
+			std::string sink_node_key1 = FP_operations[operations_iter1].result.sink_node->getName() + "/" + std::to_string(operations_iter1);
+			if (identified_sink_nodes.count(sink_node_key1)) continue; // Skip identified sink nodes
 
 			// Check for compatibility
 			for (size_t operations_iter2 = operations_iter1 + 1; operations_iter2 < FP_operations.size(); ++operations_iter2) {
-				if (identified_sink_nodes.count(FP_operations[operations_iter2].result.sink_node->getName())) continue; // Skip identified sink nodes
+				std::string sink_node_key2 = FP_operations[operations_iter2].result.sink_node->getName() + "/" + std::to_string(operations_iter2);
+				if (identified_sink_nodes.count(sink_node_key2)) continue; // Skip identified sink nodes
 
 				// check if the sink nodes are compatible
 				std::string ops_key_1 = makeForwardPropogationOperationsKey(FP_operations[operations_iter1].result.time_step,
@@ -840,17 +916,18 @@ namespace SmartPeak
 				if (argument_nodes.size() > 1) continue;
 
 				// update the maps
-				identified_sink_nodes.insert(sink_node_key);
+				identified_sink_nodes.insert(sink_node_key1);
+				identified_sink_nodes.insert(sink_node_key2);
 				std::vector<int> first_operation = { (int)operations_iter1 };
-				auto found = FC_layers.emplace(sink_node_key, first_operation);
-				FC_layers.at(sink_node_key).push_back(operations_iter2);
+				auto found = FC_layers.emplace(sink_node_key1, first_operation);
+				FC_layers.at(sink_node_key1).push_back(operations_iter2);
 			}
 
 			// Check if compatible operations were found, if not add as is
-			if (identified_sink_nodes.count(sink_node_key) == 0) {
-				identified_sink_nodes.insert(sink_node_key);
+			if (identified_sink_nodes.count(sink_node_key1) == 0) {
+				identified_sink_nodes.insert(sink_node_key1);
 				std::vector<int> first_operation = { (int)operations_iter1 };
-				auto found = FC_layers.emplace(sink_node_key, first_operation);
+				auto found = FC_layers.emplace(sink_node_key1, first_operation);
 			}
 		}
 		return FC_layers;
@@ -1119,6 +1196,95 @@ namespace SmartPeak
 	inline void ModelInterpreter<TensorT, DeviceT>::clearOperationSteps()
 	{
 		operation_steps_.clear();
+	}
+
+	template<typename TensorT, typename DeviceT>
+	inline void ModelInterpreter<TensorT, DeviceT>::FPTT(const int& time_steps, bool sync_HToD, bool sync_DToH)
+	{
+		// check time_steps vs memory_size
+		int max_steps = time_steps;
+		if (time_steps >= layer_tensors_[0]->getMemorySize())
+		{
+			std::cout << "Time_steps will be scaled back to the memory_size - 1." << std::endl;
+			max_steps = layer_tensors_[0]->getMemorySize() - 1;
+		}
+
+		for (int time_step = 0; time_step < max_steps; ++time_step)		{
+			const int time_step_cur = max_steps - 1 - time_step;
+			if (time_step == 0)
+				executeForwardPropogationOperations(layer_tensors_[0]->getMemorySize(), sync_HToD, false);
+			else if (time_step == max_steps - 1)
+				executeForwardPropogationOperations(layer_tensors_[0]->getMemorySize(), false, sync_DToH);
+			else
+				executeForwardPropogationOperations(layer_tensors_[0]->getMemorySize(), false, false);
+		}
+	}
+
+	template<typename TensorT, typename DeviceT>
+	inline void ModelInterpreter<TensorT, DeviceT>::CETT(Model<TensorT>& model, const Eigen::Tensor<TensorT, 3>& values, const std::vector<std::string>& node_names, 
+		LossFunctionTensorOp<TensorT, DeviceT> loss_function, LossFunctionGradTensorOp<TensorT, DeviceT> loss_function_grad, const int & time_steps, bool sync_HToD, bool sync_DToH)
+	{
+		// check time_steps vs memory_size
+		// [NOTE: was changed form memory_size to memory_size - 1]
+		int max_steps = time_steps;
+		if (time_steps >= layer_tensors_[0]->getMemorySize())
+		{
+			std::cout << "Time_steps will be scaled back to the memory_size - 1." << std::endl;
+			max_steps = layer_tensors_[0]->getMemorySize() - 1;
+		}
+
+		if (values.dimension(1) - 1 > layer_tensors_[0]->getMemorySize())
+			std::cout << "The sequence for CETT needs to be the memory_size - 1!" << std::endl;
+
+		// extract out the layer id
+		const int layer_id = model.getNodesMap().at(node_names[0])->getTensorIndex().first;
+		assert(getLayerTensor(layer_id)->getLayerSize() == node_names.size());
+
+		// NOTE: the output are stored [Tmax, Tmax - 1, ..., T=0, T=-1]
+		//	     while the expected output (values) are stored [T=0, T=1, ..., Tmax, Tmax]
+		for (int time_step = 0; time_step < max_steps; ++time_step)
+		{
+			int next_time_step = values.dimension(1) - 1 - time_step;
+			// [TESTS: Test for the expected output error at each time step]
+			//std::cout<<"Expected output for time point "<< time_step << " is " << values.chip(next_time_step, 1)<<std::endl;
+
+			// calculate the error for each batch of memory
+		  if (time_step == 0)
+				executeModelErrorOperations(values.chip(next_time_step, 1), layer_id, loss_function, loss_function_grad, time_step, sync_HToD, false);
+			else if (time_step == max_steps - 1)
+				executeModelErrorOperations(values.chip(next_time_step, 1), layer_id, loss_function, loss_function_grad, time_step, false, sync_DToH);
+			else
+				executeModelErrorOperations(values.chip(next_time_step, 1), layer_id, loss_function, loss_function_grad, time_step, false, false);
+		}
+	}
+
+	template<typename TensorT, typename DeviceT>
+	inline void ModelInterpreter<TensorT, DeviceT>::TBPTT(const int& time_steps, bool sync_HToD, bool sync_DToH)
+	{
+		// check time_steps vs memory_size
+		int max_steps = time_steps;
+		if (time_steps >= layer_tensors_[0]->getMemorySize())
+		{
+			std::cout << "Time_steps will be scaled back to the memory_size - 1." << std::endl;
+			max_steps = layer_tensors_[0]->getMemorySize() - 1;
+		}
+		for (int time_step = 0; time_step < max_steps; ++time_step) {
+
+			// calculate the error for each batch of memory
+			if (time_step == 0)
+				executeBackwardPropogationOperations(time_step, sync_HToD, false);
+			else if (time_step == max_steps - 1)
+				executeModelErrorOperations(time_step, false, sync_DToH);
+			else
+				executeModelErrorOperations(time_step, false, false);
+		}
+	}
+
+	template<typename TensorT, typename DeviceT>
+	inline void ModelInterpreter<TensorT, DeviceT>::updateWeights(bool sync_HToD, bool sync_DToH)
+	{
+		executeWeightErrorOperations(sync_HToD, sync_DToH);
+		executeWeightUpdateOperations(sync_HToD, sync_DToH);
 	}
 }
 #endif //SMARTPEAK_MODELINTERPRETER_H

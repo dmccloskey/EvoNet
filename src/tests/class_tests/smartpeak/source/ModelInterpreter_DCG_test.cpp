@@ -2,8 +2,7 @@
 
 #define BOOST_TEST_MODULE ModelInterpreter DCG test suite 
 #include <boost/test/included/unit_test.hpp>
-#include <SmartPeak/ml/ModelInterpreter.h>
-#include <SmartPeak/ml/Model3.h>
+#include <SmartPeak/ml/ModelInterpreterDefaultDevice.h> //TODO: make testing class using ModelInterepreter
 
 using namespace SmartPeak;
 using namespace std;

@@ -2,11 +2,7 @@
 
 #define BOOST_TEST_MODULE ModelInterpreter DAG test suite 
 #include <boost/test/included/unit_test.hpp>
-#include <SmartPeak/ml/ModelInterpreter.h>
-#include <SmartPeak/ml/Model3.h>
-
-#include <vector>
-#include <iostream>
+#include <SmartPeak/ml/ModelInterpreterDefaultDevice.h> //TODO: make testing class using ModelInterepreter
 
 using namespace SmartPeak;
 using namespace std;
@@ -593,8 +589,9 @@ BOOST_AUTO_TEST_CASE(getTensorOperations)
 	std::set<std::string> identified_sink_nodes;
 	std::map<std::string, std::vector<int>> tensor_ops = model_interpreter.getTensorOperations(FP_operations_expanded, identified_sink_nodes);
 
-	BOOST_CHECK_EQUAL(identified_sink_nodes.size(), 1);
+	BOOST_CHECK_EQUAL(identified_sink_nodes.size(), 2);
 	BOOST_CHECK_EQUAL(identified_sink_nodes.count("2/0"), 1);
+	BOOST_CHECK_EQUAL(identified_sink_nodes.count("3/1"), 1);
 	BOOST_CHECK_EQUAL(tensor_ops.size(), 1);
 	BOOST_CHECK_EQUAL(tensor_ops.at("2/0")[0], 0);
 	BOOST_CHECK_EQUAL(tensor_ops.at("2/0")[1], 1);

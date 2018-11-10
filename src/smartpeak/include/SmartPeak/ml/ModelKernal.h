@@ -384,7 +384,7 @@ namespace SmartPeak
 			const size_t bytes = batch_size * memory_size * layer_size * sizeof(TensorT);
 			// Copy host to device
 			if (copyHostToDevice) {
-				device.memcpyHostToDevice(d_node_outputs, h_node_outputs, bytes);
+				device.memcpyHostToDevice(d_node_outputs, h_node_outputs, bytes); // only if testing
 				device.memcpyHostToDevice(d_node_derivative, h_node_derivative, bytes);
 			}
 
@@ -419,7 +419,7 @@ namespace SmartPeak
 			std::size_t sink_bytes = batch_size * memory_size * sink_layer_size * sizeof(TensorT);
 			std::size_t weight_bytes = source_layer_size * sink_layer_size * sizeof(TensorT);
 			if (copyHostToDevice) {
-				device.memcpyHostToDevice(d_source_outputs, h_source_outputs, source_bytes);
+				device.memcpyHostToDevice(d_source_outputs, h_source_outputs, source_bytes); // only for input nodes
 				device.memcpyHostToDevice(d_weights, h_weights, weight_bytes);
 				device.memcpyHostToDevice(d_sink_inputs, h_sink_inputs, sink_bytes);
 			}
@@ -463,12 +463,12 @@ namespace SmartPeak
 			std::size_t sink_bytes = batch_size * memory_size * sink_layer_size * sizeof(TensorT);
 			std::size_t weight_bytes = source_layer_size * sink_layer_size * sizeof(TensorT);
 			if (copyHostToDevice) {
-				device.memcpyHostToDevice(d_source_errors, h_source_errors, source_bytes);
-				device.memcpyHostToDevice(d_source_inputs, h_source_inputs, source_bytes);
-				device.memcpyHostToDevice(d_weights, h_weights, weight_bytes);
-				device.memcpyHostToDevice(d_sink_output, h_sink_output, sink_bytes);
-				device.memcpyHostToDevice(d_sink_derivative, h_sink_derivative, sink_bytes);
-				device.memcpyHostToDevice(d_sink_error, h_sink_error, sink_bytes);
+				device.memcpyHostToDevice(d_source_errors, h_source_errors, source_bytes); // only once
+				device.memcpyHostToDevice(d_source_inputs, h_source_inputs, source_bytes); // only when testing
+				device.memcpyHostToDevice(d_weights, h_weights, weight_bytes); // only when testing
+				device.memcpyHostToDevice(d_sink_output, h_sink_output, sink_bytes); // only when testing
+				device.memcpyHostToDevice(d_sink_derivative, h_sink_derivative, sink_bytes); // only when testing
+				device.memcpyHostToDevice(d_sink_error, h_sink_error, sink_bytes); // only once
 			}
 
 			// Integrate sink node error
@@ -517,10 +517,10 @@ namespace SmartPeak
 			std::size_t bytes = batch_size * memory_size * layer_size * sizeof(TensorT);
 			std::size_t model_bytes = batch_size * memory_size * sizeof(TensorT);
 			if (copyHostToDevice) {
-				device.memcpyHostToDevice(d_node_outputs, h_node_outputs, bytes);
-				device.memcpyHostToDevice(d_node_errors, h_node_errors, bytes);
+				device.memcpyHostToDevice(d_node_outputs, h_node_outputs, bytes); // only when testing
+				device.memcpyHostToDevice(d_node_errors, h_node_errors, bytes); // only once
 				device.memcpyHostToDevice(d_expected, h_expected, expected_bytes);
-				device.memcpyHostToDevice(d_model_error, h_model_error, model_bytes);
+				device.memcpyHostToDevice(d_model_error, h_model_error, model_bytes); // only once
 			}
 
 			// Calculate the model error
@@ -531,8 +531,8 @@ namespace SmartPeak
 
 			// Copy device to host
 			if (copyDeviceToHost) {
-				device.memcpyDeviceToHost(h_node_errors, d_node_errors, bytes);
-				device.memcpyDeviceToHost(h_model_error, d_model_error, model_bytes);
+				device.memcpyDeviceToHost(h_node_errors, d_node_errors, bytes); // only once
+				device.memcpyDeviceToHost(h_model_error, d_model_error, model_bytes); // only once
 			}
 
 			// Deallocate the memory

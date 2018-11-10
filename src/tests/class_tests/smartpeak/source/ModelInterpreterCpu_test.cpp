@@ -586,4 +586,60 @@ BOOST_AUTO_TEST_CASE(executeWeightUpdateOperations)
 	}
 }
 
+Model<float> model_modelTrainer1 = makeModelFCSum();
+BOOST_AUTO_TEST_CASE(modelTrainer1)
+{
+	ModelInterpreterDefaultDevice<float> model_interpreter;
+	const int batch_size = 4;
+	const int memory_size = 2;
+	const bool train = true;
+
+	// compile the graph into a set of operations and allocate all tensors
+	model_interpreter.getForwardPropogationOperations(model_modelTrainer1, batch_size, memory_size, train);
+	model_interpreter.allocateModelErrorTensor(batch_size, memory_size);
+
+	// create the input
+	const std::vector<std::string> node_ids = { "0", "1" };
+	Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)node_ids.size());
+	input.setValues({
+		{{1, 5}, {0, 0}},
+		{{2, 6}, {0, 0}},
+		{{3, 7}, {0, 0}},
+		{{4, 8}, {0, 0}} });
+
+	// create the expected output
+	std::vector<std::string> output_nodes = { "4", "5" };
+	Eigen::Tensor<float, 2> expected(batch_size, (int)output_nodes.size());
+	expected.setValues({ {0, 1}, {0, 1}, {0, 1}, {0, 1} });
+	LossFunctionTensorOp<float, Eigen::DefaultDevice>* solver = new MSETensorOp<float, Eigen::DefaultDevice>();
+	LossFunctionGradTensorOp<float, Eigen::DefaultDevice>* solver_grad = new MSEGradTensorOp<float, Eigen::DefaultDevice>();
+	const int layer_id = model_modelTrainer1.getNode("4").getTensorIndex().first;
+
+	// iterate until we find the optimal values
+	const int max_iter = 100;
+	for (int iter = 0; iter < max_iter; ++iter)
+	{
+		// assign the input data
+		model_interpreter.mapValuesToLayers(model_modelTrainer1, input, node_ids, "output");
+		model_interpreter.initBiases(model_modelTrainer1); // create the bias	
+
+		model_interpreter.executeForwardPropogationOperations(0, true, true); //FP
+
+		// calculate the model error and node output error
+		model_interpreter.executeModelErrorOperations(expected, layer_id, solver, solver_grad, 0, true, true);
+		std::cout << "Error at iteration: " << iter << " is " << model_interpreter.getModelError()->getError().sum() << std::endl;
+
+		model_interpreter.executeBackwardPropogationOperations(0, true, true); // BP
+		model_interpreter.executeWeightErrorOperations(0, true, true); // Weight error
+		model_interpreter.executeWeightUpdateOperations(0, true, true); // Weight update
+
+		// reinitialize the model
+		model_interpreter.reInitNodes();
+		model_interpreter.reInitModelError();
+	}
+
+	const Eigen::Tensor<float, 0> total_error = model_interpreter.getModelError()->getError().sum();
+	BOOST_CHECK(total_error(0) <= 0.5);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
