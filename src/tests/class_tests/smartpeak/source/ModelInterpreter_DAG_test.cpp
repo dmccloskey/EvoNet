@@ -2,7 +2,7 @@
 
 #define BOOST_TEST_MODULE ModelInterpreter DAG test suite 
 #include <boost/test/included/unit_test.hpp>
-#include <SmartPeak/ml/ModelInterpreter3.h>
+#include <SmartPeak/ml/ModelInterpreter.h>
 #include <SmartPeak/ml/Model3.h>
 
 #include <vector>
@@ -332,6 +332,8 @@ BOOST_AUTO_TEST_CASE(expandForwardPropogationOperationsBySourceNodeKey)
 
 	std::vector<OperationList<float>> FP_operations_expanded;
 	model_interpreter.expandForwardPropogationOperationsBySourceNodeKey(FP_operations_list, FP_operations_expanded);
+
+	BOOST_CHECK_EQUAL(FP_operations_expanded.size(), 2);
 
 	FP_operations_expanded[1].arguments[2].source_node->setActivation(std::shared_ptr<ActivationOp<float>>(new ELUOp<float>()));
 

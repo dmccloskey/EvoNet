@@ -1,41 +1,32 @@
 /**TODO:  Add copyright*/
 
-#ifndef SMARTPEAK_MODEL_H
-#define SMARTPEAK_MODEL_H
+#ifndef SMARTPEAK_MODELINTERPRETER_H
+#define SMARTPEAK_MODELINTERPRETER_H
 
 // .h
-#include <SmartPeak/ml/Link.h>
-#include <SmartPeak/ml/Node.h>
-#include <SmartPeak/ml/Weight.h>
-#include <SmartPeak/ml/LossFunction.h>
+#include <SmartPeak/ml/Model3.h>
+#include <SmartPeak/ml/NodeTensorData.h>
+#include <SmartPeak/ml/WeightTensorData.h>
+#include <SmartPeak/ml/IntegrationFunctionTensor.h>
+#include <SmartPeak/ml/ActivationFunctionTensor.h>
+#include <SmartPeak/ml/SolverTensor.h>
+#include <SmartPeak/ml/LossFunctionTensor.h>
+#include <SmartPeak/ml/OpToTensorOp.h>
 
 #include <unsupported/Eigen/CXX11/Tensor>
 #include <vector>
 #include <map>
-#include <tuple>
-#include <list>
 #include <set>
 
 // .cpp
-#include <SmartPeak/ml/SharedFunctions.h>
-#include <SmartPeak/graph/CircuitFinder.h>
-
-#include <iostream>
-#include <algorithm>
-#include <thread>
-#include <future>
-#include <mutex>
-
-static std::mutex calculateNetNodeInput_mutex;
-static std::mutex calculateNodeInput_mutex;
-static std::mutex calculateNetNodeError_mutex;
-static std::mutex calculateNodeError_mutex;
-static std::mutex calculateModelError_mutex;
-static std::mutex calculateOutputNodeError_mutex;
+#include <SmartPeak/ml/ModelErrorData.h>
+#include <SmartPeak/ml/ModelKernal.h>
 
 namespace SmartPeak
 {
-
+	/*
+	Structures required to identify node operations
+	*/
 	template<typename TensorT>
 	struct OperationResult
 	{
@@ -59,42 +50,67 @@ namespace SmartPeak
 		std::vector<OperationArguments<TensorT>> arguments;
 	};
 
+	/*
+	Structures required for layer operations
+	*/
+	template<typename TensorT, typename DeviceT>
+	class OperationLayer
+	{
+	public:
+		std::shared_ptr<NodeTensorData<TensorT>> tensor = nullptr;
+		int time_step = 0;
+		std::shared_ptr<IntegrationTensorOp<TensorT, DeviceT>> integration = nullptr;
+		std::shared_ptr<IntegrationErrorTensorOp<TensorT, DeviceT>> integration_error = nullptr;
+		std::shared_ptr<IntegrationWeightGradTensorOp<TensorT, DeviceT>> integration_weight_grad = nullptr;
+		std::shared_ptr<ActivationTensorOp<TensorT, DeviceT>> activation = nullptr;
+		std::shared_ptr<ActivationTensorOp<TensorT, DeviceT>> activation_grad = nullptr;
+	};
+
+	template<typename TensorT, typename DeviceT>
+	class OperationWeight
+	{
+	public:
+		std::shared_ptr<WeightTensorData<TensorT>> tensor = nullptr;
+		std::shared_ptr<WeightInitOp<TensorT>> weight_init = nullptr;
+		std::shared_ptr<SolverTensorOp<TensorT, DeviceT>> solver = nullptr;
+	};
+
+	/*
+	Class used for layer operations
+	*/
+	template<typename TensorT, typename DeviceT>
+	class OperationTensorStep
+	{
+	public:
+		OperationLayer<TensorT, DeviceT> sink_layer;
+		OperationLayer<TensorT, DeviceT> source_layer;
+		OperationWeight<TensorT, DeviceT> weight;
+	};
+
 	/**
-		@brief Directed Network Model
+		@brief Directed Network Model Interpreter
 
 		Assumptions about the model structure:
 		1. Inputs can only be sources
 		2. Outputs can only be sinks (will break back propogation algorithm)
 	*/
-	template<typename TensorT>
-	class Model
+	template<typename TensorT, typename DeviceT>
+	class ModelInterpreter
 	{
 	public:
-		Model() = default; ///< Default constructor
-		Model(const Model& other); ///< Copy constructor that does not create a shared memory address between model nodes/links/weights
-		Model(const int& id); ///< Explicit constructor  
-		~Model() = default; ///< Default destructor
+		ModelInterpreter() = default; ///< Default constructor
+		ModelInterpreter(const ModelInterpreter& other); ///< Copy constructor that does not create a shared memory address between model nodes/links/weights
+		~ModelInterpreter() = default; ///< Default destructor
 
-		inline bool operator==(const Model& other) const
+		inline bool operator==(const ModelInterpreter& other) const
 		{
 			return
 				std::tie(
-					id_,
-					name_,
-					links_,
-					nodes_,
-					weights_
 				) == std::tie(
-					other.id_,
-					other.name_,
-					other.links_,
-					other.nodes_,
-					other.weights_
-				)
-				;
+				);
 		}
 
-		inline bool operator!=(const Model& other) const
+		inline bool operator!=(const ModelInterpreter& other) const
 		{
 			return !(*this == other);
 		}
@@ -103,58 +119,10 @@ namespace SmartPeak
 		/**
 		@brief Copy assignment operator that creates a new model with different memory addresses
 		*/
-		inline Model& operator=(const Model& other)
+		inline ModelInterpreter& operator=(const ModelInterpreter& other)
 		{
-			id_ = other.id_;
-			name_ = other.name_;
-			links_ = other.links_;
-			nodes_ = other.nodes_;
-			weights_ = other.weights_;
-			error_ = other.error_;
-			loss_function_ = other.loss_function_;
-			loss_function_grad_ = other.loss_function_grad_;
-			cyclic_pairs_ = other.cyclic_pairs_;
 			return *this;
 		}
-
-		/**
-			@brief Initialize all link weights
-		*/
-		void initWeights();
-
-		/**
-			@brief Initialize all link weights dropout probability
-
-			[TODO: add tests]
-			[TODO: implement sampling from a Gaussian distribution during interence]
-		*/
-		void initWeightsDropProbability(bool train = false);
-
-		/**
-			@brief Initialize all node output to zero.
-				The node statuses are then changed to NodeStatus::deactivated
-
-			@param[in] batch_size Batch size of the output, error, and derivative node vectors
-			@param[in] memory_size Memory size of the output, error, and derivative node vectors
-
-			[TODO: implement sampling from a Gaussian distribution during interence]
-		*/
-		void initNodes(const int& batch_size, const int& memory_size, bool train = false);
-
-		/**
-		@brief Initialize model errors to zero.
-
-		@param[in] batch_size Batch size of the output, error, and derivative node vectors
-		@param[in] memory_size Memory size of the output, error, and derivative node vectors
-		*/
-		void initError(const int& batch_size, const int& memory_size);
-
-		/**
-		@brief Infer the batch_size and memory_size.
-
-		@return a pair of batch_size and memory_size
-		*/
-		std::pair<int, int> getBatchAndMemorySizes() const;
 
 		/**
 			@brief Assigns output or error values to the nodes.
@@ -167,79 +135,27 @@ namespace SmartPeak
 
 			@param[in] values Values to assign to the node
 			@param[in] node_names
-			@param[in] status_update
 			@param[in] value_type ("output", "derivative", "error", or "dt")
 		*/
-		void mapValuesToNodes(
+		void mapValuesToLayers(
+			Model<TensorT>& model,
 			const Eigen::Tensor<TensorT, 3>& values,
 			const std::vector<std::string>& node_names,
-			const NodeStatus& status_update,
 			const std::string& value_type);
 
 		/**
-			@brief Assigns output or error values to the nodes at a specific
-				place in memory.
-				The node statuses are then changed accordingly (i.e.,
-				status_update of "activated" will update the output values
-				of the node and status_update of "corrected" will update
-				the error values of the node.
+			@brief Initializes the bias nodes to an output of 1
 
-			dimensions of batch size by nodes
+			The reason this is currently required is that layers are not seperated
+			by NodeType.  This optimization has the side-effect
+			that bias nodes may not be initialized to 1, but instead 0.
+			To correct for this, we seperately initialize them here.
 
-			@param[in] values Values to assign to the node
-			@param[in] memory_step The memory step to add values to
-			@param[in] node_names
-			@param[in] status_update
-			@param[in] value_type String of "output", "derivative", or "error"
+			dimensions of batch size by memory size by nodes
+
+			@param[in] model
 		*/
-		void mapValuesToNodes(
-			const Eigen::Tensor<TensorT, 2>& values,
-			const int& memory_step,
-			const std::vector<std::string>& node_names,
-			const NodeStatus& status_update,
-			const std::string& value_type);
-
-		/**
-			@brief Assigns output or error values to a single node at a specific
-				place in memory.
-
-			[TODO: replace chip with index assignment
-				w/ chip: 1/1 Test #16: PopulationTrainer_test ...........   Passed  766.58 sec
-				w/o chip: 1/1 Test #16: PopulationTrainer_test ...........   Passed   54.16 sec
-			]
-
-			dimensions of batch size
-
-			@param[in] values Values to assign to the node
-			@param[in] memory_step The memory step to add values to
-			@param[in] node_name
-			@param[in] status_update
-			@param[in] value_type String of "output", "derivative", or "error"
-		*/
-		void mapValuesToNode(
-			const Eigen::Tensor<TensorT, 1>& values,
-			const int& memory_step,
-			const std::string& node_name,
-			const NodeStatus& status_update,
-			const std::string& value_type);
-
-		/**
-			@brief Assigns output or error values to all nodes at a specific
-				place in memory.
-				The node statuses are also updated according to status_update.
-
-			dimensions of batch size by nodes
-
-			@param[in] values Values to assign to the node
-			@param[in] memory_step The memory step to add values to
-			@param[in] status_update
-			@param[in] value_type String of "output", "derivative", or "error"
-		*/
-		void mapValuesToNodes(
-			const Eigen::Tensor<TensorT, 1>& values,
-			const int& memory_step,
-			const NodeStatus& status_update,
-			const std::string& value_type);
+		void initBiases(Model<TensorT>& model);
 
 		/**
 			@brief A prelude to a forward propogation step. Returns a vector of links
@@ -248,10 +164,10 @@ namespace SmartPeak
 				2. all source node output values are known (i.e. active).
 				3. all nodes need not be the same type
 
-			@param[out] FP_operations_map Key/Value pair of sink node name to FP_peroations index
+			@param[out] FP_operations_map Key/Value pair of sink node name to FP_operations index
 			@param[out] FP_operations
 		*/
-		void getNextInactiveLayer(
+		void getNextInactiveLayer(Model<TensorT>& model,
 			std::map<std::string, int>& FP_operations_map,
 			std::vector<OperationList<TensorT>>& FP_operations);
 
@@ -266,7 +182,7 @@ namespace SmartPeak
 			@param[out] FP_operations
 			@param[out] sink_nodes_with_biases
 		*/
-		void getNextInactiveLayerBiases(
+		void getNextInactiveLayerBiases(Model<TensorT>& model,
 			std::map<std::string, int>& FP_operations_map,
 			std::vector<OperationList<TensorT>>& FP_operations,
 			std::vector<std::string>& sink_nodes_with_biases
@@ -283,7 +199,7 @@ namespace SmartPeak
 			@param[out] FP_operations
 			@param[out] sink_nodes_with_cycles
 		*/
-		void getNextInactiveLayerCycles(
+		void getNextInactiveLayerCycles(Model<TensorT>& model,
 			std::map<std::string, int>& FP_operations_map,
 			std::vector<OperationList<TensorT>>& FP_operations,
 			std::vector<std::string>& sink_nodes_with_cycles);
@@ -298,7 +214,7 @@ namespace SmartPeak
 			@param[out] FP_operations
 			@param[out] sink_nodes_with_cycles
 		*/
-		void pruneInactiveLayerCycles(
+		void pruneInactiveLayerCycles(Model<TensorT>& model,
 			std::map<std::string, int>& FP_operations_map,
 			std::map<std::string, int>& FP_operations_map_cycles,
 			std::vector<OperationList<TensorT>>& FP_operations,
@@ -306,1075 +222,135 @@ namespace SmartPeak
 			std::vector<std::string>& sink_nodes_with_cycles);
 
 		/**
-		@brief A prelude to a forward propogation step. Computes the net
-			input into all nodes composing the next layer:
-			1. all sink output values are unknown (i.e. inactive),
-			2. all source node output values are known (i.e. active).
+			@brief Expands the current operation list to satisfy the following assumptions:
+			1. arguments for a given sink node have the same time-step/activation/node_integration
+			2. all links have the same solver and weight_init operator
+			3. arguments are not a mix of nodes from pre-identified layers and nodes that have not yet been partitioned into a layer
 
-		Note that nodes need not be the same type.
+			[TODO: add tests!]
+
+			@param[in] FP_operations
+			@param[out] FP_operations_expanded Expanded FP_operations list
+		*/
+		void expandForwardPropogationOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::vector<OperationList<TensorT>>& FP_operations_expanded);
+		void expandForwardPropogationOperationsBySourceNodeKey(const std::vector<OperationList<TensorT>>& FP_operations, std::vector<OperationList<TensorT>>& FP_operations_expanded);
+		void expandForwardPropogationOperationsByWeightKey(const std::vector<OperationList<TensorT>>& FP_operations, std::vector<OperationList<TensorT>>& FP_operations_expanded);
+		void expandForwardPropogationOperationsByCachedNodes(const std::vector<OperationList<TensorT>>& FP_operations, std::vector<OperationList<TensorT>>& FP_operations_expanded);
+
+		/**
+			@brief Re-organizes the identified layers into tensors and attempts to optimizes
+				the layer operations to maximize hardware acceleration.
+
+			Layer operations will be partitioned into predefined tensor integration motifs
+			- Tensor integration motifs: FC/SC/Conv/FanIn/FanOut
+			- Node integration types: Sum/Prod/Max/Mean/Var/Count
+			- Custom
+
+			Criteria for FC
+			- all arguments for sinks are equal
+
+			Criteria for SC
+			- unique argument per sinks
+
+			Criteria for Conv/pool
+			- shared weights with FanIn
+
+			Criteria for FanIn and FanOut
+			- FanIn: 1 sink, multiple sources
+			- FanOut: 1 source, multiple sinks
+
+			Critera for Custom
+			- Module with optimized computation (e.g., softmax, attention, etc.,)
+
+			[TODO: add tests!]
+
+			@param[in, out] FP_operations
+		*/
+
+		/**
+			@brief Identify layer operations
+
+			[TODO: add tests]
+
+			@param[in] FP_operations
+			@param[in] identified_sink_nodes Set of identified sink nodes
+
+			@returns map of identified operations consisting of the identifying sink node name or module name
+				for the operation and a list of indices corresponding to the operations in FP_operations
+		*/
+		std::map<std::string, std::vector<int>> getCustomOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes);
+		std::map<std::string, std::vector<int>> getFullyConnectedOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes);
+		std::map<std::string, std::vector<int>> GetSinglyConnectedOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes);
+		std::map<std::string, std::vector<int>> getConvOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes);
+		std::map<std::string, std::vector<int>> getFanOutOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes);
+		std::map<std::string, std::vector<int>> getFanInOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes);
+		std::map<std::string, std::vector<int>> getTensorOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes);
+
+		/**
+		@brief Allocate Node and Weight tensor memory for all model operations.
+			Node and weight tensors indices are registered.
 
 		@param[in] FP_operations
-		@param[in] time_step Time step to activate.
-
-		[OPTIMIZATION:
-			pass memory to tensors so that when the tensors compute the matrices
-			the underlying node values are automatically updated?]
-		[PARALLEL: allow for parallelization of iteration of sink nodes]
-		[THREADPOOL/CUDA: move to seperate file for cpu/cuda compilation]
+		@param[in] ...
 		*/
-		void forwardPropogateLayerNetInput(
-			std::vector<OperationList<TensorT>>& FP_operations,
-			const int& time_step, int n_threads = 1);
+		void getForwardPropogationLayerTensorDimensions(const std::vector<OperationList<TensorT>>& FP_operations,
+			const std::map<std::string, std::vector<int>>& operations_map,
+			std::vector<int>& source_layer_sizes, std::vector<int>& sink_layer_sizes, std::vector<std::vector<std::pair<int, int>>>& weight_indices, std::vector<std::vector<TensorT>>& weight_values,
+			std::vector<bool>& make_source_tensor, std::vector<bool>& make_sink_tensor, std::vector<bool>& make_weight_tensor);
 
-		static bool calculateNodeInput_(
-			OperationResult<TensorT>* result,
-			OperationArguments<TensorT>* arguments,
-			const int& batch_size,
-			const int& memory_size,
-			const int& time_step
-		);
-		static bool calculateNetNodeInput_(
-			OperationList<TensorT>* operations,
-			const int& batch_size,
-			const int& memory_size,
-			const int& time_step,
-			int n_threads = 1
-		);
+		static std::string makeForwardPropogationOperationsKey(const int& time_step, const NodeType& node_type,
+			const std::string& node_integration, const std::string& node_activation);
+
+		void getForwardPropogationOperations(Model<TensorT>& model, const int& batch_size, const int& memory_size, const bool& train);
 
 		/**
-		@brief Foward propogation of the network model.
-			All node outputs and derivatives are calculating
-			starting from the input nodes.  Each node status is
-			changed from "initialized" to "activated" when the
-			outputs and derivatives are calculated.
+		@brief Allocate Node and Weight tensor memory for all model operations.
+			Weight solver params tensors are created using the first weight in the layer.
+			Weight matrix is initialized using the first weight in the layer
 
-		[TODO: add tests for caching]
-
-		@param[in] time_step Time step to forward propogate.
-		@param[in] cache_FP_steps Whether to save the FP steps
-			for faster iteration next epoch.
-		@param[in] use_cache Whether to use the cached FP steps.
+		@param[in] FP_operations
+		@param[in] ...
 		*/
-		void forwardPropogate(const int& time_step, bool cache_FP_steps = false, bool use_cache = false,
-			int n_threads = 1);
-
-		/**
-		@brief Foward propogation through time (FPTT) of the network model.
-			All node outputs and derivatives are calculating
-			starting from the input nodes.  Each node status is
-			changed from "initialized" to "activated" when the
-			outputs and derivatives are calculated.  This is repeated
-			for n_time steps without weight updates.
-
-		NOTE: The implementation assumes that the output values for
-			all input and biases have already been set.
-
-		@param[in] time_steps The number of time_steps forward to
-			continuously calculate node outputs and node derivatives.
-		@param[in] values Input values at each time step where
-			dim0: batch_size, dim1: time_step, and dim2: nodes.
-		@param[in] node_names
-		@param[in] dt Node time resolution
-		*/
-		void FPTT(const int& time_steps,
-			const Eigen::Tensor<TensorT, 3>& values,
-			const std::vector<std::string> node_names,
-			const Eigen::Tensor<TensorT, 2>& dt,
-			bool cache_FP_steps = false,
-			bool use_cache = false,
-			int n_threads = 1);
-
-		/**
-		@brief Calculates the error of the model with respect to
-			the expected values
-
-		@param[in] values Expected node output values
-		@param[in] node_names Output nodes
-		*/
-		void calculateError(const Eigen::Tensor<TensorT, 2>& values, const std::vector<std::string>& node_names,
-			const int& time_step, int n_threads = 1);
-
-		/**
-		@brief Calculates the error of the model for a given node
-		*/
-		static Eigen::Tensor<TensorT, 1> calculateModelError_(
-			Node<TensorT>* output_node,
-			const Eigen::Tensor<TensorT, 1>& expected,
-			LossFunctionOp<TensorT>* loss_function,
-			const int& batch_size,
-			const int& time_step
-		);
-
-		/**
-		@brief Calculates the error of the output node
-		*/
-		static bool calculateOutputNodeError_(
-			Node<TensorT>* output_node,
-			const Eigen::Tensor<TensorT, 1>& expected,
-			LossFunctionGradOp<TensorT>* loss_function_grad,
-			const int& time_step
-		);
-
-		/**
-		@brief Calculates the error of the model through time (CETT)
-			with respect to the expected values
-
-		@param[in] values Expected node output values
-			(dim0: batch_size, dim1: memory_size, dim2: output nodes)
-			where t=n to t=0
-		@param[in] node_names Output nodes
-		*/
-		void CETT(const Eigen::Tensor<TensorT, 3>& values, const std::vector<std::string>& node_names, const int& time_steps, int n_threads = 1);
-
-		/**
-		@brief A prelude to a back propogation step.  Returns a vector of links
-			and associated nodes that satisfy the following conditions:
-			1. all sink error values are unknown (i.e. active),
-			2. all source error values are known (i.e. corrected).
-			3. all nodes need not be the same type
-
-		@param[out] BP_operatations_map Key/Value pair of source nodes (sink nodes in BP) to index in BP_operations list
-		@param[out] BP_operations Operations list for Back Propogation
-		@param[out] sink_nodes
-		*/
-		void getNextUncorrectedLayer(
-			std::map<std::string, int>& BP_operations_map,
-			std::vector<OperationList<TensorT>>& BP_operations,
-			std::vector<std::string>& source_nodes);
-
-		void getNextUncorrectedLayerBiases(
-			std::map<std::string, int>& BP_operations_map,
-			std::vector<OperationList<TensorT>>& BP_operations,
-			std::vector<std::string>& source_nodes,
-			std::vector<std::string>& sink_nodes_with_biases);
-
-		/**
-		@brief A continuation of a back propogation step.  Returns a vector of links
-			and associated nodes that satisfy the following conditions:
-			1. all sink error values are known (i.e. corrected),
-			2. all source error values are known (i.e. corrected).
-			3. all nodes need not be the same type
-
-		@param[out] BP_operatations_map Key/Value pair of source nodes (sink nodes in BP) to index in BP_operations list
-		@param[out] BP_operations Operations list for Back Propogation
-		@param[out] source_nodes
-		@param[out] source_nodes_with_cycles
-		*/
-		void getNextUncorrectedLayerCycles(
-			std::map<std::string, int>& BP_operations_map,
-			std::vector<OperationList<TensorT>>& BP_operations,
-			std::vector<std::string>& source_nodes,
-			std::vector<std::string>& source_nodes_with_cycles);
-
-		/**
-		@brief A back propogation step. Computes the net
-			error into all nodes composing the next layer:
-			1. all sink error values are unknown (i.e. active),
-			2. all source error values are known (i.e. corrected).
-
-		Note that nodes need not be the same type.
-
-		@param[out] BP_operations Operations list for Back Propogation
-		@param[in] step to forward propogate.
-
-		[OPTIMIZATION:
-		pass memory to tensors so that when the tensors compute the matrices
-		the underlying node values are automatically updated]
-		*/
-		void backPropogateLayerError(
-			std::vector<OperationList<TensorT>>& BP_operations,
-			const int& time_step, int n_threads = 1);
-
-		static bool calculateNodeError_(
-			OperationResult<TensorT>* operations,
-			OperationArguments<TensorT>* arguments,
-			const int& batch_size,
-			const int& memory_size,
-			const int& time_step
-		);
-		static bool calculateNetNodeError_(
-			OperationList<TensorT>* operations,
-			const int& batch_size,
-			const int& memory_size,
-			const int& time_step,
-			int n_threads = 1
-		);
-
-		/**
-		@brief Back propogation of the network model.
-			All node errors are calculating starting from the output nodes.
-			Each node status is changed from "activated" to "corrected" when the
-			outputs and derivatives are calculated.
-
-		[TODO: add tests for caching]
-
-		@param[in] time_step Time step to forward propogate.
-		@param[in] cache_BP_steps Whether to save the BP steps
-			for faster iteration next epoch.
-		@param[in] use_cache Whether to use the cached BP steps.
-
-		@returns Vector of cyclic sink node IDs
-		*/
-		void backPropogate(const int& time_step, bool cache_BP_steps = false, bool use_cache = false, int n_threads = 1);
-
-		/**
-		@brief Truncated Back Propogation Through Time (TBPTT) of the network model.
-			All node errors are calculating starting from the output nodes.
-			Each node status is changed from "activated" to "corrected" when the
-			outputs and derivatives are calculated.
-
-		@param[in] time_steps The number of time_steps backwards to
-			unfold the network model.
-		*/
-		void TBPTT(const int& time_steps, bool cache_FP_steps = false, bool use_cache = false, int n_threads = 1);
-
-		/**
-		@brief Recurrent Real Time Learning (RTRL) of the network model.
-			All node errors are calculating starting from the output nodes.
-			Each node status is changed from "activated" to "corrected" when the
-			outputs and derivatives are calculated.
-
-		@param[in] time_steps The number of time_steps backwards to
-			unfold the network model.
-		*/
-		void RTRL(const int& time_steps, int n_threads = 1);
-
-		/**
-		@brief Update the weights
-
-		*/
-		void updateWeights(const int& time_steps, std::vector<std::string> weight_names = {});
-
-		/**
-		@brief Reset the node statuses back to inactivated
-
-		*/
-		void reInitializeNodeStatuses();
-
-		void setId(const int& id); ///< id setter
-		int getId() const; ///< id getter
-
-		void setName(const std::string& name); ///< name setter
-		std::string getName() const; ///< name getter
-
-		void setError(const Eigen::Tensor<TensorT, 2>& error); ///< error setter
-		Eigen::Tensor<TensorT, 2> getError() const; ///< error getter
-
-		void setLossFunction(const std::shared_ptr<LossFunctionOp<TensorT>>& loss_function); ///< loss_function setter
-		LossFunctionOp<TensorT>* getLossFunction() const; ///< loss_function getter
-
-		void setLossFunctionGrad(const std::shared_ptr<LossFunctionGradOp<TensorT>>& loss_function); ///< loss_function grad setter
-		LossFunctionGradOp<TensorT>* getLossFunctionGrad() const; ///< loss_function grad getter
-
-		std::vector<std::shared_ptr<Node<TensorT>>> getInputNodes(); ///< input_node getter
-		std::vector<std::shared_ptr<Node<TensorT>>> getOutputNodes(); ///< output_node getter
-		std::vector<std::string> getOutputNodeNames() const;
-
-		/**
-			@brief Add new links to the model.
-
-			@param[in] links Links to add to the model
-		*/
-		void addLinks(const std::vector<Link>& links);
-		Link getLink(const std::string& link_name) const; ///< link getter
-		std::vector<Link> getLinks() const;  ///< links getter
-
-		/**
-			@brief Remove existing links from the model.
-
-			@param[in] Link_names Links to remove from the model
-		*/
-		void removeLinks(const std::vector<std::string>& link_names);
-
-		/**
-			@brief Add new nodes to the model.
-
-			@param[in] nodes Nodes to add to the model
-		*/
-		void addNodes(const std::vector<Node<TensorT>>& nodes);
-		Node<TensorT> getNode(const std::string& node_name) const; ///< node getter
-		std::vector<Node<TensorT>> getNodes() const; ///< nodes getter
-		std::map<std::string, std::shared_ptr<Node<TensorT>>> getNodesMap();  ///< return a modifiable version of weights
-		std::map<std::string, std::vector<std::string>> getModuleNodeNameMap() const; ///< return a map of modules to a vector of node names [TODO: test!]
-
-		/**
-			@brief Remove existing nodes from the model.
-
-			@param[in] node_names Nodes to remove from the model
-		*/
-		void removeNodes(const std::vector<std::string>& node_names);
-
-		/**
-			@brief Add new weights to the model.
-
-			@param[in] weights Weights to add to the model
-		*/
-		void addWeights(const std::vector<Weight<TensorT>>& weights);
-		Weight<TensorT> getWeight(const std::string& weight_name) const; ///< weight getter
-		std::vector<Weight<TensorT>> getWeights() const;  ///< weights getter
-		std::map<std::string, std::shared_ptr<Weight<TensorT>>> getWeightsMap();  ///< return a modifiable version of weights_		
-
-		/**
-			@brief Remove existing weights from the model.
-
-			@param[in] weight_names Weights to remove from the model
-		*/
-		void removeWeights(const std::vector<std::string>& weight_names);
-
-		/**
-			@brief Removes nodes from the model that no longer
-				have an associated link.
-
-			@returns True if nodes were removed, False otherwise
-		*/
-		bool pruneNodes();
-
-		/**
-			@brief Removes links from the model that no longer
-				have associated nodes.
-
-			@returns True if links were removed, False otherwise
-		*/
-		bool pruneLinks();
-
-		/**
-			@brief Removes weights from the model that no longer
-				have associated links.
-
-			@returns True if weights were removed, False otherwise
-		*/
-		bool pruneWeights();
-
-		/**
-			@brief Removes dangling links, weights, and nodes
-				recursively until there are no more dangling
-				model components or the number of user specified
-				iterations has been reached.
-
-			@param[in] iterations The number of recursive iterations to prune
-		*/
-		void pruneModel(int iterations = 1e3);
-
-		/**
-			@brief Check to ensure that the nodes are in the model
-
-			@param[in] node_names
-		*/
-		bool checkNodeNames(const std::vector<std::string> node_names);
-
-		/**
-			@brief Check to ensure that the links are in the model
-
-			@param[in] link_names
-		*/
-		bool checkLinkNames(const std::vector<std::string> link_names);
-
-		/**
-			@brief Check to ensure that the weights are in the model
-
-			@param[in] weight_names
-		*/
-		bool checkWeightNames(const std::vector<std::string> weight_names);
-
-		/**
-		@brief Check that the path from input to output is not broken
-
-		Note: The method will modify the model weights, nodes, and errors
-			It is recommended to first create a copy of the model that will be later discarded
-			Or re-initialize the model after.
-
-		[DEPRECATED: params no longer needed]
-		@param[in] input_nodes
-		@param[out] output_nodes
-		*/
-		bool checkCompleteInputToOutput(int n_threads = 1);
-
-		/**
-		@brief Check model link node and weight names
-
-		[TODO: add tests...]
-
-		@param[out] nodes_not_found
-		@param[out] weights_not_found
-		*/
-		bool checkLinksNodeAndWeightNames(
-			std::vector<std::string>& nodes_not_found,
-			std::vector<std::string>& weights_not_found);
-
-		/**
-		@brief Remove hidden nodes that have either only 1 source and no sink connection
-			or 1 sink and no source connection
-		*/
-		bool removeIsolatedNodes();
-
-		void clearCache(); ///< clear the FP and BP caches
-
-		/**
-		@brief Convert model to adjacency list
-		TODO: Implement tests
-
-		@param[out] node_id_map Map of node id to node name
-		@param[out] node_cnt the number of vertices in the adjacency list
-
-		@returns An adjacency list representation of a graph
-		*/
-		std::list<int>* convertToAdjacencyList(std::map<int, std::string>& node_id_map, int& node_cnt);
-		void findCycles();
-
-		std::vector<std::pair<std::string, std::string>> getCyclicPairs();
-
-	private:
-		int id_; ///< Model ID
-		std::string name_; ///< Model Name
-		std::map<std::string, std::shared_ptr<Link>> links_; ///< Model links
-		std::map<std::string, std::shared_ptr<Node<TensorT>>> nodes_; ///< Model nodes
-		std::map<std::string, std::shared_ptr<Weight<TensorT>>> weights_; ///< Model nodes
-		Eigen::Tensor<TensorT, 2> error_; ///< Model error
-		std::shared_ptr<LossFunctionOp<TensorT>> loss_function_; ///< Model loss function
-		std::shared_ptr<LossFunctionGradOp<TensorT>> loss_function_grad_; ///< Model loss function
-		std::vector<std::pair<std::string, std::string>> cyclic_pairs_;
-		std::vector<std::shared_ptr<Node<TensorT>>> input_nodes_;
-		std::vector<std::shared_ptr<Node<TensorT>>> output_nodes_;
-
-		// Internal structures to allow for efficient multi-threading
-		// and off-loading of computation from host to devices
-		std::vector<std::vector<OperationList<TensorT>>> FP_operations_cache_;
-		std::vector<std::vector<OperationList<TensorT>>> BP_operations_cache_;
+		virtual void allocateForwardPropogationLayerTensors(const std::vector<OperationList<TensorT>>& FP_operations,
+			const std::map<std::string, std::vector<int>>& operations_map,
+			const std::vector<int>& source_layer_sizes, const std::vector<int>& sink_layer_sizes, const std::vector<std::vector<std::pair<int, int>>> weight_indices, const std::vector<std::vector<TensorT>>& weight_values,
+			const std::vector<bool>& make_source_tensors, const std::vector<bool>& make_sink_tensors, const std::vector<bool>& make_weight_tensors,
+			const int& batch_size, const int& memory_size, const bool& train) = 0;
+		virtual void executeForwardPropogationOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false) = 0;
+		virtual void executeModelErrorOperations(Eigen::Tensor<TensorT, 2>& expected, const int& layer_id, LossFunctionTensorOp<TensorT, DeviceT>* loss_function, LossFunctionGradTensorOp<TensorT, DeviceT>* loss_function_grad, const int& time_step, bool sync_HToD = false, bool sync_DToH = false) = 0;
+		virtual void executeBackwardPropogationOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false) = 0;
+		virtual void executeWeightErrorOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false) = 0;
+		virtual void executeWeightUpdateOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false) = 0;
+		
+		void addLayerTensor(NodeTensorData<TensorT>& layer); ///< add a layer to the cache
+		void clearLayerTensors(); ///< clear all layers from the cache
+		std::shared_ptr<NodeTensorData<TensorT>> getLayerTensor(const int& layer_index); ///< get a layer from the cache
+
+		void addWeightTensor(WeightTensorData<TensorT>& weight); ///< add a weight to the cache
+		void clearWeightTensors(); ///< clear all weights from the cache
+		std::shared_ptr<WeightTensorData<TensorT>> getWeightTensor(const int& weight_index); ///< get a weight from the cache
+
+		virtual void allocateModelErrorTensor(const int& batch_size, const int& memory_size) = 0; ///< set the model error
+		std::shared_ptr<ModelErrorData<TensorT>> getModelError(); ///< get the model error
+
+		void addOperationSteps(const std::vector<OperationTensorStep<TensorT, DeviceT>>& operation_steps);
+		std::vector<OperationTensorStep<TensorT, DeviceT>> getOperationSteps(const int& operation_index);
+		void clearOperationSteps(); ///< clear the operations caches
+
+	protected:
+		std::vector<std::vector<OperationTensorStep<TensorT, DeviceT>>> operation_steps_;
+		std::vector<std::shared_ptr<NodeTensorData<TensorT>>> layer_tensors_;
+		std::vector<std::shared_ptr<WeightTensorData<TensorT>>> weight_tensors_;
+		std::shared_ptr<ModelErrorData<TensorT>> model_error_;
 	};
-	template<typename TensorT>
-	Model<TensorT>::Model(const Model<TensorT>& other)
-	{
-		id_ = other.id_;
-		name_ = other.name_;
-		addLinks(other.getLinks());
-		addNodes(other.getNodes());
-		addWeights(other.getWeights());
-		error_ = other.error_;
-		loss_function_ = other.loss_function_;
-		loss_function_grad_ = other.loss_function_grad_;
-		cyclic_pairs_ = other.cyclic_pairs_;
-	}
 
-	template<typename TensorT>
-	Model<TensorT>::Model(const int& id) :
-		id_(id)
+	template<typename TensorT, typename DeviceT>
+	ModelInterpreter<TensorT, DeviceT>::ModelInterpreter(const ModelInterpreter<TensorT, DeviceT>& other)
 	{
 	}
 
-	template<typename TensorT>
-	void Model<TensorT>::setId(const int& id)
-	{
-		id_ = id;
-	}
-	template<typename TensorT>
-	int Model<TensorT>::getId() const
-	{
-		return id_;
-	}
-
-	template<typename TensorT>
-	void Model<TensorT>::setName(const std::string& name)
-	{
-		name_ = name;
-	}
-	template<typename TensorT>
-	std::string Model<TensorT>::getName() const
-	{
-		return name_;
-	}
-
-	template<typename TensorT>
-	void Model<TensorT>::setError(const Eigen::Tensor<TensorT, 2>& error)
-	{
-		error_ = error;
-	}
-	template<typename TensorT>
-	Eigen::Tensor<TensorT, 2> Model<TensorT>::getError() const
-	{
-		return error_;
-	}
-
-	template<typename TensorT>
-	void Model<TensorT>::setLossFunction(const std::shared_ptr<LossFunctionOp<TensorT>>& loss_function)
-	{
-		loss_function_.reset();
-		loss_function_ = std::move(loss_function);
-	}
-	template<typename TensorT>
-	LossFunctionOp<TensorT>* Model<TensorT>::getLossFunction() const
-	{
-		return loss_function_.get();
-	}
-
-	template<typename TensorT>
-	void Model<TensorT>::setLossFunctionGrad(const std::shared_ptr<LossFunctionGradOp<TensorT>>& loss_function)
-	{
-		loss_function_grad_.reset();
-		loss_function_grad_ = std::move(loss_function);
-	}
-
-	template<typename TensorT>
-	LossFunctionGradOp<TensorT>* Model<TensorT>::getLossFunctionGrad() const
-	{
-		return loss_function_grad_.get();
-	}
-
-	template<typename TensorT>
-	std::vector<std::shared_ptr<Node<TensorT>>> Model<TensorT>::getInputNodes()
-	{
-		return input_nodes_;
-	}
-
-	template<typename TensorT>
-	std::vector<std::shared_ptr<Node<TensorT>>> Model<TensorT>::getOutputNodes()
-	{
-		return output_nodes_;
-	}
-	template<typename TensorT>
-	std::vector<std::string> Model<TensorT>::getOutputNodeNames() const
-	{
-		std::vector<std::string> nodes;
-		for (const auto& node : output_nodes_)
-		{
-			nodes.push_back(node->getName());
-		}
-		return nodes;
-	}
-
-	template<typename TensorT>
-	void Model<TensorT>::addNodes(const std::vector<Node<TensorT>>& nodes)
-	{
-		for (const Node<TensorT>& node : nodes)
-		{
-			std::shared_ptr<Node<TensorT>> node_ptr;
-			node_ptr.reset(new Node<TensorT>(node));
-			auto found = nodes_.emplace(node.getName(), node_ptr);
-			if (!found.second)
-			{
-				// TODO: move to debug log
-				std::cout << "Node name " << node.getName() << " already exists!" << std::endl;
-			}
-			else {
-				if (node.getType() == NodeType::input) {
-					std::shared_ptr<Node<TensorT>> node_ptr_cpy = node_ptr;
-					input_nodes_.push_back(node_ptr_cpy);
-				}
-				else if (node.getType() == NodeType::output) {
-					std::shared_ptr<Node<TensorT>> node_ptr_cpy = node_ptr;
-					output_nodes_.push_back(node_ptr);
-				}
-			}
-		}
-	}
-
-	template<typename TensorT>
-	Node<TensorT> Model<TensorT>::getNode(const std::string& node_name) const
-	{
-		if (!nodes_.empty() && nodes_.count(node_name) != 0)
-		{
-			return *nodes_.at(node_name);
-		}
-		else
-		{
-			// TODO: move to debug log
-			std::cout << "Node name " << node_name << " not found!" << std::endl;
-		}
-	}
-
-	template<typename TensorT>
-	std::vector<Node<TensorT>> Model<TensorT>::getNodes() const
-	{
-		std::vector<Node<TensorT>> nodes;
-		for (const auto& node : nodes_)
-		{
-			nodes.push_back(*node.second);
-		}
-		return nodes;
-	}
-
-	template<typename TensorT>
-	std::map<std::string, std::shared_ptr<Node<TensorT>>> Model<TensorT>::getNodesMap()
-	{
-		return nodes_;
-	}
-
-	template<typename TensorT>
-	std::map<std::string, std::vector<std::string>> Model<TensorT>::getModuleNodeNameMap() const
-	{
-		std::map<std::string, std::vector<std::string>> module_to_node_names;
-		for (const auto& node_map : nodes_) {
-			std::vector<std::string> node_names = { node_map.first };
-			auto found = module_to_node_names.emplace(node_map.second->getModuleName(), node_names);
-			if (!found.second) {
-				module_to_node_names.at(node_map.second->getModuleName()).push_back(node_map.first);
-			}
-		}
-		return module_to_node_names;
-	}
-
-	template<typename TensorT>
-	void Model<TensorT>::removeNodes(const std::vector<std::string>& node_names)
-	{
-		for (const std::string& node_name : node_names)
-		{
-			// check for duplicate nodes (by id)
-			if (nodes_.count(node_name) != 0)
-			{
-				nodes_.erase(node_name);
-			}
-		}
-		// pruneLinks(); // Allow for dangling links
-	}
-
-	template<typename TensorT>
-	void Model<TensorT>::addWeights(const std::vector<Weight<TensorT>>& weights)
-	{
-		for (const Weight<TensorT>& weight : weights)
-		{
-			std::shared_ptr<Weight<TensorT>> weight_ptr;
-			weight_ptr.reset(new Weight<TensorT>(weight));
-			auto found = weights_.emplace(weight.getName(), weight_ptr);
-			if (!found.second)
-			{
-				// TODO: move to debug log
-				std::cout << "Weight name " << weight.getName() << " already exists!" << std::endl;
-			}
-		}
-	}
-
-	template<typename TensorT>
-	Weight<TensorT> Model<TensorT>::getWeight(const std::string& weight_name) const
-	{
-		if (!weights_.empty() && weights_.count(weight_name) != 0)
-		{
-			//return *std::move(weights_.at(weight_name));
-			return *weights_.at(weight_name);
-		}
-		else
-		{
-			// TODO: move to debug log
-			std::cout << "Weight name " << weight_name << " not found!" << std::endl;
-		}
-	}
-
-	template<typename TensorT>
-	std::vector<Weight<TensorT>> Model<TensorT>::getWeights() const
-	{
-		std::vector<Weight<TensorT>> weights;
-		for (const auto& weight : weights_)
-		{
-			weights.push_back(*weight.second);
-		}
-		return weights;
-	}
-
-	template<typename TensorT>
-	std::map<std::string, std::shared_ptr<Weight<TensorT>>> Model<TensorT>::getWeightsMap()
-	{
-		return weights_;
-	}
-
-	template<typename TensorT>
-	void Model<TensorT>::removeWeights(const std::vector<std::string>& weight_names)
-	{
-		for (std::string const& weight_name : weight_names)
-		{
-			// check for duplicate weights (by id)
-			if (weights_.count(weight_name) != 0)
-			{
-				weights_.erase(weight_name);
-			}
-		}
-		pruneLinks();
-	}
-
-	template<typename TensorT>
-	void Model<TensorT>::addLinks(const std::vector<Link>& links)
-	{
-		for (const Link& link : links)
-		{
-			std::shared_ptr<Link> link_ptr;
-			link_ptr.reset(new Link(link));
-			auto found = links_.emplace(link.getName(), link_ptr);
-			if (!found.second)
-			{
-				// TODO: move to debug log
-				std::cout << "Link name " << link.getName() << " already exists!" << std::endl;
-			}
-		}
-	}
-
-	template<typename TensorT>
-	void Model<TensorT>::removeLinks(const std::vector<std::string>& link_names)
-	{
-		for (const std::string& link_name : link_names)
-		{
-			// check for duplicate links (by id)
-			if (links_.count(link_name) != 0)
-			{
-				links_.erase(link_name);
-			}
-		}
-		// pruneNodes(); // Allow dangling nodes to exist
-		//pruneWeights();  // testing
-	}
-
-	template<typename TensorT>
-	Link Model<TensorT>::getLink(const std::string& link_name) const
-	{
-		if (!links_.empty() && links_.count(link_name) != 0)
-		{
-			return *links_.at(link_name);
-		}
-		else
-		{
-			// TODO: move to debug log
-			std::cout << "Link name " << link_name << " not found!" << std::endl;
-		}
-	}
-
-	template<typename TensorT>
-	std::vector<Link> Model<TensorT>::getLinks() const
-	{
-		std::vector<Link> links;
-		for (const auto& link : links_)
-		{
-			links.push_back(*link.second);
-		}
-		return links;
-	}
-
-	template<typename TensorT>
-	bool Model<TensorT>::pruneNodes()
-	{
-		std::vector<std::string> node_names;
-		if (nodes_.empty()) { return false; }
-		for (const auto& node : nodes_)
-		{
-			bool found = false;
-			// if (links_.empty()) { found = true; }
-			for (const auto& link : links_)
-			{
-				if (node.second->getName() == link.second->getSourceNodeName() ||
-					node.second->getName() == link.second->getSinkNodeName())
-				{
-					found = true;
-					break;
-				}
-			}
-			if (!found)
-			{
-				node_names.push_back(node.first);
-			}
-		}
-		if (node_names.size() != 0)
-		{
-			removeNodes(node_names);
-			return true;
-		}
-		else
-			return false;
-	}
-
-	template<typename TensorT>
-	bool Model<TensorT>::pruneWeights()
-	{
-		std::vector<std::string> weight_names;
-		if (weights_.empty()) { return false; }
-		for (const auto& weight : weights_)
-		{
-			bool found = false;
-			// if (links_.empty()) { found = true; }
-			for (const auto& link : links_)
-			{
-				if (weight.second->getName() == link.second->getWeightName())
-				{
-					found = true;
-					break;
-				}
-			}
-			if (!found)
-			{
-				weight_names.push_back(weight.first);
-			}
-		}
-		if (weight_names.size() != 0)
-		{
-			removeWeights(weight_names);
-			return true;
-		}
-		else
-			return false;
-	}
-
-	template<typename TensorT>
-	bool Model<TensorT>::pruneLinks()
-	{
-		std::vector<std::string> link_names;
-		if (links_.empty()) { return false; }
-		for (const auto& link : links_)
-		{
-			bool source_node_found = false;
-			bool sink_node_found = false;
-			// if (nodes_.empty())
-			// {
-			//   source_node_found = true;
-			//   sink_node_found = true;
-			// }
-			for (const auto& node : nodes_)
-			{
-				if (node.second->getName() == link.second->getSourceNodeName())
-					source_node_found = true;
-				if (node.second->getName() == link.second->getSinkNodeName())
-					sink_node_found = true;
-				if (source_node_found && sink_node_found)
-					break;
-			}
-			bool weight_found = false;
-			// if (weights_.empty()) { weight_found = true; }
-			for (const auto& weight : weights_)
-			{
-				if (weight.second->getName() == link.second->getWeightName())
-				{
-					weight_found = true;
-					break;
-				}
-			}
-			if (!source_node_found || !sink_node_found)
-			{
-				link_names.push_back(link.first);
-			}
-		}
-		if (link_names.size() != 0)
-		{
-			removeLinks(link_names);
-			return true;
-		}
-		else
-			return false;
-	}
-
-	template<typename TensorT>
-	void Model<TensorT>::pruneModel(int iterations)
-	{
-		try
-		{
-			int cnt = 0;
-			while (pruneLinks() || pruneWeights() || pruneNodes())
-			{
-				if (cnt >= iterations) { break; }
-				// std::cout<<"Pruning model iteration: "<<cnt<<std::endl;
-				cnt += 1;
-			}
-		}
-		catch (std::exception& e)
-		{
-			printf("Exception: %s", e.what());
-		}
-	}
-
-	template<typename TensorT>
-	void Model<TensorT>::initNodes(const int& batch_size, const int& memory_size, bool train)
-	{
-		for (auto& node_map : nodes_)
-		{
-			node_map.second->initNode(batch_size, memory_size + 1, train); // +1 to ensure we stay within the allocated bounds of the tensor during F and BPTT
-		}
-	}
-
-	template<typename TensorT>
-	void Model<TensorT>::initError(const int & batch_size, const int & memory_size)
-	{
-		Eigen::Tensor<TensorT, 2> init_values(batch_size, memory_size);
-		init_values.setConstant(0.0f);
-		setError(init_values);
-	}
-
-	template<typename TensorT>
-	std::pair<int, int> Model<TensorT>::getBatchAndMemorySizes() const
-	{
-		int batch_size = 0;
-		int memory_size = 0;
-		for (const auto& node : nodes_) {
-			batch_size = node.second->getBatchSize();
-			memory_size = node.second->getMemorySize();
-			break;
-		}
-		return std::make_pair(batch_size, memory_size);
-	}
-
-	template<typename TensorT>
-	void Model<TensorT>::initWeights()
-	{
-		for (auto& weight_map : weights_)
-		{
-			weight_map.second->initWeight();
-		}
-	}
-
-	template<typename TensorT>
-	void Model<TensorT>::initWeightsDropProbability(bool train)
-	{
-		if (train)
-			for (auto& weight_map : weights_)
-				weight_map.second->setDropProbability(weight_map.second->getDropProbability());
-		else
-			for (auto& weight_map : weights_)
-				weight_map.second->setDrop(1.0f);
-	}
-
-	// Method used by FPTT
-	// [TODO: remove all other mapValuesToNodes or change the name of this method]
-	template<typename TensorT>
-	void Model<TensorT>::mapValuesToNodes(
-		const Eigen::Tensor<TensorT, 1>& values,
-		const int& memory_step,
-		const NodeStatus& status_update,
-		const std::string& value_type)
-	{
-
-		// copy over the input values
-		for (auto& node_map : nodes_)
-		{
-			for (int j = 0; j < values.dimension(0); ++j)
-			{
-				if (value_type == "output")
-				{
-					node_map.second->getOutput()(j, memory_step) = values(j);
-				}
-				else if (value_type == "error")
-				{
-					node_map.second->getError()(j, memory_step) = values(j);
-				}
-				else if (value_type == "dt")
-				{
-					node_map.second->getDt()(j, memory_step) = values(j);
-				}
-				if (status_update != NodeStatus::deactivated) // [TESTS:  add tests]
-					node_map.second->setStatus(status_update);
-			}
-		}
-	}
-
-	template<typename TensorT>
-	void Model<TensorT>::mapValuesToNodes(
-		const Eigen::Tensor<TensorT, 2>& values,
-		const int& memory_step,
-		const std::vector<std::string>& node_names,
-		const NodeStatus& status_update,
-		const std::string& value_type)
-	{
-		// check dimension mismatches
-		if (node_names.size() != values.dimension(1))
-		{
-			std::cout << "The number of input features and the number of nodes do not match." << std::endl;
-			return;
-		}
-		// assumes the node exists
-		else if (nodes_.at(node_names[0])->getOutput().dimension(0) != values.dimension(0))
-		{
-			std::cout << "The number of input samples and the node batch size does not match." << std::endl;
-			return;
-		}
-		// assumes the node exists
-		else if (nodes_.at(node_names[0])->getOutput().dimension(1) <= memory_step)
-		{
-			std::cout << "The memory_step is greater than the memory_size." << std::endl;
-			return;
-		}
-
-		// // infer the memory size from the node output size
-		// const int memory_size = nodes_.at(node_names[0])->getOutput().dimension(1);
-
-		// copy over the input values
-		for (int i = 0; i < node_names.size(); ++i)
-		{
-			for (int j = 0; j < values.dimension(0); ++j)
-			{
-				if (value_type == "output")
-				{
-					nodes_.at(node_names[i])->getOutput()(j, memory_step) = values(j, i);
-				}
-				else if (value_type == "error")
-				{
-					nodes_.at(node_names[i])->getError()(j, memory_step) = values(j, i);
-				}
-				else if (value_type == "dt")
-				{
-					nodes_.at(node_names[i])->getDt()(j, memory_step) = values(j, i);
-				}
-				if (status_update != NodeStatus::deactivated) // [TESTS:  add tests]
-					nodes_.at(node_names[i])->setStatus(status_update);
-			}
-		}
-	}
-
-	template<typename TensorT>
-	void Model<TensorT>::mapValuesToNode(
-		const Eigen::Tensor<TensorT, 1>& values,
-		const int& memory_step,
-		const std::string& node_name,
-		const NodeStatus& status_update,
-		const std::string& value_type)
-	{
-		// check dimension mismatches
-		// assumes the node exists
-		if (nodes_.at(node_name)->getOutput().dimension(0) != values.dimension(0))
-		{
-			std::cout << "The number of input samples and the node batch size does not match." << std::endl;
-			return;
-		}
-
-		// // copy over the input values
-		// for (int j=0; j<values.dimension(0); ++j)
-		// {
-		//   if (value_type == "output")
-		//   {
-		//     nodes_.at(node_name)->getOutput()->operator()(j, memory_step) = values(j);
-		//   }
-		//   else if (value_type == "error")
-		//   {
-		//     nodes_.at(node_name)->getError()->operator()(j, memory_step) = values(j);
-		//   }
-		//   else if (value_type == "derivative")
-		//   {
-		//     nodes_.at(node_name)->getDerivative()->operator()(j, memory_step) = values(j);
-		//   }
-		//   else if (value_type == "dt")
-		//   {
-		//     nodes_.at(node_name)->getDt()->operator()(j, memory_step) = values(j);
-		//   }
-		// }
-
-		// copy over the input values
-		if (value_type == "output")
-		{
-			nodes_.at(node_name)->getOutput().chip(memory_step, 1) = values;
-		}
-		else if (value_type == "error")
-		{
-			nodes_.at(node_name)->getError().chip(memory_step, 1) = values;
-		}
-		else if (value_type == "derivative")
-		{
-			nodes_.at(node_name)->getDerivative().chip(memory_step, 1) = values;
-		}
-		else if (value_type == "dt")
-		{
-			nodes_.at(node_name)->getDt().chip(memory_step, 1) = values;
-		}
-
-		// update the status
-		if (status_update != NodeStatus::deactivated) // [TESTS:  add tests]
-			nodes_.at(node_name)->setStatus(status_update);
-	}
-
-	template<typename TensorT>
-	void Model<TensorT>::mapValuesToNodes(
-		const Eigen::Tensor<TensorT, 3>& values,
-		const std::vector<std::string>& node_names,
-		const NodeStatus& status_update,
-		const std::string& value_type)
+	template<typename TensorT, typename DeviceT>
+	inline void ModelInterpreter<TensorT, DeviceT>::mapValuesToLayers(Model<TensorT>& model, const Eigen::Tensor<TensorT, 3>& values, const std::vector<std::string>& node_names, const std::string & value_type)
 	{
 		// check dimension mismatches
 		if (node_names.size() != values.dimension(2))
@@ -1382,73 +358,62 @@ namespace SmartPeak
 			printf("The number of input features %d and the number of nodes %d do not match.\n", (int)values.dimension(2), node_names.size());
 			return;
 		}
-		// assumes the node exists
-		else if (nodes_.at(node_names[0])->getOutput().dimension(0) != values.dimension(0))
+		// assumes the tensors have been cached
+		else if (layer_tensors_[0]->getBatchSize() != values.dimension(0))
 		{
-			printf("The number of input samples %d and the node batch size %d does not match.\n", (int)values.dimension(0), (int)nodes_.at(node_names[0])->getOutput().dimension(0));
+			printf("The number of input samples %d and the batch size %d does not match.\n", (int)values.dimension(0), (int)layer_tensors_[0]->getBatchSize());
 			return;
 		}
-		else if (nodes_.at(node_names[0])->getOutput().dimension(1) != values.dimension(1))
+		else if (layer_tensors_[0]->getMemorySize() != values.dimension(1))
 		{
-			printf("The number of input time steps %d and the node memory size %d does not match.\n", (int)values.dimension(1), (int)nodes_.at(node_names[0])->getOutput().dimension(1));
+			printf("The number of input time steps %d and the memory size %d does not match.\n", (int)values.dimension(1), (int)layer_tensors_[0]->getMemorySize());
 			return;
 		}
 
-		// copy over the input values
-		for (int i = 0; i < node_names.size(); ++i)
-		{
-			for (int k = 0; k < values.dimension(1); ++k)
-			{
-				for (int j = 0; j < values.dimension(0); ++j)
-				{
-					if (value_type == "output")
-					{
-						// nodes_.at(node_names[i])->getOutputPointer()[k*values.dimension(0) + j] = values(j, k, i);
-						nodes_.at(node_names[i])->getOutput()(j, k) = values(j, k, i);
-					}
-					else if (value_type == "error")
-					{
-						nodes_.at(node_names[i])->getError()(j, k) = values(j, k, i);
-					}
-					else if (value_type == "derivative")
-					{
-						nodes_.at(node_names[i])->getDerivative()(j, k) = values(j, k, i);
-					}
-					else if (value_type == "dt")
-					{
-						nodes_.at(node_names[i])->getDt()(j, k) = values(j, k, i);
-					}
-					if (status_update != NodeStatus::deactivated) // [TESTS:  add tests]
-						nodes_.at(node_names[i])->setStatus(status_update);
-				}
+		for (int i = 0; i < node_names.size(); ++i){
+			auto node = model.getNodesMap().at(node_names[i]);
+			// copy over the values
+			if (value_type == "output")
+				getLayerTensor(node->getTensorIndex().first)->getOutput().chip(node->getTensorIndex().second, 2) = values.chip(i, 2);
+			else if (value_type == "error")
+				getLayerTensor(node->getTensorIndex().first)->getError().chip(node->getTensorIndex().second, 2) = values.chip(i, 2);
+			else if (value_type == "derivative")
+				getLayerTensor(node->getTensorIndex().first)->getDerivative().chip(node->getTensorIndex().second, 2) = values.chip(i, 2);
+			else if (value_type == "dt")
+				getLayerTensor(node->getTensorIndex().first)->getDt().chip(node->getTensorIndex().second, 2) = values.chip(i, 2);
+		}
+	}
+
+	template<typename TensorT, typename DeviceT>
+	inline void ModelInterpreter<TensorT, DeviceT>::initBiases(Model<TensorT>& model)
+	{
+		Eigen::Tensor<TensorT, 2> one((int)layer_tensors_[0]->getBatchSize(), (int)layer_tensors_[0]->getMemorySize());	one.setConstant(1);
+		for (auto& node_map : model.getNodesMap()) {
+			if (node_map.second->getType() == NodeType::bias) {
+				getLayerTensor(node_map.second->getTensorIndex().first)->getOutput().chip(node_map.second->getTensorIndex().second, 2) = one;
 			}
 		}
 	}
 
-	template<typename TensorT>
-	void Model<TensorT>::getNextInactiveLayer(
+	template<typename TensorT, typename DeviceT>
+	void ModelInterpreter<TensorT, DeviceT>::getNextInactiveLayer(Model<TensorT>& model,
 		std::map<std::string, int>& FP_operations_map,
 		std::vector<OperationList<TensorT>>& FP_operations)
 	{
 
 		// get all links where the source node is active and the sink node is inactive
 		// except for biases
-		for (auto& link_map : links_)
+		for (auto& link_map : model.getLinksMap())
 		{
-			if (nodes_.at(link_map.second->getSourceNodeName())->getType() != NodeType::bias &&
-				nodes_.at(link_map.second->getSourceNodeName())->getStatus() == NodeStatus::activated &&
-				nodes_.at(link_map.second->getSinkNodeName())->getStatus() == NodeStatus::initialized)
+			if (model.getNodesMap().at(link_map.second->getSourceNodeName())->getType() != NodeType::bias &&
+				model.getNodesMap().at(link_map.second->getSourceNodeName())->getStatus() == NodeStatus::activated &&
+				model.getNodesMap().at(link_map.second->getSinkNodeName())->getStatus() == NodeStatus::initialized)
 			{
 				OperationArguments<TensorT> arguments;
-				//std::cout<<"Link source node name: "<< link_map.second->getSourceNodeName() <<std::endl
-				arguments.source_node = nodes_.at(link_map.second->getSourceNodeName());
-				//std::cout << "Link weight name: " << link_map.second->getWeightName() << std::endl;
-				arguments.weight = weights_.at(link_map.second->getWeightName());
+				arguments.source_node = model.getNodesMap().at(link_map.second->getSourceNodeName());
+				arguments.weight = model.getWeightsMap().at(link_map.second->getWeightName());
 				arguments.time_step = 0;
 				arguments.link_name = link_map.first;
-
-				// std::cout<<"Addres of model source node: "<<&nodes_.at(link_map.second->getSourceNodeName())<<std::endl;
-				// std::cout<<"Addres of arguments source node: "<<arguments.source_node<<std::endl;
 
 				std::string ops_key = link_map.second->getSinkNodeName();
 				auto found = FP_operations_map.emplace(ops_key, (int)FP_operations.size());
@@ -1460,7 +425,7 @@ namespace SmartPeak
 				{
 					OperationList<TensorT> operation_list;
 					OperationResult<TensorT> result;
-					result.sink_node = nodes_.at(link_map.second->getSinkNodeName());
+					result.sink_node = model.getNodesMap().at(link_map.second->getSinkNodeName());
 					operation_list.result = result;
 					operation_list.arguments.push_back(arguments);
 					FP_operations.push_back(operation_list);
@@ -1469,29 +434,29 @@ namespace SmartPeak
 		}
 	}
 
-	template<typename TensorT>
-	void Model<TensorT>::getNextInactiveLayerBiases(
+	template<typename TensorT, typename DeviceT>
+	void ModelInterpreter<TensorT, DeviceT>::getNextInactiveLayerBiases(Model<TensorT>& model,
 		std::map<std::string, int>& FP_operations_map,
 		std::vector<OperationList<TensorT>>& FP_operations,
 		std::vector<std::string>& sink_nodes_with_biases)
 	{
 
 		// get all the biases for the sink nodes
-		for (auto& link_map : links_)
+		for (auto& link_map : model.getLinksMap())
 		{
 			std::string ops_key = link_map.second->getSinkNodeName();
 			if (
 				// does not allow for cycles
-				nodes_.at(link_map.second->getSourceNodeName())->getType() == NodeType::bias &&
-				nodes_.at(link_map.second->getSourceNodeName())->getStatus() == NodeStatus::activated &&
+				model.getNodesMap().at(link_map.second->getSourceNodeName())->getType() == NodeType::bias &&
+				model.getNodesMap().at(link_map.second->getSourceNodeName())->getStatus() == NodeStatus::activated &&
 				// required regardless if cycles are or are not allowed
-				nodes_.at(link_map.second->getSinkNodeName())->getStatus() == NodeStatus::initialized &&
+				model.getNodesMap().at(link_map.second->getSinkNodeName())->getStatus() == NodeStatus::initialized &&
 				FP_operations_map.count(ops_key) != 0 // sink node has already been identified
 				)
 			{
 				OperationArguments<TensorT> arguments;
-				arguments.source_node = nodes_.at(link_map.second->getSourceNodeName());
-				arguments.weight = weights_.at(link_map.second->getWeightName());
+				arguments.source_node = model.getNodesMap().at(link_map.second->getSourceNodeName());
+				arguments.weight = model.getWeightsMap().at(link_map.second->getWeightName());
 				arguments.time_step = 0;
 				arguments.link_name = link_map.first;
 				FP_operations[FP_operations_map.at(ops_key)].arguments.push_back(arguments);
@@ -1503,33 +468,28 @@ namespace SmartPeak
 		}
 	}
 
-	template<typename TensorT>
-	void Model<TensorT>::getNextInactiveLayerCycles(
+	template<typename TensorT, typename DeviceT>
+	void ModelInterpreter<TensorT, DeviceT>::getNextInactiveLayerCycles(Model<TensorT>& model,
 		std::map<std::string, int>& FP_operations_map,
 		std::vector<OperationList<TensorT>>& FP_operations,
 		std::vector<std::string>& sink_nodes_with_cycles)
 	{
 
 		// get cyclic source nodes
-		for (auto& link_map : links_)
+		for (auto& link_map : model.getLinksMap())
 		{
 			std::string ops_key = link_map.second->getSinkNodeName();
 			if (
-				nodes_.at(link_map.second->getSourceNodeName())->getStatus() == NodeStatus::initialized &&
+				model.getNodesMap().at(link_map.second->getSourceNodeName())->getStatus() == NodeStatus::initialized &&
 				// required regardless if cycles are or are not allowed
-				nodes_.at(link_map.second->getSinkNodeName())->getStatus() == NodeStatus::initialized &&
+				model.getNodesMap().at(link_map.second->getSinkNodeName())->getStatus() == NodeStatus::initialized &&
 				FP_operations_map.count(ops_key) != 0 // sink node has already been identified
 				)
 			{
 				OperationArguments<TensorT> arguments;
-				arguments.source_node = nodes_.at(link_map.second->getSourceNodeName());
-				arguments.weight = weights_.at(link_map.second->getWeightName());
+				arguments.source_node = model.getNodesMap().at(link_map.second->getSourceNodeName());
+				arguments.weight = model.getWeightsMap().at(link_map.second->getWeightName());
 
-				// [PARRALLEL] can we check that we will not over exceed the memory
-				//             and take appropriate measures here?
-				// e.g.
-				// memory_size = arguments.source_node->getOutput().dimension(1);
-				// if (time_step + 1 >= memory_size) ...
 				arguments.time_step = 1;
 				arguments.link_name = link_map.first;
 				FP_operations[FP_operations_map.at(ops_key)].arguments.push_back(arguments);
@@ -1538,8 +498,8 @@ namespace SmartPeak
 		}
 	}
 
-	template<typename TensorT>
-	inline void Model<TensorT>::pruneInactiveLayerCycles(std::map<std::string, int>& FP_operations_map, std::map<std::string, int>& FP_operations_map_cycles, std::vector<OperationList<TensorT>>& FP_operations, std::vector<OperationList<TensorT>>& FP_operations_cycles, std::vector<std::string>& sink_nodes_with_cycles)
+	template<typename TensorT, typename DeviceT>
+	inline void ModelInterpreter<TensorT, DeviceT>::pruneInactiveLayerCycles(Model<TensorT>& model, std::map<std::string, int>& FP_operations_map, std::map<std::string, int>& FP_operations_map_cycles, std::vector<OperationList<TensorT>>& FP_operations, std::vector<OperationList<TensorT>>& FP_operations_cycles, std::vector<std::string>& sink_nodes_with_cycles)
 	{
 
 		// Remove all nodes involved in "cycles" that have arguments
@@ -1553,7 +513,7 @@ namespace SmartPeak
 					i < FP_operations_cycles[FP_operations_map_cycles.at(sink_node)].arguments.size(); ++i) {
 					// check if the "cyclic" argument is actually involved in a cycle
 					bool isCyclicOperation = false;
-					for (const auto& cyclic_pair : cyclic_pairs_) {
+					for (const auto& cyclic_pair : model.getCyclicPairs()) {
 						if (FP_operations_cycles[FP_operations_map_cycles.at(sink_node)].arguments[i].source_node->getName() == cyclic_pair.first &&
 							FP_operations_cycles[FP_operations_map_cycles.at(sink_node)].result.sink_node->getName() == cyclic_pair.second) {
 							isCyclicOperation = true;
@@ -1582,1212 +542,583 @@ namespace SmartPeak
 		}
 	}
 
-	template<typename TensorT>
-	bool Model<TensorT>::calculateNodeInput_(
-		OperationResult<TensorT>* result,
-		OperationArguments<TensorT>* arguments,
-		const int& batch_size,
-		const int& memory_size,
-		const int& time_step)
+	template<typename TensorT, typename DeviceT>
+	inline void ModelInterpreter<TensorT, DeviceT>::expandForwardPropogationOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::vector<OperationList<TensorT>>& FP_operations_expanded)
 	{
-		std::lock_guard<std::mutex> lock(calculateNodeInput_mutex);
-
-		Eigen::Tensor<TensorT, 1> weight_tensor(batch_size);
-		weight_tensor.setConstant(arguments->weight->getWeight());
-		//if (arguments->time_step == 0 || time_step + arguments->time_step < memory_size)
-		//{
-		result->sink_node->getIntegrationShared()->operator()(weight_tensor, arguments->source_node->getOutput().chip(time_step + arguments->time_step, 1));
-		//}
-		return true;
+		std::vector<OperationList<TensorT>> FP_operations_1, FP_operations_2;
+		expandForwardPropogationOperationsBySourceNodeKey(FP_operations, FP_operations_1); // Pass 1:		 
+		expandForwardPropogationOperationsByWeightKey(FP_operations_1, FP_operations_2); // Pass 2:		
+		expandForwardPropogationOperationsByCachedNodes(FP_operations_2, FP_operations_expanded); // Pass 3: 
 	}
 
-	template<typename TensorT>
-	bool Model<TensorT>::calculateNetNodeInput_(
-		OperationList<TensorT>* operations,
-		const int& batch_size,
-		const int& memory_size,
-		const int& time_step,
-		int n_threads)
+	template<typename TensorT, typename DeviceT>
+	inline void ModelInterpreter<TensorT, DeviceT>::expandForwardPropogationOperationsBySourceNodeKey(const std::vector<OperationList<TensorT>>& FP_operations, std::vector<OperationList<TensorT>>& FP_operations_expanded)
 	{
-		std::lock_guard<std::mutex> lock(calculateNetNodeInput_mutex);
-
-		std::vector<std::future<bool>> task_results;
-		operations->result.sink_node->getIntegrationShared()->initNetNodeInput(batch_size);
-		int thread_cnt = 0;
-
-		// for (const std::string& link : sink_links)
-		for (int i = 0; i < operations->arguments.size(); ++i)
-		{
-			std::packaged_task<bool // encapsulate in a packaged_task
-			(OperationResult<TensorT>*, OperationArguments<TensorT>*, int, int, int
-				)> task(Model<TensorT>::calculateNodeInput_);
-
-			// launch the thread
-			task_results.push_back(task.get_future());
-			std::thread task_thread(std::move(task),
-				&operations->result, &operations->arguments[i], std::ref(batch_size), std::ref(memory_size), std::ref(time_step));
-			task_thread.detach();
-
-			// retreive the results
-			if (thread_cnt == n_threads - 1 || i == operations->arguments.size() - 1)
-			{
-				for (auto& task_result : task_results)
-				{
-					if (task_result.valid())
-					{
-						try
-						{
-							bool result = task_result.get();
-						}
-						catch (std::exception& e)
-						{
-							printf("Exception: %s", e.what());
-						}
+		FP_operations_expanded.clear();
+		for (const OperationList<TensorT>& FP_operation : FP_operations) {
+			// check that all arguments have the same time-step/activation/node_integration
+			std::set<std::string> unique_node_types;
+			for (const OperationArguments<TensorT>& argument : FP_operation.arguments) {
+				std::string ops_key = makeForwardPropogationOperationsKey(argument.time_step,
+					argument.source_node->getType(),
+					argument.source_node->getIntegration()->getName(),
+					argument.source_node->getActivation()->getName());
+				unique_node_types.insert(ops_key);
+			}
+			for (const std::string& node_types : unique_node_types) {
+				OperationList<TensorT> operations_list;
+				operations_list.result = FP_operation.result;
+				for (const OperationArguments<TensorT>& argument : FP_operation.arguments) {
+					std::string ops_key = makeForwardPropogationOperationsKey(argument.time_step,
+						argument.source_node->getType(),
+						argument.source_node->getIntegration()->getName(),
+						argument.source_node->getActivation()->getName());
+					if (node_types == ops_key) {
+						operations_list.arguments.push_back(argument);
 					}
 				}
-				task_results.clear();
-				thread_cnt = 0;
-			}
-			else
-			{
-				++thread_cnt;
+				FP_operations_expanded.push_back(operations_list);
 			}
 		}
-
-		// calculate the output and the derivative
-		Eigen::Tensor<TensorT, 1> output = calculateActivation<TensorT>(
-			operations->result.sink_node->getActivationShared().get(), operations->result.sink_node->getIntegrationShared()->getNetNodeInput(),
-			operations->result.sink_node->getDt().chip(time_step, 1),
-			1);
-		Eigen::Tensor<TensorT, 1> derivative = calculateDerivative<TensorT>(
-			operations->result.sink_node->getActivationGradShared().get(), output, 1);
-
-		operations->result.sink_node->setStatus(NodeStatus::activated);
-		operations->result.sink_node->getInput().chip(time_step, 1) = operations->result.sink_node->getIntegrationShared()->getNetNodeInput();
-		operations->result.sink_node->getOutput().chip(time_step, 1) = output;
-		operations->result.sink_node->getDerivative().chip(time_step, 1) = derivative;
-
-		return true;
 	}
 
-	template<typename TensorT>
-	void Model<TensorT>::forwardPropogateLayerNetInput(
-		std::vector<OperationList<TensorT>>& FP_operations,
-		const int& time_step, int n_threads)
+	template<typename TensorT, typename DeviceT>
+	inline void ModelInterpreter<TensorT, DeviceT>::expandForwardPropogationOperationsByWeightKey(const std::vector<OperationList<TensorT>>& FP_operations, std::vector<OperationList<TensorT>>& FP_operations_expanded)
 	{
-
-		// get all the information needed to construct the tensors
-		std::pair<int, int> bmsizes = getBatchAndMemorySizes();
-		int batch_size = bmsizes.first;
-		int memory_size = bmsizes.second;
-
-		// iterate through each sink node and calculate the net input
-		// invoke the activation function once the net input is calculated
-		std::vector<std::future<bool>> task_results;
-		int thread_cnt = 0;
-		const int threads_per_sub_process = 1; // [TODO: how to best divide up the allowable threads?]
-		int operations_cnt = 0;
-		for (auto& FP_operation : FP_operations)
-		{
-			std::packaged_task<bool // encapsulate in a packaged_task
-			(OperationList<TensorT>*, int, int, int, int
-				)> task(Model<TensorT>::calculateNetNodeInput_);
-
-			// launch the thread
-			task_results.push_back(task.get_future());
-			std::thread task_thread(std::move(task),
-				&FP_operation, std::ref(batch_size), std::ref(memory_size), std::ref(time_step),
-				std::ref(threads_per_sub_process));
-			task_thread.detach();
-
-			// retreive the results
-			if (thread_cnt == n_threads - 1 || operations_cnt == FP_operations.size() - 1)
-			{
-				for (auto& task_result : task_results)
-				{
-					if (task_result.valid())
-					{
-						try
-						{
-							bool success = task_result.get();
-						}
-						catch (std::exception& e)
-						{
-							printf("Exception: %s", e.what());
-						}
+		FP_operations_expanded.clear();
+		for (const OperationList<TensorT>& FP_operation : FP_operations) {
+			// check that all links have the same solver/weight_init operator
+			std::set<std::string> unique_weight_types;
+			for (const OperationArguments<TensorT>& argument : FP_operation.arguments) {
+				// Does not account for different solver parameters and weight init op parameters!
+				std::string ops_key = argument.weight->getSolverOp()->getName() + "/" + argument.weight->getWeightInitOp()->getName();
+				unique_weight_types.insert(ops_key);
+			}
+			for (const std::string& weight_types : unique_weight_types) {
+				OperationList<TensorT> operations_list;
+				operations_list.result = FP_operation.result;
+				for (const OperationArguments<TensorT>& argument : FP_operation.arguments) {
+					std::string ops_key = argument.weight->getSolverOp()->getName() + "/" + argument.weight->getWeightInitOp()->getName();
+					if (weight_types == ops_key) {
+						operations_list.arguments.push_back(argument);
 					}
 				}
-				task_results.clear();
-				thread_cnt = 0;
+				FP_operations_expanded.push_back(operations_list);
 			}
-			else
-			{
-				thread_cnt += threads_per_sub_process;
-			}
-			// std::cout<<"thread_count"<<thread_cnt<<std::endl;
-			// std::cout<<"operations_cnt"<<operations_cnt<<std::endl;
-			++operations_cnt;
 		}
 	}
 
-	template<typename TensorT>
-	void Model<TensorT>::forwardPropogate(const int& time_step, bool cache_FP_steps, bool use_cache, int n_threads)
+	template<typename TensorT, typename DeviceT>
+	inline void ModelInterpreter<TensorT, DeviceT>::expandForwardPropogationOperationsByCachedNodes(const std::vector<OperationList<TensorT>>& FP_operations, std::vector<OperationList<TensorT>>& FP_operations_expanded)
 	{
-		if (use_cache)
-		{
-			for (auto& FP_operations : FP_operations_cache_)
-				forwardPropogateLayerNetInput(FP_operations, time_step, n_threads);
+		FP_operations_expanded.clear();
+		for (const OperationList<TensorT>& FP_operation : FP_operations) {
+			// check that all nodes are either cached or not yet cached into a layer
+			OperationList<TensorT> operations_list_cached, operations_list;
+			operations_list.result = FP_operation.result;
+			operations_list_cached.result = FP_operation.result;
+			for (const OperationArguments<TensorT>& argument : FP_operation.arguments) {
+				if (argument.source_node->getTensorIndex().first == -1) {
+					operations_list.arguments.push_back(argument);
+				}
+				else {
+					operations_list_cached.arguments.push_back(argument);
+				}
+			}
+			if (operations_list.arguments.size() > 0)
+				FP_operations_expanded.push_back(operations_list);
+			if (operations_list_cached.arguments.size() > 0)
+				FP_operations_expanded.push_back(operations_list_cached);
 		}
-		else
-		{
-			const int max_iters = 1e6;
-			for (int iter = 0; iter < max_iters; ++iter)
-			{
-				// get the next hidden layer
-				std::map<std::string, int> FP_operations_map;
-				std::vector<OperationList<TensorT>> FP_operations_list;
-				getNextInactiveLayer(FP_operations_map, FP_operations_list);
+	}
 
-				// get biases,
-				std::vector<std::string> sink_nodes_with_biases;
-				getNextInactiveLayerBiases(FP_operations_map, FP_operations_list, sink_nodes_with_biases);
+	template<typename TensorT, typename DeviceT>
+	inline std::map<std::string, std::vector<int>> ModelInterpreter<TensorT, DeviceT>::getCustomOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes)
+	{
+		std::set<std::string> supported_custom_module_names = { "SoftMax" }; // [TODO: add support for ModuleType]
+		std::map<std::string, std::vector<int>> custom_layers;
+		for (size_t operations_iter = 0; operations_iter < FP_operations.size(); ++operations_iter) {
+			if (identified_sink_nodes.count(FP_operations[operations_iter].result.sink_node->getName())) continue; // Skip identified sink nodes
+			if (supported_custom_module_names.count(FP_operations[operations_iter].result.sink_node->getModuleName())) { // [TODO: replace with comparison after adding support for module types]
+				std::string sink_node_key = FP_operations[operations_iter].result.sink_node->getName() + std::to_string(operations_iter);
+				identified_sink_nodes.insert(sink_node_key);
+				auto found = custom_layers.emplace(FP_operations[operations_iter].result.sink_node->getModuleName(), std::vector<int>({ operations_iter }));
+				if (!found.second) {
+					custom_layers.at(FP_operations[operations_iter].result.sink_node->getModuleName()).push_back(operations_iter);
+				}
+			}
+		}
+		return custom_layers;
+	}
 
-				// get cycles
-				std::map<std::string, int> FP_operations_map_cycles = FP_operations_map;
-				std::vector<OperationList<TensorT>> FP_operations_list_cycles = FP_operations_list;
-				std::vector<std::string> sink_nodes_cycles;
-				getNextInactiveLayerCycles(FP_operations_map_cycles, FP_operations_list_cycles, sink_nodes_cycles);
+	template<typename TensorT, typename DeviceT>
+	inline std::map<std::string, std::vector<int>> ModelInterpreter<TensorT, DeviceT>::getFullyConnectedOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes)
+	{
+		std::map<std::string, std::vector<int>> FC_layers;
+		for (size_t operations_iter1 = 0; operations_iter1 < FP_operations.size(); ++operations_iter1) {
+			if (identified_sink_nodes.count(FP_operations[operations_iter1].result.sink_node->getName())) continue; // Skip identified sink nodes
+			for (size_t operations_iter2 = operations_iter1 + 1; operations_iter2 < FP_operations.size(); ++operations_iter2) {
+				if (identified_sink_nodes.count(FP_operations[operations_iter2].result.sink_node->getName())) continue; // Skip identified sink nodes
 
-				// Remove all nodes involved in "cycles" that have arguments
-				// involving source to sink node pairs not identified as cycles
-				pruneInactiveLayerCycles(FP_operations_map, FP_operations_map_cycles, FP_operations_list, FP_operations_list_cycles, sink_nodes_cycles);
+				// check if the sink nodes are compatible
+				std::string ops_key_1 = makeForwardPropogationOperationsKey(FP_operations[operations_iter1].result.time_step,
+					FP_operations[operations_iter1].result.sink_node->getType(),
+					FP_operations[operations_iter1].result.sink_node->getIntegration()->getName(),
+					FP_operations[operations_iter1].result.sink_node->getActivation()->getName());
+				std::string ops_key_2 = makeForwardPropogationOperationsKey(FP_operations[operations_iter2].result.time_step,
+					FP_operations[operations_iter2].result.sink_node->getType(),
+					FP_operations[operations_iter2].result.sink_node->getIntegration()->getName(),
+					FP_operations[operations_iter2].result.sink_node->getActivation()->getName());
+				if (ops_key_1 != ops_key_2) continue;
 
-				// check if all nodes have been activated
-				if (FP_operations_list.size() == 0)
-				{
-					break;
+				// check if the node names are all the same and compatible
+				std::set<std::string> argument_nodes;
+				for (const auto& argument : FP_operations[operations_iter1].arguments) {
+					std::string ops_key = makeForwardPropogationOperationsKey(argument.time_step,
+						argument.sink_node->getType(),
+						argument.sink_node->getIntegration()->getName(),
+						argument.sink_node->getActivation()->getName());
+					std::string ops_key_id = argument.sink_node->getNodeName() + "/" + ops_key;
+					argument_nodes.insert(ops_key_id);
+				}
+				for (const auto& argument : FP_operations[operations_iter2].arguments) {
+					std::string ops_key = makeForwardPropogationOperationsKey(argument.time_step,
+						argument.sink_node->getType(),
+						argument.sink_node->getIntegration()->getName(),
+						argument.sink_node->getActivation()->getName());
+					std::string ops_key_id = argument.sink_node->getNodeName() + "/" + ops_key;
+					argument_nodes.insert(ops_key_id);
+				}
+				if (argument_nodes.size() != FP_operations[operations_iter1].arguments.size() || argument_nodes.size() != FP_operations[operations_iter2].arguments.size()) continue;
+
+				// update the maps
+				std::string sink_node_key = FP_operations[operations_iter1].result.sink_node->getName() + std::string(operations_iter1);
+				identified_sink_nodes.insert(sink_node_key);
+				auto found = FC_layers.emplace(sink_node_key, std::vector<int>({ operations_iter1 }));
+				FC_layers.at(sink_node_key).push_back(operations_iter2);
+			}
+		}
+		return FC_layers;
+	}
+
+	template<typename TensorT, typename DeviceT>
+	inline std::map<std::string, std::vector<int>> ModelInterpreter<TensorT, DeviceT>::GetSinglyConnectedOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes)
+	{
+		std::map<std::string, std::vector<int>> SC_layers
+			for (size_t operations_iter1 = 0; operations_iter1 < FP_operations.size(); ++operations_iter1) {
+				if (identified_sink_nodes.count(FP_operations[operations_iter1].result.sink_node->getName())) continue; // Skip identified sink nodes
+				if (FP_operations[operations_iter1].arguments.size() != 1) continue; // Not singly connected
+				for (size_t operations_iter2 = operations_iter1 + 1; operations_iter2 < FP_operations.size(); ++operations_iter2) {
+					if (identified_sink_nodes.count(FP_operations[operations_iter2].result.sink_node->getName())) continue; // Skip identified sink nodes
+					if (FP_operations[operations_iter2].arguments.size() != 1) continue; // Not singly connected
+
+					// check if the sink nodes are compatible
+					std::string ops_key_1 = makeForwardPropogationOperationsKey(FP_operations[operations_iter1].result.time_step,
+						FP_operations[operations_iter1].result.sink_node->getType(),
+						FP_operations[operations_iter1].result.sink_node->getIntegration()->getName(),
+						FP_operations[operations_iter1].result.sink_node->getActivation()->getName());
+					std::string ops_key_2 = makeForwardPropogationOperationsKey(FP_operations[operations_iter2].result.time_step,
+						FP_operations[operations_iter2].result.sink_node->getType(),
+						FP_operations[operations_iter2].result.sink_node->getIntegration()->getName(),
+						FP_operations[operations_iter2].result.sink_node->getActivation()->getName());
+					if (ops_key_1 != ops_key_2) continue;
+
+					// check if the source nodes are compatible
+					ops_key_1 = makeForwardPropogationOperationsKey(FP_operations[operations_iter1].arguments[0].time_step,
+						FP_operations[operations_iter1].arguments[0].source_node->getType(),
+						FP_operations[operations_iter1].arguments[0].source_node->getIntegration()->getName(),
+						FP_operations[operations_iter1].arguments[0].source_node->getActivation()->getName());
+					ops_key_2 = makeForwardPropogationOperationsKey(FP_operations[operations_iter2].arguments[0].time_step,
+						FP_operations[operations_iter2].arguments[0].source_node->getType(),
+						FP_operations[operations_iter2].arguments[0].source_node->getIntegration()->getName(),
+						FP_operations[operations_iter2].arguments[0].source_node->getActivation()->getName());
+					if (ops_key_1 != ops_key_2) continue;
+
+					// update the maps
+					std::string sink_node_key = FP_operations[operations_iter1].result.sink_node->getName() + std::string(operations_iter1);
+					identified_sink_nodes.insert(sink_node_key);
+					auto found = SC_layers.emplace(sink_node_key, std::vector<int>({ operations_iter1 }));
+					SC_layers.at(sink_node_key).push_back(operations_iter2);
+				}
+			}
+		return SC_layers;
+	}
+
+	template<typename TensorT, typename DeviceT>
+	inline std::map<std::string, std::vector<int>> ModelInterpreter<TensorT, DeviceT>::getConvOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes)
+	{
+		std::map<std::string, std::vector<int>> Conv_layers;
+		// getConvOperations (special case of multiple FanIn with shared weights)
+		for (size_t operations_iter1 = 0; operations_iter1 < FP_operations.size(); ++operations_iter1) {
+			if (identified_sink_nodes.count(FP_operations[operations_iter1].result.sink_node->getName())) continue; // Skip identified sink nodes
+			for (size_t operations_iter2 = operations_iter1 + 1; operations_iter2 < FP_operations.size(); ++operations_iter2) {
+				if (identified_sink_nodes.count(FP_operations[operations_iter2].result.sink_node->getName())) continue; // Skip identified sink nodes
+
+				// check if the sink nodes are compatible
+				std::string ops_key_1 = makeForwardPropogationOperationsKey(FP_operations[operations_iter1].result.time_step,
+					FP_operations[operations_iter1].result.sink_node->getType(),
+					FP_operations[operations_iter1].result.sink_node->getIntegration()->getName(),
+					FP_operations[operations_iter1].result.sink_node->getActivation()->getName());
+				std::string ops_key_2 = makeForwardPropogationOperationsKey(FP_operations[operations_iter2].result.time_step,
+					FP_operations[operations_iter2].result.sink_node->getType(),
+					FP_operations[operations_iter2].result.sink_node->getIntegration()->getName(),
+					FP_operations[operations_iter2].result.sink_node->getActivation()->getName());
+				if (ops_key_1 != ops_key_2) continue;
+
+				// check for shared weights
+				std::set<std::string> argument_weights, argument_weights_1, argument_weights_2;
+				for (const auto& argument : FP_operations[operations_iter1].arguments) {
+					argument_weights.insert(argument.weight->getName());
+					argument_weights_1.insert(argument.weight->getName());
+				}
+				for (const auto& argument : FP_operations[operations_iter2].arguments) {
+					argument_weights.insert(argument.weight->getName());
+					argument_weights_2.insert(argument.weight->getName());
+				}
+				if (argument_weights.size() != argument_weights_1.size() || argument_weights.size() != argument_weights_2.size()) continue;
+
+				// update the maps
+				identified_sink_nodes.insert(FP_operations[operations_iter1].result.sink_node->getName());
+				auto found = Conv_layers.emplace(FP_operations[operations_iter1].result.sink_node->getName(), std::vector<int>({ operations_iter1 }));
+				Conv_layers.at(FP_operations[operations_iter1].result.sink_node->getName()).push_back(operations_iter2);
+			}
+		}
+		return Conv_layers;
+	}
+
+	template<typename TensorT, typename DeviceT>
+	inline std::map<std::string, std::vector<int>> ModelInterpreter<TensorT, DeviceT>::getFanOutOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes)
+	{
+		return std::map<std::string, std::vector<int>>();
+	}
+
+	template<typename TensorT, typename DeviceT>
+	inline std::map<std::string, std::vector<int>> ModelInterpreter<TensorT, DeviceT>::getFanInOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes)
+	{
+		// Default of what is left...
+		return std::map<std::string, std::vector<int>>();
+	}
+	template<typename TensorT, typename DeviceT>
+	inline std::map<std::string, std::vector<int>> ModelInterpreter<TensorT, DeviceT>::getTensorOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes)
+	{
+		std::map<std::string, std::vector<int>> FC_layers;
+		for (size_t operations_iter1 = 0; operations_iter1 < FP_operations.size(); ++operations_iter1) {
+			if (identified_sink_nodes.count(FP_operations[operations_iter1].result.sink_node->getName())) continue; // Skip identified sink nodes
+			std::string sink_node_key = FP_operations[operations_iter1].result.sink_node->getName() + "/" + std::to_string(operations_iter1);
+
+			// Check for compatibility
+			for (size_t operations_iter2 = operations_iter1 + 1; operations_iter2 < FP_operations.size(); ++operations_iter2) {
+				if (identified_sink_nodes.count(FP_operations[operations_iter2].result.sink_node->getName())) continue; // Skip identified sink nodes
+
+				// check if the sink nodes are compatible
+				std::string ops_key_1 = makeForwardPropogationOperationsKey(FP_operations[operations_iter1].result.time_step,
+					FP_operations[operations_iter1].result.sink_node->getType(),
+					FP_operations[operations_iter1].result.sink_node->getIntegration()->getName(),
+					FP_operations[operations_iter1].result.sink_node->getActivation()->getName());
+				std::string ops_key_2 = makeForwardPropogationOperationsKey(FP_operations[operations_iter2].result.time_step,
+					FP_operations[operations_iter2].result.sink_node->getType(),
+					FP_operations[operations_iter2].result.sink_node->getIntegration()->getName(),
+					FP_operations[operations_iter2].result.sink_node->getActivation()->getName());
+				if (ops_key_1 != ops_key_2) continue;
+
+				// check if the source nodes are compatible
+				std::set<std::string> argument_nodes;
+				for (const auto& argument : FP_operations[operations_iter1].arguments) {
+					std::string ops_key = makeForwardPropogationOperationsKey(argument.time_step,
+						argument.source_node->getType(),
+						argument.source_node->getIntegration()->getName(),
+						argument.source_node->getActivation()->getName());
+					argument_nodes.insert(ops_key);
+				}
+				for (const auto& argument : FP_operations[operations_iter2].arguments) {
+					std::string ops_key = makeForwardPropogationOperationsKey(argument.time_step,
+						argument.source_node->getType(),
+						argument.source_node->getIntegration()->getName(),
+						argument.source_node->getActivation()->getName());
+					argument_nodes.insert(ops_key);
+				}
+				if (argument_nodes.size() > 1) continue;
+
+				// update the maps
+				identified_sink_nodes.insert(sink_node_key);
+				std::vector<int> first_operation = { (int)operations_iter1 };
+				auto found = FC_layers.emplace(sink_node_key, first_operation);
+				FC_layers.at(sink_node_key).push_back(operations_iter2);
+			}
+
+			// Check if compatible operations were found, if not add as is
+			if (identified_sink_nodes.count(sink_node_key) == 0) {
+				identified_sink_nodes.insert(sink_node_key);
+				std::vector<int> first_operation = { (int)operations_iter1 };
+				auto found = FC_layers.emplace(sink_node_key, first_operation);
+			}
+		}
+		return FC_layers;
+	}
+
+	template<typename TensorT, typename DeviceT>
+	inline void ModelInterpreter<TensorT, DeviceT>::getForwardPropogationLayerTensorDimensions(const std::vector<OperationList<TensorT>>& FP_operations,
+		const std::map<std::string, std::vector<int>>& operations_map,
+		std::vector<int>& source_layer_sizes, std::vector<int>& sink_layer_sizes, std::vector<std::vector<std::pair<int, int>>>& weight_indices, std::vector<std::vector<TensorT>>& weight_values,
+		std::vector<bool>& make_source_tensors, std::vector<bool>& make_sink_tensors, std::vector<bool>& make_weight_tensors) {
+		// track the layer_tensor positions for the source and sink nodes
+		// as well as the weight_tensor positions
+		int sink_layer_pos = layer_tensors_.size();
+		int source_layer_pos = layer_tensors_.size() + 1;
+		int weight_pos = weight_tensors_.size();
+
+		for (const auto& operations : operations_map) {
+			// determine the tensor sizes
+			int sink_layer_size = 0;
+			int source_layer_size = 0;
+			std::vector<std::pair<int, int>> weight_index;
+			std::vector<TensorT> weight_value;
+			bool make_sink_tensor = false;
+			bool make_source_tensor = false;
+			bool make_weight_tensor = false;
+
+			// inernal variables to track changes in source/sink layer positions
+			bool updated_source_layer_pos = false;
+
+			for (const int& ops_index : operations.second) {
+				// index sink node tensors (if it does not yet exist)
+				int sink_layer_index;
+				bool increment_sink_layer_size = false;
+				if (FP_operations[ops_index].result.sink_node->getTensorIndex().first == -1) {
+					FP_operations[ops_index].result.sink_node->setTensorIndex(std::make_pair(sink_layer_pos, sink_layer_size));
+					sink_layer_index = sink_layer_size;
+					make_sink_tensor = true;
+					increment_sink_layer_size = true;
+				}
+				else {
+					sink_layer_index = FP_operations[ops_index].result.sink_node->getTensorIndex().second;
 				}
 
-				if (cache_FP_steps)
-					FP_operations_cache_.push_back(FP_operations_list);
+				if (!updated_source_layer_pos && !make_sink_tensor) {
+					source_layer_pos = sink_layer_pos;
+					updated_source_layer_pos = true;
+				}
 
-				// calculate the net input
-				forwardPropogateLayerNetInput(FP_operations_list, time_step, n_threads);
-			}
-		}
-	}
-
-	template<typename TensorT>
-	void Model<TensorT>::FPTT(const int& time_steps,
-		const Eigen::Tensor<TensorT, 3>& values,
-		const std::vector<std::string> node_names,
-		const Eigen::Tensor<TensorT, 2>& dt,
-		bool cache_FP_steps, bool use_cache, int n_threads)
-	{
-		// check time_steps vs memory_size
-		int max_steps = time_steps;
-		if (time_steps >= nodes_.begin()->second->getOutput().dimension(1))
-		{
-			std::cout << "Time_steps will be scaled back to the memory_size - 1." << std::endl;
-			max_steps = nodes_.begin()->second->getOutput().dimension(1) - 1;
-		}
-
-		for (int time_step = 0; time_step < max_steps; ++time_step)
-		{
-			const int time_step_cur = max_steps - 1 - time_step;
-
-			// std::cout<<"Model<TensorT>::FPTT() time_step: "<<time_step<<std::endl;
-			if (time_step > 0)
-			{
-				// move to the next memory step
-				for (auto& node_map : nodes_)
-				{
-					if (std::count(node_names.begin(), node_names.end(), node_map.first) == 0)
-					{
-						node_map.second->setStatus(NodeStatus::initialized); // reinitialize non-input nodes
+				// index source node tensor (if it does not yet exist)
+				for (const OperationArguments<TensorT>& argument : FP_operations[ops_index].arguments) {
+					int source_layer_index;
+					bool increment_source_layer_size = false;
+					if (argument.source_node->getTensorIndex().first == -1) {
+						argument.source_node->setTensorIndex(std::make_pair(source_layer_pos, source_layer_size));
+						source_layer_index = source_layer_size;
+						make_source_tensor = true;
+						increment_source_layer_size = true;
 					}
-					// std::cout<<"Model<TensorT>::FPTT() output: "<<node_map.second->getOutput()<<" for node_name: "<<node_map.first<<std::endl;
-				}
-			}
-
-			// initialize nodes for the next time-step
-			const Eigen::Tensor<TensorT, 1> dt_values = dt.chip(time_step, 1);
-			mapValuesToNodes(dt_values, time_step_cur, NodeStatus::deactivated, "dt"); // [TESTS: setting this to "initialized" caused one hell of a headache to debug...]
-			const Eigen::Tensor<TensorT, 2> active_values = values.chip(time_step, 1);
-			//std::cout<<"Model<TensorT>::FPTT() active_values: "<<active_values<<std::endl;
-			mapValuesToNodes(active_values, time_step_cur, node_names, NodeStatus::activated, "output");
-
-			if (cache_FP_steps && time_step == 0)
-				forwardPropogate(time_step_cur, true, false, n_threads);
-			else if (cache_FP_steps && time_step > 0)
-				forwardPropogate(time_step_cur, false, true, n_threads);
-			else
-				forwardPropogate(time_step_cur, cache_FP_steps, use_cache, n_threads); // always working at the current head of memory
-		}
-	}
-
-	template<typename TensorT>
-	Eigen::Tensor<TensorT, 1> Model<TensorT>::calculateModelError_(
-		Node<TensorT>* output_node,
-		const Eigen::Tensor<TensorT, 1>& expected,
-		LossFunctionOp<TensorT>* loss_function,
-		const int& batch_size,
-		const int& time_step
-	) {
-		std::lock_guard<std::mutex> lock(calculateModelError_mutex);
-
-		Eigen::Tensor<TensorT, 1> model_error(batch_size);
-		model_error = loss_function->operator()(output_node->getOutput().chip(time_step, 1), expected);
-		return model_error;
-	};
-
-	template<typename TensorT>
-	bool Model<TensorT>::calculateOutputNodeError_(
-		Node<TensorT>* output_node,
-		const Eigen::Tensor<TensorT, 1>& expected,
-		LossFunctionGradOp<TensorT>* loss_function_grad,
-		const int& time_step
-	) {
-		std::lock_guard<std::mutex> lock(calculateOutputNodeError_mutex);
-
-		output_node->getError().chip(time_step, 1) += loss_function_grad->operator()(
-			output_node->getOutput().chip(time_step, 1), expected) *
-			output_node->getDerivative().chip(time_step, 1);
-		//output_node->setStatus(NodeStatus::corrected); // corrected status will be updated in CETT based on the tagged NodeType
-		return true;
-	};
-
-	template<typename TensorT>
-	void Model<TensorT>::calculateError(
-		const Eigen::Tensor<TensorT, 2>& values, const std::vector<std::string>& node_names,
-		const int& time_step, int n_threads)
-	{
-		// infer the batch size from the first source node
-		std::pair<int, int> bmsizes = getBatchAndMemorySizes();
-		int batch_size = bmsizes.first;
-		int memory_size = bmsizes.second;
-
-		//TODO: encapsulate into a seperate method
-		// check dimension mismatches
-		if (node_names.size() != values.dimension(1))
-		{
-			std::cout << "The number of output features and the number of nodes do not match." << std::endl;
-			return;
-		}
-		// assumes the node exists
-		else if (batch_size != values.dimension(0))
-		{
-			std::cout << "The number of output samples and the node batch size does not match." << std::endl;
-			return;
-		}
-
-		// collect the loss functions
-		std::shared_ptr<LossFunctionOp<TensorT>> loss_function = loss_function_;
-		std::shared_ptr<LossFunctionGradOp<TensorT>> loss_function_grad = loss_function_grad_;
-
-		// collect the output nodes
-		std::vector<std::shared_ptr<Node<TensorT>>> output_nodes;
-		for (int i = 0; i < node_names.size(); ++i)
-		{
-			std::shared_ptr<Node<TensorT>> output_node = nodes_.at(node_names[i]);
-			output_nodes.push_back(output_node);
-		}
-
-		// loop over all nodes and calculate the error for the model
-		std::vector<std::future<Eigen::Tensor<TensorT, 1>>> model_error_task_results;
-		Eigen::Tensor<TensorT, 1> model_error(batch_size);
-		model_error.setConstant(0.0f);
-		int thread_cnt = 0;
-		for (int i = 0; i < node_names.size(); ++i)
-		{
-			// encapsulate in a packaged_task
-			std::packaged_task<Eigen::Tensor<TensorT, 1>
-				(Node<TensorT>*, Eigen::Tensor<TensorT, 1>, LossFunctionOp<TensorT>*,
-					int, int
-					)> task(Model<TensorT>::calculateModelError_);
-
-			// launch the thread
-			model_error_task_results.push_back(task.get_future());
-			std::thread task_thread(std::move(task),
-				output_nodes[i].get(), values.chip(i, 1), loss_function.get(), std::ref(batch_size), std::ref(time_step));
-			task_thread.detach();
-
-			// retreive the results
-			if (thread_cnt == n_threads - 1 || i == node_names.size() - 1)
-			{
-				for (auto& task_result : model_error_task_results)
-				{
-					if (task_result.valid())
-					{
-						try
-						{
-							model_error += task_result.get();
-						}
-						catch (std::exception& e)
-						{
-							printf("Exception: %s", e.what());
-						}
-					}
-				}
-				model_error_task_results.clear();
-				thread_cnt = 0;
-			}
-			else
-			{
-				++thread_cnt;
-			}
-		}
-		error_.chip(time_step, 1) += model_error; // add on the model_error
-
-		// loop over all nodes and calculate the error for the nodes
-		std::vector<std::future<bool>> output_node_error_task_results;
-		thread_cnt = 0;
-		for (int i = 0; i < node_names.size(); ++i)
-		{
-			// encapsulate in a packaged_task
-			std::packaged_task<bool
-			(Node<TensorT>*, Eigen::Tensor<TensorT, 1>, LossFunctionGradOp<TensorT>*,
-				int
-				)> task(Model<TensorT>::calculateOutputNodeError_);
-
-			// launch the thread
-			output_node_error_task_results.push_back(task.get_future());
-			std::thread task_thread(std::move(task),
-				output_nodes[i].get(), values.chip(i, 1), loss_function_grad.get(), std::ref(time_step));
-			task_thread.detach();
-
-			// retreive the results
-			if (thread_cnt == n_threads - 1 || i == node_names.size() - 1)
-			{
-				for (auto& task_result : output_node_error_task_results)
-				{
-					if (task_result.valid())
-					{
-						try
-						{
-							bool result = task_result.get();
-						}
-						catch (std::exception& e)
-						{
-							printf("Exception: %s", e.what());
-						}
-					}
-				}
-				output_node_error_task_results.clear();
-				thread_cnt = 0;
-			}
-			else
-			{
-				++thread_cnt;
-			}
-		}
-	}
-
-	template<typename TensorT>
-	void Model<TensorT>::CETT(const Eigen::Tensor<TensorT, 3>& values, const std::vector<std::string>& node_names, const int & time_steps, int n_threads)
-	{
-		// check time_steps vs memory_size
-		// [NOTE: was changed form memory_size to memory_size - 1]
-		int max_steps = time_steps;
-		if (time_steps >= nodes_.begin()->second->getOutput().dimension(1))
-		{
-			std::cout << "Time_steps will be scaled back to the memory_size - 1." << std::endl;
-			max_steps = nodes_.begin()->second->getOutput().dimension(1) - 1;
-		}
-
-		if (values.dimension(1) - 1 > nodes_.begin()->second->getOutput().dimension(1))
-			std::cout << "The sequence for CETT needs to be the memory_size - 1!" << std::endl;;
-
-		// NOTE: the output are stored [Tmax, Tmax - 1, ..., T=0, T=-1]
-		//	     while the expected output (values) are stored [T=0, T=1, ..., Tmax, Tmax]
-		for (int i = 0; i < max_steps; ++i)
-		{
-			int next_time_step = values.dimension(1) - 1 - i;
-			// [TESTS: Test for the expected output error at each time step]
-			//std::cout<<"Expected output for time point "<< i << " is " << values.chip(next_time_step, 1)<<std::endl;
-
-			// calculate the error for each batch of memory
-			// [TODO: refactor to pass a pair of OperationList index and Layer index]
-			calculateError(values.chip(next_time_step, 1), node_names, i, n_threads);
-			//calculateError(values.chip(i, 1), node_names, i);
-
-			// set the output nodes as corrected
-			for (auto& node : output_nodes_)
-				node->setStatus(NodeStatus::corrected);
-		}
-	}
-
-	template<typename TensorT>
-	void Model<TensorT>::getNextUncorrectedLayer(
-		std::map<std::string, int>& BP_operations_map,
-		std::vector<OperationList<TensorT>>& BP_operations,
-		std::vector<std::string>& source_nodes)
-	{
-		// get all links where the source node is corrected and the sink node is active
-		// including biases
-		for (auto& link_map : links_)
-		{
-			if (nodes_.at(link_map.second->getSinkNodeName())->getStatus() == NodeStatus::corrected &&
-				nodes_.at(link_map.second->getSourceNodeName())->getStatus() == NodeStatus::activated)
-			{
-				OperationArguments<TensorT> arguments;
-				arguments.source_node = nodes_.at(link_map.second->getSinkNodeName());
-				arguments.weight = weights_.at(link_map.second->getWeightName());
-				arguments.time_step = 0;
-				arguments.link_name = link_map.first;
-
-				// std::cout<<"Addres of model source node: "<<&nodes_.at(link_map.second->getSourceNodeName())<<std::endl;
-				// std::cout<<"Addres of arguments source node: "<<arguments.source_node<<std::endl;
-
-				auto found = BP_operations_map.emplace(link_map.second->getSourceNodeName(), (int)BP_operations.size());
-				if (!found.second)
-				{
-					BP_operations[BP_operations_map.at(link_map.second->getSourceNodeName())].arguments.push_back(arguments);
-				}
-				else
-				{
-					OperationList<TensorT> operation_list;
-					OperationResult<TensorT> result;
-					result.sink_node = nodes_.at(link_map.second->getSourceNodeName());
-					operation_list.result = result;
-					operation_list.arguments.push_back(arguments);
-					BP_operations.push_back(operation_list);
-				}
-
-				if (std::count(source_nodes.begin(), source_nodes.end(), link_map.second->getSinkNodeName()) == 0)
-				{
-					source_nodes.push_back(link_map.second->getSinkNodeName());
-				}
-			}
-		}
-	}
-
-	template<typename TensorT>
-	void Model<TensorT>::getNextUncorrectedLayerBiases(
-		std::map<std::string, int>& BP_operations_map,
-		std::vector<OperationList<TensorT>>& BP_operations,
-		std::vector<std::string>& source_nodes,
-		std::vector<std::string>& sink_nodes_with_biases)
-	{
-
-		// allows for cycles
-		for (auto& link_map : links_)
-		{
-			if (nodes_.at(link_map.second->getSourceNodeName())->getStatus() == NodeStatus::activated &&
-				nodes_.at(link_map.second->getSinkNodeName())->getStatus() == NodeStatus::activated &&
-				BP_operations_map.count(link_map.second->getSourceNodeName()) != 0 // sink node has already been identified
-				)
-			{
-				OperationArguments<TensorT> arguments;
-				arguments.source_node = nodes_.at(link_map.second->getSinkNodeName());
-				arguments.weight = weights_.at(link_map.second->getWeightName());
-				arguments.time_step = 0;
-				arguments.link_name = link_map.first;
-				BP_operations[BP_operations_map.at(link_map.second->getSourceNodeName())].arguments.push_back(arguments);
-
-				// [TODO: update name to sink_nodes...
-				if (std::count(sink_nodes_with_biases.begin(), sink_nodes_with_biases.end(), link_map.second->getSourceNodeName()) == 0)
-				{
-					sink_nodes_with_biases.push_back(link_map.second->getSourceNodeName());
-				}
-			}
-		}
-	}
-
-	template<typename TensorT>
-	void Model<TensorT>::getNextUncorrectedLayerCycles(
-		std::map<std::string, int>& BP_operations_map,
-		std::vector<OperationList<TensorT>>& BP_operations,
-		std::vector<std::string>& source_nodes,
-		std::vector<std::string>& sink_nodes_with_cycles)
-	{
-
-		// allows for cycles
-		for (auto& link_map : links_)
-		{
-			bool isCyclicOperation = false;
-			for (const auto& cyclic_pair : cyclic_pairs_) {
-				if (link_map.second->getSourceNodeName() == cyclic_pair.first &&
-					link_map.second->getSinkNodeName() == cyclic_pair.second) {
-					isCyclicOperation = true;
-					break;
-				}
-			}
-			if (isCyclicOperation &&
-				nodes_.at(link_map.second->getSourceNodeName())->getStatus() == NodeStatus::corrected &&
-				nodes_.at(link_map.second->getSinkNodeName())->getStatus() == NodeStatus::corrected
-				)
-			{
-				OperationArguments<TensorT> arguments;
-				arguments.source_node = nodes_.at(link_map.second->getSinkNodeName());
-				arguments.weight = weights_.at(link_map.second->getWeightName());
-				arguments.time_step = 0;
-				arguments.link_name = link_map.first;
-
-				auto found = BP_operations_map.emplace(link_map.second->getSourceNodeName(), (int)BP_operations.size());
-				if (!found.second)
-				{
-					BP_operations[BP_operations_map.at(link_map.second->getSourceNodeName())].arguments.push_back(arguments);
-				}
-				else
-				{
-					OperationList<TensorT> operation_list;
-					OperationResult<TensorT> result;
-					result.sink_node = nodes_.at(link_map.second->getSourceNodeName());
-					result.time_step = 1;
-					operation_list.result = result;
-					operation_list.arguments.push_back(arguments);
-					BP_operations.push_back(operation_list);
-				}
-
-				if (std::count(sink_nodes_with_cycles.begin(), sink_nodes_with_cycles.end(), link_map.second->getSourceNodeName()) == 0)
-				{
-					sink_nodes_with_cycles.push_back(link_map.second->getSourceNodeName());
-				}
-			}
-		}
-	}
-
-	template<typename TensorT>
-	bool Model<TensorT>::calculateNodeError_(
-		OperationResult<TensorT>* result,
-		OperationArguments<TensorT>* arguments,
-		const int& batch_size,
-		const int& memory_size,
-		const int& time_step)
-	{
-		std::lock_guard<std::mutex> lock(calculateNodeError_mutex);
-
-		Eigen::Tensor<TensorT, 1> weight_tensor(batch_size);
-		weight_tensor.setConstant(arguments->weight->getWeight());
-		Eigen::Tensor<TensorT, 1> n_input_nodes(arguments->source_node->getOutput().dimension(0));
-		n_input_nodes.setConstant(arguments->source_node->getIntegrationShared()->getN());
-		result->sink_node->getError().chip(time_step + result->time_step, 1) += (arguments->source_node->getIntegrationErrorShared()->operator()(
-			weight_tensor,
-			arguments->source_node->getError().chip(time_step, 1),
-			arguments->source_node->getInput().chip(time_step, 1),
-			result->sink_node->getOutput().chip(time_step + result->time_step, 1),
-			n_input_nodes) * result->sink_node->getDerivative().chip(time_step + result->time_step, 1));
-		//result->sink_node->getIntegrationErrorShared()->operator()(
-		//	weight_tensor,
-		//	arguments->source_node->getError().chip(time_step, 1),
-		//	arguments->source_node->getInput().chip(time_step, 1),
-		//	sink_output);
-		return true;
-	}
-
-	template<typename TensorT>
-	bool Model<TensorT>::calculateNetNodeError_(
-		OperationList<TensorT>* operations,
-		const int& batch_size,
-		const int& memory_size,
-		const int& time_step,
-		int n_threads)
-	{
-		std::lock_guard<std::mutex> lock(calculateNetNodeError_mutex);
-
-		std::vector<std::future<bool>> task_results;
-		int thread_cnt = 0;
-
-		// for (const std::string& link : sink_links)
-		for (int i = 0; i < operations->arguments.size(); ++i)
-		{
-			std::packaged_task<bool // encapsulate in a packaged_task
-			(OperationResult<TensorT>*, OperationArguments<TensorT>*, int, int, int
-				)> task(Model<TensorT>::calculateNodeError_);
-
-			// launch the thread
-			task_results.push_back(task.get_future());
-			std::thread task_thread(std::move(task),
-				&operations->result, &operations->arguments[i], std::ref(batch_size), std::ref(memory_size), std::ref(time_step));
-			task_thread.detach();
-
-			// retreive the results
-			if (thread_cnt == n_threads - 1 || i == operations->arguments.size() - 1)
-			{
-				for (auto& task_result : task_results)
-				{
-					if (task_result.valid())
-					{
-						try
-						{
-							bool result = task_result.get();
-						}
-						catch (std::exception& e)
-						{
-							printf("Exception: %s", e.what());
-						}
-					}
-				}
-				task_results.clear();
-				thread_cnt = 0;
-			}
-			else
-			{
-				++thread_cnt;
-			}
-		}
-		// scale the error by the derivative and add in any residual error
-		// update the node error
-		operations->result.sink_node->setStatus(NodeStatus::corrected);
-		return true;
-	}
-
-	template<typename TensorT>
-	void Model<TensorT>::backPropogateLayerError(
-		std::vector<OperationList<TensorT>>& BP_operations,
-		const int& time_step, int n_threads)
-	{
-		// get all the information needed to construct the tensors
-		std::pair<int, int> bmsizes = getBatchAndMemorySizes();
-		int batch_size = bmsizes.first;
-		int memory_size = bmsizes.second;
-
-		if (time_step >= memory_size)
-		{
-			std::cout << "time step: " << time_step << " exceeds the memory_size!" << std::endl;
-			return;
-		}
-
-		// iterate through each sink node and calculate the error
-		std::vector<std::future<bool>> task_results;
-		int thread_cnt = 0;
-		const int threads_per_sub_process = 1; // [TODO: how to best divide up the allowable threads?]
-		int operations_cnt = 0;
-		for (auto& BP_operation : BP_operations)
-		{
-			std::packaged_task<bool // encapsulate in a packaged_task
-			(OperationList<TensorT>*, int, int, int, int
-				)> task(Model<TensorT>::calculateNetNodeError_);
-
-			// launch the thread
-			task_results.push_back(task.get_future());
-			std::thread task_thread(std::move(task),
-				&BP_operation, std::ref(batch_size), std::ref(memory_size), std::ref(time_step),
-				std::ref(threads_per_sub_process));
-			task_thread.detach();
-
-			// retreive the results
-			if (thread_cnt == n_threads - 1 || operations_cnt == BP_operations.size() - 1)
-			{
-				for (auto& task_result : task_results)
-				{
-					if (task_result.valid())
-					{
-						try
-						{
-							bool success = task_result.get();
-						}
-						catch (std::exception& e)
-						{
-							printf("Exception: %s", e.what());
-						}
-					}
-				}
-				task_results.clear();
-				thread_cnt = 0;
-			}
-			else
-			{
-				thread_cnt += threads_per_sub_process;
-			}
-			// std::cout<<"thread_count"<<thread_cnt<<std::endl;
-			// std::cout<<"operations_cnt"<<operations_cnt<<std::endl;
-			++operations_cnt;
-		}
-	}
-
-	template<typename TensorT>
-	void Model<TensorT>::backPropogate(const int& time_step, bool cache_BP_steps, bool use_cache, int n_threads)
-	{
-		if (use_cache)
-		{
-			for (auto& BP_operations : BP_operations_cache_)
-				backPropogateLayerError(BP_operations, time_step, n_threads);
-		}
-		else
-		{
-			const int max_iters = 1e6;
-			std::vector<std::string> sink_nodes_cycles_found;
-			for (int iter = 0; iter < max_iters; ++iter)
-			{
-				// get the next uncorrected layer
-				std::map<std::string, int> BP_operations_map;
-				std::vector<OperationList<TensorT>> BP_operations_list;
-				std::vector<std::string> source_nodes;
-				getNextUncorrectedLayer(BP_operations_map, BP_operations_list, source_nodes);
-
-				// get biases (not a good name...these are just sinks with other sources that have not yet been corrected)
-				std::map<std::string, int> BP_operations_map_biases = BP_operations_map;
-				std::vector<OperationList<TensorT>> BP_operations_list_biases = BP_operations_list;
-				std::vector<std::string> sink_nodes_biases;
-				getNextUncorrectedLayerBiases(BP_operations_map_biases, BP_operations_list_biases, source_nodes, sink_nodes_biases);
-
-				// Remove all operations involving sink nodes where not all of the sources
-				// have been calculated
-				if (sink_nodes_biases.size() > 0)
-				{
-					std::vector<std::string> sink_nodes_remove;
-					std::vector<OperationList<TensorT>> BP_operations_list_copy = BP_operations_list;
-					for (const std::string& sink_node : sink_nodes_biases) {
-						for (size_t i = BP_operations_list[BP_operations_map.at(sink_node)].arguments.size();
-							i < BP_operations_list_biases[BP_operations_map_biases.at(sink_node)].arguments.size(); ++i) {
-							// check if the "cyclic" argument is actually involved in a cycle
-							bool isCyclicOperation = false;
-							for (const auto& cyclic_pair : cyclic_pairs_) {
-								if (BP_operations_list_biases[BP_operations_map_biases.at(sink_node)].arguments[i].source_node->getName() == cyclic_pair.second &&
-									BP_operations_list_biases[BP_operations_map_biases.at(sink_node)].result.sink_node->getName() == cyclic_pair.first) {
-									isCyclicOperation = true;
-									break;
-								}
-							}
-							// remove non cyclic sinks and ignore cyclic arguments (we will get to them after all nodes have been correct)
-							if (!isCyclicOperation) {
-								sink_nodes_remove.push_back(sink_node);
-								break;
-							}
-						}
-					}
-					// remove all identified sink nodes
-					if (sink_nodes_remove.size() > 0) {
-						BP_operations_list.clear();
-						for (const auto& BP_operation : BP_operations_list_copy)
-							if (std::count(sink_nodes_remove.begin(), sink_nodes_remove.end(), BP_operation.result.sink_node->getName()) == 0)
-								BP_operations_list.push_back(BP_operation);
-					}
-					else
-						BP_operations_list = BP_operations_list_copy;
-				}
-
-				// check if all nodes have been corrected
-				if (BP_operations_list.size() == 0)
-				{
-					// check for cyclic nodes
-					std::vector<std::string> sink_nodes_cycles;
-					getNextUncorrectedLayerCycles(BP_operations_map, BP_operations_list, source_nodes, sink_nodes_cycles);
-					if (BP_operations_list.size() == 0)
-						break;
 					else {
-						bool new_sink_node_cycle = false;
-						for (const std::string& sink_node : sink_nodes_cycles) {
-							if (std::count(sink_nodes_cycles_found.begin(), sink_nodes_cycles_found.end(), sink_node) == 0) {
-								sink_nodes_cycles_found.push_back(sink_node);
-								new_sink_node_cycle = true;
-							}
-						}
-						if (!new_sink_node_cycle)
-							break;
+						source_layer_index = argument.source_node->getTensorIndex().second;
 					}
+
+					// index weight tensors
+					if (argument.weight->getTensorIndex().size() == 0) {
+						argument.weight->addTensorIndex(std::make_tuple(weight_pos, source_layer_index, sink_layer_index));
+						weight_index.push_back(std::make_pair(source_layer_index, sink_layer_index));
+						TensorT tmp = argument.weight->getWeightInitOp()->operator()();
+						argument.weight->setWeight_(tmp);
+						weight_value.push_back(tmp);
+						make_weight_tensor = true;
+					}
+					else {
+						argument.weight->addTensorIndex(std::make_tuple(weight_pos, source_layer_index, sink_layer_index));
+						weight_index.push_back(std::make_pair(source_layer_index, sink_layer_index));
+						weight_value.push_back(argument.weight->getWeight_());
+					}
+					if (increment_source_layer_size) ++source_layer_size;
 				}
+				if (increment_sink_layer_size) ++sink_layer_size; //?
+			}
 
-				// seperate nodes by node integration/activation
+			// determine the actual source and sink layer sizes
+			std::set<int> source_nodes, sink_nodes;
+			for (const std::pair<int, int> p : weight_index) {
+				source_nodes.insert(p.first);
+				sink_nodes.insert(p.second);
+			}
 
-				// calculate the net input
-				backPropogateLayerError(BP_operations_list, time_step, n_threads);
+			// store the tensor sizes
+			//sink_layer_sizes.push_back(sink_layer_size); // This is not accurate because we are actually tracking the next sink_layer position...
+			//source_layer_sizes.push_back(source_layer_size); // This is not accurate because we are actually tracking the next source_layer position...
+			sink_layer_sizes.push_back(sink_nodes.size());
+			source_layer_sizes.push_back(source_nodes.size());
+			make_source_tensors.push_back(make_source_tensor);
+			make_sink_tensors.push_back(make_sink_tensor);
+			make_weight_tensors.push_back(make_weight_tensor);
+			weight_indices.push_back(weight_index);
+			weight_values.push_back(weight_value);
 
-				if (cache_BP_steps)
-					BP_operations_cache_.push_back(BP_operations_list);
+			// update the layer positions
+			if (make_sink_tensor && make_source_tensor) {
+				sink_layer_pos += 2;
+				source_layer_pos = sink_layer_pos + 1;
+			}
+			else if (make_sink_tensor || make_source_tensor) {
+				sink_layer_pos += 1;
+				source_layer_pos = sink_layer_pos + 1;
+			}
+
+			// update the weight positions
+			if (make_weight_tensor) {
+				weight_pos += 1;
 			}
 		}
 	}
 
-	template<typename TensorT>
-	void Model<TensorT>::TBPTT(const int& time_steps, bool cache_BP_steps, bool use_cache, int n_threads)
+	template<typename TensorT, typename DeviceT>
+	std::string ModelInterpreter<TensorT, DeviceT>::makeForwardPropogationOperationsKey(const int & time_step, const NodeType& node_type, const std::string & node_integration, const std::string & node_activation)
 	{
-		// check time_steps vs memory_size
-		int max_steps = time_steps;
-		if (time_steps >= nodes_.begin()->second->getOutput().dimension(1))
-		{
-			std::cout << "Time_steps will be scaled back to the memory_size - 1." << std::endl;
-			max_steps = nodes_.begin()->second->getOutput().dimension(1) - 1;
-		}
-		for (int time_step = 0; time_step < max_steps; ++time_step) {
-			if (time_step > 0) {
-				for (auto& node_map : nodes_) {
-					if (node_map.second->getType() == NodeType::output)
-						node_map.second->setStatus(NodeStatus::corrected); // reinitialize nodes
-					else
-						node_map.second->setStatus(NodeStatus::activated); // reinitialize nodes
-				}
-			}
+		// [TODO: may not need to add in node type
+		//std::string ops_key = std::to_string(time_step) + "/" + std::to_string(node_type) + "/" + node_integration + "/" + node_activation;
+		std::string ops_key = std::to_string(time_step) + "/" + node_integration + "/" + node_activation;
+		return ops_key;
+	}
 
-			// calculate the error for each batch of memory
-			if (cache_BP_steps && time_step == 0)
-				backPropogate(time_step, true, false, n_threads);
-			else if (cache_BP_steps && time_step > 0)
-				backPropogate(time_step, false, true, n_threads);
+	template<typename TensorT, typename DeviceT>
+	void ModelInterpreter<TensorT, DeviceT>::getForwardPropogationOperations(Model<TensorT>& model, const int& batch_size, const int& memory_size, const bool& train)
+	{
+		// initialize the node statuses to determine the FP propogation steps
+		// [NOTE: is this needed?]
+		//// initialize the input nodes to active (if not activated already)
+		//for (auto& input_node : model.getInputNodes()) {
+		//	input_node->setStatus(NodeStatus::activated);
+		//}
+		// [OR]
+		for (auto& nodes_map : model.getNodesMap()) {
+			if (nodes_map.second->getType() == NodeType::input || nodes_map.second->getType() == NodeType::bias)
+				nodes_map.second->setStatus(NodeStatus::activated);
 			else
-				backPropogate(time_step, cache_BP_steps, use_cache, n_threads);
-		}
-		// for (auto& node_map: nodes_)
-		// {
-		//   std::cout<<"Model<TensorT>::TBPTT() error: "<<node_map.second->getError()<<" for node_name: "<<node_map.first<<std::endl;
-		// }
-	}
-
-	template<typename TensorT>
-	void Model<TensorT>::updateWeights(const int& time_steps, std::vector<std::string> weight_names)
-	{
-		// check time_steps vs memory_size
-		// [TODO: changed from memory_size to memory_size - 1]
-		int max_steps = time_steps;
-		if (time_steps >= nodes_.begin()->second->getOutput().dimension(1))
-		{
-			std::cout << "Time_steps will be scaled back to the memory_size - 1." << std::endl;
-			max_steps = nodes_.begin()->second->getOutput().dimension(1) - 1;
+				nodes_map.second->setStatus(NodeStatus::initialized);
 		}
 
-		std::map<std::string, TensorT> weight_derivatives;
-
-		// calculate the average derivative for all weights
-		// sum the average derivative for all time steps
-		// and sum the average derivate for all time steps across shared weights
-		for (const auto& link_map : links_)
+		const int max_iters = 1e6;
+		for (int iter = 0; iter < max_iters; ++iter)
 		{
-			// check if the weight is in the optional update list
-			// [TODO: add tests]
-			if (weight_names.size() != 0 &&
-				std::count(weight_names.begin(), weight_names.end(), link_map.second->getWeightName()) == 0)
-				continue;
+			// STEP 1: get an unoptimized set of operations for FP
+			// get the next hidden layer
+			std::map<std::string, int> FP_operations_map;
+			std::vector<OperationList<TensorT>> FP_operations_list;
+			getNextInactiveLayer(model, FP_operations_map, FP_operations_list);
 
-			std::shared_ptr<Node<TensorT>> sink_node = nodes_.at(link_map.second->getSinkNodeName()); // which IntegrationWeightGradOp is determined by the sink node
-			sink_node->getIntegrationWeightGradShared()->initNetWeightError();
-			if (sink_node->getStatus() == NodeStatus::corrected) // [TODO: Skip dummy nodes?]
+			// get biases,
+			std::vector<std::string> sink_nodes_with_biases;
+			getNextInactiveLayerBiases(model, FP_operations_map, FP_operations_list, sink_nodes_with_biases);
+
+			// get cycles
+			std::map<std::string, int> FP_operations_map_cycles = FP_operations_map;
+			std::vector<OperationList<TensorT>> FP_operations_list_cycles = FP_operations_list;
+			std::vector<std::string> sink_nodes_cycles;
+			getNextInactiveLayerCycles(model, FP_operations_map_cycles, FP_operations_list_cycles, sink_nodes_cycles);
+
+			// Remove all nodes involved in "cycles" that have arguments
+			// involving source to sink node pairs not identified as cycles
+			pruneInactiveLayerCycles(model, FP_operations_map, FP_operations_map_cycles, FP_operations_list, FP_operations_list_cycles, sink_nodes_cycles);
+
+			// check if all nodes have been activated
+			if (FP_operations_list.size() == 0)
 			{
-				// Sum the error from current and previous time-steps
-				// [PARALLEL: implement threads here]
-				std::shared_ptr<Node<TensorT>> source_node = nodes_.at(link_map.second->getSourceNodeName());
-				Eigen::Tensor<TensorT, 1> weights(source_node->getOutput().dimension(0));
-				weights.setConstant(weights_.at(link_map.second->getWeightName())->getWeight());
-				Eigen::Tensor<TensorT, 1> n_input_nodes(sink_node->getOutput().dimension(0));  // This is not correct!
-				n_input_nodes.setConstant(sink_node->getIntegrationShared()->getN());
-				for (int i = 0; i <= max_steps; ++i)
-				{
-					// [PARALLEL: move to threadPool/CUDA implementations]
-					// [Tests: update tests accordingly]
-					sink_node->getIntegrationWeightGradShared()->operator()(
-						sink_node->getError().chip(i, 1),
-						source_node->getOutput().chip(i, 1),
-						weights,
-						source_node->getInput().chip(i, 1),
-						n_input_nodes);
-				}
-				// [PARALELL: collect threads here sum the error]
-				auto found = weight_derivatives.emplace(link_map.second->getWeightName(), sink_node->getIntegrationWeightGradShared()->getNetWeightError());
-				if (!found.second)
-				{
-					weight_derivatives.at(link_map.second->getWeightName()) += sink_node->getIntegrationWeightGradShared()->getNetWeightError();
-				}
+				break;
 			}
-		}
 
-		// update the weights
-		// [PARALLEL: implement threads here]
-		for (const auto& weight_derivative : weight_derivatives)
-			weights_.at(weight_derivative.first)->updateWeight(weight_derivative.second);
-	}
+			// STEP 2: optimized the operations set for hardware acceleration
+			// re-organize into tensors with compatible source nodes, sink nodes, and weights
+			std::vector<OperationList<TensorT>> FP_operations_expanded;
+			expandForwardPropogationOperations(FP_operations_list, FP_operations_expanded);
 
-	template<typename TensorT>
-	void Model<TensorT>::reInitializeNodeStatuses()
-	{
-		for (auto& node_map : nodes_)
-		{
-			node_map.second->setStatus(NodeStatus::initialized);
+			// identify tensor operation motifs
+			std::set<std::string> identified_sink_nodes;
+			std::map<std::string, std::vector<int>> custom_ops = getCustomOperations(FP_operations_expanded, identified_sink_nodes);
+			//std::map<std::string, std::vector<int>> FC_ops = getFullyConnectedOperations(FP_operations_expanded, identified_sink_nodes);
+			//std::map<std::string, std::vector<int>> SC_ops = getSinglyConnectedOperations(FP_operations_expanded, identified_sink_nodes);
+			//std::map<std::string, std::vector<int>> Conv_ops = getConvOperations(FP_operations_expanded, identified_sink_nodes);
+			//std::map<std::string, std::vector<int>> FIn_ops = getFanOutOperations(FP_operations_expanded, identified_sink_nodes);
+			//std::map<std::string, std::vector<int>> FOut_ops = getFanInOperations(FP_operations_expanded, identified_sink_nodes);
+			std::map<std::string, std::vector<int>> tensor_ops = getTensorOperations(FP_operations_expanded, identified_sink_nodes);
+
+			// allocate memory for tensors
+			if (custom_ops.size() != 0) {
+				std::vector<int> source_layer_sizes, sink_layer_sizes;
+				std::vector<std::vector<TensorT>> weight_values;
+				std::vector<std::vector<std::pair<int, int>>> weight_indices;
+				std::vector<bool> make_source_tensors, make_sink_tensors, make_weight_tensors;
+				getForwardPropogationLayerTensorDimensions(FP_operations_expanded, custom_ops, source_layer_sizes, sink_layer_sizes, weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors);
+				allocateForwardPropogationLayerTensors(FP_operations_expanded, custom_ops, source_layer_sizes, sink_layer_sizes, weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors, batch_size, memory_size, train);
+			}
+			if (tensor_ops.size() != 0) {
+				std::vector<int> source_layer_sizes, sink_layer_sizes;
+				std::vector<std::vector<TensorT>> weight_values;
+				std::vector<std::vector<std::pair<int, int>>> weight_indices;
+				std::vector<bool> make_source_tensors, make_sink_tensors, make_weight_tensors;
+				getForwardPropogationLayerTensorDimensions(FP_operations_expanded, tensor_ops, source_layer_sizes, sink_layer_sizes, weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors);
+				allocateForwardPropogationLayerTensors(FP_operations_expanded, tensor_ops, source_layer_sizes, sink_layer_sizes, weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors, batch_size, memory_size, train);
+			}
+
+			// activate sink nodes
+			for (auto& FP_operation : FP_operations_list)
+				FP_operation.result.sink_node->setStatus(NodeStatus::activated);
 		}
 	}
-
-	template<typename TensorT>
-	bool Model<TensorT>::checkNodeNames(const std::vector<std::string> node_names)
+	
+	template<typename TensorT, typename DeviceT>
+	inline void ModelInterpreter<TensorT, DeviceT>::addLayerTensor(NodeTensorData<TensorT>& layer)
 	{
-		bool nodes_found = true;
-		for (const std::string& node_name : node_names)
-		{
-			if (nodes_.empty() || nodes_.count(node_name) == 0)
-			{
-				nodes_found = false;
-				std::cout << "Node name " << node_name << " not found!" << std::endl;
-			}
-		}
-		return nodes_found;
+		std::shared_ptr<NodeTensorData<TensorT>> layer_ptr(std::move(&layer));
+		layer_tensors_.push_back(layer_ptr);
 	}
 
-	template<typename TensorT>
-	bool Model<TensorT>::checkLinkNames(const std::vector<std::string> link_names)
+	template<typename TensorT, typename DeviceT>
+	inline void ModelInterpreter<TensorT, DeviceT>::clearLayerTensors()
 	{
-		bool links_found = true;
-		for (const std::string& link_name : link_names)
-		{
-			if (links_.empty() || links_.count(link_name) == 0)
-			{
-				links_found = false;
-				std::cout << "Link name " << link_name << " not found!" << std::endl;
-			}
-		}
-		return links_found;
+		layer_tensors_.clear();
 	}
 
-	template<typename TensorT>
-	bool Model<TensorT>::checkWeightNames(const std::vector<std::string> weight_names)
+	template<typename TensorT, typename DeviceT>
+	inline std::shared_ptr<NodeTensorData<TensorT>> ModelInterpreter<TensorT, DeviceT>::getLayerTensor(const int & layer_index)
 	{
-		bool weights_found = true;
-		for (const std::string& weight_name : weight_names)
-		{
-			if (weights_.empty() || weights_.count(weight_name) == 0)
-			{
-				weights_found = false;
-				std::cout << "Weight name " << weight_name << " not found!" << std::endl;
-			}
-		}
-		return weights_found;
+		return layer_tensors_.at(layer_index);
 	}
 
-	template<typename TensorT>
-	bool Model<TensorT>::checkCompleteInputToOutput(
-		//const std::vector<std::string>& input_nodes, 
-		//const std::vector<std::string>& output_nodes,
-		int n_threads)
+	template<typename TensorT, typename DeviceT>
+	inline void ModelInterpreter<TensorT, DeviceT>::addWeightTensor(WeightTensorData<TensorT>& weight)
 	{
-
-		// [NOTE: Should not be needed now that the input/output nodes are cached upon model creation]
-		//// check that all input/output nodes exist!
-		//if (!checkNodeNames(input_nodes) || !checkNodeNames(output_nodes))
-		//	return false;
-
-		//// infer the batch and memory size
-		//// [BUG: modifying the batch_size or memory_size causes a memory corruption error when
-		////			 using the training the population after replicating and modifying the models
-		////			 potential cause: the batch/memory sizes are not updated during training?]
-		//std::pair<int, int> bmsizes = getBatchAndMemorySizes();
-		//int batch_size_cur = bmsizes.first;
-		//int memory_size_cur = bmsizes.second;
-
-		// check for uninitialized nodes
-		int batch_size = 1;
-		int memory_size = 1;
-
-		// initialize the model
-		initNodes(batch_size, memory_size);
-		initError(batch_size, memory_size);
-		initWeights();
-
-		std::pair<int, int> bmsizes = getBatchAndMemorySizes();
-		int batch_size_cur = bmsizes.first;
-		int memory_size_cur = bmsizes.second;
-
-		// set all node outputs to zero except for the input
-		// set all node derivatives to one
-		// set all node errors to zero except for the output
-		Eigen::Tensor<TensorT, 2> zero(batch_size_cur, memory_size_cur);
-		zero.setConstant(0.0f);
-		Eigen::Tensor<TensorT, 2> one(batch_size_cur, memory_size_cur);
-		one.setConstant(1.0f);
-		for (auto& node : input_nodes_)
-		{
-			node->getNodeData()->setOutput(one);
-			node->getNodeData()->setInput(one);
-			node->getNodeData()->setError(zero);
-			node->getNodeData()->setDerivative(one);
-			node->getNodeData()->setDt(one);
-		}
-		for (auto& node : output_nodes_)
-		{
-			node->getNodeData()->setOutput(zero);
-			node->getNodeData()->setInput(zero);
-			node->getNodeData()->setError(one);
-			node->getNodeData()->setDerivative(one);
-			node->getNodeData()->setDt(one);
-		}
-		for (auto& node_map : nodes_)
-		{
-			if (node_map.second->getType() != NodeType::input && node_map.second->getType() != NodeType::output)
-			{
-				node_map.second->getNodeData()->setOutput(zero);
-				node_map.second->getNodeData()->setInput(zero);
-				node_map.second->getNodeData()->setError(zero);
-				node_map.second->getNodeData()->setDerivative(one);
-				node_map.second->getNodeData()->setDt(one);
-				node_map.second->setStatus(NodeStatus::initialized);
-			}
-			if (node_map.second->getType() == NodeType::input || node_map.second->getType() == NodeType::bias)
-			{
-				node_map.second->setStatus(NodeStatus::activated);
-			}
-			node_map.second->setActivation(std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()));  // safer but requires setting																																																		
-			node_map.second->setActivationGrad(std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>())); // the node activation back to its original value
-		}
-
-		// set all weights to 1
-		for (auto& weight_map : weights_)
-			weight_map.second->setWeight(1.0f);
-
-		// Forward propogate
-		try {
-			forwardPropogate(0, false, false, n_threads);
-		}
-		catch (std::exception& e) {
-			printf("Exception: %s; CheckCompleteInputToOutput failed during forward propogation.\n", e.what());
-			return false;
-		}
-
-		// check that all output nodes are greater than 0
-		for (auto& node : output_nodes_)
-		{
-			Eigen::Tensor<TensorT, 0> output = node->getOutput().sum();
-			if (output(0) == 0.0f)
-				return false;
-		}
-
-		// backward propagation
-		for (auto& node : output_nodes_)
-			node->setStatus(NodeStatus::corrected);
-		try {
-			backPropogate(0, false, false, n_threads);
-		}
-		catch (std::exception& e) {
-			printf("Exception: %s; CheckCompleteInputToOutput failed during back propogation.\n", e.what());
-			return false;
-		}
-
-		// check that all input nodes are greater than 0
-		for (auto& node : input_nodes_)
-		{
-			Eigen::Tensor<TensorT, 0> error = node->getError().sum();
-			if (error(0) == 0.0f)
-				return false;
-		}
-
-		return true;
+		std::shared_ptr<WeightTensorData<TensorT>> weight_ptr(&weight);
+		weight_tensors_.push_back(weight_ptr);
 	}
 
-	template<typename TensorT>
-	bool Model<TensorT>::checkLinksNodeAndWeightNames(std::vector<std::string>& nodes_not_found, std::vector<std::string>& weights_not_found)
+	template<typename TensorT, typename DeviceT>
+	inline void ModelInterpreter<TensorT, DeviceT>::clearWeightTensors()
 	{
-		bool link_names_check = true;
-		for (const auto& link_map : links_)
-		{
-			if (!checkNodeNames({ link_map.second->getSourceNodeName() }))
-			{
-				link_names_check = false;
-				nodes_not_found.push_back(link_map.second->getSourceNodeName());
-			}
-			if (!checkNodeNames({ link_map.second->getSinkNodeName() }))
-			{
-				link_names_check = false;
-				nodes_not_found.push_back(link_map.second->getSinkNodeName());
-			}
-			if (!checkWeightNames({ link_map.second->getWeightName() }))
-			{
-				link_names_check = false;
-				weights_not_found.push_back(link_map.second->getWeightName());
-			}
-		}
-		return link_names_check;
+		weight_tensors_.clear();
 	}
 
-	template<typename TensorT>
-	bool Model<TensorT>::removeIsolatedNodes()
+	template<typename TensorT, typename DeviceT>
+	inline std::shared_ptr<WeightTensorData<TensorT>> ModelInterpreter<TensorT, DeviceT>::getWeightTensor(const int & weight_index)
 	{
-		// key/value pair of node name and source/sink count pair
-		std::map<std::string, std::pair<int, int>> node_counts;
-
-		// count all sink/source connections for each node
-		for (const auto& link_map : links_)
-		{
-			// source
-			if (nodes_.at(link_map.second->getSourceNodeName())->getType() == NodeType::hidden)
-			{
-				auto found = node_counts.emplace(link_map.second->getSourceNodeName(), std::make_pair(1, 0));
-				if (!found.second)
-				{
-					node_counts[link_map.second->getSourceNodeName()].first += 1;
-				}
-			}
-
-			// sink
-			if (nodes_.at(link_map.second->getSinkNodeName())->getType() == NodeType::hidden
-				&& nodes_.at(link_map.second->getSourceNodeName())->getType() != NodeType::bias)
-			{
-				auto found = node_counts.emplace(link_map.second->getSinkNodeName(), std::make_pair(0, 1));
-				if (!found.second)
-				{
-					node_counts[link_map.second->getSinkNodeName()].second += 1;
-				}
-			}
-		}
-
-		bool dead_end_node_found = false;
-		for (const auto& node_count : node_counts)
-		{
-			if (node_count.second.first == 0 || node_count.second.second == 0)
-			{
-				removeNodes({ node_count.first });
-				dead_end_node_found = true;
-			}
-		}
-		return dead_end_node_found;
+		return weight_tensors_.at(weight_index);
 	}
 
-	template<typename TensorT>
-	void Model<TensorT>::clearCache()
+	template<typename TensorT, typename DeviceT>
+	inline std::shared_ptr<ModelErrorData<TensorT>> ModelInterpreter<TensorT, DeviceT>::getModelError()
 	{
-		FP_operations_cache_.clear();
-		BP_operations_cache_.clear();
-		//cyclic_pairs_.clear();
+		return model_error_;
 	}
 
-	template<typename TensorT>
-	std::list<int>* Model<TensorT>::convertToAdjacencyList(std::map<int, std::string>& node_id_map, int& node_cnt)
-	{
-		// create a map of node id to node name (excluding bias nodes)
-		node_id_map.clear();
-		node_cnt = 0;
-		for (auto& node_map : nodes_) {
-			if (node_map.second->getType() != NodeType::bias) {
-				++node_cnt;
-				node_map.second->setId(node_cnt);
-				node_id_map.emplace(node_cnt, node_map.first);
-			}
-			else {
-				node_map.second->setId(-1);
-			}
-		}
-
-		// create the DFS trees (excluding bias nodes)
-		std::list<int> *adj;
-		adj = new std::list<int>[node_cnt];
-
-		// add the actual nodes
-		for (auto& link_map : links_)
-			if (nodes_.at(link_map.second->getSourceNodeName())->getType() != NodeType::bias)
-				adj[nodes_.at(link_map.second->getSourceNodeName())->getId() - 1].push_back(nodes_.at(link_map.second->getSinkNodeName())->getId());
-
-		return adj;
+	template<typename TensorT, typename DeviceT>
+	inline void ModelInterpreter<TensorT, DeviceT>::addOperationSteps(const std::vector<OperationTensorStep<TensorT, DeviceT>>& operation_steps) {
+		operation_steps_.push_back(operation_steps);
 	}
 
-	template<typename TensorT>
-	void Model<TensorT>::findCycles()
-	{
-		std::map<int, std::string> node_id_map;
-		int node_cnt;
-		std::list<int> *adj = convertToAdjacencyList(node_id_map, node_cnt);
-
-		CircuitFinder CF(adj, node_cnt);
-		CF.run();
-
-		cyclic_pairs_.clear();
-		for (const auto& source_sink : CF.getCycles()) {
-			if (nodes_.at(node_id_map.at(source_sink.second))->getType() == NodeType::recursive) // enforce order of recursive nodes
-				cyclic_pairs_.push_back(std::make_pair(node_id_map.at(source_sink.second), node_id_map.at(source_sink.first)));
-			else
-				cyclic_pairs_.push_back(std::make_pair(node_id_map.at(source_sink.first), node_id_map.at(source_sink.second)));
-		}
+	template<typename TensorT, typename DeviceT>
+	inline std::vector<OperationTensorStep<TensorT, DeviceT>> ModelInterpreter<TensorT, DeviceT>::getOperationSteps(const int& operation_index) {
+		return operation_steps_.at(operation_index);
 	}
 
-	template<typename TensorT>
-	std::vector<std::pair<std::string, std::string>> Model<TensorT>::getCyclicPairs()
+	template<typename TensorT, typename DeviceT>
+	inline void ModelInterpreter<TensorT, DeviceT>::clearOperationSteps()
 	{
-		return cyclic_pairs_;
+		operation_steps_.clear();
 	}
 }
-
-#endif //SMARTPEAK_MODEL_H
+#endif //SMARTPEAK_MODELINTERPRETER_H

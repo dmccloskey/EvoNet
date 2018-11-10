@@ -98,10 +98,7 @@ public:
     void FPTT(const int& time_steps, 
       const Eigen::Tensor<TensorT, 3>& values,
       const std::vector<std::string> node_names,
-      const Eigen::Tensor<TensorT, 2>& dt, 
-      bool cache_FP_steps = false, 
-      bool use_cache = false,
-      int n_threads = 1);
+      const Eigen::Tensor<TensorT, 2>& dt);
  
     /**
     @brief Calculates the error of the model through time (CETT)
@@ -112,7 +109,7 @@ public:
 			where t=n to t=0
     @param[in] node_names Output nodes
     */ 
-    void CETT(const Eigen::Tensor<TensorT, 3>& values, const std::vector<std::string>& node_names, const int& time_steps, int n_threads = 1);
+    void CETT(const Eigen::Tensor<TensorT, 3>& values, const std::vector<std::string>& node_names, const int& time_steps);
  
     /**
     @brief Truncated Back Propogation Through Time (TBPTT) of the network model.
@@ -123,7 +120,7 @@ public:
     @param[in] time_steps The number of time_steps backwards to 
       unfold the network model.
     */ 
-    void TBPTT(const int& time_steps, bool cache_FP_steps = false, bool use_cache = false, int n_threads = 1);  
+    void TBPTT(const int& time_steps);  
  
     /**
     @brief Recurrent Real Time Learning (RTRL) of the network model.
@@ -134,19 +131,13 @@ public:
     @param[in] time_steps The number of time_steps backwards to 
       unfold the network model.
     */ 
-    void RTRL(const int& time_steps, int n_threads = 1);  
+    void RTRL(const int& time_steps);  
  
     /**
     @brief Update the weights
       
     */ 
-		void updateWeights(const int& time_steps, std::vector<std::string> weight_names = {});
- 
-    /**
-    @brief Reset the node statuses back to inactivated
-      
-    */ 
-    void reInitializeNodeStatuses();
+		void updateWeights(std::vector<std::string> weight_names = {});
 
     void setId(const int& id); ///< id setter
     int getId() const; ///< id getter
@@ -321,7 +312,7 @@ private:
 		std::vector<std::shared_ptr<Node<TensorT>>> output_nodes_;
   };
 	template<typename TensorT>
-	Model<TensorT>::Model(const Model<TensorT>& other)
+	inline Model<TensorT>::Model(const Model<TensorT>& other)
 	{
 		id_ = other.id_;
 		name_ = other.name_;
@@ -332,46 +323,46 @@ private:
 	}
 
 	template<typename TensorT>
-	Model<TensorT>::Model(const int& id) :
+	inline Model<TensorT>::Model(const int& id) :
 		id_(id)
 	{
 	}
 
 	template<typename TensorT>
-	void Model<TensorT>::setId(const int& id)
+	inline void Model<TensorT>::setId(const int& id)
 	{
 		id_ = id;
 	}
 	template<typename TensorT>
-	int Model<TensorT>::getId() const
+	inline int Model<TensorT>::getId() const
 	{
 		return id_;
 	}
 
 	template<typename TensorT>
-	void Model<TensorT>::setName(const std::string& name)
+	inline void Model<TensorT>::setName(const std::string& name)
 	{
 		name_ = name;
 	}
 	template<typename TensorT>
-	std::string Model<TensorT>::getName() const
+	inline std::string Model<TensorT>::getName() const
 	{
 		return name_;
 	}
 
 	template<typename TensorT>
-	std::vector<std::shared_ptr<Node<TensorT>>> Model<TensorT>::getInputNodes()
+	inline std::vector<std::shared_ptr<Node<TensorT>>> Model<TensorT>::getInputNodes()
 	{
 		return input_nodes_;
 	}
 
 	template<typename TensorT>
-	std::vector<std::shared_ptr<Node<TensorT>>> Model<TensorT>::getOutputNodes()
+	inline std::vector<std::shared_ptr<Node<TensorT>>> Model<TensorT>::getOutputNodes()
 	{
 		return output_nodes_;
 	}
 	template<typename TensorT>
-	std::vector<std::string> Model<TensorT>::getOutputNodeNames() const
+	inline std::vector<std::string> Model<TensorT>::getOutputNodeNames() const
 	{
 		std::vector<std::string> nodes;
 		for (const auto& node : output_nodes_)
@@ -382,7 +373,7 @@ private:
 	}
 
 	template<typename TensorT>
-	void Model<TensorT>::addNodes(const std::vector<Node<TensorT>>& nodes)
+	inline void Model<TensorT>::addNodes(const std::vector<Node<TensorT>>& nodes)
 	{
 		for (const Node<TensorT>& node : nodes)
 		{
@@ -408,7 +399,7 @@ private:
 	}
 
 	template<typename TensorT>
-	Node<TensorT> Model<TensorT>::getNode(const std::string& node_name) const
+	inline Node<TensorT> Model<TensorT>::getNode(const std::string& node_name) const
 	{
 		if (!nodes_.empty() && nodes_.count(node_name) != 0)
 		{
@@ -422,7 +413,7 @@ private:
 	}
 
 	template<typename TensorT>
-	std::vector<Node<TensorT>> Model<TensorT>::getNodes() const
+	inline std::vector<Node<TensorT>> Model<TensorT>::getNodes() const
 	{
 		std::vector<Node<TensorT>> nodes;
 		for (const auto& node : nodes_)
@@ -433,13 +424,13 @@ private:
 	}
 
 	template<typename TensorT>
-	std::map<std::string, std::shared_ptr<Node<TensorT>>> Model<TensorT>::getNodesMap()
+	inline std::map<std::string, std::shared_ptr<Node<TensorT>>> Model<TensorT>::getNodesMap()
 	{
 		return nodes_;
 	}
 
 	template<typename TensorT>
-	std::map<std::string, std::vector<std::string>> Model<TensorT>::getModuleNodeNameMap() const
+	inline std::map<std::string, std::vector<std::string>> Model<TensorT>::getModuleNodeNameMap() const
 	{
 		std::map<std::string, std::vector<std::string>> module_to_node_names;
 		for (const auto& node_map : nodes_) {
@@ -453,7 +444,7 @@ private:
 	}
 
 	template<typename TensorT>
-	void Model<TensorT>::removeNodes(const std::vector<std::string>& node_names)
+	inline void Model<TensorT>::removeNodes(const std::vector<std::string>& node_names)
 	{
 		for (const std::string& node_name : node_names)
 		{
@@ -467,7 +458,7 @@ private:
 	}
 
 	template<typename TensorT>
-	void Model<TensorT>::addWeights(const std::vector<Weight<TensorT>>& weights)
+	inline void Model<TensorT>::addWeights(const std::vector<Weight<TensorT>>& weights)
 	{
 		for (const Weight<TensorT>& weight : weights)
 		{
@@ -483,7 +474,7 @@ private:
 	}
 
 	template<typename TensorT>
-	Weight<TensorT> Model<TensorT>::getWeight(const std::string& weight_name) const
+	inline Weight<TensorT> Model<TensorT>::getWeight(const std::string& weight_name) const
 	{
 		if (!weights_.empty() && weights_.count(weight_name) != 0)
 		{
@@ -498,7 +489,7 @@ private:
 	}
 
 	template<typename TensorT>
-	std::vector<Weight<TensorT>> Model<TensorT>::getWeights() const
+	inline std::vector<Weight<TensorT>> Model<TensorT>::getWeights() const
 	{
 		std::vector<Weight<TensorT>> weights;
 		for (const auto& weight : weights_)
@@ -509,13 +500,13 @@ private:
 	}
 
 	template<typename TensorT>
-	std::map<std::string, std::shared_ptr<Weight<TensorT>>> Model<TensorT>::getWeightsMap()
+	inline std::map<std::string, std::shared_ptr<Weight<TensorT>>> Model<TensorT>::getWeightsMap()
 	{
 		return weights_;
 	}
 
 	template<typename TensorT>
-	void Model<TensorT>::removeWeights(const std::vector<std::string>& weight_names)
+	inline void Model<TensorT>::removeWeights(const std::vector<std::string>& weight_names)
 	{
 		for (std::string const& weight_name : weight_names)
 		{
@@ -529,7 +520,7 @@ private:
 	}
 
 	template<typename TensorT>
-	void Model<TensorT>::addLinks(const std::vector<Link>& links)
+	inline void Model<TensorT>::addLinks(const std::vector<Link>& links)
 	{
 		for (const Link& link : links)
 		{
@@ -545,7 +536,7 @@ private:
 	}
 
 	template<typename TensorT>
-	void Model<TensorT>::removeLinks(const std::vector<std::string>& link_names)
+	inline void Model<TensorT>::removeLinks(const std::vector<std::string>& link_names)
 	{
 		for (const std::string& link_name : link_names)
 		{
@@ -560,7 +551,7 @@ private:
 	}
 
 	template<typename TensorT>
-	Link Model<TensorT>::getLink(const std::string& link_name) const
+	inline Link Model<TensorT>::getLink(const std::string& link_name) const
 	{
 		if (!links_.empty() && links_.count(link_name) != 0)
 		{
@@ -574,7 +565,7 @@ private:
 	}
 
 	template<typename TensorT>
-	std::vector<Link> Model<TensorT>::getLinks() const
+	inline std::vector<Link> Model<TensorT>::getLinks() const
 	{
 		std::vector<Link> links;
 		for (const auto& link : links_)
@@ -585,13 +576,13 @@ private:
 	}
 	
 	template<typename TensorT>
-	std::map<std::string, std::shared_ptr<Link>> Model<TensorT>::getLinksMap()
+	inline std::map<std::string, std::shared_ptr<Link>> Model<TensorT>::getLinksMap()
 	{
 		return links_;
 	}
 
 	template<typename TensorT>
-	bool Model<TensorT>::pruneNodes()
+	inline bool Model<TensorT>::pruneNodes()
 	{
 		std::vector<std::string> node_names;
 		if (nodes_.empty()) { return false; }
@@ -623,7 +614,7 @@ private:
 	}
 
 	template<typename TensorT>
-	bool Model<TensorT>::pruneWeights()
+	inline bool Model<TensorT>::pruneWeights()
 	{
 		std::vector<std::string> weight_names;
 		if (weights_.empty()) { return false; }
@@ -654,7 +645,7 @@ private:
 	}
 
 	template<typename TensorT>
-	bool Model<TensorT>::pruneLinks()
+	inline bool Model<TensorT>::pruneLinks()
 	{
 		std::vector<std::string> link_names;
 		if (links_.empty()) { return false; }
@@ -701,7 +692,7 @@ private:
 	}
 
 	template<typename TensorT>
-	void Model<TensorT>::pruneModel(int iterations)
+	inline void Model<TensorT>::pruneModel(int iterations)
 	{
 		try
 		{
@@ -720,11 +711,10 @@ private:
 	}
 	
 	template<typename TensorT>
-	void Model<TensorT>::FPTT(const int& time_steps,
+	inline void Model<TensorT>::FPTT(const int& time_steps,
 		const Eigen::Tensor<TensorT, 3>& values,
 		const std::vector<std::string> node_names,
-		const Eigen::Tensor<TensorT, 2>& dt,
-		bool cache_FP_steps, bool use_cache, int n_threads)
+		const Eigen::Tensor<TensorT, 2>& dt)
 	{
 		// check time_steps vs memory_size
 		int max_steps = time_steps;
@@ -753,7 +743,7 @@ private:
 	}
 	
 	template<typename TensorT>
-	void Model<TensorT>::CETT(const Eigen::Tensor<TensorT, 3>& values, const std::vector<std::string>& node_names, const int & time_steps, int n_threads)
+	inline void Model<TensorT>::CETT(const Eigen::Tensor<TensorT, 3>& values, const std::vector<std::string>& node_names, const int & time_steps)
 	{
 		// check time_steps vs memory_size
 		// [NOTE: was changed form memory_size to memory_size - 1]
@@ -787,7 +777,7 @@ private:
 	}
 
 	template<typename TensorT>
-	void Model<TensorT>::TBPTT(const int& time_steps, bool cache_BP_steps, bool use_cache, int n_threads)
+	inline void Model<TensorT>::TBPTT(const int& time_steps)
 	{
 		// check time_steps vs memory_size
 		int max_steps = time_steps;
@@ -804,12 +794,12 @@ private:
 	}
 
 	template<typename TensorT>
-	void Model<TensorT>::updateWeights(const int& time_steps, std::vector<std::string> weight_names)
+	inline void Model<TensorT>::updateWeights(std::vector<std::string> weight_names)
 	{
 	}
 	
 	template<typename TensorT>
-	bool Model<TensorT>::checkNodeNames(const std::vector<std::string> node_names)
+	inline bool Model<TensorT>::checkNodeNames(const std::vector<std::string> node_names)
 	{
 		bool nodes_found = true;
 		for (const std::string& node_name : node_names)
@@ -824,7 +814,7 @@ private:
 	}
 
 	template<typename TensorT>
-	bool Model<TensorT>::checkLinkNames(const std::vector<std::string> link_names)
+	inline bool Model<TensorT>::checkLinkNames(const std::vector<std::string> link_names)
 	{
 		bool links_found = true;
 		for (const std::string& link_name : link_names)
@@ -839,7 +829,7 @@ private:
 	}
 
 	template<typename TensorT>
-	bool Model<TensorT>::checkWeightNames(const std::vector<std::string> weight_names)
+	inline bool Model<TensorT>::checkWeightNames(const std::vector<std::string> weight_names)
 	{
 		bool weights_found = true;
 		for (const std::string& weight_name : weight_names)
@@ -854,13 +844,13 @@ private:
 	}
 
 	template<typename TensorT>
-	bool Model<TensorT>::checkCompleteInputToOutput()
+	inline bool Model<TensorT>::checkCompleteInputToOutput()
 	{
 		return true;
 	}
 
 	template<typename TensorT>
-	bool Model<TensorT>::checkLinksNodeAndWeightNames(std::vector<std::string>& nodes_not_found, std::vector<std::string>& weights_not_found)
+	inline bool Model<TensorT>::checkLinksNodeAndWeightNames(std::vector<std::string>& nodes_not_found, std::vector<std::string>& weights_not_found)
 	{
 		bool link_names_check = true;
 		for (const auto& link_map : links_)
@@ -885,7 +875,7 @@ private:
 	}
 
 	template<typename TensorT>
-	bool Model<TensorT>::removeIsolatedNodes()
+	inline bool Model<TensorT>::removeIsolatedNodes()
 	{
 		// key/value pair of node name and source/sink count pair
 		std::map<std::string, std::pair<int, int>> node_counts;
@@ -928,7 +918,7 @@ private:
 	}
 
 	template<typename TensorT>
-	std::list<int>* Model<TensorT>::convertToAdjacencyList(std::map<int, std::string>& node_id_map, int& node_cnt)
+	inline std::list<int>* Model<TensorT>::convertToAdjacencyList(std::map<int, std::string>& node_id_map, int& node_cnt)
 	{
 		// create a map of node id to node name (excluding bias nodes)
 		node_id_map.clear();
@@ -957,7 +947,7 @@ private:
 	}
 
 	template<typename TensorT>
-	void Model<TensorT>::findCycles()
+	inline void Model<TensorT>::findCycles()
 	{
 		std::map<int, std::string> node_id_map;
 		int node_cnt;
@@ -976,7 +966,7 @@ private:
 	}
 
 	template<typename TensorT>
-	std::vector<std::pair<std::string, std::string>> Model<TensorT>::getCyclicPairs()
+	inline std::vector<std::pair<std::string, std::string>> Model<TensorT>::getCyclicPairs()
 	{
 		return cyclic_pairs_;
 	}

@@ -2,8 +2,7 @@
 
 #ifndef EVONET_CUDA
 
-#include <SmartPeak/ml/ModelInterpreter3.h>
-#include <SmartPeak/ml/Model3.h>
+#include <SmartPeak/ml/ModelInterpreterGpu.h>
 
 using namespace SmartPeak;
 using namespace std;

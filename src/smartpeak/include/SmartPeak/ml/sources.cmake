@@ -17,7 +17,8 @@ set(sources_list_h
 	Model3.h
 	ModelBuilder.h
 	ModelInterpreter.h
-	ModelInterpreter3.h
+	ModelInterpreterDefaultDevice.h
+	ModelInterpreterGpu.h
 	ModelKernal.h
 	ModelLogger.h
 	ModelReplicator.h
