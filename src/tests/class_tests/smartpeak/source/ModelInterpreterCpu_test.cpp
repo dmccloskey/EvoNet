@@ -259,6 +259,30 @@ BOOST_AUTO_TEST_CASE(allocateModelErrorTensor)
 	BOOST_CHECK_EQUAL(model_interpreter.getModelError()->getMemorySize(), 2);
 }
 
+BOOST_AUTO_TEST_CASE(reInitNodes)
+{
+	ModelInterpreterDefaultDevice<float> model_interpreter;
+	const int batch_size = 4;
+	const int memory_size = 2;
+
+	//model_interpreter.allocateModelErrorTensor(batch_size, memory_size);
+
+	//BOOST_CHECK_EQUAL(model_interpreter.getModelError()->getBatchSize(), 4);
+	//BOOST_CHECK_EQUAL(model_interpreter.getModelError()->getMemorySize(), 2);
+}
+
+BOOST_AUTO_TEST_CASE(reInitModelError)
+{
+	ModelInterpreterDefaultDevice<float> model_interpreter;
+	const int batch_size = 4;
+	const int memory_size = 2;
+
+	//model_interpreter.allocateModelErrorTensor(batch_size, memory_size);
+
+	//BOOST_CHECK_EQUAL(model_interpreter.getModelError()->getBatchSize(), 4);
+	//BOOST_CHECK_EQUAL(model_interpreter.getModelError()->getMemorySize(), 2);
+}
+
 Model<float> model_mapValuesToLayers = makeModelFCSum();
 BOOST_AUTO_TEST_CASE(mapValuesToLayers)
 {
