@@ -56,7 +56,6 @@ Model<float> makeModelFCSum()
 	model2.findCycles();
 	return model2;
 }
-Model<float> model_FC_Sum = makeModelFCSum();
 
 BOOST_AUTO_TEST_SUITE(modelInterpreter_DCG)
 

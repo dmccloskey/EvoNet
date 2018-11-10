@@ -368,7 +368,7 @@ namespace SmartPeak
 			where t=n to t=0
 		@param[in] node_names Output nodes
 		*/
-		void CETT(Model<TensorT>& model, const Eigen::Tensor<TensorT, 3>& values, const std::vector<std::string>& node_names, LossFunctionTensorOp<TensorT, DeviceT> loss_function, LossFunctionGradTensorOp<TensorT, DeviceT> loss_function_grad, const int& time_steps, bool sync_HToD = false, bool sync_DToH = false);
+		void CETT(Model<TensorT>& model, const Eigen::Tensor<TensorT, 3>& values, const std::vector<std::string>& node_names, LossFunctionTensorOp<TensorT, DeviceT>* loss_function, LossFunctionGradTensorOp<TensorT, DeviceT>* loss_function_grad, const int& time_steps, bool sync_HToD = false, bool sync_DToH = false);
 
 		/**
 		@brief Truncated Back Propogation Through Time (TBPTT) of the network model.
@@ -465,7 +465,7 @@ namespace SmartPeak
 	template<typename TensorT, typename DeviceT>
 	inline void ModelInterpreter<TensorT, DeviceT>::reInitModelError()
 	{
-		Eigen::Tensor<TensorT, 2> zero((int)layer_tensors_[0]->getBatchSize(), (int)layer_tensors_[0]->getMemorySize());	zero.setConstant(0);
+		Eigen::Tensor<TensorT, 2> zero((int)model_error_->getBatchSize(), (int)model_error_->getMemorySize());	zero.setConstant(0);
 		model_error_->getError() = zero;
 	}
 
@@ -1212,17 +1212,17 @@ namespace SmartPeak
 		for (int time_step = 0; time_step < max_steps; ++time_step)		{
 			const int time_step_cur = max_steps - 1 - time_step;
 			if (time_step == 0)
-				executeForwardPropogationOperations(layer_tensors_[0]->getMemorySize(), sync_HToD, false);
+				executeForwardPropogationOperations(time_step_cur, sync_HToD, false);
 			else if (time_step == max_steps - 1)
-				executeForwardPropogationOperations(layer_tensors_[0]->getMemorySize(), false, sync_DToH);
+				executeForwardPropogationOperations(time_step_cur, false, sync_DToH);
 			else
-				executeForwardPropogationOperations(layer_tensors_[0]->getMemorySize(), false, false);
+				executeForwardPropogationOperations(time_step_cur, false, false);
 		}
 	}
 
 	template<typename TensorT, typename DeviceT>
 	inline void ModelInterpreter<TensorT, DeviceT>::CETT(Model<TensorT>& model, const Eigen::Tensor<TensorT, 3>& values, const std::vector<std::string>& node_names, 
-		LossFunctionTensorOp<TensorT, DeviceT> loss_function, LossFunctionGradTensorOp<TensorT, DeviceT> loss_function_grad, const int & time_steps, bool sync_HToD, bool sync_DToH)
+		LossFunctionTensorOp<TensorT, DeviceT>* loss_function, LossFunctionGradTensorOp<TensorT, DeviceT>* loss_function_grad, const int & time_steps, bool sync_HToD, bool sync_DToH)
 	{
 		// check time_steps vs memory_size
 		// [NOTE: was changed form memory_size to memory_size - 1]
@@ -1249,12 +1249,13 @@ namespace SmartPeak
 			//std::cout<<"Expected output for time point "<< time_step << " is " << values.chip(next_time_step, 1)<<std::endl;
 
 			// calculate the error for each batch of memory
+			Eigen::Tensor<TensorT, 2> expected = values.chip(next_time_step, 1);
 		  if (time_step == 0)
-				executeModelErrorOperations(values.chip(next_time_step, 1), layer_id, loss_function, loss_function_grad, time_step, sync_HToD, false);
+				executeModelErrorOperations(expected, layer_id, loss_function, loss_function_grad, time_step, sync_HToD, false);
 			else if (time_step == max_steps - 1)
-				executeModelErrorOperations(values.chip(next_time_step, 1), layer_id, loss_function, loss_function_grad, time_step, false, sync_DToH);
+				executeModelErrorOperations(expected, layer_id, loss_function, loss_function_grad, time_step, false, sync_DToH);
 			else
-				executeModelErrorOperations(values.chip(next_time_step, 1), layer_id, loss_function, loss_function_grad, time_step, false, false);
+				executeModelErrorOperations(expected, layer_id, loss_function, loss_function_grad, time_step, false, false);
 		}
 	}
 
@@ -1274,9 +1275,9 @@ namespace SmartPeak
 			if (time_step == 0)
 				executeBackwardPropogationOperations(time_step, sync_HToD, false);
 			else if (time_step == max_steps - 1)
-				executeModelErrorOperations(time_step, false, sync_DToH);
+				executeBackwardPropogationOperations(time_step, false, sync_DToH);
 			else
-				executeModelErrorOperations(time_step, false, false);
+				executeBackwardPropogationOperations(time_step, false, false);
 		}
 	}
 
