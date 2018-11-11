@@ -18,7 +18,7 @@ namespace SmartPeak
   /**
     @brief Network ModelErrorData
   */
-	template<typename TensorT>
+	template<typename TensorT, typename DeviceT>
   class ModelErrorData
   {
 public:
@@ -67,6 +67,10 @@ public:
 
 		void initModelErrorData(const int& batch_size, const int& memory_size);
 
+		virtual bool syncHAndDError(DeviceT& device) = 0;
+
+		std::pair<bool, bool> getErrorStatus() { return std::make_pair(h_error_updated_, d_error_updated_); };
+
 protected:
 		size_t batch_size_ = 1; ///< Mini batch size
 		size_t memory_size_ = 2; ///< Memory size
@@ -78,10 +82,12 @@ protected:
     */		
 		std::shared_ptr<TensorT> h_error_ = nullptr;
 		std::shared_ptr<TensorT> d_error_ = nullptr;
+		bool h_error_updated_ = false;
+		bool d_error_updated_ = false;
   };
 
-	template<typename TensorT>
-	inline void ModelErrorData<TensorT>::initModelErrorData(const int& batch_size, const int& memory_size)
+	template<typename TensorT, typename DeviceT>
+	inline void ModelErrorData<TensorT, DeviceT>::initModelErrorData(const int& batch_size, const int& memory_size)
 	{
 		setBatchSize(batch_size);	setMemorySize(memory_size);
 		Eigen::Tensor<TensorT, 2> zero(batch_size, memory_size); zero.setConstant(0);
@@ -89,7 +95,7 @@ protected:
 	}
 
 	template<typename TensorT>
-	class ModelErrorDataCpu : public ModelErrorData<TensorT> {
+	class ModelErrorDataCpu : public ModelErrorData<TensorT, Eigen::DefaultDevice> {
 	public:
 		void setError(const Eigen::Tensor<TensorT, 2>& error) {
 			TensorT* h_error = new TensorT[this->batch_size_*this->memory_size_];
@@ -97,13 +103,16 @@ protected:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_copy(h_error, this->batch_size_, this->memory_size_);
 			error_copy = error;
 			this->h_error_.reset(h_error);
+			this->h_error_updated_ = true;
+			this->d_error_updated_ = true;
 		}; ///< error setter
+		bool syncHAndDError(Eigen::DefaultDevice& device) { return true; }
 	};
 
 #if COMPILE_WITH_CUDA
 
 	template<typename TensorT>
-	class ModelErrorDataGpu : public ModelErrorData<TensorT> {
+	class ModelErrorDataGpu : public ModelErrorData<TensorT, Eigen::GpuDevice> {
 	public:
 		void setError(const Eigen::Tensor<TensorT, 2>& error) {
 			// allocate cuda and pinned host memory
@@ -119,7 +128,27 @@ protected:
 			auto d_deleter = [&](TensorT* ptr) { cudaFree(ptr); };
 			this->h_error_.reset(h_error, h_deleter);
 			this->d_error_.reset(d_error, d_deleter);
+			this->h_error_updated_ = true;
+			this->d_error_updated_ = false;
 		}; ///< error setter
+		bool syncHAndDError(Eigen::GpuDevice& device) {
+			if (this->h_error_updated_ && !this->d_error_updated_) {
+				device.memcpyHostToDevice(this->d_error_.get(), this->h_error_.get(), getTensorSize());
+				this->d_error_updated_ = true;
+				this->h_error_updated_ = false;
+				return true;
+			}
+			else if (!this->h_error_updated_ && this->d_error_updated_) {
+				device.memcpyDeviceToHost(this->h_error_.get(), this->d_error_.get(), getTensorSize());
+				this->h_error_updated_ = true;
+				this->d_error_updated_ = false;
+				return true;
+			}
+			else {
+				std::cout << "Both host and device are syncHAndDronized." << std::endl;
+				return false;
+			}
+		}
 	};
 #endif
 }

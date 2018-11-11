@@ -54,10 +54,20 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters2)
 	BOOST_CHECK_EQUAL(node.getMemorySize(), 3);
 	BOOST_CHECK_EQUAL(node.getLayerSize(), 4);
 	BOOST_CHECK_EQUAL(node.getInput()(1, 2, 3), 0.5);
+	BOOST_CHECK(node.getInputStatus().first);
+	BOOST_CHECK(!node.getInputStatus().second);
 	BOOST_CHECK_EQUAL(node.getOutput()(0, 0, 0), 1);
+	BOOST_CHECK(node.getOutputStatus().first);
+	BOOST_CHECK(!node.getOutputStatus().second);
 	BOOST_CHECK_EQUAL(node.getDerivative()(0, 0, 0), 2);
+	BOOST_CHECK(node.getDerivativeStatus().first);
+	BOOST_CHECK(!node.getDerivativeStatus().second);
 	BOOST_CHECK_EQUAL(node.getError()(0, 0, 0), 3);
+	BOOST_CHECK(node.getErrorStatus().first);
+	BOOST_CHECK(!node.getErrorStatus().second);
 	BOOST_CHECK_EQUAL(node.getDt()(0, 0, 0), 4);
+	BOOST_CHECK(node.getDtStatus().first);
+	BOOST_CHECK(!node.getDtStatus().second);
 
 	// Test mutability
 	node.getInput()(0, 0, 0) = 5;
@@ -71,6 +81,59 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters2)
 	BOOST_CHECK_EQUAL(node.getDerivative()(0, 0, 0), 7);
 	BOOST_CHECK_EQUAL(node.getError()(0, 0, 0), 8);
 	BOOST_CHECK_EQUAL(node.getDt()(0, 0, 0), 9);
+}
+
+BOOST_AUTO_TEST_CASE(syncHAndD2)
+{
+	NodeTensorDataGpu<float> node;
+	node.setBatchSize(2);
+	node.setMemorySize(3);
+	node.setLayerSize(4);
+
+	Eigen::Tensor<float, 3> input(2, 3, 4), output(2, 3, 4), derivative(2, 3, 4), error(2, 3, 4), dt(2, 3, 4);
+	input.setConstant(0.5); output.setConstant(1); derivative.setConstant(2); error.setConstant(3); dt.setConstant(4);
+
+	node.setInput(input);
+	node.setOutput(output);
+	node.setDerivative(derivative);
+	node.setError(error);
+	node.setDt(dt);
+
+	Eigen::GpuStreamDevice stream_device;
+	Eigen::GpuDevice device(&stream_device);
+	node.syncHAndDInput(device);
+	node.syncHAndDOutput(device);
+	node.syncHAndDDerivative(device);
+	node.syncHAndDError(device);
+	node.syncHAndDDt(device);
+
+	BOOST_CHECK(!node.getInputStatus().first);
+	BOOST_CHECK(node.getInputStatus().second);
+	BOOST_CHECK(!node.getOutputStatus().first);
+	BOOST_CHECK(node.getOutputStatus().second);
+	BOOST_CHECK(!node.getDerivativeStatus().first);
+	BOOST_CHECK(node.getDerivativeStatus().second);
+	BOOST_CHECK(!node.getErrorStatus().first);
+	BOOST_CHECK(node.getErrorStatus().second);
+	BOOST_CHECK(!node.getDtStatus().first);
+	BOOST_CHECK(node.getDtStatus().second);
+
+	node.syncHAndDInput(device);
+	node.syncHAndDOutput(device);
+	node.syncHAndDDerivative(device);
+	node.syncHAndDError(device);
+	node.syncHAndDDt(device);
+
+	BOOST_CHECK(node.getInputStatus().first);
+	BOOST_CHECK(!node.getInputStatus().second);
+	BOOST_CHECK(node.getOutputStatus().first);
+	BOOST_CHECK(!node.getOutputStatus().second);
+	BOOST_CHECK(node.getDerivativeStatus().first);
+	BOOST_CHECK(!node.getDerivativeStatus().second);
+	BOOST_CHECK(node.getErrorStatus().first);
+	BOOST_CHECK(!node.getErrorStatus().second);
+	BOOST_CHECK(node.getDtStatus().first);
+	BOOST_CHECK(!node.getDtStatus().second);
 }
 #endif
 
@@ -104,10 +167,20 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters1)
 	BOOST_CHECK_EQUAL(node.getMemorySize(), 3);
 	BOOST_CHECK_EQUAL(node.getLayerSize(), 4);
 	BOOST_CHECK_EQUAL(node.getInput()(1, 2, 3), 0);
+	BOOST_CHECK(node.getInputStatus().first);
+	BOOST_CHECK(node.getInputStatus().second);
 	BOOST_CHECK_EQUAL(node.getOutput()(0, 0, 0), 1);
+	BOOST_CHECK(node.getOutputStatus().first);
+	BOOST_CHECK(node.getOutputStatus().second);
 	BOOST_CHECK_EQUAL(node.getDerivative()(0, 0, 0), 2);
+	BOOST_CHECK(node.getDerivativeStatus().first);
+	BOOST_CHECK(node.getDerivativeStatus().second);
 	BOOST_CHECK_EQUAL(node.getError()(0, 0, 0), 3);
+	BOOST_CHECK(node.getErrorStatus().first);
+	BOOST_CHECK(node.getErrorStatus().second);
 	BOOST_CHECK_EQUAL(node.getDt()(0, 0, 0), 4);
+	BOOST_CHECK(node.getDtStatus().first);
+	BOOST_CHECK(node.getDtStatus().second);
 
 	// Test mutability
 	node.getInput()(0, 0, 0) = 5;
@@ -121,6 +194,58 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters1)
 	BOOST_CHECK_EQUAL(node.getDerivative()(0, 0, 0), 7);
 	BOOST_CHECK_EQUAL(node.getError()(0, 0, 0), 8);
 	BOOST_CHECK_EQUAL(node.getDt()(0, 0, 0), 9);
+}
+
+BOOST_AUTO_TEST_CASE(syncHAndD)
+{
+	NodeTensorDataCpu<float> node;
+	node.setBatchSize(2);
+	node.setMemorySize(3);
+	node.setLayerSize(4);
+
+	Eigen::Tensor<float, 3> input(2, 3, 4), output(2, 3, 4), derivative(2, 3, 4), error(2, 3, 4), dt(2, 3, 4);
+	input.setConstant(0.5); output.setConstant(1); derivative.setConstant(2); error.setConstant(3); dt.setConstant(4);
+
+	node.setInput(input);
+	node.setOutput(output);
+	node.setDerivative(derivative);
+	node.setError(error);
+	node.setDt(dt);
+
+	Eigen::DefaultDevice device;
+	node.syncHAndDInput(device);
+	node.syncHAndDOutput(device);
+	node.syncHAndDDerivative(device);
+	node.syncHAndDError(device);
+	node.syncHAndDDt(device);
+
+	BOOST_CHECK(node.getInputStatus().first);
+	BOOST_CHECK(node.getInputStatus().second);
+	BOOST_CHECK(node.getOutputStatus().first);
+	BOOST_CHECK(node.getOutputStatus().second);
+	BOOST_CHECK(node.getDerivativeStatus().first);
+	BOOST_CHECK(node.getDerivativeStatus().second);
+	BOOST_CHECK(node.getErrorStatus().first);
+	BOOST_CHECK(node.getErrorStatus().second);
+	BOOST_CHECK(node.getDtStatus().first);
+	BOOST_CHECK(node.getDtStatus().second);
+
+	node.syncHAndDInput(device);
+	node.syncHAndDOutput(device);
+	node.syncHAndDDerivative(device);
+	node.syncHAndDError(device);
+	node.syncHAndDDt(device);
+
+	BOOST_CHECK(node.getInputStatus().first);
+	BOOST_CHECK(node.getInputStatus().second);
+	BOOST_CHECK(node.getOutputStatus().first);
+	BOOST_CHECK(node.getOutputStatus().second);
+	BOOST_CHECK(node.getDerivativeStatus().first);
+	BOOST_CHECK(node.getDerivativeStatus().second);
+	BOOST_CHECK(node.getErrorStatus().first);
+	BOOST_CHECK(node.getErrorStatus().second);
+	BOOST_CHECK(node.getDtStatus().first);
+	BOOST_CHECK(node.getDtStatus().second);
 }
 
 BOOST_AUTO_TEST_CASE(initNodeTensorData)

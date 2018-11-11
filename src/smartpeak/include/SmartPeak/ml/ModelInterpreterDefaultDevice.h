@@ -24,11 +24,11 @@ namespace SmartPeak
 			const std::vector<int>& source_layer_sizes, const std::vector<int>& sink_layer_sizes, const std::vector<std::vector<std::pair<int, int>>> weight_indices, const std::vector<std::vector<TensorT>>& weight_values,
 			const std::vector<bool>& make_source_tensors, const std::vector<bool>& make_sink_tensors, const std::vector<bool>& make_weight_tensors,
 			const int& batch_size, const int& memory_size, const bool& train);
-		void executeForwardPropogationOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false);
-		void executeBackwardPropogationOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false);
-		void executeModelErrorOperations(Eigen::Tensor<TensorT, 2>& expected, const int& layer_id, LossFunctionTensorOp<TensorT, Eigen::DefaultDevice>* loss_function, LossFunctionGradTensorOp<TensorT, Eigen::DefaultDevice>* loss_function_grad, const int& time_step, bool sync_HToD = false, bool sync_DToH = false);
-		void executeWeightErrorOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false);
-		void executeWeightUpdateOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false);
+		void executeForwardPropogationOperations(const int& time_step);
+		void executeBackwardPropogationOperations(const int& time_step);
+		void executeModelErrorOperations(Eigen::Tensor<TensorT, 2>& expected, const int& layer_id, LossFunctionTensorOp<TensorT, Eigen::DefaultDevice>* loss_function, LossFunctionGradTensorOp<TensorT, Eigen::DefaultDevice>* loss_function_grad, const int& time_step);
+		void executeWeightErrorOperations();
+		void executeWeightUpdateOperations();
 		void allocateModelErrorTensor(const int& batch_size, const int& memory_size);
 	};
 
@@ -54,7 +54,7 @@ namespace SmartPeak
 
 			// [NOTE: order matters!  sink layer should come before the source layer to keep with
 			//  the ordering generated in getForwardPropogationTensorDimensions.]
-			std::shared_ptr<NodeTensorData<TensorT>> sink_node_data(new NodeTensorDataCpu<TensorT>());
+			std::shared_ptr<NodeTensorData<TensorT, Eigen::DefaultDevice>> sink_node_data(new NodeTensorDataCpu<TensorT>());
 			{ // make the sink layer tensor and add it to the cache and operation step
 				ActivationTensorOp<TensorT, Eigen::DefaultDevice>* activation = nullptr;
 				ActivationTensorOp<TensorT, Eigen::DefaultDevice>* activation_grad = nullptr;
@@ -94,7 +94,7 @@ namespace SmartPeak
 				}
 			}
 			
-			std::shared_ptr<NodeTensorData<TensorT>> source_node_data(new NodeTensorDataCpu<TensorT>());
+			std::shared_ptr<NodeTensorData<TensorT, Eigen::DefaultDevice>> source_node_data(new NodeTensorDataCpu<TensorT>());
 			{ // make the source layer tensor and add it to the cache and operation step
 				ActivationTensorOp<TensorT, Eigen::DefaultDevice>* activation = nullptr;
 				ActivationTensorOp<TensorT, Eigen::DefaultDevice>* activation_grad = nullptr;
@@ -134,7 +134,7 @@ namespace SmartPeak
 			}
 
 			// make the weight tensor and add it to the cache and operation step
-			std::shared_ptr<WeightTensorData<TensorT>> weight_data(new WeightTensorDataCpu<TensorT>());
+			std::shared_ptr<WeightTensorData<TensorT, Eigen::DefaultDevice>> weight_data(new WeightTensorDataCpu<TensorT>());
 			if (make_weight_tensors[iter]) {
 				SolverTensorOp<TensorT, Eigen::DefaultDevice>* solver = nullptr;
 				std::vector<TensorT> solver_params;
@@ -157,7 +157,7 @@ namespace SmartPeak
 	}
 
 	template<typename TensorT>
-	inline void ModelInterpreterDefaultDevice<TensorT>::executeForwardPropogationOperations(const int& time_step, bool sync_HToD, bool sync_DToH)
+	inline void ModelInterpreterDefaultDevice<TensorT>::executeForwardPropogationOperations(const int& time_step)
 	{
 		for (std::vector<OperationTensorStep<TensorT, Eigen::DefaultDevice>>& operations_list : operation_steps_) {
 			ModelKernalDefaultDevice<TensorT> model_kernal;
@@ -179,7 +179,7 @@ namespace SmartPeak
 					operation.sink_layer.tensor->getLayerSize(),
 					operation.source_layer.time_step + time_step,
 					operation.sink_layer.time_step + time_step,
-					device, sync_HToD, sync_DToH);
+					device);
 
 				model_kernal.executeNodeActivation(
 					operation.sink_layer.tensor->getHInputPointer().get(),
@@ -193,13 +193,13 @@ namespace SmartPeak
 					operation.sink_layer.tensor->getMemorySize(),
 					operation.sink_layer.tensor->getLayerSize(),
 					operation.sink_layer.time_step + time_step,
-					device, sync_HToD, sync_DToH);
+					device);
 			}
 		}
 	}
 
 	template<typename TensorT>
-	inline void ModelInterpreterDefaultDevice<TensorT>::executeBackwardPropogationOperations(const int & time_step, bool sync_HToD, bool sync_DToH)
+	inline void ModelInterpreterDefaultDevice<TensorT>::executeBackwardPropogationOperations(const int & time_step)
 	{
 		for (int i = operation_steps_.size() - 1; i >= 0; --i) { //iterate backwards
 			ModelKernalDefaultDevice<TensorT> model_kernal;
@@ -218,7 +218,7 @@ namespace SmartPeak
 					operation.source_layer.tensor->getMemorySize(),
 					operation.source_layer.tensor->getLayerSize(),
 					operation.source_layer.time_step + time_step,
-					device, sync_HToD, sync_DToH);
+					device);
 
 				model_kernal.executeBackwardPropogation(
 					operation.sink_layer.tensor->getHErrorPointer().get(),
@@ -241,13 +241,13 @@ namespace SmartPeak
 					operation.source_layer.tensor->getLayerSize(),
 					operation.sink_layer.time_step + time_step,
 					operation.source_layer.time_step + time_step,
-					device, sync_HToD, sync_DToH);
+					device);
 			}
 		}
 	}
 
 	template<typename TensorT>
-	inline void ModelInterpreterDefaultDevice<TensorT>::executeModelErrorOperations(Eigen::Tensor<TensorT, 2>& expected, const int& layer_id,	LossFunctionTensorOp<TensorT, Eigen::DefaultDevice>* loss_function,	LossFunctionGradTensorOp<TensorT, Eigen::DefaultDevice>* loss_function_grad, const int& time_step, bool sync_HToD, bool sync_DToH)
+	inline void ModelInterpreterDefaultDevice<TensorT>::executeModelErrorOperations(Eigen::Tensor<TensorT, 2>& expected, const int& layer_id,	LossFunctionTensorOp<TensorT, Eigen::DefaultDevice>* loss_function,	LossFunctionGradTensorOp<TensorT, Eigen::DefaultDevice>* loss_function_grad, const int& time_step)
 	{
 		ModelKernalDefaultDevice<TensorT> model_kernal;
 		Eigen::DefaultDevice device;
@@ -266,11 +266,11 @@ namespace SmartPeak
 			layer_tensor_data->getMemorySize(),
 			layer_tensor_data->getLayerSize(),
 			time_step,
-			device, sync_HToD, sync_DToH);
+			device);
 	}
 
 	template<typename TensorT>
-	inline void ModelInterpreterDefaultDevice<TensorT>::executeWeightErrorOperations(const int & time_step, bool sync_HToD, bool sync_DToH)
+	inline void ModelInterpreterDefaultDevice<TensorT>::executeWeightErrorOperations()
 	{
 		for (std::vector<OperationTensorStep<TensorT, Eigen::DefaultDevice>>& operations_list : operation_steps_) {
 			ModelKernalDefaultDevice<TensorT> model_kernal;
@@ -296,13 +296,13 @@ namespace SmartPeak
 					operation.sink_layer.tensor->getMemorySize(),
 					operation.source_layer.tensor->getLayerSize(),
 					operation.sink_layer.tensor->getLayerSize(),
-					device, sync_HToD, sync_DToH);
+					device);
 			}
 		}
 	}
 
 	template<typename TensorT>
-	inline void ModelInterpreterDefaultDevice<TensorT>::executeWeightUpdateOperations(const int & time_step, bool sync_HToD, bool sync_DToH)
+	inline void ModelInterpreterDefaultDevice<TensorT>::executeWeightUpdateOperations()
 	{
 		for (std::vector<OperationTensorStep<TensorT, Eigen::DefaultDevice>>& operations_list : operation_steps_) {
 			ModelKernalDefaultDevice<TensorT> model_kernal;
@@ -321,14 +321,14 @@ namespace SmartPeak
 					operation.weight.solver.get(),
 					operation.source_layer.tensor->getLayerSize(),
 					operation.sink_layer.tensor->getLayerSize(),
-					device, sync_HToD, sync_DToH);
+					device);
 			}
 		}
 	}
 
 	template<typename TensorT>
 	inline void ModelInterpreterDefaultDevice<TensorT>::allocateModelErrorTensor(const int& batch_size, const int& memory_size) {
-		std::shared_ptr<ModelErrorData<TensorT>> model_error_data(new ModelErrorDataCpu<TensorT>());
+		std::shared_ptr<ModelErrorData<TensorT, Eigen::DefaultDevice>> model_error_data(new ModelErrorDataCpu<TensorT>());
 		model_error_data->initModelErrorData(batch_size, memory_size);
 		model_error_ = model_error_data;
 	}

@@ -369,7 +369,7 @@ BOOST_AUTO_TEST_CASE(executeForwardPropogationOperations)
 	//biases.setConstant(1);
 	//model_interpreter.mapValuesToLayers(model_mapValuesToLayers, biases, biases_ids, "output");
 
-	model_interpreter.executeForwardPropogationOperations(0, true, true);
+	model_interpreter.executeForwardPropogationOperations(0);
 
 	// test values of output nodes
 	Eigen::Tensor<float, 2> output(batch_size, 2);
@@ -417,7 +417,7 @@ BOOST_AUTO_TEST_CASE(executeModelErrorOperations)
 	model_interpreter.mapValuesToLayers(model_executeModelErrorOperations, input, node_ids, "output");
 
 	model_interpreter.initBiases(model_executeModelErrorOperations); // create the bias	
-	model_interpreter.executeForwardPropogationOperations(0, true, true); // FP
+	model_interpreter.executeForwardPropogationOperations(0); // FP
 	model_interpreter.allocateModelErrorTensor(batch_size, memory_size); // allocate the memory
 
 	// calculate the model error
@@ -427,7 +427,7 @@ BOOST_AUTO_TEST_CASE(executeModelErrorOperations)
 	LossFunctionTensorOp<float, Eigen::DefaultDevice>* solver = new MSETensorOp<float, Eigen::DefaultDevice>();
 	LossFunctionGradTensorOp<float, Eigen::DefaultDevice>* solver_grad = new MSEGradTensorOp<float, Eigen::DefaultDevice>();
 	const int layer_id = model_executeModelErrorOperations.getNode("4").getTensorIndex().first;
-	model_interpreter.executeModelErrorOperations(expected, layer_id, solver, solver_grad, 0, true, true);
+	model_interpreter.executeModelErrorOperations(expected, layer_id, solver, solver_grad, 0);
 
 	Eigen::Tensor<float, 2> error(batch_size, memory_size);
 	error.setValues({ {105.25, 0 }, {171.25, 0}, {253.25, 0}, {351.25, 0} });
@@ -473,7 +473,7 @@ BOOST_AUTO_TEST_CASE(executeBackwardPropogationOperations)
 	model_interpreter.mapValuesToLayers(model_executeBackwardPropogationOperations, input, node_ids, "output");
 
 	model_interpreter.initBiases(model_executeBackwardPropogationOperations); // create the bias	
-	model_interpreter.executeForwardPropogationOperations(0, true, true); // FP
+	model_interpreter.executeForwardPropogationOperations(0); // FP
 	model_interpreter.allocateModelErrorTensor(batch_size, memory_size); // allocate the memory
 
 	// calculate the model error
@@ -483,9 +483,9 @@ BOOST_AUTO_TEST_CASE(executeBackwardPropogationOperations)
 	LossFunctionTensorOp<float, Eigen::DefaultDevice>* solver = new MSETensorOp<float, Eigen::DefaultDevice>();
 	LossFunctionGradTensorOp<float, Eigen::DefaultDevice>* solver_grad = new MSEGradTensorOp<float, Eigen::DefaultDevice>();
 	const int layer_id = model_executeBackwardPropogationOperations.getNode("4").getTensorIndex().first;
-	model_interpreter.executeModelErrorOperations(expected, layer_id, solver, solver_grad, 0, true, true);
+	model_interpreter.executeModelErrorOperations(expected, layer_id, solver, solver_grad, 0);
 
-	model_interpreter.executeBackwardPropogationOperations(0, true, true); // BP
+	model_interpreter.executeBackwardPropogationOperations(0); // BP
 
 	std::vector<std::string> error_nodes = { "6", "2", "3" };
 	Eigen::Tensor<float, 2> error(batch_size, (int)error_nodes.size());
@@ -526,7 +526,7 @@ BOOST_AUTO_TEST_CASE(executeWeightErrorOperations)
 	model_interpreter.mapValuesToLayers(model_executeWeightErrorOperations, input, node_ids, "output");
 
 	model_interpreter.initBiases(model_executeWeightErrorOperations); // create the bias	
-	model_interpreter.executeForwardPropogationOperations(0, true, true); // FP
+	model_interpreter.executeForwardPropogationOperations(0); // FP
 	model_interpreter.allocateModelErrorTensor(batch_size, memory_size); // allocate the memory
 
 	// calculate the model error
@@ -536,10 +536,10 @@ BOOST_AUTO_TEST_CASE(executeWeightErrorOperations)
 	LossFunctionTensorOp<float, Eigen::DefaultDevice>* solver = new MSETensorOp<float, Eigen::DefaultDevice>();
 	LossFunctionGradTensorOp<float, Eigen::DefaultDevice>* solver_grad = new MSEGradTensorOp<float, Eigen::DefaultDevice>();
 	const int layer_id = model_executeWeightErrorOperations.getNode("4").getTensorIndex().first;
-	model_interpreter.executeModelErrorOperations(expected, layer_id, solver, solver_grad, 0, true, true);
+	model_interpreter.executeModelErrorOperations(expected, layer_id, solver, solver_grad, 0);
 
-	model_interpreter.executeBackwardPropogationOperations(0, true, true); // BP
-	model_interpreter.executeWeightErrorOperations(0, true, true); // Weight error
+	model_interpreter.executeBackwardPropogationOperations(0); // BP
+	model_interpreter.executeWeightErrorOperations(); // Weight error
 
   // test values of input and hidden layers
 	const std::vector<std::string> weight_ids = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11" };
@@ -580,7 +580,7 @@ BOOST_AUTO_TEST_CASE(executeWeightUpdateOperations)
 	model_interpreter.mapValuesToLayers(model_executeWeightUpdateOperations, input, node_ids, "output");
 
 	model_interpreter.initBiases(model_executeWeightUpdateOperations); // create the bias	
-	model_interpreter.executeForwardPropogationOperations(0, true, true); // FP
+	model_interpreter.executeForwardPropogationOperations(0); // FP
 	model_interpreter.allocateModelErrorTensor(batch_size, memory_size); // allocate the memory
 
 	// calculate the model error
@@ -590,11 +590,11 @@ BOOST_AUTO_TEST_CASE(executeWeightUpdateOperations)
 	LossFunctionTensorOp<float, Eigen::DefaultDevice>* solver = new MSETensorOp<float, Eigen::DefaultDevice>();
 	LossFunctionGradTensorOp<float, Eigen::DefaultDevice>* solver_grad = new MSEGradTensorOp<float, Eigen::DefaultDevice>();
 	const int layer_id = model_executeWeightUpdateOperations.getNode("4").getTensorIndex().first;
-	model_interpreter.executeModelErrorOperations(expected, layer_id, solver, solver_grad, 0, true, true);
+	model_interpreter.executeModelErrorOperations(expected, layer_id, solver, solver_grad, 0);
 
-	model_interpreter.executeBackwardPropogationOperations(0, true, true); // BP
-	model_interpreter.executeWeightErrorOperations(0, true, true); // Weight error
-	model_interpreter.executeWeightUpdateOperations(0, true, true); // Weight update
+	model_interpreter.executeBackwardPropogationOperations(0); // BP
+	model_interpreter.executeWeightErrorOperations(); // Weight error
+	model_interpreter.executeWeightUpdateOperations(); // Weight update
 
   // test values of input and hidden layers
 	const std::vector<std::string> weight_ids = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11" };
@@ -657,15 +657,15 @@ BOOST_AUTO_TEST_CASE(modelTrainer1)
 		model_interpreter.mapValuesToLayers(model_modelTrainer1, input, node_ids, "output");
 		model_interpreter.initBiases(model_modelTrainer1); // create the bias	
 
-		model_interpreter.executeForwardPropogationOperations(0, true, true); //FP
+		model_interpreter.executeForwardPropogationOperations(0); //FP
 
 		// calculate the model error and node output error
-		model_interpreter.executeModelErrorOperations(expected, layer_id, loss_function, loss_function_grad, 0, true, true);
+		model_interpreter.executeModelErrorOperations(expected, layer_id, loss_function, loss_function_grad, 0);
 		std::cout << "Error at iteration: " << iter << " is " << model_interpreter.getModelError()->getError().sum() << std::endl;
 
-		model_interpreter.executeBackwardPropogationOperations(0, true, true); // BP
-		model_interpreter.executeWeightErrorOperations(0, true, true); // Weight error
-		model_interpreter.executeWeightUpdateOperations(0, true, true); // Weight update
+		model_interpreter.executeBackwardPropogationOperations(0); // BP
+		model_interpreter.executeWeightErrorOperations(); // Weight error
+		model_interpreter.executeWeightUpdateOperations(); // Weight update
 
 		// reinitialize the model
 		if (iter != max_iter - 1) {
@@ -752,7 +752,7 @@ BOOST_AUTO_TEST_CASE(FPTT)
 	);
 	model_interpreter.mapValuesToLayers(model_FPTT, input, input_ids, "output");
 
-	model_interpreter.FPTT(4, true, true);
+	model_interpreter.FPTT(4);
 
 	// test values of output nodes
 	Eigen::Tensor<float, 3> output(batch_size, memory_size, 5); // dim2: # of model nodes
@@ -812,7 +812,7 @@ BOOST_AUTO_TEST_CASE(CETT)
 	);
 	model_interpreter.mapValuesToLayers(model_CETT, input, input_ids, "output");
 
-	model_interpreter.FPTT(4, true, true);
+	model_interpreter.FPTT(4);
 
 	// calculate the error
 	// expected output (from t=n to t=0)
@@ -828,7 +828,7 @@ BOOST_AUTO_TEST_CASE(CETT)
 	);
 	LossFunctionTensorOp<float, Eigen::DefaultDevice>* loss_function = new MSETensorOp<float, Eigen::DefaultDevice>();
 	LossFunctionGradTensorOp<float, Eigen::DefaultDevice>* loss_function_grad = new MSEGradTensorOp<float, Eigen::DefaultDevice>();
-	model_interpreter.CETT(model_CETT, expected, output_nodes, loss_function, loss_function_grad, 4, true, true);
+	model_interpreter.CETT(model_CETT, expected, output_nodes, loss_function, loss_function_grad, 4);
 
 	// test values of errors of the output nodes
 	Eigen::Tensor<float, 2> model_error(batch_size, memory_size);
@@ -887,7 +887,7 @@ BOOST_AUTO_TEST_CASE(TBPTT)
 	);
 	model_interpreter.mapValuesToLayers(model_TBPTT, input, input_ids, "output");
 
-	model_interpreter.FPTT(4, true, true);
+	model_interpreter.FPTT(4);
 
 	// calculate the error
 	// expected output (from t=n to t=0)
@@ -903,9 +903,9 @@ BOOST_AUTO_TEST_CASE(TBPTT)
 	);
 	LossFunctionTensorOp<float, Eigen::DefaultDevice>* loss_function = new MSETensorOp<float, Eigen::DefaultDevice>();
 	LossFunctionGradTensorOp<float, Eigen::DefaultDevice>* loss_function_grad = new MSEGradTensorOp<float, Eigen::DefaultDevice>();
-	model_interpreter.CETT(model_TBPTT, expected, output_nodes, loss_function, loss_function_grad, 4, true, true);
+	model_interpreter.CETT(model_TBPTT, expected, output_nodes, loss_function, loss_function_grad, 4);
 
-	model_interpreter.TBPTT(4, true, true);
+	model_interpreter.TBPTT(4);
 
 	// test values of output nodes
 	Eigen::Tensor<float, 3> node_error(batch_size, memory_size, 5); // dim2: # of model nodes
@@ -965,7 +965,7 @@ BOOST_AUTO_TEST_CASE(updateWeights)
 	);
 	model_interpreter.mapValuesToLayers(model_updateWeights, input, input_ids, "output");
 
-	model_interpreter.FPTT(4, true, true);
+	model_interpreter.FPTT(4);
 
 	// calculate the error
 	// expected output (from t=n to t=0)
@@ -981,10 +981,10 @@ BOOST_AUTO_TEST_CASE(updateWeights)
 	);
 	LossFunctionTensorOp<float, Eigen::DefaultDevice>* loss_function = new MSETensorOp<float, Eigen::DefaultDevice>();
 	LossFunctionGradTensorOp<float, Eigen::DefaultDevice>* loss_function_grad = new MSEGradTensorOp<float, Eigen::DefaultDevice>();
-	model_interpreter.CETT(model_updateWeights, expected, output_nodes, loss_function, loss_function_grad, 4, true, true);
+	model_interpreter.CETT(model_updateWeights, expected, output_nodes, loss_function, loss_function_grad, 4);
 
-	model_interpreter.TBPTT(4, true, true);
-	model_interpreter.updateWeights(true, true);
+	model_interpreter.TBPTT(4);
+	model_interpreter.updateWeights();
 
 	auto weights_map = model_TBPTT.getWeightsMap();
 	// test values of output nodes
@@ -1049,14 +1049,14 @@ BOOST_AUTO_TEST_CASE(modelTrainer2)
 		model_interpreter.initBiases(model_modelTrainer2); // create the bias	
 		model_interpreter.mapValuesToLayers(model_modelTrainer2, input, input_nodes, "output");
 
-		model_interpreter.FPTT(4, false, false); //FP
+		model_interpreter.FPTT(4); //FP
 
 		// calculate the model error and node output error
-		model_interpreter.CETT(model_modelTrainer2, expected, output_nodes, loss_function, loss_function_grad, 4, false, false);
+		model_interpreter.CETT(model_modelTrainer2, expected, output_nodes, loss_function, loss_function_grad, 4);
 		std::cout << "Error at iteration: " << iter << " is " << model_interpreter.getModelError()->getError().sum() << std::endl;
 
-		model_interpreter.TBPTT(4, false, false); // BP
-		model_interpreter.updateWeights(false, false); // Weight update
+		model_interpreter.TBPTT(4); // BP
+		model_interpreter.updateWeights(); // Weight update
 
 		// reinitialize the model
 		if (iter != max_iter - 1) {

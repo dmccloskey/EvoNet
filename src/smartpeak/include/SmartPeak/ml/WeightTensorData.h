@@ -22,7 +22,7 @@ namespace SmartPeak
 		- define the weight and solver param mapping
 		- initialize tensors
   */
-	template<typename TensorT>
+	template<typename TensorT, typename DeviceT>
   class WeightTensorData
   {
 public:
@@ -92,6 +92,13 @@ public:
 
 		void initWeightTensorData(const int& layer1_size, const int&layer2_size, const std::vector<std::pair<int, int>>& weight_indices, const std::vector<TensorT>& weight_values, const bool& train, std::vector<TensorT>& solver_params);
 
+		virtual bool syncHAndDError(DeviceT& device) = 0;
+		virtual bool syncHAndDWeight(DeviceT& device) = 0;
+		virtual bool syncHAndDSolverParams(DeviceT& device) = 0;
+
+		std::pair<bool, bool> getErrorStatus() { return std::make_pair(h_error_updated_, d_error_updated_); };
+		std::pair<bool, bool> getWeightStatus() { return std::make_pair(h_weight_updated_, d_weight_updated_); };
+		std::pair<bool, bool> getSolverParamsStatus() { return std::make_pair(h_solver_params_updated_, d_solver_params_updated_); };
 protected:
 		int layer1_size_ = 1; ///< Layer1 size
 		int layer2_size_ = 2; ///< Layer2 size
@@ -114,10 +121,18 @@ protected:
 		std::shared_ptr<TensorT> d_solver_params_ = nullptr;
 		std::shared_ptr<TensorT> d_error_ = nullptr;
 		// [TODO: add drop probability]
+
+		bool h_error_updated_ = false;
+		bool h_weight_updated_ = false;
+		bool h_solver_params_updated_ = false;
+
+		bool d_error_updated_ = false;
+		bool d_weight_updated_ = false;
+		bool d_solver_params_updated_ = false;
   };
 
-	template<typename TensorT>
-	inline void WeightTensorData<TensorT>::initWeightTensorData(const int & layer1_size, const int & layer2_size, const std::vector<std::pair<int, int>>& weight_indices, const std::vector<TensorT>& weight_values, const bool & train, std::vector<TensorT>& solver_params)
+	template<typename TensorT, typename DeviceT>
+	inline void WeightTensorData<TensorT, DeviceT>::initWeightTensorData(const int & layer1_size, const int & layer2_size, const std::vector<std::pair<int, int>>& weight_indices, const std::vector<TensorT>& weight_values, const bool & train, std::vector<TensorT>& solver_params)
 	{
 		assert(weight_indices.size() == weight_values.size());
 		setLayer1Size(layer1_size);
@@ -142,7 +157,7 @@ protected:
 	}
 
 	template<typename TensorT>
-	class WeightTensorDataCpu : public WeightTensorData<TensorT> {
+	class WeightTensorDataCpu : public WeightTensorData<TensorT, Eigen::DefaultDevice> {
 	public:
 		void setWeight(const Eigen::Tensor<TensorT, 2>& weight) {
 			TensorT* h_weight = new TensorT[this->layer1_size_*this->layer2_size_];
@@ -150,6 +165,8 @@ protected:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weight_copy(h_weight, this->layer1_size_, this->layer2_size_);
 			weight_copy = weight;
 			this->h_weight_.reset(std::move(h_weight));
+			this->h_weight_updated_ = true;
+			this->d_weight_updated_ = true;
 		}; ///< weight setter
 		void setSolverParams(const Eigen::Tensor<TensorT, 3>& solver_params) {
 			TensorT* h_solver_params = new TensorT[this->layer1_size_*this->layer2_size_*this->n_solver_params_];
@@ -157,6 +174,8 @@ protected:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> solver_params_copy(h_solver_params, this->layer1_size_, this->layer2_size_, this->n_solver_params_);
 			solver_params_copy = solver_params;
 			this->h_solver_params_.reset(h_solver_params);
+			this->h_solver_params_updated_ = true;
+			this->d_solver_params_updated_ = true;
 		}; ///< solver_params setter
 		void setError(const Eigen::Tensor<TensorT, 2>& error) {
 			TensorT* h_error = new TensorT[this->layer1_size_*this->layer2_size_];
@@ -164,13 +183,18 @@ protected:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_copy(h_error, this->layer1_size_, this->layer2_size_);
 			error_copy = error;
 			this->h_error_.reset(h_error);
+			this->h_error_updated_ = true;
+			this->d_error_updated_ = true;
 		}; ///< error setter
+		bool syncHAndDError(Eigen::DefaultDevice& device) { return true; }
+		bool syncHAndDWeight(Eigen::DefaultDevice& device) { return true; }
+		bool syncHAndDSolverParams(Eigen::DefaultDevice& device) { return true; }
 	};
 
 #if COMPILE_WITH_CUDA
 
 	template<typename TensorT>
-	class WeightTensorDataGpu : public WeightTensorData<TensorT> {
+	class WeightTensorDataGpu : public WeightTensorData<TensorT, Eigen::GpuDevice> {
 	public:
 		void setWeight(const Eigen::Tensor<TensorT, 2>& weight) {
 			// allocate cuda and pinned host layer2
@@ -186,6 +210,8 @@ protected:
 			auto d_deleter = [&](TensorT* ptr) { cudaFree(ptr); };
 			this->h_weight_.reset(h_weight, h_deleter); 
 			this->d_weight_.reset(d_weight, d_deleter);
+			this->h_weight_updated_ = true;
+			this->d_weight_updated_ = false;
 		}; ///< weight setter
 		void setSolverParams(const Eigen::Tensor<TensorT, 3>& solver_params) {
 			// allocate cuda and pinned host layer2
@@ -201,6 +227,8 @@ protected:
 			auto d_deleter = [&](TensorT* ptr) { cudaFree(ptr); };
 			this->h_solver_params_.reset(h_solver_params, h_deleter);
 			this->d_solver_params_.reset(d_solver_params, d_deleter);
+			this->h_solver_params_updated_ = true;
+			this->d_solver_params_updated_ = false;
 		}; ///< solver_params setter
 		void setError(const Eigen::Tensor<TensorT, 2>& error) {
 			// allocate cuda and pinned host layer2
@@ -216,7 +244,65 @@ protected:
 			auto d_deleter = [&](TensorT* ptr) { cudaFree(ptr); };
 			this->h_error_.reset(h_error, h_deleter);
 			this->d_error_.reset(d_error, d_deleter);
+			this->h_error_updated_ = true;
+			this->d_error_updated_ = false;
 		}; ///< error setter
+		bool syncHAndDError(Eigen::GpuDevice& device) {
+			if (this->h_error_updated_ && !this->d_error_updated_) {
+				device.memcpyHostToDevice(this->d_error_.get(), this->h_error_.get(), getTensorSize());
+				this->d_error_updated_ = true;
+				this->h_error_updated_ = false;
+				return true;
+			}
+			else if (!this->h_error_updated_ && this->d_error_updated_) {
+				device.memcpyDeviceToHost(this->h_error_.get(), this->d_error_.get(), getTensorSize());
+				this->h_error_updated_ = true;
+				this->d_error_updated_ = false;
+				return true;
+			}
+			else {
+				std::cout << "Both host and device are syncHAndDronized." << std::endl;
+				return false;
+			}
+		}
+		bool syncHAndDWeight(Eigen::GpuDevice& device) {
+			if (this->h_weight_updated_ && !this->d_weight_updated_) {
+				device.memcpyHostToDevice(this->d_weight_.get(), this->h_weight_.get(), getTensorSize());
+				this->d_weight_updated_ = true;
+				this->h_weight_updated_ = false;
+				return true;
+			}
+			else if (!this->h_weight_updated_ && this->d_weight_updated_) {
+				device.memcpyDeviceToHost(this->h_weight_.get(), this->d_weight_.get(), getTensorSize());
+				this->h_weight_updated_ = true;
+				this->d_weight_updated_ = false;
+				return true;
+			}
+			else {
+				std::cout << "Both host and device are syncHAndDronized." << std::endl;
+				return false;
+			}
+			return true;
+		}
+		bool syncHAndDSolverParams(Eigen::GpuDevice& device) {
+			if (this->h_solver_params_updated_ && !this->d_solver_params_updated_) {
+				device.memcpyHostToDevice(this->d_solver_params_.get(), this->h_solver_params_.get(), getSolverParamsSize());
+				this->d_solver_params_updated_ = true;
+				this->h_solver_params_updated_ = false;
+				return true;
+			}
+			else if (!this->h_solver_params_updated_ && this->d_solver_params_updated_) {
+				device.memcpyDeviceToHost(this->h_solver_params_.get(), this->d_solver_params_.get(), getSolverParamsSize());
+				this->h_solver_params_updated_ = true;
+				this->d_solver_params_updated_ = false;
+				return true;
+			}
+			else {
+				std::cout << "Both host and device are syncHAndDronized." << std::endl;
+				return false;
+			}
+			return true;
+		}
 	};
 #endif
 }

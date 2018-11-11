@@ -19,7 +19,7 @@ namespace SmartPeak
   /**
     @brief Network NodeMatrixData
   */
-	template<typename TensorT>
+	template<typename TensorT, typename DeviceT>
   class NodeTensorData
   {
 public:
@@ -106,6 +106,18 @@ public:
 
 		void initNodeTensorData(const int& batch_size, const int& memory_size, const int& layer_size, const NodeType& node_type, const bool& train); ///< initialize the node according to node type
 
+		virtual bool syncHAndDInput(DeviceT& device) = 0;
+		virtual bool syncHAndDOutput(DeviceT& device) = 0;
+		virtual bool syncHAndDError(DeviceT& device) = 0;
+		virtual bool syncHAndDDerivative(DeviceT& device) = 0;
+		virtual bool syncHAndDDt(DeviceT& device) = 0;
+
+		std::pair<bool, bool> getInputStatus() { return std::make_pair(h_input_updated_, d_input_updated_);	};
+		std::pair<bool, bool> getOutputStatus() { return std::make_pair(h_output_updated_, d_output_updated_); };
+		std::pair<bool, bool> getErrorStatus() { return std::make_pair(h_error_updated_, d_error_updated_); };
+		std::pair<bool, bool> getDerivativeStatus() { return std::make_pair(h_derivative_updated_, d_derivative_updated_); };
+		std::pair<bool, bool> getDtStatus() { return std::make_pair(h_dt_updated_, d_dt_updated_); };
+
 protected:
 		int batch_size_ = 1; ///< Mini batch size
 		int memory_size_ = 2; ///< Memory size
@@ -126,10 +138,22 @@ protected:
 		std::shared_ptr<TensorT> d_error_ = nullptr;
 		std::shared_ptr<TensorT> d_derivative_ = nullptr;
 		std::shared_ptr<TensorT> d_dt_ = nullptr;
+
+		bool h_input_updated_ = false;
+		bool h_output_updated_ = false;
+		bool h_error_updated_ = false;
+		bool h_derivative_updated_ = false;
+		bool h_dt_updated_ = false;
+
+		bool d_input_updated_ = false;
+		bool d_output_updated_ = false;
+		bool d_error_updated_ = false;
+		bool d_derivative_updated_ = false;
+		bool d_dt_updated_ = false;
   };
 
-	template<typename TensorT>
-	inline void NodeTensorData<TensorT>::initNodeTensorData(const int& batch_size, const int& memory_size, const int& layer_size, const NodeType& node_type, const bool& train)
+	template<typename TensorT, typename DeviceT>
+	inline void NodeTensorData<TensorT, DeviceT>::initNodeTensorData(const int& batch_size, const int& memory_size, const int& layer_size, const NodeType& node_type, const bool& train)
 	{
 		setBatchSize(batch_size);	setMemorySize(memory_size);	setLayerSize(layer_size);
 		// Template zero and one tensor
@@ -144,7 +168,7 @@ protected:
 		//} else {
 		//	setDt(one);
 		//}
-		// corections for specific node types
+		// corrections for specific node types
 		if (node_type == NodeType::bias) {
 			setOutput(one);
 		}
@@ -160,7 +184,7 @@ protected:
 	}
 
 	template<typename TensorT>
-	class NodeTensorDataCpu : public NodeTensorData<TensorT> {
+	class NodeTensorDataCpu : public NodeTensorData<TensorT, Eigen::DefaultDevice> {
 	public:
 		void setInput(const Eigen::Tensor<TensorT, 3>& input) {
 			TensorT* h_input = new TensorT[this->batch_size_*this->memory_size_*this->layer_size_];
@@ -168,6 +192,8 @@ protected:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> input_copy(h_input, this->batch_size_, this->memory_size_, this->layer_size_);
 			input_copy = input;
 			this->h_input_.reset(std::move(h_input));
+			h_input_updated_ = true;
+			d_input_updated_ = true;
 		}; ///< input setter
 		void setOutput(const Eigen::Tensor<TensorT, 3>& output) {
 			TensorT* h_output = new TensorT[this->batch_size_*this->memory_size_*this->layer_size_];
@@ -175,6 +201,8 @@ protected:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> output_copy(h_output, this->batch_size_, this->memory_size_, this->layer_size_);
 			output_copy = output;
 			this->h_output_.reset(h_output);
+			this->h_output_updated_ = true;
+			this->d_output_updated_ = true;
 		}; ///< output setter
 		void setError(const Eigen::Tensor<TensorT, 3>& error) {
 			TensorT* h_error = new TensorT[this->batch_size_*this->memory_size_*this->layer_size_];
@@ -182,6 +210,8 @@ protected:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> error_copy(h_error, this->batch_size_, this->memory_size_, this->layer_size_);
 			error_copy = error;
 			this->h_error_.reset(h_error);
+			this->h_error_updated_ = true;
+			this->d_error_updated_ = true;
 		}; ///< error setter
 		void setDerivative(const Eigen::Tensor<TensorT, 3>& derivative) {
 			TensorT* h_derivative = new TensorT[this->batch_size_*this->memory_size_*this->layer_size_];
@@ -189,6 +219,8 @@ protected:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> derivative_copy(h_derivative, this->batch_size_, this->memory_size_, this->layer_size_);
 			derivative_copy = derivative;
 			this->h_derivative_.reset(h_derivative);
+			this->h_derivative_updated_ = true;
+			this->d_derivative_updated_ = true;
 		}; ///< derivative setter
 		void setDt(const Eigen::Tensor<TensorT, 3>& dt) {
 			TensorT* h_dt = new TensorT[this->batch_size_*this->memory_size_*this->layer_size_];
@@ -196,13 +228,20 @@ protected:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> dt_copy(h_dt, this->batch_size_, this->memory_size_, this->layer_size_);
 			dt_copy = dt;
 			this->h_dt_.reset(h_dt);
+			this->h_dt_updated_ = true;
+			this->d_dt_updated_ = true;
 		}; ///< dt setter
+		bool syncHAndDInput(Eigen::DefaultDevice& device) { return true; }
+		bool syncHAndDOutput(Eigen::DefaultDevice& device) {	return true; }
+		bool syncHAndDError(Eigen::DefaultDevice& device) { return true; }
+		bool syncHAndDDerivative(Eigen::DefaultDevice& device) { return true; }
+		bool syncHAndDDt(Eigen::DefaultDevice& device) { return true; }
 	};
 
 #if COMPILE_WITH_CUDA
 
 	template<typename TensorT>
-	class NodeTensorDataGpu : public NodeTensorData<TensorT> {
+	class NodeTensorDataGpu : public NodeTensorData<TensorT, Eigen::GpuDevice> {
 	public:
 		void setInput(const Eigen::Tensor<TensorT, 3>& input) {
 			// allocate cuda and pinned host memory
@@ -218,6 +257,8 @@ protected:
 			auto d_deleter = [&](TensorT* ptr) { cudaFree(ptr); };
 			this->h_input_.reset(h_input, h_deleter); 
 			this->d_input_.reset(d_input, d_deleter);
+			this->h_input_updated_ = true;
+			this->d_input_updated_ = false;
 		}; ///< input setter
 		void setOutput(const Eigen::Tensor<TensorT, 3>& output) {
 			// allocate cuda and pinned host memory
@@ -233,6 +274,8 @@ protected:
 			auto d_deleter = [&](TensorT* ptr) { cudaFree(ptr); };
 			this->h_output_.reset(h_output, h_deleter);
 			this->d_output_.reset(d_output, d_deleter);
+			this->h_output_updated_ = true;
+			this->d_output_updated_ = false;
 		}; ///< output setter
 		void setError(const Eigen::Tensor<TensorT, 3>& error) {
 			// allocate cuda and pinned host memory
@@ -248,6 +291,8 @@ protected:
 			auto d_deleter = [&](TensorT* ptr) { cudaFree(ptr); };
 			this->h_error_.reset(h_error, h_deleter);
 			this->d_error_.reset(d_error, d_deleter);
+			this->h_error_updated_ = true;
+			this->d_error_updated_ = false;
 		}; ///< error setter
 		void setDerivative(const Eigen::Tensor<TensorT, 3>& derivative) {
 			// allocate cuda and pinned host memory
@@ -263,6 +308,8 @@ protected:
 			auto d_deleter = [&](TensorT* ptr) { cudaFree(ptr); };
 			this->h_derivative_.reset(h_derivative, h_deleter);
 			this->d_derivative_.reset(d_derivative, d_deleter);
+			this->h_derivative_updated_ = true;
+			this->d_derivative_updated_ = false;
 		}; ///< derivative setter
 		void setDt(const Eigen::Tensor<TensorT, 3>& dt) {
 			// allocate cuda and pinned host memory
@@ -278,7 +325,101 @@ protected:
 			auto d_deleter = [&](TensorT* ptr) { cudaFree(ptr); };
 			this->h_dt_.reset(h_dt, h_deleter);
 			this->d_dt_.reset(d_dt, d_deleter);
+			this->h_dt_updated_ = true;
+			this->d_dt_updated_ = false;
 		}; ///< dt setter
+		bool syncHAndDInput(Eigen::GpuDevice& device){
+			if (this->h_input_updated_ && !this->d_input_updated_) {
+				device.memcpyHostToDevice(this->d_input_.get(), this->h_input_.get(), getTensorSize());
+				this->d_input_updated_ = true;
+				this->h_input_updated_ = false;
+				return true;
+			}
+			else if (!this->h_input_updated_ && this->d_input_updated_) {
+				device.memcpyDeviceToHost(this->h_input_.get(), this->d_input_.get(), getTensorSize());
+				this->h_input_updated_ = true;
+				this->d_input_updated_ = false;
+				return true;
+			}
+			else {
+				std::cout << "Both host and device are syncHAndDronized." << std::endl;
+				return false;
+			}
+		}
+		bool syncHAndDOutput(Eigen::GpuDevice& device){
+			if (this->h_output_updated_ && !this->d_output_updated_) {
+				device.memcpyHostToDevice(this->d_output_.get(), this->h_output_.get(), getTensorSize());
+				this->d_output_updated_ = true;
+				this->h_output_updated_ = false;
+				return true;
+			}
+			else if (!this->h_output_updated_ && this->d_output_updated_) {
+				device.memcpyDeviceToHost(this->h_output_.get(), this->d_output_.get(), getTensorSize());
+				this->h_output_updated_ = true;
+				this->d_output_updated_ = false;
+				return true;
+			}
+			else {
+				std::cout << "Both host and device are syncHAndDronized." << std::endl;
+				return false;
+			}
+		}
+		bool syncHAndDError(Eigen::GpuDevice& device){
+			if (this->h_error_updated_ && !this->d_error_updated_) {
+				device.memcpyHostToDevice(this->d_error_.get(), this->h_error_.get(), getTensorSize());
+				this->d_error_updated_ = true;
+				this->h_error_updated_ = false;
+				return true;
+			}
+			else if (!this->h_error_updated_ && this->d_error_updated_) {
+				device.memcpyDeviceToHost(this->h_error_.get(), this->d_error_.get(), getTensorSize());
+				this->h_error_updated_ = true;
+				this->d_error_updated_ = false;
+				return true;
+			}
+			else {
+				std::cout << "Both host and device are syncHAndDronized." << std::endl;
+				return false;
+			}
+		}
+		bool syncHAndDDerivative(Eigen::GpuDevice& device){
+			if (this->h_derivative_updated_ && !this->d_derivative_updated_) {
+				device.memcpyHostToDevice(this->d_derivative_.get(), this->h_derivative_.get(), getTensorSize());
+				this->d_derivative_updated_ = true;
+				this->h_derivative_updated_ = false;
+				return true;
+			}
+			else if (!this->h_derivative_updated_ && this->d_derivative_updated_) {
+				device.memcpyDeviceToHost(this->h_derivative_.get(), this->d_derivative_.get(), getTensorSize());
+				this->h_derivative_updated_ = true;
+				this->d_derivative_updated_ = false;
+				return true;
+			}
+			else {
+				std::cout << "Both host and device are syncHAndDronized." << std::endl;
+				return false;
+			}
+			return true;
+		}
+		bool syncHAndDDt(Eigen::GpuDevice& device){
+			if (this->h_dt_updated_ && !this->d_dt_updated_) {
+				device.memcpyHostToDevice(this->d_dt_.get(), this->h_dt_.get(), getTensorSize());
+				this->d_dt_updated_ = true;
+				this->h_dt_updated_ = false;
+				return true;
+			}
+			else if (!this->h_dt_updated_ && this->d_dt_updated_) {
+				device.memcpyDeviceToHost(this->h_dt_.get(), this->d_dt_.get(), getTensorSize());
+				this->h_dt_updated_ = true;
+				this->d_dt_updated_ = false;
+				return true;
+			}
+			else {
+				std::cout << "Both host and device are syncHAndDronized." << std::endl;
+				return false;
+			}
+			return true;
+		}
 	};
 #endif
 }

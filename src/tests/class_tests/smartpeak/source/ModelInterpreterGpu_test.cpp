@@ -342,7 +342,7 @@ void test_executeForwardPropogationOperations()
 	//biases.setConstant(1);
 	//model_interpreter.mapValuesToLayers(model_mapValuesToLayers, biases, biases_ids, "output");
 
-	model_interpreter.executeForwardPropogationOperations(0, true, true);
+	model_interpreter.executeForwardPropogationOperations(0);
 
 	// test values of output nodes
 	Eigen::Tensor<float, 2> output(batch_size, 2);
@@ -389,7 +389,7 @@ void test_executeModelErrorOperations()
 	model_interpreter.mapValuesToLayers(model_executeModelErrorOperations, input, node_ids, "output");
 
 	model_interpreter.initBiases(model_executeModelErrorOperations); // create the bias	
-	model_interpreter.executeForwardPropogationOperations(0, true, true); // FP
+	model_interpreter.executeForwardPropogationOperations(0); // FP
 	model_interpreter.allocateModelErrorTensor(batch_size, memory_size); // allocate the memory
 
 	// calculate the model error
@@ -399,7 +399,7 @@ void test_executeModelErrorOperations()
 	LossFunctionTensorOp<float, Eigen::GpuDevice>* solver = new MSETensorOp<float, Eigen::GpuDevice>();
 	LossFunctionGradTensorOp<float, Eigen::GpuDevice>* solver_grad = new MSEGradTensorOp<float, Eigen::GpuDevice>();
 	const int layer_id = model_executeModelErrorOperations.getNode("4").getTensorIndex().first;
-	model_interpreter.executeModelErrorOperations(expected, layer_id, solver, solver_grad, 0, true, true);
+	model_interpreter.executeModelErrorOperations(expected, layer_id, solver, solver_grad, 0);
 
 	Eigen::Tensor<float, 2> error(batch_size, memory_size);
 	error.setValues({ {105.25, 0 }, {171.25, 0}, {253.25, 0}, {351.25, 0} });
@@ -445,7 +445,7 @@ void test_executeBackwardPropogationOperations()
 	model_interpreter.mapValuesToLayers(model_executeBackwardPropogationOperations, input, node_ids, "output");
 
 	model_interpreter.initBiases(model_executeBackwardPropogationOperations); // create the bias	
-	model_interpreter.executeForwardPropogationOperations(0, true, true); // FP
+	model_interpreter.executeForwardPropogationOperations(0); // FP
 	model_interpreter.allocateModelErrorTensor(batch_size, memory_size); // allocate the memory
 
 	// calculate the model error
@@ -455,9 +455,9 @@ void test_executeBackwardPropogationOperations()
 	LossFunctionTensorOp<float, Eigen::GpuDevice>* solver = new MSETensorOp<float, Eigen::GpuDevice>();
 	LossFunctionGradTensorOp<float, Eigen::GpuDevice>* solver_grad = new MSEGradTensorOp<float, Eigen::GpuDevice>();
 	const int layer_id = model_executeBackwardPropogationOperations.getNode("4").getTensorIndex().first;
-	model_interpreter.executeModelErrorOperations(expected, layer_id, solver, solver_grad, 0, true, true);
+	model_interpreter.executeModelErrorOperations(expected, layer_id, solver, solver_grad, 0);
 
-	model_interpreter.executeBackwardPropogationOperations(0, true, true); // BP
+	model_interpreter.executeBackwardPropogationOperations(0); // BP
 
 	std::vector<std::string> error_nodes = { "6", "2", "3" };
 	Eigen::Tensor<float, 2> error(batch_size, (int)error_nodes.size());
@@ -495,7 +495,7 @@ void test_executeWeightErrorOperations()
 	model_interpreter.mapValuesToLayers(model_executeWeightErrorOperations, input, node_ids, "output");
 
 	model_interpreter.initBiases(model_executeWeightErrorOperations); // create the bias	
-	model_interpreter.executeForwardPropogationOperations(0, true, true); // FP
+	model_interpreter.executeForwardPropogationOperations(0); // FP
 	model_interpreter.allocateModelErrorTensor(batch_size, memory_size); // allocate the memory
 
 	// calculate the model error
@@ -505,10 +505,10 @@ void test_executeWeightErrorOperations()
 	LossFunctionTensorOp<float, Eigen::GpuDevice>* solver = new MSETensorOp<float, Eigen::GpuDevice>();
 	LossFunctionGradTensorOp<float, Eigen::GpuDevice>* solver_grad = new MSEGradTensorOp<float, Eigen::GpuDevice>();
 	const int layer_id = model_executeWeightErrorOperations.getNode("4").getTensorIndex().first;
-	model_interpreter.executeModelErrorOperations(expected, layer_id, solver, solver_grad, 0, true, true);
+	model_interpreter.executeModelErrorOperations(expected, layer_id, solver, solver_grad, 0);
 
-	model_interpreter.executeBackwardPropogationOperations(0, true, true); // BP
-	model_interpreter.executeWeightErrorOperations(0, true, true); // Weight error
+	model_interpreter.executeBackwardPropogationOperations(0); // BP
+	model_interpreter.executeWeightErrorOperations(); // Weight error
 
   // test values of input and hidden layers
 	const std::vector<std::string> weight_ids = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11" };
@@ -549,7 +549,7 @@ void test_executeWeightUpdateOperations()
 	model_interpreter.mapValuesToLayers(model_executeWeightUpdateOperations, input, node_ids, "output");
 
 	model_interpreter.initBiases(model_executeWeightUpdateOperations); // create the bias	
-	model_interpreter.executeForwardPropogationOperations(0, true, true); // FP
+	model_interpreter.executeForwardPropogationOperations(0); // FP
 	model_interpreter.allocateModelErrorTensor(batch_size, memory_size); // allocate the memory
 
 	// calculate the model error
@@ -559,11 +559,11 @@ void test_executeWeightUpdateOperations()
 	LossFunctionTensorOp<float, Eigen::GpuDevice>* solver = new MSETensorOp<float, Eigen::GpuDevice>();
 	LossFunctionGradTensorOp<float, Eigen::GpuDevice>* solver_grad = new MSEGradTensorOp<float, Eigen::GpuDevice>();
 	const int layer_id = model_executeWeightUpdateOperations.getNode("4").getTensorIndex().first;
-	model_interpreter.executeModelErrorOperations(expected, layer_id, solver, solver_grad, 0, true, true);
+	model_interpreter.executeModelErrorOperations(expected, layer_id, solver, solver_grad, 0);
 
-	model_interpreter.executeBackwardPropogationOperations(0, true, true); // BP
-	model_interpreter.executeWeightErrorOperations(0, true, true); // Weight error
-	model_interpreter.executeWeightUpdateOperations(0, true, true); // Weight update
+	model_interpreter.executeBackwardPropogationOperations(0); // BP
+	model_interpreter.executeWeightErrorOperations(); // Weight error
+	model_interpreter.executeWeightUpdateOperations(); // Weight update
 
   // test values of input and hidden layers
 	const std::vector<std::string> weight_ids = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11" };

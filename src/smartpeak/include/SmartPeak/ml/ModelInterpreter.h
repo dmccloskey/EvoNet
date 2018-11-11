@@ -57,7 +57,7 @@ namespace SmartPeak
 	class OperationLayer
 	{
 	public:
-		std::shared_ptr<NodeTensorData<TensorT>> tensor = nullptr;
+		std::shared_ptr<NodeTensorData<TensorT, DeviceT>> tensor = nullptr;
 		int time_step = 0;
 		std::shared_ptr<IntegrationTensorOp<TensorT, DeviceT>> integration = nullptr;
 		std::shared_ptr<IntegrationErrorTensorOp<TensorT, DeviceT>> integration_error = nullptr;
@@ -70,7 +70,7 @@ namespace SmartPeak
 	class OperationWeight
 	{
 	public:
-		std::shared_ptr<WeightTensorData<TensorT>> tensor = nullptr;
+		std::shared_ptr<WeightTensorData<TensorT, DeviceT>> tensor = nullptr;
 		std::shared_ptr<WeightInitOp<TensorT>> weight_init = nullptr;
 		std::shared_ptr<SolverTensorOp<TensorT, DeviceT>> solver = nullptr;
 	};
@@ -334,7 +334,7 @@ namespace SmartPeak
 		@param[in] sync_HToD Short circuit for testing that copies all host data to the device
 		@param[in] sync_DToH Short circuit for testing that copies all device data to the host
 		*/
-		virtual void executeForwardPropogationOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false) = 0;
+		virtual void executeForwardPropogationOperations(const int& time_step) = 0;
 
 		/**
 		@brief Execute model kernal methods required for calculating the model and output node error
@@ -343,7 +343,7 @@ namespace SmartPeak
 		@param[in] sync_HToD Short circuit for testing that copies all host data to the device
 		@param[in] sync_DToH Short circuit for testing that copies all device data to the host
 		*/
-		virtual void executeModelErrorOperations(Eigen::Tensor<TensorT, 2>& expected, const int& layer_id, LossFunctionTensorOp<TensorT, DeviceT>* loss_function, LossFunctionGradTensorOp<TensorT, DeviceT>* loss_function_grad, const int& time_step, bool sync_HToD = false, bool sync_DToH = false) = 0;
+		virtual void executeModelErrorOperations(Eigen::Tensor<TensorT, 2>& expected, const int& layer_id, LossFunctionTensorOp<TensorT, DeviceT>* loss_function, LossFunctionGradTensorOp<TensorT, DeviceT>* loss_function_grad, const int& time_step) = 0;
 
 		/**
 		@brief Execute model kernal methods required for backward propogation
@@ -352,7 +352,7 @@ namespace SmartPeak
 		@param[in] sync_HToD Short circuit for testing that copies all host data to the device
 		@param[in] sync_DToH Short circuit for testing that copies all device data to the host
 		*/
-		virtual void executeBackwardPropogationOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false) = 0;
+		virtual void executeBackwardPropogationOperations(const int& time_step) = 0;
 
 		/**
 		@brief Execute model kernal methods required for weight error calculations
@@ -360,7 +360,7 @@ namespace SmartPeak
 		@param[in] sync_HToD Short circuit for testing that copies all host data to the device
 		@param[in] sync_DToH Short circuit for testing that copies all device data to the host
 		*/
-		virtual void executeWeightErrorOperations(bool sync_HToD = false, bool sync_DToH = false) = 0;
+		virtual void executeWeightErrorOperations() = 0;
 
 		/**
 		@brief Execute model kernal methods required for weight update calculations
@@ -368,18 +368,18 @@ namespace SmartPeak
 		@param[in] sync_HToD Short circuit for testing that copies all host data to the device
 		@param[in] sync_DToH Short circuit for testing that copies all device data to the host
 		*/
-		virtual void executeWeightUpdateOperations(bool sync_HToD = false, bool sync_DToH = false) = 0;
+		virtual void executeWeightUpdateOperations() = 0;
 		
-		void addLayerTensor(NodeTensorData<TensorT>& layer); ///< add a layer to the cache
+		void addLayerTensor(NodeTensorData<TensorT, DeviceT>& layer); ///< add a layer to the cache
 		void clearLayerTensors(); ///< clear all layers from the cache
-		std::shared_ptr<NodeTensorData<TensorT>> getLayerTensor(const int& layer_index); ///< get a layer from the cache
+		std::shared_ptr<NodeTensorData<TensorT, DeviceT>> getLayerTensor(const int& layer_index); ///< get a layer from the cache
 
-		void addWeightTensor(WeightTensorData<TensorT>& weight); ///< add a weight to the cache
+		void addWeightTensor(WeightTensorData<TensorT, DeviceT>& weight); ///< add a weight to the cache
 		void clearWeightTensors(); ///< clear all weights from the cache
-		std::shared_ptr<WeightTensorData<TensorT>> getWeightTensor(const int& weight_index); ///< get a weight from the cache
+		std::shared_ptr<WeightTensorData<TensorT, DeviceT>> getWeightTensor(const int& weight_index); ///< get a weight from the cache
 
 		virtual void allocateModelErrorTensor(const int& batch_size, const int& memory_size) = 0; ///< set the model error
-		std::shared_ptr<ModelErrorData<TensorT>> getModelError(); ///< get the model error
+		std::shared_ptr<ModelErrorData<TensorT, DeviceT>> getModelError(); ///< get the model error
 
 		void addOperationSteps(const std::vector<OperationTensorStep<TensorT, DeviceT>>& operation_steps);
 		std::vector<OperationTensorStep<TensorT, DeviceT>> getOperationSteps(const int& operation_index);
@@ -395,7 +395,7 @@ namespace SmartPeak
 		@param[in] node_names
 		@param[in] dt Node time resolution
 		*/
-		void FPTT(const int& time_steps, bool sync_HToD = false, bool sync_DToH = false);
+		void FPTT(const int& time_steps);
 
 		/**
 		@brief Calculates the error of the model through time (CETT)
@@ -406,7 +406,7 @@ namespace SmartPeak
 			where t=n to t=0
 		@param[in] node_names Output nodes
 		*/
-		void CETT(Model<TensorT>& model, const Eigen::Tensor<TensorT, 3>& values, const std::vector<std::string>& node_names, LossFunctionTensorOp<TensorT, DeviceT>* loss_function, LossFunctionGradTensorOp<TensorT, DeviceT>* loss_function_grad, const int& time_steps, bool sync_HToD = false, bool sync_DToH = false);
+		void CETT(Model<TensorT>& model, const Eigen::Tensor<TensorT, 3>& values, const std::vector<std::string>& node_names, LossFunctionTensorOp<TensorT, DeviceT>* loss_function, LossFunctionGradTensorOp<TensorT, DeviceT>* loss_function_grad, const int& time_steps);
 
 		/**
 		@brief Truncated Back Propogation Through Time (TBPTT) of the network model.
@@ -414,7 +414,7 @@ namespace SmartPeak
 		@param[in] time_steps The number of time_steps backwards to
 			unfold the network model.
 		*/
-		void TBPTT(const int& time_steps, bool sync_HToD = false, bool sync_DToH = false);
+		void TBPTT(const int& time_steps);
 
 		/**
 		@brief Recurrent Real Time Learning (RTRL) of the network model.
@@ -422,19 +422,19 @@ namespace SmartPeak
 		@param[in] time_steps The number of time_steps backwards to
 			unfold the network model.
 		*/
-		void RTRL(const int& time_steps, bool sync_HToD = false, bool sync_DToH = false);
+		void RTRL(const int& time_steps);
 
 		/**
 		@brief Update the weights
 
 		*/
-		void updateWeights(bool sync_HToD = false, bool sync_DToH = false);
+		void updateWeights();
 
 	protected:
 		std::vector<std::vector<OperationTensorStep<TensorT, DeviceT>>> operation_steps_;
-		std::vector<std::shared_ptr<NodeTensorData<TensorT>>> layer_tensors_;
-		std::vector<std::shared_ptr<WeightTensorData<TensorT>>> weight_tensors_;
-		std::shared_ptr<ModelErrorData<TensorT>> model_error_;
+		std::vector<std::shared_ptr<NodeTensorData<TensorT, DeviceT>>> layer_tensors_;
+		std::vector<std::shared_ptr<WeightTensorData<TensorT, DeviceT>>> weight_tensors_;
+		std::shared_ptr<ModelErrorData<TensorT, DeviceT>> model_error_;
 	};
 
 	template<typename TensorT, typename DeviceT>
@@ -1177,9 +1177,9 @@ namespace SmartPeak
 	}
 	
 	template<typename TensorT, typename DeviceT>
-	inline void ModelInterpreter<TensorT, DeviceT>::addLayerTensor(NodeTensorData<TensorT>& layer)
+	inline void ModelInterpreter<TensorT, DeviceT>::addLayerTensor(NodeTensorData<TensorT, DeviceT>& layer)
 	{
-		std::shared_ptr<NodeTensorData<TensorT>> layer_ptr(std::move(&layer));
+		std::shared_ptr<NodeTensorData<TensorT, DeviceT>> layer_ptr(std::move(&layer));
 		layer_tensors_.push_back(layer_ptr);
 	}
 
@@ -1190,15 +1190,15 @@ namespace SmartPeak
 	}
 
 	template<typename TensorT, typename DeviceT>
-	inline std::shared_ptr<NodeTensorData<TensorT>> ModelInterpreter<TensorT, DeviceT>::getLayerTensor(const int & layer_index)
+	inline std::shared_ptr<NodeTensorData<TensorT, DeviceT>> ModelInterpreter<TensorT, DeviceT>::getLayerTensor(const int & layer_index)
 	{
 		return layer_tensors_.at(layer_index);
 	}
 
 	template<typename TensorT, typename DeviceT>
-	inline void ModelInterpreter<TensorT, DeviceT>::addWeightTensor(WeightTensorData<TensorT>& weight)
+	inline void ModelInterpreter<TensorT, DeviceT>::addWeightTensor(WeightTensorData<TensorT, DeviceT>& weight)
 	{
-		std::shared_ptr<WeightTensorData<TensorT>> weight_ptr(&weight);
+		std::shared_ptr<WeightTensorData<TensorT, DeviceT>> weight_ptr(&weight);
 		weight_tensors_.push_back(weight_ptr);
 	}
 
@@ -1209,13 +1209,13 @@ namespace SmartPeak
 	}
 
 	template<typename TensorT, typename DeviceT>
-	inline std::shared_ptr<WeightTensorData<TensorT>> ModelInterpreter<TensorT, DeviceT>::getWeightTensor(const int & weight_index)
+	inline std::shared_ptr<WeightTensorData<TensorT, DeviceT>> ModelInterpreter<TensorT, DeviceT>::getWeightTensor(const int & weight_index)
 	{
 		return weight_tensors_.at(weight_index);
 	}
 
 	template<typename TensorT, typename DeviceT>
-	inline std::shared_ptr<ModelErrorData<TensorT>> ModelInterpreter<TensorT, DeviceT>::getModelError()
+	inline std::shared_ptr<ModelErrorData<TensorT, DeviceT>> ModelInterpreter<TensorT, DeviceT>::getModelError()
 	{
 		return model_error_;
 	}
@@ -1237,7 +1237,7 @@ namespace SmartPeak
 	}
 
 	template<typename TensorT, typename DeviceT>
-	inline void ModelInterpreter<TensorT, DeviceT>::FPTT(const int& time_steps, bool sync_HToD, bool sync_DToH)
+	inline void ModelInterpreter<TensorT, DeviceT>::FPTT(const int& time_steps)
 	{
 		// check time_steps vs memory_size
 		int max_steps = time_steps;
@@ -1249,18 +1249,13 @@ namespace SmartPeak
 
 		for (int time_step = 0; time_step < max_steps; ++time_step)		{
 			const int time_step_cur = max_steps - 1 - time_step;
-			if (time_step == 0)
-				executeForwardPropogationOperations(time_step_cur, sync_HToD, false);
-			else if (time_step == max_steps - 1)
-				executeForwardPropogationOperations(time_step_cur, false, sync_DToH);
-			else
-				executeForwardPropogationOperations(time_step_cur, false, false);
+			executeForwardPropogationOperations(time_step_cur);
 		}
 	}
 
 	template<typename TensorT, typename DeviceT>
 	inline void ModelInterpreter<TensorT, DeviceT>::CETT(Model<TensorT>& model, const Eigen::Tensor<TensorT, 3>& values, const std::vector<std::string>& node_names, 
-		LossFunctionTensorOp<TensorT, DeviceT>* loss_function, LossFunctionGradTensorOp<TensorT, DeviceT>* loss_function_grad, const int & time_steps, bool sync_HToD, bool sync_DToH)
+		LossFunctionTensorOp<TensorT, DeviceT>* loss_function, LossFunctionGradTensorOp<TensorT, DeviceT>* loss_function_grad, const int & time_steps)
 	{
 		// check time_steps vs memory_size
 		// [NOTE: was changed form memory_size to memory_size - 1]
@@ -1288,17 +1283,12 @@ namespace SmartPeak
 
 			// calculate the error for each batch of memory
 			Eigen::Tensor<TensorT, 2> expected = values.chip(next_time_step, 1);
-		  if (time_step == 0)
-				executeModelErrorOperations(expected, layer_id, loss_function, loss_function_grad, time_step, sync_HToD, false);
-			else if (time_step == max_steps - 1)
-				executeModelErrorOperations(expected, layer_id, loss_function, loss_function_grad, time_step, false, sync_DToH);
-			else
-				executeModelErrorOperations(expected, layer_id, loss_function, loss_function_grad, time_step, false, false);
+		  executeModelErrorOperations(expected, layer_id, loss_function, loss_function_grad, time_step);
 		}
 	}
 
 	template<typename TensorT, typename DeviceT>
-	inline void ModelInterpreter<TensorT, DeviceT>::TBPTT(const int& time_steps, bool sync_HToD, bool sync_DToH)
+	inline void ModelInterpreter<TensorT, DeviceT>::TBPTT(const int& time_steps)
 	{
 		// check time_steps vs memory_size
 		int max_steps = time_steps;
@@ -1310,20 +1300,15 @@ namespace SmartPeak
 		for (int time_step = 0; time_step < max_steps; ++time_step) {
 
 			// calculate the error for each batch of memory
-			if (time_step == 0)
-				executeBackwardPropogationOperations(time_step, sync_HToD, false);
-			else if (time_step == max_steps - 1)
-				executeBackwardPropogationOperations(time_step, false, sync_DToH);
-			else
-				executeBackwardPropogationOperations(time_step, false, false);
+			executeBackwardPropogationOperations(time_step);
 		}
 	}
 
 	template<typename TensorT, typename DeviceT>
-	inline void ModelInterpreter<TensorT, DeviceT>::updateWeights(bool sync_HToD, bool sync_DToH)
+	inline void ModelInterpreter<TensorT, DeviceT>::updateWeights()
 	{
-		executeWeightErrorOperations(sync_HToD, sync_DToH);
-		executeWeightUpdateOperations(sync_HToD, sync_DToH);
+		executeWeightErrorOperations();
+		executeWeightUpdateOperations();
 	}
 }
 #endif //SMARTPEAK_MODELINTERPRETER_H
