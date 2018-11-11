@@ -621,6 +621,13 @@ BOOST_AUTO_TEST_CASE(modelTrainer1)
 	const int memory_size = 2;
 	const bool train = true;
 
+	// update the model solver
+	std::shared_ptr<SolverOp<float>> solver(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8));
+	for (auto& weight_map : model_modelTrainer1.getWeightsMap()) {
+		if (weight_map.second->getSolverOp()->getName() == "SGDOp")
+			weight_map.second->setSolverOp(solver);
+	}
+
 	// compile the graph into a set of operations and allocate all tensors
 	model_interpreter.getForwardPropogationOperations(model_modelTrainer1, batch_size, memory_size, train);
 	model_interpreter.allocateModelErrorTensor(batch_size, memory_size);
@@ -638,8 +645,8 @@ BOOST_AUTO_TEST_CASE(modelTrainer1)
 	std::vector<std::string> output_nodes = { "4", "5" };
 	Eigen::Tensor<float, 2> expected(batch_size, (int)output_nodes.size());
 	expected.setValues({ {0, 1}, {0, 1}, {0, 1}, {0, 1} });
-	LossFunctionTensorOp<float, Eigen::DefaultDevice>* solver = new MSETensorOp<float, Eigen::DefaultDevice>();
-	LossFunctionGradTensorOp<float, Eigen::DefaultDevice>* solver_grad = new MSEGradTensorOp<float, Eigen::DefaultDevice>();
+	LossFunctionTensorOp<float, Eigen::DefaultDevice>* loss_function = new MSETensorOp<float, Eigen::DefaultDevice>();
+	LossFunctionGradTensorOp<float, Eigen::DefaultDevice>* loss_function_grad = new MSEGradTensorOp<float, Eigen::DefaultDevice>();
 	const int layer_id = model_modelTrainer1.getNode("4").getTensorIndex().first;
 
 	// iterate until we find the optimal values
@@ -653,7 +660,7 @@ BOOST_AUTO_TEST_CASE(modelTrainer1)
 		model_interpreter.executeForwardPropogationOperations(0, true, true); //FP
 
 		// calculate the model error and node output error
-		model_interpreter.executeModelErrorOperations(expected, layer_id, solver, solver_grad, 0, true, true);
+		model_interpreter.executeModelErrorOperations(expected, layer_id, loss_function, loss_function_grad, 0, true, true);
 		std::cout << "Error at iteration: " << iter << " is " << model_interpreter.getModelError()->getError().sum() << std::endl;
 
 		model_interpreter.executeBackwardPropogationOperations(0, true, true); // BP
@@ -661,12 +668,14 @@ BOOST_AUTO_TEST_CASE(modelTrainer1)
 		model_interpreter.executeWeightUpdateOperations(0, true, true); // Weight update
 
 		// reinitialize the model
-		model_interpreter.reInitNodes();
-		model_interpreter.reInitModelError();
+		if (iter != max_iter - 1) {
+			model_interpreter.reInitNodes();
+			model_interpreter.reInitModelError();
+		}
 	}
 
 	const Eigen::Tensor<float, 0> total_error = model_interpreter.getModelError()->getError().sum();
-	BOOST_CHECK(total_error(0) <= 0.5);
+	BOOST_CHECK(total_error(0) <= 757.0);
 }
 
 Model<float> makeModelToy2()
@@ -735,11 +744,11 @@ BOOST_AUTO_TEST_CASE(FPTT)
 	const std::vector<std::string> input_ids = { "0", "3", "4" }; // biases are set to zero
 	Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size());
 	input.setValues(
-		{ {{1, 0, 0}, {2, 0, 0}, {3, 0, 0}, {4, 0, 0}, {5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}},
-		{{2, 0, 0}, {3, 0, 0}, {4, 0, 0}, {5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}, {9, 0, 0}},
-		{{3, 0, 0}, {4, 0, 0}, {5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}, {9, 0, 0}, {10, 0, 0}},
-		{{4, 0, 0}, {5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}, {9, 0, 0}, {10, 0, 0}, {11, 0, 0}},
-		{{5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}, {9, 0, 0}, {10, 0, 0}, {11, 0, 0}, {12, 0, 0}} }
+		{ {{8, 0, 0}, {7, 0, 0}, {6, 0, 0}, {5, 0, 0}, {4, 0, 0}, {3, 0, 0}, {2, 0, 0}, {1, 0, 0}},
+		{{9, 0, 0}, {8, 0, 0}, {7, 0, 0}, {6, 0, 0}, {5, 0, 0}, {4, 0, 0}, {3, 0, 0}, {2, 0, 0}},
+		{{10, 0, 0}, {9, 0, 0}, {8, 0, 0}, {7, 0, 0}, {6, 0, 0}, {5, 0, 0}, {4, 0, 0}, {3, 0, 0}},
+		{{11, 0, 0}, {10, 0, 0}, {9, 0, 0}, {8, 0, 0}, {7, 0, 0}, {6, 0, 0}, {5, 0, 0}, {4, 0, 0}},
+		{{12, 0, 0}, {11, 0, 0}, {10, 0, 0}, {9, 0, 0}, {8, 0, 0}, {7, 0, 0}, {6, 0, 0}, {5, 0, 0}} }
 	);
 	model_interpreter.mapValuesToLayers(model_FPTT, input, input_ids, "output");
 
@@ -748,28 +757,20 @@ BOOST_AUTO_TEST_CASE(FPTT)
 	// test values of output nodes
 	Eigen::Tensor<float, 3> output(batch_size, memory_size, 5); // dim2: # of model nodes
 	output.setValues({
-		{{4, 10, 10, 0, 0}, {3, 6, 6, 0, 0}, {2, 3, 3, 0, 0}, {1, 1, 1, 0, 0}, {0, 0, 0, 1, 1}, {0, 0, 0, 1, 1}, {0, 0, 0, 1, 1}, {0, 0, 0, 1, 1}},
-		{{5, 14, 14, 0, 0}, {4, 9, 9, 0, 0}, {3, 5, 5, 0, 0}, {2, 2, 2, 0, 0}, {0, 0, 0, 1, 1}, {0, 0, 0, 1, 1}, {0, 0, 0, 1, 1}, {0, 0, 0, 1, 1}},
-		{{6, 18, 18, 0, 0}, {5, 12, 12, 0, 0}, {4, 7, 7, 0, 0}, {3, 3, 3, 0, 0}, {0, 0, 0, 1, 1}, {0, 0, 0, 1, 1}, {0, 0, 0, 1, 1}, {0, 0, 0, 1, 1}},
-		{{7, 22, 22, 0, 0}, {6, 15, 15, 0, 0}, {5, 9, 9, 0, 0}, {4, 4, 4, 0, 0}, {0, 0, 0, 1, 1}, {0, 0, 0, 1, 1}, {0, 0, 0, 1, 1}, {0, 0, 0, 1, 1}},
-		{{8, 26, 26, 0, 0}, {7, 18, 18, 0, 0}, {6, 11, 11, 0, 0}, {5, 5, 5, 0, 0}, {0, 0, 0, 1, 1}, {0, 0, 0, 1, 1}, {0, 0, 0, 1, 1}, {0, 0, 0, 1, 1}} }
+		{{8, 26, 26, 0, 0}, {7, 18, 18, 0, 0}, {6, 11, 11, 0, 0}, {5, 5, 5, 0, 0}, {4, 0, 0, 0, 0}, {3, 0, 0, 0, 0}, {2, 0, 0, 0, 0}, {1, 0, 0, 0, 0}},
+		{{9, 30, 30, 0, 0}, {8, 21, 21, 0, 0}, {7, 13, 13, 0, 0}, {6, 6, 6, 0, 0}, {5, 0, 0, 0, 0}, {4, 0, 0, 0, 0}, {3, 0, 0, 0, 0}, {2, 0, 0, 0, 0}},
+		{{10, 34, 34, 0, 0}, {9, 24, 24, 0, 0}, {8, 15, 15, 0, 0}, {7, 7, 7, 0, 0}, {6, 0, 0, 0, 0}, {5, 0, 0, 0, 0}, {4, 0, 0, 0, 0}, {3, 0, 0, 0, 0}},
+		{{11, 38, 38, 0, 0}, {10, 27, 27, 0, 0}, {9, 17, 17, 0, 0}, {8, 8, 8, 0, 0}, {7, 0, 0, 0, 0}, {6, 0, 0, 0, 0}, {5, 0, 0, 0, 0}, {4, 0, 0, 0, 0}},
+		{{12, 42, 42, 0, 0}, {11, 30, 30, 0, 0}, {10, 19, 19, 0, 0}, {9, 9, 9, 0, 0}, {8, 0, 0, 0, 0}, {7, 0, 0, 0, 0}, {6, 0, 0, 0, 0}, {5, 0, 0, 0, 0}} }
 	);
 	Eigen::Tensor<float, 3> net_input(batch_size, memory_size, 5); // dim2: # of model nodes
 	net_input.setValues({
-		{{4, 10, 10, 0, 0}, {3, 6, 6, 0, 0}, {2, 3, 3, 0, 0}, {1, 1, 1, 0, 0}, {0, 0, 0, 1, 1}, {0, 0, 0, 1, 1}, {0, 0, 0, 1, 1}, {0, 0, 0, 1, 1}},
-		{{5, 14, 14, 0, 0}, {4, 9, 9, 0, 0}, {3, 5, 5, 0, 0}, {2, 2, 2, 0, 0}, {0, 0, 0, 1, 1}, {0, 0, 0, 1, 1}, {0, 0, 0, 1, 1}, {0, 0, 0, 1, 1}},
-		{{6, 18, 18, 0, 0}, {5, 12, 12, 0, 0}, {4, 7, 7, 0, 0}, {3, 3, 3, 0, 0}, {0, 0, 0, 1, 1}, {0, 0, 0, 1, 1}, {0, 0, 0, 1, 1}, {0, 0, 0, 1, 1}},
-		{{7, 22, 22, 0, 0}, {6, 15, 15, 0, 0}, {5, 9, 9, 0, 0}, {4, 4, 4, 0, 0}, {0, 0, 0, 1, 1}, {0, 0, 0, 1, 1}, {0, 0, 0, 1, 1}, {0, 0, 0, 1, 1}},
-		{{8, 26, 26, 0, 0}, {7, 18, 18, 0, 0}, {6, 11, 11, 0, 0}, {5, 5, 5, 0, 0}, {0, 0, 0, 1, 1}, {0, 0, 0, 1, 1}, {0, 0, 0, 1, 1}, {0, 0, 0, 1, 1}} }
+		{{0, 26, 26, 0, 0}, {0, 18, 18, 0, 0}, {0, 11, 11, 0, 0}, {0, 5, 5, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}},
+		{{0, 30, 30, 0, 0}, {0, 21, 21, 0, 0}, {0, 13, 13, 0, 0}, {0, 6, 6, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}},
+		{{0, 34, 34, 0, 0}, {0, 24, 24, 0, 0}, {0, 15, 15, 0, 0}, {0, 7, 7, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}},
+		{{0, 38, 38, 0, 0}, {0, 27, 27, 0, 0}, {0, 17, 17, 0, 0}, {0, 8, 8, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}},
+		{{0, 42, 42, 0, 0}, {0, 30, 30, 0, 0}, {0, 19, 19, 0, 0}, {0, 9, 9, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}} }
 	);
-	//Eigen::Tensor<float, 3> derivative(batch_size, memory_size, 5);
-	//derivative.setValues({
-	//	{{0, 1, 1, 0, 0}, {0, 1, 1, 0, 0}, {0, 1, 1, 0, 0}, {0, 1, 1, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}},
-	//	{{0, 1, 1, 0, 0}, {0, 1, 1, 0, 0}, {0, 1, 1, 0, 0}, {0, 1, 1, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}},
-	//	{{0, 1, 1, 0, 0}, {0, 1, 1, 0, 0}, {0, 1, 1, 0, 0}, {0, 1, 1, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}},
-	//	{{0, 1, 1, 0, 0}, {0, 1, 1, 0, 0}, {0, 1, 1, 0, 0}, {0, 1, 1, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}},
-	//	{{0, 1, 1, 0, 0}, {0, 1, 1, 0, 0}, {0, 1, 1, 0, 0}, {0, 1, 1, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}} }
-	//);
 	const std::vector<std::string> output_nodes = { "0", "1", "2", "3", "4" };
 
 	auto nodes_map = model_FPTT.getNodesMap();
@@ -777,9 +778,9 @@ BOOST_AUTO_TEST_CASE(FPTT)
 		for (int k = 0; k < memory_size; ++k)	{
 			for (int i = 0; i < output_nodes.size(); ++i)	{
 				const std::string node_name = output_nodes[i];
-				std::cout << "Node: " << node_name << "; Batch: " << j << "; Memory: " << k << std::endl;
-				std::cout << "Calc Output: " << model_interpreter.getLayerTensor(nodes_map.at(node_name)->getTensorIndex().first)->getOutput()(j, k, nodes_map.at(node_name)->getTensorIndex().second) << ", Expected Output: " << output(j, k, i) << std::endl;
-				std::cout << "Calc Net Input: " << model_interpreter.getLayerTensor(nodes_map.at(node_name)->getTensorIndex().first)->getInput()(j, k, nodes_map.at(node_name)->getTensorIndex().second) << ", Expected Net Input: " << net_input(j, k, i) << std::endl;
+				//std::cout << "Node: " << node_name << "; Batch: " << j << "; Memory: " << k << std::endl;
+				//std::cout << "Calc Output: " << model_interpreter.getLayerTensor(nodes_map.at(node_name)->getTensorIndex().first)->getOutput()(j, k, nodes_map.at(node_name)->getTensorIndex().second) << ", Expected Output: " << output(j, k, i) << std::endl;
+				//std::cout << "Calc Net Input: " << model_interpreter.getLayerTensor(nodes_map.at(node_name)->getTensorIndex().first)->getInput()(j, k, nodes_map.at(node_name)->getTensorIndex().second) << ", Expected Net Input: " << net_input(j, k, i) << std::endl;
 				BOOST_CHECK_CLOSE(model_interpreter.getLayerTensor(nodes_map.at(node_name)->getTensorIndex().first)->getOutput()(j, k, nodes_map.at(node_name)->getTensorIndex().second), output(j, k, i), 1e-3);
 				BOOST_CHECK_CLOSE(model_interpreter.getLayerTensor(nodes_map.at(node_name)->getTensorIndex().first)->getInput()(j, k, nodes_map.at(node_name)->getTensorIndex().second), net_input(j, k, i), 1e-3);
 			}
@@ -803,11 +804,11 @@ BOOST_AUTO_TEST_CASE(CETT)
 	const std::vector<std::string> input_ids = { "0", "3", "4" };  // biases are set to zero
 	Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size());
 	input.setValues(
-		{ {{1, 0, 0}, {2, 0, 0}, {3, 0, 0}, {4, 0, 0}, {5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}},
-		{{2, 0, 0}, {3, 0, 0}, {4, 0, 0}, {5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}, {9, 0, 0}},
-		{{3, 0, 0}, {4, 0, 0}, {5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}, {9, 0, 0}, {10, 0, 0}},
-		{{4, 0, 0}, {5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}, {9, 0, 0}, {10, 0, 0}, {11, 0, 0}},
-		{{5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}, {9, 0, 0}, {10, 0, 0}, {11, 0, 0}, {12, 0, 0}} }
+		{ {{8, 0, 0}, {7, 0, 0}, {6, 0, 0}, {5, 0, 0}, {4, 0, 0}, {3, 0, 0}, {2, 0, 0}, {1, 0, 0}},
+		{{9, 0, 0}, {8, 0, 0}, {7, 0, 0}, {6, 0, 0}, {5, 0, 0}, {4, 0, 0}, {3, 0, 0}, {2, 0, 0}},
+		{{10, 0, 0}, {9, 0, 0}, {8, 0, 0}, {7, 0, 0}, {6, 0, 0}, {5, 0, 0}, {4, 0, 0}, {3, 0, 0}},
+		{{11, 0, 0}, {10, 0, 0}, {9, 0, 0}, {8, 0, 0}, {7, 0, 0}, {6, 0, 0}, {5, 0, 0}, {4, 0, 0}},
+		{{12, 0, 0}, {11, 0, 0}, {10, 0, 0}, {9, 0, 0}, {8, 0, 0}, {7, 0, 0}, {6, 0, 0}, {5, 0, 0}} }
 	);
 	model_interpreter.mapValuesToLayers(model_CETT, input, input_ids, "output");
 
@@ -832,28 +833,30 @@ BOOST_AUTO_TEST_CASE(CETT)
 	// test values of errors of the output nodes
 	Eigen::Tensor<float, 2> model_error(batch_size, memory_size);
 	model_error.setValues({ 
-		{0,0,0,0,0,0,0,0}, 
-		{0,0,0,0,0,0,0,0}, 
-		{0,0,0,0,0,0,0,0}, 
-		{0,0,0,0,0,0,0,0}, 
-		{0,0,0,0,0,0,0,0} });
+		{242,98,32,2,0,0,0,0}, 
+		{312.5f,144.5f,40.5f,4.5f,0,0,0,0}, 
+		{420.5f,180.5f,60.5f,4.5f,0,0,0,0}, 
+		{512,242,72,8,0,0,0,0}, 
+		{648,288,98,8,0,0,0,0} });
 	Eigen::Tensor<float, 3> node_error(batch_size, memory_size, (int)output_nodes.size());
 	node_error.setValues(
-		{ { {-1.2f }, { -0.4f }, { 0.0f }, { 0.4f }, { 0.0f }, { 0.0f }, { 0.0f }, { 0.0f }},
-			{ { -1.8f },{ -1.0f },{ -0.2f },{ 0.2f },{ 0.0f },{ 0.0f },{ 0.0f },{ 0.0f } },
-			{ { -2.6f },{ -1.4f },{ -0.6f },{ 0.2f },{ 0.0f },{ 0.0f },{ 0.0f },{ 0.0f } },
-			{ { -3.2f },{ -2.0f },{ -0.8f },{ 0.0f },{ 0.0f },{ 0.0f },{ 0.0f },{ 0.0f } },
-			{ { -4.0f },{ -2.4f },{ -1.2f },{ 0.0f },{ 0.0f },{ 0.0f },{ 0.0f },{ 0.0f } } }
+		{ { { -22 }, { -14 }, { -8 }, { -2 }, { 0.0f }, { 0.0f }, { 0.0f }, { 0.0f }},
+			{ { -25 },{ -17 },{ -9 },{ -3 },{ 0.0f },{ 0.0f },{ 0.0f },{ 0.0f } },
+			{ { -29 },{ -19 },{ -11 },{ -3 },{ 0.0f },{ 0.0f },{ 0.0f },{ 0.0f } },
+			{ { -32 },{ -22 },{ -12 },{ -4 },{ 0.0f },{ 0.0f },{ 0.0f },{ 0.0f } },
+			{ { -36 },{ -24 },{ -14 },{ -4 },{ 0.0f },{ 0.0f },{ 0.0f },{ 0.0f } } }
 	);
 
 	auto nodes_map = model_CETT.getNodesMap();
 	for (int j = 0; j < batch_size; ++j) {
 		for (int k = 0; k < memory_size; ++k) {
+			//std::cout << "Batch: " << j << "; Memory: " << k << std::endl;
+			//std::cout << "Calc Model Error: " << model_interpreter.getModelError()->getError()(j, k) << ", Expected Error: " << model_error(j, k) << std::endl;
 			BOOST_CHECK_CLOSE(model_interpreter.getModelError()->getError()(j, k), model_error(j, k), 1e-6);
 			for (int i = 0; i < output_nodes.size(); ++i) {
 				const std::string node_name = output_nodes[i];
-				std::cout << "Node: " << node_name << "; Batch: " << j << "; Memory: " << k << std::endl;
-				std::cout << "Calc Error: " << model_interpreter.getLayerTensor(nodes_map.at(node_name)->getTensorIndex().first)->getOutput()(j, k, nodes_map.at(node_name)->getTensorIndex().second) << ", Expected Error: " << node_error(j, k, i) << std::endl;
+				//std::cout << "Node: " << node_name << "; Batch: " << j << "; Memory: " << k << std::endl;
+				//std::cout << "Calc Node Error: " << model_interpreter.getLayerTensor(nodes_map.at(node_name)->getTensorIndex().first)->getError()(j, k, nodes_map.at(node_name)->getTensorIndex().second) << ", Expected Error: " << node_error(j, k, i) << std::endl;
 				BOOST_CHECK_CLOSE(model_interpreter.getLayerTensor(nodes_map.at(node_name)->getTensorIndex().first)->getError()(j, k, nodes_map.at(node_name)->getTensorIndex().second), node_error(j, k, i), 1e-3);
 			}
 		}
@@ -876,11 +879,11 @@ BOOST_AUTO_TEST_CASE(TBPTT)
 	const std::vector<std::string> input_ids = { "0", "3", "4" };  // biases are set to zero
 	Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size());
 	input.setValues(
-		{ {{1, 0, 0}, {2, 0, 0}, {3, 0, 0}, {4, 0, 0}, {5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}},
-		{{2, 0, 0}, {3, 0, 0}, {4, 0, 0}, {5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}, {9, 0, 0}},
-		{{3, 0, 0}, {4, 0, 0}, {5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}, {9, 0, 0}, {10, 0, 0}},
-		{{4, 0, 0}, {5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}, {9, 0, 0}, {10, 0, 0}, {11, 0, 0}},
-		{{5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}, {9, 0, 0}, {10, 0, 0}, {11, 0, 0}, {12, 0, 0}} }
+		{ {{8, 0, 0}, {7, 0, 0}, {6, 0, 0}, {5, 0, 0}, {4, 0, 0}, {3, 0, 0}, {2, 0, 0}, {1, 0, 0}},
+		{{9, 0, 0}, {8, 0, 0}, {7, 0, 0}, {6, 0, 0}, {5, 0, 0}, {4, 0, 0}, {3, 0, 0}, {2, 0, 0}},
+		{{10, 0, 0}, {9, 0, 0}, {8, 0, 0}, {7, 0, 0}, {6, 0, 0}, {5, 0, 0}, {4, 0, 0}, {3, 0, 0}},
+		{{11, 0, 0}, {10, 0, 0}, {9, 0, 0}, {8, 0, 0}, {7, 0, 0}, {6, 0, 0}, {5, 0, 0}, {4, 0, 0}},
+		{{12, 0, 0}, {11, 0, 0}, {10, 0, 0}, {9, 0, 0}, {8, 0, 0}, {7, 0, 0}, {6, 0, 0}, {5, 0, 0}} }
 	);
 	model_interpreter.mapValuesToLayers(model_TBPTT, input, input_ids, "output");
 
@@ -907,22 +910,32 @@ BOOST_AUTO_TEST_CASE(TBPTT)
 	// test values of output nodes
 	Eigen::Tensor<float, 3> node_error(batch_size, memory_size, 5); // dim2: # of model nodes
 	node_error.setValues({
-		{ { 0.0f, -1.2f, -1.2f, 0.0f, 0.0f },{ 0.0f, -1.6f, -1.6f, 0.0f, 0.0f },{ 0.0f, -1.6f, -1.6f, 0.0f, 0.0f },{ 0.0f, -1.2f, -1.2f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f } },
-		{ { 0.0f, -1.8f, -1.8f, 0.0f, 0.0f },{ 0.0f, -2.8f, -2.8f, 0.0f, 0.0f },{ 0.0f, -3.0f, -3.0f, 0.0f, 0.0f },{ 0.0f, -2.8f, -2.8f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f } },
-		{ { 0.0f, -2.6f, -2.6f, 0.0f, 0.0f },{ 0.0f, -4.0f, -4.0f, 0.0f, 0.0f },{ 0.0f, -4.6f, -4.6f, 0.0f, 0.0f },{ 0.0f, -4.4f, -4.4f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f } },
-		{ { 0.0f, -3.2f, -3.2f, 0.0f, 0.0f },{ 0.0f, -5.2f, -5.2f, 0.0f, 0.0f },{ 0.0f, -6.0f, -6.0f, 0.0f, 0.0f },{ 0.0f, -6.0f, -6.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f } },
-		{ { 0.0f, -4.0f, -4.0f, 0.0f, 0.0f },{ 0.0f, -6.4f, -6.4f, 0.0f, 0.0f },{ 0.0f, -7.6f, -7.6f, 0.0f, 0.0f },{ 0.0f, -7.6f, -7.6f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f } } }
+		{ { -22, -22, -22, -22, -22 },{-36, -36, -14, -36, -14 },{ -44, -44, -8, -44, -8 },{ -46, -46, -2, -46, -2 },{ 0, -46, 0, 0, 0 },{ 0, 0, 0, 0, 0 },{ 0, 0, 0, 0, 0 },{ 0, 0, 0, 0, 0 } },
+		{ { -25, -25, -25, -25, -25 },{ -42, -42, -17, -42, -17 },{ -51, -51, -9, -51, -9 },{ -54, -54, -3, -54, -3 },{ 0, -54, 0, 0, 0 },{ 0, 0, 0, 0, 0 },{ 0, 0, 0, 0, 0 },{ 0, 0, 0, 0, 0 } },
+		{ { -29, -29, -29, -29, -29 },{ -48, -48, -19, -48, -19 },{ -59, -59, -11, -59, -11 },{ -62, -62, -3, -62, -3 },{ 0, -62, 0, 0, 0 },{ 0, 0, 0, 0, 0 },{ 0, 0, 0, 0, 0 },{ 0, 0, 0, 0, 0 } },
+		{ { -32, -32, -32, -32, -32 },{ -54, -54, -22, -54, -22 },{ -66, -66, -12, -66, -12 },{ -70, -70, -4, -70, -4 },{ 0, -70, 0, 0, 0 },{ 0, 0, 0, 0, 0 },{ 0, 0, 0, 0, 0 },{ 0, 0, 0, 0, 0 } },
+		{ {-36, -36, -36, -36, -36 },{-60, -60, -24, -60, -24 },{-74, -74, -14, -74, -14 },{ -78, -78, -4, -78, -4 },{ 0, -78, 0, 0, 0 },{ 0, 0, 0, 0, 0 },{ 0, 0, 0, 0, 0 },{ 0, 0, 0, 0, 0 } } }
+	);
+	Eigen::Tensor<float, 3> derivative(batch_size, memory_size, 5);
+	derivative.setValues({
+		{{1, 1, 0, 1, 1}, {1, 1, 0, 1, 1}, {1, 1, 0, 1, 1}, {1, 1, 0, 1, 1}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}},
+		{{1, 1, 0, 1, 1}, {1, 1, 0, 1, 1}, {1, 1, 0, 1, 1}, {1, 1, 0, 1, 1}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}},
+		{{1, 1, 0, 1, 1}, {1, 1, 0, 1, 1}, {1, 1, 0, 1, 1}, {1, 1, 0, 1, 1}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}},
+		{{1, 1, 0, 1, 1}, {1, 1, 0, 1, 1}, {1, 1, 0, 1, 1}, {1, 1, 0, 1, 1}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}},
+		{{1, 1, 0, 1, 1}, {1, 1, 0, 1, 1}, {1, 1, 0, 1, 1}, {1, 1, 0, 1, 1}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}} }
 	);
 	const std::vector<std::string> error_nodes = { "0", "1", "2", "3", "4" };
 
 	auto nodes_map = model_TBPTT.getNodesMap();
 	for (int j = 0; j < batch_size; ++j) {
 		for (int k = 0; k < memory_size; ++k) {
-			for (int i = 0; i < output_nodes.size(); ++i) {
+			for (int i = 0; i < error_nodes.size(); ++i) {
 				const std::string node_name = error_nodes[i];
-				std::cout << "Node: " << node_name << "; Batch: " << j << "; Memory: " << k << std::endl;
-				std::cout << "Calc Error: " << model_interpreter.getLayerTensor(nodes_map.at(node_name)->getTensorIndex().first)->getOutput()(j, k, nodes_map.at(node_name)->getTensorIndex().second) << ", Expected Error: " << node_error(j, k, i) << std::endl;
+				//std::cout << "Node: " << node_name << "; Batch: " << j << "; Memory: " << k << std::endl;
+				//std::cout << "Calc Error: " << model_interpreter.getLayerTensor(nodes_map.at(node_name)->getTensorIndex().first)->getError()(j, k, nodes_map.at(node_name)->getTensorIndex().second) << ", Expected Error: " << node_error(j, k, i) << std::endl;
+				//std::cout << "Calc Derivative: " << model_interpreter.getLayerTensor(nodes_map.at(node_name)->getTensorIndex().first)->getDerivative()(j, k, nodes_map.at(node_name)->getTensorIndex().second) << ", Expected Derivative: " << derivative(j, k, i) << std::endl;
 				BOOST_CHECK_CLOSE(model_interpreter.getLayerTensor(nodes_map.at(node_name)->getTensorIndex().first)->getError()(j, k, nodes_map.at(node_name)->getTensorIndex().second), node_error(j, k, i), 1e-3);
+				BOOST_CHECK_CLOSE(model_interpreter.getLayerTensor(nodes_map.at(node_name)->getTensorIndex().first)->getDerivative()(j, k, nodes_map.at(node_name)->getTensorIndex().second), derivative(j, k, i), 1e-3);
 			}
 		}
 	}
@@ -944,11 +957,11 @@ BOOST_AUTO_TEST_CASE(updateWeights)
 	const std::vector<std::string> input_ids = { "0", "3", "4" };  // biases are set to zero
 	Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size());
 	input.setValues(
-		{ {{1, 0, 0}, {2, 0, 0}, {3, 0, 0}, {4, 0, 0}, {5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}},
-		{{2, 0, 0}, {3, 0, 0}, {4, 0, 0}, {5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}, {9, 0, 0}},
-		{{3, 0, 0}, {4, 0, 0}, {5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}, {9, 0, 0}, {10, 0, 0}},
-		{{4, 0, 0}, {5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}, {9, 0, 0}, {10, 0, 0}, {11, 0, 0}},
-		{{5, 0, 0}, {6, 0, 0}, {7, 0, 0}, {8, 0, 0}, {9, 0, 0}, {10, 0, 0}, {11, 0, 0}, {12, 0, 0}} }
+		{ {{8, 0, 0}, {7, 0, 0}, {6, 0, 0}, {5, 0, 0}, {4, 0, 0}, {3, 0, 0}, {2, 0, 0}, {1, 0, 0}},
+		{{9, 0, 0}, {8, 0, 0}, {7, 0, 0}, {6, 0, 0}, {5, 0, 0}, {4, 0, 0}, {3, 0, 0}, {2, 0, 0}},
+		{{10, 0, 0}, {9, 0, 0}, {8, 0, 0}, {7, 0, 0}, {6, 0, 0}, {5, 0, 0}, {4, 0, 0}, {3, 0, 0}},
+		{{11, 0, 0}, {10, 0, 0}, {9, 0, 0}, {8, 0, 0}, {7, 0, 0}, {6, 0, 0}, {5, 0, 0}, {4, 0, 0}},
+		{{12, 0, 0}, {11, 0, 0}, {10, 0, 0}, {9, 0, 0}, {8, 0, 0}, {7, 0, 0}, {6, 0, 0}, {5, 0, 0}} }
 	);
 	model_interpreter.mapValuesToLayers(model_updateWeights, input, input_ids, "output");
 
@@ -977,14 +990,83 @@ BOOST_AUTO_TEST_CASE(updateWeights)
 	// test values of output nodes
 	std::vector<std::string> weight_ids = { "0", "1", "2", "3", "4" };
 	Eigen::Tensor<float, 1> weights(weight_ids.size());
-	weights.setValues({ 0.422f, -0.3f, -0.3f, 1.0f, 1.0f });
+	weights.setValues({ -19.624f, -15.744f, -34.572f, 1.0f, 1.0f });
 	for (int i = 0; i < weight_ids.size(); ++i) {
 		BOOST_CHECK_CLOSE(model_interpreter.getWeightTensor(
 			std::get<0>(weights_map.at(weight_ids[i])->getTensorIndex()[0]))->getWeight()(
 				std::get<1>(weights_map.at(weight_ids[i])->getTensorIndex()[0]), std::get<2>(weights_map.at(weight_ids[i])->getTensorIndex()[0])), weights(i), 1e-3);
 	}
-
 }
 
+Model<float> model_modelTrainer2 = makeModelToy2();
+BOOST_AUTO_TEST_CASE(modelTrainer2)
+{
+	ModelInterpreterDefaultDevice<float> model_interpreter;
+	const int batch_size = 5;
+	const int memory_size = 8;
+	const bool train = true;
+
+	// update the model solver
+	std::shared_ptr<SolverOp<float>> solver(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8));
+	for (auto& weight_map : model_modelTrainer2.getWeightsMap()) {
+		if (weight_map.second->getSolverOp()->getName() == "SGDOp")
+			weight_map.second->setSolverOp(solver);
+	}
+
+	// compile the graph into a set of operations and allocate all tensors
+	model_interpreter.getForwardPropogationOperations(model_modelTrainer2, batch_size, memory_size, train);
+	model_interpreter.allocateModelErrorTensor(batch_size, memory_size);
+
+	// create the input
+	const std::vector<std::string> input_nodes = { "0", "3", "4" };  // biases are set to zero
+	Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_nodes.size());
+	input.setValues(
+		{ {{8, 0, 0}, {7, 0, 0}, {6, 0, 0}, {5, 0, 0}, {4, 0, 0}, {3, 0, 0}, {2, 0, 0}, {1, 0, 0}},
+		{{9, 0, 0}, {8, 0, 0}, {7, 0, 0}, {6, 0, 0}, {5, 0, 0}, {4, 0, 0}, {3, 0, 0}, {2, 0, 0}},
+		{{10, 0, 0}, {9, 0, 0}, {8, 0, 0}, {7, 0, 0}, {6, 0, 0}, {5, 0, 0}, {4, 0, 0}, {3, 0, 0}},
+		{{11, 0, 0}, {10, 0, 0}, {9, 0, 0}, {8, 0, 0}, {7, 0, 0}, {6, 0, 0}, {5, 0, 0}, {4, 0, 0}},
+		{{12, 0, 0}, {11, 0, 0}, {10, 0, 0}, {9, 0, 0}, {8, 0, 0}, {7, 0, 0}, {6, 0, 0}, {5, 0, 0}} }
+	);
+
+	// expected output (from t=n to t=0) for  y = m1*(m2*x + b*yprev) where m1 = 1, m2 = 1 and b = -1
+	const std::vector<std::string> output_nodes = { "2" };
+	Eigen::Tensor<float, 3> expected(batch_size, memory_size, (int)output_nodes.size());
+	expected.setValues(
+		{ { { 1 },{ 1 },{ 2 },{ 2 },{ 3 },{ 3 },{ 4 },{ 4 } },
+		{ { 1 },{ 2 },{ 2 },{ 3 },{ 3 },{ 4 },{ 4 },{ 5 } },
+		{ { 2 },{ 2 },{ 3 },{ 3 },{ 4 },{ 4 },{ 5 },{ 5 } },
+		{ { 2 },{ 3 },{ 3 },{ 4 },{ 4 },{ 5 },{ 5 },{ 6 } },
+		{ { 3 },{ 3 },{ 4 },{ 4 },{ 5 },{ 5 },{ 6 },{ 6 } } }
+	);
+	LossFunctionTensorOp<float, Eigen::DefaultDevice>* loss_function = new MSETensorOp<float, Eigen::DefaultDevice>();
+	LossFunctionGradTensorOp<float, Eigen::DefaultDevice>* loss_function_grad = new MSEGradTensorOp<float, Eigen::DefaultDevice>();
+
+	// iterate until we find the optimal values
+	const int max_iter = 50;
+	for (int iter = 0; iter < max_iter; ++iter)
+	{
+		// assign the input data
+		model_interpreter.initBiases(model_modelTrainer2); // create the bias	
+		model_interpreter.mapValuesToLayers(model_modelTrainer2, input, input_nodes, "output");
+
+		model_interpreter.FPTT(4, false, false); //FP
+
+		// calculate the model error and node output error
+		model_interpreter.CETT(model_modelTrainer2, expected, output_nodes, loss_function, loss_function_grad, 4, false, false);
+		std::cout << "Error at iteration: " << iter << " is " << model_interpreter.getModelError()->getError().sum() << std::endl;
+
+		model_interpreter.TBPTT(4, false, false); // BP
+		model_interpreter.updateWeights(false, false); // Weight update
+
+		// reinitialize the model
+		if (iter != max_iter - 1) {
+			model_interpreter.reInitNodes();
+			model_interpreter.reInitModelError();
+		}
+	}
+
+	const Eigen::Tensor<float, 0> total_error = model_interpreter.getModelError()->getError().sum();
+	BOOST_CHECK(total_error(0) <= 1492.6);
+}
 
 BOOST_AUTO_TEST_SUITE_END()
