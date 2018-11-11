@@ -14,7 +14,7 @@ set(sources_list_h
 	LossFunctionTensor.h
 	Link.h
 	Model.h
-	Model3.h
+	Model2.h
 	ModelBuilder.h
 	ModelInterpreter.h
 	ModelInterpreterDefaultDevice.h

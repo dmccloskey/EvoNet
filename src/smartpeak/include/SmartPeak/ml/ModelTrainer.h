@@ -5,11 +5,13 @@
 
 // .h
 #include <SmartPeak/ml/Model.h>
+#include <SmartPeak/ml/LossFunction.h>
 #include <SmartPeak/ml/ModelLogger.h>
 #include <vector>
 #include <string>
 
 // .cpp
+#include <SmartPeak/ml/ModelInterpreter.h>
 
 namespace SmartPeak
 {

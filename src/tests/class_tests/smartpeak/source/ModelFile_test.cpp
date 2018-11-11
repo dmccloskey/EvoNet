@@ -89,10 +89,6 @@ Model<float> makeModel1()
 	model1.addNodes({ i1, i2, h1, h2, o1, o2, b1, b2 });
 	model1.addWeights({ w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4 });
 	model1.addLinks({ l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4 });
-	std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>());
-	model1.setLossFunction(loss_function);
-	std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
-	model1.setLossFunctionGrad(loss_function_grad);
 	return model1;
 }
 Model<float> model1 = makeModel1();

@@ -2,7 +2,7 @@
 
 #define BOOST_TEST_MODULE Model DCG test suite 
 #include <boost/test/included/unit_test.hpp>
-#include <SmartPeak/ml/Model.h>
+#include <SmartPeak/ml/Model2.h>
 #include <SmartPeak/ml/Weight.h>
 #include <SmartPeak/ml/Link.h>
 #include <SmartPeak/ml/Node.h>

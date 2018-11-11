@@ -41,9 +41,9 @@ set(ml_executables_list
   ModelReplicator_test
   ModelTrainer_test
   Model_test
-  Model_DAG_test
-  Model_DCG_test
-  Model3_test
+  Model2_test
+  Model2_DAG_test
+  Model2_DCG_test
   Node_test
   NodeData_test
   NodeTensorData_test

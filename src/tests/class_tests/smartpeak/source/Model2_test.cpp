@@ -1,9 +1,9 @@
 /**TODO:  Add copyright*/
 
-#define BOOST_TEST_MODULE Model3 test suite 
+#define BOOST_TEST_MODULE Model test suite 
 // #include <boost/test/unit_test.hpp> // changes every so often...
 #include <boost/test/included/unit_test.hpp>
-#include <SmartPeak/ml/Model3.h>
+#include <SmartPeak/ml/Model2.h>
 
 #include <SmartPeak/ml/Link.h>
 #include <SmartPeak/ml/Node.h>
@@ -14,7 +14,7 @@
 using namespace SmartPeak;
 using namespace std;
 
-BOOST_AUTO_TEST_SUITE(model3)
+BOOST_AUTO_TEST_SUITE(model)
 
 /**
  * Part 1 test suit for the Model class
@@ -52,9 +52,20 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   model.setName("model1");
   Eigen::Tensor<float, 2> error(3, 1);
   error.setConstant(0.0f);
+  model.setError(error);
+
+	std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>());
+  model.setLossFunction(loss_function);
+
+	std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
+	model.setLossFunctionGrad(loss_function_grad);
 
   BOOST_CHECK_EQUAL(model.getId(), 1);
   BOOST_CHECK_EQUAL(model.getName(), "model1");
+  BOOST_CHECK_EQUAL(model.getError()(0), error(0));
+  BOOST_CHECK_EQUAL(model.getLossFunction(), loss_function.get());
+	BOOST_CHECK_EQUAL(model.getLossFunctionGrad(), loss_function_grad.get());
+
 }
 
 BOOST_AUTO_TEST_CASE(pruneNodes) 
@@ -417,6 +428,12 @@ BOOST_AUTO_TEST_CASE(copyAssignment)
 	model1.addWeights({ weight1, weight2 });
 	model1.addNodes({ source1, sink1, source2, sink2 });
 
+	std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>());
+	model1.setLossFunction(loss_function);
+
+	std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
+	model1.setLossFunctionGrad(loss_function_grad);
+
 	// test copy assignment
 	Model<float> model2 = model1;
 	BOOST_CHECK(model1 != model2);
@@ -455,6 +472,12 @@ BOOST_AUTO_TEST_CASE(copy)
   model1.addLinks({link1, link2});
   model1.addWeights({weight1, weight2});
   model1.addNodes({source1, sink1, source2, sink2});
+
+	std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>());
+	model1.setLossFunction(loss_function);
+
+	std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
+	model1.setLossFunctionGrad(loss_function_grad);
 
   // test copy
   Model<float> model2(model1);
@@ -606,83 +629,83 @@ BOOST_AUTO_TEST_CASE(getInputAndOutputNodes)
 	BOOST_CHECK(model1.getOutputNodes()[1] == model1.getNodesMap().at("o2"));
 }
 
-//BOOST_AUTO_TEST_CASE(checkCompleteInputToOutput)
-//{
-//	Node<float> i1, i2, h1, o1, o2;
-//	i1 = Node<float>("i1", NodeType::input, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-//	i2 = Node<float>("i2", NodeType::input, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-//	h1 = Node<float>("h1", NodeType::hidden, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new TanHOp<float>()), std::shared_ptr<ActivationOp<float>>(new TanHGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-//	o1 = Node<float>("o1", NodeType::output, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new TanHOp<float>()), std::shared_ptr<ActivationOp<float>>(new TanHGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-//	o2 = Node<float>("o2", NodeType::output, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new TanHOp<float>()), std::shared_ptr<ActivationOp<float>>(new TanHGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-//
-//	Weight<float> w_i1_h1, w_i2_h1, w_h1_o1, w_h1_o2;
-//	std::shared_ptr<WeightInitOp<float>> weight_init;
-//	std::shared_ptr<SolverOp<float>> solver;
-//	weight_init.reset(new RandWeightInitOp<float>(2.0));
-//	solver.reset(new SGDOp<float>(0.01, 0.9));
-//	w_i1_h1 = Weight<float>("w_i1_h1", weight_init, solver);
-//	weight_init.reset(new RandWeightInitOp<float>(2.0));
-//	solver.reset(new SGDOp<float>(0.01, 0.9));
-//	w_i2_h1 = Weight<float>("w_i2_h1", weight_init, solver);
-//	weight_init.reset(new RandWeightInitOp<float>(2.0));
-//	solver.reset(new SGDOp<float>(0.01, 0.9));
-//	w_h1_o1 = Weight<float>("w_h1_o1", weight_init, solver);
-//	weight_init.reset(new RandWeightInitOp<float>(2.0));
-//	solver.reset(new SGDOp<float>(0.01, 0.9));
-//	w_h1_o2 = Weight<float>("w_h1_o2", weight_init, solver);
-//
-//	Link l_i1_h1, l_i2_h1, l_h1_o1, l_h1_o2;
-//	l_i1_h1 = Link("l_i1_h1", "i1", "h1", "w_i1_h1");
-//	l_i2_h1 = Link("l_i2_h1", "i2", "h1", "w_i2_h1");
-//	l_h1_o1 = Link("l_h1_o1", "h1", "o1", "w_h1_o1");
-//	l_h1_o2 = Link("l_h1_o2", "h1", "o2", "w_h1_o2");
-//
-//	std::vector<std::string> input_nodes = { "i1", "i2" };
-//	std::vector<std::string> output_nodes = { "o1", "o2" };
-//
-//	int batch_size = 2;
-//	int memory_size = 2;
-//
-//	// model 1: fully connected model
-//	Model<float> model1;
-//	model1.addNodes({ i1, i2, h1, o1, o2 });
-//	model1.addWeights({ w_i1_h1, w_i2_h1, w_h1_o1, w_h1_o2 });
-//	model1.addLinks({ l_i1_h1, l_i2_h1, l_h1_o1, l_h1_o2 });
-//
-//	BOOST_CHECK(model1.checkCompleteInputToOutput(2));
-//
-//	// model 2: disconnected output
-//	Model<float> model2;
-//	model2.addNodes({ i1, i2, h1, o1, o2 });
-//	model2.addWeights({ w_i1_h1, w_i2_h1, w_h1_o2 });
-//	model2.addLinks({ l_i1_h1, l_i2_h1, l_h1_o2 });
-//
-//	BOOST_CHECK(!model2.checkCompleteInputToOutput(2));
-//
-//	// model 3: disconnected input
-//	Model<float> model3;
-//	model3.addNodes({ i1, i2, h1, o1, o2 });
-//	model3.addWeights({ w_i1_h1, w_h1_o1, w_h1_o2 });
-//	model3.addLinks({ l_i1_h1, l_h1_o1, l_h1_o2 });
-//
-//	BOOST_CHECK(!model3.checkCompleteInputToOutput(2));
-//
-//	// model 4: missing input nodes
-//	Model<float> model4;
-//	model4.addNodes({ i2, h1, o1, o2 });
-//	model4.addWeights({ w_i1_h1, w_i2_h1, w_h1_o1, w_h1_o2 });
-//	model4.addLinks({ l_i1_h1, l_i2_h1, l_h1_o1, l_h1_o2 });
-//
-//	BOOST_CHECK(!model4.checkCompleteInputToOutput(2));
-//
-//	// model 5: missing output nodes
-//	Model<float> model5;
-//	model5.addNodes({ i1, i2, h1, o2 });
-//	model5.addWeights({ w_i1_h1, w_i2_h1, w_h1_o1, w_h1_o2 });
-//	model5.addLinks({ l_i1_h1, l_i2_h1, l_h1_o1, l_h1_o2 });
-//
-//	BOOST_CHECK(!model5.checkCompleteInputToOutput(2));
-//}
+BOOST_AUTO_TEST_CASE(checkCompleteInputToOutput)
+{
+	Node<float> i1, i2, h1, o1, o2;
+	i1 = Node<float>("i1", NodeType::input, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+	i2 = Node<float>("i2", NodeType::input, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+	h1 = Node<float>("h1", NodeType::hidden, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new TanHOp<float>()), std::shared_ptr<ActivationOp<float>>(new TanHGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+	o1 = Node<float>("o1", NodeType::output, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new TanHOp<float>()), std::shared_ptr<ActivationOp<float>>(new TanHGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+	o2 = Node<float>("o2", NodeType::output, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new TanHOp<float>()), std::shared_ptr<ActivationOp<float>>(new TanHGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+
+	Weight<float> w_i1_h1, w_i2_h1, w_h1_o1, w_h1_o2;
+	std::shared_ptr<WeightInitOp<float>> weight_init;
+	std::shared_ptr<SolverOp<float>> solver;
+	weight_init.reset(new RandWeightInitOp<float>(2.0));
+	solver.reset(new SGDOp<float>(0.01, 0.9));
+	w_i1_h1 = Weight<float>("w_i1_h1", weight_init, solver);
+	weight_init.reset(new RandWeightInitOp<float>(2.0));
+	solver.reset(new SGDOp<float>(0.01, 0.9));
+	w_i2_h1 = Weight<float>("w_i2_h1", weight_init, solver);
+	weight_init.reset(new RandWeightInitOp<float>(2.0));
+	solver.reset(new SGDOp<float>(0.01, 0.9));
+	w_h1_o1 = Weight<float>("w_h1_o1", weight_init, solver);
+	weight_init.reset(new RandWeightInitOp<float>(2.0));
+	solver.reset(new SGDOp<float>(0.01, 0.9));
+	w_h1_o2 = Weight<float>("w_h1_o2", weight_init, solver);
+
+	Link l_i1_h1, l_i2_h1, l_h1_o1, l_h1_o2;
+	l_i1_h1 = Link("l_i1_h1", "i1", "h1", "w_i1_h1");
+	l_i2_h1 = Link("l_i2_h1", "i2", "h1", "w_i2_h1");
+	l_h1_o1 = Link("l_h1_o1", "h1", "o1", "w_h1_o1");
+	l_h1_o2 = Link("l_h1_o2", "h1", "o2", "w_h1_o2");
+
+	std::vector<std::string> input_nodes = { "i1", "i2" };
+	std::vector<std::string> output_nodes = { "o1", "o2" };
+
+	int batch_size = 2;
+	int memory_size = 2;
+
+	// model 1: fully connected model
+	Model<float> model1;
+	model1.addNodes({ i1, i2, h1, o1, o2 });
+	model1.addWeights({ w_i1_h1, w_i2_h1, w_h1_o1, w_h1_o2 });
+	model1.addLinks({ l_i1_h1, l_i2_h1, l_h1_o1, l_h1_o2 });
+
+	BOOST_CHECK(model1.checkCompleteInputToOutput(2));
+
+	// model 2: disconnected output
+	Model<float> model2;
+	model2.addNodes({ i1, i2, h1, o1, o2 });
+	model2.addWeights({ w_i1_h1, w_i2_h1, w_h1_o2 });
+	model2.addLinks({ l_i1_h1, l_i2_h1, l_h1_o2 });
+
+	BOOST_CHECK(!model2.checkCompleteInputToOutput(2));
+
+	// model 3: disconnected input
+	Model<float> model3;
+	model3.addNodes({ i1, i2, h1, o1, o2 });
+	model3.addWeights({ w_i1_h1, w_h1_o1, w_h1_o2 });
+	model3.addLinks({ l_i1_h1, l_h1_o1, l_h1_o2 });
+
+	BOOST_CHECK(!model3.checkCompleteInputToOutput(2));
+
+	// model 4: missing input nodes
+	Model<float> model4;
+	model4.addNodes({ i2, h1, o1, o2 });
+	model4.addWeights({ w_i1_h1, w_i2_h1, w_h1_o1, w_h1_o2 });
+	model4.addLinks({ l_i1_h1, l_i2_h1, l_h1_o1, l_h1_o2 });
+
+	BOOST_CHECK(!model4.checkCompleteInputToOutput(2));
+
+	// model 5: missing output nodes
+	Model<float> model5;
+	model5.addNodes({ i1, i2, h1, o2 });
+	model5.addWeights({ w_i1_h1, w_i2_h1, w_h1_o1, w_h1_o2 });
+	model5.addLinks({ l_i1_h1, l_i2_h1, l_h1_o1, l_h1_o2 });
+
+	BOOST_CHECK(!model5.checkCompleteInputToOutput(2));
+}
 
 BOOST_AUTO_TEST_CASE(removeIsolatedNodes)
 {

@@ -283,82 +283,83 @@ BOOST_AUTO_TEST_CASE(updateName)
 	BOOST_CHECK_NE(new_node_name, "Node1");
 }
 
-BOOST_AUTO_TEST_CASE(makeBaselineModel) 
-{
-  ModelReplicatorExt<float> model_replicator;
-  Model<float> model;
-  std::vector<std::string> node_names, link_names, source_node_names, sink_node_names;
-
-  std::shared_ptr<WeightInitOp<float>> weight_init;
-  std::shared_ptr<SolverOp<float>> solver;
-	std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>());
-	std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
-
-  weight_init.reset(new ConstWeightInitOp<float>(1.0));
-  solver.reset(new SGDOp<float>(0.01, 0.9));
-  model = model_replicator.makeBaselineModel(
-		2, { 1 }, 2,
-    std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-    weight_init, solver,
-    loss_function, loss_function_grad);
-
-  node_names = {
-    "Input_0", "Input_1", "Hidden_0-0", "Output_0", "Output_1",
-    "Hidden_bias_0-0", "Output_bias_0", "Output_bias_1"};
-  for (const std::string& node_name : node_names)
-    BOOST_CHECK_EQUAL(model.getNode(node_name).getName(), node_name);
-  
-  link_names = {
-    "Input_0_to_Hidden_0-0", "Input_1_to_Hidden_0-0", "Bias_0-0_to_Hidden_0-0",
-    "Hidden_0-0_to_Output_0", "Hidden_0-0_to_Output_1",
-    "Bias_0_to_Output_0", "Bias_1_to_Output_1"};
-  source_node_names = {
-    "Input_0", "Input_1", "Hidden_bias_0-0", 
-    "Hidden_0-0", "Hidden_0-0", 
-    "Output_bias_0", "Output_bias_1"};
-  sink_node_names = {
-    "Hidden_0-0", "Hidden_0-0", "Hidden_0-0", 
-    "Output_0", "Output_1", 
-    "Output_0", "Output_1"};
-  for (int i=0; i<link_names.size(); ++i)
-  {
-    BOOST_CHECK_EQUAL(model.getLink(link_names[i]).getName(), link_names[i]);
-    BOOST_CHECK_EQUAL(model.getLink(link_names[i]).getSourceNodeName(), source_node_names[i]);
-    BOOST_CHECK_EQUAL(model.getLink(link_names[i]).getSinkNodeName(), sink_node_names[i]);
-    BOOST_CHECK_EQUAL(model.getWeight(link_names[i]).getName(), link_names[i]);
-  }
-
-	std::vector<int> nodes_per_hidden_layer = {};
-  model = model_replicator.makeBaselineModel(
-		2, nodes_per_hidden_layer, 2,
-    std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()), 
-		std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-    weight_init, solver,
-		loss_function, loss_function_grad);
-
-  node_names = {
-    "Input_0", "Input_1", "Output_0", "Output_1",
-    "Output_bias_0", "Output_bias_1"};
-  for (const std::string& node_name : node_names)
-    BOOST_CHECK_EQUAL(model.getNode(node_name).getName(), node_name);
-  
-  link_names = {
-    "Input_0_to_Output_0", "Input_1_to_Output_0", "Bias_0_to_Output_0",
-    "Input_0_to_Output_1", "Input_1_to_Output_1", "Bias_1_to_Output_1"};
-  source_node_names = {
-    "Input_0", "Input_1", "Output_bias_0", 
-    "Input_0", "Input_1", "Output_bias_1"};
-  sink_node_names = {
-    "Output_0", "Output_0", "Output_0",  
-    "Output_1", "Output_1", "Output_1"};
-  for (int i=0; i<link_names.size(); ++i)
-  {
-    BOOST_CHECK_EQUAL(model.getLink(link_names[i]).getName(), link_names[i]);
-    BOOST_CHECK_EQUAL(model.getLink(link_names[i]).getSourceNodeName(), source_node_names[i]);
-    BOOST_CHECK_EQUAL(model.getLink(link_names[i]).getSinkNodeName(), sink_node_names[i]);
-    BOOST_CHECK_EQUAL(model.getWeight(link_names[i]).getName(), link_names[i]);
-  }
-}
+// DEPRECATED
+//BOOST_AUTO_TEST_CASE(makeBaselineModel) 
+//{
+//  ModelReplicatorExt<float> model_replicator;
+//  Model<float> model;
+//  std::vector<std::string> node_names, link_names, source_node_names, sink_node_names;
+//
+//  std::shared_ptr<WeightInitOp<float>> weight_init;
+//  std::shared_ptr<SolverOp<float>> solver;
+//	std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>());
+//	std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
+//
+//  weight_init.reset(new ConstWeightInitOp<float>(1.0));
+//  solver.reset(new SGDOp<float>(0.01, 0.9));
+//  model = model_replicator.makeBaselineModel(
+//		2, { 1 }, 2,
+//    std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
+//    weight_init, solver,
+//    loss_function, loss_function_grad);
+//
+//  node_names = {
+//    "Input_0", "Input_1", "Hidden_0-0", "Output_0", "Output_1",
+//    "Hidden_bias_0-0", "Output_bias_0", "Output_bias_1"};
+//  for (const std::string& node_name : node_names)
+//    BOOST_CHECK_EQUAL(model.getNode(node_name).getName(), node_name);
+//  
+//  link_names = {
+//    "Input_0_to_Hidden_0-0", "Input_1_to_Hidden_0-0", "Bias_0-0_to_Hidden_0-0",
+//    "Hidden_0-0_to_Output_0", "Hidden_0-0_to_Output_1",
+//    "Bias_0_to_Output_0", "Bias_1_to_Output_1"};
+//  source_node_names = {
+//    "Input_0", "Input_1", "Hidden_bias_0-0", 
+//    "Hidden_0-0", "Hidden_0-0", 
+//    "Output_bias_0", "Output_bias_1"};
+//  sink_node_names = {
+//    "Hidden_0-0", "Hidden_0-0", "Hidden_0-0", 
+//    "Output_0", "Output_1", 
+//    "Output_0", "Output_1"};
+//  for (int i=0; i<link_names.size(); ++i)
+//  {
+//    BOOST_CHECK_EQUAL(model.getLink(link_names[i]).getName(), link_names[i]);
+//    BOOST_CHECK_EQUAL(model.getLink(link_names[i]).getSourceNodeName(), source_node_names[i]);
+//    BOOST_CHECK_EQUAL(model.getLink(link_names[i]).getSinkNodeName(), sink_node_names[i]);
+//    BOOST_CHECK_EQUAL(model.getWeight(link_names[i]).getName(), link_names[i]);
+//  }
+//
+//	std::vector<int> nodes_per_hidden_layer = {};
+//  model = model_replicator.makeBaselineModel(
+//		2, nodes_per_hidden_layer, 2,
+//    std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()), 
+//		std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
+//    weight_init, solver,
+//		loss_function, loss_function_grad);
+//
+//  node_names = {
+//    "Input_0", "Input_1", "Output_0", "Output_1",
+//    "Output_bias_0", "Output_bias_1"};
+//  for (const std::string& node_name : node_names)
+//    BOOST_CHECK_EQUAL(model.getNode(node_name).getName(), node_name);
+//  
+//  link_names = {
+//    "Input_0_to_Output_0", "Input_1_to_Output_0", "Bias_0_to_Output_0",
+//    "Input_0_to_Output_1", "Input_1_to_Output_1", "Bias_1_to_Output_1"};
+//  source_node_names = {
+//    "Input_0", "Input_1", "Output_bias_0", 
+//    "Input_0", "Input_1", "Output_bias_1"};
+//  sink_node_names = {
+//    "Output_0", "Output_0", "Output_0",  
+//    "Output_1", "Output_1", "Output_1"};
+//  for (int i=0; i<link_names.size(); ++i)
+//  {
+//    BOOST_CHECK_EQUAL(model.getLink(link_names[i]).getName(), link_names[i]);
+//    BOOST_CHECK_EQUAL(model.getLink(link_names[i]).getSourceNodeName(), source_node_names[i]);
+//    BOOST_CHECK_EQUAL(model.getLink(link_names[i]).getSinkNodeName(), sink_node_names[i]);
+//    BOOST_CHECK_EQUAL(model.getWeight(link_names[i]).getName(), link_names[i]);
+//  }
+//}
 
 Model<float> makeModel1()
 {
@@ -449,7 +450,6 @@ Model<float> makeModel1()
   model1.addNodes({i1, i2, h1, h2, o1, o2, b1, b2});
   model1.addWeights({w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4});
   model1.addLinks({l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4});
-	model1.initNodes(1, 1);  // Necessary in order to initialize the NodeData shared_ptr!
   return model1;
 }
 

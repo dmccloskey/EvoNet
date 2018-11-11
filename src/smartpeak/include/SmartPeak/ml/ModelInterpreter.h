@@ -4,7 +4,7 @@
 #define SMARTPEAK_MODELINTERPRETER_H
 
 // .h
-#include <SmartPeak/ml/Model3.h>
+#include <SmartPeak/ml/Model.h>
 #include <SmartPeak/ml/NodeTensorData.h>
 #include <SmartPeak/ml/WeightTensorData.h>
 #include <SmartPeak/ml/IntegrationFunctionTensor.h>
