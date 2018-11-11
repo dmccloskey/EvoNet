@@ -326,11 +326,49 @@ namespace SmartPeak
 			const std::vector<int>& source_layer_sizes, const std::vector<int>& sink_layer_sizes, const std::vector<std::vector<std::pair<int, int>>> weight_indices, const std::vector<std::vector<TensorT>>& weight_values,
 			const std::vector<bool>& make_source_tensors, const std::vector<bool>& make_sink_tensors, const std::vector<bool>& make_weight_tensors,
 			const int& batch_size, const int& memory_size, const bool& train) = 0;
+
+		/**
+		@brief Execute model kernal methods required for forward propogation
+
+		@param[in] time_step The current time-step to operate on
+		@param[in] sync_HToD Short circuit for testing that copies all host data to the device
+		@param[in] sync_DToH Short circuit for testing that copies all device data to the host
+		*/
 		virtual void executeForwardPropogationOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false) = 0;
+
+		/**
+		@brief Execute model kernal methods required for calculating the model and output node error
+
+		@param[in] time_step The current time-step to operate on
+		@param[in] sync_HToD Short circuit for testing that copies all host data to the device
+		@param[in] sync_DToH Short circuit for testing that copies all device data to the host
+		*/
 		virtual void executeModelErrorOperations(Eigen::Tensor<TensorT, 2>& expected, const int& layer_id, LossFunctionTensorOp<TensorT, DeviceT>* loss_function, LossFunctionGradTensorOp<TensorT, DeviceT>* loss_function_grad, const int& time_step, bool sync_HToD = false, bool sync_DToH = false) = 0;
+
+		/**
+		@brief Execute model kernal methods required for backward propogation
+
+		@param[in] time_step The current time-step to operate on
+		@param[in] sync_HToD Short circuit for testing that copies all host data to the device
+		@param[in] sync_DToH Short circuit for testing that copies all device data to the host
+		*/
 		virtual void executeBackwardPropogationOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false) = 0;
-		virtual void executeWeightErrorOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false) = 0;
-		virtual void executeWeightUpdateOperations(const int& time_step, bool sync_HToD = false, bool sync_DToH = false) = 0;
+
+		/**
+		@brief Execute model kernal methods required for weight error calculations
+
+		@param[in] sync_HToD Short circuit for testing that copies all host data to the device
+		@param[in] sync_DToH Short circuit for testing that copies all device data to the host
+		*/
+		virtual void executeWeightErrorOperations(bool sync_HToD = false, bool sync_DToH = false) = 0;
+
+		/**
+		@brief Execute model kernal methods required for weight update calculations
+
+		@param[in] sync_HToD Short circuit for testing that copies all host data to the device
+		@param[in] sync_DToH Short circuit for testing that copies all device data to the host
+		*/
+		virtual void executeWeightUpdateOperations(bool sync_HToD = false, bool sync_DToH = false) = 0;
 		
 		void addLayerTensor(NodeTensorData<TensorT>& layer); ///< add a layer to the cache
 		void clearLayerTensors(); ///< clear all layers from the cache
