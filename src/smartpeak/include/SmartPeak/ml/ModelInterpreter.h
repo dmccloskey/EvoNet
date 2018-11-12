@@ -1342,10 +1342,22 @@ namespace SmartPeak
 	inline void ModelInterpreter<TensorT, DeviceT>::getModelResults(Model<TensorT>& model)
 	{
 		// copy out the weight values
+		for (auto& weight_map : model.getWeightsMap()) {
+			const int tensor_index = std::get<0>(weight_map.second->getTensorIndex()[0]);
+			const int layer1_index = std::get<1>(weight_map.second->getTensorIndex()[0]);
+			const int layer2_index = std::get<2>(weight_map.second->getTensorIndex()[0]);
+			weight_map.second->setWeight_(getWeightTensor(tensor_index)->getWeight()(layer1_index, layer2_index));
+		}
 
 		// copy out the model error
+		model.setError(model_error_->getError());
 
 		// copy out the output node values
+		for (auto& output_node : model.getOutputNodes()) {
+			const int tensor_index = output_node->getTensorIndex().first;
+			const int layer_index = output_node->getTensorIndex().second;
+			output_node->setOutput(getLayerTensor(tensor_index)->getOutput().chip(layer_index,2));
+		}
 	}
 
 	template<typename TensorT, typename DeviceT>
