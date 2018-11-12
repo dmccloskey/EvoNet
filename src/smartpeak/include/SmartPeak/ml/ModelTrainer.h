@@ -494,8 +494,8 @@ private:
 			adaptiveTrainerScheduler(0, iter, model, model_error);
 
 			// assign the input data
-			model_interpreter.initBiases(model_modelTrainer2); // create the bias	
-			model_interpreter.mapValuesToLayers(model_modelTrainer2, input, input_nodes, "output");
+			model_interpreter.initBiases(model); // create the bias	
+			model_interpreter.mapValuesToLayers(model, input.chip(iter, 3), input_nodes, "output");
 
 			// forward propogate
 			if (getVerbosityLevel() >= 2)
@@ -505,7 +505,6 @@ private:
 			// calculate the model error and node output 
 			if (getVerbosityLevel() >= 2)
 				std::cout << "Error Calculation..." << std::endl;
-			//model.CETT(output.chip(iter, 3), output_nodes, 1,getNThreads());
 			int output_node_cnt = 0;
 			for (size_t loss_iter = 0; loss_iter < output_nodes_.size(); loss_iter++) {
 				Eigen::Tensor<TensorT, 3> expected_tmp = output.chip(iter, 3);
@@ -553,7 +552,6 @@ private:
 				model_interpreter.reInitModelError();
 			}
 		}
-		model.clearCache();
 		return model_error;
 	}
 
@@ -591,30 +589,40 @@ private:
 		}
 
 		// Initialize the model
-		model.initError(getBatchSize(), getMemorySize());
-		model.clearCache();
-		model.initNodes(getBatchSize(), getMemorySize()); // The first time point = 0
-		model.findCycles();
-		model.initWeightsDropProbability(false);
+		model.findCycles(); // [TODO: add method to model to flag when to find cycles]
 
 		// Initialize the logger
-		if (log_validation_)
+		if (log_training_)
 			model_logger.initLogs(model);
+
+		// Initialize the model interpreter
+		if (model_resources[0].getType() == DeviceType::default)
+			std::shared_ptr<ModelInterpreter<TensorT, Eigen::DefaultDevice>> model_interpreter = new ModelInterpreterDefaultDevice<TensorT>(model_resources);
+		else if (model_resources[0].getType() == DeviceType::gpu)
+			std::shared_ptr<ModelInterpreter<TensorT, Eigen::GpuDevice>> model_interpreter = new ModelInterpreterGpu<TensorT>(model_resources);
+		else
+			std::shared_ptr<ModelInterpreter<TensorT, Eigen::DefaultDevice>> model_interpreter = new ModelInterpreterDefaultDevice<TensorT>(model_resources);
+
+		// compile the graph into a set of operations and allocate all tensors
+		model_interpreter.getForwardPropogationOperations(model, getBatchSize(), getMemorySize(), false);
+		model_interpreter.allocateModelErrorTensor(getBatchSize(), getMemorySize());
 
 		for (int iter = 0; iter < getNEpochsValidation(); ++iter) // use n_epochs here
 		{
+			// assign the input data
+			model_interpreter.initBiases(model); // create the bias	
+			model_interpreter.mapValuesToLayers(model, input.chip(iter, 3), input_nodes, "output");
 
 			// forward propogate
-			if (iter == 0)
-				model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), true, true, getNThreads());
-			else
-				model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), false, true, getNThreads());
+			if (getVerbosityLevel() >= 2)
+				std::cout << "Foward Propogation..." << std::endl;
+			model_interpreter.FPTT(getMemorySize());
 
-			// calculate the model error and node output error
+			// calculate the model error and node output 
+			if (getVerbosityLevel() >= 2)
+				std::cout << "Error Calculation..." << std::endl;
 			int output_node_cnt = 0;
 			for (size_t loss_iter = 0; loss_iter < output_nodes_.size(); loss_iter++) {
-				model.setLossFunction(loss_functions_[loss_iter]);
-				model.setLossFunctionGrad(loss_function_grads_[loss_iter]);
 				Eigen::Tensor<TensorT, 3> expected_tmp = output.chip(iter, 3);
 				Eigen::Tensor<TensorT, 3> expected(getBatchSize(), getMemorySize(), (int)output_nodes_[loss_iter].size());
 				for (int batch_iter = 0; batch_iter < getBatchSize(); ++batch_iter)
@@ -622,13 +630,13 @@ private:
 						for (int node_iter = 0; node_iter < output_nodes_[loss_iter].size(); ++node_iter)
 							expected(batch_iter, memory_iter, node_iter) = expected_tmp(batch_iter, memory_iter, (int)(node_iter + output_node_cnt));
 				if (getNTETTSteps() < 0)
-					model.CETT(expected, output_nodes_[loss_iter], getMemorySize(), getNThreads());
+					model_interpreter.CETT(model, expected, output_nodes_[loss_iter], loss_functions_[loss_iter].get(), loss_function_grads_[loss_iter].get(), getMemorySize());
 				else
-					model.CETT(expected, output_nodes_[loss_iter], getNTETTSteps(), getNThreads());
+					model_interpreter.CETT(model, expected, output_nodes_[loss_iter], loss_functions_[loss_iter].get(), loss_function_grads_[loss_iter].get(), getNTETTSteps());
 				output_node_cnt += output_nodes_[loss_iter].size();
 			}
 
-			const Eigen::Tensor<TensorT, 0> total_error = model.getError().sum();
+			const Eigen::Tensor<TensorT, 0> total_error = model_interpreter.getModelError()->getError().sum();
 			model_error.push_back(total_error(0));
 			if (getVerbosityLevel() >= 1)
 				std::cout << "Model " << model.getName() << " error: " << total_error(0) << std::endl;
@@ -640,11 +648,11 @@ private:
 			}
 
 			// reinitialize the model
-			model.reInitializeNodeStatuses();
-			model.initNodes(getBatchSize(), getMemorySize());
-			model.initError(getBatchSize(), getMemorySize());
+			if (iter != max_iter - 1) {
+				model_interpreter.reInitNodes();
+				model_interpreter.reInitModelError();
+			}
 		}
-		model.clearCache();
 		return model_error;
 	}
 
@@ -677,30 +685,33 @@ private:
 		}
 
 		// Initialize the model
-		model.initError(getBatchSize(), getMemorySize());
-		model.clearCache();
-		model.initNodes(getBatchSize(), getMemorySize()); // The first time point = 0
-		model.findCycles();
-		model.initWeightsDropProbability(false);
+		model.findCycles(); // [TODO: add method to model to flag when to find cycles]
 
 		// Initialize the logger
-		if (log_evaluation_)
+		if (log_training_)
 			model_logger.initLogs(model);
+
+		// Initialize the model interpreter
+		if (model_resources[0].getType() == DeviceType::default)
+			std::shared_ptr<ModelInterpreter<TensorT, Eigen::DefaultDevice>> model_interpreter = new ModelInterpreterDefaultDevice<TensorT>(model_resources);
+		else if (model_resources[0].getType() == DeviceType::gpu)
+			std::shared_ptr<ModelInterpreter<TensorT, Eigen::GpuDevice>> model_interpreter = new ModelInterpreterGpu<TensorT>(model_resources);
+		else
+			std::shared_ptr<ModelInterpreter<TensorT, Eigen::DefaultDevice>> model_interpreter = new ModelInterpreterDefaultDevice<TensorT>(model_resources);
+
+		// compile the graph into a set of operations and allocate all tensors
+		model_interpreter.getForwardPropogationOperations(model, getBatchSize(), getMemorySize(), false);
 
 		for (int iter = 0; iter < getNEpochsEvaluation(); ++iter) // use n_epochs here
 		{
-			// re-initialize only after the first epoch
-			if (iter > 0) {
-				// reinitialize the model
-				model.reInitializeNodeStatuses();
-				model.initNodes(getBatchSize(), getMemorySize());
-			}
+			// assign the input data
+			model_interpreter.initBiases(model); // create the bias	
+			model_interpreter.mapValuesToLayers(model, input.chip(iter, 3), input_nodes, "output");
 
 			// forward propogate
-			if (iter == 0)
-				model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), true, true, getNThreads());
-			else
-				model.FPTT(getMemorySize(), input.chip(iter, 3), input_nodes, time_steps.chip(iter, 2), false, true, getNThreads());
+			if (getVerbosityLevel() >= 2)
+				std::cout << "Foward Propogation..." << std::endl;
+			model_interpreter.FPTT(getMemorySize());
 
 			// extract out the model output
 			std::vector<Eigen::Tensor<TensorT, 2>> output;
@@ -714,8 +725,12 @@ private:
 			if (log_evaluation_) {
 				model_logger.writeLogs(model, iter, {}, {}, {}, {}, output_nodes, Eigen::Tensor<TensorT, 3>(), output_nodes, {}, {});
 			}
+
+			// reinitialize the model
+			if (iter != max_iter - 1) {
+				model_interpreter.reInitNodes();
+			}
 		}
-		model.clearCache();
 		return model_output;
 	}
 }

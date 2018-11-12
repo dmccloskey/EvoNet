@@ -223,7 +223,6 @@ BOOST_AUTO_TEST_CASE(DAGToy)
   trainer.setMemorySize(1);
   trainer.setNEpochsTraining(20);
 	trainer.setNEpochsValidation(20);
-	trainer.setNThreads(1);
 	trainer.setLogging(false, false);
   const std::vector<std::string> input_nodes = {"0", "1", "6", "7"}; // true inputs + biases
   const std::vector<std::string> output_nodes = {"4", "5"};
