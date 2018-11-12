@@ -43,8 +43,6 @@ public:
 		Model<TensorT> model;
 		model.setId(0);
 		model.setName("GAN");
-		model.setLossFunction(std::shared_ptr<LossFunctionOp<float>>(new BCEOp<float>()));
-		model.setLossFunctionGrad(std::shared_ptr<LossFunctionGradOp<float>>(new BCEGradOp<float>()));
 
 		ModelBuilder<TensorT> model_builder;
 
@@ -120,7 +118,6 @@ public:
 		for (const std::string& node_name : node_names)
 			model.getNodesMap().at(node_name)->setType(NodeType::output);
 
-		model.initWeights();
 		return model;
 	}
 	Model<TensorT> makeModel() { return Model<TensorT>(); }

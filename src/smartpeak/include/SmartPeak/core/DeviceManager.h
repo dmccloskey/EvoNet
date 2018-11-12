@@ -5,6 +5,8 @@
 
 namespace SmartPeak
 {
+	typedef std::vector<DeviceManager> ModelResources;
+
 	enum class DeviceType
 	{ // higher is better
 		default = 1, 

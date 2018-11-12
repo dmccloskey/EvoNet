@@ -207,7 +207,7 @@ namespace SmartPeak
 				return op_tensor_class;
 			}
 		}
-		std::vector<TensorT> getTensorParams(SolverOp<TensorT>* op_class) const { return std::vector<TensorT>(); }
+		std::vector<TensorT> getTensorParams(LossFunctionOp<TensorT>* op_class) const { return std::vector<TensorT>(); }
 	};
 
 	template<typename TensorT, typename DeviceT>
@@ -253,7 +253,7 @@ namespace SmartPeak
 				return op_tensor_class;
 			}
 		}
-		std::vector<TensorT> getTensorParams(SolverOp<TensorT>* op_class) const { return std::vector<TensorT>(); }
+		std::vector<TensorT> getTensorParams(LossFunctionGradOp<TensorT>* op_class) const { return std::vector<TensorT>(); }
 	};
 
 	template<typename TensorT, typename DeviceT>

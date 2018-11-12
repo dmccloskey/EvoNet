@@ -826,8 +826,8 @@ BOOST_AUTO_TEST_CASE(CETT)
 		{ { 2 },{ 3 },{ 3 },{ 4 },{ 4 },{ 5 },{ 5 },{ 6 } },
 		{ { 3 },{ 3 },{ 4 },{ 4 },{ 5 },{ 5 },{ 6 },{ 6 } } }
 	);
-	LossFunctionTensorOp<float, Eigen::DefaultDevice>* loss_function = new MSETensorOp<float, Eigen::DefaultDevice>();
-	LossFunctionGradTensorOp<float, Eigen::DefaultDevice>* loss_function_grad = new MSEGradTensorOp<float, Eigen::DefaultDevice>();
+	LossFunctionOp<float>* loss_function = new MSEOp<float>();
+	LossFunctionGradOp<float>* loss_function_grad = new MSEGradOp<float>();
 	model_interpreter.CETT(model_CETT, expected, output_nodes, loss_function, loss_function_grad, 4);
 
 	// test values of errors of the output nodes
@@ -901,8 +901,8 @@ BOOST_AUTO_TEST_CASE(TBPTT)
 		{ { 2 },{ 3 },{ 3 },{ 4 },{ 4 },{ 5 },{ 5 },{ 6 } },
 		{ { 3 },{ 3 },{ 4 },{ 4 },{ 5 },{ 5 },{ 6 },{ 6 } } }
 	);
-	LossFunctionTensorOp<float, Eigen::DefaultDevice>* loss_function = new MSETensorOp<float, Eigen::DefaultDevice>();
-	LossFunctionGradTensorOp<float, Eigen::DefaultDevice>* loss_function_grad = new MSEGradTensorOp<float, Eigen::DefaultDevice>();
+	LossFunctionOp<float>* loss_function = new MSEOp<float>();
+	LossFunctionGradOp<float>* loss_function_grad = new MSEGradOp<float>();
 	model_interpreter.CETT(model_TBPTT, expected, output_nodes, loss_function, loss_function_grad, 4);
 
 	model_interpreter.TBPTT(4);
@@ -979,8 +979,8 @@ BOOST_AUTO_TEST_CASE(updateWeights)
 		{ { 2 },{ 3 },{ 3 },{ 4 },{ 4 },{ 5 },{ 5 },{ 6 } },
 		{ { 3 },{ 3 },{ 4 },{ 4 },{ 5 },{ 5 },{ 6 },{ 6 } } }
 	);
-	LossFunctionTensorOp<float, Eigen::DefaultDevice>* loss_function = new MSETensorOp<float, Eigen::DefaultDevice>();
-	LossFunctionGradTensorOp<float, Eigen::DefaultDevice>* loss_function_grad = new MSEGradTensorOp<float, Eigen::DefaultDevice>();
+	LossFunctionOp<float>* loss_function = new MSEOp<float>();
+	LossFunctionGradOp<float>* loss_function_grad = new MSEGradOp<float>();
 	model_interpreter.CETT(model_updateWeights, expected, output_nodes, loss_function, loss_function_grad, 4);
 
 	model_interpreter.TBPTT(4);
@@ -1038,8 +1038,8 @@ BOOST_AUTO_TEST_CASE(modelTrainer2)
 		{ { 2 },{ 3 },{ 3 },{ 4 },{ 4 },{ 5 },{ 5 },{ 6 } },
 		{ { 3 },{ 3 },{ 4 },{ 4 },{ 5 },{ 5 },{ 6 },{ 6 } } }
 	);
-	LossFunctionTensorOp<float, Eigen::DefaultDevice>* loss_function = new MSETensorOp<float, Eigen::DefaultDevice>();
-	LossFunctionGradTensorOp<float, Eigen::DefaultDevice>* loss_function_grad = new MSEGradTensorOp<float, Eigen::DefaultDevice>();
+	LossFunctionOp<float>* loss_function = new MSEOp<float>();
+	LossFunctionGradOp<float>* loss_function_grad = new MSEGradOp<float>();
 
 	// iterate until we find the optimal values
 	const int max_iter = 50;

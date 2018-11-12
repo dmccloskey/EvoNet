@@ -12,6 +12,7 @@
 #include <SmartPeak/ml/SolverTensor.h>
 #include <SmartPeak/ml/LossFunctionTensor.h>
 #include <SmartPeak/ml/OpToTensorOp.h>
+#include <SmartPeak/ml/ModelResources.h>
 
 #include <unsupported/Eigen/CXX11/Tensor>
 #include <vector>
@@ -100,6 +101,7 @@ namespace SmartPeak
 	public:
 		ModelInterpreter() = default; ///< Default constructor
 		ModelInterpreter(const ModelInterpreter& other); ///< Copy constructor that does not create a shared memory address between model nodes/links/weights
+		ModelInterpreter(const ModelResources& model_resources); ///< Copy constructor that does not create a shared memory address between model nodes/links/weights
 		~ModelInterpreter() = default; ///< Default destructor
 
 		inline bool operator==(const ModelInterpreter& other) const
@@ -406,7 +408,7 @@ namespace SmartPeak
 			where t=n to t=0
 		@param[in] node_names Output nodes
 		*/
-		void CETT(Model<TensorT>& model, const Eigen::Tensor<TensorT, 3>& values, const std::vector<std::string>& node_names, LossFunctionTensorOp<TensorT, DeviceT>* loss_function, LossFunctionGradTensorOp<TensorT, DeviceT>* loss_function_grad, const int& time_steps);
+		void CETT(Model<TensorT>& model, const Eigen::Tensor<TensorT, 3>& values, const std::vector<std::string>& node_names, LossFunctionOp<TensorT>* loss_function, LossFunctionGradOp<TensorT>* loss_function_grad, const int& time_steps);
 
 		/**
 		@brief Truncated Back Propogation Through Time (TBPTT) of the network model.
@@ -430,15 +432,32 @@ namespace SmartPeak
 		*/
 		void updateWeights();
 
+		/**
+		@brief Transfer Model error, weights, and output node values
+			from the model interpreter to the model
+
+		@param[in, out] model The network model
+		*/
+		void getModelResults(Model<TensorT>& model);
+
+		void setModelResources(const ModelResources& model_resources); ///< model_resources setter
+		ModelResources getModelResources(); ///< model_resources getter
+
 	protected:
 		std::vector<std::vector<OperationTensorStep<TensorT, DeviceT>>> operation_steps_;
 		std::vector<std::shared_ptr<NodeTensorData<TensorT, DeviceT>>> layer_tensors_;
 		std::vector<std::shared_ptr<WeightTensorData<TensorT, DeviceT>>> weight_tensors_;
 		std::shared_ptr<ModelErrorData<TensorT, DeviceT>> model_error_;
+		ModelResources model_resources_;
 	};
 
 	template<typename TensorT, typename DeviceT>
 	ModelInterpreter<TensorT, DeviceT>::ModelInterpreter(const ModelInterpreter<TensorT, DeviceT>& other)
+	{
+	}
+
+	template<typename TensorT, typename DeviceT>
+	ModelInterpreter<TensorT, DeviceT>::ModelInterpreter(const ModelResources& model_resources): model_resources_(model_resources)
 	{
 	}
 
@@ -1255,7 +1274,7 @@ namespace SmartPeak
 
 	template<typename TensorT, typename DeviceT>
 	inline void ModelInterpreter<TensorT, DeviceT>::CETT(Model<TensorT>& model, const Eigen::Tensor<TensorT, 3>& values, const std::vector<std::string>& node_names, 
-		LossFunctionTensorOp<TensorT, DeviceT>* loss_function, LossFunctionGradTensorOp<TensorT, DeviceT>* loss_function_grad, const int & time_steps)
+		LossFunctionOp<TensorT>* loss_function, LossFunctionGradOp<TensorT>* loss_function_grad, const int & time_steps)
 	{
 		// check time_steps vs memory_size
 		// [NOTE: was changed form memory_size to memory_size - 1]
@@ -1273,6 +1292,14 @@ namespace SmartPeak
 		const int layer_id = model.getNodesMap().at(node_names[0])->getTensorIndex().first;
 		assert(getLayerTensor(layer_id)->getLayerSize() == node_names.size());
 
+		// convert the loss function
+		LossFunctionTensorOp<TensorT, DeviceT>* loss_function_tensor = nullptr;
+		LossFunctionOpToLossFunctionTensorOp<TensorT, DeviceT> loss_conv;
+		loss_conv(loss_function, loss_function_tensor, std::vector<TensorT>());
+		LossFunctionGradTensorOp<TensorT, DeviceT>* loss_function_grad_tensor = nullptr;
+		LossFunctionGradOpToLossFunctionGradTensorOp<TensorT, DeviceT> loss_grad_conv;
+		loss_grad_conv(loss_function_grad, loss_function_grad_tensor, std::vector<TensorT>());
+
 		// NOTE: the output are stored [Tmax, Tmax - 1, ..., T=0, T=-1]
 		//	     while the expected output (values) are stored [T=0, T=1, ..., Tmax, Tmax]
 		for (int time_step = 0; time_step < max_steps; ++time_step)
@@ -1283,7 +1310,7 @@ namespace SmartPeak
 
 			// calculate the error for each batch of memory
 			Eigen::Tensor<TensorT, 2> expected = values.chip(next_time_step, 1);
-		  executeModelErrorOperations(expected, layer_id, loss_function, loss_function_grad, time_step);
+		  executeModelErrorOperations(expected, layer_id, loss_function_tensor, loss_function_grad_tensor, time_step);
 		}
 	}
 
@@ -1309,6 +1336,28 @@ namespace SmartPeak
 	{
 		executeWeightErrorOperations();
 		executeWeightUpdateOperations();
+	}
+
+	template<typename TensorT, typename DeviceT>
+	inline void ModelInterpreter<TensorT, DeviceT>::getModelResults(Model<TensorT>& model)
+	{
+		// copy out the weight values
+
+		// copy out the model error
+
+		// copy out the output node values
+	}
+
+	template<typename TensorT, typename DeviceT>
+	inline void ModelInterpreter<TensorT, DeviceT>::setModelResources(const ModelResources & model_resources)
+	{
+		model_resources_ = model_resources;
+	}
+
+	template<typename TensorT, typename DeviceT>
+	inline ModelResources ModelInterpreter<TensorT, DeviceT>::getModelResources()
+	{
+		return model_resources_;
 	}
 }
 #endif //SMARTPEAK_MODELINTERPRETER_H

@@ -2281,13 +2281,12 @@ void main_reconstruction()
 		solver.reset(new AdamOp<float>(0.01, 0.9, 0.999, 1e-8));
 		std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>());
 		std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
-		Model<float> model = model_replicator.makeBaselineModel(
+		Model<float> model; /*= model_replicator.makeBaselineModel(
 			n_input_nodes, { 100, 50, 25, 50, 100 }, n_output_nodes,
 			std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
 			std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
 			weight_init, solver,
-			loss_function, loss_function_grad, std::to_string(i));
-		model.initWeights();
+			loss_function, loss_function_grad, std::to_string(i));*/
 		model.setId(i);
 		population.push_back(model);
 	}

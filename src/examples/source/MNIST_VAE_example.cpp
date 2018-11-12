@@ -42,8 +42,6 @@ public:
 	void makeVAE(Model<TensorT>& model, int n_inputs = 784, int n_encodings = 20, int n_hidden_0 = 512) {
 		model.setId(0);
 		model.setName("VAE");
-		model.setLossFunction(std::shared_ptr<LossFunctionOp<float>>(new BCEOp<float>()));
-		model.setLossFunctionGrad(std::shared_ptr<LossFunctionGradOp<float>>(new BCEGradOp<float>()));
 
 		ModelBuilder<TensorT> model_builder;
 
@@ -120,8 +118,6 @@ public:
 		//			  so that back propogation begins at the decoder output and is propogated through the encoder layers
 		for (const std::string& node_name : node_names)
 			model.getNodesMap().at(node_name)->setType(NodeType::output);
-
-		model.initWeights();
 	}
 	Model<TensorT> makeModel() { return Model<TensorT>(); }
 	void adaptiveTrainerScheduler(

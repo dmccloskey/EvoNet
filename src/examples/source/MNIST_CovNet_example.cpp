@@ -45,8 +45,6 @@ public:
 		Model<TensorT> model;
 		model.setId(0);
 		model.setName("CovNet");
-		model.setLossFunction(std::shared_ptr<LossFunctionOp<float>>(new NegativeLogLikelihoodOp<float>(n_outputs)));
-		model.setLossFunctionGrad(std::shared_ptr<LossFunctionGradOp<float>>(new NegativeLogLikelihoodGradOp<float>(n_outputs)));
 
 		ModelBuilder<TensorT> model_builder;
 
@@ -150,7 +148,6 @@ public:
 		for (const std::string& node_name : node_names)
 			model.getNodesMap().at(node_name)->setType(NodeType::output);
 
-		model.initWeights();
 		return model;
 	}
 	Model<TensorT> makeCovNetFeatureNorm(const int& n_inputs, const int& n_outputs) {

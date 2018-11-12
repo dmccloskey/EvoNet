@@ -1,5 +1,4 @@
 set(core_executables_list
-  DeviceManager_test
   Helloworld_test
   #OperationsManagerGpu_test
   Preprocessing_test
@@ -39,6 +38,7 @@ set(ml_executables_list
   ModelKernalGpu_test
   ModelLogger_test
   ModelReplicator_test
+  ModelResources_test
   ModelTrainer_test
   Model_test
   Model2_test

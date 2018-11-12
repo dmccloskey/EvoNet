@@ -21,6 +21,7 @@ namespace SmartPeak
 		LossFunctionOp() = default;
 		LossFunctionOp(const T& eps) : eps_(eps) {};
 		~LossFunctionOp() = default;
+		virtual std::string getName() = 0;
 		virtual Eigen::Tensor<T, 1> operator()(
 			const Eigen::Tensor<T, 2>& y_pred,
 			const Eigen::Tensor<T, 2>& y_true) const = 0;
@@ -41,6 +42,7 @@ namespace SmartPeak
 		LossFunctionGradOp() = default;
 		LossFunctionGradOp(const T& eps) : eps_(eps) {};
 		~LossFunctionGradOp() = default;
+		virtual std::string getName() = 0;
 		virtual Eigen::Tensor<T, 2> operator()(
 			const Eigen::Tensor<T, 2>& y_pred,
 			const Eigen::Tensor<T, 2>& y_true) const = 0;
@@ -60,6 +62,7 @@ namespace SmartPeak
 public: 
     EuclideanDistanceOp(){}; 
     ~EuclideanDistanceOp(){};
+		std::string getName() {	return "EuclideanDistanceOp"; };
     Eigen::Tensor<T, 1> operator()(
       const Eigen::Tensor<T, 2>& y_pred, 
       const Eigen::Tensor<T, 2>& y_true) const 
@@ -84,6 +87,7 @@ public:
 public: 
     EuclideanDistanceGradOp(){}; 
     ~EuclideanDistanceGradOp(){};
+		std::string getName() { return "EuclideanDistanceGradOp"; };
     Eigen::Tensor<T, 2> operator()(
       const Eigen::Tensor<T, 2>& y_pred, 
       const Eigen::Tensor<T, 2>& y_true) const 
@@ -115,6 +119,7 @@ public:
 public: 
     L2NormOp(){}; 
     ~L2NormOp(){};
+		std::string getName() { return "L2NormOp"; };
     Eigen::Tensor<T, 1> operator()(
       const Eigen::Tensor<T, 2>& y_pred, 
       const Eigen::Tensor<T, 2>& y_true) const 
@@ -143,6 +148,7 @@ public:
 public: 
     L2NormGradOp(){}; 
     ~L2NormGradOp(){};
+		std::string getName() { return "L2NormGradOp"; };
     Eigen::Tensor<T, 2> operator()(
       const Eigen::Tensor<T, 2>& y_pred, 
       const Eigen::Tensor<T, 2>& y_true) const 
@@ -166,6 +172,7 @@ public:
 public: 
     BCEOp(){}; 
     ~BCEOp(){};
+		std::string getName() { return "BCEOp"; };
     Eigen::Tensor<T, 1> operator()(
       const Eigen::Tensor<T, 2>& y_pred, 
       const Eigen::Tensor<T, 2>& y_true) const 
@@ -207,6 +214,7 @@ public:
 public: 
     BCEGradOp(){}; 
     ~BCEGradOp(){};
+		std::string getName() { return "BCEGradOp"; };
     Eigen::Tensor<T, 2> operator()(
       const Eigen::Tensor<T, 2>& y_pred, 
       const Eigen::Tensor<T, 2>& y_true) const 
@@ -245,6 +253,7 @@ public:
 		NegativeLogLikelihoodOp(const T& n) { setN(n); };
 		void setN(const T& n) { n_ = n; }
     ~NegativeLogLikelihoodOp() = default;
+		std::string getName() { return "NegativeLogLikelihoodOp"; };
     Eigen::Tensor<T, 1> operator()(
       const Eigen::Tensor<T, 2>& y_pred, 
       const Eigen::Tensor<T, 2>& y_true) const 
@@ -275,6 +284,7 @@ public:
 		NegativeLogLikelihoodGradOp(const T& n) { setN(n); };
 		void setN(const T& n) { n_ = n; }
     ~NegativeLogLikelihoodGradOp(){};
+		std::string getName() { return "NegativeLogLikelihoodGradOp"; };
     Eigen::Tensor<T, 2> operator()(
       const Eigen::Tensor<T, 2>& y_pred, 
       const Eigen::Tensor<T, 2>& y_true) const 
@@ -304,6 +314,7 @@ public:
     MSEOp(){};
 		MSEOp(const T& n): n_(n){};
     ~MSEOp(){};
+		std::string getName() { return "MSEOp"; };
     Eigen::Tensor<T, 1> operator()(
       const Eigen::Tensor<T, 2>& y_pred, 
       const Eigen::Tensor<T, 2>& y_true) const 
@@ -339,6 +350,7 @@ public:
     MSEGradOp(){};
 		MSEGradOp(const T& n) : n_(n) {};
     ~MSEGradOp(){};
+		std::string getName() { return "MSEGradOp"; };
     Eigen::Tensor<T, 2> operator()(
       const Eigen::Tensor<T, 2>& y_pred, 
       const Eigen::Tensor<T, 2>& y_true) const 
@@ -374,6 +386,7 @@ public:
 	public:
 		KLDivergenceMuOp() {};
 		~KLDivergenceMuOp() {};
+		std::string getName() { return "KLDivergenceMuOp"; };
 		Eigen::Tensor<T, 1> operator()(
 			const Eigen::Tensor<T, 2>& y_pred,
 			const Eigen::Tensor<T, 2>& y_true) const
@@ -399,6 +412,7 @@ public:
 	public:
 		KLDivergenceMuGradOp() {};
 		~KLDivergenceMuGradOp() {};
+		std::string getName() { return "KLDivergenceMuGradOp"; };
 		Eigen::Tensor<T, 2> operator()(
 			const Eigen::Tensor<T, 2>& y_pred,
 			const Eigen::Tensor<T, 2>& y_true) const
@@ -429,6 +443,7 @@ public:
 	public:
 		KLDivergenceLogVarOp() {};
 		~KLDivergenceLogVarOp() {};
+		std::string getName() { return "KLDivergenceLogVarOp"; };
 		Eigen::Tensor<T, 1> operator()(
 			const Eigen::Tensor<T, 2>& y_pred,
 			const Eigen::Tensor<T, 2>& y_true) const
@@ -454,6 +469,7 @@ public:
 	public:
 		KLDivergenceLogVarGradOp() {};
 		~KLDivergenceLogVarGradOp() {};
+		std::string getName() { return "KLDivergenceLogVarGradOp"; };
 		Eigen::Tensor<T, 2> operator()(
 			const Eigen::Tensor<T, 2>& y_pred,
 			const Eigen::Tensor<T, 2>& y_true) const
@@ -498,6 +514,7 @@ public:
 	public:
 		BCEWithLogitsOp() {};
 		~BCEWithLogitsOp() {};
+		std::string getName() { return "BCEWithLogitsOp"; };
 		Eigen::Tensor<T, 1> operator()(
 			const Eigen::Tensor<T, 2>& y_pred,
 			const Eigen::Tensor<T, 2>& y_true) const
@@ -535,6 +552,7 @@ public:
 	public:
 		BCEWithLogitsGradOp() {};
 		~BCEWithLogitsGradOp() {};
+		std::string getName() { return "BCEWithLogitsGradOp"; };
 		Eigen::Tensor<T, 2> operator()(
 			const Eigen::Tensor<T, 2>& y_pred,
 			const Eigen::Tensor<T, 2>& y_true) const

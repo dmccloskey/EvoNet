@@ -524,4 +524,190 @@ BOOST_AUTO_TEST_CASE(getTensorParamsIntegrationWeightGradOpToIntegrationWeightGr
 	//BOOST_CHECK_EQUAL(params.size(), 0);
 }
 
+BOOST_AUTO_TEST_CASE(constructorLossFunctionGradOpToLossFunctionGradTensorOp)
+{
+	LossFunctionGradOpToLossFunctionGradTensorOp<float, Eigen::DefaultDevice>* ptr = nullptr;
+	LossFunctionGradOpToLossFunctionGradTensorOp<float, Eigen::DefaultDevice>* nullPointer = nullptr;
+	ptr = new LossFunctionGradOpToLossFunctionGradTensorOp<float, Eigen::DefaultDevice>();
+	BOOST_CHECK_NE(ptr, nullPointer);
+}
+
+BOOST_AUTO_TEST_CASE(destructorLossFunctionGradOpToLossFunctionGradTensorOp)
+{
+	LossFunctionGradOpToLossFunctionGradTensorOp<float, Eigen::DefaultDevice>* ptr = nullptr;
+	ptr = new LossFunctionGradOpToLossFunctionGradTensorOp<float, Eigen::DefaultDevice>();
+	delete ptr;
+}
+
+BOOST_AUTO_TEST_CASE(convertOpToTensorOpLossFunctionGradOpToLossFunctionGradTensorOp)
+{
+	LossFunctionGradOpToLossFunctionGradTensorOp<float, Eigen::DefaultDevice> op_to_tensor_op;
+	LossFunctionGradOp<float>* op_class;
+	LossFunctionGradTensorOp<float, Eigen::DefaultDevice>* op_tensor_class;
+
+	op_class = new EuclideanDistanceGradOp<float>();
+	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "EuclideanDistanceGradTensorOp");
+
+	op_class = new L2NormGradOp<float>();
+	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "L2NormGradTensorOp");
+
+	op_class = new L2NormGradOp<float>();
+	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "L2NormGradTensorOp");
+
+	op_class = new NegativeLogLikelihoodGradOp<float>();
+	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "NegativeLogLikelihoodGradTensorOp");
+
+	op_class = new MSEGradOp<float>();
+	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "MSEGradTensorOp");
+
+	op_class = new KLDivergenceMuGradOp<float>();
+	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "KLDivergenceMuGradTensorOp");
+
+	op_class = new KLDivergenceLogVarGradOp<float>();
+	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "KLDivergenceLogVarGradTensorOp");
+
+	op_class = new BCEWithLogitsGradOp<float>();
+	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "BCEWithLogitsGradTensorOp");
+}
+
+BOOST_AUTO_TEST_CASE(getTensorParamsLossFunctionGradOpToLossFunctionGradTensorOp)
+{
+	LossFunctionGradOpToLossFunctionGradTensorOp<float, Eigen::DefaultDevice> op_to_tensor_op;
+	LossFunctionGradOp<float>* op_class = nullptr;
+	std::vector<float> params;
+
+	op_class = new EuclideanDistanceGradOp<float>();
+	params = op_to_tensor_op.getTensorParams(op_class);
+	BOOST_CHECK_EQUAL(params.size(), 0);
+
+	op_class = new L2NormGradOp<float>();
+	params = op_to_tensor_op.getTensorParams(op_class);
+	BOOST_CHECK_EQUAL(params.size(), 0);
+
+	op_class = new L2NormGradOp<float>();
+	params = op_to_tensor_op.getTensorParams(op_class);
+	BOOST_CHECK_EQUAL(params.size(), 0);
+
+	op_class = new NegativeLogLikelihoodGradOp<float>();
+	params = op_to_tensor_op.getTensorParams(op_class);
+	BOOST_CHECK_EQUAL(params.size(), 0);
+
+	op_class = new MSEGradOp<float>();
+	params = op_to_tensor_op.getTensorParams(op_class);
+	BOOST_CHECK_EQUAL(params.size(), 0);
+
+	op_class = new KLDivergenceMuGradOp<float>();
+	params = op_to_tensor_op.getTensorParams(op_class);
+	BOOST_CHECK_EQUAL(params.size(), 0);
+
+	op_class = new KLDivergenceLogVarGradOp<float>();
+	params = op_to_tensor_op.getTensorParams(op_class);
+	BOOST_CHECK_EQUAL(params.size(), 0);
+
+	op_class = new BCEWithLogitsGradOp<float>();
+	params = op_to_tensor_op.getTensorParams(op_class);
+	BOOST_CHECK_EQUAL(params.size(), 0);
+}
+
+BOOST_AUTO_TEST_CASE(constructorLossFunctionOpToLossFunctionTensorOp)
+{
+	LossFunctionOpToLossFunctionTensorOp<float, Eigen::DefaultDevice>* ptr = nullptr;
+	LossFunctionOpToLossFunctionTensorOp<float, Eigen::DefaultDevice>* nullPointer = nullptr;
+	ptr = new LossFunctionOpToLossFunctionTensorOp<float, Eigen::DefaultDevice>();
+	BOOST_CHECK_NE(ptr, nullPointer);
+}
+
+BOOST_AUTO_TEST_CASE(destructorLossFunctionOpToLossFunctionTensorOp)
+{
+	LossFunctionOpToLossFunctionTensorOp<float, Eigen::DefaultDevice>* ptr = nullptr;
+	ptr = new LossFunctionOpToLossFunctionTensorOp<float, Eigen::DefaultDevice>();
+	delete ptr;
+}
+
+BOOST_AUTO_TEST_CASE(convertOpToTensorOpLossFunctionOpToLossFunctionTensorOp)
+{
+	LossFunctionOpToLossFunctionTensorOp<float, Eigen::DefaultDevice> op_to_tensor_op;
+	LossFunctionOp<float>* op_class;
+	LossFunctionTensorOp<float, Eigen::DefaultDevice>* op_tensor_class;
+
+	op_class = new EuclideanDistanceOp<float>();
+	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "EuclideanDistanceTensorOp");
+
+	op_class = new L2NormOp<float>();
+	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "L2NormTensorOp");
+
+	op_class = new L2NormOp<float>();
+	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "L2NormTensorOp");
+
+	op_class = new NegativeLogLikelihoodOp<float>();
+	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "NegativeLogLikelihoodTensorOp");
+
+	op_class = new MSEOp<float>();
+	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "MSETensorOp");
+
+	op_class = new KLDivergenceMuOp<float>();
+	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "KLDivergenceMuTensorOp");
+
+	op_class = new KLDivergenceLogVarOp<float>();
+	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "KLDivergenceLogVarTensorOp");
+
+	op_class = new BCEWithLogitsOp<float>();
+	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "BCEWithLogitsTensorOp");
+}
+
+BOOST_AUTO_TEST_CASE(getTensorParamsLossFunctionOpToLossFunctionTensorOp)
+{
+	LossFunctionOpToLossFunctionTensorOp<float, Eigen::DefaultDevice> op_to_tensor_op;
+	LossFunctionOp<float>* op_class = nullptr;
+	std::vector<float> params;
+
+	op_class = new EuclideanDistanceOp<float>();
+	params = op_to_tensor_op.getTensorParams(op_class);
+	BOOST_CHECK_EQUAL(params.size(), 0);
+
+	op_class = new L2NormOp<float>();
+	params = op_to_tensor_op.getTensorParams(op_class);
+	BOOST_CHECK_EQUAL(params.size(), 0);
+
+	op_class = new L2NormOp<float>();
+	params = op_to_tensor_op.getTensorParams(op_class);
+	BOOST_CHECK_EQUAL(params.size(), 0);
+
+	op_class = new NegativeLogLikelihoodOp<float>();
+	params = op_to_tensor_op.getTensorParams(op_class);
+	BOOST_CHECK_EQUAL(params.size(), 0);
+
+	op_class = new MSEOp<float>();
+	params = op_to_tensor_op.getTensorParams(op_class);
+	BOOST_CHECK_EQUAL(params.size(), 0);
+
+	op_class = new KLDivergenceMuOp<float>();
+	params = op_to_tensor_op.getTensorParams(op_class);
+	BOOST_CHECK_EQUAL(params.size(), 0);
+
+	op_class = new KLDivergenceLogVarOp<float>();
+	params = op_to_tensor_op.getTensorParams(op_class);
+	BOOST_CHECK_EQUAL(params.size(), 0);
+
+	op_class = new BCEWithLogitsOp<float>();
+	params = op_to_tensor_op.getTensorParams(op_class);
+	BOOST_CHECK_EQUAL(params.size(), 0);
+}
+
 BOOST_AUTO_TEST_SUITE_END()

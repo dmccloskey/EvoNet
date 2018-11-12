@@ -106,7 +106,6 @@ BOOST_AUTO_TEST_CASE(logExpectedAndPredictedOutputPerEpoch)
 	std::vector<std::string> node_names_test = { "Input_0", "Input_1" };
 	int batch_size = 2;
 	int memory_size = 1;
-	model.initNodes(batch_size, memory_size + 1);
 	Eigen::Tensor<float, 3> expected_values(batch_size, memory_size, (int)node_names.size());
 	expected_values.setConstant(2.0f);
 
@@ -133,7 +132,6 @@ BOOST_AUTO_TEST_CASE(logModuleMeanAndVariancePerEpoch)
 
 	int batch_size = 2;
 	int memory_size = 1;
-	model.initNodes(batch_size, memory_size + 1);
 
 	 ModelLogger<float> model_logger(false, false, false, false, false, true, false, false);
 	model_logger.initLogs(model);
@@ -158,8 +156,6 @@ BOOST_AUTO_TEST_CASE(logWeightsPerEpoch)
 
 	int batch_size = 2;
 	int memory_size = 1;
-	model.initNodes(batch_size, memory_size + 1);
-	model.initWeights();
 
 	 ModelLogger<float> model_logger(false, false, false, true, false, false, false, false);
 	model_logger.initLogs(model);
@@ -184,8 +180,6 @@ BOOST_AUTO_TEST_CASE(logNodeErrorsPerEpoch)
 
 	int batch_size = 2;
 	int memory_size = 1;
-	model.initNodes(batch_size, memory_size + 1);
-	model.initWeights();
 
 	 ModelLogger<float> model_logger(false, false, false, false, true, false, false, false);
 	model_logger.initLogs(model);
@@ -210,8 +204,6 @@ BOOST_AUTO_TEST_CASE(logNodeOutputsPerEpoch)
 
 	int batch_size = 2;
 	int memory_size = 1;
-	model.initNodes(batch_size, memory_size + 1);
-	model.initWeights();
 
 	 ModelLogger<float> model_logger(false, false, false, false, false, false, true, false);
 	model_logger.initLogs(model);
@@ -236,8 +228,6 @@ BOOST_AUTO_TEST_CASE(logNodeDerivativesPerEpoch)
 
 	int batch_size = 2;
 	int memory_size = 1;
-	model.initNodes(batch_size, memory_size + 1);
-	model.initWeights();
 
 	 ModelLogger<float> model_logger(false, false, false, false, false, false, false, true);
 	model_logger.initLogs(model);
