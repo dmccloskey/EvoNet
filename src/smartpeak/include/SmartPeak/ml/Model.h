@@ -239,6 +239,9 @@ public:
 
 		std::vector<std::pair<std::string, std::string>> getCyclicPairs();
 
+		void setError(const Eigen::Tensor<TensorT, 2> model_error); ///< model_error setter
+		Eigen::Tensor<TensorT, 2> getError() const; ///< model_error getter
+
 private:
     int id_; ///< Model ID
     std::string name_; ///< Model Name
@@ -248,6 +251,7 @@ private:
 		std::vector<std::pair<std::string, std::string>> cyclic_pairs_;
 		std::vector<std::shared_ptr<Node<TensorT>>> input_nodes_;
 		std::vector<std::shared_ptr<Node<TensorT>>> output_nodes_;
+		Eigen::Tensor<TensorT, 2> model_error_;
   };
 	template<typename TensorT>
 	inline Model<TensorT>::Model(const Model<TensorT>& other)
@@ -820,6 +824,16 @@ private:
 	{
 		return cyclic_pairs_;
 	}
+
+	template<typename TensorT>
+	inline void Model<TensorT>::setError(const Eigen::Tensor<TensorT, 2> model_error) {
+		model_error_ = model_error;
+	}
+
+	template<typename TensorT>
+	inline Eigen::Tensor<TensorT, 2> Model<TensorT>::getError() const {
+		return model_error_;
+	};
 }
 
 #endif //SMARTPEAK_MODEL_H
