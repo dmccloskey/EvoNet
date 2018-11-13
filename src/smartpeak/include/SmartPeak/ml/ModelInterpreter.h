@@ -1052,14 +1052,14 @@ namespace SmartPeak
 						argument.weight->addTensorIndex(std::make_tuple(weight_pos, source_layer_index, sink_layer_index));
 						weight_index.push_back(std::make_pair(source_layer_index, sink_layer_index));
 						TensorT tmp = argument.weight->getWeightInitOp()->operator()();
-						argument.weight->setWeight_(tmp);
+						argument.weight->setWeight(tmp);
 						weight_value.push_back(tmp);
 						make_weight_tensor = true;
 					}
 					else {
 						argument.weight->addTensorIndex(std::make_tuple(weight_pos, source_layer_index, sink_layer_index));
 						weight_index.push_back(std::make_pair(source_layer_index, sink_layer_index));
-						weight_value.push_back(argument.weight->getWeight_());
+						weight_value.push_back(argument.weight->getWeight());
 					}
 					if (increment_source_layer_size) ++source_layer_size;
 				}
@@ -1346,7 +1346,7 @@ namespace SmartPeak
 			const int tensor_index = std::get<0>(weight_map.second->getTensorIndex()[0]);
 			const int layer1_index = std::get<1>(weight_map.second->getTensorIndex()[0]);
 			const int layer2_index = std::get<2>(weight_map.second->getTensorIndex()[0]);
-			weight_map.second->setWeight_(getWeightTensor(tensor_index)->getWeight()(layer1_index, layer2_index));
+			weight_map.second->setWeight(getWeightTensor(tensor_index)->getWeight()(layer1_index, layer2_index));
 		}
 
 		// copy out the model error

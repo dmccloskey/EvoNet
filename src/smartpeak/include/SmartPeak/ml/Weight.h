@@ -74,7 +74,7 @@ public:
 			module_id_ = other.module_id_;
 			module_name_ = other.module_name_;
 			tensor_index_ = other.tensor_index_;
-      weight_data_  = other.weight_data_;
+      //weight_data_  = other.weight_data_;
       weight_init_ = other.weight_init_;
       solver_ = other.solver_;
       weight_min_ = other.weight_min_;
@@ -90,12 +90,12 @@ public:
     void setName(const std::string& name); ///< naem setter
     std::string getName() const; ///< name getter
 
-		void setWeight(const TensorT& weight); ///< weight setter
-    TensorT getWeightView() const; ///< weight getter
-		TensorT getWeight(); ///< weight getter
+		//void setWeight(const TensorT& weight); ///< weight setter
+  //  TensorT getWeightView() const; ///< weight getter
+		//TensorT getWeight(); ///< weight getter
 
-		void setWeight_(const TensorT& weight); ///< weight setter
-		TensorT getWeight_(); ///< weight getter
+		void setWeight(const TensorT& weight); ///< weight setter
+		TensorT getWeight() const; ///< weight getter
 
     void setWeightInitOp(const std::shared_ptr<WeightInitOp<TensorT>>& weight_init); ///< weight initialization operator setter
     WeightInitOp<TensorT>* getWeightInitOp() const; ///< weight initialization operator getter
@@ -123,10 +123,10 @@ public:
 		std::vector<std::tuple<int, int, int>> getTensorIndex() const; ///< layer id getter
 		void clearTensorIndex();
 
-    /**
-      @brief Initializes the weight.  
-    */ 
-    void initWeight();
+    ///**
+    //  @brief Initializes the weight.  
+    //*/ 
+    //void initWeight();
  
     /**
       @brief Update the weight.
@@ -146,7 +146,7 @@ private:
 		int module_id_ = -1; ///< Module ID
 		std::string module_name_ = ""; ///<Module Name
 		std::vector<std::tuple<int, int, int>> tensor_index_; ///< Layer ID: tuple consisting of OperationsList index and source/sink Layer index(used internally by Model)
-		std::shared_ptr<WeightData<TensorT>> weight_data_; ///< Weight weight
+		//std::shared_ptr<WeightData<TensorT>> weight_data_ = nullptr; ///< Weight weight
     std::shared_ptr<WeightInitOp<TensorT>> weight_init_; ///< weight initialization operator
     std::shared_ptr<SolverOp<TensorT>> solver_; ///< weight update operator
 		TensorT weight_ = 1;
@@ -160,7 +160,7 @@ private:
 	{
 		id_ = other.id_;
 		name_ = other.name_;
-		weight_data_ = other.weight_data_;
+		//weight_data_ = other.weight_data_;
 		module_id_ = other.module_id_;
 		module_name_ = other.module_name_;
 		tensor_index_ = other.tensor_index_;
@@ -234,34 +234,34 @@ private:
 		return name_;
 	}
 
+	//template<typename TensorT>
+	//void Weight<TensorT>::setWeight(const TensorT& weight)
+	//{
+	//	weight_data_->setWeight(weight);
+	//}
+
+	//template<typename TensorT>
+	//TensorT Weight<TensorT>::getWeightView() const
+	//{
+	//	return weight_data_->getWeight()(0);
+	//	//return weight_ * getDrop();
+	//}
+
+	//template<typename TensorT>
+	//TensorT Weight<TensorT>::getWeight()
+	//{
+	//	return weight_data_->getWeight()(0);
+	//	//return weight_ * getDrop();
+	//}
+
 	template<typename TensorT>
 	void Weight<TensorT>::setWeight(const TensorT& weight)
-	{
-		weight_data_->setWeight(weight);
-	}
-
-	template<typename TensorT>
-	TensorT Weight<TensorT>::getWeightView() const
-	{
-		return weight_data_->getWeight()(0);
-		//return weight_ * getDrop();
-	}
-
-	template<typename TensorT>
-	TensorT Weight<TensorT>::getWeight()
-	{
-		return weight_data_->getWeight()(0);
-		//return weight_ * getDrop();
-	}
-
-	template<typename TensorT>
-	void Weight<TensorT>::setWeight_(const TensorT& weight)
 	{
 		weight_ = weight;
 	}
 
 	template<typename TensorT>
-	TensorT Weight<TensorT>::getWeight_()
+	TensorT Weight<TensorT>::getWeight() const
 	{
 		return weight_;
 	}
@@ -374,17 +374,17 @@ private:
 		tensor_index_.clear();
 	}
 
-	template<typename TensorT>
-	void Weight<TensorT>::initWeight()
-	{
-#if COMPILE_WITH_CUDA
-		weight_data_.reset(new WeightDataGpu<TensorT>());
-#else
-		weight_data_.reset(new WeightDataCpu<TensorT>());
-#endif
-		weight_data_->setWeight(weight_init_->operator()());
-		//checkWeight(); // Nice to have
-	}
+//	template<typename TensorT>
+//	void Weight<TensorT>::initWeight()
+//	{
+//#if COMPILE_WITH_CUDA
+//		weight_data_.reset(new WeightDataGpu<TensorT>());
+//#else
+//		weight_data_.reset(new WeightDataCpu<TensorT>());
+//#endif
+//		weight_data_->setWeight(weight_init_->operator()());
+//		//checkWeight(); // Nice to have
+//	}
 
 	template<typename TensorT>
 	void Weight<TensorT>::updateWeight(const TensorT& error)

@@ -102,7 +102,7 @@ public:
       status_ = other.status_;
       output_min_ = other.output_min_;
       output_max_ = other.output_max_;
-			node_data_ = other.node_data_;
+			//node_data_ = other.node_data_;
 			drop_probability_ = other.drop_probability_;
 			drop_ = other.drop_;
       return *this;
@@ -158,32 +158,50 @@ public:
 		void setDrop(const Eigen::Tensor<TensorT, 2>& drop); ///< drop setter
 		Eigen::Tensor<TensorT, 2> getDrop() const; ///< drop copy getter
 
-		size_t getBatchSize() const { return node_data_->getBatchSize(); };
-		size_t getMemorySize() const { return node_data_->getMemorySize(); };
+		//int getBatchSize() const { return node_data_->getBatchSize(); };
+		//int getMemorySize() const { return node_data_->getMemorySize(); };
 
-		Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> getInput() { return node_data_->getInput(); }; ///< input copy getter
-		Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> getInputView() const { return node_data_->getInput(); }; ///< input copy getter
-		Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> getOutput() { return node_data_->getOutput(); }; ///< output copy getter
-		Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> getOutputView() const { return node_data_->getOutput(); }; ///< output copy getter
-		Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> getError() { return node_data_->getError(); }; ///< error copy getter
-		Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> getErrorView() const { return node_data_->getError(); }; ///< error copy getter
-		Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> getDerivative() { return node_data_->getDerivative(); }; ///< derivative copy getter
-		Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> getDerivativeView() const { return node_data_->getDerivative(); }; ///< derivative copy getter
-		Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> getDt() { return node_data_->getDt(); }; ///< dt copy getter
-		Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> getDtView() const { return node_data_->getDt(); }; ///< dt copy getter
+		int getBatchSize() const { return batch_size_; };
+		int getMemorySize() const { return memory_size_; };
 
-		void setNodeData(const std::shared_ptr<NodeData<TensorT>>& node_data);
-		std::shared_ptr<NodeData<TensorT>> getNodeData();
+		//Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> getInput() { return node_data_->getInput(); }; ///< input copy getter
+		//Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> getInputView() const { return node_data_->getInput(); }; ///< input copy getter
+		//Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> getOutput() { return node_data_->getOutput(); }; ///< output copy getter
+		//Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> getOutputView() const { return node_data_->getOutput(); }; ///< output copy getter
+		//Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> getError() { return node_data_->getError(); }; ///< error copy getter
+		//Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> getErrorView() const { return node_data_->getError(); }; ///< error copy getter
+		//Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> getDerivative() { return node_data_->getDerivative(); }; ///< derivative copy getter
+		//Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> getDerivativeView() const { return node_data_->getDerivative(); }; ///< derivative copy getter
+		//Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> getDt() { return node_data_->getDt(); }; ///< dt copy getter
+		//Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> getDtView() const { return node_data_->getDt(); }; ///< dt copy getter
 
-    /**
-      @brief Initialize node output to zero.
-        The node statuses are then changed to NodeStatus::deactivated
+		//void setNodeData(const std::shared_ptr<NodeData<TensorT>>& node_data);
+		//std::shared_ptr<NodeData<TensorT>> getNodeData();
 
-      @param[in] batch_size Size of the row dim for the output, error, and derivative node vectors
-      @param[in] memory_size Size of the col dim output, error, and derivative node vectors
-			@param[in] train True if training, False if validation (effectively shuts of any node regularlization, i.e., DropOut)
-    */ 
-    void initNode(const int& batch_size, const int& memory_size, bool train = false);
+		void setInput(const Eigen::Tensor<TensorT, 2>& input); ///< input setter
+		Eigen::Tensor<TensorT, 2> getInput() const; ///< input copy getter
+
+		void setOutput(const Eigen::Tensor<TensorT, 2>& output); ///< output setter
+		Eigen::Tensor<TensorT, 2> getOutput() const; ///< output copy getter
+
+		void setError(const Eigen::Tensor<TensorT, 2>& error); ///< error setter
+		Eigen::Tensor<TensorT, 2> getError() const; ///< error copy getter
+
+		void setDerivative(const Eigen::Tensor<TensorT, 2>& derivative); ///< derivative setter
+		Eigen::Tensor<TensorT, 2> getDerivative() const; ///< derivative copy getter
+
+		void setDt(const Eigen::Tensor<TensorT, 2>& dt); ///< dt setter
+		Eigen::Tensor<TensorT, 2> getDt() const; ///< dt copy getter
+
+   // /**
+   //   @brief Initialize node output to zero.
+   //     The node statuses are then changed to NodeStatus::deactivated
+
+   //   @param[in] batch_size Size of the row dim for the output, error, and derivative node vectors
+   //   @param[in] memory_size Size of the col dim output, error, and derivative node vectors
+			//@param[in] train True if training, False if validation (effectively shuts of any node regularlization, i.e., DropOut)
+   // */ 
+   // void initNode(const int& batch_size, const int& memory_size, bool train = false);
 
     /**
       @brief CHeck that the time_step is greater than 0 and not larger than
@@ -216,9 +234,25 @@ private:
 		std::shared_ptr<IntegrationWeightGradOp<TensorT>> integration_weight_grad_; ///< Node integration weight grad function 
     TensorT output_min_ = -1.0e6; ///< Min Node output
     TensorT output_max_ = 1.0e6; ///< Max Node output
-		std::shared_ptr<NodeData<TensorT>> node_data_; ///< Node data
+		//std::shared_ptr<NodeData<TensorT>> node_data_ = nullptr; ///< Node data
 		TensorT drop_probability_ = 0.0;
 		Eigen::Tensor<TensorT, 2> drop_; ///< Node Output drop tensor (initialized once per epoch)
+
+		int batch_size_ = 1;
+		int memory_size_ = 1;
+
+		/**
+			@brief output, error and derivative have the following dimensions:
+				rows: # of samples, cols: # of time steps
+				where the number of samples spans 0 to n samples
+				and the number of time steps spans m time points to 0
+		*/
+		Eigen::Tensor<TensorT, 2> input_; ///< Node Net Input (rows: # of samples, cols: # of time steps)
+		Eigen::Tensor<TensorT, 2> output_; ///< Node Output (rows: # of samples, cols: # of time steps)
+		Eigen::Tensor<TensorT, 2> error_; ///< Node Error (rows: # of samples, cols: # of time steps)
+		Eigen::Tensor<TensorT, 2> derivative_; ///< Node Error (rows: # of samples, cols: # of time steps)
+		Eigen::Tensor<TensorT, 2> dt_; ///< Resolution of each time-step (rows: # of samples, cols: # of time steps)
+
   };
 	template<typename TensorT>
 	Node<TensorT>::Node(const Node<TensorT>& other)
@@ -238,7 +272,7 @@ private:
 		integration_ = other.integration_;
 		output_min_ = other.output_min_;
 		output_max_ = other.output_max_;
-		node_data_ = other.node_data_;
+		//node_data_ = other.node_data_;
 		drop_probability_ = other.drop_probability_;
 		drop_ = other.drop_;
 	}
@@ -462,72 +496,72 @@ private:
 		return drop_;
 	}
 
-	template<typename TensorT>
-	void Node<TensorT>::setNodeData(const std::shared_ptr<NodeData<TensorT>>& node_data)
-	{
-		node_data_.reset(std::move(node_data));
-	}
+	//template<typename TensorT>
+	//void Node<TensorT>::setNodeData(const std::shared_ptr<NodeData<TensorT>>& node_data)
+	//{
+	//	node_data_.reset(std::move(node_data));
+	//}
 
-	template<typename TensorT>
-	std::shared_ptr<NodeData<TensorT>> Node<TensorT>::getNodeData()
-	{
-		return node_data_;
-	}
+	//template<typename TensorT>
+	//std::shared_ptr<NodeData<TensorT>> Node<TensorT>::getNodeData()
+	//{
+	//	return node_data_;
+	//}
 
-	template<typename TensorT>
-	void Node<TensorT>::initNode(const int& batch_size, const int& memory_size, bool train)
-	{
-
-#if COMPILE_WITH_CUDA
-		node_data_.reset(new NodeDataGpu<TensorT>());
-#else
-		node_data_.reset(new NodeDataCpu<TensorT>());
-#endif
-		node_data_->setBatchSize(batch_size);
-		node_data_->setMemorySize(memory_size);
-
-		// Template zero and one tensor
-		const auto zero = [&](const int& batch_size, const int& memory_size) { Eigen::Tensor<TensorT, 2> zero_values(batch_size, memory_size); zero_values.setConstant(0); return zero_values; };
-		const auto one = [&](const int& batch_size, const int& memory_size) { Eigen::Tensor<TensorT, 2> one_values(batch_size, memory_size); one_values.setConstant(1); return one_values; };
-
-		// set the input, error, and derivatives
-		node_data_->setInput(zero(batch_size, memory_size));
-		node_data_->setError(zero(batch_size, memory_size));
-		node_data_->setDerivative(zero(batch_size, memory_size));
-
-		// set Dt
-		node_data_->setDt(one(batch_size, memory_size));
-
-		// set Drop probabilities [TODO: broke when adding NodeData...]
-		if (train) {
-			setDrop(one(batch_size, memory_size).unaryExpr(RandBinaryOp<TensorT>(getDropProbability())));
-		}
-		else {
-			setDrop(one(batch_size, memory_size));
-		}
-
-		// corections for specific node types
-		if (type_ == NodeType::bias)
-		{
-			setStatus(NodeStatus::activated);
-			node_data_->setOutput(one(batch_size, memory_size));
-		}
-		else if (type_ == NodeType::input)
-		{
-			setStatus(NodeStatus::initialized);
-			node_data_->setOutput(zero(batch_size, memory_size));
-		}
-		else if (type_ == NodeType::zero)
-		{
-			setStatus(NodeStatus::activated);
-			node_data_->setOutput(zero(batch_size, memory_size));
-		}
-		else
-		{
-			setStatus(NodeStatus::initialized);
-			node_data_->setOutput(zero(batch_size, memory_size));
-		}
-	}
+//	template<typename TensorT>
+//	void Node<TensorT>::initNode(const int& batch_size, const int& memory_size, bool train)
+//	{
+//
+//#if COMPILE_WITH_CUDA
+//		node_data_.reset(new NodeDataGpu<TensorT>());
+//#else
+//		node_data_.reset(new NodeDataCpu<TensorT>());
+//#endif
+//		node_data_->setBatchSize(batch_size);
+//		node_data_->setMemorySize(memory_size);
+//
+//		// Template zero and one tensor
+//		const auto zero = [&](const int& batch_size, const int& memory_size) { Eigen::Tensor<TensorT, 2> zero_values(batch_size, memory_size); zero_values.setConstant(0); return zero_values; };
+//		const auto one = [&](const int& batch_size, const int& memory_size) { Eigen::Tensor<TensorT, 2> one_values(batch_size, memory_size); one_values.setConstant(1); return one_values; };
+//
+//		// set the input, error, and derivatives
+//		node_data_->setInput(zero(batch_size, memory_size));
+//		node_data_->setError(zero(batch_size, memory_size));
+//		node_data_->setDerivative(zero(batch_size, memory_size));
+//
+//		// set Dt
+//		node_data_->setDt(one(batch_size, memory_size));
+//
+//		// set Drop probabilities [TODO: broke when adding NodeData...]
+//		if (train) {
+//			setDrop(one(batch_size, memory_size).unaryExpr(RandBinaryOp<TensorT>(getDropProbability())));
+//		}
+//		else {
+//			setDrop(one(batch_size, memory_size));
+//		}
+//
+//		// corections for specific node types
+//		if (type_ == NodeType::bias)
+//		{
+//			setStatus(NodeStatus::activated);
+//			node_data_->setOutput(one(batch_size, memory_size));
+//		}
+//		else if (type_ == NodeType::input)
+//		{
+//			setStatus(NodeStatus::initialized);
+//			node_data_->setOutput(zero(batch_size, memory_size));
+//		}
+//		else if (type_ == NodeType::zero)
+//		{
+//			setStatus(NodeStatus::activated);
+//			node_data_->setOutput(zero(batch_size, memory_size));
+//		}
+//		else
+//		{
+//			setStatus(NodeStatus::initialized);
+//			node_data_->setOutput(zero(batch_size, memory_size));
+//		}
+//	}
 
 	template<typename TensorT>
 	bool Node<TensorT>::checkTimeStep(const int&time_step)
@@ -537,7 +571,7 @@ private:
 			std::cout << "time_step is less than 0." << std::endl;
 			return false;
 		}
-		else if (time_step >= node_data_->getMemorySize())
+		else if (time_step >= this->memory_size_)
 		{
 			std::cout << "time_step is greater than the node memory_size." << std::endl;
 			return false;
@@ -555,12 +589,68 @@ private:
 		{
 			for (int j = 0; j < this->memory_size_; ++j)
 			{
-				if (node_data_->getOutput()(i, j) < output_min_)
-					node_data_->getOutput()(i, j) = output_min_;
-				else if (node_data_->getOutput()(i, j) > output_max_)
-					node_data_->getOutput()(i, j) = output_max_;
+				if (output_(i, j) < output_min_)
+					output_(i, j) = output_min_;
+				else if (output_(i, j) > output_max_)
+					output_(i, j) = output_max_;
 			}
 		}
+	}
+
+	template<typename TensorT>
+	void Node<TensorT>::setInput(const Eigen::Tensor<TensorT, 2>& input)
+	{
+		input_ = input;
+	}
+	template<typename TensorT>
+	Eigen::Tensor<TensorT, 2> Node<TensorT>::getInput() const
+	{
+		return input_;
+	}
+
+	template<typename TensorT>
+	void Node<TensorT>::setOutput(const Eigen::Tensor<TensorT, 2>& output)
+	{
+		output_ = output;
+		//checkOutput();
+	}
+	template<typename TensorT>
+	Eigen::Tensor<TensorT, 2> Node<TensorT>::getOutput() const
+	{
+		return output_;// *getDrop();
+	}
+
+	template<typename TensorT>
+	void Node<TensorT>::setError(const Eigen::Tensor<TensorT, 2>& error)
+	{
+		error_ = error;
+	}
+	template<typename TensorT>
+	Eigen::Tensor<TensorT, 2> Node<TensorT>::getError() const
+	{
+		return error_;
+	}
+
+	template<typename TensorT>
+	void Node<TensorT>::setDerivative(const Eigen::Tensor<TensorT, 2>& derivative)
+	{
+		derivative_ = derivative;
+	}
+	template<typename TensorT>
+	Eigen::Tensor<TensorT, 2> Node<TensorT>::getDerivative() const
+	{
+		return derivative_;
+	}
+
+	template<typename TensorT>
+	void Node<TensorT>::setDt(const Eigen::Tensor<TensorT, 2>& dt)
+	{
+		dt_ = dt;
+	}
+	template<typename TensorT>
+	Eigen::Tensor<TensorT, 2> Node<TensorT>::getDt() const
+	{
+		return dt_;
 	}
 }
 

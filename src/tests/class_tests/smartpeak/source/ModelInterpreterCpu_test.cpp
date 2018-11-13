@@ -7,7 +7,7 @@
 using namespace SmartPeak;
 using namespace std;
 
-Model<float> makeModelFCSum()
+Model<float> makeModelToy1()
 {
 	/**
 	* Directed Acyclic Graph Toy Network Model
@@ -88,7 +88,7 @@ Model<float> makeModelFCSum()
 	model_FC_Sum.addLinks({ l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4 });
 	return model_FC_Sum;
 }
-Model<float> model_FC_Sum = makeModelFCSum();
+Model<float> model_FC_Sum = makeModelToy1();
 
 BOOST_AUTO_TEST_SUITE(modelInterpreterCpu)
 
@@ -99,7 +99,7 @@ BOOST_AUTO_TEST_SUITE(modelInterpreterCpu)
  * required of a standard feed forward neural network and recurrent neural network
 */
 
-Model<float> model_allocateForwardPropogationLayerTensors = makeModelFCSum();
+Model<float> model_allocateForwardPropogationLayerTensors = makeModelToy1();
 BOOST_AUTO_TEST_CASE(allocateForwardPropogationLayerTensors)
 {
 	ModelInterpreterDefaultDevice<float> model_interpreter;
@@ -156,7 +156,7 @@ BOOST_AUTO_TEST_CASE(allocateForwardPropogationLayerTensors)
 	assert(model_interpreter.getOperationSteps(0)[0].weight.solver->getName() == "SGDTensorOp");
 }
 
-Model<float> model_getForwardPropogationOperations = makeModelFCSum();
+Model<float> model_getForwardPropogationOperations = makeModelToy1();
 BOOST_AUTO_TEST_CASE(getForwardPropogationOperations)
 {
 	ModelInterpreterDefaultDevice<float> model_interpreter;
@@ -283,7 +283,7 @@ BOOST_AUTO_TEST_CASE(reInitModelError)
 	BOOST_CHECK_EQUAL(model_interpreter.getModelError()->getError()(0, 0), 0);
 }
 
-Model<float> model_mapValuesToLayers = makeModelFCSum();
+Model<float> model_mapValuesToLayers = makeModelToy1();
 BOOST_AUTO_TEST_CASE(mapValuesToLayers)
 {
 	ModelInterpreterDefaultDevice<float> model_interpreter;
@@ -341,7 +341,7 @@ BOOST_AUTO_TEST_CASE(mapValuesToLayers)
 	}
 }
 
-Model<float> model_executeForwardPropogationOperations = makeModelFCSum();
+Model<float> model_executeForwardPropogationOperations = makeModelToy1();
 BOOST_AUTO_TEST_CASE(executeForwardPropogationOperations)
 {
 	ModelInterpreterDefaultDevice<float> model_interpreter;
@@ -395,7 +395,7 @@ BOOST_AUTO_TEST_CASE(executeForwardPropogationOperations)
 
 }
 
-Model<float> model_executeModelErrorOperations = makeModelFCSum();
+Model<float> model_executeModelErrorOperations = makeModelToy1();
 BOOST_AUTO_TEST_CASE(executeModelErrorOperations)
 {
 	ModelInterpreterDefaultDevice<float> model_interpreter;
@@ -451,7 +451,7 @@ BOOST_AUTO_TEST_CASE(executeModelErrorOperations)
 	}
 }
 
-Model<float> model_executeBackwardPropogationOperations = makeModelFCSum();
+Model<float> model_executeBackwardPropogationOperations = makeModelToy1();
 BOOST_AUTO_TEST_CASE(executeBackwardPropogationOperations)
 {
 	ModelInterpreterDefaultDevice<float> model_interpreter;
@@ -504,7 +504,7 @@ BOOST_AUTO_TEST_CASE(executeBackwardPropogationOperations)
 	}
 }
 
-Model<float> model_executeWeightErrorOperations = makeModelFCSum();
+Model<float> model_executeWeightErrorOperations = makeModelToy1();
 BOOST_AUTO_TEST_CASE(executeWeightErrorOperations)
 {
 	ModelInterpreterDefaultDevice<float> model_interpreter;
@@ -558,7 +558,7 @@ BOOST_AUTO_TEST_CASE(executeWeightErrorOperations)
 	}
 }
 
-Model<float> model_executeWeightUpdateOperations = makeModelFCSum();
+Model<float> model_executeWeightUpdateOperations = makeModelToy1();
 BOOST_AUTO_TEST_CASE(executeWeightUpdateOperations)
 {
 	ModelInterpreterDefaultDevice<float> model_interpreter;
@@ -613,7 +613,7 @@ BOOST_AUTO_TEST_CASE(executeWeightUpdateOperations)
 	}
 }
 
-Model<float> model_modelTrainer1 = makeModelFCSum();
+Model<float> model_modelTrainer1 = makeModelToy1();
 BOOST_AUTO_TEST_CASE(modelTrainer1)
 {
 	ModelInterpreterDefaultDevice<float> model_interpreter;
@@ -1067,6 +1067,99 @@ BOOST_AUTO_TEST_CASE(modelTrainer2)
 
 	const Eigen::Tensor<float, 0> total_error = model_interpreter.getModelError()->getError().sum();
 	BOOST_CHECK(total_error(0) <= 1492.6);
+}
+
+Model<float> model_getModelResults = makeModelToy2();
+BOOST_AUTO_TEST_CASE(getModelResults)
+{
+	ModelInterpreterDefaultDevice<float> model_interpreter;
+	const int batch_size = 5;
+	const int memory_size = 8;
+	const bool train = true;
+
+	// compile the graph into a set of operations and allocate all tensors
+	model_interpreter.getForwardPropogationOperations(model_getModelResults, batch_size, memory_size, train);
+	model_interpreter.allocateModelErrorTensor(batch_size, memory_size);
+
+	// create the input
+	const std::vector<std::string> input_ids = { "0", "3", "4" };  // biases are set to zero
+	Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size());
+	input.setValues(
+		{ {{8, 0, 0}, {7, 0, 0}, {6, 0, 0}, {5, 0, 0}, {4, 0, 0}, {3, 0, 0}, {2, 0, 0}, {1, 0, 0}},
+		{{9, 0, 0}, {8, 0, 0}, {7, 0, 0}, {6, 0, 0}, {5, 0, 0}, {4, 0, 0}, {3, 0, 0}, {2, 0, 0}},
+		{{10, 0, 0}, {9, 0, 0}, {8, 0, 0}, {7, 0, 0}, {6, 0, 0}, {5, 0, 0}, {4, 0, 0}, {3, 0, 0}},
+		{{11, 0, 0}, {10, 0, 0}, {9, 0, 0}, {8, 0, 0}, {7, 0, 0}, {6, 0, 0}, {5, 0, 0}, {4, 0, 0}},
+		{{12, 0, 0}, {11, 0, 0}, {10, 0, 0}, {9, 0, 0}, {8, 0, 0}, {7, 0, 0}, {6, 0, 0}, {5, 0, 0}} }
+	);
+	model_interpreter.mapValuesToLayers(model_getModelResults, input, input_ids, "output");
+
+	model_interpreter.FPTT(4);
+
+	// calculate the error
+	// expected output (from t=n to t=0)
+	const std::vector<std::string> output_nodes = { "2" };
+	// y = m1*(m2*x + b*yprev) where m1 = 1, m2 = 1 and b = -1
+	Eigen::Tensor<float, 3> expected(batch_size, memory_size, (int)output_nodes.size());
+	expected.setValues(
+		{ { { 1 },{ 1 },{ 2 },{ 2 },{ 3 },{ 3 },{ 4 },{ 4 } },
+		{ { 1 },{ 2 },{ 2 },{ 3 },{ 3 },{ 4 },{ 4 },{ 5 } },
+		{ { 2 },{ 2 },{ 3 },{ 3 },{ 4 },{ 4 },{ 5 },{ 5 } },
+		{ { 2 },{ 3 },{ 3 },{ 4 },{ 4 },{ 5 },{ 5 },{ 6 } },
+		{ { 3 },{ 3 },{ 4 },{ 4 },{ 5 },{ 5 },{ 6 },{ 6 } } }
+	);
+	LossFunctionOp<float>* loss_function = new MSEOp<float>();
+	LossFunctionGradOp<float>* loss_function_grad = new MSEGradOp<float>();
+	model_interpreter.CETT(model_getModelResults, expected, output_nodes, loss_function, loss_function_grad, 4);
+
+	model_interpreter.TBPTT(4);
+	model_interpreter.updateWeights();
+
+	model_interpreter.getModelResults(model_getModelResults);
+
+	// test values of output nodes
+	Eigen::Tensor<float, 3> output(batch_size, memory_size, (int)output_nodes.size()); // dim2: # of model nodes
+	output.setValues({
+		{{26}, {18}, {11}, {5}, {0}, {0}, {0}, {0}},
+		{{30}, {21}, {13}, {6}, {0}, {0}, {0}, {0}},
+		{{34}, {24}, {15}, {7}, {0}, {0}, {0}, {0}},
+		{{38}, {27}, {17}, {8}, {0}, {0}, {0}, {0}},
+		{{42}, {30}, {19}, {9}, {0}, {0}, {0}, {0}} }
+	);
+
+	for (int j = 0; j < batch_size; ++j) {
+		for (int k = 0; k < memory_size; ++k) {
+			for (int i = 0; i < output_nodes.size(); ++i) {
+				const std::string node_name = output_nodes[i];
+				//std::cout << "Node: " << node_name << "; Batch: " << j << "; Memory: " << k << std::endl;
+				//std::cout << "Calc Output: " << model_getModelResults.getNodesMap().at(node_name)->getOutput()(j, k) << ", Expected Output: " << output(j, k, i) << std::endl;
+				BOOST_CHECK_CLOSE(model_getModelResults.getNodesMap().at(node_name)->getOutput()(j, k), output(j, k, i), 1e-3);
+			}
+		}
+	}
+
+	// test values of model error
+	Eigen::Tensor<float, 2> model_error(batch_size, memory_size);
+	model_error.setValues({
+		{242,98,32,2,0,0,0,0},
+		{312.5f,144.5f,40.5f,4.5f,0,0,0,0},
+		{420.5f,180.5f,60.5f,4.5f,0,0,0,0},
+		{512,242,72,8,0,0,0,0},
+		{648,288,98,8,0,0,0,0} });
+	for (int j = 0; j < batch_size; ++j) {
+		for (int k = 0; k < memory_size; ++k) {
+			//std::cout << "Batch: " << j << "; Memory: " << k << std::endl;
+			//std::cout << "Calc Model Error: " << model_getModelResults.getError()(j, k) << ", Expected Error: " << model_error(j, k) << std::endl;
+			BOOST_CHECK_CLOSE(model_getModelResults.getError()(j, k), model_error(j, k), 1e-6);
+		}
+	}
+
+	// test values of weights
+	std::vector<std::string> weight_ids = { "0", "1", "2", "3", "4" };
+	Eigen::Tensor<float, 1> weights(weight_ids.size());
+	weights.setValues({ -19.624f, -15.744f, -34.572f, 1.0f, 1.0f });
+	for (int i = 0; i < weight_ids.size(); ++i) {
+		BOOST_CHECK_CLOSE(model_getModelResults.getWeightsMap().at(weight_ids[i])->getWeight(), weights(i), 1e-3);
+	}
 }
 
 BOOST_AUTO_TEST_SUITE_END()
