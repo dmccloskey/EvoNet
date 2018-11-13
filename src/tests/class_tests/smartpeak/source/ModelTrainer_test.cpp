@@ -217,7 +217,7 @@ BOOST_AUTO_TEST_CASE(DAGToy)
 
   // Test parameters
   trainer.setBatchSize(4);
-  trainer.setMemorySize(1);
+  trainer.setMemorySize(2);
   trainer.setNEpochsTraining(20);
 	trainer.setNEpochsValidation(20);
 	trainer.setLogging(false, false);

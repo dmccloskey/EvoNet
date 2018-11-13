@@ -1113,8 +1113,6 @@ namespace SmartPeak
 	template<typename TensorT, typename DeviceT>
 	void ModelInterpreter<TensorT, DeviceT>::getForwardPropogationOperations(Model<TensorT>& model, const int& batch_size, const int& memory_size, const bool& train)
 	{
-		const memory_size_adjusted = memory_size + 1; // this is to prevent exceeding the memory threshold
-
 		// initialize the node statuses to determine the FP propogation steps
 		// [NOTE: is this needed?]
 		//// initialize the input nodes to active (if not activated already)
@@ -1180,7 +1178,7 @@ namespace SmartPeak
 				std::vector<std::vector<std::pair<int, int>>> weight_indices;
 				std::vector<bool> make_source_tensors, make_sink_tensors, make_weight_tensors;
 				getForwardPropogationLayerTensorDimensions(FP_operations_expanded, custom_ops, source_layer_sizes, sink_layer_sizes, weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors);
-				allocateForwardPropogationLayerTensors(FP_operations_expanded, custom_ops, source_layer_sizes, sink_layer_sizes, weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors, batch_size, memory_size_adjusted, train);
+				allocateForwardPropogationLayerTensors(FP_operations_expanded, custom_ops, source_layer_sizes, sink_layer_sizes, weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors, batch_size, memory_size, train);
 			}
 			if (tensor_ops.size() != 0) {
 				std::vector<int> source_layer_sizes, sink_layer_sizes;
@@ -1188,7 +1186,7 @@ namespace SmartPeak
 				std::vector<std::vector<std::pair<int, int>>> weight_indices;
 				std::vector<bool> make_source_tensors, make_sink_tensors, make_weight_tensors;
 				getForwardPropogationLayerTensorDimensions(FP_operations_expanded, tensor_ops, source_layer_sizes, sink_layer_sizes, weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors);
-				allocateForwardPropogationLayerTensors(FP_operations_expanded, tensor_ops, source_layer_sizes, sink_layer_sizes, weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors, batch_size, memory_size_adjusted, train);
+				allocateForwardPropogationLayerTensors(FP_operations_expanded, tensor_ops, source_layer_sizes, sink_layer_sizes, weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors, batch_size, memory_size, train);
 			}
 
 			// activate sink nodes
