@@ -161,7 +161,7 @@ BOOST_AUTO_TEST_CASE(getForwardPropogationOperations)
 {
 	ModelInterpreterDefaultDevice<float> model_interpreter;
 	const int batch_size = 4;
-	const int memory_size = 2;
+	const int memory_size = 1;
 	const bool train = true;
 
 	// initialize nodes
@@ -176,7 +176,7 @@ BOOST_AUTO_TEST_CASE(getForwardPropogationOperations)
 		//std::cout << "Layer memory size (" << i << "): " << model_interpreter.getLayerTensor(i)->getMemorySize() << std::endl;
 		//std::cout << "Layer memory size (" << i << "): " << model_interpreter.getLayerTensor(i)->getLayerSize() << std::endl;
 		assert(model_interpreter.getLayerTensor(i)->getBatchSize() == batch_size); // sinks
-		assert(model_interpreter.getLayerTensor(i)->getMemorySize() == memory_size); // sinks
+		assert(model_interpreter.getLayerTensor(i)->getMemorySize() == memory_size + 1); // sinks
 		if (i == 0) {
 			assert(model_interpreter.getLayerTensor(i)->getLayerSize() == 2); // sinks
 		}
@@ -288,7 +288,7 @@ BOOST_AUTO_TEST_CASE(mapValuesToLayers)
 {
 	ModelInterpreterDefaultDevice<float> model_interpreter;
 	const int batch_size = 4;
-	const int memory_size = 2;
+	const int memory_size = 1;
 	const bool train = true;
 
 	// initialize nodes
@@ -300,10 +300,10 @@ BOOST_AUTO_TEST_CASE(mapValuesToLayers)
 	const std::vector<std::string> node_ids = { "0", "1" };
 	Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)node_ids.size());
 	input.setValues({
-		{{1, 5}, {0, 0}},
-		{{2, 6}, {0, 0}},
-		{{3, 7}, {0, 0}},
-		{{4, 8}, {0, 0}} });
+		{{1, 5}},
+		{{2, 6}},
+		{{3, 7}},
+		{{4, 8}} });
 
 	auto node0 = model_mapValuesToLayers.getNode("0");
 	auto node1 = model_mapValuesToLayers.getNode("1");
@@ -346,7 +346,7 @@ BOOST_AUTO_TEST_CASE(executeForwardPropogationOperations)
 {
 	ModelInterpreterDefaultDevice<float> model_interpreter;
 	const int batch_size = 4;
-	const int memory_size = 2;
+	const int memory_size = 1;
 	const bool train = true;
 
 	// compile the graph into a set of operations
@@ -356,10 +356,10 @@ BOOST_AUTO_TEST_CASE(executeForwardPropogationOperations)
 	const std::vector<std::string> node_ids = { "0", "1" };
 	Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)node_ids.size());
 	input.setValues({
-		{{1, 5}, {0, 0}},
-		{{2, 6}, {0, 0}},
-		{{3, 7}, {0, 0}},
-		{{4, 8}, {0, 0}} });
+		{{1, 5}},
+		{{2, 6}},
+		{{3, 7}},
+		{{4, 8}} });
 	model_interpreter.mapValuesToLayers(model_executeForwardPropogationOperations, input, node_ids, "output");
 
 	// create the bias
@@ -383,7 +383,7 @@ BOOST_AUTO_TEST_CASE(executeForwardPropogationOperations)
 	for (int i = 0; i < (int)output_nodes.size(); ++i) {
 		const std::string node_name = output_nodes[i];
 		for (int j = 0; j < batch_size; ++j) {
-			for (int k = 0; k < memory_size - 1; ++k)	{
+			for (int k = 0; k < memory_size; ++k)	{
 				//std::cout << "Node: " << node_name << "; Batch: " << j << "; Memory: " << k << std::endl;
 				//std::cout << "Calc Output: " << model_interpreter.getLayerTensor(nodes_map.at(node_name)->getTensorIndex().first)->getOutput()(j, k, nodes_map.at(node_name)->getTensorIndex().second) << ", Expected Output: " << output(j, i) << std::endl;
 				//std::cout << "Calc Net Input: " << model_interpreter.getLayerTensor(nodes_map.at(node_name)->getTensorIndex().first)->getInput()(j, k, nodes_map.at(node_name)->getTensorIndex().second) << ", Expected Net Input: " << net_input(j, i) << std::endl;
@@ -400,7 +400,7 @@ BOOST_AUTO_TEST_CASE(executeModelErrorOperations)
 {
 	ModelInterpreterDefaultDevice<float> model_interpreter;
 	const int batch_size = 4;
-	const int memory_size = 2;
+	const int memory_size = 1;
 	const bool train = true;
 
 	// compile the graph into a set of operations
@@ -410,10 +410,10 @@ BOOST_AUTO_TEST_CASE(executeModelErrorOperations)
 	const std::vector<std::string> node_ids = { "0", "1" };
 	Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)node_ids.size());
 	input.setValues({
-		{{1, 5}, {0, 0}},
-		{{2, 6}, {0, 0}},
-		{{3, 7}, {0, 0}},
-		{{4, 8}, {0, 0}} });
+		{{1, 5}},
+		{{2, 6}},
+		{{3, 7}},
+		{{4, 8}} });
 	model_interpreter.mapValuesToLayers(model_executeModelErrorOperations, input, node_ids, "output");
 
 	model_interpreter.initBiases(model_executeModelErrorOperations); // create the bias	
@@ -430,7 +430,7 @@ BOOST_AUTO_TEST_CASE(executeModelErrorOperations)
 	model_interpreter.executeModelErrorOperations(expected, layer_id, solver, solver_grad, 0);
 
 	Eigen::Tensor<float, 2> error(batch_size, memory_size);
-	error.setValues({ {105.25, 0 }, {171.25, 0}, {253.25, 0}, {351.25, 0} });
+	error.setValues({ {105.25}, {171.25}, {253.25}, {351.25} });
 	for (int j = 0; j < batch_size; ++j){
 		for (int k = 0; k < memory_size; ++k) {
 			BOOST_CHECK_CLOSE(model_interpreter.getModelError()->getError()(j, k), error(j, k), 1e-6);
@@ -444,7 +444,7 @@ BOOST_AUTO_TEST_CASE(executeModelErrorOperations)
 	for (int i = 0; i < (int)output_nodes.size(); ++i){
 		const std::string node_name = output_nodes[i];
 		for (int j = 0; j < batch_size; ++j){
-			for (int k = 0; k < memory_size - 1; ++k)	{ 
+			for (int k = 0; k < memory_size; ++k)	{ 
 				BOOST_CHECK_CLOSE(model_interpreter.getLayerTensor(nodes_map.at(node_name)->getTensorIndex().first)->getError()(j, k, nodes_map.at(node_name)->getTensorIndex().second), node_error(j, i), 1e-3);
 			}
 		}
@@ -456,7 +456,7 @@ BOOST_AUTO_TEST_CASE(executeBackwardPropogationOperations)
 {
 	ModelInterpreterDefaultDevice<float> model_interpreter;
 	const int batch_size = 4;
-	const int memory_size = 2;
+	const int memory_size = 1;
 	const bool train = true;
 
 	// compile the graph into a set of operations
@@ -466,10 +466,10 @@ BOOST_AUTO_TEST_CASE(executeBackwardPropogationOperations)
 	const std::vector<std::string> node_ids = { "0", "1" };
 	Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)node_ids.size());
 	input.setValues({
-		{{1, 5}, {0, 0}},
-		{{2, 6}, {0, 0}},
-		{{3, 7}, {0, 0}},
-		{{4, 8}, {0, 0}} });
+		{{1, 5}},
+		{{2, 6}},
+		{{3, 7}},
+		{{4, 8}} });
 	model_interpreter.mapValuesToLayers(model_executeBackwardPropogationOperations, input, node_ids, "output");
 
 	model_interpreter.initBiases(model_executeBackwardPropogationOperations); // create the bias	
@@ -496,7 +496,7 @@ BOOST_AUTO_TEST_CASE(executeBackwardPropogationOperations)
 	for (int i = 0; i < (int)error_nodes.size(); ++i) {
 		const std::string node_name = error_nodes[i];
 		for (int j = 0; j < batch_size; ++j) {
-			for (int k = 0; k < memory_size - 1; ++k) {
+			for (int k = 0; k < memory_size; ++k) {
 				BOOST_CHECK_CLOSE(model_interpreter.getLayerTensor(nodes_map.at(node_name)->getTensorIndex().first)->getError()(j, k, nodes_map.at(node_name)->getTensorIndex().second), error(j, i), 1e-3);
 				BOOST_CHECK_CLOSE(model_interpreter.getLayerTensor(nodes_map.at(node_name)->getTensorIndex().first)->getDerivative()(j, k, nodes_map.at(node_name)->getTensorIndex().second), derivative(j, i), 1e-3);
 			}
@@ -509,7 +509,7 @@ BOOST_AUTO_TEST_CASE(executeWeightErrorOperations)
 {
 	ModelInterpreterDefaultDevice<float> model_interpreter;
 	const int batch_size = 4;
-	const int memory_size = 2;
+	const int memory_size = 1;
 	const bool train = true;
 
 	// compile the graph into a set of operations
@@ -519,10 +519,10 @@ BOOST_AUTO_TEST_CASE(executeWeightErrorOperations)
 	const std::vector<std::string> node_ids = { "0", "1" };
 	Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)node_ids.size());
 	input.setValues({
-		{{1, 5}, {0, 0}},
-		{{2, 6}, {0, 0}},
-		{{3, 7}, {0, 0}},
-		{{4, 8}, {0, 0}} });
+		{{1, 5}},
+		{{2, 6}},
+		{{3, 7}},
+		{{4, 8}} });
 	model_interpreter.mapValuesToLayers(model_executeWeightErrorOperations, input, node_ids, "output");
 
 	model_interpreter.initBiases(model_executeWeightErrorOperations); // create the bias	
@@ -563,7 +563,7 @@ BOOST_AUTO_TEST_CASE(executeWeightUpdateOperations)
 {
 	ModelInterpreterDefaultDevice<float> model_interpreter;
 	const int batch_size = 4;
-	const int memory_size = 2;
+	const int memory_size = 1;
 	const bool train = true;
 
 	// compile the graph into a set of operations
@@ -573,10 +573,10 @@ BOOST_AUTO_TEST_CASE(executeWeightUpdateOperations)
 	const std::vector<std::string> node_ids = { "0", "1" };
 	Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)node_ids.size());
 	input.setValues({
-		{{1, 5}, {0, 0}},
-		{{2, 6}, {0, 0}},
-		{{3, 7}, {0, 0}},
-		{{4, 8}, {0, 0}} });
+		{{1, 5}},
+		{{2, 6}},
+		{{3, 7}},
+		{{4, 8}} });
 	model_interpreter.mapValuesToLayers(model_executeWeightUpdateOperations, input, node_ids, "output");
 
 	model_interpreter.initBiases(model_executeWeightUpdateOperations); // create the bias	
@@ -618,7 +618,7 @@ BOOST_AUTO_TEST_CASE(modelTrainer1)
 {
 	ModelInterpreterDefaultDevice<float> model_interpreter;
 	const int batch_size = 4;
-	const int memory_size = 2;
+	const int memory_size = 1;
 	const bool train = true;
 
 	// update the model solver
@@ -636,10 +636,10 @@ BOOST_AUTO_TEST_CASE(modelTrainer1)
 	const std::vector<std::string> node_ids = { "0", "1" };
 	Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)node_ids.size());
 	input.setValues({
-		{{1, 5}, {0, 0}},
-		{{2, 6}, {0, 0}},
-		{{3, 7}, {0, 0}},
-		{{4, 8}, {0, 0}} });
+		{{1, 5}},
+		{{2, 6}},
+		{{3, 7}},
+		{{4, 8}} });
 
 	// create the expected output
 	std::vector<std::string> output_nodes = { "4", "5" };

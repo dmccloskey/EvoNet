@@ -464,21 +464,24 @@ namespace SmartPeak
 	template<typename TensorT, typename DeviceT>
 	inline void ModelInterpreter<TensorT, DeviceT>::mapValuesToLayers(Model<TensorT>& model, const Eigen::Tensor<TensorT, 3>& values, const std::vector<std::string>& node_names, const std::string & value_type)
 	{
+		// Buffer the input values
+		Eigen::Tensor<TensorT, 3> values_buffered = values.pad(Eigen::array<pair<int, int>, 3>({std::make_pair(0,0),std::make_pair(0,1),std::make_pair(0,0)}));
+
 		// check dimension mismatches
-		if (node_names.size() != values.dimension(2))
+		if (node_names.size() != values_buffered.dimension(2))
 		{
-			printf("The number of input features %d and the number of nodes %d do not match.\n", (int)values.dimension(2), node_names.size());
+			printf("The number of input features %d and the number of nodes %d do not match.\n", (int)values_buffered.dimension(2), node_names.size());
 			return;
 		}
 		// assumes the tensors have been cached
-		else if (layer_tensors_[0]->getBatchSize() != values.dimension(0))
+		else if (layer_tensors_[0]->getBatchSize() != values_buffered.dimension(0))
 		{
-			printf("The number of input samples %d and the batch size %d does not match.\n", (int)values.dimension(0), (int)layer_tensors_[0]->getBatchSize());
+			printf("The number of input samples %d and the batch size %d does not match.\n", (int)values_buffered.dimension(0), (int)layer_tensors_[0]->getBatchSize());
 			return;
 		}
-		else if (layer_tensors_[0]->getMemorySize() != values.dimension(1))
+		else if (layer_tensors_[0]->getMemorySize() != values_buffered.dimension(1))
 		{
-			printf("The number of input time steps %d and the memory size %d does not match.\n", (int)values.dimension(1), (int)layer_tensors_[0]->getMemorySize());
+			printf("The number of input time steps %d and the memory size %d does not match.\n", (int)values_buffered.dimension(1), (int)layer_tensors_[0]->getMemorySize());
 			return;
 		}
 
@@ -486,13 +489,13 @@ namespace SmartPeak
 			auto node = model.getNodesMap().at(node_names[i]);
 			// copy over the values
 			if (value_type == "output")
-				getLayerTensor(node->getTensorIndex().first)->getOutput().chip(node->getTensorIndex().second, 2) = values.chip(i, 2);
+				getLayerTensor(node->getTensorIndex().first)->getOutput().chip(node->getTensorIndex().second, 2) = values_buffered.chip(i, 2);
 			else if (value_type == "error")
-				getLayerTensor(node->getTensorIndex().first)->getError().chip(node->getTensorIndex().second, 2) = values.chip(i, 2);
+				getLayerTensor(node->getTensorIndex().first)->getError().chip(node->getTensorIndex().second, 2) = values_buffered.chip(i, 2);
 			else if (value_type == "derivative")
-				getLayerTensor(node->getTensorIndex().first)->getDerivative().chip(node->getTensorIndex().second, 2) = values.chip(i, 2);
+				getLayerTensor(node->getTensorIndex().first)->getDerivative().chip(node->getTensorIndex().second, 2) = values_buffered.chip(i, 2);
 			else if (value_type == "dt")
-				getLayerTensor(node->getTensorIndex().first)->getDt().chip(node->getTensorIndex().second, 2) = values.chip(i, 2);
+				getLayerTensor(node->getTensorIndex().first)->getDt().chip(node->getTensorIndex().second, 2) = values_buffered.chip(i, 2);
 		}
 	}
 
@@ -516,6 +519,7 @@ namespace SmartPeak
 			layer_tensor->getOutput() = zero;
 			layer_tensor->getDerivative() = zero;
 			layer_tensor->getError() = zero;
+			layer_tensor->getDt() = zero;
 		}
 	}
 
@@ -1113,6 +1117,9 @@ namespace SmartPeak
 	template<typename TensorT, typename DeviceT>
 	void ModelInterpreter<TensorT, DeviceT>::getForwardPropogationOperations(Model<TensorT>& model, const int& batch_size, const int& memory_size, const bool& train)
 	{
+		// buffer the memory size
+		const int memory_size_buffered = memory_size + 1;
+
 		// initialize the node statuses to determine the FP propogation steps
 		// [NOTE: is this needed?]
 		//// initialize the input nodes to active (if not activated already)
@@ -1178,7 +1185,7 @@ namespace SmartPeak
 				std::vector<std::vector<std::pair<int, int>>> weight_indices;
 				std::vector<bool> make_source_tensors, make_sink_tensors, make_weight_tensors;
 				getForwardPropogationLayerTensorDimensions(FP_operations_expanded, custom_ops, source_layer_sizes, sink_layer_sizes, weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors);
-				allocateForwardPropogationLayerTensors(FP_operations_expanded, custom_ops, source_layer_sizes, sink_layer_sizes, weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors, batch_size, memory_size, train);
+				allocateForwardPropogationLayerTensors(FP_operations_expanded, custom_ops, source_layer_sizes, sink_layer_sizes, weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors, batch_size, memory_size_buffered, train);
 			}
 			if (tensor_ops.size() != 0) {
 				std::vector<int> source_layer_sizes, sink_layer_sizes;
@@ -1186,7 +1193,7 @@ namespace SmartPeak
 				std::vector<std::vector<std::pair<int, int>>> weight_indices;
 				std::vector<bool> make_source_tensors, make_sink_tensors, make_weight_tensors;
 				getForwardPropogationLayerTensorDimensions(FP_operations_expanded, tensor_ops, source_layer_sizes, sink_layer_sizes, weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors);
-				allocateForwardPropogationLayerTensors(FP_operations_expanded, tensor_ops, source_layer_sizes, sink_layer_sizes, weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors, batch_size, memory_size, train);
+				allocateForwardPropogationLayerTensors(FP_operations_expanded, tensor_ops, source_layer_sizes, sink_layer_sizes, weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors, batch_size, memory_size_buffered, train);
 			}
 
 			// activate sink nodes
