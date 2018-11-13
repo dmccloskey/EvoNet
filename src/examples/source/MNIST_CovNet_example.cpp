@@ -532,7 +532,6 @@ void main_CovNet() {
 	model_trainer.setNEpochsTraining(501);
 	model_trainer.setNEpochsValidation(10);
 	model_trainer.setVerbosityLevel(1);
-	model_trainer.setNThreads(n_hard_threads * 2);
 	model_trainer.setLogging(true, false);
 	model_trainer.setLossFunctions({
 		std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>())//,std::shared_ptr<LossFunctionOp<float>>(new NegativeLogLikelihoodOp<float>()),

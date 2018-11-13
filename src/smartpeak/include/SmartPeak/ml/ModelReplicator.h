@@ -710,7 +710,6 @@ private:
 		sprintf(weight_name_char, "Weight_%s_to_%s@addLink#", source_node_name.data(), sink_node_name.data());
 		std::string weight_name = makeUniqueHash(weight_name_char, unique_str);
 		weight.setName(weight_name);
-		weight.initWeight();
 		model.addWeights({ weight });
 
 		// create the new link
@@ -880,7 +879,7 @@ private:
 
 		// copy the node
 		Node<TensorT> new_node = model.getNode(random_node_name);
-		new_node.initNode(new_node.getBatchSize(), new_node.getMemorySize());
+		//new_node.initNode(new_node.getBatchSize(), new_node.getMemorySize());
 
 		// select a random input link
 		// [OPTIMIZATION: refactor to pass back the Link and not just the name]
@@ -928,7 +927,6 @@ private:
 		Weight<TensorT> weight_bias = model.getWeight(model.getLink(input_link_name).getWeightName()); // [OPTIMIZATION: use Link.getWeightName() directly]
 		weight_bias.setName(weight_bias_name);
 		weight_bias.setWeightInitOp(bias_weight_init);
-		weight_bias.initWeight();
 		Link link_bias(link_bias_name, new_bias_name, new_node_name, weight_bias_name);
 
 		model.addWeights({ weight_bias });
@@ -950,7 +948,6 @@ private:
 		sprintf(weight_name_char, "Weight_%s_to_%s@addNode#", new_node_name.data(), random_node_name.data());
 		std::string weight_name = makeUniqueHash(weight_name_char, unique_str);
 		weight.setName(weight_name);
-		weight.initWeight();
 		model.addWeights({ weight });
 
 		// add a new link that connects the new copied node

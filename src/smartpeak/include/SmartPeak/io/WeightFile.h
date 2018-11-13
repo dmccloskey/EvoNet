@@ -182,7 +182,7 @@ public:
 			{
 				printf("Exception: %s", e.what());
 			}
-			weight.initWeight();
+			//weight.initWeight();
 			weight.setWeight(weight_value);
 
 			weight.setModuleName(module_name_str);
@@ -264,7 +264,7 @@ public:
 			row.push_back(weight.getSolverOp()->getParamsAsStr());
 
 			// parse the weight value
-			row.push_back(std::to_string(weight.getWeightView()));
+			row.push_back(std::to_string(weight.getWeight()));
 
 			// parse the module name
 			row.push_back(weight.getModuleName());

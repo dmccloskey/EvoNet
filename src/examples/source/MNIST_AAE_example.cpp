@@ -450,7 +450,6 @@ void main_AAELatentZTrain() {
 	model_trainer.setNEpochsTraining(5000);
 	model_trainer.setNEpochsValidation(50);
 	model_trainer.setVerbosityLevel(1);
-	model_trainer.setNThreads(n_hard_threads);
 	model_trainer.setLogging(true, false);
 	model_trainer.setLossFunctions({ 
 		std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()),
@@ -539,7 +538,6 @@ void main_AAELatentZEvaluate() {
 	model_trainer.setNEpochsValidation(0);
 	model_trainer.setNEpochsEvaluation(2);
 	model_trainer.setVerbosityLevel(1);
-	model_trainer.setNThreads(n_hard_threads);
 	model_trainer.setLogging(false, false, true);
 	model_trainer.setLossFunctions({
 		std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()),

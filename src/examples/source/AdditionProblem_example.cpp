@@ -803,7 +803,6 @@ int main(int argc, char** argv)
 	model_trainer.setNEpochsTraining(1000);
 	model_trainer.setNEpochsValidation(25);
 	model_trainer.setVerbosityLevel(1);
-	model_trainer.setNThreads(2);
 	model_trainer.setLogging(true, false);
 	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
 	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
@@ -841,7 +840,6 @@ int main(int argc, char** argv)
 	//Model<float> model = model_trainer.makeMemoryUnitV02();
 	//Model<float> model = model_trainer.makeMemoryUnitV01();
 	Model<float> model = model_trainer.makeModelLSTM(input_nodes.size());
-	model.initWeights();
 	char model_name_char[512];
 	sprintf(model_name_char, "%s_%d", model.getName().data(), 0);
 	std::string model_name(model_name_char);

@@ -308,7 +308,6 @@ void main_LSTMTrain() {
 	model_trainer.setNEpochsTraining(5000);
 	model_trainer.setNEpochsValidation(10);
 	model_trainer.setVerbosityLevel(1);
-	model_trainer.setNThreads(n_hard_threads);
 	model_trainer.setLogging(true, false);
 	//model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new NegativeLogLikelihoodOp<float>()) });
 	//model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new NegativeLogLikelihoodGradOp<float>()) });

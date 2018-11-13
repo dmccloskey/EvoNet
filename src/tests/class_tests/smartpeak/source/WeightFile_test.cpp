@@ -54,7 +54,7 @@ BOOST_AUTO_TEST_CASE(storeAndLoadCsv)
       weight_init,
       solver);
 		weight.setModuleName(std::to_string(i));
-		weight.initWeight();
+		//weight.initWeight();
     weights.push_back(weight);
   }
   data.storeWeightsCsv(filename, weights);

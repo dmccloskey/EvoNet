@@ -2149,7 +2149,6 @@ void main_classification(std::string blood_fraction = "PLT", bool make_model = t
 	model_trainer.setMemorySize(1);
 	model_trainer.setNEpochsTraining(1001);
 	model_trainer.setNEpochsValidation(25);
-	model_trainer.setNThreads(n_hard_threads); // [TODO: change back to 2!]
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setLogging(true, false);
 	//model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()), std::shared_ptr<LossFunctionOp<float>>(new NegativeLogLikelihoodOp<float>(2)) 
@@ -2248,7 +2247,6 @@ void main_reconstruction()
 	model_trainer.setMemorySize(1);
 	model_trainer.setNEpochsTraining(1001);
 	model_trainer.setNEpochsValidation(10);
-	model_trainer.setNThreads(n_hard_threads); // [TODO: change back to 2!]
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setLogging(false, false);
 	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });

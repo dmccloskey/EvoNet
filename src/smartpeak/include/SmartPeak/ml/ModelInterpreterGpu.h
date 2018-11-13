@@ -22,6 +22,7 @@ namespace SmartPeak
 	class ModelInterpreterGpu : public ModelInterpreter<TensorT, Eigen::GpuDevice>
 	{
 	public:
+		using ModelInterpreter::ModelInterpreter;
 		void allocateForwardPropogationLayerTensors(const std::vector<OperationList<TensorT>>& FP_operations,
 			const std::map<std::string, std::vector<int>>& operations_map,
 			const std::vector<int>& source_layer_sizes, const std::vector<int>& sink_layer_sizes, const std::vector<std::vector<std::pair<int, int>>> weight_indices, const std::vector<std::vector<TensorT>>& weight_values,
