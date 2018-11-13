@@ -40,7 +40,7 @@ public:
 		void setOutputNodes(const std::vector<std::vector<std::string>>& output_nodes); ///< output_nodes setter [TODO: tests]
 		void setNTBPTTSteps(const int& n_TBPTT); ///< n_TBPTT setter
 		void setNTETTSteps(const int& n_TETT); ///< n_TETT setter
-		void setModelInterpreter(const std::shared_ptr<ModelInterpreter<TensorT, DeviceT>>& model_interpreter); ///< model_interpreter_ setter
+		void setModelInterpreter(const std::shared_ptr<ModelInterpreter<TensorT, DeviceT>>& model_interpreter); ///< model_interpreter setter [TODO: tests]
 
     int getBatchSize() const; ///< batch_size setter
     int getMemorySize() const; ///< memory_size setter
@@ -53,7 +53,7 @@ public:
 		std::vector<std::vector<std::string>> getOutputNodes(); ///< output_nodes getter [TODO: tests]
 		int getNTBPTTSteps() const; ///< n_TBPTT setter
 		int getNTETTSteps() const; ///< n_TETT setter
-		std::shared_ptr<ModelInterpreter<TensorT, DeviceT>> getModelInterpreter(); ///< model_interpreter_ getter
+		std::shared_ptr<ModelInterpreter<TensorT, DeviceT>> getModelInterpreter(); ///< model_interpreter getter [TODO: tests]
  
     /**
       @brief Check input dimensions.
