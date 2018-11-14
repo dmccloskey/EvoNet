@@ -1307,16 +1307,12 @@ namespace SmartPeak
 		LossFunctionGradOpToLossFunctionGradTensorOp<TensorT, DeviceT> loss_grad_conv;
 		loss_grad_conv(loss_function_grad, loss_function_grad_tensor, std::vector<TensorT>());
 
-		// NOTE: the output are stored [Tmax, Tmax - 1, ..., T=0, T=-1]
-		//	     while the expected output (values) are stored [T=0, T=1, ..., Tmax, Tmax]
+		// NOTE: the output are stored [Tmax, Tmax - 1, ..., T=0, T=-1] where T=-1 is added automatically
+		//	     so the expected values should also be stored [Tmax, Tmax - 1, ..., T=0, T=-1]
 		for (int time_step = 0; time_step < max_steps; ++time_step)
 		{
-			int next_time_step = values.dimension(1) - 1 - time_step;
-			// [TESTS: Test for the expected output error at each time step]
-			//std::cout<<"Expected output for time point "<< time_step << " is " << values.chip(next_time_step, 1)<<std::endl;
-
 			// calculate the error for each batch of memory
-			Eigen::Tensor<TensorT, 2> expected = values.chip(next_time_step, 1);
+			Eigen::Tensor<TensorT, 2> expected = values.chip(time_step, 1);
 		  executeModelErrorOperations(expected, layer_id, loss_function_tensor, loss_function_grad_tensor, time_step);
 		}
 	}

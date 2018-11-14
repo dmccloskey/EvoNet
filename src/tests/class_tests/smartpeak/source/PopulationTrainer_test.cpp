@@ -86,11 +86,11 @@ public:
 
 		Eigen::Tensor<TensorT, 3> input_tmp(batch_size, memory_size, n_input_nodes);
 		input_tmp.setValues(
-			{ { { 1 },{ 2 },{ 3 },{ 4 },{ 5 },{ 6 },{ 7 },{ 8 } },
-			{ { 2 },{ 3 },{ 4 },{ 5 },{ 6 },{ 7 },{ 8 },{ 9 } },
-			{ { 3 },{ 4 },{ 5 },{ 6 },{ 7 },{ 8 },{ 9 },{ 10 } },
-			{ { 4 },{ 5 },{ 6 },{ 7 },{ 8 },{ 9 },{ 10 },{ 11 } },
-			{ { 5 },{ 6 },{ 7 },{ 8 },{ 9 },{ 10 },{ 11 },{ 12 } } }
+			{ {{8}, {7}, {6}, {5}, {4}, {3}, {2}, {1}},
+			{{9}, {8}, {7}, {6}, {5}, {4}, {3}, {2}},
+			{{10}, {9}, {8}, {7}, {6}, {5}, {4}, {3}},
+			{{11}, {10}, {9}, {8}, {7}, {6}, {5}, {4}},
+			{{12}, {11}, {10}, {9}, {8}, {7}, {6}, {5}} }
 		);
 		for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter)
 			for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter)
@@ -112,11 +112,11 @@ public:
 
 		Eigen::Tensor<TensorT, 3> input_tmp(batch_size, memory_size, n_input_nodes);
 		input_tmp.setValues(
-			{ { { 1 },{ 2 },{ 3 },{ 4 },{ 5 },{ 6 },{ 7 },{ 8 } },
-			{ { 2 },{ 3 },{ 4 },{ 5 },{ 6 },{ 7 },{ 8 },{ 9 } },
-			{ { 3 },{ 4 },{ 5 },{ 6 },{ 7 },{ 8 },{ 9 },{ 10 } },
-			{ { 4 },{ 5 },{ 6 },{ 7 },{ 8 },{ 9 },{ 10 },{ 11 } },
-			{ { 5 },{ 6 },{ 7 },{ 8 },{ 9 },{ 10 },{ 11 },{ 12 } } }
+			{ {{8}, {7}, {6}, {5}, {4}, {3}, {2}, {1}},
+			{{9}, {8}, {7}, {6}, {5}, {4}, {3}, {2}},
+			{{10}, {9}, {8}, {7}, {6}, {5}, {4}, {3}},
+			{{11}, {10}, {9}, {8}, {7}, {6}, {5}, {4}},
+			{{12}, {11}, {10}, {9}, {8}, {7}, {6}, {5}} }
 		);
 		for (int batch_iter = 0; batch_iter<batch_size; ++batch_iter)
 			for (int memory_iter = 0; memory_iter<memory_size; ++memory_iter)
@@ -125,11 +125,11 @@ public:
 						input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = input_tmp(batch_iter, memory_iter, nodes_iter);
 		Eigen::Tensor<TensorT, 3> output_tmp(batch_size, memory_size, n_output_nodes);
 		output_tmp.setValues(
-			{ { { 1 },{ 1 },{ 2 },{ 2 },{ 3 },{ 3 },{ 4 },{ 4 } },
-			{ { 1 },{ 2 },{ 2 },{ 3 },{ 3 },{ 4 },{ 4 },{ 5 } },
-			{ { 2 },{ 2 },{ 3 },{ 3 },{ 4 },{ 4 },{ 5 },{ 5 } },
-			{ { 2 },{ 3 },{ 3 },{ 4 },{ 4 },{ 5 },{ 5 },{ 6 } },
-			{ { 3 },{ 3 },{ 4 },{ 4 },{ 5 },{ 5 },{ 6 },{ 6 } } });
+			{ { { 4 },{ 4 },{ 3 },{ 3 },{ 2 },{ 2 },{ 1 },{ 1 } },
+			{ { 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 },{ 2 },{ 1 } },
+			{ { 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 },{ 2 } },
+			{ { 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 } },
+			{ { 6 },{ 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 } } });
 		for (int batch_iter = 0; batch_iter<batch_size; ++batch_iter)
 			for (int memory_iter = 0; memory_iter<memory_size; ++memory_iter)
 				for (int nodes_iter = 0; nodes_iter<n_output_nodes; ++nodes_iter)
@@ -388,11 +388,6 @@ BOOST_AUTO_TEST_CASE(trainModels)
   model_trainer.setMemorySize(8);
   model_trainer.setNEpochsTraining(5);
 	model_trainer.setNEpochsValidation(5);
-	const std::vector<std::string> output_nodes = { "Output_1" };
-	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
-	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
-	model_trainer.setOutputNodes({ output_nodes });
-	model_trainer.setModelInterpreter(std::shared_ptr<ModelInterpreter<float, Eigen::DefaultDevice>>(new ModelInterpreterDefaultDevice<float>(model_resources)));
 
   ModelReplicatorExt<float> model_replicator;
   model_replicator.setNNodeAdditions(1);
@@ -453,6 +448,7 @@ BOOST_AUTO_TEST_CASE(trainModels)
         for (int epochs_iter=0; epochs_iter<model_trainer.getNEpochsTraining(); ++epochs_iter)
           input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = input_tmp(batch_iter, memory_iter, nodes_iter);
   // Make the output data
+	const std::vector<std::string> output_nodes = { "Output_0" };
 	Eigen::Tensor<float, 4> output_data(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)output_nodes.size(), model_trainer.getNEpochsTraining());
 	Eigen::Tensor<float, 3> output_tmp(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)output_nodes.size());
 	output_tmp.setValues(
@@ -484,6 +480,7 @@ BOOST_AUTO_TEST_CASE(trainModels)
 	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
 	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
 	model_trainer.setOutputNodes({ output_nodes });
+	model_trainer.setModelInterpreter(std::shared_ptr<ModelInterpreter<float, Eigen::DefaultDevice>>(new ModelInterpreterDefaultDevice<float>(model_resources)));
 
   population_trainer.trainModels(population, model_trainer, ModelLogger<float>(),
     input_data, output_data, time_steps, input_nodes);

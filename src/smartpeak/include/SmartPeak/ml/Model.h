@@ -192,7 +192,7 @@ public:
 
       @param[in] weight_names 
     */ 
-    bool checkWeightNames(const std::vector<std::string> weight_names);
+    bool checkWeightNames(const std::vector<std::string> weight_names);		
 
 		/**
 		@brief Check that the path from input to output is not broken
@@ -206,6 +206,8 @@ public:
 		@param[out] output_nodes
 		*/
 		bool checkCompleteInputToOutput();
+		void checkCompleteInputToOutput_(std::string & node_cur, std::set<std::string>& found_nodes, std::set<std::string>& output_nodes, std::set<std::string>& found_output_nodes);
+		void checkCompleteOutputToInput_(std::string& node_cur, std::set<std::string>& found_nodes, std::set<std::string>& input_nodes, std::set<std::string>& found_input_nodes);
 
 		/**
 		@brief Check model link node and weight names
@@ -252,7 +254,7 @@ private:
 		std::vector<std::shared_ptr<Node<TensorT>>> input_nodes_;
 		std::vector<std::shared_ptr<Node<TensorT>>> output_nodes_;
 		Eigen::Tensor<TensorT, 2> model_error_;
-  };
+};
 	template<typename TensorT>
 	inline Model<TensorT>::Model(const Model<TensorT>& other)
 	{
@@ -698,9 +700,88 @@ private:
 	}
 
 	template<typename TensorT>
+	inline void Model<TensorT>::checkCompleteInputToOutput_(std::string& node_cur, std::set<std::string>& found_nodes, std::set<std::string>& output_nodes, std::set<std::string>& found_output_nodes)
+	{
+		for (auto& link_map : links_) {
+			if (link_map.second->getSourceNodeName() == node_cur) {
+				std::string node_next = link_map.second->getSinkNodeName();
+				if (output_nodes.count(node_next)) {
+					found_output_nodes.insert(node_next);
+					if (found_output_nodes.size() == output_nodes.size()) return;
+				}
+				else if (found_nodes.count(node_next)) {
+					continue; // found a loop
+				}
+				else {
+					found_nodes.insert(node_next);
+					node_cur = node_next;
+					checkCompleteInputToOutput_(node_cur, found_nodes, output_nodes, found_output_nodes);
+					if (found_output_nodes.size() == output_nodes.size()) return;
+				}
+			}
+		}
+	};
+
+	template<typename TensorT>
+	inline void Model<TensorT>::checkCompleteOutputToInput_(std::string& node_cur, std::set<std::string>& found_nodes, std::set<std::string>& output_nodes, std::set<std::string>& found_output_nodes)
+	{
+		for (auto& link_map : links_) {
+			if (link_map.second->getSinkNodeName() == node_cur) {
+				std::string node_next = link_map.second->getSourceNodeName();
+				if (output_nodes.count(node_next)) {
+					found_output_nodes.insert(node_next);
+					if (found_output_nodes.size() == output_nodes.size()) return;
+				}
+				else if (found_nodes.count(node_next)) {
+					continue; // found a loop
+				}
+				else {
+					found_nodes.insert(node_next);
+					node_cur = node_next;
+					checkCompleteOutputToInput_(node_cur, found_nodes, output_nodes, found_output_nodes);
+					if (found_output_nodes.size() == output_nodes.size()) return;
+				}
+			}
+		}
+	};
+
+	template<typename TensorT>
 	inline bool Model<TensorT>::checkCompleteInputToOutput()
 	{
-		return true;
+		// Create a set of target output nodes
+		std::set<std::string> output_nodes, found_output_nodes;
+		for (auto& node : output_nodes_) {
+			output_nodes.insert(node->getName());
+		}
+
+		// Start at each input node and walk through the graph until
+		// a previous node is reached or an output node is reached
+		for (auto& node : input_nodes_) {
+			std::string node_cur = node->getName();
+			std::set<std::string> found_nodes;
+			found_nodes.insert(node_cur);
+			checkCompleteInputToOutput_(node_cur, found_nodes, output_nodes, found_output_nodes);
+			if (found_output_nodes.size() == output_nodes.size()) break;
+		}
+
+		// Create a set of target output nodes
+		std::set<std::string> input_nodes, found_input_nodes;
+		for (auto& node : input_nodes_) {
+			input_nodes.insert(node->getName());
+		}
+
+		// Start at each output node and walk through the graph until
+		// a previous node is reached or an input node is reached
+		for (auto& node : output_nodes_) {
+			std::string node_cur = node->getName();
+			std::set<std::string> found_nodes;
+			found_nodes.insert(node_cur);
+			checkCompleteOutputToInput_(node_cur, found_nodes, input_nodes, found_input_nodes);
+			if (found_input_nodes.size() == input_nodes.size()) break;
+		}
+		
+		if (found_input_nodes.size() == input_nodes.size() && found_output_nodes.size() == output_nodes.size()) return true;
+		else return false;
 	}
 
 	template<typename TensorT>
