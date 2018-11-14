@@ -559,6 +559,7 @@ private:
 		// copy out results
 		model_interpreter_->getModelResults(model);
 		model_interpreter_->clear_cache();
+		model.initTensorIndices();
 		return model_error;
 	}
 
@@ -655,6 +656,7 @@ private:
 		// copy out results
 		model_interpreter_->getModelResults(model);
 		model_interpreter_->clear_cache();
+		model.initTensorIndices();
 		return model_error;
 	}
 
@@ -729,6 +731,7 @@ private:
 		// copy out results
 		model_interpreter_->getModelResults(model);
 		model_interpreter_->clear_cache();
+		model.initTensorIndices();
 		return model_output;
 	}
 }

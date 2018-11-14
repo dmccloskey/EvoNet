@@ -242,6 +242,11 @@ public:
 
 		void setError(const Eigen::Tensor<TensorT, 2> model_error); ///< model_error setter
 		Eigen::Tensor<TensorT, 2> getError() const; ///< model_error getter
+ 
+		/**
+			@brief Re-initialize all node and weight tensor indices
+		*/
+		void initTensorIndices();
 
 private:
     int id_; ///< Model ID
@@ -911,6 +916,16 @@ private:
 	template<typename TensorT>
 	inline Eigen::Tensor<TensorT, 2> Model<TensorT>::getError() const {
 		return model_error_;
+	};
+
+	template<typename TensorT>
+	inline void Model<TensorT>::initTensorIndices() {
+		for (auto& node_map : nodes_) {
+			node_map.second->setTensorIndex(std::make_pair(-1, -1));
+		}
+		for (auto& weight_map : weights_) {
+			weight_map.second->clearTensorIndex();
+		}
 	};
 }
 
