@@ -62,7 +62,6 @@ public:
       return !(*this == other);
     }
 
-
 		/**
 		@brief Copy assignment operator that creates a new model with different memory addresses
 		*/
@@ -714,8 +713,7 @@ private:
 				}
 				else {
 					found_nodes.insert(node_next);
-					node_cur = node_next;
-					checkCompleteInputToOutput_(node_cur, found_nodes, output_nodes, found_output_nodes);
+					checkCompleteInputToOutput_(node_next, found_nodes, output_nodes, found_output_nodes);
 					if (found_output_nodes.size() == output_nodes.size()) return;
 				}
 			}
@@ -737,8 +735,7 @@ private:
 				}
 				else {
 					found_nodes.insert(node_next);
-					node_cur = node_next;
-					checkCompleteOutputToInput_(node_cur, found_nodes, output_nodes, found_output_nodes);
+					checkCompleteOutputToInput_(node_next, found_nodes, output_nodes, found_output_nodes);
 					if (found_output_nodes.size() == output_nodes.size()) return;
 				}
 			}

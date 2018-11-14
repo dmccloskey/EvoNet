@@ -185,6 +185,8 @@ public:
 			Model<TensorT>& model,
 			const std::vector<TensorT>& model_errors) = 0;
 
+		virtual	ModelTrainer<TensorT, DeviceT>* copy() const = 0;
+
 private:
     int batch_size_;
     int memory_size_;
@@ -203,7 +205,7 @@ private:
 		std::vector<std::shared_ptr<LossFunctionOp<TensorT>>> loss_functions_;
 		std::vector<std::shared_ptr<LossFunctionGradOp<TensorT>>> loss_function_grads_;
 		std::vector<std::vector<std::string>> output_nodes_;
-		std::shared_ptr<ModelInterpreter<TensorT, DeviceT>> model_interpreter_ = nullptr;
+		std::shared_ptr<ModelInterpreter<TensorT, DeviceT>> model_interpreter_;
 
   };
 	template<typename TensorT, typename DeviceT>
@@ -693,6 +695,7 @@ private:
 
 		// compile the graph into a set of operations and allocate all tensors
 		model_interpreter_->getForwardPropogationOperations(model, getBatchSize(), getMemorySize(), false);
+		model_interpreter_->allocateModelErrorTensor(getBatchSize(), getMemorySize());
 
 		for (int iter = 0; iter < getNEpochsEvaluation(); ++iter) // use n_epochs here
 		{

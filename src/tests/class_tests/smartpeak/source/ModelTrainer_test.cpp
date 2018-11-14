@@ -20,6 +20,7 @@ public:
 		const int& n_epochs,
 		Model<TensorT>& model,
 		const std::vector<TensorT>& model_errors) {}
+	ModelTrainer<TensorT, DeviceT>* copy() const { return new ModelTrainerExt<TensorT, DeviceT>(*this); }
 };
 
 BOOST_AUTO_TEST_SUITE(trainer)
@@ -205,6 +206,7 @@ public:
 		const int& n_epochs,
 		Model<TensorT>& model,
 		const std::vector<TensorT>& model_errors) {}
+	ModelTrainer<TensorT, DeviceT>* copy() const { return new DAGToyModelTrainer<TensorT, DeviceT>(*this); }
 };
 BOOST_AUTO_TEST_CASE(DAGToy) 
 {
@@ -334,6 +336,7 @@ public:
 		const int& n_epochs,
 		Model<TensorT>& model,
 		const std::vector<TensorT>& model_errors) {}
+	ModelTrainer<TensorT, DeviceT>* copy() const { return new DCGToyModelTrainer<TensorT, DeviceT>(*this); }
 };
 
 BOOST_AUTO_TEST_CASE(DCGToy) 

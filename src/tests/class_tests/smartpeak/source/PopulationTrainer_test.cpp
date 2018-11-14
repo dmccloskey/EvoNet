@@ -22,6 +22,7 @@ public:
 		const int& n_epochs,
 		Model<TensorT>& model,
 		const std::vector<float>& model_errors) {}
+	ModelTrainer<TensorT, DeviceT>* copy() const { return new ModelTrainerExt<TensorT, DeviceT>(*this); }
 };
 
 template<typename TensorT>
@@ -508,6 +509,7 @@ BOOST_AUTO_TEST_CASE(evalModels)
 	model_trainer.setMemorySize(8);
 	model_trainer.setNEpochsTraining(5);
 	model_trainer.setNEpochsValidation(5);
+	model_trainer.setNEpochsEvaluation(5);
 	const std::vector<std::string> output_nodes = { "Output_0" };
 	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
 	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
@@ -597,10 +599,17 @@ BOOST_AUTO_TEST_CASE(evalModels)
 
 	for (int i = 0; i < population.size(); ++i)
 	{
-		if (i < 2)
-			BOOST_CHECK(population[i].getNode("Output_0").getStatus() != NodeStatus::activated); // output has not been calculated
-		else
-			BOOST_CHECK(population[i].getNode("Output_0").getStatus() == NodeStatus::activated); // output has been calculated
+		Eigen::Tensor<float, 0> total_output = population[i].getNodesMap().at(output_nodes[0])->getOutput().sum();
+		if (i < 2) {
+			BOOST_CHECK_EQUAL(population[i].getError().size(), 0); // error has not been calculated
+			BOOST_CHECK_EQUAL(total_output(0), 0);
+			BOOST_CHECK_EQUAL(population[i].getNodesMap().at(output_nodes[0])->getOutput().size(), 0);
+		}
+		else {
+			BOOST_CHECK_EQUAL(population[i].getError().size(), 40); // error has not been calculated
+			BOOST_CHECK_EQUAL(total_output(0), 340);
+			BOOST_CHECK_EQUAL(population[i].getNodesMap().at(output_nodes[0])->getOutput().size(), model_trainer.getBatchSize()*(model_trainer.getMemorySize() + 1));
+		}
 	}
 }
 

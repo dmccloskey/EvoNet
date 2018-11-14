@@ -608,14 +608,15 @@ BOOST_AUTO_TEST_CASE(getInputAndOutputNodes)
 
 BOOST_AUTO_TEST_CASE(checkCompleteInputToOutput)
 {
-	Node<float> i1, i2, h1, o1, o2;
+	Node<float> i1, i2, h1, o1, o2, b1;
 	i1 = Node<float>("i1", NodeType::input, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
 	i2 = Node<float>("i2", NodeType::input, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
 	h1 = Node<float>("h1", NodeType::hidden, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new TanHOp<float>()), std::shared_ptr<ActivationOp<float>>(new TanHGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
 	o1 = Node<float>("o1", NodeType::output, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new TanHOp<float>()), std::shared_ptr<ActivationOp<float>>(new TanHGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
 	o2 = Node<float>("o2", NodeType::output, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new TanHOp<float>()), std::shared_ptr<ActivationOp<float>>(new TanHGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+	b1 = Node<float>("b1", NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new TanHOp<float>()), std::shared_ptr<ActivationOp<float>>(new TanHGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
 
-	Weight<float> w_i1_h1, w_i2_h1, w_h1_o1, w_h1_o2, w_h1_h1;
+	Weight<float> w_i1_h1, w_i2_h1, w_h1_o1, w_h1_o2, w_h1_h1, w_b1_h1;
 	std::shared_ptr<WeightInitOp<float>> weight_init;
 	std::shared_ptr<SolverOp<float>> solver;
 	weight_init.reset(new RandWeightInitOp<float>(2.0));
@@ -633,13 +634,17 @@ BOOST_AUTO_TEST_CASE(checkCompleteInputToOutput)
 	weight_init.reset(new RandWeightInitOp<float>(2.0));
 	solver.reset(new SGDOp<float>(0.01, 0.9));
 	w_h1_h1 = Weight<float>("w_h1_h1", weight_init, solver);
+	weight_init.reset(new RandWeightInitOp<float>(2.0));
+	solver.reset(new SGDOp<float>(0.01, 0.9));
+	w_b1_h1 = Weight<float>("w_b1_h1", weight_init, solver);
 
-	Link l_i1_h1, l_i2_h1, l_h1_o1, l_h1_o2, l_h1_h1;
+	Link l_i1_h1, l_i2_h1, l_h1_o1, l_h1_o2, l_h1_h1, l_b1_h1;
 	l_i1_h1 = Link("l_i1_h1", "i1", "h1", "w_i1_h1");
 	l_i2_h1 = Link("l_i2_h1", "i2", "h1", "w_i2_h1");
 	l_h1_o1 = Link("l_h1_o1", "h1", "o1", "w_h1_o1");
 	l_h1_o2 = Link("l_h1_o2", "h1", "o2", "w_h1_o2");
 	l_h1_h1 = Link("l_h1_h1", "h1", "h1", "w_h1_h1");
+	l_b1_h1 = Link("l_b1_h1", "b1", "h1", "w_b1_h1");
 
 	std::vector<std::string> input_nodes = { "i1", "i2" };
 	std::vector<std::string> output_nodes = { "o1", "o2" };
@@ -668,29 +673,37 @@ BOOST_AUTO_TEST_CASE(checkCompleteInputToOutput)
 
 	BOOST_CHECK(!model3.checkCompleteInputToOutput());
 
-	// model 4: missing input nodes
+	// model 4: missing input nodes (cannot detect!)
 	Model<float> model4;
 	model4.addNodes({ i2, h1, o1, o2 });
 	model4.addWeights({ w_i1_h1, w_i2_h1, w_h1_o1, w_h1_o2 });
 	model4.addLinks({ l_i1_h1, l_i2_h1, l_h1_o1, l_h1_o2 });
 
-	BOOST_CHECK(!model4.checkCompleteInputToOutput());
+	BOOST_CHECK(model4.checkCompleteInputToOutput());
 
-	// model 5: missing output nodes
+	// model 5: missing output nodes (cannot detect!)
 	Model<float> model5;
 	model5.addNodes({ i1, i2, h1, o2 });
 	model5.addWeights({ w_i1_h1, w_i2_h1, w_h1_o1, w_h1_o2 });
 	model5.addLinks({ l_i1_h1, l_i2_h1, l_h1_o1, l_h1_o2 });
 
-	BOOST_CHECK(!model5.checkCompleteInputToOutput());
+	BOOST_CHECK(model5.checkCompleteInputToOutput());
 
 	// model 1: fully connected model with self loop
 	Model<float> model6;
 	model6.addNodes({ i1, i2, h1, o1, o2 });
-	model6.addWeights({ w_i1_h1, w_i2_h1, w_h1_o1, w_h1_o2 });
+	model6.addWeights({ w_i1_h1, w_i2_h1, w_h1_o1, w_h1_o2, w_h1_h1 });
 	model6.addLinks({ l_i1_h1, l_i2_h1, l_h1_o1, l_h1_o2, l_h1_h1 });
 
 	BOOST_CHECK(model6.checkCompleteInputToOutput());
+
+	// model 1: fully connected model with bias
+	Model<float> model7;
+	model7.addNodes({ i1, i2, h1, o1, o2, b1 });
+	model7.addWeights({ w_i1_h1, w_i2_h1, w_h1_o1, w_h1_o2, w_b1_h1 });
+	model7.addLinks({ l_i1_h1, l_i2_h1, l_h1_o1, l_h1_o2, l_b1_h1 });
+
+	BOOST_CHECK(model7.checkCompleteInputToOutput());
 }
 
 BOOST_AUTO_TEST_CASE(removeIsolatedNodes)

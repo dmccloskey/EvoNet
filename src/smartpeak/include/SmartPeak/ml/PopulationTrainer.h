@@ -359,11 +359,12 @@ private:
 
 			// create a copy of the model logger
 			ModelLogger<TensorT> model_logger_copy = model_logger;
+			ModelTrainer<TensorT, DeviceT>* model_trainer_copy = model_trainer.copy();
 
 			// launch the thread
 			task_results.push_back(task.get_future());
 			std::thread task_thread(std::move(task),
-				&models[i], &model_trainer, &model_logger_copy,
+				&models[i], model_trainer_copy, &model_logger_copy,
 				std::ref(input), std::ref(output), std::ref(time_steps),
 				std::ref(input_nodes));
 			task_thread.detach();
@@ -618,8 +619,7 @@ private:
 			model_copy.pruneModel(10);
 
 			// additional model checks
-			Model<TensorT> model_check(model_copy);
-			bool complete_model = model_check.checkCompleteInputToOutput();
+			bool complete_model = model_copy.checkCompleteInputToOutput();
 
 			if (complete_model)
 				return std::make_pair(true, model_copy);
@@ -659,11 +659,12 @@ private:
 
 			// create a copy of the model logger
 			ModelLogger<TensorT> model_logger_copy = model_logger;
+			ModelTrainer<TensorT, DeviceT>* model_trainer_copy = model_trainer.copy();
 
 			// launch the thread
 			task_results.push_back(task.get_future());
 			std::thread task_thread(std::move(task),
-				&models[i], &model_trainer, &model_logger_copy,
+				&models[i], model_trainer_copy, &model_logger_copy,
 				std::ref(input), std::ref(output), std::ref(time_steps),
 				std::ref(input_nodes));
 			task_thread.detach();
@@ -776,11 +777,12 @@ private:
 			
 			// create a copy of the model trainer and logger
 			ModelLogger<TensorT> model_logger_copy = model_logger;
+			ModelTrainer<TensorT, DeviceT>* model_trainer_copy = model_trainer.copy();
 
 			// launch the thread
 			task_results.push_back(task.get_future());
 			std::thread task_thread(std::move(task),
-				&models[i], &model_trainer, &model_logger_copy,
+				&models[i], model_trainer_copy, &model_logger_copy,
 				std::ref(input), std::ref(time_steps),
 				std::ref(input_nodes));
 			task_thread.detach();
