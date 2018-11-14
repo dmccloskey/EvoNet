@@ -22,7 +22,6 @@ public:
 		const int& n_epochs,
 		Model<TensorT>& model,
 		const std::vector<float>& model_errors) {}
-	ModelTrainer<TensorT, DeviceT>* copy() const { return new ModelTrainerExt<TensorT, DeviceT>(*this); }
 };
 
 template<typename TensorT>
@@ -380,15 +379,33 @@ BOOST_AUTO_TEST_CASE(replicateModels)
 
 BOOST_AUTO_TEST_CASE(trainModels) 
 {
+	const std::vector<std::string> input_nodes = { "Input_0" }; // true inputs + biases
+	const std::vector<std::string> output_nodes = { "Output_0" };
+	const int batch_size = 5;
+	const int memory_size = 8;
+	const int n_epochs_training = 5;
+	const int n_epochs_validation = 5;
+	const int n_epochs_evaluation = 5;
+
   PopulationTrainerExt<float, Eigen::DefaultDevice> population_trainer;
 
-	ModelResources model_resources = { ModelDevice(0, DeviceType::default, 1) };
+	std::vector<std::shared_ptr<ModelTrainer<float, Eigen::DefaultDevice>>> model_trainers;
+	for (size_t i = 0; i < 1; ++i) {
+		ModelResources model_resources = { ModelDevice(0, DeviceType::default, 1) };
 
-  ModelTrainerExt<float, Eigen::DefaultDevice> model_trainer;
-  model_trainer.setBatchSize(5);
-  model_trainer.setMemorySize(8);
-  model_trainer.setNEpochsTraining(5);
-	model_trainer.setNEpochsValidation(5);
+		std::shared_ptr<ModelTrainer<float, Eigen::DefaultDevice>> model_trainer(new ModelTrainerExt<float, Eigen::DefaultDevice>());
+		model_trainer->setBatchSize(batch_size);
+		model_trainer->setMemorySize(memory_size);
+		model_trainer->setNEpochsTraining(n_epochs_training);
+		model_trainer->setNEpochsValidation(n_epochs_validation);
+		model_trainer->setNEpochsEvaluation(n_epochs_evaluation);
+		model_trainer->setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
+		model_trainer->setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
+		model_trainer->setOutputNodes({ output_nodes });
+		model_trainer->setModelInterpreter(std::shared_ptr<ModelInterpreter<float, Eigen::DefaultDevice>>(new ModelInterpreterDefaultDevice<float>(model_resources)));
+
+		model_trainers.push_back(model_trainer);
+	}
 
   ModelReplicatorExt<float> model_replicator;
   model_replicator.setNNodeAdditions(1);
@@ -433,9 +450,8 @@ BOOST_AUTO_TEST_CASE(trainModels)
 
   // Toy data set used for all tests
   // Make the input data
-  const std::vector<std::string> input_nodes = {"Input_0"}; // true inputs + biases
-  Eigen::Tensor<float, 4> input_data(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)input_nodes.size(), model_trainer.getNEpochsTraining());
-  Eigen::Tensor<float, 3> input_tmp(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)input_nodes.size()); 
+  Eigen::Tensor<float, 4> input_data(batch_size, memory_size, (int)input_nodes.size(), n_epochs_training);
+  Eigen::Tensor<float, 3> input_tmp(batch_size, memory_size, (int)input_nodes.size()); 
   input_tmp.setValues(
 		{ {{8}, {7}, {6}, {5}, {4}, {3}, {2}, {1}},
 		{{9}, {8}, {7}, {6}, {5}, {4}, {3}, {2}},
@@ -443,29 +459,28 @@ BOOST_AUTO_TEST_CASE(trainModels)
 		{{11}, {10}, {9}, {8}, {7}, {6}, {5}, {4}},
 		{{12}, {11}, {10}, {9}, {8}, {7}, {6}, {5}} }
   );
-  for (int batch_iter=0; batch_iter<model_trainer.getBatchSize(); ++batch_iter)
-    for (int memory_iter=0; memory_iter<model_trainer.getMemorySize(); ++memory_iter)
+  for (int batch_iter=0; batch_iter<batch_size; ++batch_iter)
+    for (int memory_iter=0; memory_iter<memory_size; ++memory_iter)
       for (int nodes_iter=0; nodes_iter<(int)input_nodes.size(); ++nodes_iter)
-        for (int epochs_iter=0; epochs_iter<model_trainer.getNEpochsTraining(); ++epochs_iter)
+        for (int epochs_iter=0; epochs_iter<n_epochs_training; ++epochs_iter)
           input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = input_tmp(batch_iter, memory_iter, nodes_iter);
   // Make the output data
-	const std::vector<std::string> output_nodes = { "Output_0" };
-	Eigen::Tensor<float, 4> output_data(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)output_nodes.size(), model_trainer.getNEpochsTraining());
-	Eigen::Tensor<float, 3> output_tmp(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)output_nodes.size());
+	Eigen::Tensor<float, 4> output_data(batch_size, memory_size, (int)output_nodes.size(), n_epochs_training);
+	Eigen::Tensor<float, 3> output_tmp(batch_size, memory_size, (int)output_nodes.size());
 	output_tmp.setValues(
 		{ { { 1 },{ 1 },{ 2 },{ 2 },{ 3 },{ 3 },{ 4 },{ 4 } },
 		{ { 1 },{ 2 },{ 2 },{ 3 },{ 3 },{ 4 },{ 4 },{ 5 } },
 		{ { 2 },{ 2 },{ 3 },{ 3 },{ 4 },{ 4 },{ 5 },{ 5 } },
 		{ { 2 },{ 3 },{ 3 },{ 4 },{ 4 },{ 5 },{ 5 },{ 6 } },
 		{ { 3 },{ 3 },{ 4 },{ 4 },{ 5 },{ 5 },{ 6 },{ 6 } } });
-	for (int batch_iter = 0; batch_iter<model_trainer.getBatchSize(); ++batch_iter)
-		for (int memory_iter = 0; memory_iter<model_trainer.getMemorySize(); ++memory_iter)
+	for (int batch_iter = 0; batch_iter<batch_size; ++batch_iter)
+		for (int memory_iter = 0; memory_iter<memory_size; ++memory_iter)
 			for (int nodes_iter = 0; nodes_iter<(int)output_nodes.size(); ++nodes_iter)
-				for (int epochs_iter = 0; epochs_iter<model_trainer.getNEpochsTraining(); ++epochs_iter)
+				for (int epochs_iter = 0; epochs_iter<n_epochs_training; ++epochs_iter)
 					output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = output_tmp(batch_iter, memory_iter, nodes_iter);
   // Make the simulation time_steps
-  Eigen::Tensor<float, 3> time_steps(model_trainer.getBatchSize(), model_trainer.getMemorySize(), model_trainer.getNEpochsTraining());
-  Eigen::Tensor<float, 2> time_steps_tmp(model_trainer.getBatchSize(), model_trainer.getMemorySize()); 
+  Eigen::Tensor<float, 3> time_steps(batch_size, memory_size, n_epochs_training);
+  Eigen::Tensor<float, 2> time_steps_tmp(batch_size, memory_size); 
   time_steps_tmp.setValues({
     {1, 1, 1, 1, 1, 1, 1, 1},
     {1, 1, 1, 1, 1, 1, 1, 1},
@@ -473,17 +488,12 @@ BOOST_AUTO_TEST_CASE(trainModels)
     {1, 1, 1, 1, 1, 1, 1, 1},
     {1, 1, 1, 1, 1, 1, 1, 1}}
   );
-  for (int batch_iter=0; batch_iter<model_trainer.getBatchSize(); ++batch_iter)
-    for (int memory_iter=0; memory_iter<model_trainer.getMemorySize(); ++memory_iter)
-      for (int epochs_iter=0; epochs_iter<model_trainer.getNEpochsTraining(); ++epochs_iter)
+  for (int batch_iter=0; batch_iter<batch_size; ++batch_iter)
+    for (int memory_iter=0; memory_iter<memory_size; ++memory_iter)
+      for (int epochs_iter=0; epochs_iter<n_epochs_training; ++epochs_iter)
         time_steps(batch_iter, memory_iter, epochs_iter) = time_steps_tmp(batch_iter, memory_iter);
 
-	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
-	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
-	model_trainer.setOutputNodes({ output_nodes });
-	model_trainer.setModelInterpreter(std::shared_ptr<ModelInterpreter<float, Eigen::DefaultDevice>>(new ModelInterpreterDefaultDevice<float>(model_resources)));
-
-  population_trainer.trainModels(population, model_trainer, ModelLogger<float>(),
+  population_trainer.trainModels(population, model_trainers, ModelLogger<float>(),
     input_data, output_data, time_steps, input_nodes);
 
   BOOST_CHECK_EQUAL(population.size(), 4); // broken models should still be there
@@ -494,27 +504,39 @@ BOOST_AUTO_TEST_CASE(trainModels)
     if (i<2)
       BOOST_CHECK_EQUAL(population[i].getError().size(), 0); // error has not been calculated
     else
-      BOOST_CHECK_EQUAL(population[i].getError().size(), model_trainer.getBatchSize()*model_trainer.getMemorySize()); // error has been calculated
+      BOOST_CHECK_EQUAL(population[i].getError().size(), batch_size*memory_size); // error has been calculated
   }
 }
 
 BOOST_AUTO_TEST_CASE(evalModels)
 {
+	const std::vector<std::string> input_nodes = { "Input_0" }; // true inputs + biases
+	const std::vector<std::string> output_nodes = { "Output_0" };
+	const int batch_size = 5;
+	const int memory_size = 8;
+	const int n_epochs_training = 5;
+	const int n_epochs_validation = 5;
+	const int n_epochs_evaluation = 5;
+
 	PopulationTrainerExt<float, Eigen::DefaultDevice> population_trainer;
 
-	ModelResources model_resources = { ModelDevice(0, DeviceType::default, 1) };
+	std::vector<std::shared_ptr<ModelTrainer<float, Eigen::DefaultDevice>>> model_trainers;
+	for (size_t i = 0; i < 1; ++i) {
+		ModelResources model_resources = { ModelDevice(0, DeviceType::default, 1) };
 
-	ModelTrainerExt<float, Eigen::DefaultDevice> model_trainer;
-	model_trainer.setBatchSize(5);
-	model_trainer.setMemorySize(8);
-	model_trainer.setNEpochsTraining(5);
-	model_trainer.setNEpochsValidation(5);
-	model_trainer.setNEpochsEvaluation(5);
-	const std::vector<std::string> output_nodes = { "Output_0" };
-	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
-	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
-	model_trainer.setOutputNodes({ output_nodes });
-	model_trainer.setModelInterpreter(std::shared_ptr<ModelInterpreter<float, Eigen::DefaultDevice>>(new ModelInterpreterDefaultDevice<float>(model_resources)));
+		std::shared_ptr<ModelTrainer<float, Eigen::DefaultDevice>> model_trainer(new ModelTrainerExt<float, Eigen::DefaultDevice>());
+		model_trainer->setBatchSize(batch_size);
+		model_trainer->setMemorySize(memory_size);
+		model_trainer->setNEpochsTraining(n_epochs_training);
+		model_trainer->setNEpochsValidation(n_epochs_validation);
+		model_trainer->setNEpochsEvaluation(n_epochs_evaluation);
+		model_trainer->setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
+		model_trainer->setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
+		model_trainer->setOutputNodes({ output_nodes });
+		model_trainer->setModelInterpreter(std::shared_ptr<ModelInterpreter<float, Eigen::DefaultDevice>>(new ModelInterpreterDefaultDevice<float>(model_resources)));
+
+		model_trainers.push_back(model_trainer);
+	}
 
 	ModelReplicatorExt<float> model_replicator;
 	model_replicator.setNNodeAdditions(1);
@@ -558,9 +580,8 @@ BOOST_AUTO_TEST_CASE(evalModels)
 
 	// Toy data set used for all tests
 	// Make the input data
-	const std::vector<std::string> input_nodes = { "Input_0" }; // true inputs + biases
-	Eigen::Tensor<float, 4> input_data(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)input_nodes.size(), model_trainer.getNEpochsTraining());
-	Eigen::Tensor<float, 3> input_tmp(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)input_nodes.size());
+	Eigen::Tensor<float, 4> input_data(batch_size, memory_size, (int)input_nodes.size(), n_epochs_training);
+	Eigen::Tensor<float, 3> input_tmp(batch_size, memory_size, (int)input_nodes.size());
 	input_tmp.setValues(
 		{ {{8}, {7}, {6}, {5}, {4}, {3}, {2}, {1}},
 		{{9}, {8}, {7}, {6}, {5}, {4}, {3}, {2}},
@@ -568,14 +589,14 @@ BOOST_AUTO_TEST_CASE(evalModels)
 		{{11}, {10}, {9}, {8}, {7}, {6}, {5}, {4}},
 		{{12}, {11}, {10}, {9}, {8}, {7}, {6}, {5}} }
 	);
-	for (int batch_iter = 0; batch_iter < model_trainer.getBatchSize(); ++batch_iter)
-		for (int memory_iter = 0; memory_iter < model_trainer.getMemorySize(); ++memory_iter)
+	for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter)
+		for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter)
 			for (int nodes_iter = 0; nodes_iter < (int)input_nodes.size(); ++nodes_iter)
-				for (int epochs_iter = 0; epochs_iter < model_trainer.getNEpochsTraining(); ++epochs_iter)
+				for (int epochs_iter = 0; epochs_iter < n_epochs_training; ++epochs_iter)
 					input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = input_tmp(batch_iter, memory_iter, nodes_iter);
 	// Make the simulation time_steps
-	Eigen::Tensor<float, 3> time_steps(model_trainer.getBatchSize(), model_trainer.getMemorySize(), model_trainer.getNEpochsTraining());
-	Eigen::Tensor<float, 2> time_steps_tmp(model_trainer.getBatchSize(), model_trainer.getMemorySize());
+	Eigen::Tensor<float, 3> time_steps(batch_size, memory_size, n_epochs_training);
+	Eigen::Tensor<float, 2> time_steps_tmp(batch_size, memory_size);
 	time_steps_tmp.setValues({
 		{1, 1, 1, 1, 1, 1, 1, 1},
 		{1, 1, 1, 1, 1, 1, 1, 1},
@@ -583,16 +604,12 @@ BOOST_AUTO_TEST_CASE(evalModels)
 		{1, 1, 1, 1, 1, 1, 1, 1},
 		{1, 1, 1, 1, 1, 1, 1, 1} }
 	);
-	for (int batch_iter = 0; batch_iter < model_trainer.getBatchSize(); ++batch_iter)
-		for (int memory_iter = 0; memory_iter < model_trainer.getMemorySize(); ++memory_iter)
-			for (int epochs_iter = 0; epochs_iter < model_trainer.getNEpochsTraining(); ++epochs_iter)
+	for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter)
+		for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter)
+			for (int epochs_iter = 0; epochs_iter < n_epochs_training; ++epochs_iter)
 				time_steps(batch_iter, memory_iter, epochs_iter) = time_steps_tmp(batch_iter, memory_iter);
 
-	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
-	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
-	model_trainer.setOutputNodes({ output_nodes });
-
-	population_trainer.evalModels(population, model_trainer, ModelLogger<float>(),
+	population_trainer.evalModels(population, model_trainers, ModelLogger<float>(),
 		input_data, time_steps, input_nodes);
 
 	BOOST_CHECK_EQUAL(population.size(), 4); // broken models should still be there
@@ -608,7 +625,7 @@ BOOST_AUTO_TEST_CASE(evalModels)
 		else {
 			BOOST_CHECK_EQUAL(population[i].getError().size(), 40); // error has not been calculated
 			BOOST_CHECK_EQUAL(total_output(0), 340);
-			BOOST_CHECK_EQUAL(population[i].getNodesMap().at(output_nodes[0])->getOutput().size(), model_trainer.getBatchSize()*(model_trainer.getMemorySize() + 1));
+			BOOST_CHECK_EQUAL(population[i].getNodesMap().at(output_nodes[0])->getOutput().size(), batch_size*(memory_size + 1));
 		}
 	}
 }
@@ -626,23 +643,33 @@ BOOST_AUTO_TEST_CASE(exampleUsage)
 
   // Toy data set used for all tests
 	DataSimulatorExt<float> data_simulator;
+
   const std::vector<std::string> input_nodes = {"Input_0"}; // true inputs + biases
   const std::vector<std::string> output_nodes = {"Output_0"};
+	const int batch_size = 5;
+	const int memory_size = 8;
+	const int n_epochs_training = 5;
+	const int n_epochs_validation = 5;
+	const int n_epochs_evaluation = 5;
 
-	ModelResources model_resources = { ModelDevice(0, DeviceType::default, 1) };
-	
-	// define the model trainer
-	ModelTrainerExt<float, Eigen::DefaultDevice> model_trainer;
-	model_trainer.setBatchSize(5);
-	model_trainer.setMemorySize(8);
-	model_trainer.setNEpochsTraining(3);
-	model_trainer.setNEpochsValidation(1);
-	model_trainer.setVerbosityLevel(1);
-	model_trainer.setLogging(false, false);
-	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
-	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
-	model_trainer.setOutputNodes({ output_nodes });
-	model_trainer.setModelInterpreter(std::shared_ptr<ModelInterpreter<float, Eigen::DefaultDevice>>(new ModelInterpreterDefaultDevice<float>(model_resources)));
+	// define the model trainers and resources for the trainers
+	std::vector<std::shared_ptr<ModelTrainer<float, Eigen::DefaultDevice>>> model_trainers;
+	for (size_t i = 0; i < 1; ++i) {
+		ModelResources model_resources = { ModelDevice(0, DeviceType::default, 1) };
+
+		std::shared_ptr<ModelTrainer<float, Eigen::DefaultDevice>> model_trainer(new ModelTrainerExt<float, Eigen::DefaultDevice>());
+		model_trainer->setBatchSize(batch_size);
+		model_trainer->setMemorySize(memory_size);
+		model_trainer->setNEpochsTraining(n_epochs_training);
+		model_trainer->setNEpochsValidation(n_epochs_validation);
+		model_trainer->setNEpochsEvaluation(n_epochs_evaluation);
+		model_trainer->setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
+		model_trainer->setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
+		model_trainer->setOutputNodes({ output_nodes });
+		model_trainer->setModelInterpreter(std::shared_ptr<ModelInterpreter<float, Eigen::DefaultDevice>>(new ModelInterpreterDefaultDevice<float>(model_resources)));
+
+		model_trainers.push_back(model_trainer);
+	}
 
   // define the model replicator for growth mode
 	ModelReplicatorExt<float> model_replicator;
@@ -678,7 +705,7 @@ BOOST_AUTO_TEST_CASE(exampleUsage)
 
 	// Evolve the population
 	std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
-		population, model_trainer, model_replicator, data_simulator, model_logger, input_nodes, 1);
+		population, model_trainers, model_replicator, data_simulator, model_logger, input_nodes);
 
 	PopulationTrainerFile<float> population_trainer_file;
 	population_trainer_file.storeModels(population, "populationTrainer");

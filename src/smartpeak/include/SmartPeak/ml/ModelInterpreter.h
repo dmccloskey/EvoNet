@@ -443,6 +443,8 @@ namespace SmartPeak
 		void setModelResources(const ModelResources& model_resources); ///< model_resources setter
 		ModelResources getModelResources(); ///< model_resources getter
 
+		void clear_cache();
+
 	protected:
 		std::vector<std::vector<OperationTensorStep<TensorT, DeviceT>>> operation_steps_;
 		std::vector<std::shared_ptr<NodeTensorData<TensorT, DeviceT>>> layer_tensors_;
@@ -1373,6 +1375,14 @@ namespace SmartPeak
 	inline ModelResources ModelInterpreter<TensorT, DeviceT>::getModelResources()
 	{
 		return model_resources_;
+	}
+	template<typename TensorT, typename DeviceT>
+	inline void ModelInterpreter<TensorT, DeviceT>::clear_cache()
+	{
+		operation_steps_.clear();
+		layer_tensors_.clear();
+		weight_tensors_.clear();
+		model_error_.reset();
 	}
 }
 #endif //SMARTPEAK_MODELINTERPRETER_H

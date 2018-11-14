@@ -185,8 +185,6 @@ public:
 			Model<TensorT>& model,
 			const std::vector<TensorT>& model_errors) = 0;
 
-		virtual	ModelTrainer<TensorT, DeviceT>* copy() const = 0;
-
 private:
     int batch_size_;
     int memory_size_;
@@ -560,6 +558,7 @@ private:
 		}
 		// copy out results
 		model_interpreter_->getModelResults(model);
+		model_interpreter_->clear_cache();
 		return model_error;
 	}
 
@@ -655,6 +654,7 @@ private:
 		}
 		// copy out results
 		model_interpreter_->getModelResults(model);
+		model_interpreter_->clear_cache();
 		return model_error;
 	}
 
@@ -728,6 +728,7 @@ private:
 		}
 		// copy out results
 		model_interpreter_->getModelResults(model);
+		model_interpreter_->clear_cache();
 		return model_output;
 	}
 }

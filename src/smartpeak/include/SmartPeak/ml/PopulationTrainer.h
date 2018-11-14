@@ -75,13 +75,12 @@ public:
     */ 
 		std::vector<std::tuple<int, std::string, TensorT>> selectModels(
       std::vector<Model<TensorT>>& models,
-      ModelTrainer<TensorT, DeviceT>& model_trainer,
+      std::vector<std::shared_ptr<ModelTrainer<TensorT, DeviceT>>>& model_trainers,
 			ModelLogger<TensorT>& model_logger,
       const Eigen::Tensor<TensorT, 4>& input,
       const Eigen::Tensor<TensorT, 4>& output,
       const Eigen::Tensor<TensorT, 3>& time_steps,
-      const std::vector<std::string>& input_nodes,
-      int n_threads = 1);
+      const std::vector<std::string>& input_nodes);
  
     /**
       @brief validate all of the models
@@ -153,13 +152,12 @@ public:
     */ 
     void trainModels(
       std::vector<Model<TensorT>>& models,
-      ModelTrainer<TensorT, DeviceT>& model_trainer,
+      std::vector<std::shared_ptr<ModelTrainer<TensorT, DeviceT>>>& model_trainers,
 			ModelLogger<TensorT>& model_logger,
       const Eigen::Tensor<TensorT, 4>& input,
       const Eigen::Tensor<TensorT, 4>& output,
       const Eigen::Tensor<TensorT, 3>& time_steps,
-      const std::vector<std::string>& input_nodes,
-      int n_threads = 1);
+      const std::vector<std::string>& input_nodes);
 
     static std::pair<bool, Model<TensorT>> trainModel_(
       Model<TensorT>* model,
@@ -181,12 +179,11 @@ public:
 		*/
 		void evalModels(
 			std::vector<Model<TensorT>>& models,
-			ModelTrainer<TensorT, DeviceT>& model_trainer,
+			std::vector<std::shared_ptr<ModelTrainer<TensorT, DeviceT>>>& model_trainers,
 			ModelLogger<TensorT>& model_logger,
 			const Eigen::Tensor<TensorT, 4>& input,
 			const Eigen::Tensor<TensorT, 3>& time_steps,
-			const std::vector<std::string>& input_nodes,
-			int n_threads = 1);
+			const std::vector<std::string>& input_nodes);
 
 		static bool evalModel_(
 			Model<TensorT>* model,
@@ -209,12 +206,11 @@ public:
 		*/
 		std::vector<std::vector<std::tuple<int, std::string, TensorT>>> evolveModels(
 			std::vector<Model<TensorT>>& models,
-			ModelTrainer<TensorT, DeviceT>& model_trainer,
+			std::vector<std::shared_ptr<ModelTrainer<TensorT, DeviceT>>>& model_trainers,
 			ModelReplicator<TensorT>& model_replicator,
 			DataSimulator<TensorT>& data_simulator,
 			ModelLogger<TensorT>& model_logger,
-			const std::vector<std::string>& input_nodes,
-			int n_threads = 1);
+			const std::vector<std::string>& input_nodes);
 
 		/**
 		@brief Evaluate the population
@@ -226,7 +222,7 @@ public:
 		*/
 		void evaluateModels(
 			std::vector<Model<TensorT>>& models,
-			ModelTrainer<TensorT, DeviceT>& model_trainer,
+			std::vector<std::shared_ptr<ModelTrainer<TensorT, DeviceT>>>& model_trainers,
 			ModelReplicator<TensorT>& model_replicator,
 			DataSimulator<TensorT>& data_simulator,
 			ModelLogger<TensorT>& model_logger,
@@ -327,13 +323,12 @@ private:
 	template<typename TensorT, typename DeviceT>
 	std::vector<std::tuple<int, std::string, TensorT>> PopulationTrainer<TensorT, DeviceT>::selectModels(
 		std::vector<Model<TensorT>>& models,
-		ModelTrainer<TensorT, DeviceT>& model_trainer,
+		std::vector<std::shared_ptr<ModelTrainer<TensorT, DeviceT>>>& model_trainers,
 		ModelLogger<TensorT>& model_logger,
 		const Eigen::Tensor<TensorT, 4>& input,
 		const Eigen::Tensor<TensorT, 4>& output,
 		const Eigen::Tensor<TensorT, 3>& time_steps,
-		const std::vector<std::string>& input_nodes,
-		int n_threads)
+		const std::vector<std::string>& input_nodes)
 	{
 		// printf("PopulationTrainer<TensorT, DeviceT>::selectModels, Models size: %i\n", models.size());
 		// score the models
@@ -359,18 +354,17 @@ private:
 
 			// create a copy of the model logger
 			ModelLogger<TensorT> model_logger_copy = model_logger;
-			ModelTrainer<TensorT, DeviceT>* model_trainer_copy = model_trainer.copy();
 
 			// launch the thread
 			task_results.push_back(task.get_future());
 			std::thread task_thread(std::move(task),
-				&models[i], model_trainer_copy, &model_logger_copy,
+				&models[i], model_trainers[thread_cnt].get(), &model_logger_copy,
 				std::ref(input), std::ref(output), std::ref(time_steps),
 				std::ref(input_nodes));
 			task_thread.detach();
 
 			// retreive the results
-			if (thread_cnt == n_threads - 1 || i == models.size() - 1)
+			if (thread_cnt == model_trainers.size() - 1 || i == models.size() - 1)
 			{
 				for (auto& task_result : task_results)
 				{
@@ -631,13 +625,12 @@ private:
 	template<typename TensorT, typename DeviceT>
 	void PopulationTrainer<TensorT, DeviceT>::trainModels(
 		std::vector<Model<TensorT>>& models,
-		ModelTrainer<TensorT, DeviceT>& model_trainer,
+		std::vector<std::shared_ptr<ModelTrainer<TensorT, DeviceT>>>& model_trainers,
 		ModelLogger<TensorT>& model_logger,
 		const Eigen::Tensor<TensorT, 4>& input,
 		const Eigen::Tensor<TensorT, 4>& output,
 		const Eigen::Tensor<TensorT, 3>& time_steps,
-		const std::vector<std::string>& input_nodes,
-		int n_threads)
+		const std::vector<std::string>& input_nodes)
 	{
 		// std::vector<std::string> broken_model_names;
 		std::vector<Model<TensorT>> trained_models;
@@ -659,18 +652,17 @@ private:
 
 			// create a copy of the model logger
 			ModelLogger<TensorT> model_logger_copy = model_logger;
-			ModelTrainer<TensorT, DeviceT>* model_trainer_copy = model_trainer.copy();
 
 			// launch the thread
 			task_results.push_back(task.get_future());
 			std::thread task_thread(std::move(task),
-				&models[i], model_trainer_copy, &model_logger_copy,
+				&models[i], model_trainers[thread_cnt].get(), &model_logger_copy,
 				std::ref(input), std::ref(output), std::ref(time_steps),
 				std::ref(input_nodes));
 			task_thread.detach();
 
 			// retreive the results
-			if (thread_cnt == n_threads - 1 || i == models.size() - 1)
+			if (thread_cnt == model_trainers.size() - 1 || i == models.size() - 1)
 			{
 				for (auto& task_result : task_results)
 					// for (int j=0; j<task_results.size(); ++j)
@@ -752,12 +744,11 @@ private:
 	template<typename TensorT, typename DeviceT>
 	void PopulationTrainer<TensorT, DeviceT>::evalModels(
 		std::vector<Model<TensorT>>& models,
-		ModelTrainer<TensorT, DeviceT>& model_trainer,
+		std::vector<std::shared_ptr<ModelTrainer<TensorT, DeviceT>>>& model_trainers,
 		ModelLogger<TensorT>& model_logger,
 		const Eigen::Tensor<TensorT, 4>& input,
 		const Eigen::Tensor<TensorT, 3>& time_steps,
-		const std::vector<std::string>& input_nodes,
-		int n_threads)
+		const std::vector<std::string>& input_nodes)
 	{
 		// std::vector<std::string> broken_model_names;
 		std::vector<std::future<bool>> task_results;
@@ -777,18 +768,17 @@ private:
 			
 			// create a copy of the model trainer and logger
 			ModelLogger<TensorT> model_logger_copy = model_logger;
-			ModelTrainer<TensorT, DeviceT>* model_trainer_copy = model_trainer.copy();
 
 			// launch the thread
 			task_results.push_back(task.get_future());
 			std::thread task_thread(std::move(task),
-				&models[i], model_trainer_copy, &model_logger_copy,
+				&models[i], model_trainers[thread_cnt].get(), &model_logger_copy,
 				std::ref(input), std::ref(time_steps),
 				std::ref(input_nodes));
 			task_thread.detach();
 
 			// retreive the results
-			if (thread_cnt == n_threads - 1 || i == models.size() - 1)
+			if (thread_cnt == model_trainers.size() - 1 || i == models.size() - 1)
 			{
 				for (auto& task_result : task_results)
 				{
@@ -855,25 +845,24 @@ private:
 	template<typename TensorT, typename DeviceT>
 	std::vector<std::vector<std::tuple<int, std::string, TensorT>>> PopulationTrainer<TensorT, DeviceT>::evolveModels(
 		std::vector<Model<TensorT>>& models,
-		ModelTrainer<TensorT, DeviceT>& model_trainer,
+		std::vector<std::shared_ptr<ModelTrainer<TensorT, DeviceT>>>& model_trainers,
 		ModelReplicator<TensorT>& model_replicator,
 		DataSimulator<TensorT> &data_simulator,
 		ModelLogger<TensorT>& model_logger,
-		const std::vector<std::string>& input_nodes,
-		int n_threads)
+		const std::vector<std::string>& input_nodes)
 	{
 		std::vector<std::vector<std::tuple<int, std::string, TensorT>>> models_validation_errors_per_generation;
 
 		std::vector<std::string> output_nodes;
-		for (const std::vector<std::string>& output_nodes_vec : model_trainer.getOutputNodes())
+		for (const std::vector<std::string>& output_nodes_vec : model_trainers[0]->getOutputNodes())
 			for (const std::string& output_node : output_nodes_vec)
 				output_nodes.push_back(output_node);
 
 		// generate the input/output data for validation		
 		std::cout << "Generating the input/output data for validation..." << std::endl;
-		Eigen::Tensor<TensorT, 4> input_data_validation(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)input_nodes.size(), model_trainer.getNEpochsValidation());
-		Eigen::Tensor<TensorT, 4> output_data_validation(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)output_nodes.size(), model_trainer.getNEpochsValidation());
-		Eigen::Tensor<TensorT, 3> time_steps_validation(model_trainer.getBatchSize(), model_trainer.getMemorySize(), model_trainer.getNEpochsValidation());
+		Eigen::Tensor<TensorT, 4> input_data_validation(model_trainers[0]->getBatchSize(), model_trainers[0]->getMemorySize(), (int)input_nodes.size(), model_trainers[0]->getNEpochsValidation());
+		Eigen::Tensor<TensorT, 4> output_data_validation(model_trainers[0]->getBatchSize(), model_trainers[0]->getMemorySize(), (int)output_nodes.size(), model_trainers[0]->getNEpochsValidation());
+		Eigen::Tensor<TensorT, 3> time_steps_validation(model_trainers[0]->getBatchSize(), model_trainers[0]->getMemorySize(), model_trainers[0]->getNEpochsValidation());
 		data_simulator.simulateValidationData(input_data_validation, output_data_validation, time_steps_validation);
 
 		// Population initial conditions
@@ -888,21 +877,21 @@ private:
 
 			// Generate the input and output data for training [BUG FREE]
 			std::cout << "Generating the input/output data for training..." << std::endl;
-			Eigen::Tensor<TensorT, 4> input_data_training(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)input_nodes.size(), model_trainer.getNEpochsTraining());
-			Eigen::Tensor<TensorT, 4> output_data_training(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)output_nodes.size(), model_trainer.getNEpochsTraining());
-			Eigen::Tensor<TensorT, 3> time_steps_training(model_trainer.getBatchSize(), model_trainer.getMemorySize(), model_trainer.getNEpochsTraining());
+			Eigen::Tensor<TensorT, 4> input_data_training(model_trainers[0]->getBatchSize(), model_trainers[0]->getMemorySize(), (int)input_nodes.size(), model_trainers[0]->getNEpochsTraining());
+			Eigen::Tensor<TensorT, 4> output_data_training(model_trainers[0]->getBatchSize(), model_trainers[0]->getMemorySize(), (int)output_nodes.size(), model_trainers[0]->getNEpochsTraining());
+			Eigen::Tensor<TensorT, 3> time_steps_training(model_trainers[0]->getBatchSize(), model_trainers[0]->getMemorySize(), model_trainers[0]->getNEpochsTraining());
 			data_simulator.simulateTrainingData(input_data_training, output_data_training, time_steps_training);
 
 			// train the population
 			std::cout << "Training the models..." << std::endl;
-			trainModels(models, model_trainer, model_logger,
-				input_data_training, output_data_training, time_steps_training, input_nodes, n_threads);
+			trainModels(models, model_trainers, model_logger,
+				input_data_training, output_data_training, time_steps_training, input_nodes);
 
 			// select the top N from the population
 			std::cout << "Selecting the models..." << std::endl;
 			std::vector<std::tuple<int, std::string, TensorT>> models_validation_errors = selectModels(
-				models, model_trainer, model_logger,
-				input_data_validation, output_data_validation, time_steps_validation, input_nodes, n_threads);
+				models, model_trainers, model_logger,
+				input_data_validation, output_data_validation, time_steps_validation, input_nodes);
 			models_validation_errors_per_generation.push_back(models_validation_errors);
 
 			if (iter < getNGenerations() - 1)
@@ -914,7 +903,7 @@ private:
 				// replicate and modify models
 				// [TODO: add options for verbosity]
 				std::cout << "Replicating and modifying the models..." << std::endl;
-				replicateModels(models, model_replicator, std::to_string(iter), n_threads);
+				replicateModels(models, model_replicator, std::to_string(iter), model_trainers.size());
 				std::cout << "Population size of " << models.size() << std::endl;
 			}
 		}
@@ -924,7 +913,7 @@ private:
 	template<typename TensorT, typename DeviceT>
 	void PopulationTrainer<TensorT, DeviceT>::evaluateModels(
 		std::vector<Model<TensorT>>& models,
-		ModelTrainer<TensorT, DeviceT>& model_trainer,
+		std::vector<std::shared_ptr<ModelTrainer<TensorT, DeviceT>>>& model_trainers,
 		ModelReplicator<TensorT>& model_replicator,
 		DataSimulator<TensorT>& data_simulator,
 		ModelLogger<TensorT>& model_logger,
@@ -933,8 +922,8 @@ private:
 	{
 		// generate the input/output data for evaluation		
 		std::cout << "Generating the input/output data for evaluation..." << std::endl;
-		Eigen::Tensor<TensorT, 4> input_data_evaluation(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)input_nodes.size(), model_trainer.getNEpochsEvaluation());
-		Eigen::Tensor<TensorT, 3> time_steps_evaluation(model_trainer.getBatchSize(), model_trainer.getMemorySize(), model_trainer.getNEpochsEvaluation());
+		Eigen::Tensor<TensorT, 4> input_data_evaluation(model_trainers[0]->getBatchSize(), model_trainers[0]->getMemorySize(), (int)input_nodes.size(), model_trainers[0]->getNEpochsEvaluation());
+		Eigen::Tensor<TensorT, 3> time_steps_evaluation(model_trainers[0]->getBatchSize(), model_trainers[0]->getMemorySize(), model_trainers[0]->getNEpochsEvaluation());
 		data_simulator.simulateEvaluationData(input_data_evaluation, time_steps_evaluation);
 
 		// Population initial conditions
@@ -942,7 +931,7 @@ private:
 
 		// Evaluate the population
 		std::cout << "Evaluating the model..." << std::endl;
-		evalModels(models, model_trainer, model_logger,
+		evalModels(models, model_trainers, model_logger,
 			input_data_evaluation, time_steps_evaluation, input_nodes, n_threads);
 	}
 
