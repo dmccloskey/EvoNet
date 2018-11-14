@@ -5,18 +5,15 @@
 #include <boost/test/included/unit_test.hpp>
 #include <SmartPeak/ml/PopulationTrainer.h>
 
-#include <SmartPeak/ml/Model.h>
-#include <SmartPeak/ml/Weight.h>
-#include <SmartPeak/ml/Link.h>
-#include <SmartPeak/ml/Node.h>
+#include <SmartPeak/ml/ModelBuilder.h>
 #include <SmartPeak/io/PopulationTrainerFile.h>
 
 using namespace SmartPeak;
 using namespace std;
 
 // Extended classes used for testing
-template<typename TensorT>
-class ModelTrainerExt : public ModelTrainer<TensorT>
+template<typename TensorT, typename DeviceT>
+class ModelTrainerExt : public ModelTrainer<TensorT, DeviceT>
 {
 public:
 	Model<TensorT> makeModel() { return Model<TensorT>(); }
@@ -51,8 +48,8 @@ public:
 	}
 };
 
-template<typename TensorT>
-class PopulationTrainerExt : public PopulationTrainer<TensorT>
+template<typename TensorT, typename DeviceT>
+class PopulationTrainerExt : public PopulationTrainer<TensorT, DeviceT>
 {
 public:
 	void adaptivePopulationScheduler(
@@ -157,22 +154,22 @@ BOOST_AUTO_TEST_SUITE(populationTrainer)
 
 BOOST_AUTO_TEST_CASE(constructor) 
 {
-  PopulationTrainerExt<float>* ptr = nullptr;
-  PopulationTrainerExt<float>* nullPointer = nullptr;
-	ptr = new PopulationTrainerExt<float>();
+  PopulationTrainerExt<float, Eigen::DefaultDevice>* ptr = nullptr;
+  PopulationTrainerExt<float, Eigen::DefaultDevice>* nullPointer = nullptr;
+	ptr = new PopulationTrainerExt<float, Eigen::DefaultDevice>();
   BOOST_CHECK_NE(ptr, nullPointer);
 }
 
 BOOST_AUTO_TEST_CASE(destructor) 
 {
-  PopulationTrainerExt<float>* ptr = nullptr;
-	ptr = new PopulationTrainerExt<float>();
+  PopulationTrainerExt<float, Eigen::DefaultDevice>* ptr = nullptr;
+	ptr = new PopulationTrainerExt<float, Eigen::DefaultDevice>();
   delete ptr;
 }
 
 BOOST_AUTO_TEST_CASE(gettersAndSetters)
 {
-	PopulationTrainerExt<float> population_trainer;
+	PopulationTrainerExt<float, Eigen::DefaultDevice> population_trainer;
 	population_trainer.setNTop(4);
 	population_trainer.setNRandom(1);
 	population_trainer.setNReplicatesPerModel(2);
@@ -186,7 +183,7 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
 
 BOOST_AUTO_TEST_CASE(removeDuplicateModels) 
 {
-  PopulationTrainerExt<float> population_trainer;
+  PopulationTrainerExt<float, Eigen::DefaultDevice> population_trainer;
 
   // make a vector of models to use for testing
   std::vector<Model<float>> models;
@@ -209,7 +206,7 @@ BOOST_AUTO_TEST_CASE(removeDuplicateModels)
 
 BOOST_AUTO_TEST_CASE(getTopNModels_) 
 {
-  PopulationTrainerExt<float> population_trainer;
+  PopulationTrainerExt<float, Eigen::DefaultDevice> population_trainer;
 
   // make dummy data
   std::vector<std::tuple<int, std::string, float>> models_validation_errors;
@@ -231,7 +228,7 @@ BOOST_AUTO_TEST_CASE(getTopNModels_)
 
 BOOST_AUTO_TEST_CASE(getRandomNModels_) 
 {
-  PopulationTrainerExt<float> population_trainer;
+  PopulationTrainerExt<float, Eigen::DefaultDevice> population_trainer;
 
   // make dummy data
   std::vector<std::tuple<int, std::string, float>> models_validation_errors;
@@ -252,7 +249,7 @@ BOOST_AUTO_TEST_CASE(getRandomNModels_)
 
 BOOST_AUTO_TEST_CASE(validateModels_) 
 {
-  // PopulationTrainerExt<float> population_trainer;
+  // PopulationTrainerExt<float, Eigen::DefaultDevice> population_trainer;
   
   // model_trainer_validateModels_.setBatchSize(5);
   // model_trainer_validateModels_.setMemorySize(8);
@@ -275,37 +272,40 @@ BOOST_AUTO_TEST_CASE(validateModels_)
 
 BOOST_AUTO_TEST_CASE(selectModels) 
 {
-  PopulationTrainerExt<float> population_trainer;
+  PopulationTrainerExt<float, Eigen::DefaultDevice> population_trainer;
 
   // [TODO: add tests]
 }
 
 BOOST_AUTO_TEST_CASE(replicateModels) 
 {
-  PopulationTrainerExt<float> population_trainer;
+  PopulationTrainerExt<float, Eigen::DefaultDevice> population_trainer;
 	population_trainer.setNReplicatesPerModel(2);
 
   ModelReplicatorExt<float> model_replicator;
+	ModelBuilder<float> model_builder;
 
   // create an initial population
   std::vector<Model<float>> population1, population2, population3;
 	for (int i = 0; i < 2; ++i)
 	{
-		// baseline model
-		std::shared_ptr<WeightInitOp<float>> weight_init;
-		std::shared_ptr<SolverOp<float>> solver;
-		weight_init.reset(new ConstWeightInitOp<float>(1.0));
-		solver.reset(new AdamOp<float>(0.01, 0.9, 0.999, 1e-8));
-		std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>());
-		std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
-		Model<float> model; /*= model_replicator.makeBaselineModel(
-			1, { 1 }, 1,
-			std::shared_ptr<ActivationOp<float>>(new ELUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ELUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()), std::shared_ptr<ActivationOp<float>>(new ELUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ELUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-			weight_init, solver,
-			loss_function, loss_function_grad, std::to_string(i));
-		model.initWeights();
-		model.initNodes(4, 4);
-		model.initError(4, 4);*/
+		Model<float> model;
+
+		// make the baseline model
+		std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input", 1);
+		node_names = model_builder.addFullyConnected(model, "Hidden1", "Mod1", node_names,
+			1, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
+			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
+			std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.01, 0.9, 0.999, 1e-8)), 0, 0);
+		node_names = model_builder.addFullyConnected(model, "Output", "Mod2", node_names,
+			1, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
+			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
+			std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.01, 0.9, 0.999, 1e-8)), 0, 0);
+		for (const std::string& node_name : node_names)
+			model.getNodesMap().at(node_name)->setType(NodeType::output);
+
+		//model.initNodes(4, 4);
+		//model.initError(4, 4);
 		model.findCycles();
 
 		Model<float> model1(model), model2(model), model3(model); // copy the models
@@ -379,13 +379,20 @@ BOOST_AUTO_TEST_CASE(replicateModels)
 
 BOOST_AUTO_TEST_CASE(trainModels) 
 {
-  PopulationTrainerExt<float> population_trainer;
+  PopulationTrainerExt<float, Eigen::DefaultDevice> population_trainer;
 
-  ModelTrainerExt<float> model_trainer;
+	ModelResources model_resources = { ModelDevice(0, DeviceType::default, 1) };
+
+  ModelTrainerExt<float, Eigen::DefaultDevice> model_trainer;
   model_trainer.setBatchSize(5);
   model_trainer.setMemorySize(8);
   model_trainer.setNEpochsTraining(5);
 	model_trainer.setNEpochsValidation(5);
+	const std::vector<std::string> output_nodes = { "Output_1" };
+	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
+	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
+	model_trainer.setOutputNodes({ output_nodes });
+	model_trainer.setModelInterpreter(std::shared_ptr<ModelInterpreter<float, Eigen::DefaultDevice>>(new ModelInterpreterDefaultDevice<float>(model_resources)));
 
   ModelReplicatorExt<float> model_replicator;
   model_replicator.setNNodeAdditions(1);
@@ -393,26 +400,29 @@ BOOST_AUTO_TEST_CASE(trainModels)
   model_replicator.setNNodeDeletions(0);
   model_replicator.setNLinkDeletions(0);
 
+	ModelBuilder<float> model_builder;
+
   // create an initial population
   std::vector<Model<float>> population;
   for (int i=0; i<4; ++i)
   {
-    // baseline model
-    std::shared_ptr<WeightInitOp<float>> weight_init;
-    std::shared_ptr<SolverOp<float>> solver;
-    weight_init.reset(new ConstWeightInitOp<float>(1.0));
-    solver.reset(new AdamOp<float>(0.01, 0.9, 0.999, 1e-8));
-		std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>());
-		std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
-		Model<float> model; /*= model_replicator.makeBaselineModel(
-			1, {1}, 1,
-      std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-      weight_init, solver,
-      loss_function, loss_function_grad, std::to_string(i));*/
+		Model<float> model;
+
+		// make the baseline model
+		std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input", 1);
+		node_names = model_builder.addFullyConnected(model, "Hidden1", "Mod1", node_names,
+			1, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
+			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
+			std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.01, 0.9, 0.999, 1e-8)), 0, 0);
+		node_names = model_builder.addFullyConnected(model, "Output", "Mod2", node_names,
+			1, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
+			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
+			std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.01, 0.9, 0.999, 1e-8)), 0, 0);
+		for (const std::string& node_name : node_names)
+			model.getNodesMap().at(node_name)->setType(NodeType::output);
+
 		model.setId(i);
 		model.setName(std::to_string(i));
-  //  model.initWeights();
-		//model.initNodes(model_trainer.getBatchSize(), model_trainer.getMemorySize());
 
     population.push_back(model);
   }
@@ -431,11 +441,11 @@ BOOST_AUTO_TEST_CASE(trainModels)
   Eigen::Tensor<float, 4> input_data(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)input_nodes.size(), model_trainer.getNEpochsTraining());
   Eigen::Tensor<float, 3> input_tmp(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)input_nodes.size()); 
   input_tmp.setValues(
-    {{{1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}},
-    {{2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}},
-    {{3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}},
-    {{4}, {5}, {6}, {7}, {8}, {9}, {10}, {11}},
-    {{5}, {6}, {7}, {8}, {9}, {10}, {11}, {12}}}
+		{ {{8}, {7}, {6}, {5}, {4}, {3}, {2}, {1}},
+		{{9}, {8}, {7}, {6}, {5}, {4}, {3}, {2}},
+		{{10}, {9}, {8}, {7}, {6}, {5}, {4}, {3}},
+		{{11}, {10}, {9}, {8}, {7}, {6}, {5}, {4}},
+		{{12}, {11}, {10}, {9}, {8}, {7}, {6}, {5}} }
   );
   for (int batch_iter=0; batch_iter<model_trainer.getBatchSize(); ++batch_iter)
     for (int memory_iter=0; memory_iter<model_trainer.getMemorySize(); ++memory_iter)
@@ -443,7 +453,6 @@ BOOST_AUTO_TEST_CASE(trainModels)
         for (int epochs_iter=0; epochs_iter<model_trainer.getNEpochsTraining(); ++epochs_iter)
           input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = input_tmp(batch_iter, memory_iter, nodes_iter);
   // Make the output data
-  const std::vector<std::string> output_nodes = {"Output_0"};
 	Eigen::Tensor<float, 4> output_data(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)output_nodes.size(), model_trainer.getNEpochsTraining());
 	Eigen::Tensor<float, 3> output_tmp(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)output_nodes.size());
 	output_tmp.setValues(
@@ -493,14 +502,20 @@ BOOST_AUTO_TEST_CASE(trainModels)
 
 BOOST_AUTO_TEST_CASE(evalModels)
 {
-	PopulationTrainerExt<float> population_trainer;
+	PopulationTrainerExt<float, Eigen::DefaultDevice> population_trainer;
 
-	ModelTrainerExt<float> model_trainer;
+	ModelResources model_resources = { ModelDevice(0, DeviceType::default, 1) };
+
+	ModelTrainerExt<float, Eigen::DefaultDevice> model_trainer;
 	model_trainer.setBatchSize(5);
 	model_trainer.setMemorySize(8);
 	model_trainer.setNEpochsTraining(5);
 	model_trainer.setNEpochsValidation(5);
-	model_trainer.setNEpochsEvaluation(5);
+	const std::vector<std::string> output_nodes = { "Output_0" };
+	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
+	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
+	model_trainer.setOutputNodes({ output_nodes });
+	model_trainer.setModelInterpreter(std::shared_ptr<ModelInterpreter<float, Eigen::DefaultDevice>>(new ModelInterpreterDefaultDevice<float>(model_resources)));
 
 	ModelReplicatorExt<float> model_replicator;
 	model_replicator.setNNodeAdditions(1);
@@ -508,26 +523,28 @@ BOOST_AUTO_TEST_CASE(evalModels)
 	model_replicator.setNNodeDeletions(0);
 	model_replicator.setNLinkDeletions(0);
 
+	ModelBuilder<float> model_builder;
+
 	// create an initial population
 	std::vector<Model<float>> population;
 	for (int i = 0; i < 4; ++i)
 	{
-		// baseline model
-		std::shared_ptr<WeightInitOp<float>> weight_init;
-		std::shared_ptr<SolverOp<float>> solver;
-		weight_init.reset(new ConstWeightInitOp<float>(1.0));
-		solver.reset(new AdamOp<float>(0.01, 0.9, 0.999, 1e-8));
-		std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>());
-		std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
-		Model<float> model; /*= model_replicator.makeBaselineModel(
-			1, {1}, 1,
-			std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-			weight_init, solver,
-			loss_function, loss_function_grad, std::to_string(i));*/
+		Model<float> model;
+
+		// make the baseline model
+		std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input", 1);
+		node_names = model_builder.addFullyConnected(model, "Hidden1", "Mod1", node_names,
+			1, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
+			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
+			std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.01, 0.9, 0.999, 1e-8)), 0, 0);
+		node_names = model_builder.addFullyConnected(model, "Output", "Mod2", node_names,
+			1, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
+			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
+			std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.01, 0.9, 0.999, 1e-8)), 0, 0);
+		for (const std::string& node_name : node_names)
+			model.getNodesMap().at(node_name)->setType(NodeType::output);
 		model.setId(i);
 		model.setName(std::to_string(i));
-		//model.initWeights();
-		//model.initNodes(model_trainer.getBatchSize(), model_trainer.getMemorySize());
 
 		population.push_back(model);
 	}
@@ -546,19 +563,17 @@ BOOST_AUTO_TEST_CASE(evalModels)
 	Eigen::Tensor<float, 4> input_data(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)input_nodes.size(), model_trainer.getNEpochsTraining());
 	Eigen::Tensor<float, 3> input_tmp(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)input_nodes.size());
 	input_tmp.setValues(
-		{ {{1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}},
-		{{2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}},
-		{{3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}},
-		{{4}, {5}, {6}, {7}, {8}, {9}, {10}, {11}},
-		{{5}, {6}, {7}, {8}, {9}, {10}, {11}, {12}} }
+		{ {{8}, {7}, {6}, {5}, {4}, {3}, {2}, {1}},
+		{{9}, {8}, {7}, {6}, {5}, {4}, {3}, {2}},
+		{{10}, {9}, {8}, {7}, {6}, {5}, {4}, {3}},
+		{{11}, {10}, {9}, {8}, {7}, {6}, {5}, {4}},
+		{{12}, {11}, {10}, {9}, {8}, {7}, {6}, {5}} }
 	);
 	for (int batch_iter = 0; batch_iter < model_trainer.getBatchSize(); ++batch_iter)
 		for (int memory_iter = 0; memory_iter < model_trainer.getMemorySize(); ++memory_iter)
 			for (int nodes_iter = 0; nodes_iter < (int)input_nodes.size(); ++nodes_iter)
 				for (int epochs_iter = 0; epochs_iter < model_trainer.getNEpochsTraining(); ++epochs_iter)
 					input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = input_tmp(batch_iter, memory_iter, nodes_iter);
-	// Make the output data
-	const std::vector<std::string> output_nodes = { "Output_0" };
 	// Make the simulation time_steps
 	Eigen::Tensor<float, 3> time_steps(model_trainer.getBatchSize(), model_trainer.getMemorySize(), model_trainer.getNEpochsTraining());
 	Eigen::Tensor<float, 2> time_steps_tmp(model_trainer.getBatchSize(), model_trainer.getMemorySize());
@@ -594,7 +609,7 @@ BOOST_AUTO_TEST_CASE(evalModels)
 
 BOOST_AUTO_TEST_CASE(exampleUsage) 
 {
-	PopulationTrainerExt<float> population_trainer;
+	PopulationTrainerExt<float, Eigen::DefaultDevice> population_trainer;
 	population_trainer.setNTop(2);
 	population_trainer.setNRandom(2);
 	population_trainer.setNReplicatesPerModel(3);
@@ -607,9 +622,11 @@ BOOST_AUTO_TEST_CASE(exampleUsage)
 	DataSimulatorExt<float> data_simulator;
   const std::vector<std::string> input_nodes = {"Input_0"}; // true inputs + biases
   const std::vector<std::string> output_nodes = {"Output_0"};
+
+	ModelResources model_resources = { ModelDevice(0, DeviceType::default, 1) };
 	
 	// define the model trainer
-	ModelTrainerExt<float> model_trainer;
+	ModelTrainerExt<float, Eigen::DefaultDevice> model_trainer;
 	model_trainer.setBatchSize(5);
 	model_trainer.setMemorySize(8);
 	model_trainer.setNEpochsTraining(3);
@@ -619,6 +636,7 @@ BOOST_AUTO_TEST_CASE(exampleUsage)
 	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
 	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
 	model_trainer.setOutputNodes({ output_nodes });
+	model_trainer.setModelInterpreter(std::shared_ptr<ModelInterpreter<float, Eigen::DefaultDevice>>(new ModelInterpreterDefaultDevice<float>(model_resources)));
 
   // define the model replicator for growth mode
 	ModelReplicatorExt<float> model_replicator;
@@ -629,30 +647,32 @@ BOOST_AUTO_TEST_CASE(exampleUsage)
 
 	// define the initial population of 10 baseline models
 	std::cout << "Making the initial population..." << std::endl;
+	ModelBuilder<float> model_builder;
 	std::vector<Model<float>> population;
 	const int population_size = 8;
 	for (int i = 0; i<population_size; ++i)
 	{
-		// baseline model
-		std::shared_ptr<WeightInitOp<float>> weight_init;
-		std::shared_ptr<SolverOp<float>> solver;
-		weight_init.reset(new RandWeightInitOp<float>(1.0));
-		solver.reset(new AdamOp<float>(0.1, 0.9, 0.999, 1e-8));
-		std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>());
-		std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
-		Model<float> model; /*= model_replicator.makeBaselineModel(
-			(int)input_nodes.size(), { 1 }, (int)output_nodes.size(),
-			std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-			std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-			weight_init, solver,
-		  loss_function, loss_function_grad, std::to_string(i));*/
+		Model<float> model;
+
+		// make the baseline model
+		std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input", 1);
+		node_names = model_builder.addFullyConnected(model, "Hidden1", "Mod1", node_names,
+			1, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
+			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
+			std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.01, 0.9, 0.999, 1e-8)), 0, 0);
+		node_names = model_builder.addFullyConnected(model, "Output", "Mod2", node_names,
+			1, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
+			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
+			std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.01, 0.9, 0.999, 1e-8)), 0, 0);
+		for (const std::string& node_name : node_names)
+			model.getNodesMap().at(node_name)->setType(NodeType::output);
 
 		population.push_back(model);
 	}
 
 	// Evolve the population
 	std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
-		population, model_trainer, model_replicator, data_simulator, model_logger, input_nodes, 2);
+		population, model_trainer, model_replicator, data_simulator, model_logger, input_nodes, 1);
 
 	PopulationTrainerFile<float> population_trainer_file;
 	population_trainer_file.storeModels(population, "populationTrainer");

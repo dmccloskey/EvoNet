@@ -879,7 +879,6 @@ private:
 
 		// copy the node
 		Node<TensorT> new_node = model.getNode(random_node_name);
-		//new_node.initNode(new_node.getBatchSize(), new_node.getMemorySize());
 
 		// select a random input link
 		// [OPTIMIZATION: refactor to pass back the Link and not just the name]
@@ -910,7 +909,6 @@ private:
 		sprintf(new_bias_name_char, "Bias_%s@addNode#", add_node_name.data());
 		std::string new_bias_name = makeUniqueHash(new_bias_name_char, unique_str);
 		Node<TensorT> new_bias(new_bias_name, NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
-		new_bias.initNode(new_node.getBatchSize(), new_node.getMemorySize());
 		model.addNodes({ new_bias });
 
 		// create a link from the new bias to the new node
