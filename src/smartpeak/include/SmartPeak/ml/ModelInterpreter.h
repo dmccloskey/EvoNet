@@ -1359,8 +1359,11 @@ namespace SmartPeak
 
 		// copy out the output node values
 		for (auto& output_node : model.getOutputNodes()) {
-			const int tensor_index = output_node->getTensorIndex().first;
-			const int layer_index = output_node->getTensorIndex().second;
+			// NOTE: there is a strange bug where the tensor indices of the output nodes pointer are not updated
+			//const int tensor_index = output_node->getTensorIndex().first;
+			//const int layer_index = output_node->getTensorIndex().second;
+			const int tensor_index = model.getNodesMap().at(output_node->getName())->getTensorIndex().first;
+			const int layer_index = model.getNodesMap().at(output_node->getName())->getTensorIndex().second;
 			output_node->setOutput(getLayerTensor(tensor_index)->getOutput().chip(layer_index,2));
 		}
 	}

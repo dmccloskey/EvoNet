@@ -667,6 +667,7 @@ BOOST_AUTO_TEST_CASE(exampleUsage)
 		model_trainer->setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
 		model_trainer->setOutputNodes({ output_nodes });
 		model_trainer->setModelInterpreter(std::shared_ptr<ModelInterpreter<float, Eigen::DefaultDevice>>(new ModelInterpreterDefaultDevice<float>(model_resources)));
+		model_trainer->setVerbosityLevel(0);
 
 		model_trainers.push_back(model_trainer);
 	}
