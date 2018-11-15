@@ -676,8 +676,6 @@ public:
 
 		for (const std::string& node_name : node_names)
 			model.getNodesMap().at(node_name)->setType(NodeType::output);
-
-		model.initWeights();
 		return model;
 	}
 	Model<TensorT> makeModel()
