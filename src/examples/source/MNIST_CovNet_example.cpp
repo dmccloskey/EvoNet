@@ -27,8 +27,8 @@ using namespace SmartPeak;
  */
 
 // Extended classes
-template<typename TensorT>
-class ModelTrainerExt : public ModelTrainer<TensorT>
+template<typename TensorT, typename DeviceT>
+class ModelTrainerExt : public ModelTrainer<TensorT, DeviceT>
 {
 public:
 	/*
@@ -445,8 +445,8 @@ public:
 	}
 };
 
-template<typename TensorT>
-class PopulationTrainerExt : public PopulationTrainer<TensorT>
+template<typename TensorT, typename DeviceT>
+class PopulationTrainerExt : public PopulationTrainer<TensorT, DeviceT>
 {
 public:
 	void adaptivePopulationScheduler(
@@ -475,7 +475,7 @@ void main_CovNet() {
 	const int n_hard_threads = std::thread::hardware_concurrency();
 
 	// define the populatin trainer
-	PopulationTrainerExt<float> population_trainer;
+	PopulationTrainerExt<float, Eigen::DefaultDevice> population_trainer;
 	population_trainer.setNGenerations(1);
 	population_trainer.setNTop(1);
 	population_trainer.setNRandom(1);
@@ -525,34 +525,40 @@ void main_CovNet() {
 	for (int i = 0; i < data_simulator.mnist_labels.size(); ++i)
 		output_nodes.push_back("SoftMax-Out_" + std::to_string(i));
 
-	// define the model trainer
-	ModelTrainerExt<float> model_trainer;
-	model_trainer.setBatchSize(64);
-	model_trainer.setMemorySize(1);
-	model_trainer.setNEpochsTraining(501);
-	model_trainer.setNEpochsValidation(10);
-	model_trainer.setVerbosityLevel(1);
-	model_trainer.setLogging(true, false);
-	model_trainer.setLossFunctions({
-		std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>())//,std::shared_ptr<LossFunctionOp<float>>(new NegativeLogLikelihoodOp<float>()),
-		});
-	model_trainer.setLossFunctionGrads({
-		std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>())//,	std::shared_ptr<LossFunctionGradOp<float>>(new NegativeLogLikelihoodGradOp<float>())
-		});
-	model_trainer.setOutputNodes({ output_FC_nodes//, output_nodes 
-		});
+	// define the model trainers and resources for the trainers
+	std::vector<std::shared_ptr<ModelTrainer<float, Eigen::DefaultDevice>>> model_trainers;
+	for (size_t i = 0; i < n_hard_threads; ++i) {
+		ModelResources model_resources = { ModelDevice(0, DeviceType::default, 1) };
+		std::shared_ptr<ModelTrainer<float, Eigen::DefaultDevice>> model_trainer(new ModelTrainerExt<float, Eigen::DefaultDevice>());
+		model_trainer->setBatchSize(64);
+		model_trainer->setMemorySize(1);
+		model_trainer->setNEpochsTraining(501);
+		model_trainer->setNEpochsValidation(10);
+		model_trainer->setVerbosityLevel(1);
+		model_trainer->setLogging(true, false);
+		model_trainer->setLossFunctions({
+			std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>())//,std::shared_ptr<LossFunctionOp<float>>(new NegativeLogLikelihoodOp<float>()),
+			});
+		model_trainer->setLossFunctionGrads({
+			std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>())//,	std::shared_ptr<LossFunctionGradOp<float>>(new NegativeLogLikelihoodGradOp<float>())
+			});
+		model_trainer->setOutputNodes({ output_FC_nodes//, output_nodes 
+			});
+		model_trainer->setModelInterpreter(std::shared_ptr<ModelInterpreter<float, Eigen::DefaultDevice>>(new ModelInterpreterDefaultDevice<float>(model_resources)));
+		model_trainers.push_back(model_trainer);
+	}
 
 	// define the model replicator for growth mode
 	ModelReplicatorExt<float> model_replicator;
 
-	// define the initial population [BUG FREE]
+	// define the initial population
 	std::cout << "Initializing the population..." << std::endl;
-	std::vector<Model<float>> population = { model_trainer.makeCovNet(input_nodes.size(), output_nodes.size(), 32, 2, 128) }; 
-	//std::vector<Model<float>> population = { model_trainer.makeCovNetFeatureNorm(input_nodes.size(), output_nodes.size()) };
+	std::vector<Model<float>> population = { ModelTrainerExt<float, Eigen::DefaultDevice>().makeCovNet(input_nodes.size(), output_nodes.size(), 32, 2, 128) };
+	//std::vector<Model<float>> population = { ModelTrainerExt<float, Eigen::DefaultDevice>().makeCovNetFeatureNorm(input_nodes.size(), output_nodes.size()) };
 
 	// Evolve the population
 	std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
-		population, model_trainer, model_replicator, data_simulator, model_logger, input_nodes, 1);
+		population, model_trainers, model_replicator, data_simulator, model_logger, input_nodes);
 
 	PopulationTrainerFile<float> population_trainer_file;
 	population_trainer_file.storeModels(population, "MNIST");

@@ -485,7 +485,6 @@ namespace SmartPeak
 		model_error_data->initModelErrorData(batch_size, memory_size);
 		model_error_ = model_error_data;
 	}
-#endif
-
 }
+#endif
 #endif //SMARTPEAK_MODELINTERPRETERGPU_H

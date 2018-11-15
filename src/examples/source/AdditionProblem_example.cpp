@@ -145,8 +145,8 @@ public:
 };
 
 // Extended classes
-template<typename TensorT>
-class ModelTrainerExt : public ModelTrainer<TensorT>
+template<typename TensorT, typename DeviceT>
+class ModelTrainerExt : public ModelTrainer<TensorT, DeviceT>
 {
 public:
 
@@ -744,8 +744,8 @@ public:
 	}
 };
 
-template<typename TensorT>
-class PopulationTrainerExt : public PopulationTrainer<TensorT>
+template<typename TensorT, typename DeviceT>
+class PopulationTrainerExt : public PopulationTrainer<TensorT, DeviceT>
 {
 public:
 	void adaptivePopulationScheduler(
@@ -773,7 +773,7 @@ public:
 int main(int argc, char** argv)
 {
 	// define the population trainer parameters
-	PopulationTrainerExt<float> population_trainer;
+	PopulationTrainerExt<float, Eigen::DefaultDevice> population_trainer;
 	population_trainer.setNGenerations(20);
 	population_trainer.setNTop(3);
 	population_trainer.setNRandom(3);
@@ -781,11 +781,7 @@ int main(int argc, char** argv)
 
 	// define the multithreading parameters
 	const int n_hard_threads = std::thread::hardware_concurrency();
-	const int n_threads = n_hard_threads / 2; // the number of threads
-	char threads_cout[512];
-	sprintf(threads_cout, "Threads for population training: %d, Threads for model training/validation: %d\n",
-		n_threads, 2);
-	std::cout << threads_cout;
+	const int n_threads = n_hard_threads; // the number of threads
 
 	// define the input/output nodes
 	std::vector<std::string> input_nodes = { "Input_0", "Input_1" };
@@ -796,17 +792,24 @@ int main(int argc, char** argv)
 	data_simulator.n_mask_ = 2;
 	data_simulator.sequence_length_ = 25;
 
-	// define the model replicator for growth mode
-	ModelTrainerExt<float> model_trainer;
-	model_trainer.setBatchSize(8);
-	model_trainer.setMemorySize(data_simulator.sequence_length_);
-	model_trainer.setNEpochsTraining(1000);
-	model_trainer.setNEpochsValidation(25);
-	model_trainer.setVerbosityLevel(1);
-	model_trainer.setLogging(true, false);
-	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
-	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
-	model_trainer.setOutputNodes({ output_nodes });
+	// define the model trainers and resources for the trainers
+	std::vector<std::shared_ptr<ModelTrainer<float, Eigen::DefaultDevice>>> model_trainers;
+	for (size_t i = 0; i < n_threads; ++i) {
+		ModelResources model_resources = { ModelDevice(0, DeviceType::default, 1) };
+
+		std::shared_ptr<ModelTrainer<float, Eigen::DefaultDevice>> model_trainer(new ModelTrainerExt<float, Eigen::DefaultDevice>());
+		model_trainer->setBatchSize(8);
+		model_trainer->setMemorySize(data_simulator.sequence_length_);
+		model_trainer->setNEpochsTraining(1000);
+		model_trainer->setNEpochsValidation(25);
+		model_trainer->setVerbosityLevel(1);
+		model_trainer->setLogging(true, false);
+		model_trainer->setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
+		model_trainer->setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
+		model_trainer->setOutputNodes({ output_nodes });
+		model_trainer->setModelInterpreter(std::shared_ptr<ModelInterpreter<float, Eigen::DefaultDevice>>(new ModelInterpreterDefaultDevice<float>(model_resources)));
+		model_trainers.push_back(model_trainer);
+	}
 
 	// define the model logger
 	ModelLogger<float> model_logger(true, true, true, false, false, false, false, false);
@@ -835,11 +838,11 @@ int main(int argc, char** argv)
 	std::vector<Model<float>> population;
 
 	// make the model name
-	//Model<float> model = model_trainer.makeModelSolution();
-	//Model<float> model = model_trainer.makeModel();
-	//Model<float> model = model_trainer.makeMemoryUnitV02();
-	//Model<float> model = model_trainer.makeMemoryUnitV01();
-	Model<float> model = model_trainer.makeModelLSTM(input_nodes.size());
+	//Model<float> model = model_trainer->makeModelSolution();
+	//Model<float> model = model_trainer->makeModel();
+	//Model<float> model = model_trainer->makeMemoryUnitV02();
+	//Model<float> model = model_trainer->makeMemoryUnitV01();
+	Model<float> model = ModelTrainerExt<float, Eigen::DefaultDevice>().makeModelLSTM(input_nodes.size());
 	char model_name_char[512];
 	sprintf(model_name_char, "%s_%d", model.getName().data(), 0);
 	std::string model_name(model_name_char);
@@ -852,7 +855,7 @@ int main(int argc, char** argv)
 
 	// Evolve the population
 	std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
-		population, model_trainer, model_replicator, data_simulator, model_logger, input_nodes, n_threads);
+		population, model_trainers, model_replicator, data_simulator, model_logger, input_nodes);
 
 	PopulationTrainerFile<float> population_trainer_file;
 	population_trainer_file.storeModels(population, "AddProb");

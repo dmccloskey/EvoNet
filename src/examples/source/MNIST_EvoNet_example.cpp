@@ -22,8 +22,8 @@ using namespace SmartPeak;
  */
 
 // Extended classes
-template<typename TensorT>
-class ModelTrainerExt : public ModelTrainer<TensorT>
+template<typename TensorT, typename DeviceT>
+class ModelTrainerExt : public ModelTrainer<TensorT, DeviceT>
 {
 public:
 	Model<TensorT> makeModel() { return Model<TensorT>(); }
@@ -177,8 +177,8 @@ public:
 	}
 };
 
-template<typename TensorT>
-class PopulationTrainerExt : public PopulationTrainer<TensorT>
+template<typename TensorT, typename DeviceT>
+class PopulationTrainerExt : public PopulationTrainer<TensorT, DeviceT>
 {
 public:
 	void adaptivePopulationScheduler(
@@ -203,17 +203,23 @@ public:
 };
 
 void main_EvoNet() {
-	PopulationTrainerExt<float> population_trainer;
+	PopulationTrainerExt<float, Eigen::DefaultDevice> population_trainer;
 	population_trainer.setNGenerations(5);
 	const int n_threads = 8;
 
-	// define the model trainer
-	ModelTrainerExt<float> model_trainer;
-	model_trainer.setBatchSize(8);
-	model_trainer.setMemorySize(1);
-	model_trainer.setNEpochsTraining(50);
-	model_trainer.setNEpochsValidation(50);
-	model_trainer.setLogging(false, false);
+	// define the model trainers and resources for the trainers
+	std::vector<std::shared_ptr<ModelTrainer<float, Eigen::DefaultDevice>>> model_trainers;
+	for (size_t i = 0; i < n_threads; ++i) {
+		ModelResources model_resources = { ModelDevice(0, DeviceType::default, 1) };
+		std::shared_ptr<ModelTrainer<float, Eigen::DefaultDevice>> model_trainer(new ModelTrainerExt<float, Eigen::DefaultDevice>());
+		model_trainer->setBatchSize(8);
+		model_trainer->setMemorySize(1);
+		model_trainer->setNEpochsTraining(50);
+		model_trainer->setNEpochsValidation(50);
+		model_trainer->setLogging(false, false);
+		model_trainer->setModelInterpreter(std::shared_ptr<ModelInterpreter<float, Eigen::DefaultDevice>>(new ModelInterpreterDefaultDevice<float>(model_resources)));
+		model_trainers.push_back(model_trainer);
+	}
 
 	// define the model logger
 	ModelLogger<float> model_logger;
@@ -272,7 +278,7 @@ void main_EvoNet() {
 
 	// Evolve the population
 	std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
-		population, model_trainer, model_replicator, data_simulator, model_logger, input_nodes, n_threads);
+		population, model_trainers, model_replicator, data_simulator, model_logger, input_nodes);
 
 	PopulationTrainerFile<float> population_trainer_file;
 	population_trainer_file.storeModels(population, "SequencialMNIST");

@@ -23,8 +23,8 @@ using namespace SmartPeak;
  */
 
 // Extended classes
-template<typename TensorT>
-class ModelTrainerExt : public ModelTrainer<TensorT>
+template<typename TensorT, typename DeviceT>
+class ModelTrainerExt : public ModelTrainer<TensorT, DeviceT>
 {
 public:
 	/*
@@ -358,8 +358,8 @@ public:
 	}
 };
 
-template<typename TensorT>
-class PopulationTrainerExt : public PopulationTrainer<TensorT>
+template<typename TensorT, typename DeviceT>
+class PopulationTrainerExt : public PopulationTrainer<TensorT, DeviceT>
 {
 public:
 	void adaptivePopulationScheduler(
@@ -388,7 +388,7 @@ void main_AAELatentZTrain() {
 	const int n_hard_threads = std::thread::hardware_concurrency();
 
 	// define the populatin trainer
-	PopulationTrainerExt<float> population_trainer;
+	PopulationTrainerExt<float, Eigen::DefaultDevice> population_trainer;
 	population_trainer.setNGenerations(1);
 	population_trainer.setNTop(1);
 	population_trainer.setNRandom(1);
@@ -443,32 +443,38 @@ void main_AAELatentZTrain() {
 	for (int i = 0; i < encoding_size; ++i)
 		discriminator_output_nodes.push_back("DS-Output-" + std::to_string(i));
 
-	// define the model trainer
-	ModelTrainerExt<float> model_trainer;
-	model_trainer.setBatchSize(8);
-	model_trainer.setMemorySize(1);
-	model_trainer.setNEpochsTraining(5000);
-	model_trainer.setNEpochsValidation(50);
-	model_trainer.setVerbosityLevel(1);
-	model_trainer.setLogging(true, false);
-	model_trainer.setLossFunctions({ 
-		std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()),
-		std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
-	model_trainer.setLossFunctionGrads({ 
-		std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()),
-		std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
-	model_trainer.setOutputNodes({ decoder_output_nodes, discriminator_output_nodes });
+	// define the model trainers and resources for the trainers
+	std::vector<std::shared_ptr<ModelTrainer<float, Eigen::DefaultDevice>>> model_trainers;
+	for (size_t i = 0; i < n_hard_threads; ++i) {
+		ModelResources model_resources = { ModelDevice(0, DeviceType::default, 1) };
+		std::shared_ptr<ModelTrainer<float, Eigen::DefaultDevice>> model_trainer(new ModelTrainerExt<float, Eigen::DefaultDevice>());
+		model_trainer->setBatchSize(8);
+		model_trainer->setMemorySize(1);
+		model_trainer->setNEpochsTraining(5000);
+		model_trainer->setNEpochsValidation(50);
+		model_trainer->setVerbosityLevel(1);
+		model_trainer->setLogging(true, false);
+		model_trainer->setLossFunctions({ 
+			std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()),
+			std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
+		model_trainer->setLossFunctionGrads({ 
+			std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()),
+			std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
+		model_trainer->setOutputNodes({ decoder_output_nodes, discriminator_output_nodes });
+		model_trainer->setModelInterpreter(std::shared_ptr<ModelInterpreter<float, Eigen::DefaultDevice>>(new ModelInterpreterDefaultDevice<float>(model_resources)));
+		model_trainers.push_back(model_trainer);
+	}
 
 	// define the model replicator for growth mode
 	ModelReplicatorExt<float> model_replicator;
 
 	// define the initial population [BUG FREE]
 	std::cout << "Initializing the population..." << std::endl;
-	std::vector<Model<float>> population = { model_trainer.makeAAELatentZ(input_size, hidden_size, encoding_size) };
+	std::vector<Model<float>> population = { ModelTrainerExt<float, Eigen::DefaultDevice>().makeAAELatentZ(input_size, hidden_size, encoding_size) };
 
 	// Evolve the population
 	std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
-		population, model_trainer, model_replicator, data_simulator, model_logger, input_nodes, 1);
+		population, model_trainers, model_replicator, data_simulator, model_logger, input_nodes);
 
 	PopulationTrainerFile<float> population_trainer_file;
 	population_trainer_file.storeModels(population, "MNIST");
@@ -479,7 +485,7 @@ void main_AAELatentZEvaluate() {
 	const int n_hard_threads = std::thread::hardware_concurrency();
 
 	// define the populatin trainer
-	PopulationTrainerExt<float> population_trainer;
+	PopulationTrainerExt<float, Eigen::DefaultDevice> population_trainer;
 	population_trainer.setNGenerations(1);
 	population_trainer.setNTop(1);
 	population_trainer.setNRandom(1);
@@ -530,22 +536,28 @@ void main_AAELatentZEvaluate() {
 	for (int i = 0; i < encoding_size; ++i)
 		discriminator_output_nodes.push_back("DS-Output-" + std::to_string(i));
 
-	// define the model trainer
-	ModelTrainerExt<float> model_trainer;
-	model_trainer.setBatchSize(1);
-	model_trainer.setMemorySize(1);
-	model_trainer.setNEpochsTraining(0);
-	model_trainer.setNEpochsValidation(0);
-	model_trainer.setNEpochsEvaluation(2);
-	model_trainer.setVerbosityLevel(1);
-	model_trainer.setLogging(false, false, true);
-	model_trainer.setLossFunctions({
-		std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()),
-		std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
-	model_trainer.setLossFunctionGrads({
-		std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()),
-		std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
-	model_trainer.setOutputNodes({ decoder_output_nodes, discriminator_output_nodes });
+	// define the model trainers and resources for the trainers
+	std::vector<std::shared_ptr<ModelTrainer<float, Eigen::DefaultDevice>>> model_trainers;
+	for (size_t i = 0; i < n_hard_threads; ++i) {
+		ModelResources model_resources = { ModelDevice(0, DeviceType::default, 1) };
+		std::shared_ptr<ModelTrainer<float, Eigen::DefaultDevice>> model_trainer(new ModelTrainerExt<float, Eigen::DefaultDevice>());
+		model_trainer->setBatchSize(1);
+		model_trainer->setMemorySize(1);
+		model_trainer->setNEpochsTraining(0);
+		model_trainer->setNEpochsValidation(0);
+		model_trainer->setNEpochsEvaluation(2);
+		model_trainer->setVerbosityLevel(1);
+		model_trainer->setLogging(false, false, true);
+		model_trainer->setLossFunctions({
+			std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()),
+			std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
+		model_trainer->setLossFunctionGrads({
+			std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()),
+			std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
+		model_trainer->setOutputNodes({ decoder_output_nodes, discriminator_output_nodes });
+		model_trainer->setModelInterpreter(std::shared_ptr<ModelInterpreter<float, Eigen::DefaultDevice>>(new ModelInterpreterDefaultDevice<float>(model_resources)));
+		model_trainers.push_back(model_trainer);
+	}
 
 	// define the model replicator for growth mode
 	ModelReplicatorExt<float> model_replicator;
@@ -568,7 +580,7 @@ void main_AAELatentZEvaluate() {
 	// evaluate the trained model
 	std::cout << "Evaluating the model..." << std::endl;
 	population_trainer.evaluateModels(
-		population, model_trainer, model_replicator, data_simulator, model_logger, input_nodes, 1);
+		population, model_trainers, model_replicator, data_simulator, model_logger, input_nodes);
 }
 
 int main(int argc, char** argv)

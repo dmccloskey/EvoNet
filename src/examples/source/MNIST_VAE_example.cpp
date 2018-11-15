@@ -23,8 +23,8 @@ using namespace SmartPeak;
  */
 
 // Extended 
-template<typename TensorT>
-class ModelTrainerExt : public ModelTrainer<TensorT>
+template<typename TensorT, typename DeviceT>
+class ModelTrainerExt : public ModelTrainer<TensorT, DeviceT>
 {
 public:
 	/*
@@ -298,8 +298,8 @@ public:
 	}
 };
 
-template<typename TensorT>
-class PopulationTrainerExt : public PopulationTrainer<TensorT>
+template<typename TensorT, typename DeviceT>
+class PopulationTrainerExt : public PopulationTrainer<TensorT, DeviceT>
 {
 public:
 	void adaptivePopulationScheduler(
@@ -328,7 +328,7 @@ void main_VAE() {
 	const int n_hard_threads = std::thread::hardware_concurrency();
 
 	// define the populatin trainer
-	PopulationTrainerExt<float> population_trainer;
+	PopulationTrainerExt<float, Eigen::DefaultDevice> population_trainer;
 	population_trainer.setNGenerations(1);
 	population_trainer.setNTop(1);
 	population_trainer.setNRandom(1);
@@ -388,25 +388,31 @@ void main_VAE() {
 	for (int i = 0; i < encoding_size; ++i)
 		encoding_nodes_logvar.push_back("LogVar_" + std::to_string(i));
 
-	// define the model trainer
-	ModelTrainerExt<float> model_trainer;
-	model_trainer.setBatchSize(8);
-	model_trainer.setMemorySize(1);
-	model_trainer.setNEpochsTraining(5000);
-	model_trainer.setNEpochsValidation(10);
-	model_trainer.setVerbosityLevel(1);
-	model_trainer.setLogging(true, false);
-	model_trainer.setLossFunctions({ 
-		std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()),
-		//std::shared_ptr<LossFunctionOp<float>>(new BCEWithLogitsOp<float>()),
-		std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceMuOp<float>()),
-		std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceLogVarOp<float>()) });
-	model_trainer.setLossFunctionGrads({ 
-		std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()),
-		//std::shared_ptr<LossFunctionGradOp<float>>(new BCEWithLogitsGradOp<float>()),
-		std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceMuGradOp<float>()), 
-		std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceLogVarGradOp<float>()) });
-	model_trainer.setOutputNodes({ output_nodes, encoding_nodes_mu, encoding_nodes_logvar });
+	// define the model trainers and resources for the trainers
+	std::vector<std::shared_ptr<ModelTrainer<float, Eigen::DefaultDevice>>> model_trainers;
+	for (size_t i = 0; i < n_hard_threads; ++i) {
+		ModelResources model_resources = { ModelDevice(0, DeviceType::default, 1) };
+		std::shared_ptr<ModelTrainer<float, Eigen::DefaultDevice>> model_trainer(new ModelTrainerExt<float, Eigen::DefaultDevice>());
+		model_trainer->setBatchSize(8);
+		model_trainer->setMemorySize(1);
+		model_trainer->setNEpochsTraining(5000);
+		model_trainer->setNEpochsValidation(10);
+		model_trainer->setVerbosityLevel(1);
+		model_trainer->setLogging(true, false);
+		model_trainer->setLossFunctions({ 
+			std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()),
+			//std::shared_ptr<LossFunctionOp<float>>(new BCEWithLogitsOp<float>()),
+			std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceMuOp<float>()),
+			std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceLogVarOp<float>()) });
+		model_trainer->setLossFunctionGrads({ 
+			std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()),
+			//std::shared_ptr<LossFunctionGradOp<float>>(new BCEWithLogitsGradOp<float>()),
+			std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceMuGradOp<float>()), 
+			std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceLogVarGradOp<float>()) });
+		model_trainer->setOutputNodes({ output_nodes, encoding_nodes_mu, encoding_nodes_logvar });
+		model_trainer->setModelInterpreter(std::shared_ptr<ModelInterpreter<float, Eigen::DefaultDevice>>(new ModelInterpreterDefaultDevice<float>(model_resources)));
+		model_trainers.push_back(model_trainer);
+	}
 
 	// define the model replicator for growth mode
 	ModelReplicatorExt<float> model_replicator;
@@ -414,12 +420,12 @@ void main_VAE() {
 	// define the initial population [BUG FREE]
 	std::cout << "Initializing the population..." << std::endl;
 	Model<float> model;
-	model_trainer.makeVAE(model, input_size, encoding_size, n_hidden);
+	ModelTrainerExt<float, Eigen::DefaultDevice>().makeVAE(model, input_size, encoding_size, n_hidden);
 	std::vector<Model<float>> population = { model };
 
 	// Evolve the population
 	std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
-		population, model_trainer, model_replicator, data_simulator, model_logger, input_nodes, 1);
+		population, model_trainers, model_replicator, data_simulator, model_logger, input_nodes);
 
 	PopulationTrainerFile<float> population_trainer_file;
 	population_trainer_file.storeModels(population, "MNIST");
