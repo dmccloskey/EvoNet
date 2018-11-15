@@ -932,7 +932,7 @@ private:
 		// Evaluate the population
 		std::cout << "Evaluating the model..." << std::endl;
 		evalModels(models, model_trainers, model_logger,
-			input_data_evaluation, time_steps_evaluation, input_nodes, n_threads);
+			input_data_evaluation, time_steps_evaluation, input_nodes);
 	}
 
 	// TensorT PopulationTrainer<TensorT, DeviceT>::calculateMean(std::vector<TensorT> values)

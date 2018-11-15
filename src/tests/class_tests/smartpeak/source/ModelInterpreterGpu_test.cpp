@@ -1,6 +1,6 @@
 /**TODO:  Add copyright*/
 
-#ifndef EVONET_CUDA
+#if EVONET_CUDA
 
 #include <SmartPeak/ml/ModelInterpreterGpu.h>
 

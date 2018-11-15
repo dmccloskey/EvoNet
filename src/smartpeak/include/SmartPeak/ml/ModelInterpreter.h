@@ -467,7 +467,7 @@ namespace SmartPeak
 	inline void ModelInterpreter<TensorT, DeviceT>::mapValuesToLayers(Model<TensorT>& model, const Eigen::Tensor<TensorT, 3>& values, const std::vector<std::string>& node_names, const std::string & value_type)
 	{
 		// Buffer the input values
-		Eigen::Tensor<TensorT, 3> values_buffered = values.pad(Eigen::array<pair<int, int>, 3>({std::make_pair(0,0),std::make_pair(0,1),std::make_pair(0,0)}));
+		Eigen::Tensor<TensorT, 3> values_buffered = values.pad(Eigen::array<std::pair<int, int>, 3>({std::make_pair(0,0),std::make_pair(0,1),std::make_pair(0,0)}));
 
 		// check dimension mismatches
 		if (node_names.size() != values_buffered.dimension(2))
