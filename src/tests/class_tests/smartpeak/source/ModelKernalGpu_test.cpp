@@ -1,6 +1,6 @@
 /**TODO:  Add copyright*/
 
-#ifndef EVONET_CUDA
+#if EVONET_CUDA
 
 #define EIGEN_DEFAULT_DENSE_INDEX_TYPE int
 #define EIGEN_USE_GPU
