@@ -497,7 +497,7 @@ public:
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> error_tensor(error, batch_size, memory_size, layer_size);
 			auto predicted_chip = predicted_tensor.chip(time_step, 1);
 
-			error_tensor.chip(time_step, 1).device(device) += (predicted_chip - expected_tensor / expected_tensor.constant(layer_size));// .unaryExpr(ClipTensorOp<TensorT>(1e-6, -1e9, 1e9));
+			error_tensor.chip(time_step, 1).device(device) += ((predicted_chip - expected_tensor) / expected_tensor.constant(layer_size));// .unaryExpr(ClipTensorOp<TensorT>(1e-6, -1e9, 1e9));
 		};
 	};
 

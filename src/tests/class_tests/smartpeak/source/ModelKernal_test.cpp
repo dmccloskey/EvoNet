@@ -721,7 +721,7 @@ BOOST_AUTO_TEST_CASE(weightUpdateDefaultDevice)
 	//assert(cudaStreamDestroy(stream) == cudaSuccess);
 
 	Eigen::Tensor<float, 2> expected_weights(source_layer_size, sink_layer_size);
-	expected_weights.setValues({ {1.00398}, {1.398} });
+	expected_weights.setValues({ {1.002}, {1.2} });
 
 	Eigen::Tensor<float, 3> expected_params(source_layer_size, sink_layer_size, 3);
 	expected_params.setValues({ {{0.01, 0.99, 0.002}},
