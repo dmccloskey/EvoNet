@@ -201,8 +201,8 @@ public:
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 2>> error_tensor(error, batch_size, memory_size);
 			auto predicted_chip = predicted_tensor.chip(time_step, 1);
 
-			//error_tensor.chip(time_step, 1).device(device) += ((-expected_tensor * (predicted_chip.unaryExpr(ClipTensorOp<TensorT>(1e-6, 0, 1)).log())) * expected_tensor.constant(1 / batch_size)).sum(Eigen::array<int, 1>({ 1 }));
-			error_tensor.chip(time_step, 1).device(device) += ((-expected_tensor * (predicted_chip.log())) * expected_tensor.constant(1 / batch_size)).sum(Eigen::array<int, 1>({ 1 }));
+			//error_tensor.chip(time_step, 1).device(device) += ((-expected_tensor * (predicted_chip.unaryExpr(ClipTensorOp<TensorT>(1e-6, 0, 1)).log())) * expected_tensor.constant(1 / layer_size)).sum(Eigen::array<int, 1>({ 1 }));
+			error_tensor.chip(time_step, 1).device(device) += ((-expected_tensor * (predicted_chip.log())) * expected_tensor.constant(1 / layer_size)).sum(Eigen::array<int, 1>({ 1 }));
 		};
 	private:
 		TensorT n_ = 1.0; ///< the number of total classifiers
@@ -227,7 +227,7 @@ public:
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> error_tensor(error, batch_size, memory_size, layer_size);
 			auto predicted_chip = predicted_tensor.chip(time_step, 1);
 			
-			error_tensor.chip(time_step, 1).device(device) += (expected_tensor / (predicted_chip + expected_tensor.constant(this->eps_)) / expected_tensor.constant(batch_size));// .unaryExpr(ClipTensorOp<TensorT>(1e-6, -1e9, 1e9));
+			error_tensor.chip(time_step, 1).device(device) += (expected_tensor / (predicted_chip + expected_tensor.constant(this->eps_)) / expected_tensor.constant(layer_size));// .unaryExpr(ClipTensorOp<TensorT>(1e-6, -1e9, 1e9));
 		};
 	private:
 		TensorT n_ = 1.0; ///< the number of total classifiers
@@ -436,6 +436,68 @@ public:
 			auto predicted_chip = predicted_tensor.chip(time_step, 1);
 			//error_tensor.chip(time_step, 1).device(device) += -((expected_tensor - expected_tensor.constant(1))*predicted_chip.exp().unaryExpr(ClipTensorOp<TensorT>(1e-6, 0, 1e9)) + expected_tensor) / (predicted_chip.exp().unaryExpr(ClipTensorOp<TensorT>(1e-6, 0, 1e9)) + expected_tensor.constant(1));
 			error_tensor.chip(time_step, 1).device(device) += -((expected_tensor - expected_tensor.constant(1))*predicted_chip.exp() + expected_tensor)/(predicted_chip.exp() + expected_tensor.constant(1));
+		};
+	};
+
+	/**
+		@brief Softmax + Cross Entropy loss function.
+
+		NOTES: implemented as the following:
+
+		def stable_softmax(X):
+			exps = np.exp(X - np.max(X))
+			return exps / np.sum(exps)
+
+		def cross_entropy(p,y):
+			"""
+			p is the output from softmax layer (num_examples x num_classes)
+			y is labels (num_examples x 1)
+			"""
+			m = y.shape[0]
+			log_likelihood = -np.log(p[range(m),y])
+			loss = np.sum(log_likelihood) / m
+			return loss
+	*/
+	template<typename TensorT, typename DeviceT>
+	class CrossEntropyWithLogitsTensorOp : public LossFunctionTensorOp<TensorT, DeviceT>
+	{
+	public:
+		CrossEntropyWithLogitsTensorOp() = default;
+		~CrossEntropyWithLogitsTensorOp() = default;
+		std::string getName() { return "CrossEntropyWithLogitsTensorOp"; }
+		void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const
+		{
+			Eigen::TensorMap < Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
+			Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
+			Eigen::TensorMap < Eigen::Tensor<TensorT, 2>> error_tensor(error, batch_size, memory_size);
+			Eigen::array<int, 2> bcast = { layer_size, 1 };
+			auto predicted_chip = predicted_tensor.chip(time_step, 1);
+			auto exps = (predicted_chip - predicted_chip.maximum(Eigen::array<int, 1>({ 1 }))).exp();
+			auto stable_softmax = exps / exps.sum(Eigen::array<int, 1>({ 1 })).broadcast(bcast);
+
+			//error_tensor.chip(time_step, 1).device(device) += ((-expected_tensor * (stable_softmax.unaryExpr(ClipTensorOp<TensorT>(1e-6, 0, 1)).log())) * expected_tensor.constant(1 / layer_size)).sum(Eigen::array<int, 1>({ 1 }));
+			error_tensor.chip(time_step, 1).device(device) += ((-expected_tensor * (stable_softmax.log())) * expected_tensor.constant(1 / layer_size)).sum(Eigen::array<int, 1>({ 1 }));
+		};
+	};
+
+	/**
+		@brief Softmax + Cross Entropy loss function gradient.
+	*/
+	template<typename TensorT, typename DeviceT>
+	class CrossEntropyWithLogitsGradTensorOp : public LossFunctionGradTensorOp<TensorT, DeviceT>
+	{
+	public:
+		CrossEntropyWithLogitsGradTensorOp() {};
+		~CrossEntropyWithLogitsGradTensorOp() {};
+		std::string getName() { return "CrossEntropyWithLogitsGradTensorOp"; }
+		void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const
+		{
+			Eigen::TensorMap < Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
+			Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
+			Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> error_tensor(error, batch_size, memory_size, layer_size);
+			auto predicted_chip = predicted_tensor.chip(time_step, 1);
+
+			error_tensor.chip(time_step, 1).device(device) += (predicted_chip - expected_tensor / expected_tensor.constant(layer_size));// .unaryExpr(ClipTensorOp<TensorT>(1e-6, -1e9, 1e9));
 		};
 	};
 

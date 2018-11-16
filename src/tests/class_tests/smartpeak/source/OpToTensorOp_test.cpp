@@ -576,6 +576,10 @@ BOOST_AUTO_TEST_CASE(convertOpToTensorOpLossFunctionGradOpToLossFunctionGradTens
 	op_class = new BCEWithLogitsGradOp<float>();
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "BCEWithLogitsGradTensorOp");
+
+	op_class = new CrossEntropyWithLogitsGradOp<float>();
+	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "CrossEntropyWithLogitsGradTensorOp");
 }
 
 BOOST_AUTO_TEST_CASE(getTensorParamsLossFunctionGradOpToLossFunctionGradTensorOp)
@@ -613,6 +617,10 @@ BOOST_AUTO_TEST_CASE(getTensorParamsLossFunctionGradOpToLossFunctionGradTensorOp
 	BOOST_CHECK_EQUAL(params.size(), 0);
 
 	op_class = new BCEWithLogitsGradOp<float>();
+	params = op_to_tensor_op.getTensorParams(op_class);
+	BOOST_CHECK_EQUAL(params.size(), 0);
+
+	op_class = new CrossEntropyWithLogitsGradOp<float>();
 	params = op_to_tensor_op.getTensorParams(op_class);
 	BOOST_CHECK_EQUAL(params.size(), 0);
 }
@@ -669,6 +677,10 @@ BOOST_AUTO_TEST_CASE(convertOpToTensorOpLossFunctionOpToLossFunctionTensorOp)
 	op_class = new BCEWithLogitsOp<float>();
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "BCEWithLogitsTensorOp");
+
+	op_class = new CrossEntropyWithLogitsOp<float>();
+	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "CrossEntropyWithLogitsTensorOp");
 }
 
 BOOST_AUTO_TEST_CASE(getTensorParamsLossFunctionOpToLossFunctionTensorOp)
@@ -706,6 +718,10 @@ BOOST_AUTO_TEST_CASE(getTensorParamsLossFunctionOpToLossFunctionTensorOp)
 	BOOST_CHECK_EQUAL(params.size(), 0);
 
 	op_class = new BCEWithLogitsOp<float>();
+	params = op_to_tensor_op.getTensorParams(op_class);
+	BOOST_CHECK_EQUAL(params.size(), 0);
+
+	op_class = new CrossEntropyWithLogitsOp<float>();
 	params = op_to_tensor_op.getTensorParams(op_class);
 	BOOST_CHECK_EQUAL(params.size(), 0);
 }

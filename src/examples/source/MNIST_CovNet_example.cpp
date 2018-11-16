@@ -142,7 +142,7 @@ public:
 			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 
 		// Add the final softmax layer
-		node_names = model_builder.addStableSoftMax(model, "SoftMax", "SoftMax", node_names);
+		//node_names = model_builder.addStableSoftMax(model, "SoftMax", "SoftMax", node_names);
 		//node_names = model_builder.addSoftMax(model, "SoftMax", "SoftMax", node_names);
 
 		for (const std::string& node_name : node_names)
@@ -473,6 +473,7 @@ public:
 void main_CovNet() {
 
 	const int n_hard_threads = std::thread::hardware_concurrency();
+	const int n_threads = 1;
 
 	// define the populatin trainer
 	PopulationTrainerExt<float, Eigen::DefaultDevice> population_trainer;
@@ -492,21 +493,21 @@ void main_CovNet() {
 	DataSimulatorExt<float> data_simulator;
 
 	// read in the training data
-	//const std::string training_data_filename = "C:/Users/domccl/GitHub/mnist/train-images.idx3-ubyte";
-	//const std::string training_labels_filename = "C:/Users/domccl/GitHub/mnist/train-labels.idx1-ubyte";
+	const std::string training_data_filename = "C:/Users/domccl/GitHub/mnist/train-images.idx3-ubyte";
+	const std::string training_labels_filename = "C:/Users/domccl/GitHub/mnist/train-labels.idx1-ubyte";
 	//const std::string training_data_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/train-images-idx3-ubyte";
 	//const std::string training_labels_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/train-labels-idx1-ubyte";
-	const std::string training_data_filename = "/home/user/data/train-images-idx3-ubyte";
-	const std::string training_labels_filename = "/home/user/data/train-labels-idx1-ubyte";
+	//const std::string training_data_filename = "/home/user/data/train-images-idx3-ubyte";
+	//const std::string training_labels_filename = "/home/user/data/train-labels-idx1-ubyte";
 	data_simulator.readData(training_data_filename, training_labels_filename, true, training_data_size, input_size);
 
 	// read in the validation data
-	//const std::string validation_data_filename = "C:/Users/domccl/GitHub/mnist/t10k-images.idx3-ubyte";
-	//const std::string validation_labels_filename = "C:/Users/domccl/GitHub/mnist/t10k-labels.idx1-ubyte";
+	const std::string validation_data_filename = "C:/Users/domccl/GitHub/mnist/t10k-images.idx3-ubyte";
+	const std::string validation_labels_filename = "C:/Users/domccl/GitHub/mnist/t10k-labels.idx1-ubyte";
 	//const std::string validation_data_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/t10k-images-idx3-ubyte";
 	//const std::string validation_labels_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/t10k-labels-idx1-ubyte";
-	const std::string validation_data_filename = "/home/user/data/t10k-images-idx3-ubyte";
-	const std::string validation_labels_filename = "/home/user/data/t10k-labels-idx1-ubyte";
+	//const std::string validation_data_filename = "/home/user/data/t10k-images-idx3-ubyte";
+	//const std::string validation_labels_filename = "/home/user/data/t10k-labels-idx1-ubyte";
 	data_simulator.readData(validation_data_filename, validation_labels_filename, false, validation_data_size, input_size);
 	data_simulator.unitScaleData();
 
@@ -527,15 +528,15 @@ void main_CovNet() {
 
 	// define the model trainers and resources for the trainers
 	std::vector<std::shared_ptr<ModelTrainer<float, Eigen::DefaultDevice>>> model_trainers;
-	for (size_t i = 0; i < n_hard_threads; ++i) {
+	for (size_t i = 0; i < n_threads; ++i) {
 		ModelResources model_resources = { ModelDevice(0, DeviceType::default, 1) };
 		std::shared_ptr<ModelTrainer<float, Eigen::DefaultDevice>> model_trainer(new ModelTrainerExt<float, Eigen::DefaultDevice>());
-		model_trainer->setBatchSize(64);
+		model_trainer->setBatchSize(16);
 		model_trainer->setMemorySize(1);
-		model_trainer->setNEpochsTraining(501);
+		model_trainer->setNEpochsTraining(51);
 		model_trainer->setNEpochsValidation(10);
 		model_trainer->setVerbosityLevel(1);
-		model_trainer->setLogging(true, false);
+		model_trainer->setLogging(false, false);
 		model_trainer->setLossFunctions({
 			std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>())//,std::shared_ptr<LossFunctionOp<float>>(new NegativeLogLikelihoodOp<float>()),
 			});
@@ -553,8 +554,8 @@ void main_CovNet() {
 
 	// define the initial population
 	std::cout << "Initializing the population..." << std::endl;
-	std::vector<Model<float>> population = { ModelTrainerExt<float, Eigen::DefaultDevice>().makeCovNet(input_nodes.size(), output_nodes.size(), 32, 2, 128) };
-	//std::vector<Model<float>> population = { ModelTrainerExt<float, Eigen::DefaultDevice>().makeCovNetFeatureNorm(input_nodes.size(), output_nodes.size()) };
+	std::vector<Model<float>> population = { ModelTrainerExt<float, Eigen::DefaultDevice>().makeCovNet(input_nodes.size(), output_nodes.size(), 2, 2, 32) };
+	//std::vector<Model<float>> population = { ModelTrainerExt<float, Eigen::DefaultDevice>().makeCovNet(input_nodes.size(), output_nodes.size(), 32, 2, 128) };
 
 	// Evolve the population
 	std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(

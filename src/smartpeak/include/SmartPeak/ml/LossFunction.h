@@ -570,6 +570,56 @@ public:
 	};
 
 	/**
+		@brief CrossEntropyWithLogits loss function.
+	*/
+	template<typename T>
+	class CrossEntropyWithLogitsOp : public LossFunctionOp<T>
+	{
+	public:
+		CrossEntropyWithLogitsOp() = default;
+		~CrossEntropyWithLogitsOp() = default;
+		std::string getName() { return "CrossEntropyWithLogitsOp"; };
+		Eigen::Tensor<T, 1> operator()(
+			const Eigen::Tensor<T, 2>& y_pred,
+			const Eigen::Tensor<T, 2>& y_true) const
+		{
+			return Eigen::Tensor<T, 1>();
+		};
+		Eigen::Tensor<T, 1> operator()(
+			const Eigen::Tensor<T, 1>& y_pred,
+			const Eigen::Tensor<T, 1>& y_true) const
+		{
+			return Eigen::Tensor<T, 1>();
+		};
+	};
+
+	/**
+		@brief CrossEntropyWithLogits loss function gradient.
+	*/
+	template<typename T>
+	class CrossEntropyWithLogitsGradOp : public LossFunctionGradOp<T>
+	{
+	public:
+		CrossEntropyWithLogitsGradOp() {};
+		~CrossEntropyWithLogitsGradOp() {};
+		std::string getName() { return "CrossEntropyWithLogitsGradOp"; };
+		Eigen::Tensor<T, 2> operator()(
+			const Eigen::Tensor<T, 2>& y_pred,
+			const Eigen::Tensor<T, 2>& y_true) const
+		{
+			return Eigen::Tensor<T, 2>();
+		};
+		Eigen::Tensor<T, 1> operator()(
+			const Eigen::Tensor<T, 1>& y_pred,
+			const Eigen::Tensor<T, 1>& y_true) const
+		{
+			return Eigen::Tensor<T, 1>();
+		};
+	private:
+		T n_ = 1.0; ///< the number of total classifiers
+	};
+
+	/**
 		@brief Hinge loss function.  
 
 		Typically used for classification

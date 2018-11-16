@@ -6,15 +6,15 @@ set(sources_list_h
 	ActivationFunction.h
 	ActivationFunctionTensor.h
 	IntegrationFunction.h
-	IntegrationFunction2.h
+	#IntegrationFunction2.h
 	IntegrationFunctionTensor.h
 	Interpreter.h
 	LossFunction.h
-	LossFunction2.h
+	#LossFunction2.h
 	LossFunctionTensor.h
 	Link.h
 	Model.h
-	Model2.h
+	#Model2.h
 	ModelBuilder.h
 	ModelInterpreter.h
 	ModelInterpreterDefaultDevice.h
@@ -24,7 +24,7 @@ set(sources_list_h
 	ModelReplicator.h
 	ModelTrainer.h
 	Node.h
-	NodeData.h
+	#NodeData.h
 	NodeTensorData.h
 	OpToTensorOp.h
 	PopulationTrainer.h
@@ -32,7 +32,7 @@ set(sources_list_h
 	Solver.h
 	SolverTensor.h
 	Weight.h
-	WeightData.h
+	#WeightData.h
 	WeightInit.h
 	WeightTensorData.h
 )

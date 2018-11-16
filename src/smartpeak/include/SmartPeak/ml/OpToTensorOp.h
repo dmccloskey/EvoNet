@@ -201,6 +201,10 @@ namespace SmartPeak
 				LossFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new BCEWithLogitsTensorOp<TensorT, DeviceT>();
 				return op_tensor_class;
 			}
+			else if (op_class->getName() == "CrossEntropyWithLogitsOp") {
+				CrossEntropyWithLogitsTensorOp<TensorT, DeviceT>* op_tensor_class = new CrossEntropyWithLogitsTensorOp<TensorT, DeviceT>();
+				return op_tensor_class;
+			}
 			else {
 				std::cout << "No conversion available for " << op_class->getName() << "." << std::endl;
 				LossFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new MSETensorOp<TensorT, DeviceT>();
@@ -245,6 +249,10 @@ namespace SmartPeak
 			}
 			else if (op_class->getName() == "BCEWithLogitsGradOp") {
 				LossFunctionGradTensorOp<TensorT, DeviceT>* op_tensor_class = new BCEWithLogitsGradTensorOp<TensorT, DeviceT>();
+				return op_tensor_class;
+			}
+			else if (op_class->getName() == "CrossEntropyWithLogitsGradOp") {
+				CrossEntropyWithLogitsGradTensorOp<TensorT, DeviceT>* op_tensor_class = new CrossEntropyWithLogitsGradTensorOp<TensorT, DeviceT>();
 				return op_tensor_class;
 			}
 			else {

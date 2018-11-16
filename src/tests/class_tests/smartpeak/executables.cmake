@@ -23,11 +23,11 @@ set(graph_executables_list
 set(ml_executables_list
   ActivationFunction_test
   IntegrationFunction_test
-  IntegrationFunction2_test
+  #IntegrationFunction2_test
   IntegrationFunctionTensor_test
   Link_test
   Lossfunction_test
-  Lossfunction2_test
+  #Lossfunction2_test
   LossfunctionTensor_test
   ModelBuilder_test
   ModelInterpreter_DAG_test
@@ -41,11 +41,11 @@ set(ml_executables_list
   ModelResources_test
   ModelTrainer_test
   Model_test
-  Model2_test
-  Model2_DAG_test
-  Model2_DCG_test
+  #Model2_test
+  #Model2_DAG_test
+  #Model2_DCG_test
   Node_test
-  NodeData_test
+  #NodeData_test
   NodeTensorData_test
   OpToTensorOp_test
   PopulationTrainer_test
@@ -53,7 +53,7 @@ set(ml_executables_list
   Solver_test
   SolverTensor_test
   Weight_test
-  WeightData_test
+  #WeightData_test
   WeightInit_test
   WeightTensorData_test
 )
