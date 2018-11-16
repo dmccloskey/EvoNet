@@ -36,6 +36,19 @@ public:
 			d_error_ = other.d_error_;
 			d_derivative_ = other.d_derivative_;
 			d_dt_ = other.d_dt_;
+			batch_size_ = other.batch_size_;
+			memory_size_ = other.memory_size_;
+			layer_size_ = other.layer_size_;
+			h_input_updated_ = other.h_input_updated_;
+			h_output_updated_ = other.h_output_updated_;
+			h_error_updated_ = other.h_error_updated_;
+			h_derivative_updated_ = other.h_derivative_updated_;
+			h_dt_updated_ = other.h_dt_updated_;
+			d_input_updated_ = other.d_input_updated_;
+			d_output_updated_ = other.d_output_updated_;
+			d_error_updated_ = other.d_error_updated_;
+			d_derivative_updated_ = other.d_derivative_updated_;
+			d_dt_updated_ = other.d_dt_updated_;
 		};
     ~NodeTensorData() = default; ///< Default destructor
 
@@ -67,6 +80,19 @@ public:
 			d_error_ = other.d_error_;
 			d_derivative_ = other.d_derivative_;
 			d_dt_ = other.d_dt_;
+			batch_size_ = other.batch_size_;
+			memory_size_ = other.memory_size_;
+			layer_size_ = other.layer_size_;
+			h_input_updated_ = other.h_input_updated_;
+			h_output_updated_ = other.h_output_updated_;
+			h_error_updated_ = other.h_error_updated_;
+			h_derivative_updated_ = other.h_derivative_updated_;
+			h_dt_updated_ = other.h_dt_updated_;
+			d_input_updated_ = other.d_input_updated_;
+			d_output_updated_ = other.d_output_updated_;
+			d_error_updated_ = other.d_error_updated_;
+			d_derivative_updated_ = other.d_derivative_updated_;
+			d_dt_updated_ = other.d_dt_updated_;
       return *this;
     }
 

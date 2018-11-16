@@ -166,27 +166,24 @@ namespace SmartPeak
 			const int device_id = 0;
 			assert(cudaSetDevice(device_id) == cudaSuccess); // is this needed?
 			std::vector<cudaStream_t> streams;
-			std::vector<Eigen::GpuStreamDevice> stream_devices;
-			std::vector<Eigen::GpuDevice> devices;
 			for (size_t i = 0; i < operations_list.size(); ++i) {
 				cudaStream_t stream; // The stream will be destroyed by GpuStreamDevice once the function goes out of scope!
 				assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess);
 				streams.push_back(stream);
-				Eigen::GpuStreamDevice stream_device(&stream, 0);
-				stream_devices.push_back(stream_device);
-				Eigen::GpuDevice device(&stream_device);
-				devices.push_back(device);
 			}
 
 			// execute the forward propogation steps
 			int device_iter = 0;
 			for (OperationTensorStep<TensorT, Eigen::GpuDevice>& operation : operations_list) {
+				Eigen::GpuStreamDevice stream_device(&streams[device_iter], 0);
+				Eigen::GpuDevice device(&stream_device);
+
 				if (!operation.source_layer.tensor->getOutputStatus().second)
-					operation.source_layer.tensor->syncHAndDOutput(devices[device_iter]);
+					operation.source_layer.tensor->syncHAndDOutput(device);
 				if (!operation.weight.tensor->getWeightStatus().second)
-					operation.weight.tensor->syncHAndDWeight(devices[device_iter]);
+					operation.weight.tensor->syncHAndDWeight(device);
 				if (!operation.sink_layer.tensor->getInputStatus().second)
-					operation.source_layer.tensor->syncHAndDInput(devices[device_iter]);
+					operation.sink_layer.tensor->syncHAndDInput(device);
 
 				model_kernal.executeForwardPropogation(
 					operation.source_layer.tensor->getHOutputPointer().get(),
@@ -202,12 +199,12 @@ namespace SmartPeak
 					operation.sink_layer.tensor->getLayerSize(),
 					operation.source_layer.time_step + time_step,
 					operation.sink_layer.time_step + time_step,
-					devices[device_iter]);
+					device);
 
 				if (!operation.sink_layer.tensor->getOutputStatus().second)
-					operation.source_layer.tensor->syncHAndDOutput(devices[device_iter]);
+					operation.sink_layer.tensor->syncHAndDOutput(device);
 				if (!operation.sink_layer.tensor->getDtStatus().second)
-					operation.source_layer.tensor->syncHAndDDt(devices[device_iter]);
+					operation.sink_layer.tensor->syncHAndDDt(device);
 
 				model_kernal.executeNodeActivation(
 					operation.sink_layer.tensor->getHInputPointer().get(),
@@ -221,7 +218,7 @@ namespace SmartPeak
 					operation.sink_layer.tensor->getMemorySize(),
 					operation.sink_layer.tensor->getLayerSize(),
 					operation.sink_layer.time_step + time_step,
-					devices[device_iter]);
+					device);
 				++device_iter;
 			}
 
@@ -243,26 +240,22 @@ namespace SmartPeak
 			const int device_id = 0;
 			assert(cudaSetDevice(device_id) == cudaSuccess); // is this needed?
 			std::vector<cudaStream_t> streams;
-			std::vector<Eigen::GpuStreamDevice> stream_devices;
-			std::vector<Eigen::GpuDevice> devices;
 			for (size_t i = 0; i < operation_steps_[iter].size(); ++i) {
 				cudaStream_t stream; // The stream will be destroyed by GpuStreamDevice once the function goes out of scope!
 				assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess);
 				streams.push_back(stream);
-				Eigen::GpuStreamDevice stream_device(&stream, 0);
-				stream_devices.push_back(stream_device);
-				Eigen::GpuDevice device(&stream_device);
-				devices.push_back(device);
 			}
 
 			// execute the forward propogation steps
 			int device_iter = 0;
 			for (OperationTensorStep<TensorT, Eigen::GpuDevice>& operation : operation_steps_[iter]) { //reverse source/sink
+				Eigen::GpuStreamDevice stream_device(&streams[device_iter], 0);
+				Eigen::GpuDevice device(&stream_device);
 
 				if (!operation.source_layer.tensor->getOutputStatus().second)
-					operation.source_layer.tensor->syncHAndDOutput(devices[device_iter]);
+					operation.source_layer.tensor->syncHAndDOutput(device);
 				if (!operation.source_layer.tensor->getDerivativeStatus().second)
-					operation.source_layer.tensor->syncHAndDDerivative(devices[device_iter]);
+					operation.source_layer.tensor->syncHAndDDerivative(device);
 
 				model_kernal.executeNodeDerivative(
 					operation.source_layer.tensor->getHOutputPointer().get(),
@@ -274,16 +267,16 @@ namespace SmartPeak
 					operation.source_layer.tensor->getMemorySize(),
 					operation.source_layer.tensor->getLayerSize(),
 					operation.source_layer.time_step + time_step,
-					devices[device_iter]);
+					device);
 
 				if (!operation.sink_layer.tensor->getErrorStatus().second)
-					operation.sink_layer.tensor->syncHAndDError(devices[device_iter]);
+					operation.sink_layer.tensor->syncHAndDError(device);
 				if (!operation.sink_layer.tensor->getInputStatus().second)
-					operation.sink_layer.tensor->syncHAndDInput(devices[device_iter]);
+					operation.sink_layer.tensor->syncHAndDInput(device);
 				if (!operation.weight.tensor->getWeightStatus().second)
-					operation.weight.tensor->syncHAndDWeight(devices[device_iter]);
+					operation.weight.tensor->syncHAndDWeight(device);
 				if (!operation.source_layer.tensor->getErrorStatus().second)
-					operation.source_layer.tensor->syncHAndDError(devices[device_iter]);
+					operation.source_layer.tensor->syncHAndDError(device);
 
 				model_kernal.executeBackwardPropogation(
 					operation.sink_layer.tensor->getHErrorPointer().get(),
@@ -306,7 +299,7 @@ namespace SmartPeak
 					operation.source_layer.tensor->getLayerSize(),
 					operation.sink_layer.time_step + time_step,
 					operation.source_layer.time_step + time_step,
-					devices[device_iter]);
+					device);
 
 				++device_iter;
 			}
@@ -368,32 +361,28 @@ namespace SmartPeak
 			const int device_id = 0;
 			assert(cudaSetDevice(device_id) == cudaSuccess); // is this needed?
 			std::vector<cudaStream_t> streams;
-			std::vector<Eigen::GpuStreamDevice> stream_devices;
-			std::vector<Eigen::GpuDevice> devices;
 			for (size_t i = 0; i < operations_list.size(); ++i) {
 				cudaStream_t stream; // The stream will be destroyed by GpuStreamDevice once the function goes out of scope!
 				assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess);
 				streams.push_back(stream);
-				Eigen::GpuStreamDevice stream_device(&stream, 0);
-				stream_devices.push_back(stream_device);
-				Eigen::GpuDevice device(&stream_device);
-				devices.push_back(device);
 			}
 
 			// execute the forward propogation steps
 			int device_iter = 0;
 			for (OperationTensorStep<TensorT, Eigen::GpuDevice>& operation : operations_list) {
+				Eigen::GpuStreamDevice stream_device(&streams[device_iter], 0);
+				Eigen::GpuDevice device(&stream_device);
 
 				if (!operation.sink_layer.tensor->getErrorStatus().second)
-					operation.sink_layer.tensor->syncHAndDError(devices[device_iter]);
+					operation.sink_layer.tensor->syncHAndDError(device);
 				if (!operation.source_layer.tensor->getInputStatus().second)
-					operation.source_layer.tensor->syncHAndDInput(devices[device_iter]);
+					operation.source_layer.tensor->syncHAndDInput(device);
 				if (!operation.source_layer.tensor->getOutputStatus().second)
-					operation.source_layer.tensor->syncHAndDOutput(devices[device_iter]);
+					operation.source_layer.tensor->syncHAndDOutput(device);
 				if (!operation.weight.tensor->getWeightStatus().second)
-					operation.weight.tensor->syncHAndDWeight(devices[device_iter]);
+					operation.weight.tensor->syncHAndDWeight(device);
 				if (!operation.weight.tensor->getErrorStatus().second)
-					operation.weight.tensor->syncHAndDError(devices[device_iter]);
+					operation.weight.tensor->syncHAndDError(device);
 
 				model_kernal.executeWeightErrors(
 					operation.sink_layer.tensor->getHErrorPointer().get(),
@@ -412,7 +401,7 @@ namespace SmartPeak
 					operation.sink_layer.tensor->getMemorySize(),
 					operation.source_layer.tensor->getLayerSize(),
 					operation.sink_layer.tensor->getLayerSize(),
-					devices[device_iter]);
+					device);
 				++device_iter;
 			}
 
@@ -434,28 +423,24 @@ namespace SmartPeak
 			const int device_id = 0;
 			assert(cudaSetDevice(device_id) == cudaSuccess); // is this needed?
 			std::vector<cudaStream_t> streams;
-			std::vector<Eigen::GpuStreamDevice> stream_devices;
-			std::vector<Eigen::GpuDevice> devices;
 			for (size_t i = 0; i < operations_list.size(); ++i) {
 				cudaStream_t stream; // The stream will be destroyed by GpuStreamDevice once the function goes out of scope!
 				assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess);
 				streams.push_back(stream);
-				Eigen::GpuStreamDevice stream_device(&stream, 0);
-				stream_devices.push_back(stream_device);
-				Eigen::GpuDevice device(&stream_device);
-				devices.push_back(device);
 			}
 
 			// execute the forward propogation steps
 			int device_iter = 0;
 			for (OperationTensorStep<TensorT, Eigen::GpuDevice>& operation : operations_list) {
+				Eigen::GpuStreamDevice stream_device(&streams[device_iter], 0);
+				Eigen::GpuDevice device(&stream_device);
 
 				if (!operation.weight.tensor->getWeightStatus().second)
-					operation.weight.tensor->syncHAndDWeight(devices[device_iter]);
+					operation.weight.tensor->syncHAndDWeight(device);
 				if (!operation.weight.tensor->getErrorStatus().second)
-					operation.weight.tensor->syncHAndDError(devices[device_iter]);
+					operation.weight.tensor->syncHAndDError(device);
 				if (!operation.weight.tensor->getSolverParamsStatus().second)
-					operation.weight.tensor->syncHAndDSolverParams(devices[device_iter]);
+					operation.weight.tensor->syncHAndDSolverParams(device);
 
 				model_kernal.executeWeightUpdate(
 					operation.weight.tensor->getHWeightPointer().get(),
@@ -467,7 +452,7 @@ namespace SmartPeak
 					operation.weight.solver.get(),
 					operation.source_layer.tensor->getLayerSize(),
 					operation.sink_layer.tensor->getLayerSize(),
-					devices[device_iter]);
+					device);
 				++device_iter;
 			}
 

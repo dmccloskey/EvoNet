@@ -354,10 +354,6 @@ Model<float> model_executeForwardPropogationOperations = makeModelToy1();
 
 	// create the bias
 	model_interpreter.initBiases(model_executeForwardPropogationOperations);
-	//const std::vector<std::string> biases_ids = { "6", "7" };
-	//Eigen::Tensor<float, 3> biases(batch_size, memory_size, (int)biases_ids.size());
-	//biases.setConstant(1);
-	//model_interpreter.mapValuesToLayers(model_mapValuesToLayers, biases, biases_ids, "output");
 
 	model_interpreter.executeForwardPropogationOperations(0);
 
@@ -367,9 +363,22 @@ Model<float> model_executeForwardPropogationOperations = makeModelToy1();
 	Eigen::Tensor<float, 2> net_input(batch_size, 2);
 	net_input.setValues({ { 15, 15 },{ 19, 19 },{ 23, 23 },{ 27, 27 } });
 
-	// TODO: include full memory size
+	// Test
 	const std::vector<std::string> output_nodes = { "4", "5" };
 	auto nodes_map = model_executeForwardPropogationOperations.getNodesMap();
+
+	cudaStream_t stream; // The stream will be destroyed by GpuStreamDevice once the function goes out of scope!
+	assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess);
+	Eigen::GpuStreamDevice stream_device(&stream, 0);
+	Eigen::GpuDevice device(&stream_device);
+	for (int i = 0; i < (int)output_nodes.size(); ++i) {
+		const std::string node_name = output_nodes[i];
+		model_interpreter.getLayerTensor(nodes_map.at(node_name)->getTensorIndex().first)->syncHAndDInput(device);
+		model_interpreter.getLayerTensor(nodes_map.at(node_name)->getTensorIndex().first)->syncHAndDOutput(device);
+	}
+	assert(cudaStreamSynchronize(stream) == cudaSuccess);
+	assert(cudaStreamDestroy(stream) == cudaSuccess);
+
 	for (int i = 0; i < (int)output_nodes.size(); ++i) {
 		const std::string node_name = output_nodes[i];
 		for (int j = 0; j < batch_size; ++j) {
@@ -418,6 +427,19 @@ void test_executeModelErrorOperations()
 	const int layer_id = model_executeModelErrorOperations.getNode("4").getTensorIndex().first;
 	model_interpreter.executeModelErrorOperations(expected, layer_id, solver, solver_grad, 0);
 
+	cudaStream_t stream; // The stream will be destroyed by GpuStreamDevice once the function goes out of scope!
+	assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess);
+	Eigen::GpuStreamDevice stream_device(&stream, 0);
+	Eigen::GpuDevice device(&stream_device);
+	auto nodes_map = model_executeModelErrorOperations.getNodesMap();
+	for (int i = 0; i < (int)output_nodes.size(); ++i) {
+		const std::string node_name = output_nodes[i];
+		model_interpreter.getLayerTensor(nodes_map.at(node_name)->getTensorIndex().first)->syncHAndDError(device);
+	}
+	model_interpreter.getModelError()->syncHAndDError(device);
+	assert(cudaStreamSynchronize(stream) == cudaSuccess);
+	assert(cudaStreamDestroy(stream) == cudaSuccess);
+
 	Eigen::Tensor<float, 2> error(batch_size, memory_size);
 	error.setValues({ {105.25}, {171.25}, {253.25}, {351.25} });
 	for (int j = 0; j < batch_size; ++j) {
@@ -429,7 +451,6 @@ void test_executeModelErrorOperations()
 	// TODO: include full memory size
 	Eigen::Tensor<float, 2> node_error(batch_size, (int)output_nodes.size());
 	node_error.setValues({ {-7.5, -7}, {-9.5, -9}, {-11.5, -11}, {-13.5, -13} });
-	auto nodes_map = model_executeModelErrorOperations.getNodesMap();
 	for (int i = 0; i < (int)output_nodes.size(); ++i) {
 		const std::string node_name = output_nodes[i];
 		for (int j = 0; j < batch_size; ++j) {
