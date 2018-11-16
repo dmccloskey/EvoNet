@@ -472,7 +472,7 @@ public:
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 2>> error_tensor(error, batch_size, memory_size);
 			Eigen::array<int, 2> bcast = { layer_size, 1 };
 			auto predicted_chip = predicted_tensor.chip(time_step, 1);
-			auto exps = (predicted_chip - predicted_chip.maximum(Eigen::array<int, 1>({ 1 }))).exp();
+			auto exps = (predicted_chip - predicted_chip.maximum(Eigen::array<int, 1>({ 1 })).broadcast(bcast)).exp();
 			auto stable_softmax = exps / exps.sum(Eigen::array<int, 1>({ 1 })).broadcast(bcast);
 
 			//error_tensor.chip(time_step, 1).device(device) += ((-expected_tensor * (stable_softmax.unaryExpr(ClipTensorOp<TensorT>(1e-6, 0, 1)).log())) * expected_tensor.constant(1 / layer_size)).sum(Eigen::array<int, 1>({ 1 }));

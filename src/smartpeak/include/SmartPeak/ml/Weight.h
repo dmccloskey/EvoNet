@@ -386,24 +386,24 @@ private:
 //		//checkWeight(); // Nice to have
 //	}
 
-	template<typename TensorT>
-	void Weight<TensorT>::updateWeight(const TensorT& error)
-	{
-		if (solver_->getName() == "DummySolverOp")
-			return;
-		const TensorT new_weight = solver_->operator()(weight_data_->getWeight()(0), getDrop()*error);
-		weight_data_->setWeight(solver_->clipGradient(new_weight)); // [TODO: move to GPU/CPU device]
-		//checkWeight(); // Nice to have
-	}
+	//template<typename TensorT>
+	//void Weight<TensorT>::updateWeight(const TensorT& error)
+	//{
+	//	if (solver_->getName() == "DummySolverOp")
+	//		return;
+	//	const TensorT new_weight = solver_->operator()(weight_data_->getWeight()(0), getDrop()*error);
+	//	weight_data_->setWeight(solver_->clipGradient(new_weight)); // [TODO: move to GPU/CPU device]
+	//	//checkWeight(); // Nice to have
+	//}
 
-	template<typename TensorT>
-	void Weight<TensorT>::checkWeight()
-	{
-		if (weight_data_->getWeight()(0) < weight_min_)
-			weight_data_->getWeight()(0) = weight_min_;
-		else if (weight_data_->getWeight()(0) > weight_max_)
-			weight_data_->getWeight()(0) = weight_max_;
-	}
+	//template<typename TensorT>
+	//void Weight<TensorT>::checkWeight()
+	//{
+	//	if (weight_data_->getWeight()(0) < weight_min_)
+	//		weight_data_->getWeight()(0) = weight_min_;
+	//	else if (weight_data_->getWeight()(0) > weight_max_)
+	//		weight_data_->getWeight()(0) = weight_max_;
+	//}
 }
 
 #endif //SMARTPEAK_WEIGHT_H
