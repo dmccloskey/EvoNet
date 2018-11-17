@@ -516,10 +516,10 @@ namespace SmartPeak
 			// Copy host to device
 			std::size_t bytes = batch_size * memory_size * layer_size * sizeof(TensorT);
 			std::size_t model_bytes = batch_size * memory_size * sizeof(TensorT);
+			device.memcpyHostToDevice(d_expected, h_expected, expected_bytes);
 			if (copyHostToDevice) {
 				device.memcpyHostToDevice(d_node_outputs, h_node_outputs, bytes); // only when testing
 				device.memcpyHostToDevice(d_node_errors, h_node_errors, bytes); // only once
-				device.memcpyHostToDevice(d_expected, h_expected, expected_bytes);
 				device.memcpyHostToDevice(d_model_error, h_model_error, model_bytes); // only once
 			}
 

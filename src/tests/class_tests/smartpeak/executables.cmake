@@ -22,6 +22,7 @@ set(graph_executables_list
 
 set(ml_executables_list
   ActivationFunction_test
+  ActivationFunctionTensor_test
   IntegrationFunction_test
   #IntegrationFunction2_test
   IntegrationFunctionTensor_test

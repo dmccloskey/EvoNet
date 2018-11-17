@@ -14,9 +14,6 @@
 // .cpp
 #include <SmartPeak/core/Preprocessing.h>
 
-#define maxFunc(a,b)            (((a) > (b)) ? (a) : (b))
-#define minFunc(a,b)            (((a) < (b)) ? (a) : (b))
-
 namespace SmartPeak
 {
 

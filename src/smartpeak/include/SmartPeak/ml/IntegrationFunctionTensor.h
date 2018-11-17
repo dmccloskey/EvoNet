@@ -207,7 +207,7 @@ public:
 	};
 
 	/**
-		@brief Fan In Max integration function
+		@brief Max integration function
 	*/
 	template<typename TensorT, typename DeviceT>
 	class MaxTensorOp : public IntegrationTensorOp<TensorT, DeviceT>
@@ -248,7 +248,7 @@ public:
 	};
 
 	/**
-		@brief Fan In Mean integration function
+		@brief Mean integration function
 	*/
 	template<typename TensorT, typename DeviceT>
 	class MeanTensorOp : public IntegrationTensorOp<TensorT, DeviceT>
@@ -291,7 +291,7 @@ public:
 	};
 
 	/**
-		@brief Fan In Var integration function
+		@brief Var integration function
 	*/
 	template<typename TensorT, typename DeviceT>
 	class VarTensorOp : public IntegrationTensorOp<TensorT, DeviceT>
@@ -330,7 +330,7 @@ public:
 	};
 
 	/**
-		@brief Fan In Count integration function
+		@brief Count integration function
 	*/
 	template<typename TensorT, typename DeviceT>
 	class CountTensorOp : public IntegrationTensorOp<TensorT, DeviceT>
@@ -470,93 +470,115 @@ public:
 		std::string getName() const { return "SumErrorTensorOp"; };
 	};
 
-	///**
-	//@brief Product integration error function
-	//*/
-	//template<typename TensorT, typename DeviceT>
-	//class ProdErrorOp : public IntegrationErrorTensorOp<TensorT, DeviceT>
-	//{
-	//public:
-	//	ProdErrorOp() {};
-	//	~ProdErrorOp() {};
-	//	void operator()(TensorT* source_error, TensorT *source_input, TensorT* weight, TensorT* sink_output, TensorT* sink_error, TensorT* sink_derivative, const int& n_input_nodes, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, const int& source_time_step, const int& sink_time_step, DeviceT& device)  {
-	//		Eigen::Tensor<TensorT, 1> eps(weight.dimension(0));
-	//		eps.setConstant(this->eps_);
-	//		return (source_net_input * source_error / (sink_output + eps)).unaryExpr(ClipOp<TensorT>(1e-6, -1e9, 1e9));
-	//	};
-	//	std::string getName() const { return "ProdErrorOp"; };
-	//};
+	/**
+	@brief Product integration error function
+	*/
+	template<typename TensorT, typename DeviceT>
+	class ProdErrorTensorOp : public IntegrationErrorTensorOp<TensorT, DeviceT>
+	{
+	public:
+		ProdErrorTensorOp() {};
+		~ProdErrorTensorOp() {};
+		void operator()(TensorT* source_error, TensorT *source_input, TensorT* weight, TensorT* sink_output, TensorT* sink_error, TensorT* sink_derivative, const int& n_input_nodes, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, const int& source_time_step, const int& sink_time_step, DeviceT& device)  {
+			//TODO
+			
+			//return (source_net_input * source_error / (sink_output + eps)).unaryExpr(ClipOp<TensorT>(1e-6, -1e9, 1e9));
 
-	///**
-	//@brief Max integration error function
-	//*/
-	//template<typename TensorT, typename DeviceT>
-	//class MaxErrorOp : public IntegrationErrorTensorOp<TensorT, DeviceT>
-	//{
-	//public:
-	//	MaxErrorOp() {};
-	//	~MaxErrorOp() {};
-	//	void operator()(TensorT* source_error, TensorT *source_input, TensorT* weight, TensorT* sink_output, TensorT* sink_error, TensorT* sink_derivative, const int& n_input_nodes, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, const int& source_time_step, const int& sink_time_step, DeviceT& device) 
-	//	{
-	//		auto perc_max_tensor = (sink_output / source_net_input).unaryExpr([](const TensorT& v) {
-	//			if (v < 1 - 1e-6) 
-	//				return 0;
-	//			else 
-	//				return 1;
-	//		});
-	//		return weight * source_error * perc_max_tensor;
-	//	};
-	//	std::string getName() const { return "MaxErrorOp"; };
-	//};
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> sink_error_tensor(sink_error, batch_size, memory_size, sink_layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> sink_derivative_tensor(sink_derivative, batch_size, memory_size, sink_layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> source_error_tensor(source_error, batch_size, memory_size, source_layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> source_input_tensor(source_input, batch_size, memory_size, sink_layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weight_tensor(weight, sink_layer_size, source_layer_size); // NOTE: source/sink are reversed
+			Eigen::array<Eigen::IndexPair<int>, 1> product_dims = { Eigen::IndexPair<int>(1, 0) }; // NOTE: we are taking the transpose of the weight matrix
+			sink_error_tensor.chip(sink_time_step, 1).device(device) = (source_error_tensor.chip(source_time_step, 1)).contract(weight_tensor.shuffle(Eigen::array<int, 2>({ 1, 0 })), product_dims) * (sink_derivative_tensor.chip(source_time_step, 1));
 
-	///**
-	//@brief Mean integration error function
-	//*/
-	//template<typename TensorT, typename DeviceT>
-	//class MeanErrorOp : public IntegrationErrorTensorOp<TensorT, DeviceT>
-	//{
-	//public:
-	//	MeanErrorOp() {};
-	//	~MeanErrorOp() {};
-	//	void operator()(TensorT* source_error, TensorT *source_input, TensorT* weight, TensorT* sink_output, TensorT* sink_error, TensorT* sink_derivative, const int& n_input_nodes, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, const int& source_time_step, const int& sink_time_step, DeviceT& device)  {
-	//		return weight * source_error / n;
-	//	};
-	//	std::string getName() const { return "MeanErrorOp"; };
-	//};
+			//Eigen::array<int, 2> bcast = { batch_size, 1 };
+			//Eigen::array<int, 1> dims({ 1 });
+			//sink_input_tensor.chip(sink_time_step, 1).device(device) = sink_input_tensor.chip(sink_time_step, 1) * (source_output_tensor.chip(source_time_step, 1) * weight.broadcast(bcast)).prod(dims);
 
-	///**
-	//@brief VarMod integration error function
-	//*/
-	//template<typename TensorT, typename DeviceT>
-	//class VarModErrorOp : public IntegrationErrorTensorOp<TensorT, DeviceT>
-	//{
-	//public:
-	//	VarModErrorOp() {};
-	//	~VarModErrorOp() {};
-	//	void operator()(TensorT* source_error, TensorT *source_input, TensorT* weight, TensorT* sink_output, TensorT* sink_error, TensorT* sink_derivative, const int& n_input_nodes, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, const int& source_time_step, const int& sink_time_step, DeviceT& device)  {
-	//		Eigen::Tensor<TensorT, 1> constant(weight.dimension(0));
-	//		constant.setConstant(2);
-	//		return weight * source_error * constant / n;
-	//	};
-	//	std::string getName() const { return "VarModErrorOp"; };
-	//};
+		};
+		std::string getName() const { return "ProdErrorTensorOp"; };
+	};
 
-	///**
-	//@brief Count integration error function
-	//*/
-	//template<typename TensorT, typename DeviceT>
-	//class CountErrorOp : public IntegrationErrorTensorOp<TensorT, DeviceT>
-	//{
-	//public:
-	//	CountErrorOp() {};
-	//	~CountErrorOp() {};
-	//	void operator()(TensorT* source_error, TensorT *source_input, TensorT* weight, TensorT* sink_output, TensorT* sink_error, TensorT* sink_derivative, const int& n_input_nodes, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, const int& source_time_step, const int& sink_time_step, DeviceT& device)  {
-	//		Eigen::Tensor<TensorT, 1> constant(weight.dimension(0));
-	//		constant.setConstant(0);
-	//		return constant;
-	//	};
-	//	std::string getName() const { return "CountErrorOp"; };
-	//};
+	/**
+	@brief Max integration error function
+	*/
+	template<typename TensorT, typename DeviceT>
+	class MaxErrorTensorOp : public IntegrationErrorTensorOp<TensorT, DeviceT>
+	{
+	public:
+		MaxErrorTensorOp() {};
+		~MaxErrorTensorOp() {};
+		void operator()(TensorT* source_error, TensorT *source_input, TensorT* weight, TensorT* sink_output, TensorT* sink_error, TensorT* sink_derivative, const int& n_input_nodes, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, const int& source_time_step, const int& sink_time_step, DeviceT& device) 
+		{
+			// TODO
+			//auto perc_max_tensor = (sink_output / source_net_input).unaryExpr([](const TensorT& v) {
+			//	if (v < 1 - 1e-6) 
+			//		return 0;
+			//	else 
+			//		return 1;
+			//});
+			//return weight * source_error * perc_max_tensor;			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> sink_error_tensor(sink_error, batch_size, memory_size, sink_layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> sink_derivative_tensor(sink_derivative, batch_size, memory_size, sink_layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> source_error_tensor(source_error, batch_size, memory_size, source_layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weight_tensor(weight, sink_layer_size, source_layer_size); // NOTE: source/sink are reversed
+			Eigen::array<Eigen::IndexPair<int>, 1> product_dims = { Eigen::IndexPair<int>(1, 0) }; // NOTE: we are taking the transpose of the weight matrix
+			sink_error_tensor.chip(sink_time_step, 1).device(device) = (source_error_tensor.chip(source_time_step, 1)).contract(weight_tensor.shuffle(Eigen::array<int, 2>({ 1, 0 })), product_dims) * (sink_derivative_tensor.chip(source_time_step, 1));
+
+		};
+		std::string getName() const { return "MaxErrorTensorOp"; };
+	};
+
+	/**
+	@brief Mean integration error function
+	*/
+	template<typename TensorT, typename DeviceT>
+	class MeanErrorTensorOp : public IntegrationErrorTensorOp<TensorT, DeviceT>
+	{
+	public:
+		MeanErrorTensorOp() {};
+		~MeanErrorTensorOp() {};
+		void operator()(TensorT* source_error, TensorT *source_input, TensorT* weight, TensorT* sink_output, TensorT* sink_error, TensorT* sink_derivative, const int& n_input_nodes, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, const int& source_time_step, const int& sink_time_step, DeviceT& device)  {
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> sink_error_tensor(sink_error, batch_size, memory_size, sink_layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> sink_derivative_tensor(sink_derivative, batch_size, memory_size, sink_layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> source_error_tensor(source_error, batch_size, memory_size, source_layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weight_tensor(weight, sink_layer_size, source_layer_size); // NOTE: source/sink are reversed
+			Eigen::array<Eigen::IndexPair<int>, 1> product_dims = { Eigen::IndexPair<int>(1, 0) }; // NOTE: we are taking the transpose of the weight matrix
+			sink_error_tensor.chip(sink_time_step, 1).device(device) += (source_error_tensor.chip(source_time_step, 1)).contract(weight_tensor.shuffle(Eigen::array<int, 2>({ 1, 0 })), product_dims) * sink_error_tensor.constant(1/n_input_nodes) * (sink_derivative_tensor.chip(source_time_step, 1));
+		};
+		std::string getName() const { return "MeanErrorTensorOp"; };
+	};
+
+	/**
+	@brief VarMod integration error function
+	*/
+	template<typename TensorT, typename DeviceT>
+	class VarErrorTensorOp : public IntegrationErrorTensorOp<TensorT, DeviceT>
+	{
+	public:
+		VarErrorTensorOp() {};
+		~VarErrorTensorOp() {};
+		void operator()(TensorT* source_error, TensorT *source_input, TensorT* weight, TensorT* sink_output, TensorT* sink_error, TensorT* sink_derivative, const int& n_input_nodes, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, const int& source_time_step, const int& sink_time_step, DeviceT& device)  {
+			//TODO
+		};
+		std::string getName() const { return "VarErrorTensorOp"; };
+	};
+
+	/**
+	@brief Count integration error function
+	*/
+	template<typename TensorT, typename DeviceT>
+	class CountErrorTensorOp : public IntegrationErrorTensorOp<TensorT, DeviceT>
+	{
+	public:
+		CountErrorTensorOp() {};
+		~CountErrorTensorOp() {};
+		void operator()(TensorT* source_error, TensorT *source_input, TensorT* weight, TensorT* sink_output, TensorT* sink_error, TensorT* sink_derivative, const int& n_input_nodes, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, const int& source_time_step, const int& sink_time_step, DeviceT& device)  {
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> sink_error_tensor(sink_error, batch_size, memory_size, sink_layer_size);
+			sink_error_tensor.chip(sink_time_step, 1).device(device) = sink_error_tensor.chip(sink_time_step, 1).constant(0);
+		};
+		std::string getName() const { return "CountErrorTensorOp"; };
+	};
 
 	/**
 	@brief Base class for all integration error functions.
@@ -638,81 +660,82 @@ public:
 	//@brief Product integration error function
 	//*/
 	//template<typename TensorT, typename DeviceT>
-	//class ProdWeightGradOp : public IntegrationWeightGradTensorOp<TensorT, DeviceT>
+	//class ProdWeightGradTensorOp : public IntegrationWeightGradTensorOp<TensorT, DeviceT>
 	//{
 	//public:
-	//	ProdWeightGradOp() { this->setNetWeightError(TensorT(0)); };
-	//	~ProdWeightGradOp() {};
+	//	ProdWeightGradTensorOp() { this->setNetWeightError(TensorT(0)); };
+	//	~ProdWeightGradTensorOp() {};
 	//	void operator()(TensorT* sink_error, TensorT* source_output, TensorT* weight, TensorT* source_input, TensorT* weight_error, const int& n_input_nodes, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, DeviceT& device) {
 	//		Eigen::Tensor<TensorT, 0> derivative_mean_tensor = ((-sink_error * source_net_input / weight).unaryExpr(ClipOp<TensorT>(1e-6, -1e9, 1e9))).mean(); // average derivative
 	//		this->net_weight_error_ += derivative_mean_tensor(0);
 	//	};
-	//	std::string getName() const { return "ProdWeightGradOp"; };
+	//	std::string getName() const { return "ProdWeightGradTensorOp"; };
 	//};
 
 	///**
 	//@brief Max integration error function
 	//*/
 	//template<typename TensorT, typename DeviceT>
-	//class MaxWeightGradOp : public IntegrationWeightGradTensorOp<TensorT, DeviceT>
+	//class MaxWeightGradTensorOp : public IntegrationWeightGradTensorOp<TensorT, DeviceT>
 	//{
 	//public:
-	//	MaxWeightGradOp() { this->setNetWeightError(TensorT(0)); };
-	//	~MaxWeightGradOp() {};
+	//	MaxWeightGradTensorOp() {};
+	//	~MaxWeightGradTensorOp() {};
 	//	void operator()(TensorT* sink_error, TensorT* source_output, TensorT* weight, TensorT* source_input, TensorT* weight_error, const int& n_input_nodes, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, DeviceT& device) {
 	//		Eigen::Tensor<TensorT, 0> derivative_mean_tensor = (-sink_error * source_output).mean(); // average derivative
 	//		this->net_weight_error_ += derivative_mean_tensor(0);
 	//	};
-	//	std::string getName() const { return "MaxWeightGradOp"; };
+	//	std::string getName() const { return "MaxWeightGradTensorOp"; };
 	//};
 
-	///**
-	//@brief Count integration error function
-	//*/
-	//template<typename TensorT, typename DeviceT>
-	//class CountWeightGradOp : public IntegrationWeightGradTensorOp<TensorT, DeviceT>
-	//{
-	//public:
-	//	CountWeightGradOp() { this->setNetWeightError(TensorT(0)); };
-	//	~CountWeightGradOp() {};
-	//	void operator()(TensorT* sink_error, TensorT* source_output, TensorT* weight, TensorT* source_input, TensorT* weight_error, const int& n_input_nodes, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, DeviceT& device) {
-	//		this->net_weight_error_ += 0;
-	//	};
-	//	std::string getName() const { return "CountWeightGradOp"; };
-	//};
+	/**
+	@brief Count integration error function
+	*/
+	template<typename TensorT, typename DeviceT>
+	class CountWeightGradTensorOp : public IntegrationWeightGradTensorOp<TensorT, DeviceT>
+	{
+	public:
+		CountWeightGradTensorOp() {};
+		~CountWeightGradTensorOp() {};
+		void operator()(TensorT* sink_error, TensorT* source_output, TensorT* weight, TensorT* source_input, TensorT* weight_error, const int& n_input_nodes, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, DeviceT& device) {
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weight_error_tensor(weight_error, source_layer_size, sink_layer_size);
+			weight_error_tensor.device(device) = weight_error_tensor.constant(0);
+		};
+		std::string getName() const { return "CountWeightGradTensorOp"; };
+	};
 
 	///**
 	//@brief Mean integration error function
 	//*/
 	//template<typename TensorT, typename DeviceT>
-	//class MeanWeightGradOp : public IntegrationWeightGradTensorOp<TensorT, DeviceT>
+	//class MeanWeightGradTensorOp : public IntegrationWeightGradTensorOp<TensorT, DeviceT>
 	//{
 	//public:
-	//	MeanWeightGradOp() { this->setNetWeightError(TensorT(0)); };
-	//	~MeanWeightGradOp() {};
+	//	MeanWeightGradTensorOp() {};
+	//	~MeanWeightGradTensorOp() {};
 	//	void operator()(TensorT* sink_error, TensorT* source_output, TensorT* weight, TensorT* source_input, TensorT* weight_error, const int& n_input_nodes, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, DeviceT& device) {
 	//		Eigen::Tensor<TensorT, 0> derivative_mean_tensor = (-sink_error * source_output / n).mean(); // average derivative
 	//		this->net_weight_error_ += derivative_mean_tensor(0);
 	//	};
-	//	std::string getName() const { return "MeanWeightGradOp"; };
+	//	std::string getName() const { return "MeanWeightGradTensorOp"; };
 	//};
 
 	///**
-	//@brief VarMod integration error function
+	//@brief Var integration error function
 	//*/
 	//template<typename TensorT, typename DeviceT>
-	//class VarModWeightGradOp : public IntegrationWeightGradTensorOp<TensorT, DeviceT>
+	//class VarWeightGradTensorOp : public IntegrationWeightGradTensorOp<TensorT, DeviceT>
 	//{
 	//public:
-	//	VarModWeightGradOp() { this->setNetWeightError(TensorT(0)); };
-	//	~VarModWeightGradOp() {};
+	//	VarWeightGradTensorOp() {};
+	//	~VarWeightGradTensorOp() {};
 	//	void operator()(TensorT* sink_error, TensorT* source_output, TensorT* weight, TensorT* source_input, TensorT* weight_error, const int& n_input_nodes, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, DeviceT& device) {
 	//		Eigen::Tensor<TensorT, 1> constant(weight.dimension(0));
 	//		constant.setConstant(2);
 	//		Eigen::Tensor<TensorT, 0> derivative_mean_tensor = (-sink_error * source_output * constant / n).mean(); // average derivative
 	//		this->net_weight_error_ += derivative_mean_tensor(0);
 	//	};
-	//	std::string getName() const { return "VarModWeightGradOp"; };
+	//	std::string getName() const { return "VarWeightGradTensorOp"; };
 	//};
 }
 #endif //SMARTPEAK_TENSORINTEGRATIONFUNCTION_H

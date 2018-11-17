@@ -3,11 +3,15 @@
 
 #include <unsupported/Eigen/CXX11/Tensor>
 #include <vector>
+#include <algorithm>
 #include <map>
 #include <random>
 
 #define _USE_MATH_DEFINES
 #include <math.h>
+
+#define maxFunc(a,b)            (((a) > (b)) ? (a) : (b))
+#define minFunc(a,b)            (((a) < (b)) ? (a) : (b))
 
 namespace SmartPeak
 {
@@ -377,6 +381,23 @@ namespace SmartPeak
 	private:
 		TensorT offset_ = 0;
 	};
+
+	/*
+	@brief Test absolute and relative closeness of values
+
+	References: http://realtimecollisiondetection.net/blog/?p=89
+
+	@param: lhs Left Hand Side to compare
+	@param: rhs Right Hand Side to Compare
+	@param: rel_tol Relative Tolerance threshold
+	@param: abs_tol Absolute Tolerance threshold
+
+	@returns True or False
+	*/
+	template<typename T>
+	bool assert_close(const T& lhs, const T& rhs, T rel_tol = 1e-4, T abs_tol = 1e-4) {
+		return (std::fabs(lhs - rhs) <= maxFunc(abs_tol, rel_tol * maxFunc(fabs(lhs), fabs(rhs)) ));
+	}
 
 	///**
 	//@brief Functor for use with base classes.

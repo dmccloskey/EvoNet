@@ -438,7 +438,7 @@ namespace SmartPeak
 
 		@param[in, out] model The network model
 		*/
-		void getModelResults(Model<TensorT>& model);
+		virtual void getModelResults(Model<TensorT>& model) = 0;
 
 		void setModelResources(const ModelResources& model_resources); ///< model_resources setter
 		ModelResources getModelResources(); ///< model_resources getter
@@ -517,11 +517,11 @@ namespace SmartPeak
 	{
 		for (auto& layer_tensor: layer_tensors_) {
 			Eigen::Tensor<TensorT, 3> zero((int)layer_tensor->getBatchSize(), (int)layer_tensor->getMemorySize(), (int)layer_tensor->getLayerSize());	zero.setConstant(0);
-			layer_tensor->getInput() = zero;
-			layer_tensor->getOutput() = zero;
-			layer_tensor->getDerivative() = zero;
-			layer_tensor->getError() = zero;
-			layer_tensor->getDt() = zero;
+			layer_tensor->setInput(zero);
+			layer_tensor->setOutput(zero);
+			layer_tensor->setDerivative(zero);
+			layer_tensor->setError(zero);
+			layer_tensor->setDt(zero);
 		}
 	}
 
@@ -529,7 +529,7 @@ namespace SmartPeak
 	inline void ModelInterpreter<TensorT, DeviceT>::reInitModelError()
 	{
 		Eigen::Tensor<TensorT, 2> zero((int)model_error_->getBatchSize(), (int)model_error_->getMemorySize());	zero.setConstant(0);
-		model_error_->getError() = zero;
+		model_error_->setError(zero);
 	}
 
 	template<typename TensorT, typename DeviceT>
@@ -1341,31 +1341,6 @@ namespace SmartPeak
 	{
 		executeWeightErrorOperations();
 		executeWeightUpdateOperations();
-	}
-
-	template<typename TensorT, typename DeviceT>
-	inline void ModelInterpreter<TensorT, DeviceT>::getModelResults(Model<TensorT>& model)
-	{
-		// copy out the weight values
-		for (auto& weight_map : model.getWeightsMap()) {
-			const int tensor_index = std::get<0>(weight_map.second->getTensorIndex()[0]);
-			const int layer1_index = std::get<1>(weight_map.second->getTensorIndex()[0]);
-			const int layer2_index = std::get<2>(weight_map.second->getTensorIndex()[0]);
-			weight_map.second->setWeight(getWeightTensor(tensor_index)->getWeight()(layer1_index, layer2_index));
-		}
-
-		// copy out the model error
-		model.setError(model_error_->getError());
-
-		// copy out the output node values
-		for (auto& output_node : model.getOutputNodes()) {
-			// NOTE: there is a strange bug where the tensor indices of the output nodes pointer are not updated
-			//const int tensor_index = output_node->getTensorIndex().first;
-			//const int layer_index = output_node->getTensorIndex().second;
-			const int tensor_index = model.getNodesMap().at(output_node->getName())->getTensorIndex().first;
-			const int layer_index = model.getNodesMap().at(output_node->getName())->getTensorIndex().second;
-			output_node->setOutput(getLayerTensor(tensor_index)->getOutput().chip(layer_index,2));
-		}
 	}
 
 	template<typename TensorT, typename DeviceT>

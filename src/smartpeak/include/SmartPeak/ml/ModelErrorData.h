@@ -90,7 +90,7 @@ protected:
 	inline void ModelErrorData<TensorT, DeviceT>::initModelErrorData(const int& batch_size, const int& memory_size)
 	{
 		setBatchSize(batch_size);	setMemorySize(memory_size);
-		Eigen::Tensor<TensorT, 2> zero(batch_size, memory_size); zero.setConstant(0);
+		Eigen::Tensor<TensorT, 2> zero(batch_size, memory_size); zero.setZero();
 		setError(zero);
 	}
 

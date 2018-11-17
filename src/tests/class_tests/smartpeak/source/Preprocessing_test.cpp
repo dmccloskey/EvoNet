@@ -122,4 +122,10 @@ BOOST_AUTO_TEST_CASE(SFRandBinaryOp)
 	BOOST_CHECK_CLOSE(result(1), 0.0, 1e-3);
 }
 
+BOOST_AUTO_TEST_CASE(assertClose)
+{
+	BOOST_CHECK(!assert_close<float>(1.1, 1.2, 1e-4, 1e-4));
+	BOOST_CHECK(assert_close<float>(1.1, 1.2, 1, 1));
+}
+
 BOOST_AUTO_TEST_SUITE_END()

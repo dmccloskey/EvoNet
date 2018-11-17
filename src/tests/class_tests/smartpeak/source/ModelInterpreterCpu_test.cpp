@@ -364,10 +364,6 @@ BOOST_AUTO_TEST_CASE(executeForwardPropogationOperations)
 
 	// create the bias
 	model_interpreter.initBiases(model_executeForwardPropogationOperations);
-	//const std::vector<std::string> biases_ids = { "6", "7" };
-	//Eigen::Tensor<float, 3> biases(batch_size, memory_size, (int)biases_ids.size());
-	//biases.setConstant(1);
-	//model_interpreter.mapValuesToLayers(model_mapValuesToLayers, biases, biases_ids, "output");
 
 	model_interpreter.executeForwardPropogationOperations(0);
 
@@ -820,11 +816,11 @@ BOOST_AUTO_TEST_CASE(CETT)
 	// y = m1*(m2*x + b*yprev) where m1 = 1, m2 = 1 and b = -1
 	Eigen::Tensor<float, 3> expected(batch_size, memory_size, (int)output_nodes.size());
 	expected.setValues(
-		{ { { 1 },{ 1 },{ 2 },{ 2 },{ 3 },{ 3 },{ 4 },{ 4 } },
-		{ { 1 },{ 2 },{ 2 },{ 3 },{ 3 },{ 4 },{ 4 },{ 5 } },
-		{ { 2 },{ 2 },{ 3 },{ 3 },{ 4 },{ 4 },{ 5 },{ 5 } },
-		{ { 2 },{ 3 },{ 3 },{ 4 },{ 4 },{ 5 },{ 5 },{ 6 } },
-		{ { 3 },{ 3 },{ 4 },{ 4 },{ 5 },{ 5 },{ 6 },{ 6 } } }
+		{ { { 4 },{ 4 },{ 3 },{ 3 },{ 2 },{ 2 },{ 1 },{ 1 } },
+		{ { 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 },{ 2 },{ 1 } },
+		{ { 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 },{ 2 } },
+		{ { 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 } },
+		{ { 6 },{ 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 } } }
 	);
 	LossFunctionOp<float>* loss_function = new MSEOp<float>();
 	LossFunctionGradOp<float>* loss_function_grad = new MSEGradOp<float>();
@@ -895,11 +891,11 @@ BOOST_AUTO_TEST_CASE(TBPTT)
 	// y = m1*(m2*x + b*yprev) where m1 = 1, m2 = 1 and b = -1
 	Eigen::Tensor<float, 3> expected(batch_size, memory_size, (int)output_nodes.size());
 	expected.setValues(
-		{ { { 1 },{ 1 },{ 2 },{ 2 },{ 3 },{ 3 },{ 4 },{ 4 } },
-		{ { 1 },{ 2 },{ 2 },{ 3 },{ 3 },{ 4 },{ 4 },{ 5 } },
-		{ { 2 },{ 2 },{ 3 },{ 3 },{ 4 },{ 4 },{ 5 },{ 5 } },
-		{ { 2 },{ 3 },{ 3 },{ 4 },{ 4 },{ 5 },{ 5 },{ 6 } },
-		{ { 3 },{ 3 },{ 4 },{ 4 },{ 5 },{ 5 },{ 6 },{ 6 } } }
+		{ { { 4 },{ 4 },{ 3 },{ 3 },{ 2 },{ 2 },{ 1 },{ 1 } },
+		{ { 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 },{ 2 },{ 1 } },
+		{ { 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 },{ 2 } },
+		{ { 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 } },
+		{ { 6 },{ 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 } } }
 	);
 	LossFunctionOp<float>* loss_function = new MSEOp<float>();
 	LossFunctionGradOp<float>* loss_function_grad = new MSEGradOp<float>();
