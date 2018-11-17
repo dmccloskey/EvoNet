@@ -82,11 +82,14 @@ public:
     ELUTensorOp(){}; 
     ELUTensorOp(const TensorT& alpha): alpha_(alpha){}; 
     ~ELUTensorOp(){};
-    void operator()(TensorT* x_I, TensorT* x_O, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
+		void operator()(TensorT* x_I, TensorT* x_O, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
 			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(ELUOp<TensorT>(alpha_));
-			out.chip(time_step, 1).device(device) = (x.chip(time_step, 1) > x.chip(time_step, 1).constant(0)).select(x.chip(time_step, 1), x.chip(time_step, 1).constant(alpha_) * (x.chip(time_step, 1).exp() - x.chip(time_step, 1).constant(1)));
+			out.chip(time_step, 1).device(device) = (x.chip(time_step, 1) > x.chip(time_step, 1).constant(0)).select(
+				x.chip(time_step, 1), 
+				x.chip(time_step, 1).constant(alpha_) * (x.chip(time_step, 1).exp() - x.chip(time_step, 1).constant(1)));
+		};
     void setAlpha(const TensorT& alpha) { alpha_ = alpha; };
     TensorT getAlpha() const { return alpha_; };
     std::string getName() const{return "ELUTensorOp";};
@@ -174,7 +177,7 @@ public:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
 			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(TanHOp<TensorT>());
-			//out.chip(time_step, 1).device(device) = [TODO]
+			out.chip(time_step, 1).device(device) = x.chip(time_step, 1).tanh();
 		};
     std::string getName() const{return "TanHTensorOp";};
   };
@@ -192,7 +195,7 @@ public:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
 			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(TanHGradOp<TensorT>());
-			//out.chip(time_step, 1).device(device) = [TODO]
+			out.chip(time_step, 1).device(device) = x.chip(time_step, 1).constant(1) - (x.chip(time_step, 1).tanh()).pow(2);
 		};
     std::string getName() const{return "TanHGradTensorOp";};
   };
