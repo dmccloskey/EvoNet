@@ -8,12 +8,11 @@ set(ml_executables_list
   MNIST_VAE_example
   AdditionProblem_example
   Metabolomics_example
-  #cxx11_tensor_multi_map
 )
 
 set(cuda_executables_list
   CUDA_example
-  CUDA_example2
+  MNIST_CovNet_Gpu_example
 )
 
 ### collect example executables
