@@ -157,10 +157,10 @@ public:
 		void operator()(TensorT* source_output, TensorT* weights, TensorT* sink_input, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, const int& source_time_step, const int& sink_time_step, DeviceT& device) {
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> sink_input_tensor(sink_input, batch_size, memory_size, sink_layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> source_output_tensor(source_output, batch_size, memory_size, source_layer_size);
-			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> weight(weights, 1, source_layer_size, sink_layer_size);
-			Eigen::array<int, 2> bcast = { batch_size, 1 };
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> weight_tensor(weights, 1, source_layer_size, sink_layer_size);
+			Eigen::array<int, 2> bcast = { batch_size, 0 };
 			Eigen::array<int, 1> dims({ 1 });
-			sink_input_tensor.chip(sink_time_step, 1).device(device) = sink_input_tensor.chip(sink_time_step, 1) * (source_output_tensor.chip(source_time_step, 1) * weight.broadcast(bcast)).prod(dims);
+			sink_input_tensor.chip(sink_time_step, 1).device(device) = sink_input_tensor.chip(sink_time_step, 1) * (source_output_tensor.chip(source_time_step, 1) * weight_tensor.broadcast(bcast)).prod(dims);
 		}
 		std::string getName() const { return "ProdTensorOp"; };
 	};
@@ -178,9 +178,9 @@ public:
 			assert(source_layer_size == sink_layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> sink_input_tensor(sink_input, batch_size, memory_size, sink_layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> source_output_tensor(source_output, batch_size, memory_size, source_layer_size);
-			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weight(weights, 1, source_layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weight_tensor(weights, 1, source_layer_size);
 			Eigen::array<int, 2> bcast = { batch_size, 1 };
-			sink_input_tensor.chip(sink_time_step, 1).device(device) = sink_input_tensor.chip(sink_time_step, 1).cwiseMax(source_output_tensor.chip(source_time_step, 1) * weight.broadcast(bcast));
+			sink_input_tensor.chip(sink_time_step, 1).device(device) = sink_input_tensor.chip(sink_time_step, 1).cwiseMax(source_output_tensor.chip(source_time_step, 1) * weight_tensor.broadcast(bcast));
 		}
 		std::string getName() const { return "SinglyConnectedMaxOp"; };
 	};
@@ -218,10 +218,10 @@ public:
 		void operator()(TensorT* source_output, TensorT* weights, TensorT* sink_input, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, const int& source_time_step, const int& sink_time_step, DeviceT& device) {
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> sink_input_tensor(sink_input, batch_size, memory_size, sink_layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> source_output_tensor(source_output, batch_size, memory_size, source_layer_size);
-			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> weight(weights, 1, source_layer_size, sink_layer_size);
-			Eigen::array<int, 2> bcast = { batch_size, 1 };
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> weight_tensor(weights, 1, source_layer_size, sink_layer_size);
+			Eigen::array<int, 2> bcast = { batch_size, 0 };
 			Eigen::array<int, 1> dims({ 1 });
-			sink_input_tensor.chip(sink_time_step, 1).device(device) = sink_input_tensor.chip(sink_time_step, 1).cwiseMax((source_output_tensor.chip(source_time_step, 1) * weight.broadcast(bcast)).maximum(dims));
+			sink_input_tensor.chip(sink_time_step, 1).device(device) = sink_input_tensor.chip(sink_time_step, 1).cwiseMax((source_output_tensor.chip(source_time_step, 1) * weight_tensor.broadcast(bcast)).maximum(dims));
 		}
 		std::string getName() const { return "MaxTensorOp"; };
 	};
@@ -240,7 +240,7 @@ public:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> sink_input_tensor(sink_input, batch_size, memory_size, sink_layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> source_output_tensor(source_output, batch_size, memory_size, source_layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weight(weights, 1, source_layer_size);
-			Eigen::array<int, 2> bcast = { batch_size, 1 };
+			Eigen::array<int, 2> bcast = { batch_size, 0 };
 			Eigen::array<int, 1> dims({ 1 });
 			sink_input_tensor.chip(sink_time_step, 1).device(device) = (source_output_tensor.chip(source_time_step, 1) * weight.broadcast(bcast)).mean(dims);
 		}
@@ -260,7 +260,7 @@ public:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> sink_input_tensor(sink_input, batch_size, memory_size, sink_layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> source_output_tensor(source_output, batch_size, memory_size, source_layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> weight(weights, 1, source_layer_size, sink_layer_size);
-			Eigen::array<int, 2> bcast = { batch_size, 1 };
+			Eigen::array<int, 2> bcast = { batch_size, 0 };
 			Eigen::array<int, 1> dims({ 1 });
 			sink_input_tensor.chip(sink_time_step, 1).device(device) = (source_output_tensor.chip(source_time_step, 1) * weight.broadcast(bcast)).mean(dims);
 		}
@@ -281,7 +281,7 @@ public:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> sink_input_tensor(sink_input, batch_size, memory_size, sink_layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> source_output_tensor(source_output, batch_size, memory_size, source_layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weight(weights, 1, source_layer_size);
-			Eigen::array<int, 2> bcast = { batch_size, 1 };
+			Eigen::array<int, 2> bcast = { batch_size, 0 };
 			Eigen::array<int, 1> dims({ 1 });
 			auto mean = (source_output_tensor.chip(source_time_step, 1) * weight.broadcast(bcast)).mean(dims);
 			auto input = (source_output_tensor.chip(source_time_step, 1) * weight.broadcast(bcast)) - mean;
@@ -303,7 +303,7 @@ public:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> sink_input_tensor(sink_input, batch_size, memory_size, sink_layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> source_output_tensor(source_output, batch_size, memory_size, source_layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> weight(weights, 1, source_layer_size, sink_layer_size);
-			Eigen::array<int, 2> bcast = { batch_size, 1 };
+			Eigen::array<int, 2> bcast = { batch_size, 0 };
 			Eigen::array<int, 1> dims({ 1 });
 			auto mean = (source_output_tensor.chip(source_time_step, 1) * weight.broadcast(bcast)).mean(dims);
 			auto input = (source_output_tensor.chip(source_time_step, 1) * weight.broadcast(bcast)) - mean;
@@ -511,17 +511,22 @@ public:
 		~MaxErrorTensorOp() {};
 		void operator()(TensorT* source_error, TensorT *source_input, TensorT* weight, TensorT* sink_output, TensorT* sink_error, TensorT* sink_derivative, const int& n_input_nodes, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, const int& source_time_step, const int& sink_time_step, DeviceT& device) 
 		{
-			// TODO: this is not correct...
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> sink_error_tensor(sink_error, batch_size, memory_size, sink_layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> sink_output_tensor(sink_output, batch_size, memory_size, sink_layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> sink_derivative_tensor(sink_derivative, batch_size, memory_size, sink_layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 4>> source_input_tensor(source_input, batch_size, memory_size, source_layer_size, 1);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> source_error_tensor(source_error, batch_size, memory_size, source_layer_size);
-			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weight_tensor(weight, sink_layer_size, source_layer_size); // NOTE: source/sink are reversed
-			Eigen::array<Eigen::IndexPair<int>, 1> product_dims = { Eigen::IndexPair<int>(1, 0) }; // NOTE: we are taking the transpose of the weight matrix
-			Eigen::array<int, 2> bcast = { sink_layer_size, 1 }; // broadcast the maximum across the sink_layer dimension
-			Eigen::array<int, 1> dims = { 1 }; // maximum across the layer
-			auto error = (source_error_tensor.chip(source_time_step, 1)).contract(weight_tensor.shuffle(Eigen::array<int, 2>({ 1, 0 })), product_dims) * sink_derivative_tensor.chip(source_time_step, 1);
-			auto layer_error = error.maximum(dims).broadcast(bcast);
-			sink_error_tensor.chip(sink_time_step, 1).device(device) = sink_error_tensor.chip(sink_time_step, 1).cwiseMax(layer_error);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> weight_tensor(weight, 1, sink_layer_size, source_layer_size); // NOTE: source/sink are reversed
+			// step 1: determine the maximum
+			auto comp_tensor = source_output_tensor.chip(source_time_step, 1) * weight_tensor.shuffle(Eigen::array<int, 2>({ 1, 0 })).broadcast(Eigen::array<int, 2>({ batch_size, 0 }));
+			auto max_tensor = source_input_tensor.chip(source_time_step, 1).broadcast(Eigen::array<int, 2>({ sink_layer_size, 3 }));
+			auto selection_tensor = ((max_tensor - comp_tensor) > (0 - max_tensor.constant(1e-6)).select(max_tensor.constant(1), max_tensor.constant(0));
+
+			// step 2: select out the error to propogate
+			auto error = source_error_tensor.chip(source_time_step, 1) * weight_tensor.shuffle(Eigen::array<int, 2>({ 1, 0 })).broadcast(Eigen::array<int, 2>({ batch_size, 0 }));
+			auto selected_error = (error * selection_tensor).sum(Eigen::array<int, 1>({ 1 })); // sum along the source layer
+			
+			sink_error_tensor.chip(sink_time_step, 1).device(device) += selected_error * sink_derivative_tensor.chip(source_time_step, 1);
 		};
 		std::string getName() const { return "MaxErrorTensorOp"; };
 	};
