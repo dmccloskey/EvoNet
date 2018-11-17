@@ -475,6 +475,36 @@ namespace SmartPeak
 	template<typename TensorT>
 	inline void ModelInterpreterGpu<TensorT>::getModelResults(Model<TensorT>& model)
 	{
+		// Synchronize all data with the host
+		cudaStream_t stream; // The stream will be destroyed by GpuStreamDevice once the function goes out of scope!
+		assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess);
+		Eigen::GpuStreamDevice stream_device(&stream, 0);
+		Eigen::GpuDevice device(&stream_device);
+
+		// sync the weight values
+		for (auto& weight_map : model.getWeightsMap()) {
+			const int tensor_index = std::get<0>(weight_map.second->getTensorIndex()[0]);
+			if (!getWeightTensor(tensor_index)->getWeightStatus().first)
+				getWeightTensor(tensor_index)->syncHAndDWeight(device);
+		}
+
+		// sync the model error
+		if (!model_error_->getErrorStatus().first)
+			model_error_->syncHAndDError(device);
+
+		// sync the output node values
+		for (auto& output_node : model.getOutputNodes()) {
+			// NOTE: there is a strange bug where the tensor indices of the output nodes pointer are not updated
+			//const int tensor_index = output_node->getTensorIndex().first;
+			//const int layer_index = output_node->getTensorIndex().second;
+			const int tensor_index = model.getNodesMap().at(output_node->getName())->getTensorIndex().first;
+			if (!getLayerTensor(tensor_index)->getOutputStatus().first)
+				getLayerTensor(tensor_index)->syncHAndDOutput(device);
+		}
+
+		assert(cudaStreamSynchronize(stream) == cudaSuccess);
+		assert(cudaStreamDestroy(stream) == cudaSuccess);
+
 		// copy out the weight values
 		for (auto& weight_map : model.getWeightsMap()) {
 			const int tensor_index = std::get<0>(weight_map.second->getTensorIndex()[0]);

@@ -939,13 +939,13 @@ void test_CETT()
 
 	for (int j = 0; j < batch_size; ++j) {
 		for (int k = 0; k < memory_size; ++k) {
-			std::cout << "Batch: " << j << "; Memory: " << k << std::endl;
-			std::cout << "Calc Model Error: " << model_interpreter.getModelError()->getError()(j, k) << ", Expected Error: " << model_error(j, k) << std::endl;
+			//std::cout << "Batch: " << j << "; Memory: " << k << std::endl;
+			//std::cout << "Calc Model Error: " << model_interpreter.getModelError()->getError()(j, k) << ", Expected Error: " << model_error(j, k) << std::endl;
 			assert(assert_close(model_interpreter.getModelError()->getError()(j, k), model_error(j, k)));
 			for (int i = 0; i < output_nodes.size(); ++i) {
 				const std::string node_name = output_nodes[i];
-				std::cout << "Node: " << node_name << "; Batch: " << j << "; Memory: " << k << std::endl;
-				std::cout << "Calc Node Error: " << model_interpreter.getLayerTensor(nodes_map.at(node_name)->getTensorIndex().first)->getError()(j, k, nodes_map.at(node_name)->getTensorIndex().second) << ", Expected Error: " << node_error(j, k, i) << std::endl;
+				//std::cout << "Node: " << node_name << "; Batch: " << j << "; Memory: " << k << std::endl;
+				//std::cout << "Calc Node Error: " << model_interpreter.getLayerTensor(nodes_map.at(node_name)->getTensorIndex().first)->getError()(j, k, nodes_map.at(node_name)->getTensorIndex().second) << ", Expected Error: " << node_error(j, k, i) << std::endl;
 				assert(assert_close(model_interpreter.getLayerTensor(nodes_map.at(node_name)->getTensorIndex().first)->getError()(j, k, nodes_map.at(node_name)->getTensorIndex().second), node_error(j, k, i)));
 			}
 		}
@@ -1033,9 +1033,9 @@ void test_TBPTT()
 		for (int k = 0; k < memory_size; ++k) {
 			for (int i = 0; i < error_nodes.size(); ++i) {
 				const std::string node_name = error_nodes[i];
-				std::cout << "Node: " << node_name << "; Batch: " << j << "; Memory: " << k << std::endl;
-				std::cout << "Calc Error: " << model_interpreter.getLayerTensor(nodes_map.at(node_name)->getTensorIndex().first)->getError()(j, k, nodes_map.at(node_name)->getTensorIndex().second) << ", Expected Error: " << node_error(j, k, i) << std::endl;
-				std::cout << "Calc Derivative: " << model_interpreter.getLayerTensor(nodes_map.at(node_name)->getTensorIndex().first)->getDerivative()(j, k, nodes_map.at(node_name)->getTensorIndex().second) << ", Expected Derivative: " << derivative(j, k, i) << std::endl;
+				//std::cout << "Node: " << node_name << "; Batch: " << j << "; Memory: " << k << std::endl;
+				//std::cout << "Calc Error: " << model_interpreter.getLayerTensor(nodes_map.at(node_name)->getTensorIndex().first)->getError()(j, k, nodes_map.at(node_name)->getTensorIndex().second) << ", Expected Error: " << node_error(j, k, i) << std::endl;
+				//std::cout << "Calc Derivative: " << model_interpreter.getLayerTensor(nodes_map.at(node_name)->getTensorIndex().first)->getDerivative()(j, k, nodes_map.at(node_name)->getTensorIndex().second) << ", Expected Derivative: " << derivative(j, k, i) << std::endl;
 				assert(assert_close(model_interpreter.getLayerTensor(nodes_map.at(node_name)->getTensorIndex().first)->getError()(j, k, nodes_map.at(node_name)->getTensorIndex().second),node_error(j, k, i)));
 				assert(assert_close(model_interpreter.getLayerTensor(nodes_map.at(node_name)->getTensorIndex().first)->getDerivative()(j, k, nodes_map.at(node_name)->getTensorIndex().second),derivative(j, k, i)));
 			}
@@ -1104,9 +1104,9 @@ void test_updateWeights()
 	Eigen::Tensor<float, 1> weights(weight_ids.size());
 	weights.setValues({ -19.624f, -15.744f, -34.572f, 1.0f, 1.0f });
 	for (int i = 0; i < weight_ids.size(); ++i) {
-		std::cout << "Weight: " << weight_ids[i] << "; Calculated: " << model_interpreter.getWeightTensor(
-			std::get<0>(weights_map.at(weight_ids[i])->getTensorIndex()[0]))->getWeight()(
-				std::get<1>(weights_map.at(weight_ids[i])->getTensorIndex()[0]), std::get<2>(weights_map.at(weight_ids[i])->getTensorIndex()[0])) << ", Expected: " << weights(i) << std::endl;
+		//std::cout << "Weight: " << weight_ids[i] << "; Calculated: " << model_interpreter.getWeightTensor(
+		//	std::get<0>(weights_map.at(weight_ids[i])->getTensorIndex()[0]))->getWeight()(
+		//		std::get<1>(weights_map.at(weight_ids[i])->getTensorIndex()[0]), std::get<2>(weights_map.at(weight_ids[i])->getTensorIndex()[0])) << ", Expected: " << weights(i) << std::endl;
 		assert(assert_close(model_interpreter.getWeightTensor(
 			std::get<0>(weights_map.at(weight_ids[i])->getTensorIndex()[0]))->getWeight()(
 				std::get<1>(weights_map.at(weight_ids[i])->getTensorIndex()[0]), std::get<2>(weights_map.at(weight_ids[i])->getTensorIndex()[0])), weights(i)));
@@ -1252,8 +1252,8 @@ void test_getModelResults()
 		for (int k = 0; k < memory_size; ++k) {
 			for (int i = 0; i < output_nodes.size(); ++i) {
 				const std::string node_name = output_nodes[i];
-				std::cout << "Node: " << node_name << "; Batch: " << j << "; Memory: " << k << std::endl;
-				std::cout << "Calc Output: " << model_getModelResults.getNodesMap().at(node_name)->getOutput()(j, k) << ", Expected Output: " << output(j, k, i) << std::endl;
+				//std::cout << "Node: " << node_name << "; Batch: " << j << "; Memory: " << k << std::endl;
+				//std::cout << "Calc Output: " << model_getModelResults.getNodesMap().at(node_name)->getOutput()(j, k) << ", Expected Output: " << output(j, k, i) << std::endl;
 				assert(assert_close(model_getModelResults.getNodesMap().at(node_name)->getOutput()(j, k), output(j, k, i)));
 			}
 		}
@@ -1269,8 +1269,8 @@ void test_getModelResults()
 		{648,288,98,8,0,0,0,0} });
 	for (int j = 0; j < batch_size; ++j) {
 		for (int k = 0; k < memory_size; ++k) {
-			std::cout << "Batch: " << j << "; Memory: " << k << std::endl;
-			std::cout << "Calc Model Error: " << model_getModelResults.getError()(j, k) << ", Expected Error: " << model_error(j, k) << std::endl;
+			//std::cout << "Batch: " << j << "; Memory: " << k << std::endl;
+			//std::cout << "Calc Model Error: " << model_getModelResults.getError()(j, k) << ", Expected Error: " << model_error(j, k) << std::endl;
 			assert(assert_close(model_getModelResults.getError()(j, k), model_error(j, k)));
 		}
 	}
@@ -1280,7 +1280,7 @@ void test_getModelResults()
 	Eigen::Tensor<float, 1> weights(weight_ids.size());
 	weights.setValues({ -19.624f, -15.744f, -34.572f, 1.0f, 1.0f });
 	for (int i = 0; i < weight_ids.size(); ++i) {
-		std::cout << "Calc Weight: " << model_getModelResults.getWeightsMap().at(weight_ids[i])->getWeight()<< ", Expected Weight: " << weights(i) << std::endl;
+		//std::cout << "Calc Weight: " << model_getModelResults.getWeightsMap().at(weight_ids[i])->getWeight()<< ", Expected Weight: " << weights(i) << std::endl;
 		assert(assert_close(model_getModelResults.getWeightsMap().at(weight_ids[i])->getWeight(), weights(i)));
 	}
 }
