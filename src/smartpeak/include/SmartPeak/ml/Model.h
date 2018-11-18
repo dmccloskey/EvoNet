@@ -248,12 +248,13 @@ public:
 		*/
 		void initTensorIndices();
 
+		std::map<std::string, std::shared_ptr<Link>> links_; ///< Model links
+		std::map<std::string, std::shared_ptr<Node<TensorT>>> nodes_; ///< Model nodes
+		std::map<std::string, std::shared_ptr<Weight<TensorT>>> weights_; ///< Model nodes
+
 private:
     int id_; ///< Model ID
     std::string name_; ///< Model Name
-    std::map<std::string, std::shared_ptr<Link>> links_; ///< Model links
-    std::map<std::string, std::shared_ptr<Node<TensorT>>> nodes_; ///< Model nodes
-    std::map<std::string, std::shared_ptr<Weight<TensorT>>> weights_; ///< Model nodes
 		std::vector<std::pair<std::string, std::string>> cyclic_pairs_;
 		std::vector<std::shared_ptr<Node<TensorT>>> input_nodes_;
 		std::vector<std::shared_ptr<Node<TensorT>>> output_nodes_;

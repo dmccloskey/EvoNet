@@ -488,16 +488,21 @@ namespace SmartPeak
 		}
 
 		for (int i = 0; i < node_names.size(); ++i){
-			auto node = model.getNodesMap().at(node_names[i]);
-			// copy over the values
-			if (value_type == "output")
-				getLayerTensor(node->getTensorIndex().first)->getOutput().chip(node->getTensorIndex().second, 2) = values_buffered.chip(i, 2);
-			else if (value_type == "error")
-				getLayerTensor(node->getTensorIndex().first)->getError().chip(node->getTensorIndex().second, 2) = values_buffered.chip(i, 2);
-			else if (value_type == "derivative")
-				getLayerTensor(node->getTensorIndex().first)->getDerivative().chip(node->getTensorIndex().second, 2) = values_buffered.chip(i, 2);
-			else if (value_type == "dt")
-				getLayerTensor(node->getTensorIndex().first)->getDt().chip(node->getTensorIndex().second, 2) = values_buffered.chip(i, 2);
+			auto node = model.nodes_.at(node_names[i]);
+			if (node->getTensorIndex().first != -1) {
+				// copy over the values
+				if (value_type == "output")
+					getLayerTensor(node->getTensorIndex().first)->getOutput().chip(node->getTensorIndex().second, 2) = values_buffered.chip(i, 2);
+				else if (value_type == "error")
+					getLayerTensor(node->getTensorIndex().first)->getError().chip(node->getTensorIndex().second, 2) = values_buffered.chip(i, 2);
+				else if (value_type == "derivative")
+					getLayerTensor(node->getTensorIndex().first)->getDerivative().chip(node->getTensorIndex().second, 2) = values_buffered.chip(i, 2);
+				else if (value_type == "dt")
+					getLayerTensor(node->getTensorIndex().first)->getDt().chip(node->getTensorIndex().second, 2) = values_buffered.chip(i, 2);
+			}
+			else {
+				std::cout << "Node " << node_names[i] << " has not been assigned a tensor index!" << std::endl;
+			}
 		}
 	}
 
@@ -505,7 +510,7 @@ namespace SmartPeak
 	inline void ModelInterpreter<TensorT, DeviceT>::initBiases(Model<TensorT>& model)
 	{
 		Eigen::Tensor<TensorT, 2> one((int)layer_tensors_[0]->getBatchSize(), (int)layer_tensors_[0]->getMemorySize());	one.setConstant(1);
-		for (auto& node_map : model.getNodesMap()) {
+		for (auto& node_map : model.nodes_) {
 			if (node_map.second->getType() == NodeType::bias) {
 				getLayerTensor(node_map.second->getTensorIndex().first)->getOutput().chip(node_map.second->getTensorIndex().second, 2) = one;
 			}
@@ -540,15 +545,15 @@ namespace SmartPeak
 
 		// get all links where the source node is active and the sink node is inactive
 		// except for biases
-		for (auto& link_map : model.getLinksMap())
+		for (auto& link_map : model.links_)
 		{
-			if (model.getNodesMap().at(link_map.second->getSourceNodeName())->getType() != NodeType::bias &&
-				model.getNodesMap().at(link_map.second->getSourceNodeName())->getStatus() == NodeStatus::activated &&
-				model.getNodesMap().at(link_map.second->getSinkNodeName())->getStatus() == NodeStatus::initialized)
+			if (model.nodes_.at(link_map.second->getSourceNodeName())->getType() != NodeType::bias &&
+				model.nodes_.at(link_map.second->getSourceNodeName())->getStatus() == NodeStatus::activated &&
+				model.nodes_.at(link_map.second->getSinkNodeName())->getStatus() == NodeStatus::initialized)
 			{
 				OperationArguments<TensorT> arguments;
-				arguments.source_node = model.getNodesMap().at(link_map.second->getSourceNodeName());
-				arguments.weight = model.getWeightsMap().at(link_map.second->getWeightName());
+				arguments.source_node = model.nodes_.at(link_map.second->getSourceNodeName());
+				arguments.weight = model.weights_.at(link_map.second->getWeightName());
 				arguments.time_step = 0;
 				arguments.link_name = link_map.first;
 
@@ -562,7 +567,7 @@ namespace SmartPeak
 				{
 					OperationList<TensorT> operation_list;
 					OperationResult<TensorT> result;
-					result.sink_node = model.getNodesMap().at(link_map.second->getSinkNodeName());
+					result.sink_node = model.nodes_.at(link_map.second->getSinkNodeName());
 					operation_list.result = result;
 					operation_list.arguments.push_back(arguments);
 					FP_operations.push_back(operation_list);
@@ -579,21 +584,21 @@ namespace SmartPeak
 	{
 
 		// get all the biases for the sink nodes
-		for (auto& link_map : model.getLinksMap())
+		for (auto& link_map : model.links_)
 		{
 			std::string ops_key = link_map.second->getSinkNodeName();
 			if (
 				// does not allow for cycles
-				model.getNodesMap().at(link_map.second->getSourceNodeName())->getType() == NodeType::bias &&
-				model.getNodesMap().at(link_map.second->getSourceNodeName())->getStatus() == NodeStatus::activated &&
+				model.nodes_.at(link_map.second->getSourceNodeName())->getType() == NodeType::bias &&
+				model.nodes_.at(link_map.second->getSourceNodeName())->getStatus() == NodeStatus::activated &&
 				// required regardless if cycles are or are not allowed
-				model.getNodesMap().at(link_map.second->getSinkNodeName())->getStatus() == NodeStatus::initialized &&
+				model.nodes_.at(link_map.second->getSinkNodeName())->getStatus() == NodeStatus::initialized &&
 				FP_operations_map.count(ops_key) != 0 // sink node has already been identified
 				)
 			{
 				OperationArguments<TensorT> arguments;
-				arguments.source_node = model.getNodesMap().at(link_map.second->getSourceNodeName());
-				arguments.weight = model.getWeightsMap().at(link_map.second->getWeightName());
+				arguments.source_node = model.nodes_.at(link_map.second->getSourceNodeName());
+				arguments.weight = model.weights_.at(link_map.second->getWeightName());
 				arguments.time_step = 0;
 				arguments.link_name = link_map.first;
 				FP_operations[FP_operations_map.at(ops_key)].arguments.push_back(arguments);
@@ -613,19 +618,19 @@ namespace SmartPeak
 	{
 
 		// get cyclic source nodes
-		for (auto& link_map : model.getLinksMap())
+		for (auto& link_map : model.links_)
 		{
 			std::string ops_key = link_map.second->getSinkNodeName();
 			if (
-				model.getNodesMap().at(link_map.second->getSourceNodeName())->getStatus() == NodeStatus::initialized &&
+				model.nodes_.at(link_map.second->getSourceNodeName())->getStatus() == NodeStatus::initialized &&
 				// required regardless if cycles are or are not allowed
-				model.getNodesMap().at(link_map.second->getSinkNodeName())->getStatus() == NodeStatus::initialized &&
+				model.nodes_.at(link_map.second->getSinkNodeName())->getStatus() == NodeStatus::initialized &&
 				FP_operations_map.count(ops_key) != 0 // sink node has already been identified
 				)
 			{
 				OperationArguments<TensorT> arguments;
-				arguments.source_node = model.getNodesMap().at(link_map.second->getSourceNodeName());
-				arguments.weight = model.getWeightsMap().at(link_map.second->getWeightName());
+				arguments.source_node = model.nodes_.at(link_map.second->getSourceNodeName());
+				arguments.weight = model.weights_.at(link_map.second->getWeightName());
 
 				arguments.time_step = 1;
 				arguments.link_name = link_map.first;
@@ -1129,7 +1134,7 @@ namespace SmartPeak
 		//	input_node->setStatus(NodeStatus::activated);
 		//}
 		// [OR]
-		for (auto& nodes_map : model.getNodesMap()) {
+		for (auto& nodes_map : model.nodes_) {
 			if (nodes_map.second->getType() == NodeType::input || nodes_map.second->getType() == NodeType::bias)
 				nodes_map.second->setStatus(NodeStatus::activated);
 			else
@@ -1145,7 +1150,7 @@ namespace SmartPeak
 			std::vector<OperationList<TensorT>> FP_operations_list;
 			getNextInactiveLayer(model, FP_operations_map, FP_operations_list);
 
-			// get biases,
+			// get biases
 			std::vector<std::string> sink_nodes_with_biases;
 			getNextInactiveLayerBiases(model, FP_operations_map, FP_operations_list, sink_nodes_with_biases);
 
@@ -1220,7 +1225,12 @@ namespace SmartPeak
 	template<typename TensorT, typename DeviceT>
 	inline std::shared_ptr<NodeTensorData<TensorT, DeviceT>> ModelInterpreter<TensorT, DeviceT>::getLayerTensor(const int & layer_index)
 	{
-		return layer_tensors_.at(layer_index);
+		try { return layer_tensors_.at(layer_index); }
+		catch (const std::exception& e) {
+			std::cout << "Layer index " << layer_index << " does not exist" << std::endl;
+			return std::shared_ptr<NodeTensorData<TensorT, DeviceT>>();
+		}
+		
 	}
 
 	template<typename TensorT, typename DeviceT>
@@ -1298,7 +1308,7 @@ namespace SmartPeak
 			std::cout << "The sequence for CETT needs to be the memory_size - 1!" << std::endl;
 
 		// extract out the layer id
-		const int layer_id = model.getNodesMap().at(node_names[0])->getTensorIndex().first;
+		const int layer_id = model.nodes_.at(node_names[0])->getTensorIndex().first;
 		assert(getLayerTensor(layer_id)->getLayerSize() == node_names.size());
 
 		// convert the loss function

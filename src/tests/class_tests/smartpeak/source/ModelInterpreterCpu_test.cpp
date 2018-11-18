@@ -906,11 +906,11 @@ BOOST_AUTO_TEST_CASE(TBPTT)
 	// test values of output nodes
 	Eigen::Tensor<float, 3> node_error(batch_size, memory_size, 5); // dim2: # of model nodes
 	node_error.setValues({
-		{ { -22, -22, -22, -22, -22 },{-36, -36, -14, -36, -14 },{ -44, -44, -8, -44, -8 },{ -46, -46, -2, -46, -2 },{ 0, -46, 0, 0, 0 },{ 0, 0, 0, 0, 0 },{ 0, 0, 0, 0, 0 },{ 0, 0, 0, 0, 0 } },
-		{ { -25, -25, -25, -25, -25 },{ -42, -42, -17, -42, -17 },{ -51, -51, -9, -51, -9 },{ -54, -54, -3, -54, -3 },{ 0, -54, 0, 0, 0 },{ 0, 0, 0, 0, 0 },{ 0, 0, 0, 0, 0 },{ 0, 0, 0, 0, 0 } },
-		{ { -29, -29, -29, -29, -29 },{ -48, -48, -19, -48, -19 },{ -59, -59, -11, -59, -11 },{ -62, -62, -3, -62, -3 },{ 0, -62, 0, 0, 0 },{ 0, 0, 0, 0, 0 },{ 0, 0, 0, 0, 0 },{ 0, 0, 0, 0, 0 } },
-		{ { -32, -32, -32, -32, -32 },{ -54, -54, -22, -54, -22 },{ -66, -66, -12, -66, -12 },{ -70, -70, -4, -70, -4 },{ 0, -70, 0, 0, 0 },{ 0, 0, 0, 0, 0 },{ 0, 0, 0, 0, 0 },{ 0, 0, 0, 0, 0 } },
-		{ {-36, -36, -36, -36, -36 },{-60, -60, -24, -60, -24 },{-74, -74, -14, -74, -14 },{ -78, -78, -4, -78, -4 },{ 0, -78, 0, 0, 0 },{ 0, 0, 0, 0, 0 },{ 0, 0, 0, 0, 0 },{ 0, 0, 0, 0, 0 } } }
+		{ { -22, -22, -22, -22, -22 },{-36, -36, -14, -36, -14 },{ -44, -44, -8, -44, -8 },{ -46, -46, -2, -46, -2 },{ 0, 0, 0, 0, 0 },{ 0, 0, 0, 0, 0 },{ 0, 0, 0, 0, 0 },{ 0, 0, 0, 0, 0 } },
+		{ { -25, -25, -25, -25, -25 },{ -42, -42, -17, -42, -17 },{ -51, -51, -9, -51, -9 },{ -54, -54, -3, -54, -3 },{ 0, 0, 0, 0, 0 },{ 0, 0, 0, 0, 0 },{ 0, 0, 0, 0, 0 },{ 0, 0, 0, 0, 0 } },
+		{ { -29, -29, -29, -29, -29 },{ -48, -48, -19, -48, -19 },{ -59, -59, -11, -59, -11 },{ -62, -62, -3, -62, -3 },{ 0, 0, 0, 0, 0 },{ 0, 0, 0, 0, 0 },{ 0, 0, 0, 0, 0 },{ 0, 0, 0, 0, 0 } },
+		{ { -32, -32, -32, -32, -32 },{ -54, -54, -22, -54, -22 },{ -66, -66, -12, -66, -12 },{ -70, -70, -4, -70, -4 },{ 0, 0, 0, 0, 0 },{ 0, 0, 0, 0, 0 },{ 0, 0, 0, 0, 0 },{ 0, 0, 0, 0, 0 } },
+		{ {-36, -36, -36, -36, -36 },{-60, -60, -24, -60, -24 },{-74, -74, -14, -74, -14 },{ -78, -78, -4, -78, -4 },{ 0, 0, 0, 0, 0 },{ 0, 0, 0, 0, 0 },{ 0, 0, 0, 0, 0 },{ 0, 0, 0, 0, 0 } } }
 	);
 	Eigen::Tensor<float, 3> derivative(batch_size, memory_size, 5);
 	derivative.setValues({
@@ -922,16 +922,15 @@ BOOST_AUTO_TEST_CASE(TBPTT)
 	);
 	const std::vector<std::string> error_nodes = { "0", "1", "2", "3", "4" };
 
-	auto nodes_map = model_TBPTT.getNodesMap();
 	for (int j = 0; j < batch_size; ++j) {
 		for (int k = 0; k < memory_size; ++k) {
 			for (int i = 0; i < error_nodes.size(); ++i) {
 				const std::string node_name = error_nodes[i];
 				//std::cout << "Node: " << node_name << "; Batch: " << j << "; Memory: " << k << std::endl;
-				//std::cout << "Calc Error: " << model_interpreter.getLayerTensor(nodes_map.at(node_name)->getTensorIndex().first)->getError()(j, k, nodes_map.at(node_name)->getTensorIndex().second) << ", Expected Error: " << node_error(j, k, i) << std::endl;
-				//std::cout << "Calc Derivative: " << model_interpreter.getLayerTensor(nodes_map.at(node_name)->getTensorIndex().first)->getDerivative()(j, k, nodes_map.at(node_name)->getTensorIndex().second) << ", Expected Derivative: " << derivative(j, k, i) << std::endl;
-				BOOST_CHECK_CLOSE(model_interpreter.getLayerTensor(nodes_map.at(node_name)->getTensorIndex().first)->getError()(j, k, nodes_map.at(node_name)->getTensorIndex().second), node_error(j, k, i), 1e-3);
-				BOOST_CHECK_CLOSE(model_interpreter.getLayerTensor(nodes_map.at(node_name)->getTensorIndex().first)->getDerivative()(j, k, nodes_map.at(node_name)->getTensorIndex().second), derivative(j, k, i), 1e-3);
+				//std::cout << "Calc Error: " << model_interpreter.getLayerTensor(model_TBPTT.nodes_.at(node_name)->getTensorIndex().first)->getError()(j, k, model_TBPTT.nodes_.at(node_name)->getTensorIndex().second) << ", Expected Error: " << node_error(j, k, i) << std::endl;
+				//std::cout << "Calc Derivative: " << model_interpreter.getLayerTensor(model_TBPTT.nodes_.at(node_name)->getTensorIndex().first)->getDerivative()(j, k, model_TBPTT.nodes_.at(node_name)->getTensorIndex().second) << ", Expected Derivative: " << derivative(j, k, i) << std::endl;
+				BOOST_CHECK_CLOSE(model_interpreter.getLayerTensor(model_TBPTT.nodes_.at(node_name)->getTensorIndex().first)->getError()(j, k, model_TBPTT.nodes_.at(node_name)->getTensorIndex().second), node_error(j, k, i), 1e-3);
+				BOOST_CHECK_CLOSE(model_interpreter.getLayerTensor(model_TBPTT.nodes_.at(node_name)->getTensorIndex().first)->getDerivative()(j, k, model_TBPTT.nodes_.at(node_name)->getTensorIndex().second), derivative(j, k, i), 1e-3);
 			}
 		}
 	}
@@ -985,7 +984,7 @@ BOOST_AUTO_TEST_CASE(updateWeights)
 	// test values of output nodes
 	std::vector<std::string> weight_ids = { "0", "1", "2", "3", "4" };
 	Eigen::Tensor<float, 1> weights(weight_ids.size());
-	weights.setValues({ -19.624f, -15.744f, -34.572f, 1.0f, 1.0f });
+	weights.setValues({ -15.7439995f, -15.744f, -34.572f, 1.0f, 1.0f });
 	for (int i = 0; i < weight_ids.size(); ++i) {
 		BOOST_CHECK_CLOSE(model_interpreter.getWeightTensor(
 			std::get<0>(weights_map.at(weight_ids[i])->getTensorIndex()[0]))->getWeight()(
@@ -1149,7 +1148,7 @@ BOOST_AUTO_TEST_CASE(getModelResults)
 	// test values of weights
 	std::vector<std::string> weight_ids = { "0", "1", "2", "3", "4" };
 	Eigen::Tensor<float, 1> weights(weight_ids.size());
-	weights.setValues({ -19.624f, -15.744f, -34.572f, 1.0f, 1.0f });
+	weights.setValues({ -15.7439995f, -15.744f, -34.572f, 1.0f, 1.0f });
 	for (int i = 0; i < weight_ids.size(); ++i) {
 		BOOST_CHECK_CLOSE(model_getModelResults.getWeightsMap().at(weight_ids[i])->getWeight(), weights(i), 1e-3);
 	}

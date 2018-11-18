@@ -189,7 +189,7 @@ void test_forwardPropogationGpuDevice()
 	ModelKernalGpu<float> kernal;
 	const int device_id = 0;
 
-	IntegrationTensorOp<float, Eigen::GpuDevice>* integration_function = new FullyConnectedSumOp<float, Eigen::GpuDevice>();
+	IntegrationTensorOp<float, Eigen::GpuDevice>* integration_function = new SumTensorOp<float, Eigen::GpuDevice>();
 	const int batch_size = 4;
 	const int memory_size = 2;
 	const int source_layer_size = 2;
@@ -285,7 +285,7 @@ void test_backwardPropogationGpuDevice()
 	const int device_id = 0;
 	ModelKernalGpu<float> kernal;
 
-	IntegrationErrorTensorOp<float, Eigen::GpuDevice>* integration_function = new FullyConnectedSumErrorOp<float, Eigen::GpuDevice>();
+	IntegrationErrorTensorOp<float, Eigen::GpuDevice>* integration_function = new SumErrorTensorOp<float, Eigen::GpuDevice>();
 	const int batch_size = 4;
 	const int memory_size = 2;
 	const int source_layer_size = 2;
@@ -514,7 +514,7 @@ void test_weightErrorGpuDevice()
 	const int device_id = 0;
 	ModelKernalGpu<float> kernal;
 
-	IntegrationWeightGradTensorOp<float, Eigen::GpuDevice>* integration_function = new FullyConnectedSumWeightGradOp<float, Eigen::GpuDevice>();
+	IntegrationWeightGradTensorOp<float, Eigen::GpuDevice>* integration_function = new SumWeightGradTensorOp<float, Eigen::GpuDevice>();
 	const int batch_size = 4;
 	const int memory_size = 2;
 	const int source_layer_size = 2;

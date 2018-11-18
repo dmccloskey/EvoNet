@@ -41,6 +41,7 @@ public:
 		void setNTBPTTSteps(const int& n_TBPTT); ///< n_TBPTT setter
 		void setNTETTSteps(const int& n_TETT); ///< n_TETT setter
 		void setModelInterpreter(const std::shared_ptr<ModelInterpreter<TensorT, DeviceT>>& model_interpreter); ///< model_interpreter setter [TODO: tests]
+		void setFindCycles(const bool& find_cycles); ///< find_cycles setter [TODO: tests]
 
     int getBatchSize() const; ///< batch_size setter
     int getMemorySize() const; ///< memory_size setter
@@ -54,6 +55,7 @@ public:
 		int getNTBPTTSteps() const; ///< n_TBPTT setter
 		int getNTETTSteps() const; ///< n_TETT setter
 		std::shared_ptr<ModelInterpreter<TensorT, DeviceT>> getModelInterpreter(); ///< model_interpreter getter [TODO: tests]
+		bool getFindCycles(); ///< find_cycles getter [TODO: tests]
  
     /**
       @brief Check input dimensions.
@@ -199,6 +201,7 @@ private:
 		bool log_training_ = false;
 		bool log_validation_ = false;
 		bool log_evaluation_ = false;
+		bool find_cycles_ = true;
 
 		std::vector<std::shared_ptr<LossFunctionOp<TensorT>>> loss_functions_;
 		std::vector<std::shared_ptr<LossFunctionGradOp<TensorT>>> loss_function_grads_;
@@ -287,6 +290,12 @@ private:
 	}
 
 	template<typename TensorT, typename DeviceT>
+	inline void ModelTrainer<TensorT, DeviceT>::setFindCycles(const bool & find_cycles)
+	{
+		find_cycles_ = find_cycles;
+	}
+
+	template<typename TensorT, typename DeviceT>
 	int ModelTrainer<TensorT, DeviceT>::getBatchSize() const
 	{
 		return batch_size_;
@@ -356,6 +365,12 @@ private:
 	inline std::shared_ptr<ModelInterpreter<TensorT, DeviceT>> ModelTrainer<TensorT, DeviceT>::getModelInterpreter()
 	{
 		return model_interpreter_;
+	}
+
+	template<typename TensorT, typename DeviceT>
+	inline bool ModelTrainer<TensorT, DeviceT>::getFindCycles()
+	{
+		return find_cycles_;
 	}
 
 	template<typename TensorT, typename DeviceT>
@@ -482,13 +497,18 @@ private:
 		}
 
 		// Initialize the model
-		model.findCycles(); // [TODO: add method to model to flag when to find cycles]
+		if (getVerbosityLevel() >= 2)
+			std::cout << "Intializing the model..." << std::endl;
+		if (getFindCycles())
+			model.findCycles();
 
 		// Initialize the logger
 		if (log_training_)
 			model_logger.initLogs(model);
 
 		// compile the graph into a set of operations and allocate all tensors
+		if (getVerbosityLevel() >= 2)
+			std::cout << "Interpreting the model..." << std::endl;
 		model_interpreter_->getForwardPropogationOperations(model, getBatchSize(), getMemorySize(), true);
 		model_interpreter_->allocateModelErrorTensor(getBatchSize(), getMemorySize());
 
@@ -597,7 +617,8 @@ private:
 		}
 
 		// Initialize the model
-		model.findCycles(); // [TODO: add method to model to flag when to find cycles]
+		if (getFindCycles())
+			model.findCycles();
 
 		// Initialize the logger
 		if (log_training_)
@@ -689,7 +710,8 @@ private:
 		}
 
 		// Initialize the model
-		model.findCycles(); // [TODO: add method to model to flag when to find cycles]
+		if (getFindCycles())
+			model.findCycles();
 
 		// Initialize the logger
 		if (log_training_)
