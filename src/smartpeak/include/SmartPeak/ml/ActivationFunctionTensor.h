@@ -39,7 +39,8 @@ public:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
 			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(ReLUOp<TensorT>());
-			out.chip(time_step, 1).device(device) = (x.chip(time_step, 1) > x.chip(time_step, 1).constant(0)).select(x.chip(time_step, 1), x.chip(time_step, 1).constant(0));
+			auto result = (x.chip(time_step, 1) > x.chip(time_step, 1).constant(0)).select(x.chip(time_step, 1), x.chip(time_step, 1).constant(0));
+			out.chip(time_step, 1).device(device) = result.clip(-1e9, 1e9);
 		};
     std::string getName() const{return "ReLUTensorOp";};
   };
@@ -62,7 +63,8 @@ public:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
 			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(ReLUGradOp<TensorT>());
-			out.chip(time_step, 1).device(device) = (x.chip(time_step, 1) > x.chip(time_step, 1).constant(0)).select(x.chip(time_step, 1).constant(1), x.chip(time_step, 1).constant(0));
+			auto result = (x.chip(time_step, 1) > x.chip(time_step, 1).constant(0)).select(x.chip(time_step, 1).constant(1), x.chip(time_step, 1).constant(0));
+			out.chip(time_step, 1).device(device) = result.clip(-1e9, 1e9);
 		};
     std::string getName() const{return "ReLUGradTensorOp";};
   };
@@ -86,9 +88,10 @@ public:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
 			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(ELUOp<TensorT>(alpha_));
-			out.chip(time_step, 1).device(device) = (x.chip(time_step, 1) > x.chip(time_step, 1).constant(0)).select(
+			auto result = (x.chip(time_step, 1) > x.chip(time_step, 1).constant(0)).select(
 				x.chip(time_step, 1), 
 				x.chip(time_step, 1).constant(alpha_) * (x.chip(time_step, 1).exp() - x.chip(time_step, 1).constant(1)));
+			out.chip(time_step, 1).device(device) = result.clip(-1e9, 1e9);
 		};
     void setAlpha(const TensorT& alpha) { alpha_ = alpha; };
     TensorT getAlpha() const { return alpha_; };
@@ -116,9 +119,10 @@ public:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
 			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(ELUGradOp<TensorT>(alpha_));
-			out.chip(time_step, 1).device(device) = (x.chip(time_step, 1) > x.chip(time_step, 1).constant(0)).select(
+			auto result = (x.chip(time_step, 1) > x.chip(time_step, 1).constant(0)).select(
 				x.chip(time_step, 1).constant(1),
 				(x.chip(time_step, 1) > x.chip(time_step, 1).constant(0)).select(x.chip(time_step, 1), x.chip(time_step, 1).constant(alpha_) * (x.chip(time_step, 1).exp() - x.chip(time_step, 1).constant(1))) + x.chip(time_step, 1).constant(alpha_));
+			out.chip(time_step, 1).device(device) = result.clip(-1e9, 1e9);
 		};
     void setAlpha(const TensorT& alpha) { alpha_ = alpha; };
     TensorT getAlpha() const { return alpha_; };
@@ -140,7 +144,9 @@ public:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
 			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(SigmoidOp<TensorT>());
-			out.chip(time_step, 1).device(device) = x.chip(time_step, 1).constant(1)/(x.chip(time_step, 1).constant(1) + (-x.chip(time_step, 1).exp()));
+			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).constant(1)/(x.chip(time_step, 1).constant(1) + (-x.chip(time_step, 1).exp()));
+			auto result = x.chip(time_step, 1).sigmoid();
+			out.chip(time_step, 1).device(device) = result.clip(-1e9, 1e9);
 		};
     std::string getName() const{return "SigmoidTensorOp";};
   };
@@ -158,8 +164,8 @@ public:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
 			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(SigmoidGradOp<TensorT>());
-			auto sigmoid = x.chip(time_step, 1).constant(1) / (x.chip(time_step, 1).constant(1) + (-x.chip(time_step, 1).exp()));
-			out.chip(time_step, 1).device(device) = sigmoid * (x.chip(time_step, 1).constant(1) - sigmoid);
+			auto result = x.chip(time_step, 1).sigmoid() * (x.chip(time_step, 1).constant(1) - x.chip(time_step, 1).sigmoid());
+			out.chip(time_step, 1).device(device) = result.clip(-1e9, 1e9);
 		};
     std::string getName() const{return "SigmoidGradTensorOp";};
   };
@@ -177,7 +183,8 @@ public:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
 			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(TanHOp<TensorT>());
-			out.chip(time_step, 1).device(device) = x.chip(time_step, 1).tanh();
+			auto result = x.chip(time_step, 1).tanh();
+			out.chip(time_step, 1).device(device) = result.clip(-1e9, 1e9);
 		};
     std::string getName() const{return "TanHTensorOp";};
   };
@@ -195,7 +202,8 @@ public:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
 			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(TanHGradOp<TensorT>());
-			out.chip(time_step, 1).device(device) = x.chip(time_step, 1).constant(1) - (x.chip(time_step, 1).tanh()).pow(2);
+			auto result = x.chip(time_step, 1).constant(1) - (x.chip(time_step, 1).tanh()).pow(2); 
+			out.chip(time_step, 1).device(device) = result.clip(-1e9, 1e9);
 		};
     std::string getName() const{return "TanHGradTensorOp";};
   };
@@ -249,7 +257,8 @@ public:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
 			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(LinearOp<TensorT>());
-			out.chip(time_step, 1).device(device) = x.chip(time_step, 1);
+			auto result = x.chip(time_step, 1); 
+			out.chip(time_step, 1).device(device) = result.clip(-1e9, 1e9);
 		};
 		std::string getName() const { return "LinearTensorOp"; };
 	};
@@ -285,8 +294,9 @@ public:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
 			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(InverseOp<TensorT>());
-			out.chip(time_step, 1).device(device) = (x.chip(time_step, 1) != x.chip(time_step, 1).constant(0)).select(
+			auto result = (x.chip(time_step, 1) != x.chip(time_step, 1).constant(0)).select(
 				x.chip(time_step, 1).constant(1)/ x.chip(time_step, 1), x.chip(time_step, 1).constant(0));
+			out.chip(time_step, 1).device(device) = result.clip(-1e9, 1e9);
 		};
 		std::string getName() const { return "InverseTensorOp"; };
 	};
@@ -304,8 +314,9 @@ public:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
 			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(InverseGradOp<TensorT>());
-			out.chip(time_step, 1).device(device) = (x.chip(time_step, 1) != x.chip(time_step, 1).constant(0)).select(
+			auto result = (x.chip(time_step, 1) != x.chip(time_step, 1).constant(0)).select(
 				x.chip(time_step, 1).constant(-1) / x.chip(time_step, 1).pow(2), x.chip(time_step, 1).constant(0));
+			out.chip(time_step, 1).device(device) = result.clip(-1e9, 1e9);
 		};
 		std::string getName() const { return "InverseGradTensorOp"; };
 	};
@@ -318,17 +329,13 @@ public:
 	{
 	public:
 		ExponentialTensorOp() {};
-		ExponentialTensorOp(const TensorT& eps, const TensorT& min, const TensorT& max) {
-			this->setEps(eps);
-			this->setMin(min);
-			this->setMax(max);
-		};
 		~ExponentialTensorOp() {};
 		void operator()(TensorT* x_I, TensorT* x_O, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
 			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(ExponentialOp<TensorT>());
-			out.chip(time_step, 1).device(device) = x.chip(time_step, 1).exp();
+			auto result = x.chip(time_step, 1).exp(); 
+			out.chip(time_step, 1).device(device) = result.clip(-1e9, 1e9);
 		};
 		std::string getName() const { return "ExponentialTensorOp"; };
 	};
@@ -346,7 +353,8 @@ public:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
 			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(ExponentialGradOp<TensorT>());
-			out.chip(time_step, 1).device(device) = x.chip(time_step, 1).exp();
+			auto result = x.chip(time_step, 1).exp();
+			out.chip(time_step, 1).device(device) = result.clip(-1e9, 1e9);
 		};
 		std::string getName() const { return "ExponentialGradTensorOp"; };
 	};
@@ -364,7 +372,8 @@ public:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
 			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(LogOp<TensorT>());
-			out.chip(time_step, 1).device(device) = x.chip(time_step, 1).log();
+			auto result = x.chip(time_step, 1).log();
+			out.chip(time_step, 1).device(device) = result.clip(-1e9, 1e9);
 		};
 		std::string getName() const { return "LogTensorOp"; };
 	};
@@ -382,7 +391,8 @@ public:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
 			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(LogGradOp<TensorT>());
-			out.chip(time_step, 1).device(device) = x.chip(time_step, 1).constant(1) / x.chip(time_step, 1);
+			auto result = x.chip(time_step, 1).constant(1) / x.chip(time_step, 1);
+			out.chip(time_step, 1).device(device) = result.clip(-1e9, 1e9);
 		};
 		std::string getName() const { return "LogGradTensorOp"; };
 	};
@@ -401,7 +411,8 @@ public:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
 			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(PowOp<TensorT>(base_));
-			out.chip(time_step, 1).device(device) = x.chip(time_step, 1).pow(base_);
+			auto result = x.chip(time_step, 1).pow(base_);
+			out.chip(time_step, 1).device(device) = result.clip(-1e9, 1e9);
 		};
 		std::string getName() const { return "PowTensorOp"; };
 	private:
@@ -422,7 +433,8 @@ public:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
 			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(PowGradOp<TensorT>(base_));
-			out.chip(time_step, 1).device(device) = x.chip(time_step, 1).constant(base_) * x.chip(time_step, 1).pow(base_ - 1);
+			auto result = x.chip(time_step, 1).constant(base_) * x.chip(time_step, 1).pow(base_ - 1);
+			out.chip(time_step, 1).device(device) = result.clip(-1e9, 1e9);
 		};
 		std::string getName() const { return "PowGradTensorOp"; };
 	private:
@@ -445,8 +457,9 @@ public:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
 			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(LeakyReLUOp<TensorT>(alpha_));
-			out.chip(time_step, 1).device(device) = (x.chip(time_step, 1) > x.chip(time_step, 1).constant(0)).select(
+			auto result = (x.chip(time_step, 1) >= x.chip(time_step, 1).constant(0)).select(
 				x.chip(time_step, 1), x.chip(time_step, 1) * x.chip(time_step, 1).constant(alpha_));
+			out.chip(time_step, 1).device(device) = result.clip(-1e9, 1e9);
 		};
 		void setAlpha(const TensorT& alpha) { alpha_ = alpha; };
 		TensorT getAlpha() const { return alpha_; };
@@ -469,8 +482,9 @@ public:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
 			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(LeakyReLUGradOp<TensorT>(alpha_));
-			out.chip(time_step, 1).device(device) = (x.chip(time_step, 1) > x.chip(time_step, 1).constant(0)).select(
+			auto result = (x.chip(time_step, 1) >= x.chip(time_step, 1).constant(0)).select(
 				x.chip(time_step, 1).constant(1), x.chip(time_step, 1).constant(alpha_));
+			out.chip(time_step, 1).device(device) = result.clip(-1e9, 1e9);
 		};
 		void setAlpha(const TensorT& alpha) { alpha_ = alpha; };
 		TensorT getAlpha() const { return alpha_; };
