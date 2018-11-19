@@ -534,9 +534,9 @@ void main_CovNet() {
 	for (size_t i = 0; i < n_threads; ++i) {
 		ModelResources model_resources = { ModelDevice(0, DeviceType::gpu, 1) };
 		std::shared_ptr<ModelTrainer<float, Eigen::GpuDevice>> model_trainer(new ModelTrainerExt<float, Eigen::GpuDevice>());
-		model_trainer->setBatchSize(16);
+		model_trainer->setBatchSize(8);
 		model_trainer->setMemorySize(1);
-		model_trainer->setNEpochsTraining(51);
+		model_trainer->setNEpochsTraining(501);
 		model_trainer->setNEpochsValidation(10);
 		model_trainer->setFindCycles(false);
 		model_trainer->setVerbosityLevel(2);

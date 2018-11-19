@@ -13,6 +13,7 @@ set(ml_executables_list
 set(cuda_executables_list
   CUDA_example
   MNIST_CovNet_Gpu_example
+  MNIST_VAE_Gpu_example
 )
 
 ### collect example executables

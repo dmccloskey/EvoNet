@@ -31,6 +31,7 @@ namespace SmartPeak
 		void executeWeightUpdateOperations();
 		void allocateModelErrorTensor(const int& batch_size, const int& memory_size);
 	  void getModelResults(Model<TensorT>& model);
+		void checkMemory(const Model<TensorT>& model, const int& batch_size, const int& memory_size);
 	};
 
 	template<typename TensorT>
@@ -357,6 +358,12 @@ namespace SmartPeak
 			const int layer_index = model.getNodesMap().at(output_node->getName())->getTensorIndex().second;
 			output_node->setOutput(getLayerTensor(tensor_index)->getOutput().chip(layer_index, 2));
 		}
+	}
+
+	template<typename TensorT>
+	inline void ModelInterpreterDefaultDevice<TensorT>::checkMemory(const Model<TensorT>& model, const int& batch_size, const int& memory_size)
+	{
+		// TODO
 	}
 }
 #endif //SMARTPEAK_MODELINTERPRETERDEFAULTDEVICE_H

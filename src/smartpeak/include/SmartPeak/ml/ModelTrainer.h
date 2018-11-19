@@ -509,6 +509,7 @@ private:
 		// compile the graph into a set of operations and allocate all tensors
 		if (getVerbosityLevel() >= 2)
 			std::cout << "Interpreting the model..." << std::endl;
+		model_interpreter_->checkMemory(model, getBatchSize(), getMemorySize());
 		model_interpreter_->getForwardPropogationOperations(model, getBatchSize(), getMemorySize(), true);
 		model_interpreter_->allocateModelErrorTensor(getBatchSize(), getMemorySize());
 

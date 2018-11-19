@@ -35,6 +35,7 @@ namespace SmartPeak
 		void executeWeightUpdateOperations();
 		void allocateModelErrorTensor(const int& batch_size, const int& memory_size);
 		void getModelResults(Model<TensorT>& model);
+		void checkMemory(const Model<TensorT>& model, const int& batch_size, const int& memory_size);
 	};
 
 	template<typename TensorT>
@@ -185,7 +186,6 @@ namespace SmartPeak
 					operation.weight.tensor->syncHAndDWeight(device);
 				if (!operation.sink_layer.tensor->getInputStatus().second)
 					operation.sink_layer.tensor->syncHAndDInput(device);
-				assert(cudaStreamSynchronize(streams[device_iter]) == cudaSuccess);
 
 				model_kernal.executeForwardPropogation(
 					operation.source_layer.tensor->getHOutputPointer().get(),
@@ -526,6 +526,24 @@ namespace SmartPeak
 			const int layer_index = model.getNodesMap().at(output_node->getName())->getTensorIndex().second;
 			output_node->setOutput(getLayerTensor(tensor_index)->getOutput().chip(layer_index, 2));
 		}
+	}
+
+	template<typename TensorT>
+	inline void ModelInterpreterGpu<TensorT>::checkMemory(const Model<TensorT>& model, const int& batch_size, const int& memory_size)
+	{
+		// get the device memory
+		size_t free_byte, total_byte;
+		cudaMemGetInfo(&free_byte, &total_byte);
+
+		// estimate the needed model memory
+		size_t node_mem = model.nodes_.size() * 4 * batch_size * (memory_size + 1) * sizeof(TensorT);
+		// best and worst case scenario estimation of weight, error, and solver parameter sizes
+		size_t weight_mem_best = model.weights_.size() * 3 * 6 * sizeof(TensorT); // assumptions: all fully connected nodes with adam optimizer (6 params)
+		size_t weight_mem_worst = model.weights_.size() * model.weights_.size() * 3 * 6 * sizeof(TensorT); // assumptions: all singly connected nodes with adam optimizer (6 params)
+		//size_t weight_mem = (size_t)((float)weight_mem_best * 0.8 + (float)weight_mem_worst * 0.2);		
+		size_t weight_mem = weight_mem_best;
+
+		assert(free_byte > (node_mem + weight_mem));
 	}
 }
 #endif

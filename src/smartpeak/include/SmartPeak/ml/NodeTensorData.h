@@ -274,7 +274,7 @@ protected:
 			TensorT* d_input;
 			TensorT* h_input;
 			assert(cudaMalloc((void**)(&d_input), getTensorSize()) == cudaSuccess);
-			assert(cudaHostAlloc((void**)(&h_input), getTensorSize(), cudaHostAllocDefault) == cudaSuccess);
+			assert(cudaHostAlloc((void**)(&h_input), getTensorSize(), cudaHostAllocDefault ) == cudaSuccess);
 			// copy the tensor
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> input_copy(h_input, this->batch_size_, this->memory_size_, this->layer_size_);
 			input_copy = input;
@@ -291,7 +291,7 @@ protected:
 			TensorT* d_output;
 			TensorT* h_output;
 			assert(cudaMalloc((void**)(&d_output), getTensorSize()) == cudaSuccess);
-			assert(cudaHostAlloc((void**)(&h_output), getTensorSize(), cudaHostAllocDefault) == cudaSuccess);
+			assert(cudaHostAlloc((void**)(&h_output), getTensorSize(), cudaHostAllocDefault ) == cudaSuccess);
 			// copy the tensor
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> output_copy(h_output, this->batch_size_, this->memory_size_, this->layer_size_);
 			output_copy = output;
@@ -308,7 +308,7 @@ protected:
 			TensorT* d_error;
 			TensorT* h_error;
 			assert(cudaMalloc((void**)(&d_error), getTensorSize()) == cudaSuccess);
-			assert(cudaHostAlloc((void**)(&h_error), getTensorSize(), cudaHostAllocDefault) == cudaSuccess);
+			assert(cudaHostAlloc((void**)(&h_error), getTensorSize(), cudaHostAllocDefault ) == cudaSuccess);
 			// copy the tensor
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> error_copy(h_error, this->batch_size_, this->memory_size_, this->layer_size_);
 			error_copy = error;
@@ -325,7 +325,7 @@ protected:
 			TensorT* d_derivative;
 			TensorT* h_derivative;
 			assert(cudaMalloc((void**)(&d_derivative), getTensorSize()) == cudaSuccess);
-			assert(cudaHostAlloc((void**)(&h_derivative), getTensorSize(), cudaHostAllocDefault) == cudaSuccess);
+			assert(cudaHostAlloc((void**)(&h_derivative), getTensorSize(), cudaHostAllocDefault ) == cudaSuccess);
 			// copy the tensor
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> derivative_copy(h_derivative, this->batch_size_, this->memory_size_, this->layer_size_);
 			derivative_copy = derivative;
@@ -342,7 +342,7 @@ protected:
 			TensorT* d_dt;
 			TensorT* h_dt;
 			assert(cudaMalloc((void**)(&d_dt), getTensorSize()) == cudaSuccess);
-			assert(cudaHostAlloc((void**)(&h_dt), getTensorSize(), cudaHostAllocDefault) == cudaSuccess);
+			assert(cudaHostAlloc((void**)(&h_dt), getTensorSize(), cudaHostAllocDefault ) == cudaSuccess);
 			// copy the tensor
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> dt_copy(h_dt, this->batch_size_, this->memory_size_, this->layer_size_);
 			dt_copy = dt;

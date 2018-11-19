@@ -443,6 +443,8 @@ namespace SmartPeak
 		void setModelResources(const ModelResources& model_resources); ///< model_resources setter
 		ModelResources getModelResources(); ///< model_resources getter
 
+		virtual void checkMemory(const Model<TensorT>& model, const int& batch_size, const int& memory_size) = 0;
+
 		void clear_cache();
 
 	protected:
