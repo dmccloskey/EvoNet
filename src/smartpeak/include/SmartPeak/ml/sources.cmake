@@ -23,6 +23,8 @@ set(sources_list_h
 	ModelLogger.h
 	ModelReplicator.h
 	ModelTrainer.h
+	ModelTrainerDefaultDevice.h
+	ModelTrainerGpu.h
 	Node.h
 	#NodeData.h
 	NodeTensorData.h

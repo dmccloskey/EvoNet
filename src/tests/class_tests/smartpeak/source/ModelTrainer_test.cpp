@@ -2,7 +2,7 @@
 
 #define BOOST_TEST_MODULE ModelTrainer test suite 
 #include <boost/test/included/unit_test.hpp>
-#include <SmartPeak/ml/ModelTrainer.h>
+#include <SmartPeak/ml/ModelTrainerDefaultDevice.h>
 
 #include <SmartPeak/ml/Model.h>
 #include <SmartPeak/ml/ModelInterpreterDefaultDevice.h>
@@ -10,8 +10,8 @@
 using namespace SmartPeak;
 using namespace std;
 
-template<typename TensorT, typename DeviceT>
-class ModelTrainerExt : public ModelTrainer<TensorT, DeviceT>
+template<typename TensorT>
+class ModelTrainerExt : public ModelTrainerDefaultDevice<TensorT>
 {
 public:
 	Model<TensorT> makeModel() { return Model<TensorT>(); }
@@ -26,22 +26,22 @@ BOOST_AUTO_TEST_SUITE(trainer)
 
 BOOST_AUTO_TEST_CASE(constructor) 
 {
-  ModelTrainerExt<float, Eigen::DefaultDevice>* ptr = nullptr;
-  ModelTrainerExt<float, Eigen::DefaultDevice>* nullPointer = nullptr;
-	ptr = new ModelTrainerExt<float, Eigen::DefaultDevice>();
+  ModelTrainerExt<float>* ptr = nullptr;
+  ModelTrainerExt<float>* nullPointer = nullptr;
+	ptr = new ModelTrainerExt<float>();
   BOOST_CHECK_NE(ptr, nullPointer);
 }
 
 BOOST_AUTO_TEST_CASE(destructor) 
 {
-  ModelTrainerExt<float, Eigen::DefaultDevice>* ptr = nullptr;
-	ptr = new ModelTrainerExt<float, Eigen::DefaultDevice>();
+  ModelTrainerExt<float>* ptr = nullptr;
+	ptr = new ModelTrainerExt<float>();
   delete ptr;
 }
 
 BOOST_AUTO_TEST_CASE(gettersAndSetters) 
 {
-  ModelTrainerExt<float, Eigen::DefaultDevice> trainer;
+  ModelTrainerExt<float> trainer;
   trainer.setBatchSize(4);
   trainer.setMemorySize(1);
   trainer.setNEpochsTraining(100);
@@ -64,7 +64,7 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
 
 BOOST_AUTO_TEST_CASE(checkInputData) 
 {
-  ModelTrainerExt<float, Eigen::DefaultDevice> trainer;
+  ModelTrainerExt<float> trainer;
   trainer.setBatchSize(4);
   trainer.setMemorySize(1);
   trainer.setNEpochsTraining(100);
@@ -92,7 +92,7 @@ BOOST_AUTO_TEST_CASE(checkInputData)
 
 BOOST_AUTO_TEST_CASE(checkOutputData) 
 {
-  ModelTrainerExt<float, Eigen::DefaultDevice> trainer;
+  ModelTrainerExt<float> trainer;
   trainer.setBatchSize(4);
   trainer.setMemorySize(1);
   trainer.setNEpochsTraining(100);
@@ -117,8 +117,8 @@ BOOST_AUTO_TEST_CASE(checkOutputData)
 		output_data, trainer.getBatchSize(), 0, output_nodes));
 }
 
-template<typename TensorT, typename DeviceT>
-class DAGToyModelTrainer : public ModelTrainer<TensorT, DeviceT>
+template<typename TensorT>
+class DAGToyModelTrainer : public ModelTrainerDefaultDevice<TensorT>
 {
 public:
 	Model<TensorT> makeModel()
@@ -209,10 +209,10 @@ public:
 BOOST_AUTO_TEST_CASE(DAGToy) 
 {
   // Define the makeModel and trainModel scripts
-  DAGToyModelTrainer<float, Eigen::DefaultDevice> trainer;
+  DAGToyModelTrainer<float> trainer;
 
 	// Define the model resources
-	ModelResources model_resources = { ModelDevice(0, DeviceType::default, 1) };
+	ModelResources model_resources = { ModelDevice(DeviceType::default, 1) };
 
   // Test parameters
   trainer.setBatchSize(4);
@@ -225,7 +225,6 @@ BOOST_AUTO_TEST_CASE(DAGToy)
 	trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
 	trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
 	trainer.setOutputNodes({ output_nodes });
-	trainer.setModelInterpreter(std::shared_ptr<ModelInterpreter<float, Eigen::DefaultDevice>>(new ModelInterpreterDefaultDevice<float>(model_resources)));
 
   // Make the input data
   Eigen::Tensor<float, 4> input_data(trainer.getBatchSize(), trainer.getMemorySize(), (int)input_nodes.size(), trainer.getNEpochsTraining());
@@ -270,7 +269,7 @@ BOOST_AUTO_TEST_CASE(DAGToy)
 
   Model<float> model1 = trainer.makeModel();
   trainer.trainModel(model1, input_data, output_data, time_steps,
-    input_nodes, ModelLogger<float>());
+    input_nodes, ModelLogger<float>(), ModelInterpreterDefaultDevice<float>(model_resources));
 
   const Eigen::Tensor<float, 0> total_error = model1.getError().sum();
   BOOST_CHECK(total_error(0) <= 757.0);
@@ -279,8 +278,8 @@ BOOST_AUTO_TEST_CASE(DAGToy)
 	// TODO evaluateModel
 }
 
-template<typename TensorT, typename DeviceT>
-class DCGToyModelTrainer : public ModelTrainer<TensorT, DeviceT>
+template<typename TensorT>
+class DCGToyModelTrainer : public ModelTrainerDefaultDevice<TensorT>
 {
 public:
 	Model<TensorT> makeModel()
@@ -340,10 +339,10 @@ BOOST_AUTO_TEST_CASE(DCGToy)
 {
 
   // Define the makeModel and trainModel scripts
-  DCGToyModelTrainer<float, Eigen::DefaultDevice> trainer;
+  DCGToyModelTrainer<float> trainer;
 
 	// Define the model resources
-	ModelResources model_resources = { ModelDevice(0, DeviceType::default, 1) };
+	ModelResources model_resources = { ModelDevice(DeviceType::default, 1) };
 
   // Test parameters
   trainer.setBatchSize(5);
@@ -355,7 +354,6 @@ BOOST_AUTO_TEST_CASE(DCGToy)
 	trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
 	trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
 	trainer.setOutputNodes({ output_nodes });
-	trainer.setModelInterpreter(std::shared_ptr<ModelInterpreter<float, Eigen::DefaultDevice>>(new ModelInterpreterDefaultDevice<float>(model_resources)));
 
   // Make the input data
   Eigen::Tensor<float, 4> input_data(trainer.getBatchSize(), trainer.getMemorySize(), (int)input_nodes.size(), trainer.getNEpochsTraining());
@@ -406,7 +404,7 @@ BOOST_AUTO_TEST_CASE(DCGToy)
   Model<float> model1 = trainer.makeModel();
 
   trainer.trainModel(model1, input_data, output_data, time_steps,
-    input_nodes, ModelLogger<float>());
+    input_nodes, ModelLogger<float>(), ModelInterpreterDefaultDevice<float>(model_resources));
 
   const Eigen::Tensor<float, 0> total_error = model1.getError().sum();
   BOOST_CHECK(total_error(0) <= 1492.6);
