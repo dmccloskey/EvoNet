@@ -646,10 +646,14 @@ public:
 		assert(source_node_names.size() == input_width * input_height);
 		int input_padded_width = input_width + 2 * input_width_zero_padding;
 		//assert((input_padded_width - extent_width) % stride == 0);
-		int strides_width = std::floor((input_padded_width - extent_width) / stride); // includes the starting stride
+		if ((input_padded_width - extent_width) % stride != 0)
+			std::cout << "Warning: input width, filter width, and stride lengths will not allow for uniform coverage during convolution." << std::endl;
+		int strides_width = std::floor((input_padded_width - extent_width) / stride) +1; // includes the starting stride
 		int input_padded_height = input_height + 2 * input_height_zero_padding;
 		//assert((input_padded_height - extent_height) % stride == 0);
-		int strides_height = std::floor((input_padded_height - extent_height) / stride); // includes the starting stride
+		if ((input_padded_height - extent_height) % stride != 0)
+			std::cout << "Warning: input height, filter height, and stride lengths will not allow for uniform coverage during convolution." << std::endl;
+		int strides_height = std::floor((input_padded_height - extent_height) / stride) +1; // includes the starting stride
 		int output_nodes = strides_width + strides_height;
 		int output_padded_width = strides_width + 2 * output_width_zero_padding;
 		int output_padded_height = strides_height + 2 * output_height_zero_padding;
@@ -774,10 +778,15 @@ public:
 				int width_iter_tmp = stride * width_stride_iter - input_width_zero_padding;
 				int width_iter = maxFunc(width_iter_tmp, 0);
 				for (size_t filter_width_iter = filter_width_offset_start; filter_width_iter < filter_width_offset_end; ++filter_width_iter) {
-					int height_iter_tmp = stride * height_stride_iter - input_height_zero_padding;
+					int height_iter_tmp = stride * height_stride_iter - input_height_zero_padding; 
 					int height_iter = maxFunc(height_iter_tmp, 0);
 					for (size_t filter_height_iter = filter_height_offset_start; filter_height_iter < filter_height_offset_end; ++filter_height_iter) {
 						int source_node_iter = height_iter + width_iter * input_height;
+
+						if (source_node_iter >= source_node_names.size()) {
+							//std::cout << "WARNING: node size has been exceeded!" << std::endl;
+							break;
+						}
 
 						// Weight<TensorT> name
 						char weight_filter_name_char[512];

@@ -148,6 +148,9 @@ public:
 		for (const std::string& node_name : node_names)
 			model.getNodesMap().at(node_name)->setType(NodeType::output);
 
+		if (!model.checkCompleteInputToOutput())
+			std::cout << "Model input and output are not fully connected!" << std::endl;
+
 		return model;
 	}
 	//Model<TensorT> makeCovNetFeatureNorm(const int& n_inputs, const int& n_outputs) {

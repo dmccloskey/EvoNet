@@ -185,6 +185,7 @@ namespace SmartPeak
 					operation.weight.tensor->syncHAndDWeight(device);
 				if (!operation.sink_layer.tensor->getInputStatus().second)
 					operation.sink_layer.tensor->syncHAndDInput(device);
+				assert(cudaStreamSynchronize(streams[device_iter]) == cudaSuccess);
 
 				model_kernal.executeForwardPropogation(
 					operation.source_layer.tensor->getHOutputPointer().get(),
