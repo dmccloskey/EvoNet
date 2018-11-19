@@ -653,64 +653,65 @@ private:
 			// create a copy of the model logger
 			ModelLogger<TensorT> model_logger_copy = model_logger;
 
-			//// launch the thread
-			//task_results.push_back(task.get_future());
-			//std::thread task_thread(std::move(task),
-			//	&models[i], model_trainers[thread_cnt].get(), &model_logger_copy,
-			//	std::ref(input), std::ref(output), std::ref(time_steps),
-			//	std::ref(input_nodes));
-			//task_thread.detach();
+			// launch the thread
+			task_results.push_back(task.get_future());
+			std::thread task_thread(std::move(task),
+				&models[i], model_trainers[thread_cnt].get(), &model_logger_copy,
+				std::ref(input), std::ref(output), std::ref(time_steps),
+				std::ref(input_nodes));
+			task_thread.detach();
 
-			//// retreive the results
-			//if (thread_cnt == model_trainers.size() - 1 || i == models.size() - 1)
-			//{
-			//	for (auto& task_result : task_results)
-			//		// for (int j=0; j<task_results.size(); ++j)
-			//	{
-			//		if (task_result.valid())
-			//		{
-			//			try
-			//			{
-			//				std::pair<bool, Model<TensorT>> status = task_result.get();
-			//				// std::pair<bool, Model<TensorT>> status status = task_results[j].get();         
-			//				if (status.first)
-			//				{
-			//					trained_models.push_back(status.second);
-			//				}
-			//			}
-			//			catch (std::exception& e)
-			//			{
-			//				printf("Exception: %s", e.what());
-			//			}
-			//		}
-			//	}
-			//	task_results.clear();
-			//	thread_cnt = 0;
-			//}
-			//else
-			//{
-			//	++thread_cnt;
-			//}
-
-			try
+			// retreive the results
+			if (thread_cnt == model_trainers.size() - 1 || i == models.size() - 1)
 			{
-				std::pair<bool, Model<TensorT>> status = trainModel_(&models[i], model_trainers[thread_cnt].get(), &model_logger_copy,
-					input, output, time_steps, input_nodes);        
-				if (status.first)
+				for (auto& task_result : task_results)
+					// for (int j=0; j<task_results.size(); ++j)
 				{
-					trained_models.push_back(status.second);
+					if (task_result.valid())
+					{
+						try
+						{
+							std::pair<bool, Model<TensorT>> status = task_result.get();
+							// std::pair<bool, Model<TensorT>> status status = task_results[j].get();         
+							if (status.first)
+							{
+								trained_models.push_back(status.second);
+							}
+						}
+						catch (std::exception& e)
+						{
+							printf("Exception: %s", e.what());
+						}
+					}
 				}
-			}
-			catch (std::exception& e)
-			{
-				printf("Exception: %s", e.what());
-			}
-			if (thread_cnt == model_trainers.size() - 1) {
+				task_results.clear();
 				thread_cnt = 0;
 			}
-			else {
+			else
+			{
 				++thread_cnt;
 			}
+
+			// Test to ensure threads did not affect CUDA memory
+			//try
+			//{
+			//	std::pair<bool, Model<TensorT>> status = trainModel_(&models[i], model_trainers[thread_cnt].get(), &model_logger_copy,
+			//		input, output, time_steps, input_nodes);        
+			//	if (status.first)
+			//	{
+			//		trained_models.push_back(status.second);
+			//	}
+			//}
+			//catch (std::exception& e)
+			//{
+			//	printf("Exception: %s", e.what());
+			//}
+			//if (thread_cnt == model_trainers.size() - 1) {
+			//	thread_cnt = 0;
+			//}
+			//else {
+			//	++thread_cnt;
+			//}
 		}
 
 		// update models

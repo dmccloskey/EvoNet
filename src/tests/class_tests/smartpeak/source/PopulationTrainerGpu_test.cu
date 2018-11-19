@@ -489,8 +489,8 @@ void test_exampleUsage()
 
 int main(int argc, char** argv)
 {
-	//test_trainModels();
-	//test_evalModels();
+	test_trainModels();
+	test_evalModels();
 	test_exampleUsage();
 	return 0;
 }

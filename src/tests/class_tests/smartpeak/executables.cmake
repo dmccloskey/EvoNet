@@ -41,6 +41,7 @@ set(ml_executables_list
   ModelReplicator_test
   ModelResources_test
   ModelTrainer_test
+  ModelTrainerGpu_test
   Model_test
   #Model2_test
   #Model2_DAG_test
