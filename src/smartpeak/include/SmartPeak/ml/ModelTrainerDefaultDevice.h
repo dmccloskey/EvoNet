@@ -16,7 +16,7 @@ namespace SmartPeak
     @brief Class to train a network model
   */
 	template<typename TensorT>
-  class ModelTrainerDefaultDevice : public ModelTrainer<TensorT>
+  class ModelTrainerDefaultDevice : public ModelTrainer<TensorT, ModelInterpreterDefaultDevice<TensorT>>
   {
 public:
     ModelTrainerDefaultDevice() = default; ///< Default constructor
@@ -41,7 +41,7 @@ public:
 			const Eigen::Tensor<TensorT, 3>& time_steps,
 			const std::vector<std::string>& input_nodes,
 			ModelLogger<TensorT>& model_logger,
-			ModelInterpreterDefaultDevice<TensorT>& model_interpreter)
+			ModelInterpreterDefaultDevice<TensorT>& model_interpreter);
  
     /**
       @brief Entry point for users to code their script
@@ -56,13 +56,13 @@ public:
 
       @returns vector of average model error scores
     */ 
-			std::vector<TensorT> validateModel(Model<TensorT>& model,
-				const Eigen::Tensor<TensorT, 4>& input,
-				const Eigen::Tensor<TensorT, 4>& output,
-				const Eigen::Tensor<TensorT, 3>& time_steps,
-				const std::vector<std::string>& input_nodes,
-				ModelLogger<TensorT>& model_logger,
-				ModelInterpreterDefaultDevice<TensorT>& model_interpreter);
+		std::vector<TensorT> validateModel(Model<TensorT>& model,
+			const Eigen::Tensor<TensorT, 4>& input,
+			const Eigen::Tensor<TensorT, 4>& output,
+			const Eigen::Tensor<TensorT, 3>& time_steps,
+			const std::vector<std::string>& input_nodes,
+			ModelLogger<TensorT>& model_logger,
+			ModelInterpreterDefaultDevice<TensorT>& model_interpreter);
 
 		/**
 			@brief Entry point for users to code their script
@@ -125,7 +125,7 @@ public:
 			model.findCycles();
 
 		// Initialize the logger
-		if (log_training_)
+		if (getLogTraining())
 			model_logger.initLogs(model);
 
 		// compile the graph into a set of operations and allocate all tensors
@@ -186,7 +186,7 @@ public:
 			model_interpreter.updateWeights();
 
 			//// log epoch
-			//if (log_training_) {
+			//if (getLogTraining()) {
 			//	if (getVerbosityLevel() >= 2)
 			//		std::cout << "Logging..." << std::endl;
 			//	const Eigen::Tensor<TensorT, 3> expected_values = output.chip(iter, 3);
@@ -245,7 +245,7 @@ public:
 			model.findCycles();
 
 		// Initialize the logger
-		if (log_training_)
+		if (getLogValidation())
 			model_logger.initLogs(model);
 
 		// compile the graph into a set of operations and allocate all tensors
@@ -287,7 +287,7 @@ public:
 				std::cout << "Model " << model.getName() << " error: " << total_error(0) << std::endl;
 
 			//// log epoch
-			//if (log_validation_) {
+			//if (getLogValidation()) {
 			//	const Eigen::Tensor<TensorT, 3> expected_values = output.chip(iter, 3);
 			//	model_logger.writeLogs(model, iter, {}, { "Error" }, {}, { total_error(0) }, output_nodes, expected_values);
 			//}
@@ -339,7 +339,7 @@ public:
 			model.findCycles();
 
 		// Initialize the logger
-		if (log_training_)
+		if (getLogEvaluation())
 			model_logger.initLogs(model);
 
 		// compile the graph into a set of operations and allocate all tensors
@@ -366,7 +366,7 @@ public:
 			}
 
 			//// log epoch
-			//if (log_evaluation_) {
+			//if (getLogEvaluation()) {
 			//	model_logger.writeLogs(model, iter, {}, {}, {}, {}, output_nodes, Eigen::Tensor<TensorT, 3>(), output_nodes, {}, {});
 			//}
 

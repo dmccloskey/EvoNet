@@ -3,6 +3,12 @@
 #ifndef SMARTPEAK_MODELTRAINERGPU_H
 #define SMARTPEAK_MODELTRAINERGPU_H
 
+#if COMPILE_WITH_CUDA
+#define EIGEN_DEFAULT_DENSE_INDEX_TYPE int
+#define EIGEN_USE_GPU
+#include <cuda.h>
+#include <cuda_runtime.h>
+
 // .h
 #include <SmartPeak/ml/ModelTrainer.h>
 #include <SmartPeak/ml/ModelInterpreterGpu.h>
@@ -16,7 +22,7 @@ namespace SmartPeak
 		@brief Class to train a network model
 	*/
 	template<typename TensorT>
-	class ModelTrainerGpu: public ModelTrainer<TensorT>
+	class ModelTrainerGpu: public ModelTrainer<TensorT, ModelInterpreterGpu<TensorT>>
 	{
 	public:
 		ModelTrainerGpu() = default; ///< Default constructor
@@ -41,28 +47,28 @@ namespace SmartPeak
 			const Eigen::Tensor<TensorT, 3>& time_steps,
 			const std::vector<std::string>& input_nodes,
 			ModelLogger<TensorT>& model_logger,
-			ModelInterpreterGpu<TensorT>& model_interpreter)
+			ModelInterpreterGpu<TensorT>& model_interpreter);
 
-			/**
-				@brief Entry point for users to code their script
-					for model validation
+		/**
+			@brief Entry point for users to code their script
+				for model validation
 
-				@param[in, out] model The model to train
-				@param[in] model_resources The hardware available for training the model
-				@param[in] input Input data tensor of dimensions: batch_size, memory_size, input_nodes, n_epochs
-				@param[in] output Expected output data tensor of dimensions: batch_size, memory_size, output_nodes, n_epochs
-				@param[in] time_steps Time steps of the forward passes of dimensions: batch_size, memory_size, n_epochs
-				@param[in] input_nodes Input node names
+			@param[in, out] model The model to train
+			@param[in] model_resources The hardware available for training the model
+			@param[in] input Input data tensor of dimensions: batch_size, memory_size, input_nodes, n_epochs
+			@param[in] output Expected output data tensor of dimensions: batch_size, memory_size, output_nodes, n_epochs
+			@param[in] time_steps Time steps of the forward passes of dimensions: batch_size, memory_size, n_epochs
+			@param[in] input_nodes Input node names
 
-				@returns vector of average model error scores
-			*/
-			std::vector<TensorT> validateModel(Model<TensorT>& model,
-				const Eigen::Tensor<TensorT, 4>& input,
-				const Eigen::Tensor<TensorT, 4>& output,
-				const Eigen::Tensor<TensorT, 3>& time_steps,
-				const std::vector<std::string>& input_nodes,
-				ModelLogger<TensorT>& model_logger,
-				ModelInterpreterGpu<TensorT>& model_interpreter);
+			@returns vector of average model error scores
+		*/
+		std::vector<TensorT> validateModel(Model<TensorT>& model,
+			const Eigen::Tensor<TensorT, 4>& input,
+			const Eigen::Tensor<TensorT, 4>& output,
+			const Eigen::Tensor<TensorT, 3>& time_steps,
+			const std::vector<std::string>& input_nodes,
+			ModelLogger<TensorT>& model_logger,
+			ModelInterpreterGpu<TensorT>& model_interpreter);
 
 		/**
 			@brief Entry point for users to code their script
@@ -91,7 +97,7 @@ namespace SmartPeak
 		ModelInterpreterGpu<TensorT>& model_interpreter)
 	{
 		std::vector<TensorT> model_error;
-
+		
 		// Check input and output data
 		if (!checkInputData(getNEpochsTraining(), input, getBatchSize(), getMemorySize(), input_nodes))
 		{
@@ -125,7 +131,7 @@ namespace SmartPeak
 			model.findCycles();
 
 		// Initialize the logger
-		if (log_training_)
+		if (getLogTraining())
 			model_logger.initLogs(model);
 
 		// compile the graph into a set of operations and allocate all tensors
@@ -154,7 +160,7 @@ namespace SmartPeak
 				std::cout << "Error Calculation..." << std::endl;
 			int output_node_cnt = 0;
 			for (size_t loss_iter = 0; loss_iter < output_nodes_.size(); loss_iter++) {
-				Eigen::Tensor<TensorT, 3> expected_tmp = output.chip(iter, 3);
+				const Eigen::Tensor<TensorT, 3> expected_tmp = output.chip(iter, 3);
 				Eigen::Tensor<TensorT, 3> expected(getBatchSize(), getMemorySize(), (int)output_nodes_[loss_iter].size());
 				for (int batch_iter = 0; batch_iter < getBatchSize(); ++batch_iter)
 					for (int memory_iter = 0; memory_iter < getMemorySize(); ++memory_iter)
@@ -186,7 +192,7 @@ namespace SmartPeak
 			model_interpreter.updateWeights();
 
 			//// log epoch
-			//if (log_training_) {
+			//if (getLogTraining()) {
 			//	if (getVerbosityLevel() >= 2)
 			//		std::cout << "Logging..." << std::endl;
 			//	const Eigen::Tensor<TensorT, 3> expected_values = output.chip(iter, 3);
@@ -245,7 +251,7 @@ namespace SmartPeak
 			model.findCycles();
 
 		// Initialize the logger
-		if (log_training_)
+		if (getLogValidation())
 			model_logger.initLogs(model);
 
 		// compile the graph into a set of operations and allocate all tensors
@@ -287,7 +293,7 @@ namespace SmartPeak
 				std::cout << "Model " << model.getName() << " error: " << total_error(0) << std::endl;
 
 			//// log epoch
-			//if (log_validation_) {
+			//if (getLogValidation()) {
 			//	const Eigen::Tensor<TensorT, 3> expected_values = output.chip(iter, 3);
 			//	model_logger.writeLogs(model, iter, {}, { "Error" }, {}, { total_error(0) }, output_nodes, expected_values);
 			//}
@@ -339,7 +345,7 @@ namespace SmartPeak
 			model.findCycles();
 
 		// Initialize the logger
-		if (log_training_)
+		if (getLogEvaluation())
 			model_logger.initLogs(model);
 
 		// compile the graph into a set of operations and allocate all tensors
@@ -366,7 +372,7 @@ namespace SmartPeak
 			}
 
 			//// log epoch
-			//if (log_evaluation_) {
+			//if (getLogEvaluation()) {
 			//	model_logger.writeLogs(model, iter, {}, {}, {}, {}, output_nodes, Eigen::Tensor<TensorT, 3>(), output_nodes, {}, {});
 			//}
 
@@ -382,5 +388,5 @@ namespace SmartPeak
 		return model_output;
 	}
 }
-
+#endif
 #endif //SMARTPEAK_MODELTRAINERGPU_H

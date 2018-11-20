@@ -1,28 +1,13 @@
 /**TODO:  Add copyright*/
 #if COMPILE_WITH_CUDA
 
-#include <SmartPeak/ml/ModelTrainer.h>
-
-#include <SmartPeak/ml/Model.h>
-#include <SmartPeak/ml/ModelInterpreterGpu.h>
+#include <SmartPeak/ml/ModelTrainerGpu.h>
 
 using namespace SmartPeak;
 using namespace std;
 
-template<typename TensorT, typename DeviceT>
-class ModelTrainerExt : public ModelTrainer<TensorT, DeviceT>
-{
-public:
-	Model<TensorT> makeModel() { return Model<TensorT>(); }
-	void adaptiveTrainerScheduler(
-		const int& n_generations,
-		const int& n_epochs,
-		Model<TensorT>& model,
-		const std::vector<TensorT>& model_errors) {}
-};
-
-template<typename TensorT, typename DeviceT>
-class DAGToyModelTrainer : public ModelTrainer<TensorT, DeviceT>
+template<typename TensorT>
+class DAGToyModelTrainer : public ModelTrainerGpu<TensorT>
 {
 public:
 	Model<TensorT> makeModel()
@@ -113,11 +98,14 @@ public:
 
 void test_DAGToy() 
 {
+	std::cout << "Model DAG training test..." << std::endl;
   // Define the makeModel and trainModel scripts
-  DAGToyModelTrainer<float, Eigen::GpuDevice> trainer;
+  DAGToyModelTrainer<float> trainer;
 
 	// Define the model resources
 	ModelResources model_resources = { ModelDevice(0, DeviceType::gpu, 1) };
+	//ModelInterpreterGpu<float> model_interpreter(model_resources);
+	ModelInterpreterGpu<float> model_interpreter;
 
   // Test parameters
   trainer.setBatchSize(4);
@@ -130,7 +118,6 @@ void test_DAGToy()
 	trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
 	trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
 	trainer.setOutputNodes({ output_nodes });
-	trainer.setModelInterpreter(std::shared_ptr<ModelInterpreter<float, Eigen::GpuDevice>>(new ModelInterpreterGpu<float>(model_resources)));
 
   // Make the input data
   Eigen::Tensor<float, 4> input_data(trainer.getBatchSize(), trainer.getMemorySize(), (int)input_nodes.size(), trainer.getNEpochsTraining());
@@ -175,17 +162,18 @@ void test_DAGToy()
 
   Model<float> model1 = trainer.makeModel();
   trainer.trainModel(model1, input_data, output_data, time_steps,
-    input_nodes, ModelLogger<float>());
+    input_nodes, ModelLogger<float>(), model_interpreter);
 
   const Eigen::Tensor<float, 0> total_error = model1.getError().sum();
+	std::cout << "Model DAG Toy error: " << total_error(0) << std::endl;
   assert(total_error(0) <= 757.0);
 
 	// TODO validateModel
 	// TODO evaluateModel
 }
 
-template<typename TensorT, typename DeviceT>
-class DCGToyModelTrainer : public ModelTrainer<TensorT, DeviceT>
+template<typename TensorT>
+class DCGToyModelTrainer : public ModelTrainerGpu<TensorT>
 {
 public:
 	Model<TensorT> makeModel()
@@ -243,9 +231,9 @@ public:
 
 void test_DCGToy() 
 {
-
+	std::cout << "Model DCG training test..." << std::endl;
   // Define the makeModel and trainModel scripts
-  DCGToyModelTrainer<float, Eigen::GpuDevice> trainer;
+  DCGToyModelTrainer<float> trainer;
 
 	// Define the model resources
 	ModelResources model_resources = { ModelDevice(0, DeviceType::gpu, 1) };
@@ -260,7 +248,6 @@ void test_DCGToy()
 	trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
 	trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
 	trainer.setOutputNodes({ output_nodes });
-	trainer.setModelInterpreter(std::shared_ptr<ModelInterpreter<float, Eigen::GpuDevice>>(new ModelInterpreterGpu<float>(model_resources)));
 
   // Make the input data
   Eigen::Tensor<float, 4> input_data(trainer.getBatchSize(), trainer.getMemorySize(), (int)input_nodes.size(), trainer.getNEpochsTraining());
@@ -311,9 +298,10 @@ void test_DCGToy()
   Model<float> model1 = trainer.makeModel();
 
   trainer.trainModel(model1, input_data, output_data, time_steps,
-    input_nodes, ModelLogger<float>());
+    input_nodes, ModelLogger<float>(), ModelInterpreterGpu<float>(model_resources));
 
   const Eigen::Tensor<float, 0> total_error = model1.getError().sum();
+	std::cout << "Model DCG Toy error: " << total_error(0) << std::endl;
   assert(total_error(0) <= 1492.6);
 
 	// TODO validateModel

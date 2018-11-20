@@ -18,7 +18,7 @@ namespace SmartPeak
   /**
     @brief Class to train a network model
   */
-	template<typename TensorT>
+	template<typename TensorT, typename InterpreterT>
   class ModelTrainer
   {
 public:
@@ -45,6 +45,9 @@ public:
 		int getNEpochsValidation() const; ///< n_epochs setter
 		int getNEpochsEvaluation() const; ///< n_epochs setter
 		int getVerbosityLevel() const; ///< verbosity_level setter
+		bool getLogTraining() const;
+		bool getLogValidation() const;
+		bool getLogEvaluation() const;
 		std::vector<std::shared_ptr<LossFunctionOp<TensorT>>> getLossFunctions(); ///< loss_functions getter [TODO: tests]
 		std::vector<std::shared_ptr<LossFunctionGradOp<TensorT>>> getLossFunctionGrads(); ///< loss_functions getter [TODO: tests]
 		std::vector<std::vector<std::string>> getOutputNodes(); ///< output_nodes getter [TODO: tests]
@@ -113,14 +116,13 @@ public:
 
       @returns vector of average model error scores
     */ 
-		template<typename InterpreterT>
 		virtual std::vector<TensorT> trainModel(Model<TensorT>& model,
 			const Eigen::Tensor<TensorT, 4>& input,
 			const Eigen::Tensor<TensorT, 4>& output,
 			const Eigen::Tensor<TensorT, 3>& time_steps,
 			const std::vector<std::string>& input_nodes,
 			ModelLogger<TensorT>& model_logger,
-			InterpreterT<TensorT>& model_interpreter) = 0;
+			InterpreterT& model_interpreter) = 0;
  
     /**
       @brief Entry point for users to code their script
@@ -135,14 +137,13 @@ public:
 
       @returns vector of average model error scores
     */ 
-		template<typename InterpreterT>
-		std::vector<TensorT> validateModel(Model<TensorT>& model,
+		virtual std::vector<TensorT> validateModel(Model<TensorT>& model,
 			const Eigen::Tensor<TensorT, 4>& input,
 			const Eigen::Tensor<TensorT, 4>& output,
 			const Eigen::Tensor<TensorT, 3>& time_steps,
 			const std::vector<std::string>& input_nodes,
 			ModelLogger<TensorT>& model_logger,
-			InterpreterT<TensorT>& model_interpreter) = 0;
+			InterpreterT& model_interpreter) = 0;
 
 		/**
 			@brief Entry point for users to code their script
@@ -156,13 +157,12 @@ public:
 
 			@returns vector of vectors corresponding to output nodes
 		*/
-		template<typename InterpreterT>
-		std::vector<std::vector<Eigen::Tensor<TensorT, 2>>> evaluateModel(Model<TensorT>& model,
+		virtual std::vector<std::vector<Eigen::Tensor<TensorT, 2>>> evaluateModel(Model<TensorT>& model,
 			const Eigen::Tensor<TensorT, 4>& input,
 			const Eigen::Tensor<TensorT, 3>& time_steps,
 			const std::vector<std::string>& input_nodes,
 			ModelLogger<TensorT>& model_logger,
-			InterpreterT<TensorT>& model_interpreter) = 0;
+			InterpreterT& model_interpreter) = 0;
  
     /**
       @brief Entry point for users to code their script
@@ -188,6 +188,11 @@ public:
 			Model<TensorT>& model,
 			const std::vector<TensorT>& model_errors) = 0;
 
+protected:
+		std::vector<std::shared_ptr<LossFunctionOp<TensorT>>> loss_functions_;
+		std::vector<std::shared_ptr<LossFunctionGradOp<TensorT>>> loss_function_grads_;
+		std::vector<std::vector<std::string>> output_nodes_;
+
 private:
     int batch_size_;
     int memory_size_;
@@ -203,166 +208,179 @@ private:
 		bool log_validation_ = false;
 		bool log_evaluation_ = false;
 		bool find_cycles_ = true;
-
-		std::vector<std::shared_ptr<LossFunctionOp<TensorT>>> loss_functions_;
-		std::vector<std::shared_ptr<LossFunctionGradOp<TensorT>>> loss_function_grads_;
-		std::vector<std::vector<std::string>> output_nodes_;
-
   };
-	template<typename TensorT>
-	void ModelTrainer<TensorT>::setBatchSize(const int& batch_size)
+	template<typename TensorT, typename InterpreterT>
+	void ModelTrainer<TensorT, InterpreterT>::setBatchSize(const int& batch_size)
 	{
 		batch_size_ = batch_size;
 	}
 
-	template<typename TensorT>
-	void ModelTrainer<TensorT>::setMemorySize(const int& memory_size)
+	template<typename TensorT, typename InterpreterT>
+	void ModelTrainer<TensorT, InterpreterT>::setMemorySize(const int& memory_size)
 	{
 		memory_size_ = memory_size;
 	}
 
-	template<typename TensorT>
-	void ModelTrainer<TensorT>::setNEpochsTraining(const int& n_epochs)
+	template<typename TensorT, typename InterpreterT>
+	void ModelTrainer<TensorT, InterpreterT>::setNEpochsTraining(const int& n_epochs)
 	{
 		n_epochs_training_ = n_epochs;
 	}
 
-	template<typename TensorT>
-	void ModelTrainer<TensorT>::setNEpochsValidation(const int & n_epochs)
+	template<typename TensorT, typename InterpreterT>
+	void ModelTrainer<TensorT, InterpreterT>::setNEpochsValidation(const int & n_epochs)
 	{
 		n_epochs_validation_ = n_epochs;
 	}
 
-	template<typename TensorT>
-	void ModelTrainer<TensorT>::setNEpochsEvaluation(const int & n_epochs)
+	template<typename TensorT, typename InterpreterT>
+	void ModelTrainer<TensorT, InterpreterT>::setNEpochsEvaluation(const int & n_epochs)
 	{
 		n_epochs_evaluation_ = n_epochs;
 	}
 
-	template<typename TensorT>
-	void ModelTrainer<TensorT>::setVerbosityLevel(const int & verbosity_level)
+	template<typename TensorT, typename InterpreterT>
+	void ModelTrainer<TensorT, InterpreterT>::setVerbosityLevel(const int & verbosity_level)
 	{
 		verbosity_level_ = verbosity_level;
 	}
 
-	template<typename TensorT>
-	void ModelTrainer<TensorT>::setLogging(bool log_training, bool log_validation, bool log_evaluation)
+	template<typename TensorT, typename InterpreterT>
+	void ModelTrainer<TensorT, InterpreterT>::setLogging(bool log_training, bool log_validation, bool log_evaluation)
 	{
 		log_training_ = log_training;
 		log_validation_ = log_validation;
 		log_evaluation_ = log_evaluation;
 	}
 
-	template<typename TensorT>
-	void ModelTrainer<TensorT>::setLossFunctions(const std::vector<std::shared_ptr<LossFunctionOp<TensorT>>>& loss_functions)
+	template<typename TensorT, typename InterpreterT>
+	void ModelTrainer<TensorT, InterpreterT>::setLossFunctions(const std::vector<std::shared_ptr<LossFunctionOp<TensorT>>>& loss_functions)
 	{
 		loss_functions_ = loss_functions;
 	}
 
-	template<typename TensorT>
-	void ModelTrainer<TensorT>::setLossFunctionGrads(const std::vector<std::shared_ptr<LossFunctionGradOp<TensorT>>>& loss_function_grads)
+	template<typename TensorT, typename InterpreterT>
+	void ModelTrainer<TensorT, InterpreterT>::setLossFunctionGrads(const std::vector<std::shared_ptr<LossFunctionGradOp<TensorT>>>& loss_function_grads)
 	{
 		loss_function_grads_ = loss_function_grads;
 	}
 
-	template<typename TensorT>
-	void ModelTrainer<TensorT>::setOutputNodes(const std::vector<std::vector<std::string>>& output_nodes)
+	template<typename TensorT, typename InterpreterT>
+	void ModelTrainer<TensorT, InterpreterT>::setOutputNodes(const std::vector<std::vector<std::string>>& output_nodes)
 	{
 		output_nodes_ = output_nodes;
 	}
 
-	template<typename TensorT>
-	void ModelTrainer<TensorT>::setNTBPTTSteps(const int & n_TBPTT)
+	template<typename TensorT, typename InterpreterT>
+	void ModelTrainer<TensorT, InterpreterT>::setNTBPTTSteps(const int & n_TBPTT)
 	{
 		n_TBPTT_steps_ = n_TBPTT;
 	}
 
-	template<typename TensorT>
-	void ModelTrainer<TensorT>::setNTETTSteps(const int & n_TETT)
+	template<typename TensorT, typename InterpreterT>
+	void ModelTrainer<TensorT, InterpreterT>::setNTETTSteps(const int & n_TETT)
 	{
 		n_TETT_steps_ = n_TETT;
 	}
 
-	template<typename TensorT>
-	inline void ModelTrainer<TensorT>::setFindCycles(const bool & find_cycles)
+	template<typename TensorT, typename InterpreterT>
+	inline void ModelTrainer<TensorT, InterpreterT>::setFindCycles(const bool & find_cycles)
 	{
 		find_cycles_ = find_cycles;
 	}
 
-	template<typename TensorT>
-	int ModelTrainer<TensorT>::getBatchSize() const
+	template<typename TensorT, typename InterpreterT>
+	int ModelTrainer<TensorT, InterpreterT>::getBatchSize() const
 	{
 		return batch_size_;
 	}
 
-	template<typename TensorT>
-	int ModelTrainer<TensorT>::getMemorySize() const
+	template<typename TensorT, typename InterpreterT>
+	int ModelTrainer<TensorT, InterpreterT>::getMemorySize() const
 	{
 		return memory_size_;
 	}
 
-	template<typename TensorT>
-	int ModelTrainer<TensorT>::getNEpochsTraining() const
+	template<typename TensorT, typename InterpreterT>
+	int ModelTrainer<TensorT, InterpreterT>::getNEpochsTraining() const
 	{
 		return n_epochs_training_;
 	}
 
-	template<typename TensorT>
-	int ModelTrainer<TensorT>::getNEpochsValidation() const
+	template<typename TensorT, typename InterpreterT>
+	int ModelTrainer<TensorT, InterpreterT>::getNEpochsValidation() const
 	{
 		return n_epochs_validation_;
 	}
 
-	template<typename TensorT>
-	int ModelTrainer<TensorT>::getNEpochsEvaluation() const
+	template<typename TensorT, typename InterpreterT>
+	int ModelTrainer<TensorT, InterpreterT>::getNEpochsEvaluation() const
 	{
 		return n_epochs_evaluation_;
 	}
 
-	template<typename TensorT>
-	int ModelTrainer<TensorT>::getVerbosityLevel() const
+	template<typename TensorT, typename InterpreterT>
+	int ModelTrainer<TensorT, InterpreterT>::getVerbosityLevel() const
 	{
 		return verbosity_level_;
 	}
 
-	template<typename TensorT>
-	std::vector<std::shared_ptr<LossFunctionOp<TensorT>>> ModelTrainer<TensorT>::getLossFunctions()
+	template<typename TensorT, typename InterpreterT>
+	inline bool ModelTrainer<TensorT, InterpreterT>::getLogTraining() const
+	{
+		return log_training_;
+	}
+
+	template<typename TensorT, typename InterpreterT>
+	inline bool ModelTrainer<TensorT, InterpreterT>::getLogValidation() const
+	{
+		return log_validation_;
+	}
+
+	template<typename TensorT, typename InterpreterT>
+	inline bool ModelTrainer<TensorT, InterpreterT>::getLogEvaluation() const
+	{
+		return log_evaluation_;
+	}
+
+	template<typename TensorT, typename InterpreterT>
+	std::vector<std::shared_ptr<LossFunctionOp<TensorT>>> ModelTrainer<TensorT, InterpreterT>::getLossFunctions()
 	{
 		return loss_functions_;
 	}
 
-	template<typename TensorT>
-	std::vector<std::shared_ptr<LossFunctionGradOp<TensorT>>> ModelTrainer<TensorT>::getLossFunctionGrads()
+	template<typename TensorT, typename InterpreterT>
+	std::vector<std::shared_ptr<LossFunctionGradOp<TensorT>>> ModelTrainer<TensorT, InterpreterT>::getLossFunctionGrads()
 	{
 		return loss_function_grads_;
 	}
 
-	template<typename TensorT>
-	std::vector<std::vector<std::string>> ModelTrainer<TensorT>::getOutputNodes()
+	template<typename TensorT, typename InterpreterT>
+	std::vector<std::vector<std::string>> ModelTrainer<TensorT, InterpreterT>::getOutputNodes()
 	{
 		return output_nodes_;
 	}
 
-	template<typename TensorT>
-	int ModelTrainer<TensorT>::getNTBPTTSteps() const
+	template<typename TensorT, typename InterpreterT>
+	int ModelTrainer<TensorT, InterpreterT>::getNTBPTTSteps() const
 	{
 		return n_TBPTT_steps_;
 	}
 
-	template<typename TensorT>
-	int ModelTrainer<TensorT>::getNTETTSteps() const
+	template<typename TensorT, typename InterpreterT>
+	int ModelTrainer<TensorT, InterpreterT>::getNTETTSteps() const
 	{
 		return n_TETT_steps_;
 	}
 
-	template<typename TensorT>
-	inline bool ModelTrainer<TensorT>::getFindCycles()
+	template<typename TensorT, typename InterpreterT>
+	inline bool ModelTrainer<TensorT, InterpreterT>::getFindCycles()
 	{
 		return find_cycles_;
 	}
 
-	template<typename TensorT>
-	bool ModelTrainer<TensorT>::checkInputData(const int& n_epochs,
+	template<typename TensorT, typename InterpreterT>
+	bool ModelTrainer<TensorT, InterpreterT>::checkInputData(const int& n_epochs,
 		const Eigen::Tensor<TensorT, 4>& input,
 		const int& batch_size,
 		const int& memory_size,
@@ -394,8 +412,8 @@ private:
 		}
 	}
 
-	template<typename TensorT>
-	bool ModelTrainer<TensorT>::checkOutputData(const int& n_epochs,
+	template<typename TensorT, typename InterpreterT>
+	bool ModelTrainer<TensorT, InterpreterT>::checkOutputData(const int& n_epochs,
 		const Eigen::Tensor<TensorT, 4>& output,
 		const int& batch_size,
 		const int& memory_size,
@@ -427,8 +445,8 @@ private:
 		}
 	}
 
-	template<typename TensorT>
-	bool ModelTrainer<TensorT>::checkTimeSteps(const int & n_epochs, const Eigen::Tensor<TensorT, 3>& time_steps, const int & batch_size, const int & memory_size)
+	template<typename TensorT, typename InterpreterT>
+	bool ModelTrainer<TensorT, InterpreterT>::checkTimeSteps(const int & n_epochs, const Eigen::Tensor<TensorT, 3>& time_steps, const int & batch_size, const int & memory_size)
 	{
 		if (time_steps.dimension(0) != batch_size)
 		{
