@@ -301,7 +301,7 @@ public:
 				if (weight_map.second->getSolverOp()->getName() == "AdamOp")
 					weight_map.second->setSolverOp(solver);
 		}
-		if (n_epochs % 100 == 0 && n_epochs != 0) {
+		if (n_epochs % 1000 == 0 && n_epochs != 0) {
 			// save the model every 100 epochs
 			ModelFile<TensorT> data;
 			data.storeModelCsv(model.getName() + "_" + std::to_string(n_epochs) + "_nodes.csv",
@@ -537,10 +537,10 @@ void main_CovNet() {
 		model_interpreters.push_back(model_interpreter);
 	}
 	ModelTrainerExt<float> model_trainer;
-	model_trainer.setBatchSize(8);
+	model_trainer.setBatchSize(16);
 	model_trainer.setMemorySize(1);
-	model_trainer.setNEpochsTraining(100001);
-	model_trainer.setNEpochsValidation(10);
+	model_trainer.setNEpochsTraining(1001);
+	model_trainer.setNEpochsValidation(1);
 	model_trainer.setFindCycles(false);
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setLogging(false, false);
@@ -558,7 +558,7 @@ void main_CovNet() {
 
 	// define the initial population
 	std::cout << "Initializing the population..." << std::endl;
-	std::vector<Model<float>> population = { ModelTrainerExt<float>().makeCovNet(input_nodes.size(), output_nodes.size(), 32, 2, 128) };
+	std::vector<Model<float>> population = { ModelTrainerExt<float>().makeCovNet(input_nodes.size(), output_nodes.size(), 16, 2, 128) };
 	//std::vector<Model<float>> population = { ModelTrainerExt<float>().makeCovNet(input_nodes.size(), output_nodes.size(), 32, 2, 128) };
 
 	// Evolve the population

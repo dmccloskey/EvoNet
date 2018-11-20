@@ -298,7 +298,7 @@ public:
 				if (weight_map.second->getSolverOp()->getName() == "AdamOp")
 					weight_map.second->setSolverOp(solver);
 		}
-		if (n_epochs % 100 == 0 && n_epochs != 0) {
+		if (n_epochs % 1000 == 0 && n_epochs != 0) {
 			// save the model every 100 epochs
 			ModelFile<TensorT> data;
 			data.storeModelCsv(model.getName() + "_" + std::to_string(n_epochs) + "_nodes.csv",
@@ -530,24 +530,24 @@ void main_CovNet() {
 	std::vector<ModelInterpreterDefaultDevice<float>> model_interpreters;
 	for (size_t i = 0; i < n_threads; ++i) {
 		ModelResources model_resources = { ModelDevice(0, DeviceType::default, 1) };
-		ModelTrainerExt<float> model_trainer;
-		model_trainer.setBatchSize(16);
-		model_trainer.setMemorySize(1);
-		model_trainer.setNEpochsTraining(51);
-		model_trainer.setNEpochsValidation(10);
-		model_trainer.setVerbosityLevel(1);
-		model_trainer.setLogging(false, false);
-		model_trainer.setLossFunctions({
-			std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>())//,std::shared_ptr<LossFunctionOp<float>>(new NegativeLogLikelihoodOp<float>()),
-			});
-		model_trainer.setLossFunctionGrads({
-			std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>())//,	std::shared_ptr<LossFunctionGradOp<float>>(new NegativeLogLikelihoodGradOp<float>())
-			});
-		model_trainer.setOutputNodes({ output_FC_nodes//, output_nodes 
-			});
 		ModelInterpreterDefaultDevice<float> model_interpreter(model_resources);
 		model_interpreters.push_back(model_interpreter);
 	}
+	ModelTrainerExt<float> model_trainer;
+	model_trainer.setBatchSize(16);
+	model_trainer.setMemorySize(1);
+	model_trainer.setNEpochsTraining(51);
+	model_trainer.setNEpochsValidation(1);
+	model_trainer.setVerbosityLevel(1);
+	model_trainer.setLogging(false, false);
+	model_trainer.setLossFunctions({
+		std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>())//,std::shared_ptr<LossFunctionOp<float>>(new NegativeLogLikelihoodOp<float>()),
+		});
+	model_trainer.setLossFunctionGrads({
+		std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>())//,	std::shared_ptr<LossFunctionGradOp<float>>(new NegativeLogLikelihoodGradOp<float>())
+		});
+	model_trainer.setOutputNodes({ output_FC_nodes//, output_nodes 
+		});
 
 	// define the model replicator for growth mode
 	ModelReplicatorExt<float> model_replicator;

@@ -132,7 +132,7 @@ public:
 				if (weight_map.second->getSolverOp()->getName() == "AdamOp")
 					weight_map.second->getSolverOp()->setLearningRate(1e-4);
 		}
-		if (n_epochs % 50 == 0) {
+		if (n_epochs % 1000 == 0 && n_epochs != 0) {
 			// save the model every 100 epochs
 			ModelFile<TensorT> data;
 			data.storeModelCsv(model.getName() + "_" + std::to_string(n_epochs) + "_nodes.csv",
@@ -326,6 +326,7 @@ public:
 void main_VAE() {
 
 	const int n_hard_threads = std::thread::hardware_concurrency();
+	const int n_threads = 1;
 
 	// define the populatin trainer
 	PopulationTrainerExt<float> population_trainer;
@@ -390,15 +391,15 @@ void main_VAE() {
 
 	// define the model trainers and resources for the trainers
 	std::vector<ModelInterpreterGpu<float>> model_interpreters;
-	for (size_t i = 0; i < n_hard_threads; ++i) {
+	for (size_t i = 0; i < n_threads; ++i) {
 		ModelResources model_resources = { ModelDevice(0, DeviceType::gpu, 1) };
 		ModelInterpreterGpu<float> model_interpreter(model_resources);
 		model_interpreters.push_back(model_interpreter);
 	}
 	ModelTrainerExt<float> model_trainer;
-	model_trainer.setBatchSize(8);
+	model_trainer.setBatchSize(16);
 	model_trainer.setMemorySize(1);
-	model_trainer.setNEpochsTraining(5000);
+	model_trainer.setNEpochsTraining(5001);
 	model_trainer.setNEpochsValidation(10);
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setLogging(false, false);
