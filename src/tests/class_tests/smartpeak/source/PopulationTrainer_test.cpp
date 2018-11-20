@@ -3,17 +3,18 @@
 
 #define BOOST_TEST_MODULE PopulationTrainer test suite 
 #include <boost/test/included/unit_test.hpp>
-#include <SmartPeak/ml/PopulationTrainer.h>
+#include <SmartPeak/ml/PopulationTrainerDefaultDevice.h>
 
 #include <SmartPeak/ml/ModelBuilder.h>
 #include <SmartPeak/io/PopulationTrainerFile.h>
+#include <SmartPeak/ml/ModelTrainerDefaultDevice.h>
 
 using namespace SmartPeak;
 using namespace std;
 
 // Extended classes used for testing
-template<typename TensorT, typename DeviceT>
-class ModelTrainerExt : public ModelTrainer<TensorT, DeviceT>
+template<typename TensorT>
+class ModelTrainerExt : public ModelTrainerDefaultDevice<TensorT>
 {
 public:
 	Model<TensorT> makeModel() { return Model<TensorT>(); }
@@ -48,8 +49,8 @@ public:
 	}
 };
 
-template<typename TensorT, typename DeviceT>
-class PopulationTrainerExt : public PopulationTrainer<TensorT, DeviceT>
+template<typename TensorT>
+class PopulationTrainerExt : public PopulationTrainerDefaultDevice<TensorT>
 {
 public:
 	void adaptivePopulationScheduler(
@@ -154,22 +155,22 @@ BOOST_AUTO_TEST_SUITE(populationTrainer)
 
 BOOST_AUTO_TEST_CASE(constructor) 
 {
-  PopulationTrainerExt<float, Eigen::DefaultDevice>* ptr = nullptr;
-  PopulationTrainerExt<float, Eigen::DefaultDevice>* nullPointer = nullptr;
-	ptr = new PopulationTrainerExt<float, Eigen::DefaultDevice>();
+  PopulationTrainerExt<float>* ptr = nullptr;
+  PopulationTrainerExt<float>* nullPointer = nullptr;
+	ptr = new PopulationTrainerExt<float>();
   BOOST_CHECK_NE(ptr, nullPointer);
 }
 
 BOOST_AUTO_TEST_CASE(destructor) 
 {
-  PopulationTrainerExt<float, Eigen::DefaultDevice>* ptr = nullptr;
-	ptr = new PopulationTrainerExt<float, Eigen::DefaultDevice>();
+  PopulationTrainerExt<float>* ptr = nullptr;
+	ptr = new PopulationTrainerExt<float>();
   delete ptr;
 }
 
 BOOST_AUTO_TEST_CASE(gettersAndSetters)
 {
-	PopulationTrainerExt<float, Eigen::DefaultDevice> population_trainer;
+	PopulationTrainerExt<float> population_trainer;
 	population_trainer.setNTop(4);
 	population_trainer.setNRandom(1);
 	population_trainer.setNReplicatesPerModel(2);
@@ -183,7 +184,7 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
 
 BOOST_AUTO_TEST_CASE(removeDuplicateModels) 
 {
-  PopulationTrainerExt<float, Eigen::DefaultDevice> population_trainer;
+  PopulationTrainerExt<float> population_trainer;
 
   // make a vector of models to use for testing
   std::vector<Model<float>> models;
@@ -206,7 +207,7 @@ BOOST_AUTO_TEST_CASE(removeDuplicateModels)
 
 BOOST_AUTO_TEST_CASE(getTopNModels_) 
 {
-  PopulationTrainerExt<float, Eigen::DefaultDevice> population_trainer;
+  PopulationTrainerExt<float> population_trainer;
 
   // make dummy data
   std::vector<std::tuple<int, std::string, float>> models_validation_errors;
@@ -228,7 +229,7 @@ BOOST_AUTO_TEST_CASE(getTopNModels_)
 
 BOOST_AUTO_TEST_CASE(getRandomNModels_) 
 {
-  PopulationTrainerExt<float, Eigen::DefaultDevice> population_trainer;
+  PopulationTrainerExt<float> population_trainer;
 
   // make dummy data
   std::vector<std::tuple<int, std::string, float>> models_validation_errors;
@@ -249,7 +250,7 @@ BOOST_AUTO_TEST_CASE(getRandomNModels_)
 
 BOOST_AUTO_TEST_CASE(validateModels_) 
 {
-  // PopulationTrainerExt<float, Eigen::DefaultDevice> population_trainer;
+  // PopulationTrainerExt<float> population_trainer;
   
   // model_trainer_validateModels_.setBatchSize(5);
   // model_trainer_validateModels_.setMemorySize(8);
@@ -272,14 +273,14 @@ BOOST_AUTO_TEST_CASE(validateModels_)
 
 BOOST_AUTO_TEST_CASE(selectModels) 
 {
-  PopulationTrainerExt<float, Eigen::DefaultDevice> population_trainer;
+  PopulationTrainerExt<float> population_trainer;
 
   // [TODO: add tests]
 }
 
 BOOST_AUTO_TEST_CASE(replicateModels) 
 {
-  PopulationTrainerExt<float, Eigen::DefaultDevice> population_trainer;
+  PopulationTrainerExt<float> population_trainer;
 	population_trainer.setNReplicatesPerModel(2);
 
   ModelReplicatorExt<float> model_replicator;
@@ -387,25 +388,23 @@ BOOST_AUTO_TEST_CASE(trainModels)
 	const int n_epochs_validation = 5;
 	const int n_epochs_evaluation = 5;
 
-  PopulationTrainerExt<float, Eigen::DefaultDevice> population_trainer;
+  PopulationTrainerExt<float> population_trainer;
 
-	std::vector<std::shared_ptr<ModelTrainer<float, Eigen::DefaultDevice>>> model_trainers;
+	std::vector<ModelInterpreterDefaultDevice<float>> model_interpreters;
 	for (size_t i = 0; i < 1; ++i) {
 		ModelResources model_resources = { ModelDevice(0, DeviceType::default, 1) };
-
-		std::shared_ptr<ModelTrainer<float, Eigen::DefaultDevice>> model_trainer(new ModelTrainerExt<float, Eigen::DefaultDevice>());
-		model_trainer->setBatchSize(batch_size);
-		model_trainer->setMemorySize(memory_size);
-		model_trainer->setNEpochsTraining(n_epochs_training);
-		model_trainer->setNEpochsValidation(n_epochs_validation);
-		model_trainer->setNEpochsEvaluation(n_epochs_evaluation);
-		model_trainer->setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
-		model_trainer->setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
-		model_trainer->setOutputNodes({ output_nodes });
-		model_trainer->setModelInterpreter(std::shared_ptr<ModelInterpreter<float, Eigen::DefaultDevice>>(new ModelInterpreterDefaultDevice<float>(model_resources)));
-
-		model_trainers.push_back(model_trainer);
+		model_interpreters.push_back(ModelInterpreterDefaultDevice<float>(model_resources));
 	}
+
+	ModelTrainerExt<float> model_trainer;
+	model_trainer.setBatchSize(batch_size);
+	model_trainer.setMemorySize(memory_size);
+	model_trainer.setNEpochsTraining(n_epochs_training);
+	model_trainer.setNEpochsValidation(n_epochs_validation);
+	model_trainer.setNEpochsEvaluation(n_epochs_evaluation);
+	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
+	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
+	model_trainer.setOutputNodes({ output_nodes });
 
   ModelReplicatorExt<float> model_replicator;
   model_replicator.setNNodeAdditions(1);
@@ -493,7 +492,7 @@ BOOST_AUTO_TEST_CASE(trainModels)
       for (int epochs_iter=0; epochs_iter<n_epochs_training; ++epochs_iter)
         time_steps(batch_iter, memory_iter, epochs_iter) = time_steps_tmp(batch_iter, memory_iter);
 
-  population_trainer.trainModels(population, model_trainers, ModelLogger<float>(),
+  population_trainer.trainModels(population, model_trainer, model_interpreters,ModelLogger<float>(),
     input_data, output_data, time_steps, input_nodes);
 
   BOOST_CHECK_EQUAL(population.size(), 4); // broken models should still be there
@@ -518,25 +517,23 @@ BOOST_AUTO_TEST_CASE(evalModels)
 	const int n_epochs_validation = 5;
 	const int n_epochs_evaluation = 5;
 
-	PopulationTrainerExt<float, Eigen::DefaultDevice> population_trainer;
+	PopulationTrainerExt<float> population_trainer;
 
-	std::vector<std::shared_ptr<ModelTrainer<float, Eigen::DefaultDevice>>> model_trainers;
+	std::vector<ModelInterpreterDefaultDevice<float>> model_interpreters;
 	for (size_t i = 0; i < 1; ++i) {
 		ModelResources model_resources = { ModelDevice(0, DeviceType::default, 1) };
-
-		std::shared_ptr<ModelTrainer<float, Eigen::DefaultDevice>> model_trainer(new ModelTrainerExt<float, Eigen::DefaultDevice>());
-		model_trainer->setBatchSize(batch_size);
-		model_trainer->setMemorySize(memory_size);
-		model_trainer->setNEpochsTraining(n_epochs_training);
-		model_trainer->setNEpochsValidation(n_epochs_validation);
-		model_trainer->setNEpochsEvaluation(n_epochs_evaluation);
-		model_trainer->setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
-		model_trainer->setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
-		model_trainer->setOutputNodes({ output_nodes });
-		model_trainer->setModelInterpreter(std::shared_ptr<ModelInterpreter<float, Eigen::DefaultDevice>>(new ModelInterpreterDefaultDevice<float>(model_resources)));
-
-		model_trainers.push_back(model_trainer);
+		model_interpreters.push_back(ModelInterpreterDefaultDevice<float>(model_resources));
 	}
+
+	ModelTrainerExt<float> model_trainer;
+	model_trainer.setBatchSize(batch_size);
+	model_trainer.setMemorySize(memory_size);
+	model_trainer.setNEpochsTraining(n_epochs_training);
+	model_trainer.setNEpochsValidation(n_epochs_validation);
+	model_trainer.setNEpochsEvaluation(n_epochs_evaluation);
+	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
+	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
+	model_trainer.setOutputNodes({ output_nodes });
 
 	ModelReplicatorExt<float> model_replicator;
 	model_replicator.setNNodeAdditions(1);
@@ -609,7 +606,7 @@ BOOST_AUTO_TEST_CASE(evalModels)
 			for (int epochs_iter = 0; epochs_iter < n_epochs_training; ++epochs_iter)
 				time_steps(batch_iter, memory_iter, epochs_iter) = time_steps_tmp(batch_iter, memory_iter);
 
-	population_trainer.evalModels(population, model_trainers, ModelLogger<float>(),
+	population_trainer.evalModels(population, model_trainer, model_interpreters,ModelLogger<float>(),
 		input_data, time_steps, input_nodes);
 
 	BOOST_CHECK_EQUAL(population.size(), 4); // broken models should still be there
@@ -632,7 +629,7 @@ BOOST_AUTO_TEST_CASE(evalModels)
 
 BOOST_AUTO_TEST_CASE(exampleUsage) 
 {
-	PopulationTrainerExt<float, Eigen::DefaultDevice> population_trainer;
+	PopulationTrainerExt<float> population_trainer;
 	population_trainer.setNTop(2);
 	population_trainer.setNRandom(2);
 	population_trainer.setNReplicatesPerModel(3);
@@ -653,24 +650,21 @@ BOOST_AUTO_TEST_CASE(exampleUsage)
 	const int n_epochs_evaluation = 5;
 
 	// define the model trainers and resources for the trainers
-	std::vector<std::shared_ptr<ModelTrainer<float, Eigen::DefaultDevice>>> model_trainers;
+	std::vector<ModelInterpreterDefaultDevice<float>> model_interpreters;
 	for (size_t i = 0; i < 1; ++i) {
 		ModelResources model_resources = { ModelDevice(0, DeviceType::default, 1) };
-
-		std::shared_ptr<ModelTrainer<float, Eigen::DefaultDevice>> model_trainer(new ModelTrainerExt<float, Eigen::DefaultDevice>());
-		model_trainer->setBatchSize(batch_size);
-		model_trainer->setMemorySize(memory_size);
-		model_trainer->setNEpochsTraining(n_epochs_training);
-		model_trainer->setNEpochsValidation(n_epochs_validation);
-		model_trainer->setNEpochsEvaluation(n_epochs_evaluation);
-		model_trainer->setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
-		model_trainer->setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
-		model_trainer->setOutputNodes({ output_nodes });
-		model_trainer->setModelInterpreter(std::shared_ptr<ModelInterpreter<float, Eigen::DefaultDevice>>(new ModelInterpreterDefaultDevice<float>(model_resources)));
-		model_trainer->setVerbosityLevel(0);
-
-		model_trainers.push_back(model_trainer);
+		model_interpreters.push_back(ModelInterpreterDefaultDevice<float>(model_resources));
 	}
+
+	ModelTrainerExt<float> model_trainer;
+	model_trainer.setBatchSize(batch_size);
+	model_trainer.setMemorySize(memory_size);
+	model_trainer.setNEpochsTraining(n_epochs_training);
+	model_trainer.setNEpochsValidation(n_epochs_validation);
+	model_trainer.setNEpochsEvaluation(n_epochs_evaluation);
+	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
+	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
+	model_trainer.setOutputNodes({ output_nodes });
 
   // define the model replicator for growth mode
 	ModelReplicatorExt<float> model_replicator;
@@ -706,7 +700,7 @@ BOOST_AUTO_TEST_CASE(exampleUsage)
 
 	// Evolve the population
 	std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
-		population, model_trainers, model_replicator, data_simulator, model_logger, input_nodes);
+		population, model_trainer, model_interpreters,model_replicator, data_simulator, model_logger, input_nodes);
 
 	PopulationTrainerFile<float> population_trainer_file;
 	population_trainer_file.storeModels(population, "populationTrainer");

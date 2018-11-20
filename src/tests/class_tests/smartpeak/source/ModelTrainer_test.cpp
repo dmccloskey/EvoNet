@@ -11,7 +11,7 @@ using namespace SmartPeak;
 using namespace std;
 
 template<typename TensorT>
-class ModelTrainerExt : public ModelTrainerDefaultDevice<TensorT>
+class ModelTrainerExt : public ModelTrainerDefaultDevice<TensorT><TensorT>
 {
 public:
 	Model<TensorT> makeModel() { return Model<TensorT>(); }
@@ -118,7 +118,7 @@ BOOST_AUTO_TEST_CASE(checkOutputData)
 }
 
 template<typename TensorT>
-class DAGToyModelTrainer : public ModelTrainerDefaultDevice<TensorT>
+class DAGToyModelTrainer : public ModelTrainerDefaultDevice<TensorT><TensorT>
 {
 public:
 	Model<TensorT> makeModel()
@@ -279,7 +279,7 @@ BOOST_AUTO_TEST_CASE(DAGToy)
 }
 
 template<typename TensorT>
-class DCGToyModelTrainer : public ModelTrainerDefaultDevice<TensorT>
+class DCGToyModelTrainer : public ModelTrainerDefaultDevice<TensorT><TensorT>
 {
 public:
 	Model<TensorT> makeModel()

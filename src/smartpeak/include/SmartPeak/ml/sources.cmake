@@ -30,6 +30,8 @@ set(sources_list_h
 	NodeTensorData.h
 	OpToTensorOp.h
 	PopulationTrainer.h
+	PopulationTrainerDefaultDevice.h
+	PopulationTrainerGpu.h
 	SharedFunctions.h
 	Solver.h
 	SolverTensor.h

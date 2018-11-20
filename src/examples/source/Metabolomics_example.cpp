@@ -1,7 +1,7 @@
 /**TODO:  Add copyright*/
 
-#include <SmartPeak/ml/PopulationTrainer.h>
-#include <SmartPeak/ml/ModelTrainer.h>
+#include <SmartPeak/ml/PopulationTrainerDefaultDevice.h>
+#include <SmartPeak/ml/ModelTrainerDefaultDevice.h>
 #include <SmartPeak/ml/ModelReplicator.h>
 #include <SmartPeak/ml/ModelBuilder.h>
 #include <SmartPeak/ml/Model.h>
@@ -614,8 +614,8 @@ public:
 	}
 };
 
-template<typename TensorT, typename DeviceT>
-class PopulationTrainerExt : public PopulationTrainer<TensorT, DeviceT>
+template<typename TensorT>
+class PopulationTrainerExt : public PopulationTrainerDefaultDevice<TensorT>
 {
 public:
 	void adaptivePopulationScheduler(
@@ -639,8 +639,8 @@ public:
 	}
 };
 
-template<typename TensorT, typename DeviceT>
-class ModelTrainerExt : public ModelTrainer<TensorT, DeviceT>
+template<typename TensorT>
+class ModelTrainerExt : public ModelTrainerDefaultDevice<TensorT>
 {
 public:
 	Model<TensorT> makeModel() { return Model<TensorT>(); }
@@ -2082,7 +2082,7 @@ void main_classification(std::string blood_fraction = "PLT", bool make_model = t
 {
 
 	// define the population trainer parameters
-	PopulationTrainerExt<float, Eigen::DefaultDevice> population_trainer;
+	PopulationTrainerExt<float> population_trainer;
 	population_trainer.setNGenerations(1);
 	population_trainer.setNTop(3);
 	population_trainer.setNRandom(3);
@@ -2143,31 +2143,31 @@ void main_classification(std::string blood_fraction = "PLT", bool make_model = t
 	}
 
 	// define the model trainers and resources for the trainers
-	std::vector<std::shared_ptr<ModelTrainer<float, Eigen::DefaultDevice>>> model_trainers;
+	std::vector<ModelInterpreterDefaultDevice<float>> model_interpreters;
 	for (size_t i = 0; i < n_threads; ++i) {
 		ModelResources model_resources = { ModelDevice(0, DeviceType::default, 1) };
-		std::shared_ptr<ModelTrainer<float, Eigen::DefaultDevice>> model_trainer(new ModelTrainerExt<float, Eigen::DefaultDevice>());
-		model_trainer->setBatchSize(64);
-		model_trainer->setMemorySize(1);
-		model_trainer->setNEpochsTraining(1001);
-		model_trainer->setNEpochsValidation(25);
-		model_trainer->setVerbosityLevel(1);
-		model_trainer->setLogging(true, false);
-		//model_trainer->setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()), std::shared_ptr<LossFunctionOp<float>>(new NegativeLogLikelihoodOp<float>(2)) 
+		ModelTrainerExt<float> model_trainer;
+		model_trainer.setBatchSize(64);
+		model_trainer.setMemorySize(1);
+		model_trainer.setNEpochsTraining(1001);
+		model_trainer.setNEpochsValidation(25);
+		model_trainer.setVerbosityLevel(1);
+		model_trainer.setLogging(true, false);
+		//model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()), std::shared_ptr<LossFunctionOp<float>>(new NegativeLogLikelihoodOp<float>(2)) 
 		//});
-		//model_trainer->setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()), std::shared_ptr<LossFunctionGradOp<float>>(new NegativeLogLikelihoodGradOp<float>(2)) 
+		//model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()), std::shared_ptr<LossFunctionGradOp<float>>(new NegativeLogLikelihoodGradOp<float>(2)) 
 		//});
-		model_trainer->setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new NegativeLogLikelihoodOp<float>(2)) });
-		model_trainer->setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new NegativeLogLikelihoodGradOp<float>(2)) });
-		//model_trainer->setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new BCEWithLogitsOp<float>()) });
-		//model_trainer->setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new BCEWithLogitsGradOp<float>()) });
-		//model_trainer->setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new BCEOp<float>()) });
-		//model_trainer->setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new BCEGradOp<float>()) });
-		model_trainer->setOutputNodes({output_nodes_softmax});
-		//model_trainer->setOutputNodes({ output_nodes, output_nodes_softmax
+		model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new NegativeLogLikelihoodOp<float>(2)) });
+		model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new NegativeLogLikelihoodGradOp<float>(2)) });
+		//model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new BCEWithLogitsOp<float>()) });
+		//model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new BCEWithLogitsGradOp<float>()) });
+		//model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new BCEOp<float>()) });
+		//model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new BCEGradOp<float>()) });
+		model_trainer.setOutputNodes({output_nodes_softmax});
+		//model_trainer.setOutputNodes({ output_nodes, output_nodes_softmax
 		//});
-		model_trainer->setModelInterpreter(std::shared_ptr<ModelInterpreter<float, Eigen::DefaultDevice>>(new ModelInterpreterDefaultDevice<float>(model_resources)));
-		model_trainers.push_back(model_trainer);
+		ModelInterpreterDefaultDevice<float> model_interpreter(model_resources);
+		model_interpreters.push_back(model_interpreter);
 	}
 
 	// define the model logger
@@ -2188,7 +2188,7 @@ void main_classification(std::string blood_fraction = "PLT", bool make_model = t
 	std::cout << "Initializing the population..." << std::endl;
 	std::vector<Model<float>> population;
 	if (make_model) {
-		population = { ModelTrainerExt<float, Eigen::DefaultDevice>().makeModelClassification(n_input_nodes, n_output_nodes) };
+		population = { ModelTrainerExt<float>().makeModelClassification(n_input_nodes, n_output_nodes) };
 	}
 	else {
 		ModelFile<float> model_file;
@@ -2199,7 +2199,7 @@ void main_classification(std::string blood_fraction = "PLT", bool make_model = t
 
 	// Evolve the population
 	std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
-		population, model_trainers, model_replicator, metabolomics_data, model_logger, input_nodes);
+		population, model_trainer, model_interpreters, model_replicator, metabolomics_data, model_logger, input_nodes);
 
 	PopulationTrainerFile<float> population_trainer_file;
 	population_trainer_file.storeModels(population, "Metabolomics");
@@ -2217,7 +2217,7 @@ void main_reconstruction()
 	const int n_threads = 1;
 
 	// define the population trainer parameters
-	PopulationTrainerExt<float, Eigen::DefaultDevice> population_trainer;
+	PopulationTrainerExt<float> population_trainer;
 	population_trainer.setNGenerations(1);
 	population_trainer.setNTop(3);
 	population_trainer.setNRandom(3);
@@ -2247,21 +2247,21 @@ void main_reconstruction()
 		output_nodes.push_back("Output_" + std::to_string(i));
 
 	// define the model trainers and resources for the trainers
-	std::vector<std::shared_ptr<ModelTrainer<float, Eigen::DefaultDevice>>> model_trainers;
+	std::vector<ModelInterpreterDefaultDevice<float>> model_interpreters;
 	for (size_t i = 0; i < n_threads; ++i) {
 		ModelResources model_resources = { ModelDevice(0, DeviceType::default, 1) };
-		std::shared_ptr<ModelTrainer<float, Eigen::DefaultDevice>> model_trainer(new ModelTrainerExt<float, Eigen::DefaultDevice>());
-		model_trainer->setBatchSize(8);
-		model_trainer->setMemorySize(1);
-		model_trainer->setNEpochsTraining(1001);
-		model_trainer->setNEpochsValidation(10);
-		model_trainer->setVerbosityLevel(1);
-		model_trainer->setLogging(false, false);
-		model_trainer->setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
-		model_trainer->setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
-		model_trainer->setOutputNodes({ output_nodes });
-		model_trainer->setModelInterpreter(std::shared_ptr<ModelInterpreter<float, Eigen::DefaultDevice>>(new ModelInterpreterDefaultDevice<float>(model_resources)));
-		model_trainers.push_back(model_trainer);
+		ModelTrainerExt<float> model_trainer;
+		model_trainer.setBatchSize(8);
+		model_trainer.setMemorySize(1);
+		model_trainer.setNEpochsTraining(1001);
+		model_trainer.setNEpochsValidation(10);
+		model_trainer.setVerbosityLevel(1);
+		model_trainer.setLogging(false, false);
+		model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
+		model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
+		model_trainer.setOutputNodes({ output_nodes });
+		ModelInterpreterDefaultDevice<float> model_interpreter(model_resources);
+		model_interpreters.push_back(model_interpreter);
 	}
 
 	// define the model logger
@@ -2302,7 +2302,7 @@ void main_reconstruction()
 
 	// Evolve the population
 	std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
-		population, model_trainers, model_replicator, metabolomics_data, model_logger, input_nodes);
+		population, model_trainer, model_interpreters, model_replicator, metabolomics_data, model_logger, input_nodes);
 
 	PopulationTrainerFile<float> population_trainer_file;
 	population_trainer_file.storeModels(population, "Metabolomics");

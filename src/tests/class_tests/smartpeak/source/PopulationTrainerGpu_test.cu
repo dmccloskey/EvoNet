@@ -1,7 +1,8 @@
 /**TODO:  Add copyright*/
 #if COMPILE_WITH_CUDA
 
-#include <SmartPeak/ml/PopulationTrainer.h>
+#include <SmartPeak/ml/PopulationTrainerGpu.h>
+#include <SmartPeak/ml/ModelTrainerGpu.h>
 
 #include <SmartPeak/ml/ModelBuilder.h>
 #include <SmartPeak/io/PopulationTrainerFile.h>
@@ -10,8 +11,8 @@ using namespace SmartPeak;
 using namespace std;
 
 // Extended classes used for testing
-template<typename TensorT, typename DeviceT>
-class ModelTrainerExt : public ModelTrainer<TensorT, DeviceT>
+template<typename TensorT>
+class ModelTrainerExt : public ModelTrainerGpu<TensorT>
 {
 public:
 	Model<TensorT> makeModel() { return Model<TensorT>(); }
@@ -46,8 +47,8 @@ public:
 	}
 };
 
-template<typename TensorT, typename DeviceT>
-class PopulationTrainerExt : public PopulationTrainer<TensorT, DeviceT>
+template<typename TensorT>
+class PopulationTrainerExt : public PopulationTrainerGpu<TensorT>
 {
 public:
 	void adaptivePopulationScheduler(
@@ -116,10 +117,10 @@ public:
 			{{11}, {10}, {9}, {8}, {7}, {6}, {5}, {4}},
 			{{12}, {11}, {10}, {9}, {8}, {7}, {6}, {5}} }
 		);
-		for (int batch_iter = 0; batch_iter<batch_size; ++batch_iter)
-			for (int memory_iter = 0; memory_iter<memory_size; ++memory_iter)
-				for (int nodes_iter = 0; nodes_iter<n_input_nodes; ++nodes_iter)
-					for (int epochs_iter = 0; epochs_iter<n_epochs; ++epochs_iter)
+		for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter)
+			for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter)
+				for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter)
+					for (int epochs_iter = 0; epochs_iter < n_epochs; ++epochs_iter)
 						input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = input_tmp(batch_iter, memory_iter, nodes_iter);
 		Eigen::Tensor<TensorT, 3> output_tmp(batch_size, memory_size, n_output_nodes);
 		output_tmp.setValues(
@@ -128,10 +129,10 @@ public:
 			{ { 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 },{ 2 } },
 			{ { 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 } },
 			{ { 6 },{ 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 } } });
-		for (int batch_iter = 0; batch_iter<batch_size; ++batch_iter)
-			for (int memory_iter = 0; memory_iter<memory_size; ++memory_iter)
-				for (int nodes_iter = 0; nodes_iter<n_output_nodes; ++nodes_iter)
-					for (int epochs_iter = 0; epochs_iter<n_epochs; ++epochs_iter)
+		for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter)
+			for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter)
+				for (int nodes_iter = 0; nodes_iter < n_output_nodes; ++nodes_iter)
+					for (int epochs_iter = 0; epochs_iter < n_epochs; ++epochs_iter)
 						output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = output_tmp(batch_iter, memory_iter, nodes_iter);
 
 		// update the time_steps
@@ -158,25 +159,23 @@ void test_trainModels()
 	const int n_epochs_validation = 5;
 	const int n_epochs_evaluation = 5;
 
-  PopulationTrainerExt<float, Eigen::GpuDevice> population_trainer;
+  PopulationTrainerExt<float> population_trainer;
 
-	std::vector<std::shared_ptr<ModelTrainer<float, Eigen::GpuDevice>>> model_trainers;
+	std::vector<ModelInterpreterGpu<float>> model_interpreters;
 	for (size_t i = 0; i < 1; ++i) {
 		ModelResources model_resources = { ModelDevice(0, DeviceType::gpu, 1) };
-
-		std::shared_ptr<ModelTrainer<float, Eigen::GpuDevice>> model_trainer(new ModelTrainerExt<float, Eigen::GpuDevice>());
-		model_trainer->setBatchSize(batch_size);
-		model_trainer->setMemorySize(memory_size);
-		model_trainer->setNEpochsTraining(n_epochs_training);
-		model_trainer->setNEpochsValidation(n_epochs_validation);
-		model_trainer->setNEpochsEvaluation(n_epochs_evaluation);
-		model_trainer->setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
-		model_trainer->setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
-		model_trainer->setOutputNodes({ output_nodes });
-		model_trainer->setModelInterpreter(std::shared_ptr<ModelInterpreter<float, Eigen::GpuDevice>>(new ModelInterpreterGpu<float>(model_resources)));
-
-		model_trainers.push_back(model_trainer);
+		model_interpreters.push_back(ModelInterpreterGpu<float>(model_resources));
 	}
+
+	ModelTrainerExt<float> model_trainer;
+	model_trainer.setBatchSize(batch_size);
+	model_trainer.setMemorySize(memory_size);
+	model_trainer.setNEpochsTraining(n_epochs_training);
+	model_trainer.setNEpochsValidation(n_epochs_validation);
+	model_trainer.setNEpochsEvaluation(n_epochs_evaluation);
+	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
+	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
+	model_trainer.setOutputNodes({ output_nodes });
 
   ModelReplicatorExt<float> model_replicator;
   model_replicator.setNNodeAdditions(1);
@@ -264,7 +263,7 @@ void test_trainModels()
       for (int epochs_iter=0; epochs_iter<n_epochs_training; ++epochs_iter)
         time_steps(batch_iter, memory_iter, epochs_iter) = time_steps_tmp(batch_iter, memory_iter);
 
-  population_trainer.trainModels(population, model_trainers, ModelLogger<float>(),
+  population_trainer.trainModels(population, model_trainer, model_interpreters, ModelLogger<float>(),
     input_data, output_data, time_steps, input_nodes);
 
   assert(population.size() == 4); // broken models should still be there
@@ -289,25 +288,23 @@ void test_evalModels()
 	const int n_epochs_validation = 5;
 	const int n_epochs_evaluation = 5;
 
-	PopulationTrainerExt<float, Eigen::GpuDevice> population_trainer;
+	PopulationTrainerExt<float> population_trainer;
 
-	std::vector<std::shared_ptr<ModelTrainer<float, Eigen::GpuDevice>>> model_trainers;
+	std::vector<ModelInterpreterGpu<float>> model_interpreters;
 	for (size_t i = 0; i < 1; ++i) {
 		ModelResources model_resources = { ModelDevice(0, DeviceType::gpu, 1) };
-
-		std::shared_ptr<ModelTrainer<float, Eigen::GpuDevice>> model_trainer(new ModelTrainerExt<float, Eigen::GpuDevice>());
-		model_trainer->setBatchSize(batch_size);
-		model_trainer->setMemorySize(memory_size);
-		model_trainer->setNEpochsTraining(n_epochs_training);
-		model_trainer->setNEpochsValidation(n_epochs_validation);
-		model_trainer->setNEpochsEvaluation(n_epochs_evaluation);
-		model_trainer->setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
-		model_trainer->setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
-		model_trainer->setOutputNodes({ output_nodes });
-		model_trainer->setModelInterpreter(std::shared_ptr<ModelInterpreter<float, Eigen::GpuDevice>>(new ModelInterpreterGpu<float>(model_resources)));
-
-		model_trainers.push_back(model_trainer);
+		model_interpreters.push_back(ModelInterpreterGpu<float>(model_resources));
 	}
+
+	ModelTrainerExt<float> model_trainer;
+	model_trainer.setBatchSize(batch_size);
+	model_trainer.setMemorySize(memory_size);
+	model_trainer.setNEpochsTraining(n_epochs_training);
+	model_trainer.setNEpochsValidation(n_epochs_validation);
+	model_trainer.setNEpochsEvaluation(n_epochs_evaluation);
+	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
+	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
+	model_trainer.setOutputNodes({ output_nodes });
 
 	ModelReplicatorExt<float> model_replicator;
 	model_replicator.setNNodeAdditions(1);
@@ -380,7 +377,7 @@ void test_evalModels()
 			for (int epochs_iter = 0; epochs_iter < n_epochs_training; ++epochs_iter)
 				time_steps(batch_iter, memory_iter, epochs_iter) = time_steps_tmp(batch_iter, memory_iter);
 
-	population_trainer.evalModels(population, model_trainers, ModelLogger<float>(),
+	population_trainer.evalModels(population, model_trainer, model_interpreters, ModelLogger<float>(),
 		input_data, time_steps, input_nodes);
 
 	assert(population.size() == 4); // broken models should still be there
@@ -403,7 +400,7 @@ void test_evalModels()
 
 void test_exampleUsage() 
 {
-	PopulationTrainerExt<float, Eigen::GpuDevice> population_trainer;
+	PopulationTrainerExt<float> population_trainer;
 	population_trainer.setNTop(2);
 	population_trainer.setNRandom(2);
 	population_trainer.setNReplicatesPerModel(3);
@@ -424,24 +421,21 @@ void test_exampleUsage()
 	const int n_epochs_evaluation = 5;
 
 	// define the model trainers and resources for the trainers
-	std::vector<std::shared_ptr<ModelTrainer<float, Eigen::GpuDevice>>> model_trainers;
+	std::vector<ModelInterpreterGpu<float>> model_interpreters;
 	for (size_t i = 0; i < 1; ++i) {
 		ModelResources model_resources = { ModelDevice(0, DeviceType::gpu, 1) };
-
-		std::shared_ptr<ModelTrainer<float, Eigen::GpuDevice>> model_trainer(new ModelTrainerExt<float, Eigen::GpuDevice>());
-		model_trainer->setBatchSize(batch_size);
-		model_trainer->setMemorySize(memory_size);
-		model_trainer->setNEpochsTraining(n_epochs_training);
-		model_trainer->setNEpochsValidation(n_epochs_validation);
-		model_trainer->setNEpochsEvaluation(n_epochs_evaluation);
-		model_trainer->setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
-		model_trainer->setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
-		model_trainer->setOutputNodes({ output_nodes });
-		model_trainer->setModelInterpreter(std::shared_ptr<ModelInterpreter<float, Eigen::GpuDevice>>(new ModelInterpreterGpu<float>(model_resources)));
-		model_trainer->setVerbosityLevel(0);
-
-		model_trainers.push_back(model_trainer);
+		model_interpreters.push_back(ModelInterpreterGpu<float>(model_resources));
 	}
+
+	ModelTrainerExt<float> model_trainer;
+	model_trainer.setBatchSize(batch_size);
+	model_trainer.setMemorySize(memory_size);
+	model_trainer.setNEpochsTraining(n_epochs_training);
+	model_trainer.setNEpochsValidation(n_epochs_validation);
+	model_trainer.setNEpochsEvaluation(n_epochs_evaluation);
+	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
+	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
+	model_trainer.setOutputNodes({ output_nodes });
 
   // define the model replicator for growth mode
 	ModelReplicatorExt<float> model_replicator;
@@ -477,7 +471,7 @@ void test_exampleUsage()
 
 	// Evolve the population
 	std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
-		population, model_trainers, model_replicator, data_simulator, model_logger, input_nodes);
+		population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, input_nodes);
 
 	PopulationTrainerFile<float> population_trainer_file;
 	population_trainer_file.storeModels(population, "populationTrainer");
