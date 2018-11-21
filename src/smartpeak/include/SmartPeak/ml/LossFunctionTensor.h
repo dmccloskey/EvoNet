@@ -296,7 +296,8 @@ public:
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 2>> error_tensor(error, batch_size, memory_size);
 			auto predicted_chip = predicted_tensor.chip(time_step, 1);
 			
-			error_tensor.chip(time_step, 1).device(device) += (-expected_tensor.constant((TensorT)0.5) + expected_tensor.constant((TensorT)0.5)*predicted_chip.pow(2)).sum(Eigen::array<int, 1>({ 1 })).clip(-1e9, 1e9);
+			//error_tensor.chip(time_step, 1).device(device) += (-expected_tensor.constant((TensorT)0.5) + expected_tensor.constant((TensorT)0.5)*predicted_chip.pow(2)).sum(Eigen::array<int, 1>({ 1 })).clip(-1e9, 1e9);
+			error_tensor.chip(time_step, 1).device(device) += expected_tensor.constant((TensorT)0); // testing...
 		};
 	};
 
@@ -317,7 +318,8 @@ public:
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> error_tensor(error, batch_size, memory_size, layer_size);
 			auto predicted_chip = predicted_tensor.chip(time_step, 1);
 			
-			error_tensor.chip(time_step, 1).device(device) += expected_tensor.constant((TensorT)2) * predicted_chip;
+			//error_tensor.chip(time_step, 1).device(device) += expected_tensor.constant((TensorT)2) * predicted_chip;
+			error_tensor.chip(time_step, 1).device(device) += expected_tensor.constant((TensorT)0); // testing...
 		};
 	};
 
@@ -343,7 +345,8 @@ public:
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 2>> error_tensor(error, batch_size, memory_size);
 			auto predicted_chip = predicted_tensor.chip(time_step, 1);
 			
-			error_tensor.chip(time_step, 1).device(device) += (-expected_tensor.constant((TensorT)0.5) - expected_tensor.constant((TensorT)0.5)*predicted_chip + expected_tensor.constant((TensorT)0.5)*predicted_chip.exp()).sum(Eigen::array<int, 1>({ 1 })).clip(-1e9, 1e9);
+			//error_tensor.chip(time_step, 1).device(device) += (-expected_tensor.constant((TensorT)0.5) - expected_tensor.constant((TensorT)0.5)*predicted_chip + (expected_tensor.constant((TensorT)0.5)*predicted_chip).exp()).sum(Eigen::array<int, 1>({ 1 })).clip(-1e9, 1e9);
+			error_tensor.chip(time_step, 1).device(device) += expected_tensor.constant((TensorT)0); // testing...
 		};
 	};
 
@@ -364,7 +367,8 @@ public:
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> error_tensor(error, batch_size, memory_size, layer_size);
 			auto predicted_chip = predicted_tensor.chip(time_step, 1);
 			
-			error_tensor.chip(time_step, 1).device(device) += (-expected_tensor.constant((TensorT)0.5) + expected_tensor.constant((TensorT)0.5)*predicted_chip.exp()).clip(-1e9, 1e9);
+			//error_tensor.chip(time_step, 1).device(device) += (-expected_tensor.constant((TensorT)0.5) + (expected_tensor.constant((TensorT)0.5)*predicted_chip).exp());
+			error_tensor.chip(time_step, 1).device(device) += expected_tensor.constant((TensorT)0); // testing...
 		};
 	};
 
@@ -406,7 +410,7 @@ public:
 			
 			// Step 1
 			auto max_values = (-predicted_chip).cwiseMax(expected_tensor.constant((TensorT)0));
-			// Step 2
+			// Step 2 //NOTE: removed .clip(-1e9, 20.72) before .exp()
 			error_tensor.chip(time_step, 1).device(device) += (predicted_chip - predicted_chip * expected_tensor + max_values + ((-max_values).exp() + (-predicted_chip - max_values).exp()).log()).sum(Eigen::array<int, 1>({ 1 }));
 		};
 	};
@@ -435,7 +439,7 @@ public:
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> error_tensor(error, batch_size, memory_size, layer_size);
 			auto predicted_chip = predicted_tensor.chip(time_step, 1);
 			//error_tensor.chip(time_step, 1).device(device) += -((expected_tensor - expected_tensor.constant(1))*predicted_chip.exp().unaryExpr(ClipTensorOp<TensorT>(1e-6, 0, 1e9)) + expected_tensor) / (predicted_chip.exp().unaryExpr(ClipTensorOp<TensorT>(1e-6, 0, 1e9)) + expected_tensor.constant(1));
-			error_tensor.chip(time_step, 1).device(device) += -((expected_tensor - expected_tensor.constant((TensorT)1))*predicted_chip.exp().clip(1e-6, 1e9) + expected_tensor)/(predicted_chip.exp().clip(1e-6, 1e9) + expected_tensor.constant((TensorT)1));
+			error_tensor.chip(time_step, 1).device(device) += -((expected_tensor - expected_tensor.constant((TensorT)1))*predicted_chip.exp() + expected_tensor)/(predicted_chip.exp() + expected_tensor.constant((TensorT)1));
 		};
 	};
 

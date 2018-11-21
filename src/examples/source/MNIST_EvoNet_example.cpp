@@ -211,15 +211,15 @@ void main_EvoNet() {
 	std::vector<ModelInterpreterDefaultDevice<float>> model_interpreters;
 	for (size_t i = 0; i < n_threads; ++i) {
 		ModelResources model_resources = { ModelDevice(0, 1) };
-		ModelTrainerExt<float> model_trainer;
-		model_trainer.setBatchSize(8);
-		model_trainer.setMemorySize(1);
-		model_trainer.setNEpochsTraining(50);
-		model_trainer.setNEpochsValidation(50);
-		model_trainer.setLogging(false, false);
 		ModelInterpreterDefaultDevice<float> model_interpreter(model_resources);
 		model_interpreters.push_back(model_interpreter);
 	}
+	ModelTrainerExt<float> model_trainer;
+	model_trainer.setBatchSize(8);
+	model_trainer.setMemorySize(1);
+	model_trainer.setNEpochsTraining(50);
+	model_trainer.setNEpochsValidation(50);
+	model_trainer.setLogging(false, false);
 
 	// define the model logger
 	ModelLogger<float> model_logger;

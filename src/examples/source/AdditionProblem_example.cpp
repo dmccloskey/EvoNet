@@ -43,19 +43,25 @@ public:
 				Eigen::Tensor<float, 1> random_sequence(sequence_length_);
 				Eigen::Tensor<float, 1> mask_sequence(sequence_length_);
 				float result = AddProb(random_sequence, mask_sequence, n_mask_);
+				Eigen::Tensor<float, 1> cumulative(sequence_length_);
+				cumulative.setZero();
 
 				float result_cumulative = 0.0;
 
 				for (int memory_iter = 0; memory_iter<memory_size; ++memory_iter) {
+					// determine the cumulative vector
+					result_cumulative += random_sequence(memory_iter) * mask_sequence(memory_iter);
+					cumulative(memory_iter) = result_cumulative;
+				}
+				for (int memory_iter = memory_size - 1; memory_iter >= 0; --memory_iter) {
 					// assign the input sequences
 					input_data(batch_iter, memory_iter, 0, epochs_iter) = random_sequence(memory_iter); // random sequence
 					input_data(batch_iter, memory_iter, 1, epochs_iter) = mask_sequence(memory_iter); // mask sequence
 
 					// assign the output
-					result_cumulative += random_sequence(memory_iter) * mask_sequence(memory_iter);
-					output_data(batch_iter, memory_iter, 0, epochs_iter) = result_cumulative;
+					output_data(batch_iter, memory_iter, 0, epochs_iter) = cumulative(memory_iter);
 					//std::cout<<"result cumulative: "<<result_cumulative<<std::endl; // [TESTS: convert to a test!]
-					//if (memory_iter == memory_size - 1)
+					//if (memory_iter == 0)
 					//	output_data(batch_iter, memory_iter, 0, epochs_iter) = result;
 					//else
 					//	output_data(batch_iter, memory_iter, 0, epochs_iter) = 0.0;
@@ -772,14 +778,16 @@ int main(int argc, char** argv)
 {
 	// define the population trainer parameters
 	PopulationTrainerExt<float> population_trainer;
-	population_trainer.setNGenerations(20);
+	//population_trainer.setNGenerations(20);
+	population_trainer.setNGenerations(1);
 	population_trainer.setNTop(3);
 	population_trainer.setNRandom(3);
 	population_trainer.setNReplicatesPerModel(3);
 
 	// define the multithreading parameters
 	const int n_hard_threads = std::thread::hardware_concurrency();
-	const int n_threads = n_hard_threads; // the number of threads
+	//const int n_threads = n_hard_threads; // the number of threads
+	const int n_threads = 1; // the number of threads
 
 	// define the input/output nodes
 	std::vector<std::string> input_nodes = { "Input_0", "Input_1" };
@@ -803,7 +811,7 @@ int main(int argc, char** argv)
 	model_trainer.setNEpochsTraining(1000);
 	model_trainer.setNEpochsValidation(25);
 	model_trainer.setVerbosityLevel(1);
-	model_trainer.setLogging(true, false);
+	model_trainer.setLogging(false, false);
 	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
 	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
 	model_trainer.setOutputNodes({ output_nodes });

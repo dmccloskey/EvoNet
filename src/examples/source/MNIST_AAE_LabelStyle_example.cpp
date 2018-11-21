@@ -480,25 +480,25 @@ void main_AAELabelStyleTrain() {
 	std::vector<ModelInterpreterDefaultDevice<float>> model_interpreters;
 	for (size_t i = 0; i < n_hard_threads; ++i) {
 		ModelResources model_resources = { ModelDevice(0, 1) };
-		ModelTrainerExt<float> model_trainer;
-		model_trainer.setBatchSize(1);
-		model_trainer.setMemorySize(1);
-		model_trainer.setNEpochsTraining(1);
-		model_trainer.setNEpochsValidation(1);
-		model_trainer.setVerbosityLevel(1);
-		model_trainer.setLogging(true, false);
-		model_trainer.setLossFunctions({ 
-			std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()),
-			std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()),
-			std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
-		model_trainer.setLossFunctionGrads({ 
-			std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()),
-			std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()),
-			std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
-		model_trainer.setOutputNodes({ decoder_output_nodes, discriminator_style_output_nodes, discriminator_label_output_nodes });
 		ModelInterpreterDefaultDevice<float> model_interpreter(model_resources);
 		model_interpreters.push_back(model_interpreter);
 	}
+	ModelTrainerExt<float> model_trainer;
+	model_trainer.setBatchSize(1);
+	model_trainer.setMemorySize(1);
+	model_trainer.setNEpochsTraining(1);
+	model_trainer.setNEpochsValidation(1);
+	model_trainer.setVerbosityLevel(1);
+	model_trainer.setLogging(true, false);
+	model_trainer.setLossFunctions({
+		std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()),
+		std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()),
+		std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
+	model_trainer.setLossFunctionGrads({
+		std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()),
+		std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()),
+		std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
+	model_trainer.setOutputNodes({ decoder_output_nodes, discriminator_style_output_nodes, discriminator_label_output_nodes });
 
 	// define the model replicator for growth mode
 	ModelReplicatorExt<float> model_replicator;
@@ -589,26 +589,26 @@ void main_AAELabelStyleEvaluate() {
 	std::vector<ModelInterpreterDefaultDevice<float>> model_interpreters;
 	for (size_t i = 0; i < n_hard_threads; ++i) {
 		ModelResources model_resources = { ModelDevice(0, 1) };
-		ModelTrainerExt<float> model_trainer;
-		model_trainer.setBatchSize(1);
-		model_trainer.setMemorySize(1);
-		model_trainer.setNEpochsTraining(0);
-		model_trainer.setNEpochsValidation(0);
-		model_trainer.setNEpochsEvaluation(2);
-		model_trainer.setVerbosityLevel(1);
-		model_trainer.setLogging(false, false, true);	
-		model_trainer.setLossFunctions({
-			std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()),
-			std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()),
-			std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
-		model_trainer.setLossFunctionGrads({
-			std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()),
-			std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()),
-			std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
-		model_trainer.setOutputNodes({ decoder_output_nodes, discriminator_style_output_nodes, discriminator_label_output_nodes });
 		ModelInterpreterDefaultDevice<float> model_interpreter(model_resources);
 		model_interpreters.push_back(model_interpreter);
 	}
+	ModelTrainerExt<float> model_trainer;
+	model_trainer.setBatchSize(1);
+	model_trainer.setMemorySize(1);
+	model_trainer.setNEpochsTraining(0);
+	model_trainer.setNEpochsValidation(0);
+	model_trainer.setNEpochsEvaluation(2);
+	model_trainer.setVerbosityLevel(1);
+	model_trainer.setLogging(false, false, true);
+	model_trainer.setLossFunctions({
+		std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()),
+		std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()),
+		std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
+	model_trainer.setLossFunctionGrads({
+		std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()),
+		std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()),
+		std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
+	model_trainer.setOutputNodes({ decoder_output_nodes, discriminator_style_output_nodes, discriminator_label_output_nodes });
 	
 	// define the model replicator for growth mode
 	ModelReplicatorExt<float> model_replicator;

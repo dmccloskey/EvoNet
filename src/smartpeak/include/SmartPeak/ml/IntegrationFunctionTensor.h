@@ -201,14 +201,14 @@ public:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 4>> sink_output_tensor(sink_output, batch_size, memory_size, sink_layer_size, 1);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> sink_derivative_tensor(sink_derivative, batch_size, memory_size, sink_layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 4>> source_input_tensor(source_input, batch_size, memory_size, 1, source_layer_size);
-			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> source_error_tensor(source_error, batch_size, memory_size, source_layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 4>> source_error_tensor(source_error, batch_size, memory_size, 1, source_layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> weight_tensor(weight, 1, sink_layer_size, source_layer_size); // NOTE: source/sink are reversed
 			// step 1: re-compute the intermediate tensor and expand the net input (dims: batch, source, sink)
 			auto comp_tensor = sink_output_tensor.chip(sink_time_step, 1).broadcast(Eigen::array<int, 3>({ 1, 1, source_layer_size })) * weight_tensor.broadcast(Eigen::array<int, 3>({ batch_size, 1, 1 }));
 			auto source_exp_input_tensor = source_input_tensor.chip(source_time_step, 1).broadcast(Eigen::array<int, 3>({ 1, sink_layer_size, 1 }));
 			
-			// step 2: divide out the comp_tensor and reduce by taking the products along the source layer
-			auto tmp = (source_exp_input_tensor / (comp_tensor + comp_tensor.constant(1e-6))).prod(Eigen::array<int, 1>({ 2 }));
+			// step 2: divide out the comp_tensor, scale by the source error, and reduce by taking the sum along the source layer
+			auto tmp = (source_exp_input_tensor * source_error_tensor.chip(source_time_step, 1).broadcast(Eigen::array<int, 3>({ 1, sink_layer_size, 1 })) / (comp_tensor + comp_tensor.constant(1e-6))).sum(Eigen::array<int, 1>({ 2 }));
 			// NOTE this should be *=, but the sink error tensor is initialized to 0...
 			sink_error_tensor.chip(sink_time_step, 1).device(device) = tmp * sink_derivative_tensor.chip(sink_time_step, 1);
 
@@ -236,7 +236,7 @@ public:
 			// step 1: determine the maximum
 			auto comp_tensor = sink_output_tensor.chip(sink_time_step, 1).broadcast(Eigen::array<int, 3>({ 1, 1, source_layer_size })) * weight_tensor.broadcast(Eigen::array<int, 3>({ batch_size, 1, 1 }));
 			auto max_tensor = source_input_tensor.chip(source_time_step, 1).broadcast(Eigen::array<int, 3>({ 1, sink_layer_size, 1 }));
-			auto selection_tensor = ((max_tensor - comp_tensor) > (0 - max_tensor.constant(1e-6))).select(max_tensor.constant(1), max_tensor.constant(0));
+			auto selection_tensor = ((comp_tensor - max_tensor) > (0 - max_tensor.constant(1e-6))).select(max_tensor.constant(1), max_tensor.constant(0));
 
 			// step 2: select out the error to propogate
 			auto error = source_error_tensor.chip(source_time_step, 1).broadcast(Eigen::array<int, 3>({ 1, sink_layer_size, 1 })) * weight_tensor.broadcast(Eigen::array<int, 3>({ batch_size, 1, 1 }));
@@ -262,7 +262,7 @@ public:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> source_error_tensor(source_error, batch_size, memory_size, source_layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weight_tensor(weight, sink_layer_size, source_layer_size); // NOTE: source/sink are reversed
 			Eigen::array<Eigen::IndexPair<int>, 1> product_dims = { Eigen::IndexPair<int>(1, 0) }; // NOTE: we are taking the transpose of the weight matrix
-			sink_error_tensor.chip(sink_time_step, 1).device(device) += (source_error_tensor.chip(source_time_step, 1)).contract(weight_tensor.shuffle(Eigen::array<int, 2>({ 1, 0 })), product_dims) * sink_error_tensor.chip(sink_time_step, 1).constant(1/n_input_nodes) * (sink_derivative_tensor.chip(sink_time_step, 1));
+			sink_error_tensor.chip(sink_time_step, 1).device(device) += (source_error_tensor.chip(source_time_step, 1)).contract(weight_tensor.shuffle(Eigen::array<int, 2>({ 1, 0 })), product_dims) * sink_error_tensor.chip(sink_time_step, 1).constant(1/(TensorT)n_input_nodes) * (sink_derivative_tensor.chip(sink_time_step, 1));
 		};
 		std::string getName() const { return "MeanErrorTensorOp"; };
 	};
@@ -353,7 +353,7 @@ public:
 			// step 1: compute the weight-normalized source net input expanded across batch and memory
 			auto input_normalized_tensor = source_input_tensor.broadcast(Eigen::array<int, 4>({ 1, 1, 1, sink_layer_size })) / weight_tensor.broadcast(Eigen::array<int, 4>({ batch_size, memory_size, 1, 1 }));
 			// step 2: scale to the sink error
-			auto scaled_error = sink_error_tensor.broadcast(Eigen::array<int, 4>({ 1, 1, source_layer_size, 1 })) * input_normalized_tensor;
+			auto scaled_error = -sink_error_tensor.broadcast(Eigen::array<int, 4>({ 1, 1, source_layer_size, 1 })) * input_normalized_tensor;
 			// step 3: sum along the memory and average along the batch dimensions
 			weight_error_tensor.device(device) += scaled_error.sum(Eigen::array<int, 2>({ 0, 1 })) * weight_error_tensor.constant(1 / (TensorT)batch_size);
 		};

@@ -490,7 +490,7 @@ BOOST_AUTO_TEST_CASE(operationfunctionProdErrorTensorOp)
 		batch_size, memory_size, source_layer_size, sink_layer_size, source_time_step, sink_time_step, device);
 
 	Eigen::Tensor<float, 3> expected(batch_size, memory_size, sink_layer_size);
-	expected.setValues({ {{0}, {4}}, {{0}, {8}}, {{0}, {12}}, {{0}, {16}} });
+	expected.setValues({ {{0}, {4}}, {{0}, {16}}, {{0}, {36}}, {{0}, {64}} });
 
 	for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
 		for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
@@ -541,10 +541,10 @@ BOOST_AUTO_TEST_CASE(operationfunctionMaxErrorTensorOp)
 		{{3, 3}, {0, 0}},
 		{{4, 4}, {0, 0}} });
 	Eigen::Tensor<float, 3> source_input(batch_size, memory_size, source_layer_size);
-	source_input.setValues({ {{1, 1}, {0, 0}},
-		{{2, 2}, {0, 0}},
-		{{3, 3}, {0, 0}},
-		{{4, 4}, {0, 0}} });
+	source_input.setValues({ {{1, 2}, {0, 0}},
+		{{2, 3}, {0, 0}},
+		{{3, 4}, {0, 0}},
+		{{4, 5}, {0, 0}} });
 	Eigen::Tensor<float, 2> weights(source_layer_size, sink_layer_size);
 	weights.setConstant(1);
 	Eigen::Tensor<float, 3> sink_derivative(batch_size, memory_size, sink_layer_size);
@@ -552,7 +552,10 @@ BOOST_AUTO_TEST_CASE(operationfunctionMaxErrorTensorOp)
 	Eigen::Tensor<float, 3> sink_error(batch_size, memory_size, sink_layer_size);
 	sink_error.setConstant(0);
 	Eigen::Tensor<float, 3> sink_output(batch_size, memory_size, sink_layer_size);
-	sink_output.setConstant(1);
+	sink_output.setValues({ {{0}, {1}},
+		{{0}, {2}},
+		{{0}, {3}},
+		{{0}, {4}} });
 
 	Eigen::DefaultDevice device;
 
@@ -561,7 +564,7 @@ BOOST_AUTO_TEST_CASE(operationfunctionMaxErrorTensorOp)
 		batch_size, memory_size, source_layer_size, sink_layer_size, source_time_step, sink_time_step, device);
 
 	Eigen::Tensor<float, 3> expected(batch_size, memory_size, sink_layer_size);
-	expected.setValues({ {{0}, {4}}, {{0}, {8}}, {{0}, {12}}, {{0}, {16}} });
+	expected.setValues({ {{0}, {2}}, {{0}, {4}}, {{0}, {6}}, {{0}, {8}} });
 
 	for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
 		for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
@@ -628,11 +631,11 @@ BOOST_AUTO_TEST_CASE(operationfunctionMeanErrorTensorOp)
 	Eigen::DefaultDevice device;
 
 	MeanErrorTensorOp<float, Eigen::DefaultDevice> operation;
-	operation(source_error.data(), source_input.data(), weights.data(), sink_output.data(), sink_error.data(), sink_derivative.data(), sink_layer_size,
+	operation(source_error.data(), source_input.data(), weights.data(), sink_output.data(), sink_error.data(), sink_derivative.data(), 4, //NOTE: used only for testing purposes!
 		batch_size, memory_size, source_layer_size, sink_layer_size, source_time_step, sink_time_step, device);
 
 	Eigen::Tensor<float, 3> expected(batch_size, memory_size, sink_layer_size);
-	expected.setValues({ {{0}, {4}}, {{0}, {8}}, {{0}, {12}}, {{0}, {16}} });
+	expected.setValues({ {{0}, {1}}, {{0}, {2}}, {{0}, {3}}, {{0}, {4}} });
 
 	for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
 		for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
@@ -774,7 +777,7 @@ BOOST_AUTO_TEST_CASE(operationfunctionCountErrorTensorOp)
 		batch_size, memory_size, source_layer_size, sink_layer_size, source_time_step, sink_time_step, device);
 
 	Eigen::Tensor<float, 3> expected(batch_size, memory_size, sink_layer_size);
-	expected.setValues({ {{0}, {4}}, {{0}, {8}}, {{0}, {12}}, {{0}, {16}} });
+	expected.setValues({ {{0}, {0}}, {{0}, {0}}, {{0}, {0}}, {{0}, {0}} });
 
 	for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
 		for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
@@ -918,7 +921,7 @@ BOOST_AUTO_TEST_CASE(operationfunctionProdWeightGradTensorOp)
 		batch_size, memory_size, source_layer_size, sink_layer_size, device);
 
 	Eigen::Tensor<float, 2> expected(source_layer_size, sink_layer_size);
-	expected.setValues({ {-4.75}, {-4.75} });
+	expected.setValues({ {-8}, {-8} });
 
 	for (int source_iter = 0; source_iter < source_layer_size; ++source_iter) {
 		for (int sink_iter = 0; sink_iter < sink_layer_size; ++sink_iter) {
@@ -1060,7 +1063,7 @@ BOOST_AUTO_TEST_CASE(operationfunctionMeanWeightGradTensorOp)
 		batch_size, memory_size, source_layer_size, sink_layer_size, device);
 
 	Eigen::Tensor<float, 2> expected(source_layer_size, sink_layer_size);
-	expected.setValues({ {-4.75}, {-4.75} });
+	expected.setValues({ {-2.375}, {-2.375} });
 
 	for (int source_iter = 0; source_iter < source_layer_size; ++source_iter) {
 		for (int sink_iter = 0; sink_iter < sink_layer_size; ++sink_iter) {
@@ -1202,7 +1205,7 @@ BOOST_AUTO_TEST_CASE(operationfunctionCountWeightGradTensorOp)
 		batch_size, memory_size, source_layer_size, sink_layer_size, device);
 
 	Eigen::Tensor<float, 2> expected(source_layer_size, sink_layer_size);
-	expected.setValues({ {-4.75}, {-4.75} });
+	expected.setValues({ {0}, {0} });
 
 	for (int source_iter = 0; source_iter < source_layer_size; ++source_iter) {
 		for (int sink_iter = 0; sink_iter < sink_layer_size; ++sink_iter) {

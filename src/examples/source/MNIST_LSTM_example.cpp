@@ -305,23 +305,23 @@ void main_LSTMTrain() {
 	std::vector<ModelInterpreterDefaultDevice<float>> model_interpreters;
 	for (size_t i = 0; i < n_hard_threads; ++i) {
 		ModelResources model_resources = { ModelDevice(0, 1) };
-		ModelTrainerExt<float> model_trainer;
-		model_trainer.setBatchSize(8);
-		model_trainer.setMemorySize(input_size);
-		model_trainer.setNEpochsTraining(5000);
-		model_trainer.setNEpochsValidation(10);
-		model_trainer.setVerbosityLevel(1);
-		model_trainer.setLogging(true, false);
-		//model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new NegativeLogLikelihoodOp<float>()) });
-		//model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new NegativeLogLikelihoodGradOp<float>()) });
-		model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
-		model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
-		model_trainer.setOutputNodes({ output_nodes });
-		model_trainer.setNTETTSteps(1);
-		model_trainer.setNTBPTTSteps(100);
 		ModelInterpreterDefaultDevice<float> model_interpreter(model_resources);
 		model_interpreters.push_back(model_interpreter);
 	}
+	ModelTrainerExt<float> model_trainer;
+	model_trainer.setBatchSize(8);
+	model_trainer.setMemorySize(input_size);
+	model_trainer.setNEpochsTraining(5000);
+	model_trainer.setNEpochsValidation(10);
+	model_trainer.setVerbosityLevel(1);
+	model_trainer.setLogging(true, false);
+	//model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new NegativeLogLikelihoodOp<float>()) });
+	//model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new NegativeLogLikelihoodGradOp<float>()) });
+	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
+	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
+	model_trainer.setOutputNodes({ output_nodes });
+	model_trainer.setNTETTSteps(1);
+	model_trainer.setNTBPTTSteps(100);
 
 	// define the model replicator for growth mode
 	ModelReplicatorExt<float> model_replicator;

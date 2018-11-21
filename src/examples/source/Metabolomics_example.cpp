@@ -2146,29 +2146,29 @@ void main_classification(std::string blood_fraction = "PLT", bool make_model = t
 	std::vector<ModelInterpreterDefaultDevice<float>> model_interpreters;
 	for (size_t i = 0; i < n_threads; ++i) {
 		ModelResources model_resources = { ModelDevice(0, 1) };
-		ModelTrainerExt<float> model_trainer;
-		model_trainer.setBatchSize(64);
-		model_trainer.setMemorySize(1);
-		model_trainer.setNEpochsTraining(1001);
-		model_trainer.setNEpochsValidation(25);
-		model_trainer.setVerbosityLevel(1);
-		model_trainer.setLogging(true, false);
-		//model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()), std::shared_ptr<LossFunctionOp<float>>(new NegativeLogLikelihoodOp<float>(2)) 
-		//});
-		//model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()), std::shared_ptr<LossFunctionGradOp<float>>(new NegativeLogLikelihoodGradOp<float>(2)) 
-		//});
-		model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new NegativeLogLikelihoodOp<float>(2)) });
-		model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new NegativeLogLikelihoodGradOp<float>(2)) });
-		//model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new BCEWithLogitsOp<float>()) });
-		//model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new BCEWithLogitsGradOp<float>()) });
-		//model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new BCEOp<float>()) });
-		//model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new BCEGradOp<float>()) });
-		model_trainer.setOutputNodes({output_nodes_softmax});
-		//model_trainer.setOutputNodes({ output_nodes, output_nodes_softmax
-		//});
 		ModelInterpreterDefaultDevice<float> model_interpreter(model_resources);
 		model_interpreters.push_back(model_interpreter);
 	}
+	ModelTrainerExt<float> model_trainer;
+	model_trainer.setBatchSize(64);
+	model_trainer.setMemorySize(1);
+	model_trainer.setNEpochsTraining(1001);
+	model_trainer.setNEpochsValidation(25);
+	model_trainer.setVerbosityLevel(1);
+	model_trainer.setLogging(true, false);
+	//model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()), std::shared_ptr<LossFunctionOp<float>>(new NegativeLogLikelihoodOp<float>(2)) 
+	//});
+	//model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()), std::shared_ptr<LossFunctionGradOp<float>>(new NegativeLogLikelihoodGradOp<float>(2)) 
+	//});
+	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new NegativeLogLikelihoodOp<float>(2)) });
+	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new NegativeLogLikelihoodGradOp<float>(2)) });
+	//model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new BCEWithLogitsOp<float>()) });
+	//model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new BCEWithLogitsGradOp<float>()) });
+	//model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new BCEOp<float>()) });
+	//model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new BCEGradOp<float>()) });
+	model_trainer.setOutputNodes({ output_nodes_softmax });
+	//model_trainer.setOutputNodes({ output_nodes, output_nodes_softmax
+	//});
 
 	// define the model logger
 	ModelLogger<float> model_logger(true, true, true, false, false, false, false, false);
@@ -2250,19 +2250,19 @@ void main_reconstruction()
 	std::vector<ModelInterpreterDefaultDevice<float>> model_interpreters;
 	for (size_t i = 0; i < n_threads; ++i) {
 		ModelResources model_resources = { ModelDevice(0, 1) };
-		ModelTrainerExt<float> model_trainer;
-		model_trainer.setBatchSize(8);
-		model_trainer.setMemorySize(1);
-		model_trainer.setNEpochsTraining(1001);
-		model_trainer.setNEpochsValidation(10);
-		model_trainer.setVerbosityLevel(1);
-		model_trainer.setLogging(false, false);
-		model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
-		model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
-		model_trainer.setOutputNodes({ output_nodes });
 		ModelInterpreterDefaultDevice<float> model_interpreter(model_resources);
 		model_interpreters.push_back(model_interpreter);
 	}
+	ModelTrainerExt<float> model_trainer;
+	model_trainer.setBatchSize(8);
+	model_trainer.setMemorySize(1);
+	model_trainer.setNEpochsTraining(1001);
+	model_trainer.setNEpochsValidation(10);
+	model_trainer.setVerbosityLevel(1);
+	model_trainer.setLogging(false, false);
+	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
+	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
+	model_trainer.setOutputNodes({ output_nodes });
 
 	// define the model logger
 	ModelLogger<float> model_logger;

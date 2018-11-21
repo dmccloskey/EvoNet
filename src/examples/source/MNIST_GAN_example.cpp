@@ -383,26 +383,25 @@ void main_GAN() {
 	std::vector<ModelInterpreterDefaultDevice<float>> model_interpreters;
 	for (size_t i = 0; i < n_hard_threads; ++i) {
 		ModelResources model_resources = { ModelDevice(0, 1) };
-
-		ModelTrainerExt<float> model_trainer;
-		model_trainer.setBatchSize(1);
-		model_trainer.setMemorySize(1);
-		model_trainer.setNEpochsTraining(500);
-		model_trainer.setNEpochsValidation(10);
-		model_trainer.setVerbosityLevel(1);
-		model_trainer.setLogging(true, false);
-		model_trainer.setLossFunctions({ 
-			std::shared_ptr<LossFunctionOp<float>>(new BCEWithLogitsOp<float>()), 
-			std::shared_ptr<LossFunctionOp<float>>(new BCEWithLogitsOp<float>()),
-			std::shared_ptr<LossFunctionOp<float>>(new BCEWithLogitsOp<float>()) });
-		model_trainer.setLossFunctionGrads({ 
-			std::shared_ptr<LossFunctionGradOp<float>>(new BCEWithLogitsGradOp<float>()),
-			std::shared_ptr<LossFunctionGradOp<float>>(new BCEWithLogitsGradOp<float>()),
-			std::shared_ptr<LossFunctionGradOp<float>>(new BCEWithLogitsGradOp<float>()) });
-		model_trainer.setOutputNodes({ output_nodes_dec, output_nodes_dec, output_nodes_dec });
 		ModelInterpreterDefaultDevice<float> model_interpreter(model_resources);
 		model_interpreters.push_back(model_interpreter);
 	}
+	ModelTrainerExt<float> model_trainer;
+	model_trainer.setBatchSize(1);
+	model_trainer.setMemorySize(1);
+	model_trainer.setNEpochsTraining(500);
+	model_trainer.setNEpochsValidation(10);
+	model_trainer.setVerbosityLevel(1);
+	model_trainer.setLogging(true, false);
+	model_trainer.setLossFunctions({
+		std::shared_ptr<LossFunctionOp<float>>(new BCEWithLogitsOp<float>()),
+		std::shared_ptr<LossFunctionOp<float>>(new BCEWithLogitsOp<float>()),
+		std::shared_ptr<LossFunctionOp<float>>(new BCEWithLogitsOp<float>()) });
+	model_trainer.setLossFunctionGrads({
+		std::shared_ptr<LossFunctionGradOp<float>>(new BCEWithLogitsGradOp<float>()),
+		std::shared_ptr<LossFunctionGradOp<float>>(new BCEWithLogitsGradOp<float>()),
+		std::shared_ptr<LossFunctionGradOp<float>>(new BCEWithLogitsGradOp<float>()) });
+	model_trainer.setOutputNodes({ output_nodes_dec, output_nodes_dec, output_nodes_dec });
 
 	// define the model replicator for growth mode
 	ModelReplicatorExt<float> model_replicator;
