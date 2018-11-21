@@ -30,7 +30,7 @@ namespace SmartPeak
 		void executeWeightErrorOperations();
 		void executeWeightUpdateOperations();
 		void allocateModelErrorTensor(const int& batch_size, const int& memory_size);
-	  void getModelResults(Model<TensorT>& model);
+	  void getModelResults(Model<TensorT>& model, bool output_nodes = true, bool weights = true, bool model_error = true);
 		void checkMemory(const Model<TensorT>& model, const int& batch_size, const int& memory_size);
 	};
 
@@ -336,27 +336,32 @@ namespace SmartPeak
 	}
 
 	template<typename TensorT>
-	inline void ModelInterpreterDefaultDevice<TensorT>::getModelResults(Model<TensorT>& model)
+	inline void ModelInterpreterDefaultDevice<TensorT>::getModelResults(Model<TensorT>& model, bool output_nodes, bool weights, bool model_error)
 	{
 		// copy out the weight values
-		for (auto& weight_map : model.getWeightsMap()) {
-			const int tensor_index = std::get<0>(weight_map.second->getTensorIndex()[0]);
-			const int layer1_index = std::get<1>(weight_map.second->getTensorIndex()[0]);
-			const int layer2_index = std::get<2>(weight_map.second->getTensorIndex()[0]);
-			weight_map.second->setWeight(getWeightTensor(tensor_index)->getWeight()(layer1_index, layer2_index));
+		if (weights) {
+			for (auto& weight_map : model.getWeightsMap()) {
+				const int tensor_index = std::get<0>(weight_map.second->getTensorIndex()[0]);
+				const int layer1_index = std::get<1>(weight_map.second->getTensorIndex()[0]);
+				const int layer2_index = std::get<2>(weight_map.second->getTensorIndex()[0]);
+				weight_map.second->setWeight(getWeightTensor(tensor_index)->getWeight()(layer1_index, layer2_index));
+			}
 		}
 
 		// copy out the model error
-		model.setError(model_error_->getError());
+		if (model_error)
+			model.setError(model_error_->getError());
 
 		// copy out the output node values
-		for (auto& output_node : model.getOutputNodes()) {
-			// NOTE: there is a strange bug where the tensor indices of the output nodes pointer are not updated
-			//const int tensor_index = output_node->getTensorIndex().first;
-			//const int layer_index = output_node->getTensorIndex().second;
-			const int tensor_index = model.getNodesMap().at(output_node->getName())->getTensorIndex().first;
-			const int layer_index = model.getNodesMap().at(output_node->getName())->getTensorIndex().second;
-			output_node->setOutput(getLayerTensor(tensor_index)->getOutput().chip(layer_index, 2));
+		if (output_nodes) {
+			for (auto& output_node : model.getOutputNodes()) {
+				// NOTE: there is a strange bug where the tensor indices of the output nodes pointer are not updated
+				//const int tensor_index = output_node->getTensorIndex().first;
+				//const int layer_index = output_node->getTensorIndex().second;
+				const int tensor_index = model.getNodesMap().at(output_node->getName())->getTensorIndex().first;
+				const int layer_index = model.getNodesMap().at(output_node->getName())->getTensorIndex().second;
+				output_node->setOutput(getLayerTensor(tensor_index)->getOutput().chip(layer_index, 2));
+			}
 		}
 	}
 

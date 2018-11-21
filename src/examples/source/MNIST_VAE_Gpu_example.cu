@@ -68,8 +68,8 @@ public:
 			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + node_names.size()) / 2, 1)),
 			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 		node_names_mu = model_builder.addFullyConnected(model, "Mu", "Mu", node_names, n_encodings,
-			std::shared_ptr<ActivationOp<TensorT>>(new ELUOp<TensorT>(1.0)),
-			std::shared_ptr<ActivationOp<TensorT>>(new ELUGradOp<TensorT>(1.0)),
+			std::shared_ptr<ActivationOp<TensorT>>(new ReLUOp<TensorT>()), // NOTE: different activation than ELU so that they are placed on different layers for error calculation
+			std::shared_ptr<ActivationOp<TensorT>>(new ReLUGradOp<TensorT>()),
 			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
 			std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
 			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
@@ -392,15 +392,15 @@ void main_VAE() {
 	// define the model trainers and resources for the trainers
 	std::vector<ModelInterpreterGpu<float>> model_interpreters;
 	for (size_t i = 0; i < n_threads; ++i) {
-		ModelResources model_resources = { ModelDevice(0, DeviceType::gpu, 1) };
+		ModelResources model_resources = { ModelDevice(0, 1) };
 		ModelInterpreterGpu<float> model_interpreter(model_resources);
 		model_interpreters.push_back(model_interpreter);
 	}
 	ModelTrainerExt<float> model_trainer;
 	model_trainer.setBatchSize(16);
 	model_trainer.setMemorySize(1);
-	model_trainer.setNEpochsTraining(1001);
-	model_trainer.setNEpochsValidation(10);
+	model_trainer.setNEpochsTraining(10);
+	model_trainer.setNEpochsValidation(1);
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setLogging(false, false);
 	model_trainer.setFindCycles(false);

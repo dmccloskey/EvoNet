@@ -123,11 +123,11 @@ public:
 		~VarTensorOp() {};
 		void operator()(TensorT* source_output, TensorT* weights, TensorT* sink_input, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, const int& source_time_step, const int& sink_time_step, DeviceT& device) {
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> sink_input_tensor(sink_input, batch_size, memory_size, sink_layer_size);
-			Eigen::TensorMap<Eigen::Tensor<TensorT, 4>> source_output_tensor(source_output, batch_size, memory_size, source_layer_size, 1);
-			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> weight(weights, 1, source_layer_size, sink_layer_size);
-			auto mean = (source_output_tensor.chip(source_time_step, 1).broadcast(Eigen::array<int, 3>({ 1, 1, sink_layer_size })) * weight.broadcast(Eigen::array<int, 3>({ batch_size, 1, 1 }))).mean(Eigen::array<int, 1>({ 1 }));
-			auto input = (source_output_tensor.chip(source_time_step, 1).broadcast(Eigen::array<int, 3>({ 1, 1, sink_layer_size })) * weight.broadcast(Eigen::array<int, 3>({ batch_size, 1, 1 }))).sum(Eigen::array<int, 1>({ 1 })) - mean;
-			sink_input_tensor.chip(sink_time_step, 1).device(device) = (input * input)*input.constant(1 / (TensorT)source_layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 5>> source_output_tensor(source_output, batch_size, memory_size, source_layer_size, 1, 1);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 4>> weight(weights, 1, source_layer_size, 1, sink_layer_size);
+			auto mean = (source_output_tensor.chip(source_time_step, 1).broadcast(Eigen::array<int, 4>({ 1, 1, 1, sink_layer_size })) * weight.broadcast(Eigen::array<int, 4>({ batch_size, 1, 1, 1 }))).mean(Eigen::array<int, 1>({ 1 })).broadcast(Eigen::array<int, 3>({ 1, source_layer_size, 1 })); // dim3
+			auto input = (source_output_tensor.chip(source_time_step, 1).chip(source_time_step, 3).broadcast(Eigen::array<int, 3>({ 1, 1, sink_layer_size })) * weight.chip(0, 2).broadcast(Eigen::array<int, 3>({ batch_size, 1, 1 })) - mean); // dim3
+			sink_input_tensor.chip(sink_time_step, 1).device(device) = ((input * input)*input.constant(1 / (TensorT)source_layer_size)).sum(Eigen::array<int, 1>({ 1 }));
 		}
 		std::string getName() const { return "VarTensorOp"; };
 	};

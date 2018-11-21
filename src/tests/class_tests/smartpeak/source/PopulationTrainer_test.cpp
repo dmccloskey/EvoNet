@@ -392,7 +392,7 @@ BOOST_AUTO_TEST_CASE(trainModels)
 
 	std::vector<ModelInterpreterDefaultDevice<float>> model_interpreters;
 	for (size_t i = 0; i < 1; ++i) {
-		ModelResources model_resources = { ModelDevice(0, DeviceType::default, 1) };
+		ModelResources model_resources = { ModelDevice(0, 1) };
 		model_interpreters.push_back(ModelInterpreterDefaultDevice<float>(model_resources));
 	}
 
@@ -521,7 +521,7 @@ BOOST_AUTO_TEST_CASE(evalModels)
 
 	std::vector<ModelInterpreterDefaultDevice<float>> model_interpreters;
 	for (size_t i = 0; i < 1; ++i) {
-		ModelResources model_resources = { ModelDevice(0, DeviceType::default, 1) };
+		ModelResources model_resources = { ModelDevice(0, 1) };
 		model_interpreters.push_back(ModelInterpreterDefaultDevice<float>(model_resources));
 	}
 
@@ -652,7 +652,7 @@ BOOST_AUTO_TEST_CASE(exampleUsage)
 	// define the model trainers and resources for the trainers
 	std::vector<ModelInterpreterDefaultDevice<float>> model_interpreters;
 	for (size_t i = 0; i < 1; ++i) {
-		ModelResources model_resources = { ModelDevice(0, DeviceType::default, 1) };
+		ModelResources model_resources = { ModelDevice(0, 1) };
 		model_interpreters.push_back(ModelInterpreterDefaultDevice<float>(model_resources));
 	}
 

@@ -529,7 +529,7 @@ void main_CovNet() {
 	// define the model trainers and resources for the trainers
 	std::vector<ModelInterpreterDefaultDevice<float>> model_interpreters;
 	for (size_t i = 0; i < n_threads; ++i) {
-		ModelResources model_resources = { ModelDevice(0, DeviceType::default, 1) };
+		ModelResources model_resources = { ModelDevice(0, 1) };
 		ModelInterpreterDefaultDevice<float> model_interpreter(model_resources);
 		model_interpreters.push_back(model_interpreter);
 	}

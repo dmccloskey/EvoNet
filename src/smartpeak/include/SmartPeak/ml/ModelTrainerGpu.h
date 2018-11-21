@@ -194,7 +194,7 @@ namespace SmartPeak
 			//	model_logger.writeLogs(model, iter, { "Error" }, {}, { total_error(0) }, {}, output_nodes, expected_values);
 			//}
 
-			model_interpreter.getModelResults(model);
+			model_interpreter.getModelResults(model, false, false, true);
 			const Eigen::Tensor<TensorT, 0> total_error = model.getError().sum();
 			model_error.push_back(total_error(0));
 			if (getVerbosityLevel() >= 1)
@@ -288,16 +288,17 @@ namespace SmartPeak
 				output_node_cnt += output_nodes_[loss_iter].size();
 			}
 
-			const Eigen::Tensor<TensorT, 0> total_error = model_interpreter.getModelError()->getError().sum();
-			model_error.push_back(total_error(0));
-			if (getVerbosityLevel() >= 1)
-				std::cout << "Model " << model.getName() << " error: " << total_error(0) << std::endl;
-
 			//// log epoch
 			//if (getLogValidation()) {
 			//	const Eigen::Tensor<TensorT, 3> expected_values = output.chip(iter, 3);
 			//	model_logger.writeLogs(model, iter, {}, { "Error" }, {}, { total_error(0) }, output_nodes, expected_values);
 			//}
+
+			model_interpreter.getModelResults(model, false, false, true);
+			const Eigen::Tensor<TensorT, 0> total_error = model.getError().sum();
+			model_error.push_back(total_error(0));
+			if (getVerbosityLevel() >= 1)
+				std::cout << "Model " << model.getName() << " error: " << total_error(0) << std::endl;
 
 			// reinitialize the model
 			if (iter != getNEpochsValidation() - 1) {

@@ -163,7 +163,7 @@ void test_trainModels()
 
 	std::vector<ModelInterpreterGpu<float>> model_interpreters;
 	for (size_t i = 0; i < 1; ++i) {
-		ModelResources model_resources = { ModelDevice(0, DeviceType::gpu, 1) };
+		ModelResources model_resources = { ModelDevice(0, 1) };
 		model_interpreters.push_back(ModelInterpreterGpu<float>(model_resources));
 	}
 
@@ -292,7 +292,7 @@ void test_evalModels()
 
 	std::vector<ModelInterpreterGpu<float>> model_interpreters;
 	for (size_t i = 0; i < 1; ++i) {
-		ModelResources model_resources = { ModelDevice(0, DeviceType::gpu, 1) };
+		ModelResources model_resources = { ModelDevice(0, 1) };
 		model_interpreters.push_back(ModelInterpreterGpu<float>(model_resources));
 	}
 
@@ -423,7 +423,7 @@ void test_exampleUsage()
 	// define the model trainers and resources for the trainers
 	std::vector<ModelInterpreterGpu<float>> model_interpreters;
 	for (size_t i = 0; i < 1; ++i) {
-		ModelResources model_resources = { ModelDevice(0, DeviceType::gpu, 1) };
+		ModelResources model_resources = { ModelDevice(0, 1) };
 		model_interpreters.push_back(ModelInterpreterGpu<float>(model_resources));
 	}
 

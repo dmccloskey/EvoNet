@@ -212,7 +212,7 @@ BOOST_AUTO_TEST_CASE(DAGToy)
   DAGToyModelTrainer<float> trainer;
 
 	// Define the model resources
-	ModelResources model_resources = { ModelDevice(0, DeviceType::default, 1) };
+	ModelResources model_resources = { ModelDevice(0, 1) };
 
   // Test parameters
   trainer.setBatchSize(4);
@@ -342,7 +342,7 @@ BOOST_AUTO_TEST_CASE(DCGToy)
   DCGToyModelTrainer<float> trainer;
 
 	// Define the model resources
-	ModelResources model_resources = { ModelDevice(0, DeviceType::default, 1) };
+	ModelResources model_resources = { ModelDevice(0, 1) };
 
   // Test parameters
   trainer.setBatchSize(5);

@@ -103,9 +103,8 @@ void test_DAGToy()
   DAGToyModelTrainer<float> trainer;
 
 	// Define the model resources
-	ModelResources model_resources = { ModelDevice(0, DeviceType::gpu, 1) };
-	//ModelInterpreterGpu<float> model_interpreter(model_resources);
-	ModelInterpreterGpu<float> model_interpreter;
+	ModelResources model_resources = { ModelDevice(0, 1) };
+	ModelInterpreterGpu<float> model_interpreter(model_resources);
 
   // Test parameters
   trainer.setBatchSize(4);
@@ -236,7 +235,7 @@ void test_DCGToy()
   DCGToyModelTrainer<float> trainer;
 
 	// Define the model resources
-	ModelResources model_resources = { ModelDevice(0, DeviceType::gpu, 1) };
+	ModelResources model_resources = { ModelDevice(0, 1) };
 
   // Test parameters
   trainer.setBatchSize(5);

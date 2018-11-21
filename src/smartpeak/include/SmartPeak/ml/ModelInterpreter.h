@@ -438,7 +438,7 @@ namespace SmartPeak
 
 		@param[in, out] model The network model
 		*/
-		virtual void getModelResults(Model<TensorT>& model) = 0;
+		virtual void getModelResults(Model<TensorT>& model, bool output_nodes = true, bool weights = true, bool model_error = true) = 0;
 
 		void setModelResources(const ModelResources& model_resources); ///< model_resources setter
 		ModelResources getModelResources(); ///< model_resources getter

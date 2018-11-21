@@ -532,7 +532,7 @@ void main_CovNet() {
 	// define the model trainers and resources for the trainers
 	std::vector<ModelInterpreterGpu<float>> model_interpreters;
 	for (size_t i = 0; i < n_threads; ++i) {
-		ModelResources model_resources = { ModelDevice(0, DeviceType::gpu, 1) };
+		ModelResources model_resources = { ModelDevice(0, 1) };
 		ModelInterpreterGpu<float> model_interpreter(model_resources);
 		model_interpreters.push_back(model_interpreter);
 	}
@@ -540,15 +540,17 @@ void main_CovNet() {
 	model_trainer.setBatchSize(16);
 	model_trainer.setMemorySize(1);
 	model_trainer.setNEpochsTraining(1001);
-	model_trainer.setNEpochsValidation(1);
+	model_trainer.setNEpochsValidation(25);
 	model_trainer.setFindCycles(false);
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setLogging(false, false);
 	model_trainer.setLossFunctions({
-		std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>())//,std::shared_ptr<LossFunctionOp<float>>(new NegativeLogLikelihoodOp<float>()),
+		//std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>())
+		std::shared_ptr<LossFunctionOp<float>>(new CrossEntropyWithLogitsOp<float>())
 		});
 	model_trainer.setLossFunctionGrads({
-		std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>())//,	std::shared_ptr<LossFunctionGradOp<float>>(new NegativeLogLikelihoodGradOp<float>())
+		//std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>())
+		std::shared_ptr<LossFunctionGradOp<float>>(new CrossEntropyWithLogitsGradOp<float>())
 		});
 	model_trainer.setOutputNodes({ output_FC_nodes//, output_nodes 
 		});
