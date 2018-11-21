@@ -1127,6 +1127,10 @@ namespace SmartPeak
 	template<typename TensorT, typename DeviceT>
 	void ModelInterpreter<TensorT, DeviceT>::getForwardPropogationOperations(Model<TensorT>& model, const int& batch_size, const int& memory_size, const bool& train)
 	{
+		// register the batch and memory sizes with the model
+		// [TODO: add tests]
+		model.setBatchAndMemorySizes(batch_size, memory_size);
+
 		// buffer the memory size
 		const int memory_size_buffered = memory_size + 1;
 

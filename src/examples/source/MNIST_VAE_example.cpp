@@ -161,23 +161,20 @@ public:
 		assert(n_output_nodes == n_input_pixels + 2*n_encodings);
 		assert(n_input_nodes == n_input_pixels + n_encodings);
 
-		// make the start and end sample indices [BUG FREE]
-		this->mnist_sample_start_training = this->mnist_sample_end_training;
-		this->mnist_sample_end_training = this->mnist_sample_start_training + batch_size*n_epochs;
-		if (this->mnist_sample_end_training > this->training_data.dimension(0) - 1)
-			this->mnist_sample_end_training = this->mnist_sample_end_training - batch_size*n_epochs;
-
 		// make a vector of sample_indices [BUG FREE]
+		this->mnist_sample_start_training = this->mnist_sample_end_training;
 		std::vector<int> sample_indices;
-		for (int i = 0; i<batch_size*n_epochs; ++i)
+		int sample_index = this->mnist_sample_start_training;
+		for (int i = 0; i < batch_size*n_epochs; ++i)
 		{
-			int sample_index = i + this->mnist_sample_start_training;
 			if (sample_index > this->training_data.dimension(0) - 1)
 			{
-				sample_index = sample_index - batch_size*n_epochs;
+				sample_index = 0;
 			}
 			sample_indices.push_back(sample_index);
+			++sample_index;
 		}
+		this->mnist_sample_end_training = sample_index;
 
 		std::random_device rd{};
 		std::mt19937 gen{ rd() };
@@ -221,23 +218,20 @@ public:
 		assert(n_output_nodes == n_input_pixels + 2 * n_encodings);
 		assert(n_input_nodes == n_input_pixels + n_encodings);
 
-		// make the start and end sample indices [BUG FREE]
-		this->mnist_sample_start_training = this->mnist_sample_end_training;
-		this->mnist_sample_end_training = this->mnist_sample_start_training + batch_size * n_epochs;
-		if (this->mnist_sample_end_training > this->training_data.dimension(0) - 1)
-			this->mnist_sample_end_training = this->mnist_sample_end_training - batch_size * n_epochs;
-
 		// make a vector of sample_indices [BUG FREE]
+		this->mnist_sample_start_validation = this->mnist_sample_end_validation;
 		std::vector<int> sample_indices;
+		int sample_index = this->mnist_sample_start_validation;
 		for (int i = 0; i < batch_size*n_epochs; ++i)
 		{
-			int sample_index = i + this->mnist_sample_start_training;
-			if (sample_index > this->training_data.dimension(0) - 1)
+			if (sample_index > this->validation_data.dimension(0) - 1)
 			{
-				sample_index = sample_index - batch_size * n_epochs;
+				sample_index = 0;
 			}
 			sample_indices.push_back(sample_index);
+			++sample_index;
 		}
+		this->mnist_sample_end_validation = sample_index;
 
 		// Reformat the MNIST image data for training
 		for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
@@ -397,9 +391,9 @@ void main_VAE() {
 	}
 
 	ModelTrainerExt<float> model_trainer;
-	model_trainer.setBatchSize(8);
+	model_trainer.setBatchSize(16);
 	model_trainer.setMemorySize(1);
-	model_trainer.setNEpochsTraining(5000);
+	model_trainer.setNEpochsTraining(10000);
 	model_trainer.setNEpochsValidation(10);
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setLogging(true, false);

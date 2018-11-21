@@ -311,7 +311,7 @@ public:
 	{
 		std::pair<int, int> bmsizes = model.getBatchAndMemorySizes();
 		int batch_size = bmsizes.first;
-		int memory_size = bmsizes.second - 1;
+		int memory_size = bmsizes.second;
 
 		// writer header
 		if (log_expected_predicted_epoch_csvwriter_.getLineCount() == 0) {
@@ -371,7 +371,7 @@ public:
 		// write the next entry
 		std::vector<std::string> line = { std::to_string(n_epoch) };
 		for (const Weight<TensorT>& weight : weights) {
-			line.push_back(std::to_string(weight.getWeightView()));
+			line.push_back(std::to_string(weight.getWeight()));
 		}
 		log_weights_epoch_csvwriter_.writeDataInRow(line.begin(), line.end());
 
@@ -384,7 +384,7 @@ public:
 
 		std::pair<int, int> bmsizes = model.getBatchAndMemorySizes();
 		int batch_size = bmsizes.first;
-		int memory_size = bmsizes.second - 1;
+		int memory_size = bmsizes.second;
 
 		std::vector<Node<TensorT>> nodes;
 		if (node_names.size() == 0) {
@@ -420,7 +420,7 @@ public:
 		for (const auto& node : nodes) {
 			for (size_t batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
 				for (size_t memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
-					line.push_back(std::to_string(node.getErrorView()(batch_iter, memory_iter))); // [TODO: "cannot convert 'this' pointer from 'const...' to '...&'
+					line.push_back(std::to_string(node.getError()(batch_iter, memory_iter))); // [TODO: "cannot convert 'this' pointer from 'const...' to '...&'
 				}
 			}
 		}
@@ -441,7 +441,7 @@ public:
 
 		std::pair<int, int> bmsizes = model.getBatchAndMemorySizes();
 		int batch_size = bmsizes.first;
-		int memory_size = bmsizes.second - 1;
+		int memory_size = bmsizes.second;
 
 		// writer header
 		if (log_module_variance_epoch_csvwriter_.getLineCount() == 0) {
@@ -516,7 +516,7 @@ public:
 
 		std::pair<int, int> bmsizes = model.getBatchAndMemorySizes();
 		int batch_size = bmsizes.first;
-		int memory_size = bmsizes.second - 1;
+		int memory_size = bmsizes.second;
 
 		std::vector<Node<TensorT>> nodes;
 		if (node_names.size() == 0) {
@@ -548,7 +548,7 @@ public:
 		for (const auto& node : nodes) {
 			for (size_t batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
 				for (size_t memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
-					line.push_back(std::to_string(node.getOutputView()(batch_iter, memory_iter))); // [TODO: "cannot convert 'this' pointer from 'const...' to '...&'
+					line.push_back(std::to_string(node.getOutput()(batch_iter, memory_iter))); // [TODO: "cannot convert 'this' pointer from 'const...' to '...&'
 				}
 			}
 		}
@@ -562,7 +562,7 @@ public:
 
 		std::pair<int, int> bmsizes = model.getBatchAndMemorySizes();
 		int batch_size = bmsizes.first;
-		int memory_size = bmsizes.second - 1;
+		int memory_size = bmsizes.second;
 
 		std::vector<Node<TensorT>> nodes;
 		if (node_names.size() == 0) {
@@ -594,7 +594,7 @@ public:
 		for (const auto& node : nodes) {
 			for (size_t batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
 				for (size_t memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
-					line.push_back(std::to_string(node.getDerivativeView()(batch_iter, memory_iter))); // [TODO: "cannot convert 'this' pointer from 'const...' to '...&'
+					line.push_back(std::to_string(node.getDerivative()(batch_iter, memory_iter))); // [TODO: "cannot convert 'this' pointer from 'const...' to '...&'
 				}
 			}
 		}

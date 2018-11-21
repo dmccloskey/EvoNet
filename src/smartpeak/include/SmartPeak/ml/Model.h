@@ -248,6 +248,9 @@ public:
 		*/
 		void initTensorIndices();
 
+		void setBatchAndMemorySizes(const int& batch_size, const int& memory_size);   ///< batch and memory sizes setter
+		std::pair<int, int> getBatchAndMemorySizes() const; ///< batch and memory sizes getter (non-padded sizes)
+
 		std::map<std::string, std::shared_ptr<Link>> links_; ///< Model links
 		std::map<std::string, std::shared_ptr<Node<TensorT>>> nodes_; ///< Model nodes
 		std::map<std::string, std::shared_ptr<Weight<TensorT>>> weights_; ///< Model nodes
@@ -259,6 +262,8 @@ private:
 		std::vector<std::shared_ptr<Node<TensorT>>> input_nodes_;
 		std::vector<std::shared_ptr<Node<TensorT>>> output_nodes_;
 		Eigen::Tensor<TensorT, 2> model_error_;
+		int batch_size_ = 0;
+		int memory_size_ = 0;
 };
 	template<typename TensorT>
 	inline Model<TensorT>::Model(const Model<TensorT>& other)
@@ -927,7 +932,19 @@ private:
 		for (auto& weight_map : weights_) {
 			weight_map.second->clearTensorIndex();
 		}
-	};
+	}
+	template<typename TensorT>
+	inline void Model<TensorT>::setBatchAndMemorySizes(const int & batch_size, const int & memory_size)
+	{
+		batch_size_ = batch_size;
+		memory_size_ = memory_size;
+	}
+
+	template<typename TensorT>
+	inline std::pair<int, int> Model<TensorT>::getBatchAndMemorySizes() const
+	{
+		return std::pair<int, int>(batch_size_,memory_size_);
+	}
 }
 
 #endif //SMARTPEAK_MODEL_H
