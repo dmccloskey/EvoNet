@@ -637,6 +637,14 @@ BOOST_AUTO_TEST_CASE(addVAEEncoding)
 	std::vector<std::string> weight_names_test = {
 		"Encoding_Unity", "Encoding_Scalar" };
 
+	// check the input nodes
+	for (const std::string& node_name : mu_node_names) {
+		BOOST_CHECK(model.getNode(node_name).getType() == NodeType::vaemu);
+	}
+	for (const std::string& node_name : logvar_node_names) {
+		BOOST_CHECK(model.getNode(node_name).getType() == NodeType::vaelogvar);
+	}
+
 	// check the nodes
 	for (const std::string& node_name : node_names_test)
 	{

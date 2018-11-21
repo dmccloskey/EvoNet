@@ -976,6 +976,14 @@ public:
 
 		assert(mu_node_names.size() == logvar_node_names.size());
 
+		// Re-type the mu and logvar nodes
+		for (const std::string& node_name : mu_node_names) {
+			model.nodes_.at(node_name)->setType(NodeType::vaemu);
+		}
+		for (const std::string& node_name : logvar_node_names) {
+			model.nodes_.at(node_name)->setType(NodeType::vaelogvar);
+		}
+
 		// Create the unity weight
 		char unity_weight_name_char[512];
 		sprintf(unity_weight_name_char, "%s_Unity", name.data());

@@ -29,7 +29,9 @@ namespace SmartPeak
     hidden = 4,
 		unmodifiable = 5,
 		zero = 6, // value of 0
-		recursive = 7 // special case of hidden where the node should be treated as the source of any cyclic pair
+		recursive = 7, // special case of hidden where the node should be treated as the source of any cyclic pair
+		vaemu = 8, // special case of hidden for VAE where the mu and logvar layers need to be split for the error calculation
+		vaelogvar = 9 // special case of hidden for VAE where the mu and logvar layers need to be split for the error calculation
   };
 
   /**
