@@ -314,7 +314,7 @@ public:
 	}
 };
 
-void main_VAE() {
+void main_VAE(const bool& make_model, const bool& load_weight_values) {
 
 	const int n_hard_threads = std::thread::hardware_concurrency();
 	const int n_threads = 1;
@@ -390,7 +390,7 @@ void main_VAE() {
 	ModelTrainerExt<float> model_trainer;
 	model_trainer.setBatchSize(16);
 	model_trainer.setMemorySize(1);
-	model_trainer.setNEpochsTraining(10001);
+	model_trainer.setNEpochsTraining(100001);
 	model_trainer.setNEpochsValidation(25);
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setLogging(true, false);
@@ -413,7 +413,31 @@ void main_VAE() {
 	// define the initial population [BUG FREE]
 	std::cout << "Initializing the population..." << std::endl;
 	Model<float> model;
-	ModelTrainerExt<float>().makeVAE(model, input_size, encoding_size, n_hidden);
+	if (make_model) {
+		ModelTrainerExt<float>().makeVAE(model, input_size, encoding_size, n_hidden);
+	}
+	else {
+		// read in the trained model
+		std::cout << "Reading in the model..." << std::endl;
+		const std::string data_dir = "C:/Users/domccl/GitHub/smartPeak_cpp/build_win_cuda/bin/Debug/";
+		const std::string nodes_filename = data_dir + "0_MNIST_Nodes.csv";
+		const std::string links_filename = data_dir + "0_MNIST_Links.csv";
+		const std::string weights_filename = data_dir + "0_MNIST_Weights.csv";
+		model.setId(1);
+		model.setName("VAE1");
+		ModelFile<float> model_file;
+		model_file.loadModelCsv(nodes_filename, links_filename, weights_filename, model);
+	}
+	if (load_weight_values) {
+		// read in the trained model weights only
+		std::cout << "Reading in the model weight values..." << std::endl;
+		const std::string data_dir = "C:/Users/domccl/GitHub/smartPeak_cpp/build_win_cuda/bin/Debug/";
+		const std::string weights_filename = data_dir + "1_MNIST_Weights.csv";
+		model.setId(2);
+		model.setName("VAE2");
+		WeightFile<float> weight_file;
+		weight_file.loadWeightValuesCsv(weights_filename, model.weights_);
+	}
 	std::vector<Model<float>> population = { model };
 
 	// Evolve the population
@@ -428,7 +452,7 @@ void main_VAE() {
 int main(int argc, char** argv)
 {
 	// run the application
-	main_VAE();
+	main_VAE(true, true);
 
   return 0;
 }

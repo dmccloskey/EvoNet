@@ -48,6 +48,7 @@ public:
       @returns Status True on success, False if not
     */ 
     bool loadWeightsCsv(const std::string& filename, std::vector<Weight<TensorT>>& weights);
+		bool loadWeightValuesCsv(const std::string& filename, std::map<std::string, std::shared_ptr<Weight<TensorT>>>& weights);
  
     /**
       @brief Stores weights from binary file
@@ -68,6 +69,7 @@ public:
       @returns Status True on success, False if not
     */ 
     bool storeWeightsCsv(const std::string& filename, const std::vector<Weight<TensorT>>& weights);
+		bool storeWeightValuesCsv(const std::string& filename, const std::map<std::string, std::shared_ptr<Weight<TensorT>>>& weights);
 
     std::map<std::string, TensorT> parseParameters(const std::string& parameters);
   };
@@ -184,10 +186,39 @@ public:
 			}
 			//weight.initWeight();
 			weight.setWeight(weight_value);
+			weight.setInitWeight(false);
 
 			weight.setModuleName(module_name_str);
 
 			weights.push_back(weight);
+		}
+		return true;
+	}
+
+	template<typename TensorT>
+	inline bool WeightFile<TensorT>::loadWeightValuesCsv(const std::string & filename, std::map<std::string, std::shared_ptr<Weight<TensorT>>>& weights)
+	{
+
+		io::CSVReader<2> weights_in(filename);
+		weights_in.read_header(io::ignore_extra_column,
+			"weight_name", "weight_value");
+		std::string weight_name, weight_value_str = "";
+
+		while (weights_in.read_row(weight_name, weight_value_str))
+		{
+			// parse the weight value
+			TensorT weight_value = 0;
+			try
+			{
+				weight_value = std::stof(weight_value_str);
+			}
+			catch (std::exception& e)
+			{
+				printf("Exception: %s", e.what());
+			}
+
+			weights.at(weight_name)->setWeight(weight_value);
+			weights.at(weight_name)->setInitWeight(false);
 		}
 		return true;
 	}
@@ -268,6 +299,29 @@ public:
 
 			// parse the module name
 			row.push_back(weight.getModuleName());
+
+			// write to file
+			csvwriter.writeDataInRow(row.begin(), row.end());
+		}
+		return true;
+	}
+	template<typename TensorT>
+	inline bool WeightFile<TensorT>::storeWeightValuesCsv(const std::string & filename, const std::map<std::string, std::shared_ptr<Weight<TensorT>>>& weights)
+	{
+		CSVWriter csvwriter(filename);
+
+		// write the headers to the first line
+		const std::vector<std::string> headers = { "weight_name", "weight_value" };
+		csvwriter.writeDataInRow(headers.begin(), headers.end());
+
+		for (const auto& weight : weights)
+		{
+			std::vector<std::string> row;
+
+			row.push_back(weight.second->getName());
+
+			// parse the weight value
+			row.push_back(std::to_string(weight.second->getWeight()));
 
 			// write to file
 			csvwriter.writeDataInRow(row.begin(), row.end());

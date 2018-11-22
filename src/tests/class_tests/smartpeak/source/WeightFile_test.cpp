@@ -72,4 +72,50 @@ BOOST_AUTO_TEST_CASE(storeAndLoadCsv)
   }
 }
 
+BOOST_AUTO_TEST_CASE(storeAndLoadWeightValuesCsv)
+{
+	WeightFile<float> data;
+
+	std::string filename = "WeightFileTest_weightValues.csv";
+
+	// create list of dummy weights
+	std::map<std::string, std::shared_ptr<Weight<float>>> weights;
+	std::shared_ptr<WeightInitOp<float>> weight_init;
+	std::shared_ptr<SolverOp<float>> solver;
+	for (int i = 0; i < 3; ++i)
+	{
+		weight_init.reset(new ConstWeightInitOp<float>(1.0));
+		solver.reset(new SGDOp<float>(0.01, 0.9));
+		std::shared_ptr<Weight<float>> weight(new Weight<float>(
+			"Weight_" + std::to_string(i),
+			weight_init,
+			solver));
+		weight->setModuleName(std::to_string(i));
+		weight->setWeight(i);
+		weights.emplace(weight->getName(), weight);
+	}
+	data.storeWeightValuesCsv(filename, weights);
+
+	std::map<std::string, std::shared_ptr<Weight<float>>> weights_test;
+	for (int i = 0; i < 3; ++i)
+	{
+		weight_init.reset(new ConstWeightInitOp<float>(1.0));
+		solver.reset(new SGDOp<float>(0.01, 0.9));
+		std::shared_ptr<Weight<float>> weight(new Weight<float>(
+			"Weight_" + std::to_string(i),
+			weight_init,
+			solver));
+		weight->setModuleName(std::to_string(i));
+		weight->setWeight(0);
+		weights_test.emplace(weight->getName(), weight);
+	}
+	data.loadWeightValuesCsv(filename, weights_test);
+
+	for (auto& weight: weights_test)
+	{
+		BOOST_CHECK_EQUAL(weight.second->getName(), weights.at(weight.second->getName())->getName());
+		BOOST_CHECK_EQUAL(weight.second->getWeight(), weights.at(weight.second->getName())->getWeight());
+	}
+}
+
 BOOST_AUTO_TEST_SUITE_END()

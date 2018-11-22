@@ -130,6 +130,7 @@ public:
 	template<typename TensorT>
 	bool ModelFile<TensorT>::storeModelCsv(const std::string & filename_nodes, const std::string & filename_links, const std::string & filename_weights, const Model<TensorT>& model)
 	{
+		// [PERFORMANCE: this can be parallelized using threads]
 		NodeFile<TensorT> node_file;
 		node_file.storeNodesCsv(filename_nodes, model.getNodes());
 		LinkFile link_file;
@@ -142,6 +143,7 @@ public:
 	template<typename TensorT>
 	bool ModelFile<TensorT>::loadModelCsv(const std::string & filename_nodes, const std::string & filename_links, const std::string & filename_weights, Model<TensorT>& model)
 	{
+		// [PERFORMANCE: this can be parallelized using threads]
 		// load the nodes
 		NodeFile<TensorT> node_file;
 		std::vector<Node<TensorT>> nodes;
