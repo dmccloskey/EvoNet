@@ -6,7 +6,6 @@
 // .h
 #include <SmartPeak/ml/Solver.h>
 #include <SmartPeak/ml/WeightInit.h>
-#include <SmartPeak/ml/WeightData.h>
 
 #include <unsupported/Eigen/CXX11/Tensor>
 #include <memory>
@@ -45,7 +44,6 @@ public:
           name_,
 					weight_,
 					init_weight_,
-					//weight_data_,
 					//weight_init_->getName(),
 					//solver_->getName(),
 					module_id_,
@@ -56,7 +54,6 @@ public:
           other.name_,
 					other.weight_,
 					other.init_weight_,
-					//other.weight_data_,
 					//other.weight_init_->getName(),
 					//other.solver_->getName(),
 					other.module_id_,
@@ -80,7 +77,6 @@ public:
 			tensor_index_ = other.tensor_index_;
 			weight_ = other.weight_;
 			init_weight_ = other.init_weight_;
-      //weight_data_  = other.weight_data_;
       weight_init_ = other.weight_init_;
       solver_ = other.solver_;
       weight_min_ = other.weight_min_;
@@ -95,10 +91,6 @@ public:
 
     void setName(const std::string& name); ///< naem setter
     std::string getName() const; ///< name getter
-
-		//void setWeight(const TensorT& weight); ///< weight setter
-  //  TensorT getWeightView() const; ///< weight getter
-		//TensorT getWeight(); ///< weight getter
 
 		void setWeight(const TensorT& weight); ///< weight setter
 		TensorT getWeight() const; ///< weight getter
@@ -132,22 +124,10 @@ public:
 		std::vector<std::tuple<int, int, int>> getTensorIndex() const; ///< layer id getter
 		void clearTensorIndex();
 
-    ///**
-    //  @brief Initializes the weight.  
-    //*/ 
-    //void initWeight();
- 
     /**
-      @brief Update the weight.
-
-      @param[in] errpr Weight error   
+      @brief Initializes the weight.  
     */ 
-    void updateWeight(const TensorT& error);
- 
-    /**
-      @brief Check if the weight is within the min/max.  
-    */ 
-    void checkWeight();
+    void initWeight();
 
 private:
     int id_ = -1; ///< Weight ID
@@ -155,7 +135,6 @@ private:
 		int module_id_ = -1; ///< Module ID
 		std::string module_name_ = ""; ///<Module Name
 		std::vector<std::tuple<int, int, int>> tensor_index_; ///< Layer ID: tuple consisting of OperationsList index and source/sink Layer index(used internally by Model)
-		//std::shared_ptr<WeightData<TensorT>> weight_data_ = nullptr; ///< Weight weight
     std::shared_ptr<WeightInitOp<TensorT>> weight_init_; ///< weight initialization operator
     std::shared_ptr<SolverOp<TensorT>> solver_; ///< weight update operator
 		TensorT weight_ = 1;
@@ -173,7 +152,6 @@ private:
 		name_ = other.name_;
 		weight_ = other.weight_;
 		init_weight_ = other.init_weight_;
-		//weight_data_ = other.weight_data_;
 		module_id_ = other.module_id_;
 		module_name_ = other.module_name_;
 		tensor_index_ = other.tensor_index_;
@@ -399,36 +377,11 @@ private:
 		tensor_index_.clear();
 	}
 
-//	template<typename TensorT>
-//	void Weight<TensorT>::initWeight()
-//	{
-//#if COMPILE_WITH_CUDA
-//		weight_data_.reset(new WeightDataGpu<TensorT>());
-//#else
-//		weight_data_.reset(new WeightDataCpu<TensorT>());
-//#endif
-//		weight_data_->setWeight(weight_init_->operator()());
-//		//checkWeight(); // Nice to have
-//	}
-
-	//template<typename TensorT>
-	//void Weight<TensorT>::updateWeight(const TensorT& error)
-	//{
-	//	if (solver_->getName() == "DummySolverOp")
-	//		return;
-	//	const TensorT new_weight = solver_->operator()(weight_data_->getWeight()(0), getDrop()*error);
-	//	weight_data_->setWeight(solver_->clipGradient(new_weight)); // [TODO: move to GPU/CPU device]
-	//	//checkWeight(); // Nice to have
-	//}
-
-	//template<typename TensorT>
-	//void Weight<TensorT>::checkWeight()
-	//{
-	//	if (weight_data_->getWeight()(0) < weight_min_)
-	//		weight_data_->getWeight()(0) = weight_min_;
-	//	else if (weight_data_->getWeight()(0) > weight_max_)
-	//		weight_data_->getWeight()(0) = weight_max_;
-	//}
+	template<typename TensorT>
+	inline void Weight<TensorT>::initWeight()
+	{
+		weight_ = weight_init_->operator()();
+	}
 }
 
 #endif //SMARTPEAK_WEIGHT_H

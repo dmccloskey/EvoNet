@@ -118,73 +118,30 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
 	BOOST_CHECK_EQUAL(node.getDropProbability(), 1.0f);
 }
 
-BOOST_AUTO_TEST_CASE(initNode)
+BOOST_AUTO_TEST_CASE(gettersAndSetters2)
 {
   Node<float> node;
   node.setId(1);
 
-  node.setType(NodeType::hidden);
-  node.initNode(2,5);
+	Eigen::Tensor<float, 2> output(2, 5), input(2, 5), derivative(2, 5), error(2, 5), dt(2, 5);
+	output.setZero(); input.setConstant(1); derivative.setConstant(2); error.setConstant(3); dt.setConstant(4);
 
-	// Test the batch and memory sizes
-	BOOST_CHECK_EQUAL(node.getBatchSize(), 2);
-	BOOST_CHECK_EQUAL(node.getMemorySize(), 5);
+	node.setOutput(output);
+	node.setInput(input);
+	node.setDerivative(derivative);
+	node.setError(error);
+	node.setDt(dt);
 
-	BOOST_CHECK_EQUAL(node.getInput()(0, 0), 0.0);
-	BOOST_CHECK_EQUAL(node.getInput()(1, 4), 0.0);
+	BOOST_CHECK_EQUAL(node.getInput()(0, 0), 1.0);
+	BOOST_CHECK_EQUAL(node.getInput()(1, 4), 1.0);
   BOOST_CHECK_EQUAL(node.getOutput()(0,0), 0.0);
   BOOST_CHECK_EQUAL(node.getOutput()(1,4), 0.0);
-  BOOST_CHECK_EQUAL(node.getDerivative()(0,0), 0.0);
-  BOOST_CHECK_EQUAL(node.getDerivative()(1,4), 0.0);
-  BOOST_CHECK_EQUAL(node.getError()(0,0), 0.0);
-  BOOST_CHECK_EQUAL(node.getError()(1,4), 0.0);
-  BOOST_CHECK_EQUAL(node.getDt()(0,0), 1.0);
-  BOOST_CHECK_EQUAL(node.getDt()(1,4), 1.0);
-  BOOST_CHECK(node.getStatus() == NodeStatus::initialized);
-
-  node.setType(NodeType::bias);
-  node.initNode(2,5);
-  BOOST_CHECK_EQUAL(node.getOutput()(0,0), 1.0);
-  BOOST_CHECK_EQUAL(node.getOutput()(1,4), 1.0);
-	BOOST_CHECK_EQUAL(node.getDerivative()(0, 0), 0.0);
-	BOOST_CHECK_EQUAL(node.getDerivative()(1, 4), 0.0);
-  BOOST_CHECK(node.getStatus() == NodeStatus::activated);
-
-	node.setType(NodeType::input);
-	node.initNode(2, 5);
-	BOOST_CHECK_EQUAL(node.getOutput()(0, 0), 0.0);
-	BOOST_CHECK_EQUAL(node.getOutput()(1, 4), 0.0);
-	BOOST_CHECK_EQUAL(node.getDerivative()(0, 0), 0.0);
-	BOOST_CHECK_EQUAL(node.getDerivative()(1, 4), 0.0);
-	BOOST_CHECK(node.getStatus() == NodeStatus::initialized);
-
-	node.setType(NodeType::unmodifiable);
-	node.initNode(2, 5);
-	BOOST_CHECK_EQUAL(node.getInput()(0, 0), 0.0);
-	BOOST_CHECK_EQUAL(node.getInput()(1, 4), 0.0);
-	BOOST_CHECK_EQUAL(node.getOutput()(0, 0), 0.0);
-	BOOST_CHECK_EQUAL(node.getOutput()(1, 4), 0.0);
-	BOOST_CHECK_EQUAL(node.getDerivative()(0, 0), 0.0);
-	BOOST_CHECK_EQUAL(node.getDerivative()(1, 4), 0.0);
-	BOOST_CHECK_EQUAL(node.getError()(0, 0), 0.0);
-	BOOST_CHECK_EQUAL(node.getError()(1, 4), 0.0);
-	BOOST_CHECK_EQUAL(node.getDt()(0, 0), 1.0);
-	BOOST_CHECK_EQUAL(node.getDt()(1, 4), 1.0);
-	BOOST_CHECK(node.getStatus() == NodeStatus::initialized);
-
-	node.setType(NodeType::recursive);
-	node.initNode(2, 5);
-	BOOST_CHECK_EQUAL(node.getInput()(0, 0), 0.0);
-	BOOST_CHECK_EQUAL(node.getInput()(1, 4), 0.0);
-	BOOST_CHECK_EQUAL(node.getOutput()(0, 0), 0.0);
-	BOOST_CHECK_EQUAL(node.getOutput()(1, 4), 0.0);
-	BOOST_CHECK_EQUAL(node.getDerivative()(0, 0), 0.0);
-	BOOST_CHECK_EQUAL(node.getDerivative()(1, 4), 0.0);
-	BOOST_CHECK_EQUAL(node.getError()(0, 0), 0.0);
-	BOOST_CHECK_EQUAL(node.getError()(1, 4), 0.0);
-	BOOST_CHECK_EQUAL(node.getDt()(0, 0), 1.0);
-	BOOST_CHECK_EQUAL(node.getDt()(1, 4), 1.0);
-	BOOST_CHECK(node.getStatus() == NodeStatus::initialized);
+  BOOST_CHECK_EQUAL(node.getDerivative()(0,0), 2.0);
+  BOOST_CHECK_EQUAL(node.getDerivative()(1,4), 2.0);
+  BOOST_CHECK_EQUAL(node.getError()(0,0), 3.0);
+  BOOST_CHECK_EQUAL(node.getError()(1,4), 3.0);
+  BOOST_CHECK_EQUAL(node.getDt()(0,0), 4.0);
+  BOOST_CHECK_EQUAL(node.getDt()(1,4), 4.0);
 }
 
 // [TODO: broke when adding NodeData]
@@ -206,42 +163,6 @@ BOOST_AUTO_TEST_CASE(initNode)
 //	node.initNode(2, 5);
 //	BOOST_CHECK_EQUAL(node.getOutput()(0, 0), 0.0);
 //	BOOST_CHECK_EQUAL(node.getOutput()(1, 4), 0.0);
-//}
-
-BOOST_AUTO_TEST_CASE(checkTimeStep)
-{
-  Node<float> node;
-  node.setId(1);
-  node.initNode(2,5);
-
-  BOOST_CHECK(!node.checkTimeStep(-1));
-  BOOST_CHECK(!node.checkTimeStep(5));
-  BOOST_CHECK(node.checkTimeStep(0));
-  BOOST_CHECK(node.checkTimeStep(4));
-}
-
-// [TODO: broke when adding NodeData]
-//BOOST_AUTO_TEST_CASE(checkOutput)
-//{
-//  Node<float> node;
-//  node.setId(1);
-//  node.initNode(5,2);
-//
-//  node.setOutputMin(0.0);
-//  node.setOutputMax(5.0);
-//
-//  Eigen::Tensor<float, 2> output(5, 2);
-//  output.setValues({{0.0, 5.0}, {1.0, 6.0}, {2.0, 7.0}, {3.0, 8.0}, {4.0, 9.0}});
-//  node.setOutput(output);
-//
-//  for (int i=0; i<output.dimension(0); ++i)
-//  {
-//    for (int j=0; j<output.dimension(1); ++j)
-//    {
-//      BOOST_CHECK(node.getOutput()(i,j) >= 0.0);
-//      BOOST_CHECK(node.getOutput()(i,j) <= 5.0);
-//    }
-//  }
 //}
 
 BOOST_AUTO_TEST_SUITE_END()

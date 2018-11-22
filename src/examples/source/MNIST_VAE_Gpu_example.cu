@@ -391,7 +391,7 @@ void main_VAE() {
 	model_trainer.setBatchSize(16);
 	model_trainer.setMemorySize(1);
 	model_trainer.setNEpochsTraining(10001);
-	model_trainer.setNEpochsValidation(1);
+	model_trainer.setNEpochsValidation(25);
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setLogging(true, false);
 	model_trainer.setFindCycles(false);
