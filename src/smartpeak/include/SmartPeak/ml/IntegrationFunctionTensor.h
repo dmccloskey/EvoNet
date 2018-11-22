@@ -236,7 +236,7 @@ public:
 			// step 1: determine the maximum
 			auto comp_tensor = sink_output_tensor.chip(sink_time_step, 1).broadcast(Eigen::array<int, 3>({ 1, 1, source_layer_size })) * weight_tensor.broadcast(Eigen::array<int, 3>({ batch_size, 1, 1 }));
 			auto max_tensor = source_input_tensor.chip(source_time_step, 1).broadcast(Eigen::array<int, 3>({ 1, sink_layer_size, 1 }));
-			auto selection_tensor = ((comp_tensor - max_tensor) > (0 - max_tensor.constant(1e-6))).select(max_tensor.constant(1), max_tensor.constant(0));
+			auto selection_tensor = ((comp_tensor - max_tensor) > (max_tensor.constant((TensorT)0) - max_tensor.constant(1e-6))).select(max_tensor.constant(1), max_tensor.constant(0));
 
 			// step 2: select out the error to propogate
 			auto error = source_error_tensor.chip(source_time_step, 1).broadcast(Eigen::array<int, 3>({ 1, sink_layer_size, 1 })) * weight_tensor.broadcast(Eigen::array<int, 3>({ batch_size, 1, 1 }));

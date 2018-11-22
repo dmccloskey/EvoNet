@@ -160,7 +160,7 @@ public:
 
 		// make a vector of sample_indices [BUG FREE]
 		this->mnist_sample_start_training = this->mnist_sample_end_training;
-		std::vector<int> sample_indices;
+		Eigen::Tensor<int, 1> sample_indices(batch_size*n_epochs);
 		int sample_index = this->mnist_sample_start_training;
 		for (int i = 0; i < batch_size*n_epochs; ++i)
 		{
@@ -168,7 +168,7 @@ public:
 			{
 				sample_index = 0;
 			}
-			sample_indices.push_back(sample_index);
+			sample_indices(i) = sample_index;
 			++sample_index;
 		}
 		this->mnist_sample_end_training = sample_index;
@@ -217,7 +217,7 @@ public:
 
 		// make a vector of sample_indices [BUG FREE]
 		this->mnist_sample_start_validation = this->mnist_sample_end_validation;
-		std::vector<int> sample_indices;
+		Eigen::Tensor<int, 1> sample_indices(batch_size*n_epochs);
 		int sample_index = this->mnist_sample_start_validation;
 		for (int i = 0; i < batch_size*n_epochs; ++i)
 		{
@@ -225,7 +225,7 @@ public:
 			{
 				sample_index = 0;
 			}
-			sample_indices.push_back(sample_index);
+			sample_indices(i) = sample_index;
 			++sample_index;
 		}
 		this->mnist_sample_end_validation = sample_index;
@@ -327,7 +327,7 @@ void main_VAE() {
 	population_trainer.setNReplicatesPerModel(1);
 
 	// define the model logger
-	ModelLogger<float> model_logger(true, true, true, false, false, false, false, false);
+	ModelLogger<float> model_logger(true, true, false, false, false, false, false, false);
 
 	// define the data simulator
 	const std::size_t input_size = 784;
@@ -390,7 +390,7 @@ void main_VAE() {
 	ModelTrainerExt<float> model_trainer;
 	model_trainer.setBatchSize(16);
 	model_trainer.setMemorySize(1);
-	model_trainer.setNEpochsTraining(1001);
+	model_trainer.setNEpochsTraining(10001);
 	model_trainer.setNEpochsValidation(1);
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setLogging(true, false);

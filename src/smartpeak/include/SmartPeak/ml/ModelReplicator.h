@@ -156,16 +156,28 @@ public:
 			const Model<TensorT>& model,
 			const std::vector<NodeType>& node_type_exclude,
 			const std::vector<NodeType>& node_type_include);
+
+		/**
+			@brief Copy a node in the model.
+				This operation results in a layer addition below the target node
+				whereby the weigh between the input node and target node are
+				reused for the link between the new node and target node.
+
+			@param[in, out] model The model
+		*/
+		void copyNodeDown(Model<TensorT>& model);
 		
     /**
-      @brief Copy a node in the model (Layer expansion to the left or right)
+      @brief Copy a node in the model.  
+				This operation results in a layer expansion to the left or right whereby all target
+				node input and output node links are also copied.
 
       @param[in, out] model The model
     */ 
-    void copyNode(Model<TensorT>& model);
+    void copyNodeRight(Model<TensorT>& model);
 
     /**
-      @brief Add node to the model (Layer injection up or down).
+      @brief Add node to the model (Layer injection down).
         The method utilizes a modified version of the NEAT algorithm whereby a random
         link is chosen and bifurcated with a new node.  Instead, new nodes are added
         using the following procedure:
@@ -173,7 +185,7 @@ public:
         2. a randomly connected input link to the node is chosen.
           Note that an input link is chose because it is easier
           to exclude input nodes than output nodes.
-        3. the chosen node is copied and a new link is added
+        3. the chosen node is copied and a new link and new weight is added
           between the new node and the existing node.
         4. the new link becomes the input link of the existing node and the output link of the new node, 
           and existing link becomes the input link of the new node.
@@ -184,21 +196,48 @@ public:
 
       @param[in, out] model The model
     */ 
-    void addNode(Model<TensorT>& model, std::string unique_str = "");
+    void addNodeDown(Model<TensorT>& model, std::string unique_str = "");
+
+		/**
+			@brief Add node to the model (Layer expansion right).
+				New nodes are added	using the following procedure:
+				1. an existing node is randomly chosen from the model.
+				2. all node input and out put links are replicated and new weights
+					for each link are made.
+				3. the chosen node is copied.
+				4. the new node is then connected to the replicated input and output links.
+
+			@param[in, out] model The model
+		*/
+		void addNodeRight(Model<TensorT>& model, std::string unique_str = "");
 
     /**
-      @brief add link to the model
+      @brief add link with a new weight to the model.
 
       @param[in, out] model The model
     */ 
     void addLink(Model<TensorT>& model, std::string unique_str = "");
 
 		/**
-		@brief Add a new module to the model
+			@brief copy an existing link (no new weight is created), and add the copied link to the model.
+
+			@param[in, out] model The model
+		*/
+		void copyLink(Model<TensorT>& model, std::string unique_str = "");
+
+		/**
+		@brief Add a new module templated off of an existing module with new weights to the model
 
 		@param[in, out] model The model
 		*/
 		void addModule(Model<TensorT>& model, std::string unique_str = "");
+
+		/**
+		@brief Copy an existing module (no new weights are created), and add the copied module to the model
+
+		@param[in, out] model The model
+		*/
+		void copyModule(Model<TensorT>& model, std::string unique_str = "");
 
     /**
       @brief delete node to the model
@@ -666,6 +705,12 @@ private:
 	}
 
 	template<typename TensorT>
+	inline void ModelReplicator<TensorT>::addNodeRight(Model<TensorT>& model, std::string unique_str)
+	{
+		// [TODO: add method body]
+	}
+
+	template<typename TensorT>
 	void ModelReplicator<TensorT>::addLink(
 		Model<TensorT>& model, std::string unique_str)
 	{
@@ -718,6 +763,12 @@ private:
 		std::string link_name = makeUniqueHash(link_name_char, unique_str);
 		Link link(link_name, source_node_name, sink_node_name, weight_name);
 		model.addLinks({ link });
+	}
+
+	template<typename TensorT>
+	inline void ModelReplicator<TensorT>::copyLink(Model<TensorT>& model, std::string unique_str)
+	{
+		// [TODO: add method body]
 	}
 
 	template<typename TensorT>
@@ -835,6 +886,12 @@ private:
 	}
 
 	template<typename TensorT>
+	inline void ModelReplicator<TensorT>::copyModule(Model<TensorT>& model, std::string unique_str)
+	{
+		// [TODO: add method body]
+	}
+
+	template<typename TensorT>
 	std::string ModelReplicator<TensorT>::selectRandomModule(const Model<TensorT>& model, const std::vector<NodeType>& node_type_exclude, const std::vector<NodeType>& node_type_include)
 	{
 		std::vector<std::string> module_ids = selectModules(model, node_type_exclude, node_type_include);
@@ -849,7 +906,14 @@ private:
 	}
 
 	template<typename TensorT>
-	void ModelReplicator<TensorT>::copyNode(Model<TensorT>& model)
+	void ModelReplicator<TensorT>::copyNodeDown(Model<TensorT>& model)
+	{
+		// [TODO: add method body]
+
+	}
+
+	template<typename TensorT>
+	void ModelReplicator<TensorT>::copyNodeRight(Model<TensorT>& model)
 	{
 		// [TODO: add method body]
 
@@ -864,7 +928,7 @@ private:
 	}
 
 	template<typename TensorT>
-	void ModelReplicator<TensorT>::addNode(Model<TensorT>& model, std::string unique_str)
+	void ModelReplicator<TensorT>::addNodeDown(Model<TensorT>& model, std::string unique_str)
 	{
 		// pick a random node from the model
 		// that is not an input or bias    
@@ -1201,10 +1265,10 @@ private:
 		const int prune_iterations = 1e6;
 		for (const std::string& modification : modifications)
 		{
-			// [TODO: copyNode]
+			// [TODO: copyNodeRight]
 			if (modification == "add_node")
 			{
-				addNode(model, unique_str + "-" + std::to_string(modifications_counts.at(modification)));
+				addNodeDown(model, unique_str + "-" + std::to_string(modifications_counts.at(modification)));
 				modifications_counts[modification] += 1;
 			}
 			else if (modification == "add_link")

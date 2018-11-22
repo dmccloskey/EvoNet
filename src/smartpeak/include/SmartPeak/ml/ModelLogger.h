@@ -313,6 +313,8 @@ public:
 		int batch_size = bmsizes.first;
 		int memory_size = bmsizes.second;
 
+		// add a check to ensure the node data has been copied over from the model interpreter!
+
 		// writer header
 		if (log_expected_predicted_epoch_csvwriter_.getLineCount() == 0) {
 			std::vector<std::string> headers = { "Epoch" };
