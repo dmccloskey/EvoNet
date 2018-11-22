@@ -93,6 +93,7 @@ public:
 		const int& n_generations,
 		const int& n_epochs,
 		Model<TensorT>& model,
+		ModelInterpreterGpu<TensorT>& model_interpreter,
 		const std::vector<TensorT>& model_errors) {}
 };
 
@@ -225,6 +226,7 @@ public:
 		const int& n_generations,
 		const int& n_epochs,
 		Model<TensorT>& model,
+		ModelInterpreterGpu<TensorT>& model_interpreter,
 		const std::vector<TensorT>& model_errors) {}
 };
 

@@ -186,6 +186,7 @@ public:
 			const int& n_generations,
 			const int& n_epochs,
 			Model<TensorT>& model,
+			InterpreterT& model_interpreter,
 			const std::vector<TensorT>& model_errors) = 0;
 
 protected:

@@ -22,6 +22,7 @@ public:
 		const int& n_generations,
 		const int& n_epochs,
 		Model<TensorT>& model,
+		ModelInterpreterDefaultDevice<TensorT>& model_interpreter,
 		const std::vector<float>& model_errors) {}
 };
 

@@ -725,15 +725,16 @@ public:
 		const int& n_generations,
 		const int& n_epochs,
 		Model<TensorT>& model,
+		ModelInterpreterDefaultDevice<TensorT>& model_interpreter,
 		const std::vector<float>& model_errors)
 	{
 		if (n_epochs > 10000) {
 			// update the solver parameters
-			std::shared_ptr<SolverOp<TensorT>> solver;
-			solver.reset(new AdamOp<TensorT>(0.0001, 0.9, 0.999, 1e-8));
-			for (auto& weight_map : model.getWeightsMap())
-				if (weight_map.second->getSolverOp()->getName() == "AdamOp")
-					weight_map.second->setSolverOp(solver);
+			//std::shared_ptr<SolverOp<TensorT>> solver;
+			//solver.reset(new AdamOp<TensorT>(0.0001, 0.9, 0.999, 1e-8));
+			//for (auto& weight_map : model.getWeightsMap())
+			//	if (weight_map.second->getSolverOp()->getName() == "AdamOp")
+			//		weight_map.second->setSolverOp(solver);
 		}
 		if (n_epochs % 100 == 0 && n_epochs != 0) {
 			// save the model every 100 epochs

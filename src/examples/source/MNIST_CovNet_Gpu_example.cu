@@ -292,22 +292,18 @@ public:
 		const int& n_generations,
 		const int& n_epochs,
 		Model<TensorT>& model,
+		ModelInterpreterGpu<TensorT>& model_interpreter,
 		const std::vector<float>& model_errors) {
-		if (n_epochs > 10000) {
-			// update the solver parameters
-			std::shared_ptr<SolverOp<TensorT>> solver;
-			solver.reset(new AdamOp<TensorT>(0.0001, 0.9, 0.999, 1e-8));
-			for (auto& weight_map : model.getWeightsMap())
-				if (weight_map.second->getSolverOp()->getName() == "AdamOp")
-					weight_map.second->setSolverOp(solver);
-		}
-		if (n_epochs % 1000 == 0 && n_epochs != 0) {
-			// save the model every 100 epochs
-			ModelFile<TensorT> data;
-			data.storeModelCsv(model.getName() + "_" + std::to_string(n_epochs) + "_nodes.csv",
-				model.getName() + "_" + std::to_string(n_epochs) + "_links.csv",
-				model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model);
-		}
+		//if (n_epochs = 1000) {
+		//	// anneal the learning rate to 1e-4
+		//}
+		//if (n_epochs % 1000 == 0 && n_epochs != 0) {
+		//	// save the model every 1000 epochs
+		//	ModelFile<TensorT> data;
+		//	data.storeModelCsv(model.getName() + "_" + std::to_string(n_epochs) + "_nodes.csv",
+		//		model.getName() + "_" + std::to_string(n_epochs) + "_links.csv",
+		//		model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model);
+		//}
 	}
 };
 

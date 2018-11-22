@@ -138,7 +138,7 @@ public:
 		for (int iter = 0; iter < getNEpochsTraining(); ++iter) // use n_epochs here
 		{
 			// update the model hyperparameters
-			adaptiveTrainerScheduler(0, iter, model, model_error);
+			adaptiveTrainerScheduler(0, iter, model, model_interpreter, model_error);
 
 			// assign the input data
 			model_interpreter.initBiases(model); // create the bias	

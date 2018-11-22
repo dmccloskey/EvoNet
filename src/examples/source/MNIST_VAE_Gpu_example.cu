@@ -124,21 +124,18 @@ public:
 		const int& n_generations,
 		const int& n_epochs,
 		Model<TensorT>& model,
+		ModelInterpreterGpu<TensorT>& model_interpreter,
 		const std::vector<float>& model_errors) {
-		if (n_epochs > 500) {
-			// update the solver parameters
-			std::shared_ptr<SolverOp<TensorT>> solver;
-			for (auto& weight_map : model.getWeightsMap())
-				if (weight_map.second->getSolverOp()->getName() == "AdamOp")
-					weight_map.second->getSolverOp()->setLearningRate(1e-4);
-		}
-		if (n_epochs % 1000 == 0 && n_epochs != 0) {
-			// save the model every 100 epochs
-			ModelFile<TensorT> data;
-			data.storeModelCsv(model.getName() + "_" + std::to_string(n_epochs) + "_nodes.csv",
-				model.getName() + "_" + std::to_string(n_epochs) + "_links.csv",
-				model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model);
-		}
+		//if (n_epochs = 1000) {
+		//	// anneal the learning rate to 1e-4
+		//}
+		//if (n_epochs % 1000 == 0 && n_epochs != 0) {
+		//	// save the model every 1000 epochs
+		//	ModelFile<TensorT> data;
+		//	data.storeModelCsv(model.getName() + "_" + std::to_string(n_epochs) + "_nodes.csv",
+		//		model.getName() + "_" + std::to_string(n_epochs) + "_links.csv",
+		//		model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model);
+		//}
 	}
 };
 
@@ -393,10 +390,10 @@ void main_VAE() {
 	ModelTrainerExt<float> model_trainer;
 	model_trainer.setBatchSize(16);
 	model_trainer.setMemorySize(1);
-	model_trainer.setNEpochsTraining(10001);
+	model_trainer.setNEpochsTraining(1001);
 	model_trainer.setNEpochsValidation(1);
 	model_trainer.setVerbosityLevel(1);
-	model_trainer.setLogging(false, false);
+	model_trainer.setLogging(true, false);
 	model_trainer.setFindCycles(false);
 	model_trainer.setLossFunctions({
 		std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()),
