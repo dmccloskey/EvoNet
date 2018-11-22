@@ -607,10 +607,10 @@ BOOST_AUTO_TEST_CASE(addLink)
 }
 
 Model<float> model_addNode = makeModel1();
-BOOST_AUTO_TEST_CASE(addNode) 
+BOOST_AUTO_TEST_CASE(addNodeDown) 
 {
   ModelReplicatorExt<float> model_replicator;
-  model_replicator.addNode(model_addNode);
+  model_replicator.addNodeDown(model_addNode);
   std::vector<std::string> node_names = {
     "2", "3", "4", "5" // existing nodes
     };

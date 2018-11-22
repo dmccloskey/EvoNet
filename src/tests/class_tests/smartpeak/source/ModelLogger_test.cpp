@@ -108,6 +108,7 @@ BOOST_AUTO_TEST_CASE(logExpectedAndPredictedOutputPerEpoch)
 	int memory_size = 1;
 	Eigen::Tensor<float, 3> expected_values(batch_size, memory_size, (int)node_names.size());
 	expected_values.setConstant(2.0f);
+	model.setBatchAndMemorySizes(batch_size, memory_size);
 
 	 ModelLogger<float> model_logger(false, false, true, false, false, false, false, false);
 	model_logger.initLogs(model);
@@ -240,22 +241,29 @@ BOOST_AUTO_TEST_CASE(logNodeDerivativesPerEpoch)
 
 BOOST_AUTO_TEST_CASE(writeLogs)
 {
+	ModelBuilder<float> model_builder;
 	Model<float> model;
 	model.setName("Model1");
-	 ModelLogger<float> model_logger(true, true, true, true, true, true, true, true);
+	std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input", 2);
+	std::vector<std::string> node_names_test = { "Input_0", "Input_1" };
+	int batch_size = 2;
+	int memory_size = 1;
+	Eigen::Tensor<float, 3> expected_values(batch_size, memory_size, (int)node_names.size());
+	expected_values.setConstant(2.0f);
+	model.setBatchAndMemorySizes(batch_size, memory_size);
+
+	ModelLogger<float> model_logger(true, true, true, true, true, true, true, true);
 	model_logger.initLogs(model);
 	std::vector<std::string> training_metric_names = { "Error" };
 	std::vector<std::string> validation_metric_names = { "Error" };
 	std::vector<float> training_metrics, validation_metrics;
-	std::vector<std::string> output_nodes;
-	Eigen::Tensor<float, 3> expected_values;
 
 	training_metrics = { 20.0f };
 	validation_metrics = { 20.1f };
-	model_logger.writeLogs(model, 0, training_metric_names, validation_metric_names, training_metrics, validation_metrics, output_nodes, expected_values);
+	model_logger.writeLogs(model, 0, training_metric_names, validation_metric_names, training_metrics, validation_metrics, node_names_test, expected_values);
 	training_metrics = { 2.0f };
 	validation_metrics = { 2.1f };
-	model_logger.writeLogs(model, 1, training_metric_names, validation_metric_names, training_metrics, validation_metrics, output_nodes, expected_values);
+	model_logger.writeLogs(model, 1, training_metric_names, validation_metric_names, training_metrics, validation_metrics, node_names_test, expected_values);
 
 	// [TODO: read in and check]
 }

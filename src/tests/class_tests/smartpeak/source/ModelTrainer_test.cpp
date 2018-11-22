@@ -205,6 +205,7 @@ public:
 		const int& n_generations,
 		const int& n_epochs,
 		Model<TensorT>& model,
+		ModelInterpreterDefaultDevice<TensorT>& model_interpreter,
 		const std::vector<TensorT>& model_errors) {}
 };
 BOOST_AUTO_TEST_CASE(DAGToy) 
@@ -275,7 +276,13 @@ BOOST_AUTO_TEST_CASE(DAGToy)
   const Eigen::Tensor<float, 0> total_error = model1.getError().sum();
   BOOST_CHECK(total_error(0) <= 757.0);
 
-	// TODO validateModel
+	std::vector<float> validation_errors = trainer.validateModel(model1, input_data, output_data, time_steps,
+		input_nodes, ModelLogger<float>(), ModelInterpreterDefaultDevice<float>(model_resources));
+
+	const Eigen::Tensor<float, 0> total_error2 = model1.getError().sum();
+	BOOST_CHECK(total_error2(0) <= 757.0);
+	BOOST_CHECK(validation_errors[0] <= 757.0);
+
 	// TODO evaluateModel
 }
 
@@ -333,6 +340,7 @@ public:
 		const int& n_generations,
 		const int& n_epochs,
 		Model<TensorT>& model,
+		ModelInterpreterDefaultDevice<TensorT>& model_interpreter,
 		const std::vector<TensorT>& model_errors) {}
 };
 
@@ -410,7 +418,12 @@ BOOST_AUTO_TEST_CASE(DCGToy)
   const Eigen::Tensor<float, 0> total_error = model1.getError().sum();
   BOOST_CHECK(total_error(0) <= 1492.6);
 
-	// TODO validateModel
+	std::vector<float> validation_errors = trainer.validateModel(model1, input_data, output_data, time_steps,
+		input_nodes, ModelLogger<float>(), ModelInterpreterDefaultDevice<float>(model_resources));
+
+	const Eigen::Tensor<float, 0> total_error2 = model1.getError().sum();
+	BOOST_CHECK(total_error2(0) <= 1492.6);
+	BOOST_CHECK(validation_errors[0] <= 1492.6);
 	// TODO evaluateModel
 }
 

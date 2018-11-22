@@ -202,7 +202,8 @@ public:
 		// copy out results
 		model_interpreter.getModelResults(model);
 		model_interpreter.clear_cache();
-		model.initTensorIndices();
+		model.initNodeTensorIndices();
+		model.initWeightTensorIndices();
 		return model_error;
 	}
 
@@ -301,7 +302,8 @@ public:
 		// copy out results
 		model_interpreter.getModelResults(model);
 		model_interpreter.clear_cache();
-		model.initTensorIndices();
+		model.initNodeTensorIndices();
+		model.initWeightTensorIndices();
 		return model_error;
 	}
 
@@ -378,7 +380,8 @@ public:
 		// copy out results
 		model_interpreter.getModelResults(model);
 		model_interpreter.clear_cache();
-		model.initTensorIndices();
+		model.initNodeTensorIndices();
+		model.initWeightTensorIndices();
 		return model_output;
 	}
 }

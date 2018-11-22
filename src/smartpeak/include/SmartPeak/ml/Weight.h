@@ -43,6 +43,8 @@ public:
         std::tie(
           id_,
           name_,
+					weight_,
+					init_weight_,
 					//weight_data_,
 					//weight_init_->getName(),
 					//solver_->getName(),
@@ -52,6 +54,8 @@ public:
         ) == std::tie(
           other.id_,
           other.name_,
+					other.weight_,
+					other.init_weight_,
 					//other.weight_data_,
 					//other.weight_init_->getName(),
 					//other.solver_->getName(),
@@ -74,6 +78,8 @@ public:
 			module_id_ = other.module_id_;
 			module_name_ = other.module_name_;
 			tensor_index_ = other.tensor_index_;
+			weight_ = other.weight_;
+			init_weight_ = other.init_weight_;
       //weight_data_  = other.weight_data_;
       weight_init_ = other.weight_init_;
       solver_ = other.solver_;
@@ -119,6 +125,9 @@ public:
 		void setDrop(const TensorT& drop); ///< drop setter
 		TensorT getDrop() const; ///< drop getter
 
+		void setInitWeight(const bool& drop); ///< init_weight setter
+		bool getInitWeight() const; ///< init_weight getter
+
 		void addTensorIndex(const std::tuple<int, int, int>& layer_id); ///< layer id setter
 		std::vector<std::tuple<int, int, int>> getTensorIndex() const; ///< layer id getter
 		void clearTensorIndex();
@@ -150,16 +159,20 @@ private:
     std::shared_ptr<WeightInitOp<TensorT>> weight_init_; ///< weight initialization operator
     std::shared_ptr<SolverOp<TensorT>> solver_; ///< weight update operator
 		TensorT weight_ = 1;
+		bool init_weight_ = true;
     TensorT weight_min_ = -1.0e6;
     TensorT weight_max_ = 1.0e6;
 		TensorT drop_probability_ = 0.0;
 		TensorT drop_ = 1.0;
   };
+
 	template<typename TensorT>
-	Weight<TensorT>::Weight(const Weight<TensorT>& other)
+	inline Weight<TensorT>::Weight(const Weight<TensorT>& other)
 	{
 		id_ = other.id_;
 		name_ = other.name_;
+		weight_ = other.weight_;
+		init_weight_ = other.init_weight_;
 		//weight_data_ = other.weight_data_;
 		module_id_ = other.module_id_;
 		module_name_ = other.module_name_;
@@ -173,7 +186,7 @@ private:
 	}
 
 	template<typename TensorT>
-	Weight<TensorT>::Weight(const int& id) :
+	inline Weight<TensorT>::Weight(const int& id) :
 		id_(id)
 	{
 		if (name_ == "")
@@ -183,13 +196,13 @@ private:
 	}
 
 	template<typename TensorT>
-	Weight<TensorT>::Weight(const std::string& name) :
+	inline Weight<TensorT>::Weight(const std::string& name) :
 		name_(name)
 	{
 	}
 
 	template<typename TensorT>
-	Weight<TensorT>::Weight(const int& id, const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver) :
+	inline Weight<TensorT>::Weight(const int& id, const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver) :
 		id_(id)
 	{
 		if (name_ == "")
@@ -201,7 +214,7 @@ private:
 	}
 
 	template<typename TensorT>
-	Weight<TensorT>::Weight(const std::string& name, const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver) :
+	inline Weight<TensorT>::Weight(const std::string& name, const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver) :
 		name_(name)
 	{
 		setWeightInitOp(weight_init);
@@ -209,7 +222,7 @@ private:
 	}
 
 	template<typename TensorT>
-	void Weight<TensorT>::setId(const int& id)
+	inline void Weight<TensorT>::setId(const int& id)
 	{
 		id_ = id;
 		if (name_ == "")
@@ -218,18 +231,18 @@ private:
 		}
 	}
 	template<typename TensorT>
-	int Weight<TensorT>::getId() const
+	inline int Weight<TensorT>::getId() const
 	{
 		return id_;
 	}
 
 	template<typename TensorT>
-	void Weight<TensorT>::setName(const std::string& name)
+	inline void Weight<TensorT>::setName(const std::string& name)
 	{
 		name_ = name;
 	}
 	template<typename TensorT>
-	std::string Weight<TensorT>::getName() const
+	inline std::string Weight<TensorT>::getName() const
 	{
 		return name_;
 	}
@@ -255,31 +268,31 @@ private:
 	//}
 
 	template<typename TensorT>
-	void Weight<TensorT>::setWeight(const TensorT& weight)
+	inline void Weight<TensorT>::setWeight(const TensorT& weight)
 	{
 		weight_ = weight;
 	}
 
 	template<typename TensorT>
-	TensorT Weight<TensorT>::getWeight() const
+	inline TensorT Weight<TensorT>::getWeight() const
 	{
 		return weight_;
 	}
 
 	template<typename TensorT>
-	void Weight<TensorT>::setWeightInitOp(const std::shared_ptr<WeightInitOp<TensorT>>& weight_init)
+	inline void Weight<TensorT>::setWeightInitOp(const std::shared_ptr<WeightInitOp<TensorT>>& weight_init)
 	{
 		weight_init_.reset();
 		weight_init_ = std::move(weight_init);
 	}
 	template<typename TensorT>
-	WeightInitOp<TensorT>* Weight<TensorT>::getWeightInitOp() const
+	inline WeightInitOp<TensorT>* Weight<TensorT>::getWeightInitOp() const
 	{
 		return weight_init_.get();
 	}
 
 	template<typename TensorT>
-	void Weight<TensorT>::setSolverOp(const std::shared_ptr<SolverOp<TensorT>>& solver)
+	inline void Weight<TensorT>::setSolverOp(const std::shared_ptr<SolverOp<TensorT>>& solver)
 	{
 		solver_.reset();
 		solver_ = std::move(solver);
@@ -290,48 +303,48 @@ private:
 		return solver_;
 	}
 	template<typename TensorT>
-	SolverOp<TensorT>* Weight<TensorT>::getSolverOp() const
+	inline SolverOp<TensorT>* Weight<TensorT>::getSolverOp() const
 	{
 		return solver_.get();
 	}
 
 	template<typename TensorT>
-	void Weight<TensorT>::setWeightMin(const TensorT& weight_min)
+	inline void Weight<TensorT>::setWeightMin(const TensorT& weight_min)
 	{
 		weight_min_ = weight_min;
 	}
 	template<typename TensorT>
-	void Weight<TensorT>::setWeightMax(const TensorT& weight_max)
+	inline void Weight<TensorT>::setWeightMax(const TensorT& weight_max)
 	{
 		weight_max_ = weight_max;
 	}
 
 	template<typename TensorT>
-	void Weight<TensorT>::setModuleId(const int & module_id)
+	inline void Weight<TensorT>::setModuleId(const int & module_id)
 	{
 		module_id_ = module_id;
 	}
 
 	template<typename TensorT>
-	int Weight<TensorT>::getModuleId() const
+	inline int Weight<TensorT>::getModuleId() const
 	{
 		return module_id_;
 	}
 
 	template<typename TensorT>
-	void Weight<TensorT>::setModuleName(const std::string & module_name)
+	inline void Weight<TensorT>::setModuleName(const std::string & module_name)
 	{
 		module_name_ = module_name;
 	}
 
 	template<typename TensorT>
-	std::string Weight<TensorT>::getModuleName() const
+	inline std::string Weight<TensorT>::getModuleName() const
 	{
 		return module_name_;
 	}
 
 	template<typename TensorT>
-	void Weight<TensorT>::setDropProbability(const TensorT & drop_probability)
+	inline void Weight<TensorT>::setDropProbability(const TensorT & drop_probability)
 	{
 		drop_probability_ = drop_probability;
 		RandBinaryOp<TensorT> rand_bin(drop_probability_);
@@ -339,31 +352,43 @@ private:
 	}
 
 	template<typename TensorT>
-	TensorT Weight<TensorT>::getDropProbability() const
+	inline TensorT Weight<TensorT>::getDropProbability() const
 	{
 		return drop_probability_;
 	}
 
 	template<typename TensorT>
-	void Weight<TensorT>::setDrop(const TensorT & drop)
+	inline void Weight<TensorT>::setDrop(const TensorT & drop)
 	{
 		drop_ = drop;
 	}
 
 	template<typename TensorT>
-	TensorT Weight<TensorT>::getDrop() const
+	inline TensorT Weight<TensorT>::getDrop() const
 	{
 		return drop_;
 	}
 
 	template<typename TensorT>
-	void Weight<TensorT>::addTensorIndex(const std::tuple<int, int, int>& layer_id)
+	inline void Weight<TensorT>::setInitWeight(const bool & init_weight)
+	{
+		init_weight_ = init_weight;
+	}
+
+	template<typename TensorT>
+	inline bool Weight<TensorT>::getInitWeight() const
+	{
+		return init_weight_;
+	}
+
+	template<typename TensorT>
+	inline void Weight<TensorT>::addTensorIndex(const std::tuple<int, int, int>& layer_id)
 	{
 		tensor_index_.push_back(layer_id);
 	}
 
 	template<typename TensorT>
-	std::vector<std::tuple<int, int, int>> Weight<TensorT>::getTensorIndex() const
+	inline std::vector<std::tuple<int, int, int>> Weight<TensorT>::getTensorIndex() const
 	{
 		return tensor_index_;
 	}

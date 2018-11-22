@@ -313,7 +313,7 @@ public:
 		int batch_size = bmsizes.first;
 		int memory_size = bmsizes.second;
 
-		// add a check to ensure the node data has been copied over from the model interpreter!
+		assert(output_node_names.size() == expected_values.dimension(2));
 
 		// writer header
 		if (log_expected_predicted_epoch_csvwriter_.getLineCount() == 0) {
@@ -332,14 +332,16 @@ public:
 		}
 
 		// write next entry
+		if (model.getNode(output_node_names[0]).getOutput().size() < batch_size * memory_size)
+			return false;
+
 		std::vector<std::string> line = { std::to_string(n_epoch) };
 		int node_cnt = 0;
 		for (const std::string& node_name : output_node_names) {
 			for (size_t batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
 				for (size_t memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
-					int next_time_step = expected_values.dimension(1) - 1 - memory_iter;
-					line.push_back(std::to_string(model.getNode(node_name).getOutput()(batch_iter, memory_iter)));
-					line.push_back(std::to_string(expected_values(batch_iter, next_time_step, node_cnt)));
+					line.push_back(std::to_string(model.getNode(node_name).getOutput()(batch_iter, memory_iter))); // very slow operation
+					line.push_back(std::to_string(expected_values(batch_iter, memory_iter, node_cnt)));
 				}
 			}
 			++node_cnt;
@@ -417,6 +419,8 @@ public:
 		}
 
 		// write next entry
+		if (nodes[0].getError().size() < batch_size * memory_size)
+			return false;
 		std::vector<std::string> line = { std::to_string(n_epoch) };
 		int node_cnt = 0;
 		for (const auto& node : nodes) {
@@ -433,89 +437,89 @@ public:
 	template<typename TensorT>
 	bool ModelLogger<TensorT>::logModuleMeanAndVariancePerEpoch(const Model<TensorT>& model, const int & n_epoch, std::vector<std::string> module_name)
 	{
-		// make a map of all modules/nodes in the model
-		if (module_to_node_names_.size() == 0) {
-			module_to_node_names_ = model.getModuleNodeNameMap();
+		// [TODO: this method should be refactored or removed all together]
+		//// make a map of all modules/nodes in the model
+		//if (module_to_node_names_.size() == 0) {
+		//	module_to_node_names_ = model.getModuleNodeNameMap();
 
-			// prune nodes not in a module
-			module_to_node_names_.erase("");
-		}
+		//	// prune nodes not in a module
+		//	module_to_node_names_.erase("");
+		//}
 
-		std::pair<int, int> bmsizes = model.getBatchAndMemorySizes();
-		int batch_size = bmsizes.first;
-		int memory_size = bmsizes.second;
+		//std::pair<int, int> bmsizes = model.getBatchAndMemorySizes();
+		//int batch_size = bmsizes.first;
+		//int memory_size = bmsizes.second;
 
-		// writer header
-		if (log_module_variance_epoch_csvwriter_.getLineCount() == 0) {
-			std::vector<std::string> headers = { "Epoch" };
-			for (const auto& module_to_node_names : module_to_node_names_) {
-				for (size_t batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
-					for (size_t memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
-						std::string mod_output_mean = module_to_node_names.first + "_Output_Mean_Batch-" + std::to_string(batch_iter) + "_Memory-" + std::to_string(memory_iter);
-						headers.push_back(mod_output_mean);
-						std::string mod_output_var = module_to_node_names.first + "_Output_Var_Batch-" + std::to_string(batch_iter) + "_Memory-" + std::to_string(memory_iter);
-						headers.push_back(mod_output_var);
-						std::string mod_error_mean = module_to_node_names.first + "_Error_Mean_Batch-" + std::to_string(batch_iter) + "_Memory-" + std::to_string(memory_iter);
-						headers.push_back(mod_error_mean);
-						std::string mod_error_var = module_to_node_names.first + "_Error_Var_Batch-" + std::to_string(batch_iter) + "_Memory-" + std::to_string(memory_iter);
-						headers.push_back(mod_error_var);
-					}
-				}
-			}
-			log_module_variance_epoch_csvwriter_.writeDataInRow(headers.begin(), headers.end());
-		}
+		//// writer header
+		//if (log_module_variance_epoch_csvwriter_.getLineCount() == 0) {
+		//	std::vector<std::string> headers = { "Epoch" };
+		//	for (const auto& module_to_node_names : module_to_node_names_) {
+		//		for (size_t batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
+		//			for (size_t memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
+		//				std::string mod_output_mean = module_to_node_names.first + "_Output_Mean_Batch-" + std::to_string(batch_iter) + "_Memory-" + std::to_string(memory_iter);
+		//				headers.push_back(mod_output_mean);
+		//				std::string mod_output_var = module_to_node_names.first + "_Output_Var_Batch-" + std::to_string(batch_iter) + "_Memory-" + std::to_string(memory_iter);
+		//				headers.push_back(mod_output_var);
+		//				std::string mod_error_mean = module_to_node_names.first + "_Error_Mean_Batch-" + std::to_string(batch_iter) + "_Memory-" + std::to_string(memory_iter);
+		//				headers.push_back(mod_error_mean);
+		//				std::string mod_error_var = module_to_node_names.first + "_Error_Var_Batch-" + std::to_string(batch_iter) + "_Memory-" + std::to_string(memory_iter);
+		//				headers.push_back(mod_error_var);
+		//			}
+		//		}
+		//	}
+		//	log_module_variance_epoch_csvwriter_.writeDataInRow(headers.begin(), headers.end());
+		//}
 
-		// write next entry
-		std::vector<std::string> line = { std::to_string(n_epoch) };
-		for (const auto& module_to_node_names : module_to_node_names_) {
-			// calculate the means (excluding biases)
-			Eigen::Tensor<TensorT, 2> mean_output(batch_size, memory_size + 1), mean_error(batch_size, memory_size + 1), constant(batch_size, memory_size + 1);
-			mean_output.setConstant(0.0f);
-			mean_error.setConstant(0.0f);
-			int nodes_cnt = 0;
-			for (const std::string& node_name : module_to_node_names.second) {
-				if (model.getNode(node_name).getType() != NodeType::bias) {
-					mean_output += model.getNode(node_name).getOutput();
-					mean_error += model.getNode(node_name).getError();
-					++nodes_cnt;
-				}
-			}
-			constant.setConstant(nodes_cnt);
-			mean_output /= constant;
-			mean_error /= constant;
+		//// write next entry
+		//std::vector<std::string> line = { std::to_string(n_epoch) };
+		//for (const auto& module_to_node_names : module_to_node_names_) {
+		//	// calculate the means (excluding biases)
+		//	Eigen::Tensor<TensorT, 2> mean_output(batch_size, memory_size + 1), mean_error(batch_size, memory_size + 1), constant(batch_size, memory_size + 1);
+		//	mean_output.setConstant(0.0f);
+		//	mean_error.setConstant(0.0f);
+		//	int nodes_cnt = 0;
+		//	for (const std::string& node_name : module_to_node_names.second) {
+		//		if (model.getNode(node_name).getType() != NodeType::bias) {
+		//			mean_output += model.getNode(node_name).getOutput();
+		//			mean_error += model.getNode(node_name).getError();
+		//			++nodes_cnt;
+		//		}
+		//	}
+		//	constant.setConstant(nodes_cnt);
+		//	mean_output /= constant;
+		//	mean_error /= constant;
 
-			// calculate the variances (excluding biases)
-			Eigen::Tensor<TensorT, 2> variance_output(batch_size, memory_size + 1), variance_error(batch_size, memory_size + 1);
-			variance_output.setConstant(0.0f);
-			variance_error.setConstant(0.0f);
-			for (const std::string& node_name : module_to_node_names.second) {
-				if (model.getNode(node_name).getType() != NodeType::bias) {
-					auto diff_output = model.getNode(node_name).getOutput() - mean_output;
-					variance_output += (diff_output * diff_output);
-					auto diff_error = model.getNode(node_name).getError() - mean_error;
-					variance_error += (diff_error * diff_error);
-				}
-			}
-			variance_output /= constant;
-			variance_error /= constant;
+		//	// calculate the variances (excluding biases)
+		//	Eigen::Tensor<TensorT, 2> variance_output(batch_size, memory_size + 1), variance_error(batch_size, memory_size + 1);
+		//	variance_output.setConstant(0.0f);
+		//	variance_error.setConstant(0.0f);
+		//	for (const std::string& node_name : module_to_node_names.second) {
+		//		if (model.getNode(node_name).getType() != NodeType::bias) {
+		//			auto diff_output = model.getNode(node_name).getOutput() - mean_output;
+		//			variance_output += (diff_output * diff_output);
+		//			auto diff_error = model.getNode(node_name).getError() - mean_error;
+		//			variance_error += (diff_error * diff_error);
+		//		}
+		//	}
+		//	variance_output /= constant;
+		//	variance_error /= constant;
 
-			for (size_t batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
-				for (size_t memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
-					line.push_back(std::to_string(mean_output(batch_iter, memory_iter)));
-					line.push_back(std::to_string(variance_output(batch_iter, memory_iter)));
-					line.push_back(std::to_string(mean_error(batch_iter, memory_iter)));
-					line.push_back(std::to_string(variance_error(batch_iter, memory_iter)));
-				}
-			}
-		}
-		log_module_variance_epoch_csvwriter_.writeDataInRow(line.begin(), line.end());
+		//	for (size_t batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
+		//		for (size_t memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
+		//			line.push_back(std::to_string(mean_output(batch_iter, memory_iter)));
+		//			line.push_back(std::to_string(variance_output(batch_iter, memory_iter)));
+		//			line.push_back(std::to_string(mean_error(batch_iter, memory_iter)));
+		//			line.push_back(std::to_string(variance_error(batch_iter, memory_iter)));
+		//		}
+		//	}
+		//}
+		//log_module_variance_epoch_csvwriter_.writeDataInRow(line.begin(), line.end());
 		return true;
 	}
 
 	template<typename TensorT>
 	bool ModelLogger<TensorT>::logNodeOutputsPerEpoch(const Model<TensorT>& model, const int & n_epoch, std::vector<std::string> node_names)
 	{
-
 		std::pair<int, int> bmsizes = model.getBatchAndMemorySizes();
 		int batch_size = bmsizes.first;
 		int memory_size = bmsizes.second;
@@ -545,6 +549,8 @@ public:
 		}
 
 		// write next entry
+		if (nodes[0].getOutput().size() < batch_size * memory_size)
+			return false;
 		std::vector<std::string> line = { std::to_string(n_epoch) };
 		int node_cnt = 0;
 		for (const auto& node : nodes) {
@@ -591,6 +597,8 @@ public:
 		}
 
 		// write next entry
+		if (nodes[0].getDerivative().size() < batch_size * memory_size)
+			return false;
 		std::vector<std::string> line = { std::to_string(n_epoch) };
 		int node_cnt = 0;
 		for (const auto& node : nodes) {

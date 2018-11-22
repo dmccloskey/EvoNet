@@ -244,9 +244,18 @@ public:
 		Eigen::Tensor<TensorT, 2> getError() const; ///< model_error getter
  
 		/**
-			@brief Re-initialize all node and weight tensor indices
+			@brief Re-initialize all node tensor indices
+
+			[TODO: add tests!]
 		*/
-		void initTensorIndices();
+		void initNodeTensorIndices();
+
+		/**
+			@brief Re-initialize all weight tensor indices
+
+			[TODO: add tests!]
+		*/
+		void initWeightTensorIndices();
 
 		void setBatchAndMemorySizes(const int& batch_size, const int& memory_size);   ///< batch and memory sizes setter
 		std::pair<int, int> getBatchAndMemorySizes() const; ///< batch and memory sizes getter (non-padded sizes)
@@ -925,14 +934,19 @@ private:
 	};
 
 	template<typename TensorT>
-	inline void Model<TensorT>::initTensorIndices() {
+	inline void Model<TensorT>::initNodeTensorIndices() {
 		for (auto& node_map : nodes_) {
 			node_map.second->setTensorIndex(std::make_pair(-1, -1));
 		}
+	}
+
+	template<typename TensorT>
+	inline void Model<TensorT>::initWeightTensorIndices() {
 		for (auto& weight_map : weights_) {
 			weight_map.second->clearTensorIndex();
 		}
 	}
+
 	template<typename TensorT>
 	inline void Model<TensorT>::setBatchAndMemorySizes(const int & batch_size, const int & memory_size)
 	{

@@ -1064,9 +1064,14 @@ namespace SmartPeak
 					if (argument.weight->getTensorIndex().size() == 0) {
 						argument.weight->addTensorIndex(std::make_tuple(weight_pos, source_layer_index, sink_layer_index));
 						weight_index.push_back(std::make_pair(source_layer_index, sink_layer_index));
-						TensorT tmp = argument.weight->getWeightInitOp()->operator()();
-						argument.weight->setWeight(tmp);
-						weight_value.push_back(tmp);
+						if (argument.weight->getInitWeight()) {
+							TensorT tmp = argument.weight->getWeightInitOp()->operator()();
+							weight_value.push_back(tmp);
+							argument.weight->setInitWeight(false); // ensures that from now on the weight will not be re-initialized
+						}
+						else {
+							weight_value.push_back(argument.weight->getWeight());
+						}
 						make_weight_tensor = true;
 					}
 					else {
