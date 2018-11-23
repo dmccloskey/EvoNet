@@ -9,22 +9,23 @@ using namespace std;
 
 BOOST_AUTO_TEST_SUITE(emgmodel)
 
-class EMGModel_test: public EMGModel
+template <typename TensorT>
+class EMGModel_test: public EMGModel<TensorT>
 {
 public:
-  double z_(const double& x_I) const
+	TensorT z_(const TensorT& x_I) const
   {
     return EMGModel::z_(x_I);
   }
-  double EMGPDF1_(const double& x_I) const
+	TensorT EMGPDF1_(const TensorT& x_I) const
   {
     return EMGModel::EMGPDF1_(x_I);
   }
-  double EMGPDF2_(const double& x_I) const
+	TensorT EMGPDF2_(const TensorT& x_I) const
   {
     return EMGModel::EMGPDF2_(x_I);
   }
-  double EMGPDF3_(const double& x_I) const
+	TensorT EMGPDF3_(const TensorT& x_I) const
   {
     return EMGModel::EMGPDF3_(x_I);
   }
@@ -32,22 +33,22 @@ public:
 
 BOOST_AUTO_TEST_CASE(constructor) 
 {
-  EMGModel* ptr = nullptr;
-  EMGModel* nullPointer = nullptr;
-	ptr = new EMGModel();
+  EMGModel<double>* ptr = nullptr;
+  EMGModel<double>* nullPointer = nullptr;
+	ptr = new EMGModel<double>();
   BOOST_CHECK_NE(ptr, nullPointer);
 }
 
 BOOST_AUTO_TEST_CASE(destructor) 
 {
-  EMGModel* ptr = nullptr;
-	ptr = new EMGModel();
+  EMGModel<double>* ptr = nullptr;
+	ptr = new EMGModel<double>();
   delete ptr;
 }
 
 BOOST_AUTO_TEST_CASE(constructor2) 
 {
-  EMGModel emg(1.0, 2.0, 3.0, 4.0);
+  EMGModel<double> emg(1.0, 2.0, 3.0, 4.0);
 
   BOOST_CHECK_EQUAL(emg.getH(), 1.0);
   BOOST_CHECK_EQUAL(emg.getTau(), 2.0);
@@ -57,7 +58,7 @@ BOOST_AUTO_TEST_CASE(constructor2)
 
 BOOST_AUTO_TEST_CASE(gettersAndSetters) 
 {
-  EMGModel emg;
+  EMGModel<double> emg;
   emg.setH(1.0);
   emg.setTau(2.0);
   emg.setMu(3.0);
@@ -71,7 +72,7 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
 
 BOOST_AUTO_TEST_CASE(z_) 
 {
-  EMGModel_test emg;
+  EMGModel_test<double> emg;
   emg.setH(1.0);
   emg.setTau(0.1);
   emg.setMu(0.0);
@@ -89,7 +90,7 @@ BOOST_AUTO_TEST_CASE(z_)
 
 BOOST_AUTO_TEST_CASE(emgpdf1_) 
 {
-  EMGModel_test emg;
+  EMGModel_test<double> emg;
   emg.setH(1.0);
   emg.setTau(0.1);
   emg.setMu(0.0);
@@ -100,7 +101,7 @@ BOOST_AUTO_TEST_CASE(emgpdf1_)
 
 BOOST_AUTO_TEST_CASE(emgpdf2_) 
 {
-  EMGModel_test emg;
+  EMGModel_test<double> emg;
   emg.setH(1.0);
   emg.setTau(0.1);
   emg.setMu(0.0);
@@ -111,7 +112,7 @@ BOOST_AUTO_TEST_CASE(emgpdf2_)
 
 BOOST_AUTO_TEST_CASE(emgpdf3_) 
 {
-  EMGModel_test emg;
+  EMGModel_test<double> emg;
   emg.setH(1.0);
   emg.setTau(1e-12);
   emg.setMu(0.0);
@@ -122,7 +123,7 @@ BOOST_AUTO_TEST_CASE(emgpdf3_)
 
 BOOST_AUTO_TEST_CASE(emgpdf) 
 {
-  EMGModel emg;
+  EMGModel<double> emg;
   emg.setH(1.0);
   emg.setTau(0.1);
   emg.setMu(0.0);

@@ -179,6 +179,7 @@ public:
 		@param[in] n_generations The number of evolution generations
 		@param[in] n_epochs The number of training/validation epochs
 		@param[in, out] model The model
+		@param[in, out] model_interpreter The model interpreter
 		@param[in] model_errors The trace of model errors from training/validation
 
 		*/

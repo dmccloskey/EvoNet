@@ -54,6 +54,9 @@ namespace SmartPeak
 			// make the tensors
 			OperationTensorStep<TensorT, Eigen::GpuDevice> operation_step;
 
+			// ensure that all tensors are allocated on the correct device
+			assert(cudaSetDevice(getModelResources()[0].getID()) == cudaSuccess); // is this needed?
+
 			// [NOTE: order matters!  sink layer should come before the source layer to keep with
 			//  the ordering generated in getForwardPropogationTensorDimensions.]
 			std::shared_ptr<NodeTensorData<TensorT, Eigen::GpuDevice>> sink_node_data(new NodeTensorDataGpu<TensorT>());
@@ -165,8 +168,7 @@ namespace SmartPeak
 
 			// Set up the device, streams, and kernals
 			ModelKernalGpu<TensorT> model_kernal;
-			const int device_id = 0;
-			assert(cudaSetDevice(device_id) == cudaSuccess); // is this needed?
+			assert(cudaSetDevice(getModelResources()[0].getID()) == cudaSuccess); // is this needed?
 			std::vector<cudaStream_t> streams;
 			for (size_t i = 0; i < operations_list.size(); ++i) {
 				cudaStream_t stream; // The stream will be destroyed by GpuStreamDevice once the function goes out of scope!
@@ -177,7 +179,7 @@ namespace SmartPeak
 			// execute the forward propogation steps
 			int device_iter = 0;
 			for (OperationTensorStep<TensorT, Eigen::GpuDevice>& operation : operations_list) {
-				Eigen::GpuStreamDevice stream_device(&streams[device_iter], 0);
+				Eigen::GpuStreamDevice stream_device(&streams[device_iter], getModelResources()[0].getID());
 				Eigen::GpuDevice device(&stream_device);
 
 				if (!operation.source_layer.tensor->getOutputStatus().second)
@@ -239,8 +241,7 @@ namespace SmartPeak
 
 			// Set up the device, streams, and kernals
 			ModelKernalGpu<TensorT> model_kernal;
-			const int device_id = 0;
-			assert(cudaSetDevice(device_id) == cudaSuccess); // is this needed?
+			assert(cudaSetDevice(getModelResources()[0].getID()) == cudaSuccess); // is this needed?
 			std::vector<cudaStream_t> streams;
 			for (size_t i = 0; i < operation_steps_[iter].size(); ++i) {
 				cudaStream_t stream; // The stream will be destroyed by GpuStreamDevice once the function goes out of scope!
@@ -251,7 +252,7 @@ namespace SmartPeak
 			// execute the forward propogation steps
 			int device_iter = 0;
 			for (OperationTensorStep<TensorT, Eigen::GpuDevice>& operation : operation_steps_[iter]) { //reverse source/sink
-				Eigen::GpuStreamDevice stream_device(&streams[device_iter], 0);
+				Eigen::GpuStreamDevice stream_device(&streams[device_iter], getModelResources()[0].getID());
 				Eigen::GpuDevice device(&stream_device);
 
 				if (!operation.source_layer.tensor->getOutputStatus().second)
@@ -321,7 +322,7 @@ namespace SmartPeak
 		ModelKernalGpu<TensorT> model_kernal;
 		cudaStream_t stream; // The stream will be destroyed by GpuStreamDevice once the function goes out of scope!
 		assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess);
-		Eigen::GpuStreamDevice stream_device(&stream, 0);
+		Eigen::GpuStreamDevice stream_device(&stream, getModelResources()[0].getID());
 		Eigen::GpuDevice device(&stream_device);
 
 		auto layer_tensor_data = getLayerTensor(layer_id);
@@ -360,8 +361,7 @@ namespace SmartPeak
 
 			// Set up the device, streams, and kernals
 			ModelKernalGpu<TensorT> model_kernal;
-			const int device_id = 0;
-			assert(cudaSetDevice(device_id) == cudaSuccess); // is this needed?
+			assert(cudaSetDevice(getModelResources()[0].getID()) == cudaSuccess); // is this needed?
 			std::vector<cudaStream_t> streams;
 			for (size_t i = 0; i < operations_list.size(); ++i) {
 				cudaStream_t stream; // The stream will be destroyed by GpuStreamDevice once the function goes out of scope!
@@ -372,7 +372,7 @@ namespace SmartPeak
 			// execute the forward propogation steps
 			int device_iter = 0;
 			for (OperationTensorStep<TensorT, Eigen::GpuDevice>& operation : operations_list) {
-				Eigen::GpuStreamDevice stream_device(&streams[device_iter], 0);
+				Eigen::GpuStreamDevice stream_device(&streams[device_iter], getModelResources()[0].getID());
 				Eigen::GpuDevice device(&stream_device);
 
 				if (!operation.sink_layer.tensor->getErrorStatus().second)
@@ -422,8 +422,7 @@ namespace SmartPeak
 
 			// Set up the device, streams, and kernals
 			ModelKernalGpu<TensorT> model_kernal;
-			const int device_id = 0;
-			assert(cudaSetDevice(device_id) == cudaSuccess); // is this needed?
+			assert(cudaSetDevice(getModelResources()[0].getID()) == cudaSuccess); // is this needed?
 			std::vector<cudaStream_t> streams;
 			for (size_t i = 0; i < operations_list.size(); ++i) {
 				cudaStream_t stream; // The stream will be destroyed by GpuStreamDevice once the function goes out of scope!
@@ -434,7 +433,7 @@ namespace SmartPeak
 			// execute the forward propogation steps
 			int device_iter = 0;
 			for (OperationTensorStep<TensorT, Eigen::GpuDevice>& operation : operations_list) {
-				Eigen::GpuStreamDevice stream_device(&streams[device_iter], 0);
+				Eigen::GpuStreamDevice stream_device(&streams[device_iter], getModelResources()[0].getID());
 				Eigen::GpuDevice device(&stream_device);
 
 				if (!operation.weight.tensor->getWeightStatus().second)
@@ -479,7 +478,7 @@ namespace SmartPeak
 		// Synchronize all data with the host
 		cudaStream_t stream; // The stream will be destroyed by GpuStreamDevice once the function goes out of scope!
 		assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess);
-		Eigen::GpuStreamDevice stream_device(&stream, 0);
+		Eigen::GpuStreamDevice stream_device(&stream, getModelResources()[0].getID());
 		Eigen::GpuDevice device(&stream_device);
 
 		// sync the weight values
@@ -541,6 +540,8 @@ namespace SmartPeak
 	template<typename TensorT>
 	inline void ModelInterpreterGpu<TensorT>::checkMemory(const Model<TensorT>& model, const int& batch_size, const int& memory_size)
 	{
+		assert(cudaSetDevice(getModelResources()[0].getID()) == cudaSuccess); // is this needed?
+
 		// get the device memory
 		size_t free_byte, total_byte;
 		cudaMemGetInfo(&free_byte, &total_byte);

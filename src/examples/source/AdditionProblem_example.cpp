@@ -787,8 +787,7 @@ int main(int argc, char** argv)
 
 	// define the multithreading parameters
 	const int n_hard_threads = std::thread::hardware_concurrency();
-	//const int n_threads = n_hard_threads; // the number of threads
-	const int n_threads = 1; // the number of threads
+	const int n_threads = n_hard_threads; // the number of threads
 
 	// define the input/output nodes
 	std::vector<std::string> input_nodes = { "Input_0", "Input_1" };
@@ -818,8 +817,8 @@ int main(int argc, char** argv)
 	model_trainer.setOutputNodes({ output_nodes });
 
 	// define the model logger
-	ModelLogger<float> model_logger(true, true, true, false, false, false, false, false);
-	//ModelLogger<float> model_logger(true, true, true, true, true, false, true, true);
+	//ModelLogger<float> model_logger(true, true, true, false, false, false, false, false);
+	ModelLogger<float> model_logger(true, true, false, false, false, false, false, false);
 
 	// define the model replicator for growth mode
 	ModelReplicatorExt<float> model_replicator;
@@ -848,16 +847,13 @@ int main(int argc, char** argv)
 	//Model<float> model = model_trainer.makeModel();
 	//Model<float> model = model_trainer.makeMemoryUnitV02();
 	//Model<float> model = model_trainer.makeMemoryUnitV01();
-	Model<float> model = ModelTrainerExt<float>().makeModelLSTM(input_nodes.size());
+	Model<float> model = model_trainer.makeModelLSTM(input_nodes.size());
 	char model_name_char[512];
 	sprintf(model_name_char, "%s_%d", model.getName().data(), 0);
 	std::string model_name(model_name_char);
 	model.setName(model_name);
 	model.setId(0);
 	population.push_back(model);
-
-	//PopulationTrainerFile<float> population_trainer_file;
-	//population_trainer_file.storeModels(population, "AddProb");
 
 	// Evolve the population
 	std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(

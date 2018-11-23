@@ -314,7 +314,7 @@ public:
 	}
 };
 
-void main_VAE(const bool& make_model, const bool& load_weight_values) {
+void main_VAE(const bool& make_model, const bool& load_weight_values, const bool& train_model) {
 
 	const int n_hard_threads = std::thread::hardware_concurrency();
 	const int n_threads = 1;
@@ -327,7 +327,8 @@ void main_VAE(const bool& make_model, const bool& load_weight_values) {
 	population_trainer.setNReplicatesPerModel(1);
 
 	// define the model logger
-	ModelLogger<float> model_logger(true, true, false, false, false, false, false, false);
+	//ModelLogger<float> model_logger(true, true, false, false, false, false, false, false);
+	ModelLogger<float> model_logger(true, true, true, false, false, false, false, false); // evaluation only
 
 	// define the data simulator
 	const std::size_t input_size = 784;
@@ -388,12 +389,14 @@ void main_VAE(const bool& make_model, const bool& load_weight_values) {
 		model_interpreters.push_back(model_interpreter);
 	}
 	ModelTrainerExt<float> model_trainer;
-	model_trainer.setBatchSize(16);
-	model_trainer.setMemorySize(1);
+	model_trainer.setBatchSize(1); // evaluation only
+	//model_trainer.setBatchSize(16);
 	model_trainer.setNEpochsTraining(100001);
 	model_trainer.setNEpochsValidation(25);
+	model_trainer.setNEpochsEvaluation(100);
+	model_trainer.setMemorySize(1);
 	model_trainer.setVerbosityLevel(1);
-	model_trainer.setLogging(true, false);
+	model_trainer.setLogging(true, false, true);
 	model_trainer.setFindCycles(false);
 	model_trainer.setLossFunctions({
 		std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()),
@@ -410,7 +413,7 @@ void main_VAE(const bool& make_model, const bool& load_weight_values) {
 	// define the model replicator for growth mode
 	ModelReplicatorExt<float> model_replicator;
 
-	// define the initial population [BUG FREE]
+	// define the initial population
 	std::cout << "Initializing the population..." << std::endl;
 	Model<float> model;
 	if (make_model) {
@@ -432,7 +435,7 @@ void main_VAE(const bool& make_model, const bool& load_weight_values) {
 		// read in the trained model weights only
 		std::cout << "Reading in the model weight values..." << std::endl;
 		const std::string data_dir = "C:/Users/domccl/GitHub/smartPeak_cpp/build_win_cuda/bin/Debug/";
-		const std::string weights_filename = data_dir + "1_MNIST_Weights.csv";
+		const std::string weights_filename = data_dir + "2_MNIST_Weights.csv";
 		model.setId(2);
 		model.setName("VAE2");
 		WeightFile<float> weight_file;
@@ -440,19 +443,26 @@ void main_VAE(const bool& make_model, const bool& load_weight_values) {
 	}
 	std::vector<Model<float>> population = { model };
 
-	// Evolve the population
-	std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
-		population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, input_nodes);
+	if (train_model) {
+		// Evolve the population
+		std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
+			population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, input_nodes);
 
-	PopulationTrainerFile<float> population_trainer_file;
-	population_trainer_file.storeModels(population, "MNIST");
-	population_trainer_file.storeModelValidations("MNISTErrors.csv", models_validation_errors_per_generation.back());
+		PopulationTrainerFile<float> population_trainer_file;
+		population_trainer_file.storeModels(population, "MNIST");
+		population_trainer_file.storeModelValidations("MNISTErrors.csv", models_validation_errors_per_generation.back());
+	}
+	else {
+		// Evaluate the population
+		population_trainer.evaluateModels(
+			population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, input_nodes);
+	}
 }
 
 int main(int argc, char** argv)
 {
 	// run the application
-	main_VAE(true, true);
+	main_VAE(true, true, false);
 
   return 0;
 }

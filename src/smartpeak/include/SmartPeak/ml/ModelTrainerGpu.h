@@ -377,6 +377,7 @@ namespace SmartPeak
 
 			// log epoch
 			if (getLogEvaluation()) {
+				model_interpreter.getModelResults(model, true, true, false);
 				model_logger.writeLogs(model, iter, {}, {}, {}, {}, output_nodes, Eigen::Tensor<TensorT, 3>(), output_nodes, {}, {});
 			}
 

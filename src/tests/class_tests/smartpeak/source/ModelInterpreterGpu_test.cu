@@ -93,7 +93,8 @@ Model<float> makeModelToy1()
 void test_allocateForwardPropogationLayerTensors()
 {
 	Model<float> model_allocateForwardPropogationLayerTensors = makeModelToy1();
-	ModelInterpreterGpu<float> model_interpreter;
+	ModelResources model_resources = { ModelDevice(0, 1) };
+	ModelInterpreterGpu<float> model_interpreter(model_resources);
 	const int batch_size = 4;
 	const int memory_size = 2;
 	const bool train = true;
@@ -150,7 +151,8 @@ void test_allocateForwardPropogationLayerTensors()
 void test_getForwardPropogationOperations()
 {
 	Model<float> model_getForwardPropogationOperations = makeModelToy1();
-	ModelInterpreterGpu<float> model_interpreter;
+	ModelResources model_resources = { ModelDevice(0, 1) };
+	ModelInterpreterGpu<float> model_interpreter(model_resources);
 	const int batch_size = 4;
 	const int memory_size = 1;
 	const bool train = true;
@@ -240,7 +242,8 @@ void test_getForwardPropogationOperations()
 
 void test_allocateModelErrorTensor()
 {
-	ModelInterpreterGpu<float> model_interpreter;
+	ModelResources model_resources = { ModelDevice(0, 1) };
+	ModelInterpreterGpu<float> model_interpreter(model_resources);
 	const int batch_size = 4;
 	const int memory_size = 2;
 
@@ -252,7 +255,8 @@ void test_allocateModelErrorTensor()
 
 void test_reInitNodes()
 {
-	ModelInterpreterGpu<float> model_interpreter;
+	ModelResources model_resources = { ModelDevice(0, 1) };
+	ModelInterpreterGpu<float> model_interpreter(model_resources);
 	const int batch_size = 4;
 	const int memory_size = 2;
 
@@ -261,7 +265,8 @@ void test_reInitNodes()
 
 void test_reInitModelError()
 {
-	ModelInterpreterGpu<float> model_interpreter;
+	ModelResources model_resources = { ModelDevice(0, 1) };
+	ModelInterpreterGpu<float> model_interpreter(model_resources);
 	const int batch_size = 4;
 	const int memory_size = 2;
 
@@ -277,7 +282,8 @@ void test_reInitModelError()
 void test_mapValuesToLayers()
 {
 Model<float> model_mapValuesToLayers = makeModelToy1();
-	ModelInterpreterGpu<float> model_interpreter;
+ModelResources model_resources = { ModelDevice(0, 1) };
+ModelInterpreterGpu<float> model_interpreter(model_resources);
 	const int batch_size = 4;
 	const int memory_size = 1;
 	const bool train = true;
@@ -334,8 +340,9 @@ Model<float> model_mapValuesToLayers = makeModelToy1();
 
 void test_executeForwardPropogationOperations()
 {
-Model<float> model_executeForwardPropogationOperations = makeModelToy1();
-	ModelInterpreterGpu<float> model_interpreter;
+	Model<float> model_executeForwardPropogationOperations = makeModelToy1();
+	ModelResources model_resources = { ModelDevice(0, 1) };
+	ModelInterpreterGpu<float> model_interpreter(model_resources);
 	const int batch_size = 4;
 	const int memory_size = 1;
 	const bool train = true;
@@ -397,7 +404,8 @@ Model<float> model_executeForwardPropogationOperations = makeModelToy1();
 void test_executeModelErrorOperations()
 {
 	Model<float> model_executeModelErrorOperations = makeModelToy1();
-	ModelInterpreterGpu<float> model_interpreter;
+	ModelResources model_resources = { ModelDevice(0, 1) };
+	ModelInterpreterGpu<float> model_interpreter(model_resources);
 	const int batch_size = 4;
 	const int memory_size = 1;
 	const bool train = true;
@@ -469,8 +477,9 @@ void test_executeModelErrorOperations()
 
 void test_executeBackwardPropogationOperations()
 {
-Model<float> model_executeBackwardPropogationOperations = makeModelToy1();
-	ModelInterpreterGpu<float> model_interpreter;
+	Model<float> model_executeBackwardPropogationOperations = makeModelToy1();
+	ModelResources model_resources = { ModelDevice(0, 1) };
+	ModelInterpreterGpu<float> model_interpreter(model_resources);
 	const int batch_size = 4;
 	const int memory_size = 1;
 	const bool train = true;
@@ -540,7 +549,8 @@ Model<float> model_executeBackwardPropogationOperations = makeModelToy1();
 void test_executeWeightErrorOperations()
 {
 	Model<float> model_executeWeightErrorOperations = makeModelToy1();
-	ModelInterpreterGpu<float> model_interpreter;
+	ModelResources model_resources = { ModelDevice(0, 1) };
+	ModelInterpreterGpu<float> model_interpreter(model_resources);
 	const int batch_size = 4;
 	const int memory_size = 1;
 	const bool train = true;
@@ -605,7 +615,8 @@ void test_executeWeightErrorOperations()
 void test_executeWeightUpdateOperations()
 {
 	Model<float> model_executeWeightUpdateOperations = makeModelToy1();
-	ModelInterpreterGpu<float> model_interpreter;
+	ModelResources model_resources = { ModelDevice(0, 1) };
+	ModelInterpreterGpu<float> model_interpreter(model_resources);
 	const int batch_size = 4;
 	const int memory_size = 1;
 	const bool train = true;
@@ -671,7 +682,8 @@ void test_executeWeightUpdateOperations()
 void test_modelTrainer1()
 {
 	Model<float> model_modelTrainer1 = makeModelToy1();
-	ModelInterpreterGpu<float> model_interpreter;
+	ModelResources model_resources = { ModelDevice(0, 1) };
+	ModelInterpreterGpu<float> model_interpreter(model_resources);
 	const int batch_size = 4;
 	const int memory_size = 1;
 	const bool train = true;
@@ -795,7 +807,8 @@ Model<float> makeModelToy2()
 void test_FPTT()
 {
 	Model<float> model_FPTT = makeModelToy2();
-	ModelInterpreterGpu<float> model_interpreter;
+	ModelResources model_resources = { ModelDevice(0, 1) };
+	ModelInterpreterGpu<float> model_interpreter(model_resources);
 	const int batch_size = 5;
 	const int memory_size = 8;
 	const bool train = true;
@@ -867,7 +880,8 @@ void test_FPTT()
 void test_CETT()
 {
 	Model<float> model_CETT = makeModelToy2();
-	ModelInterpreterGpu<float> model_interpreter;
+	ModelResources model_resources = { ModelDevice(0, 1) };
+	ModelInterpreterGpu<float> model_interpreter(model_resources);
 	const int batch_size = 5;
 	const int memory_size = 8;
 	const bool train = true;
@@ -955,7 +969,8 @@ void test_CETT()
 void test_TBPTT()
 {
 	Model<float> model_TBPTT = makeModelToy2();
-	ModelInterpreterGpu<float> model_interpreter;
+	ModelResources model_resources = { ModelDevice(0, 1) };
+	ModelInterpreterGpu<float> model_interpreter(model_resources);
 	const int batch_size = 5;
 	const int memory_size = 8;
 	const bool train = true;
@@ -1046,7 +1061,8 @@ void test_TBPTT()
 void test_updateWeights()
 {
 	Model<float> model_updateWeights = makeModelToy2();
-	ModelInterpreterGpu<float> model_interpreter;
+	ModelResources model_resources = { ModelDevice(0, 1) };
+	ModelInterpreterGpu<float> model_interpreter(model_resources);
 	const int batch_size = 5;
 	const int memory_size = 8;
 	const bool train = true;
@@ -1116,7 +1132,8 @@ void test_updateWeights()
 void test_modelTrainer2()
 {
 	Model<float> model_modelTrainer2 = makeModelToy2();
-	ModelInterpreterGpu<float> model_interpreter;
+	ModelResources model_resources = { ModelDevice(0, 1) };
+	ModelInterpreterGpu<float> model_interpreter(model_resources);
 	const int batch_size = 5;
 	const int memory_size = 8;
 	const bool train = true;
@@ -1195,7 +1212,8 @@ void test_modelTrainer2()
 void test_getModelResults()
 {
 	Model<float> model_getModelResults = makeModelToy2();
-	ModelInterpreterGpu<float> model_interpreter;
+	ModelResources model_resources = { ModelDevice(0, 1) };
+	ModelInterpreterGpu<float> model_interpreter(model_resources);
 	const int batch_size = 5;
 	const int memory_size = 8;
 	const bool train = true;
