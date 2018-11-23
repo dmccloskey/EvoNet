@@ -367,10 +367,10 @@ public:
 				}
 			}
 
-			//// log epoch
-			//if (getLogEvaluation()) {
-			//	model_logger.writeLogs(model, iter, {}, {}, {}, {}, output_nodes, Eigen::Tensor<TensorT, 3>(), output_nodes, {}, {});
-			//}
+			// log epoch
+			if (getLogEvaluation()) {
+				model_logger.writeLogs(model, iter, {}, {}, {}, {}, output_nodes, Eigen::Tensor<TensorT, 3>(), output_nodes, {}, {});
+			}
 
 			// reinitialize the model
 			if (iter != getNEpochsEvaluation() - 1) {

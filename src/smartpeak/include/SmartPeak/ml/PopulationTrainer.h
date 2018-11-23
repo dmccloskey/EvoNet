@@ -223,8 +223,7 @@ public:
 			ModelReplicator<TensorT>& model_replicator,
 			DataSimulator<TensorT>& data_simulator,
 			ModelLogger<TensorT>& model_logger,
-			const std::vector<std::string>& input_nodes,
-			int n_threads = 1);
+			const std::vector<std::string>& input_nodes);
 
 		/**
 		@brief Entry point for users to code their adaptive scheduler
@@ -935,8 +934,7 @@ private:
 		ModelReplicator<TensorT>& model_replicator,
 		DataSimulator<TensorT>& data_simulator,
 		ModelLogger<TensorT>& model_logger,
-		const std::vector<std::string>& input_nodes,
-		int n_threads)
+		const std::vector<std::string>& input_nodes)
 	{
 		// generate the input/output data for evaluation		
 		std::cout << "Generating the input/output data for evaluation..." << std::endl;

@@ -143,7 +143,54 @@ template<typename TensorT>
 class DataSimulatorExt : public MNISTSimulator<TensorT>
 {
 public:
-	void simulateEvaluationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 3>& time_steps) {};
+	void simulateEvaluationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 3>& time_steps) {
+		// infer data dimensions based on the input tensors
+		const int batch_size = input_data.dimension(0);
+		const int memory_size = input_data.dimension(1);
+		const int n_input_nodes = input_data.dimension(2);
+		const int n_epochs = input_data.dimension(3);
+		const int n_input_pixels = this->validation_data.dimension(1);
+		const int n_encodings = 20; // not ideal to have this hard coded...
+
+		assert(n_input_nodes == n_input_pixels + n_encodings);
+
+		// make a vector of sample_indices [BUG FREE]
+		this->mnist_sample_start_training = this->mnist_sample_end_training;
+		Eigen::Tensor<int, 1> sample_indices(batch_size*n_epochs);
+		int sample_index = this->mnist_sample_start_training;
+		for (int i = 0; i < batch_size*n_epochs; ++i)
+		{
+			if (sample_index > this->training_data.dimension(0) - 1)
+			{
+				sample_index = 0;
+			}
+			sample_indices(i) = sample_index;
+			++sample_index;
+		}
+		this->mnist_sample_end_training = sample_index;
+
+		std::random_device rd{};
+		std::mt19937 gen{ rd() };
+		std::normal_distribution<> d{ 0.0f, 1.0f };
+		// Reformat the MNIST image data for training
+		for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
+			for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
+				for (int nodes_iter = 0; nodes_iter < n_input_pixels + 2 * n_encodings; ++nodes_iter) {
+					for (int epochs_iter = 0; epochs_iter < n_epochs; ++epochs_iter) {
+						if (nodes_iter < n_input_pixels) {
+							input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = this->training_data(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
+							//input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = this->training_data(sample_indices[0], nodes_iter);  // test on only 1 sample
+						}
+						else if (nodes_iter >= n_input_pixels && nodes_iter < n_encodings) {
+							input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 0;// d(gen); // sample from a normal distribution
+						}
+					}
+				}
+			}
+		}
+
+		time_steps.setConstant(1.0f);
+	};
 	void simulateTrainingData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
 	{
 		// infer data dimensions based on the input tensors

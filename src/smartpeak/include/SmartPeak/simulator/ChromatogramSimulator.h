@@ -87,8 +87,8 @@ namespace SmartPeak
 		const PeakSimulator<TensorT>& peak_right, const EMGModel<TensorT>& emg_right) const
 	{
 		std::vector<TensorT> x_left, y_left, x_right, y_right;
-		PeakSimulator peak_l = peak_left;
-		PeakSimulator peak_r = peak_right;
+		PeakSimulator<TensorT> peak_l = peak_left;
+		PeakSimulator<TensorT> peak_r = peak_right;
 
 		// move windows just to the overlapping region
 		peak_l.setWindowStart(peak_r.getWindowStart());
@@ -195,14 +195,14 @@ namespace SmartPeak
 		y_O.clear();
 
 		// Order the list of peaks from lowest to highest emg_mu
-		std::vector<std::pair<PeakSimulator, EMGModel>> peak_emg_pairs;
+		std::vector<std::pair<PeakSimulator<TensorT>, EMGModel<TensorT>>> peak_emg_pairs;
 		for (int i = 0; i < emgs.size(); ++i)
 		{
-			const std::pair<PeakSimulator, EMGModel> peak_emg(peaks[i], emgs[i]);
+			const std::pair<PeakSimulator<TensorT>, EMGModel<TensorT>> peak_emg(peaks[i], emgs[i]);
 			peak_emg_pairs.push_back(peak_emg);
 		}
 		std::sort(peak_emg_pairs.begin(), peak_emg_pairs.end(),
-			[](std::pair<PeakSimulator, EMGModel> lhs, std::pair<PeakSimulator, EMGModel> rhs)
+			[](std::pair<PeakSimulator<TensorT>, EMGModel<TensorT>> lhs, std::pair<PeakSimulator<TensorT>, EMGModel<TensorT>> rhs)
 		{
 			return lhs.second.getMu() < rhs.second.getMu(); //ascending order
 		}

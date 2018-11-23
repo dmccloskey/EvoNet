@@ -13,100 +13,95 @@ using namespace std;
 
 BOOST_AUTO_TEST_SUITE(chromatogramsimulator)
 
-// class ChromatogramSimulator_test: public ChromatogramSimulator
-// {
-// public:
-// };
-
 BOOST_AUTO_TEST_CASE(constructor) 
 {
-  ChromatogramSimulator* ptr = nullptr;
-  ChromatogramSimulator* nullPointer = nullptr;
-	ptr = new ChromatogramSimulator();
+  ChromatogramSimulator<double>* ptr = nullptr;
+  ChromatogramSimulator<double>* nullPointer = nullptr;
+	ptr = new ChromatogramSimulator<double>();
   BOOST_CHECK_NE(ptr, nullPointer);
 }
 
 BOOST_AUTO_TEST_CASE(destructor) 
 {
-  ChromatogramSimulator* ptr = nullptr;
-	ptr = new ChromatogramSimulator();
+  ChromatogramSimulator<double>* ptr = nullptr;
+	ptr = new ChromatogramSimulator<double>();
   delete ptr;
 }
 
 BOOST_AUTO_TEST_CASE(findPeakOverlap)
 {
-  ChromatogramSimulator chromsimulator;
-  PeakSimulator peak_left, peak_right;
-  EMGModel emg_left, emg_right;  
+  ChromatogramSimulator<double> chromsimulator;
+  PeakSimulator<double> peak_left, peak_right;
+  EMGModel<double> emg_left, emg_right;  
 
  // Overlapping windows; left and right baseline are equal;
-  peak_left = PeakSimulator(1.0, 0.0, 
+  peak_left = PeakSimulator<double>(1.0, 0.0, 
     0.0, 12.0, 
     0.0, 0.0,
     1.0, 5.0, //bl, br
     15);
-  peak_right = PeakSimulator(1.0, 0.0, 
+  peak_right = PeakSimulator<double>(1.0, 0.0, 
     8.0, 20.0, 
     0.0, 0.0,
     5.0, 1.0, //bl, br
     15);
-  emg_left = EMGModel(10.0, 0.0, 5.0, 1.0);
-  emg_right = EMGModel(10.0, 0.0, 15.0, 1.0);
+  emg_left = EMGModel<double>(10.0, 0.0, 5.0, 1.0);
+  emg_right = EMGModel<double>(10.0, 0.0, 15.0, 1.0);
   chromsimulator.findPeakOverlap(peak_left, emg_left, peak_right, emg_right);
   BOOST_CHECK_EQUAL(chromsimulator.findPeakOverlap(peak_left, emg_left, peak_right, emg_right), 12.0);
 
  // Merged peaks: both baselines overlap
-  peak_left = PeakSimulator(1.0, 0.0, 
+  peak_left = PeakSimulator<double>(1.0, 0.0, 
     0.0, 15.0, 
     0.0, 0.0,
     1.0, 1.0, //bl, br
     15);
-  peak_right = PeakSimulator(1.0, 0.0, 
+  peak_right = PeakSimulator<double>(1.0, 0.0, 
     5.0, 20.0, 
     0.0, 0.0,
     1.0, 1.0, //bl, br
     15);
-  emg_left = EMGModel(10.0, 0.0, 9.0, 1.0);
-  emg_right = EMGModel(10.0, 0.0, 11.0, 1.0);
+  emg_left = EMGModel<double>(10.0, 0.0, 9.0, 1.0);
+  emg_right = EMGModel<double>(10.0, 0.0, 11.0, 1.0);
   chromsimulator.findPeakOverlap(peak_left, emg_left, peak_right, emg_right);
   BOOST_CHECK_EQUAL(chromsimulator.findPeakOverlap(peak_left, emg_left, peak_right, emg_right), 10.0);
 
  // Merged peaks: both baselines do not overlap
-  peak_left = PeakSimulator(1.0, 0.0, 
+  peak_left = PeakSimulator<double>(1.0, 0.0, 
     0.0, 13.0, 
     0.0, 0.0,
     1.0, 1.0, //bl, br
     15);
-  peak_right = PeakSimulator(1.0, 0.0, 
+  peak_right = PeakSimulator<double>(1.0, 0.0, 
     5.0, 20.0, 
     0.0, 0.0,
     1.0, 1.0, //bl, br
     15);
-  emg_left = EMGModel(10.0, 0.0, 9.0, 1.0);
-  emg_right = EMGModel(10.0, 0.0, 11.0, 1.0);
+  emg_left = EMGModel<double>(10.0, 0.0, 9.0, 1.0);
+  emg_right = EMGModel<double>(10.0, 0.0, 11.0, 1.0);
   chromsimulator.findPeakOverlap(peak_left, emg_left, peak_right, emg_right);
   BOOST_CHECK_EQUAL(chromsimulator.findPeakOverlap(peak_left, emg_left, peak_right, emg_right), 10.0);
 }
 
 BOOST_AUTO_TEST_CASE(joinPeakWindows) 
 {
-  ChromatogramSimulator chromsimulator;
-  PeakSimulator peak_left, peak_right;
-  EMGModel emg_left, emg_right;
+  ChromatogramSimulator<double> chromsimulator;
+  PeakSimulator<double> peak_left, peak_right;
+  EMGModel<double> emg_left, emg_right;
 
   // Perfect overlap; no differences in baseline
-  peak_left = PeakSimulator(1.0, 0.0, 
+  peak_left = PeakSimulator<double>(1.0, 0.0, 
     0.0, 10.0, 
     0.0, 0.0,
     1.0, 1.0, //bl, br
     15);
-  peak_right = PeakSimulator(1.0, 0.0, 
+  peak_right = PeakSimulator<double>(1.0, 0.0, 
     10.0, 20.0, 
     0.0, 0.0,
     1.0, 1.0, //bl, br
     15);
-  emg_left = EMGModel(10.0, 0.0, 5.0, 1.0);
-  emg_right = EMGModel(10.0, 0.0, 15.0, 1.0);
+  emg_left = EMGModel<double>(10.0, 0.0, 5.0, 1.0);
+  emg_right = EMGModel<double>(10.0, 0.0, 15.0, 1.0);
   chromsimulator.joinPeakWindows(peak_left, emg_left, peak_right, emg_right);
   BOOST_CHECK_EQUAL(peak_left.getBaselineRight(), 1.0);
   BOOST_CHECK_EQUAL(peak_right.getBaselineLeft(), 1.0);
@@ -117,18 +112,18 @@ BOOST_AUTO_TEST_CASE(joinPeakWindows)
 
   // Perfect overlap; no differences in baseline
   // swapped peaks
-  peak_right = PeakSimulator(1.0, 0.0, 
+  peak_right = PeakSimulator<double>(1.0, 0.0, 
     0.0, 10.0, 
     0.0, 0.0,
     1.0, 1.0, //bl, br
     15);
-  peak_left = PeakSimulator(1.0, 0.0, 
+  peak_left = PeakSimulator<double>(1.0, 0.0, 
     10.0, 20.0, 
     0.0, 0.0,
     1.0, 1.0, //bl, br
     15);
-  emg_right = EMGModel(10.0, 0.0, 5.0, 1.0);
-  emg_left = EMGModel(10.0, 0.0, 15.0, 1.0);
+  emg_right = EMGModel<double>(10.0, 0.0, 5.0, 1.0);
+  emg_left = EMGModel<double>(10.0, 0.0, 15.0, 1.0);
   chromsimulator.joinPeakWindows(peak_left, emg_left, peak_right, emg_right);
   BOOST_CHECK_EQUAL(peak_left.getBaselineRight(), 1.0);
   BOOST_CHECK_EQUAL(peak_right.getBaselineLeft(), 1.0);
@@ -140,18 +135,18 @@ BOOST_AUTO_TEST_CASE(joinPeakWindows)
   BOOST_CHECK_EQUAL(emg_right.getMu(), 15.0);
 
  // Non overlapping windows; Left baseline is higher
-  peak_left = PeakSimulator(1.0, 0.0, 
+  peak_left = PeakSimulator<double>(1.0, 0.0, 
     0.0, 8.0, 
     0.0, 0.0,
     1.0, 5.0, //bl, br
     15);
-  peak_right = PeakSimulator(1.0, 0.0, 
+  peak_right = PeakSimulator<double>(1.0, 0.0, 
     12.0, 20.0, 
     0.0, 0.0,
     1.0, 1.0, //bl, br
     15);
-  emg_left = EMGModel(10.0, 0.0, 5.0, 1.0);
-  emg_right = EMGModel(10.0, 0.0, 15.0, 1.0);
+  emg_left = EMGModel<double>(10.0, 0.0, 5.0, 1.0);
+  emg_right = EMGModel<double>(10.0, 0.0, 15.0, 1.0);
   chromsimulator.joinPeakWindows(peak_left, emg_left, peak_right, emg_right);
   BOOST_CHECK_EQUAL(peak_left.getBaselineRight(), 5.0);
   BOOST_CHECK_EQUAL(peak_right.getBaselineLeft(), 5.0);
@@ -161,18 +156,18 @@ BOOST_AUTO_TEST_CASE(joinPeakWindows)
   BOOST_CHECK_EQUAL(emg_right.getMu(), 15.0);
 
  // Non overlapping windows; Right baseline is higher
-  peak_left = PeakSimulator(1.0, 0.0, 
+  peak_left = PeakSimulator<double>(1.0, 0.0, 
     0.0, 8.0, 
     0.0, 0.0,
     1.0, 1.0, //bl, br
     15);
-  peak_right = PeakSimulator(1.0, 0.0, 
+  peak_right = PeakSimulator<double>(1.0, 0.0, 
     12.0, 20.0, 
     0.0, 0.0,
     5.0, 1.0, //bl, br
     15);
-  emg_left = EMGModel(10.0, 0.0, 5.0, 1.0);
-  emg_right = EMGModel(10.0, 0.0, 15.0, 1.0);
+  emg_left = EMGModel<double>(10.0, 0.0, 5.0, 1.0);
+  emg_right = EMGModel<double>(10.0, 0.0, 15.0, 1.0);
   chromsimulator.joinPeakWindows(peak_left, emg_left, peak_right, emg_right);
   BOOST_CHECK_EQUAL(peak_left.getBaselineRight(), 5.0);
   BOOST_CHECK_EQUAL(peak_right.getBaselineLeft(), 5.0);
@@ -182,18 +177,18 @@ BOOST_AUTO_TEST_CASE(joinPeakWindows)
   BOOST_CHECK_EQUAL(emg_right.getMu(), 15.0);
 
  // Overlapping windows; Left baseline is higher
-  peak_left = PeakSimulator(1.0, 0.0, 
+  peak_left = PeakSimulator<double>(1.0, 0.0, 
     0.0, 12.0, 
     0.0, 0.0,
     1.0, 5.0, //bl, br
     15);
-  peak_right = PeakSimulator(1.0, 0.0, 
+  peak_right = PeakSimulator<double>(1.0, 0.0, 
     8.0, 20.0, 
     0.0, 0.0,
     1.0, 1.0, //bl, br
     15);
-  emg_left = EMGModel(10.0, 0.0, 5.0, 1.0);
-  emg_right = EMGModel(10.0, 0.0, 15.0, 1.0);
+  emg_left = EMGModel<double>(10.0, 0.0, 5.0, 1.0);
+  emg_right = EMGModel<double>(10.0, 0.0, 15.0, 1.0);
   chromsimulator.joinPeakWindows(peak_left, emg_left, peak_right, emg_right);
   BOOST_CHECK_EQUAL(peak_left.getBaselineRight(), 5.0);
   BOOST_CHECK_EQUAL(peak_right.getBaselineLeft(), 5.0);
@@ -203,18 +198,18 @@ BOOST_AUTO_TEST_CASE(joinPeakWindows)
   BOOST_CHECK_EQUAL(emg_right.getMu(), 15.0);
 
  // Overlapping windows; Right baseline is higher
-  peak_left = PeakSimulator(1.0, 0.0, 
+  peak_left = PeakSimulator<double>(1.0, 0.0, 
     0.0, 12.0, 
     0.0, 0.0,
     1.0, 1.0, //bl, br
     15);
-  peak_right = PeakSimulator(1.0, 0.0, 
+  peak_right = PeakSimulator<double>(1.0, 0.0, 
     8.0, 20.0, 
     0.0, 0.0,
     5.0, 1.0, //bl, br
     15);
-  emg_left = EMGModel(10.0, 0.0, 5.0, 1.0);
-  emg_right = EMGModel(10.0, 0.0, 15.0, 1.0);
+  emg_left = EMGModel<double>(10.0, 0.0, 5.0, 1.0);
+  emg_right = EMGModel<double>(10.0, 0.0, 15.0, 1.0);
   chromsimulator.joinPeakWindows(peak_left, emg_left, peak_right, emg_right);
   BOOST_CHECK_EQUAL(peak_left.getBaselineRight(), 5.0);
   BOOST_CHECK_EQUAL(peak_right.getBaselineLeft(), 5.0);
@@ -226,21 +221,21 @@ BOOST_AUTO_TEST_CASE(joinPeakWindows)
 
 BOOST_AUTO_TEST_CASE(simulateChromatogram) 
 {
-  ChromatogramSimulator chromsimulator;
-  PeakSimulator peak1, peak2, peak3;
-  EMGModel emg1, emg2, emg3;
+  ChromatogramSimulator<double> chromsimulator;
+  PeakSimulator<double> peak1, peak2, peak3;
+  EMGModel<double> emg1, emg2, emg3;
   std::vector<double> chrom_time, chrom_intensity, x_test, y_test;
 
-  std::vector<PeakSimulator> peaks;
-  std::vector<EMGModel> emgs;
+  std::vector<PeakSimulator<double>> peaks;
+  std::vector<EMGModel<double>> emgs;
 
   // Perfect gaussian peak
-  peak1 = PeakSimulator(1.0, 0.0, 
+  peak1 = PeakSimulator<double>(1.0, 0.0, 
     0.0, 10.0, 
     0.0, 0.0,
     1.0, 1.0, //bl, br
     100);
-  emg1 = EMGModel(10.0, 0.0, 5.0, 1.0);
+  emg1 = EMGModel<double>(10.0, 0.0, 5.0, 1.0);
   peaks = {peak1};
   emgs = {emg1};
 
@@ -255,24 +250,24 @@ BOOST_AUTO_TEST_CASE(simulateChromatogram)
   }
 
   // Perfect gaussian peaks
-  peak1 = PeakSimulator(1.0, 0.0, 
+  peak1 = PeakSimulator<double>(1.0, 0.0, 
     0.0, 10.0, 
     0.0, 0.0,
     1.0, 1.0, //bl, br
     100);
-  emg1 = EMGModel(10.0, 0.0, 5.0, 1.0);
-  peak2 = PeakSimulator(1.0, 0.0, 
+  emg1 = EMGModel<double>(10.0, 0.0, 5.0, 1.0);
+  peak2 = PeakSimulator<double>(1.0, 0.0, 
     10.0, 20.0, 
     0.0, 0.0,
     1.0, 1.0, //bl, br
     100);
-  emg2 = EMGModel(10.0, 0.0, 15.0, 1.0);
-  peak3 = PeakSimulator(1.0, 0.0, 
+  emg2 = EMGModel<double>(10.0, 0.0, 15.0, 1.0);
+  peak3 = PeakSimulator<double>(1.0, 0.0, 
     20.0, 30.0, 
     0.0, 0.0,
     1.0, 1.0, //bl, br
     100);
-  emg3 = EMGModel(10.0, 0.0, 25.0, 1.0);
+  emg3 = EMGModel<double>(10.0, 0.0, 25.0, 1.0);
   peaks = {peak1, peak2, peak3};
   emgs = {emg1, emg2, emg3};
 
@@ -287,24 +282,24 @@ BOOST_AUTO_TEST_CASE(simulateChromatogram)
   }
 
   // Increase tailing
-  peak1 = PeakSimulator(1.0, 0.0, 
+  peak1 = PeakSimulator<double>(1.0, 0.0, 
     0.0, 10.0, 
     0.0, 0.0,
     1.0, 1.0, //bl, br
     100);
-  emg1 = EMGModel(10.0, 0.0, 5.0, 1.0);
-  peak2 = PeakSimulator(1.0, 0.0, 
+  emg1 = EMGModel<double>(10.0, 0.0, 5.0, 1.0);
+  peak2 = PeakSimulator<double>(1.0, 0.0, 
     10.0, 20.0, 
     0.0, 0.0,
     1.0, 1.0, //bl, br
     100);
-  emg2 = EMGModel(10.0, 0.2, 15.0, 1.0);
-  peak3 = PeakSimulator(1.0, 0.0, 
+  emg2 = EMGModel<double>(10.0, 0.2, 15.0, 1.0);
+  peak3 = PeakSimulator<double>(1.0, 0.0, 
     20.0, 30.0, 
     0.0, 0.0,
     1.0, 1.0, //bl, br
     100);
-  emg3 = EMGModel(10.0, 1.0, 25.0, 1.0);
+  emg3 = EMGModel<double>(10.0, 1.0, 25.0, 1.0);
   peaks = {peak1, peak2, peak3};
   emgs = {emg1, emg2, emg3};
 
@@ -319,24 +314,24 @@ BOOST_AUTO_TEST_CASE(simulateChromatogram)
   }
 
   // Overlap and cutoff peak
-  peak1 = PeakSimulator(1.0, 0.0, 
+  peak1 = PeakSimulator<double>(1.0, 0.0, 
     0.0, 10.0, 
     0.0, 0.0,
     1.0, 1.0, //bl, br
     100);
-  emg1 = EMGModel(10.0, 0.0, 5.0, 1.0);
-  peak2 = PeakSimulator(1.0, 0.0, 
+  emg1 = EMGModel<double>(10.0, 0.0, 5.0, 1.0);
+  peak2 = PeakSimulator<double>(1.0, 0.0, 
     10.0, 20.0, 
     0.0, 0.0,
     1.0, 1.0, //bl, br
     100);
-  emg2 = EMGModel(10.0, 0.0, 7.0, 1.0);
-  peak3 = PeakSimulator(1.0, 0.0, 
+  emg2 = EMGModel<double>(10.0, 0.0, 7.0, 1.0);
+  peak3 = PeakSimulator<double>(1.0, 0.0, 
     20.0, 30.0, 
     0.0, 0.0,
     1.0, 1.0, //bl, br
     100);
-  emg3 = EMGModel(10.0, 0.0, 29.0, 1.0);
+  emg3 = EMGModel<double>(10.0, 0.0, 29.0, 1.0);
   peaks = {peak1, peak2, peak3};
   emgs = {emg1, emg2, emg3};
 
