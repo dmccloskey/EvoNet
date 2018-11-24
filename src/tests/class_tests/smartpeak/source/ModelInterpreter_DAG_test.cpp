@@ -7,7 +7,7 @@
 using namespace SmartPeak;
 using namespace std;
 
-Model<float> makeModelFCSum()
+Model<float> makeModelToy1()
 {
 	/**
 	* Directed Acyclic Graph Toy Network Model
@@ -88,7 +88,7 @@ Model<float> makeModelFCSum()
 	model_FC_Sum.addLinks({ l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4 });
 	return model_FC_Sum;
 }
-Model<float> model_FC_Sum = makeModelFCSum();
+Model<float> model_FC_Sum = makeModelToy1();
 
 BOOST_AUTO_TEST_SUITE(modelInterpreter_DAG)
 
@@ -107,6 +107,37 @@ BOOST_AUTO_TEST_CASE(destructor)
 	delete ptr;
 }
 
+BOOST_AUTO_TEST_CASE(constructor1)
+{
+	ModelResources model_resources = { ModelDevice(0, 1) };
+	ModelInterpreterDefaultDevice<float> model_interpreter(model_resources);
+
+	BOOST_CHECK_EQUAL(model_interpreter.getModelResources()[0].getID(), model_resources[0].getID());
+	BOOST_CHECK_EQUAL(model_interpreter.getModelResources()[0].getNEngines(), model_resources[0].getNEngines());
+}
+
+BOOST_AUTO_TEST_CASE(gettersAndSetters)
+{
+	ModelResources model_resources = { ModelDevice(0, 1) };
+	ModelInterpreterDefaultDevice<float> model_interpreter;
+	model_interpreter.setModelResources(model_resources);
+
+	BOOST_CHECK_EQUAL(model_interpreter.getModelResources()[0].getID(), model_resources[0].getID());
+	BOOST_CHECK_EQUAL(model_interpreter.getModelResources()[0].getNEngines(), model_resources[0].getNEngines());
+}
+
+BOOST_AUTO_TEST_CASE(copy)
+{
+	ModelResources model_resources = { ModelDevice(0, 1) };
+	ModelInterpreterDefaultDevice<float> model_interpreter;
+	model_interpreter.setModelResources(model_resources);
+	std::vector<ModelInterpreterDefaultDevice<float>> model_interpreters;
+	model_interpreters.push_back(model_interpreter);
+
+	BOOST_CHECK_EQUAL(model_interpreters[0].getModelResources()[0].getID(), model_resources[0].getID());
+	BOOST_CHECK_EQUAL(model_interpreters[0].getModelResources()[0].getNEngines(), model_resources[0].getNEngines());
+}
+
 /**
  * Part 1 test suit for the Model class
  * 
@@ -114,11 +145,11 @@ BOOST_AUTO_TEST_CASE(destructor)
  * required of a standard feed forward neural network
 */
 
-Model<float> model_getNextInactiveLayer = makeModelFCSum();
+Model<float> model_getNextInactiveLayer = makeModelToy1();
 BOOST_AUTO_TEST_CASE(getNextInactiveLayer) 
 {
   // Toy network: 1 hidden layer, fully connected, DAG
-  // Model<float> model_FC_Sum = makeModelFCSum();
+  // Model<float> model_FC_Sum = makeModelToy1();
 	ModelInterpreterDefaultDevice<float> model_interpreter;
 
   // initialize nodes
@@ -153,11 +184,11 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayer)
 	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[1].weight->getName(), "3");
 }
 
-Model<float> model_getNextInactiveLayerBiases = makeModelFCSum();
+Model<float> model_getNextInactiveLayerBiases = makeModelToy1();
 BOOST_AUTO_TEST_CASE(getNextInactiveLayerBiases) 
 {
   // Toy network: 1 hidden layer, fully connected, DAG
-  // Model<float> model_FC_Sum = makeModelFCSum();
+  // Model<float> model_FC_Sum = makeModelToy1();
 	ModelInterpreterDefaultDevice<float> model_interpreter;
 
   // initialize nodes
@@ -204,11 +235,11 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayerBiases)
 	BOOST_CHECK_EQUAL(sink_nodes_with_biases2[1], "3");
 }
 
-Model<float> model_getNextInactiveLayerCycles = makeModelFCSum();
+Model<float> model_getNextInactiveLayerCycles = makeModelToy1();
 BOOST_AUTO_TEST_CASE(getNextInactiveLayerCycles)
 {
 	// Toy network: 1 hidden layer, fully connected, DAG
-	// Model<float> model_FC_Sum = makeModelFCSum();
+	// Model<float> model_FC_Sum = makeModelToy1();
 	ModelInterpreterDefaultDevice<float> model_interpreter;
 
 	// initialize nodes
@@ -256,11 +287,11 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayerCycles)
 	BOOST_CHECK_EQUAL(sink_nodes_with_cycles.size(), 0);
 }
 
-Model<float> model_pruneInactiveLayerCycles = makeModelFCSum();
+Model<float> model_pruneInactiveLayerCycles = makeModelToy1();
 BOOST_AUTO_TEST_CASE(pruneInactiveLayerCycles)
 {
 	// Toy network: 1 hidden layer, fully connected, DAG
-	// Model<float> model_FC_Sum = makeModelFCSum();
+	// Model<float> model_FC_Sum = makeModelToy1();
 	ModelInterpreterDefaultDevice<float> model_interpreter;
 
 	// initialize nodes
@@ -311,7 +342,7 @@ BOOST_AUTO_TEST_CASE(pruneInactiveLayerCycles)
 	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[2].weight->getName(), "5");
 }
 
-Model<float> model_expandForwardPropogationOperationsBySourceNodeKey = makeModelFCSum();
+Model<float> model_expandForwardPropogationOperationsBySourceNodeKey = makeModelToy1();
 BOOST_AUTO_TEST_CASE(expandForwardPropogationOperationsBySourceNodeKey)
 {
 	ModelInterpreterDefaultDevice<float> model_interpreter;
@@ -373,7 +404,7 @@ BOOST_AUTO_TEST_CASE(expandForwardPropogationOperationsBySourceNodeKey)
 
 }
 
-Model<float> model_expandForwardPropogationOperationsByWeightKey = makeModelFCSum();
+Model<float> model_expandForwardPropogationOperationsByWeightKey = makeModelToy1();
 BOOST_AUTO_TEST_CASE(expandForwardPropogationOperationsByWeightKey)
 {
 	ModelInterpreterDefaultDevice<float> model_interpreter;
@@ -435,7 +466,7 @@ BOOST_AUTO_TEST_CASE(expandForwardPropogationOperationsByWeightKey)
 	BOOST_CHECK_EQUAL(FP_operations_expanded[3].arguments[0].weight->getName(), "1");
 }
 
-Model<float> model_expandForwardPropogationOperationsByCachedNodes = makeModelFCSum();
+Model<float> model_expandForwardPropogationOperationsByCachedNodes = makeModelToy1();
 BOOST_AUTO_TEST_CASE(expandForwardPropogationOperationsByCachedNodes)
 {
 	ModelInterpreterDefaultDevice<float> model_interpreter;
@@ -499,7 +530,7 @@ BOOST_AUTO_TEST_CASE(expandForwardPropogationOperationsByCachedNodes)
 
 }
 
-Model<float> model_expandForwardPropogationOperations = makeModelFCSum();
+Model<float> model_expandForwardPropogationOperations = makeModelToy1();
 BOOST_AUTO_TEST_CASE(expandForwardPropogationOperations)
 {
 	ModelInterpreterDefaultDevice<float> model_interpreter;
@@ -568,7 +599,7 @@ BOOST_AUTO_TEST_CASE(getFanInOperations)
 { //TODO
 }
 
-Model<float> model_getTensorOperations = makeModelFCSum();
+Model<float> model_getTensorOperations = makeModelToy1();
 BOOST_AUTO_TEST_CASE(getTensorOperations)
 {
 	ModelInterpreterDefaultDevice<float> model_interpreter;
@@ -597,7 +628,7 @@ BOOST_AUTO_TEST_CASE(getTensorOperations)
 	BOOST_CHECK_EQUAL(tensor_ops.at("2/0")[1], 1);
 }
 
-Model<float> model_getForwardPropogationLayerTensorDimensions = makeModelFCSum();
+Model<float> model_getForwardPropogationLayerTensorDimensions = makeModelToy1();
 BOOST_AUTO_TEST_CASE(getForwardPropogationLayerTensorDimensions)
 {
 	ModelInterpreterDefaultDevice<float> model_interpreter;

@@ -41,6 +41,9 @@ namespace SmartPeak
 	template<typename TensorT>
 	inline void ModelInterpreterGpu<TensorT>::allocateForwardPropogationLayerTensors(const std::vector<OperationList<TensorT>>& FP_operations, const std::map<std::string, std::vector<int>>& operations_map, const std::vector<int>& source_layer_sizes, const std::vector<int>& sink_layer_sizes, const std::vector<std::vector<std::pair<int, int>>> weight_indices, const std::vector<std::vector<TensorT>>& weight_values, const std::vector<bool>& make_source_tensors, const std::vector<bool>& make_sink_tensors, const std::vector<bool>& make_weight_tensors, const int & batch_size, const int & memory_size, const bool & train)
 	{
+		// ensure that all tensors are allocated on the correct device
+		assert(cudaSetDevice(getModelResources()[0].getID()) == cudaSuccess); // is this needed?
+
 		std::vector<OperationTensorStep<TensorT, Eigen::GpuDevice>> operation_step_list;
 
 		ActivationOpToActivationTensorOp<TensorT, Eigen::GpuDevice> activation_conv;
@@ -53,9 +56,6 @@ namespace SmartPeak
 
 			// make the tensors
 			OperationTensorStep<TensorT, Eigen::GpuDevice> operation_step;
-
-			// ensure that all tensors are allocated on the correct device
-			assert(cudaSetDevice(getModelResources()[0].getID()) == cudaSuccess); // is this needed?
 
 			// [NOTE: order matters!  sink layer should come before the source layer to keep with
 			//  the ordering generated in getForwardPropogationTensorDimensions.]

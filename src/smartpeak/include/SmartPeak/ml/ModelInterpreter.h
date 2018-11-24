@@ -117,12 +117,12 @@ namespace SmartPeak
 			return !(*this == other);
 		}
 
-
 		/**
 		@brief Copy assignment operator that creates a new model with different memory addresses
 		*/
 		inline ModelInterpreter& operator=(const ModelInterpreter& other)
 		{
+			model_resources_ = other.model_resources_;
 			return *this;
 		}
 
@@ -458,6 +458,7 @@ namespace SmartPeak
 	template<typename TensorT, typename DeviceT>
 	ModelInterpreter<TensorT, DeviceT>::ModelInterpreter(const ModelInterpreter<TensorT, DeviceT>& other)
 	{
+		model_resources_ = other.model_resources_;
 	}
 
 	template<typename TensorT, typename DeviceT>
