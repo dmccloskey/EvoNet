@@ -139,6 +139,60 @@ public:
 			validation_data = validation_data.unaryExpr(LinearScale<TensorT>(0, 255, -1, 1));
 		};
 
+		/**
+		@brief Make a vector of sample indices for training based on the batch_size
+			and the number of epochs
+
+		@param[in] batch_size
+		@param[in] n_epochs
+
+		@returns a 1D Tensor of sample indices
+		*/
+		Eigen::Tensor<int, 1> getTrainingIndices(const int& batch_size, const int& n_epochs) {
+			// make a vector of sample_indices [BUG FREE]
+			this->mnist_sample_start_training = this->mnist_sample_end_training;
+			Eigen::Tensor<int, 1> sample_indices(batch_size*n_epochs);
+			int sample_index = this->mnist_sample_start_training;
+			for (int i = 0; i < batch_size*n_epochs; ++i)
+			{
+				if (sample_index > this->training_data.dimension(0) - 1)
+				{
+					sample_index = 0;
+				}
+				sample_indices(i) = sample_index;
+				++sample_index;
+			}
+			this->mnist_sample_end_training = sample_index;
+			return sample_indices;
+		}
+
+		/**
+		@brief Make a vector of sample indices for validation based on the batch_size
+			and the number of epochs
+
+		@param[in] batch_size
+		@param[in] n_epochs
+
+		@returns a 1D Tensor of sample indices
+		*/
+		Eigen::Tensor<int, 1> getValidationIndices(const int& batch_size, const int& n_epochs) {
+			// make a vector of sample_indices [BUG FREE]
+			this->mnist_sample_start_validation = this->mnist_sample_end_validation;
+			Eigen::Tensor<int, 1> sample_indices(batch_size*n_epochs);
+			int sample_index = this->mnist_sample_start_validation;
+			for (int i = 0; i < batch_size*n_epochs; ++i)
+			{
+				if (sample_index > this->validation_data.dimension(0) - 1)
+				{
+					sample_index = 0;
+				}
+				sample_indices(i) = sample_index;
+				++sample_index;
+			}
+			this->mnist_sample_end_validation = sample_index;
+			return sample_indices;
+		}
+
 		// Data attributes
 		std::vector<TensorT> mnist_labels = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 

@@ -177,13 +177,6 @@ public:
 
   /**
     @brief NegativeLogLikelihood loss function.
-
-		NOTES: implemented as the following:
-		def CrossEntropy(yHat, y):
-			if y == 1:
-				error_tensor.chip(time_step, 1).device(device) += -log(yHat)
-			else:
-				error_tensor.chip(time_step, 1).device(device) += -log(1 - yHat)
   */
   template<typename TensorT, typename DeviceT>
   class NegativeLogLikelihoodTensorOp : public LossFunctionTensorOp<TensorT, DeviceT>
@@ -226,8 +219,8 @@ public:
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> error_tensor(error, batch_size, memory_size, layer_size);
 			auto predicted_chip = predicted_tensor.chip(time_step, 1);
-			
-			error_tensor.chip(time_step, 1).device(device) += (expected_tensor / (predicted_chip + expected_tensor.constant(this->eps_)) / expected_tensor.constant((TensorT)layer_size)).clip(-1e9, 1e9);
+			// NOTE: added - so that the gradient is -
+			error_tensor.chip(time_step, 1).device(device) += (-expected_tensor / (predicted_chip + expected_tensor.constant(this->eps_)) / expected_tensor.constant((TensorT)layer_size)).clip(-1e9, 1e9);
 		};
 	private:
 		TensorT n_ = 1.0; ///< the number of total classifiers
@@ -248,7 +241,7 @@ public:
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 2>> error_tensor(error, batch_size, memory_size);
 			auto predicted_chip = predicted_tensor.chip(time_step, 1);
-			// NOTE: should this be prediced - expected?
+			
 			error_tensor.chip(time_step, 1).device(device) += ((expected_tensor - predicted_chip).pow(2) * expected_tensor.constant((TensorT)0.5) / expected_tensor.constant((TensorT)layer_size)).sum(Eigen::array<int, 1>({ 1 })).clip(-1e9, 1e9);
 		};
   };
@@ -269,7 +262,7 @@ public:
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> error_tensor(error, batch_size, memory_size, layer_size);
 			auto predicted_chip = predicted_tensor.chip(time_step, 1);
-			// NOTE: should this be prediced - expected?
+			
 			error_tensor.chip(time_step, 1).device(device) += ((expected_tensor - predicted_chip) / expected_tensor.constant((TensorT)layer_size)).clip(-1e9, 1e9);
 		};
   };
@@ -296,8 +289,7 @@ public:
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 2>> error_tensor(error, batch_size, memory_size);
 			auto predicted_chip = predicted_tensor.chip(time_step, 1);
 			
-			//error_tensor.chip(time_step, 1).device(device) += (-expected_tensor.constant((TensorT)0.5) + expected_tensor.constant((TensorT)0.5)*predicted_chip.pow(2)).sum(Eigen::array<int, 1>({ 1 })).clip(-1e9, 1e9);
-			error_tensor.chip(time_step, 1).device(device) += expected_tensor.constant((TensorT)0); // testing...
+			error_tensor.chip(time_step, 1).device(device) += (-expected_tensor.constant((TensorT)0.5) + expected_tensor.constant((TensorT)0.5)*predicted_chip.pow(2)).sum(Eigen::array<int, 1>({ 1 })).clip(-1e9, 1e9);
 		};
 	};
 
@@ -317,9 +309,8 @@ public:
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> error_tensor(error, batch_size, memory_size, layer_size);
 			auto predicted_chip = predicted_tensor.chip(time_step, 1);
-			
-			//error_tensor.chip(time_step, 1).device(device) += expected_tensor.constant((TensorT)2) * predicted_chip;
-			error_tensor.chip(time_step, 1).device(device) += expected_tensor.constant((TensorT)0); // testing...
+			// NOTE: changed to -= to ensure a negative gradient
+			error_tensor.chip(time_step, 1).device(device) -= expected_tensor.constant((TensorT)2) * predicted_chip;
 		};
 	};
 
@@ -344,9 +335,8 @@ public:
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 2>> error_tensor(error, batch_size, memory_size);
 			auto predicted_chip = predicted_tensor.chip(time_step, 1);
-			
-			//error_tensor.chip(time_step, 1).device(device) += (-expected_tensor.constant((TensorT)0.5) - expected_tensor.constant((TensorT)0.5)*predicted_chip + (expected_tensor.constant((TensorT)0.5)*predicted_chip).exp()).sum(Eigen::array<int, 1>({ 1 })).clip(-1e9, 1e9);
-			error_tensor.chip(time_step, 1).device(device) += expected_tensor.constant((TensorT)0); // testing...
+
+			error_tensor.chip(time_step, 1).device(device) += (-expected_tensor.constant((TensorT)0.5) - expected_tensor.constant((TensorT)0.5)*predicted_chip + (expected_tensor.constant((TensorT)0.5)*predicted_chip).exp()).sum(Eigen::array<int, 1>({ 1 })).clip(-1e9, 1e9);
 		};
 	};
 
@@ -366,9 +356,8 @@ public:
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> error_tensor(error, batch_size, memory_size, layer_size);
 			auto predicted_chip = predicted_tensor.chip(time_step, 1);
-			
-			//error_tensor.chip(time_step, 1).device(device) += (-expected_tensor.constant((TensorT)0.5) + (expected_tensor.constant((TensorT)0.5)*predicted_chip).exp());
-			error_tensor.chip(time_step, 1).device(device) += expected_tensor.constant((TensorT)0); // testing...
+			// NOTE: changed to -= to ensure a negative gradient
+			error_tensor.chip(time_step, 1).device(device) -= (-expected_tensor.constant((TensorT)0.5) + (expected_tensor.constant((TensorT)0.5)*predicted_chip).exp());
 		};
 	};
 
@@ -406,8 +395,7 @@ public:
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 2>> error_tensor(error, batch_size, memory_size);
-			auto predicted_chip = predicted_tensor.chip(time_step, 1);
-			
+			auto predicted_chip = predicted_tensor.chip(time_step, 1);			
 			// Step 1
 			auto max_values = (-predicted_chip).cwiseMax(expected_tensor.constant((TensorT)0));
 			// Step 2 //NOTE: removed .clip(-1e9, 20.72) before .exp()
@@ -439,7 +427,8 @@ public:
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> error_tensor(error, batch_size, memory_size, layer_size);
 			auto predicted_chip = predicted_tensor.chip(time_step, 1);
 			//error_tensor.chip(time_step, 1).device(device) += -((expected_tensor - expected_tensor.constant(1))*predicted_chip.exp().unaryExpr(ClipTensorOp<TensorT>(1e-6, 0, 1e9)) + expected_tensor) / (predicted_chip.exp().unaryExpr(ClipTensorOp<TensorT>(1e-6, 0, 1e9)) + expected_tensor.constant(1));
-			error_tensor.chip(time_step, 1).device(device) += -((expected_tensor - expected_tensor.constant((TensorT)1))*predicted_chip.exp() + expected_tensor)/(predicted_chip.exp() + expected_tensor.constant((TensorT)1));
+			// NOTE: removed -(( to (( to ensure negative gradients
+			error_tensor.chip(time_step, 1).device(device) += ((expected_tensor - expected_tensor.constant((TensorT)1))*predicted_chip.exp() + expected_tensor)/(predicted_chip.exp() + expected_tensor.constant((TensorT)1));
 		};
 	};
 
@@ -499,8 +488,8 @@ public:
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> error_tensor(error, batch_size, memory_size, layer_size);
 			auto predicted_chip = predicted_tensor.chip(time_step, 1);
-
-			error_tensor.chip(time_step, 1).device(device) += ((predicted_chip - expected_tensor) / expected_tensor.constant((TensorT)layer_size)).clip(-1e9, 1e9);
+			// NOTE: changed from prediced_chip - expected to expected - predicted_chip
+			error_tensor.chip(time_step, 1).device(device) += ((expected_tensor - predicted_chip) / expected_tensor.constant((TensorT)layer_size)).clip(-1e9, 1e9);
 		};
 	};
 

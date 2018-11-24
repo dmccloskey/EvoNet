@@ -326,23 +326,8 @@ public:
 		assert(n_output_nodes == this->validation_labels.dimension(1));
 		assert(n_input_nodes == this->validation_data.dimension(1));
 
-		// make the start and end sample indices [BUG FREE]
-		this->mnist_sample_start_training = this->mnist_sample_end_training;
-		this->mnist_sample_end_training = this->mnist_sample_start_training + batch_size*n_epochs;
-		if (this->mnist_sample_end_training > this->training_data.dimension(0) - 1)
-			this->mnist_sample_end_training = this->mnist_sample_end_training - batch_size*n_epochs;
-
 		// make a vector of sample_indices [BUG FREE]
-		std::vector<int> sample_indices;
-		for (int i = 0; i<batch_size*n_epochs; ++i)
-		{
-			int sample_index = i + this->mnist_sample_start_training;
-			if (sample_index > this->training_data.dimension(0) - 1)
-			{
-				sample_index = sample_index - batch_size*n_epochs;
-			}
-			sample_indices.push_back(sample_index);
-		}
+		Eigen::Tensor<int, 1> sample_indices = this->getTrainingIndices(batch_size, n_epochs);
 
 		// Reformat the input data for training [BUG FREE]
 		for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
@@ -377,22 +362,7 @@ public:
 		assert(n_input_nodes == this->validation_data.dimension(1));
 
 		// make the start and end sample indices [BUG FREE]
-		this->mnist_sample_start_validation = this->mnist_sample_end_validation;
-		this->mnist_sample_end_validation = this->mnist_sample_start_validation + batch_size * n_epochs;
-		if (this->mnist_sample_end_validation > this->validation_data.dimension(0) - 1)
-			this->mnist_sample_end_validation = this->mnist_sample_end_validation - batch_size * n_epochs;
-
-		// make a vector of sample_indices [BUG FREE]
-		std::vector<int> sample_indices;
-		for (int i = 0; i<batch_size*n_epochs; ++i)
-		{
-			int sample_index = i + this->mnist_sample_start_validation;
-			if (sample_index > this->validation_data.dimension(0) - 1)
-			{
-				sample_index = sample_index - batch_size * n_epochs;
-			}
-			sample_indices.push_back(sample_index);
-		}
+		Eigen::Tensor<int, 1> sample_indices = this->getValidationIndices(batch_size, n_epochs);
 
 		// Reformat the input data for validation [BUG FREE]
 		for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {

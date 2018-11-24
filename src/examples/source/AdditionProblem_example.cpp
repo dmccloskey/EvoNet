@@ -16,7 +16,7 @@
 using namespace SmartPeak;
 
 template<typename TensorT>
-class DataSimulatorExt : public DataSimulator<TensorT>
+class DataSimulatorExt : public AddProbSimulator<TensorT>
 {
 public:
 	void simulateData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
@@ -83,71 +83,6 @@ public:
 		simulateData(input_data, output_data, time_steps);
 	}
 	void simulateEvaluationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 3>& time_steps) {};
-
-	/*
-	@brief implementation of the add problem that
-	has been used to test sequence prediction in
-	RNNS
-
-	References:
-	[TODO]
-
-	@param[in, out] random_sequence
-	@param[in, out] mask_sequence
-	@param[in] n_masks The number of random additions
-
-	@returns the result of the two random numbers in the sequence
-	**/
-	static TensorT AddProb(
-		Eigen::Tensor<TensorT, 1>& random_sequence,
-		Eigen::Tensor<TensorT, 1>& mask_sequence,
-		const int& n_masks)
-	{
-		TensorT result = 0.0;
-		const int sequence_length = random_sequence.size();
-
-		std::random_device rd;
-		std::mt19937 gen(rd());
-		std::uniform_real_distribution<> zero_to_one(0.0, 1.0); // in the range of abs(min/max(+/-0.5)) + abs(min/max(+/-0.5)) for TanH
-		std::uniform_int_distribution<> zero_to_length(0, sequence_length - 1);
-
-		// generate 2 random and unique indexes between 
-		// [0, sequence_length) for the mask
-		std::vector<int> mask_indices = { zero_to_length(gen) };
-		for (int i = 0; i<n_masks - 1; ++i)
-		{
-			int mask_index = 0;
-			do {
-				mask_index = zero_to_length(gen);
-			} while (std::count(mask_indices.begin(), mask_indices.end(), mask_index) != 0);
-			mask_indices.push_back(mask_index);
-		}
-
-		// generate the random sequence
-		// and the mask sequence
-		for (int i = 0; i<sequence_length; ++i)
-		{
-			// the random sequence
-			random_sequence(i) = zero_to_one(gen);
-			// the mask
-			if (std::count(mask_indices.begin(), mask_indices.end(), i) != 0)
-				mask_sequence(i) = 1.0;
-			else
-				mask_sequence(i) = 0.0;
-
-			// result update
-			result += mask_sequence(i) * random_sequence(i);
-		}
-
-		//std::cout<<"mask sequence: "<<mask_sequence<<std::endl; [TESTS:convert to a test!]
-		//std::cout<<"random sequence: "<<random_sequence<<std::endl; [TESTS:convert to a test!]
-		//std::cout<<"result: "<<result<<std::endl; [TESTS:convert to a test!]
-
-		return result;
-	}
-
-	int n_mask_ = 5;
-	int sequence_length_ = 25;
 };
 
 // Extended classes
@@ -758,18 +693,27 @@ public:
 		std::vector<Model<TensorT>>& models,
 		std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations)
 	{
-		// Population size of 16
-		if (n_generations == 0)
-		{
-			this->setNTop(3);
-			this->setNRandom(3);
-			this->setNReplicatesPerModel(15);
+		//// Population size of 16
+		//if (n_generations == 0)	{
+		//	this->setNTop(3);
+		//	this->setNRandom(3);
+		//	this->setNReplicatesPerModel(15);
+		//}
+		//else {
+		//	this->setNTop(3);
+		//	this->setNRandom(3);
+		//	this->setNReplicatesPerModel(3);
+		//}
+		// Population size of 30
+		if (n_generations == 0)	{
+			this->setNTop(5);
+			this->setNRandom(5);
+			this->setNReplicatesPerModel(29);
 		}
-		else
-		{
-			this->setNTop(3);
-			this->setNRandom(3);
-			this->setNReplicatesPerModel(3);
+		else {
+			this->setNTop(5);
+			this->setNRandom(5);
+			this->setNReplicatesPerModel(5);
 		}
 	}
 };
@@ -779,11 +723,7 @@ int main(int argc, char** argv)
 {
 	// define the population trainer parameters
 	PopulationTrainerExt<float> population_trainer;
-	//population_trainer.setNGenerations(20);
-	population_trainer.setNGenerations(1);
-	population_trainer.setNTop(3);
-	population_trainer.setNRandom(3);
-	population_trainer.setNReplicatesPerModel(3);
+	population_trainer.setNGenerations(100);
 
 	// define the multithreading parameters
 	const int n_hard_threads = std::thread::hardware_concurrency();
@@ -834,7 +774,7 @@ int main(int argc, char** argv)
 	model_replicator.setNodeIntegrations({std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new ProdOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new ProdErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new ProdWeightGradOp<float>())), 
 		std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>())),
 		std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new MeanOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new MeanErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new MeanWeightGradOp<float>())),
-		std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new VarModOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new VarModErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new VarModWeightGradOp<float>())),
+		//std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new VarModOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new VarModErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new VarModWeightGradOp<float>())),
 		std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new CountOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new CountErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new CountWeightGradOp<float>()))
 	});
 

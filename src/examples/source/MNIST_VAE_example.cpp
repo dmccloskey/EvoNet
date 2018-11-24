@@ -139,6 +139,7 @@ public:
 	}
 };
 
+
 template<typename TensorT>
 class DataSimulatorExt : public MNISTSimulator<TensorT>
 {
@@ -155,19 +156,7 @@ public:
 		assert(n_input_nodes == n_input_pixels + n_encodings);
 
 		// make a vector of sample_indices [BUG FREE]
-		this->mnist_sample_start_training = this->mnist_sample_end_training;
-		Eigen::Tensor<int, 1> sample_indices(batch_size*n_epochs);
-		int sample_index = this->mnist_sample_start_training;
-		for (int i = 0; i < batch_size*n_epochs; ++i)
-		{
-			if (sample_index > this->training_data.dimension(0) - 1)
-			{
-				sample_index = 0;
-			}
-			sample_indices(i) = sample_index;
-			++sample_index;
-		}
-		this->mnist_sample_end_training = sample_index;
+		Eigen::Tensor<int, 1> sample_indices = this->getTrainingIndices(batch_size, n_epochs);
 
 		std::random_device rd{};
 		std::mt19937 gen{ rd() };
@@ -206,19 +195,7 @@ public:
 		assert(n_input_nodes == n_input_pixels + n_encodings);
 
 		// make a vector of sample_indices [BUG FREE]
-		this->mnist_sample_start_training = this->mnist_sample_end_training;
-		Eigen::Tensor<int, 1> sample_indices(batch_size*n_epochs);
-		int sample_index = this->mnist_sample_start_training;
-		for (int i = 0; i < batch_size*n_epochs; ++i)
-		{
-			if (sample_index > this->training_data.dimension(0) - 1)
-			{
-				sample_index = 0;
-			}
-			sample_indices(i) = sample_index;
-			++sample_index;
-		}
-		this->mnist_sample_end_training = sample_index;
+		Eigen::Tensor<int, 1> sample_indices = this->getValidationIndices(batch_size, n_epochs);
 
 		std::random_device rd{};
 		std::mt19937 gen{ rd() };
@@ -375,7 +352,7 @@ void main_VAE(const bool& make_model, const bool& load_weight_values, const bool
 
 	// define the model logger
 	//ModelLogger<float> model_logger(true, true, false, false, false, false, false, false);
-	ModelLogger<float> model_logger(true, true, true, false, false, false, false, false); // evaluation only
+	ModelLogger<float> model_logger(true, true, false, false, false, false, false, false); // evaluation only
 
 	// define the data simulator
 	const std::size_t input_size = 784;
@@ -436,9 +413,9 @@ void main_VAE(const bool& make_model, const bool& load_weight_values, const bool
 		model_interpreters.push_back(model_interpreter);
 	}
 	ModelTrainerExt<float> model_trainer;
-	model_trainer.setBatchSize(1); // evaluation only
-	//model_trainer.setBatchSize(16);
-	model_trainer.setNEpochsTraining(100001);
+	//model_trainer.setBatchSize(1); // evaluation only
+	model_trainer.setBatchSize(32);
+	model_trainer.setNEpochsTraining(1001);
 	model_trainer.setNEpochsValidation(25);
 	model_trainer.setNEpochsEvaluation(100);
 	model_trainer.setMemorySize(1);
@@ -446,13 +423,13 @@ void main_VAE(const bool& make_model, const bool& load_weight_values, const bool
 	model_trainer.setLogging(true, false, true);
 	model_trainer.setFindCycles(false);
 	model_trainer.setLossFunctions({
-		std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()),
-		//std::shared_ptr<LossFunctionOp<float>>(new BCEWithLogitsOp<float>()),
+		//std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()),
+		std::shared_ptr<LossFunctionOp<float>>(new BCEWithLogitsOp<float>()),
 		std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceMuOp<float>()),
 		std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceLogVarOp<float>()) });
 	model_trainer.setLossFunctionGrads({
-		std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()),
-		//std::shared_ptr<LossFunctionGradOp<float>>(new BCEWithLogitsGradOp<float>()),
+		//std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()),
+		std::shared_ptr<LossFunctionGradOp<float>>(new BCEWithLogitsGradOp<float>()),
 		std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceMuGradOp<float>()),
 		std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceLogVarGradOp<float>()) });
 	model_trainer.setOutputNodes({ output_nodes, encoding_nodes_mu, encoding_nodes_logvar });
@@ -509,7 +486,7 @@ void main_VAE(const bool& make_model, const bool& load_weight_values, const bool
 int main(int argc, char** argv)
 {
 	// run the application
-	main_VAE(true, true, false);
+	main_VAE(true, false, true);
 
 	return 0;
 }

@@ -248,7 +248,7 @@ BOOST_AUTO_TEST_CASE(operationfunctionCrossEntropyOp)
 
 	operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, time_step, device);
 	Eigen::TensorMap<Eigen::Tensor<float, 2>> error(error_ptr, batch_size, memory_size);
-	BOOST_CHECK_CLOSE(error(0, 0), 4.60514975, 1e-6); //TODO
+	BOOST_CHECK_CLOSE(error(0, 0), 4.60514975, 1e-6); 
 	BOOST_CHECK_CLOSE(error(1, 0), 0.21071884, 1e-6);
 	BOOST_CHECK_CLOSE(error(0, 1), 0, 1e-6);
 	BOOST_CHECK_CLOSE(error(1, 1), 0, 1e-6);
@@ -542,7 +542,7 @@ BOOST_AUTO_TEST_CASE(operationfunctionKLDivergenceMuOp)
 
 	operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, time_step, device);
 	Eigen::TensorMap<Eigen::Tensor<float, 2>> error(error_ptr, batch_size, memory_size);
-	BOOST_CHECK_CLOSE(error(0, 0), 0, 1e-6); //TODO
+	BOOST_CHECK_CLOSE(error(0, 0), 0, 1e-6);
 	BOOST_CHECK_CLOSE(error(1, 0), 3, 1e-6);
 	BOOST_CHECK_CLOSE(error(0, 1), 0, 1e-6);
 	BOOST_CHECK_CLOSE(error(1, 1), 0, 1e-6);
