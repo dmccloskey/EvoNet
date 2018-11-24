@@ -248,7 +248,7 @@ public:
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 2>> error_tensor(error, batch_size, memory_size);
 			auto predicted_chip = predicted_tensor.chip(time_step, 1);
-			
+			// NOTE: should this be prediced - expected?
 			error_tensor.chip(time_step, 1).device(device) += ((expected_tensor - predicted_chip).pow(2) * expected_tensor.constant((TensorT)0.5) / expected_tensor.constant((TensorT)layer_size)).sum(Eigen::array<int, 1>({ 1 })).clip(-1e9, 1e9);
 		};
   };
@@ -269,7 +269,7 @@ public:
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> error_tensor(error, batch_size, memory_size, layer_size);
 			auto predicted_chip = predicted_tensor.chip(time_step, 1);
-			
+			// NOTE: should this be prediced - expected?
 			error_tensor.chip(time_step, 1).device(device) += ((expected_tensor - predicted_chip) / expected_tensor.constant((TensorT)layer_size)).clip(-1e9, 1e9);
 		};
   };
