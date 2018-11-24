@@ -350,13 +350,13 @@ void main_VAE(const bool& make_model, const bool& load_weight_values, const bool
 	population_trainer.setNReplicatesPerModel(1);
 
 	// define the model logger
-	ModelLogger<float> model_logger(true, true, false, false, false, false, false, false);
+	ModelLogger<float> model_logger(true, true, true, false, false, false, false, false);
 	//ModelLogger<float> model_logger(true, true, true, false, false, false, false, false); // evaluation only
 
 	// define the data simulator
 	const std::size_t input_size = 784;
 	const std::size_t encoding_size = 20;
-	const std::size_t n_hidden = 128;
+	const std::size_t n_hidden = 512;
 	const std::size_t training_data_size = 60000; //60000;
 	const std::size_t validation_data_size = 10000; //10000;
 	DataSimulatorExt<float> data_simulator;
@@ -413,13 +413,13 @@ void main_VAE(const bool& make_model, const bool& load_weight_values, const bool
 	}
 	ModelTrainerExt<float> model_trainer;
 	model_trainer.setBatchSize(32);
-	model_trainer.setNEpochsTraining(5001); // evaluation only
+	model_trainer.setNEpochsTraining(1001); // evaluation only
 	//model_trainer.setNEpochsTraining(100001);
 	model_trainer.setNEpochsValidation(25);
 	model_trainer.setNEpochsEvaluation(100);
 	model_trainer.setMemorySize(1);
 	model_trainer.setVerbosityLevel(1);
-	model_trainer.setLogging(true, false, true);
+	model_trainer.setLogging(false, true, true);
 	model_trainer.setFindCycles(false);
 	model_trainer.setLossFunctions({
 		//std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()),

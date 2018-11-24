@@ -357,7 +357,7 @@ public:
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> error_tensor(error, batch_size, memory_size, layer_size);
 			auto predicted_chip = predicted_tensor.chip(time_step, 1);
 			// NOTE: changed to -= to ensure a negative gradient
-			error_tensor.chip(time_step, 1).device(device) -= (-expected_tensor.constant((TensorT)0.5) + (expected_tensor.constant((TensorT)0.5)*predicted_chip).exp());
+			error_tensor.chip(time_step, 1).device(device) -= (-expected_tensor.constant((TensorT)0.5) + (expected_tensor.constant((TensorT)0.5)*predicted_chip).exp()).clip(-1e9, 1e9);
 		};
 	};
 

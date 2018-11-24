@@ -35,7 +35,7 @@ public:
 
 	References:
 	*/
-	Model<TensorT> makeLSTM(int n_inputs = 784, int n_outputs = 10, int n_hidden_0 = 100) {
+	Model<TensorT> makeLSTM(int n_inputs = 784, int n_outputs = 10, int n_blocks = 100, int n_cells = 1) {
 		Model<TensorT> model;
 		model.setId(0);
 		model.setName("LSTM");
@@ -46,7 +46,7 @@ public:
 		std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", n_inputs);
 
 		// Add the LSTM layer
-		std::vector<std::string> node_names = model_builder.addLSTM(model, "LSTM", "LSTM", node_names_input, n_hidden_0, 1,
+		std::vector<std::string> node_names = model_builder.addLSTM(model, "LSTM", "LSTM", node_names_input, n_blocks, n_cells,
 			std::shared_ptr<ActivationOp<TensorT>>(new TanHOp<float>()), std::shared_ptr<ActivationOp<TensorT>>(new TanHGradOp<float>()),
 			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
 			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(0.4)), std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)),
@@ -54,8 +54,8 @@ public:
 
 		// Add a final output layer
 		node_names = model_builder.addFullyConnected(model, "Output", "Output", node_names, n_outputs,
-			std::shared_ptr<ActivationOp<TensorT>>(new SigmoidOp<TensorT>()),
-			std::shared_ptr<ActivationOp<TensorT>>(new SigmoidGradOp<TensorT>()),
+			std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
+			std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
 			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
 			std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
 			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
@@ -75,20 +75,20 @@ public:
 		Model<TensorT>& model,
 		ModelInterpreterDefaultDevice<TensorT>& model_interpreter,
 		const std::vector<float>& model_errors) {
-		if (n_epochs > 200) {
-			// update the solver parameters
-			std::shared_ptr<SolverOp<TensorT>> solver;
-			for (auto& weight_map : model.getWeightsMap())
-				if (weight_map.second->getSolverOp()->getName() == "AdamOp")
-					weight_map.second->getSolverOp()->setLearningRate(1e-4);
-		}
-		if (n_epochs % 50 == 0) {
-			// save the model every 100 epochs
-			ModelFile<TensorT> data;
-			data.storeModelCsv(model.getName() + "_" + std::to_string(n_epochs) + "_nodes.csv",
-				model.getName() + "_" + std::to_string(n_epochs) + "_links.csv",
-				model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model);
-		}
+		//if (n_epochs > 200) {
+		//	// update the solver parameters
+		//	std::shared_ptr<SolverOp<TensorT>> solver;
+		//	for (auto& weight_map : model.getWeightsMap())
+		//		if (weight_map.second->getSolverOp()->getName() == "AdamOp")
+		//			weight_map.second->getSolverOp()->setLearningRate(1e-4);
+		//}
+		//if (n_epochs % 1000 == 0 && n_epochs != 0) {
+		//	// save the model every 100 epochs
+		//	ModelFile<TensorT> data;
+		//	data.storeModelCsv(model.getName() + "_" + std::to_string(n_epochs) + "_nodes.csv",
+		//		model.getName() + "_" + std::to_string(n_epochs) + "_links.csv",
+		//		model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model);
+		//}
 	}
 };
 
@@ -224,6 +224,7 @@ public:
 void main_LSTMTrain() {
 
 	const int n_hard_threads = std::thread::hardware_concurrency();
+	const int n_threads = 1;
 
 	// define the populatin trainer
 	PopulationTrainerExt<float> population_trainer;
@@ -233,14 +234,14 @@ void main_LSTMTrain() {
 	population_trainer.setNReplicatesPerModel(1);
 
 	// define the model logger
-	ModelLogger<float> model_logger(true, true, true, false, false, false, false, false);
+	ModelLogger<float> model_logger(true, true, false, false, false, false, false, false);
 
 	// define the data simulator
 	const std::size_t input_size = 784;
 	const std::size_t n_labels = 10;
-	const std::size_t n_hidden = 4; //128;
-	const std::size_t training_data_size = 10000; //60000;
-	const std::size_t validation_data_size = 100; //10000;
+	const std::size_t n_hidden = 128;
+	const std::size_t training_data_size = 60000; //60000;
+	const std::size_t validation_data_size = 10000; //10000;
 	DataSimulatorExt<float> data_simulator;
 
 	// read in the training data
@@ -274,7 +275,7 @@ void main_LSTMTrain() {
 
 	// define the model trainers and resources for the trainers
 	std::vector<ModelInterpreterDefaultDevice<float>> model_interpreters;
-	for (size_t i = 0; i < n_hard_threads; ++i) {
+	for (size_t i = 0; i < n_threads; ++i) {
 		ModelResources model_resources = { ModelDevice(0, 1) };
 		ModelInterpreterDefaultDevice<float> model_interpreter(model_resources);
 		model_interpreters.push_back(model_interpreter);
@@ -286,10 +287,8 @@ void main_LSTMTrain() {
 	model_trainer.setNEpochsValidation(10);
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setLogging(true, false);
-	//model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new NegativeLogLikelihoodOp<float>()) });
-	//model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new NegativeLogLikelihoodGradOp<float>()) });
-	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
-	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
+	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new CrossEntropyWithLogitsOp<float>()) });
+	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new CrossEntropyWithLogitsGradOp<float>()) });
 	model_trainer.setOutputNodes({ output_nodes });
 	model_trainer.setNTETTSteps(1);
 	model_trainer.setNTBPTTSteps(100);

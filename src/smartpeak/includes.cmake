@@ -3,7 +3,6 @@ set(SmartPeak_sources  CACHE INTERNAL "This variable should hold all SmartPeak s
 ## ATTENTION: The order of includes should be similar to the inclusion hierarchy
 include(source/core/sources.cmake)
 include(source/ml/sources.cmake)
-include(source/simulator/sources.cmake)
 include(source/io/sources.cmake)
 
 set(SmartPeak_sources_h  CACHE INTERNAL "This variable should hold all SmartPeak sources at the end of the config step" )

@@ -185,13 +185,13 @@ public:
 				std::cout << "Weight Update..." << std::endl;
 			model_interpreter.updateWeights();
 
-			//// log epoch
-			//if (getLogTraining()) {
-			//	if (getVerbosityLevel() >= 2)
-			//		std::cout << "Logging..." << std::endl;
-			//	const Eigen::Tensor<TensorT, 3> expected_values = output.chip(iter, 3);
-			//	model_logger.writeLogs(model, iter, { "Error" }, {}, { total_error(0) }, {}, output_nodes, expected_values);
-			//}
+			// log epoch
+			if (getLogTraining()) {
+				if (getVerbosityLevel() >= 2)
+					std::cout << "Logging..." << std::endl;
+				const Eigen::Tensor<TensorT, 3> expected_values = output.chip(iter, 3);
+				model_logger.writeLogs(model, iter, { "Error" }, {}, { total_error(0) }, {}, output_nodes, expected_values);
+			}
 
 			// reinitialize the model
 			if (iter != getNEpochsTraining() - 1) {
@@ -287,11 +287,11 @@ public:
 			if (getVerbosityLevel() >= 1)
 				std::cout << "Model " << model.getName() << " error: " << total_error(0) << std::endl;
 
-			//// log epoch
-			//if (getLogValidation()) {
-			//	const Eigen::Tensor<TensorT, 3> expected_values = output.chip(iter, 3);
-			//	model_logger.writeLogs(model, iter, {}, { "Error" }, {}, { total_error(0) }, output_nodes, expected_values);
-			//}
+			// log epoch
+			if (getLogValidation()) {
+				const Eigen::Tensor<TensorT, 3> expected_values = output.chip(iter, 3);
+				model_logger.writeLogs(model, iter, {}, { "Error" }, {}, { total_error(0) }, output_nodes, expected_values);
+			}
 
 			// reinitialize the model
 			if (iter != getNEpochsValidation() - 1) {
