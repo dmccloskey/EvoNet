@@ -301,6 +301,16 @@ namespace SmartPeak
 					operation.source_layer.tensor->getLayerSize(),
 					operation.sink_layer.tensor->getLayerSize(),
 					device);
+
+				model_kernal.executeSharedWeightErrors(
+					operation.weight.tensor->getHErrorPointer().get(),
+					operation.weight.tensor->getDErrorPointer().get(),
+					operation.weight.tensor->getHSharedWeightsPointer().get(),
+					operation.weight.tensor->getDSharedWeightsPointer().get(),
+					operation.source_layer.tensor->getLayerSize(),
+					operation.sink_layer.tensor->getLayerSize(),
+					operation.weight.tensor->getNSharedWeights(),
+					device);
 			}
 		}
 	}
