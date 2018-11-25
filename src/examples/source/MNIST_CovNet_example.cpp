@@ -141,10 +141,6 @@ public:
 			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(n_fc, 2)),
 			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 
-		// Add the final softmax layer
-		//node_names = model_builder.addStableSoftMax(model, "SoftMax", "SoftMax", node_names);
-		//node_names = model_builder.addSoftMax(model, "SoftMax", "SoftMax", node_names);
-
 		for (const std::string& node_name : node_names)
 			model.getNodesMap().at(node_name)->setType(NodeType::output);
 
@@ -274,9 +270,6 @@ public:
 		//	std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 2)),
 		//	std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.1, 0.9, 0.999, 1e-8)), 0.0, 0.0);
 
-		// Add the final softmax layer
-		node_names = model_builder.addStableSoftMax(model, "SoftMax", "SoftMax", node_names);
-
 		for (const std::string& node_name : node_names)
 			model.getNodesMap().at(node_name)->setType(NodeType::output);
 
@@ -291,21 +284,21 @@ public:
 		Model<TensorT>& model,
 		ModelInterpreterDefaultDevice<TensorT>& model_interpreter,
 		const std::vector<float>& model_errors) {
-		if (n_epochs > 10000) {
-			// update the solver parameters
-			std::shared_ptr<SolverOp<TensorT>> solver;
-			solver.reset(new AdamOp<TensorT>(0.0001, 0.9, 0.999, 1e-8));
-			for (auto& weight_map : model.getWeightsMap())
-				if (weight_map.second->getSolverOp()->getName() == "AdamOp")
-					weight_map.second->setSolverOp(solver);
-		}
-		if (n_epochs % 1000 == 0 && n_epochs != 0) {
-			// save the model every 100 epochs
-			ModelFile<TensorT> data;
-			data.storeModelCsv(model.getName() + "_" + std::to_string(n_epochs) + "_nodes.csv",
-				model.getName() + "_" + std::to_string(n_epochs) + "_links.csv",
-				model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model);
-		}
+		//if (n_epochs > 10000) {
+		//	// update the solver parameters
+		//	std::shared_ptr<SolverOp<TensorT>> solver;
+		//	solver.reset(new AdamOp<TensorT>(0.0001, 0.9, 0.999, 1e-8));
+		//	for (auto& weight_map : model.getWeightsMap())
+		//		if (weight_map.second->getSolverOp()->getName() == "AdamOp")
+		//			weight_map.second->setSolverOp(solver);
+		//}
+		//if (n_epochs % 1000 == 0 && n_epochs != 0) {
+		//	// save the model every 100 epochs
+		//	ModelFile<TensorT> data;
+		//	data.storeModelCsv(model.getName() + "_" + std::to_string(n_epochs) + "_nodes.csv",
+		//		model.getName() + "_" + std::to_string(n_epochs) + "_links.csv",
+		//		model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model);
+		//}
 	}
 };
 
@@ -513,11 +506,11 @@ void main_CovNet() {
 	model_trainer.setLogging(false, false);
 	model_trainer.setLossFunctions({
 		//std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>())//,
-		std::shared_ptr<LossFunctionOp<float>>(new NegativeLogLikelihoodOp<float>())
+		std::shared_ptr<LossFunctionOp<float>>(new CrossEntropyWithLogitsOp<float>())
 		});
 	model_trainer.setLossFunctionGrads({
 		//std::shared_ptr<LossFunctionGradOp<float>>({new MSEGradOp<float>())//,	
-		std::shared_ptr<LossFunctionGradOp<float>>(new NegativeLogLikelihoodGradOp<float>())
+		std::shared_ptr<LossFunctionGradOp<float>>(new CrossEntropyWithLogitsGradOp<float>())
 		});
 	model_trainer.setOutputNodes({ output_FC_nodes//, output_nodes 
 		});

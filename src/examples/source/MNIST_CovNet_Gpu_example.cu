@@ -141,10 +141,6 @@ public:
 			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(n_fc, 2)),
 			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 
-		// Add the final softmax layer
-		//node_names = model_builder.addStableSoftMax(model, "SoftMax", "SoftMax", node_names);
-		//node_names = model_builder.addSoftMax(model, "SoftMax", "SoftMax", node_names);
-
 		for (const std::string& node_name : node_names)
 			model.getNodesMap().at(node_name)->setType(NodeType::output);
 
@@ -526,7 +522,7 @@ void main_CovNet() {
 
 	// define the initial population
 	std::cout << "Initializing the population..." << std::endl;
-	std::vector<Model<float>> population = { ModelTrainerExt<float>().makeCovNet(input_nodes.size(), output_nodes.size(), 16, 2, 128) };
+	std::vector<Model<float>> population = { ModelTrainerExt<float>().makeCovNet(input_nodes.size(), output_nodes.size(), 8, 2, 128) };
 	//std::vector<Model<float>> population = { ModelTrainerExt<float>().makeCovNet(input_nodes.size(), output_nodes.size(), 32, 2, 128) };
 
 	// Evolve the population
