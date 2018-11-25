@@ -76,6 +76,7 @@ public:
 		int getLayer1Size() const { return layer1_size_; }
 		int getLayer2Size() const	{ return layer2_size_; }
 		int getNSolverParams() const { return n_solver_params_; }
+		int getNSharedWeights() const { return n_shared_weights_; }
 
 		virtual void setWeight(const Eigen::Tensor<TensorT, 2>& weight) = 0; ///< weight setter
 		Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> getWeight() { std::shared_ptr<TensorT> h_weight = h_weight_; Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weight(h_weight.get(), layer1_size_, layer2_size_); return weight; }; ///< weight copy getter
@@ -182,7 +183,11 @@ protected:
 		int iter = 0;
 		for (const auto& weight_indices_map : shared_weight_indices) {
 			for (const std::pair<int,int>& weight_index: weight_indices_map.second) {
-				shared.chip(iter, 2)(weight_index.first, weight_index.second) = 1;
+				Eigen::array<int, 3> offsets = { weight_index.first, weight_index.second, iter };
+				Eigen::array<int, 3> extents = { 1, 1, 1 };
+				Eigen::Tensor<TensorT, 3> ones(1, 1, 1);
+				ones.setConstant(1);
+				shared.slice(offsets, extents) = ones;
 			}
 			++iter;
 		}
