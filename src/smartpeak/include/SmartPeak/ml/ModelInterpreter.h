@@ -331,7 +331,7 @@ namespace SmartPeak
 		@param[in] node_activation
 		*/
 		static std::string makeForwardPropogationOperationsKey(const int& time_step, const NodeType& node_type,
-			const std::string& node_integration, const std::string& node_activation);
+			const std::string& node_integration, const std::string& node_activation, const std::string& module_name);
 
 		/**
 		@brief Convert a graph model to sequence of tensor operations
@@ -748,7 +748,8 @@ namespace SmartPeak
 				std::string ops_key = makeForwardPropogationOperationsKey(argument.time_step,
 					argument.source_node->getType(),
 					argument.source_node->getIntegration()->getName(),
-					argument.source_node->getActivation()->getName());
+					argument.source_node->getActivation()->getName(),
+					argument.source_node->getModuleName());
 				unique_node_types.insert(ops_key);
 			}
 			for (const std::string& node_types : unique_node_types) {
@@ -758,7 +759,8 @@ namespace SmartPeak
 					std::string ops_key = makeForwardPropogationOperationsKey(argument.time_step,
 						argument.source_node->getType(),
 						argument.source_node->getIntegration()->getName(),
-						argument.source_node->getActivation()->getName());
+						argument.source_node->getActivation()->getName(),
+						argument.source_node->getModuleName());
 					if (node_types == ops_key) {
 						operations_list.arguments.push_back(argument);
 					}
@@ -1002,11 +1004,13 @@ namespace SmartPeak
 				std::string ops_key_1 = makeForwardPropogationOperationsKey(FP_operations[operations_iter1].result.time_step,
 					FP_operations[operations_iter1].result.sink_node->getType(),
 					FP_operations[operations_iter1].result.sink_node->getIntegration()->getName(),
-					FP_operations[operations_iter1].result.sink_node->getActivation()->getName());
+					FP_operations[operations_iter1].result.sink_node->getActivation()->getName(),
+					FP_operations[operations_iter1].result.sink_node->getModuleName());
 				std::string ops_key_2 = makeForwardPropogationOperationsKey(FP_operations[operations_iter2].result.time_step,
 					FP_operations[operations_iter2].result.sink_node->getType(),
 					FP_operations[operations_iter2].result.sink_node->getIntegration()->getName(),
-					FP_operations[operations_iter2].result.sink_node->getActivation()->getName());
+					FP_operations[operations_iter2].result.sink_node->getActivation()->getName(),
+					FP_operations[operations_iter2].result.sink_node->getModuleName());
 				if (ops_key_1 != ops_key_2) continue;
 
 				// check if the source nodes are compatible
@@ -1015,14 +1019,16 @@ namespace SmartPeak
 					std::string ops_key = makeForwardPropogationOperationsKey(argument.time_step,
 						argument.source_node->getType(),
 						argument.source_node->getIntegration()->getName(),
-						argument.source_node->getActivation()->getName());
+						argument.source_node->getActivation()->getName(),
+						argument.source_node->getModuleName());
 					argument_nodes.insert(ops_key);
 				}
 				for (const auto& argument : FP_operations[operations_iter2].arguments) {
 					std::string ops_key = makeForwardPropogationOperationsKey(argument.time_step,
 						argument.source_node->getType(),
 						argument.source_node->getIntegration()->getName(),
-						argument.source_node->getActivation()->getName());
+						argument.source_node->getActivation()->getName(),
+						argument.source_node->getModuleName());
 					argument_nodes.insert(ops_key);
 				}
 				if (argument_nodes.size() > 1) continue;
@@ -1181,11 +1187,11 @@ namespace SmartPeak
 	}
 
 	template<typename TensorT, typename DeviceT>
-	std::string ModelInterpreter<TensorT, DeviceT>::makeForwardPropogationOperationsKey(const int & time_step, const NodeType& node_type, const std::string & node_integration, const std::string & node_activation)
+	std::string ModelInterpreter<TensorT, DeviceT>::makeForwardPropogationOperationsKey(const int & time_step, const NodeType& node_type, const std::string & node_integration, const std::string & node_activation, const std::string& module_name)
 	{
 		// [TODO: may not need to add in node type
 		//std::string ops_key = std::to_string(time_step) + "/" + std::to_string(node_type) + "/" + node_integration + "/" + node_activation;
-		std::string ops_key = std::to_string(time_step) + "/" + node_integration + "/" + node_activation;
+		std::string ops_key = std::to_string(time_step) + "/" + node_integration + "/" + node_activation + "/" + module_name;
 		return ops_key;
 	}
 
