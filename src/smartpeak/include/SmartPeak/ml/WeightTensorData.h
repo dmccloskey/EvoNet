@@ -32,9 +32,11 @@ public:
 			h_weight_ = other.h_weight_;
 			h_solver_params_ = other.h_solver_params_;
 			h_error_ = other.h_error_;
+			h_shared_weights_ = other.h_shared_weights_;
 			d_weight_ = other.d_weight_;
 			d_solver_params_ = other.d_solver_params_;
 			d_error_ = other.d_error_;
+			d_shared_weights_ = other.d_shared_weights_;
 		};
     ~WeightTensorData() = default; ///< Default destructor
 
@@ -55,19 +57,22 @@ public:
     }
 
     inline WeightTensorData& operator=(const WeightTensorData& other)
-    { 
+    {
 			h_weight_ = other.h_weight_;
 			h_solver_params_ = other.h_solver_params_;
 			h_error_ = other.h_error_;
+			h_shared_weights_ = other.h_shared_weights_;
 			d_weight_ = other.d_weight_;
 			d_solver_params_ = other.d_solver_params_;
 			d_error_ = other.d_error_;
+			d_shared_weights_ = other.d_shared_weights_;
       return *this;
     }
 
 		void setLayer1Size(const int& layer1_size) { layer1_size_ = layer1_size; }
 		void setLayer2Size(const int& layer2_size) { layer2_size_ = layer2_size; }
 		void setNSolverParams(const int& n_solver_params) { n_solver_params_ = n_solver_params; }
+		void setNSharedWeights(const int& n_shared_weights) { n_shared_weights_ = n_shared_weights; }
 		int getLayer1Size() const { return layer1_size_; }
 		int getLayer2Size() const	{ return layer2_size_; }
 		int getNSolverParams() const { return n_solver_params_; }
@@ -87,22 +92,32 @@ public:
 		std::shared_ptr<TensorT> getHErrorPointer() { return h_error_; }; ///< error pointer getter
 		std::shared_ptr<TensorT> getDErrorPointer() { return d_error_; }; ///< error pointer getter
 
+		virtual void setSharedWeights(const Eigen::Tensor<TensorT, 3>& shared_weights) = 0; ///< shared_weights setter
+		Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> getSharedWeights() { Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> shared_weights(h_shared_weights_.get(), layer1_size_, layer2_size_, n_shared_weights_); return shared_weights; }; ///< shared_weights copy getter
+		std::shared_ptr<TensorT> getHSharedWeightsPointer() { return h_shared_weights_; }; ///< shared_weights pointer getter
+		std::shared_ptr<TensorT> getDSharedWeightsPointer() { return d_shared_weights_; }; ///< shared_weights pointer getter
+
 		size_t getTensorSize() { return layer1_size_ * layer2_size_ * sizeof(TensorT); }; ///< Get the size of each tensor in bytes
 		size_t getSolverParamsSize() { return layer1_size_ * layer2_size_ * n_solver_params_ * sizeof(TensorT); }; ///< Get the size of each tensor in bytes
+		size_t getSharedWeightsSize() { return layer1_size_ * layer2_size_ * n_shared_weights_ * sizeof(TensorT); }; ///< Get the size of each tensor in bytes
 
-		void initWeightTensorData(const int& layer1_size, const int&layer2_size, const std::vector<std::pair<int, int>>& weight_indices, const std::vector<TensorT>& weight_values, const bool& train, std::vector<TensorT>& solver_params);
+		void initWeightTensorData(const int& layer1_size, const int&layer2_size, const std::vector<std::pair<int, int>>& weight_indices, 
+			const std::map<std::string, std::vector<std::pair<int, int>>>& shared_weight_indices, const std::vector<TensorT>& weight_values, const bool& train, std::vector<TensorT>& solver_params);
 
 		virtual bool syncHAndDError(DeviceT& device) = 0;
 		virtual bool syncHAndDWeight(DeviceT& device) = 0;
 		virtual bool syncHAndDSolverParams(DeviceT& device) = 0;
+		virtual bool syncHAndDSharedWeights(DeviceT& device) = 0;
 
 		std::pair<bool, bool> getErrorStatus() { return std::make_pair(h_error_updated_, d_error_updated_); };
 		std::pair<bool, bool> getWeightStatus() { return std::make_pair(h_weight_updated_, d_weight_updated_); };
 		std::pair<bool, bool> getSolverParamsStatus() { return std::make_pair(h_solver_params_updated_, d_solver_params_updated_); };
+		std::pair<bool, bool> getSharedWeightsStatus() { return std::make_pair(h_shared_weights_updated_, d_shared_weights_updated_); };
 protected:
 		int layer1_size_ = 1; ///< Layer1 size
 		int layer2_size_ = 2; ///< Layer2 size
 		int n_solver_params_ = 1; ///< The number of solver params
+		int n_shared_weights_ = 0; ///< The number of shared weights in the layer
 
 		// [TODO: move to weight]
 		std::map<std::string, int> solver_params_indices_; ///< Map from solver params to weight matrix indices
@@ -117,22 +132,27 @@ protected:
 		std::shared_ptr<TensorT> h_weight_ = nullptr;
 		std::shared_ptr<TensorT> h_solver_params_ = nullptr;
 		std::shared_ptr<TensorT> h_error_ = nullptr;
+		std::shared_ptr<TensorT> h_shared_weights_ = nullptr;
 		std::shared_ptr<TensorT> d_weight_ = nullptr;
 		std::shared_ptr<TensorT> d_solver_params_ = nullptr;
 		std::shared_ptr<TensorT> d_error_ = nullptr;
+		std::shared_ptr<TensorT> d_shared_weights_ = nullptr;
 		// [TODO: add drop probability]
 
 		bool h_error_updated_ = false;
 		bool h_weight_updated_ = false;
 		bool h_solver_params_updated_ = false;
+		bool h_shared_weights_updated_ = false;
 
 		bool d_error_updated_ = false;
 		bool d_weight_updated_ = false;
 		bool d_solver_params_updated_ = false;
+		bool d_shared_weights_updated_ = false;
   };
 
 	template<typename TensorT, typename DeviceT>
-	inline void WeightTensorData<TensorT, DeviceT>::initWeightTensorData(const int & layer1_size, const int & layer2_size, const std::vector<std::pair<int, int>>& weight_indices, const std::vector<TensorT>& weight_values, const bool & train, std::vector<TensorT>& solver_params)
+	inline void WeightTensorData<TensorT, DeviceT>::initWeightTensorData(const int & layer1_size, const int & layer2_size, const std::vector<std::pair<int, int>>& weight_indices, 
+		const std::map<std::string, std::vector<std::pair<int, int>>>& shared_weight_indices, const std::vector<TensorT>& weight_values, const bool & train, std::vector<TensorT>& solver_params)
 	{
 		assert(weight_indices.size() == weight_values.size());
 		setLayer1Size(layer1_size);
@@ -154,6 +174,19 @@ protected:
 			params.chip(i, 2).setConstant(solver_params[i]);
 		}
 		setSolverParams(params);
+
+		// make the shared weighs tensor
+		setNSharedWeights(shared_weight_indices.size());
+		Eigen::Tensor<TensorT, 3> shared(layer1_size, layer2_size, (int)shared_weight_indices.size());
+		shared.setZero();
+		int iter = 0;
+		for (const auto& weight_indices_map : shared_weight_indices) {
+			for (const std::pair<int,int>& weight_index: weight_indices_map.second) {
+				shared.chip(iter, 2)(weight_index.first, weight_index.second) = 1;
+			}
+			++iter;
+		}
+		setSharedWeights(shared);
 	}
 
 	template<typename TensorT>
@@ -186,9 +219,19 @@ protected:
 			this->h_error_updated_ = true;
 			this->d_error_updated_ = true;
 		}; ///< error setter
+		void setSharedWeights(const Eigen::Tensor<TensorT, 3>& shared_weights) {
+			TensorT* h_shared_weights = new TensorT[this->layer1_size_*this->layer2_size_*this->n_shared_weights_];
+			// copy the tensor
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> shared_weights_copy(h_shared_weights, this->layer1_size_, this->layer2_size_, this->n_shared_weights_);
+			shared_weights_copy = shared_weights;
+			this->h_shared_weights_.reset(h_shared_weights);
+			this->h_shared_weights_updated_ = true;
+			this->d_shared_weights_updated_ = true;
+		}; ///< shared_weights setter
 		bool syncHAndDError(Eigen::DefaultDevice& device) { return true; }
 		bool syncHAndDWeight(Eigen::DefaultDevice& device) { return true; }
 		bool syncHAndDSolverParams(Eigen::DefaultDevice& device) { return true; }
+		bool syncHAndDSharedWeights(Eigen::DefaultDevice& device) { return true; }
 	};
 
 #if COMPILE_WITH_CUDA
@@ -247,6 +290,23 @@ protected:
 			this->h_error_updated_ = true;
 			this->d_error_updated_ = false;
 		}; ///< error setter
+		void setSharedWeights(const Eigen::Tensor<TensorT, 3>& shared_weights) {
+			// allocate cuda and pinned host layer2
+			TensorT* d_shared_weights;
+			TensorT* h_shared_weights;
+			assert(cudaMalloc((void**)(&d_shared_weights), getSharedWeightsSize()) == cudaSuccess);
+			assert(cudaHostAlloc((void**)(&h_shared_weights), getSharedWeightsSize(), cudaHostAllocDefault) == cudaSuccess);
+			// copy the tensor
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> shared_weights_copy(h_shared_weights, this->layer1_size_, this->layer2_size_, this->n_shared_weights_);
+			shared_weights_copy = shared_weights;
+			// define the deleters
+			auto h_deleter = [&](TensorT* ptr) { cudaFreeHost(ptr); };
+			auto d_deleter = [&](TensorT* ptr) { cudaFree(ptr); };
+			this->h_shared_weights_.reset(h_shared_weights, h_deleter);
+			this->d_shared_weights_.reset(d_shared_weights, d_deleter);
+			this->h_shared_weights_updated_ = true;
+			this->d_shared_weights_updated_ = false;
+		}; ///< shared_weights setter
 		bool syncHAndDError(Eigen::GpuDevice& device) {
 			if (this->h_error_updated_ && !this->d_error_updated_) {
 				device.memcpyHostToDevice(this->d_error_.get(), this->h_error_.get(), getTensorSize());
@@ -295,6 +355,25 @@ protected:
 				device.memcpyDeviceToHost(this->h_solver_params_.get(), this->d_solver_params_.get(), getSolverParamsSize());
 				this->h_solver_params_updated_ = true;
 				this->d_solver_params_updated_ = false;
+				return true;
+			}
+			else {
+				std::cout << "Both host and device are syncHAndDronized." << std::endl;
+				return false;
+			}
+			return true;
+		}
+		bool syncHAndDSharedWeights(Eigen::GpuDevice& device) {
+			if (this->h_shared_weights_updated_ && !this->d_shared_weights_updated_) {
+				device.memcpyHostToDevice(this->d_shared_weights_.get(), this->h_shared_weights_.get(), getSharedWeightsSize());
+				this->d_shared_weights_updated_ = true;
+				this->h_shared_weights_updated_ = false;
+				return true;
+			}
+			else if (!this->h_shared_weights_updated_ && this->d_shared_weights_updated_) {
+				device.memcpyDeviceToHost(this->h_shared_weights_.get(), this->d_shared_weights_.get(), getSharedWeightsSize());
+				this->h_shared_weights_updated_ = true;
+				this->d_shared_weights_updated_ = false;
 				return true;
 			}
 			else {

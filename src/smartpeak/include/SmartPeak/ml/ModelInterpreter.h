@@ -280,15 +280,15 @@ namespace SmartPeak
 		*/
 
 		/**
-			@brief Identify layer operations
+		@brief Identify layer operations
 
-			[TODO: add tests]
+		[TODO: add tests]
 
-			@param[in] FP_operations
-			@param[in] identified_sink_nodes Set of identified sink nodes
+		@param[in] FP_operations
+		@param[in] identified_sink_nodes Set of identified sink nodes
 
-			@returns map of identified operations consisting of the identifying sink node name or module name
-				for the operation and a list of indices corresponding to the operations in FP_operations
+		@returns map of identified operations consisting of the identifying sink node name or module name
+			for the operation and a list of indices corresponding to the operations in FP_operations
 		*/
 		std::map<std::string, std::vector<int>> getCustomOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes);
 		//std::map<std::string, std::vector<int>> getFullyConnectedOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes);
@@ -300,32 +300,73 @@ namespace SmartPeak
 
 		/**
 		@brief Allocate Node and Weight tensor memory for all model operations.
-			Node and weight tensors indices are registered.
+			Node and weight tensors indices and tensor sizes are registered.
 
 		@param[in] FP_operations
-		@param[in] ...
+		@param[in] operations_map
+		@param[out] source_layer_sizes
+		@param[out] sink_layer_sizes
+		@param[out] weight_indices
+		@param[out] shared_weight_indices
+		@param[out] weight_values
+		@param[out] make_source_tensors
+		@param[out] make_sink_tensors
+		@param[out] make_weight_tensors
+		@param[out] batch_size
+		@param[out] memory_size
+		@param[out] train
 		*/
 		void getForwardPropogationLayerTensorDimensions(const std::vector<OperationList<TensorT>>& FP_operations,
 			const std::map<std::string, std::vector<int>>& operations_map,
-			std::vector<int>& source_layer_sizes, std::vector<int>& sink_layer_sizes, std::vector<std::vector<std::pair<int, int>>>& weight_indices, std::vector<std::vector<TensorT>>& weight_values,
+			std::vector<int>& source_layer_sizes, std::vector<int>& sink_layer_sizes, std::vector<std::vector<std::pair<int, int>>>& weight_indices, 
+			std::vector<std::map<std::string, std::vector<std::pair<int, int>>>>& shared_weight_indices, std::vector<std::vector<TensorT>>& weight_values,
 			std::vector<bool>& make_source_tensor, std::vector<bool>& make_sink_tensor, std::vector<bool>& make_weight_tensor);
 
+		/**
+		@brief Create a unique key to different nodes by time_step, node_integration, and node_activation methods
+
+		@param[in] time_step
+		@param[in] node_type Currently not used
+		@param[in] node_integration
+		@param[in] node_activation
+		*/
 		static std::string makeForwardPropogationOperationsKey(const int& time_step, const NodeType& node_type,
 			const std::string& node_integration, const std::string& node_activation);
 
+		/**
+		@brief Convert a graph model to sequence of tensor operations
+
+		@param[in] model Network model
+		@param[in] batch_size Batch size
+		@param[in] memory_size Memory size
+		*/
 		void getForwardPropogationOperations(Model<TensorT>& model, const int& batch_size, const int& memory_size, const bool& train);
 
 		/**
 		@brief Allocate Node and Weight tensor memory for all model operations.
+			Source and sink layer activations are created using the first node in the layers, respecively.
+			Source and sink layer integrations are created using the first node in the layers, respectively.
 			Weight solver params tensors are created using the first weight in the layer.
-			Weight matrix is initialized using the first weight in the layer
+			Weight matrix is initialized using the first weight in the layer.
 
 		@param[in] FP_operations
-		@param[in] ...
+		@param[in] operations_map
+		@param[in] source_layer_sizes
+		@param[in] sink_layer_sizes
+		@param[in] weight_indices
+		@param[in] shared_weight_indices
+		@param[in] weight_values
+		@param[in] make_source_tensors
+		@param[in] make_sink_tensors
+		@param[in] make_weight_tensors
+		@param[in] batch_size
+		@param[in] memory_size
+		@param[in] train
 		*/
 		virtual void allocateForwardPropogationLayerTensors(const std::vector<OperationList<TensorT>>& FP_operations,
 			const std::map<std::string, std::vector<int>>& operations_map,
-			const std::vector<int>& source_layer_sizes, const std::vector<int>& sink_layer_sizes, const std::vector<std::vector<std::pair<int, int>>> weight_indices, const std::vector<std::vector<TensorT>>& weight_values,
+			const std::vector<int>& source_layer_sizes, const std::vector<int>& sink_layer_sizes, const std::vector<std::vector<std::pair<int, int>>> weight_indices, 
+			std::vector<std::map<std::string, std::vector<std::pair<int, int>>>>& shared_weight_indices, const std::vector<std::vector<TensorT>>& weight_values,
 			const std::vector<bool>& make_source_tensors, const std::vector<bool>& make_sink_tensors, const std::vector<bool>& make_weight_tensors,
 			const int& batch_size, const int& memory_size, const bool& train) = 0;
 
@@ -1007,7 +1048,8 @@ namespace SmartPeak
 	template<typename TensorT, typename DeviceT>
 	inline void ModelInterpreter<TensorT, DeviceT>::getForwardPropogationLayerTensorDimensions(const std::vector<OperationList<TensorT>>& FP_operations,
 		const std::map<std::string, std::vector<int>>& operations_map,
-		std::vector<int>& source_layer_sizes, std::vector<int>& sink_layer_sizes, std::vector<std::vector<std::pair<int, int>>>& weight_indices, std::vector<std::vector<TensorT>>& weight_values,
+		std::vector<int>& source_layer_sizes, std::vector<int>& sink_layer_sizes, std::vector<std::vector<std::pair<int, int>>>& weight_indices, 
+		std::vector<std::map<std::string, std::vector<std::pair<int, int>>>>& shared_weight_indices, std::vector<std::vector<TensorT>>& weight_values,
 		std::vector<bool>& make_source_tensors, std::vector<bool>& make_sink_tensors, std::vector<bool>& make_weight_tensors) {
 		// track the layer_tensor positions for the source and sink nodes
 		// as well as the weight_tensor positions
@@ -1020,6 +1062,7 @@ namespace SmartPeak
 			int sink_layer_size = 0;
 			int source_layer_size = 0;
 			std::vector<std::pair<int, int>> weight_index;
+			std::map<std::string, std::vector<std::pair<int, int>>> shared_weight_index;
 			std::vector<TensorT> weight_value;
 			bool make_sink_tensor = false;
 			bool make_source_tensor = false;
@@ -1080,6 +1123,21 @@ namespace SmartPeak
 						weight_index.push_back(std::make_pair(source_layer_index, sink_layer_index));
 						weight_value.push_back(argument.weight->getWeight());
 						make_weight_tensor = true;  // even if the weights are shared, we should still make an new weight tensor
+						std::vector<std::pair<int, int>> tmp = { std::make_pair(source_layer_index, sink_layer_index) };
+						auto found = shared_weight_index.emplace(argument.weight->getName(), tmp);
+						if (!found.second) {
+							// add the new shared weight index
+							shared_weight_index.at(argument.weight->getName()).push_back(std::make_pair(source_layer_index, sink_layer_index));
+						}
+						else {
+							// add the first shared weight index
+							int weight_pos_0 = std::get<0>(argument.weight->getTensorIndex()[0]);
+							assert(weight_pos_0 == weight_pos); // if this fails, then the weight is shared with another layer.
+																									// the current weight sharing implementation cannot handle such cases.
+							int source_layer_index_0 = std::get<1>(argument.weight->getTensorIndex()[0]);
+							int sink_layer_index_0 = std::get<2>(argument.weight->getTensorIndex()[0]);
+							shared_weight_index.at(argument.weight->getName()).push_back(std::make_pair(source_layer_index_0, sink_layer_index_0));
+						}
 					}
 					if (increment_source_layer_size) ++source_layer_size;
 				}
@@ -1103,6 +1161,7 @@ namespace SmartPeak
 			make_weight_tensors.push_back(make_weight_tensor);
 			weight_indices.push_back(weight_index);
 			weight_values.push_back(weight_value);
+			shared_weight_indices.push_back(weight_index);
 
 			// update the layer positions
 			if (make_sink_tensor && make_source_tensor) {
@@ -1203,17 +1262,19 @@ namespace SmartPeak
 				std::vector<int> source_layer_sizes, sink_layer_sizes;
 				std::vector<std::vector<TensorT>> weight_values;
 				std::vector<std::vector<std::pair<int, int>>> weight_indices;
+				std::vector<std::map<std::string, std::vector<std::pair<int, int>>>> shared_weight_indices;
 				std::vector<bool> make_source_tensors, make_sink_tensors, make_weight_tensors;
-				getForwardPropogationLayerTensorDimensions(FP_operations_expanded, custom_ops, source_layer_sizes, sink_layer_sizes, weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors);
-				allocateForwardPropogationLayerTensors(FP_operations_expanded, custom_ops, source_layer_sizes, sink_layer_sizes, weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors, batch_size, memory_size_buffered, train);
+				getForwardPropogationLayerTensorDimensions(FP_operations_expanded, custom_ops, source_layer_sizes, sink_layer_sizes, weight_indices, shared_weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors);
+				allocateForwardPropogationLayerTensors(FP_operations_expanded, custom_ops, source_layer_sizes, sink_layer_sizes, weight_indices, shared_weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors, batch_size, memory_size_buffered, train);
 			}
 			if (tensor_ops.size() != 0) {
 				std::vector<int> source_layer_sizes, sink_layer_sizes;
 				std::vector<std::vector<TensorT>> weight_values;
 				std::vector<std::vector<std::pair<int, int>>> weight_indices;
+				std::vector<std::map<std::string, std::vector<std::pair<int, int>>>> shared_weight_indices;
 				std::vector<bool> make_source_tensors, make_sink_tensors, make_weight_tensors;
-				getForwardPropogationLayerTensorDimensions(FP_operations_expanded, tensor_ops, source_layer_sizes, sink_layer_sizes, weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors);
-				allocateForwardPropogationLayerTensors(FP_operations_expanded, tensor_ops, source_layer_sizes, sink_layer_sizes, weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors, batch_size, memory_size_buffered, train);
+				getForwardPropogationLayerTensorDimensions(FP_operations_expanded, tensor_ops, source_layer_sizes, sink_layer_sizes, weight_indices, shared_weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors);
+				allocateForwardPropogationLayerTensors(FP_operations_expanded, tensor_ops, source_layer_sizes, sink_layer_sizes, weight_indices, shared_weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors, batch_size, memory_size_buffered, train);
 			}
 
 			// activate sink nodes

@@ -25,7 +25,8 @@ namespace SmartPeak
 		using ModelInterpreter::ModelInterpreter;
 		void allocateForwardPropogationLayerTensors(const std::vector<OperationList<TensorT>>& FP_operations,
 			const std::map<std::string, std::vector<int>>& operations_map,
-			const std::vector<int>& source_layer_sizes, const std::vector<int>& sink_layer_sizes, const std::vector<std::vector<std::pair<int, int>>> weight_indices, const std::vector<std::vector<TensorT>>& weight_values,
+			const std::vector<int>& source_layer_sizes, const std::vector<int>& sink_layer_sizes, const std::vector<std::vector<std::pair<int, int>>> weight_indices, 
+			std::vector<std::map<std::string, std::vector<std::pair<int, int>>>>& shared_weight_indices, const std::vector<std::vector<TensorT>>& weight_values,
 			const std::vector<bool>& make_source_tensors, const std::vector<bool>& make_sink_tensors, const std::vector<bool>& make_weight_tensors,
 			const int& batch_size, const int& memory_size, const bool& train);
 		void executeForwardPropogationOperations(const int& time_step);
@@ -39,7 +40,10 @@ namespace SmartPeak
 	};
 
 	template<typename TensorT>
-	inline void ModelInterpreterGpu<TensorT>::allocateForwardPropogationLayerTensors(const std::vector<OperationList<TensorT>>& FP_operations, const std::map<std::string, std::vector<int>>& operations_map, const std::vector<int>& source_layer_sizes, const std::vector<int>& sink_layer_sizes, const std::vector<std::vector<std::pair<int, int>>> weight_indices, const std::vector<std::vector<TensorT>>& weight_values, const std::vector<bool>& make_source_tensors, const std::vector<bool>& make_sink_tensors, const std::vector<bool>& make_weight_tensors, const int & batch_size, const int & memory_size, const bool & train)
+	inline void ModelInterpreterGpu<TensorT>::allocateForwardPropogationLayerTensors(
+		const std::vector<OperationList<TensorT>>& FP_operations, const std::map<std::string, std::vector<int>>& operations_map, const std::vector<int>& source_layer_sizes,
+		const std::vector<int>& sink_layer_sizes, const std::vector<std::vector<std::pair<int, int>>> weight_indices, std::vector<std::map<std::string, std::vector<std::pair<int, int>>>>& shared_weight_indices, 
+		const std::vector<std::vector<TensorT>>& weight_values, const std::vector<bool>& make_source_tensors, const std::vector<bool>& make_sink_tensors, const std::vector<bool>& make_weight_tensors, const int & batch_size, const int & memory_size, const bool & train)
 	{
 		// ensure that all tensors are allocated on the correct device
 		assert(cudaSetDevice(getModelResources()[0].getID()) == cudaSuccess); // is this needed?
@@ -144,7 +148,7 @@ namespace SmartPeak
 				SolverTensorOp<TensorT, Eigen::GpuDevice>* solver = nullptr;
 				std::vector<TensorT> solver_params;
 				solver_conv(FP_operations[operations.second[0]].arguments[0].weight->getSolverOp(), solver, solver_params);
-				weight_data->initWeightTensorData(source_layer_sizes[iter], sink_layer_sizes[iter], weight_indices[iter], weight_values[iter], train,
+				weight_data->initWeightTensorData(source_layer_sizes[iter], sink_layer_sizes[iter], weight_indices[iter], shared_weight_indices[iter], weight_values[iter], train,
 					solver_params);
 				weight_tensors_.push_back(weight_data);
 				operation_step.weight.tensor = weight_tensors_.at(std::get<0>(FP_operations[operations.second[0]].arguments[0].weight->getTensorIndex()[0]));
