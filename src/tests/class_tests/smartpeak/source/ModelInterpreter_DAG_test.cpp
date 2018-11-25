@@ -88,7 +88,6 @@ Model<float> makeModelToy1()
 	model_FC_Sum.addLinks({ l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4 });
 	return model_FC_Sum;
 }
-Model<float> model_FC_Sum = makeModelToy1();
 
 BOOST_AUTO_TEST_SUITE(modelInterpreter_DAG)
 
@@ -636,6 +635,9 @@ BOOST_AUTO_TEST_CASE(getForwardPropogationLayerTensorDimensions)
 	// initialize nodes
 	// NOTE: input and biases have been activated when the model was created
 
+	// change the bias weights to shared
+	model_getForwardPropogationLayerTensorDimensions.links_.at("5")->setWeightName("4");
+
   // Check iteration one with no source/sink/weight tensors already allocated
 	std::map<std::string, int> FP_operations_map;
 	std::vector<OperationList<float>> FP_operations_list;
@@ -652,9 +654,10 @@ BOOST_AUTO_TEST_CASE(getForwardPropogationLayerTensorDimensions)
 
 	std::vector<int> source_layer_sizes, sink_layer_sizes;
 	std::vector<std::vector<std::pair<int, int>>> weight_indices;
+	std::vector<std::map<std::string, std::vector<std::pair<int, int>>>> shared_weight_indices;
 	std::vector<std::vector<float>> weight_values;
 	std::vector<bool> make_source_tensors, make_sink_tensors, make_weight_tensors;
-	model_interpreter.getForwardPropogationLayerTensorDimensions(FP_operations_expanded, tensor_ops, source_layer_sizes, sink_layer_sizes, weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors);
+	model_interpreter.getForwardPropogationLayerTensorDimensions(FP_operations_expanded, tensor_ops, source_layer_sizes, sink_layer_sizes, weight_indices, shared_weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors);
 
 	BOOST_CHECK_EQUAL(source_layer_sizes.size(), 1);
 	BOOST_CHECK_EQUAL(source_layer_sizes[0], 3);
@@ -670,6 +673,16 @@ BOOST_AUTO_TEST_CASE(getForwardPropogationLayerTensorDimensions)
 	for (int i = 0; i < weight_indices_test.size(); ++i) {
 		BOOST_CHECK_EQUAL(weight_indices[0][i].first, weight_indices_test[i].first);
 		BOOST_CHECK_EQUAL(weight_indices[0][i].second, weight_indices_test[i].second);
+	}
+
+	BOOST_CHECK_EQUAL(shared_weight_indices.size(), 1);
+	BOOST_CHECK_EQUAL(shared_weight_indices[0].size(), 1);
+	std::map<std::string, std::vector<std::pair<int, int>>> shared_weight_indices_test = {
+		{"4", {std::make_pair(2,1), std::make_pair(2,0)}}
+	};
+	for (int i = 0; i < shared_weight_indices_test.at("4").size(); ++i) {
+		BOOST_CHECK_EQUAL(shared_weight_indices[0].at("4")[i].first, shared_weight_indices_test.at("4")[i].first);
+		BOOST_CHECK_EQUAL(shared_weight_indices[0].at("4")[i].second, shared_weight_indices_test.at("4")[i].second);
 	}
 
 	BOOST_CHECK_EQUAL(weight_values.size(), 1);
@@ -704,9 +717,10 @@ BOOST_AUTO_TEST_CASE(getForwardPropogationLayerTensorDimensions)
 
 	source_layer_sizes.clear(), sink_layer_sizes.clear();
 	weight_indices.clear();
+	shared_weight_indices.clear();
 	weight_values.clear();
 	make_source_tensors.clear(), make_sink_tensors.clear(), make_weight_tensors.clear();
-	model_interpreter.getForwardPropogationLayerTensorDimensions(FP_operations_expanded, tensor_ops, source_layer_sizes, sink_layer_sizes, weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors);
+	model_interpreter.getForwardPropogationLayerTensorDimensions(FP_operations_expanded, tensor_ops, source_layer_sizes, sink_layer_sizes, weight_indices, shared_weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors);
 
 	BOOST_CHECK_EQUAL(source_layer_sizes.size(), 2);
 	BOOST_CHECK_EQUAL(source_layer_sizes[0], 1);
@@ -729,6 +743,10 @@ BOOST_AUTO_TEST_CASE(getForwardPropogationLayerTensorDimensions)
 		}
 	}
 
+	BOOST_CHECK_EQUAL(shared_weight_indices.size(), 2);
+	BOOST_CHECK_EQUAL(shared_weight_indices[0].size(), 0);
+	BOOST_CHECK_EQUAL(shared_weight_indices[1].size(), 0);
+
 	BOOST_CHECK_EQUAL(weight_values.size(), 2);
 	BOOST_CHECK_EQUAL(weight_values[0].size(), 2);
 	BOOST_CHECK_EQUAL(weight_values[1].size(), 4);
@@ -748,41 +766,6 @@ BOOST_AUTO_TEST_CASE(getForwardPropogationLayerTensorDimensions)
 	BOOST_CHECK_EQUAL(make_weight_tensors.size(), 2);
 	BOOST_CHECK(make_weight_tensors[0]);
 	BOOST_CHECK(make_weight_tensors[1]);
-}
-
-// TODO: move to seperate test suite (ModelInterpreterDefaultDevice and ModelInterpreterGpu)
-// with DAG model only for all non execute tests
-// and DAG/DCG model for all execute tests
-BOOST_AUTO_TEST_CASE(allocateForwardPropogationLayerTensors)
-{
-}
-
-BOOST_AUTO_TEST_CASE(getForwardPropogationOperations)
-{
-}
-
-BOOST_AUTO_TEST_CASE(mapValuesToLayers)
-{
-}
-
-BOOST_AUTO_TEST_CASE(executeForwardPropogationOperations)
-{
-}
-
-BOOST_AUTO_TEST_CASE(executeModelErrorOperations)
-{
-}
-
-BOOST_AUTO_TEST_CASE(executeBackwardPropogationOperations)
-{
-}
-
-BOOST_AUTO_TEST_CASE(executeWeightErrorOperations)
-{
-}
-
-BOOST_AUTO_TEST_CASE(executeWeightUpdateOperations)
-{
 }
 
 BOOST_AUTO_TEST_SUITE_END()

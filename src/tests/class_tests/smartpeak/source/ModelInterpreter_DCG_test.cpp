@@ -485,9 +485,10 @@ BOOST_AUTO_TEST_CASE(getForwardPropogationLayerTensorDimensions)
 
 	std::vector<int> source_layer_sizes, sink_layer_sizes;
 	std::vector<std::vector<std::pair<int, int>>> weight_indices;
+	std::vector<std::map<std::string, std::vector<std::pair<int, int>>>> shared_weight_indices;
 	std::vector<std::vector<float>> weight_values;
 	std::vector<bool> make_source_tensors, make_sink_tensors, make_weight_tensors;
-	model_interpreter.getForwardPropogationLayerTensorDimensions(FP_operations_expanded, tensor_ops, source_layer_sizes, sink_layer_sizes, weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors);
+	model_interpreter.getForwardPropogationLayerTensorDimensions(FP_operations_expanded, tensor_ops, source_layer_sizes, sink_layer_sizes, weight_indices, shared_weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors);
 
 	BOOST_CHECK_EQUAL(source_layer_sizes.size(), 2);
 	BOOST_CHECK_EQUAL(source_layer_sizes[0], 2);
@@ -509,6 +510,10 @@ BOOST_AUTO_TEST_CASE(getForwardPropogationLayerTensorDimensions)
 			BOOST_CHECK_EQUAL(weight_indices[tensor_iter][i].second, weight_indices_test1[tensor_iter][i].second);
 		}
 	}
+
+	BOOST_CHECK_EQUAL(shared_weight_indices.size(), 2);
+	BOOST_CHECK_EQUAL(shared_weight_indices[0].size(), 0);
+	BOOST_CHECK_EQUAL(shared_weight_indices[1].size(), 0);
 
 	BOOST_CHECK_EQUAL(weight_values.size(), 2);
 	BOOST_CHECK_EQUAL(weight_values[0].size(), 2);
@@ -554,9 +559,10 @@ BOOST_AUTO_TEST_CASE(getForwardPropogationLayerTensorDimensions)
 
 	source_layer_sizes.clear(), sink_layer_sizes.clear();
 	weight_indices.clear();
+	shared_weight_indices.clear();
 	weight_values.clear();
 	make_source_tensors.clear(), make_sink_tensors.clear(), make_weight_tensors.clear();
-	model_interpreter.getForwardPropogationLayerTensorDimensions(FP_operations_expanded, tensor_ops, source_layer_sizes, sink_layer_sizes, weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors);
+	model_interpreter.getForwardPropogationLayerTensorDimensions(FP_operations_expanded, tensor_ops, source_layer_sizes, sink_layer_sizes, weight_indices, shared_weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors);
 
 	BOOST_CHECK_EQUAL(source_layer_sizes.size(), 2);
 	BOOST_CHECK_EQUAL(source_layer_sizes[0], 1);
@@ -577,6 +583,10 @@ BOOST_AUTO_TEST_CASE(getForwardPropogationLayerTensorDimensions)
 			BOOST_CHECK_EQUAL(weight_indices[tensor_iter][i].second, weight_indices_test2[tensor_iter][i].second);
 		}
 	}
+
+	BOOST_CHECK_EQUAL(shared_weight_indices.size(), 2);
+	BOOST_CHECK_EQUAL(shared_weight_indices[0].size(), 0);
+	BOOST_CHECK_EQUAL(shared_weight_indices[1].size(), 0);
 
 	BOOST_CHECK_EQUAL(weight_values.size(), 2);
 	BOOST_CHECK_EQUAL(weight_values[0].size(), 1);

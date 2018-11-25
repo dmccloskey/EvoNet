@@ -1161,7 +1161,7 @@ namespace SmartPeak
 			make_weight_tensors.push_back(make_weight_tensor);
 			weight_indices.push_back(weight_index);
 			weight_values.push_back(weight_value);
-			shared_weight_indices.push_back(weight_index);
+			shared_weight_indices.push_back(shared_weight_index);
 
 			// update the layer positions
 			if (make_sink_tensor && make_source_tensor) {

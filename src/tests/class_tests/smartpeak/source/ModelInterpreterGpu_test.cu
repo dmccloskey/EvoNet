@@ -102,6 +102,9 @@ void test_allocateForwardPropogationLayerTensors()
 	// initialize nodes
 	// NOTE: input and biases have been activated when the model was created
 
+	// change the bias weights to shared
+	model_allocateForwardPropogationLayerTensors.links_.at("5")->setWeightName("4");
+
 	// Check iteration one with no source/sink/weight tensors already allocated
 	std::map<std::string, int> FP_operations_map;
 	std::vector<OperationList<float>> FP_operations_list;
@@ -118,10 +121,11 @@ void test_allocateForwardPropogationLayerTensors()
 
 	std::vector<int> source_layer_sizes, sink_layer_sizes;
 	std::vector<std::vector<std::pair<int, int>>> weight_indices;
+	std::vector<std::map<std::string, std::vector<std::pair<int, int>>>> shared_weight_indices;
 	std::vector<std::vector<float>> weight_values;
 	std::vector<bool> make_source_tensors, make_sink_tensors, make_weight_tensors;
-	model_interpreter.getForwardPropogationLayerTensorDimensions(FP_operations_expanded, tensor_ops, source_layer_sizes, sink_layer_sizes, weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors);
-	model_interpreter.allocateForwardPropogationLayerTensors(FP_operations_expanded, tensor_ops, source_layer_sizes, sink_layer_sizes, weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors, batch_size, memory_size, train);
+	model_interpreter.getForwardPropogationLayerTensorDimensions(FP_operations_expanded, tensor_ops, source_layer_sizes, sink_layer_sizes, weight_indices, shared_weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors);
+	model_interpreter.allocateForwardPropogationLayerTensors(FP_operations_expanded, tensor_ops, source_layer_sizes, sink_layer_sizes, weight_indices, shared_weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors, batch_size, memory_size, train);
 
 	// asserts are needed because boost deallocates the pointer memory after being called...
 	assert(model_interpreter.getLayerTensor(0)->getBatchSize() == batch_size); // sinks
@@ -133,6 +137,7 @@ void test_allocateForwardPropogationLayerTensors()
 	assert(model_interpreter.getWeightTensor(0)->getLayer1Size() == 3);
 	assert(model_interpreter.getWeightTensor(0)->getLayer2Size() == 2);
 	assert(model_interpreter.getWeightTensor(0)->getNSolverParams() == 3);
+	assert(model_interpreter.getWeightTensor(0)->getNSharedWeights() == 1);
 	assert(model_interpreter.getOperationSteps(0)[0].source_layer.time_step == 0);
 	assert(model_interpreter.getOperationSteps(0)[0].source_layer.activation->getName() == "LinearTensorOp");
 	assert(model_interpreter.getOperationSteps(0)[0].source_layer.activation_grad->getName() == "LinearGradTensorOp");
@@ -159,6 +164,9 @@ void test_getForwardPropogationOperations()
 
 	// initialize nodes
 	// NOTE: input and biases have been activated when the model was created
+
+	// change the bias weights to shared
+	model_getForwardPropogationOperations.links_.at("5")->setWeightName("4");
 
 	model_interpreter.getForwardPropogationOperations(model_getForwardPropogationOperations, batch_size, memory_size, train);
 
@@ -192,14 +200,17 @@ void test_getForwardPropogationOperations()
 		if (i == 0) {
 			assert(model_interpreter.getWeightTensor(i)->getLayer1Size() == 3);
 			assert(model_interpreter.getWeightTensor(i)->getLayer2Size() == 2);
+			assert(model_interpreter.getWeightTensor(i)->getNSharedWeights() == 1);
 		}
 		else if (i == 1) {
 			assert(model_interpreter.getWeightTensor(i)->getLayer1Size() == 1);
 			assert(model_interpreter.getWeightTensor(i)->getLayer2Size() == 2);
+			assert(model_interpreter.getWeightTensor(i)->getNSharedWeights() == 0);
 		}
 		else if (i == 2) {
 			assert(model_interpreter.getWeightTensor(i)->getLayer1Size() == 2);
 			assert(model_interpreter.getWeightTensor(i)->getLayer2Size() == 2);
+			assert(model_interpreter.getWeightTensor(i)->getNSharedWeights() == 0);
 		}
 	}
 	std::vector<int> expected_operation_steps = { 1, 2 };
