@@ -19,7 +19,7 @@
 namespace SmartPeak
 {
 	/*
-	@brief Device Kernal manager class.
+	@brief Class for all main Model kernals.
 
 	A single kernal is generated per method (i.e., the device is called
 	only once per kernal method).  The only except is executeModelErrors
@@ -141,6 +141,17 @@ namespace SmartPeak
 			DeviceT& device,
 			bool copyHostToDevice = false,
 			bool copyDeviceToHost = false) = 0;
+		virtual bool executeSharedWeightErrors(
+			TensorT* h_weight_error,
+			TensorT* d_weight_error,
+			TensorT* h_shared_weights,
+			TensorT* d_shared_weights,
+			const int& source_layer_size,
+			const int& sink_layer_size,
+			const int& n_shared_layers,
+			DeviceT& device,
+			bool copyHostToDevice = false,
+			bool copyDeviceToHost = false) = 0;
 		virtual bool executeWeightUpdate(
 			TensorT* h_weight,
 			TensorT* d_weight,
@@ -154,6 +165,25 @@ namespace SmartPeak
 			DeviceT& device,
 			bool copyHostToDevice = false,
 			bool copyDeviceToHost = false) = 0;
+		void combineSharedWeightErrors(
+			TensorT* weight_error,
+			TensorT* shared_weights,
+			const int& source_layer_size,
+			const int& sink_layer_size,
+			const int& n_shared_layers,
+			DeviceT& device) {
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 5>> weight_error_tensor(weight_error, 1, 1, source_layer_size, sink_layer_size, 1);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 5>> shared_weight_tensor(shared_weights, 1, 1, source_layer_size, sink_layer_size, n_shared_layers);
+			// Step 1: multiply the weight tensor by the shared weight tensor mask; sum all shared weights
+			auto weight_error_sum = (weight_error_tensor.broadcast(Eigen::array<int, 5>({ 1,1,1,1,n_shared_layers })) * shared_weight_tensor
+				).sum(Eigen::array<int, 2>({ 2, 3 })).broadcast(Eigen::array<int, 3>({ source_layer_size, sink_layer_size, 1 }));  // dims 3
+			// Step 2: multiply the weight error sum tensor by the shared weight tensor mask and subtract out the error tensor
+			auto weight_error_diff = (weight_error_sum * shared_weight_tensor.chip(0, 1).chip(0, 0) -
+				weight_error_tensor.chip(0, 1).chip(0, 0).broadcast(Eigen::array<int, 3>({ 1,1,n_shared_layers })) * shared_weight_tensor.chip(0, 1).chip(0, 0)
+				).sum(Eigen::array<int, 1>({ 2 })); //dims 2
+			// Step 3: add the weight_error_diff
+			weight_error_tensor.chip(0, 4).chip(0, 1).chip(0,0).device(device) += weight_error_diff;
+		}
 	};
 
 	template <typename TensorT>
@@ -303,6 +333,22 @@ namespace SmartPeak
 			sink_integration_function->operator()(h_sink_errors, h_source_outputs, h_weight, h_source_inputs, h_weight_error, n_input_nodes,
 				batch_size, memory_size, source_layer_size, sink_layer_size, device);
 
+			return true;
+		};
+		bool executeSharedWeightErrors(
+			TensorT* h_weight_error,
+			TensorT* d_weight_error,
+			TensorT* h_shared_weights,
+			TensorT* d_shared_weights,
+			const int& source_layer_size,
+			const int& sink_layer_size,
+			const int& n_shared_layers,
+			Eigen::DefaultDevice& device,
+			bool copyHostToDevice = false,
+			bool copyDeviceToHost = false) {
+			if (n_shared_layers == 0) return true;
+			// Pool the shared weights erros
+			this->combineSharedWeightErrors(h_weight_error, h_shared_weights, source_layer_size, sink_layer_size, n_shared_layers, device);
 			return true;
 		};
 		virtual bool executeWeightUpdate(
@@ -582,6 +628,36 @@ namespace SmartPeak
 				device.memcpyDeviceToHost(h_weight_error, d_weight_error, weight_bytes); // only needed when testing...
 			}
 
+			return true;
+		};
+		bool executeSharedWeightErrors(
+			TensorT* h_weight_error,
+			TensorT* d_weight_error,
+			TensorT* h_shared_weights,
+			TensorT* d_shared_weights,
+			const int& source_layer_size,
+			const int& sink_layer_size,
+			const int& n_shared_layers,
+			Eigen::GpuDevice& device,
+			bool copyHostToDevice = false,
+			bool copyDeviceToHost = false) {
+			if (n_shared_layers == 0) return true;
+
+			// Copy host to device
+			std::size_t error_bytes = source_layer_size * source_layer_size * sizeof(TensorT);
+			std::size_t shared_weights_bytes = source_layer_size * sink_layer_size * n_shared_layers * sizeof(TensorT);
+			if (copyHostToDevice) {
+				device.memcpyHostToDevice(d_weight_error, h_weight_error, error_bytes); // only needed when testing...
+				device.memcpyHostToDevice(d_shared_weights, h_shared_weights, shared_weights_bytes); // only needed when testing...
+			}
+
+			// Pool the shared weights erros
+			this->combineSharedWeightErrors(d_weight_error, d_shared_weights, source_layer_size, sink_layer_size, n_shared_layers, device);
+
+			// Copy device to host
+			if (copyDeviceToHost) {
+				device.memcpyDeviceToHost(h_weight_error, d_weight_error, error_bytes); // only needed when testing...
+			}
 			return true;
 		};
 		bool executeWeightUpdate(

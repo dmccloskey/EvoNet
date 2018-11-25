@@ -623,6 +623,77 @@ void test_weightErrorGpuDevice()
 	assert(cudaFree(d_weight_error) == cudaSuccess);
 }
 
+void test_sharedWeightErrorGpuDevice()
+{
+	const int device_id = 0;
+	ModelKernalGpu<float> kernal;
+
+	const int source_layer_size = 2;
+	const int sink_layer_size = 2;
+	const int n_shared_weights = 1;
+
+	float* h_shared_weights;
+	float* d_shared_weights;
+	float* h_weight_error;
+	float* d_weight_error;
+
+	assert(cudaSetDevice(device_id) == cudaSuccess); // is this needed?
+
+	// allocate memory
+	std::size_t shared_weights_bytes = source_layer_size * sink_layer_size * n_shared_weights * sizeof(float);
+	std::size_t weight_bytes = source_layer_size * sink_layer_size * sizeof(float);
+	assert(cudaHostAlloc((void**)(&h_shared_weights), shared_weights_bytes, cudaHostAllocDefault) == cudaSuccess);
+	assert(cudaMalloc((void**)(&d_shared_weights), shared_weights_bytes) == cudaSuccess);
+	assert(cudaHostAlloc((void**)(&h_weight_error), weight_bytes, cudaHostAllocDefault) == cudaSuccess);
+	assert(cudaMalloc((void**)(&d_weight_error), weight_bytes) == cudaSuccess);
+
+	Eigen::TensorMap<Eigen::Tensor<float, 3>> shared_weights(h_shared_weights, source_layer_size, sink_layer_size, n_shared_weights);
+	shared_weights.setValues({ 
+		{{1}, {1}},
+		{{0}, {0}}
+		});
+	Eigen::TensorMap<Eigen::Tensor<float, 2>> weight_error(h_weight_error, source_layer_size, sink_layer_size);
+	weight_error.setValues({ {1, 2}, {3, 4} });
+
+	// Set up the device
+	cudaStream_t stream; // The stream will be destroyed by GpuStreamDevice once the function goes out of scope!
+	assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess);
+	Eigen::GpuStreamDevice stream_device(&stream, 0);
+	Eigen::GpuDevice device(&stream_device);
+
+	bool success = kernal.executeSharedWeightErrors(
+		h_weight_error,
+		d_weight_error,
+		h_shared_weights,
+		d_shared_weights,
+		source_layer_size,
+		sink_layer_size,
+		n_shared_weights,
+		device,
+		true,
+		true);
+
+	// Synchronize the stream
+	cudaError_t err = cudaStreamQuery(stream);
+	assert(cudaStreamSynchronize(stream) == cudaSuccess);
+	assert(cudaStreamDestroy(stream) == cudaSuccess);
+
+	Eigen::Tensor<float, 2> expected_weight_error(source_layer_size, sink_layer_size);
+	expected_weight_error.setValues({ {3, 3}, {3, 4} });
+
+	for (int source_iter = 0; source_iter < source_layer_size; ++source_iter) {
+		for (int sink_iter = 0; sink_iter < sink_layer_size; ++sink_iter) {
+			std::cout << "[Weight Error] Source iter: " << source_iter << ", Sink Iter: " << sink_iter << " = " << weight_error(source_iter, sink_iter) << std::endl;
+			assert(weight_error(source_iter, sink_iter) == expected_weight_error(source_iter, sink_iter));
+		}
+	}
+
+	assert(cudaFreeHost(h_shared_weights) == cudaSuccess);
+	assert(cudaFree(d_shared_weights) == cudaSuccess);
+	assert(cudaFreeHost(h_weight_error) == cudaSuccess);
+	assert(cudaFree(d_weight_error) == cudaSuccess);
+}
+
 void test_weightUpdateGpuDevice(){
 	const int device_id = 0;
 	ModelKernalGpu<float> kernal;
@@ -718,6 +789,7 @@ int main(int argc, char** argv)
 	test_backwardPropogationGpuDevice();
 	test_modelErrorGpuDevice();
 	test_weightErrorGpuDevice();
+	test_sharedWeightErrorGpuDevice();
 	test_weightUpdateGpuDevice();
 	return 0;
 }

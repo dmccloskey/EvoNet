@@ -512,10 +512,12 @@ void main_CovNet() {
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setLogging(false, false);
 	model_trainer.setLossFunctions({
-		std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>())//,std::shared_ptr<LossFunctionOp<float>>(new NegativeLogLikelihoodOp<float>()),
+		//std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>())//,
+		std::shared_ptr<LossFunctionOp<float>>(new NegativeLogLikelihoodOp<float>())
 		});
 	model_trainer.setLossFunctionGrads({
-		std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>())//,	std::shared_ptr<LossFunctionGradOp<float>>(new NegativeLogLikelihoodGradOp<float>())
+		//std::shared_ptr<LossFunctionGradOp<float>>({new MSEGradOp<float>())//,	
+		std::shared_ptr<LossFunctionGradOp<float>>(new NegativeLogLikelihoodGradOp<float>())
 		});
 	model_trainer.setOutputNodes({ output_FC_nodes//, output_nodes 
 		});

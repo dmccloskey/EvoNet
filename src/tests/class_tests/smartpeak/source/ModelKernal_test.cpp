@@ -658,6 +658,53 @@ BOOST_AUTO_TEST_CASE(weightErrorDefaultDevice)
 	//assert(cudaFree(d_weight_error) == cudaSuccess);
 }
 
+BOOST_AUTO_TEST_CASE(sharedWeightErrorsDefaultDevice) {
+	ModelKernalDefaultDevice<float> kernal;
+
+	const int source_layer_size = 2;
+	const int sink_layer_size = 2;
+	const int n_shared_weights = 1;
+
+	float* h_shared_weights = new float[source_layer_size * sink_layer_size * n_shared_weights];
+	float* d_shared_weights = new float[source_layer_size * sink_layer_size * n_shared_weights];
+	float* h_weight_error = new float[source_layer_size * sink_layer_size];
+	float* d_weight_error = new float[source_layer_size * sink_layer_size];
+
+	Eigen::TensorMap<Eigen::Tensor<float, 3>> shared_weights(h_shared_weights, source_layer_size, sink_layer_size, n_shared_weights);
+	shared_weights.setValues({
+		{{1}, {1}},
+		{{0}, {0}}
+		});
+	Eigen::TensorMap<Eigen::Tensor<float, 2>> weight_error(h_weight_error, source_layer_size, sink_layer_size);
+	weight_error.setValues({ {1, 2}, {3, 4} });
+
+	// Set up the device
+	Eigen::DefaultDevice device;
+
+	bool success = kernal.executeSharedWeightErrors(
+		h_weight_error,
+		d_weight_error,
+		h_shared_weights,
+		d_shared_weights,
+		source_layer_size,
+		sink_layer_size,
+		n_shared_weights,
+		device,
+		true,
+		true);
+
+	Eigen::Tensor<float, 2> expected_weight_error(source_layer_size, sink_layer_size);
+	expected_weight_error.setValues({ {3, 3}, {3, 4} });
+
+	for (int source_iter = 0; source_iter < source_layer_size; ++source_iter) {
+		for (int sink_iter = 0; sink_iter < sink_layer_size; ++sink_iter) {
+			//std::cout << "[Weight Error] Source iter: " << source_iter << ", Sink Iter: " << sink_iter << " = " << weight_error(source_iter, sink_iter) << std::endl;
+			BOOST_CHECK_CLOSE(weight_error(source_iter, sink_iter), expected_weight_error(source_iter, sink_iter), 1e-4);
+		}
+	}
+
+}
+
 BOOST_AUTO_TEST_CASE(weightUpdateDefaultDevice)
 {
 	const int device_id = 0;
