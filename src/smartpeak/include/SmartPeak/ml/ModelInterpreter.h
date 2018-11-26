@@ -1191,7 +1191,7 @@ namespace SmartPeak
 	{
 		// [TODO: may not need to add in node type
 		//std::string ops_key = std::to_string(time_step) + "/" + std::to_string(node_type) + "/" + node_integration + "/" + node_activation;
-		std::string ops_key = std::to_string(time_step) + "/" + node_integration + "/" + node_activation + "/" + module_name;
+		std::string ops_key = std::to_string(time_step) + "/" + node_integration + "/" + node_activation;// +"/" + module_name;
 		return ops_key;
 	}
 

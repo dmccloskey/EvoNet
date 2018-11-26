@@ -259,14 +259,14 @@ public:
 		Model<TensorT>& model,
 		ModelInterpreterDefaultDevice<TensorT>& model_interpreter,
 		const std::vector<float>& model_errors) {
-		if (n_epochs > 10000) {
-			// update the solver parameters
-			std::shared_ptr<SolverOp<TensorT>> solver;
-			solver.reset(new AdamOp<TensorT>(0.0001, 0.9, 0.999, 1e-8));
-			for (auto& weight_map : model.getWeightsMap())
-				if (weight_map.second->getSolverOp()->getName() == "AdamOp")
-					weight_map.second->setSolverOp(solver);
-		}
+		//if (n_epochs > 10000) {
+		//	// update the solver parameters
+		//	std::shared_ptr<SolverOp<TensorT>> solver;
+		//	solver.reset(new AdamOp<TensorT>(0.0001, 0.9, 0.999, 1e-8));
+		//	for (auto& weight_map : model.getWeightsMap())
+		//		if (weight_map.second->getSolverOp()->getName() == "AdamOp")
+		//			weight_map.second->setSolverOp(solver);
+		//}
 		if (n_epochs % 1000 == 0 && n_epochs != 0) {
 			// save the model every 500 epochs
 			ModelFile<TensorT> data;
@@ -413,7 +413,7 @@ int main(int argc, char** argv)
 
 	// make the model name
 	//Model<float> model = model_trainer.makeModelSolution();
-	Model<float> model = model_trainer.makeModelLSTM(input_nodes.size());
+	Model<float> model = model_trainer.makeModelLSTM(input_nodes.size(), 1, 1);
 	char model_name_char[512];
 	sprintf(model_name_char, "%s_%d", model.getName().data(), 0);
 	std::string model_name(model_name_char);
