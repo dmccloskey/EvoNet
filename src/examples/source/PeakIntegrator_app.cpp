@@ -66,8 +66,9 @@ public:
 		assert(n_output_nodes == n_input_pixels + 2 * n_encodings);
 		assert(n_input_nodes == n_input_pixels + n_encodings);
 
-		// make a vector of sample_indices [BUG FREE]
-		Eigen::Tensor<int, 1> sample_indices = this->getValidationIndices(batch_size, n_epochs);
+		// make the noisy chrom
+
+		// make the smoothed chrom
 
 		std::random_device rd{};
 		std::mt19937 gen{ rd() };

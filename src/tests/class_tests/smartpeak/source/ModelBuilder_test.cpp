@@ -36,7 +36,7 @@ BOOST_AUTO_TEST_CASE(makeUnityWeight)
 {
 	ModelBuilder<float> model_builder;
 	Model<float> model;
-	const std::string name = model_builder.makeUnityWeight(model, 1.0, "Mod1", "%s_Unity", "test");
+	const std::string name = model_builder.makeUnityWeight(model, 1.0, "Mod1", "%s_%s", "test", "Unity");
 	BOOST_CHECK_EQUAL(name, "test_Unity");
 	BOOST_CHECK_EQUAL(model.getWeight("test_Unity").getWeightInitOp()->getName(), "ConstWeightInitOp");
 	BOOST_CHECK_EQUAL(model.getWeight("test_Unity").getSolverOp()->getName(), "DummySolverOp");

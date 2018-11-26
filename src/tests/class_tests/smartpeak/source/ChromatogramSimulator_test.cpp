@@ -11,26 +11,35 @@
 using namespace SmartPeak;
 using namespace std;
 
+template<typename TensorT>
+class ChromatogramSimulatorExt : public ChromatogramSimulator<TensorT>
+{
+public:
+	void simulateTrainingData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps) {};
+	void simulateValidationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps) {};
+	void simulateEvaluationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 3>& time_steps) {};
+};
+
 BOOST_AUTO_TEST_SUITE(chromatogramsimulator)
 
 BOOST_AUTO_TEST_CASE(constructor) 
 {
-  ChromatogramSimulator<double>* ptr = nullptr;
-  ChromatogramSimulator<double>* nullPointer = nullptr;
-	ptr = new ChromatogramSimulator<double>();
+  ChromatogramSimulatorExt<double>* ptr = nullptr;
+  ChromatogramSimulatorExt<double>* nullPointer = nullptr;
+	ptr = new ChromatogramSimulatorExt<double>();
   BOOST_CHECK_NE(ptr, nullPointer);
 }
 
 BOOST_AUTO_TEST_CASE(destructor) 
 {
-  ChromatogramSimulator<double>* ptr = nullptr;
-	ptr = new ChromatogramSimulator<double>();
+  ChromatogramSimulatorExt<double>* ptr = nullptr;
+	ptr = new ChromatogramSimulatorExt<double>();
   delete ptr;
 }
 
 BOOST_AUTO_TEST_CASE(findPeakOverlap)
 {
-  ChromatogramSimulator<double> chromsimulator;
+  ChromatogramSimulatorExt<double> chromsimulator;
   PeakSimulator<double> peak_left, peak_right;
   EMGModel<double> emg_left, emg_right;  
 
@@ -83,9 +92,9 @@ BOOST_AUTO_TEST_CASE(findPeakOverlap)
   BOOST_CHECK_EQUAL(chromsimulator.findPeakOverlap(peak_left, emg_left, peak_right, emg_right), 10.0);
 }
 
-BOOST_AUTO_TEST_CASE(joinPeakWindows) 
+BOOST_AUTO_TEST_CASE(joinPeakWindows1) 
 {
-  ChromatogramSimulator<double> chromsimulator;
+  ChromatogramSimulatorExt<double> chromsimulator;
   PeakSimulator<double> peak_left, peak_right;
   EMGModel<double> emg_left, emg_right;
 
@@ -221,7 +230,7 @@ BOOST_AUTO_TEST_CASE(joinPeakWindows)
 
 BOOST_AUTO_TEST_CASE(simulateChromatogram) 
 {
-  ChromatogramSimulator<double> chromsimulator;
+  ChromatogramSimulatorExt<double> chromsimulator;
   PeakSimulator<double> peak1, peak2, peak3;
   EMGModel<double> emg1, emg2, emg3;
   std::vector<double> chrom_time, chrom_intensity, x_test, y_test;
