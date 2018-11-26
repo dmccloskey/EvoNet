@@ -32,6 +32,17 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   ModelBuilder<float> model_builder;
 }
 
+BOOST_AUTO_TEST_CASE(makeUnityWeight)
+{
+	ModelBuilder<float> model_builder;
+	Model<float> model;
+	const std::string name = model_builder.makeUnityWeight(model, 1.0, "Mod1", "%s_Unity", "test");
+	BOOST_CHECK_EQUAL(name, "test_Unity");
+	BOOST_CHECK_EQUAL(model.getWeight("test_Unity").getWeightInitOp()->getName(), "ConstWeightInitOp");
+	BOOST_CHECK_EQUAL(model.getWeight("test_Unity").getSolverOp()->getName(), "DummySolverOp");
+	BOOST_CHECK_EQUAL(model.getWeight("test_Unity").getModuleName(), "Mod1");
+}
+
 BOOST_AUTO_TEST_CASE(addInputNodes) 
 {
   ModelBuilder<float> model_builder;
@@ -220,7 +231,8 @@ BOOST_AUTO_TEST_CASE(addSoftMax)
 		"Input_0_to_SoftMax-In_0", "SoftMax-In_0_to_SoftMax-Sum", "SoftMax-In_0_to_SoftMax-Out_0", "SoftMax-Sum_to_SoftMax-Out_0",
 		"Input_1_to_SoftMax-In_1", "SoftMax-In_1_to_SoftMax-Sum", "SoftMax-In_1_to_SoftMax-Out_1", "SoftMax-Sum_to_SoftMax-Out_1" };
 	std::vector<std::string> weight_names_test = {
-		"SoftMax_Unity", "SoftMax_Negative" };
+		"Input_0_to_SoftMax-In_0", "SoftMax-In_0_to_SoftMax-Sum", "SoftMax-In_0_to_SoftMax-Out_0", "SoftMax-Sum_to_SoftMax-Out_0",
+		"Input_1_to_SoftMax-In_1", "SoftMax-In_1_to_SoftMax-Sum", "SoftMax-In_1_to_SoftMax-Out_1", "SoftMax-Sum_to_SoftMax-Out_1" };
 
 	// check the nodes
 	for (const std::string& node_name : node_names_test)
@@ -279,6 +291,7 @@ BOOST_AUTO_TEST_CASE(addSoftMax)
 		int count = std::count(weight_names_test.begin(), weight_names_test.end(), weight.getName());
 		BOOST_CHECK_EQUAL(count, 1);
 		BOOST_CHECK_EQUAL(weight.getWeightInitOp()->getName(), "ConstWeightInitOp");
+		BOOST_CHECK_EQUAL(weight.getWeightInitOp()->getParamsAsStr(), "n:1.000000");
 		BOOST_CHECK_EQUAL(weight.getSolverOp()->getName(), "DummySolverOp");
 		BOOST_CHECK_EQUAL(weight.getModuleName(), "Mod1");
 	}
@@ -301,7 +314,8 @@ BOOST_AUTO_TEST_CASE(addStableSoftMax)
 		"Input_0_to_SoftMax-In_0", "SoftMax-In_0_to_SoftMax-Sum", "SoftMax-In_0_to_SoftMax-Out_0", "SoftMax-Sum_to_SoftMax-Out_0", "Input_0_to_SoftMax-Max", "SoftMax-Max_to_SoftMax-In_0",
 		"Input_1_to_SoftMax-In_1", "SoftMax-In_1_to_SoftMax-Sum", "SoftMax-In_1_to_SoftMax-Out_1", "SoftMax-Sum_to_SoftMax-Out_1", "Input_1_to_SoftMax-Max", "SoftMax-Max_to_SoftMax-In_1"};
 	std::vector<std::string> weight_names_test = {
-		"SoftMax_Unity", "SoftMax_Negative"};
+		"Input_0_to_SoftMax-In_0", "SoftMax-In_0_to_SoftMax-Sum", "SoftMax-In_0_to_SoftMax-Out_0", "SoftMax-Sum_to_SoftMax-Out_0", "Input_0_to_SoftMax-Max", "SoftMax-Max_to_SoftMax-In_0",
+		"Input_1_to_SoftMax-In_1", "SoftMax-In_1_to_SoftMax-Sum", "SoftMax-In_1_to_SoftMax-Out_1", "SoftMax-Sum_to_SoftMax-Out_1", "Input_1_to_SoftMax-Max", "SoftMax-Max_to_SoftMax-In_1" };
 
 	// check the nodes
 	for (const std::string& node_name: node_names_test)
@@ -359,6 +373,12 @@ BOOST_AUTO_TEST_CASE(addStableSoftMax)
 	{
 		int count = std::count(weight_names_test.begin(), weight_names_test.end(), weight.getName());
 		BOOST_CHECK_EQUAL(count, 1);
+		if (weight.getName() == "SoftMax-Max_to_SoftMax-In_0" || weight.getName() == "SoftMax-Max_to_SoftMax-In_1") {
+			BOOST_CHECK_EQUAL(weight.getWeightInitOp()->getParamsAsStr(), "n:-1.000000");
+		}
+		else {
+			BOOST_CHECK_EQUAL(weight.getWeightInitOp()->getParamsAsStr(), "n:1.000000");
+		}
 		BOOST_CHECK_EQUAL(weight.getWeightInitOp()->getName(), "ConstWeightInitOp");
 		BOOST_CHECK_EQUAL(weight.getSolverOp()->getName(), "DummySolverOp");
 		BOOST_CHECK_EQUAL(weight.getModuleName(), "Mod1");
@@ -525,9 +545,17 @@ BOOST_AUTO_TEST_CASE(addNormlization)
 		"Norm-Mean_to_Input_0-SourceMinMean","Norm-Mean_to_Input_1-SourceMinMean",
 		"Norm-Variance_to_Input_0-Normalized","Norm-Variance_to_Input_1-Normalized" };
 	std::vector<std::string> weight_names_test = {
-		"Norm_Unity", "Norm_Negative",
 		"Input_0-Normalized-bias_to_Input_0-Normalized", "Input_1-Normalized-bias_to_Input_1-Normalized",
+		"Norm-Mean_to_Input_0-SourceMinMean","Norm-Mean_to_Input_1-SourceMinMean",
 		"Input_0-Gamma", "Input_1-Gamma" };
+	std::vector<std::string> weight_names_unity_test = {
+		"Input_0-SourceMinMean_to_Input_0-Normalized",
+		"Input_0-SourceMinMean_to_Norm-Variance","Input_0_to_Input_0-SourceMinMean","Input_0_to_Norm-Mean",
+		"Input_1-SourceMinMean_to_Input_1-Normalized",
+		"Input_1-SourceMinMean_to_Norm-Variance","Input_1_to_Input_1-SourceMinMean","Input_1_to_Norm-Mean",
+		"Norm-Variance_to_Input_0-Normalized","Norm-Variance_to_Input_1-Normalized"
+		"Norm-Variance_to_Input_0-Normalized","Norm-Variance_to_Input_1-Normalized"
+	};
 
 	// check the nodes
 	for (const std::string& node_name : node_names_test)
@@ -585,7 +613,7 @@ BOOST_AUTO_TEST_CASE(addNormlization)
 		std::vector<std::string> test = SplitString(name, "_to_");
 		BOOST_CHECK_EQUAL(model.getLink(name).getSourceNodeName(), test[0]);
 		BOOST_CHECK_EQUAL(model.getLink(name).getSinkNodeName(), test[1]);
-		int count = std::count(weight_names_test.begin(), weight_names_test.end(), model.getLink(name).getWeightName());
+		int count = std::count(weight_names_test.begin(), weight_names_test.end(), model.getLink(name).getWeightName()) + std::count(weight_names_unity_test.begin(), weight_names_unity_test.end(), model.getLink(name).getWeightName());
 		BOOST_CHECK_EQUAL(count, 1);
 		BOOST_CHECK_EQUAL(model.getLink(name).getModuleName(), "Mod1");
 	}
@@ -595,7 +623,14 @@ BOOST_AUTO_TEST_CASE(addNormlization)
 	{
 		BOOST_CHECK_EQUAL(model.getWeight(name).getName(), name);
 		BOOST_CHECK_EQUAL(model.getWeight(name).getModuleName(), "Mod1");
-		if (name == "Norm_Unity" || name == "Norm_Negative") {
+		if (std::count(weight_names_unity_test.begin(), weight_names_unity_test.end(), name)) {
+			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getParamsAsStr(), "n:1.000000");
+			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
+			BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "DummySolverOp");
+			BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.0f);
+		}
+		else if (name == "Norm-Mean_to_Input_0-SourceMinMean"|| name == "Norm-Mean_to_Input_1-SourceMinMean") {
+			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getParamsAsStr(), "n:-1.000000");
 			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
 			BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "DummySolverOp");
 			BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.0f);
@@ -635,7 +670,10 @@ BOOST_AUTO_TEST_CASE(addVAEEncoding)
 		"LogVar_0-StdDev_to_Encoding_0","Mu_0_to_Encoding_0",
 		"LogVar_1-StdDev_to_Encoding_1","Mu_1_to_Encoding_1" };
 	std::vector<std::string> weight_names_test = {
-		"Encoding_Unity", "Encoding_Scalar" };
+		"LogVar_0_to_LogVar_0-Scalar","Encoding_0-Sampler_to_LogVar_0-StdDev",
+		"LogVar_1_to_LogVar_1-Scalar","Encoding_1-Sampler_to_LogVar_1-StdDev",
+		"LogVar_0-StdDev_to_Encoding_0","Mu_0_to_Encoding_0",
+		"LogVar_1-StdDev_to_Encoding_1","Mu_1_to_Encoding_1" };
 
 	// NOTE: Node type no longer differentiates layers
 	//// check the input nodes
@@ -706,7 +744,14 @@ BOOST_AUTO_TEST_CASE(addVAEEncoding)
 	{
 		BOOST_CHECK_EQUAL(model.getWeight(name).getName(), name);
 		BOOST_CHECK_EQUAL(model.getWeight(name).getModuleName(), "Mod1");
-		if (name == "Encoding_Unity" || name == "Encoding_Scalar") {
+		if (name == "LogVar_0_to_LogVar_0-Scalar" || name == "LogVar_1_to_LogVar_1-Scalar") {
+			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getParamsAsStr(), "n:0.500000");
+			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
+			BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "DummySolverOp");
+			BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.0f);
+		}
+		else {
+			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getParamsAsStr(), "n:1.000000");
 			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
 			BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "DummySolverOp");
 			BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.0f);
@@ -732,7 +777,8 @@ BOOST_AUTO_TEST_CASE(addDiscriminator)
 		"Mu_0_to_Discriminator-Output-0","Mu_1_to_Discriminator-Output-1",
 		"Discriminator-Sampler-0_to_Discriminator-Output-0","Discriminator-Sampler-1_to_Discriminator-Output-1" };
 	std::vector<std::string> weight_names_test = {
-		"Discriminator_Unity", "Discriminator_NegUnity" };
+		"Mu_0_to_Discriminator-Output-0","Mu_1_to_Discriminator-Output-1",
+		"Discriminator-Sampler-0_to_Discriminator-Output-0","Discriminator-Sampler-1_to_Discriminator-Output-1" };
 
 	// check the nodes
 	for (const std::string& node_name : node_names_test)
@@ -778,12 +824,14 @@ BOOST_AUTO_TEST_CASE(addDiscriminator)
 	{
 		BOOST_CHECK_EQUAL(model.getWeight(name).getName(), name);
 		BOOST_CHECK_EQUAL(model.getWeight(name).getModuleName(), "Mod1");
-		if (name == "Discriminator_Unity") {
+		if (name == "Discriminator-Sampler-0_to_Discriminator-Output-0" || name == "Discriminator-Sampler-1_to_Discriminator-Output-1") {
 			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
 			BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "DummySolverOp");
 			BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.0f);
+			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getParamsAsStr(), "n:-1.000000");
 		}
-		else if (name == "Discriminator_NegUnity") {
+		else {
+			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getParamsAsStr(), "n:1.000000");
 			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
 			BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "DummySolverOp");
 			BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.0f);
@@ -830,8 +878,7 @@ BOOST_AUTO_TEST_CASE(addLSTMBlock1)
 		"LSTM-BlockMultOutput-0_to_LSTM-BlockGateForget","LSTM-BlockMultOutput-0_to_LSTM-BlockGateInput","LSTM-BlockMultOutput-0_to_LSTM-BlockGateOutput","LSTM-BlockMultOutput-0_to_LSTM-BlockInput-0",
 		"LSTM-BlockMultOutput-1_to_LSTM-BlockGateForget","LSTM-BlockMultOutput-1_to_LSTM-BlockGateInput","LSTM-BlockMultOutput-1_to_LSTM-BlockGateOutput","LSTM-BlockMultOutput-1_to_LSTM-BlockInput-1",
 		"LSTM-BlockGateForget-bias_to_LSTM-BlockGateForget","LSTM-BlockGateInput-bias_to_LSTM-BlockGateInput","LSTM-BlockGateOutput-bias_to_LSTM-BlockGateOutput",
-		"LSTM-BlockInput-0-bias-0_to_LSTM-BlockInput-0","LSTM-BlockInput-1-bias-1_to_LSTM-BlockInput-1",
-		"LSTM_Unity" };
+		"LSTM-BlockInput-0-bias-0_to_LSTM-BlockInput-0","LSTM-BlockInput-1-bias-1_to_LSTM-BlockInput-1"};
 
 	// check the nodes
 	for (const std::string& node_name : node_names_test)
@@ -914,8 +961,6 @@ BOOST_AUTO_TEST_CASE(addLSTMBlock1)
 		std::vector<std::string> test = SplitString(name, "_to_");
 		BOOST_CHECK_EQUAL(model.getLink(name).getSourceNodeName(), test[0]);
 		BOOST_CHECK_EQUAL(model.getLink(name).getSinkNodeName(), test[1]);
-		int count = std::count(weight_names_test.begin(), weight_names_test.end(), model.getLink(name).getWeightName());
-		BOOST_CHECK_EQUAL(count, 1);
 		BOOST_CHECK_EQUAL(model.getLink(name).getModuleName(), "Mod1");
 	}
 
@@ -924,7 +969,7 @@ BOOST_AUTO_TEST_CASE(addLSTMBlock1)
 	{
 		BOOST_CHECK_EQUAL(model.getWeight(name).getName(), name);
 		BOOST_CHECK_EQUAL(model.getWeight(name).getModuleName(), "Mod1");
-		if (name == "LSTM_Unity") {
+		if (std::count(weight_names_test.begin(), weight_names_test.end(), model.getLink(name).getWeightName()) == 0) {
 			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
 			BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "DummySolverOp");
 			BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.0f);

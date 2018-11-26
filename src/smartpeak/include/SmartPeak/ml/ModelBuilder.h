@@ -301,6 +301,12 @@ public:
 		*/
 		std::vector<std::string> addModel(Model<TensorT>& model, const std::vector<std::string>& source_node_names,
 			const std::vector<std::string>& sink_node_names, const Model<TensorT>& model_rh);
+
+		/*
+		@brief Make a unity weight
+		*/
+		template<typename... Args>
+		std::string makeUnityWeight(Model<TensorT>& model, const TensorT& scale, const std::string& module_name, char* name_format, Args... args);
   };
 	template<typename TensorT>
 	std::vector<std::string> ModelBuilder<TensorT>::addInputNodes(Model<TensorT> & model, const std::string & name, const int & n_nodes)
@@ -439,6 +445,7 @@ public:
 	std::vector<std::string> ModelBuilder<TensorT>::addSoftMax(Model<TensorT> & model, const std::string & name, const std::string& module_name, const std::vector<std::string>& source_node_names)
 	{
 		std::vector<std::string> node_names;
+		std::string unity_weight_name;
 
 		// Create the Softmax Inverse/Sum node
 		char sms_node_name_char[512];
@@ -448,21 +455,13 @@ public:
 		sms_node.setModuleName(module_name);
 		model.addNodes({ sms_node });
 
-		// Create the unity node
-		char unity_weight_name_char[512];
-		sprintf(unity_weight_name_char, "%s_Unity", name.data());
-		std::string unity_weight_name(unity_weight_name_char);
-		Weight<TensorT> unity_weight(unity_weight_name, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()));
-		unity_weight.setModuleName(module_name);
-		model.addWeights({ unity_weight });
-
-		// Create the negative unity node
-		char negunity_weight_name_char[512];
-		sprintf(negunity_weight_name_char, "%s_Negative", name.data());
-		std::string negunity_weight_name(negunity_weight_name_char);
-		Weight<TensorT> negunity_weight(negunity_weight_name, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(-1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()));
-		negunity_weight.setModuleName(module_name);
-		model.addWeights({ negunity_weight });
+		//// Create the unity node
+		//char unity_weight_name_char[512];
+		//sprintf(unity_weight_name_char, "%s_Unity", name.data());
+		//std::string unity_weight_name(unity_weight_name_char);
+		//Weight<TensorT> unity_weight(unity_weight_name, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()));
+		//unity_weight.setModuleName(module_name);
+		//model.addWeights({ unity_weight });
 
 		// Create the Softmax input/output layer
 		for (int i = 0; i < source_node_names.size(); ++i)
@@ -485,6 +484,7 @@ public:
 			model.addNodes({ smi_node, smo_node });
 
 			// Create the weights and links for the input to softmax input layer
+			unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", source_node_names[i].data(), smi_node_name.data());
 			char ismi_link_name_char[512];
 			sprintf(ismi_link_name_char, "%s_to_%s", source_node_names[i].data(), smi_node_name.data());
 			std::string ismi_link_name(ismi_link_name_char);
@@ -493,6 +493,7 @@ public:
 			model.addLinks({ ismi_link });
 
 			// Create the weights and links for the softmax input layer to softmax sum layer
+			unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", smi_node_name.data(), sms_node_name.data());
 			char smisms_link_name_char[512];
 			sprintf(smisms_link_name_char, "%s_to_%s", smi_node_name.data(), sms_node_name.data());
 			std::string smisms_link_name(smisms_link_name_char);
@@ -501,6 +502,7 @@ public:
 			model.addLinks({ smisms_link });
 
 			// Create the weights and links for the softmax input layer to softmax output layer
+			unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", smi_node_name.data(), smo_node_name.data());
 			char smismo_link_name_char[512];
 			sprintf(smismo_link_name_char, "%s_to_%s", smi_node_name.data(), smo_node_name.data());
 			std::string smismo_link_name(smismo_link_name_char);
@@ -509,6 +511,7 @@ public:
 			model.addLinks({ smismo_link });
 
 			// Create the weights and links for the softmax sum layer to softmax output layer
+			unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", sms_node_name.data(), smo_node_name.data());
 			char smssmo_link_name_char[512];
 			sprintf(smssmo_link_name_char, "%s_to_%s", sms_node_name.data(), smo_node_name.data());
 			std::string smssmo_link_name(smssmo_link_name_char);
@@ -523,6 +526,7 @@ public:
 	std::vector<std::string> ModelBuilder<TensorT>::addStableSoftMax(Model<TensorT> & model, const std::string & name, const std::string& module_name, const std::vector<std::string>& source_node_names)
 	{
 		std::vector<std::string> node_names;
+		std::string unity_weight_name, negunity_weight_name;
 
 		// Create the Softmax Max offset node
 		char smm_node_name_char[512];
@@ -540,21 +544,21 @@ public:
 		sms_node.setModuleName(module_name);
 		model.addNodes({ sms_node });
 
-		// Create the unity node
-		char unity_weight_name_char[512];
-		sprintf(unity_weight_name_char, "%s_Unity", name.data());
-		std::string unity_weight_name(unity_weight_name_char);
-		Weight<TensorT> unity_weight(unity_weight_name, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()));
-		unity_weight.setModuleName(module_name);
-		model.addWeights({ unity_weight });
+		//// Create the unity node
+		//char unity_weight_name_char[512];
+		//sprintf(unity_weight_name_char, "%s_Unity", name.data());
+		//std::string unity_weight_name(unity_weight_name_char);
+		//Weight<TensorT> unity_weight(unity_weight_name, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()));
+		//unity_weight.setModuleName(module_name);
+		//model.addWeights({ unity_weight });
 
-		// Create the negative unity node
-		char negunity_weight_name_char[512];
-		sprintf(negunity_weight_name_char, "%s_Negative", name.data());
-		std::string negunity_weight_name(negunity_weight_name_char);
-		Weight<TensorT> negunity_weight(negunity_weight_name, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(-1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()));
-		negunity_weight.setModuleName(module_name);
-		model.addWeights({ negunity_weight });
+		//// Create the negative unity node
+		//char negunity_weight_name_char[512];
+		//sprintf(negunity_weight_name_char, "%s_Negative", name.data());
+		//std::string negunity_weight_name(negunity_weight_name_char);
+		//Weight<TensorT> negunity_weight(negunity_weight_name, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(-1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()));
+		//negunity_weight.setModuleName(module_name);
+		//model.addWeights({ negunity_weight });
 
 		// Create the Softmax input/output layer
 		for (int i = 0; i < source_node_names.size(); ++i)
@@ -577,6 +581,7 @@ public:
 			model.addNodes({ smi_node, smo_node });
 
 			// Create the weights and links for the input to softmax Max node
+			unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", source_node_names[i].data(), smm_node_name.data());
 			char ismm_link_name_char[512];
 			sprintf(ismm_link_name_char, "%s_to_%s", source_node_names[i].data(), smm_node_name.data());
 			std::string ismm_link_name(ismm_link_name_char);
@@ -585,6 +590,7 @@ public:
 			model.addLinks({ ismm_link });
 
 			// Create the weights and links for the softmax Max node softmax input layer
+			negunity_weight_name = makeUnityWeight(model, -1.0, module_name, "%s_to_%s", smm_node_name.data(), smi_node_name.data());
 			char smmsmi_link_name_char[512];
 			sprintf(smmsmi_link_name_char, "%s_to_%s", smm_node_name.data(), smi_node_name.data());
 			std::string smmsmi_link_name(smmsmi_link_name_char);
@@ -593,6 +599,7 @@ public:
 			model.addLinks({ smmsmi_link });
 
 			// Create the weights and links for the input to softmax input layer
+			unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", source_node_names[i].data(), smi_node_name.data());
 			char ismi_link_name_char[512];
 			sprintf(ismi_link_name_char, "%s_to_%s", source_node_names[i].data(), smi_node_name.data());
 			std::string ismi_link_name(ismi_link_name_char);
@@ -601,6 +608,7 @@ public:
 			model.addLinks({ ismi_link });
 
 			// Create the weights and links for the softmax input layer to softmax sum layer
+			unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", smi_node_name.data(), sms_node_name.data());
 			char smisms_link_name_char[512];
 			sprintf(smisms_link_name_char, "%s_to_%s", smi_node_name.data(), sms_node_name.data());
 			std::string smisms_link_name(smisms_link_name_char);
@@ -609,6 +617,7 @@ public:
 			model.addLinks({ smisms_link });
 
 			// Create the weights and links for the softmax input layer to softmax output layer
+			unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", smi_node_name.data(), smo_node_name.data());
 			char smismo_link_name_char[512];
 			sprintf(smismo_link_name_char, "%s_to_%s", smi_node_name.data(), smo_node_name.data());
 			std::string smismo_link_name(smismo_link_name_char);
@@ -617,6 +626,7 @@ public:
 			model.addLinks({ smismo_link });
 
 			// Create the weights and links for the softmax sum layer to softmax output layer
+			unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", sms_node_name.data(), smo_node_name.data());
 			char smssmo_link_name_char[512];
 			sprintf(smssmo_link_name_char, "%s_to_%s", sms_node_name.data(), smo_node_name.data());
 			std::string smssmo_link_name(smssmo_link_name_char);
@@ -825,6 +835,7 @@ public:
 		const std::shared_ptr<WeightInitOp<TensorT>> & weight_init, const std::shared_ptr<SolverOp<TensorT>> & solver, TensorT drop_out_prob, TensorT drop_connection_prob, bool biases)
 	{
 		std::vector<std::string> node_names;
+		std::string unity_weight_name, negunity_weight_name;
 
 		// Make the mean/linear node
 		char mean_name_char[512];
@@ -846,21 +857,21 @@ public:
 		model.addNodes({ variance });
 		//node_names.push_back(variance_name);
 
-		// Create the unity weight
-		char unity_weight_name_char[512];
-		sprintf(unity_weight_name_char, "%s_Unity", name.data());
-		std::string unity_weight_name(unity_weight_name_char);
-		Weight<TensorT> unity_weight(unity_weight_name, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()));
-		unity_weight.setModuleName(module_name);
-		model.addWeights({ unity_weight });
+		//// Create the unity weight
+		//char unity_weight_name_char[512];
+		//sprintf(unity_weight_name_char, "%s_Unity", name.data());
+		//std::string unity_weight_name(unity_weight_name_char);
+		//Weight<TensorT> unity_weight(unity_weight_name, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()));
+		//unity_weight.setModuleName(module_name);
+		//model.addWeights({ unity_weight });
 
-		// Create the negative unity weight
-		char negunity_weight_name_char[512];
-		sprintf(negunity_weight_name_char, "%s_Negative", name.data());
-		std::string negunity_weight_name(negunity_weight_name_char);
-		Weight<TensorT> negunity_weight(negunity_weight_name, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(-1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()));
-		negunity_weight.setModuleName(module_name);
-		model.addWeights({ negunity_weight });
+		//// Create the negative unity weight
+		//char negunity_weight_name_char[512];
+		//sprintf(negunity_weight_name_char, "%s_Negative", name.data());
+		//std::string negunity_weight_name(negunity_weight_name_char);
+		//Weight<TensorT> negunity_weight(negunity_weight_name, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(-1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()));
+		//negunity_weight.setModuleName(module_name);
+		//model.addWeights({ negunity_weight });
 
 		for (const std::string& node_name : source_node_names) {
 			// Make the source-mean nodes
@@ -883,6 +894,7 @@ public:
 			node_names.push_back(normalized_name);
 
 			// Make the weights/links from source to mean
+			unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", node_name.data(), mean_name.data());
 			char sToM_link_name_char[512];
 			sprintf(sToM_link_name_char, "%s_to_%s", node_name.data(), mean_name.data());
 			std::string sToM_link_name(sToM_link_name_char);
@@ -891,6 +903,7 @@ public:
 			model.addLinks({ sToM_link });
 
 			// Make the links from source to sourceMinMean
+			unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", node_name.data(), sourceMinMean_name.data());
 			char sToSMinM_link_name_char[512];
 			sprintf(sToSMinM_link_name_char, "%s_to_%s", node_name.data(), sourceMinMean_name.data());
 			std::string sToSMinM_link_name(sToSMinM_link_name_char);
@@ -899,6 +912,7 @@ public:
 			model.addLinks({ sToSMinM_link });
 
 			// Make the links from the mean to sourceMinMean
+			negunity_weight_name = makeUnityWeight(model, -1.0, module_name, "%s_to_%s", mean_name.data(), sourceMinMean_name.data());
 			char mToSMinM_link_name_char[512];
 			sprintf(mToSMinM_link_name_char, "%s_to_%s", mean_name.data(), sourceMinMean_name.data());
 			std::string mToSMinM_link_name(mToSMinM_link_name_char);
@@ -907,6 +921,7 @@ public:
 			model.addLinks({ mToSMinM_link });
 
 			// Make the links from sourceMinMean to variance
+			unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", sourceMinMean_name.data(), variance_name.data());
 			char sMinMToV_link_name_char[512];
 			sprintf(sMinMToV_link_name_char, "%s_to_%s", sourceMinMean_name.data(), variance_name.data());
 			std::string sMinMToV_link_name(sMinMToV_link_name_char);
@@ -931,6 +946,7 @@ public:
 			model.addLinks({ sMinMToN_link });
 
 			// Make the links from variance to normalized
+			unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", variance_name.data(), normalized_name.data());
 			char vToN_link_name_char[512];
 			sprintf(vToN_link_name_char, "%s_to_%s", variance_name.data(), normalized_name.data());
 			std::string vToN_link_name(vToN_link_name_char);
@@ -973,6 +989,7 @@ public:
 	std::vector<std::string> ModelBuilder<TensorT>::addVAEEncoding(Model<TensorT> & model, const std::string & name, const std::string & module_name, const std::vector<std::string>& mu_node_names, const std::vector<std::string>& logvar_node_names)
 	{
 		std::vector<std::string> node_names;
+		std::string unity_weight_name, scalar_weight_name;
 
 		assert(mu_node_names.size() == logvar_node_names.size());
 
@@ -985,21 +1002,21 @@ public:
 		//	model.nodes_.at(node_name)->setType(NodeType::vaelogvar);
 		//}
 
-		// Create the unity weight
-		char unity_weight_name_char[512];
-		sprintf(unity_weight_name_char, "%s_Unity", name.data());
-		std::string unity_weight_name(unity_weight_name_char);
-		Weight<TensorT> unity_weight(unity_weight_name, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()));
-		unity_weight.setModuleName(module_name);
-		model.addWeights({ unity_weight });
+		//// Create the unity weight
+		//char unity_weight_name_char[512];
+		//sprintf(unity_weight_name_char, "%s_Unity", name.data());
+		//std::string unity_weight_name(unity_weight_name_char);
+		//Weight<TensorT> unity_weight(unity_weight_name, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()));
+		//unity_weight.setModuleName(module_name);
+		//model.addWeights({ unity_weight });
 
-		// Create the scalar unity weight
-		char scalar_weight_name_char[512];
-		sprintf(scalar_weight_name_char, "%s_Scalar", name.data());
-		std::string scalar_weight_name(scalar_weight_name_char);
-		Weight<TensorT> scalar_weight(scalar_weight_name, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(0.5)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()));
-		scalar_weight.setModuleName(module_name);
-		model.addWeights({ scalar_weight });
+		//// Create the scalar unity weight
+		//char scalar_weight_name_char[512];
+		//sprintf(scalar_weight_name_char, "%s_Scalar", name.data());
+		//std::string scalar_weight_name(scalar_weight_name_char);
+		//Weight<TensorT> scalar_weight(scalar_weight_name, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(0.5)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()));
+		//scalar_weight.setModuleName(module_name);
+		//model.addWeights({ scalar_weight });
 
 		for (size_t i = 0; i < logvar_node_names.size(); ++i) {
 			// Make the logVar scalar nodes
@@ -1012,6 +1029,7 @@ public:
 			//node_names.push_back(logvarScale_name);
 
 			// Make the links from logvar to the scalar node
+			scalar_weight_name = makeUnityWeight(model, 0.5, module_name, "%s_to_%s", logvar_node_names[i].data(), logvarScale_name.data());
 			char lvToS_link_name_char[512];
 			sprintf(lvToS_link_name_char, "%s_to_%s", logvar_node_names[i].data(), logvarScale_name.data());
 			std::string lvToS_link_name(lvToS_link_name_char);
@@ -1038,6 +1056,7 @@ public:
 			//node_names.push_back(stddev_name);
 
 			// Make the links from logvar scalar node to the std dev node
+			unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", logvarScale_name.data(), stddev_name.data());
 			char ScToStdev_link_name_char[512];
 			sprintf(ScToStdev_link_name_char, "%s_to_%s", logvarScale_name.data(), stddev_name.data());
 			std::string ScToStdev_link_name(ScToStdev_link_name_char);
@@ -1046,6 +1065,7 @@ public:
 			model.addLinks({ ScToStdev_link });
 
 			// Make the links from sampler to the std dev node
+			unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", sampler_name.data(), stddev_name.data());
 			char SToStdev_link_name_char[512];
 			sprintf(SToStdev_link_name_char, "%s_to_%s", sampler_name.data(), stddev_name.data());
 			std::string SToStdev_link_name(SToStdev_link_name_char);
@@ -1063,6 +1083,7 @@ public:
 			node_names.push_back(output_name);
 
 			// Make the links from std dev node to the output node
+			unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", stddev_name.data(), output_name.data());
 			char StDevToOutput_link_name_char[512];
 			sprintf(StDevToOutput_link_name_char, "%s_to_%s", stddev_name.data(), output_name.data());
 			std::string StDevToOutput_link_name(StDevToOutput_link_name_char);
@@ -1071,6 +1092,7 @@ public:
 			model.addLinks({ StDevToOutput_link });
 
 			// Make the links from mean to the output node
+			unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", mu_node_names[i].data(), output_name.data());
 			char muToOutput_link_name_char[512];
 			sprintf(muToOutput_link_name_char, "%s_to_%s", mu_node_names[i].data(), output_name.data());
 			std::string muToOutput_link_name(muToOutput_link_name_char);
@@ -1085,22 +1107,23 @@ public:
 	std::vector<std::string> ModelBuilder<TensorT>::addDiscriminator(Model<TensorT> & model, const std::string & name, const std::string & module_name, const std::vector<std::string>& encoding_node_names)
 	{
 		std::vector<std::string> node_names;
+		std::string unity_weight_name, negative_weight_name;
 
-		// Create the unity weight
-		char unity_weight_name_char[512];
-		sprintf(unity_weight_name_char, "%s_Unity", name.data());
-		std::string unity_weight_name(unity_weight_name_char);
-		Weight<TensorT> unity_weight(unity_weight_name, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()));
-		unity_weight.setModuleName(module_name);
-		model.addWeights({ unity_weight });
+		//// Create the unity weight
+		//char unity_weight_name_char[512];
+		//sprintf(unity_weight_name_char, "%s_Unity", name.data());
+		//std::string unity_weight_name(unity_weight_name_char);
+		//Weight<TensorT> unity_weight(unity_weight_name, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()));
+		//unity_weight.setModuleName(module_name);
+		//model.addWeights({ unity_weight });
 
-		// Create the negative unity weight
-		char negative_weight_name_char[512];
-		sprintf(negative_weight_name_char, "%s_NegUnity", name.data());
-		std::string negative_weight_name(negative_weight_name_char);
-		Weight<TensorT> negative_weight(negative_weight_name, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(-1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()));
-		negative_weight.setModuleName(module_name);
-		model.addWeights({ negative_weight });
+		//// Create the negative unity weight
+		//char negative_weight_name_char[512];
+		//sprintf(negative_weight_name_char, "%s_NegUnity", name.data());
+		//std::string negative_weight_name(negative_weight_name_char);
+		//Weight<TensorT> negative_weight(negative_weight_name, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(-1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()));
+		//negative_weight.setModuleName(module_name);
+		//model.addWeights({ negative_weight });
 
 		for (size_t i = 0; i < encoding_node_names.size(); ++i) {
 			// Make the output node
@@ -1113,6 +1136,7 @@ public:
 			node_names.push_back(output_name);
 
 			// Make the links from the encoding to the output node
+			unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", encoding_node_names[i].data(), output_name.data());
 			char lvToS_link_name_char[512];
 			sprintf(lvToS_link_name_char, "%s_to_%s", encoding_node_names[i].data(), output_name.data());
 			std::string lvToS_link_name(lvToS_link_name_char);
@@ -1129,6 +1153,7 @@ public:
 			model.addNodes({ sampler });
 
 			// Make the links from the sampler node to the output node
+			negative_weight_name = makeUnityWeight(model, -1.0, module_name, "%s_to_%s", sampler_name.data(), output_name.data());
 			char ScToStdev_link_name_char[512];
 			sprintf(ScToStdev_link_name_char, "%s_to_%s", sampler_name.data(), output_name.data());
 			std::string ScToStdev_link_name(ScToStdev_link_name_char);
@@ -1177,14 +1202,15 @@ public:
 		TensorT drop_out_prob, TensorT drop_connection_prob, bool biases, bool forget_gate)
 	{
 		std::vector<std::string> node_names;
+		std::string unity_weight_name;
 
-		// Create the unity weight
-		char unity_weight_name_char[512];
-		sprintf(unity_weight_name_char, "%s_Unity", name.data());
-		std::string unity_weight_name(unity_weight_name_char);
-		Weight<TensorT> unity_weight(unity_weight_name, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()));
-		unity_weight.setModuleName(module_name);
-		model.addWeights({ unity_weight });
+		//// Create the unity weight
+		//char unity_weight_name_char[512];
+		//sprintf(unity_weight_name_char, "%s_Unity", name.data());
+		//std::string unity_weight_name(unity_weight_name_char);
+		//Weight<TensorT> unity_weight(unity_weight_name, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()));
+		//unity_weight.setModuleName(module_name);
+		//model.addWeights({ unity_weight });
 
 		// Make the input gate node
 		char blockGateInput_name_char[512];
@@ -1363,6 +1389,7 @@ public:
 		}
 
 		for (int cell_iter = 0; cell_iter < n_cells; ++cell_iter) {
+
 			// Make the input node
 			char blockInput_name_char[512];
 			sprintf(blockInput_name_char, "%s-BlockInput-%d", name.data(), cell_iter);
@@ -1399,6 +1426,7 @@ public:
 			model.addNodes({ blockMemoryCell });
 
 			// Make the link from memory cell to output multiplier node
+			unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", blockMemoryCell_name.data(), blockOutput_name.data());
 			char link_MemCellToOMult_name_char[512];
 			sprintf(link_MemCellToOMult_name_char, "%s_to_%s", blockMemoryCell_name.data(), blockOutput_name.data());
 			std::string link_MemCellToOMult_name(link_MemCellToOMult_name_char);
@@ -1407,6 +1435,7 @@ public:
 			model.addLinks({ link_MemCellToOMult });
 
 			// Make the link from input multiplier node to memory cell
+			unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", blockMultInput_name.data(), blockMemoryCell_name.data());
 			char link_iMultToMemCell_name_char[512];
 			sprintf(link_iMultToMemCell_name_char, "%s_to_%s", blockMultInput_name.data(), blockMemoryCell_name.data());
 			std::string link_iMultToMemCell_name(link_iMultToMemCell_name_char);
@@ -1415,6 +1444,7 @@ public:
 			model.addLinks({ link_iMultToMemCell });
 
 			// Make the link between the input and the input multiplier node
+			unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", blockInput_name.data(), blockMultInput_name.data());
 			char link_iToIMult_name_char[512];
 			sprintf(link_iToIMult_name_char, "%s_to_%s", blockInput_name.data(), blockMultInput_name.data());
 			std::string link_iToIMult_name(link_iToIMult_name_char);
@@ -1423,6 +1453,7 @@ public:
 			model.addLinks({ link_iToIMult });
 
 			// Make the link between the input gate and the input multiplier node
+			unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", blockGateInput_name.data(), blockMultInput_name.data());
 			char link_iGateToIMult_name_char[512];
 			sprintf(link_iGateToIMult_name_char, "%s_to_%s", blockGateInput_name.data(), blockMultInput_name.data());
 			std::string link_iGateToIMult_name(link_iGateToIMult_name_char);
@@ -1431,6 +1462,7 @@ public:
 			model.addLinks({ link_iGateToIMult });
 
 			// Make the link between the output gate and the output gate multiplier node
+			unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", blockGateOutput_name.data(), blockOutput_name.data());
 			char link_oGateToOMult_name_char[512];
 			sprintf(link_oGateToOMult_name_char, "%s_to_%s", blockGateOutput_name.data(), blockOutput_name.data());
 			std::string link_oGateToOMult_name(link_oGateToOMult_name_char);
@@ -1487,6 +1519,7 @@ public:
 				model.addNodes({ blockMultForget });
 
 				// Make the link between the forget gate and the forget gate multiplier node
+				unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", blockGateForget_name.data(), blockMultForget_name.data());
 				char link_fGateToFMult_name_char[512];
 				sprintf(link_fGateToFMult_name_char, "%s_to_%s", blockGateForget_name.data(), blockMultForget_name.data());
 				std::string link_fGateToFMult_name(link_fGateToFMult_name_char);
@@ -1514,6 +1547,7 @@ public:
 				model.addLinks({ link_OMultToFGate });
 
 				// Make the link from forget gate multiplier node to memory cell
+				unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", blockMultForget_name.data(), blockMemoryCell_name.data());
 				char link_fMultToMemCell_name_char[512];
 				sprintf(link_fMultToMemCell_name_char, "%s_to_%s", blockMultForget_name.data(), blockMemoryCell_name.data());
 				std::string link_fMultToMemCell_name(link_fMultToMemCell_name_char);
@@ -1522,6 +1556,7 @@ public:
 				model.addLinks({ link_fMultToMemCell });
 
 				// Make the link from memory cell to forget gate multiplier node
+				unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", blockMemoryCell_name.data(), blockMultForget_name.data());
 				char link_MemCellToFMult_name_char[512];
 				sprintf(link_MemCellToFMult_name_char, "%s_to_%s", blockMemoryCell_name.data(), blockMultForget_name.data());
 				std::string link_MemCellToFMult_name(link_MemCellToFMult_name_char);
@@ -1531,6 +1566,7 @@ public:
 			}
 			else {
 				// Make the link from forget gate multiplier node to memory cell
+				unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", blockMemoryCell_name.data(), blockMemoryCell_name.data());
 				char link_fMultToMemCell_name_char[512];
 				sprintf(link_fMultToMemCell_name_char, "%s_to_%s", blockMemoryCell_name.data(), blockMemoryCell_name.data());
 				std::string link_fMultToMemCell_name(link_fMultToMemCell_name_char);
@@ -1627,14 +1663,15 @@ public:
 		TensorT drop_out_prob, TensorT drop_connection_prob, bool biases, bool forget_gate)
 	{
 		std::vector<std::string> node_names;
+		std::string unity_weight_name;
 
-		// Create the unity weight
-		char unity_weight_name_char[512];
-		sprintf(unity_weight_name_char, "%s_Unity", name.data());
-		std::string unity_weight_name(unity_weight_name_char);
-		Weight<TensorT> unity_weight(unity_weight_name, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()));
-		unity_weight.setModuleName(module_name);
-		model.addWeights({ unity_weight });
+		//// Create the unity weight
+		//char unity_weight_name_char[512];
+		//sprintf(unity_weight_name_char, "%s_Unity", name.data());
+		//std::string unity_weight_name(unity_weight_name_char);
+		//Weight<TensorT> unity_weight(unity_weight_name, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()));
+		//unity_weight.setModuleName(module_name);
+		//model.addWeights({ unity_weight });
 
 		// Make the input gate node
 		char blockGateInput_name_char[512];
@@ -1849,6 +1886,7 @@ public:
 			model.addNodes({ blockMemoryCell });
 
 			// Make the link from memory cell to output multiplier node
+			unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", blockMemoryCell_name.data(), blockOutput_name.data());
 			char link_MemCellToOMult_name_char[512];
 			sprintf(link_MemCellToOMult_name_char, "%s_to_%s", blockMemoryCell_name.data(), blockOutput_name.data());
 			std::string link_MemCellToOMult_name(link_MemCellToOMult_name_char);
@@ -1857,6 +1895,7 @@ public:
 			model.addLinks({ link_MemCellToOMult });
 
 			// Make the link from input multiplier node to memory cell
+			unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", blockMultInput_name.data(), blockMemoryCell_name.data());
 			char link_iMultToMemCell_name_char[512];
 			sprintf(link_iMultToMemCell_name_char, "%s_to_%s", blockMultInput_name.data(), blockMemoryCell_name.data());
 			std::string link_iMultToMemCell_name(link_iMultToMemCell_name_char);
@@ -1865,6 +1904,7 @@ public:
 			model.addLinks({ link_iMultToMemCell });
 
 			// Make the link between the input and the input multiplier node
+			unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", blockInput_name.data(), blockMultInput_name.data());
 			char link_iToIMult_name_char[512];
 			sprintf(link_iToIMult_name_char, "%s_to_%s", blockInput_name.data(), blockMultInput_name.data());
 			std::string link_iToIMult_name(link_iToIMult_name_char);
@@ -1873,6 +1913,7 @@ public:
 			model.addLinks({ link_iToIMult });
 
 			// Make the link between the input gate and the input multiplier node
+			unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", blockGateInput_name.data(), blockMultInput_name.data());
 			char link_iGateToIMult_name_char[512];
 			sprintf(link_iGateToIMult_name_char, "%s_to_%s", blockGateInput_name.data(), blockMultInput_name.data());
 			std::string link_iGateToIMult_name(link_iGateToIMult_name_char);
@@ -1881,6 +1922,7 @@ public:
 			model.addLinks({ link_iGateToIMult });
 
 			// Make the link between the output gate and the output gate multiplier node
+			unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", blockGateOutput_name.data(), blockOutput_name.data());
 			char link_oGateToOMult_name_char[512];
 			sprintf(link_oGateToOMult_name_char, "%s_to_%s", blockGateOutput_name.data(), blockOutput_name.data());
 			std::string link_oGateToOMult_name(link_oGateToOMult_name_char);
@@ -1917,6 +1959,7 @@ public:
 				model.addNodes({ blockMultForget });
 
 				// Make the link between the forget gate and the forget gate multiplier node
+				unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", blockGateForget_name.data(), blockMultForget_name.data());
 				char link_fGateToFMult_name_char[512];
 				sprintf(link_fGateToFMult_name_char, "%s_to_%s", blockGateForget_name.data(), blockMultForget_name.data());
 				std::string link_fGateToFMult_name(link_fGateToFMult_name_char);
@@ -1944,6 +1987,7 @@ public:
 				model.addLinks({ link_OMultToFGate });
 
 				// Make the link from forget gate multiplier node to memory cell
+				unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", blockMultForget_name.data(), blockMemoryCell_name.data());
 				char link_fMultToMemCell_name_char[512];
 				sprintf(link_fMultToMemCell_name_char, "%s_to_%s", blockMultForget_name.data(), blockMemoryCell_name.data());
 				std::string link_fMultToMemCell_name(link_fMultToMemCell_name_char);
@@ -1952,6 +1996,7 @@ public:
 				model.addLinks({ link_fMultToMemCell });
 
 				// Make the link from memory cell to forget gate multiplier node
+				unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", blockMemoryCell_name.data(), blockMultForget_name.data());
 				char link_MemCellToFMult_name_char[512];
 				sprintf(link_MemCellToFMult_name_char, "%s_to_%s", blockMemoryCell_name.data(), blockMultForget_name.data());
 				std::string link_MemCellToFMult_name(link_MemCellToFMult_name_char);
@@ -1961,6 +2006,7 @@ public:
 			}
 			else {
 				// Make the link from forget gate multiplier node to memory cell
+				unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", blockMemoryCell_name.data(), blockMemoryCell_name.data());
 				char link_fMultToMemCell_name_char[512];
 				sprintf(link_fMultToMemCell_name_char, "%s_to_%s", blockMemoryCell_name.data(), blockMemoryCell_name.data());
 				std::string link_fMultToMemCell_name(link_fMultToMemCell_name_char);
@@ -2044,6 +2090,20 @@ public:
 		}
 
 		return node_names;
+	}
+
+	template<typename TensorT>
+	template<typename ...Args>
+	inline std::string ModelBuilder<TensorT>::makeUnityWeight(Model<TensorT>& model, const TensorT & scale, const std::string& module_name, char* name_format, Args ...args)
+	{
+		// Create the unity weight
+		char unity_weight_name_char[512];
+		sprintf(unity_weight_name_char, name_format, args...);
+		std::string unity_weight_name(unity_weight_name_char);
+		Weight<TensorT> unity_weight(unity_weight_name, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(scale)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()));
+		unity_weight.setModuleName(module_name);
+		model.addWeights({ unity_weight });
+		return unity_weight_name;
 	}
 }
 
