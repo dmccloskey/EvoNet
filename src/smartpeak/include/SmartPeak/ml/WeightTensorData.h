@@ -170,28 +170,32 @@ protected:
 
 		// make the parameters
 		setNSolverParams(solver_params.size());
-		Eigen::Tensor<TensorT, 3> params(layer1_size, layer2_size, (int)solver_params.size());
-		for (int i = 0; i < solver_params.size(); ++i) {
-			params.chip(i, 2).setConstant(solver_params[i]);
+		if (solver_params.size() > 0) {
+			Eigen::Tensor<TensorT, 3> params(layer1_size, layer2_size, (int)solver_params.size());
+			for (int i = 0; i < solver_params.size(); ++i) {
+				params.chip(i, 2).setConstant(solver_params[i]);
+			}
+			setSolverParams(params);
 		}
-		setSolverParams(params);
 
 		// make the shared weighs tensor
 		setNSharedWeights(shared_weight_indices.size());
-		Eigen::Tensor<TensorT, 3> shared(layer1_size, layer2_size, (int)shared_weight_indices.size());
-		shared.setZero();
-		int iter = 0;
-		for (const auto& weight_indices_map : shared_weight_indices) {
-			for (const std::pair<int,int>& weight_index: weight_indices_map.second) {
-				Eigen::array<int, 3> offsets = { weight_index.first, weight_index.second, iter };
-				Eigen::array<int, 3> extents = { 1, 1, 1 };
-				Eigen::Tensor<TensorT, 3> ones(1, 1, 1);
-				ones.setConstant(1);
-				shared.slice(offsets, extents) = ones;
+		if (shared_weight_indices.size() > 0) {
+			Eigen::Tensor<TensorT, 3> shared(layer1_size, layer2_size, (int)shared_weight_indices.size());
+			shared.setZero();
+			int iter = 0;
+			for (const auto& weight_indices_map : shared_weight_indices) {
+				for (const std::pair<int, int>& weight_index : weight_indices_map.second) {
+					Eigen::array<int, 3> offsets = { weight_index.first, weight_index.second, iter };
+					Eigen::array<int, 3> extents = { 1, 1, 1 };
+					Eigen::Tensor<TensorT, 3> ones(1, 1, 1);
+					ones.setConstant(1);
+					shared.slice(offsets, extents) = ones;
+				}
+				++iter;
 			}
-			++iter;
+			setSharedWeights(shared);
 		}
-		setSharedWeights(shared);
 	}
 
 	template<typename TensorT>

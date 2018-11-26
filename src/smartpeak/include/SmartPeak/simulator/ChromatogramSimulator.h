@@ -6,6 +6,7 @@
 // .h
 #include <SmartPeak/simulator/EMGModel.h>
 #include <SmartPeak/simulator/PeakSimulator.h>
+#include <SmartPeak/simulator/DataSimulator.h>
 
 namespace SmartPeak
 {
@@ -14,7 +15,7 @@ namespace SmartPeak
 			GC-MS, or HPLC chromatogram
 	*/
 	template <typename TensorT>
-	class ChromatogramSimulator
+	class ChromatogramSimulator: public DataSimulator<TensorT>
 	{
 	public:
 		ChromatogramSimulator() = default; ///< Default constructor

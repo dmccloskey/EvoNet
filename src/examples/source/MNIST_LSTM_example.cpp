@@ -239,7 +239,7 @@ void main_LSTMTrain() {
 	// define the data simulator
 	const std::size_t input_size = 784;
 	const std::size_t n_labels = 10;
-	const std::size_t n_hidden = 128;
+	const std::size_t n_hidden = 1;
 	const std::size_t training_data_size = 60000; //60000;
 	const std::size_t validation_data_size = 10000; //10000;
 	DataSimulatorExt<float> data_simulator;
@@ -281,9 +281,9 @@ void main_LSTMTrain() {
 		model_interpreters.push_back(model_interpreter);
 	}
 	ModelTrainerExt<float> model_trainer;
-	model_trainer.setBatchSize(8);
+	model_trainer.setBatchSize(1);
 	model_trainer.setMemorySize(input_size);
-	model_trainer.setNEpochsTraining(5000);
+	model_trainer.setNEpochsTraining(100);
 	model_trainer.setNEpochsValidation(10);
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setLogging(true, false);
@@ -298,7 +298,7 @@ void main_LSTMTrain() {
 
 	// define the initial population [BUG FREE]
 	std::cout << "Initializing the population..." << std::endl;
-	std::vector<Model<float>> population = { ModelTrainerExt<float>().makeLSTM(input_nodes.size(), output_nodes.size(), n_hidden) }; 
+	std::vector<Model<float>> population = { ModelTrainerExt<float>().makeLSTM(input_nodes.size(), output_nodes.size(), n_hidden) };
 
 	// Evolve the population
 	std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(

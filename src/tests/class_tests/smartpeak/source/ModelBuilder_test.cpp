@@ -879,6 +879,15 @@ BOOST_AUTO_TEST_CASE(addLSTMBlock1)
 		"LSTM-BlockMultOutput-1_to_LSTM-BlockGateForget","LSTM-BlockMultOutput-1_to_LSTM-BlockGateInput","LSTM-BlockMultOutput-1_to_LSTM-BlockGateOutput","LSTM-BlockMultOutput-1_to_LSTM-BlockInput-1",
 		"LSTM-BlockGateForget-bias_to_LSTM-BlockGateForget","LSTM-BlockGateInput-bias_to_LSTM-BlockGateInput","LSTM-BlockGateOutput-bias_to_LSTM-BlockGateOutput",
 		"LSTM-BlockInput-0-bias-0_to_LSTM-BlockInput-0","LSTM-BlockInput-1-bias-1_to_LSTM-BlockInput-1"};
+	std::vector<std::string> weight_names_unity_test = {
+		"LSTM-BlockInput-0_to_LSTM-BlockMultInput-0", "LSTM-BlockInput-1_to_LSTM-BlockMultInput-1",
+		"LSTM-BlockGateForget_to_LSTM-BlockMultForget-0","LSTM-BlockGateForget_to_LSTM-BlockMultForget-1",
+		"LSTM-BlockGateInput_to_LSTM-BlockMultInput-0","LSTM-BlockGateInput_to_LSTM-BlockMultInput-1",
+		"LSTM-BlockGateOutput_to_LSTM-BlockMultOutput-0","LSTM-BlockGateOutput_to_LSTM-BlockMultOutput-1",		
+		"LSTM-BlockMemoryCell-0_to_LSTM-BlockMultForget-0","LSTM-BlockMemoryCell-0_to_LSTM-BlockMultOutput-0",
+		"LSTM-BlockMemoryCell-1_to_LSTM-BlockMultForget-1","LSTM-BlockMemoryCell-1_to_LSTM-BlockMultOutput-1",
+		"LSTM-BlockMultForget-0_to_LSTM-BlockMemoryCell-0","LSTM-BlockMultForget-1_to_LSTM-BlockMemoryCell-1",
+		"LSTM-BlockMultInput-0_to_LSTM-BlockMemoryCell-0","LSTM-BlockMultInput-1_to_LSTM-BlockMemoryCell-1", };
 
 	// check the nodes
 	for (const std::string& node_name : node_names_test)
@@ -965,16 +974,22 @@ BOOST_AUTO_TEST_CASE(addLSTMBlock1)
 	}
 
 	// check the weights
+
+	for (const std::string& name : weight_names_unity_test)
+	{
+		BOOST_CHECK_EQUAL(model.getWeight(name).getName(), name);
+		BOOST_CHECK_EQUAL(model.getWeight(name).getModuleName(), "Mod1");
+		BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
+		BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "DummySolverOp");
+		BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.0f);
+		BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getParamsAsStr(), "n:1.000000");
+	}
+
 	for (const std::string& name : weight_names_test)
 	{
 		BOOST_CHECK_EQUAL(model.getWeight(name).getName(), name);
 		BOOST_CHECK_EQUAL(model.getWeight(name).getModuleName(), "Mod1");
-		if (std::count(weight_names_test.begin(), weight_names_test.end(), model.getLink(name).getWeightName()) == 0) {
-			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "DummySolverOp");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.0f);
-		}
-		else if (name == "Input_0_to_LSTM-BlockGateForget" || name == "Input_0_to_LSTM-BlockGateInput" || name == "Input_0_to_LSTM-BlockGateOutput" ||
+		if (name == "Input_0_to_LSTM-BlockGateForget" || name == "Input_0_to_LSTM-BlockGateInput" || name == "Input_0_to_LSTM-BlockGateOutput" ||
 			name == "Input_1_to_LSTM-BlockGateForget" ||
 			name == "Input_1_to_LSTM-BlockGateInput" || name == "Input_1_to_LSTM-BlockGateOutput" ||
 			name == "LSTM-BlockMultOutput-0_to_LSTM-BlockGateForget" || name == "LSTM-BlockMultOutput-0_to_LSTM-BlockGateInput" ||
