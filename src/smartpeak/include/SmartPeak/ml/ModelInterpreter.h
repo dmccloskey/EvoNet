@@ -749,7 +749,7 @@ namespace SmartPeak
 					argument.source_node->getType(),
 					argument.source_node->getIntegration()->getName(),
 					argument.source_node->getActivation()->getName(),
-					argument.source_node->getModuleName());
+					argument.source_node->getLayerName());
 				unique_node_types.insert(ops_key);
 			}
 			for (const std::string& node_types : unique_node_types) {
@@ -760,7 +760,7 @@ namespace SmartPeak
 						argument.source_node->getType(),
 						argument.source_node->getIntegration()->getName(),
 						argument.source_node->getActivation()->getName(),
-						argument.source_node->getModuleName());
+						argument.source_node->getLayerName());
 					if (node_types == ops_key) {
 						operations_list.arguments.push_back(argument);
 					}
@@ -1005,12 +1005,12 @@ namespace SmartPeak
 					FP_operations[operations_iter1].result.sink_node->getType(),
 					FP_operations[operations_iter1].result.sink_node->getIntegration()->getName(),
 					FP_operations[operations_iter1].result.sink_node->getActivation()->getName(),
-					FP_operations[operations_iter1].result.sink_node->getModuleName());
+					FP_operations[operations_iter1].result.sink_node->getLayerName());
 				std::string ops_key_2 = makeForwardPropogationOperationsKey(FP_operations[operations_iter2].result.time_step,
 					FP_operations[operations_iter2].result.sink_node->getType(),
 					FP_operations[operations_iter2].result.sink_node->getIntegration()->getName(),
 					FP_operations[operations_iter2].result.sink_node->getActivation()->getName(),
-					FP_operations[operations_iter2].result.sink_node->getModuleName());
+					FP_operations[operations_iter2].result.sink_node->getLayerName());
 				if (ops_key_1 != ops_key_2) continue;
 
 				// check if the source nodes are compatible
@@ -1020,7 +1020,7 @@ namespace SmartPeak
 						argument.source_node->getType(),
 						argument.source_node->getIntegration()->getName(),
 						argument.source_node->getActivation()->getName(),
-						argument.source_node->getModuleName());
+						argument.source_node->getLayerName());
 					argument_nodes.insert(ops_key);
 				}
 				for (const auto& argument : FP_operations[operations_iter2].arguments) {
@@ -1028,7 +1028,7 @@ namespace SmartPeak
 						argument.source_node->getType(),
 						argument.source_node->getIntegration()->getName(),
 						argument.source_node->getActivation()->getName(),
-						argument.source_node->getModuleName());
+						argument.source_node->getLayerName());
 					argument_nodes.insert(ops_key);
 				}
 				if (argument_nodes.size() > 1) continue;
@@ -1191,7 +1191,7 @@ namespace SmartPeak
 	{
 		// [TODO: may not need to add in node type
 		//std::string ops_key = std::to_string(time_step) + "/" + std::to_string(node_type) + "/" + node_integration + "/" + node_activation;
-		std::string ops_key = std::to_string(time_step) + "/" + node_integration + "/" + node_activation;// +"/" + module_name;
+		std::string ops_key = std::to_string(time_step) + "/" + node_integration + "/" + node_activation +"/" + module_name;
 		return ops_key;
 	}
 

@@ -28,9 +28,7 @@ namespace SmartPeak
     hidden = 4,
 		unmodifiable = 5,
 		zero = 6, // value of 0
-		recursive = 7, // special case of hidden where the node should be treated as the source of any cyclic pair
-		vaemu = 8, // special case of hidden for VAE where the mu and logvar layers need to be split for the error calculation
-		vaelogvar = 9 // special case of hidden for VAE where the mu and logvar layers need to be split for the error calculation
+		recursive = 7 // special case of hidden where the node should be treated as the source of any cyclic pair
   };
 
   /**
@@ -94,6 +92,7 @@ public:
 			module_id_ = other.module_id_;
 			module_name_ = other.module_name_;
 			tensor_index_ = other.tensor_index_;
+			layer_name_ = other.layer_name_;
       type_ = other.type_;
       activation_ = other.activation_;
 			activation_grad_ = other.activation_grad_;
@@ -149,6 +148,9 @@ public:
 		void setModuleName(const std::string& module_name); ///< module name setter
 		std::string getModuleName() const; ///< module name getter
 
+		void setLayerName(const std::string& layer_name); ///< layer name setter
+		std::string getLayerName() const; ///< layer name getter
+
     void setOutputMin(const TensorT& min_output); ///< min output setter
     void setOutputMax(const TensorT& output_max); ///< max output setter
 
@@ -179,6 +181,7 @@ private:
 		int module_id_ = -1; ///< Module ID (used internally by Model)
 		std::string module_name_ = ""; ///<Module Name
 		std::pair<int, int> tensor_index_ = std::make_pair(-1,-1); ///< Layer ID: pair consisting of OperationsList index and Layer index(used internally by Model)
+		std::string layer_name_ = ""; ///< Layer name
 		SmartPeak::NodeType type_; ///< Node Type
     SmartPeak::NodeStatus status_; ///< Node Status   
     std::shared_ptr<ActivationOp<TensorT>> activation_; ///< Node activation function 
@@ -212,6 +215,7 @@ private:
 		module_id_ = other.module_id_;
 		module_name_ = other.module_name_;
 		tensor_index_ = other.tensor_index_;
+		layer_name_ = other.layer_name_;
 		type_ = other.type_;
 		status_ = other.status_;
 		activation_ = other.activation_;
@@ -409,6 +413,18 @@ private:
 	std::string Node<TensorT>::getModuleName() const
 	{
 		return module_name_;
+	}
+
+	template<typename TensorT>
+	inline void Node<TensorT>::setLayerName(const std::string & layer_name)
+	{
+		layer_name_ = layer_name;
+	}
+
+	template<typename TensorT>
+	inline std::string Node<TensorT>::getLayerName() const
+	{
+		return layer_name_;
 	}
 
 	template<typename TensorT>
