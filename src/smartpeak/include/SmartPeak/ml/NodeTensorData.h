@@ -217,7 +217,8 @@ protected:
 			// copy the tensor
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> input_copy(h_input, this->batch_size_, this->memory_size_, this->layer_size_);
 			input_copy = input;
-			this->h_input_.reset(std::move(h_input));
+			auto h_deleter = [&](TensorT* ptr) { delete[] ptr; };
+			this->h_input_.reset(h_input, h_deleter);
 			h_input_updated_ = true;
 			d_input_updated_ = true;
 		}; ///< input setter
@@ -226,7 +227,8 @@ protected:
 			// copy the tensor
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> output_copy(h_output, this->batch_size_, this->memory_size_, this->layer_size_);
 			output_copy = output;
-			this->h_output_.reset(h_output);
+			auto h_deleter = [&](TensorT* ptr) { delete[] ptr; };
+			this->h_output_.reset(h_output, h_deleter);
 			this->h_output_updated_ = true;
 			this->d_output_updated_ = true;
 		}; ///< output setter
@@ -235,7 +237,8 @@ protected:
 			// copy the tensor
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> error_copy(h_error, this->batch_size_, this->memory_size_, this->layer_size_);
 			error_copy = error;
-			this->h_error_.reset(h_error);
+			auto h_deleter = [&](TensorT* ptr) { delete[] ptr; };
+			this->h_error_.reset(h_error, h_deleter);
 			this->h_error_updated_ = true;
 			this->d_error_updated_ = true;
 		}; ///< error setter
@@ -244,7 +247,8 @@ protected:
 			// copy the tensor
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> derivative_copy(h_derivative, this->batch_size_, this->memory_size_, this->layer_size_);
 			derivative_copy = derivative;
-			this->h_derivative_.reset(h_derivative);
+			auto h_deleter = [&](TensorT* ptr) { delete[] ptr; };
+			this->h_derivative_.reset(h_derivative, h_deleter);
 			this->h_derivative_updated_ = true;
 			this->d_derivative_updated_ = true;
 		}; ///< derivative setter
@@ -253,7 +257,8 @@ protected:
 			// copy the tensor
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> dt_copy(h_dt, this->batch_size_, this->memory_size_, this->layer_size_);
 			dt_copy = dt;
-			this->h_dt_.reset(h_dt);
+			auto h_deleter = [&](TensorT* ptr) { delete[] ptr; };
+			this->h_dt_.reset(h_dt, h_deleter);
 			this->h_dt_updated_ = true;
 			this->d_dt_updated_ = true;
 		}; ///< dt setter

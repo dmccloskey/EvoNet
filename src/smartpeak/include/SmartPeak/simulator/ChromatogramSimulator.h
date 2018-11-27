@@ -24,6 +24,33 @@ namespace SmartPeak
 		/**
 			@brief Simulates a chromatogram.
 
+			A random number of peaks with random properties are generated, and then from
+			left to right starting with a randomly determined left baseline height, and
+			spaced by randomly chosen amounts.  
+			Note that	Each subsequent peak apex must be higher than right baseline of the previous peak,
+				and the final peak will define the right baseline.			
+
+			@param[out] x_IO A vector of x values representing time or m/z
+			@param[out] y_IO A vector of y values representing the intensity at time t or m/z m
+			@param[out] n_peaks The number of peaks in the chromatogram
+			@param[in] 
+		*/
+		void simulateChromatogram(std::vector<TensorT>& x_O, std::vector<TensorT>& y_O,
+			std::vector<std::pair<TensorT, TensorT>>& peaks_LR,
+			const std::pair<TensorT, TensorT>& step_size_mu,
+			const std::pair<TensorT, TensorT>& step_size_sigma,
+			const std::pair<TensorT, TensorT>& chrom_window_size,
+			const std::pair<TensorT, TensorT>& noise_mu,
+			const std::pair<TensorT, TensorT>& noise_sigma,
+			const std::pair<TensorT, TensorT>& n_peaks,
+			const std::pair<TensorT, TensorT>& emg_h,
+			const std::pair<TensorT, TensorT>& emg_tau,
+			const std::pair<TensorT, TensorT>& emg_mu,
+			const std::pair<TensorT, TensorT>& emg_sigma) const;
+
+		/**
+			@brief Makes a chromatogram.
+
 			The left baseline of the first peak window
 				will define the left baseline of the chromatogram, while the right baseline of the
 				last peak window will define the right baseline of the chromatogram.  Peaks in the middle
@@ -47,7 +74,7 @@ namespace SmartPeak
 			@param[in] peaks list of PeakSimulator classes that will compose the chromatogram
 			@param[in] emgs list of corresponding EMGModel classes that define each peak
 		*/
-		void simulateChromatogram(std::vector<TensorT>& x_O, std::vector<TensorT>& y_O,
+		void makeChromatogram(std::vector<TensorT>& x_O, std::vector<TensorT>& y_O,
 			const std::vector<PeakSimulator<TensorT>>& peaks, const std::vector<EMGModel<TensorT>>& emgs) const;
 
 		/**
@@ -179,8 +206,21 @@ namespace SmartPeak
 		}
 	}
 
+	template<typename TensorT>
+	inline void ChromatogramSimulator<TensorT>::simulateChromatogram(std::vector<TensorT>& x_O, std::vector<TensorT>& y_O, std::vector<std::pair<TensorT, TensorT>>& peaks_LR, const std::pair<TensorT, TensorT>& step_size_mu, const std::pair<TensorT, TensorT>& step_size_sigma, const std::pair<TensorT, TensorT>& chrom_window_size, const std::pair<TensorT, TensorT>& noise_mu, const std::pair<TensorT, TensorT>& noise_sigma, const std::pair<TensorT, TensorT>& n_peaks, const std::pair<TensorT, TensorT>& emg_h, const std::pair<TensorT, TensorT>& emg_tau, const std::pair<TensorT, TensorT>& emg_mu, const std::pair<TensorT, TensorT>& emg_sigma) const
+	{
+		// generate a random set of peaks
+		std::vector<PeakSimulator<TensorT>> peaks;
+		for (int peak_iter = 0; peak_iter < n_peaks; ++peak_iter) {
+
+		}
+
+		// place the peaks on the chromatogram
+
+	}
+
 	template <typename TensorT>
-	void ChromatogramSimulator<TensorT>::simulateChromatogram(std::vector<TensorT>& x_O, std::vector<TensorT>& y_O,
+	void ChromatogramSimulator<TensorT>::makeChromatogram(std::vector<TensorT>& x_O, std::vector<TensorT>& y_O,
 		const std::vector<PeakSimulator<TensorT>>& peaks, const std::vector<EMGModel<TensorT>>& emgs) const
 	{
 		// check vector lengths

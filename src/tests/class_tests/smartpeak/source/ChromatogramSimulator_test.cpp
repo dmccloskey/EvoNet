@@ -228,7 +228,7 @@ BOOST_AUTO_TEST_CASE(joinPeakWindows1)
   BOOST_CHECK_EQUAL(emg_right.getMu(), 15.0);
 }
 
-BOOST_AUTO_TEST_CASE(simulateChromatogram) 
+BOOST_AUTO_TEST_CASE(makeChromatogram) 
 {
   ChromatogramSimulatorExt<double> chromsimulator;
   PeakSimulator<double> peak1, peak2, peak3;
@@ -248,7 +248,7 @@ BOOST_AUTO_TEST_CASE(simulateChromatogram)
   peaks = {peak1};
   emgs = {emg1};
 
-  chromsimulator.simulateChromatogram(chrom_time, chrom_intensity,
+  chromsimulator.makeChromatogram(chrom_time, chrom_intensity,
     peaks, emgs);
   x_test = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
   y_test = {1, 1, 1, 1.35335, 6.06531, 10, 6.06531, 1.35335, 1, 1, 1};
@@ -280,7 +280,7 @@ BOOST_AUTO_TEST_CASE(simulateChromatogram)
   peaks = {peak1, peak2, peak3};
   emgs = {emg1, emg2, emg3};
 
-  chromsimulator.simulateChromatogram(chrom_time, chrom_intensity,
+  chromsimulator.makeChromatogram(chrom_time, chrom_intensity,
     peaks, emgs);
   x_test = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30};
   y_test = {1, 1, 1, 1.35335, 6.06531, 10, 6.06531, 1.35335, 1, 1, 1, 1, 1, 1, 1.35335, 6.06531, 10, 6.06531, 1.35335, 1, 1, 1, 1, 1, 1, 1.35335, 6.06531, 10, 6.06531, 1.35335, 1, 1, 1};
@@ -312,7 +312,7 @@ BOOST_AUTO_TEST_CASE(simulateChromatogram)
   peaks = {peak1, peak2, peak3};
   emgs = {emg1, emg2, emg3};
 
-  chromsimulator.simulateChromatogram(chrom_time, chrom_intensity,
+  chromsimulator.makeChromatogram(chrom_time, chrom_intensity,
     peaks, emgs);
   x_test = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30};
   y_test = {1, 1, 1, 1.35335, 6.06531, 10, 6.06531, 1.35335, 1, 1, 1, 1, 1, 1, 1, 4.92435, 9.64041, 7.17685, 2.06109, 1, 1, 1, 1, 1, 1, 1, 2.55573, 6.5568, 7.60173, 4.70568, 2.01076, 1, 1};
@@ -344,7 +344,7 @@ BOOST_AUTO_TEST_CASE(simulateChromatogram)
   peaks = {peak1, peak2, peak3};
   emgs = {emg1, emg2, emg3};
 
-  chromsimulator.simulateChromatogram(chrom_time, chrom_intensity,
+  chromsimulator.makeChromatogram(chrom_time, chrom_intensity,
     peaks, emgs);
   x_test = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30};
   y_test = {1, 1, 1, 1.35335, 6.06531, 10, 6.06531, 1.35335, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1.35335, 6.06531, 10, 6.06531};

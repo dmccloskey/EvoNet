@@ -37,6 +37,10 @@ public:
 			d_solver_params_ = other.d_solver_params_;
 			d_error_ = other.d_error_;
 			d_shared_weights_ = other.d_shared_weights_;
+			layer1_size_ = other.layer1_size_;
+			layer2_size_ = other.layer2_size_;
+			n_solver_params_ = other.n_solver_params_;
+			n_shared_weights_ = other.n_shared_weights_;
 		};
     ~WeightTensorData() = default; ///< Default destructor
 
@@ -66,6 +70,10 @@ public:
 			d_solver_params_ = other.d_solver_params_;
 			d_error_ = other.d_error_;
 			d_shared_weights_ = other.d_shared_weights_;
+			layer1_size_ = other.layer1_size_;
+			layer2_size_ = other.layer2_size_;
+			n_solver_params_ = other.n_solver_params_;
+			n_shared_weights_ = other.n_shared_weights_;
       return *this;
     }
 
@@ -98,9 +106,9 @@ public:
 		std::shared_ptr<TensorT> getHSharedWeightsPointer() { return h_shared_weights_; }; ///< shared_weights pointer getter
 		std::shared_ptr<TensorT> getDSharedWeightsPointer() { return d_shared_weights_; }; ///< shared_weights pointer getter
 
-		size_t getTensorSize() { return layer1_size_ * layer2_size_ * sizeof(TensorT); }; ///< Get the size of each tensor in bytes
-		size_t getSolverParamsSize() { return layer1_size_ * layer2_size_ * n_solver_params_ * sizeof(TensorT); }; ///< Get the size of each tensor in bytes
-		size_t getSharedWeightsSize() { return layer1_size_ * layer2_size_ * n_shared_weights_ * sizeof(TensorT); }; ///< Get the size of each tensor in bytes
+		int getTensorSize() { return layer1_size_ * layer2_size_ * sizeof(TensorT); }; ///< Get the size of each tensor in bytes
+		int getSolverParamsSize() { return layer1_size_ * layer2_size_ * n_solver_params_ * sizeof(TensorT); }; ///< Get the size of each tensor in bytes
+		int getSharedWeightsSize() { return layer1_size_ * layer2_size_ * n_shared_weights_ * sizeof(TensorT); }; ///< Get the size of each tensor in bytes
 
 		void initWeightTensorData(const int& layer1_size, const int&layer2_size, const std::vector<std::pair<int, int>>& weight_indices, 
 			const std::map<std::string, std::vector<std::pair<int, int>>>& shared_weight_indices, const std::vector<TensorT>& weight_values, const bool& train, std::vector<TensorT>& solver_params);
@@ -117,12 +125,8 @@ public:
 protected:
 		int layer1_size_ = 1; ///< Layer1 size
 		int layer2_size_ = 2; ///< Layer2 size
-		int n_solver_params_ = 1; ///< The number of solver params
+		int n_solver_params_ = 0; ///< The number of solver params
 		int n_shared_weights_ = 0; ///< The number of shared weights in the layer
-
-		// [TODO: move to weight]
-		std::map<std::string, int> solver_params_indices_; ///< Map from solver params to weight matrix indices
-		std::map<std::string, int> weight_indices_;  ///< Map from weights to weight matrix indices
 
     /**
       @brief weight and error have the following dimensions:
@@ -130,14 +134,14 @@ protected:
 				while solver_params have the following dimensions:
 
     */		
-		std::shared_ptr<TensorT> h_weight_ = nullptr;
-		std::shared_ptr<TensorT> h_solver_params_ = nullptr;
-		std::shared_ptr<TensorT> h_error_ = nullptr;
-		std::shared_ptr<TensorT> h_shared_weights_ = nullptr;
-		std::shared_ptr<TensorT> d_weight_ = nullptr;
-		std::shared_ptr<TensorT> d_solver_params_ = nullptr;
-		std::shared_ptr<TensorT> d_error_ = nullptr;
-		std::shared_ptr<TensorT> d_shared_weights_ = nullptr;
+		std::shared_ptr<TensorT> h_weight_;
+		std::shared_ptr<TensorT> h_solver_params_;
+		std::shared_ptr<TensorT> h_error_;
+		std::shared_ptr<TensorT> h_shared_weights_;
+		std::shared_ptr<TensorT> d_weight_;
+		std::shared_ptr<TensorT> d_solver_params_;
+		std::shared_ptr<TensorT> d_error_;
+		std::shared_ptr<TensorT> d_shared_weights_;
 		// [TODO: add drop probability]
 
 		bool h_error_updated_ = false;
@@ -206,7 +210,8 @@ protected:
 			// copy the tensor
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weight_copy(h_weight, this->layer1_size_, this->layer2_size_);
 			weight_copy = weight;
-			this->h_weight_.reset(std::move(h_weight));
+			auto h_deleter = [&](TensorT* ptr) { delete[] ptr; };
+			this->h_weight_.reset(h_weight, h_deleter);
 			this->h_weight_updated_ = true;
 			this->d_weight_updated_ = true;
 		}; ///< weight setter
@@ -215,7 +220,8 @@ protected:
 			// copy the tensor
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> solver_params_copy(h_solver_params, this->layer1_size_, this->layer2_size_, this->n_solver_params_);
 			solver_params_copy = solver_params;
-			this->h_solver_params_.reset(h_solver_params);
+			auto h_deleter = [&](TensorT* ptr) { delete[] ptr; };
+			this->h_solver_params_.reset(h_solver_params, h_deleter);
 			this->h_solver_params_updated_ = true;
 			this->d_solver_params_updated_ = true;
 		}; ///< solver_params setter
@@ -224,7 +230,8 @@ protected:
 			// copy the tensor
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_copy(h_error, this->layer1_size_, this->layer2_size_);
 			error_copy = error;
-			this->h_error_.reset(h_error);
+			auto h_deleter = [&](TensorT* ptr) { delete[] ptr; };
+			this->h_error_.reset(h_error, h_deleter);
 			this->h_error_updated_ = true;
 			this->d_error_updated_ = true;
 		}; ///< error setter
@@ -233,7 +240,8 @@ protected:
 			// copy the tensor
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> shared_weights_copy(h_shared_weights, this->layer1_size_, this->layer2_size_, this->n_shared_weights_);
 			shared_weights_copy = shared_weights;
-			this->h_shared_weights_.reset(h_shared_weights);
+			auto h_deleter = [&](TensorT* ptr) { delete[] ptr; };
+			this->h_shared_weights_.reset(h_shared_weights, h_deleter);
 			this->h_shared_weights_updated_ = true;
 			this->d_shared_weights_updated_ = true;
 		}; ///< shared_weights setter
@@ -330,7 +338,7 @@ protected:
 				return true;
 			}
 			else {
-				std::cout << "Both host and device are syncHAndDronized." << std::endl;
+				//std::cout << "Both host and device are syncHAndDronized." << std::endl;
 				return false;
 			}
 		}
@@ -348,7 +356,7 @@ protected:
 				return true;
 			}
 			else {
-				std::cout << "Both host and device are syncHAndDronized." << std::endl;
+				//std::cout << "Both host and device are syncHAndDronized." << std::endl;
 				return false;
 			}
 			return true;
@@ -367,7 +375,7 @@ protected:
 				return true;
 			}
 			else {
-				std::cout << "Both host and device are syncHAndDronized." << std::endl;
+				//std::cout << "Both host and device are syncHAndDronized." << std::endl;
 				return false;
 			}
 			return true;
@@ -386,7 +394,7 @@ protected:
 				return true;
 			}
 			else {
-				std::cout << "Both host and device are syncHAndDronized." << std::endl;
+				//std::cout << "Both host and device are syncHAndDronized." << std::endl;
 				return false;
 			}
 			return true;

@@ -1128,7 +1128,7 @@ namespace SmartPeak
 						argument.weight->addTensorIndex(std::make_tuple(weight_pos, source_layer_index, sink_layer_index));
 						weight_index.push_back(std::make_pair(source_layer_index, sink_layer_index));
 						weight_value.push_back(argument.weight->getWeight());
-						make_weight_tensor = true;  // even if the weights are shared, we should still make an new weight tensor
+						make_weight_tensor = true;  // even if the weights are shared, we should still make a new weight tensor
 						std::vector<std::pair<int, int>> tmp = { std::make_pair(source_layer_index, sink_layer_index) };
 						auto found = shared_weight_index.emplace(argument.weight->getName(), tmp);
 						if (!found.second) {
