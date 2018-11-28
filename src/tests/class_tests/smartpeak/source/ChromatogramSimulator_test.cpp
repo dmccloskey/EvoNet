@@ -234,6 +234,7 @@ BOOST_AUTO_TEST_CASE(makeChromatogram)
   PeakSimulator<double> peak1, peak2, peak3;
   EMGModel<double> emg1, emg2, emg3;
   std::vector<double> chrom_time, chrom_intensity, x_test, y_test;
+	std::vector<std::pair<double, double>> best_lr, best_lr_test;
 
   std::vector<PeakSimulator<double>> peaks;
   std::vector<EMGModel<double>> emgs;
@@ -248,7 +249,7 @@ BOOST_AUTO_TEST_CASE(makeChromatogram)
   peaks = {peak1};
   emgs = {emg1};
 
-  chromsimulator.makeChromatogram(chrom_time, chrom_intensity,
+  chromsimulator.makeChromatogram(chrom_time, chrom_intensity, best_lr,
     peaks, emgs);
   x_test = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
   y_test = {1, 1, 1, 1.35335, 6.06531, 10, 6.06531, 1.35335, 1, 1, 1};
@@ -257,6 +258,12 @@ BOOST_AUTO_TEST_CASE(makeChromatogram)
     BOOST_CHECK_CLOSE(chrom_time[i], x_test[i], 1e-3);
     BOOST_CHECK_CLOSE(chrom_intensity[i], y_test[i], 1e-3);
   }
+	best_lr_test = { std::make_pair(2,8) };
+	for (int i = 0; i < best_lr_test.size(); ++i)
+	{
+		BOOST_CHECK_CLOSE(best_lr[i].first, best_lr_test[i].first, 1e-3);
+		BOOST_CHECK_CLOSE(best_lr[i].second, best_lr_test[i].second, 1e-3);
+	}
 
   // Perfect gaussian peaks
   peak1 = PeakSimulator<double>(1.0, 0.0, 
@@ -280,7 +287,7 @@ BOOST_AUTO_TEST_CASE(makeChromatogram)
   peaks = {peak1, peak2, peak3};
   emgs = {emg1, emg2, emg3};
 
-  chromsimulator.makeChromatogram(chrom_time, chrom_intensity,
+  chromsimulator.makeChromatogram(chrom_time, chrom_intensity, best_lr,
     peaks, emgs);
   x_test = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30};
   y_test = {1, 1, 1, 1.35335, 6.06531, 10, 6.06531, 1.35335, 1, 1, 1, 1, 1, 1, 1.35335, 6.06531, 10, 6.06531, 1.35335, 1, 1, 1, 1, 1, 1, 1.35335, 6.06531, 10, 6.06531, 1.35335, 1, 1, 1};
@@ -289,6 +296,12 @@ BOOST_AUTO_TEST_CASE(makeChromatogram)
     BOOST_CHECK_CLOSE(chrom_time[i], x_test[i], 1e-3);
     BOOST_CHECK_CLOSE(chrom_intensity[i], y_test[i], 1e-3);
   }
+	best_lr_test = { std::make_pair(2,8),std::make_pair(12,18),std::make_pair(22,28) };
+	for (int i = 0; i < best_lr_test.size(); ++i)
+	{
+		BOOST_CHECK_CLOSE(best_lr[i].first, best_lr_test[i].first, 1e-3);
+		BOOST_CHECK_CLOSE(best_lr[i].second, best_lr_test[i].second, 1e-3);
+	}
 
   // Increase tailing
   peak1 = PeakSimulator<double>(1.0, 0.0, 
@@ -312,7 +325,7 @@ BOOST_AUTO_TEST_CASE(makeChromatogram)
   peaks = {peak1, peak2, peak3};
   emgs = {emg1, emg2, emg3};
 
-  chromsimulator.makeChromatogram(chrom_time, chrom_intensity,
+  chromsimulator.makeChromatogram(chrom_time, chrom_intensity, best_lr,
     peaks, emgs);
   x_test = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30};
   y_test = {1, 1, 1, 1.35335, 6.06531, 10, 6.06531, 1.35335, 1, 1, 1, 1, 1, 1, 1, 4.92435, 9.64041, 7.17685, 2.06109, 1, 1, 1, 1, 1, 1, 1, 2.55573, 6.5568, 7.60173, 4.70568, 2.01076, 1, 1};
@@ -321,6 +334,12 @@ BOOST_AUTO_TEST_CASE(makeChromatogram)
     BOOST_CHECK_CLOSE(chrom_time[i], x_test[i], 1e-3);
     BOOST_CHECK_CLOSE(chrom_intensity[i], y_test[i], 1e-3);
   }
+	best_lr_test = { std::make_pair(2,8),std::make_pair(13,18),std::make_pair(23,29) };
+	for (int i = 0; i < best_lr_test.size(); ++i)
+	{
+		BOOST_CHECK_CLOSE(best_lr[i].first, best_lr_test[i].first, 1e-3);
+		BOOST_CHECK_CLOSE(best_lr[i].second, best_lr_test[i].second, 1e-3);
+	}
 
   // Overlap and cutoff peak
   peak1 = PeakSimulator<double>(1.0, 0.0, 
@@ -344,7 +363,7 @@ BOOST_AUTO_TEST_CASE(makeChromatogram)
   peaks = {peak1, peak2, peak3};
   emgs = {emg1, emg2, emg3};
 
-  chromsimulator.makeChromatogram(chrom_time, chrom_intensity,
+  chromsimulator.makeChromatogram(chrom_time, chrom_intensity, best_lr,
     peaks, emgs);
   x_test = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30};
   y_test = {1, 1, 1, 1.35335, 6.06531, 10, 6.06531, 1.35335, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1.35335, 6.06531, 10, 6.06531};
@@ -353,6 +372,12 @@ BOOST_AUTO_TEST_CASE(makeChromatogram)
     BOOST_CHECK_CLOSE(chrom_time[i], x_test[i], 1e-3);
     BOOST_CHECK_CLOSE(chrom_intensity[i], y_test[i], 1e-3);
   }
+	best_lr_test = { std::make_pair(2,8),std::make_pair(26,30) };
+	for (int i = 0; i < best_lr_test.size(); ++i)
+	{
+		BOOST_CHECK_CLOSE(best_lr[i].first, best_lr_test[i].first, 1e-3);
+		BOOST_CHECK_CLOSE(best_lr[i].second, best_lr_test[i].second, 1e-3);
+	}
 
   // // UNCOMMENT to print out new test values
   // for (int i=0; i<chrom_time.size(); ++i)

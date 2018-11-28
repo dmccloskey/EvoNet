@@ -24,16 +24,25 @@ namespace SmartPeak
 		/**
 			@brief Simulates a chromatogram.
 
-			A random number of peaks with random properties are generated, and then from
-			left to right starting with a randomly determined left baseline height, and
-			spaced by randomly chosen amounts.  
-			Note that	Each subsequent peak apex must be higher than right baseline of the previous peak,
-				and the final peak will define the right baseline.			
+			A random number of peaks with random properties are generated and combined into 
+				a chromatogram.  Based on the parameters chosen fewer peaks may actually be made.
+				This could be caused by neighboring baselines that are higher than the peak.
+				The actual best left and right pairs that define the peaks will be returned.
 
 			@param[out] x_IO A vector of x values representing time or m/z
 			@param[out] y_IO A vector of y values representing the intensity at time t or m/z m
-			@param[out] n_peaks The number of peaks in the chromatogram
-			@param[in] 
+			@param[out] peaks_LR A vector of best left and best right pairs
+			@param[in] step_size_mu
+			@param[in] step_size_sigma
+			@param[in] chrom_window_size The lower and upper bounds for the maximum size of the chromatogram
+			@param[in] noise_mu
+			@param[in] noise_sigma
+			@param[in] baseline_height The lower and upper bounds of the baseline heights
+			@param[in] n_peaks The number of peaks in the chromatogram
+			@param[in] emg_h
+			@param[in] emg_tau
+			@param[in] emg_mu_offset The lower and upper bounds for the Distance +/- from the peak window center
+			@param[in] emg_sigma
 		*/
 		void simulateChromatogram(std::vector<TensorT>& x_O, std::vector<TensorT>& y_O,
 			std::vector<std::pair<TensorT, TensorT>>& peaks_LR,
@@ -42,10 +51,11 @@ namespace SmartPeak
 			const std::pair<TensorT, TensorT>& chrom_window_size,
 			const std::pair<TensorT, TensorT>& noise_mu,
 			const std::pair<TensorT, TensorT>& noise_sigma,
+			const std::pair<TensorT, TensorT>& baseline_height,
 			const std::pair<TensorT, TensorT>& n_peaks,
 			const std::pair<TensorT, TensorT>& emg_h,
 			const std::pair<TensorT, TensorT>& emg_tau,
-			const std::pair<TensorT, TensorT>& emg_mu,
+			const std::pair<TensorT, TensorT>& emg_mu_offset,
 			const std::pair<TensorT, TensorT>& emg_sigma) const;
 
 		/**
@@ -74,7 +84,7 @@ namespace SmartPeak
 			@param[in] peaks list of PeakSimulator classes that will compose the chromatogram
 			@param[in] emgs list of corresponding EMGModel classes that define each peak
 		*/
-		void makeChromatogram(std::vector<TensorT>& x_O, std::vector<TensorT>& y_O,
+		void makeChromatogram(std::vector<TensorT>& x_O, std::vector<TensorT>& y_O, std::vector<std::pair<TensorT, TensorT>>& peaks_LR,
 			const std::vector<PeakSimulator<TensorT>>& peaks, const std::vector<EMGModel<TensorT>>& emgs) const;
 
 		/**
@@ -207,20 +217,67 @@ namespace SmartPeak
 	}
 
 	template<typename TensorT>
-	inline void ChromatogramSimulator<TensorT>::simulateChromatogram(std::vector<TensorT>& x_O, std::vector<TensorT>& y_O, std::vector<std::pair<TensorT, TensorT>>& peaks_LR, const std::pair<TensorT, TensorT>& step_size_mu, const std::pair<TensorT, TensorT>& step_size_sigma, const std::pair<TensorT, TensorT>& chrom_window_size, const std::pair<TensorT, TensorT>& noise_mu, const std::pair<TensorT, TensorT>& noise_sigma, const std::pair<TensorT, TensorT>& n_peaks, const std::pair<TensorT, TensorT>& emg_h, const std::pair<TensorT, TensorT>& emg_tau, const std::pair<TensorT, TensorT>& emg_mu, const std::pair<TensorT, TensorT>& emg_sigma) const
+	inline void ChromatogramSimulator<TensorT>::simulateChromatogram(std::vector<TensorT>& x_O, std::vector<TensorT>& y_O, std::vector<std::pair<TensorT, TensorT>>& peaks_LR, 
+		const std::pair<TensorT, TensorT>& step_size_mu, const std::pair<TensorT, TensorT>& step_size_sigma, 
+		const std::pair<TensorT, TensorT>& chrom_window_size, const std::pair<TensorT, TensorT>& noise_mu, const std::pair<TensorT, TensorT>& noise_sigma, 
+		const std::pair<TensorT, TensorT>& baseline_height,	const std::pair<TensorT, TensorT>& n_peaks, 
+		const std::pair<TensorT, TensorT>& emg_h, const std::pair<TensorT, TensorT>& emg_tau, const std::pair<TensorT, TensorT>& emg_mu_offset, const std::pair<TensorT, TensorT>& emg_sigma) const
 	{
+		// lampda for choosing a random number within l/u bounds
+		auto random_bounds = [](const TensorT& lb, const TensorT& ub)->TensorT {
+			std::random_device rd; // obtain a random number from hardware
+			std::mt19937 eng(rd()); // seed the generator
+			std::uniform_int_distribution<> distr(lb, ub); // define the range
+			return (TensorT)distr(eng);
+		};
+
+		// determine the chrom window size and saturation limits
+		TensorT saturation_limit = 100;
+		TensorT chrom_window_size_rand = random_bounds(chrom_window_size.first, chrom_window_size.second);
+		TensorT peak_window_length = chrom_window_size_rand / n_peaks;
+
+		// determine the sampling rate
+		TensorT step_size_mu_rand = random_bounds(step_size_mu.first, step_size_mu.second);
+		TensorT step_size_sigma_rand = random_bounds(step_size_sigma.first, step_size_sigma.second);
+
 		// generate a random set of peaks
 		std::vector<PeakSimulator<TensorT>> peaks;
+		std::vector<EMGModel<TensorT>> emgs;
+		//TensorT baseline_left = random_bounds(baseline_height.first, baseline_height.second);
 		for (int peak_iter = 0; peak_iter < n_peaks; ++peak_iter) {
+			// Define the peak
+			TensorT baseline_left = random_bounds(baseline_height.first, baseline_height.second);
+			TensorT baseline_right = random_bounds(baseline_height.first, baseline_height.second);
+			TensorT noise_mu_rand = random_bounds(noise_mu.first, noise_mu.second);
+			TensorT noise_sigma_rand = random_bounds(noise_sigma.first, noise_sigma.second);
+			TensorT peak_start = (TensorT)peak_iter * peak_window_length;
+			TensorT peak_end = (TensorT)(peak_iter + 1) * peak_window_length;
+			peaks.push_back(PeakSimulator<TensorT>(step_size_mu, step_size_sigma, peak_start, peak_end,
+				noise_mu_rand, noisesigma_rand, baseline_left, baseline_right, saturation_limit));
 
+			// Define the EMG generator
+			TensorT h = random_bounds(emg_h.first, emg_h.second);
+			//if (h <= baseline_left) {
+			//	h += (baseline_left - h)*1.2;  // increase the peak height above the baseline
+			//}
+			//if (h <= baseline_right) {
+			//	h += (baseline_right - h)*1.2;  // increase the peak height above the baseline
+			//}
+			TensorT tau = random_bounds(emg_tau.first, emg_tau.second);
+			TensorT mu = random_bounds(emg_mu_offset.first, emg_mu_offset.second) + (peak_start - peak_end)/(TensorT)2;
+			TensorT sigma = random_bounds(emg_sigma.first, emg_sigma.second);
+			emgs.push_back(EMGModel<TensorT>(h, tau, mu, sigma));
+
+			//// update the left baseline
+			//baseline_left = baseline_right;
 		}
 
-		// place the peaks on the chromatogram
-
+		// make the chromatogram
+		makeChromatogram(x_O, y_O, peaks, emgs, peaks_LR);
 	}
 
 	template <typename TensorT>
-	void ChromatogramSimulator<TensorT>::makeChromatogram(std::vector<TensorT>& x_O, std::vector<TensorT>& y_O,
+	void ChromatogramSimulator<TensorT>::makeChromatogram(std::vector<TensorT>& x_O, std::vector<TensorT>& y_O, std::vector<std::pair<TensorT, TensorT>>& peaks_LR,
 		const std::vector<PeakSimulator<TensorT>>& peaks, const std::vector<EMGModel<TensorT>>& emgs) const
 	{
 		// check vector lengths
@@ -234,6 +291,7 @@ namespace SmartPeak
 		// clear any potential input in x and y vectors
 		x_O.clear();
 		y_O.clear();
+		peaks_LR.clear();
 
 		// Order the list of peaks from lowest to highest emg_mu
 		std::vector<std::pair<PeakSimulator<TensorT>, EMGModel<TensorT>>> peak_emg_pairs;
@@ -265,6 +323,11 @@ namespace SmartPeak
 			// make the first peak
 			std::vector<TensorT> x, y;
 			peak_emg_pairs[i].first.simulatePeak(x, y, peak_emg_pairs[i].second);
+
+			// Determine the best left/right
+			std::pair<TensorT, TensorT> best_lr = peak_emg_pairs[i].first.getBestLeftAndRight(x, y, peak_emg_pairs[i].second.getMu());
+			if (best_lr.first != best_lr.second != 0)
+				peaks_LR.push_back(best_lr);
 
 			// extend the chromatogram
 			x_O.reserve(x_O.size() + distance(x.begin(), x.end()));

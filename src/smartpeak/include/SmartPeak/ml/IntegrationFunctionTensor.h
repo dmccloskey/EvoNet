@@ -210,7 +210,7 @@ public:
 			// step 2: divide out the comp_tensor, scale by the source error, and reduce by taking the sum along the source layer
 			auto tmp = (source_exp_input_tensor * source_error_tensor.chip(source_time_step, 1).broadcast(Eigen::array<int, 3>({ 1, sink_layer_size, 1 })) / (comp_tensor + comp_tensor.constant(1e-6))).sum(Eigen::array<int, 1>({ 2 }));
 			// NOTE this should be *=, but the sink error tensor is initialized to 0...
-			sink_error_tensor.chip(sink_time_step, 1).device(device) = tmp * sink_derivative_tensor.chip(sink_time_step, 1);
+			sink_error_tensor.chip(sink_time_step, 1).device(device) += tmp.clip(-1e9,1e9) * sink_derivative_tensor.chip(sink_time_step, 1);
 
 		};
 		std::string getName() const { return "ProdErrorTensorOp"; };

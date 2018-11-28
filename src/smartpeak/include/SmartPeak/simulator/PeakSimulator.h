@@ -46,6 +46,17 @@ namespace SmartPeak
 		~PeakSimulator() = default; ///< Default destructor
 
 		/**
+			@brief calculate the points that define the left and right of the "actual" peak
+				based on the fitted emg model points and set baselines.
+
+			@param[in] x_IO A vector of x values representing time or m/z
+			@param[in] y_IO A vector of y values representing the intensity at time t or m/z m
+
+			@returns std::pair<TensorT, TensorT> of best left and right points for the peak
+		*/
+		std::pair<TensorT, TensorT> getBestLeftAndRight(std::vector<TensorT>& x_O, std::vector<TensorT>& y_O, const TensorT& rt) const;
+
+		/**
 			@brief simulates two vector of points that correspond to x and y values that
 				represent a peak
 
@@ -372,6 +383,35 @@ namespace SmartPeak
 		{
 			value = (value > saturation_limit) ? saturation_limit : value;
 		}
+	}
+
+	template<typename TensorT>
+	inline std::pair<TensorT, TensorT> PeakSimulator<TensorT>::getBestLeftAndRight(std::vector<TensorT>& x_O, std::vector<TensorT>& y_O, const TensorT& rt) const
+	{
+		TensorT best_left = 0;
+		TensorT best_right = 0;
+
+		// iterate from the left
+		for (int i = 1; i < x_O.size() - 1; ++i) {
+			if (y_O[i] > baseline_left_ + noise_sigma_) {
+				best_left = x_O[i - 1];
+				break;
+			}
+			if (x_O[i] > rt)
+				break;
+		}
+
+		// iterate from the right
+		for (int i = x_O.size() - 2; i >= 0; --i) {
+			if (y_O[i] > baseline_right_ + noise_sigma_) {
+				best_right = x_O[i + 1];
+				break;
+			}
+			if (x_O[i] < rt)
+				break;
+		}		
+
+		return std::pair<TensorT, TensorT>(best_left, best_right);
 	}
 
 	template <typename TensorT>
