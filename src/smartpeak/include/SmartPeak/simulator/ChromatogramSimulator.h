@@ -231,10 +231,11 @@ namespace SmartPeak
 			return (TensorT)distr(eng);
 		};
 
-		// determine the chrom window size and saturation limits
+		// determine the chrom window size, saturation limits, and number of peaks
 		TensorT saturation_limit = 100;
 		TensorT chrom_window_size_rand = random_bounds(chrom_window_size.first, chrom_window_size.second);
-		TensorT peak_window_length = chrom_window_size_rand / n_peaks;
+		TensorT n_peaks_rand = random_bounds(n_peaks.first, n_peaks.second);
+		TensorT peak_window_length = chrom_window_size_rand / n_peaks_rand;
 
 		// determine the sampling rate
 		TensorT step_size_mu_rand = random_bounds(step_size_mu.first, step_size_mu.second);
@@ -244,7 +245,7 @@ namespace SmartPeak
 		std::vector<PeakSimulator<TensorT>> peaks;
 		std::vector<EMGModel<TensorT>> emgs;
 		//TensorT baseline_left = random_bounds(baseline_height.first, baseline_height.second);
-		for (int peak_iter = 0; peak_iter < n_peaks; ++peak_iter) {
+		for (int peak_iter = 0; peak_iter < n_peaks_rand; ++peak_iter) {
 			// Define the peak
 			TensorT baseline_left = random_bounds(baseline_height.first, baseline_height.second);
 			TensorT baseline_right = random_bounds(baseline_height.first, baseline_height.second);
@@ -252,8 +253,8 @@ namespace SmartPeak
 			TensorT noise_sigma_rand = random_bounds(noise_sigma.first, noise_sigma.second);
 			TensorT peak_start = (TensorT)peak_iter * peak_window_length;
 			TensorT peak_end = (TensorT)(peak_iter + 1) * peak_window_length;
-			peaks.push_back(PeakSimulator<TensorT>(step_size_mu, step_size_sigma, peak_start, peak_end,
-				noise_mu_rand, noisesigma_rand, baseline_left, baseline_right, saturation_limit));
+			peaks.push_back(PeakSimulator<TensorT>(step_size_mu_rand, step_size_sigma_rand, peak_start, peak_end,
+				noise_mu_rand, noise_sigma_rand, baseline_left, baseline_right, saturation_limit));
 
 			// Define the EMG generator
 			TensorT h = random_bounds(emg_h.first, emg_h.second);
@@ -264,7 +265,7 @@ namespace SmartPeak
 			//	h += (baseline_right - h)*1.2;  // increase the peak height above the baseline
 			//}
 			TensorT tau = random_bounds(emg_tau.first, emg_tau.second);
-			TensorT mu = random_bounds(emg_mu_offset.first, emg_mu_offset.second) + (peak_start - peak_end)/(TensorT)2;
+			TensorT mu = random_bounds(emg_mu_offset.first, emg_mu_offset.second) + ((peak_end - peak_start)/(TensorT)2 + peak_start);
 			TensorT sigma = random_bounds(emg_sigma.first, emg_sigma.second);
 			emgs.push_back(EMGModel<TensorT>(h, tau, mu, sigma));
 
@@ -273,7 +274,7 @@ namespace SmartPeak
 		}
 
 		// make the chromatogram
-		makeChromatogram(x_O, y_O, peaks, emgs, peaks_LR);
+		makeChromatogram(x_O, y_O, peaks_LR, peaks, emgs);
 	}
 
 	template <typename TensorT>
