@@ -892,6 +892,10 @@ private:
 			sprintf(iter_char, "Iteration #: %d\n", iter);
 			std::cout << iter_char;
 
+			// update the model replication attributes and population dynamics
+			model_replicator.adaptiveReplicatorScheduler(iter, models, models_validation_errors_per_generation);
+			adaptivePopulationScheduler(iter, models, models_validation_errors_per_generation);
+
 			// Generate the input and output data for training [BUG FREE]
 			std::cout << "Generating the input/output data for training..." << std::endl;
 			Eigen::Tensor<TensorT, 4> input_data_training(model_trainer.getBatchSize(), model_trainer.getMemorySize(), (int)input_nodes.size(), model_trainer.getNEpochsTraining());
@@ -913,10 +917,6 @@ private:
 
 			if (iter < getNGenerations() - 1)
 			{
-				// update the model replication attributes and population dynamics
-				model_replicator.adaptiveReplicatorScheduler(iter, models, models_validation_errors_per_generation);
-				adaptivePopulationScheduler(iter, models, models_validation_errors_per_generation);
-
 				// replicate and modify models
 				// [TODO: add options for verbosity]
 				std::cout << "Replicating and modifying the models..." << std::endl;

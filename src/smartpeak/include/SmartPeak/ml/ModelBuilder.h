@@ -1217,7 +1217,7 @@ public:
 		std::string blockGateInput_name(blockGateInput_name_char);
 		Node<TensorT> blockGateInput(blockGateInput_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<TensorT>>(new SigmoidOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new SigmoidGradOp<TensorT>()), node_integration, node_integration_error, node_integration_weight_grad);
 		blockGateInput.setModuleName(module_name);
-		//blockGateInput.setLayerName("BlockGateInput");
+		blockGateInput.setLayerName("BlockGateInput");
 		model.addNodes({ blockGateInput });
 
 		// Make the output gate node 
@@ -1226,7 +1226,7 @@ public:
 		std::string blockGateOutput_name(blockGateOutput_name_char);
 		Node<TensorT> blockGateOutput(blockGateOutput_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<TensorT>>(new SigmoidOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new SigmoidGradOp<TensorT>()), node_integration, node_integration_error, node_integration_weight_grad);
 		blockGateOutput.setModuleName(module_name);
-		//blockGateOutput.setLayerName("BlockGateOutput");
+		blockGateOutput.setLayerName("BlockGateOutput");
 		model.addNodes({ blockGateOutput });
 
 		std::string blockGateForget_name;
@@ -1237,7 +1237,7 @@ public:
 			blockGateForget_name = std::string(blockGateForget_name_char);
 			Node<TensorT> blockGateForget(blockGateForget_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<TensorT>>(new SigmoidOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new SigmoidGradOp<TensorT>()), node_integration, node_integration_error, node_integration_weight_grad);
 			blockGateForget.setModuleName(module_name);
-			//blockGateForget.setLayerName("BlockGateForget");
+			blockGateForget.setLayerName("BlockGateForget");
 			model.addNodes({ blockGateForget });
 		}
 
@@ -1398,7 +1398,7 @@ public:
 			std::string blockInput_name(blockInput_name_char);
 			Node<TensorT> blockInput(blockInput_name, NodeType::hidden, NodeStatus::initialized, node_activation, node_activation_grad, node_integration, node_integration_error, node_integration_weight_grad);
 			blockInput.setModuleName(module_name);
-			//blockInput.setLayerName("BlockInput");
+			blockInput.setLayerName("BlockInput");
 			blockInput.setDropProbability(drop_out_prob);
 			model.addNodes({ blockInput });
 
@@ -1408,7 +1408,7 @@ public:
 			std::string blockMultInput_name(blockMultInput_name_char);
 			Node<TensorT> blockMultInput(blockMultInput_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new ProdOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new ProdErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new ProdWeightGradOp<TensorT>()));
 			blockMultInput.setModuleName(module_name);
-			//blockMultInput.setLayerName("BlockMultInput");
+			blockMultInput.setLayerName("BlockMultInput");
 			model.addNodes({ blockMultInput });
 
 			// Make the output multiplier node[add drop prob]
@@ -1417,7 +1417,7 @@ public:
 			std::string blockOutput_name(blockOutput_name_char);
 			Node<TensorT> blockOutput(blockOutput_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new ProdOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new ProdErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new ProdWeightGradOp<TensorT>()));
 			blockOutput.setModuleName(module_name);
-			//blockOutput.setLayerName("BlockMultOut");
+			blockOutput.setLayerName("BlockMultOut");
 			blockOutput.setDropProbability(drop_out_prob);
 			model.addNodes({ blockOutput });
 			node_names.push_back(blockOutput_name);
@@ -1521,7 +1521,7 @@ public:
 				std::string blockMultForget_name(blockMultForget_name_char);
 				Node<TensorT> blockMultForget(blockMultForget_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new ProdOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new ProdErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new ProdWeightGradOp<TensorT>()));
 				blockMultForget.setModuleName(module_name);
-				//blockMultForget.setLayerName("BlockMultForget");
+				blockMultForget.setLayerName("BlockMultForget");
 				model.addNodes({ blockMultForget });
 
 				// Make the link between the forget gate and the forget gate multiplier node

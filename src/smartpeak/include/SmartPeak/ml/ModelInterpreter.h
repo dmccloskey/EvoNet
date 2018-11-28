@@ -23,6 +23,8 @@
 #include <SmartPeak/ml/ModelErrorData.h>
 #include <SmartPeak/ml/ModelKernal.h>
 
+#include <stdexcept>
+
 namespace SmartPeak
 {
 	/*
@@ -1163,6 +1165,13 @@ namespace SmartPeak
 			for (const std::pair<int, int> p : weight_index) {
 				source_nodes.insert(p.first);
 				sink_nodes.insert(p.second);
+			}
+
+			// check the source and sink layer indices
+			for (const std::pair<int, int> p : weight_index) {
+				if (p.first >= source_nodes.size() || p.second >= sink_nodes.size()) {
+					throw std::out_of_range("Weight index is greater than the layer size.");
+				}
 			}
 
 			// store the tensor sizes
