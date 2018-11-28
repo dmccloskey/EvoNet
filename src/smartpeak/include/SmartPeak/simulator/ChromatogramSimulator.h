@@ -56,7 +56,8 @@ namespace SmartPeak
 			const std::pair<TensorT, TensorT>& emg_h,
 			const std::pair<TensorT, TensorT>& emg_tau,
 			const std::pair<TensorT, TensorT>& emg_mu_offset,
-			const std::pair<TensorT, TensorT>& emg_sigma) const;
+			const std::pair<TensorT, TensorT>& emg_sigma,
+			TensorT saturation_limit = 100) const;
 
 		/**
 			@brief Makes a chromatogram.
@@ -221,7 +222,8 @@ namespace SmartPeak
 		const std::pair<TensorT, TensorT>& step_size_mu, const std::pair<TensorT, TensorT>& step_size_sigma, 
 		const std::pair<TensorT, TensorT>& chrom_window_size, const std::pair<TensorT, TensorT>& noise_mu, const std::pair<TensorT, TensorT>& noise_sigma, 
 		const std::pair<TensorT, TensorT>& baseline_height,	const std::pair<TensorT, TensorT>& n_peaks, 
-		const std::pair<TensorT, TensorT>& emg_h, const std::pair<TensorT, TensorT>& emg_tau, const std::pair<TensorT, TensorT>& emg_mu_offset, const std::pair<TensorT, TensorT>& emg_sigma) const
+		const std::pair<TensorT, TensorT>& emg_h, const std::pair<TensorT, TensorT>& emg_tau, const std::pair<TensorT, TensorT>& emg_mu_offset, const std::pair<TensorT, TensorT>& emg_sigma,
+		TensorT saturation_limit) const
 	{
 		// lampda for choosing a random number within l/u bounds
 		auto random_bounds = [](const TensorT& lb, const TensorT& ub)->TensorT {
@@ -232,7 +234,6 @@ namespace SmartPeak
 		};
 
 		// determine the chrom window size, saturation limits, and number of peaks
-		TensorT saturation_limit = 100;
 		TensorT chrom_window_size_rand = random_bounds(chrom_window_size.first, chrom_window_size.second);
 		TensorT n_peaks_rand = random_bounds(n_peaks.first, n_peaks.second);
 		TensorT peak_window_length = chrom_window_size_rand / n_peaks_rand;

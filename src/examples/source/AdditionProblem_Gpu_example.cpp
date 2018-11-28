@@ -1,7 +1,7 @@
 /**TODO:  Add copyright*/
 
-#include <SmartPeak/ml/PopulationTrainerDefaultDevice.h>
-#include <SmartPeak/ml/ModelTrainerDefaultDevice.h>
+#include <SmartPeak/ml/PopulationTrainerGpu.h>
+#include <SmartPeak/ml/ModelTrainerGpu.h>
 #include <SmartPeak/ml/ModelReplicator.h>
 #include <SmartPeak/ml/ModelBuilder.h>
 #include <SmartPeak/ml/Model.h>
@@ -88,7 +88,7 @@ public:
 
 // Extended classes
 template<typename TensorT>
-class ModelTrainerExt : public ModelTrainerDefaultDevice<TensorT>
+class ModelTrainerExt : public ModelTrainerGpu<TensorT>
 {
 public:
 	/*
@@ -261,7 +261,7 @@ public:
 		const int& n_generations,
 		const int& n_epochs,
 		Model<TensorT>& model,
-		ModelInterpreterDefaultDevice<TensorT>& model_interpreter,
+		ModelInterpreterGpu<TensorT>& model_interpreter,
 		const std::vector<float>& model_errors) {
 		//if (n_epochs > 10000) {
 		//	// update the solver parameters
@@ -318,7 +318,7 @@ public:
 };
 
 template<typename TensorT>
-class PopulationTrainerExt : public PopulationTrainerDefaultDevice<TensorT>
+class PopulationTrainerExt : public PopulationTrainerGpu<TensorT>
 {
 public:
 	void adaptivePopulationScheduler(
@@ -372,10 +372,10 @@ int main(int argc, char** argv)
 	data_simulator.sequence_length_ = 25;
 
 	// define the model trainers and resources for the trainers
-	std::vector<ModelInterpreterDefaultDevice<float>> model_interpreters;
+	std::vector<ModelInterpreterGpu<float>> model_interpreters;
 	for (size_t i = 0; i < n_threads; ++i) {
 		ModelResources model_resources = { ModelDevice(0, 1) };
-		ModelInterpreterDefaultDevice<float> model_interpreter(model_resources);
+		ModelInterpreterGpu<float> model_interpreter(model_resources);
 		model_interpreters.push_back(model_interpreter);
 	}
 	ModelTrainerExt<float> model_trainer;

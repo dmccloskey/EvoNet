@@ -205,8 +205,8 @@ public:
 		@param[out] output_nodes
 		*/
 		bool checkCompleteInputToOutput();
-		void checkCompleteInputToOutput_(std::string & node_cur, std::set<std::string>& found_nodes, std::set<std::string>& output_nodes, std::set<std::string>& found_output_nodes);
-		void checkCompleteOutputToInput_(std::string& node_cur, std::set<std::string>& found_nodes, std::set<std::string>& input_nodes, std::set<std::string>& found_input_nodes);
+		void checkCompleteInputToOutput_(const std::string & node_cur, std::set<std::string>& found_nodes, std::set<std::string>& output_nodes, std::set<std::string>& found_output_nodes);
+		void checkCompleteOutputToInput_(const std::string& node_cur, std::set<std::string>& found_nodes, std::set<std::string>& input_nodes, std::set<std::string>& found_input_nodes);
 
 		/**
 		@brief Check model link node and weight names
@@ -719,7 +719,7 @@ private:
 	}
 
 	template<typename TensorT>
-	inline void Model<TensorT>::checkCompleteInputToOutput_(std::string& node_cur, std::set<std::string>& found_nodes, std::set<std::string>& output_nodes, std::set<std::string>& found_output_nodes)
+	inline void Model<TensorT>::checkCompleteInputToOutput_(const std::string& node_cur, std::set<std::string>& found_nodes, std::set<std::string>& output_nodes, std::set<std::string>& found_output_nodes)
 	{
 		for (auto& link_map : links_) {
 			if (link_map.second->getSourceNodeName() == node_cur) {
@@ -741,7 +741,7 @@ private:
 	};
 
 	template<typename TensorT>
-	inline void Model<TensorT>::checkCompleteOutputToInput_(std::string& node_cur, std::set<std::string>& found_nodes, std::set<std::string>& output_nodes, std::set<std::string>& found_output_nodes)
+	inline void Model<TensorT>::checkCompleteOutputToInput_(const std::string& node_cur, std::set<std::string>& found_nodes, std::set<std::string>& output_nodes, std::set<std::string>& found_output_nodes)
 	{
 		for (auto& link_map : links_) {
 			if (link_map.second->getSinkNodeName() == node_cur) {
@@ -767,33 +767,31 @@ private:
 	{
 		// Create a set of target output nodes
 		std::set<std::string> output_nodes, found_output_nodes;
-		for (auto& node : output_nodes_) {
-			output_nodes.insert(node->getName());
-		}
-
-		// Start at each input node and walk through the graph until
-		// a previous node is reached or an output node is reached
-		for (auto& node : input_nodes_) {
-			std::string node_cur = node->getName();
-			std::set<std::string> found_nodes;
-			found_nodes.insert(node_cur);
-			checkCompleteInputToOutput_(node_cur, found_nodes, output_nodes, found_output_nodes);
-			if (found_output_nodes.size() == output_nodes.size()) break;
-		}
+		for (auto& node : nodes_)
+			if (node.second->getType() == NodeType::output)
+				output_nodes.insert(node.second->getName());
 
 		// Create a set of target output nodes
 		std::set<std::string> input_nodes, found_input_nodes;
-		for (auto& node : input_nodes_) {
-			input_nodes.insert(node->getName());
+		for (auto& node : nodes_)
+			if (node.second->getType() == NodeType::input)
+				input_nodes.insert(node.second->getName());
+
+		// Start at each input node and walk through the graph until
+		// a previous node is reached or an output node is reached
+		for (const std::string& node : input_nodes) {
+			std::set<std::string> found_nodes;
+			found_nodes.insert(node);
+			checkCompleteInputToOutput_(node, found_nodes, output_nodes, found_output_nodes);
+			if (found_output_nodes.size() == output_nodes.size()) break;
 		}
 
 		// Start at each output node and walk through the graph until
 		// a previous node is reached or an input node is reached
-		for (auto& node : output_nodes_) {
-			std::string node_cur = node->getName();
+		for (const std::string& node : output_nodes) {
 			std::set<std::string> found_nodes;
-			found_nodes.insert(node_cur);
-			checkCompleteOutputToInput_(node_cur, found_nodes, input_nodes, found_input_nodes);
+			found_nodes.insert(node);
+			checkCompleteOutputToInput_(node, found_nodes, input_nodes, found_input_nodes);
 			if (found_input_nodes.size() == input_nodes.size()) break;
 		}
 		
