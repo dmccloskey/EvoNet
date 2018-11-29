@@ -29,8 +29,12 @@ class ModelTrainerExt : public ModelTrainerDefaultDevice<TensorT>
 {
 public:
 	/*
-	@brief TODO
+	@brief Denoising Auto Encoder that takes a segment of a raw chromatogram
+		and returns a smoothed and denoised version of the same chromatogram
 	*/
+	Model<TensorT> makeDenoisingAE() {
+		return Model<TensorT>(); 
+	}
 	Model<TensorT> makeModel() { return Model<TensorT>(); }
 	void adaptiveTrainerScheduler(
 		const int& n_generations,

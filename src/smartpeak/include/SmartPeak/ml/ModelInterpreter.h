@@ -560,7 +560,12 @@ namespace SmartPeak
 		Eigen::Tensor<TensorT, 2> one((int)layer_tensors_[0]->getBatchSize(), (int)layer_tensors_[0]->getMemorySize());	one.setConstant(1);
 		for (auto& node_map : model.nodes_) {
 			if (node_map.second->getType() == NodeType::bias) {
-				getLayerTensor(node_map.second->getTensorIndex().first)->getOutput().chip(node_map.second->getTensorIndex().second, 2) = one;
+				if (node_map.second->getTensorIndex().first != -1) {
+					getLayerTensor(node_map.second->getTensorIndex().first)->getOutput().chip(node_map.second->getTensorIndex().second, 2) = one;
+				}
+				else {
+					std::cout << "Node " << node_map.second->getName() << " has not been assigned a tensor index!" << std::endl;
+				}
 			}
 		}
 	}
