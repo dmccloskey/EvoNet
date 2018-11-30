@@ -39,8 +39,8 @@ public:
 		ModelBuilder<TensorT> model_builder;
 
 		// Add the inputs
-		std::vector<std::string> node_names_time = model_builder.addInputNodes(model, "Time", n_inputs);
 		std::vector<std::string> node_names_intensity = model_builder.addInputNodes(model, "Intensity", n_inputs);
+		std::vector<std::string> node_names_time = model_builder.addInputNodes(model, "Time", n_inputs);
 
 		// Add the Encoder FC layers for Time and intensity
 		node_names_time = model_builder.addFullyConnected(model, "EN_Time_0", "EN_Time_0", node_names_time, n_hidden_0,
@@ -49,7 +49,7 @@ public:
 			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
 			std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
 			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_time.size() + n_hidden_0.size()) / 2, 1)),
+			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_time.size() + n_hidden_0) / 2, 1)),
 			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 		node_names_intensity = model_builder.addFullyConnected(model, "EN_Intensity_0", "EN_Intensity_0", node_names_intensity, n_hidden_0,
 			std::shared_ptr<ActivationOp<TensorT>>(new ELUOp<TensorT>(1.0)),
@@ -57,14 +57,11 @@ public:
 			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
 			std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
 			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_intensity.size() + n_hidden_0.size()) / 2, 1)),
+			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_intensity.size() + n_hidden_0) / 2, 1)),
 			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 		model_builder.addSinglyConnected(model, "EN_Time_Intensity_0", node_names_time, node_names_intensity,
-			std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1),
+			std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
 			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f);
-		model_builder.addSinglyConnected(model, "EN_Intensity_Time_0", node_names_intensity, node_names_time,
-			std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1),
-				std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f);
 
 		node_names_time = model_builder.addFullyConnected(model, "EN_Time_1", "EN_Time_1", node_names_time, n_hidden_0,
 			std::shared_ptr<ActivationOp<TensorT>>(new ELUOp<TensorT>(1.0)),
@@ -72,18 +69,24 @@ public:
 			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
 			std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
 			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_time.size() + n_hidden_0.size()) / 2, 1)),
+			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_time.size() + n_hidden_0) / 2, 1)),
 			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+		model_builder.addSinglyConnected(model, "EN_Intensity_0_Time_1", node_names_intensity, node_names_time,
+			std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
+			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f);
 		node_names_intensity = model_builder.addFullyConnected(model, "EN_Intensity_1", "EN_Intensity_1", node_names_intensity, n_hidden_0,
 			std::shared_ptr<ActivationOp<TensorT>>(new ELUOp<TensorT>(1.0)),
 			std::shared_ptr<ActivationOp<TensorT>>(new ELUGradOp<TensorT>(1.0)),
 			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
 			std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
 			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_intensity.size() + n_hidden_0.size()) / 2, 1)),
+			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_intensity.size() + n_hidden_0) / 2, 1)),
 			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+		model_builder.addSinglyConnected(model, "EN_Time_Intensity_1", node_names_time, node_names_intensity,
+			std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
+			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f);
 
-		// Add the encoding layer for Time
+		// Add the encoding layers for Time and Intensity
 		node_names_time = model_builder.addFullyConnected(model, "Encoding_Time", "Encoding_Time", node_names_time, n_encodings,
 			std::shared_ptr<ActivationOp<TensorT>>(new ELUOp<TensorT>(1.0)),
 			std::shared_ptr<ActivationOp<TensorT>>(new ELUGradOp<TensorT>(1.0)),
@@ -100,6 +103,9 @@ public:
 			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
 			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_intensity.size() + n_encodings) / 2, 1)),
 			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+		model_builder.addSinglyConnected(model, "Encoding_Time_Intensity", node_names_time, node_names_intensity,
+			std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
+			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f);
 
 		// Add the Decoder FC layers
 		node_names_time = model_builder.addFullyConnected(model, "DE_Time_0", "DE_Time_0", node_names_time, n_hidden_0,
@@ -108,7 +114,7 @@ public:
 			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
 			std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
 			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_encoder.size() + n_hidden_0) / 2, 1)),
+			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_time.size() + n_hidden_0) / 2, 1)),
 			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 		node_names_intensity = model_builder.addFullyConnected(model, "DE_Intensity_0", "DE_Intensity_0", node_names_intensity, n_hidden_0,
 			std::shared_ptr<ActivationOp<TensorT>>(new ELUOp<TensorT>(1.0)),
@@ -118,7 +124,10 @@ public:
 			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
 			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_intensity.size() + n_hidden_0) / 2, 1)),
 			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
-			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+		model_builder.addSinglyConnected(model, "DE_Time_Intensity_0", node_names_time, node_names_intensity,
+			std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
+				std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f);
+
 		node_names_time = model_builder.addFullyConnected(model, "DE_Time_1", "DE_Time_1", node_names_time, n_hidden_0,
 			std::shared_ptr<ActivationOp<TensorT>>(new ELUOp<TensorT>(1.0)),
 			std::shared_ptr<ActivationOp<TensorT>>(new ELUGradOp<TensorT>(1.0)),
@@ -127,6 +136,9 @@ public:
 			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
 			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_time.size() + n_hidden_0) / 2, 1)),
 			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+		model_builder.addSinglyConnected(model, "DE_Intensity_0_Time_1", node_names_intensity, node_names_time,
+			std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
+			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f);
 		node_names_intensity = model_builder.addFullyConnected(model, "DE_Intensity_1", "DE_Intensity_1", node_names_intensity, n_hidden_0,
 			std::shared_ptr<ActivationOp<TensorT>>(new ELUOp<TensorT>(1.0)),
 			std::shared_ptr<ActivationOp<TensorT>>(new ELUGradOp<TensorT>(1.0)),
@@ -134,19 +146,23 @@ public:
 			std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
 			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
 			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_intensity.size() + n_hidden_0) / 2, 1)),
+			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+		model_builder.addSinglyConnected(model, "DE_Time_Intensity_1", node_names_time, node_names_intensity,
+			std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
+				std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f);
 
 		// Add the output nodes
 		node_names_time = model_builder.addFullyConnected(model, "Time_Out", "Time_Out", node_names_time, n_inputs,
-			std::shared_ptr<ActivationOp<TensorT>>(new SigmoidOp<TensorT>()),
-			std::shared_ptr<ActivationOp<TensorT>>(new SigmoidGradOp<TensorT>()),
+			std::shared_ptr<ActivationOp<TensorT>>(new ELUOp<TensorT>(1.0)),
+			std::shared_ptr<ActivationOp<TensorT>>(new ELUGradOp<TensorT>(1.0)),
 			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
 			std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
 			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
 			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names_time.size(), 1)),
 			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
-		node_names_intensity = model_builder.addFullyConnected(model, "Time_Intensity", "Time_Intensity", node_names_intensity, n_inputs,
-			std::shared_ptr<ActivationOp<TensorT>>(new SigmoidOp<TensorT>()),
-			std::shared_ptr<ActivationOp<TensorT>>(new SigmoidGradOp<TensorT>()),
+		node_names_intensity = model_builder.addFullyConnected(model, "Intensity_Out", "Intensity_Out", node_names_intensity, n_inputs,
+			std::shared_ptr<ActivationOp<TensorT>>(new ELUOp<TensorT>(1.0)),
+			std::shared_ptr<ActivationOp<TensorT>>(new ELUGradOp<TensorT>(1.0)),
 			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
 			std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
 			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
@@ -161,8 +177,6 @@ public:
 
 		if (!model.checkCompleteInputToOutput())
 			std::cout << "Model input and output are not fully connected!" << std::endl;
-
-		return model;
 	}
 	Model<TensorT> makeModel() { return Model<TensorT>(); }
 	void adaptiveTrainerScheduler(
@@ -204,26 +218,26 @@ public:
 			for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
 				for (int epochs_iter = 0; epochs_iter < n_epochs; ++epochs_iter) {
 
-					std::vector<double> chrom_time, chrom_intensity, chrom_time_test, chrom_intensity_test;
-					std::vector<std::pair<double, double>> best_lr, best_lr_test;
+					std::vector<TensorT> chrom_time, chrom_intensity, chrom_time_test, chrom_intensity_test;
+					std::vector<std::pair<TensorT, TensorT>> best_lr, best_lr_test;
 
 					// make the noisy chrom
 					this->simulateChromatogram(chrom_time, chrom_intensity, best_lr,
 						std::make_pair(1.0, 1.0), std::make_pair(0.0, 0.0), std::make_pair(n_input_nodes, n_input_nodes),
 						std::make_pair(0.0, 0.0), std::make_pair(0.0, 0.0), std::make_pair(1.0, 1.0),
-						std::make_pair(3.0, 3.0), std::make_pair(10.0, 10.0), std::make_pair(0.0, 0.0), std::make_pair(0.0, 0.0), std::make_pair(1.0, 1.0);
+						std::make_pair(3.0, 3.0), std::make_pair(10.0, 10.0), std::make_pair(0.0, 0.0), std::make_pair(0.0, 0.0), std::make_pair(1.0, 1.0));
 
 					// make the smoothed chrom
 					this->simulateChromatogram(chrom_time_test, chrom_intensity_test, best_lr_test,
 						std::make_pair(1.0, 1.0), std::make_pair(0.0, 0.0), std::make_pair(n_input_nodes, n_input_nodes),
 						std::make_pair(0.0, 0.0), std::make_pair(0.0, 0.0), std::make_pair(1.0, 1.0),
-						std::make_pair(3.0, 3.0), std::make_pair(10.0, 10.0), std::make_pair(0.0, 0.0), std::make_pair(0.0, 0.0), std::make_pair(1.0, 1.0);
+						std::make_pair(3.0, 3.0), std::make_pair(10.0, 10.0), std::make_pair(0.0, 0.0), std::make_pair(0.0, 0.0), std::make_pair(1.0, 1.0));
 
 					for (int nodes_iter = 0; nodes_iter < n_input_nodes / 2; ++nodes_iter) {
-						input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = chrom_time(nodes_iter); //time
-						input_data(batch_iter, memory_iter, nodes_iter + n_input_nodes / 2, epochs_iter) = chrom_intensity(nodes_iter);  //intensity
-						output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = chrom_time_test(nodes_iter); //time
-						output_data(batch_iter, memory_iter, nodes_iter + n_input_nodes / 2, epochs_iter) = chrom_intensity_test(nodes_iter);  //intensity
+						input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = chrom_time[nodes_iter]; //time
+						input_data(batch_iter, memory_iter, nodes_iter + n_input_nodes / 2, epochs_iter) = chrom_intensity[nodes_iter];  //intensity
+						output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = chrom_time_test[nodes_iter]; //time
+						output_data(batch_iter, memory_iter, nodes_iter + n_input_nodes / 2, epochs_iter) = chrom_intensity_test[nodes_iter];  //intensity
 					}
 				}
 			}
@@ -249,26 +263,26 @@ public:
 			for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
 				for (int epochs_iter = 0; epochs_iter < n_epochs; ++epochs_iter) {
 
-					std::vector<double> chrom_time, chrom_intensity, chrom_time_test, chrom_intensity_test;
-					std::vector<std::pair<double, double>> best_lr, best_lr_test;
+					std::vector<TensorT> chrom_time, chrom_intensity, chrom_time_test, chrom_intensity_test;
+					std::vector<std::pair<TensorT, TensorT>> best_lr, best_lr_test;
 
 					// make the noisy chrom
 					this->simulateChromatogram(chrom_time, chrom_intensity, best_lr,
 						std::make_pair(1.0, 1.0), std::make_pair(0.0, 0.0), std::make_pair(n_input_nodes, n_input_nodes),
 						std::make_pair(0.0, 0.0), std::make_pair(0.0, 0.0), std::make_pair(1.0, 1.0),
-						std::make_pair(3.0, 3.0), std::make_pair(10.0, 10.0), std::make_pair(0.0, 0.0), std::make_pair(0.0, 0.0), std::make_pair(1.0, 1.0);
+						std::make_pair(3.0, 3.0), std::make_pair(10.0, 10.0), std::make_pair(0.0, 0.0), std::make_pair(0.0, 0.0), std::make_pair(1.0, 1.0));
 
 					// make the smoothed chrom
 					this->simulateChromatogram(chrom_time_test, chrom_intensity_test, best_lr_test,
 						std::make_pair(1.0, 1.0), std::make_pair(0.0, 0.0), std::make_pair(n_input_nodes, n_input_nodes),
 						std::make_pair(0.0, 0.0), std::make_pair(0.0, 0.0), std::make_pair(1.0, 1.0),
-						std::make_pair(3.0, 3.0), std::make_pair(10.0, 10.0), std::make_pair(0.0, 0.0), std::make_pair(0.0, 0.0), std::make_pair(1.0, 1.0);
+						std::make_pair(3.0, 3.0), std::make_pair(10.0, 10.0), std::make_pair(0.0, 0.0), std::make_pair(0.0, 0.0), std::make_pair(1.0, 1.0));
 
 					for (int nodes_iter = 0; nodes_iter < n_input_nodes / 2; ++nodes_iter) {
-						input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = chrom_time(nodes_iter); //time
-						input_data(batch_iter, memory_iter, nodes_iter + n_input_nodes / 2, epochs_iter) = chrom_intensity(nodes_iter);  //intensity
-						output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = chrom_time_test(nodes_iter); //time
-						output_data(batch_iter, memory_iter, nodes_iter + n_input_nodes / 2, epochs_iter) = chrom_intensity_test(nodes_iter);  //intensity
+						input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = chrom_time[nodes_iter]; //time
+						input_data(batch_iter, memory_iter, nodes_iter + n_input_nodes / 2, epochs_iter) = chrom_intensity[nodes_iter];  //intensity
+						output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = chrom_time_test[nodes_iter]; //time
+						output_data(batch_iter, memory_iter, nodes_iter + n_input_nodes / 2, epochs_iter) = chrom_intensity_test[nodes_iter];  //intensity
 					}
 				}
 			}
@@ -319,19 +333,19 @@ public:
 		std::vector<Model<TensorT>>& models,
 		std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations)
 	{
-		// Population size of 16
-		if (n_generations == 0)
-		{
-			this->setNTop(3);
-			this->setNRandom(3);
-			this->setNReplicatesPerModel(15);
-		}
-		else
-		{
-			this->setNTop(3);
-			this->setNRandom(3);
-			this->setNReplicatesPerModel(3);
-		}
+		//// Population size of 16
+		//if (n_generations == 0)
+		//{
+		//	this->setNTop(3);
+		//	this->setNRandom(3);
+		//	this->setNReplicatesPerModel(15);
+		//}
+		//else
+		//{
+		//	this->setNTop(3);
+		//	this->setNRandom(3);
+		//	this->setNReplicatesPerModel(3);
+		//}
 	}
 };
 
@@ -360,12 +374,17 @@ void main_DenoisingAE(const bool& make_model, const bool& load_weight_values, co
 	// Make the input nodes
 	std::vector<std::string> input_nodes;
 	for (int i = 0; i < input_size; ++i)
-		input_nodes.push_back("Input_" + std::to_string(i));
+		input_nodes.push_back("Time_" + std::to_string(i));
+	for (int i = 0; i < input_size; ++i)
+		input_nodes.push_back("Intensity_" + std::to_string(i));
 
 	// Make the output nodes
-	std::vector<std::string> output_nodes;
+	std::vector<std::string> output_nodes_time;
 	for (int i = 0; i < input_size; ++i)
-		output_nodes.push_back("Output_" + std::to_string(i));
+		output_nodes_time.push_back("Time_Out_" + std::to_string(i));
+	std::vector<std::string> output_nodes_intensity;
+	for (int i = 0; i < input_size; ++i)
+		output_nodes_intensity.push_back("Intensity_Out_" + std::to_string(i));
 
 	// define the model trainers and resources for the trainers
 	std::vector<ModelInterpreterDefaultDevice<float>> model_interpreters;
@@ -375,22 +394,22 @@ void main_DenoisingAE(const bool& make_model, const bool& load_weight_values, co
 		model_interpreters.push_back(model_interpreter);
 	}
 	ModelTrainerExt<float> model_trainer;
-	//model_trainer.setBatchSize(1); // evaluation only
-	model_trainer.setBatchSize(32);
-	model_trainer.setNEpochsTraining(1001);
+	model_trainer.setBatchSize(1); // evaluation only
+	//model_trainer.setBatchSize(32);
+	model_trainer.setNEpochsTraining(1000);
 	model_trainer.setNEpochsValidation(25);
-	model_trainer.setNEpochsEvaluation(100);
+	model_trainer.setNEpochsEvaluation(1);
 	model_trainer.setMemorySize(1);
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setLogging(true, false, true);
 	model_trainer.setFindCycles(false);
 	model_trainer.setLossFunctions({
-		//std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()),
-		std::shared_ptr<LossFunctionOp<float>>(new BCEWithLogitsOp<float>())});
+		std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()),
+		std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
 	model_trainer.setLossFunctionGrads({
-		//std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()),
-		std::shared_ptr<LossFunctionGradOp<float>>(new BCEWithLogitsGradOp<float>())});
-	model_trainer.setOutputNodes({ output_nodes });
+		std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()),
+		std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
+	model_trainer.setOutputNodes({ output_nodes_time, output_nodes_intensity });
 
 	// define the model replicator for growth mode
 	ModelReplicatorExt<float> model_replicator;
@@ -399,7 +418,7 @@ void main_DenoisingAE(const bool& make_model, const bool& load_weight_values, co
 	std::cout << "Initializing the population..." << std::endl;
 	Model<float> model;
 	if (make_model) {
-		model_trainer.(model, input_size, encoding_size, n_hidden);
+		model_trainer.makeDenoisingAE(model, input_size, encoding_size, n_hidden);
 	}
 	else {
 		// read in the trained model
