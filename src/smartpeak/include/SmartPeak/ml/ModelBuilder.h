@@ -68,6 +68,35 @@ public:
 			TensorT drop_connection_prob = 0.0f);
 
 		/**
+		@brief Add a singly connected layer to a model
+
+		@param[in, out] Model
+		@param[in] source_node_names Node_names to add the singly connected layer to
+		@param[in] n_nodes The number of output nodes
+		@param[in] node_activation The activation function of the hidden node to create
+		@param[in] node_activation_grad The activation function gradient of the hidden node to create
+		@param[in] node_integration The integration function of the hidden node to create
+		@param[in] drop_out_prob Node drop out probability
+		@param[in] drop_connection_prob Weight drop out probability
+		@param[in] biases Whether to include bias nodes or not
+
+		@returns vector of output node names
+		*/
+		std::vector<std::string> addSinglyConnected(Model<TensorT>& model, const std::string& name, const std::string& module_name,
+			const std::vector<std::string>& source_node_names, const int& n_nodes,
+			const std::shared_ptr<ActivationOp<TensorT>>& node_activation,
+			const std::shared_ptr<ActivationOp<TensorT>>& node_activation_grad,
+			const std::shared_ptr<IntegrationOp<TensorT>>& node_integration,
+			const std::shared_ptr<IntegrationErrorOp<TensorT>>& node_integration_error,
+			const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& node_integration_weight_grad,
+			const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver,
+			TensorT drop_out_prob = 0.0f, TensorT drop_connection_prob = 0.0f, bool biases = true);
+		void addSinglyConnected(Model<TensorT>& model, const std::string& module_name,
+			const std::vector<std::string>& source_node_names, const std::vector<std::string>& sink_node_names,
+			const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver,
+			TensorT drop_connection_prob = 0.0f);
+
+		/**
 		@brief Add a Soft Max
 
 		def stable_softmax(X):
@@ -438,6 +467,117 @@ public:
 				model.addWeights({ weight });
 				model.addLinks({ link });
 			}
+		}
+	}
+	template<typename TensorT>
+	std::vector<std::string> ModelBuilder<TensorT>::addSinglyConnected(Model<TensorT>& model, const std::string& name, const std::string& module_name,
+		const std::vector<std::string>& source_node_names, const int& n_nodes,
+		const std::shared_ptr<ActivationOp<TensorT>>& node_activation,
+		const std::shared_ptr<ActivationOp<TensorT>>& node_activation_grad,
+		const std::shared_ptr<IntegrationOp<TensorT>>& node_integration,
+		const std::shared_ptr<IntegrationErrorOp<TensorT>>& node_integration_error,
+		const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& node_integration_weight_grad,
+		const std::shared_ptr<WeightInitOp<TensorT>> & weight_init, const std::shared_ptr<SolverOp<TensorT>> & solver,
+		TensorT drop_out_prob, TensorT drop_connection_prob, bool biases)
+	{
+		std::vector<std::string> node_names;
+
+		assert(source_node_names.size() == n_nodes);
+
+		// Create the hidden nodes + biases and hidden to bias links
+		for (int i = 0; i < n_nodes; ++i)
+		{
+			char node_name_char[512];
+			sprintf(node_name_char, "%s_%d", name.data(), i);
+			std::string node_name(node_name_char);
+			node_names.push_back(node_name);
+			Node<TensorT> node(node_name, NodeType::hidden, NodeStatus::initialized, node_activation, node_activation_grad, node_integration, node_integration_error, node_integration_weight_grad);
+			node.setModuleName(module_name);
+			node.setDropProbability(drop_out_prob);
+
+			if (biases) {
+				char bias_name_char[512];
+				sprintf(bias_name_char, "%s-bias_%d", name.data(), i);
+				std::string bias_name(bias_name_char);
+				Node<TensorT> bias(bias_name, NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
+				bias.setModuleName(module_name);
+				model.addNodes({ node, bias });
+
+				char weight_bias_name_char[512];
+				sprintf(weight_bias_name_char, "%s-bias_%d_to_%s_%d", name.data(), i, name.data(), i);
+				std::string weight_bias_name(weight_bias_name_char);
+
+				char link_bias_name_char[512];
+				sprintf(link_bias_name_char, "%s-bias_%d_to_%s_%d", name.data(), i, name.data(), i);
+				std::string link_bias_name(link_bias_name_char);
+
+				std::shared_ptr<WeightInitOp<TensorT>>  bias_weight_init;
+				bias_weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));
+				std::shared_ptr<SolverOp<TensorT>>  bias_solver = solver;
+				Weight<TensorT> weight_bias(weight_bias_name, bias_weight_init, bias_solver);
+				weight_bias.setModuleName(module_name);
+				weight_bias.setDropProbability(drop_connection_prob);
+				Link link_bias(link_bias_name, bias_name, node_name, weight_bias_name);
+				link_bias.setModuleName(module_name);
+
+				model.addWeights({ weight_bias });
+				model.addLinks({ link_bias });
+			}
+
+			// Create the weights and links for input to hidden
+			char hidden_name_char[512];
+			sprintf(hidden_name_char, "%s_%d", name.data(), i);
+			std::string hidden_name(hidden_name_char);
+
+			char link_name_char[512];
+			sprintf(link_name_char, "%s_to_%s_%d", source_node_names[i].data(), name.data(), i);
+			std::string link_name(link_name_char);
+
+			char weight_name_char[512];
+			sprintf(weight_name_char, "%s_to_%s_%d", source_node_names[i].data(), name.data(), i);
+			std::string weight_name(weight_name_char);
+
+			std::shared_ptr<WeightInitOp<TensorT>>  hidden_weight_init = weight_init;
+			std::shared_ptr<SolverOp<TensorT>>  hidden_solver = solver;
+			Weight<TensorT> weight(weight_name_char, hidden_weight_init, hidden_solver);
+			weight.setModuleName(module_name);
+			weight.setDropProbability(drop_connection_prob);
+			Link link(link_name, source_node_names[i], hidden_name, weight_name);
+			link.setModuleName(module_name);
+
+			model.addWeights({ weight });
+			model.addLinks({ link });
+		}
+		return node_names;
+	}
+	template<typename TensorT>
+	void ModelBuilder<TensorT>::addSinglyConnected(Model<TensorT> & model, const std::string & module_name, const std::vector<std::string>& source_node_names, const std::vector<std::string>& sink_node_names,
+		const std::shared_ptr<WeightInitOp<TensorT>> & weight_init, const std::shared_ptr<SolverOp<TensorT>> & solver, TensorT drop_connection_prob)
+	{
+
+		assert(source_node_names.size() == sink_node_names.size());
+
+		// Create the weights and links for input to hidden
+		for (int i=0; i<source_node_names.size(); ++i)
+		{
+			char link_name_char[512];
+			sprintf(link_name_char, "%s_to_%s", source_node_names[i].data(), sink_node_names[i].data());
+			std::string link_name(link_name_char);
+
+			char weight_name_char[512];
+			sprintf(weight_name_char, "%s_to_%s", source_node_names[i].data(), sink_node_names[i].data());
+			std::string weight_name(weight_name_char);
+
+			std::shared_ptr<WeightInitOp<TensorT>>  hidden_weight_init = weight_init;
+			std::shared_ptr<SolverOp<TensorT>>  hidden_solver = solver;
+			Weight<TensorT> weight(weight_name_char, hidden_weight_init, hidden_solver);
+			weight.setModuleName(module_name);
+			weight.setDropProbability(drop_connection_prob);
+			Link link(link_name, source_node_names[i], sink_node_names[i], weight_name);
+			link.setModuleName(module_name);
+
+			model.addWeights({ weight });
+			model.addLinks({ link });
 		}
 	}
 	template<typename TensorT>

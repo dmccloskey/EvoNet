@@ -405,7 +405,7 @@ BOOST_AUTO_TEST_CASE(simulateChromatogram)
 	std::vector<std::pair<double, double>> best_lr, best_lr_test;
 
 	chromsimulator.simulateChromatogram(chrom_time, chrom_intensity, best_lr,
-		std::make_pair(1.0,1.0), std::make_pair(0.0, 0.0), std::make_pair(10.0, 10.0), 
+		std::make_pair(1.0, 1.0), std::make_pair(0.0, 0.0), std::make_pair(10.0, 10.0), 
 		std::make_pair(0.0, 0.0), std::make_pair(0.0, 0.0), std::make_pair(1.0, 1.0),
 		std::make_pair(1.0, 1.0), std::make_pair(10.0, 10.0), std::make_pair(0.0, 0.0), std::make_pair(0.0, 0.0), std::make_pair(1.0, 1.0)
 		);

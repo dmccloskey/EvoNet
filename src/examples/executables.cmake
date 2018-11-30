@@ -8,6 +8,7 @@ set(ml_executables_list
   MNIST_VAE_example
   AdditionProblem_example
   Metabolomics_example
+  PeakIntegrator_app
 )
 
 set(cuda_executables_list

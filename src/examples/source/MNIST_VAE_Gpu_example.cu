@@ -48,8 +48,7 @@ public:
 		// Add the inputs
 		std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", n_inputs);
 
-
-		// Add the Endocer FC layers
+		// Add the Endoder FC layers
 		std::vector<std::string> node_names, node_names_mu, node_names_logvar;	
 		node_names = model_builder.addFullyConnected(model, "EN0", "EN0", node_names_input, n_hidden_0,
 			std::shared_ptr<ActivationOp<TensorT>>(new ELUOp<TensorT>(1.0)),
@@ -223,7 +222,7 @@ public:
 							//input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = this->training_data(sample_indices[0], nodes_iter);  // test on only 1 sample
 						}
 						else if (nodes_iter >= n_input_pixels && nodes_iter < n_encodings) {
-							input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 0;// d(gen); // sample from a normal distribution
+							input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = d(gen); // sample from a normal distribution
 							output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 0; // Dummy data for KL divergence mu
 						}
 						else {
@@ -350,7 +349,7 @@ void main_VAE(const bool& make_model, const bool& load_weight_values, const bool
 	population_trainer.setNReplicatesPerModel(1);
 
 	// define the model logger
-	ModelLogger<float> model_logger(true, true, true, false, false, false, false, false);
+	ModelLogger<float> model_logger(true, true, false, false, false, false, false, false);
 	//ModelLogger<float> model_logger(true, true, true, false, false, false, false, false); // evaluation only
 
 	// define the data simulator
@@ -413,7 +412,7 @@ void main_VAE(const bool& make_model, const bool& load_weight_values, const bool
 	}
 	ModelTrainerExt<float> model_trainer;
 	model_trainer.setBatchSize(32);
-	model_trainer.setNEpochsTraining(1001); // evaluation only
+	model_trainer.setNEpochsTraining(5001); // evaluation only
 	//model_trainer.setNEpochsTraining(100001);
 	model_trainer.setNEpochsValidation(25);
 	model_trainer.setNEpochsEvaluation(100);
