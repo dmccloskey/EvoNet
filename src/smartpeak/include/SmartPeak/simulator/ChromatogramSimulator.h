@@ -47,20 +47,6 @@ namespace SmartPeak
 			@param[in] emg_sigma
 		*/
 		void simulateChromatogram(std::vector<TensorT>& x_O, std::vector<TensorT>& y_O,
-			std::vector<std::pair<TensorT, TensorT>>& peaks_LR,
-			const std::pair<TensorT, TensorT>& step_size_mu,
-			const std::pair<TensorT, TensorT>& step_size_sigma,
-			const std::pair<TensorT, TensorT>& chrom_window_size,
-			const std::pair<TensorT, TensorT>& noise_mu,
-			const std::pair<TensorT, TensorT>& noise_sigma,
-			const std::pair<TensorT, TensorT>& baseline_height,
-			const std::pair<TensorT, TensorT>& n_peaks,
-			const std::pair<TensorT, TensorT>& emg_h,
-			const std::pair<TensorT, TensorT>& emg_tau,
-			const std::pair<TensorT, TensorT>& emg_mu_offset,
-			const std::pair<TensorT, TensorT>& emg_sigma,
-			TensorT saturation_limit = 100) const;
-		void simulateChromatogram(std::vector<TensorT>& x_O, std::vector<TensorT>& y_O,
 			std::vector<TensorT>& x_noise_O, std::vector<TensorT>& y_noise_O,
 			std::vector<std::pair<TensorT, TensorT>>& peaks_LR,
 			const std::pair<TensorT, TensorT>& step_size_mu,
@@ -235,57 +221,6 @@ namespace SmartPeak
 	}
 
 	template<typename TensorT>
-	inline void ChromatogramSimulator<TensorT>::simulateChromatogram(std::vector<TensorT>& x_O, std::vector<TensorT>& y_O, std::vector<std::pair<TensorT, TensorT>>& peaks_LR, 
-		const std::pair<TensorT, TensorT>& step_size_mu, const std::pair<TensorT, TensorT>& step_size_sigma, 
-		const std::pair<TensorT, TensorT>& chrom_window_size, const std::pair<TensorT, TensorT>& noise_mu, const std::pair<TensorT, TensorT>& noise_sigma, 
-		const std::pair<TensorT, TensorT>& baseline_height,	const std::pair<TensorT, TensorT>& n_peaks, 
-		const std::pair<TensorT, TensorT>& emg_h, const std::pair<TensorT, TensorT>& emg_tau, const std::pair<TensorT, TensorT>& emg_mu_offset, const std::pair<TensorT, TensorT>& emg_sigma,
-		TensorT saturation_limit) const
-	{
-		// lampda for choosing a random number within l/u bounds
-		auto random_bounds = [](const TensorT& lb, const TensorT& ub)->TensorT {
-			std::random_device rd; // obtain a random number from hardware
-			std::mt19937 eng(rd()); // seed the generator
-			std::uniform_int_distribution<> distr(lb, ub); // define the range
-			return (TensorT)distr(eng);
-		};
-
-		// determine the chrom window size, saturation limits, and number of peaks
-		TensorT chrom_window_size_rand = random_bounds(chrom_window_size.first, chrom_window_size.second);
-		TensorT n_peaks_rand = random_bounds(n_peaks.first, n_peaks.second);
-		TensorT peak_window_length = chrom_window_size_rand / n_peaks_rand;
-
-		// determine the sampling rate
-		TensorT step_size_mu_rand = random_bounds(step_size_mu.first, step_size_mu.second);
-		TensorT step_size_sigma_rand = random_bounds(step_size_sigma.first, step_size_sigma.second);
-
-		// generate a random set of peaks
-		std::vector<PeakSimulator<TensorT>> peaks;
-		std::vector<EMGModel<TensorT>> emgs;
-		for (int peak_iter = 0; peak_iter < n_peaks_rand; ++peak_iter) {
-			// Define the peak
-			TensorT baseline_left = random_bounds(baseline_height.first, baseline_height.second);
-			TensorT baseline_right = random_bounds(baseline_height.first, baseline_height.second);
-			TensorT noise_mu_rand = random_bounds(noise_mu.first, noise_mu.second);
-			TensorT noise_sigma_rand = random_bounds(noise_sigma.first, noise_sigma.second);
-			TensorT peak_start = (TensorT)peak_iter * peak_window_length;
-			TensorT peak_end = (TensorT)(peak_iter + 1) * peak_window_length;
-			peaks.push_back(PeakSimulator<TensorT>(step_size_mu_rand, step_size_sigma_rand, peak_start, peak_end,
-				noise_mu_rand, noise_sigma_rand, baseline_left, baseline_right, saturation_limit));
-
-			// Define the EMG generator
-			TensorT h = random_bounds(emg_h.first, emg_h.second);
-			TensorT tau = random_bounds(emg_tau.first, emg_tau.second);
-			TensorT mu = random_bounds(emg_mu_offset.first, emg_mu_offset.second) + ((peak_end - peak_start)/(TensorT)2 + peak_start);
-			TensorT sigma = random_bounds(emg_sigma.first, emg_sigma.second);
-			emgs.push_back(EMGModel<TensorT>(h, tau, mu, sigma));
-		}
-
-		// make the chromatogram
-		makeChromatogram(x_O, y_O, peaks_LR, peaks, emgs);
-	}
-
-	template<typename TensorT>
 	inline void ChromatogramSimulator<TensorT>::simulateChromatogram(std::vector<TensorT>& x_O, std::vector<TensorT>& y_O, 
 		std::vector<TensorT>& x_noise_O, std::vector<TensorT>& y_noise_O, std::vector<std::pair<TensorT, TensorT>>& peaks_LR,
 		const std::pair<TensorT, TensorT>& step_size_mu, const std::pair<TensorT, TensorT>& step_size_sigma,
@@ -323,7 +258,7 @@ namespace SmartPeak
 			TensorT peak_start = (TensorT)peak_iter * peak_window_length;
 			TensorT peak_end = (TensorT)(peak_iter + 1) * peak_window_length;
 			peaks.push_back(PeakSimulator<TensorT>(step_size_mu_rand, 0, peak_start, peak_end,
-				noise_mu_rand, 0, baseline_left, baseline_right, saturation_limit));
+				0, 0, baseline_left, baseline_right, saturation_limit));
 			peaks_noise.push_back(PeakSimulator<TensorT>(step_size_mu_rand, step_size_sigma_rand, peak_start, peak_end,
 				noise_mu_rand, noise_sigma_rand, baseline_left, baseline_right, saturation_limit));
 

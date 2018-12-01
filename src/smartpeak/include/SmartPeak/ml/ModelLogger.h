@@ -51,7 +51,7 @@ public:
 
 		@returns True for a successfull write operation
 		*/
-		bool initLogs(const Model<TensorT> & model);
+		bool initLogs(Model<TensorT> & model);
 
 		/**
 		@brief Initialize the log files
@@ -60,7 +60,7 @@ public:
 
 		@returns True for a successfull write operation
 		*/
-		bool writeLogs(const Model<TensorT> & model, const int& n_epochs, const std::vector<std::string>& training_metric_names, const std::vector<std::string>& validation_metric_names,
+		bool writeLogs(Model<TensorT> & model, const int& n_epochs, const std::vector<std::string>& training_metric_names, const std::vector<std::string>& validation_metric_names,
 			const std::vector<TensorT>& training_metrics, const std::vector<TensorT>& validation_metrics, const std::vector<std::string>& output_node_names, const Eigen::Tensor<TensorT, 3>& expected_values,
 			std::vector<std::string> node_names = {}, std::vector<std::string> weight_names = {}, std::vector<std::string> module_names = {});
 
@@ -72,7 +72,7 @@ public:
 
 		@returns True for a successfull write operation
 		*/
-		bool logTimePerEpoch(const Model<TensorT> & model, const int& n_epoch);
+		bool logTimePerEpoch(Model<TensorT> & model, const int& n_epoch);
 
 		/**
 		@brief Log training/validation metrics per epoch
@@ -84,7 +84,7 @@ public:
 
 		@returns True for a successfull write operation
 		*/
-		bool logTrainValMetricsPerEpoch(const Model<TensorT>& model, const std::vector<std::string>& training_metric_names, const std::vector<std::string>& validation_metric_names,
+		bool logTrainValMetricsPerEpoch(Model<TensorT>& model, const std::vector<std::string>& training_metric_names, const std::vector<std::string>& validation_metric_names,
 			const std::vector<TensorT>& training_metrics, const std::vector<TensorT>& validation_metrics, const int& n_epoch);
 
 		/**
@@ -96,7 +96,7 @@ public:
 
 		@returns True for a successfull write operation
 		*/
-		bool logExpectedAndPredictedOutputPerEpoch(const Model<TensorT>& model, const std::vector<std::string>& output_node_names, const Eigen::Tensor<TensorT, 3>& expected_values, const int& n_epoch);
+		bool logExpectedAndPredictedOutputPerEpoch(Model<TensorT>& model, const std::vector<std::string>& output_node_names, const Eigen::Tensor<TensorT, 3>& expected_values, const int& n_epoch);
 
 		/**
 		@brief Model<TensorT> weight update ratio for each link for each time step per epoch
@@ -106,7 +106,7 @@ public:
 
 		@returns True for a successfull write operation
 		*/
-		bool logWeightsPerEpoch(const Model<TensorT>& model, const int& n_epoch, std::vector<std::string> weight_names = {});
+		bool logWeightsPerEpoch(Model<TensorT>& model, const int& n_epoch, std::vector<std::string> weight_names = {});
 
 		/**
 		@brief Model<TensorT> node errors for each time step per epoch
@@ -116,7 +116,7 @@ public:
 
 		@returns True for a successfull write operation
 		*/
-		bool logNodeErrorsPerEpoch(const Model<TensorT>& model, const int& n_epoch, std::vector<std::string> node_names = {});
+		bool logNodeErrorsPerEpoch(Model<TensorT>& model, const int& n_epoch, std::vector<std::string> node_names = {});
 
 		/**
 		@brief The mean and variance of each module output and error for each time step for each mini batch per epoch
@@ -126,7 +126,7 @@ public:
 
 		@returns True for a successfull write operation
 		*/
-		bool logModuleMeanAndVariancePerEpoch(const Model<TensorT>& model, const int& n_epoch, std::vector<std::string> module_names = {});
+		bool logModuleMeanAndVariancePerEpoch(Model<TensorT>& model, const int& n_epoch, std::vector<std::string> module_names = {});
 
 		/**
 		@brief Model<TensorT> node outputs for each time step per epoch
@@ -136,7 +136,7 @@ public:
 
 		@returns True for a successfull write operation
 		*/
-		bool logNodeOutputsPerEpoch(const Model<TensorT>& model, const int& n_epoch, std::vector<std::string> node_names = {});
+		bool logNodeOutputsPerEpoch(Model<TensorT>& model, const int& n_epoch, std::vector<std::string> node_names = {});
 
 		/**
 		@brief Model<TensorT> node derivatives for each time step per epoch
@@ -146,7 +146,7 @@ public:
 
 		@returns True for a successfull write operation
 		*/
-		bool logNodeDerivativesPerEpoch(const Model<TensorT>& model, const int& n_epoch, std::vector<std::string> node_names = {});
+		bool logNodeDerivativesPerEpoch(Model<TensorT>& model, const int& n_epoch, std::vector<std::string> node_names = {});
 
 	private:
 		bool log_time_epoch_ = false; ///< log ...
@@ -179,7 +179,7 @@ public:
 	}
 
 	template<typename TensorT>
-	bool ModelLogger<TensorT>::initLogs(const Model<TensorT>& model)
+	bool ModelLogger<TensorT>::initLogs(Model<TensorT>& model)
 	{
 		if (log_time_epoch_) {
 			std::string filename = model.getName() + "_TimePerEpoch.csv";
@@ -225,7 +225,7 @@ public:
 	}
 
 	template<typename TensorT>
-	bool ModelLogger<TensorT>::writeLogs(const Model<TensorT>& model, const int & n_epochs, const std::vector<std::string>& training_metric_names, const std::vector<std::string>& validation_metric_names, const std::vector<TensorT>& training_metrics, const std::vector<TensorT>& validation_metrics, const std::vector<std::string>& output_node_names, const Eigen::Tensor<TensorT, 3>& expected_values,
+	bool ModelLogger<TensorT>::writeLogs(Model<TensorT>& model, const int & n_epochs, const std::vector<std::string>& training_metric_names, const std::vector<std::string>& validation_metric_names, const std::vector<TensorT>& training_metrics, const std::vector<TensorT>& validation_metrics, const std::vector<std::string>& output_node_names, const Eigen::Tensor<TensorT, 3>& expected_values,
 		std::vector<std::string> node_names, std::vector<std::string> weight_names, std::vector<std::string> module_names)
 	{
 		if (log_time_epoch_) {
@@ -256,7 +256,7 @@ public:
 	}
 
 	template<typename TensorT>
-	bool ModelLogger<TensorT>::logTimePerEpoch(const Model<TensorT>& model, const int & n_epoch)
+	bool ModelLogger<TensorT>::logTimePerEpoch(Model<TensorT>& model, const int & n_epoch)
 	{
 		// writer header
 		if (log_time_epoch_csvwriter_.getLineCount() == 0) {
@@ -277,7 +277,7 @@ public:
 	}
 
 	template<typename TensorT>
-	bool ModelLogger<TensorT>::logTrainValMetricsPerEpoch(const Model<TensorT>& model, const std::vector<std::string>& training_metric_names, const std::vector<std::string>& validation_metric_names,
+	bool ModelLogger<TensorT>::logTrainValMetricsPerEpoch(Model<TensorT>& model, const std::vector<std::string>& training_metric_names, const std::vector<std::string>& validation_metric_names,
 		const std::vector<TensorT>& training_metrics, const std::vector<TensorT>& validation_metrics, const int & n_epoch)
 	{
 		// writer header
@@ -307,7 +307,7 @@ public:
 	}
 
 	template<typename TensorT>
-	bool ModelLogger<TensorT>::logExpectedAndPredictedOutputPerEpoch(const Model<TensorT>& model, const std::vector<std::string>& output_node_names, const Eigen::Tensor<TensorT, 3>& expected_values, const int & n_epoch)
+	bool ModelLogger<TensorT>::logExpectedAndPredictedOutputPerEpoch(Model<TensorT>& model, const std::vector<std::string>& output_node_names, const Eigen::Tensor<TensorT, 3>& expected_values, const int & n_epoch)
 	{
 		std::pair<int, int> bmsizes = model.getBatchAndMemorySizes();
 		int batch_size = bmsizes.first;
@@ -332,7 +332,7 @@ public:
 		}
 
 		// write next entry
-		if (model.getNode(output_node_names[0]).getOutput().size() < batch_size * memory_size)
+		if (model.nodes_.at(output_node_names[0])->getOutput().size() < batch_size * memory_size)
 			return false;
 
 		std::vector<std::string> line = { std::to_string(n_epoch) };
@@ -340,7 +340,7 @@ public:
 		for (const std::string& node_name : output_node_names) {
 			for (size_t batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
 				for (size_t memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
-					line.push_back(std::to_string(model.getNode(node_name).getOutput()(batch_iter, memory_iter))); // very slow operation
+					line.push_back(std::to_string(model.nodes_.at(node_name)->getOutput()(batch_iter, memory_iter))); // very slow operation
 					line.push_back(std::to_string(expected_values(batch_iter, memory_iter, node_cnt)));
 				}
 			}
@@ -351,7 +351,7 @@ public:
 	}
 
 	template<typename TensorT>
-	bool ModelLogger<TensorT>::logWeightsPerEpoch(const Model<TensorT>& model, const int & n_epoch, std::vector<std::string> weight_names)
+	bool ModelLogger<TensorT>::logWeightsPerEpoch(Model<TensorT>& model, const int & n_epoch, std::vector<std::string> weight_names)
 	{
 		std::vector<Weight<TensorT>> weights;
 		if (weight_names.size() == 0) {
@@ -383,7 +383,7 @@ public:
 	}
 
 	template<typename TensorT>
-	bool ModelLogger<TensorT>::logNodeErrorsPerEpoch(const Model<TensorT>& model, const int & n_epoch, std::vector<std::string> node_names)
+	bool ModelLogger<TensorT>::logNodeErrorsPerEpoch(Model<TensorT>& model, const int & n_epoch, std::vector<std::string> node_names)
 	{
 
 		std::pair<int, int> bmsizes = model.getBatchAndMemorySizes();
@@ -435,7 +435,7 @@ public:
 	}
 
 	template<typename TensorT>
-	bool ModelLogger<TensorT>::logModuleMeanAndVariancePerEpoch(const Model<TensorT>& model, const int & n_epoch, std::vector<std::string> module_name)
+	bool ModelLogger<TensorT>::logModuleMeanAndVariancePerEpoch(Model<TensorT>& model, const int & n_epoch, std::vector<std::string> module_name)
 	{
 		// [TODO: this method should be refactored or removed all together]
 		//// make a map of all modules/nodes in the model
@@ -479,9 +479,9 @@ public:
 		//	mean_error.setConstant(0.0f);
 		//	int nodes_cnt = 0;
 		//	for (const std::string& node_name : module_to_node_names.second) {
-		//		if (model.getNode(node_name).getType() != NodeType::bias) {
-		//			mean_output += model.getNode(node_name).getOutput();
-		//			mean_error += model.getNode(node_name).getError();
+		//		if (model.nodes_.at(node_name).getType() != NodeType::bias) {
+		//			mean_output += model.nodes_.at(node_name).getOutput();
+		//			mean_error += model.nodes_.at(node_name).getError();
 		//			++nodes_cnt;
 		//		}
 		//	}
@@ -494,10 +494,10 @@ public:
 		//	variance_output.setConstant(0.0f);
 		//	variance_error.setConstant(0.0f);
 		//	for (const std::string& node_name : module_to_node_names.second) {
-		//		if (model.getNode(node_name).getType() != NodeType::bias) {
-		//			auto diff_output = model.getNode(node_name).getOutput() - mean_output;
+		//		if (model.nodes_.at(node_name).getType() != NodeType::bias) {
+		//			auto diff_output = model.nodes_.at(node_name).getOutput() - mean_output;
 		//			variance_output += (diff_output * diff_output);
-		//			auto diff_error = model.getNode(node_name).getError() - mean_error;
+		//			auto diff_error = model.nodes_.at(node_name).getError() - mean_error;
 		//			variance_error += (diff_error * diff_error);
 		//		}
 		//	}
@@ -518,7 +518,7 @@ public:
 	}
 
 	template<typename TensorT>
-	bool ModelLogger<TensorT>::logNodeOutputsPerEpoch(const Model<TensorT>& model, const int & n_epoch, std::vector<std::string> node_names)
+	bool ModelLogger<TensorT>::logNodeOutputsPerEpoch(Model<TensorT>& model, const int & n_epoch, std::vector<std::string> node_names)
 	{
 		std::pair<int, int> bmsizes = model.getBatchAndMemorySizes();
 		int batch_size = bmsizes.first;
@@ -565,7 +565,7 @@ public:
 	}
 
 	template<typename TensorT>
-	bool ModelLogger<TensorT>::logNodeDerivativesPerEpoch(const Model<TensorT>& model, const int & n_epoch, std::vector<std::string> node_names)
+	bool ModelLogger<TensorT>::logNodeDerivativesPerEpoch(Model<TensorT>& model, const int & n_epoch, std::vector<std::string> node_names)
 	{
 
 		std::pair<int, int> bmsizes = model.getBatchAndMemorySizes();

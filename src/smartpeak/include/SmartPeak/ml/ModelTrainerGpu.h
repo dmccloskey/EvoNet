@@ -197,6 +197,8 @@ namespace SmartPeak
 				if (getVerbosityLevel() >= 2)
 					std::cout << "Logging..." << std::endl;
 				const Eigen::Tensor<TensorT, 3> expected_values = output.chip(iter, 3);
+				if (model_logger.getLogExpectedPredictedEpoch())
+					model_interpreter.getModelResults(model, true, false, false);
 				model_logger.writeLogs(model, iter, { "Error" }, {}, { total_error(0) }, {}, output_nodes, expected_values);
 			}
 
@@ -298,6 +300,8 @@ namespace SmartPeak
 			// log epoch
 			if (getLogValidation()) {
 				const Eigen::Tensor<TensorT, 3> expected_values = output.chip(iter, 3);
+				if (model_logger.getLogExpectedPredictedEpoch())
+					model_interpreter.getModelResults(model, true, false, false);
 				model_logger.writeLogs(model, iter, {}, { "Error" }, {}, { total_error(0) }, output_nodes, expected_values);
 			}
 
