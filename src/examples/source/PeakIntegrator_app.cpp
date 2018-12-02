@@ -284,6 +284,7 @@ public:
 		//assert(n_output_nodes == n_input_pixels + 2 * n_encodings);
 		//assert(n_input_nodes == n_input_pixels + n_encodings);
 		assert(n_output_nodes == n_input_nodes);
+		//assert(chrom_window_size_.first == chrom_window_size_.second == (TensorT)n_output_nodes);
 
 		// Reformat the Chromatogram for training
 		for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
@@ -295,9 +296,9 @@ public:
 
 					// make the chrom and noisy chrom
 					this->simulateChromatogram(chrom_time_test, chrom_intensity_test, chrom_time, chrom_intensity, best_lr,
-						std::make_pair(1.0, 1.0), std::make_pair(0.0, 0.0), std::make_pair(n_input_nodes, n_input_nodes),
-						std::make_pair(0.0, 0.0), std::make_pair(0.0, 5.0), std::make_pair(0.0, 0.0),
-						std::make_pair(10.0, 20.0), std::make_pair(10.0, 100.0), std::make_pair(0.0, 1.0), std::make_pair(-10.0, 10.0), std::make_pair(10.0, 30.0));
+						step_size_mu_, step_size_sigma_, chrom_window_size_,
+						noise_mu_, noise_sigma_, baseline_height_,
+						n_peaks_, emg_h_, emg_tau_, emg_mu_offset_, emg_sigma_);
 
 					for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
 						input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = chrom_intensity[nodes_iter];  //intensity
@@ -321,6 +322,7 @@ public:
 		//assert(n_output_nodes == n_input_pixels + 2 * n_encodings);
 		//assert(n_input_nodes == n_input_pixels + n_encodings);
 		assert(n_output_nodes == n_input_nodes);
+		//assert(chrom_window_size_.first == chrom_window_size_.second == (TensorT)n_output_nodes);
 
 		// Reformat the Chromatogram for training
 		for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
@@ -332,9 +334,9 @@ public:
 
 					// make the chrom and noisy chrom
 					this->simulateChromatogram(chrom_time_test, chrom_intensity_test, chrom_time, chrom_intensity, best_lr,
-						std::make_pair(1.0, 1.0), std::make_pair(0.0, 0.0), std::make_pair(n_input_nodes, n_input_nodes),
-						std::make_pair(0.0, 0.0), std::make_pair(0.0, 0.0), std::make_pair(1.0, 1.0),
-						std::make_pair(3.0, 3.0), std::make_pair(10.0, 10.0), std::make_pair(0.0, 0.0), std::make_pair(0.0, 0.0), std::make_pair(1.0, 1.0));
+						step_size_mu_, step_size_sigma_, chrom_window_size_,
+						noise_mu_, noise_sigma_, baseline_height_,
+						n_peaks_, emg_h_, emg_tau_, emg_mu_offset_, emg_sigma_);
 
 					for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
 						input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = chrom_intensity[nodes_iter];  //intensity
@@ -345,6 +347,19 @@ public:
 		}
 		time_steps.setConstant(1.0f);
 	}
+	
+	/// public members that are passed to simulate methods
+	std::pair<TensorT, TensorT> step_size_mu_ = std::make_pair(1, 1);
+	std::pair<TensorT, TensorT> step_size_sigma_ = std::make_pair(0, 0);
+	std::pair<TensorT, TensorT> chrom_window_size_ = std::make_pair(500, 500);
+	std::pair<TensorT, TensorT> noise_mu_ = std::make_pair(0, 0);
+	std::pair<TensorT, TensorT> noise_sigma_ = std::make_pair(0, 5.0);
+	std::pair<TensorT, TensorT> baseline_height_ = std::make_pair(0, 0);
+	std::pair<TensorT, TensorT> n_peaks_ = std::make_pair(10, 20);
+	std::pair<TensorT, TensorT> emg_h_ = std::make_pair(10, 100);
+	std::pair<TensorT, TensorT> emg_tau_ = std::make_pair(0, 1);
+	std::pair<TensorT, TensorT> emg_mu_offset_ = std::make_pair(-10, 10);
+	std::pair<TensorT, TensorT> emg_sigma_ = std::make_pair(10, 30);
 };
 
 template<typename TensorT>
@@ -423,9 +438,48 @@ void main_DenoisingAE(const bool& make_model, const bool& load_weight_values, co
 
 	// define the data simulator
 	const std::size_t input_size = 500;
-	const std::size_t encoding_size = 32;
-	const std::size_t n_hidden = 128;
+	const std::size_t encoding_size = 64;
+	const std::size_t n_hidden = 256;
 	DataSimulatorExt<float> data_simulator;
+
+	// Hard
+	//data_simulator.step_size_mu_ = std::make_pair(1, 1);
+	//data_simulator.step_size_sigma_ = std::make_pair(0, 0);
+	//data_simulator.chrom_window_size_ = std::make_pair(500, 500);
+	//data_simulator.noise_mu_ = std::make_pair(0, 0);
+	//data_simulator.noise_sigma_ = std::make_pair(0, 5.0);
+	//data_simulator.baseline_height_ = std::make_pair(0, 0);
+	//data_simulator.n_peaks_ = std::make_pair(10, 20);
+	//data_simulator.emg_h_ = std::make_pair(10, 100);
+	//data_simulator.emg_tau_ = std::make_pair(0, 1);
+	//data_simulator.emg_mu_offset_ = std::make_pair(-10, 10);
+	//data_simulator.emg_sigma_ = std::make_pair(10, 30);
+
+	//// Easy
+	//data_simulator.step_size_mu_ = std::make_pair(1, 1);
+	//data_simulator.step_size_sigma_ = std::make_pair(0, 0);
+	//data_simulator.chrom_window_size_ = std::make_pair(input_size, input_size);
+	//data_simulator.noise_mu_ = std::make_pair(0, 0);
+	//data_simulator.noise_sigma_ = std::make_pair(0, 5);
+	//data_simulator.baseline_height_ = std::make_pair(0, 0);
+	//data_simulator.n_peaks_ = std::make_pair(2, 20);
+	//data_simulator.emg_h_ = std::make_pair(10, 100);
+	//data_simulator.emg_tau_ = std::make_pair(0, 0);
+	//data_simulator.emg_mu_offset_ = std::make_pair(0, 0);
+	//data_simulator.emg_sigma_ = std::make_pair(10, 30);
+
+	// Test
+	data_simulator.step_size_mu_ = std::make_pair(1, 1);
+	data_simulator.step_size_sigma_ = std::make_pair(0, 0);
+	data_simulator.chrom_window_size_ = std::make_pair(input_size, input_size);
+	data_simulator.noise_mu_ = std::make_pair(0, 0);
+	data_simulator.noise_sigma_ = std::make_pair(0, 0);
+	data_simulator.baseline_height_ = std::make_pair(0, 0);
+	data_simulator.n_peaks_ = std::make_pair(1, 1);
+	data_simulator.emg_h_ = std::make_pair(100, 100);
+	data_simulator.emg_tau_ = std::make_pair(0, 0);
+	data_simulator.emg_mu_offset_ = std::make_pair(0, 0);
+	data_simulator.emg_sigma_ = std::make_pair(10, 10);
 
 	// Make the input nodes
 	std::vector<std::string> input_nodes;
@@ -450,8 +504,8 @@ void main_DenoisingAE(const bool& make_model, const bool& load_weight_values, co
 		model_interpreters.push_back(model_interpreter);
 	}
 	ModelTrainerExt<float> model_trainer;
-	//model_trainer.setBatchSize(1); // evaluation only
-	model_trainer.setBatchSize(32);
+	model_trainer.setBatchSize(1); // evaluation only
+	//model_trainer.setBatchSize(32);
 	model_trainer.setNEpochsTraining(1001);
 	model_trainer.setNEpochsValidation(0);
 	model_trainer.setNEpochsEvaluation(1);
