@@ -146,7 +146,7 @@ public:
 
 		return model;
 	}
-	Model<TensorT> makeCovNet_v02(const int& n_inputs, const int& n_outputs, int n_depth_1 = 32, int n_depth_2 = 2, int n_fc = 128) {
+	Model<TensorT> makeCovNet_v02(const int& n_inputs, const int& n_outputs, int n_depth_1 = 32, int n_depth_2 = 32, int n_fc = 128) {
 		Model<TensorT> model;
 		model.setId(0);
 		model.setName("CovNet");
@@ -159,7 +159,7 @@ public:
 		// Add the first convolution -> max pool -> ReLU layers
 		std::vector<std::string> node_names_conv0;
 		std::string conv_name = "Conv0-" + std::to_string(0);
-		node_names_conv0 = model_builder.addConvolution(model, conv_name, conv_name, node_names_input,
+		node_names_conv0 = model_builder.addConvolution(model, "Conv0", conv_name, node_names_input,
 			28, 28, 0, 0,
 			5, 5, 1, 0, 0,
 			std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
@@ -171,7 +171,7 @@ public:
 			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 		for (size_t d = 1; d < n_depth_1; ++d) {
 			std::string conv_name = "Conv0-" + std::to_string(d);
-			model_builder.addConvolution(model, conv_name, conv_name, node_names_input, node_names_conv0,
+			model_builder.addConvolution(model, "Conv0", conv_name, node_names_input, node_names_conv0,
 				28, 28, 0, 0,
 				5, 5, 1, 0, 0,
 				std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
@@ -185,8 +185,8 @@ public:
 
 		// Add the second convolution -> max pool -> ReLU layers
 		std::vector<std::string> node_names_conv1;
-		std::string conv_name = "Conv1-" + std::to_string(0);
-		node_names_conv1 = model_builder.addConvolution(model, conv_name, conv_name, node_names_conv0,
+		conv_name = "Conv1-" + std::to_string(0);
+		node_names_conv1 = model_builder.addConvolution(model, "Conv1", conv_name, node_names_conv0,
 			sqrt(node_names_conv0.size()), sqrt(node_names_conv0.size()), 0, 0,
 			5, 5, 1, 0, 0,
 			std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
@@ -198,7 +198,7 @@ public:
 			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 		for (size_t d = 1; d < n_depth_2; ++d) {
 			std::string conv_name = "Conv1-" + std::to_string(d);
-			model_builder.addConvolution(model, conv_name, conv_name, node_names_conv0, node_names_conv1,
+			model_builder.addConvolution(model, "Conv1", conv_name, node_names_conv0, node_names_conv1,
 				sqrt(node_names_conv0.size()), sqrt(node_names_conv0.size()), 0, 0,
 				5, 5, 1, 0, 0,
 				std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
@@ -546,19 +546,19 @@ void main_CovNet() {
 	DataSimulatorExt<float> data_simulator;
 
 	// read in the training data
-	const std::string training_data_filename = "C:/Users/domccl/GitHub/mnist/train-images.idx3-ubyte";
-	const std::string training_labels_filename = "C:/Users/domccl/GitHub/mnist/train-labels.idx1-ubyte";
-	//const std::string training_data_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/train-images-idx3-ubyte";
-	//const std::string training_labels_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/train-labels-idx1-ubyte";
+	//const std::string training_data_filename = "C:/Users/domccl/GitHub/mnist/train-images.idx3-ubyte";
+	//const std::string training_labels_filename = "C:/Users/domccl/GitHub/mnist/train-labels.idx1-ubyte";
+	const std::string training_data_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/train-images-idx3-ubyte";
+	const std::string training_labels_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/train-labels-idx1-ubyte";
 	//const std::string training_data_filename = "/home/user/data/train-images-idx3-ubyte";
 	//const std::string training_labels_filename = "/home/user/data/train-labels-idx1-ubyte";
 	data_simulator.readData(training_data_filename, training_labels_filename, true, training_data_size, input_size);
 
 	// read in the validation data
-	const std::string validation_data_filename = "C:/Users/domccl/GitHub/mnist/t10k-images.idx3-ubyte";
-	const std::string validation_labels_filename = "C:/Users/domccl/GitHub/mnist/t10k-labels.idx1-ubyte";
-	//const std::string validation_data_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/t10k-images-idx3-ubyte";
-	//const std::string validation_labels_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/t10k-labels-idx1-ubyte";
+	//const std::string validation_data_filename = "C:/Users/domccl/GitHub/mnist/t10k-images.idx3-ubyte";
+	//const std::string validation_labels_filename = "C:/Users/domccl/GitHub/mnist/t10k-labels.idx1-ubyte";
+	const std::string validation_data_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/t10k-images-idx3-ubyte";
+	const std::string validation_labels_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/t10k-labels-idx1-ubyte";
 	//const std::string validation_data_filename = "/home/user/data/t10k-images-idx3-ubyte";
 	//const std::string validation_labels_filename = "/home/user/data/t10k-labels-idx1-ubyte";
 	data_simulator.readData(validation_data_filename, validation_labels_filename, false, validation_data_size, input_size);
