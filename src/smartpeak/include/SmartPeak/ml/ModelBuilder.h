@@ -130,6 +130,9 @@ public:
 		The input is considered a linearized matrix in column order
 		The output is considered a linearized matrix in column order
 
+		Overload is provided to add additional filters that operate over the same
+		input and output nodes
+
 		@param[in, out] Model
 		@param[in] source_node_names Node_names to add the layer to
 		@param[in] input_width The width of the input
@@ -156,6 +159,19 @@ public:
 			const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& node_integration_weight_grad,
 			const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver,
 			TensorT drop_out_prob = 0.0f, TensorT drop_connection_prob = 0.0f, bool biases = true);
+		void addConvolution(Model<TensorT> & model, const std::string & name, const std::string& module_name, 
+			const std::vector<std::string>& source_node_names,
+			const std::vector<std::string>& output_node_names,
+			const int & input_width, const int & input_height, const int& input_width_zero_padding, const int& input_height_zero_padding,
+			const int & extent_width, const int & extent_height, const int & stride,
+			const int & output_width_zero_padding, const int& output_height_zero_padding,
+			const std::shared_ptr<ActivationOp<TensorT>>& node_activation,
+			const std::shared_ptr<ActivationOp<TensorT>>& node_activation_grad,
+			const std::shared_ptr<IntegrationOp<TensorT>>& node_integration,
+			const std::shared_ptr<IntegrationErrorOp<TensorT>>& node_integration_error,
+			const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& node_integration_weight_grad,
+			const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver,
+			TensorT drop_out_prob = 0.0f, TensorT drop_connection_prob = 0.0f);
 
 		/**
 		@brief Add a normalization layer with activation
@@ -180,7 +196,7 @@ public:
 			TensorT drop_out_prob = 0.0f, TensorT drop_connection_prob = 0.0f, bool biases = true);
 
 		/**
-		@brief Add a VAE Encoding layer with input node
+		@brief Add a VAE Encoding layer for a gaussian distribution with input node
 
 		@param[in, out] Model
 		@param[in] mu_node_names Node_names from the average layer
@@ -188,7 +204,22 @@ public:
 
 		@returns vector of output node names
 		*/
-		std::vector<std::string> addVAEEncoding(Model<TensorT>& model, const std::string& name, const std::string& module_name,
+		std::vector<std::string> addGaussianEncoding(Model<TensorT>& model, const std::string& name, const std::string& module_name,
+			const std::vector<std::string>& mu_node_names, const std::vector<std::string>& logvar_node_names);
+
+		/**
+		@brief Add a VAE Encoding layer for a Gumble categorical distribution with input node
+
+		References:
+			TODO
+
+		@param[in, out] Model
+		@param[in] mu_node_names Node_names from the average layer
+		@param[in] logvar_node_names Nodes names from the logvar layer
+
+		@returns vector of output node names
+		*/
+		std::vector<std::string> addCategoricalEncoding(Model<TensorT>& model, const std::string& name, const std::string& module_name,
 			const std::vector<std::string>& mu_node_names, const std::vector<std::string>& logvar_node_names);
 
 		/**
@@ -862,7 +893,7 @@ public:
 					if (biases) {
 						// Create the links between the bias and output nodes
 						char link_bias_name_char[512];
-						sprintf(link_bias_name_char, "%s_to_%s", bias_name.data(), output_name.data());
+						sprintf(link_bias_name_char, "%s_to_%s_%s", bias_name.data(), output_name.data(), module_name.data());
 						std::string link_bias_name(link_bias_name_char);
 						Link link_bias(link_bias_name, bias_name, output_name, weight_bias_name);
 						link_bias.setModuleName(module_name);
@@ -876,7 +907,7 @@ public:
 		for (size_t filter_height_iter = 0; filter_height_iter < extent_height; ++filter_height_iter) {
 			for (size_t filter_width_iter = 0; filter_width_iter < extent_width; ++filter_width_iter) {
 				char weight_filter_name_char[512];
-				sprintf(weight_filter_name_char, "%s_H%d-W%d", name.data(), filter_height_iter, filter_width_iter);
+				sprintf(weight_filter_name_char, "%s-%s_H%d-W%d", name.data(), module_name.data(), filter_height_iter, filter_width_iter);
 				std::string weight_filter_name(weight_filter_name_char);
 				Weight<TensorT> weight_filter(weight_filter_name, weight_init, solver);
 				weight_filter.setModuleName(module_name);
@@ -939,7 +970,7 @@ public:
 
 						// Weight<TensorT> name
 						char weight_filter_name_char[512];
-						sprintf(weight_filter_name_char, "%s_H%d-W%d", name.data(), filter_height_iter, filter_width_iter);
+						sprintf(weight_filter_name_char, "%s-%s_H%d-W%d", name.data(), module_name.data(), filter_height_iter, filter_width_iter);
 						std::string weight_filter_name(weight_filter_name_char);
 
 						// Output node name
@@ -949,7 +980,7 @@ public:
 
 						// Link name
 						char link_filter_name_char[512];
-						sprintf(link_filter_name_char, "%s_to_%s", source_node_names[source_node_iter].data(), output_name.data());
+						sprintf(link_filter_name_char, "%s_to_%s_%s", source_node_names[source_node_iter].data(), output_name.data(), module_name.data());
 						std::string link_filter_name(link_filter_name_char);
 
 						Link link_filter(link_filter_name, source_node_names[source_node_iter], output_name, weight_filter_name);
@@ -966,6 +997,132 @@ public:
 		}
 
 		return node_names;
+	}
+	template<typename TensorT>
+	void ModelBuilder<TensorT>::addConvolution(Model<TensorT> & model, const std::string & name, const std::string& module_name,
+		const std::vector<std::string>& source_node_names,
+		const std::vector<std::string>& sink_node_names,
+		const int & input_width, const int & input_height, const int& input_width_zero_padding, const int& input_height_zero_padding,
+		const int & extent_width, const int & extent_height, const int & stride,
+		const int & output_width_zero_padding, const int& output_height_zero_padding,
+		const std::shared_ptr<ActivationOp<TensorT>>& node_activation,
+		const std::shared_ptr<ActivationOp<TensorT>>& node_activation_grad,
+		const std::shared_ptr<IntegrationOp<TensorT>>& node_integration,
+		const std::shared_ptr<IntegrationErrorOp<TensorT>>& node_integration_error,
+		const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& node_integration_weight_grad,
+		const std::shared_ptr<WeightInitOp<TensorT>> & weight_init, const std::shared_ptr<SolverOp<TensorT>> & solver,
+		TensorT drop_out_prob, TensorT drop_connection_prob)
+	{
+		// Parameters for the Convolution layer
+		assert(source_node_names.size() == input_width * input_height);
+		int input_padded_width = input_width + 2 * input_width_zero_padding;
+		//assert((input_padded_width - extent_width) % stride == 0);
+		if ((input_padded_width - extent_width) % stride != 0)
+			std::cout << "Warning: input width, filter width, and stride lengths will not allow for uniform coverage during convolution." << std::endl;
+		int strides_width = std::floor((input_padded_width - extent_width) / stride) + 1; // includes the starting stride
+		int input_padded_height = input_height + 2 * input_height_zero_padding;
+		//assert((input_padded_height - extent_height) % stride == 0);
+		if ((input_padded_height - extent_height) % stride != 0)
+			std::cout << "Warning: input height, filter height, and stride lengths will not allow for uniform coverage during convolution." << std::endl;
+		int strides_height = std::floor((input_padded_height - extent_height) / stride) + 1; // includes the starting stride
+		int output_nodes = strides_width + strides_height;
+		int output_padded_width = strides_width + 2 * output_width_zero_padding;
+		int output_padded_height = strides_height + 2 * output_height_zero_padding;
+		assert(sink_node_names.size() == output_padded_width * output_padded_height);
+		
+		// Create the shared weights for each filter link
+		for (size_t filter_height_iter = 0; filter_height_iter < extent_height; ++filter_height_iter) {
+			for (size_t filter_width_iter = 0; filter_width_iter < extent_width; ++filter_width_iter) {
+				char weight_filter_name_char[512];
+				sprintf(weight_filter_name_char, "%s-%s_H%d-W%d", name.data(), module_name.data(), filter_height_iter, filter_width_iter);
+				std::string weight_filter_name(weight_filter_name_char);
+				Weight<TensorT> weight_filter(weight_filter_name, weight_init, solver);
+				weight_filter.setModuleName(module_name);
+				weight_filter.setDropProbability(drop_connection_prob);
+				model.addWeights({ weight_filter });
+			}
+		}
+
+		// Create the convolution links between input and output					
+		int tmp = 0;
+		int output_width_iter = 0;
+		for (size_t width_stride_iter = 0; width_stride_iter < strides_width; ++width_stride_iter) {
+			// check if the filter is in the left input width zero padding
+			const int filter_width_end = stride * width_stride_iter + extent_width;
+			if (filter_width_end <= input_width_zero_padding)
+				continue;
+
+			// check if the filter is in the right input width zero padding
+			const int filter_width_start = stride * width_stride_iter;
+			if (filter_width_start >= input_width_zero_padding + input_width)
+				continue;
+
+			// offset the starting width filter for the input zero padding
+			int filter_width_offset_start_tmp = input_width_zero_padding - stride * width_stride_iter;
+			int filter_width_offset_start = maxFunc(filter_width_offset_start_tmp, 0);
+			int filter_width_offset_end_tmp = -input_width_zero_padding + stride * strides_width - stride * width_stride_iter + extent_width;
+			int filter_width_offset_end = minFunc(filter_width_offset_end_tmp, extent_width);
+
+			int output_height_iter = 0;
+			for (size_t height_stride_iter = 0; height_stride_iter < strides_height; ++height_stride_iter) {
+				// check if the filter is in the top input height zero padding
+				const int filter_height_end = stride * height_stride_iter + extent_height;
+				if (filter_height_end <= input_height_zero_padding)
+					continue;
+
+				// check if the filter is in the bottom input height zero padding
+				const int filter_height_start = stride * height_stride_iter;
+				if (filter_height_start >= input_height_zero_padding + input_height)
+					continue;
+
+				// offset starting height filter for the input zero padding
+				int filter_height_offset_start_tmp = input_height_zero_padding - stride * height_stride_iter;
+				int filter_height_offset_start = maxFunc(filter_height_offset_start_tmp, 0);
+				int filter_height_offset_end_tmp = -input_height_zero_padding + stride * strides_height - stride * height_stride_iter + extent_height;
+				int filter_height_offset_end = minFunc(filter_height_offset_end_tmp, extent_height);
+
+				// create the links between input and output
+				int width_iter_tmp = stride * width_stride_iter - input_width_zero_padding;
+				int width_iter = maxFunc(width_iter_tmp, 0);
+				for (size_t filter_width_iter = filter_width_offset_start; filter_width_iter < filter_width_offset_end; ++filter_width_iter) {
+					int height_iter_tmp = stride * height_stride_iter - input_height_zero_padding;
+					int height_iter = maxFunc(height_iter_tmp, 0);
+					for (size_t filter_height_iter = filter_height_offset_start; filter_height_iter < filter_height_offset_end; ++filter_height_iter) {
+						int source_node_iter = height_iter + width_iter * input_height;
+
+						if (source_node_iter >= source_node_names.size()) {
+							//std::cout << "WARNING: node size has been exceeded!" << std::endl;
+							break;
+						}
+
+						// Weight<TensorT> name
+						char weight_filter_name_char[512];
+						sprintf(weight_filter_name_char, "%s-%s_H%d-W%d", name.data(), module_name.data(), filter_height_iter, filter_width_iter);
+						std::string weight_filter_name(weight_filter_name_char);
+
+						// Output node name
+						char output_name_char[512];
+						sprintf(output_name_char, "%s-out_H%d-W%d", name.data(), output_height_iter + output_height_zero_padding, output_width_iter + output_width_zero_padding);
+						std::string output_name(output_name_char);
+						assert(std::count(sink_node_names.begin(), sink_node_names.end(), output_name) == 1);
+
+						// Link name
+						char link_filter_name_char[512];
+						sprintf(link_filter_name_char, "%s_to_%s_%s", source_node_names[source_node_iter].data(), output_name.data(), module_name.data());
+						std::string link_filter_name(link_filter_name_char);
+
+						Link link_filter(link_filter_name, source_node_names[source_node_iter], output_name, weight_filter_name);
+						link_filter.setModuleName(module_name);
+						model.addLinks({ link_filter });
+
+						++height_iter;
+					}
+					++width_iter;
+				}
+				++output_height_iter;
+			}
+			++output_width_iter;
+		}
 	}
 
 	template<typename TensorT>
@@ -1125,7 +1282,7 @@ public:
 		return node_names;
 	}
 	template<typename TensorT>
-	std::vector<std::string> ModelBuilder<TensorT>::addVAEEncoding(Model<TensorT> & model, const std::string & name, const std::string & module_name, const std::vector<std::string>& mu_node_names, const std::vector<std::string>& logvar_node_names)
+	std::vector<std::string> ModelBuilder<TensorT>::addGaussianEncoding(Model<TensorT> & model, const std::string & name, const std::string & module_name, const std::vector<std::string>& mu_node_names, const std::vector<std::string>& logvar_node_names)
 	{
 		std::vector<std::string> node_names;
 		std::string unity_weight_name, scalar_weight_name;

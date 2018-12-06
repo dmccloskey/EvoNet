@@ -558,7 +558,7 @@ BOOST_AUTO_TEST_CASE(addConvolution1)
 
 	std::vector<std::string> node_names_test = { "Filter-bias" };
 	std::vector<std::string> weight_names_test = { "Filter-bias_to_out",
-		"Filter_H0-W0", "Filter_H1-W0", "Filter_H0-W1", "Filter_H1-W1" };
+		"Filter-Mod1_H0-W0", "Filter-Mod1_H1-W0", "Filter-Mod1_H0-W1", "Filter-Mod1_H1-W1" };
 
 	// check the nodes
 	size_t node_cnt = 0;
@@ -626,7 +626,7 @@ BOOST_AUTO_TEST_CASE(addConvolution2)
 
 	std::vector<std::string> node_names_test = { "Filter-bias" };
 	std::vector<std::string> weight_names_test = { "Filter-bias_to_out",
-		"Filter_H0-W0", "Filter_H1-W0", "Filter_H0-W1", "Filter_H1-W1" };
+		"Filter-Mod1_H0-W0", "Filter-Mod1_H1-W0", "Filter-Mod1_H0-W1", "Filter-Mod1_H1-W1" };
 
 	// check the nodes
 	size_t node_cnt = 0;
@@ -671,6 +671,85 @@ BOOST_AUTO_TEST_CASE(addConvolution2)
 		BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
 		BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "SGDOp");
 		BOOST_CHECK_EQUAL(model.getWeight(name).getModuleName(), "Mod1");
+		BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.8f);
+	}
+}
+
+BOOST_AUTO_TEST_CASE(addConvolution3)
+{
+	ModelBuilder<float> model_builder;
+	Model<float> model;
+	std::vector<std::string> node_names_input, node_names;
+
+	// make the input
+	node_names_input = model_builder.addInputNodes(model, "Input", 16);
+
+	// make the convolution layer
+	node_names = model_builder.addConvolution(
+		model, "Filter", "Mod1", node_names_input, 4, 4, 2, 2,
+		2, 2, 1, 1, 1,
+		std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()),
+		std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
+		std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new SGDOp<float>(0.1, 0.9)), 0.2f, 0.8f);
+
+	// add a second filter
+	model_builder.addConvolution(
+		model, "Filter", "Mod2", node_names_input, node_names, 4, 4, 2, 2,
+		2, 2, 1, 1, 1,
+		std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()),
+		std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
+		std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new SGDOp<float>(0.1, 0.9)), 0.2f, 0.8f);
+
+	std::vector<std::string> node_names_test = { "Filter-bias" };
+	std::vector<std::string> weight_names_test = { "Filter-bias_to_out",
+		"Filter-Mod1_H0-W0", "Filter-Mod1_H1-W0", "Filter-Mod1_H0-W1", "Filter-Mod1_H1-W1",
+		"Filter-Mod2_H0-W0", "Filter-Mod2_H1-W0", "Filter-Mod2_H0-W1", "Filter-Mod2_H1-W1" };
+
+	// check the nodes
+	size_t node_cnt = 0;
+	for (const Node<float>& node : model.getNodes())
+	{
+		if (node_cnt == 0) {
+			BOOST_CHECK_EQUAL(node.getName(), node_names_test[node_cnt]);
+			BOOST_CHECK_EQUAL(node.getModuleName(), "Mod1");
+			BOOST_CHECK_CLOSE(node.getDropProbability(), 0.0, 1e-3);
+		}
+		else if (node_cnt >= 1 && node_cnt < 82) {
+			int name_cnt = std::count(node_names.begin(), node_names.end(), node.getName());
+			BOOST_CHECK_EQUAL(name_cnt, 1);
+			BOOST_CHECK_EQUAL(node.getModuleName(), "Mod1");
+			if (node.getType() == NodeType::bias || node.getType() == NodeType::zero)
+				BOOST_CHECK_CLOSE(node.getDropProbability(), 0.0f, 1e-3);
+			else
+				BOOST_CHECK_CLOSE(node.getDropProbability(), 0.2f, 1e-3);
+		}
+		BOOST_CHECK_EQUAL(node.getActivation()->getName(), "LinearOp");
+		BOOST_CHECK_EQUAL(node.getActivationGrad()->getName(), "LinearGradOp");
+		BOOST_CHECK_EQUAL(node.getIntegration()->getName(), "SumOp");
+		BOOST_CHECK_EQUAL(node.getIntegrationError()->getName(), "SumErrorOp");
+		BOOST_CHECK_EQUAL(node.getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
+		++node_cnt;
+	}
+	BOOST_CHECK_EQUAL(node_cnt, 98);
+
+	// check the links
+	size_t link_cnt = 0;
+	for (const Link& link : model.getLinks())
+	{
+		BOOST_CHECK_EQUAL(link.getModuleName(), "Mod1");
+		// TODO: add check for Mod2
+		++link_cnt;
+	}
+	BOOST_CHECK_EQUAL(link_cnt, 189);
+
+	// check the weights
+	for (const std::string& name : weight_names_test)
+	{
+		BOOST_CHECK_EQUAL(model.getWeight(name).getName(), name);
+		BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
+		BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "SGDOp");
+		BOOST_CHECK_EQUAL(model.getWeight(name).getModuleName(), "Mod1");
+		// TODO: add check for Mod2
 		BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.8f);
 	}
 }
@@ -802,7 +881,7 @@ BOOST_AUTO_TEST_CASE(addNormlization)
 	}
 }
 
-BOOST_AUTO_TEST_CASE(addVAEEncoding)
+BOOST_AUTO_TEST_CASE(addGaussianEncoding)
 {
 	ModelBuilder<float> model_builder;
 	Model<float> model;
@@ -813,7 +892,7 @@ BOOST_AUTO_TEST_CASE(addVAEEncoding)
 	std::vector<std::string> logvar_node_names = model_builder.addInputNodes(model, "LogVar", 2);
 
 	// make the normalization 
-	node_names = model_builder.addVAEEncoding(model, "Encoding", "Mod1", mu_node_names, logvar_node_names);
+	node_names = model_builder.addGaussianEncoding(model, "Encoding", "Mod1", mu_node_names, logvar_node_names);
 
 	std::vector<std::string> node_names_test = {
 		"LogVar_0-Scalar", "LogVar_1-Scalar", "LogVar_0-StdDev", "LogVar_1-StdDev",

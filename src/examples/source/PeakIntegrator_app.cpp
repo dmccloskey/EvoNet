@@ -15,17 +15,25 @@
 using namespace SmartPeak;
 
 /**
-Application designed to train a network to accurately integrate peaks
-
-Input:
--
-
-Pre-processing:
-- each time/mz and intensity pair is binned into equally spced time
+Application designed to train a network to accurately integrate and identify peaks
 
 Features:
-- denoises the chromatogram for more accurate peak area calculation
+- de-noises the chromatogram for more accurate peak area calculation
 - determines the best left, right, and inner points for each peak as probabilities
+
+Input:
+- vector of time/mz and intensity pairs
+
+Data pre-processing:
+- each time/mz and intensity pair is binned into equally spaced time steps
+- intensities are normalized to the range 0 to 1
+
+Output:
+- vector of intensity bins
+- vector of logits of peak probabilities
+
+Post-processing:
+- integration of peaks based on binned intensity and logit peak probability pairs
 
 */
 
@@ -359,13 +367,13 @@ public:
 	std::pair<TensorT, TensorT> step_size_sigma_ = std::make_pair(0, 0);
 	std::pair<TensorT, TensorT> chrom_window_size_ = std::make_pair(500, 500);
 	std::pair<TensorT, TensorT> noise_mu_ = std::make_pair(0, 0);
-	std::pair<TensorT, TensorT> noise_sigma_ = std::make_pair(0, 5.0);
+	std::pair<TensorT, TensorT> noise_sigma_ = std::make_pair(0, 0.05);
 	std::pair<TensorT, TensorT> baseline_height_ = std::make_pair(0, 0);
 	std::pair<TensorT, TensorT> n_peaks_ = std::make_pair(10, 20);
-	std::pair<TensorT, TensorT> emg_h_ = std::make_pair(10, 100);
+	std::pair<TensorT, TensorT> emg_h_ = std::make_pair(0.1, 1.0);
 	std::pair<TensorT, TensorT> emg_tau_ = std::make_pair(0, 1);
 	std::pair<TensorT, TensorT> emg_mu_offset_ = std::make_pair(-10, 10);
-	std::pair<TensorT, TensorT> emg_sigma_ = std::make_pair(10, 30);
+	std::pair<TensorT, TensorT> emg_sigma_ = std::make_pair(0.1, 0.3);
 };
 
 template<typename TensorT>

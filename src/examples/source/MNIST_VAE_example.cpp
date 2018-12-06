@@ -85,7 +85,7 @@ public:
 			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 
 		// Add the Encoding layers
-		std::vector<std::string> node_names_encoder = model_builder.addVAEEncoding(model, "Encoding", "Encoding", node_names_mu, node_names_logvar);
+		std::vector<std::string> node_names_encoder = model_builder.addGaussianEncoding(model, "Encoding", "Encoding", node_names_mu, node_names_logvar);
 
 		// Add the Decoder FC layers
 		node_names = model_builder.addFullyConnected(model, "DE0", "DE0", node_names_encoder, n_hidden_0,
