@@ -17,9 +17,15 @@ using namespace SmartPeak;
 /**
 Application designed to train a network to accurately integrate peaks
 
+Input:
+-
+
+Pre-processing:
+- each time/mz and intensity pair is binned into equally spced time
+
 Features:
 - denoises the chromatogram for more accurate peak area calculation
-- encodes into triples of peak left, right, and "style" for later RT alignment
+- determines the best left, right, and inner points for each peak as probabilities
 
 */
 
