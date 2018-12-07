@@ -295,7 +295,7 @@ public:
 			bool forget_gate = true);
 
 		/**
-		@brief Add a LSTM layer
+		@brief Add a GRU layer
 
 		Reference:
 		1. Cho, Kyunghyun; van Merrienboer, Bart; Gulcehre, Caglar; Bahdanau, Dzmitry; Bougares, Fethi; Schwenk, Holger; Bengio, Yoshua (2014). "Learning Phrase Representations using RNN Encoder-Decoder for Statistical Machine Translation". arXiv:1406.1078
@@ -348,6 +348,30 @@ public:
 			const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& node_integration_weight_grad,
 			const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver,
 			TensorT drop_out_prob = 0.0f, TensorT drop_connection_prob = 0.0f, bool biases = true, bool input_gate_connection = true);
+		/**
+		@brief Add a dot product self attention layer with activation
+
+		References:
+		Vaswani, et al. 2017 Attention is all you need
+
+		@param[in, out] Model
+		@param[in] source_node_names Node_names to add the fully connected layer to
+		@param[in] n_nodes The number of output nodes
+		@param[in] node_activation The activation function of the hidden node to create
+		@param[in] node_activation_grad The activation function gradient of the hidden node to create
+		@param[in] node_integration The integration function of the hidden node to create
+		@param[in] drop_out_prob Node drop out probability
+		@param[in] drop_connection_prob Weight drop out probability
+		@param[in] biases Whether to include bias nodes or not
+
+		@returns vector of output node names
+		*/
+		std::vector<std::string> addDotProdSelfAtten(Model<TensorT>& model, const std::string& name, const std::string& module_name,
+			const std::vector<std::string>& source_node_names,
+			const std::shared_ptr<ActivationOp<TensorT>>& node_activation,
+			const std::shared_ptr<ActivationOp<TensorT>>& node_activation_grad,
+			const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver,
+			TensorT drop_out_prob = 0.0f, TensorT drop_connection_prob = 0.0f, bool biases = true);
 
 		/**
 		@brief Add one model to another
@@ -2391,6 +2415,14 @@ public:
 				model.addLinks({ link_iToIBlock });
 			}
 		}
+
+		return node_names;
+	}
+
+	template<typename TensorT>
+	inline std::vector<std::string> ModelBuilder<TensorT>::addDotProdSelfAtten(Model<TensorT>& model, const std::string & name, const std::string & module_name, const std::vector<std::string>& source_node_names, const std::shared_ptr<ActivationOp<TensorT>>& node_activation, const std::shared_ptr<ActivationOp<TensorT>>& node_activation_grad, const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver, TensorT drop_out_prob, TensorT drop_connection_prob, bool biases)
+	{
+		std::vector<std::string> node_names;
 
 		return node_names;
 	}
