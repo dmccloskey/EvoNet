@@ -1,4 +1,4 @@
-/**TODO:  Add copyright*/
+﻿/**TODO:  Add copyright*/
 
 #ifndef SMARTPEAK_MODELBUILDER_H
 #define SMARTPEAK_MODELBUILDER_H
@@ -237,8 +237,8 @@ public:
 		@brief Add a LSTM layer
 
 		Reference:
-		1. Hochreiter, Sepp, and J�rgen Schmidhuber. "Long short-term memory." Neural computation 9.8 (1997): 1735-1780.
-		2. Gers, F. A.; Schmidhuber, J. (2001). "LSTM Recurrent Networks Learn Simple Context Free and Context Sensitive Languages" (PDF). IEEE Transactions on Neural Networks. 12 (6): 1333�1340. doi:10.1109/72.963769.
+		1. Hochreiter, Sepp, and Jürgen Schmidhuber. "Long short-term memory." Neural computation 9.8 (1997): 1735-1780.
+		2. Gers, F. A.; Schmidhuber, J. (2001). "LSTM Recurrent Networks Learn Simple Context Free and Context Sensitive Languages" (PDF). IEEE Transactions on Neural Networks. 12 (6): 1333–1340. doi:10.1109/72.963769.
 
 
 		@param[in, out] Model
@@ -356,6 +356,7 @@ public:
 
 		@param[in, out] Model
 		@param[in] source_node_names Node_names to add the fully connected layer to
+		...
 		@param[in] n_nodes The number of output nodes
 		@param[in] node_activation The activation function of the hidden node to create
 		@param[in] node_activation_grad The activation function gradient of the hidden node to create
@@ -366,8 +367,63 @@ public:
 
 		@returns vector of output node names
 		*/
-		std::vector<std::string> addDotProdSelfAtten(Model<TensorT>& model, const std::string& name, const std::string& module_name,
-			const std::vector<std::string>& source_node_names,
+		std::vector<std::string> addMultiHeadAttention(Model<TensorT>& model, const std::string& name, const std::string& module_name,
+			const std::vector<std::string>& query_node_names, const std::vector<std::string>& key_node_names, const std::vector<std::string>& values_node_names,
+			const int& n_heads, const std::string& attention_type, const int& key_length, const int& values_length,
+			const std::shared_ptr<ActivationOp<TensorT>>& node_activation, const std::shared_ptr<ActivationOp<TensorT>>& node_activation_grad,
+			const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver,
+			TensorT drop_out_prob = 0.0f, TensorT drop_connection_prob = 0.0f, bool biases = true);
+
+		/**
+		@brief Add a scaled dot product self attention layer with activation
+
+		References:
+		Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N Gomez,
+			Lukasz Kaiser, and Illia Polosukhin. Attention is all you need. arXiv preprint arXiv:1706.03762,
+			2017.
+		*/
+		std::vector<std::string> addDotProdAttention(Model<TensorT>& model, const std::string& name, const std::string& module_name,
+			const std::vector<std::string>& query_node_names, const std::vector<std::string>& key_node_names, const std::vector<std::string>& values_node_names,
+			const int& key_length, const int& values_length,
+			const std::shared_ptr<ActivationOp<TensorT>>& node_activation,
+			const std::shared_ptr<ActivationOp<TensorT>>& node_activation_grad,
+			const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver,
+			TensorT drop_out_prob = 0.0f, TensorT drop_connection_prob = 0.0f, bool biases = true, bool scale = true);
+
+		/**
+		@brief Add an additive attention layer with activation
+
+		References:
+		Dzmitry Bahdanau, Kyunghyun Cho, and Yoshua Bengio. Neural machine translation by jointly
+			learning to align and translate. CoRR, abs/1409.0473, 2014.
+		*/
+		std::vector<std::string> addAdditiveAttention(Model<TensorT>& model, const std::string& name, const std::string& module_name,
+			const std::vector<std::string>& query_node_names, const std::vector<std::string>& key_node_names, const std::vector<std::string>& values_node_names,
+			const int& key_length, const int& values_length,
+			const std::shared_ptr<ActivationOp<TensorT>>& node_activation,
+			const std::shared_ptr<ActivationOp<TensorT>>& node_activation_grad,
+			const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver,
+			TensorT drop_out_prob = 0.0f, TensorT drop_connection_prob = 0.0f, bool biases = true);
+
+		/**
+		@brief Add a concatenation attention layer with activation
+
+		References:
+		Yonghui Wu, Mike Schuster, Zhifeng Chen, Quoc V. Le, Mohammad Norouzi, Wolfgang Macherey,
+			Maxim Krikun, Yuan Cao, Qin Gao, Klaus Macherey, Jeff Klingner, Apurva Shah, Melvin Johnson,
+			Xiaobing Liu, Łukasz Kaiser, Stephan Gouws, Yoshikiyo Kato, Taku Kudo, Hideto Kazawa,
+			Keith Stevens, George Kurian, Nishant Patil, Wei Wang, Cliff Young, Jason Smith, Jason Riesa,
+			Alex Rudnick, Oriol Vinyals, Greg Corrado, Macduff Hughes, and Jeffrey Dean. Google's neural
+			machine translation system: Bridging the gap between human and machine translation. arXiv
+			preprint arXiv:1609.08144, 2016.
+
+		Noam Shazeer, Azalia Mirhoseini, Krzysztof Maziarz, Andy Davis, Quoc Le, Geoffrey Hinton,
+			and Jeff Dean. Outrageously large neural networks: The sparsely-gated mixture-of-experts layer.
+			arXiv preprint arXiv:1701.06538, 2017.
+		*/
+		std::vector<std::string> addConcatAttention(Model<TensorT>& model, const std::string& name, const std::string& module_name,
+			const std::vector<std::string>& query_node_names, const std::vector<std::string>& key_node_names, const std::vector<std::string>& values_node_names,
+			const int& key_length, const int& values_length,
 			const std::shared_ptr<ActivationOp<TensorT>>& node_activation,
 			const std::shared_ptr<ActivationOp<TensorT>>& node_activation_grad,
 			const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver,
@@ -2420,7 +2476,9 @@ public:
 	}
 
 	template<typename TensorT>
-	inline std::vector<std::string> ModelBuilder<TensorT>::addDotProdSelfAtten(Model<TensorT>& model, const std::string & name, const std::string & module_name, const std::vector<std::string>& source_node_names, const std::shared_ptr<ActivationOp<TensorT>>& node_activation, const std::shared_ptr<ActivationOp<TensorT>>& node_activation_grad, const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver, TensorT drop_out_prob, TensorT drop_connection_prob, bool biases)
+	inline std::vector<std::string> ModelBuilder<TensorT>::addDotProdSelfAttention(Model<TensorT>& model, const std::string & name, const std::string & module_name, 
+		const std::vector<std::string>& query_node_names, const std::vector<std::string>& key_node_names, const std::vector<std::string>& values_node_names,
+		const int key_length, const int values_length, const std::shared_ptr<ActivationOp<TensorT>>& node_activation, const std::shared_ptr<ActivationOp<TensorT>>& node_activation_grad, const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver, TensorT drop_out_prob, TensorT drop_connection_prob, bool biases)
 	{
 		std::vector<std::string> node_names;
 

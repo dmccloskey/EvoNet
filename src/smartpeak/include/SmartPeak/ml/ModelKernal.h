@@ -176,12 +176,10 @@ namespace SmartPeak
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 5>> weight_error_tensor(weight_error, 1, 1, source_layer_size, sink_layer_size, 1);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 5>> shared_weight_tensor(shared_weights, 1, 1, source_layer_size, sink_layer_size, n_shared_layers);
 			// Step 1: multiply the weight tensor by the shared weight tensor mask; sum all shared weights
-			//auto 
-			Eigen::Tensor<TensorT, 3> weight_error_sum = (weight_error_tensor.broadcast(Eigen::array<int, 5>({ 1,1,1,1,n_shared_layers })) * shared_weight_tensor
+			auto  weight_error_sum = (weight_error_tensor.broadcast(Eigen::array<int, 5>({ 1,1,1,1,n_shared_layers })) * shared_weight_tensor
 				).sum(Eigen::array<int, 2>({ 2, 3 })).eval().broadcast(Eigen::array<int, 3>({ source_layer_size, sink_layer_size, 1 })).eval();  // dims 3
 			// Step 2: multiply the weight error sum tensor by the shared weight tensor mask and subtract out the error tensor
-			//auto 
-			Eigen::Tensor<TensorT, 2> weight_error_diff = (weight_error_sum * shared_weight_tensor.chip(0, 1).chip(0, 0).eval() -
+			auto weight_error_diff = (weight_error_sum * shared_weight_tensor.chip(0, 1).chip(0, 0).eval() -
 				weight_error_tensor.chip(0, 1).chip(0, 0).broadcast(Eigen::array<int, 3>({ 1,1,n_shared_layers })) * shared_weight_tensor.chip(0, 1).chip(0, 0)
 				).eval().sum(Eigen::array<int, 1>({ 2 })).eval(); //dims 2
 			// Step 3: add the weight_error_diff
