@@ -369,7 +369,7 @@ public:
 		*/
 		std::vector<std::string> addMultiHeadAttention(Model<TensorT>& model, const std::string& name, const std::string& module_name,
 			const std::vector<std::string>& query_node_names, const std::vector<std::string>& key_node_names, const std::vector<std::string>& values_node_names,
-			const int& n_heads, const std::string& attention_type, const int& key_length, const int& values_length,
+			const int& n_heads, const std::string& attention_type, const int & model_length, const int& key_length, const int& values_length,
 			const std::shared_ptr<ActivationOp<TensorT>>& node_activation, const std::shared_ptr<ActivationOp<TensorT>>& node_activation_grad,
 			const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver,
 			TensorT drop_out_prob = 0.0f, TensorT drop_connection_prob = 0.0f, bool biases = true);
@@ -2473,6 +2473,38 @@ public:
 				model.addLinks({ link_iToIBlock });
 			}
 		}
+
+		return node_names;
+	}
+
+	template<typename TensorT>
+	inline std::vector<std::string> ModelBuilder<TensorT>::addMultiHeadAttention(Model<TensorT>& model, const std::string & name, const std::string & module_name, 
+		const std::vector<std::string>& query_node_names, const std::vector<std::string>& key_node_names, const std::vector<std::string>& values_node_names, 
+		const int & n_heads, const std::string & attention_type, const int & model_length, const int & key_length, const int & values_length,
+		const std::shared_ptr<ActivationOp<TensorT>>& node_activation, const std::shared_ptr<ActivationOp<TensorT>>& node_activation_grad, 
+		const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver, TensorT drop_out_prob, TensorT drop_connection_prob, bool biases)
+	{
+
+		// Create each head and concatenate the results
+		std::vector<std::string> node_names_heads;
+		for (size_t i = 0; i < n_heads; ++i) {
+			std::vector<std::string> node_names_attention;
+			if (attention_type == "DotProd") {
+				node_names_attention = addDotProdAttention(model, name + "-" + std::to_string(i), module_name,
+					query_node_names, key_node_names, values_node_names, key_length, values_length, node_activation, node_activation_grad,
+					weight_init, solver, drop_out_prob, drop_connection_prob, biases);
+			}
+			else {
+				std::cout << "Attention type " << attention_type << " was not recognized." << std::endl;
+			}
+			for (std::string& node_name : node_names_attention)
+				node_names_heads.push_back(node_name);
+		}
+
+		// Matrix multiply the concatenated heads to create the output
+		std::vector<std::string> node_names = addFullyConnected(model, name + "_MultiHead", module_name, node_names_heads, model_length, node_activation, node_activation_grad, 
+			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
+			weight_init, solver, drop_out_prob, drop_connection_prob, biases);
 
 		return node_names;
 	}
