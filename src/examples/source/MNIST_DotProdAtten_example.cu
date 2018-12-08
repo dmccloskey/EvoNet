@@ -278,7 +278,7 @@ public:
 	}
 };
 
-void main_CovNet() {
+void main_DotProdAttention() {
 
 	const int n_hard_threads = std::thread::hardware_concurrency();
 	const int n_threads = 1;
@@ -374,7 +374,7 @@ void main_CovNet() {
 int main(int argc, char** argv)
 {
 	// run the application
-	main_CovNet();
+	main_DotProdAttention();
 
   return 0;
 }
