@@ -40,7 +40,7 @@ public:
 	@param add_skip Optional skip connections between layers
 	@param add_norm Optional normalization layer after each convolution
 	*/
-	Model<TensorT> makeCovNet(const int& n_inputs, const int& n_outputs, int n_heads = 8, int n_layers = n_layers, bool add_skip = true, bool add_norm = false) {
+	Model<TensorT> makeMultiHeadDotProdAttention(const int& n_inputs, const int& n_outputs, int n_heads = 8, int n_layers = n_layers, bool add_skip = true, bool add_norm = false) {
 		Model<TensorT> model;
 		model.setId(0);
 		model.setName("DotProdAttent");
@@ -55,10 +55,10 @@ public:
 		for (size_t i = 0; i < n_layers; ++i) {
 			// Add the attention
 			int key_query_values_lengths = n_inputs / n_heads;
-			std::string name_head1 = "Attention0" + std::to_string(i);
+			std::string name_head1 = "Attention" + std::to_string(i);
 			node_names = model_builder.addMultiHeadAttention(model, name_head1, name_head1,
 				node_names_input, node_names_input, node_names_input,
-				n_inputs, "DotProd", key_query_values_lengths, key_query_values_lengths,
+				n_heads, "DotProd", n_inputs, key_query_values_lengths, key_query_values_lengths,
 				std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
 				std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
 				std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(n_inputs, 2)),
@@ -97,12 +97,12 @@ public:
 					std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 2)),
 					std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.1, 0.9, 0.999, 1e-8)), 0.0, 0.0);
 			}
-			if (add_skip) {
-				std::string skip_name = "Skip_FC" + std::to_string(i);
-				model_builder.addSinglyConnected(model, skip_name, node_names_input, node_names,
-					std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(n_inputs, 2)),
-					std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f);
-			}
+			//if (add_skip) {
+			//	std::string skip_name = "Skip_FC" + std::to_string(i);
+			//	model_builder.addSinglyConnected(model, skip_name, node_names_input, node_names,
+			//		std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(n_inputs, 2)),
+			//		std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f);
+			//}
 			node_names_input = node_names;
 		}
 
@@ -325,9 +325,9 @@ void main_DotProdAttention() {
 		input_nodes.push_back("Input_" + std::to_string(i));
 
 	// Make the output nodes
-	std::vector<std::string> output_FC_nodes;
+	std::vector<std::string> output_nodes;
 	for (int i = 0; i < data_simulator.mnist_labels.size(); ++i)
-		output_FC_nodes.push_back("Output_" + std::to_string(i));
+		output_nodes.push_back("Output_" + std::to_string(i));
 
 	// define the model trainers and resources for the trainers
 	std::vector<ModelInterpreterDefaultDevice<float>> model_interpreters;
@@ -351,7 +351,7 @@ void main_DotProdAttention() {
 		//std::shared_ptr<LossFunctionGradOp<float>>({new MSEGradOp<float>())//,	
 		std::shared_ptr<LossFunctionGradOp<float>>(new CrossEntropyWithLogitsGradOp<float>())
 		});
-	model_trainer.setOutputNodes({ output_FC_nodes
+	model_trainer.setOutputNodes({ output_nodes
 		});
 
 	// define the model replicator for growth mode
