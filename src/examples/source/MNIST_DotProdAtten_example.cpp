@@ -40,8 +40,7 @@ public:
 	@param add_skip Optional skip connections between layers
 	@param add_norm Optional normalization layer after each convolution
 	*/
-	Model<TensorT> makeMultiHeadDotProdAttention(const int& n_inputs, const int& n_outputs, int n_heads = 8, int n_layers = n_layers, bool add_skip = true, bool add_norm = false) {
-		Model<TensorT> model;
+	void makeMultiHeadDotProdAttention(Model<TensorT>& model, const int& n_inputs, const int& n_outputs, int n_heads = 8, int n_layers = n_layers, bool add_skip = true, bool add_norm = false) {
 		model.setId(0);
 		model.setName("DotProdAttent");
 
@@ -119,8 +118,6 @@ public:
 
 		for (const std::string& node_name : node_names)
 			model.getNodesMap().at(node_name)->setType(NodeType::output);
-
-		return model;
 	}
 
 	Model<TensorT> makeModel() { return Model<TensorT>(); }
@@ -359,8 +356,9 @@ void main_DotProdAttention() {
 
 	// define the initial population
 	std::cout << "Initializing the population..." << std::endl;
-	std::vector<Model<float>> population = { ModelTrainerExt<float>().makeMultiHeadDotProdAttention(input_nodes.size(), output_nodes.size(), 8, 2, true, false) };
-	
+	Model<float> model;
+	model_trainer.makeMultiHeadDotProdAttention(model, input_nodes.size(), output_nodes.size(), 8, 2, true, false);
+	std::vector<Model<float>> population = { model };	
 
 	// Evolve the population
 	std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
