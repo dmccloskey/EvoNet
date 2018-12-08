@@ -1544,4 +1544,146 @@ BOOST_AUTO_TEST_CASE(addDotProdAttention1)
 	BOOST_CHECK_EQUAL(model.links_.size(), 51);
 }
 
+BOOST_AUTO_TEST_CASE(addMultiHeadAttention1)
+{
+	ModelBuilder<float> model_builder;
+	Model<float> model;
+	std::vector<std::string> node_names;
+
+	// make the input
+	node_names = model_builder.addInputNodes(model, "Input", 2);
+
+	// make the fully connected 
+	node_names = model_builder.addMultiHeadAttention(model, "Hidden", "Mod1", node_names, node_names, node_names,
+		2, "DotProd", 2, 3, 3, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
+		std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new SGDOp<float>(0.1, 0.9)),
+		0.2f, 0.8f);
+
+	std::vector<std::string> node_names_test= { "Hidden_MultiHead-bias_0", "Hidden_MultiHead-bias_1", "Hidden_MultiHead_0", "Hidden_MultiHead_1" };
+	std::vector<std::string> node_names_attention = { 
+		"Hidden-1-scalar","Hidden-1_scores_0","Hidden-1_scores_1","Hidden-1_scores_2",
+		"Hidden-1_attention_0","Hidden-1_attention_1","Hidden-1_attention_2",
+		"Hidden-1_keys_0","Hidden-1_keys_1","Hidden-1_keys_2","Hidden-1_query_0","Hidden-1_query_1","Hidden-1_query_2",
+		"Hidden-1_values_0","Hidden-1_values_1","Hidden-1_values_2" };
+	std::vector<std::string> link_names_attention = { "Hidden-0-scalar_to_Hidden-0_scores_0","Hidden-0-scalar_to_Hidden-0_scores_1",
+		"Hidden-0-scalar_to_Hidden-0_scores_2","Hidden-0_keys_0_to_Hidden-0_scores_0","Hidden-0_keys_1_to_Hidden-0_scores_1",
+		"Hidden-0_keys_2_to_Hidden-0_scores_2","Hidden-0_query_0_to_Hidden-0_scores_0","Hidden-0_query_1_to_Hidden-0_scores_1",
+		"Hidden-0_query_2_to_Hidden-0_scores_2","Hidden-0_scores_0_to_Hidden-0_softMax-In_0","Hidden-0_scores_0_to_Hidden-0_softMax-Max",
+		"Hidden-0_scores_1_to_Hidden-0_softMax-In_1","Hidden-0_scores_1_to_Hidden-0_softMax-Max","Hidden-0_scores_2_to_Hidden-0_softMax-In_2",
+		"Hidden-0_scores_2_to_Hidden-0_softMax-Max","Hidden-0_softMax-In_0_to_Hidden-0_softMax-Out_0","Hidden-0_softMax-In_0_to_Hidden-0_softMax-Sum",
+		"Hidden-0_softMax-In_1_to_Hidden-0_softMax-Out_1","Hidden-0_softMax-In_1_to_Hidden-0_softMax-Sum",
+		"Hidden-0_softMax-In_2_to_Hidden-0_softMax-Out_2","Hidden-0_softMax-In_2_to_Hidden-0_softMax-Sum",
+		"Hidden-0_softMax-Max_to_Hidden-0_softMax-In_0","Hidden-0_softMax-Max_to_Hidden-0_softMax-In_1","Hidden-0_softMax-Max_to_Hidden-0_softMax-In_2",
+		"Hidden-0_softMax-Sum_to_Hidden-0_softMax-Out_0","Hidden-0_softMax-Sum_to_Hidden-0_softMax-Out_1","Hidden-0_softMax-Sum_to_Hidden-0_softMax-Out_2",
+		"Hidden-0_values_0_to_Hidden-0_attention_0","Hidden-0_values_1_to_Hidden-0_attention_1","Hidden-0_values_2_to_Hidden-0_attention_2",
+		"Input_0_to_Hidden-0_keys_0","Input_0_to_Hidden-0_keys_1","Input_0_to_Hidden-0_keys_2",
+		"Input_0_to_Hidden-0_query_0","Input_0_to_Hidden-0_query_1","Input_0_to_Hidden-0_query_2",
+		"Input_0_to_Hidden-0_values_0","Input_0_to_Hidden-0_values_1","Input_0_to_Hidden-0_values_2",
+		"Input_1_to_Hidden-0_keys_0","Input_1_to_Hidden-0_keys_1","Input_1_to_Hidden-0_keys_2",
+		"Input_1_to_Hidden-0_query_0","Input_1_to_Hidden-0_query_1","Input_1_to_Hidden-0_query_2",
+		"Input_1_to_Hidden-0_values_0","Input_1_to_Hidden-0_values_1","Input_1_to_Hidden-0_values_2",
+		"Hidden-0_softMax-Out_0_to_Hidden-0_attention_0", "Hidden-0_softMax-Out_1_to_Hidden-0_attention_1", "Hidden-0_softMax-Out_2_to_Hidden-0_attention_2",
+		"Hidden-1-scalar_to_Hidden-1_scores_0","Hidden-1-scalar_to_Hidden-1_scores_1",
+		"Hidden-1-scalar_to_Hidden-1_scores_2","Hidden-1_keys_0_to_Hidden-1_scores_0","Hidden-1_keys_1_to_Hidden-1_scores_1",
+		"Hidden-1_keys_2_to_Hidden-1_scores_2","Hidden-1_query_0_to_Hidden-1_scores_0","Hidden-1_query_1_to_Hidden-1_scores_1",
+		"Hidden-1_query_2_to_Hidden-1_scores_2","Hidden-1_scores_0_to_Hidden-1_softMax-In_0","Hidden-1_scores_0_to_Hidden-1_softMax-Max",
+		"Hidden-1_scores_1_to_Hidden-1_softMax-In_1","Hidden-1_scores_1_to_Hidden-1_softMax-Max","Hidden-1_scores_2_to_Hidden-1_softMax-In_2",
+		"Hidden-1_scores_2_to_Hidden-1_softMax-Max","Hidden-1_softMax-In_0_to_Hidden-1_softMax-Out_0","Hidden-1_softMax-In_0_to_Hidden-1_softMax-Sum",
+		"Hidden-1_softMax-In_1_to_Hidden-1_softMax-Out_1","Hidden-1_softMax-In_1_to_Hidden-1_softMax-Sum",
+		"Hidden-1_softMax-In_2_to_Hidden-1_softMax-Out_2","Hidden-1_softMax-In_2_to_Hidden-1_softMax-Sum",
+		"Hidden-1_softMax-Max_to_Hidden-1_softMax-In_0","Hidden-1_softMax-Max_to_Hidden-1_softMax-In_1","Hidden-1_softMax-Max_to_Hidden-1_softMax-In_2",
+		"Hidden-1_softMax-Sum_to_Hidden-1_softMax-Out_0","Hidden-1_softMax-Sum_to_Hidden-1_softMax-Out_1","Hidden-1_softMax-Sum_to_Hidden-1_softMax-Out_2",
+		"Hidden-1_values_0_to_Hidden-1_attention_0","Hidden-1_values_1_to_Hidden-1_attention_1","Hidden-1_values_2_to_Hidden-1_attention_2",
+		"Input_0_to_Hidden-1_keys_0","Input_0_to_Hidden-1_keys_1","Input_0_to_Hidden-1_keys_2",
+		"Input_0_to_Hidden-1_query_0","Input_0_to_Hidden-1_query_1","Input_0_to_Hidden-1_query_2",
+		"Input_0_to_Hidden-1_values_0","Input_0_to_Hidden-1_values_1","Input_0_to_Hidden-1_values_2",
+		"Input_1_to_Hidden-1_keys_0","Input_1_to_Hidden-1_keys_1","Input_1_to_Hidden-1_keys_2",
+		"Input_1_to_Hidden-1_query_0","Input_1_to_Hidden-1_query_1","Input_1_to_Hidden-1_query_2",
+		"Input_1_to_Hidden-1_values_0","Input_1_to_Hidden-1_values_1","Input_1_to_Hidden-1_values_2",
+		"Hidden-1_softMax-Out_0_to_Hidden-1_attention_0", "Hidden-1_softMax-Out_1_to_Hidden-1_attention_1", "Hidden-1_softMax-Out_2_to_Hidden-1_attention_2" };
+	std::vector<std::string> weight_names_test = { 
+		"Hidden_MultiHead-bias_0_to_Hidden_MultiHead_0", "Hidden_MultiHead-bias_1_to_Hidden_MultiHead_1",
+		"Hidden-0_attention_0_to_Hidden_MultiHead_0", "Hidden-0_attention_1_to_Hidden_MultiHead_0", "Hidden-0_attention_2_to_Hidden_MultiHead_0",
+		"Hidden-0_attention_0_to_Hidden_MultiHead_1", "Hidden-0_attention_1_to_Hidden_MultiHead_1", "Hidden-0_attention_2_to_Hidden_MultiHead_1", 
+		"Hidden-1_attention_0_to_Hidden_MultiHead_0", "Hidden-1_attention_1_to_Hidden_MultiHead_0", "Hidden-1_attention_2_to_Hidden_MultiHead_0",
+		"Hidden-1_attention_0_to_Hidden_MultiHead_1", "Hidden-1_attention_1_to_Hidden_MultiHead_1", "Hidden-1_attention_2_to_Hidden_MultiHead_1"};
+
+	// check the nodes
+	for (const std::string& node_name : node_names_attention)
+	{
+		BOOST_CHECK_EQUAL(model.getNode(node_name).getName(), node_name);
+		BOOST_CHECK_EQUAL(model.getNode(node_name).getModuleName(), "Mod1");
+	}
+
+	for (const std::string& node_name : node_names_test)
+	{
+		BOOST_CHECK_EQUAL(model.getNode(node_name).getName(), node_name);
+		BOOST_CHECK_EQUAL(model.getNode(node_name).getModuleName(), "Mod1");
+		if (node_name == "Hidden_MultiHead-bias_0" || node_name == "Hidden_MultiHead-bias_1")
+		{
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "SumOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "SumErrorOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
+			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.0, 1e-3);
+		}
+		else if (node_name == "Hidden_MultiHead_0" || node_name == "Hidden_MultiHead_1")
+		{
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "ReLUOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "ReLUGradOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "SumOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "SumErrorOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
+			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.2, 1e-3);
+		}
+		else
+			BOOST_CHECK(false);
+	}
+	BOOST_CHECK_EQUAL(model.nodes_.size(), 54); // two attention heads + fully connected
+
+	// check the links
+	for (const std::string& name : link_names_attention)
+	{
+		BOOST_CHECK_EQUAL(model.getLink(name).getName(), name);
+		std::vector<std::string> test = SplitString(name, "_to_");
+		BOOST_CHECK_EQUAL(model.getLink(name).getSourceNodeName(), test[0]);
+		BOOST_CHECK_EQUAL(model.getLink(name).getSinkNodeName(), test[1]);
+		BOOST_CHECK_EQUAL(model.getLink(name).getModuleName(), "Mod1");
+	}
+	for (const std::string& name : weight_names_test)
+	{
+		BOOST_CHECK_EQUAL(model.getLink(name).getName(), name);
+		std::vector<std::string> test = SplitString(name, "_to_");
+		BOOST_CHECK_EQUAL(model.getLink(name).getSourceNodeName(), test[0]);
+		BOOST_CHECK_EQUAL(model.getLink(name).getSinkNodeName(), test[1]);
+		BOOST_CHECK_EQUAL(model.getLink(name).getModuleName(), "Mod1");
+	}
+	BOOST_CHECK_EQUAL(model.links_.size(), 116); // two attention heads + fully connected
+
+	// check the weights
+	for (const std::string& name : weight_names_test)
+	{
+		BOOST_CHECK_EQUAL(model.getWeight(name).getName(), name);
+		BOOST_CHECK_EQUAL(model.getWeight(name).getModuleName(), "Mod1");
+		if (name == "Hidden_MultiHead-bias_0_to_Hidden_MultiHead_0" || name ==  "Hidden_MultiHead-bias_1_to_Hidden_MultiHead_1") {
+			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
+			BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "SGDOp");
+			BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.8f);
+			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getParamsAsStr(), "n:1.000000");
+		}
+		else if (name == "Hidden-0_attention_0_to_Hidden_MultiHead_0" || name == "Hidden-0_attention_1_to_Hidden_MultiHead_0" || name == "Hidden-0_attention_2_to_Hidden_MultiHead_0"
+			|| name == "Hidden-0_attention_0_to_Hidden_MultiHead_1" || name == "Hidden-0_attention_1_to_Hidden_MultiHead_1" || name == "Hidden-0_attention_2_to_Hidden_MultiHead_1"
+			|| name == "Hidden-1_attention_0_to_Hidden_MultiHead_0" || name == "Hidden-1_attention_1_to_Hidden_MultiHead_0" || name == "Hidden-1_attention_2_to_Hidden_MultiHead_0"
+			|| name == "Hidden-1_attention_0_to_Hidden_MultiHead_1" || name == "Hidden-1_attention_1_to_Hidden_MultiHead_1" || name == "Hidden-1_attention_2_to_Hidden_MultiHead_1") {
+			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "RandWeightInitOp");
+			BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "SGDOp");
+			BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.8f);
+		}
+		else
+			BOOST_CHECK(false);
+	}
+	BOOST_CHECK_EQUAL(model.weights_.size(), 116); // two attention heads + fully connected
+}
+
 BOOST_AUTO_TEST_SUITE_END()
