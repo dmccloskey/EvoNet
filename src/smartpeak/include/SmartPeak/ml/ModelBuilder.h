@@ -487,6 +487,7 @@ public:
 			Node<TensorT> node(node_name, NodeType::hidden, NodeStatus::initialized, node_activation, node_activation_grad, node_integration, node_integration_error, node_integration_weight_grad);
 			node.setModuleName(module_name);
 			node.setDropProbability(drop_out_prob);
+			model.addNodes({ node });
 
 			if (biases) {
 				char bias_name_char[512];
@@ -494,7 +495,7 @@ public:
 				std::string bias_name(bias_name_char);
 				Node<TensorT> bias(bias_name, NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
 				bias.setModuleName(module_name);
-				model.addNodes({ node, bias });
+				model.addNodes({ bias });
 
 				char weight_bias_name_char[512];
 				sprintf(weight_bias_name_char, "%s-bias_%d_to_%s_%d", name.data(), i, name.data(), i);
@@ -605,6 +606,7 @@ public:
 			Node<TensorT> node(node_name, NodeType::hidden, NodeStatus::initialized, node_activation, node_activation_grad, node_integration, node_integration_error, node_integration_weight_grad);
 			node.setModuleName(module_name);
 			node.setDropProbability(drop_out_prob);
+			model.addNodes({ node });
 
 			if (biases) {
 				char bias_name_char[512];
@@ -612,7 +614,7 @@ public:
 				std::string bias_name(bias_name_char);
 				Node<TensorT> bias(bias_name, NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
 				bias.setModuleName(module_name);
-				model.addNodes({ node, bias });
+				model.addNodes({ bias });
 
 				char weight_bias_name_char[512];
 				sprintf(weight_bias_name_char, "%s-bias_%d_to_%s_%d", name.data(), i, name.data(), i);
@@ -2518,7 +2520,6 @@ public:
 		sprintf(scalar_name_char, "%s-scalar", name.data());
 		std::string scalar_name(scalar_name_char);
 		Node<TensorT> scalar(scalar_name, NodeType::input, NodeStatus::activated, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
-		scalar.setDropProbability(drop_out_prob);
 		scalar.setModuleName(module_name);
 		model.addNodes({ scalar });
 
@@ -2533,7 +2534,9 @@ public:
 		node_names = addSinglyConnected(model, name + "_attention", module_name, node_names_value, node_names_value.size(),
 			node_activation, node_activation_grad,
 			std::shared_ptr<IntegrationOp<TensorT>>(new ProdOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new ProdErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new ProdWeightGradOp<TensorT>()),
-			std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0, 0.0, false);
+			std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), drop_out_prob, 0.0, false);
+		addSinglyConnected(model, module_name, node_names_attention, node_names,
+			std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0);
 
 		return node_names;
 	}

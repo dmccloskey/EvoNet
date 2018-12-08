@@ -1296,8 +1296,12 @@ BOOST_AUTO_TEST_CASE(addDotProdAttention1)
 		std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new SGDOp<float>(0.1, 0.9)),
 		0.2f, 0.8f);
 
-	std::vector<std::string> node_names_test = { "Hidden-scalar",	"Hidden_softMax-In_0", "Hidden_softMax-In_1",	"Hidden_softMax-In_2",
-		"Hidden_softMax-Max",	"Hidden_softMax-Out_0",	"Hidden_softMax-Out_1",	"Hidden_softMax-Out_2",	"Hidden_softMax-Sum" };
+	std::vector<std::string> node_names_softmax = { "Hidden_softMax-In_0", "Hidden_softMax-In_1",	"Hidden_softMax-In_2",
+		"Hidden_softMax-Max",	"Hidden_softMax-Out_0",	"Hidden_softMax-Out_1",	"Hidden_softMax-Out_2",	"Hidden_softMax-Sum"};
+	std::vector<std::string> node_names_test = { "Hidden-scalar","Hidden_scores_0","Hidden_scores_1","Hidden_scores_2",
+		"Hidden_attention_0","Hidden_attention_1","Hidden_attention_2",
+		"Hidden_keys_0","Hidden_keys_1","Hidden_keys_2","Hidden_query_0","Hidden_query_1","Hidden_query_2",
+		"Hidden_values_0","Hidden_values_1","Hidden_values_2" };
 	std::vector<std::string> link_names_test = { "Hidden-scalar_to_Hidden_scores_0","Hidden-scalar_to_Hidden_scores_1",
 		"Hidden-scalar_to_Hidden_scores_2","Hidden_keys_0_to_Hidden_scores_0","Hidden_keys_1_to_Hidden_scores_1",
 		"Hidden_keys_2_to_Hidden_scores_2","Hidden_query_0_to_Hidden_scores_0","Hidden_query_1_to_Hidden_scores_1",
@@ -1314,89 +1318,100 @@ BOOST_AUTO_TEST_CASE(addDotProdAttention1)
 		"Input_0_to_Hidden_values_0","Input_0_to_Hidden_values_1","Input_0_to_Hidden_values_2",
 		"Input_1_to_Hidden_keys_0","Input_1_to_Hidden_keys_1","Input_1_to_Hidden_keys_2",
 		"Input_1_to_Hidden_query_0","Input_1_to_Hidden_query_1","Input_1_to_Hidden_query_2",
-		"Input_1_to_Hidden_values_0","Input_1_to_Hidden_values_1","Input_1_to_Hidden_values_2" };
-	std::vector<std::string> weight_names_test = { "Hidden-scalar_to_Hidden_scores_0","Hidden-scalar_to_Hidden_scores_1",
-		"Hidden-scalar_to_Hidden_scores_2","Hidden_keys_0_to_Hidden_scores_0","Hidden_keys_1_to_Hidden_scores_1",
-		"Hidden_keys_2_to_Hidden_scores_2","Hidden_query_0_to_Hidden_scores_0","Hidden_query_1_to_Hidden_scores_1",
-		"Hidden_query_2_to_Hidden_scores_2","Hidden_scores_0_to_Hidden_softMax-In_0","Hidden_scores_0_to_Hidden_softMax-Max",
+		"Input_1_to_Hidden_values_0","Input_1_to_Hidden_values_1","Input_1_to_Hidden_values_2",
+		"Hidden_softMax-Out_0_to_Hidden_attention_0", "Hidden_softMax-Out_1_to_Hidden_attention_1", "Hidden_softMax-Out_2_to_Hidden_attention_2" };
+	std::vector<std::string> weight_names_softmax = { "Hidden_scores_0_to_Hidden_softMax-In_0","Hidden_scores_0_to_Hidden_softMax-Max",
 		"Hidden_scores_1_to_Hidden_softMax-In_1","Hidden_scores_1_to_Hidden_softMax-Max","Hidden_scores_2_to_Hidden_softMax-In_2",
 		"Hidden_scores_2_to_Hidden_softMax-Max","Hidden_softMax-In_0_to_Hidden_softMax-Out_0","Hidden_softMax-In_0_to_Hidden_softMax-Sum",
 		"Hidden_softMax-In_1_to_Hidden_softMax-Out_1","Hidden_softMax-In_1_to_Hidden_softMax-Sum",
 		"Hidden_softMax-In_2_to_Hidden_softMax-Out_2","Hidden_softMax-In_2_to_Hidden_softMax-Sum",
 		"Hidden_softMax-Max_to_Hidden_softMax-In_0","Hidden_softMax-Max_to_Hidden_softMax-In_1","Hidden_softMax-Max_to_Hidden_softMax-In_2",
-		"Hidden_softMax-Sum_to_Hidden_softMax-Out_0","Hidden_softMax-Sum_to_Hidden_softMax-Out_1","Hidden_softMax-Sum_to_Hidden_softMax-Out_2",
+		"Hidden_softMax-Sum_to_Hidden_softMax-Out_0","Hidden_softMax-Sum_to_Hidden_softMax-Out_1","Hidden_softMax-Sum_to_Hidden_softMax-Out_2"};
+	std::vector<std::string> weight_names_test = { "Hidden-scalar_to_Hidden_scores_0","Hidden-scalar_to_Hidden_scores_1",
+		"Hidden-scalar_to_Hidden_scores_2","Hidden_keys_0_to_Hidden_scores_0","Hidden_keys_1_to_Hidden_scores_1",
+		"Hidden_keys_2_to_Hidden_scores_2","Hidden_query_0_to_Hidden_scores_0","Hidden_query_1_to_Hidden_scores_1",
+		"Hidden_query_2_to_Hidden_scores_2",
 		"Hidden_values_0_to_Hidden_attention_0","Hidden_values_1_to_Hidden_attention_1","Hidden_values_2_to_Hidden_attention_2",
 		"Input_0_to_Hidden_keys_0","Input_0_to_Hidden_keys_1","Input_0_to_Hidden_keys_2",
 		"Input_0_to_Hidden_query_0","Input_0_to_Hidden_query_1","Input_0_to_Hidden_query_2",
 		"Input_0_to_Hidden_values_0","Input_0_to_Hidden_values_1","Input_0_to_Hidden_values_2",
 		"Input_1_to_Hidden_keys_0","Input_1_to_Hidden_keys_1","Input_1_to_Hidden_keys_2",
 		"Input_1_to_Hidden_query_0","Input_1_to_Hidden_query_1","Input_1_to_Hidden_query_2",
-		"Input_1_to_Hidden_values_0","Input_1_to_Hidden_values_1","Input_1_to_Hidden_values_2" };
+		"Input_1_to_Hidden_values_0","Input_1_to_Hidden_values_1","Input_1_to_Hidden_values_2",
+		"Hidden_softMax-Out_0_to_Hidden_attention_0", "Hidden_softMax-Out_1_to_Hidden_attention_1", "Hidden_softMax-Out_2_to_Hidden_attention_2" };
 
 	// check the nodes
+	for (const std::string& node_name : node_names_softmax)
+	{
+		BOOST_CHECK_EQUAL(model.getNode(node_name).getName(), node_name);
+		BOOST_CHECK_EQUAL(model.getNode(node_name).getModuleName(), "Mod1");
+		if (node_name == "Hidden_SoftMax-Sum")
+		{
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "InverseOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "InverseGradOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "SumOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "SumErrorOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
+		}
+		else if (node_name == "Hidden_SoftMax-Max")
+		{
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "MaxOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "MaxErrorOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "MaxWeightGradOp");
+		}
+		else if (node_name == "Hidden_SoftMax-In_0" || node_name == "Hidden_SoftMax-In_1" || node_name == "Hidden_SoftMax-In_2")
+		{
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "ExponentialOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "ExponentialGradOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "SumOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "SumErrorOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
+		}
+		else if (node_name == "Hidden_SoftMax-Out_0" || node_name == "Hidden_SoftMax-Out_1" || node_name == "Hidden_SoftMax-Out_2")
+		{
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "ProdOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "ProdErrorOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "ProdWeightGradOp");
+		}
+	}
+
 	for (const std::string& node_name : node_names_test)
 	{
 		BOOST_CHECK_EQUAL(model.getNode(node_name).getName(), node_name);
 		BOOST_CHECK_EQUAL(model.getNode(node_name).getModuleName(), "Mod1");
-		if (node_name == "LSTM-BlockInput-0" || node_name == "LSTM-BlockInput-1")
+		if (node_name == "Hidden-scalar")
 		{
 			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
 			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
 			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "SumOp");
 			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "SumErrorOp");
 			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
-			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.2, 1e-3);
+			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.0, 1e-3);
+			BOOST_CHECK(model.getNode(node_name).getType() == NodeType::input);
 		}
-		else if (node_name == "LSTM-BlockGateInput" || node_name == "LSTM-BlockGateOutput" || node_name == "LSTM-BlockGateForget")
+		else if (node_name == "Hidden_scores_0" || node_name == "Hidden_scores_1" || node_name == "Hidden_scores_2")
+		{
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "ProdOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "ProdErrorOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "ProdWeightGradOp");
+			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.0, 1e-3);
+		}
+		else if (node_name == "Hidden_attention_0" || node_name == "Hidden_attention_1" || node_name == "Hidden_attention_2")
 		{
 			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "ReLUOp");
 			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "ReLUGradOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "SumOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "SumErrorOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
-			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.2, 1e-3);
-		}
-		else if (node_name == "LSTM-BlockMultOutput-0" || node_name == "LSTM-BlockMultOutput-1")
-		{
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
 			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "ProdOp");
 			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "ProdErrorOp");
 			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "ProdWeightGradOp");
 			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.2, 1e-3);
 		}
-		else if (node_name == "LSTM-BlockMultInput-0" || node_name == "LSTM-BlockMultForget-0" ||
-			node_name == "LSTM-BlockMultInput-1" || node_name == "LSTM-BlockMultForget-1")
-		{
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "ProdOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "ProdErrorOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "ProdWeightGradOp");
-			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.0, 1e-3);
-		}
-		else if (node_name == "LSTM-BlockMemoryCell-1" || node_name == "LSTM-BlockMemoryCell-2")
-		{
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "SumOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "SumErrorOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
-			BOOST_CHECK(model.getNode(node_name).getType() == NodeType::recursive);
-			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.0, 1e-3);
-		}
-		else if (node_name == "LSTM-BlockGateInput-bias" || node_name == "LSTM-BlockGateOutput-bias" || node_name == "LSTM-BlockGateForget-bias" ||
-			node_name == "LSTM-BlockMultInput-0-bias-0" || node_name == "LSTM-BlockMultOutput-0-bias-0" || node_name == "LSTM-BlockMultForget-0-bias-0" ||
-			node_name == "LSTM-BlockMultInput-1-bias-1" || node_name == "LSTM-BlockMultOutput-1-bias-1" || node_name == "LSTM-BlockMultForget-1-bias-1")
-		{
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "SumOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "SumErrorOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
-			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.0, 1e-3);
-		}
-		else if (node_name == "LSTM-BlockInput-0-bias-0" || node_name == "LSTM-BlockInput-1-bias-1")
+		else if (node_name == "Hidden_keys_0" || node_name == "Hidden_keys_1" || node_name == "Hidden_keys_2")
 		{
 			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
 			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
@@ -1405,9 +1420,31 @@ BOOST_AUTO_TEST_CASE(addDotProdAttention1)
 			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
 			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.2, 1e-3);
 		}
+		else if (node_name == "Hidden_query_0" || node_name == "Hidden_query_1" || node_name == "Hidden_query_2")
+		{
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "SumOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "SumErrorOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
+			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.2, 1e-3);
+		}
+		else if (node_name == "Hidden_values_0" || node_name == "Hidden_values_1" || node_name == "Hidden_values_2")
+		{
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "SumOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "SumErrorOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
+			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.2, 1e-3);
+		}
+		else
+			BOOST_CHECK(false);
 	}
+	BOOST_CHECK_EQUAL(model.nodes_.size(), 26);
 
 	// check the links
+	int links_cnt = 0;
 	for (const std::string& name : link_names_test)
 	{
 		BOOST_CHECK_EQUAL(model.getLink(name).getName(), name);
@@ -1416,45 +1453,95 @@ BOOST_AUTO_TEST_CASE(addDotProdAttention1)
 		BOOST_CHECK_EQUAL(model.getLink(name).getSinkNodeName(), test[1]);
 		BOOST_CHECK_EQUAL(model.getLink(name).getModuleName(), "Mod1");
 	}
+	BOOST_CHECK_EQUAL(model.links_.size(), 51);
 
 	// check the weights
-	for (const std::string& name : weight_names_test)
+	for (const std::string& name : weight_names_softmax)
 	{
 		BOOST_CHECK_EQUAL(model.getWeight(name).getName(), name);
 		BOOST_CHECK_EQUAL(model.getWeight(name).getModuleName(), "Mod1");
-		if (name == "Input_0_to_LSTM-BlockGateForget" || name == "Input_0_to_LSTM-BlockGateInput" || name == "Input_0_to_LSTM-BlockGateOutput" ||
-			name == "Input_1_to_LSTM-BlockGateForget" ||
-			name == "Input_1_to_LSTM-BlockGateInput" || name == "Input_1_to_LSTM-BlockGateOutput" ||
-			name == "LSTM-BlockMultOutput-0_to_LSTM-BlockGateForget" || name == "LSTM-BlockMultOutput-0_to_LSTM-BlockGateInput" ||
-			name == "LSTM-BlockMultOutput-0_to_LSTM-BlockGateOutput" ||
-			name == "LSTM-BlockMultOutput-1_to_LSTM-BlockGateForget" || name == "LSTM-BlockMultOutput-1_to_LSTM-BlockGateInput" ||
-			name == "LSTM-BlockMultOutput-1_to_LSTM-BlockGateOutput") {
-			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "RandWeightInitOp");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "SGDOp");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.0f);
-		}
-		else if (name == "Input_0_to_LSTM-BlockInput-0" || name == "Input_0_to_LSTM-BlockInput-1" ||
-			name == "Input_1_to_LSTM-BlockInput-0" ||
-			name == "Input_1_to_LSTM-BlockInput-1" ||
-			name == "LSTM-BlockMultOutput-0_to_LSTM-BlockInput-0" || name == "LSTM-BlockMultOutput-1_to_LSTM-BlockInput-1") {
-			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "RandWeightInitOp");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "SGDOp");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.8f);
-		}
-		else if (name == "LSTM-BlockGateForget-bias_to_LSTM-BlockGateForget" || name == "LSTM-BlockGateInput-bias_to_LSTM-BlockGateInput" ||
-			name == "LSTM-BlockGateOutput-bias_to_LSTM-BlockGateOutput") {
+		// From stable softmax
+		if (model.getWeight(name).getName() == "Hidden_softMax-Max_to_Hidden_softMax-In_0" || model.getWeight(name).getName() == "Hidden_softMax-Max_to_Hidden_softMax-In_1" || model.getWeight(name).getName() == "Hidden_softMax-Max_to_Hidden_softMax-In_2") {
+			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getParamsAsStr(), "n:-1.000000");
 			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "SGDOp");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.0f);
+			BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "DummySolverOp");
 		}
-		else if (name == "LSTM-BlockInput-0-bias-0_to_LSTM-BlockInput-0" || name == "LSTM-BlockInput-1-bias-1_to_LSTM-BlockInput-1") {
+		else if (model.getWeight(name).getName() == "Hidden_softMax-Max_to_Hidden_softMax-In_0" || model.getWeight(name).getName() == "Hidden_softMax-Max_to_Hidden_softMax-In_1" || model.getWeight(name).getName() == "Hidden_softMax-Max_to_Hidden_softMax-In_2") {
+			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getParamsAsStr(), "n:1.000000");
 			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "SGDOp");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.8f);
+			BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "DummySolverOp");
+		}
+		else if (model.getWeight(name).getName() == "Hidden_scores_0_to_Hidden_softMax-In_0" || model.getWeight(name).getName() == "Hidden_scores_1_to_Hidden_softMax-In_1" || model.getWeight(name).getName() == "Hidden_scores_2_to_Hidden_softMax-In_2") {
+			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getParamsAsStr(), "n:1.000000");
+			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
+			BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "DummySolverOp");
+		}
+		else if (model.getWeight(name).getName() == "Hidden_softMax-In_0_to_Hidden_softMax-Out_0" || model.getWeight(name).getName() == "Hidden_softMax-In_1_to_Hidden_softMax-Out_1" || model.getWeight(name).getName() == "Hidden_softMax-In_2_to_Hidden_softMax-Out_2") {
+			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getParamsAsStr(), "n:1.000000");
+			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
+			BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "DummySolverOp");
+		}
+		else if (model.getWeight(name).getName() == "Hidden_softMax-Sum_to_Hidden_softMax-Out_0" || model.getWeight(name).getName() == "Hidden_softMax-Sum_to_Hidden_softMax-Out_1" || model.getWeight(name).getName() == "Hidden_softMax-Sum_to_Hidden_softMax-Out_2") {
+			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getParamsAsStr(), "n:1.000000");
+			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
+			BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "DummySolverOp");
+		}
+		else if (model.getWeight(name).getName() == "Hidden_softMax-In_0_to_Hidden_softMax-Sum" || model.getWeight(name).getName() == "Hidden_softMax-In_1_to_Hidden_softMax-Sum" || model.getWeight(name).getName() == "Hidden_softMax-In_2_to_Hidden_softMax-Sum") {
+			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getParamsAsStr(), "n:1.000000");
+			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
+			BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "DummySolverOp");
+		}
+		else if (model.getWeight(name).getName() == "Hidden_scores_0_to_Hidden_softMax-Max" || model.getWeight(name).getName() == "Hidden_scores_1_to_Hidden_softMax-Max" || model.getWeight(name).getName() == "Hidden_scores_2_to_Hidden_softMax-Max") {
+			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getParamsAsStr(), "n:1.000000");
+			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
+			BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "DummySolverOp");
 		}
 		else
 			BOOST_CHECK(false);
 	}
+	for (const std::string& name : weight_names_test)
+	{
+		BOOST_CHECK_EQUAL(model.getWeight(name).getName(), name);
+		BOOST_CHECK_EQUAL(model.getWeight(name).getModuleName(), "Mod1");
+		if (name == "Hidden-scalar_to_Hidden_scores_0" || name == "Hidden-scalar_to_Hidden_scores_1" || name == "Hidden-scalar_to_Hidden_scores_2") {
+			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
+			BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "DummySolverOp");
+			BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.0f);
+			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getParamsAsStr(), "n:1.732051");
+		}
+		else if (name == "Hidden_keys_0_to_Hidden_scores_0" || name == "Hidden_keys_1_to_Hidden_scores_1" || name == "Hidden_keys_2_to_Hidden_scores_2") {
+			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
+			BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "DummySolverOp");
+			BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.0f);
+			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getParamsAsStr(), "n:1.000000");
+		}
+		else if (name == "Hidden_query_0_to_Hidden_scores_0" || name == "Hidden_query_1_to_Hidden_scores_1" || name == "Hidden_query_2_to_Hidden_scores_2") {
+			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
+			BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "DummySolverOp");
+			BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.0f);
+			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getParamsAsStr(), "n:1.000000");
+		}
+		else if (name == "Input_0_to_Hidden_keys_0" || name == "Input_0_to_Hidden_keys_1" || name == "Input_0_to_Hidden_keys_2"
+			|| name == "Input_1_to_Hidden_keys_0" || name == "Input_1_to_Hidden_keys_1" || name == "Input_1_to_Hidden_keys_2"
+			|| name == "Input_0_to_Hidden_query_0" || name == "Input_0_to_Hidden_query_1" || name == "Input_0_to_Hidden_query_2"
+			|| name == "Input_1_to_Hidden_query_0" || name == "Input_1_to_Hidden_query_1" || name == "Input_1_to_Hidden_query_2"
+			|| name == "Input_0_to_Hidden_values_0" || name == "Input_0_to_Hidden_values_1" || name == "Input_0_to_Hidden_values_2"
+			|| name == "Input_1_to_Hidden_values_0" || name == "Input_1_to_Hidden_values_1" || name == "Input_1_to_Hidden_values_2") {
+			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "RandWeightInitOp");
+			BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "SGDOp");
+			BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.8f);
+		}
+		else if (name == "Hidden_values_0_to_Hidden_attention_0" || name == "Hidden_values_1_to_Hidden_attention_1" || name == "Hidden_values_2_to_Hidden_attention_2"
+			|| name == "Hidden_softMax-Out_0_to_Hidden_attention_0" || name == "Hidden_softMax-Out_1_to_Hidden_attention_1" || name == "Hidden_softMax-Out_2_to_Hidden_attention_2") {
+			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
+			BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "DummySolverOp");
+			BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.0f);
+			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getParamsAsStr(), "n:1.000000");
+		}
+		else
+			BOOST_CHECK(false);
+	}
+	BOOST_CHECK_EQUAL(model.links_.size(), 51);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
