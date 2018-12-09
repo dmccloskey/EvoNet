@@ -444,7 +444,7 @@ void main_CovNet() {
 	population_trainer.setNReplicatesPerModel(1);
 
 	// define the model logger
-	ModelLogger<float> model_logger(true, true, true, false, false, false, false, false);
+	ModelLogger<float> model_logger(true, true, false, false, false, false, false, false);
 	//ModelLogger<float> model_logger(true, true, true, true, true, false, true, true);
 
 	// define the data simulator
@@ -454,19 +454,19 @@ void main_CovNet() {
 	DataSimulatorExt<float> data_simulator;
 
 	// read in the training data
-	//const std::string training_data_filename = "C:/Users/domccl/GitHub/mnist/train-images.idx3-ubyte";
-	//const std::string training_labels_filename = "C:/Users/domccl/GitHub/mnist/train-labels.idx1-ubyte";
-	const std::string training_data_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/train-images-idx3-ubyte";
-	const std::string training_labels_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/train-labels-idx1-ubyte";
+	const std::string training_data_filename = "C:/Users/domccl/GitHub/mnist/train-images.idx3-ubyte";
+	const std::string training_labels_filename = "C:/Users/domccl/GitHub/mnist/train-labels.idx1-ubyte";
+	//const std::string training_data_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/train-images-idx3-ubyte";
+	//const std::string training_labels_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/train-labels-idx1-ubyte";
 	//const std::string training_data_filename = "/home/user/data/train-images-idx3-ubyte";
 	//const std::string training_labels_filename = "/home/user/data/train-labels-idx1-ubyte";
 	data_simulator.readData(training_data_filename, training_labels_filename, true, training_data_size, input_size);
 
 	// read in the validation data
-	//const std::string validation_data_filename = "C:/Users/domccl/GitHub/mnist/t10k-images.idx3-ubyte";
-	//const std::string validation_labels_filename = "C:/Users/domccl/GitHub/mnist/t10k-labels.idx1-ubyte";
-	const std::string validation_data_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/t10k-images-idx3-ubyte";
-	const std::string validation_labels_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/t10k-labels-idx1-ubyte";
+	const std::string validation_data_filename = "C:/Users/domccl/GitHub/mnist/t10k-images.idx3-ubyte";
+	const std::string validation_labels_filename = "C:/Users/domccl/GitHub/mnist/t10k-labels.idx1-ubyte";
+	//const std::string validation_data_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/t10k-images-idx3-ubyte";
+	//const std::string validation_labels_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/t10k-labels-idx1-ubyte";
 	//const std::string validation_data_filename = "/home/user/data/t10k-images-idx3-ubyte";
 	//const std::string validation_labels_filename = "/home/user/data/t10k-labels-idx1-ubyte";
 	data_simulator.readData(validation_data_filename, validation_labels_filename, false, validation_data_size, input_size);
@@ -501,6 +501,7 @@ void main_CovNet() {
 	model_trainer.setNEpochsValidation(1);
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setLogging(false, false);
+	model_trainer.setFindCycles(false);
 	model_trainer.setLossFunctions({
 		//std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>())//,
 		std::shared_ptr<LossFunctionOp<float>>(new CrossEntropyWithLogitsOp<float>())
@@ -517,10 +518,9 @@ void main_CovNet() {
 
 	// define the initial population
 	std::cout << "Initializing the population..." << std::endl;
-	//std::vector<Model<float>> population = { ModelTrainerExt<float>().makeCovNet(input_nodes.size(), output_nodes.size(), 2, 2, 32) };
-	//std::vector<Model<float>> population = { ModelTrainerExt<float>().makeCovNet(input_nodes.size(), output_nodes.size(), 32, 2, 128) };
-	std::vector<Model<float>> population = { ModelTrainerExt<float>().makeCovNet_v02(input_nodes.size(), output_nodes.size(), 32, 32, 128) };
-	
+	//std::vector<Model<float>> population = { model_trainer.makeCovNet(input_nodes.size(), output_nodes.size(), 2, 2, 32) };
+	std::vector<Model<float>> population = { model_trainer.makeCovNet(input_nodes.size(), output_nodes.size(), 32, 2, 128) };
+	//std::vector<Model<float>> population = { model_trainer.makeCovNet_v02(input_nodes.size(), output_nodes.size(), 32, 32, 128) };	
 
 	// Evolve the population
 	std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
