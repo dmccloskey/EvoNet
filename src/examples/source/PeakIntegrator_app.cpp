@@ -265,7 +265,7 @@ public:
 			std::cout << "Model input and output are not fully connected!" << std::endl;
 	}
 	void makeOverlappingAttention(Model<TensorT>& model, const int& n_inputs, const int& n_outputs, 
-		std::vector<int> n_heads = { 8, 8 }, std::vector<int> key_query_values_lengths = { 32, 32 }, std::vector<int> extent_lengths = { 64, 128 }, std::vector<int> stride_lengths = {32, 32},
+		std::vector<int> n_heads = { 8, 8 }, std::vector<int> key_query_values_lengths = { 32, 32 }, std::vector<int> extent_lengths = { 64, 128 }, std::vector<int> stride_lengths = {32, 64},
 		bool add_FC = true, bool add_skip = true, bool add_norm = false) {
 		// check parameter lengths match
 		assert(n_inputs == n_outputs);
