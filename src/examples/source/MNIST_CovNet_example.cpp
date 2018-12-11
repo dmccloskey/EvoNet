@@ -519,7 +519,8 @@ void main_CovNet() {
 	// define the initial population
 	std::cout << "Initializing the population..." << std::endl;
 	//std::vector<Model<float>> population = { model_trainer.makeCovNet(input_nodes.size(), output_nodes.size(), 2, 2, 32) };
-	std::vector<Model<float>> population = { model_trainer.makeCovNet(input_nodes.size(), output_nodes.size(), 32, 2, 128) };
+	std::vector<Model<float>> population = { model_trainer.makeCovNet(input_nodes.size(), output_nodes.size(), 16, 2, 32) };
+	//std::vector<Model<float>> population = { model_trainer.makeCovNet(input_nodes.size(), output_nodes.size(), 32, 2, 128) };
 	//std::vector<Model<float>> population = { model_trainer.makeCovNet_v02(input_nodes.size(), output_nodes.size(), 32, 32, 128) };	
 
 	// Evolve the population

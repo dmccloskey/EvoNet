@@ -40,7 +40,8 @@ public:
 	@param add_skip Optional skip connections between layers
 	@param add_norm Optional normalization layer after each convolution
 	*/
-	void makeMultiHeadDotProdAttention(Model<TensorT>& model, const int& n_inputs, const int& n_outputs, int n_heads = 8, int key_query_values_lengths = 48, int n_layers = 3, bool add_FC = true, bool add_skip = true, bool add_norm = false) {
+	void makeMultiHeadDotProdAttention(Model<TensorT>& model, const int& n_inputs, const int& n_outputs, int n_heads = 8, int key_query_values_lengths = 48, int n_layers = 3, 
+		bool add_FC = true, bool add_skip = true, bool add_norm = false) {
 		model.setId(0);
 		model.setName("DotProdAttent");
 
@@ -359,7 +360,7 @@ void main_DotProdAttention() {
 	// define the initial population
 	std::cout << "Initializing the population..." << std::endl;
 	Model<float> model;
-	model_trainer.makeMultiHeadDotProdAttention(model, input_nodes.size(), output_nodes.size(), 4, 24, 2, false, true, false);
+	model_trainer.makeMultiHeadDotProdAttention(model, input_nodes.size(), output_nodes.size(), 4, 24, 2, false, false, false);
 	std::vector<Model<float>> population = { model };	
 
 	// Evolve the population

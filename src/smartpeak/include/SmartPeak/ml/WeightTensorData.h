@@ -162,6 +162,8 @@ protected:
 		assert(weight_indices.size() == weight_values.size());
 		setLayer1Size(layer1_size);
 		setLayer2Size(layer2_size);
+		// TODO: implement checks to ensure Tensors are not too large
+		// results in a std::bad_array_new_length
 
 		// make the weight and error tensors
 		Eigen::Tensor<TensorT, 2> zero(layer1_size, layer2_size); zero.setZero();
