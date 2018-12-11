@@ -130,6 +130,8 @@ public:
 		The input is considered a linearized matrix in column order
 		The output is considered a linearized matrix in column order
 
+		BUG: addition of bias causes an odd bug in model interpreter
+
 		Overload is provided to add additional filters that operate over the same
 		input and output nodes
 
@@ -158,7 +160,7 @@ public:
 			const std::shared_ptr<IntegrationErrorOp<TensorT>>& node_integration_error,
 			const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& node_integration_weight_grad,
 			const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver,
-			TensorT drop_out_prob = 0.0f, TensorT drop_connection_prob = 0.0f, bool biases = true, bool split_filter_tensors = true);
+			TensorT drop_out_prob = 0.0f, TensorT drop_connection_prob = 0.0f, bool biases = true, bool split_filter_layers = true);
 		void addConvolution(Model<TensorT> & model, const std::string & name, const std::string& module_name, 
 			const std::vector<std::string>& source_node_names,
 			const std::vector<std::string>& output_node_names,
@@ -171,7 +173,7 @@ public:
 			const std::shared_ptr<IntegrationErrorOp<TensorT>>& node_integration_error,
 			const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& node_integration_weight_grad,
 			const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver,
-			TensorT drop_out_prob = 0.0f, TensorT drop_connection_prob = 0.0f, bool split_filter_tensors = true);
+			TensorT drop_out_prob = 0.0f, TensorT drop_connection_prob = 0.0f, bool split_filter_layers = true);
 
 		/**
 		@brief Add a normalization layer with activation
@@ -900,7 +902,7 @@ public:
 		const std::shared_ptr<IntegrationErrorOp<TensorT>>& node_integration_error,
 		const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& node_integration_weight_grad,
 		const std::shared_ptr<WeightInitOp<TensorT>> & weight_init, const std::shared_ptr<SolverOp<TensorT>> & solver,
-		TensorT drop_out_prob, TensorT drop_connection_prob, bool biases, bool split_filter_tensors)
+		TensorT drop_out_prob, TensorT drop_connection_prob, bool biases, bool split_filter_layers)
 	{
 		std::vector<std::string> node_names;
 
@@ -950,7 +952,7 @@ public:
 					std::string bias_name(bias_name_char);
 					Node<TensorT> bias(bias_name, NodeType::zero, NodeStatus::activated, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
 					bias.setModuleName(module_name);
-					bias.setLayerName(name);
+					if (split_filter_layers) bias.setLayerName(name);
 					model.addNodes({ bias });
 					node_names.push_back(bias_name);
 				}
@@ -960,7 +962,7 @@ public:
 					std::string bias_name(bias_name_char);
 					Node<TensorT> bias(bias_name, NodeType::zero, NodeStatus::activated, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
 					bias.setModuleName(module_name);
-					bias.setLayerName(name);
+					if (split_filter_layers) bias.setLayerName(name);
 					model.addNodes({ bias });
 					node_names.push_back(bias_name);
 				}
@@ -971,7 +973,7 @@ public:
 					Node<TensorT> output(output_name, NodeType::hidden, NodeStatus::activated, node_activation, node_activation_grad, node_integration, node_integration_error, node_integration_weight_grad);
 					output.setModuleName(module_name);
 					output.setDropProbability(drop_out_prob);
-					output.setLayerName(name);
+					if (split_filter_layers) output.setLayerName(name);
 					model.addNodes({ output });
 					node_names.push_back(output_name);
 
@@ -997,6 +999,7 @@ public:
 				Weight<TensorT> weight_filter(weight_filter_name, weight_init, solver);
 				weight_filter.setModuleName(module_name);
 				weight_filter.setDropProbability(drop_connection_prob);
+				if (split_filter_layers) weight_filter.setLayerName(name);
 				model.addWeights({ weight_filter });
 			}
 		}
@@ -1096,7 +1099,7 @@ public:
 		const std::shared_ptr<IntegrationErrorOp<TensorT>>& node_integration_error,
 		const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& node_integration_weight_grad,
 		const std::shared_ptr<WeightInitOp<TensorT>> & weight_init, const std::shared_ptr<SolverOp<TensorT>> & solver,
-		TensorT drop_out_prob, TensorT drop_connection_prob, bool split_filter_tensors)
+		TensorT drop_out_prob, TensorT drop_connection_prob, bool split_filter_layers)
 	{
 		// Parameters for the Convolution layer
 		assert(source_node_names.size() == input_width * input_height);
@@ -1124,6 +1127,7 @@ public:
 				Weight<TensorT> weight_filter(weight_filter_name, weight_init, solver);
 				weight_filter.setModuleName(module_name);
 				weight_filter.setDropProbability(drop_connection_prob);
+				if (split_filter_layers) weight_filter.setLayerName(name);
 				model.addWeights({ weight_filter });
 			}
 		}

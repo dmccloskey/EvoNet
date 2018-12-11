@@ -790,14 +790,14 @@ namespace SmartPeak
 			std::set<std::string> unique_weight_types;
 			for (const OperationArguments<TensorT>& argument : FP_operation.arguments) {
 				// Does not account for different solver parameters and weight init op parameters!
-				std::string ops_key = argument.weight->getSolverOp()->getName() + "/" + argument.weight->getWeightInitOp()->getName();
+				std::string ops_key = argument.weight->getSolverOp()->getName() + "/" + argument.weight->getWeightInitOp()->getName() + "/" + argument.weight->getLayerName();
 				unique_weight_types.insert(ops_key);
 			}
 			for (const std::string& weight_types : unique_weight_types) {
 				OperationList<TensorT> operations_list;
 				operations_list.result = FP_operation.result;
 				for (const OperationArguments<TensorT>& argument : FP_operation.arguments) {
-					std::string ops_key = argument.weight->getSolverOp()->getName() + "/" + argument.weight->getWeightInitOp()->getName();
+					std::string ops_key = argument.weight->getSolverOp()->getName() + "/" + argument.weight->getWeightInitOp()->getName() + "/" + argument.weight->getLayerName();
 					if (weight_types == ops_key) {
 						operations_list.arguments.push_back(argument);
 					}
