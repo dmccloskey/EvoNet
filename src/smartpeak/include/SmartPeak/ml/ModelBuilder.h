@@ -61,11 +61,11 @@ public:
 			const std::shared_ptr<IntegrationErrorOp<TensorT>>& node_integration_error,
 			const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& node_integration_weight_grad,
 			const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver,
-			TensorT drop_out_prob = 0.0f, TensorT drop_connection_prob = 0.0f, bool biases = true);
+			TensorT drop_out_prob = 0.0f, TensorT drop_connection_prob = 0.0f, bool biases = true, bool specify_layer = false);
 		void addFullyConnected(Model<TensorT>& model, const std::string& module_name,
 			const std::vector<std::string>& source_node_names, const std::vector<std::string>& sink_node_names,
 			const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver, 
-			TensorT drop_connection_prob = 0.0f);
+			TensorT drop_connection_prob = 0.0f, bool specify_layer = false);
 
 		/**
 		@brief Add a singly connected layer to a model
@@ -90,11 +90,11 @@ public:
 			const std::shared_ptr<IntegrationErrorOp<TensorT>>& node_integration_error,
 			const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& node_integration_weight_grad,
 			const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver,
-			TensorT drop_out_prob = 0.0f, TensorT drop_connection_prob = 0.0f, bool biases = true);
+			TensorT drop_out_prob = 0.0f, TensorT drop_connection_prob = 0.0f, bool biases = true, bool specify_layer = false);
 		void addSinglyConnected(Model<TensorT>& model, const std::string& module_name,
 			const std::vector<std::string>& source_node_names, const std::vector<std::string>& sink_node_names,
 			const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver,
-			TensorT drop_connection_prob = 0.0f);
+			TensorT drop_connection_prob = 0.0f, bool specify_layer = false);
 
 		/**
 		@brief Add a Soft Max
@@ -374,7 +374,7 @@ public:
 			const int& n_heads, const std::string& attention_type, const int & model_length, const int& key_length, const int& values_length,
 			const std::shared_ptr<ActivationOp<TensorT>>& node_activation, const std::shared_ptr<ActivationOp<TensorT>>& node_activation_grad,
 			const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver,
-			TensorT drop_out_prob = 0.0f, TensorT drop_connection_prob = 0.0f, bool biases = true);
+			TensorT drop_out_prob = 0.0f, TensorT drop_connection_prob = 0.0f, bool biases = true, bool split_attention_layers = true);
 
 		/**
 		@brief Add a scaled dot product self attention layer with activation
@@ -390,7 +390,7 @@ public:
 			const std::shared_ptr<ActivationOp<TensorT>>& node_activation,
 			const std::shared_ptr<ActivationOp<TensorT>>& node_activation_grad,
 			const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver,
-			TensorT drop_out_prob = 0.0f, TensorT drop_connection_prob = 0.0f, bool biases = true);
+			TensorT drop_out_prob = 0.0f, TensorT drop_connection_prob = 0.0f, bool biases = true, bool split_attention_layers = true);
 
 		/**
 		@brief Add an additive attention layer with activation
@@ -405,7 +405,7 @@ public:
 			const std::shared_ptr<ActivationOp<TensorT>>& node_activation,
 			const std::shared_ptr<ActivationOp<TensorT>>& node_activation_grad,
 			const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver,
-			TensorT drop_out_prob = 0.0f, TensorT drop_connection_prob = 0.0f, bool biases = true);
+			TensorT drop_out_prob = 0.0f, TensorT drop_connection_prob = 0.0f, bool biases = true, bool split_attention_layers = true);
 
 		/**
 		@brief Add a concatenation attention layer with activation
@@ -429,7 +429,7 @@ public:
 			const std::shared_ptr<ActivationOp<TensorT>>& node_activation,
 			const std::shared_ptr<ActivationOp<TensorT>>& node_activation_grad,
 			const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver,
-			TensorT drop_out_prob = 0.0f, TensorT drop_connection_prob = 0.0f, bool biases = true);
+			TensorT drop_out_prob = 0.0f, TensorT drop_connection_prob = 0.0f, bool biases = true, bool split_attention_layers = true);
 
 		/**
 		@brief Add one model to another
@@ -475,7 +475,7 @@ public:
 		const std::shared_ptr<IntegrationErrorOp<TensorT>>& node_integration_error,
 		const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& node_integration_weight_grad,
 		const std::shared_ptr<WeightInitOp<TensorT>> & weight_init, const std::shared_ptr<SolverOp<TensorT>> & solver,
-		TensorT drop_out_prob, TensorT drop_connection_prob, bool biases)
+		TensorT drop_out_prob, TensorT drop_connection_prob, bool biases, bool specify_layer)
 	{
 		std::vector<std::string> node_names;
 
@@ -489,6 +489,7 @@ public:
 			Node<TensorT> node(node_name, NodeType::hidden, NodeStatus::initialized, node_activation, node_activation_grad, node_integration, node_integration_error, node_integration_weight_grad);
 			node.setModuleName(module_name);
 			node.setDropProbability(drop_out_prob);
+			if (specify_layer) node.setLayerName(module_name);
 			model.addNodes({ node });
 
 			if (biases) {
@@ -543,6 +544,7 @@ public:
 				Weight<TensorT> weight(weight_name_char, hidden_weight_init, hidden_solver);
 				weight.setModuleName(module_name);
 				weight.setDropProbability(drop_connection_prob);
+				if (specify_layer) weight.setLayerName(module_name);
 				Link link(link_name, source_node_names[i], hidden_name, weight_name);
 				link.setModuleName(module_name);
 
@@ -554,7 +556,7 @@ public:
 	}
 	template<typename TensorT>
 	void ModelBuilder<TensorT>::addFullyConnected(Model<TensorT> & model, const std::string & module_name, const std::vector<std::string>& source_node_names, const std::vector<std::string>& sink_node_names,
-		const std::shared_ptr<WeightInitOp<TensorT>> & weight_init, const std::shared_ptr<SolverOp<TensorT>> & solver, TensorT drop_connection_prob)
+		const std::shared_ptr<WeightInitOp<TensorT>> & weight_init, const std::shared_ptr<SolverOp<TensorT>> & solver, TensorT drop_connection_prob, bool specify_layer)
 	{
 
 		// Create the weights and links for input to hidden
@@ -575,6 +577,7 @@ public:
 				Weight<TensorT> weight(weight_name_char, hidden_weight_init, hidden_solver);
 				weight.setModuleName(module_name);
 				weight.setDropProbability(drop_connection_prob);
+				if (specify_layer) weight.setLayerName(module_name);
 				Link link(link_name, source_node_name, sink_node_name, weight_name);
 				link.setModuleName(module_name);
 
@@ -592,7 +595,7 @@ public:
 		const std::shared_ptr<IntegrationErrorOp<TensorT>>& node_integration_error,
 		const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& node_integration_weight_grad,
 		const std::shared_ptr<WeightInitOp<TensorT>> & weight_init, const std::shared_ptr<SolverOp<TensorT>> & solver,
-		TensorT drop_out_prob, TensorT drop_connection_prob, bool biases)
+		TensorT drop_out_prob, TensorT drop_connection_prob, bool biases, bool specify_layer)
 	{
 		std::vector<std::string> node_names;
 
@@ -608,6 +611,7 @@ public:
 			Node<TensorT> node(node_name, NodeType::hidden, NodeStatus::initialized, node_activation, node_activation_grad, node_integration, node_integration_error, node_integration_weight_grad);
 			node.setModuleName(module_name);
 			node.setDropProbability(drop_out_prob);
+			if (specify_layer) node.setLayerName(module_name);
 			model.addNodes({ node });
 
 			if (biases) {
@@ -657,6 +661,7 @@ public:
 			Weight<TensorT> weight(weight_name_char, hidden_weight_init, hidden_solver);
 			weight.setModuleName(module_name);
 			weight.setDropProbability(drop_connection_prob);
+			if (specify_layer) weight.setLayerName(module_name);
 			Link link(link_name, source_node_names[i], hidden_name, weight_name);
 			link.setModuleName(module_name);
 
@@ -667,7 +672,7 @@ public:
 	}
 	template<typename TensorT>
 	void ModelBuilder<TensorT>::addSinglyConnected(Model<TensorT> & model, const std::string & module_name, const std::vector<std::string>& source_node_names, const std::vector<std::string>& sink_node_names,
-		const std::shared_ptr<WeightInitOp<TensorT>> & weight_init, const std::shared_ptr<SolverOp<TensorT>> & solver, TensorT drop_connection_prob)
+		const std::shared_ptr<WeightInitOp<TensorT>> & weight_init, const std::shared_ptr<SolverOp<TensorT>> & solver, TensorT drop_connection_prob, bool specify_layer)
 	{
 
 		assert(source_node_names.size() == sink_node_names.size());
@@ -688,6 +693,7 @@ public:
 			Weight<TensorT> weight(weight_name_char, hidden_weight_init, hidden_solver);
 			weight.setModuleName(module_name);
 			weight.setDropProbability(drop_connection_prob);
+			if (specify_layer) weight.setLayerName(module_name);
 			Link link(link_name, source_node_names[i], sink_node_names[i], weight_name);
 			link.setModuleName(module_name);
 
@@ -952,7 +958,7 @@ public:
 					std::string bias_name(bias_name_char);
 					Node<TensorT> bias(bias_name, NodeType::zero, NodeStatus::activated, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
 					bias.setModuleName(module_name);
-					if (split_filter_layers) bias.setLayerName(name);
+					if (split_filter_layers) bias.setLayerName(module_name);
 					model.addNodes({ bias });
 					node_names.push_back(bias_name);
 				}
@@ -962,7 +968,7 @@ public:
 					std::string bias_name(bias_name_char);
 					Node<TensorT> bias(bias_name, NodeType::zero, NodeStatus::activated, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
 					bias.setModuleName(module_name);
-					if (split_filter_layers) bias.setLayerName(name);
+					if (split_filter_layers) bias.setLayerName(module_name);
 					model.addNodes({ bias });
 					node_names.push_back(bias_name);
 				}
@@ -973,7 +979,7 @@ public:
 					Node<TensorT> output(output_name, NodeType::hidden, NodeStatus::activated, node_activation, node_activation_grad, node_integration, node_integration_error, node_integration_weight_grad);
 					output.setModuleName(module_name);
 					output.setDropProbability(drop_out_prob);
-					if (split_filter_layers) output.setLayerName(name);
+					if (split_filter_layers) output.setLayerName(module_name);
 					model.addNodes({ output });
 					node_names.push_back(output_name);
 
@@ -999,7 +1005,7 @@ public:
 				Weight<TensorT> weight_filter(weight_filter_name, weight_init, solver);
 				weight_filter.setModuleName(module_name);
 				weight_filter.setDropProbability(drop_connection_prob);
-				if (split_filter_layers) weight_filter.setLayerName(name);
+				if (split_filter_layers) weight_filter.setLayerName(module_name);
 				model.addWeights({ weight_filter });
 			}
 		}
@@ -1127,7 +1133,7 @@ public:
 				Weight<TensorT> weight_filter(weight_filter_name, weight_init, solver);
 				weight_filter.setModuleName(module_name);
 				weight_filter.setDropProbability(drop_connection_prob);
-				if (split_filter_layers) weight_filter.setLayerName(name);
+				if (split_filter_layers) weight_filter.setLayerName(module_name);
 				model.addWeights({ weight_filter });
 			}
 		}
@@ -2489,7 +2495,7 @@ public:
 		const std::vector<std::string>& query_node_names, const std::vector<std::string>& key_node_names, const std::vector<std::string>& values_node_names, 
 		const int & n_heads, const std::string & attention_type, const int & model_length, const int & key_length, const int & values_length,
 		const std::shared_ptr<ActivationOp<TensorT>>& node_activation, const std::shared_ptr<ActivationOp<TensorT>>& node_activation_grad, 
-		const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver, TensorT drop_out_prob, TensorT drop_connection_prob, bool biases)
+		const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver, TensorT drop_out_prob, TensorT drop_connection_prob, bool biases, bool split_attention_layers)
 	{
 
 		// Create each head and concatenate the results
@@ -2499,7 +2505,7 @@ public:
 			if (attention_type == "DotProd") {
 				node_names_attention = addDotProdAttention(model, name + "-" + std::to_string(i), module_name,
 					query_node_names, key_node_names, values_node_names, key_length, values_length, node_activation, node_activation_grad,
-					weight_init, solver, drop_out_prob, drop_connection_prob, biases);
+					weight_init, solver, drop_out_prob, drop_connection_prob, biases, split_attention_layers);
 			}
 			else {
 				std::cout << "Attention type " << attention_type << " was not recognized." << std::endl;
@@ -2511,7 +2517,7 @@ public:
 		// Matrix multiply the concatenated heads to create the output
 		std::vector<std::string> node_names = addFullyConnected(model, name + "_MultiHead", module_name, node_names_heads, model_length, node_activation, node_activation_grad, 
 			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-			weight_init, solver, drop_out_prob, drop_connection_prob, biases);
+			weight_init, solver, drop_out_prob, drop_connection_prob, biases, split_attention_layers);
 
 		return node_names;
 	}
@@ -2523,35 +2529,35 @@ public:
 		const std::shared_ptr<ActivationOp<TensorT>>& node_activation,
 		const std::shared_ptr<ActivationOp<TensorT>>& node_activation_grad,
 		const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver,
-		TensorT drop_out_prob, TensorT drop_connection_prob, bool biases)
+		TensorT drop_out_prob, TensorT drop_connection_prob, bool biases, bool split_attention_layers)
 	{
 		std::vector<std::string> node_names;
 
 		// Make the query network
-		std::vector<std::string> node_names_query = addFullyConnected(model, name + "_query", module_name, query_node_names, key_length, 
+		std::vector<std::string> node_names_query = addFullyConnected(model, name + "_query", module_name + "_query", query_node_names, key_length,
 			std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
 			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-			weight_init, solver, drop_out_prob, drop_connection_prob, false);
+			weight_init, solver, drop_out_prob, drop_connection_prob, false, split_attention_layers);
 
 		// Make the key network
-		std::vector<std::string> node_names_key = addFullyConnected(model, name + "_keys", module_name, query_node_names, key_length, 
+		std::vector<std::string> node_names_key = addFullyConnected(model, name + "_keys", module_name + "_keys", query_node_names, key_length,
 			std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
 			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-			weight_init, solver, drop_out_prob, drop_connection_prob, false);
+			weight_init, solver, drop_out_prob, drop_connection_prob, false, split_attention_layers);
 
 		// Make the values network
-		std::vector<std::string> node_names_value = addFullyConnected(model, name + "_values", module_name, query_node_names, values_length, 
+		std::vector<std::string> node_names_value = addFullyConnected(model, name + "_values", module_name + "_values", query_node_names, values_length,
 			std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
 			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-			weight_init, solver, drop_out_prob, drop_connection_prob, false);
+			weight_init, solver, drop_out_prob, drop_connection_prob, false, split_attention_layers);
 
 		// Multiply the key with the values and scale by the squared of the keys_length
-		std::vector<std::string> node_names_scores = addSinglyConnected(model, name + "_scores", module_name, node_names_key, node_names_key.size(), 
+		std::vector<std::string> node_names_scores = addSinglyConnected(model, name + "_scores", module_name + "_scores", node_names_key, node_names_key.size(),
 			std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
 			std::shared_ptr<IntegrationOp<TensorT>>(new ProdOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new ProdErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new ProdWeightGradOp<TensorT>()),
-			std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0, 0.0, false);
-		addSinglyConnected(model, module_name, node_names_query, node_names_scores, 
-			std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0);
+			std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0, 0.0, false, split_attention_layers);
+		addSinglyConnected(model, module_name + "_scores", node_names_query, node_names_scores,
+			std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0, split_attention_layers);
 
 		// Add the scalar
 		TensorT scalar_value = std::sqrt((TensorT)key_length);
@@ -2563,19 +2569,19 @@ public:
 		model.addNodes({ scalar });
 
 		std::vector<std::string> scalar_nodes = { scalar_name };
-		addFullyConnected(model, module_name, scalar_nodes, node_names_scores,
-			std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(scalar_value)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0);
+		addFullyConnected(model, module_name + "_scores", scalar_nodes, node_names_scores,
+			std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(scalar_value)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0, split_attention_layers);
 
 		// Add a stable softmax to create the attention
 		std::vector<std::string> node_names_attention = addStableSoftMax(model, name + "_softMax", module_name, node_names_scores);
 
 		// Multiply the attention with the values
-		node_names = addSinglyConnected(model, name + "_attention", module_name, node_names_value, node_names_value.size(),
+		node_names = addSinglyConnected(model, name + "_attention", module_name + "_attention", node_names_value, node_names_value.size(),
 			node_activation, node_activation_grad,
 			std::shared_ptr<IntegrationOp<TensorT>>(new ProdOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new ProdErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new ProdWeightGradOp<TensorT>()),
 			std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), drop_out_prob, 0.0, false);
 		addSinglyConnected(model, module_name, node_names_attention, node_names,
-			std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0);
+			std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0, split_attention_layers);
 
 		return node_names;
 	}

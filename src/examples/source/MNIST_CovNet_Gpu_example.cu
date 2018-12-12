@@ -171,7 +171,7 @@ public:
 			std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
 			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
 			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(n_inputs, 2)),
-			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
 		for (size_t d = 1; d < n_depth_1; ++d) {
 			std::string conv_name = "Conv0-" + std::to_string(d);
 			model_builder.addConvolution(model, "Conv0", conv_name, node_names_input, node_names_conv0,
@@ -183,7 +183,7 @@ public:
 				std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
 				std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
 				std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(n_inputs, 2)),
-				std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+				std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, true);
 		}
 
 		// Add the second convolution -> max pool -> ReLU layers
@@ -198,7 +198,7 @@ public:
 			std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
 			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
 			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(n_inputs, 2)),
-			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
 		for (size_t d = 1; d < n_depth_2; ++d) {
 			std::string conv_name = "Conv1-" + std::to_string(d);
 			model_builder.addConvolution(model, "Conv1", conv_name, node_names_conv0, node_names_conv1,
@@ -210,7 +210,7 @@ public:
 				std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
 				std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
 				std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(n_inputs, 2)),
-				std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+				std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false);
 		}
 
 		// Add the FC layers
@@ -596,12 +596,12 @@ void main_CovNet() {
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setLogging(false, false);
 	model_trainer.setLossFunctions({
-		//std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>())
-		std::shared_ptr<LossFunctionOp<float>>(new CrossEntropyWithLogitsOp<float>())
+		std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>())
+		//std::shared_ptr<LossFunctionOp<float>>(new CrossEntropyWithLogitsOp<float>())
 		});
 	model_trainer.setLossFunctionGrads({
-		//std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>())
-		std::shared_ptr<LossFunctionGradOp<float>>(new CrossEntropyWithLogitsGradOp<float>())
+		std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>())
+		//std::shared_ptr<LossFunctionGradOp<float>>(new CrossEntropyWithLogitsGradOp<float>())
 		});
 	model_trainer.setOutputNodes({ output_FC_nodes//, output_nodes 
 		});
@@ -612,8 +612,8 @@ void main_CovNet() {
 	// define the initial population
 	std::cout << "Initializing the population..." << std::endl;
 	//std::vector<Model<float>> population = { ModelTrainerExt<float>().makeCovNet(input_nodes.size(), output_nodes.size(), 2, 2, 32) };
-	std::vector<Model<float>> population = { ModelTrainerExt<float>().makeCovNet(input_nodes.size(), output_nodes.size(), 32, 2, 128) };
-	//std::vector<Model<float>> population = { ModelTrainerExt<float>().makeCovNet_v02(input_nodes.size(), output_nodes.size(), 32, 8, 128) };
+	//std::vector<Model<float>> population = { ModelTrainerExt<float>().makeCovNet(input_nodes.size(), output_nodes.size(), 32, 2, 128) };
+	std::vector<Model<float>> population = { ModelTrainerExt<float>().makeCovNet_v02(input_nodes.size(), output_nodes.size(), 12, 12, 128) };
 
 	// Evolve the population
 	std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(

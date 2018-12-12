@@ -334,8 +334,8 @@ namespace SmartPeak
 		@param[in] layer_name
 		@param[in] layer_index
 		*/
-		static std::string makeForwardPropogationOperationsKey(const int& time_step, const NodeType& node_type,
-			const std::string& node_integration, const std::string& node_activation, const std::string& layer_name, const int& layer_index);
+		static std::string makeForwardPropogationOperationsKey(const int & time_step, const NodeType& node_type, const std::string & node_integration, const std::string & node_activation,
+			const std::string& node_layer_name, const int& node_layer_index, const std::string& weight_layer_name);
 
 		/**
 		@brief Convert a graph model to sequence of tensor operations
@@ -759,7 +759,8 @@ namespace SmartPeak
 					argument.source_node->getIntegration()->getName(),
 					argument.source_node->getActivation()->getName(),
 					argument.source_node->getLayerName(),
-					argument.source_node->getTensorIndex().first);
+					argument.source_node->getTensorIndex().first,
+					"");
 				unique_node_types.insert(ops_key);
 			}
 			for (const std::string& node_types : unique_node_types) {
@@ -771,7 +772,8 @@ namespace SmartPeak
 						argument.source_node->getIntegration()->getName(),
 						argument.source_node->getActivation()->getName(),
 						argument.source_node->getLayerName(),
-						argument.source_node->getTensorIndex().first);
+						argument.source_node->getTensorIndex().first,
+						"");
 					if (node_types == ops_key) {
 						operations_list.arguments.push_back(argument);
 					}
@@ -1017,13 +1019,15 @@ namespace SmartPeak
 					FP_operations[operations_iter1].result.sink_node->getIntegration()->getName(),
 					FP_operations[operations_iter1].result.sink_node->getActivation()->getName(),
 					FP_operations[operations_iter1].result.sink_node->getLayerName(),
-					FP_operations[operations_iter1].result.sink_node->getTensorIndex().first);
+					FP_operations[operations_iter1].result.sink_node->getTensorIndex().first,
+					FP_operations[operations_iter1].arguments[0].weight->getLayerName());
 				std::string ops_key_2 = makeForwardPropogationOperationsKey(FP_operations[operations_iter2].result.time_step,
 					FP_operations[operations_iter2].result.sink_node->getType(),
 					FP_operations[operations_iter2].result.sink_node->getIntegration()->getName(),
 					FP_operations[operations_iter2].result.sink_node->getActivation()->getName(),
 					FP_operations[operations_iter2].result.sink_node->getLayerName(),
-					FP_operations[operations_iter2].result.sink_node->getTensorIndex().first);
+					FP_operations[operations_iter2].result.sink_node->getTensorIndex().first,
+					FP_operations[operations_iter2].arguments[0].weight->getLayerName());
 				if (ops_key_1 != ops_key_2) continue;
 
 				// check if the source nodes are compatible
@@ -1034,7 +1038,8 @@ namespace SmartPeak
 						argument.source_node->getIntegration()->getName(),
 						argument.source_node->getActivation()->getName(),
 						argument.source_node->getLayerName(),
-						argument.source_node->getTensorIndex().first);
+						argument.source_node->getTensorIndex().first,
+						argument.weight->getLayerName());
 					argument_nodes.insert(ops_key);
 				}
 				for (const auto& argument : FP_operations[operations_iter2].arguments) {
@@ -1043,7 +1048,8 @@ namespace SmartPeak
 						argument.source_node->getIntegration()->getName(),
 						argument.source_node->getActivation()->getName(),
 						argument.source_node->getLayerName(),
-						argument.source_node->getTensorIndex().first);
+						argument.source_node->getTensorIndex().first,
+						argument.weight->getLayerName());
 					argument_nodes.insert(ops_key);
 				}
 				if (argument_nodes.size() > 1) continue;
@@ -1209,11 +1215,13 @@ namespace SmartPeak
 	}
 
 	template<typename TensorT, typename DeviceT>
-	std::string ModelInterpreter<TensorT, DeviceT>::makeForwardPropogationOperationsKey(const int & time_step, const NodeType& node_type, const std::string & node_integration, const std::string & node_activation, const std::string& layer_name, const int& layer_index)
+	std::string ModelInterpreter<TensorT, DeviceT>::makeForwardPropogationOperationsKey(
+		const int & time_step, const NodeType& node_type, const std::string & node_integration, const std::string & node_activation, 
+		const std::string& node_layer_name, const int& node_layer_index, const std::string& weight_layer_name)
 	{
 		// [TODO: may not need to add in node type
 		//std::string ops_key = std::to_string(time_step) + "/" + std::to_string(node_type) + "/" + node_integration + "/" + node_activation;
-		std::string ops_key = std::to_string(time_step) + "/" + node_integration + "/" + node_activation + "/" + layer_name;// +"/" + std::to_string(layer_index);
+		std::string ops_key = std::to_string(time_step) + "/" + node_integration + "/" + node_activation + "/" + node_layer_name + "/" + weight_layer_name;// +"/" + std::to_string(layer_index);
 		return ops_key;
 	}
 
