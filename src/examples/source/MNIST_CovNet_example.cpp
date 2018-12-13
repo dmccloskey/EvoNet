@@ -184,7 +184,7 @@ public:
 	References:
 	https://github.com/pytorch/examples/blob/master/mnist/main.py
 	*/
-	Model<TensorT> makeCovNet_v02(const int& n_inputs, const int& n_outputs, int n_depth_1 = 32, int n_depth_2 = 32, int n_fc = 128) {
+	Model<TensorT> makeCovNet_v02(const int& n_inputs, const int& n_outputs, int n_depth_1 = 32, int n_depth_2 = 32, int n_fc = 128, int add_scalar = true) {
 		Model<TensorT> model;
 		model.setId(0);
 		model.setName("CovNet");
@@ -200,8 +200,8 @@ public:
 		node_names_conv0 = model_builder.addConvolution(model, "Conv0", conv_name, node_names_input,
 			28, 28, 0, 0,
 			5, 5, 1, 0, 0,
-			std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-			std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+			std::shared_ptr<ActivationOp<TensorT>>(new ReLUOp<TensorT>()),
+			std::shared_ptr<ActivationOp<TensorT>>(new ReLUGradOp<TensorT>()),
 			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
 			std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
 			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
@@ -212,13 +212,14 @@ public:
 			model_builder.addConvolution(model, "Conv0", conv_name, node_names_input, node_names_conv0,
 				28, 28, 0, 0,
 				5, 5, 1, 0, 0,
-				std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-				std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
-				std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-				std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-				std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
 				std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(n_inputs, 2)),
 				std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, true);
+		}
+		if (add_scalar) {
+			node_names_conv0 = model_builder.addScalar(model, "Scalar0", "Scalar0", node_names_conv0, 5 * n_inputs,
+				std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
+				std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+				true);
 		}
 
 		// Add the second convolution -> max pool -> ReLU layers
@@ -227,8 +228,8 @@ public:
 		node_names_conv1 = model_builder.addConvolution(model, "Conv1", conv_name, node_names_conv0,
 			sqrt(node_names_conv0.size()), sqrt(node_names_conv0.size()), 0, 0,
 			5, 5, 1, 0, 0,
-			std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-			std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+			std::shared_ptr<ActivationOp<TensorT>>(new ReLUOp<TensorT>()),
+			std::shared_ptr<ActivationOp<TensorT>>(new ReLUGradOp<TensorT>()),
 			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
 			std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
 			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
@@ -239,13 +240,14 @@ public:
 			model_builder.addConvolution(model, "Conv1", conv_name, node_names_conv0, node_names_conv1,
 				sqrt(node_names_conv0.size()), sqrt(node_names_conv0.size()), 0, 0,
 				5, 5, 1, 0, 0,
-				std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-				std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
-				std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-				std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-				std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
 				std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(n_inputs, 2)),
 				std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, true);
+		}
+		if (add_scalar) {
+			node_names_conv1 = model_builder.addScalar(model, "Scalar1", "Scalar1", node_names_conv1, 5 * node_names_conv0.size(),
+				std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
+				std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+				true);
 		}
 
 		// Add the FC layers
@@ -519,9 +521,9 @@ void main_CovNet() {
 	// define the initial population
 	std::cout << "Initializing the population..." << std::endl;
 	//std::vector<Model<float>> population = { model_trainer.makeCovNet(input_nodes.size(), output_nodes.size(), 2, 2, 32) };
-	std::vector<Model<float>> population = { model_trainer.makeCovNet(input_nodes.size(), output_nodes.size(), 16, 2, 32) };
+	//std::vector<Model<float>> population = { model_trainer.makeCovNet(input_nodes.size(), output_nodes.size(), 8, 2, 32) };
 	//std::vector<Model<float>> population = { model_trainer.makeCovNet(input_nodes.size(), output_nodes.size(), 32, 2, 128) };
-	//std::vector<Model<float>> population = { model_trainer.makeCovNet_v02(input_nodes.size(), output_nodes.size(), 12, 12, 128) };
+	std::vector<Model<float>> population = { model_trainer.makeCovNet_v02(input_nodes.size(), output_nodes.size(), 12, 12, 128) };
 	//std::vector<Model<float>> population = { model_trainer.makeCovNet_v02(input_nodes.size(), output_nodes.size(), 32, 32, 128) };	
 
 	// Evolve the population

@@ -696,8 +696,6 @@ BOOST_AUTO_TEST_CASE(addConvolution3)
 	model_builder.addConvolution(
 		model, "Filter", "Mod2", node_names_input, node_names, 4, 4, 2, 2,
 		2, 2, 1, 1, 1,
-		std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()),
-		std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
 		std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new SGDOp<float>(0.1, 0.9)), 0.2f, 0.8f);
 
 	std::vector<std::string> node_names_test = { "Filter-bias" };

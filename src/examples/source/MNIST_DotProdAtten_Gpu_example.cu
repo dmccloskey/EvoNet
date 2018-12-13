@@ -332,7 +332,7 @@ void main_DotProdAttention() {
 	model_trainer.setNEpochsTraining(1001);
 	model_trainer.setNEpochsValidation(1);
 	model_trainer.setVerbosityLevel(1);
-	model_trainer.setLogging(false, false);
+	model_trainer.setLogging(true, false);
 	model_trainer.setFindCycles(false);
 	model_trainer.setLossFunctions({
 		//std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>())//,

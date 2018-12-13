@@ -167,11 +167,6 @@ public:
 			const int & input_width, const int & input_height, const int& input_width_zero_padding, const int& input_height_zero_padding,
 			const int & extent_width, const int & extent_height, const int & stride,
 			const int & output_width_zero_padding, const int& output_height_zero_padding,
-			const std::shared_ptr<ActivationOp<TensorT>>& node_activation,
-			const std::shared_ptr<ActivationOp<TensorT>>& node_activation_grad,
-			const std::shared_ptr<IntegrationOp<TensorT>>& node_integration,
-			const std::shared_ptr<IntegrationErrorOp<TensorT>>& node_integration_error,
-			const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& node_integration_weight_grad,
 			const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver,
 			TensorT drop_out_prob = 0.0f, TensorT drop_connection_prob = 0.0f, bool split_filter_layers = true);
 
@@ -350,6 +345,7 @@ public:
 			const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& node_integration_weight_grad,
 			const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver,
 			TensorT drop_out_prob = 0.0f, TensorT drop_connection_prob = 0.0f, bool biases = true, bool input_gate_connection = true);
+
 		/**
 		@brief Add a dot product self attention layer with activation
 
@@ -430,6 +426,25 @@ public:
 			const std::shared_ptr<ActivationOp<TensorT>>& node_activation_grad,
 			const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver,
 			TensorT drop_out_prob = 0.0f, TensorT drop_connection_prob = 0.0f, bool biases = true, bool split_attention_layers = true);
+
+		/**
+		@brief Add a fully connected layer to a model
+
+		@param[in, out] Model
+		@param[in] source_node_names Node_names to add the fully connected layer to
+		@param[in] n_nodes The number of output nodes
+		@param[in] scalar_value The value of the scalar
+		@param[in] node_activation The activation function of the hidden node to create
+		@param[in] node_activation_grad The activation function gradient of the hidden node to create
+		@param[in] specify_layer Whether to specify the layer or not
+
+		@returns vector of output node names
+		*/
+		std::vector<std::string> addScalar(Model<TensorT>& model, const std::string& name, const std::string& module_name,
+			const std::vector<std::string>& source_node_names, const TensorT& scalar_value,
+			const std::shared_ptr<ActivationOp<TensorT>>& node_activation,
+			const std::shared_ptr<ActivationOp<TensorT>>& node_activation_grad,
+			bool specify_layer = false);
 
 		/**
 		@brief Add one model to another
@@ -1099,11 +1114,6 @@ public:
 		const int & input_width, const int & input_height, const int& input_width_zero_padding, const int& input_height_zero_padding,
 		const int & extent_width, const int & extent_height, const int & stride,
 		const int & output_width_zero_padding, const int& output_height_zero_padding,
-		const std::shared_ptr<ActivationOp<TensorT>>& node_activation,
-		const std::shared_ptr<ActivationOp<TensorT>>& node_activation_grad,
-		const std::shared_ptr<IntegrationOp<TensorT>>& node_integration,
-		const std::shared_ptr<IntegrationErrorOp<TensorT>>& node_integration_error,
-		const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& node_integration_weight_grad,
 		const std::shared_ptr<WeightInitOp<TensorT>> & weight_init, const std::shared_ptr<SolverOp<TensorT>> & solver,
 		TensorT drop_out_prob, TensorT drop_connection_prob, bool split_filter_layers)
 	{
@@ -2582,6 +2592,32 @@ public:
 			std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), drop_out_prob, 0.0, false);
 		addSinglyConnected(model, module_name, node_names_attention, node_names,
 			std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0, split_attention_layers);
+
+		return node_names;
+	}
+
+	template<typename TensorT>
+	inline std::vector<std::string> ModelBuilder<TensorT>::addScalar(Model<TensorT>& model, const std::string & name, const std::string & module_name, 
+		const std::vector<std::string>& source_node_names, const TensorT & scalar_value, 
+		const std::shared_ptr<ActivationOp<TensorT>>& node_activation, const std::shared_ptr<ActivationOp<TensorT>>& node_activation_grad, bool specify_layer)
+	{
+		// Multiply the key with the values and scale by the squared of the keys_length
+		std::vector<std::string> node_names = addSinglyConnected(model, name, module_name, source_node_names, source_node_names.size(),
+			node_activation, node_activation_grad,
+			std::shared_ptr<IntegrationOp<TensorT>>(new ProdOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new ProdErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new ProdWeightGradOp<TensorT>()),
+			std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0, 0.0, false, specify_layer);
+
+		// Add the scalar
+		char scalar_name_char[512];
+		sprintf(scalar_name_char, "%s-scalar", name.data());
+		std::string scalar_name(scalar_name_char);
+		Node<TensorT> scalar(scalar_name, NodeType::input, NodeStatus::activated, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
+		scalar.setModuleName(module_name);
+		model.addNodes({ scalar });
+
+		std::vector<std::string> scalar_nodes = { scalar_name };
+		addFullyConnected(model, module_name, scalar_nodes, node_names,
+			std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(scalar_value)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0, specify_layer);
 
 		return node_names;
 	}

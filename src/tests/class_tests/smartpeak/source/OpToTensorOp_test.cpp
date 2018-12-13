@@ -300,29 +300,25 @@ BOOST_AUTO_TEST_CASE(convertOpToTensorOpIntegrationOpToIntegrationTensorOp)
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "SumTensorOp");
 
-	//op_class = new ProdOp<float>();
-	//op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
-	//BOOST_CHECK_EQUAL(op_tensor_class->getName(), "ProdTensorOp");
+	op_class = new ProdOp<float>();
+	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "ProdTensorOp");
 
-	//op_class = new MaxOp<float>();
-	//op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
-	//BOOST_CHECK_EQUAL(op_tensor_class->getName(), "MaxTensorOp");
-
-	//op_class = new MeanOp<float>();
-	//op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
-	//BOOST_CHECK_EQUAL(op_tensor_class->getName(), "MeanTensorOp");
+	op_class = new MaxOp<float>();
+	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "MaxTensorOp");
 
 	//op_class = new VarOp<float>(); //TODO...
 	//op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	//BOOST_CHECK_EQUAL(op_tensor_class->getName(), "VarTensorOp");
 
-	//op_class = new CountOp<float>();
-	//op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
-	//BOOST_CHECK_EQUAL(op_tensor_class->getName(), "CountTensorOp");
+	op_class = new CountOp<float>();
+	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "CountTensorOp");
 
-	//op_class = new VarModOp<float>();
-	//op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
-	//BOOST_CHECK_EQUAL(op_tensor_class->getName(), "VarModTensorOp");
+	op_class = new VarModOp<float>();
+	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "VarModTensorOp");
 }
 
 BOOST_AUTO_TEST_CASE(getTensorParamsIntegrationOpToIntegrationTensorOp)
@@ -333,29 +329,29 @@ BOOST_AUTO_TEST_CASE(getTensorParamsIntegrationOpToIntegrationTensorOp)
 	std::vector<float> params = op_to_tensor_op.getTensorParams(op_class);
 	BOOST_CHECK_EQUAL(params.size(), 0);
 
-	//op_class = new ProdOp<float>();
-	//params = op_to_tensor_op.getTensorParams(op_class);
-	//BOOST_CHECK_EQUAL(params.size(), 0);
+	op_class = new ProdOp<float>();
+	params = op_to_tensor_op.getTensorParams(op_class);
+	BOOST_CHECK_EQUAL(params.size(), 0);
 
-	//op_class = new MaxOp<float>();
-	//params = op_to_tensor_op.getTensorParams(op_class);
-	//BOOST_CHECK_EQUAL(params.size(), 0);
+	op_class = new MaxOp<float>();
+	params = op_to_tensor_op.getTensorParams(op_class);
+	BOOST_CHECK_EQUAL(params.size(), 0);
 
-	//op_class = new MeanOp<float>();
-	//params = op_to_tensor_op.getTensorParams(op_class);
-	//BOOST_CHECK_EQUAL(params.size(), 0);
+	op_class = new MeanOp<float>();
+	params = op_to_tensor_op.getTensorParams(op_class);
+	BOOST_CHECK_EQUAL(params.size(), 0);
 
 	//op_class = new VarOp<float>();
 	//params = op_to_tensor_op.getTensorParams(op_class);
 	//BOOST_CHECK_EQUAL(params.size(), 0);
 
-	//op_class = new CountOp<float>();
-	//params = op_to_tensor_op.getTensorParams(op_class);
-	//BOOST_CHECK_EQUAL(params.size(), 0);
+	op_class = new CountOp<float>();
+	params = op_to_tensor_op.getTensorParams(op_class);
+	BOOST_CHECK_EQUAL(params.size(), 0);
 
-	//op_class = new VarModOp<float>();
-	//params = op_to_tensor_op.getTensorParams(op_class);
-	//BOOST_CHECK_EQUAL(params.size(), 0);
+	op_class = new VarModOp<float>();
+	params = op_to_tensor_op.getTensorParams(op_class);
+	BOOST_CHECK_EQUAL(params.size(), 0);
 }
 
 BOOST_AUTO_TEST_CASE(constructorIntegrationErrorOpToIntegrationErrorTensorOp)
@@ -383,29 +379,29 @@ BOOST_AUTO_TEST_CASE(convertOpToTensorOpIntegrationErrorOpToIntegrationErrorTens
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "SumErrorTensorOp");
 
-	//op_class = new ProdErrorOp<float>();
-	//op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
-	//BOOST_CHECK_EQUAL(op_tensor_class->getName(), "ProdErrorTensorOp");
+	op_class = new ProdErrorOp<float>();
+	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "ProdErrorTensorOp");
 
-	//op_class = new MaxErrorOp<float>();
-	//op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
-	//BOOST_CHECK_EQUAL(op_tensor_class->getName(), "MaxErrorTensorOp");
+	op_class = new MaxErrorOp<float>();
+	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "MaxErrorTensorOp");
 
-	//op_class = new MeanErrorOp<float>();
-	//op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
-	//BOOST_CHECK_EQUAL(op_tensor_class->getName(), "MeanErrorTensorOp");
+	op_class = new MeanErrorOp<float>();
+	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "MeanErrorTensorOp");
 
 	//op_class = new VarErrorOp<float>(); //TODO...
 	//op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	//BOOST_CHECK_EQUAL(op_tensor_class->getName(), "VarErrorTensorOp");
 
-	//op_class = new CountErrorOp<float>();
-	//op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
-	//BOOST_CHECK_EQUAL(op_tensor_class->getName(), "CountErrorTensorOp");
+	op_class = new CountErrorOp<float>();
+	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "CountErrorTensorOp");
 
-	//op_class = new VarModErrorOp<float>();
-	//op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
-	//BOOST_CHECK_EQUAL(op_tensor_class->getName(), "VarModErrorTensorOp");
+	op_class = new VarModErrorOp<float>();
+	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "VarModErrorTensorOp");
 }
 
 BOOST_AUTO_TEST_CASE(getTensorParamsIntegrationErrorOpToIntegrationErrorTensorOp)
@@ -416,29 +412,29 @@ BOOST_AUTO_TEST_CASE(getTensorParamsIntegrationErrorOpToIntegrationErrorTensorOp
 	std::vector<float> params = op_to_tensor_op.getTensorParams(op_class);
 	BOOST_CHECK_EQUAL(params.size(), 0);
 
-	//op_class = new ProdErrorOp<float>();
-	//params = op_to_tensor_op.getTensorParams(op_class);
-	//BOOST_CHECK_EQUAL(params.size(), 0);
+	op_class = new ProdErrorOp<float>();
+	params = op_to_tensor_op.getTensorParams(op_class);
+	BOOST_CHECK_EQUAL(params.size(), 0);
 
-	//op_class = new MaxErrorOp<float>();
-	//params = op_to_tensor_op.getTensorParams(op_class);
-	//BOOST_CHECK_EQUAL(params.size(), 0);
+	op_class = new MaxErrorOp<float>();
+	params = op_to_tensor_op.getTensorParams(op_class);
+	BOOST_CHECK_EQUAL(params.size(), 0);
 
-	//op_class = new MeanErrorOp<float>();
-	//params = op_to_tensor_op.getTensorParams(op_class);
-	//BOOST_CHECK_EQUAL(params.size(), 0);
+	op_class = new MeanErrorOp<float>();
+	params = op_to_tensor_op.getTensorParams(op_class);
+	BOOST_CHECK_EQUAL(params.size(), 0);
 
 	//op_class = new VarErrorOp<float>();
 	//params = op_to_tensor_op.getTensorParams(op_class);
 	//BOOST_CHECK_EQUAL(params.size(), 0);
 
-	//op_class = new CountErrorOp<float>();
-	//params = op_to_tensor_op.getTensorParams(op_class);
-	//BOOST_CHECK_EQUAL(params.size(), 0);
+	op_class = new CountErrorOp<float>();
+	params = op_to_tensor_op.getTensorParams(op_class);
+	BOOST_CHECK_EQUAL(params.size(), 0);
 
-	//op_class = new VarModErrorOp<float>();
-	//params = op_to_tensor_op.getTensorParams(op_class);
-	//BOOST_CHECK_EQUAL(params.size(), 0);
+	op_class = new VarModErrorOp<float>();
+	params = op_to_tensor_op.getTensorParams(op_class);
+	BOOST_CHECK_EQUAL(params.size(), 0);
 }
 
 BOOST_AUTO_TEST_CASE(constructorIntegrationWeightGradOpToIntegrationWeightGradTensorOp)
@@ -466,29 +462,29 @@ BOOST_AUTO_TEST_CASE(convertOpToTensorOpIntegrationWeightGradOpToIntegrationWeig
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "SumWeightGradTensorOp");
 
-	//op_class = new ProdWeightGradOp<float>();
-	//op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
-	//BOOST_CHECK_EQUAL(op_tensor_class->getName(), "ProdWeightGradTensorOp");
+	op_class = new ProdWeightGradOp<float>();
+	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "ProdWeightGradTensorOp");
 
-	//op_class = new MaxWeightGradOp<float>();
-	//op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
-	//BOOST_CHECK_EQUAL(op_tensor_class->getName(), "MaxWeightGradTensorOp");
+	op_class = new MaxWeightGradOp<float>();
+	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "MaxWeightGradTensorOp");
 
-	//op_class = new MeanWeightGradOp<float>();
-	//op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
-	//BOOST_CHECK_EQUAL(op_tensor_class->getName(), "MeanWeightGradTensorOp");
+	op_class = new MeanWeightGradOp<float>();
+	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "MeanWeightGradTensorOp");
 
 	//op_class = new VarWeightGradOp<float>(); //TODO...
 	//op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	//BOOST_CHECK_EQUAL(op_tensor_class->getName(), "VarWeightGradTensorOp");
 
-	//op_class = new CountWeightGradOp<float>();
-	//op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
-	//BOOST_CHECK_EQUAL(op_tensor_class->getName(), "CountWeightGradTensorOp");
+	op_class = new CountWeightGradOp<float>();
+	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "CountWeightGradTensorOp");
 
-	//op_class = new VarModWeightGradOp<float>();
-	//op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
-	//BOOST_CHECK_EQUAL(op_tensor_class->getName(), "VarModWeightGradTensorOp");
+	op_class = new VarModWeightGradOp<float>();
+	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "VarModWeightGradTensorOp");
 }
 
 BOOST_AUTO_TEST_CASE(getTensorParamsIntegrationWeightGradOpToIntegrationWeightGradTensorOp)
@@ -499,29 +495,29 @@ BOOST_AUTO_TEST_CASE(getTensorParamsIntegrationWeightGradOpToIntegrationWeightGr
 	std::vector<float> params = op_to_tensor_op.getTensorParams(op_class);
 	BOOST_CHECK_EQUAL(params.size(), 0);
 
-	//op_class = new ProdWeightGradOp<float>();
-	//params = op_to_tensor_op.getTensorParams(op_class);
-	//BOOST_CHECK_EQUAL(params.size(), 0);
+	op_class = new ProdWeightGradOp<float>();
+	params = op_to_tensor_op.getTensorParams(op_class);
+	BOOST_CHECK_EQUAL(params.size(), 0);
 
-	//op_class = new MaxWeightGradOp<float>();
-	//params = op_to_tensor_op.getTensorParams(op_class);
-	//BOOST_CHECK_EQUAL(params.size(), 0);
+	op_class = new MaxWeightGradOp<float>();
+	params = op_to_tensor_op.getTensorParams(op_class);
+	BOOST_CHECK_EQUAL(params.size(), 0);
 
-	//op_class = new MeanWeightGradOp<float>();
-	//params = op_to_tensor_op.getTensorParams(op_class);
-	//BOOST_CHECK_EQUAL(params.size(), 0);
+	op_class = new MeanWeightGradOp<float>();
+	params = op_to_tensor_op.getTensorParams(op_class);
+	BOOST_CHECK_EQUAL(params.size(), 0);
 
 	//op_class = new VarWeightGradOp<float>();
 	//params = op_to_tensor_op.getTensorParams(op_class);
 	//BOOST_CHECK_EQUAL(params.size(), 0);
 
-	//op_class = new CountWeightGradOp<float>();
-	//params = op_to_tensor_op.getTensorParams(op_class);
-	//BOOST_CHECK_EQUAL(params.size(), 0);
+	op_class = new CountWeightGradOp<float>();
+	params = op_to_tensor_op.getTensorParams(op_class);
+	BOOST_CHECK_EQUAL(params.size(), 0);
 
-	//op_class = new VarModWeightGradOp<float>();
-	//params = op_to_tensor_op.getTensorParams(op_class);
-	//BOOST_CHECK_EQUAL(params.size(), 0);
+	op_class = new VarModWeightGradOp<float>();
+	params = op_to_tensor_op.getTensorParams(op_class);
+	BOOST_CHECK_EQUAL(params.size(), 0);
 }
 
 BOOST_AUTO_TEST_CASE(constructorLossFunctionGradOpToLossFunctionGradTensorOp)

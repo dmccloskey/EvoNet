@@ -113,6 +113,28 @@ public:
 	};
 
 	/**
+		@brief VarMod integration function
+
+		Modified variance integration function: 1/n Sum[0 to n](Xi)^2
+		where Xi = xi - u (u: mean, xi: single sample)
+	*/
+	template<typename TensorT, typename DeviceT>
+	class VarModTensorOp : public IntegrationTensorOp<TensorT, DeviceT>
+	{
+	public:
+		VarModTensorOp() {};
+		~VarModTensorOp() {};
+		void operator()(TensorT* source_output, TensorT* weights, TensorT* sink_input, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, const int& source_time_step, const int& sink_time_step, DeviceT& device) {
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> sink_input_tensor(sink_input, batch_size, memory_size, sink_layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 4>> source_output_tensor(source_output, batch_size, memory_size, source_layer_size, 1);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> weight(weights, 1, source_layer_size, sink_layer_size);
+			auto input = source_output_tensor.chip(source_time_step, 1).broadcast(Eigen::array<int, 3>({ 1, 1, sink_layer_size })) * weight.broadcast(Eigen::array<int, 3>({ batch_size, 1, 1 })); // dim3
+			sink_input_tensor.chip(sink_time_step, 1).device(device) = ((input * input)*input.constant(1 / (TensorT)source_layer_size)).sum(Eigen::array<int, 1>({ 1 }));
+		}
+		std::string getName() const { return "VarModTensorOp"; };
+	};
+
+	/**
 		@brief Var integration function
 	*/
 	template<typename TensorT, typename DeviceT>
@@ -271,6 +293,28 @@ public:
 	@brief VarMod integration error function
 	*/
 	template<typename TensorT, typename DeviceT>
+	class VarModErrorTensorOp : public IntegrationErrorTensorOp<TensorT, DeviceT>
+	{
+	public:
+		VarModErrorTensorOp() {};
+		~VarModErrorTensorOp() {};
+		void operator()(TensorT* source_error, TensorT *source_input, TensorT* weight, TensorT* sink_output, TensorT* sink_error, TensorT* sink_derivative, const int& n_input_nodes, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, const int& source_time_step, const int& sink_time_step, DeviceT& device) {
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> sink_error_tensor(sink_error, batch_size, memory_size, sink_layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> sink_derivative_tensor(sink_derivative, batch_size, memory_size, sink_layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> source_error_tensor(source_error, batch_size, memory_size, source_layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weight_tensor(weight, sink_layer_size, source_layer_size); // NOTE: source/sink are reversed
+			Eigen::array<Eigen::IndexPair<int>, 1> product_dims = { Eigen::IndexPair<int>(1, 0) }; // NOTE: we are taking the transpose of the weight matrix
+			sink_error_tensor.chip(sink_time_step, 1).device(device) += (source_error_tensor.chip(source_time_step, 1)).contract(weight_tensor.shuffle(Eigen::array<int, 2>({ 1, 0 })), product_dims) 
+				* sink_error_tensor.chip(sink_time_step, 1).constant(1 / (TensorT)n_input_nodes) * sink_error_tensor.chip(sink_time_step, 1).constant((TensorT)2)
+				* (sink_derivative_tensor.chip(sink_time_step, 1));
+		};
+		std::string getName() const { return "VarModErrorTensorOp"; };
+	};
+
+	/**
+	@brief Var integration error function
+	*/
+	template<typename TensorT, typename DeviceT>
 	class VarErrorTensorOp : public IntegrationErrorTensorOp<TensorT, DeviceT>
 	{
 	public:
@@ -420,6 +464,29 @@ public:
 			// NOTE: Requires a correction by dividing by the batch size
 		};
 		std::string getName() const { return "MeanWeightGradTensorOp"; };
+	};
+
+	/**
+	@brief VarMod integration error function
+	*/
+	template<typename TensorT, typename DeviceT>
+	class VarModWeightGradTensorOp : public IntegrationWeightGradTensorOp<TensorT, DeviceT>
+	{
+	public:
+		VarModWeightGradTensorOp() {};
+		~VarModWeightGradTensorOp() {};
+		void operator()(TensorT* sink_error, TensorT* source_output, TensorT* weight, TensorT* source_input, TensorT* weight_error, const int& n_input_nodes, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, DeviceT& device) {
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> sink_error_tensor(sink_error, batch_size, memory_size, sink_layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> source_output_tensor(source_output, batch_size, memory_size, source_layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weight_error_tensor(weight_error, source_layer_size, sink_layer_size);
+
+			Eigen::array<Eigen::IndexPair<int>, 2> double_contraction_product_dims = { Eigen::IndexPair<int>(1,1), Eigen::IndexPair<int>(0,0) };
+			auto tmp = -source_output_tensor.contract(sink_error_tensor, double_contraction_product_dims);
+			// NOTE: Double contraction along the memory and batch (equivalent to a double sum along the products of the batch and memory dimensions)
+			weight_error_tensor.device(device) += tmp * weight_error_tensor.constant(1 / (TensorT)batch_size) * weight_error_tensor.constant(1 / (TensorT)n_input_nodes)* weight_error_tensor.constant((TensorT)2);
+			// NOTE: Requires a correction by dividing by the batch size
+		};
+		std::string getName() const { return "VarModWeightGradTensorOp"; };
 	};
 
 	/**

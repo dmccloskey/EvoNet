@@ -286,7 +286,7 @@ namespace SmartPeak
 				return op_tensor_class;
 			}
 			else if (op_class->getName() == "VarModOp") {
-				IntegrationTensorOp<TensorT, DeviceT>* op_tensor_class = new VarTensorOp<TensorT, DeviceT>(); // [TODO: update!]
+				IntegrationTensorOp<TensorT, DeviceT>* op_tensor_class = new VarModTensorOp<TensorT, DeviceT>();
 				return op_tensor_class;
 			}
 			else if (op_class->getName() == "VarOp") {
@@ -319,7 +319,7 @@ namespace SmartPeak
 				IntegrationErrorTensorOp<TensorT, DeviceT>* op_tensor_class = new ProdErrorTensorOp<TensorT, DeviceT>();
 				return op_tensor_class;
 			}
-			else if (op_class->getName() == "MeanErrorErrorOp") {
+			else if (op_class->getName() == "MeanErrorOp") {
 				IntegrationErrorTensorOp<TensorT, DeviceT>* op_tensor_class = new MeanErrorTensorOp<TensorT, DeviceT>();
 				return op_tensor_class;
 			}
@@ -328,7 +328,7 @@ namespace SmartPeak
 				return op_tensor_class;
 			}
 			else if (op_class->getName() == "VarModErrorOp") {
-				IntegrationErrorTensorOp<TensorT, DeviceT>* op_tensor_class = new VarErrorTensorOp<TensorT, DeviceT>(); // [TODO: ]
+				IntegrationErrorTensorOp<TensorT, DeviceT>* op_tensor_class = new VarModErrorTensorOp<TensorT, DeviceT>();
 				return op_tensor_class;
 			}
 			else if (op_class->getName() == "VarErrorOp") {// [TODO: ]
@@ -361,7 +361,7 @@ namespace SmartPeak
 				IntegrationWeightGradTensorOp<TensorT, DeviceT>* op_tensor_class = new ProdWeightGradTensorOp<TensorT, DeviceT>();
 				return op_tensor_class;
 			}
-			else if (op_class->getName() == "MeanWeightGradWeightGradOp") {
+			else if (op_class->getName() == "MeanWeightGradOp") {
 				IntegrationWeightGradTensorOp<TensorT, DeviceT>* op_tensor_class = new MeanWeightGradTensorOp<TensorT, DeviceT>();
 				return op_tensor_class;
 			}
@@ -370,7 +370,7 @@ namespace SmartPeak
 				return op_tensor_class;
 			}
 			else if (op_class->getName() == "VarModWeightGradOp") {
-				IntegrationWeightGradTensorOp<TensorT, DeviceT>* op_tensor_class = new VarWeightGradTensorOp<TensorT, DeviceT>();
+				IntegrationWeightGradTensorOp<TensorT, DeviceT>* op_tensor_class = new VarModWeightGradTensorOp<TensorT, DeviceT>();
 				return op_tensor_class;
 			}
 			else if (op_class->getName() == "VarWeightGradOp") {
