@@ -40,7 +40,11 @@ public:
 	@param add_skip Optional skip connections between layers
 	@param add_norm Optional normalization layer after each convolution
 	*/
-	void makeMultiHeadDotProdAttention(Model<TensorT>& model, const int& n_inputs, const int& n_outputs, int n_heads = 8, int key_query_values_lengths = 48, int n_layers = 3, bool add_FC = true, bool add_skip = true, bool add_norm = false) {
+	void makeMultiHeadDotProdAttention(Model<TensorT>& model, const int& n_inputs, const int& n_outputs,
+		std::vector<int> n_heads = { 8, 8 },
+		std::vector<int> key_query_values_lengths = { 48, 24 },
+		std::vector<int> model_lengths = { 48, 24 },
+		bool add_FC = true, bool add_skip = true, bool add_norm = false) {
 		model.setId(0);
 		model.setName("DotProdAttent");
 
@@ -51,15 +55,15 @@ public:
 
 		// Multi-head attention
 		std::vector<std::string> node_names;
-		for (size_t i = 0; i < n_layers; ++i) {
+		for (size_t i = 0; i < n_heads.size(); ++i) {
 			// Add the attention
 			std::string name_head1 = "Attention" + std::to_string(i);
 			node_names = model_builder.addMultiHeadAttention(model, name_head1, name_head1,
 				node_names_input, node_names_input, node_names_input,
-				n_heads, "DotProd", n_inputs, key_query_values_lengths, key_query_values_lengths,
+				n_heads[i], "DotProd", model_lengths[i], key_query_values_lengths[i], key_query_values_lengths[i],
 				std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
 				std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
-				std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(n_inputs, 2)),
+				std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names_input.size(), 2)),
 				std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 			if (add_norm) {
 				std::string norm_name = "Norm" + std::to_string(i);
@@ -72,7 +76,7 @@ public:
 			if (add_skip) {
 				std::string skip_name = "Skip" + std::to_string(i);
 				model_builder.addSinglyConnected(model, skip_name, node_names_input, node_names,
-					std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(n_inputs, 2)),
+					std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names_input.size(), 2)),
 					std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f);
 			}
 			node_names_input = node_names;
@@ -86,7 +90,7 @@ public:
 					std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
 					std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
 					std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-					std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(n_inputs, 2)),
+					std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names_input.size(), 2)),
 					std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 			}
 			if (add_norm) {
@@ -114,13 +118,12 @@ public:
 			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
 			std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
 			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(n_inputs, 2)),
+			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 2)),
 			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 
 		for (const std::string& node_name : node_names)
 			model.nodes_.at(node_name)->setType(NodeType::output);
 	}
-
 	Model<TensorT> makeModel() { return Model<TensorT>(); }
 	void adaptiveTrainerScheduler(
 		const int& n_generations,
@@ -351,7 +354,7 @@ void main_DotProdAttention() {
 	// define the initial population
 	std::cout << "Initializing the population..." << std::endl;
 	Model<float> model;
-	model_trainer.makeMultiHeadDotProdAttention(model, input_nodes.size(), output_nodes.size(), 4, 48, 2, false, false, true);
+	model_trainer.makeMultiHeadDotProdAttention(model, input_nodes.size(), output_nodes.size(), { 8, 8 }, { 48, 24 }, { 128, 64 }, false, false, true);
 	std::vector<Model<float>> population = { model };
 
 	// Evolve the population
