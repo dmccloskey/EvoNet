@@ -332,7 +332,7 @@ void main_DotProdAttention() {
 	ModelTrainerExt<float> model_trainer;
 	model_trainer.setBatchSize(16);
 	model_trainer.setMemorySize(1);
-	model_trainer.setNEpochsTraining(1001);
+	model_trainer.setNEpochsTraining(10001);
 	model_trainer.setNEpochsValidation(1);
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setLogging(true, false);
@@ -354,7 +354,7 @@ void main_DotProdAttention() {
 	// define the initial population
 	std::cout << "Initializing the population..." << std::endl;
 	Model<float> model;
-	model_trainer.makeMultiHeadDotProdAttention(model, input_nodes.size(), output_nodes.size(), { 8, 8 }, { 48, 24 }, { 128, 64 }, false, false, true);
+	model_trainer.makeMultiHeadDotProdAttention(model, input_nodes.size(), output_nodes.size(), { 8, 8 }, { 48, 24 }, { 512, 128 }, false, false, true);
 	std::vector<Model<float>> population = { model };
 
 	// Evolve the population

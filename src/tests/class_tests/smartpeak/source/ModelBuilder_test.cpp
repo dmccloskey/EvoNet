@@ -1684,4 +1684,99 @@ BOOST_AUTO_TEST_CASE(addMultiHeadAttention1)
 	BOOST_CHECK_EQUAL(model.weights_.size(), 116); // two attention heads + fully connected
 }
 
+BOOST_AUTO_TEST_CASE(addScalar)
+{
+	//TODO
+}
+
+BOOST_AUTO_TEST_CASE(addProjection1)
+{
+	ModelBuilder<float> model_builder;
+	Model<float> model;
+	std::vector<std::string> node_names;
+
+	// make the input
+	node_names = model_builder.addInputNodes(model, "Input", 4);
+
+	// make the fully connected 
+	node_names = model_builder.addProjection(
+		model, "Filter", "Mod1", node_names, 2, 2, 0, 0,
+		4, 4, 1, 0, 0,
+		std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
+		std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
+		std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new SGDOp<float>(0.1, 0.9)), 0.2f, 0.8f);
+
+	std::vector<std::string> node_names_test = { 
+		"Filter-out_H0-W0", "Filter-out_H0-W1", "Filter-out_H0-W2", "Filter-out_H0-W3", "Filter-out_H0-W4", 
+		"Filter-out_H1-W0", "Filter-out_H1-W1", "Filter-out_H1-W2", "Filter-out_H1-W3", "Filter-out_H1-W4", 
+		"Filter-out_H2-W0", "Filter-out_H2-W1", "Filter-out_H2-W2", "Filter-out_H2-W3", "Filter-out_H2-W4", 
+		"Filter-out_H3-W0", "Filter-out_H3-W1", "Filter-out_H3-W2", "Filter-out_H3-W3", "Filter-out_H3-W4", 
+		"Filter-out_H4-W0", "Filter-out_H4-W1", "Filter-out_H4-W2", "Filter-out_H4-W3", "Filter-out_H4-W4" };	
+	std::vector<std::string> link_names_test = {
+		"Input_0_to_Filter-out_H0-W0_Mod1", "Input_0_to_Filter-out_H0-W1_Mod1", "Input_0_to_Filter-out_H0-W2_Mod1", "Input_0_to_Filter-out_H0-W3_Mod1", 
+		"Input_0_to_Filter-out_H1-W0_Mod1", "Input_0_to_Filter-out_H1-W1_Mod1", "Input_0_to_Filter-out_H1-W2_Mod1", "Input_0_to_Filter-out_H1-W3_Mod1", 
+		"Input_0_to_Filter-out_H2-W0_Mod1", "Input_0_to_Filter-out_H2-W1_Mod1", "Input_0_to_Filter-out_H2-W2_Mod1", "Input_0_to_Filter-out_H2-W3_Mod1", 
+		"Input_0_to_Filter-out_H3-W0_Mod1", "Input_0_to_Filter-out_H3-W1_Mod1", "Input_0_to_Filter-out_H3-W2_Mod1", "Input_0_to_Filter-out_H3-W3_Mod1", 
+		"Input_1_to_Filter-out_H0-W1_Mod1", "Input_1_to_Filter-out_H0-W2_Mod1", "Input_1_to_Filter-out_H0-W3_Mod1", "Input_1_to_Filter-out_H0-W4_Mod1", 
+		"Input_1_to_Filter-out_H1-W1_Mod1", "Input_1_to_Filter-out_H1-W2_Mod1", "Input_1_to_Filter-out_H1-W3_Mod1", "Input_1_to_Filter-out_H1-W4_Mod1", 
+		"Input_1_to_Filter-out_H2-W1_Mod1", "Input_1_to_Filter-out_H2-W2_Mod1", "Input_1_to_Filter-out_H2-W3_Mod1", "Input_1_to_Filter-out_H2-W4_Mod1", 
+		"Input_1_to_Filter-out_H3-W1_Mod1", "Input_1_to_Filter-out_H3-W2_Mod1", "Input_1_to_Filter-out_H3-W3_Mod1", "Input_1_to_Filter-out_H3-W4_Mod1", 
+		"Input_2_to_Filter-out_H1-W0_Mod1", "Input_2_to_Filter-out_H1-W1_Mod1", "Input_2_to_Filter-out_H1-W2_Mod1", "Input_2_to_Filter-out_H1-W3_Mod1", 
+		"Input_2_to_Filter-out_H2-W0_Mod1", "Input_2_to_Filter-out_H2-W1_Mod1", "Input_2_to_Filter-out_H2-W2_Mod1", "Input_2_to_Filter-out_H2-W3_Mod1", 
+		"Input_2_to_Filter-out_H3-W0_Mod1", "Input_2_to_Filter-out_H3-W1_Mod1", "Input_2_to_Filter-out_H3-W2_Mod1", "Input_2_to_Filter-out_H3-W3_Mod1", 
+		"Input_2_to_Filter-out_H4-W0_Mod1", "Input_2_to_Filter-out_H4-W1_Mod1", "Input_2_to_Filter-out_H4-W2_Mod1", "Input_2_to_Filter-out_H4-W3_Mod1", 
+		"Input_3_to_Filter-out_H1-W1_Mod1", "Input_3_to_Filter-out_H1-W2_Mod1", "Input_3_to_Filter-out_H1-W3_Mod1", "Input_3_to_Filter-out_H1-W4_Mod1", 
+		"Input_3_to_Filter-out_H2-W1_Mod1", "Input_3_to_Filter-out_H2-W2_Mod1", "Input_3_to_Filter-out_H2-W3_Mod1", "Input_3_to_Filter-out_H2-W4_Mod1", 
+		"Input_3_to_Filter-out_H3-W1_Mod1", "Input_3_to_Filter-out_H3-W2_Mod1", "Input_3_to_Filter-out_H3-W3_Mod1", "Input_3_to_Filter-out_H3-W4_Mod1", 
+		"Input_3_to_Filter-out_H4-W1_Mod1", "Input_3_to_Filter-out_H4-W2_Mod1", "Input_3_to_Filter-out_H4-W3_Mod1", "Input_3_to_Filter-out_H4-W4_Mod1" };
+	std::vector<std::string> weight_names_test = { 
+		"Filter-Mod1_H0-W0", "Filter-Mod1_H0-W1", "Filter-Mod1_H0-W2", "Filter-Mod1_H0-W3", 
+		"Filter-Mod1_H1-W0", "Filter-Mod1_H1-W1", "Filter-Mod1_H1-W2", "Filter-Mod1_H1-W3", 
+		"Filter-Mod1_H2-W0", "Filter-Mod1_H2-W1", "Filter-Mod1_H2-W2", "Filter-Mod1_H2-W3", 
+		"Filter-Mod1_H3-W0", "Filter-Mod1_H3-W1", "Filter-Mod1_H3-W2", "Filter-Mod1_H3-W3"};
+
+	//for (auto& e : model.nodes_)
+	//	std::cout << "Node: " << e.second->getName() << std::endl;
+	//for (auto& e : model.links_)
+	//	std::cout << "Link: " << e.second->getName() << std::endl;
+	//for (auto& e : model.weights_)
+	//	std::cout << "Node: " << e.second->getName() << std::endl;
+
+	// check the nodes
+	for (const std::string& node_name: node_names_test)
+	{
+		BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getName(), node_name);
+		BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getModuleName(), "Mod1");
+		BOOST_CHECK_CLOSE(model.nodes_.at(node_name)->getDropProbability(), 0.2f, 1e-3);
+		BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getActivation()->getName(), "ReLUOp");
+		BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getActivationGrad()->getName(), "ReLUGradOp");
+		BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getIntegration()->getName(), "SumOp");
+		BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getIntegrationError()->getName(), "SumErrorOp");
+		BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
+	}
+
+	// check the links
+	for (const std::string& name : link_names_test)
+	{
+		BOOST_CHECK_EQUAL(model.getLink(name).getName(), name);
+		std::vector<std::string> test = SplitString(name, "_to_");
+		BOOST_CHECK_EQUAL(model.getLink(name).getSourceNodeName(), ReplaceTokens(test[0], { "(_Mod1)" }, "") );
+		BOOST_CHECK_EQUAL(model.getLink(name).getSinkNodeName(), ReplaceTokens(test[1], { "(_Mod1)" }, ""));
+		BOOST_CHECK_EQUAL(model.getLink(name).getModuleName(), "Mod1");
+		int count = std::count(weight_names_test.begin(), weight_names_test.end(), model.getLink(name).getWeightName());
+		std::cout << model.getLink(name).getWeightName() << std::endl;
+		BOOST_CHECK_EQUAL(count, 1);
+	}
+
+	// check the weights
+	for (const std::string& name : weight_names_test)
+	{
+		BOOST_CHECK_EQUAL(model.getWeight(name).getName(), name);
+		BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
+		BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "SGDOp");
+		BOOST_CHECK_EQUAL(model.getWeight(name).getModuleName(), "Mod1");
+		BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.8f);
+	}
+}
+
 BOOST_AUTO_TEST_SUITE_END()

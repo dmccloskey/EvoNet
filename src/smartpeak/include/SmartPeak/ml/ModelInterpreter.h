@@ -600,7 +600,8 @@ namespace SmartPeak
 		// except for biases
 		for (auto& link_map : model.links_)
 		{
-			if (model.nodes_.at(link_map.second->getSourceNodeName())->getType() != NodeType::bias &&
+			if (
+				//model.nodes_.at(link_map.second->getSourceNodeName())->getType() != NodeType::bias &&
 				model.nodes_.at(link_map.second->getSourceNodeName())->getStatus() == NodeStatus::activated &&
 				model.nodes_.at(link_map.second->getSinkNodeName())->getStatus() == NodeStatus::initialized)
 			{
@@ -1257,10 +1258,12 @@ namespace SmartPeak
 			std::map<std::string, int> FP_operations_map;
 			std::vector<OperationList<TensorT>> FP_operations_list;
 			getNextInactiveLayer(model, FP_operations_map, FP_operations_list);
-
-			// get biases
-			std::vector<std::string> sink_nodes_with_biases;
-			getNextInactiveLayerBiases(model, FP_operations_map, FP_operations_list, sink_nodes_with_biases);
+			
+			// [OPTIMIZATION: for performance, this method has been combined with getNextInactiveLayer above to reduce
+			//							  the number of iterations through all model links
+			//// get biases
+			//std::vector<std::string> sink_nodes_with_biases;
+			//getNextInactiveLayerBiases(model, FP_operations_map, FP_operations_list, sink_nodes_with_biases);
 
 			// get cycles
 			std::map<std::string, int> FP_operations_map_cycles = FP_operations_map;

@@ -171,6 +171,52 @@ public:
 			TensorT drop_out_prob = 0.0f, TensorT drop_connection_prob = 0.0f, bool split_filter_layers = true);
 
 		/**
+		@brief Add a Projection layer (i.e., inverse convolution)
+
+		The input is considered a linearized matrix in column order
+		The output is considered a linearized matrix in column order
+
+		BUG: addition of bias causes an odd bug in model interpreter
+
+		Overload is provided to add additional filters that operate over the same
+		input and output nodes
+
+		@param[in, out] Model
+		@param[in] source_node_names Node_names to add the layer to
+		@param[in] input_width The width of the input
+		@param[in] input_height The height of the input
+		@param[in] input_width_zero_padding Add 0s to the left and right of the input
+		@param[in] input_height_zero_padding Add 0s to the top and bottom of the input
+		@param[in] depth The number of convolution filters
+		@param[in] extent_width The width of the filter
+		@param[in] extent_height The height of the filter
+		@param[in] stride The spacing between filters
+		@param[in] output_width_zero_padding Add 0s to the left and right of the output
+		@param[in] output_height_zero_padding Add 0s to the top and bottom of the output
+
+		@returns vector of output node names
+		*/
+		std::vector<std::string> addProjection(Model<TensorT> & model, const std::string & name, const std::string& module_name, const std::vector<std::string>& source_node_names,
+			const int & input_width, const int & input_height, const int& input_width_zero_padding, const int& input_height_zero_padding,
+			const int & extent_width, const int & extent_height, const int & stride,
+			const int & output_width_zero_padding, const int& output_height_zero_padding,
+			const std::shared_ptr<ActivationOp<TensorT>>& node_activation,
+			const std::shared_ptr<ActivationOp<TensorT>>& node_activation_grad,
+			const std::shared_ptr<IntegrationOp<TensorT>>& node_integration,
+			const std::shared_ptr<IntegrationErrorOp<TensorT>>& node_integration_error,
+			const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& node_integration_weight_grad,
+			const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver,
+			TensorT drop_out_prob = 0.0f, TensorT drop_connection_prob = 0.0f, bool biases = true, bool split_filter_layers = true);
+		void addProjection(Model<TensorT> & model, const std::string & name, const std::string& module_name,
+			const std::vector<std::string>& source_node_names,
+			const std::vector<std::string>& output_node_names,
+			const int & input_width, const int & input_height, const int& input_width_zero_padding, const int& input_height_zero_padding,
+			const int & extent_width, const int & extent_height, const int & stride,
+			const int & output_width_zero_padding, const int& output_height_zero_padding,
+			const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver,
+			TensorT drop_out_prob = 0.0f, TensorT drop_connection_prob = 0.0f, bool split_filter_layers = true);
+
+		/**
 		@brief Add a normalization layer with activation
 
 		@param[in, out] Model
@@ -1228,6 +1274,177 @@ public:
 			}
 			++output_width_iter;
 		}
+	}
+	template<typename TensorT>
+	std::vector<std::string> ModelBuilder<TensorT>::addProjection(Model<TensorT> & model, const std::string & name, const std::string& module_name, const std::vector<std::string>& source_node_names,
+		const int & input_width, const int & input_height, const int& input_width_zero_padding, const int& input_height_zero_padding,
+		const int & extent_width, const int & extent_height, const int & spacing,
+		const int & output_width_zero_padding, const int& output_height_zero_padding,
+		const std::shared_ptr<ActivationOp<TensorT>>& node_activation,
+		const std::shared_ptr<ActivationOp<TensorT>>& node_activation_grad,
+		const std::shared_ptr<IntegrationOp<TensorT>>& node_integration,
+		const std::shared_ptr<IntegrationErrorOp<TensorT>>& node_integration_error,
+		const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& node_integration_weight_grad,
+		const std::shared_ptr<WeightInitOp<TensorT>> & weight_init, const std::shared_ptr<SolverOp<TensorT>> & solver,
+		TensorT drop_out_prob, TensorT drop_connection_prob, bool biases, bool split_filter_layers)
+	{
+		std::vector<std::string> node_names;
+
+		// Parameters for the Convolution layer
+		assert(source_node_names.size() == input_width * input_height);
+		int input_padded_width = input_width + 2 * input_width_zero_padding;
+		int input_padded_height = input_height + 2 * input_height_zero_padding;
+		int strides_width = input_padded_width;
+		int strides_height = input_padded_height;
+		int output_width = input_padded_width + (extent_width - 1) + input_padded_width * (spacing - 1);
+		int output_height = input_padded_height + (extent_height - 1) + input_padded_height * (spacing - 1);
+		int output_padded_width = output_width + 2 * output_width_zero_padding;
+		int output_padded_height = output_height + 2 * output_height_zero_padding;
+
+		// [TODO: would need to be refactored to add a bias for each filter output (i.e., extent_width * extent_height)]
+		std::string bias_name;
+		//std::string weight_bias_name;
+		//if (biases) {
+		//	// Create the filter bias
+		//	char bias_name_char[512];
+		//	sprintf(bias_name_char, "%s-bias", name.data());
+		//	bias_name = std::string(bias_name_char);
+		//	Node<TensorT> bias(bias_name, NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
+		//	bias.setModuleName(module_name);
+		//	model.addNodes({ bias });
+
+		//	// Create the shared weights for each bias to output node
+		//	char weight_bias_name_char[512];
+		//	sprintf(weight_bias_name_char, "%s_to_out", bias_name.data());
+		//	weight_bias_name = std::string(weight_bias_name_char);
+		//	Weight<TensorT> weight_bias(weight_bias_name, weight_init, solver);
+		//	weight_bias.setModuleName(module_name);
+		//	weight_bias.setDropProbability(drop_connection_prob);
+		//	model.addWeights({ weight_bias });
+		//}
+
+		// Create the output zero padding nodes
+		for (size_t output_width_iter = 0; output_width_iter < output_padded_width; ++output_width_iter) {
+			for (size_t output_height_iter = 0; output_height_iter < output_padded_height; ++output_height_iter) {
+				if (output_height_iter < output_height_zero_padding || output_height_iter >= output_padded_height - output_height_zero_padding) {
+					char bias_name_char[512];
+					sprintf(bias_name_char, "%s-out-padding_H%d-W%d", name.data(), output_height_iter, output_width_iter);
+					std::string bias_name(bias_name_char);
+					Node<TensorT> bias(bias_name, NodeType::zero, NodeStatus::activated, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
+					bias.setModuleName(module_name);
+					if (split_filter_layers) bias.setLayerName(module_name);
+					model.addNodes({ bias });
+					node_names.push_back(bias_name);
+				}
+				else if (output_width_iter < output_width_zero_padding || output_width_iter >= output_padded_width - output_width_zero_padding) {
+					char bias_name_char[512];
+					sprintf(bias_name_char, "%s-out-padding_H%d-W%d", name.data(), output_height_iter, output_width_iter);
+					std::string bias_name(bias_name_char);
+					Node<TensorT> bias(bias_name, NodeType::zero, NodeStatus::activated, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
+					bias.setModuleName(module_name);
+					if (split_filter_layers) bias.setLayerName(module_name);
+					model.addNodes({ bias });
+					node_names.push_back(bias_name);
+				}
+				else {
+					char output_name_char[512];
+					sprintf(output_name_char, "%s-out_H%d-W%d", name.data(), output_height_iter, output_width_iter);
+					std::string output_name(output_name_char);
+					Node<TensorT> output(output_name, NodeType::hidden, NodeStatus::activated, node_activation, node_activation_grad, node_integration, node_integration_error, node_integration_weight_grad);
+					output.setModuleName(module_name);
+					output.setDropProbability(drop_out_prob);
+					if (split_filter_layers) output.setLayerName(module_name);
+					model.addNodes({ output });
+					node_names.push_back(output_name);
+
+					//if (biases) {
+					//	// Create the links between the bias and output nodes
+					//	char link_bias_name_char[512];
+					//	sprintf(link_bias_name_char, "%s_to_%s_%s", bias_name.data(), output_name.data(), module_name.data());
+					//	std::string link_bias_name(link_bias_name_char);
+					//	Link link_bias(link_bias_name, bias_name, output_name, weight_bias_name);
+					//	link_bias.setModuleName(module_name);
+					//	model.addLinks({ link_bias });
+					//}
+				}
+			}
+		}
+
+		// Create the shared weights for each filter link
+		for (size_t filter_height_iter = 0; filter_height_iter < extent_height; ++filter_height_iter) {
+			for (size_t filter_width_iter = 0; filter_width_iter < extent_width; ++filter_width_iter) {
+				char weight_filter_name_char[512];
+				sprintf(weight_filter_name_char, "%s-%s_H%d-W%d", name.data(), module_name.data(), filter_height_iter, filter_width_iter);
+				std::string weight_filter_name(weight_filter_name_char);
+				Weight<TensorT> weight_filter(weight_filter_name, weight_init, solver);
+				weight_filter.setModuleName(module_name);
+				weight_filter.setDropProbability(drop_connection_prob);
+				if (split_filter_layers) weight_filter.setLayerName(module_name);
+				model.addWeights({ weight_filter });
+			}
+		}
+
+		// Create the projection links between input and output					
+		int tmp = 0;
+		for (size_t width_stride_iter = 0; width_stride_iter < strides_width; ++width_stride_iter) {
+			// check if the filter is in the left input width zero padding
+			const int filter_width_end = (spacing - 1) * width_stride_iter + width_stride_iter + extent_width - 1;
+			if (width_stride_iter < input_width_zero_padding)
+				continue;
+
+			// check if the filter is in the right input width zero padding
+			const int filter_width_start = (spacing - 1) * width_stride_iter + width_stride_iter;
+			if (width_stride_iter >= input_width_zero_padding + input_width)
+				continue;
+
+			for (size_t height_stride_iter = 0; height_stride_iter < strides_height; ++height_stride_iter) {
+				// check if the filter is in the top input height zero padding
+				const int filter_height_end = (spacing - 1) * height_stride_iter + height_stride_iter + extent_height - 1;
+				if (height_stride_iter < input_height_zero_padding)
+					continue;
+
+				// check if the filter is in the bottom input height zero padding
+				const int filter_height_start = (spacing - 1) * height_stride_iter + height_stride_iter;
+				if (height_stride_iter >= input_height_zero_padding + input_height)
+					continue;
+
+				// create the links between input and output
+				int width_iter = width_stride_iter - input_width_zero_padding;
+				int height_iter = height_stride_iter - input_height_zero_padding;
+				int source_node_iter = height_iter + width_iter * input_height;
+
+				if (source_node_iter >= source_node_names.size()) {
+					//std::cout << "WARNING: node size has been exceeded!" << std::endl;
+					break;
+				}
+
+				for (size_t filter_width_iter = filter_width_start; filter_width_iter <= filter_width_end; ++filter_width_iter) {
+					for (size_t filter_height_iter = filter_height_start; filter_height_iter <= filter_height_end; ++filter_height_iter) {
+
+						// Weight name
+						char weight_filter_name_char[512];
+						sprintf(weight_filter_name_char, "%s-%s_H%d-W%d", name.data(), module_name.data(), filter_height_iter, filter_width_iter);
+						std::string weight_filter_name(weight_filter_name_char);
+
+						// Output node name
+						char output_name_char[512];
+						sprintf(output_name_char, "%s-out_H%d-W%d", name.data(), filter_width_iter + output_height_zero_padding, filter_height_iter + output_width_zero_padding);
+						std::string output_name(output_name_char);
+
+						// Link name
+						char link_filter_name_char[512];
+						sprintf(link_filter_name_char, "%s_to_%s_%s", source_node_names[source_node_iter].data(), output_name.data(), module_name.data());
+						std::string link_filter_name(link_filter_name_char);
+
+						Link link_filter(link_filter_name, source_node_names[source_node_iter], output_name, weight_filter_name);
+						link_filter.setModuleName(module_name);
+						model.addLinks({ link_filter });
+					}
+				}
+			}
+		}
+
+		return node_names;
 	}
 
 	template<typename TensorT>
