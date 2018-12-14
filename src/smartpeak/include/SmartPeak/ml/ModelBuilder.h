@@ -2787,7 +2787,8 @@ public:
 			std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0, split_attention_layers);
 
 		// Add the scalar
-		TensorT scalar_value = std::sqrt((TensorT)key_length);
+		TensorT scalar_value = 1/std::sqrt((TensorT)key_length);
+		//TensorT scalar_value = 1/(TensorT)key_length;
 		char scalar_name_char[512];
 		sprintf(scalar_name_char, "%s-scalar", name.data());
 		std::string scalar_name(scalar_name_char);
