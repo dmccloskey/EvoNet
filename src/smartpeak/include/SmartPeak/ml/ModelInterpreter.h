@@ -595,7 +595,6 @@ namespace SmartPeak
 		std::map<std::string, int>& FP_operations_map,
 		std::vector<OperationList<TensorT>>& FP_operations)
 	{
-
 		// get all links where the source node is active and the sink node is inactive
 		// except for biases
 		for (auto& link_map : model.links_)
@@ -605,9 +604,17 @@ namespace SmartPeak
 				model.nodes_.at(link_map.second->getSourceNodeName())->getStatus() == NodeStatus::activated &&
 				model.nodes_.at(link_map.second->getSinkNodeName())->getStatus() == NodeStatus::initialized)
 			{
+				//if (FP_operations.size() == 680)
+				//	std::cout << "check" << std::endl;
 				OperationArguments<TensorT> arguments;
-				arguments.source_node = model.nodes_.at(link_map.second->getSourceNodeName());
-				arguments.weight = model.weights_.at(link_map.second->getWeightName());
+				try {
+					arguments.source_node = model.nodes_.at(link_map.second->getSourceNodeName());
+					arguments.weight = model.weights_.at(link_map.second->getWeightName());
+				}
+				catch (std::exception& e)
+				{
+					printf("Exception: %s", e.what());
+				}
 				arguments.time_step = 0;
 				arguments.link_name = link_map.first;
 
@@ -615,16 +622,28 @@ namespace SmartPeak
 				auto found = FP_operations_map.emplace(ops_key, (int)FP_operations.size());
 				if (!found.second)
 				{
-					FP_operations[FP_operations_map.at(ops_key)].arguments.push_back(arguments);
+					try {
+						FP_operations[FP_operations_map.at(ops_key)].arguments.push_back(arguments);
+					}
+					catch (std::exception& e)
+					{
+						printf("Exception: %s", e.what());
+					}
 				}
 				else
 				{
-					OperationList<TensorT> operation_list;
-					OperationResult<TensorT> result;
-					result.sink_node = model.nodes_.at(link_map.second->getSinkNodeName());
-					operation_list.result = result;
-					operation_list.arguments.push_back(arguments);
-					FP_operations.push_back(operation_list);
+					try {
+						OperationList<TensorT> operation_list;
+						OperationResult<TensorT> result;
+						result.sink_node = model.nodes_.at(link_map.second->getSinkNodeName());
+						operation_list.result = result;
+						operation_list.arguments.push_back(arguments);
+						FP_operations.push_back(operation_list);
+					}
+					catch (std::exception& e)
+					{
+						printf("Exception: %s", e.what());
+					}
 				}
 			}
 		}
