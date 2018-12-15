@@ -1418,8 +1418,10 @@ public:
 					break;
 				}
 
-				for (size_t filter_width_iter = filter_width_start; filter_width_iter <= filter_width_end; ++filter_width_iter) {
-					for (size_t filter_height_iter = filter_height_start; filter_height_iter <= filter_height_end; ++filter_height_iter) {
+				int filter_width_iter = 0;
+				for (size_t filter_width_pos = filter_width_start; filter_width_pos <= filter_width_end; ++filter_width_pos) {
+					int filter_height_iter = 0;
+					for (size_t filter_height_pos = filter_height_start; filter_height_pos <= filter_height_end; ++filter_height_pos) {
 
 						// Weight name
 						char weight_filter_name_char[512];
@@ -1428,7 +1430,7 @@ public:
 
 						// Output node name
 						char output_name_char[512];
-						sprintf(output_name_char, "%s-out_H%d-W%d", name.data(), filter_width_iter + output_height_zero_padding, filter_height_iter + output_width_zero_padding);
+						sprintf(output_name_char, "%s-out_H%d-W%d", name.data(), filter_width_pos + output_height_zero_padding, filter_height_pos + output_width_zero_padding);
 						std::string output_name(output_name_char);
 
 						// Link name
@@ -1439,7 +1441,10 @@ public:
 						Link link_filter(link_filter_name, source_node_names[source_node_iter], output_name, weight_filter_name);
 						link_filter.setModuleName(module_name);
 						model.addLinks({ link_filter });
+
+						++filter_height_iter;
 					}
+					++filter_width_iter;
 				}
 			}
 		}
@@ -1510,8 +1515,10 @@ public:
 					break;
 				}
 
-				for (size_t filter_width_iter = filter_width_start; filter_width_iter <= filter_width_end; ++filter_width_iter) {
-					for (size_t filter_height_iter = filter_height_start; filter_height_iter <= filter_height_end; ++filter_height_iter) {
+				int filter_width_iter = 0;
+				for (size_t filter_width_pos = filter_width_start; filter_width_pos <= filter_width_end; ++filter_width_pos) {
+					int filter_height_iter = 0;
+					for (size_t filter_height_pos = filter_height_start; filter_height_pos <= filter_height_end; ++filter_height_pos) {
 
 						// Weight name
 						char weight_filter_name_char[512];
@@ -1520,7 +1527,7 @@ public:
 
 						// Output node name
 						char output_name_char[512];
-						sprintf(output_name_char, "%s-out_H%d-W%d", name.data(), filter_width_iter + output_height_zero_padding, filter_height_iter + output_width_zero_padding);
+						sprintf(output_name_char, "%s-out_H%d-W%d", name.data(), filter_width_pos + output_height_zero_padding, filter_height_pos + output_width_zero_padding);
 						std::string output_name(output_name_char);
 
 						// Link name
@@ -1531,7 +1538,10 @@ public:
 						Link link_filter(link_filter_name, source_node_names[source_node_iter], output_name, weight_filter_name);
 						link_filter.setModuleName(module_name);
 						model.addLinks({ link_filter });
+
+						++filter_height_iter;
 					}
+					++filter_width_iter;
 				}
 			}
 		}

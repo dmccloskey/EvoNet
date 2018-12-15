@@ -1764,7 +1764,7 @@ BOOST_AUTO_TEST_CASE(addProjection1)
 		BOOST_CHECK_EQUAL(model.getLink(name).getSinkNodeName(), ReplaceTokens(test[1], { "(_Mod1)" }, ""));
 		BOOST_CHECK_EQUAL(model.getLink(name).getModuleName(), "Mod1");
 		int count = std::count(weight_names_test.begin(), weight_names_test.end(), model.getLink(name).getWeightName());
-		std::cout << model.getLink(name).getWeightName() << std::endl;
+		//std::cout << model.getLink(name).getWeightName() << std::endl;
 		BOOST_CHECK_EQUAL(count, 1);
 	}
 
