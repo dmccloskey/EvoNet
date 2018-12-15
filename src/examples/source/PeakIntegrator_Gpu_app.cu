@@ -264,103 +264,103 @@ public:
 		if (!model.checkCompleteInputToOutput())
 			std::cout << "Model input and output are not fully connected!" << std::endl;
 	}
-	void makeOverlappingAttention(Model<TensorT>& model, const int& n_inputs, const int& n_outputs, 
-		std::vector<int> n_heads = { 8, 8 }, std::vector<int> key_query_values_lengths = { 32, 32 }, std::vector<int> extent_lengths = { 64, 128 }, std::vector<int> stride_lengths = {32, 64},
-		bool add_FC = true, bool add_skip = true, bool add_norm = false) {
-		// check parameter lengths match
-		assert(n_inputs == n_outputs);
-		assert(n_heads.size() == key_query_values_lengths.size() == model_lengths.size() == stride_lengths.size());
-		// check stride and model lengths are divisible without remainder with the input size
-		// TODO
+	//void makeOverlappingAttention(Model<TensorT>& model, const int& n_inputs, const int& n_outputs, 
+	//	std::vector<int> n_heads = { 8, 8 }, std::vector<int> key_query_values_lengths = { 32, 32 }, std::vector<int> extent_lengths = { 64, 128 }, std::vector<int> stride_lengths = {32, 64},
+	//	bool add_FC = true, bool add_skip = true, bool add_norm = false) {
+	//	// check parameter lengths match
+	//	assert(n_inputs == n_outputs);
+	//	assert(n_heads.size() == key_query_values_lengths.size() == model_lengths.size() == stride_lengths.size());
+	//	// check stride and model lengths are divisible without remainder with the input size
+	//	// TODO
 
-		ModelBuilder<TensorT> model_builder;
-		model.setId(0);
-		model.setName("DotProdAtten_PeakInt");
+	//	ModelBuilder<TensorT> model_builder;
+	//	model.setId(0);
+	//	model.setName("DotProdAtten_PeakInt");
 
-		// Add the inputs
-		std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", n_inputs);
-		
-		std::vector<std::string> node_names;
-		for (size_t layers_iter = 0; layers_iter < n_heads.size(); ++layers_iter) {
-			// Strided attention layers
-			const int n_strides = std::floor(extent_lengths[layers_iter] / stride_lengths[layers_iter]) + 1;;
-			for (size_t strides_iter = 0; strides_iter < n_strides; ++strides_iter) {
-				// Determine the input node names
-				std::vector<std::string> node_names_input_att;
-				int nodes_iter_start;
-				int nodes_iter_stop;
-				for (size_t nodes_iter = nodes_iter_start; nodes_iter < nodes_iter_stop; ++nodes_iter) {
-					node_names_input_att.push_back(node_names_input[nodes_iter]);
-				}
-				// Add Multi-head attention
-				std::string name_head1 = "Attention" + "-" + std::to_string(layers_iter) + "-" + std::to_string(strides_iter);
-				node_names = model_builder.addMultiHeadAttention(model, name_head1, name_head1,
-					node_names_input, node_names_input, node_names_input,
-					n_heads[layers_iter], "DotProd", extent_lengths[layers_iter], key_query_values_lengths[layers_iter], key_query_values_lengths[layers_iter],
-					std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-					std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
-					std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(extent_lengths[layers_iter], 2)),
-					std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
-				if (add_norm) {
-					std::string norm_name = "Norm" + "-" + std::to_string(layers_iter) + "-" + std::to_string(strides_iter);
-					node_names = model_builder.addNormalization(model, norm_name, norm_name, node_names,
-						std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-						std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
-						std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 2)),
-						std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.1, 0.9, 0.999, 1e-8)), 0.0, 0.0);
-				}
-				if (add_skip) {
-					std::string skip_name = "Skip" + "-" + std::to_string(layers_iter) + "-" + std::to_string(strides_iter);
-					model_builder.addSinglyConnected(model, skip_name, node_names_input, node_names,
-						std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names_input_att.size(), 2)),
-						std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f);
-				}
-				node_names_input_att = node_names;
+	//	// Add the inputs
+	//	std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", n_inputs);
+	//	
+	//	std::vector<std::string> node_names;
+	//	for (size_t layers_iter = 0; layers_iter < n_heads.size(); ++layers_iter) {
+	//		// Strided attention layers
+	//		const int n_strides = std::floor(extent_lengths[layers_iter] / stride_lengths[layers_iter]) + 1;;
+	//		for (size_t strides_iter = 0; strides_iter < n_strides; ++strides_iter) {
+	//			// Determine the input node names
+	//			std::vector<std::string> node_names_input_att;
+	//			int nodes_iter_start;
+	//			int nodes_iter_stop;
+	//			for (size_t nodes_iter = nodes_iter_start; nodes_iter < nodes_iter_stop; ++nodes_iter) {
+	//				node_names_input_att.push_back(node_names_input[nodes_iter]);
+	//			}
+	//			// Add Multi-head attention
+	//			std::string name_head1 = "Attention" + "-" + std::to_string(layers_iter) + "-" + std::to_string(strides_iter);
+	//			node_names = model_builder.addMultiHeadAttention(model, name_head1, name_head1,
+	//				node_names_input, node_names_input, node_names_input,
+	//				n_heads[layers_iter], "DotProd", extent_lengths[layers_iter], key_query_values_lengths[layers_iter], key_query_values_lengths[layers_iter],
+	//				std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
+	//				std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+	//				std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(extent_lengths[layers_iter], 2)),
+	//				std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+	//			if (add_norm) {
+	//				std::string norm_name = "Norm" + "-" + std::to_string(layers_iter) + "-" + std::to_string(strides_iter);
+	//				node_names = model_builder.addNormalization(model, norm_name, norm_name, node_names,
+	//					std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
+	//					std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+	//					std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 2)),
+	//					std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.1, 0.9, 0.999, 1e-8)), 0.0, 0.0);
+	//			}
+	//			if (add_skip) {
+	//				std::string skip_name = "Skip" + "-" + std::to_string(layers_iter) + "-" + std::to_string(strides_iter);
+	//				model_builder.addSinglyConnected(model, skip_name, node_names_input, node_names,
+	//					std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names_input_att.size(), 2)),
+	//					std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f);
+	//			}
+	//			node_names_input_att = node_names;
 
-				// Add the feedforward net
-				if (add_FC) {
-					std::string norm_name = "FC" + "-" + std::to_string(layers_iter) + "-" + std::to_string(strides_iter);
-					node_names = model_builder.addFullyConnected(model, norm_name, norm_name, node_names_input, extent_lengths[layers_iter],
-						std::shared_ptr<ActivationOp<TensorT>>(new ReLUOp<TensorT>()),
-						std::shared_ptr<ActivationOp<TensorT>>(new ReLUGradOp<TensorT>()),
-						std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-						std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-						std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-						std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(extent_lengths[layers_iter], 2)),
-						std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
-				}
-				if (add_norm) {
-					std::string norm_name = "Norm_FC" + "-" + std::to_string(layers_iter) + "-" + std::to_string(strides_iter);
-					node_names = model_builder.addNormalization(model, norm_name, norm_name, node_names,
-						std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-						std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
-						std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 2)),
-						std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.1, 0.9, 0.999, 1e-8)), 0.0, 0.0);
-				}
-				//if (add_skip) {
-				//	std::string skip_name = "Skip_FC" + "-" + std::to_string(layers_iter) + "-" + std::to_string(strides_iter);
-				//	model_builder.addSinglyConnected(model, skip_name, node_names_input, node_names,
-				//		std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(n_inputs, 2)),
-				//		std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f);
-				//}
-				node_names_input_att = node_names;
-			}
-		}
+	//			// Add the feedforward net
+	//			if (add_FC) {
+	//				std::string norm_name = "FC" + "-" + std::to_string(layers_iter) + "-" + std::to_string(strides_iter);
+	//				node_names = model_builder.addFullyConnected(model, norm_name, norm_name, node_names_input, extent_lengths[layers_iter],
+	//					std::shared_ptr<ActivationOp<TensorT>>(new ReLUOp<TensorT>()),
+	//					std::shared_ptr<ActivationOp<TensorT>>(new ReLUGradOp<TensorT>()),
+	//					std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
+	//					std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
+	//					std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
+	//					std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(extent_lengths[layers_iter], 2)),
+	//					std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+	//			}
+	//			if (add_norm) {
+	//				std::string norm_name = "Norm_FC" + "-" + std::to_string(layers_iter) + "-" + std::to_string(strides_iter);
+	//				node_names = model_builder.addNormalization(model, norm_name, norm_name, node_names,
+	//					std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
+	//					std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+	//					std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 2)),
+	//					std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.1, 0.9, 0.999, 1e-8)), 0.0, 0.0);
+	//			}
+	//			//if (add_skip) {
+	//			//	std::string skip_name = "Skip_FC" + "-" + std::to_string(layers_iter) + "-" + std::to_string(strides_iter);
+	//			//	model_builder.addSinglyConnected(model, skip_name, node_names_input, node_names,
+	//			//		std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(n_inputs, 2)),
+	//			//		std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f);
+	//			//}
+	//			node_names_input_att = node_names;
+	//		}
+	//	}
 
 
-		// Add the FC layer
-		node_names = model_builder.addFullyConnected(model, "Output", "Output", node_names, n_outputs,
-			std::shared_ptr<ActivationOp<TensorT>>(new ReLUOp<TensorT>()),
-			std::shared_ptr<ActivationOp<TensorT>>(new ReLUGradOp<TensorT>()),
-			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-			std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(n_inputs, 2)),
-			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+	//	// Add the FC layer
+	//	node_names = model_builder.addFullyConnected(model, "Output", "Output", node_names, n_outputs,
+	//		std::shared_ptr<ActivationOp<TensorT>>(new ReLUOp<TensorT>()),
+	//		std::shared_ptr<ActivationOp<TensorT>>(new ReLUGradOp<TensorT>()),
+	//		std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
+	//		std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
+	//		std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
+	//		std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(n_inputs, 2)),
+	//		std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 
-		for (const std::string& node_name : node_names)
-			model.nodes_.at(node_name)->setType(NodeType::output);
-	}
+	//	for (const std::string& node_name : node_names)
+	//		model.nodes_.at(node_name)->setType(NodeType::output);
+	//}
 	void makeCompactCovNetAE(Model<TensorT>& model, const int& n_inputs, const int& n_outputs, int n_encodings = 32, int n_depth_1 = 32, int n_depth_2 = 32, bool add_scalar = true) {
 		model.setId(0);
 		model.setName("CovNetPeakInt");
