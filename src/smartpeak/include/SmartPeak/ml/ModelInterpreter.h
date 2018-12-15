@@ -607,14 +607,8 @@ namespace SmartPeak
 				//if (FP_operations.size() == 680)
 				//	std::cout << "check" << std::endl;
 				OperationArguments<TensorT> arguments;
-				try {
-					arguments.source_node = model.nodes_.at(link_map.second->getSourceNodeName());
-					arguments.weight = model.weights_.at(link_map.second->getWeightName());
-				}
-				catch (std::exception& e)
-				{
-					printf("Exception: %s", e.what());
-				}
+				arguments.source_node = model.nodes_.at(link_map.second->getSourceNodeName());
+				arguments.weight = model.weights_.at(link_map.second->getWeightName());
 				arguments.time_step = 0;
 				arguments.link_name = link_map.first;
 
@@ -622,28 +616,16 @@ namespace SmartPeak
 				auto found = FP_operations_map.emplace(ops_key, (int)FP_operations.size());
 				if (!found.second)
 				{
-					try {
-						FP_operations[FP_operations_map.at(ops_key)].arguments.push_back(arguments);
-					}
-					catch (std::exception& e)
-					{
-						printf("Exception: %s", e.what());
-					}
+					FP_operations[FP_operations_map.at(ops_key)].arguments.push_back(arguments);
 				}
 				else
 				{
-					try {
-						OperationList<TensorT> operation_list;
-						OperationResult<TensorT> result;
-						result.sink_node = model.nodes_.at(link_map.second->getSinkNodeName());
-						operation_list.result = result;
-						operation_list.arguments.push_back(arguments);
-						FP_operations.push_back(operation_list);
-					}
-					catch (std::exception& e)
-					{
-						printf("Exception: %s", e.what());
-					}
+					OperationList<TensorT> operation_list;
+					OperationResult<TensorT> result;
+					result.sink_node = model.nodes_.at(link_map.second->getSinkNodeName());
+					operation_list.result = result;
+					operation_list.arguments.push_back(arguments);
+					FP_operations.push_back(operation_list);
 				}
 			}
 		}
