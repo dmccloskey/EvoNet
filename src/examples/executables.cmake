@@ -19,6 +19,7 @@ set(cuda_executables_list
   MNIST_LSTM_Gpu_example
   MNIST_VAE_Gpu_example
   AdditionProblem_Gpu_example
+  PeakIntegrator_Gpu_app
 )
 
 ### collect example executables
