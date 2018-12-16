@@ -64,20 +64,20 @@ public:
 				std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
 				std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
 				std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names_input.size(), 2)),
-				std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.0001, 0.8, 0.998, 1e-8)), 0.0f, 0.0f);
+				std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.0005, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 			if (add_norm) {
 				std::string norm_name = "Norm" + std::to_string(i);
 				node_names = model_builder.addNormalization(model, norm_name, norm_name, node_names,
 					std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
 					std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
 					std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 2)),
-					std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.0001, 0.8, 0.998, 1e-8)), 0.0, 0.0);
+					std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.0005, 0.9, 0.999, 1e-8)), 0.0, 0.0);
 			}
 			if (add_skip) {
 				std::string skip_name = "Skip" + std::to_string(i);
 				model_builder.addSinglyConnected(model, skip_name, node_names_input, node_names,
 					std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names_input.size(), 2)),
-					std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.0001, 0.8, 0.998, 1e-8)), 0.0f);
+					std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.0005, 0.9, 0.999, 1e-8)), 0.0f);
 			}
 			node_names_input = node_names;
 
@@ -91,7 +91,7 @@ public:
 					std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
 					std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
 					std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names_input.size(), 2)),
-					std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.0001, 0.8, 0.998, 1e-8)), 0.0f, 0.0f);
+					std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.0005, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 			}
 			if (add_norm) {
 				std::string norm_name = "Norm_FC" + std::to_string(i);
@@ -99,13 +99,13 @@ public:
 					std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
 					std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
 					std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 2)),
-					std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.0001, 0.8, 0.998, 1e-8)), 0.0, 0.0);
+					std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.0005, 0.9, 0.999, 1e-8)), 0.0, 0.0);
 			}
 			//if (add_skip) {
 			//	std::string skip_name = "Skip_FC" + std::to_string(i);
 			//	model_builder.addSinglyConnected(model, skip_name, node_names_input, node_names,
 			//		std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(n_inputs, 2)),
-			//		std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.0001, 0.8, 0.998, 1e-8)), 0.0f);
+			//		std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.0005, 0.9, 0.999, 1e-8)), 0.0f);
 			//}
 			node_names_input = node_names;
 		}
@@ -118,7 +118,7 @@ public:
 			std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
 			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
 			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 2)),
-			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.0001, 0.8, 0.998, 1e-8)), 0.0f, 0.0f);
+			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.0005, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 
 		for (const std::string& node_name : node_names)
 			model.nodes_.at(node_name)->setType(NodeType::output);
@@ -353,7 +353,7 @@ void main_DotProdAttention() {
 	// define the initial population
 	std::cout << "Initializing the population..." << std::endl;
 	Model<float> model;
-	model_trainer.makeMultiHeadDotProdAttention(model, input_nodes.size(), output_nodes.size(), { 8, 8 }, { 48, 24 }, { 512, 128 }, false, false, false);
+	model_trainer.makeMultiHeadDotProdAttention(model, input_nodes.size(), output_nodes.size(), { 8, 8 }, { 48, 24 }, { 512, 128 }, false, false, true);
 	std::vector<Model<float>> population = { model };
 
 	// Evolve the population
