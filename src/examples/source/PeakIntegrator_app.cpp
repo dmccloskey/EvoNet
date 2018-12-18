@@ -361,6 +361,79 @@ public:
 		for (const std::string& node_name : node_names)
 			model.nodes_.at(node_name)->setType(NodeType::output);
 	}
+	void makeMultiHeadDotProdAttention(Model<TensorT>& model, const int& n_inputs, const int& n_outputs,
+		std::vector<int> n_heads = { 8, 8 },
+		std::vector<int> key_query_values_lengths = { 48, 24 },
+		std::vector<int> model_lengths = { 48, 24 },
+		bool add_FC = true, bool add_skip = true, bool add_norm = false) {
+		model.setId(0);
+		model.setName("DotProdAttentPeakInt");
+
+		ModelBuilder<TensorT> model_builder;
+
+		// Add the inputs
+		std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", n_inputs);
+
+		// Multi-head attention
+		std::vector<std::string> node_names;
+		for (size_t i = 0; i < n_heads.size(); ++i) {
+			// Add the attention
+			std::string name_head1 = "Attention" + std::to_string(i);
+			node_names = model_builder.addMultiHeadAttention(model, name_head1, name_head1,
+				node_names_input, node_names_input, node_names_input,
+				n_heads[i], "DotProd", model_lengths[i], key_query_values_lengths[i], key_query_values_lengths[i],
+				std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
+				std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+				std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names_input.size(), 2)),
+				std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+			if (add_norm) {
+				std::string norm_name = "Norm" + std::to_string(i);
+				node_names = model_builder.addNormalization(model, norm_name, norm_name, node_names,
+					std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
+					std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+					std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 2)),
+					std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.1, 0.9, 0.999, 1e-8)), 0.0, 0.0);
+			}
+			if (add_skip) {
+				std::string skip_name = "Skip" + std::to_string(i);
+				model_builder.addSinglyConnected(model, skip_name, node_names_input, node_names,
+					std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names_input.size(), 2)),
+					std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f);
+			}
+			node_names_input = node_names;
+
+			// Add the feedforward net
+			if (add_FC) {
+				std::string norm_name = "FC" + std::to_string(i);
+				node_names = model_builder.addFullyConnected(model, norm_name, norm_name, node_names_input, n_inputs,
+					std::shared_ptr<ActivationOp<TensorT>>(new ReLUOp<TensorT>()),
+					std::shared_ptr<ActivationOp<TensorT>>(new ReLUGradOp<TensorT>()),
+					std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
+					std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
+					std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
+					std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names_input.size(), 2)),
+					std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+			}
+			if (add_norm) {
+				std::string norm_name = "Norm_FC" + std::to_string(i);
+				node_names = model_builder.addNormalization(model, norm_name, norm_name, node_names,
+					std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
+					std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+					std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 2)),
+					std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.1, 0.9, 0.999, 1e-8)), 0.0, 0.0);
+			}
+			//if (add_skip) {
+			//	std::string skip_name = "Skip_FC" + std::to_string(i);
+			//	model_builder.addSinglyConnected(model, skip_name, node_names_input, node_names,
+			//		std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(n_inputs, 2)),
+			//		std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f);
+			//}
+			node_names_input = node_names;
+		}
+
+		for (const std::string& node_name : node_names)
+			model.nodes_.at(node_name)->setType(NodeType::output);
+	}
 	void makeCompactCovNetAE(Model<TensorT>& model, const int& n_inputs, const int& n_outputs, int n_encodings = 32, int n_depth_1 = 32, int n_depth_2 = 32, bool add_scalar = true) {
 		model.setId(0);
 		model.setName("CovNetPeakInt");
@@ -706,9 +779,8 @@ void main_DenoisingAE(const bool& make_model, const bool& load_weight_values, co
 	ModelLogger<float> model_logger(true, true, true, false, false, false, false, false); // evaluation only
 
 	// define the data simulator
-	const std::size_t input_size = 400;
+	const std::size_t input_size = 512;
 	const std::size_t encoding_size = 256;
-	const std::size_t n_hidden = 256;
 	DataSimulatorExt<float> data_simulator;
 
 	// Hard
@@ -801,6 +873,7 @@ void main_DenoisingAE(const bool& make_model, const bool& load_weight_values, co
 	Model<float> model;
 	if (make_model) {
 		//model_trainer.makeDenoisingAE(model, input_size, encoding_size, n_hidden);
+		model_trainer.makeMultiHeadDotProdAttention(model, input_size, input_size, { 8, 8 }, { 48, 48 }, { input_size, input_size }, false, false, false);
 		model_trainer.makeCompactCovNetAE(model, input_size, input_size, encoding_size, 16, 16, false);
 	}
 	else {
