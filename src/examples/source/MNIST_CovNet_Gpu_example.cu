@@ -457,13 +457,13 @@ void main_CovNet() {
 		model_interpreters.push_back(model_interpreter);
 	}
 	ModelTrainerExt<float> model_trainer;
-	model_trainer.setBatchSize(16);
+	model_trainer.setBatchSize(64);
 	model_trainer.setMemorySize(1);
-	model_trainer.setNEpochsTraining(1001);
+	model_trainer.setNEpochsTraining(10001);
 	model_trainer.setNEpochsValidation(25);
 	model_trainer.setFindCycles(false);
 	model_trainer.setVerbosityLevel(1);
-	model_trainer.setLogging(false, false);
+	model_trainer.setLogging(false, true);
 	model_trainer.setLossFunctions({
 		std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>())
 		//std::shared_ptr<LossFunctionOp<float>>(new CrossEntropyWithLogitsOp<float>())

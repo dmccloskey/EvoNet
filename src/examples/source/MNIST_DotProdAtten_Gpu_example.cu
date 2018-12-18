@@ -353,7 +353,7 @@ void main_DotProdAttention() {
 	// define the initial population
 	std::cout << "Initializing the population..." << std::endl;
 	Model<float> model;
-	model_trainer.makeMultiHeadDotProdAttention(model, input_nodes.size(), output_nodes.size(), { 8, 8 }, { 48, 24 }, { 512, 128 }, false, false, true);
+	model_trainer.makeMultiHeadDotProdAttention(model, input_nodes.size(), output_nodes.size(), { 8, 8 }, { 48, 24 }, { 512, 128 }, false, false, false);
 	std::vector<Model<float>> population = { model };
 
 	// Evolve the population
