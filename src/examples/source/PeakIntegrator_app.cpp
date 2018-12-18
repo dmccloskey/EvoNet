@@ -374,8 +374,8 @@ public:
 		std::vector<std::string> node_names_conv0;
 		std::string conv_name = "EncConv0-" + std::to_string(0);
 		node_names_conv0 = model_builder.addConvolution(model, "EncConv0", conv_name, node_names_input,
-			sqrt(node_names_input.size()), sqrt(node_names_input.size()), 0, 0,
-			5, 5, 1, 0, 0,
+			node_names_input.size(), 1, 0, 0,
+			9, 1, 1, 0, 0,
 			std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>(0.01)),
 			std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>(0.01)),
 			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
