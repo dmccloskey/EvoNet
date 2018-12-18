@@ -386,13 +386,13 @@ public:
 		for (size_t d = 1; d < n_depth_1; ++d) {
 			std::string conv_name = "EncConv0-" + std::to_string(d);
 			model_builder.addConvolution(model, "EncConv0", conv_name, node_names_input, node_names_conv0,
-				sqrt(node_names_input.size()), sqrt(node_names_input.size()), 0, 0,
-				5, 5, 1, 0, 0,
+				node_names_input.size(), 1, 0, 0,
+				9, 1, 1, 0, 0,
 				std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(n_inputs, 2)),
 				std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, true);
 		}
 		if (add_scalar) {
-			node_names_conv0 = model_builder.addScalar(model, "EncScalar0", "EncScalar0", node_names_conv0, 5 * n_inputs,
+			node_names_conv0 = model_builder.addScalar(model, "EncScalar0", "EncScalar0", node_names_conv0, 9 * n_inputs,
 				std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
 				std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
 				true);
@@ -402,21 +402,21 @@ public:
 		std::vector<std::string> node_names_conv1;
 		conv_name = "EncConv1-" + std::to_string(0);
 		node_names_conv1 = model_builder.addConvolution(model, "EncConv1", conv_name, node_names_conv0,
-			sqrt(node_names_conv0.size()), sqrt(node_names_conv0.size()), 0, 0,
-			5, 5, 1, 0, 0,
+			node_names_conv0.size(), 1, 0, 0,
+			9, 1, 1, 0, 0,
 			std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>(0.01)),
 			std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>(0.01)),
 			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
 			std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
 			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(n_inputs, 2)),
+			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names_conv0.size(), 2)),
 			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
 		for (size_t d = 1; d < n_depth_2; ++d) {
 			std::string conv_name = "EncConv1-" + std::to_string(d);
 			model_builder.addConvolution(model, "EncConv1", conv_name, node_names_conv0, node_names_conv1,
-				sqrt(node_names_conv0.size()), sqrt(node_names_conv0.size()), 0, 0,
-				5, 5, 1, 0, 0,
-				std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(n_inputs, 2)),
+				node_names_conv0.size(),1, 0, 0,
+				9, 1, 1, 0, 0,
+				std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names_conv0.size(), 2)),
 				std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, true);
 		}
 		if (add_scalar) {
@@ -434,7 +434,7 @@ public:
 			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
 			std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
 			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(n_encodings, 2)),
+			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names_conv1.size(), 2)),
 			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 		node_names = model_builder.addFullyConnected(model, "FC0", "FC0", node_names, node_names_conv1.size(),
 			std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>(0.01)),
@@ -442,27 +442,27 @@ public:
 			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
 			std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
 			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names_conv1.size(), 2)),
+			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(n_encodings, 2)),
 			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 
 		// Add the first projection
 		std::vector<std::string> node_names_proj0;
 		std::string proj_name = "DecProj0-" + std::to_string(0);
 		node_names_proj0 = model_builder.addProjection(model, "DecProj0", proj_name, node_names,
-			sqrt(node_names.size()), sqrt(node_names.size()), 0, 0,
-			5, 5, 1, 0, 0,
+			node_names.size(), 1, 0, 0,
+			9, 1, 1, 0, 0,
 			std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>(0.01)),
 			std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>(0.01)),
 			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
 			std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
 			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(n_inputs, 2)),
+			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 2)),
 			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
 		for (size_t d = 1; d < n_depth_2; ++d) {
 			std::string proj_name = "DecProj0-" + std::to_string(d);
 			model_builder.addProjection(model, "DecProj0", proj_name, node_names, node_names_proj0,
-				sqrt(node_names.size()), sqrt(node_names.size()), 0, 0,
-				5, 5, 1, 0, 0,
+				node_names.size(), 1, 0, 0,
+				9, 1, 1, 0, 0,
 				std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 2)),
 				std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, true);
 		}
@@ -477,8 +477,8 @@ public:
 		std::vector<std::string> node_names_proj1;
 		proj_name = "DecProj1-" + std::to_string(0);
 		node_names_proj1 = model_builder.addProjection(model, "DecProj1", proj_name, node_names_proj0,
-			sqrt(node_names_proj0.size()), sqrt(node_names_proj0.size()), 0, 0,
-			5, 5, 1, 0, 0,
+			node_names_proj0.size(), 1, 0, 0,
+			9, 1, 1, 0, 0,
 			std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>(0.01)),
 			std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>(0.01)),
 			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
@@ -489,8 +489,8 @@ public:
 		for (size_t d = 1; d < n_depth_1; ++d) {
 			std::string proj_name = "DecProj1-" + std::to_string(d);
 			model_builder.addProjection(model, "DecProj1", proj_name, node_names_proj0, node_names_proj1,
-				sqrt(node_names_proj0.size()), sqrt(node_names_proj0.size()), 0, 0,
-				5, 5, 1, 0, 0,
+				node_names_proj0.size(), 1, 0, 0,
+				9, 1, 1, 0, 0,
 				std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names_proj0.size(), 2)),
 				std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, true);
 		}
@@ -501,8 +501,8 @@ public:
 		//		true);
 		//}
 		node_names = model_builder.addSinglyConnected(model, "Intensity_Out", "Intensity_Out", node_names_proj1, node_names_proj1.size(),
-			std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>(0.01)),
-			std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>(0.01)),
+			std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
+			std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
 			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
 			std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
 			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
@@ -512,12 +512,12 @@ public:
 		for (const std::string& node_name : node_names)
 			model.getNodesMap().at(node_name)->setType(NodeType::output);
 
-		//if (!model.checkCompleteInputToOutput())
-		//	std::cout << "Model is not fully connected!" << std::endl;
+		if (!model.checkCompleteInputToOutput())
+			std::cout << "Model is not fully connected!" << std::endl;
 
-		//std::vector<std::string> node_names_NA, weight_names_NA;
-		//if (!model.checkLinksNodeAndWeightNames(node_names_NA, weight_names_NA))
-		//	std::cout << "Model links are not pointing to the correct nodes and weights!" << std::endl;
+		std::vector<std::string> node_names_NA, weight_names_NA;
+		if (!model.checkLinksNodeAndWeightNames(node_names_NA, weight_names_NA))
+			std::cout << "Model links are not pointing to the correct nodes and weights!" << std::endl;
 	}
 	Model<TensorT> makeModel() { return Model<TensorT>(); }
 	void adaptiveTrainerScheduler(
