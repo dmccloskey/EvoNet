@@ -1430,7 +1430,7 @@ public:
 
 						// Output node name
 						char output_name_char[512];
-						sprintf(output_name_char, "%s-out_H%d-W%d", name.data(), filter_width_pos + output_height_zero_padding, filter_height_pos + output_width_zero_padding);
+						sprintf(output_name_char, "%s-out_H%d-W%d", name.data(), filter_height_pos + output_height_zero_padding, filter_width_pos + output_width_zero_padding);
 						std::string output_name(output_name_char);
 
 						// Link name
@@ -1453,7 +1453,8 @@ public:
 	}
 
 	template<typename TensorT>
-	inline void ModelBuilder<TensorT>::addProjection(Model<TensorT>& model, const std::string & name, const std::string & module_name, const std::vector<std::string>& source_node_names, const std::vector<std::string>& output_node_names, const int & input_width, const int & input_height, const int & input_width_zero_padding, const int & input_height_zero_padding, const int & extent_width, const int & extent_height, const int & spacing, const int & output_width_zero_padding, const int & output_height_zero_padding, const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver, TensorT drop_out_prob, TensorT drop_connection_prob, bool split_filter_layers)
+	inline void ModelBuilder<TensorT>::addProjection(Model<TensorT>& model, const std::string & name, const std::string & module_name, 
+		const std::vector<std::string>& source_node_names, const std::vector<std::string>& output_node_names, const int & input_width, const int & input_height, const int & input_width_zero_padding, const int & input_height_zero_padding, const int & extent_width, const int & extent_height, const int & spacing, const int & output_width_zero_padding, const int & output_height_zero_padding, const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver, TensorT drop_out_prob, TensorT drop_connection_prob, bool split_filter_layers)
 	{
 
 		// Parameters for the Convolution layer
@@ -1527,7 +1528,7 @@ public:
 
 						// Output node name
 						char output_name_char[512];
-						sprintf(output_name_char, "%s-out_H%d-W%d", name.data(), filter_width_pos + output_height_zero_padding, filter_height_pos + output_width_zero_padding);
+						sprintf(output_name_char, "%s-out_H%d-W%d", name.data(), filter_height_pos + output_height_zero_padding, filter_width_pos + output_width_zero_padding);
 						std::string output_name(output_name_char);
 
 						// Link name

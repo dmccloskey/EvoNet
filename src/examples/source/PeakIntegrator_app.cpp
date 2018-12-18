@@ -585,8 +585,8 @@ public:
 		for (const std::string& node_name : node_names)
 			model.getNodesMap().at(node_name)->setType(NodeType::output);
 
-		if (!model.checkCompleteInputToOutput())
-			std::cout << "Model is not fully connected!" << std::endl;
+		//if (!model.checkCompleteInputToOutput())
+		//	std::cout << "Model is not fully connected!" << std::endl;
 
 		std::vector<std::string> node_names_NA, weight_names_NA;
 		if (!model.checkLinksNodeAndWeightNames(node_names_NA, weight_names_NA))
@@ -856,10 +856,8 @@ void main_DenoisingAE(const bool& make_model, const bool& load_weight_values, co
 	model_trainer.setLogging(true, false, true);
 	model_trainer.setFindCycles(false);
 	model_trainer.setLossFunctions({
-		//std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()),
 		std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
 	model_trainer.setLossFunctionGrads({
-		//std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()),
 		std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
 	model_trainer.setOutputNodes({ 
 		//output_nodes_time, 
@@ -873,8 +871,8 @@ void main_DenoisingAE(const bool& make_model, const bool& load_weight_values, co
 	Model<float> model;
 	if (make_model) {
 		//model_trainer.makeDenoisingAE(model, input_size, encoding_size, n_hidden);
-		model_trainer.makeMultiHeadDotProdAttention(model, input_size, input_size, { 8, 8 }, { 48, 48 }, { input_size, input_size }, false, false, false);
-		model_trainer.makeCompactCovNetAE(model, input_size, input_size, encoding_size, 16, 16, false);
+		//model_trainer.makeMultiHeadDotProdAttention(model, input_size, input_size, { 8, 8 }, { 48, 48 }, { input_size, input_size }, false, false, false);
+		model_trainer.makeCompactCovNetAE(model, input_size, input_size, encoding_size, 8, 8, false);
 	}
 	else {
 		// read in the trained model
