@@ -406,7 +406,7 @@ void main_CovNet() {
 	population_trainer.setNReplicatesPerModel(1);
 
 	// define the model logger
-	ModelLogger<float> model_logger(true, true, true, false, false, false, false, false);
+	ModelLogger<float> model_logger(true, true, false, false, false, false, false, false);
 	//ModelLogger<float> model_logger(true, true, true, true, true, false, true, true);
 
 	// define the data simulator
@@ -463,14 +463,14 @@ void main_CovNet() {
 	model_trainer.setNEpochsValidation(25);
 	model_trainer.setFindCycles(false);
 	model_trainer.setVerbosityLevel(1);
-	model_trainer.setLogging(false, true);
+	model_trainer.setLogging(true, false);
 	model_trainer.setLossFunctions({
-		std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>())
-		//std::shared_ptr<LossFunctionOp<float>>(new CrossEntropyWithLogitsOp<float>())
+		//std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>())
+		std::shared_ptr<LossFunctionOp<float>>(new CrossEntropyWithLogitsOp<float>())
 		});
 	model_trainer.setLossFunctionGrads({
-		std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>())
-		//std::shared_ptr<LossFunctionGradOp<float>>(new CrossEntropyWithLogitsGradOp<float>())
+		//std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>())
+		std::shared_ptr<LossFunctionGradOp<float>>(new CrossEntropyWithLogitsGradOp<float>())
 		});
 	model_trainer.setOutputNodes({ output_FC_nodes//, output_nodes 
 		});
