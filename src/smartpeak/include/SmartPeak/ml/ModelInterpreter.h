@@ -485,6 +485,18 @@ namespace SmartPeak
 		*/
 		virtual void getModelResults(Model<TensorT>& model, bool output_nodes = true, bool weights = true, bool model_error = true) = 0;
 
+		/**
+		@brief Update the weight solver params
+
+		NOTE: this method is only safe for updating the learning rate.  More sophisticated checks
+			would need to be implemented for updating other paramaters when multiple solvers can
+			be used.
+
+		@param[in] param_index The parameter index to update (i.e., 0 for learning rate)
+		@param[in] param_value The parameter value to set (i.e., 1e-4)
+		*/
+		virtual void updateSolverParams(const int& param_index, const TensorT& param_value) = 0;
+
 		void setModelResources(const ModelResources& model_resources); ///< model_resources setter
 		ModelResources getModelResources(); ///< model_resources getter
 
@@ -1343,14 +1355,13 @@ namespace SmartPeak
 		catch (const std::exception& e) {
 			std::cout << "Layer index " << layer_index << " does not exist" << std::endl;
 			return std::shared_ptr<NodeTensorData<TensorT, DeviceT>>();
-		}
-		
+		}		
 	}
 
 	template<typename TensorT, typename DeviceT>
 	inline void ModelInterpreter<TensorT, DeviceT>::addWeightTensor(WeightTensorData<TensorT, DeviceT>& weight)
 	{
-		std::shared_ptr<WeightTensorData<TensorT, DeviceT>> weight_ptr(&weight);
+		std::shared_ptr<WeightTensorData<TensorT, DeviceT>> weight_ptr(std::move(&weight));
 		weight_tensors_.push_back(weight_ptr);
 	}
 

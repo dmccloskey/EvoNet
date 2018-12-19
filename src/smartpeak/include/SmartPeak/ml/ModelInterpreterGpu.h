@@ -37,6 +37,7 @@ namespace SmartPeak
 		void allocateModelErrorTensor(const int& batch_size, const int& memory_size);
 		void getModelResults(Model<TensorT>& model, bool output_nodes = true, bool weights = true, bool model_error = true);
 		void checkMemory(const Model<TensorT>& model, const int& batch_size, const int& memory_size);
+		void updateSolverParams(const int& param_index, const TensorT& param_value);
 	};
 
 	template<typename TensorT>
@@ -572,6 +573,41 @@ namespace SmartPeak
 		size_t weight_mem = weight_mem_best;
 
 		assert(free_byte > (node_mem + weight_mem));
+	}
+
+	template<typename TensorT>
+	inline void ModelInterpreterGpu<TensorT>::updateSolverParams(const int & param_index, const TensorT & param_value)
+	{
+		assert(cudaSetDevice(getModelResources()[0].getID()) == cudaSuccess); // is this needed?
+		std::vector<cudaStream_t> streams;
+		for (size_t i = 0; i < weight_tensors_.size(); ++i) {
+			cudaStream_t stream; // The stream will be destroyed by GpuStreamDevice once the function goes out of scope!
+			assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess);
+			streams.push_back(stream);
+		}
+
+		size_t device_iter = 0;
+		for (auto& weight_tensor_data : weight_tensors_) {
+			if (weight_tensor_data->getNSolverParams() > 0) {
+				Eigen::GpuStreamDevice stream_device(&streams[device_iter], getModelResources()[0].getID());
+				Eigen::GpuDevice device(&stream_device);
+
+				if (!weight_tensor_data->getSolverParamsStatus().first)
+					weight_tensor_data->syncHAndDSolverParams(device);
+
+				Eigen::Tensor<TensorT, 2> solver_params(weight_tensor_data->getLayer1Size(), weight_tensor_data->getLayer2Size());
+				solver_params.setConstant(param_value);
+				weight_tensor_data->getSolverParams().chip(param_index, 2) = solver_params;
+
+				++device_iter;
+			}
+		}
+
+		// sync and destroy the streams
+		for (size_t i = 0; i < weight_tensors_.size(); ++i) {
+			assert(cudaStreamSynchronize(streams[i]) == cudaSuccess);
+			assert(cudaStreamDestroy(streams[i]) == cudaSuccess);
+		}
 	}
 }
 #endif

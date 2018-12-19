@@ -33,6 +33,7 @@ namespace SmartPeak
 		void allocateModelErrorTensor(const int& batch_size, const int& memory_size);
 	  void getModelResults(Model<TensorT>& model, bool output_nodes = true, bool weights = true, bool model_error = true);
 		void checkMemory(const Model<TensorT>& model, const int& batch_size, const int& memory_size);
+		void updateSolverParams(const int& param_index, const TensorT& param_value);
 	};
 
 	template<typename TensorT>
@@ -381,6 +382,18 @@ namespace SmartPeak
 	inline void ModelInterpreterDefaultDevice<TensorT>::checkMemory(const Model<TensorT>& model, const int& batch_size, const int& memory_size)
 	{
 		// TODO
+	}
+
+	template<typename TensorT>
+	inline void ModelInterpreterDefaultDevice<TensorT>::updateSolverParams(const int & param_index, const TensorT & param_value)
+	{
+		for (auto& weight_tensor_data : weight_tensors_) {
+			if (weight_tensor_data->getNSolverParams() > 0) {
+				Eigen::Tensor<TensorT, 2> solver_params(weight_tensor_data->getLayer1Size(), weight_tensor_data->getLayer2Size());
+				solver_params.setConstant(param_value);
+				weight_tensor_data->getSolverParams().chip(param_index, 2) = solver_params;
+			}
+		}
 	}
 }
 #endif //SMARTPEAK_MODELINTERPRETERDEFAULTDEVICE_H
