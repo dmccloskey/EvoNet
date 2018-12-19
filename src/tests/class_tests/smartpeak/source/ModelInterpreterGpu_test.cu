@@ -1330,6 +1330,8 @@ void test_updateSolverParams()
 	// Test that the learning rate was updated
 	model_interpreter.addWeightTensor(weight_data);
 	model_interpreter.updateSolverParams(0, 2);
+	assert(model_interpreter.getWeightTensor(0)->getSolverParamsStatus().first);
+	assert(!model_interpreter.getWeightTensor(0)->getSolverParamsStatus().second);
 	assert(model_interpreter.getWeightTensor(0)->getSolverParams()(0, 0, 0) == 2);
 	assert(model_interpreter.getWeightTensor(0)->getSolverParams()(0, 0, 1) == 3);
 	assert(model_interpreter.getWeightTensor(0)->getSolverParams()(1, 0, 0) == 2);

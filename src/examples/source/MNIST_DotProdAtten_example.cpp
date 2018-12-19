@@ -132,14 +132,19 @@ public:
 		Model<TensorT>& model,
 		ModelInterpreterDefaultDevice<TensorT>& model_interpreter,
 		const std::vector<float>& model_errors) {
-		//if (n_epochs > 10000) {
-		//	// update the solver parameters
-		//	std::shared_ptr<SolverOp<TensorT>> solver;
-		//	solver.reset(new AdamOp<TensorT>(0.0001, 0.9, 0.999, 1e-8));
-		//	for (auto& weight_map : model.getWeightsMap())
-		//		if (weight_map.second->getSolverOp()->getName() == "AdamOp")
-		//			weight_map.second->setSolverOp(solver);
-		//}
+		if (n_epochs > 0 && model_errors.back() < 0.01) {
+			// update the solver parameters
+			model_interpreter.updateSolverParams(0, 0.0002);
+		}
+		else if (n_epochs > 0 && model_errors.back() < 4.0) {
+			// update the solver parameters
+			model_interpreter.updateSolverParams(0, 0.0005);
+		}
+		else {
+			// update the solver parameters
+			model_interpreter.updateSolverParams(0, 0.00095);
+		}
+
 		//if (n_epochs % 1000 == 0 && n_epochs != 0) {
 		//	// save the model every 100 epochs
 		//	ModelFile<TensorT> data;
@@ -363,7 +368,7 @@ void main_DotProdAttention() {
 	// define the initial population
 	std::cout << "Initializing the population..." << std::endl;
 	Model<float> model;
-	model_trainer.makeMultiHeadDotProdAttention(model, input_nodes.size(), output_nodes.size(), { 2,2 }, { 48,48 }, { 128, 128 }, false, false, true);
+	model_trainer.makeMultiHeadDotProdAttention(model, input_nodes.size(), output_nodes.size(), { 2,2 }, { 24,24 }, { 48, 48 }, false, false, false);
 	std::vector<Model<float>> population = { model };	
 
 	// Evolve the population

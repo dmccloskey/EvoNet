@@ -118,10 +118,14 @@ public:
 		virtual bool syncHAndDSolverParams(DeviceT& device) = 0;
 		virtual bool syncHAndDSharedWeights(DeviceT& device) = 0;
 
-		std::pair<bool, bool> getErrorStatus() { return std::make_pair(h_error_updated_, d_error_updated_); };
-		std::pair<bool, bool> getWeightStatus() { return std::make_pair(h_weight_updated_, d_weight_updated_); };
-		std::pair<bool, bool> getSolverParamsStatus() { return std::make_pair(h_solver_params_updated_, d_solver_params_updated_); };
-		std::pair<bool, bool> getSharedWeightsStatus() { return std::make_pair(h_shared_weights_updated_, d_shared_weights_updated_); };
+		std::pair<bool, bool> getErrorStatus() const { return std::make_pair(h_error_updated_, d_error_updated_); };
+		void setErrorStatus(const bool& h_status, const bool& d_status) { h_error_updated_ = h_status; d_error_updated_ = d_status; };
+		std::pair<bool, bool> getWeightStatus() const { return std::make_pair(h_weight_updated_, d_weight_updated_); };
+		void setWeightStatus(const bool& h_status, const bool& d_status) { h_weight_updated_ = h_status; d_weight_updated_ = d_status; };
+		std::pair<bool, bool> getSolverParamsStatus() const { return std::make_pair(h_solver_params_updated_, d_solver_params_updated_); };
+		void setSolverParamsStatus(const bool& h_status, const bool& d_status) { h_solver_params_updated_ = h_status; d_solver_params_updated_ = d_status; };
+		std::pair<bool, bool> getSharedWeightsStatus() const { return std::make_pair(h_shared_weights_updated_, d_shared_weights_updated_); };
+		void setSharedWeightsStatus(const bool& h_status, const bool& d_status) { h_shared_weights_updated_ = h_status; d_shared_weights_updated_ = d_status; };
 protected:
 		int layer1_size_ = 1; ///< Layer1 size
 		int layer2_size_ = 2; ///< Layer2 size

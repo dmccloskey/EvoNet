@@ -599,6 +599,8 @@ namespace SmartPeak
 				solver_params.setConstant(param_value);
 				weight_tensor_data->getSolverParams().chip(param_index, 2) = solver_params;
 
+				weight_tensor_data->setSolverParamsStatus(true, false);
+
 				++device_iter;
 			}
 		}
