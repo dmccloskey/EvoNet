@@ -422,19 +422,20 @@ public:
 					std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 2)),
 					std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.1, 0.9, 0.999, 1e-8)), 0.0, 0.0);
 			}
-			//if (add_skip) {
-			//	std::string skip_name = "Skip_FC" + std::to_string(i);
-			//	model_builder.addSinglyConnected(model, skip_name, node_names_input, node_names,
-			//		std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(n_inputs, 2)),
-			//		std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f);
-			//}
+			if (add_skip) {
+				std::string skip_name = "Skip_FC" + std::to_string(i);
+				model_builder.addSinglyConnected(model, skip_name, node_names_input, node_names,
+					std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(n_inputs, 2)),
+					std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f);
+			}
 			node_names_input = node_names;
 		}
 
 		for (const std::string& node_name : node_names)
 			model.nodes_.at(node_name)->setType(NodeType::output);
 	}
-	void makeCompactCovNetAE(Model<TensorT>& model, const int& n_inputs, const int& n_outputs, int n_encodings = 32, int n_depth_1 = 32, int n_depth_2 = 32, bool add_scalar = true) {
+	void makeCompactCovNetAE(Model<TensorT>& model, const int& n_inputs, const int& n_outputs, int n_encodings = 32, 
+		int n_depth_1 = 32, int n_depth_2 = 32, bool add_scalar = true) {
 		model.setId(0);
 		model.setName("CovNetPeakInt");
 
@@ -539,12 +540,12 @@ public:
 				std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 2)),
 				std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, true);
 		}
-		//if (add_scalar) {
-		//	node_names_proj0 = model_builder.addScalar(model, "DecScalar0", "DecScalar0", node_names_proj0, 5 * node_names.size(),
-		//		std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-		//		std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
-		//		true);
-		//}
+		if (add_scalar) {
+			node_names_proj0 = model_builder.addScalar(model, "DecScalar0", "DecScalar0", node_names_proj0, 5 * node_names.size(),
+				std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
+				std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+				true);
+		}
 
 		// Add the second projection
 		std::vector<std::string> node_names_proj1;
@@ -567,12 +568,12 @@ public:
 				std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names_proj0.size(), 2)),
 				std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, true);
 		}
-		//if (add_scalar) {
-		//	node_names_proj1 = model_builder.addScalar(model, "DecScalar1", "DecScalar1", node_names_proj1, 5 * node_names_proj0.size(),
-		//		std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-		//		std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
-		//		true);
-		//}
+		if (add_scalar) {
+			node_names_proj1 = model_builder.addScalar(model, "DecScalar1", "DecScalar1", node_names_proj1, 5 * node_names_proj0.size(),
+				std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
+				std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+				true);
+		}
 		node_names = model_builder.addSinglyConnected(model, "Intensity_Out", "Intensity_Out", node_names_proj1, node_names_proj1.size(),
 			std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
 			std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
@@ -588,9 +589,9 @@ public:
 		//if (!model.checkCompleteInputToOutput())
 		//	std::cout << "Model is not fully connected!" << std::endl;
 
-		std::vector<std::string> node_names_NA, weight_names_NA;
-		if (!model.checkLinksNodeAndWeightNames(node_names_NA, weight_names_NA))
-			std::cout << "Model links are not pointing to the correct nodes and weights!" << std::endl;
+		//std::vector<std::string> node_names_NA, weight_names_NA;
+		//if (!model.checkLinksNodeAndWeightNames(node_names_NA, weight_names_NA))
+		//	std::cout << "Model links are not pointing to the correct nodes and weights!" << std::endl;
 	}
 	Model<TensorT> makeModel() { return Model<TensorT>(); }
 	void adaptiveTrainerScheduler(
@@ -872,7 +873,7 @@ void main_DenoisingAE(const bool& make_model, const bool& load_weight_values, co
 	if (make_model) {
 		//model_trainer.makeDenoisingAE(model, input_size, encoding_size, n_hidden);
 		//model_trainer.makeMultiHeadDotProdAttention(model, input_size, input_size, { 8, 8 }, { 48, 48 }, { input_size, input_size }, false, false, false);
-		model_trainer.makeCompactCovNetAE(model, input_size, input_size, encoding_size, 8, 8, false);
+		model_trainer.makeCompactCovNetAE(model, input_size, input_size, encoding_size, 4, 4, true);
 	}
 	else {
 		// read in the trained model
