@@ -730,7 +730,7 @@ void main_DenoisingAE(const bool& make_model, const bool& load_weight_values, co
 	data_simulator.noise_mu_ = std::make_pair(0, 0);
 	data_simulator.noise_sigma_ = std::make_pair(0, 0);
 	data_simulator.baseline_height_ = std::make_pair(0, 0);
-	data_simulator.n_peaks_ = std::make_pair(1, 1);
+	data_simulator.n_peaks_ = std::make_pair(2, 2);
 	data_simulator.emg_h_ = std::make_pair(1, 1);
 	data_simulator.emg_tau_ = std::make_pair(0, 0);
 	data_simulator.emg_mu_offset_ = std::make_pair(0, 0);

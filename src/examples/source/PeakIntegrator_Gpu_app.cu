@@ -730,7 +730,7 @@ void main_DenoisingAE(const bool& make_model, const bool& load_weight_values, co
 	data_simulator.noise_mu_ = std::make_pair(0, 0);
 	data_simulator.noise_sigma_ = std::make_pair(0, 0);
 	data_simulator.baseline_height_ = std::make_pair(0, 0);
-	data_simulator.n_peaks_ = std::make_pair(1, 1);
+	data_simulator.n_peaks_ = std::make_pair(2, 2);
 	data_simulator.emg_h_ = std::make_pair(1, 1);
 	data_simulator.emg_tau_ = std::make_pair(0, 0);
 	data_simulator.emg_mu_offset_ = std::make_pair(0, 0);
@@ -786,7 +786,7 @@ void main_DenoisingAE(const bool& make_model, const bool& load_weight_values, co
 	Model<float> model;
 	if (make_model) {
 		//model_trainer.makeDenoisingAE(model, input_size, encoding_size, n_hidden);
-		model_trainer.makeMultiHeadDotProdAttention(model, input_size, input_size, { 8, 8 }, { 48, 48 }, { (int)input_size, (int)input_size }, false, true, false);
+		model_trainer.makeMultiHeadDotProdAttention(model, input_size, input_size, { 8, 8 }, { 48, 48 }, { (int)input_size, (int)input_size }, false, false, false);
 		//model_trainer.makeCompactCovNetAE(model, input_size, input_size, encoding_size, 4, 4, true);
 	}
 	else {
