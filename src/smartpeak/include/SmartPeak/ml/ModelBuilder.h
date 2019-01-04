@@ -519,7 +519,7 @@ public:
 		for (int i = 0; i < n_nodes; ++i)
 		{
 			char node_name_char[512];
-			sprintf(node_name_char, "%s_%d", name.data(), i);
+			sprintf(node_name_char, "%s_%010d", name.data(), i);
 			std::string node_name(node_name_char);
 			node_names.push_back(node_name);
 			Node<TensorT> node(node_name, NodeType::input, NodeStatus::activated, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
@@ -544,7 +544,7 @@ public:
 		for (int i = 0; i < n_nodes; ++i)
 		{
 			char node_name_char[512];
-			sprintf(node_name_char, "%s_%d", name.data(), i);
+			sprintf(node_name_char, "%s_%010d", name.data(), i);
 			std::string node_name(node_name_char);
 			node_names.push_back(node_name);
 			Node<TensorT> node(node_name, NodeType::hidden, NodeStatus::initialized, node_activation, node_activation_grad, node_integration, node_integration_error, node_integration_weight_grad);
@@ -555,18 +555,18 @@ public:
 
 			if (biases) {
 				char bias_name_char[512];
-				sprintf(bias_name_char, "%s-bias_%d", name.data(), i);
+				sprintf(bias_name_char, "%s-bias_%010d", name.data(), i);
 				std::string bias_name(bias_name_char);
 				Node<TensorT> bias(bias_name, NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
 				bias.setModuleName(module_name);
 				model.addNodes({ bias });
 
 				char weight_bias_name_char[512];
-				sprintf(weight_bias_name_char, "%s-bias_%d_to_%s_%d", name.data(), i, name.data(), i);
+				sprintf(weight_bias_name_char, "%s-bias_%010d_to_%s_%010d", name.data(), i, name.data(), i);
 				std::string weight_bias_name(weight_bias_name_char);
 
 				char link_bias_name_char[512];
-				sprintf(link_bias_name_char, "%s-bias_%d_to_%s_%d", name.data(), i, name.data(), i);
+				sprintf(link_bias_name_char, "%s-bias_%010d_to_%s_%010d", name.data(), i, name.data(), i);
 				std::string link_bias_name(link_bias_name_char);
 
 				std::shared_ptr<WeightInitOp<TensorT>>  bias_weight_init;
@@ -589,15 +589,15 @@ public:
 			for (int j = 0; j < n_nodes; ++j)
 			{
 				char hidden_name_char[512];
-				sprintf(hidden_name_char, "%s_%d", name.data(), j);
+				sprintf(hidden_name_char, "%s_%010d", name.data(), j);
 				std::string hidden_name(hidden_name_char);
 
 				char link_name_char[512];
-				sprintf(link_name_char, "%s_to_%s_%d", source_node_names[i].data(), name.data(), j);
+				sprintf(link_name_char, "%s_to_%s_%010d", source_node_names[i].data(), name.data(), j);
 				std::string link_name(link_name_char);
 
 				char weight_name_char[512];
-				sprintf(weight_name_char, "%s_to_%s_%d", source_node_names[i].data(), name.data(), j);
+				sprintf(weight_name_char, "%s_to_%s_%010d", source_node_names[i].data(), name.data(), j);
 				std::string weight_name(weight_name_char);
 
 				std::shared_ptr<WeightInitOp<TensorT>>  hidden_weight_init = weight_init;
@@ -666,7 +666,7 @@ public:
 		for (int i = 0; i < n_nodes; ++i)
 		{
 			char node_name_char[512];
-			sprintf(node_name_char, "%s_%d", name.data(), i);
+			sprintf(node_name_char, "%s_%010d", name.data(), i);
 			std::string node_name(node_name_char);
 			node_names.push_back(node_name);
 			Node<TensorT> node(node_name, NodeType::hidden, NodeStatus::initialized, node_activation, node_activation_grad, node_integration, node_integration_error, node_integration_weight_grad);
@@ -677,18 +677,18 @@ public:
 
 			if (biases) {
 				char bias_name_char[512];
-				sprintf(bias_name_char, "%s-bias_%d", name.data(), i);
+				sprintf(bias_name_char, "%s-bias_%010d", name.data(), i);
 				std::string bias_name(bias_name_char);
 				Node<TensorT> bias(bias_name, NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
 				bias.setModuleName(module_name);
 				model.addNodes({ bias });
 
 				char weight_bias_name_char[512];
-				sprintf(weight_bias_name_char, "%s-bias_%d_to_%s_%d", name.data(), i, name.data(), i);
+				sprintf(weight_bias_name_char, "%s-bias_%010d_to_%s_%010d", name.data(), i, name.data(), i);
 				std::string weight_bias_name(weight_bias_name_char);
 
 				char link_bias_name_char[512];
-				sprintf(link_bias_name_char, "%s-bias_%d_to_%s_%d", name.data(), i, name.data(), i);
+				sprintf(link_bias_name_char, "%s-bias_%010d_to_%s_%010d", name.data(), i, name.data(), i);
 				std::string link_bias_name(link_bias_name_char);
 
 				std::shared_ptr<WeightInitOp<TensorT>>  bias_weight_init;
@@ -706,15 +706,15 @@ public:
 
 			// Create the weights and links for input to hidden
 			char hidden_name_char[512];
-			sprintf(hidden_name_char, "%s_%d", name.data(), i);
+			sprintf(hidden_name_char, "%s_%010d", name.data(), i);
 			std::string hidden_name(hidden_name_char);
 
 			char link_name_char[512];
-			sprintf(link_name_char, "%s_to_%s_%d", source_node_names[i].data(), name.data(), i);
+			sprintf(link_name_char, "%s_to_%s_%010d", source_node_names[i].data(), name.data(), i);
 			std::string link_name(link_name_char);
 
 			char weight_name_char[512];
-			sprintf(weight_name_char, "%s_to_%s_%d", source_node_names[i].data(), name.data(), i);
+			sprintf(weight_name_char, "%s_to_%s_%010d", source_node_names[i].data(), name.data(), i);
 			std::string weight_name(weight_name_char);
 
 			std::shared_ptr<WeightInitOp<TensorT>>  hidden_weight_init = weight_init;
@@ -789,14 +789,14 @@ public:
 		{
 			// Create the input layer
 			char smi_node_name_char[512];
-			sprintf(smi_node_name_char, "%s-In_%d", name.data(), i);
+			sprintf(smi_node_name_char, "%s-In_%010d", name.data(), i);
 			std::string smi_node_name(smi_node_name_char);
 			Node<TensorT> smi_node(smi_node_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<TensorT>>(new ExponentialOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new ExponentialGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
 			smi_node.setModuleName(module_name);
 
 			// Create the output layer
 			char smo_node_name_char[512];
-			sprintf(smo_node_name_char, "%s-Out_%d", name.data(), i);
+			sprintf(smo_node_name_char, "%s-Out_%010d", name.data(), i);
 			std::string smo_node_name(smo_node_name_char);
 			node_names.push_back(smo_node_name);
 			Node<TensorT> smo_node(smo_node_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new ProdOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new ProdErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new ProdWeightGradOp<TensorT>()));
@@ -886,14 +886,14 @@ public:
 		{
 			// Create the input layer
 			char smi_node_name_char[512];
-			sprintf(smi_node_name_char, "%s-In_%d", name.data(), i);
+			sprintf(smi_node_name_char, "%s-In_%010d", name.data(), i);
 			std::string smi_node_name(smi_node_name_char);
 			Node<TensorT> smi_node(smi_node_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<TensorT>>(new ExponentialOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new ExponentialGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
 			smi_node.setModuleName(module_name);
 
 			// Create the output layer
 			char smo_node_name_char[512];
-			sprintf(smo_node_name_char, "%s-Out_%d", name.data(), i);
+			sprintf(smo_node_name_char, "%s-Out_%010d", name.data(), i);
 			std::string smo_node_name(smo_node_name_char);
 			node_names.push_back(smo_node_name);
 			Node<TensorT> smo_node(smo_node_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new ProdOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new ProdErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new ProdWeightGradOp<TensorT>()));
@@ -1015,7 +1015,7 @@ public:
 			for (size_t output_height_iter = 0; output_height_iter < output_padded_height; ++output_height_iter) {
 				if (output_height_iter < output_height_zero_padding || output_height_iter >= output_padded_height - output_height_zero_padding) {
 					char bias_name_char[512];
-					sprintf(bias_name_char, "%s-out-padding_H%d-W%d", name.data(), output_height_iter, output_width_iter);
+					sprintf(bias_name_char, "%s-out-padding_H%010d-W%010d", name.data(), output_height_iter, output_width_iter);
 					std::string bias_name(bias_name_char);
 					Node<TensorT> bias(bias_name, NodeType::zero, NodeStatus::activated, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
 					bias.setModuleName(module_name);
@@ -1025,7 +1025,7 @@ public:
 				}
 				else if (output_width_iter < output_width_zero_padding || output_width_iter >= output_padded_width - output_width_zero_padding) {
 					char bias_name_char[512];
-					sprintf(bias_name_char, "%s-out-padding_H%d-W%d", name.data(), output_height_iter, output_width_iter);
+					sprintf(bias_name_char, "%s-out-padding_H%010d-W%010d", name.data(), output_height_iter, output_width_iter);
 					std::string bias_name(bias_name_char);
 					Node<TensorT> bias(bias_name, NodeType::zero, NodeStatus::activated, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
 					bias.setModuleName(module_name);
@@ -1035,7 +1035,7 @@ public:
 				}
 				else {
 					char output_name_char[512];
-					sprintf(output_name_char, "%s-out_H%d-W%d", name.data(), output_height_iter, output_width_iter);
+					sprintf(output_name_char, "%s-out_H%010d-W%010d", name.data(), output_height_iter, output_width_iter);
 					std::string output_name(output_name_char);
 					Node<TensorT> output(output_name, NodeType::hidden, NodeStatus::activated, node_activation, node_activation_grad, node_integration, node_integration_error, node_integration_weight_grad);
 					output.setModuleName(module_name);
@@ -1061,7 +1061,7 @@ public:
 		for (size_t filter_height_iter = 0; filter_height_iter < extent_height; ++filter_height_iter) {
 			for (size_t filter_width_iter = 0; filter_width_iter < extent_width; ++filter_width_iter) {
 				char weight_filter_name_char[512];
-				sprintf(weight_filter_name_char, "%s-%s_H%d-W%d", name.data(), module_name.data(), filter_height_iter, filter_width_iter);
+				sprintf(weight_filter_name_char, "%s-%s_H%010d-W%010d", name.data(), module_name.data(), filter_height_iter, filter_width_iter);
 				std::string weight_filter_name(weight_filter_name_char);
 				Weight<TensorT> weight_filter(weight_filter_name, weight_init, solver);
 				weight_filter.setModuleName(module_name);
@@ -1125,12 +1125,12 @@ public:
 
 						// Weight<TensorT> name
 						char weight_filter_name_char[512];
-						sprintf(weight_filter_name_char, "%s-%s_H%d-W%d", name.data(), module_name.data(), filter_height_iter, filter_width_iter);
+						sprintf(weight_filter_name_char, "%s-%s_H%010d-W%010d", name.data(), module_name.data(), filter_height_iter, filter_width_iter);
 						std::string weight_filter_name(weight_filter_name_char);
 
 						// Output node name
 						char output_name_char[512];
-						sprintf(output_name_char, "%s-out_H%d-W%d", name.data(), output_height_iter + output_height_zero_padding, output_width_iter + output_width_zero_padding);
+						sprintf(output_name_char, "%s-out_H%010d-W%010d", name.data(), output_height_iter + output_height_zero_padding, output_width_iter + output_width_zero_padding);
 						std::string output_name(output_name_char);
 
 						// Link name
@@ -1184,7 +1184,7 @@ public:
 		for (size_t filter_height_iter = 0; filter_height_iter < extent_height; ++filter_height_iter) {
 			for (size_t filter_width_iter = 0; filter_width_iter < extent_width; ++filter_width_iter) {
 				char weight_filter_name_char[512];
-				sprintf(weight_filter_name_char, "%s-%s_H%d-W%d", name.data(), module_name.data(), filter_height_iter, filter_width_iter);
+				sprintf(weight_filter_name_char, "%s-%s_H%010d-W%010d", name.data(), module_name.data(), filter_height_iter, filter_width_iter);
 				std::string weight_filter_name(weight_filter_name_char);
 				Weight<TensorT> weight_filter(weight_filter_name, weight_init, solver);
 				weight_filter.setModuleName(module_name);
@@ -1248,12 +1248,12 @@ public:
 
 						// Weight<TensorT> name
 						char weight_filter_name_char[512];
-						sprintf(weight_filter_name_char, "%s-%s_H%d-W%d", name.data(), module_name.data(), filter_height_iter, filter_width_iter);
+						sprintf(weight_filter_name_char, "%s-%s_H%010d-W%010d", name.data(), module_name.data(), filter_height_iter, filter_width_iter);
 						std::string weight_filter_name(weight_filter_name_char);
 
 						// Output node name
 						char output_name_char[512];
-						sprintf(output_name_char, "%s-out_H%d-W%d", name.data(), output_height_iter + output_height_zero_padding, output_width_iter + output_width_zero_padding);
+						sprintf(output_name_char, "%s-out_H%010d-W%010d", name.data(), output_height_iter + output_height_zero_padding, output_width_iter + output_width_zero_padding);
 						std::string output_name(output_name_char);
 						assert(std::count(sink_node_names.begin(), sink_node_names.end(), output_name) == 1);
 
@@ -1328,7 +1328,7 @@ public:
 			for (size_t output_height_iter = 0; output_height_iter < output_padded_height; ++output_height_iter) {
 				if (output_height_iter < output_height_zero_padding || output_height_iter >= output_padded_height - output_height_zero_padding) {
 					char bias_name_char[512];
-					sprintf(bias_name_char, "%s-out-padding_H%d-W%d", name.data(), output_height_iter, output_width_iter);
+					sprintf(bias_name_char, "%s-out-padding_H%010d-W%010d", name.data(), output_height_iter, output_width_iter);
 					std::string bias_name(bias_name_char);
 					Node<TensorT> bias(bias_name, NodeType::zero, NodeStatus::activated, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
 					bias.setModuleName(module_name);
@@ -1338,7 +1338,7 @@ public:
 				}
 				else if (output_width_iter < output_width_zero_padding || output_width_iter >= output_padded_width - output_width_zero_padding) {
 					char bias_name_char[512];
-					sprintf(bias_name_char, "%s-out-padding_H%d-W%d", name.data(), output_height_iter, output_width_iter);
+					sprintf(bias_name_char, "%s-out-padding_H%010d-W%010d", name.data(), output_height_iter, output_width_iter);
 					std::string bias_name(bias_name_char);
 					Node<TensorT> bias(bias_name, NodeType::zero, NodeStatus::activated, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
 					bias.setModuleName(module_name);
@@ -1348,7 +1348,7 @@ public:
 				}
 				else {
 					char output_name_char[512];
-					sprintf(output_name_char, "%s-out_H%d-W%d", name.data(), output_height_iter, output_width_iter);
+					sprintf(output_name_char, "%s-out_H%010d-W%010d", name.data(), output_height_iter, output_width_iter);
 					std::string output_name(output_name_char);
 					Node<TensorT> output(output_name, NodeType::hidden, NodeStatus::activated, node_activation, node_activation_grad, node_integration, node_integration_error, node_integration_weight_grad);
 					output.setModuleName(module_name);
@@ -1374,7 +1374,7 @@ public:
 		for (size_t filter_height_iter = 0; filter_height_iter < extent_height; ++filter_height_iter) {
 			for (size_t filter_width_iter = 0; filter_width_iter < extent_width; ++filter_width_iter) {
 				char weight_filter_name_char[512];
-				sprintf(weight_filter_name_char, "%s-%s_H%d-W%d", name.data(), module_name.data(), filter_height_iter, filter_width_iter);
+				sprintf(weight_filter_name_char, "%s-%s_H%010d-W%010d", name.data(), module_name.data(), filter_height_iter, filter_width_iter);
 				std::string weight_filter_name(weight_filter_name_char);
 				Weight<TensorT> weight_filter(weight_filter_name, weight_init, solver);
 				weight_filter.setModuleName(module_name);
@@ -1425,12 +1425,12 @@ public:
 
 						// Weight name
 						char weight_filter_name_char[512];
-						sprintf(weight_filter_name_char, "%s-%s_H%d-W%d", name.data(), module_name.data(), filter_height_iter, filter_width_iter);
+						sprintf(weight_filter_name_char, "%s-%s_H%010d-W%010d", name.data(), module_name.data(), filter_height_iter, filter_width_iter);
 						std::string weight_filter_name(weight_filter_name_char);
 
 						// Output node name
 						char output_name_char[512];
-						sprintf(output_name_char, "%s-out_H%d-W%d", name.data(), filter_height_pos + output_height_zero_padding, filter_width_pos + output_width_zero_padding);
+						sprintf(output_name_char, "%s-out_H%010d-W%010d", name.data(), filter_height_pos + output_height_zero_padding, filter_width_pos + output_width_zero_padding);
 						std::string output_name(output_name_char);
 
 						// Link name
@@ -1472,7 +1472,7 @@ public:
 		for (size_t filter_height_iter = 0; filter_height_iter < extent_height; ++filter_height_iter) {
 			for (size_t filter_width_iter = 0; filter_width_iter < extent_width; ++filter_width_iter) {
 				char weight_filter_name_char[512];
-				sprintf(weight_filter_name_char, "%s-%s_H%d-W%d", name.data(), module_name.data(), filter_height_iter, filter_width_iter);
+				sprintf(weight_filter_name_char, "%s-%s_H%010d-W%010d", name.data(), module_name.data(), filter_height_iter, filter_width_iter);
 				std::string weight_filter_name(weight_filter_name_char);
 				Weight<TensorT> weight_filter(weight_filter_name, weight_init, solver);
 				weight_filter.setModuleName(module_name);
@@ -1523,12 +1523,12 @@ public:
 
 						// Weight name
 						char weight_filter_name_char[512];
-						sprintf(weight_filter_name_char, "%s-%s_H%d-W%d", name.data(), module_name.data(), filter_height_iter, filter_width_iter);
+						sprintf(weight_filter_name_char, "%s-%s_H%010d-W%010d", name.data(), module_name.data(), filter_height_iter, filter_width_iter);
 						std::string weight_filter_name(weight_filter_name_char);
 
 						// Output node name
 						char output_name_char[512];
-						sprintf(output_name_char, "%s-out_H%d-W%d", name.data(), filter_height_pos + output_height_zero_padding, filter_width_pos + output_width_zero_padding);
+						sprintf(output_name_char, "%s-out_H%010d-W%010d", name.data(), filter_height_pos + output_height_zero_padding, filter_width_pos + output_width_zero_padding);
 						std::string output_name(output_name_char);
 
 						// Link name
@@ -1758,7 +1758,7 @@ public:
 
 			// Make the sampler nodes
 			char sampler_name_char[512];
-			sprintf(sampler_name_char, "%s_%d-Sampler", name.data(), i);
+			sprintf(sampler_name_char, "%s_%010d-Sampler", name.data(), i);
 			std::string sampler_name(sampler_name_char);
 			Node<TensorT> sampler(sampler_name, NodeType::input, NodeStatus::initialized, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
 			sampler.setModuleName(module_name);
@@ -1794,7 +1794,7 @@ public:
 
 			// Make the output nodes
 			char output_name_char[512];
-			sprintf(output_name_char, "%s_%d", name.data(), i);
+			sprintf(output_name_char, "%s_%010d", name.data(), i);
 			std::string output_name(output_name_char);
 			Node<TensorT> output(output_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
 			output.setModuleName(module_name);
@@ -1847,7 +1847,7 @@ public:
 		for (size_t i = 0; i < encoding_node_names.size(); ++i) {
 			// Make the output node
 			char output_name_char[512];
-			sprintf(output_name_char, "%s-Output-%d", name.data(), i);
+			sprintf(output_name_char, "%s-Output-%010d", name.data(), i);
 			std::string output_name(output_name_char);
 			Node<TensorT> output(output_name, NodeType::output, NodeStatus::initialized, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
 			output.setModuleName(module_name);
@@ -1865,7 +1865,7 @@ public:
 
 			// Make the sampler nodes
 			char sampler_name_char[512];
-			sprintf(sampler_name_char, "%s-Sampler-%d", name.data(), i);
+			sprintf(sampler_name_char, "%s-Sampler-%010d", name.data(), i);
 			std::string sampler_name(sampler_name_char);
 			Node<TensorT> sampler(sampler_name, NodeType::input, NodeStatus::initialized, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
 			sampler.setModuleName(module_name);
@@ -2114,7 +2114,7 @@ public:
 
 			// Make the input node
 			char blockInput_name_char[512];
-			sprintf(blockInput_name_char, "%s-BlockInput-%d", name.data(), cell_iter);
+			sprintf(blockInput_name_char, "%s-BlockInput-%010d", name.data(), cell_iter);
 			std::string blockInput_name(blockInput_name_char);
 			Node<TensorT> blockInput(blockInput_name, NodeType::hidden, NodeStatus::initialized, node_activation, node_activation_grad, node_integration, node_integration_error, node_integration_weight_grad);
 			blockInput.setModuleName(module_name);
@@ -2124,7 +2124,7 @@ public:
 
 			// Make the input multiplier node
 			char blockMultInput_name_char[512];
-			sprintf(blockMultInput_name_char, "%s-BlockMultInput-%d", name.data(), cell_iter);
+			sprintf(blockMultInput_name_char, "%s-BlockMultInput-%010d", name.data(), cell_iter);
 			std::string blockMultInput_name(blockMultInput_name_char);
 			Node<TensorT> blockMultInput(blockMultInput_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new ProdOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new ProdErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new ProdWeightGradOp<TensorT>()));
 			blockMultInput.setModuleName(module_name);
@@ -2133,7 +2133,7 @@ public:
 
 			// Make the output multiplier node[add drop prob]
 			char blockOutput_name_char[512];
-			sprintf(blockOutput_name_char, "%s-BlockMultOutput-%d", name.data(), cell_iter);
+			sprintf(blockOutput_name_char, "%s-BlockMultOutput-%010d", name.data(), cell_iter);
 			std::string blockOutput_name(blockOutput_name_char);
 			Node<TensorT> blockOutput(blockOutput_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new ProdOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new ProdErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new ProdWeightGradOp<TensorT>()));
 			blockOutput.setModuleName(module_name);
@@ -2144,7 +2144,7 @@ public:
 
 			// Make the memory cell
 			char blockMemoryCell_name_char[512];
-			sprintf(blockMemoryCell_name_char, "%s-BlockMemoryCell-%d", name.data(), cell_iter);
+			sprintf(blockMemoryCell_name_char, "%s-BlockMemoryCell-%010d", name.data(), cell_iter);
 			std::string blockMemoryCell_name(blockMemoryCell_name_char);
 			Node<TensorT> blockMemoryCell(blockMemoryCell_name, NodeType::recursive, NodeStatus::initialized, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
 			blockMemoryCell.setModuleName(module_name);
@@ -2237,7 +2237,7 @@ public:
 			if (forget_gate) {
 				// Make the forget gate multiplier node
 				char blockMultForget_name_char[512];
-				sprintf(blockMultForget_name_char, "%s-BlockMultForget-%d", name.data(), cell_iter);
+				sprintf(blockMultForget_name_char, "%s-BlockMultForget-%010d", name.data(), cell_iter);
 				std::string blockMultForget_name(blockMultForget_name_char);
 				Node<TensorT> blockMultForget(blockMultForget_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new ProdOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new ProdErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new ProdWeightGradOp<TensorT>()));
 				blockMultForget.setModuleName(module_name);
@@ -2323,7 +2323,7 @@ public:
 			if (biases) {  // biases, links, and weights for input
 				// Make the input bias nodes
 				char iBias_name_char[512];
-				sprintf(iBias_name_char, "%s-bias-%d", blockInput_name.data(), cell_iter);
+				sprintf(iBias_name_char, "%s-bias-%010d", blockInput_name.data(), cell_iter);
 				std::string iBias_name(iBias_name_char);
 				Node<TensorT> iBias(iBias_name, NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
 				iBias.setDropProbability(drop_out_prob);
@@ -2578,7 +2578,7 @@ public:
 		for (int cell_iter = 0; cell_iter < n_cells; ++cell_iter) {
 			// Make the input node
 			char blockInput_name_char[512];
-			sprintf(blockInput_name_char, "%s-BlockInput-%d", name.data(), cell_iter);
+			sprintf(blockInput_name_char, "%s-BlockInput-%010d", name.data(), cell_iter);
 			std::string blockInput_name(blockInput_name_char);
 			Node<TensorT> blockInput(blockInput_name, NodeType::hidden, NodeStatus::initialized, node_activation, node_activation_grad, node_integration, node_integration_error, node_integration_weight_grad);
 			blockInput.setModuleName(module_name);
@@ -2587,7 +2587,7 @@ public:
 
 			// Make the input multiplier node
 			char blockMultInput_name_char[512];
-			sprintf(blockMultInput_name_char, "%s-BlockMultInput-%d", name.data(), cell_iter);
+			sprintf(blockMultInput_name_char, "%s-BlockMultInput-%010d", name.data(), cell_iter);
 			std::string blockMultInput_name(blockMultInput_name_char);
 			Node<TensorT> blockMultInput(blockMultInput_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new ProdOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new ProdErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new ProdWeightGradOp<TensorT>()));
 			blockMultInput.setModuleName(module_name);
@@ -2595,7 +2595,7 @@ public:
 
 			// Make the output multiplier node[add drop prob]
 			char blockOutput_name_char[512];
-			sprintf(blockOutput_name_char, "%s-BlockMultOutput-%d", name.data(), cell_iter);
+			sprintf(blockOutput_name_char, "%s-BlockMultOutput-%010d", name.data(), cell_iter);
 			std::string blockOutput_name(blockOutput_name_char);
 			Node<TensorT> blockOutput(blockOutput_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new ProdOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new ProdErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new ProdWeightGradOp<TensorT>()));
 			blockOutput.setModuleName(module_name);
@@ -2605,7 +2605,7 @@ public:
 
 			// Make the memory cell
 			char blockMemoryCell_name_char[512];
-			sprintf(blockMemoryCell_name_char, "%s-BlockMemoryCell-%d", name.data(), cell_iter);
+			sprintf(blockMemoryCell_name_char, "%s-BlockMemoryCell-%010d", name.data(), cell_iter);
 			std::string blockMemoryCell_name(blockMemoryCell_name_char);
 			Node<TensorT> blockMemoryCell(blockMemoryCell_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
 			blockMemoryCell.setModuleName(module_name);
@@ -2678,7 +2678,7 @@ public:
 			if (forget_gate) {
 				// Make the forget gate multiplier node
 				char blockMultForget_name_char[512];
-				sprintf(blockMultForget_name_char, "%s-BlockMultForget-%d", name.data(), cell_iter);
+				sprintf(blockMultForget_name_char, "%s-BlockMultForget-%010d", name.data(), cell_iter);
 				std::string blockMultForget_name(blockMultForget_name_char);
 				Node<TensorT> blockMultForget(blockMultForget_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new ProdOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new ProdErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new ProdWeightGradOp<TensorT>()));
 				blockMultForget.setModuleName(module_name);
@@ -2763,7 +2763,7 @@ public:
 			if (biases) {  // biases, links, and weights for input
 				// Make the input bias nodes
 				char iBias_name_char[512];
-				sprintf(iBias_name_char, "%s-bias-%d", blockInput_name.data(), cell_iter);
+				sprintf(iBias_name_char, "%s-bias-%010d", blockInput_name.data(), cell_iter);
 				std::string iBias_name(iBias_name_char);
 				Node<TensorT> iBias(iBias_name, NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
 				iBias.setDropProbability(drop_out_prob);
