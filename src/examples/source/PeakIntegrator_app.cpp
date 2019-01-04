@@ -301,9 +301,8 @@ public:
 				std::string skip_name = "Skip" + std::to_string(i);
 				model_builder.addSinglyConnected(model, skip_name, node_names_input, node_names,
 					//std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names_input.size(), 2)),
-					//std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f);
 					std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1.0)),
-					std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0f);
+					std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f);
 			}
 			node_names_input = node_names;
 
@@ -752,8 +751,8 @@ void main_DenoisingAE(const bool& make_model, const bool& load_weight_values, co
 	std::vector<std::string> output_nodes_intensity;
 	for (int i = 0; i < input_size; ++i)
 		//output_nodes_intensity.push_back("Intensity_Out_" + std::to_string(i));
-		output_nodes_intensity.push_back("DecScalar1_" + std::to_string(i));
-		//output_nodes_intensity.push_back("Attention1_MultiHead_" + std::to_string(i));
+		//output_nodes_intensity.push_back("DecScalar1_" + std::to_string(i));
+		output_nodes_intensity.push_back("Attention1_MultiHead_" + std::to_string(i));
 
 	// define the model trainers and resources for the trainers
 	std::vector<ModelInterpreterDefaultDevice<float>> model_interpreters;
@@ -788,8 +787,8 @@ void main_DenoisingAE(const bool& make_model, const bool& load_weight_values, co
 	Model<float> model;
 	if (make_model) {
 		//model_trainer.makeDenoisingAE(model, input_size, encoding_size, n_hidden);
-		//model_trainer.makeMultiHeadDotProdAttention(model, input_size, input_size, { 2, 2 }, { 48, 48 }, { (int)input_size, (int)input_size }, false, true, false);
-		model_trainer.makeCompactCovNetAE(model, input_size, input_size, encoding_size, 4, 4, true);
+		model_trainer.makeMultiHeadDotProdAttention(model, input_size, input_size, { 1, 1 }, { 12, 12 }, { (int)input_size, (int)input_size }, false, true, false);
+		//model_trainer.makeCompactCovNetAE(model, input_size, input_size, encoding_size, 4, 4, true);
 	}
 	else {
 		// read in the trained model
