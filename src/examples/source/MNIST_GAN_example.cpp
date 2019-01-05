@@ -333,22 +333,38 @@ void main_GAN() {
 
 	// Make the input nodes
 	std::vector<std::string> input_nodes;
-	for (int i = 0; i < input_size; ++i)
-		input_nodes.push_back("Input_" + std::to_string(i));
+	for (int i = 0; i < input_size; ++i) {
+		char name_char[512];
+		sprintf(name_char, "Input_%012d", i);
+		std::string name(name_char);
+		input_nodes.push_back(name);
+	}
 
 	// Make the encoding nodes and add them to the input
-	for (int i = 0; i < encoding_size; ++i)
-		input_nodes.push_back("Encoding_" + std::to_string(i));
+	for (int i = 0; i < encoding_size; ++i) {
+		char name_char[512];
+		sprintf(name_char, "Encoding_%012d", i);
+		std::string name(name_char);
+		input_nodes.push_back(name);
+	}
 
 	// Make the discriminator output nodes
 	std::vector<std::string> output_nodes_dec;
-	for (int i = 0; i < 1; ++i)
-		output_nodes_dec.push_back("DisOut_" + std::to_string(i));
+	for (int i = 0; i < 1; ++i) {
+		char name_char[512];
+		sprintf(name_char, "DisOut_%012d", i);
+		std::string name(name_char);
+		output_nodes_dec.push_back(name);
+	}
 
 	// Make the generator output nodes
 	std::vector<std::string> encoding_nodes_gen;
-	for (int i = 0; i < encoding_size; ++i)
-		encoding_nodes_gen.push_back("GenOut_" + std::to_string(i));
+	for (int i = 0; i < encoding_size; ++i) {
+		char name_char[512];
+		sprintf(name_char, "GenOut_%012d", i);
+		std::string name(name_char);
+		encoding_nodes_gen.push_back(name);
+	}
 
 	// define the model trainers and resources for the trainers
 	std::vector<ModelInterpreterDefaultDevice<float>> model_interpreters;

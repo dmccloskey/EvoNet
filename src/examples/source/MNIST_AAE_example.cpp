@@ -494,18 +494,30 @@ void main_AAELatentZEvaluate() {
 
 	// Make the input nodes
 	std::vector<std::string> input_nodes;
-	for (int i = 0; i < input_size; ++i)
-		input_nodes.push_back("Input_" + std::to_string(i));
+	for (int i = 0; i < input_size; ++i) {
+		char name_char[512];
+		sprintf(name_char, "Input_%012d", i);
+		std::string name(name_char);
+		input_nodes.push_back(name);
+	}
 
 	// Make the output nodes
 	std::vector<std::string> decoder_output_nodes;
-	for (int i = 0; i < input_size; ++i)
-		decoder_output_nodes.push_back("DE-Output_" + std::to_string(i));
+	for (int i = 0; i < input_size; ++i) {
+		char name_char[512];
+		sprintf(name_char, "DE-Output_%012d", i);
+		std::string name(name_char);
+		decoder_output_nodes.push_back(name);
+	}
 
 	// Make the output nodes
 	std::vector<std::string> discriminator_output_nodes;
-	for (int i = 0; i < encoding_size; ++i)
-		discriminator_output_nodes.push_back("DS-Output-" + std::to_string(i));
+	for (int i = 0; i < encoding_size; ++i) {
+		char name_char[512];
+		sprintf(name_char, "DS-Output-%012d", i);
+		std::string name(name_char);
+		discriminator_output_nodes.push_back(name);
+	}
 
 	// define the model trainers and resources for the trainers
 	std::vector<ModelInterpreterDefaultDevice<float>> model_interpreters;

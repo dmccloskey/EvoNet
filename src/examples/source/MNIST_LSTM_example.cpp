@@ -265,13 +265,21 @@ void main_LSTMTrain() {
 
 	// Make the input nodes
 	std::vector<std::string> input_nodes;
-	for (int i = 0; i < 1; ++i)
-		input_nodes.push_back("Input_" + std::to_string(i));
+	for (int i = 0; i < 1; ++i) {
+		char name_char[512];
+		sprintf(name_char, "Input_%012d", i);
+		std::string name(name_char);
+		input_nodes.push_back(name);
+	}
 
 	// Make the output nodes
 	std::vector<std::string> output_nodes;
-	for (int i = 0; i < data_simulator.mnist_labels.size(); ++i)
-		output_nodes.push_back("Output_" + std::to_string(i));
+	for (int i = 0; i < data_simulator.mnist_labels.size(); ++i) {
+		char name_char[512];
+		sprintf(name_char, "Output_%012d", i);
+		std::string name(name_char);
+		output_nodes.push_back(name);
+	}
 
 	// define the model trainers and resources for the trainers
 	std::vector<ModelInterpreterDefaultDevice<float>> model_interpreters;

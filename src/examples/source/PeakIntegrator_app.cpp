@@ -743,7 +743,7 @@ void main_DenoisingAE(const bool& make_model, const bool& load_weight_values, co
 	//	input_nodes.push_back("Time_" + std::to_string(i));
 	for (int i = 0; i < input_size; ++i) {
 		char name_char[512];
-		sprintf(name_char, "Intensity_%010d", i);
+		sprintf(name_char, "Intensity_%012d", i);
 		std::string name(name_char);
 		input_nodes.push_back(name);
 	}
@@ -752,16 +752,16 @@ void main_DenoisingAE(const bool& make_model, const bool& load_weight_values, co
 	std::vector<std::string> output_nodes_time;
 	for (int i = 0; i < input_size; ++i) {
 		char name_char[512];
-		sprintf(name_char, "Time_Out_%010d", i);
+		sprintf(name_char, "Time_Out_%012d", i);
 		std::string name(name_char);
 		output_nodes_time.push_back(name);
 	}
 	std::vector<std::string> output_nodes_intensity;
 	for (int i = 0; i < input_size; ++i) {
 		char name_char[512];
-		//sprintf(name_char, "Intensity_Out_%010d", i);
-		//sprintf(name_char, "DecScalar1_%010d", i);
-		sprintf(name_char, "Attention1_MultiHead_%010d", i);
+		//sprintf(name_char, "Intensity_Out_%012d", i);
+		//sprintf(name_char, "DecScalar1_%012d", i);
+		sprintf(name_char, "Attention1_MultiHead_%012d", i);
 		std::string name(name_char);
 		output_nodes_intensity.push_back(name);
 	}

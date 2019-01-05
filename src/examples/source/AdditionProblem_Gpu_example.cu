@@ -363,8 +363,8 @@ int main(int argc, char** argv)
 	const int n_threads = n_hard_threads; // the number of threads
 
 	// define the input/output nodes
-	std::vector<std::string> input_nodes = { "Input_0", "Input_1" };
-	std::vector<std::string> output_nodes = { "Output_0" };
+	std::vector<std::string> input_nodes = { "Input_000000000000", "Input_000000000001" };
+	std::vector<std::string> output_nodes = { "Output_000000000000" };
 
 	// define the data simulator
 	DataSimulatorExt<float> data_simulator;
