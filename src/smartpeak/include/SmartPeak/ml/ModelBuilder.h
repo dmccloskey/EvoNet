@@ -1898,14 +1898,17 @@ public:
 
 		for (int block_iter = 0; block_iter < n_blocks; ++block_iter) {
 			// Make the LSTM cell
+			char name_char[512];
+			sprintf(name_char, "%s-%012d", name, block_iter);
+			std::string node_name(name_char);
 			if (block_version == 1) {
-				std::vector<std::string> output_node_names = addLSTMBlock1(model, name + "-" + std::to_string(block_iter), module_name, source_node_names, n_cells, node_activation, node_activation_grad,
+				std::vector<std::string> output_node_names = addLSTMBlock1(model, node_name, module_name, source_node_names, n_cells, node_activation, node_activation_grad,
 					node_integration, node_integration_error, node_integration_weight_grad,
 					weight_init, solver, drop_out_prob, drop_connection_prob, biases, forget_gate);
 				for (const std::string& node_name : output_node_names) node_names.push_back(node_name);
 			}
 			else if (block_version == 2) {
-				std::vector<std::string> output_node_names = addLSTMBlock2(model, name + "-" + std::to_string(block_iter), module_name, source_node_names, n_cells, node_activation, node_activation_grad,
+				std::vector<std::string> output_node_names = addLSTMBlock2(model, node_name, module_name, source_node_names, n_cells, node_activation, node_activation_grad,
 					node_integration, node_integration_error, node_integration_weight_grad,
 					weight_init, solver, drop_out_prob, drop_connection_prob, biases, forget_gate);
 				for (const std::string& node_name : output_node_names) node_names.push_back(node_name);
@@ -2834,8 +2837,11 @@ public:
 		std::vector<std::string> node_names_heads;
 		for (size_t i = 0; i < n_heads; ++i) {
 			std::vector<std::string> node_names_attention;
+			char name_char[512];
+			sprintf(name_char, "%s-%012d", name, i);
+			std::string node_name(name_char);
 			if (attention_type == "DotProd") {
-				node_names_attention = addDotProdAttention(model, name + "-" + std::to_string(i), module_name,
+				node_names_attention = addDotProdAttention(model, node_name, module_name,
 					query_node_names, key_node_names, values_node_names, key_length, values_length, node_activation, node_activation_grad,
 					weight_init, solver, drop_out_prob, drop_connection_prob, biases, split_attention_layers);
 			}
