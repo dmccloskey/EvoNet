@@ -149,13 +149,13 @@ BOOST_AUTO_TEST_CASE(addFullyConnected2)
 	model_builder.addFullyConnected(model, "Mod1", node_names_encoding, node_names,
 		std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new SGDOp<float>(0.1, 0.9)), 0.8f);
 
-	std::vector<std::string> node_names_test = { "Hidden_000000000000", "Hidden-bias_000000000000", "Hidden_000000000001", "Hidden-bias_000000000001", "Encoding_000000000000", "Encoding_00000000000000000000001" };
+	std::vector<std::string> node_names_test = { "Hidden_000000000000", "Hidden-bias_000000000000", "Hidden_000000000001", "Hidden-bias_000000000001", "Encoding_000000000000", "Encoding_000000000001" };
 	std::vector<std::string> link_names_test = { "Hidden-bias_000000000000_to_Hidden_000000000000", "Hidden-bias_000000000001_to_Hidden_000000000001",
 		"Input_000000000000_to_Hidden_000000000000", "Input_000000000000_to_Hidden_000000000001", "Input_000000000001_to_Hidden_000000000000", "Input_000000000001_to_Hidden_000000000001",
-		"Encoding_000000000000_to_Hidden_000000000000", "Encoding_000000000000_to_Hidden_000000000001", "Encoding_00000000000000000000001_to_Hidden_000000000000", "Encoding_00000000000000000000001_to_Hidden_000000000001"};
+		"Encoding_000000000000_to_Hidden_000000000000", "Encoding_000000000000_to_Hidden_000000000001", "Encoding_000000000001_to_Hidden_000000000000", "Encoding_000000000001_to_Hidden_000000000001"};
 	std::vector<std::string> weight_names_test = { "Hidden-bias_000000000000_to_Hidden_000000000000", "Hidden-bias_000000000001_to_Hidden_000000000001",
 		"Input_000000000000_to_Hidden_000000000000", "Input_000000000000_to_Hidden_000000000001", "Input_000000000000_to_Hidden_000000000000", "Input_000000000000_to_Hidden_000000000001",
-		"Encoding_000000000000_to_Hidden_000000000000", "Encoding_000000000000_to_Hidden_000000000001", "Encoding_00000000000000000000001_to_Hidden_000000000000", "Encoding_00000000000000000000001_to_Hidden_000000000001" };
+		"Encoding_000000000000_to_Hidden_000000000000", "Encoding_000000000000_to_Hidden_000000000001", "Encoding_000000000001_to_Hidden_000000000000", "Encoding_000000000001_to_Hidden_000000000001" };
 
 	// check the nodes
 	for (const std::string& node_name: node_names_test)
@@ -171,7 +171,7 @@ BOOST_AUTO_TEST_CASE(addFullyConnected2)
 			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.0, 1e-3);
 			BOOST_CHECK_EQUAL(model.getNode(node_name).getModuleName(), "Mod1");
 		}
-		else if (node_name == "Encoding_000000000000" || node_name == "Encoding_00000000000000000000001")
+		else if (node_name == "Encoding_000000000000" || node_name == "Encoding_000000000001")
 		{
 			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
 			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
@@ -305,11 +305,11 @@ BOOST_AUTO_TEST_CASE(addSinglyConnected2)
 	model_builder.addSinglyConnected(model, "Mod1", node_names_encoding, node_names,
 		std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new SGDOp<float>(0.1, 0.9)), 0.8f);
 
-	std::vector<std::string> node_names_test = { "Hidden_000000000000", "Hidden-bias_000000000000", "Hidden_000000000001", "Hidden-bias_000000000001", "Encoding_000000000000", "Encoding_00000000000000000000001" };
+	std::vector<std::string> node_names_test = { "Hidden_000000000000", "Hidden-bias_000000000000", "Hidden_000000000001", "Hidden-bias_000000000001", "Encoding_000000000000", "Encoding_000000000001" };
 	std::vector<std::string> link_names_test = { "Hidden-bias_000000000000_to_Hidden_000000000000", "Hidden-bias_000000000001_to_Hidden_000000000001",
-		"Input_000000000000_to_Hidden_000000000000", "Input_000000000001_to_Hidden_000000000001",	"Encoding_000000000000_to_Hidden_000000000000", "Encoding_00000000000000000000001_to_Hidden_000000000001" };
+		"Input_000000000000_to_Hidden_000000000000", "Input_000000000001_to_Hidden_000000000001",	"Encoding_000000000000_to_Hidden_000000000000", "Encoding_000000000001_to_Hidden_000000000001" };
 	std::vector<std::string> weight_names_test = { "Hidden-bias_000000000000_to_Hidden_000000000000", "Hidden-bias_000000000001_to_Hidden_000000000001",
-		"Input_000000000000_to_Hidden_000000000000", "Input_000000000001_to_Hidden_000000000001",	"Encoding_000000000000_to_Hidden_000000000000", "Encoding_00000000000000000000001_to_Hidden_000000000001" };
+		"Input_000000000000_to_Hidden_000000000000", "Input_000000000001_to_Hidden_000000000001",	"Encoding_000000000000_to_Hidden_000000000000", "Encoding_000000000001_to_Hidden_000000000001" };
 
 	// check the nodes
 	for (const std::string& node_name : node_names_test)
@@ -325,7 +325,7 @@ BOOST_AUTO_TEST_CASE(addSinglyConnected2)
 			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.0, 1e-3);
 			BOOST_CHECK_EQUAL(model.getNode(node_name).getModuleName(), "Mod1");
 		}
-		else if (node_name == "Encoding_000000000000" || node_name == "Encoding_00000000000000000000001")
+		else if (node_name == "Encoding_000000000000" || node_name == "Encoding_000000000001")
 		{
 			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
 			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
@@ -894,17 +894,17 @@ BOOST_AUTO_TEST_CASE(addGaussianEncoding)
 
 	std::vector<std::string> node_names_test = {
 		"LogVar_000000000000-Scalar", "LogVar_000000000001-Scalar", "LogVar_000000000000-StdDev", "LogVar_000000000001-StdDev",
-		"Encoding_000000000000", "Encoding_00000000000000000000001", "Encoding_000000000000-Sampler", "Encoding_00000000000000000000001-Sampler" };
+		"Encoding_000000000000", "Encoding_000000000001", "Encoding_000000000000-Sampler", "Encoding_000000000001-Sampler" };
 	std::vector<std::string> link_names_test = {
 		"LogVar_000000000000_to_LogVar_000000000000-Scalar","Encoding_000000000000-Sampler_to_LogVar_000000000000-StdDev",
-		"LogVar_000000000001_to_LogVar_000000000001-Scalar","Encoding_00000000000000000000001-Sampler_to_LogVar_000000000001-StdDev",
+		"LogVar_000000000001_to_LogVar_000000000001-Scalar","Encoding_000000000001-Sampler_to_LogVar_000000000001-StdDev",
 		"LogVar_000000000000-StdDev_to_Encoding_000000000000","Mu_000000000000_to_Encoding_000000000000",
-		"LogVar_000000000001-StdDev_to_Encoding_00000000000000000000001","Mu_000000000001_to_Encoding_00000000000000000000001" };
+		"LogVar_000000000001-StdDev_to_Encoding_000000000001","Mu_000000000001_to_Encoding_000000000001" };
 	std::vector<std::string> weight_names_test = {
 		"LogVar_000000000000_to_LogVar_000000000000-Scalar","Encoding_000000000000-Sampler_to_LogVar_000000000000-StdDev",
-		"LogVar_000000000001_to_LogVar_000000000001-Scalar","Encoding_00000000000000000000001-Sampler_to_LogVar_000000000001-StdDev",
+		"LogVar_000000000001_to_LogVar_000000000001-Scalar","Encoding_000000000001-Sampler_to_LogVar_000000000001-StdDev",
 		"LogVar_000000000000-StdDev_to_Encoding_000000000000","Mu_000000000000_to_Encoding_000000000000",
-		"LogVar_000000000001-StdDev_to_Encoding_00000000000000000000001","Mu_000000000001_to_Encoding_00000000000000000000001" };
+		"LogVar_000000000001-StdDev_to_Encoding_000000000001","Mu_000000000001_to_Encoding_000000000001" };
 
 	// NOTE: Node type no longer differentiates layers
 	//// check the input nodes
@@ -938,7 +938,7 @@ BOOST_AUTO_TEST_CASE(addGaussianEncoding)
 			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "ProdWeightGradOp");
 			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.0, 1e-3);
 		}
-		else if (node_name == "Encoding_000000000000-Sampler" || node_name == "Encoding_00000000000000000000001-Sampler")
+		else if (node_name == "Encoding_000000000000-Sampler" || node_name == "Encoding_000000000001-Sampler")
 		{
 			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
 			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
@@ -947,7 +947,7 @@ BOOST_AUTO_TEST_CASE(addGaussianEncoding)
 			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
 			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.0, 1e-3);
 		}
-		else if (node_name == "Encoding_000000000000" || node_name == "Encoding_00000000000000000000001")
+		else if (node_name == "Encoding_000000000000" || node_name == "Encoding_000000000001")
 		{
 			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
 			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");

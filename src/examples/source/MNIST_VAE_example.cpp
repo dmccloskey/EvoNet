@@ -129,13 +129,13 @@ public:
 		//if (n_epochs = 1000) {
 		//	// anneal the learning rate to 1e-4
 		//}
-		//if (n_epochs % 1000 == 0 && n_epochs != 0) {
-		//	// save the model every 1000 epochs
-		//	ModelFile<TensorT> data;
-		//	data.storeModelCsv(model.getName() + "_" + std::to_string(n_epochs) + "_nodes.csv",
-		//		model.getName() + "_" + std::to_string(n_epochs) + "_links.csv",
-		//		model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model);
-		//}
+		if (n_epochs % 1000 == 0 && n_epochs != 0) {
+			// save the model every 1000 epochs
+			ModelFile<TensorT> data;
+			data.storeModelCsv(model.getName() + "_" + std::to_string(n_epochs) + "_nodes.csv",
+				model.getName() + "_" + std::to_string(n_epochs) + "_links.csv",
+				model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model);
+		}
 	}
 };
 
@@ -435,8 +435,8 @@ void main_VAE(const bool& make_model, const bool& load_weight_values, const bool
 	ModelTrainerExt<float> model_trainer;
 	//model_trainer.setBatchSize(1); // evaluation only
 	model_trainer.setBatchSize(32);
-	model_trainer.setNEpochsTraining(1001);
-	model_trainer.setNEpochsValidation(25);
+	model_trainer.setNEpochsTraining(10001);
+	model_trainer.setNEpochsValidation(0);
 	model_trainer.setNEpochsEvaluation(100);
 	model_trainer.setMemorySize(1);
 	model_trainer.setVerbosityLevel(1);

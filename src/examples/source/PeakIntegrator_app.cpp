@@ -423,15 +423,6 @@ public:
 			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(n_encodings, 2)),
 			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 
-		//node_names = model_builder.addFullyConnected(model, "DecScalar1", "DecScalar1", node_names, n_inputs,
-		//	std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>(0.01)),
-		//	std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>(0.01)),
-		//	std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-		//	std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-		//	std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-		//	std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(n_inputs, 2)),
-		//	std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
-
 		// Add the first projection
 		std::vector<std::string> node_names_proj0;
 		std::string proj_name = "DecProj0-" + std::to_string(0);
@@ -487,14 +478,14 @@ public:
 				std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
 				true);
 		}
-/*		node_names = model_builder.addSinglyConnected(model, "Intensity_Out", "Intensity_Out", node_names_proj1, node_names_proj1.size(),
+		node_names = model_builder.addSinglyConnected(model, "Intensity_Out", "Intensity_Out", node_names_proj1, node_names_proj1.size(),
 			std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
 			std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
 			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
 			std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
 			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
 			std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
-			std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0f, 0.0f);*/		
+			std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0f, 0.0f);		
 
 		for (const std::string& node_name : node_names)
 			model.getNodesMap().at(node_name)->setType(NodeType::output);
@@ -760,7 +751,6 @@ void main_DenoisingAE(const bool& make_model, const bool& load_weight_values, co
 	for (int i = 0; i < input_size; ++i) {
 		char name_char[512];
 		//sprintf(name_char, "Intensity_Out_%012d", i);
-		//sprintf(name_char, "DecScalar1_%012d", i);
 		sprintf(name_char, "Attention1_MultiHead_%012d", i);
 		std::string name(name_char);
 		output_nodes_intensity.push_back(name);
