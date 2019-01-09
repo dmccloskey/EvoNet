@@ -1,7 +1,7 @@
 /**TODO:  Add copyright*/
 
-#include <SmartPeak/ml/PopulationTrainerDefaultDevice.h>
-#include <SmartPeak/ml/ModelTrainerDefaultDevice.h>
+#include <SmartPeak/ml/PopulationTrainerGpu.h>
+#include <SmartPeak/ml/ModelTrainerGpu.h>
 #include <SmartPeak/ml/ModelReplicator.h>
 #include <SmartPeak/ml/ModelBuilder.h>
 #include <SmartPeak/ml/Model.h>
@@ -24,7 +24,7 @@ using namespace SmartPeak;
 
  // Extended 
 template<typename TensorT>
-class ModelTrainerExt : public ModelTrainerDefaultDevice<TensorT>
+class ModelTrainerExt : public ModelTrainerGpu<TensorT>
 {
 public:
 	/*
@@ -124,7 +124,7 @@ public:
 		const int& n_generations,
 		const int& n_epochs,
 		Model<TensorT>& model,
-		ModelInterpreterDefaultDevice<TensorT>& model_interpreter,
+		ModelInterpreterGpu<TensorT>& model_interpreter,
 		const std::vector<float>& model_errors) {
 		//if (n_epochs = 1000) {
 		//	// anneal the learning rate to 1e-4
@@ -195,7 +195,7 @@ public:
 		assert(n_input_nodes == n_input_pixels + n_encodings);
 
 		// make a vector of sample_indices [BUG FREE]
-		Eigen::Tensor<int, 1> sample_indices = this->getValidationIndices(batch_size, n_epochs);
+		Eigen::Tensor<int, 1> sample_indices = this->getTrainingIndices(batch_size, n_epochs);
 
 		std::random_device rd{};
 		std::mt19937 gen{ rd() };
@@ -240,19 +240,7 @@ public:
 		assert(n_input_nodes == n_input_pixels + n_encodings);
 
 		// make a vector of sample_indices [BUG FREE]
-		this->mnist_sample_start_validation = this->mnist_sample_end_validation;
-		Eigen::Tensor<int, 1> sample_indices(batch_size*n_epochs);
-		int sample_index = this->mnist_sample_start_validation;
-		for (int i = 0; i < batch_size*n_epochs; ++i)
-		{
-			if (sample_index > this->validation_data.dimension(0) - 1)
-			{
-				sample_index = 0;
-			}
-			sample_indices(i) = sample_index;
-			++sample_index;
-		}
-		this->mnist_sample_end_validation = sample_index;
+		Eigen::Tensor<int, 1> sample_indices = this->getValidationIndices(batch_size, n_epochs);
 
 		// Reformat the MNIST image data for training
 		for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
@@ -314,7 +302,7 @@ public:
 };
 
 template<typename TensorT>
-class PopulationTrainerExt : public PopulationTrainerDefaultDevice<TensorT>
+class PopulationTrainerExt : public PopulationTrainerGpu<TensorT>
 {
 public:
 	void adaptivePopulationScheduler(
@@ -426,10 +414,10 @@ void main_VAE(const bool& make_model, const bool& load_weight_values, const bool
 	}
 
 	// define the model trainers and resources for the trainers
-	std::vector<ModelInterpreterDefaultDevice<float>> model_interpreters;
+	std::vector<ModelInterpreterGpu<float>> model_interpreters;
 	for (size_t i = 0; i < n_threads; ++i) {
 		ModelResources model_resources = { ModelDevice(0, 1) };
-		ModelInterpreterDefaultDevice<float> model_interpreter(model_resources);
+		ModelInterpreterGpu<float> model_interpreter(model_resources);
 		model_interpreters.push_back(model_interpreter);
 	}
 	ModelTrainerExt<float> model_trainer;

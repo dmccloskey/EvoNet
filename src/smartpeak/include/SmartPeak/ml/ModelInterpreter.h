@@ -1152,6 +1152,7 @@ namespace SmartPeak
 						if (argument.weight->getInitWeight()) {
 							TensorT tmp = argument.weight->getWeightInitOp()->operator()();
 							weight_value.push_back(tmp);
+							argument.weight->setWeight(tmp);
 							argument.weight->setInitWeight(false); // ensures that from now on the weight will not be re-initialized
 						}
 						else {

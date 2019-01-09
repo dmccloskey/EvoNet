@@ -195,7 +195,7 @@ public:
 		assert(n_input_nodes == n_input_pixels + n_encodings);
 
 		// make a vector of sample_indices [BUG FREE]
-		Eigen::Tensor<int, 1> sample_indices = this->getValidationIndices(batch_size, n_epochs);
+		Eigen::Tensor<int, 1> sample_indices = this->getTrainingIndices(batch_size, n_epochs);
 
 		std::random_device rd{};
 		std::mt19937 gen{ rd() };
@@ -240,19 +240,7 @@ public:
 		assert(n_input_nodes == n_input_pixels + n_encodings);
 
 		// make a vector of sample_indices [BUG FREE]
-		this->mnist_sample_start_validation = this->mnist_sample_end_validation;
-		Eigen::Tensor<int, 1> sample_indices(batch_size*n_epochs);
-		int sample_index = this->mnist_sample_start_validation;
-		for (int i = 0; i < batch_size*n_epochs; ++i)
-		{
-			if (sample_index > this->validation_data.dimension(0) - 1)
-			{
-				sample_index = 0;
-			}
-			sample_indices(i) = sample_index;
-			++sample_index;
-		}
-		this->mnist_sample_end_validation = sample_index;
+		Eigen::Tensor<int, 1> sample_indices = this->getValidationIndices(batch_size, n_epochs);
 
 		// Reformat the MNIST image data for training
 		for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {

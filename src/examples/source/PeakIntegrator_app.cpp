@@ -789,8 +789,8 @@ void main_DenoisingAE(const bool& make_model, const bool& load_weight_values, co
 	Model<float> model;
 	if (make_model) {
 		//model_trainer.makeDenoisingAE(model, input_size, encoding_size, n_hidden);
-		model_trainer.makeMultiHeadDotProdAttention(model, input_size, input_size, { 1, 1 }, { 12, 12 }, { (int)input_size, (int)input_size }, false, true, false);
-		//model_trainer.makeCompactCovNetAE(model, input_size, input_size, encoding_size, 4, 4, true);
+		//model_trainer.makeMultiHeadDotProdAttention(model, input_size, input_size, { 1, 1 }, { 12, 12 }, { (int)input_size, (int)input_size }, false, true, false);
+		model_trainer.makeCompactCovNetAE(model, input_size, input_size, encoding_size, 1, 1, false);
 	}
 	else {
 		// read in the trained model
