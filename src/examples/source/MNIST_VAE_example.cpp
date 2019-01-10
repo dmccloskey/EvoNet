@@ -190,7 +190,7 @@ public:
 		const int n_input_pixels = this->validation_data.dimension(1);
 		const int n_encodings = 20; // not ideal to have this hard coded...
 
-		//assert(n_output_nodes == n_input_pixels + 2 * n_encodings); // NOTE: uncomment when done testing
+		assert(n_output_nodes == n_input_pixels + 2 * n_encodings); 
 		assert(n_input_nodes == n_input_pixels + n_encodings);
 
 		// make a vector of sample_indices [BUG FREE]
@@ -235,7 +235,7 @@ public:
 		const int n_input_pixels = this->validation_data.dimension(1);
 		const int n_encodings = 20; // not ideal to have this hard coded...
 
-		//assert(n_output_nodes == n_input_pixels + 2 * n_encodings); // NOTE: uncomment when finished testing
+		assert(n_output_nodes == n_input_pixels + 2 * n_encodings);
 		assert(n_input_nodes == n_input_pixels + n_encodings);
 
 		// make a vector of sample_indices [BUG FREE]
@@ -430,15 +430,15 @@ void main_VAE(const bool& make_model, const bool& load_weight_values, const bool
 	model_trainer.setFindCycles(false);
 	model_trainer.setLossFunctions({
 		//std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()),
-		std::shared_ptr<LossFunctionOp<float>>(new BCEWithLogitsOp<float>())/*,
+		std::shared_ptr<LossFunctionOp<float>>(new BCEWithLogitsOp<float>()),
 		std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceMuOp<float>()),
-		std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceLogVarOp<float>())*/ });
+		std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceLogVarOp<float>()) });
 	model_trainer.setLossFunctionGrads({
 		//std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()),
-		std::shared_ptr<LossFunctionGradOp<float>>(new BCEWithLogitsGradOp<float>())/*,
+		std::shared_ptr<LossFunctionGradOp<float>>(new BCEWithLogitsGradOp<float>()),
 		std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceMuGradOp<float>()),
-		std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceLogVarGradOp<float>())*/ });
-	model_trainer.setOutputNodes({ output_nodes/*, encoding_nodes_mu, encoding_nodes_logvar*/ });
+		std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceLogVarGradOp<float>()) });
+	model_trainer.setOutputNodes({ output_nodes, encoding_nodes_mu, encoding_nodes_logvar });
 
 	// define the model replicator for growth mode
 	ModelReplicatorExt<float> model_replicator;

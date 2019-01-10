@@ -393,9 +393,9 @@ BOOST_AUTO_TEST_CASE(operationfunctionNegativeLogLikelihoodGradOp)
 
 	operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, time_step, device);
 	Eigen::TensorMap<Eigen::Tensor<float, 3>> error(error_ptr, batch_size, memory_size, layer_size);
-	BOOST_CHECK_CLOSE(error(0, 0, 0), 4.99994993, 1e-6);
+	BOOST_CHECK_CLOSE(error(0, 0, 0), -4.99994993, 1e-6);
 	BOOST_CHECK_CLOSE(error(0, 1, 0), 0.0, 1e-6);
-	BOOST_CHECK_CLOSE(error(1, 0, 0), 0.555554926, 1e-6);
+	BOOST_CHECK_CLOSE(error(1, 0, 0), -0.555554926, 1e-6);
 	BOOST_CHECK_CLOSE(error(1, 1, 0), 0.0, 1e-6);
 	BOOST_CHECK_CLOSE(error(0, 0, 1), 0.0, 1e-6);
 	BOOST_CHECK_CLOSE(error(0, 1, 1), 0.0, 1e-6);
@@ -589,13 +589,13 @@ BOOST_AUTO_TEST_CASE(operationfunctionKLDivergenceMuGradOp)
 
 	operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, time_step, device);
 	Eigen::TensorMap<Eigen::Tensor<float, 3>> error(error_ptr, batch_size, memory_size, layer_size);
-	BOOST_CHECK_CLOSE(error(0, 0, 0), 2.0, 1e-6);
+	BOOST_CHECK_CLOSE(error(0, 0, 0), -2.0, 1e-6);
 	BOOST_CHECK_CLOSE(error(0, 1, 0), 0.0, 1e-6);
-	BOOST_CHECK_CLOSE(error(1, 0, 0), 4.0, 1e-6);
+	BOOST_CHECK_CLOSE(error(1, 0, 0), -4.0, 1e-6);
 	BOOST_CHECK_CLOSE(error(1, 1, 0), 0.0, 1e-6);
-	BOOST_CHECK_CLOSE(error(0, 0, 1), 2.0, 1e-6);
+	BOOST_CHECK_CLOSE(error(0, 0, 1), -2.0, 1e-6);
 	BOOST_CHECK_CLOSE(error(0, 1, 1), 0.0, 1e-6);
-	BOOST_CHECK_CLOSE(error(1, 0, 1), 4.0, 1e-6);
+	BOOST_CHECK_CLOSE(error(1, 0, 1), -4.0, 1e-6);
 	BOOST_CHECK_CLOSE(error(1, 1, 1), 0.0, 1e-6);
 }
 
@@ -687,13 +687,13 @@ BOOST_AUTO_TEST_CASE(operationfunctionKLDivergenceLogVarGradOp)
 
 	operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, time_step, device);
 	Eigen::TensorMap<Eigen::Tensor<float, 3>> error(error_ptr, batch_size, memory_size, layer_size);
-	BOOST_CHECK_CLOSE(error(0, 0, 0), 1.14872122, 1e-6);
+	BOOST_CHECK_CLOSE(error(0, 0, 0), -1.14872122, 1e-6);
 	BOOST_CHECK_CLOSE(error(0, 1, 0), 0.0, 1e-6);
-	BOOST_CHECK_CLOSE(error(1, 0, 0), 2.21828175, 1e-6);
+	BOOST_CHECK_CLOSE(error(1, 0, 0), -2.21828175, 1e-6);
 	BOOST_CHECK_CLOSE(error(1, 1, 0), 0.0, 1e-6);
-	BOOST_CHECK_CLOSE(error(0, 0, 1), 1.14872122, 1e-6);
+	BOOST_CHECK_CLOSE(error(0, 0, 1), -1.14872122, 1e-6);
 	BOOST_CHECK_CLOSE(error(0, 1, 1), 0, 1e-6);
-	BOOST_CHECK_CLOSE(error(1, 0, 1), 2.21828175, 1e-6);
+	BOOST_CHECK_CLOSE(error(1, 0, 1), -2.21828175, 1e-6);
 	BOOST_CHECK_CLOSE(error(1, 1, 1), 0.0, 1e-6);
 }
 
@@ -785,13 +785,13 @@ BOOST_AUTO_TEST_CASE(operationfunctionBCEWithLogitsGradOp)
 
 	operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, time_step, device);
 	Eigen::TensorMap<Eigen::Tensor<float, 3>> error(error_ptr, batch_size, memory_size, layer_size);
-	BOOST_CHECK_CLOSE(error(0, 0, 0), -0.268941432, 1e-6);
+	BOOST_CHECK_CLOSE(error(0, 0, 0), 0.268941432, 1e-6);
 	BOOST_CHECK_CLOSE(error(0, 1, 0), 0.0, 1e-6);
-	BOOST_CHECK_CLOSE(error(1, 0, 0), 0.731058598, 1e-6);
+	BOOST_CHECK_CLOSE(error(1, 0, 0), -0.731058598, 1e-6);
 	BOOST_CHECK_CLOSE(error(1, 1, 0), 0.0, 1e-6);
-	BOOST_CHECK_CLOSE(error(0, 0, 1), 0.880797088, 1e-6);
+	BOOST_CHECK_CLOSE(error(0, 0, 1), -0.880797088, 1e-6);
 	BOOST_CHECK_CLOSE(error(0, 1, 1), 0, 1e-6);
-	BOOST_CHECK_CLOSE(error(1, 0, 1), 0.880797088, 1e-6);
+	BOOST_CHECK_CLOSE(error(1, 0, 1), -0.880797088, 1e-6);
 	BOOST_CHECK_CLOSE(error(1, 1, 1), 0.0, 1e-6);
 }
 
@@ -885,11 +885,11 @@ BOOST_AUTO_TEST_CASE(operationfunctionCrossEntropyWithLogitsGradOp1)
 	Eigen::TensorMap<Eigen::Tensor<float, 3>> error(error_ptr, batch_size, memory_size, layer_size);
 	BOOST_CHECK_CLOSE(error(0, 0, 0), 0.0, 1e-6);
 	BOOST_CHECK_CLOSE(error(0, 1, 0), 0.0, 1e-6);
-	BOOST_CHECK_CLOSE(error(1, 0, 0), 0.5, 1e-6);
+	BOOST_CHECK_CLOSE(error(1, 0, 0), -0.5, 1e-6);
 	BOOST_CHECK_CLOSE(error(1, 1, 0), 0.0, 1e-6);
-	BOOST_CHECK_CLOSE(error(0, 0, 1), 1.0, 1e-6);
+	BOOST_CHECK_CLOSE(error(0, 0, 1), -1.0, 1e-6);
 	BOOST_CHECK_CLOSE(error(0, 1, 1), 0.0, 1e-6);
-	BOOST_CHECK_CLOSE(error(1, 0, 1), 1.0, 1e-6);
+	BOOST_CHECK_CLOSE(error(1, 0, 1), -1.0, 1e-6);
 	BOOST_CHECK_CLOSE(error(1, 1, 1), 0.0, 1e-6);
 }
 

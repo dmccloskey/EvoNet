@@ -1848,6 +1848,7 @@ public:
 		std::string unity_weight_name, scalar_weight_name;
 
 		for (size_t i = 0; i < alpha_node_names.size(); ++i) {
+			// NOTE: is this needed? can we just treat the encoding nodes as logits?
 			// Make the logAlpha scalar nodes
 			char logalphaScale_name_char[512];
 			sprintf(logalphaScale_name_char, "%s-Scalar", alpha_node_names[i].data());
