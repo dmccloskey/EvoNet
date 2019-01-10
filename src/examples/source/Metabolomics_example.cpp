@@ -542,6 +542,7 @@ public:
 	BiochemicalReactions biochemicalReactions_;
 	MetaData metaData_;
 	std::vector<std::string> reaction_ids_;
+	//std::map<std::string, std::vector<BiochemicalReaction>> reaction_ids_to_mars_; // [TODO]
 	std::vector<std::string> sample_group_names_;
 	std::vector<std::string> labels_;
 	std::vector<std::string> component_group_names_;
