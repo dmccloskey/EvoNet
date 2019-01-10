@@ -32,14 +32,14 @@ public:
 
 	Notes:
 	Model input nodes: "Input_0, Input_1, ... Input_784" up to n_inputs
-	Model encoding input nodes: "Encoding_0, Encoding_1, ... Encoding 20" up to n_encodings
+	Model encoding input nodes: "Encoding_0, Encoding_1, ... Encoding 64" up to n_encodings
 	Model output nodes: "Output_0, Output_1, ... Output_784" up to n_inputs
 
 	References:
 	Based on Kingma et al, 2014: https://arxiv.org/pdf/1312.6114
 	https://github.com/pytorch/examples/blob/master/vae/main.py
 	*/
-	void makeVAE(Model<TensorT>& model, int n_inputs = 784, int n_encodings = 20, int n_hidden_0 = 512) {
+	void makeVAE(Model<TensorT>& model, int n_inputs = 784, int n_encodings = 64, int n_hidden_0 = 512) {
 		model.setId(0);
 		model.setName("VAE");
 
@@ -75,7 +75,7 @@ public:
 			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
 			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_encodings) / 2, 1)),
 			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
-		node_names_logvar = model_builder.addFullyConnected(model, "LogVar", "LogVar", node_names, 20,
+		node_names_logvar = model_builder.addFullyConnected(model, "LogVar", "LogVar", node_names, n_encodings,
 			std::shared_ptr<ActivationOp<TensorT>>(new ELUOp<TensorT>(1.0)),
 			std::shared_ptr<ActivationOp<TensorT>>(new ELUGradOp<TensorT>(1.0)),
 			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
@@ -150,7 +150,7 @@ public:
 		const int n_input_nodes = input_data.dimension(2);
 		const int n_epochs = input_data.dimension(3);
 		const int n_input_pixels = this->validation_data.dimension(1);
-		const int n_encodings = 20; // not ideal to have this hard coded...
+		const int n_encodings = 64; // not ideal to have this hard coded...
 
 		assert(n_input_nodes == n_input_pixels + n_encodings);
 
@@ -188,7 +188,7 @@ public:
 		const int n_output_nodes = output_data.dimension(2);
 		const int n_epochs = input_data.dimension(3);
 		const int n_input_pixels = this->validation_data.dimension(1);
-		const int n_encodings = 20; // not ideal to have this hard coded...
+		const int n_encodings = 64; // not ideal to have this hard coded...
 
 		assert(n_output_nodes == n_input_pixels + 2 * n_encodings); 
 		assert(n_input_nodes == n_input_pixels + n_encodings);
@@ -233,7 +233,7 @@ public:
 		const int n_output_nodes = output_data.dimension(2);
 		const int n_epochs = input_data.dimension(3);
 		const int n_input_pixels = this->validation_data.dimension(1);
-		const int n_encodings = 20; // not ideal to have this hard coded...
+		const int n_encodings = 64; // not ideal to have this hard coded...
 
 		assert(n_output_nodes == n_input_pixels + 2 * n_encodings);
 		assert(n_input_nodes == n_input_pixels + n_encodings);
@@ -342,7 +342,7 @@ void main_VAE(const bool& make_model, const bool& load_weight_values, const bool
 
 	// define the data simulator
 	const std::size_t input_size = 784;
-	const std::size_t encoding_size = 20;
+	const std::size_t encoding_size = 64;
 	const std::size_t n_hidden = 512;
 	const std::size_t training_data_size = 60000; //60000;
 	const std::size_t validation_data_size = 10000; //10000;

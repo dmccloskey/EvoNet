@@ -208,8 +208,18 @@ public:
 			row.equation = equation_str;
 			row.gpr = gpr_str;
 			row.used = (used__str == "t") ? true : false;
-			row.reactants_ids = SplitString(ReplaceTokens(reactants_ids_str, { "[\{\}]", "_p", "_c", "_e", "_m", "_r" }, ""), ",");
-			row.products_ids = SplitString(ReplaceTokens(products_ids_str, { "[\{\}]", "_p", "_c", "_e", "_m", "_r" }, ""), ",");
+			std::vector<std::string> reactants_ids = SplitString(ReplaceTokens(reactants_ids_str, { "[\{\}]", "_p", "_c", "_e", "_m", "_r" }, ""), ",");
+			for (const std::string& met_id : reactants_ids) {
+				if (!met_id.empty()) { 
+					row.reactants_ids.push_back(met_id); 
+				} 
+			}
+			std::vector<std::string> products_ids = SplitString(ReplaceTokens(products_ids_str, { "[\{\}]", "_p", "_c", "_e", "_m", "_r" }, ""), ",");
+			for (const std::string& met_id : products_ids) { 
+				if (!met_id.empty()) { 
+					row.products_ids.push_back(met_id); 
+				} 
+			}
 
 			std::vector<std::string> reactants_stoichiometry_vector = SplitString(ReplaceTokens(reactants_stoichiometry_str, { "[\{\}]" }, ""), ",");
 			for (const std::string& int_str : reactants_stoichiometry_vector)
@@ -219,6 +229,9 @@ public:
 			for (const std::string& int_str : products_stoichiometry_vector)
 				if (int_str != "")
 					row.products_stoichiometry.push_back(std::stof(int_str));
+
+			assert(row.reactants_ids.size() == row.reactants_stoichiometry.size());
+			assert(row.products_ids.size() == row.products_stoichiometry.size());
 
 			// build up the map
 			auto found_in_data = biochemicalReactions.emplace(rxn_id_str, row);
@@ -337,13 +350,50 @@ public:
 	[TODO: add unit tests]
 
 	@param[in] biochemicalReactions
+	@param[in] include_currency_mets Boolean to indicate whether or not to include currency metabolites in the MAR
+	@param[in] exclude_non_currency_mets Boolean to indicate whether or not to include only currency metabolites in the MAR
+	@param[in] threshold Minimal metabolite coverage value
 
 	@returns a vector of reaction_ids
 	**/
-	void findMARs()
+	void findMARs(bool exclude_currency_mets = false, bool exclude_non_currency_mets = false, TensorT threshold = 0.75)
 	{
 		reaction_ids_.clear();
 		findComponentGroupNames();
+
+		BiochemicalReactions new_reactions;
+
+		std::vector<std::string> ignore_mets = getDefaultMets(); // set up the ignore list (metabolites not included in the MAR count)
+		std::vector<std::string> exlude_mets = {}; // set up the exclude list (metabolites not included in the MAR met ids list)
+		if (exclude_currency_mets) { // remove currency mets from the component_group_names_
+			std::vector<std::string> component_group_names = component_group_names_;
+			component_group_names_.clear();
+			std::vector<std::string> currency_mets = getCurrencyMets();
+			for (const std::string& met_id : component_group_names) {
+				if (std::count(currency_mets.begin(), currency_mets.end(), met_id) == 0) {
+					component_group_names_.push_back(met_id);
+				}
+				else {
+					exlude_mets.push_back(met_id);
+					ignore_mets.push_back(met_id);
+				}
+			}
+		}
+		else if (exclude_non_currency_mets) { // include only currency mets from the component_group_names_
+			std::vector<std::string> component_group_names = component_group_names_;
+			component_group_names_.clear();
+			std::vector<std::string> currency_mets = getCurrencyMets();
+			for (const std::string& met_id : component_group_names) {
+				if (std::count(currency_mets.begin(), currency_mets.end(), met_id) > 0) {
+					component_group_names_.push_back(met_id);
+				}
+				else {
+					exlude_mets.push_back(met_id);
+					ignore_mets.push_back(met_id);
+				}
+			}
+		}
+
 		for (const auto& biochem_rxn_map : biochemicalReactions_)
 		{
 			std::vector<std::string> products_ids = biochem_rxn_map.second.products_ids;
@@ -359,26 +409,72 @@ public:
 			if (products_ids == reactants_ids)
 				continue;
 
-			// ignore reactions with less than 50% metabolomics data coverage
-			std::vector<std::string> ignore_mets = { "pi", "h", "h2", "h2o", "co2", "o2" };
-			int data_cnt = 0;
+			// ignore reactions with less than 50% metabolomics data coverage		
 			int total_cnt = 0;
-			for (const std::string& met_id : products_ids) {
-				if (std::count(component_group_names_.begin(), component_group_names_.end(), met_id) != 0)
-					++data_cnt;
-				if (std::count(ignore_mets.begin(), ignore_mets.end(), met_id) == 0)
+			int prod_cnt = 0;
+			int react_cnt = 0;
+			std::vector<std::string> prod_ids;
+			std::vector<std::string> react_ids;
+			std::vector<float> prod_stoich;
+			std::vector<float> react_stoich;
+			for (int i = 0; i < biochem_rxn_map.second.products_ids.size(); ++i) {
+				if (std::count(component_group_names_.begin(), component_group_names_.end(), biochem_rxn_map.second.products_ids[i]) != 0) {
+					++prod_cnt;
+				}
+				if (std::count(ignore_mets.begin(), ignore_mets.end(), biochem_rxn_map.second.products_ids[i]) == 0) {
 					++total_cnt;
+				}
+				if (std::count(exlude_mets.begin(), exlude_mets.end(), biochem_rxn_map.second.products_ids[i]) == 0) {
+					prod_ids.push_back(biochem_rxn_map.second.products_ids[i]);
+					prod_stoich.push_back(biochem_rxn_map.second.products_stoichiometry[i]);
+				}
 			}
-			for (const std::string& met_id : reactants_ids) {
-				if (std::count(component_group_names_.begin(), component_group_names_.end(), met_id) != 0)
-					++data_cnt;
-				if (std::count(ignore_mets.begin(), ignore_mets.end(), met_id) == 0)
+			for (int i = 0; i < biochem_rxn_map.second.reactants_ids.size(); ++i) {
+				if (std::count(component_group_names_.begin(), component_group_names_.end(), biochem_rxn_map.second.reactants_ids[i]) != 0) {
+					++react_cnt;
+				}
+				if (std::count(ignore_mets.begin(), ignore_mets.end(), biochem_rxn_map.second.reactants_ids[i]) == 0) {
 					++total_cnt;
+				}
+				if (std::count(exlude_mets.begin(), exlude_mets.end(), biochem_rxn_map.second.reactants_ids[i]) == 0) {
+					react_ids.push_back(biochem_rxn_map.second.reactants_ids[i]);
+					react_stoich.push_back(biochem_rxn_map.second.reactants_stoichiometry[i]);
+				}
 			}
-			if (((TensorT)data_cnt) / ((TensorT)total_cnt) < 0.75f)
+			if (((TensorT)(prod_cnt + react_cnt)) / ((TensorT)total_cnt) < threshold)
+				continue;
+			if (prod_cnt <= 0 || react_cnt <= 0)
 				continue;
 
-			reaction_ids_.push_back(biochem_rxn_map.first);
+			if (exclude_currency_mets) {
+				std::string rxn_id = biochem_rxn_map.first + "_" + "NoCurrencyMets";
+				BiochemicalReaction mod_rxn = biochem_rxn_map.second;
+				mod_rxn.products_ids = prod_ids;
+				mod_rxn.products_stoichiometry = prod_stoich;
+				mod_rxn.reactants_ids = react_ids;
+				mod_rxn.reactants_stoichiometry = react_stoich;
+				new_reactions.emplace(rxn_id, mod_rxn);
+				reaction_ids_.push_back(rxn_id);
+			}
+			else if (exclude_non_currency_mets) {
+				std::string rxn_id = biochem_rxn_map.first + "_" + "CurrencyOnlyMets";
+				BiochemicalReaction mod_rxn = biochem_rxn_map.second;
+				mod_rxn.products_ids = prod_ids;
+				mod_rxn.products_stoichiometry = prod_stoich;
+				mod_rxn.reactants_ids = react_ids;
+				mod_rxn.reactants_stoichiometry = react_stoich;
+				new_reactions.emplace(rxn_id, mod_rxn);
+				reaction_ids_.push_back(rxn_id);
+			}
+			else {
+				reaction_ids_.push_back(biochem_rxn_map.first);
+			}
+		}
+
+		if (new_reactions.size() > 0) {
+			for (auto& new_rxn : new_reactions) {
+				biochemicalReactions_.emplace(new_rxn.first, new_rxn.second);
+			}
 		}
 	}
 
@@ -537,12 +633,47 @@ public:
 
 		return mar;
 	};
+
+	/*
+	@brief Get default metabolites including inorganic ions, metals, and salts
+
+	@return Vector of "default" metabolite strings
+	**/
+	static std::vector<std::string> getDefaultMets() {
+		std::vector<std::string> default_mets = { 
+			"pi", "h", "h2", "h2o", "co2", "o2", 
+			"so4", "so3", "o2s", "no", "nh3", "nh4", "na1", "fe2", "fe3",
+			"hco3", "h2o2", "ca2", "co", "k", "cl"
+		};
+		return default_mets;
+	}
+	
+	/*
+	@brief Get currency metabolites including 
+
+	@return Vector of currency metabolite strings
+	**/
+	static std::vector<std::string> getCurrencyMets() {
+		std::vector<std::string> currency_mets = {
+			// charged/uncharged nucleotides
+			"atp", "adp", "amp", "itp", "idp", "imp", "gtp", "gdp", "gmp",
+			"utp", "udp", "ump", "ctp", "cdp", "cmp", "xtp", "xdp", "xmp",
+			"ttp", "tdp", "tmp",
+			// redox metabolites
+			"nad", "nadh", "nadp", "nadph", "gthox", "gthrd",
+			// COA moieties
+			"accoa", "coa",
+			// charged/uncharged nitrogen metabolites
+			"glu__L", "akg", "gln__L"
+		};
+		return currency_mets;
+	}
 	
 	MetabolomicsData metabolomicsData_;
 	BiochemicalReactions biochemicalReactions_;
 	MetaData metaData_;
-	std::vector<std::string> reaction_ids_;
-	//std::map<std::string, std::vector<BiochemicalReaction>> reaction_ids_to_mars_; // [TODO]
+	std::vector<std::string> reaction_ids_; // or MAR ids
+	BiochemicalReaction mars_;
 	std::vector<std::string> sample_group_names_;
 	std::vector<std::string> labels_;
 	std::vector<std::string> component_group_names_;
@@ -2101,9 +2232,9 @@ void main_classification(std::string blood_fraction = "PLT", bool make_model = t
 
 	// define the data simulator
 	MetDataSimClassification<float> metabolomics_data;
-	//std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
+	std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
 	//std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
-	std::string data_dir = "/home/user/Data/";
+	//std::string data_dir = "/home/user/Data/";
 	std::string model_name = "0_Metabolomics";
 
 	std::string biochem_rxns_filename, metabo_data_filename, meta_data_filename;
@@ -2128,7 +2259,9 @@ void main_classification(std::string blood_fraction = "PLT", bool make_model = t
 	metabolomics_data.readBiochemicalReactions(biochem_rxns_filename);
 	metabolomics_data.readMetabolomicsData(metabo_data_filename);
 	metabolomics_data.readMetaData(meta_data_filename);
-	metabolomics_data.findMARs(); 
+	metabolomics_data.findMARs();
+	metabolomics_data.findMARs(true, false);
+	metabolomics_data.findMARs(false, true);
 	metabolomics_data.removeRedundantMARs();
 	metabolomics_data.findLabels();
 
