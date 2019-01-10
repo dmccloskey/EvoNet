@@ -1004,8 +1004,8 @@ BOOST_AUTO_TEST_CASE(addCategoricalEncoding)
 
 	std::vector<std::string> node_names_test = {
 		"Alpha_000000000000-Scalar", "Alpha_000000000001-Scalar", 
-		"Encoding-SoftMax-In_000000000000", "Encoding-SoftMax-In_000000000001", "Encoding-SoftMax-Out_000000000000", "Encoding-SoftMax-Out_000000000001", 
-		"Encoding-SoftMax-Sum", "Encoding_000000000000-GumbelSampler", "Encoding_000000000000-InverseTau", "Encoding_000000000000-LogAlphaSampler", "Encoding_000000000000-SoftmaxArgs", 
+		"Encoding-SoftMax-In_000000000000", "Encoding-SoftMax-In_000000000001", "Encoding-SoftMax-Out_000000000000", "Encoding-SoftMax-Out_000000000001", "Encoding-SoftMax-Sum", 
+		"Encoding_000000000000-GumbelSampler", "Encoding_000000000000-InverseTau", "Encoding_000000000000-LogAlphaSampler", "Encoding_000000000000-SoftmaxArgs", 
 		"Encoding_000000000001-GumbelSampler", "Encoding_000000000001-InverseTau", "Encoding_000000000001-LogAlphaSampler", "Encoding_000000000001-SoftmaxArgs" };
 	std::vector<std::string> link_names_test = {
 		"Alpha_000000000000-Scalar_to_Encoding_000000000000-LogAlphaSampler", "Alpha_000000000000_to_Alpha_000000000000-Scalar", 
@@ -1015,14 +1015,25 @@ BOOST_AUTO_TEST_CASE(addCategoricalEncoding)
 		"Encoding-SoftMax-Sum_to_Encoding-SoftMax-Out_000000000000", "Encoding-SoftMax-Sum_to_Encoding-SoftMax-Out_000000000001", 
 		"Encoding_000000000000-GumbelSampler_to_Encoding_000000000000-LogAlphaSampler", "Encoding_000000000000-InverseTau_to_Encoding_000000000000-SoftmaxArgs", "Encoding_000000000000-LogAlphaSampler_to_Encoding_000000000000-SoftmaxArgs", "Encoding_000000000000-SoftmaxArgs_to_Encoding-SoftMax-In_000000000000", 
 		"Encoding_000000000001-GumbelSampler_to_Encoding_000000000001-LogAlphaSampler", "Encoding_000000000001-InverseTau_to_Encoding_000000000001-SoftmaxArgs", "Encoding_000000000001-LogAlphaSampler_to_Encoding_000000000001-SoftmaxArgs", "Encoding_000000000001-SoftmaxArgs_to_Encoding-SoftMax-In_000000000001" };
-	std::vector<std::string> weight_names_test = {
+	std::vector<std::string> weight_names_check = {
 		"Alpha_000000000000-Scalar_to_Encoding_000000000000-LogAlphaSampler", "Alpha_000000000000_to_Alpha_000000000000-Scalar",
 		"Alpha_000000000001-Scalar_to_Encoding_000000000001-LogAlphaSampler", "Alpha_000000000001_to_Alpha_000000000001-Scalar",
 		"Encoding-SoftMax-In_000000000000_to_Encoding-SoftMax-Out_000000000000", "Encoding-SoftMax-In_000000000000_to_Encoding-SoftMax-Sum",
 		"Encoding-SoftMax-In_000000000001_to_Encoding-SoftMax-Out_000000000001", "Encoding-SoftMax-In_000000000001_to_Encoding-SoftMax-Sum",
 		"Encoding-SoftMax-Sum_to_Encoding-SoftMax-Out_000000000000", "Encoding-SoftMax-Sum_to_Encoding-SoftMax-Out_000000000001",
-		"Encoding_000000000000-GumbelSampler_to_Encoding_000000000000-LogAlphaSampler", "Encoding_000000000000-InverseTau_to_Encoding_000000000000-SoftmaxArgs", "Encoding_000000000000-LogAlphaSampler_to_Encoding_000000000000-SoftmaxArgs", "Encoding_000000000000-SoftmaxArgs_to_Encoding-SoftMax-In_000000000000",
-		"Encoding_000000000001-GumbelSampler_to_Encoding_000000000001-LogAlphaSampler", "Encoding_000000000001-InverseTau_to_Encoding_000000000001-SoftmaxArgs", "Encoding_000000000001-LogAlphaSampler_to_Encoding_000000000001-SoftmaxArgs", "Encoding_000000000001-SoftmaxArgs_to_Encoding-SoftMax-In_000000000001" };
+		"Encoding_000000000000-GumbelSampler_to_Encoding_000000000000-LogAlphaSampler", "Encoding_000000000000-InverseTau_to_Encoding_000000000000-SoftmaxArgs", "Encoding_000000000000-LogAlphaSampler_to_Encoding_000000000000-SoftmaxArgs", 
+		"Encoding_000000000000-SoftmaxArgs_to_Encoding-SoftMax-In_000000000000","Encoding_000000000001-SoftmaxArgs_to_Encoding-SoftMax-In_000000000001", 
+		"Encoding_000000000001-GumbelSampler_to_Encoding_000000000001-LogAlphaSampler", "Encoding_000000000001-InverseTau_to_Encoding_000000000001-SoftmaxArgs", "Encoding_000000000001-LogAlphaSampler_to_Encoding_000000000001-SoftmaxArgs"};	
+	std::vector<std::string> weight_names_test = {
+		"Alpha_000000000000-Scalar_to_Encoding_000000000000-LogAlphaSampler", "Alpha_000000000000_to_Alpha_000000000000-Scalar",
+		"Alpha_000000000001-Scalar_to_Encoding_000000000001-LogAlphaSampler", "Alpha_000000000001_to_Alpha_000000000001-Scalar",
+		//"Encoding-SoftMax-In_000000000000_to_Encoding-SoftMax-Out_000000000000", "Encoding-SoftMax-In_000000000000_to_Encoding-SoftMax-Sum",
+		//"Encoding-SoftMax-In_000000000001_to_Encoding-SoftMax-Out_000000000001", "Encoding-SoftMax-In_000000000001_to_Encoding-SoftMax-Sum",
+		//"Encoding-SoftMax-Sum_to_Encoding-SoftMax-Out_000000000000", "Encoding-SoftMax-Sum_to_Encoding-SoftMax-Out_000000000001",
+		"Encoding_000000000000-GumbelSampler_to_Encoding_000000000000-LogAlphaSampler", "Encoding_000000000000-InverseTau_to_Encoding_000000000000-SoftmaxArgs", "Encoding_000000000000-LogAlphaSampler_to_Encoding_000000000000-SoftmaxArgs",
+		//"Encoding_000000000000-SoftmaxArgs_to_Encoding-SoftMax-In_000000000000","Encoding_000000000001-SoftmaxArgs_to_Encoding-SoftMax-In_000000000001", 
+		"Encoding_000000000001-GumbelSampler_to_Encoding_000000000001-LogAlphaSampler", "Encoding_000000000001-InverseTau_to_Encoding_000000000001-SoftmaxArgs", "Encoding_000000000001-LogAlphaSampler_to_Encoding_000000000001-SoftmaxArgs",
+	};
 
 	//for (auto& e : model.nodes_) {
 	//	std::cout << "Node: " << e.second->getName() << std::endl;
@@ -1048,22 +1059,22 @@ BOOST_AUTO_TEST_CASE(addCategoricalEncoding)
 			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
 			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.0, 1e-3);
 		}
-		else if (node_name == "Alpha_000000000000-Scalar" || node_name == "Alpha_000000000001-Scalar")
+		else if (node_name == "Encoding_000000000000-GumbelSampler" || node_name == "Encoding_000000000001-GumbelSampler")
 		{
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "ExponentialOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "ExponentialGradOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
 			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "SumOp");
 			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "SumErrorOp");
 			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
 			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.0, 1e-3);
 		}
-		else if (node_name == "LogVar_000000000000-StdDev" || node_name == "LogVar_000000000001-StdDev")
+		else if (node_name == "Encoding_000000000000-InverseTau" || node_name == "Encoding_000000000001-InverseTau")
 		{
 			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
 			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "ProdOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "ProdErrorOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "ProdWeightGradOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "SumOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "SumErrorOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
 			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.0, 1e-3);
 		}
 		else if (node_name == "Encoding_000000000000-Sampler" || node_name == "Encoding_000000000001-Sampler")
@@ -1075,7 +1086,7 @@ BOOST_AUTO_TEST_CASE(addCategoricalEncoding)
 			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
 			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.0, 1e-3);
 		}
-		else if (node_name == "Encoding_000000000000" || node_name == "Encoding_000000000001")
+		else if (node_name == "Encoding_000000000000-LogAlphaSampler" || node_name == "Encoding_000000000001-LogAlphaSampler")
 		{
 			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
 			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
@@ -1084,6 +1095,16 @@ BOOST_AUTO_TEST_CASE(addCategoricalEncoding)
 			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
 			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.0, 1e-3);
 		}
+		else if (node_name == "Encoding_000000000000-SoftmaxArgs" || node_name == "Encoding_000000000001-SoftmaxArgs")
+		{
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "ProdOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "ProdErrorOp");
+			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "ProdWeightGradOp");
+			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.0, 1e-3);
+		}
+		// [TODO: addSoftmax tests?]
 	}
 
 	// check the links
@@ -1093,7 +1114,9 @@ BOOST_AUTO_TEST_CASE(addCategoricalEncoding)
 		std::vector<std::string> test = SplitString(name, "_to_");
 		BOOST_CHECK_EQUAL(model.getLink(name).getSourceNodeName(), test[0]);
 		BOOST_CHECK_EQUAL(model.getLink(name).getSinkNodeName(), test[1]);
-		int count = std::count(weight_names_test.begin(), weight_names_test.end(), model.getLink(name).getWeightName());
+		int count = std::count(weight_names_check.begin(), weight_names_check.end(), model.getLink(name).getWeightName());
+		//if (count == 0)
+		//	std::cout << "Check: " << model.getLink(name).getWeightName() << std::endl;
 		BOOST_CHECK_EQUAL(count, 1);
 		BOOST_CHECK_EQUAL(model.getLink(name).getModuleName(), "Mod1");
 	}
@@ -1103,18 +1126,10 @@ BOOST_AUTO_TEST_CASE(addCategoricalEncoding)
 	{
 		BOOST_CHECK_EQUAL(model.getWeight(name).getName(), name);
 		BOOST_CHECK_EQUAL(model.getWeight(name).getModuleName(), "Mod1");
-		if (name == "LogVar_000000000000_to_LogVar_000000000000-Scalar" || name == "LogVar_000000000001_to_LogVar_000000000001-Scalar") {
-			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getParamsAsStr(), "n:0.500000");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "DummySolverOp");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.0f);
-		}
-		else {
-			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getParamsAsStr(), "n:1.000000");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "DummySolverOp");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.0f);
-		}
+		BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getParamsAsStr(), "n:1.000000");
+		BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
+		BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "DummySolverOp");
+		BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.0f);
 	}
 }
 
@@ -1408,7 +1423,7 @@ BOOST_AUTO_TEST_CASE(addLSTM)
 }
 
 BOOST_AUTO_TEST_CASE(addDotProdAttention1)
-{
+{ // [TODO: update mod names]
 	ModelBuilder<float> model_builder;
 	Model<float> model;
 	std::vector<std::string> node_names;
@@ -1845,14 +1860,14 @@ BOOST_AUTO_TEST_CASE(addProjection1)
 		"Input_000000000000_to_Filter-out_H000000000001-W000000000000_Mod1", "Input_000000000000_to_Filter-out_H000000000001-W000000000001_Mod1", "Input_000000000000_to_Filter-out_H000000000001-W000000000002_Mod1", "Input_000000000000_to_Filter-out_H000000000001-W000000000003_Mod1", 
 		"Input_000000000000_to_Filter-out_H000000000002-W000000000000_Mod1", "Input_000000000000_to_Filter-out_H000000000002-W000000000001_Mod1", "Input_000000000000_to_Filter-out_H000000000002-W000000000002_Mod1", "Input_000000000000_to_Filter-out_H000000000002-W000000000003_Mod1", 
 		"Input_000000000000_to_Filter-out_H000000000003-W000000000000_Mod1", "Input_000000000000_to_Filter-out_H000000000003-W000000000001_Mod1", "Input_000000000000_to_Filter-out_H000000000003-W000000000002_Mod1", "Input_000000000000_to_Filter-out_H000000000003-W000000000003_Mod1", 
-		"Input_000000000001_to_Filter-out_H000000000000-W000000000001_Mod1", "Input_000000000001_to_Filter-out_H000000000000-W000000000002_Mod1", "Input_000000000001_to_Filter-out_H000000000000-W000000000003_Mod1", "Input_000000000001_to_Filter-out_H000000000000-W000000000004_Mod1", 
-		"Input_000000000001_to_Filter-out_H000000000001-W000000000001_Mod1", "Input_000000000001_to_Filter-out_H000000000001-W000000000002_Mod1", "Input_000000000001_to_Filter-out_H000000000001-W000000000003_Mod1", "Input_000000000001_to_Filter-out_H000000000001-W000000000004_Mod1", 
-		"Input_000000000001_to_Filter-out_H000000000002-W000000000001_Mod1", "Input_000000000001_to_Filter-out_H000000000002-W000000000002_Mod1", "Input_000000000001_to_Filter-out_H000000000002-W000000000003_Mod1", "Input_000000000001_to_Filter-out_H000000000002-W000000000004_Mod1", 
-		"Input_000000000001_to_Filter-out_H000000000003-W000000000001_Mod1", "Input_000000000001_to_Filter-out_H000000000003-W000000000002_Mod1", "Input_000000000001_to_Filter-out_H000000000003-W000000000003_Mod1", "Input_000000000001_to_Filter-out_H000000000003-W000000000004_Mod1", 
-		"Input_000000000002_to_Filter-out_H000000000001-W000000000000_Mod1", "Input_000000000002_to_Filter-out_H000000000001-W000000000001_Mod1", "Input_000000000002_to_Filter-out_H000000000001-W000000000002_Mod1", "Input_000000000002_to_Filter-out_H000000000001-W000000000003_Mod1", 
-		"Input_000000000002_to_Filter-out_H000000000002-W000000000000_Mod1", "Input_000000000002_to_Filter-out_H000000000002-W000000000001_Mod1", "Input_000000000002_to_Filter-out_H000000000002-W000000000002_Mod1", "Input_000000000002_to_Filter-out_H000000000002-W000000000003_Mod1", 
-		"Input_000000000002_to_Filter-out_H000000000003-W000000000000_Mod1", "Input_000000000002_to_Filter-out_H000000000003-W000000000001_Mod1", "Input_000000000002_to_Filter-out_H000000000003-W000000000002_Mod1", "Input_000000000002_to_Filter-out_H000000000003-W000000000003_Mod1", 
-		"Input_000000000002_to_Filter-out_H000000000004-W000000000000_Mod1", "Input_000000000002_to_Filter-out_H000000000004-W000000000001_Mod1", "Input_000000000002_to_Filter-out_H000000000004-W000000000002_Mod1", "Input_000000000002_to_Filter-out_H000000000004-W000000000003_Mod1", 
+		"Input_000000000002_to_Filter-out_H000000000000-W000000000001_Mod1", "Input_000000000002_to_Filter-out_H000000000000-W000000000002_Mod1", "Input_000000000002_to_Filter-out_H000000000000-W000000000003_Mod1", "Input_000000000002_to_Filter-out_H000000000000-W000000000004_Mod1", 
+		"Input_000000000002_to_Filter-out_H000000000001-W000000000001_Mod1", "Input_000000000002_to_Filter-out_H000000000001-W000000000002_Mod1", "Input_000000000002_to_Filter-out_H000000000001-W000000000003_Mod1", "Input_000000000002_to_Filter-out_H000000000001-W000000000004_Mod1", 
+		"Input_000000000002_to_Filter-out_H000000000002-W000000000001_Mod1", "Input_000000000002_to_Filter-out_H000000000002-W000000000002_Mod1", "Input_000000000002_to_Filter-out_H000000000002-W000000000003_Mod1", "Input_000000000002_to_Filter-out_H000000000002-W000000000004_Mod1", 
+		"Input_000000000002_to_Filter-out_H000000000003-W000000000001_Mod1", "Input_000000000002_to_Filter-out_H000000000003-W000000000002_Mod1", "Input_000000000002_to_Filter-out_H000000000003-W000000000003_Mod1", "Input_000000000002_to_Filter-out_H000000000003-W000000000004_Mod1", 
+		"Input_000000000001_to_Filter-out_H000000000001-W000000000000_Mod1", "Input_000000000001_to_Filter-out_H000000000001-W000000000001_Mod1", "Input_000000000001_to_Filter-out_H000000000001-W000000000002_Mod1", "Input_000000000001_to_Filter-out_H000000000001-W000000000003_Mod1", 
+		"Input_000000000001_to_Filter-out_H000000000002-W000000000000_Mod1", "Input_000000000001_to_Filter-out_H000000000002-W000000000001_Mod1", "Input_000000000001_to_Filter-out_H000000000002-W000000000002_Mod1", "Input_000000000001_to_Filter-out_H000000000002-W000000000003_Mod1", 
+		"Input_000000000001_to_Filter-out_H000000000003-W000000000000_Mod1", "Input_000000000001_to_Filter-out_H000000000003-W000000000001_Mod1", "Input_000000000001_to_Filter-out_H000000000003-W000000000002_Mod1", "Input_000000000001_to_Filter-out_H000000000003-W000000000003_Mod1", 
+		"Input_000000000001_to_Filter-out_H000000000004-W000000000000_Mod1", "Input_000000000001_to_Filter-out_H000000000004-W000000000001_Mod1", "Input_000000000001_to_Filter-out_H000000000004-W000000000002_Mod1", "Input_000000000001_to_Filter-out_H000000000004-W000000000003_Mod1", 
 		"Input_000000000003_to_Filter-out_H000000000001-W000000000001_Mod1", "Input_000000000003_to_Filter-out_H000000000001-W000000000002_Mod1", "Input_000000000003_to_Filter-out_H000000000001-W000000000003_Mod1", "Input_000000000003_to_Filter-out_H000000000001-W000000000004_Mod1", 
 		"Input_000000000003_to_Filter-out_H000000000002-W000000000001_Mod1", "Input_000000000003_to_Filter-out_H000000000002-W000000000002_Mod1", "Input_000000000003_to_Filter-out_H000000000002-W000000000003_Mod1", "Input_000000000003_to_Filter-out_H000000000002-W000000000004_Mod1", 
 		"Input_000000000003_to_Filter-out_H000000000003-W000000000001_Mod1", "Input_000000000003_to_Filter-out_H000000000003-W000000000002_Mod1", "Input_000000000003_to_Filter-out_H000000000003-W000000000003_Mod1", "Input_000000000003_to_Filter-out_H000000000003-W000000000004_Mod1", 

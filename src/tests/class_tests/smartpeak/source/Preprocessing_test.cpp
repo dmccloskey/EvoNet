@@ -55,6 +55,7 @@ BOOST_AUTO_TEST_CASE(P_OneHotEncoder)
 {
 	// TODO
 }
+
 BOOST_AUTO_TEST_CASE(SFcheckNan)
 {
 	Eigen::Tensor<float, 1> values(2);
@@ -126,6 +127,16 @@ BOOST_AUTO_TEST_CASE(assertClose)
 {
 	BOOST_CHECK(!assert_close<float>(1.1, 1.2, 1e-4, 1e-4));
 	BOOST_CHECK(assert_close<float>(1.1, 1.2, 1, 1));
+}
+
+BOOST_AUTO_TEST_CASE(P_GaussianMixture)
+{
+	// TODO
+}
+
+BOOST_AUTO_TEST_CASE(P_SwissRoll)
+{
+	// TODO
 }
 
 BOOST_AUTO_TEST_CASE(P_GumbelSampler)

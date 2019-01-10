@@ -1889,7 +1889,7 @@ public:
 			char lsToLAS_link_name_char[512];
 			sprintf(lsToLAS_link_name_char, "%s_to_%s", sampler_name.data(), logAlphaSampler_name.data());
 			std::string lsToLAS_link_name(lsToLAS_link_name_char);
-			Link lsToLAS_link(lsToLAS_link_name, sampler_name, logalphaScale_name, scalar_weight_name);
+			Link lsToLAS_link(lsToLAS_link_name, sampler_name, logAlphaSampler_name, scalar_weight_name);
 			lsToLAS_link.setModuleName(module_name);
 			model.addLinks({ lsToLAS_link });
 
@@ -1898,7 +1898,7 @@ public:
 			char laToLAS_link_name_char[512];
 			sprintf(laToLAS_link_name_char, "%s_to_%s", logalphaScale_name.data(), logAlphaSampler_name.data());
 			std::string laToLAS_link_name(laToLAS_link_name_char);
-			Link laToLAS_link(laToLAS_link_name, logalphaScale_name, logalphaScale_name, scalar_weight_name);
+			Link laToLAS_link(laToLAS_link_name, logalphaScale_name, logAlphaSampler_name, scalar_weight_name);
 			laToLAS_link.setModuleName(module_name);
 			model.addLinks({ laToLAS_link });
 
@@ -1906,7 +1906,7 @@ public:
 			char tau_name_char[512];
 			sprintf(tau_name_char, "%s_%012d-InverseTau", name.data(), i);
 			std::string tau_name(tau_name_char);
-			Node<TensorT> stddev(tau_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new ProdErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
+			Node<TensorT> stddev(tau_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
 			stddev.setModuleName(module_name);
 			model.addNodes({ stddev });
 			//node_names.push_back(tau_name)
@@ -2018,7 +2018,7 @@ public:
 		for (int block_iter = 0; block_iter < n_blocks; ++block_iter) {
 			// Make the LSTM cell
 			char name_char[512];
-			sprintf(name_char, "%s-%012d", name, block_iter);
+			sprintf(name_char, "%s-%012d", name.data(), block_iter);
 			std::string node_name(name_char);
 			if (block_version == 1) {
 				std::vector<std::string> output_node_names = addLSTMBlock1(model, node_name, module_name, source_node_names, n_cells, node_activation, node_activation_grad,
@@ -2957,7 +2957,7 @@ public:
 		for (size_t i = 0; i < n_heads; ++i) {
 			std::vector<std::string> node_names_attention;
 			char name_char[512];
-			sprintf(name_char, "%s-%012d", name, i);
+			sprintf(name_char, "%s-%012d", name.data(), i);
 			std::string node_name(name_char);
 			if (attention_type == "DotProd") {
 				node_names_attention = addDotProdAttention(model, node_name, module_name,
@@ -3018,7 +3018,6 @@ public:
 
 		// Add the scalar
 		TensorT scalar_value = 1/std::sqrt((TensorT)key_length);
-		//TensorT scalar_value = 1/(TensorT)key_length;
 		char scalar_name_char[512];
 		sprintf(scalar_name_char, "%s-scalar", name.data());
 		std::string scalar_name(scalar_name_char);
