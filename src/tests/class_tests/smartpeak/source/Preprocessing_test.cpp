@@ -128,4 +128,24 @@ BOOST_AUTO_TEST_CASE(assertClose)
 	BOOST_CHECK(assert_close<float>(1.1, 1.2, 1, 1));
 }
 
+BOOST_AUTO_TEST_CASE(P_GumbelSampler)
+{
+	Eigen::Tensor<float, 2> gumbel_samples = GumbelSampler<float>(2, 3);
+	BOOST_CHECK_LE(gumbel_samples(0, 0), 10);
+	BOOST_CHECK_GE(gumbel_samples(0, 0), -10);
+	BOOST_CHECK_LE(gumbel_samples(1, 2), 10);
+	BOOST_CHECK_GE(gumbel_samples(1, 2), -10);
+	std::cout << gumbel_samples << std::endl;
+}
+
+BOOST_AUTO_TEST_CASE(P_GaussianSampler)
+{
+	Eigen::Tensor<float, 2> gaussian_samples = GaussianSampler<float>(2, 3);
+	BOOST_CHECK_LE(gaussian_samples(0, 0), 2);
+	BOOST_CHECK_GE(gaussian_samples(0, 0), -2);
+	BOOST_CHECK_LE(gaussian_samples(1, 2), 2);
+	BOOST_CHECK_GE(gaussian_samples(1, 2), -2);
+	std::cout << gaussian_samples << std::endl;
+}
+
 BOOST_AUTO_TEST_SUITE_END()

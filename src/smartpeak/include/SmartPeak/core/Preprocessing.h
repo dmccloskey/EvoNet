@@ -277,6 +277,49 @@ namespace SmartPeak
 		return swiss_roll;
 	}
 
+	/*
+	@brief 1D Gumbel sampler
+
+	where the Gumbel(0; 1) distribution can be sampled using inverse transform sampling by drawing u 
+		Uniform(0; 1) and computing g = -log(-log(u)).
+
+	@param[in] n_dims the number of categorical labels
+	@param[in] n_labels the number of categorical labels
+
+	@returns a Tensor of Gumbel samples
+	*/
+	template<typename Ta>
+	Eigen::Tensor<Ta, 2> GumbelSampler(const int& n_dims, const int& n_labels) {
+		std::random_device rd{};
+		std::mt19937 gen{ rd() };
+		std::uniform_real_distribution<> dist{ 0, 1 };
+		Eigen::Tensor<Ta, 2> gumbel_dist(n_dims, n_labels);
+		gumbel_dist = -(-(gumbel_dist.unaryExpr([&gen, &dist](const Ta& elem) {
+			return Ta(dist(gen));
+		})).log()).log();
+		return gumbel_dist;
+	};
+
+	/*
+	@brief 1D Gaussian sampler
+
+	@param[in] n_dims the number of categorical labels
+	@param[in] n_labels the number of categorical labels
+
+	@returns a Tensor of Gumbel samples
+	*/
+	template<typename Ta>
+	Eigen::Tensor<Ta, 2> GaussianSampler(const int& n_dims, const int& n_labels) {
+		std::random_device rd{};
+		std::mt19937 gen{ rd() };
+		std::normal_distribution<> dist{ 0.0f, 1.0f };
+		Eigen::Tensor<Ta, 2> gaussian_dist(n_dims, n_labels);
+		gaussian_dist = gaussian_dist.unaryExpr([&gen, &dist](const Ta& elem) {
+			return Ta(dist(gen)); 
+		});
+		return gaussian_dist;
+	};
+
 	/**
 	@brief Replaces NaN and Inf with 0
 	*/
