@@ -22,7 +22,7 @@ namespace SmartPeak
 	class ModelInterpreterGpu : public ModelInterpreter<TensorT, Eigen::GpuDevice>
 	{
 	public:
-		using ModelInterpreter::ModelInterpreter;
+		using ModelInterpreter<TensorT, Eigen::GpuDevice>::ModelInterpreter;
 		void allocateForwardPropogationLayerTensors(const std::vector<OperationList<TensorT>>& FP_operations,
 			const std::map<std::string, std::vector<int>>& operations_map,
 			const std::vector<int>& source_layer_sizes, const std::vector<int>& sink_layer_sizes, const std::vector<std::vector<std::pair<int, int>>> weight_indices, 
@@ -73,7 +73,7 @@ namespace SmartPeak
 				IntegrationWeightGradTensorOp<TensorT, Eigen::GpuDevice>* integration_weight_grad = nullptr;
 				if (make_sink_tensors[iter]) {
 					sink_node_data->initNodeTensorData(batch_size, memory_size, sink_layer_sizes[iter], FP_operations[operations.second[0]].result.sink_node->getType(), train);
-					layer_tensors_.push_back(sink_node_data);
+					this->layer_tensors_.push_back(sink_node_data);
 					operation_step.sink_layer.time_step = FP_operations[operations.second[0]].result.time_step;
 					activation_conv(FP_operations[operations.second[0]].result.sink_node->getActivation(), activation, std::vector<TensorT>());
 					operation_step.sink_layer.activation.reset(activation);
@@ -85,10 +85,10 @@ namespace SmartPeak
 					operation_step.sink_layer.integration_error.reset(integration_error);
 					integration_weight_grad_conv(FP_operations[operations.second[0]].result.sink_node->getIntegrationWeightGrad(), integration_weight_grad, std::vector<TensorT>());
 					operation_step.sink_layer.integration_weight_grad.reset(integration_weight_grad);
-					operation_step.sink_layer.tensor = layer_tensors_[FP_operations[operations.second[0]].result.sink_node->getTensorIndex().first];
+					operation_step.sink_layer.tensor = this->layer_tensors_[FP_operations[operations.second[0]].result.sink_node->getTensorIndex().first];
 				}
 				else {
-					operation_step.sink_layer.tensor = layer_tensors_[FP_operations[operations.second[0]].result.sink_node->getTensorIndex().first];
+					operation_step.sink_layer.tensor = this->layer_tensors_[FP_operations[operations.second[0]].result.sink_node->getTensorIndex().first];
 					operation_step.sink_layer.time_step = FP_operations[operations.second[0]].result.time_step;
 					activation_conv(FP_operations[operations.second[0]].result.sink_node->getActivation(), activation, std::vector<TensorT>());
 					operation_step.sink_layer.activation.reset(std::move(activation));
@@ -114,7 +114,7 @@ namespace SmartPeak
 				if (make_source_tensors[iter]) {
 					source_node_data->initNodeTensorData(batch_size, memory_size, source_layer_sizes[iter], FP_operations[operations.second[0]].arguments[0].source_node->getType(), train);
 					operation_step.source_layer.time_step = FP_operations[operations.second[0]].arguments[0].time_step;
-					layer_tensors_.push_back(source_node_data);
+					this->layer_tensors_.push_back(source_node_data);
 					activation_conv(FP_operations[operations.second[0]].arguments[0].source_node->getActivation(), activation, std::vector<TensorT>());
 					operation_step.source_layer.activation.reset(activation);
 					activation_conv(FP_operations[operations.second[0]].arguments[0].source_node->getActivationGrad(), activation_grad, std::vector<TensorT>());
@@ -151,8 +151,8 @@ namespace SmartPeak
 				solver_conv(FP_operations[operations.second[0]].arguments[0].weight->getSolverOp(), solver, solver_params);
 				weight_data->initWeightTensorData(source_layer_sizes[iter], sink_layer_sizes[iter], weight_indices[iter], shared_weight_indices[iter], weight_values[iter], train,
 					solver_params);
-				weight_tensors_.push_back(weight_data);
-				operation_step.weight.tensor = weight_tensors_.at(std::get<0>(FP_operations[operations.second[0]].arguments[0].weight->getTensorIndex()[0]));
+				this->weight_tensors_.push_back(weight_data);
+				operation_step.weight.tensor = this->weight_tensors_.at(std::get<0>(FP_operations[operations.second[0]].arguments[0].weight->getTensorIndex()[0]));
 				operation_step.weight.solver.reset(solver);
 			}
 			else {
@@ -163,13 +163,13 @@ namespace SmartPeak
 			++iter;
 		}
 		// add the operations to the cache
-		operation_steps_.push_back(operation_step_list);
+		this->operation_steps_.push_back(operation_step_list);
 	}
 
 	template<typename TensorT>
 	void ModelInterpreterGpu<TensorT>::executeForwardPropogationOperations(const int& time_step)
 	{
-		for (auto& operations_list : operation_steps_) {
+		for (auto& operations_list : this->operation_steps_) {
 
 			// Set up the device, streams, and kernals
 			ModelKernalGpu<TensorT> model_kernal;
@@ -242,13 +242,13 @@ namespace SmartPeak
 	template<typename TensorT>
 	inline void ModelInterpreterGpu<TensorT>::executeBackwardPropogationOperations(const int & time_step)
 	{
-		for (int iter = operation_steps_.size() - 1; iter >= 0; --iter) { //iterate backwards
+		for (int iter = this->operation_steps_.size() - 1; iter >= 0; --iter) { //iterate backwards
 
 			// Set up the device, streams, and kernals
 			ModelKernalGpu<TensorT> model_kernal;
 			assert(cudaSetDevice(getModelResources()[0].getID()) == cudaSuccess); // is this needed?
 			std::vector<cudaStream_t> streams;
-			for (size_t i = 0; i < operation_steps_[iter].size(); ++i) {
+			for (size_t i = 0; i < this->operation_steps_[iter].size(); ++i) {
 				cudaStream_t stream; // The stream will be destroyed by GpuStreamDevice once the function goes out of scope!
 				assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess);
 				streams.push_back(stream);
@@ -256,7 +256,7 @@ namespace SmartPeak
 
 			// execute the forward propogation steps
 			int device_iter = 0;
-			for (OperationTensorStep<TensorT, Eigen::GpuDevice>& operation : operation_steps_[iter]) { //reverse source/sink
+			for (OperationTensorStep<TensorT, Eigen::GpuDevice>& operation : this->operation_steps_[iter]) { //reverse source/sink
 				Eigen::GpuStreamDevice stream_device(&streams[device_iter], getModelResources()[0].getID());
 				Eigen::GpuDevice device(&stream_device);
 
@@ -313,7 +313,7 @@ namespace SmartPeak
 			}
 
 			// sync and destroy the streams
-			for (size_t i = 0; i < operation_steps_[iter].size(); ++i) {
+			for (size_t i = 0; i < this->operation_steps_[iter].size(); ++i) {
 				assert(cudaStreamSynchronize(streams[i]) == cudaSuccess);
 				assert(cudaStreamDestroy(streams[i]) == cudaSuccess);
 			}
@@ -332,8 +332,8 @@ namespace SmartPeak
 
 		auto layer_tensor_data = getLayerTensor(layer_id);
 
-		if (!model_error_->getErrorStatus().second)
-			model_error_->syncHAndDError(device);
+		if (!this->model_error_->getErrorStatus().second)
+			this->model_error_->syncHAndDError(device);
 		if (!layer_tensor_data->getErrorStatus().second)
 			layer_tensor_data->syncHAndDError(device);
 		if (!layer_tensor_data->getOutputStatus().second)
@@ -343,8 +343,8 @@ namespace SmartPeak
 			expected,
 			layer_tensor_data->getHOutputPointer().get(),
 			layer_tensor_data->getDOutputPointer().get(),
-			model_error_->getHErrorPointer().get(),
-			model_error_->getDErrorPointer().get(),
+			this->model_error_->getHErrorPointer().get(),
+			this->model_error_->getDErrorPointer().get(),
 			layer_tensor_data->getHErrorPointer().get(),
 			layer_tensor_data->getDErrorPointer().get(),
 			loss_function,
@@ -362,7 +362,7 @@ namespace SmartPeak
 	template<typename TensorT>
 	inline void ModelInterpreterGpu<TensorT>::executeWeightErrorOperations()
 	{
-		for (std::vector<OperationTensorStep<TensorT, Eigen::GpuDevice>>& operations_list : operation_steps_) {
+		for (std::vector<OperationTensorStep<TensorT, Eigen::GpuDevice>>& operations_list : this->operation_steps_) {
 
 			// Set up the device, streams, and kernals
 			ModelKernalGpu<TensorT> model_kernal;
@@ -436,7 +436,7 @@ namespace SmartPeak
 	template<typename TensorT>
 	inline void ModelInterpreterGpu<TensorT>::executeWeightUpdateOperations()
 	{
-		for (std::vector<OperationTensorStep<TensorT, Eigen::GpuDevice>>& operations_list : operation_steps_) {
+		for (std::vector<OperationTensorStep<TensorT, Eigen::GpuDevice>>& operations_list : this->operation_steps_) {
 
 			// Set up the device, streams, and kernals
 			ModelKernalGpu<TensorT> model_kernal;
@@ -487,7 +487,7 @@ namespace SmartPeak
 	inline void ModelInterpreterGpu<TensorT>::allocateModelErrorTensor(const int& batch_size, const int& memory_size) {
 		std::shared_ptr<ModelErrorData<TensorT, Eigen::GpuDevice>> model_error_data(new ModelErrorDataGpu<TensorT>());
 		model_error_data->initModelErrorData(batch_size, memory_size);
-		model_error_ = model_error_data;
+		this->model_error_ = model_error_data;
 	}
 
 	template<typename TensorT>
@@ -510,8 +510,8 @@ namespace SmartPeak
 
 		// sync the model error
 		if (model_error)
-			if (!model_error_->getErrorStatus().first)
-				model_error_->syncHAndDError(device);
+			if (!this->model_error_->getErrorStatus().first)
+				this->model_error_->syncHAndDError(device);
 
 		// sync the output node values
 		if (output_nodes) {
@@ -540,7 +540,7 @@ namespace SmartPeak
 
 		// copy out the model error
 		if (model_error)
-			model.setError(model_error_->getError());
+			model.setError(this->model_error_->getError());
 
 		// copy out the output node values
 		if (output_nodes) {
@@ -580,14 +580,14 @@ namespace SmartPeak
 	{
 		assert(cudaSetDevice(getModelResources()[0].getID()) == cudaSuccess); // is this needed?
 		std::vector<cudaStream_t> streams;
-		for (size_t i = 0; i < weight_tensors_.size(); ++i) {
+		for (size_t i = 0; i < this->weight_tensors_.size(); ++i) {
 			cudaStream_t stream; // The stream will be destroyed by GpuStreamDevice once the function goes out of scope!
 			assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess);
 			streams.push_back(stream);
 		}
 
 		size_t device_iter = 0;
-		for (auto& weight_tensor_data : weight_tensors_) {
+		for (auto& weight_tensor_data : this->weight_tensors_) {
 			if (weight_tensor_data->getNSolverParams() > 0) {
 				Eigen::GpuStreamDevice stream_device(&streams[device_iter], getModelResources()[0].getID());
 				Eigen::GpuDevice device(&stream_device);
@@ -604,7 +604,7 @@ namespace SmartPeak
 		}
 
 		// sync and destroy the streams
-		for (size_t i = 0; i < weight_tensors_.size(); ++i) {
+		for (size_t i = 0; i < this->weight_tensors_.size(); ++i) {
 			assert(cudaStreamSynchronize(streams[i]) == cudaSuccess);
 			assert(cudaStreamDestroy(streams[i]) == cudaSuccess);
 		}

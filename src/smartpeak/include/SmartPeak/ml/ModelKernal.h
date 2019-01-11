@@ -192,7 +192,7 @@ namespace SmartPeak
 	class ModelKernalDefaultDevice : ModelKernal<TensorT, Eigen::DefaultDevice>
 	{
 	public:
-		using ModelKernal::ModelKernal;
+		using ModelKernal<TensorT, Eigen::DefaultDevice>::ModelKernal;
 		bool executeNodeActivation(
 			TensorT* h_node_inputs,
 			TensorT* d_node_inputs,
@@ -378,7 +378,7 @@ namespace SmartPeak
 	class ModelKernalGpu : ModelKernal<TensorT, Eigen::GpuDevice>
 	{
 	public:
-		using ModelKernal::ModelKernal;
+		using ModelKernal<TensorT, Eigen::GpuDevice>::ModelKernal;
 		bool executeNodeActivation(
 			TensorT* h_node_inputs,
 			TensorT* d_node_inputs,

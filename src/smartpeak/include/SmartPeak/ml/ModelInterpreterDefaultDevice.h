@@ -18,7 +18,7 @@ namespace SmartPeak
 	class ModelInterpreterDefaultDevice : public ModelInterpreter<TensorT, Eigen::DefaultDevice>
 	{
 	public:
-		using ModelInterpreter::ModelInterpreter;
+		using ModelInterpreter<TensorT, Eigen::DefaultDevice>::ModelInterpreter;
 		void allocateForwardPropogationLayerTensors(const std::vector<OperationList<TensorT>>& FP_operations,
 			const std::map<std::string, std::vector<int>>& operations_map,
 			const std::vector<int>& source_layer_sizes, const std::vector<int>& sink_layer_sizes, const std::vector<std::vector<std::pair<int, int>>> weight_indices, 
@@ -68,7 +68,7 @@ namespace SmartPeak
 				IntegrationWeightGradTensorOp<TensorT, Eigen::DefaultDevice>* integration_weight_grad = nullptr;
 				if (make_sink_tensors[iter]) {
 					sink_node_data->initNodeTensorData(batch_size, memory_size, sink_layer_sizes[iter], FP_operations[operations.second[0]].result.sink_node->getType(), train);
-					layer_tensors_.push_back(sink_node_data);
+					this->layer_tensors_.push_back(sink_node_data);
 					operation_step.sink_layer.time_step = FP_operations[operations.second[0]].result.time_step;
 					activation_conv(FP_operations[operations.second[0]].result.sink_node->getActivation(), activation, std::vector<TensorT>());
 					operation_step.sink_layer.activation.reset(activation);
@@ -80,10 +80,10 @@ namespace SmartPeak
 					operation_step.sink_layer.integration_error.reset(integration_error);
 					integration_weight_grad_conv(FP_operations[operations.second[0]].result.sink_node->getIntegrationWeightGrad(), integration_weight_grad, std::vector<TensorT>());
 					operation_step.sink_layer.integration_weight_grad.reset(integration_weight_grad);
-					operation_step.sink_layer.tensor = layer_tensors_[FP_operations[operations.second[0]].result.sink_node->getTensorIndex().first];
+					operation_step.sink_layer.tensor = this->layer_tensors_[FP_operations[operations.second[0]].result.sink_node->getTensorIndex().first];
 				}
 				else {
-					operation_step.sink_layer.tensor = layer_tensors_[FP_operations[operations.second[0]].result.sink_node->getTensorIndex().first];
+					operation_step.sink_layer.tensor = this->layer_tensors_[FP_operations[operations.second[0]].result.sink_node->getTensorIndex().first];
 					operation_step.sink_layer.time_step = FP_operations[operations.second[0]].result.time_step;
 					activation_conv(FP_operations[operations.second[0]].result.sink_node->getActivation(), activation, std::vector<TensorT>());
 					operation_step.sink_layer.activation.reset(std::move(activation));
@@ -109,7 +109,7 @@ namespace SmartPeak
 				if (make_source_tensors[iter]) {
 					source_node_data->initNodeTensorData(batch_size, memory_size, source_layer_sizes[iter], FP_operations[operations.second[0]].arguments[0].source_node->getType(), train);
 					operation_step.source_layer.time_step = FP_operations[operations.second[0]].arguments[0].time_step;
-					layer_tensors_.push_back(source_node_data);
+					this->layer_tensors_.push_back(source_node_data);
 					activation_conv(FP_operations[operations.second[0]].arguments[0].source_node->getActivation(), activation, std::vector<TensorT>());
 					operation_step.source_layer.activation.reset(activation);
 					activation_conv(FP_operations[operations.second[0]].arguments[0].source_node->getActivationGrad(), activation_grad, std::vector<TensorT>());
@@ -146,8 +146,8 @@ namespace SmartPeak
 				solver_conv(FP_operations[operations.second[0]].arguments[0].weight->getSolverOp(), solver, solver_params);
 				weight_data->initWeightTensorData(source_layer_sizes[iter], sink_layer_sizes[iter], weight_indices[iter], shared_weight_indices[iter], weight_values[iter], train,
 					solver_params);
-				weight_tensors_.push_back(weight_data);
-				operation_step.weight.tensor = weight_tensors_.at(std::get<0>(FP_operations[operations.second[0]].arguments[0].weight->getTensorIndex()[0]));
+				this->weight_tensors_.push_back(weight_data);
+				operation_step.weight.tensor = this->weight_tensors_.at(std::get<0>(FP_operations[operations.second[0]].arguments[0].weight->getTensorIndex()[0]));
 				operation_step.weight.solver.reset(solver);
 			}
 			else {
@@ -158,13 +158,13 @@ namespace SmartPeak
 			++iter;
 		}
 		// add the operations to the cache
-		operation_steps_.push_back(operation_step_list);
+		this->operation_steps_.push_back(operation_step_list);
 	}
 
 	template<typename TensorT>
 	inline void ModelInterpreterDefaultDevice<TensorT>::executeForwardPropogationOperations(const int& time_step)
 	{
-		for (std::vector<OperationTensorStep<TensorT, Eigen::DefaultDevice>>& operations_list : operation_steps_) {
+		for (std::vector<OperationTensorStep<TensorT, Eigen::DefaultDevice>>& operations_list : this->operation_steps_) {
 			ModelKernalDefaultDevice<TensorT> model_kernal;
 			Eigen::DefaultDevice device;
 
@@ -206,12 +206,12 @@ namespace SmartPeak
 	template<typename TensorT>
 	inline void ModelInterpreterDefaultDevice<TensorT>::executeBackwardPropogationOperations(const int & time_step)
 	{
-		for (int i = operation_steps_.size() - 1; i >= 0; --i) { //iterate backwards
+		for (int i = this->operation_steps_.size() - 1; i >= 0; --i) { //iterate backwards
 			ModelKernalDefaultDevice<TensorT> model_kernal;
 			Eigen::DefaultDevice device;
 
 			// execute the forward propogation steps
-			for (OperationTensorStep<TensorT, Eigen::DefaultDevice>& operation : operation_steps_[i]) { //reverse source/sink
+			for (OperationTensorStep<TensorT, Eigen::DefaultDevice>& operation : this->operation_steps_[i]) { //reverse source/sink
 
 				model_kernal.executeNodeDerivative(
 					operation.source_layer.tensor->getHOutputPointer().get(),
@@ -261,8 +261,8 @@ namespace SmartPeak
 			expected,
 			layer_tensor_data->getHOutputPointer().get(),
 			layer_tensor_data->getDOutputPointer().get(),
-			model_error_->getHErrorPointer().get(),
-			model_error_->getDErrorPointer().get(),
+			this->model_error_->getHErrorPointer().get(),
+			this->model_error_->getDErrorPointer().get(),
 			layer_tensor_data->getHErrorPointer().get(),
 			layer_tensor_data->getDErrorPointer().get(),
 			loss_function,
@@ -277,7 +277,7 @@ namespace SmartPeak
 	template<typename TensorT>
 	inline void ModelInterpreterDefaultDevice<TensorT>::executeWeightErrorOperations()
 	{
-		for (std::vector<OperationTensorStep<TensorT, Eigen::DefaultDevice>>& operations_list : operation_steps_) {
+		for (std::vector<OperationTensorStep<TensorT, Eigen::DefaultDevice>>& operations_list : this->operation_steps_) {
 			ModelKernalDefaultDevice<TensorT> model_kernal;
 			Eigen::DefaultDevice device;
 
@@ -319,7 +319,7 @@ namespace SmartPeak
 	template<typename TensorT>
 	inline void ModelInterpreterDefaultDevice<TensorT>::executeWeightUpdateOperations()
 	{
-		for (std::vector<OperationTensorStep<TensorT, Eigen::DefaultDevice>>& operations_list : operation_steps_) {
+		for (std::vector<OperationTensorStep<TensorT, Eigen::DefaultDevice>>& operations_list : this->operation_steps_) {
 			ModelKernalDefaultDevice<TensorT> model_kernal;
 			Eigen::DefaultDevice device;
 
@@ -345,7 +345,7 @@ namespace SmartPeak
 	inline void ModelInterpreterDefaultDevice<TensorT>::allocateModelErrorTensor(const int& batch_size, const int& memory_size) {
 		std::shared_ptr<ModelErrorData<TensorT, Eigen::DefaultDevice>> model_error_data(new ModelErrorDataCpu<TensorT>());
 		model_error_data->initModelErrorData(batch_size, memory_size);
-		model_error_ = model_error_data;
+		this->model_error_ = model_error_data;
 	}
 
 	template<typename TensorT>
@@ -363,7 +363,7 @@ namespace SmartPeak
 
 		// copy out the model error
 		if (model_error)
-			model.setError(model_error_->getError());
+			model.setError(this->model_error_->getError());
 
 		// copy out the output node values
 		if (output_nodes) {
@@ -387,7 +387,7 @@ namespace SmartPeak
 	template<typename TensorT>
 	inline void ModelInterpreterDefaultDevice<TensorT>::updateSolverParams(const int & param_index, const TensorT & param_value)
 	{
-		for (auto& weight_tensor_data : weight_tensors_) {
+		for (auto& weight_tensor_data : this->weight_tensors_) {
 			if (weight_tensor_data->getNSolverParams() > 0) {
 				Eigen::Tensor<TensorT, 2> solver_params(weight_tensor_data->getLayer1Size(), weight_tensor_data->getLayer2Size());
 				solver_params.setConstant(param_value);

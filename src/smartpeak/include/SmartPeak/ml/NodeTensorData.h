@@ -219,8 +219,8 @@ protected:
 			input_copy = input;
 			auto h_deleter = [&](TensorT* ptr) { delete[] ptr; };
 			this->h_input_.reset(h_input, h_deleter);
-			h_input_updated_ = true;
-			d_input_updated_ = true;
+			this->h_input_updated_ = true;
+			this->d_input_updated_ = true;
 		}; ///< input setter
 		void setOutput(const Eigen::Tensor<TensorT, 3>& output) {
 			TensorT* h_output = new TensorT[this->batch_size_*this->memory_size_*this->layer_size_];

@@ -126,7 +126,7 @@ public:
 	}
 
 	Model<TensorT> makeModel() { return Model<TensorT>(); }
-	void adaptiveTrainerScheduler(
+	void this->adaptiveTrainerScheduler(
 		const int& n_generations,
 		const int& n_epochs,
 		Model<TensorT>& model,
