@@ -99,19 +99,19 @@ namespace SmartPeak
 		std::vector<TensorT> model_error;
 		
 		// Check input and output data
-		if (!checkInputData(getNEpochsTraining(), input, getBatchSize(), getMemorySize(), input_nodes))
+		if (!this->checkInputData(this->getNEpochsTraining(), input, this->getBatchSize(), this->getMemorySize(), input_nodes))
 		{
 			return model_error;
 		}
 		std::vector<std::string> output_nodes;
-		for (const std::vector<std::string>& output_nodes_vec : output_nodes_)
+		for (const std::vector<std::string>& output_nodes_vec : this->output_nodes_)
 			for (const std::string& output_node : output_nodes_vec)
 				output_nodes.push_back(output_node);
-		if (!checkOutputData(getNEpochsTraining(), output, getBatchSize(), getMemorySize(), output_nodes))
+		if (!this->checkOutputData(this->getNEpochsTraining(), output, this->getBatchSize(), this->getMemorySize(), output_nodes))
 		{
 			return model_error;
 		}
-		if (!checkTimeSteps(getNEpochsTraining(), time_steps, getBatchSize(), getMemorySize()))
+		if (!this->checkTimeSteps(this->getNEpochsTraining(), time_steps, this->getBatchSize(), this->getMemorySize()))
 		{
 			return model_error;
 		}
@@ -125,76 +125,76 @@ namespace SmartPeak
 		}
 
 		// Initialize the model
-		if (getVerbosityLevel() >= 2)
+		if (this->getVerbosityLevel() >= 2)
 			std::cout << "Intializing the model..." << std::endl;
-		if (getFindCycles())
+		if (this->getFindCycles())
 			model.findCycles();
 
 		// Initialize the logger
-		if (getLogTraining())
+		if (this->getLogTraining())
 			model_logger.initLogs(model);
 
 		// compile the graph into a set of operations and allocate all tensors
-		if (getVerbosityLevel() >= 2)
+		if (this->getVerbosityLevel() >= 2)
 			std::cout << "Interpreting the model..." << std::endl;
-		model_interpreter.checkMemory(model, getBatchSize(), getMemorySize());
-		model_interpreter.getForwardPropogationOperations(model, getBatchSize(), getMemorySize(), true);
-		model_interpreter.allocateModelErrorTensor(getBatchSize(), getMemorySize());
+		model_interpreter.checkMemory(model, this->getBatchSize(), this->getMemorySize());
+		model_interpreter.getForwardPropogationOperations(model, this->getBatchSize(), this->getMemorySize(), true);
+		model_interpreter.allocateModelErrorTensor(this->getBatchSize(), this->getMemorySize());
 
-		for (int iter = 0; iter < getNEpochsTraining(); ++iter) // use n_epochs here
+		for (int iter = 0; iter < this->getNEpochsTraining(); ++iter) // use n_epochs here
 		{
 			// update the model hyperparameters
-			adaptiveTrainerScheduler(0, iter, model, model_interpreter, model_error);
+			this->adaptiveTrainerScheduler(0, iter, model, model_interpreter, model_error);
 
 			// assign the input data
 			model_interpreter.initBiases(model); // create the bias	
 			model_interpreter.mapValuesToLayers(model, input.chip(iter, 3), input_nodes, "output");
 
 			// forward propogate
-			if (getVerbosityLevel() >= 2)
+			if (this->getVerbosityLevel() >= 2)
 				std::cout << "Foward Propogation..." << std::endl;
-			model_interpreter.FPTT(getMemorySize());
+			model_interpreter.FPTT(this->getMemorySize());
 
 			// calculate the model error and node output 
-			if (getVerbosityLevel() >= 2)
+			if (this->getVerbosityLevel() >= 2)
 				std::cout << "Error Calculation..." << std::endl;
 			int output_node_cnt = 0;
-			for (size_t loss_iter = 0; loss_iter < output_nodes_.size(); loss_iter++) {
+			for (size_t loss_iter = 0; loss_iter < this->output_nodes_.size(); loss_iter++) {
 				const Eigen::Tensor<TensorT, 3> expected_tmp = output.chip(iter, 3);
-				Eigen::Tensor<TensorT, 3> expected(getBatchSize(), getMemorySize(), (int)output_nodes_[loss_iter].size());
-				for (int batch_iter = 0; batch_iter < getBatchSize(); ++batch_iter)
-					for (int memory_iter = 0; memory_iter < getMemorySize(); ++memory_iter)
-						for (int node_iter = 0; node_iter < output_nodes_[loss_iter].size(); ++node_iter)
+				Eigen::Tensor<TensorT, 3> expected(this->getBatchSize(), this->getMemorySize(), (int)this->output_nodes_[loss_iter].size());
+				for (int batch_iter = 0; batch_iter < this->getBatchSize(); ++batch_iter)
+					for (int memory_iter = 0; memory_iter < this->getMemorySize(); ++memory_iter)
+						for (int node_iter = 0; node_iter < this->output_nodes_[loss_iter].size(); ++node_iter)
 							expected(batch_iter, memory_iter, node_iter) = expected_tmp(batch_iter, memory_iter, (int)(node_iter + output_node_cnt));
-				if (getNTETTSteps() < 0)
-					model_interpreter.CETT(model, expected, output_nodes_[loss_iter], loss_functions_[loss_iter].get(), loss_function_grads_[loss_iter].get(), getMemorySize());
+				if (this->getNTETTSteps() < 0)
+					model_interpreter.CETT(model, expected, this->output_nodes_[loss_iter], this->loss_functions_[loss_iter].get(), this->loss_function_grads_[loss_iter].get(), this->getMemorySize());
 				else
-					model_interpreter.CETT(model, expected, output_nodes_[loss_iter], loss_functions_[loss_iter].get(), loss_function_grads_[loss_iter].get(), getNTETTSteps());
-				output_node_cnt += output_nodes_[loss_iter].size();
+					model_interpreter.CETT(model, expected, this->output_nodes_[loss_iter], this->loss_functions_[loss_iter].get(), this->loss_function_grads_[loss_iter].get(), this->getNTETTSteps());
+				output_node_cnt += this->output_nodes_[loss_iter].size();
 			}
 
 			// back propogate
-			if (getVerbosityLevel() >= 2)
+			if (this->getVerbosityLevel() >= 2)
 				std::cout << "Back Propogation..." << std::endl;
-			if (getNTBPTTSteps() < 0)
-				model_interpreter.TBPTT(getMemorySize());
+			if (this->getNTBPTTSteps() < 0)
+				model_interpreter.TBPTT(this->getMemorySize());
 			else
-				model_interpreter.TBPTT(getNTBPTTSteps());
+				model_interpreter.TBPTT(this->getNTBPTTSteps());
 
 			// update the weights
-			if (getVerbosityLevel() >= 2)
+			if (this->getVerbosityLevel() >= 2)
 				std::cout << "Weight Update..." << std::endl;
 			model_interpreter.updateWeights();
 
 			model_interpreter.getModelResults(model, false, false, true);
 			const Eigen::Tensor<TensorT, 0> total_error = model.getError().sum();
 			model_error.push_back(total_error(0));
-			if (getVerbosityLevel() >= 1)
+			if (this->getVerbosityLevel() >= 1)
 				std::cout << "Model " << model.getName() << " error: " << total_error(0) << std::endl;
 
 			// log epoch
-			if (getLogTraining()) {
-				if (getVerbosityLevel() >= 2)
+			if (this->getLogTraining()) {
+				if (this->getVerbosityLevel() >= 2)
 					std::cout << "Logging..." << std::endl;
 				const Eigen::Tensor<TensorT, 3> expected_values = output.chip(iter, 3);
 				if (model_logger.getLogExpectedPredictedEpoch())
@@ -203,7 +203,7 @@ namespace SmartPeak
 			}
 
 			// reinitialize the model
-			if (iter != getNEpochsTraining() - 1) {
+			if (iter != this->getNEpochsTraining() - 1) {
 				model_interpreter.reInitNodes();
 				model_interpreter.reInitModelError();
 			}
@@ -225,19 +225,19 @@ namespace SmartPeak
 		std::vector<TensorT> model_error;
 
 		// Check input and output data
-		if (!checkInputData(getNEpochsValidation(), input, getBatchSize(), getMemorySize(), input_nodes))
+		if (!this->checkInputData(this->getNEpochsValidation(), input, this->getBatchSize(), this->getMemorySize(), input_nodes))
 		{
 			return model_error;
 		}
 		std::vector<std::string> output_nodes;
-		for (const std::vector<std::string>& output_nodes_vec : output_nodes_)
+		for (const std::vector<std::string>& output_nodes_vec : this->output_nodes_)
 			for (const std::string& output_node : output_nodes_vec)
 				output_nodes.push_back(output_node);
-		if (!checkOutputData(getNEpochsValidation(), output, getBatchSize(), getMemorySize(), output_nodes))
+		if (!this->checkOutputData(this->getNEpochsValidation(), output, this->getBatchSize(), this->getMemorySize(), output_nodes))
 		{
 			return model_error;
 		}
-		if (!checkTimeSteps(getNEpochsValidation(), time_steps, getBatchSize(), getMemorySize()))
+		if (!this->checkTimeSteps(this->getNEpochsValidation(), time_steps, this->getBatchSize(), this->getMemorySize()))
 		{
 			return model_error;
 		}
@@ -251,54 +251,54 @@ namespace SmartPeak
 		}
 
 		// Initialize the model
-		if (getFindCycles())
+		if (this->getFindCycles())
 			model.findCycles();
 
 		// Initialize the logger
-		if (getLogValidation())
+		if (this->getLogValidation())
 			model_logger.initLogs(model);
 
 		// compile the graph into a set of operations and allocate all tensors
-		model_interpreter.getForwardPropogationOperations(model, getBatchSize(), getMemorySize(), false);
-		model_interpreter.allocateModelErrorTensor(getBatchSize(), getMemorySize());
+		model_interpreter.getForwardPropogationOperations(model, this->getBatchSize(), this->getMemorySize(), false);
+		model_interpreter.allocateModelErrorTensor(this->getBatchSize(), this->getMemorySize());
 
-		for (int iter = 0; iter < getNEpochsValidation(); ++iter) // use n_epochs here
+		for (int iter = 0; iter < this->getNEpochsValidation(); ++iter) // use n_epochs here
 		{
 			// assign the input data
 			model_interpreter.initBiases(model); // create the bias	
 			model_interpreter.mapValuesToLayers(model, input.chip(iter, 3), input_nodes, "output");
 
 			// forward propogate
-			if (getVerbosityLevel() >= 2)
+			if (this->getVerbosityLevel() >= 2)
 				std::cout << "Foward Propogation..." << std::endl;
-			model_interpreter.FPTT(getMemorySize());
+			model_interpreter.FPTT(this->getMemorySize());
 
 			// calculate the model error and node output 
-			if (getVerbosityLevel() >= 2)
+			if (this->getVerbosityLevel() >= 2)
 				std::cout << "Error Calculation..." << std::endl;
 			int output_node_cnt = 0;
-			for (size_t loss_iter = 0; loss_iter < output_nodes_.size(); loss_iter++) {
+			for (size_t loss_iter = 0; loss_iter < this->output_nodes_.size(); loss_iter++) {
 				Eigen::Tensor<TensorT, 3> expected_tmp = output.chip(iter, 3);
-				Eigen::Tensor<TensorT, 3> expected(getBatchSize(), getMemorySize(), (int)output_nodes_[loss_iter].size());
-				for (int batch_iter = 0; batch_iter < getBatchSize(); ++batch_iter)
-					for (int memory_iter = 0; memory_iter < getMemorySize(); ++memory_iter)
-						for (int node_iter = 0; node_iter < output_nodes_[loss_iter].size(); ++node_iter)
+				Eigen::Tensor<TensorT, 3> expected(this->getBatchSize(), this->getMemorySize(), (int)this->output_nodes_[loss_iter].size());
+				for (int batch_iter = 0; batch_iter < this->getBatchSize(); ++batch_iter)
+					for (int memory_iter = 0; memory_iter < this->getMemorySize(); ++memory_iter)
+						for (int node_iter = 0; node_iter < this->output_nodes_[loss_iter].size(); ++node_iter)
 							expected(batch_iter, memory_iter, node_iter) = expected_tmp(batch_iter, memory_iter, (int)(node_iter + output_node_cnt));
-				if (getNTETTSteps() < 0)
-					model_interpreter.CETT(model, expected, output_nodes_[loss_iter], loss_functions_[loss_iter].get(), loss_function_grads_[loss_iter].get(), getMemorySize());
+				if (this->getNTETTSteps() < 0)
+					model_interpreter.CETT(model, expected, this->output_nodes_[loss_iter], this->loss_functions_[loss_iter].get(), this->loss_function_grads_[loss_iter].get(), this->getMemorySize());
 				else
-					model_interpreter.CETT(model, expected, output_nodes_[loss_iter], loss_functions_[loss_iter].get(), loss_function_grads_[loss_iter].get(), getNTETTSteps());
-				output_node_cnt += output_nodes_[loss_iter].size();
+					model_interpreter.CETT(model, expected, this->output_nodes_[loss_iter], this->loss_functions_[loss_iter].get(), this->loss_function_grads_[loss_iter].get(), this->getNTETTSteps());
+				output_node_cnt += this->output_nodes_[loss_iter].size();
 			}
 
 			model_interpreter.getModelResults(model, false, false, true);
 			const Eigen::Tensor<TensorT, 0> total_error = model.getError().sum();
 			model_error.push_back(total_error(0));
-			if (getVerbosityLevel() >= 1)
+			if (this->getVerbosityLevel() >= 1)
 				std::cout << "Model " << model.getName() << " error: " << total_error(0) << std::endl;
 
 			// log epoch
-			if (getLogValidation()) {
+			if (this->getLogValidation()) {
 				const Eigen::Tensor<TensorT, 3> expected_values = output.chip(iter, 3);
 				if (model_logger.getLogExpectedPredictedEpoch())
 					model_interpreter.getModelResults(model, true, false, false);
@@ -306,7 +306,7 @@ namespace SmartPeak
 			}
 
 			// reinitialize the model
-			if (iter != getNEpochsValidation() - 1) {
+			if (iter != this->getNEpochsValidation() - 1) {
 				model_interpreter.reInitNodes();
 				model_interpreter.reInitModelError();
 			}
@@ -327,11 +327,11 @@ namespace SmartPeak
 		std::vector<std::vector<Eigen::Tensor<TensorT, 2>>> model_output;
 
 		// Check input data
-		if (!checkInputData(getNEpochsEvaluation(), input, getBatchSize(), getMemorySize(), input_nodes))
+		if (!this->checkInputData(this->getNEpochsEvaluation(), input, this->getBatchSize(), this->getMemorySize(), input_nodes))
 		{
 			return model_output;
 		}
-		if (!checkTimeSteps(getNEpochsEvaluation(), time_steps, getBatchSize(), getMemorySize()))
+		if (!this->checkTimeSteps(this->getNEpochsEvaluation(), time_steps, this->getBatchSize(), this->getMemorySize()))
 		{
 			return model_output;
 		}
@@ -340,7 +340,7 @@ namespace SmartPeak
 			return model_output;
 		}
 		std::vector<std::string> output_nodes;
-		for (const std::vector<std::string>& output_nodes_vec : output_nodes_)
+		for (const std::vector<std::string>& output_nodes_vec : this->output_nodes_)
 			for (const std::string& output_node : output_nodes_vec)
 				output_nodes.push_back(output_node);
 		if (!model.checkNodeNames(output_nodes))
@@ -349,44 +349,44 @@ namespace SmartPeak
 		}
 
 		// Initialize the model
-		if (getFindCycles())
+		if (this->getFindCycles())
 			model.findCycles();
 
 		// Initialize the logger
-		if (getLogEvaluation())
+		if (this->getLogEvaluation())
 			model_logger.initLogs(model);
 
 		// compile the graph into a set of operations and allocate all tensors
-		model_interpreter.getForwardPropogationOperations(model, getBatchSize(), getMemorySize(), false);
-		model_interpreter.allocateModelErrorTensor(getBatchSize(), getMemorySize());
+		model_interpreter.getForwardPropogationOperations(model, this->getBatchSize(), this->getMemorySize(), false);
+		model_interpreter.allocateModelErrorTensor(this->getBatchSize(), this->getMemorySize());
 
-		for (int iter = 0; iter < getNEpochsEvaluation(); ++iter) // use n_epochs here
+		for (int iter = 0; iter < this->getNEpochsEvaluation(); ++iter) // use n_epochs here
 		{
 			// assign the input data
 			model_interpreter.initBiases(model); // create the bias	
 			model_interpreter.mapValuesToLayers(model, input.chip(iter, 3), input_nodes, "output");
 
 			// forward propogate
-			if (getVerbosityLevel() >= 2)
+			if (this->getVerbosityLevel() >= 2)
 				std::cout << "Foward Propogation..." << std::endl;
-			model_interpreter.FPTT(getMemorySize());
+			model_interpreter.FPTT(this->getMemorySize());
 
 			// extract out the model output
 			std::vector<Eigen::Tensor<TensorT, 2>> output;
-			for (const std::vector<std::string>& output_nodes_vec : output_nodes_) {
+			for (const std::vector<std::string>& output_nodes_vec : this->output_nodes_) {
 				for (const std::string& output_node : output_nodes_vec) {
 					output.push_back(model.getNode(output_node).getOutput());
 				}
 			}
 
 			// log epoch
-			if (getLogEvaluation()) {
+			if (this->getLogEvaluation()) {
 				model_interpreter.getModelResults(model, true, true, false);
 				model_logger.writeLogs(model, iter, {}, {}, {}, {}, output_nodes, Eigen::Tensor<TensorT, 3>(), output_nodes, {}, {});
 			}
 
 			// reinitialize the model
-			if (iter != getNEpochsEvaluation() - 1) {
+			if (iter != this->getNEpochsEvaluation() - 1) {
 				model_interpreter.reInitNodes();
 			}
 		}
