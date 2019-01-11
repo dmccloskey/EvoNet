@@ -3,7 +3,7 @@
 #ifndef SMARTPEAK_TENSORINTEGRATIONFUNCTION_H
 #define SMARTPEAK_TENSORINTEGRATIONFUNCTION_H
 
-#include <SmartPeak/core/preprocessing.h>
+#include <SmartPeak/core/Preprocessing.h>
 #include <SmartPeak/ml/ActivationFunctionTensor.h>
 #include <unsupported/Eigen/CXX11/Tensor>
 

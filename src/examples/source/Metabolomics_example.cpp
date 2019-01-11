@@ -31,6 +31,7 @@ struct PWStats {
 	std::string sample_name_1;
 	std::string sample_name_2;
 	std::string feature_name;
+	std::string feature_comment;
 	int n1, n2;
 	std::pair<float, float> confidence_interval_1;
 	std::pair<float, float> confidence_interval_2;
@@ -88,6 +89,21 @@ struct BiochemicalReaction {
 	std::string calculated_concentration_units;
 	// others if needed
 	bool used;
+	void updateEquation() {
+		std::string new_equation = "";
+		for (int i = 0; i < reactants_ids.size(); ++i) {
+			if (i > 0) new_equation += " + ";
+			if (reactants_stoichiometry[i] > 1) new_equation += std::to_string((int)reactants_stoichiometry[i]) + " ";
+			new_equation += reactants_ids[i];
+		}
+		new_equation += " = ";
+		for (int i = 0; i < products_ids.size(); ++i) {
+			if (i > 0) new_equation += " + ";
+			if (products_stoichiometry[i] > 1) new_equation += std::to_string((int)products_stoichiometry[i]) + " ";
+			new_equation += products_ids[i];
+		}
+		equation = new_equation;
+	}
 };
 typedef std::map<std::string, BiochemicalReaction> BiochemicalReactions;
 
@@ -358,20 +374,20 @@ public:
 	**/
 	void findMARs(bool exclude_currency_mets = false, bool exclude_non_currency_mets = false, TensorT threshold = 0.75)
 	{
-		reaction_ids_.clear();
-		findComponentGroupNames();
+		std::vector<std::string> component_group_names = component_group_names_;
 
 		BiochemicalReactions new_reactions;
 
-		std::vector<std::string> ignore_mets = getDefaultMets(); // set up the ignore list (metabolites not included in the MAR count)
+		std::vector<std::string> ignore_mets = {}; // set up the ignore list (metabolites not included in the MAR count)
 		std::vector<std::string> exlude_mets = {}; // set up the exclude list (metabolites not included in the MAR met ids list)
-		if (exclude_currency_mets) { // remove currency mets from the component_group_names_
-			std::vector<std::string> component_group_names = component_group_names_;
-			component_group_names_.clear();
+		if (exclude_currency_mets) { // remove currency mets from the component_group_names
+			ignore_mets = getDefaultMets();
+			std::vector<std::string> component_group_names_copy = component_group_names;
+			component_group_names.clear();
 			std::vector<std::string> currency_mets = getCurrencyMets();
-			for (const std::string& met_id : component_group_names) {
+			for (const std::string& met_id : component_group_names_copy) {
 				if (std::count(currency_mets.begin(), currency_mets.end(), met_id) == 0) {
-					component_group_names_.push_back(met_id);
+					component_group_names.push_back(met_id);
 				}
 				else {
 					exlude_mets.push_back(met_id);
@@ -379,19 +395,22 @@ public:
 				}
 			}
 		}
-		else if (exclude_non_currency_mets) { // include only currency mets from the component_group_names_
-			std::vector<std::string> component_group_names = component_group_names_;
-			component_group_names_.clear();
+		else if (exclude_non_currency_mets) { // include only currency mets from the component_group_names
+			std::vector<std::string> component_group_names_copy = component_group_names;
+			component_group_names.clear();
 			std::vector<std::string> currency_mets = getCurrencyMets();
-			for (const std::string& met_id : component_group_names) {
+			for (const std::string& met_id : component_group_names_copy) {
 				if (std::count(currency_mets.begin(), currency_mets.end(), met_id) > 0) {
-					component_group_names_.push_back(met_id);
+					component_group_names.push_back(met_id);
 				}
 				else {
 					exlude_mets.push_back(met_id);
 					ignore_mets.push_back(met_id);
 				}
 			}
+		}
+		else {
+			ignore_mets = getDefaultMets();
 		}
 
 		for (const auto& biochem_rxn_map : biochemicalReactions_)
@@ -418,25 +437,27 @@ public:
 			std::vector<float> prod_stoich;
 			std::vector<float> react_stoich;
 			for (int i = 0; i < biochem_rxn_map.second.products_ids.size(); ++i) {
-				if (std::count(component_group_names_.begin(), component_group_names_.end(), biochem_rxn_map.second.products_ids[i]) != 0) {
+				if (std::count(component_group_names.begin(), component_group_names.end(), biochem_rxn_map.second.products_ids[i]) != 0) {
 					++prod_cnt;
 				}
 				if (std::count(ignore_mets.begin(), ignore_mets.end(), biochem_rxn_map.second.products_ids[i]) == 0) {
 					++total_cnt;
 				}
-				if (std::count(exlude_mets.begin(), exlude_mets.end(), biochem_rxn_map.second.products_ids[i]) == 0) {
+				if (std::count(exlude_mets.begin(), exlude_mets.end(), biochem_rxn_map.second.products_ids[i]) == 0
+					&& std::count(component_group_names.begin(), component_group_names.end(), biochem_rxn_map.second.products_ids[i]) != 0) {
 					prod_ids.push_back(biochem_rxn_map.second.products_ids[i]);
 					prod_stoich.push_back(biochem_rxn_map.second.products_stoichiometry[i]);
 				}
 			}
 			for (int i = 0; i < biochem_rxn_map.second.reactants_ids.size(); ++i) {
-				if (std::count(component_group_names_.begin(), component_group_names_.end(), biochem_rxn_map.second.reactants_ids[i]) != 0) {
+				if (std::count(component_group_names.begin(), component_group_names.end(), biochem_rxn_map.second.reactants_ids[i]) != 0) {
 					++react_cnt;
 				}
 				if (std::count(ignore_mets.begin(), ignore_mets.end(), biochem_rxn_map.second.reactants_ids[i]) == 0) {
 					++total_cnt;
 				}
-				if (std::count(exlude_mets.begin(), exlude_mets.end(), biochem_rxn_map.second.reactants_ids[i]) == 0) {
+				if (std::count(exlude_mets.begin(), exlude_mets.end(), biochem_rxn_map.second.reactants_ids[i]) == 0
+					&& std::count(component_group_names.begin(), component_group_names.end(), biochem_rxn_map.second.reactants_ids[i]) != 0) {
 					react_ids.push_back(biochem_rxn_map.second.reactants_ids[i]);
 					react_stoich.push_back(biochem_rxn_map.second.reactants_stoichiometry[i]);
 				}
@@ -453,6 +474,7 @@ public:
 				mod_rxn.products_stoichiometry = prod_stoich;
 				mod_rxn.reactants_ids = react_ids;
 				mod_rxn.reactants_stoichiometry = react_stoich;
+				mod_rxn.updateEquation();
 				new_reactions.emplace(rxn_id, mod_rxn);
 				reaction_ids_.push_back(rxn_id);
 			}
@@ -463,6 +485,7 @@ public:
 				mod_rxn.products_stoichiometry = prod_stoich;
 				mod_rxn.reactants_ids = react_ids;
 				mod_rxn.reactants_stoichiometry = react_stoich;
+				mod_rxn.updateEquation();
 				new_reactions.emplace(rxn_id, mod_rxn);
 				reaction_ids_.push_back(rxn_id);
 			}
@@ -908,6 +931,7 @@ PWData PWComparison(MetDataSimClassification<float>& metabolomics_data, const st
 				// initialize the data struct
 				PWStats pw_stats;
 				pw_stats.feature_name = mar;
+				pw_stats.feature_comment = metabolomics_data.biochemicalReactions_.at(mar).equation;
 				pw_stats.sample_name_1 = sample_names[sgn1_iter];
 				pw_stats.sample_name_2 = sample_names[sgn2_iter];
 				pw_stats.n1 = n_samples;
@@ -974,6 +998,7 @@ PWData PWPrePostComparison(MetDataSimClassification<float>& metabolomics_data,
 			// initialize the data struct
 			PWStats pw_stats;
 			pw_stats.feature_name = mar;
+			pw_stats.feature_comment = metabolomics_data.biochemicalReactions_.at(mar).equation;
 			pw_stats.sample_name_1 = pre_samples[pairs_iter];
 			pw_stats.sample_name_2 = post_samples[pairs_iter];
 			pw_stats.n1 = n_samples;
@@ -1060,6 +1085,7 @@ PWData PWPrePostDifference(MetDataSimClassification<float>& metabolomics_data,
 				// initialize the data struct
 				PWStats pw_stats;
 				pw_stats.feature_name = mar;
+				pw_stats.feature_comment = metabolomics_data.biochemicalReactions_.at(mar).equation;
 				pw_stats.sample_name_1 = sample_name_1;
 				pw_stats.sample_name_2 = sample_name_2;
 				pw_stats.n1 = n_samples;
@@ -1171,12 +1197,13 @@ bool WritePWData(const std::string& filename, const PWData& pw_data) {
 
 	// Export the results to file
 	CSVWriter csvwriter(filename);
-	std::vector<std::string> headers = { "Feature", "Sample1", "Sample2", "LB1", "LB2", "UB1", "UB2", "Log2(FC)" };
+	std::vector<std::string> headers = { "Feature", "FeatureComment", "Sample1", "Sample2", "LB1", "LB2", "UB1", "UB2", "Log2(FC)" };
 	csvwriter.writeDataInRow(headers.begin(), headers.end());
 	for (const auto& pw_datum : pw_data) {
 		for (const auto& pw_stats : pw_datum.second) {
 			std::vector<std::string> line;
 			line.push_back(pw_stats.feature_name);
+			line.push_back(pw_stats.feature_comment);
 			line.push_back(pw_stats.sample_name_1);
 			line.push_back(pw_stats.sample_name_2);
 			line.push_back(std::to_string(pw_stats.confidence_interval_1.first));
@@ -1865,6 +1892,7 @@ void main_statistics_timecourse(std::string blood_fraction = "PLT",
 	metabolomics_data.readBiochemicalReactions(biochem_rxns_filename);
 	metabolomics_data.readMetabolomicsData(metabo_data_filename);
 	metabolomics_data.readMetaData(meta_data_filename);
+	metabolomics_data.findComponentGroupNames();
 	metabolomics_data.findMARs();
 	metabolomics_data.findLabels();
 
@@ -2113,6 +2141,7 @@ void main_statistics_controls(std::string blood_fraction = "PLT", bool run_contr
 	metabolomics_data.readBiochemicalReactions(biochem_rxns_filename);
 	metabolomics_data.readMetabolomicsData(metabo_data_filename);
 	metabolomics_data.readMetaData(meta_data_filename);
+	metabolomics_data.findComponentGroupNames();
 	metabolomics_data.findMARs();
 	metabolomics_data.findLabels();
 
@@ -2131,8 +2160,8 @@ void main_statistics_preVsPost(std::string blood_fraction = "PLT", bool run_oneV
 
 	// data dirs
 	//std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
-	std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
-	//std::string data_dir = "/home/user/Data/";
+	//std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
+	std::string data_dir = "/home/user/Data/";
 
 	std::string biochem_rxns_filename, metabo_data_filename, meta_data_filename,
 		oneVSonePre_filename, oneVSonePost_filename, preVSpost_filename, postMinPre_filename;
@@ -2178,7 +2207,11 @@ void main_statistics_preVsPost(std::string blood_fraction = "PLT", bool run_oneV
 	metabolomics_data.readBiochemicalReactions(biochem_rxns_filename);
 	metabolomics_data.readMetabolomicsData(metabo_data_filename);
 	metabolomics_data.readMetaData(meta_data_filename);
+	metabolomics_data.findComponentGroupNames();
 	metabolomics_data.findMARs();
+	metabolomics_data.findMARs(true, false);
+	metabolomics_data.findMARs(false, true);
+	metabolomics_data.removeRedundantMARs();
 	metabolomics_data.findLabels();
 
 	if (run_oneVSone) {
@@ -2259,6 +2292,7 @@ void main_classification(std::string blood_fraction = "PLT", bool make_model = t
 	metabolomics_data.readBiochemicalReactions(biochem_rxns_filename);
 	metabolomics_data.readMetabolomicsData(metabo_data_filename);
 	metabolomics_data.readMetaData(meta_data_filename);
+	metabolomics_data.findComponentGroupNames();
 	metabolomics_data.findMARs();
 	metabolomics_data.findMARs(true, false);
 	metabolomics_data.findMARs(false, true);
@@ -2290,7 +2324,7 @@ void main_classification(std::string blood_fraction = "PLT", bool make_model = t
 	model_trainer.setNEpochsTraining(1001);
 	model_trainer.setNEpochsValidation(25);
 	model_trainer.setVerbosityLevel(1);
-	model_trainer.setLogging(true, false);
+	model_trainer.setLogging(true, false, false);
 	//model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()), std::shared_ptr<LossFunctionOp<float>>(new NegativeLogLikelihoodOp<float>(2)) 
 	//});
 	//model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()), std::shared_ptr<LossFunctionGradOp<float>>(new NegativeLogLikelihoodGradOp<float>(2)) 
@@ -2306,8 +2340,7 @@ void main_classification(std::string blood_fraction = "PLT", bool make_model = t
 	//});
 
 	// define the model logger
-	ModelLogger<float> model_logger(true, true, true, false, false, false, false, false);
-	//ModelLogger<float> model_logger(true, true, true, true, true, false, true, true);
+	ModelLogger<float> model_logger(true, true, false, false, false, false, false, false);
 
 	// initialize the model replicator
 	ModelReplicatorExt<float> model_replicator;
@@ -2369,6 +2402,7 @@ void main_reconstruction()
 	metabolomics_data.readBiochemicalReactions(biochem_rxns_filename);
 	metabolomics_data.readMetabolomicsData(metabo_data_filename);
 	metabolomics_data.readMetaData(meta_data_filename);
+	metabolomics_data.findComponentGroupNames();
 	metabolomics_data.findMARs();
 	metabolomics_data.findLabels();
 
@@ -2483,10 +2517,10 @@ int main(int argc, char** argv)
 	//	true, true, true, true, true,
 	//	true, true, true, true,
 	//	true, true, true, true);
-	//main_statistics_preVsPost("PLT", false, false, false);
+	main_statistics_preVsPost("PLT", true, true, true);
 	//main_statistics_preVsPost("RBC", false, false, false);
 	//main_statistics_preVsPost("P", false, false, false);
-	main_classification("PLT", false);
+	//main_classification("PLT", false);
 	//main_reconstruction();
 	return 0;
 }
