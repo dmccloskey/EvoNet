@@ -120,10 +120,10 @@ namespace SmartPeak
 					operation_step.source_layer.integration_error.reset(integration_error);
 					integration_weight_grad_conv(FP_operations[operations.second[0]].arguments[0].source_node->getIntegrationWeightGrad(), integration_weight_grad, std::vector<TensorT>());
 					operation_step.source_layer.integration_weight_grad.reset(integration_weight_grad);
-					operation_step.source_layer.tensor = getLayerTensor(FP_operations[operations.second[0]].arguments[0].source_node->getTensorIndex().first);
+					operation_step.source_layer.tensor = this->getLayerTensor(FP_operations[operations.second[0]].arguments[0].source_node->getTensorIndex().first);
 				}
 				else {
-					operation_step.source_layer.tensor = getLayerTensor(FP_operations[operations.second[0]].arguments[0].source_node->getTensorIndex().first);
+					operation_step.source_layer.tensor = this->getLayerTensor(FP_operations[operations.second[0]].arguments[0].source_node->getTensorIndex().first);
 					operation_step.source_layer.time_step = FP_operations[operations.second[0]].arguments[0].time_step;
 					activation_conv(FP_operations[operations.second[0]].arguments[0].source_node->getActivation(), activation, std::vector<TensorT>());
 					operation_step.source_layer.activation.reset(activation);
@@ -256,7 +256,7 @@ namespace SmartPeak
 	{
 		ModelKernalDefaultDevice<TensorT> model_kernal;
 		Eigen::DefaultDevice device;
-		auto layer_tensor_data = getLayerTensor(layer_id);
+		auto layer_tensor_data = this->getLayerTensor(layer_id);
 		model_kernal.executeModelErrors(
 			expected,
 			layer_tensor_data->getHOutputPointer().get(),
@@ -357,7 +357,7 @@ namespace SmartPeak
 				const int tensor_index = std::get<0>(weight_map.second->getTensorIndex()[0]);
 				const int layer1_index = std::get<1>(weight_map.second->getTensorIndex()[0]);
 				const int layer2_index = std::get<2>(weight_map.second->getTensorIndex()[0]);
-				weight_map.second->setWeight(getWeightTensor(tensor_index)->getWeight()(layer1_index, layer2_index));
+				weight_map.second->setWeight(this->getWeightTensor(tensor_index)->getWeight()(layer1_index, layer2_index));
 			}
 		}
 
@@ -373,7 +373,7 @@ namespace SmartPeak
 				//const int layer_index = output_node->getTensorIndex().second;
 				const int tensor_index = model.getNodesMap().at(output_node->getName())->getTensorIndex().first;
 				const int layer_index = model.getNodesMap().at(output_node->getName())->getTensorIndex().second;
-				output_node->setOutput(getLayerTensor(tensor_index)->getOutput().chip(layer_index, 2));
+				output_node->setOutput(this->getLayerTensor(tensor_index)->getOutput().chip(layer_index, 2));
 			}
 		}
 	}

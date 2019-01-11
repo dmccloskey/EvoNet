@@ -125,10 +125,10 @@ namespace SmartPeak
 					operation_step.source_layer.integration_error.reset(integration_error);
 					integration_weight_grad_conv(FP_operations[operations.second[0]].arguments[0].source_node->getIntegrationWeightGrad(), integration_weight_grad, std::vector<TensorT>());
 					operation_step.source_layer.integration_weight_grad.reset(integration_weight_grad);
-					operation_step.source_layer.tensor = getLayerTensor(FP_operations[operations.second[0]].arguments[0].source_node->getTensorIndex().first);
+					operation_step.source_layer.tensor = this->getLayerTensor(FP_operations[operations.second[0]].arguments[0].source_node->getTensorIndex().first);
 				}
 				else {
-					operation_step.source_layer.tensor = getLayerTensor(FP_operations[operations.second[0]].arguments[0].source_node->getTensorIndex().first);
+					operation_step.source_layer.tensor = this->getLayerTensor(FP_operations[operations.second[0]].arguments[0].source_node->getTensorIndex().first);
 					operation_step.source_layer.time_step = FP_operations[operations.second[0]].arguments[0].time_step;
 					activation_conv(FP_operations[operations.second[0]].arguments[0].source_node->getActivation(), activation, std::vector<TensorT>());
 					operation_step.source_layer.activation.reset(activation);
@@ -330,7 +330,7 @@ namespace SmartPeak
 		Eigen::GpuStreamDevice stream_device(&stream, getModelResources()[0].getID());
 		Eigen::GpuDevice device(&stream_device);
 
-		auto layer_tensor_data = getLayerTensor(layer_id);
+		auto layer_tensor_data = this->getLayerTensor(layer_id);
 
 		if (!this->model_error_->getErrorStatus().second)
 			this->model_error_->syncHAndDError(device);
@@ -503,8 +503,8 @@ namespace SmartPeak
 		if (weights) {
 			for (auto& weight_map : model.getWeightsMap()) {
 				const int tensor_index = std::get<0>(weight_map.second->getTensorIndex()[0]);
-				if (!getWeightTensor(tensor_index)->getWeightStatus().first)
-					getWeightTensor(tensor_index)->syncHAndDWeight(device);
+				if (!this->getWeightTensor(tensor_index)->getWeightStatus().first)
+					this->getWeightTensor(tensor_index)->syncHAndDWeight(device);
 			}
 		}
 
@@ -520,8 +520,8 @@ namespace SmartPeak
 				//const int tensor_index = output_node->getTensorIndex().first;
 				//const int layer_index = output_node->getTensorIndex().second;
 				const int tensor_index = model.getNodesMap().at(output_node->getName())->getTensorIndex().first;
-				if (!getLayerTensor(tensor_index)->getOutputStatus().first)
-					getLayerTensor(tensor_index)->syncHAndDOutput(device);
+				if (!this->getLayerTensor(tensor_index)->getOutputStatus().first)
+					this->getLayerTensor(tensor_index)->syncHAndDOutput(device);
 			}
 		}
 
@@ -534,7 +534,7 @@ namespace SmartPeak
 				const int tensor_index = std::get<0>(weight_map.second->getTensorIndex()[0]);
 				const int layer1_index = std::get<1>(weight_map.second->getTensorIndex()[0]);
 				const int layer2_index = std::get<2>(weight_map.second->getTensorIndex()[0]);
-				weight_map.second->setWeight(getWeightTensor(tensor_index)->getWeight()(layer1_index, layer2_index));
+				weight_map.second->setWeight(this->getWeightTensor(tensor_index)->getWeight()(layer1_index, layer2_index));
 			}
 		}
 
@@ -550,7 +550,7 @@ namespace SmartPeak
 				//const int layer_index = output_node->getTensorIndex().second;
 				const int tensor_index = model.getNodesMap().at(output_node->getName())->getTensorIndex().first;
 				const int layer_index = model.getNodesMap().at(output_node->getName())->getTensorIndex().second;
-				output_node->setOutput(getLayerTensor(tensor_index)->getOutput().chip(layer_index, 2));
+				output_node->setOutput(this->getLayerTensor(tensor_index)->getOutput().chip(layer_index, 2));
 			}
 		}
 	}
