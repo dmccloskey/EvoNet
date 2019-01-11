@@ -1440,10 +1440,10 @@ namespace SmartPeak
 		// convert the loss function
 		LossFunctionTensorOp<TensorT, DeviceT>* loss_function_tensor = nullptr;
 		LossFunctionOpToLossFunctionTensorOp<TensorT, DeviceT> loss_conv;
-		loss_conv(loss_function, loss_function_tensor, std::vector<TensorT>());
+		loss_conv(loss_function, loss_function_tensor, std::vector<TensorT>() = {});
 		LossFunctionGradTensorOp<TensorT, DeviceT>* loss_function_grad_tensor = nullptr;
 		LossFunctionGradOpToLossFunctionGradTensorOp<TensorT, DeviceT> loss_grad_conv;
-		loss_grad_conv(loss_function_grad, loss_function_grad_tensor, std::vector<TensorT>());
+		loss_grad_conv(loss_function_grad, loss_function_grad_tensor, std::vector<TensorT>() = {});
 
 		// NOTE: the output are stored [Tmax, Tmax - 1, ..., T=0, T=-1] where T=-1 is added automatically
 		//	     so the expected values should also be stored [Tmax, Tmax - 1, ..., T=0, T=-1]

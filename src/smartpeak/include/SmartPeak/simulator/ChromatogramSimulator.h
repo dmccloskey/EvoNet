@@ -272,7 +272,7 @@ namespace SmartPeak
 
 		// make the chromatogram
 		makeChromatogram(x_O, y_O, peaks_LR, peaks, emgs);
-		makeChromatogram(x_noise_O, y_noise_O, std::vector<std::pair<TensorT, TensorT>>(), peaks_noise, emgs);
+		makeChromatogram(x_noise_O, y_noise_O, std::vector<std::pair<TensorT, TensorT>>() = {}, peaks_noise, emgs);
 	}
 
 	template <typename TensorT>
