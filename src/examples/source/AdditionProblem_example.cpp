@@ -30,21 +30,21 @@ public:
 		const int n_epochs = input_data.dimension(3);
 
 		//// generate a new sequence 
-		//// TODO: ensure that the sequence_length_ >= memory_size!
-		//Eigen::Tensor<TensorT, 1> random_sequence(sequence_length_);
-		//Eigen::Tensor<TensorT, 1> mask_sequence(sequence_length_);
-		//float result = AddProb(random_sequence, mask_sequence, n_mask_);
+		//// TODO: ensure that the this->sequence_length_ >= memory_size!
+		//Eigen::Tensor<TensorT, 1> random_sequence(this->sequence_length_);
+		//Eigen::Tensor<TensorT, 1> mask_sequence(this->sequence_length_);
+		//float result = AddProb(random_sequence, mask_sequence, this->n_mask_);
 
 		// Generate the input and output data for training [BUG FREE]
 		for (int batch_iter = 0; batch_iter<batch_size; ++batch_iter) {
 			for (int epochs_iter = 0; epochs_iter<n_epochs; ++epochs_iter) {
 
 				// generate a new sequence 
-				// TODO: ensure that the sequence_length_ >= memory_size!
-				Eigen::Tensor<float, 1> random_sequence(sequence_length_);
-				Eigen::Tensor<float, 1> mask_sequence(sequence_length_);
-				float result = AddProb(random_sequence, mask_sequence, n_mask_);
-				Eigen::Tensor<float, 1> cumulative(sequence_length_);
+				// TODO: ensure that the this->sequence_length_ >= memory_size!
+				Eigen::Tensor<float, 1> random_sequence(this->sequence_length_);
+				Eigen::Tensor<float, 1> mask_sequence(this->sequence_length_);
+				float result = AddProb(random_sequence, mask_sequence, this->n_mask_);
+				Eigen::Tensor<float, 1> cumulative(this->sequence_length_);
 				cumulative.setZero();
 
 				float result_cumulative = 0.0;
