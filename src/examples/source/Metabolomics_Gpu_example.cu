@@ -2354,8 +2354,8 @@ void main_classification(std::string blood_fraction = "PLT", bool make_model = t
 
 	// define the data simulator
 	MetDataSimClassification<float> metabolomics_data;
-	std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
-	//std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
+	//std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
+	std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
 	//std::string data_dir = "/home/user/Data/";
 	std::string model_name = "0_Metabolomics";
 
