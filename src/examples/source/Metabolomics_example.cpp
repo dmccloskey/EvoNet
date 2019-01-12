@@ -2606,7 +2606,7 @@ int main(int argc, char** argv)
 	//	true, true, true, true, true,
 	//	true, true, true, true,
 	//	true, true, true, true);
-	main_statistics_preVsPost("PLT", true, true, false);
+	//main_statistics_preVsPost("PLT", true, true, false);
 	main_statistics_preVsPost("RBC", true, true, false);
 	main_statistics_preVsPost("P", true, true, false);
 	//main_classification("PLT", true);
