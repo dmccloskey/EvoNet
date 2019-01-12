@@ -382,6 +382,7 @@ public:
 		std::vector<std::string> exlude_mets = {}; // set up the exclude list (metabolites not included in the MAR met ids list)
 		if (exclude_currency_mets) { // remove currency mets from the component_group_names
 			ignore_mets = getDefaultMets();
+			exlude_mets = getDefaultMets();
 			std::vector<std::string> component_group_names_copy = component_group_names;
 			component_group_names.clear();
 			std::vector<std::string> currency_mets = getCurrencyMets();
@@ -963,7 +964,7 @@ public:
 			model.nodes_.at(node_name)->setType(NodeType::output);
 
 		// Add the final softmax layer
-		node_names = model_builder.addStableSoftMax(model, "SoftMax", "SoftMax", node_names);
+		//node_names = model_builder.addStableSoftMax(model, "SoftMax", "SoftMax", node_names);
 	}
 	void adaptiveTrainerScheduler(
 		const int& n_generations,
@@ -2393,11 +2394,23 @@ void main_classification(std::string blood_fraction = "PLT", bool make_model = t
 	const int n_output_nodes = metabolomics_data.labels_.size();
 	std::vector<std::string> input_nodes;
 	std::vector<std::string> output_nodes, output_nodes_softmax;
-	for (int i = 0; i < n_input_nodes; ++i)
-		input_nodes.push_back("Input_" + std::to_string(i));
+	for (int i = 0; i < n_input_nodes; ++i) {
+		char name_char[512];
+		sprintf(name_char, "Input_%012d", i);
+		std::string name(name_char);
+		input_nodes.push_back(name);
+	}
 	for (int i = 0; i < n_output_nodes; ++i) {
-		output_nodes.push_back("Output_" + std::to_string(i));
-		output_nodes_softmax.push_back("SoftMax-Out_" + std::to_string(i));
+		char name_char[512];
+		sprintf(name_char, "Output_%012d", i);
+		std::string name(name_char);
+		output_nodes.push_back(name);
+	} 
+	for (int i = 0; i < n_output_nodes; ++i) {
+		char name_char[512];
+		sprintf(name_char, "SoftMax-Out_%012d", i);
+		std::string name(name_char);
+		output_nodes_softmax.push_back(name);
 	}
 
 	// define the model trainers and resources for the trainers
@@ -2410,8 +2423,8 @@ void main_classification(std::string blood_fraction = "PLT", bool make_model = t
 	ModelTrainerExt<float> model_trainer;
 	model_trainer.setBatchSize(64);
 	model_trainer.setMemorySize(1);
-	model_trainer.setNEpochsTraining(1001);
-	model_trainer.setNEpochsValidation(25);
+	model_trainer.setNEpochsTraining(1000);
+	model_trainer.setNEpochsValidation(0);
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setLogging(true, false, false);
 	//model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()), std::shared_ptr<LossFunctionOp<float>>(new NegativeLogLikelihoodOp<float>(2)) 
@@ -2443,8 +2456,8 @@ void main_classification(std::string blood_fraction = "PLT", bool make_model = t
 	if (make_model) {
 		Model<float> model;
 		//model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes);
-		model_trainer.makeMultiHeadDotProdAttention(model, input_nodes.size(), output_nodes.size(), { 2,2 }, { 24,24 }, { 48, 48 }, false, false, false);
-		//model_trainer.makeMultiHeadDotProdAttention(model, input_nodes.size(), output_nodes.size(), { 8, 8 }, { 48, 24 }, { 96, 48 }, false, false, false); //GPU
+		//model_trainer.makeMultiHeadDotProdAttention(model, input_nodes.size(), output_nodes.size(), { 2, 2 }, { 2, 2 }, { 2, 2 }, false, false, false);
+		model_trainer.makeMultiHeadDotProdAttention(model, input_nodes.size(), output_nodes.size(), { 12, 6 }, { 48, 24 }, { 96, 48 }, false, false, false); //GPU
 		population = { model };
 	}
 	else {
