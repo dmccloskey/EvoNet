@@ -5,6 +5,8 @@
 #include <vector>
 #include <string>
 #include <regex>
+#include <iostream>
+#include <cctype>
 
 
 namespace SmartPeak
@@ -12,7 +14,6 @@ namespace SmartPeak
 	/*
 	@brief Methods for string parsing, tokenization, etc.
 	*/
-
 
 	/*
 	@brief Replace tokens in a string
@@ -63,6 +64,24 @@ namespace SmartPeak
 		return tokens;
 	}
 
+	/*
+	@brief Replace all whitespaces in a string
+
+	Tests:
+	std::string test = RemoveWhiteSpaces("A     string with \t\t\t a lot of     \n\n whitespace\n");
+	BOOST_TEST_EQUAL(test, "Astringwithalotofwhitespace");
+
+	@param[in] string
+
+	@returns string with tokens replaced
+	**/
+	static std::string RemoveWhiteSpaces(const std::string& str) {
+		std::string str_nws = str;
+		str_nws.erase(
+			std::remove_if(str_nws.begin(), str_nws.end(), 
+				[](unsigned char c) { return std::isspace(c); }), str_nws.end());
+		return str_nws;
+	}
 }
 
 #endif //SMARTPEAK_STRINGPARSING_H

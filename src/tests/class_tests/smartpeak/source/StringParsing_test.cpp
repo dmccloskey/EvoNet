@@ -23,4 +23,10 @@ BOOST_AUTO_TEST_CASE(SP_SplitString)
 		BOOST_CHECK_EQUAL(test[i], check[i]);
 }
 
+BOOST_AUTO_TEST_CASE(SP_RemoveWhiteSpaces)
+{
+	std::string test = RemoveWhiteSpaces("A     string with \t\t\t a lot of     \n\n whitespace\n");
+	BOOST_CHECK_EQUAL(test, "Astringwithalotofwhitespace");
+}
+
 BOOST_AUTO_TEST_SUITE_END()

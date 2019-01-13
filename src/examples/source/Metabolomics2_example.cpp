@@ -19,9 +19,9 @@ void main_statistics_timecourseSummary(
 	MetDataSimClassification<float> metabolomics_data;
 
 	// data dirs
-	std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
+	//std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
 	//std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
-	//std::string data_dir = "/home/user/Data/";
+	std::string data_dir = "/home/user/Data/";
 
 	std::string 
 		timeCourse_Ref_filename, timeCourse_Gnd_filename, timeCourse_SdhCB_filename, timeCourse_Pgi_filename, timeCourse_PtsHIcrr_filename,

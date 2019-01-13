@@ -221,24 +221,24 @@ public:
 			row.equation = equation_str;
 			row.gpr = gpr_str;
 			row.used = (used__str == "t") ? true : false;
-			std::vector<std::string> reactants_ids = SplitString(ReplaceTokens(reactants_ids_str, { "[\{\}]", "_p", "_c", "_e", "_m", "_r" }, ""), ",");
+			std::vector<std::string> reactants_ids = SplitString(ReplaceTokens(reactants_ids_str, { "[\{\}\']", "_p", "_c", "_e", "_m", "_r", "\\s+" }, ""), ",");
 			for (const std::string& met_id : reactants_ids) {
 				if (!met_id.empty()) {
 					row.reactants_ids.push_back(met_id);
 				}
 			}
-			std::vector<std::string> products_ids = SplitString(ReplaceTokens(products_ids_str, { "[\{\}]", "_p", "_c", "_e", "_m", "_r" }, ""), ",");
+			std::vector<std::string> products_ids = SplitString(ReplaceTokens(products_ids_str, { "[\{\}\']", "_p", "_c", "_e", "_m", "_r", "\\s+" }, ""), ",");
 			for (const std::string& met_id : products_ids) {
 				if (!met_id.empty()) {
 					row.products_ids.push_back(met_id);
 				}
 			}
 
-			std::vector<std::string> reactants_stoichiometry_vector = SplitString(ReplaceTokens(reactants_stoichiometry_str, { "[\{\}]" }, ""), ",");
+			std::vector<std::string> reactants_stoichiometry_vector = SplitString(ReplaceTokens(reactants_stoichiometry_str, { "[\{\}]", "\\s+" }, ""), ",");
 			for (const std::string& int_str : reactants_stoichiometry_vector)
 				if (int_str != "")
 					row.reactants_stoichiometry.push_back(std::stof(int_str));
-			std::vector<std::string> products_stoichiometry_vector = SplitString(ReplaceTokens(products_stoichiometry_str, { "[\{\}]" }, ""), ",");
+			std::vector<std::string> products_stoichiometry_vector = SplitString(ReplaceTokens(products_stoichiometry_str, { "[\{\}]", "\\s+" }, ""), ",");
 			for (const std::string& int_str : products_stoichiometry_vector)
 				if (int_str != "")
 					row.products_stoichiometry.push_back(std::stof(int_str));
