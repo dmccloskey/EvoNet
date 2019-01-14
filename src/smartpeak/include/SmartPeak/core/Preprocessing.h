@@ -303,10 +303,10 @@ namespace SmartPeak
 	/*
 	@brief 1D Gaussian sampler
 
-	@param[in] n_dims the number of categorical labels
-	@param[in] n_labels the number of categorical labels
+	@param[in] n_dims the number of gaussian labels
+	@param[in] n_labels the number of gaussian labels
 
-	@returns a Tensor of Gumbel samples
+	@returns a Tensor of Gaussian samples
 	*/
 	template<typename Ta>
 	Eigen::Tensor<Ta, 2> GaussianSampler(const int& n_dims, const int& n_labels) {

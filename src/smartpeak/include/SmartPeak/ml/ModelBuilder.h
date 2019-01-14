@@ -1848,24 +1848,24 @@ public:
 		std::string unity_weight_name, scalar_weight_name;
 
 		for (size_t i = 0; i < alpha_node_names.size(); ++i) {
-			// NOTE: is this needed? can we just treat the encoding nodes as logits?
-			// Make the logAlpha scalar nodes
-			char logalphaScale_name_char[512];
-			sprintf(logalphaScale_name_char, "%s-Scalar", alpha_node_names[i].data());
-			std::string logalphaScale_name(logalphaScale_name_char);
-			Node<TensorT> logalphaScale(logalphaScale_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<TensorT>>(new LogOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LogGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
-			logalphaScale.setModuleName(module_name);
-			model.addNodes({ logalphaScale });
-			//node_names.push_back(logalphaScale_name);
+			//// NOTE: is this needed? can we just treat the encoding nodes as logits?
+			//// Make the logAlpha scalar nodes
+			//char logalphaScale_name_char[512];
+			//sprintf(logalphaScale_name_char, "%s-Scalar", alpha_node_names[i].data());
+			//std::string logalphaScale_name(logalphaScale_name_char);
+			//Node<TensorT> logalphaScale(logalphaScale_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<TensorT>>(new LogOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LogGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
+			//logalphaScale.setModuleName(module_name);
+			//model.addNodes({ logalphaScale });
+			////node_names.push_back(logalphaScale_name);
 
-			// Make the links from logvar to the scalar node
-			scalar_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", alpha_node_names[i], logalphaScale_name);
-			char lvToS_link_name_char[512];
-			sprintf(lvToS_link_name_char, "%s_to_%s", alpha_node_names[i].data(), logalphaScale_name.data());
-			std::string lvToS_link_name(lvToS_link_name_char);
-			Link lvToS_link(lvToS_link_name, alpha_node_names[i], logalphaScale_name, scalar_weight_name);
-			lvToS_link.setModuleName(module_name);
-			model.addLinks({ lvToS_link });
+			//// Make the links from logvar to the scalar node
+			//scalar_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", alpha_node_names[i], logalphaScale_name);
+			//char lvToS_link_name_char[512];
+			//sprintf(lvToS_link_name_char, "%s_to_%s", alpha_node_names[i].data(), logalphaScale_name.data());
+			//std::string lvToS_link_name(lvToS_link_name_char);
+			//Link lvToS_link(lvToS_link_name, alpha_node_names[i], logalphaScale_name, scalar_weight_name);
+			//lvToS_link.setModuleName(module_name);
+			//model.addLinks({ lvToS_link });
 
 			// Make the sampler nodes
 			char sampler_name_char[512];
@@ -1895,11 +1895,11 @@ public:
 			model.addLinks({ lsToLAS_link });
 
 			// Make the links from the logAlpha node and sampler node to the logAlphaSamplerSum node
-			scalar_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", logalphaScale_name, logAlphaSampler_name);
+			scalar_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", alpha_node_names[i]/*logalphaScale_name*/, logAlphaSampler_name);
 			char laToLAS_link_name_char[512];
-			sprintf(laToLAS_link_name_char, "%s_to_%s", logalphaScale_name.data(), logAlphaSampler_name.data());
+			sprintf(laToLAS_link_name_char, "%s_to_%s", alpha_node_names[i]/*logalphaScale_name*/.data(), logAlphaSampler_name.data());
 			std::string laToLAS_link_name(laToLAS_link_name_char);
-			Link laToLAS_link(laToLAS_link_name, logalphaScale_name, logAlphaSampler_name, scalar_weight_name);
+			Link laToLAS_link(laToLAS_link_name, alpha_node_names[i]/*logalphaScale_name*/, logAlphaSampler_name, scalar_weight_name);
 			laToLAS_link.setModuleName(module_name);
 			model.addLinks({ laToLAS_link });
 

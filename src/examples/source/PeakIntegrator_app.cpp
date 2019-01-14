@@ -681,8 +681,8 @@ void main_DenoisingAE(const bool& make_model, const bool& load_weight_values, co
 	population_trainer.setNReplicatesPerModel(1);
 
 	// define the model logger
-	//ModelLogger<float> model_logger(true, true, false, false, false, false, false, false);
-	ModelLogger<float> model_logger(true, true, true, false, false, false, false, false); // evaluation only
+	ModelLogger<float> model_logger(true, true, false, false, false, false, false, false);
+	//ModelLogger<float> model_logger(true, true, true, false, false, false, false, false); // evaluation and testing only
 
 	// define the data simulator
 	const std::size_t input_size = 512;
@@ -692,7 +692,7 @@ void main_DenoisingAE(const bool& make_model, const bool& load_weight_values, co
 	// Hard
 	//data_simulator.step_size_mu_ = std::make_pair(1, 1);
 	//data_simulator.step_size_sigma_ = std::make_pair(0, 0);
-	//data_simulator.chrom_window_size_ = std::make_pair(500, 500);
+	//data_simulator.chrom_window_size_ = std::make_pair(input_size, input_size);
 	//data_simulator.noise_mu_ = std::make_pair(0, 0);
 	//data_simulator.noise_sigma_ = std::make_pair(0, 5.0);
 	//data_simulator.baseline_height_ = std::make_pair(0, 0);
@@ -710,7 +710,7 @@ void main_DenoisingAE(const bool& make_model, const bool& load_weight_values, co
 	//data_simulator.noise_sigma_ = std::make_pair(0, 5);
 	//data_simulator.baseline_height_ = std::make_pair(0, 0);
 	//data_simulator.n_peaks_ = std::make_pair(2, 20);
-	//data_simulator.emg_h_ = std::make_pair(10, 100);
+	//data_simulator.emg_h_ = std::make_pair(0.1, 1.0);
 	//data_simulator.emg_tau_ = std::make_pair(0, 0);
 	//data_simulator.emg_mu_offset_ = std::make_pair(0, 0);
 	//data_simulator.emg_sigma_ = std::make_pair(10, 30);
@@ -720,7 +720,8 @@ void main_DenoisingAE(const bool& make_model, const bool& load_weight_values, co
 	data_simulator.step_size_sigma_ = std::make_pair(0, 0);
 	data_simulator.chrom_window_size_ = std::make_pair(input_size, input_size);
 	data_simulator.noise_mu_ = std::make_pair(0, 0);
-	data_simulator.noise_sigma_ = std::make_pair(0, 0);
+	data_simulator.noise_sigma_ = std::make_pair(0, 0.2);
+	//data_simulator.noise_sigma_ = std::make_pair(0, 0);
 	data_simulator.baseline_height_ = std::make_pair(0, 0);
 	data_simulator.n_peaks_ = std::make_pair(2, 2);
 	data_simulator.emg_h_ = std::make_pair(1, 1);
@@ -768,7 +769,7 @@ void main_DenoisingAE(const bool& make_model, const bool& load_weight_values, co
 	//model_trainer.setBatchSize(32);
 	model_trainer.setNEpochsTraining(10001);
 	model_trainer.setNEpochsValidation(1);
-	model_trainer.setNEpochsEvaluation(1);
+	model_trainer.setNEpochsEvaluation(100);
 	model_trainer.setMemorySize(1);
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setLogging(true, false, true);
@@ -789,8 +790,8 @@ void main_DenoisingAE(const bool& make_model, const bool& load_weight_values, co
 	Model<float> model;
 	if (make_model) {
 		//model_trainer.makeDenoisingAE(model, input_size, encoding_size, n_hidden);
-		//model_trainer.makeMultiHeadDotProdAttention(model, input_size, input_size, { 1, 1 }, { 12, 12 }, { (int)input_size, (int)input_size }, false, true, false);
-		model_trainer.makeCompactCovNetAE(model, input_size, input_size, encoding_size, 1, 1, false);
+		model_trainer.makeMultiHeadDotProdAttention(model, input_size, input_size, { 12, 12 }, { 48, 48 }, { (int)input_size, (int)input_size }, false, false, false);
+		//model_trainer.makeCompactCovNetAE(model, input_size, input_size, encoding_size, 1, 1, false);
 	}
 	else {
 		// read in the trained model
