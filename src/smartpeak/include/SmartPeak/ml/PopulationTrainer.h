@@ -905,8 +905,10 @@ private:
 
 			// train the population
 			std::cout << "Training the models..." << std::endl;
-			trainModels(models, model_trainer, model_interpreters, model_logger,
-				input_data_training, output_data_training, time_steps_training, input_nodes);
+			if (model_trainer.getNEpochsTraining() > 0) {
+				trainModels(models, model_trainer, model_interpreters, model_logger,
+					input_data_training, output_data_training, time_steps_training, input_nodes);
+			}
 
 			// select the top N from the population
 			std::cout << "Selecting the models..." << std::endl;
