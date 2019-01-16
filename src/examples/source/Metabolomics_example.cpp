@@ -1228,45 +1228,45 @@ void main_reconstruction()
 int main(int argc, char** argv)
 {
 	main_statistics_controls("PLT", true);
-	//main_statistics_controls("RBC", true);
-	//main_statistics_controls("P", true);
+	main_statistics_controls("RBC", true);
+	main_statistics_controls("P", true);
 	main_statistics_controlsSummary("PLT", true);
-	//main_statistics_controlsSummary("RBC", true);
-	//main_statistics_controlsSummary("P", true);
+	main_statistics_controlsSummary("RBC", true);
+	main_statistics_controlsSummary("P", true);
 	main_statistics_timecourse("PLT",
 		true, true, true, true, true,
 		true, true, true, true, true,
 		true, true, true, true,
 		true, true, true, true);
-	//main_statistics_timecourse("P",
-	//	true, true, true, true, true,
-	//	true, true, true, true, true,
-	//	true, true, true, true,
-	//	true, true, true, true);
-	//main_statistics_timecourse("RBC",
-	//	true, true, true, true, true,
-	//	true, true, true, true, true,
-	//	true, true, true, true,
-	//	true, true, true, true);
+	main_statistics_timecourse("P",
+		true, true, true, true, true,
+		true, true, true, true, true,
+		true, true, true, true,
+		true, true, true, true);
+	main_statistics_timecourse("RBC",
+		true, true, true, true, true,
+		true, true, true, true, true,
+		true, true, true, true,
+		true, true, true, true);
 	main_statistics_timecourseSummary("PLT", 
 		true, true, true, true, true,
 		true, true, true, true, true,
 		true, true, true, true,
 		true, true, true, true);
-	//main_statistics_timecourseSummary("P",
-	//	true, true, true, true, true,
-	//	true, true, true, true, true,
-	//	true, true, true, true,
-	//	true, true, true, true);
-	//main_statistics_timecourseSummary("RBC",
-	//	true, true, true, true, true,
-	//	true, true, true, true, true,
-	//	true, true, true, true,
-	//	true, true, true, true);
+	main_statistics_timecourseSummary("P",
+		true, true, true, true, true,
+		true, true, true, true, true,
+		true, true, true, true,
+		true, true, true, true);
+	main_statistics_timecourseSummary("RBC",
+		true, true, true, true, true,
+		true, true, true, true, true,
+		true, true, true, true,
+		true, true, true, true);
 	main_statistics_preVsPost("PLT", true, true, false);
-	//main_statistics_preVsPost("RBC", true, true, false);
-	//main_statistics_preVsPost("P", true, true, false);
-	main_classification("PLT", true);
-	main_reconstruction();
+	main_statistics_preVsPost("RBC", true, true, false);
+	main_statistics_preVsPost("P", true, true, false);
+	//main_classification("PLT", true);
+	//main_reconstruction();
 	return 0;
 }

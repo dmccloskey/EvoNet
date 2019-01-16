@@ -94,7 +94,7 @@ public:
 		std::vector<std::string> node_names_Cencoder = model_builder.addCategoricalEncoding(model, "Categorical_encoding", "Categorical_encoding", node_names_logalpha);
 
 		// Add the Decoder FC layers
-		node_names = model_builder.addFullyConnected(model, "DE0", "G_DE0", node_names_Gencoder, n_hidden_0,
+		node_names = model_builder.addFullyConnected(model, "DE0", "DE0", node_names_Gencoder, n_hidden_0,
 			std::shared_ptr<ActivationOp<TensorT>>(new ELUOp<TensorT>(1.0)),
 			std::shared_ptr<ActivationOp<TensorT>>(new ELUGradOp<TensorT>(1.0)),
 			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
@@ -102,7 +102,7 @@ public:
 			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
 			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_Gencoder.size() + n_hidden_0) / 2, 1)),
 			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
-		model_builder.addFullyConnected(model, "C_DE0", node_names_Cencoder, node_names,
+		model_builder.addFullyConnected(model, "DE0", node_names_Cencoder, node_names,
 			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_Cencoder.size() + n_hidden_0) / 2, 1)),
 			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 		node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names, n_hidden_0,
@@ -220,7 +220,7 @@ public:
 					}
 
 					// Gaussian Sampler
-					Eigen::Tensor<TensorT, 2> gaussian_samples = GaussianSampler(1, n_encodings);
+					Eigen::Tensor<TensorT, 2> gaussian_samples = GaussianSampler<TensorT>(1, n_encodings);
 
 					// Input and Output: encodings
 					for (int nodes_iter = 0; nodes_iter < n_encodings; ++nodes_iter) {
@@ -230,7 +230,7 @@ public:
 					}
 
 					// Concrete Sampler
-					Eigen::Tensor<TensorT, 2> categorical_samples = GumbelSampler(1, n_categorical);
+					Eigen::Tensor<TensorT, 2> categorical_samples = GumbelSampler<TensorT>(1, n_categorical);
 					TensorT inverse_tau = 1.0 / 0.5; // Madison 2017 recommended 2/3 for tau
 
 					// Input and Output: categorical
@@ -366,25 +366,25 @@ void main_VAE(const bool& make_model, const bool& load_weight_values, const bool
 	const std::size_t input_size = 784;
 	const std::size_t encoding_size = 64;
 	const std::size_t categorical_size = 10;
-	const std::size_t n_hidden = 512;
-	const std::size_t training_data_size = 60000; //60000;
-	const std::size_t validation_data_size = 10000; //10000;
+	const std::size_t n_hidden = 1;
+	const std::size_t training_data_size = 600; //60000;
+	const std::size_t validation_data_size = 100; //10000;
 	DataSimulatorExt<float> data_simulator;
 
 	// read in the training data
-	const std::string training_data_filename = "C:/Users/domccl/GitHub/mnist/train-images.idx3-ubyte";
-	const std::string training_labels_filename = "C:/Users/domccl/GitHub/mnist/train-labels.idx1-ubyte";
-	//const std::string training_data_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/train-images-idx3-ubyte";
-	//const std::string training_labels_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/train-labels-idx1-ubyte";
+	//const std::string training_data_filename = "C:/Users/domccl/GitHub/mnist/train-images.idx3-ubyte";
+	//const std::string training_labels_filename = "C:/Users/domccl/GitHub/mnist/train-labels.idx1-ubyte";
+	const std::string training_data_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/train-images-idx3-ubyte";
+	const std::string training_labels_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/train-labels-idx1-ubyte";
 	//const std::string training_data_filename = "/home/user/data/train-images-idx3-ubyte";
 	//const std::string training_labels_filename = "/home/user/data/train-labels-idx1-ubyte";
 	data_simulator.readData(training_data_filename, training_labels_filename, true, training_data_size, input_size);
 
 	// read in the validation data
-	const std::string validation_data_filename = "C:/Users/domccl/GitHub/mnist/t10k-images.idx3-ubyte";
-	const std::string validation_labels_filename = "C:/Users/domccl/GitHub/mnist/t10k-labels.idx1-ubyte";
-	//const std::string validation_data_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/t10k-images-idx3-ubyte";
-	//const std::string validation_labels_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/t10k-labels-idx1-ubyte";
+	//const std::string validation_data_filename = "C:/Users/domccl/GitHub/mnist/t10k-images.idx3-ubyte";
+	//const std::string validation_labels_filename = "C:/Users/domccl/GitHub/mnist/t10k-labels.idx1-ubyte";
+	const std::string validation_data_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/t10k-images-idx3-ubyte";
+	const std::string validation_labels_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/t10k-labels-idx1-ubyte";
 	//const std::string validation_data_filename = "/home/user/data/t10k-images-idx3-ubyte";
 	//const std::string validation_labels_filename = "/home/user/data/t10k-labels-idx1-ubyte";
 	data_simulator.readData(validation_data_filename, validation_labels_filename, false, validation_data_size, input_size);
@@ -448,9 +448,9 @@ void main_VAE(const bool& make_model, const bool& load_weight_values, const bool
 
 	// Make the encoding nodes
 	std::vector<std::string> encoding_nodes_logalpha;
-	for (int i = 0; i < encoding_size; ++i) {
+	for (int i = 0; i < categorical_size; ++i) {
 		char name_char[512];
-		sprintf(name_char, "LogAlpha_%012d", i); // Categorical_encoding-SoftMax-Out_%012d
+		sprintf(name_char, "Categorical_encoding-SoftMax-Out_%012d", i); // LogAlpha_%012d
 		std::string name(name_char);
 		encoding_nodes_logalpha.push_back(name);
 	}
@@ -463,9 +463,9 @@ void main_VAE(const bool& make_model, const bool& load_weight_values, const bool
 		model_interpreters.push_back(model_interpreter);
 	}
 	ModelTrainerExt<float> model_trainer;
-	//model_trainer.setBatchSize(1); // evaluation only
-	model_trainer.setBatchSize(32);
-	model_trainer.setNEpochsTraining(10001);
+	model_trainer.setBatchSize(1); // evaluation only
+	//model_trainer.setBatchSize(32);
+	model_trainer.setNEpochsTraining(100);
 	model_trainer.setNEpochsValidation(0);
 	model_trainer.setNEpochsEvaluation(100);
 	model_trainer.setMemorySize(1);
@@ -484,7 +484,7 @@ void main_VAE(const bool& make_model, const bool& load_weight_values, const bool
 		std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceMuGradOp<float>()),
 		std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceLogVarGradOp<float>()),
 		std::shared_ptr<LossFunctionGradOp<float>>(new NegativeLogLikelihoodGradOp<float>()) });
-	model_trainer.setOutputNodes({ output_nodes, encoding_nodes_mu, encoding_nodes_logvar, encoding_nodes_logvar, encoding_nodes_logalpha });
+	model_trainer.setOutputNodes({ output_nodes, encoding_nodes_mu, encoding_nodes_logvar, encoding_nodes_logalpha });
 
 	// define the model replicator for growth mode
 	ModelReplicatorExt<float> model_replicator;
@@ -493,7 +493,7 @@ void main_VAE(const bool& make_model, const bool& load_weight_values, const bool
 	std::cout << "Initializing the population..." << std::endl;
 	Model<float> model;
 	if (make_model) {
-		ModelTrainerExt<float>().makeCVAE(model, input_size, encoding_size, n_hidden);
+		model_trainer.makeCVAE(model, input_size, categorical_size, encoding_size, n_hidden);
 	}
 	else {
 		// read in the trained model

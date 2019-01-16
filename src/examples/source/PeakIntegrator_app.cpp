@@ -707,9 +707,9 @@ void main_DenoisingAE(const bool& make_model, const bool& load_weight_values, co
 	//data_simulator.step_size_sigma_ = std::make_pair(0, 0);
 	//data_simulator.chrom_window_size_ = std::make_pair(input_size, input_size);
 	//data_simulator.noise_mu_ = std::make_pair(0, 0);
-	//data_simulator.noise_sigma_ = std::make_pair(0, 5);
+	//data_simulator.noise_sigma_ = std::make_pair(0, 0.2);
 	//data_simulator.baseline_height_ = std::make_pair(0, 0);
-	//data_simulator.n_peaks_ = std::make_pair(2, 20);
+	//data_simulator.n_peaks_ = std::make_pair(1, 20);
 	//data_simulator.emg_h_ = std::make_pair(0.1, 1.0);
 	//data_simulator.emg_tau_ = std::make_pair(0, 0);
 	//data_simulator.emg_mu_offset_ = std::make_pair(0, 0);
@@ -767,7 +767,7 @@ void main_DenoisingAE(const bool& make_model, const bool& load_weight_values, co
 	ModelTrainerExt<float> model_trainer;
 	model_trainer.setBatchSize(1); // evaluation only
 	//model_trainer.setBatchSize(32);
-	model_trainer.setNEpochsTraining(10001);
+	model_trainer.setNEpochsTraining(10000);
 	model_trainer.setNEpochsValidation(1);
 	model_trainer.setNEpochsEvaluation(100);
 	model_trainer.setMemorySize(1);
