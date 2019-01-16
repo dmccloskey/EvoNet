@@ -22,8 +22,8 @@ void main_statistics_timecourseSummary(std::string blood_fraction = "PLT",
 
 	// data dirs
 	//std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
-	std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
-	//std::string data_dir = "/home/user/Data/";
+	//std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
+	std::string data_dir = "/home/user/Data/";
 
 	std::string 
 		timeCourse_S01D01_filename, timeCourse_S01D02_filename, timeCourse_S01D03_filename, timeCourse_S01D04_filename, timeCourse_S01D05_filename,
@@ -509,8 +509,8 @@ void main_statistics_timecourse(std::string blood_fraction = "PLT",
 
 	// data dirs
 	//std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
-	std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
-	//std::string data_dir = "/home/user/Data/";
+	//std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
+	std::string data_dir = "/home/user/Data/";
 
 	std::string biochem_rxns_filename, metabo_data_filename, meta_data_filename,
 		timeCourse_S01D01_filename, timeCourse_S01D02_filename, timeCourse_S01D03_filename, timeCourse_S01D04_filename, timeCourse_S01D05_filename,
@@ -794,8 +794,8 @@ void main_statistics_controlsSummary(std::string blood_fraction = "PLT", bool ru
 
 	// data dirs
 	//std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
-	std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
-	//std::string data_dir = "/home/user/Data/";
+	//std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
+	std::string data_dir = "/home/user/Data/";
 
 	std::string
 		controls_filename, controlsSampleSummary_filename, controlsFeatureSummary_filename;
@@ -841,8 +841,8 @@ void main_statistics_controls(std::string blood_fraction = "PLT", bool run_contr
 
 	// data dirs
 	//std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
-	std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
-	//std::string data_dir = "/home/user/Data/";
+	//std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
+	std::string data_dir = "/home/user/Data/";
 
 	std::string biochem_rxns_filename, metabo_data_filename, meta_data_filename,
 		controls_filename;
@@ -1003,9 +1003,9 @@ void main_classification(std::string blood_fraction = "PLT", bool make_model = t
 
 	// define the data simulator
 	MetDataSimClassification<float> metabolomics_data;
-	std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
+	//std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
 	//std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
-	//std::string data_dir = "/home/user/Data/";
+	std::string data_dir = "/home/user/Data/";
 	std::string model_name = "0_Metabolomics";
 
 	std::string biochem_rxns_filename, metabo_data_filename, meta_data_filename;
