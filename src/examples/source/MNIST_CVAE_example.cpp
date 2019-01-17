@@ -90,8 +90,8 @@ public:
 			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 
 		// Add the Encoding layers
-		std::vector<std::string> node_names_Gencoder = model_builder.addGaussianEncoding(model, "Gaussian_encoding", "Gaussian_encoding", node_names_mu, node_names_logvar);
-		std::vector<std::string> node_names_Cencoder = model_builder.addCategoricalEncoding(model, "Categorical_encoding", "Categorical_encoding", node_names_logalpha);
+		std::vector<std::string> node_names_Gencoder = model_builder.addGaussianEncoding(model, "Gaussian_encoding", "Gaussian_encoding", node_names_mu, node_names_logvar, true);
+		std::vector<std::string> node_names_Cencoder = model_builder.addCategoricalEncoding(model, "Categorical_encoding", "Categorical_encoding", node_names_logalpha, true);
 
 		// Add the Decoder FC layers
 		node_names = model_builder.addFullyConnected(model, "DE0", "DE0", node_names_Gencoder, n_hidden_0,
@@ -366,27 +366,27 @@ void main_VAE(const bool& make_model, const bool& load_weight_values, const bool
 	const std::size_t input_size = 784;
 	const std::size_t encoding_size = 64;
 	const std::size_t categorical_size = 10;
-	const std::size_t n_hidden = 1;
-	const std::size_t training_data_size = 600; //60000;
-	const std::size_t validation_data_size = 100; //10000;
+	const std::size_t n_hidden = 256;
+	const std::size_t training_data_size = 60000; //60000;
+	const std::size_t validation_data_size = 10000; //10000;
 	DataSimulatorExt<float> data_simulator;
 
 	// read in the training data
 	//const std::string training_data_filename = "C:/Users/domccl/GitHub/mnist/train-images.idx3-ubyte";
 	//const std::string training_labels_filename = "C:/Users/domccl/GitHub/mnist/train-labels.idx1-ubyte";
-	const std::string training_data_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/train-images-idx3-ubyte";
-	const std::string training_labels_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/train-labels-idx1-ubyte";
-	//const std::string training_data_filename = "/home/user/data/train-images-idx3-ubyte";
-	//const std::string training_labels_filename = "/home/user/data/train-labels-idx1-ubyte";
+	//const std::string training_data_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/train-images-idx3-ubyte";
+	//const std::string training_labels_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/train-labels-idx1-ubyte";
+	const std::string training_data_filename = "/home/user/data/train-images-idx3-ubyte";
+	const std::string training_labels_filename = "/home/user/data/train-labels-idx1-ubyte";
 	data_simulator.readData(training_data_filename, training_labels_filename, true, training_data_size, input_size);
 
 	// read in the validation data
 	//const std::string validation_data_filename = "C:/Users/domccl/GitHub/mnist/t10k-images.idx3-ubyte";
 	//const std::string validation_labels_filename = "C:/Users/domccl/GitHub/mnist/t10k-labels.idx1-ubyte";
-	const std::string validation_data_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/t10k-images-idx3-ubyte";
-	const std::string validation_labels_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/t10k-labels-idx1-ubyte";
-	//const std::string validation_data_filename = "/home/user/data/t10k-images-idx3-ubyte";
-	//const std::string validation_labels_filename = "/home/user/data/t10k-labels-idx1-ubyte";
+	//const std::string validation_data_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/t10k-images-idx3-ubyte";
+	//const std::string validation_labels_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/t10k-labels-idx1-ubyte";
+	const std::string validation_data_filename = "/home/user/data/t10k-images-idx3-ubyte";
+	const std::string validation_labels_filename = "/home/user/data/t10k-labels-idx1-ubyte";
 	data_simulator.readData(validation_data_filename, validation_labels_filename, false, validation_data_size, input_size);
 	data_simulator.unitScaleData();
 
@@ -463,11 +463,11 @@ void main_VAE(const bool& make_model, const bool& load_weight_values, const bool
 		model_interpreters.push_back(model_interpreter);
 	}
 	ModelTrainerExt<float> model_trainer;
-	model_trainer.setBatchSize(1); // evaluation only
-	//model_trainer.setBatchSize(32);
-	model_trainer.setNEpochsTraining(100);
-	model_trainer.setNEpochsValidation(0);
-	model_trainer.setNEpochsEvaluation(100);
+	//model_trainer.setBatchSize(1); // evaluation only
+	model_trainer.setBatchSize(32);
+	model_trainer.setNEpochsTraining(10000);
+	model_trainer.setNEpochsValidation(25);
+	model_trainer.setNEpochsEvaluation(0);
 	model_trainer.setMemorySize(1);
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setLogging(true, false, true);
