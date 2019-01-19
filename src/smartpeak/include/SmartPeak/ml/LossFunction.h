@@ -19,9 +19,10 @@ namespace SmartPeak
 	{
 	public:
 		LossFunctionOp() = default;
-		LossFunctionOp(const T& eps) : eps_(eps) {};
+		LossFunctionOp(const T& eps, const T& scale) : eps_(eps), scale_(scale) {};
 		~LossFunctionOp() = default;
 		virtual std::string getName() = 0;
+		virtual std::vector<T> getParameters() const = 0;
 		virtual Eigen::Tensor<T, 1> operator()(
 			const Eigen::Tensor<T, 2>& y_pred,
 			const Eigen::Tensor<T, 2>& y_true) const = 0;
@@ -30,6 +31,7 @@ namespace SmartPeak
 			const Eigen::Tensor<T, 1>& y_true) const = 0;
 	protected:
 		T eps_ = 1e-6;
+		T scale_ = 1.0;
 	};
 
 	/**
@@ -40,9 +42,10 @@ namespace SmartPeak
 	{
 	public:
 		LossFunctionGradOp() = default;
-		LossFunctionGradOp(const T& eps) : eps_(eps) {};
+		LossFunctionGradOp(const T& eps, const T& scale) : eps_(eps), scale_(scale) {};
 		~LossFunctionGradOp() = default;
 		virtual std::string getName() = 0;
+		virtual std::vector<T> getParameters() const = 0;
 		virtual Eigen::Tensor<T, 2> operator()(
 			const Eigen::Tensor<T, 2>& y_pred,
 			const Eigen::Tensor<T, 2>& y_true) const = 0;
@@ -51,6 +54,7 @@ namespace SmartPeak
 			const Eigen::Tensor<T, 1>& y_true) const = 0;
 	protected:
 		T eps_ = 1e-6;
+		T scale_ = 1.0;
 	};
 
   /**
@@ -60,9 +64,9 @@ namespace SmartPeak
   class EuclideanDistanceOp : public LossFunctionOp<T>
   {
 public: 
-    EuclideanDistanceOp(){}; 
-    ~EuclideanDistanceOp(){};
+		using LossFunctionOp<T>::LossFunctionOp;
 		std::string getName() {	return "EuclideanDistanceOp"; };
+		std::vector<T> getParameters() const { return std::vector<T>({this->eps_, this->scale_}); }
     Eigen::Tensor<T, 1> operator()(
       const Eigen::Tensor<T, 2>& y_pred, 
       const Eigen::Tensor<T, 2>& y_true) const 
@@ -85,9 +89,9 @@ public:
   class EuclideanDistanceGradOp : public LossFunctionGradOp<T>
   {
 public: 
-    EuclideanDistanceGradOp(){}; 
-    ~EuclideanDistanceGradOp(){};
+		using LossFunctionGradOp<T>::LossFunctionGradOp;
 		std::string getName() { return "EuclideanDistanceGradOp"; };
+		std::vector<T> getParameters() const { return std::vector<T>({this->eps_, this->scale_}); }
     Eigen::Tensor<T, 2> operator()(
       const Eigen::Tensor<T, 2>& y_pred, 
       const Eigen::Tensor<T, 2>& y_true) const 
@@ -116,10 +120,10 @@ public:
   template<typename T>
   class L2NormOp : public LossFunctionOp<T>
   {
-public: 
-    L2NormOp(){}; 
-    ~L2NormOp(){};
+public:
+		using LossFunctionOp<T>::LossFunctionOp;
 		std::string getName() { return "L2NormOp"; };
+		std::vector<T> getParameters() const { return std::vector<T>({this->eps_, this->scale_}); }
     Eigen::Tensor<T, 1> operator()(
       const Eigen::Tensor<T, 2>& y_pred, 
       const Eigen::Tensor<T, 2>& y_true) const 
@@ -145,10 +149,10 @@ public:
   template<typename T>
   class L2NormGradOp : public LossFunctionGradOp<T>
   {
-public: 
-    L2NormGradOp(){}; 
-    ~L2NormGradOp(){};
+public:
+		using LossFunctionGradOp<T>::LossFunctionGradOp;
 		std::string getName() { return "L2NormGradOp"; };
+		std::vector<T> getParameters() const { return std::vector<T>({this->eps_, this->scale_}); }
     Eigen::Tensor<T, 2> operator()(
       const Eigen::Tensor<T, 2>& y_pred, 
       const Eigen::Tensor<T, 2>& y_true) const 
@@ -169,10 +173,10 @@ public:
   template<typename T>
   class BCEOp : public LossFunctionOp<T>
   {
-public: 
-    BCEOp(){}; 
-    ~BCEOp(){};
+public:
+		using LossFunctionOp<T>::LossFunctionOp;
 		std::string getName() { return "BCEOp"; };
+		std::vector<T> getParameters() const { return std::vector<T>({this->eps_, this->scale_}); }
     Eigen::Tensor<T, 1> operator()(
       const Eigen::Tensor<T, 2>& y_pred, 
       const Eigen::Tensor<T, 2>& y_true) const 
@@ -211,10 +215,10 @@ public:
   template<typename T>
   class BCEGradOp : public LossFunctionGradOp<T>
   {
-public: 
-    BCEGradOp(){}; 
-    ~BCEGradOp(){};
+public:
+		using LossFunctionGradOp<T>::LossFunctionGradOp;
 		std::string getName() { return "BCEGradOp"; };
+		std::vector<T> getParameters() const { return std::vector<T>({this->eps_, this->scale_}); }
     Eigen::Tensor<T, 2> operator()(
       const Eigen::Tensor<T, 2>& y_pred, 
       const Eigen::Tensor<T, 2>& y_true) const 
@@ -248,12 +252,14 @@ public:
   template<typename T>
   class NegativeLogLikelihoodOp : public LossFunctionOp<T>
   {
-public: 
-    NegativeLogLikelihoodOp() = default;
-		NegativeLogLikelihoodOp(const T& n) { setN(n); };
+public:
+		using LossFunctionOp<T>::LossFunctionOp;
+  //  NegativeLogLikelihoodOp() = default;
+		//NegativeLogLikelihoodOp(const T& n) { setN(n); };
 		void setN(const T& n) { n_ = n; }
-    ~NegativeLogLikelihoodOp() = default;
+    //~NegativeLogLikelihoodOp() = default;
 		std::string getName() { return "NegativeLogLikelihoodOp"; };
+		std::vector<T> getParameters() const { return std::vector<T>({this->eps_, this->scale_}); }
     Eigen::Tensor<T, 1> operator()(
       const Eigen::Tensor<T, 2>& y_pred, 
       const Eigen::Tensor<T, 2>& y_true) const 
@@ -279,12 +285,14 @@ public:
   template<typename T>
   class NegativeLogLikelihoodGradOp : public LossFunctionGradOp<T>
   {
-public: 
-    NegativeLogLikelihoodGradOp(){};
-		NegativeLogLikelihoodGradOp(const T& n) { setN(n); };
+public:
+		using LossFunctionGradOp<T>::LossFunctionGradOp;
+  //  NegativeLogLikelihoodGradOp(){};
+		//NegativeLogLikelihoodGradOp(const T& n) { setN(n); };
 		void setN(const T& n) { n_ = n; }
-    ~NegativeLogLikelihoodGradOp(){};
+    //~NegativeLogLikelihoodGradOp(){};
 		std::string getName() { return "NegativeLogLikelihoodGradOp"; };
+		std::vector<T> getParameters() const { return std::vector<T>({this->eps_, this->scale_}); }
     Eigen::Tensor<T, 2> operator()(
       const Eigen::Tensor<T, 2>& y_pred, 
       const Eigen::Tensor<T, 2>& y_true) const 
@@ -310,11 +318,13 @@ public:
   template<typename T>
   class MSEOp : public LossFunctionOp<T>
   {
-public: 
-    MSEOp(){};
-		MSEOp(const T& n): n_(n){};
-    ~MSEOp(){};
+public:
+		using LossFunctionOp<T>::LossFunctionOp;
+  //  MSEOp(){};
+		//MSEOp(const T& n): n_(n){};
+  //  ~MSEOp(){};
 		std::string getName() { return "MSEOp"; };
+		std::vector<T> getParameters() const { return std::vector<T>({this->eps_, this->scale_}); }
     Eigen::Tensor<T, 1> operator()(
       const Eigen::Tensor<T, 2>& y_pred, 
       const Eigen::Tensor<T, 2>& y_true) const 
@@ -346,11 +356,13 @@ private:
   template<typename T>
   class MSEGradOp : public LossFunctionGradOp<T>
   {
-public: 
-    MSEGradOp(){};
-		MSEGradOp(const T& n) : n_(n) {};
-    ~MSEGradOp(){};
+public:
+		using LossFunctionGradOp<T>::LossFunctionGradOp;
+  //  MSEGradOp(){};
+		//MSEGradOp(const T& n) : n_(n) {};
+  //  ~MSEGradOp(){};
 		std::string getName() { return "MSEGradOp"; };
+		std::vector<T> getParameters() const { return std::vector<T>({this->eps_, this->scale_}); }
     Eigen::Tensor<T, 2> operator()(
       const Eigen::Tensor<T, 2>& y_pred, 
       const Eigen::Tensor<T, 2>& y_true) const 
@@ -384,9 +396,9 @@ public:
 	class KLDivergenceMuOp : public LossFunctionOp<T>
 	{
 	public:
-		KLDivergenceMuOp() {};
-		~KLDivergenceMuOp() {};
+		using LossFunctionOp<T>::LossFunctionOp;
 		std::string getName() { return "KLDivergenceMuOp"; };
+		std::vector<T> getParameters() const { return std::vector<T>({this->eps_, this->scale_}); }
 		Eigen::Tensor<T, 1> operator()(
 			const Eigen::Tensor<T, 2>& y_pred,
 			const Eigen::Tensor<T, 2>& y_true) const
@@ -410,9 +422,9 @@ public:
 	class KLDivergenceMuGradOp : public LossFunctionGradOp<T>
 	{
 	public:
-		KLDivergenceMuGradOp() {};
-		~KLDivergenceMuGradOp() {};
+		using LossFunctionGradOp<T>::LossFunctionGradOp;
 		std::string getName() { return "KLDivergenceMuGradOp"; };
+		std::vector<T> getParameters() const { return std::vector<T>({this->eps_, this->scale_}); }
 		Eigen::Tensor<T, 2> operator()(
 			const Eigen::Tensor<T, 2>& y_pred,
 			const Eigen::Tensor<T, 2>& y_true) const
@@ -441,9 +453,9 @@ public:
 	class KLDivergenceLogVarOp : public LossFunctionOp<T>
 	{
 	public:
-		KLDivergenceLogVarOp() {};
-		~KLDivergenceLogVarOp() {};
+		using LossFunctionOp<T>::LossFunctionOp;
 		std::string getName() { return "KLDivergenceLogVarOp"; };
+		std::vector<T> getParameters() const { return std::vector<T>({this->eps_, this->scale_}); }
 		Eigen::Tensor<T, 1> operator()(
 			const Eigen::Tensor<T, 2>& y_pred,
 			const Eigen::Tensor<T, 2>& y_true) const
@@ -467,9 +479,9 @@ public:
 	class KLDivergenceLogVarGradOp : public LossFunctionGradOp<T>
 	{
 	public:
-		KLDivergenceLogVarGradOp() {};
-		~KLDivergenceLogVarGradOp() {};
+		using LossFunctionGradOp<T>::LossFunctionGradOp;
 		std::string getName() { return "KLDivergenceLogVarGradOp"; };
+		std::vector<T> getParameters() const { return std::vector<T>({this->eps_, this->scale_}); }
 		Eigen::Tensor<T, 2> operator()(
 			const Eigen::Tensor<T, 2>& y_pred,
 			const Eigen::Tensor<T, 2>& y_true) const
@@ -512,9 +524,9 @@ public:
 	class BCEWithLogitsOp : public LossFunctionOp<T>
 	{
 	public:
-		BCEWithLogitsOp() {};
-		~BCEWithLogitsOp() {};
+		using LossFunctionOp<T>::LossFunctionOp;
 		std::string getName() { return "BCEWithLogitsOp"; };
+		std::vector<T> getParameters() const { return std::vector<T>({this->eps_, this->scale_}); }
 		Eigen::Tensor<T, 1> operator()(
 			const Eigen::Tensor<T, 2>& y_pred,
 			const Eigen::Tensor<T, 2>& y_true) const
@@ -550,9 +562,9 @@ public:
 	class BCEWithLogitsGradOp : public LossFunctionGradOp<T>
 	{
 	public:
-		BCEWithLogitsGradOp() {};
-		~BCEWithLogitsGradOp() {};
+		using LossFunctionGradOp<T>::LossFunctionGradOp;
 		std::string getName() { return "BCEWithLogitsGradOp"; };
+		std::vector<T> getParameters() const { return std::vector<T>({this->eps_, this->scale_}); }
 		Eigen::Tensor<T, 2> operator()(
 			const Eigen::Tensor<T, 2>& y_pred,
 			const Eigen::Tensor<T, 2>& y_true) const
@@ -576,9 +588,9 @@ public:
 	class CrossEntropyWithLogitsOp : public LossFunctionOp<T>
 	{
 	public:
-		CrossEntropyWithLogitsOp() = default;
-		~CrossEntropyWithLogitsOp() = default;
+		using LossFunctionOp<T>::LossFunctionOp;
 		std::string getName() { return "CrossEntropyWithLogitsOp"; };
+		std::vector<T> getParameters() const { return std::vector<T>({this->eps_, this->scale_}); }
 		Eigen::Tensor<T, 1> operator()(
 			const Eigen::Tensor<T, 2>& y_pred,
 			const Eigen::Tensor<T, 2>& y_true) const
@@ -600,9 +612,9 @@ public:
 	class CrossEntropyWithLogitsGradOp : public LossFunctionGradOp<T>
 	{
 	public:
-		CrossEntropyWithLogitsGradOp() {};
-		~CrossEntropyWithLogitsGradOp() {};
+		using LossFunctionGradOp<T>::LossFunctionGradOp;
 		std::string getName() { return "CrossEntropyWithLogitsGradOp"; };
+		std::vector<T> getParameters() const { return std::vector<T>({this->eps_, this->scale_}); }
 		Eigen::Tensor<T, 2> operator()(
 			const Eigen::Tensor<T, 2>& y_pred,
 			const Eigen::Tensor<T, 2>& y_true) const

@@ -429,15 +429,15 @@ void main_VAE(const bool& make_model, const bool& load_weight_values, const bool
 	model_trainer.setLogging(true, false, true);
 	model_trainer.setFindCycles(false);
 	model_trainer.setLossFunctions({
-		//std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()),
-		std::shared_ptr<LossFunctionOp<float>>(new BCEWithLogitsOp<float>()),
-		std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceMuOp<float>()),
-		std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceLogVarOp<float>()) });
+		//std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>(1e-6, 1.0)),
+		std::shared_ptr<LossFunctionOp<float>>(new BCEWithLogitsOp<float>(1e-6, 1.0)),
+		std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceMuOp<float>(1e-6, 0.25)),
+		std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceLogVarOp<float>(1e-6, 0.25)) });
 	model_trainer.setLossFunctionGrads({
-		//std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()),
-		std::shared_ptr<LossFunctionGradOp<float>>(new BCEWithLogitsGradOp<float>()),
-		std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceMuGradOp<float>()),
-		std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceLogVarGradOp<float>()) });
+		//std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>(1e-6, 1.0)),
+		std::shared_ptr<LossFunctionGradOp<float>>(new BCEWithLogitsGradOp<float>(1e-6, 1.0)),
+		std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceMuGradOp<float>(1e-6, 0.25)),
+		std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceLogVarGradOp<float>(1e-6, 0.25)) });
 	model_trainer.setOutputNodes({ output_nodes, encoding_nodes_mu, encoding_nodes_logvar });
 
 	// define the model replicator for growth mode
