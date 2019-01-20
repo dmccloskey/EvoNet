@@ -306,7 +306,7 @@ void main_LSTMTrain() {
 
 	// define the initial population [BUG FREE]
 	std::cout << "Initializing the population..." << std::endl;
-	std::vector<Model<float>> population = { ModelTrainerExt<float>().makeLSTM(input_nodes.size(), output_nodes.size(), n_hidden) };
+	std::vector<Model<float>> population = {model_trainer.makeLSTM(input_nodes.size(), output_nodes.size(), n_hidden) };
 
 	// Evolve the population
 	std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(

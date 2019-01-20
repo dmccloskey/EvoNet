@@ -1324,7 +1324,7 @@ namespace SmartPeak
 		//std::map<std::string, std::vector<int>> Conv_ops = getConvOperations(FP_operations_expanded, identified_sink_nodes);
 		//std::map<std::string, std::vector<int>> FIn_ops = getFanOutOperations(FP_operations_expanded, identified_sink_nodes);
 		//std::map<std::string, std::vector<int>> FOut_ops = getFanInOperations(FP_operations_expanded, identified_sink_nodes);
-		std::map<std::string, std::vector<int>> tensor_ops = getTensorOperations(FP_operations_expanded, identified_sink_nodes);  // need to update to account for different Operation index
+		std::map<std::string, std::vector<int>> tensor_ops = getTensorOperations(FP_operations_expanded, identified_sink_nodes);
 
 		// organize into a list of seperate operation indices
 		// [NOTE: can be avoided by changing the `getForwardPropogationLayerTensorDimensions` and `allocateForwardPropogationLayerTensors` methods
@@ -1357,8 +1357,8 @@ namespace SmartPeak
 				std::vector<std::vector<std::pair<int, int>>> weight_indices;
 				std::vector<std::map<std::string, std::vector<std::pair<int, int>>>> shared_weight_indices;
 				std::vector<bool> make_source_tensors, make_sink_tensors, make_weight_tensors;
-				getForwardPropogationLayerTensorDimensions(FP_operations_steps[i], tensor_ops_steps[i], source_layer_sizes, sink_layer_sizes, weight_indices, shared_weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors);
-				allocateForwardPropogationLayerTensors(FP_operations_steps[i], tensor_ops_steps[i], source_layer_sizes, sink_layer_sizes, weight_indices, shared_weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors, batch_size, memory_size_buffered, train);
+				getForwardPropogationLayerTensorDimensions(FP_operations_expanded, tensor_ops_steps[i], source_layer_sizes, sink_layer_sizes, weight_indices, shared_weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors);
+				allocateForwardPropogationLayerTensors(FP_operations_expanded, tensor_ops_steps[i], source_layer_sizes, sink_layer_sizes, weight_indices, shared_weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors, batch_size, memory_size_buffered, train);
 			}
 		}
 	}

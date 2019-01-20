@@ -29,21 +29,21 @@ public:
 		const int n_output_nodes = output_data.dimension(2);
 		const int n_epochs = input_data.dimension(3);
 
-		//// generate a new sequence 
-		//// TODO: ensure that the this->sequence_length_ >= memory_size!
-		//Eigen::Tensor<TensorT, 1> random_sequence(this->sequence_length_);
-		//Eigen::Tensor<TensorT, 1> mask_sequence(this->sequence_length_);
-		//float result = this->AddProb(random_sequence, mask_sequence, this->n_mask_);
+		// generate a new sequence 
+		// TODO: ensure that the this->sequence_length_ >= memory_size!
+		Eigen::Tensor<TensorT, 1> random_sequence(this->sequence_length_);
+		Eigen::Tensor<TensorT, 1> mask_sequence(this->sequence_length_);
+		float result = this->AddProb(random_sequence, mask_sequence, this->n_mask_);
 
 		// Generate the input and output data for training [BUG FREE]
 		for (int batch_iter = 0; batch_iter<batch_size; ++batch_iter) {
 			for (int epochs_iter = 0; epochs_iter<n_epochs; ++epochs_iter) {
 
-				// generate a new sequence 
-				// TODO: ensure that the this->sequence_length_ >= memory_size!
-				Eigen::Tensor<float, 1> random_sequence(this->sequence_length_);
-				Eigen::Tensor<float, 1> mask_sequence(this->sequence_length_);
-				float result = this->AddProb(random_sequence, mask_sequence, this->n_mask_);
+				//// generate a new sequence 
+				//// TODO: ensure that the this->sequence_length_ >= memory_size!
+				//Eigen::Tensor<float, 1> random_sequence(this->sequence_length_);
+				//Eigen::Tensor<float, 1> mask_sequence(this->sequence_length_);
+				//float result = this->AddProb(random_sequence, mask_sequence, this->n_mask_);
 				Eigen::Tensor<float, 1> cumulative(this->sequence_length_);
 				cumulative.setZero();
 
@@ -381,17 +381,17 @@ int main(int argc, char** argv)
 	ModelTrainerExt<float> model_trainer;
 	model_trainer.setBatchSize(8);
 	model_trainer.setMemorySize(data_simulator.sequence_length_);
-	model_trainer.setNEpochsTraining(1001);
+	model_trainer.setNEpochsTraining(1000);
 	model_trainer.setNEpochsValidation(25);
 	model_trainer.setVerbosityLevel(1);
-	model_trainer.setLogging(false, false);
+	model_trainer.setLogging(true, false);
 	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
 	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
 	model_trainer.setOutputNodes({ output_nodes });
 
 	// define the model logger
-	//ModelLogger<float> model_logger(true, true, true, false, false, false, false, false);
-	ModelLogger<float> model_logger(true, true, false, false, false, false, false, false);
+	ModelLogger<float> model_logger(true, true, true, false, false, false, false, false);
+	//ModelLogger<float> model_logger(true, true, false, false, false, false, false, false);
 
 	// define the model replicator for growth mode
 	ModelReplicatorExt<float> model_replicator;
