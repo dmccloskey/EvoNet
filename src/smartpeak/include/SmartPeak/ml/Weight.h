@@ -48,6 +48,7 @@ public:
 					//solver_->getName(),
 					module_id_,
 					module_name_,
+					operation_index_,
 					tensor_index_
         ) == std::tie(
           other.id_,
@@ -58,6 +59,7 @@ public:
 					//other.solver_->getName(),
 					other.module_id_,
 					other.module_name_,
+					other.operation_index_,
 					other.tensor_index_
         )
       ;
@@ -75,6 +77,7 @@ public:
 			module_id_ = other.module_id_;
 			module_name_ = other.module_name_;
 			layer_name_ = other.layer_name_;
+			operation_index_ = other.operation_index_;
 			tensor_index_ = other.tensor_index_;
 			weight_ = other.weight_;
 			init_weight_ = other.init_weight_;
@@ -125,6 +128,10 @@ public:
 		std::vector<std::tuple<int, int, int>> getTensorIndex() const; ///< layer id getter
 		void clearTensorIndex();
 
+		void addOperationIndex(const int& operation_id); ///< operation id setter
+		std::vector<int> getOperationIndex() const; ///< operation id getter
+		void clearOperationIndex();
+
 		void setLayerName(const std::string& layer_name); ///< layer name setter
 		std::string getLayerName() const; ///< layer name getter
 
@@ -139,6 +146,7 @@ private:
 		int module_id_ = -1; ///< Module ID
 		std::string module_name_ = ""; ///<Module Name
 		std::string layer_name_ = ""; ///< Layer name
+		std::vector<int> operation_index_; ///< Operation ID: vector of OperationList ids
 		std::vector<std::tuple<int, int, int>> tensor_index_; ///< Layer ID: tuple consisting of OperationsList index and source/sink Layer index(used internally by Model)
     std::shared_ptr<WeightInitOp<TensorT>> weight_init_; ///< weight initialization operator
     std::shared_ptr<SolverOp<TensorT>> solver_; ///< weight update operator
@@ -160,6 +168,7 @@ private:
 		module_id_ = other.module_id_;
 		module_name_ = other.module_name_;
 		layer_name_ = other.layer_name_;
+		operation_index_ = other.operation_index_;
 		tensor_index_ = other.tensor_index_;
 		weight_init_ = other.weight_init_;
 		solver_ = other.solver_;
@@ -393,6 +402,24 @@ private:
 	inline void Weight<TensorT>::clearTensorIndex()
 	{
 		tensor_index_.clear();
+	}
+
+	template<typename OperationT>
+	inline void Weight<OperationT>::addOperationIndex(const int& operation_id)
+	{
+		operation_index_.push_back(operation_id);
+	}
+
+	template<typename OperationT>
+	inline std::vector<int> Weight<OperationT>::getOperationIndex() const
+	{
+		return operation_index_;
+	}
+
+	template<typename OperationT>
+	inline void Weight<OperationT>::clearOperationIndex()
+	{
+		operation_index_.clear();
 	}
 
 	template<typename TensorT>

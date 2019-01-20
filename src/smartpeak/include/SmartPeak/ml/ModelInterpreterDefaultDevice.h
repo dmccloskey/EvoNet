@@ -154,6 +154,7 @@ namespace SmartPeak
 				std::cout << "Weight tensor is not being created...Check!" << std::endl;
 			}
 
+			//this->operation_steps_[FP_operations[operations.second[0]].result.sink_node->getOperationIndex()].push_back(operation_step);
 			operation_step_list.push_back(operation_step);
 			++iter;
 		}

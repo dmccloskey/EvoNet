@@ -51,6 +51,7 @@ namespace SmartPeak
 	{
 		OperationResult<TensorT> result;
 		std::vector<OperationArguments<TensorT>> arguments;
+		int operation_index = -1;
 	};
 
 	/*
@@ -335,7 +336,7 @@ namespace SmartPeak
 		@param[in] layer_index
 		*/
 		static std::string makeForwardPropogationOperationsKey(const int & time_step, const NodeType& node_type, const std::string & node_integration, const std::string & node_activation,
-			const std::string& node_layer_name, const int& node_layer_index, const std::string& weight_layer_name);
+			const std::string& node_layer_name, const int& node_layer_index, const std::string& weight_layer_name, const int& node_operation_index);
 
 		/**
 		@brief Convert a graph model to sequence of tensor operations
@@ -774,7 +775,7 @@ namespace SmartPeak
 					argument.source_node->getActivation()->getName(),
 					argument.source_node->getLayerName(),
 					argument.source_node->getTensorIndex().first,
-					"");
+					"", -1);
 				unique_node_types.insert(ops_key);
 			}
 			for (const std::string& node_types : unique_node_types) {
@@ -787,11 +788,12 @@ namespace SmartPeak
 						argument.source_node->getActivation()->getName(),
 						argument.source_node->getLayerName(),
 						argument.source_node->getTensorIndex().first,
-						"");
+						"", -1);
 					if (node_types == ops_key) {
 						operations_list.arguments.push_back(argument);
 					}
 				}
+				operations_list.operation_index = FP_operation.operation_index;
 				FP_operations_expanded.push_back(operations_list);
 			}
 		}
@@ -818,6 +820,7 @@ namespace SmartPeak
 						operations_list.arguments.push_back(argument);
 					}
 				}
+				operations_list.operation_index = FP_operation.operation_index;
 				FP_operations_expanded.push_back(operations_list);
 			}
 		}
@@ -831,7 +834,9 @@ namespace SmartPeak
 			// check that all nodes are either cached or not yet cached into a layer
 			OperationList<TensorT> operations_list_cached, operations_list;
 			operations_list.result = FP_operation.result;
+			operations_list.operation_index = FP_operation.operation_index;
 			operations_list_cached.result = FP_operation.result;
+			operations_list_cached.operation_index = FP_operation.operation_index;
 			for (const OperationArguments<TensorT>& argument : FP_operation.arguments) {
 				if (argument.source_node->getTensorIndex().first == -1) {
 					operations_list.arguments.push_back(argument);
@@ -1034,14 +1039,16 @@ namespace SmartPeak
 					FP_operations[operations_iter1].result.sink_node->getActivation()->getName(),
 					FP_operations[operations_iter1].result.sink_node->getLayerName(),
 					FP_operations[operations_iter1].result.sink_node->getTensorIndex().first,
-					FP_operations[operations_iter1].arguments[0].weight->getLayerName());
+					FP_operations[operations_iter1].arguments[0].weight->getLayerName(),
+					FP_operations[operations_iter1].result.sink_node->getOperationIndex());
 				std::string ops_key_2 = makeForwardPropogationOperationsKey(FP_operations[operations_iter2].result.time_step,
 					FP_operations[operations_iter2].result.sink_node->getType(),
 					FP_operations[operations_iter2].result.sink_node->getIntegration()->getName(),
 					FP_operations[operations_iter2].result.sink_node->getActivation()->getName(),
 					FP_operations[operations_iter2].result.sink_node->getLayerName(),
 					FP_operations[operations_iter2].result.sink_node->getTensorIndex().first,
-					FP_operations[operations_iter2].arguments[0].weight->getLayerName());
+					FP_operations[operations_iter2].arguments[0].weight->getLayerName(),
+					FP_operations[operations_iter2].result.sink_node->getOperationIndex());
 				if (ops_key_1 != ops_key_2) continue;
 
 				// check if the source nodes are compatible
@@ -1053,7 +1060,8 @@ namespace SmartPeak
 						argument.source_node->getActivation()->getName(),
 						argument.source_node->getLayerName(),
 						argument.source_node->getTensorIndex().first,
-						argument.weight->getLayerName());
+						argument.weight->getLayerName(),
+						-1);
 					argument_nodes.insert(ops_key);
 				}
 				for (const auto& argument : FP_operations[operations_iter2].arguments) {
@@ -1063,7 +1071,8 @@ namespace SmartPeak
 						argument.source_node->getActivation()->getName(),
 						argument.source_node->getLayerName(),
 						argument.source_node->getTensorIndex().first,
-						argument.weight->getLayerName());
+						argument.weight->getLayerName(),
+						-1);
 					argument_nodes.insert(ops_key);
 				}
 				if (argument_nodes.size() > 1) continue;
@@ -1232,17 +1241,19 @@ namespace SmartPeak
 	template<typename TensorT, typename DeviceT>
 	std::string ModelInterpreter<TensorT, DeviceT>::makeForwardPropogationOperationsKey(
 		const int & time_step, const NodeType& node_type, const std::string & node_integration, const std::string & node_activation, 
-		const std::string& node_layer_name, const int& node_layer_index, const std::string& weight_layer_name)
+		const std::string& node_layer_name, const int& node_layer_index, const std::string& weight_layer_name, const int& node_operation_index)
 	{
 		// [TODO: may not need to add in node type
 		//std::string ops_key = std::to_string(time_step) + "/" + std::to_string(node_type) + "/" + node_integration + "/" + node_activation;
-		std::string ops_key = std::to_string(time_step) + "/" + node_integration + "/" + node_activation + "/" + node_layer_name + "/" + weight_layer_name;// +"/" + std::to_string(layer_index);
+		std::string ops_key = std::to_string(time_step) + "/" + node_integration + "/" + node_activation + "/" + node_layer_name + "/" + weight_layer_name + "/" + std::to_string(node_operation_index);// +"/" + std::to_string(layer_index);
 		return ops_key;
 	}
 
 	template<typename TensorT, typename DeviceT>
 	void ModelInterpreter<TensorT, DeviceT>::getForwardPropogationOperations(Model<TensorT>& model, const int& batch_size, const int& memory_size, const bool& train)
 	{
+		// STEP 1: Preliminaries...
+
 		// register the batch and memory sizes with the model
 		// [TODO: add tests]
 		model.setBatchAndMemorySizes(batch_size, memory_size);
@@ -1251,12 +1262,6 @@ namespace SmartPeak
 		const int memory_size_buffered = memory_size + 1;
 
 		// initialize the node statuses to determine the FP propogation steps
-		// [NOTE: is this needed?]
-		//// initialize the input nodes to active (if not activated already)
-		//for (auto& input_node : model.getInputNodes()) {
-		//	input_node->setStatus(NodeStatus::activated);
-		//}
-		// [OR]
 		for (auto& nodes_map : model.nodes_) {
 			if (nodes_map.second->getType() == NodeType::input || nodes_map.second->getType() == NodeType::bias)
 				nodes_map.second->setStatus(NodeStatus::activated);
@@ -1264,15 +1269,17 @@ namespace SmartPeak
 				nodes_map.second->setStatus(NodeStatus::initialized);
 		}
 
+		// STEP 2: Get a list of unoptimized operations for FP
 		const int max_iters = 1e6;
-		for (int iter = 0; iter < max_iters; ++iter)
+		std::vector<OperationList<TensorT>> FP_operations;
+		int iter = 0;
+		for ( ; iter < max_iters; ++iter)
 		{
-			// STEP 1: get an unoptimized set of operations for FP
 			// get the next hidden layer
 			std::map<std::string, int> FP_operations_map;
 			std::vector<OperationList<TensorT>> FP_operations_list;
 			getNextInactiveLayer(model, FP_operations_map, FP_operations_list);
-			
+
 			// [OPTIMIZATION: for performance, this method has been combined with getNextInactiveLayer above to reduce
 			//							  the number of iterations through all model links
 			//// get biases
@@ -1290,49 +1297,69 @@ namespace SmartPeak
 			pruneInactiveLayerCycles(model, FP_operations_map, FP_operations_map_cycles, FP_operations_list, FP_operations_list_cycles, sink_nodes_cycles);
 
 			// check if all nodes have been activated
-			if (FP_operations_list.size() == 0)
-			{
+			if (FP_operations_list.size() == 0)	{
 				break;
 			}
 
-			// STEP 2: optimized the operations set for hardware acceleration
-			// re-organize into tensors with compatible source nodes, sink nodes, and weights
-			std::vector<OperationList<TensorT>> FP_operations_expanded;
-			expandForwardPropogationOperations(FP_operations_list, FP_operations_expanded);
-
-			// identify tensor operation motifs
-			std::set<std::string> identified_sink_nodes;
-			std::map<std::string, std::vector<int>> custom_ops = getCustomOperations(FP_operations_expanded, identified_sink_nodes);
-			//std::map<std::string, std::vector<int>> FC_ops = getFullyConnectedOperations(FP_operations_expanded, identified_sink_nodes);
-			//std::map<std::string, std::vector<int>> SC_ops = getSinglyConnectedOperations(FP_operations_expanded, identified_sink_nodes);
-			//std::map<std::string, std::vector<int>> Conv_ops = getConvOperations(FP_operations_expanded, identified_sink_nodes);
-			//std::map<std::string, std::vector<int>> FIn_ops = getFanOutOperations(FP_operations_expanded, identified_sink_nodes);
-			//std::map<std::string, std::vector<int>> FOut_ops = getFanInOperations(FP_operations_expanded, identified_sink_nodes);
-			std::map<std::string, std::vector<int>> tensor_ops = getTensorOperations(FP_operations_expanded, identified_sink_nodes);
-
-			// allocate memory for tensors
-			if (custom_ops.size() != 0) {
-				std::vector<int> source_layer_sizes, sink_layer_sizes;
-				std::vector<std::vector<TensorT>> weight_values;
-				std::vector<std::vector<std::pair<int, int>>> weight_indices;
-				std::vector<std::map<std::string, std::vector<std::pair<int, int>>>> shared_weight_indices;
-				std::vector<bool> make_source_tensors, make_sink_tensors, make_weight_tensors;
-				getForwardPropogationLayerTensorDimensions(FP_operations_expanded, custom_ops, source_layer_sizes, sink_layer_sizes, weight_indices, shared_weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors);
-				allocateForwardPropogationLayerTensors(FP_operations_expanded, custom_ops, source_layer_sizes, sink_layer_sizes, weight_indices, shared_weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors, batch_size, memory_size_buffered, train);
+			// activate sink nodes and update the Operations index
+			for (auto& FP_operation : FP_operations_list) {
+				FP_operation.result.sink_node->setStatus(NodeStatus::activated);
+				FP_operation.result.sink_node->setOperationIndex(iter); // needed?
+				FP_operation.operation_index = iter;
+				FP_operations.push_back(FP_operation);
 			}
+		}
+
+		// STEP 3: organize the operations into Tensor layers for hardware acceleration
+
+		// Pre-emptively Expand the set of operations
+		std::vector<OperationList<TensorT>> FP_operations_expanded;
+		expandForwardPropogationOperations(FP_operations, FP_operations_expanded);
+
+		// identify tensor operation motifs
+		std::set<std::string> identified_sink_nodes;
+		//std::map<std::string, std::vector<int>> custom_ops = getCustomOperations(FP_operations_expanded, identified_sink_nodes);
+		//std::map<std::string, std::vector<int>> FC_ops = getFullyConnectedOperations(FP_operations_expanded, identified_sink_nodes);
+		//std::map<std::string, std::vector<int>> SC_ops = getSinglyConnectedOperations(FP_operations_expanded, identified_sink_nodes);
+		//std::map<std::string, std::vector<int>> Conv_ops = getConvOperations(FP_operations_expanded, identified_sink_nodes);
+		//std::map<std::string, std::vector<int>> FIn_ops = getFanOutOperations(FP_operations_expanded, identified_sink_nodes);
+		//std::map<std::string, std::vector<int>> FOut_ops = getFanInOperations(FP_operations_expanded, identified_sink_nodes);
+		std::map<std::string, std::vector<int>> tensor_ops = getTensorOperations(FP_operations_expanded, identified_sink_nodes);  // need to update to account for different Operation index
+
+		// organize into a list of seperate operation indices
+		// [NOTE: can be avoided by changing the `getForwardPropogationLayerTensorDimensions` and `allocateForwardPropogationLayerTensors` methods
+		// and then implementing something like `operation_steps_.resize(iter); // allocate space for each operation step`]
+		std::vector<std::vector<OperationList<TensorT>>> FP_operations_steps;
+		FP_operations_steps.resize(iter);
+		for (auto& operation: FP_operations_expanded) {
+			FP_operations_steps[operation.operation_index].push_back(operation);
+		}
+		std::vector<std::map<std::string, std::vector<int>>> tensor_ops_steps;
+		tensor_ops_steps.resize(iter);
+		for (auto& tensor_op: tensor_ops) {
+			tensor_ops_steps[FP_operations_expanded[tensor_op.second[0]].operation_index].emplace(tensor_op.first, tensor_op.second);
+		}
+		
+		// Part 4: Allocate memory for tensors
+		for (int i = 0; i < iter; ++i) {
+			//if (custom_ops.size() != 0) {
+			//	std::vector<int> source_layer_sizes, sink_layer_sizes;
+			//	std::vector<std::vector<TensorT>> weight_values;
+			//	std::vector<std::vector<std::pair<int, int>>> weight_indices;
+			//	std::vector<std::map<std::string, std::vector<std::pair<int, int>>>> shared_weight_indices;
+			//	std::vector<bool> make_source_tensors, make_sink_tensors, make_weight_tensors;
+			//	getForwardPropogationLayerTensorDimensions(FP_operations_steps[i], custom_ops, source_layer_sizes, sink_layer_sizes, weight_indices, shared_weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors);
+			//	allocateForwardPropogationLayerTensors(FP_operations_steps[i], custom_ops, source_layer_sizes, sink_layer_sizes, weight_indices, shared_weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors, batch_size, memory_size_buffered, train);
+			//}
 			if (tensor_ops.size() != 0) {
 				std::vector<int> source_layer_sizes, sink_layer_sizes;
 				std::vector<std::vector<TensorT>> weight_values;
 				std::vector<std::vector<std::pair<int, int>>> weight_indices;
 				std::vector<std::map<std::string, std::vector<std::pair<int, int>>>> shared_weight_indices;
 				std::vector<bool> make_source_tensors, make_sink_tensors, make_weight_tensors;
-				getForwardPropogationLayerTensorDimensions(FP_operations_expanded, tensor_ops, source_layer_sizes, sink_layer_sizes, weight_indices, shared_weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors);
-				allocateForwardPropogationLayerTensors(FP_operations_expanded, tensor_ops, source_layer_sizes, sink_layer_sizes, weight_indices, shared_weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors, batch_size, memory_size_buffered, train);
+				getForwardPropogationLayerTensorDimensions(FP_operations_steps[i], tensor_ops_steps[i], source_layer_sizes, sink_layer_sizes, weight_indices, shared_weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors);
+				allocateForwardPropogationLayerTensors(FP_operations_steps[i], tensor_ops_steps[i], source_layer_sizes, sink_layer_sizes, weight_indices, shared_weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors, batch_size, memory_size_buffered, train);
 			}
-
-			// activate sink nodes
-			for (auto& FP_operation : FP_operations_list)
-				FP_operation.result.sink_node->setStatus(NodeStatus::activated);
 		}
 	}
 	
