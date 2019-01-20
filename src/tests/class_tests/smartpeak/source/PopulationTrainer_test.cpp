@@ -381,8 +381,8 @@ BOOST_AUTO_TEST_CASE(replicateModels)
 
 BOOST_AUTO_TEST_CASE(trainModels) 
 {
-	const std::vector<std::string> input_nodes = { "Input_0" }; // true inputs + biases
-	const std::vector<std::string> output_nodes = { "Output_0" };
+	const std::vector<std::string> input_nodes = { "Input_000000000000" }; // true inputs + biases
+	const std::vector<std::string> output_nodes = { "Output_000000000000" };
 	const int batch_size = 5;
 	const int memory_size = 8;
 	const int n_epochs_training = 5;
@@ -501,6 +501,7 @@ BOOST_AUTO_TEST_CASE(trainModels)
 	// TODO implement a better test...
   for (int i=0; i<population.size(); ++i)
   {
+		std::cout << population[i].getError().size() << std::endl;
     if (i<2)
       BOOST_CHECK_EQUAL(population[i].getError().size(), 0); // error has not been calculated
     else
@@ -510,8 +511,8 @@ BOOST_AUTO_TEST_CASE(trainModels)
 
 BOOST_AUTO_TEST_CASE(evalModels)
 {
-	const std::vector<std::string> input_nodes = { "Input_0" }; // true inputs + biases
-	const std::vector<std::string> output_nodes = { "Output_0" };
+	const std::vector<std::string> input_nodes = { "Input_000000000000" }; // true inputs + biases
+	const std::vector<std::string> output_nodes = { "Output_000000000000" };
 	const int batch_size = 5;
 	const int memory_size = 8;
 	const int n_epochs_training = 5;
@@ -642,8 +643,8 @@ BOOST_AUTO_TEST_CASE(exampleUsage)
   // Toy data set used for all tests
 	DataSimulatorExt<float> data_simulator;
 
-  const std::vector<std::string> input_nodes = {"Input_0"}; // true inputs + biases
-  const std::vector<std::string> output_nodes = {"Output_0"};
+  const std::vector<std::string> input_nodes = {"Input_000000000000"}; // true inputs + biases
+  const std::vector<std::string> output_nodes = {"Output_000000000000"};
 	const int batch_size = 5;
 	const int memory_size = 8;
 	const int n_epochs_training = 5;
