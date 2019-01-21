@@ -591,7 +591,7 @@ private:
 		if (str_tokens.size() > 1)
 			model_name_new = str_tokens[0]; // only retain the last timestamp
 
-		char model_name_char[128];
+		char model_name_char[512];
 		sprintf(model_name_char, "%s@replicateModel#%s", model_name_new.data(), unique_str.data());
 		std::string model_name = model_replicator->makeUniqueHash(model_name_char, std::to_string(cnt));
 

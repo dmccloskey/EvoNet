@@ -30,7 +30,7 @@ public:
     ModelReplicator() = default; ///< Default constructor
     ~ModelReplicator() = default; ///< Default destructor
 
-    void setNNodeAdditions(const int& n_node_additions); ///< n_node_additions setter
+    void setNNodeDownAdditions(const int& n_node_additions); ///< n_node_additions setter
     void setNLinkAdditions(const int& n_link_additions); ///< n_link_additions setter
     void setNNodeDeletions(const int& n_node_deletions); ///< n_node_deletions setter
     void setNLinkDeletions(const int& n_link_deletions); ///< n_link_deletions setter
@@ -41,7 +41,7 @@ public:
 		void setNModuleAdditions(const int& n_module_additions); ///< n_module_additions setter
 		void setNModuleDeletions(const int& n_module_deletions); ///< n_module_deletions setter
 
-    int getNNodeAdditions() const; ///< n_node_additions setter
+    int getNNodeDownAdditions() const; ///< n_node_additions setter
     int getNLinkAdditions() const; ///< n_link_additions setter
     int getNNodeDeletions() const; ///< n_node_deletions setter
     int getNLinkDeletions() const; ///< n_link_deletions setter
@@ -52,11 +52,11 @@ public:
 		int getNModuleAdditions() const; ///< n_module_additions setter
 		int getNModuleDeletions() const; ///< n_module_deletions setter
 
-		void setNNodeCopies(const int& n_node_copies); ///< n_node_copies setter
+		void setNNodeDownCopies(const int& n_node_copies); ///< n_node_copies setter
 		void setNWeightChanges(const int& n_weight_changes); ///< n_weight_changes setter
 		void setWeightChangeStDev(const TensorT& weight_change_stdev); ///< weight_change_stdev setter
 
-		int getNNodeCopies() const; ///< n_node_copies setter
+		int getNNodeDownCopies() const; ///< n_node_copies setter
 		int getNWeightChanges() const; ///< n_weight_changes setter
     TensorT getWeightChangeStDev() const; ///< weight_change_stdev setter
  
@@ -317,14 +317,18 @@ public:
 		/**
 		@brief set random model modification parameters
 
-		@param[in] node_additions lower/upper bound for the number of potential node additions
+		@param[in] node_down_additions lower/upper bound for the number of potential node additions
 		@param[in] link_additions lower/upper bound for the number of potential link additions
 		@param[in] node_deletions lower/upper bound for the number of potential node deletions
 		@param[in] link_deletions lower/upper bound for the number of potential link deletions
 		*/
 		void setRandomModifications(
-			const std::pair<int, int>& node_additions,
+			const std::pair<int, int>& node_down_additions,
+			//const std::pair<int, int>& node_right_additions,
+			//const std::pair<int, int>& node_down_copies,
+			//const std::pair<int, int>& node_right_copies,
 			const std::pair<int, int>& link_additions,
+			//const std::pair<int, int>& link_copies,
 			const std::pair<int, int>& node_deletions,
 			const std::pair<int, int>& link_deletions,
 			const std::pair<int, int>& node_activation_changes,
@@ -352,8 +356,12 @@ public:
 
 private:
     // modification parameters
-    int n_node_additions_ = 0; ///< new nodes to add to the model (nodes are created through replication)
+    int n_node_down_additions_ = 0; ///< new nodes "down" to add to the model (nodes are created through replication)
+		int n_node_right_additions_ = 0; ///< new nodes "right" to add to the model (nodes are created through replication)
+		int n_node_down_copies_ = 0; ///< nodes to duplicate "down" in the model
+		int n_node_right_copies_ = 0; ///< nodes to duplicate "right" in the model
     int n_link_additions_ = 0; ///< new links to add to the model
+		int n_link_copies_ = 0; ///< new links to copy in the model
     int n_node_deletions_ = 0; ///< nodes to remove from the model
     int n_link_deletions_ = 0; ///< links to remove from the model
 		int n_node_activation_changes_ = 0; ///< nodes to change the activation
@@ -362,8 +370,12 @@ private:
 		int n_module_deletions_ = 0; ///< modules to remove from the model
 
 		// random modification parameters
-		std::pair<int, int> node_additions_ = std::make_pair(0, 0);
+		std::pair<int, int> node_down_additions_ = std::make_pair(0, 0);
+		std::pair<int, int> node_right_additions_ = std::make_pair(0, 0);
+		std::pair<int, int> node_down_copies_ = std::make_pair(0, 0);
+		std::pair<int, int> node_right_copies_ = std::make_pair(0, 0);
 		std::pair<int, int> link_additions_ = std::make_pair(0, 0);
+		std::pair<int, int> link_copies_ = std::make_pair(0, 0);
 		std::pair<int, int> node_deletions_ = std::make_pair(0, 0);
 		std::pair<int, int> link_deletions_ = std::make_pair(0, 0);
 		std::pair<int, int> node_activation_changes_ = std::make_pair(0, 0);
@@ -375,20 +387,19 @@ private:
 		
 
 		// not yet implemented...
-		int n_node_copies_ = 0; ///< nodes to duplicate in the model (with a random source and sink connection) [TODO: names should be swapped at some point]
     int n_weight_changes_ = 0; ///< the number of weights to change in the model
     TensorT weight_change_stdev_ = 0; ///< the standard deviation to change the weights in the model
   };
 	template<typename TensorT>
-	void ModelReplicator<TensorT>::setNNodeCopies(const int& n_node_copies)
+	void ModelReplicator<TensorT>::setNNodeDownCopies(const int& n_node_copies)
 	{
-		n_node_copies_ = n_node_copies;
+		n_node_down_copies_ = n_node_copies;
 	}
 
 	template<typename TensorT>
-	void ModelReplicator<TensorT>::setNNodeAdditions(const int& n_node_additions)
+	void ModelReplicator<TensorT>::setNNodeDownAdditions(const int& n_node_additions)
 	{
-		n_node_additions_ = n_node_additions;
+		n_node_down_additions_ = n_node_additions;
 	}
 
 	template<typename TensorT>
@@ -458,15 +469,15 @@ private:
 	}
 
 	template<typename TensorT>
-	int ModelReplicator<TensorT>::getNNodeCopies() const
+	int ModelReplicator<TensorT>::getNNodeDownCopies() const
 	{
-		return n_node_copies_;
+		return n_node_down_copies_;
 	}
 
 	template<typename TensorT>
-	int ModelReplicator<TensorT>::getNNodeAdditions() const
+	int ModelReplicator<TensorT>::getNNodeDownAdditions() const
 	{
-		return n_node_additions_;
+		return n_node_down_additions_;
 	}
 
 	template<typename TensorT>
@@ -1187,7 +1198,7 @@ private:
 		std::vector<std::string> modifications;
 		for (int i = 0; i < n_node_activation_changes_; ++i) modifications.push_back("change_node_activation");
 		for (int i = 0; i < n_node_integration_changes_; ++i) modifications.push_back("change_node_integration");
-		for (int i = 0; i < n_node_additions_; ++i) modifications.push_back("add_node");
+		for (int i = 0; i < n_node_down_additions_; ++i) modifications.push_back("add_node");
 		for (int i = 0; i < n_link_additions_; ++i) modifications.push_back("add_link");
 		for (int i = 0; i < n_module_additions_; ++i) modifications.push_back("add_module");
 		for (int i = 0; i < n_node_deletions_; ++i) modifications.push_back("delete_node");
@@ -1204,7 +1215,7 @@ private:
 
 	template<typename TensorT>
 	void ModelReplicator<TensorT>::setRandomModifications(
-		const std::pair<int, int>& node_additions,
+		const std::pair<int, int>& node_down_additions,
 		const std::pair<int, int>& link_additions,
 		const std::pair<int, int>& node_deletions,
 		const std::pair<int, int>& link_deletions,
@@ -1214,7 +1225,7 @@ private:
 		const std::pair<int, int>& module_deletions)
 	{
 		// set 
-		node_additions_ = node_additions;
+		node_down_additions_ = node_down_additions;
 		link_additions_ = link_additions;
 		node_deletions_ = node_deletions;
 		link_deletions_ = link_deletions;
@@ -1232,8 +1243,8 @@ private:
 		std::mt19937 gen(rd());
 
 		// set 
-		std::uniform_int_distribution<> node_addition_gen(node_additions_.first, node_additions_.second);
-		setNNodeAdditions(node_addition_gen(gen));
+		std::uniform_int_distribution<> node_down_addition_gen(node_down_additions_.first, node_down_additions_.second);
+		setNNodeDownAdditions(node_down_addition_gen(gen));
 		std::uniform_int_distribution<> link_addition_gen(link_additions_.first, link_additions_.second);
 		setNLinkAdditions(link_addition_gen(gen));
 		std::uniform_int_distribution<> node_deletion_gen(node_deletions_.first, node_deletions_.second);
