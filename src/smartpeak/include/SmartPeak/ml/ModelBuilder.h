@@ -332,7 +332,7 @@ public:
 			const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& node_integration_weight_grad,
 			const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver,
 			TensorT drop_out_prob = 0.0f, TensorT drop_connection_prob = 0.0f, bool biases = true,
-			bool forget_gate = true, int block_version = 1);
+			bool forget_gate = true, int block_version = 1, bool specify_layer = false);
 		std::vector<std::string> addLSTMBlock1(Model<TensorT>& model, const std::string& name, const std::string& module_name,
 			const std::vector<std::string>& source_node_names,
 			const int& n_cells,
@@ -343,7 +343,7 @@ public:
 			const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& node_integration_weight_grad,
 			const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver,
 			TensorT drop_out_prob = 0.0f, TensorT drop_connection_prob = 0.0f, bool biases = true,
-			bool forget_gate = true);
+			bool forget_gate = true, bool specify_layer = false);
 		std::vector<std::string> addLSTMBlock2(Model<TensorT>& model, const std::string& name, const std::string& module_name,
 			const std::vector<std::string>& source_node_names,
 			const int& n_cells,
@@ -354,7 +354,7 @@ public:
 			const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& node_integration_weight_grad,
 			const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver,
 			TensorT drop_out_prob = 0.0f, TensorT drop_connection_prob = 0.0f, bool biases = true,
-			bool forget_gate = true);
+			bool forget_gate = true, bool specify_layer = false);
 
 		/**
 		@brief Add a GRU layer
@@ -391,7 +391,7 @@ public:
 			const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& node_integration_weight_grad,
 			const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver,
 			TensorT drop_out_prob = 0.0f, TensorT drop_connection_prob = 0.0f, bool biases = true,
-			bool forget_gate = true, int block_version = 1);
+			bool forget_gate = true, int block_version = 1, bool specify_layer = false);
 		std::vector<std::string> addGRU1(Model<TensorT>& model, const std::string& name, const std::string& module_name,
 			const std::vector<std::string>& source_node_names,
 			const std::shared_ptr<ActivationOp<TensorT>>& node_activation,
@@ -400,7 +400,7 @@ public:
 			const std::shared_ptr<IntegrationErrorOp<TensorT>>& node_integration_error,
 			const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& node_integration_weight_grad,
 			const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver,
-			TensorT drop_out_prob = 0.0f, TensorT drop_connection_prob = 0.0f, bool biases = true, bool input_gate_connection = true);
+			TensorT drop_out_prob = 0.0f, TensorT drop_connection_prob = 0.0f, bool biases = true, bool input_gate_connection = true, bool specify_layer = false);
 		std::vector<std::string> addGRU2(Model<TensorT>& model, const std::string& name, const std::string& module_name,
 			const std::vector<std::string>& source_node_names,
 			const std::shared_ptr<ActivationOp<TensorT>>& node_activation,
@@ -409,7 +409,7 @@ public:
 			const std::shared_ptr<IntegrationErrorOp<TensorT>>& node_integration_error,
 			const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& node_integration_weight_grad,
 			const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver,
-			TensorT drop_out_prob = 0.0f, TensorT drop_connection_prob = 0.0f, bool biases = true, bool input_gate_connection = true);
+			TensorT drop_out_prob = 0.0f, TensorT drop_connection_prob = 0.0f, bool biases = true, bool input_gate_connection = true, bool specify_layer = false);
 
 		/**
 		@brief Add a dot product self attention layer with activation
@@ -1905,11 +1905,14 @@ public:
 			model.addLinks({ lsToLAS_link });
 
 			// Make the links from the logAlpha node and sampler node to the logAlphaSamplerSum node
-			scalar_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", alpha_node_names[i]/*logalphaScale_name*/, logAlphaSampler_name);
+			scalar_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", alpha_node_names[i], logAlphaSampler_name);
+			//scalar_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", logalphaScale_name, logAlphaSampler_name);
 			char laToLAS_link_name_char[512];
-			sprintf(laToLAS_link_name_char, "%s_to_%s", alpha_node_names[i]/*logalphaScale_name*/.data(), logAlphaSampler_name.data());
+			sprintf(laToLAS_link_name_char, "%s_to_%s", alpha_node_names[i].data(), logAlphaSampler_name.data());
+			//sprintf(laToLAS_link_name_char, "%s_to_%s", logalphaScale_name.data(), logAlphaSampler_name.data());
 			std::string laToLAS_link_name(laToLAS_link_name_char);
-			Link laToLAS_link(laToLAS_link_name, alpha_node_names[i]/*logalphaScale_name*/, logAlphaSampler_name, scalar_weight_name);
+			Link laToLAS_link(laToLAS_link_name, alpha_node_names[i], logAlphaSampler_name, scalar_weight_name);
+			//Link laToLAS_link(laToLAS_link_name, logalphaScale_name, logAlphaSampler_name, scalar_weight_name);
 			laToLAS_link.setModuleName(module_name);
 			model.addLinks({ laToLAS_link });
 
@@ -2024,7 +2027,7 @@ public:
 		const std::shared_ptr<ActivationOp<TensorT>>& node_activation, const std::shared_ptr<ActivationOp<TensorT>>& node_activation_grad,
 		const std::shared_ptr<IntegrationOp<TensorT>>& node_integration, const std::shared_ptr<IntegrationErrorOp<TensorT>>& node_integration_error, const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& node_integration_weight_grad,
 		const std::shared_ptr<WeightInitOp<TensorT>> & weight_init, const std::shared_ptr<SolverOp<TensorT>> & solver,
-		TensorT drop_out_prob, TensorT drop_connection_prob, bool biases, bool forget_gate, int block_version)
+		TensorT drop_out_prob, TensorT drop_connection_prob, bool biases, bool forget_gate, int block_version, bool specify_layer)
 	{
 		std::vector<std::string> node_names;
 
@@ -2036,13 +2039,13 @@ public:
 			if (block_version == 1) {
 				std::vector<std::string> output_node_names = addLSTMBlock1(model, node_name, module_name, source_node_names, n_cells, node_activation, node_activation_grad,
 					node_integration, node_integration_error, node_integration_weight_grad,
-					weight_init, solver, drop_out_prob, drop_connection_prob, biases, forget_gate);
+					weight_init, solver, drop_out_prob, drop_connection_prob, biases, forget_gate, specify_layer);
 				for (const std::string& node_name : output_node_names) node_names.push_back(node_name);
 			}
 			else if (block_version == 2) {
 				std::vector<std::string> output_node_names = addLSTMBlock2(model, node_name, module_name, source_node_names, n_cells, node_activation, node_activation_grad,
 					node_integration, node_integration_error, node_integration_weight_grad,
-					weight_init, solver, drop_out_prob, drop_connection_prob, biases, forget_gate);
+					weight_init, solver, drop_out_prob, drop_connection_prob, biases, forget_gate, specify_layer);
 				for (const std::string& node_name : output_node_names) node_names.push_back(node_name);
 			}
 		}
@@ -2057,7 +2060,7 @@ public:
 		const std::shared_ptr<ActivationOp<TensorT>>& node_activation, const std::shared_ptr<ActivationOp<TensorT>>& node_activation_grad,
 		const std::shared_ptr<IntegrationOp<TensorT>>& node_integration, const std::shared_ptr<IntegrationErrorOp<TensorT>>& node_integration_error, const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& node_integration_weight_grad,
 		const std::shared_ptr<WeightInitOp<TensorT>> & weight_init, const std::shared_ptr<SolverOp<TensorT>> & solver,
-		TensorT drop_out_prob, TensorT drop_connection_prob, bool biases, bool forget_gate)
+		TensorT drop_out_prob, TensorT drop_connection_prob, bool biases, bool forget_gate, bool specify_layer)
 	{
 		std::vector<std::string> node_names;
 		std::string unity_weight_name;
@@ -2076,7 +2079,7 @@ public:
 		std::string blockGateInput_name(blockGateInput_name_char);
 		Node<TensorT> blockGateInput(blockGateInput_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<TensorT>>(new SigmoidOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new SigmoidGradOp<TensorT>()), node_integration, node_integration_error, node_integration_weight_grad);
 		blockGateInput.setModuleName(module_name);
-		blockGateInput.setLayerName("BlockGateInput");
+		if (specify_layer) blockGateInput.setLayerName("BlockGateInput");
 		model.addNodes({ blockGateInput });
 
 		// Make the output gate node 
@@ -2085,7 +2088,7 @@ public:
 		std::string blockGateOutput_name(blockGateOutput_name_char);
 		Node<TensorT> blockGateOutput(blockGateOutput_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<TensorT>>(new SigmoidOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new SigmoidGradOp<TensorT>()), node_integration, node_integration_error, node_integration_weight_grad);
 		blockGateOutput.setModuleName(module_name);
-		blockGateOutput.setLayerName("BlockGateOutput");
+		if (specify_layer) blockGateOutput.setLayerName("BlockGateOutput");
 		model.addNodes({ blockGateOutput });
 
 		std::string blockGateForget_name;
@@ -2096,7 +2099,7 @@ public:
 			blockGateForget_name = std::string(blockGateForget_name_char);
 			Node<TensorT> blockGateForget(blockGateForget_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<TensorT>>(new SigmoidOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new SigmoidGradOp<TensorT>()), node_integration, node_integration_error, node_integration_weight_grad);
 			blockGateForget.setModuleName(module_name);
-			blockGateForget.setLayerName("BlockGateForget");
+			if (specify_layer) blockGateForget.setLayerName("BlockGateForget");
 			model.addNodes({ blockGateForget });
 		}
 
@@ -2257,7 +2260,7 @@ public:
 			std::string blockInput_name(blockInput_name_char);
 			Node<TensorT> blockInput(blockInput_name, NodeType::hidden, NodeStatus::initialized, node_activation, node_activation_grad, node_integration, node_integration_error, node_integration_weight_grad);
 			blockInput.setModuleName(module_name);
-			blockInput.setLayerName("BlockInput");
+			if (specify_layer) blockInput.setLayerName("BlockInput");
 			blockInput.setDropProbability(drop_out_prob);
 			model.addNodes({ blockInput });
 
@@ -2267,7 +2270,7 @@ public:
 			std::string blockMultInput_name(blockMultInput_name_char);
 			Node<TensorT> blockMultInput(blockMultInput_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new ProdOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new ProdErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new ProdWeightGradOp<TensorT>()));
 			blockMultInput.setModuleName(module_name);
-			blockMultInput.setLayerName("BlockMultInput");
+			if (specify_layer) blockMultInput.setLayerName("BlockMultInput");
 			model.addNodes({ blockMultInput });
 
 			// Make the output multiplier node[add drop prob]
@@ -2276,7 +2279,7 @@ public:
 			std::string blockOutput_name(blockOutput_name_char);
 			Node<TensorT> blockOutput(blockOutput_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new ProdOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new ProdErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new ProdWeightGradOp<TensorT>()));
 			blockOutput.setModuleName(module_name);
-			blockOutput.setLayerName("BlockMultOut");
+			if (specify_layer) blockOutput.setLayerName("BlockMultOut");
 			blockOutput.setDropProbability(drop_out_prob);
 			model.addNodes({ blockOutput });
 			node_names.push_back(blockOutput_name);
@@ -2380,7 +2383,7 @@ public:
 				std::string blockMultForget_name(blockMultForget_name_char);
 				Node<TensorT> blockMultForget(blockMultForget_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new ProdOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new ProdErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new ProdWeightGradOp<TensorT>()));
 				blockMultForget.setModuleName(module_name);
-				blockMultForget.setLayerName("BlockMultForget");
+				if (specify_layer) blockMultForget.setLayerName("BlockMultForget");
 				model.addNodes({ blockMultForget });
 
 				// Make the link between the forget gate and the forget gate multiplier node
@@ -2525,7 +2528,7 @@ public:
 		const std::shared_ptr<ActivationOp<TensorT>>& node_activation, const std::shared_ptr<ActivationOp<TensorT>>& node_activation_grad,
 		const std::shared_ptr<IntegrationOp<TensorT>>& node_integration, const std::shared_ptr<IntegrationErrorOp<TensorT>>& node_integration_error, const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& node_integration_weight_grad,
 		const std::shared_ptr<WeightInitOp<TensorT>> & weight_init, const std::shared_ptr<SolverOp<TensorT>> & solver,
-		TensorT drop_out_prob, TensorT drop_connection_prob, bool biases, bool forget_gate)
+		TensorT drop_out_prob, TensorT drop_connection_prob, bool biases, bool forget_gate, bool specify_layer)
 	{
 		std::vector<std::string> node_names;
 		std::string unity_weight_name;

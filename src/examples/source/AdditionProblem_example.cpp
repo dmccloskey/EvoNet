@@ -381,17 +381,17 @@ int main(int argc, char** argv)
 	ModelTrainerExt<float> model_trainer;
 	model_trainer.setBatchSize(8);
 	model_trainer.setMemorySize(data_simulator.sequence_length_);
-	model_trainer.setNEpochsTraining(1000);
+	model_trainer.setNEpochsTraining(250);
 	model_trainer.setNEpochsValidation(25);
 	model_trainer.setVerbosityLevel(1);
-	model_trainer.setLogging(true, false);
+	model_trainer.setLogging(false, false);
 	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
 	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
 	model_trainer.setOutputNodes({ output_nodes });
 
 	// define the model logger
-	ModelLogger<float> model_logger(true, true, true, false, false, false, false, false);
-	//ModelLogger<float> model_logger(true, true, false, false, false, false, false, false);
+	//ModelLogger<float> model_logger(true, true, true, false, false, false, false, false);
+	ModelLogger<float> model_logger(true, true, false, false, false, false, false, false);
 
 	// define the model replicator for growth mode
 	ModelReplicatorExt<float> model_replicator;
@@ -417,7 +417,7 @@ int main(int argc, char** argv)
 
 	// make the model name
 	//Model<float> model = model_trainer.makeModelSolution();
-	Model<float> model = model_trainer.makeModelLSTM(input_nodes.size(), 128, 1);
+	Model<float> model = model_trainer.makeModelLSTM(input_nodes.size(), 1, 1);
 	char model_name_char[512];
 	sprintf(model_name_char, "%s_%d", model.getName().data(), 0);
 	std::string model_name(model_name_char);

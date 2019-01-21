@@ -62,7 +62,6 @@ public:
           name_,
 					module_id_,
 					module_name_,
-					operation_index_,
 					tensor_index_
         ) == std::tie(
           other.id_,
@@ -76,7 +75,6 @@ public:
           other.name_,
 					other.module_id_,
 					other.module_name_,
-					other.operation_index_,
 					other.tensor_index_
         )
       ;
@@ -94,7 +92,6 @@ public:
 			module_id_ = other.module_id_;
 			module_name_ = other.module_name_;
 			tensor_index_ = other.tensor_index_;
-			operation_index_ = other.operation_index_;
 			layer_name_ = other.layer_name_;
       type_ = other.type_;
       activation_ = other.activation_;
@@ -186,7 +183,6 @@ private:
     std::string name_ = ""; ///< Node Name
 		int module_id_ = -1; ///< Module ID (used internally by Model)
 		std::string module_name_ = ""; ///<Module Name
-		int operation_index_ = -1; ///< Operation ID: Order of Tensor operation
 		std::pair<int, int> tensor_index_ = std::make_pair(-1,-1); ///< Layer ID: pair consisting of OperationsList index and Layer index(used internally by Model)
 		std::string layer_name_ = ""; ///< Layer name
 		SmartPeak::NodeType type_; ///< Node Type
@@ -221,7 +217,6 @@ private:
 		name_ = other.name_;
 		module_id_ = other.module_id_;
 		module_name_ = other.module_name_;
-		operation_index_ = other.operation_index_;
 		tensor_index_ = other.tensor_index_;
 		layer_name_ = other.layer_name_;
 		type_ = other.type_;
@@ -397,18 +392,6 @@ private:
 	int Node<TensorT>::getModuleId() const
 	{
 		return module_id_;
-	}
-
-	template<typename TensorT>
-	void Node<TensorT>::setOperationIndex(const int& id)
-	{
-		operation_index_ = id;
-	}
-
-	template<typename TensorT>
-	int Node<TensorT>::getOperationIndex() const
-	{
-		return operation_index_;
 	}
 
 	template<typename TensorT>

@@ -1003,21 +1003,23 @@ BOOST_AUTO_TEST_CASE(addCategoricalEncoding)
 	node_names = model_builder.addCategoricalEncoding(model, "Encoding", "Mod1", alpha_node_names);
 
 	std::vector<std::string> node_names_test = {
-		"Alpha_000000000000-Scalar", "Alpha_000000000001-Scalar", 
+		//"Alpha_000000000000-Scalar", "Alpha_000000000001-Scalar", 
 		"Encoding-SoftMax-In_000000000000", "Encoding-SoftMax-In_000000000001", "Encoding-SoftMax-Out_000000000000", "Encoding-SoftMax-Out_000000000001", "Encoding-SoftMax-Sum", 
 		"Encoding_000000000000-GumbelSampler", "Encoding_000000000000-InverseTau", "Encoding_000000000000-LogAlphaSampler", "Encoding_000000000000-SoftmaxArgs", 
 		"Encoding_000000000001-GumbelSampler", "Encoding_000000000001-InverseTau", "Encoding_000000000001-LogAlphaSampler", "Encoding_000000000001-SoftmaxArgs" };
 	std::vector<std::string> link_names_test = {
-		"Alpha_000000000000-Scalar_to_Encoding_000000000000-LogAlphaSampler", "Alpha_000000000000_to_Alpha_000000000000-Scalar", 
-		"Alpha_000000000001-Scalar_to_Encoding_000000000001-LogAlphaSampler", "Alpha_000000000001_to_Alpha_000000000001-Scalar", 
+		//"Alpha_000000000000-Scalar_to_Encoding_000000000000-LogAlphaSampler", "Alpha_000000000000_to_Alpha_000000000000-Scalar", 
+		//"Alpha_000000000001-Scalar_to_Encoding_000000000001-LogAlphaSampler", "Alpha_000000000001_to_Alpha_000000000001-Scalar", 
+		"Alpha_000000000000_to_Encoding_000000000000-LogAlphaSampler", "Alpha_000000000001_to_Encoding_000000000001-LogAlphaSampler",
 		"Encoding-SoftMax-In_000000000000_to_Encoding-SoftMax-Out_000000000000", "Encoding-SoftMax-In_000000000000_to_Encoding-SoftMax-Sum", 
 		"Encoding-SoftMax-In_000000000001_to_Encoding-SoftMax-Out_000000000001", "Encoding-SoftMax-In_000000000001_to_Encoding-SoftMax-Sum", 
 		"Encoding-SoftMax-Sum_to_Encoding-SoftMax-Out_000000000000", "Encoding-SoftMax-Sum_to_Encoding-SoftMax-Out_000000000001", 
 		"Encoding_000000000000-GumbelSampler_to_Encoding_000000000000-LogAlphaSampler", "Encoding_000000000000-InverseTau_to_Encoding_000000000000-SoftmaxArgs", "Encoding_000000000000-LogAlphaSampler_to_Encoding_000000000000-SoftmaxArgs", "Encoding_000000000000-SoftmaxArgs_to_Encoding-SoftMax-In_000000000000", 
 		"Encoding_000000000001-GumbelSampler_to_Encoding_000000000001-LogAlphaSampler", "Encoding_000000000001-InverseTau_to_Encoding_000000000001-SoftmaxArgs", "Encoding_000000000001-LogAlphaSampler_to_Encoding_000000000001-SoftmaxArgs", "Encoding_000000000001-SoftmaxArgs_to_Encoding-SoftMax-In_000000000001" };
 	std::vector<std::string> weight_names_check = {
-		"Alpha_000000000000-Scalar_to_Encoding_000000000000-LogAlphaSampler", "Alpha_000000000000_to_Alpha_000000000000-Scalar",
-		"Alpha_000000000001-Scalar_to_Encoding_000000000001-LogAlphaSampler", "Alpha_000000000001_to_Alpha_000000000001-Scalar",
+		//"Alpha_000000000000-Scalar_to_Encoding_000000000000-LogAlphaSampler", "Alpha_000000000000_to_Alpha_000000000000-Scalar",
+		//"Alpha_000000000001-Scalar_to_Encoding_000000000001-LogAlphaSampler", "Alpha_000000000001_to_Alpha_000000000001-Scalar",
+		"Alpha_000000000000_to_Encoding_000000000000-LogAlphaSampler", "Alpha_000000000001_to_Encoding_000000000001-LogAlphaSampler",
 		"Encoding-SoftMax-In_000000000000_to_Encoding-SoftMax-Out_000000000000", "Encoding-SoftMax-In_000000000000_to_Encoding-SoftMax-Sum",
 		"Encoding-SoftMax-In_000000000001_to_Encoding-SoftMax-Out_000000000001", "Encoding-SoftMax-In_000000000001_to_Encoding-SoftMax-Sum",
 		"Encoding-SoftMax-Sum_to_Encoding-SoftMax-Out_000000000000", "Encoding-SoftMax-Sum_to_Encoding-SoftMax-Out_000000000001",
@@ -1025,13 +1027,10 @@ BOOST_AUTO_TEST_CASE(addCategoricalEncoding)
 		"Encoding_000000000000-SoftmaxArgs_to_Encoding-SoftMax-In_000000000000","Encoding_000000000001-SoftmaxArgs_to_Encoding-SoftMax-In_000000000001", 
 		"Encoding_000000000001-GumbelSampler_to_Encoding_000000000001-LogAlphaSampler", "Encoding_000000000001-InverseTau_to_Encoding_000000000001-SoftmaxArgs", "Encoding_000000000001-LogAlphaSampler_to_Encoding_000000000001-SoftmaxArgs"};	
 	std::vector<std::string> weight_names_test = {
-		"Alpha_000000000000-Scalar_to_Encoding_000000000000-LogAlphaSampler", "Alpha_000000000000_to_Alpha_000000000000-Scalar",
-		"Alpha_000000000001-Scalar_to_Encoding_000000000001-LogAlphaSampler", "Alpha_000000000001_to_Alpha_000000000001-Scalar",
-		//"Encoding-SoftMax-In_000000000000_to_Encoding-SoftMax-Out_000000000000", "Encoding-SoftMax-In_000000000000_to_Encoding-SoftMax-Sum",
-		//"Encoding-SoftMax-In_000000000001_to_Encoding-SoftMax-Out_000000000001", "Encoding-SoftMax-In_000000000001_to_Encoding-SoftMax-Sum",
-		//"Encoding-SoftMax-Sum_to_Encoding-SoftMax-Out_000000000000", "Encoding-SoftMax-Sum_to_Encoding-SoftMax-Out_000000000001",
+		//"Alpha_000000000000-Scalar_to_Encoding_000000000000-LogAlphaSampler", "Alpha_000000000000_to_Alpha_000000000000-Scalar",
+		//"Alpha_000000000001-Scalar_to_Encoding_000000000001-LogAlphaSampler", "Alpha_000000000001_to_Alpha_000000000001-Scalar",
+		"Alpha_000000000000_to_Encoding_000000000000-LogAlphaSampler", "Alpha_000000000001_to_Encoding_000000000001-LogAlphaSampler",
 		"Encoding_000000000000-GumbelSampler_to_Encoding_000000000000-LogAlphaSampler", "Encoding_000000000000-InverseTau_to_Encoding_000000000000-SoftmaxArgs", "Encoding_000000000000-LogAlphaSampler_to_Encoding_000000000000-SoftmaxArgs",
-		//"Encoding_000000000000-SoftmaxArgs_to_Encoding-SoftMax-In_000000000000","Encoding_000000000001-SoftmaxArgs_to_Encoding-SoftMax-In_000000000001", 
 		"Encoding_000000000001-GumbelSampler_to_Encoding_000000000001-LogAlphaSampler", "Encoding_000000000001-InverseTau_to_Encoding_000000000001-SoftmaxArgs", "Encoding_000000000001-LogAlphaSampler_to_Encoding_000000000001-SoftmaxArgs",
 	};
 
@@ -1050,16 +1049,16 @@ BOOST_AUTO_TEST_CASE(addCategoricalEncoding)
 	{
 		BOOST_CHECK_EQUAL(model.getNode(node_name).getName(), node_name);
 		BOOST_CHECK_EQUAL(model.getNode(node_name).getModuleName(), "Mod1");
-		if (node_name == "Alpha_000000000000-Scalar" || node_name == "Alpha_000000000001-Scalar")
-		{
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LogOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LogGradOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "SumOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "SumErrorOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
-			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.0, 1e-3);
-		}
-		else if (node_name == "Encoding_000000000000-GumbelSampler" || node_name == "Encoding_000000000001-GumbelSampler")
+		//if (node_name == "Alpha_000000000000-Scalar" || node_name == "Alpha_000000000001-Scalar")
+		//{
+		//	BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LogOp");
+		//	BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LogGradOp");
+		//	BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "SumOp");
+		//	BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "SumErrorOp");
+		//	BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
+		//	BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.0, 1e-3);
+		//}
+		if (node_name == "Encoding_000000000000-GumbelSampler" || node_name == "Encoding_000000000001-GumbelSampler")
 		{
 			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
 			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
@@ -1115,8 +1114,8 @@ BOOST_AUTO_TEST_CASE(addCategoricalEncoding)
 		BOOST_CHECK_EQUAL(model.getLink(name).getSourceNodeName(), test[0]);
 		BOOST_CHECK_EQUAL(model.getLink(name).getSinkNodeName(), test[1]);
 		int count = std::count(weight_names_check.begin(), weight_names_check.end(), model.getLink(name).getWeightName());
-		//if (count == 0)
-		//	std::cout << "Check: " << model.getLink(name).getWeightName() << std::endl;
+		if (count == 0)
+			std::cout << "Check: " << model.getLink(name).getWeightName() << std::endl;
 		BOOST_CHECK_EQUAL(count, 1);
 		BOOST_CHECK_EQUAL(model.getLink(name).getModuleName(), "Mod1");
 	}
