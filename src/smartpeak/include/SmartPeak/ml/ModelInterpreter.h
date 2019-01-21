@@ -562,7 +562,10 @@ namespace SmartPeak
 					getLayerTensor(node->getTensorIndex().first)->getDt().chip(node->getTensorIndex().second, 2) = values_buffered.chip(i, 2);
 			}
 			else {
-				std::cout << "Node " << node_names[i] << " has not been assigned a tensor index!" << std::endl;
+				char error_char[512];
+				sprintf(error_char, "Node %s has not been assigned a tensor index!", node->getName().data());
+				std::string error(error_char);
+				throw std::runtime_error(error_char);
 			}
 		}
 	}
@@ -577,7 +580,10 @@ namespace SmartPeak
 					getLayerTensor(node_map.second->getTensorIndex().first)->getOutput().chip(node_map.second->getTensorIndex().second, 2) = one;
 				}
 				else {
-					std::cout << "Node " << node_map.second->getName() << " has not been assigned a tensor index!" << std::endl;
+					char error_char[512];
+					sprintf(error_char, "Node %s has not been assigned a tensor index!", node_map.second->getName().data());
+					std::string error(error_char);
+					throw std::runtime_error(error_char);
 				}
 			}
 		}
