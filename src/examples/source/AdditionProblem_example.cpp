@@ -381,7 +381,7 @@ int main(int argc, char** argv)
 	ModelTrainerExt<float> model_trainer;
 	model_trainer.setBatchSize(8);
 	model_trainer.setMemorySize(data_simulator.sequence_length_);
-	model_trainer.setNEpochsTraining(250);
+	model_trainer.setNEpochsTraining(100);
 	model_trainer.setNEpochsValidation(25);
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setLogging(false, false);

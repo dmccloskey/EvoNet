@@ -293,7 +293,7 @@ void main_LSTMTrain() {
 	ModelTrainerExt<float> model_trainer;
 	model_trainer.setBatchSize(8);
 	model_trainer.setMemorySize(input_size);
-	model_trainer.setNEpochsTraining(1000);
+	model_trainer.setNEpochsTraining(500);
 	model_trainer.setNEpochsValidation(25);
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setLogging(true, false);
