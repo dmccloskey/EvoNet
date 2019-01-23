@@ -2,7 +2,7 @@
 
 #define BOOST_TEST_MODULE ModelInterpreter DAG test suite 
 #include <boost/test/included/unit_test.hpp>
-#include <SmartPeak/ml/ModelInterpreterDefaultDevice.h> //TODO: make testing class using ModelInterepreter
+#include <SmartPeak/ml/ModelInterpreterDefaultDevice.h>
 
 using namespace SmartPeak;
 using namespace std;
@@ -145,7 +145,7 @@ BOOST_AUTO_TEST_CASE(copy)
 */
 
 Model<float> model_getNextInactiveLayer = makeModelToy1();
-BOOST_AUTO_TEST_CASE(getNextInactiveLayer) 
+BOOST_AUTO_TEST_CASE(getNextInactiveLayerWOBiases) 
 {
   // Toy network: 1 hidden layer, fully connected, DAG
   // Model<float> model_FC_Sum = makeModelToy1();
@@ -157,7 +157,7 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayer)
 	// get the next hidden layer
 	std::map<std::string, int> FP_operations_map;
 	std::vector<OperationList<float>> FP_operations_list;
-	model_interpreter.getNextInactiveLayer(model_getNextInactiveLayer, FP_operations_map, FP_operations_list);
+	model_interpreter.getNextInactiveLayerWOBiases(model_getNextInactiveLayer, FP_operations_map, FP_operations_list);
 
 	BOOST_CHECK_EQUAL(FP_operations_map.size(), 2);
 	BOOST_CHECK_EQUAL(FP_operations_map.at("2"), 0);
@@ -196,7 +196,7 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayerBiases)
 	// get the next hidden layer
 	std::map<std::string, int> FP_operations_map;
 	std::vector<OperationList<float>> FP_operations_list;
-	model_interpreter.getNextInactiveLayer(model_getNextInactiveLayerBiases, FP_operations_map, FP_operations_list);
+	model_interpreter.getNextInactiveLayerWOBiases(model_getNextInactiveLayerBiases, FP_operations_map, FP_operations_list);
 
 	std::vector<std::string> sink_nodes_with_biases2;
 	model_interpreter.getNextInactiveLayerBiases(model_getNextInactiveLayerBiases, FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
@@ -247,7 +247,7 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayerCycles)
 	// get the next hidden layer
 	std::map<std::string, int> FP_operations_map;
 	std::vector<OperationList<float>> FP_operations_list;
-	model_interpreter.getNextInactiveLayer(model_getNextInactiveLayerCycles, FP_operations_map, FP_operations_list);
+	model_interpreter.getNextInactiveLayerWOBiases(model_getNextInactiveLayerCycles, FP_operations_map, FP_operations_list);
 
 	std::vector<std::string> sink_nodes_with_biases2;
 	model_interpreter.getNextInactiveLayerBiases(model_getNextInactiveLayerCycles, FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
@@ -299,7 +299,7 @@ BOOST_AUTO_TEST_CASE(pruneInactiveLayerCycles)
 	// get the next hidden layer
 	std::map<std::string, int> FP_operations_map;
 	std::vector<OperationList<float>> FP_operations_list;
-	model_interpreter.getNextInactiveLayer(model_pruneInactiveLayerCycles, FP_operations_map, FP_operations_list);
+	model_interpreter.getNextInactiveLayerWOBiases(model_pruneInactiveLayerCycles, FP_operations_map, FP_operations_list);
 
 	std::vector<std::string> sink_nodes_with_biases2;
 	model_interpreter.getNextInactiveLayerBiases(model_pruneInactiveLayerCycles, FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
@@ -351,7 +351,7 @@ BOOST_AUTO_TEST_CASE(expandForwardPropogationOperationsBySourceNodeKey)
 
 	std::map<std::string, int> FP_operations_map;
 	std::vector<OperationList<float>> FP_operations_list;
-	model_interpreter.getNextInactiveLayer(model_expandForwardPropogationOperationsBySourceNodeKey, FP_operations_map, FP_operations_list);
+	model_interpreter.getNextInactiveLayerWOBiases(model_expandForwardPropogationOperationsBySourceNodeKey, FP_operations_map, FP_operations_list);
 
 	std::vector<std::string> sink_nodes_with_biases2;
 	model_interpreter.getNextInactiveLayerBiases(model_expandForwardPropogationOperationsBySourceNodeKey, FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
@@ -413,7 +413,7 @@ BOOST_AUTO_TEST_CASE(expandForwardPropogationOperationsByWeightKey)
 
 	std::map<std::string, int> FP_operations_map;
 	std::vector<OperationList<float>> FP_operations_list;
-	model_interpreter.getNextInactiveLayer(model_expandForwardPropogationOperationsByWeightKey, FP_operations_map, FP_operations_list);
+	model_interpreter.getNextInactiveLayerWOBiases(model_expandForwardPropogationOperationsByWeightKey, FP_operations_map, FP_operations_list);
 
 	std::vector<std::string> sink_nodes_with_biases2;
 	model_interpreter.getNextInactiveLayerBiases(model_expandForwardPropogationOperationsByWeightKey, FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
@@ -475,7 +475,7 @@ BOOST_AUTO_TEST_CASE(expandForwardPropogationOperationsByCachedNodes)
 
 	std::map<std::string, int> FP_operations_map;
 	std::vector<OperationList<float>> FP_operations_list;
-	model_interpreter.getNextInactiveLayer(model_expandForwardPropogationOperationsByCachedNodes, FP_operations_map, FP_operations_list);
+	model_interpreter.getNextInactiveLayerWOBiases(model_expandForwardPropogationOperationsByCachedNodes, FP_operations_map, FP_operations_list);
 
 	std::vector<std::string> sink_nodes_with_biases2;
 	model_interpreter.getNextInactiveLayerBiases(model_expandForwardPropogationOperationsByCachedNodes, FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
@@ -539,7 +539,7 @@ BOOST_AUTO_TEST_CASE(expandForwardPropogationOperations)
 
 	std::map<std::string, int> FP_operations_map;
 	std::vector<OperationList<float>> FP_operations_list;
-	model_interpreter.getNextInactiveLayer(model_expandForwardPropogationOperations, FP_operations_map, FP_operations_list);
+	model_interpreter.getNextInactiveLayerWOBiases(model_expandForwardPropogationOperations, FP_operations_map, FP_operations_list);
 
 	std::vector<std::string> sink_nodes_with_biases2;
 	model_interpreter.getNextInactiveLayerBiases(model_expandForwardPropogationOperations, FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
@@ -572,6 +572,52 @@ BOOST_AUTO_TEST_CASE(expandForwardPropogationOperations)
 	BOOST_CHECK_EQUAL(FP_operations_expanded[1].arguments[2].time_step, 0);
 	BOOST_CHECK_EQUAL(FP_operations_expanded[1].arguments[2].source_node->getName(), "6");
 	BOOST_CHECK_EQUAL(FP_operations_expanded[1].arguments[2].weight->getName(), "5");
+}
+
+Model<float> model_expandAllForwardPropogationOperations = makeModelToy1();
+BOOST_AUTO_TEST_CASE(expandAllForwardPropogationOperations)
+{
+	ModelInterpreterDefaultDevice<float> model_interpreter;
+
+	// initialize nodes
+	// NOTE: input and biases have been activated when the model was created
+
+	std::map<std::string, int> FP_operations_map;
+	std::vector<OperationList<float>> FP_operations_list;
+	model_interpreter.getNextInactiveLayerWOBiases(model_expandAllForwardPropogationOperations, FP_operations_map, FP_operations_list);
+
+	std::vector<std::string> sink_nodes_with_biases2;
+	model_interpreter.getNextInactiveLayerBiases(model_expandAllForwardPropogationOperations, FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
+
+	std::vector<OperationList<float>> FP_operations_expanded;
+	model_interpreter.expandAllForwardPropogationOperations(FP_operations_list, FP_operations_expanded);
+
+	// TODO: update tests
+	//BOOST_CHECK_EQUAL(FP_operations_expanded.size(), 2);
+	//BOOST_CHECK_EQUAL(FP_operations_expanded[0].result.time_step, 0);
+	//BOOST_CHECK_EQUAL(FP_operations_expanded[0].result.sink_node->getName(), "2");
+	//BOOST_CHECK_EQUAL(FP_operations_expanded[0].arguments.size(), 3);
+	//BOOST_CHECK_EQUAL(FP_operations_expanded[0].arguments[0].time_step, 0);
+	//BOOST_CHECK_EQUAL(FP_operations_expanded[0].arguments[0].source_node->getName(), "0");
+	//BOOST_CHECK_EQUAL(FP_operations_expanded[0].arguments[0].weight->getName(), "0");
+	//BOOST_CHECK_EQUAL(FP_operations_expanded[0].arguments[1].time_step, 0);
+	//BOOST_CHECK_EQUAL(FP_operations_expanded[0].arguments[1].source_node->getName(), "1");
+	//BOOST_CHECK_EQUAL(FP_operations_expanded[0].arguments[1].weight->getName(), "2");
+	//BOOST_CHECK_EQUAL(FP_operations_expanded[0].arguments[2].time_step, 0);
+	//BOOST_CHECK_EQUAL(FP_operations_expanded[0].arguments[2].source_node->getName(), "6");
+	//BOOST_CHECK_EQUAL(FP_operations_expanded[0].arguments[2].weight->getName(), "4");
+	//BOOST_CHECK_EQUAL(FP_operations_expanded[1].result.time_step, 0);
+	//BOOST_CHECK_EQUAL(FP_operations_expanded[1].result.sink_node->getName(), "3");
+	//BOOST_CHECK_EQUAL(FP_operations_expanded[1].arguments.size(), 3);
+	//BOOST_CHECK_EQUAL(FP_operations_expanded[1].arguments[0].time_step, 0);
+	//BOOST_CHECK_EQUAL(FP_operations_expanded[1].arguments[0].source_node->getName(), "0");
+	//BOOST_CHECK_EQUAL(FP_operations_expanded[1].arguments[0].weight->getName(), "1");
+	//BOOST_CHECK_EQUAL(FP_operations_expanded[1].arguments[1].time_step, 0);
+	//BOOST_CHECK_EQUAL(FP_operations_expanded[1].arguments[1].source_node->getName(), "1");
+	//BOOST_CHECK_EQUAL(FP_operations_expanded[1].arguments[1].weight->getName(), "3");
+	//BOOST_CHECK_EQUAL(FP_operations_expanded[1].arguments[2].time_step, 0);
+	//BOOST_CHECK_EQUAL(FP_operations_expanded[1].arguments[2].source_node->getName(), "6");
+	//BOOST_CHECK_EQUAL(FP_operations_expanded[1].arguments[2].weight->getName(), "5");
 }
 
 BOOST_AUTO_TEST_CASE(getCustomOperations)
@@ -608,7 +654,7 @@ BOOST_AUTO_TEST_CASE(getTensorOperations)
 
 	std::map<std::string, int> FP_operations_map;
 	std::vector<OperationList<float>> FP_operations_list;
-	model_interpreter.getNextInactiveLayer(model_getTensorOperations, FP_operations_map, FP_operations_list);
+	model_interpreter.getNextInactiveLayerWOBiases(model_getTensorOperations, FP_operations_map, FP_operations_list);
 
 	std::vector<std::string> sink_nodes_with_biases2;
 	model_interpreter.getNextInactiveLayerBiases(model_getTensorOperations, FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
@@ -641,7 +687,7 @@ BOOST_AUTO_TEST_CASE(getForwardPropogationLayerTensorDimensions)
   // Check iteration one with no source/sink/weight tensors already allocated
 	std::map<std::string, int> FP_operations_map;
 	std::vector<OperationList<float>> FP_operations_list;
-	model_interpreter.getNextInactiveLayer(model_getForwardPropogationLayerTensorDimensions, FP_operations_map, FP_operations_list);
+	model_interpreter.getNextInactiveLayerWOBiases(model_getForwardPropogationLayerTensorDimensions, FP_operations_map, FP_operations_list);
 
 	std::vector<std::string> sink_nodes_with_biases2;
 	model_interpreter.getNextInactiveLayerBiases(model_getForwardPropogationLayerTensorDimensions, FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
@@ -704,7 +750,7 @@ BOOST_AUTO_TEST_CASE(getForwardPropogationLayerTensorDimensions)
 	model_getForwardPropogationLayerTensorDimensions.getNodesMap().at("3")->setStatus(NodeStatus::activated);
 	FP_operations_map.clear();
 	FP_operations_list.clear();
-	model_interpreter.getNextInactiveLayer(model_getForwardPropogationLayerTensorDimensions, FP_operations_map, FP_operations_list);
+	model_interpreter.getNextInactiveLayerWOBiases(model_getForwardPropogationLayerTensorDimensions, FP_operations_map, FP_operations_list);
 
 	sink_nodes_with_biases2.clear();
 	model_interpreter.getNextInactiveLayerBiases(model_getForwardPropogationLayerTensorDimensions, FP_operations_map, FP_operations_list, sink_nodes_with_biases2);

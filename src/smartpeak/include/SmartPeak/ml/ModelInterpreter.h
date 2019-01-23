@@ -185,6 +185,9 @@ namespace SmartPeak
 		void getNextInactiveLayer(Model<TensorT>& model,
 			std::map<std::string, int>& FP_operations_map,
 			std::vector<OperationList<TensorT>>& FP_operations);
+		void getNextInactiveLayerWOBiases(Model<TensorT>& model,
+			std::map<std::string, int>& FP_operations_map,
+			std::vector<OperationList<TensorT>>& FP_operations);
 
 		/**
 			@brief Continuation of the forward propogation step that identifies all biases
@@ -251,6 +254,7 @@ namespace SmartPeak
 		void expandForwardPropogationOperationsBySourceNodeKey(const std::vector<OperationList<TensorT>>& FP_operations, std::vector<OperationList<TensorT>>& FP_operations_expanded);
 		void expandForwardPropogationOperationsByWeightKey(const std::vector<OperationList<TensorT>>& FP_operations, std::vector<OperationList<TensorT>>& FP_operations_expanded);
 		void expandForwardPropogationOperationsByCachedNodes(const std::vector<OperationList<TensorT>>& FP_operations, std::vector<OperationList<TensorT>>& FP_operations_expanded);
+		void expandAllForwardPropogationOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::vector<OperationList<TensorT>>& FP_operations_expanded);
 
 		/**
 			@brief Re-organizes the identified layers into tensors and attempts to optimizes
@@ -651,6 +655,47 @@ namespace SmartPeak
 	}
 
 	template<typename TensorT, typename DeviceT>
+	void ModelInterpreter<TensorT, DeviceT>::getNextInactiveLayerWOBiases(Model<TensorT>& model,
+		std::map<std::string, int>& FP_operations_map,
+		std::vector<OperationList<TensorT>>& FP_operations)
+	{
+		// get all links where the source node is active and the sink node is inactive
+		// except for biases
+		for (auto& link_map : model.links_)
+		{
+			if (
+				model.nodes_.at(link_map.second->getSourceNodeName())->getType() != NodeType::bias &&
+				model.nodes_.at(link_map.second->getSourceNodeName())->getStatus() == NodeStatus::activated &&
+				model.nodes_.at(link_map.second->getSinkNodeName())->getStatus() == NodeStatus::initialized)
+			{
+				//if (FP_operations.size() == 680)
+				//	std::cout << "check" << std::endl;
+				OperationArguments<TensorT> arguments;
+				arguments.source_node = model.nodes_.at(link_map.second->getSourceNodeName());
+				arguments.weight = model.weights_.at(link_map.second->getWeightName());
+				arguments.time_step = 0;
+				arguments.link_name = link_map.first;
+
+				std::string ops_key = link_map.second->getSinkNodeName();
+				auto found = FP_operations_map.emplace(ops_key, (int)FP_operations.size());
+				if (!found.second)
+				{
+					FP_operations[FP_operations_map.at(ops_key)].arguments.push_back(arguments);
+				}
+				else
+				{
+					OperationList<TensorT> operation_list;
+					OperationResult<TensorT> result;
+					result.sink_node = model.nodes_.at(link_map.second->getSinkNodeName());
+					operation_list.result = result;
+					operation_list.arguments.push_back(arguments);
+					FP_operations.push_back(operation_list);
+				}
+			}
+		}
+	}
+
+	template<typename TensorT, typename DeviceT>
 	void ModelInterpreter<TensorT, DeviceT>::getNextInactiveLayerBiases(Model<TensorT>& model,
 		std::map<std::string, int>& FP_operations_map,
 		std::vector<OperationList<TensorT>>& FP_operations,
@@ -859,6 +904,21 @@ namespace SmartPeak
 	}
 
 	template<typename TensorT, typename DeviceT>
+	inline void ModelInterpreter<TensorT, DeviceT>::expandAllForwardPropogationOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::vector<OperationList<TensorT>>& FP_operations_expanded)
+	{
+		FP_operations_expanded.clear();
+		for (const OperationList<TensorT>& FP_operation : FP_operations) {
+			for (const OperationArguments<TensorT>& argument : FP_operation.arguments) {
+				OperationList<TensorT> operations_list;
+				operations_list.result = FP_operation.result;
+				operations_list.arguments.push_back(argument);
+				operations_list.operation_index = FP_operation.operation_index;
+				FP_operations_expanded.push_back(operations_list);
+			}
+		}
+	}
+
+	template<typename TensorT, typename DeviceT>
 	inline std::map<std::string, std::vector<int>> ModelInterpreter<TensorT, DeviceT>::getCustomOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes)
 	{
 		std::set<std::string> supported_custom_module_names = { "SoftMax" }; // [TODO: add support for ModuleType]
@@ -1056,7 +1116,7 @@ namespace SmartPeak
 				if (sink_ops_key_1 != sink_ops_key_2) continue;
 
 				// check if the source nodes are compatible
-				std::set<std::string> argument_nodes;
+				std::set<std::string> argument1_nodes, argument2_nodes;
 				for (const auto& argument : FP_operations[operations_iter1].arguments) {
 					std::string ops_key = makeForwardPropogationOperationsKey(argument.time_step,
 						argument.source_node->getType(),
@@ -1065,7 +1125,7 @@ namespace SmartPeak
 						argument.source_node->getLayerName(),
 						argument.source_node->getTensorIndex().first,
 						argument.weight->getLayerName());
-					argument_nodes.insert(ops_key);
+					argument1_nodes.insert(ops_key);
 				}
 				for (const auto& argument : FP_operations[operations_iter2].arguments) {
 					std::string ops_key = makeForwardPropogationOperationsKey(argument.time_step,
@@ -1075,14 +1135,16 @@ namespace SmartPeak
 						argument.source_node->getLayerName(),
 						argument.source_node->getTensorIndex().first,
 						argument.weight->getLayerName());
-					argument_nodes.insert(ops_key);
+					argument2_nodes.insert(ops_key);
 				}
-				if (argument_nodes.size() > 1) continue;
+				if (argument1_nodes != argument2_nodes ) continue;
 
 				// Check compatibility with future operations
 				std::set<std::string> sinkAsSourceNode_1, sinkAsSourceNode_2, sourceAsSourceNode_1, sourceAsSourceNode_2,
 					sinkAsSinkNode_1, sinkAsSinkNode_2, sinkToSinkNode_1, sinkToSinkNode_2;
-				for (size_t operations_iter3 = operations_iter2 + 1; operations_iter3 < FP_operations.size(); ++operations_iter3) {
+				for (size_t operations_iter3 = operations_iter1 + 1; operations_iter3 < FP_operations.size(); ++operations_iter3) {
+					std::string sink_node_key3 = FP_operations[operations_iter2].result.sink_node->getName() + "/" + std::to_string(operations_iter3);
+					if (identified_sink_nodes.count(sink_node_key3) || operations_iter3 == operations_iter2) continue; // Skip current and identified sink nodes
 					std::string sink_ops_key_3 = makeForwardPropogationOperationsKey(FP_operations[operations_iter1].result.time_step,
 						FP_operations[operations_iter3].result.sink_node->getType(),
 						FP_operations[operations_iter3].result.sink_node->getIntegration()->getName(),
@@ -1374,6 +1436,9 @@ namespace SmartPeak
 
 			// [OPTIMIZATION: for performance, this method has been combined with getNextInactiveLayer above to reduce
 			//							  the number of iterations through all model links
+			//std::map<std::string, int> FP_operations_map;
+			//std::vector<OperationList<TensorT>> FP_operations_list;
+			//getNextInactiveLayerWOBiases(model, FP_operations_map, FP_operations_list);
 			//// get biases
 			//std::vector<std::string> sink_nodes_with_biases;
 			//getNextInactiveLayerBiases(model, FP_operations_map, FP_operations_list, sink_nodes_with_biases);
@@ -1405,17 +1470,9 @@ namespace SmartPeak
 
 		// Pre-emptively Expand the set of operations
 		std::vector<OperationList<TensorT>> FP_operations_expanded;
-		//expandForwardPropogationOperations(FP_operations, FP_operations_expanded);
-		FP_operations_expanded.clear();
-		for (const OperationList<TensorT>& FP_operation : FP_operations) {
-			for (const OperationArguments<TensorT>& argument : FP_operation.arguments) {
-				OperationList<TensorT> operations_list;
-				operations_list.result = FP_operation.result;
-				operations_list.arguments.push_back(argument);
-				operations_list.operation_index = FP_operation.operation_index;
-				FP_operations_expanded.push_back(operations_list);
-			}
-		}
+		//expandForwardPropogationOperations(FP_operations, FP_operations_expanded); // Faster, but does not always expand enough...
+		FP_operations_expanded.reserve(iter);
+		expandAllForwardPropogationOperations(FP_operations, FP_operations_expanded); 
 
 		// [DEBUGGING]
 		//for (auto& FP_operation : FP_operations_expanded) {
