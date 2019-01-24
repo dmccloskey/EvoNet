@@ -57,12 +57,16 @@ public:
 	{
 		nodes.clear();
 
-		io::CSVReader<9> nodes_in(filename);
+		io::CSVReader<12> nodes_in(filename);
 		nodes_in.read_header(io::ignore_extra_column,
-			"node_name", "node_type", "node_status", "node_activation", "node_activation_grad", "node_integration", "node_integration_error", "node_integration_weight_grad", "module_name");
-		std::string node_name, node_type_str, node_status_str, node_activation_str, node_activation_grad_str, node_integration_str, node_integration_error_str, node_integration_weight_grad_str, module_name_str = "";
+			"node_name", "node_type", "node_status", "node_activation", "node_activation_grad", 
+			"node_integration", "node_integration_error", "node_integration_weight_grad", 
+			"module_name", "layer_name", "tensor_number", "tensor_position");
+		std::string node_name, node_type_str, node_status_str, node_activation_str, node_activation_grad_str, node_integration_str, node_integration_error_str, node_integration_weight_grad_str, 
+			module_name_str, layer_name_str, tensor_number_str, tensor_position_str = "";
 
-		while (nodes_in.read_row(node_name, node_type_str, node_status_str, node_activation_str, node_activation_grad_str, node_integration_str, node_integration_error_str, node_integration_weight_grad_str, module_name_str))
+		while (nodes_in.read_row(node_name, node_type_str, node_status_str, node_activation_str, node_activation_grad_str, node_integration_str, node_integration_error_str, node_integration_weight_grad_str, module_name_str,
+			layer_name_str, tensor_number_str, tensor_position_str))
 		{
 			// parse the node_type
 			NodeType node_type;
@@ -140,7 +144,15 @@ public:
 			else std::cout << "NodeIntegrationWeightGrad for node_name " << node_name << " was not recognized." << std::endl;
 
 			std::shared_ptr<Node<TensorT>> node(new Node<TensorT>(node_name, node_type, node_status, node_activation, node_activation_grad, node_integration, node_integration_error, node_integration_weight_grad));
+			
+			// parse tensor specific information
 			node->setModuleName(module_name_str);
+			node->setLayerName(layer_name_str);
+			int tensor_number = -1, tensor_position = -1;
+			tensor_number = std::stoi(tensor_number_str);
+			tensor_position = std::stoi(tensor_position_str);
+			node->setTensorIndex(std::make_pair(tensor_number, tensor_position));
+
 			nodes.emplace(node_name,node);
 		}
 		return true;
@@ -155,7 +167,9 @@ public:
 		CSVWriter csvwriter(filename);
 
 		// write the headers to the first line
-		const std::vector<std::string> headers = { "node_name", "node_type", "node_status", "node_activation", "node_activation_grad", "node_integration", "node_integration_error", "node_integration_weight_grad", "module_name" };
+		const std::vector<std::string> headers = { "node_name", "node_type", "node_status", "node_activation", "node_activation_grad", 
+			"node_integration", "node_integration_error", "node_integration_weight_grad", "module_name",
+			"layer_name", "tensor_number", "tensor_position" };
 		csvwriter.writeDataInRow(headers.begin(), headers.end());
 
 		for (const auto& node : nodes)
@@ -197,6 +211,9 @@ public:
 			row.push_back(node_integration_weight_grad_str);
 
 			row.push_back(node.second->getModuleName());
+			row.push_back(node.second->getLayerName());
+			row.push_back(std::to_string(node.second->getTensorIndex().first));
+			row.push_back(std::to_string(node.second->getTensorIndex().second));
 
 			// write to file
 			csvwriter.writeDataInRow(row.begin(), row.end());

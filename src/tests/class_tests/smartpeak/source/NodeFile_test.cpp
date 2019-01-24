@@ -43,6 +43,9 @@ BOOST_AUTO_TEST_CASE(storeAndLoadCsv)
 			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), 
 			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), 
 			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>())));
+		node->setModuleName("Mod_" + std::to_string(i));
+		node->setLayerName("Layer_" + std::to_string(i));
+		node->setTensorIndex(std::make_pair(i, i+1));
     nodes.emplace("Node_" + std::to_string(i), node);
   }
   data.storeNodesCsv(filename, nodes);
@@ -54,7 +57,6 @@ BOOST_AUTO_TEST_CASE(storeAndLoadCsv)
   for (auto& nodes_map: nodes_test)
   {
     BOOST_CHECK_EQUAL(nodes_map.second->getName(), "Node_" + std::to_string(i));
-		BOOST_CHECK_EQUAL(nodes_map.second->getModuleName(), "");
     BOOST_CHECK(nodes_map.second->getType() == NodeType::hidden);
     BOOST_CHECK(nodes_map.second->getStatus() == NodeStatus::initialized);
 		BOOST_CHECK_EQUAL(nodes_map.second->getActivation()->getName(), "ReLUOp");
@@ -62,6 +64,10 @@ BOOST_AUTO_TEST_CASE(storeAndLoadCsv)
 		BOOST_CHECK_EQUAL(nodes_map.second->getIntegration()->getName(), "SumOp");
 		BOOST_CHECK_EQUAL(nodes_map.second->getIntegrationError()->getName(), "SumErrorOp");
 		BOOST_CHECK_EQUAL(nodes_map.second->getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
+		BOOST_CHECK_EQUAL(nodes_map.second->getModuleName(), "Mod_" + std::to_string(i));
+		BOOST_CHECK_EQUAL(nodes_map.second->getLayerName(), "Layer_" + std::to_string(i));
+		BOOST_CHECK_EQUAL(nodes_map.second->getTensorIndex().first, i);
+		BOOST_CHECK_EQUAL(nodes_map.second->getTensorIndex().second, i + 1);
 		//BOOST_CHECK(nodes_map.second == nodes.at(nodes_map.first)); // Broken
 		++i;
   }

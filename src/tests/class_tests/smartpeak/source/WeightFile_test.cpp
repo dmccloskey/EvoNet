@@ -53,8 +53,10 @@ BOOST_AUTO_TEST_CASE(storeAndLoadCsv)
       "Weight_" + std::to_string(i), 
       weight_init,
       solver));
-		weight->setModuleName(std::to_string(i));
-		//weight->initWeight();
+		weight->setModuleName("Mod_" + std::to_string(i));
+		weight->setLayerName("Layer_" + std::to_string(i));
+		weight->addTensorIndex(std::make_tuple(i, i + 1, i + 2));
+		weight->addTensorIndex(std::make_tuple(i, i + 3, i + 4));
     weights.emplace("Weight_" + std::to_string(i), weight);
   }
   data.storeWeightsCsv(filename, weights);
@@ -66,9 +68,16 @@ BOOST_AUTO_TEST_CASE(storeAndLoadCsv)
   for (auto& weight_map: weights_test)
   {
     BOOST_CHECK_EQUAL(weight_map.second->getName(), "Weight_" + std::to_string(i));
-		BOOST_CHECK_EQUAL(weight_map.second->getModuleName(), std::to_string(i));
+		BOOST_CHECK_EQUAL(weight_map.second->getModuleName(), "Mod_" + std::to_string(i));
+		BOOST_CHECK_EQUAL(weight_map.second->getLayerName(), "Layer_" + std::to_string(i));
     BOOST_CHECK_EQUAL(weight_map.second->getWeightInitOp()->operator()(), 1.0);
     BOOST_CHECK_CLOSE(weight_map.second->getSolverOp()->operator()(1.0, 2.0), 0.98, 1e-3);
+		BOOST_CHECK_EQUAL(std::get<0>(weight_map.second->getTensorIndex()[0]), i);
+		BOOST_CHECK_EQUAL(std::get<1>(weight_map.second->getTensorIndex()[0]), i + 1);
+		BOOST_CHECK_EQUAL(std::get<2>(weight_map.second->getTensorIndex()[0]), i + 2);
+		BOOST_CHECK_EQUAL(std::get<0>(weight_map.second->getTensorIndex()[1]), i);
+		BOOST_CHECK_EQUAL(std::get<1>(weight_map.second->getTensorIndex()[1]), i + 3);
+		BOOST_CHECK_EQUAL(std::get<2>(weight_map.second->getTensorIndex()[1]), i + 4);
 		//BOOST_CHECK(weight_map.second == weights.at(weight_map.first)); // Broken
 		++i;
   }

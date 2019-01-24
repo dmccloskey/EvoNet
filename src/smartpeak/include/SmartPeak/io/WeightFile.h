@@ -16,6 +16,7 @@
 #include <SmartPeak/io/csv.h>
 #include <SmartPeak/io/CSVWriter.h>
 #include <regex>
+#include <SmartPeak/core/StringParsing.h>
 
 namespace SmartPeak
 {
@@ -81,12 +82,12 @@ public:
 	{
 		weights.clear();
 
-		io::CSVReader<7> weights_in(filename);
+		io::CSVReader<9> weights_in(filename);
 		weights_in.read_header(io::ignore_extra_column,
-			"weight_name", "weight_init_op", "weight_init_params", "solver_op", "solver_params", "weight_value", "module_name");
-		std::string weight_name, weight_init_op_str, weight_init_params_str, solver_op_str, solver_params_str, weight_value_str, module_name_str = "";
+			"weight_name", "weight_init_op", "weight_init_params", "solver_op", "solver_params", "weight_value", "module_name", "layer_name", "tensor_index");
+		std::string weight_name, weight_init_op_str, weight_init_params_str, solver_op_str, solver_params_str, weight_value_str, module_name_str, layer_name_str, tensor_index_str;
 
-		while (weights_in.read_row(weight_name, weight_init_op_str, weight_init_params_str, solver_op_str, solver_params_str, weight_value_str, module_name_str))
+		while (weights_in.read_row(weight_name, weight_init_op_str, weight_init_params_str, solver_op_str, solver_params_str, weight_value_str, module_name_str, layer_name_str, tensor_index_str))
 		{
 			// parse the weight_init_params
 			std::map<std::string, TensorT> weight_init_params = parseParameters(weight_init_params_str);
@@ -184,11 +185,22 @@ public:
 			{
 				printf("Exception: %s", e.what());
 			}
-			//weight->initWeight();
 			weight->setWeight(weight_value);
 			weight->setInitWeight(false);
-
+			
+			// parse the tensor indexing
 			weight->setModuleName(module_name_str);
+			weight->setLayerName(layer_name_str);
+			std::vector<std::string> tensor_indices = SplitString(tensor_index_str, "|");
+			for (std::string& tensor_index : tensor_indices) {
+				std::vector<std::string> tensor_indexes = SplitString(ReplaceTokens(tensor_index, { "[\{\}]", "\\s+" }, ""), ";");
+				assert(tensor_indexes.size() == 3);
+				int ind1 = -1, ind2 = -1, ind3 = -1;
+				ind1 = std::stoi(tensor_indexes[0]);
+				ind2 = std::stoi(tensor_indexes[1]);
+				ind3 = std::stoi(tensor_indexes[2]);
+				weight->addTensorIndex(std::make_tuple(ind1, ind2, ind3));
+			}
 
 			weights.emplace(weight_name, weight);
 		}
@@ -271,7 +283,8 @@ public:
 		CSVWriter csvwriter(filename);
 
 		// write the headers to the first line
-		const std::vector<std::string> headers = { "weight_name", "weight_init_op", "weight_init_params", "solver_op", "solver_params", "weight_value", "module_name" };
+		std::vector<std::string> headers = { "weight_name", "weight_init_op", "weight_init_params", "solver_op", "solver_params", "weight_value", "module_name", "layer_name", "tensor_index"};
+		const int n_operations = weights.begin()->second->getTensorIndex().size();
 		csvwriter.writeDataInRow(headers.begin(), headers.end());
 
 		for (const auto& weight : weights)
@@ -299,6 +312,17 @@ public:
 
 			// parse the module name
 			row.push_back(weight.second->getModuleName());
+
+			// parse the tensor indexing
+			row.push_back(weight.second->getLayerName());
+			std::string tensor_index = "";
+			for (int i = 0; i < n_operations; ++i) {
+				tensor_index += "{" + std::to_string(std::get<0>(weight.second->getTensorIndex()[i])) + ";"
+					+ std::to_string(std::get<1>(weight.second->getTensorIndex()[i])) + ";"
+					+ std::to_string(std::get<2>(weight.second->getTensorIndex()[i])) + "}";
+				if (i < n_operations - 1)	tensor_index += "|";
+			}
+			row.push_back(tensor_index);
 
 			// write to file
 			csvwriter.writeDataInRow(row.begin(), row.end());
