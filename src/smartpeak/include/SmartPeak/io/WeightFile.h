@@ -17,6 +17,9 @@
 #include <SmartPeak/io/CSVWriter.h>
 #include <regex>
 #include <SmartPeak/core/StringParsing.h>
+#include <cereal/types/memory.hpp>
+#include <cereal/archives/binary.hpp>
+#include <fstream>
 
 namespace SmartPeak
 {
@@ -284,7 +287,9 @@ public:
 
 		// write the headers to the first line
 		std::vector<std::string> headers = { "weight_name", "weight_init_op", "weight_init_params", "solver_op", "solver_params", "weight_value", "module_name", "layer_name", "tensor_index"};
-		const int n_operations = weights.begin()->second->getTensorIndex().size();
+		int n_operations = 0;
+		if (weights.size() != 0)
+			n_operations = weights.begin()->second->getTensorIndex().size();
 		csvwriter.writeDataInRow(headers.begin(), headers.end());
 
 		for (const auto& weight : weights)

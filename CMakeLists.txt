@@ -18,6 +18,7 @@ if (USE_SUPERBUILD)
   project ("SuperBuild" NONE)
   #include(external/boost.cmake)
   include(external/eigen.cmake)
+  include(external/cereal.cmake)
   return() # stop processing this file further
 else()
   project ("SmartPeak_host")

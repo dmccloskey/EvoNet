@@ -31,7 +31,7 @@ ctest -DCTEST_MEMORYCHECK_COMMAND="/usr/bin/valgrind" -DMemoryCheckCommand="/usr
 
 ##Windows (MSVC or Cygwin64)
 ###dmccloskey
-cmake -DEVONET_CUDA=OFF -DBOOST_USE_STATIC=OFF -G "Visual Studio 15 2017 Win64" -T host=x64 -DUSE_SUPERBUILD=OFF -DBOOST_ROOT=C:/local/boost_1_67_0 -DEIGEN3_INCLUDE_DIR=C:/Users/dmccloskey/Documents/GitHub/smartPeak_cpp/build_external/Dependencies/Source/eigen ..
+cmake -DEVONET_CUDA=OFF -DBOOST_USE_STATIC=OFF -G "Visual Studio 15 2017 Win64" -T host=x64 -DUSE_SUPERBUILD=OFF -DBOOST_ROOT=C:/local/boost_1_67_0 -DEIGEN3_INCLUDE_DIR=C:/Users/dmccloskey/Documents/GitHub/smartPeak_cpp/build_external/Dependencies/Source/eigen -DCEREAL_ROOT=C:/Users/dmccloskey/Documents/GitHub/smartPeak_cpp/build_external/Dependencies/Source/cereal ..
 
 ###domccl
 cmake -G "Visual Studio 15 2017 Win64" -T host=x64 -DUSE_SUPERBUILD=ON ..

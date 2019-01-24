@@ -51,7 +51,7 @@ namespace SmartPeak
 
 		@returns True if successful, false otherwise
 		*/
-		bool storeModels(const std::vector<Model<TensorT>>& models,
+		bool storeModels(std::vector<Model<TensorT>>& models,
 			const std::string& filename);
 
 		/**
@@ -79,7 +79,7 @@ namespace SmartPeak
 	}
 
 	template<typename TensorT>
-	bool PopulationTrainerFile<TensorT>::storeModels(const std::vector<Model<TensorT>>& models,
+	bool PopulationTrainerFile<TensorT>::storeModels(std::vector<Model<TensorT>>& models,
 		const std::string& filename)
 	{
 		std::fstream file;
@@ -87,7 +87,7 @@ namespace SmartPeak
 
 		file.open(filename + ".sh", std::ios::out | std::ios::trunc);
 
-		for (const Model<TensorT>& model : models)
+		for (Model<TensorT>& model : models)
 		{
 			// write the model to file
 			//std::string model_name = model.getName();
@@ -97,11 +97,11 @@ namespace SmartPeak
 			std::string model_name_score = std::to_string(model_id) + "_";
 
 			WeightFile<TensorT> weightfile;
-			weightfile.storeWeightsCsv(model_name_score + filename + "_Weights.csv", model.getWeights());
+			weightfile.storeWeightsCsv(model_name_score + filename + "_Weights.csv", model.weights_);
 			LinkFile linkfile;
-			linkfile.storeLinksCsv(model_name_score + filename + "_Links.csv", model.getLinks());
+			linkfile.storeLinksCsv(model_name_score + filename + "_Links.csv", model.links_);
 			NodeFile<TensorT> nodefile;
-			nodefile.storeNodesCsv(model_name_score + filename + "_Nodes.csv", model.getNodes());
+			nodefile.storeNodesCsv(model_name_score + filename + "_Nodes.csv", model.nodes_);
 			ModelFile<TensorT> modelfile;
 			std::string dot_filename = model_name_score + filename + "_Graph.gv";
 			modelfile.storeModelDot(dot_filename, model);

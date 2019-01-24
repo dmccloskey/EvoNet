@@ -345,7 +345,7 @@ void main_VAE(const bool& make_model, const bool& load_weight_values, const bool
 	// define the data simulator
 	const std::size_t input_size = 784;
 	const std::size_t encoding_size = 64;
-	const std::size_t n_hidden = 1;
+	const std::size_t n_hidden = 128;
 	const std::size_t training_data_size = 60000; //60000;
 	const std::size_t validation_data_size = 10000; //10000;
 	DataSimulatorExt<float> data_simulator;
@@ -430,6 +430,7 @@ void main_VAE(const bool& make_model, const bool& load_weight_values, const bool
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setLogging(true, false, true);
 	model_trainer.setFindCycles(false);
+	model_trainer.setFastInterpreter(true);
 	model_trainer.setLossFunctions({
 		//std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>(1e-6, 1.0)),
 		std::shared_ptr<LossFunctionOp<float>>(new BCEWithLogitsOp<float>(1e-6, 1.0)),
