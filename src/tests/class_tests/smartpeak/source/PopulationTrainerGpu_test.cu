@@ -179,7 +179,7 @@ void test_trainModels()
 	model_trainer.setOutputNodes({ output_nodes });
 
   ModelReplicatorExt<float> model_replicator;
-  model_replicator.setNNodeAdditions(1);
+  model_replicator.setNNodeDownAdditions(1);
   model_replicator.setNLinkAdditions(1);
   model_replicator.setNNodeDeletions(0);
   model_replicator.setNLinkDeletions(0);
@@ -308,7 +308,7 @@ void test_evalModels()
 	model_trainer.setOutputNodes({ output_nodes });
 
 	ModelReplicatorExt<float> model_replicator;
-	model_replicator.setNNodeAdditions(1);
+	model_replicator.setNNodeDownAdditions(1);
 	model_replicator.setNLinkAdditions(1);
 	model_replicator.setNNodeDeletions(0);
 	model_replicator.setNLinkDeletions(0);
@@ -440,7 +440,7 @@ void test_exampleUsage()
 
   // define the model replicator for growth mode
 	ModelReplicatorExt<float> model_replicator;
-  model_replicator.setNNodeAdditions(1);
+  model_replicator.setNNodeDownAdditions(1);
   model_replicator.setNLinkAdditions(1);
   model_replicator.setNNodeDeletions(0);
   model_replicator.setNLinkDeletions(0);

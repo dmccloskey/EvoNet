@@ -206,10 +206,12 @@ private:
 		int n_TETT_steps_ = -1; ///< the number of truncated error through time calculation steps
 
 		int verbosity_level_ = 0; ///< level of verbosity (0=none, 1=test/validation errors, 2=test/validation node values
-		bool log_training_ = false;
-		bool log_validation_ = false;
-		bool log_evaluation_ = false;
-		bool find_cycles_ = true;
+		bool log_training_ = false; ///< whether to log training epochs or not
+		bool log_validation_ = false; ///< whether to log validation epochs or not
+		bool log_evaluation_ = false; ///< whether to log evaluation epochs or not
+
+		bool find_cycles_ = true; ///< whether to find cycles prior to interpreting the model
+		bool fast_interpreter_ = false; ///< whether to skip certain checks when interpreting the model
   };
 	template<typename TensorT, typename InterpreterT>
 	void ModelTrainer<TensorT, InterpreterT>::setBatchSize(const int& batch_size)

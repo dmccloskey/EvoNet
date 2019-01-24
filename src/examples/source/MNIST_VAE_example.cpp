@@ -187,6 +187,7 @@ public:
 		const int n_input_nodes = input_data.dimension(2);
 		const int n_output_nodes = output_data.dimension(2);
 		const int n_epochs = input_data.dimension(3);
+		if (n_epochs <= 0) return;
 		const int n_input_pixels = this->validation_data.dimension(1);
 		const int n_encodings = 64; // not ideal to have this hard coded...
 
@@ -232,6 +233,7 @@ public:
 		const int n_input_nodes = input_data.dimension(2);
 		const int n_output_nodes = output_data.dimension(2);
 		const int n_epochs = input_data.dimension(3);
+		if (n_epochs <= 0) return;
 		const int n_input_pixels = this->validation_data.dimension(1);
 		const int n_encodings = 64; // not ideal to have this hard coded...
 
@@ -278,21 +280,21 @@ public:
 	{
 		if (n_generations > 100)
 		{
-			this->setNNodeAdditions(1);
+			this->setNNodeDownAdditions(1);
 			this->setNLinkAdditions(2);
 			this->setNNodeDeletions(1);
 			this->setNLinkDeletions(2);
 		}
 		else if (n_generations > 1 && n_generations < 100)
 		{
-			this->setNNodeAdditions(1);
+			this->setNNodeDownAdditions(1);
 			this->setNLinkAdditions(2);
 			this->setNNodeDeletions(1);
 			this->setNLinkDeletions(2);
 		}
 		else if (n_generations == 0)
 		{
-			this->setNNodeAdditions(10);
+			this->setNNodeDownAdditions(10);
 			this->setNLinkAdditions(20);
 			this->setNNodeDeletions(0);
 			this->setNLinkDeletions(0);
@@ -343,29 +345,29 @@ void main_VAE(const bool& make_model, const bool& load_weight_values, const bool
 	// define the data simulator
 	const std::size_t input_size = 784;
 	const std::size_t encoding_size = 64;
-	const std::size_t n_hidden = 512;
+	const std::size_t n_hidden = 1;
 	const std::size_t training_data_size = 60000; //60000;
 	const std::size_t validation_data_size = 10000; //10000;
 	DataSimulatorExt<float> data_simulator;
 
-	// read in the training data
-	//const std::string training_data_filename = "C:/Users/domccl/GitHub/mnist/train-images.idx3-ubyte";
-	//const std::string training_labels_filename = "C:/Users/domccl/GitHub/mnist/train-labels.idx1-ubyte";
-	const std::string training_data_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/train-images-idx3-ubyte";
-	const std::string training_labels_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/train-labels-idx1-ubyte";
-	//const std::string training_data_filename = "/home/user/data/train-images-idx3-ubyte";
-	//const std::string training_labels_filename = "/home/user/data/train-labels-idx1-ubyte";
-	data_simulator.readData(training_data_filename, training_labels_filename, true, training_data_size, input_size);
+	//// read in the training data
+	////const std::string training_data_filename = "C:/Users/domccl/GitHub/mnist/train-images.idx3-ubyte";
+	////const std::string training_labels_filename = "C:/Users/domccl/GitHub/mnist/train-labels.idx1-ubyte";
+	//const std::string training_data_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/train-images-idx3-ubyte";
+	//const std::string training_labels_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/train-labels-idx1-ubyte";
+	////const std::string training_data_filename = "/home/user/data/train-images-idx3-ubyte";
+	////const std::string training_labels_filename = "/home/user/data/train-labels-idx1-ubyte";
+	//data_simulator.readData(training_data_filename, training_labels_filename, true, training_data_size, input_size);
 
-	// read in the validation data
-	//const std::string validation_data_filename = "C:/Users/domccl/GitHub/mnist/t10k-images.idx3-ubyte";
-	//const std::string validation_labels_filename = "C:/Users/domccl/GitHub/mnist/t10k-labels.idx1-ubyte";
-	const std::string validation_data_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/t10k-images-idx3-ubyte";
-	const std::string validation_labels_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/t10k-labels-idx1-ubyte";
-	//const std::string validation_data_filename = "/home/user/data/t10k-images-idx3-ubyte";
-	//const std::string validation_labels_filename = "/home/user/data/t10k-labels-idx1-ubyte";
-	data_simulator.readData(validation_data_filename, validation_labels_filename, false, validation_data_size, input_size);
-	data_simulator.unitScaleData();
+	//// read in the validation data
+	////const std::string validation_data_filename = "C:/Users/domccl/GitHub/mnist/t10k-images.idx3-ubyte";
+	////const std::string validation_labels_filename = "C:/Users/domccl/GitHub/mnist/t10k-labels.idx1-ubyte";
+	//const std::string validation_data_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/t10k-images-idx3-ubyte";
+	//const std::string validation_labels_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/t10k-labels-idx1-ubyte";
+	////const std::string validation_data_filename = "/home/user/data/t10k-images-idx3-ubyte";
+	////const std::string validation_labels_filename = "/home/user/data/t10k-labels-idx1-ubyte";
+	//data_simulator.readData(validation_data_filename, validation_labels_filename, false, validation_data_size, input_size);
+	//data_simulator.unitScaleData();
 
 	// Make the input nodes
 	std::vector<std::string> input_nodes;
@@ -421,7 +423,7 @@ void main_VAE(const bool& make_model, const bool& load_weight_values, const bool
 	ModelTrainerExt<float> model_trainer;
 	//model_trainer.setBatchSize(1); // evaluation only
 	model_trainer.setBatchSize(64);
-	model_trainer.setNEpochsTraining(10000);
+	model_trainer.setNEpochsTraining(0);
 	model_trainer.setNEpochsValidation(0);
 	model_trainer.setNEpochsEvaluation(100);
 	model_trainer.setMemorySize(1);

@@ -96,6 +96,7 @@ public:
 		*/
 		bool storeModelDot(const std::string& filename, const Model<TensorT>& model);
   };
+
 	template<typename TensorT>
 	bool ModelFile<TensorT>::storeModelBinary(const std::string & filename, const Model<TensorT>& model)
 	{

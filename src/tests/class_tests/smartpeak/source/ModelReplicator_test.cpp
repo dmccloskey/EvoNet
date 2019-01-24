@@ -42,7 +42,7 @@ BOOST_AUTO_TEST_CASE(destructor)
 BOOST_AUTO_TEST_CASE(gettersAndSetters) 
 {
   ModelReplicatorExt<float> model_replicator;
-  model_replicator.setNNodeAdditions(1);
+  model_replicator.setNNodeDownAdditions(1);
   model_replicator.setNLinkAdditions(2);
   model_replicator.setNNodeDeletions(3);
   model_replicator.setNLinkDeletions(4);
@@ -854,42 +854,42 @@ BOOST_AUTO_TEST_CASE(makeRandomModificationOrder)
 {
   ModelReplicatorExt<float> model_replicator;
 
-  model_replicator.setNNodeAdditions(1);
+  model_replicator.setNNodeDownAdditions(1);
   model_replicator.setNLinkAdditions(0);
   model_replicator.setNNodeDeletions(0);
   model_replicator.setNLinkDeletions(0);
 	model_replicator.setNNodeActivationChanges(0);
 	model_replicator.setNNodeIntegrationChanges(0);
   BOOST_CHECK_EQUAL(model_replicator.makeRandomModificationOrder()[0], "add_node");
-  model_replicator.setNNodeAdditions(0);
+  model_replicator.setNNodeDownAdditions(0);
   model_replicator.setNLinkAdditions(1);
   model_replicator.setNNodeDeletions(0);
   model_replicator.setNLinkDeletions(0);
 	model_replicator.setNNodeActivationChanges(0);
 	model_replicator.setNNodeIntegrationChanges(0);
   BOOST_CHECK_EQUAL(model_replicator.makeRandomModificationOrder()[0], "add_link");
-  model_replicator.setNNodeAdditions(0);
+  model_replicator.setNNodeDownAdditions(0);
   model_replicator.setNLinkAdditions(0);
   model_replicator.setNNodeDeletions(1);
   model_replicator.setNLinkDeletions(0);
 	model_replicator.setNNodeActivationChanges(0);
 	model_replicator.setNNodeIntegrationChanges(0);
   BOOST_CHECK_EQUAL(model_replicator.makeRandomModificationOrder()[0], "delete_node");
-  model_replicator.setNNodeAdditions(0);
+  model_replicator.setNNodeDownAdditions(0);
   model_replicator.setNLinkAdditions(0);
   model_replicator.setNNodeDeletions(0);
   model_replicator.setNLinkDeletions(1);
 	model_replicator.setNNodeActivationChanges(0);
 	model_replicator.setNNodeIntegrationChanges(0);
   BOOST_CHECK_EQUAL(model_replicator.makeRandomModificationOrder()[0], "delete_link");
-	model_replicator.setNNodeAdditions(0);
+	model_replicator.setNNodeDownAdditions(0);
 	model_replicator.setNLinkAdditions(0);
 	model_replicator.setNNodeDeletions(0);
 	model_replicator.setNLinkDeletions(0);
 	model_replicator.setNNodeActivationChanges(1);
 	model_replicator.setNNodeIntegrationChanges(0);
 	BOOST_CHECK_EQUAL(model_replicator.makeRandomModificationOrder()[0], "change_node_activation");
-	model_replicator.setNNodeAdditions(0);
+	model_replicator.setNNodeDownAdditions(0);
 	model_replicator.setNLinkAdditions(0);
 	model_replicator.setNNodeDeletions(0);
 	model_replicator.setNLinkDeletions(0);
@@ -903,7 +903,7 @@ BOOST_AUTO_TEST_CASE(makeRandomModificationOrder)
   bool delete_link_found = false;
 	bool change_node_activation_found = false;
 	bool change_node_integration_found = false;
-  model_replicator.setNNodeAdditions(2);
+  model_replicator.setNNodeDownAdditions(2);
   model_replicator.setNLinkAdditions(2);
   model_replicator.setNNodeDeletions(0);
   model_replicator.setNLinkDeletions(2);
@@ -952,14 +952,14 @@ BOOST_AUTO_TEST_CASE(modifyModel)
   BOOST_CHECK_EQUAL(model_modifyModel1.getLinks().size(), 12);
   BOOST_CHECK_EQUAL(model_modifyModel1.getWeights().size(), 12);
 
-  model_replicator.setNNodeAdditions(1);
+  model_replicator.setNNodeDownAdditions(1);
   model_replicator.setNLinkAdditions(1);
   model_replicator.modifyModel(model_modifyModel1);
   BOOST_CHECK_EQUAL(model_modifyModel1.getNodes().size(), 10);
   BOOST_CHECK_EQUAL(model_modifyModel1.getLinks().size(), 15);
   BOOST_CHECK_EQUAL(model_modifyModel1.getWeights().size(), 15);
 
-  model_replicator.setNNodeAdditions(0);
+  model_replicator.setNNodeDownAdditions(0);
   model_replicator.setNLinkAdditions(0);
   model_replicator.setNNodeDeletions(1);
   model_replicator.modifyModel(model_modifyModel2);
@@ -967,7 +967,7 @@ BOOST_AUTO_TEST_CASE(modifyModel)
   BOOST_CHECK_EQUAL(model_modifyModel2.getLinks().size(), 7);
   BOOST_CHECK_EQUAL(model_modifyModel2.getWeights().size(), 7);
 
-  model_replicator.setNNodeAdditions(0);
+  model_replicator.setNNodeDownAdditions(0);
   model_replicator.setNLinkAdditions(0);
   model_replicator.setNNodeDeletions(0);
   model_replicator.setNLinkDeletions(1);
@@ -976,7 +976,7 @@ BOOST_AUTO_TEST_CASE(modifyModel)
   BOOST_CHECK_EQUAL(model_modifyModel3.getLinks().size(), 11);
   BOOST_CHECK_EQUAL(model_modifyModel3.getWeights().size(), 11);
 
-	model_replicator.setNNodeAdditions(0);
+	model_replicator.setNNodeDownAdditions(0);
 	model_replicator.setNLinkAdditions(0);
 	model_replicator.setNNodeDeletions(0);
 	model_replicator.setNLinkDeletions(0);
@@ -998,7 +998,7 @@ BOOST_AUTO_TEST_CASE(modifyModel)
 	BOOST_CHECK_EQUAL(model_modifyModel4.getLinks().size(), 12);
 	BOOST_CHECK_EQUAL(model_modifyModel4.getWeights().size(), 12);
 
-	model_replicator.setNNodeAdditions(0);
+	model_replicator.setNNodeDownAdditions(0);
 	model_replicator.setNLinkAdditions(0);
 	model_replicator.setNNodeDeletions(0);
 	model_replicator.setNLinkDeletions(0);
@@ -1020,7 +1020,7 @@ BOOST_AUTO_TEST_CASE(modifyModel)
 	BOOST_CHECK_EQUAL(model_modifyModel5.getLinks().size(), 12);
 	BOOST_CHECK_EQUAL(model_modifyModel5.getWeights().size(), 12);
 
-	model_replicator.setNNodeAdditions(0);
+	model_replicator.setNNodeDownAdditions(0);
 	model_replicator.setNLinkAdditions(0);
 	model_replicator.setNNodeDeletions(0);
 	model_replicator.setNLinkDeletions(0);
@@ -1032,7 +1032,7 @@ BOOST_AUTO_TEST_CASE(modifyModel)
 	BOOST_CHECK_EQUAL(model_modifyModel6.getLinks().size(), 22);
 	BOOST_CHECK_EQUAL(model_modifyModel6.getWeights().size(), 22);
 
-	model_replicator.setNNodeAdditions(0);
+	model_replicator.setNNodeDownAdditions(0);
 	model_replicator.setNLinkAdditions(0);
 	model_replicator.setNNodeDeletions(0);
 	model_replicator.setNLinkDeletions(0);
