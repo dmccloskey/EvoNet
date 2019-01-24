@@ -115,7 +115,7 @@ BOOST_AUTO_TEST_CASE(allocateForwardPropogationLayerTensors)
 	// Check iteration one with no source/sink/weight tensors already allocated
 	std::map<std::string, int> FP_operations_map;
 	std::vector<OperationList<float>> FP_operations_list;
-	model_interpreter.getNextInactiveLayer(model_allocateForwardPropogationLayerTensors, FP_operations_map, FP_operations_list);
+	model_interpreter.getNextInactiveLayerWOBiases(model_allocateForwardPropogationLayerTensors, FP_operations_map, FP_operations_list);
 
 	std::vector<std::string> sink_nodes_with_biases2;
 	model_interpreter.getNextInactiveLayerBiases(model_allocateForwardPropogationLayerTensors, FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
@@ -124,7 +124,7 @@ BOOST_AUTO_TEST_CASE(allocateForwardPropogationLayerTensors)
 	model_interpreter.expandForwardPropogationOperations(FP_operations_list, FP_operations_expanded);
 
 	std::set<std::string> identified_sink_nodes;
-	std::map<std::string, std::vector<int>> tensor_ops = model_interpreter.getTensorOperations(FP_operations_expanded, identified_sink_nodes);
+	std::map<std::string, std::vector<int>> tensor_ops = model_interpreter.getTensorOperations(FP_operations_expanded, identified_sink_nodes, false);
 
 	std::vector<int> source_layer_sizes, sink_layer_sizes;
 	std::vector<std::vector<std::pair<int, int>>> weight_indices;
@@ -175,7 +175,7 @@ BOOST_AUTO_TEST_CASE(getForwardPropogationOperations)
 	// change the bias weights to shared
 	model_getForwardPropogationOperations.links_.at("5")->setWeightName("4");
 
-	model_interpreter.getForwardPropogationOperations(model_getForwardPropogationOperations, batch_size, memory_size, train);
+	model_interpreter.getForwardPropogationOperations(model_getForwardPropogationOperations, batch_size, memory_size, train, false, true);
 
 	// asserts are needed because boost deallocates the pointer memory after being called...
 	int expected_layer_tensors = 4;
@@ -305,7 +305,7 @@ BOOST_AUTO_TEST_CASE(mapValuesToLayers)
 	// initialize nodes
 	// NOTE: input and biases have been activated when the model was created
 
-	model_interpreter.getForwardPropogationOperations(model_mapValuesToLayers, batch_size, memory_size, train);
+	model_interpreter.getForwardPropogationOperations(model_mapValuesToLayers, batch_size, memory_size, train, false, true);
 
 	// create the input
 	const std::vector<std::string> node_ids = { "0", "1" };
@@ -361,7 +361,7 @@ BOOST_AUTO_TEST_CASE(executeForwardPropogationOperations)
 	const bool train = true;
 
 	// compile the graph into a set of operations
-	model_interpreter.getForwardPropogationOperations(model_executeForwardPropogationOperations, batch_size, memory_size, train);
+	model_interpreter.getForwardPropogationOperations(model_executeForwardPropogationOperations, batch_size, memory_size, train, false, true);
 
 	// create the input
 	const std::vector<std::string> node_ids = { "0", "1" };
@@ -411,7 +411,7 @@ BOOST_AUTO_TEST_CASE(executeModelErrorOperations)
 	const bool train = true;
 
 	// compile the graph into a set of operations
-	model_interpreter.getForwardPropogationOperations(model_executeModelErrorOperations, batch_size, memory_size, train);
+	model_interpreter.getForwardPropogationOperations(model_executeModelErrorOperations, batch_size, memory_size, train, false, true);
 
 	// create the input
 	const std::vector<std::string> node_ids = { "0", "1" };
@@ -467,7 +467,7 @@ BOOST_AUTO_TEST_CASE(executeBackwardPropogationOperations)
 	const bool train = true;
 
 	// compile the graph into a set of operations
-	model_interpreter.getForwardPropogationOperations(model_executeBackwardPropogationOperations, batch_size, memory_size, train);
+	model_interpreter.getForwardPropogationOperations(model_executeBackwardPropogationOperations, batch_size, memory_size, train, false, true);
 
 	// create the input
 	const std::vector<std::string> node_ids = { "0", "1" };
@@ -520,7 +520,7 @@ BOOST_AUTO_TEST_CASE(executeWeightErrorOperations)
 	const bool train = true;
 
 	// compile the graph into a set of operations
-	model_interpreter.getForwardPropogationOperations(model_executeWeightErrorOperations, batch_size, memory_size, train);
+	model_interpreter.getForwardPropogationOperations(model_executeWeightErrorOperations, batch_size, memory_size, train, false, true);
 
 	// create the input
 	const std::vector<std::string> node_ids = { "0", "1" };
@@ -574,7 +574,7 @@ BOOST_AUTO_TEST_CASE(executeWeightUpdateOperations)
 	const bool train = true;
 
 	// compile the graph into a set of operations
-	model_interpreter.getForwardPropogationOperations(model_executeWeightUpdateOperations, batch_size, memory_size, train);
+	model_interpreter.getForwardPropogationOperations(model_executeWeightUpdateOperations, batch_size, memory_size, train, false, true);
 
 	// create the input
 	const std::vector<std::string> node_ids = { "0", "1" };
@@ -636,7 +636,7 @@ BOOST_AUTO_TEST_CASE(modelTrainer1)
 	}
 
 	// compile the graph into a set of operations and allocate all tensors
-	model_interpreter.getForwardPropogationOperations(model_modelTrainer1, batch_size, memory_size, train);
+	model_interpreter.getForwardPropogationOperations(model_modelTrainer1, batch_size, memory_size, train, false, true);
 	model_interpreter.allocateModelErrorTensor(batch_size, memory_size);
 
 	// create the input
@@ -744,7 +744,7 @@ BOOST_AUTO_TEST_CASE(FPTT)
 	const bool train = true;
 
 	// compile the graph into a set of operations and allocate all tensors
-	model_interpreter.getForwardPropogationOperations(model_FPTT, batch_size, memory_size, train);
+	model_interpreter.getForwardPropogationOperations(model_FPTT, batch_size, memory_size, train, false, true);
 	model_interpreter.allocateModelErrorTensor(batch_size, memory_size);
 
 	// create the input
@@ -804,7 +804,7 @@ BOOST_AUTO_TEST_CASE(CETT)
 	const bool train = true;
 
 	// compile the graph into a set of operations and allocate all tensors
-	model_interpreter.getForwardPropogationOperations(model_CETT, batch_size, memory_size, train);
+	model_interpreter.getForwardPropogationOperations(model_CETT, batch_size, memory_size, train, false, true);
 	model_interpreter.allocateModelErrorTensor(batch_size, memory_size);
 
 	// create the input
@@ -879,7 +879,7 @@ BOOST_AUTO_TEST_CASE(TBPTT)
 	const bool train = true;
 
 	// compile the graph into a set of operations and allocate all tensors
-	model_interpreter.getForwardPropogationOperations(model_TBPTT, batch_size, memory_size, train);
+	model_interpreter.getForwardPropogationOperations(model_TBPTT, batch_size, memory_size, train, false, true);
 	model_interpreter.allocateModelErrorTensor(batch_size, memory_size);
 
 	// create the input
@@ -956,7 +956,7 @@ BOOST_AUTO_TEST_CASE(updateWeights)
 	const bool train = true;
 
 	// compile the graph into a set of operations and allocate all tensors
-	model_interpreter.getForwardPropogationOperations(model_updateWeights, batch_size, memory_size, train);
+	model_interpreter.getForwardPropogationOperations(model_updateWeights, batch_size, memory_size, train, false, true);
 	model_interpreter.allocateModelErrorTensor(batch_size, memory_size);
 
 	// create the input
@@ -1019,7 +1019,7 @@ BOOST_AUTO_TEST_CASE(modelTrainer2)
 	}
 
 	// compile the graph into a set of operations and allocate all tensors
-	model_interpreter.getForwardPropogationOperations(model_modelTrainer2, batch_size, memory_size, train);
+	model_interpreter.getForwardPropogationOperations(model_modelTrainer2, batch_size, memory_size, train, false, true);
 	model_interpreter.allocateModelErrorTensor(batch_size, memory_size);
 
 	// create the input
@@ -1082,7 +1082,7 @@ BOOST_AUTO_TEST_CASE(getModelResults)
 	const bool train = true;
 
 	// compile the graph into a set of operations and allocate all tensors
-	model_interpreter.getForwardPropogationOperations(model_getModelResults, batch_size, memory_size, train);
+	model_interpreter.getForwardPropogationOperations(model_getModelResults, batch_size, memory_size, train, false, true);
 	model_interpreter.allocateModelErrorTensor(batch_size, memory_size);
 
 	// create the input

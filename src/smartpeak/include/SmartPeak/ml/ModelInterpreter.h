@@ -349,8 +349,11 @@ namespace SmartPeak
 		@param[in] model Network model
 		@param[in] batch_size Batch size
 		@param[in] memory_size Memory size
+		@param[in] train Boolean to indicate training or testing (needed for dropout or drop connection)
+		@param[in] fast_check Boolean to use a faster but incomplete tensor compatibility check when manually specifying layers
+		@param[in] find_cycles Boolean to search for cyclic nodes
 		*/
-		void getForwardPropogationOperations(Model<TensorT>& model, const int& batch_size, const int& memory_size, const bool& train, const bool& fast_check);
+		void getForwardPropogationOperations(Model<TensorT>& model, const int& batch_size, const int& memory_size, const bool& train, const bool& fast_check, const bool& find_cycles);
 
 		/**
 		@brief Allocate Node and Weight tensor memory for all model operations.
@@ -1147,7 +1150,7 @@ namespace SmartPeak
 					std::set<std::string> sinkAsSourceNode_1, sinkAsSourceNode_2, sourceAsSourceNode_1, sourceAsSourceNode_2,
 						sinkAsSinkNode_1, sinkAsSinkNode_2, sinkToSinkNode_1, sinkToSinkNode_2;
 					for (size_t operations_iter3 = operations_iter1 + 1; operations_iter3 < FP_operations.size(); ++operations_iter3) {
-						std::string sink_node_key3 = FP_operations[operations_iter2].result.sink_node->getName() + "/" + std::to_string(operations_iter3);
+						std::string sink_node_key3 = FP_operations[operations_iter3].result.sink_node->getName() + "/" + std::to_string(operations_iter3);
 						if (identified_sink_nodes.count(sink_node_key3) || operations_iter3 == operations_iter2) continue; // Skip current and identified sink nodes
 						std::string sink_ops_key_3 = makeForwardPropogationOperationsKey(FP_operations[operations_iter1].result.time_step,
 							FP_operations[operations_iter3].result.sink_node->getType(),
@@ -1410,7 +1413,8 @@ namespace SmartPeak
 	}
 
 	template<typename TensorT, typename DeviceT>
-	void ModelInterpreter<TensorT, DeviceT>::getForwardPropogationOperations(Model<TensorT>& model, const int& batch_size, const int& memory_size, const bool& train, const bool& fast_check)
+	void ModelInterpreter<TensorT, DeviceT>::getForwardPropogationOperations(Model<TensorT>& model, const int& batch_size, const int& memory_size, 
+		const bool& train, const bool& fast_check, const bool& find_cycles)
 	{
 		// STEP 1: Preliminaries...
 
@@ -1449,15 +1453,17 @@ namespace SmartPeak
 			//std::vector<std::string> sink_nodes_with_biases;
 			//getNextInactiveLayerBiases(model, FP_operations_map, FP_operations_list, sink_nodes_with_biases);
 
-			// get cycles
-			std::map<std::string, int> FP_operations_map_cycles = FP_operations_map;
-			std::vector<OperationList<TensorT>> FP_operations_list_cycles = FP_operations_list;
-			std::vector<std::string> sink_nodes_cycles;
-			getNextInactiveLayerCycles(model, FP_operations_map_cycles, FP_operations_list_cycles, sink_nodes_cycles);
+			if (find_cycles) {
+				// get cycles
+				std::map<std::string, int> FP_operations_map_cycles = FP_operations_map;
+				std::vector<OperationList<TensorT>> FP_operations_list_cycles = FP_operations_list;
+				std::vector<std::string> sink_nodes_cycles;
+				getNextInactiveLayerCycles(model, FP_operations_map_cycles, FP_operations_list_cycles, sink_nodes_cycles);
 
-			// Remove all nodes involved in "cycles" that have arguments
-			// involving source to sink node pairs not identified as cycles
-			pruneInactiveLayerCycles(model, FP_operations_map, FP_operations_map_cycles, FP_operations_list, FP_operations_list_cycles, sink_nodes_cycles);
+				// Remove all nodes involved in "cycles" that have arguments
+				// involving source to sink node pairs not identified as cycles
+				pruneInactiveLayerCycles(model, FP_operations_map, FP_operations_map_cycles, FP_operations_list, FP_operations_list_cycles, sink_nodes_cycles);
+			}
 
 			// check if all nodes have been activated
 			if (FP_operations_list.size() == 0)	{

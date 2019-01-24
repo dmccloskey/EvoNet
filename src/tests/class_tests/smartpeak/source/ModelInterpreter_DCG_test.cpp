@@ -490,7 +490,7 @@ BOOST_AUTO_TEST_CASE(getTensorOperations)
 	model_interpreter.expandForwardPropogationOperations(FP_operations_list, FP_operations_expanded);
 
 	std::set<std::string> identified_sink_nodes;
-	std::map<std::string, std::vector<int>> tensor_ops = model_interpreter.getTensorOperations(FP_operations_expanded, identified_sink_nodes);
+	std::map<std::string, std::vector<int>> tensor_ops = model_interpreter.getTensorOperations(FP_operations_expanded, identified_sink_nodes, false);
 
 	BOOST_CHECK_EQUAL(identified_sink_nodes.size(), 2);
 	BOOST_CHECK_EQUAL(identified_sink_nodes.count("1/0"), 1);
@@ -527,7 +527,7 @@ BOOST_AUTO_TEST_CASE(getForwardPropogationLayerTensorDimensions)
 	model_interpreter.expandForwardPropogationOperations(FP_operations_list, FP_operations_expanded);
 
 	std::set<std::string> identified_sink_nodes;
-	std::map<std::string, std::vector<int>> tensor_ops = model_interpreter.getTensorOperations(FP_operations_expanded, identified_sink_nodes);
+	std::map<std::string, std::vector<int>> tensor_ops = model_interpreter.getTensorOperations(FP_operations_expanded, identified_sink_nodes, false);
 
 	std::vector<int> source_layer_sizes, sink_layer_sizes;
 	std::vector<std::vector<std::pair<int, int>>> weight_indices;
@@ -601,7 +601,7 @@ BOOST_AUTO_TEST_CASE(getForwardPropogationLayerTensorDimensions)
 	model_interpreter.expandForwardPropogationOperations(FP_operations_list, FP_operations_expanded);
 
 	identified_sink_nodes.clear();
-	tensor_ops = model_interpreter.getTensorOperations(FP_operations_expanded, identified_sink_nodes);
+	tensor_ops = model_interpreter.getTensorOperations(FP_operations_expanded, identified_sink_nodes, false);
 
 	source_layer_sizes.clear(), sink_layer_sizes.clear();
 	weight_indices.clear();
