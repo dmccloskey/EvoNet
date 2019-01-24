@@ -35,8 +35,8 @@ public:
 
       @returns Status True on success, False if not
     */ 
-    bool loadNodesBinary(const std::string& filename, std::vector<Node<TensorT>>& nodes);
-    bool loadNodesCsv(const std::string& filename, std::vector<Node<TensorT>>& nodes);
+		bool loadNodesBinary(const std::string& filename, std::map<std::string, std::shared_ptr<Node<TensorT>>>& nodes);
+		bool loadNodesCsv(const std::string& filename, std::map<std::string, std::shared_ptr<Node<TensorT>>>& nodes);
  
     /**
       @brief Load nodes from file
@@ -46,14 +46,14 @@ public:
 
       @returns Status True on success, False if not
     */ 
-    bool storeNodesBinary(const std::string& filename, const std::vector<Node<TensorT>>& nodes);
-    bool storeNodesCsv(const std::string& filename, const std::vector<Node<TensorT>>& nodes);
+		bool storeNodesBinary(const std::string& filename, std::map<std::string, std::shared_ptr<Node<TensorT>>>& nodes);
+		bool storeNodesCsv(const std::string& filename, std::map<std::string, std::shared_ptr<Node<TensorT>>>& nodes);
   };
 	template<typename TensorT>
-	bool NodeFile<TensorT>::loadNodesBinary(const std::string& filename, std::vector<Node<TensorT>>& nodes) { return true; }
+	inline bool NodeFile<TensorT>::loadNodesBinary(const std::string& filename, std::map<std::string, std::shared_ptr<Node<TensorT>>>& nodes) { return true; }
 
 	template<typename TensorT>
-	bool NodeFile<TensorT>::loadNodesCsv(const std::string& filename, std::vector<Node<TensorT>>& nodes)
+	inline bool NodeFile<TensorT>::loadNodesCsv(const std::string & filename, std::map<std::string, std::shared_ptr<Node<TensorT>>>& nodes)
 	{
 		nodes.clear();
 
@@ -139,18 +139,18 @@ public:
 			else if (node_integration_weight_grad_str == "CountWeightGradOp") node_integration_weight_grad.reset(new CountWeightGradOp<TensorT>());
 			else std::cout << "NodeIntegrationWeightGrad for node_name " << node_name << " was not recognized." << std::endl;
 
-			Node<TensorT> node(node_name, node_type, node_status, node_activation, node_activation_grad, node_integration, node_integration_error, node_integration_weight_grad);
-			node.setModuleName(module_name_str);
-			nodes.push_back(node);
+			std::shared_ptr<Node<TensorT>> node(new Node<TensorT>(node_name, node_type, node_status, node_activation, node_activation_grad, node_integration, node_integration_error, node_integration_weight_grad));
+			node->setModuleName(module_name_str);
+			nodes.emplace(node_name,node);
 		}
 		return true;
 	}
 
 	template<typename TensorT>
-	bool NodeFile<TensorT>::storeNodesBinary(const std::string& filename, const std::vector<Node<TensorT>>& nodes) { return true; }
+	inline bool NodeFile<TensorT>::storeNodesBinary(const std::string& filename, std::map<std::string, std::shared_ptr<Node<TensorT>>>& nodes) { return true; }
 
 	template<typename TensorT>
-	bool NodeFile<TensorT>::storeNodesCsv(const std::string& filename, const std::vector<Node<TensorT>>& nodes)
+	inline bool NodeFile<TensorT>::storeNodesCsv(const std::string & filename, std::map<std::string, std::shared_ptr<Node<TensorT>>>& nodes)
 	{
 		CSVWriter csvwriter(filename);
 
@@ -158,45 +158,45 @@ public:
 		const std::vector<std::string> headers = { "node_name", "node_type", "node_status", "node_activation", "node_activation_grad", "node_integration", "node_integration_error", "node_integration_weight_grad", "module_name" };
 		csvwriter.writeDataInRow(headers.begin(), headers.end());
 
-		for (const Node<TensorT>& node : nodes)
+		for (const auto& node : nodes)
 		{
 			std::vector<std::string> row;
-			row.push_back(node.getName());
+			row.push_back(node.second->getName());
 
 			// parse the node_type
 			std::string node_type_str = "";
-			if (node.getType() == NodeType::hidden) node_type_str = "hidden";
-			else if (node.getType() == NodeType::output) node_type_str = "output";
-			else if (node.getType() == NodeType::input) node_type_str = "input";
-			else if (node.getType() == NodeType::bias) node_type_str = "bias";
-			else if (node.getType() == NodeType::recursive) node_type_str = "recursive";
-			else std::cout << "NodeType for node_name " << node.getName() << " was not recognized." << std::endl;
+			if (node.second->getType() == NodeType::hidden) node_type_str = "hidden";
+			else if (node.second->getType() == NodeType::output) node_type_str = "output";
+			else if (node.second->getType() == NodeType::input) node_type_str = "input";
+			else if (node.second->getType() == NodeType::bias) node_type_str = "bias";
+			else if (node.second->getType() == NodeType::recursive) node_type_str = "recursive";
+			else std::cout << "NodeType for node_name " << node.second->getName() << " was not recognized." << std::endl;
 			row.push_back(node_type_str);
 
 			// parse the node_status
 			std::string node_status_str = "";
-			if (node.getStatus() == NodeStatus::deactivated) node_status_str = "deactivated";
-			else if (node.getStatus() == NodeStatus::initialized) node_status_str = "initialized";
-			else if (node.getStatus() == NodeStatus::activated) node_status_str = "activated";
-			else if (node.getStatus() == NodeStatus::corrected) node_status_str = "corrected";
-			else std::cout << "NodeStatus for node_name " << node.getName() << " was not recognized." << std::endl;
+			if (node.second->getStatus() == NodeStatus::deactivated) node_status_str = "deactivated";
+			else if (node.second->getStatus() == NodeStatus::initialized) node_status_str = "initialized";
+			else if (node.second->getStatus() == NodeStatus::activated) node_status_str = "activated";
+			else if (node.second->getStatus() == NodeStatus::corrected) node_status_str = "corrected";
+			else std::cout << "NodeStatus for node_name " << node.second->getName() << " was not recognized." << std::endl;
 			row.push_back(node_status_str);
 
 			// parse the node_activation
-			std::string node_activation_str = node.getActivation()->getName();
+			std::string node_activation_str = node.second->getActivation()->getName();
 			row.push_back(node_activation_str);
-			std::string node_activation_grad_str = node.getActivationGrad()->getName();
+			std::string node_activation_grad_str = node.second->getActivationGrad()->getName();
 			row.push_back(node_activation_grad_str);
 
 			// parse the node_integration
-			std::string node_integration_str = node.getIntegration()->getName();
+			std::string node_integration_str = node.second->getIntegration()->getName();
 			row.push_back(node_integration_str);
-			std::string node_integration_error_str = node.getIntegrationError()->getName();
+			std::string node_integration_error_str = node.second->getIntegrationError()->getName();
 			row.push_back(node_integration_error_str);
-			std::string node_integration_weight_grad_str = node.getIntegrationWeightGrad()->getName();
+			std::string node_integration_weight_grad_str = node.second->getIntegrationWeightGrad()->getName();
 			row.push_back(node_integration_weight_grad_str);
 
-			row.push_back(node.getModuleName());
+			row.push_back(node.second->getModuleName());
 
 			// write to file
 			csvwriter.writeDataInRow(row.begin(), row.end());

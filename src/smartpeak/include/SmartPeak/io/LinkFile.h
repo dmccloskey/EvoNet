@@ -7,7 +7,8 @@
 
 #include <iostream>
 #include <fstream>
-#include <vector>
+#include <map>
+#include <memory>
 
 namespace SmartPeak
 {
@@ -18,8 +19,8 @@ namespace SmartPeak
   class LinkFile
   {
 public:
-    LinkFile(); ///< Default constructor
-    ~LinkFile(); ///< Default destructor
+    LinkFile() = default; ///< Default constructor
+    ~LinkFile() = default; ///< Default destructor
  
     /**
       @brief Load links from file
@@ -29,8 +30,8 @@ public:
 
       @returns Status True on success, False if not
     */ 
-    bool loadLinksBinary(const std::string& filename, std::vector<Link>& links);
-    bool loadLinksCsv(const std::string& filename, std::vector<Link>& links);
+    bool loadLinksBinary(const std::string& filename, std::map<std::string, std::shared_ptr<Link>>& links);
+    bool loadLinksCsv(const std::string& filename, std::map<std::string, std::shared_ptr<Link>>& links);
  
     /**
       @brief save links to file
@@ -40,8 +41,8 @@ public:
 
       @returns Status True on success, False if not
     */ 
-    bool storeLinksBinary(const std::string& filename, const std::vector<Link>& links);
-    bool storeLinksCsv(const std::string& filename, const std::vector<Link>& links);
+    bool storeLinksBinary(const std::string& filename, std::map<std::string, std::shared_ptr<Link>>& links);
+    bool storeLinksCsv(const std::string& filename, std::map<std::string, std::shared_ptr<Link>>& links);
   };
 }
 

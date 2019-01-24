@@ -31,29 +31,31 @@ BOOST_AUTO_TEST_CASE(storeAndLoadCsv)
   std::string filename = "LinkFileTest.csv";
 
   // create list of dummy links
-  std::vector<Link> links;
+  std::map<std::string, std::shared_ptr<Link>> links;
   for (int i=0; i<3; ++i)
   {
-    Link link(
+    std::shared_ptr<Link> link(new Link(
       "Link_" + std::to_string(i), 
       "Source_" + std::to_string(i),
       "Sink_" + std::to_string(i),
-      "Weight_" + std::to_string(i));
-		link.setModuleName(std::to_string(i));
-    links.push_back(link);
+      "Weight_" + std::to_string(i)));
+		link->setModuleName(std::to_string(i));
+    links.emplace("Link_" + std::to_string(i), link);
   }
   data.storeLinksCsv(filename, links);
 
-  std::vector<Link> links_test;
+  std::map<std::string, std::shared_ptr<Link>> links_test;
 	data.loadLinksCsv(filename, links_test);
 
-  for (int i=0; i<3; ++i)
+	int i = 0;
+  for (auto& link_map: links_test)
   {
-    BOOST_CHECK_EQUAL(links_test[i].getName(), "Link_" + std::to_string(i));
-    BOOST_CHECK_EQUAL(links_test[i].getSourceNodeName(), "Source_" + std::to_string(i));
-    BOOST_CHECK_EQUAL(links_test[i].getSinkNodeName(), "Sink_" + std::to_string(i));
-    BOOST_CHECK_EQUAL(links_test[i].getWeightName(), "Weight_" + std::to_string(i));
-		BOOST_CHECK_EQUAL(links_test[i].getModuleName(), std::to_string(i));
+    BOOST_CHECK_EQUAL(link_map.second->getName(), "Link_" + std::to_string(i));
+    BOOST_CHECK_EQUAL(link_map.second->getSourceNodeName(), "Source_" + std::to_string(i));
+    BOOST_CHECK_EQUAL(link_map.second->getSinkNodeName(), "Sink_" + std::to_string(i));
+    BOOST_CHECK_EQUAL(link_map.second->getWeightName(), "Weight_" + std::to_string(i));
+		BOOST_CHECK_EQUAL(link_map.second->getModuleName(), std::to_string(i));
+		++i;
   }
 }
 

@@ -37,7 +37,7 @@ public:
 
       @returns Status True on success, False if not
     */ 
-    bool loadWeightsBinary(const std::string& filename, std::vector<Weight<TensorT>>& weights);
+    bool loadWeightsBinary(const std::string& filename, std::map<std::string, std::shared_ptr<Weight<TensorT>>>& weights);
  
     /**
       @brief Load weights from csv file
@@ -47,7 +47,7 @@ public:
 
       @returns Status True on success, False if not
     */ 
-    bool loadWeightsCsv(const std::string& filename, std::vector<Weight<TensorT>>& weights);
+    bool loadWeightsCsv(const std::string& filename, std::map<std::string, std::shared_ptr<Weight<TensorT>>>& weights);
 		bool loadWeightValuesCsv(const std::string& filename, std::map<std::string, std::shared_ptr<Weight<TensorT>>>& weights);
  
     /**
@@ -58,7 +58,7 @@ public:
 
       @returns Status True on success, False if not
     */ 
-    bool storeWeightsBinary(const std::string& filename, const std::vector<Weight<TensorT>>& weights);
+    bool storeWeightsBinary(const std::string& filename, const std::map<std::string, std::shared_ptr<Weight<TensorT>>>& weights);
  
     /**
       @brief Stores weights from binary file
@@ -68,16 +68,16 @@ public:
 
       @returns Status True on success, False if not
     */ 
-    bool storeWeightsCsv(const std::string& filename, const std::vector<Weight<TensorT>>& weights);
+    bool storeWeightsCsv(const std::string& filename, const std::map<std::string, std::shared_ptr<Weight<TensorT>>>& weights);
 		bool storeWeightValuesCsv(const std::string& filename, const std::map<std::string, std::shared_ptr<Weight<TensorT>>>& weights);
 
     std::map<std::string, TensorT> parseParameters(const std::string& parameters);
   };
 	template<typename TensorT>
-	bool WeightFile<TensorT>::loadWeightsBinary(const std::string& filename, std::vector<Weight<TensorT>>& weights) { return true; }
+	bool WeightFile<TensorT>::loadWeightsBinary(const std::string& filename, std::map<std::string, std::shared_ptr<Weight<TensorT>>>& weights) { return true; }
 
 	template<typename TensorT>
-	bool WeightFile<TensorT>::loadWeightsCsv(const std::string& filename, std::vector<Weight<TensorT>>& weights)
+	bool WeightFile<TensorT>::loadWeightsCsv(const std::string& filename, std::map<std::string, std::shared_ptr<Weight<TensorT>>>& weights)
 	{
 		weights.clear();
 
@@ -172,7 +172,7 @@ public:
 			}
 			else std::cout << "SolverOp " << solver_op_str << " for weight_name " << weight_name << " was not recognized." << std::endl;
 
-			Weight<TensorT> weight(weight_name, weight_init, solver);
+			std::shared_ptr<Weight<TensorT>> weight(new Weight<TensorT>(weight_name, weight_init, solver));
 
 			// parse the weight value
 			TensorT weight_value = 0;
@@ -184,13 +184,13 @@ public:
 			{
 				printf("Exception: %s", e.what());
 			}
-			//weight.initWeight();
-			weight.setWeight(weight_value);
-			weight.setInitWeight(false);
+			//weight->initWeight();
+			weight->setWeight(weight_value);
+			weight->setInitWeight(false);
 
-			weight.setModuleName(module_name_str);
+			weight->setModuleName(module_name_str);
 
-			weights.push_back(weight);
+			weights.emplace(weight_name, weight);
 		}
 		return true;
 	}
@@ -263,10 +263,10 @@ public:
 
 
 	template<typename TensorT>
-	bool WeightFile<TensorT>::storeWeightsBinary(const std::string& filename, const std::vector<Weight<TensorT>>& weights) { return true; }
+	bool WeightFile<TensorT>::storeWeightsBinary(const std::string& filename, const std::map<std::string, std::shared_ptr<Weight<TensorT>>>& weights) { return true; }
 
 	template<typename TensorT>
-	bool WeightFile<TensorT>::storeWeightsCsv(const std::string& filename, const std::vector<Weight<TensorT>>& weights)
+	bool WeightFile<TensorT>::storeWeightsCsv(const std::string& filename, const std::map<std::string, std::shared_ptr<Weight<TensorT>>>& weights)
 	{
 		CSVWriter csvwriter(filename);
 
@@ -274,31 +274,31 @@ public:
 		const std::vector<std::string> headers = { "weight_name", "weight_init_op", "weight_init_params", "solver_op", "solver_params", "weight_value", "module_name" };
 		csvwriter.writeDataInRow(headers.begin(), headers.end());
 
-		for (const Weight<TensorT>& weight : weights)
+		for (const auto& weight : weights)
 		{
 			std::vector<std::string> row;
 
-			row.push_back(weight.getName());
+			row.push_back(weight.second->getName());
 
 			// parse the weight_init_op
-			const std::string weight_init_op_name = weight.getWeightInitOp()->getName();
+			const std::string weight_init_op_name = weight.second->getWeightInitOp()->getName();
 			row.push_back(weight_init_op_name);
 
 			// parse the weight_init_params
-			row.push_back(weight.getWeightInitOp()->getParamsAsStr());
+			row.push_back(weight.second->getWeightInitOp()->getParamsAsStr());
 
 			// parse the solver_op
-			const std::string solver_op_name = weight.getSolverOp()->getName();
+			const std::string solver_op_name = weight.second->getSolverOp()->getName();
 			row.push_back(solver_op_name);
 
 			// parse the solver_op_params
-			row.push_back(weight.getSolverOp()->getParamsAsStr());
+			row.push_back(weight.second->getSolverOp()->getParamsAsStr());
 
 			// parse the weight value
-			row.push_back(std::to_string(weight.getWeight()));
+			row.push_back(std::to_string(weight.second->getWeight()));
 
 			// parse the module name
-			row.push_back(weight.getModuleName());
+			row.push_back(weight.second->getModuleName());
 
 			// write to file
 			csvwriter.writeDataInRow(row.begin(), row.end());

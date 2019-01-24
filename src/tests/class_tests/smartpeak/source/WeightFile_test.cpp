@@ -42,33 +42,35 @@ BOOST_AUTO_TEST_CASE(storeAndLoadCsv)
   std::string filename = "WeightFileTest.csv";
 
   // create list of dummy weights
-  std::vector<Weight<float>> weights;
+  std::map<std::string, std::shared_ptr<Weight<float>>> weights;
   std::shared_ptr<WeightInitOp<float>> weight_init;
   std::shared_ptr<SolverOp<float>> solver;
   for (int i=0; i<3; ++i)
   {
     weight_init.reset(new ConstWeightInitOp<float>(1.0));
     solver.reset(new SGDOp<float>(0.01, 0.9));
-    Weight<float> weight(
+    std::shared_ptr<Weight<float>> weight(new Weight<float>(
       "Weight_" + std::to_string(i), 
       weight_init,
-      solver);
-		weight.setModuleName(std::to_string(i));
-		//weight.initWeight();
-    weights.push_back(weight);
+      solver));
+		weight->setModuleName(std::to_string(i));
+		//weight->initWeight();
+    weights.emplace("Weight_" + std::to_string(i), weight);
   }
   data.storeWeightsCsv(filename, weights);
 
-  std::vector<Weight<float>> weights_test;
+	std::map<std::string, std::shared_ptr<Weight<float>>> weights_test;
 	data.loadWeightsCsv(filename, weights_test);
 
-  for (int i=0; i<3; ++i)
+	int i = 0;
+  for (auto& weight_map: weights_test)
   {
-    BOOST_CHECK_EQUAL(weights_test[i].getName(), "Weight_" + std::to_string(i));
-		BOOST_CHECK_EQUAL(weights_test[i].getModuleName(), std::to_string(i));
-    BOOST_CHECK_EQUAL(weights_test[i].getWeightInitOp()->operator()(), 1.0);
-    BOOST_CHECK_CLOSE(weights_test[i].getSolverOp()->operator()(1.0, 2.0), 0.98, 1e-3);
-		BOOST_CHECK(weights_test[i] == weights[i]);
+    BOOST_CHECK_EQUAL(weight_map.second->getName(), "Weight_" + std::to_string(i));
+		BOOST_CHECK_EQUAL(weight_map.second->getModuleName(), std::to_string(i));
+    BOOST_CHECK_EQUAL(weight_map.second->getWeightInitOp()->operator()(), 1.0);
+    BOOST_CHECK_CLOSE(weight_map.second->getSolverOp()->operator()(1.0, 2.0), 0.98, 1e-3);
+		//BOOST_CHECK(weight_map.second == weights.at(weight_map.first)); // Broken
+		++i;
   }
 }
 

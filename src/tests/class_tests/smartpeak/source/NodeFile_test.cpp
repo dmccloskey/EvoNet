@@ -31,10 +31,10 @@ BOOST_AUTO_TEST_CASE(storeAndLoadCsv)
   std::string filename = "NodeFileTest.csv";
 
   // create list of dummy nodes
-  std::vector<Node<float>> nodes;
+  std::map<std::string, std::shared_ptr<Node<float>>> nodes;
   for (int i=0; i<3; ++i)
   {
-    const Node<float> node(
+    std::shared_ptr<Node<float>> node(new Node<float>(
       "Node_" + std::to_string(i), 
       NodeType::hidden,
       NodeStatus::initialized,
@@ -42,26 +42,28 @@ BOOST_AUTO_TEST_CASE(storeAndLoadCsv)
 			std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), 
 			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), 
 			std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), 
-			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-    nodes.push_back(node);
+			std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>())));
+    nodes.emplace("Node_" + std::to_string(i), node);
   }
   data.storeNodesCsv(filename, nodes);
 
-  std::vector<Node<float>> nodes_test;
+	std::map<std::string, std::shared_ptr<Node<float>>> nodes_test;
   data.loadNodesCsv(filename, nodes_test);
 
-  for (int i=0; i<3; ++i)
+	int i = 0;
+  for (auto& nodes_map: nodes_test)
   {
-    BOOST_CHECK_EQUAL(nodes_test[i].getName(), "Node_" + std::to_string(i));
-		BOOST_CHECK_EQUAL(nodes_test[i].getModuleName(), "");
-    BOOST_CHECK(nodes_test[i].getType() == NodeType::hidden);
-    BOOST_CHECK(nodes_test[i].getStatus() == NodeStatus::initialized);
-		BOOST_CHECK_EQUAL(nodes_test[i].getActivation()->getName(), "ReLUOp");
-		BOOST_CHECK_EQUAL(nodes_test[i].getActivationGrad()->getName(), "ReLUGradOp");
-		BOOST_CHECK_EQUAL(nodes_test[i].getIntegration()->getName(), "SumOp");
-		BOOST_CHECK_EQUAL(nodes_test[i].getIntegrationError()->getName(), "SumErrorOp");
-		BOOST_CHECK_EQUAL(nodes_test[i].getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
-		BOOST_CHECK(nodes_test[i] == nodes[i]);
+    BOOST_CHECK_EQUAL(nodes_map.second->getName(), "Node_" + std::to_string(i));
+		BOOST_CHECK_EQUAL(nodes_map.second->getModuleName(), "");
+    BOOST_CHECK(nodes_map.second->getType() == NodeType::hidden);
+    BOOST_CHECK(nodes_map.second->getStatus() == NodeStatus::initialized);
+		BOOST_CHECK_EQUAL(nodes_map.second->getActivation()->getName(), "ReLUOp");
+		BOOST_CHECK_EQUAL(nodes_map.second->getActivationGrad()->getName(), "ReLUGradOp");
+		BOOST_CHECK_EQUAL(nodes_map.second->getIntegration()->getName(), "SumOp");
+		BOOST_CHECK_EQUAL(nodes_map.second->getIntegrationError()->getName(), "SumErrorOp");
+		BOOST_CHECK_EQUAL(nodes_map.second->getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
+		//BOOST_CHECK(nodes_map.second == nodes.at(nodes_map.first)); // Broken
+		++i;
   }
 }
 

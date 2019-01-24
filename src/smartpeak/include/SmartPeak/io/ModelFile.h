@@ -63,7 +63,7 @@ public:
 
 			@returns Status True on success, False if not
 		*/
-		bool storeModelCsv(const std::string& filename_nodes, const std::string& filename_links, const std::string& filename_weights, const Model<TensorT>& model);
+		bool storeModelCsv(const std::string& filename_nodes, const std::string& filename_links, const std::string& filename_weights, Model<TensorT>& model);
 
 		/**
 			@brief Load nodes, links, and weights from file and create a Model
@@ -129,15 +129,15 @@ public:
 	}
 
 	template<typename TensorT>
-	bool ModelFile<TensorT>::storeModelCsv(const std::string & filename_nodes, const std::string & filename_links, const std::string & filename_weights, const Model<TensorT>& model)
+	bool ModelFile<TensorT>::storeModelCsv(const std::string & filename_nodes, const std::string & filename_links, const std::string & filename_weights, Model<TensorT>& model)
 	{
 		// [PERFORMANCE: this can be parallelized using threads]
 		NodeFile<TensorT> node_file;
-		node_file.storeNodesCsv(filename_nodes, model.getNodes());
+		node_file.storeNodesCsv(filename_nodes, model.nodes_);
 		LinkFile link_file;
-		link_file.storeLinksCsv(filename_links, model.getLinks());
+		link_file.storeLinksCsv(filename_links, model.links_);
 		WeightFile<TensorT> weight_file;
-		weight_file.storeWeightsCsv(filename_weights, model.getWeights());
+		weight_file.storeWeightsCsv(filename_weights, model.weights_);
 		return true;
 	}
 
@@ -147,23 +147,23 @@ public:
 		// [PERFORMANCE: this can be parallelized using threads]
 		// load the nodes
 		NodeFile<TensorT> node_file;
-		std::vector<Node<TensorT>> nodes;
+		std::map<std::string, std::shared_ptr<Node<TensorT>>> nodes;
 		node_file.loadNodesCsv(filename_nodes, nodes);
 
 		// load the links
 		LinkFile link_file;
-		std::vector<Link> links;
+		std::map<std::string, std::shared_ptr<Link>> links;
 		link_file.loadLinksCsv(filename_links, links);
 
 		// load the weights
 		WeightFile<TensorT> weight_file;
-		std::vector<Weight<TensorT>> weights;
+		std::map<std::string, std::shared_ptr<Weight<TensorT>>> weights;
 		weight_file.loadWeightsCsv(filename_weights, weights);
 
 		// make the model
-		model.addNodes(nodes);
-		model.addLinks(links);
-		model.addWeights(weights);
+		model.nodes_ = nodes;
+		model.links_ = links;
+		model.weights_ = weights;
 
 		return true;
 	}

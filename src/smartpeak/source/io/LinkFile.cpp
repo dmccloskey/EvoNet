@@ -5,14 +5,10 @@
 #include <SmartPeak/io/CSVWriter.h>
 
 namespace SmartPeak
-{
+{ 
+  bool LinkFile::loadLinksBinary(const std::string& filename, std::map<std::string, std::shared_ptr<Link>>& links) { return true; }
 
-  LinkFile::LinkFile(){}
-  LinkFile::~LinkFile(){}
- 
-  bool LinkFile::loadLinksBinary(const std::string& filename, std::vector<Link>& links) { return true; }
-
-  bool LinkFile::loadLinksCsv(const std::string& filename, std::vector<Link>& links)
+  bool LinkFile::loadLinksCsv(const std::string& filename, std::map<std::string, std::shared_ptr<Link>>& links)
   {
     links.clear();
 
@@ -23,16 +19,16 @@ namespace SmartPeak
 
     while(links_in.read_row(link_name, source_node_name, sink_node_name, weight_name, module_name))
     {
-      Link link(link_name, source_node_name, sink_node_name, weight_name);
-			link.setModuleName(module_name);
-      links.push_back(link);
+			std::shared_ptr<Link> link(new Link(link_name, source_node_name, sink_node_name, weight_name));
+			link->setModuleName(module_name);
+      links.emplace(link_name, link);
     }
 	return true;
   }
 
-  bool LinkFile::storeLinksBinary(const std::string& filename, const std::vector<Link>& links) { return true; }
+  bool LinkFile::storeLinksBinary(const std::string& filename, std::map<std::string, std::shared_ptr<Link>>& links) { return true; }
 
-  bool LinkFile::storeLinksCsv(const std::string& filename, const std::vector<Link>& links)
+  bool LinkFile::storeLinksCsv(const std::string& filename, std::map<std::string, std::shared_ptr<Link>>& links)
   {    
     CSVWriter csvwriter(filename);
 
@@ -40,18 +36,18 @@ namespace SmartPeak
     const std::vector<std::string> headers = {"link_name", "source_node_name", "sink_node_name", "weight_name", "module_name" };
     csvwriter.writeDataInRow(headers.begin(), headers.end());
 
-    for (const Link& link: links)
+    for (const auto& link: links)
     {
       std::vector<std::string> row;
-      row.push_back(link.getName());
-      row.push_back(link.getSourceNodeName());
-      row.push_back(link.getSinkNodeName());
-      row.push_back(link.getWeightName());
-			row.push_back(link.getModuleName());
+      row.push_back(link.second->getName());
+      row.push_back(link.second->getSourceNodeName());
+      row.push_back(link.second->getSinkNodeName());
+      row.push_back(link.second->getWeightName());
+			row.push_back(link.second->getModuleName());
 
       // write to file
       csvwriter.writeDataInRow(row.begin(), row.end());
     }
-	return true;
+		return true;
   }
 }
