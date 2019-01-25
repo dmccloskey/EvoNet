@@ -17,9 +17,6 @@
 #include <SmartPeak/io/CSVWriter.h>
 #include <regex>
 #include <SmartPeak/core/StringParsing.h>
-#include <cereal/types/memory.hpp>
-#include <cereal/archives/binary.hpp>
-#include <fstream>
 
 namespace SmartPeak
 {

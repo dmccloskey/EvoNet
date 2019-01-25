@@ -17,8 +17,13 @@
 
 // .cpp
 #include <SmartPeak/graph/CircuitFinder.h>
-
 #include <iostream>
+#include <cereal/access.hpp>  // serialiation of private members
+#include <cereal/types/memory.hpp>
+#include <cereal/types/map.hpp>
+#include <cereal/types/tuple.hpp>
+#include <cereal/types/utility.hpp> // std::pair
+#include <cereal/types/vector.hpp>
 
 namespace SmartPeak
 {
@@ -265,6 +270,12 @@ public:
 		std::map<std::string, std::shared_ptr<Weight<TensorT>>> weights_; ///< Model nodes
 
 private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive)
+		{
+			archive(id_, name_, links_, nodes_, weights_, batch_size_, memory_size_);
+		}
     int id_; ///< Model ID
     std::string name_; ///< Model Name
 		std::vector<std::pair<std::string, std::string>> cyclic_pairs_;

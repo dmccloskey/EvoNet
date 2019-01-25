@@ -14,11 +14,17 @@
 #include <SmartPeak/io/WeightFile.h>
 #include <SmartPeak/io/LinkFile.h>
 //#include <filesystem> // C++ 17
+//#include <cereal/types/memory.hpp>
+//#include <cereal/types/map.hpp>
+//#include <cereal/types/tuple.hpp>
+//#include <cereal/types/utility.hpp> // std::pair
+//#include <cereal/types/vector.hpp>
+#include <cereal/archives/binary.hpp>
+#include <fstream>
 
 
 namespace SmartPeak
 {
-
   /**
     @brief ModelFile
   */
@@ -100,9 +106,16 @@ public:
 	template<typename TensorT>
 	bool ModelFile<TensorT>::storeModelBinary(const std::string & filename, const Model<TensorT>& model)
 	{
-		auto myfile = std::fstream(filename, std::ios::out | std::ios::binary);
-		myfile.write((char*)&model, sizeof(model));
-		myfile.close();
+		//auto myfile = std::fstream(filename, std::ios::out | std::ios::binary);
+		//myfile.write((char*)&model, sizeof(model));
+		//myfile.close();
+
+		std::ofstream ofs(filename, std::ios::binary);  // Output file stream.
+		if (ofs.is_open() == false) {
+			cereal::BinaryOutputArchive oarchive(ofs); // Choose binary format, writing direction.
+			oarchive(model); // Save the modified instance.
+			ofs.close();
+		}
 		return true;
 	}
 
@@ -120,11 +133,18 @@ public:
 		//int err = stat(filename.data(), &results);
 		//std::uintmax_t file_size = results.st_size;
 
-		auto myfile = std::fstream(filename, std::ios::in | std::ios::binary | std::ios::ate);
-		std::uintmax_t file_size = myfile.tellg();
-		myfile.seekg(0, std::ios::beg);
-		myfile.read((char*)&model, file_size);
-		myfile.close();
+		//auto myfile = std::fstream(filename, std::ios::in | std::ios::binary | std::ios::ate);
+		//std::uintmax_t file_size = myfile.tellg();
+		//myfile.seekg(0, std::ios::beg);
+		//myfile.read((char*)&model, file_size);
+		//myfile.close(); 
+		
+		std::ifstream ifs(filename, std::ios::binary);  // Input file stream. You might use string streams as well.
+		if (ifs.is_open()) {
+			cereal::BinaryInputArchive iarchive(ifs);  // Choose binary format, reading direction.
+			iarchive(model);
+			ifs.close();
+		}
 		return true;
 	}
 

@@ -3,11 +3,19 @@
 #ifndef SMARTPEAK_NODE_H
 #define SMARTPEAK_NODE_H
 
+// .h
 #include <SmartPeak/ml/ActivationFunction.h>
 #include <SmartPeak/ml/IntegrationFunction.h>
 #include <unsupported/Eigen/CXX11/Tensor>
 #include <memory>
 #include <vector>
+
+#include <cereal/access.hpp>  // serialiation of private members
+#include <cereal/types/memory.hpp>
+#include <cereal/types/map.hpp>
+#include <cereal/types/tuple.hpp>
+#include <cereal/types/utility.hpp> // std::pair
+#include <cereal/types/vector.hpp>
 
 namespace SmartPeak
 {
@@ -179,6 +187,14 @@ public:
 		Eigen::Tensor<TensorT, 2> getDt() const; ///< dt copy getter
 		
 private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive)
+		{
+			archive(id_, name_, module_id_, module_name_, tensor_index_, layer_name_,
+				type_, activation_, activation_grad_, integration_, integration_error_,
+				integration_weight_grad_, status_, output_max_, output_min_);
+		}
     int id_ = -1; ///< Node ID (used internally by Model)
     std::string name_ = ""; ///< Node Name
 		int module_id_ = -1; ///< Module ID (used internally by Model)

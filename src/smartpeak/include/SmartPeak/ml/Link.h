@@ -5,6 +5,7 @@
 
 #include <tuple>
 #include <string>
+#include <cereal/cereal.hpp>
 
 namespace SmartPeak
 {
@@ -87,6 +88,12 @@ public:
 		std::string getModuleName() const; ///< module name getter
 
 private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive)
+		{
+			archive(id_, name_, module_id_, module_name_, source_node_name_, sink_node_name_,	weight_name_);
+		}
     int id_ = -1; ///< Weight ID
     std::string name_ = ""; ///< Weight Name
 		int module_id_ = -1; ///< Module ID

@@ -18,6 +18,13 @@
 #include <cmath>
 #include <iostream>
 
+#include <cereal/access.hpp>  // serialiation of private members
+#include <cereal/types/memory.hpp>
+#include <cereal/types/map.hpp>
+#include <cereal/types/tuple.hpp>
+#include <cereal/types/utility.hpp> // std::pair
+#include <cereal/types/vector.hpp>
+
 namespace SmartPeak
 {
 
@@ -134,6 +141,14 @@ public:
     void initWeight();
 
 private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive)
+		{
+			archive(id_, name_, module_id_, module_name_, tensor_index_, layer_name_,
+				weight_, init_weight_, weight_init_, solver_, weight_min_,
+				weight_max_);
+		}
     int id_ = -1; ///< Weight ID
     std::string name_ = ""; ///< Weight Name
 		int module_id_ = -1; ///< Module ID
