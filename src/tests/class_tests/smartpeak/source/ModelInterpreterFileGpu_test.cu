@@ -1,14 +1,12 @@
 /**TODO:  Add copyright*/
 
-#define BOOST_TEST_MODULE ModelInterpreterFile test suite 
-#include <boost/test/included/unit_test.hpp>
+#if COMPILE_WITH_CUDA
+
 #include <SmartPeak/io/ModelInterpreterFile.h>
-#include <SmartPeak/ml/ModelInterpreterDefaultDevice.h>
+#include <SmartPeak/ml/ModelInterpreterGpu.h>
 
 using namespace SmartPeak;
 using namespace std;
-
-BOOST_AUTO_TEST_SUITE(ModelInterpreterFile1)
 
 Model<float> makeModel1()
 {
@@ -93,24 +91,9 @@ Model<float> makeModel1()
 	return model1;
 }
 
-BOOST_AUTO_TEST_CASE(constructor) 
+void test_loadModelBinary1()
 {
-  ModelInterpreterFileDefaultDevice<float>* ptr = nullptr;
-	ModelInterpreterFileDefaultDevice<float>* nullPointer = nullptr;
-  ptr = new ModelInterpreterFileDefaultDevice<float>();
-  BOOST_CHECK_NE(ptr, nullPointer);
-}
-
-BOOST_AUTO_TEST_CASE(destructor) 
-{
-	ModelInterpreterFileDefaultDevice<float>* ptr = nullptr;
-	ptr = new ModelInterpreterFileDefaultDevice<float>();
-  delete ptr;
-}
-
-Model<float> model1 = makeModel1();
-BOOST_AUTO_TEST_CASE(loadModelBinary1)
-{
+	Model<float> model1 = makeModel1();
 	ModelInterpreterFileDefaultDevice<float> data;
 
 	// START: model_interpreter test taken from ModelinterpreterCpu_test
@@ -131,13 +114,12 @@ BOOST_AUTO_TEST_CASE(loadModelBinary1)
 	data.loadModelInterpreterBinary(filename, model_interpreter_test);
 
 	BOOST_CHECK(model_interpreter_test.getTensorOpsSteps() == model_interpreter.getTensorOpsSteps());
-	BOOST_CHECK_EQUAL(model_interpreter_test.getModelResources().size(), model_interpreter.getModelResources().size());
-	//BOOST_CHECK(model_interpreter_test.getModelResources() == model_interpreter.getModelResources());
+	BOOST_CHECK(model_interpreter_test.getModelResources() == model_interpreter.getModelResources());
 }
 
-Model<float> model2 = makeModel1();
-BOOST_AUTO_TEST_CASE(loadModelBinary2)
+void_loadModelBinary2()
 {
+	Model<float> model2 = makeModel1();
 	ModelInterpreterFileDefaultDevice<float> data;
 
 	// START: model_interpreter test taken from ModelinterpreterCpu_test
@@ -250,4 +232,11 @@ BOOST_AUTO_TEST_CASE(loadModelBinary2)
 	// END RE-START: model_interpreter test taken from ModelinterpreterCpu_test
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+int main(int argc, char** argv)
+{
+	test_loadModelBinary1();
+	test_loadModelBinary2();
+	return 0;
+}
+
+#endif

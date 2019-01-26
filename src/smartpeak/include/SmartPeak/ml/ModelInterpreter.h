@@ -581,7 +581,7 @@ namespace SmartPeak
 		//}
 		template<class Archive>
 		void serialize(Archive& archive) {
-			archive(tensor_ops_steps_, FP_operations_);
+			archive(tensor_ops_steps_, FP_operations_, model_resources_);
 		}
 	};
 
@@ -1646,8 +1646,7 @@ namespace SmartPeak
 					getForwardPropogationLayerTensorDimensions(FP_operations_, tensor_ops_step, source_layer_sizes, sink_layer_sizes, weight_indices, shared_weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors);
 					allocateForwardPropogationLayerTensors(FP_operations_, tensor_ops_step, source_layer_sizes, sink_layer_sizes, weight_indices, shared_weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors, batch_size, memory_size_buffered, train);
 				}
-		}
-
+			}
 		}
 	}
 	
