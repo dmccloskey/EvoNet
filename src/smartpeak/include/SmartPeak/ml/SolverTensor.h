@@ -17,10 +17,10 @@ using std::tanh;
 #include <random>
 #include <iostream>
 
-#include <cereal/access.hpp>  // serialiation of private members
-#undef min // clashes with std::limit on windows in polymorphic.hpp
-#undef max // clashes with std::limit on windows in polymorphic.hpp
-#include <cereal/types/polymorphic.hpp>
+//#include <cereal/access.hpp>  // serialiation of private members
+//#undef min // clashes with std::limit on windows in polymorphic.hpp
+//#undef max // clashes with std::limit on windows in polymorphic.hpp
+//#include <cereal/types/polymorphic.hpp>
 
 namespace SmartPeak
 {
@@ -82,11 +82,11 @@ public:
 		}
     //virtual std::string getParameters() const = 0;
 	private:
-		friend class cereal::access;
-		template<class Archive>
-		void serialize(Archive& archive) {
-			archive(gradient_threshold_, gradient_noise_sigma_, gradient_noise_gamma_);
-		}
+		//friend class cereal::access;
+		//template<class Archive>
+		//void serialize(Archive& archive) {
+		//	archive(gradient_threshold_, gradient_noise_sigma_, gradient_noise_gamma_);
+		//}
     // clipping parameters
     TensorT gradient_threshold_ = 1e6; ///< maximum gradient magnitude
 
@@ -122,12 +122,12 @@ public:
 			weights_tensor.device(device) += solver_params_tensor.chip(2, 2);
     };
     std::string getName() const{return "SGDTensorOp";};
-	private:
-		friend class cereal::access;
-		template<class Archive>
-		void serialize(Archive& archive) {
-			archive(cereal::base_class<SolverTensorOp<TensorT, DeviceT>>(this));
-		}
+	//private:
+	//	friend class cereal::access;
+	//	template<class Archive>
+	//	void serialize(Archive& archive) {
+	//		archive(cereal::base_class<SolverTensorOp<TensorT, DeviceT>>(this));
+	//	}
   };
 
   /**
@@ -164,12 +164,12 @@ public:
 			weights_tensor.device(device) = weights_tensor - solver_params_tensor.chip(0, 2) * unbiased_adam1 / (unbiased_adam2.sqrt() + solver_params_tensor.chip(3, 2));
     };
     std::string getName() const{return "AdamTensorOp";};
-	private:
-		friend class cereal::access;
-		template<class Archive>
-		void serialize(Archive& archive) {
-			archive(cereal::base_class<SolverTensorOp<TensorT, DeviceT>>(this));
-		}
+	//private:
+	//	friend class cereal::access;
+	//	template<class Archive>
+	//	void serialize(Archive& archive) {
+	//		archive(cereal::base_class<SolverTensorOp<TensorT, DeviceT>>(this));
+	//	}
   };
 
 	/**
@@ -183,12 +183,12 @@ public:
 		~DummySolverTensorOp() {};
 		void operator()(TensorT* weights, TensorT* errors, TensorT* solver_params, const int& source_layer_size, const int& sink_layer_size, DeviceT& device)	{	};
 		std::string getName() const { return "DummySolverTensorOp"; };
-	private:
-		friend class cereal::access;
-		template<class Archive>
-		void serialize(Archive& archive) {
-			archive(cereal::base_class<SolverTensorOp<TensorT, DeviceT>>(this));
-		}
+	//private:
+	//	friend class cereal::access;
+	//	template<class Archive>
+	//	void serialize(Archive& archive) {
+	//		archive(cereal::base_class<SolverTensorOp<TensorT, DeviceT>>(this));
+	//	}
 	};
 
 	/**
@@ -209,12 +209,12 @@ public:
 			//return addGradientNoise(new_weight);
 		};
 		std::string getName() const { return "SGDNoiseTensorOp"; };
-	private:
-		friend class cereal::access;
-		template<class Archive>
-		void serialize(Archive& archive) {
-			archive(cereal::base_class<SolverTensorOp<TensorT, DeviceT>>(this));
-		}
+	//private:
+	//	friend class cereal::access;
+	//	template<class Archive>
+	//	void serialize(Archive& archive) {
+	//		archive(cereal::base_class<SolverTensorOp<TensorT, DeviceT>>(this));
+	//	}
 	};
 
   /**
@@ -240,17 +240,17 @@ public:
   */
 }
 
-CEREAL_REGISTER_TYPE(SmartPeak::SGDTensorOp<float, Eigen::DefaultDevice>);
-CEREAL_REGISTER_TYPE(SmartPeak::AdamTensorOp<float, Eigen::DefaultDevice>);
-CEREAL_REGISTER_TYPE(SmartPeak::DummySolverTensorOp<float, Eigen::DefaultDevice>);
-CEREAL_REGISTER_TYPE(SmartPeak::SGDNoiseTensorOp<float, Eigen::DefaultDevice>);
-
-#if COMPILE_WITH_CUDA
-CEREAL_REGISTER_TYPE(SmartPeak::SGDTensorOp<float, Eigen::GpuDevice>);
-CEREAL_REGISTER_TYPE(SmartPeak::AdamTensorOp<float, Eigen::GpuDevice>);
-CEREAL_REGISTER_TYPE(SmartPeak::DummySolverTensorOp<float, Eigen::GpuDevice>);
-CEREAL_REGISTER_TYPE(SmartPeak::SGDNoiseTensorOp<float, Eigen::GpuDevice>);
-#endif
-// TODO: add double, int, etc.
+//CEREAL_REGISTER_TYPE(SmartPeak::SGDTensorOp<float, Eigen::DefaultDevice>);
+//CEREAL_REGISTER_TYPE(SmartPeak::AdamTensorOp<float, Eigen::DefaultDevice>);
+//CEREAL_REGISTER_TYPE(SmartPeak::DummySolverTensorOp<float, Eigen::DefaultDevice>);
+//CEREAL_REGISTER_TYPE(SmartPeak::SGDNoiseTensorOp<float, Eigen::DefaultDevice>);
+//
+//#if COMPILE_WITH_CUDA
+//CEREAL_REGISTER_TYPE(SmartPeak::SGDTensorOp<float, Eigen::GpuDevice>);
+//CEREAL_REGISTER_TYPE(SmartPeak::AdamTensorOp<float, Eigen::GpuDevice>);
+//CEREAL_REGISTER_TYPE(SmartPeak::DummySolverTensorOp<float, Eigen::GpuDevice>);
+//CEREAL_REGISTER_TYPE(SmartPeak::SGDNoiseTensorOp<float, Eigen::GpuDevice>);
+//#endif
+//// TODO: add double, int, etc.
 
 #endif //SMARTPEAK_SOLVERTENSOR_H

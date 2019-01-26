@@ -92,7 +92,6 @@ Model<float> makeModel1()
 	model1.addLinks({ l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4 });
 	return model1;
 }
-Model<float> model1 = makeModel1();
 
 BOOST_AUTO_TEST_CASE(constructor) 
 {
@@ -109,7 +108,33 @@ BOOST_AUTO_TEST_CASE(destructor)
   delete ptr;
 }
 
-BOOST_AUTO_TEST_CASE(loadModelBinary)
+Model<float> model1 = makeModel1();
+BOOST_AUTO_TEST_CASE(loadModelBinary1)
+{
+	ModelInterpreterFileDefaultDevice<float> data;
+
+	// START: model_interpreter test taken from ModelinterpreterCpu_test
+	ModelInterpreterDefaultDevice<float> model_interpreter;
+	const int batch_size = 4;
+	const int memory_size = 1;
+	const bool train = true;
+
+	// compile the graph into a set of operations and allocate all tensors
+	model_interpreter.getForwardPropogationOperations(model1, batch_size, memory_size, train, false, true);
+
+	// Store the model interpreter
+	std::string filename = "ModelInterpreterFileTest.binary";
+	data.storeModelInterpreterBinary(filename, model_interpreter);
+
+	// Read in the test model_interpreter
+	ModelInterpreterDefaultDevice<float> model_interpreter_test;
+	data.loadModelInterpreterBinary(filename, model_interpreter_test);
+
+	BOOST_CHECK(model_interpreter_test.getTensorOpsSteps() == model_interpreter.getTensorOpsSteps());
+}
+
+Model<float> model2 = makeModel1();
+BOOST_AUTO_TEST_CASE(loadModelBinary2)
 {
 	ModelInterpreterFileDefaultDevice<float> data;
 
@@ -121,13 +146,13 @@ BOOST_AUTO_TEST_CASE(loadModelBinary)
 
 	// update the model solver
 	std::shared_ptr<SolverOp<float>> solver(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8));
-	for (auto& weight_map : model1.getWeightsMap()) {
+	for (auto& weight_map : model2.getWeightsMap()) {
 		if (weight_map.second->getSolverOp()->getName() == "SGDOp")
 			weight_map.second->setSolverOp(solver);
 	}
 
 	// compile the graph into a set of operations and allocate all tensors
-	model_interpreter.getForwardPropogationOperations(model1, batch_size, memory_size, train, false, true);
+	model_interpreter.getForwardPropogationOperations(model2, batch_size, memory_size, train, false, true);
 	model_interpreter.allocateModelErrorTensor(batch_size, memory_size);
 
 	// create the input
@@ -145,15 +170,15 @@ BOOST_AUTO_TEST_CASE(loadModelBinary)
 	expected.setValues({ {0, 1}, {0, 1}, {0, 1}, {0, 1} });
 	LossFunctionTensorOp<float, Eigen::DefaultDevice>* loss_function = new MSETensorOp<float, Eigen::DefaultDevice>();
 	LossFunctionGradTensorOp<float, Eigen::DefaultDevice>* loss_function_grad = new MSEGradTensorOp<float, Eigen::DefaultDevice>();
-	const int layer_id = model1.getNode("4").getTensorIndex().first;
+	const int layer_id = model2.getNode("4").getTensorIndex().first;
 
 	// iterate until we find the optimal values
 	const int max_iter = 20;
 	for (int iter = 0; iter < max_iter; ++iter)
 	{
 		// assign the input data
-		model_interpreter.mapValuesToLayers(model1, input, node_ids, "output");
-		model_interpreter.initBiases(model1); // create the bias	
+		model_interpreter.mapValuesToLayers(model2, input, node_ids, "output");
+		model_interpreter.initBiases(model2); // create the bias	
 
 		model_interpreter.executeForwardPropogationOperations(0); //FP
 
@@ -171,7 +196,6 @@ BOOST_AUTO_TEST_CASE(loadModelBinary)
 			model_interpreter.reInitModelError();
 		}
 	}
-
 	const Eigen::Tensor<float, 0> total_error = model_interpreter.getModelError()->getError().sum();
 	BOOST_CHECK(total_error(0) <= 757.0);
 	// END: model_interpreter test taken from ModelinterpreterCpu_test
@@ -184,35 +208,25 @@ BOOST_AUTO_TEST_CASE(loadModelBinary)
 	ModelInterpreterDefaultDevice<float> model_interpreter_test;
 	data.loadModelInterpreterBinary(filename, model_interpreter_test);
 
-	//// asserts are needed because boost deallocates the pointer memory after being called...
-	//int expected_layer_tensors = 4;
-	//for (int i = 0; i < expected_layer_tensors; ++i) {
-	//	assert(model_interpreter_test.getLayerTensor(i) == model_interpreter.getLayerTensor(i));
-	//}
-	//int expected_weight_tensors = 3;
-	//for (int i = 0; i < expected_weight_tensors; ++i) {
-	//	assert(model_interpreter_test.getWeightTensor(i) == model_interpreter.getWeightTensor(i));
-	//}
-	//std::vector<int> expected_operation_steps = { 1, 2 };
-	//for (int i = 0; i < expected_operation_steps.size(); ++i) {
-	//	for (int j = 0; j < expected_operation_steps[i]; ++j) {
-	//		assert(model_interpreter_test.getOperationSteps(i)[j].source_layer == model_interpreter.getOperationSteps(i)[j].source_layer);
-	//		assert(model_interpreter_test.getOperationSteps(i)[j].sink_layer == model_interpreter.getOperationSteps(i)[j].sink_layer);
-	//		assert(model_interpreter_test.getOperationSteps(i)[j].weight == model_interpreter.getOperationSteps(i)[j].weight);
-	//	}
-	//}
+	// Test for the expected model_interpreter operations
+	model_interpreter.getModelResults(model2);
+	model_interpreter.clear_cache();
+	model2.initNodeTensorIndices();
+	model2.initWeightTensorIndices();
 
-	BOOST_CHECK(model_interpreter_test == model_interpreter);
+	// Compile the graph into a set of operations and allocate all tensors
+	model_interpreter_test.getForwardPropogationOperations(model2, batch_size, memory_size, train, false, true);
+	model_interpreter_test.allocateModelErrorTensor(batch_size, memory_size);
 
+	BOOST_CHECK(model_interpreter_test == model_interpreter);  // Trivial comparison; instead we use the following from `ModelInterpreterCpu_test.cpp`
 
 	// RE-START: model_interpreter test taken from ModelinterpreterCpu_test
 	// iterate until we find the optimal values
-	const int max_iter = 20;
 	for (int iter = 0; iter < max_iter; ++iter)
 	{
 		// assign the input data
-		model_interpreter_test.mapValuesToLayers(model1, input, node_ids, "output");
-		model_interpreter_test.initBiases(model1); // create the bias	
+		model_interpreter_test.mapValuesToLayers(model2, input, node_ids, "output");
+		model_interpreter_test.initBiases(model2); // create the bias	
 
 		model_interpreter_test.executeForwardPropogationOperations(0); //FP
 
@@ -231,8 +245,8 @@ BOOST_AUTO_TEST_CASE(loadModelBinary)
 		}
 	}
 
-	const Eigen::Tensor<float, 0> total_error = model_interpreter_test.getModelError()->getError().sum();
-	BOOST_CHECK(total_error(0) <= 757.0);
+	const Eigen::Tensor<float, 0> total_error_test = model_interpreter_test.getModelError()->getError().sum();
+	BOOST_CHECK(total_error_test(0) <= 757.0);
 	// END RE-START: model_interpreter test taken from ModelinterpreterCpu_test
 }
 

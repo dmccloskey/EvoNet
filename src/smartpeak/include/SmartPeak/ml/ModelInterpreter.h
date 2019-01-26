@@ -41,6 +41,10 @@ namespace SmartPeak
 	{
 		std::shared_ptr<Node<TensorT>> sink_node;
 		int time_step = 0;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(sink_node, time_step);
+		}
 	};
 
 	template<typename TensorT>
@@ -50,6 +54,10 @@ namespace SmartPeak
 		std::shared_ptr<Weight<TensorT>> weight;
 		std::string link_name;
 		int time_step = 0;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(source_node, weight, link_name, time_step);
+		}
 	};
 
 	template<typename TensorT>
@@ -58,6 +66,10 @@ namespace SmartPeak
 		OperationResult<TensorT> result;
 		std::vector<OperationArguments<TensorT>> arguments;
 		int operation_index = -1;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(result, arguments, operation_index);
+		}
 	};
 
 	/*
@@ -550,17 +562,26 @@ namespace SmartPeak
 
 		void clear_cache();
 
+		std::vector<std::map<std::string, std::vector<int>>> getTensorOpsSteps() const;
+
 	protected:
 		std::vector<std::vector<OperationTensorStep<TensorT, DeviceT>>> operation_steps_;
 		std::vector<std::shared_ptr<NodeTensorData<TensorT, DeviceT>>> layer_tensors_;
 		std::vector<std::shared_ptr<WeightTensorData<TensorT, DeviceT>>> weight_tensors_;
 		std::shared_ptr<ModelErrorData<TensorT, DeviceT>> model_error_;
 		ModelResources model_resources_;
+
 	private:
+		std::vector<std::map<std::string, std::vector<int>>> tensor_ops_steps_;
+		std::vector<OperationList<TensorT>> FP_operations_;
 		friend class cereal::access;
+		//template<class Archive>
+		//void serialize(Archive& archive) {
+		//	archive(operation_steps_, layer_tensors_, weight_tensors_, model_error_, model_resources_);
+		//}
 		template<class Archive>
 		void serialize(Archive& archive) {
-			archive(operation_steps_, layer_tensors_, weight_tensors_, model_error_, model_resources_);
+			archive(tensor_ops_steps_, FP_operations_);
 		}
 	};
 
@@ -1459,8 +1480,6 @@ namespace SmartPeak
 	void ModelInterpreter<TensorT, DeviceT>::getForwardPropogationOperations(Model<TensorT>& model, const int& batch_size, const int& memory_size, 
 		const bool& train, const bool& fast_check, const bool& find_cycles)
 	{
-		// STEP 1: Preliminaries...
-
 		// register the batch and memory sizes with the model
 		// [TODO: add tests]
 		model.setBatchAndMemorySizes(batch_size, memory_size);
@@ -1468,124 +1487,167 @@ namespace SmartPeak
 		// buffer the memory size
 		const int memory_size_buffered = memory_size + 1;
 
-		// initialize the node statuses to determine the FP propogation steps
-		for (auto& nodes_map : model.nodes_) {
-			if (nodes_map.second->getType() == NodeType::input || nodes_map.second->getType() == NodeType::bias)
-				nodes_map.second->setStatus(NodeStatus::activated);
-			else
-				nodes_map.second->setStatus(NodeStatus::initialized);
-		}
+		// Get the forward operation steps
+		if (tensor_ops_steps_.size() == 0) {
+			// STEP 1: Preliminaries...
 
-		// STEP 2: Get a list of unoptimized operations for FP
-		const int max_iters = 1e6;
-		std::vector<OperationList<TensorT>> FP_operations;
-		int iter = 0;
-		for ( ; iter < max_iters; ++iter)
-		{
-			// get the next hidden layer
-			std::map<std::string, int> FP_operations_map;
-			std::vector<OperationList<TensorT>> FP_operations_list;
-			getNextInactiveLayer(model, FP_operations_map, FP_operations_list);
-
-			// [OPTIMIZATION: for performance, this method has been combined with getNextInactiveLayer above to reduce
-			//							  the number of iterations through all model links
-			//std::map<std::string, int> FP_operations_map;
-			//std::vector<OperationList<TensorT>> FP_operations_list;
-			//getNextInactiveLayerWOBiases(model, FP_operations_map, FP_operations_list);
-			//// get biases
-			//std::vector<std::string> sink_nodes_with_biases;
-			//getNextInactiveLayerBiases(model, FP_operations_map, FP_operations_list, sink_nodes_with_biases);
-
-			if (find_cycles) {
-				// get cycles
-				std::map<std::string, int> FP_operations_map_cycles = FP_operations_map;
-				std::vector<OperationList<TensorT>> FP_operations_list_cycles = FP_operations_list;
-				std::vector<std::string> sink_nodes_cycles;
-				getNextInactiveLayerCycles(model, FP_operations_map_cycles, FP_operations_list_cycles, sink_nodes_cycles);
-
-				// Remove all nodes involved in "cycles" that have arguments
-				// involving source to sink node pairs not identified as cycles
-				pruneInactiveLayerCycles(model, FP_operations_map, FP_operations_map_cycles, FP_operations_list, FP_operations_list_cycles, sink_nodes_cycles);
+			// initialize the node statuses to determine the FP propogation steps
+			for (auto& nodes_map : model.nodes_) {
+				if (nodes_map.second->getType() == NodeType::input || nodes_map.second->getType() == NodeType::bias)
+					nodes_map.second->setStatus(NodeStatus::activated);
+				else
+					nodes_map.second->setStatus(NodeStatus::initialized);
 			}
 
-			// check if all nodes have been activated
-			if (FP_operations_list.size() == 0)	{
-				break;
+			// STEP 2: Get a list of unoptimized operations for FP
+			const int max_iters = 1e6;
+			std::vector<OperationList<TensorT>> FP_operations;
+			int iter = 0;
+			for (; iter < max_iters; ++iter)
+			{
+				// get the next hidden layer
+				std::map<std::string, int> FP_operations_map;
+				std::vector<OperationList<TensorT>> FP_operations_list;
+				getNextInactiveLayer(model, FP_operations_map, FP_operations_list);
+
+				// [OPTIMIZATION: for performance, this method has been combined with getNextInactiveLayer above to reduce
+				//							  the number of iterations through all model links
+				//std::map<std::string, int> FP_operations_map;
+				//std::vector<OperationList<TensorT>> FP_operations_list;
+				//getNextInactiveLayerWOBiases(model, FP_operations_map, FP_operations_list);
+				//// get biases
+				//std::vector<std::string> sink_nodes_with_biases;
+				//getNextInactiveLayerBiases(model, FP_operations_map, FP_operations_list, sink_nodes_with_biases);
+
+				if (find_cycles) {
+					// get cycles
+					std::map<std::string, int> FP_operations_map_cycles = FP_operations_map;
+					std::vector<OperationList<TensorT>> FP_operations_list_cycles = FP_operations_list;
+					std::vector<std::string> sink_nodes_cycles;
+					getNextInactiveLayerCycles(model, FP_operations_map_cycles, FP_operations_list_cycles, sink_nodes_cycles);
+
+					// Remove all nodes involved in "cycles" that have arguments
+					// involving source to sink node pairs not identified as cycles
+					pruneInactiveLayerCycles(model, FP_operations_map, FP_operations_map_cycles, FP_operations_list, FP_operations_list_cycles, sink_nodes_cycles);
+				}
+
+				// check if all nodes have been activated
+				if (FP_operations_list.size() == 0) {
+					break;
+				}
+
+				// activate sink nodes and update the Operations index
+				for (auto& FP_operation : FP_operations_list) {
+					FP_operation.result.sink_node->setStatus(NodeStatus::activated);
+					FP_operation.operation_index = iter;
+					FP_operations.push_back(FP_operation);
+				}
 			}
 
-			// activate sink nodes and update the Operations index
-			for (auto& FP_operation : FP_operations_list) {
-				FP_operation.result.sink_node->setStatus(NodeStatus::activated);
-				FP_operation.operation_index = iter;
-				FP_operations.push_back(FP_operation);
-			}
-		}
+			// STEP 3: organize the operations into Tensor layers for hardware acceleration
 
-		// STEP 3: organize the operations into Tensor layers for hardware acceleration
+			// Pre-emptively Expand the set of operations
+			std::vector<OperationList<TensorT>> FP_operations_expanded;
+			//expandForwardPropogationOperations(FP_operations, FP_operations_expanded); // Slower and not needed...
+			FP_operations_expanded.reserve(iter);
+			expandAllForwardPropogationOperations(FP_operations, FP_operations_expanded);
 
-		// Pre-emptively Expand the set of operations
-		std::vector<OperationList<TensorT>> FP_operations_expanded;
-		//expandForwardPropogationOperations(FP_operations, FP_operations_expanded); // Slower and not needed...
-		FP_operations_expanded.reserve(iter);
-		expandAllForwardPropogationOperations(FP_operations, FP_operations_expanded); 
-
-		// [DEBUGGING]
-		//for (auto& FP_operation : FP_operations_expanded) {
-		//	std::cout << FP_operation.result.sink_node->getName() << std::endl;
-		//}
-
-		// identify tensor operation motifs
-		std::set<std::string> identified_sink_nodes;
-		//std::map<std::string, std::vector<int>> custom_ops = getCustomOperations(FP_operations_expanded, identified_sink_nodes);
-		//std::map<std::string, std::vector<int>> FC_ops = getFullyConnectedOperations(FP_operations_expanded, identified_sink_nodes);
-		//std::map<std::string, std::vector<int>> SC_ops = getSinglyConnectedOperations(FP_operations_expanded, identified_sink_nodes);
-		//std::map<std::string, std::vector<int>> Conv_ops = getConvOperations(FP_operations_expanded, identified_sink_nodes);
-		//std::map<std::string, std::vector<int>> FIn_ops = getFanOutOperations(FP_operations_expanded, identified_sink_nodes);
-		//std::map<std::string, std::vector<int>> FOut_ops = getFanInOperations(FP_operations_expanded, identified_sink_nodes);
-		std::map<std::string, std::vector<int>> tensor_ops = getTensorOperations(FP_operations_expanded, identified_sink_nodes, fast_check);
-
-		// organize into a list of seperate operation indices
-		// [NOTE: can be avoided by changing the `getForwardPropogationLayerTensorDimensions` and `allocateForwardPropogationLayerTensors` methods
-		// and then implementing something like `operation_steps_.resize(iter); // allocate space for each operation step`]
-		std::vector<std::map<std::string, std::vector<int>>> tensor_ops_steps;
-		tensor_ops_steps.resize(iter);
-		for (auto& tensor_op: tensor_ops) {
-			tensor_ops_steps[FP_operations_expanded[tensor_op.second[0]].operation_index].emplace(tensor_op.first, tensor_op.second);
-		}
-
-		// [DEBUGGING]
-		//int cnt = 0;
-		//for (auto& tensor_ops_map : tensor_ops_steps) {
-		//	std::cout << "Operation Index: " << cnt << std::endl;
-		//	for (auto& tensor_ops : tensor_ops_map) {
-		//		std::cout << "Operation: " << tensor_ops.first << std::endl;
-		//		for (auto& tensor_op : tensor_ops.second) {
-		//			std::cout << "Tensor_op: " << tensor_op << std::endl;
-		//		}
-		//	}
-		//	++cnt;
-		//}
-		
-		// Part 4: Allocate memory for tensors
-		for (int i = 0; i < iter; ++i) {
-			//if (custom_ops.size() != 0) {
-			//	std::vector<int> source_layer_sizes, sink_layer_sizes;
-			//	std::vector<std::vector<TensorT>> weight_values;
-			//	std::vector<std::vector<std::pair<int, int>>> weight_indices;
-			//	std::vector<std::map<std::string, std::vector<std::pair<int, int>>>> shared_weight_indices;
-			//	std::vector<bool> make_source_tensors, make_sink_tensors, make_weight_tensors;
-			//	getForwardPropogationLayerTensorDimensions(FP_operations_steps[i], custom_ops, source_layer_sizes, sink_layer_sizes, weight_indices, shared_weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors);
-			//	allocateForwardPropogationLayerTensors(FP_operations_steps[i], custom_ops, source_layer_sizes, sink_layer_sizes, weight_indices, shared_weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors, batch_size, memory_size_buffered, train);
+			// [DEBUGGING]
+			//for (auto& FP_operation : FP_operations_expanded) {
+			//	std::cout << FP_operation.result.sink_node->getName() << std::endl;
 			//}
-			if (tensor_ops.size() != 0) {
-				std::vector<int> source_layer_sizes, sink_layer_sizes;
-				std::vector<std::vector<TensorT>> weight_values;
-				std::vector<std::vector<std::pair<int, int>>> weight_indices;
-				std::vector<std::map<std::string, std::vector<std::pair<int, int>>>> shared_weight_indices;
-				std::vector<bool> make_source_tensors, make_sink_tensors, make_weight_tensors;
-				getForwardPropogationLayerTensorDimensions(FP_operations_expanded, tensor_ops_steps[i], source_layer_sizes, sink_layer_sizes, weight_indices, shared_weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors);
-				allocateForwardPropogationLayerTensors(FP_operations_expanded, tensor_ops_steps[i], source_layer_sizes, sink_layer_sizes, weight_indices, shared_weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors, batch_size, memory_size_buffered, train);
+
+			// identify tensor operation motifs
+			std::set<std::string> identified_sink_nodes;
+			//std::map<std::string, std::vector<int>> custom_ops = getCustomOperations(FP_operations_expanded, identified_sink_nodes);
+			//std::map<std::string, std::vector<int>> FC_ops = getFullyConnectedOperations(FP_operations_expanded, identified_sink_nodes);
+			//std::map<std::string, std::vector<int>> SC_ops = getSinglyConnectedOperations(FP_operations_expanded, identified_sink_nodes);
+			//std::map<std::string, std::vector<int>> Conv_ops = getConvOperations(FP_operations_expanded, identified_sink_nodes);
+			//std::map<std::string, std::vector<int>> FIn_ops = getFanOutOperations(FP_operations_expanded, identified_sink_nodes);
+			//std::map<std::string, std::vector<int>> FOut_ops = getFanInOperations(FP_operations_expanded, identified_sink_nodes);
+			std::map<std::string, std::vector<int>> tensor_ops = getTensorOperations(FP_operations_expanded, identified_sink_nodes, fast_check);
+
+			// organize into a list of seperate operation indices
+			// [NOTE: can be avoided by changing the `getForwardPropogationLayerTensorDimensions` and `allocateForwardPropogationLayerTensors` methods
+			// and then implementing something like `operation_steps_.resize(iter); // allocate space for each operation step`]
+			std::vector<std::map<std::string, std::vector<int>>> tensor_ops_steps;
+			tensor_ops_steps.resize(iter);
+			for (auto& tensor_op : tensor_ops) {
+				tensor_ops_steps[FP_operations_expanded[tensor_op.second[0]].operation_index].emplace(tensor_op.first, tensor_op.second);
 			}
+
+			// Save for fast model check pointing
+			tensor_ops_steps_ = tensor_ops_steps;
+			FP_operations_ = FP_operations_expanded;
+
+			// [DEBUGGING]
+			//int cnt = 0;
+			//for (auto& tensor_ops_map : tensor_ops_steps) {
+			//	std::cout << "Operation Index: " << cnt << std::endl;
+			//	for (auto& tensor_ops : tensor_ops_map) {
+			//		std::cout << "Operation: " << tensor_ops.first << std::endl;
+			//		for (auto& tensor_op : tensor_ops.second) {
+			//			std::cout << "Tensor_op: " << tensor_op << std::endl;
+			//		}
+			//	}
+			//	++cnt;
+			//}
+
+			// Part 4: Allocate memory for tensors
+			for (auto& tensor_ops_step: tensor_ops_steps) {
+				//if (custom_ops.size() != 0) {
+				//	std::vector<int> source_layer_sizes, sink_layer_sizes;
+				//	std::vector<std::vector<TensorT>> weight_values;
+				//	std::vector<std::vector<std::pair<int, int>>> weight_indices;
+				//	std::vector<std::map<std::string, std::vector<std::pair<int, int>>>> shared_weight_indices;
+				//	std::vector<bool> make_source_tensors, make_sink_tensors, make_weight_tensors;
+				//	getForwardPropogationLayerTensorDimensions(tensor_ops_step, custom_ops, source_layer_sizes, sink_layer_sizes, weight_indices, shared_weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors);
+				//	allocateForwardPropogationLayerTensors(tensor_ops_step, custom_ops, source_layer_sizes, sink_layer_sizes, weight_indices, shared_weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors, batch_size, memory_size_buffered, train);
+				//}
+				if (tensor_ops_step.size() != 0) {
+					std::vector<int> source_layer_sizes, sink_layer_sizes;
+					std::vector<std::vector<TensorT>> weight_values;
+					std::vector<std::vector<std::pair<int, int>>> weight_indices;
+					std::vector<std::map<std::string, std::vector<std::pair<int, int>>>> shared_weight_indices;
+					std::vector<bool> make_source_tensors, make_sink_tensors, make_weight_tensors;
+					getForwardPropogationLayerTensorDimensions(FP_operations_expanded, tensor_ops_step, source_layer_sizes, sink_layer_sizes, weight_indices, shared_weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors);
+					allocateForwardPropogationLayerTensors(FP_operations_expanded, tensor_ops_step, source_layer_sizes, sink_layer_sizes, weight_indices, shared_weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors, batch_size, memory_size_buffered, train);
+				}
+			}
+		}
+		// Work from the cache
+		else {
+			// Clear the tensor indices
+			// NOTE: could be avoided by instead using the model directly
+			//			to keep track of the tensor indices during `getForwardPropogationLayerDimensions`
+			for (auto& FP_operation : FP_operations_) {
+				FP_operation.result.sink_node->setTensorIndex(std::make_pair(-1, -1));
+				for (auto& argument : FP_operation.arguments) {
+					argument.source_node->setTensorIndex(std::make_pair(-1, -1));
+					argument.weight->clearTensorIndex();
+				}
+			}
+			for (auto& tensor_ops_step : tensor_ops_steps_) {
+				//if (custom_ops.size() != 0) {
+				//	std::vector<int> source_layer_sizes, sink_layer_sizes;
+				//	std::vector<std::vector<TensorT>> weight_values;
+				//	std::vector<std::vector<std::pair<int, int>>> weight_indices;
+				//	std::vector<std::map<std::string, std::vector<std::pair<int, int>>>> shared_weight_indices;
+				//	std::vector<bool> make_source_tensors, make_sink_tensors, make_weight_tensors;
+				//	getForwardPropogationLayerTensorDimensions(tensor_ops_step, custom_ops, source_layer_sizes, sink_layer_sizes, weight_indices, shared_weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors);
+				//	allocateForwardPropogationLayerTensors(tensor_ops_step, custom_ops, source_layer_sizes, sink_layer_sizes, weight_indices, shared_weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors, batch_size, memory_size_buffered, train);
+				//}
+				if (tensor_ops_step.size() != 0) {
+					std::vector<int> source_layer_sizes, sink_layer_sizes;
+					std::vector<std::vector<TensorT>> weight_values;
+					std::vector<std::vector<std::pair<int, int>>> weight_indices;
+					std::vector<std::map<std::string, std::vector<std::pair<int, int>>>> shared_weight_indices;
+					std::vector<bool> make_source_tensors, make_sink_tensors, make_weight_tensors;
+					getForwardPropogationLayerTensorDimensions(FP_operations_, tensor_ops_step, source_layer_sizes, sink_layer_sizes, weight_indices, shared_weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors);
+					allocateForwardPropogationLayerTensors(FP_operations_, tensor_ops_step, source_layer_sizes, sink_layer_sizes, weight_indices, shared_weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors, batch_size, memory_size_buffered, train);
+				}
+		}
+
 		}
 	}
 	
@@ -1750,6 +1812,12 @@ namespace SmartPeak
 		layer_tensors_.clear();
 		weight_tensors_.clear();
 		model_error_.reset();
+		FP_operations_.clear();
+		tensor_ops_steps_.clear();
+	}
+	template<typename TensorT, typename DeviceT>
+	inline std::vector<std::map<std::string, std::vector<int>>> ModelInterpreter<TensorT, DeviceT>::getTensorOpsSteps() const {
+		return tensor_ops_steps_;
 	}
 }
 #endif //SMARTPEAK_MODELINTERPRETER_H
