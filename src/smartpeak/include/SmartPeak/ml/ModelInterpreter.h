@@ -19,6 +19,12 @@
 #include <map>
 #include <set>
 
+#include <cereal/access.hpp>  // serialiation of private members
+#include <cereal/types/memory.hpp>
+#include <cereal/types/map.hpp>
+#include <cereal/types/utility.hpp> // std::pair
+#include <cereal/types/vector.hpp>
+
 // .cpp
 #include <SmartPeak/ml/ModelErrorData.h>
 #include <SmartPeak/ml/ModelKernal.h>
@@ -68,6 +74,12 @@ namespace SmartPeak
 		std::shared_ptr<IntegrationWeightGradTensorOp<TensorT, DeviceT>> integration_weight_grad = nullptr;
 		std::shared_ptr<ActivationTensorOp<TensorT, DeviceT>> activation = nullptr;
 		std::shared_ptr<ActivationTensorOp<TensorT, DeviceT>> activation_grad = nullptr;
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(tensor, time_step, integration, integration_error, integration_weight_grad,	activation, activation_grad);
+		}
 	};
 
 	template<typename TensorT, typename DeviceT>
@@ -77,6 +89,12 @@ namespace SmartPeak
 		std::shared_ptr<WeightTensorData<TensorT, DeviceT>> tensor = nullptr;
 		std::shared_ptr<WeightInitOp<TensorT>> weight_init = nullptr;
 		std::shared_ptr<SolverTensorOp<TensorT, DeviceT>> solver = nullptr;
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(tensor, weight_init, solver);
+		}
 	};
 
 	/*
@@ -89,6 +107,12 @@ namespace SmartPeak
 		OperationLayer<TensorT, DeviceT> sink_layer;
 		OperationLayer<TensorT, DeviceT> source_layer;
 		OperationWeight<TensorT, DeviceT> weight;
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(sink_layer, source_layer, weight);
+		}
 	};
 
 	/**
@@ -519,6 +543,12 @@ namespace SmartPeak
 		std::vector<std::shared_ptr<WeightTensorData<TensorT, DeviceT>>> weight_tensors_;
 		std::shared_ptr<ModelErrorData<TensorT, DeviceT>> model_error_;
 		ModelResources model_resources_;
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(operation_steps_, layer_tensors_, weight_tensors_, model_error_, model_resources_);
+		}
 	};
 
 	template<typename TensorT, typename DeviceT>

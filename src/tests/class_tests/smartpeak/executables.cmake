@@ -11,6 +11,7 @@ set(io_executables_list
   DataFile_test
   LinkFile_test
   ModelFile_test
+  ModelInterpreterFile_test
   NodeFile_test
   PopulationTrainerFile_test
   WeightFile_test

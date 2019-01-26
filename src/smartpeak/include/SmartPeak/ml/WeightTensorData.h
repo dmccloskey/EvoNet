@@ -12,6 +12,12 @@
 
 #include <unsupported/Eigen/CXX11/Tensor>
 
+#include <cereal/access.hpp>  // serialiation of private members
+#include <cereal/types/memory.hpp>
+#undef min // clashes with std::limit on windows in polymorphic.hpp
+#undef max // clashes with std::limit on windows in polymorphic.hpp
+#include <cereal/types/polymorphic.hpp>
+
 namespace SmartPeak
 {
   /**
@@ -157,6 +163,17 @@ protected:
 		bool d_weight_updated_ = false;
 		bool d_solver_params_updated_ = false;
 		bool d_shared_weights_updated_ = false;
+
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(layer1_size_, layer2_size_, n_solver_params_, n_shared_weights_,
+				h_weight_, h_solver_params_, h_error_, h_shared_weights_,
+				d_weight_, d_solver_params_, d_error_, d_shared_weights_,
+				h_error_updated_, h_weight_updated_, h_solver_params_updated_, h_shared_weights_updated_,
+				d_error_updated_, d_weight_updated_, d_solver_params_updated_, d_shared_weights_updated_);
+		}
   };
 
 	template<typename TensorT, typename DeviceT>
@@ -255,6 +272,12 @@ protected:
 		bool syncHAndDWeight(Eigen::DefaultDevice& device) { return true; }
 		bool syncHAndDSolverParams(Eigen::DefaultDevice& device) { return true; }
 		bool syncHAndDSharedWeights(Eigen::DefaultDevice& device) { return true; }
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<WeightTensorData<TensorT, Eigen::DefaultDevice>>(this));
+		}
 	};
 
 #if COMPILE_WITH_CUDA
@@ -405,8 +428,21 @@ protected:
 			}
 			return true;
 		}
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<WeightTensorData<TensorT, Eigen::GpuDevice>>(this));
+		}
 	};
 #endif
 }
+
+CEREAL_REGISTER_TYPE(SmartPeak::WeightTensorDataCpu<float>);
+// TODO: add double, int, etc.
+#if COMPILE_WITH_CUDA
+CEREAL_REGISTER_TYPE(SmartPeak::WeightTensorDataGpu<float>);
+// TODO: add double, int, etc.
+#endif
 
 #endif //SMARTPEAK_WEIGHTTENSORDATA_H

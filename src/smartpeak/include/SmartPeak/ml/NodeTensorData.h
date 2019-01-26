@@ -14,6 +14,12 @@
 #include <SmartPeak/ml/Node.h>
 #include <memory>
 
+#include <cereal/access.hpp>  // serialiation of private members
+#include <cereal/types/memory.hpp>
+#undef min // clashes with std::limit on windows in polymorphic.hpp
+#undef max // clashes with std::limit on windows in polymorphic.hpp
+#include <cereal/types/polymorphic.hpp>
+
 namespace SmartPeak
 {
   /**
@@ -176,6 +182,17 @@ protected:
 		bool d_error_updated_ = false;
 		bool d_derivative_updated_ = false;
 		bool d_dt_updated_ = false;
+
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(batch_size_, memory_size_, layer_size_, 
+			h_input_, h_output_, h_error_, h_derivative_, h_dt_,
+			d_input_, d_output_, d_error_, d_derivative_, d_dt_,
+			h_input_updated_, h_output_updated_, h_error_updated_, h_derivative_updated_, h_dt_updated_,
+			d_input_updated_, d_output_updated_, d_error_updated_, d_derivative_updated_, d_dt_updated_);
+		}
   };
 
 	template<typename TensorT, typename DeviceT>
@@ -267,6 +284,12 @@ protected:
 		bool syncHAndDError(Eigen::DefaultDevice& device) { return true; }
 		bool syncHAndDDerivative(Eigen::DefaultDevice& device) { return true; }
 		bool syncHAndDDt(Eigen::DefaultDevice& device) { return true; }
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<NodeTensorData<TensorT, Eigen::DefaultDevice>>(this));
+		}
 	};
 
 #if COMPILE_WITH_CUDA
@@ -451,8 +474,21 @@ protected:
 			}
 			return true;
 		}
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<NodeTensorData<TensorT, Eigen::GpuDevice>>(this));
+		}
 	};
 #endif
 }
+
+CEREAL_REGISTER_TYPE(SmartPeak::NodeTensorDataCpu<float>);
+// TODO: add double, int, etc.
+#if COMPILE_WITH_CUDA
+CEREAL_REGISTER_TYPE(SmartPeak::NodeTensorDataGpu<float>);
+// TODO: add double, int, etc.
+#endif
 
 #endif //SMARTPEAK_NODETENSORDATA_H

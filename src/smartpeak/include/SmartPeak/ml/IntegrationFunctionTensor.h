@@ -7,6 +7,11 @@
 #include <SmartPeak/ml/ActivationFunctionTensor.h>
 #include <unsupported/Eigen/CXX11/Tensor>
 
+#include <cereal/access.hpp>  // serialiation of private members
+#undef min // clashes with std::limit on windows in polymorphic.hpp
+#undef max // clashes with std::limit on windows in polymorphic.hpp
+#include <cereal/types/polymorphic.hpp>
+
 namespace SmartPeak
 {
   /**
@@ -23,6 +28,12 @@ public:
     virtual void operator()(TensorT* source_output, TensorT* weights, TensorT* sink_input, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, const int& source_time_step, const int& sink_time_step, DeviceT& device) = 0;
 	protected:
 		TensorT eps_ = 1e-9;
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(eps_);
+		}
   };
 
 	/**
@@ -42,6 +53,12 @@ public:
 			sink_input_tensor.chip(sink_time_step, 1).device(device) += (source_output_tensor.chip(source_time_step, 1)).contract(weight, product_dims);
 		};
 		std::string getName() const { return "SumTensorOp"; };
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<IntegrationTensorOp<TensorT, DeviceT>>(this));
+		}
 	};
 
 	/**
@@ -68,6 +85,12 @@ public:
 				).prod(Eigen::array<int, 1>({ 1 }));
 		}
 		std::string getName() const { return "ProdTensorOp"; };
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<IntegrationTensorOp<TensorT, DeviceT>>(this));
+		}
 	};
 
 	/**
@@ -89,6 +112,12 @@ public:
 					).maximum(Eigen::array<int, 1>({ 1 })));
 		}
 		std::string getName() const { return "MaxTensorOp"; };
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<IntegrationTensorOp<TensorT, DeviceT>>(this));
+		}
 	};
 
 	/**
@@ -110,6 +139,12 @@ public:
 				).mean(Eigen::array<int, 1>({ 1 }));
 		}
 		std::string getName() const { return "MeanTensorOp"; };
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<IntegrationTensorOp<TensorT, DeviceT>>(this));
+		}
 	};
 
 	/**
@@ -132,6 +167,12 @@ public:
 			sink_input_tensor.chip(sink_time_step, 1).device(device) = ((input * input)*input.constant(1 / (TensorT)source_layer_size)).sum(Eigen::array<int, 1>({ 1 }));
 		}
 		std::string getName() const { return "VarModTensorOp"; };
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<IntegrationTensorOp<TensorT, DeviceT>>(this));
+		}
 	};
 
 	/**
@@ -152,6 +193,12 @@ public:
 			sink_input_tensor.chip(sink_time_step, 1).device(device) = ((input * input)*input.constant(1 / (TensorT)source_layer_size)).sum(Eigen::array<int, 1>({ 1 }));
 		}
 		std::string getName() const { return "VarTensorOp"; };
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<IntegrationTensorOp<TensorT, DeviceT>>(this));
+		}
 	};
 
 	/**
@@ -168,6 +215,12 @@ public:
 			sink_input_tensor.chip(sink_time_step, 1).device(device) += sink_input_tensor.chip(sink_time_step, 1).constant(source_layer_size);
 		}
 		std::string getName() const { return "CountTensorOp"; };
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<IntegrationTensorOp<TensorT, DeviceT>>(this));
+		}
 	};
 
 	/**
@@ -187,6 +240,12 @@ public:
 		virtual void operator()(TensorT* source_error, TensorT *source_input, TensorT* weight, TensorT* sink_output, TensorT* sink_error, TensorT* sink_derivative, const int& n_input_nodes, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, const int& source_time_step, const int& sink_time_step, DeviceT& device) = 0;
 	protected:
 		TensorT eps_ = 1e-6;
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(eps_);
+		}
 	};
 
 	/**
@@ -207,6 +266,12 @@ public:
 			sink_error_tensor.chip(sink_time_step, 1).device(device) += (source_error_tensor.chip(source_time_step, 1)).contract(weight_tensor.shuffle(Eigen::array<int, 2>({ 1, 0 })), product_dims) * (sink_derivative_tensor.chip(sink_time_step, 1));
 		};
 		std::string getName() const { return "SumErrorTensorOp"; };
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<IntegrationErrorTensorOp<TensorT, DeviceT>>(this));
+		}
 	};
 
 	/**
@@ -236,6 +301,12 @@ public:
 
 		};
 		std::string getName() const { return "ProdErrorTensorOp"; };
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<IntegrationErrorTensorOp<TensorT, DeviceT>>(this));
+		}
 	};
 
 	/**
@@ -267,6 +338,12 @@ public:
 			sink_error_tensor.chip(sink_time_step, 1).device(device) += selected_error * sink_derivative_tensor.chip(sink_time_step, 1);
 		};
 		std::string getName() const { return "MaxErrorTensorOp"; };
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<IntegrationErrorTensorOp<TensorT, DeviceT>>(this));
+		}
 	};
 
 	/**
@@ -287,6 +364,12 @@ public:
 			sink_error_tensor.chip(sink_time_step, 1).device(device) += (source_error_tensor.chip(source_time_step, 1)).contract(weight_tensor.shuffle(Eigen::array<int, 2>({ 1, 0 })), product_dims) * sink_error_tensor.chip(sink_time_step, 1).constant(1/(TensorT)n_input_nodes) * (sink_derivative_tensor.chip(sink_time_step, 1));
 		};
 		std::string getName() const { return "MeanErrorTensorOp"; };
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<IntegrationErrorTensorOp<TensorT, DeviceT>>(this));
+		}
 	};
 
 	/**
@@ -309,6 +392,12 @@ public:
 				* (sink_derivative_tensor.chip(sink_time_step, 1));
 		};
 		std::string getName() const { return "VarModErrorTensorOp"; };
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<IntegrationErrorTensorOp<TensorT, DeviceT>>(this));
+		}
 	};
 
 	/**
@@ -324,6 +413,12 @@ public:
 			//TODO
 		};
 		std::string getName() const { return "VarErrorTensorOp"; };
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<IntegrationErrorTensorOp<TensorT, DeviceT>>(this));
+		}
 	};
 
 	/**
@@ -340,6 +435,12 @@ public:
 			sink_error_tensor.chip(sink_time_step, 1).device(device) = sink_error_tensor.chip(sink_time_step, 1).constant(0);
 		};
 		std::string getName() const { return "CountErrorTensorOp"; };
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<IntegrationErrorTensorOp<TensorT, DeviceT>>(this));
+		}
 	};
 
 	/**
@@ -356,6 +457,12 @@ public:
 		virtual void operator()(TensorT* sink_error, TensorT* source_output, TensorT* weight, TensorT* source_input, TensorT* weight_error, const int& n_input_nodes, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, DeviceT& device) = 0;
 	protected:
 		TensorT eps_ = 1e-6;
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(eps_);
+		}
 	};
 
 	/**
@@ -377,6 +484,12 @@ public:
 			// NOTE: Requires a correction by dividing by the batch size
 		};
 		std::string getName() const { return "SumWeightGradTensorOp"; };
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<IntegrationWeightGradTensorOp<TensorT, DeviceT>>(this));
+		}
 	};
 
 	/**
@@ -402,6 +515,12 @@ public:
 			weight_error_tensor.device(device) += scaled_error.sum(Eigen::array<int, 2>({ 0, 1 })) * weight_error_tensor.constant(1 / (TensorT)batch_size);
 		};
 		std::string getName() const { return "ProdWeightGradTensorOp"; };
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<IntegrationWeightGradTensorOp<TensorT, DeviceT>>(this));
+		}
 	};
 
 	/**
@@ -425,6 +544,12 @@ public:
 			// NOTE: Requires a correction by dividing by the batch size
 		};
 		std::string getName() const { return "MaxWeightGradTensorOp"; };
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<IntegrationWeightGradTensorOp<TensorT, DeviceT>>(this));
+		}
 	};
 
 	/**
@@ -441,6 +566,12 @@ public:
 			weight_error_tensor.device(device) = weight_error_tensor.constant(0);
 		};
 		std::string getName() const { return "CountWeightGradTensorOp"; };
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<IntegrationWeightGradTensorOp<TensorT, DeviceT>>(this));
+		}
 	};
 
 	/**
@@ -464,6 +595,12 @@ public:
 			// NOTE: Requires a correction by dividing by the batch size
 		};
 		std::string getName() const { return "MeanWeightGradTensorOp"; };
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<IntegrationWeightGradTensorOp<TensorT, DeviceT>>(this));
+		}
 	};
 
 	/**
@@ -487,6 +624,12 @@ public:
 			// NOTE: Requires a correction by dividing by the batch size
 		};
 		std::string getName() const { return "VarModWeightGradTensorOp"; };
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<IntegrationWeightGradTensorOp<TensorT, DeviceT>>(this));
+		}
 	};
 
 	/**
@@ -502,6 +645,50 @@ public:
 			// TODO
 		};
 		std::string getName() const { return "VarWeightGradTensorOp"; };
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<IntegrationWeightGradTensorOp<TensorT, DeviceT>>(this));
+		}
 	};
 }
+CEREAL_REGISTER_TYPE(SmartPeak::SumTensorOp<float, Eigen::DefaultDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::ProdTensorOp<float, Eigen::DefaultDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::MaxTensorOp<float, Eigen::DefaultDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::MeanTensorOp<float, Eigen::DefaultDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::VarModTensorOp<float, Eigen::DefaultDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::CountTensorOp<float, Eigen::DefaultDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::SumErrorTensorOp<float, Eigen::DefaultDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::ProdErrorTensorOp<float, Eigen::DefaultDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::MaxErrorTensorOp<float, Eigen::DefaultDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::MeanErrorTensorOp<float, Eigen::DefaultDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::VarModErrorTensorOp<float, Eigen::DefaultDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::CountErrorTensorOp<float, Eigen::DefaultDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::SumWeightGradTensorOp<float, Eigen::DefaultDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::ProdWeightGradTensorOp<float, Eigen::DefaultDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::MaxWeightGradTensorOp<float, Eigen::DefaultDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::CountWeightGradTensorOp<float, Eigen::DefaultDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::MeanWeightGradTensorOp<float, Eigen::DefaultDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::VarModWeightGradTensorOp<float, Eigen::DefaultDevice>);
+
+CEREAL_REGISTER_TYPE(SmartPeak::SumTensorOp<float, Eigen::GpuDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::ProdTensorOp<float, Eigen::GpuDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::MaxTensorOp<float, Eigen::GpuDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::MeanTensorOp<float, Eigen::GpuDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::VarModTensorOp<float, Eigen::GpuDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::CountTensorOp<float, Eigen::GpuDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::SumErrorTensorOp<float, Eigen::GpuDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::ProdErrorTensorOp<float, Eigen::GpuDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::MaxErrorTensorOp<float, Eigen::GpuDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::MeanErrorTensorOp<float, Eigen::GpuDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::VarModErrorTensorOp<float, Eigen::GpuDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::CountErrorTensorOp<float, Eigen::GpuDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::SumWeightGradTensorOp<float, Eigen::GpuDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::ProdWeightGradTensorOp<float, Eigen::GpuDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::MaxWeightGradTensorOp<float, Eigen::GpuDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::CountWeightGradTensorOp<float, Eigen::GpuDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::MeanWeightGradTensorOp<float, Eigen::GpuDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::VarModWeightGradTensorOp<float, Eigen::GpuDevice>);
+
 #endif //SMARTPEAK_TENSORINTEGRATIONFUNCTION_H

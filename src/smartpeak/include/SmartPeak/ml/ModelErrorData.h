@@ -13,6 +13,12 @@
 #include <unsupported/Eigen/CXX11/Tensor>
 #include <memory>
 
+#include <cereal/access.hpp>  // serialiation of private members
+#include <cereal/types/memory.hpp>
+#undef min // clashes with std::limit on windows in polymorphic.hpp
+#undef max // clashes with std::limit on windows in polymorphic.hpp
+#include <cereal/types/polymorphic.hpp>
+
 namespace SmartPeak
 {
   /**
@@ -84,6 +90,12 @@ protected:
 		std::shared_ptr<TensorT> d_error_ = nullptr;
 		bool h_error_updated_ = false;
 		bool d_error_updated_ = false;
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(batch_size_, memory_size_, h_error_, d_error_, h_error_updated_, d_error_updated_);
+		}
   };
 
 	template<typename TensorT, typename DeviceT>
@@ -107,6 +119,12 @@ protected:
 			this->d_error_updated_ = true;
 		}; ///< error setter
 		bool syncHAndDError(Eigen::DefaultDevice& device) { return true; }
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<ModelErrorData<TensorT, Eigen::DefaultDevice>>(this));
+		}
 	};
 
 #if COMPILE_WITH_CUDA
@@ -149,8 +167,21 @@ protected:
 				return false;
 			}
 		}
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<ModelErrorData<TensorT, Eigen::GpuDevice>>(this));
+		}
 	};
 #endif
 }
+
+CEREAL_REGISTER_TYPE(SmartPeak::ModelErrorDataCpu<float>);
+// TODO: add double, int, etc.
+#if COMPILE_WITH_CUDA
+CEREAL_REGISTER_TYPE(SmartPeak::ModelErrorDataGpu<float>);
+// TODO: add double, int, etc.
+#endif
 
 #endif //SMARTPEAK_MODELERRORDATA_H

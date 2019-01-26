@@ -8,6 +8,7 @@ set(sources_list_h
 	DataFile.h
 	LinkFile.h
 	ModelFile.h
+	ModelInterpreterFile.h
 	NodeFile.h
 	PopulationTrainerFile.h
 	WeightFile.h

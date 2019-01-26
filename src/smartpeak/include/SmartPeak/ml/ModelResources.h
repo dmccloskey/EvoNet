@@ -1,6 +1,8 @@
 #ifndef SMARTPEAK_MODELRESOURCES_H
 #define SMARTPEAK_MODELRESOURCES_H
 
+#include <cereal/access.hpp>  // serialiation of private members
+
 namespace SmartPeak
 {
 
@@ -24,6 +26,11 @@ namespace SmartPeak
 		int getNEngines() const { return n_engines_; };
 
 	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(id_, n_engines_);
+		}
 		int id_;  ///< ID of the device
 		int n_engines_ = -1; ///< the number of threads (CPU) or asynchroous engines (GPU) available on the device
   };

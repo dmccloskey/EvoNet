@@ -6,19 +6,28 @@
 #include <SmartPeak/ml/ActivationFunction.h>
 #include <unsupported/Eigen/CXX11/Tensor>
 
+#include <cereal/access.hpp>  // serialiation of private members
+#undef min // clashes with std::limit on windows in polymorphic.hpp
+#undef max // clashes with std::limit on windows in polymorphic.hpp
+#include <cereal/types/polymorphic.hpp>
+
 namespace SmartPeak
 {
   /**
     @brief Base class for all activation function wrappers.
   */
- template<typename TensorT, typename DeviceT>
+  template<typename TensorT, typename DeviceT>
   class ActivationTensorOp
   {
-public: 
+  public: 
 		ActivationTensorOp() {};
 		~ActivationTensorOp() {};
 		virtual std::string getName() const = 0;
 		virtual void operator()(TensorT* x_I, TensorT* x_O, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const = 0;
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {}
   };
 
   /**
@@ -32,7 +41,7 @@ public:
   template<typename TensorT, typename DeviceT>
   class ReLUTensorOp: public ActivationTensorOp<TensorT, DeviceT>
   {
-public: 
+	public: 
     ReLUTensorOp(){}; 
     ~ReLUTensorOp(){};
     void operator()(TensorT* x_I, TensorT* x_O, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
@@ -43,6 +52,12 @@ public:
 			out.chip(time_step, 1).device(device) = result.clip(-1e9, 1e9);
 		};
     std::string getName() const{return "ReLUTensorOp";};
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<ActivationTensorOp<TensorT, DeviceT>>(this));
+		}
   };
 
   /**
@@ -67,6 +82,12 @@ public:
 			out.chip(time_step, 1).device(device) = result.clip(-1e9, 1e9);
 		};
     std::string getName() const{return "ReLUGradTensorOp";};
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<ActivationTensorOp<TensorT, DeviceT>>(this));
+		}
   };
 
   /**
@@ -96,7 +117,12 @@ public:
     void setAlpha(const TensorT& alpha) { alpha_ = alpha; };
     TensorT getAlpha() const { return alpha_; };
     std::string getName() const{return "ELUTensorOp";};
-private:
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<ActivationTensorOp<TensorT, DeviceT>>(this), alpha_);
+		}
     TensorT alpha_ = 1;
   };
 
@@ -128,6 +154,12 @@ public:
     TensorT getAlpha() const { return alpha_; };
     std::string getName() const{return "ELUGradTensorOp";};
 private:
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<ActivationTensorOp<TensorT, DeviceT>>(this), alpha_);
+		}
     TensorT alpha_ = 1;
   };
 
@@ -149,6 +181,12 @@ public:
 			out.chip(time_step, 1).device(device) = result.clip(-1e9, 1e9);
 		};
     std::string getName() const{return "SigmoidTensorOp";};
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<ActivationTensorOp<TensorT, DeviceT>>(this));
+		}
   };
 
   /**
@@ -168,6 +206,12 @@ public:
 			out.chip(time_step, 1).device(device) = result.clip(-1e9, 1e9);
 		};
     std::string getName() const{return "SigmoidGradTensorOp";};
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<ActivationTensorOp<TensorT, DeviceT>>(this));
+		}
   };
   
   /**
@@ -187,6 +231,12 @@ public:
 			out.chip(time_step, 1).device(device) = result.clip(-1e9, 1e9);
 		};
     std::string getName() const{return "TanHTensorOp";};
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<ActivationTensorOp<TensorT, DeviceT>>(this));
+		}
   };
 
   /**
@@ -206,6 +256,12 @@ public:
 			out.chip(time_step, 1).device(device) = result.clip(-1e9, 1e9);
 		};
     std::string getName() const{return "TanHGradTensorOp";};
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<ActivationTensorOp<TensorT, DeviceT>>(this));
+		}
   };
   
   /**
@@ -224,6 +280,12 @@ public:
 			//out.chip(time_step, 1).device(device) = [TODO]
 		};
     std::string getName() const{return "ReTanHTensorOp";};
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<ActivationTensorOp<TensorT, DeviceT>>(this));
+		}
   };
 
   /**
@@ -242,6 +304,12 @@ public:
 			//out.chip(time_step, 1).device(device) = [TODO]
 		};
     std::string getName() const{return "ReTanHGradTensorOp";};
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<ActivationTensorOp<TensorT, DeviceT>>(this));
+		}
   };
 
 	/**
@@ -261,6 +329,12 @@ public:
 			out.chip(time_step, 1).device(device) = result.clip(-1e9, 1e9);
 		};
 		std::string getName() const { return "LinearTensorOp"; };
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<ActivationTensorOp<TensorT, DeviceT>>(this));
+		}
 	};
 
 	/**
@@ -279,6 +353,12 @@ public:
 			out.chip(time_step, 1).device(device) = x.chip(time_step, 1).constant(1);
 		};
 		std::string getName() const { return "LinearGradTensorOp"; };
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<ActivationTensorOp<TensorT, DeviceT>>(this));
+		}
 	};
 
 	/**
@@ -299,6 +379,12 @@ public:
 			out.chip(time_step, 1).device(device) = result.clip(-1e9, 1e9);
 		};
 		std::string getName() const { return "InverseTensorOp"; };
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<ActivationTensorOp<TensorT, DeviceT>>(this));
+		}
 	};
 
 	/**
@@ -319,6 +405,12 @@ public:
 			out.chip(time_step, 1).device(device) = result.clip(-1e9, 1e9);
 		};
 		std::string getName() const { return "InverseGradTensorOp"; };
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<ActivationTensorOp<TensorT, DeviceT>>(this));
+		}
 	};
 
 	/**
@@ -338,6 +430,12 @@ public:
 			out.chip(time_step, 1).device(device) = result.clip(-1e9, 1e9);
 		};
 		std::string getName() const { return "ExponentialTensorOp"; };
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<ActivationTensorOp<TensorT, DeviceT>>(this));
+		}
 	};
 
 	/**
@@ -357,6 +455,12 @@ public:
 			out.chip(time_step, 1).device(device) = result.clip(-1e9, 1e9);
 		};
 		std::string getName() const { return "ExponentialGradTensorOp"; };
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<ActivationTensorOp<TensorT, DeviceT>>(this));
+		}
 	};
 
 	/**
@@ -376,6 +480,12 @@ public:
 			out.chip(time_step, 1).device(device) = result.clip(-1e9, 1e9);
 		};
 		std::string getName() const { return "LogTensorOp"; };
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<ActivationTensorOp<TensorT, DeviceT>>(this));
+		}
 	};
 
 	/**
@@ -395,6 +505,12 @@ public:
 			out.chip(time_step, 1).device(device) = result.clip(-1e9, 1e9);
 		};
 		std::string getName() const { return "LogGradTensorOp"; };
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<ActivationTensorOp<TensorT, DeviceT>>(this));
+		}
 	};
 
 	/**
@@ -416,6 +532,11 @@ public:
 		};
 		std::string getName() const { return "PowTensorOp"; };
 	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<ActivationTensorOp<TensorT, DeviceT>>(this), base_);
+		}
 		TensorT base_;
 	};
 
@@ -438,6 +559,11 @@ public:
 		};
 		std::string getName() const { return "PowGradTensorOp"; };
 	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<ActivationTensorOp<TensorT, DeviceT>>(this), base_);
+		}
 		TensorT base_;
 	};
 
@@ -465,6 +591,11 @@ public:
 		TensorT getAlpha() const { return alpha_; };
 		std::string getName() const { return "LeakyReLUTensorOp"; };
 	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<ActivationTensorOp<TensorT, DeviceT>>(this), alpha_);
+		}
 		TensorT alpha_ = 1e-2;
 	};
 
@@ -490,7 +621,60 @@ public:
 		TensorT getAlpha() const { return alpha_; };
 		std::string getName() const { return "LeakyReLUGradTensorOp"; };
 	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<ActivationTensorOp<TensorT, DeviceT>>(this), alpha_);
+		}
 		TensorT alpha_ = 1e-2;
 	};
 }
+CEREAL_REGISTER_TYPE(SmartPeak::ReLUTensorOp<float, Eigen::DefaultDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::ReLUGradTensorOp<float, Eigen::DefaultDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::ELUTensorOp<float, Eigen::DefaultDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::ELUGradTensorOp<float, Eigen::DefaultDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::SigmoidTensorOp<float, Eigen::DefaultDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::SigmoidGradTensorOp<float, Eigen::DefaultDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::TanHTensorOp<float, Eigen::DefaultDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::TanHGradTensorOp<float, Eigen::DefaultDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::ReTanHTensorOp<float, Eigen::DefaultDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::ReTanHGradTensorOp<float, Eigen::DefaultDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::LinearTensorOp<float, Eigen::DefaultDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::LinearGradTensorOp<float, Eigen::DefaultDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::InverseTensorOp<float, Eigen::DefaultDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::InverseGradTensorOp<float, Eigen::DefaultDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::ExponentialTensorOp<float, Eigen::DefaultDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::ExponentialGradTensorOp<float, Eigen::DefaultDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::LogTensorOp<float, Eigen::DefaultDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::LogGradTensorOp<float, Eigen::DefaultDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::PowTensorOp<float, Eigen::DefaultDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::PowGradTensorOp<float, Eigen::DefaultDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::LeakyReLUTensorOp<float, Eigen::DefaultDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::LeakyReLUGradTensorOp<float, Eigen::DefaultDevice>);
+
+CEREAL_REGISTER_TYPE(SmartPeak::ReLUTensorOp<float, Eigen::GpuDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::ReLUGradTensorOp<float, Eigen::GpuDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::ELUTensorOp<float, Eigen::GpuDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::ELUGradTensorOp<float, Eigen::GpuDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::SigmoidTensorOp<float, Eigen::GpuDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::SigmoidGradTensorOp<float, Eigen::GpuDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::TanHTensorOp<float, Eigen::GpuDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::TanHGradTensorOp<float, Eigen::GpuDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::ReTanHTensorOp<float, Eigen::GpuDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::ReTanHGradTensorOp<float, Eigen::GpuDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::LinearTensorOp<float, Eigen::GpuDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::LinearGradTensorOp<float, Eigen::GpuDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::InverseTensorOp<float, Eigen::GpuDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::InverseGradTensorOp<float, Eigen::GpuDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::ExponentialTensorOp<float, Eigen::GpuDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::ExponentialGradTensorOp<float, Eigen::GpuDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::LogTensorOp<float, Eigen::GpuDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::LogGradTensorOp<float, Eigen::GpuDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::PowTensorOp<float, Eigen::GpuDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::PowGradTensorOp<float, Eigen::GpuDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::LeakyReLUTensorOp<float, Eigen::GpuDevice>);
+CEREAL_REGISTER_TYPE(SmartPeak::LeakyReLUGradTensorOp<float, Eigen::GpuDevice>);
+
+// TODO: double, int, etc.,
+
 #endif //SMARTPEAK_ACTIVATIONTENSORFUNCTION_H
