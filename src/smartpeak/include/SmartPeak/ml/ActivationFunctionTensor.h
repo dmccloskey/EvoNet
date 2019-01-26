@@ -652,6 +652,7 @@ CEREAL_REGISTER_TYPE(SmartPeak::PowGradTensorOp<float, Eigen::DefaultDevice>);
 CEREAL_REGISTER_TYPE(SmartPeak::LeakyReLUTensorOp<float, Eigen::DefaultDevice>);
 CEREAL_REGISTER_TYPE(SmartPeak::LeakyReLUGradTensorOp<float, Eigen::DefaultDevice>);
 
+#if COMPILE_WITH_CUDA
 CEREAL_REGISTER_TYPE(SmartPeak::ReLUTensorOp<float, Eigen::GpuDevice>);
 CEREAL_REGISTER_TYPE(SmartPeak::ReLUGradTensorOp<float, Eigen::GpuDevice>);
 CEREAL_REGISTER_TYPE(SmartPeak::ELUTensorOp<float, Eigen::GpuDevice>);
@@ -674,6 +675,7 @@ CEREAL_REGISTER_TYPE(SmartPeak::PowTensorOp<float, Eigen::GpuDevice>);
 CEREAL_REGISTER_TYPE(SmartPeak::PowGradTensorOp<float, Eigen::GpuDevice>);
 CEREAL_REGISTER_TYPE(SmartPeak::LeakyReLUTensorOp<float, Eigen::GpuDevice>);
 CEREAL_REGISTER_TYPE(SmartPeak::LeakyReLUGradTensorOp<float, Eigen::GpuDevice>);
+#endif
 
 // TODO: double, int, etc.,
 

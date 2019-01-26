@@ -18,6 +18,9 @@ using std::tanh;
 #include <iostream>
 
 #include <cereal/access.hpp>  // serialiation of private members
+#undef min // clashes with std::limit on windows in polymorphic.hpp
+#undef max // clashes with std::limit on windows in polymorphic.hpp
+#include <cereal/types/polymorphic.hpp>
 
 namespace SmartPeak
 {
@@ -242,10 +245,12 @@ CEREAL_REGISTER_TYPE(SmartPeak::AdamTensorOp<float, Eigen::DefaultDevice>);
 CEREAL_REGISTER_TYPE(SmartPeak::DummySolverTensorOp<float, Eigen::DefaultDevice>);
 CEREAL_REGISTER_TYPE(SmartPeak::SGDNoiseTensorOp<float, Eigen::DefaultDevice>);
 
+#if COMPILE_WITH_CUDA
 CEREAL_REGISTER_TYPE(SmartPeak::SGDTensorOp<float, Eigen::GpuDevice>);
 CEREAL_REGISTER_TYPE(SmartPeak::AdamTensorOp<float, Eigen::GpuDevice>);
 CEREAL_REGISTER_TYPE(SmartPeak::DummySolverTensorOp<float, Eigen::GpuDevice>);
 CEREAL_REGISTER_TYPE(SmartPeak::SGDNoiseTensorOp<float, Eigen::GpuDevice>);
+#endif
 // TODO: add double, int, etc.
 
 #endif //SMARTPEAK_SOLVERTENSOR_H

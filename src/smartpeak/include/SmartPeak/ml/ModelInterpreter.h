@@ -133,9 +133,22 @@ namespace SmartPeak
 
 		inline bool operator==(const ModelInterpreter& other) const
 		{
+			// BUG: 
+			// - 'operator __surrogate_func': no matching overloaded function found
+			// - Failed to specialize function template 'unknown-type std::equal_to<void>::operator ()(_Ty1 && _Ty2 &&) const'
 			return
 				std::tie(
+					//operation_steps_,
+					//layer_tensors_,
+					//weight_tensors_,
+					//model_error_,
+					//model_resources_
 				) == std::tie(
+					//other.operation_steps_,
+					//other.layer_tensors_,
+					//other.weight_tensors_,
+					//other.model_error_,
+					//other.model_resources_
 				);
 		}
 

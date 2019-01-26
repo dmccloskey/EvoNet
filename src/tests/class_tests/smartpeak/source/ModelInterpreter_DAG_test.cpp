@@ -137,6 +137,17 @@ BOOST_AUTO_TEST_CASE(copy)
 	BOOST_CHECK_EQUAL(model_interpreters[0].getModelResources()[0].getNEngines(), model_resources[0].getNEngines());
 }
 
+BOOST_AUTO_TEST_CASE(comparison1)
+{
+	ModelResources model_resources = { ModelDevice(0, 1) };
+	ModelInterpreterDefaultDevice<float> model_interpreter(model_resources);
+	ModelInterpreterDefaultDevice<float> model_interpreter_test;
+	//BOOST_CHECK(model_interpreter != model_interpreter_test); // Need to fix '==' operator in `ModelInterpreter`
+
+	model_interpreter_test.setModelResources(model_resources);
+	BOOST_CHECK(model_interpreter == model_interpreter_test);
+}
+
 /**
  * Part 1 test suit for the Model class
  * 

@@ -12,6 +12,11 @@
 // .h
 #include <SmartPeak/ml/ModelInterpreter.h>
 
+#include <cereal/access.hpp>  // serialiation of private members
+#undef min // clashes with std::limit on windows in polymorphic.hpp
+#undef max // clashes with std::limit on windows in polymorphic.hpp
+#include <cereal/types/polymorphic.hpp>
+
 // .cpp
 #include <SmartPeak/ml/ModelErrorData.h>
 #include <SmartPeak/ml/ModelKernal.h>
@@ -38,6 +43,12 @@ namespace SmartPeak
 		void getModelResults(Model<TensorT>& model, bool output_nodes = true, bool weights = true, bool model_error = true);
 		void checkMemory(const Model<TensorT>& model, const int& batch_size, const int& memory_size);
 		void updateSolverParams(const int& param_index, const TensorT& param_value);
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<ModelInterpreter<TensorT, Eigen::GpuDevice>>(this));
+		}
 	};
 
 	template<typename TensorT>
@@ -610,5 +621,8 @@ namespace SmartPeak
 		}
 	}
 }
+CEREAL_REGISTER_TYPE(SmartPeak::ModelInterpreterGpu<float>);
+// TODO: add double, int, etc.
+
 #endif
 #endif //SMARTPEAK_MODELINTERPRETERGPU_H

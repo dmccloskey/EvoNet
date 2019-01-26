@@ -672,6 +672,7 @@ CEREAL_REGISTER_TYPE(SmartPeak::CountWeightGradTensorOp<float, Eigen::DefaultDev
 CEREAL_REGISTER_TYPE(SmartPeak::MeanWeightGradTensorOp<float, Eigen::DefaultDevice>);
 CEREAL_REGISTER_TYPE(SmartPeak::VarModWeightGradTensorOp<float, Eigen::DefaultDevice>);
 
+#if COMPILE_WITH_CUDA
 CEREAL_REGISTER_TYPE(SmartPeak::SumTensorOp<float, Eigen::GpuDevice>);
 CEREAL_REGISTER_TYPE(SmartPeak::ProdTensorOp<float, Eigen::GpuDevice>);
 CEREAL_REGISTER_TYPE(SmartPeak::MaxTensorOp<float, Eigen::GpuDevice>);
@@ -690,5 +691,6 @@ CEREAL_REGISTER_TYPE(SmartPeak::MaxWeightGradTensorOp<float, Eigen::GpuDevice>);
 CEREAL_REGISTER_TYPE(SmartPeak::CountWeightGradTensorOp<float, Eigen::GpuDevice>);
 CEREAL_REGISTER_TYPE(SmartPeak::MeanWeightGradTensorOp<float, Eigen::GpuDevice>);
 CEREAL_REGISTER_TYPE(SmartPeak::VarModWeightGradTensorOp<float, Eigen::GpuDevice>);
+#endif
 
 #endif //SMARTPEAK_TENSORINTEGRATIONFUNCTION_H

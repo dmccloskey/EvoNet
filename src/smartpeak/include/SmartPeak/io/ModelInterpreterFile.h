@@ -4,14 +4,16 @@
 #define SMARTPEAK_MODELINTERPRETERFILE_H
 
 // .h
-#include <SmartPeak/ml/ModelInterpreter.h>
+#include <SmartPeak/ml/ModelInterpreterDefaultDevice.h>
+
+#if COMPILE_WITH_CUDA
+#define EIGEN_DEFAULT_DENSE_INDEX_TYPE int
+#define EIGEN_USE_GPU
+#include <cuda.h>
+#include <cuda_runtime.h>
+#endif
 
 // .cpp
-//#include <cereal/types/memory.hpp>
-//#include <cereal/types/map.hpp>
-//#include <cereal/types/tuple.hpp>
-//#include <cereal/types/utility.hpp> // std::pair
-#include <cereal/types/vector.hpp>
 #include <cereal/archives/binary.hpp>
 
 namespace SmartPeak
@@ -74,6 +76,41 @@ public:
 		}
 		return true;
 	}
-}
 
+	/**
+		@brief ModelInterpreterFileDefaultDevice
+	*/
+	template<typename TensorT>
+	class ModelInterpreterFileDefaultDevice : public ModelInterpreterFile<TensorT, Eigen::DefaultDevice>
+	{
+	public:
+		ModelInterpreterFileDefaultDevice() = default; ///< Default constructor
+		~ModelInterpreterFileDefaultDevice() = default; ///< Default destructor
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<ModelInterpreterFile<TensorT, Eigen::DefaultDevice>>(this));
+		}
+	};
+
+#if COMPILE_WITH_CUDA
+	/**
+		@brief ModelInterpreterFileGpu
+	*/
+	template<typename TensorT>
+	class ModelInterpreterFileGpu : public ModelInterpreterFile<TensorT, Eigen::GpuDevice>
+	{
+	public:
+		ModelInterpreterFileGpu() = default; ///< Default constructor
+		~ModelInterpreterFileGpu() = default; ///< Default destructor
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<ModelInterpreterFile<TensorT, Eigen::GpuDevice>>(this));
+		}
+	};
+#endif
+}
 #endif //SMARTPEAK_MODELINTERPRETERFILE_H
