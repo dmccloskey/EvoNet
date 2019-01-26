@@ -8,6 +8,10 @@
 #include <random>
 #include <iostream>
 
+#include <cereal/access.hpp>  // serialiation of private members
+#undef min // clashes with std::limit on windows in polymorphic.hpp
+#undef max // clashes with std::limit on windows in polymorphic.hpp
+#include <cereal/types/polymorphic.hpp>
 
 namespace SmartPeak
 {
@@ -17,12 +21,16 @@ namespace SmartPeak
 	template<typename TensorT>
   class WeightInitOp
   {
-public: 
+	public: 
     WeightInitOp() = default; 
 		~WeightInitOp() = default;
     virtual std::string getName() const = 0;
     virtual TensorT operator()() const = 0;
     virtual std::string getParamsAsStr() const = 0;
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive){}
   };  
 
   /**
@@ -54,6 +62,11 @@ public:
       return params;
     }
 private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<WeightInitOp<TensorT>>(this), n_, f_);
+		}
     TensorT n_ = 1.0; ///< the denominator (i.e., number of input nodes for He et al, or average input/output nodes for Xavior et al)
 		TensorT f_ = 1.0; ///< the numerator (i.e., 2 for He et al, 1 for Xavior et al)
   };
@@ -77,7 +90,19 @@ public:
       return params;
     }
 private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<WeightInitOp<TensorT>>(this), n_);
+		}
     TensorT n_ = 1.0; ///< the constant to return
   };  
 }
+
+CEREAL_REGISTER_TYPE(SmartPeak::RandWeightInitOp<float>);
+CEREAL_REGISTER_TYPE(SmartPeak::ConstWeightInitOp<float>);
+CEREAL_REGISTER_TYPE(SmartPeak::RandWeightInitOp<double>);
+CEREAL_REGISTER_TYPE(SmartPeak::ConstWeightInitOp<double>);
+CEREAL_REGISTER_TYPE(SmartPeak::RandWeightInitOp<int>);
+CEREAL_REGISTER_TYPE(SmartPeak::ConstWeightInitOp<int>);
 #endif //SMARTPEAK_WEIGHTINIT_H

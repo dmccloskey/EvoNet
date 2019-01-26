@@ -28,26 +28,6 @@ BOOST_AUTO_TEST_CASE(destructorSumOp)
   delete ptrReLU;
 }
 
-BOOST_AUTO_TEST_CASE(operationfunctionSumOp) 
-{
-	const int batch_size = 3;
-	Eigen::Tensor<float, 1> input1(batch_size), input2(batch_size), input3(batch_size);
-	input1.setValues({ 1, 2, 4 }); input2.setValues({ 2, 4, 1 }); input3.setValues({ 4, 1, 2 });
-	Eigen::Tensor<float, 1> weight1(batch_size), weight2(batch_size), weight3(batch_size);
-	weight1.setValues({ 1, 1, 1 }); weight2.setValues({ 1, 1, 1 }); weight3.setValues({ 1, 1, 1 });
-
-	SumOp<float> operation;
-	operation.initNetNodeInput(3);
-	operation(weight1, input1);
-	operation(weight2, input2);
-	operation(weight3, input3);
-
-  BOOST_CHECK_CLOSE(operation.getNetNodeInput()(0), 7.0, 1e-4);
-	BOOST_CHECK_CLOSE(operation.getNetNodeInput()(1), 7.0, 1e-4);
-	BOOST_CHECK_CLOSE(operation.getNetNodeInput()(2), 7.0, 1e-4);
-	BOOST_CHECK_CLOSE(operation.getN(), 3.0, 1e-4);
-}
-
 BOOST_AUTO_TEST_CASE(getNameSumOp)
 {
 	SumOp<float> operation;
@@ -70,26 +50,6 @@ BOOST_AUTO_TEST_CASE(destructorProdOp)
 	ProdOp<float>* ptrReLU = nullptr;
 	ptrReLU = new ProdOp<float>();
 	delete ptrReLU;
-}
-
-BOOST_AUTO_TEST_CASE(operationfunctionProdOp)
-{
-	const int batch_size = 3;
-	Eigen::Tensor<float, 1> input1(batch_size), input2(batch_size), input3(batch_size);
-	input1.setValues({ 1, 2, 4 }); input2.setValues({ 2, 4, 1 }); input3.setValues({ 4, 1, 2 });
-	Eigen::Tensor<float, 1> weight1(batch_size), weight2(batch_size), weight3(batch_size);
-	weight1.setValues({ 1, 1, 1 }); weight2.setValues({ 1, 1, 1 }); weight3.setValues({ 1, 1, 1 });
-
-	ProdOp<float> operation;
-	operation.initNetNodeInput(3);
-	operation(weight1, input1);
-	operation(weight2, input2);
-	operation(weight3, input3);
-
-	BOOST_CHECK_CLOSE(operation.getNetNodeInput()(0), 8.0, 1e-4);
-	BOOST_CHECK_CLOSE(operation.getNetNodeInput()(1), 8.0, 1e-4);
-	BOOST_CHECK_CLOSE(operation.getNetNodeInput()(2), 8.0, 1e-4);
-	BOOST_CHECK_CLOSE(operation.getN(), 3.0, 1e-4);
 }
 
 BOOST_AUTO_TEST_CASE(getNameProdOp)
@@ -116,26 +76,6 @@ BOOST_AUTO_TEST_CASE(destructorMaxOp)
 	delete ptrReLU;
 }
 
-BOOST_AUTO_TEST_CASE(operationfunctionMaxOp)
-{
-	const int batch_size = 3;
-	Eigen::Tensor<float, 1> input1(batch_size), input2(batch_size), input3(batch_size);
-	input1.setValues({ 1, 2, 4 }); input2.setValues({ 2, 4, 1 }); input3.setValues({ 4, 1, 2 });
-	Eigen::Tensor<float, 1> weight1(batch_size), weight2(batch_size), weight3(batch_size);
-	weight1.setValues({ 1, 1, 1 }); weight2.setValues({ 1, 1, 1 }); weight3.setValues({ 1, 1, 1 });
-
-	MaxOp<float> operation;
-	operation.initNetNodeInput(3);
-	operation(weight1, input1);
-	operation(weight2, input2);
-	operation(weight3, input3);
-
-	BOOST_CHECK_CLOSE(operation.getNetNodeInput()(0), 4.0, 1e-4);
-	BOOST_CHECK_CLOSE(operation.getNetNodeInput()(1), 4.0, 1e-4);
-	BOOST_CHECK_CLOSE(operation.getNetNodeInput()(2), 4.0, 1e-4);
-	BOOST_CHECK_CLOSE(operation.getN(), 3.0, 1e-4);
-}
-
 BOOST_AUTO_TEST_CASE(getNameMaxOp)
 {
 	MaxOp<float> operation;
@@ -158,26 +98,6 @@ BOOST_AUTO_TEST_CASE(destructorMeanOp)
 	MeanOp<float>* ptrReLU = nullptr;
 	ptrReLU = new MeanOp<float>();
 	delete ptrReLU;
-}
-
-BOOST_AUTO_TEST_CASE(operationfunctionMeanOp)
-{
-	const int batch_size = 3;
-	Eigen::Tensor<float, 1> input1(batch_size), input2(batch_size), input3(batch_size);
-	input1.setValues({ 1, 2, 4 }); input2.setValues({ 2, 4, 1 }); input3.setValues({ 4, 1, 2 });
-	Eigen::Tensor<float, 1> weight1(batch_size), weight2(batch_size), weight3(batch_size);
-	weight1.setValues({ 1, 1, 1 }); weight2.setValues({ 1, 1, 1 }); weight3.setValues({ 1, 1, 1 });
-
-	MeanOp<float> operation;
-	operation.initNetNodeInput(3);
-	operation(weight1, input1);
-	operation(weight2, input2);
-	operation(weight3, input3);
-
-	BOOST_CHECK_CLOSE(operation.getNetNodeInput()(0), 2.3333333, 1e-4);
-	BOOST_CHECK_CLOSE(operation.getNetNodeInput()(1), 2.3333333, 1e-4);
-	BOOST_CHECK_CLOSE(operation.getNetNodeInput()(2), 2.3333333, 1e-4);
-	BOOST_CHECK_CLOSE(operation.getN(), 3.0, 1e-4);
 }
 
 BOOST_AUTO_TEST_CASE(getNameMeanOp)
@@ -204,26 +124,6 @@ BOOST_AUTO_TEST_CASE(destructorVarModOp)
 	delete ptrReLU;
 }
 
-BOOST_AUTO_TEST_CASE(operationfunctionVarModOp)
-{
-	const int batch_size = 3;
-	Eigen::Tensor<float, 1> input1(batch_size), input2(batch_size), input3(batch_size);
-	input1.setValues({ 2, 2, 4 }); input2.setValues({ 2, 4, 1 }); input3.setValues({ 4, 1, 2 });
-	Eigen::Tensor<float, 1> weight1(batch_size), weight2(batch_size), weight3(batch_size);
-	weight1.setValues({ 1, 1, 1 }); weight2.setValues({ 1, 1, 1 }); weight3.setValues({ 1, 1, 1 });
-
-	VarModOp<float> operation;
-	operation.initNetNodeInput(3);
-	operation(weight1, input1);
-	operation(weight2, input2);
-	operation(weight3, input3);
-
-	BOOST_CHECK_CLOSE(operation.getNetNodeInput()(0), 8.0, 1e-4);
-	BOOST_CHECK_CLOSE(operation.getNetNodeInput()(1), 7.0, 1e-4);
-	BOOST_CHECK_CLOSE(operation.getNetNodeInput()(2), 7.0, 1e-4);
-	BOOST_CHECK_CLOSE(operation.getN(), 3.0, 1e-4);
-}
-
 BOOST_AUTO_TEST_CASE(getNameVarModOp)
 {
 	VarModOp<float> operation;
@@ -246,26 +146,6 @@ BOOST_AUTO_TEST_CASE(destructorCountOp)
 	CountOp<float>* ptrReLU = nullptr;
 	ptrReLU = new CountOp<float>();
 	delete ptrReLU;
-}
-
-BOOST_AUTO_TEST_CASE(operationfunctionCountOp)
-{
-	const int batch_size = 3;
-	Eigen::Tensor<float, 1> input1(batch_size), input2(batch_size), input3(batch_size);
-	input1.setValues({ 1, 2, 4 }); input2.setValues({ 2, 4, 1 }); input3.setValues({ 4, 1, 2 });
-	Eigen::Tensor<float, 1> weight1(batch_size), weight2(batch_size), weight3(batch_size);
-	weight1.setValues({ 1, 1, 1 }); weight2.setValues({ 1, 1, 1 }); weight3.setValues({ 1, 1, 1 });
-
-	CountOp<float> operation;
-	operation.initNetNodeInput(3);
-	operation(weight1, input1);
-	operation(weight2, input2);
-	operation(weight3, input3);
-
-	BOOST_CHECK_CLOSE(operation.getNetNodeInput()(0), 3.0, 1e-4);
-	BOOST_CHECK_CLOSE(operation.getNetNodeInput()(1), 3.0, 1e-4);
-	BOOST_CHECK_CLOSE(operation.getNetNodeInput()(2), 3.0, 1e-4);
-	BOOST_CHECK_CLOSE(operation.getN(), 3.0, 1e-4);
 }
 
 BOOST_AUTO_TEST_CASE(getNameCountOp)
@@ -292,28 +172,6 @@ BOOST_AUTO_TEST_CASE(destructorSumErrorOp)
 	delete ptrReLU;
 }
 
-BOOST_AUTO_TEST_CASE(operationfunctionSumErrorOp)
-{
-	const int batch_size = 3;
-	Eigen::Tensor<float, 1> source_error1(batch_size), source_error2(batch_size), source_error3(batch_size);
-	source_error1.setValues({ 1, 2, 4 }); source_error2.setValues({ 2, 4, 1 }); source_error3.setValues({ 4, 1, 2 });
-	Eigen::Tensor<float, 1> weight1(batch_size), weight2(batch_size), weight3(batch_size);
-	weight1.setValues({ 1, 1, 1 }); weight2.setValues({ 2, 2, 2 }); weight3.setValues({ 2, 2, 2 });
-	Eigen::Tensor<float, 1> dummy1(batch_size), dummy2(batch_size), dummy3(batch_size);
-	dummy1.setZero(); dummy2.setZero(); dummy3.setZero();
-
-	SumErrorOp<float> operation;
-	Eigen::Tensor<float, 1> test(batch_size);
-	test.setConstant(0.0f);
-	test += operation(weight1, source_error1, dummy1, dummy1, dummy1);
-	test += operation(weight2, source_error2, dummy2, dummy2, dummy2);
-	test += operation(weight3, source_error3, dummy3, dummy3, dummy3);
-
-	BOOST_CHECK_CLOSE(test(0), 13.0, 1e-4);
-	BOOST_CHECK_CLOSE(test(1), 12.0, 1e-4);
-	BOOST_CHECK_CLOSE(test(2), 10.0, 1e-4);
-}
-
 BOOST_AUTO_TEST_CASE(getNameSumErrorOp)
 {
 	SumErrorOp<float> operation;
@@ -336,30 +194,6 @@ BOOST_AUTO_TEST_CASE(destructorProdErrorOp)
 	ProdErrorOp<float>* ptrReLU = nullptr;
 	ptrReLU = new ProdErrorOp<float>();
 	delete ptrReLU;
-}
-
-BOOST_AUTO_TEST_CASE(operationfunctionProdErrorOp)
-{
-	const int batch_size = 3;
-	Eigen::Tensor<float, 1> source_net_input1(batch_size), source_net_input2(batch_size), source_net_input3(batch_size);
-	source_net_input1.setValues({ 1, 2, 4 }); source_net_input2.setValues({ 2, 4, 1 }); source_net_input3.setValues({ 4, 1, 2 });
-	Eigen::Tensor<float, 1> source_error1(batch_size), source_error2(batch_size), source_error3(batch_size);
-	source_error1.setValues({ 1, 1, 1 }); source_error2.setValues({ 2, 2, 2 }); source_error3.setValues({ 2, 2, 2 });
-	Eigen::Tensor<float, 1> sink_output1(batch_size), sink_output2(batch_size), sink_output3(batch_size);
-	sink_output1.setValues({ 1, 1, 1 }); sink_output2.setValues({ 2, 2, 2 }); sink_output3.setValues({ 1, 1, 0 });
-	Eigen::Tensor<float, 1> dummy1(batch_size), dummy2(batch_size), dummy3(batch_size);
-	dummy1.setZero(); dummy2.setZero(); dummy3.setZero();
-
-	ProdErrorOp<float> operation;
-	Eigen::Tensor<float, 1> test(batch_size);
-	test.setConstant(0.0f);
-	test += operation(dummy1, source_error1, source_net_input1, sink_output1, dummy1);
-	test += operation(dummy2, source_error2, source_net_input2, sink_output2, dummy2);
-	test += operation(dummy3, source_error3, source_net_input3, sink_output3, dummy3);
-
-	BOOST_CHECK_CLOSE(test(0), 11.0, 1e-4);
-	BOOST_CHECK_CLOSE(test(1), 8.0, 1e-4);
-	BOOST_CHECK_CLOSE(test(2), 1e9, 1e-4);
 }
 
 BOOST_AUTO_TEST_CASE(getNameProdErrorOp)
@@ -386,32 +220,6 @@ BOOST_AUTO_TEST_CASE(destructorMaxErrorOp)
 	delete ptrReLU;
 }
 
-BOOST_AUTO_TEST_CASE(operationfunctionMaxErrorOp)
-{
-	const int batch_size = 3;
-	Eigen::Tensor<float, 1> source_error1(batch_size), source_error2(batch_size), source_error3(batch_size);
-	source_error1.setValues({ 1, 2, 4 }); source_error2.setValues({ 2, 4, 1 }); source_error3.setValues({ 4, 1, 2 });
-	Eigen::Tensor<float, 1> weight1(batch_size), weight2(batch_size), weight3(batch_size);
-	weight1.setValues({ 1, 1, 1 }); weight2.setValues({ 2, 2, 2 }); weight3.setValues({ 2, 2, 2 });
-	Eigen::Tensor<float, 1> source_net_source_error1(batch_size), source_net_source_error2(batch_size), source_net_source_error3(batch_size);
-	source_net_source_error1.setValues({ 7, 7, 7 }); source_net_source_error2.setValues({ 7, 7, 7 }); source_net_source_error3.setValues({ 7, 7, 7 });
-	Eigen::Tensor<float, 1> sink_output1(batch_size), sink_output2(batch_size), sink_output3(batch_size);
-	sink_output1.setValues({ 7, 2, 1 }); sink_output2.setValues({ 2, 7, 2 }); sink_output3.setValues({ 0, 0, 7 });
-	Eigen::Tensor<float, 1> dummy1(batch_size), dummy2(batch_size), dummy3(batch_size);
-	dummy1.setZero(); dummy2.setZero(); dummy3.setZero();
-
-	MaxErrorOp<float> operation;
-	Eigen::Tensor<float, 1> test(batch_size);
-	test.setConstant(0.0f);
-	test += operation(weight1, source_error1, source_net_source_error1, sink_output1, dummy1);
-	test += operation(weight2, source_error2, source_net_source_error2, sink_output2, dummy2);
-	test += operation(weight3, source_error3, source_net_source_error3, sink_output3, dummy3);
-
-	BOOST_CHECK_CLOSE(test(0), 1.0, 1e-4);
-	BOOST_CHECK_CLOSE(test(1), 8.0, 1e-4);
-	BOOST_CHECK_CLOSE(test(2), 4.0, 1e-4);
-}
-
 BOOST_AUTO_TEST_CASE(getNameMaxErrorOp)
 {
 	MaxErrorOp<float> operation;
@@ -434,30 +242,6 @@ BOOST_AUTO_TEST_CASE(destructorMeanErrorOp)
 	MeanErrorOp<float>* ptrReLU = nullptr;
 	ptrReLU = new MeanErrorOp<float>();
 	delete ptrReLU;
-}
-
-BOOST_AUTO_TEST_CASE(operationfunctionMeanErrorOp)
-{
-	const int batch_size = 3;
-	Eigen::Tensor<float, 1> source_error1(batch_size), source_error2(batch_size), source_error3(batch_size);
-	source_error1.setValues({ 1, 2, 4 }); source_error2.setValues({ 2, 4, 1 }); source_error3.setValues({ 4, 1, 2 });
-	Eigen::Tensor<float, 1> weight1(batch_size), weight2(batch_size), weight3(batch_size);
-	weight1.setValues({ 1, 1, 1 }); weight2.setValues({ 2, 2, 2 }); weight3.setValues({ 2, 2, 2 });
-	Eigen::Tensor<float, 1> n1(batch_size), n2(batch_size), n3(batch_size);
-	n1.setConstant(3); n2.setConstant(3); n3.setConstant(3);
-	Eigen::Tensor<float, 1> dummy1(batch_size), dummy2(batch_size), dummy3(batch_size);
-	dummy1.setZero(); dummy2.setZero(); dummy3.setZero();
-
-	MeanErrorOp<float> operation;
-	Eigen::Tensor<float, 1> test(batch_size);
-	test.setConstant(0.0f);
-	test += operation(weight1, source_error1, dummy1, dummy1, n1);
-	test += operation(weight2, source_error2, dummy2, dummy2, n2);
-	test += operation(weight3, source_error3, dummy3, dummy3, n3);
-
-	BOOST_CHECK_CLOSE(test(0), 4.333333, 1e-4);
-	BOOST_CHECK_CLOSE(test(1), 4.0, 1e-4);
-	BOOST_CHECK_CLOSE(test(2), 3.333333, 1e-4);
 }
 
 BOOST_AUTO_TEST_CASE(getNameMeanErrorOp)
@@ -484,30 +268,6 @@ BOOST_AUTO_TEST_CASE(destructorVarModErrorOp)
 	delete ptrReLU;
 }
 
-BOOST_AUTO_TEST_CASE(operationfunctionVarModErrorOp)
-{
-	const int batch_size = 3;
-	Eigen::Tensor<float, 1> source_error1(batch_size), source_error2(batch_size), source_error3(batch_size);
-	source_error1.setValues({ 1, 2, 4 }); source_error2.setValues({ 2, 4, 1 }); source_error3.setValues({ 4, 1, 2 });
-	Eigen::Tensor<float, 1> weight1(batch_size), weight2(batch_size), weight3(batch_size);
-	weight1.setValues({ 1, 1, 1 }); weight2.setValues({ 2, 2, 2 }); weight3.setValues({ 2, 2, 2 });
-	Eigen::Tensor<float, 1> n1(batch_size), n2(batch_size), n3(batch_size);
-	n1.setConstant(3); n2.setConstant(3); n3.setConstant(3);
-	Eigen::Tensor<float, 1> dummy1(batch_size), dummy2(batch_size), dummy3(batch_size);
-	dummy1.setZero(); dummy2.setZero(); dummy3.setZero();
-
-	VarModErrorOp<float> operation;
-	Eigen::Tensor<float, 1> test(batch_size);
-	test.setConstant(0.0f);
-	test += operation(weight1, source_error1, dummy1, dummy1, n1);
-	test += operation(weight2, source_error2, dummy2, dummy2, n2);
-	test += operation(weight3, source_error3, dummy3, dummy3, n3);
-
-	BOOST_CHECK_CLOSE(test(0), 8.6666667, 1e-4);
-	BOOST_CHECK_CLOSE(test(1), 8.0, 1e-4);
-	BOOST_CHECK_CLOSE(test(2), 6.6666667, 1e-4);
-}
-
 BOOST_AUTO_TEST_CASE(getNameVarModErrorOp)
 {
 	VarModErrorOp<float> operation;
@@ -530,28 +290,6 @@ BOOST_AUTO_TEST_CASE(destructorCountErrorOp)
 	CountErrorOp<float>* ptrReLU = nullptr;
 	ptrReLU = new CountErrorOp<float>();
 	delete ptrReLU;
-}
-
-BOOST_AUTO_TEST_CASE(operationfunctionCountErrorOp)
-{
-	const int batch_size = 3;
-	Eigen::Tensor<float, 1> source_error1(batch_size), source_error2(batch_size), source_error3(batch_size);
-	source_error1.setValues({ 1, 2, 4 }); source_error2.setValues({ 2, 4, 1 }); source_error3.setValues({ 4, 1, 2 });
-	Eigen::Tensor<float, 1> weight1(batch_size), weight2(batch_size), weight3(batch_size);
-	weight1.setValues({ 1, 1, 1 }); weight2.setValues({ 2, 2, 2 }); weight3.setValues({ 2, 2, 2 });
-	Eigen::Tensor<float, 1> dummy1(batch_size), dummy2(batch_size), dummy3(batch_size);
-	dummy1.setZero(); dummy2.setZero(); dummy3.setZero();
-
-	CountErrorOp<float> operation;
-	Eigen::Tensor<float, 1> test(batch_size);
-	test.setConstant(0.0f);
-	test += operation(weight1, source_error1, dummy1, dummy1, dummy1);
-	test += operation(weight2, source_error2, dummy2, dummy2, dummy2);
-	test += operation(weight3, source_error3, dummy3, dummy3, dummy3);
-
-	BOOST_CHECK_CLOSE(test(0), 0.0, 1e-4);
-	BOOST_CHECK_CLOSE(test(1), 0.0, 1e-4);
-	BOOST_CHECK_CLOSE(test(2), 0.0, 1e-4);
 }
 
 BOOST_AUTO_TEST_CASE(getNameCountErrorOp)
@@ -578,28 +316,6 @@ BOOST_AUTO_TEST_CASE(destructorSumWeightGradOp)
 	delete ptrReLU;
 }
 
-BOOST_AUTO_TEST_CASE(operationfunctionSumWeightGradOp)
-{
-	const int batch_size = 3;
-	Eigen::Tensor<float, 1> sink_error1(batch_size), sink_error2(batch_size), sink_error3(batch_size);
-	sink_error1.setValues({ 1, 2, 4 }); sink_error2.setValues({ 2, 4, 1 }); sink_error3.setValues({ 4, 1, 2 });
-	Eigen::Tensor<float, 1> source_output1(batch_size), source_output2(batch_size), source_output3(batch_size);
-	source_output1.setValues({ 1, 1, 1 }); source_output2.setValues({ 2, 2, 2 }); source_output3.setValues({ 2, 2, 2 });
-	Eigen::Tensor<float, 1> weight1(batch_size), weight2(batch_size), weight3(batch_size);
-	weight1.setValues({ 1, 2, 4 }); weight2.setValues({ 2, 4, 1 }); weight3.setValues({ 4, 1, 0 });
-	Eigen::Tensor<float, 1> source_net_input1(batch_size), source_net_input2(batch_size), source_net_input3(batch_size);
-	source_net_input1.setValues({ 1, 1, 1 }); source_net_input2.setValues({ 2, 2, 2 }); source_net_input3.setValues({ 1, 1, 1 });
-	Eigen::Tensor<float, 1> dummy1(batch_size), dummy2(batch_size), dummy3(batch_size);
-	dummy1.setZero(); dummy2.setZero(); dummy3.setZero();
-
-	SumWeightGradOp<float> operation;
-	operation(source_output1, sink_error1, weight1, source_net_input1, dummy1);
-	operation(source_output2, sink_error2, weight2, source_net_input2, dummy2);
-	operation(source_output3, sink_error3, weight3, source_net_input3, dummy3);
-
-	BOOST_CHECK_CLOSE(operation.getNetWeightError(), -11.66666666667, 1e-4);
-}
-
 BOOST_AUTO_TEST_CASE(getNameSumWeightGradOp)
 {
 	SumWeightGradOp<float> operation;
@@ -622,28 +338,6 @@ BOOST_AUTO_TEST_CASE(destructorProdWeightGradOp)
 	ProdWeightGradOp<float>* ptrReLU = nullptr;
 	ptrReLU = new ProdWeightGradOp<float>();
 	delete ptrReLU;
-}
-
-BOOST_AUTO_TEST_CASE(operationfunctionProdWeightGradOp)
-{
-	const int batch_size = 3;
-	Eigen::Tensor<float, 1> sink_error1(batch_size), sink_error2(batch_size), sink_error3(batch_size);
-	sink_error1.setValues({ 1, 2, 4 }); sink_error2.setValues({ 2, 4, 1 }); sink_error3.setValues({ 4, 1, 2 });
-	Eigen::Tensor<float, 1> source_output1(batch_size), source_output2(batch_size), source_output3(batch_size);
-	source_output1.setValues({ 1, 1, 1 }); source_output2.setValues({ 2, 2, 2 }); source_output3.setValues({ 2, 2, 2 });
-	Eigen::Tensor<float, 1> weight1(batch_size), weight2(batch_size), weight3(batch_size);
-	weight1.setValues({ 1, 2, 4 }); weight2.setValues({ 2, 4, 1 }); weight3.setValues({ 4, 1, 0 });
-	Eigen::Tensor<float, 1> source_net_input1(batch_size), source_net_input2(batch_size), source_net_input3(batch_size);
-	source_net_input1.setValues({ 1, 1, 1 }); source_net_input2.setValues({ 2, 2, 2 }); source_net_input3.setValues({ 1, 1, 1 });
-	Eigen::Tensor<float, 1> dummy1(batch_size), dummy2(batch_size), dummy3(batch_size);
-	dummy1.setZero(); dummy2.setZero(); dummy3.setZero();
-
-	ProdWeightGradOp<float> operation;
-	operation(source_output1, sink_error1, weight1, source_net_input1, dummy1);
-	operation(source_output2, sink_error2, weight2, source_net_input2, dummy2);
-	operation(source_output3, sink_error3, weight3, source_net_input3, dummy3);
-
-	BOOST_CHECK_CLOSE(operation.getNetWeightError(), -333333344, 1e-4);
 }
 
 BOOST_AUTO_TEST_CASE(getNameProdWeightGradOp)
@@ -670,28 +364,6 @@ BOOST_AUTO_TEST_CASE(destructorMaxWeightGradOp)
 	delete ptrReLU;
 }
 
-BOOST_AUTO_TEST_CASE(operationfunctionMaxWeightGradOp)
-{
-	const int batch_size = 3;
-	Eigen::Tensor<float, 1> sink_error1(batch_size), sink_error2(batch_size), sink_error3(batch_size);
-	sink_error1.setValues({ 1, 2, 4 }); sink_error2.setValues({ 2, 4, 1 }); sink_error3.setValues({ 4, 1, 2 });
-	Eigen::Tensor<float, 1> source_output1(batch_size), source_output2(batch_size), source_output3(batch_size);
-	source_output1.setValues({ 1, 1, 1 }); source_output2.setValues({ 2, 2, 2 }); source_output3.setValues({ 2, 2, 2 });
-	Eigen::Tensor<float, 1> weight1(batch_size), weight2(batch_size), weight3(batch_size);
-	weight1.setValues({ 1, 2, 4 }); weight2.setValues({ 2, 4, 1 }); weight3.setValues({ 4, 1, 0 });
-	Eigen::Tensor<float, 1> source_net_input1(batch_size), source_net_input2(batch_size), source_net_input3(batch_size);
-	source_net_input1.setValues({ 1, 1, 1 }); source_net_input2.setValues({ 2, 2, 2 }); source_net_input3.setValues({ 1, 1, 1 });
-	Eigen::Tensor<float, 1> dummy1(batch_size), dummy2(batch_size), dummy3(batch_size);
-	dummy1.setZero(); dummy2.setZero(); dummy3.setZero();
-
-	MaxWeightGradOp<float> operation;
-	operation(source_output1, sink_error1, weight1, source_net_input1, dummy1);
-	operation(source_output2, sink_error2, weight2, source_net_input2, dummy2);
-	operation(source_output3, sink_error3, weight3, source_net_input3, dummy3);
-
-	BOOST_CHECK_CLOSE(operation.getNetWeightError(), -11.66666666667, 1e-4);
-}
-
 BOOST_AUTO_TEST_CASE(getNameMaxWeightGradOp)
 {
 	MaxWeightGradOp<float> operation;
@@ -714,28 +386,6 @@ BOOST_AUTO_TEST_CASE(destructorMeanWeightGradOp)
 	MeanWeightGradOp<float>* ptrReLU = nullptr;
 	ptrReLU = new MeanWeightGradOp<float>();
 	delete ptrReLU;
-}
-
-BOOST_AUTO_TEST_CASE(operationfunctionMeanWeightGradOp)
-{
-	const int batch_size = 3;
-	Eigen::Tensor<float, 1> sink_error1(batch_size), sink_error2(batch_size), sink_error3(batch_size);
-	sink_error1.setValues({ 1, 2, 4 }); sink_error2.setValues({ 2, 4, 1 }); sink_error3.setValues({ 4, 1, 2 });
-	Eigen::Tensor<float, 1> source_output1(batch_size), source_output2(batch_size), source_output3(batch_size);
-	source_output1.setValues({ 1, 1, 1 }); source_output2.setValues({ 2, 2, 2 }); source_output3.setValues({ 2, 2, 2 });
-	Eigen::Tensor<float, 1> weight1(batch_size), weight2(batch_size), weight3(batch_size);
-	weight1.setValues({ 1, 2, 4 }); weight2.setValues({ 2, 4, 1 }); weight3.setValues({ 4, 1, 0 });
-	Eigen::Tensor<float, 1> source_net_input1(batch_size), source_net_input2(batch_size), source_net_input3(batch_size);
-	source_net_input1.setValues({ 1, 1, 1 }); source_net_input2.setValues({ 2, 2, 2 }); source_net_input3.setValues({ 1, 1, 1 });
-	Eigen::Tensor<float, 1> n1(batch_size), n2(batch_size), n3(batch_size);
-	n1.setConstant(3); n2.setConstant(3); n3.setConstant(3);
-
-	MeanWeightGradOp<float> operation;
-	operation(source_output1, sink_error1, weight1, source_net_input1, n1);
-	operation(source_output2, sink_error2, weight2, source_net_input2, n2);
-	operation(source_output3, sink_error3, weight3, source_net_input3, n3);
-
-	BOOST_CHECK_CLOSE(operation.getNetWeightError(), -3.888888, 1e-4);
 }
 
 BOOST_AUTO_TEST_CASE(getNameMeanWeightGradOp)
@@ -762,28 +412,6 @@ BOOST_AUTO_TEST_CASE(destructorVarModWeightGradOp)
 	delete ptrReLU;
 }
 
-BOOST_AUTO_TEST_CASE(operationfunctionVarModWeightGradOp)
-{
-	const int batch_size = 3;
-	Eigen::Tensor<float, 1> sink_error1(batch_size), sink_error2(batch_size), sink_error3(batch_size);
-	sink_error1.setValues({ 1, 2, 4 }); sink_error2.setValues({ 2, 4, 1 }); sink_error3.setValues({ 4, 1, 2 });
-	Eigen::Tensor<float, 1> source_output1(batch_size), source_output2(batch_size), source_output3(batch_size);
-	source_output1.setValues({ 1, 1, 1 }); source_output2.setValues({ 2, 2, 2 }); source_output3.setValues({ 2, 2, 2 });
-	Eigen::Tensor<float, 1> weight1(batch_size), weight2(batch_size), weight3(batch_size);
-	weight1.setValues({ 1, 2, 4 }); weight2.setValues({ 2, 4, 1 }); weight3.setValues({ 4, 1, 0 });
-	Eigen::Tensor<float, 1> source_net_input1(batch_size), source_net_input2(batch_size), source_net_input3(batch_size);
-	source_net_input1.setValues({ 1, 1, 1 }); source_net_input2.setValues({ 2, 2, 2 }); source_net_input3.setValues({ 1, 1, 1 });
-	Eigen::Tensor<float, 1> n1(batch_size), n2(batch_size), n3(batch_size);
-	n1.setConstant(3); n2.setConstant(3); n3.setConstant(3);
-
-	VarModWeightGradOp<float> operation;
-	operation(source_output1, sink_error1, weight1, source_net_input1, n1);
-	operation(source_output2, sink_error2, weight2, source_net_input2, n2);
-	operation(source_output3, sink_error3, weight3, source_net_input3, n3);
-
-	BOOST_CHECK_CLOSE(operation.getNetWeightError(), -7.777777, 1e-4);
-}
-
 BOOST_AUTO_TEST_CASE(getNameVarModWeightGradOp)
 {
 	VarModWeightGradOp<float> operation;
@@ -806,28 +434,6 @@ BOOST_AUTO_TEST_CASE(destructorCountWeightGradOp)
 	CountWeightGradOp<float>* ptrReLU = nullptr;
 	ptrReLU = new CountWeightGradOp<float>();
 	delete ptrReLU;
-}
-
-BOOST_AUTO_TEST_CASE(operationfunctionCountWeightGradOp)
-{
-	const int batch_size = 3;
-	Eigen::Tensor<float, 1> sink_error1(batch_size), sink_error2(batch_size), sink_error3(batch_size);
-	sink_error1.setValues({ 1, 2, 4 }); sink_error2.setValues({ 2, 4, 1 }); sink_error3.setValues({ 4, 1, 2 });
-	Eigen::Tensor<float, 1> source_output1(batch_size), source_output2(batch_size), source_output3(batch_size);
-	source_output1.setValues({ 1, 1, 1 }); source_output2.setValues({ 2, 2, 2 }); source_output3.setValues({ 2, 2, 2 });
-	Eigen::Tensor<float, 1> weight1(batch_size), weight2(batch_size), weight3(batch_size);
-	weight1.setValues({ 1, 2, 4 }); weight2.setValues({ 2, 4, 1 }); weight3.setValues({ 4, 1, 0 });
-	Eigen::Tensor<float, 1> source_net_input1(batch_size), source_net_input2(batch_size), source_net_input3(batch_size);
-	source_net_input1.setValues({ 1, 1, 1 }); source_net_input2.setValues({ 2, 2, 2 }); source_net_input3.setValues({ 1, 1, 1 });
-	Eigen::Tensor<float, 1> dummy1(batch_size), dummy2(batch_size), dummy3(batch_size);
-	dummy1.setZero(); dummy2.setZero(); dummy3.setZero();
-
-	CountWeightGradOp<float> operation;
-	operation(source_output1, sink_error1, weight1, source_net_input1, dummy1);
-	operation(source_output2, sink_error2, weight2, source_net_input2, dummy2);
-	operation(source_output3, sink_error3, weight3, source_net_input3, dummy3);
-
-	BOOST_CHECK_CLOSE(operation.getNetWeightError(), 0.0, 1e-4);
 }
 
 BOOST_AUTO_TEST_CASE(getNameCountWeightGradOp)

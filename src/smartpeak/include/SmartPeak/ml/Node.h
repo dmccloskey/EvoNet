@@ -12,10 +12,7 @@
 
 #include <cereal/access.hpp>  // serialiation of private members
 #include <cereal/types/memory.hpp>
-#include <cereal/types/map.hpp>
-#include <cereal/types/tuple.hpp>
 #include <cereal/types/utility.hpp> // std::pair
-#include <cereal/types/vector.hpp>
 
 namespace SmartPeak
 {
@@ -150,9 +147,6 @@ public:
 		void setModuleId(const int& module_id); ///< module id setter
 		int getModuleId() const; ///< module id getter
 
-		void setOperationIndex(const int& id); ///< id setter
-		int getOperationIndex() const; ///< id getter
-
 		void setTensorIndex(const std::pair<int, int>& layer_id); ///< layer id setter
 		std::pair<int, int> getTensorIndex() const; ///< layer id getter
 
@@ -191,9 +185,11 @@ private:
 		template<class Archive>
 		void serialize(Archive& archive)
 		{
-			archive(id_, name_, module_id_, module_name_, tensor_index_, layer_name_,
-				type_, activation_, activation_grad_, integration_, integration_error_,
-				integration_weight_grad_, status_, output_max_, output_min_);
+			archive(id_, name_, module_id_, module_name_, layer_name_, output_max_, output_min_,
+				tensor_index_, type_, status_, 
+				activation_, activation_grad_, 
+				integration_, integration_error_, integration_weight_grad_
+			);
 		}
     int id_ = -1; ///< Node ID (used internally by Model)
     std::string name_ = ""; ///< Node Name

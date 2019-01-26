@@ -8,6 +8,11 @@
 #include <random>
 #include <iostream>
 
+#include <cereal/access.hpp>  // serialiation of private members
+#undef min // clashes with std::limit on windows in polymorphic.hpp
+#undef max // clashes with std::limit on windows in polymorphic.hpp
+#include <cereal/types/polymorphic.hpp>
+
 namespace SmartPeak
 {
   /**
@@ -45,7 +50,7 @@ public:
 			TensorT new_gradient = gradient;
       if (std::abs(gradient) >= gradient_threshold_)
 				new_gradient = gradient * gradient_threshold_/std::abs(gradient);
-			return checkWeight(gradient, new_gradient);
+			return new_gradient;
     }
     void setGradientNoiseSigma(const TensorT& gradient_noise_sigma){gradient_noise_sigma_ = gradient_noise_sigma;};
     TensorT getGradientNoiseSigma() const{return gradient_noise_sigma_;};
@@ -61,24 +66,24 @@ public:
     }
 		TensorT addGradientNoise(const TensorT& gradient)
 		{
-			std::random_device rd{};
-			std::mt19937 gen{ rd() };
-			std::normal_distribution<> d{ 0.0f, gradient_noise_sigma_ };
-			return gradient + d(gen);
+			// NOTE: Registration with cereal requires explicit types which causes a "narrowing" conversion error for `std::normal_distribution<>`
+			//std::random_device rd{};
+			//std::mt19937 gen{ rd() };
+			//std::normal_distribution<> d{ 0.0f, gradient_noise_sigma_ };
+			//return gradient + d(gen);
+			return 0;
 		}
 		void setLearningRate(const TensorT& learning_rate) { learning_rate_ = learning_rate; };
 		TensorT getLearningRate() const { return learning_rate_; };
     virtual std::string getParamsAsStr() const = 0;
 		virtual std::vector<TensorT> getParameters() const = 0;
 		virtual int getNParameters() const = 0;
-		TensorT checkWeight(const TensorT& weight, const TensorT& new_weight)
-		{
-			if (std::isinf(new_weight) || std::isnan(new_weight))
-				return weight;
-			else
-				return new_weight;
-		}
 private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(gradient_threshold_, learning_rate_, gradient_noise_sigma_, gradient_noise_gamma_);
+		}
     // clipping parameters
     TensorT gradient_threshold_ = 1e6; ///< maximum gradient magnitude
 		TensorT learning_rate_ = 1e-3; ///< the learning rate
@@ -136,6 +141,11 @@ public:
 		}
 		int getNParameters() const { return 3; };
 private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<SolverOp<TensorT>>(this), learning_rate_, momentum_, momentum_prev_);
+		}
     TensorT learning_rate_ = 0.01; ///< Learning rate
     TensorT momentum_ = 0.9; ///< Momentum
     TensorT momentum_prev_ = 0.0;
@@ -177,7 +187,7 @@ public:
       const TensorT unbiased_adam1 = adam1/ (1 - momentum_);
       const TensorT unbiased_adam2 = adam2/ (1 - momentum2_);
       const TensorT new_weight = weight - learning_rate_ * unbiased_adam1 / (std::sqrt(unbiased_adam2) + delta_);
-      return this->checkWeight(weight, new_weight);
+      return new_weight;
     };
     std::string getName() const{return "AdamOp";};
     std::string getParamsAsStr() const
@@ -209,6 +219,11 @@ public:
 			return parameters;
 		}
 private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<SolverOp<TensorT>>(this), learning_rate_, momentum_, momentum2_, delta_, momentum_prev_, momentum2_prev_);
+		}
     TensorT learning_rate_ = 0.01; ///< Learning rate
     TensorT momentum_ = 0.9; ///< Momentum
     TensorT momentum2_ = 0.999; ///< Momentum2
@@ -240,6 +255,12 @@ private:
 			return std::vector<TensorT>();
 		}
 		int getNParameters() const { return 0; };
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<SolverOp<TensorT>>(this));
+		}
 	};
 
 	/**
@@ -292,6 +313,11 @@ private:
 		}
 		int getNParameters() const { return 4; };
 	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<SolverOp<TensorT>>(this), learning_rate_, momentum_, momentum_prev_);
+		}
 		TensorT learning_rate_ = 0.01; ///< Learning rate
 		TensorT momentum_ = 0.9; ///< Momentum
 		TensorT momentum_prev_ = 0.0;
@@ -319,4 +345,16 @@ private:
       arXiv:1712.06563
   */
 }
+CEREAL_REGISTER_TYPE(SmartPeak::SGDOp<float>);
+CEREAL_REGISTER_TYPE(SmartPeak::AdamOp<float>);
+CEREAL_REGISTER_TYPE(SmartPeak::DummySolverOp<float>);
+CEREAL_REGISTER_TYPE(SmartPeak::SGDNoiseOp<float>);
+CEREAL_REGISTER_TYPE(SmartPeak::SGDOp<double>);
+CEREAL_REGISTER_TYPE(SmartPeak::AdamOp<double>);
+CEREAL_REGISTER_TYPE(SmartPeak::DummySolverOp<double>);
+CEREAL_REGISTER_TYPE(SmartPeak::SGDNoiseOp<double>);
+CEREAL_REGISTER_TYPE(SmartPeak::SGDOp<int>);
+CEREAL_REGISTER_TYPE(SmartPeak::AdamOp<int>);
+CEREAL_REGISTER_TYPE(SmartPeak::DummySolverOp<int>);
+CEREAL_REGISTER_TYPE(SmartPeak::SGDNoiseOp<int>);
 #endif //SMARTPEAK_SOLVER_H

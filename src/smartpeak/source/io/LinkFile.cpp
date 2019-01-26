@@ -3,10 +3,23 @@
 #include <SmartPeak/io/LinkFile.h>
 #include <SmartPeak/io/csv.h>
 #include <SmartPeak/io/CSVWriter.h>
+#include <cereal/archives/binary.hpp>
+#include <fstream>
+#include <cereal/types/memory.hpp>
+#include <cereal/types/map.hpp>
 
 namespace SmartPeak
 { 
-  bool LinkFile::loadLinksBinary(const std::string& filename, std::map<std::string, std::shared_ptr<Link>>& links) { return true; }
+  bool LinkFile::loadLinksBinary(const std::string& filename, std::map<std::string, std::shared_ptr<Link>>& links) {
+
+		std::ofstream ofs(filename, std::ios::binary); 
+		if (ofs.is_open() == false) {
+			cereal::BinaryOutputArchive oarchive(ofs);
+			oarchive(links); 
+			ofs.close();
+		}
+		return true; 
+	}
 
   bool LinkFile::loadLinksCsv(const std::string& filename, std::map<std::string, std::shared_ptr<Link>>& links)
   {
@@ -26,7 +39,14 @@ namespace SmartPeak
 	return true;
   }
 
-  bool LinkFile::storeLinksBinary(const std::string& filename, std::map<std::string, std::shared_ptr<Link>>& links) { return true; }
+  bool LinkFile::storeLinksBinary(const std::string& filename, std::map<std::string, std::shared_ptr<Link>>& links) { 
+		std::ifstream ifs(filename, std::ios::binary);
+		if (ifs.is_open()) {
+			cereal::BinaryInputArchive iarchive(ifs);
+			iarchive(links);
+			ifs.close();
+		}return true; 
+	}
 
   bool LinkFile::storeLinksCsv(const std::string& filename, std::map<std::string, std::shared_ptr<Link>>& links)
   {    

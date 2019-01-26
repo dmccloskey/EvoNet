@@ -19,6 +19,11 @@ using std::tanh;
 #include <iostream>
 #include <limits>
 
+#include <cereal/access.hpp>  // serialiation of private members
+#undef min // clashes with std::limit on windows in polymorphic.hpp
+#undef max // clashes with std::limit on windows in polymorphic.hpp
+#include <cereal/types/polymorphic.hpp>
+
 namespace SmartPeak
 {
   /**
@@ -52,6 +57,12 @@ public:
 		TensorT eps_ = 1e-12; ///< threshold to clip between min and max
 		TensorT min_ = -1e9;
 		TensorT max_ = 1e9;
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(eps_, min_, max_);
+		}
   };
 
   /**
@@ -66,8 +77,7 @@ public:
   class ReLUOp: public ActivationOp<TensorT>
   {
 public: 
-    ReLUOp(){}; 
-    ~ReLUOp(){};
+		using ActivationOp<TensorT>::ActivationOp;
     TensorT operator()(const TensorT& x_I) const {
 			TensorT result = (x_I > 0.0) ? x_I : 0.0;
 			return result;
@@ -76,6 +86,12 @@ public:
 		};
     std::string getName() const{return "ReLUOp";};
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<ActivationOp<TensorT>>(this));
+		}
   };
 
   /**
@@ -89,12 +105,17 @@ public:
   template<typename TensorT>
   class ReLUGradOp: public ActivationOp<TensorT>
   {
-public: 
-    ReLUGradOp(){}; 
-    ~ReLUGradOp(){};
+public:
+		using ActivationOp<TensorT>::ActivationOp;
     TensorT operator()(const TensorT& x_I) const { return (x_I > 0.0) ? 1.0: 0.0; };
     std::string getName() const{return "ReLUGradOp";};
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<ActivationOp<TensorT>>(this));
+		}
   };
 
   /**
@@ -108,10 +129,10 @@ public:
   template<typename TensorT>
   class ELUOp: public ActivationOp<TensorT>
   {
-public: 
-    ELUOp(){}; 
+public:
+		ELUOp() = default;
+		~ELUOp() = default;
     ELUOp(const TensorT& alpha): alpha_(alpha){}; 
-    ~ELUOp(){};
     TensorT operator()(const TensorT& x_I) const {
 			TensorT result = (x_I > 0.0) ? x_I : alpha_ * (exp(x_I) - 1);
 			return result;
@@ -124,6 +145,11 @@ public:
     std::string getName() const{return "ELUOp";};
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ alpha_ }); }
 private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<ActivationOp<TensorT>>(this), alpha_);
+		}
     TensorT alpha_ = 1;
   };
 
@@ -138,10 +164,10 @@ private:
   template<typename TensorT>
   class ELUGradOp: public ActivationOp<TensorT>
   {
-public: 
-    ELUGradOp(){}; 
+public:
+		ELUGradOp() = default;
+		~ELUGradOp() = default;
     ELUGradOp(const TensorT& alpha): alpha_(alpha){}; 
-    ~ELUGradOp(){};
     TensorT operator()(const TensorT& x_I) const {
       SmartPeak::ELUOp<TensorT> eluop(alpha_);
       return (x_I > 0.0) ? 1.0: eluop(x_I) + alpha_;
@@ -151,6 +177,11 @@ public:
     std::string getName() const{return "ELUGradOp";};
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ alpha_ }); }
 private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<ActivationOp<TensorT>>(this), alpha_);
+		}
     TensorT alpha_ = 1;
   };
 
@@ -160,9 +191,8 @@ private:
   template<typename TensorT>
   class SigmoidOp: public ActivationOp<TensorT>
   {
-public: 
-    SigmoidOp(){}; 
-    ~SigmoidOp(){};
+public:
+		using ActivationOp<TensorT>::ActivationOp;
     TensorT operator()(const TensorT& x_I) const {
 			TensorT result = 1 / (1 + exp(-x_I));
 			return result;
@@ -171,6 +201,12 @@ public:
 		};
     std::string getName() const{return "SigmoidOp";};
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<ActivationOp<TensorT>>(this));
+		}
   };
 
   /**
@@ -179,15 +215,20 @@ public:
   template<typename TensorT>
   class SigmoidGradOp: public ActivationOp<TensorT>
   {
-public: 
-    SigmoidGradOp(){}; 
-    ~SigmoidGradOp(){};
+public:
+		using ActivationOp<TensorT>::ActivationOp;
     TensorT operator()(const TensorT& x_I) const {
       SmartPeak::SigmoidOp<TensorT> sigmoidop;
       return sigmoidop(x_I) * (1 - sigmoidop(x_I));
     };
     std::string getName() const{return "SigmoidGradOp";};
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<ActivationOp<TensorT>>(this));
+		}
   };
   
   /**
@@ -196,12 +237,17 @@ public:
   template<typename TensorT>
   class TanHOp: public ActivationOp<TensorT>
   {
-public: 
-    TanHOp(){}; 
-    ~TanHOp(){};
+public:
+		using ActivationOp<TensorT>::ActivationOp;
     TensorT operator()(const TensorT& x_I) const { return tanh(x_I); };
     std::string getName() const{return "TanHOp";};
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<ActivationOp<TensorT>>(this));
+		}
   };
 
   /**
@@ -210,9 +256,8 @@ public:
   template<typename TensorT>
   class TanHGradOp: public ActivationOp<TensorT>
   {
-public: 
-    TanHGradOp(){}; 
-    ~TanHGradOp(){};
+public:
+		using ActivationOp<TensorT>::ActivationOp;
     TensorT operator()(const TensorT& x_I) const    {
 			const TensorT x_new = 1 - pow(tanh(x_I), 2);
 			return x_new;
@@ -221,6 +266,12 @@ public:
     };
     std::string getName() const{return "TanHGradOp";};
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<ActivationOp<TensorT>>(this));
+		}
   };
   
   /**
@@ -229,9 +280,8 @@ public:
   template<typename TensorT>
   class ReTanHOp: public ActivationOp<TensorT>
   {
-public: 
-    ReTanHOp(){}; 
-    ~ReTanHOp(){};
+public:
+		using ActivationOp<TensorT>::ActivationOp;
     TensorT operator()(const TensorT& x_I) const { 
 			const TensorT result = (x_I > 0.0) ? (exp(x_I) - exp(-x_I)) / (exp(x_I) + exp(-x_I)) : 0.0;
 			return result;
@@ -240,6 +290,12 @@ public:
     };
     std::string getName() const{return "ReTanHOp";};
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<ActivationOp<TensorT>>(this));
+		}
   };
 
   /**
@@ -248,9 +304,8 @@ public:
   template<typename TensorT>
   class ReTanHGradOp: public ActivationOp<TensorT>
   {
-public: 
-    ReTanHGradOp(){}; 
-    ~ReTanHGradOp(){};
+public:
+		using ActivationOp<TensorT>::ActivationOp;
     TensorT operator()(const TensorT& x_I) const {
       ReTanHOp<TensorT> tanhop;
 			TensorT x_new = (x_I > 0.0) ? 1 - pow(tanhop(x_I), 2) : 0.0;
@@ -260,6 +315,12 @@ public:
     };
     std::string getName() const{return "ReTanHGradOp";};
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<ActivationOp<TensorT>>(this));
+		}
   };
 
 	/**
@@ -269,11 +330,16 @@ public:
 	class LinearOp : public ActivationOp<TensorT>
 	{
 	public:
-		LinearOp() {};
-		~LinearOp() {};
+		using ActivationOp<TensorT>::ActivationOp;
 		TensorT operator()(const TensorT& x_I) const { return x_I; };
 		std::string getName() const { return "LinearOp"; };
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<ActivationOp<TensorT>>(this));
+		}
 	};
 
 	/**
@@ -283,11 +349,16 @@ public:
 	class LinearGradOp : public ActivationOp<TensorT>
 	{
 	public:
-		LinearGradOp() {};
-		~LinearGradOp() {};
+		using ActivationOp<TensorT>::ActivationOp;
 		TensorT operator()(const TensorT& x_I) const { return 1.0; };
 		std::string getName() const { return "LinearGradOp"; };
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<ActivationOp<TensorT>>(this));
+		}
 	};
 
 	/**
@@ -297,8 +368,7 @@ public:
 	class InverseOp : public ActivationOp<TensorT>
 	{
 	public:
-		InverseOp() {};
-		~InverseOp() {};
+		using ActivationOp<TensorT>::ActivationOp;
 		TensorT operator()(const TensorT& x_I) const {
 			const TensorT result = x_I != 0.0 ? 1 / x_I : 0.0;
 			//return result;
@@ -307,6 +377,12 @@ public:
 		};
 		std::string getName() const { return "InverseOp"; };
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<ActivationOp<TensorT>>(this));
+		}
 	};
 
 	/**
@@ -316,8 +392,7 @@ public:
 	class InverseGradOp : public ActivationOp<TensorT>
 	{
 	public:
-		InverseGradOp() {};
-		~InverseGradOp() {};
+		using ActivationOp<TensorT>::ActivationOp;
 		TensorT operator()(const TensorT& x_I) const {
 			const TensorT result = x_I != 0.0 ? -1 / pow(x_I, 2) : 0.0;
 			//return result;
@@ -326,6 +401,12 @@ public:
 		};
 		std::string getName() const { return "InverseGradOp"; };
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<ActivationOp<TensorT>>(this));
+		}
 	};
 
 	/**
@@ -335,13 +416,7 @@ public:
 	class ExponentialOp : public ActivationOp<TensorT>
 	{
 	public:
-		ExponentialOp() {};
-		ExponentialOp(const TensorT& eps, const TensorT& min, const TensorT& max) {
-			this->setEps(eps);
-			this->setMin(min);
-			this->setMax(max);
-		};
-		~ExponentialOp() {};
+		using ActivationOp<TensorT>::ActivationOp;
 		TensorT operator()(const TensorT& x_I) const {
 			//return exp(x_I);
 			ClipOp<TensorT> clip(this->eps_, this->min_, this->max_);  // Not compatible with CUDA
@@ -349,6 +424,12 @@ public:
 		};
 		std::string getName() const { return "ExponentialOp"; };
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<ActivationOp<TensorT>>(this));
+		}
 	};
 
 	/**
@@ -358,8 +439,7 @@ public:
 	class ExponentialGradOp : public ActivationOp<TensorT>
 	{
 	public:
-		ExponentialGradOp() {};
-		~ExponentialGradOp() {};
+		using ActivationOp<TensorT>::ActivationOp;
 		TensorT operator()(const TensorT& x_I) const {
 			//return exp(x_I);
 			ClipOp<TensorT> clip(this->eps_, this->min_, this->max_);  // Not compatible with CUDA
@@ -367,6 +447,12 @@ public:
 		};
 		std::string getName() const { return "ExponentialGradOp"; };
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<ActivationOp<TensorT>>(this));
+		}
 	};
 
 	/**
@@ -376,8 +462,7 @@ public:
 	class LogOp : public ActivationOp<TensorT>
 	{
 	public:
-		LogOp() {};
-		~LogOp() {};
+		using ActivationOp<TensorT>::ActivationOp;
 		TensorT operator()(const TensorT& x_I) const {
 			return log(x_I);
 			//ClipOp<TensorT> clip(this->eps_, this->min_, this->max_);  // Not compatible with CUDA
@@ -385,6 +470,12 @@ public:
 		};
 		std::string getName() const { return "LogOp"; };
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<ActivationOp<TensorT>>(this));
+		}
 	};
 
 	/**
@@ -394,8 +485,7 @@ public:
 	class LogGradOp : public ActivationOp<TensorT>
 	{
 	public:
-		LogGradOp() {};
-		~LogGradOp() {};
+		using ActivationOp<TensorT>::ActivationOp;
 		TensorT operator()(const TensorT& x_I) const {
 			return 1 / x_I; 
 			//ClipOp<TensorT> clip(this->eps_, this->min_, this->max_); // Not compatible with CUDA
@@ -403,6 +493,12 @@ public:
 		};
 		std::string getName() const { return "LogGradOp"; };
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<ActivationOp<TensorT>>(this));
+		}
 	};
 
 	/**
@@ -412,8 +508,9 @@ public:
 	class PowOp : public ActivationOp<TensorT>
 	{
 	public:
+		PowOp() = default;
+		~PowOp() = default;
 		PowOp(const TensorT& base): base_(base){};
-		~PowOp() {};
 		TensorT operator()(const TensorT& x_I) const {
 			return pow(x_I, base_);
 			//ClipOp<TensorT> clip(this->eps_, this->min_, this->max_); // Not compatible with CUDA
@@ -422,6 +519,11 @@ public:
 		std::string getName() const { return "PowOp"; };
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ base_ }); }
 	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<ActivationOp<TensorT>>(this), base_);
+		}
 		TensorT base_;
 	};
 
@@ -432,8 +534,9 @@ public:
 	class PowGradOp : public ActivationOp<TensorT>
 	{
 	public:
+		PowGradOp() = default;
+		~PowGradOp() = default;
 		PowGradOp(const TensorT& base) : base_(base) {};
-		~PowGradOp() {};
 		TensorT operator()(const TensorT& x_I) const {
 			const TensorT result = base_ * pow(x_I, base_ - 1);
 			return result;
@@ -443,6 +546,11 @@ public:
 		std::string getName() const { return "PowGradOp"; };
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ base_ }); }
 	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<ActivationOp<TensorT>>(this), base_);
+		}
 		TensorT base_;
 	};
 
@@ -455,9 +563,9 @@ public:
 	class LeakyReLUOp : public ActivationOp<TensorT>
 	{
 	public:
-		LeakyReLUOp() {};
+		LeakyReLUOp() = default;
+		~LeakyReLUOp() = default;
 		LeakyReLUOp(const TensorT& alpha) : alpha_(alpha) {};
-		~LeakyReLUOp() {};
 		TensorT operator()(const TensorT& x_I) const {
 			const TensorT result = (x_I >= 0.0) ? x_I : alpha_ * x_I;
 			return result;
@@ -469,6 +577,11 @@ public:
 		std::string getName() const { return "LeakyReLUOp"; };
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ alpha_ }); }
 	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<ActivationOp<TensorT>>(this), alpha_);
+		}
 		TensorT alpha_ = 1e-2;
 	};
 
@@ -479,9 +592,9 @@ public:
 	class LeakyReLUGradOp : public ActivationOp<TensorT>
 	{
 	public:
-		LeakyReLUGradOp() {};
+		LeakyReLUGradOp() = default;
+		~LeakyReLUGradOp() = default;
 		LeakyReLUGradOp(const TensorT& alpha) : alpha_(alpha) {};
-		~LeakyReLUGradOp() {};
 		TensorT operator()(const TensorT& x_I) const {
 			return (x_I >= 0.0) ? 1.0 : alpha_;
 		};
@@ -490,7 +603,80 @@ public:
 		std::string getName() const { return "LeakyReLUGradOp"; };
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ alpha_ }); }
 	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<ActivationOp<TensorT>>(this), alpha_);
+		}
 		TensorT alpha_ = 1e-2;
 	};
 }
+
+CEREAL_REGISTER_TYPE(SmartPeak::ReLUOp<float>);
+CEREAL_REGISTER_TYPE(SmartPeak::ReLUGradOp<float>);
+CEREAL_REGISTER_TYPE(SmartPeak::ELUOp<float>);
+CEREAL_REGISTER_TYPE(SmartPeak::ELUGradOp<float>);
+CEREAL_REGISTER_TYPE(SmartPeak::SigmoidOp<float>);
+CEREAL_REGISTER_TYPE(SmartPeak::SigmoidGradOp<float>);
+CEREAL_REGISTER_TYPE(SmartPeak::TanHOp<float>);
+CEREAL_REGISTER_TYPE(SmartPeak::TanHGradOp<float>);
+CEREAL_REGISTER_TYPE(SmartPeak::ReTanHOp<float>);
+CEREAL_REGISTER_TYPE(SmartPeak::ReTanHGradOp<float>);
+CEREAL_REGISTER_TYPE(SmartPeak::LinearOp<float>);
+CEREAL_REGISTER_TYPE(SmartPeak::LinearGradOp<float>);
+CEREAL_REGISTER_TYPE(SmartPeak::InverseOp<float>);
+CEREAL_REGISTER_TYPE(SmartPeak::InverseGradOp<float>);
+CEREAL_REGISTER_TYPE(SmartPeak::ExponentialOp<float>);
+CEREAL_REGISTER_TYPE(SmartPeak::ExponentialGradOp<float>);
+CEREAL_REGISTER_TYPE(SmartPeak::LogOp<float>);
+CEREAL_REGISTER_TYPE(SmartPeak::LogGradOp<float>);
+CEREAL_REGISTER_TYPE(SmartPeak::PowOp<float>);
+CEREAL_REGISTER_TYPE(SmartPeak::PowGradOp<float>);
+CEREAL_REGISTER_TYPE(SmartPeak::LeakyReLUOp<float>);
+CEREAL_REGISTER_TYPE(SmartPeak::LeakyReLUGradOp<float>);
+CEREAL_REGISTER_TYPE(SmartPeak::ReLUOp<double>);
+CEREAL_REGISTER_TYPE(SmartPeak::ReLUGradOp<double>);
+CEREAL_REGISTER_TYPE(SmartPeak::ELUOp<double>);
+CEREAL_REGISTER_TYPE(SmartPeak::ELUGradOp<double>);
+CEREAL_REGISTER_TYPE(SmartPeak::SigmoidOp<double>);
+CEREAL_REGISTER_TYPE(SmartPeak::SigmoidGradOp<double>);
+CEREAL_REGISTER_TYPE(SmartPeak::TanHOp<double>);
+CEREAL_REGISTER_TYPE(SmartPeak::TanHGradOp<double>);
+CEREAL_REGISTER_TYPE(SmartPeak::ReTanHOp<double>);
+CEREAL_REGISTER_TYPE(SmartPeak::ReTanHGradOp<double>);
+CEREAL_REGISTER_TYPE(SmartPeak::LinearOp<double>);
+CEREAL_REGISTER_TYPE(SmartPeak::LinearGradOp<double>);
+CEREAL_REGISTER_TYPE(SmartPeak::InverseOp<double>);
+CEREAL_REGISTER_TYPE(SmartPeak::InverseGradOp<double>);
+CEREAL_REGISTER_TYPE(SmartPeak::ExponentialOp<double>);
+CEREAL_REGISTER_TYPE(SmartPeak::ExponentialGradOp<double>);
+CEREAL_REGISTER_TYPE(SmartPeak::LogOp<double>);
+CEREAL_REGISTER_TYPE(SmartPeak::LogGradOp<double>);
+CEREAL_REGISTER_TYPE(SmartPeak::PowOp<double>);
+CEREAL_REGISTER_TYPE(SmartPeak::PowGradOp<double>);
+CEREAL_REGISTER_TYPE(SmartPeak::LeakyReLUOp<double>);
+CEREAL_REGISTER_TYPE(SmartPeak::LeakyReLUGradOp<double>);
+CEREAL_REGISTER_TYPE(SmartPeak::ReLUOp<int>);
+CEREAL_REGISTER_TYPE(SmartPeak::ReLUGradOp<int>);
+CEREAL_REGISTER_TYPE(SmartPeak::ELUOp<int>);
+CEREAL_REGISTER_TYPE(SmartPeak::ELUGradOp<int>);
+CEREAL_REGISTER_TYPE(SmartPeak::SigmoidOp<int>);
+CEREAL_REGISTER_TYPE(SmartPeak::SigmoidGradOp<int>);
+CEREAL_REGISTER_TYPE(SmartPeak::TanHOp<int>);
+CEREAL_REGISTER_TYPE(SmartPeak::TanHGradOp<int>);
+CEREAL_REGISTER_TYPE(SmartPeak::ReTanHOp<int>);
+CEREAL_REGISTER_TYPE(SmartPeak::ReTanHGradOp<int>);
+CEREAL_REGISTER_TYPE(SmartPeak::LinearOp<int>);
+CEREAL_REGISTER_TYPE(SmartPeak::LinearGradOp<int>);
+CEREAL_REGISTER_TYPE(SmartPeak::InverseOp<int>);
+CEREAL_REGISTER_TYPE(SmartPeak::InverseGradOp<int>);
+CEREAL_REGISTER_TYPE(SmartPeak::ExponentialOp<int>);
+CEREAL_REGISTER_TYPE(SmartPeak::ExponentialGradOp<int>);
+CEREAL_REGISTER_TYPE(SmartPeak::LogOp<int>);
+CEREAL_REGISTER_TYPE(SmartPeak::LogGradOp<int>);
+CEREAL_REGISTER_TYPE(SmartPeak::PowOp<int>);
+CEREAL_REGISTER_TYPE(SmartPeak::PowGradOp<int>);
+CEREAL_REGISTER_TYPE(SmartPeak::LeakyReLUOp<int>);
+CEREAL_REGISTER_TYPE(SmartPeak::LeakyReLUGradOp<int>);
+
 #endif //SMARTPEAK_ACTIVATIONFUNCTION_H

@@ -129,4 +129,51 @@ BOOST_AUTO_TEST_CASE(storeAndLoadWeightValuesCsv)
 	}
 }
 
+BOOST_AUTO_TEST_CASE(storeAndLoadBinary)
+{
+	WeightFile<float> data;
+
+	std::string filename = "WeightFileTest.bin";
+
+	// create list of dummy weights
+	std::map<std::string, std::shared_ptr<Weight<float>>> weights;
+	std::shared_ptr<WeightInitOp<float>> weight_init;
+	std::shared_ptr<SolverOp<float>> solver;
+	for (int i = 0; i < 3; ++i)
+	{
+		weight_init.reset(new ConstWeightInitOp<float>(1.0));
+		solver.reset(new SGDOp<float>(0.01, 0.9));
+		std::shared_ptr<Weight<float>> weight(new Weight<float>(
+			"Weight_" + std::to_string(i),
+			weight_init,
+			solver));
+		weight->setModuleName("Mod_" + std::to_string(i));
+		weight->setLayerName("Layer_" + std::to_string(i));
+		weight->addTensorIndex(std::make_tuple(i, i + 1, i + 2));
+		weight->addTensorIndex(std::make_tuple(i, i + 3, i + 4));
+		weights.emplace("Weight_" + std::to_string(i), weight);
+	}
+	data.storeWeightsBinary(filename, weights);
+
+	std::map<std::string, std::shared_ptr<Weight<float>>> weights_test;
+	data.loadWeightsBinary(filename, weights_test);
+
+	int i = 0;
+	for (auto& weight_map : weights_test)
+	{
+		BOOST_CHECK_EQUAL(weight_map.second->getName(), "Weight_" + std::to_string(i));
+		BOOST_CHECK_EQUAL(weight_map.second->getModuleName(), "Mod_" + std::to_string(i));
+		BOOST_CHECK_EQUAL(weight_map.second->getLayerName(), "Layer_" + std::to_string(i));
+		BOOST_CHECK_EQUAL(weight_map.second->getWeightInitOp()->operator()(), 1.0);
+		BOOST_CHECK_CLOSE(weight_map.second->getSolverOp()->operator()(1.0, 2.0), 0.98, 1e-3);
+		BOOST_CHECK_EQUAL(std::get<0>(weight_map.second->getTensorIndex()[0]), i);
+		BOOST_CHECK_EQUAL(std::get<1>(weight_map.second->getTensorIndex()[0]), i + 1);
+		BOOST_CHECK_EQUAL(std::get<2>(weight_map.second->getTensorIndex()[0]), i + 2);
+		BOOST_CHECK_EQUAL(std::get<0>(weight_map.second->getTensorIndex()[1]), i);
+		BOOST_CHECK_EQUAL(std::get<1>(weight_map.second->getTensorIndex()[1]), i + 3);
+		BOOST_CHECK_EQUAL(std::get<2>(weight_map.second->getTensorIndex()[1]), i + 4);
+		//BOOST_CHECK(weight_map.second == weights.at(weight_map.first)); // Broken
+		++i;
+	}
+}
 BOOST_AUTO_TEST_SUITE_END()

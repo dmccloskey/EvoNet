@@ -13,15 +13,15 @@
 #include <SmartPeak/io/NodeFile.h>
 #include <SmartPeak/io/WeightFile.h>
 #include <SmartPeak/io/LinkFile.h>
-//#include <filesystem> // C++ 17
-//#include <cereal/types/memory.hpp>
-//#include <cereal/types/map.hpp>
-//#include <cereal/types/tuple.hpp>
-//#include <cereal/types/utility.hpp> // std::pair
-//#include <cereal/types/vector.hpp>
-#include <cereal/archives/binary.hpp>
-#include <fstream>
 
+//#include <filesystem> // C++ 17
+
+#include <cereal/types/memory.hpp>
+#include <cereal/types/map.hpp>
+#include <cereal/types/tuple.hpp>
+#include <cereal/types/utility.hpp> // std::pair
+#include <cereal/types/vector.hpp>
+#include <cereal/archives/binary.hpp>
 
 namespace SmartPeak
 {
@@ -110,12 +110,12 @@ public:
 		//myfile.write((char*)&model, sizeof(model));
 		//myfile.close();
 
-		std::ofstream ofs(filename, std::ios::binary);  // Output file stream.
-		if (ofs.is_open() == false) {
-			cereal::BinaryOutputArchive oarchive(ofs); // Choose binary format, writing direction.
-			oarchive(model); // Save the modified instance.
-			ofs.close();
-		}
+		std::ofstream ofs(filename, std::ios::binary);  
+		//if (ofs.is_open() == false) {// Lines check to make sure the file is not already created
+		cereal::BinaryOutputArchive oarchive(ofs); 
+		oarchive(model); 
+		ofs.close();
+		//}// Lines check to make sure the file is not already created
 		return true;
 	}
 
@@ -139,9 +139,9 @@ public:
 		//myfile.read((char*)&model, file_size);
 		//myfile.close(); 
 		
-		std::ifstream ifs(filename, std::ios::binary);  // Input file stream. You might use string streams as well.
+		std::ifstream ifs(filename, std::ios::binary); 
 		if (ifs.is_open()) {
-			cereal::BinaryInputArchive iarchive(ifs);  // Choose binary format, reading direction.
+			cereal::BinaryInputArchive iarchive(ifs);
 			iarchive(model);
 			ifs.close();
 		}

@@ -14,6 +14,9 @@
 #include <SmartPeak/io/csv.h>
 #include <SmartPeak/io/CSVWriter.h>
 
+#include <cereal/archives/binary.hpp>
+#include <cereal/types/map.hpp>
+
 namespace SmartPeak
 {
 
@@ -50,7 +53,15 @@ public:
 		bool storeNodesCsv(const std::string& filename, std::map<std::string, std::shared_ptr<Node<TensorT>>>& nodes);
   };
 	template<typename TensorT>
-	inline bool NodeFile<TensorT>::loadNodesBinary(const std::string& filename, std::map<std::string, std::shared_ptr<Node<TensorT>>>& nodes) { return true; }
+	inline bool NodeFile<TensorT>::loadNodesBinary(const std::string& filename, std::map<std::string, std::shared_ptr<Node<TensorT>>>& nodes) {
+		std::ifstream ifs(filename, std::ios::binary);
+		if (ifs.is_open()) {
+			cereal::BinaryInputArchive iarchive(ifs);
+			iarchive(nodes);
+			ifs.close();
+		}
+		return true; 
+	}
 
 	template<typename TensorT>
 	inline bool NodeFile<TensorT>::loadNodesCsv(const std::string & filename, std::map<std::string, std::shared_ptr<Node<TensorT>>>& nodes)
@@ -88,28 +99,28 @@ public:
 			// parse the node_activation
 			std::shared_ptr<ActivationOp<TensorT>> node_activation;
 			if (node_activation_str == "ReLUOp") node_activation.reset(new ReLUOp<TensorT>());
-			else if (node_activation_str == "ELUOp") node_activation.reset(new ELUOp<TensorT>());
+			else if (node_activation_str == "ELUOp") node_activation.reset(new ELUOp<TensorT>(1.0));
 			else if (node_activation_str == "LinearOp") node_activation.reset(new LinearOp<TensorT>());
 			else if (node_activation_str == "SigmoidOp") node_activation.reset(new SigmoidOp<TensorT>());
 			else if (node_activation_str == "TanHOp") node_activation.reset(new TanHOp<TensorT>());
 			else if (node_activation_str == "ExponentialOp") node_activation.reset(new ExponentialOp<TensorT>());
 			else if (node_activation_str == "InverseOp") node_activation.reset(new InverseOp<TensorT>());
 			else if (node_activation_str == "LinearOp") node_activation.reset(new LinearOp<TensorT>());
-			else if (node_activation_str == "LeakyReLUOp") node_activation.reset(new LeakyReLUOp<TensorT>()); // TODO define values
+			else if (node_activation_str == "LeakyReLUOp") node_activation.reset(new LeakyReLUOp<TensorT>(1e-2)); // TODO define values
 			else if (node_activation_str == "PowOp") node_activation.reset(new PowOp<TensorT>(-0.5));  // TODO define values
 			else std::cout << "NodeActivation for node_name " << node_name << " was not recognized." << std::endl;
 
 			// parse the node_activation
 			std::shared_ptr<ActivationOp<TensorT>> node_activation_grad;
 			if (node_activation_grad_str == "ReLUGradOp") node_activation_grad.reset(new ReLUGradOp<TensorT>());
-			else if (node_activation_grad_str == "ELUGradOp") node_activation_grad.reset(new ELUGradOp<TensorT>());
+			else if (node_activation_grad_str == "ELUGradOp") node_activation_grad.reset(new ELUGradOp<TensorT>(1.0));
 			else if (node_activation_grad_str == "LinearGradOp") node_activation_grad.reset(new LinearGradOp<TensorT>());
 			else if (node_activation_grad_str == "SigmoidGradOp") node_activation_grad.reset(new SigmoidGradOp<TensorT>());
 			else if (node_activation_grad_str == "TanHGradOp") node_activation_grad.reset(new TanHGradOp<TensorT>());
 			else if (node_activation_grad_str == "ExponentialGradOp") node_activation_grad.reset(new ExponentialGradOp<TensorT>());
 			else if (node_activation_grad_str == "InverseGradOp") node_activation_grad.reset(new InverseGradOp<TensorT>());
 			else if (node_activation_grad_str == "LinearGradOp") node_activation_grad.reset(new LinearGradOp<TensorT>());
-			else if (node_activation_grad_str == "LeakyReLUGradOp") node_activation_grad.reset(new LeakyReLUGradOp<TensorT>());
+			else if (node_activation_grad_str == "LeakyReLUGradOp") node_activation_grad.reset(new LeakyReLUGradOp<TensorT>(1e-2));
 			else if (node_activation_grad_str == "PowGradOp") node_activation_grad.reset(new PowGradOp<TensorT>(-0.5));
 			else std::cout << "NodeActivationGrad for node_name " << node_name << " was not recognized." << std::endl;
 
@@ -159,7 +170,15 @@ public:
 	}
 
 	template<typename TensorT>
-	inline bool NodeFile<TensorT>::storeNodesBinary(const std::string& filename, std::map<std::string, std::shared_ptr<Node<TensorT>>>& nodes) { return true; }
+	inline bool NodeFile<TensorT>::storeNodesBinary(const std::string& filename, std::map<std::string, std::shared_ptr<Node<TensorT>>>& nodes) {
+		std::ofstream ofs(filename, std::ios::binary | std::ios::out | std::ios::trunc);
+		//if (ofs.is_open() == false) { // Lines check to make sure the file is not already created
+		cereal::BinaryOutputArchive oarchive(ofs);
+		oarchive(nodes);
+		ofs.close();
+		//} // Lines check to make sure the file is not already created
+		return true; 
+	}
 
 	template<typename TensorT>
 	inline bool NodeFile<TensorT>::storeNodesCsv(const std::string & filename, std::map<std::string, std::shared_ptr<Node<TensorT>>>& nodes)

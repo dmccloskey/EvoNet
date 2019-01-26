@@ -12,18 +12,18 @@
 #include <tuple>
 #include <string>
 
-// .cpp
-#include <SmartPeak/ml/SharedFunctions.h>
-#include <vector>
-#include <cmath>
-#include <iostream>
-
 #include <cereal/access.hpp>  // serialiation of private members
 #include <cereal/types/memory.hpp>
 #include <cereal/types/map.hpp>
 #include <cereal/types/tuple.hpp>
 #include <cereal/types/utility.hpp> // std::pair
 #include <cereal/types/vector.hpp>
+
+// .cpp
+#include <SmartPeak/ml/SharedFunctions.h>
+#include <vector>
+#include <cmath>
+#include <iostream>
 
 namespace SmartPeak
 {

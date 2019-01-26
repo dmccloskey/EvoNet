@@ -17,6 +17,7 @@
 #include <SmartPeak/io/CSVWriter.h>
 #include <regex>
 #include <SmartPeak/core/StringParsing.h>
+#include <cereal/archives/binary.hpp>
 
 namespace SmartPeak
 {
@@ -75,7 +76,15 @@ public:
     std::map<std::string, TensorT> parseParameters(const std::string& parameters);
   };
 	template<typename TensorT>
-	bool WeightFile<TensorT>::loadWeightsBinary(const std::string& filename, std::map<std::string, std::shared_ptr<Weight<TensorT>>>& weights) { return true; }
+	bool WeightFile<TensorT>::loadWeightsBinary(const std::string& filename, std::map<std::string, std::shared_ptr<Weight<TensorT>>>& weights) {
+		std::ifstream ifs(filename, std::ios::binary);
+		if (ifs.is_open()) {
+			cereal::BinaryInputArchive iarchive(ifs);
+			iarchive(weights);
+			ifs.close();
+		}
+		return true; 
+	}
 
 	template<typename TensorT>
 	bool WeightFile<TensorT>::loadWeightsCsv(const std::string& filename, std::map<std::string, std::shared_ptr<Weight<TensorT>>>& weights)
@@ -193,13 +202,15 @@ public:
 			weight->setLayerName(layer_name_str);
 			std::vector<std::string> tensor_indices = SplitString(tensor_index_str, "|");
 			for (std::string& tensor_index : tensor_indices) {
-				std::vector<std::string> tensor_indexes = SplitString(ReplaceTokens(tensor_index, { "[\{\}]", "\\s+" }, ""), ";");
-				assert(tensor_indexes.size() == 3);
-				int ind1 = -1, ind2 = -1, ind3 = -1;
-				ind1 = std::stoi(tensor_indexes[0]);
-				ind2 = std::stoi(tensor_indexes[1]);
-				ind3 = std::stoi(tensor_indexes[2]);
-				weight->addTensorIndex(std::make_tuple(ind1, ind2, ind3));
+				if (!tensor_index.empty()) {
+					std::vector<std::string> tensor_indexes = SplitString(ReplaceTokens(tensor_index, { "[\{\}]", "\\s+" }, ""), ";");
+					assert(tensor_indexes.size() == 3);
+					int ind1 = -1, ind2 = -1, ind3 = -1;
+					ind1 = std::stoi(tensor_indexes[0]);
+					ind2 = std::stoi(tensor_indexes[1]);
+					ind3 = std::stoi(tensor_indexes[2]);
+					weight->addTensorIndex(std::make_tuple(ind1, ind2, ind3));
+				}
 			}
 
 			weights.emplace(weight_name, weight);
@@ -275,7 +286,15 @@ public:
 
 
 	template<typename TensorT>
-	bool WeightFile<TensorT>::storeWeightsBinary(const std::string& filename, const std::map<std::string, std::shared_ptr<Weight<TensorT>>>& weights) { return true; }
+	bool WeightFile<TensorT>::storeWeightsBinary(const std::string& filename, const std::map<std::string, std::shared_ptr<Weight<TensorT>>>& weights) {
+		std::ofstream ofs(filename, std::ios::binary);
+		//if (ofs.is_open() == false) { // Lines check to make sure the file is not already created
+		cereal::BinaryOutputArchive oarchive(ofs);
+		oarchive(weights);
+		ofs.close();
+		//} // Lines check to make sure the file is not already created
+		return true; 
+	}
 
 	template<typename TensorT>
 	bool WeightFile<TensorT>::storeWeightsCsv(const std::string& filename, const std::map<std::string, std::shared_ptr<Weight<TensorT>>>& weights)

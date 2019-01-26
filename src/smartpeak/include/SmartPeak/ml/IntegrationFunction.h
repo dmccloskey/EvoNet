@@ -6,30 +6,30 @@
 #include <SmartPeak/ml/SharedFunctions.h>
 #include <unsupported/Eigen/CXX11/Tensor>
 
+#include <cereal/access.hpp>  // serialiation of private members
+#undef min // clashes with std::limit on windows in polymorphic.hpp
+#undef max // clashes with std::limit on windows in polymorphic.hpp
+#include <cereal/types/polymorphic.hpp>
+
 namespace SmartPeak
 {
-
   /**
     @brief Base class for all integration functions.
   */
 	template<typename T>
   class IntegrationOp
   {
-public: 
+	public: 
     IntegrationOp() = default;
-		IntegrationOp(const T& eps) : eps_(eps) {};
     ~IntegrationOp() = default;
-		virtual void initNetNodeInput(const int& batch_size) = 0;
-		void setNetNodeInput(const Eigen::Tensor<T, 1>& net_node_input) { net_node_input_ = net_node_input; }
-		Eigen::Tensor<T, 1> getNetNodeInput() const { return net_node_input_; }
     virtual std::string getName() const = 0;
-		T getN() { return n_; };
-    virtual void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>&source_output) = 0;
-	protected:
-		Eigen::Tensor<T, 1> net_node_input_; ///<
-		T n_ = 0;
-		T eps_ = 1e-9;
-		//std::atomic<Eigen::Tensor<T, 1>> net_node_input_; ///< 
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(eps_);
+		}
+		T eps_ = 1e-6;
   };
 
   /**
@@ -39,19 +39,14 @@ public:
   class SumOp: public IntegrationOp<T>
   {
 public: 
-		SumOp(){};
-		void initNetNodeInput(const int& batch_size){
-			Eigen::Tensor<T, 1> net_node_input(batch_size);
-			net_node_input.setConstant(0);
-			this->setNetNodeInput(net_node_input);
-			this->n_ = 0;
-		}
-    ~SumOp(){};
-    void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>&source_output) { 
-			this->net_node_input_ += weight * source_output; 
-			this->n_ += 1;
-		};
+		using IntegrationOp<T>::IntegrationOp;
     std::string getName() const{return "SumOp";};
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<IntegrationOp<T>>(this));
+		}
   };
 
 	/**
@@ -61,19 +56,14 @@ public:
 	class ProdOp : public IntegrationOp<T>
 	{
 	public:
-		ProdOp() {};
-		void initNetNodeInput(const int& batch_size) {
-			Eigen::Tensor<T, 1> net_node_input(batch_size);
-			net_node_input.setConstant(1);
-			this->setNetNodeInput(net_node_input);
-			this->n_ = 0;
-		}
-		~ProdOp() {};
-		void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>&source_output) { 
-			this->net_node_input_ *= weight * source_output;
-			this->n_ += 1;
-		};
+		using IntegrationOp<T>::IntegrationOp;
 		std::string getName() const { return "ProdOp"; };
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<IntegrationOp<T>>(this));
+		}
 	};
 
 	/**
@@ -83,19 +73,14 @@ public:
 	class MaxOp : public IntegrationOp<T>
 	{
 	public:
-		MaxOp() {};
-		void initNetNodeInput(const int& batch_size) {
-			Eigen::Tensor<T, 1> net_node_input(batch_size);
-			net_node_input.setConstant(-1e12);
-			this->setNetNodeInput(net_node_input);
-			this->n_ = 0;
-		}
-		~MaxOp() {};
-		void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>&source_output) { 
-			this->net_node_input_ = this->net_node_input_.cwiseMax(weight * source_output);
-			this->n_ += 1;
-		};
+		using IntegrationOp<T>::IntegrationOp;
 		std::string getName() const { return "MaxOp"; };
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<IntegrationOp<T>>(this));
+		}
 	};
 
 	/**
@@ -105,24 +90,14 @@ public:
 	class MeanOp : public IntegrationOp<T>
 	{
 	public:
-		MeanOp() {};
-		void initNetNodeInput(const int& batch_size) {
-			Eigen::Tensor<T, 1> net_node_input(batch_size);
-			net_node_input.setConstant(0);
-			this->setNetNodeInput(net_node_input);
-			this->n_ = 0;
-		}
-		~MeanOp() {};
-		Eigen::Tensor<T, 1> getNetNodeInput() const {
-			Eigen::Tensor<T, 1> n(this->net_node_input_.dimension(0));
-			n.setConstant(this->n_);
-			return this->net_node_input_/n; 
-		}
-		void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>&source_output) { 
-			this->net_node_input_ += weight * source_output;
-			this->n_ += 1;
-		};
+		using IntegrationOp<T>::IntegrationOp;
 		std::string getName() const { return "MeanOp"; };
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<IntegrationOp<T>>(this));
+		}
 	};
 
 	/**
@@ -135,31 +110,30 @@ public:
 	class VarianceOp : public IntegrationOp<T>
 	{
 	public:
-		VarianceOp() {};
-		void initNetNodeInput(const int& batch_size) {
-			Eigen::Tensor<T, 1> net_node_input(batch_size);
-			net_node_input.setConstant(0);
-			this->setNetNodeInput(net_node_input);
-			this->n_ = 0;
-		}
-		~VarianceOp() {};
-		Eigen::Tensor<T, 1> getNetNodeInput() const { 
-			Eigen::Tensor<T, 1> n(this->net_node_input_.dimension(0));
-			n.setConstant(this->n_); 
-			return (this->net_node_input_  - (ex_ * ex_)/ n)/n; }
-		void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>&source_output) {
-			auto input = weight * source_output;
-			if (this->n_ == 0)
-				k_ = input;
-			auto input_k = input - k_;
-			ex_ += input_k;
-			this->n_ += 1;
-			this->net_node_input_ += (input_k * input_k);
-		};
+		using IntegrationOp<T>::IntegrationOp;
+		//Eigen::Tensor<T, 1> getNetNodeInput() const { 
+		//	Eigen::Tensor<T, 1> n(this->net_node_input_.dimension(0));
+		//	n.setConstant(this->n_); 
+		//	return (this->net_node_input_  - (ex_ * ex_)/ n)/n; }
+		//void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>&source_output) {
+		//	auto input = weight * source_output;
+		//	if (this->n_ == 0)
+		//		k_ = input;
+		//	auto input_k = input - k_;
+		//	ex_ += input_k;
+		//	this->n_ += 1;
+		//	this->net_node_input_ += (input_k * input_k);
+		//};
 		std::string getName() const { return "VarianceOp"; };
+	//private:
+	//	Eigen::Tensor<T, 1> k_ = 0;
+	//	Eigen::Tensor<T, 1> ex_ = 0;
 	private:
-		Eigen::Tensor<T, 1> k_ = 0;
-		Eigen::Tensor<T, 1> ex_ = 0;
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<IntegrationOp<T>>(this));
+		}
 	};
 
 	/**
@@ -172,24 +146,14 @@ public:
 	class VarModOp : public IntegrationOp<T>
 	{
 	public:
-		VarModOp() {};
-		void initNetNodeInput(const int& batch_size) {
-			Eigen::Tensor<T, 1> net_node_input(batch_size);
-			net_node_input.setConstant(0);
-			this->setNetNodeInput(net_node_input);
-			this->n_ = 0;
-		}
-		~VarModOp() {};
-		Eigen::Tensor<T, 1> getNetNodeInput() const {
-			Eigen::Tensor<T, 1> n(this->net_node_input_.dimension(0));
-			n.setConstant(this->n_);
-			return this->net_node_input_ / n; }
-		void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>&source_output) {
-			auto input = weight * source_output;
-			this->n_ += 1;
-			this->net_node_input_ += (input * input);
-		};
+		using IntegrationOp<T>::IntegrationOp;
 		std::string getName() const { return "VarModOp"; };
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<IntegrationOp<T>>(this));
+		}
 	};
 
 	/**
@@ -199,20 +163,14 @@ public:
 	class CountOp : public IntegrationOp<T>
 	{
 	public:
-		CountOp() {};
-		void initNetNodeInput(const int& batch_size) {
-			Eigen::Tensor<T, 1> net_node_input(batch_size);
-			net_node_input.setConstant(0);
-			this->setNetNodeInput(net_node_input);
-		}
-		~CountOp() {};
-		void operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>&source_output) { 
-			Eigen::Tensor<T, 1> one(source_output.dimension(0));
-			one.setConstant(1.0f);
-			this->net_node_input_ += one; 
-			++(this->n_);
-		};
+		using IntegrationOp<T>::IntegrationOp;
 		std::string getName() const { return "CountOp"; };
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<IntegrationOp<T>>(this));
+		}
 	};
 
 	/**
@@ -223,20 +181,14 @@ public:
 	{
 	public:
 		IntegrationErrorOp() = default;
-		IntegrationErrorOp(const T& eps) : eps_(eps) {};
 		~IntegrationErrorOp() = default;
 		virtual std::string getName() const = 0;
-		/*
-		@brief Sum integration error void operator
-
-		@param[in] x1 The weight tensor
-		@param[in] x2 The source error tensor
-		@param[in] x3 The source net input tensor
-		@param[in] x4 The sink output tensor
-		@param[in] x5 The number of inputs
-		*/
-		virtual Eigen::Tensor<T, 1> operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_error, const Eigen::Tensor<T, 1>& source_net_input, const Eigen::Tensor<T, 1>& sink_output, const Eigen::Tensor<T, 1>& n) = 0;
-	protected:
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(eps_);
+		}
 		T eps_ = 1e-6;
 	};
 
@@ -247,12 +199,14 @@ public:
 	class SumErrorOp : public IntegrationErrorOp<T>
 	{
 	public:
-		SumErrorOp() {};
-		~SumErrorOp() {};
-		Eigen::Tensor<T, 1> operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_error, const Eigen::Tensor<T, 1>& source_net_input, const Eigen::Tensor<T, 1>& sink_output, const Eigen::Tensor<T, 1>& n) {
-			return weight * source_error;
-		};
+		using IntegrationErrorOp<T>::IntegrationErrorOp;
 		std::string getName() const { return "SumErrorOp"; };
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<IntegrationErrorOp<T>>(this));
+		}
 	};
 
 	/**
@@ -262,15 +216,14 @@ public:
 	class ProdErrorOp : public IntegrationErrorOp<T>
 	{
 	public:
-		ProdErrorOp() {};
-		~ProdErrorOp() {};
-		Eigen::Tensor<T, 1> operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_error, const Eigen::Tensor<T, 1>& source_net_input, const Eigen::Tensor<T, 1>& sink_output, const Eigen::Tensor<T, 1>& n) {
-			Eigen::Tensor<T, 1> eps(weight.dimension(0));
-			eps.setConstant(this->eps_);
-			//return (source_net_input * source_error / (sink_output + eps)).unaryExpr(ClipOp<T>(1e-6, -1e9, 1e9)).unaryExpr(std::ptr_fun(checkNan<T>));
-			return (source_net_input * source_error / sink_output).unaryExpr(ClipOp<T>(1e-6, -1e9, 1e9)).unaryExpr(std::ptr_fun(checkNan<T>));
-		};
+		using IntegrationErrorOp<T>::IntegrationErrorOp;
 		std::string getName() const { return "ProdErrorOp"; };
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<IntegrationErrorOp<T>>(this));
+		}
 	};
 
 	/**
@@ -280,19 +233,14 @@ public:
 	class MaxErrorOp : public IntegrationErrorOp<T>
 	{
 	public:
-		MaxErrorOp() {};
-		~MaxErrorOp() {};
-		Eigen::Tensor<T, 1> operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_error, const Eigen::Tensor<T, 1>& source_net_input, const Eigen::Tensor<T, 1>& sink_output, const Eigen::Tensor<T, 1>& n)
-		{
-			auto perc_max_tensor = (sink_output / source_net_input).unaryExpr([](const T& v) {
-				if (v < 1 - 1e-6) 
-					return 0;
-				else 
-					return 1;
-			});
-			return weight * source_error * perc_max_tensor;
-		};
+		using IntegrationErrorOp<T>::IntegrationErrorOp;
 		std::string getName() const { return "MaxErrorOp"; };
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<IntegrationErrorOp<T>>(this));
+		}
 	};
 
 	/**
@@ -302,12 +250,14 @@ public:
 	class MeanErrorOp : public IntegrationErrorOp<T>
 	{
 	public:
-		MeanErrorOp() {};
-		~MeanErrorOp() {};
-		Eigen::Tensor<T, 1> operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_error, const Eigen::Tensor<T, 1>& source_net_input, const Eigen::Tensor<T, 1>& sink_output, const Eigen::Tensor<T, 1>& n) {
-			return weight * source_error / n;
-		};
+		using IntegrationErrorOp<T>::IntegrationErrorOp;
 		std::string getName() const { return "MeanErrorOp"; };
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<IntegrationErrorOp<T>>(this));
+		}
 	};
 
 	/**
@@ -317,14 +267,14 @@ public:
 	class VarModErrorOp : public IntegrationErrorOp<T>
 	{
 	public:
-		VarModErrorOp() {};
-		~VarModErrorOp() {};
-		Eigen::Tensor<T, 1> operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_error, const Eigen::Tensor<T, 1>& source_net_input, const Eigen::Tensor<T, 1>& sink_output, const Eigen::Tensor<T, 1>& n) {
-			Eigen::Tensor<T, 1> constant(weight.dimension(0));
-			constant.setConstant(2);
-			return weight * source_error * constant / n;
-		};
+		using IntegrationErrorOp<T>::IntegrationErrorOp;
 		std::string getName() const { return "VarModErrorOp"; };
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<IntegrationErrorOp<T>>(this));
+		}
 	};
 
 	/**
@@ -334,14 +284,14 @@ public:
 	class CountErrorOp : public IntegrationErrorOp<T>
 	{
 	public:
-		CountErrorOp() {};
-		~CountErrorOp() {};
-		Eigen::Tensor<T, 1> operator()(const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_error, const Eigen::Tensor<T, 1>& source_net_input, const Eigen::Tensor<T, 1>& sink_output, const Eigen::Tensor<T, 1>& n) {
-			Eigen::Tensor<T, 1> constant(weight.dimension(0));
-			constant.setConstant(0);
-			return constant;
-		};
+		using IntegrationErrorOp<T>::IntegrationErrorOp;
 		std::string getName() const { return "CountErrorOp"; };
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<IntegrationErrorOp<T>>(this));
+		}
 	};
 
 	/**
@@ -352,17 +302,15 @@ public:
 	{
 	public:
 		IntegrationWeightGradOp() = default;
-		IntegrationWeightGradOp(const T& eps) : eps_(eps) {};
 		~IntegrationWeightGradOp() = default;
-		void initNetWeightError() { net_weight_error_ = 0; }
-		void setNetWeightError(const T& net_weight_error) { net_weight_error_ = net_weight_error; }
-		T getNetWeightError() const { return net_weight_error_; }
 		virtual std::string getName() const = 0;
-		virtual void operator()(const Eigen::Tensor<T, 1>& sink_error, const Eigen::Tensor<T, 1>& source_output, const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_net_input, const Eigen::Tensor<T, 1>& n) = 0;
-	protected:
-		T net_weight_error_ = 0; ///< 
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(eps_);
+		}
 		T eps_ = 1e-6;
-		//std::atomic<T> net_weight_error_ = 0; ///< 
 	};
 
 	/**
@@ -372,13 +320,14 @@ public:
 	class SumWeightGradOp : public IntegrationWeightGradOp<T>
 	{
 	public:
-		SumWeightGradOp() { this->setNetWeightError(T(0)); };
-		~SumWeightGradOp() {};
-		void operator()(const Eigen::Tensor<T, 1>& sink_error, const Eigen::Tensor<T, 1>& source_output, const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_net_input, const Eigen::Tensor<T, 1>& n) {
-			Eigen::Tensor<T, 0> derivative_mean_tensor = (-sink_error * source_output).mean(); // average derivative
-			this->net_weight_error_ += derivative_mean_tensor(0);
-		};
+		using IntegrationWeightGradOp<T>::IntegrationWeightGradOp;
 		std::string getName() const { return "SumWeightGradOp"; };
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<IntegrationWeightGradOp<T>>(this));
+		}
 	};
 
 	/**
@@ -388,13 +337,14 @@ public:
 	class ProdWeightGradOp : public IntegrationWeightGradOp<T>
 	{
 	public:
-		ProdWeightGradOp() { this->setNetWeightError(T(0)); };
-		~ProdWeightGradOp() {};
-		void operator()(const Eigen::Tensor<T, 1>& sink_error, const Eigen::Tensor<T, 1>& source_output, const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_net_input, const Eigen::Tensor<T, 1>& n) {
-			Eigen::Tensor<T, 0> derivative_mean_tensor = ((-sink_error * source_net_input / weight).unaryExpr(ClipOp<T>(1e-6, -1e9, 1e9))).mean(); // average derivative
-			this->net_weight_error_ += derivative_mean_tensor(0);
-		};
+		using IntegrationWeightGradOp<T>::IntegrationWeightGradOp;
 		std::string getName() const { return "ProdWeightGradOp"; };
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<IntegrationWeightGradOp<T>>(this));
+		}
 	};
 
 	/**
@@ -404,13 +354,14 @@ public:
 	class MaxWeightGradOp : public IntegrationWeightGradOp<T>
 	{
 	public:
-		MaxWeightGradOp() { this->setNetWeightError(T(0)); };
-		~MaxWeightGradOp() {};
-		void operator()(const Eigen::Tensor<T, 1>& sink_error, const Eigen::Tensor<T, 1>& source_output, const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_net_input, const Eigen::Tensor<T, 1>& n) {
-			Eigen::Tensor<T, 0> derivative_mean_tensor = (-sink_error * source_output).mean(); // average derivative
-			this->net_weight_error_ += derivative_mean_tensor(0);
-		};
+		using IntegrationWeightGradOp<T>::IntegrationWeightGradOp;
 		std::string getName() const { return "MaxWeightGradOp"; };
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<IntegrationWeightGradOp<T>>(this));
+		}
 	};
 
 	/**
@@ -420,12 +371,14 @@ public:
 	class CountWeightGradOp : public IntegrationWeightGradOp<T>
 	{
 	public:
-		CountWeightGradOp() { this->setNetWeightError(T(0)); };
-		~CountWeightGradOp() {};
-		void operator()(const Eigen::Tensor<T, 1>& sink_error, const Eigen::Tensor<T, 1>& source_output, const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_net_input, const Eigen::Tensor<T, 1>& n) {
-			this->net_weight_error_ += 0;
-		};
+		using IntegrationWeightGradOp<T>::IntegrationWeightGradOp;
 		std::string getName() const { return "CountWeightGradOp"; };
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<IntegrationWeightGradOp<T>>(this));
+		}
 	};
 
 	/**
@@ -435,13 +388,14 @@ public:
 	class MeanWeightGradOp : public IntegrationWeightGradOp<T>
 	{
 	public:
-		MeanWeightGradOp() { this->setNetWeightError(T(0)); };
-		~MeanWeightGradOp() {};
-		void operator()(const Eigen::Tensor<T, 1>& sink_error, const Eigen::Tensor<T, 1>& source_output, const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_net_input, const Eigen::Tensor<T, 1>& n) {
-			Eigen::Tensor<T, 0> derivative_mean_tensor = (-sink_error * source_output / n).mean(); // average derivative
-			this->net_weight_error_ += derivative_mean_tensor(0);
-		};
+		using IntegrationWeightGradOp<T>::IntegrationWeightGradOp;
 		std::string getName() const { return "MeanWeightGradOp"; };
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<IntegrationWeightGradOp<T>>(this));
+		}
 	};
 
 	/**
@@ -451,15 +405,74 @@ public:
 	class VarModWeightGradOp : public IntegrationWeightGradOp<T>
 	{
 	public:
-		VarModWeightGradOp() { this->setNetWeightError(T(0)); };
-		~VarModWeightGradOp() {};
-		void operator()(const Eigen::Tensor<T, 1>& sink_error, const Eigen::Tensor<T, 1>& source_output, const Eigen::Tensor<T, 1>& weight, const Eigen::Tensor<T, 1>& source_net_input, const Eigen::Tensor<T, 1>& n) {
-			Eigen::Tensor<T, 1> constant(weight.dimension(0));
-			constant.setConstant(2);
-			Eigen::Tensor<T, 0> derivative_mean_tensor = (-sink_error * source_output * constant / n).mean(); // average derivative
-			this->net_weight_error_ += derivative_mean_tensor(0);
-		};
+		using IntegrationWeightGradOp<T>::IntegrationWeightGradOp;
 		std::string getName() const { return "VarModWeightGradOp"; };
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<IntegrationWeightGradOp<T>>(this));
+		}
 	};
 }
+
+CEREAL_REGISTER_TYPE(SmartPeak::SumOp<float>);
+CEREAL_REGISTER_TYPE(SmartPeak::ProdOp<float>);
+CEREAL_REGISTER_TYPE(SmartPeak::MaxOp<float>);
+CEREAL_REGISTER_TYPE(SmartPeak::MeanOp<float>);
+CEREAL_REGISTER_TYPE(SmartPeak::VarianceOp<float>);
+CEREAL_REGISTER_TYPE(SmartPeak::VarModOp<float>);
+CEREAL_REGISTER_TYPE(SmartPeak::CountOp<float>);
+CEREAL_REGISTER_TYPE(SmartPeak::SumErrorOp<float>);
+CEREAL_REGISTER_TYPE(SmartPeak::ProdErrorOp<float>);
+CEREAL_REGISTER_TYPE(SmartPeak::MaxErrorOp<float>);
+CEREAL_REGISTER_TYPE(SmartPeak::MeanErrorOp<float>);
+CEREAL_REGISTER_TYPE(SmartPeak::VarModErrorOp<float>);
+CEREAL_REGISTER_TYPE(SmartPeak::CountErrorOp<float>);
+CEREAL_REGISTER_TYPE(SmartPeak::SumWeightGradOp<float>);
+CEREAL_REGISTER_TYPE(SmartPeak::ProdWeightGradOp<float>);
+CEREAL_REGISTER_TYPE(SmartPeak::MaxWeightGradOp<float>);
+CEREAL_REGISTER_TYPE(SmartPeak::CountWeightGradOp<float>);
+CEREAL_REGISTER_TYPE(SmartPeak::MeanWeightGradOp<float>);
+CEREAL_REGISTER_TYPE(SmartPeak::VarModWeightGradOp<float>);
+
+CEREAL_REGISTER_TYPE(SmartPeak::SumOp<double>);
+CEREAL_REGISTER_TYPE(SmartPeak::ProdOp<double>);
+CEREAL_REGISTER_TYPE(SmartPeak::MaxOp<double>);
+CEREAL_REGISTER_TYPE(SmartPeak::MeanOp<double>);
+CEREAL_REGISTER_TYPE(SmartPeak::VarianceOp<double>);
+CEREAL_REGISTER_TYPE(SmartPeak::VarModOp<double>);
+CEREAL_REGISTER_TYPE(SmartPeak::CountOp<double>);
+CEREAL_REGISTER_TYPE(SmartPeak::SumErrorOp<double>);
+CEREAL_REGISTER_TYPE(SmartPeak::ProdErrorOp<double>);
+CEREAL_REGISTER_TYPE(SmartPeak::MaxErrorOp<double>);
+CEREAL_REGISTER_TYPE(SmartPeak::MeanErrorOp<double>);
+CEREAL_REGISTER_TYPE(SmartPeak::VarModErrorOp<double>);
+CEREAL_REGISTER_TYPE(SmartPeak::CountErrorOp<double>);
+CEREAL_REGISTER_TYPE(SmartPeak::SumWeightGradOp<double>);
+CEREAL_REGISTER_TYPE(SmartPeak::ProdWeightGradOp<double>);
+CEREAL_REGISTER_TYPE(SmartPeak::MaxWeightGradOp<double>);
+CEREAL_REGISTER_TYPE(SmartPeak::CountWeightGradOp<double>);
+CEREAL_REGISTER_TYPE(SmartPeak::MeanWeightGradOp<double>);
+CEREAL_REGISTER_TYPE(SmartPeak::VarModWeightGradOp<double>);
+
+CEREAL_REGISTER_TYPE(SmartPeak::SumOp<int>);
+CEREAL_REGISTER_TYPE(SmartPeak::ProdOp<int>);
+CEREAL_REGISTER_TYPE(SmartPeak::MaxOp<int>);
+CEREAL_REGISTER_TYPE(SmartPeak::MeanOp<int>);
+CEREAL_REGISTER_TYPE(SmartPeak::VarianceOp<int>);
+CEREAL_REGISTER_TYPE(SmartPeak::VarModOp<int>);
+CEREAL_REGISTER_TYPE(SmartPeak::CountOp<int>);
+CEREAL_REGISTER_TYPE(SmartPeak::SumErrorOp<int>);
+CEREAL_REGISTER_TYPE(SmartPeak::ProdErrorOp<int>);
+CEREAL_REGISTER_TYPE(SmartPeak::MaxErrorOp<int>);
+CEREAL_REGISTER_TYPE(SmartPeak::MeanErrorOp<int>);
+CEREAL_REGISTER_TYPE(SmartPeak::VarModErrorOp<int>);
+CEREAL_REGISTER_TYPE(SmartPeak::CountErrorOp<int>);
+CEREAL_REGISTER_TYPE(SmartPeak::SumWeightGradOp<int>);
+CEREAL_REGISTER_TYPE(SmartPeak::ProdWeightGradOp<int>);
+CEREAL_REGISTER_TYPE(SmartPeak::MaxWeightGradOp<int>);
+CEREAL_REGISTER_TYPE(SmartPeak::CountWeightGradOp<int>);
+CEREAL_REGISTER_TYPE(SmartPeak::MeanWeightGradOp<int>);
+CEREAL_REGISTER_TYPE(SmartPeak::VarModWeightGradOp<int>);
 #endif //SMARTPEAK_INTEGRATIONFUNCTION_H

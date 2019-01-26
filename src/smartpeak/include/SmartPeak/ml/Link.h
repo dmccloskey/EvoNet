@@ -5,6 +5,7 @@
 
 #include <tuple>
 #include <string>
+
 #include <cereal/cereal.hpp>
 
 namespace SmartPeak
