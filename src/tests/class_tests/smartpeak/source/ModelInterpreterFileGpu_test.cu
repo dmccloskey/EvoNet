@@ -113,11 +113,11 @@ void test_loadModelBinary1()
 	ModelInterpreterDefaultDevice<float> model_interpreter_test;
 	data.loadModelInterpreterBinary(filename, model_interpreter_test);
 
-	BOOST_CHECK(model_interpreter_test.getTensorOpsSteps() == model_interpreter.getTensorOpsSteps());
-	BOOST_CHECK(model_interpreter_test.getModelResources() == model_interpreter.getModelResources());
+	assert(model_interpreter_test.getTensorOpsSteps() == model_interpreter.getTensorOpsSteps());
+	assert(model_interpreter_test.getModelResources().size() == model_interpreter.getModelResources().size());
 }
 
-void_loadModelBinary2()
+void test_loadModelBinary2()
 {
 	Model<float> model2 = makeModel1();
 	ModelInterpreterFileDefaultDevice<float> data;
@@ -181,7 +181,7 @@ void_loadModelBinary2()
 		}
 	}
 	const Eigen::Tensor<float, 0> total_error = model_interpreter.getModelError()->getError().sum();
-	BOOST_CHECK(total_error(0) <= 757.0);
+	assert(total_error(0) <= 757.0);
 	// END: model_interpreter test taken from ModelinterpreterCpu_test
 
 	// Store the model interpreter
@@ -199,8 +199,6 @@ void_loadModelBinary2()
 	// Compile the graph into a set of operations and allocate all tensors
 	model_interpreter_test.getForwardPropogationOperations(model2, batch_size, memory_size, train, false, true);
 	model_interpreter_test.allocateModelErrorTensor(batch_size, memory_size);
-
-	BOOST_CHECK(model_interpreter_test == model_interpreter);  // Trivial comparison; instead we use the following from `ModelInterpreterCpu_test.cpp`
 
 	// RE-START: model_interpreter test taken from ModelinterpreterCpu_test
 	// iterate until we find the optimal values
@@ -228,7 +226,7 @@ void_loadModelBinary2()
 	}
 
 	const Eigen::Tensor<float, 0> total_error_test = model_interpreter_test.getModelError()->getError().sum();
-	BOOST_CHECK(total_error_test(0) <= 757.0);
+	assert(total_error_test(0) <= 757.0);
 	// END RE-START: model_interpreter test taken from ModelinterpreterCpu_test
 }
 
