@@ -102,7 +102,7 @@ BOOST_AUTO_TEST_CASE(logExpectedAndPredictedOutputPerEpoch)
 	ModelBuilder<float> model_builder;
 	Model<float> model;
 	model.setName("Model1");
-	std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input", 2);
+	std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input", "Input", 2);
 	std::vector<std::string> node_names_test = { "Input_0", "Input_1" };
 	int batch_size = 2;
 	int memory_size = 1;
@@ -125,7 +125,7 @@ BOOST_AUTO_TEST_CASE(logModuleMeanAndVariancePerEpoch)
 	ModelBuilder<float> model_builder;
 	Model<float> model;
 	model.setName("Model1");
-	std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input", 2);
+	std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input", "Input", 2);
 	node_names = model_builder.addFullyConnected(model, "Hidden", "Mod1", node_names,
 		2, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
 		std::shared_ptr<IntegrationOp<float>>(new ProdOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new ProdErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new ProdWeightGradOp<float>()),
@@ -149,7 +149,7 @@ BOOST_AUTO_TEST_CASE(logWeightsPerEpoch)
 	ModelBuilder<float> model_builder;
 	Model<float> model;
 	model.setName("Model1");
-	std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input", 2);
+	std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input", "Input", 2);
 	node_names = model_builder.addFullyConnected(model, "Hidden", "Mod1", node_names,
 		2, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
 		std::shared_ptr<IntegrationOp<float>>(new ProdOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new ProdErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new ProdWeightGradOp<float>()),
@@ -173,7 +173,7 @@ BOOST_AUTO_TEST_CASE(logNodeErrorsPerEpoch)
 	ModelBuilder<float> model_builder;
 	Model<float> model;
 	model.setName("Model1");
-	std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input", 2);
+	std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input", "Input", 2);
 	node_names = model_builder.addFullyConnected(model, "Hidden", "Mod1", node_names,
 		2, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
 		std::shared_ptr<IntegrationOp<float>>(new ProdOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new ProdErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new ProdWeightGradOp<float>()),
@@ -197,7 +197,7 @@ BOOST_AUTO_TEST_CASE(logNodeOutputsPerEpoch)
 	ModelBuilder<float> model_builder;
 	Model<float> model;
 	model.setName("Model1");
-	std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input", 2);
+	std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input", "Input", 2);
 	node_names = model_builder.addFullyConnected(model, "Hidden", "Mod1", node_names,
 		2, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
 		std::shared_ptr<IntegrationOp<float>>(new ProdOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new ProdErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new ProdWeightGradOp<float>()),
@@ -221,7 +221,7 @@ BOOST_AUTO_TEST_CASE(logNodeDerivativesPerEpoch)
 	ModelBuilder<float> model_builder;
 	Model<float> model;
 	model.setName("Model1");
-	std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input", 2);
+	std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input", "Input", 2);
 	node_names = model_builder.addFullyConnected(model, "Hidden", "Mod1", node_names,
 		2, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
 		std::shared_ptr<IntegrationOp<float>>(new ProdOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new ProdErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new ProdWeightGradOp<float>()),
@@ -244,7 +244,7 @@ BOOST_AUTO_TEST_CASE(writeLogs)
 	ModelBuilder<float> model_builder;
 	Model<float> model;
 	model.setName("Model1");
-	std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input", 2);
+	std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input", "Input", 2);
 	std::vector<std::string> node_names_test = { "Input_0", "Input_1" };
 	int batch_size = 2;
 	int memory_size = 1;

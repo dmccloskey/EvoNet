@@ -40,7 +40,7 @@ public:
 
 		@returns vector of output node names
 		*/
-		std::vector<std::string> addInputNodes(Model<TensorT>& model, const std::string& name, const int& n_nodes);
+		std::vector<std::string> addInputNodes(Model<TensorT>& model, const std::string& name, const std::string & module_name, const int& n_nodes, bool specify_layer = false);
 
 		/**
 		@brief Add a fully connected layer to a model
@@ -530,7 +530,7 @@ public:
 		std::string makeUnityWeight(Model<TensorT>& model, const TensorT& scale, const std::string& module_name, const std::string& name_format, const std::string& lhs, const std::string& rhs);
   };
 	template<typename TensorT>
-	std::vector<std::string> ModelBuilder<TensorT>::addInputNodes(Model<TensorT> & model, const std::string & name, const int & n_nodes)
+	std::vector<std::string> ModelBuilder<TensorT>::addInputNodes(Model<TensorT> & model, const std::string & name, const std::string & module_name, const int & n_nodes, bool specify_layer)
 	{
 		std::vector<std::string> node_names;
 
@@ -542,6 +542,8 @@ public:
 			std::string node_name(node_name_char);
 			node_names.push_back(node_name);
 			Node<TensorT> node(node_name, NodeType::input, NodeStatus::activated, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
+			node.setModuleName(module_name);
+			if (specify_layer) node.setLayerName(module_name);
 			model.addNodes({ node });
 		}
 		return node_names;

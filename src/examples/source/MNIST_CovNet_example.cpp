@@ -50,7 +50,7 @@ public:
 		ModelBuilder<TensorT> model_builder;
 
 		// Add the inputs
-		std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", n_inputs);
+		std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", "Input", n_inputs);
 
 		// Add the first convolution -> max pool -> ReLU layers
 		std::vector<std::vector<std::string>> node_names_l0;
@@ -192,7 +192,7 @@ public:
 		ModelBuilder<TensorT> model_builder;
 
 		// Add the inputs
-		std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", n_inputs);
+		std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", "Input", n_inputs);
 
 		// Add the first convolution -> max pool -> ReLU layers
 		std::vector<std::string> node_names_conv0;

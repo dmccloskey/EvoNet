@@ -294,7 +294,7 @@ BOOST_AUTO_TEST_CASE(replicateModels)
 		Model<float> model;
 
 		// make the baseline model
-		std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input", 1);
+		std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input", "Input", 1);
 		node_names = model_builder.addFullyConnected(model, "Hidden1", "Mod1", node_names,
 			1, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
 			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
@@ -422,7 +422,7 @@ BOOST_AUTO_TEST_CASE(trainModels)
 		Model<float> model;
 
 		// make the baseline model
-		std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input", 1);
+		std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input", "Input", 1);
 		node_names = model_builder.addFullyConnected(model, "Hidden1", "Mod1", node_names,
 			1, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
 			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
@@ -552,7 +552,7 @@ BOOST_AUTO_TEST_CASE(evalModels)
 		Model<float> model;
 
 		// make the baseline model
-		std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input", 1);
+		std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input", "Input", 1);
 		node_names = model_builder.addFullyConnected(model, "Hidden1", "Mod1", node_names,
 			1, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
 			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
@@ -685,7 +685,7 @@ BOOST_AUTO_TEST_CASE(exampleUsage)
 		Model<float> model;
 
 		// make the baseline model
-		std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input", 1);
+		std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input", "Input", 1);
 		node_names = model_builder.addFullyConnected(model, "Hidden1", "Mod1", node_names,
 			1, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
 			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),

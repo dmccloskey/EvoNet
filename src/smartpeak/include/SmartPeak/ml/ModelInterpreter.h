@@ -403,6 +403,16 @@ namespace SmartPeak
 		@param[in] find_cycles Boolean to search for cyclic nodes
 		*/
 		void getForwardPropogationOperations(Model<TensorT>& model, const int& batch_size, const int& memory_size, const bool& train, const bool& fast_check, const bool& find_cycles);
+		
+		/**
+		@brief Convert a graph model to sequence of tensor operations
+
+		@param[in] model Network model
+		@param[in] batch_size Batch size
+		@param[in] memory_size Memory size
+		@param[in] train Boolean to indicate training or testing (needed for dropout or drop connection)
+		*/
+		void getGraphOperations(Model<TensorT>& model, const int& batch_size, const int& memory_size, const bool& train);
 
 		/**
 		@brief Allocate Node and Weight tensor memory for all model operations.

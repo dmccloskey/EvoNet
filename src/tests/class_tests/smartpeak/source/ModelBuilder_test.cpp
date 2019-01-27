@@ -48,13 +48,14 @@ BOOST_AUTO_TEST_CASE(addInputNodes)
   ModelBuilder<float> model_builder;
   Model<float> model;
   
-	std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input", 2);
+	std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input", "Input", 2);
 
   std::vector<std::string> node_names_test = {"Input_000000000000", "Input_000000000001"};
 	for (size_t i=0; i<node_names_test.size(); ++i)
 	{
 		BOOST_CHECK_EQUAL(model.getNode(node_names_test[i]).getName(), node_names_test[i]);
 		BOOST_CHECK_EQUAL(node_names[i], node_names_test[i]);
+		BOOST_CHECK_EQUAL(model.getNode(node_names_test[i]).getModuleName(), "Input");
 	}
 }
 
@@ -65,7 +66,7 @@ BOOST_AUTO_TEST_CASE(addFullyConnected1)
 	std::vector<std::string> node_names;
 
 	// make the input
-	node_names = model_builder.addInputNodes(model, "Input", 2);
+	node_names = model_builder.addInputNodes(model, "Input", "Input", 2);
 
 	// make the fully connected 
 	node_names = model_builder.addFullyConnected(model, "Hidden", "Mod1", node_names,
@@ -134,7 +135,7 @@ BOOST_AUTO_TEST_CASE(addFullyConnected2)
 	std::vector<std::string> node_names;
 
 	// make the input
-	node_names = model_builder.addInputNodes(model, "Input", 2);
+	node_names = model_builder.addInputNodes(model, "Input", "Input", 2);
 
 	// make the fully connected 
 	node_names = model_builder.addFullyConnected(model, "Hidden", "Mod1", node_names,
@@ -143,7 +144,7 @@ BOOST_AUTO_TEST_CASE(addFullyConnected2)
 		std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new SGDOp<float>(0.1, 0.9)), 0.2f, 0.8f);
 
 	// make the input
-	std::vector<std::string> node_names_encoding = model_builder.addInputNodes(model, "Encoding", 2);
+	std::vector<std::string> node_names_encoding = model_builder.addInputNodes(model, "Encoding", "Encoding", 2);
 
 	// make the fully connected 
 	model_builder.addFullyConnected(model, "Mod1", node_names_encoding, node_names,
@@ -221,7 +222,7 @@ BOOST_AUTO_TEST_CASE(addSinglyConnected1)
 	std::vector<std::string> node_names;
 
 	// make the input
-	node_names = model_builder.addInputNodes(model, "Input", 2);
+	node_names = model_builder.addInputNodes(model, "Input", "Input", 2);
 
 	// make the fully connected 
 	node_names = model_builder.addSinglyConnected(model, "Hidden", "Mod1", node_names,
@@ -290,7 +291,7 @@ BOOST_AUTO_TEST_CASE(addSinglyConnected2)
 	std::vector<std::string> node_names;
 
 	// make the input
-	node_names = model_builder.addInputNodes(model, "Input", 2);
+	node_names = model_builder.addInputNodes(model, "Input", "Input", 2);
 
 	// make the fully connected 
 	node_names = model_builder.addSinglyConnected(model, "Hidden", "Mod1", node_names,
@@ -299,7 +300,7 @@ BOOST_AUTO_TEST_CASE(addSinglyConnected2)
 		std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new SGDOp<float>(0.1, 0.9)), 0.2f, 0.8f);
 
 	// make the input
-	std::vector<std::string> node_names_encoding = model_builder.addInputNodes(model, "Encoding", 2);
+	std::vector<std::string> node_names_encoding = model_builder.addInputNodes(model, "Encoding", "Encoding", 2);
 
 	// make the fully connected 
 	model_builder.addSinglyConnected(model, "Mod1", node_names_encoding, node_names,
@@ -375,7 +376,7 @@ BOOST_AUTO_TEST_CASE(addSoftMax)
 	std::vector<std::string> node_names;
 
 	// make the input
-	node_names = model_builder.addInputNodes(model, "Input", 2);
+	node_names = model_builder.addInputNodes(model, "Input", "Input", 2);
 
 	// make the fully connected 
 	node_names = model_builder.addSoftMax(model, "SoftMax", "Mod1", node_names);
@@ -458,7 +459,7 @@ BOOST_AUTO_TEST_CASE(addStableSoftMax)
 	std::vector<std::string> node_names;
 
 	// make the input
-	node_names = model_builder.addInputNodes(model, "Input", 2);
+	node_names = model_builder.addInputNodes(model, "Input", "Input", 2);
 
 	// make the fully connected 
 	node_names = model_builder.addStableSoftMax(model, "SoftMax", "Mod1", node_names);
@@ -546,7 +547,7 @@ BOOST_AUTO_TEST_CASE(addConvolution1)
 	std::vector<std::string> node_names;
 
 	// make the input
-	node_names = model_builder.addInputNodes(model, "Input", 16);
+	node_names = model_builder.addInputNodes(model, "Input", "Input", 16);
 
 	// make the fully connected 
 	node_names = model_builder.addConvolution(
@@ -614,7 +615,7 @@ BOOST_AUTO_TEST_CASE(addConvolution2)
 	std::vector<std::string> node_names;
 
 	// make the input
-	node_names = model_builder.addInputNodes(model, "Input", 16);
+	node_names = model_builder.addInputNodes(model, "Input", "Input", 16);
 
 	// make the fully connected 
 	node_names = model_builder.addConvolution(
@@ -682,7 +683,7 @@ BOOST_AUTO_TEST_CASE(addConvolution3)
 	std::vector<std::string> node_names_input, node_names;
 
 	// make the input
-	node_names_input = model_builder.addInputNodes(model, "Input", 16);
+	node_names_input = model_builder.addInputNodes(model, "Input", "Input", 16);
 
 	// make the convolution layer
 	node_names = model_builder.addConvolution(
@@ -759,7 +760,7 @@ BOOST_AUTO_TEST_CASE(addNormalization1)
 	std::vector<std::string> node_names;
 
 	// make the input
-	node_names = model_builder.addInputNodes(model, "Input", 2);
+	node_names = model_builder.addInputNodes(model, "Input", "Input", 2);
 
 	// make the normalization 
 	node_names = model_builder.addNormalization(model, "Norm", "Mod1", node_names,
@@ -886,8 +887,8 @@ BOOST_AUTO_TEST_CASE(addGaussianEncoding)
 	std::vector<std::string> node_names;
 
 	// make the input
-	std::vector<std::string> mu_node_names = model_builder.addInputNodes(model, "Mu", 2);
-	std::vector<std::string> logvar_node_names = model_builder.addInputNodes(model, "LogVar", 2);
+	std::vector<std::string> mu_node_names = model_builder.addInputNodes(model, "Mu", "Mu", 2);
+	std::vector<std::string> logvar_node_names = model_builder.addInputNodes(model, "LogVar", "LogVar", 2);
 
 	// make the normalization 
 	node_names = model_builder.addGaussianEncoding(model, "Encoding", "Mod1", mu_node_names, logvar_node_names);
@@ -997,7 +998,7 @@ BOOST_AUTO_TEST_CASE(addCategoricalEncoding)
 	std::vector<std::string> node_names;
 
 	// make the input
-	std::vector<std::string> alpha_node_names = model_builder.addInputNodes(model, "Alpha", 2);
+	std::vector<std::string> alpha_node_names = model_builder.addInputNodes(model, "Alpha", "Alpha", 2);
 
 	// make the normalization 
 	node_names = model_builder.addCategoricalEncoding(model, "Encoding", "Mod1", alpha_node_names);
@@ -1139,7 +1140,7 @@ BOOST_AUTO_TEST_CASE(addDiscriminator)
 	std::vector<std::string> node_names;
 
 	// make the input
-	std::vector<std::string> encoding_node_names = model_builder.addInputNodes(model, "Mu", 2);
+	std::vector<std::string> encoding_node_names = model_builder.addInputNodes(model, "Mu", "Mu", 2);
 
 	// make the normalization 
 	node_names = model_builder.addDiscriminator(model, "Discriminator", "Mod1", encoding_node_names);
@@ -1219,7 +1220,7 @@ BOOST_AUTO_TEST_CASE(addLSTMBlock1)
 	std::vector<std::string> node_names;
 
 	// make the input
-	node_names = model_builder.addInputNodes(model, "Input", 2);
+	node_names = model_builder.addInputNodes(model, "Input", "Input", 2);
 
 	// make the normalization 
 	node_names = model_builder.addLSTMBlock1(model, "LSTM", "Mod1", node_names, 2,
@@ -1404,7 +1405,7 @@ BOOST_AUTO_TEST_CASE(addLSTM)
 	std::vector<std::string> node_names;
 
 	// make the input
-	node_names = model_builder.addInputNodes(model, "Input", 2);
+	node_names = model_builder.addInputNodes(model, "Input", "Input", 2);
 
 	// make the normalization 
 	node_names = model_builder.addLSTM(model, "LSTM", "Mod1", node_names, 2, 2,
@@ -1428,7 +1429,7 @@ BOOST_AUTO_TEST_CASE(addDotProdAttention1)
 	std::vector<std::string> node_names;
 
 	// make the input
-	node_names = model_builder.addInputNodes(model, "Input", 2);
+	node_names = model_builder.addInputNodes(model, "Input", "Input", 2);
 
 	// make the fully connected 
 	node_names = model_builder.addDotProdAttention(model, "Hidden", "Mod1", node_names, node_names, node_names,
@@ -1691,7 +1692,7 @@ BOOST_AUTO_TEST_CASE(addMultiHeadAttention1)
 	std::vector<std::string> node_names;
 
 	// make the input
-	node_names = model_builder.addInputNodes(model, "Input", 2);
+	node_names = model_builder.addInputNodes(model, "Input", "Input", 2);
 
 	// make the fully connected 
 	node_names = model_builder.addMultiHeadAttention(model, "Hidden", "Mod1", node_names, node_names, node_names,
@@ -1838,7 +1839,7 @@ BOOST_AUTO_TEST_CASE(addProjection1)
 	std::vector<std::string> node_names;
 
 	// make the input
-	node_names = model_builder.addInputNodes(model, "Input", 4);
+	node_names = model_builder.addInputNodes(model, "Input", "Input", 4);
 
 	// make the fully connected 
 	node_names = model_builder.addProjection(

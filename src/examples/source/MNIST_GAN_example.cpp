@@ -81,7 +81,7 @@ public:
 			model.getNodesMap().at(node_name)->setType(NodeType::output);
 
 		// Add the real image inputs
-		std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", n_encodings);
+		std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", "Input", n_encodings);
 		for (const std::string& node_name : node_names_gen)
 			node_names_input.push_back(node_name);
 

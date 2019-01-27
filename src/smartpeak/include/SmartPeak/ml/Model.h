@@ -363,12 +363,14 @@ private:
 			}
 			else {
 				if (node.getType() == NodeType::input) {
+					// Add layer_name of "Input" to ensure they are allocated to seperate layers?
 					std::shared_ptr<Node<TensorT>> node_ptr_cpy = node_ptr;
 					input_nodes_.push_back(node_ptr_cpy);
 				}
 				else if (node.getType() == NodeType::output) {
+					// Add layer_name of "Output" to ensure they are allocated to seperate layers?
 					std::shared_ptr<Node<TensorT>> node_ptr_cpy = node_ptr;
-					output_nodes_.push_back(node_ptr);
+					output_nodes_.push_back(node_ptr_cpy);
 				}
 			}
 		}
