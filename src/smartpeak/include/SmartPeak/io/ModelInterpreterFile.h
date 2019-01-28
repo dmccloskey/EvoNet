@@ -15,6 +15,7 @@
 
 // .cpp
 #include <cereal/archives/binary.hpp>
+#include <fstream>
 
 namespace SmartPeak
 {
