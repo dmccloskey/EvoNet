@@ -395,6 +395,43 @@ namespace SmartPeak
 		/**
 		@brief Convert a graph model to sequence of tensor operations
 
+		@param[in, out] model Network model
+		@param[in] batch_size Batch size
+		@param[in] memory_size Memory size
+		@param[in] train Boolean to indicate training or testing (needed for dropout or drop connection)
+		@param[in] fast_check Boolean to use a faster but incomplete tensor compatibility check when manually specifying layers
+		@param[in] find_cycles Boolean to search for cyclic nodes
+		@param[in] preserve_OoO Boolean to indicate whether the order of operation (OoO) of the model should be preserved (true) or
+			the model should be treated as a graph where all operations happen simultaneously (false)
+		*/
+		void getForwardPropogationOperations(Model<TensorT>& model, const int& batch_size, const int& memory_size, const bool& train, const bool& fast_check, const bool& find_cycles, const bool& preserve_OoO);
+		
+		/**
+		@brief Convert a graph model to sequence of tensor operations
+			preserving the order of operations
+
+		@param[in, out] model Network model
+		@param[in] find_cycles Boolean to search for cyclic nodes
+		@param[out] FP_operations_expanded List of forward (and reverse) operations
+		@param[out] iter Number of operations
+		*/
+		void getFPOpsOoO_(Model<TensorT>& model, const bool& find_cycles, std::vector<OperationList<TensorT>>& FP_operations_expanded, int& iter);
+
+		/**
+		@brief Convert a graph model to sequence of tensor operations
+			preserving the order of operations
+
+		@param[in, out] model Network model
+		@param[in] find_cycles Boolean to search for cyclic nodes
+		@param[out] FP_operations_expanded List of forward (and reverse) operations
+		@param[out] iter Number of operations
+		*/
+		void getFPOpsGraph_(Model<TensorT>& model, std::vector<OperationList<TensorT>>& FP_operations_expanded, int& iter);
+
+		/**
+		@brief Convert a graph model to sequence of tensor operations
+			preserving the order of operations
+
 		@param[in] model Network model
 		@param[in] batch_size Batch size
 		@param[in] memory_size Memory size
@@ -402,17 +439,10 @@ namespace SmartPeak
 		@param[in] fast_check Boolean to use a faster but incomplete tensor compatibility check when manually specifying layers
 		@param[in] find_cycles Boolean to search for cyclic nodes
 		*/
-		void getForwardPropogationOperations(Model<TensorT>& model, const int& batch_size, const int& memory_size, const bool& train, const bool& fast_check, const bool& find_cycles);
-		
-		/**
-		@brief Convert a graph model to sequence of tensor operations
-
-		@param[in] model Network model
-		@param[in] batch_size Batch size
-		@param[in] memory_size Memory size
-		@param[in] train Boolean to indicate training or testing (needed for dropout or drop connection)
-		*/
-		void getGraphOperations(Model<TensorT>& model, const int& batch_size, const int& memory_size, const bool& train);
+		template<typename TensorT, typename DeviceT>
+		void ModelInterpreter<TensorT, DeviceT>::getFPOpsGraph(
+			Model<TensorT>& model, const int& batch_size, const int& memory_size,
+			const bool& train, const bool& fast_check)
 
 		/**
 		@brief Allocate Node and Weight tensor memory for all model operations.
@@ -707,8 +737,6 @@ namespace SmartPeak
 				model.nodes_.at(link_map.second->getSourceNodeName())->getStatus() == NodeStatus::activated &&
 				model.nodes_.at(link_map.second->getSinkNodeName())->getStatus() == NodeStatus::initialized)
 			{
-				//if (FP_operations.size() == 680)
-				//	std::cout << "check" << std::endl;
 				OperationArguments<TensorT> arguments;
 				arguments.source_node = model.nodes_.at(link_map.second->getSourceNodeName());
 				arguments.weight = model.weights_.at(link_map.second->getWeightName());
@@ -1488,7 +1516,7 @@ namespace SmartPeak
 
 	template<typename TensorT, typename DeviceT>
 	void ModelInterpreter<TensorT, DeviceT>::getForwardPropogationOperations(Model<TensorT>& model, const int& batch_size, const int& memory_size, 
-		const bool& train, const bool& fast_check, const bool& find_cycles)
+		const bool& train, const bool& fast_check, const bool& find_cycles, const bool& preserve_OoO)
 	{
 		// register the batch and memory sizes with the model
 		// [TODO: add tests]
@@ -1499,75 +1527,16 @@ namespace SmartPeak
 
 		// Get the forward operation steps
 		if (tensor_ops_steps_.size() == 0) {
-			// STEP 1: Preliminaries...
 
-			// initialize the node statuses to determine the FP propogation steps
-			for (auto& nodes_map : model.nodes_) {
-				if (nodes_map.second->getType() == NodeType::input || nodes_map.second->getType() == NodeType::bias)
-					nodes_map.second->setStatus(NodeStatus::activated);
-				else
-					nodes_map.second->setStatus(NodeStatus::initialized);
-			}
-
-			// STEP 2: Get a list of unoptimized operations for FP
-			const int max_iters = 1e6;
-			std::vector<OperationList<TensorT>> FP_operations;
+			// compile the model into a list of operations
 			int iter = 0;
-			for (; iter < max_iters; ++iter)
-			{
-				// get the next hidden layer
-				std::map<std::string, int> FP_operations_map;
-				std::vector<OperationList<TensorT>> FP_operations_list;
-				getNextInactiveLayer(model, FP_operations_map, FP_operations_list);
+			std::vector<OperationList<TensorT>>& FP_operations_expanded;
+			if (preserve_OoO) 
+				getFPOpsOoO_(model, find_cycles, FP_operations_expanded, iter);
+			else
+				getFPOpsGraph_(model, find_cycles, FP_operations_expanded, iter);
 
-				// [OPTIMIZATION: for performance, this method has been combined with getNextInactiveLayer above to reduce
-				//							  the number of iterations through all model links
-				//std::map<std::string, int> FP_operations_map;
-				//std::vector<OperationList<TensorT>> FP_operations_list;
-				//getNextInactiveLayerWOBiases(model, FP_operations_map, FP_operations_list);
-				//// get biases
-				//std::vector<std::string> sink_nodes_with_biases;
-				//getNextInactiveLayerBiases(model, FP_operations_map, FP_operations_list, sink_nodes_with_biases);
-
-				if (find_cycles) {
-					// get cycles
-					std::map<std::string, int> FP_operations_map_cycles = FP_operations_map;
-					std::vector<OperationList<TensorT>> FP_operations_list_cycles = FP_operations_list;
-					std::vector<std::string> sink_nodes_cycles;
-					getNextInactiveLayerCycles(model, FP_operations_map_cycles, FP_operations_list_cycles, sink_nodes_cycles);
-
-					// Remove all nodes involved in "cycles" that have arguments
-					// involving source to sink node pairs not identified as cycles
-					pruneInactiveLayerCycles(model, FP_operations_map, FP_operations_map_cycles, FP_operations_list, FP_operations_list_cycles, sink_nodes_cycles);
-				}
-
-				// check if all nodes have been activated
-				if (FP_operations_list.size() == 0) {
-					break;
-				}
-
-				// activate sink nodes and update the Operations index
-				for (auto& FP_operation : FP_operations_list) {
-					FP_operation.result.sink_node->setStatus(NodeStatus::activated);
-					FP_operation.operation_index = iter;
-					FP_operations.push_back(FP_operation);
-				}
-			}
-
-			// STEP 3: organize the operations into Tensor layers for hardware acceleration
-
-			// Pre-emptively Expand the set of operations
-			std::vector<OperationList<TensorT>> FP_operations_expanded;
-			//expandForwardPropogationOperations(FP_operations, FP_operations_expanded); // Slower and not needed...
-			FP_operations_expanded.reserve(iter);
-			expandAllForwardPropogationOperations(FP_operations, FP_operations_expanded);
-
-			// [DEBUGGING]
-			//for (auto& FP_operation : FP_operations_expanded) {
-			//	std::cout << FP_operation.result.sink_node->getName() << std::endl;
-			//}
-
-			// identify tensor operation motifs
+			// identify tensor operation motifs in the list of operations
 			std::set<std::string> identified_sink_nodes;
 			//std::map<std::string, std::vector<int>> custom_ops = getCustomOperations(FP_operations_expanded, identified_sink_nodes);
 			//std::map<std::string, std::vector<int>> FC_ops = getFullyConnectedOperations(FP_operations_expanded, identified_sink_nodes);
@@ -1586,24 +1555,11 @@ namespace SmartPeak
 				tensor_ops_steps[FP_operations_expanded[tensor_op.second[0]].operation_index].emplace(tensor_op.first, tensor_op.second);
 			}
 
-			// Save for fast model check pointing
+			// Save the list of operations for fast model check-pointing
 			tensor_ops_steps_ = tensor_ops_steps;
 			FP_operations_ = FP_operations_expanded;
 
-			// [DEBUGGING]
-			//int cnt = 0;
-			//for (auto& tensor_ops_map : tensor_ops_steps) {
-			//	std::cout << "Operation Index: " << cnt << std::endl;
-			//	for (auto& tensor_ops : tensor_ops_map) {
-			//		std::cout << "Operation: " << tensor_ops.first << std::endl;
-			//		for (auto& tensor_op : tensor_ops.second) {
-			//			std::cout << "Tensor_op: " << tensor_op << std::endl;
-			//		}
-			//	}
-			//	++cnt;
-			//}
-
-			// Part 4: Allocate memory for tensors
+			// Allocate memory for tensors
 			for (auto& tensor_ops_step: tensor_ops_steps) {
 				//if (custom_ops.size() != 0) {
 				//	std::vector<int> source_layer_sizes, sink_layer_sizes;
@@ -1658,6 +1614,108 @@ namespace SmartPeak
 				}
 			}
 		}
+	}
+
+	template<typename TensorT, typename DeviceT>
+	inline void ModelInterpreter<TensorT, DeviceT>::getFPOpsOoO_(Model<TensorT>& model, const bool& find_cycles, std::vector<OperationList<TensorT>>& FP_operations_expanded, int& iter)
+	{
+		FP_operations_expanded.clear();
+		iter = 0;
+
+		// STEP 1: Preliminaries...
+		// initialize the node statuses to determine the FP propogation steps
+		for (auto& nodes_map : model.nodes_) {
+			if (nodes_map.second->getType() == NodeType::input || nodes_map.second->getType() == NodeType::bias)
+				nodes_map.second->setStatus(NodeStatus::activated);
+			else
+				nodes_map.second->setStatus(NodeStatus::initialized);
+		}
+
+		// STEP 2: Get a list of unoptimized operations for FP
+		const int max_iters = 1e6;
+		std::vector<OperationList<TensorT>> FP_operations;
+		for (; iter < max_iters; ++iter)
+		{
+			// get the next hidden layer
+			std::map<std::string, int> FP_operations_map;
+			std::vector<OperationList<TensorT>> FP_operations_list;
+			getNextInactiveLayer(model, FP_operations_map, FP_operations_list);
+
+			// [OPTIMIZATION: for performance, this method has been combined with getNextInactiveLayer above to reduce
+			//							  the number of iterations through all model links
+			//std::map<std::string, int> FP_operations_map;
+			//std::vector<OperationList<TensorT>> FP_operations_list;
+			//getNextInactiveLayerWOBiases(model, FP_operations_map, FP_operations_list);
+			//// get biases
+			//std::vector<std::string> sink_nodes_with_biases;
+			//getNextInactiveLayerBiases(model, FP_operations_map, FP_operations_list, sink_nodes_with_biases);
+
+			if (find_cycles) {
+				// get cycles
+				std::map<std::string, int> FP_operations_map_cycles = FP_operations_map;
+				std::vector<OperationList<TensorT>> FP_operations_list_cycles = FP_operations_list;
+				std::vector<std::string> sink_nodes_cycles;
+				getNextInactiveLayerCycles(model, FP_operations_map_cycles, FP_operations_list_cycles, sink_nodes_cycles);
+
+				// Remove all nodes involved in "cycles" that have arguments
+				// involving source to sink node pairs not identified as cycles
+				pruneInactiveLayerCycles(model, FP_operations_map, FP_operations_map_cycles, FP_operations_list, FP_operations_list_cycles, sink_nodes_cycles);
+			}
+
+			// check if all nodes have been activated
+			if (FP_operations_list.size() == 0) {
+				break;
+			}
+
+			// activate sink nodes and update the Operations index
+			for (auto& FP_operation : FP_operations_list) {
+				FP_operation.result.sink_node->setStatus(NodeStatus::activated);
+				FP_operation.operation_index = iter;
+				FP_operations.push_back(FP_operation);
+			}
+		}
+
+		// STEP 3: organize the operations into Tensor layers for hardware acceleration
+
+		// Pre-emptively Expand the set of operations
+		//expandForwardPropogationOperations(FP_operations, FP_operations_expanded); // Slower and not needed...
+		expandAllForwardPropogationOperations(FP_operations, FP_operations_expanded);
+
+		// [DEBUGGING]
+		//for (auto& FP_operation : FP_operations_expanded) {
+		//	std::cout << FP_operation.result.sink_node->getName() << std::endl;
+		//}
+
+	}
+
+	template<typename TensorT, typename DeviceT>
+	inline void ModelInterpreter<TensorT, DeviceT>::getFPOpsGraph_(Model<TensorT>& model, std::vector<OperationList<TensorT>>& FP_operations_expanded, int & iter)
+	{
+		FP_operations_expanded.clear();
+
+		// get all operations in the graph
+		for (auto& link_map : model.links_)
+		{
+			// arguments
+			// NOTE: each link is given it's own OperationList to avoid the eventual split downstream
+			OperationArguments<TensorT> arguments;
+			arguments.source_node = model.nodes_.at(link_map.second->getSourceNodeName());
+			arguments.weight = model.weights_.at(link_map.second->getWeightName());
+			arguments.time_step = 1;
+			arguments.link_name = link_map.first;
+
+			// results
+			OperationList<TensorT> operation_list;
+			OperationResult<TensorT> result;
+			result.sink_node = model.nodes_.at(link_map.second->getSinkNodeName());
+			result.time_step = 0;
+			operation_list.result = result;
+			operation_list.arguments.push_back(arguments);
+			operation_list.operation_index = 0;
+			FP_operations_expanded.push_back(operation_list);
+		}
+
+		iter = 1;
 	}
 	
 	template<typename TensorT, typename DeviceT>

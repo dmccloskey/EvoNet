@@ -366,7 +366,7 @@ namespace SmartPeak
 		// copy out the weight values
 		if (weights) {
 			for (auto& weight_map : model.getWeightsMap()) {
-				// NOTE: there is a strange bug where the tensor indices of the output nodes pointer are not updated
+				// NOTE: there is a strange bug where the tensor indices of the weight pointer are not updated
 				const int tensor_index = std::get<0>(weight_map.second->getTensorIndex()[0]);
 				const int layer1_index = std::get<1>(weight_map.second->getTensorIndex()[0]);
 				const int layer2_index = std::get<2>(weight_map.second->getTensorIndex()[0]);
