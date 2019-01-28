@@ -7,6 +7,73 @@
 using namespace SmartPeak;
 using namespace std;
 
+BOOST_AUTO_TEST_SUITE(modelInterpreterCpu)
+
+/**
+ * Part 2 test suit for the ModelInterpreter class
+ * 
+ * The following methods test cpu-based methods
+*/
+
+BOOST_AUTO_TEST_CASE(allocateModelErrorTensor)
+{
+	ModelInterpreterDefaultDevice<float> model_interpreter;
+	const int batch_size = 4;
+	const int memory_size = 2;
+
+	model_interpreter.allocateModelErrorTensor(batch_size, memory_size);
+
+	BOOST_CHECK_EQUAL(model_interpreter.getModelError()->getBatchSize(), 4);
+	BOOST_CHECK_EQUAL(model_interpreter.getModelError()->getMemorySize(), 2);
+}
+
+BOOST_AUTO_TEST_CASE(reInitNodes)
+{
+	ModelInterpreterDefaultDevice<float> model_interpreter;
+	const int batch_size = 4;
+	const int memory_size = 2;
+
+	// TODO
+}
+
+BOOST_AUTO_TEST_CASE(reInitModelError)
+{
+	ModelInterpreterDefaultDevice<float> model_interpreter;
+	const int batch_size = 4;
+	const int memory_size = 2;
+
+	model_interpreter.allocateModelErrorTensor(batch_size, memory_size);
+	Eigen::Tensor<float, 2> ones(batch_size, memory_size); ones.setConstant(1);
+	model_interpreter.getModelError()->getError() = ones;
+	BOOST_CHECK_EQUAL(model_interpreter.getModelError()->getError()(0, 0), 1);
+
+	model_interpreter.reInitModelError();
+	BOOST_CHECK_EQUAL(model_interpreter.getModelError()->getError()(0, 0), 0);
+}
+
+// BUG in addWeightTensor
+//BOOST_AUTO_TEST_CASE(updateSolverParams)
+//{
+//	ModelInterpreterDefaultDevice<float> model_interpreter;
+//
+//	// Make a dummy weight tensor data and add it to the model interpreter
+//	WeightTensorDataCpu<float> weight_data;
+//	std::vector<float> solver_params = { 1, 3, 0.8 };
+//	std::vector<std::pair<int, int>> weight_indices = { std::make_pair(0,0), std::make_pair(0,1),std::make_pair(1,0),std::make_pair(1,1) };
+//	std::map<std::string, std::vector<std::pair<int, int>>> shared_weight_indices = {};
+//	std::vector<float> weight_values = { 0, 0, 0, 0 };
+//	weight_data.initWeightTensorData(2, 2, weight_indices, shared_weight_indices, weight_values, true, solver_params);
+//
+//	// Test that the learning rate was updated
+//	model_interpreter.addWeightTensor(weight_data);
+//	model_interpreter.updateSolverParams(0, 2);
+//	assert(model_interpreter.getWeightTensor(0)->getSolverParams()(0, 0, 0) == 2);
+//	assert(model_interpreter.getWeightTensor(0)->getSolverParams()(0, 0, 1) == 3);
+//	assert(model_interpreter.getWeightTensor(0)->getSolverParams()(1, 0, 0) == 2);
+//	assert(model_interpreter.getWeightTensor(0)->getSolverParams()(0, 1, 0) == 2);
+//	assert(model_interpreter.getWeightTensor(0)->getSolverParams()(1, 1, 0) == 2);
+//}
+
 Model<float> makeModelToy1()
 {
 	/**
@@ -89,15 +156,6 @@ Model<float> makeModelToy1()
 	return model_FC_Sum;
 }
 
-BOOST_AUTO_TEST_SUITE(modelInterpreterCpu)
-
-/**
- * Part 2 test suit for the ModelInterpreter class
- * 
- * The following test methods that are
- * required of a standard feed forward neural network and recurrent neural network
-*/
-
 Model<float> model_allocateForwardPropogationLayerTensors = makeModelToy1();
 BOOST_AUTO_TEST_CASE(allocateForwardPropogationLayerTensors)
 {
@@ -175,7 +233,7 @@ BOOST_AUTO_TEST_CASE(getForwardPropogationOperations)
 	// change the bias weights to shared
 	model_getForwardPropogationOperations.links_.at("5")->setWeightName("4");
 
-	model_interpreter.getForwardPropogationOperations(model_getForwardPropogationOperations, batch_size, memory_size, train, false, true);
+	model_interpreter.getForwardPropogationOperations(model_getForwardPropogationOperations, batch_size, memory_size, train, false, true, true);
 
 	// asserts are needed because boost deallocates the pointer memory after being called...
 	int expected_layer_tensors = 4;
@@ -258,42 +316,6 @@ BOOST_AUTO_TEST_CASE(getForwardPropogationOperations)
 	}
 }
 
-BOOST_AUTO_TEST_CASE(allocateModelErrorTensor)
-{
-	ModelInterpreterDefaultDevice<float> model_interpreter;
-	const int batch_size = 4;
-	const int memory_size = 2;
-
-	model_interpreter.allocateModelErrorTensor(batch_size, memory_size);
-
-	BOOST_CHECK_EQUAL(model_interpreter.getModelError()->getBatchSize(), 4);
-	BOOST_CHECK_EQUAL(model_interpreter.getModelError()->getMemorySize(), 2);
-}
-
-BOOST_AUTO_TEST_CASE(reInitNodes)
-{
-	ModelInterpreterDefaultDevice<float> model_interpreter;
-	const int batch_size = 4;
-	const int memory_size = 2;
-
-	// TODO
-}
-
-BOOST_AUTO_TEST_CASE(reInitModelError)
-{
-	ModelInterpreterDefaultDevice<float> model_interpreter;
-	const int batch_size = 4;
-	const int memory_size = 2;
-
-	model_interpreter.allocateModelErrorTensor(batch_size, memory_size);
-	Eigen::Tensor<float, 2> ones(batch_size, memory_size); ones.setConstant(1);
-	model_interpreter.getModelError()->getError() = ones;
-	BOOST_CHECK_EQUAL(model_interpreter.getModelError()->getError()(0,0), 1);
-
-	model_interpreter.reInitModelError();
-	BOOST_CHECK_EQUAL(model_interpreter.getModelError()->getError()(0, 0), 0);
-}
-
 Model<float> model_mapValuesToLayers = makeModelToy1();
 BOOST_AUTO_TEST_CASE(mapValuesToLayers)
 {
@@ -305,7 +327,7 @@ BOOST_AUTO_TEST_CASE(mapValuesToLayers)
 	// initialize nodes
 	// NOTE: input and biases have been activated when the model was created
 
-	model_interpreter.getForwardPropogationOperations(model_mapValuesToLayers, batch_size, memory_size, train, false, true);
+	model_interpreter.getForwardPropogationOperations(model_mapValuesToLayers, batch_size, memory_size, train, false, true, true);
 
 	// create the input
 	const std::vector<std::string> node_ids = { "0", "1" };
@@ -361,7 +383,7 @@ BOOST_AUTO_TEST_CASE(executeForwardPropogationOperations)
 	const bool train = true;
 
 	// compile the graph into a set of operations
-	model_interpreter.getForwardPropogationOperations(model_executeForwardPropogationOperations, batch_size, memory_size, train, false, true);
+	model_interpreter.getForwardPropogationOperations(model_executeForwardPropogationOperations, batch_size, memory_size, train, false, true, true);
 
 	// create the input
 	const std::vector<std::string> node_ids = { "0", "1" };
@@ -411,7 +433,7 @@ BOOST_AUTO_TEST_CASE(executeModelErrorOperations)
 	const bool train = true;
 
 	// compile the graph into a set of operations
-	model_interpreter.getForwardPropogationOperations(model_executeModelErrorOperations, batch_size, memory_size, train, false, true);
+	model_interpreter.getForwardPropogationOperations(model_executeModelErrorOperations, batch_size, memory_size, train, false, true, true);
 
 	// create the input
 	const std::vector<std::string> node_ids = { "0", "1" };
@@ -467,7 +489,7 @@ BOOST_AUTO_TEST_CASE(executeBackwardPropogationOperations)
 	const bool train = true;
 
 	// compile the graph into a set of operations
-	model_interpreter.getForwardPropogationOperations(model_executeBackwardPropogationOperations, batch_size, memory_size, train, false, true);
+	model_interpreter.getForwardPropogationOperations(model_executeBackwardPropogationOperations, batch_size, memory_size, train, false, true, true);
 
 	// create the input
 	const std::vector<std::string> node_ids = { "0", "1" };
@@ -520,7 +542,7 @@ BOOST_AUTO_TEST_CASE(executeWeightErrorOperations)
 	const bool train = true;
 
 	// compile the graph into a set of operations
-	model_interpreter.getForwardPropogationOperations(model_executeWeightErrorOperations, batch_size, memory_size, train, false, true);
+	model_interpreter.getForwardPropogationOperations(model_executeWeightErrorOperations, batch_size, memory_size, train, false, true, true);
 
 	// create the input
 	const std::vector<std::string> node_ids = { "0", "1" };
@@ -574,7 +596,7 @@ BOOST_AUTO_TEST_CASE(executeWeightUpdateOperations)
 	const bool train = true;
 
 	// compile the graph into a set of operations
-	model_interpreter.getForwardPropogationOperations(model_executeWeightUpdateOperations, batch_size, memory_size, train, false, true);
+	model_interpreter.getForwardPropogationOperations(model_executeWeightUpdateOperations, batch_size, memory_size, train, false, true, true);
 
 	// create the input
 	const std::vector<std::string> node_ids = { "0", "1" };
@@ -636,7 +658,7 @@ BOOST_AUTO_TEST_CASE(modelTrainer1)
 	}
 
 	// compile the graph into a set of operations and allocate all tensors
-	model_interpreter.getForwardPropogationOperations(model_modelTrainer1, batch_size, memory_size, train, false, true);
+	model_interpreter.getForwardPropogationOperations(model_modelTrainer1, batch_size, memory_size, train, false, true, true);
 	model_interpreter.allocateModelErrorTensor(batch_size, memory_size);
 
 	// create the input
@@ -744,7 +766,7 @@ BOOST_AUTO_TEST_CASE(FPTT)
 	const bool train = true;
 
 	// compile the graph into a set of operations and allocate all tensors
-	model_interpreter.getForwardPropogationOperations(model_FPTT, batch_size, memory_size, train, false, true);
+	model_interpreter.getForwardPropogationOperations(model_FPTT, batch_size, memory_size, train, false, true, true);
 	model_interpreter.allocateModelErrorTensor(batch_size, memory_size);
 
 	// create the input
@@ -804,7 +826,7 @@ BOOST_AUTO_TEST_CASE(CETT)
 	const bool train = true;
 
 	// compile the graph into a set of operations and allocate all tensors
-	model_interpreter.getForwardPropogationOperations(model_CETT, batch_size, memory_size, train, false, true);
+	model_interpreter.getForwardPropogationOperations(model_CETT, batch_size, memory_size, train, false, true, true);
 	model_interpreter.allocateModelErrorTensor(batch_size, memory_size);
 
 	// create the input
@@ -879,7 +901,7 @@ BOOST_AUTO_TEST_CASE(TBPTT)
 	const bool train = true;
 
 	// compile the graph into a set of operations and allocate all tensors
-	model_interpreter.getForwardPropogationOperations(model_TBPTT, batch_size, memory_size, train, false, true);
+	model_interpreter.getForwardPropogationOperations(model_TBPTT, batch_size, memory_size, train, false, true, true);
 	model_interpreter.allocateModelErrorTensor(batch_size, memory_size);
 
 	// create the input
@@ -956,7 +978,7 @@ BOOST_AUTO_TEST_CASE(updateWeights)
 	const bool train = true;
 
 	// compile the graph into a set of operations and allocate all tensors
-	model_interpreter.getForwardPropogationOperations(model_updateWeights, batch_size, memory_size, train, false, true);
+	model_interpreter.getForwardPropogationOperations(model_updateWeights, batch_size, memory_size, train, false, true, true);
 	model_interpreter.allocateModelErrorTensor(batch_size, memory_size);
 
 	// create the input
@@ -1019,7 +1041,7 @@ BOOST_AUTO_TEST_CASE(modelTrainer2)
 	}
 
 	// compile the graph into a set of operations and allocate all tensors
-	model_interpreter.getForwardPropogationOperations(model_modelTrainer2, batch_size, memory_size, train, false, true);
+	model_interpreter.getForwardPropogationOperations(model_modelTrainer2, batch_size, memory_size, train, false, true, true);
 	model_interpreter.allocateModelErrorTensor(batch_size, memory_size);
 
 	// create the input
@@ -1082,7 +1104,7 @@ BOOST_AUTO_TEST_CASE(getModelResults)
 	const bool train = true;
 
 	// compile the graph into a set of operations and allocate all tensors
-	model_interpreter.getForwardPropogationOperations(model_getModelResults, batch_size, memory_size, train, false, true);
+	model_interpreter.getForwardPropogationOperations(model_getModelResults, batch_size, memory_size, train, false, true, true);
 	model_interpreter.allocateModelErrorTensor(batch_size, memory_size);
 
 	// create the input
@@ -1165,27 +1187,119 @@ BOOST_AUTO_TEST_CASE(getModelResults)
 	}
 }
 
-// BUG in addWeightTensor
-BOOST_AUTO_TEST_CASE(updateSolverParams)
+
+Model<float> makeModelToy3()
+{
+	/**
+	 * Interaction Graph Toy Network Model
+	 * Linear Harmonic Oscillator with three masses and two springs
+	*/
+	Node<float> m1, m2, m3;
+	Link l1_to_l2, l2_to_l1, l2_to_l3, l3_to_l2;
+	Weight<float> w1_to_w2, w2_to_w1, w2_to_w3, w3_to_w2;
+	Model<float> model3;
+	// Toy network: 1 hidden layer, fully connected, DCG
+	m1 = Node<float>("m1", NodeType::input, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+	m2 = Node<float>("m2", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+	m3 = Node<float>("m3", NodeType::output, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+	// weights  
+	std::shared_ptr<WeightInitOp<float>> weight_init;
+	std::shared_ptr<SolverOp<float>> solver;
+	// weight_init.reset(new RandWeightInitOp(1.0)); // No random init for testing
+	weight_init.reset(new ConstWeightInitOp<float>(1.0));
+	solver.reset(new SGDOp<float>(0.01, 0.9));
+	w1_to_w2 = Weight<float>("m1_to_m2", weight_init, solver);
+	weight_init.reset(new ConstWeightInitOp<float>(1.0));
+	solver.reset(new SGDOp<float>(0.01, 0.9));
+	w2_to_w1 = Weight<float>("m2_to_m1", weight_init, solver);
+	weight_init.reset(new ConstWeightInitOp<float>(1.0));
+	solver.reset(new SGDOp<float>(0.01, 0.9));
+	w2_to_w3 = Weight<float>("m2_to_m3", weight_init, solver);
+	weight_init.reset(new ConstWeightInitOp<float>(1.0));
+	solver.reset(new SGDOp<float>(0.01, 0.9));
+	w3_to_w2 = Weight<float>("m3_to_m2", weight_init, solver);
+	weight_init.reset();
+	solver.reset();
+	// links
+	l1_to_l2 = Link("l1_to_l2", "m1", "m2", "m1_to_m2");
+	l2_to_l1 = Link("l2_to_l1", "m2", "m1", "m2_to_m1");
+	l2_to_l3 = Link("l2_to_l3", "m2", "m3", "m2_to_m3");
+	l3_to_l2 = Link("l3_to_l2", "m3", "m2", "m3_to_m2");
+	model3.setId(3);
+	model3.addNodes({ m1, m2, m3 });
+	model3.addWeights({ w1_to_w2, w2_to_w1, w2_to_w3, w3_to_w2 });
+	model3.addLinks({ l1_to_l2, l2_to_l1, l2_to_l3, l3_to_l2 });
+	return model3;
+}
+
+Model<float> model_modelTrainer3 = makeModelToy3();
+BOOST_AUTO_TEST_CASE(modelTrainer3)
 {
 	ModelInterpreterDefaultDevice<float> model_interpreter;
+	const int batch_size = 5;
+	const int memory_size = 8;
+	const bool train = true;
 
-	// Make a dummy weight tensor data and add it to the model interpreter
-	WeightTensorDataCpu<float> weight_data;
-	std::vector<float> solver_params = { 1, 3, 0.8 };
-	std::vector<std::pair<int, int>> weight_indices = { std::make_pair(0,0), std::make_pair(0,1),std::make_pair(1,0),std::make_pair(1,1) };
-	std::map<std::string, std::vector<std::pair<int, int>>> shared_weight_indices = {};
-	std::vector<float> weight_values = { 0, 0, 0, 0 };
-	weight_data.initWeightTensorData(2, 2, weight_indices, shared_weight_indices, weight_values, true, solver_params);
+	// update the model solver
+	std::shared_ptr<SolverOp<float>> solver(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8));
+	for (auto& weight_map : model_modelTrainer3.getWeightsMap()) {
+		if (weight_map.second->getSolverOp()->getName() == "SGDOp")
+			weight_map.second->setSolverOp(solver);
+	}
 
-	// Test that the learning rate was updated
-	model_interpreter.addWeightTensor(weight_data);
-	model_interpreter.updateSolverParams(0, 2);
-	assert(model_interpreter.getWeightTensor(0)->getSolverParams()(0, 0, 0) == 2);
-	assert(model_interpreter.getWeightTensor(0)->getSolverParams()(0, 0, 1) == 3);
-	assert(model_interpreter.getWeightTensor(0)->getSolverParams()(1, 0, 0) == 2);
-	assert(model_interpreter.getWeightTensor(0)->getSolverParams()(0, 1, 0) == 2);
-	assert(model_interpreter.getWeightTensor(0)->getSolverParams()(1, 1, 0) == 2);
+	// compile the graph into a set of operations and allocate all tensors
+	model_interpreter.getForwardPropogationOperations(model_modelTrainer3, batch_size, memory_size, train, false, true, false);
+	model_interpreter.allocateModelErrorTensor(batch_size, memory_size);
+
+	// create the input
+	const std::vector<std::string> input_nodes = { "m1"}; 
+	Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_nodes.size());
+	input.setValues(
+		{ {{8}, {7}, {6}, {5}, {4}, {3}, {2}, {1}},
+		{{9}, {8}, {7}, {6}, {5}, {4}, {3}, {2}},
+		{{10}, {9}, {8}, {7}, {6}, {5}, {4}, {3}},
+		{{11}, {10}, {9}, {8}, {7}, {6}, {5}, {4}},
+		{{12}, {11}, {10}, {9}, {8}, {7}, {6}, {5}} }
+	);
+
+	// expected output (from t=n to t=0) for  y = m1*(m2*x + b*yprev) where m1 = 1, m2 = 1 and b = -1
+	const std::vector<std::string> output_nodes = { "m2", "m3" };
+	Eigen::Tensor<float, 3> expected(batch_size, memory_size, (int)output_nodes.size());
+	expected.setValues(
+		{ { { 4 },{ 4 },{ 3 },{ 3 },{ 2 },{ 2 },{ 1 },{ 1 } },
+		{ { 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 },{ 2 },{ 1 } },
+		{ { 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 },{ 2 } },
+		{ { 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 } },
+		{ { 6 },{ 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 } } });
+	LossFunctionOp<float>* loss_function = new MSEOp<float>();
+	LossFunctionGradOp<float>* loss_function_grad = new MSEGradOp<float>();
+
+	// iterate until we find the optimal values
+	const int max_iter = 50;
+	for (int epoch = 0; epoch < max_iter; ++epoch)
+	{
+		// assign the input data
+		model_interpreter.initBiases(model_modelTrainer3); // create the bias	
+		model_interpreter.mapValuesToLayers(model_modelTrainer3, input, input_nodes, "output");
+
+		model_interpreter.FPTT(4); //FP
+
+		// calculate the model error and node output error
+		model_interpreter.CETT(model_modelTrainer3, expected, output_nodes, loss_function, loss_function_grad, 4);
+		std::cout << "Error at iteration: " << epoch << " is " << model_interpreter.getModelError()->getError().sum() << std::endl;
+
+		model_interpreter.TBPTT(4); // BP
+		model_interpreter.updateWeights(); // Weight update
+
+		// reinitialize the model
+		if (epoch != max_iter - 1) {
+			model_interpreter.reInitNodes();
+			model_interpreter.reInitModelError();
+		}
+	}
+
+	const Eigen::Tensor<float, 0> total_error = model_interpreter.getModelError()->getError().sum();
+	BOOST_CHECK(total_error(0) <= 1492.6);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

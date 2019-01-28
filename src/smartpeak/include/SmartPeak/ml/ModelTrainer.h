@@ -39,6 +39,7 @@ public:
 		void setNTETTSteps(const int& n_TETT); ///< n_TETT setter
 		void setFindCycles(const bool& find_cycles); ///< find_cycles setter [TODO: tests]
 		void setFastInterpreter(const bool& fast_interpreter); ///< fast_interpreter setter [TODO: tests]
+		void setPreserveOoO(const bool& preserve_OoO); ///< preserve_OoO setter [TODO: test]
 
     int getBatchSize() const; ///< batch_size setter
     int getMemorySize() const; ///< memory_size setter
@@ -56,6 +57,7 @@ public:
 		int getNTETTSteps() const; ///< n_TETT setter
 		bool getFindCycles(); ///< find_cycles getter [TODO: tests]
 		bool getFastInterpreter(); ///< fast_interpreter getter [TODO: tests]
+		bool getPreserveOoO(); ///< preserve_OoO getter [TODO: tests]
  
     /**
       @brief Check input dimensions.
@@ -212,8 +214,9 @@ private:
 		bool log_validation_ = false; ///< whether to log validation epochs or not
 		bool log_evaluation_ = false; ///< whether to log evaluation epochs or not
 
-		bool find_cycles_ = true; ///< whether to find cycles prior to interpreting the model
-		bool fast_interpreter_ = false; ///< whether to skip certain checks when interpreting the model
+		bool find_cycles_ = true; ///< whether to find cycles prior to interpreting the model (see `ModelInterpreter`)
+		bool fast_interpreter_ = false; ///< whether to skip certain checks when interpreting the model (see `ModelInterpreter`)
+		bool preserve_OoO_ = true; ///< whether to preserve the order of operations (see `ModelInterpreter`)
   };
 	template<typename TensorT, typename InterpreterT>
 	void ModelTrainer<TensorT, InterpreterT>::setBatchSize(const int& batch_size)
@@ -293,6 +296,12 @@ private:
 	inline void ModelTrainer<TensorT, InterpreterT>::setFindCycles(const bool & find_cycles)
 	{
 		find_cycles_ = find_cycles;
+	}
+
+	template<typename TensorT, typename InterpreterT>
+	inline void ModelTrainer<TensorT, InterpreterT>::setPreserveOoO(const bool & preserve_OoO)
+	{
+		preserve_OoO_ = preserve_OoO;
 	}
 
 	template<typename TensorT, typename InterpreterT>
@@ -395,6 +404,12 @@ private:
 	inline bool ModelTrainer<TensorT, InterpreterT>::getFastInterpreter()
 	{
 		return fast_interpreter_;
+	}
+
+	template<typename TensorT, typename InterpreterT>
+	inline bool ModelTrainer<TensorT, InterpreterT>::getPreserveOoO()
+	{
+		return preserve_OoO_;
 	}
 
 	template<typename TensorT, typename InterpreterT>
@@ -535,7 +550,7 @@ private:
 		if (this->getVerbosityLevel() >= 2)
 			std::cout << "Interpreting the model..." << std::endl;
 		model_interpreter.checkMemory(model, this->getBatchSize(), this->getMemorySize());
-		model_interpreter.getForwardPropogationOperations(model, this->getBatchSize(), this->getMemorySize(), true, this->getFastInterpreter(), this->getFindCycles());
+		model_interpreter.getForwardPropogationOperations(model, this->getBatchSize(), this->getMemorySize(), true, this->getFastInterpreter(), this->getFindCycles(), this->getPreserveOoO());
 		model_interpreter.allocateModelErrorTensor(this->getBatchSize(), this->getMemorySize());
 
 		for (int iter = 0; iter < this->getNEpochsTraining(); ++iter) // use n_epochs here
@@ -656,7 +671,7 @@ private:
 			model_logger.initLogs(model);
 
 		// compile the graph into a set of operations and allocate all tensors
-		model_interpreter.getForwardPropogationOperations(model, this->getBatchSize(), this->getMemorySize(), false, this->getFastInterpreter(), this->getFindCycles());
+		model_interpreter.getForwardPropogationOperations(model, this->getBatchSize(), this->getMemorySize(), false, this->getFastInterpreter(), this->getFindCycles(), this->getPreserveOoO());
 		model_interpreter.allocateModelErrorTensor(this->getBatchSize(), this->getMemorySize());
 
 		for (int iter = 0; iter < this->getNEpochsValidation(); ++iter) // use n_epochs here
@@ -754,7 +769,7 @@ private:
 			model_logger.initLogs(model);
 
 		// compile the graph into a set of operations and allocate all tensors
-		model_interpreter.getForwardPropogationOperations(model, this->getBatchSize(), this->getMemorySize(), false, this->getFastInterpreter(), this->getFindCycles());
+		model_interpreter.getForwardPropogationOperations(model, this->getBatchSize(), this->getMemorySize(), false, this->getFastInterpreter(), this->getFindCycles(), this->getPreserveOoO());
 		model_interpreter.allocateModelErrorTensor(this->getBatchSize(), this->getMemorySize());
 
 		for (int iter = 0; iter < this->getNEpochsEvaluation(); ++iter) // use n_epochs here

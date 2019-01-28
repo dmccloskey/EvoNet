@@ -429,22 +429,6 @@ namespace SmartPeak
 		void getFPOpsGraph_(Model<TensorT>& model, std::vector<OperationList<TensorT>>& FP_operations_expanded, int& iter);
 
 		/**
-		@brief Convert a graph model to sequence of tensor operations
-			preserving the order of operations
-
-		@param[in] model Network model
-		@param[in] batch_size Batch size
-		@param[in] memory_size Memory size
-		@param[in] train Boolean to indicate training or testing (needed for dropout or drop connection)
-		@param[in] fast_check Boolean to use a faster but incomplete tensor compatibility check when manually specifying layers
-		@param[in] find_cycles Boolean to search for cyclic nodes
-		*/
-		template<typename TensorT, typename DeviceT>
-		void ModelInterpreter<TensorT, DeviceT>::getFPOpsGraph(
-			Model<TensorT>& model, const int& batch_size, const int& memory_size,
-			const bool& train, const bool& fast_check)
-
-		/**
 		@brief Allocate Node and Weight tensor memory for all model operations.
 			Source and sink layer activations are created using the first node in the layers, respecively.
 			Source and sink layer integrations are created using the first node in the layers, respectively.
@@ -1530,11 +1514,11 @@ namespace SmartPeak
 
 			// compile the model into a list of operations
 			int iter = 0;
-			std::vector<OperationList<TensorT>>& FP_operations_expanded;
+			std::vector<OperationList<TensorT>> FP_operations_expanded;
 			if (preserve_OoO) 
 				getFPOpsOoO_(model, find_cycles, FP_operations_expanded, iter);
 			else
-				getFPOpsGraph_(model, find_cycles, FP_operations_expanded, iter);
+				getFPOpsGraph_(model, FP_operations_expanded, iter);
 
 			// identify tensor operation motifs in the list of operations
 			std::set<std::string> identified_sink_nodes;
@@ -1676,16 +1660,9 @@ namespace SmartPeak
 		}
 
 		// STEP 3: organize the operations into Tensor layers for hardware acceleration
-
 		// Pre-emptively Expand the set of operations
 		//expandForwardPropogationOperations(FP_operations, FP_operations_expanded); // Slower and not needed...
 		expandAllForwardPropogationOperations(FP_operations, FP_operations_expanded);
-
-		// [DEBUGGING]
-		//for (auto& FP_operation : FP_operations_expanded) {
-		//	std::cout << FP_operation.result.sink_node->getName() << std::endl;
-		//}
-
 	}
 
 	template<typename TensorT, typename DeviceT>

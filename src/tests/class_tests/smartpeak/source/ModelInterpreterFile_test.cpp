@@ -120,7 +120,7 @@ BOOST_AUTO_TEST_CASE(loadModelBinary1)
 	const bool train = true;
 
 	// compile the graph into a set of operations and allocate all tensors
-	model_interpreter.getForwardPropogationOperations(model1, batch_size, memory_size, train, false, true);
+	model_interpreter.getForwardPropogationOperations(model1, batch_size, memory_size, train, false, true, true);
 
 	// Store the model interpreter
 	std::string filename = "ModelInterpreterFileTest.binary";
@@ -154,7 +154,7 @@ BOOST_AUTO_TEST_CASE(loadModelBinary2)
 	}
 
 	// compile the graph into a set of operations and allocate all tensors
-	model_interpreter.getForwardPropogationOperations(model2, batch_size, memory_size, train, false, true);
+	model_interpreter.getForwardPropogationOperations(model2, batch_size, memory_size, train, false, true, true);
 	model_interpreter.allocateModelErrorTensor(batch_size, memory_size);
 
 	// create the input
@@ -215,7 +215,7 @@ BOOST_AUTO_TEST_CASE(loadModelBinary2)
 	model_interpreter.clear_cache();
 
 	// Compile the graph into a set of operations and allocate all tensors
-	model_interpreter_test.getForwardPropogationOperations(model2, batch_size, memory_size, train, false, true);
+	model_interpreter_test.getForwardPropogationOperations(model2, batch_size, memory_size, train, false, true, true);
 	model_interpreter_test.allocateModelErrorTensor(batch_size, memory_size);
 
 	BOOST_CHECK(model_interpreter_test == model_interpreter);  // Trivial comparison; instead we use the following from `ModelInterpreterCpu_test.cpp`

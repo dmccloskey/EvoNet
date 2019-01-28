@@ -34,8 +34,10 @@ public:
 	Model input nodes: "Input_0, Input_1, ... Input_784" up to n_inputs
 	Model encoding input nodes: "Encoding_0, Encoding_1, ... Encoding 64" up to n_encodings
 	Model output nodes: "Output_0, Output_1, ... Output_784" up to n_inputs
-
+	
 	References:
+	Alireza Makhzani, Jonathon Shlens, Navdeep Jaitly, Ian Goodfellow, Brendan Frey. "Adversarial Autoencoders" 2015.  arXiv:1511.05644
+	https://github.com/musyoku/adversarial-autoencoder/blob/master/run/semi-supervised/regularize_z/model.py
 	*/
 	void makeCVAE(Model<TensorT>& model, int n_inputs = 784, int n_categorical = 10, int n_encodings = 64, int n_hidden_0 = 512) {
 		model.setId(0);
