@@ -3,6 +3,7 @@
 #define BOOST_TEST_MODULE ModelInterpreterCpu test suite 
 #include <boost/test/included/unit_test.hpp>
 #include <SmartPeak/ml/ModelInterpreterDefaultDevice.h>
+#include <SmartPeak/simulator/HarmonicOscillatorSimulator.h>
 
 using namespace SmartPeak;
 using namespace std;
@@ -1236,8 +1237,8 @@ Model<float> model_modelTrainer3 = makeModelToy3();
 BOOST_AUTO_TEST_CASE(modelTrainer3)
 {
 	ModelInterpreterDefaultDevice<float> model_interpreter;
-	const int batch_size = 5;
-	const int memory_size = 8;
+	const int batch_size = 1;
+	const int memory_size = 32;
 	const bool train = true;
 
 	// update the model solver
@@ -1251,44 +1252,47 @@ BOOST_AUTO_TEST_CASE(modelTrainer3)
 	model_interpreter.getForwardPropogationOperations(model_modelTrainer3, batch_size, memory_size, train, false, true, false);
 	model_interpreter.allocateModelErrorTensor(batch_size, memory_size);
 
-	// create the input
-	const std::vector<std::string> input_nodes = { "m1"}; 
+	// create the input and output (from t=n to t=0)
+	HarmonicOscillatorSimulator<float> WeightSpring;
+	const std::vector<std::string> input_nodes = { "m2"}; 
 	Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_nodes.size());
-	input.setValues(
-		{ {{8}, {7}, {6}, {5}, {4}, {3}, {2}, {1}},
-		{{9}, {8}, {7}, {6}, {5}, {4}, {3}, {2}},
-		{{10}, {9}, {8}, {7}, {6}, {5}, {4}, {3}},
-		{{11}, {10}, {9}, {8}, {7}, {6}, {5}, {4}},
-		{{12}, {11}, {10}, {9}, {8}, {7}, {6}, {5}} }
-	);
-
-	// expected output (from t=n to t=0) for  y = m1*(m2*x + b*yprev) where m1 = 1, m2 = 1 and b = -1
-	const std::vector<std::string> output_nodes = { "m2", "m3" };
+	const std::vector<std::string> output_nodes = { "m1", "m3" };
 	Eigen::Tensor<float, 3> expected(batch_size, memory_size, (int)output_nodes.size());
-	expected.setValues(
-		{ { { 4 },{ 4 },{ 3 },{ 3 },{ 2 },{ 2 },{ 1 },{ 1 } },
-		{ { 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 },{ 2 },{ 1 } },
-		{ { 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 },{ 2 } },
-		{ { 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 } },
-		{ { 6 },{ 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 } } });
+	for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
+		Eigen::Tensor<float, 1> time_steps(memory_size);
+		Eigen::Tensor<float, 2> displacements(memory_size, 3);
+		WeightSpring.WeightSpring3W2S1D(time_steps, displacements, memory_size, 0.1,
+			1, 1, 1, //A
+			1, 1, 1, //m
+			0, batch_iter, 0, //xo
+			1);
+		//std::cout << "time_steps: " << time_steps << std::endl;
+		//std::cout << "displacements: " << displacements << std::endl;
+		for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
+			input(batch_iter, memory_iter, 0) = displacements(memory_size - 1 - memory_iter, 1);
+			expected(batch_iter, memory_iter, 0) = displacements(memory_size - 1 - memory_iter, 0);
+			expected(batch_iter, memory_iter, 1) = displacements(memory_size - 1 - memory_iter, 2);
+		}
+	}  
+
 	LossFunctionOp<float>* loss_function = new MSEOp<float>();
 	LossFunctionGradOp<float>* loss_function_grad = new MSEGradOp<float>();
 
 	// iterate until we find the optimal values
-	const int max_iter = 50;
+	const int max_iter = 1000;
 	for (int epoch = 0; epoch < max_iter; ++epoch)
 	{
 		// assign the input data
 		model_interpreter.initBiases(model_modelTrainer3); // create the bias	
 		model_interpreter.mapValuesToLayers(model_modelTrainer3, input, input_nodes, "output");
 
-		model_interpreter.FPTT(4); //FP
+		model_interpreter.FPTT(memory_size); //FP
 
 		// calculate the model error and node output error
-		model_interpreter.CETT(model_modelTrainer3, expected, output_nodes, loss_function, loss_function_grad, 4);
+		model_interpreter.CETT(model_modelTrainer3, expected, output_nodes, loss_function, loss_function_grad, memory_size);
 		std::cout << "Error at iteration: " << epoch << " is " << model_interpreter.getModelError()->getError().sum() << std::endl;
 
-		model_interpreter.TBPTT(4); // BP
+		model_interpreter.TBPTT(memory_size); // BP
 		model_interpreter.updateWeights(); // Weight update
 
 		// reinitialize the model

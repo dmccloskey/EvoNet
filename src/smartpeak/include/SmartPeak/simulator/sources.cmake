@@ -7,6 +7,7 @@ set(sources_list_h
 	ChromatogramSimulator.h
 	DataSimulator.h
 	EMGModel.h
+	HarmonicOscillatorSimulator.h
 	MNISTSimulator.h
 	PeakSimulator.h
 )
