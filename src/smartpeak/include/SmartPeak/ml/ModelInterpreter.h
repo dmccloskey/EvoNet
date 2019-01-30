@@ -650,6 +650,8 @@ namespace SmartPeak
 				// copy over the values
 				if (value_type == "output")
 					getLayerTensor(node->getTensorIndex().first)->getOutput().chip(node->getTensorIndex().second, 2) = values_buffered.chip(i, 2);
+				if (value_type == "input")
+					getLayerTensor(node->getTensorIndex().first)->getInput().chip(node->getTensorIndex().second, 2) = values_buffered.chip(i, 2);
 				else if (value_type == "error")
 					getLayerTensor(node->getTensorIndex().first)->getError().chip(node->getTensorIndex().second, 2) = values_buffered.chip(i, 2);
 				else if (value_type == "derivative")

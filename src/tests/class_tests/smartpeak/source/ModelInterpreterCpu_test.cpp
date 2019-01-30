@@ -1207,16 +1207,16 @@ Model<float> makeModelToy3()
 	std::shared_ptr<WeightInitOp<float>> weight_init;
 	std::shared_ptr<SolverOp<float>> solver;
 	// weight_init.reset(new RandWeightInitOp(1.0)); // No random init for testing
-	weight_init.reset(new ConstWeightInitOp<float>(1.0));
+	weight_init.reset(new ConstWeightInitOp<float>(0.1));
 	solver.reset(new SGDOp<float>(0.01, 0.9));
 	w1_to_w2 = Weight<float>("m1_to_m2", weight_init, solver);
-	weight_init.reset(new ConstWeightInitOp<float>(1.0));
+	weight_init.reset(new ConstWeightInitOp<float>(0.1));
 	solver.reset(new SGDOp<float>(0.01, 0.9));
 	w2_to_w1 = Weight<float>("m2_to_m1", weight_init, solver);
-	weight_init.reset(new ConstWeightInitOp<float>(1.0));
+	weight_init.reset(new ConstWeightInitOp<float>(0.1));
 	solver.reset(new SGDOp<float>(0.01, 0.9));
 	w2_to_w3 = Weight<float>("m2_to_m3", weight_init, solver);
-	weight_init.reset(new ConstWeightInitOp<float>(1.0));
+	weight_init.reset(new ConstWeightInitOp<float>(0.1));
 	solver.reset(new SGDOp<float>(0.01, 0.9));
 	w3_to_w2 = Weight<float>("m3_to_m2", weight_init, solver);
 	weight_init.reset();
@@ -1279,14 +1279,21 @@ BOOST_AUTO_TEST_CASE(modelTrainer3)
 	LossFunctionGradOp<float>* loss_function_grad = new MSEGradOp<float>();
 
 	// iterate until we find the optimal values
-	const int max_iter = 1000;
+	const int max_iter = 50;
 	for (int epoch = 0; epoch < max_iter; ++epoch)
 	{
 		// assign the input data
 		model_interpreter.initBiases(model_modelTrainer3); // create the bias	
+		model_interpreter.mapValuesToLayers(model_modelTrainer3, input, input_nodes, "input");
 		model_interpreter.mapValuesToLayers(model_modelTrainer3, input, input_nodes, "output");
 
 		model_interpreter.FPTT(memory_size); //FP
+		//std::cout << "Tensor Output 0: " << model_interpreter.getLayerTensor(0)->getOutput() << std::endl;
+		//std::cout << "Tensor Output 1: " << model_interpreter.getLayerTensor(1)->getOutput() << std::endl;
+		//std::cout << "Tensor Input 0: " << model_interpreter.getLayerTensor(0)->getInput() << std::endl;
+		//std::cout << "Tensor Input 1: " << model_interpreter.getLayerTensor(1)->getInput() << std::endl;
+		//std::cout << "Tensor Error 0: " << model_interpreter.getLayerTensor(0)->getError() << std::endl;
+		//std::cout << "Tensor Error 1: " << model_interpreter.getLayerTensor(1)->getError() << std::endl;
 
 		// calculate the model error and node output error
 		model_interpreter.CETT(model_modelTrainer3, expected, output_nodes, loss_function, loss_function_grad, memory_size);
@@ -1303,7 +1310,7 @@ BOOST_AUTO_TEST_CASE(modelTrainer3)
 	}
 
 	const Eigen::Tensor<float, 0> total_error = model_interpreter.getModelError()->getError().sum();
-	BOOST_CHECK(total_error(0) <= 1492.6);
+	BOOST_CHECK(total_error(0) <= 8.88);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
