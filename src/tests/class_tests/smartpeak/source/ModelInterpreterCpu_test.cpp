@@ -1310,7 +1310,7 @@ BOOST_AUTO_TEST_CASE(modelTrainer3)
 	}
 
 	const Eigen::Tensor<float, 0> total_error = model_interpreter.getModelError()->getError().sum();
-	BOOST_CHECK(total_error(0) <= 8.88);
+	BOOST_CHECK(total_error(0) <= 8.89);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
