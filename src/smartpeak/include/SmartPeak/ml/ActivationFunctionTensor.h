@@ -5,6 +5,8 @@
 
 #include <SmartPeak/ml/ActivationFunction.h>
 #include <unsupported/Eigen/CXX11/Tensor>
+#include <unsupported/Eigen/MatrixFunctions>
+
 
 //#include <cereal/access.hpp>  // serialiation of private members
 //#undef min // clashes with std::limit on windows in polymorphic.hpp
@@ -627,6 +629,102 @@ public:
 		//}
 		TensorT alpha_ = 1e-2;
 	};
+
+	/**
+	@brief Sin activation function
+	*/
+	template<typename TensorT, typename DeviceT>
+	class SinTensorOp : public ActivationTensorOp<TensorT, DeviceT>
+	{
+	public:
+		SinTensorOp() {};
+		~SinTensorOp() {};
+		void operator()(TensorT* x_I, TensorT* x_O, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
+			//auto result = x.chip(time_step, 1).sin();
+			//out.chip(time_step, 1).device(device) = result.clip(-1e9, 1e9);
+		};
+		std::string getName() const { return "SinTensorOp"; };
+		//private:
+		//	friend class cereal::access;
+		//	template<class Archive>
+		//	void serialize(Archive& archive) {
+		//		archive(cereal::base_class<ActivationTensorOp<TensorT, DeviceT>>(this));
+		//	}
+	};
+
+	/**
+	@brief Sin gradient
+	*/
+	template<typename TensorT, typename DeviceT>
+	class SinGradTensorOp : public ActivationTensorOp<TensorT, DeviceT>
+	{
+	public:
+		SinGradTensorOp() {};
+		~SinGradTensorOp() {};
+		void operator()(TensorT* x_I, TensorT* x_O, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
+			//auto result = x.chip(time_step, 1).cos();
+			//out.chip(time_step, 1).device(device) = result.clip(-1e9, 1e9);
+		};
+		std::string getName() const { return "SinGradTensorOp"; };
+		//private:
+		//	friend class cereal::access;
+		//	template<class Archive>
+		//	void serialize(Archive& archive) {
+		//		archive(cereal::base_class<ActivationTensorOp<TensorT, DeviceT>>(this));
+		//	}
+	};
+
+	/**
+	@brief Cos activation function
+	*/
+	template<typename TensorT, typename DeviceT>
+	class CosTensorOp : public ActivationTensorOp<TensorT, DeviceT>
+	{
+	public:
+		CosTensorOp() {};
+		~CosTensorOp() {};
+		void operator()(TensorT* x_I, TensorT* x_O, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
+			//auto result = x.chip(time_step, 1).cos();
+			//out.chip(time_step, 1).device(device) = result.clip(-1e9, 1e9);
+		};
+		std::string getName() const { return "CosTensorOp"; };
+		//private:
+		//	friend class cereal::access;
+		//	template<class Archive>
+		//	void serialize(Archive& archive) {
+		//		archive(cereal::base_class<ActivationTensorOp<TensorT, DeviceT>>(this));
+		//	}
+	};
+
+	/**
+	@brief Cos gradient
+	*/
+	template<typename TensorT, typename DeviceT>
+	class CosGradTensorOp : public ActivationTensorOp<TensorT, DeviceT>
+	{
+	public:
+		CosGradTensorOp() {};
+		~CosGradTensorOp() {};
+		void operator()(TensorT* x_I, TensorT* x_O, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
+			//auto result = -x.chip(time_step, 1).sin();
+			//out.chip(time_step, 1).device(device) = result.clip(-1e9, 1e9);
+		};
+		std::string getName() const { return "CosGradTensorOp"; };
+		//private:
+		//	friend class cereal::access;
+		//	template<class Archive>
+		//	void serialize(Archive& archive) {
+		//		archive(cereal::base_class<ActivationTensorOp<TensorT, DeviceT>>(this));
+		//	}
+	};
 }
 //CEREAL_REGISTER_TYPE(SmartPeak::ReLUTensorOp<float, Eigen::DefaultDevice>);
 //CEREAL_REGISTER_TYPE(SmartPeak::ReLUGradTensorOp<float, Eigen::DefaultDevice>);
@@ -650,6 +748,10 @@ public:
 //CEREAL_REGISTER_TYPE(SmartPeak::PowGradTensorOp<float, Eigen::DefaultDevice>);
 //CEREAL_REGISTER_TYPE(SmartPeak::LeakyReLUTensorOp<float, Eigen::DefaultDevice>);
 //CEREAL_REGISTER_TYPE(SmartPeak::LeakyReLUGradTensorOp<float, Eigen::DefaultDevice>);
+//CEREAL_REGISTER_TYPE(SmartPeak::SinTensorOp<float, Eigen::DefaultDevice>);
+//CEREAL_REGISTER_TYPE(SmartPeak::SinGradTensorOp<float, Eigen::DefaultDevice>);
+//CEREAL_REGISTER_TYPE(SmartPeak::CosTensorOp<float, Eigen::DefaultDevice>);
+//CEREAL_REGISTER_TYPE(SmartPeak::CosGradTensorOp<float, Eigen::DefaultDevice>);
 //
 //#if COMPILE_WITH_CUDA
 //CEREAL_REGISTER_TYPE(SmartPeak::ReLUTensorOp<float, Eigen::GpuDevice>);
@@ -674,6 +776,10 @@ public:
 //CEREAL_REGISTER_TYPE(SmartPeak::PowGradTensorOp<float, Eigen::GpuDevice>);
 //CEREAL_REGISTER_TYPE(SmartPeak::LeakyReLUTensorOp<float, Eigen::GpuDevice>);
 //CEREAL_REGISTER_TYPE(SmartPeak::LeakyReLUGradTensorOp<float, Eigen::GpuDevice>);
+//CEREAL_REGISTER_TYPE(SmartPeak::SinTensorOp<float, Eigen::GpuDevice>);
+//CEREAL_REGISTER_TYPE(SmartPeak::SinGradTensorOp<float, Eigen::GpuDevice>);
+//CEREAL_REGISTER_TYPE(SmartPeak::CosTensorOp<float, Eigen::GpuDevice>);
+//CEREAL_REGISTER_TYPE(SmartPeak::CosGradTensorOp<float, Eigen::GpuDevice>);
 //#endif
 //
 //// TODO: double, int, etc.,

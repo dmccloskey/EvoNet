@@ -610,6 +610,90 @@ public:
 		}
 		TensorT alpha_ = 1e-2;
 	};
+
+	/**
+	@brief Sin activation function
+	*/
+	template<typename TensorT>
+	class SinOp : public ActivationOp<TensorT>
+	{
+	public:
+		using ActivationOp<TensorT>::ActivationOp;
+		TensorT operator()(const TensorT& x_I) const {
+			return std::sin(x_I);
+		};
+		std::string getName() const { return "SinOp"; };
+		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<ActivationOp<TensorT>>(this));
+		}
+	};
+
+	/**
+	@brief Sin gradient
+	*/
+	template<typename TensorT>
+	class SinGradOp : public ActivationOp<TensorT>
+	{
+	public:
+		using ActivationOp<TensorT>::ActivationOp;
+		TensorT operator()(const TensorT& x_I) const {
+			return std::cos(x_I);
+		};
+		std::string getName() const { return "SinGradOp"; };
+		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<ActivationOp<TensorT>>(this));
+		}
+	};
+
+	/**
+	@brief Cos activation function
+	*/
+	template<typename TensorT>
+	class CosOp : public ActivationOp<TensorT>
+	{
+	public:
+		using ActivationOp<TensorT>::ActivationOp;
+		TensorT operator()(const TensorT& x_I) const {
+			return std::cos(x_I);
+		};
+		std::string getName() const { return "CosOp"; };
+		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<ActivationOp<TensorT>>(this));
+		}
+	};
+
+	/**
+	@brief Cos gradient
+	*/
+	template<typename TensorT>
+	class CosGradOp : public ActivationOp<TensorT>
+	{
+	public:
+		using ActivationOp<TensorT>::ActivationOp;
+		TensorT operator()(const TensorT& x_I) const {
+			return -std::sin(x_I);
+		};
+		std::string getName() const { return "CosGradOp"; };
+		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+	private:
+		friend class cereal::access;
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(cereal::base_class<ActivationOp<TensorT>>(this));
+		}
+	};
 }
 
 CEREAL_REGISTER_TYPE(SmartPeak::ReLUOp<float>);
@@ -634,6 +718,11 @@ CEREAL_REGISTER_TYPE(SmartPeak::PowOp<float>);
 CEREAL_REGISTER_TYPE(SmartPeak::PowGradOp<float>);
 CEREAL_REGISTER_TYPE(SmartPeak::LeakyReLUOp<float>);
 CEREAL_REGISTER_TYPE(SmartPeak::LeakyReLUGradOp<float>);
+CEREAL_REGISTER_TYPE(SmartPeak::SinOp<float>);
+CEREAL_REGISTER_TYPE(SmartPeak::SinGradOp<float>);
+CEREAL_REGISTER_TYPE(SmartPeak::CosOp<float>);
+CEREAL_REGISTER_TYPE(SmartPeak::CosGradOp<float>);
+
 CEREAL_REGISTER_TYPE(SmartPeak::ReLUOp<double>);
 CEREAL_REGISTER_TYPE(SmartPeak::ReLUGradOp<double>);
 CEREAL_REGISTER_TYPE(SmartPeak::ELUOp<double>);
@@ -656,6 +745,11 @@ CEREAL_REGISTER_TYPE(SmartPeak::PowOp<double>);
 CEREAL_REGISTER_TYPE(SmartPeak::PowGradOp<double>);
 CEREAL_REGISTER_TYPE(SmartPeak::LeakyReLUOp<double>);
 CEREAL_REGISTER_TYPE(SmartPeak::LeakyReLUGradOp<double>);
+CEREAL_REGISTER_TYPE(SmartPeak::SinOp<double>);
+CEREAL_REGISTER_TYPE(SmartPeak::SinGradOp<double>);
+CEREAL_REGISTER_TYPE(SmartPeak::CosOp<double>);
+CEREAL_REGISTER_TYPE(SmartPeak::CosGradOp<double>);
+
 CEREAL_REGISTER_TYPE(SmartPeak::ReLUOp<int>);
 CEREAL_REGISTER_TYPE(SmartPeak::ReLUGradOp<int>);
 CEREAL_REGISTER_TYPE(SmartPeak::ELUOp<int>);
@@ -678,5 +772,9 @@ CEREAL_REGISTER_TYPE(SmartPeak::PowOp<int>);
 CEREAL_REGISTER_TYPE(SmartPeak::PowGradOp<int>);
 CEREAL_REGISTER_TYPE(SmartPeak::LeakyReLUOp<int>);
 CEREAL_REGISTER_TYPE(SmartPeak::LeakyReLUGradOp<int>);
+CEREAL_REGISTER_TYPE(SmartPeak::SinOp<int>);
+CEREAL_REGISTER_TYPE(SmartPeak::SinGradOp<int>);
+CEREAL_REGISTER_TYPE(SmartPeak::CosOp<int>);
+CEREAL_REGISTER_TYPE(SmartPeak::CosGradOp<int>);
 
 #endif //SMARTPEAK_ACTIVATIONFUNCTION_H

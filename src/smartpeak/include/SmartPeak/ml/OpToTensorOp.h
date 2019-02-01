@@ -125,6 +125,22 @@ namespace SmartPeak
 				ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new LeakyReLUGradTensorOp<TensorT, DeviceT>(op_class->getParameters()[0]);
 				return op_tensor_class;
 			}
+			else if (op_class->getName() == "SinOp") {
+				ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new SinTensorOp<TensorT, DeviceT>();
+				return op_tensor_class;
+			}
+			else if (op_class->getName() == "SinGradOp") {
+				ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new SinGradTensorOp<TensorT, DeviceT>();
+				return op_tensor_class;
+			}
+			else if (op_class->getName() == "CosOp") {
+				ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new CosTensorOp<TensorT, DeviceT>();
+				return op_tensor_class;
+			}
+			else if (op_class->getName() == "CosGradOp") {
+				ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new CosGradTensorOp<TensorT, DeviceT>();
+				return op_tensor_class;
+			}
 			else {
 				std::cout << "No conversion available for " << op_class->getName() << "." << std::endl;
 				ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new LinearTensorOp<TensorT, DeviceT>();

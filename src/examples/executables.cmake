@@ -9,6 +9,8 @@ set(ml_executables_list
   MNIST_LSTM_example
   MNIST_VAE_example
   AdditionProblem_example
+  HarmonicOscillator_example
+  KineticModel_example
   Metabolomics_example
   Metabolomics2_example
   PeakIntegrator_app

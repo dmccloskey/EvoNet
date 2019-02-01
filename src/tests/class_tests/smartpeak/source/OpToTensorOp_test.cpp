@@ -117,6 +117,22 @@ BOOST_AUTO_TEST_CASE(convertOpToTensorOpActivationOpToActivationTensorOp)
 	op_class = new LeakyReLUGradOp<float>();
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "LeakyReLUGradTensorOp");
+
+	op_class = new SinOp<float>();
+	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "SinTensorOp");
+
+	op_class = new SinGradOp<float>();
+	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "SinGradTensorOp");
+
+	op_class = new CosOp<float>();
+	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "CosTensorOp");
+
+	op_class = new CosGradOp<float>();
+	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "CosGradTensorOp");
 }
 
 BOOST_AUTO_TEST_CASE(getTensorParamsActivationOpToActivationTensorOp)
@@ -207,6 +223,22 @@ BOOST_AUTO_TEST_CASE(getTensorParamsActivationOpToActivationTensorOp)
 	BOOST_CHECK_EQUAL(params.size(), 0);
 
 	op_class = new LeakyReLUGradOp<float>();
+	params = op_to_tensor_op.getTensorParams(op_class);
+	BOOST_CHECK_EQUAL(params.size(), 0);
+
+	op_class = new SinOp<float>();
+	params = op_to_tensor_op.getTensorParams(op_class);
+	BOOST_CHECK_EQUAL(params.size(), 0);
+
+	op_class = new SinGradOp<float>();
+	params = op_to_tensor_op.getTensorParams(op_class);
+	BOOST_CHECK_EQUAL(params.size(), 0);
+
+	op_class = new CosOp<float>();
+	params = op_to_tensor_op.getTensorParams(op_class);
+	BOOST_CHECK_EQUAL(params.size(), 0);
+
+	op_class = new CosGradOp<float>();
 	params = op_to_tensor_op.getTensorParams(op_class);
 	BOOST_CHECK_EQUAL(params.size(), 0);
 }

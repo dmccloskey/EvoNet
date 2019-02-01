@@ -463,8 +463,8 @@ void main_VAE(const bool& make_model, const bool& train_model) {
 		// read in the trained model
 		std::cout << "Reading in the model..." << std::endl;
 		const std::string data_dir = "C:/Users/domccl/GitHub/smartPeak_cpp/build_win_cuda/bin/Debug/";
-		const std::string model_filename = data_dir + "0_MNIST_model.csv";
-		const std::string interpreter_filename = data_dir + "0_MNIST_interpreter.csv";
+		const std::string model_filename = data_dir + "0_MNIST_model.binary";
+		const std::string interpreter_filename = data_dir + "0_MNIST_interpreter.binary";
 		ModelFile<float> model_file;
 		model_file.loadModelBinary(model_filename, model);
 		model.setId(1);
