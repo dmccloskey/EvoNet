@@ -1079,7 +1079,7 @@ public:
 					char output_name_char[512];
 					sprintf(output_name_char, "%s-out_H%012d-W%012d", name.data(), output_height_iter, output_width_iter);
 					std::string output_name(output_name_char);
-					Node<TensorT> output(output_name, NodeType::hidden, NodeStatus::activated, node_activation, node_activation_grad, node_integration, node_integration_error, node_integration_weight_grad);
+					Node<TensorT> output(output_name, NodeType::hidden, NodeStatus::initialized, node_activation, node_activation_grad, node_integration, node_integration_error, node_integration_weight_grad);
 					output.setModuleName(module_name);
 					output.setDropProbability(drop_out_prob);
 					if (split_filter_layers) output.setLayerName(module_name);
@@ -3127,15 +3127,15 @@ public:
 	{
 		for (const auto& elementary_reactions : elementary_graph) {
 			for (const std::pair<std::string, std::string>& source_sink : elementary_reactions.second) {
-				Node<TensorT> source_node(source_sink.first, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-				Node<TensorT> sink_node(source_sink.second, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+				Node<TensorT> source_node(source_sink.first, NodeType::hidden, NodeStatus::initialized, node_activation, node_activation_grad, node_integration, node_integration_error, node_integration_weight_grad);
+				Node<TensorT> sink_node(source_sink.second, NodeType::hidden, NodeStatus::initialized, node_activation, node_activation_grad, node_integration, node_integration_error, node_integration_weight_grad);
 				source_node.setModuleName(module_name);
 				sink_node.setModuleName(module_name);
 				Weight<TensorT> weight(elementary_reactions.first, weight_init, solver); // How to deal with stoichiometry > 1?
 				weight.setModuleName(module_name);
 				Link link(elementary_reactions.first, source_sink.first, source_sink.second, elementary_reactions.first);
 				link.setModuleName(module_name);
-				model.addNodes({ source_node, sink_node });
+				model.addNodes({ source_node, sink_node }); // rxn_id node will be added multiple times
 				model.addLinks({ link });
 				model.addWeights({ weight });
 			}

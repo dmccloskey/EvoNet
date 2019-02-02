@@ -1945,8 +1945,8 @@ BOOST_AUTO_TEST_CASE(addInteractionGraph1)
 		std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new SGDOp<float>(0.1, 0.9)));
 
 	std::vector<std::string> node_names_test = { "glc", "atp", "g6p", "h", "adp", "HK" };
-	std::vector<std::string> link_names_test = { "glc_HK", "atp_HK", "HK_g6p", "HK_h", "HK_adp" };
-	std::vector<std::string> weight_names_test = { "glc_HK", "atp_HK", "HK_g6p", "HK_h", "HK_adp" };
+	std::vector<std::string> link_names_test = { "glc_to_HK", "atp_to_HK", "HK_to_g6p", "HK_to_h", "HK_to_adp" };
+	std::vector<std::string> weight_names_test = { "glc_to_HK", "atp_to_HK", "HK_to_g6p", "HK_to_h", "HK_to_adp" };
 
 	//for (auto& e : model.nodes_)
 	//	std::cout << "Node: " << e.second->getName() << std::endl;
