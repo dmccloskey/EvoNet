@@ -69,7 +69,8 @@ public:
 
 			@returns Status True on success, False if not
 		*/
-		bool storeModelCsv(const std::string& filename_nodes, const std::string& filename_links, const std::string& filename_weights, Model<TensorT>& model);
+		bool storeModelCsv(const std::string& filename_nodes, const std::string& filename_links, const std::string& filename_weights, Model<TensorT>& model,
+			bool store_nodes = true, bool store_links = true, bool store_weights = true);
 
 		/**
 			@brief Load nodes, links, and weights from file and create a Model
@@ -81,7 +82,8 @@ public:
 
 			@returns Status True on success, False if not
 		*/
-		bool loadModelCsv(const std::string& filename_nodes, const std::string& filename_links, const std::string& filename_weights, Model<TensorT>& model);
+		bool loadModelCsv(const std::string& filename_nodes, const std::string& filename_links, const std::string& filename_weights, Model<TensorT>& model,
+			bool load_nodes = true, bool load_links = true, bool load_weights = true);
 
 		/**
 		@brief save network model to file in dot format for visualization
@@ -149,41 +151,53 @@ public:
 	}
 
 	template<typename TensorT>
-	bool ModelFile<TensorT>::storeModelCsv(const std::string & filename_nodes, const std::string & filename_links, const std::string & filename_weights, Model<TensorT>& model)
+	bool ModelFile<TensorT>::storeModelCsv(const std::string & filename_nodes, const std::string & filename_links, const std::string & filename_weights, Model<TensorT>& model,
+		bool store_nodes, bool store_links, bool store_weights)
 	{
 		// [PERFORMANCE: this can be parallelized using threads]
-		NodeFile<TensorT> node_file;
-		node_file.storeNodesCsv(filename_nodes, model.nodes_);
-		LinkFile link_file;
-		link_file.storeLinksCsv(filename_links, model.links_);
-		WeightFile<TensorT> weight_file;
-		weight_file.storeWeightsCsv(filename_weights, model.weights_);
+		if (store_nodes) {
+			NodeFile<TensorT> node_file;
+			node_file.storeNodesCsv(filename_nodes, model.nodes_);
+		}
+		if (store_links) {
+			LinkFile link_file;
+			link_file.storeLinksCsv(filename_links, model.links_);
+		}
+		if (store_weights) {
+			WeightFile<TensorT> weight_file;
+			weight_file.storeWeightsCsv(filename_weights, model.weights_);
+		}
 		return true;
 	}
 
 	template<typename TensorT>
-	bool ModelFile<TensorT>::loadModelCsv(const std::string & filename_nodes, const std::string & filename_links, const std::string & filename_weights, Model<TensorT>& model)
+	bool ModelFile<TensorT>::loadModelCsv(const std::string & filename_nodes, const std::string & filename_links, const std::string & filename_weights, Model<TensorT>& model,
+		bool load_nodes, bool load_links, bool load_weights)
 	{
 		// [PERFORMANCE: this can be parallelized using threads]
 		// load the nodes
-		NodeFile<TensorT> node_file;
-		std::map<std::string, std::shared_ptr<Node<TensorT>>> nodes;
-		node_file.loadNodesCsv(filename_nodes, nodes);
+		if (load_nodes) {
+			NodeFile<TensorT> node_file;
+			std::map<std::string, std::shared_ptr<Node<TensorT>>> nodes;
+			node_file.loadNodesCsv(filename_nodes, nodes);
+			model.nodes_ = nodes;
+		}
 
 		// load the links
-		LinkFile link_file;
-		std::map<std::string, std::shared_ptr<Link>> links;
-		link_file.loadLinksCsv(filename_links, links);
+		if (load_links) {
+			LinkFile link_file;
+			std::map<std::string, std::shared_ptr<Link>> links;
+			link_file.loadLinksCsv(filename_links, links);
+			model.links_ = links;
+		}
 
 		// load the weights
-		WeightFile<TensorT> weight_file;
-		std::map<std::string, std::shared_ptr<Weight<TensorT>>> weights;
-		weight_file.loadWeightsCsv(filename_weights, weights);
-
-		// make the model
-		model.nodes_ = nodes;
-		model.links_ = links;
-		model.weights_ = weights;
+		if (load_weights) {
+			WeightFile<TensorT> weight_file;
+			std::map<std::string, std::shared_ptr<Weight<TensorT>>> weights;
+			weight_file.loadWeightsCsv(filename_weights, weights);
+			model.weights_ = weights;
+		}
 
 		return true;
 	}

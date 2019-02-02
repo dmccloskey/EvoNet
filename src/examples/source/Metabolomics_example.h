@@ -1,23 +1,11 @@
 /**TODO:  Add copyright*/
 
-#include <SmartPeak/ml/PopulationTrainerDefaultDevice.h>
-#include <SmartPeak/ml/ModelTrainerDefaultDevice.h>
-#include <SmartPeak/ml/ModelReplicator.h>
-#include <SmartPeak/ml/ModelBuilder.h>
-#include <SmartPeak/ml/Model.h>
-#include <SmartPeak/io/PopulationTrainerFile.h>
 #include <SmartPeak/io/csv.h>
 #include <SmartPeak/io/CSVWriter.h>
 
 #include <SmartPeak/core/Preprocessing.h>
 #include <SmartPeak/core/StringParsing.h>
 #include <SmartPeak/core/Statistics.h>
-
-#include <random>
-#include <fstream>
-#include <thread>
-#include <map>
-#include <set>
 
 #include <unsupported/Eigen/CXX11/Tensor>
 
@@ -113,13 +101,12 @@ struct MetaDatum {
 };
 typedef std::map<std::string, MetaDatum> MetaData;
 
-// Extended data classes
 template<typename TensorT>
-class MetDataSimClassification : public DataSimulator<TensorT>
+class BiochemicalReactionModel
 {
 public:
-	MetDataSimClassification() = default;
-	~MetDataSimClassification() = default;
+	BiochemicalReactionModel() = default;
+	~BiochemicalReactionModel() = default;
 
 	/*
 	@brief Read in the metabolomics data from .csv file
@@ -290,72 +277,6 @@ public:
 	void readMetabolomicsData(std::string& filename) { ReadMetabolomicsData(filename, metabolomicsData_); }
 	void readBiochemicalReactions(std::string& filename) { ReadBiochemicalReactions(filename, biochemicalReactions_); }
 	void readMetaData(std::string& filename) { ReadMetaData(filename, metaData_); }
-
-	void simulateData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
-	{
-		// infer data dimensions based on the input tensors
-		const int batch_size = input_data.dimension(0);
-		const int memory_size = input_data.dimension(1);
-		const int n_input_nodes = input_data.dimension(2);
-		const int n_output_nodes = output_data.dimension(2);
-		const int n_epochs = input_data.dimension(3);
-
-		// NOTE: used for testing
-		//std::string sample_group_name = sample_group_names_[0];
-		//std::vector<float> mars;
-		//for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
-		//	float mar = calculateMAR(metabolomicsData_.at(sample_group_name),
-		//		biochemicalReactions_.at(reaction_ids_[nodes_iter]));
-		//	mars.push_back(mar);
-		//	//std::cout << "OutputNode: "<<nodes_iter<< " = " << mar << std::endl;
-		//}
-
-		for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
-			for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
-				for (int epochs_iter = 0; epochs_iter < n_epochs; ++epochs_iter) {
-
-					// pick a random sample group name
-					std::string sample_group_name = selectRandomElement(sample_group_names_);
-
-					for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
-						input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = calculateMAR(
-							metabolomicsData_.at(sample_group_name),
-							biochemicalReactions_.at(reaction_ids_[nodes_iter]));
-						//input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = mars[nodes_iter]; // NOTE: used for testing
-					}
-
-					// convert the label to a one hot vector
-					Eigen::Tensor<TensorT, 1> one_hot_vec = OneHotEncoder<std::string, TensorT>(metaData_.at(sample_group_name).condition, labels_);
-					Eigen::Tensor<TensorT, 1> one_hot_vec_smoothed = one_hot_vec.unaryExpr(LabelSmoother<TensorT>(0.01, 0.01));
-
-					//// MSE + LogLoss
-					//for (int nodes_iter = 0; nodes_iter < n_output_nodes/2; ++nodes_iter) {
-					//	output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = one_hot_vec(nodes_iter);
-					//	output_data(batch_iter, memory_iter, nodes_iter + n_output_nodes/2, epochs_iter) = one_hot_vec(nodes_iter);
-					//	//output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = one_hot_vec_smoothed(nodes_iter);
-					//}
-
-					// MSE or LogLoss only
-					for (int nodes_iter = 0; nodes_iter < n_output_nodes; ++nodes_iter) {
-						output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = one_hot_vec(nodes_iter);
-						//output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = one_hot_vec_smoothed(nodes_iter);
-					}
-				}
-			}
-		}
-
-		// update the time_steps
-		time_steps.setConstant(1.0f);
-	}
-	void simulateTrainingData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
-	{
-		simulateData(input_data, output_data, time_steps);
-	}
-	void simulateValidationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
-	{
-		simulateData(input_data, output_data, time_steps);
-	}
-	void simulateEvaluationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 3>& time_steps) {};
 
 	/*
 	@brief Find candidate reactions that can be used to calculate the MAR
@@ -557,7 +478,6 @@ public:
 		component_group_names_.assign(component_group_names.begin(), component_group_names.end());
 	}
 
-
 	/*
 	@brief Find all unique component group names in the data set
 
@@ -612,8 +532,8 @@ public:
 
 	MAR = R1^r1 * R2^r2 / (P1^p1 * P2^p2)
 
-	@param[in] filename
 	@param[in, out] metabolomicsData
+	@param[in, out] biochemicalReaction
 	**/
 	static float calculateMAR(
 		const std::map<std::string, std::vector<MetabolomicsDatum>>& metabolomicsData,
@@ -690,14 +610,141 @@ public:
 		return currency_mets;
 	}
 
+	/*
+	@brief Break a compound biochemical reaction into a interaction graph
+
+	e.g., PGI: g6p = f6p becomes
+		g6p_PGI: g6p = PGI
+		PGI_f6p: PGI = f6p
+
+	e.g., HK: glc + atp = g6p + h + adp becomes
+		glc_HK: glc = HK
+		atp_HK: atp = HK
+		HK_g6p: HK = g6p
+		HK_h: HK = h
+		HK_adp: HK = adp
+
+	@param[in] biochemicalReaction
+	@param[out] elementary_graph A map of vectores of source/sink pairs where the key is the connection name
+	**/
+	static void getInteractionGraph(const BiochemicalReactions& biochemicalReactions,
+		std::map<std::string, std::vector<std::pair<std::string, std::string>>>& elementary_graph)
+	{
+		elementary_graph.clear();
+		for (const auto& biochemicalReaction : biochemicalReactions) {		
+
+			// parse the reactants
+			for (int i = 0; i < biochemicalReaction.reactants_ids.size(); ++i) {
+				std::string weight_name = biochemicalReaction.reactants_ids[i] + "_to_" + biochemicalReaction.second.rxn_id;
+				std::vector<std::pair<std::string, std::string>> source_sinks;
+				for (int stoich = 0; stoich < std::abs(biochemicalReaction.reactants_stoichiometry[i]); ++stoich) {
+					soruce_sinks.push_back(std::make_pair(biochemicalReaction.reactants_ids[i], weight_name));
+				}
+				auto found = elementary_graph.emplace(weight_name, source_sinks);
+				if (!found.second) {
+					std::cout << "Duplicate reaction found: " << biochemicalReaction.reactants_ids[i] << std::endl;
+				}
+			}
+
+			// parse the products
+			for (int i = 0; i < biochemicalReaction.products_ids.size(); ++i) {
+				std::string weight_name = biochemicalReaction.second.rxn_id + "_to_" + biochemicalReaction.products_ids[i];
+				std::vector<std::pair<std::string, std::string>> source_sinks;
+				for (int stoich = 0; stoich < std::abs(biochemicalReaction.products_stoichiometry[i]); ++stoich) {
+					soruce_sinks.push_back(std::make_pair(biochemicalReaction.products_ids[i], weight_name));
+				}
+				auto found = elementary_graph.emplace(weight_name, source_sinks);
+				if (!found.second) {
+					std::cout << "Duplicate reaction found: " << biochemicalReaction.reactants_ids[i] << std::endl;
+				}
+			}
+		}
+	}
+
 	MetabolomicsData metabolomicsData_;
 	BiochemicalReactions biochemicalReactions_;
 	MetaData metaData_;
 	std::vector<std::string> reaction_ids_; // or MAR ids
-	BiochemicalReaction mars_;
 	std::vector<std::string> sample_group_names_;
 	std::vector<std::string> labels_;
 	std::vector<std::string> component_group_names_;
+};
+
+// Extended data classes
+template<typename TensorT>
+class MetDataSimClassification : public DataSimulator<TensorT>
+{
+public:
+	MetDataSimClassification() = default;
+	~MetDataSimClassification() = default;
+
+	void simulateData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
+	{
+		// infer data dimensions based on the input tensors
+		const int batch_size = input_data.dimension(0);
+		const int memory_size = input_data.dimension(1);
+		const int n_input_nodes = input_data.dimension(2);
+		const int n_output_nodes = output_data.dimension(2);
+		const int n_epochs = input_data.dimension(3);
+
+		// NOTE: used for testing
+		//std::string sample_group_name = sample_group_names_[0];
+		//std::vector<float> mars;
+		//for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
+		//	float mar = calculateMAR(metabolomicsData_.at(sample_group_name),
+		//		biochemicalReactions_.at(reaction_ids_[nodes_iter]));
+		//	mars.push_back(mar);
+		//	//std::cout << "OutputNode: "<<nodes_iter<< " = " << mar << std::endl;
+		//}
+
+		for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
+			for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
+				for (int epochs_iter = 0; epochs_iter < n_epochs; ++epochs_iter) {
+
+					// pick a random sample group name
+					std::string sample_group_name = selectRandomElement(this->model_.sample_group_names_);
+
+					for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
+						input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = this->model_.calculateMAR(
+							this->model_.metabolomicsData_.at(sample_group_name),
+							this->model_.biochemicalReactions_.at(this->model_.reaction_ids_[nodes_iter]));
+						//input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = mars[nodes_iter]; // NOTE: used for testing
+					}
+
+					// convert the label to a one hot vector
+					Eigen::Tensor<TensorT, 1> one_hot_vec = OneHotEncoder<std::string, TensorT>(this->model_.metaData_.at(sample_group_name).condition, this->model_.labels_);
+					Eigen::Tensor<TensorT, 1> one_hot_vec_smoothed = one_hot_vec.unaryExpr(LabelSmoother<TensorT>(0.01, 0.01));
+
+					//// MSE + LogLoss
+					//for (int nodes_iter = 0; nodes_iter < n_output_nodes/2; ++nodes_iter) {
+					//	output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = one_hot_vec(nodes_iter);
+					//	output_data(batch_iter, memory_iter, nodes_iter + n_output_nodes/2, epochs_iter) = one_hot_vec(nodes_iter);
+					//	//output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = one_hot_vec_smoothed(nodes_iter);
+					//}
+
+					// MSE or LogLoss only
+					for (int nodes_iter = 0; nodes_iter < n_output_nodes; ++nodes_iter) {
+						output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = one_hot_vec(nodes_iter);
+						//output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = one_hot_vec_smoothed(nodes_iter);
+					}
+				}
+			}
+		}
+
+		// update the time_steps
+		time_steps.setConstant(1.0f);
+	}
+	void simulateTrainingData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
+	{
+		simulateData(input_data, output_data, time_steps);
+	}
+	void simulateValidationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
+	{
+		simulateData(input_data, output_data, time_steps);
+	}
+	void simulateEvaluationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 3>& time_steps) {};
+
+	BiochemicalReactionModel<TensorT> model_;
 };
 
 template<typename TensorT>
@@ -719,12 +766,12 @@ public:
 
 					// pick a random sample group name
 					//std::string sample_group_name = selectRandomElement(sample_group_names_);
-					std::string sample_group_name = this->sample_group_names_[0];
+					std::string sample_group_name = this->model_.sample_group_names_[0];
 
 					for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
-						const TensorT mar = this->calculateMAR(
-							this->metabolomicsData_.at(sample_group_name),
-							this->biochemicalReactions_.at(this->reaction_ids_[nodes_iter]));
+						const TensorT mar = this->model_.calculateMAR(
+							this->model_.metabolomicsData_.at(sample_group_name),
+							this->model_.biochemicalReactions_.at(this->model_.reaction_ids_[nodes_iter]));
 						input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = mar;
 						output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = mar;
 					}
@@ -740,6 +787,8 @@ public:
 	{
 		simulateData(input_data, output_data, time_steps);
 	}
+	
+	BiochemicalReactionModel<TensorT> model_;
 };
 
 // Other extended classes
@@ -991,7 +1040,7 @@ public:
 /*
 @brief Find significant pair-wise MARS between samples (one pre/post vs. all pre/post)
 */
-PWData PWComparison(MetDataSimClassification<float>& metabolomics_data, const std::vector<std::string>& sample_names, int n_samples = 10000, float alpha = 0.05, float fc = 1.0) {
+PWData PWComparison(BiochemicalReactionModel<float>& metabolomics_data, const std::vector<std::string>& sample_names, int n_samples = 10000, float alpha = 0.05, float fc = 1.0) {
 	PWData pw_data;
 	for (const std::string& mar : metabolomics_data.reaction_ids_) {
 		for (size_t sgn1_iter = 0; sgn1_iter < sample_names.size(); ++sgn1_iter) {
@@ -1068,7 +1117,7 @@ PWData PWComparison(MetDataSimClassification<float>& metabolomics_data, const st
 /*
 @brief Find significant pair-wise MARS between pre/post samples (one pre vs one post)
 */
-PWData PWPrePostComparison(MetDataSimClassification<float>& metabolomics_data,
+PWData PWPrePostComparison(BiochemicalReactionModel<float>& metabolomics_data,
 	std::vector<std::string>& pre_samples, std::vector<std::string>& post_samples, const int& n_pairs,
 	int n_samples = 10000, float alpha = 0.05, float fc = 1.0) {
 	PWData pw_data;
@@ -1137,7 +1186,7 @@ PWData PWPrePostComparison(MetDataSimClassification<float>& metabolomics_data,
 /*
 @brief Find significant pair-wise MARS between pre/post samples (one pre vs one post)
 */
-PWData PWPrePostDifference(MetDataSimClassification<float>& metabolomics_data,
+PWData PWPrePostDifference(BiochemicalReactionModel<float>& metabolomics_data,
 	std::vector<std::string>& pre_samples, std::vector<std::string>& post_samples, const int& n_pairs,
 	int n_samples = 10000, float alpha = 0.05, float fc = 0.43229) {
 

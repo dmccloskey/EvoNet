@@ -1,5 +1,11 @@
 /**TODO:  Add copyright*/
 
+#include <SmartPeak/ml/PopulationTrainerDefaultDevice.h>
+#include <SmartPeak/ml/ModelTrainerDefaultDevice.h>
+#include <SmartPeak/ml/ModelReplicator.h>
+#include <SmartPeak/ml/ModelBuilder.h>
+#include <SmartPeak/io/PopulationTrainerFile.h>
+
 #include "Metabolomics_example.h"
 
 using namespace SmartPeak;
@@ -18,7 +24,7 @@ void main_statistics_timecourseSummary(std::string blood_fraction = "PLT",
 	bool run_timeCourse_S02D01vsS02D02 = false, bool run_timeCourse_S02D01vsS02D03 = false, bool run_timeCourse_S02D01vsS02D04 = false, bool run_timeCourse_S02D01vsS02D05 = false)
 {
 	// define the data simulator
-	MetDataSimClassification<float> metabolomics_data;
+	BiochemicalReactionModel<float> metabolomics_data;
 
 	// data dirs
 	//std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
@@ -505,7 +511,7 @@ void main_statistics_timecourse(std::string blood_fraction = "PLT",
 	bool run_timeCourse_S02D01vsS02D02 = false, bool run_timeCourse_S02D01vsS02D03 = false, bool run_timeCourse_S02D01vsS02D04 = false, bool run_timeCourse_S02D01vsS02D05 = false)
 {
 	// define the data simulator
-	MetDataSimClassification<float> metabolomics_data;
+	BiochemicalReactionModel<float> metabolomics_data;
 
 	// data dirs
 	//std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
@@ -790,7 +796,7 @@ void main_statistics_timecourse(std::string blood_fraction = "PLT",
 void main_statistics_controlsSummary(std::string blood_fraction = "PLT", bool run_controls = false)
 {
 	// define the data simulator
-	MetDataSimClassification<float> metabolomics_data;
+	BiochemicalReactionModel<float> metabolomics_data;
 
 	// data dirs
 	//std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
@@ -837,7 +843,7 @@ void main_statistics_controlsSummary(std::string blood_fraction = "PLT", bool ru
 void main_statistics_controls(std::string blood_fraction = "PLT", bool run_controls = false)
 {
 	// define the data simulator
-	MetDataSimClassification<float> metabolomics_data;
+	BiochemicalReactionModel<float> metabolomics_data;
 
 	// data dirs
 	//std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
@@ -894,7 +900,7 @@ void main_statistics_controls(std::string blood_fraction = "PLT", bool run_contr
 void main_statistics_preVsPost(std::string blood_fraction = "PLT", bool run_oneVSone = true, bool run_preVSpost = true, bool run_postMinPre = false)
 {
 	// define the data simulator
-	MetDataSimClassification<float> metabolomics_data;
+	BiochemicalReactionModel<float> metabolomics_data;
 
 	// data dirs
 	//std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_RBC_Platelet/";
@@ -1027,19 +1033,19 @@ void main_classification(std::string blood_fraction = "PLT", bool make_model = t
 		metabo_data_filename = data_dir + "MetabolomicsData_P.csv";
 		meta_data_filename = data_dir + "MetaData_prePost_P.csv";
 	}
-	metabolomics_data.readBiochemicalReactions(biochem_rxns_filename);
-	metabolomics_data.readMetabolomicsData(metabo_data_filename);
-	metabolomics_data.readMetaData(meta_data_filename);
-	metabolomics_data.findComponentGroupNames();
-	metabolomics_data.findMARs();
-	metabolomics_data.findMARs(true, false);
-	metabolomics_data.findMARs(false, true);
-	metabolomics_data.removeRedundantMARs();
-	metabolomics_data.findLabels();
+	metabolomics_data.model_.readBiochemicalReactions(biochem_rxns_filename);
+	metabolomics_data.model_.readMetabolomicsData(metabo_data_filename);
+	metabolomics_data.model_.readMetaData(meta_data_filename);
+	metabolomics_data.model_.findComponentGroupNames();
+	metabolomics_data.model_.findMARs();
+	metabolomics_data.model_.findMARs(true, false);
+	metabolomics_data.model_.findMARs(false, true);
+	metabolomics_data.model_.removeRedundantMARs();
+	metabolomics_data.model_.findLabels();
 
 	// define the model input/output nodes
-	const int n_input_nodes = metabolomics_data.reaction_ids_.size();
-	const int n_output_nodes = metabolomics_data.labels_.size();
+	const int n_input_nodes = metabolomics_data.model_.reaction_ids_.size();
+	const int n_output_nodes = metabolomics_data.model_.labels_.size();
 	std::vector<std::string> input_nodes;
 	std::vector<std::string> output_nodes, output_nodes_softmax;
 	for (int i = 0; i < n_input_nodes; ++i) {
@@ -1149,16 +1155,16 @@ void main_reconstruction()
 	std::string biochem_rxns_filename = data_dir + "iAT_PLT_636.csv";
 	std::string metabo_data_filename = data_dir + "MetabolomicsData_PLT.csv";
 	std::string meta_data_filename = data_dir + "MetaData_prePost_PLT.csv";
-	metabolomics_data.readBiochemicalReactions(biochem_rxns_filename);
-	metabolomics_data.readMetabolomicsData(metabo_data_filename);
-	metabolomics_data.readMetaData(meta_data_filename);
-	metabolomics_data.findComponentGroupNames();
-	metabolomics_data.findMARs();
-	metabolomics_data.findLabels();
+	metabolomics_data.model_.readBiochemicalReactions(biochem_rxns_filename);
+	metabolomics_data.model_.readMetabolomicsData(metabo_data_filename);
+	metabolomics_data.model_.readMetaData(meta_data_filename);
+	metabolomics_data.model_.findComponentGroupNames();
+	metabolomics_data.model_.findMARs();
+	metabolomics_data.model_.findLabels();
 
 	// define the model input/output nodes
-	const int n_input_nodes = metabolomics_data.reaction_ids_.size();
-	const int n_output_nodes = metabolomics_data.reaction_ids_.size();
+	const int n_input_nodes = metabolomics_data.model_.reaction_ids_.size();
+	const int n_output_nodes = metabolomics_data.model_.reaction_ids_.size();
 	std::vector<std::string> input_nodes, encoder_nodes, output_nodes;
 	for (int i = 0; i < n_input_nodes; ++i)
 		input_nodes.push_back("Input_" + std::to_string(i));

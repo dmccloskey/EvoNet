@@ -26,32 +26,29 @@ public:
 		const int n_output_nodes = output_data.dimension(2);
 		const int n_epochs = input_data.dimension(3);
 
-		// generate a new sequence 
-		// TODO: ensure that the this->sequence_length_ >= memory_size!
-		Eigen::Tensor<TensorT, 1> random_sequence(this->sequence_length_);
-		Eigen::Tensor<TensorT, 1> mask_sequence(this->sequence_length_);
-		float result = this->AddProb(random_sequence, mask_sequence, this->n_mask_);
+		HarmonicOscillatorSimulator<float> WeightSpring;
+		std::random_device rd{};
+		std::mt19937 gen{ rd() };
+		std::normal_distribution<> dist{ 0.0f, 1.0f };
 
-		// Generate the input and output data for training [BUG FREE]
+		// Generate the input and output data for training
 		for (int batch_iter = 0; batch_iter<batch_size; ++batch_iter) {
 			for (int epochs_iter = 0; epochs_iter<n_epochs; ++epochs_iter) {
-				for (int memory_iter = 0; memory_iter<memory_size; ++memory_iter) {
-					// determine the cumulative vector
-					result_cumulative += random_sequence(memory_iter) * mask_sequence(memory_iter);
-					cumulative(memory_iter) = result_cumulative;
-				}
-				for (int memory_iter = memory_size - 1; memory_iter >= 0; --memory_iter) {
-					// assign the input sequences
-					input_data(batch_iter, memory_iter, 0, epochs_iter) = random_sequence(memory_iter); // random sequence
-					input_data(batch_iter, memory_iter, 1, epochs_iter) = mask_sequence(memory_iter); // mask sequence
 
-					// assign the output
-					output_data(batch_iter, memory_iter, 0, epochs_iter) = cumulative(memory_iter);
-					//std::cout<<"result cumulative: "<<result_cumulative<<std::endl; // [TESTS: convert to a test!]
-					//if (memory_iter == 0)
-					//	output_data(batch_iter, memory_iter, 0, epochs_iter) = result;
-					//else
-					//	output_data(batch_iter, memory_iter, 0, epochs_iter) = 0.0;
+				// Simulate a 3 weight and 2 spring 1D harmonic system
+				// where the middle weight has been displaced by a random amount
+				Eigen::Tensor<float, 1> time_steps(memory_size);
+				Eigen::Tensor<float, 2> displacements(memory_size, 3);
+				WeightSpring.WeightSpring3W2S1D(time_steps, displacements, memory_size, 0.1,
+					1, 1, 1, //A
+					1, 1, 1, //m
+					0, dist(gen), 0, //xo
+					1);
+
+				for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
+					input_data(batch_iter, memory_iter, 0, epochs_iter) = displacements(memory_size - 1 - memory_iter, 1); // m2
+					output_data(batch_iter, memory_iter, 0, epochs_iter) = displacements(memory_size - 1 - memory_iter, 0); // m1
+					output_data(batch_iter, memory_iter, 1, epochs_iter) = displacements(memory_size - 1 - memory_iter, 2); // m3
 				}
 			}
 		}
@@ -74,6 +71,47 @@ template<typename TensorT>
 class ModelTrainerExt : public ModelTrainerDefaultDevice<TensorT>
 {
 public:
+	void makeHarmonicOscillator(Model<TensorT>& model) {
+		/**
+		 * Interaction Graph Toy Network Model
+		 * Linear Harmonic Oscillator with three masses and two springs
+		*/
+		Node<float> m1, m2, m3;
+		Link l1_to_l2, l2_to_l1, l2_to_l3, l3_to_l2;
+		Weight<float> w1_to_w2, w2_to_w1, w2_to_w3, w3_to_w2;
+		// Toy network: 1 hidden layer, fully connected, DCG
+		m1 = Node<float>("m1", NodeType::input, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+		m2 = Node<float>("m2", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+		m3 = Node<float>("m3", NodeType::output, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+		// weights  
+		std::shared_ptr<WeightInitOp<float>> weight_init;
+		std::shared_ptr<SolverOp<float>> solver;
+		// weight_init.reset(new RandWeightInitOp(1.0)); // No random init for testing
+		weight_init.reset(new ConstWeightInitOp<float>(0.1));
+		solver.reset(new SGDOp<float>(0.01, 0.9));
+		w1_to_w2 = Weight<float>("m1_to_m2", weight_init, solver);
+		weight_init.reset(new ConstWeightInitOp<float>(0.1));
+		solver.reset(new SGDOp<float>(0.01, 0.9));
+		w2_to_w1 = Weight<float>("m2_to_m1", weight_init, solver);
+		weight_init.reset(new ConstWeightInitOp<float>(0.1));
+		solver.reset(new SGDOp<float>(0.01, 0.9));
+		w2_to_w3 = Weight<float>("m2_to_m3", weight_init, solver);
+		weight_init.reset(new ConstWeightInitOp<float>(0.1));
+		solver.reset(new SGDOp<float>(0.01, 0.9));
+		w3_to_w2 = Weight<float>("m3_to_m2", weight_init, solver);
+		weight_init.reset();
+		solver.reset();
+		// links
+		l1_to_l2 = Link("l1_to_l2", "m1", "m2", "m1_to_m2");
+		l2_to_l1 = Link("l2_to_l1", "m2", "m1", "m2_to_m1");
+		l2_to_l3 = Link("l2_to_l3", "m2", "m3", "m2_to_m3");
+		l3_to_l2 = Link("l3_to_l2", "m3", "m2", "m3_to_m2");
+		model.setId(0);
+		model.setName("HarmonicOscillator");
+		model.addNodes({ m1, m2, m3 });
+		model.addWeights({ w1_to_w2, w2_to_w1, w2_to_w3, w3_to_w2 });
+		model.addLinks({ l1_to_l2, l2_to_l1, l2_to_l3, l3_to_l2 });
+	}
 	Model<TensorT> makeModel(){	return Model<TensorT>(); }
 	void adaptiveTrainerScheduler(
 		const int& n_generations,
@@ -81,16 +119,20 @@ public:
 		Model<TensorT>& model,
 		ModelInterpreterDefaultDevice<TensorT>& model_interpreter,
 		const std::vector<float>& model_errors) {
+		// Check point the model every 1000 epochs
 		if (n_epochs % 1000 == 0 && n_epochs != 0) {
-			// save the model every 1000 epochs
-			//model_interpreter.getModelResults(model, false, true, false);
+			model_interpreter.getModelResults(model, false, true, false);
 			ModelFile<TensorT> data;
-			//data.storeModelCsv(model.getName() + "_" + std::to_string(n_epochs) + "_nodes.csv",
-			//	model.getName() + "_" + std::to_string(n_epochs) + "_links.csv",
-			//	model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model);
 			data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
 			ModelInterpreterFileDefaultDevice<TensorT> interpreter_data;
 			interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
+		}
+		// Record the nodes/links
+		if (n_epochs == 0) {
+			ModelFile<TensorT> data;
+			data.storeModelCsv(model.getName() + "_" + std::to_string(n_epochs) + "_nodes.csv",
+				model.getName() + "_" + std::to_string(n_epochs) + "_links.csv",
+				model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model);
 		}
 	}
 };
@@ -175,8 +217,8 @@ void main_WeightSpring3W2S1D(const bool& make_model, const bool& train_model) {
 	const int n_threads = n_hard_threads; // the number of threads
 
 	// define the input/output nodes
-	std::vector<std::string> input_nodes = { "Input_000000000000", "Input_000000000001" };
-	std::vector<std::string> output_nodes = { "Output_000000000000" };
+	std::vector<std::string> input_nodes = { "m2" };
+	std::vector<std::string> output_nodes = { "m1","m3" };
 
 	// define the data simulator
 	DataSimulatorExt<float> data_simulator;
@@ -190,11 +232,11 @@ void main_WeightSpring3W2S1D(const bool& make_model, const bool& train_model) {
 	}
 	ModelTrainerExt<float> model_trainer;
 	model_trainer.setBatchSize(8);
-	model_trainer.setMemorySize(1);
-	model_trainer.setNEpochsTraining(100);
+	model_trainer.setMemorySize(16);
+	model_trainer.setNEpochsTraining(1000);
 	model_trainer.setNEpochsValidation(25);
 	model_trainer.setVerbosityLevel(1);
-	model_trainer.setLogging(false, false);
+	model_trainer.setLogging(true, false);
 	model_trainer.setFindCycles(false);
 	model_trainer.setFastInterpreter(true);
 	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
@@ -219,7 +261,7 @@ void main_WeightSpring3W2S1D(const bool& make_model, const bool& train_model) {
 	model_replicator.setNodeIntegrations({ std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new ProdOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new ProdErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new ProdWeightGradOp<float>())),
 		std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>())),
 		std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new MeanOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new MeanErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new MeanWeightGradOp<float>())),
-		//std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new VarModOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new VarModErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new VarModWeightGradOp<float>())),
+		std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new VarModOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new VarModErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new VarModWeightGradOp<float>())),
 		std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new CountOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new CountErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new CountWeightGradOp<float>()))
 		});
 
@@ -227,18 +269,18 @@ void main_WeightSpring3W2S1D(const bool& make_model, const bool& train_model) {
 	std::cout << "Initializing the population..." << std::endl;
 	Model<float> model;
 	if (make_model) {
-		// ModelTrainerExt<float>().makeVAE(model, input_size, encoding_size, n_hidden);
+		 ModelTrainerExt<float>().makeHarmonicOscillator(model);
 	}
 	else {
 		// read in the trained model
 		std::cout << "Reading in the model..." << std::endl;
 		const std::string data_dir = "C:/Users/domccl/GitHub/smartPeak_cpp/build_win_cuda/bin/Debug/";
-		const std::string model_filename = data_dir + "0_MNIST_model.binary";
-		const std::string interpreter_filename = data_dir + "0_MNIST_interpreter.binary";
+		const std::string model_filename = data_dir + "0_HarmonicOscillator_model.binary";
+		const std::string interpreter_filename = data_dir + "0_HarmonicOscillator_interpreter.binary";
 		ModelFile<float> model_file;
 		model_file.loadModelBinary(model_filename, model);
 		model.setId(1);
-		model.setName("VAE1");
+		model.setName("HarmonicOscillator-1");
 		ModelInterpreterFileDefaultDevice<float> model_interpreter_file;
 		model_interpreter_file.loadModelInterpreterBinary(interpreter_filename, model_interpreters[0]); // FIX ME!
 	}
@@ -250,8 +292,8 @@ void main_WeightSpring3W2S1D(const bool& make_model, const bool& train_model) {
 			population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, input_nodes);
 
 		PopulationTrainerFile<float> population_trainer_file;
-		population_trainer_file.storeModels(population, "MNIST");
-		population_trainer_file.storeModelValidations("MNISTErrors.csv", models_validation_errors_per_generation.back());
+		population_trainer_file.storeModels(population, "HarmonicOscillator");
+		population_trainer_file.storeModelValidations("HarmonicOscillatorErrors.csv", models_validation_errors_per_generation.back());
 	}
 	else {
 		// Evaluate the population

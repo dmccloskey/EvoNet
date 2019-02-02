@@ -1,5 +1,11 @@
 /**TODO:  Add copyright*/
 
+#include <SmartPeak/ml/PopulationTrainerDefaultDevice.h>
+#include <SmartPeak/ml/ModelTrainerDefaultDevice.h>
+#include <SmartPeak/ml/ModelReplicator.h>
+#include <SmartPeak/ml/ModelBuilder.h>
+#include <SmartPeak/io/PopulationTrainerFile.h>
+
 #include "Metabolomics_example.h"
 
 using namespace SmartPeak;
@@ -16,7 +22,7 @@ void main_statistics_timecourseSummary(
 	bool run_timeCourse_TpiA = false)
 {
 	// define the data simulator
-	MetDataSimClassification<float> metabolomics_data;
+	BiochemicalReactionModel<float> metabolomics_data;
 
 	// data dirs
 	//std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
@@ -152,7 +158,7 @@ void main_statistics_timecourse(
 	bool run_timeCourse_TpiA = false)
 {
 	// define the data simulator
-	MetDataSimClassification<float> metabolomics_data;
+	BiochemicalReactionModel<float> metabolomics_data;
 
 	// data dirs
 	//std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
@@ -261,6 +267,7 @@ void main_classification(bool make_model = true)
 	const int n_threads = 1;
 
 	// define the data simulator
+	BiochemicalReactionModel<float> reaction_model;
 	MetDataSimClassification<float> metabolomics_data;
 	//std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
 	//std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
@@ -272,19 +279,20 @@ void main_classification(bool make_model = true)
 	biochem_rxns_filename = data_dir + "iJO1366.csv";
 	metabo_data_filename = data_dir + "ALEsKOs01_Metabolomics.csv";
 	meta_data_filename = data_dir + "ALEsKOs01_MetaData.csv";
-	metabolomics_data.readBiochemicalReactions(biochem_rxns_filename);
-	metabolomics_data.readMetabolomicsData(metabo_data_filename);
-	metabolomics_data.readMetaData(meta_data_filename);
-	metabolomics_data.findComponentGroupNames();
-	metabolomics_data.findMARs();
-	metabolomics_data.findMARs(true, false);
-	metabolomics_data.findMARs(false, true);
-	metabolomics_data.removeRedundantMARs();
-	metabolomics_data.findLabels();
+	reaction_model.readBiochemicalReactions(biochem_rxns_filename);
+	reaction_model.readMetabolomicsData(metabo_data_filename);
+	reaction_model.readMetaData(meta_data_filename);
+	reaction_model.findComponentGroupNames();
+	reaction_model.findMARs();
+	reaction_model.findMARs(true, false);
+	reaction_model.findMARs(false, true);
+	reaction_model.removeRedundantMARs();
+	reaction_model.findLabels();
+	metabolomics_data.model_ = reaction_model;
 
 	// define the model input/output nodes
-	const int n_input_nodes = metabolomics_data.reaction_ids_.size();
-	const int n_output_nodes = metabolomics_data.labels_.size();
+	const int n_input_nodes = reaction_model.reaction_ids_.size();
+	const int n_output_nodes = reaction_model.labels_.size();
 	std::vector<std::string> input_nodes;
 	std::vector<std::string> output_nodes, output_nodes_softmax;
 	for (int i = 0; i < n_input_nodes; ++i) {

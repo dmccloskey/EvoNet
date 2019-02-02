@@ -509,7 +509,24 @@ public:
 			const std::vector<std::string>& source_node_names, const TensorT& scalar_value,
 			const std::shared_ptr<ActivationOp<TensorT>>& node_activation,
 			const std::shared_ptr<ActivationOp<TensorT>>& node_activation_grad,
-			bool specify_layer = false);
+			bool specify_layer = false); 
+
+		/*
+		@brief Convert a biochemical interaction graph into a network model
+
+		@param[in] elementary_graph A map of vectores of source/sink pairs where the key is the connection name
+		@param[in, out] Model
+		@param[in] node_activation The activation function of the input node to create
+		@param[in] node_activation_grad The activation function gradient of the input node to create
+		@param[in] node_integration The integration function of the input node to create
+		@param[in] node_integration_error The integration function of the input node to create
+		@param[in] node_integration_weight_grad The integration function of the input node to create
+		**/
+		void ModelBuilder<TensorT>::addInteractionGraph(const std::map<std::string, std::vector<std::pair<std::string, std::string>>>& elementary_graph,
+			Model<TensorT> & model, const std::string & name, const std::string& module_name,
+			const std::shared_ptr<ActivationOp<TensorT>>& node_activation, const std::shared_ptr<ActivationOp<TensorT>>& node_activation_grad,
+			const std::shared_ptr<IntegrationOp<TensorT>>& node_integration, const std::shared_ptr<IntegrationErrorOp<TensorT>>& node_integration_error, const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& node_integration_weight_grad,
+			const std::shared_ptr<WeightInitOp<TensorT>> & weight_init, const std::shared_ptr<SolverOp<TensorT>> & solver);
 
 		/**
 		@brief Add one model to another
@@ -3099,6 +3116,30 @@ public:
 		model.addWeights({ unity_weight });
 		delete[] unity_weight_name_char;
 		return unity_weight_name;
+	}
+
+	template<typename TensorT>
+	inline void ModelBuilder<TensorT>::addInteractionGraph(const std::map<std::string, std::vector<std::pair<std::string, std::string>>>& elementary_graph,
+		Model<TensorT> & model, const std::string & name, const std::string& module_name,
+		const std::shared_ptr<ActivationOp<TensorT>>& node_activation, const std::shared_ptr<ActivationOp<TensorT>>& node_activation_grad,
+		const std::shared_ptr<IntegrationOp<TensorT>>& node_integration, const std::shared_ptr<IntegrationErrorOp<TensorT>>& node_integration_error, const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& node_integration_weight_grad,
+		const std::shared_ptr<WeightInitOp<TensorT>> & weight_init, const std::shared_ptr<SolverOp<TensorT>> & solver)
+	{
+		for (const auto& elementary_reactions : elementary_graph) {
+			for (const std::pair<std::string, std::string>& source_sink : elementary_reactions.second) {
+				Node<TensorT> source_node(source_sink.first, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+				Node<TensorT> sink_node(source_sink.second, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+				source_node.setModuleName(module_name);
+				sink_node.setModuleName(module_name);
+				Weight<TensorT> weight(elementary_reactions.first, weight_init, solver); // How to deal with stoichiometry > 1?
+				weight.setModuleName(module_name);
+				Link link(elementary_reactions.first, source_sink.first, source_sink.second, elementary_reactions.first);
+				link.setModuleName(module_name);
+				model.addNodes({ source_node, sink_node });
+				model.addLinks({ link });
+				model.addWeights({ weight });
+			}
+		}
 	}
 }
 

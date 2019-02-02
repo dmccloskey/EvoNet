@@ -1288,12 +1288,6 @@ BOOST_AUTO_TEST_CASE(modelTrainer3)
 		model_interpreter.mapValuesToLayers(model_modelTrainer3, input, input_nodes, "output");
 
 		model_interpreter.FPTT(memory_size); //FP
-		//std::cout << "Tensor Output 0: " << model_interpreter.getLayerTensor(0)->getOutput() << std::endl;
-		//std::cout << "Tensor Output 1: " << model_interpreter.getLayerTensor(1)->getOutput() << std::endl;
-		//std::cout << "Tensor Input 0: " << model_interpreter.getLayerTensor(0)->getInput() << std::endl;
-		//std::cout << "Tensor Input 1: " << model_interpreter.getLayerTensor(1)->getInput() << std::endl;
-		//std::cout << "Tensor Error 0: " << model_interpreter.getLayerTensor(0)->getError() << std::endl;
-		//std::cout << "Tensor Error 1: " << model_interpreter.getLayerTensor(1)->getError() << std::endl;
 
 		// calculate the model error and node output error
 		model_interpreter.CETT(model_modelTrainer3, expected, output_nodes, loss_function, loss_function_grad, memory_size);
