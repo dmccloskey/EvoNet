@@ -86,17 +86,16 @@ public:
 		// weights  
 		std::shared_ptr<WeightInitOp<float>> weight_init;
 		std::shared_ptr<SolverOp<float>> solver;
-		// weight_init.reset(new RandWeightInitOp(1.0)); // No random init for testing
-		weight_init.reset(new ConstWeightInitOp<float>(0.1));
+		weight_init.reset(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8));
 		solver.reset(new SGDOp<float>(0.01, 0.9));
 		w1_to_w2 = Weight<float>("m1_to_m2", weight_init, solver);
-		weight_init.reset(new ConstWeightInitOp<float>(0.1));
+		weight_init.reset(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8));
 		solver.reset(new SGDOp<float>(0.01, 0.9));
 		w2_to_w1 = Weight<float>("m2_to_m1", weight_init, solver);
-		weight_init.reset(new ConstWeightInitOp<float>(0.1));
+		weight_init.reset(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8));
 		solver.reset(new SGDOp<float>(0.01, 0.9));
 		w2_to_w3 = Weight<float>("m2_to_m3", weight_init, solver);
-		weight_init.reset(new ConstWeightInitOp<float>(0.1));
+		weight_init.reset(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8));
 		solver.reset(new SGDOp<float>(0.01, 0.9));
 		w3_to_w2 = Weight<float>("m3_to_m2", weight_init, solver);
 		weight_init.reset();
@@ -239,6 +238,7 @@ void main_WeightSpring3W2S1D(const bool& make_model, const bool& train_model) {
 	model_trainer.setLogging(true, false);
 	model_trainer.setFindCycles(false);
 	model_trainer.setFastInterpreter(true);
+	model_trainer.setPreserveOoO(false);
 	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
 	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
 	model_trainer.setOutputNodes({ output_nodes });

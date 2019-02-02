@@ -27,23 +27,44 @@ public:
 		const int n_output_nodes = output_data.dimension(2);
 		const int n_epochs = input_data.dimension(3);
 
+		//met_id	conc
+		//13dpg	0.00024
+		//adp	0.29
+		//amp	0.0867
+		//atp	1.6
+		//dhap	0.16
+		//f6p	0.0198
+		//fdp	0.0146
+		//g3p	0.00728
+		//g6p	0.0486
+		//glc__D	1
+		//h	10e-4
+		//h2o	1
+		//lac__L	1.36
+		//nad	0.0589
+		//nadh	0.0301
+		//pep	0.017
+		//2pg	0.0113
+		//3pg	0.0773
+		//pi	2.5
+		//pyr	0.0603
+
+		std::vector<std::string> output_nodes = { "13dpg","2pg","3pg","adp","amp","atp","dhap","f6p","fdp","g3p","g6p","glc__D","h","h2o","lac__L","nad","nadh","pep","pi","pyr" };
+		std::vector<TensorT> met_data_stst = { 0.00024,0.0113,0.0773,0.29,0.0867,1.6,0.16,0.0198,0.0146,0.00728,0.0486,1,10e-4,1,1.36,0.0589,0.0301,0.017,2.5,0.0603 };
+
 		// Generate the input and output data for training
 		for (int batch_iter = 0; batch_iter<batch_size; ++batch_iter) {
 			for (int epochs_iter = 0; epochs_iter<n_epochs; ++epochs_iter) {
 				for (int memory_iter = 0; memory_iter<memory_size; ++memory_iter) {
-
+					input_data(batch_iter, memory_iter, 0, epochs_iter) = 1.0; // glc__D
+					for (int nodes_iter = 0; nodes_iter < n_output_nodes; ++nodes_iter) {
+						output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst[nodes_iter];
+					}
 				}
-				for (int memory_iter = memory_size - 1; memory_iter >= 0; --memory_iter) {
-					//std::cout<<"result cumulative: "<<result_cumulative<<std::endl; // [TESTS: convert to a test!]
-					//if (memory_iter == 0)
-					//	output_data(batch_iter, memory_iter, 0, epochs_iter) = result;
-					//else
-					//	output_data(batch_iter, memory_iter, 0, epochs_iter) = 0.0;
-				}
+				//for (int memory_iter = memory_size - 1; memory_iter >= 0; --memory_iter) {
+				//}
 			}
 		}
-		//std::cout << "Input data: " << input_data << std::endl; // [TESTS: convert to a test!]
-		//std::cout << "Output data: " << output_data << std::endl; // [TESTS: convert to a test!]
 
 		time_steps.setConstant(1.0f);
 	}
@@ -64,70 +85,29 @@ template<typename TensorT>
 class ModelTrainerExt : public ModelTrainerDefaultDevice<TensorT>
 {
 public:
-	void makeRBCGlycolysis(Model<TensorT>& model) {
+	void makeRBCGlycolysis(Model<TensorT>& model, const std::string& biochem_rxns_filename) {
 		model.setId(0);
 		model.setName("RBCGlycolysis");
 
-		Node<float> Gluc, G6P, F6P, FDP, DHAP, GAP, DPG13, PG3, PG2, PEP, PYR, LAC, NAD, NADH, AMP, ADP, ATP, Pi, H, H2O,
-			HK, PGI, PFK, TPI, ALD, GAPDH, PGK, PGLM, ENO, PK, LDH, AMPe, APK, PYKe, LACe, ATPh, NADHo, GLUin, AMPin, He, H2Oe;
-		//Link HK, PGI, PFK, TPI, ALD, GAPDH, PGK, PGLM, ENO, PK, LDH, AMPe, APK, PYKe, LACe, ATPh, NADHo, GLUin, AMPin, He, H2Oe;
-		Weight<float> wHK, wPGI, wPFK, wTPI, wALD, wGAPDH, wPGK, wPGLM, wENO, wPK, wLDH, wAMPe, wAPK,
-			wPYKe, wLACe, wATPh, wNADHo, wGLUin, wAMPin, wHe, wH2Oe;
-
-		// Nodes (i.e., metabolites)
-		Gluc = Node<float>("Gluc", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-		G6P = Node<float>("G6P", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-		F6P = Node<float>("F6P", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-		FDP = Node<float>("FDP", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-		DHAP = Node<float>("DHAP", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-		GAP = Node<float>("GAP", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-		DPG13 = Node<float>("DPG13", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-		PG3 = Node<float>("PG3", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-		PG2 = Node<float>("PG2", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-		PEP = Node<float>("PEP", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-		PYR = Node<float>("PYR", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-		LAC = Node<float>("LAC", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-		NAD = Node<float>("NAD", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-		NADH = Node<float>("NADH", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-		AMP = Node<float>("AMP", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-		ADP = Node<float>("ADP", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-		ATP = Node<float>("ATP", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-		Pi = Node<float>("Pi", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-		H = Node<float>("H", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-		H2O = Node<float>("H2O", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+		// Convert the COBRA model to an interaction graph
+		BiochemicalReactionModel<TensorT> biochemical_reaction_model;
+		biochemical_reaction_model.readBiochemicalReactions(biochem_rxns_filename);
+		std::map<std::string, std::vector<std::pair<std::string, std::string>>> interaction_graph;
+		biochemical_reaction_model.getInteractionGraph(interaction_graph);
 		
-		// Weights (i.e., kinetic parameters)
-		HK = Weight<float>("wHK", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8)));
-		wPGI = Weight<float>("wPGI", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8)));
-		wPFK = Weight<float>("wPFK", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8)));
-		wTPI = Weight<float>("wTPI", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8)));
-		wALD = Weight<float>("wALD", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8)));
-		wGAPDH = Weight<float>("wGAPDH", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8)));
-		wPGK = Weight<float>("wPGK", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8)));
-		wPGLM = Weight<float>("wPGLM", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8)));
-		wENO = Weight<float>("wENO", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8)));
-		wPK = Weight<float>("wPK", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8)));
-		wLDH = Weight<float>("wLDH", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8)));
-		wAMPe = Weight<float>("wAMPe", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8)));
-		wAPK = Weight<float>("wAPK", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8)));
-		wPYKe = Weight<float>("wPYKe", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8)));
-		wLACe = Weight<float>("wLACe", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8)));
-		wATPh = Weight<float>("wATPh", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8)));
-		wNADHo = Weight<float>("wNADHo", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8)));
-		wGLUin = Weight<float>("wGLUin", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8)));
-		wAMPin = Weight<float>("wAMPin", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8)));
-		wHe = Weight<float>("wHe", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8)));
-		wH2Oe = Weight<float>("wH2Oe", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8)));
+		// Convert the interaction graph to a network moel
+		ModelBuilder<TensorT> model_builder;
+		model_builder.addInteractionGraph(interaction_graph, model, "RBC", "RBC",
+			std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
+			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
+			std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8))
+		);
 
-		// Links (i.e., reactions)
-
-		// Add nodes/weights/links to the model
-		model.addNodes({ Gluc_in, AMP_in, Gluc, G6P, F6P, FDP, DHAP, GAP, DPG13, PG3, PG2, PEP, PYR, LAC,
-			NAD, NADH, AMP, ADP, ATP, Pi, H, H2O });
-		model.addLinks({ HK, PGI, PFK, TPI, ALD, GAPDH, PGK, PGLM, ENO, PK, LDH, AMPe, APK,
-			PYKe, LACe, ATPh, NADHo, GLUin, AMPin, He, H2Oe });
-		model.addWeights({ wHK, wPGI, wPFK, wTPI, wALD, wGAPDH, wPGK, wPGLM, wENO, wPK, wLDH, wAMPe, wAPK,
-			wPYKe, wLACe, wATPh, wNADHo, wGLUin, wAMPin, wHe, wH2Oe });
+		// Specify the output layer for metabolite nodes
+		std::vector<std::string> output_nodes = { "glc__D","g6p","f6p","fdp","dhap","g3p","13dpg","3pg","2pg","pep","pyr","lac__L","nad","nadh","amp","adp","atp","pi","h","h2o" };
+		for (const std::string& node : output_nodes) {
+			model.nodes_.at(node)->setLayerName("Metabolites");
+		}
 	}
 	Model<TensorT> makeModel() { return Model<TensorT>(); }
 	void adaptiveTrainerScheduler(
@@ -144,13 +124,13 @@ public:
 			ModelInterpreterFileDefaultDevice<TensorT> interpreter_data;
 			interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
 		}
-		// Record the nodes/links
-		if (n_epochs == 0) {
-			ModelFile<TensorT> data;
-			data.storeModelCsv(model.getName() + "_" + std::to_string(n_epochs) + "_nodes.csv",
-				model.getName() + "_" + std::to_string(n_epochs) + "_links.csv",
-				model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model);
-		}
+		//// Record the nodes/links
+		//if (n_epochs == 0) {
+		//	ModelFile<TensorT> data;
+		//	data.storeModelCsv(model.getName() + "_" + std::to_string(n_epochs) + "_nodes.csv",
+		//		model.getName() + "_" + std::to_string(n_epochs) + "_links.csv",
+		//		model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model);
+		//}
 	}
 };
 
@@ -234,8 +214,9 @@ void main_KineticModel(const bool& make_model, const bool& train_model) {
 	const int n_threads = n_hard_threads; // the number of threads
 
 	// define the input/output nodes
-	std::vector<std::string> input_nodes = { "Input_000000000000", "Input_000000000001" };
-	std::vector<std::string> output_nodes = { "Output_000000000000" };
+	std::vector<std::string> input_nodes = { "glc__D" };
+	// TODO: manually specify the tensor index ordering or update for correct tensor ordering
+	std::vector<std::string> output_nodes = { "13dpg","2pg","3pg","adp","amp","atp","dhap","f6p","fdp","g3p","g6p","glc__D","h","h2o","lac__L","nad","nadh","pep","pi","pyr" };
 
 	// define the data simulator
 	DataSimulatorExt<float> data_simulator;
@@ -256,6 +237,7 @@ void main_KineticModel(const bool& make_model, const bool& train_model) {
 	model_trainer.setLogging(false, false);
 	model_trainer.setFindCycles(false);
 	model_trainer.setFastInterpreter(true);
+	model_trainer.setPreserveOoO(false);
 	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
 	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
 	model_trainer.setOutputNodes({ output_nodes });
@@ -286,7 +268,9 @@ void main_KineticModel(const bool& make_model, const bool& train_model) {
 	std::cout << "Initializing the population..." << std::endl;
 	Model<float> model;
 	if (make_model) {
-		//ModelTrainerExt<float>().makeVAE(model, input_size, encoding_size, n_hidden);
+		const std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Project_EvoNet/";
+		const std::string model_filename = data_dir + "RBCGlycolysis.csv";
+		ModelTrainerExt<float>().makeRBCGlycolysis(model, model_filename);
 	}
 	else {
 		// read in the trained model
