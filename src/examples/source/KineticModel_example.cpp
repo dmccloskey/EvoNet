@@ -27,30 +27,31 @@ public:
 		const int n_output_nodes = output_data.dimension(2);
 		const int n_epochs = input_data.dimension(3);
 
-		//met_id	conc
-		//13dpg	0.00024
-		//adp	0.29
-		//amp	0.0867
-		//atp	1.6
-		//dhap	0.16
-		//f6p	0.0198
-		//fdp	0.0146
-		//g3p	0.00728
-		//g6p	0.0486
-		//glc__D	1
-		//h	10e-4
-		//h2o	1
-		//lac__L	1.36
-		//nad	0.0589
-		//nadh	0.0301
-		//pep	0.017
-		//2pg	0.0113
-		//3pg	0.0773
-		//pi	2.5
-		//pyr	0.0603
+		//met_id	conc	tensor_position
+		//2pg	0.0113	0
+		//3pg	0.0773	1
+		//adp	0.29	2
+		//amp	0.0867	3
+		//h	10e-4	4
+		//pi	2.5	5
+		//nad	0.0589	6
+		//h2o	1	7
+		//pep	0.017	8
+		//dhap	0.16	9
+		//g3p	0.00728	10
+		//13dpg	0.00024	11
+		//nadh	0.0301	12
+		//glc__D	1	13
+		//g6p	0.0486	14
+		//pyr	0.0603	15
+		//lac__L	1.36	16
+		//fdp	0.0146	17
+		//f6p	0.0198	18
+		//atp	1.6	19
 
-		std::vector<std::string> output_nodes = { "13dpg","2pg","3pg","adp","amp","atp","dhap","f6p","fdp","g3p","g6p","glc__D","h","h2o","lac__L","nad","nadh","pep","pi","pyr" };
-		std::vector<TensorT> met_data_stst = { 0.00024,0.0113,0.0773,0.29,0.0867,1.6,0.16,0.0198,0.0146,0.00728,0.0486,1,10e-4,1,1.36,0.0589,0.0301,0.017,2.5,0.0603 };
+
+		std::vector<std::string> output_nodes = { "2pg","3pg","adp","amp","h","pi","nad","h2o","pep","dhap","g3p","13dpg","nadh","glc__D","g6p","pyr","lac__L","fdp","f6p","atp" };
+		std::vector<TensorT> met_data_stst = { 0.0113,0.0773,0.29,0.0867,10e-4,2.5,0.0589,1,0.017,0.16,0.00728,0.00024,0.0301,1,0.0486,0.0603,1.36,0.0146,0.0198,1.6, };
 
 		// Generate the input and output data for training
 		for (int batch_iter = 0; batch_iter<batch_size; ++batch_iter) {
@@ -124,13 +125,13 @@ public:
 			ModelInterpreterFileDefaultDevice<TensorT> interpreter_data;
 			interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
 		}
-		//// Record the nodes/links
-		//if (n_epochs == 0) {
-		//	ModelFile<TensorT> data;
-		//	data.storeModelCsv(model.getName() + "_" + std::to_string(n_epochs) + "_nodes.csv",
-		//		model.getName() + "_" + std::to_string(n_epochs) + "_links.csv",
-		//		model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model);
-		//}
+		// Record the nodes/links
+		if (n_epochs == 0) {
+			ModelFile<TensorT> data;
+			data.storeModelCsv(model.getName() + "_" + std::to_string(n_epochs) + "_nodes.csv",
+				model.getName() + "_" + std::to_string(n_epochs) + "_links.csv",
+				model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model, true, false, false);
+		}
 	}
 };
 
@@ -216,7 +217,7 @@ void main_KineticModel(const bool& make_model, const bool& train_model) {
 	// define the input/output nodes
 	std::vector<std::string> input_nodes = { "glc__D" };
 	// TODO: manually specify the tensor index ordering or update for correct tensor ordering
-	std::vector<std::string> output_nodes = { "13dpg","2pg","3pg","adp","amp","atp","dhap","f6p","fdp","g3p","g6p","glc__D","h","h2o","lac__L","nad","nadh","pep","pi","pyr" };
+	std::vector<std::string> output_nodes = { "2pg","3pg","adp","amp","h","pi","nad","h2o","pep","dhap","g3p","13dpg","nadh","glc__D","g6p","pyr","lac__L","fdp","f6p","atp" };
 
 	// define the data simulator
 	DataSimulatorExt<float> data_simulator;
@@ -230,7 +231,7 @@ void main_KineticModel(const bool& make_model, const bool& train_model) {
 	}
 	ModelTrainerExt<float> model_trainer;
 	model_trainer.setBatchSize(8);
-	model_trainer.setMemorySize(1);
+	model_trainer.setMemorySize(32);
 	model_trainer.setNEpochsTraining(100);
 	model_trainer.setNEpochsValidation(25);
 	model_trainer.setVerbosityLevel(1);

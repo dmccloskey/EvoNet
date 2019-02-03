@@ -560,7 +560,8 @@ private:
 
 			// assign the input data
 			model_interpreter.initBiases(model); // create the bias	
-			model_interpreter.mapValuesToLayers(model, input.chip(iter, 3), input_nodes, "output");
+			model_interpreter.mapValuesToLayers(model, input.chip(iter, 3), input_nodes, "output"); // Needed for DAG and DCG
+			model_interpreter.mapValuesToLayers(model, input.chip(iter, 3), input_nodes, "input"); // Needed for IG
 
 			// forward propogate
 			if (this->getVerbosityLevel() >= 2)
