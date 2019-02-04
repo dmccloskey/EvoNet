@@ -52,13 +52,21 @@ public:
 		int getNModuleAdditions() const; ///< n_module_additions setter
 		int getNModuleDeletions() const; ///< n_module_deletions setter
 
+		void setNNodeRightAdditions(const int& n_node_additions);  ///< n_nodes_additions setter
 		void setNNodeDownCopies(const int& n_node_copies); ///< n_node_copies setter
+		void setNNodeRightCopies(const int& n_node_copies);  ///< n_node_copies setter
+		void setNLinkCopies(const int& n_link_copies); ///< n_link_copies setter
+		void setNModuleCopies(const int& n_module_copies); ///< n_module_copies setter
 		void setNWeightChanges(const int& n_weight_changes); ///< n_weight_changes setter
 		void setWeightChangeStDev(const TensorT& weight_change_stdev); ///< weight_change_stdev setter
 
-		int getNNodeDownCopies() const; ///< n_node_copies setter
-		int getNWeightChanges() const; ///< n_weight_changes setter
-    TensorT getWeightChangeStDev() const; ///< weight_change_stdev setter
+		int getNNodeRightAdditions() const;  ///< n_node_additions getter
+		int getNNodeDownCopies() const; ///< n_node_copies getter
+		int getNNodeRightCopies() const; ///< n_node_copies getter
+		int getNLinkCopies() const; ///< n_link_copies setter
+		int getNModuleCopies() const; ///< n_module_copies setter
+		int getNWeightChanges() const; ///< n_weight_changes getter
+    TensorT getWeightChangeStDev() const; ///< weight_change_stdev getter
  
     /**
       @brief Modify (i.e., mutate) an existing model in place
@@ -403,9 +411,27 @@ private:
 	}
 
 	template<typename TensorT>
+	void ModelReplicator<TensorT>::setNNodeRightCopies(const int& n_node_copies)
+	{
+		n_node_right_copies_ = n_node_copies;
+	}
+
+	template<typename TensorT>
+	void ModelReplicator<TensorT>::setNNodeRightAdditions(const int& n_node_additions)
+	{
+		n_node_right_additions_ = n_node_additions;
+	}
+
+	template<typename TensorT>
 	void ModelReplicator<TensorT>::setNLinkAdditions(const int& n_link_additions)
 	{
 		n_link_additions_ = n_link_additions;
+	}
+
+	template<typename TensorT>
+	void ModelReplicator<TensorT>::setNLinkCopies(const int& n_link_copies)
+	{
+		n_link_copies_ = n_link_copies;
 	}
 
 	template<typename TensorT>
@@ -481,9 +507,27 @@ private:
 	}
 
 	template<typename TensorT>
+	int ModelReplicator<TensorT>::getNNodeRightCopies() const
+	{
+		return n_node_right_copies_;
+	}
+
+	template<typename TensorT>
+	int ModelReplicator<TensorT>::getNNodeRightAdditions() const
+	{
+		return n_node_right_additions_;
+	}
+
+	template<typename TensorT>
 	int ModelReplicator<TensorT>::getNLinkAdditions() const
 	{
 		return n_link_additions_;
+	}
+
+	template<typename TensorT>
+	int ModelReplicator<TensorT>::getNLinkCopies() const
+	{
+		return n_link_copies_;
 	}
 
 	template<typename TensorT>

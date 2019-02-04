@@ -28,36 +28,37 @@ public:
 		const int n_epochs = input_data.dimension(3);
 
 		//met_id	conc	tensor_position
-		//2pg	0.0113	0
-		//3pg	0.0773	1
-		//adp	0.29	2
-		//amp	0.0867	3
-		//h	10e-4	4
-		//pi	2.5	5
-		//nad	0.0589	6
-		//h2o	1	7
-		//pep	0.017	8
-		//dhap	0.16	9
-		//g3p	0.00728	10
-		//13dpg	0.00024	11
-		//nadh	0.0301	12
-		//glc__D	1	13
-		//g6p	0.0486	14
-		//pyr	0.0603	15
-		//lac__L	1.36	16
-		//fdp	0.0146	17
-		//f6p	0.0198	18
-		//atp	1.6	19
-
-
-		std::vector<std::string> output_nodes = { "2pg","3pg","adp","amp","h","pi","nad","h2o","pep","dhap","g3p","13dpg","nadh","glc__D","g6p","pyr","lac__L","fdp","f6p","atp" };
-		std::vector<TensorT> met_data_stst = { 0.0113,0.0773,0.29,0.0867,10e-4,2.5,0.0589,1,0.017,0.16,0.00728,0.00024,0.0301,1,0.0486,0.0603,1.36,0.0146,0.0198,1.6, };
+		//13dpg	0.00024	0
+		//2pg	0.0113	1
+		//3pg	0.0773	2
+		//adp	0.29	3
+		//amp	0.0867	4
+		//atp	1.6	5
+		//dhap	0.16	6
+		//f6p	0.0198	7
+		//fdp	0.0146	8
+		//g3p	0.00728	9
+		//g6p	0.0486	10
+		//glc__D	1	11
+		//h	1.00E-03	13
+		//h2o	1	12
+		//lac__L	1.36	14
+		//nad	0.0589	15
+		//nadh	0.0301	16
+		//pep	0.017	17
+		//pi	2.5	18
+		//pyr	0.0603	19
+		
+		std::vector<std::string> output_nodes = { "13dpg","2pg","3pg","adp","amp","atp","dhap","f6p","fdp","g3p","g6p","glc__D","h","h2o","lac__L","nad","nadh","pep","pi","pyr" };
+		std::vector<TensorT> met_data_stst = { 0.00024,0.0113,0.0773,0.29,0.0867,1.6,0.16,0.0198,0.0146,0.00728,0.0486,1,1.00e-03,1,1.36,0.0589,0.0301,0.017,2.5,0.0603 };
 
 		// Generate the input and output data for training
 		for (int batch_iter = 0; batch_iter<batch_size; ++batch_iter) {
 			for (int epochs_iter = 0; epochs_iter<n_epochs; ++epochs_iter) {
 				for (int memory_iter = 0; memory_iter<memory_size; ++memory_iter) {
-					input_data(batch_iter, memory_iter, 0, epochs_iter) = 1.0; // glc__D
+					for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
+						input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst[nodes_iter];
+					}
 					for (int nodes_iter = 0; nodes_iter < n_output_nodes; ++nodes_iter) {
 						output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst[nodes_iter];
 					}
@@ -215,9 +216,9 @@ void main_KineticModel(const bool& make_model, const bool& train_model) {
 	const int n_threads = n_hard_threads; // the number of threads
 
 	// define the input/output nodes
-	std::vector<std::string> input_nodes = { "glc__D" };
+	std::vector<std::string> input_nodes = { "13dpg","2pg","3pg","adp","amp","atp","dhap","f6p","fdp","g3p","g6p","glc__D","h","h2o","lac__L","nad","nadh","pep","pi","pyr" };
 	// TODO: manually specify the tensor index ordering or update for correct tensor ordering
-	std::vector<std::string> output_nodes = { "2pg","3pg","adp","amp","h","pi","nad","h2o","pep","dhap","g3p","13dpg","nadh","glc__D","g6p","pyr","lac__L","fdp","f6p","atp" };
+	std::vector<std::string> output_nodes = { "13dpg","2pg","3pg","adp","amp","atp","dhap","f6p","fdp","g3p","g6p","glc__D","h","h2o","lac__L","nad","nadh","pep","pi","pyr" };
 
 	// define the data simulator
 	DataSimulatorExt<float> data_simulator;
@@ -230,9 +231,9 @@ void main_KineticModel(const bool& make_model, const bool& train_model) {
 		model_interpreters.push_back(model_interpreter);
 	}
 	ModelTrainerExt<float> model_trainer;
-	model_trainer.setBatchSize(8);
+	model_trainer.setBatchSize(1);
 	model_trainer.setMemorySize(32);
-	model_trainer.setNEpochsTraining(100);
+	model_trainer.setNEpochsTraining(10000);
 	model_trainer.setNEpochsValidation(25);
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setLogging(false, false);

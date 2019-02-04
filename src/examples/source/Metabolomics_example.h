@@ -73,6 +73,7 @@ struct BiochemicalReaction {
 	std::string component_group_name;
 	std::string calculated_concentration_units;
 	// others if needed
+	bool reversibility;
 	bool used;
 	void updateEquation() {
 		std::string new_equation = "";
@@ -191,15 +192,15 @@ public:
 		const std::string& filename,
 		BiochemicalReactions& biochemicalReactions)
 	{
-		io::CSVReader<9, io::trim_chars<' ', '\t'>, io::double_quote_escape<',', '"'>> data_in(filename);
+		io::CSVReader<10, io::trim_chars<' ', '\t'>, io::double_quote_escape<',', '"'>> data_in(filename);
 		data_in.read_header(io::ignore_extra_column,
 			"rxn_id", "rxn_name", "equation", "gpr", "used_",
-			"reactants_stoichiometry", "products_stoichiometry", "reactants_ids", "products_ids");
+			"reactants_stoichiometry", "products_stoichiometry", "reactants_ids", "products_ids", "reversibility");
 		std::string rxn_id_str, rxn_name_str, equation_str, gpr_str, used__str,
-			reactants_stoichiometry_str, products_stoichiometry_str, reactants_ids_str, products_ids_str = "";
+			reactants_stoichiometry_str, products_stoichiometry_str, reactants_ids_str, products_ids_str, reversibility_str;
 
 		while (data_in.read_row(rxn_id_str, rxn_name_str, equation_str, gpr_str, used__str,
-			reactants_stoichiometry_str, products_stoichiometry_str, reactants_ids_str, products_ids_str))
+			reactants_stoichiometry_str, products_stoichiometry_str, reactants_ids_str, products_ids_str, reversibility_str))
 		{
 			// parse the .csv file
 			BiochemicalReaction row;
@@ -232,6 +233,17 @@ public:
 
 			assert(row.reactants_ids.size() == row.reactants_stoichiometry.size());
 			assert(row.products_ids.size() == row.products_stoichiometry.size());
+
+			// parse the reversibility
+			if (reversibility_str == "t" || reversibility_str == "TRUE") {
+				row.reversibility = true;
+			}
+			else if (reversibility_str == "f" || reversibility_str == "FALSE") {
+				row.reversibility = false;
+			}
+			else {
+				std::cout << "Reversibility text: " << reversibility_str << " is not supported" << std::endl;
+			}
 
 			// build up the map
 			auto found_in_data = biochemicalReactions.emplace(rxn_id_str, row);
@@ -633,13 +645,14 @@ public:
 	{
 		elementary_graph.clear();
 		for (const auto& biochemicalReaction : this->biochemicalReactions_) {		
+			if (!biochemicalReaction.second.used) continue; // Skip specified reactions
 
 			// parse the reactants
 			for (int i = 0; i < biochemicalReaction.second.reactants_ids.size(); ++i) {
 				std::string weight_name = biochemicalReaction.second.reactants_ids[i] + "_to_" + biochemicalReaction.second.reaction_id;
 				std::vector<std::pair<std::string, std::string>> source_sinks;
 				for (int stoich = 0; stoich < std::abs(biochemicalReaction.second.reactants_stoichiometry[i]); ++stoich) {
-					source_sinks.push_back(std::make_pair(biochemicalReaction.second.reactants_ids[i], weight_name));
+					source_sinks.push_back(std::make_pair(biochemicalReaction.second.reactants_ids[i], biochemicalReaction.second.reaction_id));
 				}
 				auto found = elementary_graph.emplace(weight_name, source_sinks);
 				if (!found.second) {
@@ -652,12 +665,42 @@ public:
 				std::string weight_name = biochemicalReaction.second.reaction_id + "_to_" + biochemicalReaction.second.products_ids[i];
 				std::vector<std::pair<std::string, std::string>> source_sinks;
 				for (int stoich = 0; stoich < std::abs(biochemicalReaction.second.products_stoichiometry[i]); ++stoich) {
-					source_sinks.push_back(std::make_pair(biochemicalReaction.second.products_ids[i], weight_name));
+					source_sinks.push_back(std::make_pair(biochemicalReaction.second.reaction_id, biochemicalReaction.second.products_ids[i]));
 				}
 				auto found = elementary_graph.emplace(weight_name, source_sinks);
 				if (!found.second) {
 					std::cout << "Duplicate reaction found: " << biochemicalReaction.second.reactants_ids[i] << std::endl;
 				}
+			}
+
+			if (biochemicalReaction.second.reversibility) {
+
+				// parse the reactants
+				for (int i = 0; i < biochemicalReaction.second.reactants_ids.size(); ++i) {
+					std::string weight_name = biochemicalReaction.second.reaction_id +"_to_" + biochemicalReaction.second.reactants_ids[i] ;
+					std::vector<std::pair<std::string, std::string>> source_sinks;
+					for (int stoich = 0; stoich < std::abs(biochemicalReaction.second.reactants_stoichiometry[i]); ++stoich) {
+						source_sinks.push_back(std::make_pair(biochemicalReaction.second.reaction_id, biochemicalReaction.second.reactants_ids[i]));
+					}
+					auto found = elementary_graph.emplace(weight_name, source_sinks);
+					if (!found.second) {
+						std::cout << "Duplicate reaction found: " << biochemicalReaction.second.reactants_ids[i] << std::endl;
+					}
+				}
+
+				// parse the products
+				for (int i = 0; i < biochemicalReaction.second.products_ids.size(); ++i) {
+					std::string weight_name = biochemicalReaction.second.products_ids[i] +"_to_" + biochemicalReaction.second.reaction_id;
+					std::vector<std::pair<std::string, std::string>> source_sinks;
+					for (int stoich = 0; stoich < std::abs(biochemicalReaction.second.products_stoichiometry[i]); ++stoich) {
+						source_sinks.push_back(std::make_pair(biochemicalReaction.second.products_ids[i], biochemicalReaction.second.reaction_id));
+					}
+					auto found = elementary_graph.emplace(weight_name, source_sinks);
+					if (!found.second) {
+						std::cout << "Duplicate reaction found: " << biochemicalReaction.second.reactants_ids[i] << std::endl;
+					}
+				}
+
 			}
 		}
 	}
