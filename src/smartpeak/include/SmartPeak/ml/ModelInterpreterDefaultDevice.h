@@ -78,7 +78,7 @@ namespace SmartPeak
 				IntegrationErrorTensorOp<TensorT, Eigen::DefaultDevice>* integration_error = nullptr;
 				IntegrationWeightGradTensorOp<TensorT, Eigen::DefaultDevice>* integration_weight_grad = nullptr;
 				if (make_sink_tensors[iter]) {
-					sink_node_data->initNodeTensorData(batch_size, memory_size, sink_layer_sizes[iter], FP_operations[operations.second[0]].result.sink_node->getType(), train);
+					sink_node_data->initNodeTensorData(batch_size, memory_size, sink_layer_sizes[iter], FP_operations[operations.second[0]].result.sink_node->getType(), train);  // FP_operations[operations.second[0]].result.sink_node->getIntegration()->getName()
 					this->layer_tensors_.push_back(sink_node_data);
 					operation_step.sink_layer.time_step = FP_operations[operations.second[0]].result.time_step;
 					activation_conv(FP_operations[operations.second[0]].result.sink_node->getActivation(), activation, std::vector<TensorT>() = {});
@@ -118,7 +118,7 @@ namespace SmartPeak
 				IntegrationErrorTensorOp<TensorT, Eigen::DefaultDevice>* integration_error = nullptr;
 				IntegrationWeightGradTensorOp<TensorT, Eigen::DefaultDevice>* integration_weight_grad = nullptr;
 				if (make_source_tensors[iter]) {
-					source_node_data->initNodeTensorData(batch_size, memory_size, source_layer_sizes[iter], FP_operations[operations.second[0]].arguments[0].source_node->getType(), train);
+					source_node_data->initNodeTensorData(batch_size, memory_size, source_layer_sizes[iter], FP_operations[operations.second[0]].arguments[0].source_node->getType(), train);  // FP_operations[operations.second[0]].result.sink_node->getIntegration()->getName()
 					operation_step.source_layer.time_step = FP_operations[operations.second[0]].arguments[0].time_step;
 					this->layer_tensors_.push_back(source_node_data);
 					activation_conv(FP_operations[operations.second[0]].arguments[0].source_node->getActivation(), activation, std::vector<TensorT>() = {});
@@ -196,7 +196,7 @@ namespace SmartPeak
 					operation.sink_layer.tensor->getLayerSize(),
 					operation.source_layer.time_step + time_step,
 					operation.sink_layer.time_step + time_step,
-					device);
+					device);  // Not over-written
 
 				model_kernal.executeNodeActivation(
 					operation.sink_layer.tensor->getHInputPointer().get(),
@@ -210,7 +210,7 @@ namespace SmartPeak
 					operation.sink_layer.tensor->getMemorySize(),
 					operation.sink_layer.tensor->getLayerSize(),
 					operation.sink_layer.time_step + time_step,
-					device);
+					device); // Over-written
 			}
 		}
 	}

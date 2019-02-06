@@ -216,7 +216,7 @@ protected:
 			setOutput(one);
 		}
 		else if (node_type == NodeType::input) {
-			setOutput(zero);
+			setOutput(zero);  // Check for `node_integration` == "ProdOp" and set to 1
 		}
 		else if (node_type == NodeType::zero) {
 			setOutput(zero);
