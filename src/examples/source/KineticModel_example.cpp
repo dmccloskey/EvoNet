@@ -80,6 +80,10 @@ public:
 		simulateData(input_data, output_data, time_steps);
 	}
 	void simulateEvaluationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 3>& time_steps) {};
+
+	// Custom parameters
+	bool steady_state_ = true;
+	bool dynamic = false;
 };
 
 // Extended classes
@@ -209,7 +213,7 @@ public:
 void main_KineticModel(const bool& make_model, const bool& train_model) {
 	// define the population trainer parameters
 	PopulationTrainerExt<float> population_trainer;
-	population_trainer.setNGenerations(100);
+	population_trainer.setNGenerations(1);
 
 	// define the multithreading parameters
 	const int n_hard_threads = std::thread::hardware_concurrency();
@@ -232,13 +236,13 @@ void main_KineticModel(const bool& make_model, const bool& train_model) {
 	}
 	ModelTrainerExt<float> model_trainer;
 	model_trainer.setBatchSize(1);
-	model_trainer.setMemorySize(32);
+	model_trainer.setMemorySize(16);
 	model_trainer.setNEpochsTraining(10000);
 	model_trainer.setNEpochsValidation(25);
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setLogging(false, false);
 	model_trainer.setFindCycles(false);
-	model_trainer.setFastInterpreter(true);
+	model_trainer.setFastInterpreter(false);
 	model_trainer.setPreserveOoO(false);
 	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
 	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
