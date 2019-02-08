@@ -212,7 +212,9 @@ public:
 			Model<TensorT>& model,
 			InterpreterT& model_interpreter,
 			ModelLogger<TensorT>& model_logger,
-			const Eigen::Tensor<TensorT, 3> expected_values);
+			const Eigen::Tensor<TensorT, 3>& expected_values,
+			const std::vector<std::string>& output_nodes,
+			const TensorT& model_error);
 
 		/**
 		@brief Entry point for users to code their validation logger
@@ -232,7 +234,9 @@ public:
 			Model<TensorT>& model,
 			InterpreterT& model_interpreter,
 			ModelLogger<TensorT>& model_logger,
-			const Eigen::Tensor<TensorT, 3> expected_values);
+			const Eigen::Tensor<TensorT, 3>& expected_values,
+			const std::vector<std::string>& output_nodes,
+			const TensorT& model_error);
 
 		/**
 		@brief Entry point for users to code their evaluation logger
@@ -250,7 +254,8 @@ public:
 			const int& n_epochs,
 			Model<TensorT>& model,
 			InterpreterT& model_interpreter,
-			ModelLogger<TensorT>& model_logger);
+			ModelLogger<TensorT>& model_logger,
+			const std::vector<std::string>& output_nodes);
 
 protected:
 		std::vector<std::shared_ptr<LossFunctionOp<TensorT>>> loss_functions_;
@@ -667,7 +672,7 @@ private:
 			if (this->getLogTraining()) {
 				if (this->getVerbosityLevel() >= 2)
 					std::cout << "Logging..." << std::endl;
-				this->trainingModelLogger(iter, model, model_interpreter, model_logger, output.chip(iter, 3));
+				this->trainingModelLogger(iter, model, model_interpreter, model_logger, output.chip(iter, 3), output_nodes, total_error(0));
 			}
 
 			// reinitialize the model
@@ -769,7 +774,7 @@ private:
 			if (this->getLogValidation()) {
 				if (this->getVerbosityLevel() >= 2)
 					std::cout << "Logging..." << std::endl;
-				this->validationModelLogger(iter, model, model_interpreter, model_logger, output.chip(iter, 3));
+				this->validationModelLogger(iter, model, model_interpreter, model_logger, output.chip(iter, 3), output_nodes, total_error(0));
 			}
 
 			// reinitialize the model
@@ -850,7 +855,7 @@ private:
 			if (this->getLogEvaluation()) {
 				if (this->getVerbosityLevel() >= 2)
 					std::cout << "Logging..." << std::endl;
-				this->evaluationModelLogger(iter, model, model_interpreter, model_logger, output.chip(iter, 3));
+				this->evaluationModelLogger(iter, model, model_interpreter, model_logger, output_nodes);
 			}
 
 			// reinitialize the model
@@ -876,29 +881,36 @@ private:
 		// USER: create your own overload method
 	}
 	template<typename TensorT, typename InterpreterT>
-	inline void ModelTrainer<TensorT, InterpreterT>::trainingModelLogger(const int & n_epochs, Model<TensorT>& model, InterpreterT & model_interpreter, ModelLogger<TensorT>& model_logger, const Eigen::Tensor<TensorT, 3> expected_values)
+	inline void ModelTrainer<TensorT, InterpreterT>::trainingModelLogger(const int & n_epochs, Model<TensorT>& model, InterpreterT & model_interpreter, ModelLogger<TensorT>& model_logger, 
+		const Eigen::Tensor<TensorT, 3>& expected_values,
+		const std::vector<std::string>& output_nodes,
+		const TensorT& model_error)
 	{
 		if (n_epochs % 10 == 0) {
 			if (model_logger.getLogExpectedPredictedEpoch())
 				model_interpreter.getModelResults(model, true, false, false);
-			model_logger.writeLogs(model, iter, { "Error" }, {}, { total_error(0) }, {}, output_nodes, expected_values);
+			model_logger.writeLogs(model, n_epochs, { "Error" }, {}, { model_error }, {}, output_nodes, expected_values);
 		}
 	}
 	template<typename TensorT, typename InterpreterT>
-	inline void ModelTrainer<TensorT, InterpreterT>::validationModelLogger(const int & n_epochs, Model<TensorT>& model, InterpreterT & model_interpreter, ModelLogger<TensorT>& model_logger, const Eigen::Tensor<TensorT, 3> expected_values)
+	inline void ModelTrainer<TensorT, InterpreterT>::validationModelLogger(const int & n_epochs, Model<TensorT>& model, InterpreterT & model_interpreter, ModelLogger<TensorT>& model_logger, 
+		const Eigen::Tensor<TensorT, 3>& expected_values,
+		const std::vector<std::string>& output_nodes,
+		const TensorT& model_error)
 	{
 		if (n_epochs % 10 == 0) {
 			if (model_logger.getLogExpectedPredictedEpoch())
 				model_interpreter.getModelResults(model, true, false, false);
-			model_logger.writeLogs(model, iter, {}, { "Error" }, {}, { total_error(0) }, output_nodes, expected_values);
+			model_logger.writeLogs(model, n_epochs, {}, { "Error" }, {}, { model_error }, output_nodes, expected_values);
 		}
 	}
 	template<typename TensorT, typename InterpreterT>
-	inline void ModelTrainer<TensorT, InterpreterT>::evaluationModelLogger(const int & n_epochs, Model<TensorT>& model, InterpreterT & model_interpreter, ModelLogger<TensorT>& model_logger)
+	inline void ModelTrainer<TensorT, InterpreterT>::evaluationModelLogger(const int & n_epochs, Model<TensorT>& model, InterpreterT & model_interpreter, ModelLogger<TensorT>& model_logger,
+		const std::vector<std::string>& output_nodes)
 	{
 		if (n_epochs % 1 == 0) {
 			model_interpreter.getModelResults(model, true, true, false);
-			model_logger.writeLogs(model, iter, {}, {}, {}, {}, output_nodes, Eigen::Tensor<TensorT, 3>(), output_nodes, {}, {});
+			model_logger.writeLogs(model, n_epochs, {}, {}, {}, {}, output_nodes, Eigen::Tensor<TensorT, 3>(), output_nodes, {}, {});
 		}
 	}
 }

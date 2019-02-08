@@ -25,32 +25,54 @@ public:
 		const int memory_size = input_data.dimension(1);
 		const int n_input_nodes = input_data.dimension(2);
 		const int n_output_nodes = output_data.dimension(2);
-		const int n_epochs = input_data.dimension(3);
+		const int n_epochs = input_data.dimension(3); 
 
-		//met_id	conc	tensor_position
-		//13dpg	0.00024	0
-		//2pg	0.0113	1
-		//3pg	0.0773	2
-		//adp	0.29	3
-		//amp	0.0867	4
-		//atp	1.6	5
-		//dhap	0.16	6
-		//f6p	0.0198	7
-		//fdp	0.0146	8
-		//g3p	0.00728	9
-		//g6p	0.0486	10
-		//glc__D	1	11
-		//h	1.00E-03	13
-		//h2o	1	12
-		//lac__L	1.36	14
-		//nad	0.0589	15
-		//nadh	0.0301	16
-		//pep	0.017	17
-		//pi	2.5	18
-		//pyr	0.0603	19
+		//node_name	conc
+		//13dpg	0.00024
+		//2pg	0.0113
+		//3pg	0.0773
+		//adp	0.29
+		//amp	0.0867
+		//atp	1.6
+		//dhap	0.16
+		//f6p	0.0198
+		//fdp	0.0146
+		//g3p	0.00728
+		//g6p	0.0486
+		//glc__D	1
+		//h	1.00E-03
+		//h2o	1
+		//lac__L	1.36
+		//nad	0.0589
+		//nadh	0.0301
+		//pep	0.017
+		//pi	2.5
+		//pyr	0.0603
+		//GAPD_reverse	1
+		//PGK_reverse	1
+		//ENO	1
+		//ADK1	1
+		//PGM	1
+		//ADK1_reverse	1
+		//PGK	1
+		//ATPh	1
+		//PGM_reverse	1
+		//DM_nadh	1
+		//ENO_reverse	1
+		//FBA	1
+		//FBA_reverse	1
+		//GAPD	1
+		//HEX1	1
+		//LDH_L	1
+		//LDH_L_reverse	1
+		//PFK	1
+		//PGI	1
+		//PGI_reverse	1
+		//PYK	1
+		//TPI_reverse	1
+		//TPI	1
 		
-		std::vector<std::string> output_nodes = { "13dpg","2pg","3pg","adp","amp","atp","dhap","f6p","fdp","g3p","g6p","glc__D","h","h2o","lac__L","nad","nadh","pep","pi","pyr" };
-		std::vector<TensorT> met_data_stst = { 0.00024,0.0113,0.0773,0.29,0.0867,1.6,0.16,0.0198,0.0146,0.00728,0.0486,1,1.00e-03,1,1.36,0.0589,0.0301,0.017,2.5,0.0603 };
+		std::vector<TensorT> met_data_stst = { 1,1,1,1,1,1,0.29,0.0867,1.6,1.00e-03,2.5,0.0589,1,0.017,0.16,0.0146,0.00728,0.0301,0.0486,1.36,0.0603,0.0198,0.00024,0.0113,0.0773,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1, };
 
 		// Generate the input and output data for training
 		for (int batch_iter = 0; batch_iter<batch_size; ++batch_iter) {
@@ -109,13 +131,19 @@ public:
 			std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8))
 		);
 
-		// Specify the output layer for metabolite nodes
-		std::vector<std::string> output_nodes = { "glc__D","g6p","f6p","fdp","dhap","g3p","13dpg","3pg","2pg","pep","pyr","lac__L","nad","nadh","amp","adp","atp","pi","h","h2o" };
-		for (const std::string& node : output_nodes) {
-			model.nodes_.at(node)->setLayerName("Metabolites");
-		}
+		//// Specify the output layer for metabolite nodes (20)
+		//std::vector<std::string> output_nodes = { "glc__D","g6p","f6p","fdp","dhap","g3p","13dpg","3pg","2pg","pep","pyr","lac__L","nad","nadh","amp","adp","atp","pi","h","h2o" };
+		//for (const std::string& node : output_nodes) {
+		//	model.nodes_.at(node)->setLayerName("Metabolites");
+		//}
+
+		//// Specify the layer for the enzymes (f/r) (14)
+		//std::vector<std::string> enzymes_f_nodes = { "ENO","FBA","GAPD","HEX1","LDH_L","PFK","PGI","PGK","PGM","PYK","TPI","DM_nadh","ADK1","ATPh" };
+		//for (const std::string& node : enzymes_f_nodes) {
+		//	model.nodes_.at(node)->setLayerName("Enzymes");
+		//}
+
 	}
-	Model<TensorT> makeModel() { return Model<TensorT>(); }
 	void adaptiveTrainerScheduler(
 		const int& n_generations,
 		const int& n_epochs,
@@ -135,7 +163,7 @@ public:
 			ModelFile<TensorT> data;
 			data.storeModelCsv(model.getName() + "_" + std::to_string(n_epochs) + "_nodes.csv",
 				model.getName() + "_" + std::to_string(n_epochs) + "_links.csv",
-				model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model, true, false, false);
+				model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model, true, true, false);
 		}
 	}
 };
@@ -220,9 +248,10 @@ void main_KineticModel(const bool& make_model, const bool& train_model) {
 	const int n_threads = n_hard_threads; // the number of threads
 
 	// define the input/output nodes
-	std::vector<std::string> input_nodes = { "13dpg","2pg","3pg","adp","amp","atp","dhap","f6p","fdp","g3p","g6p","glc__D","h","h2o","lac__L","nad","nadh","pep","pi","pyr" };
+	std::vector<std::string> input_nodes = { "GAPD_reverse","PGK_reverse","ENO","PGM","PGK","PGM_reverse","adp","amp","atp","h","pi","nad","h2o","pep","dhap","fdp","g3p","nadh","g6p","lac__L","pyr","f6p","13dpg","2pg","3pg","ADK1","ADK1_reverse","ATPh","DM_nadh","ENO_reverse","FBA","FBA_reverse","GAPD","HEX1","LDH_L","LDH_L_reverse","PFK","PGI","PGI_reverse","PYK","TPI_reverse","TPI","glc__D" };
 	// TODO: manually specify the tensor index ordering or update for correct tensor ordering
-	std::vector<std::string> output_nodes = { "13dpg","2pg","3pg","adp","amp","atp","dhap","f6p","fdp","g3p","g6p","glc__D","h","h2o","lac__L","nad","nadh","pep","pi","pyr" };
+	std::vector<std::string> output_nodes1 = { "GAPD_reverse","PGK_reverse","ENO","PGM","PGK","PGM_reverse","adp","amp","atp","h","pi","nad","h2o","pep","dhap","fdp","g3p","nadh","g6p","lac__L","pyr","f6p","13dpg" };
+	std::vector<std::string> output_nodes2 = { "2pg","3pg","ADK1","ADK1_reverse","ATPh","DM_nadh","ENO_reverse","FBA","FBA_reverse","GAPD","HEX1","LDH_L","LDH_L_reverse","PFK","PGI","PGI_reverse","PYK","TPI_reverse","TPI","glc__D" };
 
 	// define the data simulator
 	DataSimulatorExt<float> data_simulator;
@@ -242,11 +271,11 @@ void main_KineticModel(const bool& make_model, const bool& train_model) {
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setLogging(false, false);
 	model_trainer.setFindCycles(false);
-	model_trainer.setFastInterpreter(false);
+	model_trainer.setFastInterpreter(true);
 	model_trainer.setPreserveOoO(false);
-	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
-	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
-	model_trainer.setOutputNodes({ output_nodes });
+	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()),std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
+	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()),std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
+	model_trainer.setOutputNodes({ output_nodes1, output_nodes2 });
 
 	// define the model logger
 	//ModelLogger<float> model_logger(true, true, true, false, false, false, false, false);

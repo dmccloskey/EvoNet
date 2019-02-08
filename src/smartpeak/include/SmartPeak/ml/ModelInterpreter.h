@@ -1532,6 +1532,10 @@ namespace SmartPeak
 			//std::map<std::string, std::vector<int>> FOut_ops = getFanInOperations(FP_operations_expanded, identified_sink_nodes);
 			std::map<std::string, std::vector<int>> tensor_ops = getTensorOperations(FP_operations_expanded, identified_sink_nodes, fast_check);
 
+			// TODO: We need to ensure that the previous operations is not an incomplete list
+			//       of all nodes that should be in the same layer
+			// FIX: Could sort the tensor_ops by ascending order of unique source and unique sink sizes?
+
 			// organize into a list of seperate operation indices
 			// [NOTE: can be avoided by changing the `getForwardPropogationLayerTensorDimensions` and `allocateForwardPropogationLayerTensors` methods
 			// and then implementing something like `operation_steps_.resize(iter); // allocate space for each operation step`]

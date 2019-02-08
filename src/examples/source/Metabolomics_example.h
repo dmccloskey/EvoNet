@@ -636,6 +636,8 @@ public:
 		HK_h: HK = h
 		HK_adp: HK = adp
 
+	For reversible reactions, the enzyme/reaction name is appended with "_reverse"
+
 	@param[in] biochemicalReaction
 	@param[out] elementary_graph A map of vectores of source/sink pairs where the key is the connection name
 	**/
@@ -646,19 +648,6 @@ public:
 		elementary_graph.clear();
 		for (const auto& biochemicalReaction : this->biochemicalReactions_) {		
 			if (!biochemicalReaction.second.used) continue; // Skip specified reactions
-
-			// parse the reactants
-			for (int i = 0; i < biochemicalReaction.second.reactants_ids.size(); ++i) {
-				std::string weight_name = biochemicalReaction.second.reactants_ids[i] + "_to_" + biochemicalReaction.second.reaction_id;
-				std::vector<std::pair<std::string, std::string>> source_sinks;
-				for (int stoich = 0; stoich < std::abs(biochemicalReaction.second.reactants_stoichiometry[i]); ++stoich) {
-					source_sinks.push_back(std::make_pair(biochemicalReaction.second.reactants_ids[i], biochemicalReaction.second.reaction_id));
-				}
-				auto found = elementary_graph.emplace(weight_name, source_sinks);
-				if (!found.second) {
-					std::cout << "Duplicate reaction found: " << biochemicalReaction.second.reactants_ids[i] << std::endl;
-				}
-			}
 
 			// parse the products
 			for (int i = 0; i < biochemicalReaction.second.products_ids.size(); ++i) {
@@ -673,6 +662,19 @@ public:
 				}
 			}
 
+			// parse the reactants
+			for (int i = 0; i < biochemicalReaction.second.reactants_ids.size(); ++i) {
+				std::string weight_name = biochemicalReaction.second.reactants_ids[i] + "_to_" + biochemicalReaction.second.reaction_id;
+				std::vector<std::pair<std::string, std::string>> source_sinks;
+				for (int stoich = 0; stoich < std::abs(biochemicalReaction.second.reactants_stoichiometry[i]); ++stoich) {
+					source_sinks.push_back(std::make_pair(biochemicalReaction.second.reactants_ids[i], biochemicalReaction.second.reaction_id));
+				}
+				auto found = elementary_graph.emplace(weight_name, source_sinks);
+				if (!found.second) {
+					std::cout << "Duplicate reaction found: " << biochemicalReaction.second.reactants_ids[i] << std::endl;
+				}
+			}
+
 			if (biochemicalReaction.second.reversibility) {
 
 				// parse the reactants
@@ -680,7 +682,7 @@ public:
 					std::string weight_name = biochemicalReaction.second.reaction_id +"_to_" + biochemicalReaction.second.reactants_ids[i] ;
 					std::vector<std::pair<std::string, std::string>> source_sinks;
 					for (int stoich = 0; stoich < std::abs(biochemicalReaction.second.reactants_stoichiometry[i]); ++stoich) {
-						source_sinks.push_back(std::make_pair(biochemicalReaction.second.reaction_id, biochemicalReaction.second.reactants_ids[i]));
+						source_sinks.push_back(std::make_pair(biochemicalReaction.second.reaction_id + "_reverse", biochemicalReaction.second.reactants_ids[i]));
 					}
 					auto found = elementary_graph.emplace(weight_name, source_sinks);
 					if (!found.second) {
@@ -693,14 +695,13 @@ public:
 					std::string weight_name = biochemicalReaction.second.products_ids[i] +"_to_" + biochemicalReaction.second.reaction_id;
 					std::vector<std::pair<std::string, std::string>> source_sinks;
 					for (int stoich = 0; stoich < std::abs(biochemicalReaction.second.products_stoichiometry[i]); ++stoich) {
-						source_sinks.push_back(std::make_pair(biochemicalReaction.second.products_ids[i], biochemicalReaction.second.reaction_id));
+						source_sinks.push_back(std::make_pair(biochemicalReaction.second.products_ids[i], biochemicalReaction.second.reaction_id + "_reverse"));
 					}
 					auto found = elementary_graph.emplace(weight_name, source_sinks);
 					if (!found.second) {
 						std::cout << "Duplicate reaction found: " << biochemicalReaction.second.reactants_ids[i] << std::endl;
 					}
 				}
-
 			}
 		}
 	}
