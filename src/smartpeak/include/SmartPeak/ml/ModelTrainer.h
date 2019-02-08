@@ -174,7 +174,7 @@ public:
 
       @returns The constructed model
     */ 
-    virtual Model<TensorT> makeModel() = 0;
+    virtual Model<TensorT> makeModel();
 
 		/**
 		@brief Entry point for users to code their adaptive scheduler
@@ -192,7 +192,65 @@ public:
 			const int& n_epochs,
 			Model<TensorT>& model,
 			InterpreterT& model_interpreter,
-			const std::vector<TensorT>& model_errors) = 0;
+			const std::vector<TensorT>& model_errors);
+
+		/**
+		@brief Entry point for users to code their training logger
+
+		[TODO: add tests]
+
+		@param[in] n_generations The number of evolution generations
+		@param[in] n_epochs The number of training/validation epochs
+		@param[in, out] model The model
+		@param[in, out] model_interpreter The model interpreter
+		@param[in, out] model_logger The model logger
+		@param[in] expected_values The expected values
+
+		*/
+		virtual void trainingModelLogger(
+			const int& n_epochs,
+			Model<TensorT>& model,
+			InterpreterT& model_interpreter,
+			ModelLogger<TensorT>& model_logger,
+			const Eigen::Tensor<TensorT, 3> expected_values);
+
+		/**
+		@brief Entry point for users to code their validation logger
+
+		[TODO: add tests]
+
+		@param[in] n_generations The number of evolution generations
+		@param[in] n_epochs The number of training/validation epochs
+		@param[in, out] model The model
+		@param[in, out] model_interpreter The model interpreter
+		@param[in, out] model_logger The model logger
+		@param[in] expected_values The expected values
+
+		*/
+		virtual void validationModelLogger(
+			const int& n_epochs,
+			Model<TensorT>& model,
+			InterpreterT& model_interpreter,
+			ModelLogger<TensorT>& model_logger,
+			const Eigen::Tensor<TensorT, 3> expected_values);
+
+		/**
+		@brief Entry point for users to code their evaluation logger
+
+		[TODO: add tests]
+
+		@param[in] n_generations The number of evolution generations
+		@param[in] n_epochs The number of training/validation epochs
+		@param[in, out] model The model
+		@param[in, out] model_interpreter The model interpreter
+		@param[in, out] model_logger The model logger
+
+		*/
+		virtual void evaluationModelLogger(
+			const int& n_epochs,
+			Model<TensorT>& model,
+			InterpreterT& model_interpreter,
+			ModelLogger<TensorT>& model_logger);
 
 protected:
 		std::vector<std::shared_ptr<LossFunctionOp<TensorT>>> loss_functions_;
@@ -609,10 +667,7 @@ private:
 			if (this->getLogTraining()) {
 				if (this->getVerbosityLevel() >= 2)
 					std::cout << "Logging..." << std::endl;
-				const Eigen::Tensor<TensorT, 3> expected_values = output.chip(iter, 3);
-				if (model_logger.getLogExpectedPredictedEpoch())
-					model_interpreter.getModelResults(model, true, false, false);
-				model_logger.writeLogs(model, iter, { "Error" }, {}, { total_error(0) }, {}, output_nodes, expected_values);
+				this->trainingModelLogger(iter, model, model_interpreter, model_logger, output.chip(iter, 3));
 			}
 
 			// reinitialize the model
@@ -712,10 +767,9 @@ private:
 
 			// log epoch
 			if (this->getLogValidation()) {
-				const Eigen::Tensor<TensorT, 3> expected_values = output.chip(iter, 3);
-				if (model_logger.getLogExpectedPredictedEpoch())
-					model_interpreter.getModelResults(model, true, false, false);
-				model_logger.writeLogs(model, iter, {}, { "Error" }, {}, { total_error(0) }, output_nodes, expected_values);
+				if (this->getVerbosityLevel() >= 2)
+					std::cout << "Logging..." << std::endl;
+				this->validationModelLogger(iter, model, model_interpreter, model_logger, output.chip(iter, 3));
 			}
 
 			// reinitialize the model
@@ -794,8 +848,9 @@ private:
 
 			// log epoch
 			if (this->getLogEvaluation()) {
-				model_interpreter.getModelResults(model, true, true, false);
-				model_logger.writeLogs(model, iter, {}, {}, {}, {}, output_nodes, Eigen::Tensor<TensorT, 3>(), output_nodes, {}, {});
+				if (this->getVerbosityLevel() >= 2)
+					std::cout << "Logging..." << std::endl;
+				this->evaluationModelLogger(iter, model, model_interpreter, model_logger, output.chip(iter, 3));
 			}
 
 			// reinitialize the model
@@ -809,6 +864,42 @@ private:
 		model.initNodeTensorIndices();
 		model.initWeightTensorIndices();
 		return model_output;
+	}
+	template<typename TensorT, typename InterpreterT>
+	inline Model<TensorT> ModelTrainer<TensorT, InterpreterT>::makeModel()
+	{
+		return Model<TensorT>();  // USER:  create your own overload method
+	}
+	template<typename TensorT, typename InterpreterT>
+	inline void ModelTrainer<TensorT, InterpreterT>::adaptiveTrainerScheduler(const int & n_generations, const int & n_epochs, Model<TensorT>& model, InterpreterT & model_interpreter, const std::vector<TensorT>& model_errors)
+	{
+		// USER: create your own overload method
+	}
+	template<typename TensorT, typename InterpreterT>
+	inline void ModelTrainer<TensorT, InterpreterT>::trainingModelLogger(const int & n_epochs, Model<TensorT>& model, InterpreterT & model_interpreter, ModelLogger<TensorT>& model_logger, const Eigen::Tensor<TensorT, 3> expected_values)
+	{
+		if (n_epochs % 10 == 0) {
+			if (model_logger.getLogExpectedPredictedEpoch())
+				model_interpreter.getModelResults(model, true, false, false);
+			model_logger.writeLogs(model, iter, { "Error" }, {}, { total_error(0) }, {}, output_nodes, expected_values);
+		}
+	}
+	template<typename TensorT, typename InterpreterT>
+	inline void ModelTrainer<TensorT, InterpreterT>::validationModelLogger(const int & n_epochs, Model<TensorT>& model, InterpreterT & model_interpreter, ModelLogger<TensorT>& model_logger, const Eigen::Tensor<TensorT, 3> expected_values)
+	{
+		if (n_epochs % 10 == 0) {
+			if (model_logger.getLogExpectedPredictedEpoch())
+				model_interpreter.getModelResults(model, true, false, false);
+			model_logger.writeLogs(model, iter, {}, { "Error" }, {}, { total_error(0) }, output_nodes, expected_values);
+		}
+	}
+	template<typename TensorT, typename InterpreterT>
+	inline void ModelTrainer<TensorT, InterpreterT>::evaluationModelLogger(const int & n_epochs, Model<TensorT>& model, InterpreterT & model_interpreter, ModelLogger<TensorT>& model_logger)
+	{
+		if (n_epochs % 1 == 0) {
+			model_interpreter.getModelResults(model, true, true, false);
+			model_logger.writeLogs(model, iter, {}, {}, {}, {}, output_nodes, Eigen::Tensor<TensorT, 3>(), output_nodes, {}, {});
+		}
 	}
 }
 #endif //SMARTPEAK_MODELTRAINER_H
