@@ -1447,13 +1447,13 @@ namespace SmartPeak
 
 			// determine the actual source and sink layer sizes
 			std::set<int> source_nodes, sink_nodes;
-			for (const std::pair<int, int> p : weight_index) {
+			for (const std::pair<int, int>& p : weight_index) {
 				source_nodes.insert(p.first);
 				sink_nodes.insert(p.second);
 			}
 
 			// check the source and sink layer indices
-			for (const std::pair<int, int> p : weight_index) {
+			for (const std::pair<int, int>& p : weight_index) {
 				if (p.first >= source_nodes.size() || p.second >= sink_nodes.size()) {
 					throw std::out_of_range("Weight index is greater than the layer size.");
 					// Error is caused by incorrectly allocating nodes and weights to different tensors

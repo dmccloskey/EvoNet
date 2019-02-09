@@ -72,7 +72,8 @@ public:
 		//TPI_reverse	1
 		//TPI	1
 		
-		std::vector<TensorT> met_data_stst = { 1,1,1,1,1,1,0.29,0.0867,1.6,1.00e-03,2.5,0.0589,1,0.017,0.16,0.0146,0.00728,0.0301,0.0486,1.36,0.0603,0.0198,0.00024,0.0113,0.0773,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1, };
+		std::vector<std::string> output_nodes = { "13dpg","2pg","3pg","adp","amp","atp","dhap","f6p","fdp","g3p","g6p","glc__D","h","h2o","lac__L","nad","nadh","pep","pi","pyr" };
+		std::vector<TensorT> met_data_stst = { 0.00024,0.0113,0.0773,0.29,0.0867,1.6,0.16,0.0198,0.0146,0.00728,0.0486,1,1.00e-03,1,1.36,0.0589,0.0301,0.017,2.5,0.0603 };
 
 		// Generate the input and output data for training
 		for (int batch_iter = 0; batch_iter<batch_size; ++batch_iter) {
@@ -122,7 +123,7 @@ public:
 		biochemical_reaction_model.readBiochemicalReactions(biochem_rxns_filename);
 		std::map<std::string, std::vector<std::pair<std::string, std::string>>> interaction_graph;
 		biochemical_reaction_model.getInteractionGraph(interaction_graph);
-		
+
 		// Convert the interaction graph to a network moel
 		ModelBuilder<TensorT> model_builder;
 		model_builder.addInteractionGraph(interaction_graph, model, "RBC", "RBC",
@@ -131,11 +132,11 @@ public:
 			std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8))
 		);
 
-		//// Specify the output layer for metabolite nodes (20)
-		//std::vector<std::string> output_nodes = { "glc__D","g6p","f6p","fdp","dhap","g3p","13dpg","3pg","2pg","pep","pyr","lac__L","nad","nadh","amp","adp","atp","pi","h","h2o" };
-		//for (const std::string& node : output_nodes) {
-		//	model.nodes_.at(node)->setLayerName("Metabolites");
-		//}
+		// Specify the output layer for metabolite nodes (20)
+		std::vector<std::string> output_nodes = { "glc__D","g6p","f6p","fdp","dhap","g3p","13dpg","3pg","2pg","pep","pyr","lac__L","nad","nadh","amp","adp","atp","pi","h","h2o" };
+		for (const std::string& node : output_nodes) {
+			model.nodes_.at(node)->setLayerName("Metabolites");
+		}
 
 		//// Specify the layer for the enzymes (f/r) (14)
 		//std::vector<std::string> enzymes_f_nodes = { "ENO","FBA","GAPD","HEX1","LDH_L","PFK","PGI","PGK","PGM","PYK","TPI","DM_nadh","ADK1","ATPh" };
@@ -248,10 +249,9 @@ void main_KineticModel(const bool& make_model, const bool& train_model) {
 	const int n_threads = n_hard_threads; // the number of threads
 
 	// define the input/output nodes
-	std::vector<std::string> input_nodes = { "GAPD_reverse","PGK_reverse","ENO","PGM","PGK","PGM_reverse","adp","amp","atp","h","pi","nad","h2o","pep","dhap","fdp","g3p","nadh","g6p","lac__L","pyr","f6p","13dpg","2pg","3pg","ADK1","ADK1_reverse","ATPh","DM_nadh","ENO_reverse","FBA","FBA_reverse","GAPD","HEX1","LDH_L","LDH_L_reverse","PFK","PGI","PGI_reverse","PYK","TPI_reverse","TPI","glc__D" };
+	std::vector<std::string> input_nodes = { "13dpg","2pg","3pg","adp","amp","atp","dhap","f6p","fdp","g3p","g6p","glc__D","h","h2o","lac__L","nad","nadh","pep","pi","pyr" };
 	// TODO: manually specify the tensor index ordering or update for correct tensor ordering
-	std::vector<std::string> output_nodes1 = { "GAPD_reverse","PGK_reverse","ENO","PGM","PGK","PGM_reverse","adp","amp","atp","h","pi","nad","h2o","pep","dhap","fdp","g3p","nadh","g6p","lac__L","pyr","f6p","13dpg" };
-	std::vector<std::string> output_nodes2 = { "2pg","3pg","ADK1","ADK1_reverse","ATPh","DM_nadh","ENO_reverse","FBA","FBA_reverse","GAPD","HEX1","LDH_L","LDH_L_reverse","PFK","PGI","PGI_reverse","PYK","TPI_reverse","TPI","glc__D" };
+	std::vector<std::string> output_nodes = { "13dpg","2pg","3pg","adp","amp","atp","dhap","f6p","fdp","g3p","g6p","glc__D","h","h2o","lac__L","nad","nadh","pep","pi","pyr" };
 
 	// define the data simulator
 	DataSimulatorExt<float> data_simulator;
@@ -273,9 +273,9 @@ void main_KineticModel(const bool& make_model, const bool& train_model) {
 	model_trainer.setFindCycles(false);
 	model_trainer.setFastInterpreter(true);
 	model_trainer.setPreserveOoO(false);
-	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()),std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
-	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()),std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
-	model_trainer.setOutputNodes({ output_nodes1, output_nodes2 });
+	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
+	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
+	model_trainer.setOutputNodes({ output_nodes });
 
 	// define the model logger
 	//ModelLogger<float> model_logger(true, true, true, false, false, false, false, false);
