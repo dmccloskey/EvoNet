@@ -660,6 +660,7 @@ namespace SmartPeak
 					getLayerTensor(node->getTensorIndex().first)->getDt().chip(node->getTensorIndex().second, 2) = values_buffered.chip(i, 2);
 			}
 			else {
+				clear_cache(); // clean up before exiting
 				char error_char[512];
 				sprintf(error_char, "Node %s has not been assigned a tensor index!", node->getName().data());
 				std::string error(error_char);
@@ -679,6 +680,7 @@ namespace SmartPeak
 					getLayerTensor(node_map.second->getTensorIndex().first)->getOutput().chip(node_map.second->getTensorIndex().second, 2) = one;
 				}
 				else {
+					clear_cache(); // clean up before exiting
 					char error_char[512];
 					sprintf(error_char, "Node %s has not been assigned a tensor index!", node_map.second->getName().data());
 					std::string error(error_char);
@@ -1452,13 +1454,13 @@ namespace SmartPeak
 				sink_nodes.insert(p.second);
 			}
 
-			// check the source and sink layer indices
-			for (const std::pair<int, int>& p : weight_index) {
-				if (p.first >= source_nodes.size() || p.second >= sink_nodes.size()) {
-					//throw std::out_of_range("Weight index is greater than the layer size.");
-					// Error is caused by incorrectly allocating nodes and weights to different tensors
-				}
-			}
+			//// check the source and sink layer indices
+			//for (const std::pair<int, int>& p : weight_index) {
+			//	if (p.first >= source_nodes.size() || p.second >= sink_nodes.size()) {
+			//		throw std::out_of_range("Weight index is greater than the layer size.");
+			//		// Error is caused by incorrectly allocating nodes and weights to different tensors
+			//	}
+			//}
 
 			// store the tensor sizes
 			//sink_layer_sizes.push_back(sink_layer_size); // This is not accurate because we are actually tracking the next sink_layer position...
