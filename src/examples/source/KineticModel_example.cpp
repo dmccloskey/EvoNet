@@ -133,16 +133,23 @@ public:
 		);
 
 		// Specify the output layer for metabolite nodes (20)
-		std::vector<std::string> output_nodes = { "glc__D","g6p","f6p","fdp","dhap","g3p","13dpg","3pg","2pg","pep","pyr","lac__L","nad","nadh","amp","adp","atp","pi","h","h2o" };
+		std::vector<std::string> output_nodes = { "13dpg","2pg","3pg","adp","amp","atp","dhap","f6p","fdp","g3p","g6p","glc__D","h","h2o","lac__L","nad","nadh","pep","pi","pyr" };
+		int iter = 0;
 		for (const std::string& node : output_nodes) {
 			model.nodes_.at(node)->setLayerName("Metabolites");
+			//model.nodes_.at(node)->setTensorIndex(std::make_pair(0, iter));
+			++iter;
 		}
 
-		//// Specify the layer for the enzymes (f/r) (14)
-		//std::vector<std::string> enzymes_f_nodes = { "ENO","FBA","GAPD","HEX1","LDH_L","PFK","PGI","PGK","PGM","PYK","TPI","DM_nadh","ADK1","ATPh" };
-		//for (const std::string& node : enzymes_f_nodes) {
-		//	model.nodes_.at(node)->setLayerName("Enzymes");
-		//}
+		// Specify the layer for the enzymes (f/r) (14)
+		std::vector<std::string> enzymes_f_nodes = { "ENO","FBA","GAPD","HEX1","LDH_L","PFK","PGI","PGK","PGM","PYK","TPI","DM_nadh","ADK1","ATPh",
+		 "ADK1_reverse","ENO_reverse","FBA_reverse","GAPD_reverse","LDH_L_reverse","PGI_reverse","PGK_reverse","PGM_reverse","TPI_reverse" };
+		iter = 0;
+		for (const std::string& node : enzymes_f_nodes) {
+			model.nodes_.at(node)->setLayerName("Enzymes");
+			//model.nodes_.at(node)->setTensorIndex(std::make_pair(1, iter));
+			++iter;
+		}
 
 	}
 	void adaptiveTrainerScheduler(

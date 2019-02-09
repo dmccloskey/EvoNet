@@ -199,6 +199,7 @@ protected:
 		setNSolverParams(solver_params.size());
 		if (solver_params.size() > 0) {
 			Eigen::Tensor<TensorT, 3> params(layer1_size, layer2_size, (int)solver_params.size());
+			params.setZero();
 			for (int i = 0; i < solver_params.size(); ++i) {
 				params.chip(i, 2).setConstant(solver_params[i]);
 			}

@@ -1455,7 +1455,7 @@ namespace SmartPeak
 			// check the source and sink layer indices
 			for (const std::pair<int, int>& p : weight_index) {
 				if (p.first >= source_nodes.size() || p.second >= sink_nodes.size()) {
-					throw std::out_of_range("Weight index is greater than the layer size.");
+					//throw std::out_of_range("Weight index is greater than the layer size.");
 					// Error is caused by incorrectly allocating nodes and weights to different tensors
 				}
 			}
@@ -1463,8 +1463,10 @@ namespace SmartPeak
 			// store the tensor sizes
 			//sink_layer_sizes.push_back(sink_layer_size); // This is not accurate because we are actually tracking the next sink_layer position...
 			//source_layer_sizes.push_back(source_layer_size); // This is not accurate because we are actually tracking the next source_layer position...
-			sink_layer_sizes.push_back(sink_nodes.size());
-			source_layer_sizes.push_back(source_nodes.size());
+			//sink_layer_sizes.push_back(sink_nodes.size());
+			//source_layer_sizes.push_back(source_nodes.size());
+			sink_layer_sizes.push_back(*std::max_element(sink_nodes.begin(), sink_nodes.end()) + 1);
+			source_layer_sizes.push_back(*std::max_element(source_nodes.begin(), source_nodes.end()) + 1);
 			make_source_tensors.push_back(make_source_tensor);
 			make_sink_tensors.push_back(make_sink_tensor);
 			make_weight_tensors.push_back(make_weight_tensor);
