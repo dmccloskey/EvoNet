@@ -606,11 +606,11 @@ BOOST_AUTO_TEST_CASE(addLink)
   BOOST_CHECK(weight_found);
 }
 
-Model<float> model_addNode = makeModel1();
+Model<float> model_addNodeDown = makeModel1();
 BOOST_AUTO_TEST_CASE(addNodeDown) 
 {
   ModelReplicatorExt<float> model_replicator;
-  model_replicator.addNodeDown(model_addNode);
+  model_replicator.addNodeDown(model_addNodeDown);
   std::vector<std::string> node_names = {
     "2", "3", "4", "5" // existing nodes
     };
@@ -621,7 +621,7 @@ BOOST_AUTO_TEST_CASE(addNodeDown)
   // check that the node was found
   bool node_found = false;
   std::string node_name = "";
-  for (const Node<float>& node: model_addNode.getNodes())
+  for (const Node<float>& node: model_addNodeDown.getNodes())
   {
     node_name = node.getName();
     std::vector<std::string> node_name_tokens;
@@ -646,7 +646,7 @@ BOOST_AUTO_TEST_CASE(addNodeDown)
     std::sregex_token_iterator(node_name.begin(), node_name.end(), re_addNodes, -1),
     std::sregex_token_iterator(),
     std::back_inserter(node_text_tokens));
-  if (node_text_tokens.size() > 1 && node_text_tokens[1] == "addNode")
+  if (node_text_tokens.size() > 1 && node_text_tokens[1] == "addNodeDown")
     add_node_marker_found = true;
   BOOST_CHECK(add_node_marker_found);
 
@@ -659,6 +659,60 @@ BOOST_AUTO_TEST_CASE(addNodeDown)
   // [TODO: check that the new link was found]
 
   // [TODO: check that the new weight was found]
+}
+
+
+Model<float> model_addNodeRight = makeModel1();
+BOOST_AUTO_TEST_CASE(addNodeRight)
+{
+	ModelReplicatorExt<float> model_replicator;
+	model_replicator.addNodeRight(model_addNodeRight);
+	std::vector<std::string> node_names = {
+		"2", "3", "4", "5" // existing nodes
+	};
+
+	// [TODO: add loop here with iter = 100]
+	std::regex re("@");
+
+	// check that the node was found
+	bool node_found = false;
+	std::string node_name = "";
+	for (const Node<float>& node : model_addNodeRight.getNodes())
+	{
+		node_name = node.getName();
+		std::vector<std::string> node_name_tokens;
+		std::copy(
+			std::sregex_token_iterator(node_name.begin(), node_name.end(), re, -1),
+			std::sregex_token_iterator(),
+			std::back_inserter(node_name_tokens));
+		if (node_name_tokens.size() > 1 &&
+			std::count(node_names.begin(), node_names.end(), node_name_tokens[0]) != 0)
+		{
+			node_found = true;
+			break;
+		}
+	}
+	BOOST_CHECK(node_found);
+
+	// check the correct text after @
+	bool add_node_marker_found = false;
+	std::regex re_addNodes("@|#");
+	std::vector<std::string> node_text_tokens;
+	std::copy(
+		std::sregex_token_iterator(node_name.begin(), node_name.end(), re_addNodes, -1),
+		std::sregex_token_iterator(),
+		std::back_inserter(node_text_tokens));
+	if (node_text_tokens.size() > 1 && node_text_tokens[1] == "addNodeRight")
+		add_node_marker_found = true;
+	BOOST_CHECK(add_node_marker_found);
+
+	// [TODO: check that the node is of the correct type]
+
+	// [TODO: check that the new modified links were found]
+
+	// [TODO: check that the new modified weighs were found]
+
+	// [TODO: check that the new link/weight/node bias were found]
 }
 
 Model<float> model_deleteNode = makeModel1();

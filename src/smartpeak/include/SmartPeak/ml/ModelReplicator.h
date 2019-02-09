@@ -762,7 +762,118 @@ private:
 	template<typename TensorT>
 	inline void ModelReplicator<TensorT>::addNodeRight(Model<TensorT>& model, std::string unique_str)
 	{
-		// [TODO: add method body]
+		// pick a random node from the model
+		// that is not an input or bias    
+		std::vector<NodeType> node_exclusion_list = { NodeType::bias, NodeType::input, NodeType::output };
+		std::vector<NodeType> node_inclusion_list = { NodeType::hidden };
+		std::string random_node_name = selectRandomNode(model, node_exclusion_list, node_inclusion_list);
+		if (random_node_name.empty() || random_node_name == "")
+		{
+			std::cout << "No nodes were added to the model." << std::endl;
+			return;
+		}
+
+		// copy the node
+		Node<TensorT> new_node = model.getNode(random_node_name);
+
+		std::string new_node_name, add_node_name;
+		updateName(random_node_name, "%s@addNode#", unique_str, add_node_name, new_node_name);
+		new_node.setName(new_node_name);
+		new_node.setType(NodeType::hidden); // [TODO: add test to check for the type!
+		model.addNodes({ new_node });
+
+		std::vector<std::string> input_link_names, output_link_names;
+		std::vector<std::string> bias_link_names;
+		for (const Link& link : model.getLinks())
+		{
+			// find the random_nodes bias
+			if (link.getSinkNodeName() == random_node_name &&
+				model.getNode(link.getSourceNodeName()).getType() == NodeType::bias){
+				bias_link_names.push_back(link.getName());
+			}
+			if (link.getSinkNodeName() == random_node_name &&
+				model.getNode(link.getSourceNodeName()).getType() != NodeType::bias) {
+				input_link_names.push_back(link.getName());
+			}
+			if (link.getSourceNodeName() == random_node_name) {
+				output_link_names.push_back(link.getName());
+			}
+		}
+		if (input_link_names.size() == 0)
+		{
+			std::cout << "No nodes were added to the model." << std::endl;
+			return;
+		}
+
+		if (bias_link_names.size() != 0) {
+			// create a new bias
+			char new_bias_name_char[512];
+			sprintf(new_bias_name_char, "Bias_%s@addNodeRight#", add_node_name.data());
+			std::string new_bias_name = makeUniqueHash(new_bias_name_char, unique_str);
+			Node<TensorT> new_bias(new_bias_name, NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
+			model.addNodes({ new_bias });
+
+			// create a link from the new bias to the new node
+			char weight_bias_name_char[512];
+			sprintf(weight_bias_name_char, "%s_to_%s@addNodeRight#", new_bias_name.data(), new_node_name.data());
+			std::string weight_bias_name = makeUniqueHash(weight_bias_name_char, unique_str);
+
+			char link_bias_name_char[512];
+			sprintf(link_bias_name_char, "%s_to_%s@addNodeRight#", new_bias_name.data(), new_node_name.data());
+			std::string link_bias_name = makeUniqueHash(link_bias_name_char, unique_str);
+
+			std::shared_ptr<WeightInitOp<TensorT>> bias_weight_init;
+			bias_weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));
+			Weight<TensorT> weight_bias = model.getWeight(model.getLink(bias_link_names).getWeightName()); // [OPTIMIZATION: use Link.getWeightName() directly]
+			weight_bias.setName(weight_bias_name);
+			weight_bias.setWeightInitOp(bias_weight_init);
+			Link link_bias(link_bias_name, new_bias_name, new_node_name, weight_bias_name);
+
+			model.addWeights({ weight_bias });
+			model.addLinks({ link_bias });
+		}
+
+		// replicate all input connections
+		for (const std::string& input_link_name : input_link_names) {
+			// change the source to new node weight
+			Weight<TensorT> weight = model.getWeight(model.getLink(input_link_name).getWeightName()); // copy assignment
+			char weight_name_char[512];
+			sprintf(weight_name_char, "Weight_%s_to_%s@addNodeRight#", model.getLink(input_link_name).getSourceNodeName().data(), new_node_name.data());
+			std::string weight_name = makeUniqueHash(weight_name_char, unique_str);
+			weight.setName(weight_name);
+			model.addWeights({ weight });
+
+			// change the source to new node link
+			Link modified_link = model.getLink(input_link_name);
+			modified_link.setSinkNodeName(new_node_name);
+			modified_link.setWeightName(weight_name);
+			char modified_link_name_char[512];
+			sprintf(modified_link_name_char, "Link_%s_to_%s@addNodeRight#", modified_link.getSourceNodeName().data(), new_node_name.data());
+			std::string modified_link_name = makeUniqueHash(modified_link_name_char, unique_str);
+			modified_link.setName(modified_link_name);
+			model.addLinks({ modified_link });
+		}
+
+		// replicate all output connections
+		for (const std::string& output_link_name : output_link_names) {
+			// change the source to new node weight
+			Weight<TensorT> weight = model.getWeight(model.getLink(output_link_name).getWeightName()); // copy assignment
+			char weight_name_char[512];
+			sprintf(weight_name_char, "Weight_%s_to_%s@addNodeRight#", new_node_name.data(), model.getLink(output_link_name).getSinkNodeName().data());
+			std::string weight_name = makeUniqueHash(weight_name_char, unique_str);
+			weight.setName(weight_name);
+			model.addWeights({ weight });
+
+			// change the source to new node link
+			Link modified_link = model.getLink(output_link_name);
+			modified_link.setSourceNodeName(new_node_name);
+			modified_link.setWeightName(weight_name);
+			char modified_link_name_char[512];
+			sprintf(modified_link_name_char, "Link_%s_to_%s@addNodeRight#", new_node_name.data(), modified_link.getSinkNodeName().data());
+			std::string modified_link_name = makeUniqueHash(modified_link_name_char, unique_str);
+			modified_link.setName(modified_link_name);
+			model.addLinks({ modified_link });
+		}
 	}
 
 	template<typename TensorT>
@@ -1001,13 +1112,16 @@ private:
 
 		// select a random input link
 		// [OPTIMIZATION: refactor to pass back the Link and not just the name]
-		std::vector<std::string> input_link_names;
+		std::vector<std::string> input_link_names, bias_link_names;
 		for (const Link& link : model.getLinks())
 		{
 			if (link.getSinkNodeName() == random_node_name &&
-				model.getNode(link.getSourceNodeName()).getType() != NodeType::bias)
-			{
+				model.getNode(link.getSourceNodeName()).getType() != NodeType::bias){
 				input_link_names.push_back(link.getName());
+			}
+			if (link.getSinkNodeName() == random_node_name &&
+				model.getNode(link.getSourceNodeName()).getType() == NodeType::bias) {
+				bias_link_names.push_back(link.getName());
 			}
 		}
 		if (input_link_names.size() == 0)
@@ -1018,42 +1132,44 @@ private:
 		std::string input_link_name = selectRandomElement<std::string>(input_link_names);
 
 		std::string new_node_name, add_node_name;
-		updateName(random_node_name, "%s@addNode#", unique_str, add_node_name, new_node_name);
+		updateName(random_node_name, "%s@addNodeDown#", unique_str, add_node_name, new_node_name);
 		new_node.setName(new_node_name);
 		new_node.setType(NodeType::hidden); // [TODO: add test to check for the type!
 		model.addNodes({ new_node });
 
-		// create a new bias
-		char new_bias_name_char[512];
-		sprintf(new_bias_name_char, "Bias_%s@addNode#", add_node_name.data());
-		std::string new_bias_name = makeUniqueHash(new_bias_name_char, unique_str);
-		Node<TensorT> new_bias(new_bias_name, NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
-		model.addNodes({ new_bias });
+		if (bias_link_names.size() != 0) {
+			// create a new bias
+			char new_bias_name_char[512];
+			sprintf(new_bias_name_char, "Bias_%s@addNodeDown#", add_node_name.data());
+			std::string new_bias_name = makeUniqueHash(new_bias_name_char, unique_str);
+			Node<TensorT> new_bias(new_bias_name, NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
+			model.addNodes({ new_bias });
 
-		// create a link from the new bias to the new node
-		char weight_bias_name_char[512];
-		sprintf(weight_bias_name_char, "%s_to_%s@addNode#", new_bias_name.data(), new_node_name.data());
-		std::string weight_bias_name = makeUniqueHash(weight_bias_name_char, unique_str);
+			// create a link from the new bias to the new node
+			char weight_bias_name_char[512];
+			sprintf(weight_bias_name_char, "%s_to_%s@addNodeDown#", new_bias_name.data(), new_node_name.data());
+			std::string weight_bias_name = makeUniqueHash(weight_bias_name_char, unique_str);
 
-		char link_bias_name_char[512];
-		sprintf(link_bias_name_char, "%s_to_%s@addNode#", new_bias_name.data(), new_node_name.data());
-		std::string link_bias_name = makeUniqueHash(link_bias_name_char, unique_str);
+			char link_bias_name_char[512];
+			sprintf(link_bias_name_char, "%s_to_%s@addNodeDown#", new_bias_name.data(), new_node_name.data());
+			std::string link_bias_name = makeUniqueHash(link_bias_name_char, unique_str);
 
-		std::shared_ptr<WeightInitOp<TensorT>> bias_weight_init;
-		bias_weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));
-		Weight<TensorT> weight_bias = model.getWeight(model.getLink(input_link_name).getWeightName()); // [OPTIMIZATION: use Link.getWeightName() directly]
-		weight_bias.setName(weight_bias_name);
-		weight_bias.setWeightInitOp(bias_weight_init);
-		Link link_bias(link_bias_name, new_bias_name, new_node_name, weight_bias_name);
+			std::shared_ptr<WeightInitOp<TensorT>> bias_weight_init;
+			bias_weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));
+			Weight<TensorT> weight_bias = model.getWeight(model.getLink(bias_link_names[0]).getWeightName()); // [OPTIMIZATION: use Link.getWeightName() directly]
+			weight_bias.setName(weight_bias_name);
+			weight_bias.setWeightInitOp(bias_weight_init);
+			Link link_bias(link_bias_name, new_bias_name, new_node_name, weight_bias_name);
 
-		model.addWeights({ weight_bias });
-		model.addLinks({ link_bias });
+			model.addWeights({ weight_bias });
+			model.addLinks({ link_bias });
+		}
 
 		// change the output node name of the link to the new copied node name
 		Link modified_link = model.getLink(input_link_name);
 		modified_link.setSinkNodeName(new_node_name);
 		char modified_link_name_char[512];
-		sprintf(modified_link_name_char, "Link_%s_to_%s@addNode#", modified_link.getSourceNodeName().data(), new_node_name.data());
+		sprintf(modified_link_name_char, "Link_%s_to_%s@addNodeDown#", modified_link.getSourceNodeName().data(), new_node_name.data());
 		std::string modified_link_name = makeUniqueHash(modified_link_name_char, unique_str);
 		modified_link.setName(modified_link_name);
 		model.addLinks({ modified_link });
@@ -1062,7 +1178,7 @@ private:
 		// to its original node
 		Weight<TensorT> weight = model.getWeight(model.getLink(input_link_name).getWeightName()); // copy assignment
 		char weight_name_char[512];
-		sprintf(weight_name_char, "Weight_%s_to_%s@addNode#", new_node_name.data(), random_node_name.data());
+		sprintf(weight_name_char, "Weight_%s_to_%s@addNodeDown#", new_node_name.data(), random_node_name.data());
 		std::string weight_name = makeUniqueHash(weight_name_char, unique_str);
 		weight.setName(weight_name);
 		model.addWeights({ weight });
@@ -1070,13 +1186,13 @@ private:
 		// add a new link that connects the new copied node
 		// to its original node
 		char link_name_char[512];
-		sprintf(link_name_char, "Link_%s_to_%s@addNode#", new_node_name.data(), random_node_name.data());
+		sprintf(link_name_char, "Link_%s_to_%s@addNodeDown#", new_node_name.data(), random_node_name.data());
 		std::string link_name = makeUniqueHash(link_name_char, unique_str);
 		Link link(link_name, new_node_name, random_node_name, weight_name);
 		model.addLinks({ link });
 
 		// remove the unmodified link
-	// [CHECK: is this needed?  identified as a high CPU call due to prune weights]
+	  // [CHECK: is this needed?  identified as a high CPU call due to prune weights]
 		model.removeLinks({ input_link_name });
 	}
 
