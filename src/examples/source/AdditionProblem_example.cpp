@@ -294,11 +294,16 @@ public:
 		{
 			this->setRandomModifications(
 				std::make_pair(0, 1),
+				std::make_pair(0, 1),
+				std::make_pair(0, 0),
+				std::make_pair(0, 0),
 				std::make_pair(0, 2),
+				std::make_pair(0, 0),
 				std::make_pair(0, 1),
 				std::make_pair(0, 2),
 				std::make_pair(0, 2),
 				std::make_pair(0, 2),
+				std::make_pair(0, 0),
 				std::make_pair(0, 0),
 				std::make_pair(0, 0));
 		}
@@ -307,8 +312,13 @@ public:
 			this->setRandomModifications(
 				std::make_pair(0, 1),
 				std::make_pair(0, 1),
+				std::make_pair(0, 0),
+				std::make_pair(0, 0),
 				std::make_pair(0, 1),
+				std::make_pair(0, 0),
+				std::make_pair(0, 2),
 				std::make_pair(0, 1),
+				std::make_pair(0, 0),
 				std::make_pair(0, 0),
 				std::make_pair(0, 0),
 				std::make_pair(0, 0),

@@ -185,25 +185,35 @@ public:
 		std::vector<Model<TensorT>>& models,
 		std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations)
 	{
-		if (n_generations>0)
+		if (n_generations > 0)
 		{
 			this->setRandomModifications(
-				std::make_pair(0, 1),
-				std::make_pair(0, 2),
-				std::make_pair(0, 1),
-				std::make_pair(0, 2),
-				std::make_pair(0, 2),
-				std::make_pair(0, 2),
+				std::make_pair(0, 0),
+				std::make_pair(0, 0),
+				std::make_pair(0, 0),
+				std::make_pair(0, 0),
+				std::make_pair(0, 1), // addLink
+				std::make_pair(0, 0),
+				std::make_pair(0, 0),
+				std::make_pair(0, 1), // deleteLink
+				std::make_pair(0, 0),
+				std::make_pair(0, 0),
+				std::make_pair(0, 0),
 				std::make_pair(0, 0),
 				std::make_pair(0, 0));
 		}
 		else
 		{
 			this->setRandomModifications(
-				std::make_pair(0, 1),
-				std::make_pair(0, 1),
-				std::make_pair(0, 1),
-				std::make_pair(0, 1),
+				std::make_pair(0, 0),
+				std::make_pair(0, 0),
+				std::make_pair(0, 0),
+				std::make_pair(0, 0),
+				std::make_pair(0, 1), // addLink
+				std::make_pair(0, 0),
+				std::make_pair(0, 0),
+				std::make_pair(0, 1), // deleteLink
+				std::make_pair(0, 0),
 				std::make_pair(0, 0),
 				std::make_pair(0, 0),
 				std::make_pair(0, 0),

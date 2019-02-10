@@ -19,19 +19,7 @@ public:
 		const int& n_generations,
 		std::vector<Model<TensorT>>& models,
 		std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations)
-	{
-		if (n_generations >= 0)
-		{
-			this->setRandomModifications(
-				std::make_pair(0, 5),
-				std::make_pair(0, 10),
-				std::make_pair(0, 5),
-				std::make_pair(0, 10),
-				std::make_pair(0, 5),
-				std::make_pair(0, 5),
-				std::make_pair(0, 0),
-				std::make_pair(0, 0));
-		}
+	{ //TODO
 	}
 };
 

@@ -343,28 +343,7 @@ public:
 		const int& n_generations,
 		std::vector<Model<TensorT>>& models,
 		std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations)
-	{
-		if (n_generations > 100)
-		{
-			this->setNNodeAdditions(1);
-			this->setNLinkAdditions(2);
-			this->setNNodeDeletions(1);
-			this->setNLinkDeletions(2);
-		}
-		else if (n_generations > 1 && n_generations < 100)
-		{
-			this->setNNodeAdditions(1);
-			this->setNLinkAdditions(2);
-			this->setNNodeDeletions(1);
-			this->setNLinkDeletions(2);
-		}
-		else if (n_generations == 0)
-		{
-			this->setNNodeAdditions(10);
-			this->setNLinkAdditions(20);
-			this->setNNodeDeletions(0);
-			this->setNLinkDeletions(0);
-		}
+	{ // TODO
 	}
 };
 

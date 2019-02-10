@@ -38,11 +38,16 @@ public:
 		if (n_generations >= 0)
 		{
 			setRandomModifications(
-				std::make_pair(0, 0),
-				std::make_pair(1, 1),
-				std::make_pair(0, 0),
-				std::make_pair(1, 1),
-				std::make_pair(0, 0),
+				std::make_pair(0, 0), // addNodeDown
+				std::make_pair(0, 0), // addNodeRight
+				std::make_pair(0, 0), // copyNodeDown 
+				std::make_pair(0, 0), // copyNodeRight
+				std::make_pair(1, 1), // addLink
+				std::make_pair(0, 0), // copyLink
+				std::make_pair(0, 0), // deleteNode
+				std::make_pair(1, 1), // deleteLink
+				std::make_pair(0, 0), // changeActivation
+				std::make_pair(0, 0), // changeIntegration
 				std::make_pair(0, 0),
 				std::make_pair(0, 0),
 				std::make_pair(0, 0));
@@ -319,6 +324,11 @@ BOOST_AUTO_TEST_CASE(replicateModels)
 	// control (no modifications)
 	model_replicator.setRandomModifications(
 		std::make_pair(0, 0),
+		std::make_pair(0, 0), // addNodeRight
+		std::make_pair(0, 0), // copyNodeDown 
+		std::make_pair(0, 0), // copyNodeRight
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
 		std::make_pair(0, 0),
 		std::make_pair(0, 0),
 		std::make_pair(0, 0),
@@ -337,6 +347,11 @@ BOOST_AUTO_TEST_CASE(replicateModels)
 		std::make_pair(1, 1),
 		std::make_pair(0, 0),
 		std::make_pair(0, 0),
+		std::make_pair(1, 1),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
 		std::make_pair(0, 0),
 		std::make_pair(0, 0),
 		std::make_pair(0, 0),
@@ -350,8 +365,13 @@ BOOST_AUTO_TEST_CASE(replicateModels)
 	model_replicator.setRandomModifications(
 		std::make_pair(0, 0),
 		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
 		std::make_pair(1, 1),
 		std::make_pair(1, 1),
+		std::make_pair(0, 0),
 		std::make_pair(0, 0),
 		std::make_pair(0, 0),
 		std::make_pair(0, 0),
