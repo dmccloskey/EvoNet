@@ -777,7 +777,8 @@ private:
 		Node<TensorT> new_node = model.getNode(random_node_name);
 
 		std::string new_node_name, add_node_name;
-		updateName(random_node_name, "%s@addNodeRight#", unique_str, add_node_name, new_node_name);
+		if (as_copy) updateName(random_node_name, "%s@copyNodeRight#", unique_str, add_node_name, new_node_name);
+		else updateName(random_node_name, "%s@addNodeRight#", unique_str, add_node_name, new_node_name);
 		new_node.setName(new_node_name);
 		new_node.setType(NodeType::hidden); // [TODO: add test to check for the type!
 		model.addNodes({ new_node });
@@ -835,7 +836,8 @@ private:
 				weight_bias_name = model.getLink(bias_link_names[0]).getWeightName();
 
 			char link_bias_name_char[512];
-			sprintf(link_bias_name_char, "%s_to_%s@addNodeRight#", new_bias_name.data(), new_node_name.data());
+			if (as_copy) sprintf(link_bias_name_char, "%s_to_%s@copyNodeRight#", new_bias_name.data(), new_node_name.data());
+			else sprintf(link_bias_name_char, "%s_to_%s@addNodeRight#", new_bias_name.data(), new_node_name.data());
 			std::string link_bias_name = makeUniqueHash(link_bias_name_char, unique_str);
 			Link link_bias(link_bias_name, new_bias_name, new_node_name, weight_bias_name);
 			model.addLinks({ link_bias });
@@ -861,7 +863,8 @@ private:
 			modified_link.setSinkNodeName(new_node_name);
 			modified_link.setWeightName(weight_name);
 			char modified_link_name_char[512];
-			sprintf(modified_link_name_char, "Link_%s_to_%s@addNodeRight#", modified_link.getSourceNodeName().data(), new_node_name.data());
+			if (as_copy) sprintf(modified_link_name_char, "Link_%s_to_%s@copyNodeRight#", modified_link.getSourceNodeName().data(), new_node_name.data());
+			else sprintf(modified_link_name_char, "Link_%s_to_%s@addNodeRight#", modified_link.getSourceNodeName().data(), new_node_name.data());
 			std::string modified_link_name = makeUniqueHash(modified_link_name_char, unique_str);
 			modified_link.setName(modified_link_name);
 			model.addLinks({ modified_link });
@@ -887,7 +890,8 @@ private:
 			modified_link.setSourceNodeName(new_node_name);
 			modified_link.setWeightName(weight_name);
 			char modified_link_name_char[512];
-			sprintf(modified_link_name_char, "Link_%s_to_%s@addNodeRight#", new_node_name.data(), modified_link.getSinkNodeName().data());
+			if (as_copy) sprintf(modified_link_name_char, "Link_%s_to_%s@copyNodeRight#", new_node_name.data(), modified_link.getSinkNodeName().data());
+			else sprintf(modified_link_name_char, "Link_%s_to_%s@addNodeRight#", new_node_name.data(), modified_link.getSinkNodeName().data());
 			std::string modified_link_name = makeUniqueHash(modified_link_name_char, unique_str);
 			modified_link.setName(modified_link_name);
 			model.addLinks({ modified_link });
@@ -1140,7 +1144,8 @@ private:
 		std::string input_link_name = selectRandomElement<std::string>(input_link_names);
 
 		std::string new_node_name, add_node_name;
-		updateName(random_node_name, "%s@addNodeDown#", unique_str, add_node_name, new_node_name);
+		if (as_copy) updateName(random_node_name, "%s@copyNodeDown#", unique_str, add_node_name, new_node_name);
+		else updateName(random_node_name, "%s@addNodeDown#", unique_str, add_node_name, new_node_name);
 		new_node.setName(new_node_name);
 		new_node.setType(NodeType::hidden); // [TODO: add test to check for the type!
 		model.addNodes({ new_node });
@@ -1175,7 +1180,8 @@ private:
 				weight_bias_name = model.getLink(bias_link_names[0]).getWeightName();
 
 			char link_bias_name_char[512];
-			sprintf(link_bias_name_char, "%s_to_%s@addNodeRight#", new_bias_name.data(), new_node_name.data());
+			if (as_copy) sprintf(link_bias_name_char, "%s_to_%s@copyNodeRight#", new_bias_name.data(), new_node_name.data());
+			else sprintf(link_bias_name_char, "%s_to_%s@addNodeRight#", new_bias_name.data(), new_node_name.data());
 			std::string link_bias_name = makeUniqueHash(link_bias_name_char, unique_str);
 			Link link_bias(link_bias_name, new_bias_name, new_node_name, weight_bias_name);
 			model.addLinks({ link_bias });
@@ -1185,7 +1191,8 @@ private:
 		Link modified_link = model.getLink(input_link_name);
 		modified_link.setSinkNodeName(new_node_name);
 		char modified_link_name_char[512];
-		sprintf(modified_link_name_char, "Link_%s_to_%s@addNodeDown#", modified_link.getSourceNodeName().data(), new_node_name.data());
+		if (as_copy) sprintf(modified_link_name_char, "Link_%s_to_%s@copyNodeDown#", modified_link.getSourceNodeName().data(), new_node_name.data());
+		else sprintf(modified_link_name_char, "Link_%s_to_%s@addNodeDown#", modified_link.getSourceNodeName().data(), new_node_name.data());
 		std::string modified_link_name = makeUniqueHash(modified_link_name_char, unique_str);
 		modified_link.setName(modified_link_name);
 		model.addLinks({ modified_link });
@@ -1207,7 +1214,8 @@ private:
 		// add a new link that connects the new copied node
 		// to its original node
 		char link_name_char[512];
-		sprintf(link_name_char, "Link_%s_to_%s@addNodeDown#", new_node_name.data(), random_node_name.data());
+		if (as_copy) sprintf(link_name_char, "Link_%s_to_%s@copyNodeDown#", new_node_name.data(), random_node_name.data());
+		else sprintf(link_name_char, "Link_%s_to_%s@addNodeDown#", new_node_name.data(), random_node_name.data());
 		std::string link_name = makeUniqueHash(link_name_char, unique_str);
 		Link link(link_name, new_node_name, random_node_name, weight_name);
 		model.addLinks({ link });

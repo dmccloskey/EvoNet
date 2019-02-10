@@ -717,11 +717,109 @@ BOOST_AUTO_TEST_CASE(addNodeRight)
 Model<float> model_copyNodeDown = makeModel1();
 BOOST_AUTO_TEST_CASE(copyNodeDown)
 {
+	ModelReplicatorExt<float> model_replicator;
+	model_replicator.copyNodeDown(model_copyNodeDown);
+	std::vector<std::string> node_names = {
+		"2", "3", "4", "5" // existing nodes
+	};
+
+	// [TODO: add loop here with iter = 100]
+	std::regex re("@");
+
+	// check that the node was found
+	bool node_found = false;
+	std::string node_name = "";
+	for (const Node<float>& node : model_copyNodeDown.getNodes())
+	{
+		node_name = node.getName();
+		std::vector<std::string> node_name_tokens;
+		std::copy(
+			std::sregex_token_iterator(node_name.begin(), node_name.end(), re, -1),
+			std::sregex_token_iterator(),
+			std::back_inserter(node_name_tokens));
+		if (node_name_tokens.size() > 1 &&
+			std::count(node_names.begin(), node_names.end(), node_name_tokens[0]) != 0)
+		{
+			node_found = true;
+			break;
+		}
+	}
+	BOOST_CHECK(node_found);
+
+	// check the correct text after @
+	bool add_node_marker_found = false;
+	std::regex re_copyNodes("@|#");
+	std::vector<std::string> node_text_tokens;
+	std::copy(
+		std::sregex_token_iterator(node_name.begin(), node_name.end(), re_copyNodes, -1),
+		std::sregex_token_iterator(),
+		std::back_inserter(node_text_tokens));
+	if (node_text_tokens.size() > 1 && node_text_tokens[1] == "copyNodeDown")
+		add_node_marker_found = true;
+	BOOST_CHECK(add_node_marker_found);
+
+	// [TODO: check that the node is of the correct type]
+
+	// [TODO: check that the modified link was found]
+
+	// [TODO: check that the modified link weight name was not changed]
+
+	// [TODO: check that the new link was found]
+
+	// [TODO: check that the new weight was found]
 }
 
 Model<float> model_copyNodeRight = makeModel1();
 BOOST_AUTO_TEST_CASE(copyNodeRight)
 {
+	ModelReplicatorExt<float> model_replicator;
+	model_replicator.copyNodeRight(model_copyNodeRight);
+	std::vector<std::string> node_names = {
+		"2", "3", "4", "5" // existing nodes
+	};
+
+	// [TODO: add loop here with iter = 100]
+	std::regex re("@");
+
+	// check that the node was found
+	bool node_found = false;
+	std::string node_name = "";
+	for (const Node<float>& node : model_copyNodeRight.getNodes())
+	{
+		node_name = node.getName();
+		std::vector<std::string> node_name_tokens;
+		std::copy(
+			std::sregex_token_iterator(node_name.begin(), node_name.end(), re, -1),
+			std::sregex_token_iterator(),
+			std::back_inserter(node_name_tokens));
+		if (node_name_tokens.size() > 1 &&
+			std::count(node_names.begin(), node_names.end(), node_name_tokens[0]) != 0)
+		{
+			node_found = true;
+			break;
+		}
+	}
+	BOOST_CHECK(node_found);
+
+	// check the correct text after @
+	bool add_node_marker_found = false;
+	std::regex re_copyNodes("@|#");
+	std::vector<std::string> node_text_tokens;
+	std::copy(
+		std::sregex_token_iterator(node_name.begin(), node_name.end(), re_copyNodes, -1),
+		std::sregex_token_iterator(),
+		std::back_inserter(node_text_tokens));
+	if (node_text_tokens.size() > 1 && node_text_tokens[1] == "copyNodeRight")
+		add_node_marker_found = true;
+	BOOST_CHECK(add_node_marker_found);
+
+	// [TODO: check that the node is of the correct type]
+
+	// [TODO: check that the new modified links were found]
+
+	// [TODO: check that the new modified weighs were found]
+
+	// [TODO: check that the new link/weight/node bias were found]
 }
 
 Model<float> model_deleteNode = makeModel1();
