@@ -39,6 +39,7 @@ public:
 		void setNodeActivations(const std::vector<std::pair<std::shared_ptr<ActivationOp<TensorT>>, std::shared_ptr<ActivationOp<TensorT>>>>& node_activations); ///< node_activations setter
 		void setNodeIntegrations(const std::vector<std::tuple<std::shared_ptr<IntegrationOp<TensorT>>, std::shared_ptr<IntegrationErrorOp<TensorT>>, std::shared_ptr<IntegrationWeightGradOp<TensorT>>>>& node_integrations); ///< node_integrations setter
 		void setNModuleAdditions(const int& n_module_additions); ///< n_module_additions setter
+		void setNModuleCopies(const int& n_module_copies); ///< n_module_copies setter
 		void setNModuleDeletions(const int& n_module_deletions); ///< n_module_deletions setter
 
     int getNNodeDownAdditions() const; ///< n_node_additions setter
@@ -50,13 +51,13 @@ public:
 		std::vector<std::pair<std::shared_ptr<ActivationOp<TensorT>>, std::shared_ptr<ActivationOp<TensorT>>>> getNodeActivations() const; ///< node_activations setter
 		std::vector<std::tuple<std::shared_ptr<IntegrationOp<TensorT>>, std::shared_ptr<IntegrationErrorOp<TensorT>>, std::shared_ptr<IntegrationWeightGradOp<TensorT>>>> getNodeIntegrations() const; ///< node_integrations setter
 		int getNModuleAdditions() const; ///< n_module_additions setter
+		int getNModuleCopies() const; ///< n_module_copies setter
 		int getNModuleDeletions() const; ///< n_module_deletions setter
 
 		void setNNodeRightAdditions(const int& n_node_additions);  ///< n_nodes_additions setter
 		void setNNodeDownCopies(const int& n_node_copies); ///< n_node_copies setter
 		void setNNodeRightCopies(const int& n_node_copies);  ///< n_node_copies setter
 		void setNLinkCopies(const int& n_link_copies); ///< n_link_copies setter
-		void setNModuleCopies(const int& n_module_copies); ///< n_module_copies setter
 		void setNWeightChanges(const int& n_weight_changes); ///< n_weight_changes setter
 		void setWeightChangeStDev(const TensorT& weight_change_stdev); ///< weight_change_stdev setter
 
@@ -64,7 +65,6 @@ public:
 		int getNNodeDownCopies() const; ///< n_node_copies getter
 		int getNNodeRightCopies() const; ///< n_node_copies getter
 		int getNLinkCopies() const; ///< n_link_copies setter
-		int getNModuleCopies() const; ///< n_module_copies setter
 		int getNWeightChanges() const; ///< n_weight_changes getter
     TensorT getWeightChangeStDev() const; ///< weight_change_stdev getter
  
@@ -224,7 +224,7 @@ public:
 
       @param[in, out] model The model
     */ 
-    void addLink(Model<TensorT>& model, std::string unique_str = "");
+    void addLink(Model<TensorT>& model, std::string unique_str = "", bool as_copy = false);
 
 		/**
 			@brief copy an existing link (no new weight is created), and add the copied link to the model.
@@ -238,7 +238,7 @@ public:
 
 		@param[in, out] model The model
 		*/
-		void addModule(Model<TensorT>& model, std::string unique_str = "");
+		void addModule(Model<TensorT>& model, std::string unique_str = "", bool as_copy = false);
 
 		/**
 		@brief Copy an existing module (no new weights are created), and add the copied module to the model
@@ -332,16 +332,17 @@ public:
 		*/
 		void setRandomModifications(
 			const std::pair<int, int>& node_down_additions,
-			//const std::pair<int, int>& node_right_additions,
-			//const std::pair<int, int>& node_down_copies,
-			//const std::pair<int, int>& node_right_copies,
+			const std::pair<int, int>& node_right_additions,
+			const std::pair<int, int>& node_down_copies,
+			const std::pair<int, int>& node_right_copies,
 			const std::pair<int, int>& link_additions,
-			//const std::pair<int, int>& link_copies,
+			const std::pair<int, int>& link_copies,
 			const std::pair<int, int>& node_deletions,
 			const std::pair<int, int>& link_deletions,
 			const std::pair<int, int>& node_activation_changes,
 			const std::pair<int, int>& node_integration_changes,
 			const std::pair<int, int>& module_additions,
+			const std::pair<int, int>& module_copies,
 			const std::pair<int, int>& module_deletions);
 
 		/**
@@ -375,6 +376,7 @@ private:
 		int n_node_activation_changes_ = 0; ///< nodes to change the activation
 		int n_node_integration_changes_ = 0; ///< nodes to change the activation
 		int n_module_additions_ = 0; ///< new modules added to the model (modules are created through replication)
+		int n_module_copies_ = 0; ///< copied modules added to the model (modules are created through replication)
 		int n_module_deletions_ = 0; ///< modules to remove from the model
 
 		// random modification parameters
@@ -389,6 +391,7 @@ private:
 		std::pair<int, int> node_activation_changes_ = std::make_pair(0, 0);
 		std::pair<int, int> node_integration_changes_ = std::make_pair(0, 0);
 		std::pair<int, int> module_additions_ = std::make_pair(0, 0);
+		std::pair<int, int> module_copies_ = std::make_pair(0, 0);
 		std::pair<int, int> module_deletions_ = std::make_pair(0, 0);
 		std::vector<std::pair<std::shared_ptr<ActivationOp<TensorT>>, std::shared_ptr<ActivationOp<TensorT>>>> node_activations_;
 		std::vector<std::tuple<std::shared_ptr<IntegrationOp<TensorT>>, std::shared_ptr<IntegrationErrorOp<TensorT>>, std::shared_ptr<IntegrationWeightGradOp<TensorT>>>> node_integrations_;
@@ -474,6 +477,12 @@ private:
 	void ModelReplicator<TensorT>::setNModuleAdditions(const int & n_module_additions)
 	{
 		n_module_additions_ = n_module_additions;
+	}
+
+	template<typename TensorT>
+	inline void ModelReplicator<TensorT>::setNModuleCopies(const int & n_module_copies)
+	{
+		n_module_copies_ = n_module_copies;
 	}
 
 	template<typename TensorT>
@@ -570,6 +579,12 @@ private:
 	int ModelReplicator<TensorT>::getNModuleAdditions() const
 	{
 		return n_module_additions_;
+	}
+
+	template<typename TensorT>
+	inline int ModelReplicator<TensorT>::getNModuleCopies() const
+	{
+		return n_module_copies_;
 	}
 
 	template<typename TensorT>
@@ -900,7 +915,7 @@ private:
 
 	template<typename TensorT>
 	void ModelReplicator<TensorT>::addLink(
-		Model<TensorT>& model, std::string unique_str)
+		Model<TensorT>& model, std::string unique_str, bool as_copy)
 	{
 		// define the inclusion/exclusion nodes
 		const std::vector<NodeType> source_node_type_exclude = { NodeType::bias, NodeType::output }; // no output can be a source
@@ -938,16 +953,21 @@ private:
 		// create the new weight based on a random link (this can probably be optmized...)
 		std::string random_link = selectRandomLink(model, source_node_type_exclude, source_node_type_include, sink_node_type_exclude, sink_node_type_include);
 
-		Weight<TensorT> weight = model.getWeight(model.getLink(random_link).getWeightName()); // copy assignment
-		char weight_name_char[512];
-		sprintf(weight_name_char, "Weight_%s_to_%s@addLink#", source_node_name.data(), sink_node_name.data());
-		std::string weight_name = makeUniqueHash(weight_name_char, unique_str);
-		weight.setName(weight_name);
-		model.addWeights({ weight });
+		std::string weight_name;
+		if (!as_copy) {
+			Weight<TensorT> weight = model.getWeight(model.getLink(random_link).getWeightName()); // copy assignment
+			char weight_name_char[512];
+			sprintf(weight_name_char, "Weight_%s_to_%s@addLink#", source_node_name.data(), sink_node_name.data());
+			weight_name = makeUniqueHash(weight_name_char, unique_str);
+			weight.setName(weight_name);
+			model.addWeights({ weight });
+		}
+		else weight_name = model.getLink(random_link).getWeightName();
 
 		// create the new link
 		char link_name_char[512];
-		sprintf(link_name_char, "Link_%s_to_%s@addLink#", source_node_name.data(), sink_node_name.data());
+		if (as_copy) sprintf(link_name_char, "Link_%s_to_%s@copyLink#", source_node_name.data(), sink_node_name.data());
+		else sprintf(link_name_char, "Link_%s_to_%s@addLink#", source_node_name.data(), sink_node_name.data());
 		std::string link_name = makeUniqueHash(link_name_char, unique_str);
 		Link link(link_name, source_node_name, sink_node_name, weight_name);
 		model.addLinks({ link });
@@ -956,11 +976,11 @@ private:
 	template<typename TensorT>
 	inline void ModelReplicator<TensorT>::copyLink(Model<TensorT>& model, std::string unique_str)
 	{
-		// [TODO: add method body]
+		addLink(model, unique_str, true);
 	}
 
 	template<typename TensorT>
-	void ModelReplicator<TensorT>::addModule(Model<TensorT>& model, std::string unique_str)
+	void ModelReplicator<TensorT>::addModule(Model<TensorT>& model, std::string unique_str, bool as_copy)
 	{
 		// pick a random module from the model
 		std::vector<NodeType> node_exclusion_list = {};
@@ -973,10 +993,14 @@ private:
 		}
 
 		// update the module name [TODO: update the module ID]
-		std::string new_name_format = "%s@addModule#";
+		std::string new_name_format;
+		if (as_copy) new_name_format = "%s@copyModule#";
+		else new_name_format = "%s@addModule#";
 		std::string new_module_name, module_name_prefix;
 		updateName(random_module_name, new_name_format, unique_str, module_name_prefix, new_module_name);
-		std::string new_module_suffix = makeUniqueHash("@addModule#", unique_str); // time-stamp should be constant!
+		std::string new_module_suffix;
+		if (as_copy) new_module_suffix = makeUniqueHash("@copyModule#", unique_str); // time-stamp should be constant!
+		else new_module_suffix = makeUniqueHash("@addModule#", unique_str); // time-stamp should be constant!
 
 		// copy the module and reconnect the links
 		std::vector<Node<TensorT>> new_nodes;
@@ -1003,13 +1027,18 @@ private:
 				if (std::count(new_nodes.begin(), new_nodes.end(), sink_node) == 0)
 					new_nodes.push_back(sink_node);
 
-				Weight<TensorT> weight = model.getWeight(link.getWeightName());
-				std::string new_weight_name, weight_prefix;
-				updateName(weight.getName(), new_name_format, unique_str, weight_prefix, new_weight_name);
-				weight.setName(weight_prefix + new_module_suffix);
-				weight.setModuleName(new_module_name);
-				if (std::count(new_weights.begin(), new_weights.end(), weight) == 0)
-					new_weights.push_back(weight);
+				std::string weight_name;
+				if (!as_copy) {
+					Weight<TensorT> weight = model.getWeight(link.getWeightName());
+					std::string new_weight_name, weight_prefix;
+					updateName(weight.getName(), new_name_format, unique_str, weight_prefix, new_weight_name);
+					weight_name = weight_prefix + new_module_suffix;
+					weight.setName(weight_name);
+					weight.setModuleName(new_module_name);
+					if (std::count(new_weights.begin(), new_weights.end(), weight) == 0)
+						new_weights.push_back(weight);
+				}
+				else weight_name = link.getWeightName();
 
 				std::string new_link_name, link_prefix;
 				updateName(link.getName(), new_name_format, unique_str, link_prefix, new_link_name);
@@ -1017,7 +1046,7 @@ private:
 				link.setModuleName(new_module_name);
 				link.setSourceNodeName(source_node.getName());
 				link.setSinkNodeName(sink_node.getName());
-				link.setWeightName(weight.getName());
+				link.setWeightName(weight_name);
 				if (std::count(new_links.begin(), new_links.end(), link) == 0)
 					new_links.push_back(link);
 			}
@@ -1025,12 +1054,17 @@ private:
 			{ // copy the connecting links and weights, and give them a new name/id
 				// and update the source node name (i.e., connect to the new module)
 
-				Weight<TensorT> weight = model.getWeight(link.getWeightName());
-				std::string new_weight_name, weight_prefix;
-				updateName(weight.getName(), new_name_format, unique_str, weight_prefix, new_weight_name);
-				weight.setName(weight_prefix + new_module_suffix);
-				if (std::count(connecting_weights.begin(), connecting_weights.end(), weight) == 0)
-					connecting_weights.push_back(weight);
+				std::string weight_name;
+				if (!as_copy) {
+					Weight<TensorT> weight = model.getWeight(link.getWeightName());
+					std::string new_weight_name, weight_prefix;
+					updateName(weight.getName(), new_name_format, unique_str, weight_prefix, new_weight_name);
+					weight_name = weight_prefix + new_module_suffix;
+					weight.setName(weight_name);
+					if (std::count(connecting_weights.begin(), connecting_weights.end(), weight) == 0)
+						connecting_weights.push_back(weight);
+				}
+				else weight_name = link.getWeightName();
 
 				std::string new_link_name, link_prefix;
 				updateName(link.getName(), new_name_format, unique_str, link_prefix, new_link_name);
@@ -1038,7 +1072,7 @@ private:
 				std::string new_node_name, node_prefix;
 				updateName(link.getSourceNodeName(), new_name_format, unique_str, node_prefix, new_node_name);
 				link.setSourceNodeName(node_prefix + new_module_suffix);
-				link.setWeightName(weight.getName());
+				link.setWeightName(weight_name);
 				if (std::count(connecting_links.begin(), connecting_links.end(), link) == 0)
 					connecting_links.push_back(link);
 			}
@@ -1046,12 +1080,17 @@ private:
 			{ // copy the connecting links and weights, and give them a new name/id
 				// and update the sink node name (i.e., connect to the new module)
 
-				Weight<TensorT> weight = model.getWeight(link.getWeightName());
-				std::string new_weight_name, weight_prefix;
-				updateName(weight.getName(), new_name_format, unique_str, weight_prefix, new_weight_name);
-				weight.setName(weight_prefix + new_module_suffix);
-				if (std::count(connecting_weights.begin(), connecting_weights.end(), weight) == 0)
-					connecting_weights.push_back(weight);
+				std::string weight_name;
+				if (!as_copy) {
+					Weight<TensorT> weight = model.getWeight(link.getWeightName());
+					std::string new_weight_name, weight_prefix;
+					updateName(weight.getName(), new_name_format, unique_str, weight_prefix, new_weight_name);
+					weight_name = weight_prefix + new_module_suffix;
+					weight.setName(weight_name);
+					if (std::count(connecting_weights.begin(), connecting_weights.end(), weight) == 0)
+						connecting_weights.push_back(weight);
+				}
+				else weight_name = link.getWeightName();
 
 				std::string new_link_name, link_prefix;
 				updateName(link.getName(), new_name_format, unique_str, link_prefix, new_link_name);
@@ -1059,7 +1098,7 @@ private:
 				std::string new_node_name, node_prefix;
 				updateName(link.getSinkNodeName(), new_name_format, unique_str, node_prefix, new_node_name);
 				link.setSinkNodeName(node_prefix + new_module_suffix);
-				link.setWeightName(weight.getName());
+				link.setWeightName(weight_name);
 				if (std::count(connecting_links.begin(), connecting_links.end(), link) == 0)
 					connecting_links.push_back(link);
 			}
@@ -1076,7 +1115,7 @@ private:
 	template<typename TensorT>
 	inline void ModelReplicator<TensorT>::copyModule(Model<TensorT>& model, std::string unique_str)
 	{
-		// [TODO: add method body]
+		addModule(model, unique_str, true);
 	}
 
 	template<typename TensorT>
@@ -1387,9 +1426,14 @@ private:
 		std::vector<std::string> modifications;
 		for (int i = 0; i < n_node_activation_changes_; ++i) modifications.push_back("change_node_activation");
 		for (int i = 0; i < n_node_integration_changes_; ++i) modifications.push_back("change_node_integration");
-		for (int i = 0; i < n_node_down_additions_; ++i) modifications.push_back("add_node");
+		for (int i = 0; i < n_node_down_additions_; ++i) modifications.push_back("add_node_down");
+		for (int i = 0; i < n_node_right_additions_; ++i) modifications.push_back("add_node_right");
+		for (int i = 0; i < n_node_down_copies_; ++i) modifications.push_back("copy_node_down");
+		for (int i = 0; i < n_node_right_copies_; ++i) modifications.push_back("copy_node_right");
 		for (int i = 0; i < n_link_additions_; ++i) modifications.push_back("add_link");
+		for (int i = 0; i < n_link_copies_; ++i) modifications.push_back("copy_link");
 		for (int i = 0; i < n_module_additions_; ++i) modifications.push_back("add_module");
+		for (int i = 0; i < n_module_copies_; ++i) modifications.push_back("copy_module");
 		for (int i = 0; i < n_node_deletions_; ++i) modifications.push_back("delete_node");
 		for (int i = 0; i < n_link_deletions_; ++i) modifications.push_back("delete_link");
 		for (int i = 0; i < n_module_deletions_; ++i) modifications.push_back("delete_module");
@@ -1405,22 +1449,32 @@ private:
 	template<typename TensorT>
 	void ModelReplicator<TensorT>::setRandomModifications(
 		const std::pair<int, int>& node_down_additions,
+		const std::pair<int, int>& node_right_additions,
+		const std::pair<int, int>& node_down_copies,
+		const std::pair<int, int>& node_right_copies,
 		const std::pair<int, int>& link_additions,
+		const std::pair<int, int>& link_copies,
 		const std::pair<int, int>& node_deletions,
 		const std::pair<int, int>& link_deletions,
 		const std::pair<int, int>& node_activation_changes,
 		const std::pair<int, int>& node_integration_changes,
 		const std::pair<int, int>& module_additions,
+		const std::pair<int, int>& module_copies,
 		const std::pair<int, int>& module_deletions)
 	{
 		// set 
 		node_down_additions_ = node_down_additions;
+		node_right_additions_ = node_right_additions;
+		node_down_copies_ = node_down_copies;
+		node_right_copies_ = node_right_copies;
 		link_additions_ = link_additions;
+		link_copies_ = link_copies;
 		node_deletions_ = node_deletions;
 		link_deletions_ = link_deletions;
 		node_activation_changes_ = node_activation_changes;
 		node_integration_changes_ = node_integration_changes;
 		module_additions_ = module_additions;
+		module_copies_ = module_copies;
 		module_deletions_ = module_deletions;
 	}
 
@@ -1434,8 +1488,16 @@ private:
 		// set 
 		std::uniform_int_distribution<> node_down_addition_gen(node_down_additions_.first, node_down_additions_.second);
 		setNNodeDownAdditions(node_down_addition_gen(gen));
+		std::uniform_int_distribution<> node_right_addition_gen(node_right_additions_.first, node_right_additions_.second);
+		setNNodeRightAdditions(node_right_addition_gen(gen));
+		std::uniform_int_distribution<> node_down_copy_gen(node_down_copies_.first, node_down_copies_.second);
+		setNNodeDownCopies(node_down_copy_gen(gen));
+		std::uniform_int_distribution<> node_right_copy_gen(node_right_copies_.first, node_right_copies_.second);
+		setNNodeRightCopies(node_right_copy_gen(gen));
 		std::uniform_int_distribution<> link_addition_gen(link_additions_.first, link_additions_.second);
 		setNLinkAdditions(link_addition_gen(gen));
+		std::uniform_int_distribution<> link_copy_gen(link_copies_.first, link_copies_.second);
+		setNLinkCopies(link_copy_gen(gen));
 		std::uniform_int_distribution<> node_deletion_gen(node_deletions_.first, node_deletions_.second);
 		setNNodeDeletions(node_deletion_gen(gen));
 		std::uniform_int_distribution<> link_deletion_gen(link_deletions_.first, link_deletions_.second);
@@ -1446,6 +1508,8 @@ private:
 		setNNodeIntegrationChanges(node_integration_changes_gen(gen));
 		std::uniform_int_distribution<> module_addition_gen(module_additions_.first, module_additions_.second);
 		setNModuleAdditions(module_addition_gen(gen));
+		std::uniform_int_distribution<> module_copy_gen(module_copies_.first, module_copies_.second);
+		setNModuleCopies(module_copy_gen(gen));
 		std::uniform_int_distribution<> module_deletion_gen(module_deletions_.first, module_deletions_.second);
 		setNModuleDeletions(module_deletion_gen(gen));
 	}
@@ -1466,14 +1530,34 @@ private:
 		for (const std::string& modification : modifications)
 		{
 			// [TODO: copyNodeRight]
-			if (modification == "add_node")
+			if (modification == "add_node_down")
 			{
 				addNodeDown(model, unique_str + "-" + std::to_string(modifications_counts.at(modification)));
+				modifications_counts[modification] += 1;
+			}
+			else if (modification == "add_node_right")
+			{
+				addNodeRight(model, unique_str + "-" + std::to_string(modifications_counts.at(modification)));
+				modifications_counts[modification] += 1;
+			}
+			else if (modification == "copy_node_down")
+			{
+				copyNodeDown(model, unique_str + "-" + std::to_string(modifications_counts.at(modification)));
+				modifications_counts[modification] += 1;
+			}
+			else if (modification == "copy_node_right")
+			{
+				copyNodeRight(model, unique_str + "-" + std::to_string(modifications_counts.at(modification)));
 				modifications_counts[modification] += 1;
 			}
 			else if (modification == "add_link")
 			{
 				addLink(model, unique_str + "-" + std::to_string(modifications_counts.at(modification)));
+				modifications_counts[modification] += 1;
+			}
+			else if (modification == "copy_link")
+			{
+				copyLink(model, unique_str + "-" + std::to_string(modifications_counts.at(modification)));
 				modifications_counts[modification] += 1;
 			}
 			else if (modification == "delete_node")
@@ -1496,9 +1580,14 @@ private:
 				changeNodeIntegration(model);
 				modifications_counts[modification] += 1;
 			}
-			if (modification == "add_module")
+			else if (modification == "add_module")
 			{
 				addModule(model, unique_str + "-" + std::to_string(modifications_counts.at(modification)));
+				modifications_counts[modification] += 1;
+			}
+			else if (modification == "copy_module")
+			{
+				copyModule(model, unique_str + "-" + std::to_string(modifications_counts.at(modification)));
 				modifications_counts[modification] += 1;
 			}
 			else if (modification == "delete_module")

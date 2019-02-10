@@ -43,7 +43,11 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
 {
   ModelReplicatorExt<float> model_replicator;
   model_replicator.setNNodeDownAdditions(1);
+	model_replicator.setNNodeRightAdditions(8);
+	model_replicator.setNNodeDownCopies(9);
+	model_replicator.setNNodeRightCopies(10);
   model_replicator.setNLinkAdditions(2);
+	model_replicator.setNLinkCopies(11);
   model_replicator.setNNodeDeletions(3);
   model_replicator.setNLinkDeletions(4);
   model_replicator.setNWeightChanges(5);
@@ -58,7 +62,11 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
 	model_replicator.setNodeIntegrations(integrations);
 
   BOOST_CHECK_EQUAL(model_replicator.getNNodeDownAdditions(), 1);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeRightAdditions(), 8);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeDownCopies(), 9);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeRightCopies(), 10);
   BOOST_CHECK_EQUAL(model_replicator.getNLinkAdditions(), 2);
+	BOOST_CHECK_EQUAL(model_replicator.getNLinkCopies(), 11);
   BOOST_CHECK_EQUAL(model_replicator.getNNodeDeletions(), 3);
   BOOST_CHECK_EQUAL(model_replicator.getNLinkDeletions(), 4);
   BOOST_CHECK_EQUAL(model_replicator.getNWeightChanges(), 5);
@@ -73,9 +81,14 @@ BOOST_AUTO_TEST_CASE(setAndMakeRandomModifications)
 {
 	ModelReplicatorExt<float> model_replicator;
 
-	// node additions
+	// node additions down
   model_replicator.setRandomModifications(
 		std::make_pair(1, 2),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
 		std::make_pair(0, 0),
 		std::make_pair(0, 0),
 		std::make_pair(0, 0),
@@ -85,15 +98,20 @@ BOOST_AUTO_TEST_CASE(setAndMakeRandomModifications)
 		std::make_pair(0, 0));
 	model_replicator.makeRandomModifications();
 	BOOST_CHECK_NE(model_replicator.getNNodeDownAdditions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeRightAdditions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeDownCopies(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeRightCopies(), 0);
 	BOOST_CHECK_EQUAL(model_replicator.getNLinkAdditions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNLinkCopies(), 0);
 	BOOST_CHECK_EQUAL(model_replicator.getNNodeDeletions(), 0);
 	BOOST_CHECK_EQUAL(model_replicator.getNLinkDeletions(), 0);
 	BOOST_CHECK_EQUAL(model_replicator.getNNodeActivationChanges(), 0);
 	BOOST_CHECK_EQUAL(model_replicator.getNNodeIntegrationChanges(), 0);
 	BOOST_CHECK_EQUAL(model_replicator.getNModuleAdditions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNModuleCopies(), 0);
 	BOOST_CHECK_EQUAL(model_replicator.getNModuleDeletions(), 0);
 
-	// link additions
+	// node additions right
 	model_replicator.setRandomModifications(
 		std::make_pair(0, 0),
 		std::make_pair(1, 2),
@@ -102,22 +120,157 @@ BOOST_AUTO_TEST_CASE(setAndMakeRandomModifications)
 		std::make_pair(0, 0),
 		std::make_pair(0, 0),
 		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
 		std::make_pair(0, 0));
 	model_replicator.makeRandomModifications();
 	BOOST_CHECK_EQUAL(model_replicator.getNNodeDownAdditions(), 0);
-	BOOST_CHECK_NE(model_replicator.getNLinkAdditions(), 0);
+	BOOST_CHECK_NE(model_replicator.getNNodeRightAdditions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeDownCopies(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeRightCopies(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNLinkAdditions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNLinkCopies(), 0);
 	BOOST_CHECK_EQUAL(model_replicator.getNNodeDeletions(), 0);
 	BOOST_CHECK_EQUAL(model_replicator.getNLinkDeletions(), 0);
 	BOOST_CHECK_EQUAL(model_replicator.getNNodeActivationChanges(), 0);
 	BOOST_CHECK_EQUAL(model_replicator.getNNodeIntegrationChanges(), 0);
 	BOOST_CHECK_EQUAL(model_replicator.getNModuleAdditions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNModuleCopies(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNModuleDeletions(), 0);
+
+	// copy additions down
+	model_replicator.setRandomModifications(
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(1, 2),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0));
+	model_replicator.makeRandomModifications();
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeDownAdditions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeRightAdditions(), 0);
+	BOOST_CHECK_NE(model_replicator.getNNodeDownCopies(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeRightCopies(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNLinkAdditions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNLinkCopies(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeDeletions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNLinkDeletions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeActivationChanges(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeIntegrationChanges(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNModuleAdditions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNModuleCopies(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNModuleDeletions(), 0);
+
+	// copy additions right
+	model_replicator.setRandomModifications(
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(1, 2),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0));
+	model_replicator.makeRandomModifications();
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeDownAdditions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeRightAdditions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeDownCopies(), 0);
+	BOOST_CHECK_NE(model_replicator.getNNodeRightCopies(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNLinkAdditions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNLinkCopies(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeDeletions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNLinkDeletions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeActivationChanges(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeIntegrationChanges(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNModuleAdditions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNModuleCopies(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNModuleDeletions(), 0);
+
+	// link additions
+	model_replicator.setRandomModifications(
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(1, 2),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0));
+	model_replicator.makeRandomModifications();
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeDownAdditions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeRightAdditions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeDownCopies(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeRightCopies(), 0);
+	BOOST_CHECK_NE(model_replicator.getNLinkAdditions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNLinkCopies(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeDeletions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNLinkDeletions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeActivationChanges(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeIntegrationChanges(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNModuleAdditions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNModuleCopies(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNModuleDeletions(), 0);
+
+	// link copies
+	model_replicator.setRandomModifications(
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(1, 2),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0));
+	model_replicator.makeRandomModifications();
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeDownAdditions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeRightAdditions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeDownCopies(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeRightCopies(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNLinkAdditions(), 0);
+	BOOST_CHECK_NE(model_replicator.getNLinkCopies(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeDeletions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNLinkDeletions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeActivationChanges(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeIntegrationChanges(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNModuleAdditions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNModuleCopies(), 0);
 	BOOST_CHECK_EQUAL(model_replicator.getNModuleDeletions(), 0);
 
 	// node deletions
 	model_replicator.setRandomModifications(
 		std::make_pair(0, 0),
 		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
 		std::make_pair(1, 2),
+		std::make_pair(0, 0),
 		std::make_pair(0, 0),
 		std::make_pair(0, 0),
 		std::make_pair(0, 0),
@@ -125,12 +278,17 @@ BOOST_AUTO_TEST_CASE(setAndMakeRandomModifications)
 		std::make_pair(0, 0));
 	model_replicator.makeRandomModifications();
 	BOOST_CHECK_EQUAL(model_replicator.getNNodeDownAdditions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeRightAdditions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeDownCopies(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeRightCopies(), 0);
 	BOOST_CHECK_EQUAL(model_replicator.getNLinkAdditions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNLinkCopies(), 0);
 	BOOST_CHECK_NE(model_replicator.getNNodeDeletions(), 0);
 	BOOST_CHECK_EQUAL(model_replicator.getNLinkDeletions(), 0);
 	BOOST_CHECK_EQUAL(model_replicator.getNNodeActivationChanges(), 0);
 	BOOST_CHECK_EQUAL(model_replicator.getNNodeIntegrationChanges(), 0);
 	BOOST_CHECK_EQUAL(model_replicator.getNModuleAdditions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNModuleCopies(), 0);
 	BOOST_CHECK_EQUAL(model_replicator.getNModuleDeletions(), 0);
 
 	// link deletions
@@ -138,19 +296,29 @@ BOOST_AUTO_TEST_CASE(setAndMakeRandomModifications)
 		std::make_pair(0, 0),
 		std::make_pair(0, 0),
 		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
 		std::make_pair(1, 2),
+		std::make_pair(0, 0),
 		std::make_pair(0, 0),
 		std::make_pair(0, 0),
 		std::make_pair(0, 0),
 		std::make_pair(0, 0));
 	model_replicator.makeRandomModifications();
 	BOOST_CHECK_EQUAL(model_replicator.getNNodeDownAdditions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeRightAdditions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeDownCopies(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeRightCopies(), 0);
 	BOOST_CHECK_EQUAL(model_replicator.getNLinkAdditions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNLinkCopies(), 0);
 	BOOST_CHECK_EQUAL(model_replicator.getNNodeDeletions(), 0);
 	BOOST_CHECK_NE(model_replicator.getNLinkDeletions(), 0);
 	BOOST_CHECK_EQUAL(model_replicator.getNNodeActivationChanges(), 0);
 	BOOST_CHECK_EQUAL(model_replicator.getNNodeIntegrationChanges(), 0);
 	BOOST_CHECK_EQUAL(model_replicator.getNModuleAdditions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNModuleCopies(), 0);
 	BOOST_CHECK_EQUAL(model_replicator.getNModuleDeletions(), 0);
 
 	// node activation changes
@@ -159,18 +327,28 @@ BOOST_AUTO_TEST_CASE(setAndMakeRandomModifications)
 		std::make_pair(0, 0),
 		std::make_pair(0, 0),
 		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
 		std::make_pair(1, 2),
+		std::make_pair(0, 0),
 		std::make_pair(0, 0),
 		std::make_pair(0, 0),
 		std::make_pair(0, 0));
 	model_replicator.makeRandomModifications();
 	BOOST_CHECK_EQUAL(model_replicator.getNNodeDownAdditions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeRightAdditions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeDownCopies(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeRightCopies(), 0);
 	BOOST_CHECK_EQUAL(model_replicator.getNLinkAdditions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNLinkCopies(), 0);
 	BOOST_CHECK_EQUAL(model_replicator.getNNodeDeletions(), 0);
 	BOOST_CHECK_EQUAL(model_replicator.getNLinkDeletions(), 0);
 	BOOST_CHECK_NE(model_replicator.getNNodeActivationChanges(), 0);
 	BOOST_CHECK_EQUAL(model_replicator.getNNodeIntegrationChanges(), 0);
 	BOOST_CHECK_EQUAL(model_replicator.getNModuleAdditions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNModuleCopies(), 0);
 	BOOST_CHECK_EQUAL(model_replicator.getNModuleDeletions(), 0);
 
 	// node integration changes
@@ -180,7 +358,12 @@ BOOST_AUTO_TEST_CASE(setAndMakeRandomModifications)
 		std::make_pair(0, 0),
 		std::make_pair(0, 0),
 		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
 		std::make_pair(1, 2),
+		std::make_pair(0, 0),
 		std::make_pair(0, 0),
 		std::make_pair(0, 0));
 	model_replicator.makeRandomModifications();
@@ -201,16 +384,56 @@ BOOST_AUTO_TEST_CASE(setAndMakeRandomModifications)
 		std::make_pair(0, 0),
 		std::make_pair(0, 0),
 		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
 		std::make_pair(1, 2),
+		std::make_pair(0, 0),
 		std::make_pair(0, 0));
 	model_replicator.makeRandomModifications();
 	BOOST_CHECK_EQUAL(model_replicator.getNNodeDownAdditions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeRightAdditions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeDownCopies(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeRightCopies(), 0);
 	BOOST_CHECK_EQUAL(model_replicator.getNLinkAdditions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNLinkCopies(), 0);
 	BOOST_CHECK_EQUAL(model_replicator.getNNodeDeletions(), 0);
 	BOOST_CHECK_EQUAL(model_replicator.getNLinkDeletions(), 0);
 	BOOST_CHECK_EQUAL(model_replicator.getNNodeActivationChanges(), 0);
 	BOOST_CHECK_EQUAL(model_replicator.getNNodeIntegrationChanges(), 0);
 	BOOST_CHECK_NE(model_replicator.getNModuleAdditions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNModuleCopies(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNModuleDeletions(), 0);
+
+	// module additions changes
+	model_replicator.setRandomModifications(
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(1, 2),
+		std::make_pair(0, 0));
+	model_replicator.makeRandomModifications();
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeDownAdditions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeRightAdditions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeDownCopies(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeRightCopies(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNLinkAdditions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNLinkCopies(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeDeletions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNLinkDeletions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeActivationChanges(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeIntegrationChanges(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNModuleAdditions(), 0);
+	BOOST_CHECK_NE(model_replicator.getNModuleCopies(), 0);
 	BOOST_CHECK_EQUAL(model_replicator.getNModuleDeletions(), 0);
 
 	// module deletions changes
@@ -222,15 +445,25 @@ BOOST_AUTO_TEST_CASE(setAndMakeRandomModifications)
 		std::make_pair(0, 0),
 		std::make_pair(0, 0),
 		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
+		std::make_pair(0, 0),
 		std::make_pair(1, 2));
 	model_replicator.makeRandomModifications();
 	BOOST_CHECK_EQUAL(model_replicator.getNNodeDownAdditions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeRightAdditions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeDownCopies(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNNodeRightCopies(), 0);
 	BOOST_CHECK_EQUAL(model_replicator.getNLinkAdditions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNLinkCopies(), 0);
 	BOOST_CHECK_EQUAL(model_replicator.getNNodeDeletions(), 0);
 	BOOST_CHECK_EQUAL(model_replicator.getNLinkDeletions(), 0);
 	BOOST_CHECK_EQUAL(model_replicator.getNNodeActivationChanges(), 0);
 	BOOST_CHECK_EQUAL(model_replicator.getNNodeIntegrationChanges(), 0);
 	BOOST_CHECK_EQUAL(model_replicator.getNModuleAdditions(), 0);
+	BOOST_CHECK_EQUAL(model_replicator.getNModuleCopies(), 0);
 	BOOST_CHECK_NE(model_replicator.getNModuleDeletions(), 0);
 }
 
@@ -282,84 +515,6 @@ BOOST_AUTO_TEST_CASE(updateName)
 	BOOST_CHECK_EQUAL(node_prefix, "Node1");
 	BOOST_CHECK_NE(new_node_name, "Node1");
 }
-
-// DEPRECATED
-//BOOST_AUTO_TEST_CASE(makeBaselineModel) 
-//{
-//  ModelReplicatorExt<float> model_replicator;
-//  Model<float> model;
-//  std::vector<std::string> node_names, link_names, source_node_names, sink_node_names;
-//
-//  std::shared_ptr<WeightInitOp<float>> weight_init;
-//  std::shared_ptr<SolverOp<float>> solver;
-//	std::shared_ptr<LossFunctionOp<float>> loss_function(new MSEOp<float>());
-//	std::shared_ptr<LossFunctionGradOp<float>> loss_function_grad(new MSEGradOp<float>());
-//
-//  weight_init.reset(new ConstWeightInitOp<float>(1.0));
-//  solver.reset(new SGDOp<float>(0.01, 0.9));
-//  model = model_replicator.makeBaselineModel(
-//		2, { 1 }, 2,
-//    std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-//    weight_init, solver,
-//    loss_function, loss_function_grad);
-//
-//  node_names = {
-//    "Input_0", "Input_1", "Hidden_0-0", "Output_0", "Output_1",
-//    "Hidden_bias_0-0", "Output_bias_0", "Output_bias_1"};
-//  for (const std::string& node_name : node_names)
-//    BOOST_CHECK_EQUAL(model.getNode(node_name).getName(), node_name);
-//  
-//  link_names = {
-//    "Input_0_to_Hidden_0-0", "Input_1_to_Hidden_0-0", "Bias_0-0_to_Hidden_0-0",
-//    "Hidden_0-0_to_Output_0", "Hidden_0-0_to_Output_1",
-//    "Bias_0_to_Output_0", "Bias_1_to_Output_1"};
-//  source_node_names = {
-//    "Input_0", "Input_1", "Hidden_bias_0-0", 
-//    "Hidden_0-0", "Hidden_0-0", 
-//    "Output_bias_0", "Output_bias_1"};
-//  sink_node_names = {
-//    "Hidden_0-0", "Hidden_0-0", "Hidden_0-0", 
-//    "Output_0", "Output_1", 
-//    "Output_0", "Output_1"};
-//  for (int i=0; i<link_names.size(); ++i)
-//  {
-//    BOOST_CHECK_EQUAL(model.getLink(link_names[i]).getName(), link_names[i]);
-//    BOOST_CHECK_EQUAL(model.getLink(link_names[i]).getSourceNodeName(), source_node_names[i]);
-//    BOOST_CHECK_EQUAL(model.getLink(link_names[i]).getSinkNodeName(), sink_node_names[i]);
-//    BOOST_CHECK_EQUAL(model.getWeight(link_names[i]).getName(), link_names[i]);
-//  }
-//
-//	std::vector<int> nodes_per_hidden_layer = {};
-//  model = model_replicator.makeBaselineModel(
-//		2, nodes_per_hidden_layer, 2,
-//    std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()), 
-//		std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-//    weight_init, solver,
-//		loss_function, loss_function_grad);
-//
-//  node_names = {
-//    "Input_0", "Input_1", "Output_0", "Output_1",
-//    "Output_bias_0", "Output_bias_1"};
-//  for (const std::string& node_name : node_names)
-//    BOOST_CHECK_EQUAL(model.getNode(node_name).getName(), node_name);
-//  
-//  link_names = {
-//    "Input_0_to_Output_0", "Input_1_to_Output_0", "Bias_0_to_Output_0",
-//    "Input_0_to_Output_1", "Input_1_to_Output_1", "Bias_1_to_Output_1"};
-//  source_node_names = {
-//    "Input_0", "Input_1", "Output_bias_0", 
-//    "Input_0", "Input_1", "Output_bias_1"};
-//  sink_node_names = {
-//    "Output_0", "Output_0", "Output_0",  
-//    "Output_1", "Output_1", "Output_1"};
-//  for (int i=0; i<link_names.size(); ++i)
-//  {
-//    BOOST_CHECK_EQUAL(model.getLink(link_names[i]).getName(), link_names[i]);
-//    BOOST_CHECK_EQUAL(model.getLink(link_names[i]).getSourceNodeName(), source_node_names[i]);
-//    BOOST_CHECK_EQUAL(model.getLink(link_names[i]).getSinkNodeName(), sink_node_names[i]);
-//    BOOST_CHECK_EQUAL(model.getWeight(link_names[i]).getName(), link_names[i]);
-//  }
-//}
 
 Model<float> makeModel1()
 {
@@ -604,6 +759,46 @@ BOOST_AUTO_TEST_CASE(addLink)
   // [TODO: add tests for the correct tokens after @]
   // std::regex re(":"); to split the "addLinks" from the timestamp
   BOOST_CHECK(weight_found);
+}
+
+Model<float> model_copyLink = makeModel1();
+BOOST_AUTO_TEST_CASE(copyLink)
+{
+	ModelReplicatorExt<float> model_replicator;
+	model_replicator.copyLink(model_copyLink);
+	std::vector<std::string> link_names = {
+		"Link_0_to_2", "Link_0_to_3", "Link_1_to_2", "Link_1_to_3", // existing links
+		"Link_2_to_4", "Link_2_to_5", "Link_3_to_4", "Link_3_to_5", // existing links
+		"Link_0_to_4", "Link_0_to_5", "Link_1_to_4", "Link_1_to_5", // new links
+		"Link_2_to_3", "Link_3_to_2", "Link_4_to_5", "Link_5_to_4", // new links
+		"Link_4_to_2", "Link_5_to_2", "Link_4_to_3", "Link_5_to_3", // new cyclic links
+		"Link_2_to_2", "Link_5_to_5", "Link_4_to_4", "Link_3_to_3", // new cyclic links
+	};
+	std::vector<std::string> weight_names = { "0", "1", "2", "3", "4", "5", "6","7","8","9","10","11" };
+
+	// [TODO: add loop here with iter = 100]
+	std::regex re("@");
+
+	bool link_found = false;
+	std::string link_name = model_copyLink.getLinks().rbegin()->getName();
+	std::vector<std::string> link_name_tokens;
+	std::copy(
+		std::sregex_token_iterator(link_name.begin(), link_name.end(), re, -1),
+		std::sregex_token_iterator(),
+		std::back_inserter(link_name_tokens));
+	if (std::count(link_names.begin(), link_names.end(), link_name_tokens[0]) != 0)
+		link_found = true;
+	// [TODO: add tests for the correct tokens after @]
+	// std::regex re(":"); to split the "copyLinks" from the timestamp
+	BOOST_CHECK(link_found);
+
+	bool weight_found = true;
+	for (const auto& weight_map: model_copyLink.weights_)
+	if (std::count(weight_names.begin(), weight_names.end(), weight_map.second->getName()) == 0) // [TODO: implement getWeights]
+		weight_found = false;
+	// [TODO: add tests for the correct tokens after @]
+	// std::regex re(":"); to split the "copyLinks" from the timestamp
+	BOOST_CHECK(weight_found);
 }
 
 Model<float> model_addNodeDown = makeModel1();
@@ -977,6 +1172,73 @@ BOOST_AUTO_TEST_CASE(addModule)
 	// [TODO: check that the new weight was found]
 }
 
+
+Model<float> model_copyModule = makeModel1();
+BOOST_AUTO_TEST_CASE(copyModule)
+{
+	ModelReplicatorExt<float> model_replicator;
+	model_replicator.copyModule(model_copyModule);
+
+	// new module components
+	std::vector<std::string> node_names_prefix = { "2", "3", "6" };
+	std::vector<std::string> link_names_prefix = { "6_to_2", "6_to_3", // new module
+		"0_to_2", "0_to_3", "1_to_2", "1_to_3", "2_to_4", "2_to_5", "3_to_4", "3_to_5" }; // new connections
+	std::vector<std::string> weight_names_prefix = { "4", "5" }; // new module
+
+	// check for the expected model size
+	BOOST_CHECK_EQUAL(model_copyModule.getNodes().size(), 11); // 8 existing + 3 new
+	BOOST_CHECK_EQUAL(model_copyModule.getLinks().size(), 22); // 12 existing + 2 new + 8 new connecting
+	BOOST_CHECK_EQUAL(model_copyModule.getWeights().size(), 12); // 12 existing
+
+	// check that the expected nodes/links/weights exist
+	std::map<std::string, int> node_names_map, link_names_map, weight_names_map;
+	for (const std::string& name : node_names_prefix)
+		node_names_map.emplace(name, 0);
+	for (const std::string& name : link_names_prefix)
+		link_names_map.emplace(name, 0);
+	for (const std::string& name : weight_names_prefix)
+		weight_names_map.emplace(name, 0);
+	for (const Node<float>& node : model_copyModule.getNodes())
+	{
+		std::string name_prefix, new_name;
+		model_replicator.updateName(node.getName(), "", "", name_prefix, new_name);
+		if (std::count(node_names_prefix.begin(), node_names_prefix.end(), name_prefix) > 0)
+			node_names_map.at(name_prefix) += 1;
+	}
+	for (const Link& link : model_copyModule.getLinks())
+	{
+		std::string name_prefix, new_name;
+		model_replicator.updateName(link.getName(), "", "", name_prefix, new_name);
+		if (std::count(link_names_prefix.begin(), link_names_prefix.end(), name_prefix) > 0)
+			link_names_map.at(name_prefix) += 1;
+	}
+	for (const Weight<float>& weight : model_copyModule.getWeights())
+	{
+		std::string name_prefix, new_name;
+		model_replicator.updateName(weight.getName(), "", "", name_prefix, new_name);
+		if (std::count(weight_names_prefix.begin(), weight_names_prefix.end(), name_prefix) > 0)
+			weight_names_map.at(name_prefix) += 1;
+	}
+	for (const auto& name_count : node_names_map)
+		BOOST_CHECK_EQUAL(name_count.second, 2);
+	for (const auto& name_count : link_names_map)
+		BOOST_CHECK_EQUAL(name_count.second, 2);
+	for (const auto& name_count : weight_names_map)
+		BOOST_CHECK_EQUAL(name_count.second, 1);
+
+	// check the correct text after @
+
+	// [TODO: check that the node is of the correct type]
+
+	// [TODO: check that the modified link was found]
+
+	// [TODO: check that the modified link weight name was not changed]
+
+	// [TODO: check that the new link was found]
+
+	// [TODO: check that the new weight was found]
+}
+
 Model<float> model_deleteModule = makeModel1();
 BOOST_AUTO_TEST_CASE(deleteModule)
 {
@@ -1021,7 +1283,7 @@ BOOST_AUTO_TEST_CASE(makeRandomModificationOrder)
   model_replicator.setNLinkDeletions(0);
 	model_replicator.setNNodeActivationChanges(0);
 	model_replicator.setNNodeIntegrationChanges(0);
-  BOOST_CHECK_EQUAL(model_replicator.makeRandomModificationOrder()[0], "add_node");
+  BOOST_CHECK_EQUAL(model_replicator.makeRandomModificationOrder()[0], "add_node_down");
   model_replicator.setNNodeDownAdditions(0);
   model_replicator.setNLinkAdditions(1);
   model_replicator.setNNodeDeletions(0);
@@ -1072,7 +1334,7 @@ BOOST_AUTO_TEST_CASE(makeRandomModificationOrder)
 	model_replicator.setNNodeIntegrationChanges(2);
   for (const std::string& modification: model_replicator.makeRandomModificationOrder())
   {
-    if (modification == "add_node") add_node_found = true;
+    if (modification == "add_node_down") add_node_found = true;
     else if (modification == "add_link") add_link_found = true;
     else if (modification == "delete_node") delete_node_found = true;
     else if (modification == "delete_link") delete_link_found = true;
@@ -1087,6 +1349,7 @@ BOOST_AUTO_TEST_CASE(makeRandomModificationOrder)
 	BOOST_CHECK(change_node_integration_found);
 }
 
+// [TODO: update for new ModelReplicator methods
 Model<float> model_modifyModel1 = makeModel1();
 Model<float> model_modifyModel2 = makeModel1();
 Model<float> model_modifyModel3 = makeModel1();
