@@ -661,7 +661,6 @@ BOOST_AUTO_TEST_CASE(addNodeDown)
   // [TODO: check that the new weight was found]
 }
 
-
 Model<float> model_addNodeRight = makeModel1();
 BOOST_AUTO_TEST_CASE(addNodeRight)
 {
@@ -713,6 +712,16 @@ BOOST_AUTO_TEST_CASE(addNodeRight)
 	// [TODO: check that the new modified weighs were found]
 
 	// [TODO: check that the new link/weight/node bias were found]
+}
+
+Model<float> model_copyNodeDown = makeModel1();
+BOOST_AUTO_TEST_CASE(copyNodeDown)
+{
+}
+
+Model<float> model_copyNodeRight = makeModel1();
+BOOST_AUTO_TEST_CASE(copyNodeRight)
+{
 }
 
 Model<float> model_deleteNode = makeModel1();
