@@ -20,7 +20,7 @@ cd /home/user/code/build
 cmake -DCMAKE_PREFIX_PATH="/usr/local/contrib-build/;/usr/local/contrib/;/usr/;/usr/local" -DBOOST_USE_STATIC=OFF -DHAS_XSERVER=Off ..
 cmake -DCMAKE_PREFIX_PATH="/usr/local/dependencies-build/;/usr/local/smartPeak_dependencies/;/usr/;/usr/local" -DBOOST_USE_STATIC=OFF -DHAS_XSERVER=Off ..
 cmake -DEVONET_CUDA=ON -DCUDA_TOOLKIT_ROOT_DIR="/usr/local/cuda-9.2" -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH="/usr/local/contrib-build/;/usr/local/contrib-build/include/;/usr/local/smartPeak_dependencies/;/usr/;/usr/local" -DBOOST_USE_STATIC=OFF -DHAS_XSERVER=Off ..
-cmake -DEVONET_CUDA=OFF -DUSE_SUPERBUILD=OFF -DBUILD_TESTS=OFF -DBUILD_EXAMPLES=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH="/usr/local/contrib-build/;/usr/local/contrib-build/include/;/usr/local/smartPeak_dependencies/;/usr/;/usr/local" -DEIGEN3_INCLUDE_DIR=/home/user/code/build2/Dependencies/Source/eigen -DBOOST_USE_STATIC=OFF -DHAS_XSERVER=Off ..
+cmake -DEVONET_CUDA=OFF -DUSE_SUPERBUILD=OFF -DBUILD_TESTS=OFF -DBUILD_EXAMPLES=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH="/usr/local/contrib-build/;/usr/local/contrib-build/include/;/usr/local/smartPeak_dependencies/;/usr/;/usr/local" -DEIGEN3_INCLUDE_DIR=/home/user/code/build2/Dependencies/Source/eigen -DCEREAL_ROOT=/home/user/code/build2/Dependencies/Source/cereal -DBOOST_USE_STATIC=OFF -DHAS_XSERVER=Off ..
 cmake -DEVONET_CUDA=OFF -DUSE_SUPERBUILD=ON -DHAS_XSERVER=Off ..
 
 ### code prifiling with valgrind and gprof
