@@ -812,7 +812,7 @@ void main_DenoisingAE(const bool& make_model, const bool& load_weight_values, co
 
 		PopulationTrainerFile<float> population_trainer_file;
 		population_trainer_file.storeModels(population, "PeakIntegrator");
-		population_trainer_file.storeModelValidations("PeakIntegrator_Errors.csv", models_validation_errors_per_generation.back());
+		population_trainer_file.storeModelValidations("PeakIntegrator_Errors.csv", models_validation_errors_per_generation);
 	}
 	else {
 		// Evaluate the population

@@ -301,9 +301,9 @@ public:
 				std::make_pair(0, 0),
 				std::make_pair(0, 1),
 				std::make_pair(0, 2),
-				std::make_pair(0, 2),
-				std::make_pair(0, 2),
-				std::make_pair(0, 0),
+				std::make_pair(0, 1),
+				std::make_pair(0, 1),
+				std::make_pair(0, 4),
 				std::make_pair(0, 0),
 				std::make_pair(0, 0));
 		}
@@ -318,11 +318,11 @@ public:
 				std::make_pair(0, 0),
 				std::make_pair(0, 2),
 				std::make_pair(0, 1),
+				std::make_pair(0, 1),
+				std::make_pair(0, 1),
+				std::make_pair(0, 1),
 				std::make_pair(0, 0),
-				std::make_pair(0, 0),
-				std::make_pair(0, 0),
-				std::make_pair(0, 0),
-				std::make_pair(0, 0));
+				std::make_pair(0, 1));
 		}
 	}
 };
@@ -366,7 +366,7 @@ int main(int argc, char** argv)
 {
 	// define the population trainer parameters
 	PopulationTrainerExt<float> population_trainer;
-	population_trainer.setNGenerations(100);
+	population_trainer.setNGenerations(20);
 
 	// define the multithreading parameters
 	const int n_hard_threads = std::thread::hardware_concurrency();
@@ -391,7 +391,7 @@ int main(int argc, char** argv)
 	ModelTrainerExt<float> model_trainer;
 	model_trainer.setBatchSize(8);
 	model_trainer.setMemorySize(data_simulator.sequence_length_);
-	model_trainer.setNEpochsTraining(100);
+	model_trainer.setNEpochsTraining(500);
 	model_trainer.setNEpochsValidation(25);
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setLogging(false, false);
@@ -417,7 +417,7 @@ int main(int argc, char** argv)
 	model_replicator.setNodeIntegrations({std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new ProdOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new ProdErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new ProdWeightGradOp<float>())), 
 		std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>())),
 		std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new MeanOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new MeanErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new MeanWeightGradOp<float>())),
-		//std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new VarModOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new VarModErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new VarModWeightGradOp<float>())),
+		std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new VarModOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new VarModErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new VarModWeightGradOp<float>())),
 		std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new CountOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new CountErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new CountWeightGradOp<float>()))
 	});
 
@@ -441,7 +441,7 @@ int main(int argc, char** argv)
 
 	PopulationTrainerFile<float> population_trainer_file;
 	population_trainer_file.storeModels(population, "AddProb");
-	population_trainer_file.storeModelValidations("AddProbValidationErrors.csv", models_validation_errors_per_generation.back());
+	population_trainer_file.storeModelValidations("AddProbValidationErrors.csv", models_validation_errors_per_generation);
 
 	return 0;
 }

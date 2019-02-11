@@ -458,7 +458,7 @@ void main_VAE(const bool& make_model, const bool& train_model) {
 
 		PopulationTrainerFile<float> population_trainer_file;
 		population_trainer_file.storeModels(population, "MNIST");
-		population_trainer_file.storeModelValidations("MNISTErrors.csv", models_validation_errors_per_generation.back());
+		population_trainer_file.storeModelValidations("MNISTErrors.csv", models_validation_errors_per_generation);
 	}
 	else {
 		// Evaluate the population

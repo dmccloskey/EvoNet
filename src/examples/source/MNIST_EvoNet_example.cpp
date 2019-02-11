@@ -240,7 +240,7 @@ void main_EvoNet() {
 
 	PopulationTrainerFile<float> population_trainer_file;
 	population_trainer_file.storeModels(population, "SequencialMNIST");
-	population_trainer_file.storeModelValidations("SequencialMNISTErrors.csv", models_validation_errors_per_generation.back());
+	population_trainer_file.storeModelValidations("SequencialMNISTErrors.csv", models_validation_errors_per_generation);
 
 }
 

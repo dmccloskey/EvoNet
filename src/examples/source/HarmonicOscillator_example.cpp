@@ -303,7 +303,7 @@ void main_WeightSpring3W2S1D(const bool& make_model, const bool& train_model) {
 
 		PopulationTrainerFile<float> population_trainer_file;
 		population_trainer_file.storeModels(population, "HarmonicOscillator");
-		population_trainer_file.storeModelValidations("HarmonicOscillatorErrors.csv", models_validation_errors_per_generation.back());
+		population_trainer_file.storeModelValidations("HarmonicOscillatorErrors.csv", models_validation_errors_per_generation);
 	}
 	else {
 		// Evaluate the population

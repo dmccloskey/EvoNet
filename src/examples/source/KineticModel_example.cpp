@@ -256,7 +256,7 @@ public:
 	}
 };
 
-void main_KineticModel(const bool& make_model, const bool& train_model) {
+void main_KineticModel(const bool& make_model, const bool& train_model, const int& simulation) {
 	// define the population trainer parameters
 	PopulationTrainerExt<float> population_trainer;
 	population_trainer.setNGenerations(1);
@@ -301,19 +301,7 @@ void main_KineticModel(const bool& make_model, const bool& train_model) {
 	// define the model replicator for growth mode
 	ModelReplicatorExt<float> model_replicator;
 	model_replicator.setNodeActivations({ std::make_pair(std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>())),
-		std::make_pair(std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>())),
-		std::make_pair(std::shared_ptr<ActivationOp<float>>(new ELUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ELUGradOp<float>())),
 		std::make_pair(std::shared_ptr<ActivationOp<float>>(new SigmoidOp<float>()), std::shared_ptr<ActivationOp<float>>(new SigmoidGradOp<float>())),
-		std::make_pair(std::shared_ptr<ActivationOp<float>>(new TanHOp<float>()), std::shared_ptr<ActivationOp<float>>(new TanHGradOp<float>())),
-		std::make_pair(std::shared_ptr<ActivationOp<float>>(new ExponentialOp<float>()), std::shared_ptr<ActivationOp<float>>(new ExponentialGradOp<float>())),
-		std::make_pair(std::shared_ptr<ActivationOp<float>>(new LogOp<float>()), std::shared_ptr<ActivationOp<float>>(new LogGradOp<float>())),
-		std::make_pair(std::shared_ptr<ActivationOp<float>>(new InverseOp<float>()), std::shared_ptr<ActivationOp<float>>(new InverseGradOp<float>()))
-		});
-	model_replicator.setNodeIntegrations({ std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new ProdOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new ProdErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new ProdWeightGradOp<float>())),
-		std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>())),
-		std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new MeanOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new MeanErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new MeanWeightGradOp<float>())),
-		//std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new VarModOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new VarModErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new VarModWeightGradOp<float>())),
-		std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new CountOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new CountErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new CountWeightGradOp<float>()))
 		});
 
 	// define the initial population
@@ -346,7 +334,7 @@ void main_KineticModel(const bool& make_model, const bool& train_model) {
 
 		PopulationTrainerFile<float> population_trainer_file;
 		population_trainer_file.storeModels(population, "RBCGlycolysis");
-		population_trainer_file.storeModelValidations("RBCGlycolysisErrors.csv", models_validation_errors_per_generation.back());
+		population_trainer_file.storeModelValidations("RBCGlycolysisErrors.csv", models_validation_errors_per_generation);
 	}
 	else {
 		// Evaluate the population
@@ -358,6 +346,10 @@ void main_KineticModel(const bool& make_model, const bool& train_model) {
 // Main
 int main(int argc, char** argv)
 {
-	main_KineticModel(true, true);
+	main_KineticModel(true, true, 0);
+	// Simulations:
+	// [0] Constant glucose
+	// [1] Glucose pulse at T = 0 (maintenance of constant pyr levels)
+  // [2] AMP rise/fall at T = 0 (maintenance of constant ATP levels)
 	return 0;
 }

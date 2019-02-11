@@ -476,7 +476,7 @@ void test_exampleUsage()
 
 	PopulationTrainerFile<float> population_trainer_file;
 	population_trainer_file.storeModels(population, "populationTrainer");
-	population_trainer_file.storeModelValidations("populationTrainerValidationErrors.csv", models_validation_errors_per_generation.back());
+	population_trainer_file.storeModelValidations("populationTrainerValidationErrors.csv", models_validation_errors_per_generation);
 
   // [TODO: check that one of the models has a 0.0 error
   //        i.e., correct structure and weights]
