@@ -522,7 +522,7 @@ public:
 		@param[in] node_integration_error The integration function of the input node to create
 		@param[in] node_integration_weight_grad The integration function of the input node to create
 		**/
-		void ModelBuilder<TensorT>::addInteractionGraph(const std::map<std::string, std::vector<std::pair<std::string, std::string>>>& elementary_graph,
+		void addInteractionGraph(const std::map<std::string, std::vector<std::pair<std::string, std::string>>>& elementary_graph,
 			Model<TensorT> & model, const std::string & name, const std::string& module_name,
 			const std::shared_ptr<ActivationOp<TensorT>>& node_activation, const std::shared_ptr<ActivationOp<TensorT>>& node_activation_grad,
 			const std::shared_ptr<IntegrationOp<TensorT>>& node_integration, const std::shared_ptr<IntegrationErrorOp<TensorT>>& node_integration_error, const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& node_integration_weight_grad,
