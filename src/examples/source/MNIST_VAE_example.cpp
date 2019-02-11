@@ -49,7 +49,6 @@ public:
 		// Add the inputs
 		std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", "Input", n_inputs);
 
-
 		// Add the Endocer FC layers
 		std::vector<std::string> node_names, node_names_mu, node_names_logvar;
 		node_names = model_builder.addFullyConnected(model, "EN0", "EN0", node_names_input, n_hidden_0,
@@ -130,8 +129,7 @@ public:
 		//if (n_epochs = 1000) {
 		//	// anneal the learning rate to 1e-4
 		//}
-		if (n_epochs % 1000 == 0
-			//&& n_epochs != 0
+		if (n_epochs % 1000 == 0 && n_epochs != 0
 			) {
 			// save the model every 1000 epochs
 			//model_interpreter.getModelResults(model, false, true, false);
@@ -409,7 +407,7 @@ void main_VAE(const bool& make_model, const bool& train_model) {
 	ModelTrainerExt<float> model_trainer;
 	//model_trainer.setBatchSize(1); // evaluation only
 	model_trainer.setBatchSize(64);
-	model_trainer.setNEpochsTraining(10);
+	model_trainer.setNEpochsTraining(10000);
 	model_trainer.setNEpochsValidation(0);
 	model_trainer.setNEpochsEvaluation(100);
 	model_trainer.setMemorySize(1);
