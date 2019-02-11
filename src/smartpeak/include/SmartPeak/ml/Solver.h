@@ -287,7 +287,7 @@ private:
 			const TensorT weight_update = momentum_ * momentum_prev_ - learning_rate_ * weight * error;
 			momentum_prev_ = weight_update;
 			const TensorT new_weight = weight + weight_update;
-			return addGradientNoise(new_weight);
+			return this->addGradientNoise(new_weight);
 		};
 		std::string getName() const { return "SGDNoiseOp"; };
 		std::string getParamsAsStr() const
