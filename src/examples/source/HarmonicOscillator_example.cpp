@@ -86,17 +86,17 @@ public:
 		// weights  
 		std::shared_ptr<WeightInitOp<float>> weight_init;
 		std::shared_ptr<SolverOp<float>> solver;
-		weight_init.reset(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8));
-		solver.reset(new SGDOp<float>(0.01, 0.9));
+		weight_init.reset(new RandWeightInitOp<float>(1.0));
+		solver.reset(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8));
 		w1_to_w2 = Weight<float>("m1_to_m2", weight_init, solver);
-		weight_init.reset(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8));
-		solver.reset(new SGDOp<float>(0.01, 0.9));
+		weight_init.reset(new RandWeightInitOp<float>(1.0));
+		solver.reset(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8));
 		w2_to_w1 = Weight<float>("m2_to_m1", weight_init, solver);
-		weight_init.reset(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8));
-		solver.reset(new SGDOp<float>(0.01, 0.9));
+		weight_init.reset(new RandWeightInitOp<float>(1.0));
+		solver.reset(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8));
 		w2_to_w3 = Weight<float>("m2_to_m3", weight_init, solver);
-		weight_init.reset(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8));
-		solver.reset(new SGDOp<float>(0.01, 0.9));
+		weight_init.reset(new RandWeightInitOp<float>(1.0));
+		solver.reset(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8));
 		w3_to_w2 = Weight<float>("m3_to_m2", weight_init, solver);
 		weight_init.reset();
 		solver.reset();
