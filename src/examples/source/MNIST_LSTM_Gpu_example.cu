@@ -218,6 +218,10 @@ void main_LSTMTrain() {
 	population_trainer.setNTop(1);
 	population_trainer.setNRandom(1);
 	population_trainer.setNReplicatesPerModel(1);
+	population_trainer.setLogging(true);
+
+	// define the population logger
+	PopulationLogger<float> population_logger(true, true);
 
 	// define the model logger
 	ModelLogger<float> model_logger(true, true, false, false, false, false, false, false);
@@ -296,7 +300,7 @@ void main_LSTMTrain() {
 
 	// Evolve the population
 	std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
-		population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, input_nodes);
+		population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, population_logger, input_nodes);
 
 	PopulationTrainerFile<float> population_trainer_file;
 	population_trainer_file.storeModels(population, "MNIST");

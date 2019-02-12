@@ -367,6 +367,10 @@ int main(int argc, char** argv)
 	// define the population trainer parameters
 	PopulationTrainerExt<float> population_trainer;
 	population_trainer.setNGenerations(100);
+	population_trainer.setLogging(true);
+
+	// define the population logger
+	PopulationLogger<float> population_logger(true, true);
 
 	// define the multithreading parameters
 	const int n_hard_threads = std::thread::hardware_concurrency();
@@ -437,7 +441,7 @@ int main(int argc, char** argv)
 
 	// Evolve the population
 	std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
-		population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, input_nodes);
+		population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, population_logger, input_nodes);
 
 	PopulationTrainerFile<float> population_trainer_file;
 	population_trainer_file.storeModels(population, "AddProb");

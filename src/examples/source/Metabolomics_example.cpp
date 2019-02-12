@@ -1216,6 +1216,10 @@ void main_classification(std::string blood_fraction = "PLT", bool make_model = t
 	population_trainer.setNTop(3);
 	population_trainer.setNRandom(3);
 	population_trainer.setNReplicatesPerModel(3);
+	population_trainer.setLogging(true);
+
+	// define the population logger
+	PopulationLogger<float> population_logger(true, true);
 
 	// define the multithreading parameters
 	const int n_hard_threads = std::thread::hardware_concurrency();
@@ -1342,7 +1346,7 @@ void main_classification(std::string blood_fraction = "PLT", bool make_model = t
 
 	// Evolve the population
 	std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
-		population, model_trainer, model_interpreters, model_replicator, metabolomics_data, model_logger, input_nodes);
+		population, model_trainer, model_interpreters, model_replicator, metabolomics_data, model_logger, population_logger, input_nodes);
 
 	PopulationTrainerFile<float> population_trainer_file;
 	population_trainer_file.storeModels(population, "Metabolomics");
@@ -1365,6 +1369,10 @@ void main_reconstruction()
 	population_trainer.setNTop(3);
 	population_trainer.setNRandom(3);
 	population_trainer.setNReplicatesPerModel(3);
+	population_trainer.setLogging(true);
+
+	// define the population logger
+	PopulationLogger<float> population_logger(true, true);
 
 	// define the data simulator
 	MetDataSimReconstruction<float> metabolomics_data;
@@ -1442,7 +1450,7 @@ void main_reconstruction()
 
 	// Evolve the population
 	std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
-		population, model_trainer, model_interpreters, model_replicator, metabolomics_data, model_logger, input_nodes);
+		population, model_trainer, model_interpreters, model_replicator, metabolomics_data, model_logger, population_logger, input_nodes);
 
 	PopulationTrainerFile<float> population_trainer_file;
 	population_trainer_file.storeModels(population, "Metabolomics");
