@@ -141,15 +141,15 @@ public:
 			++iter;
 		}
 
-		// Specify the layer for the enzymes (f/r) (14)
-		std::vector<std::string> enzymes_f_nodes = { "ENO","FBA","GAPD","HEX1","LDH_L","PFK","PGI","PGK","PGM","PYK","TPI","DM_nadh","ADK1","ATPh",
-		 "ADK1_reverse","ENO_reverse","FBA_reverse","GAPD_reverse","LDH_L_reverse","PGI_reverse","PGK_reverse","PGM_reverse","TPI_reverse" };
-		iter = 0;
-		for (const std::string& node : enzymes_f_nodes) {
-			model.nodes_.at(node)->setLayerName("Enzymes");
-			//model.nodes_.at(node)->setTensorIndex(std::make_pair(1, iter));
-			++iter;
-		}
+		//// Specify the layer for the enzymes (f/r) (14)
+		//std::vector<std::string> enzymes_f_nodes = { "ENO","FBA","GAPD","HEX1","LDH_L","PFK","PGI","PGK","PGM","PYK","TPI","DM_nadh","ADK1","ATPh",
+		// "ADK1_reverse","ENO_reverse","FBA_reverse","GAPD_reverse","LDH_L_reverse","PGI_reverse","PGK_reverse","PGM_reverse","TPI_reverse" };
+		//iter = 0;
+		//for (const std::string& node : enzymes_f_nodes) {
+		//	model.nodes_.at(node)->setLayerName("Enzymes");
+		//	//model.nodes_.at(node)->setTensorIndex(std::make_pair(1, iter));
+		//	++iter;
+		//}
 
 	}
 	void adaptiveTrainerScheduler(
@@ -312,7 +312,8 @@ void main_KineticModel(const bool& make_model, const bool& train_model, const in
 	std::cout << "Initializing the population..." << std::endl;
 	Model<float> model;
 	if (make_model) {
-		const std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Project_EvoNet/";
+		//const std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Project_EvoNet/";
+		const std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Project_EvoNet/";
 		const std::string model_filename = data_dir + "RBCGlycolysis.csv";
 		ModelTrainerExt<float>().makeRBCGlycolysis(model, model_filename);
 	}
