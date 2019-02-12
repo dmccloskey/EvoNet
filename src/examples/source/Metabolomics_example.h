@@ -649,12 +649,35 @@ public:
 		for (const auto& biochemicalReaction : this->biochemicalReactions_) {		
 			if (!biochemicalReaction.second.used) continue; // Skip specified reactions
 
+			// make the enzyme complexes
+			std::string enzyme_complex_name_products = biochemicalReaction.second.reaction_id;
+			for (int i = 0; i < biochemicalReaction.second.products_ids.size(); ++i) {
+				enzyme_complex_name_products += ";" + biochemicalReaction.second.products_ids[i];
+			}
+			std::string enzyme_complex_name_reactants = biochemicalReaction.second.reaction_id;
+			for (int i = 0; i < biochemicalReaction.second.reactants_ids.size(); ++i) {
+				enzyme_complex_name_reactants += ";" + biochemicalReaction.second.reactants_ids[i];
+			}
+
+			// make the enzyme to complex pseudo-reactions
+			std::vector<std::pair<std::string, std::string>> pseudo_rxn;
+			std::string pseudo_rxn_name;
+			pseudo_rxn_name = biochemicalReaction.second.reaction_id + "_to_" + enzyme_complex_name_reactants;
+			pseudo_rxn = {std::make_pair(biochemicalReaction.second.reaction_id, enzyme_complex_name_reactants)};
+			elementary_graph.emplace(pseudo_rxn_name, pseudo_rxn);
+			pseudo_rxn_name = enzyme_complex_name_reactants + "_to_" + enzyme_complex_name_products;
+			pseudo_rxn = { std::make_pair(enzyme_complex_name_reactants, enzyme_complex_name_products) };
+			elementary_graph.emplace(pseudo_rxn_name, pseudo_rxn);
+			pseudo_rxn_name = enzyme_complex_name_products + "_to_" + biochemicalReaction.second.reaction_id;
+			pseudo_rxn = { std::make_pair(enzyme_complex_name_products, biochemicalReaction.second.reaction_id) };
+			elementary_graph.emplace(pseudo_rxn_name, pseudo_rxn);
+
 			// parse the products
 			for (int i = 0; i < biochemicalReaction.second.products_ids.size(); ++i) {
-				std::string weight_name = biochemicalReaction.second.reaction_id + "_to_" + biochemicalReaction.second.products_ids[i];
+				std::string weight_name = enzyme_complex_name_products + "_to_" + biochemicalReaction.second.products_ids[i];
 				std::vector<std::pair<std::string, std::string>> source_sinks;
 				for (int stoich = 0; stoich < std::abs(biochemicalReaction.second.products_stoichiometry[i]); ++stoich) {
-					source_sinks.push_back(std::make_pair(biochemicalReaction.second.reaction_id, biochemicalReaction.second.products_ids[i]));
+					source_sinks.push_back(std::make_pair(enzyme_complex_name_products, biochemicalReaction.second.products_ids[i]));
 				}
 				auto found = elementary_graph.emplace(weight_name, source_sinks);
 				if (!found.second) {
@@ -664,10 +687,10 @@ public:
 
 			// parse the reactants
 			for (int i = 0; i < biochemicalReaction.second.reactants_ids.size(); ++i) {
-				std::string weight_name = biochemicalReaction.second.reactants_ids[i] + "_to_" + biochemicalReaction.second.reaction_id;
+				std::string weight_name = biochemicalReaction.second.reactants_ids[i] + "_to_" + enzyme_complex_name_reactants;
 				std::vector<std::pair<std::string, std::string>> source_sinks;
 				for (int stoich = 0; stoich < std::abs(biochemicalReaction.second.reactants_stoichiometry[i]); ++stoich) {
-					source_sinks.push_back(std::make_pair(biochemicalReaction.second.reactants_ids[i], biochemicalReaction.second.reaction_id));
+					source_sinks.push_back(std::make_pair(biochemicalReaction.second.reactants_ids[i], enzyme_complex_name_reactants));
 				}
 				auto found = elementary_graph.emplace(weight_name, source_sinks);
 				if (!found.second) {
@@ -676,13 +699,23 @@ public:
 			}
 
 			if (biochemicalReaction.second.reversibility) {
+				// make the enzyme to complex pseudo-reactions
+				pseudo_rxn_name = enzyme_complex_name_reactants + "_to_" + biochemicalReaction.second.reaction_id;
+				pseudo_rxn = { std::make_pair(enzyme_complex_name_reactants, biochemicalReaction.second.reaction_id) };
+				elementary_graph.emplace(pseudo_rxn_name, pseudo_rxn);
+				pseudo_rxn_name = enzyme_complex_name_products + "_to_" + enzyme_complex_name_reactants;
+				pseudo_rxn = { std::make_pair(enzyme_complex_name_products, enzyme_complex_name_reactants) };
+				elementary_graph.emplace(pseudo_rxn_name, pseudo_rxn);
+				pseudo_rxn_name = biochemicalReaction.second.reaction_id + "_to_" + enzyme_complex_name_products;
+				pseudo_rxn = { std::make_pair(biochemicalReaction.second.reaction_id, enzyme_complex_name_products) };
+				elementary_graph.emplace(pseudo_rxn_name, pseudo_rxn);
 
 				// parse the reactants
 				for (int i = 0; i < biochemicalReaction.second.reactants_ids.size(); ++i) {
-					std::string weight_name = biochemicalReaction.second.reaction_id +"_to_" + biochemicalReaction.second.reactants_ids[i] ;
+					std::string weight_name = enzyme_complex_name_reactants +"_to_" + biochemicalReaction.second.reactants_ids[i] ;
 					std::vector<std::pair<std::string, std::string>> source_sinks;
 					for (int stoich = 0; stoich < std::abs(biochemicalReaction.second.reactants_stoichiometry[i]); ++stoich) {
-						source_sinks.push_back(std::make_pair(biochemicalReaction.second.reaction_id + "_reverse", biochemicalReaction.second.reactants_ids[i]));
+						source_sinks.push_back(std::make_pair(enzyme_complex_name_reactants, biochemicalReaction.second.reactants_ids[i]));
 					}
 					auto found = elementary_graph.emplace(weight_name, source_sinks);
 					if (!found.second) {
@@ -692,10 +725,10 @@ public:
 
 				// parse the products
 				for (int i = 0; i < biochemicalReaction.second.products_ids.size(); ++i) {
-					std::string weight_name = biochemicalReaction.second.products_ids[i] +"_to_" + biochemicalReaction.second.reaction_id;
+					std::string weight_name = biochemicalReaction.second.products_ids[i] +"_to_" + enzyme_complex_name_products;
 					std::vector<std::pair<std::string, std::string>> source_sinks;
 					for (int stoich = 0; stoich < std::abs(biochemicalReaction.second.products_stoichiometry[i]); ++stoich) {
-						source_sinks.push_back(std::make_pair(biochemicalReaction.second.products_ids[i], biochemicalReaction.second.reaction_id + "_reverse"));
+						source_sinks.push_back(std::make_pair(biochemicalReaction.second.products_ids[i], enzyme_complex_name_products));
 					}
 					auto found = elementary_graph.emplace(weight_name, source_sinks);
 					if (!found.second) {
