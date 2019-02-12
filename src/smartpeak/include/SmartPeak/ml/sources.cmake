@@ -25,6 +25,7 @@ set(sources_list_h
 	Node.h
 	NodeTensorData.h
 	OpToTensorOp.h
+	PopulationLogger.h
 	PopulationTrainer.h
 	PopulationTrainerDefaultDevice.h
 	PopulationTrainerGpu.h

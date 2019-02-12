@@ -47,6 +47,7 @@ set(ml_executables_list
   Node_test
   NodeTensorData_test
   OpToTensorOp_test
+  PopulationLogger_test
   PopulationTrainer_test
   PopulationTrainerGpu_test
   SharedFunctions_test
