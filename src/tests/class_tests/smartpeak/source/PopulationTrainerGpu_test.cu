@@ -410,6 +410,9 @@ void test_exampleUsage()
 	// define the model logger
 	ModelLogger<float> model_logger;
 
+	// define the population logger
+	PopulationLogger<float> population_logger;
+
   // Toy data set used for all tests
 	DataSimulatorExt<float> data_simulator;
 
@@ -472,7 +475,7 @@ void test_exampleUsage()
 
 	// Evolve the population
 	std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
-		population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, input_nodes);
+		population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, population_logger, input_nodes);
 
 	PopulationTrainerFile<float> population_trainer_file;
 	population_trainer_file.storeModels(population, "populationTrainer");

@@ -181,11 +181,13 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
 	population_trainer.setNRandom(1);
 	population_trainer.setNReplicatesPerModel(2);
 	population_trainer.setNGenerations(10);
+	population_trainer.setLogging(true);
 
 	BOOST_CHECK_EQUAL(population_trainer.getNTop(), 4);
 	BOOST_CHECK_EQUAL(population_trainer.getNRandom(), 1);
 	BOOST_CHECK_EQUAL(population_trainer.getNReplicatesPerModel(), 2);
 	BOOST_CHECK_EQUAL(population_trainer.getNGenerations(), 10);
+	BOOST_CHECK(population_trainer.getLogTraining());
 }
 
 BOOST_AUTO_TEST_CASE(removeDuplicateModels) 
@@ -656,9 +658,13 @@ BOOST_AUTO_TEST_CASE(exampleUsage)
 	population_trainer.setNRandom(2);
 	population_trainer.setNReplicatesPerModel(3);
 	population_trainer.setNGenerations(5);
+	population_trainer.setLogging(true);
 
 	// define the model logger
 	ModelLogger<float> model_logger;
+
+	// define the population logger
+	PopulationLogger<float> population_logger(true, true);
 
   // Toy data set used for all tests
 	DataSimulatorExt<float> data_simulator;
@@ -722,7 +728,7 @@ BOOST_AUTO_TEST_CASE(exampleUsage)
 
 	// Evolve the population
 	std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
-		population, model_trainer, model_interpreters,model_replicator, data_simulator, model_logger, input_nodes);
+		population, model_trainer, model_interpreters,model_replicator, data_simulator, model_logger, population_logger, input_nodes);
 
 	PopulationTrainerFile<float> population_trainer_file;
 	population_trainer_file.storeModels(population, "populationTrainer");

@@ -6,6 +6,7 @@
 // .h
 #include <SmartPeak/ml/ModelReplicator.h>
 #include <SmartPeak/ml/ModelTrainer.h>
+#include <SmartPeak/ml/PopulationLogger.h>
 #include <SmartPeak/simulator/DataSimulator.h>
 
 // .cpp
@@ -42,11 +43,13 @@ public:
 		void setNRandom(const int& n_random); ///< n_random setter
 		void setNReplicatesPerModel(const int& n_replicates_per_model); ///< n_replicates_per_model setter
 		void setNGenerations(const int& n_generations); ///< n_generations setter
+		void setLogging(bool log_training = false); ///< enable_logging setter
 
 		int getNTop() const; ///< batch_size setter
 		int getNRandom() const; ///< memory_size setter
 		int getNReplicatesPerModel() const; ///< n_epochs setter
 		int getNGenerations() const; ///< n_epochs setter
+		bool getLogTraining() const; ///< log_training getter
 
     /**
       @brief Remove models with non-unique names from the population of models
@@ -207,6 +210,7 @@ public:
 			ModelReplicator<TensorT>& model_replicator,
 			DataSimulator<TensorT>& data_simulator,
 			ModelLogger<TensorT>& model_logger,
+			PopulationLogger<TensorT>& population_logger,
 			const std::vector<std::string>& input_nodes);
 
 		/**
@@ -236,7 +240,22 @@ public:
 		virtual void adaptivePopulationScheduler(
 			const int& n_generations,
 			std::vector<Model<TensorT>>& models,
-			std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations) = 0;
+			std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations);
+
+		/**
+		@brief Entry point for users to code their training logger
+
+		[TODO: add tests]
+
+		@param[in] n_generations The number of evolution generations
+		@param[in, out] population_logger The population logger
+		@param[in] models_validation_errors_per_generation The model validation errors in the population
+
+		*/
+		virtual void trainingPopulationLogger(
+			const int& n_generations,
+			PopulationLogger<TensorT>& population_logger,
+			const std::vector<std::tuple<int, std::string, TensorT>>& models_validation_errors_per_generation);
 
 private:
 		int unique_id_ = 0;
@@ -246,6 +265,8 @@ private:
 		int n_random_ = 0; ///< The number of random models to select from the pool of top models
 		int n_replicates_per_model_ = 0; ///< The number of replications per model
 		int n_generations_ = 0; ///< The number of generations to evolve the models
+
+		bool log_training_ = false;
   };
 	template<typename TensorT, typename InterpreterT>
 	void PopulationTrainer<TensorT, InterpreterT>::setNTop(const int & n_top)
@@ -268,6 +289,11 @@ private:
 		n_generations_ = n_generations;
 	}
 	template<typename TensorT, typename InterpreterT>
+	void PopulationTrainer<TensorT, InterpreterT>::setLogging(bool log_training)
+	{
+		log_training_ = log_training;
+	}
+	template<typename TensorT, typename InterpreterT>
 	int PopulationTrainer<TensorT, InterpreterT>::getNTop() const
 	{
 		return n_top_;
@@ -286,6 +312,12 @@ private:
 	int PopulationTrainer<TensorT, InterpreterT>::getNGenerations() const
 	{
 		return n_generations_;
+	}
+
+	template<typename TensorT, typename InterpreterT>
+	inline bool PopulationTrainer<TensorT, InterpreterT>::getLogTraining() const
+	{
+		return log_training_;
 	}
 
 	template<typename TensorT, typename InterpreterT>
@@ -866,6 +898,7 @@ private:
 		ModelReplicator<TensorT>& model_replicator,
 		DataSimulator<TensorT> &data_simulator,
 		ModelLogger<TensorT>& model_logger,
+		PopulationLogger<TensorT>& population_logger,
 		const std::vector<std::string>& input_nodes)
 	{
 		std::vector<std::vector<std::tuple<int, std::string, TensorT>>> models_validation_errors_per_generation;
@@ -884,6 +917,10 @@ private:
 
 		// Population initial conditions
 		setID(models.size());
+
+		// Initialize the logger
+		if (this->getLogTraining())
+			population_logger.initLogs("Population");
 
 		// Evolve the population
 		for (int iter = 0; iter < getNGenerations(); ++iter)
@@ -916,6 +953,13 @@ private:
 				models, model_trainer, model_interpreters, model_logger,
 				input_data_validation, output_data_validation, time_steps_validation, input_nodes);
 			models_validation_errors_per_generation.push_back(models_validation_errors);
+
+			// log generation
+			if (this->getLogTraining()) {
+				//if (this->getVerbosityLevel() >= 2)
+				//	std::cout << "Logging..." << std::endl;
+				this->trainingPopulationLogger(iter, population_logger, models_validation_errors);
+			}
 
 			if (iter < getNGenerations() - 1)
 			{
@@ -951,6 +995,18 @@ private:
 		std::cout << "Evaluating the model..." << std::endl;
 		evalModels(models, model_trainer, model_interpreters, model_logger,
 			input_data_evaluation, time_steps_evaluation, input_nodes);
+	}
+
+	template<typename TensorT, typename InterpreterT>
+	inline void PopulationTrainer<TensorT, InterpreterT>::adaptivePopulationScheduler(const int & n_generations, std::vector<Model<TensorT>>& models, std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations)
+	{
+		// TODO user
+	}
+
+	template<typename TensorT, typename InterpreterT>
+	inline void PopulationTrainer<TensorT, InterpreterT>::trainingPopulationLogger(const int & n_generations, PopulationLogger<TensorT>& population_logger, const std::vector<std::tuple<int, std::string, TensorT>>& models_validation_errors_per_generation)
+	{
+		// TODO user
 	}
 
 	// TensorT PopulationTrainer<TensorT, InterpreterT>::calculateMean(std::vector<TensorT> values)
