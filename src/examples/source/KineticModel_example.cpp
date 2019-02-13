@@ -384,7 +384,7 @@ void main_KineticModel(const bool& make_model, const bool& train_model, const st
 int main(int argc, char** argv)
 {
 	//main_KineticModel(true, true, "steady_state"); // Constant glucose
-	main_KineticModel(true, true, "glucose_pulse"); // Glucose pulse at T = 0 (maintenance of constant pyr levels)
+	//main_KineticModel(true, true, "glucose_pulse"); // Glucose pulse at T = 0 (maintenance of constant pyr levels)
 	main_KineticModel(true, true, "amp_sweep"); // AMP rise/fall at T = 0 (maintenance of constant ATP levels)
 	return 0;
 }
