@@ -513,9 +513,11 @@ namespace SmartPeak
 		// sync the weight values
 		if (weights) {
 			for (auto& weight_map : model.getWeightsMap()) {
-				const int tensor_index = std::get<0>(weight_map.second->getTensorIndex()[0]);
-				if (!this->getWeightTensor(tensor_index)->getWeightStatus().first)
-					this->getWeightTensor(tensor_index)->syncHAndDWeight(device);
+				if (weight_map.second->getTensorIndex().size() > 0) {
+					const int tensor_index = std::get<0>(weight_map.second->getTensorIndex()[0]);
+					if (!this->getWeightTensor(tensor_index)->getWeightStatus().first)
+						this->getWeightTensor(tensor_index)->syncHAndDWeight(device);
+				}
 			}
 		}
 
@@ -542,10 +544,12 @@ namespace SmartPeak
 		// copy out the weight values
 		if (weights) {
 			for (auto& weight_map : model.getWeightsMap()) {
-				const int tensor_index = std::get<0>(weight_map.second->getTensorIndex()[0]);
-				const int layer1_index = std::get<1>(weight_map.second->getTensorIndex()[0]);
-				const int layer2_index = std::get<2>(weight_map.second->getTensorIndex()[0]);
-				weight_map.second->setWeight(this->getWeightTensor(tensor_index)->getWeight()(layer1_index, layer2_index));
+				if (weight_map.second->getTensorIndex().size() > 0) {
+					const int tensor_index = std::get<0>(weight_map.second->getTensorIndex()[0]);
+					const int layer1_index = std::get<1>(weight_map.second->getTensorIndex()[0]);
+					const int layer2_index = std::get<2>(weight_map.second->getTensorIndex()[0]);
+					weight_map.second->setWeight(this->getWeightTensor(tensor_index)->getWeight()(layer1_index, layer2_index));
+				}
 			}
 		}
 

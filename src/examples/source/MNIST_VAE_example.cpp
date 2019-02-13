@@ -36,6 +36,8 @@ public:
 	Model encoding input nodes: "Encoding_0, Encoding_1, ... Encoding 64" up to n_encodings
 	Model output nodes: "Output_0, Output_1, ... Output_784" up to n_inputs
 
+	Hidden size of 128 and 256 reach a training loss of 34776 (batch size 64 and loss of 1.0 BCE, 0.25 KLDiverg) after 10,000 epochs
+
 	References:
 	Based on Kingma et al, 2014: https://arxiv.org/pdf/1312.6114
 	https://github.com/pytorch/examples/blob/master/vae/main.py
