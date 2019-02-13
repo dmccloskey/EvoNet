@@ -623,6 +623,13 @@ namespace SmartPeak
 	template<typename TensorT, typename DeviceT>
 	inline void ModelInterpreter<TensorT, DeviceT>::mapValuesToLayers(Model<TensorT>& model, const Eigen::Tensor<TensorT, 3>& values, const std::vector<std::string>& node_names, const std::string & value_type)
 	{
+		if (layer_tensors_.size() <= 0) {
+			char error_char[512];
+			sprintf(error_char, "Tensor layers have not been created.  Cannot map values to layers.");
+			std::string error(error_char);
+			throw std::runtime_error(error_char);
+		}
+
 		// Buffer the input values
 		Eigen::Tensor<TensorT, 3> values_buffered = values.pad(Eigen::array<std::pair<int, int>, 3>({std::make_pair(0,0),std::make_pair(0,1),std::make_pair(0,0)}));
 
@@ -673,6 +680,12 @@ namespace SmartPeak
 	template<typename TensorT, typename DeviceT>
 	inline void ModelInterpreter<TensorT, DeviceT>::initBiases(Model<TensorT>& model)
 	{
+		if (layer_tensors_.size() <= 0) {
+			char error_char[512];
+			sprintf(error_char, "Tensor layers have not been created.  Cannot initiate biases.");
+			std::string error(error_char);
+			throw std::runtime_error(error_char);
+		}
 		Eigen::Tensor<TensorT, 2> one((int)layer_tensors_[0]->getBatchSize(), (int)layer_tensors_[0]->getMemorySize());	one.setConstant(1);
 		for (auto& node_map : model.nodes_) {
 			if (node_map.second->getType() == NodeType::bias) {
@@ -1804,7 +1817,12 @@ namespace SmartPeak
 
 		// extract out the layer id
 		const int layer_id = model.nodes_.at(node_names[0])->getTensorIndex().first;
-		assert(getLayerTensor(layer_id)->getLayerSize() == node_names.size());
+		if (getLayerTensor(layer_id)->getLayerSize() != node_names.size()) {
+			char error_char[512];
+			sprintf(error_char, "The number of output nodes does not match the output layer tensor size.");
+			std::string error(error_char);
+			throw std::runtime_error(error_char);
+		}
 
 		// convert the loss function
 		LossFunctionTensorOp<TensorT, DeviceT>* loss_function_tensor = nullptr;

@@ -76,6 +76,45 @@ public:
 		 * Interaction Graph Toy Network Model
 		 * Linear Harmonic Oscillator with three masses and two springs
 		*/
+		Node<float> m1, m2, m3, s1, s2;
+		Link m1_to_s1, s1_to_m1, s1_to_m2, m2_to_s1, m2_to_s2, s2_to_m2, s2_to_m3, m3_to_s2;
+		Weight<float> Wm1_to_s1, Ws1_to_m1, Ws1_to_m2, Wm2_to_s1, Wm2_to_s2, Ws2_to_m2, Ws2_to_m3, Wm3_to_s2;
+		// Toy network: 1 hidden layer, fully connected, DCG
+		m1 = Node<float>("m1", NodeType::output, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+		m2 = Node<float>("m2", NodeType::input, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+		m3 = Node<float>("m3", NodeType::output, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+		s1 = Node<float>("s1", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+		s2 = Node<float>("s2", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+		m1.setLayerName("Output"); m3.setLayerName("Output"); m2.setLayerName("Input");
+		// weights  
+		Wm1_to_s1 = Weight<float>("m1_to_s1", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8)));
+		Ws1_to_m1 = Weight<float>("s1_to_m1", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8)));
+		Ws1_to_m2 = Weight<float>("s1_to_m2", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8)));
+		Wm2_to_s1 = Weight<float>("m2_to_s1", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8)));
+		Wm2_to_s2 = Weight<float>("m2_to_s2", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8)));
+		Ws2_to_m2 = Weight<float>("s2_to_m2", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8)));
+		Ws2_to_m3 = Weight<float>("s2_to_m3", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8)));
+		Wm3_to_s2 = Weight<float>("m3_to_s2", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8)));
+		// links
+		m1_to_s1 = Link("m1_to_s1", "m1", "s1", "m1_to_s1");
+		s1_to_m1 = Link("s1_to_m1", "s1", "m1", "s1_to_m1");
+		s1_to_m2 = Link("s1_to_m2", "s1", "m2", "s1_to_m2");
+		m2_to_s1 = Link("m2_to_s1", "m2", "s1", "m2_to_s1");
+		m2_to_s2 = Link("m2_to_s2", "m2", "s2", "m2_to_s2");
+		s2_to_m2 = Link("s2_to_m2", "s2", "m2", "s2_to_m2");
+		s2_to_m3 = Link("s2_to_m3", "s2", "m3", "s2_to_m3");
+		m3_to_s2 = Link("m3_to_s2", "m3", "s2", "m3_to_s2");
+		model.setId(0);
+		model.setName("HarmonicOscillator");
+		model.addNodes({ m1, m2, m3, s1, s2 });
+		model.addWeights({ Wm1_to_s1, Ws1_to_m1, Ws1_to_m2, Wm2_to_s1, Wm2_to_s2, Ws2_to_m2, Ws2_to_m3, Wm3_to_s2 });
+		model.addLinks({ m1_to_s1, s1_to_m1, s1_to_m2, m2_to_s1, m2_to_s2, s2_to_m2, s2_to_m3, m3_to_s2 });
+	}
+	void makeHarmonicOscillatorINCORRECTLY(Model<TensorT>& model) {
+		/**
+		 * Interaction Graph Toy Network Model
+		 * Linear Harmonic Oscillator with three masses and two springs
+		*/
 		Node<float> m1, m2, m3;
 		Link l1_to_l2, l2_to_l1, l2_to_l3, l3_to_l2;
 		Weight<float> w1_to_w2, w2_to_w1, w2_to_w3, w3_to_w2;

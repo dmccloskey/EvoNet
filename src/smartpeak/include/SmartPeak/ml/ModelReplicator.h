@@ -793,7 +793,10 @@ private:
 
 		std::string new_node_name, add_node_name;
 		if (as_copy) updateName(random_node_name, "%s@copyNodeRight#", unique_str, add_node_name, new_node_name);
-		else updateName(random_node_name, "%s@addNodeRight#", unique_str, add_node_name, new_node_name);
+		else {
+			updateName(random_node_name, "%s@addNodeRight#", unique_str, add_node_name, new_node_name);
+			new_node.setLayerName(""); //reset the layername
+		}
 		new_node.setName(new_node_name);
 		new_node.setType(NodeType::hidden); // [TODO: add test to check for the type!
 		model.addNodes({ new_node });
@@ -845,6 +848,7 @@ private:
 				Weight<TensorT> weight_bias = model.getWeight(model.getLink(bias_link_names[0]).getWeightName()); // [OPTIMIZATION: use Link.getWeightName() directly]
 				weight_bias.setName(weight_bias_name);
 				weight_bias.setWeightInitOp(bias_weight_init);
+				weight_bias.setInitWeight(true); // re-initalize the new weight
 				model.addWeights({ weight_bias });
 			}
 			else
@@ -868,6 +872,7 @@ private:
 				sprintf(weight_name_char, "Weight_%s_to_%s@addNodeRight#", model.getLink(input_link_name).getSourceNodeName().data(), new_node_name.data());
 				weight_name = makeUniqueHash(weight_name_char, unique_str);
 				weight.setName(weight_name);
+				weight.setInitWeight(true); // re-initalize the new weight
 				model.addWeights({ weight });
 			}
 			else
@@ -895,6 +900,7 @@ private:
 				sprintf(weight_name_char, "Weight_%s_to_%s@addNodeRight#", new_node_name.data(), model.getLink(output_link_name).getSinkNodeName().data());
 				weight_name = makeUniqueHash(weight_name_char, unique_str);
 				weight.setName(weight_name);
+				weight.setInitWeight(true); // re-initalize the new weight
 				model.addWeights({ weight });
 			}
 			else
@@ -960,6 +966,7 @@ private:
 			sprintf(weight_name_char, "Weight_%s_to_%s@addLink#", source_node_name.data(), sink_node_name.data());
 			weight_name = makeUniqueHash(weight_name_char, unique_str);
 			weight.setName(weight_name);
+			weight.setInitWeight(true); // re-initalize the new weight
 			model.addWeights({ weight });
 		}
 		else weight_name = model.getLink(random_link).getWeightName();
@@ -1030,6 +1037,7 @@ private:
 				std::string weight_name;
 				if (!as_copy) {
 					Weight<TensorT> weight = model.getWeight(link.getWeightName());
+					weight.setInitWeight(true); // re-initalize the new weight
 					std::string new_weight_name, weight_prefix;
 					updateName(weight.getName(), new_name_format, unique_str, weight_prefix, new_weight_name);
 					weight_name = weight_prefix + new_module_suffix;
@@ -1057,6 +1065,7 @@ private:
 				std::string weight_name;
 				if (!as_copy) {
 					Weight<TensorT> weight = model.getWeight(link.getWeightName());
+					weight.setInitWeight(true); // re-initalize the new weight
 					std::string new_weight_name, weight_prefix;
 					updateName(weight.getName(), new_name_format, unique_str, weight_prefix, new_weight_name);
 					weight_name = weight_prefix + new_module_suffix;
@@ -1083,6 +1092,7 @@ private:
 				std::string weight_name;
 				if (!as_copy) {
 					Weight<TensorT> weight = model.getWeight(link.getWeightName());
+					weight.setInitWeight(true); // re-initalize the new weight
 					std::string new_weight_name, weight_prefix;
 					updateName(weight.getName(), new_name_format, unique_str, weight_prefix, new_weight_name);
 					weight_name = weight_prefix + new_module_suffix;
@@ -1184,7 +1194,10 @@ private:
 
 		std::string new_node_name, add_node_name;
 		if (as_copy) updateName(random_node_name, "%s@copyNodeDown#", unique_str, add_node_name, new_node_name);
-		else updateName(random_node_name, "%s@addNodeDown#", unique_str, add_node_name, new_node_name);
+		else {
+			updateName(random_node_name, "%s@addNodeDown#", unique_str, add_node_name, new_node_name);
+			new_node.setLayerName(""); //reset the layername
+		}
 		new_node.setName(new_node_name);
 		new_node.setType(NodeType::hidden); // [TODO: add test to check for the type!
 		model.addNodes({ new_node });
@@ -1194,7 +1207,7 @@ private:
 			if (!as_copy) {
 				// create a new bias
 				char new_bias_name_char[512];
-				sprintf(new_bias_name_char, "Bias_%s@addNodeRight#", add_node_name.data());
+				sprintf(new_bias_name_char, "Bias_%s@addNodeDown#", add_node_name.data());
 				new_bias_name = makeUniqueHash(new_bias_name_char, unique_str);
 				Node<TensorT> new_bias(new_bias_name, NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
 				model.addNodes({ new_bias });
@@ -1206,21 +1219,22 @@ private:
 			std::string weight_bias_name;
 			if (!as_copy) {
 				char weight_bias_name_char[512];
-				sprintf(weight_bias_name_char, "%s_to_%s@addNodeRight#", new_bias_name.data(), new_node_name.data());
+				sprintf(weight_bias_name_char, "%s_to_%s@addNodeDown#", new_bias_name.data(), new_node_name.data());
 				weight_bias_name = makeUniqueHash(weight_bias_name_char, unique_str);
 				std::shared_ptr<WeightInitOp<TensorT>> bias_weight_init;
 				bias_weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));
 				Weight<TensorT> weight_bias = model.getWeight(model.getLink(bias_link_names[0]).getWeightName()); // [OPTIMIZATION: use Link.getWeightName() directly]
 				weight_bias.setName(weight_bias_name);
 				weight_bias.setWeightInitOp(bias_weight_init);
+				weight_bias.setInitWeight(true); // re-initalize the new weight
 				model.addWeights({ weight_bias });
 			}
 			else
 				weight_bias_name = model.getLink(bias_link_names[0]).getWeightName();
 
 			char link_bias_name_char[512];
-			if (as_copy) sprintf(link_bias_name_char, "%s_to_%s@copyNodeRight#", new_bias_name.data(), new_node_name.data());
-			else sprintf(link_bias_name_char, "%s_to_%s@addNodeRight#", new_bias_name.data(), new_node_name.data());
+			if (as_copy) sprintf(link_bias_name_char, "%s_to_%s@copyNodeDown#", new_bias_name.data(), new_node_name.data());
+			else sprintf(link_bias_name_char, "%s_to_%s@addNodeDown#", new_bias_name.data(), new_node_name.data());
 			std::string link_bias_name = makeUniqueHash(link_bias_name_char, unique_str);
 			Link link_bias(link_bias_name, new_bias_name, new_node_name, weight_bias_name);
 			model.addLinks({ link_bias });
@@ -1245,6 +1259,7 @@ private:
 			sprintf(weight_name_char, "Weight_%s_to_%s@addNodeDown#", new_node_name.data(), random_node_name.data());
 			weight_name = makeUniqueHash(weight_name_char, unique_str);
 			weight.setName(weight_name);
+			weight.setInitWeight(true); // re-initalize the new weight
 			model.addWeights({ weight });
 		}
 		else

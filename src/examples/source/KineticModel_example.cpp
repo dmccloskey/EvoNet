@@ -75,15 +75,48 @@ public:
 		std::vector<std::string> output_nodes = { "13dpg","2pg","3pg","adp","amp","atp","dhap","f6p","fdp","g3p","g6p","glc__D","h","h2o","lac__L","nad","nadh","pep","pi","pyr" };
 		std::vector<TensorT> met_data_stst = { 0.00024,0.0113,0.0773,0.29,0.0867,1.6,0.16,0.0198,0.0146,0.00728,0.0486,1,1.00e-03,1,1.36,0.0589,0.0301,0.017,2.5,0.0603 };
 
+		const int n_data = batch_size * n_epochs;
+		Eigen::Tensor<TensorT, 2> glu__D_rand = GaussianSampler<TensorT>(1, n_data);
+		glu__D_rand = (glu__D_rand + glu__D_rand.constant(1)) * glu__D_rand.constant(10);
+
+		Eigen::Tensor<TensorT, 2> amp_rand = GaussianSampler<TensorT>(1, n_data);
+		amp_rand = (amp_rand + amp_rand.constant(1)) * amp_rand.constant(5);
+
 		// Generate the input and output data for training
 		for (int batch_iter = 0; batch_iter<batch_size; ++batch_iter) {
 			for (int epochs_iter = 0; epochs_iter<n_epochs; ++epochs_iter) {
 				for (int memory_iter = 0; memory_iter<memory_size; ++memory_iter) {
 					for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
-						input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst[nodes_iter];
+						if (simulation_type_ == "glucose_pulse") {
+							if (nodes_iter == 11 && memory_iter == 0)
+								input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = glu__D_rand(0, batch_size*n_epochs + epochs_iter);
+							else
+								input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst[nodes_iter];
+						}
+						else if (simulation_type_ == "amp_sweep") {
+							if (nodes_iter == 11 && memory_iter <= 5)
+								input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = amp_rand(0, batch_size*n_epochs + epochs_iter);
+							else
+								input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst[nodes_iter];
+						}
+						else if (simulation_type_ == "steady_state")
+							input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst[nodes_iter];
 					}
 					for (int nodes_iter = 0; nodes_iter < n_output_nodes; ++nodes_iter) {
-						output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst[nodes_iter];
+						if (simulation_type_ == "glucose_pulse") {
+							if (nodes_iter == 11 && memory_iter == 0)
+								output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = glu__D_rand(0, batch_size*n_epochs + epochs_iter);
+							else
+								output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst[nodes_iter];
+						}
+						else if (simulation_type_ == "amp_sweep"){
+							if (nodes_iter == 11 && memory_iter <= 5)
+								output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = amp_rand(0, batch_size*n_epochs + epochs_iter);
+							else
+								output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst[nodes_iter];
+						}
+						else if (simulation_type_ == "steady_state")
+							output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst[nodes_iter];
 					}
 				}
 				//for (int memory_iter = memory_size - 1; memory_iter >= 0; --memory_iter) {
@@ -105,8 +138,7 @@ public:
 	void simulateEvaluationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 3>& time_steps) {};
 
 	// Custom parameters
-	bool steady_state_ = true;
-	bool dynamic = false;
+	std::string simulation_type_ = "steady_state"; ///< simulation types of steady_state, glucose_pulse, or amp_sweep
 };
 
 // Extended classes
@@ -142,8 +174,7 @@ public:
 		}
 
 		//// Specify the layer for the enzymes (f/r) (14)
-		//std::vector<std::string> enzymes_f_nodes = { "ENO","FBA","GAPD","HEX1","LDH_L","PFK","PGI","PGK","PGM","PYK","TPI","DM_nadh","ADK1","ATPh",
-		// "ADK1_reverse","ENO_reverse","FBA_reverse","GAPD_reverse","LDH_L_reverse","PGI_reverse","PGK_reverse","PGM_reverse","TPI_reverse" };
+		//std::vector<std::string> enzymes_f_nodes = { "ENO","FBA","GAPD","HEX1","LDH_L","PFK","PGI","PGK","PGM","PYK","TPI","DM_nadh","ADK1","ATPh"};
 		//iter = 0;
 		//for (const std::string& node : enzymes_f_nodes) {
 		//	model.nodes_.at(node)->setLayerName("Enzymes");
@@ -159,7 +190,7 @@ public:
 		ModelInterpreterDefaultDevice<TensorT>& model_interpreter,
 		const std::vector<float>& model_errors) {
 		// Check point the model every 1000 epochs
-		if (n_epochs % 1000 == 0 && n_epochs != 0) {
+		if (n_epochs % 999 == 0 && n_epochs != 0) {
 			model_interpreter.getModelResults(model, false, true, false);
 			ModelFile<TensorT> data;
 			data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
@@ -256,7 +287,7 @@ public:
 	}
 };
 
-void main_KineticModel(const bool& make_model, const bool& train_model, const int& simulation) {
+void main_KineticModel(const bool& make_model, const bool& train_model, const std::string& simulation_type) {
 	// define the population trainer parameters
 	PopulationTrainerExt<float> population_trainer;
 	population_trainer.setNGenerations(1);
@@ -276,6 +307,7 @@ void main_KineticModel(const bool& make_model, const bool& train_model, const in
 
 	// define the data simulator
 	DataSimulatorExt<float> data_simulator;
+	data_simulator.simulation_type_ = simulation_type;
 
 	// define the model trainers and resources for the trainers
 	std::vector<ModelInterpreterDefaultDevice<float>> model_interpreters;
@@ -351,10 +383,8 @@ void main_KineticModel(const bool& make_model, const bool& train_model, const in
 // Main
 int main(int argc, char** argv)
 {
-	main_KineticModel(true, true, 0);
-	// Simulations:
-	// [0] Constant glucose
-	// [1] Glucose pulse at T = 0 (maintenance of constant pyr levels)
-  // [2] AMP rise/fall at T = 0 (maintenance of constant ATP levels)
+	main_KineticModel(true, true, "steady_state"); // Constant glucose
+	main_KineticModel(true, true, "glucose_pulse"); // Glucose pulse at T = 0 (maintenance of constant pyr levels)
+	main_KineticModel(true, true, "amp_sweep"); // AMP rise/fall at T = 0 (maintenance of constant ATP levels)
 	return 0;
 }
