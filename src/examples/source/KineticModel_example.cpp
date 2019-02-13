@@ -94,7 +94,7 @@ public:
 								input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst[nodes_iter];
 						}
 						else if (simulation_type_ == "amp_sweep") {
-							if (nodes_iter == 11 && memory_iter <= 5)
+							if (nodes_iter == 11 && memory_iter <= 0)
 								input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = amp_rand(0, batch_iter*n_epochs + epochs_iter);
 							else
 								input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst[nodes_iter];
@@ -110,7 +110,7 @@ public:
 								output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst[nodes_iter];
 						}
 						else if (simulation_type_ == "amp_sweep"){
-							if (nodes_iter == 11 && memory_iter <= 5)
+							if (nodes_iter == 11 && memory_iter <= 0)
 								output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = amp_rand(0, batch_iter*n_epochs + epochs_iter);
 							else
 								output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst[nodes_iter];
@@ -321,6 +321,7 @@ void main_KineticModel(const bool& make_model, const bool& train_model, const st
 	model_trainer.setMemorySize(16);
 	model_trainer.setNEpochsTraining(10000);
 	model_trainer.setNEpochsValidation(25);
+	model_trainer.setNTETTSteps(1);
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setLogging(false, false);
 	model_trainer.setFindCycles(false);
@@ -344,8 +345,8 @@ void main_KineticModel(const bool& make_model, const bool& train_model, const st
 	std::cout << "Initializing the population..." << std::endl;
 	Model<float> model;
 	if (make_model) {
-		//const std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Project_EvoNet/";
-		const std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Project_EvoNet/";
+		const std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Project_EvoNet/";
+		//const std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Project_EvoNet/";
 		const std::string model_filename = data_dir + "RBCGlycolysis.csv";
 		ModelTrainerExt<float>().makeRBCGlycolysis(model, model_filename);
 	}
