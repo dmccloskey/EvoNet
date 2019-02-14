@@ -1448,8 +1448,14 @@ namespace SmartPeak
 						else {
 							// add the first shared weight index
 							int weight_pos_0 = std::get<0>(argument.weight->getTensorIndex()[0]);
-							assert(weight_pos_0 == weight_pos); // if this fails, then the weight is shared with another layer.
-																									// the current weight sharing implementation cannot handle such cases.
+							if (weight_pos_0 != weight_pos) {
+								char error_char[512];
+								sprintf(error_char, "The weight is shared across multiple tensors.  This is currently not supported.");
+								std::string error(error_char);
+								throw std::runtime_error(error_char);
+								// if this fails, then the weight is shared with another layer.
+								// the current weight sharing implementation cannot handle such cases.
+							}
 							int source_layer_index_0 = std::get<1>(argument.weight->getTensorIndex()[0]);
 							int sink_layer_index_0 = std::get<2>(argument.weight->getTensorIndex()[0]);
 							shared_weight_index.at(argument.weight->getName()).push_back(std::make_pair(source_layer_index_0, sink_layer_index_0));
@@ -1817,6 +1823,12 @@ namespace SmartPeak
 
 		// extract out the layer id
 		const int layer_id = model.nodes_.at(node_names[0])->getTensorIndex().first;
+		if (layer_id < 0) {
+			char error_char[512];
+			sprintf(error_char, "The output layer does not exist.");
+			std::string error(error_char);
+			throw std::runtime_error(error_char);
+		}
 		if (getLayerTensor(layer_id)->getLayerSize() != node_names.size()) {
 			char error_char[512];
 			sprintf(error_char, "The number of output nodes does not match the output layer tensor size.");
