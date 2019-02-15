@@ -254,6 +254,7 @@ public:
 		*/
 		virtual void trainingPopulationLogger(
 			const int& n_generations,
+			std::vector<Model<TensorT>>& models,
 			PopulationLogger<TensorT>& population_logger,
 			const std::vector<std::tuple<int, std::string, TensorT>>& models_validation_errors_per_generation);
 
@@ -958,7 +959,7 @@ private:
 			if (this->getLogTraining()) {
 				//if (this->getVerbosityLevel() >= 2)
 				//	std::cout << "Logging..." << std::endl;
-				this->trainingPopulationLogger(iter, population_logger, models_validation_errors);
+				this->trainingPopulationLogger(iter, models, population_logger, models_validation_errors);
 			}
 
 			if (iter < getNGenerations() - 1)
@@ -1004,7 +1005,10 @@ private:
 	}
 
 	template<typename TensorT, typename InterpreterT>
-	inline void PopulationTrainer<TensorT, InterpreterT>::trainingPopulationLogger(const int & n_generations, PopulationLogger<TensorT>& population_logger, const std::vector<std::tuple<int, std::string, TensorT>>& models_validation_errors_per_generation)
+	inline void PopulationTrainer<TensorT, InterpreterT>::trainingPopulationLogger(const int & n_generations,
+		std::vector<Model<TensorT>>& models,
+		PopulationLogger<TensorT>& population_logger, 
+		const std::vector<std::tuple<int, std::string, TensorT>>& models_validation_errors_per_generation)
 	{
 		// TODO user
 	}

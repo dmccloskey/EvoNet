@@ -411,8 +411,17 @@ public:
 	}
 	void trainingPopulationLogger(
 		const int& n_generations,
+		std::vector<Model<TensorT>>& models,
 		PopulationLogger<TensorT>& population_logger,
 		const std::vector<std::tuple<int, std::string, TensorT>>& models_validation_errors_per_generation) {
+		// Export the selected models
+		for (auto& model : models) {
+		ModelFile<TensorT> data;
+		data.storeModelCsv(model.getName() + "_" + std::to_string(n_generations) + "_nodes.csv",
+			model.getName() + "_" + std::to_string(n_generations) + "_links.csv",
+			model.getName() + "_" + std::to_string(n_generations) + "_weights.csv", model);
+		}
+		// Log the population statistics
 		population_logger.writeLogs(n_generations, models_validation_errors_per_generation);
 	}
 };
@@ -422,7 +431,7 @@ int main(int argc, char** argv)
 {
 	// define the population trainer parameters
 	PopulationTrainerExt<float> population_trainer;
-	population_trainer.setNGenerations(20);
+	population_trainer.setNGenerations(100);
 	population_trainer.setLogging(true);
 
 	// define the population logger
@@ -451,7 +460,7 @@ int main(int argc, char** argv)
 	ModelTrainerExt<float> model_trainer;
 	model_trainer.setBatchSize(8);
 	model_trainer.setMemorySize(data_simulator.sequence_length_);
-	model_trainer.setNEpochsTraining(50);
+	model_trainer.setNEpochsTraining(100);
 	model_trainer.setNEpochsValidation(25);
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setLogging(false, false);
