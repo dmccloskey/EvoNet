@@ -7,6 +7,7 @@
 #include <SmartPeak/ml/Model.h>
 #include <SmartPeak/io/PopulationTrainerFile.h>
 #include <SmartPeak/io/ModelFile.h>
+#include <SmartPeak/io/ModelInterpreterFile.h>
 
 #include <SmartPeak/simulator/ChromatogramSimulator.h>
 
@@ -199,7 +200,7 @@ public:
 		ModelBuilder<TensorT> model_builder;
 
 		// Add the inputs
-		std::vector<std::string> node_names_intensity = model_builder.addInputNodes(model, "Intensity", n_inputs);
+		std::vector<std::string> node_names_intensity = model_builder.addInputNodes(model, "Intensity", "Input", n_inputs);
 
 		// Add the Encoder FC layers for Time and intensity
 		node_names_intensity = model_builder.addFullyConnected(model, "EN_Intensity_0", "EN_Intensity_0", node_names_intensity, n_hidden_0,
@@ -504,12 +505,13 @@ public:
 		Model<TensorT>& model,
 		ModelInterpreterDefaultDevice<TensorT>& model_interpreter,
 		const std::vector<float>& model_errors) {
-		if (n_epochs % 1000 == 0 && n_epochs != 0) {
-			// save the model every 1000 epochs
+		// Check point the model every 1000 epochs
+		if (n_epochs % 999 == 0 && n_epochs != 0) {
+			model_interpreter.getModelResults(model, false, true, false);
 			ModelFile<TensorT> data;
-			data.storeModelCsv(model.getName() + "_" + std::to_string(n_epochs) + "_nodes.csv",
-				model.getName() + "_" + std::to_string(n_epochs) + "_links.csv",
-				model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model);
+			data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
+			ModelInterpreterFileDefaultDevice<TensorT> interpreter_data;
+			interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
 		}
 	}
 };
@@ -647,7 +649,7 @@ public:
 	}
 };
 
-void main_DenoisingAE(const bool& make_model, const bool& load_weight_values, const bool& train_model) {
+void main_DenoisingAE(const bool& make_model, const bool& train_model) {
 
 	const int n_hard_threads = std::thread::hardware_concurrency();
 	const int n_threads = 1;
@@ -658,7 +660,7 @@ void main_DenoisingAE(const bool& make_model, const bool& load_weight_values, co
 	population_trainer.setNTop(1);
 	population_trainer.setNRandom(1);
 	population_trainer.setNReplicatesPerModel(1);
-	population_trainer.setLogging(true);
+	population_trainer.setLogging(false);
 
 	// define the population logger
 	PopulationLogger<float> population_logger(true, true);
@@ -734,8 +736,8 @@ void main_DenoisingAE(const bool& make_model, const bool& load_weight_values, co
 	std::vector<std::string> output_nodes_intensity;
 	for (int i = 0; i < input_size; ++i) {
 		char name_char[512];
-		//sprintf(name_char, "Intensity_Out_%012d", i);
-		sprintf(name_char, "Attention1_MultiHead_%012d", i);
+		sprintf(name_char, "Intensity_Out_%012d", i);
+		//sprintf(name_char, "Attention1_MultiHead_%012d", i);
 		std::string name(name_char);
 		output_nodes_intensity.push_back(name);
 	}
@@ -748,8 +750,8 @@ void main_DenoisingAE(const bool& make_model, const bool& load_weight_values, co
 		model_interpreters.push_back(model_interpreter);
 	}
 	ModelTrainerExt<float> model_trainer;
-	model_trainer.setBatchSize(1); // evaluation only
-	//model_trainer.setBatchSize(32);
+	//model_trainer.setBatchSize(1); // evaluation only
+	model_trainer.setBatchSize(64);
 	model_trainer.setNEpochsTraining(10000);
 	model_trainer.setNEpochsValidation(1);
 	model_trainer.setNEpochsEvaluation(100);
@@ -757,6 +759,8 @@ void main_DenoisingAE(const bool& make_model, const bool& load_weight_values, co
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setLogging(true, false, true);
 	model_trainer.setFindCycles(false);
+	model_trainer.setFastInterpreter(true);
+	model_trainer.setPreserveOoO(true);
 	model_trainer.setLossFunctions({
 		std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
 	model_trainer.setLossFunctionGrads({
@@ -772,31 +776,22 @@ void main_DenoisingAE(const bool& make_model, const bool& load_weight_values, co
 	std::cout << "Initializing the population..." << std::endl;
 	Model<float> model;
 	if (make_model) {
-		//model_trainer.makeDenoisingAE(model, input_size, encoding_size, n_hidden);
-		model_trainer.makeMultiHeadDotProdAttention(model, input_size, input_size, { 12, 12 }, { 48, 48 }, { (int)input_size, (int)input_size }, false, false, false);
+		model_trainer.makeDenoisingAE(model, input_size, encoding_size, 128);
+		//model_trainer.makeMultiHeadDotProdAttention(model, input_size, input_size, { 12, 12 }, { 48, 48 }, { (int)input_size, (int)input_size }, false, false, false);
 		//model_trainer.makeCompactCovNetAE(model, input_size, input_size, encoding_size, 1, 1, false);
 	}
 	else {
 		// read in the trained model
 		std::cout << "Reading in the model..." << std::endl;
 		const std::string data_dir = "C:/Users/domccl/GitHub/smartPeak_cpp/build_win_cuda/bin/Debug/";
-		const std::string nodes_filename = data_dir + "0_PeakIntegrator_Nodes.csv";
-		const std::string links_filename = data_dir + "0_PeakIntegrator_Links.csv";
-		const std::string weights_filename = data_dir + "0_PeakIntegrator_Weights.csv";
+		const std::string model_filename = data_dir + "0_PeakIntegrator_model.binary";
+		const std::string interpreter_filename = data_dir + "0_PeakIntegrator_interpreter.binary";
+		ModelFile<float> model_file;
+		model_file.loadModelBinary(model_filename, model);
 		model.setId(1);
 		model.setName("PeakInt-0");
-		ModelFile<float> model_file;
-		model_file.loadModelCsv(nodes_filename, links_filename, weights_filename, model);
-	}
-	if (load_weight_values) {
-		// read in the trained model weights only
-		std::cout << "Reading in the model weight values..." << std::endl;
-		const std::string data_dir = "C:/Users/domccl/GitHub/smartPeak_cpp/build_win_cuda/bin/Debug/";
-		const std::string weights_filename = data_dir + "Weights.csv";
-		model.setId(2);
-		model.setName("PeakInt-0");
-		WeightFile<float> weight_file;
-		weight_file.loadWeightValuesCsv(weights_filename, model.weights_);
+		ModelInterpreterFileDefaultDevice<float> model_interpreter_file;
+		model_interpreter_file.loadModelInterpreterBinary(interpreter_filename, model_interpreters[0]); // FIX ME!
 	}
 	std::vector<Model<float>> population = { model };
 
@@ -819,7 +814,7 @@ void main_DenoisingAE(const bool& make_model, const bool& load_weight_values, co
 int main(int argc, char** argv)
 {
 	// run the application
-	main_DenoisingAE(true, false, true);
+	main_DenoisingAE(true, true);
 
 	return 0;
 }

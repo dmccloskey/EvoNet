@@ -7,6 +7,7 @@
 #include <SmartPeak/ml/Model.h>
 #include <SmartPeak/io/PopulationTrainerFile.h>
 #include <SmartPeak/io/ModelFile.h>
+#include <SmartPeak/io/ModelInterpreterFile.h>
 
 #include <SmartPeak/simulator/ChromatogramSimulator.h>
 
@@ -199,7 +200,7 @@ public:
 		ModelBuilder<TensorT> model_builder;
 
 		// Add the inputs
-		std::vector<std::string> node_names_intensity = model_builder.addInputNodes(model, "Intensity", n_inputs);
+		std::vector<std::string> node_names_intensity = model_builder.addInputNodes(model, "Intensity", "Input", n_inputs);
 
 		// Add the Encoder FC layers for Time and intensity
 		node_names_intensity = model_builder.addFullyConnected(model, "EN_Intensity_0", "EN_Intensity_0", node_names_intensity, n_hidden_0,
@@ -275,7 +276,7 @@ public:
 		ModelBuilder<TensorT> model_builder;
 
 		// Add the inputs
-		std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Intensity", n_inputs);
+		std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Intensity", "Intensity", n_inputs);
 
 		// Multi-head attention
 		std::vector<std::string> node_names;
@@ -423,15 +424,6 @@ public:
 			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(n_encodings, 2)),
 			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 
-		//node_names = model_builder.addFullyConnected(model, "DecScalar1", "DecScalar1", node_names, n_inputs,
-		//	std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>(0.01)),
-		//	std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>(0.01)),
-		//	std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-		//	std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-		//	std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-		//	std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(n_inputs, 2)),
-		//	std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
-
 		// Add the first projection
 		std::vector<std::string> node_names_proj0;
 		std::string proj_name = "DecProj0-" + std::to_string(0);
@@ -487,14 +479,14 @@ public:
 				std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
 				true);
 		}
-		/*		node_names = model_builder.addSinglyConnected(model, "Intensity_Out", "Intensity_Out", node_names_proj1, node_names_proj1.size(),
-					std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-					std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
-					std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-					std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-					std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-					std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
-					std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0f, 0.0f);*/
+		node_names = model_builder.addSinglyConnected(model, "Intensity_Out", "Intensity_Out", node_names_proj1, node_names_proj1.size(),
+			std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
+			std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
+			std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
+			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
+			std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
+			std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0f, 0.0f);
 
 		for (const std::string& node_name : node_names)
 			model.getNodesMap().at(node_name)->setType(NodeType::output);
@@ -513,12 +505,13 @@ public:
 		Model<TensorT>& model,
 		ModelInterpreterGpu<TensorT>& model_interpreter,
 		const std::vector<float>& model_errors) {
-		if (n_epochs % 1000 == 0 && n_epochs != 0) {
-			// save the model every 1000 epochs
+		// Check point the model every 1000 epochs
+		if (n_epochs % 999 == 0 && n_epochs != 0) {
+			model_interpreter.getModelResults(model, false, true, false);
 			ModelFile<TensorT> data;
-			data.storeModelCsv(model.getName() + "_" + std::to_string(n_epochs) + "_nodes.csv",
-				model.getName() + "_" + std::to_string(n_epochs) + "_links.csv",
-				model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model);
+			data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
+			ModelInterpreterFileGpu<TensorT> interpreter_data;
+			interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
 		}
 	}
 };
@@ -656,7 +649,7 @@ public:
 	}
 };
 
-void main_DenoisingAE(const bool& make_model, const bool& load_weight_values, const bool& train_model) {
+void main_DenoisingAE(const bool& make_model, const bool& train_model) {
 
 	const int n_hard_threads = std::thread::hardware_concurrency();
 	const int n_threads = 1;
@@ -667,14 +660,14 @@ void main_DenoisingAE(const bool& make_model, const bool& load_weight_values, co
 	population_trainer.setNTop(1);
 	population_trainer.setNRandom(1);
 	population_trainer.setNReplicatesPerModel(1);
-	population_trainer.setLogging(true);
+	population_trainer.setLogging(false);
 
 	// define the population logger
 	PopulationLogger<float> population_logger(true, true);
 
 	// define the model logger
-	//ModelLogger<float> model_logger(true, true, false, false, false, false, false, false);
-	ModelLogger<float> model_logger(true, true, true, false, false, false, false, false); // evaluation only
+	ModelLogger<float> model_logger(true, true, false, false, false, false, false, false);
+	//ModelLogger<float> model_logger(true, true, true, false, false, false, false, false); // evaluation and testing only
 
 	// define the data simulator
 	const std::size_t input_size = 512;
@@ -684,7 +677,7 @@ void main_DenoisingAE(const bool& make_model, const bool& load_weight_values, co
 	// Hard
 	//data_simulator.step_size_mu_ = std::make_pair(1, 1);
 	//data_simulator.step_size_sigma_ = std::make_pair(0, 0);
-	//data_simulator.chrom_window_size_ = std::make_pair(500, 500);
+	//data_simulator.chrom_window_size_ = std::make_pair(input_size, input_size);
 	//data_simulator.noise_mu_ = std::make_pair(0, 0);
 	//data_simulator.noise_sigma_ = std::make_pair(0, 5.0);
 	//data_simulator.baseline_height_ = std::make_pair(0, 0);
@@ -699,10 +692,10 @@ void main_DenoisingAE(const bool& make_model, const bool& load_weight_values, co
 	//data_simulator.step_size_sigma_ = std::make_pair(0, 0);
 	//data_simulator.chrom_window_size_ = std::make_pair(input_size, input_size);
 	//data_simulator.noise_mu_ = std::make_pair(0, 0);
-	//data_simulator.noise_sigma_ = std::make_pair(0, 5);
+	//data_simulator.noise_sigma_ = std::make_pair(0, 0.2);
 	//data_simulator.baseline_height_ = std::make_pair(0, 0);
-	//data_simulator.n_peaks_ = std::make_pair(2, 20);
-	//data_simulator.emg_h_ = std::make_pair(10, 100);
+	//data_simulator.n_peaks_ = std::make_pair(1, 20);
+	//data_simulator.emg_h_ = std::make_pair(0.1, 1.0);
 	//data_simulator.emg_tau_ = std::make_pair(0, 0);
 	//data_simulator.emg_mu_offset_ = std::make_pair(0, 0);
 	//data_simulator.emg_sigma_ = std::make_pair(10, 30);
@@ -712,7 +705,8 @@ void main_DenoisingAE(const bool& make_model, const bool& load_weight_values, co
 	data_simulator.step_size_sigma_ = std::make_pair(0, 0);
 	data_simulator.chrom_window_size_ = std::make_pair(input_size, input_size);
 	data_simulator.noise_mu_ = std::make_pair(0, 0);
-	data_simulator.noise_sigma_ = std::make_pair(0, 0);
+	data_simulator.noise_sigma_ = std::make_pair(0, 0.2);
+	//data_simulator.noise_sigma_ = std::make_pair(0, 0);
 	data_simulator.baseline_height_ = std::make_pair(0, 0);
 	data_simulator.n_peaks_ = std::make_pair(2, 2);
 	data_simulator.emg_h_ = std::make_pair(1, 1);
@@ -742,9 +736,8 @@ void main_DenoisingAE(const bool& make_model, const bool& load_weight_values, co
 	std::vector<std::string> output_nodes_intensity;
 	for (int i = 0; i < input_size; ++i) {
 		char name_char[512];
-		//sprintf(name_char, "Intensity_Out_%012d", i);
-		//sprintf(name_char, "DecScalar1_%012d", i);
-		sprintf(name_char, "Attention1_MultiHead_%012d", i);
+		sprintf(name_char, "Intensity_Out_%012d", i);
+		//sprintf(name_char, "Attention1_MultiHead_%012d", i);
 		std::string name(name_char);
 		output_nodes_intensity.push_back(name);
 	}
@@ -757,15 +750,17 @@ void main_DenoisingAE(const bool& make_model, const bool& load_weight_values, co
 		model_interpreters.push_back(model_interpreter);
 	}
 	ModelTrainerExt<float> model_trainer;
-	model_trainer.setBatchSize(1); // evaluation only
-	//model_trainer.setBatchSize(32);
-	model_trainer.setNEpochsTraining(10001);
+	//model_trainer.setBatchSize(1); // evaluation only
+	model_trainer.setBatchSize(64);
+	model_trainer.setNEpochsTraining(10000);
 	model_trainer.setNEpochsValidation(1);
-	model_trainer.setNEpochsEvaluation(1);
+	model_trainer.setNEpochsEvaluation(100);
 	model_trainer.setMemorySize(1);
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setLogging(true, false, true);
 	model_trainer.setFindCycles(false);
+	model_trainer.setFastInterpreter(true);
+	model_trainer.setPreserveOoO(true);
 	model_trainer.setLossFunctions({
 		std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
 	model_trainer.setLossFunctionGrads({
@@ -781,31 +776,22 @@ void main_DenoisingAE(const bool& make_model, const bool& load_weight_values, co
 	std::cout << "Initializing the population..." << std::endl;
 	Model<float> model;
 	if (make_model) {
-		//model_trainer.makeDenoisingAE(model, input_size, encoding_size, n_hidden);
-		model_trainer.makeMultiHeadDotProdAttention(model, input_size, input_size, { 8, 8 }, { 48, 48 }, { (int)input_size, (int)input_size }, false, false, false);
-		//model_trainer.makeCompactCovNetAE(model, input_size, input_size, encoding_size, 4, 4, true);
+		model_trainer.makeDenoisingAE(model, input_size, encoding_size, 128);
+		//model_trainer.makeMultiHeadDotProdAttention(model, input_size, input_size, { 12, 12 }, { 48, 48 }, { (int)input_size, (int)input_size }, false, false, false);
+		//model_trainer.makeCompactCovNetAE(model, input_size, input_size, encoding_size, 1, 1, false);
 	}
 	else {
 		// read in the trained model
 		std::cout << "Reading in the model..." << std::endl;
 		const std::string data_dir = "C:/Users/domccl/GitHub/smartPeak_cpp/build_win_cuda/bin/Debug/";
-		const std::string nodes_filename = data_dir + "0_PeakIntegrator_Nodes.csv";
-		const std::string links_filename = data_dir + "0_PeakIntegrator_Links.csv";
-		const std::string weights_filename = data_dir + "0_PeakIntegrator_Weights.csv";
+		const std::string model_filename = data_dir + "0_PeakIntegrator_model.binary";
+		const std::string interpreter_filename = data_dir + "0_PeakIntegrator_interpreter.binary";
+		ModelFile<float> model_file;
+		model_file.loadModelBinary(model_filename, model);
 		model.setId(1);
 		model.setName("PeakInt-0");
-		ModelFile<float> model_file;
-		model_file.loadModelCsv(nodes_filename, links_filename, weights_filename, model);
-	}
-	if (load_weight_values) {
-		// read in the trained model weights only
-		std::cout << "Reading in the model weight values..." << std::endl;
-		const std::string data_dir = "C:/Users/domccl/GitHub/smartPeak_cpp/build_win_cuda/bin/Debug/";
-		const std::string weights_filename = data_dir + "Weights.csv";
-		model.setId(2);
-		model.setName("PeakInt-0");
-		WeightFile<float> weight_file;
-		weight_file.loadWeightValuesCsv(weights_filename, model.weights_);
+		ModelInterpreterFileGpu<float> model_interpreter_file;
+		model_interpreter_file.loadModelInterpreterBinary(interpreter_filename, model_interpreters[0]); // FIX ME!
 	}
 	std::vector<Model<float>> population = { model };
 
@@ -828,7 +814,7 @@ void main_DenoisingAE(const bool& make_model, const bool& load_weight_values, co
 int main(int argc, char** argv)
 {
 	// run the application
-	main_DenoisingAE(true, false, true);
+	main_DenoisingAE(true, true);
 
 	return 0;
 }
