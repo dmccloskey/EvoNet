@@ -542,7 +542,7 @@ public:
 		if (n_epochs == 0) {
 			model_logger.initLogs(model);
 		}
-		if (n_epochs % 10 == 0) {
+		if (n_epochs % 1 == 0) {
 			if (model_logger.getLogExpectedPredictedEpoch())
 				model_interpreter.getModelResults(model, true, false, false);
 			model_logger.writeLogs(model, n_epochs, {}, { "Error" }, {}, { model_error }, output_nodes, expected_values);
@@ -783,8 +783,8 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
 		model_interpreters.push_back(model_interpreter);
 	}
 	ModelTrainerExt<float> model_trainer;
-	//model_trainer.setBatchSize(1); // evaluation only
-	model_trainer.setBatchSize(64);
+	model_trainer.setBatchSize(1); // evaluation only
+	//model_trainer.setBatchSize(64);
 	model_trainer.setNEpochsTraining(0);
 	model_trainer.setNEpochsValidation(10);
 	model_trainer.setNEpochsEvaluation(10);
