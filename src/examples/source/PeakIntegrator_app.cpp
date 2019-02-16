@@ -757,7 +757,7 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
 	model_trainer.setNEpochsEvaluation(100);
 	model_trainer.setMemorySize(1);
 	model_trainer.setVerbosityLevel(1);
-	model_trainer.setLogging(true, false, true);
+	model_trainer.setLogging(true, true, true);
 	model_trainer.setFindCycles(false);
 	model_trainer.setFastInterpreter(true);
 	model_trainer.setPreserveOoO(true);
