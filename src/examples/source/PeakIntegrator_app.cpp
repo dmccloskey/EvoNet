@@ -700,7 +700,7 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
 	PopulationLogger<float> population_logger(true, true);
 
 	// define the model logger
-	ModelLogger<float> model_logger(true, true, false, false, false, false, false, false);
+	ModelLogger<float> model_logger(true, true, true, false, false, false, false, false);
 
 	// define the data simulator
 	const std::size_t input_size = 512;
@@ -785,9 +785,9 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
 	ModelTrainerExt<float> model_trainer;
 	//model_trainer.setBatchSize(1); // evaluation only
 	model_trainer.setBatchSize(64);
-	model_trainer.setNEpochsTraining(3000);
-	model_trainer.setNEpochsValidation(1);
-	model_trainer.setNEpochsEvaluation(100);
+	model_trainer.setNEpochsTraining(0);
+	model_trainer.setNEpochsValidation(10);
+	model_trainer.setNEpochsEvaluation(10);
 	model_trainer.setMemorySize(1);
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setLogging(true, true, true);
@@ -816,9 +816,9 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
 	else {
 		// read in the trained model
 		std::cout << "Reading in the model..." << std::endl;
-		const std::string data_dir = "C:/Users/domccl/GitHub/smartPeak_cpp/build_win_cuda/bin/Debug/";
-		const std::string model_filename = data_dir + "0_PeakIntegrator_model.binary";
-		const std::string interpreter_filename = data_dir + "0_PeakIntegrator_interpreter.binary";
+		const std::string data_dir = "/home/user/code/";
+		const std::string model_filename = data_dir + "DenoisingAE_9990_model.binary";
+		const std::string interpreter_filename = data_dir + "DenoisingAE_9990_interpreter.binary";
 		ModelFile<float> model_file;
 		model_file.loadModelBinary(model_filename, model);
 		model.setId(1);
@@ -847,7 +847,7 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
 int main(int argc, char** argv)
 {
 	// run the application
-	main_DenoisingAE(true, true);
+	main_DenoisingAE(false, true);
 
 	return 0;
 }
