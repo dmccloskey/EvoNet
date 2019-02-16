@@ -499,7 +499,6 @@ public:
 		if (!model.checkLinksNodeAndWeightNames(node_names_NA, weight_names_NA))
 			std::cout << "Model links are not pointing to the correct nodes and weights!" << std::endl;
 	}
-	Model<TensorT> makeModel() { return Model<TensorT>(); }
 	void adaptiveTrainerScheduler(
 		const int& n_generations,
 		const int& n_epochs,
@@ -513,6 +512,40 @@ public:
 			data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
 			ModelInterpreterFileDefaultDevice<TensorT> interpreter_data;
 			interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
+		}
+	}
+	void trainingModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
+		const Eigen::Tensor<TensorT, 3>& expected_values,
+		const std::vector<std::string>& output_nodes,
+		const TensorT& model_error)
+	{
+		model_logger.setLogTimeEpoch(true);
+		model_logger.setLogTrainValMetricEpoch(true);
+		model_logger.setLogExpectedPredictedEpoch(false);
+		if (n_epochs == 0) {
+			model_logger.initLogs(model);
+		}
+		if (n_epochs % 10 == 0) {
+			if (model_logger.getLogExpectedPredictedEpoch())
+				model_interpreter.getModelResults(model, true, false, false);
+			model_logger.writeLogs(model, n_epochs, { "Error" }, {}, { model_error }, {}, output_nodes, expected_values);
+		}
+	}
+	void validationModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
+		const Eigen::Tensor<TensorT, 3>& expected_values,
+		const std::vector<std::string>& output_nodes,
+		const TensorT& model_error)
+	{
+		model_logger.setLogTimeEpoch(false);
+		model_logger.setLogTrainValMetricEpoch(false);
+		model_logger.setLogExpectedPredictedEpoch(true);
+		if (n_epochs == 0) {
+			model_logger.initLogs(model);
+		}
+		if (n_epochs % 10 == 0) {
+			if (model_logger.getLogExpectedPredictedEpoch())
+				model_interpreter.getModelResults(model, true, false, false);
+			model_logger.writeLogs(model, n_epochs, {}, { "Error" }, {}, { model_error }, output_nodes, expected_values);
 		}
 	}
 };
@@ -668,7 +701,6 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
 
 	// define the model logger
 	ModelLogger<float> model_logger(true, true, false, false, false, false, false, false);
-	//ModelLogger<float> model_logger(true, true, true, false, false, false, false, false); // evaluation and testing only
 
 	// define the data simulator
 	const std::size_t input_size = 512;
@@ -688,32 +720,32 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
 	//data_simulator.emg_mu_offset_ = std::make_pair(-10, 10);
 	//data_simulator.emg_sigma_ = std::make_pair(10, 30);
 
-	//// Easy
-	//data_simulator.step_size_mu_ = std::make_pair(1, 1);
-	//data_simulator.step_size_sigma_ = std::make_pair(0, 0);
-	//data_simulator.chrom_window_size_ = std::make_pair(input_size, input_size);
-	//data_simulator.noise_mu_ = std::make_pair(0, 0);
-	//data_simulator.noise_sigma_ = std::make_pair(0, 0.2);
-	//data_simulator.baseline_height_ = std::make_pair(0, 0);
-	//data_simulator.n_peaks_ = std::make_pair(1, 20);
-	//data_simulator.emg_h_ = std::make_pair(0.1, 1.0);
-	//data_simulator.emg_tau_ = std::make_pair(0, 0);
-	//data_simulator.emg_mu_offset_ = std::make_pair(0, 0);
-	//data_simulator.emg_sigma_ = std::make_pair(10, 30);
-
-	// Test
+	// Easy
 	data_simulator.step_size_mu_ = std::make_pair(1, 1);
 	data_simulator.step_size_sigma_ = std::make_pair(0, 0);
 	data_simulator.chrom_window_size_ = std::make_pair(input_size, input_size);
 	data_simulator.noise_mu_ = std::make_pair(0, 0);
 	data_simulator.noise_sigma_ = std::make_pair(0, 0.2);
-	//data_simulator.noise_sigma_ = std::make_pair(0, 0);
 	data_simulator.baseline_height_ = std::make_pair(0, 0);
-	data_simulator.n_peaks_ = std::make_pair(2, 2);
-	data_simulator.emg_h_ = std::make_pair(1, 1);
+	data_simulator.n_peaks_ = std::make_pair(1, 20);
+	data_simulator.emg_h_ = std::make_pair(0.1, 1.0);
 	data_simulator.emg_tau_ = std::make_pair(0, 0);
 	data_simulator.emg_mu_offset_ = std::make_pair(0, 0);
-	data_simulator.emg_sigma_ = std::make_pair(10, 10);
+	data_simulator.emg_sigma_ = std::make_pair(10, 30);
+
+	//// Test
+	//data_simulator.step_size_mu_ = std::make_pair(1, 1);
+	//data_simulator.step_size_sigma_ = std::make_pair(0, 0);
+	//data_simulator.chrom_window_size_ = std::make_pair(input_size, input_size);
+	//data_simulator.noise_mu_ = std::make_pair(0, 0);
+	//data_simulator.noise_sigma_ = std::make_pair(0, 0.2);
+	////data_simulator.noise_sigma_ = std::make_pair(0, 0);
+	//data_simulator.baseline_height_ = std::make_pair(0, 0);
+	//data_simulator.n_peaks_ = std::make_pair(2, 2);
+	//data_simulator.emg_h_ = std::make_pair(1, 1);
+	//data_simulator.emg_tau_ = std::make_pair(0, 0);
+	//data_simulator.emg_mu_offset_ = std::make_pair(0, 0);
+	//data_simulator.emg_sigma_ = std::make_pair(10, 10);
 
 	// Make the input nodes
 	std::vector<std::string> input_nodes;
@@ -753,7 +785,7 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
 	ModelTrainerExt<float> model_trainer;
 	//model_trainer.setBatchSize(1); // evaluation only
 	model_trainer.setBatchSize(64);
-	model_trainer.setNEpochsTraining(10000);
+	model_trainer.setNEpochsTraining(3000);
 	model_trainer.setNEpochsValidation(1);
 	model_trainer.setNEpochsEvaluation(100);
 	model_trainer.setMemorySize(1);

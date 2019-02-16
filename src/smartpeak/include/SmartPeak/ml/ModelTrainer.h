@@ -605,9 +605,9 @@ private:
 		if (this->getFindCycles())
 			model.findCycles();
 
-		// Initialize the logger
-		if (this->getLogTraining())
-			model_logger.initLogs(model);
+		//// Initialize the logger
+		//if (this->getLogTraining())
+		//	model_logger.initLogs(model);
 
 		// compile the graph into a set of operations and allocate all tensors
 		if (this->getVerbosityLevel() >= 2)
@@ -727,9 +727,9 @@ private:
 		if (this->getFindCycles())
 			model.findCycles();
 
-		// Initialize the logger
-		if (this->getLogValidation())
-			model_logger.initLogs(model);
+		//// Initialize the logger
+		//if (this->getLogValidation())
+		//	model_logger.initLogs(model);
 
 		// compile the graph into a set of operations and allocate all tensors
 		model_interpreter.getForwardPropogationOperations(model, this->getBatchSize(), this->getMemorySize(), false, this->getFastInterpreter(), this->getFindCycles(), this->getPreserveOoO());
@@ -824,9 +824,9 @@ private:
 		if (this->getFindCycles())
 			model.findCycles();
 
-		// Initialize the logger
-		if (this->getLogEvaluation())
-			model_logger.initLogs(model);
+		//// Initialize the logger
+		//if (this->getLogEvaluation())
+		//	model_logger.initLogs(model);
 
 		// compile the graph into a set of operations and allocate all tensors
 		model_interpreter.getForwardPropogationOperations(model, this->getBatchSize(), this->getMemorySize(), false, this->getFastInterpreter(), this->getFindCycles(), this->getPreserveOoO());
@@ -886,6 +886,9 @@ private:
 		const std::vector<std::string>& output_nodes,
 		const TensorT& model_error)
 	{
+		if (n_epochs == 0) {
+			model_logger.initLogs(model);
+		}
 		if (n_epochs % 10 == 0) {
 			if (model_logger.getLogExpectedPredictedEpoch())
 				model_interpreter.getModelResults(model, true, false, false);
@@ -898,6 +901,9 @@ private:
 		const std::vector<std::string>& output_nodes,
 		const TensorT& model_error)
 	{
+		if (n_epochs == 0) {
+			model_logger.initLogs(model);
+		}
 		if (n_epochs % 10 == 0) {
 			if (model_logger.getLogExpectedPredictedEpoch())
 				model_interpreter.getModelResults(model, true, false, false);
@@ -908,6 +914,9 @@ private:
 	inline void ModelTrainer<TensorT, InterpreterT>::evaluationModelLogger(const int & n_epochs, Model<TensorT>& model, InterpreterT & model_interpreter, ModelLogger<TensorT>& model_logger,
 		const std::vector<std::string>& output_nodes)
 	{
+		if (n_epochs == 0) {
+			model_logger.initLogs(model);
+		}
 		if (n_epochs % 1 == 0) {
 			model_interpreter.getModelResults(model, true, true, false);
 			model_logger.writeLogs(model, n_epochs, {}, {}, {}, {}, output_nodes, Eigen::Tensor<TensorT, 3>(), output_nodes, {}, {});
