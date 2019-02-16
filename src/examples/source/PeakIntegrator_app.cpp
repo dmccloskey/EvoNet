@@ -259,8 +259,10 @@ public:
 			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
 
 		// Specify the output node types manually
-		for (const std::string& node_name : node_names_intensity)
+		for (const std::string& node_name : node_names_intensity) {
 			model.nodes_.at(node_name)->setType(NodeType::output);
+			model.nodes_.at(node_name)->setLayerName("Output");
+		}
 
 		if (!model.checkCompleteInputToOutput())
 			std::cout << "Model input and output are not fully connected!" << std::endl;
@@ -671,7 +673,7 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
 
 	// define the data simulator
 	const std::size_t input_size = 512;
-	const std::size_t encoding_size = 256;
+	const std::size_t encoding_size = 64;
 	DataSimulatorExt<float> data_simulator;
 
 	// Hard
