@@ -816,7 +816,7 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
 	else {
 		// read in the trained model
 		std::cout << "Reading in the model..." << std::endl;
-		const std::string data_dir = "/home/user/code/";
+		const std::string data_dir = "/home/user/code/build/";
 		const std::string model_filename = data_dir + "DenoisingAE_9990_model.binary";
 		const std::string interpreter_filename = data_dir + "DenoisingAE_9990_interpreter.binary";
 		ModelFile<float> model_file;
