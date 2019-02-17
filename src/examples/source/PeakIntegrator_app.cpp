@@ -727,7 +727,7 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
 	data_simulator.noise_mu_ = std::make_pair(0, 0);
 	data_simulator.noise_sigma_ = std::make_pair(0, 0.2);
 	data_simulator.baseline_height_ = std::make_pair(0, 0);
-	data_simulator.n_peaks_ = std::make_pair(1, 20);
+	data_simulator.n_peaks_ = std::make_pair(1, 5);
 	data_simulator.emg_h_ = std::make_pair(0.1, 1.0);
 	data_simulator.emg_tau_ = std::make_pair(0, 0);
 	data_simulator.emg_mu_offset_ = std::make_pair(0, 0);
@@ -784,8 +784,8 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
 	}
 	ModelTrainerExt<float> model_trainer;
 	model_trainer.setBatchSize(1); // evaluation only
-	//model_trainer.setBatchSize(64);
-	model_trainer.setNEpochsTraining(0);
+	model_trainer.setBatchSize(16);
+	model_trainer.setNEpochsTraining(5000);
 	model_trainer.setNEpochsValidation(10);
 	model_trainer.setNEpochsEvaluation(10);
 	model_trainer.setMemorySize(1);
@@ -847,7 +847,7 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
 int main(int argc, char** argv)
 {
 	// run the application
-	main_DenoisingAE(false, true);
+	main_DenoisingAE(true, true);
 
 	return 0;
 }
