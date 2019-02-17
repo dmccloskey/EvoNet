@@ -785,7 +785,7 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
 	ModelTrainerExt<float> model_trainer;
 	model_trainer.setBatchSize(1); // evaluation only
 	//model_trainer.setBatchSize(16);
-	model_trainer.setNEpochsTraining(10);
+	model_trainer.setNEpochsTraining(0);
 	model_trainer.setNEpochsValidation(10);
 	model_trainer.setNEpochsEvaluation(10);
 	model_trainer.setMemorySize(1);
