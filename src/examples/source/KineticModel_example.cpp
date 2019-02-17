@@ -88,35 +88,47 @@ public:
 				for (int memory_iter = 0; memory_iter<memory_size; ++memory_iter) {
 					for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
 						if (simulation_type_ == "glucose_pulse") {
-							if (nodes_iter == 11 && memory_iter == 0)
+							if (nodes_iter != 11 && memory_iter <= 3)
+								input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst[nodes_iter];
+							else if (nodes_iter == 11 && memory_iter <= 3)
 								input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = glu__D_rand(0, batch_iter*n_epochs + epochs_iter);
 							else
-								input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst[nodes_iter];
+								input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 0;
 						}
 						else if (simulation_type_ == "amp_sweep") {
-							if (nodes_iter == 11 && memory_iter <= 0)
+							if (nodes_iter != 4 && memory_iter <= 3)
+								input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst[nodes_iter];
+							else if (nodes_iter == 4 && memory_iter <= 3)
 								input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = amp_rand(0, batch_iter*n_epochs + epochs_iter);
 							else
-								input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst[nodes_iter];
+								input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 0;
 						}
 						else if (simulation_type_ == "steady_state")
-							input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst[nodes_iter];
+							if (nodes_iter != 11 && memory_iter <= 3)
+								input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst[nodes_iter];
+							else if (nodes_iter == 11)
+								input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst[nodes_iter];
+							else
+								input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 0;
 					}
 					for (int nodes_iter = 0; nodes_iter < n_output_nodes; ++nodes_iter) {
 						if (simulation_type_ == "glucose_pulse") {
-							if (nodes_iter == 11 && memory_iter == 0)
-								output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = glu__D_rand(0, batch_iter*n_epochs + epochs_iter);
-							else
+							if (memory_iter == memory_size - 1)
 								output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst[nodes_iter];
+							else
+								output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 0; // NOTE: TETT of 1
 						}
-						else if (simulation_type_ == "amp_sweep"){
-							if (nodes_iter == 11 && memory_iter <= 0)
-								output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = amp_rand(0, batch_iter*n_epochs + epochs_iter);
-							else
+						else if (simulation_type_ == "amp_sweep") {
+							if (memory_iter == memory_size - 1)
 								output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst[nodes_iter];
+							else
+								output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 0; // NOTE: TETT of 1
 						}
 						else if (simulation_type_ == "steady_state")
-							output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst[nodes_iter];
+							if (memory_iter == memory_size - 1)
+								output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst[nodes_iter];
+							else
+								output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 0; // NOTE: TETT of 1
 					}
 				}
 				//for (int memory_iter = memory_size - 1; memory_iter >= 0; --memory_iter) {
@@ -384,8 +396,8 @@ void main_KineticModel(const bool& make_model, const bool& train_model, const st
 // Main
 int main(int argc, char** argv)
 {
-	//main_KineticModel(true, true, "steady_state"); // Constant glucose
-	//main_KineticModel(true, true, "glucose_pulse"); // Glucose pulse at T = 0 (maintenance of constant pyr levels)
-	main_KineticModel(true, true, "amp_sweep"); // AMP rise/fall at T = 0 (maintenance of constant ATP levels)
+	main_KineticModel(true, true, "steady_state"); // Constant glucose from T = 0 to N, SS metabolite levels at T = 0 (maintenance of constant metabolite levels)
+	//main_KineticModel(true, true, "glucose_pulse"); // Glucose pulse at T = 0, SS metabolite levels at T = 0 (maintenance of constant pyr levels)
+	//main_KineticModel(true, true, "amp_sweep"); // AMP rise/fall at T = 0, SS metabolite levels at T = 0 (maintenance of constant ATP levels)
 	return 0;
 }
