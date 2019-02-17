@@ -720,32 +720,32 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
 	//data_simulator.emg_mu_offset_ = std::make_pair(-10, 10);
 	//data_simulator.emg_sigma_ = std::make_pair(10, 30);
 
-	//// Easy
-	//data_simulator.step_size_mu_ = std::make_pair(1, 1);
-	//data_simulator.step_size_sigma_ = std::make_pair(0, 0);
-	//data_simulator.chrom_window_size_ = std::make_pair(input_size, input_size);
-	//data_simulator.noise_mu_ = std::make_pair(0, 0);
-	//data_simulator.noise_sigma_ = std::make_pair(0, 0.2);
-	//data_simulator.baseline_height_ = std::make_pair(0, 0);
-	//data_simulator.n_peaks_ = std::make_pair(1, 20);
-	//data_simulator.emg_h_ = std::make_pair(0.1, 1.0);
-	//data_simulator.emg_tau_ = std::make_pair(0, 0);
-	//data_simulator.emg_mu_offset_ = std::make_pair(0, 0);
-	//data_simulator.emg_sigma_ = std::make_pair(10, 30);
-
-	// Test
+	// Easy
 	data_simulator.step_size_mu_ = std::make_pair(1, 1);
 	data_simulator.step_size_sigma_ = std::make_pair(0, 0);
 	data_simulator.chrom_window_size_ = std::make_pair(input_size, input_size);
 	data_simulator.noise_mu_ = std::make_pair(0, 0);
 	data_simulator.noise_sigma_ = std::make_pair(0, 0.2);
-	//data_simulator.noise_sigma_ = std::make_pair(0, 0);
 	data_simulator.baseline_height_ = std::make_pair(0, 0);
-	data_simulator.n_peaks_ = std::make_pair(2, 2);
-	data_simulator.emg_h_ = std::make_pair(1, 1);
+	data_simulator.n_peaks_ = std::make_pair(1, 20);
+	data_simulator.emg_h_ = std::make_pair(0.1, 1.0);
 	data_simulator.emg_tau_ = std::make_pair(0, 0);
 	data_simulator.emg_mu_offset_ = std::make_pair(0, 0);
-	data_simulator.emg_sigma_ = std::make_pair(10, 10);
+	data_simulator.emg_sigma_ = std::make_pair(10, 30);
+
+	//// Test
+	//data_simulator.step_size_mu_ = std::make_pair(1, 1);
+	//data_simulator.step_size_sigma_ = std::make_pair(0, 0);
+	//data_simulator.chrom_window_size_ = std::make_pair(input_size, input_size);
+	//data_simulator.noise_mu_ = std::make_pair(0, 0);
+	//data_simulator.noise_sigma_ = std::make_pair(0, 0.2);
+	////data_simulator.noise_sigma_ = std::make_pair(0, 0);
+	//data_simulator.baseline_height_ = std::make_pair(0, 0);
+	//data_simulator.n_peaks_ = std::make_pair(2, 2);
+	//data_simulator.emg_h_ = std::make_pair(1, 1);
+	//data_simulator.emg_tau_ = std::make_pair(0, 0);
+	//data_simulator.emg_mu_offset_ = std::make_pair(0, 0);
+	//data_simulator.emg_sigma_ = std::make_pair(10, 10);
 
 	// Make the input nodes
 	std::vector<std::string> input_nodes;
