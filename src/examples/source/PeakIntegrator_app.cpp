@@ -769,8 +769,8 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
 	std::vector<std::string> output_nodes_intensity;
 	for (int i = 0; i < input_size; ++i) {
 		char name_char[512];
-		sprintf(name_char, "Intensity_Out_%012d", i);
-		//sprintf(name_char, "Attention1_MultiHead_%012d", i);
+		//sprintf(name_char, "Intensity_Out_%012d", i);
+		sprintf(name_char, "Attention1_MultiHead_%012d", i);
 		std::string name(name_char);
 		output_nodes_intensity.push_back(name);
 	}
