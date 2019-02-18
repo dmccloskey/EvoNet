@@ -605,10 +605,6 @@ private:
 		if (this->getFindCycles())
 			model.findCycles();
 
-		//// Initialize the logger
-		//if (this->getLogTraining())
-		//	model_logger.initLogs(model);
-
 		// compile the graph into a set of operations and allocate all tensors
 		if (this->getVerbosityLevel() >= 2)
 			std::cout << "Interpreting the model..." << std::endl;
@@ -624,7 +620,7 @@ private:
 			// assign the input data
 			model_interpreter.initBiases(model); // create the bias	
 			model_interpreter.mapValuesToLayers(model, input.chip(iter, 3), input_nodes, "output"); // Needed for DAG and DCG
-			model_interpreter.mapValuesToLayers(model, input.chip(iter, 3), input_nodes, "input"); // Needed for IG
+			//model_interpreter.mapValuesToLayers(model, input.chip(iter, 3), input_nodes, "input"); // Needed for IG
 
 			// forward propogate
 			if (this->getVerbosityLevel() >= 2)
@@ -727,10 +723,6 @@ private:
 		if (this->getFindCycles())
 			model.findCycles();
 
-		//// Initialize the logger
-		//if (this->getLogValidation())
-		//	model_logger.initLogs(model);
-
 		// compile the graph into a set of operations and allocate all tensors
 		model_interpreter.getForwardPropogationOperations(model, this->getBatchSize(), this->getMemorySize(), false, this->getFastInterpreter(), this->getFindCycles(), this->getPreserveOoO());
 		model_interpreter.allocateModelErrorTensor(this->getBatchSize(), this->getMemorySize());
@@ -823,10 +815,6 @@ private:
 		// Initialize the model
 		if (this->getFindCycles())
 			model.findCycles();
-
-		//// Initialize the logger
-		//if (this->getLogEvaluation())
-		//	model_logger.initLogs(model);
 
 		// compile the graph into a set of operations and allocate all tensors
 		model_interpreter.getForwardPropogationOperations(model, this->getBatchSize(), this->getMemorySize(), false, this->getFastInterpreter(), this->getFindCycles(), this->getPreserveOoO());
