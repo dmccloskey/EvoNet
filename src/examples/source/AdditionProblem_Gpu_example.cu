@@ -343,33 +343,47 @@ public:
 		if (n_generations > 0)
 		{
 			this->setRandomModifications(
-				std::make_pair(0, 4),
-				std::make_pair(0, 4),
+				std::make_pair(0, 1),
+				std::make_pair(0, 1),
 				std::make_pair(0, 0),
 				std::make_pair(0, 0),
-				std::make_pair(0, 8),
+				std::make_pair(0, 2),
 				std::make_pair(0, 0),
 				std::make_pair(0, 0),
 				std::make_pair(0, 0),
-				std::make_pair(0, 4),
-				std::make_pair(0, 4),
+				std::make_pair(0, 1),
+				std::make_pair(0, 1),
 				std::make_pair(0, 0),
 				std::make_pair(0, 0),
 				std::make_pair(0, 0));
+			// Appears to lead to instability?
+			//std::make_pair(0, 4),
+			//	std::make_pair(0, 4),
+			//	std::make_pair(0, 0),
+			//	std::make_pair(0, 0),
+			//	std::make_pair(0, 8),
+			//	std::make_pair(0, 0),
+			//	std::make_pair(0, 0),
+			//	std::make_pair(0, 0),
+			//	std::make_pair(0, 4),
+			//	std::make_pair(0, 4),
+			//	std::make_pair(0, 0),
+			//	std::make_pair(0, 0),
+			//	std::make_pair(0, 0));
 		}
 		else
 		{
 			this->setRandomModifications(
-				std::make_pair(0, 4),
-				std::make_pair(0, 4),
+				std::make_pair(0, 1),
+				std::make_pair(0, 1),
 				std::make_pair(0, 0),
 				std::make_pair(0, 0),
-				std::make_pair(0, 8),
+				std::make_pair(0, 2),
 				std::make_pair(0, 0),
 				std::make_pair(0, 0),
 				std::make_pair(0, 0),
-				std::make_pair(0, 4),
-				std::make_pair(0, 4),
+				std::make_pair(0, 1),
+				std::make_pair(0, 1),
 				std::make_pair(0, 0),
 				std::make_pair(0, 0),
 				std::make_pair(0, 0));
