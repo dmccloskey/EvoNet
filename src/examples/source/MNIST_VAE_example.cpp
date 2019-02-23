@@ -169,8 +169,8 @@ public:
 		const std::vector<std::string>& output_nodes,
 		const TensorT& model_error)
 	{
-		model_logger.setLogTimeEpoch(false);
-		model_logger.setLogTrainValMetricEpoch(false);
+		model_logger.setLogTimeEpoch(true);
+		model_logger.setLogTrainValMetricEpoch(true);
 		model_logger.setLogExpectedPredictedEpoch(true);
 		if (n_epochs == 0) {
 			model_logger.initLogs(model);
@@ -450,14 +450,14 @@ void main_VAE(const bool& make_model, const bool& train_model) {
 		model_interpreters.push_back(model_interpreter);
 	}
 	ModelTrainerExt<float> model_trainer;
-	//model_trainer.setBatchSize(1); // evaluation only
-	model_trainer.setBatchSize(64);
-	model_trainer.setNEpochsTraining(10000);
-	model_trainer.setNEpochsValidation(0);
+	model_trainer.setBatchSize(1); // evaluation only
+	//model_trainer.setBatchSize(64);
+	model_trainer.setNEpochsTraining(0);
+	model_trainer.setNEpochsValidation(20);
 	model_trainer.setNEpochsEvaluation(100);
 	model_trainer.setMemorySize(1);
 	model_trainer.setVerbosityLevel(1);
-	model_trainer.setLogging(true, false, true);
+	model_trainer.setLogging(false, true, true);
 	model_trainer.setFindCycles(false);
 	model_trainer.setFastInterpreter(true);
 	model_trainer.setLossFunctions({
@@ -484,9 +484,9 @@ void main_VAE(const bool& make_model, const bool& train_model) {
 	else {
 		// read in the trained model
 		std::cout << "Reading in the model..." << std::endl;
-		const std::string data_dir = "C:/Users/domccl/GitHub/smartPeak_cpp/build_win_cuda/bin/Debug/";
-		const std::string model_filename = data_dir + "0_MNIST_model.binary";
-		const std::string interpreter_filename = data_dir + "0_MNIST_interpreter.binary";
+		const std::string data_dir = "/home/user/code/build/";
+		const std::string model_filename = data_dir + "VAE_9000_model.binary";
+		const std::string interpreter_filename = data_dir + "VAE_9000_interpreter.binary";
 		ModelFile<float> model_file;
 		model_file.loadModelBinary(model_filename, model);
 		model.setId(1);
@@ -515,7 +515,7 @@ void main_VAE(const bool& make_model, const bool& train_model) {
 int main(int argc, char** argv)
 {
 	// run the application
-	main_VAE(true, true);
+	main_VAE(false, true);
 
 	return 0;
 }
