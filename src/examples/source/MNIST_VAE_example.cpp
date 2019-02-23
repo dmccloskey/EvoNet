@@ -134,7 +134,7 @@ public:
 		//if (n_epochs = 1000) {
 		//	// anneal the learning rate to 1e-4
 		//}
-		if (n_epochs % 1000 == 0 && n_epochs != 0
+		if (n_epochs % 999 == 0 && n_epochs != 0
 			) {
 			// save the model every 1000 epochs
 			//model_interpreter.getModelResults(model, false, true, false);
@@ -450,14 +450,14 @@ void main_VAE(const bool& make_model, const bool& train_model) {
 		model_interpreters.push_back(model_interpreter);
 	}
 	ModelTrainerExt<float> model_trainer;
-	//model_trainer.setBatchSize(1); // evaluation only
-	model_trainer.setBatchSize(64);
+	model_trainer.setBatchSize(8); // evaluation only
+	//model_trainer.setBatchSize(64);
 	model_trainer.setNEpochsTraining(5000);
 	model_trainer.setNEpochsValidation(10);
 	model_trainer.setNEpochsEvaluation(100);
 	model_trainer.setMemorySize(1);
 	model_trainer.setVerbosityLevel(1);
-	model_trainer.setLogging(false, true, true);
+	model_trainer.setLogging(true, true, true);
 	model_trainer.setFindCycles(false);
 	model_trainer.setFastInterpreter(true);
 	model_trainer.setLossFunctions({
