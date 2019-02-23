@@ -1663,7 +1663,7 @@ namespace SmartPeak
 			//std::vector<std::string> sink_nodes_with_biases;
 			//getNextInactiveLayerBiases(model, FP_operations_map, FP_operations_list, sink_nodes_with_biases);
 
-			if (find_cycles) {
+			//if (find_cycles) {
 				// get cycles
 				std::map<std::string, int> FP_operations_map_cycles = FP_operations_map;
 				std::vector<OperationList<TensorT>> FP_operations_list_cycles = FP_operations_list;
@@ -1673,7 +1673,7 @@ namespace SmartPeak
 				// Remove all nodes involved in "cycles" that have arguments
 				// involving source to sink node pairs not identified as cycles
 				pruneInactiveLayerCycles(model, FP_operations_map, FP_operations_map_cycles, FP_operations_list, FP_operations_list_cycles, sink_nodes_cycles);
-			}
+			//}
 
 			// check if all nodes have been activated
 			if (FP_operations_list.size() == 0) {
