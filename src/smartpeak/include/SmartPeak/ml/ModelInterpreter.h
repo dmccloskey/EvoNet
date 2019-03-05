@@ -1649,21 +1649,12 @@ namespace SmartPeak
 		std::vector<OperationList<TensorT>> FP_operations;
 		for (; iter < max_iters; ++iter)
 		{
-			// get the next hidden layer
-			std::map<std::string, int> FP_operations_map;
-			std::vector<OperationList<TensorT>> FP_operations_list;
-			getNextInactiveLayer(model, FP_operations_map, FP_operations_list);
+      std::map<std::string, int> FP_operations_map;
+      std::vector<OperationList<TensorT>> FP_operations_list;
+			if (find_cycles) {
+        // get the next hidden layer
+        getNextInactiveLayer(model, FP_operations_map, FP_operations_list);
 
-			// [OPTIMIZATION: for performance, this method has been combined with getNextInactiveLayer above to reduce
-			//							  the number of iterations through all model links
-			//std::map<std::string, int> FP_operations_map;
-			//std::vector<OperationList<TensorT>> FP_operations_list;
-			//getNextInactiveLayerWOBiases(model, FP_operations_map, FP_operations_list);
-			//// get biases
-			//std::vector<std::string> sink_nodes_with_biases;
-			//getNextInactiveLayerBiases(model, FP_operations_map, FP_operations_list, sink_nodes_with_biases);
-
-			//if (find_cycles) {
 				// get cycles
 				std::map<std::string, int> FP_operations_map_cycles = FP_operations_map;
 				std::vector<OperationList<TensorT>> FP_operations_list_cycles = FP_operations_list;
@@ -1673,7 +1664,15 @@ namespace SmartPeak
 				// Remove all nodes involved in "cycles" that have arguments
 				// involving source to sink node pairs not identified as cycles
 				pruneInactiveLayerCycles(model, FP_operations_map, FP_operations_map_cycles, FP_operations_list, FP_operations_list_cycles, sink_nodes_cycles);
-			//}
+			}
+      else {
+        // get the next hidden layer
+        getNextInactiveLayerWOBiases(model, FP_operations_map, FP_operations_list);
+
+        // get biases
+        std::vector<std::string> sink_nodes_with_biases;
+        getNextInactiveLayerBiases(model, FP_operations_map, FP_operations_list, sink_nodes_with_biases);
+      }
 
 			// check if all nodes have been activated
 			if (FP_operations_list.size() == 0) {
