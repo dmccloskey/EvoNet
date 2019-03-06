@@ -381,20 +381,20 @@ void main_VAE(const bool& make_model, const bool& train_model) {
 	std::string training_data_filename, training_labels_filename;
 	//training_data_filename = "/home/user/data/train-images-idx3-ubyte";
 	//training_labels_filename = "/home/user/data/train-labels-idx1-ubyte";
-	//training_data_filename = "C:/Users/domccl/GitHub/mnist/train-images.idx3-ubyte";
-	//training_labels_filename = "C:/Users/domccl/GitHub/mnist/train-labels.idx1-ubyte";
-	training_data_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/train-images-idx3-ubyte";
-	training_labels_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/train-labels-idx1-ubyte";
+	training_data_filename = "C:/Users/domccl/GitHub/mnist/train-images.idx3-ubyte";
+	training_labels_filename = "C:/Users/domccl/GitHub/mnist/train-labels.idx1-ubyte";
+	//training_data_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/train-images-idx3-ubyte";
+	//training_labels_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/train-labels-idx1-ubyte";
 	data_simulator.readData(training_data_filename, training_labels_filename, true, training_data_size, input_size);
 
 	// read in the validation data
 	std::string validation_data_filename, validation_labels_filename;
 	//validation_data_filename = "/home/user/data/t10k-images-idx3-ubyte";
 	//validation_labels_filename = "/home/user/data/t10k-labels-idx1-ubyte";
-	//validation_data_filename = "C:/Users/domccl/GitHub/mnist/t10k-images.idx3-ubyte";
-	//validation_labels_filename = "C:/Users/domccl/GitHub/mnist/t10k-labels.idx1-ubyte";
-	validation_data_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/t10k-images-idx3-ubyte";
-	validation_labels_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/t10k-labels-idx1-ubyte";
+	validation_data_filename = "C:/Users/domccl/GitHub/mnist/t10k-images.idx3-ubyte";
+	validation_labels_filename = "C:/Users/domccl/GitHub/mnist/t10k-labels.idx1-ubyte";
+	//validation_data_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/t10k-images-idx3-ubyte";
+	//validation_labels_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/t10k-labels-idx1-ubyte";
 	data_simulator.readData(validation_data_filename, validation_labels_filename, false, validation_data_size, input_size);
 	data_simulator.unitScaleData();
 

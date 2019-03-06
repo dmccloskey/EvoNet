@@ -1541,7 +1541,7 @@ namespace SmartPeak
 			int iter = 0;
 			std::vector<OperationList<TensorT>> FP_operations_expanded;
 			if (preserve_OoO) 
-				getFPOpsOoO_(model, find_cycles, FP_operations_expanded, iter);
+				getFPOpsOoO_(model, find_cycles, FP_operations_expanded, iter); // TODO: remove `find_cycles`
 			else
 				getFPOpsGraph_(model, FP_operations_expanded, iter);
 
@@ -1651,7 +1651,7 @@ namespace SmartPeak
 		{
       std::map<std::string, int> FP_operations_map;
       std::vector<OperationList<TensorT>> FP_operations_list;
-			if (find_cycles) {
+			//if (find_cycles) {
         // get the next hidden layer
         getNextInactiveLayer(model, FP_operations_map, FP_operations_list);
 
@@ -1664,15 +1664,15 @@ namespace SmartPeak
 				// Remove all nodes involved in "cycles" that have arguments
 				// involving source to sink node pairs not identified as cycles
 				pruneInactiveLayerCycles(model, FP_operations_map, FP_operations_map_cycles, FP_operations_list, FP_operations_list_cycles, sink_nodes_cycles);
-			}
-      else {
-        // get the next hidden layer
-        getNextInactiveLayerWOBiases(model, FP_operations_map, FP_operations_list);
+			//}
+   //   else {
+   //     // get the next hidden layer
+   //     getNextInactiveLayerWOBiases(model, FP_operations_map, FP_operations_list);
 
-        // get biases
-        std::vector<std::string> sink_nodes_with_biases;
-        getNextInactiveLayerBiases(model, FP_operations_map, FP_operations_list, sink_nodes_with_biases);
-      }
+   //     // get biases
+   //     std::vector<std::string> sink_nodes_with_biases;
+   //     getNextInactiveLayerBiases(model, FP_operations_map, FP_operations_list, sink_nodes_with_biases);
+   //   }
 
 			// check if all nodes have been activated
 			if (FP_operations_list.size() == 0) {
