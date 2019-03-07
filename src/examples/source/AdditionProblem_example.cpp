@@ -70,8 +70,8 @@ public:
 				}
 			}
 		}
-		//std::cout << "Input data: " << input_data << std::endl; // [TESTS: convert to a test!]
-		//std::cout << "Output data: " << output_data << std::endl; // [TESTS: convert to a test!]
+		std::cout << "Input data: " << input_data << std::endl; // [TESTS: convert to a test!]
+		std::cout << "Output data: " << output_data << std::endl; // [TESTS: convert to a test!]
 
 		time_steps.setConstant(1.0f);
 	}
@@ -629,8 +629,8 @@ int main(int argc, char** argv)
 	ModelTrainerExt<float> model_trainer;
 	model_trainer.setBatchSize(1);
 	model_trainer.setMemorySize(data_simulator.sequence_length_);
-	model_trainer.setNEpochsTraining(10000);
-	model_trainer.setNEpochsValidation(25);
+	model_trainer.setNEpochsTraining(1);
+	model_trainer.setNEpochsValidation(0);
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setFindCycles(true);
 	model_trainer.setLogging(true, false);

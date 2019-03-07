@@ -619,8 +619,12 @@ private:
 
 			// assign the input data
 			model_interpreter.initBiases(model); // create the bias	
-			model_interpreter.mapValuesToLayers(model, input.chip(iter, 3), input_nodes, "output"); // Needed for DAG and DCG
-			//model_interpreter.mapValuesToLayers(model, input.chip(iter, 3), input_nodes, "input"); // Needed for IG
+      if (this->getPreserveOoO()) {
+        model_interpreter.mapValuesToLayers(model, input.chip(iter, 3), input_nodes, "output"); // Needed for OoO/IG with DAG and DCG
+      } else {
+        model_interpreter.mapValuesToLayers(model, input.chip(iter, 3), input_nodes, "output"); // Needed for OoO/IG with DAG and DCG
+        model_interpreter.mapValuesToLayers(model, input.chip(iter, 3), input_nodes, "input"); // Needed for IG with DAG and DCG
+      }
 
 			// forward propogate
 			if (this->getVerbosityLevel() >= 2)
@@ -731,7 +735,13 @@ private:
 		{
 			// assign the input data
 			model_interpreter.initBiases(model); // create the bias	
-			model_interpreter.mapValuesToLayers(model, input.chip(iter, 3), input_nodes, "output");
+      if (this->getPreserveOoO()) {
+        model_interpreter.mapValuesToLayers(model, input.chip(iter, 3), input_nodes, "output"); // Needed for OoO/IG with DAG and DCG
+      }
+      else {
+        model_interpreter.mapValuesToLayers(model, input.chip(iter, 3), input_nodes, "output"); // Needed for OoO/IG with DAG and DCG
+        model_interpreter.mapValuesToLayers(model, input.chip(iter, 3), input_nodes, "input"); // Needed for IG with DAG and DCG
+      }
 
 			// forward propogate
 			if (this->getVerbosityLevel() >= 2)
@@ -824,7 +834,13 @@ private:
 		{
 			// assign the input data
 			model_interpreter.initBiases(model); // create the bias	
-			model_interpreter.mapValuesToLayers(model, input.chip(iter, 3), input_nodes, "output");
+      if (this->getPreserveOoO()) {
+        model_interpreter.mapValuesToLayers(model, input.chip(iter, 3), input_nodes, "output"); // Needed for OoO/IG with DAG and DCG
+      }
+      else {
+        model_interpreter.mapValuesToLayers(model, input.chip(iter, 3), input_nodes, "output"); // Needed for OoO/IG with DAG and DCG
+        model_interpreter.mapValuesToLayers(model, input.chip(iter, 3), input_nodes, "input"); // Needed for IG with DAG and DCG
+      }
 
 			// forward propogate
 			if (this->getVerbosityLevel() >= 2)

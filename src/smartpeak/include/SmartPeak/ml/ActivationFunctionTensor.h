@@ -52,7 +52,7 @@ namespace SmartPeak
 			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(ReLUOp<TensorT>());
 			auto result = (x.chip(time_step, 1) > x.chip(time_step, 1).constant(0)).select(x.chip(time_step, 1), x.chip(time_step, 1).constant(0));
 			out.chip(time_step, 1).device(device) = result.clip(-1e9, 1e9);
-			std::cout << out.chip(time_step, 1) << std::endl;
+      std::cout << out.chip(time_step, 1) << std::endl;
 		};
     std::string getName() const{return "ReLUTensorOp";};
 	//private:

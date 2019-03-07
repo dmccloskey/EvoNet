@@ -1651,28 +1651,28 @@ namespace SmartPeak
 		{
       std::map<std::string, int> FP_operations_map;
       std::vector<OperationList<TensorT>> FP_operations_list;
-			//if (find_cycles) {
-        // get the next hidden layer
-        getNextInactiveLayer(model, FP_operations_map, FP_operations_list);
+			//if (find_cycles) { // TBD: if an optimization can be made to reduce the `NextActiveLayer` method to the minimal number of link iterations
+      // get the next hidden layer
+      getNextInactiveLayer(model, FP_operations_map, FP_operations_list);
 
-				// get cycles
-				std::map<std::string, int> FP_operations_map_cycles = FP_operations_map;
-				std::vector<OperationList<TensorT>> FP_operations_list_cycles = FP_operations_list;
-				std::vector<std::string> sink_nodes_cycles;
-				getNextInactiveLayerCycles(model, FP_operations_map_cycles, FP_operations_list_cycles, sink_nodes_cycles);
+			// get cycles
+			std::map<std::string, int> FP_operations_map_cycles = FP_operations_map;
+			std::vector<OperationList<TensorT>> FP_operations_list_cycles = FP_operations_list;
+			std::vector<std::string> sink_nodes_cycles;
+			getNextInactiveLayerCycles(model, FP_operations_map_cycles, FP_operations_list_cycles, sink_nodes_cycles);
 
-				// Remove all nodes involved in "cycles" that have arguments
-				// involving source to sink node pairs not identified as cycles
-				pruneInactiveLayerCycles(model, FP_operations_map, FP_operations_map_cycles, FP_operations_list, FP_operations_list_cycles, sink_nodes_cycles);
+			// Remove all nodes involved in "cycles" that have arguments
+			// involving source to sink node pairs not identified as cycles
+			pruneInactiveLayerCycles(model, FP_operations_map, FP_operations_map_cycles, FP_operations_list, FP_operations_list_cycles, sink_nodes_cycles);
 			//}
-   //   else {
-   //     // get the next hidden layer
-   //     getNextInactiveLayerWOBiases(model, FP_operations_map, FP_operations_list);
+      //else {
+      //  // get the next hidden layer
+      //  getNextInactiveLayerWOBiases(model, FP_operations_map, FP_operations_list);
 
-   //     // get biases
-   //     std::vector<std::string> sink_nodes_with_biases;
-   //     getNextInactiveLayerBiases(model, FP_operations_map, FP_operations_list, sink_nodes_with_biases);
-   //   }
+      //  // get biases
+      //  std::vector<std::string> sink_nodes_with_biases;
+      //  getNextInactiveLayerBiases(model, FP_operations_map, FP_operations_list, sink_nodes_with_biases);
+      //}
 
 			// check if all nodes have been activated
 			if (FP_operations_list.size() == 0) {
