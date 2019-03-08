@@ -56,13 +56,14 @@ public:
 					cumulative(memory_iter) = result_cumulative;
 					//std::cout << "result cumulative: " << result_cumulative << std::endl; // [TESTS: convert to a test!]
 				}
-				for (int memory_iter = memory_size - 1; memory_iter >= 0; --memory_iter) {
+        //for (int memory_iter = memory_size - 1; memory_iter >= 0; --memory_iter) {
+				for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
 					// assign the input sequences
-					input_data(batch_iter, memory_iter, 0, epochs_iter) = random_sequence(memory_iter); // random sequence
-					input_data(batch_iter, memory_iter, 1, epochs_iter) = mask_sequence(memory_iter); // mask sequence
+					input_data(batch_iter, memory_iter, 0, epochs_iter) = random_sequence(memory_size - memory_iter - 1); // random sequence
+					input_data(batch_iter, memory_iter, 1, epochs_iter) = mask_sequence(memory_size - memory_iter - 1); // mask sequence
 
 					// assign the output
-					output_data(batch_iter, memory_iter, 0, epochs_iter) = cumulative(memory_iter);
+					output_data(batch_iter, memory_iter, 0, epochs_iter) = cumulative(memory_size - memory_iter - 1);
 					//if (memory_iter == 0)
 					//	output_data(batch_iter, memory_iter, 0, epochs_iter) = result;
 					//else
@@ -70,8 +71,8 @@ public:
 				}
 			}
 		}
-		std::cout << "Input data: " << input_data << std::endl; // [TESTS: convert to a test!]
-		std::cout << "Output data: " << output_data << std::endl; // [TESTS: convert to a test!]
+		//std::cout << "Input data: " << input_data << std::endl; // [TESTS: convert to a test!]
+		//std::cout << "Output data: " << output_data << std::endl; // [TESTS: convert to a test!]
 
 		time_steps.setConstant(1.0f);
 	}
@@ -165,7 +166,7 @@ public:
 	NOTE: evolution also does not seem to converge on the solution when using
 	this as the starting network
 	*/
-	Model<TensorT> makeModelSolution1()
+	Model<TensorT> makeModelSolution1(bool init_weight_soln = true)
 	{
 		Node<TensorT> i_rand, i_mask, h, m, o,
 			h_bias, m_bias, o_bias;
@@ -192,44 +193,43 @@ public:
 		// weights  
 		std::shared_ptr<WeightInitOp<TensorT>> weight_init;
 		std::shared_ptr<SolverOp<TensorT>> solver;
-		weight_init.reset(new ConstWeightInitOp<TensorT>(1.0)); //solution
-		weight_init.reset(new RandWeightInitOp<TensorT>(2.0));
+		if (init_weight_soln) weight_init.reset(new ConstWeightInitOp<TensorT>(1.0)); //solution
+		else weight_init.reset(new RandWeightInitOp<TensorT>(2.0));
 		solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));
 		solver->setGradientThreshold(10.0f);
 		Weight_i_rand_to_h = Weight<TensorT>("Weight_i_rand_to_h", weight_init, solver);
-		weight_init.reset(new ConstWeightInitOp<TensorT>(100.0)); //solution (large weight magnituted will need to an explosion of even a small error!)
-		//solver.reset(std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)));
-		weight_init.reset(new RandWeightInitOp<TensorT>(2.0));
+		if (init_weight_soln) weight_init.reset(new ConstWeightInitOp<TensorT>(100.0)); //solution (large weight magnituted will need to an explosion of even a small error!)
+		else weight_init.reset(new RandWeightInitOp<TensorT>(2.0));
 		solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));
 		solver->setGradientThreshold(10.0f);
 		Weight_i_mask_to_h = Weight<TensorT>("Weight_i_mask_to_h", weight_init, solver);
-		weight_init.reset(new ConstWeightInitOp<TensorT>(1.0)); //solution
-		weight_init.reset(new RandWeightInitOp<TensorT>(2.0));
+		if (init_weight_soln) weight_init.reset(new ConstWeightInitOp<TensorT>(1.0)); //solution
+		else weight_init.reset(new RandWeightInitOp<TensorT>(2.0));
 		solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));
 		solver->setGradientThreshold(10.0f);
 		Weight_h_to_m = Weight<TensorT>("Weight_h_to_m", weight_init, solver);
-		weight_init.reset(new ConstWeightInitOp<TensorT>(1.0)); //solution
-		weight_init.reset(new RandWeightInitOp<TensorT>(2.0));
+		if (init_weight_soln) weight_init.reset(new ConstWeightInitOp<TensorT>(1.0)); //solution
+		else weight_init.reset(new RandWeightInitOp<TensorT>(2.0));
 		solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));
 		solver->setGradientThreshold(10.0f);
 		Weight_m_to_m = Weight<TensorT>("Weight_m_to_m", weight_init, solver);
-		weight_init.reset(new ConstWeightInitOp<TensorT>(1.0)); //solution
-		weight_init.reset(new RandWeightInitOp<TensorT>(2.0));
+		if (init_weight_soln) weight_init.reset(new ConstWeightInitOp<TensorT>(1.0)); //solution
+		else weight_init.reset(new RandWeightInitOp<TensorT>(2.0));
 		solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));
 		solver->setGradientThreshold(10.0f);
 		Weight_m_to_o = Weight<TensorT>("Weight_m_to_o", weight_init, solver);
-		weight_init.reset(new ConstWeightInitOp<TensorT>(-100.0)); //solution (large weight magnituted will need to an explosion of even a small error!)
-		weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));
+		if (init_weight_soln) weight_init.reset(new ConstWeightInitOp<TensorT>(-100.0)); //solution (large weight magnituted will need to an explosion of even a small error!)
+    else weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));
 		solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));
 		solver->setGradientThreshold(10.0f);
 		Weight_h_bias_to_h = Weight<TensorT>("Weight_h_bias_to_h", weight_init, solver);
-		weight_init.reset(new ConstWeightInitOp<TensorT>(0.0)); //solution
-		weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));
+		if (init_weight_soln) weight_init.reset(new ConstWeightInitOp<TensorT>(0.0)); //solution
+    else weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));
 		solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));
 		solver->setGradientThreshold(10.0f);
 		Weight_m_bias_to_m = Weight<TensorT>("Weight_m_bias_to_m", weight_init, solver);
-		weight_init.reset(new ConstWeightInitOp<TensorT>(0.0)); //solution
-		weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));
+		if (init_weight_soln) weight_init.reset(new ConstWeightInitOp<TensorT>(0.0)); //solution
+    else weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));
 		solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));
 		solver->setGradientThreshold(10.0f);
 		Weight_o_bias_to_o = Weight<TensorT>("Weight_o_bias_to_o", weight_init, solver);
@@ -269,7 +269,7 @@ public:
 	/*
 	@brief Minimal newtork required to solve the addition problem
 	*/
-	Model<TensorT> makeModelSolution2()
+  Model<TensorT> makeModelSolution2(bool init_weight_soln = true)
 	{
 		Node<TensorT> i_rand, i_mask, h, m, mr, o,
 			h_bias, m_bias, o_bias;
@@ -297,38 +297,38 @@ public:
 		// weights  
 		std::shared_ptr<WeightInitOp<TensorT>> weight_init;
 		std::shared_ptr<SolverOp<TensorT>> solver;
-		weight_init.reset(new ConstWeightInitOp<TensorT>(1.0)); //solution
-		//weight_init.reset(new RandWeightInitOp<TensorT>(2.0));
+		if (init_weight_soln) weight_init.reset(new ConstWeightInitOp<TensorT>(1.0)); //solution
+		else weight_init.reset(new RandWeightInitOp<TensorT>(2.0));
 		solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));
 		solver->setGradientThreshold(10.0f);
 		Weight_i_rand_to_h = Weight<TensorT>("Weight_i_rand_to_h", weight_init, solver);
-		weight_init.reset(new ConstWeightInitOp<TensorT>(1.0)); //solution 
-		//weight_init.reset(new RandWeightInitOp<TensorT>(2.0));
+    if (init_weight_soln) weight_init.reset(new ConstWeightInitOp<TensorT>(1.0)); //solution 
+    else weight_init.reset(new RandWeightInitOp<TensorT>(2.0));
 		solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));
 		solver->setGradientThreshold(10.0f);
 		Weight_i_mask_to_h = Weight<TensorT>("Weight_i_mask_to_h", weight_init, solver);
-		weight_init.reset(new ConstWeightInitOp<TensorT>(1.0)); //solution
-		//weight_init.reset(new RandWeightInitOp<TensorT>(2.0));
+    if (init_weight_soln) weight_init.reset(new ConstWeightInitOp<TensorT>(1.0)); //solution
+    else weight_init.reset(new RandWeightInitOp<TensorT>(2.0));
 		solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));
 		solver->setGradientThreshold(10.0f);
 		Weight_h_to_m = Weight<TensorT>("Weight_h_to_m", weight_init, solver);
-		weight_init.reset(new ConstWeightInitOp<TensorT>(1.0)); //solution
-		//weight_init.reset(new RandWeightInitOp<TensorT>(2.0));
+    if (init_weight_soln) weight_init.reset(new ConstWeightInitOp<TensorT>(1.0)); //solution
+    else weight_init.reset(new RandWeightInitOp<TensorT>(2.0));
 		solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));
 		solver->setGradientThreshold(10.0f);
 		Weight_m_to_mr = Weight<TensorT>("Weight_m_to_mr", weight_init, solver);
-		weight_init.reset(new ConstWeightInitOp<TensorT>(1.0)); //solution
-		//weight_init.reset(new RandWeightInitOp<TensorT>(2.0));
+    if (init_weight_soln) weight_init.reset(new ConstWeightInitOp<TensorT>(1.0)); //solution
+    else weight_init.reset(new RandWeightInitOp<TensorT>(2.0));
 		solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));
 		solver->setGradientThreshold(10.0f);
 		Weight_mr_to_m = Weight<TensorT>("Weight_mr_to_m", weight_init, solver);
-		weight_init.reset(new ConstWeightInitOp<TensorT>(1.0)); //solution
-		//weight_init.reset(new RandWeightInitOp<TensorT>(2.0));
+    if (init_weight_soln) weight_init.reset(new ConstWeightInitOp<TensorT>(1.0)); //solution
+    else weight_init.reset(new RandWeightInitOp<TensorT>(2.0));
 		solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));
 		solver->setGradientThreshold(10.0f);
 		Weight_m_to_o = Weight<TensorT>("Weight_m_to_o", weight_init, solver);
-		weight_init.reset(new ConstWeightInitOp<TensorT>(1.0)); //solution
-		//weight_init.reset(new RandWeightInitOp<TensorT>(2.0));
+    if (init_weight_soln) weight_init.reset(new ConstWeightInitOp<TensorT>(1.0)); //solution
+    else weight_init.reset(new RandWeightInitOp<TensorT>(2.0));
 		solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));
 		solver->setGradientThreshold(10.0f);
 		Weight_h_bias_to_h = Weight<TensorT>("Weight_h_bias_to_h", weight_init, solver);
@@ -627,10 +627,10 @@ int main(int argc, char** argv)
 		model_interpreters.push_back(model_interpreter);
 	}
 	ModelTrainerExt<float> model_trainer;
-	model_trainer.setBatchSize(1);
+	model_trainer.setBatchSize(8);
 	model_trainer.setMemorySize(data_simulator.sequence_length_);
-	model_trainer.setNEpochsTraining(1);
-	model_trainer.setNEpochsValidation(0);
+	model_trainer.setNEpochsTraining(50000);
+	model_trainer.setNEpochsValidation(25);
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setFindCycles(true);
 	model_trainer.setLogging(true, false);
@@ -669,7 +669,7 @@ int main(int argc, char** argv)
 	// make the model name
 	//Model<float> model = model_trainer.makeModelMinimal();
 	//Model<float> model = model_trainer.makeModelSolution1(); // Algo updates broke layer allocation
-	Model<float> model = model_trainer.makeModelSolution2(); // Algo updates broke layer allocation
+	Model<float> model = model_trainer.makeModelSolution2(false);
 	//Model<float> model = model_trainer.makeModelLSTM(input_nodes.size(), 1, 1);
 	char model_name_char[512];
 	sprintf(model_name_char, "%s_%d", model.getName().data(), 0);

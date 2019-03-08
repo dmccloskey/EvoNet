@@ -51,6 +51,7 @@ public:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weight(weights, source_layer_size, sink_layer_size);
 			Eigen::array<Eigen::IndexPair<int>, 1> product_dims = { Eigen::IndexPair<int>(1, 0) };
 			sink_input_tensor.chip(sink_time_step, 1).device(device) += (source_output_tensor.chip(source_time_step, 1)).contract(weight, product_dims);
+      //std::cout << "[SumTensorOp] Time step " << sink_time_step << " : " << sink_input_tensor.chip(sink_time_step, 1) << std::endl; // DEBUGGING...
 		};
 		std::string getName() const { return "SumTensorOp"; };
 	//private:
