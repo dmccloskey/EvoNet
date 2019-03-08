@@ -669,8 +669,8 @@ int main(int argc, char** argv)
 	// make the model name
 	//Model<float> model = model_trainer.makeModelMinimal();
 	//Model<float> model = model_trainer.makeModelSolution1(); // Algo updates broke layer allocation
-	Model<float> model = model_trainer.makeModelSolution2(false);
-	//Model<float> model = model_trainer.makeModelLSTM(input_nodes.size(), 1, 1);
+	//Model<float> model = model_trainer.makeModelSolution2(false);
+	Model<float> model = model_trainer.makeModelLSTM(input_nodes.size(), 1, 1);
 	char model_name_char[512];
 	sprintf(model_name_char, "%s_%d", model.getName().data(), 0);
 	std::string model_name(model_name_char);
