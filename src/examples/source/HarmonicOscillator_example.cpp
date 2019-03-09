@@ -42,8 +42,7 @@ public:
 				WeightSpring.WeightSpring3W2S1D(time_steps, displacements, memory_size, 0.1,
 					1, 1, 1, //A
 					1, 1, 1, //m
-          0, 1, 0, //xo
-					//0, dist(gen), 0, //xo
+					0, dist(gen), 0, //xo
 					1);
 
 				for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
@@ -254,13 +253,27 @@ public:
 			this->setNReplicatesPerModel(5);
 		}
 	}
+  void trainingPopulationLogger(
+    const int& n_generations,
+    std::vector<Model<TensorT>>& models,
+    PopulationLogger<TensorT>& population_logger,
+    const std::vector<std::tuple<int, std::string, TensorT>>& models_validation_errors_per_generation) {
+    // Export the selected models
+    for (auto& model : models) {
+      ModelFile<TensorT> data;
+      data.storeModelCsv(model.getName() + "_" + std::to_string(n_generations) + "_nodes.csv",
+        model.getName() + "_" + std::to_string(n_generations) + "_links.csv",
+        model.getName() + "_" + std::to_string(n_generations) + "_weights.csv", model);
+    }
+    // Log the population statistics
+    population_logger.writeLogs(n_generations, models_validation_errors_per_generation);
+  }
 };
 
 void main_WeightSpring3W2S1D(const bool& make_model, const bool& train_model) {
 	// define the population trainer parameters
 	PopulationTrainerExt<float> population_trainer;
-	population_trainer.setNGenerations(1);
-  //population_trainer.setNGenerations(100);  // TODO...
+  population_trainer.setNGenerations(100); 
 	population_trainer.setLogging(true);
 
 	// define the population logger
@@ -285,8 +298,8 @@ void main_WeightSpring3W2S1D(const bool& make_model, const bool& train_model) {
 		model_interpreters.push_back(model_interpreter);
 	}
 	ModelTrainerExt<float> model_trainer;
-	model_trainer.setBatchSize(8);
-	model_trainer.setMemorySize(16);
+	model_trainer.setBatchSize(1);
+	model_trainer.setMemorySize(32);
 	model_trainer.setNEpochsTraining(1000);
 	model_trainer.setNEpochsValidation(25);
 	model_trainer.setVerbosityLevel(1);
@@ -299,25 +312,25 @@ void main_WeightSpring3W2S1D(const bool& make_model, const bool& train_model) {
 	model_trainer.setOutputNodes({ output_nodes });
 
 	// define the model logger
-	//ModelLogger<float> model_logger(true, true, true, false, false, false, false, false);
-	ModelLogger<float> model_logger(true, true, false, false, false, false, false, false);
+	ModelLogger<float> model_logger(true, true, true, false, false, false, false, false);
+	//ModelLogger<float> model_logger(true, true, false, false, false, false, false, false);
 
 	// define the model replicator for growth mode
 	ModelReplicatorExt<float> model_replicator;
 	model_replicator.setNodeActivations({ std::make_pair(std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>())),
 		std::make_pair(std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>())),
-		std::make_pair(std::shared_ptr<ActivationOp<float>>(new ELUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ELUGradOp<float>())),
+		//std::make_pair(std::shared_ptr<ActivationOp<float>>(new ELUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ELUGradOp<float>())),
 		std::make_pair(std::shared_ptr<ActivationOp<float>>(new SigmoidOp<float>()), std::shared_ptr<ActivationOp<float>>(new SigmoidGradOp<float>())),
 		std::make_pair(std::shared_ptr<ActivationOp<float>>(new TanHOp<float>()), std::shared_ptr<ActivationOp<float>>(new TanHGradOp<float>())),
-		std::make_pair(std::shared_ptr<ActivationOp<float>>(new ExponentialOp<float>()), std::shared_ptr<ActivationOp<float>>(new ExponentialGradOp<float>())),
-		std::make_pair(std::shared_ptr<ActivationOp<float>>(new LogOp<float>()), std::shared_ptr<ActivationOp<float>>(new LogGradOp<float>())),
-		std::make_pair(std::shared_ptr<ActivationOp<float>>(new InverseOp<float>()), std::shared_ptr<ActivationOp<float>>(new InverseGradOp<float>()))
+		//std::make_pair(std::shared_ptr<ActivationOp<float>>(new ExponentialOp<float>()), std::shared_ptr<ActivationOp<float>>(new ExponentialGradOp<float>())),
+		//std::make_pair(std::shared_ptr<ActivationOp<float>>(new LogOp<float>()), std::shared_ptr<ActivationOp<float>>(new LogGradOp<float>())),
+		//std::make_pair(std::shared_ptr<ActivationOp<float>>(new InverseOp<float>()), std::shared_ptr<ActivationOp<float>>(new InverseGradOp<float>()))
 		});
 	model_replicator.setNodeIntegrations({ std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new ProdOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new ProdErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new ProdWeightGradOp<float>())),
 		std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>())),
-		std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new MeanOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new MeanErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new MeanWeightGradOp<float>())),
-		std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new VarModOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new VarModErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new VarModWeightGradOp<float>())),
-		std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new CountOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new CountErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new CountWeightGradOp<float>()))
+		//std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new MeanOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new MeanErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new MeanWeightGradOp<float>())),
+		//std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new VarModOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new VarModErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new VarModWeightGradOp<float>())),
+		//std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new CountOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new CountErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new CountWeightGradOp<float>()))
 		});
 
 	// define the initial population
