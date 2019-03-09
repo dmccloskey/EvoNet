@@ -131,8 +131,6 @@ public:
 								output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 0; // NOTE: TETT of 1
 					}
 				}
-				//for (int memory_iter = memory_size - 1; memory_iter >= 0; --memory_iter) {
-				//}
 			}
 		}
 

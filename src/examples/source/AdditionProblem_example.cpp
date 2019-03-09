@@ -30,21 +30,21 @@ public:
 		const int n_output_nodes = output_data.dimension(2);
 		const int n_epochs = input_data.dimension(3);
 
-		//// generate a new sequence 
-		//// TODO: ensure that the this->sequence_length_ >= memory_size!
-		//Eigen::Tensor<TensorT, 1> random_sequence(this->sequence_length_);
-		//Eigen::Tensor<TensorT, 1> mask_sequence(this->sequence_length_);
-		//float result = this->AddProb(random_sequence, mask_sequence, this->n_mask_);
+		// generate a new sequence 
+		// TODO: ensure that the this->sequence_length_ >= memory_size!
+		Eigen::Tensor<TensorT, 1> random_sequence(this->sequence_length_);
+		Eigen::Tensor<TensorT, 1> mask_sequence(this->sequence_length_);
+		float result = this->AddProb(random_sequence, mask_sequence, this->n_mask_);
 
 		// Generate the input and output data for training [BUG FREE]
 		for (int batch_iter = 0; batch_iter<batch_size; ++batch_iter) {
 			for (int epochs_iter = 0; epochs_iter<n_epochs; ++epochs_iter) {
 
-				// generate a new sequence 
-				// TODO: ensure that the this->sequence_length_ >= memory_size!
-				Eigen::Tensor<float, 1> random_sequence(this->sequence_length_);
-				Eigen::Tensor<float, 1> mask_sequence(this->sequence_length_);
-				float result = this->AddProb(random_sequence, mask_sequence, this->n_mask_);
+				//// generate a new sequence 
+				//// TODO: ensure that the this->sequence_length_ >= memory_size!
+				//Eigen::Tensor<float, 1> random_sequence(this->sequence_length_);
+				//Eigen::Tensor<float, 1> mask_sequence(this->sequence_length_);
+				//float result = this->AddProb(random_sequence, mask_sequence, this->n_mask_);
 				Eigen::Tensor<float, 1> cumulative(this->sequence_length_);
 				cumulative.setZero();
 
@@ -302,14 +302,18 @@ public:
 		solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));
 		solver->setGradientThreshold(10.0f);
 		Weight_i_rand_to_h = Weight<TensorT>("Weight_i_rand_to_h", weight_init, solver);
-    if (init_weight_soln) weight_init.reset(new ConstWeightInitOp<TensorT>(1.0)); //solution 
-    else weight_init.reset(new RandWeightInitOp<TensorT>(2.0));
-		solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));
+  //  if (init_weight_soln) weight_init.reset(new ConstWeightInitOp<TensorT>(1.0)); //solution 
+  //  else weight_init.reset(new RandWeightInitOp<TensorT>(2.0));
+		//solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));
+    weight_init.reset(new ConstWeightInitOp<TensorT>(1.0)); //solution
+    solver.reset(new DummySolverOp<TensorT>());
 		solver->setGradientThreshold(10.0f);
 		Weight_i_mask_to_h = Weight<TensorT>("Weight_i_mask_to_h", weight_init, solver);
-    if (init_weight_soln) weight_init.reset(new ConstWeightInitOp<TensorT>(1.0)); //solution
-    else weight_init.reset(new RandWeightInitOp<TensorT>(2.0));
-		solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));
+  //  if (init_weight_soln) weight_init.reset(new ConstWeightInitOp<TensorT>(1.0)); //solution
+  //  else weight_init.reset(new RandWeightInitOp<TensorT>(2.0));
+		//solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));
+    weight_init.reset(new ConstWeightInitOp<TensorT>(1.0)); //solution
+    solver.reset(new DummySolverOp<TensorT>());
 		solver->setGradientThreshold(10.0f);
 		Weight_h_to_m = Weight<TensorT>("Weight_h_to_m", weight_init, solver);
     if (init_weight_soln) weight_init.reset(new ConstWeightInitOp<TensorT>(1.0)); //solution
@@ -317,14 +321,18 @@ public:
 		solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));
 		solver->setGradientThreshold(10.0f);
 		Weight_m_to_mr = Weight<TensorT>("Weight_m_to_mr", weight_init, solver);
-    if (init_weight_soln) weight_init.reset(new ConstWeightInitOp<TensorT>(1.0)); //solution
-    else weight_init.reset(new RandWeightInitOp<TensorT>(2.0));
-		solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));
+  //  if (init_weight_soln) weight_init.reset(new ConstWeightInitOp<TensorT>(1.0)); //solution
+  //  else weight_init.reset(new RandWeightInitOp<TensorT>(2.0));
+		//solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));
+    weight_init.reset(new ConstWeightInitOp<TensorT>(1.0)); //solution
+    solver.reset(new DummySolverOp<TensorT>());
 		solver->setGradientThreshold(10.0f);
 		Weight_mr_to_m = Weight<TensorT>("Weight_mr_to_m", weight_init, solver);
-    if (init_weight_soln) weight_init.reset(new ConstWeightInitOp<TensorT>(1.0)); //solution
-    else weight_init.reset(new RandWeightInitOp<TensorT>(2.0));
-		solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));
+  //  if (init_weight_soln) weight_init.reset(new ConstWeightInitOp<TensorT>(1.0)); //solution
+  //  else weight_init.reset(new RandWeightInitOp<TensorT>(2.0));
+		//solver.reset(new AdamOp<TensorT>(0.01, 0.9, 0.999, 1e-8));
+    weight_init.reset(new ConstWeightInitOp<TensorT>(1.0)); //solution
+    solver.reset(new DummySolverOp<TensorT>());
 		solver->setGradientThreshold(10.0f);
 		Weight_m_to_o = Weight<TensorT>("Weight_m_to_o", weight_init, solver);
     if (init_weight_soln) weight_init.reset(new ConstWeightInitOp<TensorT>(1.0)); //solution
@@ -433,21 +441,21 @@ public:
 		Model<TensorT>& model,
 		ModelInterpreterDefaultDevice<TensorT>& model_interpreter,
 		const std::vector<float>& model_errors) {
-		if (n_epochs % 499 == 0 && n_epochs != 0) {
-			// save the model every 500 epochs
-			ModelFile<TensorT> data;
-			data.storeModelCsv(model.getName() + "_" + std::to_string(n_epochs) + "_nodes.csv",
-				model.getName() + "_" + std::to_string(n_epochs) + "_links.csv",
-				model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model);
-		}
-		// Check point the model every 1000 epochs
-		if (n_epochs % 999 == 0 && n_epochs != 0) {
-			model_interpreter.getModelResults(model, false, true, false);
-			ModelFile<TensorT> data;
-			data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
-			ModelInterpreterFileDefaultDevice<TensorT> interpreter_data;
-			interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
-		}
+		//if (n_epochs % 499 == 0 && n_epochs != 0) {
+		//	// save the model every 500 epochs
+		//	ModelFile<TensorT> data;
+		//	data.storeModelCsv(model.getName() + "_" + std::to_string(n_epochs) + "_nodes.csv",
+		//		model.getName() + "_" + std::to_string(n_epochs) + "_links.csv",
+		//		model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model);
+		//}
+		//// Check point the model every 1000 epochs
+		//if (n_epochs % 999 == 0 && n_epochs != 0) {
+		//	model_interpreter.getModelResults(model, false, true, false);
+		//	ModelFile<TensorT> data;
+		//	data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
+		//	ModelInterpreterFileDefaultDevice<TensorT> interpreter_data;
+		//	interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
+		//}
 	}
 	void trainingModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
 		const Eigen::Tensor<TensorT, 3>& expected_values,
@@ -631,6 +639,8 @@ int main(int argc, char** argv)
 	model_trainer.setMemorySize(data_simulator.sequence_length_);
 	model_trainer.setNEpochsTraining(50000);
 	model_trainer.setNEpochsValidation(25);
+  model_trainer.setNTETTSteps(25);
+  model_trainer.setNTBPTTSteps(25);
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setFindCycles(true);
 	model_trainer.setLogging(true, false);
@@ -669,8 +679,8 @@ int main(int argc, char** argv)
 	// make the model name
 	//Model<float> model = model_trainer.makeModelMinimal();
 	//Model<float> model = model_trainer.makeModelSolution1(); // Algo updates broke layer allocation
-	//Model<float> model = model_trainer.makeModelSolution2(false);
-	Model<float> model = model_trainer.makeModelLSTM(input_nodes.size(), 1, 1);
+	Model<float> model = model_trainer.makeModelSolution2();
+	//Model<float> model = model_trainer.makeModelLSTM(input_nodes.size(), 1, 1);
 	char model_name_char[512];
 	sprintf(model_name_char, "%s_%d", model.getName().data(), 0);
 	std::string model_name(model_name_char);

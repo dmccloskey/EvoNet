@@ -96,7 +96,41 @@ private:
 			archive(cereal::base_class<WeightInitOp<TensorT>>(this), n_);
 		}
     TensorT n_ = 1.0; ///< the constant to return
-  };  
+  };
+
+  /**
+    @brief Random weight initialization over a lower and upper bound of values
+
+  */
+  template<typename TensorT>
+  class RangeWeightInitOp : public WeightInitOp<TensorT>
+  {
+  public:
+    RangeWeightInitOp(TensorT lb = 0.0, TensorT ub = 1.0) : lb_(lb), ub_(ub) {};
+    std::string getName() const { return "RangeWeightInitOp"; };
+    TensorT operator()() const {
+      std::random_device rd{};
+      std::mt19937 gen{ rd() };
+      std::uniform_real_distribution<> d(lb_, ub_); // define the range
+      return d(gen);
+    };
+    TensorT getLB() const { return lb_; }
+    TensorT getUB() const { return ub_; }
+    std::string getParamsAsStr() const
+    {
+      std::string params = "lb:" + std::to_string(getLB()) +
+        ";ub:" + std::to_string(getUB());
+      return params;
+    }
+  private:
+    friend class cereal::access;
+    template<class Archive>
+    void serialize(Archive& archive) {
+      archive(cereal::base_class<WeightInitOp<TensorT>>(this), lb_, ub_);
+    }
+    TensorT lb_ = 0.0; ///< the lower bound
+    TensorT ub_ = 1.0; ///< the upper bound
+  };
 }
 
 CEREAL_REGISTER_TYPE(SmartPeak::RandWeightInitOp<float>);

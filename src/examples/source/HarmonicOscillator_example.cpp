@@ -42,7 +42,8 @@ public:
 				WeightSpring.WeightSpring3W2S1D(time_steps, displacements, memory_size, 0.1,
 					1, 1, 1, //A
 					1, 1, 1, //m
-					0, dist(gen), 0, //xo
+          0, 1, 0, //xo
+					//0, dist(gen), 0, //xo
 					1);
 
 				for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
@@ -187,16 +188,16 @@ public:
 		if (n_generations>0)
 		{
 			this->setRandomModifications(
-				std::make_pair(0, 1),
-				std::make_pair(0, 1),
+        std::make_pair(0, 0),
+        std::make_pair(0, 0),
 				std::make_pair(0, 0),
 				std::make_pair(0, 0),
-				std::make_pair(0, 2),
+        std::make_pair(0, 0),
 				std::make_pair(0, 0),
-				std::make_pair(0, 1),
-				std::make_pair(0, 2),
-				std::make_pair(0, 2),
-				std::make_pair(0, 2),
+        std::make_pair(0, 0),
+        std::make_pair(0, 0),
+				std::make_pair(0, 2), // node activation changes
+				std::make_pair(0, 2), // node integration changes
 				std::make_pair(0, 0),
 				std::make_pair(0, 0),
 				std::make_pair(0, 0));
@@ -204,19 +205,19 @@ public:
 		else
 		{
 			this->setRandomModifications(
-				std::make_pair(0, 1),
-				std::make_pair(0, 1),
-				std::make_pair(0, 0),
-				std::make_pair(0, 0),
-				std::make_pair(0, 1),
-				std::make_pair(0, 0),
-				std::make_pair(0, 1),
-				std::make_pair(0, 1),
-				std::make_pair(0, 1),
-				std::make_pair(0, 1),
-				std::make_pair(0, 0),
-				std::make_pair(0, 0),
-				std::make_pair(0, 0));
+        std::make_pair(0, 0),
+        std::make_pair(0, 0),
+        std::make_pair(0, 0),
+        std::make_pair(0, 0),
+        std::make_pair(0, 0),
+        std::make_pair(0, 0),
+        std::make_pair(0, 0),
+        std::make_pair(0, 0),
+        std::make_pair(0, 2), // node activation changes
+        std::make_pair(0, 2), // node integration changes
+        std::make_pair(0, 0),
+        std::make_pair(0, 0),
+        std::make_pair(0, 0));
 		}
 	}
 };
@@ -258,7 +259,8 @@ public:
 void main_WeightSpring3W2S1D(const bool& make_model, const bool& train_model) {
 	// define the population trainer parameters
 	PopulationTrainerExt<float> population_trainer;
-	population_trainer.setNGenerations(100);
+	population_trainer.setNGenerations(1);
+  //population_trainer.setNGenerations(100);  // TODO...
 	population_trainer.setLogging(true);
 
 	// define the population logger
