@@ -78,4 +78,39 @@ BOOST_AUTO_TEST_CASE(settersAndGettersConstWeightInitOp)
   BOOST_CHECK_EQUAL(operation.getParamsAsStr(), "n:1.000000");
 }
 
+/**
+  RangeWeightInitOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorRangeWeightInitOp)
+{
+  RangeWeightInitOp<float>* ptrRangeWeightInit = nullptr;
+  RangeWeightInitOp<float>* nullPointerRangeWeightInit = nullptr;
+  BOOST_CHECK_EQUAL(ptrRangeWeightInit, nullPointerRangeWeightInit);
+}
+
+BOOST_AUTO_TEST_CASE(destructorRangeWeightInitOp)
+{
+  RangeWeightInitOp<float>* ptrRangeWeightInit = nullptr;
+  ptrRangeWeightInit = new RangeWeightInitOp<float>();
+  delete ptrRangeWeightInit;
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionRangeWeightInitOp)
+{
+  RangeWeightInitOp<float> operation;
+  operation = RangeWeightInitOp<float>(0, 0);
+  BOOST_CHECK_EQUAL(operation(), 0);
+  operation = RangeWeightInitOp<float>(0, 1);
+  float value = operation();
+  std::cout << value << std::endl;
+  BOOST_CHECK(value >= 0 && value <= 1);
+}
+
+BOOST_AUTO_TEST_CASE(settersAndGettersRangeWeightInitOp)
+{
+  RangeWeightInitOp<float> operation(-1,1);
+  BOOST_CHECK_EQUAL(operation.getName(), "RangeWeightInitOp");
+  BOOST_CHECK_EQUAL(operation.getParamsAsStr(), "lb:-1.000000;ub:1.000000");
+}
+
 BOOST_AUTO_TEST_SUITE_END()
