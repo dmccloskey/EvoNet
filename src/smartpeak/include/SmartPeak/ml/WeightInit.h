@@ -135,8 +135,11 @@ private:
 
 CEREAL_REGISTER_TYPE(SmartPeak::RandWeightInitOp<float>);
 CEREAL_REGISTER_TYPE(SmartPeak::ConstWeightInitOp<float>);
-CEREAL_REGISTER_TYPE(SmartPeak::RandWeightInitOp<double>);
-CEREAL_REGISTER_TYPE(SmartPeak::ConstWeightInitOp<double>);
-CEREAL_REGISTER_TYPE(SmartPeak::RandWeightInitOp<int>);
-CEREAL_REGISTER_TYPE(SmartPeak::ConstWeightInitOp<int>);
+CEREAL_REGISTER_TYPE(SmartPeak::RangeWeightInitOp<float>);
+//CEREAL_REGISTER_TYPE(SmartPeak::RandWeightInitOp<double>);
+//CEREAL_REGISTER_TYPE(SmartPeak::ConstWeightInitOp<double>);
+//CEREAL_REGISTER_TYPE(SmartPeak::RangeWeightInitOp<double>);
+//CEREAL_REGISTER_TYPE(SmartPeak::RandWeightInitOp<int>);
+//CEREAL_REGISTER_TYPE(SmartPeak::ConstWeightInitOp<int>);
+//CEREAL_REGISTER_TYPE(SmartPeak::RangeWeightInitOp<int>);
 #endif //SMARTPEAK_WEIGHTINIT_H

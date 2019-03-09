@@ -121,6 +121,15 @@ public:
 					ptr = new RandWeightInitOp<TensorT>(1.0);
 				weight_init.reset(ptr);
 			}
+      else if (weight_init_op_str == "RangeWeightInitOp")
+      {
+        RangeWeightInitOp<TensorT>* ptr = nullptr;
+        if (weight_init_params.count("lb") && weight_init_params.count("ub"))
+          ptr = new RangeWeightInitOp<TensorT>(weight_init_params.at("lb"), weight_init_params.at("ub"));
+        else
+          ptr = new RangeWeightInitOp<TensorT>(0.0, 1.0);
+        weight_init.reset(ptr);
+      }
 			else std::cout << "WeightInitOp " << weight_init_op_str << " for weight_name " << weight_name << " was not recognized." << std::endl;
 
 			// parse the solver_params_str
