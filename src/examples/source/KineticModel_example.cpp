@@ -171,7 +171,7 @@ public:
 		model_builder.addInteractionGraph(interaction_graph, model, "RBC", "RBC",
 			std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
 			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-			std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8))
+			std::shared_ptr<WeightInitOp<float>>(new RangeWeightInitOp<float>(0.0, 2.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8))
 		);
 
 		// Specify the output layer for metabolite nodes (20)
@@ -394,8 +394,10 @@ void main_KineticModel(const bool& make_model, const bool& train_model, const st
 // Main
 int main(int argc, char** argv)
 {
-	main_KineticModel(true, true, "steady_state"); // Constant glucose from T = 0 to N, SS metabolite levels at T = 0 (maintenance of constant metabolite levels)
-	//main_KineticModel(true, true, "glucose_pulse"); // Glucose pulse at T = 0, SS metabolite levels at T = 0 (maintenance of constant pyr levels)
-	//main_KineticModel(true, true, "amp_sweep"); // AMP rise/fall at T = 0, SS metabolite levels at T = 0 (maintenance of constant ATP levels)
+	//main_KineticModel(true, true, "steady_state"); // Constant glucose from T = 0 to N, SS metabolite levels at T = 0 (maintenance of SS metabolite levels)
+	//main_KineticModel(true, true, "glucose_pulse"); // Glucose pulse at T = 0, SS metabolite levels at T = 0 (maintenance of SS metabolite)
+	main_KineticModel(true, true, "amp_sweep"); // AMP rise/fall at T = 0, SS metabolite levels at T = 0 (maintenance of SS metbolite levels)
+  //main_KineticModel(true, true, "TODO"); // Glucose pulse at T = 0, SS metabolite levels at T = 0 (maintenance of SS pyr levels)
+  //main_KineticModel(true, true, "TODO"); // AMP rise/fall at T = 0, SS metabolite levels at T = 0 (maintenance of SS ATP levels)
 	return 0;
 }

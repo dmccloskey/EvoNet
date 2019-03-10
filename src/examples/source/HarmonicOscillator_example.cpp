@@ -42,8 +42,7 @@ public:
 				WeightSpring.WeightSpring3W2S1D(time_steps, displacements, memory_size, 0.1,
 					1, 1, 1, //A
 					1, 1, 1, //m
-          0, 1, 0, //xo
-					//0, dist(gen), 0, //xo
+					0, dist(gen), 0, //xo
 					1);
 
 				for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
@@ -72,84 +71,86 @@ template<typename TensorT>
 class ModelTrainerExt : public ModelTrainerDefaultDevice<TensorT>
 {
 public:
-	void makeHarmonicOscillator(Model<TensorT>& model) {
+	void makeHarmonicOscillator3M2S(Model<TensorT>& model) {
 		/**
 		 * Interaction Graph Toy Network Model
 		 * Linear Harmonic Oscillator with three masses and two springs
 		*/
-		Node<float> m1, m2, m3, s1, s2;
-		Link m1_to_s1, s1_to_m1, s1_to_m2, m2_to_s1, m2_to_s2, s2_to_m2, s2_to_m3, m3_to_s2;
-		Weight<float> Wm1_to_s1, Ws1_to_m1, Ws1_to_m2, Wm2_to_s1, Wm2_to_s2, Ws2_to_m2, Ws2_to_m3, Wm3_to_s2;
+		Node<float> m1, m2, m3, s1f, s2f, s1r, s2r;
+		Link m1_to_s1f, s1r_to_m1, s1f_to_m2, m2_to_s1r, m2_to_s2f, s2r_to_m2, s2f_to_m3, m3_to_s2r;
+		Weight<float> Wm1_to_s1f, Ws1r_to_m1, Ws1f_to_m2, Wm2_to_s1r, Wm2_to_s2f, Ws2r_to_m2, Ws2f_to_m3, Wm3_to_s2r;
 		// Toy network: 1 hidden layer, fully connected, DCG
 		m1 = Node<float>("m1", NodeType::output, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
 		m2 = Node<float>("m2", NodeType::input, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
 		m3 = Node<float>("m3", NodeType::output, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-		s1 = Node<float>("s1", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-		s2 = Node<float>("s2", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+		s1f = Node<float>("s1f", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+		s2f = Node<float>("s2f", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+    s1r = Node<float>("s1r", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+    s2r = Node<float>("s2r", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
 		m1.setLayerName("Output"); m3.setLayerName("Output"); m2.setLayerName("Input");
 		// weights  
-		Wm1_to_s1 = Weight<float>("m1_to_s1", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8)));
-		Ws1_to_m1 = Weight<float>("s1_to_m1", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8)));
-		Ws1_to_m2 = Weight<float>("s1_to_m2", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8)));
-		Wm2_to_s1 = Weight<float>("m2_to_s1", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8)));
-		Wm2_to_s2 = Weight<float>("m2_to_s2", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8)));
-		Ws2_to_m2 = Weight<float>("s2_to_m2", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8)));
-		Ws2_to_m3 = Weight<float>("s2_to_m3", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8)));
-		Wm3_to_s2 = Weight<float>("m3_to_s2", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8)));
+		Wm1_to_s1f = Weight<float>("m1_to_s1f", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(2.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8, 10)));
+		Ws1r_to_m1 = Weight<float>("s1r_to_m1", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(2.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8, 10)));
+		Ws1f_to_m2 = Weight<float>("s1f_to_m2", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(2.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8, 10)));
+		Wm2_to_s1r = Weight<float>("m2_to_s1r", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(2.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8, 10)));
+		Wm2_to_s2f = Weight<float>("m2_to_s2f", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(2.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8, 10)));
+		Ws2r_to_m2 = Weight<float>("s2r_to_m2", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(2.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8, 10)));
+		Ws2f_to_m3 = Weight<float>("s2f_to_m3", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(2.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8, 10)));
+		Wm3_to_s2r = Weight<float>("m3_to_s2r", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(2.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8, 10)));
 		// links
-		m1_to_s1 = Link("m1_to_s1", "m1", "s1", "m1_to_s1");
-		s1_to_m1 = Link("s1_to_m1", "s1", "m1", "s1_to_m1");
-		s1_to_m2 = Link("s1_to_m2", "s1", "m2", "s1_to_m2");
-		m2_to_s1 = Link("m2_to_s1", "m2", "s1", "m2_to_s1");
-		m2_to_s2 = Link("m2_to_s2", "m2", "s2", "m2_to_s2");
-		s2_to_m2 = Link("s2_to_m2", "s2", "m2", "s2_to_m2");
-		s2_to_m3 = Link("s2_to_m3", "s2", "m3", "s2_to_m3");
-		m3_to_s2 = Link("m3_to_s2", "m3", "s2", "m3_to_s2");
+		m1_to_s1f = Link("m1_to_s1f", "m1", "s1f", "m1_to_s1f");
+		s1r_to_m1 = Link("s1r_to_m1", "s1r", "m1", "s1r_to_m1");
+		s1f_to_m2 = Link("s1f_to_m2", "s1f", "m2", "s1f_to_m2");
+		m2_to_s1r = Link("m2_to_s1r", "m2", "s1r", "m2_to_s1r");
+		m2_to_s2f = Link("m2_to_s2f", "m2", "s2f", "m2_to_s2f");
+		s2r_to_m2 = Link("s2r_to_m2", "s2r", "m2", "s2r_to_m2");
+		s2f_to_m3 = Link("s2f_to_m3", "s2f", "m3", "s2f_to_m3");
+		m3_to_s2r = Link("m3_to_s2r", "m3", "s2r", "m3_to_s2r");
 		model.setId(0);
-		model.setName("HarmonicOscillator");
-		model.addNodes({ m1, m2, m3, s1, s2 });
-		model.addWeights({ Wm1_to_s1, Ws1_to_m1, Ws1_to_m2, Wm2_to_s1, Wm2_to_s2, Ws2_to_m2, Ws2_to_m3, Wm3_to_s2 });
-		model.addLinks({ m1_to_s1, s1_to_m1, s1_to_m2, m2_to_s1, m2_to_s2, s2_to_m2, s2_to_m3, m3_to_s2 });
+		model.setName("HarmonicOscillator3M2S");
+		model.addNodes({ m1, m2, m3, s1f, s2f, s1r, s2r });
+		model.addWeights({ Wm1_to_s1f, Ws1r_to_m1, Ws1f_to_m2, Wm2_to_s1r, Wm2_to_s2f, Ws2r_to_m2, Ws2f_to_m3, Wm3_to_s2r });
+		model.addLinks({ m1_to_s1f, s1r_to_m1, s1f_to_m2, m2_to_s1r, m2_to_s2f, s2r_to_m2, s2f_to_m3, m3_to_s2r });
 	}
-	void makeHarmonicOscillatorINCORRECTLY(Model<TensorT>& model) {
+	void makeHarmonicOscillator2M1S(Model<TensorT>& model) {
 		/**
 		 * Interaction Graph Toy Network Model
 		 * Linear Harmonic Oscillator with three masses and two springs
 		*/
-		Node<float> m1, m2, m3;
-		Link l1_to_l2, l2_to_l1, l2_to_l3, l3_to_l2;
-		Weight<float> w1_to_w2, w2_to_w1, w2_to_w3, w3_to_w2;
+		Node<float> m1, m2, s1;
+		Link m1_to_s1, s1_to_m1, s1_to_m2, m2_to_s1;
+		Weight<float> Wm1_to_s1, Ws1_to_m1, Ws1_to_m2, Wm2_to_s1;
 		// Toy network: 1 hidden layer, fully connected, DCG
 		m1 = Node<float>("m1", NodeType::input, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
 		m2 = Node<float>("m2", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-		m3 = Node<float>("m3", NodeType::output, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+		s1 = Node<float>("s1", NodeType::output, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
 		// weights  
 		std::shared_ptr<WeightInitOp<float>> weight_init;
 		std::shared_ptr<SolverOp<float>> solver;
 		weight_init.reset(new RandWeightInitOp<float>(1.0));
 		solver.reset(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8));
-		w1_to_w2 = Weight<float>("m1_to_m2", weight_init, solver);
+    Wm1_to_s1 = Weight<float>("m1_to_s1", weight_init, solver);
 		weight_init.reset(new RandWeightInitOp<float>(1.0));
 		solver.reset(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8));
-		w2_to_w1 = Weight<float>("m2_to_m1", weight_init, solver);
+    Ws1_to_m2 = Weight<float>("s1_to_m2", weight_init, solver);
 		weight_init.reset(new RandWeightInitOp<float>(1.0));
 		solver.reset(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8));
-		w2_to_w3 = Weight<float>("m2_to_m3", weight_init, solver);
+    Ws1_to_m1 = Weight<float>("s1_to_m1", weight_init, solver);
 		weight_init.reset(new RandWeightInitOp<float>(1.0));
 		solver.reset(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8));
-		w3_to_w2 = Weight<float>("m3_to_m2", weight_init, solver);
+    Wm2_to_s1 = Weight<float>("m2_to_s1", weight_init, solver);
 		weight_init.reset();
 		solver.reset();
 		// links
-		l1_to_l2 = Link("l1_to_l2", "m1", "m2", "m1_to_m2");
-		l2_to_l1 = Link("l2_to_l1", "m2", "m1", "m2_to_m1");
-		l2_to_l3 = Link("l2_to_l3", "m2", "m3", "m2_to_m3");
-		l3_to_l2 = Link("l3_to_l2", "m3", "m2", "m3_to_m2");
+    m1_to_s1 = Link("m1_to_s1", "m1", "s1", "m1_to_s1");
+    s1_to_m2 = Link("s1_to_m2", "s1", "m2", "s1_to_m2");
+    s1_to_m1 = Link("s1_to_m1", "s1", "m1", "s1_to_m1");
+    m2_to_s1 = Link("m2_to_s1", "m2", "s1", "m2_to_s1");
 		model.setId(0);
-		model.setName("HarmonicOscillator");
-		model.addNodes({ m1, m2, m3 });
-		model.addWeights({ w1_to_w2, w2_to_w1, w2_to_w3, w3_to_w2 });
-		model.addLinks({ l1_to_l2, l2_to_l1, l2_to_l3, l3_to_l2 });
+		model.setName("HarmonicOscillator2M1S");
+		model.addNodes({ m1, m2, s1 });
+		model.addWeights({ Wm1_to_s1, Ws1_to_m1, Ws1_to_m2, Wm2_to_s1 });
+		model.addLinks({ m1_to_s1, s1_to_m1, s1_to_m2, m2_to_s1 });
 	}
 	Model<TensorT> makeModel(){	return Model<TensorT>(); }
 	void adaptiveTrainerScheduler(
@@ -254,13 +255,27 @@ public:
 			this->setNReplicatesPerModel(5);
 		}
 	}
+  void trainingPopulationLogger(
+    const int& n_generations,
+    std::vector<Model<TensorT>>& models,
+    PopulationLogger<TensorT>& population_logger,
+    const std::vector<std::tuple<int, std::string, TensorT>>& models_validation_errors_per_generation) {
+    // Export the selected models
+    for (auto& model : models) {
+      ModelFile<TensorT> data;
+      data.storeModelCsv(model.getName() + "_" + std::to_string(n_generations) + "_nodes.csv",
+        model.getName() + "_" + std::to_string(n_generations) + "_links.csv",
+        model.getName() + "_" + std::to_string(n_generations) + "_weights.csv", model);
+    }
+    // Log the population statistics
+    population_logger.writeLogs(n_generations, models_validation_errors_per_generation);
+  }
 };
 
 void main_WeightSpring3W2S1D(const bool& make_model, const bool& train_model) {
 	// define the population trainer parameters
 	PopulationTrainerExt<float> population_trainer;
-	population_trainer.setNGenerations(1);
-  //population_trainer.setNGenerations(100);  // TODO...
+  population_trainer.setNGenerations(100); 
 	population_trainer.setLogging(true);
 
 	// define the population logger
@@ -285,8 +300,8 @@ void main_WeightSpring3W2S1D(const bool& make_model, const bool& train_model) {
 		model_interpreters.push_back(model_interpreter);
 	}
 	ModelTrainerExt<float> model_trainer;
-	model_trainer.setBatchSize(8);
-	model_trainer.setMemorySize(16);
+	model_trainer.setBatchSize(1);
+	model_trainer.setMemorySize(128);
 	model_trainer.setNEpochsTraining(1000);
 	model_trainer.setNEpochsValidation(25);
 	model_trainer.setVerbosityLevel(1);
@@ -299,32 +314,32 @@ void main_WeightSpring3W2S1D(const bool& make_model, const bool& train_model) {
 	model_trainer.setOutputNodes({ output_nodes });
 
 	// define the model logger
-	//ModelLogger<float> model_logger(true, true, true, false, false, false, false, false);
-	ModelLogger<float> model_logger(true, true, false, false, false, false, false, false);
+	ModelLogger<float> model_logger(true, true, true, false, false, false, false, false);
+	//ModelLogger<float> model_logger(true, true, false, false, false, false, false, false);
 
 	// define the model replicator for growth mode
 	ModelReplicatorExt<float> model_replicator;
 	model_replicator.setNodeActivations({ std::make_pair(std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>())),
 		std::make_pair(std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>())),
-		std::make_pair(std::shared_ptr<ActivationOp<float>>(new ELUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ELUGradOp<float>())),
+		//std::make_pair(std::shared_ptr<ActivationOp<float>>(new ELUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ELUGradOp<float>())),
 		std::make_pair(std::shared_ptr<ActivationOp<float>>(new SigmoidOp<float>()), std::shared_ptr<ActivationOp<float>>(new SigmoidGradOp<float>())),
 		std::make_pair(std::shared_ptr<ActivationOp<float>>(new TanHOp<float>()), std::shared_ptr<ActivationOp<float>>(new TanHGradOp<float>())),
-		std::make_pair(std::shared_ptr<ActivationOp<float>>(new ExponentialOp<float>()), std::shared_ptr<ActivationOp<float>>(new ExponentialGradOp<float>())),
-		std::make_pair(std::shared_ptr<ActivationOp<float>>(new LogOp<float>()), std::shared_ptr<ActivationOp<float>>(new LogGradOp<float>())),
-		std::make_pair(std::shared_ptr<ActivationOp<float>>(new InverseOp<float>()), std::shared_ptr<ActivationOp<float>>(new InverseGradOp<float>()))
+		//std::make_pair(std::shared_ptr<ActivationOp<float>>(new ExponentialOp<float>()), std::shared_ptr<ActivationOp<float>>(new ExponentialGradOp<float>())),
+		//std::make_pair(std::shared_ptr<ActivationOp<float>>(new LogOp<float>()), std::shared_ptr<ActivationOp<float>>(new LogGradOp<float>())),
+		//std::make_pair(std::shared_ptr<ActivationOp<float>>(new InverseOp<float>()), std::shared_ptr<ActivationOp<float>>(new InverseGradOp<float>()))
 		});
 	model_replicator.setNodeIntegrations({ std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new ProdOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new ProdErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new ProdWeightGradOp<float>())),
 		std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>())),
-		std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new MeanOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new MeanErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new MeanWeightGradOp<float>())),
-		std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new VarModOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new VarModErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new VarModWeightGradOp<float>())),
-		std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new CountOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new CountErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new CountWeightGradOp<float>()))
+		//std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new MeanOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new MeanErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new MeanWeightGradOp<float>())),
+		//std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new VarModOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new VarModErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new VarModWeightGradOp<float>())),
+		//std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new CountOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new CountErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new CountWeightGradOp<float>()))
 		});
 
 	// define the initial population
 	std::cout << "Initializing the population..." << std::endl;
 	Model<float> model;
 	if (make_model) {
-		 ModelTrainerExt<float>().makeHarmonicOscillator(model);
+		 ModelTrainerExt<float>().makeHarmonicOscillator3M2S(model);
 	}
 	else {
 		// read in the trained model

@@ -54,13 +54,6 @@ public:
     void setGradientThreshold(const TensorT& gradient_threshold){gradient_threshold_ = gradient_threshold;};
     TensorT getGradientThreshold() const{return gradient_threshold_;};
     virtual void operator()(TensorT* weights, TensorT* errors, TensorT* solver_params, const int& source_layer_size, const int& sink_layer_size, DeviceT& device) = 0;
-    TensorT clipGradient(const TensorT& gradient)
-    {
-			TensorT new_gradient = gradient;
-      if (std::abs(gradient) >= gradient_threshold_)
-				new_gradient = gradient * gradient_threshold_/std::abs(gradient);
-			return new_gradient;
-    }
     void setGradientNoiseSigma(const TensorT& gradient_noise_sigma){gradient_noise_sigma_ = gradient_noise_sigma;};
     TensorT getGradientNoiseSigma() const{return gradient_noise_sigma_;};
     void setGradientNoiseGamma(const TensorT& gradient_noise_gamma){gradient_noise_gamma_ = gradient_noise_gamma;};
@@ -102,8 +95,7 @@ public:
   class SGDTensorOp: public SolverTensorOp<TensorT, DeviceT>
   {
 public: 
-    SGDTensorOp(){}; 
-    ~SGDTensorOp(){};
+   using SolverTensorOp<TensorT, DeviceT>::SolverTensorOp;
 		/*
 		@brief SGD solver operator
 
@@ -118,7 +110,13 @@ public:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weights_tensor(weights, source_layer_size, sink_layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> errors_tensor(errors, source_layer_size, sink_layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> solver_params_tensor(solver_params, source_layer_size, sink_layer_size, 3);
-			solver_params_tensor.chip(2, 2).device(device) = solver_params_tensor.chip(1, 2) * solver_params_tensor.chip(2,2) - solver_params_tensor.chip(0, 2) * weights_tensor * errors_tensor;
+
+      // Gradient clipping
+      auto clip = errors_tensor.abs() > errors_tensor.constant(this->getGradientThreshold());
+      auto errors_clipped = clip.select(errors_tensor * errors_tensor.constant(this->getGradientThreshold()) / errors_tensor.abs(), errors_tensor);
+
+      // Weight updates
+			solver_params_tensor.chip(2, 2).device(device) = solver_params_tensor.chip(1, 2) * solver_params_tensor.chip(2,2) - solver_params_tensor.chip(0, 2) * weights_tensor * errors_clipped;
 			weights_tensor.device(device) += solver_params_tensor.chip(2, 2);
     };
     std::string getName() const{return "SGDTensorOp";};
@@ -140,9 +138,8 @@ public:
 	template<typename TensorT, typename DeviceT>
   class AdamTensorOp: public SolverTensorOp<TensorT, DeviceT>
   {
-public: 
-    AdamTensorOp(){}; 
-    ~AdamTensorOp(){};
+public:
+   using SolverTensorOp<TensorT, DeviceT>::SolverTensorOp;
 		/*
 		@brief SGD solver operator
 
@@ -157,8 +154,14 @@ public:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weights_tensor(weights, source_layer_size, sink_layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> errors_tensor(errors, source_layer_size, sink_layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> solver_params_tensor(solver_params, source_layer_size, sink_layer_size, 6);
-			solver_params_tensor.chip(4, 2).device(device) = solver_params_tensor.chip(1, 2) * solver_params_tensor.chip(4, 2) + (weights_tensor.constant(1) - solver_params_tensor.chip(1, 2)) * weights_tensor * errors_tensor;
-			solver_params_tensor.chip(5, 2).device(device) = solver_params_tensor.chip(2, 2) * solver_params_tensor.chip(5, 2) + (weights_tensor.constant(1) - solver_params_tensor.chip(2, 2)) * weights_tensor * errors_tensor * weights_tensor * errors_tensor;
+
+      // Gradient clipping
+      auto clip = errors_tensor.abs() > errors_tensor.constant(this->getGradientThreshold());
+      auto errors_clipped = clip.select(errors_tensor * errors_tensor.constant(this->getGradientThreshold()) / errors_tensor.abs(), errors_tensor);
+
+      // Weight updates
+			solver_params_tensor.chip(4, 2).device(device) = solver_params_tensor.chip(1, 2) * solver_params_tensor.chip(4, 2) + (weights_tensor.constant(1) - solver_params_tensor.chip(1, 2)) * weights_tensor * errors_clipped;
+			solver_params_tensor.chip(5, 2).device(device) = solver_params_tensor.chip(2, 2) * solver_params_tensor.chip(5, 2) + (weights_tensor.constant(1) - solver_params_tensor.chip(2, 2)) * weights_tensor * errors_clipped * weights_tensor * errors_clipped;
       auto unbiased_adam1 = solver_params_tensor.chip(4, 2) / (weights_tensor.constant(1) - solver_params_tensor.chip(1, 2));
       auto unbiased_adam2 = solver_params_tensor.chip(5, 2) / (weights_tensor.constant(1) - solver_params_tensor.chip(2, 2));
 			weights_tensor.device(device) = weights_tensor - solver_params_tensor.chip(0, 2) * unbiased_adam1 / (unbiased_adam2.sqrt() + solver_params_tensor.chip(3, 2));
@@ -179,8 +182,7 @@ public:
 	class DummySolverTensorOp : public SolverTensorOp<TensorT, DeviceT>
 	{
 	public:
-		DummySolverTensorOp() {};
-		~DummySolverTensorOp() {};
+    using SolverTensorOp<TensorT, DeviceT>::SolverTensorOp;
 		void operator()(TensorT* weights, TensorT* errors, TensorT* solver_params, const int& source_layer_size, const int& sink_layer_size, DeviceT& device)	{	};
 		std::string getName() const { return "DummySolverTensorOp"; };
 	//private:
@@ -198,8 +200,7 @@ public:
 	class SGDNoiseTensorOp : public SolverTensorOp<TensorT, DeviceT>
 	{
 	public:
-		SGDNoiseTensorOp() {};
-		~SGDNoiseTensorOp() {};
+    using SolverTensorOp<TensorT, DeviceT>::SolverTensorOp;
 		void operator()(TensorT* weights, TensorT* errors, TensorT* solver_params, const int& source_layer_size, const int& sink_layer_size, DeviceT& device)
 		{
 			// [TODO]

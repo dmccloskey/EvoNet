@@ -483,6 +483,99 @@ public:
 		};
 	};
 
+  /**
+    @brief MSERangeUB Mean Squared Error loss function.
+  */
+  template<typename TensorT, typename DeviceT>
+  class MSERangeUBTensorOp : public LossFunctionTensorOp<TensorT, DeviceT>
+  {
+  public:
+    using LossFunctionTensorOp<TensorT, DeviceT>::LossFunctionTensorOp;
+    std::string getName() { return "MSERangeUBTensorOp"; }
+    void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
+      Eigen::TensorMap < Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
+      Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
+      Eigen::TensorMap < Eigen::Tensor<TensorT, 2>> error_tensor(error, batch_size, memory_size);
+      auto predicted_chip = predicted_tensor.chip(time_step, 1);
+      auto mse = ((expected_tensor - predicted_chip).pow(2) * expected_tensor.constant((TensorT)0.5) / expected_tensor.constant((TensorT)layer_size));        
+      auto in_range = predicted_chip > expected_tensor;
+      auto result = in_range.select(mse, predicted_chip.constant(0));
+
+      error_tensor.chip(time_step, 1).device(device) += (result.sum(Eigen::array<int, 1>({ 1 })) * error_tensor.chip(time_step, 1).constant(this->scale_)).clip(-1e9, 1e9);
+    };
+  };
+
+  /**
+    @brief MSERangeUB Mean Squared Error loss function gradient.
+  */
+  template<typename TensorT, typename DeviceT>
+  class MSERangeUBGradTensorOp : public LossFunctionGradTensorOp<TensorT, DeviceT>
+  {
+  public:
+    using LossFunctionGradTensorOp<TensorT, DeviceT>::LossFunctionGradTensorOp;
+    std::string getName() { return "MSERangeUBGradTensorOp"; }
+    void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const
+    {
+      Eigen::TensorMap < Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
+      Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
+      Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> error_tensor(error, batch_size, memory_size, layer_size);
+      auto predicted_chip = predicted_tensor.chip(time_step, 1);
+      auto mse_grad = (((expected_tensor - predicted_chip) / expected_tensor.constant((TensorT)layer_size))
+        *error_tensor.chip(time_step, 1).constant(this->scale_)).clip(-1e9, 1e9);
+      auto in_range = predicted_chip > expected_tensor;
+      auto result = in_range.select(mse_grad, predicted_chip.constant(0));
+
+      error_tensor.chip(time_step, 1).device(device) += result;
+    };
+  };
+
+  /**
+    @brief MSERangeLB Mean Squared Error loss function.
+  */
+  template<typename TensorT, typename DeviceT>
+  class MSERangeLBTensorOp : public LossFunctionTensorOp<TensorT, DeviceT>
+  {
+  public:
+    using LossFunctionTensorOp<TensorT, DeviceT>::LossFunctionTensorOp;
+    std::string getName() { return "MSERangeLBTensorOp"; }
+    void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
+      Eigen::TensorMap < Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
+      Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
+      Eigen::TensorMap < Eigen::Tensor<TensorT, 2>> error_tensor(error, batch_size, memory_size);
+      auto predicted_chip = predicted_tensor.chip(time_step, 1);
+      auto mse = ((expected_tensor - predicted_chip).pow(2) * expected_tensor.constant((TensorT)0.5) / expected_tensor.constant((TensorT)layer_size));
+      auto in_range = predicted_chip < expected_tensor;
+      auto result = in_range.select(mse, predicted_chip.constant(0));
+
+      error_tensor.chip(time_step, 1).device(device) += (result.sum(Eigen::array<int, 1>({ 1 }))
+        *error_tensor.chip(time_step, 1).constant(this->scale_)).clip(-1e9, 1e9);
+    };
+  };
+
+  /**
+    @brief MSERangeLB Mean Squared Error loss function gradient.
+  */
+  template<typename TensorT, typename DeviceT>
+  class MSERangeLBGradTensorOp : public LossFunctionGradTensorOp<TensorT, DeviceT>
+  {
+  public:
+    using LossFunctionGradTensorOp<TensorT, DeviceT>::LossFunctionGradTensorOp;
+    std::string getName() { return "MSERangeLBGradTensorOp"; }
+    void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const
+    {
+      Eigen::TensorMap < Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
+      Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
+      Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> error_tensor(error, batch_size, memory_size, layer_size);
+      auto predicted_chip = predicted_tensor.chip(time_step, 1);
+      auto mse_grad = (((expected_tensor - predicted_chip) / expected_tensor.constant((TensorT)layer_size))
+        *error_tensor.chip(time_step, 1).constant(this->scale_)).clip(-1e9, 1e9);
+      auto in_range = predicted_chip < expected_tensor;
+      auto result = in_range.select(mse_grad, predicted_chip.constant(0));
+
+      error_tensor.chip(time_step, 1).device(device) += result;
+    };
+  };
+
 	/**
 		@brief Hinge loss function.  
 

@@ -631,6 +631,110 @@ public:
 		T n_ = 1.0; ///< the number of total classifiers
 	};
 
+  /**
+    @brief MSE Mean Squared Error loss function for when a value is not within a specified range.
+  */
+  template<typename T>
+  class MSERangeUBOp : public LossFunctionOp<T>
+  {
+  public:
+    using LossFunctionOp<T>::LossFunctionOp;
+    std::string getName() { return "MSERangeUBOp"; };
+    std::vector<T> getParameters() const { return std::vector<T>({ this->eps_, this->scale_ }); }
+    Eigen::Tensor<T, 1> operator()(
+      const Eigen::Tensor<T, 2>& y_pred,
+      const Eigen::Tensor<T, 2>& y_true) const
+    {
+      return Eigen::Tensor<T, 1>();
+    };
+    Eigen::Tensor<T, 1> operator()(
+      const Eigen::Tensor<T, 1>& y_pred,
+      const Eigen::Tensor<T, 1>& y_true) const
+    {
+      return Eigen::Tensor<T, 1>();
+    };
+  private:
+    T n_ = 1;
+  };
+
+  /**
+    @brief MSE Mean Squared Error loss function gradient for when a value is not within a specified range.
+  */
+  template<typename T>
+  class MSERangeUBGradOp : public LossFunctionGradOp<T>
+  {
+  public:
+    using LossFunctionGradOp<T>::LossFunctionGradOp;
+    std::string getName() { return "MSERangeUBGradOp"; };
+    std::vector<T> getParameters() const { return std::vector<T>({ this->eps_, this->scale_ }); }
+    Eigen::Tensor<T, 2> operator()(
+      const Eigen::Tensor<T, 2>& y_pred,
+      const Eigen::Tensor<T, 2>& y_true) const
+    {
+      return Eigen::Tensor<T, 2>();
+    };
+    Eigen::Tensor<T, 1> operator()(
+      const Eigen::Tensor<T, 1>& y_pred,
+      const Eigen::Tensor<T, 1>& y_true) const
+    {
+      return Eigen::Tensor<T, 1>();
+    };
+  private:
+    T n_ = 1;
+  };
+
+  /**
+    @brief MSE Mean Squared Error loss function for when a value is not within a specified range.
+  */
+  template<typename T>
+  class MSERangeLBOp : public LossFunctionOp<T>
+  {
+  public:
+    using LossFunctionOp<T>::LossFunctionOp;
+    std::string getName() { return "MSERangeLBOp"; };
+    std::vector<T> getParameters() const { return std::vector<T>({ this->eps_, this->scale_ }); }
+    Eigen::Tensor<T, 1> operator()(
+      const Eigen::Tensor<T, 2>& y_pred,
+      const Eigen::Tensor<T, 2>& y_true) const
+    {
+      return Eigen::Tensor<T, 1>();
+    };
+    Eigen::Tensor<T, 1> operator()(
+      const Eigen::Tensor<T, 1>& y_pred,
+      const Eigen::Tensor<T, 1>& y_true) const
+    {
+      return Eigen::Tensor<T, 1>();
+    };
+  private:
+    T n_ = 1;
+  };
+
+  /**
+    @brief MSE Mean Squared Error loss function gradient for when a value is not within a specified range.
+  */
+  template<typename T>
+  class MSERangeLBGradOp : public LossFunctionGradOp<T>
+  {
+  public:
+    using LossFunctionGradOp<T>::LossFunctionGradOp;
+    std::string getName() { return "MSERangeLBGradOp"; };
+    std::vector<T> getParameters() const { return std::vector<T>({ this->eps_, this->scale_ }); }
+    Eigen::Tensor<T, 2> operator()(
+      const Eigen::Tensor<T, 2>& y_pred,
+      const Eigen::Tensor<T, 2>& y_true) const
+    {
+      return Eigen::Tensor<T, 2>();
+    };
+    Eigen::Tensor<T, 1> operator()(
+      const Eigen::Tensor<T, 1>& y_pred,
+      const Eigen::Tensor<T, 1>& y_true) const
+    {
+      return Eigen::Tensor<T, 1>();
+    };
+  private:
+    T n_ = 1;
+  };
+
 	/**
 		@brief Hinge loss function.  
 

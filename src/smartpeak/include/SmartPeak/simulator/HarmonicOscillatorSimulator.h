@@ -14,6 +14,8 @@ namespace SmartPeak
 		References:
 		https://www.dcode.fr/differential-equation-solver
 		http://www.physics.hmc.edu/~saeta/courses/p111/uploads/Y2013/chap13.pdf
+    https://projects.ncsu.edu/crsc/events/ugw05/slides/root_harmonic.pdf
+    http://www.sharetechnote.com/html/DE_Modeling_Example_SpringMass.html#SingleSpring_SimpleHarmonic
 		
   */
 	template<typename TensorT>
@@ -64,6 +66,69 @@ namespace SmartPeak
 			const TensorT& m1, const TensorT& m2, const TensorT& m3,
 			const TensorT& x1o, const TensorT& x2o, const TensorT& x3o,
 			const TensorT& k);
+
+    /*
+    @brief 1 weight and 1 spring system (1D) without damping system
+    Where the spring is tethered to a rigid body
+
+    Analytical solution
+    F1: x1 = A1*sin(wt) + A1*cos(wt)
+    where w = sqrt(k/m)
+    or F1: x1 = A1*sin(wt + sigma)
+    where A1 = x1o^2 + (vo/w)^2 and sigma = tan-1(x1o*w/vo)
+    and where x1o is the initial displacement with initial velocity vo
+
+    [TODO: add tests]
+
+    @param[in, out] time_steps (dim0: n_time_steps)
+    @param[in, out] displacements (dim0: n_time_steps, dim1: x1...x3 displacements)
+    @param[in] n_time_steps The number of time-steps
+    @param[in] time_intervals The spacing between time-steps
+    @param[in] A1 The amplitudes for each of the mass oscillations
+    @param[in] m1 The mass values
+    @param[in] x1o The starting mass displacements from their starting positions
+    @param[in] k The spring constant (for simplicity, we assume all spring constants are the same)
+
+    @returns time_steps and displacements for the system
+    **/
+    static void WeightSpring1W1S1D(
+      Eigen::Tensor<TensorT, 1>& time_steps,
+      Eigen::Tensor<TensorT, 2>& displacements,
+      const int& n_time_steps, const TensorT& time_intervals,
+      const TensorT& A1, const TensorT& A2, const TensorT& A3,
+      const TensorT& m1, const TensorT& m2, const TensorT& m3,
+      const TensorT& x1o, const TensorT& x2o, const TensorT& x3o,
+      const TensorT& k);
+
+    /*
+    @brief 2 weight and 3 spring system (1D) without damping
+    Where the two end springs are tethered to rigid bodies
+
+    Analytical solution
+    F1: x1 = x2 + A1*sin(wt) + A1*cos(wt)
+    F2: x2 = x1 + A2*sin(wt) + A2*cos(wt)
+
+    [TODO: add tests]
+
+    @param[in, out] time_steps (dim0: n_time_steps)
+    @param[in, out] displacements (dim0: n_time_steps, dim1: x1...x3 displacements)
+    @param[in] n_time_steps The number of time-steps
+    @param[in] time_intervals The spacing between time-steps
+    @param[in] A1, A2 The amplitudes for each of the mass oscillations
+    @param[in] m1, m2 The mass values
+    @param[in] x1o, x2o The starting mass displacements from their starting positions
+    @param[in] k1 are the spring constants (assuming the same spring constant for simplicity) 
+
+    @returns time_steps and displacements for the system
+    **/
+    static void WeightSpring2W3S1D(
+      Eigen::Tensor<TensorT, 1>& time_steps,
+      Eigen::Tensor<TensorT, 2>& displacements,
+      const int& n_time_steps, const TensorT& time_intervals,
+      const TensorT& A1, const TensorT& A2, const TensorT& A3,
+      const TensorT& m1, const TensorT& m2, const TensorT& m3,
+      const TensorT& x1o, const TensorT& x2o,
+      const TensorT& k1);
 
 		// [TODO: add option for gaussian_noise]
 		TensorT gaussian_noise_ = 0;  ///< the amount of gaussian noise to add to the oscillator trajectories
