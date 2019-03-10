@@ -104,6 +104,10 @@ public:
     ~SGDOp(){};
     SGDOp(const TensorT& learning_rate, const TensorT& momentum):
       learning_rate_(learning_rate), momentum_(momentum){}
+    SGDOp(const TensorT& learning_rate, const TensorT& momentum, const TensorT& gradient_threshold) :
+      learning_rate_(learning_rate), momentum_(momentum) {
+      this->setGradientThreshold(gradient_threshold);
+    }
     void setLearningRate(const TensorT& learning_rate){learning_rate_ = learning_rate;};
     TensorT getLearningRate() const{return learning_rate_;};
     void setMomentum(const TensorT& momentum){momentum_ = momentum;};
@@ -164,8 +168,12 @@ private:
 public: 
     AdamOp(){}; 
     ~AdamOp(){};
-    AdamOp(const TensorT& learning_rate, const TensorT& momentum, const TensorT& momentum2, const TensorT& delta):
-      learning_rate_(learning_rate), momentum_(momentum), momentum2_(momentum2), delta_(delta){}
+    AdamOp(const TensorT& learning_rate, const TensorT& momentum, const TensorT& momentum2, const TensorT& delta) :
+      learning_rate_(learning_rate), momentum_(momentum), momentum2_(momentum2), delta_(delta) {};
+    AdamOp(const TensorT& learning_rate, const TensorT& momentum, const TensorT& momentum2, const TensorT& delta, const TensorT& gradient_threshold) :
+      learning_rate_(learning_rate), momentum_(momentum), momentum2_(momentum2), delta_(delta) {
+      this->setGradientThreshold(gradient_threshold);
+    };
     void setLearningRate(const TensorT& learning_rate){learning_rate_ = learning_rate;};
     TensorT getLearningRate() const{return learning_rate_;};
     void setMomentum(const TensorT& momentum){momentum_ = momentum;};

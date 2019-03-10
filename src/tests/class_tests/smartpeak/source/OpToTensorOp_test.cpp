@@ -265,20 +265,28 @@ BOOST_AUTO_TEST_CASE(convertOpToTensorOpSolverOpToSolverTensorOp)
 	SolverTensorOp<float, Eigen::DefaultDevice>* op_tensor_class;
 
 	op_class = new SGDOp<float>(0.1, 0.9);
+  op_class->setGradientThreshold(10);
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "SGDTensorOp");
+  BOOST_CHECK_EQUAL(op_tensor_class->getGradientThreshold(), 10);
 
 	op_class = new AdamOp<float>(0.001, 0.9, 0.999, 1e-8);
+  op_class->setGradientThreshold(10);
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "AdamTensorOp");
+  BOOST_CHECK_EQUAL(op_tensor_class->getGradientThreshold(), 10);
 
 	op_class = new DummySolverOp<float>();
+  op_class->setGradientThreshold(10);
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "DummySolverTensorOp");
+  BOOST_CHECK_EQUAL(op_tensor_class->getGradientThreshold(), 10);
 
 	op_class = new SGDNoiseOp<float>(0.1, 0.9, 0.1);
+  op_class->setGradientThreshold(10);
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "SGDNoiseTensorOp");
+  BOOST_CHECK_EQUAL(op_tensor_class->getGradientThreshold(), 10);
 }
 
 BOOST_AUTO_TEST_CASE(getTensorParamsSolverOpToSolverTensorOp)
