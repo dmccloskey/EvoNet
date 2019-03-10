@@ -152,7 +152,7 @@ public:
         std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
         std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
         std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 2)),
-        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.1, 0.9, 0.999, 1e-8)), 0.0, 0.0, true, true);
+        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.1, 0.9, 0.999, 1e-8)), 0.0, 0.0);
     }
     node_names = model_builder.addFullyConnected(model, "FC1", "FC1", node_names, n_outputs,
       std::shared_ptr<ActivationOp<TensorT>>(new ReLUOp<TensorT>()),
@@ -547,9 +547,9 @@ void main_CovNet() {
   // define the initial population
   std::cout << "Initializing the population..." << std::endl;
   //std::vector<Model<float>> population = { model_trainer.makeCovNet(input_nodes.size(), output_nodes.size(), 2, 2, 32) };
-  //std::vector<Model<float>> population = { model_trainer.makeCovNet(input_nodes.size(), output_nodes.size(), 8, 2, 32) };
+  std::vector<Model<float>> population = { model_trainer.makeCovNet(input_nodes.size(), output_nodes.size(), 8, 2, 128) };
   //std::vector<Model<float>> population = { model_trainer.makeCovNet(input_nodes.size(), output_nodes.size(), 32, 2, 128) };
-  std::vector<Model<float>> population = { model_trainer.makeCovNetCompact(input_nodes.size(), output_nodes.size(), 12, 12, 128) };
+  //std::vector<Model<float>> population = { model_trainer.makeCovNetCompact(input_nodes.size(), output_nodes.size(), 12, 12, 128) };
   //std::vector<Model<float>> population = { model_trainer.makeCovNetCompact(input_nodes.size(), output_nodes.size(), 32, 32, 128) };	
 
   // Evolve the population
