@@ -521,7 +521,7 @@ public:
 	{
 		model_logger.setLogTimeEpoch(true);
 		model_logger.setLogTrainValMetricEpoch(true);
-		model_logger.setLogExpectedPredictedEpoch(false);
+		model_logger.setLogExpectedPredictedEpoch(true);
 		if (n_epochs == 0) {
 			model_logger.initLogs(model);
 		}
@@ -783,7 +783,7 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
 		model_interpreters.push_back(model_interpreter);
 	}
 	ModelTrainerExt<float> model_trainer;
-	model_trainer.setBatchSize(1); // evaluation only
+	//model_trainer.setBatchSize(1); // evaluation only
 	model_trainer.setBatchSize(16);
 	model_trainer.setNEpochsTraining(5000);
 	model_trainer.setNEpochsValidation(10);

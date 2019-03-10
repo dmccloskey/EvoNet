@@ -6,12 +6,10 @@
 #include <SmartPeak/ml/ModelBuilder.h>
 #include <SmartPeak/ml/Model.h>
 #include <SmartPeak/io/PopulationTrainerFile.h>
+#include <SmartPeak/io/ModelInterpreterFile.h>
+#include <SmartPeak/io/ModelFile.h>
 
 #include <SmartPeak/simulator/MNISTSimulator.h>
-
-#include <SmartPeak/core/Preprocessing.h>
-
-#include <fstream>
 
 #include <unsupported/Eigen/CXX11/Tensor>
 
@@ -50,7 +48,7 @@ public:
 		ModelBuilder<TensorT> model_builder;
 
 		// Add the inputs
-		std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", "Input", n_inputs);
+		std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", "Input", n_inputs, true);
 
 		// Add the first convolution -> max pool -> ReLU layers
 		std::vector<std::vector<std::string>> node_names_l0;
@@ -148,13 +146,13 @@ public:
 			std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
 			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
 			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(180, 2)),
-			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, true, true);
 		if (add_norm) {
 			node_names = model_builder.addNormalization(model, "NormFC0", "NormFC0", node_names,
 				std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
 				std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
 				std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 2)),
-				std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.1, 0.9, 0.999, 1e-8)), 0.0, 0.0);
+				std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.1, 0.9, 0.999, 1e-8)), 0.0, 0.0, true, true);
 		}
 		node_names = model_builder.addFullyConnected(model, "FC1", "FC1", node_names, n_outputs,
 			std::shared_ptr<ActivationOp<TensorT>>(new ReLUOp<TensorT>()),
@@ -163,7 +161,7 @@ public:
 			std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
 			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
 			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(n_fc, 2)),
-			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, true, true);
 
 		for (const std::string& node_name : node_names)
 			model.getNodesMap().at(node_name)->setType(NodeType::output);
@@ -184,7 +182,7 @@ public:
 	References:
 	https://github.com/pytorch/examples/blob/master/mnist/main.py
 	*/
-	Model<TensorT> makeCovNet_v02(const int& n_inputs, const int& n_outputs, int n_depth_1 = 32, int n_depth_2 = 32, int n_fc = 128, int add_scalar = true) {
+	Model<TensorT> makeCovNetCompact(const int& n_inputs, const int& n_outputs, int n_depth_1 = 32, int n_depth_2 = 32, int n_fc = 128, int add_scalar = true) {
 		Model<TensorT> model;
 		model.setId(0);
 		model.setName("CovNet");
@@ -192,7 +190,7 @@ public:
 		ModelBuilder<TensorT> model_builder;
 
 		// Add the inputs
-		std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", "Input", n_inputs);
+		std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", "Input", n_inputs, true);
 
 		// Add the first convolution -> max pool -> ReLU layers
 		std::vector<std::string> node_names_conv0;
@@ -260,7 +258,7 @@ public:
 			std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
 			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
 			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(180, 2)),
-			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, true, true);
 		node_names = model_builder.addFullyConnected(model, "FC1", "FC1", node_names, n_outputs,
 			std::shared_ptr<ActivationOp<TensorT>>(new ReLUOp<TensorT>()),
 			std::shared_ptr<ActivationOp<TensorT>>(new ReLUGradOp<TensorT>()),
@@ -268,37 +266,68 @@ public:
 			std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
 			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
 			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(n_fc, 2)),
-			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, true, true);
 
 		for (const std::string& node_name : node_names)
 			model.getNodesMap().at(node_name)->setType(NodeType::output);
 
 		return model;
 	}
-
-	Model<TensorT> makeModel() { return Model<TensorT>(); }
-	void adaptiveTrainerScheduler(
-		const int& n_generations,
-		const int& n_epochs,
-		Model<TensorT>& model,
-		ModelInterpreterDefaultDevice<TensorT>& model_interpreter,
-		const std::vector<float>& model_errors) {
-		//if (n_epochs > 10000) {
-		//	// update the solver parameters
-		//	std::shared_ptr<SolverOp<TensorT>> solver;
-		//	solver.reset(new AdamOp<TensorT>(0.0001, 0.9, 0.999, 1e-8));
-		//	for (auto& weight_map : model.getWeightsMap())
-		//		if (weight_map.second->getSolverOp()->getName() == "AdamOp")
-		//			weight_map.second->setSolverOp(solver);
-		//}
-		//if (n_epochs % 1000 == 0 && n_epochs != 0) {
-		//	// save the model every 100 epochs
-		//	ModelFile<TensorT> data;
-		//	data.storeModelCsv(model.getName() + "_" + std::to_string(n_epochs) + "_nodes.csv",
-		//		model.getName() + "_" + std::to_string(n_epochs) + "_links.csv",
-		//		model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model);
-		//}
-	}
+  void adaptiveTrainerScheduler(
+    const int& n_generations,
+    const int& n_epochs,
+    Model<TensorT>& model,
+    ModelInterpreterDefaultDevice<TensorT>& model_interpreter,
+    const std::vector<float>& model_errors) {
+    //if (n_epochs = 1000) {
+    //	// anneal the learning rate to 1e-4
+    //}
+    if (n_epochs % 999 == 0 && n_epochs != 0) {
+      // save the model every 1000 epochs
+      //model_interpreter.getModelResults(model, false, true, false);
+      ModelFile<TensorT> data;
+      //data.storeModelCsv(model.getName() + "_" + std::to_string(n_epochs) + "_nodes.csv",
+      //	model.getName() + "_" + std::to_string(n_epochs) + "_links.csv",
+      //	model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model);
+      data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
+      ModelInterpreterFileDefaultDevice<TensorT> interpreter_data;
+      interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
+    }
+  }
+  void trainingModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
+    const Eigen::Tensor<TensorT, 3>& expected_values,
+    const std::vector<std::string>& output_nodes,
+    const TensorT& model_error)
+  {
+    model_logger.setLogTimeEpoch(true);
+    model_logger.setLogTrainValMetricEpoch(true);
+    model_logger.setLogExpectedPredictedEpoch(false);
+    if (n_epochs == 0) {
+      model_logger.initLogs(model);
+    }
+    if (n_epochs % 10 == 0) {
+      if (model_logger.getLogExpectedPredictedEpoch())
+        model_interpreter.getModelResults(model, true, false, false);
+      model_logger.writeLogs(model, n_epochs, { "Error" }, {}, { model_error }, {}, output_nodes, expected_values);
+    }
+  }
+  void validationModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
+    const Eigen::Tensor<TensorT, 3>& expected_values,
+    const std::vector<std::string>& output_nodes,
+    const TensorT& model_error)
+  {
+    model_logger.setLogTimeEpoch(false);
+    model_logger.setLogTrainValMetricEpoch(false);
+    model_logger.setLogExpectedPredictedEpoch(true);
+    if (n_epochs == 0) {
+      model_logger.initLogs(model);
+    }
+    if (n_epochs % 1 == 0) {
+      if (model_logger.getLogExpectedPredictedEpoch())
+        model_interpreter.getModelResults(model, true, false, false);
+      model_logger.writeLogs(model, n_epochs, {}, { "Error" }, {}, { model_error }, output_nodes, expected_values);
+    }
+  }
 };
 
 template<typename TensorT>
@@ -492,13 +521,15 @@ void main_CovNet() {
 		model_interpreters.push_back(model_interpreter);
 	}
 	ModelTrainerExt<float> model_trainer;
-	model_trainer.setBatchSize(16);
+	model_trainer.setBatchSize(64);
 	model_trainer.setMemorySize(1);
-	model_trainer.setNEpochsTraining(51);
+	model_trainer.setNEpochsTraining(1000);
 	model_trainer.setNEpochsValidation(1);
-	model_trainer.setVerbosityLevel(1);
-	model_trainer.setLogging(false, false);
-	model_trainer.setFindCycles(false);
+  model_trainer.setNEpochsEvaluation(100);
+  model_trainer.setVerbosityLevel(1);
+  model_trainer.setLogging(true, true, true);
+  model_trainer.setFindCycles(false);
+  model_trainer.setFastInterpreter(true);
 	model_trainer.setLossFunctions({
 		//std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>())//,
 		std::shared_ptr<LossFunctionOp<float>>(new CrossEntropyWithLogitsOp<float>())
@@ -518,8 +549,8 @@ void main_CovNet() {
 	//std::vector<Model<float>> population = { model_trainer.makeCovNet(input_nodes.size(), output_nodes.size(), 2, 2, 32) };
 	//std::vector<Model<float>> population = { model_trainer.makeCovNet(input_nodes.size(), output_nodes.size(), 8, 2, 32) };
 	//std::vector<Model<float>> population = { model_trainer.makeCovNet(input_nodes.size(), output_nodes.size(), 32, 2, 128) };
-	std::vector<Model<float>> population = { model_trainer.makeCovNet_v02(input_nodes.size(), output_nodes.size(), 12, 12, 128) };
-	//std::vector<Model<float>> population = { model_trainer.makeCovNet_v02(input_nodes.size(), output_nodes.size(), 32, 32, 128) };	
+	std::vector<Model<float>> population = { model_trainer.makeCovNetCompact(input_nodes.size(), output_nodes.size(), 12, 12, 128) };
+	//std::vector<Model<float>> population = { model_trainer.makeCovNetCompact(input_nodes.size(), output_nodes.size(), 32, 32, 128) };	
 
 	// Evolve the population
 	std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
