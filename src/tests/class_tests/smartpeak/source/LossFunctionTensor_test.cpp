@@ -893,4 +893,200 @@ BOOST_AUTO_TEST_CASE(operationfunctionCrossEntropyWithLogitsGradOp1)
 	BOOST_CHECK_CLOSE(error(1, 1, 1), 0.0, 1e-6);
 }
 
+/**
+  MSERangeUBOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorMSERangeUBOp)
+{
+  MSERangeUBTensorOp<float, Eigen::DefaultDevice>* ptrMSERangeUB = nullptr;
+  MSERangeUBTensorOp<float, Eigen::DefaultDevice>* nullPointerMSERangeUB = nullptr;
+  BOOST_CHECK_EQUAL(ptrMSERangeUB, nullPointerMSERangeUB);
+}
+
+BOOST_AUTO_TEST_CASE(destructorMSERangeUBOp)
+{
+  MSERangeUBTensorOp<float, Eigen::DefaultDevice>* ptrMSERangeUB = nullptr;
+  ptrMSERangeUB = new MSERangeUBTensorOp<float, Eigen::DefaultDevice>();
+  delete ptrMSERangeUB;
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionMSERangeUBOp)
+{
+  MSERangeUBTensorOp<float, Eigen::DefaultDevice> operation;
+
+  const int memory_size = 2;
+  const int batch_size = 2;
+  const int layer_size = 2;
+  const int time_step = 0;
+  Eigen::Tensor<float, 3> y_true(batch_size, memory_size, layer_size);
+  y_true.setValues({
+    {{1, 2}, {0, 0}},
+    {{1, 2}, {0, 0}}
+    });
+  Eigen::Tensor<float, 3> y_pred(batch_size, memory_size, layer_size);
+  y_pred.setValues({
+    {{1, 3}, {0, 0}},
+    {{0, 2}, {0, 0}}
+    });
+
+  float error_ptr[] = { 0, 0, 0, 0 };
+  Eigen::DefaultDevice device;
+
+  operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, time_step, device);
+  Eigen::TensorMap<Eigen::Tensor<float, 2>> error(error_ptr, batch_size, memory_size);
+  BOOST_CHECK_CLOSE(error(0, 0), 2.25, 1e-6);
+  BOOST_CHECK_CLOSE(error(1, 0), 1, 1e-6);
+  BOOST_CHECK_CLOSE(error(0, 1), 0, 1e-6);
+  BOOST_CHECK_CLOSE(error(1, 1), 0, 1e-6);
+}
+
+/**
+  MSERangeUBGradOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorMSERangeUBGradOp)
+{
+  MSERangeUBGradTensorOp<float, Eigen::DefaultDevice>* ptrMSERangeUB = nullptr;
+  MSERangeUBGradTensorOp<float, Eigen::DefaultDevice>* nullPointerMSERangeUB = nullptr;
+  BOOST_CHECK_EQUAL(ptrMSERangeUB, nullPointerMSERangeUB);
+}
+
+BOOST_AUTO_TEST_CASE(destructorMSERangeUBGradOp)
+{
+  MSERangeUBGradTensorOp<float, Eigen::DefaultDevice>* ptrMSERangeUB = nullptr;
+  ptrMSERangeUB = new MSERangeUBGradTensorOp<float, Eigen::DefaultDevice>();
+  delete ptrMSERangeUB;
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionMSERangeUBGradOp)
+{
+  MSERangeUBGradTensorOp<float, Eigen::DefaultDevice> operation;
+
+  const int memory_size = 2;
+  const int batch_size = 2;
+  const int layer_size = 2;
+  const int time_step = 0;
+  Eigen::Tensor<float, 3> y_true(batch_size, memory_size, layer_size);
+  y_true.setValues({
+    {{1, 2}, {0, 0}},
+    {{1, 2}, {0, 0}}
+    });
+  Eigen::Tensor<float, 3> y_pred(batch_size, memory_size, layer_size);
+  y_pred.setValues({
+    {{1, 3}, {0, 0}},
+    {{0, 2}, {0, 0}}
+    });
+
+  float error_ptr[] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+  Eigen::DefaultDevice device;
+
+  operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, time_step, device);
+  Eigen::TensorMap<Eigen::Tensor<float, 3>> error(error_ptr, batch_size, memory_size, layer_size);
+  BOOST_CHECK_CLOSE(error(0, 0, 0), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(error(0, 1, 0), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(error(1, 0, 0), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(error(1, 1, 0), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(error(0, 0, 1), -1.5, 1e-6);
+  BOOST_CHECK_CLOSE(error(0, 1, 1), 0, 1e-6);
+  BOOST_CHECK_CLOSE(error(1, 0, 1), -1.0, 1e-6);
+  BOOST_CHECK_CLOSE(error(1, 1, 1), 0.0, 1e-6);
+}
+
+/**
+  MSERangeLBOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorMSERangeLBOp)
+{
+  MSERangeLBTensorOp<float, Eigen::DefaultDevice>* ptrMSERangeLB = nullptr;
+  MSERangeLBTensorOp<float, Eigen::DefaultDevice>* nullPointerMSERangeLB = nullptr;
+  BOOST_CHECK_EQUAL(ptrMSERangeLB, nullPointerMSERangeLB);
+}
+
+BOOST_AUTO_TEST_CASE(destructorMSERangeLBOp)
+{
+  MSERangeLBTensorOp<float, Eigen::DefaultDevice>* ptrMSERangeLB = nullptr;
+  ptrMSERangeLB = new MSERangeLBTensorOp<float, Eigen::DefaultDevice>();
+  delete ptrMSERangeLB;
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionMSERangeLBOp)
+{
+  MSERangeLBTensorOp<float, Eigen::DefaultDevice> operation;
+
+  const int memory_size = 2;
+  const int batch_size = 2;
+  const int layer_size = 2;
+  const int time_step = 0;
+  Eigen::Tensor<float, 3> y_true(batch_size, memory_size, layer_size);
+  y_true.setValues({
+    {{1, 2}, {0, 0}},
+    {{1, 2}, {0, 0}}
+    });
+  Eigen::Tensor<float, 3> y_pred(batch_size, memory_size, layer_size);
+  y_pred.setValues({
+    {{1, 3}, {0, 0}},
+    {{0, 2}, {0, 0}}
+    });
+
+  float error_ptr[] = { 0, 0, 0, 0 };
+  Eigen::DefaultDevice device;
+
+  operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, time_step, device);
+  Eigen::TensorMap<Eigen::Tensor<float, 2>> error(error_ptr, batch_size, memory_size);
+  BOOST_CHECK_CLOSE(error(0, 0), 0, 1e-6);
+  BOOST_CHECK_CLOSE(error(1, 0), 0.25, 1e-6);
+  BOOST_CHECK_CLOSE(error(0, 1), 0, 1e-6);
+  BOOST_CHECK_CLOSE(error(1, 1), 0, 1e-6);
+}
+
+/**
+  MSERangeLBGradOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorMSERangeLBGradOp)
+{
+  MSERangeLBGradTensorOp<float, Eigen::DefaultDevice>* ptrMSERangeLB = nullptr;
+  MSERangeLBGradTensorOp<float, Eigen::DefaultDevice>* nullPointerMSERangeLB = nullptr;
+  BOOST_CHECK_EQUAL(ptrMSERangeLB, nullPointerMSERangeLB);
+}
+
+BOOST_AUTO_TEST_CASE(destructorMSERangeLBGradOp)
+{
+  MSERangeLBGradTensorOp<float, Eigen::DefaultDevice>* ptrMSERangeLB = nullptr;
+  ptrMSERangeLB = new MSERangeLBGradTensorOp<float, Eigen::DefaultDevice>();
+  delete ptrMSERangeLB;
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionMSERangeLBGradOp)
+{
+  MSERangeLBGradTensorOp<float, Eigen::DefaultDevice> operation;
+
+  const int memory_size = 2;
+  const int batch_size = 2;
+  const int layer_size = 2;
+  const int time_step = 0;
+  Eigen::Tensor<float, 3> y_true(batch_size, memory_size, layer_size);
+  y_true.setValues({
+    {{1, 2}, {0, 0}},
+    {{1, 2}, {0, 0}}
+    });
+  Eigen::Tensor<float, 3> y_pred(batch_size, memory_size, layer_size);
+  y_pred.setValues({
+    {{1, 3}, {0, 0}},
+    {{0, 2}, {0, 0}}
+    });
+
+  float error_ptr[] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+  Eigen::DefaultDevice device;
+
+  operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, time_step, device);
+  Eigen::TensorMap<Eigen::Tensor<float, 3>> error(error_ptr, batch_size, memory_size, layer_size);
+  BOOST_CHECK_CLOSE(error(0, 0, 0), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(error(0, 1, 0), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(error(1, 0, 0), 0.5, 1e-6);
+  BOOST_CHECK_CLOSE(error(1, 1, 0), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(error(0, 0, 1), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(error(0, 1, 1), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(error(1, 0, 1), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(error(1, 1, 1), 0.0, 1e-6);
+}
+
 BOOST_AUTO_TEST_SUITE_END()

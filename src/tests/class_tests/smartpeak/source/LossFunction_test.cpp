@@ -708,4 +708,96 @@ BOOST_AUTO_TEST_CASE(operationfunctionBCEWithLogitsGradOp2)
 	BOOST_CHECK_CLOSE(error(1), -0.278032422, 1e-6);
 }
 
+/**
+  MSERangeUBOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorMSERangeUBOp)
+{
+  MSERangeUBOp<double>* ptrMSERangeUB = nullptr;
+  MSERangeUBOp<double>* nullPointerMSERangeUB = nullptr;
+  BOOST_CHECK_EQUAL(ptrMSERangeUB, nullPointerMSERangeUB);
+}
+
+BOOST_AUTO_TEST_CASE(destructorMSERangeUBOp)
+{
+  MSERangeUBOp<double>* ptrMSERangeUB = nullptr;
+  ptrMSERangeUB = new MSERangeUBOp<double>();
+  delete ptrMSERangeUB;
+}
+
+BOOST_AUTO_TEST_CASE(gettersAndSettersMSERangeUBOp)
+{
+  MSERangeUBOp<float> operation;
+  BOOST_CHECK_EQUAL(operation.getName(), "MSERangeUBOp");
+}
+
+/**
+  MSERangeUBGradOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorMSERangeUBGradOp)
+{
+  MSERangeUBGradOp<double>* ptrMSERangeUB = nullptr;
+  MSERangeUBGradOp<double>* nullPointerMSERangeUB = nullptr;
+  BOOST_CHECK_EQUAL(ptrMSERangeUB, nullPointerMSERangeUB);
+}
+
+BOOST_AUTO_TEST_CASE(destructorMSERangeUBGradOp)
+{
+  MSERangeUBGradOp<double>* ptrMSERangeUB = nullptr;
+  ptrMSERangeUB = new MSERangeUBGradOp<double>();
+  delete ptrMSERangeUB;
+}
+
+BOOST_AUTO_TEST_CASE(gettersAndSettersMSERangeUBGradOp)
+{
+  MSERangeUBGradOp<float> operation;
+  BOOST_CHECK_EQUAL(operation.getName(), "MSERangeUBGradOp");
+}
+
+/**
+  MSERangeLBOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorMSERangeLBOp)
+{
+  MSERangeLBOp<double>* ptrMSERangeLB = nullptr;
+  MSERangeLBOp<double>* nullPointerMSERangeLB = nullptr;
+  BOOST_CHECK_EQUAL(ptrMSERangeLB, nullPointerMSERangeLB);
+}
+
+BOOST_AUTO_TEST_CASE(destructorMSERangeLBOp)
+{
+  MSERangeLBOp<double>* ptrMSERangeLB = nullptr;
+  ptrMSERangeLB = new MSERangeLBOp<double>();
+  delete ptrMSERangeLB;
+}
+
+BOOST_AUTO_TEST_CASE(gettersAndSettersMSERangeLBOp)
+{
+  MSERangeLBOp<float> operation;
+  BOOST_CHECK_EQUAL(operation.getName(), "MSERangeLBOp");
+}
+
+/**
+  MSERangeLBGradOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorMSERangeLBGradOp)
+{
+  MSERangeLBGradOp<double>* ptrMSERangeLB = nullptr;
+  MSERangeLBGradOp<double>* nullPointerMSERangeLB = nullptr;
+  BOOST_CHECK_EQUAL(ptrMSERangeLB, nullPointerMSERangeLB);
+}
+
+BOOST_AUTO_TEST_CASE(destructorMSERangeLBGradOp)
+{
+  MSERangeLBGradOp<double>* ptrMSERangeLB = nullptr;
+  ptrMSERangeLB = new MSERangeLBGradOp<double>();
+  delete ptrMSERangeLB;
+}
+
+BOOST_AUTO_TEST_CASE(gettersAndSettersMSERangeLBGradOp)
+{
+  MSERangeLBGradOp<float> operation;
+  BOOST_CHECK_EQUAL(operation.getName(), "MSERangeLBGradOp");
+}
+
 BOOST_AUTO_TEST_SUITE_END()

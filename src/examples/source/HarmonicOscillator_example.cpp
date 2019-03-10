@@ -87,14 +87,14 @@ public:
 		s2 = Node<float>("s2", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
 		m1.setLayerName("Output"); m3.setLayerName("Output"); m2.setLayerName("Input");
 		// weights  
-		Wm1_to_s1 = Weight<float>("m1_to_s1", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8, 10)));
-		Ws1_to_m1 = Weight<float>("s1_to_m1", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8, 10)));
-		Ws1_to_m2 = Weight<float>("s1_to_m2", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8, 10)));
-		Wm2_to_s1 = Weight<float>("m2_to_s1", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8, 10)));
-		Wm2_to_s2 = Weight<float>("m2_to_s2", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8, 10)));
-		Ws2_to_m2 = Weight<float>("s2_to_m2", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8, 10)));
-		Ws2_to_m3 = Weight<float>("s2_to_m3", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8, 10)));
-		Wm3_to_s2 = Weight<float>("m3_to_s2", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8, 10)));
+		Wm1_to_s1 = Weight<float>("m1_to_s1", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(2.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8, 10)));
+		Ws1_to_m1 = Weight<float>("s1_to_m1", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(2.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8, 10)));
+		Ws1_to_m2 = Weight<float>("s1_to_m2", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(2.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8, 10)));
+		Wm2_to_s1 = Weight<float>("m2_to_s1", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(2.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8, 10)));
+		Wm2_to_s2 = Weight<float>("m2_to_s2", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(2.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8, 10)));
+		Ws2_to_m2 = Weight<float>("s2_to_m2", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(2.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8, 10)));
+		Ws2_to_m3 = Weight<float>("s2_to_m3", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(2.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8, 10)));
+		Wm3_to_s2 = Weight<float>("m3_to_s2", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(2.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8, 10)));
 		// links
 		m1_to_s1 = Link("m1_to_s1", "m1", "s1", "m1_to_s1");
 		s1_to_m1 = Link("s1_to_m1", "s1", "m1", "s1_to_m1");

@@ -221,6 +221,14 @@ namespace SmartPeak
 				CrossEntropyWithLogitsTensorOp<TensorT, DeviceT>* op_tensor_class = new CrossEntropyWithLogitsTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1]);
 				return op_tensor_class;
 			}
+      else if (op_class->getName() == "MSERangeUBOp") {
+        LossFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new MSERangeUBTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1]);
+        return op_tensor_class;
+      }
+      else if (op_class->getName() == "MSERangeLBOp") {
+        LossFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new MSERangeLBTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1]);
+        return op_tensor_class;
+      }
 			else {
 				std::cout << "No conversion available for " << op_class->getName() << "." << std::endl;
 				LossFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new MSETensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1]);
@@ -271,6 +279,14 @@ namespace SmartPeak
 				CrossEntropyWithLogitsGradTensorOp<TensorT, DeviceT>* op_tensor_class = new CrossEntropyWithLogitsGradTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1]);
 				return op_tensor_class;
 			}
+      else if (op_class->getName() == "MSERangeLBGradOp") {
+        LossFunctionGradTensorOp<TensorT, DeviceT>* op_tensor_class = new MSERangeLBGradTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1]);
+        return op_tensor_class;
+      }
+      else if (op_class->getName() == "MSERangeUBGradOp") {
+        LossFunctionGradTensorOp<TensorT, DeviceT>* op_tensor_class = new MSERangeUBGradTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1]);
+        return op_tensor_class;
+      }
 			else {
 				std::cout << "No conversion available for " << op_class->getName() << "." << std::endl;
 				LossFunctionGradTensorOp<TensorT, DeviceT>* op_tensor_class = new MSEGradTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1]);
