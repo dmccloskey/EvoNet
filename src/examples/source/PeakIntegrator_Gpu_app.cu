@@ -783,9 +783,10 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
     model_interpreters.push_back(model_interpreter);
   }
   ModelTrainerExt<float> model_trainer;
-  //model_trainer.setBatchSize(1); // evaluation only
-  model_trainer.setBatchSize(16);
-  model_trainer.setNEpochsTraining(5000);
+  model_trainer.setBatchSize(1); // evaluation only
+  //model_trainer.setBatchSize(64);
+  //model_trainer.setNEpochsTraining(5000);
+  model_trainer.setNEpochsTraining(0);
   model_trainer.setNEpochsValidation(10);
   model_trainer.setNEpochsEvaluation(10);
   model_trainer.setMemorySize(1);
@@ -816,9 +817,9 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
   else {
     // read in the trained model
     std::cout << "Reading in the model..." << std::endl;
-    const std::string data_dir = "/home/user/code/build/";
-    const std::string model_filename = data_dir + "DenoisingAE_2997_model.binary";
-    const std::string interpreter_filename = data_dir + "DenoisingAE_2997_interpreter.binary";
+    const std::string data_dir = "C:/Users/domccl/Desktop/PeakInt/GPU1/";
+    const std::string model_filename = data_dir + "DotProdAttentPeakInt_1998_model.binary";
+    const std::string interpreter_filename = data_dir + "DotProdAttentPeakInt_1998_interpreter.binary";
     ModelFile<float> model_file;
     model_file.loadModelBinary(model_filename, model);
     model.setId(1);
@@ -847,7 +848,7 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
 int main(int argc, char** argv)
 {
   // run the application
-  main_DenoisingAE(true, true);
+  main_DenoisingAE(false, true);
 
   return 0;
 }
