@@ -9,10 +9,6 @@
 
 #include <SmartPeak/simulator/MNISTSimulator.h>
 
-#include <SmartPeak/core/Preprocessing.h>
-
-#include <fstream>
-
 #include <unsupported/Eigen/CXX11/Tensor>
 
 using namespace SmartPeak;
@@ -51,7 +47,7 @@ public:
 		ModelBuilder<TensorT> model_builder;
 
 		// Add the inputs
-		std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", "Input", n_inputs);
+		std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", "Input", n_inputs, true);
 
 		// Multi-head attention
 		std::vector<std::string> node_names;
@@ -91,7 +87,7 @@ public:
 					std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
 					std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
 					std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names_input.size(), 2)),
-					std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+					std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, true, true);
 			}
 			if (add_norm) {
 				std::string norm_name = "Norm_FC" + std::to_string(i);
@@ -119,7 +115,7 @@ public:
 			std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
 			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
 			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 2)),
-			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, true, true);
 
 		for (const std::string& node_name : node_names)
 			model.nodes_.at(node_name)->setType(NodeType::output);
@@ -334,24 +330,26 @@ void main_DotProdAttention() {
 		ModelInterpreterDefaultDevice<float> model_interpreter(model_resources);
 		model_interpreters.push_back(model_interpreter);
 	}
-	ModelTrainerExt<float> model_trainer;
-	model_trainer.setBatchSize(16);
-	model_trainer.setMemorySize(1);
-	model_trainer.setNEpochsTraining(51);
-	model_trainer.setNEpochsValidation(1);
-	model_trainer.setVerbosityLevel(1);
-	model_trainer.setLogging(false, false);
-	model_trainer.setFindCycles(false);
-	model_trainer.setLossFunctions({
-		//std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>())//,
-		std::shared_ptr<LossFunctionOp<float>>(new CrossEntropyWithLogitsOp<float>())
-		});
-	model_trainer.setLossFunctionGrads({
-		//std::shared_ptr<LossFunctionGradOp<float>>({new MSEGradOp<float>())//,	
-		std::shared_ptr<LossFunctionGradOp<float>>(new CrossEntropyWithLogitsGradOp<float>())
-		});
-	model_trainer.setOutputNodes({ output_nodes
-		});
+  ModelTrainerExt<float> model_trainer;
+  model_trainer.setBatchSize(64);
+  model_trainer.setMemorySize(1);
+  model_trainer.setNEpochsTraining(10001);
+  model_trainer.setNEpochsValidation(1);
+  model_trainer.setVerbosityLevel(1);
+  model_trainer.setLogging(true, false);
+  model_trainer.setFindCycles(false);
+  model_trainer.setFastInterpreter(true);
+  model_trainer.setPreserveOoO(true);
+  model_trainer.setLossFunctions({
+    //std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>())//,
+    std::shared_ptr<LossFunctionOp<float>>(new CrossEntropyWithLogitsOp<float>())
+    });
+  model_trainer.setLossFunctionGrads({
+    //std::shared_ptr<LossFunctionGradOp<float>>({new MSEGradOp<float>())//,	
+    std::shared_ptr<LossFunctionGradOp<float>>(new CrossEntropyWithLogitsGradOp<float>())
+    });
+  model_trainer.setOutputNodes({ output_nodes
+    });
 
 	// define the model replicator for growth mode
 	ModelReplicatorExt<float> model_replicator;
@@ -359,7 +357,8 @@ void main_DotProdAttention() {
 	// define the initial population
 	std::cout << "Initializing the population..." << std::endl;
 	Model<float> model;
-	model_trainer.makeMultiHeadDotProdAttention(model, input_nodes.size(), output_nodes.size(), { 2,2 }, { 24,24 }, { 48, 48 }, false, false, false);
+	//model_trainer.makeMultiHeadDotProdAttention(model, input_nodes.size(), output_nodes.size(), { 2,2 }, { 24,24 }, { 48, 48 }, false, false, false); // Test model
+  model_trainer.makeMultiHeadDotProdAttention(model, input_nodes.size(), output_nodes.size(), { 12, 8 }, { 48, 24 }, { 512, 128 }, false, false, false); // Solving model
 	std::vector<Model<float>> population = { model };	
 
 	// Evolve the population

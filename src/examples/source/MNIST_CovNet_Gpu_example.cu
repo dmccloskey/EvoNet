@@ -546,11 +546,10 @@ void main_CovNet() {
 
   // define the initial population
   std::cout << "Initializing the population..." << std::endl;
-  //std::vector<Model<float>> population = { model_trainer.makeCovNet(input_nodes.size(), output_nodes.size(), 2, 2, 32) };
-  std::vector<Model<float>> population = { model_trainer.makeCovNet(input_nodes.size(), output_nodes.size(), 8, 2, 128) };
-  //std::vector<Model<float>> population = { model_trainer.makeCovNet(input_nodes.size(), output_nodes.size(), 32, 2, 128) };
-  //std::vector<Model<float>> population = { model_trainer.makeCovNetCompact(input_nodes.size(), output_nodes.size(), 12, 12, 128) };
-  //std::vector<Model<float>> population = { model_trainer.makeCovNetCompact(input_nodes.size(), output_nodes.size(), 32, 32, 128) };	
+  //std::vector<Model<float>> population = { model_trainer.makeCovNet(input_nodes.size(), output_nodes.size(), 2, 2, 32) };  // Sanity test
+  std::vector<Model<float>> population = { model_trainer.makeCovNet(input_nodes.size(), output_nodes.size(), 8, 2, 128) };  // Minimal solving model
+  //std::vector<Model<float>> population = { model_trainer.makeCovNet(input_nodes.size(), output_nodes.size(), 32, 2, 128) }; // Recommended model
+  //std::vector<Model<float>> population = { model_trainer.makeCovNetCompact(input_nodes.size(), output_nodes.size(), 12, 12, 128) };  // Test
 
   // Evolve the population
   std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
