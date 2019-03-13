@@ -391,7 +391,7 @@ namespace SmartPeak
 				//const int layer_index = output_node->getTensorIndex().second;
 				const int tensor_index = model.getNodesMap().at(output_node->getName())->getTensorIndex().first;
 				const int layer_index = model.getNodesMap().at(output_node->getName())->getTensorIndex().second;
-				output_node->setOutput(this->getLayerTensor(tensor_index)->getOutput().chip(layer_index, 2));
+        model.getNodesMap().at(output_node->getName())->setOutput(this->getLayerTensor(tensor_index)->getOutput().chip(layer_index, 2));
 			}
 		}
 	}

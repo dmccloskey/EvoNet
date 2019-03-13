@@ -99,7 +99,7 @@ public:
     void addLinks(const std::vector<Link>& links);
     Link getLink(const std::string& link_name) const; ///< link getter
     std::vector<Link> getLinks() const;  ///< links getter
-		std::map<std::string, std::shared_ptr<Link>> getLinksMap();  ///< return a modifiable version of weights
+		std::map<std::string, std::shared_ptr<Link>>& getLinksMap();  ///< return a modifiable version of weights
  
     /**
       @brief Remove existing links from the model.
@@ -116,7 +116,7 @@ public:
     void addNodes(const std::vector<Node<TensorT>>& nodes);
     Node<TensorT> getNode(const std::string& node_name) const; ///< node getter
     std::vector<Node<TensorT>> getNodes() const; ///< nodes getter
-		std::map<std::string, std::shared_ptr<Node<TensorT>>> getNodesMap();  ///< return a modifiable version of weights
+		std::map<std::string, std::shared_ptr<Node<TensorT>>>& getNodesMap();  ///< return a modifiable version of weights
 		std::map<std::string, std::vector<std::string>> getModuleNodeNameMap() const; ///< return a map of modules to a vector of node names [TODO: test!]
 
     /**
@@ -134,7 +134,7 @@ public:
     void addWeights(const std::vector<Weight<TensorT>>& weights);
     Weight<TensorT> getWeight(const std::string& weight_name) const; ///< weight getter
     std::vector<Weight<TensorT>> getWeights() const;  ///< weights getter
-		std::map<std::string, std::shared_ptr<Weight<TensorT>>> getWeightsMap();  ///< return a modifiable version of weights_		
+		std::map<std::string, std::shared_ptr<Weight<TensorT>>>& getWeightsMap();  ///< return a modifiable version of weights_		
  
     /**
       @brief Remove existing weights from the model.
@@ -402,7 +402,7 @@ private:
 	}
 
 	template<typename TensorT>
-	inline std::map<std::string, std::shared_ptr<Node<TensorT>>> Model<TensorT>::getNodesMap()
+	inline std::map<std::string, std::shared_ptr<Node<TensorT>>>& Model<TensorT>::getNodesMap()
 	{
 		return nodes_;
 	}
@@ -478,7 +478,7 @@ private:
 	}
 
 	template<typename TensorT>
-	inline std::map<std::string, std::shared_ptr<Weight<TensorT>>> Model<TensorT>::getWeightsMap()
+	inline std::map<std::string, std::shared_ptr<Weight<TensorT>>>& Model<TensorT>::getWeightsMap()
 	{
 		return weights_;
 	}
@@ -554,7 +554,7 @@ private:
 	}
 	
 	template<typename TensorT>
-	inline std::map<std::string, std::shared_ptr<Link>> Model<TensorT>::getLinksMap()
+	inline std::map<std::string, std::shared_ptr<Link>>& Model<TensorT>::getLinksMap()
 	{
 		return links_;
 	}
