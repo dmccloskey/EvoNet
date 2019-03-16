@@ -71,11 +71,10 @@ template<typename TensorT>
 class ModelTrainerExt : public ModelTrainerDefaultDevice<TensorT>
 {
 public:
+  /**
+  @brief Interaction Graph Toy Network Model based on Linear Harmonic Oscillator with three masses and two springs
+  */
 	void makeHarmonicOscillator3M2S(Model<TensorT>& model) {
-		/**
-		 * Interaction Graph Toy Network Model
-		 * Linear Harmonic Oscillator with three masses and two springs
-		*/
 		Node<float> m1, m2, m3, s1f, s2f, s1r, s2r;
 		Link m1_to_s1f, s1r_to_m1, s1f_to_m2, m2_to_s1r, m2_to_s2f, s2r_to_m2, s2f_to_m3, m3_to_s2r;
 		Weight<float> Wm1_to_s1f, Ws1r_to_m1, Ws1f_to_m2, Wm2_to_s1r, Wm2_to_s2f, Ws2r_to_m2, Ws2f_to_m3, Wm3_to_s2r;
@@ -112,11 +111,10 @@ public:
 		model.addWeights({ Wm1_to_s1f, Ws1r_to_m1, Ws1f_to_m2, Wm2_to_s1r, Wm2_to_s2f, Ws2r_to_m2, Ws2f_to_m3, Wm3_to_s2r });
 		model.addLinks({ m1_to_s1f, s1r_to_m1, s1f_to_m2, m2_to_s1r, m2_to_s2f, s2r_to_m2, s2f_to_m3, m3_to_s2r });
 	}
+  /**
+  @brief Interaction Graph Toy Network Model based on Linear Harmonic Oscillator with two masses and three springs
+  */
 	void makeHarmonicOscillator2M1S(Model<TensorT>& model) {
-		/**
-		 * Interaction Graph Toy Network Model
-		 * Linear Harmonic Oscillator with three masses and two springs
-		*/
 		Node<float> m1, m2, s1;
 		Link m1_to_s1, s1_to_m1, s1_to_m2, m2_to_s1;
 		Weight<float> Wm1_to_s1, Ws1_to_m1, Ws1_to_m2, Wm2_to_s1;

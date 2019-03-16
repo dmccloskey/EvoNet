@@ -233,10 +233,10 @@ public:
 				std::make_pair(0, 0),
 				std::make_pair(0, 0),
 				std::make_pair(0, 0),
-				std::make_pair(0, 1), // addLink
+				std::make_pair(1, 2), // addLink
 				std::make_pair(0, 0),
 				std::make_pair(0, 0),
-				std::make_pair(0, 1), // deleteLink
+				std::make_pair(1, 2), // deleteLink
 				std::make_pair(0, 0),
 				std::make_pair(0, 0),
 				std::make_pair(0, 0),
@@ -250,10 +250,10 @@ public:
 				std::make_pair(0, 0),
 				std::make_pair(0, 0),
 				std::make_pair(0, 0),
-				std::make_pair(0, 1), // addLink
+				std::make_pair(1, 3), // addLink
 				std::make_pair(0, 0),
 				std::make_pair(0, 0),
-				std::make_pair(0, 1), // deleteLink
+				std::make_pair(0, 0), // deleteLink
 				std::make_pair(0, 0),
 				std::make_pair(0, 0),
 				std::make_pair(0, 0),
@@ -300,7 +300,7 @@ public:
 void main_KineticModel(const bool& make_model, const bool& train_model, const std::string& simulation_type) {
 	// define the population trainer parameters
 	PopulationTrainerExt<float> population_trainer;
-	population_trainer.setNGenerations(1);
+	population_trainer.setNGenerations(10);
 	population_trainer.setLogging(true);
 
 	// define the population logger
@@ -327,9 +327,9 @@ void main_KineticModel(const bool& make_model, const bool& train_model, const st
 		model_interpreters.push_back(model_interpreter);
 	}
 	ModelTrainerExt<float> model_trainer;
-	model_trainer.setBatchSize(1);
+	model_trainer.setBatchSize(32);
 	model_trainer.setMemorySize(16);
-	model_trainer.setNEpochsTraining(10000);
+	model_trainer.setNEpochsTraining(500);
 	model_trainer.setNEpochsValidation(25);
 	model_trainer.setNTETTSteps(1);
 	model_trainer.setVerbosityLevel(1);
@@ -395,9 +395,9 @@ void main_KineticModel(const bool& make_model, const bool& train_model, const st
 int main(int argc, char** argv)
 {
 	//main_KineticModel(true, true, "steady_state"); // Constant glucose from T = 0 to N, SS metabolite levels at T = 0 (maintenance of SS metabolite levels)
-	//main_KineticModel(true, true, "glucose_pulse"); // Glucose pulse at T = 0, SS metabolite levels at T = 0 (maintenance of SS metabolite)
-	main_KineticModel(true, true, "amp_sweep"); // AMP rise/fall at T = 0, SS metabolite levels at T = 0 (maintenance of SS metbolite levels)
-  //main_KineticModel(true, true, "TODO"); // Glucose pulse at T = 0, SS metabolite levels at T = 0 (maintenance of SS pyr levels)
-  //main_KineticModel(true, true, "TODO"); // AMP rise/fall at T = 0, SS metabolite levels at T = 0 (maintenance of SS ATP levels)
+	main_KineticModel(true, true, "glucose_pulse"); // Glucose pulse at T = 0, SS metabolite levels at T = 0 (maintenance of SS metabolite)
+	//main_KineticModel(true, true, "amp_sweep"); // AMP rise/fall at T = 0, SS metabolite levels at T = 0 (maintenance of SS metbolite levels)
+  //main_KineticModel(true, true, "TODO?"); // Glucose pulse at T = 0, SS metabolite levels at T = 0 (maintenance of SS pyr levels)
+  //main_KineticModel(true, true, "TODO?"); // AMP rise/fall at T = 0, SS metabolite levels at T = 0 (maintenance of SS ATP levels)
 	return 0;
 }
