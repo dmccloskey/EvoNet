@@ -6,11 +6,10 @@
 #include <SmartPeak/ml/ModelBuilder.h>
 #include <SmartPeak/ml/Model.h>
 #include <SmartPeak/io/PopulationTrainerFile.h>
+#include <SmartPeak/io/ModelInterpreterFile.h>
 #include <SmartPeak/io/ModelFile.h>
 
 #include <SmartPeak/simulator/MNISTSimulator.h>
-
-#include <SmartPeak/core/Preprocessing.h>
 
 #include <unsupported/Eigen/CXX11/Tensor>
 
@@ -51,8 +50,8 @@ public:
 		std::vector<std::string> node_names = model_builder.addLSTM(model, "LSTM", "LSTM", node_names_input, n_blocks, n_cells,
 			std::shared_ptr<ActivationOp<TensorT>>(new TanHOp<float>()), std::shared_ptr<ActivationOp<TensorT>>(new TanHGradOp<float>()),
 			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(0.4)), std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)),
-			0.0f, 0.0f, true, true, 1);
+			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(0.4)), std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8, 10.0)),
+			0.0f, 0.0f, true, true, 1, true);
 
 		// Add a final output layer
 		node_names = model_builder.addFullyConnected(model, "Output", "Output", node_names, n_outputs,
@@ -62,36 +61,69 @@ public:
 			std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
 			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
 			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 2)),
-			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8, 10.0)), 0.0f, 0.0f, false, true);
 
 		for (const std::string& node_name : node_names)
 			model.getNodesMap().at(node_name)->setType(NodeType::output);
 
 		return model;
 	}
-
-	Model<TensorT> makeModel() { return Model<TensorT>(); }
-	void adaptiveTrainerScheduler(
-		const int& n_generations,
-		const int& n_epochs,
-		Model<TensorT>& model,
-		ModelInterpreterDefaultDevice<TensorT>& model_interpreter,
-		const std::vector<float>& model_errors) {
-		//if (n_epochs > 200) {
-		//	// update the solver parameters
-		//	std::shared_ptr<SolverOp<TensorT>> solver;
-		//	for (auto& weight_map : model.getWeightsMap())
-		//		if (weight_map.second->getSolverOp()->getName() == "AdamOp")
-		//			weight_map.second->getSolverOp()->setLearningRate(1e-4);
-		//}
-		//if (n_epochs % 1000 == 0 && n_epochs != 0) {
-		//	// save the model every 100 epochs
-		//	ModelFile<TensorT> data;
-		//	data.storeModelCsv(model.getName() + "_" + std::to_string(n_epochs) + "_nodes.csv",
-		//		model.getName() + "_" + std::to_string(n_epochs) + "_links.csv",
-		//		model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model);
-		//}
-	}
+  void adaptiveTrainerScheduler(
+    const int& n_generations,
+    const int& n_epochs,
+    Model<TensorT>& model,
+    ModelInterpreterDefaultDevice<TensorT>& model_interpreter,
+    const std::vector<float>& model_errors) {
+    //if (n_epochs = 1000) {
+    //	// anneal the learning rate to 1e-4
+    //}
+    if (n_epochs % 999 == 0 && n_epochs != 0
+      ) {
+      // save the model every 1000 epochs
+      //model_interpreter.getModelResults(model, false, true, false);
+      ModelFile<TensorT> data;
+      //data.storeModelCsv(model.getName() + "_" + std::to_string(n_epochs) + "_nodes.csv",
+      //	model.getName() + "_" + std::to_string(n_epochs) + "_links.csv",
+      //	model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model);
+      data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
+      ModelInterpreterFileDefaultDevice<TensorT> interpreter_data;
+      interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
+    }
+  }
+  void trainingModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
+    const Eigen::Tensor<TensorT, 3>& expected_values,
+    const std::vector<std::string>& output_nodes,
+    const TensorT& model_error)
+  {
+    model_logger.setLogTimeEpoch(true);
+    model_logger.setLogTrainValMetricEpoch(true);
+    model_logger.setLogExpectedPredictedEpoch(false);
+    if (n_epochs == 0) {
+      model_logger.initLogs(model);
+    }
+    if (n_epochs % 10 == 0) {
+      if (model_logger.getLogExpectedPredictedEpoch())
+        model_interpreter.getModelResults(model, true, false, false);
+      model_logger.writeLogs(model, n_epochs, { "Error" }, {}, { model_error }, {}, output_nodes, expected_values);
+    }
+  }
+  void validationModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
+    const Eigen::Tensor<TensorT, 3>& expected_values,
+    const std::vector<std::string>& output_nodes,
+    const TensorT& model_error)
+  {
+    model_logger.setLogTimeEpoch(false);
+    model_logger.setLogTrainValMetricEpoch(false);
+    model_logger.setLogExpectedPredictedEpoch(true);
+    if (n_epochs == 0) {
+      model_logger.initLogs(model);
+    }
+    if (n_epochs % 1 == 0) {
+      if (model_logger.getLogExpectedPredictedEpoch())
+        model_interpreter.getModelResults(model, true, false, false);
+      model_logger.writeLogs(model, n_epochs, {}, { "Error" }, {}, { model_error }, output_nodes, expected_values);
+    }
+  }
 };
 
 template<typename TensorT>
@@ -119,16 +151,16 @@ public:
 			for (int memory_iter = 0; memory_iter<memory_size; ++memory_iter)
 				for (int nodes_iter = 0; nodes_iter< n_input_nodes; ++nodes_iter)
 					for (int epochs_iter = 0; epochs_iter<n_epochs; ++epochs_iter)
-						input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = this->training_data(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
-						//input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = this->training_data(sample_indices[0], nodes_iter);  // test on only 1 sample
+						//input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = this->training_data(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
+						input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = this->training_data(sample_indices[0], nodes_iter);  // test on only 1 sample
 
 		// reformat the output data for training [BUG FREE]
 		for (int batch_iter = 0; batch_iter<batch_size; ++batch_iter)
 			for (int memory_iter = 0; memory_iter<memory_size; ++memory_iter)
 				for (int nodes_iter = 0; nodes_iter<this->training_labels.dimension(1); ++nodes_iter)
 					for (int epochs_iter = 0; epochs_iter<n_epochs; ++epochs_iter)
-						output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = (TensorT)this->training_labels(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
-						//output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = (TensorT)this->training_labels(sample_indices[0], nodes_iter); // test on only 1 sample
+						//output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = (TensorT)this->training_labels(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
+						output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = (TensorT)this->training_labels(sample_indices[0], nodes_iter); // test on only 1 sample
 
 		time_steps.setConstant(1.0f);
 	}
@@ -224,28 +256,30 @@ void main_LSTMTrain() {
 	// define the data simulator
 	const std::size_t input_size = 784;
 	const std::size_t n_labels = 10;
-	const std::size_t n_hidden = 128;
+	const std::size_t n_hidden = 1;
 	const std::size_t training_data_size = 60000; //60000;
 	const std::size_t validation_data_size = 10000; //10000;
 	DataSimulatorExt<float> data_simulator;
 
-	// read in the training data
-	//const std::string training_data_filename = "C:/Users/domccl/GitHub/mnist/train-images.idx3-ubyte";
-	//const std::string training_labels_filename = "C:/Users/domccl/GitHub/mnist/train-labels.idx1-ubyte";
-	//const std::string training_data_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/train-images-idx3-ubyte";
-	//const std::string training_labels_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/train-labels-idx1-ubyte";
-	const std::string training_data_filename = "/home/user/data/train-images-idx3-ubyte";
-	const std::string training_labels_filename = "/home/user/data/train-labels-idx1-ubyte";
-	data_simulator.readData(training_data_filename, training_labels_filename, true, training_data_size, input_size);
+  // read in the training data
+  std::string training_data_filename, training_labels_filename;
+  //training_data_filename = "/home/user/data/train-images-idx3-ubyte";
+  //training_labels_filename = "/home/user/data/train-labels-idx1-ubyte";
+  training_data_filename = "C:/Users/domccl/GitHub/mnist/train-images.idx3-ubyte";
+  training_labels_filename = "C:/Users/domccl/GitHub/mnist/train-labels.idx1-ubyte";
+  //training_data_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/train-images-idx3-ubyte";
+  //training_labels_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/train-labels-idx1-ubyte";
+  data_simulator.readData(training_data_filename, training_labels_filename, true, training_data_size, input_size);
 
-	// read in the validation data
-	//const std::string validation_data_filename = "C:/Users/domccl/GitHub/mnist/t10k-images.idx3-ubyte";
-	//const std::string validation_labels_filename = "C:/Users/domccl/GitHub/mnist/t10k-labels.idx1-ubyte";
-	//const std::string validation_data_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/t10k-images-idx3-ubyte";
-	//const std::string validation_labels_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/t10k-labels-idx1-ubyte";
-	const std::string validation_data_filename = "/home/user/data/t10k-images-idx3-ubyte";
-	const std::string validation_labels_filename = "/home/user/data/t10k-labels-idx1-ubyte";
-	data_simulator.readData(validation_data_filename, validation_labels_filename, false, validation_data_size, input_size);
+  // read in the validation data
+  std::string validation_data_filename, validation_labels_filename;
+  //validation_data_filename = "/home/user/data/t10k-images-idx3-ubyte";
+  //validation_labels_filename = "/home/user/data/t10k-labels-idx1-ubyte";
+  validation_data_filename = "C:/Users/domccl/GitHub/mnist/t10k-images.idx3-ubyte";
+  validation_labels_filename = "C:/Users/domccl/GitHub/mnist/t10k-labels.idx1-ubyte";
+  //validation_data_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/t10k-images-idx3-ubyte";
+  //validation_labels_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/t10k-labels-idx1-ubyte";
+  data_simulator.readData(validation_data_filename, validation_labels_filename, false, validation_data_size, input_size);
 	data_simulator.unitScaleData();
 
 	// Make the input nodes
@@ -276,10 +310,15 @@ void main_LSTMTrain() {
 	ModelTrainerExt<float> model_trainer;
 	model_trainer.setBatchSize(8);
 	model_trainer.setMemorySize(input_size);
-	model_trainer.setNEpochsTraining(500);
+	model_trainer.setNEpochsTraining(1000);
 	model_trainer.setNEpochsValidation(25);
 	model_trainer.setVerbosityLevel(1);
-	model_trainer.setLogging(true, false);
+	model_trainer.setLogging(true, true, false);
+  model_trainer.setNTETTSteps(1);
+  model_trainer.setNTBPTTSteps(128);
+  model_trainer.setPreserveOoO(true);
+  model_trainer.setFindCycles(true);
+  model_trainer.setFastInterpreter(true);
 	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new CrossEntropyWithLogitsOp<float>()) });
 	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new CrossEntropyWithLogitsGradOp<float>()) });
 	model_trainer.setOutputNodes({ output_nodes });

@@ -703,7 +703,7 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
   ModelLogger<float> model_logger(true, true, true, false, false, false, false, false);
 
   // define the data simulator
-  const std::size_t input_size = 512;
+  const std::size_t input_size = 128;
   const std::size_t encoding_size = 64;
   DataSimulatorExt<float> data_simulator;
 
@@ -783,10 +783,10 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
     model_interpreters.push_back(model_interpreter);
   }
   ModelTrainerExt<float> model_trainer;
-  model_trainer.setBatchSize(1); // evaluation only
-  //model_trainer.setBatchSize(64);
-  //model_trainer.setNEpochsTraining(5000);
-  model_trainer.setNEpochsTraining(0);
+  //model_trainer.setBatchSize(1); // evaluation only
+  model_trainer.setBatchSize(32);
+  model_trainer.setNEpochsTraining(5000);
+  //model_trainer.setNEpochsTraining(0);
   model_trainer.setNEpochsValidation(25);
   model_trainer.setNEpochsEvaluation(10);
   model_trainer.setMemorySize(1);
@@ -811,7 +811,7 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
   Model<float> model;
   if (make_model) {
     //model_trainer.makeDenoisingAE(model, input_size, encoding_size, 128);
-    model_trainer.makeMultiHeadDotProdAttention(model, input_size, input_size, { 16, 16 }, { 48, 48 }, { (int)input_size, (int)input_size }, false, false, false);
+    model_trainer.makeMultiHeadDotProdAttention(model, input_size, input_size, { 16, 16, 16 }, { 48, 48, 48 }, { (int)input_size, (int)input_size, (int)input_size }, false, false, false);
     //model_trainer.makeCompactCovNetAE(model, input_size, input_size, encoding_size, 1, 1, false);
   }
   else {
@@ -848,7 +848,7 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
 int main(int argc, char** argv)
 {
   // run the application
-  main_DenoisingAE(false, true);
+  main_DenoisingAE(true, true);
 
   return 0;
 }

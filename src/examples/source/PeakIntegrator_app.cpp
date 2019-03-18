@@ -783,11 +783,11 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
 		model_interpreters.push_back(model_interpreter);
 	}
 	ModelTrainerExt<float> model_trainer;
-	model_trainer.setBatchSize(1); // evaluation only
-	//model_trainer.setBatchSize(16);
-	model_trainer.setNEpochsTraining(10);
-  //model_trainer.setNEpochsTraining(5000);
-	model_trainer.setNEpochsValidation(10);
+	//model_trainer.setBatchSize(1); // evaluation only
+	model_trainer.setBatchSize(16);
+	//model_trainer.setNEpochsTraining(10);
+  model_trainer.setNEpochsTraining(5000);
+	model_trainer.setNEpochsValidation(25);
 	model_trainer.setNEpochsEvaluation(10);
 	model_trainer.setMemorySize(1);
 	model_trainer.setVerbosityLevel(1);
@@ -811,7 +811,7 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
 	Model<float> model;
 	if (make_model) {
 		//model_trainer.makeDenoisingAE(model, input_size, encoding_size, 128);
-		model_trainer.makeMultiHeadDotProdAttention(model, input_size, input_size, { 16, 16 }, { 48, 48 }, { (int)input_size, (int)input_size }, false, false, false);
+    model_trainer.makeMultiHeadDotProdAttention(model, input_size, input_size, { 16, 16, 16 }, { 48, 48, 48 }, { (int)input_size, (int)input_size, (int)input_size }, false, false, false);
 		//model_trainer.makeCompactCovNetAE(model, input_size, input_size, encoding_size, 1, 1, false);
 	}
 	else {
