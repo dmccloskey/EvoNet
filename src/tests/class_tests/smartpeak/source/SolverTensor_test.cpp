@@ -213,14 +213,4 @@ BOOST_AUTO_TEST_CASE(operationfunctionSGDNoiseOp)
 	BOOST_CHECK_CLOSE(solver_params(1, 0, 2), 0, 1e-4);
 }
 
-BOOST_AUTO_TEST_CASE(clipGradient) 
-{
-  SGDTensorOp<float, Eigen::DefaultDevice> operation;
-  operation.setGradientThreshold(1000);
-  BOOST_CHECK_CLOSE(operation.clipGradient(1.0), 1.0, 1e-3);
-  BOOST_CHECK_CLOSE(operation.clipGradient(1000.0), 1000.0, 1e-3);
-  BOOST_CHECK_CLOSE(operation.clipGradient(100000.0), 1000.0, 1e-3);
-	BOOST_CHECK_CLOSE(operation.clipGradient(0.0), 0.0, 1e-3);
-}
-
 BOOST_AUTO_TEST_SUITE_END()

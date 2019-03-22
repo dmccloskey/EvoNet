@@ -4,7 +4,6 @@
 #define SMARTPEAK_POPULATIONLOGGER_H
 
 // .h
-#include <SmartPeak/ml/PopulationTrainer.h>
 #include <SmartPeak/io/CSVWriter.h>
 #include <vector>
 
