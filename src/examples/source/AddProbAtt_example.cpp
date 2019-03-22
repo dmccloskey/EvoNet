@@ -52,6 +52,7 @@ public:
           for (int nodes_iter = 0; nodes_iter < n_input_nodes/2; ++nodes_iter) {
             input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = random_sequence(nodes_iter); // random sequence
             input_data(batch_iter, memory_iter, nodes_iter + n_input_nodes/2, epochs_iter) = mask_sequence(nodes_iter); // mask sequence
+            std::cout << "Node: " << nodes_iter << ";Rand: " << input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) << ";Mask: " << input_data(batch_iter, memory_iter, nodes_iter + n_input_nodes / 2, epochs_iter) << std::endl;
           }
           for (int nodes_iter = 0; nodes_iter < n_output_nodes; ++nodes_iter) {
             output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = result;
@@ -291,7 +292,8 @@ public:
 		if (n_epochs == 0) {
 			model_logger.initLogs(model);
 		}
-		if (n_epochs % 10 == 0) {
+		//if (n_epochs % 10 == 0) {
+    if (n_epochs % 1 == 0) {
 			if (model_logger.getLogExpectedPredictedEpoch())
 				model_interpreter.getModelResults(model, true, false, false);
 			model_logger.writeLogs(model, n_epochs, { "Error" }, {}, { model_error }, {}, output_nodes, expected_values);
@@ -472,8 +474,8 @@ int main(int argc, char** argv)
 	ModelTrainerExt<float> model_trainer;
 	model_trainer.setBatchSize(1);
 	model_trainer.setMemorySize(1);
-	model_trainer.setNEpochsTraining(101);
-	model_trainer.setNEpochsValidation(25);
+	model_trainer.setNEpochsTraining(10);
+	model_trainer.setNEpochsValidation(0);
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setFindCycles(false);
 	model_trainer.setLogging(true, false);
