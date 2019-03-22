@@ -35,24 +35,24 @@ public:
     assert(sequence_length == this->sequence_length_);
 
 		// generate a new sequence 
-		//Eigen::Tensor<TensorT, 1> random_sequence(this->sequence_length_);
-		//Eigen::Tensor<TensorT, 1> mask_sequence(this->sequence_length_);
-		//float result = this->AddProb(random_sequence, mask_sequence, this->n_mask_);
+		Eigen::Tensor<TensorT, 1> random_sequence(this->sequence_length_);
+		Eigen::Tensor<TensorT, 1> mask_sequence(this->sequence_length_);
+		float result = this->AddProb(random_sequence, mask_sequence, this->n_mask_);
 
 		// Generate the input and output data for training [BUG FREE]
 		for (int batch_iter = 0; batch_iter<batch_size; ++batch_iter) {
 			for (int epochs_iter = 0; epochs_iter<n_epochs; ++epochs_iter) {
 
-				// generate a new sequence 
-        Eigen::Tensor<TensorT, 1> random_sequence(this->sequence_length_);
-        Eigen::Tensor<TensorT, 1> mask_sequence(this->sequence_length_);
-        float result = this->AddProb(random_sequence, mask_sequence, this->n_mask_);
+				//// generate a new sequence 
+    //    Eigen::Tensor<TensorT, 1> random_sequence(this->sequence_length_);
+    //    Eigen::Tensor<TensorT, 1> mask_sequence(this->sequence_length_);
+    //    float result = this->AddProb(random_sequence, mask_sequence, this->n_mask_);
 
 				for (int memory_iter = 0; memory_iter<memory_size; ++memory_iter) {
           for (int nodes_iter = 0; nodes_iter < n_input_nodes/2; ++nodes_iter) {
             input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = random_sequence(nodes_iter); // random sequence
             input_data(batch_iter, memory_iter, nodes_iter + n_input_nodes/2, epochs_iter) = mask_sequence(nodes_iter); // mask sequence
-            std::cout << "Node: " << nodes_iter << ";Rand: " << input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) << ";Mask: " << input_data(batch_iter, memory_iter, nodes_iter + n_input_nodes / 2, epochs_iter) << std::endl;
+            //std::cout << "Node: " << nodes_iter << ";Rand: " << input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) << ";Mask: " << input_data(batch_iter, memory_iter, nodes_iter + n_input_nodes / 2, epochs_iter) << std::endl;
           }
           for (int nodes_iter = 0; nodes_iter < n_output_nodes; ++nodes_iter) {
             output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = result;
@@ -142,12 +142,13 @@ public:
     std::shared_ptr<WeightInitOp<TensorT>> weight_init;
     if (init_weight_soln) {
       solver.reset(new DummySolverOp<TensorT>());
-      //solver.reset(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)); // Testing...
       weight_init.reset(new ConstWeightInitOp<TensorT>(1));
     }
     else {
       solver.reset(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8));
-      weight_init.reset(new RandWeightInitOp<TensorT>((int)(node_names_random.size() + n_inputs) / 2, 1));
+      weight_init.reset(new RangeWeightInitOp<float>(0, 2)); // Solves
+      //weight_init.reset(new RangeWeightInitOp<float>(-1, 1)); // Fails
+      //weight_init.reset(new RandWeightInitOp<TensorT>((int)(node_names_random.size() + n_inputs) / 2, 1)); // Fails
     }
 
     // Add the hidden layer
@@ -299,8 +300,7 @@ public:
 		if (n_epochs == 0) {
 			model_logger.initLogs(model);
 		}
-		//if (n_epochs % 10 == 0) {
-    if (n_epochs % 1 == 0) {
+		if (n_epochs % 10 == 0) {
 			if (model_logger.getLogExpectedPredictedEpoch())
 				model_interpreter.getModelResults(model, true, false, false);
 			model_logger.writeLogs(model, n_epochs, { "Error" }, {}, { model_error }, {}, output_nodes, expected_values);
@@ -479,22 +479,22 @@ int main(int argc, char** argv)
 		model_interpreters.push_back(model_interpreter);
 	}
 	ModelTrainerExt<float> model_trainer;
-	model_trainer.setBatchSize(1);
+	model_trainer.setBatchSize(64);
 	model_trainer.setMemorySize(1);
-	model_trainer.setNEpochsTraining(10);
+	model_trainer.setNEpochsTraining(10000);
 	model_trainer.setNEpochsValidation(10);
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setFindCycles(false);
 	model_trainer.setLogging(true, false);
 	model_trainer.setPreserveOoO(true);
-	model_trainer.setFastInterpreter(true);
+	model_trainer.setFastInterpreter(false);
 	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
 	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
 	model_trainer.setOutputNodes({ output_nodes });
 
 	// define the model logger
-	ModelLogger<float> model_logger(true, true, true, false, false, false, false, false);
-	//ModelLogger<float> model_logger(true, true, false, false, false, false, false, false);
+	//ModelLogger<float> model_logger(true, true, true, false, false, false, false, false);
+	ModelLogger<float> model_logger(true, true, false, false, false, false, false, false);
 
 	// define the model replicator for growth mode
 	ModelReplicatorExt<float> model_replicator;
@@ -521,8 +521,8 @@ int main(int argc, char** argv)
 	// make the model name
   Model<float> model;
   //model_trainer.makeModelMinimal(model, input_nodes.size() / 2, output_nodes.size());
-  model_trainer.makeModelSolution(model, input_nodes.size() / 2, output_nodes.size(), true);
-  //model_trainer.makeModelAttention(model, (int)(input_nodes.size() / 2), output_nodes.size(), { 12 }, { 24 }, { (int)(input_nodes.size() / 2) }, false, false, false);
+  //model_trainer.makeModelSolution(model, input_nodes.size() / 2, output_nodes.size(), false);
+  model_trainer.makeModelAttention(model, (int)(input_nodes.size() / 2), output_nodes.size(), { 12 }, { 24 }, { (int)(input_nodes.size() / 2) }, false, false, false);
 	population.push_back(model);
 
 	// Evolve the population
