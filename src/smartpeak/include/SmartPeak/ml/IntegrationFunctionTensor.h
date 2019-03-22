@@ -48,10 +48,15 @@ public:
 		void operator()(TensorT* source_output, TensorT* weights, TensorT* sink_input, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, const int& source_time_step, const int& sink_time_step, DeviceT& device) {
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> sink_input_tensor(sink_input, batch_size, memory_size, sink_layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> source_output_tensor(source_output, batch_size, memory_size, source_layer_size);
-			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weight(weights, source_layer_size, sink_layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weight_tensor(weights, source_layer_size, sink_layer_size);
 			Eigen::array<Eigen::IndexPair<int>, 1> product_dims = { Eigen::IndexPair<int>(1, 0) };
-			sink_input_tensor.chip(sink_time_step, 1).device(device) += (source_output_tensor.chip(source_time_step, 1)).contract(weight, product_dims);
-      //std::cout << "[SumTensorOp] Time step " << sink_time_step << " : " << sink_input_tensor.chip(sink_time_step, 1) << std::endl; // DEBUGGING...
+			sink_input_tensor.chip(sink_time_step, 1).device(device) += (source_output_tensor.chip(source_time_step, 1)).contract(weight_tensor, product_dims);
+
+      //// DEBUG
+      //std::cout << "[SumTensorOp]Sink Time step " << sink_time_step << std::endl;
+      //std::cout << "[SumTensorOp]Source: " << source_output_tensor.chip(source_time_step, 1) << std::endl;
+      //std::cout << "[SumTensorOp]Weight: " << weight_tensor << std::endl;
+      //std::cout << "[SumTensorOp]Sink (End): " << sink_input_tensor.chip(sink_time_step, 1) << std::endl;
 		};
 		std::string getName() const { return "SumTensorOp"; };
 	//private:
@@ -75,15 +80,26 @@ public:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> sink_input_tensor(sink_input, batch_size, memory_size, sink_layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 4>> source_output_tensor(source_output, batch_size, memory_size, source_layer_size, 1);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> weight_tensor(weights, 1, source_layer_size, sink_layer_size);
-			// NOTE this should be *=, but the starting values are all 0...
-			//sink_input_tensor.chip(sink_time_step, 1).device(device) = sink_input_tensor.chip(sink_time_step, 1) * (
-			//	source_output_tensor.chip(source_time_step, 1).broadcast(Eigen::array<int, 3>({ 1, 1, sink_layer_size })) *
-			//	weight_tensor.broadcast(Eigen::array<int, 3>({ batch_size, 1, 1 }))
+
+      //// DEBUG
+      //std::cout << "[ProdTensorOp]Sink (Start): " << sink_input_tensor.chip(sink_time_step, 1) << std::endl;
+			
+			sink_input_tensor.chip(sink_time_step, 1).device(device) = sink_input_tensor.chip(sink_time_step, 1) * (
+				source_output_tensor.chip(source_time_step, 1).broadcast(Eigen::array<int, 3>({ 1, 1, sink_layer_size })) *
+				weight_tensor.broadcast(Eigen::array<int, 3>({ batch_size, 1, 1 }))
+				).prod(Eigen::array<int, 1>({ 1 }));
+
+      // NOTE this should be *=, but the starting values are all 0...
+			//sink_input_tensor.chip(sink_time_step, 1).device(device) = (source_output_tensor.chip(source_time_step, 1).broadcast(Eigen::array<int, 3>({ 1, 1, sink_layer_size })) *
+			//		weight_tensor.broadcast(Eigen::array<int, 3>({ batch_size, 1, 1 }))
 			//	).prod(Eigen::array<int, 1>({ 1 }));
 
-			sink_input_tensor.chip(sink_time_step, 1).device(device) = (source_output_tensor.chip(source_time_step, 1).broadcast(Eigen::array<int, 3>({ 1, 1, sink_layer_size })) *
-					weight_tensor.broadcast(Eigen::array<int, 3>({ batch_size, 1, 1 }))
-				).prod(Eigen::array<int, 1>({ 1 }));
+      //// DEBUG
+      //std::cout << "[ProdTensorOp]Source: " << source_output_tensor.chip(source_time_step, 1) << std::endl;
+      //std::cout << "[ProdTensorOp]Weight: " << weight_tensor << std::endl;
+      //std::cout << "[ProdTensorOp]Intermediate: " << source_output_tensor.chip(source_time_step, 1).broadcast(Eigen::array<int, 3>({ 1, 1, sink_layer_size })) *
+      //  weight_tensor.broadcast(Eigen::array<int, 3>({ batch_size, 1, 1 })) << std::endl;
+      //std::cout << "[ProdTensorOp]Sink (End): " << sink_input_tensor.chip(sink_time_step, 1) << std::endl;
 		}
 		std::string getName() const { return "ProdTensorOp"; };
 	//private:

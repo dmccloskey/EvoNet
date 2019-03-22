@@ -145,6 +145,9 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
 	node.setLayerSize(4);
 	size_t test = 2 * 3 * 4 * sizeof(float);
 	BOOST_CHECK_EQUAL(node.getTensorSize(), test);
+
+  node.setLayerIntegration("SumOp");
+  BOOST_CHECK_EQUAL(node.getLayerIntegration(), "SumOp");
 }
 
 BOOST_AUTO_TEST_CASE(gettersAndSetters1)
@@ -251,12 +254,13 @@ BOOST_AUTO_TEST_CASE(syncHAndD)
 BOOST_AUTO_TEST_CASE(initNodeTensorData)
 {
 	NodeTensorDataCpu<float> node;
-	node.initNodeTensorData(2, 5, 4, NodeType::hidden, true);
+	node.initNodeTensorData(2, 5, 4, NodeType::hidden, "SumOp", true);
 
 	// Test the batch and memory sizes
 	BOOST_CHECK_EQUAL(node.getBatchSize(), 2);
 	BOOST_CHECK_EQUAL(node.getMemorySize(), 5);
 	BOOST_CHECK_EQUAL(node.getLayerSize(), 4);
+  BOOST_CHECK_EQUAL(node.getLayerIntegration(), "SumOp");
 
 	BOOST_CHECK_EQUAL(node.getInput()(0, 0, 0), 0.0);
 	BOOST_CHECK_EQUAL(node.getInput()(1, 4, 3), 0.0);
@@ -269,19 +273,31 @@ BOOST_AUTO_TEST_CASE(initNodeTensorData)
 	BOOST_CHECK_EQUAL(node.getDt()(0, 0, 0), 1.0);
 	BOOST_CHECK_EQUAL(node.getDt()(1, 4, 3), 1.0);
 
-	node.initNodeTensorData(2, 5, 4, NodeType::bias, true);
+	node.initNodeTensorData(2, 5, 4, NodeType::bias, "SumOp", true);
+  BOOST_CHECK_EQUAL(node.getInput()(0, 0, 0), 0.0);
+  BOOST_CHECK_EQUAL(node.getInput()(1, 4, 3), 0.0);
 	BOOST_CHECK_EQUAL(node.getOutput()(0, 0, 0), 1.0);
 	BOOST_CHECK_EQUAL(node.getOutput()(1, 4, 3), 1.0);
 	BOOST_CHECK_EQUAL(node.getDerivative()(0, 0, 0), 0.0);
 	BOOST_CHECK_EQUAL(node.getDerivative()(1, 4, 3), 0.0);
+  BOOST_CHECK_EQUAL(node.getError()(0, 0, 0), 0.0);
+  BOOST_CHECK_EQUAL(node.getError()(1, 4, 3), 0.0);
+  BOOST_CHECK_EQUAL(node.getDt()(0, 0, 0), 1.0);
+  BOOST_CHECK_EQUAL(node.getDt()(1, 4, 3), 1.0);
 
-	node.initNodeTensorData(2, 5, 4, NodeType::input, true);
+	node.initNodeTensorData(2, 5, 4, NodeType::input, "SumOp", true);
+  BOOST_CHECK_EQUAL(node.getInput()(0, 0, 0), 0.0);
+  BOOST_CHECK_EQUAL(node.getInput()(1, 4, 3), 0.0);
 	BOOST_CHECK_EQUAL(node.getOutput()(0, 0, 0), 0.0);
 	BOOST_CHECK_EQUAL(node.getOutput()(1, 4, 3), 0.0);
 	BOOST_CHECK_EQUAL(node.getDerivative()(0, 0, 0), 0.0);
 	BOOST_CHECK_EQUAL(node.getDerivative()(1, 4, 3), 0.0);
+  BOOST_CHECK_EQUAL(node.getError()(0, 0, 0), 0.0);
+  BOOST_CHECK_EQUAL(node.getError()(1, 4, 3), 0.0);
+  BOOST_CHECK_EQUAL(node.getDt()(0, 0, 0), 1.0);
+  BOOST_CHECK_EQUAL(node.getDt()(1, 4, 3), 1.0);
 
-	node.initNodeTensorData(2, 5, 4, NodeType::unmodifiable, true);
+	node.initNodeTensorData(2, 5, 4, NodeType::unmodifiable, "SumOp", true);
 	BOOST_CHECK_EQUAL(node.getInput()(0, 0, 0), 0.0);
 	BOOST_CHECK_EQUAL(node.getInput()(1, 4, 3), 0.0);
 	BOOST_CHECK_EQUAL(node.getOutput()(0, 0, 0), 0.0);
@@ -293,7 +309,7 @@ BOOST_AUTO_TEST_CASE(initNodeTensorData)
 	BOOST_CHECK_EQUAL(node.getDt()(0, 0, 0), 1.0);
 	BOOST_CHECK_EQUAL(node.getDt()(1, 4, 3), 1.0);
 
-	node.initNodeTensorData(2, 5, 4, NodeType::recursive, true);
+	node.initNodeTensorData(2, 5, 4, NodeType::recursive, "SumOp", true);
 	BOOST_CHECK_EQUAL(node.getInput()(0, 0, 0), 0.0);
 	BOOST_CHECK_EQUAL(node.getInput()(1, 4, 3), 0.0);
 	BOOST_CHECK_EQUAL(node.getOutput()(0, 0, 0), 0.0);
@@ -304,6 +320,69 @@ BOOST_AUTO_TEST_CASE(initNodeTensorData)
 	BOOST_CHECK_EQUAL(node.getError()(1, 4, 3), 0.0);
 	BOOST_CHECK_EQUAL(node.getDt()(0, 0, 0), 1.0);
 	BOOST_CHECK_EQUAL(node.getDt()(1, 4, 3), 1.0);
+
+  node.initNodeTensorData(2, 5, 4, NodeType::hidden, "ProdOp", true);
+  BOOST_CHECK_EQUAL(node.getLayerIntegration(), "ProdOp");
+
+  BOOST_CHECK_EQUAL(node.getInput()(0, 0, 0), 1.0);
+  BOOST_CHECK_EQUAL(node.getInput()(1, 4, 3), 1.0);
+  BOOST_CHECK_EQUAL(node.getOutput()(0, 0, 0), 0.0);
+  BOOST_CHECK_EQUAL(node.getOutput()(1, 4, 3), 0.0);
+  BOOST_CHECK_EQUAL(node.getDerivative()(0, 0, 0), 0.0);
+  BOOST_CHECK_EQUAL(node.getDerivative()(1, 4, 3), 0.0);
+  BOOST_CHECK_EQUAL(node.getError()(0, 0, 0), 0.0);
+  BOOST_CHECK_EQUAL(node.getError()(1, 4, 3), 0.0);
+  BOOST_CHECK_EQUAL(node.getDt()(0, 0, 0), 1.0);
+  BOOST_CHECK_EQUAL(node.getDt()(1, 4, 3), 1.0);
+
+  node.initNodeTensorData(2, 5, 4, NodeType::bias, "ProdOp", true);
+  BOOST_CHECK_EQUAL(node.getInput()(0, 0, 0), 0.0);
+  BOOST_CHECK_EQUAL(node.getInput()(1, 4, 3), 0.0);
+  BOOST_CHECK_EQUAL(node.getOutput()(0, 0, 0), 1.0);
+  BOOST_CHECK_EQUAL(node.getOutput()(1, 4, 3), 1.0);
+  BOOST_CHECK_EQUAL(node.getDerivative()(0, 0, 0), 0.0);
+  BOOST_CHECK_EQUAL(node.getDerivative()(1, 4, 3), 0.0);
+  BOOST_CHECK_EQUAL(node.getError()(0, 0, 0), 0.0);
+  BOOST_CHECK_EQUAL(node.getError()(1, 4, 3), 0.0);
+  BOOST_CHECK_EQUAL(node.getDt()(0, 0, 0), 1.0);
+  BOOST_CHECK_EQUAL(node.getDt()(1, 4, 3), 1.0);
+
+  node.initNodeTensorData(2, 5, 4, NodeType::input, "ProdOp", true);
+  BOOST_CHECK_EQUAL(node.getInput()(0, 0, 0), 0.0);
+  BOOST_CHECK_EQUAL(node.getInput()(1, 4, 3), 0.0);
+  BOOST_CHECK_EQUAL(node.getOutput()(0, 0, 0), 0.0);
+  BOOST_CHECK_EQUAL(node.getOutput()(1, 4, 3), 0.0);
+  BOOST_CHECK_EQUAL(node.getDerivative()(0, 0, 0), 0.0);
+  BOOST_CHECK_EQUAL(node.getDerivative()(1, 4, 3), 0.0);
+  BOOST_CHECK_EQUAL(node.getError()(0, 0, 0), 0.0);
+  BOOST_CHECK_EQUAL(node.getError()(1, 4, 3), 0.0);
+  BOOST_CHECK_EQUAL(node.getDt()(0, 0, 0), 1.0);
+  BOOST_CHECK_EQUAL(node.getDt()(1, 4, 3), 1.0);
+
+  node.initNodeTensorData(2, 5, 4, NodeType::unmodifiable, "ProdOp", true);
+  BOOST_CHECK_EQUAL(node.getInput()(0, 0, 0), 1.0);
+  BOOST_CHECK_EQUAL(node.getInput()(1, 4, 3), 1.0);
+  BOOST_CHECK_EQUAL(node.getOutput()(0, 0, 0), 0.0);
+  BOOST_CHECK_EQUAL(node.getOutput()(1, 4, 3), 0.0);
+  BOOST_CHECK_EQUAL(node.getDerivative()(0, 0, 0), 0.0);
+  BOOST_CHECK_EQUAL(node.getDerivative()(1, 4, 3), 0.0);
+  BOOST_CHECK_EQUAL(node.getError()(0, 0, 0), 0.0);
+  BOOST_CHECK_EQUAL(node.getError()(1, 4, 3), 0.0);
+  BOOST_CHECK_EQUAL(node.getDt()(0, 0, 0), 1.0);
+  BOOST_CHECK_EQUAL(node.getDt()(1, 4, 3), 1.0);
+
+  node.initNodeTensorData(2, 5, 4, NodeType::recursive, "ProdOp", true);
+  BOOST_CHECK_EQUAL(node.getInput()(0, 0, 0), 1.0);
+  BOOST_CHECK_EQUAL(node.getInput()(1, 4, 3), 1.0);
+  BOOST_CHECK_EQUAL(node.getOutput()(0, 0, 0), 0.0);
+  BOOST_CHECK_EQUAL(node.getOutput()(1, 4, 3), 0.0);
+  BOOST_CHECK_EQUAL(node.getDerivative()(0, 0, 0), 0.0);
+  BOOST_CHECK_EQUAL(node.getDerivative()(1, 4, 3), 0.0);
+  BOOST_CHECK_EQUAL(node.getError()(0, 0, 0), 0.0);
+  BOOST_CHECK_EQUAL(node.getError()(1, 4, 3), 0.0);
+  BOOST_CHECK_EQUAL(node.getDt()(0, 0, 0), 1.0);
+  BOOST_CHECK_EQUAL(node.getDt()(1, 4, 3), 1.0);
+
 }
 
 BOOST_AUTO_TEST_SUITE_END()

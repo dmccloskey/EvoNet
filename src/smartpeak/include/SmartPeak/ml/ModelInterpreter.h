@@ -709,11 +709,21 @@ namespace SmartPeak
 	{
 		for (auto& layer_tensor: layer_tensors_) {
 			Eigen::Tensor<TensorT, 3> zero((int)layer_tensor->getBatchSize(), (int)layer_tensor->getMemorySize(), (int)layer_tensor->getLayerSize());	zero.setConstant(0);
-			layer_tensor->setInput(zero);
-			layer_tensor->setOutput(zero);
-			layer_tensor->setDerivative(zero);
-			layer_tensor->setError(zero);
-			layer_tensor->setDt(zero);
+      Eigen::Tensor<TensorT, 3> one((int)layer_tensor->getBatchSize(), (int)layer_tensor->getMemorySize(), (int)layer_tensor->getLayerSize()); one.setConstant(1);
+      if (layer_tensor->getLayerIntegration() == "ProdOp") {
+        layer_tensor->setInput(one);
+        layer_tensor->setOutput(zero);
+        layer_tensor->setDerivative(zero);
+        layer_tensor->setError(zero);
+        layer_tensor->setDt(zero);
+      }
+      else {
+        layer_tensor->setInput(zero);
+        layer_tensor->setOutput(zero);
+        layer_tensor->setDerivative(zero);
+        layer_tensor->setError(zero);
+        layer_tensor->setDt(zero);
+      }
 		}
 	}
 
@@ -1494,6 +1504,16 @@ namespace SmartPeak
 			weight_indices.push_back(weight_index);
 			weight_values.push_back(weight_value);
 			shared_weight_indices.push_back(shared_weight_index);
+
+      // Check that source layer size is not less than the # of operation arguments
+      if (source_layer_sizes.back() < operations.second.size()) {
+        char error_char[512];
+        sprintf(error_char, "Attempting to join multiple source nodes into a single layer that were previously split into seperate layers.");
+        std::string error(error_char);
+        throw std::runtime_error(error_char);
+        // if this fails, then the weight is shared with another layer.
+        // the current weight sharing implementation cannot handle such cases.
+      }
 
 			// update the layer positions
 			if (make_sink_tensor && make_source_tensor) {

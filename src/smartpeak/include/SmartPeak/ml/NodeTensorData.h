@@ -105,9 +105,11 @@ public:
 		void setBatchSize(const int& batch_size) { batch_size_ = batch_size; }
 		void setMemorySize(const int& memory_size) { memory_size_ = memory_size; }
 		void setLayerSize(const int& layer_size) { layer_size_ = layer_size; }
+    void setLayerIntegration(const std::string& layer_integration) { layer_integration_ = layer_integration; }
 		int getBatchSize() const { return batch_size_; }
 		int getMemorySize() const	{ return memory_size_; }
 		int getLayerSize() const { return layer_size_; }
+    std::string getLayerIntegration() const { return layer_integration_; }
 
 		virtual void setInput(const Eigen::Tensor<TensorT, 3>& input) = 0; ///< input setter
 		Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> getInput() { std::shared_ptr<TensorT> h_input = h_input_; Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> input(h_input.get(), batch_size_, memory_size_, layer_size_); return input; }; ///< input copy getter
@@ -136,7 +138,7 @@ public:
 
 		size_t getTensorSize() { return batch_size_ * memory_size_ * layer_size_ * sizeof(TensorT); }; ///< Get the size of each tensor in bytes
 
-		void initNodeTensorData(const int& batch_size, const int& memory_size, const int& layer_size, const NodeType& node_type, const bool& train); ///< initialize the node according to node type
+		void initNodeTensorData(const int& batch_size, const int& memory_size, const int& layer_size, const NodeType& node_type, const std::string& node_integration, const bool& train); ///< initialize the node according to node type
 
 		virtual bool syncHAndDInput(DeviceT& device) = 0;
 		virtual bool syncHAndDOutput(DeviceT& device) = 0;
@@ -183,6 +185,8 @@ protected:
 		bool d_derivative_updated_ = false;
 		bool d_dt_updated_ = false;
 
+    std::string layer_integration_;
+
 	//private:
 	//	friend class cereal::access;
 	//	template<class Archive>
@@ -196,14 +200,15 @@ protected:
   };
 
 	template<typename TensorT, typename DeviceT>
-	inline void NodeTensorData<TensorT, DeviceT>::initNodeTensorData(const int& batch_size, const int& memory_size, const int& layer_size, const NodeType& node_type, const bool& train)
+	inline void NodeTensorData<TensorT, DeviceT>::initNodeTensorData(const int& batch_size, const int& memory_size, const int& layer_size, const NodeType& node_type, const std::string& node_integration, const bool& train)
 	{
 		setBatchSize(batch_size);	setMemorySize(memory_size);	setLayerSize(layer_size);
+    setLayerIntegration(node_integration);
 		// Template zero and one tensor
 		Eigen::Tensor<TensorT, 3> zero(batch_size, memory_size, layer_size); zero.setConstant(0);
 		Eigen::Tensor<TensorT, 3> one(batch_size, memory_size, layer_size);	one.setConstant(1);
 		// set the input, error, and derivatives
-		setInput(zero);	setError(zero);	setDerivative(zero);
+		setError(zero);	setDerivative(zero);
 		setDt(one);
 		//// set Drop probabilities [TODO: broke when adding NodeData...]
 		//if (train) {
@@ -214,15 +219,23 @@ protected:
 		// corrections for specific node types
 		if (node_type == NodeType::bias) {
 			setOutput(one);
+      setInput(zero);
 		}
 		else if (node_type == NodeType::input) {
 			setOutput(zero);  // Check for `node_integration` == "ProdOp" and set to 1
+      setInput(zero);
 		}
 		else if (node_type == NodeType::zero) {
 			setOutput(zero);
+      setInput(zero);
 		}
+    else if (node_integration == "ProdOp") {
+      setOutput(zero);
+      setInput(one);
+    }
 		else {
 			setOutput(zero);
+      setInput(zero);
 		}
 	}
 

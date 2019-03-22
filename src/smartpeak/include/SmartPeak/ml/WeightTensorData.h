@@ -87,10 +87,12 @@ public:
 		void setLayer2Size(const int& layer2_size) { layer2_size_ = layer2_size; }
 		void setNSolverParams(const int& n_solver_params) { n_solver_params_ = n_solver_params; }
 		void setNSharedWeights(const int& n_shared_weights) { n_shared_weights_ = n_shared_weights; }
+    void setSinkLayerIntegration(const std::string& sink_layer_integration) { sink_layer_integration_ = sink_layer_integration; }
 		int getLayer1Size() const { return layer1_size_; }
 		int getLayer2Size() const	{ return layer2_size_; }
 		int getNSolverParams() const { return n_solver_params_; }
 		int getNSharedWeights() const { return n_shared_weights_; }
+    std::string getSinkLayerIntegration() const { return sink_layer_integration_; }
 
 		virtual void setWeight(const Eigen::Tensor<TensorT, 2>& weight) = 0; ///< weight setter
 		Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> getWeight() { std::shared_ptr<TensorT> h_weight = h_weight_; Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weight(h_weight.get(), layer1_size_, layer2_size_); return weight; }; ///< weight copy getter
@@ -117,7 +119,8 @@ public:
 		int getSharedWeightsSize() { return layer1_size_ * layer2_size_ * n_shared_weights_ * sizeof(TensorT); }; ///< Get the size of each tensor in bytes
 
 		void initWeightTensorData(const int& layer1_size, const int&layer2_size, const std::vector<std::pair<int, int>>& weight_indices, 
-			const std::map<std::string, std::vector<std::pair<int, int>>>& shared_weight_indices, const std::vector<TensorT>& weight_values, const bool& train, std::vector<TensorT>& solver_params);
+			const std::map<std::string, std::vector<std::pair<int, int>>>& shared_weight_indices, const std::vector<TensorT>& weight_values, const bool& train, std::vector<TensorT>& solver_params,
+      const std::string& sink_node_integration);
 
 		virtual bool syncHAndDError(DeviceT& device) = 0;
 		virtual bool syncHAndDWeight(DeviceT& device) = 0;
@@ -164,6 +167,8 @@ protected:
 		bool d_solver_params_updated_ = false;
 		bool d_shared_weights_updated_ = false;
 
+    std::string sink_layer_integration_;
+
 	//private:
 	//	friend class cereal::access;
 	//	template<class Archive>
@@ -178,17 +183,31 @@ protected:
 
 	template<typename TensorT, typename DeviceT>
 	inline void WeightTensorData<TensorT, DeviceT>::initWeightTensorData(const int & layer1_size, const int & layer2_size, const std::vector<std::pair<int, int>>& weight_indices, 
-		const std::map<std::string, std::vector<std::pair<int, int>>>& shared_weight_indices, const std::vector<TensorT>& weight_values, const bool & train, std::vector<TensorT>& solver_params)
+		const std::map<std::string, std::vector<std::pair<int, int>>>& shared_weight_indices, const std::vector<TensorT>& weight_values, const bool & train, std::vector<TensorT>& solver_params,
+    const std::string& sink_node_integration)
 	{
 		assert(weight_indices.size() == weight_values.size());
 		setLayer1Size(layer1_size);
 		setLayer2Size(layer2_size);
+    setSinkLayerIntegration(sink_node_integration);
 		// TODO: implement checks to ensure Tensors are not too large
 		// results in a std::bad_array_new_length
 
 		// make the weight and error tensors
 		Eigen::Tensor<TensorT, 2> zero(layer1_size, layer2_size); zero.setZero();
-		Eigen::Tensor<TensorT, 2> weights(layer1_size, layer2_size); weights.setZero();
+    Eigen::Tensor<TensorT, 2> weights(layer1_size, layer2_size); weights.setZero();
+
+    // TODO: experimental and may not be correct!
+		//if (sink_node_integration == "ProdOp") weights.setConstant(1);
+    //else weights.setZero();
+
+    if (sink_node_integration == "ProdOp" && weight_values.size() < layer1_size*layer2_size) {
+      char error_char[512];
+      sprintf(error_char, "The weight values for a ProdOp integration type is less than the product of the source and sink layer sizes.  This will result in a zero sink tensor.");
+      std::string error(error_char);
+      throw std::runtime_error(error_char);
+    }
+
 		for (size_t i = 0; i < weight_indices.size(); ++i) {
 			weights(weight_indices[i].first, weight_indices[i].second) = weight_values[i];
 		}

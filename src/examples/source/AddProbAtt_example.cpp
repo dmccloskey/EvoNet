@@ -133,6 +133,8 @@ public:
     ModelBuilder<TensorT> model_builder;
 
     // Add the inputs
+    // BUG: breaks model interpreter algorithm
+    //      Attempts to put all ProdOp hidden nodes on a single layer after they have already be seperated
     std::vector<std::string> node_names_random = model_builder.addInputNodes(model, "Random", "Random", n_inputs, true);
     std::vector<std::string> node_names_mask = model_builder.addInputNodes(model, "Mask", "Mask", n_inputs, true);
 
@@ -158,6 +160,11 @@ public:
       weight_init, solver, 0.0f, 0.0f, false, true);
     model_builder.addSinglyConnected(model, "HiddenR", node_names_mask, node_names,
       weight_init, solver, 0.0f, true);
+
+    // BUG: breaks model interpreter algorithm
+    //      Attempts to put all ProdOp hidden nodes on a single layer after they have already be seperated
+    for (const std::string& node_name : node_names)
+      model.nodes_.at(node_name)->setLayerName(node_name);
 
     // Add the output layer
     node_names = model_builder.addFullyConnected(model, "Output", "Output", node_names, n_outputs,
@@ -475,12 +482,12 @@ int main(int argc, char** argv)
 	model_trainer.setBatchSize(1);
 	model_trainer.setMemorySize(1);
 	model_trainer.setNEpochsTraining(10);
-	model_trainer.setNEpochsValidation(0);
+	model_trainer.setNEpochsValidation(10);
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setFindCycles(false);
 	model_trainer.setLogging(true, false);
 	model_trainer.setPreserveOoO(true);
-	model_trainer.setFastInterpreter(false);
+	model_trainer.setFastInterpreter(true);
 	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
 	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
 	model_trainer.setOutputNodes({ output_nodes });

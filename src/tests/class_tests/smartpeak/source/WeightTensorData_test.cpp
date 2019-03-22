@@ -83,6 +83,9 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
 	BOOST_CHECK_EQUAL(weight.getTensorSize(), 2 * 3 * sizeof(float));
 	BOOST_CHECK_EQUAL(weight.getSolverParamsSize(), 2 * 3 * 4 * sizeof(float));
 	BOOST_CHECK_EQUAL(weight.getSharedWeightsSize(), 2 * 3 * 2 * sizeof(float));
+
+  weight.setSinkLayerIntegration("SumOp");
+  BOOST_CHECK_EQUAL(weight.getSinkLayerIntegration(), "SumOp");
 }
 
 BOOST_AUTO_TEST_CASE(gettersAndSetters1)
@@ -129,29 +132,30 @@ BOOST_AUTO_TEST_CASE(initWeightTensorData)
 	std::vector<std::pair<int, int>> weight_indices = {
 		std::make_pair(0, 0), std::make_pair(1, 0),
 		std::make_pair(0, 1), std::make_pair(1, 1),
-		std::make_pair(0, 2), std::make_pair(1, 2)
+		std::make_pair(0, 2), //std::make_pair(1, 2)
 	};
 	std::map<std::string, std::vector<std::pair<int, int>>> shared_weight_indices = { 
 		{"0", {std::make_pair(0, 0), std::make_pair(1, 0)}},
-		{"1", {std::make_pair(0, 1), std::make_pair(1, 1)}},
-		{"2", {std::make_pair(0, 2), std::make_pair(1, 2)}}
+		{"1", {std::make_pair(0, 1), std::make_pair(1, 1)}}//,
+		//{"2", {std::make_pair(0, 2), std::make_pair(1, 2)}}
 	};
-	std::vector<float> weight_values = { 1, 1, 2, 2, 3, 3 };
+	std::vector<float> weight_values = { 1, 1, 2, 2, 3 };
 	std::vector<float> solver_params = {1, 2, 3, 4};
-	weight.initWeightTensorData(2, 3, weight_indices, shared_weight_indices, weight_values, true, solver_params);
+	weight.initWeightTensorData(2, 3, weight_indices, shared_weight_indices, weight_values, true, solver_params, "SumOp");
 
 	// Test the layer and param sizes
 	BOOST_CHECK_EQUAL(weight.getLayer1Size(), 2);
 	BOOST_CHECK_EQUAL(weight.getLayer2Size(), 3);
 	BOOST_CHECK_EQUAL(weight.getNSolverParams(), 4);
-	BOOST_CHECK_EQUAL(weight.getNSharedWeights(), 3);
+	BOOST_CHECK_EQUAL(weight.getNSharedWeights(), 2);
 
 	for (int j = 0; j < 3; ++j) {
 		for (int i = 0; i < 2; ++i) {
-			BOOST_CHECK_EQUAL(weight.getWeight()(i, j), weight_values[i + j * 2]);
+      if (i == 1 && j == 2) BOOST_CHECK_EQUAL(weight.getWeight()(i, j), 0);
+			else BOOST_CHECK_EQUAL(weight.getWeight()(i, j), weight_values[i + j * 2]);
 		}
 	}
-	for (int j = 0; j < 3; ++j) {
+	for (int j = 0; j < 2; ++j) {
 		for (int i = 0; i < 2; ++i) {
 			if (std::to_string(j) == "0")
 				BOOST_CHECK_EQUAL(weight.getSharedWeights()(i, j, 0), 1);
@@ -161,10 +165,6 @@ BOOST_AUTO_TEST_CASE(initWeightTensorData)
 				BOOST_CHECK_EQUAL(weight.getSharedWeights()(i, j, 1), 1);
 			else
 				BOOST_CHECK_EQUAL(weight.getSharedWeights()(i, j, 1), 0);
-			if (std::to_string(j) == "2")
-				BOOST_CHECK_EQUAL(weight.getSharedWeights()(i, j, 2), 1);
-			else
-				BOOST_CHECK_EQUAL(weight.getSharedWeights()(i, j, 2), 0);
 		}
 	}
 	BOOST_CHECK_EQUAL(weight.getError()(0, 0), 0.0);
@@ -173,6 +173,33 @@ BOOST_AUTO_TEST_CASE(initWeightTensorData)
 	BOOST_CHECK_EQUAL(weight.getSolverParams()(0, 0, 1), 2);
 	BOOST_CHECK_EQUAL(weight.getSolverParams()(0, 0, 2), 3);
 	BOOST_CHECK_EQUAL(weight.getSolverParams()(0, 0, 3), 4);
+
+  weight.initWeightTensorData(2, 3, weight_indices, shared_weight_indices, weight_values, true, solver_params, "ProdOp");
+
+  for (int j = 0; j < 3; ++j) {
+    for (int i = 0; i < 2; ++i) {
+      if (i == 1 && j == 2) BOOST_CHECK_EQUAL(weight.getWeight()(i, j), 1);
+      else BOOST_CHECK_EQUAL(weight.getWeight()(i, j), weight_values[i + j * 2]);
+    }
+  }
+  for (int j = 0; j < 2; ++j) {
+    for (int i = 0; i < 2; ++i) {
+      if (std::to_string(j) == "0")
+        BOOST_CHECK_EQUAL(weight.getSharedWeights()(i, j, 0), 1);
+      else
+        BOOST_CHECK_EQUAL(weight.getSharedWeights()(i, j, 0), 0);
+      if (std::to_string(j) == "1")
+        BOOST_CHECK_EQUAL(weight.getSharedWeights()(i, j, 1), 1);
+      else
+        BOOST_CHECK_EQUAL(weight.getSharedWeights()(i, j, 1), 0);
+    }
+  }
+  BOOST_CHECK_EQUAL(weight.getError()(0, 0), 0.0);
+  BOOST_CHECK_EQUAL(weight.getError()(1, 2), 0.0);
+  BOOST_CHECK_EQUAL(weight.getSolverParams()(0, 0, 0), 1);
+  BOOST_CHECK_EQUAL(weight.getSolverParams()(0, 0, 1), 2);
+  BOOST_CHECK_EQUAL(weight.getSolverParams()(0, 0, 2), 3);
+  BOOST_CHECK_EQUAL(weight.getSolverParams()(0, 0, 3), 4);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
