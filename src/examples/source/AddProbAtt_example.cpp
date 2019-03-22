@@ -35,16 +35,18 @@ public:
     assert(sequence_length == this->sequence_length_);
 
 		// generate a new sequence 
-		Eigen::Tensor<TensorT, 1> random_sequence(this->sequence_length_);
-		Eigen::Tensor<TensorT, 1> mask_sequence(this->sequence_length_);
-		float result = this->AddProb(random_sequence, mask_sequence, this->n_mask_);
+		//Eigen::Tensor<TensorT, 1> random_sequence(this->sequence_length_);
+		//Eigen::Tensor<TensorT, 1> mask_sequence(this->sequence_length_);
+		//float result = this->AddProb(random_sequence, mask_sequence, this->n_mask_);
 
 		// Generate the input and output data for training [BUG FREE]
 		for (int batch_iter = 0; batch_iter<batch_size; ++batch_iter) {
 			for (int epochs_iter = 0; epochs_iter<n_epochs; ++epochs_iter) {
 
 				// generate a new sequence 
-				// TODO: COPY FROM ABOVE
+        Eigen::Tensor<TensorT, 1> random_sequence(this->sequence_length_);
+        Eigen::Tensor<TensorT, 1> mask_sequence(this->sequence_length_);
+        float result = this->AddProb(random_sequence, mask_sequence, this->n_mask_);
 
 				for (int memory_iter = 0; memory_iter<memory_size; ++memory_iter) {
           for (int nodes_iter = 0; nodes_iter < n_input_nodes/2; ++nodes_iter) {
@@ -57,8 +59,8 @@ public:
 				}
 			}
 		}
-		std::cout << "Input data: " << input_data << std::endl; // [TESTS: convert to a test!]
-		std::cout << "Output data: " << output_data << std::endl; // [TESTS: convert to a test!]
+		//std::cout << "Input data: " << input_data << std::endl; // [TESTS: convert to a test!]
+		//std::cout << "Output data: " << output_data << std::endl; // [TESTS: convert to a test!]
 
 		time_steps.setConstant(1.0f);
 	}
@@ -82,7 +84,7 @@ public:
 	/*
 	@brief Minimal network 
 	*/
-	void makeModelMinimal(Model<TensorT>& model, const int& n_inputs, const int& n_hidden_0 = 1)
+	void makeModelMinimal(Model<TensorT>& model, const int& n_inputs, const int& n_outputs, const int& n_hidden_0 = 1)
 	{
     model.setId(0);
     model.setName("AddProbAtt-Min");
@@ -95,25 +97,25 @@ public:
 
     // Add the hidden layer
     std::vector<std::string> node_names = model_builder.addFullyConnected(model, "HiddenR", "HiddenR", node_names_random, n_hidden_0,
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
-        std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-        std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-        std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-        std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_random.size() + n_hidden_0 / 2, 1)),
-        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8, 10.0)), 0.0f, 0.0f, false, true);
-    model_builder.addFullyConnected(model, "HiddenR", node_names_mask, node_names,
-      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_mask.size() + n_hidden_0) / 2, 1)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
-
-    // Add the output layer
-    std::vector<std::string> node_names = model_builder.addFullyConnected(model, "Output", "Output", node_names, n_hidden_0,
       std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
       std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
       std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_hidden_0 / 2, 1)),
+      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_random.size() + n_hidden_0) / 2, 1)),
+      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8, 10.0)), 0.0f, 0.0f, false, true);
+    model_builder.addFullyConnected(model, "HiddenR", node_names_mask, node_names,
+      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_mask.size() + n_hidden_0) / 2, 1)),
+      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, true);
+
+    // Add the output layer
+    node_names = model_builder.addFullyConnected(model, "Output", "Output", node_names, n_outputs,
+      std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
+      std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+      std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
+      std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
+      std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
+      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_outputs) / 2, 1)),
         std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8, 10.0)), 0.0f, 0.0f, false, true);
 
     for (const std::string& node_name : node_names)
@@ -122,7 +124,7 @@ public:
 	/*
 	@brief Minimal newtork required to solve the addition problem
 	*/
-	void makeModelSolution(Model<TensorT>& model, const int& n_inputs, bool init_weight_soln = true)
+	void makeModelSolution(Model<TensorT>& model, const int& n_inputs, const int& n_outputs, bool init_weight_soln = true)
 	{
     model.setId(0);
     model.setName("AddProbAtt-Solution");
@@ -136,33 +138,34 @@ public:
     std::shared_ptr<SolverOp<TensorT>> solver;
     std::shared_ptr<WeightInitOp<TensorT>> weight_init;
     if (init_weight_soln) {
-      solver = new DummySolverOp<TensorT>();
-      weight_init = new ConstWeightInitOp<TensorT>(1);
+      solver.reset(new DummySolverOp<TensorT>());
+      //solver.reset(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)); // Testing...
+      weight_init.reset(new ConstWeightInitOp<TensorT>(1));
     }
     else {
-      solver = new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8);
-      weight_init = new RandWeightInitOp<TensorT>((int)(node_names_random.size() + n_inputs / 2, 1);
+      solver.reset(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8));
+      weight_init.reset(new RandWeightInitOp<TensorT>((int)(node_names_random.size() + n_inputs) / 2, 1));
     }
 
     // Add the hidden layer
     std::vector<std::string> node_names = model_builder.addSinglyConnected(model, "HiddenR", "HiddenR", node_names_random, n_inputs,
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
-        std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-        std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-        std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-        weight_init_op, solver, 0.0f, 0.0f, false, true);
-    model_builder.addFullyConnected(model, "HiddenR", node_names_mask, node_names,
-      weight_init_op, solver, 0.0f, 0.0f, false, true);
+      std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
+      std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+      std::shared_ptr<IntegrationOp<TensorT>>(new ProdOp<TensorT>()),
+      std::shared_ptr<IntegrationErrorOp<TensorT>>(new ProdErrorOp<TensorT>()),
+      std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new ProdWeightGradOp<TensorT>()),
+      weight_init, solver, 0.0f, 0.0f, false, true);
+    model_builder.addSinglyConnected(model, "HiddenR", node_names_mask, node_names,
+      weight_init, solver, 0.0f, true);
 
     // Add the output layer
-    std::vector<std::string> node_names = model_builder.addFullyConnected(model, "Output", "Output", node_names, n_hidden_0,
+    node_names = model_builder.addFullyConnected(model, "Output", "Output", node_names, n_outputs,
       std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
       std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
       std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      weight_init_op, solver, 0.0f, 0.0f, false, true);
+      weight_init, solver, 0.0f, 0.0f, false, true);
 
     for (const std::string& node_name : node_names)
       model.nodes_.at(node_name)->setType(NodeType::output);
@@ -183,6 +186,7 @@ public:
     // Add the inputs
     std::vector<std::string> node_names_random = model_builder.addInputNodes(model, "Random", "Random", n_inputs, true); // Q and V matrices
     std::vector<std::string> node_names_mask = model_builder.addInputNodes(model, "Mask", "Mask", n_inputs, true);  // K matrix
+    std::vector<std::string> node_names_input = node_names_random;  // initial "input"
 
     // Multi-head attention
     std::vector<std::string> node_names;
@@ -439,8 +443,8 @@ int main(int argc, char** argv)
 
 	// define the data simulator
 	DataSimulatorExt<float> data_simulator;
-	data_simulator.n_mask_ = 2;
-	data_simulator.sequence_length_ = 25;
+	data_simulator.n_mask_ = 1;
+	data_simulator.sequence_length_ = 5;
 
   // define the input/output nodes
   std::vector<std::string> input_nodes;
@@ -466,12 +470,10 @@ int main(int argc, char** argv)
 		model_interpreters.push_back(model_interpreter);
 	}
 	ModelTrainerExt<float> model_trainer;
-	model_trainer.setBatchSize(8);
-	model_trainer.setMemorySize(0);
-	model_trainer.setNEpochsTraining(1000);
+	model_trainer.setBatchSize(1);
+	model_trainer.setMemorySize(1);
+	model_trainer.setNEpochsTraining(101);
 	model_trainer.setNEpochsValidation(25);
-  model_trainer.setNTETTSteps(25);
-  model_trainer.setNTBPTTSteps(25);
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setFindCycles(false);
 	model_trainer.setLogging(true, false);
@@ -509,9 +511,9 @@ int main(int argc, char** argv)
 
 	// make the model name
   Model<float> model;
-  model_trainer.makeModelMinimal(model);
-  model_trainer.makeModelSolution(model);
-  model_trainer.makeModelAttention(model, input_nodes.size()/2, output_nodes.size(), { 12 }, { 24 }, { input_nodes.size() / 2 }, false, false, false);
+  //model_trainer.makeModelMinimal(model, input_nodes.size() / 2, output_nodes.size());
+  model_trainer.makeModelSolution(model, input_nodes.size() / 2, output_nodes.size(), true);
+  //model_trainer.makeModelAttention(model, (int)(input_nodes.size() / 2), output_nodes.size(), { 12 }, { 24 }, { (int)(input_nodes.size() / 2) }, false, false, false);
 	population.push_back(model);
 
 	// Evolve the population
