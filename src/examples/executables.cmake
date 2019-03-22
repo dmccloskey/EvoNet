@@ -1,6 +1,7 @@
 set(ml_executables_list
   MNIST_CovNet_example
   MNIST_CVAE_example
+  MNIST_DenoisingAE_example
   MNIST_DotProdAtten_example
   MNIST_EvoNet_example
   MNIST_LSTM_example
