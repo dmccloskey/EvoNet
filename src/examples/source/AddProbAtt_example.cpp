@@ -483,7 +483,7 @@ int main(int argc, char** argv)
 		model_interpreters.push_back(model_interpreter);
 	}
 	ModelTrainerExt<float> model_trainer;
-	model_trainer.setBatchSize(1);
+	model_trainer.setBatchSize(8);
 	model_trainer.setMemorySize(1);
 	model_trainer.setNEpochsTraining(10000);
 	model_trainer.setNEpochsValidation(10);
@@ -491,7 +491,7 @@ int main(int argc, char** argv)
 	model_trainer.setFindCycles(false);
 	model_trainer.setLogging(true, false);
 	model_trainer.setPreserveOoO(true);
-	model_trainer.setFastInterpreter(false);
+	model_trainer.setFastInterpreter(true); // NOTE: change back to false for experiments with Minimal and Solution!
 	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
 	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
 	model_trainer.setOutputNodes({ output_nodes });
@@ -525,8 +525,8 @@ int main(int argc, char** argv)
 	// make the model name
   Model<float> model;
   //model_trainer.makeModelMinimal(model, input_nodes.size() / 2, output_nodes.size());
-  model_trainer.makeModelSolution(model, input_nodes.size() / 2, output_nodes.size(), false, false);
-  //model_trainer.makeModelAttention(model, (int)(input_nodes.size() / 2), output_nodes.size(), { 12 }, { 24 }, { (int)(input_nodes.size() / 2) }, false, false, false);
+  //model_trainer.makeModelSolution(model, input_nodes.size() / 2, output_nodes.size(), false, false);
+  model_trainer.makeModelAttention(model, (int)(input_nodes.size() / 2), output_nodes.size(), { 1 }, { 4 }, { (int)(input_nodes.size() / 2) }, false, false, false);
 	population.push_back(model);
 
 	// Evolve the population

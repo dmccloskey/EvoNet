@@ -3032,13 +3032,13 @@ public:
 			weight_init, solver, drop_out_prob, drop_connection_prob, false, split_attention_layers);
 
 		// Make the key network
-		std::vector<std::string> node_names_key = addFullyConnected(model, name + "_keys", module_name + "_keys", query_node_names, key_length,
+		std::vector<std::string> node_names_key = addFullyConnected(model, name + "_keys", module_name + "_keys", key_node_names, key_length,
 			std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
 			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
 			weight_init, solver, drop_out_prob, drop_connection_prob, false, split_attention_layers);
 
 		// Make the values network
-		std::vector<std::string> node_names_value = addFullyConnected(model, name + "_values", module_name + "_values", query_node_names, values_length,
+		std::vector<std::string> node_names_value = addFullyConnected(model, name + "_values", module_name + "_values", values_node_names, values_length,
 			std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
 			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
 			weight_init, solver, drop_out_prob, drop_connection_prob, false, split_attention_layers);
@@ -3061,17 +3061,17 @@ public:
 		model.addNodes({ scalar });
 
 		std::vector<std::string> scalar_nodes = { scalar_name };
-		addFullyConnected(model, module_name + "_scores", scalar_nodes, node_names_scores,
+		addFullyConnected(model, module_name + "_scalar", scalar_nodes, node_names_scores,
 			std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(scalar_value)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0, split_attention_layers);
 
 		// Add a stable softmax to create the attention
-		std::vector<std::string> node_names_attention = addStableSoftMax(model, name + "_softMax", module_name, node_names_scores);
+		std::vector<std::string> node_names_attention = addStableSoftMax(model, name + "_softMax", module_name, node_names_scores, split_attention_layers);
 
 		// Multiply the attention with the values
 		node_names = addSinglyConnected(model, name + "_attention", module_name + "_attention", node_names_value, node_names_value.size(),
 			node_activation, node_activation_grad,
 			std::shared_ptr<IntegrationOp<TensorT>>(new ProdOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new ProdErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new ProdWeightGradOp<TensorT>()),
-			std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), drop_out_prob, 0.0, false);
+			std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), drop_out_prob, 0.0, false, split_attention_layers);
 		addSinglyConnected(model, module_name, node_names_attention, node_names,
 			std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0, split_attention_layers);
 
