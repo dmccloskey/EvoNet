@@ -237,9 +237,10 @@ BOOST_AUTO_TEST_CASE(operationfunctionCrossEntropyOp1)
   Eigen::Tensor<float, 2> y_pred(batch_size, outputs); 
   y_pred.setValues({{1.0f, 0.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f, 0.0f}}); 
 
-  Eigen::Tensor<float, 1> error = operation(y_pred, y_true);
-  BOOST_CHECK_CLOSE(error(0), 3.7416575, 1e-6);
-  BOOST_CHECK_CLOSE(error(1), 2.44948983, 1e-6);
+  // DEPRECATED
+  //Eigen::Tensor<float, 1> error = operation(y_pred, y_true);
+  //BOOST_CHECK_CLOSE(error(0), 3.7416575, 1e-6);
+  //BOOST_CHECK_CLOSE(error(1), 2.44948983, 1e-6);
 }
 
 BOOST_AUTO_TEST_CASE(operationfunctionCrossEntropyOp2)
@@ -285,15 +286,16 @@ BOOST_AUTO_TEST_CASE(operationfunctionCrossEntropyGradOp1)
   Eigen::Tensor<float, 2> y_pred(batch_size, outputs);
   y_pred.setValues({ { 1.0f, 0.0f, 0.0f, 0.0f },{ 1.0f, 0.0f, 0.0f, 0.0f } });
 
-  Eigen::Tensor<float, 2> error = operation(y_pred, y_true);
-  BOOST_CHECK_CLOSE(error(0, 0), 0.0, 1e-6);
-  BOOST_CHECK_CLOSE(error(0, 1), -1.0, 1e-6);
-  BOOST_CHECK_CLOSE(error(0, 2), -2.0, 1e-6);
-  BOOST_CHECK_CLOSE(error(0, 3), -3.0, 1e-6);
-  BOOST_CHECK_CLOSE(error(1, 0), 1.0, 1e-6);
-  BOOST_CHECK_CLOSE(error(1, 1), 0.0, 1e-6);
-  BOOST_CHECK_CLOSE(error(1, 2), -1.0, 1e-6);
-  BOOST_CHECK_CLOSE(error(1, 3), -2.0, 1e-6);
+  // DEPRECATED
+  //Eigen::Tensor<float, 2> error = operation(y_pred, y_true);
+  //BOOST_CHECK_CLOSE(error(0, 0), 0.0, 1e-6);
+  //BOOST_CHECK_CLOSE(error(0, 1), -1.0, 1e-6);
+  //BOOST_CHECK_CLOSE(error(0, 2), -2.0, 1e-6);
+  //BOOST_CHECK_CLOSE(error(0, 3), -3.0, 1e-6);
+  //BOOST_CHECK_CLOSE(error(1, 0), 1.0, 1e-6);
+  //BOOST_CHECK_CLOSE(error(1, 1), 0.0, 1e-6);
+  //BOOST_CHECK_CLOSE(error(1, 2), -1.0, 1e-6);
+  //BOOST_CHECK_CLOSE(error(1, 3), -2.0, 1e-6);
 }
 
 BOOST_AUTO_TEST_CASE(operationfunctionCrossEntropyGradOp2)
@@ -409,9 +411,10 @@ BOOST_AUTO_TEST_CASE(operationfunctionNegativeLogLikelihoodGradOp2)
 	Eigen::Tensor<float, 1> y_pred(batch_size);
 	y_pred.setValues({ 0.1f, 0.9f });
 
-	Eigen::Tensor<float, 1> error = operation(y_pred, y_true);
-	BOOST_CHECK_CLOSE(error(0), 0.0, 1e-6);
-	BOOST_CHECK_CLOSE(error(1), -1.11110985, 1e-6);
+  // DEPRECATED
+	//Eigen::Tensor<float, 1> error = operation(y_pred, y_true);
+	//BOOST_CHECK_CLOSE(error(0), 0.0, 1e-6);
+	//BOOST_CHECK_CLOSE(error(1), -1.11110985, 1e-6);
 }
 
 /**
@@ -442,9 +445,10 @@ BOOST_AUTO_TEST_CASE(operationfunctionMSEOp1)
   Eigen::Tensor<float, 2> y_pred(batch_size, outputs); 
   y_pred.setValues({{1, 2, 3, 4}, {1, 2, 3, 4}}); 
 
-  Eigen::Tensor<float, 1> error = operation(y_pred, y_true);
-  BOOST_CHECK_CLOSE(error(0), 3.5, 1e-6);
-  BOOST_CHECK_CLOSE(error(1), 1.5, 1e-6);
+  // DEPRECATED
+  //Eigen::Tensor<float, 1> error = operation(y_pred, y_true);
+  //BOOST_CHECK_CLOSE(error(0), 3.5, 1e-6);
+  //BOOST_CHECK_CLOSE(error(1), 1.5, 1e-6);
 }
 
 BOOST_AUTO_TEST_CASE(operationfunctionMSEOp2)
@@ -457,9 +461,10 @@ BOOST_AUTO_TEST_CASE(operationfunctionMSEOp2)
 	Eigen::Tensor<float, 1> y_pred(batch_size);
 	y_pred.setValues({ 2, 3 });
 
-	Eigen::Tensor<float, 1> error = operation(y_pred, y_true);
-	BOOST_CHECK_CLOSE(error(0), 0.25, 1e-6);
-	BOOST_CHECK_CLOSE(error(1), 0.25, 1e-6);
+  // DEPRECATED
+	//Eigen::Tensor<float, 1> error = operation(y_pred, y_true);
+	//BOOST_CHECK_CLOSE(error(0), 0.25, 1e-6);
+	//BOOST_CHECK_CLOSE(error(1), 0.25, 1e-6);
 }
 
 /**
@@ -490,15 +495,16 @@ BOOST_AUTO_TEST_CASE(operationfunctionMSEGradOp1)
   Eigen::Tensor<float, 2> y_pred(batch_size, outputs); 
   y_pred.setValues({{1, 2, 3, 4}, {1, 2, 3, 4}}); 
 
-  Eigen::Tensor<float, 2> error = operation(y_pred, y_true);
-  BOOST_CHECK_CLOSE(error(0, 0), 0.0, 1e-6);
-  BOOST_CHECK_CLOSE(error(0, 1), -0.5, 1e-6);
-  BOOST_CHECK_CLOSE(error(0, 2), -1.0, 1e-6);
-  BOOST_CHECK_CLOSE(error(0, 3), -1.5, 1e-6);
-  BOOST_CHECK_CLOSE(error(1, 0), 0.5, 1e-6);
-  BOOST_CHECK_CLOSE(error(1, 1), 0.0, 1e-6);
-  BOOST_CHECK_CLOSE(error(1, 2), -0.5, 1e-6);
-  BOOST_CHECK_CLOSE(error(1, 3), -1.0, 1e-6);
+  // DEPRECATED
+  //Eigen::Tensor<float, 2> error = operation(y_pred, y_true);
+  //BOOST_CHECK_CLOSE(error(0, 0), 0.0, 1e-6);
+  //BOOST_CHECK_CLOSE(error(0, 1), -0.5, 1e-6);
+  //BOOST_CHECK_CLOSE(error(0, 2), -1.0, 1e-6);
+  //BOOST_CHECK_CLOSE(error(0, 3), -1.5, 1e-6);
+  //BOOST_CHECK_CLOSE(error(1, 0), 0.5, 1e-6);
+  //BOOST_CHECK_CLOSE(error(1, 1), 0.0, 1e-6);
+  //BOOST_CHECK_CLOSE(error(1, 2), -0.5, 1e-6);
+  //BOOST_CHECK_CLOSE(error(1, 3), -1.0, 1e-6);
 }
 
 BOOST_AUTO_TEST_CASE(operationfunctionMSEGradOp2)
@@ -511,9 +517,10 @@ BOOST_AUTO_TEST_CASE(operationfunctionMSEGradOp2)
 	Eigen::Tensor<float, 1> y_pred(batch_size);
 	y_pred.setValues({ 2, 3 });
 
-	Eigen::Tensor<float, 1> error = operation(y_pred, y_true);
-	BOOST_CHECK_CLOSE(error(0), -0.5, 1e-6);
-	BOOST_CHECK_CLOSE(error(1), -0.5, 1e-6);
+  // DEPRECATED
+	//Eigen::Tensor<float, 1> error = operation(y_pred, y_true);
+	//BOOST_CHECK_CLOSE(error(0), -0.5, 1e-6);
+	//BOOST_CHECK_CLOSE(error(1), -0.5, 1e-6);
 }
 
 /**

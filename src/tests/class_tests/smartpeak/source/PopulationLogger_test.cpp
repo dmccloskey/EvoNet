@@ -3,6 +3,7 @@
 #define BOOST_TEST_MODULE  PopulationLogger<float> test suite 
 #include <boost/test/included/unit_test.hpp>
 #include <SmartPeak/ml/PopulationLogger.h>
+#include <SmartPeak/ml/Model.h>
 
 using namespace SmartPeak;
 using namespace std;
