@@ -245,7 +245,7 @@ BOOST_AUTO_TEST_CASE(writeLogs)
 	Model<float> model;
 	model.setName("Model1");
 	std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input", "Input", 2);
-	std::vector<std::string> node_names_test = { "Input_0", "Input_1" };
+	std::vector<std::string> node_names_test = { "Input_000000000000", "Input_000000000001" };
 	int batch_size = 2;
 	int memory_size = 1;
 	Eigen::Tensor<float, 3> expected_values(batch_size, memory_size, (int)node_names.size());
