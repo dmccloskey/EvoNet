@@ -309,6 +309,10 @@ namespace SmartPeak
 				IntegrationTensorOp<TensorT, DeviceT>* op_tensor_class = new ProdTensorOp<TensorT, DeviceT>();
 				return op_tensor_class;
 			}
+      else if (op_class->getName() == "ProdSCOp") {
+        IntegrationTensorOp<TensorT, DeviceT>* op_tensor_class = new ProdSCTensorOp<TensorT, DeviceT>();
+        return op_tensor_class;
+      }
 			else if (op_class->getName() == "MeanOp") {
 				IntegrationTensorOp<TensorT, DeviceT>* op_tensor_class = new MeanTensorOp<TensorT, DeviceT>();
 				return op_tensor_class;

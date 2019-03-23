@@ -135,8 +135,11 @@ public:
     // Add the inputs
     // BUG: breaks model interpreter algorithm
     //      Attempts to put all ProdOp hidden nodes on a single layer after they have already be seperated
-    std::vector<std::string> node_names_random = model_builder.addInputNodes(model, "Random", "Random", n_inputs, specify_layers);
-    std::vector<std::string> node_names_mask = model_builder.addInputNodes(model, "Mask", "Mask", n_inputs, specify_layers);
+    //std::vector<std::string> node_names_random = model_builder.addInputNodes(model, "Random", "Random", n_inputs, specify_layers);
+    //std::vector<std::string> node_names_mask = model_builder.addInputNodes(model, "Mask", "Mask", n_inputs, specify_layers);
+    std::vector<std::string> node_names_random = model_builder.addInputNodes(model, "Random", "Random", n_inputs, true);
+    std::vector<std::string> node_names_mask = model_builder.addInputNodes(model, "Mask", "Mask", n_inputs, true);
+
 
     std::shared_ptr<SolverOp<TensorT>> solver;
     std::shared_ptr<WeightInitOp<TensorT>> weight_init;
@@ -480,7 +483,7 @@ int main(int argc, char** argv)
 		model_interpreters.push_back(model_interpreter);
 	}
 	ModelTrainerExt<float> model_trainer;
-	model_trainer.setBatchSize(64);
+	model_trainer.setBatchSize(1);
 	model_trainer.setMemorySize(1);
 	model_trainer.setNEpochsTraining(10000);
 	model_trainer.setNEpochsValidation(10);

@@ -344,7 +344,7 @@ namespace SmartPeak
 			for the operation and a list of indices corresponding to the operations in FP_operations
 		*/
 		std::map<std::string, std::vector<int>> getCustomOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes);
-		//std::map<std::string, std::vector<int>> GetSinglyConnectedOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes);
+		std::map<std::string, std::vector<int>> GetSinglyConnectedOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes);
 		//std::map<std::string, std::vector<int>> getConvOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes);
 		std::map<std::string, std::vector<int>> getTensorOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes, const bool& fast_check);
 
@@ -703,7 +703,7 @@ namespace SmartPeak
 		for (auto& layer_tensor: layer_tensors_) {
 			Eigen::Tensor<TensorT, 3> zero((int)layer_tensor->getBatchSize(), (int)layer_tensor->getMemorySize(), (int)layer_tensor->getLayerSize());	zero.setConstant(0);
       Eigen::Tensor<TensorT, 3> one((int)layer_tensor->getBatchSize(), (int)layer_tensor->getMemorySize(), (int)layer_tensor->getLayerSize()); one.setConstant(1);
-      if (layer_tensor->getLayerIntegration() == "ProdOp") {
+      if (layer_tensor->getLayerIntegration() == "ProdOp" || layer_tensor->getLayerIntegration() == "ProdSCOp") {
         layer_tensor->setInput(one);
         layer_tensor->setOutput(zero);
         layer_tensor->setDerivative(zero);
@@ -1049,48 +1049,71 @@ namespace SmartPeak
 		return custom_layers;
 	}
 
-	//template<typename TensorT, typename DeviceT>
-	//inline std::map<std::string, std::vector<int>> ModelInterpreter<TensorT, DeviceT>::GetSinglyConnectedOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes)
-	//{
-	//	std::map<std::string, std::vector<int>> SC_layers
-	//		for (size_t operations_iter1 = 0; operations_iter1 < FP_operations.size(); ++operations_iter1) {
-	//			if (identified_sink_nodes.count(FP_operations[operations_iter1].result.sink_node->getName())) continue; // Skip identified sink nodes
-	//			if (FP_operations[operations_iter1].arguments.size() != 1) continue; // Not singly connected
-	//			for (size_t operations_iter2 = operations_iter1 + 1; operations_iter2 < FP_operations.size(); ++operations_iter2) {
-	//				if (identified_sink_nodes.count(FP_operations[operations_iter2].result.sink_node->getName())) continue; // Skip identified sink nodes
-	//				if (FP_operations[operations_iter2].arguments.size() != 1) continue; // Not singly connected
+	template<typename TensorT, typename DeviceT>
+	inline std::map<std::string, std::vector<int>> ModelInterpreter<TensorT, DeviceT>::GetSinglyConnectedOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes)
+	{
+    std::map<std::string, std::vector<int>> SC_layers;
+		for (size_t operations_iter1 = 0; operations_iter1 < FP_operations.size(); ++operations_iter1) {
+      if (FP_operations[operations_iter1].arguments.size() != 1) continue; // Not singly connected
+      if (FP_operations[operations_iter1].result.sink_node->getIntegration()->getName() != "ProdOp") continue; // Only supports product integration for now
+      std::string sink_node_key1 = FP_operations[operations_iter1].result.sink_node->getName() + "/" + std::to_string(operations_iter1);
+      if (identified_sink_nodes.count(sink_node_key1)) continue; // Skip identified sink nodes
+			for (size_t operations_iter2 = operations_iter1 + 1; operations_iter2 < FP_operations.size(); ++operations_iter2) {
+				if (FP_operations[operations_iter2].arguments.size() != 1) continue; // Not singly connected
+        std::string sink_node_key2 = FP_operations[operations_iter2].result.sink_node->getName() + "/" + std::to_string(operations_iter2);
+        if (identified_sink_nodes.count(sink_node_key2)) continue; // Skip identified sink nodes
 
-	//				// check if the sink nodes are compatible
-	//				std::string ops_key_1 = makeForwardPropogationOperationsKey(FP_operations[operations_iter1].result.time_step,
-	//					FP_operations[operations_iter1].result.sink_node->getType(),
-	//					FP_operations[operations_iter1].result.sink_node->getIntegration()->getName(),
-	//					FP_operations[operations_iter1].result.sink_node->getActivation()->getName());
-	//				std::string ops_key_2 = makeForwardPropogationOperationsKey(FP_operations[operations_iter2].result.time_step,
-	//					FP_operations[operations_iter2].result.sink_node->getType(),
-	//					FP_operations[operations_iter2].result.sink_node->getIntegration()->getName(),
-	//					FP_operations[operations_iter2].result.sink_node->getActivation()->getName());
-	//				if (ops_key_1 != ops_key_2) continue;
+			// check if the sink nodes are compatible
+        std::string sink_ops_key_1 = makeForwardPropogationOperationsKey(FP_operations[operations_iter1].result.time_step,
+          FP_operations[operations_iter1].result.sink_node->getType(),
+          FP_operations[operations_iter1].result.sink_node->getIntegration()->getName(),
+          FP_operations[operations_iter1].result.sink_node->getActivation()->getName(),
+          FP_operations[operations_iter1].result.sink_node->getLayerName(),
+          FP_operations[operations_iter1].result.sink_node->getTensorIndex().first,
+          FP_operations[operations_iter1].arguments[0].weight->getLayerName());
+        std::string sink_ops_key_2 = makeForwardPropogationOperationsKey(FP_operations[operations_iter2].result.time_step,
+          FP_operations[operations_iter2].result.sink_node->getType(),
+          FP_operations[operations_iter2].result.sink_node->getIntegration()->getName(),
+          FP_operations[operations_iter2].result.sink_node->getActivation()->getName(),
+          FP_operations[operations_iter2].result.sink_node->getLayerName(),
+          FP_operations[operations_iter2].result.sink_node->getTensorIndex().first,
+          FP_operations[operations_iter2].arguments[0].weight->getLayerName());
+        if (sink_ops_key_1 != sink_ops_key_2) continue;
 
-	//				// check if the source nodes are compatible
-	//				ops_key_1 = makeForwardPropogationOperationsKey(FP_operations[operations_iter1].arguments[0].time_step,
-	//					FP_operations[operations_iter1].arguments[0].source_node->getType(),
-	//					FP_operations[operations_iter1].arguments[0].source_node->getIntegration()->getName(),
-	//					FP_operations[operations_iter1].arguments[0].source_node->getActivation()->getName());
-	//				ops_key_2 = makeForwardPropogationOperationsKey(FP_operations[operations_iter2].arguments[0].time_step,
-	//					FP_operations[operations_iter2].arguments[0].source_node->getType(),
-	//					FP_operations[operations_iter2].arguments[0].source_node->getIntegration()->getName(),
-	//					FP_operations[operations_iter2].arguments[0].source_node->getActivation()->getName());
-	//				if (ops_key_1 != ops_key_2) continue;
+        // check if the source nodes are compatible
+        std::set<std::string> argument1_nodes, argument2_nodes;
+        for (const auto& argument : FP_operations[operations_iter1].arguments) {
+          std::string ops_key = makeForwardPropogationOperationsKey(argument.time_step,
+            argument.source_node->getType(),
+            argument.source_node->getIntegration()->getName(),
+            argument.source_node->getActivation()->getName(),
+            argument.source_node->getLayerName(),
+            argument.source_node->getTensorIndex().first,
+            argument.weight->getLayerName());
+          argument1_nodes.insert(ops_key);
+        }
+        for (const auto& argument : FP_operations[operations_iter2].arguments) {
+          std::string ops_key = makeForwardPropogationOperationsKey(argument.time_step,
+            argument.source_node->getType(),
+            argument.source_node->getIntegration()->getName(),
+            argument.source_node->getActivation()->getName(),
+            argument.source_node->getLayerName(),
+            argument.source_node->getTensorIndex().first,
+            argument.weight->getLayerName());
+          argument2_nodes.insert(ops_key);
+        }
+        if (argument1_nodes != argument2_nodes) continue;
 
-	//				// update the maps
-	//				std::string sink_node_key = FP_operations[operations_iter1].result.sink_node->getName() + std::string(operations_iter1);
-	//				identified_sink_nodes.insert(sink_node_key);
-	//				auto found = SC_layers.emplace(sink_node_key, std::vector<int>({ operations_iter1 }));
-	//				SC_layers.at(sink_node_key).push_back(operations_iter2);
-	//			}
-	//		}
-	//	return SC_layers;
-	//}
+				// update the maps
+        identified_sink_nodes.insert(sink_node_key1);
+        identified_sink_nodes.insert(sink_node_key2);
+        std::vector<int> first_operation = { (int)operations_iter1 };
+        auto found = SC_layers.emplace(sink_node_key1, first_operation);
+        SC_layers.at(sink_node_key1).push_back(operations_iter2);
+			}
+		}
+		return SC_layers;
+	}
 
 	//template<typename TensorT, typename DeviceT>
 	//inline std::map<std::string, std::vector<int>> ModelInterpreter<TensorT, DeviceT>::getConvOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes)
@@ -1497,19 +1520,27 @@ namespace SmartPeak
 			// identify tensor operation motifs in the list of operations
 			std::set<std::string> identified_sink_nodes;
 			//std::map<std::string, std::vector<int>> custom_ops = getCustomOperations(FP_operations_expanded, identified_sink_nodes);
-			//std::map<std::string, std::vector<int>> SC_ops = getSinglyConnectedOperations(FP_operations_expanded, identified_sink_nodes);
+			std::map<std::string, std::vector<int>> SC_ops = GetSinglyConnectedOperations(FP_operations_expanded, identified_sink_nodes);
+
+      // TODO:  add check to accept or reject SC the optimization based on the following criteria:
+      // - Given a series of FanIn or or FanOut operations where the size of the Fan layer is N 
+      //   and the number of unique target nodes in the series is M
+      //   acceptance criteria is M * 2 < N
+      //   e.g., SC_ops.size() * 2 < SC_ops.front().size() where all SC_ops target the same sink layer
+      // - if (!SC_ops_acceptance) SC_ops.clear(); identified_sink_nodes.clear();
+      //   assuming the only identified sink nodes are those from `GetSinglyConnectedOperations`
+
 			//std::map<std::string, std::vector<int>> Conv_ops = getConvOperations(FP_operations_expanded, identified_sink_nodes);
 			std::map<std::string, std::vector<int>> tensor_ops = getTensorOperations(FP_operations_expanded, identified_sink_nodes, fast_check);
 
-			// TODO: We need to ensure that the previous operations is not an incomplete list
-			//       of all nodes that should be in the same layer
-			// FIX: Could sort the tensor_ops by ascending order of unique source and unique sink sizes?
-
-			// organize into a list of seperate operation indices
-			// [NOTE: can be avoided by changing the `getForwardPropogationLayerTensorDimensions` and `allocateForwardPropogationLayerTensors` methods
-			// and then implementing something like `operation_steps_.resize(iter); // allocate space for each operation step`]
 			std::vector<std::map<std::string, std::vector<int>>> tensor_ops_steps;
 			tensor_ops_steps.resize(iter);
+      for (auto& tensor_op : SC_ops) {         
+        FP_operations_expanded[tensor_op.second[0]].result.sink_node->setIntegration(
+          std::shared_ptr<IntegrationOp<TensorT>>(new ProdSCOp<TensorT>())); // TODO/ASSUMPTION: update the integration to ProdSCOp since
+                                                                             // ProdOp integration types are the only allowed SC motifes for now...
+        tensor_ops_steps[FP_operations_expanded[tensor_op.second[0]].operation_index].emplace(tensor_op.first, tensor_op.second);
+      }
 			for (auto& tensor_op : tensor_ops) {
 				tensor_ops_steps[FP_operations_expanded[tensor_op.second[0]].operation_index].emplace(tensor_op.first, tensor_op.second);
 			}

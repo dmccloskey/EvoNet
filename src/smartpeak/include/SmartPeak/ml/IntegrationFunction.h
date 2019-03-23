@@ -66,6 +66,23 @@ public:
 		}
 	};
 
+  /**
+  @brief Product singly connected integration function
+  */
+  template<typename T>
+  class ProdSCOp : public IntegrationOp<T>
+  {
+  public:
+    using IntegrationOp<T>::IntegrationOp;
+    std::string getName() const { return "ProdSCOp"; };
+  private:
+    friend class cereal::access;
+    template<class Archive>
+    void serialize(Archive& archive) {
+      archive(cereal::base_class<IntegrationOp<T>>(this));
+    }
+  };
+
 	/**
 	@brief Max integration function
 	*/

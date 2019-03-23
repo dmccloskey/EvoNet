@@ -635,23 +635,11 @@ BOOST_AUTO_TEST_CASE(getCustomOperations)
 { //TODO
 }
 
-BOOST_AUTO_TEST_CASE(getFullyConnectedOperations)
-{ //TODO
-}
-
 BOOST_AUTO_TEST_CASE(GetSinglyConnectedOperations)
 { //TODO
 }
 
 BOOST_AUTO_TEST_CASE(getConvOperations)
-{ //TODO
-}
-
-BOOST_AUTO_TEST_CASE(getFanOutOperations)
-{ //TODO
-}
-
-BOOST_AUTO_TEST_CASE(getFanInOperations)
 { //TODO
 }
 

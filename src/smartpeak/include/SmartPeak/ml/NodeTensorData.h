@@ -229,7 +229,7 @@ protected:
 			setOutput(zero);
       setInput(zero);
 		}
-    else if (node_integration == "ProdOp") {
+    else if (node_integration == "ProdOp" || node_integration == "ProdSCOp") {
       setOutput(zero);
       setInput(one);
     }
