@@ -52,7 +52,7 @@ public:
 			Eigen::array<Eigen::IndexPair<int>, 1> product_dims = { Eigen::IndexPair<int>(1, 0) };
 			sink_input_tensor.chip(sink_time_step, 1).device(device) += (source_output_tensor.chip(source_time_step, 1)).contract(weight_tensor, product_dims);
 
-      //// DEBUG
+      //// DEBUG (only on CPU)
       //std::cout << "[SumTensorOp]Sink Time step " << sink_time_step << std::endl;
       //std::cout << "[SumTensorOp]Source: " << source_output_tensor.chip(source_time_step, 1) << std::endl;
       //std::cout << "[SumTensorOp]Weight: " << weight_tensor << std::endl;
@@ -68,7 +68,7 @@ public:
 	};
 
 	/**
-		@brief Fan In Prod integration function
+		@brief Prod integration function
 	*/
 	template<typename TensorT, typename DeviceT>
 	class ProdTensorOp : public IntegrationTensorOp<TensorT, DeviceT>
@@ -81,7 +81,7 @@ public:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 4>> source_output_tensor(source_output, batch_size, memory_size, source_layer_size, 1);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> weight_tensor(weights, 1, source_layer_size, sink_layer_size);
 
-      //// DEBUG
+      //// DEBUG (only on CPU)
       //std::cout << "[ProdTensorOp]Sink (Start): " << sink_input_tensor.chip(sink_time_step, 1) << std::endl;
 			
 			sink_input_tensor.chip(sink_time_step, 1).device(device) = sink_input_tensor.chip(sink_time_step, 1) * (
@@ -89,12 +89,7 @@ public:
 				weight_tensor.broadcast(Eigen::array<int, 3>({ batch_size, 1, 1 }))
 				).prod(Eigen::array<int, 1>({ 1 }));
 
-      // NOTE this should be *=, but the starting values are all 0...
-			//sink_input_tensor.chip(sink_time_step, 1).device(device) = (source_output_tensor.chip(source_time_step, 1).broadcast(Eigen::array<int, 3>({ 1, 1, sink_layer_size })) *
-			//		weight_tensor.broadcast(Eigen::array<int, 3>({ batch_size, 1, 1 }))
-			//	).prod(Eigen::array<int, 1>({ 1 }));
-
-      //// DEBUG
+      //// DEBUG (only on CPU)
       //std::cout << "[ProdTensorOp]Source: " << source_output_tensor.chip(source_time_step, 1) << std::endl;
       //std::cout << "[ProdTensorOp]Weight: " << weight_tensor << std::endl;
       //std::cout << "[ProdTensorOp]Intermediate: " << source_output_tensor.chip(source_time_step, 1).broadcast(Eigen::array<int, 3>({ 1, 1, sink_layer_size })) *
@@ -109,6 +104,45 @@ public:
 	//		archive(cereal::base_class<IntegrationTensorOp<TensorT, DeviceT>>(this));
 	//	}
 	};
+
+  /**
+    @brief Prod Singly Connected integration function
+  */
+  template<typename TensorT, typename DeviceT>
+  class ProdSCTensorOp : public IntegrationTensorOp<TensorT, DeviceT>
+  {
+  public:
+    ProdSCTensorOp() {};
+    ~ProdSCTensorOp() {};
+    void operator()(TensorT* source_output, TensorT* weights, TensorT* sink_input, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, const int& source_time_step, const int& sink_time_step, DeviceT& device) {
+      assert(source_layer_size == sink_layer_size);
+
+      // NOTE: Should work with optimized Weight tensors but this requires specialized methods for the solvers
+      //Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> sink_input_tensor(sink_input, batch_size, memory_size, sink_layer_size);
+      //Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> source_output_tensor(source_output, batch_size, memory_size, source_layer_size);
+      //Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weight_tensor(weights, 1, source_layer_size);
+
+      //sink_input_tensor.chip(sink_time_step, 1).device(device) = sink_input_tensor.chip(sink_time_step, 1) *
+      //  source_output_tensor.chip(source_time_step, 1) * weight_tensor.broadcast(Eigen::array<int, 2>({ batch_size, 1}));
+
+      // NOTE: Works for diagonal weight tensors between source and sink layers
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> sink_input_tensor(sink_input, batch_size, memory_size, sink_layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 4>> source_output_tensor(source_output, batch_size, memory_size, source_layer_size, 1);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> weight_tensor(weights, 1, source_layer_size, sink_layer_size);
+
+      sink_input_tensor.chip(sink_time_step, 1).device(device) = sink_input_tensor.chip(sink_time_step, 1) * (
+        source_output_tensor.chip(source_time_step, 1).broadcast(Eigen::array<int, 3>({ 1, 1, sink_layer_size })) *
+        weight_tensor.broadcast(Eigen::array<int, 3>({ batch_size, 1, 1 }))
+        ).sum(Eigen::array<int, 1>({ 1 }));  // NOTE the use of sum instead of prod here
+    }
+    std::string getName() const { return "ProdSCTensorOp"; };
+    //private:
+    //	friend class cereal::access;
+    //	template<class Archive>
+    //	void serialize(Archive& archive) {
+    //		archive(cereal::base_class<IntegrationTensorOp<TensorT, DeviceT>>(this));
+    //	}
+  };
 
 	/**
 		@brief Max integration function
@@ -312,10 +346,18 @@ public:
 			auto source_exp_input_tensor = source_input_tensor.chip(source_time_step, 1).broadcast(Eigen::array<int, 3>({ 1, sink_layer_size, 1 }));
 			
 			// step 2: divide out the comp_tensor, scale by the source error, and reduce by taking the sum along the source layer
-			auto tmp = (source_exp_input_tensor * source_error_tensor.chip(source_time_step, 1).broadcast(Eigen::array<int, 3>({ 1, sink_layer_size, 1 })) / (comp_tensor + comp_tensor.constant(1e-6))).sum(Eigen::array<int, 1>({ 2 }));
+      // NOTE for numerical stability, we multiply by the comp_tensor in order to zero out non contributing elements,
+      //      which otherwise would result in an very large error even though their contribution was 0,
+      //      and then divide by the square of the comp_tensor plus a small constant to avoid division by 0
+			auto tmp = (source_exp_input_tensor * source_error_tensor.chip(source_time_step, 1).broadcast(Eigen::array<int, 3>({ 1, sink_layer_size, 1 }))
+        * comp_tensor / (comp_tensor * comp_tensor + comp_tensor.constant(1e-6))).sum(Eigen::array<int, 1>({ 2 }));
 			// NOTE this should be *=, but the sink error tensor is initialized to 0...
 			sink_error_tensor.chip(sink_time_step, 1).device(device) += tmp.clip(-1e9,1e9) * sink_derivative_tensor.chip(sink_time_step, 1);
 
+      //// DEBUG (only on CPU)
+      //std::cout << "[ProdErrorTensorOp]comp_tensor: " << comp_tensor << std::endl;
+      //std::cout << "[ProdErrorTensorOp]tmp: " << tmp << std::endl;
+      //std::cout << "[ProdErrorTensorOp]sink_error_tensor (End): " << sink_error_tensor.chip(sink_time_step, 1) << std::endl;
 		};
 		std::string getName() const { return "ProdErrorTensorOp"; };
 	//private:
@@ -525,11 +567,20 @@ public:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 4>> weight_tensor(weight, 1, 1, source_layer_size, sink_layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weight_error_tensor(weight_error, source_layer_size, sink_layer_size);
 			// step 1: compute the weight-normalized source net input expanded across batch and memory
-			auto input_normalized_tensor = source_input_tensor.broadcast(Eigen::array<int, 4>({ 1, 1, 1, sink_layer_size })) / weight_tensor.broadcast(Eigen::array<int, 4>({ batch_size, memory_size, 1, 1 }));
+      // NOTE for numerical stability we multiply by the weight_tensor and then divide by the square of the weight tensor plus a small number to avoid dividing by 0
+      auto weight_tensor_exp = weight_tensor.broadcast(Eigen::array<int, 4>({ batch_size, memory_size, 1, 1 }));
+			auto input_normalized_tensor = source_input_tensor.broadcast(Eigen::array<int, 4>({ 1, 1, 1, sink_layer_size })) * weight_tensor_exp / (weight_tensor_exp*weight_tensor_exp + weight_tensor_exp.constant(1e-6));
 			// step 2: scale to the sink error
 			auto scaled_error = -sink_error_tensor.broadcast(Eigen::array<int, 4>({ 1, 1, source_layer_size, 1 })) * input_normalized_tensor;
 			// step 3: sum along the memory and average along the batch dimensions
 			weight_error_tensor.device(device) += scaled_error.sum(Eigen::array<int, 2>({ 0, 1 })) * weight_error_tensor.constant(1 / (TensorT)batch_size);
+
+      //// DEBUG (only on CPU)
+      //std::cout << "[ProdWeightGradTensorOp]weight_tensor: " << weight_tensor << std::endl;
+      //std::cout << "[ProdWeightGradTensorOp]source_input_tensor: " << source_input_tensor << std::endl;
+      //std::cout << "[ProdWeightGradTensorOp]input_normalized_tensor: " << input_normalized_tensor << std::endl;
+      //std::cout << "[ProdWeightGradTensorOp]scaled_error: " << scaled_error << std::endl;
+      //std::cout << "[ProdWeightGradTensorOp]weight_error_tensor (End): " << weight_error_tensor << std::endl;
 		};
 		std::string getName() const { return "ProdWeightGradTensorOp"; };
 	//private:

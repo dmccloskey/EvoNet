@@ -34,7 +34,7 @@ BOOST_AUTO_TEST_CASE(reInitNodes)
 	const int batch_size = 4;
 	const int memory_size = 2;
 
-	// TODO
+	// TODO: test for differences between SumOp and ProdOp/ProdSCOp integration types
 }
 
 BOOST_AUTO_TEST_CASE(reInitModelError)
@@ -1187,7 +1187,6 @@ BOOST_AUTO_TEST_CASE(getModelResults)
 		BOOST_CHECK_CLOSE(model_getModelResults.getWeightsMap().at(weight_ids[i])->getWeight(), weights(i), 1e-3);
 	}
 }
-
 
 Model<float> makeModelToy3()
 {

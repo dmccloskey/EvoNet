@@ -344,6 +344,10 @@ BOOST_AUTO_TEST_CASE(convertOpToTensorOpIntegrationOpToIntegrationTensorOp)
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "ProdTensorOp");
 
+  op_class = new ProdSCOp<float>();
+  op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+  BOOST_CHECK_EQUAL(op_tensor_class->getName(), "ProdSCTensorOp");
+
 	op_class = new MaxOp<float>();
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "MaxTensorOp");
@@ -372,6 +376,10 @@ BOOST_AUTO_TEST_CASE(getTensorParamsIntegrationOpToIntegrationTensorOp)
 	op_class = new ProdOp<float>();
 	params = op_to_tensor_op.getTensorParams(op_class);
 	BOOST_CHECK_EQUAL(params.size(), 0);
+
+  op_class = new ProdSCOp<float>();
+  params = op_to_tensor_op.getTensorParams(op_class);
+  BOOST_CHECK_EQUAL(params.size(), 0);
 
 	op_class = new MaxOp<float>();
 	params = op_to_tensor_op.getTensorParams(op_class);

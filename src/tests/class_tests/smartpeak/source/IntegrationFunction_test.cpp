@@ -60,6 +60,30 @@ BOOST_AUTO_TEST_CASE(getNameProdOp)
 }
 
 /**
+ProdSCOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorProdSCOp)
+{
+  ProdSCOp<float>* ptrReLU = nullptr;
+  ProdSCOp<float>* nullPointerReLU = nullptr;
+  BOOST_CHECK_EQUAL(ptrReLU, nullPointerReLU);
+}
+
+BOOST_AUTO_TEST_CASE(destructorProdSCOp)
+{
+  ProdSCOp<float>* ptrReLU = nullptr;
+  ptrReLU = new ProdSCOp<float>();
+  delete ptrReLU;
+}
+
+BOOST_AUTO_TEST_CASE(getNameProdSCOp)
+{
+  ProdSCOp<float> operation;
+
+  BOOST_CHECK_EQUAL(operation.getName(), "ProdSCOp");
+}
+
+/**
 MaxOp Tests
 */
 BOOST_AUTO_TEST_CASE(constructorMaxOp)

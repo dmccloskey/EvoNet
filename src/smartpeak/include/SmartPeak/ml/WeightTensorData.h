@@ -201,7 +201,8 @@ protected:
 		//if (sink_node_integration == "ProdOp") weights.setConstant(1);
     //else weights.setZero();
 
-    if (sink_node_integration == "ProdOp" && weight_values.size() < layer1_size*layer2_size) {
+    if (sink_node_integration == "ProdOp" && 
+      (weight_values.size() < layer1_size*layer2_size || sqrt(weight_values.size()) != layer1_size*layer2_size)) {
       char error_char[512];
       sprintf(error_char, "The weight values for a ProdOp integration type is less than the product of the source and sink layer sizes.  This will result in a zero sink tensor.");
       std::string error(error_char);
