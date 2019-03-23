@@ -684,6 +684,7 @@ namespace SmartPeak
 			if (node_map.second->getType() == NodeType::bias) {
 				if (node_map.second->getTensorIndex().first != -1) {
 					getLayerTensor(node_map.second->getTensorIndex().first)->getOutput().chip(node_map.second->getTensorIndex().second, 2) = one;
+          getLayerTensor(node_map.second->getTensorIndex().first)->getInput().chip(node_map.second->getTensorIndex().second, 2) = one;
 				}
 				else {
 					clear_cache(); // clean up before exiting
