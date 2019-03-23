@@ -331,8 +331,8 @@ void main_VAE(const bool& make_model, const bool& train_model) {
 
 	// define the data simulator
 	const std::size_t input_size = 784;
-	const std::size_t encoding_size = 64;
-	const std::size_t n_hidden = 256;
+	const std::size_t encoding_size = 10;
+	const std::size_t n_hidden = 128;
 	const std::size_t training_data_size = 60000; //60000;
 	const std::size_t validation_data_size = 10000; //10000;
 	DataSimulatorExt<float> data_simulator;
@@ -386,8 +386,10 @@ void main_VAE(const bool& make_model, const bool& train_model) {
 	ModelTrainerExt<float> model_trainer;
 	//model_trainer.setBatchSize(1); // evaluation only
 	model_trainer.setBatchSize(64);
+  //model_trainer.setNEpochsTraining(1); // evaluation only
 	model_trainer.setNEpochsTraining(5000);
-	model_trainer.setNEpochsValidation(10);
+  model_trainer.setNEpochsValidation(1); // evaluation only
+	//model_trainer.setNEpochsValidation(10);
 	model_trainer.setNEpochsEvaluation(100);
 	model_trainer.setMemorySize(1);
 	model_trainer.setVerbosityLevel(1);

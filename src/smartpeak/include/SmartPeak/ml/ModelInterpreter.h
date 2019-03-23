@@ -1414,6 +1414,7 @@ namespace SmartPeak
 			}
 
 			//// check the source and sink layer indices
+      //// NOTE: this check should no longer be needed...
 			//for (const std::pair<int, int>& p : weight_index) {
 			//	if (p.first >= source_nodes.size() || p.second >= sink_nodes.size()) {
 			//		throw std::out_of_range("Weight index is greater than the layer size.");
@@ -1424,8 +1425,8 @@ namespace SmartPeak
 			// store the tensor sizes
 			//sink_layer_sizes.push_back(sink_layer_size); // This is not accurate because we are actually tracking the next sink_layer position...
 			//source_layer_sizes.push_back(source_layer_size); // This is not accurate because we are actually tracking the next source_layer position...
-			//sink_layer_sizes.push_back(sink_nodes.size());
-			//source_layer_sizes.push_back(source_nodes.size());
+			//sink_layer_sizes.push_back(sink_nodes.size());  // This is also not accurate because the sink node size may be less than the maximum sink index
+			//source_layer_sizes.push_back(source_nodes.size());  // This is also not accurate because the source node size may be less than the maximum source index
 			sink_layer_sizes.push_back(*std::max_element(sink_nodes.begin(), sink_nodes.end()) + 1);
 			source_layer_sizes.push_back(*std::max_element(source_nodes.begin(), source_nodes.end()) + 1);
 			make_source_tensors.push_back(make_source_tensor);
@@ -1435,14 +1436,12 @@ namespace SmartPeak
 			weight_values.push_back(weight_value);
 			shared_weight_indices.push_back(shared_weight_index);
 
-      // Check that source layer size is not less than the # of operation arguments
-      if (source_layer_sizes.back() < operations.second.size()) {
+      // Check that source layer size is not less than the # of source nodes
+      if (source_layer_sizes.back() < source_nodes.size()) {
         char error_char[512];
         sprintf(error_char, "Attempting to join multiple source nodes into a single layer that were previously split into seperate layers.");
         std::string error(error_char);
         throw std::runtime_error(error_char);
-        // if this fails, then the weight is shared with another layer.
-        // the current weight sharing implementation cannot handle such cases.
       }
 
 			// update the layer positions
