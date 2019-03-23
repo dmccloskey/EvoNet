@@ -34,19 +34,19 @@ public:
     const int sequence_length = n_input_nodes / 2;
     assert(sequence_length == this->sequence_length_);
 
-		// generate a new sequence 
-		Eigen::Tensor<TensorT, 1> random_sequence(this->sequence_length_);
-		Eigen::Tensor<TensorT, 1> mask_sequence(this->sequence_length_);
-		float result = this->AddProb(random_sequence, mask_sequence, this->n_mask_);
+		//// generate a new sequence 
+		//Eigen::Tensor<TensorT, 1> random_sequence(this->sequence_length_);
+		//Eigen::Tensor<TensorT, 1> mask_sequence(this->sequence_length_);
+		//float result = this->AddProb(random_sequence, mask_sequence, this->n_mask_);
 
 		// Generate the input and output data for training [BUG FREE]
 		for (int batch_iter = 0; batch_iter<batch_size; ++batch_iter) {
 			for (int epochs_iter = 0; epochs_iter<n_epochs; ++epochs_iter) {
 
-				//// generate a new sequence 
-    //    Eigen::Tensor<TensorT, 1> random_sequence(this->sequence_length_);
-    //    Eigen::Tensor<TensorT, 1> mask_sequence(this->sequence_length_);
-    //    float result = this->AddProb(random_sequence, mask_sequence, this->n_mask_);
+				// generate a new sequence 
+        Eigen::Tensor<TensorT, 1> random_sequence(this->sequence_length_);
+        Eigen::Tensor<TensorT, 1> mask_sequence(this->sequence_length_);
+        float result = this->AddProb(random_sequence, mask_sequence, this->n_mask_);
 
 				for (int memory_iter = 0; memory_iter<memory_size; ++memory_iter) {
           for (int nodes_iter = 0; nodes_iter < n_input_nodes/2; ++nodes_iter) {
@@ -526,7 +526,7 @@ int main(int argc, char** argv)
   Model<float> model;
   //model_trainer.makeModelMinimal(model, input_nodes.size() / 2, output_nodes.size());
   //model_trainer.makeModelSolution(model, input_nodes.size() / 2, output_nodes.size(), false, false);
-  model_trainer.makeModelAttention(model, (int)(input_nodes.size() / 2), output_nodes.size(), { 1 }, { 4 }, { (int)(input_nodes.size() / 2) }, false, false, false);
+  model_trainer.makeModelAttention(model, (int)(input_nodes.size() / 2), output_nodes.size(), { 8 }, { 24 }, { (int)(input_nodes.size() / 2) }, false, false, false);
 	population.push_back(model);
 
 	// Evolve the population
