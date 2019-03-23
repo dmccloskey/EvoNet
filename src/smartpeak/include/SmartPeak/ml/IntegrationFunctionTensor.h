@@ -68,7 +68,7 @@ public:
 	};
 
 	/**
-		@brief Fan In Prod integration function
+		@brief Prod integration function
 	*/
 	template<typename TensorT, typename DeviceT>
 	class ProdTensorOp : public IntegrationTensorOp<TensorT, DeviceT>
@@ -109,6 +109,48 @@ public:
 	//		archive(cereal::base_class<IntegrationTensorOp<TensorT, DeviceT>>(this));
 	//	}
 	};
+
+  /**
+    @brief Prod Singly Connected integration function
+  */
+  template<typename TensorT, typename DeviceT>
+  class ProdSCTensorOp : public IntegrationTensorOp<TensorT, DeviceT>
+  {
+  public:
+    ProdSCTensorOp() {};
+    ~ProdSCTensorOp() {};
+    void operator()(TensorT* source_output, TensorT* weights, TensorT* sink_input, const int& batch_size, const int& memory_size, const int& source_layer_size, const int& sink_layer_size, const int& source_time_step, const int& sink_time_step, DeviceT& device) {
+      assert(source_layer_size == sink_layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> sink_input_tensor(sink_input, batch_size, memory_size, sink_layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> source_output_tensor(source_output, batch_size, memory_size, source_layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> weight_tensor(weights, 1, source_layer_size);      
+
+      //// DEBUG
+      //std::cout << "[ProdTensorOp]Sink (Start): " << sink_input_tensor.chip(sink_time_step, 1) << std::endl;
+
+      sink_input_tensor.chip(sink_time_step, 1).device(device) = sink_input_tensor.chip(sink_time_step, 1) *
+        source_output_tensor.chip(source_time_step, 1) * weight_tensor.broadcast(Eigen::array<int, 2>({ batch_size, 1}));
+
+      // NOTE this should be *=, but the starting values are all 0...
+      //sink_input_tensor.chip(sink_time_step, 1).device(device) = (source_output_tensor.chip(source_time_step, 1).broadcast(Eigen::array<int, 3>({ 1, 1, sink_layer_size })) *
+      //		weight_tensor.broadcast(Eigen::array<int, 3>({ batch_size, 1, 1 }))
+      //	).prod(Eigen::array<int, 1>({ 1 }));
+
+      //// DEBUG
+      //std::cout << "[ProdTensorOp]Source: " << source_output_tensor.chip(source_time_step, 1) << std::endl;
+      //std::cout << "[ProdTensorOp]Weight: " << weight_tensor << std::endl;
+      //std::cout << "[ProdTensorOp]Intermediate: " << source_output_tensor.chip(source_time_step, 1).broadcast(Eigen::array<int, 3>({ 1, 1, sink_layer_size })) *
+      //  weight_tensor.broadcast(Eigen::array<int, 3>({ batch_size, 1, 1 })) << std::endl;
+      //std::cout << "[ProdTensorOp]Sink (End): " << sink_input_tensor.chip(sink_time_step, 1) << std::endl;
+    }
+    std::string getName() const { return "ProdSCTensorOp"; };
+    //private:
+    //	friend class cereal::access;
+    //	template<class Archive>
+    //	void serialize(Archive& archive) {
+    //		archive(cereal::base_class<IntegrationTensorOp<TensorT, DeviceT>>(this));
+    //	}
+  };
 
 	/**
 		@brief Max integration function

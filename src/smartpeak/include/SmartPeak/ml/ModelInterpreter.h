@@ -309,13 +309,17 @@ namespace SmartPeak
 			@brief Re-organizes the identified layers into tensors and attempts to optimizes
 				the layer operations to maximize hardware acceleration.
 
-			Layer operations will be partitioned into predefined tensor integration motifs
+			If possible, layer operations will be partitioned into predefined tensor integration motifs
+      in order to optimize matrix size and memory usage
 			- Tensor integration motifs: FC/SC/Conv/FanIn/FanOut
-			- Node integration types: Sum/Prod/Max/Mean/Var/Count
 			- Custom
 
-			Criteria for FC
+			Criteria for FC (Not implemented; Subset of matrix multiplication)
 			- all arguments for sinks are equal
+
+			Criteria for FanIn and FanOut (Not implemented; Subset of matrix multiplication)
+			- FanIn: 1 sink, multiple sources
+			- FanOut: 1 source, multiple sinks
 
 			Criteria for SC
 			- unique argument per sinks
@@ -323,16 +327,8 @@ namespace SmartPeak
 			Criteria for Conv/pool
 			- shared weights with FanIn
 
-			Criteria for FanIn and FanOut
-			- FanIn: 1 sink, multiple sources
-			- FanOut: 1 source, multiple sinks
-
 			Critera for Custom
 			- Module with optimized computation (e.g., softmax, attention, etc.,)
-
-			[TODO: add tests!]
-
-			@param[in, out] FP_operations
 		*/
 
 		/**
@@ -348,11 +344,8 @@ namespace SmartPeak
 			for the operation and a list of indices corresponding to the operations in FP_operations
 		*/
 		std::map<std::string, std::vector<int>> getCustomOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes);
-		//std::map<std::string, std::vector<int>> getFullyConnectedOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes);
 		//std::map<std::string, std::vector<int>> GetSinglyConnectedOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes);
 		//std::map<std::string, std::vector<int>> getConvOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes);
-		//std::map<std::string, std::vector<int>> getFanOutOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes);
-		//std::map<std::string, std::vector<int>> getFanInOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes);
 		std::map<std::string, std::vector<int>> getTensorOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes, const bool& fast_check);
 
 		/**
@@ -1057,56 +1050,6 @@ namespace SmartPeak
 	}
 
 	//template<typename TensorT, typename DeviceT>
-	//inline std::map<std::string, std::vector<int>> ModelInterpreter<TensorT, DeviceT>::getFullyConnectedOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes)
-	//{
-	//	std::map<std::string, std::vector<int>> FC_layers;
-	//	for (size_t operations_iter1 = 0; operations_iter1 < FP_operations.size(); ++operations_iter1) {
-	//		if (identified_sink_nodes.count(FP_operations[operations_iter1].result.sink_node->getName())) continue; // Skip identified sink nodes
-	//		for (size_t operations_iter2 = operations_iter1 + 1; operations_iter2 < FP_operations.size(); ++operations_iter2) {
-	//			if (identified_sink_nodes.count(FP_operations[operations_iter2].result.sink_node->getName())) continue; // Skip identified sink nodes
-
-	//			// check if the sink nodes are compatible
-	//			std::string ops_key_1 = makeForwardPropogationOperationsKey(FP_operations[operations_iter1].result.time_step,
-	//				FP_operations[operations_iter1].result.sink_node->getType(),
-	//				FP_operations[operations_iter1].result.sink_node->getIntegration()->getName(),
-	//				FP_operations[operations_iter1].result.sink_node->getActivation()->getName());
-	//			std::string ops_key_2 = makeForwardPropogationOperationsKey(FP_operations[operations_iter2].result.time_step,
-	//				FP_operations[operations_iter2].result.sink_node->getType(),
-	//				FP_operations[operations_iter2].result.sink_node->getIntegration()->getName(),
-	//				FP_operations[operations_iter2].result.sink_node->getActivation()->getName());
-	//			if (ops_key_1 != ops_key_2) continue;
-
-	//			// check if the node names are all the same and compatible
-	//			std::set<std::string> argument_nodes;
-	//			for (const auto& argument : FP_operations[operations_iter1].arguments) {
-	//				std::string ops_key = makeForwardPropogationOperationsKey(argument.time_step,
-	//					argument.sink_node->getType(),
-	//					argument.sink_node->getIntegration()->getName(),
-	//					argument.sink_node->getActivation()->getName());
-	//				std::string ops_key_id = argument.sink_node->getNodeName() + "/" + ops_key;
-	//				argument_nodes.insert(ops_key_id);
-	//			}
-	//			for (const auto& argument : FP_operations[operations_iter2].arguments) {
-	//				std::string ops_key = makeForwardPropogationOperationsKey(argument.time_step,
-	//					argument.sink_node->getType(),
-	//					argument.sink_node->getIntegration()->getName(),
-	//					argument.sink_node->getActivation()->getName());
-	//				std::string ops_key_id = argument.sink_node->getNodeName() + "/" + ops_key;
-	//				argument_nodes.insert(ops_key_id);
-	//			}
-	//			if (argument_nodes.size() != FP_operations[operations_iter1].arguments.size() || argument_nodes.size() != FP_operations[operations_iter2].arguments.size()) continue;
-
-	//			// update the maps
-	//			std::string sink_node_key = FP_operations[operations_iter1].result.sink_node->getName() + std::string(operations_iter1);
-	//			identified_sink_nodes.insert(sink_node_key);
-	//			auto found = FC_layers.emplace(sink_node_key, std::vector<int>({ operations_iter1 }));
-	//			FC_layers.at(sink_node_key).push_back(operations_iter2);
-	//		}
-	//	}
-	//	return FC_layers;
-	//}
-
-	//template<typename TensorT, typename DeviceT>
 	//inline std::map<std::string, std::vector<int>> ModelInterpreter<TensorT, DeviceT>::GetSinglyConnectedOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes)
 	//{
 	//	std::map<std::string, std::vector<int>> SC_layers
@@ -1189,19 +1132,6 @@ namespace SmartPeak
 	//		}
 	//	}
 	//	return Conv_layers;
-	//}
-
-	//template<typename TensorT, typename DeviceT>
-	//inline std::map<std::string, std::vector<int>> ModelInterpreter<TensorT, DeviceT>::getFanOutOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes)
-	//{
-	//	return std::map<std::string, std::vector<int>>();
-	//}
-
-	//template<typename TensorT, typename DeviceT>
-	//inline std::map<std::string, std::vector<int>> ModelInterpreter<TensorT, DeviceT>::getFanInOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::set<std::string>& identified_sink_nodes)
-	//{
-	//	// Default of what is left...
-	//	return std::map<std::string, std::vector<int>>();
 	//}
 
 	template<typename TensorT, typename DeviceT>
@@ -1568,11 +1498,8 @@ namespace SmartPeak
 			// identify tensor operation motifs in the list of operations
 			std::set<std::string> identified_sink_nodes;
 			//std::map<std::string, std::vector<int>> custom_ops = getCustomOperations(FP_operations_expanded, identified_sink_nodes);
-			//std::map<std::string, std::vector<int>> FC_ops = getFullyConnectedOperations(FP_operations_expanded, identified_sink_nodes);
 			//std::map<std::string, std::vector<int>> SC_ops = getSinglyConnectedOperations(FP_operations_expanded, identified_sink_nodes);
 			//std::map<std::string, std::vector<int>> Conv_ops = getConvOperations(FP_operations_expanded, identified_sink_nodes);
-			//std::map<std::string, std::vector<int>> FIn_ops = getFanOutOperations(FP_operations_expanded, identified_sink_nodes);
-			//std::map<std::string, std::vector<int>> FOut_ops = getFanInOperations(FP_operations_expanded, identified_sink_nodes);
 			std::map<std::string, std::vector<int>> tensor_ops = getTensorOperations(FP_operations_expanded, identified_sink_nodes, fast_check);
 
 			// TODO: We need to ensure that the previous operations is not an incomplete list
