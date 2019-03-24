@@ -125,7 +125,7 @@ public:
 	/*
 	@brief Minimal newtork required to solve the addition problem
 	*/
-	void makeModelSolution(Model<TensorT>& model, const int& n_inputs, const int& n_outputs, bool init_weight_soln = true, bool specify_layers = true)
+	void makeModelSolution(Model<TensorT>& model, const int& n_inputs, const int& n_outputs, bool init_weight_soln = true)
 	{
     model.setId(0);
     model.setName("AddProbAtt-Solution");
@@ -133,13 +133,8 @@ public:
     ModelBuilder<TensorT> model_builder;
 
     // Add the inputs
-    // BUG: breaks model interpreter algorithm
-    //      Attempts to put all ProdOp hidden nodes on a single layer after they have already be seperated
-    //std::vector<std::string> node_names_random = model_builder.addInputNodes(model, "Random", "Random", n_inputs, specify_layers);
-    //std::vector<std::string> node_names_mask = model_builder.addInputNodes(model, "Mask", "Mask", n_inputs, specify_layers);
-    std::vector<std::string> node_names_random = model_builder.addInputNodes(model, "Random", "Random", n_inputs, true);
-    std::vector<std::string> node_names_mask = model_builder.addInputNodes(model, "Mask", "Mask", n_inputs, true);
-
+    std::vector<std::string> node_names_random = model_builder.addInputNodes(model, "Random", "Random", n_inputs);
+    std::vector<std::string> node_names_mask = model_builder.addInputNodes(model, "Mask", "Mask", n_inputs);
 
     std::shared_ptr<SolverOp<TensorT>> solver;
     std::shared_ptr<WeightInitOp<TensorT>> weight_init;
@@ -161,15 +156,9 @@ public:
       std::shared_ptr<IntegrationOp<TensorT>>(new ProdOp<TensorT>()),
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new ProdErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new ProdWeightGradOp<TensorT>()),
-      weight_init, solver, 0.0f, 0.0f, false, specify_layers);
+      weight_init, solver, 0.0f, 0.0f, false);
     model_builder.addSinglyConnected(model, "HiddenR", node_names_mask, node_names,
-      weight_init, solver, 0.0f, specify_layers);
-
-    // BUG: breaks model interpreter algorithm
-    //      Attempts to put all ProdOp hidden nodes on a single layer after they have already be seperated
-    if (specify_layers)
-      for (const std::string& node_name : node_names)
-        model.nodes_.at(node_name)->setLayerName(node_name);
+      weight_init, solver, 0.0f);
 
     // Add the output layer
     node_names = model_builder.addFullyConnected(model, "Output", "Output", node_names, n_outputs,
@@ -178,7 +167,7 @@ public:
       std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      weight_init, solver, 0.0f, 0.0f, false, true);  // always specify the output layer!
+      weight_init, solver, 0.0f, 0.0f, false);  // always specify the output layer!
 
     for (const std::string& node_name : node_names)
       model.nodes_.at(node_name)->setType(NodeType::output);
@@ -525,7 +514,7 @@ int main(int argc, char** argv)
 	// make the model name
   Model<float> model;
   //model_trainer.makeModelMinimal(model, input_nodes.size() / 2, output_nodes.size());
-  //model_trainer.makeModelSolution(model, input_nodes.size() / 2, output_nodes.size(), false, false);
+  //model_trainer.makeModelSolution(model, input_nodes.size() / 2, output_nodes.size(), true);
   model_trainer.makeModelAttention(model, (int)(input_nodes.size() / 2), output_nodes.size(), { 8 }, { 24 }, { (int)(input_nodes.size() / 2) }, false, false, false);
 	population.push_back(model);
 

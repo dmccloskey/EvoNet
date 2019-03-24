@@ -83,17 +83,21 @@ public:
 
       //// DEBUG (only on CPU)
       //std::cout << "[ProdTensorOp]Sink (Start): " << sink_input_tensor.chip(sink_time_step, 1) << std::endl;
-			
-			sink_input_tensor.chip(sink_time_step, 1).device(device) = sink_input_tensor.chip(sink_time_step, 1) * (
-				source_output_tensor.chip(source_time_step, 1).broadcast(Eigen::array<int, 3>({ 1, 1, sink_layer_size })) *
-				weight_tensor.broadcast(Eigen::array<int, 3>({ batch_size, 1, 1 }))
+
+      // Step 1: expand source across the sink layer dim and weight tensor across the batch dim and multiply
+      auto weight_tensor_exp = weight_tensor.broadcast(Eigen::array<int, 3>({ batch_size, 1, 1 }));
+      auto source_weight_exp = source_output_tensor.chip(source_time_step, 1).broadcast(Eigen::array<int, 3>({ 1, 1, sink_layer_size })) *  weight_tensor_exp;
+      // Step 2: Substitute 1 for all 0 entries (assuming 0s are non entries)
+      auto source_weight_1 = (weight_tensor_exp > weight_tensor_exp.constant(-1e-24) && weight_tensor_exp < weight_tensor_exp.constant(1e-24)).select(source_weight_exp.constant(1), source_weight_exp);
+      // Step 3: multiply along the source dim
+			sink_input_tensor.chip(sink_time_step, 1).device(device) = sink_input_tensor.chip(sink_time_step, 1) * (source_weight_1				
 				).prod(Eigen::array<int, 1>({ 1 }));
 
       //// DEBUG (only on CPU)
       //std::cout << "[ProdTensorOp]Source: " << source_output_tensor.chip(source_time_step, 1) << std::endl;
       //std::cout << "[ProdTensorOp]Weight: " << weight_tensor << std::endl;
-      //std::cout << "[ProdTensorOp]Intermediate: " << source_output_tensor.chip(source_time_step, 1).broadcast(Eigen::array<int, 3>({ 1, 1, sink_layer_size })) *
-      //  weight_tensor.broadcast(Eigen::array<int, 3>({ batch_size, 1, 1 })) << std::endl;
+      //std::cout << "[ProdTensorOp]source_weight_exp: " << source_weight_exp << std::endl;
+      //std::cout << "[ProdTensorOp]source_weight_1: " << source_weight_1 << std::endl;
       //std::cout << "[ProdTensorOp]Sink (End): " << sink_input_tensor.chip(sink_time_step, 1) << std::endl;
 		}
 		std::string getName() const { return "ProdTensorOp"; };

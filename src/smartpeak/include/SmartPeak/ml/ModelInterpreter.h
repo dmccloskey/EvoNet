@@ -1515,7 +1515,7 @@ namespace SmartPeak
 			// identify tensor operation motifs in the list of operations
 			std::set<std::string> identified_sink_nodes;
 			//std::map<std::string, std::vector<int>> custom_ops = getCustomOperations(FP_operations_expanded, identified_sink_nodes);
-			std::map<std::string, std::vector<int>> SC_ops = GetSinglyConnectedOperations(FP_operations_expanded, identified_sink_nodes);
+			//std::map<std::string, std::vector<int>> SC_ops = GetSinglyConnectedOperations(FP_operations_expanded, identified_sink_nodes);
 
       // TODO:  add check to accept or reject SC the optimization based on the following criteria:
       // - Given a series of FanIn or or FanOut operations where the size of the Fan layer is N 
@@ -1531,12 +1531,12 @@ namespace SmartPeak
 
 			std::vector<std::map<std::string, std::vector<int>>> tensor_ops_steps;
 			tensor_ops_steps.resize(iter);
-      for (auto& tensor_op : SC_ops) {         
-        FP_operations_expanded[tensor_op.second[0]].result.sink_node->setIntegration(
-          std::shared_ptr<IntegrationOp<TensorT>>(new ProdSCOp<TensorT>())); // TODO/ASSUMPTION: update the integration to ProdSCOp since
-                                                                             // ProdOp integration types are the only allowed SC motifes for now...
-        tensor_ops_steps[FP_operations_expanded[tensor_op.second[0]].operation_index].emplace(tensor_op.first, tensor_op.second);
-      }
+      //for (auto& tensor_op : SC_ops) {         
+      //  FP_operations_expanded[tensor_op.second[0]].result.sink_node->setIntegration(
+      //    std::shared_ptr<IntegrationOp<TensorT>>(new ProdSCOp<TensorT>())); // TODO/ASSUMPTION: update the integration to ProdSCOp since
+      //                                                                       // ProdOp integration types are the only allowed SC motifes for now...
+      //  tensor_ops_steps[FP_operations_expanded[tensor_op.second[0]].operation_index].emplace(tensor_op.first, tensor_op.second);
+      //}
 			for (auto& tensor_op : tensor_ops) {
 				tensor_ops_steps[FP_operations_expanded[tensor_op.second[0]].operation_index].emplace(tensor_op.first, tensor_op.second);
 			}

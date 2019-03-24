@@ -185,8 +185,6 @@ public:
 		h_bias = Node<TensorT>("h_bias", NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
 		m_bias = Node<TensorT>("m_bias", NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
 		o_bias = Node<TensorT>("o_bias", NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
-    i_rand.setLayerName("Random");
-    i_mask.setLayerName("Mask");
     o.setLayerName("Output");
     // weights  
 		std::shared_ptr<WeightInitOp<TensorT>> weight_init;
@@ -571,7 +569,7 @@ int main(int argc, char** argv)
 	// make the model name
 	//Model<float> model = model_trainer.makeModelMinimal();
 	//Model<float> model = model_trainer.makeModelSolution(true);
-	Model<float> model = model_trainer.makeModelLSTM(input_nodes.size(), 1, 1);
+	Model<float> model = model_trainer.makeModelLSTM(input_nodes.size(), 4, 2);
 	char model_name_char[512];
 	sprintf(model_name_char, "%s_%d", model.getName().data(), 0);
 	std::string model_name(model_name_char);

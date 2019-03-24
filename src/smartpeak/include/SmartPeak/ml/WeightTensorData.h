@@ -197,17 +197,14 @@ protected:
 		Eigen::Tensor<TensorT, 2> zero(layer1_size, layer2_size); zero.setZero();
     Eigen::Tensor<TensorT, 2> weights(layer1_size, layer2_size); weights.setZero();
 
-    // TODO: experimental and may not be correct!
-		//if (sink_node_integration == "ProdOp") weights.setConstant(1);
-    //else weights.setZero();
-
-    if (sink_node_integration == "ProdOp" && 
-      (weight_values.size() < layer1_size*layer2_size || sqrt(weight_values.size()) != layer1_size*layer2_size)) {
-      char error_char[512];
-      sprintf(error_char, "The weight values for a ProdOp integration type is less than the product of the source and sink layer sizes.  This will result in a zero sink tensor.");
-      std::string error(error_char);
-      throw std::runtime_error(error_char);
-    }
+    // DEPRECATED:  TODO: delete
+    //if (sink_node_integration == "ProdOp" && 
+    //  (weight_values.size() < layer1_size*layer2_size || sqrt(weight_values.size()) != layer1_size*layer2_size)) {
+    //  char error_char[512];
+    //  sprintf(error_char, "The weight values for a ProdOp integration type is less than the product of the source and sink layer sizes.  This will result in a zero sink tensor.");
+    //  std::string error(error_char);
+    //  throw std::runtime_error(error_char);
+    //}
 
 		for (size_t i = 0; i < weight_indices.size(); ++i) {
 			weights(weight_indices[i].first, weight_indices[i].second) = weight_values[i];
