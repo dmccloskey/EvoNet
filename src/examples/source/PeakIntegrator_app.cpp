@@ -506,7 +506,8 @@ public:
 		ModelInterpreterDefaultDevice<TensorT>& model_interpreter,
 		const std::vector<float>& model_errors) {
 		// Check point the model every 1000 epochs
-		if (n_epochs % 999 == 0 && n_epochs != 0) {
+		if (n_epochs % 999 == 0 //&& n_epochs != 0
+      ) {
 			model_interpreter.getModelResults(model, false, true, false);
 			ModelFile<TensorT> data;
 			data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
@@ -521,7 +522,7 @@ public:
 	{
 		model_logger.setLogTimeEpoch(true);
 		model_logger.setLogTrainValMetricEpoch(true);
-		model_logger.setLogExpectedPredictedEpoch(true);
+		model_logger.setLogExpectedPredictedEpoch(false);
 		if (n_epochs == 0) {
 			model_logger.initLogs(model);
 		}
@@ -700,10 +701,10 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
 	PopulationLogger<float> population_logger(true, true);
 
 	// define the model logger
-	ModelLogger<float> model_logger(true, true, true, false, false, false, false, false);
+	ModelLogger<float> model_logger(true, true, false, false, false, false, false, false);
 
 	// define the data simulator
-	const std::size_t input_size = 512;
+	const std::size_t input_size = 128;
 	const std::size_t encoding_size = 64;
 	DataSimulatorExt<float> data_simulator;
 
@@ -811,7 +812,7 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
 	Model<float> model;
 	if (make_model) {
 		//model_trainer.makeDenoisingAE(model, input_size, encoding_size, 128);
-    model_trainer.makeMultiHeadDotProdAttention(model, input_size, input_size, { 16, 16, 16 }, { 48, 48, 48 }, { (int)input_size, (int)input_size, (int)input_size }, false, false, false);
+    model_trainer.makeMultiHeadDotProdAttention(model, input_size, input_size, { 16, 16 }, { 48, 48 }, { (int)input_size, (int)input_size }, false, false, false);
 		//model_trainer.makeCompactCovNetAE(model, input_size, input_size, encoding_size, 1, 1, false);
 	}
 	else {
