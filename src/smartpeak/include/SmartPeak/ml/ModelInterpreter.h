@@ -1524,7 +1524,7 @@ namespace SmartPeak
       //   e.g., SC_ops.size() * 2 < SC_ops.front().size() where all SC_ops target the same sink layer
       // - if (!SC_ops_acceptance) SC_ops.clear(); identified_sink_nodes.clear();
       //   assuming the only identified sink nodes are those from `GetSinglyConnectedOperations`
-      // NOTE:  a side-effect of this method is that FC, FanIn, and FanOut motifs are also identified
+      // NOTE:  a side-effect of this method is that FC, FanIn, and FanOut method
 
 			//std::map<std::string, std::vector<int>> Conv_ops = getConvOperations(FP_operations_expanded, identified_sink_nodes);
 			std::map<std::string, std::vector<int>> tensor_ops = getTensorOperations(FP_operations_expanded, identified_sink_nodes, fast_check);
