@@ -715,6 +715,10 @@ private:
 				}
 				task_results.clear();
 				thread_cnt = 0;
+        // Ensure all model_interpreter resources have been destroyed
+        for (auto& model_interpreter : model_interpreters) {
+          model_interpreter.clear_cache();
+        }
 			}
 			else
 			{

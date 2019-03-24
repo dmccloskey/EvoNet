@@ -275,8 +275,6 @@ namespace SmartPeak
 			@brief Prunes identified cyclic nodes that are not in fact part of a cycle
 				but are instead not yet activated and not yet ready to fire.
 
-			[TODO: add tests!]
-
 			@param[out] FP_operations_map Key/Value pair of sink node name to FP_peroations index
 			@param[out] FP_operations
 			@param[out] sink_nodes_with_cycles
@@ -306,33 +304,29 @@ namespace SmartPeak
 		void expandAllForwardPropogationOperations(const std::vector<OperationList<TensorT>>& FP_operations, std::vector<OperationList<TensorT>>& FP_operations_expanded);
 
 		/**
-			@brief Re-organizes the identified layers into tensors and attempts to optimizes
-				the layer operations to maximize hardware acceleration.
+		@brief Re-organizes the identified layers into tensors and attempts to optimizes
+			the layer operations to maximize hardware acceleration.
 
-			If possible, layer operations will be partitioned into predefined tensor integration motifs
-      in order to optimize matrix size and memory usage
-			- Tensor integration motifs: FC/SC/Conv/FanIn/FanOut
-			- Custom
+		If possible, layer operations will be partitioned into predefined tensor integration motifs
+    in order to optimize matrix size and memory usage
+		- Tensor integration motifs: FC/SC/Conv/FanIn/FanOut
+		- Custom
 
-			Criteria for FC (Not implemented; Subset of matrix multiplication)
-			- all arguments for sinks are equal
+		Criteria for FC (Not implemented; Subset of matrix multiplication)
+		- all arguments for sinks are equal
 
-			Criteria for FanIn and FanOut (Not implemented; Subset of matrix multiplication)
-			- FanIn: 1 sink, multiple sources
-			- FanOut: 1 source, multiple sinks
+		Criteria for FanIn and FanOut (Not implemented; Subset of matrix multiplication)
+		- FanIn: 1 sink, multiple sources
+		- FanOut: 1 source, multiple sinks
 
-			Criteria for SC
-			- unique argument per sinks
+		Criteria for SC
+		- unique argument per sinks
 
-			Criteria for Conv/pool
-			- shared weights with FanIn
+		Criteria for Conv/pool
+		- shared weights with FanIn
 
-			Critera for Custom
-			- Module with optimized computation (e.g., softmax, attention, etc.,)
-		*/
-
-		/**
-		@brief Identify layer operations
+		Critera for Custom
+		- Module with optimized computation (e.g., softmax, attention, etc.,)
 
 		[TODO: add tests]
 
@@ -1530,6 +1524,7 @@ namespace SmartPeak
       //   e.g., SC_ops.size() * 2 < SC_ops.front().size() where all SC_ops target the same sink layer
       // - if (!SC_ops_acceptance) SC_ops.clear(); identified_sink_nodes.clear();
       //   assuming the only identified sink nodes are those from `GetSinglyConnectedOperations`
+      // NOTE:  a side-effect of this method is that FC, FanIn, and FanOut motifs are also identified
 
 			//std::map<std::string, std::vector<int>> Conv_ops = getConvOperations(FP_operations_expanded, identified_sink_nodes);
 			std::map<std::string, std::vector<int>> tensor_ops = getTensorOperations(FP_operations_expanded, identified_sink_nodes, fast_check);
