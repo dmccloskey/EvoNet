@@ -179,6 +179,8 @@ public:
 
 		void setDt(const Eigen::Tensor<TensorT, 2>& dt); ///< dt setter
 		Eigen::Tensor<TensorT, 2> getDt() const; ///< dt copy getter
+
+    Node<TensorT> getNodeCopy(const Node<TensorT>& other) const;
 		
 private:
 		friend class cereal::access;
@@ -232,13 +234,23 @@ private:
 		tensor_index_ = other.tensor_index_;
 		layer_name_ = other.layer_name_;
 		type_ = other.type_;
-		status_ = other.status_;
-		activation_ = other.activation_;
-		activation_grad_ = other.activation_grad_;
-		integration_ = other.integration_;
-		integration_error_ = other.integration_error_;
-		integration_weight_grad_ = other.integration_weight_grad_;
-		integration_ = other.integration_;
+		status_ = other.status_;    
+    setActivation(std::make_shared<ActivationOp<TensorT>>(*other.activation_));
+    setActivationGrad(std::make_shared<ActivationOp<TensorT>>(*other.activation_grad_));
+    setIntegration(std::make_shared<IntegrationOp<TensorT>>(*other.integration_));
+    setIntegrationError(std::make_shared<IntegrationErrorOp<TensorT>>(*other.integration_error_));
+    setIntegrationWeightGrad(std::make_shared<IntegrationWeightGradOp<TensorT>>(*other.integration_weight_grad_));
+
+    //setActivation(other.activation_);
+    //setActivationGrad(other.activation_grad_);
+    //setIntegration(other.integration_);
+    //setIntegrationError(other.integration_error_);
+    //setIntegrationWeightGrad(other.integration_weight_grad_);
+		//activation_ = other.activation_;
+		//activation_grad_ = other.activation_grad_;
+		//integration_ = other.integration_;
+		//integration_error_ = other.integration_error_;
+		//integration_weight_grad_ = other.integration_weight_grad_;
 		output_min_ = other.output_min_;
 		output_max_ = other.output_max_;
 		drop_probability_ = other.drop_probability_;
@@ -530,6 +542,29 @@ private:
 	{
 		return dt_;
 	}
+
+  //template<typename TensorT>
+  //Node<TensorT> Node<TensorT>::getNodeCopy(const Node<TensorT>& other) const {
+  //  Node<TensorT> node_copy;
+  //  node_copy.setId(other.id_);
+  //  name_ = other.name_;
+  //  module_id_ = other.module_id_;
+  //  module_name_ = other.module_name_;
+  //  tensor_index_ = other.tensor_index_;
+  //  layer_name_ = other.layer_name_;
+  //  type_ = other.type_;
+  //  activation_ = std::make_shared<ActivationOp<Tensor>>(*other.activation_);
+  //  activation_grad_ = std::make_shared<ActivationOp<Tensor>>(*other.activation_grad_);
+  //  integration_ = std::make_shared<IntegrationOp<Tensor>>(*other.integration_);
+  //  integration_error_ = std::make_shared<IntegrationErrorOp<Tensor>>(*other.integration_error_); other.integration_error_;
+  //  integration_weight_grad_ = std::make_shared<IntegrationWeightGradOp<Tensor>>(*other.integration_weight_grad_);
+  //  status_ = other.status_;
+  //  output_min_ = other.output_min_;
+  //  output_max_ = other.output_max_;
+  //  drop_probability_ = other.drop_probability_;
+  //  drop_ = other.drop_;
+  //  return *this;
+  //}
 }
 
 #endif //SMARTPEAK_NODE_H

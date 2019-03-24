@@ -184,40 +184,54 @@ public:
 		std::vector<Model<TensorT>>& models,
 		std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations)
 	{
-		if (n_generations>0)
-		{
-			this->setRandomModifications(
-        std::make_pair(0, 0),
-        std::make_pair(0, 0),
-				std::make_pair(0, 0),
-				std::make_pair(0, 0),
-        std::make_pair(0, 0),
-				std::make_pair(0, 0),
-        std::make_pair(0, 0),
-        std::make_pair(0, 0),
-				std::make_pair(0, 2), // node activation changes
-				std::make_pair(0, 2), // node integration changes
-				std::make_pair(0, 0),
-				std::make_pair(0, 0),
-				std::make_pair(0, 0));
-		}
-		else
-		{
-			this->setRandomModifications(
-        std::make_pair(0, 0),
-        std::make_pair(0, 0),
-        std::make_pair(0, 0),
-        std::make_pair(0, 0),
-        std::make_pair(0, 0),
-        std::make_pair(0, 0),
-        std::make_pair(0, 0),
-        std::make_pair(0, 0),
-        std::make_pair(0, 2), // node activation changes
-        std::make_pair(0, 2), // node integration changes
-        std::make_pair(0, 0),
-        std::make_pair(0, 0),
-        std::make_pair(0, 0));
-		}
+		//if (n_generations>0)
+		//{
+		//	this->setRandomModifications(
+  //      std::make_pair(0, 0),
+  //      std::make_pair(0, 0),
+		//		std::make_pair(0, 0),
+		//		std::make_pair(0, 0),
+  //      std::make_pair(0, 0),
+		//		std::make_pair(0, 0),
+  //      std::make_pair(0, 0),
+  //      std::make_pair(0, 0),
+		//		std::make_pair(0, 2), // node activation changes
+		//		std::make_pair(0, 2), // node integration changes
+		//		std::make_pair(0, 0),
+		//		std::make_pair(0, 0),
+		//		std::make_pair(0, 0));
+		//}
+		//else
+		//{
+		//	this->setRandomModifications(
+  //      std::make_pair(0, 0),
+  //      std::make_pair(0, 0),
+  //      std::make_pair(0, 0),
+  //      std::make_pair(0, 0),
+  //      std::make_pair(0, 0),
+  //      std::make_pair(0, 0),
+  //      std::make_pair(0, 0),
+  //      std::make_pair(0, 0),
+  //      std::make_pair(0, 2), // node activation changes
+  //      std::make_pair(0, 2), // node integration changes
+  //      std::make_pair(0, 0),
+  //      std::make_pair(0, 0),
+  //      std::make_pair(0, 0));
+		//}
+    this->setRandomModifications(
+      std::make_pair(1, 1),
+      std::make_pair(1, 1),
+      std::make_pair(0, 0),
+      std::make_pair(0, 0),
+      std::make_pair(0, 0),
+      std::make_pair(0, 0),
+      std::make_pair(1, 1),
+      std::make_pair(0, 0),
+      std::make_pair(0, 0), // node activation changes
+      std::make_pair(0, 0), // node integration changes
+      std::make_pair(0, 0),
+      std::make_pair(0, 0),
+      std::make_pair(0, 0));
 	}
 };
 
@@ -299,11 +313,15 @@ void main_WeightSpring3W2S1D(const bool& make_model, const bool& train_model) {
 	}
 	ModelTrainerExt<float> model_trainer;
 	model_trainer.setBatchSize(1);
-	model_trainer.setMemorySize(128);
-	model_trainer.setNEpochsTraining(1000);
-	model_trainer.setNEpochsValidation(25);
+	//model_trainer.setMemorySize(128);
+  model_trainer.setMemorySize(8);
+	//model_trainer.setNEpochsTraining(1000);
+  model_trainer.setNEpochsTraining(3);
+  //model_trainer.setNEpochsValidation(25);
+	model_trainer.setNEpochsValidation(1);
 	model_trainer.setVerbosityLevel(1);
-	model_trainer.setLogging(true, false);
+	//model_trainer.setLogging(true, false);
+  model_trainer.setLogging(false, false);
 	model_trainer.setFindCycles(false);
 	model_trainer.setFastInterpreter(true);
 	model_trainer.setPreserveOoO(false);
@@ -312,8 +330,8 @@ void main_WeightSpring3W2S1D(const bool& make_model, const bool& train_model) {
 	model_trainer.setOutputNodes({ output_nodes });
 
 	// define the model logger
-	ModelLogger<float> model_logger(true, true, true, false, false, false, false, false);
-	//ModelLogger<float> model_logger(true, true, false, false, false, false, false, false);
+	//ModelLogger<float> model_logger(true, true, true, false, false, false, false, false);
+	ModelLogger<float> model_logger(true, true, false, false, false, false, false, false);
 
 	// define the model replicator for growth mode
 	ModelReplicatorExt<float> model_replicator;
@@ -326,8 +344,8 @@ void main_WeightSpring3W2S1D(const bool& make_model, const bool& train_model) {
 		//std::make_pair(std::shared_ptr<ActivationOp<float>>(new LogOp<float>()), std::shared_ptr<ActivationOp<float>>(new LogGradOp<float>())),
 		//std::make_pair(std::shared_ptr<ActivationOp<float>>(new InverseOp<float>()), std::shared_ptr<ActivationOp<float>>(new InverseGradOp<float>()))
 		});
-	model_replicator.setNodeIntegrations({ std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new ProdOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new ProdErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new ProdWeightGradOp<float>())),
-		std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>())),
+	model_replicator.setNodeIntegrations({std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>())),
+    //std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new ProdOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new ProdErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new ProdWeightGradOp<float>())),
 		//std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new MeanOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new MeanErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new MeanWeightGradOp<float>())),
 		//std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new VarModOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new VarModErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new VarModWeightGradOp<float>())),
 		//std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new CountOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new CountErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new CountWeightGradOp<float>()))

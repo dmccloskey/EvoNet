@@ -44,6 +44,9 @@ public:
 		void setEps(const TensorT& eps) { eps_ = eps; }
 		void setMin(const TensorT& min) { min_ = min; }
 		void setMax(const TensorT& max) { max_ = max; }
+    TensorT getEps() const { return eps_; }
+    TensorT getMin() const { return min_; }
+    TensorT getMax() const { return max_; }
 //#if COMPILE_WITH_CUDA
 //		std::string getName() const { return ""; }; // No Virtual Functions Allowed when using Cuda!
 //		TensorT operator()(const TensorT& x_I) const { return 0; }; // No Virtual Functions Allowed when using Cuda!
@@ -52,9 +55,10 @@ public:
 		virtual std::string getName() const = 0;
 		virtual TensorT operator()(const TensorT& x_I) const = 0;
 		virtual std::vector<TensorT> getParameters() const = 0;
+    virtual ActivationOp<TensorT>* copy() const = 0;
 //#endif // !EVONET_CUDA
 	protected:
-		TensorT eps_ = 1e-12; ///< threshold to clip between min and max
+		TensorT eps_ = 1e-6; ///< threshold to clip between min and max
 		TensorT min_ = -1e9;
 		TensorT max_ = 1e9;
 	private:
@@ -86,6 +90,7 @@ public:
 		};
     std::string getName() const{return "ReLUOp";};
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+    ActivationOp<TensorT>* copy() const { return new ReLUOp<TensorT>(*this); }
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -110,6 +115,7 @@ public:
     TensorT operator()(const TensorT& x_I) const { return (x_I > 0.0) ? 1.0: 0.0; };
     std::string getName() const{return "ReLUGradOp";};
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+    ActivationOp<TensorT>* copy() const { return new ReLUGradOp<TensorT>(*this); }
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -144,6 +150,7 @@ public:
     TensorT getAlpha() const { return alpha_; };
     std::string getName() const{return "ELUOp";};
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ alpha_ }); }
+    ActivationOp<TensorT>* copy() const { return new ELUOp<TensorT>(*this); }
 private:
 		friend class cereal::access;
 		template<class Archive>
@@ -176,6 +183,7 @@ public:
     TensorT getAlpha() const { return alpha_; };
     std::string getName() const{return "ELUGradOp";};
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ alpha_ }); }
+    ActivationOp<TensorT>* copy() const { return new ELUGradOp<TensorT>(*this); }
 private:
 		friend class cereal::access;
 		template<class Archive>
@@ -201,6 +209,7 @@ public:
 		};
     std::string getName() const{return "SigmoidOp";};
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+    ActivationOp<TensorT>* copy() const { return new SigmoidOp<TensorT>(*this); }
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -223,6 +232,7 @@ public:
     };
     std::string getName() const{return "SigmoidGradOp";};
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+    ActivationOp<TensorT>* copy() const { return new SigmoidGradOp<TensorT>(*this); }
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -242,6 +252,7 @@ public:
     TensorT operator()(const TensorT& x_I) const { return tanh(x_I); };
     std::string getName() const{return "TanHOp";};
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+    ActivationOp<TensorT>* copy() const { return new TanHOp<TensorT>(*this); }
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -266,6 +277,7 @@ public:
     };
     std::string getName() const{return "TanHGradOp";};
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+    ActivationOp<TensorT>* copy() const { return new TanHGradOp<TensorT>(*this); }
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -290,6 +302,7 @@ public:
     };
     std::string getName() const{return "ReTanHOp";};
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+    ActivationOp<TensorT>* copy() const { return new ReTanHOp<TensorT>(*this); }
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -315,6 +328,7 @@ public:
     };
     std::string getName() const{return "ReTanHGradOp";};
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+    ActivationOp<TensorT>* copy() const { return new ReTanHGradOp<TensorT>(*this); }
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -334,6 +348,7 @@ public:
 		TensorT operator()(const TensorT& x_I) const { return x_I; };
 		std::string getName() const { return "LinearOp"; };
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+    ActivationOp<TensorT>* copy() const { return new LinearOp<TensorT>(*this); }
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -353,6 +368,7 @@ public:
 		TensorT operator()(const TensorT& x_I) const { return 1.0; };
 		std::string getName() const { return "LinearGradOp"; };
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+    ActivationOp<TensorT>* copy() const { return new LinearGradOp<TensorT>(*this); }
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -377,6 +393,7 @@ public:
 		};
 		std::string getName() const { return "InverseOp"; };
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+    ActivationOp<TensorT>* copy() const { return new InverseOp<TensorT>(*this); }
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -401,6 +418,7 @@ public:
 		};
 		std::string getName() const { return "InverseGradOp"; };
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+    ActivationOp<TensorT>* copy() const { return new InverseGradOp<TensorT>(*this); }
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -424,6 +442,7 @@ public:
 		};
 		std::string getName() const { return "ExponentialOp"; };
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+    ActivationOp<TensorT>* copy() const { return new ExponentialOp<TensorT>(*this); }
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -447,6 +466,7 @@ public:
 		};
 		std::string getName() const { return "ExponentialGradOp"; };
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+    ActivationOp<TensorT>* copy() const { return new ExponentialGradOp<TensorT>(*this); }
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -470,6 +490,7 @@ public:
 		};
 		std::string getName() const { return "LogOp"; };
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+    ActivationOp<TensorT>* copy() const { return new LogOp<TensorT>(*this); }
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -493,6 +514,7 @@ public:
 		};
 		std::string getName() const { return "LogGradOp"; };
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+    ActivationOp<TensorT>* copy() const { return new LogGradOp<TensorT>(*this); }
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -518,6 +540,7 @@ public:
 		};
 		std::string getName() const { return "PowOp"; };
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ base_ }); }
+    ActivationOp<TensorT>* copy() const { return new PowOp<TensorT>(*this); }
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -545,6 +568,7 @@ public:
 		};
 		std::string getName() const { return "PowGradOp"; };
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ base_ }); }
+    ActivationOp<TensorT>* copy() const { return new PowGradOp<TensorT>(*this); }
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -576,6 +600,7 @@ public:
 		TensorT getAlpha() const { return alpha_; };
 		std::string getName() const { return "LeakyReLUOp"; };
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ alpha_ }); }
+    ActivationOp<TensorT>* copy() const { return new LeakyReLUOp<TensorT>(*this); }
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -602,6 +627,7 @@ public:
 		TensorT getAlpha() const { return alpha_; };
 		std::string getName() const { return "LeakyReLUGradOp"; };
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ alpha_ }); }
+    ActivationOp<TensorT>* copy() const { return new LeakyReLUGradOp<TensorT>(*this); }
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -624,6 +650,7 @@ public:
 		};
 		std::string getName() const { return "SinOp"; };
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+    ActivationOp<TensorT>* copy() const { return new SinOp<TensorT>(*this); }
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -645,6 +672,7 @@ public:
 		};
 		std::string getName() const { return "SinGradOp"; };
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+    ActivationOp<TensorT>* copy() const { return new SinGradOp<TensorT>(*this); }
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -666,6 +694,7 @@ public:
 		};
 		std::string getName() const { return "CosOp"; };
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+    ActivationOp<TensorT>* copy() const { return new CosOp<TensorT>(*this); }
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -687,6 +716,7 @@ public:
 		};
 		std::string getName() const { return "CosGradOp"; };
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+    ActivationOp<TensorT>* copy() const { return new CosGradOp<TensorT>(*this); }
 	private:
 		friend class cereal::access;
 		template<class Archive>

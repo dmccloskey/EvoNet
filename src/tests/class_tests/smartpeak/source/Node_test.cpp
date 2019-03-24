@@ -66,19 +66,24 @@ BOOST_AUTO_TEST_CASE(comparison)
   node.setId(2);
   BOOST_CHECK(node != node_test);
 
+  // Check name
   node = Node<float>("2", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
   node.setId(1);
   BOOST_CHECK(node != node_test);
 
+  // Check ActivationOp
   node = Node<float>("1", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new ELUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ELUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
   BOOST_CHECK(node != node_test);
 
+  // Check NodeStatus
   node = Node<float>("1", NodeType::hidden, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
   BOOST_CHECK(node != node_test);
 
+  // Check NodeType
   node = Node<float>("1", NodeType::output, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
   BOOST_CHECK(node != node_test);
 
+  // CheckNode IntegrationOp
 	node = Node<float>("1", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new ProdOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new ProdErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new ProdWeightGradOp<float>()));
 	BOOST_CHECK(node != node_test);
 }
@@ -116,6 +121,35 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
 	BOOST_CHECK_EQUAL(node.getModuleId(), 4);
 	BOOST_CHECK_EQUAL(node.getModuleName(), "Module1");
 	BOOST_CHECK_EQUAL(node.getDropProbability(), 1.0f);
+
+  // Check smart pointer data modification
+  BOOST_CHECK_CLOSE(node.getActivation()->getEps(), 1e-6, 1e-3);
+  BOOST_CHECK_CLOSE(node.getActivationGrad()->getEps(), 1e-6, 1e-3);
+  BOOST_CHECK_CLOSE(node.getIntegration()->getEps(), 1e-6, 1e-3);
+  BOOST_CHECK_CLOSE(node.getIntegrationError()->getEps(), 1e-6, 1e-3);
+  BOOST_CHECK_CLOSE(node.getIntegrationWeightGrad()->getEps(), 1e-6, 1e-3);
+  activation->setEps(1);
+  activation_grad->setEps(1);
+  activation->setEps(1);
+  activation->setEps(1);
+  activation->setEps(1);
+  BOOST_CHECK_EQUAL(node.getActivation()->getEps(), activation->getEps());
+  BOOST_CHECK_EQUAL(node.getActivationGrad()->getEps(), activation_grad->getEps());
+  BOOST_CHECK_EQUAL(node.getIntegration()->getEps(), integration->getEps());
+  BOOST_CHECK_EQUAL(node.getIntegrationError()->getEps(), integration_error->getEps());
+  BOOST_CHECK_EQUAL(node.getIntegrationWeightGrad()->getEps(), integration_weight_grad->getEps());
+
+  // Check smart pointer re-assignment
+  activation.reset(new ReLUOp<float>());
+  activation_grad.reset(new ReLUGradOp<float>());
+  integration.reset(new SumOp<float>());
+  integration_error.reset(new SumErrorOp<float>());
+  integration_weight_grad.reset(new SumWeightGradOp<float>());
+  BOOST_CHECK_NE(node.getActivation(), activation.get());
+  BOOST_CHECK_NE(node.getActivationGrad(), activation_grad.get());
+  BOOST_CHECK_NE(node.getIntegration(), integration.get());
+  BOOST_CHECK_NE(node.getIntegrationError(), integration_error.get());
+  BOOST_CHECK_NE(node.getIntegrationWeightGrad(), integration_weight_grad.get());
 }
 
 BOOST_AUTO_TEST_CASE(gettersAndSetters2)
@@ -142,6 +176,100 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters2)
   BOOST_CHECK_EQUAL(node.getError()(1,4), 3.0);
   BOOST_CHECK_EQUAL(node.getDt()(0,0), 4.0);
   BOOST_CHECK_EQUAL(node.getDt()(1,4), 4.0);
+}
+
+BOOST_AUTO_TEST_CASE(assignment) 
+{
+  Node<float> node;
+  node.setId(1);
+  node.setName("Node1");
+  node.setType(NodeType::hidden);
+  node.setStatus(NodeStatus::initialized);
+	std::shared_ptr<ActivationOp<float>> activation(new TanHOp<float>());
+	std::shared_ptr<ActivationOp<float>> activation_grad(new TanHGradOp<float>());
+	node.setActivation(activation);
+	node.setActivationGrad(activation_grad);
+	std::shared_ptr<IntegrationOp<float>> integration(new ProdOp<float>());
+	std::shared_ptr<IntegrationErrorOp<float>> integration_error(new ProdErrorOp<float>());
+	std::shared_ptr<IntegrationWeightGradOp<float>> integration_weight_grad(new ProdWeightGradOp<float>());
+	node.setIntegration(integration);
+	node.setIntegrationError(integration_error);
+	node.setIntegrationWeightGrad(integration_weight_grad);
+	node.setModuleId(4);
+	node.setModuleName("Module1");
+	node.setDropProbability(1.0f);
+
+  // Check assignment #1
+  Node<float> node2(node);
+  BOOST_CHECK_EQUAL(node.getId(), node2.getId());
+  BOOST_CHECK_EQUAL(node.getName(), node2.getName());
+  BOOST_CHECK(node.getType() == node2.getType());
+  BOOST_CHECK(node.getStatus() == node2.getStatus());
+  BOOST_CHECK_EQUAL(node.getActivation(), node2.getActivation());
+  BOOST_CHECK_EQUAL(node.getActivationGrad(), node2.getActivationGrad());
+  BOOST_CHECK_EQUAL(node.getIntegration(), node2.getIntegration());
+  BOOST_CHECK_EQUAL(node.getIntegrationError(), node2.getIntegrationError());
+  BOOST_CHECK_EQUAL(node.getIntegrationWeightGrad(), node2.getIntegrationWeightGrad());
+  BOOST_CHECK_EQUAL(node.getModuleId(), node2.getModuleId());
+  BOOST_CHECK_EQUAL(node.getModuleName(), node2.getModuleName());
+  BOOST_CHECK_EQUAL(node.getDropProbability(), node2.getDropProbability());
+
+  node2.setId(2);
+  node2.setName("2");
+  node2.setType(NodeType::input);
+  node2.setStatus(NodeStatus::activated);
+  node2.setModuleId(2);
+  node2.setModuleName("Module2");
+  node2.setDropProbability(2.0f);
+  node2.setActivation(std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()));
+  node2.setActivationGrad(std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()));
+  node2.setIntegration(std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()));
+  node2.setIntegrationError(std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()));
+  node2.setIntegrationWeightGrad(std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+
+  // Check that node is unmodified
+  BOOST_CHECK_EQUAL(node.getId(), 1);
+  BOOST_CHECK_EQUAL(node.getName(), "Node1");
+  BOOST_CHECK(node.getType() == NodeType::hidden);
+  BOOST_CHECK(node.getStatus() == NodeStatus::initialized);
+  BOOST_CHECK_EQUAL(node.getActivation(), activation.get());
+  BOOST_CHECK_EQUAL(node.getActivationGrad(), activation_grad.get());
+  BOOST_CHECK_EQUAL(node.getIntegration(), integration.get());
+  BOOST_CHECK_EQUAL(node.getIntegrationError(), integration_error.get());
+  BOOST_CHECK_EQUAL(node.getIntegrationWeightGrad(), integration_weight_grad.get());
+  BOOST_CHECK_EQUAL(node.getModuleId(), 4);
+  BOOST_CHECK_EQUAL(node.getModuleName(), "Module1");
+  BOOST_CHECK_EQUAL(node.getDropProbability(), 1.0f);
+
+  // Check that the nodes are no longer equal
+  BOOST_CHECK_NE(node.getId(), node2.getId());
+  BOOST_CHECK_NE(node.getName(), node2.getName());
+  BOOST_CHECK(node.getType() != node2.getType());
+  BOOST_CHECK(node.getStatus() != node2.getStatus());
+  BOOST_CHECK_NE(node.getActivation(), node2.getActivation());
+  BOOST_CHECK_NE(node.getActivationGrad(), node2.getActivationGrad());
+  BOOST_CHECK_NE(node.getIntegration(), node2.getIntegration());
+  BOOST_CHECK_NE(node.getIntegrationError(), node2.getIntegrationError());
+  BOOST_CHECK_NE(node.getIntegrationWeightGrad(), node2.getIntegrationWeightGrad());
+  BOOST_CHECK_NE(node.getModuleId(), node2.getModuleId());
+  BOOST_CHECK_NE(node.getModuleName(), node2.getModuleName());
+  BOOST_CHECK_NE(node.getDropProbability(), node2.getDropProbability());
+
+  // Check assignment #2
+
+  Node<float> node3 = node;
+  BOOST_CHECK_EQUAL(node.getId(), node3.getId());
+  BOOST_CHECK_EQUAL(node.getName(), node3.getName());
+  BOOST_CHECK(node.getType() == node3.getType());
+  BOOST_CHECK(node.getStatus() == node3.getStatus());
+  BOOST_CHECK_EQUAL(node.getActivation(), node3.getActivation());
+  BOOST_CHECK_EQUAL(node.getActivationGrad(), node3.getActivationGrad());
+  BOOST_CHECK_EQUAL(node.getIntegration(), node3.getIntegration());
+  BOOST_CHECK_EQUAL(node.getIntegrationError(), node3.getIntegrationError());
+  BOOST_CHECK_EQUAL(node.getIntegrationWeightGrad(), node3.getIntegrationWeightGrad());
+  BOOST_CHECK_EQUAL(node.getModuleId(), node3.getModuleId());
+  BOOST_CHECK_EQUAL(node.getModuleName(), node3.getModuleName());
+  BOOST_CHECK_EQUAL(node.getDropProbability(), node3.getDropProbability());
 }
 
 // [TODO: broke when adding NodeData]

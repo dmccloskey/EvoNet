@@ -22,6 +22,8 @@ namespace SmartPeak
 	public: 
     IntegrationOp() = default;
     ~IntegrationOp() = default;
+    void setEps(const T& eps) { eps_ = eps; }
+    T getEps() const { return eps_; };
     virtual std::string getName() const = 0;
 	private:
 		friend class cereal::access;
@@ -199,6 +201,8 @@ public:
 	public:
 		IntegrationErrorOp() = default;
 		~IntegrationErrorOp() = default;
+    void setEps(const T& eps) { eps_ = eps; }
+    T getEps() const { return eps_; };
 		virtual std::string getName() const = 0;
 	private:
 		friend class cereal::access;
@@ -320,6 +324,8 @@ public:
 	public:
 		IntegrationWeightGradOp() = default;
 		~IntegrationWeightGradOp() = default;
+    void setEps(const T& eps) { eps_ = eps; }
+    T getEps() const { return eps_; };
 		virtual std::string getName() const = 0;
 	private:
 		friend class cereal::access;
