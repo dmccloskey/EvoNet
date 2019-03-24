@@ -81,20 +81,20 @@ public:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 4>> source_output_tensor(source_output, batch_size, memory_size, source_layer_size, 1);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> weight_tensor(weights, 1, source_layer_size, sink_layer_size);
 
-      // DEBUG (only on CPU)
-      std::cout << "[ProdTensorOp]Sink (Start): " << sink_input_tensor.chip(sink_time_step, 1) << std::endl;
+      //// DEBUG (only on CPU)
+      //std::cout << "[ProdTensorOp]Sink (Start): " << sink_input_tensor.chip(sink_time_step, 1) << std::endl;
 			
 			sink_input_tensor.chip(sink_time_step, 1).device(device) = sink_input_tensor.chip(sink_time_step, 1) * (
 				source_output_tensor.chip(source_time_step, 1).broadcast(Eigen::array<int, 3>({ 1, 1, sink_layer_size })) *
 				weight_tensor.broadcast(Eigen::array<int, 3>({ batch_size, 1, 1 }))
 				).prod(Eigen::array<int, 1>({ 1 }));
 
-      // DEBUG (only on CPU)
-      std::cout << "[ProdTensorOp]Source: " << source_output_tensor.chip(source_time_step, 1) << std::endl;
-      std::cout << "[ProdTensorOp]Weight: " << weight_tensor << std::endl;
-      std::cout << "[ProdTensorOp]Intermediate: " << source_output_tensor.chip(source_time_step, 1).broadcast(Eigen::array<int, 3>({ 1, 1, sink_layer_size })) *
-        weight_tensor.broadcast(Eigen::array<int, 3>({ batch_size, 1, 1 })) << std::endl;
-      std::cout << "[ProdTensorOp]Sink (End): " << sink_input_tensor.chip(sink_time_step, 1) << std::endl;
+      //// DEBUG (only on CPU)
+      //std::cout << "[ProdTensorOp]Source: " << source_output_tensor.chip(source_time_step, 1) << std::endl;
+      //std::cout << "[ProdTensorOp]Weight: " << weight_tensor << std::endl;
+      //std::cout << "[ProdTensorOp]Intermediate: " << source_output_tensor.chip(source_time_step, 1).broadcast(Eigen::array<int, 3>({ 1, 1, sink_layer_size })) *
+      //  weight_tensor.broadcast(Eigen::array<int, 3>({ batch_size, 1, 1 })) << std::endl;
+      //std::cout << "[ProdTensorOp]Sink (End): " << sink_input_tensor.chip(sink_time_step, 1) << std::endl;
 		}
 		std::string getName() const { return "ProdTensorOp"; };
 	//private:
@@ -135,12 +135,12 @@ public:
         weight_tensor.broadcast(Eigen::array<int, 3>({ batch_size, 1, 1 }))
         ).sum(Eigen::array<int, 1>({ 1 }));  // NOTE the use of sum instead of prod here
 
-      // DEBUG (only on CPU)
-      std::cout << "[ProdSCTensorOp]Source: " << source_output_tensor.chip(source_time_step, 1) << std::endl;
-      std::cout << "[ProdSCTensorOp]Weight: " << weight_tensor << std::endl;
-      std::cout << "[ProdSCTensorOp]Intermediate: " << source_output_tensor.chip(source_time_step, 1).broadcast(Eigen::array<int, 3>({ 1, 1, sink_layer_size })) *
-        weight_tensor.broadcast(Eigen::array<int, 3>({ batch_size, 1, 1 })) << std::endl;
-      std::cout << "[ProdSCTensorOp]Sink (End): " << sink_input_tensor.chip(sink_time_step, 1) << std::endl;
+      //// DEBUG (only on CPU)
+      //std::cout << "[ProdSCTensorOp]Source: " << source_output_tensor.chip(source_time_step, 1) << std::endl;
+      //std::cout << "[ProdSCTensorOp]Weight: " << weight_tensor << std::endl;
+      //std::cout << "[ProdSCTensorOp]Intermediate: " << source_output_tensor.chip(source_time_step, 1).broadcast(Eigen::array<int, 3>({ 1, 1, sink_layer_size })) *
+      //  weight_tensor.broadcast(Eigen::array<int, 3>({ batch_size, 1, 1 })) << std::endl;
+      //std::cout << "[ProdSCTensorOp]Sink (End): " << sink_input_tensor.chip(sink_time_step, 1) << std::endl;
     }
     std::string getName() const { return "ProdSCTensorOp"; };
     //private:

@@ -306,7 +306,7 @@ public:
 			//std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(0.4)), 
       std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0.0, 1.0)),
       std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.0005, 0.9, 0.999, 1e-8)),
-			0.0f, 0.0f, false, true, 1);
+			0.0f, 0.0f, true, true, 1, true);
 
 		// Add a final output layer (Specify the layer name to ensure the output is always on its own tensor!!!)
 		node_names = model_builder.addFullyConnected(model, "Output", "Output", node_names, 1,
@@ -516,8 +516,8 @@ int main(int argc, char** argv)
 
 	// define the data simulator
 	DataSimulatorExt<float> data_simulator;
-	data_simulator.n_mask_ = 1;
-	data_simulator.sequence_length_ = 5;
+	data_simulator.n_mask_ = 2;
+	data_simulator.sequence_length_ = 25;
 
 	// define the model trainers and resources for the trainers
 	std::vector<ModelInterpreterDefaultDevice<float>> model_interpreters;
@@ -527,12 +527,12 @@ int main(int argc, char** argv)
 		model_interpreters.push_back(model_interpreter);
 	}
 	ModelTrainerExt<float> model_trainer;
-	model_trainer.setBatchSize(8);
+	model_trainer.setBatchSize(1);
 	model_trainer.setMemorySize(data_simulator.sequence_length_);
 	model_trainer.setNEpochsTraining(10000);
 	model_trainer.setNEpochsValidation(25);
-  model_trainer.setNTETTSteps(25);
-  model_trainer.setNTBPTTSteps(25);
+  model_trainer.setNTETTSteps(data_simulator.sequence_length_);
+  model_trainer.setNTBPTTSteps(data_simulator.sequence_length_);
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setFindCycles(true);
 	model_trainer.setLogging(true, false);
@@ -570,8 +570,8 @@ int main(int argc, char** argv)
 
 	// make the model name
 	//Model<float> model = model_trainer.makeModelMinimal();
-	Model<float> model = model_trainer.makeModelSolution(true);
-	//Model<float> model = model_trainer.makeModelLSTM(input_nodes.size(), 1, 1);
+	//Model<float> model = model_trainer.makeModelSolution(true);
+	Model<float> model = model_trainer.makeModelLSTM(input_nodes.size(), 1, 1);
 	char model_name_char[512];
 	sprintf(model_name_char, "%s_%d", model.getName().data(), 0);
 	std::string model_name(model_name_char);
