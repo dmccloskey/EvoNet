@@ -78,6 +78,7 @@ public:
     virtual std::string getParamsAsStr() const = 0;
 		virtual std::vector<TensorT> getParameters() const = 0;
 		virtual int getNParameters() const = 0;
+    virtual SolverOp<TensorT>* copy() const = 0;
 private:
 		friend class cereal::access;
 		template<class Archive>
@@ -139,6 +140,7 @@ public:
         std::to_string(getMomentumPrev());
       return params;
     }
+    SolverOp<TensorT>* copy() const { return new SGDOp<TensorT>(*this); }
 		std::vector<TensorT> getParameters() const {
 			std::vector<TensorT> parameters = {learning_rate_, momentum_, momentum_prev_};
 			return parameters;
@@ -226,6 +228,7 @@ public:
 			std::vector<TensorT> parameters = { learning_rate_, momentum_, momentum2_, delta_, momentum_prev_, momentum2_prev_ };
 			return parameters;
 		}
+    SolverOp<TensorT>* copy() const { return new AdamOp<TensorT>(*this); }
 private:
 		friend class cereal::access;
 		template<class Archive>
@@ -263,6 +266,7 @@ private:
 			return std::vector<TensorT>();
 		}
 		int getNParameters() const { return 0; };
+    SolverOp<TensorT>* copy() const { return new DummySolverOp<TensorT>(*this); }
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -320,6 +324,7 @@ private:
 			return parameters;
 		}
 		int getNParameters() const { return 4; };
+    SolverOp<TensorT>* copy() const { return new SGDNoiseOp<TensorT>(*this); }
 	private:
 		friend class cereal::access;
 		template<class Archive>

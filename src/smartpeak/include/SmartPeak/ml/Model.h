@@ -292,6 +292,7 @@ private:
 	{
 		id_ = other.id_;
 		name_ = other.name_;
+    // TODO: find a more efficient way to copy the links, nodes, and weights
 		addLinks(other.getLinks());
 		addNodes(other.getNodes());
 		addWeights(other.getWeights());

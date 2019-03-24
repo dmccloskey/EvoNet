@@ -199,74 +199,32 @@ BOOST_AUTO_TEST_CASE(assignment)
 	node.setModuleName("Module1");
 	node.setDropProbability(1.0f);
 
-  // Check assignment #1
+  // Check assignment #1 (copied references)
   Node<float> node2(node);
   BOOST_CHECK_EQUAL(node.getId(), node2.getId());
   BOOST_CHECK_EQUAL(node.getName(), node2.getName());
   BOOST_CHECK(node.getType() == node2.getType());
   BOOST_CHECK(node.getStatus() == node2.getStatus());
-  BOOST_CHECK_EQUAL(node.getActivation(), node2.getActivation());
-  BOOST_CHECK_EQUAL(node.getActivationGrad(), node2.getActivationGrad());
-  BOOST_CHECK_EQUAL(node.getIntegration(), node2.getIntegration());
-  BOOST_CHECK_EQUAL(node.getIntegrationError(), node2.getIntegrationError());
-  BOOST_CHECK_EQUAL(node.getIntegrationWeightGrad(), node2.getIntegrationWeightGrad());
-  BOOST_CHECK_EQUAL(node.getModuleId(), node2.getModuleId());
-  BOOST_CHECK_EQUAL(node.getModuleName(), node2.getModuleName());
-  BOOST_CHECK_EQUAL(node.getDropProbability(), node2.getDropProbability());
-
-  node2.setId(2);
-  node2.setName("2");
-  node2.setType(NodeType::input);
-  node2.setStatus(NodeStatus::activated);
-  node2.setModuleId(2);
-  node2.setModuleName("Module2");
-  node2.setDropProbability(2.0f);
-  node2.setActivation(std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()));
-  node2.setActivationGrad(std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()));
-  node2.setIntegration(std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()));
-  node2.setIntegrationError(std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()));
-  node2.setIntegrationWeightGrad(std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-
-  // Check that node is unmodified
-  BOOST_CHECK_EQUAL(node.getId(), 1);
-  BOOST_CHECK_EQUAL(node.getName(), "Node1");
-  BOOST_CHECK(node.getType() == NodeType::hidden);
-  BOOST_CHECK(node.getStatus() == NodeStatus::initialized);
-  BOOST_CHECK_EQUAL(node.getActivation(), activation.get());
-  BOOST_CHECK_EQUAL(node.getActivationGrad(), activation_grad.get());
-  BOOST_CHECK_EQUAL(node.getIntegration(), integration.get());
-  BOOST_CHECK_EQUAL(node.getIntegrationError(), integration_error.get());
-  BOOST_CHECK_EQUAL(node.getIntegrationWeightGrad(), integration_weight_grad.get());
-  BOOST_CHECK_EQUAL(node.getModuleId(), 4);
-  BOOST_CHECK_EQUAL(node.getModuleName(), "Module1");
-  BOOST_CHECK_EQUAL(node.getDropProbability(), 1.0f);
-
-  // Check that the nodes are no longer equal
-  BOOST_CHECK_NE(node.getId(), node2.getId());
-  BOOST_CHECK_NE(node.getName(), node2.getName());
-  BOOST_CHECK(node.getType() != node2.getType());
-  BOOST_CHECK(node.getStatus() != node2.getStatus());
   BOOST_CHECK_NE(node.getActivation(), node2.getActivation());
   BOOST_CHECK_NE(node.getActivationGrad(), node2.getActivationGrad());
   BOOST_CHECK_NE(node.getIntegration(), node2.getIntegration());
   BOOST_CHECK_NE(node.getIntegrationError(), node2.getIntegrationError());
   BOOST_CHECK_NE(node.getIntegrationWeightGrad(), node2.getIntegrationWeightGrad());
-  BOOST_CHECK_NE(node.getModuleId(), node2.getModuleId());
-  BOOST_CHECK_NE(node.getModuleName(), node2.getModuleName());
-  BOOST_CHECK_NE(node.getDropProbability(), node2.getDropProbability());
+  BOOST_CHECK_EQUAL(node.getModuleId(), node2.getModuleId());
+  BOOST_CHECK_EQUAL(node.getModuleName(), node2.getModuleName());
+  BOOST_CHECK_EQUAL(node.getDropProbability(), node2.getDropProbability());
 
-  // Check assignment #2
-
+  // Check assignment #2 (shared references)
   Node<float> node3 = node;
   BOOST_CHECK_EQUAL(node.getId(), node3.getId());
   BOOST_CHECK_EQUAL(node.getName(), node3.getName());
   BOOST_CHECK(node.getType() == node3.getType());
   BOOST_CHECK(node.getStatus() == node3.getStatus());
-  BOOST_CHECK_EQUAL(node.getActivation(), node3.getActivation());
-  BOOST_CHECK_EQUAL(node.getActivationGrad(), node3.getActivationGrad());
-  BOOST_CHECK_EQUAL(node.getIntegration(), node3.getIntegration());
-  BOOST_CHECK_EQUAL(node.getIntegrationError(), node3.getIntegrationError());
-  BOOST_CHECK_EQUAL(node.getIntegrationWeightGrad(), node3.getIntegrationWeightGrad());
+  BOOST_CHECK_NE(node.getActivation(), node2.getActivation());
+  BOOST_CHECK_NE(node.getActivationGrad(), node2.getActivationGrad());
+  BOOST_CHECK_NE(node.getIntegration(), node2.getIntegration());
+  BOOST_CHECK_NE(node.getIntegrationError(), node2.getIntegrationError());
+  BOOST_CHECK_NE(node.getIntegrationWeightGrad(), node2.getIntegrationWeightGrad());
   BOOST_CHECK_EQUAL(node.getModuleId(), node3.getModuleId());
   BOOST_CHECK_EQUAL(node.getModuleName(), node3.getModuleName());
   BOOST_CHECK_EQUAL(node.getDropProbability(), node3.getDropProbability());

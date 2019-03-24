@@ -38,11 +38,9 @@ BOOST_AUTO_TEST_CASE(constructor2)
   // ID and attributes
   std::shared_ptr<WeightInitOp<float>> weight_init(new ConstWeightInitOp<float>(2.0));
   std::shared_ptr<SolverOp<float>> solver(new SGDOp<float>(0.01, 0.9));
-  // ConstWeightInitOp<float> weight_init(2.0);
-  // SGDOp solver(0.01, 0.9);
   weight = Weight<float>(1, weight_init, solver);
-  BOOST_CHECK_EQUAL(weight.getWeightInitOp(), weight_init.get()); //shouldn't this be NE?
-  BOOST_CHECK_EQUAL(weight.getSolverOp(), solver.get()); //shouldn't this be NE?
+  BOOST_CHECK_EQUAL(weight.getWeightInitOp(), weight_init.get());
+  BOOST_CHECK_EQUAL(weight.getSolverOp(), solver.get());
   BOOST_CHECK_EQUAL(weight.getWeightInitOp()->operator()(), 2.0);
   BOOST_CHECK_CLOSE(weight.getSolverOp()->operator()(1.0, 2.0), 0.98, 1e-3);
 }
@@ -108,6 +106,38 @@ BOOST_AUTO_TEST_CASE(initWeight)
   weight.setWeightInitOp(weight_init);
   weight.initWeight();
   BOOST_CHECK_EQUAL(weight.getWeight(), 2.0);
+}
+
+BOOST_AUTO_TEST_CASE(assignment)
+{
+  Weight<float> weight;
+  weight.setId(1);
+  weight.setName("1");
+  weight.setModuleId(1);
+  weight.setModuleName("Mod1");
+  weight.setDropProbability(0.0f);
+  weight.setWeightInitOp(std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(2.0)));
+  weight.setSolverOp(std::shared_ptr<SolverOp<float>>(new SGDOp<float>(0.01, 0.9)));
+
+  Weight<float> weight2(weight);
+  BOOST_CHECK_EQUAL(weight.getId(), weight2.getId());
+  BOOST_CHECK_EQUAL(weight.getName(), weight2.getName());
+  BOOST_CHECK_EQUAL(weight.getModuleId(), weight2.getModuleId());
+  BOOST_CHECK_EQUAL(weight.getModuleName(), weight2.getModuleName());
+  BOOST_CHECK_EQUAL(weight.getDropProbability(), weight2.getDropProbability());
+  BOOST_CHECK_EQUAL(weight.getDrop(), weight2.getDrop());
+  BOOST_CHECK_NE(weight.getWeightInitOp(), weight2.getWeightInitOp());
+  BOOST_CHECK_NE(weight.getSolverOp(), weight2.getSolverOp());
+
+  Weight<float> weight3 = weight;
+  BOOST_CHECK_EQUAL(weight.getId(), weight3.getId());
+  BOOST_CHECK_EQUAL(weight.getName(), weight3.getName());
+  BOOST_CHECK_EQUAL(weight.getModuleId(), weight3.getModuleId());
+  BOOST_CHECK_EQUAL(weight.getModuleName(), weight3.getModuleName());
+  BOOST_CHECK_EQUAL(weight.getDropProbability(), weight3.getDropProbability());
+  BOOST_CHECK_EQUAL(weight.getDrop(), weight3.getDrop());
+  BOOST_CHECK_NE(weight.getWeightInitOp(), weight3.getWeightInitOp());
+  BOOST_CHECK_NE(weight.getSolverOp(), weight3.getSolverOp());
 }
 
 // Broke when adding nodeData

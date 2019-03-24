@@ -27,6 +27,7 @@ namespace SmartPeak
     virtual std::string getName() const = 0;
     virtual TensorT operator()() const = 0;
     virtual std::string getParamsAsStr() const = 0;
+    virtual WeightInitOp<TensorT>* copy() const = 0;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -61,6 +62,7 @@ public:
 				";f:" + std::to_string(getF());
       return params;
     }
+    WeightInitOp<TensorT>* copy() const { return new RandWeightInitOp<TensorT>(*this); }
 private:
 		friend class cereal::access;
 		template<class Archive>
@@ -89,6 +91,7 @@ public:
       std::string params = "n:" + std::to_string(getN());
       return params;
     }
+    WeightInitOp<TensorT>* copy() const { return new ConstWeightInitOp<TensorT>(*this); }
 private:
 		friend class cereal::access;
 		template<class Archive>
@@ -122,6 +125,7 @@ private:
         ";ub:" + std::to_string(getUB());
       return params;
     }
+    WeightInitOp<TensorT>* copy() const { return new RangeWeightInitOp<TensorT>(*this); }
   private:
     friend class cereal::access;
     template<class Archive>

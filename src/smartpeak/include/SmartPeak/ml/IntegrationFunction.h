@@ -25,6 +25,7 @@ namespace SmartPeak
     void setEps(const T& eps) { eps_ = eps; }
     T getEps() const { return eps_; };
     virtual std::string getName() const = 0;
+    virtual IntegrationOp<T>* copy() const = 0;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -43,6 +44,7 @@ namespace SmartPeak
 public: 
 		using IntegrationOp<T>::IntegrationOp;
     std::string getName() const{return "SumOp";};
+    IntegrationOp<T>* copy() const { return new SumOp<T>(*this); }
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -60,6 +62,7 @@ public:
 	public:
 		using IntegrationOp<T>::IntegrationOp;
 		std::string getName() const { return "ProdOp"; };
+    IntegrationOp<T>* copy() const { return new ProdOp<T>(*this); }
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -77,6 +80,7 @@ public:
   public:
     using IntegrationOp<T>::IntegrationOp;
     std::string getName() const { return "ProdSCOp"; };
+    IntegrationOp<T>* copy() const { return new ProdSCOp<T>(*this); }
   private:
     friend class cereal::access;
     template<class Archive>
@@ -94,6 +98,7 @@ public:
 	public:
 		using IntegrationOp<T>::IntegrationOp;
 		std::string getName() const { return "MaxOp"; };
+    IntegrationOp<T>* copy() const { return new MaxOp<T>(*this); }
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -111,6 +116,7 @@ public:
 	public:
 		using IntegrationOp<T>::IntegrationOp;
 		std::string getName() const { return "MeanOp"; };
+    IntegrationOp<T>* copy() const { return new MeanOp<T>(*this); }
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -144,6 +150,7 @@ public:
 		//	this->net_node_input_ += (input_k * input_k);
 		//};
 		std::string getName() const { return "VarianceOp"; };
+    IntegrationOp<T>* copy() const { return new VarianceOp<T>(*this); }
 	//private:
 	//	Eigen::Tensor<T, 1> k_ = 0;
 	//	Eigen::Tensor<T, 1> ex_ = 0;
@@ -167,6 +174,7 @@ public:
 	public:
 		using IntegrationOp<T>::IntegrationOp;
 		std::string getName() const { return "VarModOp"; };
+    IntegrationOp<T>* copy() const { return new VarModOp<T>(*this); }
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -184,6 +192,7 @@ public:
 	public:
 		using IntegrationOp<T>::IntegrationOp;
 		std::string getName() const { return "CountOp"; };
+    IntegrationOp<T>* copy() const { return new CountOp<T>(*this); }
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -204,6 +213,7 @@ public:
     void setEps(const T& eps) { eps_ = eps; }
     T getEps() const { return eps_; };
 		virtual std::string getName() const = 0;
+    virtual IntegrationErrorOp<T>* copy() const = 0;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -222,6 +232,7 @@ public:
 	public:
 		using IntegrationErrorOp<T>::IntegrationErrorOp;
 		std::string getName() const { return "SumErrorOp"; };
+    IntegrationErrorOp<T>* copy() const { return new SumErrorOp<T>(*this); }
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -239,6 +250,7 @@ public:
 	public:
 		using IntegrationErrorOp<T>::IntegrationErrorOp;
 		std::string getName() const { return "ProdErrorOp"; };
+    IntegrationErrorOp<T>* copy() const { return new ProdErrorOp<T>(*this); }
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -256,6 +268,7 @@ public:
 	public:
 		using IntegrationErrorOp<T>::IntegrationErrorOp;
 		std::string getName() const { return "MaxErrorOp"; };
+    IntegrationErrorOp<T>* copy() const { return new MaxErrorOp<T>(*this); }
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -273,6 +286,7 @@ public:
 	public:
 		using IntegrationErrorOp<T>::IntegrationErrorOp;
 		std::string getName() const { return "MeanErrorOp"; };
+    IntegrationErrorOp<T>* copy() const { return new MeanErrorOp<T>(*this); }
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -290,6 +304,7 @@ public:
 	public:
 		using IntegrationErrorOp<T>::IntegrationErrorOp;
 		std::string getName() const { return "VarModErrorOp"; };
+    IntegrationErrorOp<T>* copy() const { return new VarModErrorOp<T>(*this); }
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -307,6 +322,7 @@ public:
 	public:
 		using IntegrationErrorOp<T>::IntegrationErrorOp;
 		std::string getName() const { return "CountErrorOp"; };
+    IntegrationErrorOp<T>* copy() const { return new CountErrorOp<T>(*this); }
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -327,6 +343,7 @@ public:
     void setEps(const T& eps) { eps_ = eps; }
     T getEps() const { return eps_; };
 		virtual std::string getName() const = 0;
+    virtual IntegrationWeightGradOp<T>* copy() const = 0;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -345,6 +362,7 @@ public:
 	public:
 		using IntegrationWeightGradOp<T>::IntegrationWeightGradOp;
 		std::string getName() const { return "SumWeightGradOp"; };
+    IntegrationWeightGradOp<T>* copy() const { return new SumWeightGradOp<T>(*this); }
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -362,6 +380,7 @@ public:
 	public:
 		using IntegrationWeightGradOp<T>::IntegrationWeightGradOp;
 		std::string getName() const { return "ProdWeightGradOp"; };
+    IntegrationWeightGradOp<T>* copy() const { return new ProdWeightGradOp<T>(*this); }
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -379,6 +398,7 @@ public:
 	public:
 		using IntegrationWeightGradOp<T>::IntegrationWeightGradOp;
 		std::string getName() const { return "MaxWeightGradOp"; };
+    IntegrationWeightGradOp<T>* copy() const { return new MaxWeightGradOp<T>(*this); }
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -396,6 +416,7 @@ public:
 	public:
 		using IntegrationWeightGradOp<T>::IntegrationWeightGradOp;
 		std::string getName() const { return "CountWeightGradOp"; };
+    IntegrationWeightGradOp<T>* copy() const { return new CountWeightGradOp<T>(*this); }
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -413,6 +434,7 @@ public:
 	public:
 		using IntegrationWeightGradOp<T>::IntegrationWeightGradOp;
 		std::string getName() const { return "MeanWeightGradOp"; };
+    IntegrationWeightGradOp<T>* copy() const { return new MeanWeightGradOp<T>(*this); }
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -430,6 +452,7 @@ public:
 	public:
 		using IntegrationWeightGradOp<T>::IntegrationWeightGradOp;
 		std::string getName() const { return "VarModWeightGradOp"; };
+    IntegrationWeightGradOp<T>* copy() const { return new VarModWeightGradOp<T>(*this); }
 	private:
 		friend class cereal::access;
 		template<class Archive>

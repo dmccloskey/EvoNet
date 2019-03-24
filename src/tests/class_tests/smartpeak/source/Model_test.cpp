@@ -64,7 +64,7 @@ BOOST_AUTO_TEST_CASE(pruneNodes)
   Weight<float> weight1;
   source1 = Node<float>("0", NodeType::hidden, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
   sink1 = Node<float>("1", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-  weight1 = Weight<float>("0");
+  weight1 = Weight<float>("0", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(2.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8, 10)));
   link1 = Link("0", source1.getName(), sink1.getName(), weight1.getName());
 
   Model<float> model;
@@ -97,7 +97,7 @@ BOOST_AUTO_TEST_CASE(pruneWeights)
   Weight<float> weight1;
   source1 = Node<float>("0", NodeType::hidden, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
   sink1 = Node<float>("1", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-  weight1 = Weight<float>("0");
+  weight1 = Weight<float>("0", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(2.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8, 10)));
   link1 = Link("0", source1.getName(), sink1.getName(), weight1.getName());
 
   Model<float> model;
@@ -129,7 +129,7 @@ BOOST_AUTO_TEST_CASE(pruneLinks)
   Weight<float> weight1;
   source1 = Node<float>("0", NodeType::hidden, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
   sink1 = Node<float>("1", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-  weight1 = Weight<float>("0");
+  weight1 = Weight<float>("0", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(2.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8, 10)));
   link1 = Link("0", source1.getName(), sink1.getName(), weight1.getName());
   Model<float> model;
   
@@ -221,7 +221,7 @@ BOOST_AUTO_TEST_CASE(addGetRemoveNodes)
 BOOST_AUTO_TEST_CASE(addGetRemoveWeights) 
 {
   Weight<float> weight1, weight2;
-  weight1 = Weight<float>("0");
+  weight1 = Weight<float>("0", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(2.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8, 10)));
   Model<float> model;
 
   // add weights to the model
@@ -237,7 +237,7 @@ BOOST_AUTO_TEST_CASE(addGetRemoveWeights)
   }
 
   // add more weights to the model
-  weight2 = Weight<float>("1");
+  weight2 = Weight<float>("1", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(2.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8, 10)));
 
   // add weights to the model
   model.addWeights({weight2});
@@ -265,7 +265,7 @@ BOOST_AUTO_TEST_CASE(addGetRemoveLinks)
   source1 = Node<float>("0", NodeType::hidden, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
   sink1 = Node<float>("1", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
   Weight<float> weight1;
-  weight1 = Weight<float>("0");
+  weight1 = Weight<float>("0", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(2.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8, 10)));
   link1 = Link("0", source1.getName(), sink1.getName(), weight1.getName());
   Model<float> model;
 
@@ -302,7 +302,7 @@ BOOST_AUTO_TEST_CASE(addGetRemoveLinks)
   source2 = Node<float>("2", NodeType::hidden, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
   sink2 = Node<float>("3", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
   Weight<float> weight2;
-  weight2 = Weight<float>("1");
+  weight2 = Weight<float>("1", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(2.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8, 10)));
   link2 = Link("1", source2.getName(), sink2.getName(), weight2.getName());
   // add nodes to the model
   model.addNodes({source2, sink2});
@@ -357,7 +357,7 @@ BOOST_AUTO_TEST_CASE(comparison)
   source = Node<float>("1", NodeType::hidden, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
   sink = Node<float>("2", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
   Weight<float> weight1;
-  weight1 = Weight<float>("0");
+  weight1 = Weight<float>("0", std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(2.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8, 10)));
   link1 = Link("1", source.getName(), sink.getName(), weight1.getName());
   link2 = Link("2", source.getName(), sink.getName(), weight1.getName());
   Model<float> model1(1);

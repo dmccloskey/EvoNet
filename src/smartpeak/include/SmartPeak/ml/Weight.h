@@ -176,8 +176,8 @@ private:
 		module_name_ = other.module_name_;
 		layer_name_ = other.layer_name_;
 		tensor_index_ = other.tensor_index_;
-		weight_init_ = other.weight_init_;
-		solver_ = other.solver_;
+    setWeightInitOp(std::shared_ptr<WeightInitOp<TensorT>>(other.weight_init_.get()->copy()));
+    setSolverOp(std::shared_ptr<SolverOp<TensorT>>(other.solver_.get()->copy()));
 		weight_min_ = other.weight_min_;
 		weight_max_ = other.weight_max_;
 		drop_probability_ = other.drop_probability_;

@@ -235,22 +235,11 @@ private:
 		layer_name_ = other.layer_name_;
 		type_ = other.type_;
 		status_ = other.status_;    
-    setActivation(std::make_shared<ActivationOp<TensorT>>(*other.activation_));
-    setActivationGrad(std::make_shared<ActivationOp<TensorT>>(*other.activation_grad_));
-    setIntegration(std::make_shared<IntegrationOp<TensorT>>(*other.integration_));
-    setIntegrationError(std::make_shared<IntegrationErrorOp<TensorT>>(*other.integration_error_));
-    setIntegrationWeightGrad(std::make_shared<IntegrationWeightGradOp<TensorT>>(*other.integration_weight_grad_));
-
-    //setActivation(other.activation_);
-    //setActivationGrad(other.activation_grad_);
-    //setIntegration(other.integration_);
-    //setIntegrationError(other.integration_error_);
-    //setIntegrationWeightGrad(other.integration_weight_grad_);
-		//activation_ = other.activation_;
-		//activation_grad_ = other.activation_grad_;
-		//integration_ = other.integration_;
-		//integration_error_ = other.integration_error_;
-		//integration_weight_grad_ = other.integration_weight_grad_;
+    setActivation(std::shared_ptr<ActivationOp<TensorT>>(other.activation_.get()->copy()));
+    setActivationGrad(std::shared_ptr<ActivationOp<TensorT>>(other.activation_grad_.get()->copy()));
+    setIntegration(std::shared_ptr<IntegrationOp<TensorT>>(other.integration_.get()->copy()));
+    setIntegrationError(std::shared_ptr<IntegrationErrorOp<TensorT>>(other.integration_error_.get()->copy()));
+    setIntegrationWeightGrad(std::shared_ptr<IntegrationWeightGradOp<TensorT>>(other.integration_weight_grad_.get()->copy()));
 		output_min_ = other.output_min_;
 		output_max_ = other.output_max_;
 		drop_probability_ = other.drop_probability_;

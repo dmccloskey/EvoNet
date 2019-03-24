@@ -45,6 +45,15 @@ BOOST_AUTO_TEST_CASE(getNameReLUOp)
 
 	BOOST_CHECK_EQUAL(operation.getName(), "ReLUOp");
 }
+BOOST_AUTO_TEST_CASE(copyReluOp)
+{
+  std::shared_ptr<ActivationOp<double>> relu_ptr_1 = std::make_shared<ReLUOp<double>>();
+  std::shared_ptr<ActivationOp<double>> relu_ptr_2;
+  relu_ptr_2 = std::shared_ptr<ActivationOp<double>>(relu_ptr_1);
+  BOOST_CHECK_EQUAL(relu_ptr_1.get(), relu_ptr_2.get());
+  relu_ptr_2 = std::shared_ptr<ActivationOp<double>>(relu_ptr_1.get()->copy());
+  BOOST_CHECK_NE(relu_ptr_1.get(), relu_ptr_2.get());
+}
 
 /**
   ReLUGradOp Tests
