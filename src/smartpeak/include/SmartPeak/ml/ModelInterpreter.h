@@ -1864,10 +1864,10 @@ namespace SmartPeak
 	template<typename TensorT, typename DeviceT>
 	inline void ModelInterpreter<TensorT, DeviceT>::clear_cache()
 	{
+    layer_tensors_.clear();
+    weight_tensors_.clear();
+    model_error_.reset();
 		operation_steps_.clear();
-		layer_tensors_.clear();
-		weight_tensors_.clear();
-		model_error_.reset();
 		FP_operations_.clear();
 		tensor_ops_steps_.clear();
 	}
