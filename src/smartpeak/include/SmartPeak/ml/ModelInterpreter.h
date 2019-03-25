@@ -79,7 +79,7 @@ namespace SmartPeak
 	class OperationLayer
 	{
 	public:
-		std::shared_ptr<NodeTensorData<TensorT, DeviceT>> tensor = nullptr;
+    int tensor_index = 0;
 		int time_step = 0;
 		std::shared_ptr<IntegrationTensorOp<TensorT, DeviceT>> integration = nullptr;
 		std::shared_ptr<IntegrationErrorTensorOp<TensorT, DeviceT>> integration_error = nullptr;
@@ -98,7 +98,7 @@ namespace SmartPeak
 	class OperationWeight
 	{
 	public:
-		std::shared_ptr<WeightTensorData<TensorT, DeviceT>> tensor = nullptr;
+    int tensor_index = 0;
 		std::shared_ptr<WeightInitOp<TensorT>> weight_init = nullptr;
 		std::shared_ptr<SolverTensorOp<TensorT, DeviceT>> solver = nullptr;
 	private:

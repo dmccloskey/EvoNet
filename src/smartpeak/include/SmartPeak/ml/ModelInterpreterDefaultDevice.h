@@ -94,10 +94,10 @@ namespace SmartPeak
 					operation_step.sink_layer.integration_error.reset(integration_error);
 					integration_weight_grad_conv(FP_operations[operations.second[0]].result.sink_node->getIntegrationWeightGrad(), integration_weight_grad, std::vector<TensorT>() = {});
 					operation_step.sink_layer.integration_weight_grad.reset(integration_weight_grad);
-					operation_step.sink_layer.tensor = this->layer_tensors_[FP_operations[operations.second[0]].result.sink_node->getTensorIndex().first];
+					operation_step.sink_layer.tensor_index = FP_operations[operations.second[0]].result.sink_node->getTensorIndex().first;
 				}
 				else {
-					operation_step.sink_layer.tensor = this->layer_tensors_[FP_operations[operations.second[0]].result.sink_node->getTensorIndex().first];
+					operation_step.sink_layer.tensor_index = FP_operations[operations.second[0]].result.sink_node->getTensorIndex().first;
 					operation_step.sink_layer.time_step = FP_operations[operations.second[0]].result.time_step;
 					activation_conv(FP_operations[operations.second[0]].result.sink_node->getActivation(), activation, std::vector<TensorT>() = {});
 					operation_step.sink_layer.activation.reset(std::move(activation));
@@ -136,10 +136,10 @@ namespace SmartPeak
 					operation_step.source_layer.integration_error.reset(integration_error);
 					integration_weight_grad_conv(FP_operations[operations.second[0]].arguments[0].source_node->getIntegrationWeightGrad(), integration_weight_grad, std::vector<TensorT>() = {});
 					operation_step.source_layer.integration_weight_grad.reset(integration_weight_grad);
-					operation_step.source_layer.tensor = this->getLayerTensor(FP_operations[operations.second[0]].arguments[0].source_node->getTensorIndex().first);
+					operation_step.source_layer.tensor_index = FP_operations[operations.second[0]].arguments[0].source_node->getTensorIndex().first;
 				}
 				else {
-					operation_step.source_layer.tensor = this->getLayerTensor(FP_operations[operations.second[0]].arguments[0].source_node->getTensorIndex().first);
+					operation_step.source_layer.tensor_index = FP_operations[operations.second[0]].arguments[0].source_node->getTensorIndex().first;
 					operation_step.source_layer.time_step = FP_operations[operations.second[0]].arguments[0].time_step;
 					activation_conv(FP_operations[operations.second[0]].arguments[0].source_node->getActivation(), activation, std::vector<TensorT>() = {});
 					operation_step.source_layer.activation.reset(activation);
@@ -163,7 +163,7 @@ namespace SmartPeak
 				weight_data->initWeightTensorData(source_layer_sizes[iter], sink_layer_sizes[iter], weight_indices[iter], shared_weight_indices[iter], weight_values[iter], train,
 					solver_params, FP_operations[operations.second[0]].result.sink_node->getIntegration()->getName());
 				this->weight_tensors_.push_back(weight_data);
-				operation_step.weight.tensor = this->weight_tensors_.at(std::get<0>(FP_operations[operations.second[0]].arguments[0].weight->getTensorIndex()[0]));
+				operation_step.weight.tensor_index = std::get<0>(FP_operations[operations.second[0]].arguments[0].weight->getTensorIndex()[0]);
 				operation_step.weight.solver.reset(solver);
 			}
 			else {
@@ -188,32 +188,32 @@ namespace SmartPeak
 			// execute the forward propogation steps
 			for (OperationTensorStep<TensorT, Eigen::DefaultDevice>& operation : operations_list) {
 				model_kernal.executeForwardPropogation(
-					operation.source_layer.tensor->getHOutputPointer().get(),
-					operation.source_layer.tensor->getDOutputPointer().get(),
-					operation.weight.tensor->getHWeightPointer().get(),
-					operation.weight.tensor->getDWeightPointer().get(),
-					operation.sink_layer.tensor->getHInputPointer().get(),
-					operation.sink_layer.tensor->getDInputPointer().get(),
+					this->layer_tensors_.at(operation.source_layer.tensor_index)->getHOutputPointer().get(),
+					this->layer_tensors_.at(operation.source_layer.tensor_index)->getDOutputPointer().get(),
+					this->weight_tensors_.at(operation.weight.tensor_index)->getHWeightPointer().get(),
+					this->weight_tensors_.at(operation.weight.tensor_index)->getDWeightPointer().get(),
+					this->layer_tensors_.at(operation.sink_layer.tensor_index)->getHInputPointer().get(),
+					this->layer_tensors_.at(operation.sink_layer.tensor_index)->getDInputPointer().get(),
 					operation.sink_layer.integration.get(),
-					operation.source_layer.tensor->getBatchSize(),
-					operation.source_layer.tensor->getMemorySize(),
-					operation.source_layer.tensor->getLayerSize(),
-					operation.sink_layer.tensor->getLayerSize(),
+					this->layer_tensors_.at(operation.source_layer.tensor_index)->getBatchSize(),
+					this->layer_tensors_.at(operation.source_layer.tensor_index)->getMemorySize(),
+					this->layer_tensors_.at(operation.source_layer.tensor_index)->getLayerSize(),
+					this->layer_tensors_.at(operation.sink_layer.tensor_index)->getLayerSize(),
 					operation.source_layer.time_step + time_step,
 					operation.sink_layer.time_step + time_step,
 					device);  // Not over-written
 
 				model_kernal.executeNodeActivation(
-					operation.sink_layer.tensor->getHInputPointer().get(),
-					operation.sink_layer.tensor->getDInputPointer().get(),
-					operation.sink_layer.tensor->getHOutputPointer().get(),
-					operation.sink_layer.tensor->getDOutputPointer().get(),
-					operation.sink_layer.tensor->getHDtPointer().get(),
-					operation.sink_layer.tensor->getDDtPointer().get(),
+					this->layer_tensors_.at(operation.sink_layer.tensor_index)->getHInputPointer().get(),
+					this->layer_tensors_.at(operation.sink_layer.tensor_index)->getDInputPointer().get(),
+					this->layer_tensors_.at(operation.sink_layer.tensor_index)->getHOutputPointer().get(),
+					this->layer_tensors_.at(operation.sink_layer.tensor_index)->getDOutputPointer().get(),
+					this->layer_tensors_.at(operation.sink_layer.tensor_index)->getHDtPointer().get(),
+					this->layer_tensors_.at(operation.sink_layer.tensor_index)->getDDtPointer().get(),
 					operation.sink_layer.activation.get(),
-					operation.sink_layer.tensor->getBatchSize(),
-					operation.sink_layer.tensor->getMemorySize(),
-					operation.sink_layer.tensor->getLayerSize(),
+					this->layer_tensors_.at(operation.sink_layer.tensor_index)->getBatchSize(),
+					this->layer_tensors_.at(operation.sink_layer.tensor_index)->getMemorySize(),
+					this->layer_tensors_.at(operation.sink_layer.tensor_index)->getLayerSize(),
 					operation.sink_layer.time_step + time_step,
 					device); // Over-written
 			}
@@ -231,36 +231,36 @@ namespace SmartPeak
 			for (OperationTensorStep<TensorT, Eigen::DefaultDevice>& operation : this->operation_steps_[i]) { //reverse source/sink
 
 				model_kernal.executeNodeDerivative(
-					operation.source_layer.tensor->getHOutputPointer().get(),
-					operation.source_layer.tensor->getDOutputPointer().get(),
-					operation.source_layer.tensor->getHDerivativePointer().get(),
-					operation.source_layer.tensor->getDDerivativePointer().get(),
+					this->layer_tensors_.at(operation.source_layer.tensor_index)->getHOutputPointer().get(),
+					this->layer_tensors_.at(operation.source_layer.tensor_index)->getDOutputPointer().get(),
+					this->layer_tensors_.at(operation.source_layer.tensor_index)->getHDerivativePointer().get(),
+					this->layer_tensors_.at(operation.source_layer.tensor_index)->getDDerivativePointer().get(),
 					operation.source_layer.activation_grad.get(),
-					operation.source_layer.tensor->getBatchSize(),
-					operation.source_layer.tensor->getMemorySize(),
-					operation.source_layer.tensor->getLayerSize(),
+					this->layer_tensors_.at(operation.source_layer.tensor_index)->getBatchSize(),
+					this->layer_tensors_.at(operation.source_layer.tensor_index)->getMemorySize(),
+					this->layer_tensors_.at(operation.source_layer.tensor_index)->getLayerSize(),
 					operation.source_layer.time_step + time_step,
 					device);
 
 				model_kernal.executeBackwardPropogation(
-					operation.sink_layer.tensor->getHErrorPointer().get(),
-					operation.sink_layer.tensor->getDErrorPointer().get(),
-					operation.sink_layer.tensor->getHInputPointer().get(),
-					operation.sink_layer.tensor->getDInputPointer().get(),
-					operation.source_layer.tensor->getHOutputPointer().get(),
-					operation.source_layer.tensor->getDOutputPointer().get(),
-					operation.weight.tensor->getHWeightPointer().get(),
-					operation.weight.tensor->getDWeightPointer().get(),
-					operation.source_layer.tensor->getHErrorPointer().get(),
-					operation.source_layer.tensor->getDErrorPointer().get(),
-					operation.source_layer.tensor->getHDerivativePointer().get(),
-					operation.source_layer.tensor->getDDerivativePointer().get(),
-					operation.source_layer.tensor->getLayerSize(), // [TODO: replace with N]
+					this->layer_tensors_.at(operation.sink_layer.tensor_index)->getHErrorPointer().get(),
+					this->layer_tensors_.at(operation.sink_layer.tensor_index)->getDErrorPointer().get(),
+					this->layer_tensors_.at(operation.sink_layer.tensor_index)->getHInputPointer().get(),
+					this->layer_tensors_.at(operation.sink_layer.tensor_index)->getDInputPointer().get(),
+					this->layer_tensors_.at(operation.source_layer.tensor_index)->getHOutputPointer().get(),
+					this->layer_tensors_.at(operation.source_layer.tensor_index)->getDOutputPointer().get(),
+					this->weight_tensors_.at(operation.weight.tensor_index)->getHWeightPointer().get(),
+					this->weight_tensors_.at(operation.weight.tensor_index)->getDWeightPointer().get(),
+					this->layer_tensors_.at(operation.source_layer.tensor_index)->getHErrorPointer().get(),
+					this->layer_tensors_.at(operation.source_layer.tensor_index)->getDErrorPointer().get(),
+					this->layer_tensors_.at(operation.source_layer.tensor_index)->getHDerivativePointer().get(),
+					this->layer_tensors_.at(operation.source_layer.tensor_index)->getDDerivativePointer().get(),
+					this->layer_tensors_.at(operation.source_layer.tensor_index)->getLayerSize(), // [TODO: replace with N]
 					operation.source_layer.integration_error.get(),
-					operation.sink_layer.tensor->getBatchSize(),
-					operation.sink_layer.tensor->getMemorySize(),
-					operation.sink_layer.tensor->getLayerSize(),
-					operation.source_layer.tensor->getLayerSize(),
+					this->layer_tensors_.at(operation.sink_layer.tensor_index)->getBatchSize(),
+					this->layer_tensors_.at(operation.sink_layer.tensor_index)->getMemorySize(),
+					this->layer_tensors_.at(operation.sink_layer.tensor_index)->getLayerSize(),
+					this->layer_tensors_.at(operation.source_layer.tensor_index)->getLayerSize(),
 					operation.sink_layer.time_step + time_step,
 					operation.source_layer.time_step + time_step,
 					device);
@@ -302,32 +302,32 @@ namespace SmartPeak
 			for (OperationTensorStep<TensorT, Eigen::DefaultDevice>& operation : operations_list) {
 
 				model_kernal.executeWeightErrors(
-					operation.sink_layer.tensor->getHErrorPointer().get(),
-					operation.sink_layer.tensor->getDErrorPointer().get(),
-					operation.source_layer.tensor->getHOutputPointer().get(),
-					operation.source_layer.tensor->getDOutputPointer().get(),
-					operation.source_layer.tensor->getHInputPointer().get(),
-					operation.source_layer.tensor->getDInputPointer().get(),
-					operation.source_layer.tensor->getLayerSize(), // [TODO: change to N]
+					this->layer_tensors_.at(operation.sink_layer.tensor_index)->getHErrorPointer().get(),
+					this->layer_tensors_.at(operation.sink_layer.tensor_index)->getDErrorPointer().get(),
+					this->layer_tensors_.at(operation.source_layer.tensor_index)->getHOutputPointer().get(),
+					this->layer_tensors_.at(operation.source_layer.tensor_index)->getDOutputPointer().get(),
+					this->layer_tensors_.at(operation.source_layer.tensor_index)->getHInputPointer().get(),
+					this->layer_tensors_.at(operation.source_layer.tensor_index)->getDInputPointer().get(),
+					this->layer_tensors_.at(operation.source_layer.tensor_index)->getLayerSize(), // [TODO: change to N]
 					operation.sink_layer.integration_weight_grad.get(),
-					operation.weight.tensor->getHWeightPointer().get(),
-					operation.weight.tensor->getDWeightPointer().get(),
-					operation.weight.tensor->getHErrorPointer().get(),
-					operation.weight.tensor->getDErrorPointer().get(),
-					operation.sink_layer.tensor->getBatchSize(),
-					operation.sink_layer.tensor->getMemorySize(),
-					operation.source_layer.tensor->getLayerSize(),
-					operation.sink_layer.tensor->getLayerSize(),
+					this->weight_tensors_.at(operation.weight.tensor_index)->getHWeightPointer().get(),
+					this->weight_tensors_.at(operation.weight.tensor_index)->getDWeightPointer().get(),
+					this->weight_tensors_.at(operation.weight.tensor_index)->getHErrorPointer().get(),
+					this->weight_tensors_.at(operation.weight.tensor_index)->getDErrorPointer().get(),
+					this->layer_tensors_.at(operation.sink_layer.tensor_index)->getBatchSize(),
+					this->layer_tensors_.at(operation.sink_layer.tensor_index)->getMemorySize(),
+					this->layer_tensors_.at(operation.source_layer.tensor_index)->getLayerSize(),
+					this->layer_tensors_.at(operation.sink_layer.tensor_index)->getLayerSize(),
 					device);
 
 				model_kernal.executeSharedWeightErrors(
-					operation.weight.tensor->getHErrorPointer().get(),
-					operation.weight.tensor->getDErrorPointer().get(),
-					operation.weight.tensor->getHSharedWeightsPointer().get(),
-					operation.weight.tensor->getDSharedWeightsPointer().get(),
-					operation.source_layer.tensor->getLayerSize(),
-					operation.sink_layer.tensor->getLayerSize(),
-					operation.weight.tensor->getNSharedWeights(),
+					this->weight_tensors_.at(operation.weight.tensor_index)->getHErrorPointer().get(),
+					this->weight_tensors_.at(operation.weight.tensor_index)->getDErrorPointer().get(),
+					this->weight_tensors_.at(operation.weight.tensor_index)->getHSharedWeightsPointer().get(),
+					this->weight_tensors_.at(operation.weight.tensor_index)->getDSharedWeightsPointer().get(),
+					this->layer_tensors_.at(operation.source_layer.tensor_index)->getLayerSize(),
+					this->layer_tensors_.at(operation.sink_layer.tensor_index)->getLayerSize(),
+					this->weight_tensors_.at(operation.weight.tensor_index)->getNSharedWeights(),
 					device);
 			}
 		}
@@ -344,15 +344,15 @@ namespace SmartPeak
 			for (OperationTensorStep<TensorT, Eigen::DefaultDevice>& operation : operations_list) {
 
 				model_kernal.executeWeightUpdate(
-					operation.weight.tensor->getHWeightPointer().get(),
-					operation.weight.tensor->getDWeightPointer().get(),
-					operation.weight.tensor->getHSolverParamsPointer().get(),
-					operation.weight.tensor->getDSolverParamsPointer().get(),
-					operation.weight.tensor->getHErrorPointer().get(),
-					operation.weight.tensor->getDErrorPointer().get(),
+					this->weight_tensors_.at(operation.weight.tensor_index)->getHWeightPointer().get(),
+					this->weight_tensors_.at(operation.weight.tensor_index)->getDWeightPointer().get(),
+					this->weight_tensors_.at(operation.weight.tensor_index)->getHSolverParamsPointer().get(),
+					this->weight_tensors_.at(operation.weight.tensor_index)->getDSolverParamsPointer().get(),
+					this->weight_tensors_.at(operation.weight.tensor_index)->getHErrorPointer().get(),
+					this->weight_tensors_.at(operation.weight.tensor_index)->getDErrorPointer().get(),
 					operation.weight.solver.get(),
-					operation.source_layer.tensor->getLayerSize(),
-					operation.sink_layer.tensor->getLayerSize(),
+					this->layer_tensors_.at(operation.source_layer.tensor_index)->getLayerSize(),
+					this->layer_tensors_.at(operation.sink_layer.tensor_index)->getLayerSize(),
 					device);
 			}
 		}
