@@ -184,54 +184,54 @@ public:
 		std::vector<Model<TensorT>>& models,
 		std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations)
 	{
-		//if (n_generations>0)
-		//{
-		//	this->setRandomModifications(
-  //      std::make_pair(0, 0),
-  //      std::make_pair(0, 0),
-		//		std::make_pair(0, 0),
-		//		std::make_pair(0, 0),
-  //      std::make_pair(0, 0),
-		//		std::make_pair(0, 0),
-  //      std::make_pair(0, 0),
-  //      std::make_pair(0, 0),
-		//		std::make_pair(0, 2), // node activation changes
-		//		std::make_pair(0, 2), // node integration changes
-		//		std::make_pair(0, 0),
-		//		std::make_pair(0, 0),
-		//		std::make_pair(0, 0));
-		//}
-		//else
-		//{
-		//	this->setRandomModifications(
-  //      std::make_pair(0, 0),
-  //      std::make_pair(0, 0),
-  //      std::make_pair(0, 0),
-  //      std::make_pair(0, 0),
-  //      std::make_pair(0, 0),
-  //      std::make_pair(0, 0),
-  //      std::make_pair(0, 0),
-  //      std::make_pair(0, 0),
-  //      std::make_pair(0, 2), // node activation changes
-  //      std::make_pair(0, 2), // node integration changes
-  //      std::make_pair(0, 0),
-  //      std::make_pair(0, 0),
-  //      std::make_pair(0, 0));
-		//}
-    this->setRandomModifications(
-      std::make_pair(1, 1),
-      std::make_pair(1, 1),
-      std::make_pair(0, 0),
-      std::make_pair(0, 0),
-      std::make_pair(0, 0),
-      std::make_pair(0, 0),
-      std::make_pair(1, 1),
-      std::make_pair(0, 0),
-      std::make_pair(0, 0), // node activation changes
-      std::make_pair(0, 0), // node integration changes
-      std::make_pair(0, 0),
-      std::make_pair(0, 0),
-      std::make_pair(0, 0));
+		if (n_generations>0)
+		{
+			this->setRandomModifications(
+        std::make_pair(0, 0),
+        std::make_pair(0, 0),
+				std::make_pair(0, 0),
+				std::make_pair(0, 0),
+        std::make_pair(0, 0),
+				std::make_pair(0, 0),
+        std::make_pair(0, 0),
+        std::make_pair(0, 0),
+				std::make_pair(0, 2), // node activation changes
+				std::make_pair(0, 0), // node integration changes
+				std::make_pair(0, 0),
+				std::make_pair(0, 0),
+				std::make_pair(0, 0));
+		}
+		else
+		{
+			this->setRandomModifications(
+        std::make_pair(0, 0),
+        std::make_pair(0, 0),
+        std::make_pair(0, 0),
+        std::make_pair(0, 0),
+        std::make_pair(0, 0),
+        std::make_pair(0, 0),
+        std::make_pair(0, 0),
+        std::make_pair(0, 0),
+        std::make_pair(0, 2), // node activation changes
+        std::make_pair(0, 0), // node integration changes
+        std::make_pair(0, 0),
+        std::make_pair(0, 0),
+        std::make_pair(0, 0));
+		}
+    //this->setRandomModifications(
+    //  std::make_pair(1, 1),
+    //  std::make_pair(1, 1),
+    //  std::make_pair(0, 0),
+    //  std::make_pair(0, 0),
+    //  std::make_pair(1, 1),
+    //  std::make_pair(0, 0),
+    //  std::make_pair(1, 1),
+    //  std::make_pair(1, 1),
+    //  std::make_pair(1, 1),
+    //  std::make_pair(1, 1),
+    //  std::make_pair(0, 0),
+    //  std::make_pair(0, 0),
+    //  std::make_pair(0, 0));
 	}
 };
 
@@ -322,8 +322,8 @@ void main_WeightSpring3W2S1D(const bool& make_model, const bool& train_model) {
 	model_trainer.setVerbosityLevel(1);
 	//model_trainer.setLogging(true, false);
   model_trainer.setLogging(false, false);
-	model_trainer.setFindCycles(false);
-	model_trainer.setFastInterpreter(true);
+	model_trainer.setFindCycles(false); // IG default
+	model_trainer.setFastInterpreter(false); // IG default
 	model_trainer.setPreserveOoO(false);
 	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
 	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });

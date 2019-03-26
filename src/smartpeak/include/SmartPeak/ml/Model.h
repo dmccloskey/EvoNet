@@ -397,7 +397,8 @@ private:
 		std::vector<Node<TensorT>> nodes;
 		for (const auto& node : nodes_)
 		{
-			nodes.push_back(*node.second);
+      Node<TensorT> node_cpy(*node.second);
+			nodes.push_back(node_cpy);
 		}
 		return nodes;
 	}
@@ -473,7 +474,8 @@ private:
 		std::vector<Weight<TensorT>> weights;
 		for (const auto& weight : weights_)
 		{
-			weights.push_back(*weight.second);
+      Weight<TensorT> weight_cpy(*weight.second);
+			weights.push_back(weight_cpy);
 		}
 		return weights;
 	}
@@ -549,7 +551,8 @@ private:
 		std::vector<Link> links;
 		for (const auto& link : links_)
 		{
-			links.push_back(*link.second);
+      Link link_cpy(*link.second);
+			links.push_back(link_cpy);
 		}
 		return links;
 	}

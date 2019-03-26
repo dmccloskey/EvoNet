@@ -1213,7 +1213,8 @@ namespace SmartPeak
 					for (size_t operations_iter3 = operations_iter1 + 1; operations_iter3 < FP_operations.size(); ++operations_iter3) {
 						std::string sink_node_key3 = FP_operations[operations_iter3].result.sink_node->getName() + "/" + std::to_string(operations_iter3);
 						if (identified_sink_nodes.count(sink_node_key3) || operations_iter3 == operations_iter2) continue; // Skip current and identified sink nodes
-						std::string sink_ops_key_3 = makeForwardPropogationOperationsKey(FP_operations[operations_iter1].result.time_step,
+						std::string sink_ops_key_3 = makeForwardPropogationOperationsKey(
+              FP_operations[operations_iter3].result.time_step,
 							FP_operations[operations_iter3].result.sink_node->getType(),
 							FP_operations[operations_iter3].result.sink_node->getIntegration()->getName(),
 							FP_operations[operations_iter3].result.sink_node->getActivation()->getName(),
@@ -1296,8 +1297,12 @@ namespace SmartPeak
 							}
 						}
 					}
-					if (sinkAsSourceNode_1 != sinkAsSourceNode_2 || sourceAsSourceNode_1 != sourceAsSourceNode_2
-						|| sinkAsSinkNode_1 != sinkAsSinkNode_2 || sinkToSinkNode_1 != sinkToSinkNode_2) continue;
+					if (sinkAsSourceNode_1 != sinkAsSourceNode_2 
+            || sourceAsSourceNode_1 != sourceAsSourceNode_2
+						|| sinkAsSinkNode_1 != sinkAsSinkNode_2 
+            || sinkToSinkNode_1 != sinkToSinkNode_2
+            ) 
+            continue;
 				}
 
 				// update the maps
@@ -1454,10 +1459,18 @@ namespace SmartPeak
 			weight_values.push_back(weight_value);
 			shared_weight_indices.push_back(shared_weight_index);
 
-      // Check that source layer size is not less than the # of source nodes
-      if (source_layer_sizes.back() < source_nodes.size()) {
+      // Check that the source layer size is not less than the # of source nodes
+      if (source_layer_sizes.back() != source_nodes.size()) {
         char error_char[512];
         sprintf(error_char, "Attempting to join multiple source nodes into a single layer that were previously split into seperate layers.");
+        std::string error(error_char);
+        throw std::runtime_error(error_char);
+      }
+
+      // Check that the sink layer size is not less than the # of sink nodes
+      if (sink_layer_sizes.back() != sink_nodes.size()) {
+        char error_char[512];
+        sprintf(error_char, "Attempting to join multiple sink nodes into a single layer that were previously split into seperate layers.");
         std::string error(error_char);
         throw std::runtime_error(error_char);
       }

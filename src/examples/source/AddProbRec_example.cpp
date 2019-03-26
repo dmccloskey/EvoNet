@@ -304,7 +304,7 @@ public:
 			//std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(0.4)), 
       std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0.0, 1.0)),
       std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.0005, 0.9, 0.999, 1e-8)),
-			0.0f, 0.0f, true, true, 1, true);
+			0.0f, 0.0f, true, true, 1);
 
 		// Add a final output layer (Specify the layer name to ensure the output is always on its own tensor!!!)
 		node_names = model_builder.addFullyConnected(model, "Output", "Output", node_names, 1,
@@ -331,7 +331,8 @@ public:
 		Model<TensorT>& model,
 		ModelInterpreterDefaultDevice<TensorT>& model_interpreter,
 		const std::vector<float>& model_errors) {
-		//if (n_epochs % 499 == 0 && n_epochs != 0) {
+		////if (n_epochs % 499 == 0 && n_epochs != 0) {
+  //  if (n_epochs % 1 == 0) {
 		//	// save the model every 500 epochs
 		//	ModelFile<TensorT> data;
 		//	data.storeModelCsv(model.getName() + "_" + std::to_string(n_epochs) + "_nodes.csv",
@@ -392,54 +393,68 @@ public:
 		std::vector<Model<TensorT>>& models,
 		std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations)
 	{
-		if (n_generations>0)
-		{
-			this->setRandomModifications(
-				std::make_pair(0, 1),
-				std::make_pair(0, 1),
-				std::make_pair(0, 0),
-				std::make_pair(0, 0),
-				std::make_pair(0, 2),
-				std::make_pair(0, 0),
-				std::make_pair(0, 0),
-				std::make_pair(0, 0),
-				std::make_pair(0, 1),
-				std::make_pair(0, 1),
-				std::make_pair(0, 0),
-				std::make_pair(0, 0),
-				std::make_pair(0, 0));
-			// Appears to lead to instability?
-			//std::make_pair(0, 4),
-			//	std::make_pair(0, 4),
-			//	std::make_pair(0, 0),
-			//	std::make_pair(0, 0),
-			//	std::make_pair(0, 8),
-			//	std::make_pair(0, 0),
-			//	std::make_pair(0, 0),
-			//	std::make_pair(0, 0),
-			//	std::make_pair(0, 4),
-			//	std::make_pair(0, 4),
-			//	std::make_pair(0, 0),
-			//	std::make_pair(0, 0),
-			//	std::make_pair(0, 0));
-		}
-		else
-		{
-			this->setRandomModifications(
-				std::make_pair(0, 1),
-				std::make_pair(0, 1),
-				std::make_pair(0, 0),
-				std::make_pair(0, 0),
-				std::make_pair(0, 2),
-				std::make_pair(0, 0),
-				std::make_pair(0, 0),
-				std::make_pair(0, 0),
-				std::make_pair(0, 1),
-				std::make_pair(0, 1),
-				std::make_pair(0, 0),
-				std::make_pair(0, 0),
-				std::make_pair(0, 0));
-		}
+		//if (n_generations>0)
+		//{
+		//	this->setRandomModifications(
+		//		std::make_pair(0, 1),
+		//		std::make_pair(0, 1),
+		//		std::make_pair(0, 0),
+		//		std::make_pair(0, 0),
+		//		std::make_pair(0, 2),
+		//		std::make_pair(0, 0),
+		//		std::make_pair(0, 0),
+		//		std::make_pair(0, 0),
+		//		std::make_pair(0, 1),
+		//		std::make_pair(0, 1),
+		//		std::make_pair(0, 0),
+		//		std::make_pair(0, 0),
+		//		std::make_pair(0, 0));
+		//	// Appears to lead to instability?
+		//	//std::make_pair(0, 4),
+		//	//	std::make_pair(0, 4),
+		//	//	std::make_pair(0, 0),
+		//	//	std::make_pair(0, 0),
+		//	//	std::make_pair(0, 8),
+		//	//	std::make_pair(0, 0),
+		//	//	std::make_pair(0, 0),
+		//	//	std::make_pair(0, 0),
+		//	//	std::make_pair(0, 4),
+		//	//	std::make_pair(0, 4),
+		//	//	std::make_pair(0, 0),
+		//	//	std::make_pair(0, 0),
+		//	//	std::make_pair(0, 0));
+		//}
+		//else
+		//{
+		//	this->setRandomModifications(
+		//		std::make_pair(0, 1),
+		//		std::make_pair(0, 1),
+		//		std::make_pair(0, 0),
+		//		std::make_pair(0, 0),
+		//		std::make_pair(0, 2),
+		//		std::make_pair(0, 0),
+		//		std::make_pair(0, 0),
+		//		std::make_pair(0, 0),
+		//		std::make_pair(0, 1),
+		//		std::make_pair(0, 1),
+		//		std::make_pair(0, 0),
+		//		std::make_pair(0, 0),
+		//		std::make_pair(0, 0));
+		//}
+    this->setRandomModifications(
+      std::make_pair(1, 1),
+      std::make_pair(1, 1),
+      std::make_pair(0, 0),
+      std::make_pair(0, 0),
+      std::make_pair(1, 1),
+      std::make_pair(0, 0),
+      std::make_pair(1, 1),
+      std::make_pair(1, 1),
+      std::make_pair(1, 1),
+      std::make_pair(1, 1),
+      std::make_pair(0, 0),
+      std::make_pair(0, 0),
+      std::make_pair(0, 0));
 	}
 };
 
@@ -497,8 +512,8 @@ int main(int argc, char** argv)
 {
 	// define the population trainer parameters
 	PopulationTrainerExt<float> population_trainer;
-	//population_trainer.setNGenerations(20);
-	population_trainer.setNGenerations(1);
+	population_trainer.setNGenerations(50);
+	//population_trainer.setNGenerations(1);
 	population_trainer.setLogging(true);
 
 	// define the population logger
@@ -527,7 +542,7 @@ int main(int argc, char** argv)
 	ModelTrainerExt<float> model_trainer;
 	model_trainer.setBatchSize(1);
 	model_trainer.setMemorySize(data_simulator.sequence_length_);
-	model_trainer.setNEpochsTraining(10000);
+	model_trainer.setNEpochsTraining(25);
 	model_trainer.setNEpochsValidation(25);
   model_trainer.setNTETTSteps(data_simulator.sequence_length_);
   model_trainer.setNTBPTTSteps(data_simulator.sequence_length_);
@@ -569,7 +584,7 @@ int main(int argc, char** argv)
 	// make the model name
 	//Model<float> model = model_trainer.makeModelMinimal();
 	//Model<float> model = model_trainer.makeModelSolution(true);
-	Model<float> model = model_trainer.makeModelLSTM(input_nodes.size(), 4, 2);
+	Model<float> model = model_trainer.makeModelLSTM(input_nodes.size(), 1, 1);
 	char model_name_char[512];
 	sprintf(model_name_char, "%s_%d", model.getName().data(), 0);
 	std::string model_name(model_name_char);
