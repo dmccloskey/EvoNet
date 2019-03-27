@@ -1216,10 +1216,10 @@ namespace SmartPeak
 					//for (size_t operations_iter3 = operations_iter1 + 1; operations_iter3 < FP_operations.size(); ++operations_iter3) {
           for (size_t operations_iter3 = 0; operations_iter3 < FP_operations.size(); ++operations_iter3) {
 						std::string sink_node_key3 = FP_operations[operations_iter3].result.sink_node->getName() + "/" + std::to_string(operations_iter3);
-						if (
-              //identified_sink_nodes.count(sink_node_key3) || 
-              operations_iter3 == operations_iter2 || 
-              operations_iter3 == operations_iter1) continue; // Skip current and identified sink nodes
+						//if (
+      //        identified_sink_nodes.count(sink_node_key3) || 
+      //        operations_iter3 == operations_iter2 || 
+      //        operations_iter3 == operations_iter1) continue; // Skip current and identified sink nodes
 						std::string sink_ops_key_3 = makeForwardPropogationOperationsKey(
               FP_operations[operations_iter3].result.time_step,
 							FP_operations[operations_iter3].result.sink_node->getType(),
@@ -1241,13 +1241,15 @@ namespace SmartPeak
 							if (source_ops_key_1 == sink_ops_key_1
 								&& argument.source_node->getName() == FP_operations[operations_iter1].result.sink_node->getName()
 								) {
-								sinkAsSourceNode_1.insert(argument.source_node->getName());
+                sinkAsSourceNode_1.insert(source_ops_key_1);
+								//sinkAsSourceNode_1.insert(argument.source_node->getName());
                 //sinkAsSourceNode_1.insert(FP_operations[operations_iter3].result.sink_node->getName());
 							}
 							if (source_ops_key_1 == sink_ops_key_2
 								&& argument.source_node->getName() == FP_operations[operations_iter2].result.sink_node->getName()
 								) {
-								sinkAsSourceNode_2.insert(argument.source_node->getName());
+                sinkAsSourceNode_2.insert(source_ops_key_1);
+								//sinkAsSourceNode_2.insert(argument.source_node->getName());
                 //sinkAsSourceNode_2.insert(FP_operations[operations_iter3].result.sink_node->getName());
 							}
 
@@ -1261,8 +1263,9 @@ namespace SmartPeak
 									argument1.source_node->getTensorIndex().first,
 									argument1.weight->getLayerName());
                 // Check if the source nodes will be compatible as future source nodes
-								if (source_ops_key_1 == ops_key //&& sink_ops_key_3 == sink_ops_key_1
-									&& argument.source_node->getName() == argument1.source_node->getName()
+								if (source_ops_key_1 == ops_key && 
+                  //sink_ops_key_3 == sink_ops_key_1 && 
+                  argument.source_node->getName() == argument1.source_node->getName()
 									) {
                   sourceAsSourceNode_1.insert(source_ops_key_1);
 									//sourceAsSourceNode_1.insert(FP_operations[operations_iter3].result.sink_node->getName());
@@ -1276,10 +1279,11 @@ namespace SmartPeak
                   //sourceAsSinkNode_1.insert(FP_operations[operations_iter3].result.sink_node->getName());
 								}
                 // Check if the sink nodes will be compatible with future sink nodes
-                if (source_ops_key_1 == ops_key //&& sink_ops_key_3 == sink_ops_key_1
-                  && FP_operations[operations_iter3].result.sink_node->getName() == FP_operations[operations_iter1].result.sink_node->getName()
+                if (//source_ops_key_1 == ops_key && 
+                  sink_ops_key_3 == sink_ops_key_1 && 
+                  FP_operations[operations_iter3].result.sink_node->getName() == FP_operations[operations_iter1].result.sink_node->getName()
                   ) {
-                  sinkAsSinkNode_1.insert(source_ops_key_1);
+                  sinkAsSinkNode_1.insert(sink_ops_key_3);
                   //sinkAsSinkNode_1.insert(argument.source_node->getName());
                   //sinkAsSinkNode_1.insert(FP_operations[operations_iter3].result.sink_node->getName());
                 }
@@ -1302,8 +1306,9 @@ namespace SmartPeak
 									argument2.source_node->getTensorIndex().first,
 									argument2.weight->getLayerName());
                 // Check if the source nodes will be compatible as future source nodes
-								if (source_ops_key_1 == ops_key //&& sink_ops_key_3 == sink_ops_key_2
-									&& argument.source_node->getName() == argument2.source_node->getName()
+								if (source_ops_key_1 == ops_key && 
+                  //sink_ops_key_3 == sink_ops_key_2 &&
+									argument.source_node->getName() == argument2.source_node->getName()
 									) {
 									sourceAsSourceNode_2.insert(source_ops_key_1);
                   //sourceAsSourceNode_2.insert(FP_operations[operations_iter3].result.sink_node->getName());
@@ -1317,10 +1322,11 @@ namespace SmartPeak
                   //sourceAsSinkNode_2.insert(FP_operations[operations_iter3].result.sink_node->getName());
 								}
                 // Check if the sink nodes will be compatible with future sink nodes
-                if (source_ops_key_1 == ops_key //&& sink_ops_key_3 == sink_ops_key_2
-                  && FP_operations[operations_iter3].result.sink_node->getName() == FP_operations[operations_iter2].result.sink_node->getName()
+                if (//source_ops_key_1 == ops_key && 
+                  sink_ops_key_3 == sink_ops_key_2 && 
+                  FP_operations[operations_iter3].result.sink_node->getName() == FP_operations[operations_iter2].result.sink_node->getName()
                   ) {
-                  sinkAsSinkNode_2.insert(source_ops_key_1);
+                  sinkAsSinkNode_2.insert(sink_ops_key_3);
                   //sinkAsSinkNode_2.insert(argument.source_node->getName());
                   //sinkAsSinkNode_2.insert(FP_operations[operations_iter3].result.sink_node->getName());
                 }
