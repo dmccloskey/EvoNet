@@ -1208,11 +1208,17 @@ namespace SmartPeak
 
 				// Check compatibility with future operations
 				if (!fast_check) {
-					std::set<std::string> sinkAsSourceNode_1, sinkAsSourceNode_2, sourceAsSourceNode_1, sourceAsSourceNode_2,
-						sinkAsSinkNode_1, sinkAsSinkNode_2, sourceAsSinkNode_1, sourceAsSinkNode_2;
+          std::set<std::string> sinkAsSourceNode_1, sinkAsSourceNode_2,
+            sourceAsSourceNode_1, sourceAsSourceNode_2,
+            sinkAsSinkNode_1, sinkAsSinkNode_2,
+            sourceAsSinkNode_1, sourceAsSinkNode_2;
 					for (size_t operations_iter3 = operations_iter1 + 1; operations_iter3 < FP_operations.size(); ++operations_iter3) {
+          //for (size_t operations_iter3 = 0; operations_iter3 < FP_operations.size(); ++operations_iter3) {
 						std::string sink_node_key3 = FP_operations[operations_iter3].result.sink_node->getName() + "/" + std::to_string(operations_iter3);
-						if (identified_sink_nodes.count(sink_node_key3) || operations_iter3 == operations_iter2 || operations_iter3 == operations_iter1) continue; // Skip current and identified sink nodes
+						if (
+              //identified_sink_nodes.count(sink_node_key3) || 
+              operations_iter3 == operations_iter2 || 
+              operations_iter3 == operations_iter1) continue; // Skip current and identified sink nodes
 						std::string sink_ops_key_3 = makeForwardPropogationOperationsKey(
               FP_operations[operations_iter3].result.time_step,
 							FP_operations[operations_iter3].result.sink_node->getType(),
@@ -1221,18 +1227,6 @@ namespace SmartPeak
 							FP_operations[operations_iter3].result.sink_node->getLayerName(),
 							FP_operations[operations_iter3].result.sink_node->getTensorIndex().first,
 							FP_operations[operations_iter3].arguments[0].weight->getLayerName());
-
-            // Check if the sink nodes target sink layer is compatible
-            if (sink_ops_key_3 == sink_ops_key_1
-              && FP_operations[operations_iter3].result.sink_node->getName() == FP_operations[operations_iter1].result.sink_node->getName()
-              ) {
-              sinkAsSinkNode_1.insert(FP_operations[operations_iter3].result.sink_node->getName());
-            }
-            if (sink_ops_key_3 == sink_ops_key_2
-              && FP_operations[operations_iter3].result.sink_node->getName() == FP_operations[operations_iter2].result.sink_node->getName()
-              ) {
-              sinkAsSinkNode_2.insert(FP_operations[operations_iter3].result.sink_node->getName());
-            }
 
 						for (auto& argument : FP_operations[operations_iter3].arguments) {
 							// Check if sink nodes will be compatible as future source nodes
@@ -1246,15 +1240,17 @@ namespace SmartPeak
 							if (source_ops_key_1 == sink_ops_key_1
 								&& argument.source_node->getName() == FP_operations[operations_iter1].result.sink_node->getName()
 								) {
-								sinkAsSourceNode_1.insert(FP_operations[operations_iter3].result.sink_node->getName());
+								sinkAsSourceNode_1.insert(argument.source_node->getName());
+                //sinkAsSourceNode_1.insert(FP_operations[operations_iter3].result.sink_node->getName());
 							}
 							if (source_ops_key_1 == sink_ops_key_2
 								&& argument.source_node->getName() == FP_operations[operations_iter2].result.sink_node->getName()
 								) {
-								sinkAsSourceNode_2.insert(FP_operations[operations_iter3].result.sink_node->getName());
+								sinkAsSourceNode_2.insert(argument.source_node->getName());
+                //sinkAsSourceNode_2.insert(FP_operations[operations_iter3].result.sink_node->getName());
 							}
 
-							// Check if the source nodes will be compatible as future source nodes
+							// Check if the source nodes 1
 							for (const auto& argument1 : FP_operations[operations_iter1].arguments) {
 								std::string ops_key = makeForwardPropogationOperationsKey(argument1.time_step,
 									argument1.source_node->getType(),
@@ -1263,18 +1259,29 @@ namespace SmartPeak
 									argument1.source_node->getLayerName(),
 									argument1.source_node->getTensorIndex().first,
 									argument1.weight->getLayerName());
-								if (source_ops_key_1 == ops_key
+                // Check if the source nodes will be compatible as future source nodes
+								if (source_ops_key_1 == ops_key && sink_ops_key_3 == sink_ops_key_1
 									&& argument.source_node->getName() == argument1.source_node->getName()
 									) {
-									sourceAsSourceNode_1.insert(argument.source_node->getName());
+									sourceAsSourceNode_1.insert(FP_operations[operations_iter3].result.sink_node->getName());
+                  //sourceAsSourceNode_1.insert(argument.source_node->getName());
 								}
-                // Also check if the source nodes will be compatible as sink nodes
+                // Check if the source nodes will be compatible as sink nodes
 								if (sink_ops_key_3 == ops_key 
-									&& FP_operations[operations_iter3].result.sink_node->getName() == FP_operations[operations_iter1].result.sink_node->getName()
+									&& FP_operations[operations_iter3].result.sink_node->getName() == argument1.source_node->getName()
 									) {
 									sourceAsSinkNode_1.insert(FP_operations[operations_iter3].result.sink_node->getName());
 								}
+                // Check if the sink nodes will be compatible with future sink nodes
+                if (source_ops_key_1 == ops_key && sink_ops_key_3 == sink_ops_key_1
+                  && FP_operations[operations_iter3].result.sink_node->getName() == FP_operations[operations_iter1].result.sink_node->getName()
+                  ) {
+                  sinkAsSinkNode_1.insert(argument.source_node->getName());
+                  //sinkAsSinkNode_1.insert(FP_operations[operations_iter3].result.sink_node->getName());
+                }
 							}
+
+              // Check if the source nodes 2
 							for (const auto& argument2 : FP_operations[operations_iter2].arguments) {
 								std::string ops_key = makeForwardPropogationOperationsKey(argument2.time_step,
 									argument2.source_node->getType(),
@@ -1283,23 +1290,32 @@ namespace SmartPeak
 									argument2.source_node->getLayerName(),
 									argument2.source_node->getTensorIndex().first,
 									argument2.weight->getLayerName());
-								if (source_ops_key_1 == ops_key
+                // Check if the source nodes will be compatible as future source nodes
+								if (source_ops_key_1 == ops_key && sink_ops_key_3 == sink_ops_key_2
 									&& argument.source_node->getName() == argument2.source_node->getName()
 									) {
-									sourceAsSourceNode_2.insert(argument.source_node->getName());
+									sourceAsSourceNode_2.insert(FP_operations[operations_iter3].result.sink_node->getName());
+                  //sourceAsSourceNode_2.insert(argument.source_node->getName());
 								}
-								// Also check if the source nodes will be compatible as sink nodes
-								if (sink_ops_key_3 == ops_key //&& sink_ops_key_3 == sink_ops_key_2
-									&& FP_operations[operations_iter3].result.sink_node->getName() == FP_operations[operations_iter2].result.sink_node->getName()
+                // Check if the source nodes will be compatible as sink nodes
+								if (sink_ops_key_3 == ops_key
+									&& FP_operations[operations_iter3].result.sink_node->getName() == argument2.source_node->getName()
 									) {
 									sourceAsSinkNode_2.insert(FP_operations[operations_iter3].result.sink_node->getName());
 								}
+                // Check if the sink nodes will be compatible with future sink nodes
+                if (source_ops_key_1 == ops_key && sink_ops_key_3 == sink_ops_key_2
+                  && FP_operations[operations_iter3].result.sink_node->getName() == FP_operations[operations_iter2].result.sink_node->getName()
+                  ) {
+                  sinkAsSinkNode_2.insert(argument.source_node->getName());
+                  //sinkAsSinkNode_2.insert(FP_operations[operations_iter3].result.sink_node->getName());
+                }
 							}
 						}
 					}
 					if (sinkAsSourceNode_1 != sinkAsSourceNode_2 
             || sourceAsSourceNode_1 != sourceAsSourceNode_2
-						|| sinkAsSinkNode_1 != sinkAsSinkNode_2 
+						|| sinkAsSinkNode_1 != sinkAsSinkNode_2
             || sourceAsSinkNode_1 != sourceAsSinkNode_2
             ) 
             continue;

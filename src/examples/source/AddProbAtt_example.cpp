@@ -513,9 +513,9 @@ int main(int argc, char** argv)
 
 	// make the model name
   Model<float> model;
-  model_trainer.makeModelMinimal(model, input_nodes.size() / 2, output_nodes.size());
+  //model_trainer.makeModelMinimal(model, input_nodes.size() / 2, output_nodes.size());
   //model_trainer.makeModelSolution(model, input_nodes.size() / 2, output_nodes.size(), true);
-  //model_trainer.makeModelAttention(model, (int)(input_nodes.size() / 2), output_nodes.size(), { 8 }, { 24 }, { (int)(input_nodes.size() / 2) }, false, false, false);
+  model_trainer.makeModelAttention(model, (int)(input_nodes.size() / 2), output_nodes.size(), { 2 }, { 6 }, { (int)(input_nodes.size() / 2) }, false, false, false);
 	population.push_back(model);
 
 	// Evolve the population
