@@ -1231,7 +1231,8 @@ BOOST_AUTO_TEST_CASE(addLSTMBlock1)
 	std::vector<std::string> node_names_test = {
 		"LSTM-BlockGateForget","LSTM-BlockGateForget-bias","LSTM-BlockGateInput","LSTM-BlockGateInput-bias","LSTM-BlockGateOutput","LSTM-BlockGateOutput-bias",
 		"LSTM-BlockInput-000000000000","LSTM-BlockInput-000000000000-bias-000000000000","LSTM-BlockInput-000000000001","LSTM-BlockInput-000000000001-bias-000000000001",
-		"LSTM-BlockMemoryCell-000000000000","LSTM-BlockMemoryCell-000000000001","LSTM-BlockMultForget-000000000000","LSTM-BlockMultForget-000000000001","LSTM-BlockMultInput-000000000000","LSTM-BlockMultInput-000000000001","LSTM-BlockMultOutput-000000000000","LSTM-BlockMultOutput-000000000001" };
+		"LSTM-BlockMemoryCell-000000000000","LSTM-BlockMemoryCell-000000000001","LSTM-BlockMultForget-000000000000","LSTM-BlockMultForget-000000000001",
+    "LSTM-BlockMultInput-000000000000","LSTM-BlockMultInput-000000000001","LSTM-BlockMultOutput-000000000000","LSTM-BlockMultOutput-000000000001" };
 	std::vector<std::string> link_names_test = {
 		"Input_000000000000_to_LSTM-BlockGateForget","Input_000000000000_to_LSTM-BlockGateInput","Input_000000000000_to_LSTM-BlockGateOutput","Input_000000000000_to_LSTM-BlockInput-000000000000","Input_000000000000_to_LSTM-BlockInput-000000000001",
 		"Input_000000000001_to_LSTM-BlockGateForget","Input_000000000001_to_LSTM-BlockGateInput","Input_000000000001_to_LSTM-BlockGateOutput","Input_000000000001_to_LSTM-BlockInput-000000000000","Input_000000000001_to_LSTM-BlockInput-000000000001",

@@ -269,7 +269,7 @@ namespace SmartPeak
 		void getNextInactiveLayerCycles(Model<TensorT>& model,
 			std::map<std::string, int>& FP_operations_map,
 			std::vector<OperationList<TensorT>>& FP_operations,
-			std::vector<std::string>& sink_nodes_with_cycles);
+			std::set<std::string>& sink_nodes_with_cycles);
 
 		/**
 			@brief Prunes identified cyclic nodes that are not in fact part of a cycle
@@ -284,7 +284,7 @@ namespace SmartPeak
 			std::map<std::string, int>& FP_operations_map_cycles,
 			std::vector<OperationList<TensorT>>& FP_operations,
 			std::vector<OperationList<TensorT>>& FP_operations_cycles,
-			std::vector<std::string>& sink_nodes_with_cycles);
+			std::set<std::string>& sink_nodes_with_cycles);
 
 		/**
 			@brief Expands the current operation list to satisfy the following assumptions:
@@ -840,7 +840,7 @@ namespace SmartPeak
 	void ModelInterpreter<TensorT, DeviceT>::getNextInactiveLayerCycles(Model<TensorT>& model,
 		std::map<std::string, int>& FP_operations_map,
 		std::vector<OperationList<TensorT>>& FP_operations,
-		std::vector<std::string>& sink_nodes_with_cycles)
+		std::set<std::string>& sink_nodes_with_cycles)
 	{
 
 		// get cyclic source nodes
@@ -861,13 +861,13 @@ namespace SmartPeak
 				arguments.time_step = 1;
 				arguments.link_name = link_map.first;
 				FP_operations[FP_operations_map.at(ops_key)].arguments.push_back(arguments);
-				sink_nodes_with_cycles.push_back(ops_key);
+				sink_nodes_with_cycles.insert(ops_key);
 			}
 		}
 	}
 
 	template<typename TensorT, typename DeviceT>
-	inline void ModelInterpreter<TensorT, DeviceT>::pruneInactiveLayerCycles(Model<TensorT>& model, std::map<std::string, int>& FP_operations_map, std::map<std::string, int>& FP_operations_map_cycles, std::vector<OperationList<TensorT>>& FP_operations, std::vector<OperationList<TensorT>>& FP_operations_cycles, std::vector<std::string>& sink_nodes_with_cycles)
+	inline void ModelInterpreter<TensorT, DeviceT>::pruneInactiveLayerCycles(Model<TensorT>& model, std::map<std::string, int>& FP_operations_map, std::map<std::string, int>& FP_operations_map_cycles, std::vector<OperationList<TensorT>>& FP_operations, std::vector<OperationList<TensorT>>& FP_operations_cycles, std::set<std::string>& sink_nodes_with_cycles)
 	{
 
 		// Remove all nodes involved in "cycles" that have arguments
@@ -1241,16 +1241,16 @@ namespace SmartPeak
 							if (source_ops_key_1 == sink_ops_key_1
 								&& argument.source_node->getName() == FP_operations[operations_iter1].result.sink_node->getName()
 								) {
-                sinkAsSourceNode_1.insert(source_ops_key_1);
+                //sinkAsSourceNode_1.insert(source_ops_key_1);
 								//sinkAsSourceNode_1.insert(argument.source_node->getName());
-                //sinkAsSourceNode_1.insert(FP_operations[operations_iter3].result.sink_node->getName());
+                sinkAsSourceNode_1.insert(FP_operations[operations_iter3].result.sink_node->getName());
 							}
 							if (source_ops_key_1 == sink_ops_key_2
 								&& argument.source_node->getName() == FP_operations[operations_iter2].result.sink_node->getName()
 								) {
                 sinkAsSourceNode_2.insert(source_ops_key_1);
 								//sinkAsSourceNode_2.insert(argument.source_node->getName());
-                //sinkAsSourceNode_2.insert(FP_operations[operations_iter3].result.sink_node->getName());
+                sinkAsSourceNode_2.insert(FP_operations[operations_iter3].result.sink_node->getName());
 							}
 
 							// Check if the source nodes 1
@@ -1267,15 +1267,16 @@ namespace SmartPeak
                   //sink_ops_key_3 == sink_ops_key_1 && 
                   argument.source_node->getName() == argument1.source_node->getName()
 									) {
-                  sourceAsSourceNode_1.insert(source_ops_key_1);
-									//sourceAsSourceNode_1.insert(FP_operations[operations_iter3].result.sink_node->getName());
+                  //sourceAsSourceNode_1.insert(source_ops_key_1);
+									sourceAsSourceNode_1.insert(FP_operations[operations_iter3].result.sink_node->getName());
                   //sourceAsSourceNode_1.insert(argument.source_node->getName());
 								}
                 // Check if the source nodes will be compatible as sink nodes
 								if (sink_ops_key_3 == ops_key 
 									&& FP_operations[operations_iter3].result.sink_node->getName() == argument1.source_node->getName()
 									) {
-									sourceAsSinkNode_1.insert(sink_ops_key_3);
+									//sourceAsSinkNode_1.insert(sink_ops_key_3);
+                  sourceAsSinkNode_1.insert(argument.source_node->getName());
                   //sourceAsSinkNode_1.insert(FP_operations[operations_iter3].result.sink_node->getName());
 								}
                 // Check if the sink nodes will be compatible with future sink nodes
@@ -1283,8 +1284,8 @@ namespace SmartPeak
                   sink_ops_key_3 == sink_ops_key_1 && 
                   FP_operations[operations_iter3].result.sink_node->getName() == FP_operations[operations_iter1].result.sink_node->getName()
                   ) {
-                  sinkAsSinkNode_1.insert(sink_ops_key_3);
-                  //sinkAsSinkNode_1.insert(argument.source_node->getName());
+                  //sinkAsSinkNode_1.insert(sink_ops_key_3);
+                  sinkAsSinkNode_1.insert(argument.source_node->getName());
                   //sinkAsSinkNode_1.insert(FP_operations[operations_iter3].result.sink_node->getName());
                 }
                 // Check if the operations will be compatible
@@ -1310,15 +1311,16 @@ namespace SmartPeak
                   //sink_ops_key_3 == sink_ops_key_2 &&
 									argument.source_node->getName() == argument2.source_node->getName()
 									) {
-									sourceAsSourceNode_2.insert(source_ops_key_1);
-                  //sourceAsSourceNode_2.insert(FP_operations[operations_iter3].result.sink_node->getName());
+									//sourceAsSourceNode_2.insert(source_ops_key_1);
+                  sourceAsSourceNode_2.insert(FP_operations[operations_iter3].result.sink_node->getName());
                   //sourceAsSourceNode_2.insert(argument.source_node->getName());
 								}
                 // Check if the source nodes will be compatible as sink nodes
 								if (sink_ops_key_3 == ops_key
 									&& FP_operations[operations_iter3].result.sink_node->getName() == argument2.source_node->getName()
 									) {
-									sourceAsSinkNode_2.insert(sink_ops_key_3);
+									//sourceAsSinkNode_2.insert(sink_ops_key_3);
+                  sourceAsSinkNode_2.insert(argument.source_node->getName());
                   //sourceAsSinkNode_2.insert(FP_operations[operations_iter3].result.sink_node->getName());
 								}
                 // Check if the sink nodes will be compatible with future sink nodes
@@ -1326,8 +1328,8 @@ namespace SmartPeak
                   sink_ops_key_3 == sink_ops_key_2 && 
                   FP_operations[operations_iter3].result.sink_node->getName() == FP_operations[operations_iter2].result.sink_node->getName()
                   ) {
-                  sinkAsSinkNode_2.insert(sink_ops_key_3);
-                  //sinkAsSinkNode_2.insert(argument.source_node->getName());
+                  //sinkAsSinkNode_2.insert(sink_ops_key_3);
+                  sinkAsSinkNode_2.insert(argument.source_node->getName());
                   //sinkAsSinkNode_2.insert(FP_operations[operations_iter3].result.sink_node->getName());
                 }
                 // Check if the operations will be compatible
@@ -1703,7 +1705,7 @@ namespace SmartPeak
 			// get cycles
 			std::map<std::string, int> FP_operations_map_cycles = FP_operations_map;
 			std::vector<OperationList<TensorT>> FP_operations_list_cycles = FP_operations_list;
-			std::vector<std::string> sink_nodes_cycles;
+			std::set<std::string> sink_nodes_cycles;
 			getNextInactiveLayerCycles(model, FP_operations_map_cycles, FP_operations_list_cycles, sink_nodes_cycles);
 
 			// Remove all nodes involved in "cycles" that have arguments
