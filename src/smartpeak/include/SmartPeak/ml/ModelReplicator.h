@@ -942,21 +942,34 @@ private:
 
 		// select candidate sink nodes
 		std::vector<std::string> sink_node_ids = selectNodes(model, sink_node_type_exclude, sink_node_type_include);
-		if (sink_node_ids.size() == 0)
+
+    // remove candidate sink nodes for which a link already exists
+    // [TODO: add test coverage]
+    std::vector<std::string> sink_node_ids_noDuplicates;
+    for (std::string sink_node : sink_node_ids) {
+      bool new_link = true;
+      for (const auto& link_map : model.links_) {
+        if (link_map.second->getSourceNodeName() == source_node_name &&
+          link_map.second->getSinkNodeName() == sink_node) {
+          new_link = false;
+          break;
+        }
+      }
+      if (new_link) {
+        sink_node_ids_noDuplicates.push_back(sink_node);
+      }
+    }
+
+		if (sink_node_ids_noDuplicates.size() == 0)
 		{
 			printf("No sink nodes were found that matched the inclusion/exclusion criteria.\n");
 			return;
 		}
 
-		// remove candidate sink nodes for which a link already exists
-
-
 		// select a random sink node
-		std::string sink_node_name = selectRandomElement<std::string>(sink_node_ids);
+		std::string sink_node_name = selectRandomElement<std::string>(sink_node_ids_noDuplicates);
 
-		// [TODO: Need a check if the link already exists...]
-
-		// create the new weight based on a random link (this can probably be optmized...)
+		// create the new weight based on a random link (this can probably be optimized...)
 		std::string random_link = selectRandomLink(model, source_node_type_exclude, source_node_type_include, sink_node_type_exclude, sink_node_type_include);
 
 		std::string weight_name;
