@@ -1345,13 +1345,11 @@ namespace SmartPeak
               }
 						}
 					}
-          if (opsCompatibility_1 == opsCompatibility_2) {
-            // proceed
-          }
-          else if (sinkAsSourceNode_1 != sinkAsSourceNode_2
+          if (sinkAsSourceNode_1 != sinkAsSourceNode_2
             || sourceAsSourceNode_1 != sourceAsSourceNode_2
             || sinkAsSinkNode_1 != sinkAsSinkNode_2
-            || sourceAsSinkNode_1 != sourceAsSinkNode_2) {
+            || sourceAsSinkNode_1 != sourceAsSinkNode_2
+            || opsCompatibility_1 == opsCompatibility_2) {
             continue;
           }
 				}
