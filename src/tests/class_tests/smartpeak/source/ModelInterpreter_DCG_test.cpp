@@ -158,7 +158,7 @@ BOOST_AUTO_TEST_CASE(getNextInactiveLayerCycles)
 	std::vector<std::string> sink_nodes_with_biases2;
 	model_interpreter.getNextInactiveLayerBiases(model_getNextInactiveLayerCycles, FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
 
-	std::vector<std::string> sink_nodes_with_cycles;
+	std::set<std::string> sink_nodes_with_cycles;
 	model_interpreter.getNextInactiveLayerCycles(model_getNextInactiveLayerCycles, FP_operations_map, FP_operations_list, sink_nodes_with_cycles);
 
 	BOOST_CHECK_EQUAL(FP_operations_map.size(), 1);
@@ -198,7 +198,7 @@ BOOST_AUTO_TEST_CASE(pruneInactiveLayerCycles)
 	std::vector<std::string> sink_nodes_with_biases2;
 	model_interpreter.getNextInactiveLayerBiases(model_pruneInactiveLayerCycles, FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
 
-	std::vector<std::string> sink_nodes_with_cycles;
+	std::set<std::string> sink_nodes_with_cycles;
 	std::map<std::string, int> FP_operations_map_cycles = FP_operations_map;
 	std::vector<OperationList<float>> FP_operations_list_cycles = FP_operations_list;
 	model_interpreter.getNextInactiveLayerCycles(model_pruneInactiveLayerCycles, FP_operations_map_cycles, FP_operations_list_cycles, sink_nodes_with_cycles);
@@ -239,7 +239,7 @@ BOOST_AUTO_TEST_CASE(expandForwardPropogationOperationsBySourceNodeKey)
 	std::vector<std::string> sink_nodes_with_biases2;
 	model_interpreter.getNextInactiveLayerBiases(model_expandForwardPropogationOperationsBySourceNodeKey, FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
 
-	std::vector<std::string> sink_nodes_with_cycles;
+	std::set<std::string> sink_nodes_with_cycles;
 	std::map<std::string, int> FP_operations_map_cycles = FP_operations_map;
 	std::vector<OperationList<float>> FP_operations_list_cycles = FP_operations_list;
 	model_interpreter.getNextInactiveLayerCycles(model_expandForwardPropogationOperationsBySourceNodeKey, FP_operations_map_cycles, FP_operations_list_cycles, sink_nodes_with_cycles);
@@ -284,7 +284,7 @@ BOOST_AUTO_TEST_CASE(expandForwardPropogationOperationsByWeightKey)
 	std::vector<std::string> sink_nodes_with_biases2;
 	model_interpreter.getNextInactiveLayerBiases(model_expandForwardPropogationOperationsByWeightKey, FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
 
-	std::vector<std::string> sink_nodes_with_cycles;
+	std::set<std::string> sink_nodes_with_cycles;
 	std::map<std::string, int> FP_operations_map_cycles = FP_operations_map;
 	std::vector<OperationList<float>> FP_operations_list_cycles = FP_operations_list;
 	model_interpreter.getNextInactiveLayerCycles(model_expandForwardPropogationOperationsByWeightKey, FP_operations_map_cycles, FP_operations_list_cycles, sink_nodes_with_cycles);
@@ -324,7 +324,7 @@ BOOST_AUTO_TEST_CASE(expandForwardPropogationOperationsByCachedNodes)
 	std::vector<std::string> sink_nodes_with_biases2;
 	model_interpreter.getNextInactiveLayerBiases(model_expandForwardPropogationOperationsByCachedNodes, FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
 
-	std::vector<std::string> sink_nodes_with_cycles;
+	std::set<std::string> sink_nodes_with_cycles;
 	std::map<std::string, int> FP_operations_map_cycles = FP_operations_map;
 	std::vector<OperationList<float>> FP_operations_list_cycles = FP_operations_list;
 	model_interpreter.getNextInactiveLayerCycles(model_expandForwardPropogationOperationsByCachedNodes, FP_operations_map_cycles, FP_operations_list_cycles, sink_nodes_with_cycles);
@@ -365,7 +365,7 @@ BOOST_AUTO_TEST_CASE(expandForwardPropogationOperations)
 	std::vector<std::string> sink_nodes_with_biases2;
 	model_interpreter.getNextInactiveLayerBiases(model_expandForwardPropogationOperations, FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
 
-	std::vector<std::string> sink_nodes_with_cycles;
+	std::set<std::string> sink_nodes_with_cycles;
 	std::map<std::string, int> FP_operations_map_cycles = FP_operations_map;
 	std::vector<OperationList<float>> FP_operations_list_cycles = FP_operations_list;
 	model_interpreter.getNextInactiveLayerCycles(model_expandForwardPropogationOperations, FP_operations_map_cycles, FP_operations_list_cycles, sink_nodes_with_cycles);
@@ -409,7 +409,7 @@ BOOST_AUTO_TEST_CASE(expandAllForwardPropogationOperations)
 	std::vector<std::string> sink_nodes_with_biases2;
 	model_interpreter.getNextInactiveLayerBiases(model_expandAllForwardPropogationOperations, FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
 
-	std::vector<std::string> sink_nodes_with_cycles;
+	std::set<std::string> sink_nodes_with_cycles;
 	std::map<std::string, int> FP_operations_map_cycles = FP_operations_map;
 	std::vector<OperationList<float>> FP_operations_list_cycles = FP_operations_list;
 	model_interpreter.getNextInactiveLayerCycles(model_expandAllForwardPropogationOperations, FP_operations_map_cycles, FP_operations_list_cycles, sink_nodes_with_cycles);
@@ -479,7 +479,7 @@ BOOST_AUTO_TEST_CASE(getTensorOperations)
 	std::vector<std::string> sink_nodes_with_biases2;
 	model_interpreter.getNextInactiveLayerBiases(model_getTensorOperations, FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
 
-	std::vector<std::string> sink_nodes_with_cycles;
+	std::set<std::string> sink_nodes_with_cycles;
 	std::map<std::string, int> FP_operations_map_cycles = FP_operations_map;
 	std::vector<OperationList<float>> FP_operations_list_cycles = FP_operations_list;
 	model_interpreter.getNextInactiveLayerCycles(model_getTensorOperations, FP_operations_map_cycles, FP_operations_list_cycles, sink_nodes_with_cycles);
@@ -516,7 +516,7 @@ BOOST_AUTO_TEST_CASE(getForwardPropogationLayerTensorDimensions)
 	std::vector<std::string> sink_nodes_with_biases2;
 	model_interpreter.getNextInactiveLayerBiases(model_getForwardPropogationLayerTensorDimensions, FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
 
-	std::vector<std::string> sink_nodes_with_cycles;
+	std::set<std::string> sink_nodes_with_cycles;
 	std::map<std::string, int> FP_operations_map_cycles = FP_operations_map;
 	std::vector<OperationList<float>> FP_operations_list_cycles = FP_operations_list;
 	model_interpreter.getNextInactiveLayerCycles(model_getForwardPropogationLayerTensorDimensions, FP_operations_map_cycles, FP_operations_list_cycles, sink_nodes_with_cycles);
