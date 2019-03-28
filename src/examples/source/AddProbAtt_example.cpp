@@ -93,8 +93,8 @@ public:
     ModelBuilder<TensorT> model_builder;
 
     // Add the inputs
-    std::vector<std::string> node_names_random = model_builder.addInputNodes(model, "Random", "Random", n_inputs, true);
-    std::vector<std::string> node_names_mask = model_builder.addInputNodes(model, "Mask", "Mask", n_inputs, true);
+    std::vector<std::string> node_names_random = model_builder.addInputNodes(model, "Random", "Random", n_inputs);
+    std::vector<std::string> node_names_mask = model_builder.addInputNodes(model, "Mask", "Mask", n_inputs);
 
     // Add the hidden layer
     std::vector<std::string> node_names = model_builder.addFullyConnected(model, "HiddenR", "HiddenR", node_names_random, n_hidden_0,
@@ -186,8 +186,8 @@ public:
     ModelBuilder<TensorT> model_builder;
 
     // Add the inputs
-    std::vector<std::string> node_names_random = model_builder.addInputNodes(model, "Random", "Random", n_inputs, true); // Q and V matrices
-    std::vector<std::string> node_names_mask = model_builder.addInputNodes(model, "Mask", "Mask", n_inputs, true);  // K matrix
+    std::vector<std::string> node_names_random = model_builder.addInputNodes(model, "Random", "Random", n_inputs); // Q and V matrices
+    std::vector<std::string> node_names_mask = model_builder.addInputNodes(model, "Mask", "Mask", n_inputs);  // K matrix
     std::vector<std::string> node_names_input = node_names_random;  // initial "input"
 
     // Multi-head attention
@@ -201,7 +201,7 @@ public:
         std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
         std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
         std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names_input.size(), 2)),
-        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, true, false);
       if (add_norm) {
         std::string norm_name = "Norm" + std::to_string(i);
         node_names = model_builder.addNormalization(model, norm_name, norm_name, node_names,
@@ -446,7 +446,7 @@ int main(int argc, char** argv)
 	// define the data simulator
 	DataSimulatorExt<float> data_simulator;
 	data_simulator.n_mask_ = 1;
-	data_simulator.sequence_length_ = 5;
+	data_simulator.sequence_length_ = 2;
 
   // define the input/output nodes
   std::vector<std::string> input_nodes;
@@ -514,8 +514,8 @@ int main(int argc, char** argv)
 	// make the model name
   Model<float> model;
   //model_trainer.makeModelMinimal(model, input_nodes.size() / 2, output_nodes.size());
-  model_trainer.makeModelSolution(model, input_nodes.size() / 2, output_nodes.size(), true);
-  //model_trainer.makeModelAttention(model, (int)(input_nodes.size() / 2), output_nodes.size(), { 2 }, { 6 }, { (int)(input_nodes.size() / 2) }, false, false, false);
+  //model_trainer.makeModelSolution(model, input_nodes.size() / 2, output_nodes.size(), true);
+  model_trainer.makeModelAttention(model, (int)(input_nodes.size() / 2), output_nodes.size(), { 2 }, { 3 }, { (int)(input_nodes.size() / 2) }, false, false, false);
 	population.push_back(model);
 
 	// Evolve the population
