@@ -1211,9 +1211,9 @@ namespace SmartPeak
         // - Create method for keys used in ...As...Node sets
         // - Create method key for sink node operation
         // NOTEs:
-        // - The keys used in ...As...Node comparison need to incorporate node name and layer key information
+        // - The keys used in ...As...Node comparison need to incorporate node name and compatibility information
         // - Previously identified sink nodes must be checked to ensure sourceAsSink and sinkAsSource compatibility
-        // - Iteration 3 must start at 0 and include iteration 1 and iteration 3 (double check)
+        // - Iteration 3 must start at 0 and excluding iteration 1 and iteration 3 (double check)
 				if (!fast_check) {
           std::set<std::string> sinkAsSourceNode_1, sinkAsSourceNode_2,
             sourceAsSourceNode_1, sourceAsSourceNode_2,
@@ -1226,7 +1226,7 @@ namespace SmartPeak
 						if (
               //identified_sink_nodes.count(sink_node_key3) || 
               operations_iter3 == operations_iter2 || 
-              operations_iter3 == operations_iter1) continue; // Skip current and identified sink nodes
+              operations_iter3 == operations_iter1) continue; // Skip current sink nodes
 						std::string sink_ops_key_3 = makeForwardPropogationOperationsKey(
               FP_operations[operations_iter3].result.time_step,
 							FP_operations[operations_iter3].result.sink_node->getType(),
@@ -1249,17 +1249,13 @@ namespace SmartPeak
                 argument.source_node->getName() == FP_operations[operations_iter1].result.sink_node->getName()
 								) {
                 sinkAsSourceNode_1.insert(source_ops_key_3 + ":" + sink_ops_key_3);
-                sinkAsSourceNode_1.insert(sink_node_key3);
-                //sinkAsSourceNode_1.insert(FP_operations[operations_iter3].result.sink_node->getName());
-								//sinkAsSourceNode_1.insert(argument.source_node->getName());
+                sinkAsSourceNode_1.insert(sink_node_key3); // Results in "increased" splitting
 							}
 							if (//source_ops_key_3 == sink_ops_key_2 && 
                 argument.source_node->getName() == FP_operations[operations_iter2].result.sink_node->getName()
 								) {
                 sinkAsSourceNode_2.insert(source_ops_key_3 + ":" + sink_ops_key_3);
-                sinkAsSourceNode_2.insert(sink_node_key3);
-                //sinkAsSourceNode_2.insert(FP_operations[operations_iter3].result.sink_node->getName());
-								//sinkAsSourceNode_2.insert(argument.source_node->getName());
+                sinkAsSourceNode_2.insert(sink_node_key3); // Results in "increased" splitting
 							}
 
 							// Check if the source nodes 1
@@ -1279,18 +1275,14 @@ namespace SmartPeak
                   // NOTE: sink node name is used instead of the sink name because using the source name will always
                   //       split the source layers by node name
                   sourceAsSourceNode_1.insert(source_ops_key_3 + ":" + sink_ops_key_3);
-                  sourceAsSourceNode_1.insert(FP_operations[operations_iter3].result.sink_node->getName());
-                  //sourceAsSourceNode_1.insert(sink_node_key3);
-                  //sourceAsSourceNode_1.insert(argument.source_node->getName());
+                  sourceAsSourceNode_1.insert(FP_operations[operations_iter3].result.sink_node->getName()); // Results in "increased" splitting
 								}
                 // Check if the source nodes will be compatible as sink nodes
 								if (//sink_ops_key_3 == ops_key && 
                   FP_operations[operations_iter3].result.sink_node->getName() == argument1.source_node->getName()
 									) {
 									sourceAsSinkNode_1.insert(source_ops_key_3 + ":" + sink_ops_key_3);
-                  sourceAsSinkNode_1.insert(sink_node_key3);
-                  //sourceAsSinkNode_1.insert(argument.source_node->getName());
-                  //sourceAsSinkNode_1.insert(FP_operations[operations_iter3].result.sink_node->getName());
+                  sourceAsSinkNode_1.insert(sink_node_key3); // Results in "increased" splitting
 								}
                 // Check if the sink nodes will be compatible with future sink nodes
                 if (//source_ops_key_3 == ops_key && 
@@ -1300,16 +1292,12 @@ namespace SmartPeak
                   // NOTE: source node name is used instead of the sink name because using the sink name will always
                   //       split the sink layers by node name
                   sinkAsSinkNode_1.insert(source_ops_key_3 + ":" + sink_ops_key_3);
-                  sinkAsSinkNode_1.insert(argument.source_node->getName());
-                  //sinkAsSinkNode_1.insert(sink_node_key3);
-                  //sinkAsSinkNode_1.insert(FP_operations[operations_iter3].result.sink_node->getName());
+                  sinkAsSinkNode_1.insert(argument.source_node->getName()); // Results in "increased" splitting
                 }
                 // Check if the operations will be compatible
                 if (source_ops_key_3 == ops_key && sink_ops_key_3 == sink_ops_key_1
                   ) {
                   opsCompatibility_1.insert(sink_node_key3);
-                  //opsCompatibility_1.insert(argument.source_node->getName());
-                  //opsCompatibility_1.insert(FP_operations[operations_iter3].result.sink_node->getName());
                 }
 							}
 
@@ -1330,18 +1318,14 @@ namespace SmartPeak
                   // NOTE: sink node name is used instead of the sink name because using the source name will always
                   //       split the source layers by node name
                   sourceAsSourceNode_2.insert(source_ops_key_3 + ":" + sink_ops_key_3);
-                  sourceAsSourceNode_2.insert(FP_operations[operations_iter3].result.sink_node->getName());
-                  //sourceAsSourceNode_2.insert(sink_node_key3);
-                  //sourceAsSourceNode_2.insert(argument.source_node->getName());
+                  sourceAsSourceNode_2.insert(FP_operations[operations_iter3].result.sink_node->getName()); // Results in "increased" splitting
                 }
                 // Check if the source nodes will be compatible as sink nodes
                 if (//sink_ops_key_3 == ops_key && 
                   FP_operations[operations_iter3].result.sink_node->getName() == argument2.source_node->getName()
                   ) {
                   sourceAsSinkNode_2.insert(source_ops_key_3 + ":" + sink_ops_key_3);
-                  sourceAsSinkNode_2.insert(sink_node_key3);
-                  //sourceAsSinkNode_2.insert(argument.source_node->getName());
-                  //sourceAsSinkNode_2.insert(FP_operations[operations_iter3].result.sink_node->getName());
+                  sourceAsSinkNode_2.insert(sink_node_key3); // Results in "increased" splitting
                 }
                 // Check if the sink nodes will be compatible with future sink nodes
                 if (//source_ops_key_3 == ops_key && 
@@ -1351,27 +1335,25 @@ namespace SmartPeak
                   // NOTE: source node name is used instead of the sink name because using the sink name will always
                   //       split the sink layers by node name
                   sinkAsSinkNode_2.insert(source_ops_key_3 + ":" + sink_ops_key_3);
-                  sinkAsSinkNode_2.insert(argument.source_node->getName());
-                  //sinkAsSinkNode_2.insert(sink_node_key3);
-                  //sinkAsSinkNode_2.insert(FP_operations[operations_iter3].result.sink_node->getName());
+                  sinkAsSinkNode_2.insert(argument.source_node->getName()); // Results in "increased" splitting
                 }
                 // Check if the operations will be compatible
                 if (source_ops_key_3 == ops_key && sink_ops_key_3 == sink_ops_key_2
                   ) {
                   opsCompatibility_2.insert(sink_node_key3);
-                  //opsCompatibility_2.insert(argument.source_node->getName());
-                  //opsCompatibility_2.insert(FP_operations[operations_iter3].result.sink_node->getName());
                 }
               }
 						}
 					}
-					if (sinkAsSourceNode_1 != sinkAsSourceNode_2 
+          if (opsCompatibility_1 == opsCompatibility_2) {
+            // proceed
+          }
+          else if (sinkAsSourceNode_1 != sinkAsSourceNode_2
             || sourceAsSourceNode_1 != sourceAsSourceNode_2
-						|| sinkAsSinkNode_1 != sinkAsSinkNode_2
-            || sourceAsSinkNode_1 != sourceAsSinkNode_2
-            || opsCompatibility_1 != opsCompatibility_2
-            ) 
+            || sinkAsSinkNode_1 != sinkAsSinkNode_2
+            || sourceAsSinkNode_1 != sourceAsSinkNode_2) {
             continue;
+          }
 				}
 
 				// update the maps
