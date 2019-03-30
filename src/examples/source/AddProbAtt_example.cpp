@@ -186,8 +186,8 @@ public:
     ModelBuilder<TensorT> model_builder;
 
     // Add the inputs
-    std::vector<std::string> node_names_random = model_builder.addInputNodes(model, "Random", "Random", n_inputs, true); // Q and V matrices
-    std::vector<std::string> node_names_mask = model_builder.addInputNodes(model, "Mask", "Mask", n_inputs, true);  // K matrix
+    std::vector<std::string> node_names_random = model_builder.addInputNodes(model, "Random", "Random", n_inputs); // Q and V matrices
+    std::vector<std::string> node_names_mask = model_builder.addInputNodes(model, "Mask", "Mask", n_inputs);  // K matrix
     std::vector<std::string> node_names_input = node_names_random;  // initial "input"
 
     // Multi-head attention
@@ -201,7 +201,7 @@ public:
         std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
         std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
         std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names_input.size(), 2)),
-        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, true, true);
+        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, true, false);
       if (add_norm) {
         std::string norm_name = "Norm" + std::to_string(i);
         node_names = model_builder.addNormalization(model, norm_name, norm_name, node_names,
@@ -480,7 +480,7 @@ int main(int argc, char** argv)
 	model_trainer.setFindCycles(false);
 	model_trainer.setLogging(true, false);
 	model_trainer.setPreserveOoO(true);
-	model_trainer.setFastInterpreter(true); // NOTE: change back to false for experiments with Minimal and Solution!
+	model_trainer.setFastInterpreter(false); // NOTE: change back to false for experiments with Minimal and Solution!
 	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
 	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
 	model_trainer.setOutputNodes({ output_nodes });

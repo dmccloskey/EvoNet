@@ -1220,16 +1220,16 @@ namespace SmartPeak
             sinkAsSinkNode_1s, sinkAsSinkNode_2s,
             sourceAsSinkNode_1s, sourceAsSinkNode_2s,
             opsCompatibility_1s, opsCompatibility_2s,
-            sinkAsSourceSourceNode_1s, sinkAsSourceSourceNode_2s;
+            sinkAsSourceSourceNode_1s, sinkAsSourceSourceNode_2s,
+            sourceAsSinkOps_1s, sourceAsSinkOps_2s;
           std::vector<std::string> sinkAsSourceNode_1v, sinkAsSourceNode_2v,
             sourceAsSourceNode_1v, sourceAsSourceNode_2v,
             sinkAsSinkNode_1v, sinkAsSinkNode_2v,
             sourceAsSinkNode_1v, sourceAsSinkNode_2v,
             sinkAsSourceSourceNode_1v, sinkAsSourceSourceNode_2v;
-					//for (size_t operations_iter3 = operations_iter1 + 1; operations_iter3 < FP_operations.size(); ++operations_iter3) {
-          for (size_t operations_iter3 = 0; operations_iter3 < FP_operations.size(); ++operations_iter3) {
+					for (size_t operations_iter3 = 0; operations_iter3 < FP_operations.size(); ++operations_iter3) {
             std::string sink_node_key3 = FP_operations[operations_iter3].result.sink_node->getName() + "/" + std::to_string(operations_iter3);
-						if (operations_iter3 == operations_iter2 || operations_iter3 == operations_iter1) continue; // Skip current sink nodes
+						//if (operations_iter3 == operations_iter2 || operations_iter3 == operations_iter1) continue; // Skip current sink nodes
 						std::string sink_ops_key_3 = makeForwardPropogationOperationsKey(
               FP_operations[operations_iter3].result.time_step,
 							FP_operations[operations_iter3].result.sink_node->getType(),
@@ -1251,33 +1251,34 @@ namespace SmartPeak
               if (argument3.source_node->getName() == FP_operations[operations_iter1].result.sink_node->getName()) {
                 sinkAsSourceNode_1v.push_back(source_ops_key_3 + ":" + sink_ops_key_3);
 
-                //// Find all futures source nodes that the current sink node will be combined with on the same layer
-                //for (size_t operations_iter4 = operations_iter1 + 1; operations_iter4 < FP_operations.size(); ++operations_iter4) {
-                //  if (operations_iter4 == operations_iter1 || operations_iter4 == operations_iter2 || operations_iter4 == operations_iter3) continue; // Skip current sink nodes
-                //  std::string sink_ops_key_4 = makeForwardPropogationOperationsKey(
-                //    FP_operations[operations_iter4].result.time_step,
-                //    FP_operations[operations_iter4].result.sink_node->getType(),
-                //    FP_operations[operations_iter4].result.sink_node->getIntegration()->getName(),
-                //    FP_operations[operations_iter4].result.sink_node->getActivation()->getName(),
-                //    FP_operations[operations_iter4].result.sink_node->getLayerName(),
-                //    FP_operations[operations_iter4].result.sink_node->getTensorIndex().first,
-                //    FP_operations[operations_iter4].arguments[0].weight->getLayerName());
-                //  for (auto& argument4 : FP_operations[operations_iter4].arguments) {
-                //    std::string source_ops_key_4 = makeForwardPropogationOperationsKey(argument4.time_step,
-                //      argument4.source_node->getType(),
-                //      argument4.source_node->getIntegration()->getName(),
-                //      argument4.source_node->getActivation()->getName(),
-                //      argument4.source_node->getLayerName(),
-                //      argument4.source_node->getTensorIndex().first,
-                //      argument4.weight->getLayerName());
-                //    if (FP_operations[operations_iter4].result.sink_node->getName() == FP_operations[operations_iter3].result.sink_node->getName() && 
-                //      sink_ops_key_4 == sink_ops_key_3 && source_ops_key_4 == source_ops_key_3) {
-                //      sinkAsSourceSourceNode_1s.insert(argument4.source_node->getName() + "|" + std::to_string(argument4.time_step));
-                //      //sinkAsSourceSourceNode_1s.insert((FP_operations[operations_iter3].result.sink_node->getName() + "|" +
-                //      //  std::to_string(FP_operations[operations_iter3].result.time_step));
-                //    }
-                //  }
-                //}
+                // Find all futures source nodes that the current sink node will be combined with on the same layer
+                for (size_t operations_iter4 = 0; operations_iter4 < FP_operations.size(); ++operations_iter4) {
+                  std::string sink_node_key4 = FP_operations[operations_iter4].result.sink_node->getName() + "/" + std::to_string(operations_iter4);
+                  //if (operations_iter4 == operations_iter1 || operations_iter4 == operations_iter2 || operations_iter4 == operations_iter3) continue; // Skip current sink nodes
+                  std::string sink_ops_key_4 = makeForwardPropogationOperationsKey(
+                    FP_operations[operations_iter4].result.time_step,
+                    FP_operations[operations_iter4].result.sink_node->getType(),
+                    FP_operations[operations_iter4].result.sink_node->getIntegration()->getName(),
+                    FP_operations[operations_iter4].result.sink_node->getActivation()->getName(),
+                    FP_operations[operations_iter4].result.sink_node->getLayerName(),
+                    FP_operations[operations_iter4].result.sink_node->getTensorIndex().first,
+                    FP_operations[operations_iter4].arguments[0].weight->getLayerName());
+                  for (auto& argument4 : FP_operations[operations_iter4].arguments) {
+                    std::string source_ops_key_4 = makeForwardPropogationOperationsKey(argument4.time_step,
+                      argument4.source_node->getType(),
+                      argument4.source_node->getIntegration()->getName(),
+                      argument4.source_node->getActivation()->getName(),
+                      argument4.source_node->getLayerName(),
+                      argument4.source_node->getTensorIndex().first,
+                      argument4.weight->getLayerName());
+                    if (FP_operations[operations_iter4].result.sink_node->getName() == FP_operations[operations_iter3].result.sink_node->getName()) {
+                      sinkAsSourceSourceNode_1v.push_back(source_ops_key_4 + ":" + sink_ops_key_4);
+                    }
+                    if (sink_ops_key_4 == sink_ops_key_3) {
+                      sinkAsSourceSourceNode_1s.insert(argument4.source_node->getName() + "|" + std::to_string(argument4.time_step));
+                    }
+                  }
+                }
               }
               if (source_ops_key_3 == sink_ops_key_1) {
                 sinkAsSourceNode_1s.insert(FP_operations[operations_iter3].result.sink_node->getName() + "|" +
@@ -1286,31 +1287,34 @@ namespace SmartPeak
               if (argument3.source_node->getName() == FP_operations[operations_iter2].result.sink_node->getName()) {
                 sinkAsSourceNode_2v.push_back(source_ops_key_3 + ":" + sink_ops_key_3);
 
-                //// Find all futures source nodes that the current sink node will be combined with on the same layer
-                //for (size_t operations_iter4 = operations_iter1 + 1; operations_iter4 < FP_operations.size(); ++operations_iter4) {
-                //  if (operations_iter4 == operations_iter1 || operations_iter4 == operations_iter2 || operations_iter4 == operations_iter3) continue; // Skip current sink nodes
-                //  std::string sink_ops_key_4 = makeForwardPropogationOperationsKey(
-                //    FP_operations[operations_iter4].result.time_step,
-                //    FP_operations[operations_iter4].result.sink_node->getType(),
-                //    FP_operations[operations_iter4].result.sink_node->getIntegration()->getName(),
-                //    FP_operations[operations_iter4].result.sink_node->getActivation()->getName(),
-                //    FP_operations[operations_iter4].result.sink_node->getLayerName(),
-                //    FP_operations[operations_iter4].result.sink_node->getTensorIndex().first,
-                //    FP_operations[operations_iter4].arguments[0].weight->getLayerName());
-                //  for (auto& argument4 : FP_operations[operations_iter4].arguments) {
-                //    std::string source_ops_key_4 = makeForwardPropogationOperationsKey(argument4.time_step,
-                //      argument4.source_node->getType(),
-                //      argument4.source_node->getIntegration()->getName(),
-                //      argument4.source_node->getActivation()->getName(),
-                //      argument4.source_node->getLayerName(),
-                //      argument4.source_node->getTensorIndex().first,
-                //      argument4.weight->getLayerName());
-                //    if (FP_operations[operations_iter4].result.sink_node->getName() == FP_operations[operations_iter3].result.sink_node->getName() &&
-                //      sink_ops_key_4 == sink_ops_key_3 && source_ops_key_4 == source_ops_key_3) {
-                //      sinkAsSourceSourceNode_1s.insert(argument4.source_node->getName() + "|" + std::to_string(argument4.time_step));
-                //    }
-                //  }
-                //}
+                // Find all futures source nodes that the current sink node will be combined with on the same layer
+                for (size_t operations_iter4 = 0; operations_iter4 < FP_operations.size(); ++operations_iter4) {
+                  std::string sink_node_key4 = FP_operations[operations_iter4].result.sink_node->getName() + "/" + std::to_string(operations_iter4);
+                  //if (operations_iter4 == operations_iter1 || operations_iter4 == operations_iter2 || operations_iter4 == operations_iter3) continue; // Skip current sink nodes
+                  std::string sink_ops_key_4 = makeForwardPropogationOperationsKey(
+                    FP_operations[operations_iter4].result.time_step,
+                    FP_operations[operations_iter4].result.sink_node->getType(),
+                    FP_operations[operations_iter4].result.sink_node->getIntegration()->getName(),
+                    FP_operations[operations_iter4].result.sink_node->getActivation()->getName(),
+                    FP_operations[operations_iter4].result.sink_node->getLayerName(),
+                    FP_operations[operations_iter4].result.sink_node->getTensorIndex().first,
+                    FP_operations[operations_iter4].arguments[0].weight->getLayerName());
+                  for (auto& argument4 : FP_operations[operations_iter4].arguments) {
+                    std::string source_ops_key_4 = makeForwardPropogationOperationsKey(argument4.time_step,
+                      argument4.source_node->getType(),
+                      argument4.source_node->getIntegration()->getName(),
+                      argument4.source_node->getActivation()->getName(),
+                      argument4.source_node->getLayerName(),
+                      argument4.source_node->getTensorIndex().first,
+                      argument4.weight->getLayerName());
+                    if (FP_operations[operations_iter4].result.sink_node->getName() == FP_operations[operations_iter3].result.sink_node->getName()) {
+                      sinkAsSourceSourceNode_2v.push_back(source_ops_key_4 + ":" + sink_ops_key_4);
+                    }
+                    if (sink_ops_key_4 == sink_ops_key_3) {
+                      sinkAsSourceSourceNode_2s.insert(argument4.source_node->getName() + "|" + std::to_string(argument4.time_step));
+                    }
+                  }
+                }
               }
               if (source_ops_key_3 == sink_ops_key_2) {
                 sinkAsSourceNode_2s.insert(FP_operations[operations_iter3].result.sink_node->getName() + "|" +
@@ -1327,10 +1331,7 @@ namespace SmartPeak
 									argument1.source_node->getTensorIndex().first,
 									argument1.weight->getLayerName());
                 // Check if the source nodes will be compatible as future source nodes
-                if (//source_ops_key_3 == ops_key && 
-                  //sink_ops_key_3 == sink_ops_key_1 && 
-                  argument3.source_node->getName() == argument1.source_node->getName()
-                  ) {
+                if (argument3.source_node->getName() == argument1.source_node->getName()) {
                   // NOTE: sink node name is used instead of the sink name because using the source name will always
                   //       split the source layers by node name
                   sourceAsSourceNode_1v.push_back(source_ops_key_3 + ":" + sink_ops_key_3);
@@ -1340,20 +1341,24 @@ namespace SmartPeak
                     std::to_string(FP_operations[operations_iter3].result.time_step)); // Results in "increased" splitting
 								}
                 // Check if the source nodes will be compatible as sink nodes
-                if (//sink_ops_key_3 == ops_key && 
-                  FP_operations[operations_iter3].result.sink_node->getName() == argument1.source_node->getName()
-                  ) {
+                if (FP_operations[operations_iter3].result.sink_node->getName() == argument1.source_node->getName()) {
                   sourceAsSinkNode_1v.push_back(source_ops_key_3 + ":" + sink_ops_key_3);
+
+                  // Look at all past FC operations ensure the next layer is consistent with previous layers
+                  for (const auto& ops_map: FC_layers) {
+                    for (const int ops_index : ops_map.second) {
+                      if (FP_operations[ops_index].result.sink_node->getName() == argument1.source_node->getName()) {
+                        sourceAsSinkOps_1s.insert(ops_map.first);
+                      }
+                    }
+                  }
                 }
                 if (sink_ops_key_3 == ops_key) {
                   sourceAsSinkNode_1s.insert(argument3.source_node->getName() + "|" +
                     std::to_string(argument3.time_step)); // Results in "increased" splitting
 								}
                 // Check if the sink nodes will be compatible with future sink nodes
-                if (//source_ops_key_3 == ops_key && 
-                  //sink_ops_key_3 == sink_ops_key_1 && 
-                  FP_operations[operations_iter3].result.sink_node->getName() == FP_operations[operations_iter1].result.sink_node->getName()
-                  ) {
+                if (FP_operations[operations_iter3].result.sink_node->getName() == FP_operations[operations_iter1].result.sink_node->getName()) {
                   // NOTE: source node name is used instead of the sink name because using the sink name will always
                   //       split the sink layers by node name
                   sinkAsSinkNode_1v.push_back(source_ops_key_3 + ":" + sink_ops_key_3);
@@ -1379,10 +1384,7 @@ namespace SmartPeak
                   argument2.source_node->getTensorIndex().first,
                   argument2.weight->getLayerName());
                 // Check if the source nodes will be compatible as future source nodes
-                if (//source_ops_key_3 == ops_key &&
-                  //sink_ops_key_3 == sink_ops_key_2 && 
-                  argument3.source_node->getName() == argument2.source_node->getName()
-                  ) {
+                if (argument3.source_node->getName() == argument2.source_node->getName()) {
                   // NOTE: sink node name is used instead of the sink name because using the source name will always
                   //       split the source layers by node name
                   sourceAsSourceNode_2v.push_back(source_ops_key_3 + ":" + sink_ops_key_3);
@@ -1392,20 +1394,24 @@ namespace SmartPeak
                     std::to_string(FP_operations[operations_iter3].result.time_step)); // Results in "increased" splitting
                 }
                 // Check if the source nodes will be compatible as sink nodes
-                if (//sink_ops_key_3 == ops_key && 
-                  FP_operations[operations_iter3].result.sink_node->getName() == argument2.source_node->getName()
-                  ) {
+                if (FP_operations[operations_iter3].result.sink_node->getName() == argument2.source_node->getName()) {
                   sourceAsSinkNode_2v.push_back(source_ops_key_3 + ":" + sink_ops_key_3);
+
+                  // Look at all past FC operations ensure the next layer is consistent with previous layers
+                  for (const auto& ops_map : FC_layers) {
+                    for (const int ops_index : ops_map.second) {
+                      if (FP_operations[ops_index].result.sink_node->getName() == argument2.source_node->getName()) {
+                        sourceAsSinkOps_2s.insert(ops_map.first);
+                      }
+                    }
+                  }
                 }
                 if (sink_ops_key_3 == ops_key){
                   sourceAsSinkNode_2s.insert(argument3.source_node->getName() + "|" +
                     std::to_string(argument3.time_step)); // Results in "increased" splitting
                 }
                 // Check if the sink nodes will be compatible with future sink nodes
-                if (//source_ops_key_3 == ops_key && 
-                  //sink_ops_key_3 == sink_ops_key_2 &&
-                  FP_operations[operations_iter3].result.sink_node->getName() == FP_operations[operations_iter2].result.sink_node->getName()
-                  ) {
+                if (FP_operations[operations_iter3].result.sink_node->getName() == FP_operations[operations_iter2].result.sink_node->getName()) {
                   // NOTE: source node name is used instead of the sink name because using the sink name will always
                   //       split the sink layers by node name
                   sinkAsSinkNode_2v.push_back(source_ops_key_3 + ":" + sink_ops_key_3);
@@ -1446,6 +1452,8 @@ namespace SmartPeak
           if (opsCompatibility_1s != opsCompatibility_2s) 
             continue;
           if (sinkAsSourceSourceNode_1s != sinkAsSourceSourceNode_2s) 
+            continue;
+          if (sourceAsSinkOps_1s != sourceAsSinkOps_2s)
             continue;
           if (sinkAsSourceNode_1v != sinkAsSourceNode_2v) 
             continue;
