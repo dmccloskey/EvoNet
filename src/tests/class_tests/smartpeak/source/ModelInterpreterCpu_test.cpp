@@ -180,7 +180,7 @@ BOOST_AUTO_TEST_CASE(allocateForwardPropogationLayerTensors)
 	model_interpreter.getNextInactiveLayerBiases(model_allocateForwardPropogationLayerTensors, FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
 
 	std::vector<OperationList<float>> FP_operations_expanded;
-	model_interpreter.expandForwardPropogationOperations(FP_operations_list, FP_operations_expanded);
+	model_interpreter.expandAllForwardPropogationOperations(FP_operations_list, FP_operations_expanded);
 
 	std::set<std::string> identified_sink_nodes;
 	std::map<std::string, std::vector<int>> tensor_ops = model_interpreter.getTensorOperations(FP_operations_expanded, identified_sink_nodes, false);
