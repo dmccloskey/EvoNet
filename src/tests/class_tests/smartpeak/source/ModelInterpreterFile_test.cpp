@@ -250,4 +250,25 @@ BOOST_AUTO_TEST_CASE(loadModelBinary2)
 	// END RE-START: model_interpreter test taken from ModelinterpreterCpu_test
 }
 
+Model<float> model3 = makeModel1();
+BOOST_AUTO_TEST_CASE(loadModelCsv1)
+{
+  ModelInterpreterFileDefaultDevice<float> data;
+
+  // START: model_interpreter test taken from ModelinterpreterCpu_test
+  ModelInterpreterDefaultDevice<float> model_interpreter;
+  const int batch_size = 4;
+  const int memory_size = 1;
+  const bool train = true;
+
+  // compile the graph into a set of operations and allocate all tensors
+  model_interpreter.getForwardPropogationOperations(model3, batch_size, memory_size, train, false, true, true);
+
+  // Store the model interpreter
+  std::string filename = "ModelInterpreterFileTest.csv";
+  data.storeModelInterpreterCsv(filename, model_interpreter);
+
+  // NO TESTS
+}
+
 BOOST_AUTO_TEST_SUITE_END()

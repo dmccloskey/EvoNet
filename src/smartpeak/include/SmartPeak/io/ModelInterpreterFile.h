@@ -16,6 +16,7 @@
 // .cpp
 #include <cereal/archives/binary.hpp>
 #include <fstream>
+#include <SmartPeak/io/CSVWriter.h>
 
 namespace SmartPeak
 {
@@ -38,6 +39,7 @@ public:
 			@returns Status True on success, False if not
 		*/
 		bool storeModelInterpreterBinary(const std::string& filename, const ModelInterpreter<TensorT, DeviceT>& model_interpreter);
+    bool storeModelInterpreterCsv(const std::string& filename, const ModelInterpreter<TensorT, DeviceT>& model_interpreter);
  
 		/**
 			@brief load Model from file
@@ -65,6 +67,40 @@ public:
 		//}// Lines check to make sure the file is not already created
 		return true;
 	}
+
+  template<typename TensorT, typename DeviceT>
+  inline bool ModelInterpreterFile<TensorT, DeviceT>::storeModelInterpreterCsv(const std::string & filename, const ModelInterpreter<TensorT, DeviceT>& model_interpreter)
+  {
+    CSVWriter csvwriter(filename);
+
+    // write the headers to the first line
+    const std::vector<std::string> headers = { "Operation", "source_node_name", "source_node_timestep",
+      "weight_name", "sink_node_name", "sink_node_timestep" };
+    csvwriter.writeDataInRow(headers.begin(), headers.end());
+
+    for (const auto& tensor_ops_step : model_interpreter.getTensorOpsSteps()) {
+      for (const auto& tensor_op_map : tensor_ops_step) {
+        for (const auto& tensor_op : tensor_op_map.second) {
+          auto FP_operations = model_interpreter.getFPOperations();
+          std::string sink_node_name = FP_operations[tensor_op].result.sink_node->getName();
+          int sink_node_timestep = FP_operations[tensor_op].result.time_step;
+          for (const auto& argument : FP_operations[tensor_op].arguments) {
+            std::vector<std::string> row;
+            row.push_back(tensor_op_map.first);
+            row.push_back(argument.source_node->getName());
+            row.push_back(std::to_string(argument.time_step));
+            row.push_back(argument.weight->getName());
+            row.push_back(sink_node_name);
+            row.push_back(std::to_string(sink_node_timestep));
+
+            // write to file
+            csvwriter.writeDataInRow(row.begin(), row.end());
+          }
+        }
+      }
+    }
+    return true;
+  }
 
 	template<typename TensorT, typename DeviceT>
 	bool ModelInterpreterFile<TensorT, DeviceT>::loadModelInterpreterBinary(const std::string & filename,  ModelInterpreter<TensorT, DeviceT>& model_interpreter)

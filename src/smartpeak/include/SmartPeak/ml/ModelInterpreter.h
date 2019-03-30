@@ -571,9 +571,19 @@ namespace SmartPeak
 
 		virtual void checkMemory(const Model<TensorT>& model, const int& batch_size, const int& memory_size) = 0;
 
+    /**
+    @brief Clear model interpreter resources including the following structures:
+      - operation_steps
+      - layer_tensors_
+      - weight_tensors_
+      - model_error_
+      - tensor_ops_steps_
+      - FP_operations_
+    */
 		void clear_cache();
 
 		std::vector<std::map<std::string, std::vector<int>>> getTensorOpsSteps() const;
+    std::vector<OperationList<TensorT>> getFPOperations() const;
 
 	protected:
 		std::vector<std::vector<OperationTensorStep<TensorT, DeviceT>>> operation_steps_;
@@ -1738,19 +1748,6 @@ namespace SmartPeak
 				tensor_ops_steps[FP_operations_expanded[tensor_op.second[0]].operation_index].emplace(tensor_op.first, tensor_op.second);
 			}
 
-      std::cout << "operation[tab]Sink[tab]TimeStepSink[tab]Source[tab]TimeStepSource" << std::endl;
-      for (auto& tensor_ops_step : tensor_ops_steps) {
-        for (auto& tensor_op_map : tensor_ops_step) {
-          for (auto& tensor_op : tensor_op_map.second){
-            std::cout << tensor_op_map.first << "[tab]"
-            << FP_operations_expanded[tensor_op].result.sink_node->getName() << "[tab]"
-            << FP_operations_expanded[tensor_op].result.time_step << "[tab]"
-            << FP_operations_expanded[tensor_op].arguments[0].source_node->getName() << "[tab]"
-            << FP_operations_expanded[tensor_op].arguments[0].time_step << std::endl;
-          }
-        }
-      }
-
 			// Save the list of operations for fast model check-pointing
 			tensor_ops_steps_ = tensor_ops_steps;
 			FP_operations_ = FP_operations_expanded;
@@ -2085,5 +2082,10 @@ namespace SmartPeak
 	inline std::vector<std::map<std::string, std::vector<int>>> ModelInterpreter<TensorT, DeviceT>::getTensorOpsSteps() const {
 		return tensor_ops_steps_;
 	}
+  template<typename TensorT, typename DeviceT>
+  inline std::vector<OperationList<TensorT>> ModelInterpreter<TensorT, DeviceT>::getFPOperations() const
+  {
+    return FP_operations_;
+  }
 }
 #endif //SMARTPEAK_MODELINTERPRETER_H
