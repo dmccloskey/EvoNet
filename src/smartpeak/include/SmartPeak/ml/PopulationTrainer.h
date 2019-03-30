@@ -14,6 +14,7 @@
 #include <SmartPeak/io/LinkFile.h>
 #include <SmartPeak/io/NodeFile.h>
 #include <SmartPeak/io/ModelFile.h>
+#include <SmartPeak/io/ModelInterpreterFile.h>
 #include <algorithm> // tokenizing
 #include <regex> // tokenizing
 #include <utility>
@@ -693,6 +694,7 @@ private:
 			// retreive the results
 			if (thread_cnt == model_interpreters.size() - 1 || i == models.size() - 1)
 			{
+        int task_cnt = 0;
 				for (auto& task_result : task_results)
 					// for (int j=0; j<task_results.size(); ++j)
 				{
@@ -700,8 +702,7 @@ private:
 					{
 						try
 						{
-							std::pair<bool, Model<TensorT>> status = task_result.get();
-							// std::pair<bool, Model<TensorT>> status status = task_results[j].get();         
+							std::pair<bool, Model<TensorT>> status = task_result.get();        
 							if (status.first)
 							{
 								trained_models.push_back(status.second);
@@ -712,6 +713,7 @@ private:
 							printf("Exception: %s", e.what());
 						}
 					}
+          ++task_cnt;
 				}
 				task_results.clear();
 				thread_cnt = 0;
@@ -791,6 +793,7 @@ private:
 		{
 			printf("The model %s is broken.\n", model->getName().data());
 			printf("Error: %s.\n", e.what());
+      ModelInterpreterFile<TensorT, InterpreterT>::storeModelInterpreterCsv(model->getName() + "_interpreterOps.csv", *model_interpreter);
 			return std::make_pair(false, *model);
 		}
 	}

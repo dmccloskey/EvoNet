@@ -23,7 +23,7 @@ namespace SmartPeak
   /**
     @brief ModelInterpreterFile
   */
-	template<typename TensorT, typename DeviceT>
+	template<typename TensorT, typename InterpreterT>
   class ModelInterpreterFile
   {
 public:
@@ -38,8 +38,8 @@ public:
 
 			@returns Status True on success, False if not
 		*/
-		bool storeModelInterpreterBinary(const std::string& filename, const ModelInterpreter<TensorT, DeviceT>& model_interpreter);
-    bool storeModelInterpreterCsv(const std::string& filename, const ModelInterpreter<TensorT, DeviceT>& model_interpreter);
+		static bool storeModelInterpreterBinary(const std::string& filename, const InterpreterT& model_interpreter);
+    static bool storeModelInterpreterCsv(const std::string& filename, const InterpreterT& model_interpreter);
  
 		/**
 			@brief load Model from file
@@ -49,11 +49,11 @@ public:
 
 			@returns Status True on success, False if not
 		*/
-		bool loadModelInterpreterBinary(const std::string& filename, ModelInterpreter<TensorT, DeviceT>& model_interpreter);
+		static bool loadModelInterpreterBinary(const std::string& filename, InterpreterT& model_interpreter);
   };
 
-	template<typename TensorT, typename DeviceT>
-	bool ModelInterpreterFile<TensorT, DeviceT>::storeModelInterpreterBinary(const std::string & filename, const  ModelInterpreter<TensorT, DeviceT>& model_interpreter)
+	template<typename TensorT, typename InterpreterT>
+	bool ModelInterpreterFile<TensorT, InterpreterT>::storeModelInterpreterBinary(const std::string & filename, const  InterpreterT& model_interpreter)
 	{
 		//auto myfile = std::fstream(filename, std::ios::out | std::ios::binary);
 		//myfile.write((char*)&model_interpreter, sizeof(model_interpreter));
@@ -68,8 +68,8 @@ public:
 		return true;
 	}
 
-  template<typename TensorT, typename DeviceT>
-  inline bool ModelInterpreterFile<TensorT, DeviceT>::storeModelInterpreterCsv(const std::string & filename, const ModelInterpreter<TensorT, DeviceT>& model_interpreter)
+  template<typename TensorT, typename InterpreterT>
+  inline bool ModelInterpreterFile<TensorT, InterpreterT>::storeModelInterpreterCsv(const std::string & filename, const InterpreterT& model_interpreter)
   {
     CSVWriter csvwriter(filename);
 
@@ -102,8 +102,8 @@ public:
     return true;
   }
 
-	template<typename TensorT, typename DeviceT>
-	bool ModelInterpreterFile<TensorT, DeviceT>::loadModelInterpreterBinary(const std::string & filename,  ModelInterpreter<TensorT, DeviceT>& model_interpreter)
+	template<typename TensorT, typename InterpreterT>
+	bool ModelInterpreterFile<TensorT, InterpreterT>::loadModelInterpreterBinary(const std::string & filename, InterpreterT& model_interpreter)
 	{		
 		std::ifstream ifs(filename, std::ios::binary); 
 		if (ifs.is_open()) {
@@ -118,7 +118,7 @@ public:
 		@brief ModelInterpreterFileDefaultDevice
 	*/
 	template<typename TensorT>
-	class ModelInterpreterFileDefaultDevice : public ModelInterpreterFile<TensorT, Eigen::DefaultDevice>
+	class ModelInterpreterFileDefaultDevice : public ModelInterpreterFile<TensorT, ModelInterpreterDefaultDevice<TensorT>>
 	{
 	public:
 		ModelInterpreterFileDefaultDevice() = default; ///< Default constructor
@@ -127,7 +127,7 @@ public:
 		friend class cereal::access;
 		template<class Archive>
 		void serialize(Archive& archive) {
-			archive(cereal::base_class<ModelInterpreterFile<TensorT, Eigen::DefaultDevice>>(this));
+			archive(cereal::base_class<ModelInterpreterFile<TensorT, ModelInterpreterDefaultDevice<TensorT>>>(this));
 		}
 	};
 
@@ -136,7 +136,7 @@ public:
 		@brief ModelInterpreterFileGpu
 	*/
 	template<typename TensorT>
-	class ModelInterpreterFileGpu : public ModelInterpreterFile<TensorT, Eigen::GpuDevice>
+	class ModelInterpreterFileGpu : public ModelInterpreterFile<TensorT, ModelInterpreterGpu<TensorT>>
 	{
 	public:
 		ModelInterpreterFileGpu() = default; ///< Default constructor
@@ -145,7 +145,7 @@ public:
 		friend class cereal::access;
 		template<class Archive>
 		void serialize(Archive& archive) {
-			archive(cereal::base_class<ModelInterpreterFile<TensorT, Eigen::GpuDevice>>(this));
+			archive(cereal::base_class<ModelInterpreterFile<TensorT, ModelInterpreterGpu<TensorT>>>(this));
 		}
 	};
 #endif
