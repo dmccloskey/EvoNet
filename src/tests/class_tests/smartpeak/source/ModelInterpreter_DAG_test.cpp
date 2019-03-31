@@ -701,7 +701,8 @@ template<typename TensorT>
 void makeModelSolution(Model<TensorT>& model, const int& n_inputs, const int& n_outputs, bool specify_layers = false)
 {
   model.setId(0);
-  model.setName("AddProbAtt-Solution");
+  model.setName("AddProbAtt-Solution-NoBiases");
+  // NOTE: Biases will be non-optimally split when layers are specified
 
   ModelBuilder<TensorT> model_builder;
 
@@ -721,7 +722,7 @@ void makeModelSolution(Model<TensorT>& model, const int& n_inputs, const int& n_
     std::shared_ptr<IntegrationOp<TensorT>>(new ProdOp<TensorT>()),
     std::shared_ptr<IntegrationErrorOp<TensorT>>(new ProdErrorOp<TensorT>()),
     std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new ProdWeightGradOp<TensorT>()),
-    weight_init, solver, 0.0f, 0.0f, true, specify_layers);
+    weight_init, solver, 0.0f, 0.0f, false, specify_layers);
   model_builder.addSinglyConnected(model, "HiddenR", node_names_mask, node_names,
     weight_init, solver, 0.0f, specify_layers);
 
@@ -744,7 +745,8 @@ void makeModelAttention(Model<TensorT>& model, const int& n_inputs, const int& n
   std::vector<int> model_lengths = { 2, 2 },
   bool add_FC = true, bool add_skip = true, bool add_norm = false, bool specify_layers = false) {
   model.setId(0);
-  model.setName("AddProbAtt-DotProdAtt");
+  model.setName("AddProbAtt-DotProdAtt-NoBiases");
+  // NOTE: Biases will be non-optimally split when layers are specified
 
   ModelBuilder<TensorT> model_builder;
 
@@ -764,7 +766,7 @@ void makeModelAttention(Model<TensorT>& model, const int& n_inputs, const int& n
       std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
       std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
       std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names_input.size(), 2)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, true, specify_layers);
+      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, specify_layers);
     if (add_norm) {
       std::string norm_name = "Norm" + std::to_string(i);
       node_names = model_builder.addNormalization(model, norm_name, norm_name, node_names,
@@ -791,7 +793,7 @@ void makeModelAttention(Model<TensorT>& model, const int& n_inputs, const int& n
         std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
         std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
         std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names_input.size(), 2)),
-        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, true, specify_layers);
+        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, specify_layers);
     }
     if (add_norm) {
       std::string norm_name = "Norm_FC" + std::to_string(i);
@@ -823,8 +825,99 @@ void makeModelAttention(Model<TensorT>& model, const int& n_inputs, const int& n
   for (const std::string& node_name : node_names)
     model.nodes_.at(node_name)->setType(NodeType::output);
 }
+template<typename TensorT>
+void makeModelVAE(Model<TensorT>& model, int n_inputs = 784, int n_encodings = 64, int n_hidden_0 = 512, bool specify_layer = false) {
+  model.setId(0);
+  model.setName("VAE");
 
-BOOST_AUTO_TEST_CASE(makeModelSolutionTest)
+  ModelBuilder<TensorT> model_builder;
+
+  // Add the inputs
+  std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", "Input", n_inputs, specify_layer);
+
+  // Add the Endocer FC layers
+  std::vector<std::string> node_names, node_names_mu, node_names_logvar;
+  node_names = model_builder.addFullyConnected(model, "EN0", "EN0", node_names_input, n_hidden_0,
+    std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
+    std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+    std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
+    std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
+    std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
+    //std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0, 2 / (int)(node_names_input.size() + node_names.size()))),
+    std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_input.size() + node_names.size()) / 2, 1)),
+    std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8, 10.0)), 0.0f, 0.0f, false, specify_layer);
+  node_names = model_builder.addFullyConnected(model, "EN1", "EN1", node_names, n_hidden_0,
+    std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
+    std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+    std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
+    std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
+    std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
+    //std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0, 2 / (int)(node_names.size() + node_names.size()))),
+    std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + node_names.size()) / 2, 1)),
+    std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8, 10.0)), 0.0f, 0.0f, false, specify_layer);
+  node_names_mu = model_builder.addFullyConnected(model, "Mu", "Mu", node_names, n_encodings,
+    std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
+    std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+    std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
+    std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
+    std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
+    //std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0, 2 / (int)(node_names.size() + n_encodings))),
+    std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_encodings) / 2, 1)),
+    std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8, 10.0)), 0.0f, 0.0f, false, specify_layer);
+  node_names_logvar = model_builder.addFullyConnected(model, "LogVar", "LogVar", node_names, n_encodings,
+    std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
+    std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+    std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
+    std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
+    std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
+    //std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0, 2 / (int)(node_names.size() + n_encodings))),
+    std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_encodings) / 2, 1)),
+    std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8, 10.0)), 0.0f, 0.0f, false, specify_layer);
+
+  // Specify the output node types manually
+  for (const std::string& node_name : node_names_mu)
+    model.nodes_.at(node_name)->setType(NodeType::output);
+  for (const std::string& node_name : node_names_logvar)
+    model.nodes_.at(node_name)->setType(NodeType::output);
+
+  // Add the Encoding layers
+  std::vector<std::string> node_names_encoder = model_builder.addGaussianEncoding(model, "Encoding", "Encoding", node_names_mu, node_names_logvar, specify_layer);
+
+  // Add the Decoder FC layers
+  node_names = model_builder.addFullyConnected(model, "DE0", "DE0", node_names_encoder, n_hidden_0,
+    std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
+    std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+    std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
+    std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
+    std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
+    //std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0, 2 / (int)(node_names_encoder.size() + n_hidden_0))),
+    std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_encoder.size() + n_hidden_0) / 2, 1)),
+    std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8, 10.0)), 0.0f, 0.0f, false, specify_layer);
+  node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names, n_hidden_0,
+    std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
+    std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+    std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
+    std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
+    std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
+    //std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0, 2 / (int)(node_names.size() + n_hidden_0))),
+    std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_hidden_0) / 2, 1)),
+    std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8, 10.0)), 0.0f, 0.0f, false, specify_layer);
+  node_names = model_builder.addFullyConnected(model, "Output", "Output", node_names, n_inputs,
+    std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
+    std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+    std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
+    std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
+    std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
+    //std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0, 2 / node_names.size())),
+    std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 1)),
+    std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8, 10.0)), 0.0f, 0.0f, false, specify_layer);
+
+  // Specify the output node types manually
+  for (const std::string& node_name : node_names)
+    model.nodes_.at(node_name)->setType(NodeType::output);
+}
+
+BOOST_AUTO_TEST_CASE(makeModelSolution1)
 {
   ModelInterpreterDefaultDevice<float> model_interpreter;
 
@@ -840,27 +933,201 @@ BOOST_AUTO_TEST_CASE(makeModelSolutionTest)
   std::map<std::string, std::vector<int>> tensor_ops_test = model_interpreter.getTensorOperations(FP_operations_expanded_test, identified_sink_nodes_test, true);
 
   // Determine the tensor_ops_steps and FP_operations for the manually specified layer case
-  Model<float> model_specified_layers;
-  makeModelSolution(model_specified_layers, 2, 1, true);
+  Model<float> model;
+  makeModelSolution(model, 2, 1, false);
 
   int iter = 0;
   std::vector<OperationList<float>> FP_operations_expanded;
-  model_interpreter.getFPOpsOoO_(model_specified_layers, true, FP_operations_expanded, iter);
+  model_interpreter.getFPOpsOoO_(model, true, FP_operations_expanded, iter);
 
   std::set<std::string> identified_sink_nodes;
-  std::map<std::string, std::vector<int>> tensor_ops = model_interpreter.getTensorOperations(FP_operations_expanded, identified_sink_nodes, true);
+  std::map<std::string, std::vector<int>> tensor_ops = model_interpreter.getTensorOperations(FP_operations_expanded, identified_sink_nodes, false);
 
   BOOST_CHECK_EQUAL(iter_test, iter);
   BOOST_CHECK(tensor_ops_test == tensor_ops);
   BOOST_CHECK(identified_sink_nodes_test == identified_sink_nodes);
-  for (int i = 0; i < FP_operations_expanded_test.size(); ++i) {
-    BOOST_CHECK_EQUAL(FP_operations_expanded_test[i].result.sink_node->getName(), FP_operations_expanded[i].result.sink_node->getName());
-    BOOST_CHECK_EQUAL(FP_operations_expanded_test[i].result.time_step, FP_operations_expanded[i].result.time_step);
-    for (int j = 0; j < FP_operations_expanded_test[i].arguments.size(); ++j) {
-      BOOST_CHECK_EQUAL(FP_operations_expanded_test[i].arguments[j].source_node->getName(), FP_operations_expanded[i].arguments[j].source_node->getName());
-      BOOST_CHECK_EQUAL(FP_operations_expanded_test[i].arguments[j].weight->getName(), FP_operations_expanded[i].arguments[j].weight->getName());
-      BOOST_CHECK_EQUAL(FP_operations_expanded_test[i].arguments[j].time_step, FP_operations_expanded[i].arguments[j].time_step);
+  BOOST_CHECK_EQUAL(FP_operations_expanded_test.size(), FP_operations_expanded.size());
+  if (tensor_ops_test == tensor_ops && identified_sink_nodes_test == identified_sink_nodes && FP_operations_expanded_test.size() == FP_operations_expanded.size()) {
+    for (int i = 0; i < FP_operations_expanded_test.size(); ++i) {
+      BOOST_CHECK_EQUAL(FP_operations_expanded_test[i].result.sink_node->getName(), FP_operations_expanded[i].result.sink_node->getName());
+      BOOST_CHECK_EQUAL(FP_operations_expanded_test[i].result.time_step, FP_operations_expanded[i].result.time_step);
+      for (int j = 0; j < FP_operations_expanded_test[i].arguments.size(); ++j) {
+        BOOST_CHECK_EQUAL(FP_operations_expanded_test[i].arguments[j].source_node->getName(), FP_operations_expanded[i].arguments[j].source_node->getName());
+        BOOST_CHECK_EQUAL(FP_operations_expanded_test[i].arguments[j].weight->getName(), FP_operations_expanded[i].arguments[j].weight->getName());
+        BOOST_CHECK_EQUAL(FP_operations_expanded_test[i].arguments[j].time_step, FP_operations_expanded[i].arguments[j].time_step);
+      }
+    }
+  }
+}
 
+BOOST_AUTO_TEST_CASE(makeModelAttention1)
+{
+  ModelInterpreterDefaultDevice<float> model_interpreter;
+
+  // Determine the tensor_ops_steps and FP_operations for the manually specified layer case
+  Model<float> model_test;
+  makeModelAttention(model_test, 1, 1, { 2 }, { 3 }, { 1 }, false, false, false, true);
+
+  int iter_test = 0;
+  std::vector<OperationList<float>> FP_operations_expanded_test;
+  model_interpreter.getFPOpsOoO_(model_test, true, FP_operations_expanded_test, iter_test);
+
+  std::set<std::string> identified_sink_nodes_test;
+  std::map<std::string, std::vector<int>> tensor_ops_test = model_interpreter.getTensorOperations(FP_operations_expanded_test, identified_sink_nodes_test, true);
+
+  // Determine the tensor_ops_steps and FP_operations for the manually specified layer case
+  Model<float> model;
+  makeModelAttention(model, 1, 1, { 2 }, { 3 }, { 1 }, false, false, false, false);
+
+  int iter = 0;
+  std::vector<OperationList<float>> FP_operations_expanded;
+  model_interpreter.getFPOpsOoO_(model, true, FP_operations_expanded, iter);
+
+  std::set<std::string> identified_sink_nodes;
+  std::map<std::string, std::vector<int>> tensor_ops = model_interpreter.getTensorOperations(FP_operations_expanded, identified_sink_nodes, false);
+
+  BOOST_CHECK_EQUAL(iter_test, iter);
+  BOOST_CHECK(tensor_ops_test == tensor_ops);
+  BOOST_CHECK(identified_sink_nodes_test == identified_sink_nodes);
+  BOOST_CHECK_EQUAL(FP_operations_expanded_test.size(), FP_operations_expanded.size());
+  if (tensor_ops_test == tensor_ops && identified_sink_nodes_test == identified_sink_nodes && FP_operations_expanded_test.size() == FP_operations_expanded.size()) {
+    for (int i = 0; i < FP_operations_expanded_test.size(); ++i) {
+      BOOST_CHECK_EQUAL(FP_operations_expanded_test[i].result.sink_node->getName(), FP_operations_expanded[i].result.sink_node->getName());
+      BOOST_CHECK_EQUAL(FP_operations_expanded_test[i].result.time_step, FP_operations_expanded[i].result.time_step);
+      for (int j = 0; j < FP_operations_expanded_test[i].arguments.size(); ++j) {
+        BOOST_CHECK_EQUAL(FP_operations_expanded_test[i].arguments[j].source_node->getName(), FP_operations_expanded[i].arguments[j].source_node->getName());
+        BOOST_CHECK_EQUAL(FP_operations_expanded_test[i].arguments[j].weight->getName(), FP_operations_expanded[i].arguments[j].weight->getName());
+        BOOST_CHECK_EQUAL(FP_operations_expanded_test[i].arguments[j].time_step, FP_operations_expanded[i].arguments[j].time_step);
+      }
+    }
+  }
+}
+
+BOOST_AUTO_TEST_CASE(makeModelAttention2)
+{
+  ModelInterpreterDefaultDevice<float> model_interpreter;
+
+  // Determine the tensor_ops_steps and FP_operations for the manually specified layer case
+  Model<float> model_test;
+  makeModelAttention(model_test, 1, 1, { 2 }, { 3 }, { 1 }, true, true, false, true);
+
+  int iter_test = 0;
+  std::vector<OperationList<float>> FP_operations_expanded_test;
+  model_interpreter.getFPOpsOoO_(model_test, true, FP_operations_expanded_test, iter_test);
+
+  std::set<std::string> identified_sink_nodes_test;
+  std::map<std::string, std::vector<int>> tensor_ops_test = model_interpreter.getTensorOperations(FP_operations_expanded_test, identified_sink_nodes_test, true);
+
+  // Determine the tensor_ops_steps and FP_operations for the manually specified layer case
+  Model<float> model;
+  makeModelAttention(model, 1, 1, { 2 }, { 3 }, { 1 }, true, true, false, false);
+
+  int iter = 0;
+  std::vector<OperationList<float>> FP_operations_expanded;
+  model_interpreter.getFPOpsOoO_(model, true, FP_operations_expanded, iter);
+
+  std::set<std::string> identified_sink_nodes;
+  std::map<std::string, std::vector<int>> tensor_ops = model_interpreter.getTensorOperations(FP_operations_expanded, identified_sink_nodes, false);
+
+  BOOST_CHECK_EQUAL(iter_test, iter);
+  BOOST_CHECK(tensor_ops_test == tensor_ops);
+  BOOST_CHECK(identified_sink_nodes_test == identified_sink_nodes);
+  BOOST_CHECK_EQUAL(FP_operations_expanded_test.size(), FP_operations_expanded.size());
+  if (tensor_ops_test == tensor_ops && identified_sink_nodes_test == identified_sink_nodes && FP_operations_expanded_test.size() == FP_operations_expanded.size()) {
+    for (int i = 0; i < FP_operations_expanded_test.size(); ++i) {
+      BOOST_CHECK_EQUAL(FP_operations_expanded_test[i].result.sink_node->getName(), FP_operations_expanded[i].result.sink_node->getName());
+      BOOST_CHECK_EQUAL(FP_operations_expanded_test[i].result.time_step, FP_operations_expanded[i].result.time_step);
+      for (int j = 0; j < FP_operations_expanded_test[i].arguments.size(); ++j) {
+        BOOST_CHECK_EQUAL(FP_operations_expanded_test[i].arguments[j].source_node->getName(), FP_operations_expanded[i].arguments[j].source_node->getName());
+        BOOST_CHECK_EQUAL(FP_operations_expanded_test[i].arguments[j].weight->getName(), FP_operations_expanded[i].arguments[j].weight->getName());
+        BOOST_CHECK_EQUAL(FP_operations_expanded_test[i].arguments[j].time_step, FP_operations_expanded[i].arguments[j].time_step);
+      }
+    }
+  }
+}
+
+BOOST_AUTO_TEST_CASE(makeModelAttention3)
+{
+  ModelInterpreterDefaultDevice<float> model_interpreter;
+
+  // Determine the tensor_ops_steps and FP_operations for the manually specified layer case
+  Model<float> model_test;
+  makeModelAttention(model_test, 1, 1, { 2 }, { 3 }, { 1 }, true, true, true, true);
+
+  int iter_test = 0;
+  std::vector<OperationList<float>> FP_operations_expanded_test;
+  model_interpreter.getFPOpsOoO_(model_test, true, FP_operations_expanded_test, iter_test);
+
+  std::set<std::string> identified_sink_nodes_test;
+  std::map<std::string, std::vector<int>> tensor_ops_test = model_interpreter.getTensorOperations(FP_operations_expanded_test, identified_sink_nodes_test, true);
+
+  // Determine the tensor_ops_steps and FP_operations for the manually specified layer case
+  Model<float> model;
+  makeModelAttention(model, 1, 1, { 2 }, { 3 }, { 1 }, true, true, true, false);
+
+  int iter = 0;
+  std::vector<OperationList<float>> FP_operations_expanded;
+  model_interpreter.getFPOpsOoO_(model, true, FP_operations_expanded, iter);
+
+  std::set<std::string> identified_sink_nodes;
+  std::map<std::string, std::vector<int>> tensor_ops = model_interpreter.getTensorOperations(FP_operations_expanded, identified_sink_nodes, false);
+
+  BOOST_CHECK_EQUAL(iter_test, iter);
+  BOOST_CHECK(tensor_ops_test == tensor_ops);
+  BOOST_CHECK(identified_sink_nodes_test == identified_sink_nodes);
+  BOOST_CHECK_EQUAL(FP_operations_expanded_test.size(), FP_operations_expanded.size());
+  if (tensor_ops_test == tensor_ops && identified_sink_nodes_test == identified_sink_nodes && FP_operations_expanded_test.size() == FP_operations_expanded.size()) {
+    for (int i = 0; i < FP_operations_expanded_test.size(); ++i) {
+      BOOST_CHECK_EQUAL(FP_operations_expanded_test[i].result.sink_node->getName(), FP_operations_expanded[i].result.sink_node->getName());
+      BOOST_CHECK_EQUAL(FP_operations_expanded_test[i].result.time_step, FP_operations_expanded[i].result.time_step);
+      for (int j = 0; j < FP_operations_expanded_test[i].arguments.size(); ++j) {
+        BOOST_CHECK_EQUAL(FP_operations_expanded_test[i].arguments[j].source_node->getName(), FP_operations_expanded[i].arguments[j].source_node->getName());
+        BOOST_CHECK_EQUAL(FP_operations_expanded_test[i].arguments[j].weight->getName(), FP_operations_expanded[i].arguments[j].weight->getName());
+        BOOST_CHECK_EQUAL(FP_operations_expanded_test[i].arguments[j].time_step, FP_operations_expanded[i].arguments[j].time_step);
+      }
+    }
+  }
+}
+
+BOOST_AUTO_TEST_CASE(makeModelVAE1)
+{
+  ModelInterpreterDefaultDevice<float> model_interpreter;
+
+  // Determine the tensor_ops_steps and FP_operations for the manually specified layer case
+  Model<float> model_test;
+  makeModelVAE(model_test, 8, 2, 4, true);
+
+  int iter_test = 0;
+  std::vector<OperationList<float>> FP_operations_expanded_test;
+  model_interpreter.getFPOpsOoO_(model_test, true, FP_operations_expanded_test, iter_test);
+
+  std::set<std::string> identified_sink_nodes_test;
+  std::map<std::string, std::vector<int>> tensor_ops_test = model_interpreter.getTensorOperations(FP_operations_expanded_test, identified_sink_nodes_test, true);
+
+  // Determine the tensor_ops_steps and FP_operations for the manually specified layer case
+  Model<float> model;
+  makeModelVAE(model, 8, 2, 4, false);
+
+  int iter = 0;
+  std::vector<OperationList<float>> FP_operations_expanded;
+  model_interpreter.getFPOpsOoO_(model, true, FP_operations_expanded, iter);
+
+  std::set<std::string> identified_sink_nodes;
+  std::map<std::string, std::vector<int>> tensor_ops = model_interpreter.getTensorOperations(FP_operations_expanded, identified_sink_nodes, false);
+
+  BOOST_CHECK_EQUAL(iter_test, iter);
+  BOOST_CHECK(tensor_ops_test == tensor_ops);
+  BOOST_CHECK(identified_sink_nodes_test == identified_sink_nodes);
+  BOOST_CHECK_EQUAL(FP_operations_expanded_test.size(), FP_operations_expanded.size());
+  if (tensor_ops_test == tensor_ops && identified_sink_nodes_test == identified_sink_nodes && FP_operations_expanded_test.size() == FP_operations_expanded.size()) {
+    for (int i = 0; i < FP_operations_expanded_test.size(); ++i) {
+      BOOST_CHECK_EQUAL(FP_operations_expanded_test[i].result.sink_node->getName(), FP_operations_expanded[i].result.sink_node->getName());
+      BOOST_CHECK_EQUAL(FP_operations_expanded_test[i].result.time_step, FP_operations_expanded[i].result.time_step);
+      for (int j = 0; j < FP_operations_expanded_test[i].arguments.size(); ++j) {
+        BOOST_CHECK_EQUAL(FP_operations_expanded_test[i].arguments[j].source_node->getName(), FP_operations_expanded[i].arguments[j].source_node->getName());
+        BOOST_CHECK_EQUAL(FP_operations_expanded_test[i].arguments[j].weight->getName(), FP_operations_expanded[i].arguments[j].weight->getName());
+        BOOST_CHECK_EQUAL(FP_operations_expanded_test[i].arguments[j].time_step, FP_operations_expanded[i].arguments[j].time_step);
+      }
     }
   }
 }

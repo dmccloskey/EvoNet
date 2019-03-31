@@ -125,7 +125,7 @@ public:
 	/*
 	@brief Minimal newtork required to solve the addition problem
 	*/
-	void makeModelSolution(Model<TensorT>& model, const int& n_inputs, const int& n_outputs, bool init_weight_soln = true)
+	void makeModelSolution(Model<TensorT>& model, const int& n_inputs, const int& n_outputs, bool init_weight_soln = true, bool specify_layers = false)
 	{
     model.setId(0);
     model.setName("AddProbAtt-Solution");
@@ -133,8 +133,8 @@ public:
     ModelBuilder<TensorT> model_builder;
 
     // Add the inputs
-    std::vector<std::string> node_names_random = model_builder.addInputNodes(model, "Random", "Random", n_inputs);
-    std::vector<std::string> node_names_mask = model_builder.addInputNodes(model, "Mask", "Mask", n_inputs);
+    std::vector<std::string> node_names_random = model_builder.addInputNodes(model, "Random", "Random", n_inputs, specify_layer);
+    std::vector<std::string> node_names_mask = model_builder.addInputNodes(model, "Mask", "Mask", n_inputs, specify_layer);
 
     std::shared_ptr<SolverOp<TensorT>> solver;
     std::shared_ptr<WeightInitOp<TensorT>> weight_init;
@@ -156,9 +156,9 @@ public:
       std::shared_ptr<IntegrationOp<TensorT>>(new ProdOp<TensorT>()),
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new ProdErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new ProdWeightGradOp<TensorT>()),
-      weight_init, solver, 0.0f, 0.0f, false);
+      weight_init, solver, 0.0f, 0.0f, false, specify_layer);
     model_builder.addSinglyConnected(model, "HiddenR", node_names_mask, node_names,
-      weight_init, solver, 0.0f);
+      weight_init, solver, 0.0f, specify_layer);
 
     // Add the output layer
     node_names = model_builder.addFullyConnected(model, "Output", "Output", node_names, n_outputs,
@@ -179,15 +179,15 @@ public:
     std::vector<int> n_heads = { 8, 8 },
     std::vector<int> key_query_values_lengths = { 48, 24 },
     std::vector<int> model_lengths = { 48, 24 },
-    bool add_FC = true, bool add_skip = true, bool add_norm = false) {
+    bool add_FC = true, bool add_skip = true, bool add_norm = false, bool specify_layers = false) {
     model.setId(0);
     model.setName("AddProbAtt-DotProdAtt");
 
     ModelBuilder<TensorT> model_builder;
 
     // Add the inputs
-    std::vector<std::string> node_names_random = model_builder.addInputNodes(model, "Random", "Random", n_inputs); // Q and V matrices
-    std::vector<std::string> node_names_mask = model_builder.addInputNodes(model, "Mask", "Mask", n_inputs);  // K matrix
+    std::vector<std::string> node_names_random = model_builder.addInputNodes(model, "Random", "Random", n_inputs, specify_layers); // Q and V matrices
+    std::vector<std::string> node_names_mask = model_builder.addInputNodes(model, "Mask", "Mask", n_inputs, specify_layers);  // K matrix
     std::vector<std::string> node_names_input = node_names_random;  // initial "input"
 
     // Multi-head attention
@@ -201,20 +201,20 @@ public:
         std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
         std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
         std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names_input.size(), 2)),
-        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, true, false);
+        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, true, specify_layers);
       if (add_norm) {
         std::string norm_name = "Norm" + std::to_string(i);
         node_names = model_builder.addNormalization(model, norm_name, norm_name, node_names,
           std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
           std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
           std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 2)),
-          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.1, 0.9, 0.999, 1e-8)), 0.0, 0.0);
+          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.1, 0.9, 0.999, 1e-8)), 0.0, 0.0, specify_layers);
       }
       if (add_skip) {
         std::string skip_name = "Skip" + std::to_string(i);
         model_builder.addSinglyConnected(model, skip_name, node_names_input, node_names,
           std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names_input.size(), 2)),
-          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f);
+          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, specify_layers);
       }
       node_names_input = node_names;
 
@@ -228,7 +228,7 @@ public:
           std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
           std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
           std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names_input.size(), 2)),
-          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, true, true);
+          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, true, specify_layers);
       }
       if (add_norm) {
         std::string norm_name = "Norm_FC" + std::to_string(i);
@@ -236,13 +236,13 @@ public:
           std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
           std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
           std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 2)),
-          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.1, 0.9, 0.999, 1e-8)), 0.0, 0.0);
+          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.1, 0.9, 0.999, 1e-8)), 0.0, 0.0, specify_layers);
       }
       //if (add_skip) {
       //	std::string skip_name = "Skip_FC" + std::to_string(i);
       //	model_builder.addSinglyConnected(model, skip_name, node_names_input, node_names,
       //		std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(n_inputs, 2)),
-      //		std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f);
+      //		std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, specify_layers);
       //}
       node_names_input = node_names;
     }

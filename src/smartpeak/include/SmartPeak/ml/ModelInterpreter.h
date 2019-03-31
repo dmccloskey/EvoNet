@@ -545,6 +545,13 @@ namespace SmartPeak
 		void setModelResources(const ModelResources& model_resources); ///< model_resources setter
 		ModelResources getModelResources(); ///< model_resources getter
 
+    /**
+    @brief Estimate the memory footprint of all Tensor Layers
+
+    @param[in] model The network model
+    @param[in] batch_size
+    @param[in] memory_size
+    */
 		virtual void checkMemory(const Model<TensorT>& model, const int& batch_size, const int& memory_size) = 0;
 
     /**
@@ -558,8 +565,14 @@ namespace SmartPeak
     */
 		void clear_cache();
 
-		std::vector<std::map<std::string, std::vector<int>>> getTensorOpsSteps() const;
-    std::vector<OperationList<TensorT>> getFPOperations() const;
+		std::vector<std::map<std::string, std::vector<int>>> getTensorOpsSteps() const; ///< retrieve the tensor_ops_steps_
+    std::vector<OperationList<TensorT>> getFPOperations() const; ///< retrieve the FP_operations
+
+    /**
+    @brief Print the tensor ops steps to the screen
+      for faster debugging of layer allocation errors
+    */
+    void printTensorOpsSteps(std::string delimiter = "\t") const;
 
 	protected:
 		std::vector<std::vector<OperationTensorStep<TensorT, DeviceT>>> operation_steps_;
@@ -1193,101 +1206,101 @@ namespace SmartPeak
         }
 
         // Operation 4 checks
-        //if (argument3.source_node->getName() == FP_operations[operations_iter1].result.sink_node->getName() ||
-        //  argument3.source_node->getName() == FP_operations[operations_iter2].result.sink_node->getName()) {
-        for (size_t operations_iter4 = 0; operations_iter4 < FP_operations.size(); ++operations_iter4) {
-          std::string sink_node_key4 = FP_operations[operations_iter4].result.sink_node->getName() + "/" + std::to_string(operations_iter4);
-          //if (operations_iter4 == operations_iter1 || operations_iter4 == operations_iter2 || operations_iter4 == operations_iter3) continue; // Skip current sink nodes
-          std::string sink_ops_key_4 = makeForwardPropogationOperationsKey(
-            FP_operations[operations_iter4].result.time_step,
-            FP_operations[operations_iter4].result.sink_node->getType(),
-            FP_operations[operations_iter4].result.sink_node->getIntegration()->getName(),
-            FP_operations[operations_iter4].result.sink_node->getActivation()->getName(),
-            FP_operations[operations_iter4].result.sink_node->getLayerName(),
-            FP_operations[operations_iter4].result.sink_node->getTensorIndex().first,
-            FP_operations[operations_iter4].arguments[0].weight->getLayerName());
-          for (auto& argument4 : FP_operations[operations_iter4].arguments) {
-            std::string source_ops_key_4 = makeForwardPropogationOperationsKey(argument4.time_step,
-              argument4.source_node->getType(),
-              argument4.source_node->getIntegration()->getName(),
-              argument4.source_node->getActivation()->getName(),
-              argument4.source_node->getLayerName(),
-              argument4.source_node->getTensorIndex().first,
-              argument4.weight->getLayerName());
-            // Check all future layers that the sink node may be combined with as a sink node
-            if (FP_operations[operations_iter3].result.sink_node->getName() == FP_operations[operations_iter1].result.sink_node->getName() &&
-              argument4.source_node->getName() == argument3.source_node->getName()) {
-              sinkAsSinkSinkNode_1v.push_back(source_ops_key_4 + ":" + sink_ops_key_4);
-            }
-            if (FP_operations[operations_iter3].result.sink_node->getName() == FP_operations[operations_iter1].result.sink_node->getName() &&
-              source_ops_key_4 == source_ops_key_3) {
-              sinkAsSinkSinkNode_1s.insert(FP_operations[operations_iter4].result.sink_node->getName() + "|" + std::to_string(FP_operations[operations_iter4].result.time_step));
-            }
-            if (FP_operations[operations_iter3].result.sink_node->getName() == FP_operations[operations_iter2].result.sink_node->getName() &&
-              argument4.source_node->getName() == argument3.source_node->getName()) {
-              sinkAsSinkSinkNode_2v.push_back(source_ops_key_4 + ":" + sink_ops_key_4);
-            }
-            if (FP_operations[operations_iter3].result.sink_node->getName() == FP_operations[operations_iter2].result.sink_node->getName() &&
-              source_ops_key_4 == source_ops_key_3) {
-              sinkAsSinkSinkNode_2s.insert(FP_operations[operations_iter4].result.sink_node->getName() + "|" + std::to_string(FP_operations[operations_iter4].result.time_step));
-            }
-            // Check all future layers that the sink node may be combined with as a source node
-            if (argument3.source_node->getName() == FP_operations[operations_iter1].result.sink_node->getName() &&
-              FP_operations[operations_iter4].result.sink_node->getName() == FP_operations[operations_iter3].result.sink_node->getName()) {
-              sinkAsSourceSourceNode_1v.push_back(source_ops_key_4 + ":" + sink_ops_key_4);
-            }
-            if (argument3.source_node->getName() == FP_operations[operations_iter1].result.sink_node->getName() &&
-              sink_ops_key_4 == sink_ops_key_3) {
-              sinkAsSourceSourceNode_1s.insert(argument4.source_node->getName() + "|" + std::to_string(argument4.time_step));
-            }
-            if (argument3.source_node->getName() == FP_operations[operations_iter2].result.sink_node->getName() &&
-              FP_operations[operations_iter4].result.sink_node->getName() == FP_operations[operations_iter3].result.sink_node->getName()) {
-              sinkAsSourceSourceNode_2v.push_back(source_ops_key_4 + ":" + sink_ops_key_4);
-            }
-            if (argument3.source_node->getName() == FP_operations[operations_iter2].result.sink_node->getName() &&
-              sink_ops_key_4 == sink_ops_key_3) {
-              sinkAsSourceSourceNode_2s.insert(argument4.source_node->getName() + "|" + std::to_string(argument4.time_step));
-            }
+        if (argument3.source_node->getName() == FP_operations[operations_iter1].result.sink_node->getName() ||
+          argument3.source_node->getName() == FP_operations[operations_iter2].result.sink_node->getName()) {
+          for (size_t operations_iter4 = 0; operations_iter4 < FP_operations.size(); ++operations_iter4) {
+            std::string sink_node_key4 = FP_operations[operations_iter4].result.sink_node->getName() + "/" + std::to_string(operations_iter4);
+            //if (operations_iter4 == operations_iter1 || operations_iter4 == operations_iter2 || operations_iter4 == operations_iter3) continue; // Skip current sink nodes
+            std::string sink_ops_key_4 = makeForwardPropogationOperationsKey(
+              FP_operations[operations_iter4].result.time_step,
+              FP_operations[operations_iter4].result.sink_node->getType(),
+              FP_operations[operations_iter4].result.sink_node->getIntegration()->getName(),
+              FP_operations[operations_iter4].result.sink_node->getActivation()->getName(),
+              FP_operations[operations_iter4].result.sink_node->getLayerName(),
+              FP_operations[operations_iter4].result.sink_node->getTensorIndex().first,
+              FP_operations[operations_iter4].arguments[0].weight->getLayerName());
+            for (auto& argument4 : FP_operations[operations_iter4].arguments) {
+              std::string source_ops_key_4 = makeForwardPropogationOperationsKey(argument4.time_step,
+                argument4.source_node->getType(),
+                argument4.source_node->getIntegration()->getName(),
+                argument4.source_node->getActivation()->getName(),
+                argument4.source_node->getLayerName(),
+                argument4.source_node->getTensorIndex().first,
+                argument4.weight->getLayerName());
+              // Check all future layers that the sink node may be combined with as a sink node
+              if (FP_operations[operations_iter3].result.sink_node->getName() == FP_operations[operations_iter1].result.sink_node->getName() &&
+                argument4.source_node->getName() == argument3.source_node->getName()) {
+                sinkAsSinkSinkNode_1v.push_back(source_ops_key_4 + ":" + sink_ops_key_4);
+              }
+              if (FP_operations[operations_iter3].result.sink_node->getName() == FP_operations[operations_iter1].result.sink_node->getName() &&
+                source_ops_key_4 == source_ops_key_3) {
+                sinkAsSinkSinkNode_1s.insert(FP_operations[operations_iter4].result.sink_node->getName() + "|" + std::to_string(FP_operations[operations_iter4].result.time_step));
+              }
+              if (FP_operations[operations_iter3].result.sink_node->getName() == FP_operations[operations_iter2].result.sink_node->getName() &&
+                argument4.source_node->getName() == argument3.source_node->getName()) {
+                sinkAsSinkSinkNode_2v.push_back(source_ops_key_4 + ":" + sink_ops_key_4);
+              }
+              if (FP_operations[operations_iter3].result.sink_node->getName() == FP_operations[operations_iter2].result.sink_node->getName() &&
+                source_ops_key_4 == source_ops_key_3) {
+                sinkAsSinkSinkNode_2s.insert(FP_operations[operations_iter4].result.sink_node->getName() + "|" + std::to_string(FP_operations[operations_iter4].result.time_step));
+              }
+              // Check all future layers that the sink node may be combined with as a source node
+              if (argument3.source_node->getName() == FP_operations[operations_iter1].result.sink_node->getName() &&
+                FP_operations[operations_iter4].result.sink_node->getName() == FP_operations[operations_iter3].result.sink_node->getName()) {
+                sinkAsSourceSourceNode_1v.push_back(source_ops_key_4 + ":" + sink_ops_key_4);
+              }
+              if (argument3.source_node->getName() == FP_operations[operations_iter1].result.sink_node->getName() &&
+                sink_ops_key_4 == sink_ops_key_3) {
+                sinkAsSourceSourceNode_1s.insert(argument4.source_node->getName() + "|" + std::to_string(argument4.time_step));
+              }
+              if (argument3.source_node->getName() == FP_operations[operations_iter2].result.sink_node->getName() &&
+                FP_operations[operations_iter4].result.sink_node->getName() == FP_operations[operations_iter3].result.sink_node->getName()) {
+                sinkAsSourceSourceNode_2v.push_back(source_ops_key_4 + ":" + sink_ops_key_4);
+              }
+              if (argument3.source_node->getName() == FP_operations[operations_iter2].result.sink_node->getName() &&
+                sink_ops_key_4 == sink_ops_key_3) {
+                sinkAsSourceSourceNode_2s.insert(argument4.source_node->getName() + "|" + std::to_string(argument4.time_step));
+              }
 
-            for (const auto& argument1 : FP_operations[operations_iter1].arguments) {
-              std::string ops_key = makeForwardPropogationOperationsKey(argument1.time_step,
-                argument1.source_node->getType(),
-                argument1.source_node->getIntegration()->getName(),
-                argument1.source_node->getActivation()->getName(),
-                argument1.source_node->getLayerName(),
-                argument1.source_node->getTensorIndex().first,
-                argument1.weight->getLayerName());
-              // Check if the source nodes will be compatible as future source nodes
-              if (argument3.source_node->getName() == argument1.source_node->getName() &&
-                FP_operations[operations_iter4].result.sink_node->getName() == FP_operations[operations_iter3].result.sink_node->getName()) {
-                sourceAsSourceNode_1v.push_back(source_ops_key_3 + ":" + sink_ops_key_3);
+              for (const auto& argument1 : FP_operations[operations_iter1].arguments) {
+                std::string ops_key = makeForwardPropogationOperationsKey(argument1.time_step,
+                  argument1.source_node->getType(),
+                  argument1.source_node->getIntegration()->getName(),
+                  argument1.source_node->getActivation()->getName(),
+                  argument1.source_node->getLayerName(),
+                  argument1.source_node->getTensorIndex().first,
+                  argument1.weight->getLayerName());
+                // Check if the source nodes will be compatible as future source nodes
+                if (argument3.source_node->getName() == argument1.source_node->getName() &&
+                  FP_operations[operations_iter4].result.sink_node->getName() == FP_operations[operations_iter3].result.sink_node->getName()) {
+                  sourceAsSourceSourceNode_1v.push_back(source_ops_key_3 + ":" + sink_ops_key_3);
+                }
+                if (argument3.source_node->getName() == argument1.source_node->getName() &&
+                  sink_ops_key_4 == sink_ops_key_3) {
+                  sourceAsSourceSourceNode_1s.insert(argument4.source_node->getName() + "|" + std::to_string(argument4.time_step));
+                }
               }
-              if (argument3.source_node->getName() == argument1.source_node->getName() && 
-                sink_ops_key_4 == sink_ops_key_3) {
-                sourceAsSourceNode_1s.insert(argument4.source_node->getName() + "|" + std::to_string(argument4.time_step));
-              }
-            }
-            for (const auto& argument2 : FP_operations[operations_iter2].arguments) {
-              std::string ops_key = makeForwardPropogationOperationsKey(argument2.time_step,
-                argument2.source_node->getType(),
-                argument2.source_node->getIntegration()->getName(),
-                argument2.source_node->getActivation()->getName(),
-                argument2.source_node->getLayerName(),
-                argument2.source_node->getTensorIndex().first,
-                argument2.weight->getLayerName());
-              // Check if the source nodes will be compatible as future source nodes
-              if (argument3.source_node->getName() == argument2.source_node->getName() &&
-                FP_operations[operations_iter4].result.sink_node->getName() == FP_operations[operations_iter3].result.sink_node->getName()) {
-                sourceAsSourceNode_2v.push_back(source_ops_key_3 + ":" + sink_ops_key_3);
-              }
-              if (argument3.source_node->getName() == argument2.source_node->getName() &&
-                sink_ops_key_4 == sink_ops_key_3) {
-                sourceAsSourceNode_2s.insert(argument4.source_node->getName() + "|" + std::to_string(argument4.time_step));
+              for (const auto& argument2 : FP_operations[operations_iter2].arguments) {
+                std::string ops_key = makeForwardPropogationOperationsKey(argument2.time_step,
+                  argument2.source_node->getType(),
+                  argument2.source_node->getIntegration()->getName(),
+                  argument2.source_node->getActivation()->getName(),
+                  argument2.source_node->getLayerName(),
+                  argument2.source_node->getTensorIndex().first,
+                  argument2.weight->getLayerName());
+                // Check if the source nodes will be compatible as future source nodes
+                if (argument3.source_node->getName() == argument2.source_node->getName() &&
+                  FP_operations[operations_iter4].result.sink_node->getName() == FP_operations[operations_iter3].result.sink_node->getName()) {
+                  sourceAsSourceSourceNode_2v.push_back(source_ops_key_3 + ":" + sink_ops_key_3);
+                }
+                if (argument3.source_node->getName() == argument2.source_node->getName() &&
+                  sink_ops_key_4 == sink_ops_key_3) {
+                  sourceAsSourceSourceNode_2s.insert(argument4.source_node->getName() + "|" + std::to_string(argument4.time_step));
+                }
               }
             }
           }
         }
-
       }
     }
     // Sort the vectors
@@ -1319,10 +1332,10 @@ namespace SmartPeak
       return false;
     if (sinkAsSourceSourceNode_1s != sinkAsSourceSourceNode_2s)
       return false;
-    if (sourceAsSourceSourceNode_1s != sourceAsSourceSourceNode_2s)
-      return false;
-    if (sinkAsSinkSinkNode_1s != sinkAsSinkSinkNode_2s)
-      return false;
+    //if (sourceAsSourceSourceNode_1s != sourceAsSourceSourceNode_2s)
+    //  return false;
+    //if (sinkAsSinkSinkNode_1s != sinkAsSinkSinkNode_2s)
+    //  return false;
     if (sinkAsSourceNode_1v != sinkAsSourceNode_2v)
       return false;
     if (sourceAsSourceNode_1v != sourceAsSourceNode_2v)
@@ -1333,10 +1346,10 @@ namespace SmartPeak
       return false;
     if (sinkAsSourceSourceNode_1v != sinkAsSourceSourceNode_2v)
       return false;
-    if (sourceAsSourceSourceNode_1v != sourceAsSourceSourceNode_2v)
-      return false;
-    if (sinkAsSinkSinkNode_1v != sinkAsSinkSinkNode_2v)
-      return false;
+    //if (sourceAsSourceSourceNode_1v != sourceAsSourceSourceNode_2v)
+    //  return false;
+    //if (sinkAsSinkSinkNode_1v != sinkAsSinkSinkNode_2v)
+    //  return false;
     return true;
   }
 
@@ -1553,19 +1566,6 @@ namespace SmartPeak
 			for (auto& tensor_op : tensor_ops) {
 				tensor_ops_steps[FP_operations_expanded[tensor_op.second[0]].operation_index].emplace(tensor_op.first, tensor_op.second);
 			}
-
-      std::cout << "operation[tab]Sink[tab]TimeStepSink[tab]Source[tab]TimeStepSource" << std::endl;
-      for (auto& tensor_ops_step : tensor_ops_steps) {
-        for (auto& tensor_op_map : tensor_ops_step) {
-          for (auto& tensor_op : tensor_op_map.second) {
-            std::cout << tensor_op_map.first << "[tab]"
-              << FP_operations_expanded[tensor_op].result.sink_node->getName() << "[tab]"
-              << FP_operations_expanded[tensor_op].result.time_step << "[tab]"
-              << FP_operations_expanded[tensor_op].arguments[0].source_node->getName() << "[tab]"
-              << FP_operations_expanded[tensor_op].arguments[0].time_step << std::endl;
-          }
-        }
-      }
 
 			// Save the list of operations for fast model check-pointing
 			tensor_ops_steps_ = tensor_ops_steps;
@@ -1887,6 +1887,41 @@ namespace SmartPeak
   inline std::vector<OperationList<TensorT>> ModelInterpreter<TensorT, DeviceT>::getFPOperations() const
   {
     return FP_operations_;
+  }
+  template<typename TensorT, typename DeviceT>
+  inline void ModelInterpreter<TensorT, DeviceT>::printTensorOpsSteps(std::string delimiter) const
+  {
+    const std::vector<std::string> headers = { "Operation", "source_node_name", "source_node_timestep",
+      "weight_name", "sink_node_name", "sink_node_timestep" };
+
+    // Print the headers
+    for (const std::string& header : headers)
+      std::cout << header << delimiter;
+    std::cout << "\n";
+
+    // Print the rows
+    for (const auto& tensor_ops_step : tensor_ops_steps_) {
+      for (const auto& tensor_op_map : tensor_ops_step) {
+        for (const auto& tensor_op : tensor_op_map.second) {
+          std::string sink_node_name = FP_operations_[tensor_op].result.sink_node->getName();
+          int sink_node_timestep = FP_operations_[tensor_op].result.time_step;
+          for (const auto& argument : FP_operations_[tensor_op].arguments) {
+            std::vector<std::string> row;
+            row.push_back(tensor_op_map.first);
+            row.push_back(argument.source_node->getName());
+            row.push_back(std::to_string(argument.time_step));
+            row.push_back(argument.weight->getName());
+            row.push_back(sink_node_name);
+            row.push_back(std::to_string(sink_node_timestep));
+
+            // write to the console
+            for (const std::string& e : row)
+              std::cout << e << delimiter;
+            std::cout << "\n";
+          }
+        }
+      }
+    }
   }
 }
 #endif //SMARTPEAK_MODELINTERPRETER_H

@@ -96,7 +96,7 @@ public:
 	/*
 	@brief Minimal network 
 	*/
-	Model<TensorT> makeModelMinimal()
+	void makeModelMinimal(Model<TensorT>& model)
 	{
 		Node<TensorT> i_rand, i_mask, h, o,
 			h_bias, o_bias;
@@ -106,7 +106,6 @@ public:
 		Weight<TensorT> Weight_i_rand_to_h, Weight_i_mask_to_h,
 			Weight_h_to_o,
 			Weight_h_bias_to_h, Weight_o_bias_to_o;
-		Model<TensorT> model;
 		// Nodes
 		i_rand = Node<TensorT>("Input_000000000000", NodeType::input, NodeStatus::activated, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
 		i_mask = Node<TensorT>("Input_000000000001", NodeType::input, NodeStatus::activated, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
@@ -155,12 +154,11 @@ public:
 			});
 		model.addLinks({ Link_i_rand_to_h, Link_i_mask_to_h, Link_h_to_o//,	Link_h_bias_to_h, Link_o_bias_to_o 
 			});
-		return model;
 	}
 	/*
 	@brief Minimal newtork required to solve the addition problem
 	*/
-  Model<TensorT> makeModelSolution(bool init_weight_soln = true)
+  void makeModelSolution(Model<TensorT>& model, bool init_weight_soln = true)
 	{
 		Node<TensorT> i_rand, i_mask, h, m, mr, o,
 			h_bias, m_bias, o_bias;
@@ -174,7 +172,6 @@ public:
 			Weight_m_to_o, Weight_m_to_mr, Weight_mr_to_m,
 			Weight_h_bias_to_h,
 			Weight_m_bias_to_m, Weight_o_bias_to_o;
-		Model<TensorT> model;
 		// Nodes
 		i_rand = Node<TensorT>("Input_000000000000", NodeType::input, NodeStatus::activated, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
 		i_mask = Node<TensorT>("Input_000000000001", NodeType::input, NodeStatus::activated, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
@@ -270,7 +267,6 @@ public:
 			//Link_m_bias_to_m, 
 			//Link_o_bias_to_o 
 			});
-		return model;
 	}
 
 	/*
@@ -286,16 +282,15 @@ public:
 		Cho et al. "Learning Phrase Representations using RNN Encoder–Decoder for Statistical Machine Translation". 2014. arXiv:1406.1078v3
 		Chung et al. "Empirical Evaluation of Gated Recurrent Neural Networks on Sequence Modeling". 2014. arXiv:1412.3555v1
 	*/
-	Model<TensorT> makeModelLSTM(const int& n_inputs, int n_blocks = 2, int n_cells = 2)
+	void makeModelLSTM(Model<TensorT>& model, const int& n_inputs, int n_blocks = 2, int n_cells = 2, bool specify_layers = false)
 	{
-		Model<TensorT> model;
 		model.setId(0);
 		model.setName("LSTM");
 
 		ModelBuilder<TensorT> model_builder;
 
 		// Add the inputs
-		std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", "Input", n_inputs, true);
+		std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", "Input", n_inputs, specify_layers);
 
 		// Add the LSTM layer
 		std::vector<std::string> node_names = model_builder.addLSTM(model, "LSTM", "LSTM", node_names_input, n_blocks, n_cells,
@@ -304,7 +299,7 @@ public:
 			//std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(0.4)), 
       std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0.0, 1.0)),
       std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.0005, 0.9, 0.999, 1e-8)),
-			0.0f, 0.0f, true, true, 1, true);
+			0.0f, 0.0f, true, true, 1, specify_layers);
 
 		// Add a final output layer (Specify the layer name to ensure the output is always on its own tensor!!!)
 		node_names = model_builder.addFullyConnected(model, "Output", "Output", node_names, 1,
@@ -314,15 +309,13 @@ public:
 			std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
 			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
 			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 2)),
-			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, true, true); 
+			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, true, true);
 
 		for (const std::string& node_name : node_names)
 			model.getNodesMap().at(node_name)->setType(NodeType::output);
 
 		if (!model.checkCompleteInputToOutput())
 			std::cout << "Model input and output are not fully connected!" << std::endl;
-
-		return model;
 	}
 	Model<TensorT> makeModel(){	return Model<TensorT>(); }
 	void adaptiveTrainerScheduler(
@@ -550,7 +543,7 @@ int main(int argc, char** argv)
 	model_trainer.setFindCycles(true);
 	model_trainer.setLogging(true, false);
 	model_trainer.setPreserveOoO(true);
-	model_trainer.setFastInterpreter(true);
+	model_trainer.setFastInterpreter(false);
 	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
 	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
 	model_trainer.setOutputNodes({ output_nodes });
@@ -582,9 +575,10 @@ int main(int argc, char** argv)
 	std::vector<Model<float>> population;
 
 	// make the model name
-	//Model<float> model = model_trainer.makeModelMinimal();
-	//Model<float> model = model_trainer.makeModelSolution(true);
-	Model<float> model = model_trainer.makeModelLSTM(input_nodes.size(), 1, 2);
+  Model<float> model;
+  // model_trainer.makeModelMinimal(model);
+  // model_trainer.makeModelSolution(model, true);
+  model_trainer.makeModelLSTM(model, input_nodes.size(), 1, 2);
 	char model_name_char[512];
 	sprintf(model_name_char, "%s_%d", model.getName().data(), 0);
 	std::string model_name(model_name_char);
