@@ -114,7 +114,7 @@ void test_allocateForwardPropogationLayerTensors()
 	model_interpreter.getNextInactiveLayerBiases(model_allocateForwardPropogationLayerTensors, FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
 
 	std::vector<OperationList<float>> FP_operations_expanded;
-	model_interpreter.expandForwardPropogationOperations(FP_operations_list, FP_operations_expanded);
+	model_interpreter.expandAllForwardPropogationOperations(FP_operations_list, FP_operations_expanded);
 
 	std::set<std::string> identified_sink_nodes;
 	std::map<std::string, std::vector<int>> tensor_ops = model_interpreter.getTensorOperations(FP_operations_expanded, identified_sink_nodes, false);
@@ -1325,7 +1325,7 @@ void test_updateSolverParams()
 	std::vector<std::pair<int, int>> weight_indices = { std::make_pair(0,0), std::make_pair(0,1),std::make_pair(1,0),std::make_pair(1,1) };
 	std::map<std::string, std::vector<std::pair<int, int>>> shared_weight_indices = {};
 	std::vector<float> weight_values = { 0, 0, 0, 0 };
-	weight_data.initWeightTensorData(2, 2, weight_indices, shared_weight_indices, weight_values, true, solver_params);
+	weight_data.initWeightTensorData(2, 2, weight_indices, shared_weight_indices, weight_values, true, solver_params, "SumOp");
 
 	// Test that the learning rate was updated
 	model_interpreter.addWeightTensor(weight_data);

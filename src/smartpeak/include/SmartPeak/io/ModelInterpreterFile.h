@@ -5,11 +5,11 @@
 
 // .h
 #include <SmartPeak/ml/ModelInterpreterDefaultDevice.h>
-#include <SmartPeak/ml/ModelInterpreterGpu.h>
 
 #if COMPILE_WITH_CUDA
 #define EIGEN_DEFAULT_DENSE_INDEX_TYPE int
 #define EIGEN_USE_GPU
+#include <SmartPeak/ml/ModelInterpreterGpu.h>
 #include <cuda.h>
 #include <cuda_runtime.h>
 #endif
