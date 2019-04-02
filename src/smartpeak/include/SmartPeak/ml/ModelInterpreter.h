@@ -316,7 +316,7 @@ namespace SmartPeak
     bool checkPreviousOperations_(const std::vector<OperationList<TensorT>>& FP_operations, std::map<std::string, std::vector<int>>& operations_map,
       const int& operations_iter1, const int& operations_iter2);
     bool checkFutureOperations_(const std::vector<OperationList<TensorT>>& FP_operations, const std::string& sink_ops_key_1, const std::string& sink_ops_key_2,
-      const int& operations_iter1, const int& operations_iter2);
+      const int& operations_iter1, const int& operations_iter2, const std::set<std::string>& identified_sink_nodes);
 
 		/**
 		@brief Allocate Node and Weight tensor memory for all model operations.
@@ -931,6 +931,8 @@ namespace SmartPeak
 		for (size_t operations_iter1 = 0; operations_iter1 < FP_operations.size(); ++operations_iter1) {
 			std::string sink_node_key1 = FP_operations[operations_iter1].result.sink_node->getName() + "/" + std::to_string(operations_iter1);
 			if (identified_sink_nodes.count(sink_node_key1)) continue; // Skip identified sink nodes
+      std::map<std::string, std::vector<int>> FC_layers_tmp;
+      std::set<std::string> identified_sink_nodes_tmp;
 
 			// Check for compatibility
 			for (size_t operations_iter2 = operations_iter1 + 1; operations_iter2 < FP_operations.size(); ++operations_iter2) {
@@ -981,23 +983,27 @@ namespace SmartPeak
         // Run a comprehensive check on future and previous layer compatibility
         if (!fast_check) {
           if (!checkPreviousOperations_(FP_operations, FC_layers, operations_iter1, operations_iter2)) continue;
-          if (!checkFutureOperations_(FP_operations, sink_ops_key_1, sink_ops_key_2, operations_iter1, operations_iter2)) continue;
+          if (!checkFutureOperations_(FP_operations, sink_ops_key_1, sink_ops_key_2, operations_iter1, operations_iter2, identified_sink_nodes)) continue;
         }
 
 				// update the maps
-				identified_sink_nodes.insert(sink_node_key1);
-				identified_sink_nodes.insert(sink_node_key2);
+        identified_sink_nodes_tmp.insert(sink_node_key1);
+        identified_sink_nodes_tmp.insert(sink_node_key2);
 				std::vector<int> first_operation = { (int)operations_iter1 };
-				auto found = FC_layers.emplace(sink_node_key1, first_operation);
-				FC_layers.at(sink_node_key1).push_back(operations_iter2);
+				auto found = FC_layers_tmp.emplace(sink_node_key1, first_operation);
+				FC_layers_tmp.at(sink_node_key1).push_back(operations_iter2);
 			}
 
 			// Check if compatible operations were found, if not add as is
-			if (identified_sink_nodes.count(sink_node_key1) == 0) {
+			if (identified_sink_nodes_tmp.count(sink_node_key1) == 0) {
 				identified_sink_nodes.insert(sink_node_key1);
 				std::vector<int> first_operation = { (int)operations_iter1 };
 				auto found = FC_layers.emplace(sink_node_key1, first_operation);
 			}
+      else {
+        identified_sink_nodes.insert(identified_sink_nodes_tmp.begin(), identified_sink_nodes_tmp.end());
+        FC_layers.insert(FC_layers_tmp.begin(), FC_layers_tmp.end());
+      }
 		}
 		return FC_layers;
 	}
@@ -1070,17 +1076,18 @@ namespace SmartPeak
     }
     if (sinkAsSourceOps_1s != sinkAsSourceOps_2s)
       return false;
-    //if (sourceAsSourceOps_1s != sourceAsSourceOps_2s)
-    //  return false;
-    //if (sinkAsSinkOps_1s != sinkAsSinkOps_2s)
-    //  return false;
+    if (sourceAsSourceOps_1s != sourceAsSourceOps_2s)
+      return false;
+    if (sinkAsSinkOps_1s != sinkAsSinkOps_2s)
+      return false;
     if (sourceAsSinkOps_1s != sourceAsSinkOps_2s)
       return false;
     return true;
   }
 
   template<typename TensorT, typename DeviceT>
-  inline bool ModelInterpreter<TensorT, DeviceT>::checkFutureOperations_(const std::vector<OperationList<TensorT>>& FP_operations, const std::string& sink_ops_key_1, const std::string& sink_ops_key_2, const int & operations_iter1, const int & operations_iter2)
+  inline bool ModelInterpreter<TensorT, DeviceT>::checkFutureOperations_(const std::vector<OperationList<TensorT>>& FP_operations, const std::string& sink_ops_key_1, const std::string& sink_ops_key_2, const int & operations_iter1, const int & operations_iter2,
+    const std::set<std::string>& identified_sink_nodes)
   {
     // Future operations layer consistency checks
     std::set<std::string> sinkAsSourceNode_1s, sinkAsSourceNode_2s,
@@ -1118,8 +1125,9 @@ namespace SmartPeak
       FP_operations[operations_iter2].arguments[0].weight->getLayerName());
 
     // Operation 3 checks
-    for (size_t operations_iter3 = 0; operations_iter3 < FP_operations.size(); ++operations_iter3) {
+    for (size_t operations_iter3 = operations_iter1; operations_iter3 < FP_operations.size(); ++operations_iter3) {
       std::string sink_node_key3 = FP_operations[operations_iter3].result.sink_node->getName() + "/" + std::to_string(operations_iter3);
+      if (identified_sink_nodes.count(sink_node_key3)) continue;
       //if (operations_iter3 == operations_iter2 || operations_iter3 == operations_iter1) continue; // Skip current sink nodes
       std::string sink_ops_key_3 = makeForwardPropogationOperationsKey(
         FP_operations[operations_iter3].result.time_step,
@@ -1262,8 +1270,9 @@ namespace SmartPeak
           FP_operations[operations_iter3].result.sink_node->getName() == FP_operations[operations_iter1].arguments[0].source_node->getName() || //ASSUMPTION: arguments are of length 1!
           FP_operations[operations_iter3].result.sink_node->getName() == FP_operations[operations_iter2].arguments[0].source_node->getName()
           ) {
-          for (size_t operations_iter4 = 0; operations_iter4 < FP_operations.size(); ++operations_iter4) {
+          for (size_t operations_iter4 = operations_iter1; operations_iter4 < FP_operations.size(); ++operations_iter4) {
             std::string sink_node_key4 = FP_operations[operations_iter4].result.sink_node->getName() + "/" + std::to_string(operations_iter4);
+            if (identified_sink_nodes.count(sink_node_key4)) continue;
             //if (operations_iter4 == operations_iter1 || operations_iter4 == operations_iter2 || operations_iter4 == operations_iter3) continue; // Skip current sink nodes
             std::string sink_ops_key_4 = makeForwardPropogationOperationsKey(
               FP_operations[operations_iter4].result.time_step,
