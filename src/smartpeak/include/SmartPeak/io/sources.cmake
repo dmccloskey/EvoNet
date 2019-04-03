@@ -9,6 +9,8 @@ set(sources_list_h
 	LinkFile.h
 	ModelFile.h
 	ModelInterpreterFile.h
+	ModelInterpreterFileDefaultDevice.h
+	ModelInterpreterFileGpu.h
 	NodeFile.h
 	PopulationTrainerFile.h
 	WeightFile.h

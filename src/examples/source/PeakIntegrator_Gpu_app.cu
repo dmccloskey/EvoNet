@@ -7,7 +7,7 @@
 #include <SmartPeak/ml/Model.h>
 #include <SmartPeak/io/PopulationTrainerFile.h>
 #include <SmartPeak/io/ModelFile.h>
-#include <SmartPeak/io/ModelInterpreterFile.h>
+#include <SmartPeak/io/ModelInterpreterFileGpu.h>
 
 #include <SmartPeak/simulator/ChromatogramSimulator.h>
 

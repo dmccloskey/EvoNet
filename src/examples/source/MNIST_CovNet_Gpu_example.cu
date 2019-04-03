@@ -6,7 +6,7 @@
 #include <SmartPeak/ml/ModelBuilder.h>
 #include <SmartPeak/ml/Model.h>
 #include <SmartPeak/io/PopulationTrainerFile.h>
-#include <SmartPeak/io/ModelInterpreterFile.h>
+#include <SmartPeak/io/ModelInterpreterFileGpu.h>
 #include <SmartPeak/io/ModelFile.h>
 
 #include <SmartPeak/simulator/MNISTSimulator.h>

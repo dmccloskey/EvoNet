@@ -6,7 +6,7 @@
 #include <SmartPeak/ml/ModelBuilder.h>
 #include <SmartPeak/ml/Model.h>
 #include <SmartPeak/io/PopulationTrainerFile.h>
-#include <SmartPeak/io/ModelInterpreterFile.h>
+#include <SmartPeak/io/ModelInterpreterFileDefaultDevice.h>
 
 #include "Metabolomics_example.h"
 

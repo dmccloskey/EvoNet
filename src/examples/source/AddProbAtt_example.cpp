@@ -7,7 +7,7 @@
 #include <SmartPeak/ml/Model.h>
 #include <SmartPeak/io/PopulationTrainerFile.h>
 #include <SmartPeak/simulator/AddProbSimulator.h>
-#include <SmartPeak/io/ModelInterpreterFile.h>
+#include <SmartPeak/io/ModelInterpreterFileDefaultDevice.h>
 
 #include <random>
 #include <fstream>

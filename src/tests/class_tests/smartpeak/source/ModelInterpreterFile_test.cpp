@@ -2,7 +2,7 @@
 
 #define BOOST_TEST_MODULE ModelInterpreterFile test suite 
 #include <boost/test/included/unit_test.hpp>
-#include <SmartPeak/io/ModelInterpreterFile.h>
+#include <SmartPeak/io/ModelInterpreterFileDefaultDevice.h>
 #include <SmartPeak/ml/ModelInterpreterDefaultDevice.h>
 
 using namespace SmartPeak;

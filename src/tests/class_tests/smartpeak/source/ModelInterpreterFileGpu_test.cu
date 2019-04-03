@@ -2,7 +2,7 @@
 
 #if COMPILE_WITH_CUDA
 
-#include <SmartPeak/io/ModelInterpreterFile.h>
+#include <SmartPeak/io/ModelInterpreterFileGpu.h>
 #include <SmartPeak/ml/ModelInterpreterGpu.h>
 
 using namespace SmartPeak;
@@ -94,10 +94,10 @@ Model<float> makeModel1()
 void test_loadModelBinary1()
 {
 	Model<float> model1 = makeModel1();
-	ModelInterpreterFileDefaultDevice<float> data;
+	ModelInterpreterFileGpu<float> data;
 
 	// START: model_interpreter test taken from ModelinterpreterCpu_test
-	ModelInterpreterDefaultDevice<float> model_interpreter;
+	ModelInterpreterGpu<float> model_interpreter;
 	const int batch_size = 4;
 	const int memory_size = 1;
 	const bool train = true;
@@ -110,7 +110,7 @@ void test_loadModelBinary1()
 	data.storeModelInterpreterBinary(filename, model_interpreter);
 
 	// Read in the test model_interpreter
-	ModelInterpreterDefaultDevice<float> model_interpreter_test;
+	ModelInterpreterGpu<float> model_interpreter_test;
 	data.loadModelInterpreterBinary(filename, model_interpreter_test);
 
 	assert(model_interpreter_test.getTensorOpsSteps() == model_interpreter.getTensorOpsSteps());
@@ -120,10 +120,10 @@ void test_loadModelBinary1()
 void test_loadModelBinary2()
 {
 	Model<float> model2 = makeModel1();
-	ModelInterpreterFileDefaultDevice<float> data;
+	ModelInterpreterFileGpu<float> data;
 
 	// START: model_interpreter test taken from ModelinterpreterCpu_test
-	ModelInterpreterDefaultDevice<float> model_interpreter;
+	ModelInterpreterGpu<float> model_interpreter;
 	const int batch_size = 4;
 	const int memory_size = 1;
 	const bool train = true;
@@ -152,8 +152,8 @@ void test_loadModelBinary2()
 	std::vector<std::string> output_nodes = { "4", "5" };
 	Eigen::Tensor<float, 2> expected(batch_size, (int)output_nodes.size());
 	expected.setValues({ {0, 1}, {0, 1}, {0, 1}, {0, 1} });
-	LossFunctionTensorOp<float, Eigen::DefaultDevice>* loss_function = new MSETensorOp<float, Eigen::DefaultDevice>();
-	LossFunctionGradTensorOp<float, Eigen::DefaultDevice>* loss_function_grad = new MSEGradTensorOp<float, Eigen::DefaultDevice>();
+	LossFunctionTensorOp<float, Eigen::GpuDevice>* loss_function = new MSETensorOp<float, Eigen::GpuDevice>();
+	LossFunctionGradTensorOp<float, Eigen::GpuDevice>* loss_function_grad = new MSEGradTensorOp<float, Eigen::GpuDevice>();
 	const int layer_id = model2.getNode("4").getTensorIndex().first;
 
 	// iterate until we find the optimal values
@@ -189,7 +189,7 @@ void test_loadModelBinary2()
 	data.storeModelInterpreterBinary(filename, model_interpreter);
 
 	// Read in the test model_interpreter
-	ModelInterpreterDefaultDevice<float> model_interpreter_test;
+	ModelInterpreterGpu<float> model_interpreter_test;
 	data.loadModelInterpreterBinary(filename, model_interpreter_test);
 
 	// Test for the expected model_interpreter operations

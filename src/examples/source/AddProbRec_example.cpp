@@ -7,7 +7,7 @@
 #include <SmartPeak/ml/Model.h>
 #include <SmartPeak/io/PopulationTrainerFile.h>
 #include <SmartPeak/simulator/AddProbSimulator.h>
-#include <SmartPeak/io/ModelInterpreterFile.h>
+#include <SmartPeak/io/ModelInterpreterFileDefaultDevice.h>
 
 #include <random>
 #include <fstream>
@@ -578,7 +578,7 @@ int main(int argc, char** argv)
   Model<float> model;
   // model_trainer.makeModelMinimal(model);
   // model_trainer.makeModelSolution(model, true);
-  model_trainer.makeModelLSTM(model, input_nodes.size(), 1, 2);
+  model_trainer.makeModelLSTM(model, input_nodes.size(), 2, 2);
 	char model_name_char[512];
 	sprintf(model_name_char, "%s_%d", model.getName().data(), 0);
 	std::string model_name(model_name_char);
