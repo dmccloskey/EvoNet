@@ -36,21 +36,25 @@ public:
 
 	References:
 	*/
-	Model<TensorT> makeLSTM(int n_inputs = 784, int n_outputs = 10, int n_blocks = 100, int n_cells = 1) {
-		Model<TensorT> model;
+	void makeLSTM(Model<TensorT>& model, int n_inputs = 784, int n_outputs = 10, int n_blocks = 100, int n_cells = 1) {
 		model.setId(0);
 		model.setName("LSTM");
 
 		ModelBuilder<TensorT> model_builder;
 
 		// Add the inputs
-		std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", "Input", n_inputs);
+		std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", "Input", n_inputs, true);
 
 		// Add the LSTM layer
 		std::vector<std::string> node_names = model_builder.addLSTM(model, "LSTM", "LSTM", node_names_input, n_blocks, n_cells,
-			std::shared_ptr<ActivationOp<TensorT>>(new TanHOp<float>()), std::shared_ptr<ActivationOp<TensorT>>(new TanHGradOp<float>()),
-			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(0.4)), std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8, 10.0)),
+			std::shared_ptr<ActivationOp<TensorT>>(new TanHOp<float>()), 
+      std::shared_ptr<ActivationOp<TensorT>>(new TanHGradOp<float>()),
+			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), 
+      std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), 
+      std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
+      std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0.5, 1.5)),
+			//std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(0.4)), 
+      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8, 100.0)),
 			0.0f, 0.0f, true, true, 1, true);
 
 		// Add a final output layer
@@ -60,13 +64,12 @@ public:
 			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
 			std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
 			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 2)),
-			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8, 10.0)), 0.0f, 0.0f, false, true);
+      std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0.1, 1.0)),
+			//std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 2)),
+			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8, 100.0)), 0.0f, 0.0f, false, true);
 
 		for (const std::string& node_name : node_names)
 			model.getNodesMap().at(node_name)->setType(NodeType::output);
-
-		return model;
 	}
   void adaptiveTrainerScheduler(
     const int& n_generations,
@@ -256,7 +259,7 @@ void main_LSTMTrain() {
 	// define the data simulator
 	const std::size_t input_size = 784;
 	const std::size_t n_labels = 10;
-	const std::size_t n_hidden = 1;
+	const std::size_t n_hidden = 64;
 	const std::size_t training_data_size = 60000; //60000;
 	const std::size_t validation_data_size = 10000; //10000;
 	DataSimulatorExt<float> data_simulator;
@@ -315,22 +318,22 @@ void main_LSTMTrain() {
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setLogging(true, true, false);
   model_trainer.setNTETTSteps(1);
-  model_trainer.setNTBPTTSteps(128);
+  model_trainer.setNTBPTTSteps(input_size);
   model_trainer.setPreserveOoO(true);
   model_trainer.setFindCycles(true);
   model_trainer.setFastInterpreter(true);
-	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new CrossEntropyWithLogitsOp<float>()) });
-	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new CrossEntropyWithLogitsGradOp<float>()) });
+	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new CrossEntropyWithLogitsOp<float>(1e-6, 1.0)) });
+	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new CrossEntropyWithLogitsGradOp<float>(1e-6, 1.0)) });
 	model_trainer.setOutputNodes({ output_nodes });
-	model_trainer.setNTETTSteps(1);
-	model_trainer.setNTBPTTSteps(100);
 
 	// define the model replicator for growth mode
 	ModelReplicatorExt<float> model_replicator;
 
 	// define the initial population [BUG FREE]
 	std::cout << "Initializing the population..." << std::endl;
-	std::vector<Model<float>> population = {model_trainer.makeLSTM(input_nodes.size(), output_nodes.size(), n_hidden) };
+  Model<float> model;
+  model_trainer.makeLSTM(model, input_nodes.size(), output_nodes.size(), n_hidden);
+	std::vector<Model<float>> population = { model };
 
 	// Evolve the population
 	std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(

@@ -4,12 +4,7 @@ set(directory source/io)
 ### list all filenames of the directory here
 set(sources_list
 	CSVWriter.cpp
-	DataFile.cpp
 	LinkFile.cpp
-	#ModelFile.cpp
-	#NodeFile.cpp
-	#PopulationTrainerFile.cpp
-	#WeightFile.cpp
 )
 
 ### add path to the filenames

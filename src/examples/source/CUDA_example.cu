@@ -175,7 +175,6 @@ int main(int argc, char** argv)
 	cudaError_t err = cudaDeviceReset();
 
 	// Async optimization tests
-
   stringCompareGpuEx(1e6);
   stringCompareDefaultDeviceEx(1e6);
   stringCompareThreadPoolEx(1e6);

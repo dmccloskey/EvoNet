@@ -23,8 +23,8 @@ namespace SmartPeak
   class DataFile
   {
 public:
-    DataFile(); ///< Default constructor
-    ~DataFile(); ///< Default destructor
+    DataFile() = default; ///< Default constructor
+    ~DataFile() = default; ///< Default destructor
  
     /**
       @brief Load data from file

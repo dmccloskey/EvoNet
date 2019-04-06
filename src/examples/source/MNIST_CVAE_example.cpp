@@ -6,6 +6,7 @@
 #include <SmartPeak/ml/ModelBuilder.h>
 #include <SmartPeak/ml/Model.h>
 #include <SmartPeak/io/PopulationTrainerFile.h>
+#include <SmartPeak/io/ModelInterpreterFileDefaultDevice.h>
 #include <SmartPeak/io/ModelFile.h>
 
 #include <SmartPeak/simulator/MNISTSimulator.h>
@@ -39,14 +40,14 @@ public:
 	Alireza Makhzani, Jonathon Shlens, Navdeep Jaitly, Ian Goodfellow, Brendan Frey. "Adversarial Autoencoders" 2015.  arXiv:1511.05644
 	https://github.com/musyoku/adversarial-autoencoder/blob/master/run/semi-supervised/regularize_z/model.py
 	*/
-	void makeCVAE(Model<TensorT>& model, int n_inputs = 784, int n_categorical = 10, int n_encodings = 64, int n_hidden_0 = 512) {
+	void makeCVAE(Model<TensorT>& model, int n_inputs = 784, int n_categorical = 10, int n_encodings = 64, int n_hidden_0 = 512, bool specify_layer = true) {
 		model.setId(0);
 		model.setName("VAE");
 
 		ModelBuilder<TensorT> model_builder;
 
 		// Add the inputs
-		std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", "Input", n_inputs);
+		std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", "Input", n_inputs, specify_layer);
 
 		// Add the Endocer FC layers
 		std::vector<std::string> node_names, node_names_mu, node_names_logvar, node_names_logalpha;
@@ -56,40 +57,45 @@ public:
 			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
 			std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
 			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_input.size() + node_names.size()) / 2, 1)),
-			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+      std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0.001, 0.1)),
+			//std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_input.size() + node_names.size()) / 2, 1)),
+			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, specify_layer);
 		node_names = model_builder.addFullyConnected(model, "EN1", "EN1", node_names, n_hidden_0,
 			std::shared_ptr<ActivationOp<TensorT>>(new ELUOp<TensorT>(1.0)),
 			std::shared_ptr<ActivationOp<TensorT>>(new ELUGradOp<TensorT>(1.0)),
 			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
 			std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
 			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + node_names.size()) / 2, 1)),
-			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+      std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0.001, 0.1)),
+			//std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + node_names.size()) / 2, 1)),
+			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, specify_layer);
 		node_names_mu = model_builder.addFullyConnected(model, "Mu", "Mu", node_names, n_encodings,
 			std::shared_ptr<ActivationOp<TensorT>>(new ELUOp<TensorT>(1.0)),
 			std::shared_ptr<ActivationOp<TensorT>>(new ELUGradOp<TensorT>(1.0)),
 			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
 			std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
 			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_encodings) / 2, 1)),
-			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+      std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0.001, 0.1)),
+			//std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_encodings) / 2, 1)),
+			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, specify_layer);
 		node_names_logvar = model_builder.addFullyConnected(model, "LogVar", "LogVar", node_names, n_encodings,
 			std::shared_ptr<ActivationOp<TensorT>>(new ELUOp<TensorT>(1.0)),
 			std::shared_ptr<ActivationOp<TensorT>>(new ELUGradOp<TensorT>(1.0)),
 			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
 			std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
 			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_encodings) / 2, 1)),
-			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+      std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0.001, 0.1)),
+			//std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_encodings) / 2, 1)),
+			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, specify_layer);
 		node_names_logalpha = model_builder.addFullyConnected(model, "LogAlpha", "LogAlpha", node_names, n_categorical,
 			std::shared_ptr<ActivationOp<TensorT>>(new ELUOp<TensorT>(1.0)),
 			std::shared_ptr<ActivationOp<TensorT>>(new ELUGradOp<TensorT>(1.0)),
 			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
 			std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
 			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_categorical) / 2, 1)),
-			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+      std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0.001, 0.1)),
+			//std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_categorical) / 2, 1)),
+			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, specify_layer);
 
 		// Add the Encoding layers
 		std::vector<std::string> node_names_Gencoder = model_builder.addGaussianEncoding(model, "Gaussian_encoding", "Gaussian_encoding", node_names_mu, node_names_logvar, true);
@@ -102,27 +108,31 @@ public:
 			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
 			std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
 			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_Gencoder.size() + n_hidden_0) / 2, 1)),
-			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+      std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0.001, 0.1)),
+			//std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_Gencoder.size() + n_hidden_0) / 2, 1)),
+			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, specify_layer);
 		model_builder.addFullyConnected(model, "DE0", node_names_Cencoder, node_names,
-			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_Cencoder.size() + n_hidden_0) / 2, 1)),
-			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+      std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0.001, 0.1)),
+			//std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_Cencoder.size() + n_hidden_0) / 2, 1)),
+			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, specify_layer);
 		node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names, n_hidden_0,
 			std::shared_ptr<ActivationOp<TensorT>>(new ELUOp<TensorT>(1.0)),
 			std::shared_ptr<ActivationOp<TensorT>>(new ELUGradOp<TensorT>(1.0)),
 			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
 			std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
 			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_hidden_0) / 2, 1)),
-			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+      std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0.001, 0.1)),
+			//std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_hidden_0) / 2, 1)),
+			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, specify_layer);
 		node_names = model_builder.addFullyConnected(model, "Output", "Output", node_names, n_inputs,
 			std::shared_ptr<ActivationOp<TensorT>>(new ELUOp<TensorT>(1.0)),
 			std::shared_ptr<ActivationOp<TensorT>>(new ELUGradOp<TensorT>(1.0)),
 			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
 			std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
 			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 1)),
-			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
+      std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0.001, 0.1)),
+			//std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 1)),
+			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
 
 		// Specify the output node types manually
 		// [NOTE: we do not specify the Encoding node types as outputs so that they remain "active" after CETT
@@ -140,13 +150,16 @@ public:
 		//if (n_epochs = 1000) {
 		//	// anneal the learning rate to 1e-4
 		//}
-		//if (n_epochs % 1000 == 0 && n_epochs != 0) {
-		//	// save the model every 1000 epochs
-		//	ModelFile<TensorT> data;
-		//	data.storeModelCsv(model.getName() + "_" + std::to_string(n_epochs) + "_nodes.csv",
-		//		model.getName() + "_" + std::to_string(n_epochs) + "_links.csv",
-		//		model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model);
-		//}
+		if (n_epochs % 1000 == 0 && n_epochs != 0) {
+			// save the model every 1000 epochs
+			ModelFile<TensorT> data;
+			//data.storeModelCsv(model.getName() + "_" + std::to_string(n_epochs) + "_nodes.csv",
+			//	model.getName() + "_" + std::to_string(n_epochs) + "_links.csv",
+			//	model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model);
+      data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
+      ModelInterpreterFileDefaultDevice<TensorT> interpreter_data;
+      interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
+		}
 	}
 };
 
@@ -328,7 +341,7 @@ public:
 	}
 };
 
-void main_VAE(const bool& make_model, const bool& load_weight_values, const bool& train_model) {
+void main_VAE(const bool& make_model, const bool& train_model) {
 
 	const int n_hard_threads = std::thread::hardware_concurrency();
 	const int n_threads = 1;
@@ -339,7 +352,7 @@ void main_VAE(const bool& make_model, const bool& load_weight_values, const bool
 	population_trainer.setNTop(1);
 	population_trainer.setNRandom(1);
 	population_trainer.setNReplicatesPerModel(1);
-	population_trainer.setLogging(true);
+	population_trainer.setLogging(false);
 
 	// define the population logger
 	PopulationLogger<float> population_logger(true, true);
@@ -357,21 +370,21 @@ void main_VAE(const bool& make_model, const bool& load_weight_values, const bool
 	DataSimulatorExt<float> data_simulator;
 
 	// read in the training data
-	//const std::string training_data_filename = "C:/Users/domccl/GitHub/mnist/train-images.idx3-ubyte";
-	//const std::string training_labels_filename = "C:/Users/domccl/GitHub/mnist/train-labels.idx1-ubyte";
+	const std::string training_data_filename = "C:/Users/domccl/GitHub/mnist/train-images.idx3-ubyte";
+	const std::string training_labels_filename = "C:/Users/domccl/GitHub/mnist/train-labels.idx1-ubyte";
 	//const std::string training_data_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/train-images-idx3-ubyte";
 	//const std::string training_labels_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/train-labels-idx1-ubyte";
-	const std::string training_data_filename = "/home/user/data/train-images-idx3-ubyte";
-	const std::string training_labels_filename = "/home/user/data/train-labels-idx1-ubyte";
+	//const std::string training_data_filename = "/home/user/data/train-images-idx3-ubyte";
+	//const std::string training_labels_filename = "/home/user/data/train-labels-idx1-ubyte";
 	data_simulator.readData(training_data_filename, training_labels_filename, true, training_data_size, input_size);
 
 	// read in the validation data
-	//const std::string validation_data_filename = "C:/Users/domccl/GitHub/mnist/t10k-images.idx3-ubyte";
-	//const std::string validation_labels_filename = "C:/Users/domccl/GitHub/mnist/t10k-labels.idx1-ubyte";
+	const std::string validation_data_filename = "C:/Users/domccl/GitHub/mnist/t10k-images.idx3-ubyte";
+	const std::string validation_labels_filename = "C:/Users/domccl/GitHub/mnist/t10k-labels.idx1-ubyte";
 	//const std::string validation_data_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/t10k-images-idx3-ubyte";
 	//const std::string validation_labels_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/t10k-labels-idx1-ubyte";
-	const std::string validation_data_filename = "/home/user/data/t10k-images-idx3-ubyte";
-	const std::string validation_labels_filename = "/home/user/data/t10k-labels-idx1-ubyte";
+	//const std::string validation_data_filename = "/home/user/data/t10k-images-idx3-ubyte";
+	//const std::string validation_labels_filename = "/home/user/data/t10k-labels-idx1-ubyte";
 	data_simulator.readData(validation_data_filename, validation_labels_filename, false, validation_data_size, input_size);
 	data_simulator.unitScaleData();
 
@@ -449,26 +462,27 @@ void main_VAE(const bool& make_model, const bool& load_weight_values, const bool
 	}
 	ModelTrainerExt<float> model_trainer;
 	//model_trainer.setBatchSize(1); // evaluation only
-	model_trainer.setBatchSize(32);
-	model_trainer.setNEpochsTraining(10000);
+	model_trainer.setBatchSize(8);
+	model_trainer.setNEpochsTraining(1000);
 	model_trainer.setNEpochsValidation(25);
 	model_trainer.setNEpochsEvaluation(0);
 	model_trainer.setMemorySize(1);
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setLogging(true, false, true);
 	model_trainer.setFindCycles(false);
+  model_trainer.setFastInterpreter(true);
 	model_trainer.setLossFunctions({
-		//std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()),
-		std::shared_ptr<LossFunctionOp<float>>(new BCEWithLogitsOp<float>()),
-		std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceMuOp<float>()),
-		std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceLogVarOp<float>()),
-		std::shared_ptr<LossFunctionOp<float>>(new NegativeLogLikelihoodOp<float>()) });
+		//std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>(1e-6, 1.0)),
+		std::shared_ptr<LossFunctionOp<float>>(new BCEWithLogitsOp<float>(1e-6, 1.0)),
+		std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceMuOp<float>(1e-6, 0.5)),
+		std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceLogVarOp<float>(1e-6, 0.5)),
+		std::shared_ptr<LossFunctionOp<float>>(new NegativeLogLikelihoodOp<float>(1e-6, 0.0)) });
 	model_trainer.setLossFunctionGrads({
-		//std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()),
-		std::shared_ptr<LossFunctionGradOp<float>>(new BCEWithLogitsGradOp<float>()),
-		std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceMuGradOp<float>()),
-		std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceLogVarGradOp<float>()),
-		std::shared_ptr<LossFunctionGradOp<float>>(new NegativeLogLikelihoodGradOp<float>()) });
+		//std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>(1e-6, 1.0)),
+		std::shared_ptr<LossFunctionGradOp<float>>(new BCEWithLogitsGradOp<float>(1e-6, 1.0)),
+		std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceMuGradOp<float>(1e-6, 0.5)),
+		std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceLogVarGradOp<float>(1e-6, 0.5)),
+		std::shared_ptr<LossFunctionGradOp<float>>(new NegativeLogLikelihoodGradOp<float>(1e-6, 0.0)) });
 	model_trainer.setOutputNodes({ output_nodes, encoding_nodes_mu, encoding_nodes_logvar, encoding_nodes_logalpha });
 
 	// define the model replicator for growth mode
@@ -481,26 +495,17 @@ void main_VAE(const bool& make_model, const bool& load_weight_values, const bool
 		model_trainer.makeCVAE(model, input_size, categorical_size, encoding_size, n_hidden);
 	}
 	else {
-		// read in the trained model
-		std::cout << "Reading in the model..." << std::endl;
-		const std::string data_dir = "C:/Users/domccl/GitHub/smartPeak_cpp/build_win_cuda/bin/Debug/";
-		const std::string nodes_filename = data_dir + "0_MNIST_Nodes.csv";
-		const std::string links_filename = data_dir + "0_MNIST_Links.csv";
-		const std::string weights_filename = data_dir + "0_MNIST_Weights.csv";
-		model.setId(1);
-		model.setName("VAE1");
-		ModelFile<float> model_file;
-		model_file.loadModelCsv(nodes_filename, links_filename, weights_filename, model);
-	}
-	if (load_weight_values) {
-		// read in the trained model weights only
-		std::cout << "Reading in the model weight values..." << std::endl;
-		const std::string data_dir = "C:/Users/domccl/GitHub/smartPeak_cpp/build_win_cuda/bin/Debug/";
-		const std::string weights_filename = data_dir + "2_MNIST_Weights.csv";
-		model.setId(2);
-		model.setName("VAE2");
-		WeightFile<float> weight_file;
-		weight_file.loadWeightValuesCsv(weights_filename, model.weights_);
+    // read in the trained model
+    std::cout << "Reading in the model..." << std::endl;
+    const std::string data_dir = "/home/user/code/build/";
+    const std::string model_filename = data_dir + "VAE_9000_model.binary";
+    const std::string interpreter_filename = data_dir + "VAE_9000_interpreter.binary";
+    ModelFile<float> model_file;
+    model_file.loadModelBinary(model_filename, model);
+    model.setId(1);
+    model.setName("VAE1");
+    ModelInterpreterFileDefaultDevice<float> model_interpreter_file;
+    model_interpreter_file.loadModelInterpreterBinary(interpreter_filename, model_interpreters[0]); // FIX ME!
 	}
 	std::vector<Model<float>> population = { model };
 
@@ -523,7 +528,7 @@ void main_VAE(const bool& make_model, const bool& load_weight_values, const bool
 int main(int argc, char** argv)
 {
 	// run the application
-	main_VAE(true, false, true);
+	main_VAE(true, true);
 
 	return 0;
 }
