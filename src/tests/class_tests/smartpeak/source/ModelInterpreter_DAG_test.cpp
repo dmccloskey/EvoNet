@@ -931,7 +931,7 @@ void makeCovNet(Model<TensorT>& model, const int& n_inputs, const int& n_outputs
   for (size_t d = 0; d < n_depth_1; ++d) {
     std::vector<std::string> node_names;
     std::string conv_name = "Conv0-" + std::to_string(d);
-    node_names = model_builder.addConvolution(model, conv_name, conv_name, node_names_input,
+    node_names = model_builder.addConvolution(model, conv_name, "Conv0-" /*conv_name*/, node_names_input,
       sqrt(node_names_input.size()), sqrt(node_names_input.size()), 0, 0,
       filter_size, filter_size, 1, 0, 0,
       std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
@@ -943,14 +943,14 @@ void makeCovNet(Model<TensorT>& model, const int& n_inputs, const int& n_outputs
       std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, specify_layers);
     if (add_norm) {
       std::string norm_name = "Norm0-" + std::to_string(d);
-      node_names = model_builder.addNormalization(model, norm_name, norm_name, node_names,
+      node_names = model_builder.addNormalization(model, norm_name, "Norm0-" /*norm_name*/, node_names,
         std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
         std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
         std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 2)),
         std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.1, 0.9, 0.999, 1e-8)), 0.0, 0.0, false, specify_layers);
     }
     std::string pool_name = "Pool0-" + std::to_string(d);
-    node_names = model_builder.addConvolution(model, pool_name, pool_name, node_names,
+    node_names = model_builder.addConvolution(model, pool_name, "Pool0-" /*pool_name*/, node_names,
       sqrt(node_names.size()), sqrt(node_names.size()), 1, 1,
       pool_size, pool_size, 2, 0, 0,
       std::shared_ptr<ActivationOp<TensorT>>(new ReLUOp<TensorT>()),
@@ -970,7 +970,7 @@ void makeCovNet(Model<TensorT>& model, const int& n_inputs, const int& n_outputs
     for (size_t d = 0; d < n_depth_2; ++d) {
       std::vector<std::string> node_names;
       std::string conv_name = "Conv1-" + std::to_string(l_cnt) + "-" + std::to_string(d);
-      node_names = model_builder.addConvolution(model, conv_name, conv_name, node_names_l,
+      node_names = model_builder.addConvolution(model, conv_name, "Conv1-" /*conv_name*/, node_names_l,
         sqrt(node_names_l.size()), sqrt(node_names_l.size()), 0, 0,
         filter_size, filter_size, 1, 0, 0,
         std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
@@ -982,14 +982,14 @@ void makeCovNet(Model<TensorT>& model, const int& n_inputs, const int& n_outputs
         std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, specify_layers);
       if (add_norm) {
         std::string norm_name = "Norm1-" + std::to_string(l_cnt) + "-" + std::to_string(d);
-        node_names = model_builder.addNormalization(model, norm_name, norm_name, node_names,
+        node_names = model_builder.addNormalization(model, norm_name, "Norm1-" /*norm_name*/, node_names,
           std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
           std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
           std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 2)),
           std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.1, 0.9, 0.999, 1e-8)), 0.0, 0.0, false, specify_layers);
       }
       std::string pool_name = "Pool1-" + std::to_string(l_cnt) + "-" + std::to_string(d);
-      node_names = model_builder.addConvolution(model, pool_name, pool_name, node_names,
+      node_names = model_builder.addConvolution(model, pool_name, "Pool1-" /*pool_name*/, node_names,
         sqrt(node_names.size()), sqrt(node_names.size()), 1, 1,
         pool_size, pool_size, 2, 0, 0,
         std::shared_ptr<ActivationOp<TensorT>>(new ReLUOp<TensorT>()),
@@ -1221,7 +1221,7 @@ BOOST_AUTO_TEST_CASE(makeModelVAE1)
 
   // Determine the tensor_ops_steps and FP_operations for the manually specified layer case
   Model<float> model_test;
-  makeModelVAE(model_test, 8, 2, 4, true);
+  makeModelVAE(model_test, 6, 2, 4, true);
 
   int iter_test = 0;
   std::vector<OperationList<float>> FP_operations_expanded_test;
@@ -1232,7 +1232,7 @@ BOOST_AUTO_TEST_CASE(makeModelVAE1)
 
   // Determine the tensor_ops_steps and FP_operations for the manually specified layer case
   Model<float> model;
-  makeModelVAE(model, 8, 2, 4, false);
+  makeModelVAE(model, 6, 2, 4, false);
 
   int iter = 0;
   std::vector<OperationList<float>> FP_operations_expanded;
@@ -1264,7 +1264,7 @@ BOOST_AUTO_TEST_CASE(makeModelCovNet1)
 
   // Determine the tensor_ops_steps and FP_operations for the manually specified layer case
   Model<float> model_test;
-  makeCovNet(model_test, 36, 10, 2, 2, 32, 5, 2, false, true);
+  makeCovNet(model_test, 4, 2, 2, 2, 3, 2, 2, false, true);
 
   int iter_test = 0;
   std::vector<OperationList<float>> FP_operations_expanded_test;
@@ -1275,7 +1275,7 @@ BOOST_AUTO_TEST_CASE(makeModelCovNet1)
 
   // Determine the tensor_ops_steps and FP_operations for the manually specified layer case
   Model<float> model;
-  makeCovNet(model, 36, 10, 2, 2, 32, 5, 2, false, false);
+  makeCovNet(model, 4, 2, 2, 2, 3, 2, 2, false, false);
 
   int iter = 0;
   std::vector<OperationList<float>> FP_operations_expanded;
