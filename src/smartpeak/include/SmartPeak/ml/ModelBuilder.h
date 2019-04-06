@@ -241,7 +241,7 @@ public:
 			const std::shared_ptr<ActivationOp<TensorT>>& node_activation,
 			const std::shared_ptr<ActivationOp<TensorT>>& node_activation_grad,
 			const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver,
-			TensorT drop_out_prob = 0.0f, TensorT drop_connection_prob = 0.0f, bool biases = true);
+			TensorT drop_out_prob = 0.0f, TensorT drop_connection_prob = 0.0f, bool biases = true, bool specify_layers = false);
 
 		/**
 		@brief Add a VAE Encoding layer for a gaussian distribution with input node
@@ -544,7 +544,7 @@ public:
 		/*
 		@brief Make a unity weight
 		*/
-		std::string makeUnityWeight(Model<TensorT>& model, const TensorT& scale, const std::string& module_name, const std::string& name_format, const std::string& lhs, const std::string& rhs);
+		std::string makeUnityWeight(Model<TensorT>& model, const TensorT& scale, const std::string& module_name, const std::string& name_format, const std::string& lhs, const std::string& rhs, bool specify_layer = false);
   };
 	template<typename TensorT>
 	std::vector<std::string> ModelBuilder<TensorT>::addInputNodes(Model<TensorT> & model, const std::string & name, const std::string & module_name, const int & n_nodes, bool specify_layer)
@@ -1593,7 +1593,7 @@ public:
 	template<typename TensorT>
 	std::vector<std::string> ModelBuilder<TensorT>::addNormalization(Model<TensorT> & model, const std::string & name, const std::string & module_name, const std::vector<std::string>& source_node_names,
 		const std::shared_ptr<ActivationOp<TensorT>>& node_activation, const std::shared_ptr<ActivationOp<TensorT>>& node_activation_grad,
-		const std::shared_ptr<WeightInitOp<TensorT>> & weight_init, const std::shared_ptr<SolverOp<TensorT>> & solver, TensorT drop_out_prob, TensorT drop_connection_prob, bool biases)
+		const std::shared_ptr<WeightInitOp<TensorT>> & weight_init, const std::shared_ptr<SolverOp<TensorT>> & solver, TensorT drop_out_prob, TensorT drop_connection_prob, bool biases, bool specify_layers)
 	{
 		std::vector<std::string> node_names;
 		std::string unity_weight_name, negunity_weight_name;
@@ -1605,6 +1605,7 @@ public:
 		Node<TensorT> mean(mean_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new MeanOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new MeanErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new MeanWeightGradOp<TensorT>()));
 		mean.setModuleName(module_name);
 		mean.setDropProbability(drop_out_prob);
+    if (specify_layers) mean.setLayerName(module_name);
 		model.addNodes({ mean });
 		//node_names.push_back(mean_name);
 
@@ -1615,24 +1616,9 @@ public:
 		Node<TensorT> variance(variance_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<TensorT>>(new PowOp<TensorT>(-0.5)), std::shared_ptr<ActivationOp<TensorT>>(new PowGradOp<TensorT>(-0.5)), std::shared_ptr<IntegrationOp<TensorT>>(new VarModOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new VarModErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new VarModWeightGradOp<TensorT>()));
 		variance.setModuleName(module_name);
 		variance.setDropProbability(drop_out_prob);
+    if (specify_layers) mean.setLayerName(module_name);
 		model.addNodes({ variance });
 		//node_names.push_back(variance_name);
-
-		//// Create the unity weight
-		//char unity_weight_name_char[512];
-		//sprintf(unity_weight_name_char, "%s_Unity", name.data());
-		//std::string unity_weight_name(unity_weight_name_char);
-		//Weight<TensorT> unity_weight(unity_weight_name, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()));
-		//unity_weight.setModuleName(module_name);
-		//model.addWeights({ unity_weight });
-
-		//// Create the negative unity weight
-		//char negunity_weight_name_char[512];
-		//sprintf(negunity_weight_name_char, "%s_Negative", name.data());
-		//std::string negunity_weight_name(negunity_weight_name_char);
-		//Weight<TensorT> negunity_weight(negunity_weight_name, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(-1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()));
-		//negunity_weight.setModuleName(module_name);
-		//model.addWeights({ negunity_weight });
 
 		for (const std::string& node_name : source_node_names) {
 			// Make the source-mean nodes
@@ -1641,6 +1627,7 @@ public:
 			std::string sourceMinMean_name(sourceMinMean_name_char);
 			Node<TensorT> sourceMinMean(sourceMinMean_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
 			sourceMinMean.setModuleName(module_name);
+      if (specify_layers) sourceMinMean.setLayerName(module_name);
 			model.addNodes({ sourceMinMean });
 			//node_names.push_back(sourceMinMean_name);
 
@@ -1651,11 +1638,12 @@ public:
 			Node<TensorT> normalized(normalized_name, NodeType::hidden, NodeStatus::initialized, node_activation, node_activation_grad, std::shared_ptr<IntegrationOp<TensorT>>(new ProdOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new ProdErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new ProdWeightGradOp<TensorT>()));
 			normalized.setModuleName(module_name);
 			normalized.setDropProbability(drop_out_prob);
+      if (specify_layers) normalized.setLayerName(module_name);
 			model.addNodes({ normalized });
 			node_names.push_back(normalized_name);
 
 			// Make the weights/links from source to mean
-			unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", node_name, mean_name);
+			unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", node_name, mean_name, specify_layers);
 			char sToM_link_name_char[512];
 			sprintf(sToM_link_name_char, "%s_to_%s", node_name.data(), mean_name.data());
 			std::string sToM_link_name(sToM_link_name_char);
@@ -1664,7 +1652,7 @@ public:
 			model.addLinks({ sToM_link });
 
 			// Make the links from source to sourceMinMean
-			unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", node_name, sourceMinMean_name);
+			unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", node_name, sourceMinMean_name, specify_layers);
 			char sToSMinM_link_name_char[512];
 			sprintf(sToSMinM_link_name_char, "%s_to_%s", node_name.data(), sourceMinMean_name.data());
 			std::string sToSMinM_link_name(sToSMinM_link_name_char);
@@ -1673,7 +1661,7 @@ public:
 			model.addLinks({ sToSMinM_link });
 
 			// Make the links from the mean to sourceMinMean
-			negunity_weight_name = makeUnityWeight(model, -1.0, module_name, "%s_to_%s", mean_name, sourceMinMean_name);
+			negunity_weight_name = makeUnityWeight(model, -1.0, module_name, "%s_to_%s", mean_name, sourceMinMean_name, specify_layers);
 			char mToSMinM_link_name_char[512];
 			sprintf(mToSMinM_link_name_char, "%s_to_%s", mean_name.data(), sourceMinMean_name.data());
 			std::string mToSMinM_link_name(mToSMinM_link_name_char);
@@ -1682,7 +1670,7 @@ public:
 			model.addLinks({ mToSMinM_link });
 
 			// Make the links from sourceMinMean to variance
-			unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", sourceMinMean_name, variance_name);
+			unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", sourceMinMean_name, variance_name, specify_layers);
 			char sMinMToV_link_name_char[512];
 			sprintf(sMinMToV_link_name_char, "%s_to_%s", sourceMinMean_name.data(), variance_name.data());
 			std::string sMinMToV_link_name(sMinMToV_link_name_char);
@@ -1697,6 +1685,7 @@ public:
 			Weight<TensorT> gamma_weight(gamma_weight_name, weight_init, solver);
 			gamma_weight.setModuleName(module_name);
 			gamma_weight.setDropProbability(drop_connection_prob);
+      if (specify_layers) gamma_weight.setLayerName(module_name);
 			model.addWeights({ gamma_weight });
 
 			char sMinMToN_link_name_char[512];
@@ -1722,6 +1711,7 @@ public:
 				std::string bias_name(bias_name_char);
 				Node<TensorT> bias(bias_name, NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
 				bias.setModuleName(module_name);
+        if (specify_layers) bias.setLayerName(module_name);
 				model.addNodes({ bias });
 
 				char weight_bias_name_char[512];
@@ -1737,6 +1727,7 @@ public:
 				std::shared_ptr<SolverOp<TensorT>>  bias_solver = solver;
 				Weight<TensorT> weight_bias(weight_bias_name, bias_weight_init, bias_solver);
 				weight_bias.setModuleName(module_name);
+        if (specify_layers) weight_bias.setLayerName(module_name);
 				Link link_bias(link_bias_name, bias_name, normalized_name, weight_bias_name);
 				link_bias.setModuleName(module_name);
 
@@ -3105,7 +3096,7 @@ public:
 	}
 
 	template<typename TensorT>
-	inline std::string ModelBuilder<TensorT>::makeUnityWeight(Model<TensorT>& model, const TensorT & scale, const std::string& module_name, const std::string& name_format, const std::string& lhs, const std::string& rhs)
+	inline std::string ModelBuilder<TensorT>::makeUnityWeight(Model<TensorT>& model, const TensorT & scale, const std::string& module_name, const std::string& name_format, const std::string& lhs, const std::string& rhs, bool specify_layer)
 	{
 		// Create the unity weight
 		char* unity_weight_name_char = new char[512];
@@ -3113,6 +3104,7 @@ public:
 		std::string unity_weight_name(unity_weight_name_char);
 		Weight<TensorT> unity_weight(unity_weight_name, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(scale)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()));
 		unity_weight.setModuleName(module_name);
+    if (specify_layer) unity_weight.setLayerName(module_name);
 		model.addWeights({ unity_weight });
 		delete[] unity_weight_name_char;
 		return unity_weight_name;

@@ -491,6 +491,7 @@ int main(int argc, char** argv)
   }
 
   // Sorting comparison tests
+  // GPU could be improved by https://github.com/NVIDIA/nvstrings or https://nvlabs.github.io/nvbio/structnvbio_1_1cuda_1_1_compression_sort.html
   if (sort_comparison) {
     numericSortGpuEx<float>(1e6);
     numericSortCpuEx<float>(1e6);
