@@ -40,8 +40,7 @@ public:
   References:
   https://github.com/pytorch/examples/blob/master/mnist/main.py
   */
-  Model<TensorT> makeCovNet(const int& n_inputs, const int& n_outputs, int n_depth_1 = 32, int n_depth_2 = 2, int n_fc = 128, bool add_norm = false, bool specify_layers = false) {
-    Model<TensorT> model;
+  void makeCovNet(Model<TensorT>& model, const int& n_inputs, const int& n_outputs, int n_depth_1 = 32, int n_depth_2 = 2, int n_fc = 128, bool add_norm = false, bool specify_layers = false) {
     model.setId(0);
     model.setName("CovNet");
 
@@ -165,8 +164,6 @@ public:
 
     for (const std::string& node_name : node_names)
       model.getNodesMap().at(node_name)->setType(NodeType::output);
-
-    return model;
   }
   /*
   @brief Convolution classifier using compact convolutions
@@ -182,8 +179,7 @@ public:
   References:
   https://github.com/pytorch/examples/blob/master/mnist/main.py
   */
-  Model<TensorT> makeCovNetCompact(const int& n_inputs, const int& n_outputs, int n_depth_1 = 32, int n_depth_2 = 32, int n_fc = 128, int add_scalar = true) {
-    Model<TensorT> model;
+  void makeCovNetCompact(Model<TensorT>& model, const int& n_inputs, const int& n_outputs, int n_depth_1 = 32, int n_depth_2 = 32, int n_fc = 128, int add_scalar = true) {
     model.setId(0);
     model.setName("CovNet");
 
@@ -270,8 +266,6 @@ public:
 
     for (const std::string& node_name : node_names)
       model.getNodesMap().at(node_name)->setType(NodeType::output);
-
-    return model;
   }
   void adaptiveTrainerScheduler(
     const int& n_generations,
@@ -546,10 +540,12 @@ void main_CovNet() {
 
   // define the initial population
   std::cout << "Initializing the population..." << std::endl;
-  //std::vector<Model<float>> population = { model_trainer.makeCovNet(input_nodes.size(), output_nodes.size(), 2, 2, 32) };  // Sanity test
-  std::vector<Model<float>> population = { model_trainer.makeCovNet(input_nodes.size(), output_nodes.size(), 8, 2, 128) };  // Minimal solving model
-  //std::vector<Model<float>> population = { model_trainer.makeCovNet(input_nodes.size(), output_nodes.size(), 32, 2, 128) }; // Recommended model
-  //std::vector<Model<float>> population = { model_trainer.makeCovNetCompact(input_nodes.size(), output_nodes.size(), 12, 12, 128) };  // Test
+  Model<float> model;
+  //model_trainer.makeCovNet(model, input_nodes.size(), output_nodes.size(), 2, 2, 32, false, true);  // Sanity test
+  model_trainer.makeCovNet(model, input_nodes.size(), output_nodes.size(), 8, 2, 128, false, true);  // Minimal solving model
+  //model_trainer.makeCovNet(model, input_nodes.size(), output_nodes.size(), 32, 2, 128, true, true); // Recommended model
+  //model_trainer.makeCovNetCompact(model, input_nodes.size(), output_nodes.size(), 12, 12, 128);  // Test
+  std::vector<Model<float>> population = { model };
 
   // Evolve the population
   std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
