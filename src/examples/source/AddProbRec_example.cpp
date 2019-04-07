@@ -455,16 +455,16 @@ public:
 		//		std::make_pair(0, 0));
 		//}
     this->setRandomModifications(
-      std::make_pair(1, 1),
-      std::make_pair(1, 1),
+      std::make_pair(1, 4),
+      std::make_pair(1, 4),
       std::make_pair(0, 0),
       std::make_pair(0, 0),
-      std::make_pair(1, 1),
+      std::make_pair(1, 8),
       std::make_pair(0, 0),
-      std::make_pair(1, 1),
-      std::make_pair(1, 1),
-      std::make_pair(1, 1),
-      std::make_pair(1, 1),
+      std::make_pair(1, 4),
+      std::make_pair(1, 8),
+      std::make_pair(1, 4),
+      std::make_pair(1, 4),
       std::make_pair(0, 0),
       std::make_pair(0, 0),
       std::make_pair(0, 0));
@@ -555,7 +555,7 @@ int main(int argc, char** argv)
 	ModelTrainerExt<float> model_trainer;
   model_trainer.setBatchSize(32);
 	model_trainer.setMemorySize(data_simulator.sequence_length_);
-	model_trainer.setNEpochsTraining(50); // population training
+	model_trainer.setNEpochsTraining(100); // population training
   //model_trainer.setNEpochsTraining(1000); // single model training
 	model_trainer.setNEpochsValidation(25);
   model_trainer.setNTETTSteps(data_simulator.sequence_length_);
