@@ -15,16 +15,7 @@
 
 using namespace SmartPeak;
 
-/**
- * EXAMPLES using the MNIST data set
- *
- * EXAMPLE1:
- * - classification on MNIST using DAG
- * - whole image pixels (linearized) 28x28 normalized to 0 to 1
- * - classifier (1 hot vector from 0 to 9)
- */
-
- // Extended classes
+// Extended classes
 template<typename TensorT>
 class ModelTrainerExt : public ModelTrainerGpu<TensorT>
 {
@@ -32,18 +23,21 @@ public:
   /*
   @brief LSTM classifier
 
-  Recommended hyperparameters: 512 n_blocks, 1 n_cells, 1e6 epochs, 8 batch_size
-
-  References:
+  @param[in, out] model The network model
+  @param[in] n_inputs The number of pixel inputs
+  @param[in] n_outputs The number of classifier outputs
+  @param[in] n_blocks The number of LSTM blocks to add to the network
+  @param[in] n_cells The number of cells in each LSTM block
+  @param[in] specify_layers Whether to give the `ModelInterpreter` "hints" as to the correct network structure during graph to tensor compilation
   */
-  void makeLSTM(Model<TensorT>& model, int n_inputs = 784, int n_outputs = 10, int n_blocks = 100, int n_cells = 1) {
+  void makeLSTM(Model<TensorT>& model, int n_inputs = 784, int n_outputs = 10, int n_blocks = 512, int n_cells = 1, bool specify_layers = true) {
     model.setId(0);
     model.setName("LSTM");
 
     ModelBuilder<TensorT> model_builder;
 
     // Add the inputs
-    std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", "Input", n_inputs, true);
+    std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", "Input", n_inputs, specify_layers);
 
     // Add the LSTM layer
     std::vector<std::string> node_names = model_builder.addLSTM(model, "LSTM", "LSTM", node_names_input, n_blocks, n_cells,
@@ -55,7 +49,7 @@ public:
       std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0.5, 1.5)),
       //std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(0.4)), 
       std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8, 100.0)),
-      0.0f, 0.0f, true, true, 1, true);
+      0.0f, 0.0f, true, true, 1, specify_layers);
 
     // Add a final output layer
     node_names = model_builder.addFullyConnected(model, "Output", "Output", node_names, n_outputs,
@@ -104,7 +98,7 @@ public:
     if (n_epochs == 0) {
       model_logger.initLogs(model);
     }
-    if (n_epochs % 10 == 0) {
+    if (n_epochs % 1 == 0) {
       if (model_logger.getLogExpectedPredictedEpoch())
         model_interpreter.getModelResults(model, true, false, false);
       model_logger.writeLogs(model, n_epochs, { "Error" }, {}, { model_error }, {}, output_nodes, expected_values);
@@ -220,24 +214,20 @@ public:
     const int& n_generations,
     std::vector<Model<TensorT>>& models,
     std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations)
-  {
-    // Population size of 16
-    if (n_generations == 0)
-    {
-      this->setNTop(3);
-      this->setNRandom(3);
-      this->setNReplicatesPerModel(15);
-    }
-    else
-    {
-      this->setNTop(3);
-      this->setNRandom(3);
-      this->setNReplicatesPerModel(3);
-    }
+  { // TODO
   }
 };
 
-void main_LSTMTrain() {
+/**
+ @brief Pixel by pixel MNIST example whereby each pixel is
+   read into the model one by one and a classification
+   is given after reading in all pixels
+
+  Data processing:
+  - whole image pixels (linearized) 28x28 normalized to 0 to 1
+  - classifier (1 hot vector from 0 to 9)
+ */
+void main_MNIST(const bool& make_model, const bool& train_model) {
 
   const int n_hard_threads = std::thread::hardware_concurrency();
   const int n_threads = 1;
@@ -245,10 +235,7 @@ void main_LSTMTrain() {
   // define the populatin trainer
   PopulationTrainerExt<float> population_trainer;
   population_trainer.setNGenerations(1);
-  population_trainer.setNTop(1);
-  population_trainer.setNRandom(1);
-  population_trainer.setNReplicatesPerModel(1);
-  population_trainer.setLogging(true);
+  population_trainer.setLogging(false);
 
   // define the population logger
   PopulationLogger<float> population_logger(true, true);
@@ -326,28 +313,50 @@ void main_LSTMTrain() {
   model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new CrossEntropyWithLogitsGradOp<float>(1e-6, 1.0)) });
   model_trainer.setOutputNodes({ output_nodes });
 
-  // define the model replicator for growth mode
+  // define the model replicator
   ModelReplicatorExt<float> model_replicator;
 
-  // define the initial population [BUG FREE]
+  // define the initial population
   std::cout << "Initializing the population..." << std::endl;
   Model<float> model;
-  model_trainer.makeLSTM(model, input_nodes.size(), output_nodes.size(), n_hidden);
+  if (make_model) {
+    model_trainer.makeLSTM(model, input_nodes.size(), output_nodes.size(), n_hidden);
+  }
+  else {
+    // read in the trained model
+    std::cout << "Reading in the model..." << std::endl;
+    const std::string data_dir = "/home/user/code/build/";
+    const std::string model_filename = data_dir + "LSTM_9000_model.binary";
+    const std::string interpreter_filename = data_dir + "LSTM_9000_interpreter.binary";
+    ModelFile<float> model_file;
+    model_file.loadModelBinary(model_filename, model);
+    model.setId(1);
+    model.setName("LSTM1");
+    ModelInterpreterFileGpu<float> model_interpreter_file;
+    model_interpreter_file.loadModelInterpreterBinary(interpreter_filename, model_interpreters[0]);
+  }
   std::vector<Model<float>> population = { model };
 
-  // Evolve the population
-  std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
-    population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, population_logger, input_nodes);
+  if (train_model) {
+    // Evolve the population
+    std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
+      population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, population_logger, input_nodes);
 
-  PopulationTrainerFile<float> population_trainer_file;
-  population_trainer_file.storeModels(population, "MNIST");
-  population_trainer_file.storeModelValidations("MNISTErrors.csv", models_validation_errors_per_generation);
-}
+    PopulationTrainerFile<float> population_trainer_file;
+    population_trainer_file.storeModels(population, "MNIST");
+    population_trainer_file.storeModelValidations("MNISTErrors.csv", models_validation_errors_per_generation);
+  }
+  else {
+    // Evaluate the population
+    population_trainer.evaluateModels(
+      population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, input_nodes);
+  }
+};
 
 int main(int argc, char** argv)
 {
   // run the application
-  main_LSTMTrain();
+  main_MNIST(true, true);
 
   return 0;
 }

@@ -15,32 +15,23 @@
 
 using namespace SmartPeak;
 
-/**
- * EXAMPLES using the MNIST data set
- *
- * EXAMPLE1:
- * - reconstruction on MNIST using a VAE
- * - whole image pixels (linearized) 28x28 normalized to 0 to 1
- */
-
  // Extended 
 template<typename TensorT>
 class ModelTrainerExt : public ModelTrainerDefaultDevice<TensorT>
 {
 public:
 	/*
-	@brief Basic VAE with	Xavier initialization
-
-	Notes:
-	Model input nodes: "Input_0, Input_1, ... Input_784" up to n_inputs
-	Model encoding input nodes: "Encoding_0, Encoding_1, ... Encoding 64" up to n_encodings
-	Model output nodes: "Output_0, Output_1, ... Output_784" up to n_inputs
-
-	Hidden size of 128 and 256 reach a training loss of 34776 (batch size 64 and loss of 1.0 BCE, 0.25 KLDiverg) after 10,000 epochs
+	@brief Basic VAE with	Xavier-like initialization
 
 	References:
 	Based on Kingma et al, 2014: https://arxiv.org/pdf/1312.6114
 	https://github.com/pytorch/examples/blob/master/vae/main.py
+
+  @param[in, out] model The network model
+  @param[in] n_inputs The number of input pixels
+  @param[in] n_encodings The length of the encodings layer
+  @param[in] n_hidden The length of the hidden layers
+  @param[in] specify_layers Whether to give the `ModelInterpreter` "hints" as to the correct network structure during graph to tensor compilation
 	*/
 	void makeVAE(Model<TensorT>& model, int n_inputs = 784, int n_encodings = 64, int n_hidden_0 = 512, bool specify_layer = false) {
 		model.setId(0);
@@ -141,7 +132,7 @@ public:
 		//if (n_epochs = 1000) {
 		//	// anneal the learning rate to 1e-4
 		//}
-		if (n_epochs % 999 == 0 && n_epochs != 0
+		if (n_epochs % 1000 == 0 && n_epochs != 0
 			) {
 			// save the model every 1000 epochs
 			//model_interpreter.getModelResults(model, false, true, false);
@@ -165,7 +156,7 @@ public:
 		if (n_epochs == 0) {
 			model_logger.initLogs(model);
 		}
-		if (n_epochs % 10 == 0) {
+		if (n_epochs % 1 == 0) {
 			if (model_logger.getLogExpectedPredictedEpoch())
 				model_interpreter.getModelResults(model, true, false, false);
 			model_logger.writeLogs(model, n_epochs, { "Error" }, {}, { model_error }, {}, output_nodes, expected_values);
@@ -340,24 +331,19 @@ public:
 		const int& n_generations,
 		std::vector<Model<TensorT>>& models,
 		std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations)
-	{
-		// Population size of 16
-		if (n_generations == 0)
-		{
-			this->setNTop(3);
-			this->setNRandom(3);
-			this->setNReplicatesPerModel(15);
-		}
-		else
-		{
-			this->setNTop(3);
-			this->setNRandom(3);
-			this->setNReplicatesPerModel(3);
-		}
+	{// TODO
 	}
 };
 
-void main_VAE(const bool& make_model, const bool& train_model) {
+/**
+ @brief Pixel reconstruction MNIST example whereby all pixels are
+  linearized and read into the model.  The model then attempts to 
+  reconstruction the pixels using a Variational Auto Encoder network
+
+  Data processing:
+  - whole image pixels (linearized) 28x28 normalized to 0 to 1
+ */
+void main_MNIST(const bool& make_model, const bool& train_model) {
 
 	const int n_hard_threads = std::thread::hardware_concurrency();
 	const int n_threads = 1;
@@ -458,9 +444,9 @@ void main_VAE(const bool& make_model, const bool& train_model) {
 	}
 	ModelTrainerExt<float> model_trainer;
 	//model_trainer.setBatchSize(1); // evaluation only
-	model_trainer.setBatchSize(8);
-	model_trainer.setNEpochsTraining(100);
-	model_trainer.setNEpochsValidation(10);
+	model_trainer.setBatchSize(64);
+	model_trainer.setNEpochsTraining(1001);
+	model_trainer.setNEpochsValidation(25);
 	model_trainer.setNEpochsEvaluation(100);
 	model_trainer.setMemorySize(1);
 	model_trainer.setVerbosityLevel(1);
@@ -522,7 +508,7 @@ void main_VAE(const bool& make_model, const bool& train_model) {
 int main(int argc, char** argv)
 {
 	// run the application
-	main_VAE(true, true);
+	main_MNIST(true, true);
 
 	return 0;
 }

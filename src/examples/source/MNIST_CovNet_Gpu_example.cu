@@ -15,15 +15,6 @@
 
 using namespace SmartPeak;
 
-/**
- * EXAMPLES using the MNIST data set
- *
- * EXAMPLE1:
- * - classification on MNIST using DAG
- * - whole image pixels (linearized) 28x28 normalized to 0 to 1
- * - classifier (1 hot vector from 0 to 9)
- */
-
  // Extended classes
 template<typename TensorT>
 class ModelTrainerExt : public ModelTrainerGpu<TensorT>
@@ -32,13 +23,15 @@ public:
   /*
   @brief Convolution classifier
 
-  @param n_depth_1 32 (32 filters)
-  @param n_depth_2 2 (total of 64 filters)
-  @param n_fc 1024
-  @param add_norm Optional normalization layer after each convolution
-
   References:
   https://github.com/pytorch/examples/blob/master/mnist/main.py
+
+  @param model The network model
+  @param n_depth_1 The number of filters in the first Cov layer
+  @param n_depth_2 The number of filters to create from each individual filter in the first Cov layer
+    e.g., n_depth_1 = 32 and n_depth_2 = 2 the first Cov layer will have 32 filters and the second will have 64 layers
+  @param n_fc The length of each fully connected layer
+  @param add_norm Optional normalization layer after each convolution
   */
   void makeCovNet(Model<TensorT>& model, const int& n_inputs, const int& n_outputs, int n_depth_1 = 32, int n_depth_2 = 2, int n_fc = 128, bool add_norm = false, bool specify_layers = false) {
     model.setId(0);
@@ -55,7 +48,7 @@ public:
       std::vector<std::string> node_names;
       std::string conv_name = "Conv0-" + std::to_string(d);
       node_names = model_builder.addConvolution(model, conv_name, conv_name, node_names_input,
-        28, 28, 0, 0,
+        sqrt(node_names_input.size()), sqrt(node_names_input.size()), 0, 0,
         5, 5, 1, 0, 0,
         std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
         std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
@@ -276,7 +269,7 @@ public:
     //if (n_epochs = 1000) {
     //	// anneal the learning rate to 1e-4
     //}
-    if (n_epochs % 999 == 0 && n_epochs != 0) {
+    if (n_epochs % 1000 == 0 && n_epochs != 0) {
       // save the model every 1000 epochs
       //model_interpreter.getModelResults(model, false, true, false);
       ModelFile<TensorT> data;
@@ -299,7 +292,7 @@ public:
     if (n_epochs == 0) {
       model_logger.initLogs(model);
     }
-    if (n_epochs % 10 == 0) {
+    if (n_epochs % 1 == 0) {
       if (model_logger.getLogExpectedPredictedEpoch())
         model_interpreter.getModelResults(model, true, false, false);
       model_logger.writeLogs(model, n_epochs, { "Error" }, {}, { model_error }, {}, output_nodes, expected_values);
@@ -341,22 +334,20 @@ public:
     assert(n_output_nodes == this->validation_labels.dimension(1));
     assert(n_input_nodes == this->validation_data.dimension(1));
 
-    // make a vector of sample_indices [BUG FREE]
+    // make a vector of sample_indices
     Eigen::Tensor<int, 1> sample_indices = this->getTrainingIndices(batch_size, n_epochs);
 
-    // Reformat the input data for training [BUG FREE]
+    // Reformat the input data for training
     for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
       for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
         for (int epochs_iter = 0; epochs_iter < n_epochs; ++epochs_iter) {
           for (int nodes_iter = 0; nodes_iter < this->training_data.dimension(1); ++nodes_iter) {
-            //input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = this->training_data(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
-            input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = this->training_data(sample_indices[0], nodes_iter);  // test on only 1 sample
+            input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = this->training_data(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
+            //input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = this->training_data(sample_indices[0], nodes_iter);  // test on only 1 sample
           }
           for (int nodes_iter = 0; nodes_iter < this->training_labels.dimension(1); ++nodes_iter) {
-            //output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = (TensorT)this->training_labels(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
-            output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = (TensorT)this->training_labels(sample_indices[0], nodes_iter); // test on only 1 sample
-            //output_data(batch_iter, memory_iter, nodes_iter + this->training_labels.dimension(1), epochs_iter) = (TensorT)this->training_labels(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
-            ////output_data(batch_iter, memory_iter, nodes_iter + this->training_labels.dimension(1), epochs_iter) = (TensorT)this->training_labels(sample_indices[0], nodes_iter); // test on only 1 sample
+            output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = (TensorT)this->training_labels(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
+            //output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = (TensorT)this->training_labels(sample_indices[0], nodes_iter); // test on only 1 sample
           }
         }
       }
@@ -376,10 +367,10 @@ public:
     assert(n_output_nodes == this->validation_labels.dimension(1));
     assert(n_input_nodes == this->validation_data.dimension(1));
 
-    // make the start and end sample indices [BUG FREE]
+    // make the start and end sample indices
     Eigen::Tensor<int, 1> sample_indices = this->getValidationIndices(batch_size, n_epochs);
 
-    // Reformat the input data for validation [BUG FREE]
+    // Reformat the input data for validation
     for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
       for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
         for (int epochs_iter = 0; epochs_iter < n_epochs; ++epochs_iter) {
@@ -388,7 +379,6 @@ public:
           }
           for (int nodes_iter = 0; nodes_iter < this->validation_labels.dimension(1); ++nodes_iter) {
             output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = (TensorT)this->validation_labels(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
-            //output_data(batch_iter, memory_iter, nodes_iter + this->validation_labels.dimension(1), epochs_iter) = (TensorT)this->validation_labels(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
           }
         }
       }
@@ -418,24 +408,20 @@ public:
     const int& n_generations,
     std::vector<Model<TensorT>>& models,
     std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations)
-  {
-    // Population size of 16
-    if (n_generations == 0)
-    {
-      this->setNTop(3);
-      this->setNRandom(3);
-      this->setNReplicatesPerModel(15);
-    }
-    else
-    {
-      this->setNTop(3);
-      this->setNRandom(3);
-      this->setNReplicatesPerModel(3);
-    }
+  { //TODO
   }
 };
 
-void main_CovNet() {
+/**
+ @brief Image classification MNIST example whereby all pixels are
+  linearized and read into the model.  The model then attempts to
+  classify the image using a CovNet architecture
+
+  Data processing:
+  - whole image pixels (linearized) 28x28 normalized to 0 to 1
+  - classifier (1 hot vector from 0 to 9)
+ */
+void main_MNIST(const bool& make_model, const bool& train_model) {
 
   const int n_hard_threads = std::thread::hardware_concurrency();
   const int n_threads = 1;
@@ -443,10 +429,7 @@ void main_CovNet() {
   // define the populatin trainer
   PopulationTrainerExt<float> population_trainer;
   population_trainer.setNGenerations(1);
-  population_trainer.setNTop(1);
-  population_trainer.setNRandom(1);
-  population_trainer.setNReplicatesPerModel(1);
-  population_trainer.setLogging(true);
+  population_trainer.setLogging(false);
 
   // define the population logger
   PopulationLogger<float> population_logger(true, true);
@@ -517,49 +500,64 @@ void main_CovNet() {
   ModelTrainerExt<float> model_trainer;
   model_trainer.setBatchSize(64);
   model_trainer.setMemorySize(1);
-  model_trainer.setNEpochsTraining(1000);
-  model_trainer.setNEpochsValidation(1);
+  model_trainer.setNEpochsTraining(1001);
+  model_trainer.setNEpochsValidation(25);
   model_trainer.setNEpochsEvaluation(100);
   model_trainer.setVerbosityLevel(1);
   model_trainer.setLogging(true, true, true);
   model_trainer.setFindCycles(false);
   model_trainer.setFastInterpreter(true);
-  model_trainer.setLossFunctions({
-    //std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>())//,
-    std::shared_ptr<LossFunctionOp<float>>(new CrossEntropyWithLogitsOp<float>())
-    });
-  model_trainer.setLossFunctionGrads({
-    //std::shared_ptr<LossFunctionGradOp<float>>({new MSEGradOp<float>())//,	
-    std::shared_ptr<LossFunctionGradOp<float>>(new CrossEntropyWithLogitsGradOp<float>())
-    });
-  model_trainer.setOutputNodes({ output_FC_nodes//, output_nodes 
-    });
+  model_trainer.setLossFunctions({std::shared_ptr<LossFunctionOp<float>>(new CrossEntropyWithLogitsOp<float>())});
+  model_trainer.setLossFunctionGrads({std::shared_ptr<LossFunctionGradOp<float>>(new CrossEntropyWithLogitsGradOp<float>())});
+  model_trainer.setOutputNodes({ output_FC_nodes });
 
-  // define the model replicator for growth mode
+  // define the model replicator
   ModelReplicatorExt<float> model_replicator;
 
   // define the initial population
   std::cout << "Initializing the population..." << std::endl;
   Model<float> model;
-  //model_trainer.makeCovNet(model, input_nodes.size(), output_nodes.size(), 2, 2, 32, false, true);  // Sanity test
-  model_trainer.makeCovNet(model, input_nodes.size(), output_nodes.size(), 8, 2, 128, false, true);  // Minimal solving model
-  //model_trainer.makeCovNet(model, input_nodes.size(), output_nodes.size(), 32, 2, 128, true, true); // Recommended model
-  //model_trainer.makeCovNetCompact(model, input_nodes.size(), output_nodes.size(), 12, 12, 128);  // Test
+  if (make_model) {
+    //model_trainer.makeCovNet(model, input_nodes.size(), output_nodes.size(), 2, 2, 32, false, true);  // Sanity test
+    model_trainer.makeCovNet(model, input_nodes.size(), output_nodes.size(), 8, 2, 128, false, true);  // Minimal solving model
+    //model_trainer.makeCovNet(model, input_nodes.size(), output_nodes.size(), 32, 2, 128, true, true); // Recommended model
+    //model_trainer.makeCovNetCompact(model, input_nodes.size(), output_nodes.size(), 12, 12, 128);  // Test
+  }
+  else {
+    // read in the trained model
+    std::cout << "Reading in the model..." << std::endl;
+    const std::string data_dir = "/home/user/code/build/";
+    const std::string model_filename = data_dir + "CovNet_1000_model.binary";
+    const std::string interpreter_filename = data_dir + "CovNet_1000_interpreter.binary";
+    ModelFile<float> model_file;
+    model_file.loadModelBinary(model_filename, model);
+    model.setId(1);
+    model.setName("CovNet1");
+    ModelInterpreterFileGpu<float> model_interpreter_file;
+    model_interpreter_file.loadModelInterpreterBinary(interpreter_filename, model_interpreters[0]);
+  }
   std::vector<Model<float>> population = { model };
 
-  // Evolve the population
-  std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
-    population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, population_logger, input_nodes);
+  if (train_model) {
+    // Evolve the population
+    std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
+      population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, population_logger, input_nodes);
 
-  PopulationTrainerFile<float> population_trainer_file;
-  population_trainer_file.storeModels(population, "MNIST");
-  population_trainer_file.storeModelValidations("MNISTErrors.csv", models_validation_errors_per_generation);
+    PopulationTrainerFile<float> population_trainer_file;
+    population_trainer_file.storeModels(population, "MNIST");
+    population_trainer_file.storeModelValidations("MNISTErrors.csv", models_validation_errors_per_generation);
+  }
+  else {
+    // Evaluate the population
+    population_trainer.evaluateModels(
+      population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, input_nodes);
+  }
 }
 
 int main(int argc, char** argv)
 {
   // run the application
-  main_CovNet();
+  main_MNIST(true, true);
 
   return 0;
 }
