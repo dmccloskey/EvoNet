@@ -264,18 +264,24 @@ public:
 	{
 		// writer header
 		if (log_time_epoch_csvwriter_.getLineCount() == 0) {
-			std::vector<std::string> headers = { "Epoch", "Time" };
+			std::vector<std::string> headers = { "Epoch", "TimeStamp", "Milliseconds" };
 			log_time_epoch_csvwriter_.writeDataInRow(headers.begin(), headers.end());
 		}
-
-		// write next entry
+        
+    // TimeStamp
 		std::chrono::time_point<std::chrono::system_clock> time_now = std::chrono::system_clock::now();
 		std::time_t time_now_t = std::chrono::system_clock::to_time_t(time_now);
 		std::tm now_tm = *std::localtime(&time_now_t);
 		char timestamp[64];
 		std::strftime(timestamp, 64, "%Y-%m-%d-%H-%M-%S", &now_tm);
 		std::string time_stamp(timestamp);
-		std::vector<std::string> line = { std::to_string(n_epoch), time_stamp };
+
+    // Current time in milliseconds since 1970
+    auto now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+    std::string milli_now = std::to_string(now);
+
+    // write next entry
+		std::vector<std::string> line = { std::to_string(n_epoch), time_stamp, milli_now };
 		log_time_epoch_csvwriter_.writeDataInRow(line.begin(), line.end());
 		return true;
 	}

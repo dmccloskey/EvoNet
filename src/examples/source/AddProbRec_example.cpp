@@ -17,6 +17,24 @@
 
 using namespace SmartPeak;
 
+/*
+@brief Add problem genetic + deep learning algorithm examples
+
+Experiments:
+1. addProb and single model training with the solution model initialized to the correct weights
+2. addProb and single model training with solution model and weight dev from the correct weights
+3. addProb and population training with the solution model as the population seed
+4. addProb and population training with the minimal model as the population seed
+5. addProb and single model training with the LSTM architecture
+6. addProb and population training with the LSTM model as the population seed
+
+Hyper parameters:
+1. Adam solver with a learning rate of 0.001
+2. Batch size of 32
+3. 5000 epochs (single model training); 50 epochs (population training)
+4. 25 epochs testing
+*/
+
 template<typename TensorT>
 class DataSimulatorExt : public AddProbSimulator<TensorT>
 {
@@ -270,13 +288,13 @@ public:
 	}
 
 	/*
-	@brief LSTM implementation with 4 hidden layers
+	@brief LSTM implementation
 
 	References:
 		Hochreiter et al. "Long Short-Term Memory". Neural Computation 9, 1735–1780 (1997)
 		Chung et al. "Empirical Evaluation of Gated Recurrent Neural Networks on Sequence Modeling". 2014. arXiv:1412.3555v1
 
-	GRU implementation with 4 hidden layers
+	GRU implementation
 
 	References:
 		Cho et al. "Learning Phrase Representations using RNN Encoder–Decoder for Statistical Machine Translation". 2014. arXiv:1406.1078v3
@@ -297,7 +315,7 @@ public:
 			std::shared_ptr<ActivationOp<TensorT>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<TensorT>>(new ReLUGradOp<float>()),
 			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
 			//std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(0.4)), 
-      std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0.1, 1.0)),
+      std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0.2, 0.8)),
       std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)),
 			0.0f, 0.0f, true, true, 1, specify_layers);
 
@@ -309,7 +327,7 @@ public:
 			std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
 			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
 			//std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 2)),
-      std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0.5, 2.0)),
+      std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0.9, 1.1)),
 			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, true, true);
 
 		for (const std::string& node_name : node_names)
@@ -353,7 +371,8 @@ public:
 		if (n_epochs == 0) {
 			model_logger.initLogs(model);
 		}
-		if (n_epochs % 10 == 0) {
+		if (n_epochs % 1 == 0) {
+    //if (n_epochs % 10 == 0) {
 			if (model_logger.getLogExpectedPredictedEpoch())
 				model_interpreter.getModelResults(model, true, false, false);
 			model_logger.writeLogs(model, n_epochs, { "Error" }, {}, { model_error }, {}, output_nodes, expected_values);
@@ -506,8 +525,8 @@ int main(int argc, char** argv)
 {
 	// define the population trainer parameters
 	PopulationTrainerExt<float> population_trainer;
-	population_trainer.setNGenerations(50);
-	//population_trainer.setNGenerations(1);
+	//population_trainer.setNGenerations(50); // population training
+	population_trainer.setNGenerations(1); // single model training
 	population_trainer.setLogging(true);
 
 	// define the population logger
@@ -524,7 +543,7 @@ int main(int argc, char** argv)
 	// define the data simulator
 	DataSimulatorExt<float> data_simulator;
 	data_simulator.n_mask_ = 2;
-	data_simulator.sequence_length_ = 10;
+	data_simulator.sequence_length_ = 25;
 
 	// define the model trainers and resources for the trainers
 	std::vector<ModelInterpreterDefaultDevice<float>> model_interpreters;
@@ -534,11 +553,10 @@ int main(int argc, char** argv)
 		model_interpreters.push_back(model_interpreter);
 	}
 	ModelTrainerExt<float> model_trainer;
-	//model_trainer.setBatchSize(1);
   model_trainer.setBatchSize(32);
 	model_trainer.setMemorySize(data_simulator.sequence_length_);
-	//model_trainer.setNEpochsTraining(25);
-  model_trainer.setNEpochsTraining(1000);
+	//model_trainer.setNEpochsTraining(50); // population training
+  model_trainer.setNEpochsTraining(5000); // single model training
 	model_trainer.setNEpochsValidation(25);
   model_trainer.setNTETTSteps(data_simulator.sequence_length_);
   model_trainer.setNTBPTTSteps(data_simulator.sequence_length_);
