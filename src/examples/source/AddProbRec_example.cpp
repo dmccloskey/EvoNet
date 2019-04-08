@@ -491,17 +491,28 @@ public:
 		//	this->setNRandom(3);
 		//	this->setNReplicatesPerModel(3);
 		//}
-		// Population size of 30
-		if (n_generations == 0)	{
-			this->setNTop(5);
-			this->setNRandom(5);
-			this->setNReplicatesPerModel(29);
-		}
-		else {
-			this->setNTop(5);
-			this->setNRandom(5);
-			this->setNReplicatesPerModel(5);
-		}
+		//// Population size of 30
+		//if (n_generations == 0)	{
+		//	this->setNTop(5);
+		//	this->setNRandom(5);
+		//	this->setNReplicatesPerModel(29);
+		//}
+		//else {
+		//	this->setNTop(5);
+		//	this->setNRandom(5);
+		//	this->setNReplicatesPerModel(5);
+		//}
+    // Population size of 100
+    if (n_generations == 0) {
+      this->setNTop(20);
+      this->setNRandom(20);
+      this->setNReplicatesPerModel(99);
+    }
+    else {
+      this->setNTop(20);
+      this->setNRandom(20);
+      this->setNReplicatesPerModel(5);
+    }
 	}
 	void trainingPopulationLogger(
 		const int& n_generations,

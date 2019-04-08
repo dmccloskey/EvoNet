@@ -18,7 +18,8 @@ set(ml_executables_list
 set(cuda_executables_list
   CUDA_example
   MNIST_CovNet_Gpu_example
-  MNIST_DenoisingAE_Gpu_example.cu
+  MNIST_CVAE_Gpu_example
+  MNIST_DenoisingAE_Gpu_example
   MNIST_DotProdAtten_Gpu_example
   MNIST_LSTM_Gpu_example
   MNIST_VAE_Gpu_example
