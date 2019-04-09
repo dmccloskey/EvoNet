@@ -406,65 +406,31 @@ public:
 		std::vector<Model<TensorT>>& models,
 		std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations)
 	{
-		//if (n_generations>0)
-		//{
-		//	this->setRandomModifications(
-		//		std::make_pair(0, 1),
-		//		std::make_pair(0, 1),
-		//		std::make_pair(0, 0),
-		//		std::make_pair(0, 0),
-		//		std::make_pair(0, 2),
-		//		std::make_pair(0, 0),
-		//		std::make_pair(0, 0),
-		//		std::make_pair(0, 0),
-		//		std::make_pair(0, 1),
-		//		std::make_pair(0, 1),
-		//		std::make_pair(0, 0),
-		//		std::make_pair(0, 0),
-		//		std::make_pair(0, 0));
-		//	// Appears to lead to instability?
-		//	//std::make_pair(0, 4),
-		//	//	std::make_pair(0, 4),
-		//	//	std::make_pair(0, 0),
-		//	//	std::make_pair(0, 0),
-		//	//	std::make_pair(0, 8),
-		//	//	std::make_pair(0, 0),
-		//	//	std::make_pair(0, 0),
-		//	//	std::make_pair(0, 0),
-		//	//	std::make_pair(0, 4),
-		//	//	std::make_pair(0, 4),
-		//	//	std::make_pair(0, 0),
-		//	//	std::make_pair(0, 0),
-		//	//	std::make_pair(0, 0));
-		//}
-		//else
-		//{
-		//	this->setRandomModifications(
-		//		std::make_pair(0, 1),
-		//		std::make_pair(0, 1),
-		//		std::make_pair(0, 0),
-		//		std::make_pair(0, 0),
-		//		std::make_pair(0, 2),
-		//		std::make_pair(0, 0),
-		//		std::make_pair(0, 0),
-		//		std::make_pair(0, 0),
-		//		std::make_pair(0, 1),
-		//		std::make_pair(0, 1),
-		//		std::make_pair(0, 0),
-		//		std::make_pair(0, 0),
-		//		std::make_pair(0, 0));
-		//}
+    //this->setRandomModifications(
+    //  std::make_pair(1, 4),
+    //  std::make_pair(1, 4),
+    //  std::make_pair(0, 0),
+    //  std::make_pair(0, 0),
+    //  std::make_pair(1, 8),
+    //  std::make_pair(0, 0),
+    //  std::make_pair(1, 4),
+    //  std::make_pair(1, 8),
+    //  std::make_pair(1, 4),
+    //  std::make_pair(1, 4),
+    //  std::make_pair(0, 0),
+    //  std::make_pair(0, 0),
+    //  std::make_pair(0, 0));
     this->setRandomModifications(
-      std::make_pair(1, 4),
-      std::make_pair(1, 4),
-      std::make_pair(0, 0),
-      std::make_pair(0, 0),
+      std::make_pair(1, 8),
       std::make_pair(1, 8),
       std::make_pair(0, 0),
-      std::make_pair(1, 4),
+      std::make_pair(0, 0),
+      std::make_pair(1, 16),
+      std::make_pair(0, 0),
       std::make_pair(1, 8),
-      std::make_pair(1, 4),
-      std::make_pair(1, 4),
+      std::make_pair(1, 16),
+      std::make_pair(1, 8),
+      std::make_pair(1, 8),
       std::make_pair(0, 0),
       std::make_pair(0, 0),
       std::make_pair(0, 0));
@@ -504,14 +470,14 @@ public:
 		//}
     // Population size of 100
     if (n_generations == 0) {
-      this->setNTop(20);
-      this->setNRandom(20);
+      this->setNTop(10);
+      this->setNRandom(10);
       this->setNReplicatesPerModel(99);
     }
     else {
-      this->setNTop(20);
-      this->setNRandom(20);
-      this->setNReplicatesPerModel(5);
+      this->setNTop(10);
+      this->setNRandom(10);
+      this->setNReplicatesPerModel(10);
     }
 	}
 	void trainingPopulationLogger(

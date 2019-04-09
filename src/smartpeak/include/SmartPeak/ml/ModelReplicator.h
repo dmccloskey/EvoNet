@@ -326,9 +326,18 @@ public:
 		@brief set random model modification parameters
 
 		@param[in] node_down_additions lower/upper bound for the number of potential node additions
+		@param[in] node_right_additions lower/upper bound for the number of potential node additions
+		@param[in] node_down_copies lower/upper bound for the number of potential node copies
+		@param[in] node_right_copies lower/upper bound for the number of potential node copies
 		@param[in] link_additions lower/upper bound for the number of potential link additions
+		@param[in] link_copies lower/upper bound for the number of potential link copies
 		@param[in] node_deletions lower/upper bound for the number of potential node deletions
 		@param[in] link_deletions lower/upper bound for the number of potential link deletions
+		@param[in] node_activation_changes lower/upper bound for the number of potential node activation changes
+		@param[in] node_integration_changes lower/upper bound for the number of potential node integration changes
+		@param[in] module_additions lower/upper bound for the number of potential module additions
+		@param[in] module_copies lower/upper bound for the number of potential module copies
+		@param[in] module_deletions lower/upper bound for the number of potential module deletions
 		*/
 		void setRandomModifications(
 			const std::pair<int, int>& node_down_additions,
@@ -344,6 +353,7 @@ public:
 			const std::pair<int, int>& module_additions,
 			const std::pair<int, int>& module_copies,
 			const std::pair<int, int>& module_deletions);
+    std::vector<std::pair<int,int>> getRandomModifications() const;  ///< get a copy of the current Random modifications attributes
 
 		/**
 		@brief make random model modification parameters
@@ -1490,7 +1500,6 @@ private:
 		const std::pair<int, int>& module_copies,
 		const std::pair<int, int>& module_deletions)
 	{
-		// set 
 		node_down_additions_ = node_down_additions;
 		node_right_additions_ = node_right_additions;
 		node_down_copies_ = node_down_copies;
@@ -1505,6 +1514,27 @@ private:
 		module_copies_ = module_copies;
 		module_deletions_ = module_deletions;
 	}
+
+  template<typename TensorT>
+  inline std::vector<std::pair<int, int>> ModelReplicator<TensorT>::getRandomModifications() const
+  {
+    std::vector<std::pair<int, int>> random_modifications;
+    random_modifications.push_back(node_down_additions_);
+    random_modifications.push_back(node_right_additions_);
+    random_modifications.push_back(node_down_copies_);
+    random_modifications.push_back(node_right_copies_);
+    random_modifications.push_back(link_additions_);
+    random_modifications.push_back(link_copies_);
+    random_modifications.push_back(node_deletions_);
+    random_modifications.push_back(link_deletions_);
+    random_modifications.push_back(node_activation_changes_);
+    random_modifications.push_back(node_integration_changes_);
+    random_modifications.push_back(module_additions_);
+    random_modifications.push_back(module_copies_);
+    random_modifications.push_back(module_deletions_);
+
+    return random_modifications;
+  }
 
 	template<typename TensorT>
 	void ModelReplicator<TensorT>::makeRandomModifications()

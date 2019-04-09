@@ -88,8 +88,8 @@ public:
 			if (add_norm) {
 				std::string norm_name = "Norm_FC" + std::to_string(i);
 				node_names = model_builder.addNormalization(model, norm_name, norm_name, node_names,
-					std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-					std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+          std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
+          std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
 					std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 2)),
 					std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0, 0.0, false, specify_layers);
 			}
@@ -104,8 +104,8 @@ public:
 
 		// Add the FC layer
 		node_names = model_builder.addFullyConnected(model, "Output", "Output", node_names, n_outputs,
-			std::shared_ptr<ActivationOp<TensorT>>(new ReLUOp<TensorT>()),
-			std::shared_ptr<ActivationOp<TensorT>>(new ReLUGradOp<TensorT>()),
+      std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
+      std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
 			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
 			std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
 			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),

@@ -75,6 +75,47 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
 	BOOST_CHECK_EQUAL(model_replicator.getNNodeIntegrationChanges(), 7);
 	BOOST_CHECK(model_replicator.getNodeActivations()[0] == activations[0]);
 	BOOST_CHECK(model_replicator.getNodeIntegrations()[0] == integrations[0]);
+
+  model_replicator.setRandomModifications(
+    std::make_pair(0, 0),
+    std::make_pair(1, 1),
+    std::make_pair(2, 2),
+    std::make_pair(3, 3),
+    std::make_pair(4, 4),
+    std::make_pair(5, 5),
+    std::make_pair(6, 6),
+    std::make_pair(7, 7),
+    std::make_pair(8, 8),
+    std::make_pair(9, 9),
+    std::make_pair(10, 10),
+    std::make_pair(11, 11),
+    std::make_pair(12, 12));
+  BOOST_CHECK_EQUAL(model_replicator.getRandomModifications()[0].first, 0);
+  BOOST_CHECK_EQUAL(model_replicator.getRandomModifications()[0].second, 0);
+  BOOST_CHECK_EQUAL(model_replicator.getRandomModifications()[1].first, 1);
+  BOOST_CHECK_EQUAL(model_replicator.getRandomModifications()[1].second, 1);
+  BOOST_CHECK_EQUAL(model_replicator.getRandomModifications()[2].first, 2);
+  BOOST_CHECK_EQUAL(model_replicator.getRandomModifications()[2].second, 2);
+  BOOST_CHECK_EQUAL(model_replicator.getRandomModifications()[3].first, 3);
+  BOOST_CHECK_EQUAL(model_replicator.getRandomModifications()[3].second, 3);
+  BOOST_CHECK_EQUAL(model_replicator.getRandomModifications()[4].first, 4);
+  BOOST_CHECK_EQUAL(model_replicator.getRandomModifications()[4].second, 4);
+  BOOST_CHECK_EQUAL(model_replicator.getRandomModifications()[5].first, 5);
+  BOOST_CHECK_EQUAL(model_replicator.getRandomModifications()[5].second, 5);
+  BOOST_CHECK_EQUAL(model_replicator.getRandomModifications()[6].first, 6);
+  BOOST_CHECK_EQUAL(model_replicator.getRandomModifications()[6].second, 6);
+  BOOST_CHECK_EQUAL(model_replicator.getRandomModifications()[7].first, 7);
+  BOOST_CHECK_EQUAL(model_replicator.getRandomModifications()[7].second, 7);
+  BOOST_CHECK_EQUAL(model_replicator.getRandomModifications()[8].first, 8);
+  BOOST_CHECK_EQUAL(model_replicator.getRandomModifications()[8].second, 8);
+  BOOST_CHECK_EQUAL(model_replicator.getRandomModifications()[9].first, 9);
+  BOOST_CHECK_EQUAL(model_replicator.getRandomModifications()[9].second, 9);
+  BOOST_CHECK_EQUAL(model_replicator.getRandomModifications()[10].first, 10);
+  BOOST_CHECK_EQUAL(model_replicator.getRandomModifications()[10].second, 10);
+  BOOST_CHECK_EQUAL(model_replicator.getRandomModifications()[11].first, 11);
+  BOOST_CHECK_EQUAL(model_replicator.getRandomModifications()[11].second, 11);
+  BOOST_CHECK_EQUAL(model_replicator.getRandomModifications()[12].first, 12);
+  BOOST_CHECK_EQUAL(model_replicator.getRandomModifications()[12].second, 12);
 }
 
 BOOST_AUTO_TEST_CASE(setAndMakeRandomModifications)
