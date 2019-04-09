@@ -937,8 +937,7 @@ private:
 			sprintf(iter_char, "Iteration #: %d\n", iter);
 			std::cout << iter_char;
 
-			// update the model replication attributes and population dynamics
-			model_replicator.adaptiveReplicatorScheduler(iter, models, models_validation_errors_per_generation);
+			// update the population dynamics
 			adaptivePopulationScheduler(iter, models, models_validation_errors_per_generation);
 
 			// Generate the input and output data for training [BUG FREE]
@@ -961,6 +960,9 @@ private:
 				models, model_trainer, model_interpreters, model_logger,
 				input_data_validation, output_data_validation, time_steps_validation, input_nodes);
 			models_validation_errors_per_generation.push_back(models_validation_errors);
+
+      // update the model replication attributes
+      model_replicator.adaptiveReplicatorScheduler(iter, models, models_validation_errors_per_generation);
 
 			// log generation
 			if (this->getLogTraining()) {
