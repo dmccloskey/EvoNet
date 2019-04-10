@@ -248,16 +248,19 @@ public:
 
 		[TODO: add tests]
 
-		@param[in] n_generations The number of evolution generations
-		@param[in, out] population_logger The population logger
-		@param[in] models_validation_errors_per_generation The model validation errors in the population
-
+    @param[in] n_generations The number of evolution generations
+    @param[in, out] population_logger The population logger
+    @param[in] models_validation_errors_per_generation The model validation errors in the population
 		*/
 		virtual void trainingPopulationLogger(
-			const int& n_generations,
-			std::vector<Model<TensorT>>& models,
-			PopulationLogger<TensorT>& population_logger,
-			const std::vector<std::tuple<int, std::string, TensorT>>& models_validation_errors_per_generation);
+      const int& n_generations,
+      std::vector<Model<TensorT>>& models,
+      PopulationLogger<TensorT>& population_logger,
+      const std::vector<std::tuple<int, std::string, TensorT>>& models_validation_errors_per_generation);
+
+    void updateNEpochsTraining(ModelTrainer<TensorT, InterpreterT>& model_trainer); ///< Update the number of training epochs
+    void setNEpochsTraining(const int& n_epochs); ///< n_epochs setter
+    int getNEpochsTraining() const; ///< n_epochs setter
 
 private:
 		int unique_id_ = 0;
@@ -267,6 +270,7 @@ private:
 		int n_random_ = 0; ///< The number of random models to select from the pool of top models
 		int n_replicates_per_model_ = 0; ///< The number of replications per model
 		int n_generations_ = 0; ///< The number of generations to evolve the models
+    int n_epochs_training_ = -1; ///< The number of epochs to train the models
 
 		bool log_training_ = false;
   };
@@ -939,6 +943,7 @@ private:
 
 			// update the population dynamics
 			adaptivePopulationScheduler(iter, models, models_validation_errors_per_generation);
+      updateNEpochsTraining(model_trainer);
 
 			// Generate the input and output data for training [BUG FREE]
 			std::cout << "Generating the input/output data for training..." << std::endl;
@@ -1007,11 +1012,12 @@ private:
 			input_data_evaluation, time_steps_evaluation, input_nodes);
 	}
 
-	template<typename TensorT, typename InterpreterT>
-	inline void PopulationTrainer<TensorT, InterpreterT>::adaptivePopulationScheduler(const int & n_generations, std::vector<Model<TensorT>>& models, std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations)
-	{
-		// TODO user
-	}
+  template<typename TensorT, typename InterpreterT>
+  inline void PopulationTrainer<TensorT, InterpreterT>::adaptivePopulationScheduler(const int & n_generations, std::vector<Model<TensorT>>& models,
+    std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations)
+  {
+    // TODO user
+  }
 
 	template<typename TensorT, typename InterpreterT>
 	inline void PopulationTrainer<TensorT, InterpreterT>::trainingPopulationLogger(const int & n_generations,
@@ -1021,6 +1027,25 @@ private:
 	{
 		// TODO user
 	}
+
+  template<typename TensorT, typename InterpreterT>
+  inline void PopulationTrainer<TensorT, InterpreterT>::setNEpochsTraining(const int & n_epochs)
+  {
+    n_epochs_training_ = n_epochs;
+  }
+
+  template<typename TensorT, typename InterpreterT>
+  inline int PopulationTrainer<TensorT, InterpreterT>::getNEpochsTraining() const
+  {
+    return n_epochs_training_;
+  }
+
+  template<typename TensorT, typename InterpreterT>
+  inline void PopulationTrainer<TensorT, InterpreterT>::updateNEpochsTraining(ModelTrainer<TensorT, InterpreterT>& model_trainer)
+  {
+    if (n_epochs_training_ > 0)
+      model_trainer.setNEpochsTraining(n_epochs_training_);
+  }
 
 	// TensorT PopulationTrainer<TensorT, InterpreterT>::calculateMean(std::vector<TensorT> values)
 	// {

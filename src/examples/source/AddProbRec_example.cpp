@@ -420,38 +420,38 @@ public:
       TensorT abs_percent_diff = abs(mean_errors_per_generation_prev - mean_errors_per_generation_cur) / mean_errors_per_generation_prev;
       if (abs_percent_diff < 0.1) {
         this->setRandomModifications(
-          std::make_pair(this->getRandomModifications()[0].first, this->getRandomModifications()[0].second * 2),
-          std::make_pair(this->getRandomModifications()[1].first, this->getRandomModifications()[1].second * 2),
-          std::make_pair(this->getRandomModifications()[2].first, this->getRandomModifications()[2].second * 2),
-          std::make_pair(this->getRandomModifications()[3].first, this->getRandomModifications()[3].second * 2),
-          std::make_pair(this->getRandomModifications()[4].first, this->getRandomModifications()[4].second * 2),
-          std::make_pair(this->getRandomModifications()[5].first, this->getRandomModifications()[5].second * 2),
-          std::make_pair(this->getRandomModifications()[6].first, this->getRandomModifications()[6].second * 2),
-          std::make_pair(this->getRandomModifications()[7].first, this->getRandomModifications()[7].second * 2),
-          std::make_pair(this->getRandomModifications()[8].first, this->getRandomModifications()[8].second * 2),
-          std::make_pair(this->getRandomModifications()[9].first, this->getRandomModifications()[9].second * 2),
-          std::make_pair(this->getRandomModifications()[10].first, this->getRandomModifications()[10].second * 2),
-          std::make_pair(this->getRandomModifications()[11].first, this->getRandomModifications()[11].second * 2),
-          std::make_pair(this->getRandomModifications()[12].first, this->getRandomModifications()[12].second * 2));
+          std::make_pair(this->getRandomModifications()[0].first * 2, this->getRandomModifications()[0].second * 2),
+          std::make_pair(this->getRandomModifications()[1].first * 2, this->getRandomModifications()[1].second * 2),
+          std::make_pair(this->getRandomModifications()[2].first * 2, this->getRandomModifications()[2].second * 2),
+          std::make_pair(this->getRandomModifications()[3].first * 2, this->getRandomModifications()[3].second * 2),
+          std::make_pair(this->getRandomModifications()[4].first * 2, this->getRandomModifications()[4].second * 2),
+          std::make_pair(this->getRandomModifications()[5].first * 2, this->getRandomModifications()[5].second * 2),
+          std::make_pair(this->getRandomModifications()[6].first * 2, this->getRandomModifications()[6].second * 2),
+          std::make_pair(this->getRandomModifications()[7].first * 2, this->getRandomModifications()[7].second * 2),
+          std::make_pair(this->getRandomModifications()[8].first * 2, this->getRandomModifications()[8].second * 2),
+          std::make_pair(this->getRandomModifications()[9].first * 2, this->getRandomModifications()[9].second * 2),
+          std::make_pair(this->getRandomModifications()[10].first * 2, this->getRandomModifications()[10].second * 2),
+          std::make_pair(this->getRandomModifications()[11].first * 2, this->getRandomModifications()[11].second * 2),
+          std::make_pair(this->getRandomModifications()[12].first * 2, this->getRandomModifications()[12].second * 2));
       }
       else if (abs_percent_diff >= 0.1 && abs_percent_diff < 0.5) {
         // Keep the same parameters
       }
       else {
         this->setRandomModifications(
-          std::make_pair(this->getRandomModifications()[0].first, this->getRandomModifications()[0].second / 2),
-          std::make_pair(this->getRandomModifications()[1].first, this->getRandomModifications()[1].second / 2),
-          std::make_pair(this->getRandomModifications()[2].first, this->getRandomModifications()[2].second / 2),
-          std::make_pair(this->getRandomModifications()[3].first, this->getRandomModifications()[3].second / 2),
-          std::make_pair(this->getRandomModifications()[4].first, this->getRandomModifications()[4].second / 2),
-          std::make_pair(this->getRandomModifications()[5].first, this->getRandomModifications()[5].second / 2),
-          std::make_pair(this->getRandomModifications()[6].first, this->getRandomModifications()[6].second / 2),
-          std::make_pair(this->getRandomModifications()[7].first, this->getRandomModifications()[7].second / 2),
-          std::make_pair(this->getRandomModifications()[8].first, this->getRandomModifications()[8].second / 2),
-          std::make_pair(this->getRandomModifications()[9].first, this->getRandomModifications()[9].second / 2),
-          std::make_pair(this->getRandomModifications()[10].first, this->getRandomModifications()[10].second / 2),
-          std::make_pair(this->getRandomModifications()[11].first, this->getRandomModifications()[11].second / 2),
-          std::make_pair(this->getRandomModifications()[12].first, this->getRandomModifications()[12].second / 2));
+          std::make_pair(this->getRandomModifications()[0].first / 2, this->getRandomModifications()[0].second / 2),
+          std::make_pair(this->getRandomModifications()[1].first / 2, this->getRandomModifications()[1].second / 2),
+          std::make_pair(this->getRandomModifications()[2].first / 2, this->getRandomModifications()[2].second / 2),
+          std::make_pair(this->getRandomModifications()[3].first / 2, this->getRandomModifications()[3].second / 2),
+          std::make_pair(this->getRandomModifications()[4].first / 2, this->getRandomModifications()[4].second / 2),
+          std::make_pair(this->getRandomModifications()[5].first / 2, this->getRandomModifications()[5].second / 2),
+          std::make_pair(this->getRandomModifications()[6].first / 2, this->getRandomModifications()[6].second / 2),
+          std::make_pair(this->getRandomModifications()[7].first / 2, this->getRandomModifications()[7].second / 2),
+          std::make_pair(this->getRandomModifications()[8].first / 2, this->getRandomModifications()[8].second / 2),
+          std::make_pair(this->getRandomModifications()[9].first / 2, this->getRandomModifications()[9].second / 2),
+          std::make_pair(this->getRandomModifications()[10].first / 2, this->getRandomModifications()[10].second / 2),
+          std::make_pair(this->getRandomModifications()[11].first / 2, this->getRandomModifications()[11].second / 2),
+          std::make_pair(this->getRandomModifications()[12].first / 2, this->getRandomModifications()[12].second / 2));
       }
     }
     else {
@@ -496,41 +496,41 @@ public:
 		std::vector<Model<TensorT>>& models,
 		std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations)
 	{
-		//// Population size of 16
-		//if (n_generations == 0)	{
-		//	this->setNTop(3);
-		//	this->setNRandom(3);
-		//	this->setNReplicatesPerModel(15);
-		//}
-		//else {
-		//	this->setNTop(3);
-		//	this->setNRandom(3);
-		//	this->setNReplicatesPerModel(3);
-		//}
+    // Adjust the population sizes
+    const size_t population_size = 32;
+    if (population_size == 2) { // Tournament
+      this->setNTop(1); this->setNRandom(1); this->setNReplicatesPerModel(1);
+    }
+    else if (population_size == 8) { // 1/4 selection size
+      if (n_generations == 0)	{	this->setNTop(2);	this->setNRandom(2); this->setNReplicatesPerModel(7); }
+      else { this->setNTop(2); this->setNRandom(2);	this->setNReplicatesPerModel(3); }
+    }
+    else if (population_size == 32) { // 1/8 selection size
+      if (n_generations == 0) { this->setNTop(4); this->setNRandom(4); this->setNReplicatesPerModel(31); }
+      else { this->setNTop(4); this->setNRandom(4); this->setNReplicatesPerModel(7); }
+    }
+    else if (population_size == 128) { // 1/8 selection size
+      if (n_generations == 0) { this->setNTop(16); this->setNRandom(16); this->setNReplicatesPerModel(127); }
+      else { this->setNTop(16); this->setNRandom(16); this->setNReplicatesPerModel(7); }
+    }
 
-		// Population size of 30
-		if (n_generations == 0)	{
-			this->setNTop(5);
-			this->setNRandom(5);
-			this->setNReplicatesPerModel(29);
-		}
-		else {
-			this->setNTop(5);
-			this->setNRandom(5);
-			this->setNReplicatesPerModel(5);
-		}
+    // Calculate the average model size
+    TensorT mean_model_size = 0;
+    for (Model<TensorT>& model : models) {
+      int links = model.getLinksMap().size();
+      mean_model_size += links;
+    }
+    mean_model_size = mean_model_size / models.size();
 
-    //// Population size of 100
-    //if (n_generations == 0) {
-    //  this->setNTop(10);
-    //  this->setNRandom(10);
-    //  this->setNReplicatesPerModel(99);
-    //}
-    //else {
-    //  this->setNTop(10);
-    //  this->setNRandom(10);
-    //  this->setNReplicatesPerModel(10);
-    //}
+    // Adjust the number of training steps
+    if (mean_model_size <= 8)
+      this->setNEpochsTraining(100);
+    else if (mean_model_size <= 16)
+      this->setNEpochsTraining(200);
+    else if (mean_model_size <= 32)
+      this->setNEpochsTraining(400);
+    else if (mean_model_size <= 64)
+      this->setNEpochsTraining(800);
 	}
 	void trainingPopulationLogger(
 		const int& n_generations,

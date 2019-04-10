@@ -190,6 +190,18 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
 	BOOST_CHECK(population_trainer.getLogTraining());
 }
 
+BOOST_AUTO_TEST_CASE(setNEpochsTraining)
+{
+  PopulationTrainerExt<float> population_trainer;
+  population_trainer.setNEpochsTraining(101);
+  BOOST_CHECK_EQUAL(population_trainer.getNEpochsTraining(), 101);
+
+  ModelTrainerExt<float> model_trainer;
+  BOOST_CHECK_NE(model_trainer.getNEpochsTraining(), 101);
+  population_trainer.updateNEpochsTraining(model_trainer);
+  BOOST_CHECK_EQUAL(model_trainer.getNEpochsTraining(), 101);
+}
+
 BOOST_AUTO_TEST_CASE(removeDuplicateModels) 
 {
   PopulationTrainerExt<float> population_trainer;
