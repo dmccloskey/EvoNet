@@ -102,7 +102,6 @@ BOOST_AUTO_TEST_CASE(operationfunctionRangeWeightInitOp)
   BOOST_CHECK_EQUAL(operation(), 0);
   operation = RangeWeightInitOp<float>(0, 1);
   float value = operation();
-  std::cout << value << std::endl;
   BOOST_CHECK(value >= 0 && value <= 1);
 }
 

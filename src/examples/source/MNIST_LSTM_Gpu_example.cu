@@ -79,9 +79,6 @@ public:
       // save the model every 1000 epochs
       //model_interpreter.getModelResults(model, false, true, false);
       ModelFile<TensorT> data;
-      //data.storeModelCsv(model.getName() + "_" + std::to_string(n_epochs) + "_nodes.csv",
-      //	model.getName() + "_" + std::to_string(n_epochs) + "_links.csv",
-      //	model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model);
       data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
       ModelInterpreterFileGpu<TensorT> interpreter_data;
       interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
@@ -345,6 +342,12 @@ void main_MNIST(const bool& make_model, const bool& train_model) {
     PopulationTrainerFile<float> population_trainer_file;
     population_trainer_file.storeModels(population, "MNIST");
     population_trainer_file.storeModelValidations("MNISTErrors.csv", models_validation_errors_per_generation);
+
+    ModelFile<float> data;
+    data.storeModelCsv(population.front().getName() + "_nodes.csv",
+      population.front().getName() + "_links.csv",
+      population.front().getName() + "_weights.csv", 
+      population.front(), true, true, true);
   }
   else {
     // Evaluate the population

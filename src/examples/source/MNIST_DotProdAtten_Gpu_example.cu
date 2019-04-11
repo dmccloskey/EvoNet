@@ -58,6 +58,13 @@ public:
         std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0.01, 1.0)),
         //std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names_input.size(), 2)),
         std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.0005, 0.9, 0.999, 1e-8, 100)), 0.0f, 0.0f, false, specify_layers);
+      if (add_skip) {
+        std::string skip_name = "Skip" + std::to_string(i);
+        model_builder.addSinglyConnected(model, skip_name, node_names_input, node_names,
+          std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0.01, 1.0)),
+          //std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names_input.size(), 2)),
+          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.0005, 0.9, 0.999, 1e-8, 100)), 0.0f, specify_layers);
+      }
       if (add_norm) {
         std::string norm_name = "Norm" + std::to_string(i);
         node_names = model_builder.addNormalization(model, norm_name, norm_name, node_names,
@@ -66,13 +73,6 @@ public:
           std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0.01, 1.0)),
           //std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 2)),
           std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.0005, 0.9, 0.999, 1e-8, 100)), 0.0, 0.0, false, specify_layers);
-      }
-      if (add_skip) {
-        std::string skip_name = "Skip" + std::to_string(i);
-        model_builder.addSinglyConnected(model, skip_name, node_names_input, node_names,
-          std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0.01, 1.0)),
-          //std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names_input.size(), 2)),
-          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.0005, 0.9, 0.999, 1e-8, 100)), 0.0f, specify_layers);
       }
       node_names_input = node_names;
 
@@ -89,6 +89,12 @@ public:
           //std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names_input.size(), 2)),
           std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.0005, 0.9, 0.999, 1e-8, 100)), 0.0f, 0.0f, false, specify_layers);
       }
+      if (add_skip) {
+      	std::string skip_name = "Skip_FC" + std::to_string(i);
+      	model_builder.addSinglyConnected(model, skip_name, node_names_input, node_names,
+      		std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(n_inputs, 2)),
+      		std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.0005, 0.9, 0.999, 1e-8, 100)), 0.0f);
+      }
       if (add_norm) {
         std::string norm_name = "Norm_FC" + std::to_string(i);
         node_names = model_builder.addNormalization(model, norm_name, norm_name, node_names,
@@ -98,12 +104,6 @@ public:
           //std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 2)),
           std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.0005, 0.9, 0.999, 1e-8, 100)), 0.0, 0.0, false, specify_layers);
       }
-      //if (add_skip) {
-      //	std::string skip_name = "Skip_FC" + std::to_string(i);
-      //	model_builder.addSinglyConnected(model, skip_name, node_names_input, node_names,
-      //		std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(n_inputs, 2)),
-      //		std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.0005, 0.9, 0.999, 1e-8, 100)), 0.0f);
-      //}
       node_names_input = node_names;
     }
 
@@ -382,7 +382,7 @@ void main_MNIST(const bool& make_model, const bool& train_model) {
   Model<float> model;
   if (make_model) {
     //model_trainer.makeMultiHeadDotProdAttention(model, input_nodes.size(), output_nodes.size(), { 2,2 }, { 24,24 }, { 48, 48 }, false, false, false); // Test model
-    model_trainer.makeMultiHeadDotProdAttention(model, input_nodes.size(), output_nodes.size(), { 12, 8 }, { 48, 24 }, { 512, 128 }, false, false, true); // Solving model
+    model_trainer.makeMultiHeadDotProdAttention(model, input_nodes.size(), output_nodes.size(), { 12, 8 }, { 48, 24 }, { 512, 128 }, false, false, false); // Solving model
   }
   else {
     // read in the trained model
@@ -407,6 +407,12 @@ void main_MNIST(const bool& make_model, const bool& train_model) {
     PopulationTrainerFile<float> population_trainer_file;
     population_trainer_file.storeModels(population, "MNIST");
     population_trainer_file.storeModelValidations("MNISTErrors.csv", models_validation_errors_per_generation);
+
+    ModelFile<float> data;
+    data.storeModelCsv(population.front().getName() + "_nodes.csv",
+      population.front().getName() + "_links.csv",
+      population.front().getName() + "_weights.csv",
+      population.front(), true, true, true);
   }
   else {
     // Evaluate the population

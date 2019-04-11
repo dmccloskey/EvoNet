@@ -94,15 +94,8 @@ public:
 
 		time_steps.setConstant(1.0f);
 	}
-
-	void simulateTrainingData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
-	{
-		simulateData(input_data, output_data, time_steps);
-	}
-	void simulateValidationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
-	{
-		simulateData(input_data, output_data, time_steps);
-	}
+	void simulateTrainingData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)	{	simulateData(input_data, output_data, time_steps); }
+	void simulateValidationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)	{	simulateData(input_data, output_data, time_steps); }
 	void simulateEvaluationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 3>& time_steps) {};
 };
 
@@ -286,7 +279,6 @@ public:
 			//Link_o_bias_to_o 
 			});
 	}
-
 	/*
 	@brief LSTM implementation
 
@@ -336,64 +328,17 @@ public:
 		if (!model.checkCompleteInputToOutput())
 			std::cout << "Model input and output are not fully connected!" << std::endl;
 	}
-	Model<TensorT> makeModel(){	return Model<TensorT>(); }
-	void adaptiveTrainerScheduler(
-		const int& n_generations,
-		const int& n_epochs,
-		Model<TensorT>& model,
-		ModelInterpreterDefaultDevice<TensorT>& model_interpreter,
-		const std::vector<float>& model_errors) {
-		////if (n_epochs % 499 == 0 && n_epochs != 0) {
-  //  if (n_epochs % 1 == 0) {
-		//	// save the model every 500 epochs
-		//	ModelFile<TensorT> data;
-		//	data.storeModelCsv(model.getName() + "_" + std::to_string(n_epochs) + "_nodes.csv",
-		//		model.getName() + "_" + std::to_string(n_epochs) + "_links.csv",
-		//		model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model);
-		//}
-		//// Check point the model every 1000 epochs
-		//if (n_epochs % 999 == 0 && n_epochs != 0) {
-		//	model_interpreter.getModelResults(model, false, true, false);
-		//	ModelFile<TensorT> data;
-		//	data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
-		//	ModelInterpreterFileDefaultDevice<TensorT> interpreter_data;
-		//	interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
-		//}
-	}
 	void trainingModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
 		const Eigen::Tensor<TensorT, 3>& expected_values,
 		const std::vector<std::string>& output_nodes,
 		const TensorT& model_error)
-	{
-		//model_logger.setLogTimeEpoch(true);
-		//model_logger.setLogTrainValMetricEpoch(true);
-		//model_logger.setLogExpectedPredictedEpoch(true);
-		if (n_epochs == 0) {
-			model_logger.initLogs(model);
-		}
-		//if (n_epochs % 1 == 0) {
-    if (n_epochs % 100 == 0) {
-			if (model_logger.getLogExpectedPredictedEpoch())
-				model_interpreter.getModelResults(model, true, false, false);
-			model_logger.writeLogs(model, n_epochs, { "Error" }, {}, { model_error }, {}, output_nodes, expected_values);
-		}
+	{ // Left blank intentionally to prevent writing of files during training
 	}
 	void validationModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
 		const Eigen::Tensor<TensorT, 3>& expected_values,
 		const std::vector<std::string>& output_nodes,
 		const TensorT& model_error)
-	{
-		//model_logger.setLogTimeEpoch(false);
-		//model_logger.setLogTrainValMetricEpoch(false);
-		//model_logger.setLogExpectedPredictedEpoch(true);
-		if (n_epochs == 0) {
-			model_logger.initLogs(model);
-		}
-		if (n_epochs % 1 == 0) {
-			if (model_logger.getLogExpectedPredictedEpoch())
-				model_interpreter.getModelResults(model, true, false, false);
-			model_logger.writeLogs(model, n_epochs, {}, { "Error" }, {}, { model_error }, output_nodes, expected_values);
-		}
+	{ // Left blank intentionally to prevent writing of files during validation
 	}
 };
 
@@ -469,20 +414,6 @@ public:
         std::make_pair(0, 0),
         std::make_pair(0, 0),
         std::make_pair(0, 0));
-      //this->setRandomModifications(
-      //  std::make_pair(1, 8),
-      //  std::make_pair(1, 8),
-      //  std::make_pair(0, 0),
-      //  std::make_pair(0, 0),
-      //  std::make_pair(1, 16),
-      //  std::make_pair(0, 0),
-      //  std::make_pair(1, 8),
-      //  std::make_pair(1, 16),
-      //  std::make_pair(1, 8),
-      //  std::make_pair(1, 8),
-      //  std::make_pair(0, 0),
-      //  std::make_pair(0, 0),
-      //  std::make_pair(0, 0));
     }
 	}
 };
@@ -497,21 +428,19 @@ public:
 		std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations)
 	{
     // Adjust the population sizes
+    // 
     const size_t population_size = 32;
-    if (population_size == 2) { // Tournament
-      this->setNTop(1); this->setNRandom(1); this->setNReplicatesPerModel(1);
+    const size_t selection_ratio = 4; ///< options include 2, 4, 8
+    const size_t selection_size = population_size / selection_ratio;
+    if (n_generations == 0)	{	
+      this->setNTop(selection_size);
+      this->setNRandom(selection_size);
+      this->setNReplicatesPerModel(population_size - 1);
     }
-    else if (population_size == 8) { // 1/4 selection size
-      if (n_generations == 0)	{	this->setNTop(2);	this->setNRandom(2); this->setNReplicatesPerModel(7); }
-      else { this->setNTop(2); this->setNRandom(2);	this->setNReplicatesPerModel(3); }
-    }
-    else if (population_size == 32) { // 1/8 selection size
-      if (n_generations == 0) { this->setNTop(4); this->setNRandom(4); this->setNReplicatesPerModel(31); }
-      else { this->setNTop(4); this->setNRandom(4); this->setNReplicatesPerModel(7); }
-    }
-    else if (population_size == 128) { // 1/8 selection size
-      if (n_generations == 0) { this->setNTop(16); this->setNRandom(16); this->setNReplicatesPerModel(127); }
-      else { this->setNTop(16); this->setNRandom(16); this->setNReplicatesPerModel(7); }
+    else { 
+      this->setNTop(selection_size);
+      this->setNRandom(selection_size);
+      this->setNReplicatesPerModel(selection_ratio - 1);
     }
 
     // Calculate the average model size
@@ -626,9 +555,9 @@ int main(int argc, char** argv)
 
 	// make the model name
   Model<float> model;
-   model_trainer.makeModelMinimal(model);
+   //model_trainer.makeModelMinimal(model);
    //model_trainer.makeModelSolution(model, false);
-  //model_trainer.makeModelLSTM(model, input_nodes.size(), 1, 1);
+  model_trainer.makeModelLSTM(model, input_nodes.size(), 1, 1);
 	char model_name_char[512];
 	sprintf(model_name_char, "%s_%d", model.getName().data(), 0);
 	std::string model_name(model_name_char);
