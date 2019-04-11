@@ -623,7 +623,7 @@ public:
 	}
 
 	/*
-	@brief Break a compound biochemical reaction into a interaction graph
+	@brief Break a compound biochemical reaction into an interaction graph
 
 	e.g., PGI: g6p = f6p becomes
 		g6p_PGI: g6p = PGI
@@ -639,7 +639,7 @@ public:
 	For reversible reactions, the enzyme/reaction name is appended with "_reverse"
 
 	@param[in] biochemicalReaction
-	@param[out] elementary_graph A map of vectores of source/sink pairs where the key is the connection name
+	@param[out] elementary_graph A map of vectors of source/sink pairs where the key is the connection name
 	**/
 	void getInteractionGraph(
 		//const BiochemicalReactions& biochemicalReactions,
@@ -738,6 +738,134 @@ public:
 			}
 		}
 	}
+
+  /*
+  @brief Break a compound biochemical reaction into an interaction graph
+
+  For reversible reactions, the enzyme/reaction name is appended with "_reverse"
+
+  @param[in] biochemicalReaction
+  @param[out] elementary_graph A map of vectors of source/sink pairs where the key is the connection name
+  **/
+  void getMASSGraph(
+    const BiochemicalReactions& biochemicalReactions)
+  {
+    elementary_graph.clear();
+    for (const auto& biochemicalReaction : biochemicalReactions) {
+      if (!biochemicalReaction.second.used) continue; // Skip specified reactions
+
+      // make the reactants complex name
+      std::string enzyme_complex_name = biochemicalReaction.second.reaction_id;
+      std::string enzyme_complex_name_tmp, enzyme_complex_name_result;
+
+      // parse the reactants
+      for (int i = 0; i < biochemicalReaction.second.reactants_ids.size(); ++i) {
+        for (int stoich = 0; stoich < std::abs(biochemicalReaction.second.reactants_stoichiometry[i]); ++stoich) {
+          enzyme_complex_name_tmp = enzyme_complex_name + "~" + biochemicalReaction.second.reactants_ids[i];
+          enzyme_complex_name_result = enzyme_complex_name + "&" + biochemicalReaction.second.reactants_ids[i];
+
+          // TODO node: enzyme complex (check if already in the model); Sum/ReLU
+          // TODO node: tmp enzyme complex (check if already in the model); Min/ReLU
+          // TODO node: reactant (check if already in the model); Sum/ReLU
+          // TODO node: resulting enzyme complex (check if already in the model); Sum/ReLU
+
+          // Add the enzyme to complex link and weight
+          // TODO link: enzyme_complex_name, enzyme_complex_name_tmp
+          // TODO weight: enzyme_complex_name, enzyme_complex_name_tmp (Dummy 1)
+          std::string weight_name_1 = enzyme_complex_name + "_to_" + enzyme_complex_name_tmp;
+
+          // Add the reactant to complex link and weight
+          // TODO link: reactant, enzyme_complex_name_tmp
+          // TODO weight: reactant, enzyme_complex_name_tmp (Dummy 1)
+          std::string weight_name_2 = biochemicalReaction.second.reactants_ids[i] + "_to_" + enzyme_complex_name_tmp;
+
+          // Add the enzyme loss pseudo link and weight
+          // TODO link: enzyme_complex_name_tmp, enzyme_complex_name
+          // TODO weight: enzyme_complex_name_tmp, enzyme_complex_name (Dummy -1)
+
+          // Add the reactant loss pseudo link and weight
+          // TODO link: enzyme_complex_name_tmp, reactant
+          // TODO weight: enzyme_complex_name_tmp, reactant (Dummy -1)
+
+          // Add the result enzyme complex link and weight
+          std::string weight_name_result = enzyme_complex_name_tmp + "_to_" + enzyme_complex_name_result;
+
+          enzyme_complex_name = enzyme_complex_name_result;
+        }
+      }
+
+      // make the products enzyme complex name
+      std::vector<std::string> enzyme_complex_names_tmp, enzyme_complex_names_result;
+      enzyme_complex_names_tmp.push_back(biochemicalReaction.second.reaction_id);
+      enzyme_complex_name_result.push_back(biochemicalReaction.second.reaction_id);
+      for (int i = biochemicalReaction.second.products_ids.size() - 1; i >= 0; --i) {
+        for (int stoich = 0; stoich < std::abs(biochemicalReaction.second.products_stoichiometry[i]); ++stoich) {
+          enzyme_complex_names_tmp.push_back(enzyme_complex_names_result.back() + "~" + biochemicalReaction.second.products_ids[i]);
+          enzyme_complex_names_result.push_back(enzyme_complex_names_result.back() + "&" + biochemicalReaction.second.products_ids[i]);
+        }
+      }
+
+      // parse the products
+      for (int i = 0; i < biochemicalReaction.second.products_ids.size(); ++i) {
+        for (int stoich = 0; stoich < std::abs(biochemicalReaction.second.products_stoichiometry[i]); ++stoich) {
+          if (i == 0) {
+            enzyme_complex_name_tmp = enzyme_complex_name_tmp;  // TODO: pop off the "~"
+          } else {
+            enzyme_complex_name_tmp = enzyme_complex_name;  // TODO: pop off the "~"
+          }
+
+          // Complex to enzyme
+          std::string weight_name_1 = enzyme_complex_name + "_to_" + enzyme_complex_name_tmp;
+
+          // Complex to product
+          std::string weight_name_2 = enzyme_complex_name + "_to_" + biochemicalReaction.second.products_ids[i];
+
+          // Add in the enzyme loss pseudo reactions
+
+          enzyme_complex_name = enzyme_complex_name_tmp;
+        }
+      }
+
+      if (biochemicalReaction.second.reversibility) {
+        // make the enzyme to complex pseudo-reactions
+        pseudo_rxn_name = enzyme_complex_name_reactants + "_to_" + biochemicalReaction.second.reaction_id;
+        pseudo_rxn = { std::make_pair(enzyme_complex_name_reactants, biochemicalReaction.second.reaction_id) };
+        elementary_graph.emplace(pseudo_rxn_name, pseudo_rxn);
+        pseudo_rxn_name = enzyme_complex_name_products + "_to_" + enzyme_complex_name_reactants;
+        pseudo_rxn = { std::make_pair(enzyme_complex_name_products, enzyme_complex_name_reactants) };
+        elementary_graph.emplace(pseudo_rxn_name, pseudo_rxn);
+        pseudo_rxn_name = biochemicalReaction.second.reaction_id + "_to_" + enzyme_complex_name_products;
+        pseudo_rxn = { std::make_pair(biochemicalReaction.second.reaction_id, enzyme_complex_name_products) };
+        elementary_graph.emplace(pseudo_rxn_name, pseudo_rxn);
+
+        // parse the reactants
+        for (int i = 0; i < biochemicalReaction.second.reactants_ids.size(); ++i) {
+          std::string weight_name = enzyme_complex_name_reactants + "_to_" + biochemicalReaction.second.reactants_ids[i];
+          std::vector<std::pair<std::string, std::string>> source_sinks;
+          for (int stoich = 0; stoich < std::abs(biochemicalReaction.second.reactants_stoichiometry[i]); ++stoich) {
+            source_sinks.push_back(std::make_pair(enzyme_complex_name_reactants, biochemicalReaction.second.reactants_ids[i]));
+          }
+          auto found = elementary_graph.emplace(weight_name, source_sinks);
+          if (!found.second) {
+            std::cout << "Duplicate reaction found: " << biochemicalReaction.second.reactants_ids[i] << std::endl;
+          }
+        }
+
+        // parse the products
+        for (int i = 0; i < biochemicalReaction.second.products_ids.size(); ++i) {
+          std::string weight_name = biochemicalReaction.second.products_ids[i] + "_to_" + enzyme_complex_name_products;
+          std::vector<std::pair<std::string, std::string>> source_sinks;
+          for (int stoich = 0; stoich < std::abs(biochemicalReaction.second.products_stoichiometry[i]); ++stoich) {
+            source_sinks.push_back(std::make_pair(biochemicalReaction.second.products_ids[i], enzyme_complex_name_products));
+          }
+          auto found = elementary_graph.emplace(weight_name, source_sinks);
+          if (!found.second) {
+            std::cout << "Duplicate reaction found: " << biochemicalReaction.second.reactants_ids[i] << std::endl;
+          }
+        }
+      }
+    }
+  }
 
 	MetabolomicsData metabolomicsData_;
 	BiochemicalReactions biochemicalReactions_;
