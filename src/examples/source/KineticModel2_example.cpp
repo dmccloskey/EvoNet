@@ -180,14 +180,21 @@ public:
 			++iter;
 		}
 
-		//// Specify the layer for the enzymes (f/r) (14)
-		//std::vector<std::string> enzymes_f_nodes = { "ENO","FBA","GAPD","HEX1","LDH_L","PFK","PGI","PGK","PGM","PYK","TPI","DM_nadh","ADK1","ATPh"};
-		//iter = 0;
-		//for (const std::string& node : enzymes_f_nodes) {
-		//	model.nodes_.at(node)->setLayerName("Enzymes");
-		//	//model.nodes_.at(node)->setTensorIndex(std::make_pair(1, iter));
-		//	++iter;
-		//}
+		// Specify the layer for the enzymes (f/r) (14)
+		std::vector<std::string> enzymes_f_nodes = { "ENO","FBA","GAPD","HEX1","LDH_L","PFK","PGI","PGK","PGM","PYK","TPI","DM_nadh","ADK1","ATPh"};
+		iter = 0;
+		for (const std::string& node : enzymes_f_nodes) {
+			model.nodes_.at(node)->setLayerName("Enzymes");
+      model.nodes_.at(node)->setType(NodeType::input);
+      //model.nodes_.at(node)->setTensorIndex(std::make_pair(1, iter));
+      std::string node_r = node + "_reverse";
+      if (model.nodes_.count(node_r)) {
+        model.nodes_.at(node_r)->setLayerName("Enzymes");
+        model.nodes_.at(node_r)->setType(NodeType::input);
+        //model.nodes_.at(node)->setTensorIndex(std::make_pair(1, iter));
+      }
+			++iter;
+		}
 
 	}
 	void adaptiveTrainerScheduler(
