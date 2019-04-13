@@ -275,9 +275,9 @@ void main_KineticModel(const bool& make_model, const bool& train_model, const st
 	model_trainer.setNTETTSteps(1);
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setLogging(true, false);
-	model_trainer.setFindCycles(false);
+	model_trainer.setFindCycles(true);
 	model_trainer.setFastInterpreter(false);
-	model_trainer.setPreserveOoO(false);
+	model_trainer.setPreserveOoO(true);
 	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
 	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
 	model_trainer.setOutputNodes({ output_nodes });

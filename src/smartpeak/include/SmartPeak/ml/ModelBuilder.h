@@ -3322,6 +3322,8 @@ public:
         enzyme_complex_name_tmp1 = enzyme_complex_names_tmp1[enzyme_complex_names_tmp1.size() - 1 - i];
         enzyme_complex_name_tmp2 = enzyme_complex_names_tmp2[enzyme_complex_names_tmp2.size() - 1 - i];
         enzyme_complex_name_result = enzyme_complex_names_result[enzyme_complex_names_result.size() - 2 - i];
+        if (i == reaction.products_ids.size() - 1)
+          enzyme_complex_name_result = enzyme_complex_names_result[enzyme_complex_names_result.size() - 2 - i] + "_inactivated";
 
         // Add the nodes for the enzyme complex, enzyme complex tmp, product, and enzyme complex result
         Node<TensorT> enzyme_complex(enzyme_complex_name, NodeType::hidden, NodeStatus::initialized,
@@ -3389,6 +3391,15 @@ public:
         enzyme_complex_name = enzyme_complex_name_result;
       }
     }
+
+    // Add the reactivated complex link and weight
+    std::string weight_name_activated = enzyme_complex_name + "_to_" + enzyme_complex_names_result[0];
+    Weight<TensorT> weight_activated(weight_name_activated, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()));
+    weight_activated.setModuleName(module_name);
+    Link link_activated(weight_name_activated, enzyme_complex_name, enzyme_complex_names_result[0], weight_name_activated);
+    link_activated.setModuleName(module_name);
+    model.addLinks({ link_activated });
+    model.addWeights({ weight_activated });
   }
 }
 
