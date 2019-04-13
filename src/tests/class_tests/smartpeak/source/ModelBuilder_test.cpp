@@ -1923,7 +1923,6 @@ BOOST_AUTO_TEST_CASE(addProjection1)
 	}
 }
 
-
 BOOST_AUTO_TEST_CASE(addInteractionGraph1)
 {
 	ModelBuilder<float> model_builder;
@@ -1988,6 +1987,74 @@ BOOST_AUTO_TEST_CASE(addInteractionGraph1)
 		BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "SGDOp");
 		BOOST_CHECK_EQUAL(model.getWeight(name).getModuleName(), "Mod1");
 	}
+}
+
+BOOST_AUTO_TEST_CASE(addBiochemicalReaction1)
+{
+  ModelBuilder<float> model_builder;
+  Model<float> model;
+
+  // make the toy model
+  BiochemicalReaction reaction1;
+  reaction1.reaction_id = "HK1";
+  reaction1.reaction_name = "Hexokinase1";
+  reaction1.reactants_ids = std::vector<std::string>({"g6p","h","adp"});
+  reaction1.reactants_stoichiometry = std::vector<float>({ 1, 1, 1 });
+  reaction1.products_ids = std::vector<std::string>({ "glc","atp" });
+  reaction1.products_stoichiometry = std::vector<float>({ 1, 1 });
+  reaction1.used = true;
+  reaction1.reversibility = true;
+  BiochemicalReactions reactions;
+  reactions.emplace("HK", reaction1);
+
+  // make the fully connected 
+  model_builder.addBiochemicalReactions(
+    model, reactions, "Mod", "Mod1",
+    std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(4.0)), std::shared_ptr<SolverOp<float>>(new SGDOp<float>(0.1, 0.9)));
+
+  std::vector<std::string> node_names_test = { "glc", "atp", "g6p", "h", "adp", "HK" };
+  std::vector<std::string> link_names_test = { "glc_to_HK", "atp_to_HK", "HK_to_g6p", "HK_to_h", "HK_to_adp" };
+  std::vector<std::string> weight_names_test = { "glc_to_HK", "atp_to_HK", "HK_to_g6p", "HK_to_h", "HK_to_adp" };
+
+  for (auto& e : model.nodes_)
+  	std::cout << "Node: " << e.second->getName() << std::endl;
+  for (auto& e : model.links_)
+  	std::cout << "Link: " << e.second->getName() << std::endl;
+  for (auto& e : model.weights_)
+  	std::cout << "Node: " << e.second->getName() << std::endl;
+
+  // check the nodes
+  for (const std::string& node_name : node_names_test)
+  {
+    BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getName(), node_name);
+    BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getModuleName(), "Mod1");
+    BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getActivation()->getName(), "ReLUOp");
+    BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getActivationGrad()->getName(), "ReLUGradOp");
+    BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getIntegration()->getName(), "SumOp");
+    BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getIntegrationError()->getName(), "SumErrorOp");
+    BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
+  }
+
+  // check the links
+  for (const std::string& name : link_names_test)
+  {
+    BOOST_CHECK_EQUAL(model.getLink(name).getName(), name);
+    std::vector<std::string> test = SplitString(name, "_to_");
+    BOOST_CHECK_EQUAL(model.getLink(name).getSourceNodeName(), test[0]);
+    BOOST_CHECK_EQUAL(model.getLink(name).getSinkNodeName(), test[1]);
+    BOOST_CHECK_EQUAL(model.getLink(name).getModuleName(), "Mod1");
+    int count = std::count(weight_names_test.begin(), weight_names_test.end(), model.getLink(name).getWeightName());
+    BOOST_CHECK_EQUAL(count, 1);
+  }
+
+  // check the weights
+  for (const std::string& name : weight_names_test)
+  {
+    BOOST_CHECK_EQUAL(model.getWeight(name).getName(), name);
+    BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
+    BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "SGDOp");
+    BOOST_CHECK_EQUAL(model.getWeight(name).getModuleName(), "Mod1");
+  }
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -4,6 +4,7 @@ set(directory include/SmartPeak/simulator)
 ### list all header files of the directory here
 set(sources_list_h
 	AddProbSimulator.h
+	BiochemicalReaction.h
 	ChromatogramSimulator.h
 	DataSimulator.h
 	EMGModel.h
