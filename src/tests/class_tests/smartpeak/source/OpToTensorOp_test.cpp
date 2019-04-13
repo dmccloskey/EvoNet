@@ -352,6 +352,10 @@ BOOST_AUTO_TEST_CASE(convertOpToTensorOpIntegrationOpToIntegrationTensorOp)
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "MaxTensorOp");
 
+  op_class = new MinOp<float>();
+  op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+  BOOST_CHECK_EQUAL(op_tensor_class->getName(), "MinTensorOp");
+
 	//op_class = new VarOp<float>(); //TODO...
 	//op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	//BOOST_CHECK_EQUAL(op_tensor_class->getName(), "VarTensorOp");
@@ -384,6 +388,10 @@ BOOST_AUTO_TEST_CASE(getTensorParamsIntegrationOpToIntegrationTensorOp)
 	op_class = new MaxOp<float>();
 	params = op_to_tensor_op.getTensorParams(op_class);
 	BOOST_CHECK_EQUAL(params.size(), 0);
+
+  op_class = new MinOp<float>();
+  params = op_to_tensor_op.getTensorParams(op_class);
+  BOOST_CHECK_EQUAL(params.size(), 0);
 
 	op_class = new MeanOp<float>();
 	params = op_to_tensor_op.getTensorParams(op_class);
@@ -435,6 +443,10 @@ BOOST_AUTO_TEST_CASE(convertOpToTensorOpIntegrationErrorOpToIntegrationErrorTens
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "MaxErrorTensorOp");
 
+  op_class = new MinErrorOp<float>();
+  op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+  BOOST_CHECK_EQUAL(op_tensor_class->getName(), "MinErrorTensorOp");
+
 	op_class = new MeanErrorOp<float>();
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "MeanErrorTensorOp");
@@ -467,6 +479,10 @@ BOOST_AUTO_TEST_CASE(getTensorParamsIntegrationErrorOpToIntegrationErrorTensorOp
 	op_class = new MaxErrorOp<float>();
 	params = op_to_tensor_op.getTensorParams(op_class);
 	BOOST_CHECK_EQUAL(params.size(), 0);
+
+  op_class = new MinErrorOp<float>();
+  params = op_to_tensor_op.getTensorParams(op_class);
+  BOOST_CHECK_EQUAL(params.size(), 0);
 
 	op_class = new MeanErrorOp<float>();
 	params = op_to_tensor_op.getTensorParams(op_class);
@@ -518,6 +534,10 @@ BOOST_AUTO_TEST_CASE(convertOpToTensorOpIntegrationWeightGradOpToIntegrationWeig
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "MaxWeightGradTensorOp");
 
+  op_class = new MinWeightGradOp<float>();
+  op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+  BOOST_CHECK_EQUAL(op_tensor_class->getName(), "MinWeightGradTensorOp");
+
 	op_class = new MeanWeightGradOp<float>();
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "MeanWeightGradTensorOp");
@@ -550,6 +570,10 @@ BOOST_AUTO_TEST_CASE(getTensorParamsIntegrationWeightGradOpToIntegrationWeightGr
 	op_class = new MaxWeightGradOp<float>();
 	params = op_to_tensor_op.getTensorParams(op_class);
 	BOOST_CHECK_EQUAL(params.size(), 0);
+
+  op_class = new MinWeightGradOp<float>();
+  params = op_to_tensor_op.getTensorParams(op_class);
+  BOOST_CHECK_EQUAL(params.size(), 0);
 
 	op_class = new MeanWeightGradOp<float>();
 	params = op_to_tensor_op.getTensorParams(op_class);

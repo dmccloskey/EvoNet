@@ -108,6 +108,30 @@ BOOST_AUTO_TEST_CASE(getNameMaxOp)
 }
 
 /**
+MinOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorMinOp)
+{
+  MinOp<float>* ptrReLU = nullptr;
+  MinOp<float>* nullPointerReLU = nullptr;
+  BOOST_CHECK_EQUAL(ptrReLU, nullPointerReLU);
+}
+
+BOOST_AUTO_TEST_CASE(destructorMinOp)
+{
+  MinOp<float>* ptrReLU = nullptr;
+  ptrReLU = new MinOp<float>();
+  delete ptrReLU;
+}
+
+BOOST_AUTO_TEST_CASE(getNameMinOp)
+{
+  MinOp<float> operation;
+
+  BOOST_CHECK_EQUAL(operation.getName(), "MinOp");
+}
+
+/**
  MeanOp Tests
 */
 BOOST_AUTO_TEST_CASE(constructorMeanOp)
@@ -252,6 +276,30 @@ BOOST_AUTO_TEST_CASE(getNameMaxErrorOp)
 }
 
 /**
+MinErrorOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorMinErrorOp)
+{
+  MinErrorOp<float>* ptrReLU = nullptr;
+  MinErrorOp<float>* nullPointerReLU = nullptr;
+  BOOST_CHECK_EQUAL(ptrReLU, nullPointerReLU);
+}
+
+BOOST_AUTO_TEST_CASE(destructorMinErrorOp)
+{
+  MinErrorOp<float>* ptrReLU = nullptr;
+  ptrReLU = new MinErrorOp<float>();
+  delete ptrReLU;
+}
+
+BOOST_AUTO_TEST_CASE(getNameMinErrorOp)
+{
+  MinErrorOp<float> operation;
+
+  BOOST_CHECK_EQUAL(operation.getName(), "MinErrorOp");
+}
+
+/**
 MeanErrorOp Tests
 */
 BOOST_AUTO_TEST_CASE(constructorMeanErrorOp)
@@ -393,6 +441,30 @@ BOOST_AUTO_TEST_CASE(getNameMaxWeightGradOp)
 	MaxWeightGradOp<float> operation;
 
 	BOOST_CHECK_EQUAL(operation.getName(), "MaxWeightGradOp");
+}
+
+/**
+MinWeightGradOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorMinWeightGradOp)
+{
+  MinWeightGradOp<float>* ptrReLU = nullptr;
+  MinWeightGradOp<float>* nullPointerReLU = nullptr;
+  BOOST_CHECK_EQUAL(ptrReLU, nullPointerReLU);
+}
+
+BOOST_AUTO_TEST_CASE(destructorMinWeightGradOp)
+{
+  MinWeightGradOp<float>* ptrReLU = nullptr;
+  ptrReLU = new MinWeightGradOp<float>();
+  delete ptrReLU;
+}
+
+BOOST_AUTO_TEST_CASE(getNameMinWeightGradOp)
+{
+  MinWeightGradOp<float> operation;
+
+  BOOST_CHECK_EQUAL(operation.getName(), "MinWeightGradOp");
 }
 
 /**

@@ -321,6 +321,10 @@ namespace SmartPeak
 				IntegrationTensorOp<TensorT, DeviceT>* op_tensor_class = new MaxTensorOp<TensorT, DeviceT>();
 				return op_tensor_class;
 			}
+      else if (op_class->getName() == "MinOp") {
+        IntegrationTensorOp<TensorT, DeviceT>* op_tensor_class = new MinTensorOp<TensorT, DeviceT>();
+        return op_tensor_class;
+      }
 			else if (op_class->getName() == "VarModOp") {
 				IntegrationTensorOp<TensorT, DeviceT>* op_tensor_class = new VarModTensorOp<TensorT, DeviceT>();
 				return op_tensor_class;
@@ -363,6 +367,10 @@ namespace SmartPeak
 				IntegrationErrorTensorOp<TensorT, DeviceT>* op_tensor_class = new MaxErrorTensorOp<TensorT, DeviceT>();
 				return op_tensor_class;
 			}
+      else if (op_class->getName() == "MinErrorOp") {
+        IntegrationErrorTensorOp<TensorT, DeviceT>* op_tensor_class = new MinErrorTensorOp<TensorT, DeviceT>();
+        return op_tensor_class;
+      }
 			else if (op_class->getName() == "VarModErrorOp") {
 				IntegrationErrorTensorOp<TensorT, DeviceT>* op_tensor_class = new VarModErrorTensorOp<TensorT, DeviceT>();
 				return op_tensor_class;
@@ -405,6 +413,10 @@ namespace SmartPeak
 				IntegrationWeightGradTensorOp<TensorT, DeviceT>* op_tensor_class = new MaxWeightGradTensorOp<TensorT, DeviceT>();
 				return op_tensor_class;
 			}
+      else if (op_class->getName() == "MinWeightGradOp") {
+        IntegrationWeightGradTensorOp<TensorT, DeviceT>* op_tensor_class = new MinWeightGradTensorOp<TensorT, DeviceT>();
+        return op_tensor_class;
+      }
 			else if (op_class->getName() == "VarModWeightGradOp") {
 				IntegrationWeightGradTensorOp<TensorT, DeviceT>* op_tensor_class = new VarModWeightGradTensorOp<TensorT, DeviceT>();
 				return op_tensor_class;

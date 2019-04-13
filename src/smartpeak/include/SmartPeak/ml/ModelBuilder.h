@@ -3205,14 +3205,14 @@ public:
     const bool& is_reverse)
   {
     if (is_reverse)
-      enzyme_complex_name = reaction.reaction_id;
-    else
       enzyme_complex_name = reaction.reaction_id + "_reverse";
+    else
+      enzyme_complex_name = reaction.reaction_id;
 
     for (int i = 0; i < reaction.reactants_ids.size(); ++i) {
       for (int stoich = 0; stoich < std::abs(reaction.reactants_stoichiometry[i]); ++stoich) {
-        enzyme_complex_name_tmp1 = enzyme_complex_name + "+" + reaction.reactants_ids[i];
-        enzyme_complex_name_tmp2 = enzyme_complex_name + "~" + reaction.reactants_ids[i];
+        enzyme_complex_name_tmp1 = enzyme_complex_name + ":" + reaction.reactants_ids[i];
+        enzyme_complex_name_tmp2 = enzyme_complex_name + "::" + reaction.reactants_ids[i];
         enzyme_complex_name_result = enzyme_complex_name + "&" + reaction.reactants_ids[i];
 
         // Add the nodes for the enzyme complex, enzyme complex tmp, reactant, and enzyme complex result
@@ -3241,42 +3241,42 @@ public:
         std::string weight_name_1 = enzyme_complex_name + "_to_" + enzyme_complex_name_tmp1;
         Weight<TensorT> weight1(weight_name_1, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()));
         weight1.setModuleName(module_name);
-        Link link1(weight_name_1, enzyme_complex_name, enzyme_complex_name_tmp1);
+        Link link1(weight_name_1, enzyme_complex_name, enzyme_complex_name_tmp1, weight_name_1);
         link1.setModuleName(module_name);
 
         // Add the reactant to complex link and weight
         std::string weight_name_2 = reaction.reactants_ids[i] + "_to_" + enzyme_complex_name_tmp1;
         Weight<TensorT> weight2(weight_name_2, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()));
         weight2.setModuleName(module_name);
-        Link link2(weight_name_2, reaction.reactants_ids[i], enzyme_complex_name_tmp1);
+        Link link2(weight_name_2, reaction.reactants_ids[i], enzyme_complex_name_tmp1, weight_name_2);
         link2.setModuleName(module_name);
 
         // Add the reactant to complex link and weight
         std::string weight_name_3 = enzyme_complex_name_tmp1 + "_to_" + enzyme_complex_name_tmp2;
         Weight<TensorT> weight3(weight_name_3, weight_init, solver);
         weight3.setModuleName(module_name);
-        Link link3(weight_name_3, enzyme_complex_name_tmp1, enzyme_complex_name_tmp2);
+        Link link3(weight_name_3, enzyme_complex_name_tmp1, enzyme_complex_name_tmp2, weight_name_3);
         link3.setModuleName(module_name);
 
         // Add the enzyme loss pseudo link and weight
         std::string weight_name_4 = enzyme_complex_name_tmp2 + "_to_" + enzyme_complex_name;
         Weight<TensorT> weight4(weight_name_4, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(-1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()));
         weight4.setModuleName(module_name);
-        Link link4(weight_name_4, enzyme_complex_name_tmp2, enzyme_complex_name);
+        Link link4(weight_name_4, enzyme_complex_name_tmp2, enzyme_complex_name, weight_name_4);
         link4.setModuleName(module_name);
 
         // Add the reactant loss pseudo link and weight
         std::string weight_name_5 = enzyme_complex_name_tmp2 + "_to_" + reaction.reactants_ids[i];
         Weight<TensorT> weight5(weight_name_5, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(-1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()));
         weight5.setModuleName(module_name);
-        Link link5(weight_name_5, enzyme_complex_name_tmp2, reaction.reactants_ids[i]);
+        Link link5(weight_name_5, enzyme_complex_name_tmp2, reaction.reactants_ids[i], weight_name_5);
         link5.setModuleName(module_name);
 
         // Add the result enzyme complex link and weight
         std::string weight_name_result = enzyme_complex_name_tmp2 + "_to_" + enzyme_complex_name_result;
         Weight<TensorT> weight_result(weight_name_result, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()));
         weight_result.setModuleName(module_name);
-        Link link_result(weight_name_result, enzyme_complex_name_tmp2, enzyme_complex_name_result);
+        Link link_result(weight_name_result, enzyme_complex_name_tmp2, enzyme_complex_name_result, weight_name_result);
         link_result.setModuleName(module_name);
 
         // Add all of the nodes, links, and weights to the model
@@ -3301,17 +3301,17 @@ public:
     if (is_reverse) {
       enzyme_complex_names_tmp1.push_back(reaction.reaction_id + "_reverse");
       enzyme_complex_names_tmp2.push_back(reaction.reaction_id + "_reverse");
-      enzyme_complex_name_result.push_back(reaction.reaction_id + "_reverse");
+      enzyme_complex_names_result.push_back(reaction.reaction_id + "_reverse");
     }
     else {
       enzyme_complex_names_tmp1.push_back(reaction.reaction_id);
       enzyme_complex_names_tmp2.push_back(reaction.reaction_id);
-      enzyme_complex_name_result.push_back(reaction.reaction_id);
+      enzyme_complex_names_result.push_back(reaction.reaction_id);
     }
     for (int i = reaction.products_ids.size() - 1; i >= 0; --i) {
       for (int stoich = 0; stoich < std::abs(reaction.products_stoichiometry[i]); ++stoich) {
-        enzyme_complex_names_tmp1.push_back(enzyme_complex_names_result.back() + "+" + reaction.products_ids[i]);
-        enzyme_complex_names_tmp2.push_back(enzyme_complex_names_result.back() + "~" + reaction.products_ids[i]);
+        enzyme_complex_names_tmp1.push_back(enzyme_complex_names_result.back() + "::" + reaction.products_ids[i]);
+        enzyme_complex_names_tmp2.push_back(enzyme_complex_names_result.back() + ":" + reaction.products_ids[i]);
         enzyme_complex_names_result.push_back(enzyme_complex_names_result.back() + "&" + reaction.products_ids[i]);
       }
     }
@@ -3319,9 +3319,9 @@ public:
     // parse the products
     for (int i = 0; i < reaction.products_ids.size(); ++i) {
       for (int stoich = 0; stoich < std::abs(reaction.products_stoichiometry[i]); ++stoich) {
-        enzyme_complex_name_tmp1 = enzyme_comples_names_tmp[enzyme_complex_name_tmp1.size() - 1 - i];
-        enzyme_complex_name_tmp2 = enzyme_comples_names_tmp[enzyme_complex_name_tmp2.size() - 1 - i];
-        enzyme_complex_name_result = enzyme_complex_name_result[enzyme_complex_name_result.size() - 1 - i];
+        enzyme_complex_name_tmp1 = enzyme_complex_names_tmp1[enzyme_complex_names_tmp1.size() - 1 - i];
+        enzyme_complex_name_tmp2 = enzyme_complex_names_tmp2[enzyme_complex_names_tmp2.size() - 1 - i];
+        enzyme_complex_name_result = enzyme_complex_names_result[enzyme_complex_names_result.size() - 2 - i];
 
         // Add the nodes for the enzyme complex, enzyme complex tmp, product, and enzyme complex result
         Node<TensorT> enzyme_complex(enzyme_complex_name, NodeType::hidden, NodeStatus::initialized,
@@ -3349,35 +3349,35 @@ public:
         std::string weight_name_1 = enzyme_complex_name + "_to_" + enzyme_complex_name_tmp1;
         Weight<TensorT> weight1(weight_name_1, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()));
         weight1.setModuleName(module_name);
-        Link link1(weight_name_1, enzyme_complex_name, enzyme_complex_name_tmp1);
+        Link link1(weight_name_1, enzyme_complex_name, enzyme_complex_name_tmp1, weight_name_1);
         link1.setModuleName(module_name);
 
         // Add the complex tmp1 to tmp2
         std::string weight_name_3 = enzyme_complex_name_tmp1 + "_to_" + enzyme_complex_name_tmp2;
         Weight<TensorT> weight3(weight_name_3, weight_init, solver);
         weight3.setModuleName(module_name);
-        Link link3(weight_name_3, enzyme_complex_name_tmp1, enzyme_complex_name_tmp2);
+        Link link3(weight_name_3, enzyme_complex_name_tmp1, enzyme_complex_name_tmp2, weight_name_3);
         link3.setModuleName(module_name);
 
         // Add the enzyme loss pseudo link and weight
         std::string weight_name_4 = enzyme_complex_name_tmp2 + "_to_" + enzyme_complex_name;
         Weight<TensorT> weight4(weight_name_4, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(-1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()));
         weight4.setModuleName(module_name);
-        Link link4(weight_name_4, enzyme_complex_name_tmp2, enzyme_complex_name);
+        Link link4(weight_name_4, enzyme_complex_name_tmp2, enzyme_complex_name, weight_name_4);
         link4.setModuleName(module_name);
 
         // Add the resulting product
-        std::string weight_name_5 = enzyme_complex_name_tmp2 + "_to_" + reaction.product_ids[i];
+        std::string weight_name_5 = enzyme_complex_name_tmp2 + "_to_" + reaction.products_ids[i];
         Weight<TensorT> weight5(weight_name_5, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()));
         weight5.setModuleName(module_name);
-        Link link5(weight_name_5, enzyme_complex_name_tmp2, reaction.product_ids[i]);
+        Link link5(weight_name_5, enzyme_complex_name_tmp2, reaction.products_ids[i], weight_name_5);
         link5.setModuleName(module_name);
 
         // Add the result enzyme complex link and weight
         std::string weight_name_result = enzyme_complex_name_tmp2 + "_to_" + enzyme_complex_name_result;
         Weight<TensorT> weight_result(weight_name_result, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()));
         weight_result.setModuleName(module_name);
-        Link link_result(weight_name_result, enzyme_complex_name_tmp2, enzyme_complex_name_result);
+        Link link_result(weight_name_result, enzyme_complex_name_tmp2, enzyme_complex_name_result, weight_name_result);
         link_result.setModuleName(module_name);
 
         // Add all of the nodes, links, and weights to the model
