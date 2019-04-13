@@ -10,6 +10,7 @@ set(ml_executables_list
   AddProbRec_example
   HarmonicOscillator_example
   KineticModel_example
+  KineticModel2_example
   Metabolomics_example
   Metabolomics2_example
   PeakIntegrator_app
