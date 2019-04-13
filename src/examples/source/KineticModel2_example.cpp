@@ -175,6 +175,7 @@ public:
 		int iter = 0;
 		for (const std::string& node : output_nodes) {
 			model.nodes_.at(node)->setLayerName("Metabolites");
+      model.nodes_.at(node)->setType(NodeType::input);
 			//model.nodes_.at(node)->setTensorIndex(std::make_pair(0, iter));
 			++iter;
 		}
@@ -276,7 +277,7 @@ void main_KineticModel(const bool& make_model, const bool& train_model, const st
 	model_trainer.setLogging(true, false);
 	model_trainer.setFindCycles(false);
 	model_trainer.setFastInterpreter(false);
-	model_trainer.setPreserveOoO(true);
+	model_trainer.setPreserveOoO(false);
 	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
 	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
 	model_trainer.setOutputNodes({ output_nodes });
@@ -295,8 +296,8 @@ void main_KineticModel(const bool& make_model, const bool& train_model, const st
 	std::cout << "Initializing the population..." << std::endl;
 	Model<float> model;
 	if (make_model) {
-		const std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Project_EvoNet/";
-		//const std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Project_EvoNet/";
+		//const std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Project_EvoNet/";
+		const std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Project_EvoNet/";
 		const std::string model_filename = data_dir + "RBCGlycolysis.csv";
 		ModelTrainerExt<float>().makeRBCGlycolysis(model, model_filename);
 	}

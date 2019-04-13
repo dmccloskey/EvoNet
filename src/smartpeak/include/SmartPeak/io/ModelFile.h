@@ -21,6 +21,7 @@
 #include <cereal/types/tuple.hpp>
 #include <cereal/types/utility.hpp> // std::pair
 #include <cereal/types/vector.hpp>
+#include <cereal/types/set.hpp>
 #include <cereal/archives/binary.hpp>
 
 namespace SmartPeak
