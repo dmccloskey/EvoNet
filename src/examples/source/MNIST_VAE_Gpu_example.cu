@@ -455,8 +455,8 @@ void main_MNIST(const bool& make_model, const bool& train_model) {
   model_trainer.setLossFunctionGrads({
     std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>(1e-6, 1.0)),
     //std::shared_ptr<LossFunctionGradOp<float>>(new BCEWithLogitsGradOp<float>(1e-6, 1.0)),
-    std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceMuGradOp<float>(1e-6, 0.001)),
-    std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceLogVarGradOp<float>(1e-6, 0.001)) });
+    std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceMuGradOp<float>(1e-6, 0.5)),
+    std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceLogVarGradOp<float>(1e-6, 0.5)) });
   model_trainer.setOutputNodes({ output_nodes, encoding_nodes_mu, encoding_nodes_logvar });
 
   // define the model replicator
@@ -471,9 +471,9 @@ void main_MNIST(const bool& make_model, const bool& train_model) {
   else {
     // read in the trained model
     std::cout << "Reading in the model..." << std::endl;
-    const std::string data_dir = "/home/user/code/build/";
-    const std::string model_filename = data_dir + "VAE_9000_model.binary";
-    const std::string interpreter_filename = data_dir + "VAE_9000_interpreter.binary";
+    const std::string data_dir = "C:/Users/domccl/Desktop/EvoNetExp/MNIST_VAE_GPU/GPU5/";
+    const std::string model_filename = data_dir + "VAE_1000_model.binary";
+    const std::string interpreter_filename = data_dir + "VAE_1000_interpreter.binary";
     ModelFile<float> model_file;
     model_file.loadModelBinary(model_filename, model);
     model.setId(1);
@@ -502,7 +502,7 @@ void main_MNIST(const bool& make_model, const bool& train_model) {
 int main(int argc, char** argv)
 {
   // run the application
-  main_MNIST(true, true);
+  main_MNIST(false, true);
 
   return 0;
 }

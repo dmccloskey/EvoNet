@@ -7,7 +7,7 @@ set (DEPENDENCIES)
 set (CUB_VERSION 1.8.0)
 message (STATUS "Adding Cub ${CUB_VERSION} as an external project.")
 
-ExternalProject_Add(eigen
+ExternalProject_Add(cub
   GIT_REPOSITORY "https://github.com/NVlabs/cub.git"
   GIT_TAG ${CUB_VERSION}
   UPDATE_COMMAND ""

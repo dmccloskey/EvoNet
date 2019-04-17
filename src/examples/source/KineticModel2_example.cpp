@@ -168,36 +168,42 @@ public:
 		ModelBuilder<TensorT> model_builder;
 		model_builder.addBiochemicalReactions(model, biochemical_reaction_model.biochemicalReactions_, "RBC", "RBC",
       std::shared_ptr<WeightInitOp<float>>(new RangeWeightInitOp<float>(0.0, 2.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8)),
-      specify_layers);
+      specify_layers, true);
 
-    // Create a dummy input node for glucose
+    // Create a dummy input node for all metabolites and enzymes
     std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input", "Input", 1, specify_layers);
-    model_builder.addSinglyConnected(model, "Input", node_names, { "glc__D" },
-      std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new DummySolverOp<float>()),
-      0.0, specify_layers);
 
-		//// Specify the output layer for metabolite nodes (20)
-		//std::vector<std::string> output_nodes = { "13dpg","2pg","3pg","adp","amp","atp","dhap","f6p","fdp","g3p","g6p","glc__D","h","h2o","lac__L","nad","nadh","pep","pi","pyr" };
-		//int iter = 0;
-		//for (const std::string& node : output_nodes) {
-		//	model.nodes_.at(node)->setLayerName("Metabolites");
-		//	//model.nodes_.at(node)->setTensorIndex(std::make_pair(0, iter));
-		//	++iter;
-		//}
+		// Specify the output layer for metabolite nodes (20)
+		std::vector<std::string> output_nodes = { "13dpg","2pg","3pg","adp","amp","atp","dhap","f6p","fdp","g3p","g6p","glc__D","h","h2o","lac__L","nad","nadh","pep","pi","pyr" };
+		int iter = 0;
+		for (const std::string& node : output_nodes) {
+      model_builder.addSinglyConnected(model, "Input", node_names, { node },
+        std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new DummySolverOp<float>()),
+        0.0, specify_layers);
+			//model.nodes_.at(node)->setLayerName("Metabolites");
+			//model.nodes_.at(node)->setTensorIndex(std::make_pair(0, iter));
+			++iter;
+		}
 
-		//// Specify the layer for the enzymes (f/r) (14)
-		//std::vector<std::string> enzymes_f_nodes = { "ENO","FBA","GAPD","HEX1","LDH_L","PFK","PGI","PGK","PGM","PYK","TPI","DM_nadh","ADK1","ATPh"};
-		//iter = 0;
-		//for (const std::string& node : enzymes_f_nodes) {
-		//	model.nodes_.at(node)->setLayerName("Enzymes");
-  //    //model.nodes_.at(node)->setTensorIndex(std::make_pair(1, iter));
-  //    std::string node_r = node + "_reverse";
-  //    if (model.nodes_.count(node_r)) {
-  //      model.nodes_.at(node_r)->setLayerName("Enzymes");
-  //      //model.nodes_.at(node)->setTensorIndex(std::make_pair(1, iter));
-  //    }
-		//	++iter;
-		//}
+		// Specify the layer for the enzymes (f/r) (14)
+		std::vector<std::string> enzymes_f_nodes = { "ENO","FBA","GAPD","HEX1","LDH_L","PFK","PGI","PGK","PGM","PYK","TPI","DM_nadh","ADK1","ATPh"};
+		iter = 0;
+		for (const std::string& node : enzymes_f_nodes) {
+      model_builder.addSinglyConnected(model, "Input", node_names, { node },
+        std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new DummySolverOp<float>()),
+        0.0, specify_layers);
+			//model.nodes_.at(node)->setLayerName("Enzymes");
+      //model.nodes_.at(node)->setTensorIndex(std::make_pair(1, iter));
+      std::string node_r = node + "_reverse";
+      if (model.nodes_.count(node_r)) {
+        model_builder.addSinglyConnected(model, "Input", node_names, { node },
+          std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new DummySolverOp<float>()),
+          0.0, specify_layers);
+        //model.nodes_.at(node_r)->setLayerName("Enzymes");
+        //model.nodes_.at(node)->setTensorIndex(std::make_pair(1, iter));
+      }
+			++iter;
+		}
 
 	}
 	void adaptiveTrainerScheduler(
@@ -290,8 +296,8 @@ void main_KineticModel(const bool& make_model, const bool& train_model, const st
   //model_trainer.setFastInterpreter(true);
   //model_trainer.setPreserveOoO(false);
   // OoO
-	model_trainer.setFindCycles(true);
-	model_trainer.setFastInterpreter(true);
+	model_trainer.setFindCycles(false);
+	model_trainer.setFastInterpreter(false);
 	model_trainer.setPreserveOoO(true);
 	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
 	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
@@ -314,7 +320,7 @@ void main_KineticModel(const bool& make_model, const bool& train_model, const st
 		//const std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Project_EvoNet/";
 		const std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Project_EvoNet/";
 		const std::string model_filename = data_dir + "RBCGlycolysis.csv";
-		ModelTrainerExt<float>().makeRBCGlycolysis(model, model_filename, true);
+		ModelTrainerExt<float>().makeRBCGlycolysis(model, model_filename, false);
 	}
 	else {
 		// read in the trained model

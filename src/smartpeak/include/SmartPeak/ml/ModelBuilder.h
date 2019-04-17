@@ -544,15 +544,15 @@ public:
     @param[in] solver The solver for learnable parameters
     **/
     void addBiochemicalReactions(Model<TensorT> & model, const BiochemicalReactions& biochemicalReactions, const std::string & name, const std::string & module_name,
-      const std::shared_ptr<WeightInitOp<TensorT>> & weight_init, const std::shared_ptr<SolverOp<TensorT>> & solver, bool specify_layer = false);
+      const std::shared_ptr<WeightInitOp<TensorT>> & weight_init, const std::shared_ptr<SolverOp<TensorT>> & solver, bool specify_layer = false, bool specify_cycles = false);
     void addReactants(Model<TensorT> & model, const BiochemicalReaction& reaction, const std::string & name, const std::string & module_name,
       const std::shared_ptr<WeightInitOp<TensorT>> & weight_init, const std::shared_ptr<SolverOp<TensorT>> & solver,
       std::string& enzyme_complex_name, std::string& enzyme_complex_name_tmp1, std::string& enzyme_complex_name_tmp2, std::string& enzyme_complex_name_result,
-      const bool& is_reverse, bool specify_layer = false);
+      const bool& is_reverse, bool specify_layer = false, bool specify_cycles = false);
     void addProducts(Model<TensorT> & model, const BiochemicalReaction& reaction, const std::string & name, const std::string & module_name,
       const std::shared_ptr<WeightInitOp<TensorT>> & weight_init, const std::shared_ptr<SolverOp<TensorT>> & solver,
       std::string& enzyme_complex_name, std::string& enzyme_complex_name_tmp1, std::string& enzyme_complex_name_tmp2, std::string& enzyme_complex_name_result,
-      const bool& is_reverse, bool specify_layer = false);
+      const bool& is_reverse, bool specify_layer = false, bool specify_cycles = false);
 
 		/**
 		@brief Add one model to another
@@ -3160,7 +3160,7 @@ public:
 		}
 	}
   template<typename TensorT>
-  inline void ModelBuilder<TensorT>::addBiochemicalReactions(Model<TensorT>& model, const BiochemicalReactions& biochemicalReactions, const std::string & name, const std::string & module_name, const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver, bool specify_layer)
+  inline void ModelBuilder<TensorT>::addBiochemicalReactions(Model<TensorT>& model, const BiochemicalReactions& biochemicalReactions, const std::string & name, const std::string & module_name, const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver, bool specify_layer, bool specify_cycles)
   {
     for (const auto& biochemicalReaction : biochemicalReactions) {
       if (!biochemicalReaction.second.used) continue; // Skip specified reactions
@@ -3170,11 +3170,11 @@ public:
 
       // parse the reactants
       addReactants(model, biochemicalReaction.second, name, module_name, weight_init, solver,
-        enzyme_complex_name, enzyme_complex_name_tmp1, enzyme_complex_name_tmp2, enzyme_complex_name_result, false, specify_layer);
+        enzyme_complex_name, enzyme_complex_name_tmp1, enzyme_complex_name_tmp2, enzyme_complex_name_result, false, specify_layer, specify_cycles);
 
       // parse the products
       addProducts(model, biochemicalReaction.second, name, module_name, weight_init, solver,
-        enzyme_complex_name, enzyme_complex_name_tmp1, enzyme_complex_name_tmp2, enzyme_complex_name_result, false, specify_layer);
+        enzyme_complex_name, enzyme_complex_name_tmp1, enzyme_complex_name_tmp2, enzyme_complex_name_result, false, specify_layer, specify_cycles);
 
       if (biochemicalReaction.second.reversibility) {
         // flip the products and reactants and repeat the above
@@ -3189,11 +3189,11 @@ public:
 
         // parse the reactants
         addReactants(model, reverse_reaction, name, module_name, weight_init, solver,
-          enzyme_complex_name, enzyme_complex_name_tmp1, enzyme_complex_name_tmp2, enzyme_complex_name_result, true, specify_layer);
+          enzyme_complex_name, enzyme_complex_name_tmp1, enzyme_complex_name_tmp2, enzyme_complex_name_result, true, specify_layer, specify_cycles);
 
         // parse the products
         addProducts(model, reverse_reaction, name, module_name, weight_init, solver,
-          enzyme_complex_name, enzyme_complex_name_tmp1, enzyme_complex_name_tmp2, enzyme_complex_name_result, true, specify_layer);
+          enzyme_complex_name, enzyme_complex_name_tmp1, enzyme_complex_name_tmp2, enzyme_complex_name_result, true, specify_layer, specify_cycles);
       }
     }
   }
@@ -3202,7 +3202,7 @@ public:
     const std::string & name, const std::string & module_name, 
     const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver,
     std::string & enzyme_complex_name, std::string & enzyme_complex_name_tmp1, std::string & enzyme_complex_name_tmp2, std::string & enzyme_complex_name_result,
-    const bool& is_reverse, bool specify_layer)
+    const bool& is_reverse, bool specify_layer, bool specify_cycles)
   {
     if (is_reverse)
       enzyme_complex_name = reaction.reaction_id + "_reverse";
@@ -3220,7 +3220,7 @@ public:
           std::shared_ptr<ActivationOp<TensorT>>(new ReLUOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new ReLUGradOp<TensorT>()),
           std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
         enzyme_complex.setModuleName(module_name);
-        if (specify_layer) enzyme_complex.setLayerName(module_name + "-Enz");
+        if (specify_layer) enzyme_complex.setLayerName(module_name + enzyme_complex_name);// "-Enz");
         Node<TensorT> enzyme_complex_tmp1(enzyme_complex_name_tmp1, NodeType::hidden, NodeStatus::initialized,
           std::shared_ptr<ActivationOp<TensorT>>(new ReLUOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new ReLUGradOp<TensorT>()),
           std::shared_ptr<IntegrationOp<TensorT>>(new MinOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new MinErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new MinWeightGradOp<TensorT>()));
@@ -3235,17 +3235,18 @@ public:
           std::shared_ptr<ActivationOp<TensorT>>(new ReLUOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new ReLUGradOp<TensorT>()),
           std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
         reactant.setModuleName(module_name);
-        if (specify_layer) reactant.setLayerName(module_name + "-Met");
+        if (specify_layer) reactant.setLayerName(module_name + reaction.reactants_ids[i]);// "-Met");
         Node<TensorT> enzyme_complex_result(enzyme_complex_name_result, NodeType::hidden, NodeStatus::initialized,
           std::shared_ptr<ActivationOp<TensorT>>(new ReLUOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new ReLUGradOp<TensorT>()),
           std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
         enzyme_complex_result.setModuleName(module_name);
-        if (specify_layer) enzyme_complex_result.setLayerName(module_name + "-Enz");
+        if (specify_layer) enzyme_complex_result.setLayerName(module_name + "-Result");
 
         // Add the enzyme to complex link and weight
         std::string weight_name_1 = enzyme_complex_name + "_to_" + enzyme_complex_name_tmp1;
         Weight<TensorT> weight1(weight_name_1, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()));
         weight1.setModuleName(module_name);
+        if (specify_layer) weight1.setLayerName(module_name + "-Enz_to_EnzTmp1");
         Link link1(weight_name_1, enzyme_complex_name, enzyme_complex_name_tmp1, weight_name_1);
         link1.setModuleName(module_name);
 
@@ -3253,6 +3254,7 @@ public:
         std::string weight_name_2 = reaction.reactants_ids[i] + "_to_" + enzyme_complex_name_tmp1;
         Weight<TensorT> weight2(weight_name_2, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()));
         weight2.setModuleName(module_name);
+        if (specify_layer) weight2.setLayerName(module_name + "-Met_to_EnzTmp1");
         Link link2(weight_name_2, reaction.reactants_ids[i], enzyme_complex_name_tmp1, weight_name_2);
         link2.setModuleName(module_name);
 
@@ -3260,6 +3262,7 @@ public:
         std::string weight_name_3 = enzyme_complex_name_tmp1 + "_to_" + enzyme_complex_name_tmp2;
         Weight<TensorT> weight3(weight_name_3, weight_init, solver);
         weight3.setModuleName(module_name);
+        if (specify_layer) weight3.setLayerName(module_name + "-EnzTmp1_to_EnzTmp2");
         Link link3(weight_name_3, enzyme_complex_name_tmp1, enzyme_complex_name_tmp2, weight_name_3);
         link3.setModuleName(module_name);
 
@@ -3267,20 +3270,25 @@ public:
         std::string weight_name_4 = enzyme_complex_name_tmp2 + "_to_" + enzyme_complex_name;
         Weight<TensorT> weight4(weight_name_4, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(-1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()));
         weight4.setModuleName(module_name);
+        if (specify_layer) weight4.setLayerName(module_name + "-EnzTmp2_to_Enz");
         Link link4(weight_name_4, enzyme_complex_name_tmp2, enzyme_complex_name, weight_name_4);
         link4.setModuleName(module_name);
+        if (specify_cycles) model.getCyclicPairs().insert(std::make_pair(enzyme_complex_name_tmp2, enzyme_complex_name));
 
         // Add the reactant loss pseudo link and weight
         std::string weight_name_5 = enzyme_complex_name_tmp2 + "_to_" + reaction.reactants_ids[i];
         Weight<TensorT> weight5(weight_name_5, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(-1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()));
         weight5.setModuleName(module_name);
+        if (specify_layer) weight5.setLayerName(module_name + "-EnzTmp2_to_Met");
         Link link5(weight_name_5, enzyme_complex_name_tmp2, reaction.reactants_ids[i], weight_name_5);
         link5.setModuleName(module_name);
+        if (specify_cycles) model.getCyclicPairs().insert(std::make_pair(enzyme_complex_name_tmp2, reaction.reactants_ids[i]));
 
         // Add the result enzyme complex link and weight
         std::string weight_name_result = enzyme_complex_name_tmp2 + "_to_" + enzyme_complex_name_result;
         Weight<TensorT> weight_result(weight_name_result, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()));
         weight_result.setModuleName(module_name);
+        if (specify_layer) weight_result.setLayerName(module_name + "-EnzTmp2_to_Result");
         Link link_result(weight_name_result, enzyme_complex_name_tmp2, enzyme_complex_name_result, weight_name_result);
         link_result.setModuleName(module_name);
 
@@ -3299,7 +3307,7 @@ public:
     const std::string & name, const std::string & module_name, 
     const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver, 
     std::string & enzyme_complex_name, std::string & enzyme_complex_name_tmp1, std::string & enzyme_complex_name_tmp2, std::string & enzyme_complex_name_result,
-    const bool& is_reverse, bool specify_layer)
+    const bool& is_reverse, bool specify_layer, bool specify_cycles)
   {
     // make the products enzyme complex name
     std::vector<std::string> enzyme_complex_names_tmp1, enzyme_complex_names_tmp2, enzyme_complex_names_result;
@@ -3337,7 +3345,7 @@ public:
           std::shared_ptr<ActivationOp<TensorT>>(new ReLUOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new ReLUGradOp<TensorT>()),
           std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
         enzyme_complex.setModuleName(module_name);
-        if (specify_layer) enzyme_complex.setLayerName(module_name + "-Enz");
+        if (specify_layer) enzyme_complex.setLayerName(module_name + enzyme_complex_name);// "-Enz");
         Node<TensorT> enzyme_complex_tmp1(enzyme_complex_name_tmp1, NodeType::hidden, NodeStatus::initialized,
           std::shared_ptr<ActivationOp<TensorT>>(new ReLUOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new ReLUGradOp<TensorT>()),
           std::shared_ptr<IntegrationOp<TensorT>>(new MinOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new MinErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new MinWeightGradOp<TensorT>()));
@@ -3352,17 +3360,18 @@ public:
           std::shared_ptr<ActivationOp<TensorT>>(new ReLUOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new ReLUGradOp<TensorT>()),
           std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
         product.setModuleName(module_name);
-        if (specify_layer) product.setLayerName(module_name + "-Met");
+        if (specify_layer) product.setLayerName(module_name + reaction.products_ids[i]);// "-Met");
         Node<TensorT> enzyme_complex_result(enzyme_complex_name_result, NodeType::hidden, NodeStatus::initialized,
           std::shared_ptr<ActivationOp<TensorT>>(new ReLUOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new ReLUGradOp<TensorT>()),
           std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
         enzyme_complex_result.setModuleName(module_name);
-        if (specify_layer) enzyme_complex_result.setLayerName(module_name + "-Enz");
+        if (specify_layer) enzyme_complex_result.setLayerName(module_name + "-Result");
 
         // Add the enzyme to complex link and weight
         std::string weight_name_1 = enzyme_complex_name + "_to_" + enzyme_complex_name_tmp1;
         Weight<TensorT> weight1(weight_name_1, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()));
         weight1.setModuleName(module_name);
+        if (specify_layer) weight1.setLayerName(module_name + "-Enz_to_EnzTmp1");
         Link link1(weight_name_1, enzyme_complex_name, enzyme_complex_name_tmp1, weight_name_1);
         link1.setModuleName(module_name);
 
@@ -3370,6 +3379,7 @@ public:
         std::string weight_name_3 = enzyme_complex_name_tmp1 + "_to_" + enzyme_complex_name_tmp2;
         Weight<TensorT> weight3(weight_name_3, weight_init, solver);
         weight3.setModuleName(module_name);
+        if (specify_layer) weight3.setLayerName(module_name + "-EnzTmp1_to_EnzTmp2");
         Link link3(weight_name_3, enzyme_complex_name_tmp1, enzyme_complex_name_tmp2, weight_name_3);
         link3.setModuleName(module_name);
 
@@ -3377,22 +3387,29 @@ public:
         std::string weight_name_4 = enzyme_complex_name_tmp2 + "_to_" + enzyme_complex_name;
         Weight<TensorT> weight4(weight_name_4, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(-1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()));
         weight4.setModuleName(module_name);
+        if (specify_layer) weight4.setLayerName(module_name + "-EnzTmp2_to_Enz");
         Link link4(weight_name_4, enzyme_complex_name_tmp2, enzyme_complex_name, weight_name_4);
         link4.setModuleName(module_name);
+        if (specify_cycles) model.getCyclicPairs().insert(std::make_pair(enzyme_complex_name_tmp2, enzyme_complex_name));
 
         // Add the resulting product
         std::string weight_name_5 = enzyme_complex_name_tmp2 + "_to_" + reaction.products_ids[i];
         Weight<TensorT> weight5(weight_name_5, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()));
         weight5.setModuleName(module_name);
+        if (specify_layer) weight5.setLayerName(module_name + "-EnzTmp2_to_Met");
         Link link5(weight_name_5, enzyme_complex_name_tmp2, reaction.products_ids[i], weight_name_5);
         link5.setModuleName(module_name);
+        if (specify_cycles) model.getCyclicPairs().insert(std::make_pair(enzyme_complex_name_tmp2, reaction.products_ids[i]));
 
         // Add the result enzyme complex link and weight
         std::string weight_name_result = enzyme_complex_name_tmp2 + "_to_" + enzyme_complex_name_result;
         Weight<TensorT> weight_result(weight_name_result, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()));
         weight_result.setModuleName(module_name);
+        if (specify_layer) weight_result.setLayerName(module_name + "-EnzTmp2_to_Result");
         Link link_result(weight_name_result, enzyme_complex_name_tmp2, enzyme_complex_name_result, weight_name_result);
         link_result.setModuleName(module_name);
+        if (i == reaction.products_ids.size()-1 && stoich == std::abs(reaction.products_stoichiometry[i]) - 1 && specify_cycles)
+          model.getCyclicPairs().insert(std::make_pair(enzyme_complex_name_tmp2, enzyme_complex_name_result));
 
         // Add all of the nodes, links, and weights to the model
         model.addNodes({ enzyme_complex, enzyme_complex_tmp1, product, enzyme_complex_tmp2, enzyme_complex_result });
