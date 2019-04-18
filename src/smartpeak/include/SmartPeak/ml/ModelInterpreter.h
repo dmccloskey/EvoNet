@@ -322,6 +322,11 @@ namespace SmartPeak
 		@brief Allocate Node and Weight tensor memory for all model operations.
 			Node and weight tensors indices and tensor sizes are registered.
 
+    NOTES:
+      - The user can manually specify tensor layers for nodes, however,
+        the user must specify ALL layer tensors
+      - 
+
 		@param[in] FP_operations
 		@param[in] operations_map
 		@param[out] source_layer_sizes
@@ -341,6 +346,12 @@ namespace SmartPeak
 			std::vector<int>& source_layer_sizes, std::vector<int>& sink_layer_sizes, std::vector<std::vector<std::pair<int, int>>>& weight_indices, 
 			std::vector<std::map<std::string, std::vector<std::pair<int, int>>>>& shared_weight_indices, std::vector<std::vector<TensorT>>& weight_values,
 			std::vector<bool>& make_source_tensor, std::vector<bool>& make_sink_tensor, std::vector<bool>& make_weight_tensor);
+    void getForwardPropogationLayerTensorDimensions(const std::vector<OperationList<TensorT>>& FP_operations,
+      const std::map<std::string, std::vector<int>>& operations_map,
+      std::vector<int>& source_layer_sizes, std::vector<int>& sink_layer_sizes, std::vector<std::vector<std::pair<int, int>>>& weight_indices,
+      std::vector<std::map<std::string, std::vector<std::pair<int, int>>>>& shared_weight_indices, std::vector<std::vector<TensorT>>& weight_values,
+      std::vector<bool>& make_source_tensor, std::vector<bool>& make_sink_tensor, std::vector<bool>& make_weight_tensor,
+      std::vector<int>& source_layer_pos, std::vector<int>& sink_layer_pos, std::map<int, int>& max_layer_sizes);
 
 		/**
 		@brief Create a unique key to different nodes by time_step, node_integration, and node_activation methods
@@ -1476,7 +1487,8 @@ namespace SmartPeak
 		const std::map<std::string, std::vector<int>>& operations_map,
 		std::vector<int>& source_layer_sizes, std::vector<int>& sink_layer_sizes, std::vector<std::vector<std::pair<int, int>>>& weight_indices, 
 		std::vector<std::map<std::string, std::vector<std::pair<int, int>>>>& shared_weight_indices, std::vector<std::vector<TensorT>>& weight_values,
-		std::vector<bool>& make_source_tensors, std::vector<bool>& make_sink_tensors, std::vector<bool>& make_weight_tensors) {
+		std::vector<bool>& make_source_tensors, std::vector<bool>& make_sink_tensors, std::vector<bool>& make_weight_tensors,
+    std::vector<int>& source_layer_tensor_pos, std::vector<int>& sink_layer_tensor_pos, std::map<int, int>& max_layer_sizes) {
 		// track the layer_tensor positions for the source and sink nodes
 		// as well as the weight_tensor positions
 		int sink_layer_pos = layer_tensors_.size();
@@ -1487,6 +1499,8 @@ namespace SmartPeak
 			// determine the tensor sizes
 			int sink_layer_size = 0;
 			int source_layer_size = 0;
+      int sink_layer_t_pos = 0;
+      int source_layer_t_pos = 0;
 			std::vector<std::pair<int, int>> weight_index;
 			std::map<std::string, std::vector<std::pair<int, int>>> shared_weight_index;
 			std::vector<TensorT> weight_value;
@@ -1508,9 +1522,16 @@ namespace SmartPeak
 					increment_sink_layer_size = true;
 				}
 				else {
-					sink_layer_index = FP_operations[ops_index].result.sink_node->getTensorIndex().second;
+					sink_layer_index = FP_operations[ops_index].result.sink_node->getTensorIndex().second;          
 				}
+        // track the sink layer tensor position sizes
+        sink_layer_t_pos = FP_operations[ops_index].result.sink_node->getTensorIndex().first;
+        auto found = max_layer_sizes.emplace(sink_layer_pos, sink_layer_index);
+        if (!found.second && max_layer_sizes.at(sink_layer_pos) < sink_layer_index)
+          max_layer_sizes.at(sink_layer_pos) = sink_layer_index;
 
+        // move the source layer position back one because a sink node
+        // is not going to be made
 				if (!updated_source_layer_pos && !make_sink_tensor) {
 					source_layer_pos = sink_layer_pos;
 					updated_source_layer_pos = true;
@@ -1529,6 +1550,11 @@ namespace SmartPeak
 					else {
 						source_layer_index = argument.source_node->getTensorIndex().second;
 					}
+          // track the source layer tensor position sizes
+          source_layer_t_pos = argument.source_node->getTensorIndex().first;
+          auto found = max_layer_sizes.emplace(source_layer_pos, source_layer_index);
+          if (!found.second && max_layer_sizes.at(source_layer_pos) < source_layer_index)
+            max_layer_sizes.at(source_layer_pos) = source_layer_index;
 
 					// index weight tensors
 					if (argument.weight->getTensorIndex().size() == 0) {
@@ -1584,15 +1610,6 @@ namespace SmartPeak
 				sink_nodes.insert(p.second);
 			}
 
-			//// check the source and sink layer indices
-      //// NOTE: this check should no longer be needed...
-			//for (const std::pair<int, int>& p : weight_index) {
-			//	if (p.first >= source_nodes.size() || p.second >= sink_nodes.size()) {
-			//		throw std::out_of_range("Weight index is greater than the layer size.");
-			//		// Error is caused by incorrectly allocating nodes and weights to different tensors
-			//	}
-			//}
-
 			// store the tensor sizes
 			//sink_layer_sizes.push_back(sink_layer_size); // This is not accurate because we are actually tracking the next sink_layer position...
 			//source_layer_sizes.push_back(source_layer_size); // This is not accurate because we are actually tracking the next source_layer position...
@@ -1606,9 +1623,18 @@ namespace SmartPeak
 			weight_indices.push_back(weight_index);
 			weight_values.push_back(weight_value);
 			shared_weight_indices.push_back(shared_weight_index);
+      sink_layer_tensor_pos.push_back(sink_layer_t_pos);
+      source_layer_tensor_pos.push_back(source_layer_t_pos);
+
+      if (updated_source_layer_pos && make_sink_tensor) {
+        char error_char[512];
+        sprintf(error_char, "Attempting to join sink nodes allocated to a previous layer and a new layer.");
+        std::string error(error_char);
+        throw std::runtime_error(error_char);
+      }
 
       // Check that the source layer size is not less than the # of source nodes
-      if (source_layer_sizes.back() != source_nodes.size()) {
+      if (source_layer_sizes.back() < source_nodes.size() - 1) { // changed from != and add -1
         char error_char[512];
         sprintf(error_char, "Attempting to join multiple source nodes into a single layer that were previously split into seperate layers.");
         std::string error(error_char);
@@ -1616,7 +1642,7 @@ namespace SmartPeak
       }
 
       // Check that the sink layer size is not less than the # of sink nodes
-      if (sink_layer_sizes.back() != sink_nodes.size()) {
+      if (sink_layer_sizes.back() < sink_nodes.size() - 1) { // changed from != and added -1
         char error_char[512];
         sprintf(error_char, "Attempting to join multiple sink nodes into a single layer that were previously split into seperate layers.");
         std::string error(error_char);
@@ -1689,7 +1715,14 @@ namespace SmartPeak
 			tensor_ops_steps_ = tensor_ops_steps;
 			FP_operations_ = FP_operations_expanded;
 
-			// Allocate memory for tensors
+			// Allocate memory for tensors      
+      std::map<int, int> max_layer_sizes; // structure to track max layer size where the key is the layer and the value is the max size
+      std::vector<std::vector<int>> source_layer_sizes_all, sink_layer_sizes_all;
+      std::vector<std::vector<std::vector<TensorT>>> weight_values_all;
+      std::vector<std::vector<std::vector<std::pair<int, int>>>> weight_indices_all;
+      std::vector<std::vector<std::map<std::string, std::vector<std::pair<int, int>>>>> shared_weight_indices_all;
+      std::vector<std::vector<bool>> make_source_tensors_all, make_sink_tensors_all, make_weight_tensors_all;
+      std::vector<std::vector<int>> source_layer_pos_all, sink_layer_pos_all;
 			for (auto& tensor_ops_step: tensor_ops_steps) {
 				if (tensor_ops_step.size() != 0) {
 					std::vector<int> source_layer_sizes, sink_layer_sizes;
@@ -1697,10 +1730,31 @@ namespace SmartPeak
 					std::vector<std::vector<std::pair<int, int>>> weight_indices;
 					std::vector<std::map<std::string, std::vector<std::pair<int, int>>>> shared_weight_indices;
 					std::vector<bool> make_source_tensors, make_sink_tensors, make_weight_tensors;
-					getForwardPropogationLayerTensorDimensions(FP_operations_expanded, tensor_ops_step, source_layer_sizes, sink_layer_sizes, weight_indices, shared_weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors);
-					allocateForwardPropogationLayerTensors(FP_operations_expanded, tensor_ops_step, source_layer_sizes, sink_layer_sizes, weight_indices, shared_weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors, batch_size, memory_size_buffered, train);
+          std::vector<int> source_layer_pos, sink_layer_pos;
+					getForwardPropogationLayerTensorDimensions(FP_operations_expanded, tensor_ops_step, source_layer_sizes, sink_layer_sizes, weight_indices, shared_weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors,
+            source_layer_pos, sink_layer_pos, max_layer_sizes);
+					//allocateForwardPropogationLayerTensors(FP_operations_expanded, tensor_ops_step, source_layer_sizes, sink_layer_sizes, weight_indices, shared_weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors, batch_size, memory_size_buffered, train);
+          source_layer_sizes_all.push_back(source_layer_sizes); sink_layer_sizes_all.push_back(sink_layer_sizes);
+          weight_values_all.push_back(weight_values); weight_indices_all.push_back(weight_indices); shared_weight_indices_all.push_back(shared_weight_indices);
+          make_source_tensors_all.push_back(make_source_tensors); make_sink_tensors_all.push_back(make_sink_tensors); make_weight_tensors_all.push_back(make_weight_tensors);
+          source_layer_pos_all.push_back(source_layer_pos); sink_layer_pos_all.push_back(sink_layer_pos);
 				}
 			}
+      // correct source/sink layer sizes based off of the max layer size
+      for (int i = 0; i < source_layer_pos_all.size(); ++i) {
+        for (int j = 0; j < source_layer_pos_all.at(i).size(); ++j) {
+          source_layer_sizes_all.at(i).at(j) = max_layer_sizes.at(source_layer_pos_all.at(i).at(j));
+          sink_layer_sizes_all.at(i).at(j) = max_layer_sizes.at(sink_layer_pos_all.at(i).at(j));
+        }
+      }
+      // Allocate the tensors
+      int i = 0;
+      for (auto& tensor_ops_step : tensor_ops_steps) {
+        if (tensor_ops_step.size() != 0) {
+          allocateForwardPropogationLayerTensors(FP_operations_expanded, tensor_ops_step, source_layer_sizes_all.at(i), sink_layer_sizes_all.at(i), weight_indices_all.at(i), shared_weight_indices_all.at(i), weight_values_all.at(i), make_source_tensors_all.at(i), make_sink_tensors_all.at(i), make_weight_tensors_all.at(i), batch_size, memory_size_buffered, train);
+        }
+        ++i;
+      }
 		}
 		// Work from the cache
 		else {
