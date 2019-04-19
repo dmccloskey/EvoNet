@@ -167,7 +167,7 @@ public:
 		biochemical_reaction_model.getInteractionGraph(interaction_graph);
 
 		// Convert the interaction graph to a network moel
-		ModelBuilder<TensorT> model_builder;
+		ModelBuilderExperimental<TensorT> model_builder;
 		model_builder.addInteractionGraph(interaction_graph, model, "RBC", "RBC",
 			std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
 			std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
