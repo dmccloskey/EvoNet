@@ -18,6 +18,7 @@ set(ml_executables_list
 
 set(cuda_executables_list
   CUDA_example
+  KineticModel2_Gpu_example
   MNIST_CovNet_Gpu_example
   MNIST_CVAE_Gpu_example
   MNIST_DenoisingAE_Gpu_example
