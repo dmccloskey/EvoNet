@@ -3,7 +3,7 @@
 #include <SmartPeak/ml/PopulationTrainerDefaultDevice.h>
 #include <SmartPeak/ml/ModelTrainerDefaultDevice.h>
 #include <SmartPeak/ml/ModelReplicator.h>
-#include <SmartPeak/ml/ModelBuilder.h>
+#include <SmartPeak/ml/ModelBuilderExperimental.h>
 #include <SmartPeak/ml/Model.h>
 #include <SmartPeak/io/PopulationTrainerFile.h>
 #include <SmartPeak/io/ModelInterpreterFileDefaultDevice.h>

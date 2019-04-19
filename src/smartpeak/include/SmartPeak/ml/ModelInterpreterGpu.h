@@ -41,7 +41,7 @@ namespace SmartPeak
 		void executeWeightErrorOperations();
 		void executeWeightUpdateOperations();
 		void allocateModelErrorTensor(const int& batch_size, const int& memory_size);
-		void getModelResults(Model<TensorT>& model, bool output_nodes = true, bool weights = true, bool model_error = true);
+		void getModelResults(Model<TensorT>& model, const bool& output_nodes, const bool& weights, const bool& model_error);
 		void checkMemory(const Model<TensorT>& model, const int& batch_size, const int& memory_size);
 		void updateSolverParams(const int& param_index, const TensorT& param_value);
 	private:
@@ -508,7 +508,7 @@ namespace SmartPeak
 	}
 
 	template<typename TensorT>
-	inline void ModelInterpreterGpu<TensorT>::getModelResults(Model<TensorT>& model, bool output_nodes, bool weights, bool model_error)
+	inline void ModelInterpreterGpu<TensorT>::getModelResults(Model<TensorT>& model, const bool& output_nodes, const bool& weights, const bool& model_error)
 	{
 		// Synchronize all data with the host
 		cudaStream_t stream; // The stream will be destroyed by GpuStreamDevice once the function goes out of scope!

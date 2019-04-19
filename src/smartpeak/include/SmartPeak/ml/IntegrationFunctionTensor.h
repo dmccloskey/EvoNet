@@ -195,10 +195,24 @@ public:
       Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> sink_input_tensor(sink_input, batch_size, memory_size, sink_layer_size);
       Eigen::TensorMap<Eigen::Tensor<TensorT, 4>> source_output_tensor(source_output, batch_size, memory_size, source_layer_size, 1);
       Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> weight_tensor(weights, 1, source_layer_size, sink_layer_size);
-      sink_input_tensor.chip(sink_time_step, 1).device(device) = sink_input_tensor.chip(sink_time_step, 1).cwiseMin(
-        (source_output_tensor.chip(source_time_step, 1).broadcast(Eigen::array<int, 3>({ 1, 1, sink_layer_size })) *
-          weight_tensor.broadcast(Eigen::array<int, 3>({ batch_size, 1, 1 }))
-          ).minimum(Eigen::array<int, 1>({ 1 })));
+
+      // Step 1: Substitute 1e24 for all 0 entries (assuming 0s are non entries) in the input
+      auto sink_input_chip = sink_input_tensor.chip(sink_time_step, 1);
+      auto sink_input_large = (sink_input_chip > sink_input_chip.constant(-1e-24) && sink_input_chip < sink_input_chip.constant(1e-24)).select(sink_input_chip.constant(1e24), sink_input_chip);
+      // Step 2: expand source across the sink layer dim and weight tensor across the batch dim and multiply
+      auto weight_tensor_exp = weight_tensor.broadcast(Eigen::array<int, 3>({ batch_size, 1, 1 }));
+      auto source_weight_exp = source_output_tensor.chip(source_time_step, 1).broadcast(Eigen::array<int, 3>({ 1, 1, sink_layer_size })) *  weight_tensor_exp;
+      // Step 3: Substitute 1e24 for all 0 entries (assuming 0s are non entries)
+      auto source_weight_1 = (weight_tensor_exp > weight_tensor_exp.constant(-1e-24) && weight_tensor_exp < weight_tensor_exp.constant(1e-24)).select(source_weight_exp.constant(1e24), source_weight_exp);
+      // Step 4: Take the Minimum along the source dim0
+      auto sink_input_tensor_tmp = sink_input_large.cwiseMin(source_weight_1.minimum(Eigen::array<int, 1>({ 1 })));
+      // Step 5: Replace all 1e24 with 0
+      sink_input_tensor.chip(sink_time_step, 1).device(device) = (sink_input_tensor_tmp >= sink_input_tensor_tmp.constant(1e24)).select(sink_input_tensor_tmp.constant(0), sink_input_tensor_tmp);
+
+      //// DEBUG (only on CPU)
+      //std::cout << "Source: "<< source_output_tensor.chip(source_time_step, 1) << std::endl;
+      //std::cout << "Weight: " << weight_tensor << std::endl;
+      //std::cout << "Sink: " << sink_input_tensor.chip(sink_time_step, 1) << std::endl;
     }
     std::string getName() const { return "MinTensorOp"; };
     //private:

@@ -684,7 +684,7 @@ private:
 			}
 		}
 		// copy out results
-		model_interpreter.getModelResults(model);
+		model_interpreter.getModelResults(model, true, true, true);
 		model_interpreter.clear_cache();
 		model.initNodeTensorIndices();
 		model.initWeightTensorIndices();
@@ -790,7 +790,7 @@ private:
 			}
 		}
 		// copy out results
-		model_interpreter.getModelResults(model);
+		model_interpreter.getModelResults(model, true, true, true);
 		model_interpreter.clear_cache();
 		model.initNodeTensorIndices();
 		model.initWeightTensorIndices();
@@ -874,7 +874,7 @@ private:
 			}
 		}
 		// copy out results
-		model_interpreter.getModelResults(model);
+		model_interpreter.getModelResults(model, true, true, true);
 		model_interpreter.clear_cache();
 		model.initNodeTensorIndices();
 		model.initWeightTensorIndices();

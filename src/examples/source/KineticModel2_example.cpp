@@ -3,7 +3,8 @@
 #include <SmartPeak/ml/PopulationTrainerDefaultDevice.h>
 #include <SmartPeak/ml/ModelTrainerDefaultDevice.h>
 #include <SmartPeak/ml/ModelReplicator.h>
-#include <SmartPeak/ml/ModelBuilder.h>
+#include <SmartPeak/ml/ModelBuilder.h> // Input only
+#include <SmartPeak/ml/ModelBuilderExperimental.h>
 #include <SmartPeak/ml/Model.h>
 #include <SmartPeak/io/PopulationTrainerFile.h>
 #include <SmartPeak/io/ModelInterpreterFileDefaultDevice.h>
@@ -72,7 +73,8 @@ public:
 		//TPI_reverse	1
 		//TPI	1
 		
-		std::vector<std::string> output_nodes = { "13dpg","2pg","3pg","adp","amp","atp","dhap","f6p","fdp","g3p","g6p","glc__D","h","h2o","lac__L","nad","nadh","pep","pi","pyr" };
+		std::vector<std::string> metabolites = { "13dpg","2pg","3pg","adp","amp","atp","dhap","f6p","fdp","g3p","g6p","glc__D","h","h2o","lac__L","nad","nadh","pep","pi","pyr" };
+    std::vector<std::string> enzymes = { "ADK1","ADK1_reverse","ATPh","DM_nadh","ENO","ENO_reverse","FBA","FBA_reverse","GAPD","GAPD_reverse","HEX1","LDH_L","LDH_L_reverse","PFK","PGI","PGI_reverse","PGK","PGK_reverse","PGM","PGM_reverse","PYK","TPI","TPI_reverse" };
 		std::vector<TensorT> met_data_stst = { 0.00024,0.0113,0.0773,0.29,0.0867,1.6,0.16,0.0198,0.0146,0.00728,0.0486,1,1.00e-03,1,1.36,0.0589,0.0301,0.017,2.5,0.0603 };
 
 		const int n_data = batch_size * n_epochs;
@@ -88,28 +90,35 @@ public:
 				for (int memory_iter = 0; memory_iter<memory_size; ++memory_iter) {
 					for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
 						if (simulation_type_ == "glucose_pulse") {
-							if (nodes_iter != 11 && memory_iter <= 3)
+              if (nodes_iter > 19)
+                input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 1; // enzymes default
+							else if (nodes_iter != 11 && memory_iter <= 3)
 								input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst[nodes_iter];
 							else if (nodes_iter == 11 && memory_iter <= 3)
 								input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = glu__D_rand(0, batch_iter*n_epochs + epochs_iter);
 							else
-								input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 0;
+								input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 0; // metabolites default
 						}
 						else if (simulation_type_ == "amp_sweep") {
-							if (nodes_iter != 4 && memory_iter <= 3)
+              if (nodes_iter > 19)
+                input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 1; // enzymes default
+							else if (nodes_iter != 4 && memory_iter <= 3)
 								input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst[nodes_iter];
 							else if (nodes_iter == 4 && memory_iter <= 3)
 								input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = amp_rand(0, batch_iter*n_epochs + epochs_iter);
-							else
-								input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 0;
+              else
+                input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 0; // metabolites default
 						}
-						else if (simulation_type_ == "steady_state")
-							if (nodes_iter != 11 && memory_iter <= 3)
-								input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst[nodes_iter];
-							else if (nodes_iter == 11)
-								input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst[nodes_iter];
-							else
-								input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 0;
+            else if (simulation_type_ == "steady_state") {
+              if (nodes_iter > 19)
+                input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 1; // enzymes default
+              else if (nodes_iter != 11 && memory_iter <= 3)
+                input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst[nodes_iter];
+              else if (nodes_iter == 11)
+                input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst[nodes_iter];
+              else
+                input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 0; // metabolites default
+            }
 					}
 					for (int nodes_iter = 0; nodes_iter < n_output_nodes; ++nodes_iter) {
 						if (simulation_type_ == "glucose_pulse") {
@@ -165,10 +174,10 @@ public:
 		biochemical_reaction_model.readBiochemicalReactions(biochem_rxns_filename);
 
 		// Convert the interaction graph to a network moel
-		ModelBuilder<TensorT> model_builder;
-		model_builder.addBiochemicalReactions(model, biochemical_reaction_model.biochemicalReactions_, "RBC", "RBC",
+		ModelBuilderExperimental<TensorT> model_builder_exp;
+		model_builder_exp.addBiochemicalReactions(model, biochemical_reaction_model.biochemicalReactions_, "RBC", "RBC",
       std::shared_ptr<WeightInitOp<float>>(new RangeWeightInitOp<float>(0.0, 2.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8)),
-      specify_layers, true);
+      2, specify_layers, true);
 
     std::set<std::string> output_nodes = { "13dpg","2pg","3pg","adp","amp","atp","dhap","f6p","fdp","g3p","g6p","glc__D","h","h2o","lac__L","nad","nadh","pep","pi","pyr" };
     std::set<std::string> enzymes_f_nodes = { "ENO","FBA","GAPD","HEX1","LDH_L","PFK","PGI","PGK","PGM","PYK","TPI","DM_nadh","ADK1","ATPh" };
@@ -180,6 +189,7 @@ public:
 
     // Create a dummy input node for all metabolites and enzymes (OoO)
     if (preserve_OoO) {
+      ModelBuilder<TensorT> model_builder;
       std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input", "Input", 1, specify_layers);
       for (const std::string& node : output_nodes) {
         model_builder.addSinglyConnected(model, "Input", node_names, { node },
@@ -201,46 +211,35 @@ public:
     }
 
 		// Specify the output layer for all nodes
-    if (specify_layers && specify_output_layers) {
+    if (specify_output_layers) {
       // specify metabolite and enzymes
-      int met_iter = 0, enz_iter = 0;
       for (const std::string& node : output_nodes) {
         model.nodes_.at(node)->setLayerName("Metabolites");
-        //model.nodes_.at(node)->setTensorIndex(std::make_pair(0, met_iter));
-        ++met_iter;
+        model.nodes_.at(node)->setType(NodeType::output);
       }
       for (const std::string& node : enzymes_f_nodes) {
         model.nodes_.at(node)->setLayerName("Enzymes");
-        //model.nodes_.at(node)->setTensorIndex(std::make_pair(1, enz_iter));
-        ++enz_iter;
       }
       for (const std::string& node : enzymes_r_nodes) {
         if (model.nodes_.count(node)) {
           model.nodes_.at(node)->setLayerName("Enzymes");
-          //model.nodes_.at(node)->setTensorIndex(std::make_pair(1, enz_iter));
-          ++enz_iter;
         }
       }
+    }
+    if (specify_layers) {
       // Specify the intermediates
-      int tmp1_iter = 0, tmp2_iter = 0, result_iter = 0;
       for (auto& node : model.getNodesMap()) {
         if (output_nodes.count(node.second->getName()) == 0
           && enzymes_f_nodes.count(node.second->getName()) == 0
           && enzymes_r_nodes.count(node.second->getName()) == 0) {
           if (node.second->getLayerName() == "RBC-EnzTmp1") {
             node.second->setLayerName("EnzTmp1");
-            //node.second->setTensorIndex(std::make_pair(2, tmp1_iter));
-            ++tmp1_iter;
           }
           else if (node.second->getLayerName() == "RBC-EnzTmp2") {
             node.second->setLayerName("EnzTmp2");
-            //node.second->setTensorIndex(std::make_pair(3, tmp2_iter));
-            ++tmp2_iter;
           }
           else {
             node.second->setLayerName("tmpResult");
-            //node.second->setTensorIndex(std::make_pair(4, result_iter));
-            ++result_iter;
           }
         }
       }
@@ -261,13 +260,31 @@ public:
 			interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
 		}
 		// Record the nodes/links
-		if (n_epochs == 0) {
+		if (n_epochs % 50 == 0 || n_epochs == 0) {
 			ModelFile<TensorT> data;
+      model_interpreter.getModelResults(model, false, true, false);
 			data.storeModelCsv(model.getName() + "_" + std::to_string(n_epochs) + "_nodes.csv",
 				model.getName() + "_" + std::to_string(n_epochs) + "_links.csv",
-				model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model, true, true, false);
+				model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model, true, true, true);
 		}
 	}
+  void trainingModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
+    const Eigen::Tensor<TensorT, 3>& expected_values,
+    const std::vector<std::string>& output_nodes,
+    const TensorT& model_error)
+  {
+    model_logger.setLogTimeEpoch(true);
+    model_logger.setLogTrainValMetricEpoch(true);
+    model_logger.setLogExpectedPredictedEpoch(true);
+    if (n_epochs == 0) {
+      model_logger.initLogs(model);
+    }
+    if (n_epochs % 1 == 0) {
+      if (model_logger.getLogExpectedPredictedEpoch())
+        model_interpreter.getModelResults(model, true, false, false);
+      model_logger.writeLogs(model, n_epochs, { "Error" }, {}, { model_error }, {}, output_nodes, expected_values);
+    }
+  }
 };
 
 template<typename TensorT>
@@ -308,7 +325,11 @@ void main_KineticModel(const bool& make_model, const bool& train_model, const st
 	const int n_threads = n_hard_threads; // the number of threads
 
 	// define the input/output nodes
-	std::vector<std::string> input_nodes = { "13dpg","2pg","3pg","adp","amp","atp","dhap","f6p","fdp","g3p","g6p","glc__D","h","h2o","lac__L","nad","nadh","pep","pi","pyr" };
+  std::vector<std::string> input_nodes = { "13dpg","2pg","3pg","adp","amp","atp","dhap","f6p","fdp","g3p","g6p","glc__D","h","h2o","lac__L","nad","nadh","pep","pi","pyr" };
+  std::vector<std::string> enzymes_nodes = { "ADK1","ADK1_reverse","ATPh","DM_nadh","ENO","ENO_reverse","FBA","FBA_reverse","GAPD","GAPD_reverse","HEX1","LDH_L","LDH_L_reverse","PFK","PGI","PGI_reverse","PGK","PGK_reverse","PGM","PGM_reverse","PYK","TPI","TPI_reverse" };
+  for (const std::string& node : enzymes_nodes) {
+    input_nodes.push_back(node);
+  }
 	// TODO: manually specify the tensor index ordering or update for correct tensor ordering
 	std::vector<std::string> output_nodes = { "13dpg","2pg","3pg","adp","amp","atp","dhap","f6p","fdp","g3p","g6p","glc__D","h","h2o","lac__L","nad","nadh","pep","pi","pyr" };
 
@@ -324,8 +345,10 @@ void main_KineticModel(const bool& make_model, const bool& train_model, const st
 		model_interpreters.push_back(model_interpreter);
 	}
 	ModelTrainerExt<float> model_trainer;
-	model_trainer.setBatchSize(32);
-	model_trainer.setMemorySize(16);
+	//model_trainer.setBatchSize(32);
+	//model_trainer.setMemorySize(128);
+  model_trainer.setBatchSize(1);
+  model_trainer.setMemorySize(246);
 	model_trainer.setNEpochsTraining(500);
 	model_trainer.setNEpochsValidation(25);
 	model_trainer.setNTETTSteps(1);

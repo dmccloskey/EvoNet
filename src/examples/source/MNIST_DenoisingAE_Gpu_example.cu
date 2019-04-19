@@ -363,7 +363,7 @@ void main_AE(const bool& make_model, const bool& train_model) {
 	ModelTrainerExt<float> model_trainer;
 	//model_trainer.setBatchSize(1); // evaluation only
 	model_trainer.setBatchSize(64);
-	model_trainer.setNEpochsTraining(5001);
+	model_trainer.setNEpochsTraining(1001);
   model_trainer.setNEpochsValidation(25);
 	model_trainer.setNEpochsEvaluation(100);
 	model_trainer.setMemorySize(1);

@@ -186,6 +186,7 @@ BOOST_AUTO_TEST_CASE(allocateForwardPropogationLayerTensors)
 	std::map<std::string, std::vector<int>> tensor_ops = model_interpreter.getTensorOperations(FP_operations_expanded, identified_sink_nodes, false);
 
   std::map<int, int> max_layer_sizes;
+  std::map<std::string, int> layer_name_pos;
 	std::vector<int> source_layer_sizes, sink_layer_sizes;
 	std::vector<std::vector<std::pair<int, int>>> weight_indices;
 	std::vector<std::map<std::string, std::vector<std::pair<int, int>>>> shared_weight_indices;
@@ -193,7 +194,7 @@ BOOST_AUTO_TEST_CASE(allocateForwardPropogationLayerTensors)
 	std::vector<bool> make_source_tensors, make_sink_tensors, make_weight_tensors;
   std::vector<int> source_layer_pos, sink_layer_pos;
 	model_interpreter.getForwardPropogationLayerTensorDimensions(FP_operations_expanded, tensor_ops, source_layer_sizes, sink_layer_sizes, weight_indices, shared_weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors,
-    source_layer_pos, sink_layer_pos, max_layer_sizes, 0, 0);
+    source_layer_pos, sink_layer_pos, max_layer_sizes, layer_name_pos, 0, 0);
 	model_interpreter.allocateForwardPropogationLayerTensors(FP_operations_expanded, tensor_ops, source_layer_sizes, sink_layer_sizes, weight_indices, shared_weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors, batch_size, memory_size, train);
 
 	// asserts are needed because boost deallocates the pointer memory after being called...
@@ -1158,7 +1159,7 @@ BOOST_AUTO_TEST_CASE(getModelResults)
 	model_interpreter.TBPTT(4);
 	model_interpreter.updateWeights();
 
-	model_interpreter.getModelResults(model_getModelResults);
+	model_interpreter.getModelResults(model_getModelResults, true, true, true);
 
 	// test values of output nodes
 	Eigen::Tensor<float, 3> output(batch_size, memory_size, (int)output_nodes.size()); // dim2: # of model nodes
