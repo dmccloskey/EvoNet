@@ -235,6 +235,9 @@ public:
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 2>> error_tensor(error, batch_size, memory_size);
 			auto predicted_chip = predicted_tensor.chip(time_step, 1);
+
+      std::cout << "Predicted: " << predicted_chip << std::endl;
+      std::cout << "Expected: " << expected_tensor << std::endl;
 			
 			error_tensor.chip(time_step, 1).device(device) += (((expected_tensor - predicted_chip).pow(2) * expected_tensor.constant((TensorT)0.5) / expected_tensor.constant((TensorT)layer_size)).sum(Eigen::array<int, 1>({ 1 }))
 				*error_tensor.chip(time_step, 1).constant(this->scale_)).clip(-1e9, 1e9);

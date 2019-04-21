@@ -176,7 +176,7 @@ public:
 		// Convert the interaction graph to a network moel
 		ModelBuilderExperimental<TensorT> model_builder_exp;
 		model_builder_exp.addBiochemicalReactions(model, biochemical_reaction_model.biochemicalReactions_, "RBC", "RBC",
-      std::shared_ptr<WeightInitOp<float>>(new RangeWeightInitOp<float>(0.0, 2.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.01, 0.9, 0.999, 1e-8)),
+      std::shared_ptr<WeightInitOp<float>>(new RangeWeightInitOp<float>(0.0, 2.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.1, 0.9, 0.999, 1e-8)),
       2, specify_layers, true);
 
     std::set<std::string> output_nodes = { "13dpg","2pg","3pg","adp","amp","atp","dhap","f6p","fdp","g3p","g6p","glc__D","h","h2o","lac__L","nad","nadh","pep","pi","pyr" };
@@ -260,7 +260,7 @@ public:
 			interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
 		}
 		// Record the nodes/links
-		if (n_epochs % 50 == 0 || n_epochs == 0) {
+		if (n_epochs % 100 == 0 || n_epochs == 0) {
 			ModelFile<TensorT> data;
       model_interpreter.getModelResults(model, false, true, false);
 			data.storeModelCsv(model.getName() + "_" + std::to_string(n_epochs) + "_nodes.csv",
@@ -279,7 +279,7 @@ public:
     if (n_epochs == 0) {
       model_logger.initLogs(model);
     }
-    if (n_epochs % 1 == 0) {
+    if (n_epochs % 10 == 0) {
       if (model_logger.getLogExpectedPredictedEpoch())
         model_interpreter.getModelResults(model, true, false, false);
       model_logger.writeLogs(model, n_epochs, { "Error" }, {}, { model_error }, {}, output_nodes, expected_values);
@@ -348,7 +348,7 @@ void main_KineticModel(const bool& make_model, const bool& train_model, const st
 	//model_trainer.setBatchSize(32);
 	//model_trainer.setMemorySize(128);
   model_trainer.setBatchSize(1);
-  model_trainer.setMemorySize(246);
+  model_trainer.setMemorySize(64);
 	model_trainer.setNEpochsTraining(500);
 	model_trainer.setNEpochsValidation(25);
 	model_trainer.setNTETTSteps(1);
