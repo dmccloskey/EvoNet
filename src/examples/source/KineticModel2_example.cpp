@@ -92,9 +92,9 @@ public:
             if (simulation_type_ == "glucose_pulse") {
               if (nodes_iter > 19)
                 input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 1; // enzymes default
-              else if (nodes_iter != 11 && memory_iter <= 3)
+              else if (nodes_iter != 11 && memory_iter > memory_size - 4)
                 input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst[nodes_iter];
-              else if (nodes_iter == 11 && memory_iter <= 3)
+              else if (nodes_iter == 11 && memory_iter > memory_size - 4)
                 input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = glu__D_rand(0, batch_iter*n_epochs + epochs_iter);
               else
                 input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 0; // metabolites default
@@ -102,9 +102,9 @@ public:
             else if (simulation_type_ == "amp_sweep") {
               if (nodes_iter > 19)
                 input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 1; // enzymes default
-              else if (nodes_iter != 4 && memory_iter <= 3)
+              else if (nodes_iter != 4 && memory_iter > memory_size - 4)
                 input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst[nodes_iter];
-              else if (nodes_iter == 4 && memory_iter <= 3)
+              else if (nodes_iter == 4 && memory_iter > memory_size - 4)
                 input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = amp_rand(0, batch_iter*n_epochs + epochs_iter);
               else
                 input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 0; // metabolites default
@@ -112,7 +112,7 @@ public:
             else if (simulation_type_ == "steady_state") {
               if (nodes_iter > 19)
                 input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 1; // enzymes default
-              else if (nodes_iter != 11 && memory_iter <= 3)
+              else if (nodes_iter != 11 && memory_iter > memory_size - 4)
                 input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst[nodes_iter];
               else if (nodes_iter == 11)
                 input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst[nodes_iter];
@@ -122,19 +122,19 @@ public:
           }
           for (int nodes_iter = 0; nodes_iter < n_output_nodes; ++nodes_iter) {
             if (simulation_type_ == "glucose_pulse") {
-              if (memory_iter == memory_size - 1)
+              if (memory_iter == 0)
                 output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst[nodes_iter];
               else
                 output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 0; // NOTE: TETT of 1
             }
             else if (simulation_type_ == "amp_sweep") {
-              if (memory_iter == memory_size - 1)
+              if (memory_iter == 0)
                 output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst[nodes_iter];
               else
                 output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 0; // NOTE: TETT of 1
             }
             else if (simulation_type_ == "steady_state")
-              if (memory_iter == memory_size - 1)
+              if (memory_iter == 0)
                 output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst[nodes_iter];
               else
                 output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 0; // NOTE: TETT of 1
@@ -348,7 +348,7 @@ void main_KineticModel(const bool& make_model, const bool& train_model, const st
   //model_trainer.setBatchSize(32);
   //model_trainer.setMemorySize(128);
   model_trainer.setBatchSize(1);
-  model_trainer.setMemorySize(64);
+  model_trainer.setMemorySize(16);
   model_trainer.setNEpochsTraining(500);
   model_trainer.setNEpochsValidation(25);
   model_trainer.setNTETTSteps(1);
