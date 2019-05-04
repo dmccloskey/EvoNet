@@ -92,9 +92,9 @@ public:
             if (simulation_type_ == "glucose_pulse") {
               if (nodes_iter > 19)
                 input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 1; // enzymes default
-              else if (nodes_iter != 11 && memory_iter > memory_size - 4)
+              else if (nodes_iter != 11 && memory_iter > memory_size - 31)
                 input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst[nodes_iter];
-              else if (nodes_iter == 11 && memory_iter > memory_size - 4)
+              else if (nodes_iter == 11 && memory_iter > memory_size - 31)
                 input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = glu__D_rand(0, batch_iter*n_epochs + epochs_iter);
               else
                 input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 0; // metabolites default
@@ -102,9 +102,9 @@ public:
             else if (simulation_type_ == "amp_sweep") {
               if (nodes_iter > 19)
                 input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 1; // enzymes default
-              else if (nodes_iter != 4 && memory_iter > memory_size - 4)
+              else if (nodes_iter != 4 && memory_iter > memory_size - 31)
                 input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst[nodes_iter];
-              else if (nodes_iter == 4 && memory_iter > memory_size - 4)
+              else if (nodes_iter == 4 && memory_iter > memory_size - 31)
                 input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = amp_rand(0, batch_iter*n_epochs + epochs_iter);
               else
                 input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 0; // metabolites default
@@ -112,7 +112,7 @@ public:
             else if (simulation_type_ == "steady_state") {
               if (nodes_iter > 19)
                 input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 1; // enzymes default
-              else if (nodes_iter != 11 && memory_iter > memory_size - 4)
+              else if (nodes_iter != 11 && memory_iter > memory_size - 31)
                 input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst[nodes_iter];
               else if (nodes_iter == 11)
                 input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst[nodes_iter];
@@ -173,10 +173,10 @@ public:
     BiochemicalReactionModel<TensorT> biochemical_reaction_model;
     biochemical_reaction_model.readBiochemicalReactions(biochem_rxns_filename);
 
-    // Convert the interaction graph to a network moel
+    // Convert the interaction graph to a network model
     ModelBuilderExperimental<TensorT> model_builder_exp;
     model_builder_exp.addBiochemicalReactions(model, biochemical_reaction_model.biochemicalReactions_, "RBC", "RBC",
-      std::shared_ptr<WeightInitOp<float>>(new RangeWeightInitOp<float>(0.0, 2.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.1, 0.9, 0.999, 1e-8)),
+      std::shared_ptr<WeightInitOp<float>>(new RangeWeightInitOp<float>(0.0, 2.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8)),
       2, specify_layers, true);
 
     std::set<std::string> output_nodes = { "13dpg","2pg","3pg","adp","amp","atp","dhap","f6p","fdp","g3p","g6p","glc__D","h","h2o","lac__L","nad","nadh","pep","pi","pyr" };
@@ -324,12 +324,7 @@ void main_KineticModel(const bool& make_model, const bool& train_model, const st
   const int n_hard_threads = std::thread::hardware_concurrency();
   const int n_threads = n_hard_threads; // the number of threads
 
-  // define the input/output nodes
-  std::vector<std::string> input_nodes = { "13dpg","2pg","3pg","adp","amp","atp","dhap","f6p","fdp","g3p","g6p","glc__D","h","h2o","lac__L","nad","nadh","pep","pi","pyr" };
-  std::vector<std::string> enzymes_nodes = { "ADK1","ADK1_reverse","ATPh","DM_nadh","ENO","ENO_reverse","FBA","FBA_reverse","GAPD","GAPD_reverse","HEX1","LDH_L","LDH_L_reverse","PFK","PGI","PGI_reverse","PGK","PGK_reverse","PGM","PGM_reverse","PYK","TPI","TPI_reverse" };
-  for (const std::string& node : enzymes_nodes) {
-    input_nodes.push_back(node);
-  }
+  // define the output nodes
   // TODO: manually specify the tensor index ordering or update for correct tensor ordering
   std::vector<std::string> output_nodes = { "13dpg","2pg","3pg","adp","amp","atp","dhap","f6p","fdp","g3p","g6p","glc__D","h","h2o","lac__L","nad","nadh","pep","pi","pyr" };
 
@@ -348,10 +343,11 @@ void main_KineticModel(const bool& make_model, const bool& train_model, const st
   //model_trainer.setBatchSize(32);
   //model_trainer.setMemorySize(128);
   model_trainer.setBatchSize(1);
-  model_trainer.setMemorySize(16);
+  model_trainer.setMemorySize(91);
   model_trainer.setNEpochsTraining(500);
   model_trainer.setNEpochsValidation(25);
   model_trainer.setNTETTSteps(1);
+  model_trainer.setNTBPTTSteps(30);
   model_trainer.setVerbosityLevel(1);
   model_trainer.setLogging(true, false);
   // NonOoO
@@ -380,8 +376,8 @@ void main_KineticModel(const bool& make_model, const bool& train_model, const st
   std::cout << "Initializing the population..." << std::endl;
   Model<float> model;
   if (make_model) {
-    //const std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Project_EvoNet/";
-    const std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Project_EvoNet/";
+    const std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Project_EvoNet/";
+    //const std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Project_EvoNet/";
     const std::string model_filename = data_dir + "RBCGlycolysis.csv";
     ModelTrainerExt<float>().makeRBCGlycolysis(model, model_filename, true, true, false);
   }
@@ -399,6 +395,18 @@ void main_KineticModel(const bool& make_model, const bool& train_model, const st
     model_interpreter_file.loadModelInterpreterBinary(interpreter_filename, model_interpreters[0]);
   }
   std::vector<Model<float>> population = { model };
+
+  // define the input nodes
+  std::vector<std::string> input_nodes = { "13dpg","2pg","3pg","adp","amp","atp","dhap","f6p","fdp","g3p","g6p","glc__D","h","h2o","lac__L","nad","nadh","pep","pi","pyr" };
+  std::vector<std::string> enzymes_nodes = { "ADK1","ADK1_reverse","ATPh","DM_nadh","ENO","ENO_reverse","FBA","FBA_reverse","GAPD","GAPD_reverse","HEX1","LDH_L","LDH_L_reverse","PFK","PGI","PGI_reverse","PGK","PGK_reverse","PGM","PGM_reverse","PYK","TPI","TPI_reverse" };
+  for (const std::string& node : enzymes_nodes) {
+    input_nodes.push_back(node);
+  }
+  //for (auto& node : model.nodes_) {
+  //  if (std::count(input_nodes.begin(), input_nodes.end(), node.second->getName()) == 0) {
+  //    input_nodes.push_back(node.second->getName());
+  //  }
+  //}
 
   if (train_model) {
     // Evolve the population

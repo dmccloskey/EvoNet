@@ -218,12 +218,12 @@ public:
       if (typeid(device).name() == typeid(Eigen::DefaultDevice).name()) {
         tmp_data = new TensorT[batch_size*source_layer_size*sink_layer_size];
       }
+#if COMPILE_WITH_CUDA
       else if (typeid(device).name() == typeid(Eigen::GpuDevice).name()) {
         size_t bytes = batch_size * source_layer_size*sink_layer_size * sizeof(TensorT);
-#if COMPILE_WITH_CUDA
         assert(cudaMalloc((void**)(&tmp_data), bytes) == cudaSuccess);
-#endif
       }
+#endif
       Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> source_weight_1(tmp_data, batch_size, source_layer_size, sink_layer_size);
       source_weight_1.device(device) = (weight_tensor_exp > weight_tensor_exp.constant(-1e-24) && weight_tensor_exp < weight_tensor_exp.constant(1e-24)).select(source_weight_exp.constant(1e24), source_weight_exp).eval();
       
@@ -241,11 +241,11 @@ public:
       if (typeid(device).name() == typeid(Eigen::DefaultDevice).name()) {
         delete[] tmp_data;
       }
-      else if (typeid(device).name() == typeid(Eigen::GpuDevice).name()) {
 #if COMPILE_WITH_CUDA
+      else if (typeid(device).name() == typeid(Eigen::GpuDevice).name()) {
         assert(cudaFree(tmp_data) == cudaSuccess);
-#endif
       }
+#endif
     }
     std::string getName() const { return "MinTensorOp"; };
     //private:
