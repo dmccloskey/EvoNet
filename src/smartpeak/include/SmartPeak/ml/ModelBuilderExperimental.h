@@ -482,6 +482,24 @@ public:
     Link link_result(weight_name_result, enzyme_complex_name_tmp2, enzyme_complex_name_result, weight_name_result);
     link_result.setModuleName(module_name);
 
+    // Add "self" enzyme link
+    std::string weight_name_1_self = enzyme_complex_name + "_to_" + enzyme_complex_name;
+    Weight<TensorT> weight1_self(weight_name_1_self, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()));
+    weight1_self.setModuleName(module_name);
+    if (specify_layer) weight1_self.setLayerName(module_name + "-Enz_to_Enz");
+    Link link1_self(weight_name_1_self, enzyme_complex_name, enzyme_complex_name, weight_name_1_self);
+    link1_self.setModuleName(module_name);
+    if (specify_cycles) model.getCyclicPairs().insert(std::make_pair(enzyme_complex_name, enzyme_complex_name));
+
+    // Add "self" result link
+    std::string weight_name_result_self = enzyme_complex_name_result + "_to_" + enzyme_complex_name_result;
+    Weight<TensorT> weight_result_self(weight_name_result_self, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()));
+    weight_result_self.setModuleName(module_name);
+    if (specify_layer) weight_result_self.setLayerName(module_name + "-Result_to_Result");
+    Link link_result_self(weight_name_result_self, enzyme_complex_name_result, enzyme_complex_name_result, weight_name_result_self);
+    link_result_self.setModuleName(module_name);
+    if (specify_cycles) model.getCyclicPairs().insert(std::make_pair(enzyme_complex_name_result, enzyme_complex_name_result));
+
     for (int i = 0; i < reaction.reactants_ids.size(); ++i) {
       const int stoich = std::abs(reaction.reactants_stoichiometry[i]);
 
@@ -509,16 +527,25 @@ public:
       link5.setModuleName(module_name);
       if (specify_cycles) model.getCyclicPairs().insert(std::make_pair(enzyme_complex_name_tmp2, reaction.reactants_ids[i]));
 
+      // Add the reactant "self" link
+      std::string weight_name_2_self = reaction.reactants_ids[i] + "_to_" + reaction.reactants_ids[i];
+      Weight<TensorT> weight2_self(weight_name_2_self, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()));
+      weight2_self.setModuleName(module_name);
+      if (specify_layer) weight2_self.setLayerName(module_name + "-Met_to_Met");
+      Link link2_self(weight_name_2_self, reaction.reactants_ids[i], reaction.reactants_ids[i], weight_name_2_self);
+      link2_self.setModuleName(module_name);
+      if (specify_cycles) model.getCyclicPairs().insert(std::make_pair(reaction.reactants_ids[i], reaction.reactants_ids[i]));
+
       // Add all of the nodes, links, and weights to the model
       model.addNodes({ reactant });
-      model.addLinks({ link2, link5 });
-      model.addWeights({ weight2, weight5 });
+      model.addLinks({ link2, link5, link2_self });
+      model.addWeights({ weight2, weight5, weight2_self });
     }
 
     // Add all of the nodes, links, and weights to the model
     model.addNodes({ enzyme_complex, enzyme_complex_tmp1, enzyme_complex_tmp2, enzyme_complex_result });
-    model.addLinks({ link1, link3, link4, link_result });
-    model.addWeights({ weight1, weight3, weight4, weight_result });
+    model.addLinks({ link1, link3, link4, link_result, link1_self, link_result_self });
+    model.addWeights({ weight1, weight3, weight4, weight_result, weight1_self, weight_result_self });
 
     // Update the enzyme complex name with the result
     enzyme_complex_name = enzyme_complex_name_result;
@@ -607,6 +634,24 @@ public:
     if (specify_cycles)
       model.getCyclicPairs().insert(std::make_pair(enzyme_complex_name_tmp2, enzyme_complex_name_result));
 
+    // Add the enzyme "self" link and weight
+    std::string weight_name_1_self = enzyme_complex_name + "_to_" + enzyme_complex_name;
+    Weight<TensorT> weight1_self(weight_name_1_self, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()));
+    weight1_self.setModuleName(module_name);
+    if (specify_layer) weight1_self.setLayerName(module_name + "-Enz_to_Enz");
+    Link link1_self(weight_name_1_self, enzyme_complex_name, enzyme_complex_name, weight_name_1_self);
+    link1_self.setModuleName(module_name);
+    if (specify_cycles) model.getCyclicPairs().insert(std::make_pair(enzyme_complex_name, enzyme_complex_name));
+
+    // Add the result enzyme complex "self" link and weight
+    std::string weight_name_result_self = enzyme_complex_name_result + "_to_" + enzyme_complex_name_result;
+    Weight<TensorT> weight_result_self(weight_name_result_self, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()));
+    weight_result_self.setModuleName(module_name);
+    if (specify_layer) weight_result_self.setLayerName(module_name + "-Result_to_Result");
+    Link link_result_self(weight_name_result_self, enzyme_complex_name_result, enzyme_complex_name_result, weight_name_result_self);
+    link_result_self.setModuleName(module_name);
+    if (specify_cycles) model.getCyclicPairs().insert(std::make_pair(enzyme_complex_name_result, enzyme_complex_name_result));
+
     // parse the products
     for (int i = 0; i < reaction.products_ids.size(); ++i) {
       const int stoich = std::abs(reaction.products_stoichiometry[i]);
@@ -627,16 +672,25 @@ public:
       link5.setModuleName(module_name);
       if (specify_cycles) model.getCyclicPairs().insert(std::make_pair(enzyme_complex_name_tmp2, reaction.products_ids[i]));
 
+      // Add the resulting product "self" link
+      std::string weight_name_5_self = reaction.products_ids[i] + "_to_" + reaction.products_ids[i];
+      Weight<TensorT> weight5_self(weight_name_5_self, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>((TensorT)stoich)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()));
+      weight5_self.setModuleName(module_name);
+      if (specify_layer) weight5_self.setLayerName(module_name + "-Met_to_Met");
+      Link link5_self(weight_name_5_self, reaction.products_ids[i], reaction.products_ids[i], weight_name_5_self);
+      link5_self.setModuleName(module_name);
+      if (specify_cycles) model.getCyclicPairs().insert(std::make_pair(reaction.products_ids[i], reaction.products_ids[i]));
+
       // Add all of the nodes, links, and weights to the model
       model.addNodes({ product });
-      model.addLinks({ link5 });
-      model.addWeights({ weight5 });
+      model.addLinks({ link5, link5_self });
+      model.addWeights({ weight5, weight5_self });
     }
 
     // Add all of the nodes, links, and weights to the model
     model.addNodes({ enzyme_complex, enzyme_complex_tmp1, enzyme_complex_tmp2, enzyme_complex_result });
-    model.addLinks({ link1, link3, link4, link_result });
-    model.addWeights({ weight1, weight3, weight4, weight_result });
+    model.addLinks({ link1, link3, link4, link_result, link1_self, link_result_self });
+    model.addWeights({ weight1, weight3, weight4, weight_result, weight1_self, weight_result_self });
 
     // Update the enzyme complex name with the result
     enzyme_complex_name = enzyme_complex_name_result;
