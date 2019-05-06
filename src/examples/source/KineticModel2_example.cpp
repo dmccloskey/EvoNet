@@ -112,9 +112,9 @@ public:
             else if (simulation_type_ == "steady_state") {
               if (nodes_iter > 19 && memory_iter > memory_size - 4)
                 input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 1e-6; // enzymes default
-              else if (nodes_iter != 11 && memory_iter > memory_size - 4)
-                input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst[nodes_iter];
-              else if (nodes_iter == 11)
+              //else if (nodes_iter != 11 && memory_iter > memory_size - 4)
+              //  input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst[nodes_iter];
+              else if (nodes_iter == 11 && memory_iter > memory_size - 4)
                 input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = met_data_stst[nodes_iter];
               else
                 input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 0; // metabolites default
@@ -168,6 +168,7 @@ public:
   void makeRBCGlycolysis(Model<TensorT>& model, const std::string& biochem_rxns_filename, const bool& specify_layers, const bool& specify_output_layers, const bool& preserve_OoO) {
     model.setId(0);
     model.setName("RBCGlycolysis");
+    ModelBuilder<TensorT> model_builder;
 
     // Convert the COBRA model to an interaction graph
     BiochemicalReactionModel<TensorT> biochemical_reaction_model;
@@ -179,6 +180,16 @@ public:
       std::shared_ptr<WeightInitOp<float>>(new RangeWeightInitOp<float>(1e-3, 1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8)),
       2, specify_layers, true);
 
+    // Create biases for exchange reactions
+    std::vector<std::string> exchange_nodes_neg = { "lac__L", "pyr", "h" };
+    model_builder.addBiases(model, "Sinks", exchange_nodes_neg,
+      std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(-1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8)), 
+      0.0, specify_layers);
+    std::vector<std::string> exchange_nodes_pos = { "glc__D", "h2o", "amp" };
+    model_builder.addBiases(model, "Sinks", exchange_nodes_pos,
+      std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8)),
+      0.0, specify_layers);
+
     std::set<std::string> output_nodes = { "13dpg","2pg","3pg","adp","amp","atp","dhap","f6p","fdp","g3p","g6p","glc__D","h","h2o","lac__L","nad","nadh","pep","pi","pyr" };
     std::set<std::string> enzymes_f_nodes = { "ENO","FBA","GAPD","HEX1","LDH_L","PFK","PGI","PGK","PGM","PYK","TPI","DM_nadh","ADK1","ATPh" };
     std::set<std::string> enzymes_r_nodes;
@@ -189,7 +200,6 @@ public:
 
     // Create a dummy input node for all metabolites and enzymes (OoO)
     if (preserve_OoO) {
-      ModelBuilder<TensorT> model_builder;
       std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input", "Input", 1, specify_layers);
       for (const std::string& node : output_nodes) {
         model_builder.addSinglyConnected(model, "Input", node_names, { node },

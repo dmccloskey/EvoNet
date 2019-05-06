@@ -369,6 +369,59 @@ BOOST_AUTO_TEST_CASE(addSinglyConnected2)
 	}
 }
 
+
+BOOST_AUTO_TEST_CASE(addBiases1)
+{
+  ModelBuilder<float> model_builder;
+  Model<float> model;
+  std::vector<std::string> node_names;
+
+  // make the input
+  node_names = model_builder.addInputNodes(model, "Input", "Input", 2);
+
+  // make the biases for the input nodes 
+  node_names = model_builder.addBiases(model, "Mod1", node_names,
+    std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new SGDOp<float>(0.1, 0.9)), 0.8f);
+
+  std::vector<std::string> node_names_test = { "Input_000000000000-bias", "Input_000000000001-bias" };
+  std::vector<std::string> link_names_test = { "Input_000000000000-bias_to_Input_000000000000", "Input_000000000001-bias_to_Input_000000000001"};
+  std::vector<std::string> weight_names_test = { "Input_000000000000-bias_to_Input_000000000000", "Input_000000000001-bias_to_Input_000000000001" };
+
+  // check the nodes
+  for (const std::string& node_name : node_names_test)
+  {
+    BOOST_CHECK_EQUAL(model.getNode(node_name).getName(), node_name);
+    BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
+    BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
+    BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "SumOp");
+    BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "SumErrorOp");
+    BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
+    BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.0, 1e-3);
+    BOOST_CHECK_EQUAL(model.getNode(node_name).getModuleName(), "Mod1");
+  }
+
+  // check the links
+  for (const std::string& name : link_names_test)
+  {
+    BOOST_CHECK_EQUAL(model.getLink(name).getName(), name);
+    std::vector<std::string> test = SplitString(name, "_to_");
+    BOOST_CHECK_EQUAL(model.getLink(name).getSourceNodeName(), test[0]);
+    BOOST_CHECK_EQUAL(model.getLink(name).getSinkNodeName(), test[1]);
+    BOOST_CHECK_EQUAL(model.getLink(name).getWeightName(), name);
+    BOOST_CHECK_EQUAL(model.getLink(name).getModuleName(), "Mod1");
+  }
+
+  // check the weights
+  for (const std::string& name : weight_names_test)
+  {
+    BOOST_CHECK_EQUAL(model.getWeight(name).getName(), name);
+    BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
+    BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "SGDOp");
+    BOOST_CHECK_EQUAL(model.getWeight(name).getModuleName(), "Mod1");
+    BOOST_CHECK_CLOSE(model.getWeight(name).getDropProbability(), 0.8, 1e-3);
+  }
+}
+
 BOOST_AUTO_TEST_CASE(addSoftMax)
 {
 	ModelBuilder<float> model_builder;

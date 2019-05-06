@@ -77,6 +77,10 @@ public:
 		@param[in] node_activation The activation function of the hidden node to create
 		@param[in] node_activation_grad The activation function gradient of the hidden node to create
 		@param[in] node_integration The integration function of the hidden node to create
+		@param[in] node_integration_error The integration error function of the hidden node to create
+		@param[in] node_integration_weight_grad The integration weight gradient function of the hidden node to create
+		@param[in] weight_init The weight initialization function
+		@param[in] solver The weight solver
 		@param[in] drop_out_prob Node drop out probability
 		@param[in] drop_connection_prob Weight drop out probability
 		@param[in] biases Whether to include bias nodes or not
@@ -96,6 +100,25 @@ public:
 			const std::vector<std::string>& source_node_names, const std::vector<std::string>& sink_node_names,
 			const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver,
 			TensorT drop_connection_prob = 0.0f, bool specify_layer = false);
+
+    /*
+    @brief Add biases
+
+    A special case of `addSinglyConnected` where the source nodes are biases
+
+		@param[in, out] Model
+		@param[in] module_name The module name used when specifying layers
+		@param[in] sink_node_names Node_names to add the singly connected layer to
+		@param[in] weight_init The weight initialization function
+		@param[in] solver The weight solver
+		@param[in] drop_connection_prob Weight drop out probability
+		@param[in] specify_layer Manually specify the layer that the node should be placed on
+
+		@returns vector of output node names
+    */
+    std::vector<std::string> addBiases(Model<TensorT>& model, const std::string& module_name, const std::vector<std::string>& sink_node_names,
+      const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver,
+      TensorT drop_connection_prob = 0.0f, bool specify_layer = false);
 
 		/**
 		@brief Add a Soft Max
@@ -780,7 +803,44 @@ public:
 			model.addLinks({ link });
 		}
 	}
-	template<typename TensorT>
+  template<typename TensorT>
+  std::vector<std::string> ModelBuilder<TensorT>::addBiases(Model<TensorT>& model, const std::string& module_name, const std::vector<std::string>& sink_node_names,
+    const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver,
+    TensorT drop_connection_prob = 0.0f, bool specify_layer = false)
+  {
+    std::vector<std::string> biases_names;
+
+    for (const std::string& node : sink_node_names) {
+      // make the bias
+      char bias_name_char[512];
+      sprintf(bias_name_char, "%s-bias", node.data());
+      std::string bias_name = std::string(bias_name_char);
+      Node<TensorT> bias(bias_name, NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
+      bias.setModuleName(module_name);
+      if (specify_layer) bias.setLayerName(module_name);
+      model.addNodes({ bias });
+      biases_names.push_back(bias_name);
+
+      // make the bias weight
+      char weight_bias_name_char[512];
+      sprintf(weight_bias_name_char, "%s_to_%s", bias_name.data(), node.data());
+      std::string weight_bias_name = std::string(weight_bias_name_char);
+      Weight<TensorT> weight_bias(weight_bias_name, weight_init, solver);
+      weight_bias.setModuleName(module_name);
+      weight_bias.setDropProbability(drop_connection_prob);
+      model.addWeights({ weight_bias });
+
+      // make the bias link
+      char link_bias_name_char[512];
+      sprintf(link_bias_name_char, "%s_to_%s", bias_name.data(), node.data());
+      std::string link_bias_name(link_bias_name_char);
+      Link link_bias(link_bias_name, bias_name, node, weight_bias_name);
+      link_bias.setModuleName(module_name);
+      model.addLinks({ link_bias });
+    }
+    return biases_names;
+  }
+  template<typename TensorT>
 	std::vector<std::string> ModelBuilder<TensorT>::addSoftMax(Model<TensorT> & model, const std::string & name, const std::string& module_name, const std::vector<std::string>& source_node_names)
 	{
 		std::vector<std::string> node_names;
