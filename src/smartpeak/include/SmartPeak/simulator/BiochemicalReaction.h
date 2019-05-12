@@ -198,7 +198,8 @@ namespace SmartPeak
     **/
     static void ReadBiochemicalReactions(
       const std::string& filename,
-      BiochemicalReactions& biochemicalReactions)
+      BiochemicalReactions& biochemicalReactions,
+      bool remove_compartments = false)
     {
       io::CSVReader<10, io::trim_chars<' ', '\t'>, io::double_quote_escape<',', '"'>> data_in(filename);
       data_in.read_header(io::ignore_extra_column,
@@ -217,13 +218,19 @@ namespace SmartPeak
         row.equation = equation_str;
         row.gpr = gpr_str;
         row.used = (used__str == "t") ? true : false;
-        std::vector<std::string> reactants_ids = SplitString(ReplaceTokens(reactants_ids_str, { "[\{\}\']", "_p", "_c", "_e", "_m", "_r", "\\s+" }, ""), ",");
+
+        // parse the reactant and product ids
+        std::vector<std::string> reactants_ids;
+        if (remove_compartments) reactants_ids = SplitString(ReplaceTokens(reactants_ids_str, { "[\{\}\']", "_p", "_c", "_e", "_m", "_r", "\\s+" }, ""), ",");
+        else reactants_ids = SplitString(ReplaceTokens(reactants_ids_str, { "[\{\}\']", "\\s+" }, ""), ",");
         for (const std::string& met_id : reactants_ids) {
           if (!met_id.empty()) {
             row.reactants_ids.push_back(met_id);
           }
         }
-        std::vector<std::string> products_ids = SplitString(ReplaceTokens(products_ids_str, { "[\{\}\']", "_p", "_c", "_e", "_m", "_r", "\\s+" }, ""), ",");
+        std::vector<std::string> products_ids;
+        if (remove_compartments) products_ids = SplitString(ReplaceTokens(products_ids_str, { "[\{\}\']", "_p", "_c", "_e", "_m", "_r", "\\s+" }, ""), ",");
+        else products_ids = SplitString(ReplaceTokens(products_ids_str, { "[\{\}\']", "\\s+" }, ""), ",");
         for (const std::string& met_id : products_ids) {
           if (!met_id.empty()) {
             row.products_ids.push_back(met_id);
@@ -295,7 +302,7 @@ namespace SmartPeak
     };
 
     void readMetabolomicsData(const std::string& filename) { ReadMetabolomicsData(filename, metabolomicsData_); }
-    void readBiochemicalReactions(const std::string& filename) { ReadBiochemicalReactions(filename, biochemicalReactions_); }
+    void readBiochemicalReactions(const std::string& filename, bool remove_compartments = false) { ReadBiochemicalReactions(filename, biochemicalReactions_, remove_compartments); }
     void readMetaData(const std::string& filename) { ReadMetaData(filename, metaData_); }
 
     /*

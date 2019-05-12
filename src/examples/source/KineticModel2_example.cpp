@@ -180,17 +180,18 @@ public:
       std::shared_ptr<WeightInitOp<float>>(new RangeWeightInitOp<float>(1e-3, 1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8)),
       2, specify_layers, true);
 
-    // Create biases for exchange reactions
-    std::vector<std::string> exchange_nodes_neg = { "lac__L", "pyr", "h" };
-    model_builder.addBiases(model, "Sinks", exchange_nodes_neg,
-      std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(-1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8)), 
-      0.0, specify_layers);
-    std::vector<std::string> exchange_nodes_pos = { "glc__D", "h2o", "amp" };
-    model_builder.addBiases(model, "Sinks", exchange_nodes_pos,
-      std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8)),
-      0.0, specify_layers);
+    //// Create biases for exchange reactions
+    //std::vector<std::string> exchange_nodes_neg = { "lac__L", "pyr", "h" };
+    //model_builder.addBiases(model, "Sinks", exchange_nodes_neg,
+    //  std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(-1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8)), 
+    //  0.0, specify_layers);
+    //std::vector<std::string> exchange_nodes_pos = { "glc__D", "h2o", "amp" };
+    //model_builder.addBiases(model, "Sinks", exchange_nodes_pos,
+    //  std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new AdamOp<float>(0.001, 0.9, 0.999, 1e-8)),
+    //  0.0, specify_layers);
 
-    std::set<std::string> output_nodes = { "13dpg","2pg","3pg","adp","amp","atp","dhap","f6p","fdp","g3p","g6p","glc__D","h","h2o","lac__L","nad","nadh","pep","pi","pyr" };
+    std::set<std::string> exchange_nodes = { "lac__L_e", "pyr_e", "h_e", "glc__D_e", "h2o_e", "amp_e" };
+    std::set<std::string> output_nodes = { "13dpg_c","2pg_c","3pg_c","adp_c","amp_c","atp_c","dhap_c","f6p_c","fdp_c","g3p_c","g6p_c","glc__D_c","h_c","h2o_c","lac__L_c","nad_c","nadh_c","pep_c","pi_c","pyr_c" };
     std::set<std::string> enzymes_f_nodes = { "ENO","FBA","GAPD","HEX1","LDH_L","PFK","PGI","PGK","PGM","PYK","TPI","DM_nadh","ADK1","ATPh" };
     std::set<std::string> enzymes_r_nodes;
     for (const std::string& node : enzymes_f_nodes) {
@@ -226,6 +227,9 @@ public:
       for (const std::string& node : output_nodes) {
         model.nodes_.at(node)->setLayerName("Metabolites");
         model.nodes_.at(node)->setType(NodeType::output);
+      }
+      for (const std::string& node : exchange_nodes) {
+        model.nodes_.at(node)->setLayerName("Exchange");
       }
       for (const std::string& node : enzymes_f_nodes) {
         model.nodes_.at(node)->setLayerName("Enzymes");
@@ -336,7 +340,7 @@ void main_KineticModel(const bool& make_model, const bool& train_model, const st
 
   // define the output nodes
   // TODO: manually specify the tensor index ordering or update for correct tensor ordering
-  std::vector<std::string> output_nodes = { "13dpg","2pg","3pg","adp","amp","atp","dhap","f6p","fdp","g3p","g6p","glc__D","h","h2o","lac__L","nad","nadh","pep","pi","pyr" };
+  std::vector<std::string> output_nodes = { "13dpg_c","2pg_c","3pg_c","adp_c","amp_c","atp_c","dhap_c","f6p_c","fdp_c","g3p_c","g6p_c","glc__D_c","h_c","h2o_c","lac__L_c","nad_c","nadh_c","pep_c","pi_c","pyr_c" };
 
   // define the data simulator
   DataSimulatorExt<float> data_simulator;
@@ -357,7 +361,7 @@ void main_KineticModel(const bool& make_model, const bool& train_model, const st
   model_trainer.setNEpochsTraining(5001);
   model_trainer.setNEpochsValidation(25);
   model_trainer.setNTETTSteps(1);
-  model_trainer.setNTBPTTSteps(30);
+  model_trainer.setNTBPTTSteps(15);
   model_trainer.setVerbosityLevel(1);
   model_trainer.setLogging(true, false);
   // NonOoO
@@ -407,7 +411,7 @@ void main_KineticModel(const bool& make_model, const bool& train_model, const st
   std::vector<Model<float>> population = { model };
 
   // define the input nodes
-  std::vector<std::string> input_nodes = { "13dpg","2pg","3pg","adp","amp","atp","dhap","f6p","fdp","g3p","g6p","glc__D","h","h2o","lac__L","nad","nadh","pep","pi","pyr" };
+  std::vector<std::string> input_nodes = { "13dpg_c","2pg_c","3pg_c","adp_c","amp_c","atp_c","dhap_c","f6p_c","fdp_c","g3p_c","g6p_c","glc__D_c","h_c","h2o_c","lac__L_c","nad_c","nadh_c","pep_c","pi_c","pyr_c" };
   //std::vector<std::string> enzymes_nodes = { "ADK1","ADK1_reverse","ATPh","DM_nadh","ENO","ENO_reverse","FBA","FBA_reverse","GAPD","GAPD_reverse","HEX1","LDH_L","LDH_L_reverse","PFK","PGI","PGI_reverse","PGK","PGK_reverse","PGM","PGM_reverse","PYK","TPI","TPI_reverse" };
   //for (const std::string& node : enzymes_nodes) {
   //  input_nodes.push_back(node);

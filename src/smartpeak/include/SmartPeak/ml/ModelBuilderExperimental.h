@@ -674,7 +674,7 @@ public:
 
       // Add the resulting product "self" link
       std::string weight_name_5_self = reaction.products_ids[i] + "_to_" + reaction.products_ids[i];
-      Weight<TensorT> weight5_self(weight_name_5_self, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>((TensorT)stoich)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()));
+      Weight<TensorT> weight5_self(weight_name_5_self, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()));
       weight5_self.setModuleName(module_name);
       if (specify_layer) weight5_self.setLayerName(module_name + "-Met_to_Met");
       Link link5_self(weight_name_5_self, reaction.products_ids[i], reaction.products_ids[i], weight_name_5_self);
