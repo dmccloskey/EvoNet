@@ -621,12 +621,6 @@ private:
 			model_interpreter.initBiases(model); // create the bias	
       model_interpreter.mapValuesToLayers(model, input.chip(iter, 3), input_nodes, "output"); // Needed for OoO/IG with DAG and DCG
       model_interpreter.mapValuesToLayers(model, input.chip(iter, 3), input_nodes, "input"); // Needed for OoO/IG with DAG and DCG
-      //if (this->getPreserveOoO()) {
-      //  model_interpreter.mapValuesToLayers(model, input.chip(iter, 3), input_nodes, "output"); // Needed for OoO/IG with DAG and DCG
-      //} else {
-      //  model_interpreter.mapValuesToLayers(model, input.chip(iter, 3), input_nodes, "output"); // Needed for OoO/IG with DAG and DCG
-      //  model_interpreter.mapValuesToLayers(model, input.chip(iter, 3), input_nodes, "input"); // Needed for IG with DAG and DCG
-      //}
 
 			// forward propogate
 			if (this->getVerbosityLevel() >= 2)
@@ -684,7 +678,7 @@ private:
 			}
 		}
 		// copy out results
-		model_interpreter.getModelResults(model);
+		model_interpreter.getModelResults(model, true, true, true);
 		model_interpreter.clear_cache();
 		model.initNodeTensorIndices();
 		model.initWeightTensorIndices();
@@ -790,7 +784,7 @@ private:
 			}
 		}
 		// copy out results
-		model_interpreter.getModelResults(model);
+		model_interpreter.getModelResults(model, true, true, true);
 		model_interpreter.clear_cache();
 		model.initNodeTensorIndices();
 		model.initWeightTensorIndices();
@@ -874,7 +868,7 @@ private:
 			}
 		}
 		// copy out results
-		model_interpreter.getModelResults(model);
+		model_interpreter.getModelResults(model, true, true, true);
 		model_interpreter.clear_cache();
 		model.initNodeTensorIndices();
 		model.initWeightTensorIndices();

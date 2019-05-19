@@ -107,6 +107,24 @@ public:
 		}
 	};
 
+  /**
+  @brief Max integration function
+  */
+  template<typename T>
+  class MinOp : public IntegrationOp<T>
+  {
+  public:
+    using IntegrationOp<T>::IntegrationOp;
+    std::string getName() const { return "MinOp"; };
+    IntegrationOp<T>* copy() const { return new MinOp<T>(*this); }
+  private:
+    friend class cereal::access;
+    template<class Archive>
+    void serialize(Archive& archive) {
+      archive(cereal::base_class<IntegrationOp<T>>(this));
+    }
+  };
+
 	/**
 		@brief Mean integration function
 	*/
@@ -277,6 +295,24 @@ public:
 		}
 	};
 
+  /**
+  @brief Min integration error function
+  */
+  template<typename T>
+  class MinErrorOp : public IntegrationErrorOp<T>
+  {
+  public:
+    using IntegrationErrorOp<T>::IntegrationErrorOp;
+    std::string getName() const { return "MinErrorOp"; };
+    IntegrationErrorOp<T>* copy() const { return new MinErrorOp<T>(*this); }
+  private:
+    friend class cereal::access;
+    template<class Archive>
+    void serialize(Archive& archive) {
+      archive(cereal::base_class<IntegrationErrorOp<T>>(this));
+    }
+  };
+
 	/**
 	@brief Mean integration error function
 	*/
@@ -407,6 +443,24 @@ public:
 		}
 	};
 
+  /**
+  @brief Min integration error function
+  */
+  template<typename T>
+  class MinWeightGradOp : public IntegrationWeightGradOp<T>
+  {
+  public:
+    using IntegrationWeightGradOp<T>::IntegrationWeightGradOp;
+    std::string getName() const { return "MinWeightGradOp"; };
+    IntegrationWeightGradOp<T>* copy() const { return new MinWeightGradOp<T>(*this); }
+  private:
+    friend class cereal::access;
+    template<class Archive>
+    void serialize(Archive& archive) {
+      archive(cereal::base_class<IntegrationWeightGradOp<T>>(this));
+    }
+  };
+
 	/**
 	@brief Count integration error function
 	*/
@@ -466,6 +520,7 @@ CEREAL_REGISTER_TYPE(SmartPeak::SumOp<float>);
 CEREAL_REGISTER_TYPE(SmartPeak::ProdOp<float>);
 CEREAL_REGISTER_TYPE(SmartPeak::ProdSCOp<float>);
 CEREAL_REGISTER_TYPE(SmartPeak::MaxOp<float>);
+CEREAL_REGISTER_TYPE(SmartPeak::MinOp<float>);
 CEREAL_REGISTER_TYPE(SmartPeak::MeanOp<float>);
 CEREAL_REGISTER_TYPE(SmartPeak::VarianceOp<float>);
 CEREAL_REGISTER_TYPE(SmartPeak::VarModOp<float>);
@@ -473,12 +528,14 @@ CEREAL_REGISTER_TYPE(SmartPeak::CountOp<float>);
 CEREAL_REGISTER_TYPE(SmartPeak::SumErrorOp<float>);
 CEREAL_REGISTER_TYPE(SmartPeak::ProdErrorOp<float>);
 CEREAL_REGISTER_TYPE(SmartPeak::MaxErrorOp<float>);
+CEREAL_REGISTER_TYPE(SmartPeak::MinErrorOp<float>);
 CEREAL_REGISTER_TYPE(SmartPeak::MeanErrorOp<float>);
 CEREAL_REGISTER_TYPE(SmartPeak::VarModErrorOp<float>);
 CEREAL_REGISTER_TYPE(SmartPeak::CountErrorOp<float>);
 CEREAL_REGISTER_TYPE(SmartPeak::SumWeightGradOp<float>);
 CEREAL_REGISTER_TYPE(SmartPeak::ProdWeightGradOp<float>);
 CEREAL_REGISTER_TYPE(SmartPeak::MaxWeightGradOp<float>);
+CEREAL_REGISTER_TYPE(SmartPeak::MinWeightGradOp<float>);
 CEREAL_REGISTER_TYPE(SmartPeak::CountWeightGradOp<float>);
 CEREAL_REGISTER_TYPE(SmartPeak::MeanWeightGradOp<float>);
 CEREAL_REGISTER_TYPE(SmartPeak::VarModWeightGradOp<float>);
@@ -487,6 +544,7 @@ CEREAL_REGISTER_TYPE(SmartPeak::VarModWeightGradOp<float>);
 //CEREAL_REGISTER_TYPE(SmartPeak::ProdOp<double>);
 //CEREAL_REGISTER_TYPE(SmartPeak::ProdSCOp<double>);
 //CEREAL_REGISTER_TYPE(SmartPeak::MaxOp<double>);
+//CEREAL_REGISTER_TYPE(SmartPeak::MinOp<double>);
 //CEREAL_REGISTER_TYPE(SmartPeak::MeanOp<double>);
 //CEREAL_REGISTER_TYPE(SmartPeak::VarianceOp<double>);
 //CEREAL_REGISTER_TYPE(SmartPeak::VarModOp<double>);
@@ -494,12 +552,14 @@ CEREAL_REGISTER_TYPE(SmartPeak::VarModWeightGradOp<float>);
 //CEREAL_REGISTER_TYPE(SmartPeak::SumErrorOp<double>);
 //CEREAL_REGISTER_TYPE(SmartPeak::ProdErrorOp<double>);
 //CEREAL_REGISTER_TYPE(SmartPeak::MaxErrorOp<double>);
+//CEREAL_REGISTER_TYPE(SmartPeak::MinErrorOp<double>);
 //CEREAL_REGISTER_TYPE(SmartPeak::MeanErrorOp<double>);
 //CEREAL_REGISTER_TYPE(SmartPeak::VarModErrorOp<double>);
 //CEREAL_REGISTER_TYPE(SmartPeak::CountErrorOp<double>);
 //CEREAL_REGISTER_TYPE(SmartPeak::SumWeightGradOp<double>);
 //CEREAL_REGISTER_TYPE(SmartPeak::ProdWeightGradOp<double>);
 //CEREAL_REGISTER_TYPE(SmartPeak::MaxWeightGradOp<double>);
+//CEREAL_REGISTER_TYPE(SmartPeak::MinWeightGradOp<double>);
 //CEREAL_REGISTER_TYPE(SmartPeak::CountWeightGradOp<double>);
 //CEREAL_REGISTER_TYPE(SmartPeak::MeanWeightGradOp<double>);
 //CEREAL_REGISTER_TYPE(SmartPeak::VarModWeightGradOp<double>);
@@ -508,6 +568,7 @@ CEREAL_REGISTER_TYPE(SmartPeak::VarModWeightGradOp<float>);
 //CEREAL_REGISTER_TYPE(SmartPeak::ProdOp<int>);
 //CEREAL_REGISTER_TYPE(SmartPeak::ProdSCOp<int>);
 //CEREAL_REGISTER_TYPE(SmartPeak::MaxOp<int>);
+//CEREAL_REGISTER_TYPE(SmartPeak::MinOp<int>);
 //CEREAL_REGISTER_TYPE(SmartPeak::MeanOp<int>);
 //CEREAL_REGISTER_TYPE(SmartPeak::VarianceOp<int>);
 //CEREAL_REGISTER_TYPE(SmartPeak::VarModOp<int>);
@@ -515,12 +576,14 @@ CEREAL_REGISTER_TYPE(SmartPeak::VarModWeightGradOp<float>);
 //CEREAL_REGISTER_TYPE(SmartPeak::SumErrorOp<int>);
 //CEREAL_REGISTER_TYPE(SmartPeak::ProdErrorOp<int>);
 //CEREAL_REGISTER_TYPE(SmartPeak::MaxErrorOp<int>);
+//CEREAL_REGISTER_TYPE(SmartPeak::MinErrorOp<int>);
 //CEREAL_REGISTER_TYPE(SmartPeak::MeanErrorOp<int>);
 //CEREAL_REGISTER_TYPE(SmartPeak::VarModErrorOp<int>);
 //CEREAL_REGISTER_TYPE(SmartPeak::CountErrorOp<int>);
 //CEREAL_REGISTER_TYPE(SmartPeak::SumWeightGradOp<int>);
 //CEREAL_REGISTER_TYPE(SmartPeak::ProdWeightGradOp<int>);
 //CEREAL_REGISTER_TYPE(SmartPeak::MaxWeightGradOp<int>);
+//CEREAL_REGISTER_TYPE(SmartPeak::MinWeightGradOp<int>);
 //CEREAL_REGISTER_TYPE(SmartPeak::CountWeightGradOp<int>);
 //CEREAL_REGISTER_TYPE(SmartPeak::MeanWeightGradOp<int>);
 //CEREAL_REGISTER_TYPE(SmartPeak::VarModWeightGradOp<int>);

@@ -13,6 +13,7 @@ set(sources_list_h
 	Link.h
 	Model.h
 	ModelBuilder.h
+	ModelBuilderExperimental.h
 	ModelInterpreter.h
 	ModelInterpreterDefaultDevice.h
 	ModelInterpreterGpu.h

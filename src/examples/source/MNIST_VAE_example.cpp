@@ -497,6 +497,12 @@ void main_MNIST(const bool& make_model, const bool& train_model) {
 		PopulationTrainerFile<float> population_trainer_file;
 		population_trainer_file.storeModels(population, "MNIST");
 		population_trainer_file.storeModelValidations("MNISTErrors.csv", models_validation_errors_per_generation);
+
+    ModelFile<float> data;
+    data.storeModelCsv(population.front().getName() + "_nodes.csv",
+      population.front().getName() + "_links.csv",
+      population.front().getName() + "_weights.csv",
+      population.front(), true, true, true);
 	}
 	else {
 		// Evaluate the population

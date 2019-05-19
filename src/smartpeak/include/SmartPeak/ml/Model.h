@@ -243,7 +243,7 @@ public:
 		std::list<int>* convertToAdjacencyList(std::map<int, std::string>& node_id_map, int& node_cnt);
 		void findCycles();
 
-		std::vector<std::pair<std::string, std::string>> getCyclicPairs();
+		std::set<std::pair<std::string, std::string>>& getCyclicPairs();
 
 		void setError(const Eigen::Tensor<TensorT, 2> model_error); ///< model_error setter
 		Eigen::Tensor<TensorT, 2> getError() const; ///< model_error getter
@@ -269,7 +269,15 @@ public:
 		std::map<std::string, std::shared_ptr<Node<TensorT>>> nodes_; ///< Model nodes
 		std::map<std::string, std::shared_ptr<Weight<TensorT>>> weights_; ///< Model nodes
 
-private:
+  private:
+    int id_; ///< Model ID
+    std::string name_; ///< Model Name
+    std::set<std::pair<std::string, std::string>> cyclic_pairs_;
+    std::vector<std::shared_ptr<Node<TensorT>>> input_nodes_;
+    std::vector<std::shared_ptr<Node<TensorT>>> output_nodes_;
+    Eigen::Tensor<TensorT, 2> model_error_;
+    int batch_size_ = 0;
+    int memory_size_ = 0;
 		friend class cereal::access;
 		template<class Archive>
 		void serialize(Archive& archive)
@@ -278,15 +286,7 @@ private:
 				links_, nodes_, weights_
 			);
 		}
-    int id_; ///< Model ID
-    std::string name_; ///< Model Name
-		std::vector<std::pair<std::string, std::string>> cyclic_pairs_;
-		std::vector<std::shared_ptr<Node<TensorT>>> input_nodes_;
-		std::vector<std::shared_ptr<Node<TensorT>>> output_nodes_;
-		Eigen::Tensor<TensorT, 2> model_error_;
-		int batch_size_ = 0;
-		int memory_size_ = 0;
-};
+  };
 	template<typename TensorT>
 	inline Model<TensorT>::Model(const Model<TensorT>& other)
 	{
@@ -928,14 +928,14 @@ private:
 		cyclic_pairs_.clear();
 		for (const auto& source_sink : CF.getCycles()) {
 			if (nodes_.at(node_id_map.at(source_sink.second))->getType() == NodeType::recursive) // enforce order of recursive nodes
-				cyclic_pairs_.push_back(std::make_pair(node_id_map.at(source_sink.second), node_id_map.at(source_sink.first)));
+				cyclic_pairs_.insert(std::make_pair(node_id_map.at(source_sink.second), node_id_map.at(source_sink.first)));
 			else
-				cyclic_pairs_.push_back(std::make_pair(node_id_map.at(source_sink.first), node_id_map.at(source_sink.second)));
+				cyclic_pairs_.insert(std::make_pair(node_id_map.at(source_sink.first), node_id_map.at(source_sink.second)));
 		}
 	}
 
 	template<typename TensorT>
-	inline std::vector<std::pair<std::string, std::string>> Model<TensorT>::getCyclicPairs()
+	inline std::set<std::pair<std::string, std::string>>& Model<TensorT>::getCyclicPairs()
 	{
 		return cyclic_pairs_;
 	}
