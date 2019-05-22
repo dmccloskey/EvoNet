@@ -166,8 +166,8 @@ public:
 			Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> error_tensor(error, batch_size, memory_size, layer_size);
 			auto predicted_chip = predicted_tensor.chip(time_step, 1);
 			
-			//error_tensor.chip(time_step, 1).device(device) += (-(predicted_chip - expected_tensor) / ((predicted_chip.unaryExpr(OffsetTensorOp<TensorT>(- this->eps_ - 1))) * predicted_chip)).clip(-1e9, 1e9);
-			error_tensor.chip(time_step, 1).device(device) += ((-(predicted_chip - expected_tensor) / (((predicted_chip - expected_tensor.constant((TensorT)1)) * predicted_chip) - expected_tensor.constant(this->eps_)))
+      // NOTE: change `(predicted_chip - expected_tensor)` to `-(predicted_chip - expected_tensor)`
+			error_tensor.chip(time_step, 1).device(device) += (((predicted_chip - expected_tensor) / (((predicted_chip - expected_tensor.constant((TensorT)1)) * predicted_chip) + expected_tensor.constant(this->eps_)))
 				*error_tensor.chip(time_step, 1).constant(this->scale_)).clip(-1e9, 1e9);
 
 		};

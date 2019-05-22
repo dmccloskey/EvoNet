@@ -31,40 +31,40 @@ public:
     ~ModelReplicator() = default; ///< Default destructor
 
     void setNNodeDownAdditions(const int& n_node_additions); ///< n_node_additions setter
+    void setNNodeRightAdditions(const int& n_node_additions);  ///< n_nodes_additions setter
+    void setNNodeDownCopies(const int& n_node_copies); ///< n_node_copies setter
+    void setNNodeRightCopies(const int& n_node_copies);  ///< n_node_copies setter
     void setNLinkAdditions(const int& n_link_additions); ///< n_link_additions setter
+    void setNLinkCopies(const int& n_link_copies); ///< n_link_copies setter
     void setNNodeDeletions(const int& n_node_deletions); ///< n_node_deletions setter
     void setNLinkDeletions(const int& n_link_deletions); ///< n_link_deletions setter
 		void setNNodeActivationChanges(const int& n_node_activation_changes); ///< n_node_activation_changes setter
 		void setNNodeIntegrationChanges(const int& n_node_integration_changes); ///< n_node_integration_changes setter
-		void setNodeActivations(const std::vector<std::pair<std::shared_ptr<ActivationOp<TensorT>>, std::shared_ptr<ActivationOp<TensorT>>>>& node_activations); ///< node_activations setter
-		void setNodeIntegrations(const std::vector<std::tuple<std::shared_ptr<IntegrationOp<TensorT>>, std::shared_ptr<IntegrationErrorOp<TensorT>>, std::shared_ptr<IntegrationWeightGradOp<TensorT>>>>& node_integrations); ///< node_integrations setter
 		void setNModuleAdditions(const int& n_module_additions); ///< n_module_additions setter
 		void setNModuleCopies(const int& n_module_copies); ///< n_module_copies setter
 		void setNModuleDeletions(const int& n_module_deletions); ///< n_module_deletions setter
+    void setNodeActivations(const std::vector<std::pair<std::shared_ptr<ActivationOp<TensorT>>, std::shared_ptr<ActivationOp<TensorT>>>>& node_activations); ///< node_activations setter
+    void setNodeIntegrations(const std::vector<std::tuple<std::shared_ptr<IntegrationOp<TensorT>>, std::shared_ptr<IntegrationErrorOp<TensorT>>, std::shared_ptr<IntegrationWeightGradOp<TensorT>>>>& node_integrations); ///< node_integrations setter
 
     int getNNodeDownAdditions() const; ///< n_node_additions setter
+    int getNNodeRightAdditions() const;  ///< n_node_additions getter
+    int getNNodeDownCopies() const; ///< n_node_copies getter
+    int getNNodeRightCopies() const; ///< n_node_copies getter
     int getNLinkAdditions() const; ///< n_link_additions setter
+    int getNLinkCopies() const; ///< n_link_copies setter
     int getNNodeDeletions() const; ///< n_node_deletions setter
     int getNLinkDeletions() const; ///< n_link_deletions setter
 		int getNNodeActivationChanges() const; ///< n_node_activation_changes setter
 		int getNNodeIntegrationChanges() const; ///< n_node_integration_changes setter
-		std::vector<std::pair<std::shared_ptr<ActivationOp<TensorT>>, std::shared_ptr<ActivationOp<TensorT>>>> getNodeActivations() const; ///< node_activations setter
-		std::vector<std::tuple<std::shared_ptr<IntegrationOp<TensorT>>, std::shared_ptr<IntegrationErrorOp<TensorT>>, std::shared_ptr<IntegrationWeightGradOp<TensorT>>>> getNodeIntegrations() const; ///< node_integrations setter
 		int getNModuleAdditions() const; ///< n_module_additions setter
 		int getNModuleCopies() const; ///< n_module_copies setter
 		int getNModuleDeletions() const; ///< n_module_deletions setter
+    std::vector<std::pair<std::shared_ptr<ActivationOp<TensorT>>, std::shared_ptr<ActivationOp<TensorT>>>> getNodeActivations() const; ///< node_activations setter
+    std::vector<std::tuple<std::shared_ptr<IntegrationOp<TensorT>>, std::shared_ptr<IntegrationErrorOp<TensorT>>, std::shared_ptr<IntegrationWeightGradOp<TensorT>>>> getNodeIntegrations() const; ///< node_integrations setter
 
-		void setNNodeRightAdditions(const int& n_node_additions);  ///< n_nodes_additions setter
-		void setNNodeDownCopies(const int& n_node_copies); ///< n_node_copies setter
-		void setNNodeRightCopies(const int& n_node_copies);  ///< n_node_copies setter
-		void setNLinkCopies(const int& n_link_copies); ///< n_link_copies setter
 		void setNWeightChanges(const int& n_weight_changes); ///< n_weight_changes setter
 		void setWeightChangeStDev(const TensorT& weight_change_stdev); ///< weight_change_stdev setter
 
-		int getNNodeRightAdditions() const;  ///< n_node_additions getter
-		int getNNodeDownCopies() const; ///< n_node_copies getter
-		int getNNodeRightCopies() const; ///< n_node_copies getter
-		int getNLinkCopies() const; ///< n_link_copies setter
 		int getNWeightChanges() const; ///< n_weight_changes getter
     TensorT getWeightChangeStDev() const; ///< weight_change_stdev getter
  
@@ -404,8 +404,7 @@ private:
 		std::pair<int, int> module_copies_ = std::make_pair(0, 0);
 		std::pair<int, int> module_deletions_ = std::make_pair(0, 0);
 		std::vector<std::pair<std::shared_ptr<ActivationOp<TensorT>>, std::shared_ptr<ActivationOp<TensorT>>>> node_activations_;
-		std::vector<std::tuple<std::shared_ptr<IntegrationOp<TensorT>>, std::shared_ptr<IntegrationErrorOp<TensorT>>, std::shared_ptr<IntegrationWeightGradOp<TensorT>>>> node_integrations_;
-		
+		std::vector<std::tuple<std::shared_ptr<IntegrationOp<TensorT>>, std::shared_ptr<IntegrationErrorOp<TensorT>>, std::shared_ptr<IntegrationWeightGradOp<TensorT>>>> node_integrations_;	
 
 		// not yet implemented...
     int n_weight_changes_ = 0; ///< the number of weights to change in the model

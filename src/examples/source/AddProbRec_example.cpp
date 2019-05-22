@@ -361,20 +361,37 @@ public:
         mean_errors_per_generation_cur += std::get<2>(models_errors);
       mean_errors_per_generation_cur = mean_errors_per_generation_cur / models_errors_per_generations[n_generations].size();
 
+      // Lambdas to ensure the lb/ub of random modifications stay within certain limits
+      auto clipLinkMod = [](const std::pair<int,int>& value) {
+        std::pair<int, int> value_copy = value;
+        if (value.second > 16) value_copy.second = 16;
+        if (value.first > 8) value_copy.first = 8;
+        if (value.second < 4) value_copy.second = 4;
+        if (value.first < 2) value_copy.first = 2;
+        return value_copy;
+      };
+      auto clipNodeMod = [](const std::pair<int, int>& value) {
+        std::pair<int, int> value_copy = value;
+        if (value.second > 8) value_copy.second = 8;
+        if (value.first > 4) value_copy.first = 4;
+        if (value.second < 2) value_copy.second = 2;
+        if (value.first < 1) value_copy.first = 1;
+        return value_copy; };
+
       // update the # of random modifications
       TensorT abs_percent_diff = abs(mean_errors_per_generation_prev - mean_errors_per_generation_cur) / mean_errors_per_generation_prev;
       if (abs_percent_diff < 0.1) {
         this->setRandomModifications(
-          std::make_pair(this->getRandomModifications()[0].first * 2, this->getRandomModifications()[0].second * 2),
-          std::make_pair(this->getRandomModifications()[1].first * 2, this->getRandomModifications()[1].second * 2),
+          clipNodeMod(std::make_pair(this->getRandomModifications()[0].first * 2, this->getRandomModifications()[0].second * 2)),
+          clipNodeMod(std::make_pair(this->getRandomModifications()[1].first * 2, this->getRandomModifications()[1].second * 2)),
           std::make_pair(this->getRandomModifications()[2].first * 2, this->getRandomModifications()[2].second * 2),
           std::make_pair(this->getRandomModifications()[3].first * 2, this->getRandomModifications()[3].second * 2),
-          std::make_pair(this->getRandomModifications()[4].first * 2, this->getRandomModifications()[4].second * 2),
+          clipLinkMod(std::make_pair(this->getRandomModifications()[4].first * 2, this->getRandomModifications()[4].second * 2)),
           std::make_pair(this->getRandomModifications()[5].first * 2, this->getRandomModifications()[5].second * 2),
-          std::make_pair(this->getRandomModifications()[6].first * 2, this->getRandomModifications()[6].second * 2),
-          std::make_pair(this->getRandomModifications()[7].first * 2, this->getRandomModifications()[7].second * 2),
-          std::make_pair(this->getRandomModifications()[8].first * 2, this->getRandomModifications()[8].second * 2),
-          std::make_pair(this->getRandomModifications()[9].first * 2, this->getRandomModifications()[9].second * 2),
+          clipNodeMod(std::make_pair(this->getRandomModifications()[6].first * 2, this->getRandomModifications()[6].second * 2)),
+          clipLinkMod(std::make_pair(this->getRandomModifications()[7].first * 2, this->getRandomModifications()[7].second * 2)),
+          clipNodeMod(std::make_pair(this->getRandomModifications()[8].first * 2, this->getRandomModifications()[8].second * 2)),
+          clipNodeMod(std::make_pair(this->getRandomModifications()[9].first * 2, this->getRandomModifications()[9].second * 2)),
           std::make_pair(this->getRandomModifications()[10].first * 2, this->getRandomModifications()[10].second * 2),
           std::make_pair(this->getRandomModifications()[11].first * 2, this->getRandomModifications()[11].second * 2),
           std::make_pair(this->getRandomModifications()[12].first * 2, this->getRandomModifications()[12].second * 2));
@@ -384,16 +401,16 @@ public:
       }
       else {
         this->setRandomModifications(
-          std::make_pair(this->getRandomModifications()[0].first / 2, this->getRandomModifications()[0].second / 2),
-          std::make_pair(this->getRandomModifications()[1].first / 2, this->getRandomModifications()[1].second / 2),
+          clipNodeMod(std::make_pair(this->getRandomModifications()[0].first / 2, this->getRandomModifications()[0].second / 2)),
+          clipNodeMod(std::make_pair(this->getRandomModifications()[1].first / 2, this->getRandomModifications()[1].second / 2)),
           std::make_pair(this->getRandomModifications()[2].first / 2, this->getRandomModifications()[2].second / 2),
           std::make_pair(this->getRandomModifications()[3].first / 2, this->getRandomModifications()[3].second / 2),
-          std::make_pair(this->getRandomModifications()[4].first / 2, this->getRandomModifications()[4].second / 2),
+          clipLinkMod(std::make_pair(this->getRandomModifications()[4].first / 2, this->getRandomModifications()[4].second / 2)),
           std::make_pair(this->getRandomModifications()[5].first / 2, this->getRandomModifications()[5].second / 2),
-          std::make_pair(this->getRandomModifications()[6].first / 2, this->getRandomModifications()[6].second / 2),
-          std::make_pair(this->getRandomModifications()[7].first / 2, this->getRandomModifications()[7].second / 2),
-          std::make_pair(this->getRandomModifications()[8].first / 2, this->getRandomModifications()[8].second / 2),
-          std::make_pair(this->getRandomModifications()[9].first / 2, this->getRandomModifications()[9].second / 2),
+          clipNodeMod(std::make_pair(this->getRandomModifications()[6].first / 2, this->getRandomModifications()[6].second / 2)),
+          clipLinkMod(std::make_pair(this->getRandomModifications()[7].first / 2, this->getRandomModifications()[7].second / 2)),
+          clipNodeMod(std::make_pair(this->getRandomModifications()[8].first / 2, this->getRandomModifications()[8].second / 2)),
+          clipNodeMod(std::make_pair(this->getRandomModifications()[9].first / 2, this->getRandomModifications()[9].second / 2)),
           std::make_pair(this->getRandomModifications()[10].first / 2, this->getRandomModifications()[10].second / 2),
           std::make_pair(this->getRandomModifications()[11].first / 2, this->getRandomModifications()[11].second / 2),
           std::make_pair(this->getRandomModifications()[12].first / 2, this->getRandomModifications()[12].second / 2));
