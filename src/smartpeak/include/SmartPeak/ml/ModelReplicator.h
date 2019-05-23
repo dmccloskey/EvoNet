@@ -73,7 +73,7 @@ public:
 
       @param[in, out] model The model to modify
     */ 
-    void modifyModel(Model<TensorT>& model, std::string unique_str = "");
+    void modifyModel(Model<TensorT>& model, std::string unique_str = "", int prune_iterations = 1e3);
  
     /**
       @brief Select nodes given a set of conditions
@@ -980,6 +980,11 @@ private:
 
 		// create the new weight based on a random link (this can probably be optimized...)
 		std::string random_link = selectRandomLink(model, source_node_type_exclude, source_node_type_include, sink_node_type_exclude, sink_node_type_include);
+    if (random_link.empty())
+    {
+      printf("No links were found that could be added to the Model.\n");
+      return;
+    }
 
 		std::string weight_name;
 		if (!as_copy) {
@@ -1572,7 +1577,7 @@ private:
 	}
 
 	template<typename TensorT>
-	void ModelReplicator<TensorT>::modifyModel(Model<TensorT>& model, std::string unique_str)
+	void ModelReplicator<TensorT>::modifyModel(Model<TensorT>& model, std::string unique_str, int prune_iterations)
 	{
 		// randomly order the modifications
 		std::vector<std::string> modifications = makeRandomModificationOrder();
@@ -1583,7 +1588,6 @@ private:
 		for (const std::string& modification : modifications)
 			modifications_counts.emplace(modification, 0);
 
-		const int prune_iterations = 1e6;
 		for (const std::string& modification : modifications)
 		{
 			// [TODO: copyNodeRight]

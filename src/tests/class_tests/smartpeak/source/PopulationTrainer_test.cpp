@@ -182,12 +182,20 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
 	population_trainer.setNReplicatesPerModel(2);
 	population_trainer.setNGenerations(10);
 	population_trainer.setLogging(true);
+  population_trainer.setRemoveIsolatedNodes(false);
+  population_trainer.setPruneModelNum(12);
+  population_trainer.setCheckCompleteModelInputToOutput(false);
+  population_trainer.setSelectModels(false);
 
 	BOOST_CHECK_EQUAL(population_trainer.getNTop(), 4);
 	BOOST_CHECK_EQUAL(population_trainer.getNRandom(), 1);
 	BOOST_CHECK_EQUAL(population_trainer.getNReplicatesPerModel(), 2);
 	BOOST_CHECK_EQUAL(population_trainer.getNGenerations(), 10);
 	BOOST_CHECK(population_trainer.getLogTraining());
+  BOOST_CHECK(!population_trainer.getRemoveIsolatedNodes());
+  BOOST_CHECK_EQUAL(population_trainer.getPruneModelNum(), 12);
+  BOOST_CHECK(!population_trainer.getCheckCompleteModelInputToOutput());
+  BOOST_CHECK(!population_trainer.getSelectModels());
 }
 
 BOOST_AUTO_TEST_CASE(setNEpochsTraining)
@@ -198,6 +206,10 @@ BOOST_AUTO_TEST_CASE(setNEpochsTraining)
 
   ModelTrainerExt<float> model_trainer;
   BOOST_CHECK_NE(model_trainer.getNEpochsTraining(), 101);
+  population_trainer.updateNEpochsTraining(model_trainer);
+  BOOST_CHECK_EQUAL(model_trainer.getNEpochsTraining(), 101);
+
+  population_trainer.setNEpochsTraining(-1);
   population_trainer.updateNEpochsTraining(model_trainer);
   BOOST_CHECK_EQUAL(model_trainer.getNEpochsTraining(), 101);
 }

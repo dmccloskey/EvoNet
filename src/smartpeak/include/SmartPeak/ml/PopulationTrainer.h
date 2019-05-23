@@ -45,12 +45,20 @@ public:
 		void setNReplicatesPerModel(const int& n_replicates_per_model); ///< n_replicates_per_model setter
 		void setNGenerations(const int& n_generations); ///< n_generations setter
 		void setLogging(bool log_training = false); ///< enable_logging setter
+    void setRemoveIsolatedNodes(const bool& remove_isolated_nodes);
+    void setPruneModelNum(const int& prune_model_num);
+    void setCheckCompleteModelInputToOutput(const bool& check_complete_input_to_output);
+    void setSelectModels(const bool& select_models);
 
 		int getNTop() const; ///< batch_size setter
 		int getNRandom() const; ///< memory_size setter
 		int getNReplicatesPerModel() const; ///< n_epochs setter
 		int getNGenerations() const; ///< n_epochs setter
 		bool getLogTraining() const; ///< log_training getter
+    bool getRemoveIsolatedNodes() const;
+    int getPruneModelNum() const;
+    bool getCheckCompleteModelInputToOutput() const;
+    bool getSelectModels() const; 
 
     /**
       @brief Remove models with non-unique names from the population of models
@@ -140,7 +148,7 @@ public:
     static std::pair<bool, Model<TensorT>> replicateModel_(
       Model<TensorT>* model,
       ModelReplicator<TensorT>* model_replicator,
-      std::string unique_str, int cnt);
+      std::string unique_str, int cnt, bool remove_isolated_nodes, int prune_model_num, bool check_complete_input_to_output);
  
     /**
       @brief Trains each of the models in the population
@@ -273,6 +281,12 @@ private:
     int n_epochs_training_ = -1; ///< The number of epochs to train the models
 
 		bool log_training_ = false;
+    bool select_models_ = true; ///< Whether to skip the selection step or not
+
+    // model replicator settings
+    bool remove_isolated_nodes_ = true;
+    int prune_model_num_ = 10;
+    bool check_complete_input_to_output_ = true;
   };
 	template<typename TensorT, typename InterpreterT>
 	void PopulationTrainer<TensorT, InterpreterT>::setNTop(const int & n_top)
@@ -299,6 +313,26 @@ private:
 	{
 		log_training_ = log_training;
 	}
+  template<typename TensorT, typename InterpreterT>
+  inline void PopulationTrainer<TensorT, InterpreterT>::setRemoveIsolatedNodes(const bool & remove_isolated_nodes)
+  {
+    remove_isolated_nodes_ = remove_isolated_nodes;
+  }
+  template<typename TensorT, typename InterpreterT>
+  inline void PopulationTrainer<TensorT, InterpreterT>::setPruneModelNum(const int & prune_model_num)
+  {
+    prune_model_num_ = prune_model_num;
+  }
+  template<typename TensorT, typename InterpreterT>
+  inline void PopulationTrainer<TensorT, InterpreterT>::setCheckCompleteModelInputToOutput(const bool & check_complete_input_to_output)
+  {
+    check_complete_input_to_output_ = check_complete_input_to_output;
+  }
+  template<typename TensorT, typename InterpreterT>
+  inline void PopulationTrainer<TensorT, InterpreterT>::setSelectModels(const bool & select_models)
+  {
+    select_models_ = select_models;
+  }
 	template<typename TensorT, typename InterpreterT>
 	int PopulationTrainer<TensorT, InterpreterT>::getNTop() const
 	{
@@ -325,6 +359,30 @@ private:
 	{
 		return log_training_;
 	}
+
+  template<typename TensorT, typename InterpreterT>
+  inline bool PopulationTrainer<TensorT, InterpreterT>::getRemoveIsolatedNodes() const
+  {
+    return remove_isolated_nodes_;
+  }
+
+  template<typename TensorT, typename InterpreterT>
+  inline int PopulationTrainer<TensorT, InterpreterT>::getPruneModelNum() const
+  {
+    return prune_model_num_;
+  }
+
+  template<typename TensorT, typename InterpreterT>
+  inline bool PopulationTrainer<TensorT, InterpreterT>::getCheckCompleteModelInputToOutput() const
+  {
+    return check_complete_input_to_output_;
+  }
+
+  template<typename TensorT, typename InterpreterT>
+  inline bool PopulationTrainer<TensorT, InterpreterT>::getSelectModels() const
+  {
+    return select_models_;
+  }
 
 	template<typename TensorT, typename InterpreterT>
 	void PopulationTrainer<TensorT, InterpreterT>::removeDuplicateModels(std::vector<Model<TensorT>>& models)
@@ -562,14 +620,15 @@ private:
 			{
 				std::packaged_task<std::pair<bool, Model<TensorT>>// encapsulate in a packaged_task
 					(Model<TensorT>*, ModelReplicator<TensorT>*,
-						std::string, int
+						std::string, int, bool, int, bool
 						)> task(PopulationTrainer<TensorT, InterpreterT>::replicateModel_);
 
 				// launch the thread
 				task_results.push_back(task.get_future());
 				std::thread task_thread(std::move(task),
 					&model, &model_replicator,
-					std::ref(unique_str), std::ref(cnt));
+					std::ref(unique_str), std::ref(cnt),
+          std::ref(remove_isolated_nodes_), std::ref(prune_model_num_), std::ref(check_complete_input_to_output_));
 				task_thread.detach();
 
 				// retreive the results
@@ -614,7 +673,8 @@ private:
 	std::pair<bool, Model<TensorT>> PopulationTrainer<TensorT, InterpreterT>::replicateModel_(
 		Model<TensorT>* model,
 		ModelReplicator<TensorT>* model_replicator,
-		std::string unique_str, int cnt)
+		std::string unique_str, int cnt,
+    bool remove_isolated_nodes, int prune_model_num, bool check_complete_input_to_output)
 	{
 		std::lock_guard<std::mutex> lock(replicateModel_mutex);
 
@@ -640,14 +700,14 @@ private:
 			model_copy.setName(model_name);
 
 			model_replicator->makeRandomModifications();
-			model_replicator->modifyModel(model_copy, unique_str);
+			model_replicator->modifyModel(model_copy, unique_str, prune_model_num);
 
 			// model checks
-			model_copy.removeIsolatedNodes();
-			model_copy.pruneModel(10);
-
-			// additional model checks
-			bool complete_model = model_copy.checkCompleteInputToOutput();
+      // TODO: add unit test coverage for these cases
+      if (remove_isolated_nodes)	model_copy.removeIsolatedNodes();
+			if (prune_model_num > 0) model_copy.pruneModel(prune_model_num);
+      bool complete_model = true;
+      if (check_complete_input_to_output) complete_model = model_copy.checkCompleteInputToOutput();
 
 			if (complete_model)
 				return std::make_pair(true, model_copy);
@@ -961,9 +1021,17 @@ private:
 
 			// select the top N from the population
 			std::cout << "Selecting the models..." << std::endl;
-			std::vector<std::tuple<int, std::string, TensorT>> models_validation_errors = selectModels(
-				models, model_trainer, model_interpreters, model_logger,
-				input_data_validation, output_data_validation, time_steps_validation, input_nodes);
+      std::vector<std::tuple<int, std::string, TensorT>> models_validation_errors;
+      if (select_models_) { 
+        models_validation_errors = selectModels(
+          models, model_trainer, model_interpreters, model_logger,
+          input_data_validation, output_data_validation, time_steps_validation, input_nodes);
+      }
+      else { // TODO: add unit test coverage for this case
+        for (Model<TensorT>& model : models) {
+          models_validation_errors.push_back(std::make_tuple(model.getId(), model.getName(), TensorT(-1)));
+        }
+      }
 			models_validation_errors_per_generation.push_back(models_validation_errors);
 
       // update the model replication attributes
@@ -1043,7 +1111,7 @@ private:
   template<typename TensorT, typename InterpreterT>
   inline void PopulationTrainer<TensorT, InterpreterT>::updateNEpochsTraining(ModelTrainer<TensorT, InterpreterT>& model_trainer)
   {
-    if (n_epochs_training_ > 0)
+    if (n_epochs_training_ >= 0)
       model_trainer.setNEpochsTraining(n_epochs_training_);
   }
 
