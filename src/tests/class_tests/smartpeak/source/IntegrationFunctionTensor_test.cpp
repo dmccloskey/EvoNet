@@ -1186,12 +1186,14 @@ BOOST_AUTO_TEST_CASE(operationfunctionSumWeightGradTensorOp)
 	Eigen::Tensor<float, 3> sink_error(batch_size, memory_size, sink_layer_size);
 	sink_error.setValues({ {{1}, {1}},
 		{{2}, {1}},
-		{{3}, {0}},
+		{{3}, {1}},
+    //{{3}, {0}},
 		{{4}, {0}} });
 	Eigen::Tensor<float, 3> source_output(batch_size, memory_size, source_layer_size);
 	source_output.setValues({ {{1, 1}, {1, 1}},
 		{{2, 2}, {2, 2}},
-		{{1, 1}, {0, 0}},
+		{{1, 0}, {1, 0}},
+    //{{1, 1}, {0, 0}},
 		{{2, 2}, {0, 0}} });
 	Eigen::Tensor<float, 3> source_input(batch_size, memory_size, source_layer_size);
 	source_input.setValues({ {{2, 2}, {0, 0}},
@@ -1211,7 +1213,8 @@ BOOST_AUTO_TEST_CASE(operationfunctionSumWeightGradTensorOp)
 		batch_size, memory_size, source_layer_size, sink_layer_size, device);
 
 	Eigen::Tensor<float, 2> expected(source_layer_size, sink_layer_size);
-	expected.setValues({ {-4.75}, {-4.75} });
+	expected.setValues({ {-5}, {-4} });
+  //expected.setValues({ {-4.75}, {-4.75} });
 
 	for (int source_iter = 0; source_iter < source_layer_size; ++source_iter) {
 		for (int sink_iter = 0; sink_iter < sink_layer_size; ++sink_iter) {

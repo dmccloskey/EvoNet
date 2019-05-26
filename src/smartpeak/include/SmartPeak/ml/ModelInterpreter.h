@@ -90,7 +90,7 @@ namespace SmartPeak
 		friend class cereal::access;
 		template<class Archive>
 		void serialize(Archive& archive) {
-			archive(tensor, time_step, integration, integration_error, integration_weight_grad,	activation, activation_grad);
+			archive(tensor_index, time_step, integration, integration_error, integration_weight_grad,	activation, activation_grad);
 		}
 	};
 
@@ -105,7 +105,7 @@ namespace SmartPeak
 		friend class cereal::access;
 		template<class Archive>
 		void serialize(Archive& archive) {
-			archive(tensor, weight_init, solver);
+			archive(tensor_index, weight_init, solver);
 		}
 	};
 

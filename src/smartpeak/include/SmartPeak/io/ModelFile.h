@@ -109,10 +109,6 @@ public:
 	template<typename TensorT>
 	bool ModelFile<TensorT>::storeModelBinary(const std::string & filename, const Model<TensorT>& model)
 	{
-		//auto myfile = std::fstream(filename, std::ios::out | std::ios::binary);
-		//myfile.write((char*)&model, sizeof(model));
-		//myfile.close();
-
 		std::ofstream ofs(filename, std::ios::binary);  
 		//if (ofs.is_open() == false) {// Lines check to make sure the file is not already created
 		cereal::BinaryOutputArchive oarchive(ofs); 
@@ -124,24 +120,7 @@ public:
 
 	template<typename TensorT>
 	bool ModelFile<TensorT>::loadModelBinary(const std::string & filename, Model<TensorT>& model)
-	{
-		// C++17
-		//std::uintmax_t file_size = std::filesystem::file_size(filename); 
-		//auto myfile = std::fstream(filename, std::ios::in | std::ios::binary);
-		//myfile.read((char*)&model, file_size);
-		//myfile.close();
-
-		// using the C stat header
-		//struct stat results;
-		//int err = stat(filename.data(), &results);
-		//std::uintmax_t file_size = results.st_size;
-
-		//auto myfile = std::fstream(filename, std::ios::in | std::ios::binary | std::ios::ate);
-		//std::uintmax_t file_size = myfile.tellg();
-		//myfile.seekg(0, std::ios::beg);
-		//myfile.read((char*)&model, file_size);
-		//myfile.close(); 
-		
+	{		
 		std::ifstream ifs(filename, std::ios::binary); 
 		if (ifs.is_open()) {
 			cereal::BinaryInputArchive iarchive(ifs);

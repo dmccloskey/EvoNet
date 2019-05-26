@@ -45,10 +45,6 @@ public:
 	template<typename TensorT, typename InterpreterT>
 	bool ModelInterpreterFile<TensorT, InterpreterT>::storeModelInterpreterBinary(const std::string & filename, const  InterpreterT& model_interpreter)
 	{
-		//auto myfile = std::fstream(filename, std::ios::out | std::ios::binary);
-		//myfile.write((char*)&model_interpreter, sizeof(model_interpreter));
-		//myfile.close();
-
 		std::ofstream ofs(filename, std::ios::binary);  
 		//if (ofs.is_open() == false) {// Lines check to make sure the file is not already created
 		cereal::BinaryOutputArchive oarchive(ofs); 
