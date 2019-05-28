@@ -211,7 +211,7 @@ public:
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
       //std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0.001, 0.1)),
       std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_intensity.size() + n_hidden_0) / 2, 1)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
+      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(5e-5, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
     node_names_intensity = model_builder.addFullyConnected(model, "EN_Intensity_1", "EN_Intensity_1", node_names_intensity, n_hidden_0,
       std::shared_ptr<ActivationOp<TensorT>>(new ReLUOp<TensorT>()),
       std::shared_ptr<ActivationOp<TensorT>>(new ReLUGradOp<TensorT>()),
@@ -220,7 +220,7 @@ public:
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
       //std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0.001, 0.1)),
       std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_intensity.size() + n_hidden_0) / 2, 1)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
+      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(5e-5, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
 
     // Add the encoding layers for Time and Intensity
     node_names_intensity = model_builder.addFullyConnected(model, "Encoding_Intensity", "Encoding_Intensity", node_names_intensity, n_encodings,
@@ -231,7 +231,7 @@ public:
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
       //std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0.001, 0.1)),
       std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_intensity.size() + n_encodings) / 2, 1)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
+      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(5e-5, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
 
     // Add the Decoder FC layers
     node_names_intensity = model_builder.addFullyConnected(model, "DE_Intensity_0", "DE_Intensity_0", node_names_intensity, n_hidden_0,
@@ -242,7 +242,7 @@ public:
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
       //std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0.001, 0.1)),
       std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_intensity.size() + n_hidden_0) / 2, 1)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
+      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(5e-5, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
     node_names_intensity = model_builder.addFullyConnected(model, "DE_Intensity_1", "DE_Intensity_1", node_names_intensity, n_hidden_0,
       std::shared_ptr<ActivationOp<TensorT>>(new ReLUOp<TensorT>()),
       std::shared_ptr<ActivationOp<TensorT>>(new ReLUGradOp<TensorT>()),
@@ -251,7 +251,7 @@ public:
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
       //std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0.001, 0.1)),
       std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_intensity.size() + n_hidden_0) / 2, 1)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
+      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(5e-5, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
 
     // Add the output nodes
     node_names_intensity = model_builder.addFullyConnected(model, "Intensity_Out", "Intensity_Out", node_names_intensity, n_inputs,
@@ -262,7 +262,7 @@ public:
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
       //std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0.001, 0.1)),
       std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names_intensity.size(), 1)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
+      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(5e-5, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
 
     // Specify the output node types manually
     for (const std::string& node_name : node_names_intensity) {
@@ -792,7 +792,7 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
   //model_trainer.setBatchSize(1); // evaluation only
   //model_trainer.setNEpochsTraining(0); // evaluation only
   model_trainer.setBatchSize(32);
-  model_trainer.setNEpochsTraining(5001);
+  model_trainer.setNEpochsTraining(10001);
   model_trainer.setNEpochsValidation(25);
   model_trainer.setNEpochsEvaluation(25);
   model_trainer.setMemorySize(1);
@@ -821,9 +821,9 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
   else {
     // read in the trained model
     std::cout << "Reading in the model..." << std::endl;
-    const std::string data_dir = "C:/Users/domccl/Desktop/PeakIntegrator/GPU4/";
-    const std::string model_filename = data_dir + "DenoisingAE_5000_model.binary";
-    const std::string interpreter_filename = data_dir + "DenoisingAE_5000_interpreter.binary";
+    const std::string data_dir = "C:/Users/domccl/Desktop/PeakIntegrator/GPU6/";
+    const std::string model_filename = data_dir + "DenoisingAE_10000_model.binary";
+    const std::string interpreter_filename = data_dir + "DenoisingAE_10000_interpreter.binary";
     ModelFile<float> model_file;
     model_file.loadModelBinary(model_filename, model);
     model.setId(1);
@@ -852,8 +852,8 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
 int main(int argc, char** argv)
 {
   // run the application
-  //main_DenoisingAE(false, true); //evaluation only
-  main_DenoisingAE(true, true);
+  main_DenoisingAE(false, true); //evaluation only
+  //main_DenoisingAE(true, true);
 
   return 0;
 }
