@@ -82,12 +82,9 @@ public:
 				}
 
 				// get the actual data (read row-wise)
-				for (int i = 0; i < number_of_images; ++i)
-				{
-					for (int r = 0; r < n_rows; ++r)
-					{
-						for (int c = 0; c < n_cols; ++c)
-						{
+				for (int i = 0; i < number_of_images; ++i){
+					for (int r = 0; r < n_rows; ++r){
+						for (int c = 0; c < n_cols; ++c){
 							unsigned char temp = 0;
 							file.read((char*)&temp, sizeof(temp));
 							//data(i, (n_rows*r) + c) = (TensorT)temp; // row-wise return

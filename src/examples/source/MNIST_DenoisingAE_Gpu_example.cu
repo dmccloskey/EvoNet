@@ -308,7 +308,7 @@ void main_AE(const bool& make_model, const bool& train_model) {
 
 	// define the data simulator
 	const std::size_t input_size = 784;
-	const std::size_t encoding_size = 64;
+	const std::size_t encoding_size = 2;
 	const std::size_t n_hidden = 128;
 	const std::size_t training_data_size = 60000; //60000;
 	const std::size_t validation_data_size = 10000; //10000;

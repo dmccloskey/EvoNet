@@ -64,6 +64,7 @@ set(simulator_executables_list
   DataSimulator_test
   EMGModel_test
   PeakSimulator_test
+  MNISTSimulator_test
 )
 
 ### collect test executables

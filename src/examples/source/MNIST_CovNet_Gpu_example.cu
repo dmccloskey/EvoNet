@@ -57,7 +57,7 @@ public:
         std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
         std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0.01, 0.2)),
         //std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(n_inputs, 2)),
-        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(5e-5, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, specify_layers);
+        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-5, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, specify_layers);
       if (add_norm) {
         std::string norm_name = "Norm0-" + std::to_string(d);
         node_names = model_builder.addNormalization(model, norm_name, norm_name, node_names,
@@ -98,7 +98,7 @@ public:
           std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
           std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0.01, 0.2)),
           //std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(n_inputs, 2)),
-          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(5e-5, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, specify_layers);
+          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-5, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, specify_layers);
         if (add_norm) {
           std::string norm_name = "Norm1-" + std::to_string(l_cnt) + "-" + std::to_string(d);
           node_names = model_builder.addNormalization(model, norm_name, norm_name, node_names,
@@ -143,7 +143,7 @@ public:
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
       //std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0.01, 0.2)),
       std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(180, 2)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(5e-5, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, specify_layers);
+      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-5, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, specify_layers);
     if (add_norm) {
       node_names = model_builder.addNormalization(model, "NormFC0", "NormFC0", node_names,
         std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
@@ -160,7 +160,7 @@ public:
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
       //std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0.01, 0.2)),
       std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(n_fc, 2)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(5e-5, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
+      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-5, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
 
     for (const std::string& node_name : node_names)
       model.getNodesMap().at(node_name)->setType(NodeType::output);
@@ -200,14 +200,14 @@ public:
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
       std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(n_inputs, 2)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(5e-5, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
+      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-5, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
     for (size_t d = 1; d < n_depth_1; ++d) {
       std::string conv_name = "Conv0-" + std::to_string(d);
       model_builder.addConvolution(model, "Conv0", conv_name, node_names_input, node_names_conv0,
         28, 28, 0, 0,
         5, 5, 1, 0, 0,
         std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(n_inputs, 2)),
-        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(5e-5, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, true);
+        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-5, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, true);
     }
     if (add_scalar) {
       node_names_conv0 = model_builder.addScalar(model, "Scalar0", "Scalar0", node_names_conv0, 5 * n_inputs,
@@ -228,14 +228,14 @@ public:
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
       std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(n_inputs, 2)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(5e-5, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
+      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-5, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
     for (size_t d = 1; d < n_depth_2; ++d) {
       std::string conv_name = "Conv1-" + std::to_string(d);
       model_builder.addConvolution(model, "Conv1", conv_name, node_names_conv0, node_names_conv1,
         sqrt(node_names_conv0.size()), sqrt(node_names_conv0.size()), 0, 0,
         5, 5, 1, 0, 0,
         std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(n_inputs, 2)),
-        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(5e-5, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, true);
+        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-5, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, true);
     }
     if (add_scalar) {
       node_names_conv1 = model_builder.addScalar(model, "Scalar1", "Scalar1", node_names_conv1, 5 * node_names_conv0.size(),
@@ -254,7 +254,7 @@ public:
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
       std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(180, 2)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(5e-5, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, true, true);
+      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-5, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, true, true);
     node_names = model_builder.addFullyConnected(model, "FC1", "FC1", node_names, n_outputs,
       std::shared_ptr<ActivationOp<TensorT>>(new ReLUOp<TensorT>()),
       std::shared_ptr<ActivationOp<TensorT>>(new ReLUGradOp<TensorT>()),
@@ -262,7 +262,7 @@ public:
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
       std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(n_fc, 2)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(5e-5, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, true, true);
+      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-5, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, true, true);
 
     for (const std::string& node_name : node_names)
       model.getNodesMap().at(node_name)->setType(NodeType::output);
