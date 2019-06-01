@@ -418,9 +418,8 @@ public:
 	}
 };
 
-BOOST_AUTO_TEST_CASE(DCGToy) 
+BOOST_AUTO_TEST_CASE(DCGToy1) 
 {
-
   // Define the makeModel and trainModel scripts
   DCGToyModelTrainer<float> trainer;
 
@@ -499,6 +498,40 @@ BOOST_AUTO_TEST_CASE(DCGToy)
 	BOOST_CHECK(total_error2(0) <= 1492.6);
 	BOOST_CHECK(validation_errors[0] <= 1492.6);
 	// TODO evaluateModel
+}
+
+BOOST_AUTO_TEST_CASE(DCGToy2)
+{
+  // Define the makeModel and trainModel scripts
+  DCGToyModelTrainer<float> trainer;
+
+  // Define the model resources
+  ModelResources model_resources = { ModelDevice(0, 1) };
+
+  // Test parameters
+  trainer.setBatchSize(5);
+  trainer.setMemorySize(8);
+  trainer.setNEpochsTraining(50);
+  trainer.setNEpochsValidation(50);
+  const std::vector<std::string> input_nodes = { "0", "3", "4" }; // true inputs + biases
+  const std::vector<std::string> output_nodes = { "2" };
+  trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
+  trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
+  trainer.setOutputNodes({ output_nodes });
+
+  // Make data simulator
+  DataSimulatorDCGToy<float> data_simulator;
+
+  Model<float> model1 = trainer.makeModel();
+
+  std::pair<std::vector<float>, std::vector<float>> errors = trainer.trainModel(model1, data_simulator,
+    input_nodes, ModelLogger<float>(), ModelInterpreterDefaultDevice<float>(model_resources));
+
+  const Eigen::Tensor<float, 0> total_error2 = model1.getError().sum();
+  BOOST_CHECK(total_error2(0) <= 1492.6);
+  BOOST_CHECK(errors.first.back() <= 1492.6);
+  BOOST_CHECK(errors.second.back() <= 1492.6);
+  // TODO evaluateModel
 }
 
 BOOST_AUTO_TEST_SUITE_END()
