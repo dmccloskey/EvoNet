@@ -767,7 +767,8 @@ private:
       this->adaptiveTrainerScheduler(0, iter, model, model_interpreter, model_error_training);
 
       // Generate the input and output data for validation
-      std::cout << "Generating the input/output data for validation..." << std::endl;
+      if (this->getVerbosityLevel() >= 2)
+        std::cout << "Generating the input/output data for validation..." << std::endl;
       Eigen::Tensor<TensorT, 3> input_data_validation(this->getBatchSize(), this->getMemorySize(), (int)input_nodes.size());
       Eigen::Tensor<TensorT, 3> output_data_validation(this->getBatchSize(), this->getMemorySize(), (int)output_nodes.size());
       Eigen::Tensor<TensorT, 2> time_steps_validation(this->getBatchSize(), this->getMemorySize());
@@ -810,7 +811,8 @@ private:
       model_interpreter.reInitModelError();
 
       // Generate the input and output data for training
-      std::cout << "Generating the input/output data for training..." << std::endl;
+      if (this->getVerbosityLevel() >= 2)
+        std::cout << "Generating the input/output data for training..." << std::endl;
       Eigen::Tensor<TensorT, 3> input_data_training(this->getBatchSize(), this->getMemorySize(), (int)input_nodes.size());
       Eigen::Tensor<TensorT, 3> output_data_training(this->getBatchSize(), this->getMemorySize(), (int)output_nodes.size());
       Eigen::Tensor<TensorT, 2> time_steps_training(this->getBatchSize(), this->getMemorySize());

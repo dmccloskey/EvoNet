@@ -371,7 +371,7 @@ public:
 		virtual void adaptiveReplicatorScheduler(
 			const int& n_generations,
 			std::vector<Model<TensorT>>& models,
-			std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations) = 0;
+			std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations);
 
 private:
     // modification parameters
@@ -1575,6 +1575,12 @@ private:
 		std::uniform_int_distribution<> module_deletion_gen(module_deletions_.first, module_deletions_.second);
 		setNModuleDeletions(module_deletion_gen(gen));
 	}
+
+  template<typename TensorT>
+  inline void ModelReplicator<TensorT>::adaptiveReplicatorScheduler(const int & n_generations, std::vector<Model<TensorT>>& models, std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations)
+  {
+    //TODO
+  }
 
 	template<typename TensorT>
 	void ModelReplicator<TensorT>::modifyModel(Model<TensorT>& model, std::string unique_str, int prune_iterations)
