@@ -11,16 +11,31 @@ using namespace SmartPeak;
 using namespace std;
 
 template<typename TensorT>
-class ModelTrainerExt : public ModelTrainerDefaultDevice<TensorT>
-{
+class ModelTrainerExt : public ModelTrainerDefaultDevice<TensorT>{};
+
+template<typename TensorT>
+class DataSimulatorDAGToy : public DataSimulator<TensorT> {
 public:
-	Model<TensorT> makeModel() { return Model<TensorT>(); }
-	void adaptiveTrainerScheduler(
-		const int& n_generations,
-		const int& n_epochs,
-		Model<TensorT>& model,
-		ModelInterpreterDefaultDevice<TensorT>& model_interpreter,
-		const std::vector<TensorT>& model_errors) {}
+  void simulateTrainingData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps) {
+    // Make the input data
+    input_data.setValues({ {{1, 5, 1, 1}}, {{2, 6, 1, 1}}, {{3, 7, 1, 1}}, {{4, 8, 1, 1}} });
+
+    // Make the output data
+    output_data.setValues({ {{0, 1}}, {{0, 1}}, {{0, 1}}, {{0, 1}} });
+
+    // Make the simulation time_steps
+    time_steps.setConstant(1);
+  };
+  void simulateValidationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps) {
+    // Make the input data
+    input_data.setValues({ {{1, 1, 5, 1}}, {{1, 1, 2, 6}}, {{1, 1, 3, 7}}, {{1, 1, 4, 8 }} });
+
+    // Make the output data
+    output_data.setValues({ {{1, 0}}, {{1, 0}}, {{1, 0}}, {{1, 0}} });
+
+    // Make the simulation time_steps
+    time_steps.setConstant(1);
+  };
 };
 
 BOOST_AUTO_TEST_SUITE(trainer)
@@ -201,14 +216,9 @@ public:
 		model1.addLinks({ l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4 });
 		return model1;
 	}
-	void adaptiveTrainerScheduler(
-		const int& n_generations,
-		const int& n_epochs,
-		Model<TensorT>& model,
-		ModelInterpreterDefaultDevice<TensorT>& model_interpreter,
-		const std::vector<TensorT>& model_errors) {}
 };
-BOOST_AUTO_TEST_CASE(DAGToy) 
+
+BOOST_AUTO_TEST_CASE(DAGToy1) 
 {
   // Define the makeModel and trainModel scripts
   DAGToyModelTrainer<float> trainer;
@@ -284,6 +294,40 @@ BOOST_AUTO_TEST_CASE(DAGToy)
 	BOOST_CHECK(validation_errors[0] <= 757.0);
 
 	// TODO evaluateModel
+}
+
+BOOST_AUTO_TEST_CASE(DAGToy2)
+{
+  // Define the makeModel and trainModel scripts
+  DAGToyModelTrainer<float> trainer;
+
+  // Define the model resources
+  ModelResources model_resources = { ModelDevice(0, 1) };
+
+  // Test parameters
+  trainer.setBatchSize(4);
+  trainer.setMemorySize(1);
+  trainer.setNEpochsTraining(20);
+  trainer.setNEpochsValidation(20);
+  trainer.setLogging(false, false);
+  const std::vector<std::string> input_nodes = { "0", "1", "6", "7" }; // true inputs + biases
+  const std::vector<std::string> output_nodes = { "4", "5" };
+  trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
+  trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
+  trainer.setOutputNodes({ output_nodes });
+
+  DataSimulatorDAGToy<float> data_simulator;
+
+  Model<float> model1 = trainer.makeModel();
+  std::pair<std::vector<float>, std::vector<float>> errors = trainer.trainModel(model1, data_simulator,
+    input_nodes, ModelLogger<float>(), ModelInterpreterDefaultDevice<float>(model_resources));
+
+  const Eigen::Tensor<float, 0> total_error = model1.getError().sum();
+  BOOST_CHECK(total_error(0) <= 757.0);
+  BOOST_CHECK(errors.first.back() <= 757.0);
+  BOOST_CHECK(errors.second.back() <= 486.0);
+
+  // TODO evaluateModel
 }
 
 template<typename TensorT>
