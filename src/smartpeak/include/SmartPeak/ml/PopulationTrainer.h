@@ -790,27 +790,6 @@ private:
 			{
 				++thread_cnt;
 			}
-
-			// Test to ensure threads did not affect CUDA memory
-			//try
-			//{
-			//	std::pair<bool, Model<TensorT>> status = trainModel_(&models[i], &model_trainer, &model_interpreters[thread_cnt], &model_logger_copy,
-			//		input, output, time_steps, input_nodes);        
-			//	if (status.first)
-			//	{
-			//		trained_models.push_back(status.second);
-			//	}
-			//}
-			//catch (std::exception& e)
-			//{
-			//	printf("Exception: %s", e.what());
-			//}
-			//if (thread_cnt == model_interpreters.size() - 1) {
-			//	thread_cnt = 0;
-			//}
-			//else {
-			//	++thread_cnt;
-			//}
 		}
 
 		// update models
@@ -843,11 +822,9 @@ private:
 	{
 		std::lock_guard<std::mutex> lock(trainModel_mutex);
 
-		//Model<TensorT> model_copy(*model);
 		try
 		{
 			model_trainer->trainModel(
-				//model_copy,
 				*model,
 				input, output, time_steps,
 				input_nodes, *model_logger, *model_interpreter);
