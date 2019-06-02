@@ -554,6 +554,33 @@ public:
       model_logger.writeLogs(model, n_epochs, {}, { "Error" }, {}, { model_error }, output_nodes, expected_values);
     }
   }
+  void trainingModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterGpu<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger, const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const TensorT & model_error_train, const TensorT & model_error_test)
+  {
+    // Set the defaults
+    model_logger.setLogTimeEpoch(true);
+    model_logger.setLogTrainValMetricEpoch(true);
+    model_logger.setLogExpectedPredictedEpoch(false);
+
+    // initialize all logs
+    if (n_epochs == 0) {
+      model_logger.setLogExpectedPredictedEpoch(true);
+      model_logger.initLogs(model);
+    }
+
+    // Per n epoch logging
+    if (n_epochs % 5000 == 0) {
+      model_logger.setLogExpectedPredictedEpoch(true);
+      if (model_logger.getLogExpectedPredictedEpoch())
+        model_interpreter.getModelResults(model, true, false, false);
+      model_logger.writeLogs(model, n_epochs, { "Train_Error" }, { "Test_Error" }, { model_error_train }, { model_error_test }, output_nodes, expected_values);
+    }
+    else if (n_epochs % 10 == 0) {
+      model_logger.setLogExpectedPredictedEpoch(false);
+      if (model_logger.getLogExpectedPredictedEpoch())
+        model_interpreter.getModelResults(model, true, false, false);
+      model_logger.writeLogs(model, n_epochs, { "Train_Error" }, { "Test_Error" }, { model_error_train }, { model_error_test }, output_nodes, expected_values);
+    }
+  }
 };
 
 template<typename TensorT>
@@ -637,6 +664,70 @@ public:
     }
     time_steps.setConstant(1.0f);
   }
+  void simulateTrainingData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps)
+  {
+    // infer data dimensions based on the input tensors
+    const int batch_size = input_data.dimension(0);
+    const int memory_size = input_data.dimension(1);
+    const int n_input_nodes = input_data.dimension(2);
+    const int n_output_nodes = output_data.dimension(2);
+
+    assert(n_output_nodes == n_input_nodes);
+
+    // Reformat the Chromatogram for training
+    for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
+      for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
+
+        std::vector<TensorT> chrom_time, chrom_intensity, chrom_time_test, chrom_intensity_test;
+        std::vector<std::pair<TensorT, TensorT>> best_lr;
+
+        // make the chrom and noisy chrom
+        this->simulateChromatogram(chrom_time_test, chrom_intensity_test, chrom_time, chrom_intensity, best_lr,
+          step_size_mu_, step_size_sigma_, chrom_window_size_,
+          noise_mu_, noise_sigma_, baseline_height_,
+          n_peaks_, emg_h_, emg_tau_, emg_mu_offset_, emg_sigma_);
+
+        for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
+          input_data(batch_iter, memory_iter, nodes_iter) = chrom_intensity[nodes_iter];  //intensity
+          output_data(batch_iter, memory_iter, nodes_iter) = chrom_intensity_test[nodes_iter];  //intensity
+          assert(chrom_intensity[nodes_iter] == chrom_intensity_test[nodes_iter]);
+        }
+      }
+    }
+
+    time_steps.setConstant(1.0f);
+  }
+  void simulateValidationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps)
+  {
+    // infer data dimensions based on the input tensors
+    const int batch_size = input_data.dimension(0);
+    const int memory_size = input_data.dimension(1);
+    const int n_input_nodes = input_data.dimension(2);
+    const int n_output_nodes = output_data.dimension(2);
+
+    assert(n_output_nodes == n_input_nodes);
+
+    // Reformat the Chromatogram for training
+    for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
+      for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
+
+        std::vector<TensorT> chrom_time, chrom_intensity, chrom_time_test, chrom_intensity_test;
+        std::vector<std::pair<TensorT, TensorT>> best_lr;
+
+        // make the chrom and noisy chrom
+        this->simulateChromatogram(chrom_time_test, chrom_intensity_test, chrom_time, chrom_intensity, best_lr,
+          step_size_mu_, step_size_sigma_, chrom_window_size_,
+          noise_mu_, noise_sigma_, baseline_height_,
+          n_peaks_, emg_h_, emg_tau_, emg_mu_offset_, emg_sigma_);
+
+        for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
+          input_data(batch_iter, memory_iter, nodes_iter) = chrom_intensity[nodes_iter];  //intensity
+          output_data(batch_iter, memory_iter, nodes_iter) = chrom_intensity_test[nodes_iter];  //intensity
+        }
+      }
+    }
+    time_steps.setConstant(1.0f);
+  }
 
   /// public members that are passed to simulate methods
   std::pair<TensorT, TensorT> step_size_mu_ = std::make_pair(1, 1);
@@ -654,40 +745,11 @@ public:
 
 template<typename TensorT>
 class ModelReplicatorExt : public ModelReplicator<TensorT>
-{
-public:
-  void adaptiveReplicatorScheduler(
-    const int& n_generations,
-    std::vector<Model<TensorT>>& models,
-    std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations)
-  { //TODO
-  }
-};
+{};
 
 template<typename TensorT>
 class PopulationTrainerExt : public PopulationTrainerGpu<TensorT>
-{
-public:
-  void adaptivePopulationScheduler(
-    const int& n_generations,
-    std::vector<Model<TensorT>>& models,
-    std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations)
-  {
-    //// Population size of 16
-    //if (n_generations == 0)
-    //{
-    //	this->setNTop(3);
-    //	this->setNRandom(3);
-    //	this->setNReplicatesPerModel(15);
-    //}
-    //else
-    //{
-    //	this->setNTop(3);
-    //	this->setNRandom(3);
-    //	this->setNReplicatesPerModel(3);
-    //}
-  }
-};
+{};
 
 void main_DenoisingAE(const bool& make_model, const bool& train_model) {
 
@@ -710,7 +772,7 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
 
   // define the data simulator
   const std::size_t input_size = 512;
-  const std::size_t encoding_size = 64;
+  const std::size_t encoding_size = 16;
   DataSimulatorExt<float> data_simulator;
 
   // Hard
@@ -791,8 +853,8 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
   ModelTrainerExt<float> model_trainer;
   //model_trainer.setBatchSize(1); // evaluation only
   //model_trainer.setNEpochsTraining(0); // evaluation only
-  model_trainer.setBatchSize(32);
-  model_trainer.setNEpochsTraining(10001);
+  model_trainer.setBatchSize(8);
+  model_trainer.setNEpochsTraining(100001);
   model_trainer.setNEpochsValidation(25);
   model_trainer.setNEpochsEvaluation(25);
   model_trainer.setMemorySize(1);
@@ -814,7 +876,7 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
   std::cout << "Initializing the population..." << std::endl;
   Model<float> model;
   if (make_model) {
-    model_trainer.makeDenoisingAE(model, input_size, encoding_size, 128);
+    model_trainer.makeDenoisingAE(model, input_size, encoding_size, 64);
     //model_trainer.makeMultiHeadDotProdAttention(model, input_size, input_size, { 16, 16 }, { 48, 48 }, { (int)input_size, (int)input_size }, false, false, false);
     //model_trainer.makeCompactCovNetAE(model, input_size, input_size, encoding_size, 1, 1, false);
   }
@@ -834,13 +896,20 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
   std::vector<Model<float>> population = { model };
 
   if (train_model) {
-    // Evolve the population
-    std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
-      population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, population_logger, input_nodes);
+    // Train the model
+    std::pair<std::vector<float>, std::vector<float>> model_errors = model_trainer.trainModel(model, data_simulator,
+      input_nodes, model_logger, model_interpreters.front());
 
     PopulationTrainerFile<float> population_trainer_file;
     population_trainer_file.storeModels(population, "PeakIntegrator");
-    population_trainer_file.storeModelValidations("PeakIntegrator_Errors.csv", models_validation_errors_per_generation);
+
+    //// Evolve the population
+    //std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
+    //  population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, population_logger, input_nodes);
+
+    //PopulationTrainerFile<float> population_trainer_file;
+    //population_trainer_file.storeModels(population, "PeakIntegrator");
+    //population_trainer_file.storeModelValidations("PeakIntegrator_Errors.csv", models_validation_errors_per_generation);
   }
   else {
     // Evaluate the population
@@ -852,8 +921,8 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
 int main(int argc, char** argv)
 {
   // run the application
-  main_DenoisingAE(false, true); //evaluation only
-  //main_DenoisingAE(true, true);
+  //main_DenoisingAE(false, true); //evaluation only
+  main_DenoisingAE(true, true);
 
   return 0;
 }

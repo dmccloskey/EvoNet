@@ -585,6 +585,41 @@ BOOST_AUTO_TEST_CASE(clearCache)
   // No tests
 }
 
+BOOST_AUTO_TEST_CASE(setInputAndOutputNodes)
+{
+  Node<float> i1, i2, o1, o2;
+  i1 = Node<float>("i1", NodeType::input, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+  i2 = Node<float>("i2", NodeType::hidden, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+  o1 = Node<float>("o1", NodeType::output, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new TanHOp<float>()), std::shared_ptr<ActivationOp<float>>(new TanHGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+  o2 = Node<float>("o2", NodeType::hidden, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new TanHOp<float>()), std::shared_ptr<ActivationOp<float>>(new TanHGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+  
+  std::vector<std::string> input_nodes = { "i1", "i2" };
+  std::vector<std::string> output_nodes = { "o1", "o2" };
+
+  // model 1: fully connected model
+  Model<float> model1;
+  model1.addNodes({ i1, i2, o1, o2 });
+
+  BOOST_CHECK_EQUAL(model1.getInputNodes().size(), 1);
+  BOOST_CHECK_EQUAL(model1.getOutputNodes().size(), 1);
+
+  // Specify the node types manually
+  for (const std::string& node_name : output_nodes) {
+    model1.nodes_.at(node_name)->setType(NodeType::output);
+  }
+  for (const std::string& node_name : input_nodes) {
+    model1.nodes_.at(node_name)->setType(NodeType::input);
+  }
+  model1.setInputAndOutputNodes();
+  BOOST_CHECK_EQUAL(model1.getInputNodes().size(), 2);
+  BOOST_CHECK_EQUAL(model1.getOutputNodes().size(), 2);
+
+  BOOST_CHECK(model1.getInputNodes()[0] == model1.getNodesMap().at("i1"));
+  BOOST_CHECK(model1.getInputNodes()[1] == model1.getNodesMap().at("i2"));
+  BOOST_CHECK(model1.getOutputNodes()[0] == model1.getNodesMap().at("o1"));
+  BOOST_CHECK(model1.getOutputNodes()[1] == model1.getNodesMap().at("o2"));
+}
+
 BOOST_AUTO_TEST_CASE(getInputAndOutputNodes)
 {
 	Node<float> i1, i2, o1, o2;

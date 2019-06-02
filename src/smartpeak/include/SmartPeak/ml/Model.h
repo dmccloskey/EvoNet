@@ -87,6 +87,7 @@ public:
     void setName(const std::string& name); ///< name setter
     std::string getName() const; ///< name getter
 
+    void setInputAndOutputNodes(); ///< iterate through the model nodes and record the input and output nodes
 		std::vector<std::shared_ptr<Node<TensorT>>> getInputNodes(); ///< input_node getter
 		std::vector<std::shared_ptr<Node<TensorT>>> getOutputNodes(); ///< output_node getter
 		std::vector<std::string> getOutputNodeNames() const;
@@ -332,6 +333,23 @@ public:
 	{
 		return input_nodes_;
 	}
+
+  template<typename TensorT>
+  inline void Model<TensorT>::setInputAndOutputNodes()
+  {
+    for (auto& node : nodes_) {
+      if (node.second->getType() == NodeType::input &&
+        std::count(input_nodes_.begin(), input_nodes_.end(), node.second) == 0) {
+        std::shared_ptr<Node<TensorT>> node_ptr_cpy = node.second;
+        input_nodes_.push_back(node_ptr_cpy);
+      }
+      else if (node.second->getType() == NodeType::output &&
+        std::count(output_nodes_.begin(), output_nodes_.end(), node.second) == 0) {
+        std::shared_ptr<Node<TensorT>> node_ptr_cpy = node.second;
+        output_nodes_.push_back(node_ptr_cpy);
+      }
+    }
+  }
 
 	template<typename TensorT>
 	inline std::vector<std::shared_ptr<Node<TensorT>>> Model<TensorT>::getOutputNodes()
