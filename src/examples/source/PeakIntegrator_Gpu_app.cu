@@ -204,73 +204,74 @@ public:
 
     // Add the Encoder FC layers for Time and intensity
     node_names_intensity = model_builder.addFullyConnected(model, "EN_Intensity_0", "EN_Intensity_0", node_names_intensity, n_hidden_0,
-      std::shared_ptr<ActivationOp<TensorT>>(new ReLUOp<TensorT>()),
-      std::shared_ptr<ActivationOp<TensorT>>(new ReLUGradOp<TensorT>()),
+      std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
+      std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
       std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
       //std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0.001, 0.1)),
       std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_intensity.size() + n_hidden_0) / 2, 1)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(5e-5, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
+      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-6, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
     node_names_intensity = model_builder.addFullyConnected(model, "EN_Intensity_1", "EN_Intensity_1", node_names_intensity, n_hidden_0,
-      std::shared_ptr<ActivationOp<TensorT>>(new ReLUOp<TensorT>()),
-      std::shared_ptr<ActivationOp<TensorT>>(new ReLUGradOp<TensorT>()),
+      std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
+      std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
       std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
       //std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0.001, 0.1)),
       std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_intensity.size() + n_hidden_0) / 2, 1)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(5e-5, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
+      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-6, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
 
     // Add the encoding layers for Time and Intensity
     node_names_intensity = model_builder.addFullyConnected(model, "Encoding_Intensity", "Encoding_Intensity", node_names_intensity, n_encodings,
-      std::shared_ptr<ActivationOp<TensorT>>(new ReLUOp<TensorT>()),
-      std::shared_ptr<ActivationOp<TensorT>>(new ReLUGradOp<TensorT>()),
+      std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
+      std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
       std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
       //std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0.001, 0.1)),
       std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_intensity.size() + n_encodings) / 2, 1)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(5e-5, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
+      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-6, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
 
     // Add the Decoder FC layers
     node_names_intensity = model_builder.addFullyConnected(model, "DE_Intensity_0", "DE_Intensity_0", node_names_intensity, n_hidden_0,
-      std::shared_ptr<ActivationOp<TensorT>>(new ReLUOp<TensorT>()),
-      std::shared_ptr<ActivationOp<TensorT>>(new ReLUGradOp<TensorT>()),
+      std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
+      std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
       std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
       //std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0.001, 0.1)),
       std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_intensity.size() + n_hidden_0) / 2, 1)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(5e-5, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
+      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-6, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
     node_names_intensity = model_builder.addFullyConnected(model, "DE_Intensity_1", "DE_Intensity_1", node_names_intensity, n_hidden_0,
-      std::shared_ptr<ActivationOp<TensorT>>(new ReLUOp<TensorT>()),
-      std::shared_ptr<ActivationOp<TensorT>>(new ReLUGradOp<TensorT>()),
+      std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
+      std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
       std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
       //std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0.001, 0.1)),
       std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_intensity.size() + n_hidden_0) / 2, 1)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(5e-5, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
+      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-6, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
 
     // Add the output nodes
     node_names_intensity = model_builder.addFullyConnected(model, "Intensity_Out", "Intensity_Out", node_names_intensity, n_inputs,
-      std::shared_ptr<ActivationOp<TensorT>>(new ReLUOp<TensorT>()),
-      std::shared_ptr<ActivationOp<TensorT>>(new ReLUGradOp<TensorT>()),
+      std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
+      std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
       std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
       //std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0.001, 0.1)),
       std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names_intensity.size(), 1)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(5e-5, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
+      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-6, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
 
     // Specify the output node types manually
     for (const std::string& node_name : node_names_intensity) {
       model.nodes_.at(node_name)->setType(NodeType::output);
     }
+    model.setInputAndOutputNodes();
 
-    if (!model.checkCompleteInputToOutput())
-      std::cout << "Model input and output are not fully connected!" << std::endl;
+    //if (!model.checkCompleteInputToOutput())
+    //  std::cout << "Model input and output are not fully connected!" << std::endl;
   }
   void makeMultiHeadDotProdAttention(Model<TensorT>& model, const int& n_inputs, const int& n_outputs,
     std::vector<int> n_heads = { 8, 8 },
@@ -853,7 +854,7 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
   ModelTrainerExt<float> model_trainer;
   //model_trainer.setBatchSize(1); // evaluation only
   //model_trainer.setNEpochsTraining(0); // evaluation only
-  model_trainer.setBatchSize(8);
+  model_trainer.setBatchSize(16);
   model_trainer.setNEpochsTraining(100001);
   model_trainer.setNEpochsValidation(25);
   model_trainer.setNEpochsEvaluation(25);
@@ -881,15 +882,24 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
     //model_trainer.makeCompactCovNetAE(model, input_size, input_size, encoding_size, 1, 1, false);
   }
   else {
-    // read in the trained model
     std::cout << "Reading in the model..." << std::endl;
-    const std::string data_dir = "C:/Users/domccl/Desktop/PeakIntegrator/GPU6/";
-    const std::string model_filename = data_dir + "DenoisingAE_10000_model.binary";
-    const std::string interpreter_filename = data_dir + "DenoisingAE_10000_interpreter.binary";
+    const std::string data_dir = "C:/Users/domccl/Desktop/PeakIntegrator/GPU8/";
+    //const std::string model_filename = data_dir + "DenoisingAE_23000_model.binary";
+    //const std::string interpreter_filename = data_dir + "DenoisingAE_23000_interpreter.binary";
+    const std::string model_filename = data_dir + "PeakInt-0_9000_model.binary";
+    const std::string interpreter_filename = data_dir + "PeakInt-0_9000_interpreter.binary";
+
+    // read in and modify the model
     ModelFile<float> model_file;
     model_file.loadModelBinary(model_filename, model);
     model.setId(1);
-    model.setName("PeakInt-0");
+    //model.setName("PeakInt-0");
+    model.setName("PeakInt-1");
+    for (auto& weight : model.weights_) {
+      weight.second->getSolverOp()->setLearningRate(1e-8);
+    }
+
+    // read in the model interpreter data
     ModelInterpreterFileGpu<float> model_interpreter_file;
     model_interpreter_file.loadModelInterpreterBinary(interpreter_filename, model_interpreters[0]); // FIX ME!
   }
@@ -921,8 +931,8 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
 int main(int argc, char** argv)
 {
   // run the application
-  //main_DenoisingAE(false, true); //evaluation only
-  main_DenoisingAE(true, true);
+  main_DenoisingAE(false, true);
+  //main_DenoisingAE(true, true);
 
   return 0;
 }
