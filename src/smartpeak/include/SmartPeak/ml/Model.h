@@ -283,7 +283,7 @@ public:
 		template<class Archive>
 		void serialize(Archive& archive)
 		{
-			archive(id_, name_, batch_size_, memory_size_, cyclic_pairs_,
+			archive(id_, name_, batch_size_, memory_size_, input_nodes_, output_nodes_, cyclic_pairs_,
 				links_, nodes_, weights_
 			);
 		}

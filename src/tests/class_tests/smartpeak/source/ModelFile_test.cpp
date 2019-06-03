@@ -91,7 +91,6 @@ Model<float> makeModel1()
 	model1.addLinks({ l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4 });
 	return model1;
 }
-Model<float> model1 = makeModel1();
 
 BOOST_AUTO_TEST_CASE(constructor) 
 {
@@ -114,6 +113,7 @@ BOOST_AUTO_TEST_CASE(storeModelDot)
 
 	std::string filename = "ModelFileTest.gv";
 
+  Model<float> model1 = makeModel1();
 	data.storeModelDot(filename, model1);
 }
 
@@ -128,6 +128,7 @@ BOOST_AUTO_TEST_CASE(loadModelCsv)
 	std::string filename_links = "ModelLinkFileTest.csv";
 	std::string filename_weights = "ModelWeightFileTest.csv";
 
+  Model<float> model1 = makeModel1();
 	data.storeModelCsv(filename_nodes, filename_links, filename_weights, model1);
 
 	data.loadModelCsv(filename_nodes, filename_links, filename_weights, model_test);
@@ -136,6 +137,8 @@ BOOST_AUTO_TEST_CASE(loadModelCsv)
 	BOOST_CHECK(model_test.getNodes() == model1.getNodes());
 	BOOST_CHECK(model_test.getLinks() == model1.getLinks());
 	//BOOST_CHECK(model_test.getWeights() == model1.getWeights());  // Broke
+  BOOST_CHECK(model_test.getInputNodes().size() == model1.getInputNodes().size()); // Not sure why this fails
+  BOOST_CHECK(model_test.getOutputNodes().size() == model1.getOutputNodes().size()); // Not sure why this fails
 	//BOOST_CHECK(model_test == model1); // Not sure why this fails
 }
 
@@ -143,11 +146,10 @@ BOOST_AUTO_TEST_CASE(loadModelBinary)
 {
 	ModelFile<float> data;
 	Model<float> model_test;
-	model_test.setId(1);
-	model_test.setName("1");
 
 	std::string filename = "ModelFileTest.binary";
 
+  Model<float> model1 = makeModel1();
 	data.storeModelBinary(filename, model1);
 
 	data.loadModelBinary(filename, model_test);
@@ -156,6 +158,8 @@ BOOST_AUTO_TEST_CASE(loadModelBinary)
 	BOOST_CHECK(model_test.getNodes() == model1.getNodes());
 	BOOST_CHECK(model_test.getLinks() == model1.getLinks());
 	BOOST_CHECK(model_test.getWeights() == model1.getWeights());
+  BOOST_CHECK(model_test.getInputNodes().size() == model1.getInputNodes().size()); // Not sure why this fails
+  BOOST_CHECK(model_test.getOutputNodes().size() == model1.getOutputNodes().size()); // Not sure why this fails
 	//BOOST_CHECK(model_test == model1);
 }
 

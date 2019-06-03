@@ -161,6 +161,7 @@ public:
 			std::map<std::string, std::shared_ptr<Node<TensorT>>> nodes;
 			node_file.loadNodesCsv(filename_nodes, nodes);
 			model.nodes_ = nodes;
+      model.setInputAndOutputNodes(); // Need to initialize the input/output node cache
 		}
 
 		// load the links
