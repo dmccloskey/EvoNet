@@ -886,18 +886,19 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
     const std::string data_dir = "C:/Users/domccl/Desktop/PeakIntegrator/GPU8/";
     //const std::string model_filename = data_dir + "DenoisingAE_23000_model.binary";
     //const std::string interpreter_filename = data_dir + "DenoisingAE_23000_interpreter.binary";
-    const std::string model_filename = data_dir + "PeakInt-0_9000_model.binary";
-    const std::string interpreter_filename = data_dir + "PeakInt-0_9000_interpreter.binary";
+    const std::string model_filename = data_dir + "PeakInt-1_10000_model.binary";
+    const std::string interpreter_filename = data_dir + "PeakInt-1_10000_interpreter.binary";
 
     // read in and modify the model
     ModelFile<float> model_file;
     model_file.loadModelBinary(model_filename, model);
     model.setId(1);
     //model.setName("PeakInt-0");
-    model.setName("PeakInt-1");
+    model.setName("PeakInt-2");
     for (auto& weight : model.weights_) {
-      weight.second->getSolverOp()->setLearningRate(1e-8);
+      weight.second->getSolverOp()->setLearningRate(1e-9);
     }
+    model.setInputAndOutputNodes();
 
     // read in the model interpreter data
     ModelInterpreterFileGpu<float> model_interpreter_file;

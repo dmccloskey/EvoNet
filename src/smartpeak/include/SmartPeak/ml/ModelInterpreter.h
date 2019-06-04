@@ -367,8 +367,9 @@ namespace SmartPeak
 		@param[in] node_type [Currently not used]
 		@param[in] node_integration
 		@param[in] node_activation
-		@param[in] layer_name
-		@param[in] layer_index
+		@param[in] node_layer_name
+		@param[in] node_layer_index
+		@param[in] weight_layer_name
 		*/
 		static std::string makeForwardPropogationOperationsKey(const int & time_step, const NodeType& node_type, const std::string & node_integration, const std::string & node_activation,
 			const std::string& node_layer_name, const int& node_layer_index, const std::string& weight_layer_name);
