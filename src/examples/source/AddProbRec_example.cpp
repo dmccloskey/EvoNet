@@ -97,6 +97,47 @@ public:
 	void simulateTrainingData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)	{	simulateData(input_data, output_data, time_steps); }
 	void simulateValidationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)	{	simulateData(input_data, output_data, time_steps); }
 	void simulateEvaluationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 3>& time_steps) {};
+  void simulateData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps)
+  {
+    // infer data dimensions based on the input tensors
+    const int batch_size = input_data.dimension(0);
+    const int memory_size = input_data.dimension(1);
+    const int n_input_nodes = input_data.dimension(2);
+    const int n_output_nodes = output_data.dimension(2);
+
+    // Generate the input and output data for training [BUG FREE]
+    for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
+
+      // generate a new sequence 
+      // TODO: ensure that the this->sequence_length_ >= memory_size!
+      Eigen::Tensor<float, 1> random_sequence(this->sequence_length_);
+      Eigen::Tensor<float, 1> mask_sequence(this->sequence_length_);
+      float result = this->AddProb(random_sequence, mask_sequence, this->n_mask_);
+      Eigen::Tensor<float, 1> cumulative(this->sequence_length_);
+      cumulative.setZero();
+
+      float result_cumulative = 0.0;
+
+      for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
+        // determine the cumulative vector
+        result_cumulative += random_sequence(memory_iter) * mask_sequence(memory_iter);
+        cumulative(memory_iter) = result_cumulative;
+      }
+      //for (int memory_iter = memory_size - 1; memory_iter >= 0; --memory_iter) {
+      for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
+        // assign the input sequences
+        input_data(batch_iter, memory_iter, 0) = random_sequence(memory_size - memory_iter - 1); // random sequence
+        input_data(batch_iter, memory_iter, 1) = mask_sequence(memory_size - memory_iter - 1); // mask sequence
+
+        // assign the output
+        output_data(batch_iter, memory_iter, 0) = cumulative(memory_size - memory_iter - 1);
+      }
+    }
+
+    time_steps.setConstant(1.0f);
+  }
+  void simulateTrainingData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps) { simulateData(input_data, output_data, time_steps); }
+  void simulateValidationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps) { simulateData(input_data, output_data, time_steps); }
 };
 
 // Extended classes
@@ -620,100 +661,121 @@ public:
 	}
 };
 
+void main_AddProbRec(const std::string& mode) {
+  // define the population trainer parameters
+  PopulationTrainerExt<float> population_trainer;
+  population_trainer.setNGenerations(50); // population training
+  //population_trainer.setNGenerations(1); // single model training
+  population_trainer.setLogging(true);
+
+  // define the population logger
+  PopulationLogger<float> population_logger(true, true);
+
+  // define the multithreading parameters
+  const int n_hard_threads = std::thread::hardware_concurrency();
+  const int n_threads = n_hard_threads; // the number of threads
+
+  // define the input/output nodes
+  std::vector<std::string> input_nodes = { "Input_000000000000", "Input_000000000001" };
+  std::vector<std::string> output_nodes = { "Output_000000000000" };
+
+  // define the data simulator
+  DataSimulatorExt<float> data_simulator;
+  data_simulator.n_mask_ = 2;
+  data_simulator.sequence_length_ = 25;
+
+  // define the model trainers and resources for the trainers
+  std::vector<ModelInterpreterDefaultDevice<float>> model_interpreters;
+  for (size_t i = 0; i < n_threads; ++i) {
+    ModelResources model_resources = { ModelDevice(0, 1) };
+    ModelInterpreterDefaultDevice<float> model_interpreter(model_resources);
+    model_interpreters.push_back(model_interpreter);
+  }
+  ModelTrainerExt<float> model_trainer;
+  model_trainer.setBatchSize(32);
+  model_trainer.setMemorySize(data_simulator.sequence_length_);
+  //model_trainer.setNEpochsTraining(100); // population training
+  model_trainer.setNEpochsTraining(5000); // single model training
+  model_trainer.setNEpochsValidation(25);
+  model_trainer.setNTETTSteps(data_simulator.sequence_length_);
+  model_trainer.setNTBPTTSteps(data_simulator.sequence_length_);
+  model_trainer.setVerbosityLevel(1);
+  model_trainer.setFindCycles(true);
+  model_trainer.setLogging(true, false);
+  model_trainer.setPreserveOoO(true);
+  model_trainer.setFastInterpreter(false);
+  model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
+  model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
+  model_trainer.setOutputNodes({ output_nodes });
+
+  // define the model logger
+  ModelLogger<float> model_logger(true, true, false, false, false, false, false, false);
+
+  // define the model replicator for growth mode
+  ModelReplicatorExt<float> model_replicator;
+  model_replicator.setNodeActivations({ std::make_pair(std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>())),
+    std::make_pair(std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>())),
+    std::make_pair(std::shared_ptr<ActivationOp<float>>(new ELUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ELUGradOp<float>())),
+    std::make_pair(std::shared_ptr<ActivationOp<float>>(new SigmoidOp<float>()), std::shared_ptr<ActivationOp<float>>(new SigmoidGradOp<float>())),
+    std::make_pair(std::shared_ptr<ActivationOp<float>>(new TanHOp<float>()), std::shared_ptr<ActivationOp<float>>(new TanHGradOp<float>()))//,
+    //std::make_pair(std::shared_ptr<ActivationOp<float>>(new ExponentialOp<float>()), std::shared_ptr<ActivationOp<float>>(new ExponentialGradOp<float>())),
+    //std::make_pair(std::shared_ptr<ActivationOp<float>>(new LogOp<float>()), std::shared_ptr<ActivationOp<float>>(new LogGradOp<float>())),
+    //std::make_pair(std::shared_ptr<ActivationOp<float>>(new InverseOp<float>()), std::shared_ptr<ActivationOp<float>>(new InverseGradOp<float>()))
+    });
+  model_replicator.setNodeIntegrations({ std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new ProdOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new ProdErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new ProdWeightGradOp<float>())),
+    std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>())),
+    //std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new MeanOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new MeanErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new MeanWeightGradOp<float>())),
+    //std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new VarModOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new VarModErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new VarModWeightGradOp<float>())),
+    //std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new CountOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new CountErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new CountWeightGradOp<float>()))
+    });
+
+  if (mode == "evolve_population") {
+    // define the initial population [BUG FREE]
+    std::cout << "Initializing the population..." << std::endl;
+    std::vector<Model<float>> population;
+
+    // make the model name
+    Model<float> model;
+    model_trainer.makeModelMinimal(model);
+    //model_trainer.makeModelSolution(model, false);
+    //model_trainer.makeModelLSTM(model, input_nodes.size(), 1, 1);
+    char model_name_char[512];
+    sprintf(model_name_char, "%s_%d", model.getName().data(), 0);
+    std::string model_name(model_name_char);
+    model.setName(model_name);
+    model.setId(0);
+    population.push_back(model);
+
+    // Evolve the population
+    std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
+      population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, population_logger, input_nodes);
+
+    PopulationTrainerFile<float> population_trainer_file;
+    population_trainer_file.storeModels(population, "AddProb");
+    population_trainer_file.storeModelValidations("AddProbValidationErrors.csv", models_validation_errors_per_generation);
+  }
+  else if (mode == "train_single_model") {
+    // Read in the model from .csv
+    const std::string data_dir = "C:/Users/domccl/Desktop/EvoNetExp/AddProb_Rec_CPU/FromMinimalModel/CPU13_BestModel/";
+    std::string filename_nodes = "MemoryCell_0@replicateModel#9_12_2019-05-28-09-32-36_14_nodes.csv";
+    std::string filename_links = "MemoryCell_0@replicateModel#9_12_2019-05-28-09-32-36_14_links.csv";
+    std::string filename_weights = "MemoryCell_0@replicateModel#9_12_2019-05-28-09-32-36_14_weights.csv";
+    Model<float> model;
+    model.setId(1);
+    model.setName("MemoryCell_0@replicateModel#9_12_2019-05-28-09-32-36_14");
+    ModelFile<float> data;
+    data.loadModelCsv(data_dir + filename_nodes, data_dir + filename_links, data_dir + filename_weights, model);
+
+    // Train the model
+    std::pair<std::vector<float>, std::vector<float>> model_errors = model_trainer.trainModel(model, data_simulator,
+      input_nodes, model_logger, model_interpreters.front());
+  }
+}
+
 // Main
 int main(int argc, char** argv)
 {
-	// define the population trainer parameters
-	PopulationTrainerExt<float> population_trainer;
-	population_trainer.setNGenerations(50); // population training
-	//population_trainer.setNGenerations(1); // single model training
-	population_trainer.setLogging(true);
-
-	// define the population logger
-	PopulationLogger<float> population_logger(true, true);
-
-	// define the multithreading parameters
-	const int n_hard_threads = std::thread::hardware_concurrency();
-	const int n_threads = n_hard_threads; // the number of threads
-
-	// define the input/output nodes
-	std::vector<std::string> input_nodes = { "Input_000000000000", "Input_000000000001" };
-	std::vector<std::string> output_nodes = { "Output_000000000000" };
-
-	// define the data simulator
-	DataSimulatorExt<float> data_simulator;
-	data_simulator.n_mask_ = 2;
-	data_simulator.sequence_length_ = 25;
-
-	// define the model trainers and resources for the trainers
-	std::vector<ModelInterpreterDefaultDevice<float>> model_interpreters;
-	for (size_t i = 0; i < n_threads; ++i) {
-		ModelResources model_resources = { ModelDevice(0, 1) };
-		ModelInterpreterDefaultDevice<float> model_interpreter(model_resources);
-		model_interpreters.push_back(model_interpreter);
-	}
-	ModelTrainerExt<float> model_trainer;
-  model_trainer.setBatchSize(32);
-	model_trainer.setMemorySize(data_simulator.sequence_length_);
-	model_trainer.setNEpochsTraining(100); // population training
-  //model_trainer.setNEpochsTraining(1000); // single model training
-	model_trainer.setNEpochsValidation(25);
-  model_trainer.setNTETTSteps(data_simulator.sequence_length_);
-  model_trainer.setNTBPTTSteps(data_simulator.sequence_length_);
-	model_trainer.setVerbosityLevel(1);
-	model_trainer.setFindCycles(true);
-	model_trainer.setLogging(true, false);
-	model_trainer.setPreserveOoO(true);
-	model_trainer.setFastInterpreter(false);
-	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
-	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
-	model_trainer.setOutputNodes({ output_nodes });
-
-	// define the model logger
-	ModelLogger<float> model_logger(true, true, true, false, false, false, false, false);
-	//ModelLogger<float> model_logger(true, true, false, false, false, false, false, false);
-
-	// define the model replicator for growth mode
-	ModelReplicatorExt<float> model_replicator;
-	model_replicator.setNodeActivations({ std::make_pair(std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>())),
-		std::make_pair(std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>())),
-		//std::make_pair(std::shared_ptr<ActivationOp<float>>(new ELUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ELUGradOp<float>())),
-		std::make_pair(std::shared_ptr<ActivationOp<float>>(new SigmoidOp<float>()), std::shared_ptr<ActivationOp<float>>(new SigmoidGradOp<float>())),
-		std::make_pair(std::shared_ptr<ActivationOp<float>>(new TanHOp<float>()), std::shared_ptr<ActivationOp<float>>(new TanHGradOp<float>()))//,
-		//std::make_pair(std::shared_ptr<ActivationOp<float>>(new ExponentialOp<float>()), std::shared_ptr<ActivationOp<float>>(new ExponentialGradOp<float>())),
-		//std::make_pair(std::shared_ptr<ActivationOp<float>>(new LogOp<float>()), std::shared_ptr<ActivationOp<float>>(new LogGradOp<float>())),
-		//std::make_pair(std::shared_ptr<ActivationOp<float>>(new InverseOp<float>()), std::shared_ptr<ActivationOp<float>>(new InverseGradOp<float>()))
-		});
-	model_replicator.setNodeIntegrations({ std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new ProdOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new ProdErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new ProdWeightGradOp<float>())),
-		std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>())),
-		//std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new MeanOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new MeanErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new MeanWeightGradOp<float>())),
-		//std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new VarModOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new VarModErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new VarModWeightGradOp<float>())),
-		//std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new CountOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new CountErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new CountWeightGradOp<float>()))
-		});
-
-	// define the initial population [BUG FREE]
-	std::cout << "Initializing the population..." << std::endl;
-	std::vector<Model<float>> population;
-
-	// make the model name
-  Model<float> model;
-  model_trainer.makeModelMinimal(model);
-  //model_trainer.makeModelSolution(model, false);
-  //model_trainer.makeModelLSTM(model, input_nodes.size(), 1, 1);
-	char model_name_char[512];
-	sprintf(model_name_char, "%s_%d", model.getName().data(), 0);
-	std::string model_name(model_name_char);
-	model.setName(model_name);
-	model.setId(0);
-	population.push_back(model);
-
-	// Evolve the population
-	std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
-		population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, population_logger, input_nodes);
-
-	PopulationTrainerFile<float> population_trainer_file;
-	population_trainer_file.storeModels(population, "AddProb");
-	population_trainer_file.storeModelValidations("AddProbValidationErrors.csv", models_validation_errors_per_generation);
-
+  main_AddProbRec("evolve_population");
+  //main_AddProbRec("train_single_model");
 	return 0;
 }

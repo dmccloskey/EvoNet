@@ -100,7 +100,7 @@ public:
 		@brief SGD solver operator
 
 		@params weights Data for the weight tensor
-		@params errorr Data for the weight tensor errors
+		@params error Data for the weight tensor errors
 		@params solver_params Data for the solver params (Dim 2, size 3: learning rate, momentum, momentum_prev)
 		@param source_layer_size Dim 0
 		@param sink_layer_size Dim 1
@@ -164,7 +164,7 @@ public:
 			solver_params_tensor.chip(5, 2).device(device) = solver_params_tensor.chip(2, 2) * solver_params_tensor.chip(5, 2) + (weights_tensor.constant(1) - solver_params_tensor.chip(2, 2)) * weights_tensor * errors_clipped * weights_tensor * errors_clipped;
       auto unbiased_adam1 = solver_params_tensor.chip(4, 2) / (weights_tensor.constant(1) - solver_params_tensor.chip(1, 2));
       auto unbiased_adam2 = solver_params_tensor.chip(5, 2) / (weights_tensor.constant(1) - solver_params_tensor.chip(2, 2));
-			weights_tensor.device(device) = weights_tensor - solver_params_tensor.chip(0, 2) * unbiased_adam1 / (unbiased_adam2.sqrt() + solver_params_tensor.chip(3, 2));
+			weights_tensor.device(device) -= solver_params_tensor.chip(0, 2) * unbiased_adam1 / (unbiased_adam2.sqrt() + solver_params_tensor.chip(3, 2));
     };
     std::string getName() const{return "AdamTensorOp";};
 	//private:
