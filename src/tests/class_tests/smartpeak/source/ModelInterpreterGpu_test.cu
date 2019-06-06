@@ -1341,7 +1341,9 @@ void test_updateSolverParams()
 
 int main(int argc, char** argv)
 {
-	//test_allocateForwardPropogationLayerTensors(); //Broke
+  test_reInitNodes(); // TODO
+  test_reInitModelError(); // TODO
+	test_allocateForwardPropogationLayerTensors(); //Broke
 	test_getForwardPropogationOperations();
 	test_allocateModelErrorTensor();
 	test_mapValuesToLayers();
@@ -1356,6 +1358,7 @@ int main(int argc, char** argv)
 	test_TBPTT();
 	test_updateWeights();
 	test_modelTrainer2();
+  //test_modelTrainer3(); // TODO
 	test_getModelResults();
 	test_updateSolverParams();
 	return 0;

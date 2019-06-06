@@ -683,7 +683,7 @@ void test_sharedWeightErrorGpuDevice()
 
 	for (int source_iter = 0; source_iter < source_layer_size; ++source_iter) {
 		for (int sink_iter = 0; sink_iter < sink_layer_size; ++sink_iter) {
-			std::cout << "[Weight Error] Source iter: " << source_iter << ", Sink Iter: " << sink_iter << " = " << weight_error(source_iter, sink_iter) << std::endl;
+			//std::cout << "[Weight Error] Source iter: " << source_iter << ", Sink Iter: " << sink_iter << " = " << weight_error(source_iter, sink_iter) << std::endl;
 			assert(weight_error(source_iter, sink_iter) == expected_weight_error(source_iter, sink_iter));
 		}
 	}
