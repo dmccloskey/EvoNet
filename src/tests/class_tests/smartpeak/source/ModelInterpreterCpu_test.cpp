@@ -198,7 +198,6 @@ BOOST_AUTO_TEST_CASE(allocateForwardPropogationLayerTensors)
 	model_interpreter.allocateForwardPropogationLayerTensors(FP_operations_expanded, tensor_ops, source_layer_sizes, sink_layer_sizes, weight_indices, shared_weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors, batch_size, memory_size, train);
 
 	// asserts are needed because boost deallocates the pointer memory after being called...
-	// TODO: Broke tests
 	assert(model_interpreter.getLayerTensor(0)->getBatchSize()==batch_size); // sinks
 	assert(model_interpreter.getLayerTensor(0)->getMemorySize() == memory_size); // sinks
 	assert(model_interpreter.getLayerTensor(0)->getLayerSize() == 2); // sinks
