@@ -481,11 +481,11 @@ namespace SmartPeak
 		*/
 		virtual void executeWeightUpdateOperations() = 0;
 		
-		void addLayerTensor(NodeTensorData<TensorT, DeviceT>& layer); ///< add a layer to the cache
+		void addLayerTensor(std::shared_ptr<NodeTensorData<TensorT, DeviceT>>& layer); ///< add a layer to the cache
 		void clearLayerTensors(); ///< clear all layers from the cache
 		std::shared_ptr<NodeTensorData<TensorT, DeviceT>> getLayerTensor(const int& layer_index); ///< get a layer from the cache
 
-		void addWeightTensor(WeightTensorData<TensorT, DeviceT>& weight); ///< add a weight to the cache
+		void addWeightTensor(std::shared_ptr<WeightTensorData<TensorT, DeviceT>>& weight); ///< add a weight to the cache
 		void clearWeightTensors(); ///< clear all weights from the cache
 		std::shared_ptr<WeightTensorData<TensorT, DeviceT>> getWeightTensor(const int& weight_index); ///< get a weight from the cache
 
@@ -1943,10 +1943,9 @@ namespace SmartPeak
 	}
 	
 	template<typename TensorT, typename DeviceT>
-	inline void ModelInterpreter<TensorT, DeviceT>::addLayerTensor(NodeTensorData<TensorT, DeviceT>& layer)
+	inline void ModelInterpreter<TensorT, DeviceT>::addLayerTensor(std::shared_ptr<NodeTensorData<TensorT, DeviceT>>& layer)
 	{
-		std::shared_ptr<NodeTensorData<TensorT, DeviceT>> layer_ptr(std::move(&layer));
-		layer_tensors_.push_back(layer_ptr);
+		layer_tensors_.push_back(layer);
 	}
 
 	template<typename TensorT, typename DeviceT>
@@ -1966,10 +1965,9 @@ namespace SmartPeak
 	}
 
 	template<typename TensorT, typename DeviceT>
-	inline void ModelInterpreter<TensorT, DeviceT>::addWeightTensor(WeightTensorData<TensorT, DeviceT>& weight)
+	inline void ModelInterpreter<TensorT, DeviceT>::addWeightTensor(std::shared_ptr<WeightTensorData<TensorT, DeviceT>>& weight)
 	{
-		std::shared_ptr<WeightTensorData<TensorT, DeviceT>> weight_ptr(std::move(&weight));
-		weight_tensors_.push_back(weight_ptr);
+		weight_tensors_.push_back(weight);
 	}
 
 	template<typename TensorT, typename DeviceT>
