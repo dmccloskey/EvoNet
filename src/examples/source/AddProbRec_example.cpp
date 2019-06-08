@@ -381,6 +381,29 @@ public:
 		const TensorT& model_error)
 	{ // Left blank intentionally to prevent writing of files during validation
 	}
+  void adaptiveTrainerScheduler(
+    const int& n_generations,
+    const int& n_epochs,
+    Model<TensorT>& model,
+    ModelInterpreterDefaultDevice<TensorT>& model_interpreter,
+    const std::vector<float>& model_errors) {
+    if (n_epochs % 100 == 0 && n_epochs != 0) {
+    	// anneal the learning rate by half on each plateau
+      model_interpreter.getModelResults(model, false, true, false);
+      TensorT lr_cur = model.weights_.begin()->second->getSolverOp()->getLearningRate();
+      TensorT lr_new = this->reduceLROnPlateau(lr_cur, model_errors, 0.5, 80, 10, 0.1);
+      if (lr_new != lr_cur)
+        model_interpreter.updateSolverParams(0, lr_new);
+    }
+    if (n_epochs % 1000 == 0 && n_epochs != 0) {
+      // save the model every 1000 epochs
+      model_interpreter.getModelResults(model, false, true, false);
+      ModelFile<TensorT> data;
+      data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
+      ModelInterpreterFileDefaultDevice<TensorT> interpreter_data;
+      interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
+    }
+  }
 };
 
 template<typename TensorT>

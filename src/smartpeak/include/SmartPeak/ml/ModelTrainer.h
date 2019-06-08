@@ -15,7 +15,6 @@
 
 namespace SmartPeak
 {
-
   /**
     @brief Class to train a network model
   */
@@ -299,6 +298,26 @@ public:
 			InterpreterT& model_interpreter,
 			ModelLogger<TensorT>& model_logger,
 			const std::vector<std::string>& output_nodes);
+
+    /*
+    @brief Reduce the learning rate by a decay factor if the model_errors has not
+      increases/decreased by a specified threshold for a period of epochs
+      
+    TODO: could be more nicely implemented as a functor?
+
+    @param[in] learning_rate The current learning rate
+    @param[in] model_errors The history of model errors
+    @param[in] decay A scalar to multiple the current learning rate to get the new learning rate
+    @param[in] cur_epoch The current epoch number
+    @param[in] n_epochs_avg The number of epochs to determine the average model error
+    @param[in] n_epochs_win The number of epochs to determine a recent window to compare to the average model error
+    @param[in] min_per_error_diff The minimum percent error difference to change the learning rate
+
+    @returns The decayed learning rate
+    */
+    TensorT reduceLROnPlateau(const TensorT& learning_rate, const std::vector<float>& model_errors,
+      const TensorT& decay, const int& n_epochs_avg, const int& n_epochs_win,
+      const TensorT& min_perc_error_diff);
 
 protected:
 		std::vector<std::shared_ptr<LossFunctionOp<TensorT>>> loss_functions_;
@@ -1139,5 +1158,34 @@ private:
 			model_logger.writeLogs(model, n_epochs, {}, {}, {}, {}, output_nodes, Eigen::Tensor<TensorT, 3>(), output_nodes, {}, {});
 		}
 	}
+  template<typename TensorT, typename InterpreterT>
+  inline TensorT ModelTrainer<TensorT, InterpreterT>::reduceLROnPlateau(const TensorT & learning_rate, const std::vector<float>& model_errors, const TensorT & decay, const int & n_epochs_avg, const int & n_epochs_win, const TensorT & min_perc_error_diff)
+  {
+    assert(n_epochs_avg > n_epochs_win); // The number of average epochs is less than the number of windowed epochs.
+    int cur_epoch = model_errors.size() - 1;
+    // Check that enough epochs has elapsed
+    if (cur_epoch < n_epochs_avg)
+      return learning_rate;
+
+    // Calculate the averages
+    TensorT avg_error = 0;
+    for (int i = 0; i < n_epochs_avg; ++i) {
+      avg_error += model_errors.at(cur_epoch - i);
+    }
+    avg_error /= (TensorT)n_epochs_avg;
+    TensorT win_error = 0;
+    for (int i = 0; i < n_epochs_win; ++i) {
+      win_error += model_errors.at(cur_epoch - i);
+    }
+    win_error /= (TensorT)n_epochs_win;
+
+    // Check if the threshold has been met
+    TensorT learning_rate_new = learning_rate;
+    TensorT percent_diff = (avg_error - win_error) / avg_error;
+    if (percent_diff < min_perc_error_diff) {
+      learning_rate_new *= decay;
+    }
+    return learning_rate_new;
+  }
 }
 #endif //SMARTPEAK_MODELTRAINER_H
