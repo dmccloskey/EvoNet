@@ -135,6 +135,7 @@ public:
     // Specify the output node types manually
     for (const std::string& node_name : node_names)
       model.nodes_.at(node_name)->setType(NodeType::output);
+    model.setInputAndOutputNodes();
   }
   void adaptiveTrainerScheduler(
     const int& n_generations,
@@ -142,47 +143,50 @@ public:
     Model<TensorT>& model,
     ModelInterpreterGpu<TensorT>& model_interpreter,
     const std::vector<float>& model_errors) {
-    if (n_epochs % 5000 == 0 && n_epochs != 0) {
+    if (n_epochs % 100 == 0 && n_epochs > 1000) {
+      // anneal the learning rate by half on each plateau
+      model_interpreter.getModelResults(model, false, true, false);
+      TensorT lr_cur = model.weights_.begin()->second->getSolverOp()->getLearningRate();
+      TensorT lr_new = this->reduceLROnPlateau(lr_cur, model_errors, 0.5, 100, 10, 0.1);
+      if (lr_new < lr_cur - 1e-3) {
+        model_interpreter.updateSolverParams(0, lr_new);
+        std::cout << "The learning rate has been annealed from " << lr_cur << " to " << lr_new << std::endl;
+      }
+    }
+    if (n_epochs % 1000 == 0 && n_epochs != 0) {
       // save the model every 1000 epochs
-     model_interpreter.getModelResults(model, false, true, false);
+      model_interpreter.getModelResults(model, false, true, false);
       ModelFile<TensorT> data;
       data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
       ModelInterpreterFileGpu<TensorT> interpreter_data;
       interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
     }
   }
-  void trainingModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterGpu<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
-    const Eigen::Tensor<TensorT, 3>& expected_values,
-    const std::vector<std::string>& output_nodes,
-    const TensorT& model_error)
+  void trainingModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterGpu<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger, const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const TensorT & model_error_train, const TensorT & model_error_test)
   {
+    // Set the defaults
     model_logger.setLogTimeEpoch(true);
     model_logger.setLogTrainValMetricEpoch(true);
     model_logger.setLogExpectedPredictedEpoch(false);
+
+    // initialize all logs
     if (n_epochs == 0) {
+      model_logger.setLogExpectedPredictedEpoch(true);
       model_logger.initLogs(model);
     }
-    if (n_epochs % 10 == 0) {
+
+    // Per n epoch logging
+    if (n_epochs % 1000 == 0) {
+      model_logger.setLogExpectedPredictedEpoch(true);
       if (model_logger.getLogExpectedPredictedEpoch())
         model_interpreter.getModelResults(model, true, false, false);
-      model_logger.writeLogs(model, n_epochs, { "Error" }, {}, { model_error }, {}, output_nodes, expected_values);
+      model_logger.writeLogs(model, n_epochs, { "Train_Error" }, { "Test_Error" }, { model_error_train }, { model_error_test }, output_nodes, expected_values);
     }
-  }
-  void validationModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterGpu<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
-    const Eigen::Tensor<TensorT, 3>& expected_values,
-    const std::vector<std::string>& output_nodes,
-    const TensorT& model_error)
-  {
-    model_logger.setLogTimeEpoch(false);
-    model_logger.setLogTrainValMetricEpoch(false);
-    model_logger.setLogExpectedPredictedEpoch(true);
-    if (n_epochs == 0) {
-      model_logger.initLogs(model);
-    }
-    if (n_epochs % 1 == 0) {
+    else if (n_epochs % 10 == 0) {
+      model_logger.setLogExpectedPredictedEpoch(false);
       if (model_logger.getLogExpectedPredictedEpoch())
         model_interpreter.getModelResults(model, true, false, false);
-      model_logger.writeLogs(model, n_epochs, {}, { "Error" }, {}, { model_error }, output_nodes, expected_values);
+      model_logger.writeLogs(model, n_epochs, { "Train_Error" }, { "Test_Error" }, { model_error_train }, { model_error_test }, output_nodes, expected_values);
     }
   }
 };

@@ -210,7 +210,7 @@ public:
             output_data(batch_iter, memory_iter, nodes_iter) = this->training_data(sample_indices[batch_iter], nodes_iter);
           }
           else if (nodes_iter >= n_input_pixels && nodes_iter < n_encodings) {
-            input_data(batch_iter, memory_iter, nodes_iter) = d(gen); // sample from a normal distribution
+            input_data(batch_iter, memory_iter, nodes_iter) = abs(d(gen)); // sample from a normal distribution
             output_data(batch_iter, memory_iter, nodes_iter) = 0; // Dummy data for KL divergence mu
           }
           else {
