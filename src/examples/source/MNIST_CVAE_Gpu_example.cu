@@ -62,7 +62,7 @@ public:
 			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
 			std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
 			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(1 / (TensorT)(node_names_input.size() + n_hidden_0), 10 / (TensorT)(node_names_input.size() + n_hidden_0))),
+      std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(1 / (TensorT)(node_names.size() + n_hidden_0), 10 / (TensorT)(node_names.size() + n_hidden_0))),
 			//std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + node_names.size()) / 2, 1)),
 			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-5, 0.9, 0.999, 1e-3, 10.0)), 0.0f, 0.0f, false, specify_layer);
 		node_names_mu = model_builder.addFullyConnected(model, "Mu", "Mu", node_names, n_encodings,
@@ -71,7 +71,7 @@ public:
 			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
 			std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
 			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(1 / (TensorT)(node_names_input.size() + n_encodings), 10 / (TensorT)(node_names_input.size() + n_encodings))),
+      std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(1 / (TensorT)(node_names.size() + n_encodings), 10 / (TensorT)(node_names.size() + n_encodings))),
 			//std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_encodings) / 2, 1)),
 			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-5, 0.9, 0.999, 1e-3, 10.0)), 0.0f, 0.0f, false, specify_layer);
 		node_names_logvar = model_builder.addFullyConnected(model, "LogVar", "LogVar", node_names, n_encodings,
@@ -80,7 +80,7 @@ public:
 			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
 			std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
 			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(1 / (TensorT)(node_names_input.size() + n_encodings), 10 / (TensorT)(node_names_input.size() + n_encodings))),
+      std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(1 / (TensorT)(node_names.size() + n_encodings), 10 / (TensorT)(node_names.size() + n_encodings))),
 			//std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_encodings) / 2, 1)),
 			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-5, 0.9, 0.999, 1e-3, 10.0)), 0.0f, 0.0f, false, specify_layer);
 		node_names_logalpha = model_builder.addFullyConnected(model, "LogAlpha", "LogAlpha", node_names, n_categorical,
@@ -89,7 +89,7 @@ public:
 			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
 			std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
 			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(1 / (TensorT)(node_names_input.size() + n_categorical), 10 / (TensorT)(node_names_input.size() + n_categorical))),
+      std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(1 / (TensorT)(node_names.size() + n_categorical), 10 / (TensorT)(node_names.size() + n_categorical))),
 			//std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_categorical) / 2, 1)),
 			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-5, 0.9, 0.999, 1e-3, 10.0)), 0.0f, 0.0f, false, specify_layer);
 
@@ -104,11 +104,11 @@ public:
 			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
 			std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
 			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(1 / (TensorT)(node_names_input.size() + n_hidden_0), 10 / (TensorT)(node_names_input.size() + n_hidden_0))),
+      std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(1 / (TensorT)(node_names.size() + n_hidden_0), 10 / (TensorT)(node_names.size() + n_hidden_0))),
 			//std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_Gencoder.size() + n_hidden_0) / 2, 1)),
 			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-5, 0.9, 0.999, 1e-3, 10.0)), 0.0f, 0.0f, false, specify_layer);
 		model_builder.addFullyConnected(model, "DE0", node_names_Cencoder, node_names,
-      std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(1 / (TensorT)(node_names_input.size() + n_hidden_0), 10 / (TensorT)(node_names_input.size() + n_hidden_0))),
+      std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(1 / (TensorT)(node_names.size() + n_hidden_0), 10 / (TensorT)(node_names.size() + n_hidden_0))),
 			//std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_Cencoder.size() + n_hidden_0) / 2, 1)),
 			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-5, 0.9, 0.999, 1e-3, 10.0)), 0.0f, specify_layer);
 		node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names, n_hidden_0,
@@ -117,7 +117,7 @@ public:
 			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
 			std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
 			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(1 / (TensorT)(node_names_input.size() + n_hidden_0), 10 / (TensorT)(node_names_input.size() + n_hidden_0))),
+      std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(1 / (TensorT)(node_names.size() + n_hidden_0), 10 / (TensorT)(node_names.size() + n_hidden_0))),
 			//std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_hidden_0) / 2, 1)),
 			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-5, 0.9, 0.999, 1e-3, 10.0)), 0.0f, 0.0f, false, specify_layer);
 		node_names = model_builder.addFullyConnected(model, "Output", "Output", node_names, n_inputs,
@@ -126,7 +126,7 @@ public:
 			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
 			std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
 			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(1 / (TensorT)node_names_input.size(), 10 / (TensorT)node_names_input.size())),
+      std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(1 / (TensorT)node_names.size(), 10 / (TensorT)node_names.size())),
 			//std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 1)),
 			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-5, 0.9, 0.999, 1e-3, 10.0)), 0.0f, 0.0f, false, true);
 
@@ -195,7 +195,7 @@ template<typename TensorT>
 class DataSimulatorExt : public MNISTSimulator<TensorT>
 {
 public:
-	void simulateTrainingData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
+	void simulateTrainingData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps)
 	{
 		// infer data dimensions based on the input tensors
 		const int batch_size = input_data.dimension(0);
@@ -261,7 +261,7 @@ public:
 		assert(n_input_nodes == n_input_pixels + n_encodings + 2 * n_categorical); // Guassian sampler, Gumbel sampler, inverse tau
 
 		// make a vector of sample_indices [BUG FREE]
-		Eigen::Tensor<int, 1> sample_indices = this->getValidationIndices(batch_size, n_epochs);
+		Eigen::Tensor<int, 1> sample_indices = this->getValidationIndices(batch_size, 1);
 
 		// Reformat the MNIST image data for training
 		for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {

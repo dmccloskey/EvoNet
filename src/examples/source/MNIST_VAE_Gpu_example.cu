@@ -59,7 +59,7 @@ public:
       std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(1 / (TensorT)(node_names_input.size() + n_hidden_0), 10 / (TensorT)(node_names_input.size() + n_hidden_0))),
+      std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(1 / (TensorT)(node_names.size() + n_hidden_0), 10 / (TensorT)(node_names.size() + n_hidden_0))),
       //std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + node_names.size()) / 2, 1)),
       std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-5, 0.9, 0.999, 1e-3, 10)), 0.0f, 0.0f, false, specify_layer);
     node_names_mu = model_builder.addFullyConnected(model, "Mu", "Mu", node_names, n_encodings,
@@ -68,7 +68,7 @@ public:
       std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(1 / (TensorT)(node_names_input.size() + n_encodings), 10 / (TensorT)(node_names_input.size() + n_encodings))),
+      std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(1 / (TensorT)(node_names.size() + n_encodings), 10 / (TensorT)(node_names.size() + n_encodings))),
       //std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_encodings) / 2, 1)),
       std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-5, 0.9, 0.999, 1e-3, 10)), 0.0f, 0.0f, false, specify_layer);
     node_names_logvar = model_builder.addFullyConnected(model, "LogVar", "LogVar", node_names, n_encodings,
@@ -77,7 +77,7 @@ public:
       std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(1 / (TensorT)(node_names_input.size() + n_encodings), 10 / (TensorT)(node_names_input.size() + n_encodings))),
+      std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(1 / (TensorT)(node_names.size() + n_encodings), 10 / (TensorT)(node_names.size() + n_encodings))),
       //std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_encodings) / 2, 1)),
       std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-5, 0.9, 0.999, 1e-3, 10)), 0.0f, 0.0f, false, specify_layer);
 
@@ -97,7 +97,7 @@ public:
       std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(1 / (TensorT)(node_names_input.size() + n_hidden_0), 10 / (TensorT)(node_names_input.size() + n_hidden_0))),
+      std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(1 / (TensorT)(node_names.size() + n_hidden_0), 10 / (TensorT)(node_names.size() + n_hidden_0))),
       //std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_encoder.size() + n_hidden_0) / 2, 1)),
       std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-5, 0.9, 0.999, 1e-3, 10)), 0.0f, 0.0f, false, specify_layer);
     node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names, n_hidden_0,
@@ -106,7 +106,7 @@ public:
       std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(1 / (TensorT)(node_names_input.size() + n_hidden_0), 10 / (TensorT)(node_names_input.size() + n_hidden_0))),
+      std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(1 / (TensorT)(node_names.size() + n_hidden_0), 10 / (TensorT)(node_names.size() + n_hidden_0))),
       //std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_hidden_0) / 2, 1)),
       std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-5, 0.9, 0.999, 1e-3, 10)), 0.0f, 0.0f, false, specify_layer);
     node_names = model_builder.addFullyConnected(model, "Output", "Output", node_names, n_inputs,
@@ -115,7 +115,7 @@ public:
       std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(1 / (TensorT)node_names_input.size(), 10 / (TensorT)node_names_input.size())),
+      std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(1 / (TensorT)node_names.size(), 10 / (TensorT)node_names.size())),
       //std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 1)),
       std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-5, 0.9, 0.999, 1e-3, 10)), 0.0f, 0.0f, false, specify_layer);
 
@@ -134,7 +134,7 @@ public:
       // anneal the learning rate by half on each plateau
       model_interpreter.getModelResults(model, false, true, false);
       TensorT lr_cur = model.weights_.begin()->second->getSolverOp()->getLearningRate();
-      TensorT lr_new = this->reduceLROnPlateau(lr_cur, model_errors, 0.5, 80, 10, 0.1);
+      TensorT lr_new = this->reduceLROnPlateau(lr_cur, model_errors, 0.5, 100, 10, 0.1);
       if (lr_new < lr_cur - 1e-3) {
         model_interpreter.updateSolverParams(0, lr_new);
         std::cout << "The learning rate has been annealed from " << lr_cur << " to " << lr_new << std::endl;
