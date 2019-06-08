@@ -97,7 +97,7 @@ public:
       std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(1 / (TensorT)(node_names.size() + n_hidden_0), 10 / (TensorT)(node_names.size() + n_hidden_0))),
+      std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(1 / (TensorT)(node_names_encoder.size() + n_hidden_0), 10 / (TensorT)(node_names_encoder.size() + n_hidden_0))),
       //std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_encoder.size() + n_hidden_0) / 2, 1)),
       std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-5, 0.9, 0.999, 1e-3, 10)), 0.0f, 0.0f, false, specify_layer);
     node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names, n_hidden_0,
@@ -200,7 +200,7 @@ public:
 
     std::random_device rd{};
     std::mt19937 gen{ rd() };
-    std::normal_distribution<> d{ 0.0f, 1.0f };
+    std::normal_distribution<> d{ 1.0f, 1.0f };
     // Reformat the MNIST image data for training
     for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
       for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
@@ -209,8 +209,8 @@ public:
             input_data(batch_iter, memory_iter, nodes_iter) = this->training_data(sample_indices[batch_iter], nodes_iter);
             output_data(batch_iter, memory_iter, nodes_iter) = this->training_data(sample_indices[batch_iter], nodes_iter);
           }
-          else if (nodes_iter >= n_input_pixels && nodes_iter < n_encodings) {
-            input_data(batch_iter, memory_iter, nodes_iter) = abs(d(gen)); // sample from a normal distribution
+          else if (nodes_iter >= n_input_pixels && nodes_iter < n_input_pixels + n_encodings) {
+            input_data(batch_iter, memory_iter, nodes_iter) = d(gen); // sample from a normal distribution
             output_data(batch_iter, memory_iter, nodes_iter) = 0; // Dummy data for KL divergence mu
           }
           else {
@@ -246,7 +246,7 @@ public:
             input_data(batch_iter, memory_iter, nodes_iter) = this->validation_data(sample_indices[batch_iter], nodes_iter);
             output_data(batch_iter, memory_iter, nodes_iter) = this->validation_data(sample_indices[batch_iter], nodes_iter);
           }
-          else if (nodes_iter >= n_input_pixels && nodes_iter < n_encodings) {
+          else if (nodes_iter >= n_input_pixels && nodes_iter < n_input_pixels + n_encodings) {
             input_data(batch_iter, memory_iter, nodes_iter) = 0; // sample from a normal distribution
             output_data(batch_iter, memory_iter, nodes_iter) = 0; // Dummy data for KL divergence mu
           }

@@ -226,9 +226,9 @@ public:
 
 				// Input and Output: encodings
 				for (int nodes_iter = 0; nodes_iter < n_encodings; ++nodes_iter) {
-					input_data(batch_iter, memory_iter, nodes_iter) = gaussian_samples(0, nodes_iter); // sample from a normal distribution
-					output_data(batch_iter, memory_iter, nodes_iter) = 0; // Dummy data for KL divergence mu
-					output_data(batch_iter, memory_iter, n_encodings + nodes_iter) = 0; // Dummy data for KL divergence logvar
+					input_data(batch_iter, memory_iter, nodes_iter + n_input_pixels) = gaussian_samples(0, nodes_iter); // sample from a normal distribution
+					output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels) = 0; // Dummy data for KL divergence mu
+					output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels + n_encodings) = 0; // Dummy data for KL divergence logvar
 				}
 
 				// Concrete Sampler
@@ -237,9 +237,9 @@ public:
 
 				// Input and Output: categorical
 				for (int nodes_iter = 0; nodes_iter < n_categorical; ++nodes_iter) {
-					input_data(batch_iter, memory_iter, nodes_iter) = categorical_samples(0, nodes_iter); // sample from gumbel distribution
-					input_data(batch_iter, memory_iter, n_categorical + nodes_iter) = inverse_tau; // inverse tau
-					output_data(batch_iter, memory_iter, nodes_iter) = (TensorT)this->training_labels(sample_indices[batch_iter], nodes_iter); // Expected label
+					input_data(batch_iter, memory_iter, nodes_iter + n_input_pixels + n_encodings) = categorical_samples(0, nodes_iter); // sample from gumbel distribution
+					input_data(batch_iter, memory_iter, nodes_iter + n_input_pixels + n_encodings + n_categorical) = inverse_tau; // inverse tau
+					output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels + 2*n_encodings) = (TensorT)this->training_labels(sample_indices[batch_iter], nodes_iter); // Expected label
 				}
 			}
 		}
@@ -266,19 +266,28 @@ public:
 		// Reformat the MNIST image data for training
 		for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
 			for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
-				for (int nodes_iter = 0; nodes_iter < n_input_pixels + 2 * n_encodings; ++nodes_iter) {
-					if (nodes_iter < n_input_pixels) {
-						input_data(batch_iter, memory_iter, nodes_iter) = this->validation_data(sample_indices[batch_iter], nodes_iter);
-						output_data(batch_iter, memory_iter, nodes_iter) = this->validation_data(sample_indices[batch_iter], nodes_iter);
-					}
-					else if (nodes_iter >= n_input_pixels && nodes_iter < n_encodings) {
-						input_data(batch_iter, memory_iter, nodes_iter) = 0; // sample from a normal distribution
-						output_data(batch_iter, memory_iter, nodes_iter) = 0; // Dummy data for KL divergence mu
-					}
-					else {
-						output_data(batch_iter, memory_iter, nodes_iter) = 0; // Dummy data for KL divergence logvar
-					}
-				}
+        // Input and Output: Pixels
+        for (int nodes_iter = 0; nodes_iter < n_input_pixels; ++nodes_iter) {
+          input_data(batch_iter, memory_iter, nodes_iter) = this->training_data(sample_indices[batch_iter], nodes_iter);
+          output_data(batch_iter, memory_iter, nodes_iter) = this->training_data(sample_indices[batch_iter], nodes_iter);
+        }
+
+        // Input and Output: encodings
+        for (int nodes_iter = 0; nodes_iter < n_encodings; ++nodes_iter) {
+          input_data(batch_iter, memory_iter, nodes_iter + n_input_pixels) = 0; // sample from a normal distribution
+          output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels) = 0; // Dummy data for KL divergence mu
+          output_data(batch_iter, memory_iter, n_input_pixels + n_encodings + nodes_iter) = 0; // Dummy data for KL divergence logvar
+        }
+
+        // Concrete Sampler
+        TensorT inverse_tau = 1.0 / 0.5; // Madison 2017 recommended 2/3 for tau
+
+        // Input and Output: categorical
+        for (int nodes_iter = 0; nodes_iter < n_categorical; ++nodes_iter) {
+          input_data(batch_iter, memory_iter, nodes_iter + n_input_pixels + n_encodings) = 0; // sample from gumbel distribution
+          input_data(batch_iter, memory_iter, nodes_iter + n_input_pixels + n_encodings + n_categorical) = inverse_tau; // inverse tau
+          output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels + 2 * n_encodings) = (TensorT)this->training_labels(sample_indices[batch_iter], nodes_iter); // Expected label
+        }
 			}
 		}
 		time_steps.setConstant(1.0f);

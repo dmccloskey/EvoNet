@@ -30,7 +30,7 @@ public:
   @param[in] n_cells The number of cells in each LSTM block
   @param[in] specify_layers Whether to give the `ModelInterpreter` "hints" as to the correct network structure during graph to tensor compilation
   */
-  void makeLSTM(Model<TensorT>& model, int n_inputs = 784, int n_outputs = 10, int n_blocks = 512, int n_cells = 1, bool specify_layers = true) {
+  void makeLSTM(Model<TensorT>& model, int n_inputs = 784, int n_outputs = 10, int n_blocks = 512, int n_cells = 1, int n_hidden = 32, bool specify_layers = true) {
     model.setId(0);
     model.setName("LSTM");
 
@@ -39,17 +39,38 @@ public:
     // Add the inputs
     std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", "Input", n_inputs, specify_layers);
 
-    // Add the LSTM layer
-    std::vector<std::string> node_names = model_builder.addLSTM(model, "LSTM", "LSTM", node_names_input, n_blocks, n_cells,
+    // Add the LSTM layer(s)
+    std::vector<std::string> node_names = model_builder.addLSTM(model, "LSTM-01", "LSTM-01", node_names_input, n_blocks, n_cells,
       std::shared_ptr<ActivationOp<TensorT>>(new TanHOp<float>()),
       std::shared_ptr<ActivationOp<TensorT>>(new TanHGradOp<float>()),
       std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(1e-4, 0.1)),
+      std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(1 / (TensorT)(node_names_input.size() + n_blocks), 10 / (TensorT)(node_names_input.size() + n_blocks))),
       //std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(0.4)), 
       std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-3, 10.0)),
       0.0f, 0.0f, true, true, 1, specify_layers);
+    node_names = model_builder.addLSTM(model, "LSTM-02", "LSTM-02", node_names, n_blocks, n_cells,
+      std::shared_ptr<ActivationOp<TensorT>>(new TanHOp<float>()),
+      std::shared_ptr<ActivationOp<TensorT>>(new TanHGradOp<float>()),
+      std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
+      std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
+      std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
+      std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(1 / (TensorT)(node_names.size() + n_blocks), 10 / (TensorT)(node_names.size() + n_blocks))),
+      //std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(0.4)), 
+      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-3, 10.0)),
+      0.0f, 0.0f, true, true, 1, specify_layers);
+
+   // Add a fully connected layer
+   node_names = model_builder.addFullyConnected(model, "FC-01", "FC-01", node_names, n_outputs,
+     std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
+     std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+     std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
+     std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
+     std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
+     std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(1 / (TensorT)(node_names.size() + n_hidden), 10 / (TensorT)(node_names.size() + n_hidden))),
+     //std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 2)),
+     std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-3, 10.0)), 0.0f, 0.0f, false, specify_layers);
 
     // Add a final output layer
     node_names = model_builder.addFullyConnected(model, "Output", "Output", node_names, n_outputs,
@@ -218,7 +239,8 @@ void main_MNIST(const bool& make_model, const bool& train_model) {
   // define the data simulator
   const std::size_t input_size = 784;
   const std::size_t n_labels = 10;
-  const std::size_t n_hidden = 64;
+  const std::size_t n_blocks = 64;
+  const std::size_t n_hidden = 32;
   const std::size_t training_data_size = 60000; //60000;
   const std::size_t validation_data_size = 10000; //10000;
   DataSimulatorExt<float> data_simulator;
@@ -292,7 +314,7 @@ void main_MNIST(const bool& make_model, const bool& train_model) {
   std::cout << "Initializing the population..." << std::endl;
   Model<float> model;
   if (make_model) {
-    model_trainer.makeLSTM(model, input_nodes.size(), output_nodes.size(), n_hidden, true);
+    model_trainer.makeLSTM(model, input_nodes.size(), output_nodes.size(), n_blocks, 1, n_hidden, true);
   }
   else {
     // read in the trained model
