@@ -41,8 +41,8 @@ public:
 
     // Add the LSTM layer(s)
     std::vector<std::string> node_names = model_builder.addLSTM(model, "LSTM-01", "LSTM-01", node_names_input, n_blocks, n_cells,
-      std::shared_ptr<ActivationOp<TensorT>>(new TanHOp<float>()),
-      std::shared_ptr<ActivationOp<TensorT>>(new TanHGradOp<float>()),
+      std::shared_ptr<ActivationOp<TensorT>>(new ELUOp<float>()),
+      std::shared_ptr<ActivationOp<TensorT>>(new ELUGradOp<float>()),
       std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
@@ -51,8 +51,8 @@ public:
       std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-3, 10.0)),
       0.0f, 0.0f, true, true, 1, specify_layers);
     node_names = model_builder.addLSTM(model, "LSTM-02", "LSTM-02", node_names, n_blocks, n_cells,
-      std::shared_ptr<ActivationOp<TensorT>>(new TanHOp<float>()),
-      std::shared_ptr<ActivationOp<TensorT>>(new TanHGradOp<float>()),
+      std::shared_ptr<ActivationOp<TensorT>>(new ELUOp<float>()),
+      std::shared_ptr<ActivationOp<TensorT>>(new ELUGradOp<float>()),
       std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
@@ -63,8 +63,8 @@ public:
 
    // Add a fully connected layer
    node_names = model_builder.addFullyConnected(model, "FC-01", "FC-01", node_names, n_outputs,
-     std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-     std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+     std::shared_ptr<ActivationOp<TensorT>>(new ELUOp<TensorT>()),
+     std::shared_ptr<ActivationOp<TensorT>>(new ELUGradOp<TensorT>()),
      std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
      std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
      std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
@@ -74,8 +74,8 @@ public:
 
     // Add a final output layer
     node_names = model_builder.addFullyConnected(model, "Output", "Output", node_names, n_outputs,
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+      std::shared_ptr<ActivationOp<TensorT>>(new ELUOp<TensorT>()),
+      std::shared_ptr<ActivationOp<TensorT>>(new ELUGradOp<TensorT>()),
       std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),

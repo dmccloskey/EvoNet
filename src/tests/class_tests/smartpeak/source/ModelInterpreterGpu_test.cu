@@ -1332,11 +1332,20 @@ void test_updateSolverParams()
 	weight_data.initWeightTensorData(2, 2, weight_indices, shared_weight_indices, weight_values, true, solver_params, "SumOp");
   std::shared_ptr<WeightTensorData<float, Eigen::GpuDevice>> weight_data_ptr = std::make_shared<WeightTensorDataGpu<float>>(weight_data);
 
+  // Push the solver params to the device
+  cudaStream_t stream;
+  assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess);
+  Eigen::GpuStreamDevice stream_device(&stream, 0);
+  Eigen::GpuDevice device(&stream_device);
+  weight_data_ptr->syncHAndDSolverParams(device);
+  assert(cudaStreamSynchronize(stream) == cudaSuccess);
+  assert(cudaStreamDestroy(stream) == cudaSuccess);
+
 	// Test that the learning rate was updated
 	model_interpreter.addWeightTensor(weight_data_ptr);
 	model_interpreter.updateSolverParams(0, 2);
-	//assert(model_interpreter.getWeightTensor(0)->getSolverParamsStatus().first);
-	//assert(!model_interpreter.getWeightTensor(0)->getSolverParamsStatus().second);
+	assert(model_interpreter.getWeightTensor(0)->getSolverParamsStatus().first);
+	assert(!model_interpreter.getWeightTensor(0)->getSolverParamsStatus().second);
 	assert(model_interpreter.getWeightTensor(0)->getSolverParams()(0, 0, 0) == 2);
 	assert(model_interpreter.getWeightTensor(0)->getSolverParams()(0, 0, 1) == 3);
 	assert(model_interpreter.getWeightTensor(0)->getSolverParams()(1, 0, 0) == 2);

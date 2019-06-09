@@ -132,7 +132,7 @@ public:
 
 		@returns vector of output node names
 		*/
-		std::vector<std::string> addSoftMax(Model<TensorT>& model, const std::string& name, const std::string& module_name, const std::vector<std::string>& source_node_names);
+		std::vector<std::string> addSoftMax(Model<TensorT>& model, const std::string& name, const std::string& module_name, const std::vector<std::string>& source_node_names, bool specify_layer = false);
 
 		/**
 		@brief Add a Stable Soft Max
@@ -817,7 +817,7 @@ public:
       std::string bias_name = std::string(bias_name_char);
       Node<TensorT> bias(bias_name, NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
       bias.setModuleName(module_name);
-      if (specify_layer) bias.setLayerName(module_name);
+      if (specify_layer) bias.setLayerName(module_name + "-bias");
       model.addNodes({ bias });
       biases_names.push_back(bias_name);
 
@@ -841,7 +841,7 @@ public:
     return biases_names;
   }
   template<typename TensorT>
-	std::vector<std::string> ModelBuilder<TensorT>::addSoftMax(Model<TensorT> & model, const std::string & name, const std::string& module_name, const std::vector<std::string>& source_node_names)
+	std::vector<std::string> ModelBuilder<TensorT>::addSoftMax(Model<TensorT> & model, const std::string & name, const std::string& module_name, const std::vector<std::string>& source_node_names, bool specify_layer)
 	{
 		std::vector<std::string> node_names;
 		std::string unity_weight_name;
@@ -852,15 +852,8 @@ public:
 		std::string sms_node_name(sms_node_name_char);
 		Node<TensorT> sms_node(sms_node_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<TensorT>>(new InverseOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new InverseGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
 		sms_node.setModuleName(module_name);
+    if (specify_layer) sms_node.setLayerName(module_name + "-SoftMaxSum");
 		model.addNodes({ sms_node });
-
-		//// Create the unity node
-		//char unity_weight_name_char[512];
-		//sprintf(unity_weight_name_char, "%s_Unity", name.data());
-		//std::string unity_weight_name(unity_weight_name_char);
-		//Weight<TensorT> unity_weight(unity_weight_name, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()));
-		//unity_weight.setModuleName(module_name);
-		//model.addWeights({ unity_weight });
 
 		// Create the Softmax input/output layer
 		for (int i = 0; i < source_node_names.size(); ++i)
@@ -870,7 +863,9 @@ public:
 			sprintf(smi_node_name_char, "%s-In_%012d", name.data(), i);
 			std::string smi_node_name(smi_node_name_char);
 			Node<TensorT> smi_node(smi_node_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<TensorT>>(new ExponentialOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new ExponentialGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
-			smi_node.setModuleName(module_name);
+      smi_node.setModuleName(module_name);
+      if (specify_layer) smi_node.setLayerName(module_name + "-SoftMaxIn");
+      smi_node.setModuleName(module_name);
 
 			// Create the output layer
 			char smo_node_name_char[512];
@@ -878,7 +873,9 @@ public:
 			std::string smo_node_name(smo_node_name_char);
 			node_names.push_back(smo_node_name);
 			Node<TensorT> smo_node(smo_node_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new ProdOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new ProdErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new ProdWeightGradOp<TensorT>()));
-			smo_node.setModuleName(module_name);
+      smo_node.setModuleName(module_name);
+      if (specify_layer) smo_node.setLayerName(module_name + "-SoftMaxOut");
+      smo_node.setModuleName(module_name);
 
 			model.addNodes({ smi_node, smo_node });
 
@@ -933,7 +930,7 @@ public:
 		std::string smm_node_name(smm_node_name_char);
 		Node<TensorT> smm_node(smm_node_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new MaxOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new MaxErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new MaxWeightGradOp<TensorT>()));
 		smm_node.setModuleName(module_name);
-		if (specify_layer) smm_node.setLayerName(module_name);
+		if (specify_layer) smm_node.setLayerName(module_name +"-Max");
 		model.addNodes({ smm_node });
 
 		// Create the Softmax Inverse/Sum node
@@ -942,24 +939,8 @@ public:
 		std::string sms_node_name(sms_node_name_char);
 		Node<TensorT> sms_node(sms_node_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<TensorT>>(new InverseOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new InverseGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
 		sms_node.setModuleName(module_name);
-		if (specify_layer) sms_node.setLayerName(module_name);
+		if (specify_layer) sms_node.setLayerName(module_name + "-Sum");
 		model.addNodes({ sms_node });
-
-		//// Create the unity node
-		//char unity_weight_name_char[512];
-		//sprintf(unity_weight_name_char, "%s_Unity", name.data());
-		//std::string unity_weight_name(unity_weight_name_char);
-		//Weight<TensorT> unity_weight(unity_weight_name, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()));
-		//unity_weight.setModuleName(module_name);
-		//model.addWeights({ unity_weight });
-
-		//// Create the negative unity node
-		//char negunity_weight_name_char[512];
-		//sprintf(negunity_weight_name_char, "%s_Negative", name.data());
-		//std::string negunity_weight_name(negunity_weight_name_char);
-		//Weight<TensorT> negunity_weight(negunity_weight_name, std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(-1.0)), std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()));
-		//negunity_weight.setModuleName(module_name);
-		//model.addWeights({ negunity_weight });
 
 		// Create the Softmax input/output layer
 		for (int i = 0; i < source_node_names.size(); ++i)
@@ -970,7 +951,7 @@ public:
 			std::string smi_node_name(smi_node_name_char);
 			Node<TensorT> smi_node(smi_node_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<TensorT>>(new ExponentialOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new ExponentialGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
 			smi_node.setModuleName(module_name);
-			if (specify_layer) smi_node.setLayerName(module_name);
+			if (specify_layer) smi_node.setLayerName(module_name + "-SoftMaxIn");
 
 			// Create the output layer
 			char smo_node_name_char[512];
@@ -979,7 +960,7 @@ public:
 			node_names.push_back(smo_node_name);
 			Node<TensorT> smo_node(smo_node_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new ProdOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new ProdErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new ProdWeightGradOp<TensorT>()));
 			smo_node.setModuleName(module_name);
-			if (specify_layer) smo_node.setLayerName(module_name);
+			if (specify_layer) smo_node.setLayerName(module_name + "-SoftMaxOut");
 
 			model.addNodes({ smi_node, smo_node });
 

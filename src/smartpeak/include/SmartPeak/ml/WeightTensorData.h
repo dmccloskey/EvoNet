@@ -47,6 +47,15 @@ public:
 			layer2_size_ = other.layer2_size_;
 			n_solver_params_ = other.n_solver_params_;
 			n_shared_weights_ = other.n_shared_weights_;
+      h_error_updated_ = other.h_error_updated_;
+      h_weight_updated_ = other.h_weight_updated_;
+      h_solver_params_updated_ = other.h_solver_params_updated_;
+      h_shared_weights_updated_ = other.h_shared_weights_updated_;
+      d_error_updated_ = other.d_error_updated_;
+      d_weight_updated_ = other.d_weight_updated_;
+      d_solver_params_updated_ = other.d_solver_params_updated_;
+      d_shared_weights_updated_ = other.d_shared_weights_updated_;
+      sink_layer_integration_ = other.sink_layer_integration_;
 		};
     ~WeightTensorData() = default; ///< Default destructor
 
@@ -80,6 +89,15 @@ public:
 			layer2_size_ = other.layer2_size_;
 			n_solver_params_ = other.n_solver_params_;
 			n_shared_weights_ = other.n_shared_weights_;
+      h_error_updated_ = other.h_error_updated_;
+      h_weight_updated_ = other.h_weight_updated_;
+      h_solver_params_updated_ = other.h_solver_params_updated_;
+      h_shared_weights_updated_ = other.h_shared_weights_updated_;
+      d_error_updated_ = other.d_error_updated_;
+      d_weight_updated_ = other.d_weight_updated_;
+      d_solver_params_updated_ = other.d_solver_params_updated_;
+      d_shared_weights_updated_ = other.d_shared_weights_updated_;
+      sink_layer_integration_ = other.sink_layer_integration_;
       return *this;
     }
 

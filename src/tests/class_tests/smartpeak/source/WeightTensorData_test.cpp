@@ -33,6 +33,8 @@ BOOST_AUTO_TEST_CASE(comparison)
 	BOOST_CHECK(weight == weight_test);
 }
 
+// TODO copy test!
+
 #if COMPILE_WITH_CUDA
 BOOST_AUTO_TEST_CASE(gettersAndSetters2)
 {
