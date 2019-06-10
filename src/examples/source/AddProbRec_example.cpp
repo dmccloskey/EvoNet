@@ -387,13 +387,13 @@ public:
     Model<TensorT>& model,
     ModelInterpreterDefaultDevice<TensorT>& model_interpreter,
     const std::vector<float>& model_errors) {
-    if (n_epochs % 100 == 0 && n_epochs != 0) {
-    	// anneal the learning rate by half on each plateau
-      model_interpreter.getModelResults(model, false, true, false);
-      TensorT lr_cur = model.weights_.begin()->second->getSolverOp()->getLearningRate();
-      TensorT lr_new = this->reduceLROnPlateau(lr_cur, model_errors, 0.5, 80, 10, 0.1);
-      if (lr_new != lr_cur)
+    if (n_epochs % 100 == 0 && n_epochs > 100) {
+      // anneal the learning rate by half on each plateau
+      TensorT lr_new = this->reduceLROnPlateau(model_errors, 0.5, 100, 10, 0.1);
+      if (lr_new < 1.0) {
         model_interpreter.updateSolverParams(0, lr_new);
+        std::cout << "The learning rate has been annealed by a factor of " << lr_new << std::endl;
+      }
     }
     if (n_epochs % 1000 == 0 && n_epochs != 0) {
       // save the model every 1000 epochs

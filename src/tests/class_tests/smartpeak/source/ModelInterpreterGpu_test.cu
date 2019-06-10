@@ -1325,14 +1325,21 @@ void test_updateSolverParams()
 
 	// Make a dummy weight tensor data and add it to the model interpreter
 	WeightTensorDataGpu<float> weight_data;
-	std::vector<float> solver_params = { 1, 3, 0.8 };
+	std::vector<float> solver_params = { 2, 3, 0.8 };
 	std::vector<std::pair<int, int>> weight_indices = { std::make_pair(0,0), std::make_pair(0,1),std::make_pair(1,0),std::make_pair(1,1) };
 	std::map<std::string, std::vector<std::pair<int, int>>> shared_weight_indices = {};
 	std::vector<float> weight_values = { 0, 0, 0, 0 };
 	weight_data.initWeightTensorData(2, 2, weight_indices, shared_weight_indices, weight_values, true, solver_params, "SumOp");
   std::shared_ptr<WeightTensorData<float, Eigen::GpuDevice>> weight_data_ptr = std::make_shared<WeightTensorDataGpu<float>>(weight_data);
 
-  // Push the solver params to the device
+
+	// Test that the learning rate was updated
+	model_interpreter.addWeightTensor(weight_data_ptr);
+	model_interpreter.updateSolverParams(0, 2);
+	assert(!model_interpreter.getWeightTensor(0)->getSolverParamsStatus().first);
+	assert(model_interpreter.getWeightTensor(0)->getSolverParamsStatus().second);
+
+  // Get the solver params from the device
   cudaStream_t stream;
   assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess);
   Eigen::GpuStreamDevice stream_device(&stream, 0);
@@ -1341,16 +1348,11 @@ void test_updateSolverParams()
   assert(cudaStreamSynchronize(stream) == cudaSuccess);
   assert(cudaStreamDestroy(stream) == cudaSuccess);
 
-	// Test that the learning rate was updated
-	model_interpreter.addWeightTensor(weight_data_ptr);
-	model_interpreter.updateSolverParams(0, 2);
-	assert(model_interpreter.getWeightTensor(0)->getSolverParamsStatus().first);
-	assert(!model_interpreter.getWeightTensor(0)->getSolverParamsStatus().second);
-	assert(model_interpreter.getWeightTensor(0)->getSolverParams()(0, 0, 0) == 2);
+	assert(model_interpreter.getWeightTensor(0)->getSolverParams()(0, 0, 0) == 4);
 	assert(model_interpreter.getWeightTensor(0)->getSolverParams()(0, 0, 1) == 3);
-	assert(model_interpreter.getWeightTensor(0)->getSolverParams()(1, 0, 0) == 2);
-	assert(model_interpreter.getWeightTensor(0)->getSolverParams()(0, 1, 0) == 2);
-	assert(model_interpreter.getWeightTensor(0)->getSolverParams()(1, 1, 0)== 2);
+	assert(model_interpreter.getWeightTensor(0)->getSolverParams()(1, 0, 0) == 4);
+	assert(model_interpreter.getWeightTensor(0)->getSolverParams()(0, 1, 0) == 4);
+	assert(model_interpreter.getWeightTensor(0)->getSolverParams()(1, 1, 0)== 4);
 }
 
 int main(int argc, char** argv)

@@ -173,14 +173,13 @@ BOOST_AUTO_TEST_CASE(reduceLROnPlateau)
 {
   ModelTrainerDefaultDevice<float> trainer;
   std::vector<float> model_errors1 = { 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0 };
-  float lr_cur = 1.0;
-  float lr_new1 = trainer.reduceLROnPlateau(lr_cur, model_errors1, 0.1, 10, 3, 0.1);
-  BOOST_CHECK_CLOSE(lr_new1, lr_cur, 1e-3);
+  float lr_new1 = trainer.reduceLROnPlateau(model_errors1, 0.1, 10, 3, 0.1);
+  BOOST_CHECK_CLOSE(lr_new1, 1.0, 1e-3);
 
   std::vector<float> model_errors2 = { 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 };
-  float lr_new2a = trainer.reduceLROnPlateau(lr_cur, model_errors2, 0.1, 11, 3, 0.1);
-  BOOST_CHECK_CLOSE(lr_new2a, lr_cur, 1e-3); // Too large of `n_epoch_avg` param
-  float lr_new2 = trainer.reduceLROnPlateau(lr_cur, model_errors2, 0.1, 10, 3, 0.1);
+  float lr_new2a = trainer.reduceLROnPlateau(model_errors2, 0.1, 11, 3, 0.1);
+  BOOST_CHECK_CLOSE(lr_new2a, 1.0, 1e-3); // Too large of `n_epoch_avg` param
+  float lr_new2 = trainer.reduceLROnPlateau(model_errors2, 0.1, 10, 3, 0.1);
   BOOST_CHECK_CLOSE(lr_new2, 0.1, 1e-3);
 }
 

@@ -39,7 +39,7 @@ namespace SmartPeak
 		void allocateModelErrorTensor(const int& batch_size, const int& memory_size);
 	  void getModelResults(Model<TensorT>& model, const bool& output_nodes, const bool& weights, const bool& model_error);
 		void checkMemory(const Model<TensorT>& model, const int& batch_size, const int& memory_size);
-		void updateSolverParams(const int& param_index, const TensorT& param_value);
+		void updateSolverParams(const int& param_index, const TensorT& param_factor);
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -409,13 +409,11 @@ namespace SmartPeak
 	}
 
 	template<typename TensorT>
-	inline void ModelInterpreterDefaultDevice<TensorT>::updateSolverParams(const int & param_index, const TensorT & param_value)
+	inline void ModelInterpreterDefaultDevice<TensorT>::updateSolverParams(const int & param_index, const TensorT & param_factor)
 	{
 		for (auto& weight_tensor_data : this->weight_tensors_) {
 			if (weight_tensor_data->getNSolverParams() > 0) {
-				Eigen::Tensor<TensorT, 2> solver_params(weight_tensor_data->getLayer1Size(), weight_tensor_data->getLayer2Size());
-				solver_params.setConstant(param_value);
-				weight_tensor_data->getSolverParams().chip(param_index, 2) = solver_params;
+				weight_tensor_data->getSolverParams().chip(param_index, 2) = weight_tensor_data->getSolverParams().chip(param_index, 2) * weight_tensor_data->getSolverParams().chip(param_index, 2).constant(param_factor);
 			}
 		}
 	}

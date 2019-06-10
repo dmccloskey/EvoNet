@@ -557,9 +557,9 @@ namespace SmartPeak
 			be used.
 
 		@param[in] param_index The parameter index to update (i.e., 0 for learning rate)
-		@param[in] param_value The parameter value to set (i.e., 1e-4)
+		@param[in] param_factor The factor to change the parameter value by (i.e., 0.1)
 		*/
-		virtual void updateSolverParams(const int& param_index, const TensorT& param_value) = 0;
+		virtual void updateSolverParams(const int& param_index, const TensorT& param_factor) = 0;
 
 		void setModelResources(const ModelResources& model_resources); ///< model_resources setter
 		ModelResources getModelResources(); ///< model_resources getter

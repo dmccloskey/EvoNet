@@ -93,14 +93,12 @@ public:
     Model<TensorT>& model,
     ModelInterpreterGpu<TensorT>& model_interpreter,
     const std::vector<float>& model_errors) {
-    if (n_epochs % 100 == 0 && n_epochs > 1000) {
+    if (n_epochs % 100 == 0 && n_epochs > 100) {
       // anneal the learning rate by half on each plateau
-      model_interpreter.getModelResults(model, false, true, false);
-      TensorT lr_cur = model.weights_.begin()->second->getSolverOp()->getLearningRate();
-      TensorT lr_new = this->reduceLROnPlateau(lr_cur, model_errors, 0.5, 100, 10, 0.1);
-      if (lr_new < lr_cur - 1e-3) {
+      TensorT lr_new = this->reduceLROnPlateau(model_errors, 0.5, 100, 10, 0.1);
+      if (lr_new < 1.0) {
         model_interpreter.updateSolverParams(0, lr_new);
-        std::cout << "The learning rate has been annealed from " << lr_cur << " to " << lr_new << std::endl;
+        std::cout << "The learning rate has been annealed by a factor of " << lr_new << std::endl;
       }
     }
     if (n_epochs % 1000 == 0 && n_epochs != 0) {

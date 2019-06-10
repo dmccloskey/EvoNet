@@ -59,7 +59,7 @@ BOOST_AUTO_TEST_CASE(updateSolverParams)
 
 	// Make a dummy weight tensor data and add it to the model interpreter
 	WeightTensorDataCpu<float> weight_data;
-	std::vector<float> solver_params = { 1, 3, 0.8 };
+	std::vector<float> solver_params = { 2, 3, 0.8 };
 	std::vector<std::pair<int, int>> weight_indices = { std::make_pair(0,0), std::make_pair(0,1),std::make_pair(1,0),std::make_pair(1,1) };
 	std::map<std::string, std::vector<std::pair<int, int>>> shared_weight_indices = {};
 	std::vector<float> weight_values = { 0, 0, 0, 0 };
@@ -69,11 +69,11 @@ BOOST_AUTO_TEST_CASE(updateSolverParams)
 	// Test that the learning rate was updated
 	model_interpreter.addWeightTensor(weight_data_ptr);
 	model_interpreter.updateSolverParams(0, 2);
-	assert(model_interpreter.getWeightTensor(0)->getSolverParams()(0, 0, 0) == 2);
+	assert(model_interpreter.getWeightTensor(0)->getSolverParams()(0, 0, 0) == 4);
 	assert(model_interpreter.getWeightTensor(0)->getSolverParams()(0, 0, 1) == 3);
-	assert(model_interpreter.getWeightTensor(0)->getSolverParams()(1, 0, 0) == 2);
-	assert(model_interpreter.getWeightTensor(0)->getSolverParams()(0, 1, 0) == 2);
-	assert(model_interpreter.getWeightTensor(0)->getSolverParams()(1, 1, 0) == 2);
+	assert(model_interpreter.getWeightTensor(0)->getSolverParams()(1, 0, 0) == 4);
+	assert(model_interpreter.getWeightTensor(0)->getSolverParams()(0, 1, 0) == 4);
+	assert(model_interpreter.getWeightTensor(0)->getSolverParams()(1, 1, 0) == 4);
 }
 
 Model<float> makeModelToy1()

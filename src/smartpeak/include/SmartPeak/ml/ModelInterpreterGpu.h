@@ -43,7 +43,7 @@ namespace SmartPeak
 		void allocateModelErrorTensor(const int& batch_size, const int& memory_size);
 		void getModelResults(Model<TensorT>& model, const bool& output_nodes, const bool& weights, const bool& model_error);
 		void checkMemory(const Model<TensorT>& model, const int& batch_size, const int& memory_size);
-		void updateSolverParams(const int& param_index, const TensorT& param_value);
+		void updateSolverParams(const int& param_index, const TensorT& param_factor);
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -597,33 +597,38 @@ namespace SmartPeak
 	}
 
 	template<typename TensorT>
-	inline void ModelInterpreterGpu<TensorT>::updateSolverParams(const int & param_index, const TensorT & param_value)
+	inline void ModelInterpreterGpu<TensorT>::updateSolverParams(const int & param_index, const TensorT & param_factor)
 	{
 		assert(cudaSetDevice(getModelResources()[0].getID()) == cudaSuccess); // is this needed?
+    assert(cudaSetDevice(getModelResources()[0].getID()) == cudaSuccess); // is this needed?
+    std::vector<cudaStream_t> streams;
+    for (size_t i = 0; i < this->weight_tensors_.size(); ++i) {
+      cudaStream_t stream; // The stream will be destroyed by GpuStreamDevice once the function goes out of scope!
+      assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess);
+      streams.push_back(stream);
+    }
 
-		size_t device_iter = 0;
-		for (auto& weight_tensor_data : this->weight_tensors_) {
-			if (weight_tensor_data->getNSolverParams() > 0) {
-        cudaStream_t stream; // The stream will be destroyed by GpuStreamDevice once the function goes out of scope!
-        assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess);
-				Eigen::GpuStreamDevice stream_device(&stream, getModelResources()[0].getID());
-				Eigen::GpuDevice device(&stream_device);
+    size_t device_iter = 0;
+    for (auto& weight_tensor_data : this->weight_tensors_) {
+      if (weight_tensor_data->getNSolverParams() > 0) {
+        Eigen::GpuStreamDevice stream_device(&streams[device_iter], getModelResources()[0].getID());
+        Eigen::GpuDevice device(&stream_device);
 
-				if (!weight_tensor_data->getSolverParamsStatus().first)
-					weight_tensor_data->syncHAndDSolverParams(device);
+        if (!weight_tensor_data->getSolverParamsStatus().second)
+          weight_tensor_data->syncHAndDSolverParams(device);
 
-        // sync and destroy the streams
-        assert(cudaStreamSynchronize(stream) == cudaSuccess);
-        assert(cudaStreamDestroy(stream) == cudaSuccess);
+        Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> solver_params(weight_tensor_data->getDSolverParamsPointer().get(), weight_tensor_data->getLayer1Size(), weight_tensor_data->getLayer2Size(), weight_tensor_data->getNSolverParams());
+        solver_params.chip(param_index, 2).device(device) = solver_params.chip(param_index, 2) * solver_params.chip(param_index, 2).constant(param_factor);
 
-        // updated on the CPU
-				Eigen::Tensor<TensorT, 2> solver_params(weight_tensor_data->getLayer1Size(), weight_tensor_data->getLayer2Size());
-				solver_params.setConstant(param_value);
-				weight_tensor_data->getSolverParams().chip(param_index, 2) = solver_params;
+        ++device_iter;
+      }
+    }
 
-				++device_iter;
-			}
-		}
+    // sync and destroy the streams
+    for (size_t i = 0; i < this->weight_tensors_.size(); ++i) {
+      assert(cudaStreamSynchronize(streams[i]) == cudaSuccess);
+      assert(cudaStreamDestroy(streams[i]) == cudaSuccess);
+    }
 	}
 }
 CEREAL_REGISTER_TYPE(SmartPeak::ModelInterpreterGpu<float>);
