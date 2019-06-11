@@ -29,18 +29,13 @@ namespace SmartPeak
   /**
     @brief Base class for all activation functions.
   */
- template<typename TensorT>
+  template<typename TensorT>
   class ActivationOp
   {
-public: 
-	ActivationOp() {};
-		//ActivationOp(const TensorT& eps, const TensorT& min, const TensorT& max) : eps_(eps), min_(min), max_(max) {};
-	ActivationOp(const TensorT& eps, const TensorT& min, const TensorT& max) {
-		setEps(eps);
-		setMin(min);
-		setMax(max);
-	};
-		~ActivationOp() {};
+  public: 
+	  ActivationOp() = default;
+    ActivationOp(const TensorT& eps, const TensorT& min, const TensorT& max) : eps_(eps), min_(min), max_(max) {};
+		virtual ~ActivationOp() = default;
 		void setEps(const TensorT& eps) { eps_ = eps; }
 		void setMin(const TensorT& min) { min_ = min; }
 		void setMax(const TensorT& max) { max_ = max; }

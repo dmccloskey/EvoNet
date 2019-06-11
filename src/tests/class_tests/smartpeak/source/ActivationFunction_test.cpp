@@ -28,6 +28,29 @@ BOOST_AUTO_TEST_CASE(destructorReluOp)
   delete ptrReLU;
 }
 
+BOOST_AUTO_TEST_CASE(gettersAndSettersReluOp)
+{
+  // Test defaults
+  ReLUOp<double> operation_defaults;
+  BOOST_CHECK_CLOSE(operation_defaults.getEps(), 1e-6, 1e-6);
+  BOOST_CHECK_CLOSE(operation_defaults.getMin(), -1e9, 1e-6);
+  BOOST_CHECK_CLOSE(operation_defaults.getMax(), 1e9, 1e-6);
+
+  // Test setters
+  operation_defaults.setEps(10);
+  operation_defaults.setMin(20);
+  operation_defaults.setMax(30);
+  BOOST_CHECK_CLOSE(operation_defaults.getEps(), 10, 1e-6);
+  BOOST_CHECK_CLOSE(operation_defaults.getMin(), 20, 1e-6);
+  BOOST_CHECK_CLOSE(operation_defaults.getMax(), 30, 1e-6);
+
+  // Test constructor
+  ReLUOp<double> operation(10, 20, 30);
+  BOOST_CHECK_CLOSE(operation.getEps(), 10, 1e-6);
+  BOOST_CHECK_CLOSE(operation.getMin(), 20, 1e-6);
+  BOOST_CHECK_CLOSE(operation.getMax(), 30, 1e-6);
+}
+
 BOOST_AUTO_TEST_CASE(operationfunctionReluOp) 
 {
   ReLUOp<double> operation;

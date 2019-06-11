@@ -22,10 +22,21 @@ namespace SmartPeak
   class ActivationTensorOp
   {
   public: 
-		ActivationTensorOp() {};
-		~ActivationTensorOp() {};
+		ActivationTensorOp() = default;
+    ActivationTensorOp(const TensorT& eps, const TensorT& min, const TensorT& max) : eps_(eps), min_(min), max_(max) {};
+		virtual ~ActivationTensorOp() = default;
 		virtual std::string getName() const = 0;
 		virtual void operator()(TensorT* x_I, TensorT* x_O, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const = 0;
+    void setEps(const TensorT& eps) { eps_ = eps; }
+    void setMin(const TensorT& min) { min_ = min; }
+    void setMax(const TensorT& max) { max_ = max; }
+    TensorT getEps() const { return eps_; }
+    TensorT getMin() const { return min_; }
+    TensorT getMax() const { return max_; }
+  protected:
+    TensorT eps_ = 1e-6; ///< threshold to clip between min and max
+    TensorT min_ = -1e9;
+    TensorT max_ = 1e9;
 	//private:
 	//	friend class cereal::access;
 	//	template<class Archive>
@@ -43,15 +54,14 @@ namespace SmartPeak
   template<typename TensorT, typename DeviceT>
   class ReLUTensorOp: public ActivationTensorOp<TensorT, DeviceT>
   {
-	public: 
-    ReLUTensorOp(){}; 
-    ~ReLUTensorOp(){};
+	public:
+    using ActivationTensorOp<TensorT, DeviceT>::ActivationTensorOp;
     void operator()(TensorT* x_I, TensorT* x_O, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
 			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(ReLUOp<TensorT>());
 			auto result = (x.chip(time_step, 1) > x.chip(time_step, 1).constant(0)).select(x.chip(time_step, 1), x.chip(time_step, 1).constant(0));
-			out.chip(time_step, 1).device(device) = result.clip(-1e9, 1e9);
+			out.chip(time_step, 1).device(device) = result.clip(this->getMin(), this->getMax());
       //std::cout << "[ReLUTensorOp] Time step " << time_step << " : " << out.chip(time_step, 1) << std::endl;  // DEBUGGING...
 		};
     std::string getName() const{return "ReLUTensorOp";};
@@ -74,15 +84,14 @@ namespace SmartPeak
   template<typename TensorT, typename DeviceT>
   class ReLUGradTensorOp: public ActivationTensorOp<TensorT, DeviceT>
   {
-public: 
-    ReLUGradTensorOp(){}; 
-    ~ReLUGradTensorOp(){};
+  public:
+    using ActivationTensorOp<TensorT, DeviceT>::ActivationTensorOp;
     void operator()(TensorT* x_I, TensorT* x_O, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
 			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(ReLUGradOp<TensorT>());
 			auto result = (x.chip(time_step, 1) > x.chip(time_step, 1).constant(0)).select(x.chip(time_step, 1).constant(1), x.chip(time_step, 1).constant(0));
-			out.chip(time_step, 1).device(device) = result.clip(-1e9, 1e9);
+			out.chip(time_step, 1).device(device) = result.clip(this->getMin(), this->getMax());
 		};
     std::string getName() const{return "ReLUGradTensorOp";};
 	//private:
@@ -104,10 +113,11 @@ public:
   template<typename TensorT, typename DeviceT>
   class ELUTensorOp: public ActivationTensorOp<TensorT, DeviceT>
   {
-public: 
-    ELUTensorOp(){}; 
+  public:
+    ELUTensorOp() = default;
+    ~ELUTensorOp() = default;
+    ELUTensorOp(const TensorT& eps, const TensorT& min, const TensorT& max, const TensorT& alpha) : ActivationTensorOp(eps, min, max), alpha_(alpha) {};
     ELUTensorOp(const TensorT& alpha): alpha_(alpha){}; 
-    ~ELUTensorOp(){};
 		void operator()(TensorT* x_I, TensorT* x_O, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
@@ -115,7 +125,7 @@ public:
 			auto result = (x.chip(time_step, 1) > x.chip(time_step, 1).constant(0)).select(
 				x.chip(time_step, 1), 
 				x.chip(time_step, 1).constant(alpha_) * (x.chip(time_step, 1).exp() - x.chip(time_step, 1).constant(1)));
-			out.chip(time_step, 1).device(device) = result.clip(-1e9, 1e9);
+			out.chip(time_step, 1).device(device) = result.clip(this->getMin(), this->getMax());
 		};
     void setAlpha(const TensorT& alpha) { alpha_ = alpha; };
     TensorT getAlpha() const { return alpha_; };
@@ -140,10 +150,11 @@ public:
   template<typename TensorT, typename DeviceT>
   class ELUGradTensorOp: public ActivationTensorOp<TensorT, DeviceT>
   {
-public: 
-    ELUGradTensorOp(){}; 
+  public:
+    ELUGradTensorOp() = default;
+    ~ELUGradTensorOp() = default;
+    ELUGradTensorOp(const TensorT& eps, const TensorT& min, const TensorT& max, const TensorT& alpha) : ActivationTensorOp(eps, min, max), alpha_(alpha) {};
     ELUGradTensorOp(const TensorT& alpha): alpha_(alpha){}; 
-    ~ELUGradTensorOp(){};
     void operator()(TensorT* x_I, TensorT* x_O, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
@@ -151,7 +162,7 @@ public:
 			auto result = (x.chip(time_step, 1) > x.chip(time_step, 1).constant(0)).select(
 				x.chip(time_step, 1).constant(1),
 				(x.chip(time_step, 1) > x.chip(time_step, 1).constant(0)).select(x.chip(time_step, 1), x.chip(time_step, 1).constant(alpha_) * (x.chip(time_step, 1).exp() - x.chip(time_step, 1).constant(1))) + x.chip(time_step, 1).constant(alpha_));
-			out.chip(time_step, 1).device(device) = result.clip(-1e9, 1e9);
+			out.chip(time_step, 1).device(device) = result.clip(this->getMin(), this->getMax());
 		};
     void setAlpha(const TensorT& alpha) { alpha_ = alpha; };
     TensorT getAlpha() const { return alpha_; };
@@ -171,16 +182,15 @@ public:
   template<typename TensorT, typename DeviceT>
   class SigmoidTensorOp: public ActivationTensorOp<TensorT, DeviceT>
   {
-public: 
-    SigmoidTensorOp(){}; 
-    ~SigmoidTensorOp(){};
+  public:
+    using ActivationTensorOp<TensorT, DeviceT>::ActivationTensorOp;
     void operator()(TensorT* x_I, TensorT* x_O, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
 			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(SigmoidOp<TensorT>());
 			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).constant(1)/(x.chip(time_step, 1).constant(1) + (-x.chip(time_step, 1).exp()));
 			auto result = x.chip(time_step, 1).sigmoid();
-			out.chip(time_step, 1).device(device) = result.clip(-1e9, 1e9);
+			out.chip(time_step, 1).device(device) = result.clip(this->getMin(), this->getMax());
 		};
     std::string getName() const{return "SigmoidTensorOp";};
 	//private:
@@ -197,15 +207,14 @@ public:
   template<typename TensorT, typename DeviceT>
   class SigmoidGradTensorOp: public ActivationTensorOp<TensorT, DeviceT>
   {
-public: 
-    SigmoidGradTensorOp(){}; 
-    ~SigmoidGradTensorOp(){};
+  public:
+    using ActivationTensorOp<TensorT, DeviceT>::ActivationTensorOp;
     void operator()(TensorT* x_I, TensorT* x_O, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
 			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(SigmoidGradOp<TensorT>());
 			auto result = x.chip(time_step, 1).sigmoid() * (x.chip(time_step, 1).constant(1) - x.chip(time_step, 1).sigmoid());
-			out.chip(time_step, 1).device(device) = result.clip(-1e9, 1e9);
+			out.chip(time_step, 1).device(device) = result.clip(this->getMin(), this->getMax());
 		};
     std::string getName() const{return "SigmoidGradTensorOp";};
 	//private:
@@ -222,15 +231,14 @@ public:
   template<typename TensorT, typename DeviceT>
   class TanHTensorOp: public ActivationTensorOp<TensorT, DeviceT>
   {
-public: 
-    TanHTensorOp(){}; 
-    ~TanHTensorOp(){};
+  public:
+    using ActivationTensorOp<TensorT, DeviceT>::ActivationTensorOp;
     void operator()(TensorT* x_I, TensorT* x_O, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
 			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(TanHOp<TensorT>());
 			auto result = x.chip(time_step, 1).tanh();
-			out.chip(time_step, 1).device(device) = result.clip(-1e9, 1e9);
+			out.chip(time_step, 1).device(device) = result.clip(this->getMin(), this->getMax());
 		};
     std::string getName() const{return "TanHTensorOp";};
 	//private:
@@ -247,15 +255,14 @@ public:
   template<typename TensorT, typename DeviceT>
   class TanHGradTensorOp: public ActivationTensorOp<TensorT, DeviceT>
   {
-public: 
-    TanHGradTensorOp(){}; 
-    ~TanHGradTensorOp(){};
+  public:
+    using ActivationTensorOp<TensorT, DeviceT>::ActivationTensorOp;
     void operator()(TensorT* x_I, TensorT* x_O, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
 			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(TanHGradOp<TensorT>());
 			auto result = x.chip(time_step, 1).constant(1) - (x.chip(time_step, 1).tanh()).pow(2); 
-			out.chip(time_step, 1).device(device) = result.clip(-1e9, 1e9);
+			out.chip(time_step, 1).device(device) = result.clip(this->getMin(), this->getMax());
 		};
     std::string getName() const{return "TanHGradTensorOp";};
 	//private:
@@ -272,9 +279,8 @@ public:
   template<typename TensorT, typename DeviceT>
   class ReTanHTensorOp: public ActivationTensorOp<TensorT, DeviceT>
   {
-public: 
-    ReTanHTensorOp(){}; 
-    ~ReTanHTensorOp(){};
+  public:
+    using ActivationTensorOp<TensorT, DeviceT>::ActivationTensorOp;
     void operator()(TensorT* x_I, TensorT* x_O, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
@@ -296,9 +302,8 @@ public:
   template<typename TensorT, typename DeviceT>
   class ReTanHGradTensorOp: public ActivationTensorOp<TensorT, DeviceT>
   {
-public: 
-    ReTanHGradTensorOp(){}; 
-    ~ReTanHGradTensorOp(){};
+  public:
+    using ActivationTensorOp<TensorT, DeviceT>::ActivationTensorOp;
     void operator()(TensorT* x_I, TensorT* x_O, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
@@ -320,15 +325,14 @@ public:
 	template<typename TensorT, typename DeviceT>
 	class LinearTensorOp : public ActivationTensorOp<TensorT, DeviceT>
 	{
-	public:
-		LinearTensorOp() {};
-		~LinearTensorOp() {};
+  public:
+    using ActivationTensorOp<TensorT, DeviceT>::ActivationTensorOp;
 		void operator()(TensorT* x_I, TensorT* x_O, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
 			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(LinearOp<TensorT>());
 			auto result = x.chip(time_step, 1); 
-			out.chip(time_step, 1).device(device) = result.clip(-1e9, 1e9);
+			out.chip(time_step, 1).device(device) = result.clip(this->getMin(), this->getMax());
 		};
 		std::string getName() const { return "LinearTensorOp"; };
 	//private:
@@ -345,9 +349,8 @@ public:
 	template<typename TensorT, typename DeviceT>
 	class LinearGradTensorOp : public ActivationTensorOp<TensorT, DeviceT>
 	{
-	public:
-		LinearGradTensorOp() {};
-		~LinearGradTensorOp() {};
+  public:
+    using ActivationTensorOp<TensorT, DeviceT>::ActivationTensorOp;
 		void operator()(TensorT* x_I, TensorT* x_O, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
@@ -369,16 +372,15 @@ public:
 	template<typename TensorT, typename DeviceT>
 	class InverseTensorOp : public ActivationTensorOp<TensorT, DeviceT>
 	{
-	public:
-		InverseTensorOp() {};
-		~InverseTensorOp() {};
+  public:
+    using ActivationTensorOp<TensorT, DeviceT>::ActivationTensorOp;
 		void operator()(TensorT* x_I, TensorT* x_O, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
 			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(InverseOp<TensorT>());
 			auto result = (x.chip(time_step, 1) != x.chip(time_step, 1).constant(0)).select(
 				x.chip(time_step, 1).constant(1)/ x.chip(time_step, 1), x.chip(time_step, 1).constant(0));
-			out.chip(time_step, 1).device(device) = result.clip(-1e9, 1e9);
+			out.chip(time_step, 1).device(device) = result.clip(this->getMin(), this->getMax());
 		};
 		std::string getName() const { return "InverseTensorOp"; };
 	//private:
@@ -395,16 +397,15 @@ public:
 	template<typename TensorT, typename DeviceT>
 	class InverseGradTensorOp : public ActivationTensorOp<TensorT, DeviceT>
 	{
-	public:
-		InverseGradTensorOp() {};
-		~InverseGradTensorOp() {};
+  public:
+    using ActivationTensorOp<TensorT, DeviceT>::ActivationTensorOp;
 		void operator()(TensorT* x_I, TensorT* x_O, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
 			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(InverseGradOp<TensorT>());
 			auto result = (x.chip(time_step, 1) != x.chip(time_step, 1).constant(0)).select(
 				x.chip(time_step, 1).constant(-1) / x.chip(time_step, 1).pow(2), x.chip(time_step, 1).constant(0));
-			out.chip(time_step, 1).device(device) = result.clip(-1e9, 1e9);
+			out.chip(time_step, 1).device(device) = result.clip(this->getMin(), this->getMax());
 		};
 		std::string getName() const { return "InverseGradTensorOp"; };
 	//private:
@@ -421,15 +422,14 @@ public:
 	template<typename TensorT, typename DeviceT>
 	class ExponentialTensorOp : public ActivationTensorOp<TensorT, DeviceT>
 	{
-	public:
-		ExponentialTensorOp() {};
-		~ExponentialTensorOp() {};
+  public:
+    using ActivationTensorOp<TensorT, DeviceT>::ActivationTensorOp;
 		void operator()(TensorT* x_I, TensorT* x_O, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
 			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(ExponentialOp<TensorT>());
 			auto result = x.chip(time_step, 1).exp(); 
-			out.chip(time_step, 1).device(device) = result.clip(-1e9, 1e9);
+			out.chip(time_step, 1).device(device) = result.clip(this->getMin(), this->getMax());
 		};
 		std::string getName() const { return "ExponentialTensorOp"; };
 	//private:
@@ -446,15 +446,14 @@ public:
 	template<typename TensorT, typename DeviceT>
 	class ExponentialGradTensorOp : public ActivationTensorOp<TensorT, DeviceT>
 	{
-	public:
-		ExponentialGradTensorOp() {};
-		~ExponentialGradTensorOp() {};
+  public:
+    using ActivationTensorOp<TensorT, DeviceT>::ActivationTensorOp;
 		void operator()(TensorT* x_I, TensorT* x_O, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
 			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(ExponentialGradOp<TensorT>());
 			auto result = x.chip(time_step, 1).exp();
-			out.chip(time_step, 1).device(device) = result.clip(-1e9, 1e9);
+			out.chip(time_step, 1).device(device) = result.clip(this->getMin(), this->getMax());
 		};
 		std::string getName() const { return "ExponentialGradTensorOp"; };
 	//private:
@@ -471,15 +470,14 @@ public:
 	template<typename TensorT, typename DeviceT>
 	class LogTensorOp : public ActivationTensorOp<TensorT, DeviceT>
 	{
-	public:
-		LogTensorOp() {};
-		~LogTensorOp() {};
+  public:
+    using ActivationTensorOp<TensorT, DeviceT>::ActivationTensorOp;
 		void operator()(TensorT* x_I, TensorT* x_O, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
 			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(LogOp<TensorT>());
 			auto result = x.chip(time_step, 1).log();
-			out.chip(time_step, 1).device(device) = result.clip(-1e9, 1e9);
+			out.chip(time_step, 1).device(device) = result.clip(this->getMin(), this->getMax());
 		};
 		std::string getName() const { return "LogTensorOp"; };
 	//private:
@@ -496,15 +494,14 @@ public:
 	template<typename TensorT, typename DeviceT>
 	class LogGradTensorOp : public ActivationTensorOp<TensorT, DeviceT>
 	{
-	public:
-		LogGradTensorOp() {};
-		~LogGradTensorOp() {};
+  public:
+    using ActivationTensorOp<TensorT, DeviceT>::ActivationTensorOp;
 		void operator()(TensorT* x_I, TensorT* x_O, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
 			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(LogGradOp<TensorT>());
 			auto result = x.chip(time_step, 1).constant(1) / x.chip(time_step, 1);
-			out.chip(time_step, 1).device(device) = result.clip(-1e9, 1e9);
+			out.chip(time_step, 1).device(device) = result.clip(this->getMin(), this->getMax());
 		};
 		std::string getName() const { return "LogGradTensorOp"; };
 	//private:
@@ -521,16 +518,17 @@ public:
 	template<typename TensorT, typename DeviceT>
 	class PowTensorOp : public ActivationTensorOp<TensorT, DeviceT>
 	{
-	public:
-		PowTensorOp() {};
+  public:
+    PowTensorOp() = default;
+    ~PowTensorOp() = default;
+    PowTensorOp(const TensorT& eps, const TensorT& min, const TensorT& max, const TensorT& base) : ActivationTensorOp(eps, min, max), base_(base) {};
 		PowTensorOp(const TensorT& base): base_(base){};
-		~PowTensorOp() {};
 		void operator()(TensorT* x_I, TensorT* x_O, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
 			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(PowOp<TensorT>(base_));
 			auto result = x.chip(time_step, 1).pow(base_);
-			out.chip(time_step, 1).device(device) = result.clip(-1e9, 1e9);
+			out.chip(time_step, 1).device(device) = result.clip(this->getMin(), this->getMax());
 		};
 		std::string getName() const { return "PowTensorOp"; };
 	private:
@@ -548,16 +546,17 @@ public:
 	template<typename TensorT, typename DeviceT>
 	class PowGradTensorOp : public ActivationTensorOp<TensorT, DeviceT>
 	{
-	public:
-		PowGradTensorOp() {};
+  public:
+    PowGradTensorOp() = default;
+    ~PowGradTensorOp() = default;
+    PowGradTensorOp(const TensorT& eps, const TensorT& min, const TensorT& max, const TensorT& base) : ActivationTensorOp(eps, min, max), base_(base) {};
 		PowGradTensorOp(const TensorT& base) : base_(base) {};
-		~PowGradTensorOp() {};
 		void operator()(TensorT* x_I, TensorT* x_O, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
 			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(PowGradOp<TensorT>(base_));
 			auto result = x.chip(time_step, 1).constant(base_) * x.chip(time_step, 1).pow(base_ - 1);
-			out.chip(time_step, 1).device(device) = result.clip(-1e9, 1e9);
+			out.chip(time_step, 1).device(device) = result.clip(this->getMin(), this->getMax());
 		};
 		std::string getName() const { return "PowGradTensorOp"; };
 	private:
@@ -577,17 +576,18 @@ public:
 	template<typename TensorT, typename DeviceT>
 	class LeakyReLUTensorOp : public ActivationTensorOp<TensorT, DeviceT>
 	{
-	public:
-		LeakyReLUTensorOp() {};
+  public:
+    LeakyReLUTensorOp() = default;
+    ~LeakyReLUTensorOp() = default;
+    LeakyReLUTensorOp(const TensorT& eps, const TensorT& min, const TensorT& max, const TensorT& alpha) : ActivationTensorOp(eps, min, max), alpha_(alpha) {};
 		LeakyReLUTensorOp(const TensorT& alpha) : alpha_(alpha) {};
-		~LeakyReLUTensorOp() {};
 		void operator()(TensorT* x_I, TensorT* x_O, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
 			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(LeakyReLUOp<TensorT>(alpha_));
 			auto result = (x.chip(time_step, 1) >= x.chip(time_step, 1).constant(0)).select(
 				x.chip(time_step, 1), x.chip(time_step, 1) * x.chip(time_step, 1).constant(alpha_));
-			out.chip(time_step, 1).device(device) = result.clip(-1e9, 1e9);
+			out.chip(time_step, 1).device(device) = result.clip(this->getMin(), this->getMax());
 		};
 		void setAlpha(const TensorT& alpha) { alpha_ = alpha; };
 		TensorT getAlpha() const { return alpha_; };
@@ -607,17 +607,18 @@ public:
 	template<typename TensorT, typename DeviceT>
 	class LeakyReLUGradTensorOp : public ActivationTensorOp<TensorT, DeviceT>
 	{
-	public:
-		LeakyReLUGradTensorOp() {};
+  public:
+    LeakyReLUGradTensorOp() = default;
+    ~LeakyReLUGradTensorOp() = default;
+    LeakyReLUGradTensorOp(const TensorT& eps, const TensorT& min, const TensorT& max, const TensorT& alpha) : ActivationTensorOp(eps, min, max), alpha_(alpha) {};
 		LeakyReLUGradTensorOp(const TensorT& alpha) : alpha_(alpha) {};
-		~LeakyReLUGradTensorOp() {};
 		void operator()(TensorT* x_I, TensorT* x_O, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
 			//out.chip(time_step, 1).device(device) = x.chip(time_step, 1).unaryExpr(LeakyReLUGradOp<TensorT>(alpha_));
 			auto result = (x.chip(time_step, 1) >= x.chip(time_step, 1).constant(0)).select(
 				x.chip(time_step, 1).constant(1), x.chip(time_step, 1).constant(alpha_));
-			out.chip(time_step, 1).device(device) = result.clip(-1e9, 1e9);
+			out.chip(time_step, 1).device(device) = result.clip(this->getMin(), this->getMax());
 		};
 		void setAlpha(const TensorT& alpha) { alpha_ = alpha; };
 		TensorT getAlpha() const { return alpha_; };
@@ -637,14 +638,13 @@ public:
 	template<typename TensorT, typename DeviceT>
 	class SinTensorOp : public ActivationTensorOp<TensorT, DeviceT>
 	{
-	public:
-		SinTensorOp() {};
-		~SinTensorOp() {};
+  public:
+    using ActivationTensorOp<TensorT, DeviceT>::ActivationTensorOp;
 		void operator()(TensorT* x_I, TensorT* x_O, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
 			//auto result = x.chip(time_step, 1).sin();
-			//out.chip(time_step, 1).device(device) = result.clip(-1e9, 1e9);
+			//out.chip(time_step, 1).device(device) = result.clip(this->getMin(), this->getMax());
 		};
 		std::string getName() const { return "SinTensorOp"; };
 		//private:
@@ -661,14 +661,13 @@ public:
 	template<typename TensorT, typename DeviceT>
 	class SinGradTensorOp : public ActivationTensorOp<TensorT, DeviceT>
 	{
-	public:
-		SinGradTensorOp() {};
-		~SinGradTensorOp() {};
+  public:
+    using ActivationTensorOp<TensorT, DeviceT>::ActivationTensorOp;
 		void operator()(TensorT* x_I, TensorT* x_O, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
 			//auto result = x.chip(time_step, 1).cos();
-			//out.chip(time_step, 1).device(device) = result.clip(-1e9, 1e9);
+			//out.chip(time_step, 1).device(device) = result.clip(this->getMin(), this->getMax());
 		};
 		std::string getName() const { return "SinGradTensorOp"; };
 		//private:
@@ -685,14 +684,13 @@ public:
 	template<typename TensorT, typename DeviceT>
 	class CosTensorOp : public ActivationTensorOp<TensorT, DeviceT>
 	{
-	public:
-		CosTensorOp() {};
-		~CosTensorOp() {};
+  public:
+    using ActivationTensorOp<TensorT, DeviceT>::ActivationTensorOp;
 		void operator()(TensorT* x_I, TensorT* x_O, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
 			//auto result = x.chip(time_step, 1).cos();
-			//out.chip(time_step, 1).device(device) = result.clip(-1e9, 1e9);
+			//out.chip(time_step, 1).device(device) = result.clip(this->getMin(), this->getMax());
 		};
 		std::string getName() const { return "CosTensorOp"; };
 		//private:
@@ -709,14 +707,13 @@ public:
 	template<typename TensorT, typename DeviceT>
 	class CosGradTensorOp : public ActivationTensorOp<TensorT, DeviceT>
 	{
-	public:
-		CosGradTensorOp() {};
-		~CosGradTensorOp() {};
+  public:
+    using ActivationTensorOp<TensorT, DeviceT>::ActivationTensorOp;
 		void operator()(TensorT* x_I, TensorT* x_O, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> x(x_I, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> out(x_O, batch_size, memory_size, layer_size);
 			//auto result = -x.chip(time_step, 1).sin();
-			//out.chip(time_step, 1).device(device) = result.clip(-1e9, 1e9);
+			//out.chip(time_step, 1).device(device) = result.clip(this->getMin(), this->getMax());
 		};
 		std::string getName() const { return "CosGradTensorOp"; };
 		//private:
