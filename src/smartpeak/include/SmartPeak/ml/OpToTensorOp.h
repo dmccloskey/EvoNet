@@ -22,8 +22,8 @@ namespace SmartPeak
   class OpToTensorOp
   {
 	public: 
-		OpToTensorOp() {};
-		~OpToTensorOp() {};
+		OpToTensorOp() = default;
+		virtual ~OpToTensorOp() = default;
 		virtual OperatorTensorT* convertOpToTensorOp(OperatorT* op_class) const = 0;
 		virtual std::vector<TensorT> getTensorParams(OperatorT* op_class) const = 0;
 		void operator()(OperatorT* op_class, OperatorTensorT*& op_tensor_class, std::vector<TensorT>& op_params) const {
@@ -38,107 +38,107 @@ namespace SmartPeak
 	public:
 		ActivationTensorOp<TensorT, DeviceT>* convertOpToTensorOp(ActivationOp<TensorT>* op_class) const {
 			if (op_class->getName() == "ReLUOp") {
-				ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new ReLUTensorOp<TensorT, DeviceT>();
+				ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new ReLUTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1], op_class->getParameters()[2]);
 				return op_tensor_class;
 			}
 			else if (op_class->getName() == "ReLUGradOp") {
-				ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new ReLUGradTensorOp<TensorT, DeviceT>();
+				ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new ReLUGradTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1], op_class->getParameters()[2]);
 				return op_tensor_class;
 			}
 			else if (op_class->getName() == "ELUOp") {
-				ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new ELUTensorOp<TensorT, DeviceT>(op_class->getParameters()[0]);
+				ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new ELUTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1], op_class->getParameters()[2], op_class->getParameters()[3]);
 				return op_tensor_class;
 			}
 			else if (op_class->getName() == "ELUGradOp") {
-				ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new ELUGradTensorOp<TensorT, DeviceT>(op_class->getParameters()[0]);
+				ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new ELUGradTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1], op_class->getParameters()[2], op_class->getParameters()[3]);
 				return op_tensor_class;
 			}
 			else if (op_class->getName() == "SigmoidOp") {
-				ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new SigmoidTensorOp<TensorT, DeviceT>();
+				ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new SigmoidTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1], op_class->getParameters()[2]);
 				return op_tensor_class;
 			}
 			else if (op_class->getName() == "SigmoidGradOp") {
-				ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new SigmoidGradTensorOp<TensorT, DeviceT>();
+				ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new SigmoidGradTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1], op_class->getParameters()[2]);
 				return op_tensor_class;
 			}
 			else if (op_class->getName() == "TanHOp") {
-				ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new TanHTensorOp<TensorT, DeviceT>();
+				ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new TanHTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1], op_class->getParameters()[2]);
 				return op_tensor_class;
 			}
 			else if (op_class->getName() == "TanHGradOp") {
-				ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new TanHGradTensorOp<TensorT, DeviceT>();
+				ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new TanHGradTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1], op_class->getParameters()[2]);
 				return op_tensor_class;
 			}
 			else if (op_class->getName() == "ReTanHOp") {
-				ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new ReTanHTensorOp<TensorT, DeviceT>();
+				ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new ReTanHTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1], op_class->getParameters()[2]);
 				return op_tensor_class;
 			}
 			else if (op_class->getName() == "ReTanHGradOp") {
-				ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new ReTanHGradTensorOp<TensorT, DeviceT>();
+				ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new ReTanHGradTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1], op_class->getParameters()[2]);
 				return op_tensor_class;
 			}
 			else if (op_class->getName() == "LinearOp") {
-				ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new LinearTensorOp<TensorT, DeviceT>();
+				ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new LinearTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1], op_class->getParameters()[2]);
 				return op_tensor_class;
 			}
 			else if (op_class->getName() == "LinearGradOp") {
-				ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new LinearGradTensorOp<TensorT, DeviceT>();
+				ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new LinearGradTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1], op_class->getParameters()[2]);
 				return op_tensor_class;
 			}
 			else if (op_class->getName() == "InverseOp") {
-				ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new InverseTensorOp<TensorT, DeviceT>();
+				ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new InverseTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1], op_class->getParameters()[2]);
 				return op_tensor_class;
 			}
 			else if (op_class->getName() == "InverseGradOp") {
-				ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new InverseGradTensorOp<TensorT, DeviceT>();
+				ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new InverseGradTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1], op_class->getParameters()[2]);
 				return op_tensor_class;
 			}
 			else if (op_class->getName() == "ExponentialOp") {
-				ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new ExponentialTensorOp<TensorT, DeviceT>();
+				ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new ExponentialTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1], op_class->getParameters()[2]);
 				return op_tensor_class;
 			}
 			else if (op_class->getName() == "ExponentialGradOp") {
-				ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new ExponentialGradTensorOp<TensorT, DeviceT>();
+				ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new ExponentialGradTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1], op_class->getParameters()[2]);
 				return op_tensor_class;
 			}
 			else if (op_class->getName() == "LogOp") {
-				ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new LogTensorOp<TensorT, DeviceT>();
+				ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new LogTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1], op_class->getParameters()[2]);
 				return op_tensor_class;
 			}
 			else if (op_class->getName() == "LogGradOp") {
-				ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new LogGradTensorOp<TensorT, DeviceT>();
+				ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new LogGradTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1], op_class->getParameters()[2]);
 				return op_tensor_class;
 			}
 			else if (op_class->getName() == "PowOp") {
-				ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new PowTensorOp<TensorT, DeviceT>(op_class->getParameters()[0]);
+				ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new PowTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1], op_class->getParameters()[2], op_class->getParameters()[3]);
 				return op_tensor_class;
 			}
 			else if (op_class->getName() == "PowGradOp") {
-				ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new PowGradTensorOp<TensorT, DeviceT>(op_class->getParameters()[0]);
+				ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new PowGradTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1], op_class->getParameters()[2], op_class->getParameters()[3]);
 				return op_tensor_class;
 			}
 			else if (op_class->getName() == "LeakyReLUOp") {
-				ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new LeakyReLUTensorOp<TensorT, DeviceT>(op_class->getParameters()[0]);
+				ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new LeakyReLUTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1], op_class->getParameters()[2], op_class->getParameters()[3]);
 				return op_tensor_class;
 			}
 			else if (op_class->getName() == "LeakyReLUGradOp") {
-				ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new LeakyReLUGradTensorOp<TensorT, DeviceT>(op_class->getParameters()[0]);
+				ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new LeakyReLUGradTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1], op_class->getParameters()[2], op_class->getParameters()[3]);
 				return op_tensor_class;
 			}
 			else if (op_class->getName() == "SinOp") {
-				ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new SinTensorOp<TensorT, DeviceT>();
+				ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new SinTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1], op_class->getParameters()[2]);
 				return op_tensor_class;
 			}
 			else if (op_class->getName() == "SinGradOp") {
-				ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new SinGradTensorOp<TensorT, DeviceT>();
+				ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new SinGradTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1], op_class->getParameters()[2]);
 				return op_tensor_class;
 			}
 			else if (op_class->getName() == "CosOp") {
-				ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new CosTensorOp<TensorT, DeviceT>();
+				ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new CosTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1], op_class->getParameters()[2]);
 				return op_tensor_class;
 			}
 			else if (op_class->getName() == "CosGradOp") {
-				ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new CosGradTensorOp<TensorT, DeviceT>();
+				ActivationTensorOp<TensorT, DeviceT>* op_tensor_class = new CosGradTensorOp<TensorT, DeviceT>(op_class->getParameters()[0], op_class->getParameters()[1], op_class->getParameters()[2]);
 				return op_tensor_class;
 			}
 			else {

@@ -84,7 +84,7 @@ public:
 			//return clip(result); 
 		};
     std::string getName() const{return "ReLUOp";};
-		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+    std::vector<TensorT> getParameters() const { return std::vector<TensorT>({this->getEps(), this->getMin(), this->getMax()}); }
     ActivationOp<TensorT>* copy() const { return new ReLUOp<TensorT>(*this); }
 	private:
 		friend class cereal::access;
@@ -109,7 +109,7 @@ public:
 		using ActivationOp<TensorT>::ActivationOp;
     TensorT operator()(const TensorT& x_I) const { return (x_I > 0.0) ? 1.0: 0.0; };
     std::string getName() const{return "ReLUGradOp";};
-		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+    std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->getEps(), this->getMin(), this->getMax() }); }
     ActivationOp<TensorT>* copy() const { return new ReLUGradOp<TensorT>(*this); }
 	private:
 		friend class cereal::access;
@@ -133,6 +133,7 @@ public:
 public:
 		ELUOp() = default;
 		~ELUOp() = default;
+    ELUOp(const TensorT& eps, const TensorT& min, const TensorT& max, const TensorT& alpha) : ActivationOp(eps, min, max), alpha_(alpha) {};
     ELUOp(const TensorT& alpha): alpha_(alpha){}; 
     TensorT operator()(const TensorT& x_I) const {
 			TensorT result = (x_I > 0.0) ? x_I : alpha_ * (exp(x_I) - 1);
@@ -144,7 +145,7 @@ public:
     void setAlpha(const TensorT& alpha) { alpha_ = alpha; };
     TensorT getAlpha() const { return alpha_; };
     std::string getName() const{return "ELUOp";};
-		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ alpha_ }); }
+		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->getEps(), this->getMin(), this->getMax(), alpha_ }); }
     ActivationOp<TensorT>* copy() const { return new ELUOp<TensorT>(*this); }
 private:
 		friend class cereal::access;
@@ -169,6 +170,7 @@ private:
 public:
 		ELUGradOp() = default;
 		~ELUGradOp() = default;
+    ELUGradOp(const TensorT& eps, const TensorT& min, const TensorT& max, const TensorT& alpha) : ActivationOp(eps, min, max), alpha_(alpha) {};
     ELUGradOp(const TensorT& alpha): alpha_(alpha){}; 
     TensorT operator()(const TensorT& x_I) const {
       SmartPeak::ELUOp<TensorT> eluop(alpha_);
@@ -177,7 +179,7 @@ public:
     void setAlpha(const TensorT& alpha) { alpha_ = alpha; };
     TensorT getAlpha() const { return alpha_; };
     std::string getName() const{return "ELUGradOp";};
-		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ alpha_ }); }
+		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->getEps(), this->getMin(), this->getMax(), alpha_ }); }
     ActivationOp<TensorT>* copy() const { return new ELUGradOp<TensorT>(*this); }
 private:
 		friend class cereal::access;
@@ -203,7 +205,7 @@ public:
 			//return clip(result); 
 		};
     std::string getName() const{return "SigmoidOp";};
-		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+    std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->getEps(), this->getMin(), this->getMax() }); }
     ActivationOp<TensorT>* copy() const { return new SigmoidOp<TensorT>(*this); }
 	private:
 		friend class cereal::access;
@@ -226,7 +228,7 @@ public:
       return sigmoidop(x_I) * (1 - sigmoidop(x_I));
     };
     std::string getName() const{return "SigmoidGradOp";};
-		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+    std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->getEps(), this->getMin(), this->getMax() }); }
     ActivationOp<TensorT>* copy() const { return new SigmoidGradOp<TensorT>(*this); }
 	private:
 		friend class cereal::access;
@@ -246,7 +248,7 @@ public:
 		using ActivationOp<TensorT>::ActivationOp;
     TensorT operator()(const TensorT& x_I) const { return tanh(x_I); };
     std::string getName() const{return "TanHOp";};
-		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+    std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->getEps(), this->getMin(), this->getMax() }); }
     ActivationOp<TensorT>* copy() const { return new TanHOp<TensorT>(*this); }
 	private:
 		friend class cereal::access;
@@ -271,7 +273,7 @@ public:
    //   return clip(x_new);
     };
     std::string getName() const{return "TanHGradOp";};
-		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+    std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->getEps(), this->getMin(), this->getMax() }); }
     ActivationOp<TensorT>* copy() const { return new TanHGradOp<TensorT>(*this); }
 	private:
 		friend class cereal::access;
@@ -296,7 +298,7 @@ public:
    //   return clip(result);
     };
     std::string getName() const{return "ReTanHOp";};
-		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+    std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->getEps(), this->getMin(), this->getMax() }); }
     ActivationOp<TensorT>* copy() const { return new ReTanHOp<TensorT>(*this); }
 	private:
 		friend class cereal::access;
@@ -322,7 +324,7 @@ public:
    //   return clip(x_new);
     };
     std::string getName() const{return "ReTanHGradOp";};
-		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+    std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->getEps(), this->getMin(), this->getMax() }); }
     ActivationOp<TensorT>* copy() const { return new ReTanHGradOp<TensorT>(*this); }
 	private:
 		friend class cereal::access;
@@ -342,7 +344,7 @@ public:
 		using ActivationOp<TensorT>::ActivationOp;
 		TensorT operator()(const TensorT& x_I) const { return x_I; };
 		std::string getName() const { return "LinearOp"; };
-		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+    std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->getEps(), this->getMin(), this->getMax() }); }
     ActivationOp<TensorT>* copy() const { return new LinearOp<TensorT>(*this); }
 	private:
 		friend class cereal::access;
@@ -362,7 +364,7 @@ public:
 		using ActivationOp<TensorT>::ActivationOp;
 		TensorT operator()(const TensorT& x_I) const { return 1.0; };
 		std::string getName() const { return "LinearGradOp"; };
-		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+    std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->getEps(), this->getMin(), this->getMax() }); }
     ActivationOp<TensorT>* copy() const { return new LinearGradOp<TensorT>(*this); }
 	private:
 		friend class cereal::access;
@@ -387,7 +389,7 @@ public:
 			return clip(result);
 		};
 		std::string getName() const { return "InverseOp"; };
-		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+    std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->getEps(), this->getMin(), this->getMax() }); }
     ActivationOp<TensorT>* copy() const { return new InverseOp<TensorT>(*this); }
 	private:
 		friend class cereal::access;
@@ -412,7 +414,7 @@ public:
 			return clip(result);
 		};
 		std::string getName() const { return "InverseGradOp"; };
-		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+    std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->getEps(), this->getMin(), this->getMax() }); }
     ActivationOp<TensorT>* copy() const { return new InverseGradOp<TensorT>(*this); }
 	private:
 		friend class cereal::access;
@@ -436,7 +438,7 @@ public:
 			return clip(exp(x_I));
 		};
 		std::string getName() const { return "ExponentialOp"; };
-		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+    std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->getEps(), this->getMin(), this->getMax() }); }
     ActivationOp<TensorT>* copy() const { return new ExponentialOp<TensorT>(*this); }
 	private:
 		friend class cereal::access;
@@ -460,7 +462,7 @@ public:
 			return clip(exp(x_I));
 		};
 		std::string getName() const { return "ExponentialGradOp"; };
-		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+    std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->getEps(), this->getMin(), this->getMax() }); }
     ActivationOp<TensorT>* copy() const { return new ExponentialGradOp<TensorT>(*this); }
 	private:
 		friend class cereal::access;
@@ -484,7 +486,7 @@ public:
 			//return clip(log(x_I));
 		};
 		std::string getName() const { return "LogOp"; };
-		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+    std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->getEps(), this->getMin(), this->getMax() }); }
     ActivationOp<TensorT>* copy() const { return new LogOp<TensorT>(*this); }
 	private:
 		friend class cereal::access;
@@ -508,7 +510,7 @@ public:
 			//return clip(1/x_I);
 		};
 		std::string getName() const { return "LogGradOp"; };
-		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+    std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->getEps(), this->getMin(), this->getMax() }); }
     ActivationOp<TensorT>* copy() const { return new LogGradOp<TensorT>(*this); }
 	private:
 		friend class cereal::access;
@@ -527,6 +529,7 @@ public:
 	public:
 		PowOp() = default;
 		~PowOp() = default;
+    PowOp(const TensorT& eps, const TensorT& min, const TensorT& max, const TensorT& base) : ActivationOp(eps, min, max), base_(base) {};
 		PowOp(const TensorT& base): base_(base){};
 		TensorT operator()(const TensorT& x_I) const {
 			return pow(x_I, base_);
@@ -534,7 +537,7 @@ public:
 			//return clip(pow(x_I, base_));
 		};
 		std::string getName() const { return "PowOp"; };
-		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ base_ }); }
+		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->getEps(), this->getMin(), this->getMax(), base_ }); }
     ActivationOp<TensorT>* copy() const { return new PowOp<TensorT>(*this); }
 	private:
 		friend class cereal::access;
@@ -554,6 +557,7 @@ public:
 	public:
 		PowGradOp() = default;
 		~PowGradOp() = default;
+    PowGradOp(const TensorT& eps, const TensorT& min, const TensorT& max, const TensorT& base) : ActivationOp(eps, min, max), base_(base) {};
 		PowGradOp(const TensorT& base) : base_(base) {};
 		TensorT operator()(const TensorT& x_I) const {
 			const TensorT result = base_ * pow(x_I, base_ - 1);
@@ -562,7 +566,7 @@ public:
 			//return clip(result);
 		};
 		std::string getName() const { return "PowGradOp"; };
-		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ base_ }); }
+		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->getEps(), this->getMin(), this->getMax(), base_ }); }
     ActivationOp<TensorT>* copy() const { return new PowGradOp<TensorT>(*this); }
 	private:
 		friend class cereal::access;
@@ -584,6 +588,7 @@ public:
 	public:
 		LeakyReLUOp() = default;
 		~LeakyReLUOp() = default;
+    LeakyReLUOp(const TensorT& eps, const TensorT& min, const TensorT& max, const TensorT& alpha) : ActivationOp(eps, min, max), alpha_(alpha) {};
 		LeakyReLUOp(const TensorT& alpha) : alpha_(alpha) {};
 		TensorT operator()(const TensorT& x_I) const {
 			const TensorT result = (x_I >= 0.0) ? x_I : alpha_ * x_I;
@@ -594,7 +599,7 @@ public:
 		void setAlpha(const TensorT& alpha) { alpha_ = alpha; };
 		TensorT getAlpha() const { return alpha_; };
 		std::string getName() const { return "LeakyReLUOp"; };
-		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ alpha_ }); }
+		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->getEps(), this->getMin(), this->getMax(), alpha_ }); }
     ActivationOp<TensorT>* copy() const { return new LeakyReLUOp<TensorT>(*this); }
 	private:
 		friend class cereal::access;
@@ -614,6 +619,7 @@ public:
 	public:
 		LeakyReLUGradOp() = default;
 		~LeakyReLUGradOp() = default;
+    LeakyReLUGradOp(const TensorT& eps, const TensorT& min, const TensorT& max, const TensorT& alpha) : ActivationOp(eps, min, max), alpha_(alpha) {};
 		LeakyReLUGradOp(const TensorT& alpha) : alpha_(alpha) {};
 		TensorT operator()(const TensorT& x_I) const {
 			return (x_I >= 0.0) ? 1.0 : alpha_;
@@ -621,7 +627,7 @@ public:
 		void setAlpha(const TensorT& alpha) { alpha_ = alpha; };
 		TensorT getAlpha() const { return alpha_; };
 		std::string getName() const { return "LeakyReLUGradOp"; };
-		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ alpha_ }); }
+		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->getEps(), this->getMin(), this->getMax(), alpha_ }); }
     ActivationOp<TensorT>* copy() const { return new LeakyReLUGradOp<TensorT>(*this); }
 	private:
 		friend class cereal::access;
@@ -644,7 +650,7 @@ public:
 			return std::sin(x_I);
 		};
 		std::string getName() const { return "SinOp"; };
-		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+    std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->getEps(), this->getMin(), this->getMax() }); }
     ActivationOp<TensorT>* copy() const { return new SinOp<TensorT>(*this); }
 	private:
 		friend class cereal::access;
@@ -666,7 +672,7 @@ public:
 			return std::cos(x_I);
 		};
 		std::string getName() const { return "SinGradOp"; };
-		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+    std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->getEps(), this->getMin(), this->getMax() }); }
     ActivationOp<TensorT>* copy() const { return new SinGradOp<TensorT>(*this); }
 	private:
 		friend class cereal::access;
@@ -688,7 +694,7 @@ public:
 			return std::cos(x_I);
 		};
 		std::string getName() const { return "CosOp"; };
-		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+    std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->getEps(), this->getMin(), this->getMax() }); }
     ActivationOp<TensorT>* copy() const { return new CosOp<TensorT>(*this); }
 	private:
 		friend class cereal::access;
@@ -710,7 +716,7 @@ public:
 			return -std::sin(x_I);
 		};
 		std::string getName() const { return "CosGradOp"; };
-		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+    std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->getEps(), this->getMin(), this->getMax() }); }
     ActivationOp<TensorT>* copy() const { return new CosGradOp<TensorT>(*this); }
 	private:
 		friend class cereal::access;

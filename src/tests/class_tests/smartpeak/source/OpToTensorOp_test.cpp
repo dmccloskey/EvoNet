@@ -30,109 +30,187 @@ BOOST_AUTO_TEST_CASE(convertOpToTensorOpActivationOpToActivationTensorOp)
 	ActivationOp<float>* op_class;
 	ActivationTensorOp<float, Eigen::DefaultDevice>* op_tensor_class;
 
-	op_class = new ReLUOp<float>();
+	op_class = new ReLUOp<float>(1, 2, 3);
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "ReLUTensorOp");
+  BOOST_CHECK_EQUAL(op_tensor_class->getEps(), 1);
+  BOOST_CHECK_EQUAL(op_tensor_class->getMin(), 2);
+  BOOST_CHECK_EQUAL(op_tensor_class->getMax(), 3);
 
-	op_class = new ReLUGradOp<float>();
+	op_class = new ReLUGradOp<float>(1.0f, 2.0f, 3.0f);
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "ReLUGradTensorOp");
+  BOOST_CHECK_EQUAL(op_tensor_class->getEps(), 1);
+  BOOST_CHECK_EQUAL(op_tensor_class->getMin(), 2);
+  BOOST_CHECK_EQUAL(op_tensor_class->getMax(), 3);
 
-	op_class = new ELUOp<float>();
+	op_class = new ELUOp<float>(1.0f, 2.0f, 3.0f, 4.0f);
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "ELUTensorOp");
+  BOOST_CHECK_EQUAL(op_tensor_class->getEps(), 1);
+  BOOST_CHECK_EQUAL(op_tensor_class->getMin(), 2);
+  BOOST_CHECK_EQUAL(op_tensor_class->getMax(), 3);
 
-	op_class = new ELUGradOp<float>();
+	op_class = new ELUGradOp<float>(1.0f, 2.0f, 3.0f, 4.0f);
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "ELUGradTensorOp");
+  BOOST_CHECK_EQUAL(op_tensor_class->getEps(), 1);
+  BOOST_CHECK_EQUAL(op_tensor_class->getMin(), 2);
+  BOOST_CHECK_EQUAL(op_tensor_class->getMax(), 3);
 
-	op_class = new SigmoidOp<float>();
+	op_class = new SigmoidOp<float>(1.0f, 2.0f, 3.0f);
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "SigmoidTensorOp");
+  BOOST_CHECK_EQUAL(op_tensor_class->getEps(), 1);
+  BOOST_CHECK_EQUAL(op_tensor_class->getMin(), 2);
+  BOOST_CHECK_EQUAL(op_tensor_class->getMax(), 3);
 
-	op_class = new SigmoidGradOp<float>();
+	op_class = new SigmoidGradOp<float>(1.0f, 2.0f, 3.0f);
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "SigmoidGradTensorOp");
+  BOOST_CHECK_EQUAL(op_tensor_class->getEps(), 1);
+  BOOST_CHECK_EQUAL(op_tensor_class->getMin(), 2);
+  BOOST_CHECK_EQUAL(op_tensor_class->getMax(), 3);
 
-	op_class = new TanHOp<float>();
+	op_class = new TanHOp<float>(1.0f, 2.0f, 3.0f);
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "TanHTensorOp");
+  BOOST_CHECK_EQUAL(op_tensor_class->getEps(), 1);
+  BOOST_CHECK_EQUAL(op_tensor_class->getMin(), 2);
+  BOOST_CHECK_EQUAL(op_tensor_class->getMax(), 3);
 
-	op_class = new TanHGradOp<float>();
+	op_class = new TanHGradOp<float>(1.0f, 2.0f, 3.0f);
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "TanHGradTensorOp");
+  BOOST_CHECK_EQUAL(op_tensor_class->getEps(), 1);
+  BOOST_CHECK_EQUAL(op_tensor_class->getMin(), 2);
+  BOOST_CHECK_EQUAL(op_tensor_class->getMax(), 3);
 
-	op_class = new ReTanHOp<float>();
+	op_class = new ReTanHOp<float>(1.0f, 2.0f, 3.0f);
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "ReTanHTensorOp");
+  BOOST_CHECK_EQUAL(op_tensor_class->getEps(), 1);
+  BOOST_CHECK_EQUAL(op_tensor_class->getMin(), 2);
+  BOOST_CHECK_EQUAL(op_tensor_class->getMax(), 3);
 
-	op_class = new ReTanHGradOp<float>();
+	op_class = new ReTanHGradOp<float>(1.0f, 2.0f, 3.0f);
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "ReTanHGradTensorOp");
+  BOOST_CHECK_EQUAL(op_tensor_class->getEps(), 1);
+  BOOST_CHECK_EQUAL(op_tensor_class->getMin(), 2);
+  BOOST_CHECK_EQUAL(op_tensor_class->getMax(), 3);
 
-	op_class = new LinearOp<float>();
+	op_class = new LinearOp<float>(1.0f, 2.0f, 3.0f);
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "LinearTensorOp");
+  BOOST_CHECK_EQUAL(op_tensor_class->getEps(), 1);
+  BOOST_CHECK_EQUAL(op_tensor_class->getMin(), 2);
+  BOOST_CHECK_EQUAL(op_tensor_class->getMax(), 3);
 
-	op_class = new LinearGradOp<float>();
+	op_class = new LinearGradOp<float>(1.0f, 2.0f, 3.0f);
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "LinearGradTensorOp");
+  BOOST_CHECK_EQUAL(op_tensor_class->getEps(), 1);
+  BOOST_CHECK_EQUAL(op_tensor_class->getMin(), 2);
+  BOOST_CHECK_EQUAL(op_tensor_class->getMax(), 3);
 
-	op_class = new InverseOp<float>();
+	op_class = new InverseOp<float>(1.0f, 2.0f, 3.0f);
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "InverseTensorOp");
+  BOOST_CHECK_EQUAL(op_tensor_class->getEps(), 1);
+  BOOST_CHECK_EQUAL(op_tensor_class->getMin(), 2);
+  BOOST_CHECK_EQUAL(op_tensor_class->getMax(), 3);
 
-	op_class = new InverseGradOp<float>();
+	op_class = new InverseGradOp<float>(1.0f, 2.0f, 3.0f);
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "InverseGradTensorOp");
+  BOOST_CHECK_EQUAL(op_tensor_class->getEps(), 1);
+  BOOST_CHECK_EQUAL(op_tensor_class->getMin(), 2);
+  BOOST_CHECK_EQUAL(op_tensor_class->getMax(), 3);
 
-	op_class = new ExponentialOp<float>();
+	op_class = new ExponentialOp<float>(1.0f, 2.0f, 3.0f);
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "ExponentialTensorOp");
+  BOOST_CHECK_EQUAL(op_tensor_class->getEps(), 1);
+  BOOST_CHECK_EQUAL(op_tensor_class->getMin(), 2);
+  BOOST_CHECK_EQUAL(op_tensor_class->getMax(), 3);
 
-	op_class = new ExponentialGradOp<float>();
+	op_class = new ExponentialGradOp<float>(1.0f, 2.0f, 3.0f);
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "ExponentialGradTensorOp");
+  BOOST_CHECK_EQUAL(op_tensor_class->getEps(), 1);
+  BOOST_CHECK_EQUAL(op_tensor_class->getMin(), 2);
+  BOOST_CHECK_EQUAL(op_tensor_class->getMax(), 3);
 
-	op_class = new LogOp<float>();
+	op_class = new LogOp<float>(1.0f, 2.0f, 3.0f);
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "LogTensorOp");
+  BOOST_CHECK_EQUAL(op_tensor_class->getEps(), 1);
+  BOOST_CHECK_EQUAL(op_tensor_class->getMin(), 2);
+  BOOST_CHECK_EQUAL(op_tensor_class->getMax(), 3);
 
-	op_class = new LogGradOp<float>();
+	op_class = new LogGradOp<float>(1.0f, 2.0f, 3.0f);
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "LogGradTensorOp");
+  BOOST_CHECK_EQUAL(op_tensor_class->getEps(), 1);
+  BOOST_CHECK_EQUAL(op_tensor_class->getMin(), 2);
+  BOOST_CHECK_EQUAL(op_tensor_class->getMax(), 3);
 
-	op_class = new PowOp<float>(2);
+	op_class = new PowOp<float>(1.0f,2.0f,3.0f,2.0f);
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "PowTensorOp");
+  BOOST_CHECK_EQUAL(op_tensor_class->getEps(), 1);
+  BOOST_CHECK_EQUAL(op_tensor_class->getMin(), 2);
+  BOOST_CHECK_EQUAL(op_tensor_class->getMax(), 3);
 
-	op_class = new PowGradOp<float>(2);
+	op_class = new PowGradOp<float>(1.0f, 2.0f, 3.0f, 2.0f);
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "PowGradTensorOp");
+  BOOST_CHECK_EQUAL(op_tensor_class->getEps(), 1);
+  BOOST_CHECK_EQUAL(op_tensor_class->getMin(), 2);
+  BOOST_CHECK_EQUAL(op_tensor_class->getMax(), 3);
 
-	op_class = new LeakyReLUOp<float>();
+	op_class = new LeakyReLUOp<float>(1.0f, 2.0f, 3.0f, 4.0f);
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "LeakyReLUTensorOp");
+  BOOST_CHECK_EQUAL(op_tensor_class->getEps(), 1);
+  BOOST_CHECK_EQUAL(op_tensor_class->getMin(), 2);
+  BOOST_CHECK_EQUAL(op_tensor_class->getMax(), 3);
 
-	op_class = new LeakyReLUGradOp<float>();
+	op_class = new LeakyReLUGradOp<float>(1.0f, 2.0f, 3.0f, 4.0f);
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "LeakyReLUGradTensorOp");
+  BOOST_CHECK_EQUAL(op_tensor_class->getEps(), 1);
+  BOOST_CHECK_EQUAL(op_tensor_class->getMin(), 2);
+  BOOST_CHECK_EQUAL(op_tensor_class->getMax(), 3);
 
-	op_class = new SinOp<float>();
+	op_class = new SinOp<float>(1.0f, 2.0f, 3.0f);
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "SinTensorOp");
+  BOOST_CHECK_EQUAL(op_tensor_class->getEps(), 1);
+  BOOST_CHECK_EQUAL(op_tensor_class->getMin(), 2);
+  BOOST_CHECK_EQUAL(op_tensor_class->getMax(), 3);
 
-	op_class = new SinGradOp<float>();
+	op_class = new SinGradOp<float>(1.0f, 2.0f, 3.0f);
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "SinGradTensorOp");
+  BOOST_CHECK_EQUAL(op_tensor_class->getEps(), 1);
+  BOOST_CHECK_EQUAL(op_tensor_class->getMin(), 2);
+  BOOST_CHECK_EQUAL(op_tensor_class->getMax(), 3);
 
-	op_class = new CosOp<float>();
+	op_class = new CosOp<float>(1.0f, 2.0f, 3.0f);
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "CosTensorOp");
+  BOOST_CHECK_EQUAL(op_tensor_class->getEps(), 1);
+  BOOST_CHECK_EQUAL(op_tensor_class->getMin(), 2);
+  BOOST_CHECK_EQUAL(op_tensor_class->getMax(), 3);
 
-	op_class = new CosGradOp<float>();
+	op_class = new CosGradOp<float>(1.0f, 2.0f, 3.0f);
 	op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
 	BOOST_CHECK_EQUAL(op_tensor_class->getName(), "CosGradTensorOp");
+  BOOST_CHECK_EQUAL(op_tensor_class->getEps(), 1);
+  BOOST_CHECK_EQUAL(op_tensor_class->getMin(), 2);
+  BOOST_CHECK_EQUAL(op_tensor_class->getMax(), 3);
 }
 
 BOOST_AUTO_TEST_CASE(getTensorParamsActivationOpToActivationTensorOp)
