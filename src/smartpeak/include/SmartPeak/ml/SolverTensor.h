@@ -48,8 +48,8 @@ namespace SmartPeak
   {
 public: 
     SolverTensorOp() = default;
-    SolverOp(const TensorT& gradient_threshold) : gradient_threshold_(gradient_threshold) {};
-    SolverOp(const TensorT& gradient_threshold, const TensorT& gradient_noise_sigma) : gradient_threshold_(gradient_threshold), gradient_noise_sigma_(gradient_noise_sigma) {};
+    SolverTensorOp(const TensorT& gradient_threshold) : gradient_threshold_(gradient_threshold) {};
+    SolverTensorOp(const TensorT& gradient_threshold, const TensorT& gradient_noise_sigma) : gradient_threshold_(gradient_threshold), gradient_noise_sigma_(gradient_noise_sigma) {};
     virtual ~SolverTensorOp() = default;
     virtual std::string getName() const = 0;
     void setGradientThreshold(const TensorT& gradient_threshold){gradient_threshold_ = gradient_threshold;};
@@ -102,7 +102,7 @@ public:
       auto errors_clipped = clip.select(errors_tensor * errors_tensor.constant(this->getGradientThreshold()) / errors_tensor.abs(), errors_tensor);
 
       // Gradient noise
-      auto noise = weights_tensor.random()*weights_tensor.constant(this->getGradientNoiseSigma);
+      auto noise = weights_tensor.random()*weights_tensor.constant(this->getGradientNoiseSigma());
 
       // Weight updates
 			solver_params_tensor.chip(2, 2).device(device) = solver_params_tensor.chip(1, 2) * solver_params_tensor.chip(2,2) - solver_params_tensor.chip(0, 2) * weights_tensor * errors_clipped + noise;
@@ -149,7 +149,7 @@ public:
       auto errors_clipped = clip.select(errors_tensor * errors_tensor.constant(this->getGradientThreshold()) / errors_tensor.abs(), errors_tensor);
 
       // Gradient noise
-      auto noise = weights_tensor.random()*weights_tensor.constant(this->getGradientNoiseSigma);
+      auto noise = weights_tensor.random()*weights_tensor.constant(this->getGradientNoiseSigma());
 
       // Weight updates
 			solver_params_tensor.chip(4, 2).device(device) = solver_params_tensor.chip(1, 2) * solver_params_tensor.chip(4, 2) + (weights_tensor.constant(1) - solver_params_tensor.chip(1, 2)) * weights_tensor * errors_clipped;
