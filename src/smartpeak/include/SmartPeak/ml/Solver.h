@@ -38,9 +38,10 @@ namespace SmartPeak
   class SolverOp
   {
 public: 
-    SolverOp(){}; 
-    SolverOp(const TensorT& gradient_threshold){setGradientThreshold(gradient_threshold);}; 
-    ~SolverOp(){};
+    SolverOp() = default; 
+    SolverOp(const TensorT& gradient_threshold) : gradient_threshold_(gradient_threshold) {};
+    SolverOp(const TensorT& gradient_threshold, const TensorT& gradient_noise_sigma) : gradient_threshold_(gradient_threshold), gradient_noise_sigma_(gradient_noise_sigma){};
+    virtual ~SolverOp() = default;
     virtual std::string getName() const = 0;
     void setGradientThreshold(const TensorT& gradient_threshold){gradient_threshold_ = gradient_threshold;};
     TensorT getGradientThreshold() const{return gradient_threshold_;};

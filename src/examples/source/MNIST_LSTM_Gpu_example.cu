@@ -49,7 +49,7 @@ public:
       std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(1 / (TensorT)(node_names_input.size() + n_blocks), 10 / (TensorT)(node_names_input.size() + n_blocks))),
       //std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(0.4)), 
       std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-3, 10.0)),
-      0.0f, 0.0f, true, true, 1, specify_layers);
+      0.0f, 0.0f, false, true, 1, specify_layers);
     node_names = model_builder.addLSTM(model, "LSTM-02", "LSTM-02", node_names, n_blocks, n_cells,
       std::shared_ptr<ActivationOp<TensorT>>(new ELUOp<float>()),
       std::shared_ptr<ActivationOp<TensorT>>(new ELUGradOp<float>()),
@@ -59,7 +59,7 @@ public:
       std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(1 / (TensorT)(node_names.size() + n_blocks), 10 / (TensorT)(node_names.size() + n_blocks))),
       //std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(0.4)), 
       std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-3, 10.0)),
-      0.0f, 0.0f, true, true, 1, specify_layers);
+      0.0f, 0.0f, false, true, 1, specify_layers);
 
    // Add a fully connected layer
    node_names = model_builder.addFullyConnected(model, "FC-01", "FC-01", node_names, n_outputs,
@@ -237,7 +237,7 @@ void main_MNIST(const bool& make_model, const bool& train_model) {
   // define the data simulator
   const std::size_t input_size = 784;
   const std::size_t n_labels = 10;
-  const std::size_t n_blocks = 64;
+  const std::size_t n_blocks = 128;
   const std::size_t n_hidden = 32;
   const std::size_t training_data_size = 60000; //60000;
   const std::size_t validation_data_size = 10000; //10000;
@@ -290,14 +290,15 @@ void main_MNIST(const bool& make_model, const bool& train_model) {
     model_interpreters.push_back(model_interpreter);
   }
   ModelTrainerExt<float> model_trainer;
-  model_trainer.setBatchSize(16);
+  model_trainer.setBatchSize(32);
   model_trainer.setMemorySize(input_size);
   model_trainer.setNEpochsTraining(500001);
   model_trainer.setNEpochsValidation(25);
   model_trainer.setVerbosityLevel(1);
   model_trainer.setLogging(true, true, false);
   model_trainer.setNTETTSteps(1);
-  model_trainer.setNTBPTTSteps(input_size);
+  model_trainer.setNTBPTTSteps(256);
+  //model_trainer.setNTBPTTSteps(input_size);
   model_trainer.setPreserveOoO(true);
   model_trainer.setFindCycles(true);
   model_trainer.setFastInterpreter(true);

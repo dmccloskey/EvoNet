@@ -47,9 +47,10 @@ namespace SmartPeak
   class SolverTensorOp
   {
 public: 
-    SolverTensorOp(){}; 
-    SolverTensorOp(const TensorT& gradient_threshold){setGradientThreshold(gradient_threshold);}; 
-    ~SolverTensorOp(){};
+    SolverTensorOp() = default;
+    SolverOp(const TensorT& gradient_threshold) : gradient_threshold_(gradient_threshold) {};
+    SolverOp(const TensorT& gradient_threshold, const TensorT& gradient_noise_sigma) : gradient_threshold_(gradient_threshold), gradient_noise_sigma_(gradient_noise_sigma) {};
+    virtual ~SolverTensorOp() = default;
     virtual std::string getName() const = 0;
     void setGradientThreshold(const TensorT& gradient_threshold){gradient_threshold_ = gradient_threshold;};
     TensorT getGradientThreshold() const{return gradient_threshold_;};
@@ -58,21 +59,6 @@ public:
     TensorT getGradientNoiseSigma() const{return gradient_noise_sigma_;};
     void setGradientNoiseGamma(const TensorT& gradient_noise_gamma){gradient_noise_gamma_ = gradient_noise_gamma;};
     TensorT getGradientNoiseGamma() const{return gradient_noise_gamma_;};
-    TensorT addGradientNoiseAnnealed(const TensorT& time)
-    {
-      const TensorT sigma_annealed = gradient_noise_sigma_ / std::pow((1 + time), gradient_noise_gamma_); // annealed variance
-      std::random_device rd{};
-      std::mt19937 gen{rd()};
-      std::normal_distribution<> d{0.0f, sigma_annealed};
-      return d(gen);
-    }
-		TensorT addGradientNoise()
-		{
-			std::random_device rd{};
-			std::mt19937 gen{ rd() };
-			std::normal_distribution<> d{ 0.0f, gradient_noise_sigma_ };
-			return d(gen);
-		}
     //virtual std::string getParameters() const = 0;
 	private:
 		//friend class cereal::access;
@@ -84,7 +70,7 @@ public:
     TensorT gradient_threshold_ = 1e6; ///< maximum gradient magnitude
 
     // gradient noise with annealed variance parameters
-    TensorT gradient_noise_sigma_ = 1.0; ///< variance before annealing
+    TensorT gradient_noise_sigma_ = 0.0; ///< variance before annealing (0.0 = none, 1.0 = normal distribution with mean = 0 and var = 1.0)
     TensorT gradient_noise_gamma_ = 0.55; ///< time-dependend annealing factor
   };
 
@@ -115,8 +101,11 @@ public:
       auto clip = errors_tensor.abs() > errors_tensor.constant(this->getGradientThreshold());
       auto errors_clipped = clip.select(errors_tensor * errors_tensor.constant(this->getGradientThreshold()) / errors_tensor.abs(), errors_tensor);
 
+      // Gradient noise
+      auto noise = weights_tensor.random()*weights_tensor.constant(this->getGradientNoiseSigma);
+
       // Weight updates
-			solver_params_tensor.chip(2, 2).device(device) = solver_params_tensor.chip(1, 2) * solver_params_tensor.chip(2,2) - solver_params_tensor.chip(0, 2) * weights_tensor * errors_clipped;
+			solver_params_tensor.chip(2, 2).device(device) = solver_params_tensor.chip(1, 2) * solver_params_tensor.chip(2,2) - solver_params_tensor.chip(0, 2) * weights_tensor * errors_clipped + noise;
 			weights_tensor.device(device) += solver_params_tensor.chip(2, 2);
     };
     std::string getName() const{return "SGDTensorOp";};
@@ -158,6 +147,9 @@ public:
       // Gradient clipping
       auto clip = errors_tensor.abs() > errors_tensor.constant(this->getGradientThreshold());
       auto errors_clipped = clip.select(errors_tensor * errors_tensor.constant(this->getGradientThreshold()) / errors_tensor.abs(), errors_tensor);
+
+      // Gradient noise
+      auto noise = weights_tensor.random()*weights_tensor.constant(this->getGradientNoiseSigma);
 
       // Weight updates
 			solver_params_tensor.chip(4, 2).device(device) = solver_params_tensor.chip(1, 2) * solver_params_tensor.chip(4, 2) + (weights_tensor.constant(1) - solver_params_tensor.chip(1, 2)) * weights_tensor * errors_clipped;
