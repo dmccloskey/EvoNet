@@ -91,7 +91,7 @@ private:
 		TensorT learning_rate_ = 1e-3; ///< the learning rate
 
     // gradient noise with annealed variance parameters
-    TensorT gradient_noise_sigma_ = 1.0; ///< variance before annealing
+    TensorT gradient_noise_sigma_ = 0.0; ///< variance before annealing
     TensorT gradient_noise_gamma_ = 0.55; ///< time-dependend annealing factor
   };
 
@@ -102,14 +102,14 @@ private:
   class SGDOp: public SolverOp<TensorT>
   {
 public: 
-    SGDOp(){}; 
-    ~SGDOp(){};
+    SGDOp() = default; 
+    virtual ~SGDOp() = default;
     SGDOp(const TensorT& learning_rate, const TensorT& momentum):
       learning_rate_(learning_rate), momentum_(momentum){}
     SGDOp(const TensorT& learning_rate, const TensorT& momentum, const TensorT& gradient_threshold) :
-      learning_rate_(learning_rate), momentum_(momentum) {
-      this->setGradientThreshold(gradient_threshold);
-    }
+      SolverOp(gradient_threshold), learning_rate_(learning_rate), momentum_(momentum) {}
+    SGDOp(const TensorT& learning_rate, const TensorT& momentum, const TensorT& gradient_threshold, const TensorT& gradient_noise_sigma) :
+      SolverOp(gradient_threshold, gradient_noise_sigma), learning_rate_(learning_rate), momentum_(momentum) {}
     void setLearningRate(const TensorT& learning_rate){learning_rate_ = learning_rate;};
     TensorT getLearningRate() const{return learning_rate_;};
     void setMomentum(const TensorT& momentum){momentum_ = momentum;};
@@ -169,14 +169,14 @@ private:
   class AdamOp: public SolverOp<TensorT>
   {
 public: 
-    AdamOp(){}; 
-    ~AdamOp(){};
+    AdamOp() = default; 
+    virtual ~AdamOp() = default;
     AdamOp(const TensorT& learning_rate, const TensorT& momentum, const TensorT& momentum2, const TensorT& delta) :
       learning_rate_(learning_rate), momentum_(momentum), momentum2_(momentum2), delta_(delta) {};
     AdamOp(const TensorT& learning_rate, const TensorT& momentum, const TensorT& momentum2, const TensorT& delta, const TensorT& gradient_threshold) :
-      learning_rate_(learning_rate), momentum_(momentum), momentum2_(momentum2), delta_(delta) {
-      this->setGradientThreshold(gradient_threshold);
-    };
+      SolverOp(gradient_threshold), learning_rate_(learning_rate), momentum_(momentum), momentum2_(momentum2), delta_(delta) {}
+    AdamOp(const TensorT& learning_rate, const TensorT& momentum, const TensorT& momentum2, const TensorT& delta, const TensorT& gradient_threshold, const TensorT& gradient_noise_sigma) :
+      SolverOp(gradient_threshold, gradient_noise_sigma), learning_rate_(learning_rate), momentum_(momentum), momentum2_(momentum2), delta_(delta) {}
     void setLearningRate(const TensorT& learning_rate){learning_rate_ = learning_rate;};
     TensorT getLearningRate() const{return learning_rate_;};
     void setMomentum(const TensorT& momentum){momentum_ = momentum;};
