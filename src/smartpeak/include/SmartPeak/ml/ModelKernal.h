@@ -178,7 +178,7 @@ namespace SmartPeak
 
 			// Step 1: multiply the weight tensor by the shared weight tensor mask; sum all shared weights
 			auto weight_error_sum = (weight_error_tensor.broadcast(Eigen::array<int, 5>({ 1,1,1,1,n_shared_layers })) * shared_weight_tensor
-				).sum(Eigen::array<int, 2>({ 2, 3 })).eval().broadcast(Eigen::array<int, 3>({ source_layer_size, sink_layer_size, 1 }));  // dims 3
+				).sum(Eigen::array<int, 2>({ 2, 3 })).eval().broadcast(Eigen::array<int, 3>({ source_layer_size, sink_layer_size, 1 })).eval();  // dims 3
 			// Step 2: multiply the weight error sum tensor by the shared weight tensor mask and subtract out the error tensor
 			auto weight_error_diff = (weight_error_sum * shared_weight_tensor.chip(0, 1).chip(0, 0) -
 				weight_error_tensor.chip(0, 1).chip(0, 0).broadcast(Eigen::array<int, 3>({ 1,1,n_shared_layers })) * shared_weight_tensor.chip(0, 1).chip(0, 0)
