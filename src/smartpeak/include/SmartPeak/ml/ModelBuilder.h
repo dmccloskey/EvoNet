@@ -1069,7 +1069,6 @@ public:
 			weight_bias_name = std::string(weight_bias_name_char);
 			Weight<TensorT> weight_bias(weight_bias_name, weight_init, solver);
 			weight_bias.setModuleName(module_name);
-			weight_bias.setDropProbability(drop_connection_prob);
 			model.addWeights({ weight_bias });
 		}
 
@@ -1131,7 +1130,6 @@ public:
             weight_bias_name = std::string(weight_bias_name_char);
             Weight<TensorT> weight_bias(weight_bias_name, weight_init, solver);
             weight_bias.setModuleName(module_name);
-            weight_bias.setDropProbability(drop_connection_prob);
             model.addWeights({ weight_bias });
 
             // Create the links between the bias and output nodes
