@@ -1743,7 +1743,7 @@ public:
 				std::string link_bias_name(link_bias_name_char);
 
 				std::shared_ptr<WeightInitOp<TensorT>>  bias_weight_init;
-				bias_weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));;
+				bias_weight_init.reset(new ConstWeightInitOp<TensorT>(0.0));;
 				std::shared_ptr<SolverOp<TensorT>>  bias_solver = solver;
 				Weight<TensorT> weight_bias(weight_bias_name, bias_weight_init, bias_solver);
 				weight_bias.setModuleName(module_name);
