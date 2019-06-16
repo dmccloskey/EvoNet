@@ -13,40 +13,11 @@ using namespace SmartPeak;
 // Other extended classes
 template<typename TensorT>
 class ModelReplicatorExt : public ModelReplicator<TensorT>
-{
-public:
-	void adaptiveReplicatorScheduler(
-		const int& n_generations,
-		std::vector<Model<TensorT>>& models,
-		std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations)
-	{ //TODO
-	}
-};
+{};
 
 template<typename TensorT>
 class PopulationTrainerExt : public PopulationTrainerDefaultDevice<TensorT>
-{
-public:
-	void adaptivePopulationScheduler(
-		const int& n_generations,
-		std::vector<Model<TensorT>>& models,
-		std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations)
-	{
-		// Population size of 16
-		if (n_generations == 0)
-		{
-			this->setNTop(3);
-			this->setNRandom(3);
-			this->setNReplicatesPerModel(15);
-		}
-		else
-		{
-			this->setNTop(3);
-			this->setNRandom(3);
-			this->setNReplicatesPerModel(3);
-		}
-	}
-};
+{};
 
 template<typename TensorT>
 class ModelTrainerExt : public ModelTrainerDefaultDevice<TensorT>
@@ -122,13 +93,6 @@ public:
 		// Specify the output node types manually
 		for (const std::string& node_name : node_names)
 			model.getNodesMap().at(node_name)->setType(NodeType::output);
-
-		// Add the final softmax layer
-		node_names = model_builder.addStableSoftMax(model, "SoftMax", "SoftMax", node_names);
-
-		//// Specify the output node types manually
-		//for (const std::string& node_name : node_names)
-		//	model.getNodesMap().at(node_name)->setType(NodeType::output);
 	}
 	/*
 	@brief Multi-head self-attention dot product classifier
@@ -218,14 +182,6 @@ public:
 
 		// Add the final softmax layer
 		//node_names = model_builder.addStableSoftMax(model, "SoftMax", "SoftMax", node_names);
-	}
-	void adaptiveTrainerScheduler(
-		const int& n_generations,
-		const int& n_epochs,
-		Model<TensorT>& model,
-		ModelInterpreterDefaultDevice<TensorT>& model_interpreter,
-		const std::vector<float>& model_errors)
-	{
 	}
 };
 

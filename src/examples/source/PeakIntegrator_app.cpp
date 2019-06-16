@@ -12,9 +12,8 @@
 #include <SmartPeak/simulator/ChromatogramSimulator.h>
 
 #include <unsupported/Eigen/CXX11/Tensor>
-#include <SmartPeak/core/half.hpp>
+//#include <SmartPeak/core/half.hpp>
 
-using half_float::half;
 using namespace SmartPeak;
 
 /**
@@ -888,7 +887,7 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
   const int n_threads = 1;
 
   // define the populatin trainer
-  PopulationTrainerExt<half_float::half> population_trainer;
+  PopulationTrainerExt<float> population_trainer;
   population_trainer.setNGenerations(1);
   population_trainer.setNTop(1);
   population_trainer.setNRandom(1);
@@ -896,16 +895,16 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
   population_trainer.setLogging(false);
 
   // define the population logger
-  PopulationLogger<half_float::half> population_logger(true, true);
+  PopulationLogger<float> population_logger(true, true);
 
   // define the model logger
-  ModelLogger<half_float::half> model_logger(true, true, true, false, false, false, false, false);
+  ModelLogger<float> model_logger(true, true, true, false, false, false, false, false);
 
   // define the data simulator
   const std::size_t input_size = 512;
   const std::size_t encoding_size = 16;
   const std::size_t n_hidden = 64;
-  DataSimulatorExt<half_float::half> data_simulator;
+  DataSimulatorExt<float> data_simulator;
 
   // Hard
   //data_simulator.step_size_mu_ = std::make_pair(1, 1);
@@ -976,13 +975,13 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
   }
 
   // define the model trainers and resources for the trainers
-  std::vector<ModelInterpreterDefaultDevice<half_float::half>> model_interpreters;
+  std::vector<ModelInterpreterDefaultDevice<float>> model_interpreters;
   for (size_t i = 0; i < n_threads; ++i) {
     ModelResources model_resources = { ModelDevice(0, 1) };
-    ModelInterpreterDefaultDevice<half_float::half> model_interpreter(model_resources);
+    ModelInterpreterDefaultDevice<float> model_interpreter(model_resources);
     model_interpreters.push_back(model_interpreter);
   }
-  ModelTrainerExt<half_float::half> model_trainer;
+  ModelTrainerExt<float> model_trainer;
   //model_trainer.setBatchSize(1); // evaluation only
   //model_trainer.setNEpochsTraining(0); // evaluation only
   model_trainer.setBatchSize(16);
@@ -995,18 +994,18 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
   model_trainer.setFindCycles(false);
   model_trainer.setFastInterpreter(true);
   model_trainer.setPreserveOoO(true);
-  model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<half_float::half>>(new MSEOp<half_float::half>()) });
-  model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<half_float::half>>(new MSEGradOp<half_float::half>()) });
+  model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
+  model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
   model_trainer.setOutputNodes({
     //output_nodes_time, 
     output_nodes_intensity });
 
   // define the model replicator for growth mode
-  ModelReplicatorExt<half_float::half> model_replicator;
+  ModelReplicatorExt<float> model_replicator;
 
   // define the initial population
   std::cout << "Initializing the population..." << std::endl;
-  Model<half_float::half> model;
+  Model<float> model;
   if (make_model) {
     model_trainer.makeDenoisingAE(model, input_size, encoding_size, n_hidden);
     //model_trainer.makeMultiHeadDotProdAttention(model, input_size, input_size, { 16, 16 }, { 48, 48 }, { (TensorT)input_size, (TensorT)input_size }, false, false, false);
@@ -1020,30 +1019,30 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
     const std::string interpreter_filename = data_dir + "PeakInt-1_10000_interpreter.binary";
 
     //// read in and modify the model
-    //ModelFile<half_float::half> model_file;
+    //ModelFile<float> model_file;
     //model_file.loadModelBinary(model_filename, model);
     //model.setId(1);
     //model.setName("PeakInt-0");
 
     //// read in the model interpreter data
-    //ModelInterpreterFileDefaultDevice<half_float::half> model_interpreter_file;
+    //ModelInterpreterFileDefaultDevice<float> model_interpreter_file;
     //model_interpreter_file.loadModelInterpreterBinary(interpreter_filename, model_interpreters[0]); // FIX ME!
   }
-  std::vector<Model<half_float::half>> population = { model };
+  std::vector<Model<float>> population = { model };
 
   if (train_model) {
     // Train the model
-    std::pair<std::vector<half_float::half>, std::vector<half_float::half>> model_errors = model_trainer.trainModel(model, data_simulator,
+    std::pair<std::vector<float>, std::vector<float>> model_errors = model_trainer.trainModel(model, data_simulator,
       input_nodes, model_logger, model_interpreters.front());
 
-    PopulationTrainerFile<half_float::half> population_trainer_file;
+    PopulationTrainerFile<float> population_trainer_file;
     population_trainer_file.storeModels(population, "PeakIntegrator");
 
     //// Evolve the population
-    //std::vector<std::vector<std::tuple<int, std::string, half_float::half>>> models_validation_errors_per_generation = population_trainer.evolveModels(
+    //std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
     //  population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, population_logger, input_nodes);
 
-    //PopulationTrainerFile<half_float::half> population_trainer_file;
+    //PopulationTrainerFile<float> population_trainer_file;
     //population_trainer_file.storeModels(population, "PeakIntegrator");
     //population_trainer_file.storeModelValidations("PeakIntegrator_Errors.csv", models_validation_errors_per_generation);
   }

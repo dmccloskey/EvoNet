@@ -10,9 +10,6 @@ template<typename TensorT>
 class MetDataSimClassification : public DataSimulator<TensorT>
 {
 public:
-	MetDataSimClassification() = default;
-	~MetDataSimClassification() = default;
-
 	void simulateData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
 	{
 		// infer data dimensions based on the input tensors
@@ -69,15 +66,71 @@ public:
 		// update the time_steps
 		time_steps.setConstant(1.0f);
 	}
-	void simulateTrainingData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
-	{
+	void simulateTrainingData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)	{
 		simulateData(input_data, output_data, time_steps);
 	}
-	void simulateValidationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
-	{
+	void simulateValidationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)	{
 		simulateData(input_data, output_data, time_steps);
 	}
-	void simulateEvaluationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 3>& time_steps) {};
+  void simulateData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps)
+  {
+    // infer data dimensions based on the input tensors
+    const int batch_size = input_data.dimension(0);
+    const int memory_size = input_data.dimension(1);
+    const int n_input_nodes = input_data.dimension(2);
+    const int n_output_nodes = output_data.dimension(2);
+
+    // NOTE: used for testing
+    //std::string sample_group_name = sample_group_names_[0];
+    //std::vector<float> mars;
+    //for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
+    //	float mar = calculateMAR(metabolomicsData_.at(sample_group_name),
+    //		biochemicalReactions_.at(reaction_ids_[nodes_iter]));
+    //	mars.push_back(mar);
+    //	//std::cout << "OutputNode: "<<nodes_iter<< " = " << mar << std::endl;
+    //}
+
+    for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
+      for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
+
+        // pick a random sample group name
+        std::string sample_group_name = selectRandomElement(this->model_.sample_group_names_);
+
+        for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
+          input_data(batch_iter, memory_iter, nodes_iter) = this->model_.calculateMAR(
+            this->model_.metabolomicsData_.at(sample_group_name),
+            this->model_.biochemicalReactions_.at(this->model_.reaction_ids_[nodes_iter]));
+          //input_data(batch_iter, memory_iter, nodes_iter) = mars[nodes_iter]; // NOTE: used for testing
+        }
+
+        // convert the label to a one hot vector
+        Eigen::Tensor<TensorT, 1> one_hot_vec = OneHotEncoder<std::string, TensorT>(this->model_.metaData_.at(sample_group_name).condition, this->model_.labels_);
+        Eigen::Tensor<TensorT, 1> one_hot_vec_smoothed = one_hot_vec.unaryExpr(LabelSmoother<TensorT>(0.01, 0.01));
+
+        //// MSE + LogLoss
+        //for (int nodes_iter = 0; nodes_iter < n_output_nodes/2; ++nodes_iter) {
+        //	output_data(batch_iter, memory_iter, nodes_iter) = one_hot_vec(nodes_iter);
+        //	output_data(batch_iter, memory_iter, nodes_iter + n_output_nodes/2, epochs_iter) = one_hot_vec(nodes_iter);
+        //	//output_data(batch_iter, memory_iter, nodes_iter) = one_hot_vec_smoothed(nodes_iter);
+        //}
+
+        // MSE or LogLoss only
+        for (int nodes_iter = 0; nodes_iter < n_output_nodes; ++nodes_iter) {
+          output_data(batch_iter, memory_iter, nodes_iter) = one_hot_vec(nodes_iter);
+          //output_data(batch_iter, memory_iter, nodes_iter) = one_hot_vec_smoothed(nodes_iter);
+        }
+      }
+    }
+
+    // update the time_steps
+    time_steps.setConstant(1.0f);
+  }
+  void simulateTrainingData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps) {
+    simulateData(input_data, output_data, time_steps);
+  }
+  void simulateValidationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps) {
+    simulateData(input_data, output_data, time_steps);
+  }
 
 	BiochemicalReactionModel<TensorT> model_;
 };
@@ -114,14 +167,43 @@ public:
 			}
 		}
 	}
-	void simulateTrainingData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
-	{
+	void simulateTrainingData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)	{
 		simulateData(input_data, output_data, time_steps);
 	}
-	void simulateValidationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
-	{
+	void simulateValidationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)	{
 		simulateData(input_data, output_data, time_steps);
 	}
+  void simulateData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps)
+  {
+    // infer data dimensions based on the input tensors
+    const int batch_size = input_data.dimension(0);
+    const int memory_size = input_data.dimension(1);
+    const int n_input_nodes = input_data.dimension(2);
+    const int n_output_nodes = output_data.dimension(2);
+
+    for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
+      for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
+
+        // pick a random sample group name
+        //std::string sample_group_name = selectRandomElement(sample_group_names_);
+        std::string sample_group_name = this->model_.sample_group_names_[0];
+
+        for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
+          const TensorT mar = this->model_.calculateMAR(
+            this->model_.metabolomicsData_.at(sample_group_name),
+            this->model_.biochemicalReactions_.at(this->model_.reaction_ids_.at(nodes_iter)));
+          input_data(batch_iter, memory_iter, nodes_iter) = mar;
+          output_data(batch_iter, memory_iter, nodes_iter) = mar;
+        }
+      }
+    }
+  }
+  void simulateTrainingData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps) {
+    simulateData(input_data, output_data, time_steps);
+  }
+  void simulateValidationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps) {
+    simulateData(input_data, output_data, time_steps);
+  }
 	
 	BiochemicalReactionModel<TensorT> model_;
 };
