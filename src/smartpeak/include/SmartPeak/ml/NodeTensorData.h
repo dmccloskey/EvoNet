@@ -205,8 +205,8 @@ protected:
 		setBatchSize(batch_size);	setMemorySize(memory_size);	setLayerSize(layer_size);
     setLayerIntegration(node_integration);
 		// Template zero and one tensor
-		Eigen::Tensor<TensorT, 3> zero(batch_size, memory_size, layer_size); zero.setConstant(0);
-		Eigen::Tensor<TensorT, 3> one(batch_size, memory_size, layer_size);	one.setConstant(1);
+		Eigen::Tensor<TensorT, 3> zero(batch_size, memory_size, layer_size); zero.setConstant((TensorT)0);
+		Eigen::Tensor<TensorT, 3> one(batch_size, memory_size, layer_size);	one.setConstant((TensorT)1);
 		// set the input, error, and derivatives
 		setError(zero);	setDerivative(zero);
 		setDt(one);

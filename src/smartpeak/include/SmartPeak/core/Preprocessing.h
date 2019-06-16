@@ -385,10 +385,10 @@ namespace SmartPeak
 			std::random_device rd;
 			std::mt19937 gen(rd());
 			std::discrete_distribution<> distrib({ p_, 1 - p_ });
-			return x * distrib(gen);
+			return x * (T)distrib(gen);
 		}
 	private:
-		T p_ = 1; ///< probablity of 0
+		T p_ = (T)1; ///< probablity of 0
 	};
 
 	/**

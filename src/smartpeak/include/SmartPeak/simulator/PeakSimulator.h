@@ -153,15 +153,15 @@ namespace SmartPeak
 		TensorT getSaturationLimit() const; ///< saturation_limit getter
 
 	private:
-		TensorT step_size_mu_ = 1.0; ///< The mean spacing between points
-		TensorT step_size_sigma_ = 0.001; ///< The standard deviation of spacing between points
-		TensorT window_start_ = 0.0; ///< Peak window start
-		TensorT window_end_ = 100.0; ///< Peak window end
-		TensorT noise_mu_ = 0.0; ///< Mean of random noise generated from a normal distribution
-		TensorT noise_sigma_ = 1.0; ///< Standard deviation of random noise generated from a normal distribution
-		TensorT baseline_left_ = 0.0; ///< Height of the left baseline
-		TensorT baseline_right_ = 0.0; ///< Height of the right baseline
-		TensorT saturation_limit_ = 1e6; ///< Maximum point height before peak saturation
+		TensorT step_size_mu_ = (TensorT)1.0; ///< The mean spacing between points
+		TensorT step_size_sigma_ = (TensorT)0.001; ///< The standard deviation of spacing between points
+		TensorT window_start_ = (TensorT)0.0; ///< Peak window start
+		TensorT window_end_ = (TensorT)100.0; ///< Peak window end
+		TensorT noise_mu_ = (TensorT)0.0; ///< Mean of random noise generated from a normal distribution
+		TensorT noise_sigma_ = (TensorT)1.0; ///< Standard deviation of random noise generated from a normal distribution
+		TensorT baseline_left_ = (TensorT)0.0; ///< Height of the left baseline
+		TensorT baseline_right_ = (TensorT)0.0; ///< Height of the right baseline
+		TensorT saturation_limit_ = (TensorT)1e6; ///< Maximum point height before peak saturation
 
 	};
 
@@ -388,8 +388,8 @@ namespace SmartPeak
 	template<typename TensorT>
 	inline std::pair<TensorT, TensorT> PeakSimulator<TensorT>::getBestLeftAndRight(std::vector<TensorT>& x_O, std::vector<TensorT>& y_O, const TensorT& rt) const
 	{
-		TensorT best_left = 0;
-		TensorT best_right = 0;
+		TensorT best_left = (TensorT)0;
+		TensorT best_right = (TensorT)0;
 
 		// iterate from the left
 		for (int i = 1; i < x_O.size() - 1; ++i) {

@@ -3,6 +3,7 @@ set(directory include/SmartPeak/core)
 
 ### list all header files of the directory here
 set(sources_list_h
+	half.hpp
 	Helloworld.h
 	Preprocessing.h
 	Statistics.h

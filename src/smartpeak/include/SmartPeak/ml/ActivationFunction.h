@@ -53,9 +53,9 @@ namespace SmartPeak
     virtual ActivationOp<TensorT>* copy() const = 0;
 //#endif // !EVONET_CUDA
 	protected:
-		TensorT eps_ = 1e-6; ///< threshold to clip between min and max
-		TensorT min_ = -1e9;
-		TensorT max_ = 1e9;
+		TensorT eps_ = (TensorT)1e-6; ///< threshold to clip between min and max
+		TensorT min_ = (TensorT)-1e9;
+		TensorT max_ = (TensorT)1e9;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -78,7 +78,7 @@ namespace SmartPeak
 public: 
 		using ActivationOp<TensorT>::ActivationOp;
     TensorT operator()(const TensorT& x_I) const {
-			TensorT result = (x_I > 0.0) ? x_I : 0.0;
+			TensorT result = (x_I > (TensorT)0.0) ? x_I : (TensorT)0.0;
 			return result;
 			//ClipOp<TensorT> clip(this->eps_, this->min_, this->max_); // not compatible with CUDA
 			//return clip(result); 
@@ -107,7 +107,7 @@ public:
   {
 public:
 		using ActivationOp<TensorT>::ActivationOp;
-    TensorT operator()(const TensorT& x_I) const { return (x_I > 0.0) ? 1.0: 0.0; };
+    TensorT operator()(const TensorT& x_I) const { return (x_I > (TensorT)0) ? (TensorT)1: (TensorT)0; };
     std::string getName() const{return "ReLUGradOp";};
     std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->getEps(), this->getMin(), this->getMax() }); }
     ActivationOp<TensorT>* copy() const { return new ReLUGradOp<TensorT>(*this); }
@@ -136,7 +136,7 @@ public:
     ELUOp(const TensorT& eps, const TensorT& min, const TensorT& max, const TensorT& alpha) : ActivationOp(eps, min, max), alpha_(alpha) {};
     ELUOp(const TensorT& alpha): alpha_(alpha){}; 
     TensorT operator()(const TensorT& x_I) const {
-			TensorT result = (x_I > 0.0) ? x_I : alpha_ * (exp(x_I) - 1);
+			TensorT result = (x_I > (TensorT)0) ? x_I : alpha_ * (exp(x_I) - 1);
 			return result;
 			//ClipOp<TensorT> clip(this->eps_, this->min_, this->max_); // Not compatible with CUDA
 			//return clip(result); 
@@ -174,7 +174,7 @@ public:
     ELUGradOp(const TensorT& alpha): alpha_(alpha){}; 
     TensorT operator()(const TensorT& x_I) const {
       SmartPeak::ELUOp<TensorT> eluop(alpha_);
-      return (x_I > 0.0) ? 1.0: eluop(x_I) + alpha_;
+      return (x_I > (TensorT)0) ? (TensorT)1: eluop(x_I) + alpha_;
     };
     void setAlpha(const TensorT& alpha) { alpha_ = alpha; };
     TensorT getAlpha() const { return alpha_; };
@@ -292,7 +292,7 @@ public:
 public:
 		using ActivationOp<TensorT>::ActivationOp;
     TensorT operator()(const TensorT& x_I) const { 
-			const TensorT result = (x_I > 0.0) ? (exp(x_I) - exp(-x_I)) / (exp(x_I) + exp(-x_I)) : 0.0;
+			const TensorT result = (x_I > 0.0) ? (exp(x_I) - exp(-x_I)) / (exp(x_I) + exp(-x_I)) : (TensorT)0;
 			return result;
 			//ClipOp<TensorT> clip(this->eps_, this->min_, this->max_);  // Not compatible with CUDA
    //   return clip(result);
@@ -362,7 +362,7 @@ public:
 	{
 	public:
 		using ActivationOp<TensorT>::ActivationOp;
-		TensorT operator()(const TensorT& x_I) const { return 1.0; };
+		TensorT operator()(const TensorT& x_I) const { return (TensorT)1; };
 		std::string getName() const { return "LinearGradOp"; };
     std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->getEps(), this->getMin(), this->getMax() }); }
     ActivationOp<TensorT>* copy() const { return new LinearGradOp<TensorT>(*this); }

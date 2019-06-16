@@ -24,8 +24,8 @@ namespace SmartPeak
 		virtual std::string getName() = 0;
 		virtual std::vector<T> getParameters() const = 0;
 	protected:
-		T eps_ = 1e-6;
-		T scale_ = 1.0;
+		T eps_ = (T)1e-6;
+		T scale_ = (T)1.0;
 	};
 
 	/**
@@ -41,8 +41,8 @@ namespace SmartPeak
 		virtual std::string getName() = 0;
 		virtual std::vector<T> getParameters() const = 0;
 	protected:
-		T eps_ = 1e-6;
-		T scale_ = 1.0;
+		T eps_ = (T)1e-6;
+		T scale_ = (T)1.0;
 	};
 
   /**

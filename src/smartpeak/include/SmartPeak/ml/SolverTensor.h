@@ -67,11 +67,11 @@ public:
 		//	archive(gradient_threshold_, gradient_noise_sigma_, gradient_noise_gamma_);
 		//}
     // clipping parameters
-    TensorT gradient_threshold_ = 1e6; ///< maximum gradient magnitude
+    TensorT gradient_threshold_ = (TensorT)1e6; ///< maximum gradient magnitude
 
     // gradient noise with annealed variance parameters
-    TensorT gradient_noise_sigma_ = 0.0; ///< variance before annealing (0.0 = none, 1.0 = normal distribution with mean = 0 and var = 1.0)
-    TensorT gradient_noise_gamma_ = 0.55; ///< time-dependend annealing factor
+    TensorT gradient_noise_sigma_ = (TensorT)0.0; ///< variance before annealing (0.0 = none, 1.0 = normal distribution with mean = 0 and var = 1.0)
+    TensorT gradient_noise_gamma_ = (TensorT)0.55; ///< time-dependend annealing factor
   };
 
   /**
@@ -152,10 +152,10 @@ public:
       auto noise = weights_tensor.random()*weights_tensor.constant(this->getGradientNoiseSigma());
 
       // Weight updates
-			solver_params_tensor.chip(4, 2).device(device) = solver_params_tensor.chip(1, 2) * solver_params_tensor.chip(4, 2) + (weights_tensor.constant(1) - solver_params_tensor.chip(1, 2)) * weights_tensor * errors_clipped;
-			solver_params_tensor.chip(5, 2).device(device) = solver_params_tensor.chip(2, 2) * solver_params_tensor.chip(5, 2) + (weights_tensor.constant(1) - solver_params_tensor.chip(2, 2)) * weights_tensor * errors_clipped * weights_tensor * errors_clipped;
-      auto unbiased_adam1 = solver_params_tensor.chip(4, 2) / (weights_tensor.constant(1) - solver_params_tensor.chip(1, 2));
-      auto unbiased_adam2 = solver_params_tensor.chip(5, 2) / (weights_tensor.constant(1) - solver_params_tensor.chip(2, 2));
+			solver_params_tensor.chip(4, 2).device(device) = solver_params_tensor.chip(1, 2) * solver_params_tensor.chip(4, 2) + (weights_tensor.constant((TensorT)1) - solver_params_tensor.chip(1, 2)) * weights_tensor * errors_clipped;
+			solver_params_tensor.chip(5, 2).device(device) = solver_params_tensor.chip(2, 2) * solver_params_tensor.chip(5, 2) + (weights_tensor.constant((TensorT)1) - solver_params_tensor.chip(2, 2)) * weights_tensor * errors_clipped * weights_tensor * errors_clipped;
+      auto unbiased_adam1 = solver_params_tensor.chip(4, 2) / (weights_tensor.constant((TensorT)1) - solver_params_tensor.chip(1, 2));
+      auto unbiased_adam2 = solver_params_tensor.chip(5, 2) / (weights_tensor.constant((TensorT)1) - solver_params_tensor.chip(2, 2));
 			weights_tensor.device(device) -= solver_params_tensor.chip(0, 2) * unbiased_adam1 / (unbiased_adam2.sqrt() + solver_params_tensor.chip(3, 2)) + noise;
     };
     std::string getName() const{return "AdamTensorOp";};

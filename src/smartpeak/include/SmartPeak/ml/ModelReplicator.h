@@ -408,7 +408,7 @@ private:
 
 		// not yet implemented...
     int n_weight_changes_ = 0; ///< the number of weights to change in the model
-    TensorT weight_change_stdev_ = 0; ///< the standard deviation to change the weights in the model
+    TensorT weight_change_stdev_ = (TensorT)0; ///< the standard deviation to change the weights in the model
   };
 	template<typename TensorT>
 	void ModelReplicator<TensorT>::setNNodeDownCopies(const int& n_node_copies)

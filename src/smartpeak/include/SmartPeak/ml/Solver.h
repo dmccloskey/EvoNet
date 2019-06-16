@@ -87,12 +87,12 @@ private:
 			archive(gradient_threshold_, learning_rate_, gradient_noise_sigma_, gradient_noise_gamma_);
 		}
     // clipping parameters
-    TensorT gradient_threshold_ = 1e6; ///< maximum gradient magnitude
-		TensorT learning_rate_ = 1e-3; ///< the learning rate
+    TensorT gradient_threshold_ = (TensorT)1e6; ///< maximum gradient magnitude
+		TensorT learning_rate_ = (TensorT)1e-3; ///< the learning rate
 
     // gradient noise with annealed variance parameters
-    TensorT gradient_noise_sigma_ = 0.0; ///< variance before annealing
-    TensorT gradient_noise_gamma_ = 0.55; ///< time-dependend annealing factor
+    TensorT gradient_noise_sigma_ = (TensorT)0.0; ///< variance before annealing
+    TensorT gradient_noise_gamma_ = (TensorT)0.55; ///< time-dependend annealing factor
   };
 
   /**
@@ -191,14 +191,15 @@ public:
     TensorT getMomentum2Prev() const{return momentum2_prev_;};
     TensorT operator()(const TensorT& weight, const TensorT& error) 
     {
-      const TensorT adam1 = momentum_ * momentum_prev_ + (1 - momentum_) * weight * error;
-      const TensorT adam2 = momentum2_ * momentum2_prev_ + (1 - momentum2_) * std::pow(weight * error, 2);
-      momentum_prev_= adam1;
-      momentum2_prev_ = adam2;
-      const TensorT unbiased_adam1 = adam1/ (1 - momentum_);
-      const TensorT unbiased_adam2 = adam2/ (1 - momentum2_);
-      const TensorT new_weight = weight - learning_rate_ * unbiased_adam1 / (std::sqrt(unbiased_adam2) + delta_);
-      return new_weight;
+      //const TensorT adam1 = momentum_ * momentum_prev_ + (1 - momentum_) * weight * error;
+      //const TensorT adam2 = momentum2_ * momentum2_prev_ + (1 - momentum2_) * std::pow(weight * error, 2);
+      //momentum_prev_= adam1;
+      //momentum2_prev_ = adam2;
+      //const TensorT unbiased_adam1 = adam1/ (1 - momentum_);
+      //const TensorT unbiased_adam2 = adam2/ (1 - momentum2_);
+      //const TensorT new_weight = weight - learning_rate_ * unbiased_adam1 / (std::sqrt(unbiased_adam2) + delta_);
+      //return new_weight;
+      return weight;
     };
     std::string getName() const{return "AdamOp";};
     std::string getParamsAsStr() const
@@ -236,12 +237,12 @@ private:
 		void serialize(Archive& archive) {
 			archive(cereal::base_class<SolverOp<TensorT>>(this), learning_rate_, momentum_, momentum2_, delta_, momentum_prev_, momentum2_prev_);
 		}
-    TensorT learning_rate_ = 0.01; ///< Learning rate
-    TensorT momentum_ = 0.9; ///< Momentum
-    TensorT momentum2_ = 0.999; ///< Momentum2
-    TensorT delta_ = 1e-8; ///< Delta
-    TensorT momentum_prev_ = 0.0;
-    TensorT momentum2_prev_ = 0.0;
+    TensorT learning_rate_ = (TensorT)0.01; ///< Learning rate
+    TensorT momentum_ = (TensorT)0.9; ///< Momentum
+    TensorT momentum2_ = (TensorT)0.999; ///< Momentum2
+    TensorT delta_ = (TensorT)1e-8; ///< Delta
+    TensorT momentum_prev_ = (TensorT)0.0;
+    TensorT momentum2_prev_ = (TensorT)0.0;
   };
 
 	/**

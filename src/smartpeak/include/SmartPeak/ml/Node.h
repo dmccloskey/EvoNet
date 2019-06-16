@@ -206,9 +206,9 @@ private:
 		std::shared_ptr<IntegrationOp<TensorT>> integration_; ///< Node integration function 
 		std::shared_ptr<IntegrationErrorOp<TensorT>> integration_error_; ///< Node integration error function 
 		std::shared_ptr<IntegrationWeightGradOp<TensorT>> integration_weight_grad_; ///< Node integration weight grad function 
-    TensorT output_min_ = -1.0e6; ///< Min Node output
-    TensorT output_max_ = 1.0e6; ///< Max Node output
-		TensorT drop_probability_ = 0.0;
+    TensorT output_min_ = (TensorT)-1.0e6; ///< Min Node output
+    TensorT output_max_ = (TensorT)1.0e6; ///< Max Node output
+		TensorT drop_probability_ = (TensorT)0.0;
 		Eigen::Tensor<TensorT, 2> drop_; ///< Node Output drop tensor (initialized once per epoch)
 
 		/**

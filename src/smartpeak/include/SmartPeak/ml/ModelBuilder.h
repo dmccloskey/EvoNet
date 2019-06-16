@@ -231,7 +231,7 @@ public:
 			const std::shared_ptr<IntegrationErrorOp<TensorT>>& node_integration_error,
 			const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& node_integration_weight_grad,
 			const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver,
-			TensorT drop_out_prob = 0.0f, TensorT drop_connection_prob = 0.0f, bool biases = true, bool split_filter_layers = true);
+			TensorT drop_out_prob = 0.0f, TensorT drop_connection_prob = 0.0f, bool biases = true, bool split_filter_layers = true, bool share_weights = true);
 		void addProjection(Model<TensorT> & model, const std::string & name, const std::string& module_name,
 			const std::vector<std::string>& source_node_names,
 			const std::vector<std::string>& output_node_names,
@@ -611,7 +611,7 @@ public:
 				std::string link_bias_name(link_bias_name_char);
 
 				std::shared_ptr<WeightInitOp<TensorT>>  bias_weight_init;
-				bias_weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));
+				bias_weight_init.reset(new ConstWeightInitOp<TensorT>((TensorT)1));
 				std::shared_ptr<SolverOp<TensorT>>  bias_solver = solver;
 				Weight<TensorT> weight_bias(weight_bias_name, bias_weight_init, bias_solver);
 				weight_bias.setModuleName(module_name);
@@ -1388,7 +1388,7 @@ public:
 		const std::shared_ptr<IntegrationErrorOp<TensorT>>& node_integration_error,
 		const std::shared_ptr<IntegrationWeightGradOp<TensorT>>& node_integration_weight_grad,
 		const std::shared_ptr<WeightInitOp<TensorT>> & weight_init, const std::shared_ptr<SolverOp<TensorT>> & solver,
-		TensorT drop_out_prob, TensorT drop_connection_prob, bool biases, bool split_filter_layers)
+		TensorT drop_out_prob, TensorT drop_connection_prob, bool biases, bool split_filter_layers, bool share_weights)
 	{
 		std::vector<std::string> node_names;
 
@@ -1472,19 +1472,21 @@ public:
 			}
 		}
 
-		// Create the shared weights for each filter link
-		for (size_t filter_height_iter = 0; filter_height_iter < extent_height; ++filter_height_iter) {
-			for (size_t filter_width_iter = 0; filter_width_iter < extent_width; ++filter_width_iter) {
-				char weight_filter_name_char[512];
-				sprintf(weight_filter_name_char, "%s-%s_H%012d-W%012d", name.data(), module_name.data(), filter_height_iter, filter_width_iter);
-				std::string weight_filter_name(weight_filter_name_char);
-				Weight<TensorT> weight_filter(weight_filter_name, weight_init, solver);
-				weight_filter.setModuleName(module_name);
-				weight_filter.setDropProbability(drop_connection_prob);
-				if (split_filter_layers) weight_filter.setLayerName(module_name);
-				model.addWeights({ weight_filter });
-			}
-		}
+    if (share_weights) {
+      // Create the shared weights for each filter link
+      for (size_t filter_height_iter = 0; filter_height_iter < extent_height; ++filter_height_iter) {
+        for (size_t filter_width_iter = 0; filter_width_iter < extent_width; ++filter_width_iter) {
+          char weight_filter_name_char[512];
+          sprintf(weight_filter_name_char, "%s-%s_H%012d-W%012d", name.data(), module_name.data(), filter_height_iter, filter_width_iter);
+          std::string weight_filter_name(weight_filter_name_char);
+          Weight<TensorT> weight_filter(weight_filter_name, weight_init, solver);
+          weight_filter.setModuleName(module_name);
+          weight_filter.setDropProbability(drop_connection_prob);
+          if (split_filter_layers) weight_filter.setLayerName(module_name);
+          model.addWeights({ weight_filter });
+        }
+      }
+    }
 
 		// Create the projection links between input and output					
 		int tmp = 0;
@@ -1525,15 +1527,28 @@ public:
 					int filter_height_iter = 0;
 					for (size_t filter_height_pos = filter_height_start; filter_height_pos <= filter_height_end; ++filter_height_pos) {
 
-						// Weight name
-						char weight_filter_name_char[512];
-						sprintf(weight_filter_name_char, "%s-%s_H%012d-W%012d", name.data(), module_name.data(), filter_height_iter, filter_width_iter);
-						std::string weight_filter_name(weight_filter_name_char);
+            // Output node name
+            char output_name_char[512];
+            sprintf(output_name_char, "%s-out_H%012d-W%012d", name.data(), filter_height_pos + output_height_zero_padding, filter_width_pos + output_width_zero_padding);
+            std::string output_name(output_name_char);
 
-						// Output node name
-						char output_name_char[512];
-						sprintf(output_name_char, "%s-out_H%012d-W%012d", name.data(), filter_height_pos + output_height_zero_padding, filter_width_pos + output_width_zero_padding);
-						std::string output_name(output_name_char);
+						// Weight name
+            std::string weight_filter_name;
+            if (share_weights) {
+              char weight_filter_name_char[512];
+              sprintf(weight_filter_name_char, "%s-%s_H%012d-W%012d", name.data(), module_name.data(), filter_height_iter, filter_width_iter);
+              weight_filter_name = std::string(weight_filter_name_char);
+            }
+            else {
+              char weight_filter_name_char[512];
+              sprintf(weight_filter_name_char, "%s_to_%s_%s", source_node_names[source_node_iter].data(), output_name.data(), module_name.data());
+              weight_filter_name = std::string(weight_filter_name_char);
+              Weight<TensorT> weight_filter(weight_filter_name, weight_init, solver);
+              weight_filter.setModuleName(module_name);
+              weight_filter.setDropProbability(drop_connection_prob);
+              if (split_filter_layers) weight_filter.setLayerName(module_name);
+              model.addWeights({ weight_filter });
+            }
 
 						// Link name
 						char link_filter_name_char[512];

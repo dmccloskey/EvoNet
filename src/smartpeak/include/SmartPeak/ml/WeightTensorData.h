@@ -252,7 +252,7 @@ protected:
 					Eigen::array<int, 3> offsets = { weight_index.first, weight_index.second, iter };
 					Eigen::array<int, 3> extents = { 1, 1, 1 };
 					Eigen::Tensor<TensorT, 3> ones(1, 1, 1);
-					ones.setConstant(1);
+					ones.setConstant((TensorT)1);
 					shared.slice(offsets, extents) = ones;
 				}
 				++iter;

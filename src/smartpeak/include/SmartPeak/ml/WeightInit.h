@@ -52,7 +52,8 @@ public:
       std::random_device rd{};
       std::mt19937 gen{rd()};
       std::normal_distribution<> d{0.0, 1.0};
-      return d(gen)*std::sqrt(f_/n_); 
+      const TensorT init_value = TensorT(d(gen)*std::sqrt(f_ / n_));
+      return init_value;
     };
     TensorT getN() const { return n_; }
 		TensorT getF() const { return f_; }

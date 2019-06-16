@@ -60,7 +60,7 @@ namespace SmartPeak
 			const std::pair<TensorT, TensorT>& emg_tau,
 			const std::pair<TensorT, TensorT>& emg_mu_offset,
 			const std::pair<TensorT, TensorT>& emg_sigma,
-			TensorT saturation_limit = 100) const;
+			TensorT saturation_limit = (TensorT)100) const;
 
 		/**
 			@brief Makes a chromatogram.
@@ -142,7 +142,7 @@ namespace SmartPeak
 
 		// find the highest point where the peaks cross
 		TensorT x_overlap = peak_left.getWindowEnd();
-		TensorT y_overlap = 0.0;
+		TensorT y_overlap = (TensorT)0.0;
 		for (int i = x_right.size() - 1; i >= 0; --i)
 		{  // iterate in reverse order to extend the left peak
 			for (int j = x_left.size() - 1; j >= 0; --j)
@@ -257,8 +257,8 @@ namespace SmartPeak
 			TensorT noise_sigma_rand = random_bounds(noise_sigma.first, noise_sigma.second);
 			TensorT peak_start = (TensorT)peak_iter * peak_window_length;
 			TensorT peak_end = (TensorT)(peak_iter + 1) * peak_window_length;
-			peaks.push_back(PeakSimulator<TensorT>(step_size_mu_rand, 0, peak_start, peak_end,
-				0, 0, baseline_left, baseline_right, saturation_limit));
+			peaks.push_back(PeakSimulator<TensorT>(step_size_mu_rand, (TensorT)0, peak_start, peak_end,
+        (TensorT)0, (TensorT)0, baseline_left, baseline_right, saturation_limit));
 			peaks_noise.push_back(PeakSimulator<TensorT>(step_size_mu_rand, step_size_sigma_rand, peak_start, peak_end,
 				noise_mu_rand, noise_sigma_rand, baseline_left, baseline_right, saturation_limit));
 

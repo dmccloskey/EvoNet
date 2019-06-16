@@ -100,10 +100,10 @@ namespace SmartPeak
 		TensorT z_(const TensorT& x_I) const;
 
 	private:
-		TensorT emg_h_ = 1.0; ///< Amplitude of the Gaussian peak
-		TensorT emg_tau_ = 0.1; ///< Exponential relaxation time 
-		TensorT emg_mu_ = 0.0; ///< Mean of the EMG
-		TensorT emg_sigma_ = 1.0; ///< Standard deviation of the EGM
+		TensorT emg_h_ = (TensorT)1.0; ///< Amplitude of the Gaussian peak
+		TensorT emg_tau_ = (TensorT)0.1; ///< Exponential relaxation time 
+		TensorT emg_mu_ = (TensorT)0.0; ///< Mean of the EMG
+		TensorT emg_sigma_ = (TensorT)1.0; ///< Standard deviation of the EGM
 
 	};
 
@@ -167,39 +167,39 @@ namespace SmartPeak
 	template <typename TensorT>
 	TensorT EMGModel<TensorT>::z_(const TensorT& x_I) const
 	{
-		TensorT z = 1 / std::sqrt(2)*(emg_sigma_ / emg_tau_ - (x_I - emg_mu_) / emg_sigma_);
+		TensorT z = TensorT(1 / std::sqrt(2)*(emg_sigma_ / emg_tau_ - (x_I - emg_mu_) / emg_sigma_));
 		return z;
 	}
 
 	template <typename TensorT>
 	TensorT EMGModel<TensorT>::EMGPDF1_(const TensorT& x_I) const
 	{
-		const TensorT PI = 3.141592653589793;
-		const TensorT term1a = emg_h_ * emg_sigma_ / emg_tau_ * std::sqrt(PI / 2);
-		const TensorT term2a = 0.5*std::pow(emg_sigma_ / emg_tau_, 2) - (x_I - emg_mu_) / emg_tau_;
-		const TensorT term3a = 1 / sqrt(2)*(emg_sigma_ / emg_tau_ - (x_I - emg_mu_) / emg_sigma_);
-		const TensorT y = term1a * std::exp(term2a)*std::erfc(term3a);
+		const TensorT PI = TensorT(3.141592653589793);
+		const TensorT term1a = TensorT(emg_h_ * emg_sigma_ / emg_tau_ * std::sqrt(PI / 2));
+		const TensorT term2a = TensorT(0.5*std::pow(emg_sigma_ / emg_tau_, 2) - (x_I - emg_mu_) / emg_tau_);
+		const TensorT term3a = TensorT(1 / sqrt(2)*(emg_sigma_ / emg_tau_ - (x_I - emg_mu_) / emg_sigma_));
+		const TensorT y = TensorT(term1a * std::exp(term2a)*std::erfc(term3a));
 		return y;
 	}
 
-	template <typename TensorT>
-	TensorT EMGModel<TensorT>::EMGPDF2_(const TensorT& x_I) const
-	{
-		const TensorT PI = 3.141592653589793;
-		const TensorT term1a = emg_h_ * emg_sigma_ / emg_tau_ * std::sqrt(PI / 2);
-		const TensorT term2b = -0.5*std::pow((x_I - emg_mu_) / emg_sigma_, 2);
-		const TensorT term3a = 1 / sqrt(2)*(emg_sigma_ / emg_tau_ - (x_I - emg_mu_) / emg_sigma_);
-		const TensorT y = term1a * std::exp(term2b)*std::exp(std::pow(term3a, 2))*std::erfc(term3a);
-		return y;
-	}
+  template <typename TensorT>
+  TensorT EMGModel<TensorT>::EMGPDF2_(const TensorT& x_I) const
+  {
+    const TensorT PI = TensorT(3.141592653589793);
+    const TensorT term1a = TensorT(emg_h_ * emg_sigma_ / emg_tau_ * std::sqrt(PI / 2));
+    const TensorT term2b = TensorT(-0.5*std::pow((x_I - emg_mu_) / emg_sigma_, 2));
+    const TensorT term3a = TensorT(1 / sqrt(2)*(emg_sigma_ / emg_tau_ - (x_I - emg_mu_) / emg_sigma_));
+    const TensorT y = TensorT(term1a * std::exp(term2b)*std::exp(std::pow(term3a, 2))*std::erfc(term3a));
+    return y;
+  }
 
 	template <typename TensorT>
 	TensorT EMGModel<TensorT>::EMGPDF3_(const TensorT& x_I) const
 	{
-		const TensorT term1b = emg_h_;
-		const TensorT term2b = -0.5*std::pow((x_I - emg_mu_) / emg_sigma_, 2);
-		const TensorT term3b = 1 - (x_I - emg_mu_)*emg_tau_ / std::pow(emg_sigma_, 2);
-		const TensorT y = term1b * std::exp(term2b) / term3b;
+		const TensorT term1b = TensorT(emg_h_);
+		const TensorT term2b = TensorT(-0.5*std::pow((x_I - emg_mu_) / emg_sigma_, 2));
+		const TensorT term3b = TensorT(1 - (x_I - emg_mu_)*emg_tau_ / std::pow(emg_sigma_, 2));
+		const TensorT y = TensorT(term1b * std::exp(term2b) / term3b);
 		return y;
 	}
 
@@ -207,7 +207,7 @@ namespace SmartPeak
 	TensorT EMGModel<TensorT>::PDF(const TensorT& x_I) const
 	{
 		const TensorT z = z_(x_I);
-		TensorT y = 0.0;
+		TensorT y = (TensorT)0;
 		if (z < 0)
 		{
 			y = EMGPDF1_(x_I);

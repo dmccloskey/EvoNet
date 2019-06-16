@@ -32,7 +32,7 @@ namespace SmartPeak
 		void serialize(Archive& archive) {
 			archive(eps_);
 		}
-		T eps_ = 1e-6;
+		T eps_ = (T)1e-6;
   };
 
   /**
@@ -238,7 +238,7 @@ public:
 		void serialize(Archive& archive) {
 			archive(eps_);
 		}
-		T eps_ = 1e-6;
+		T eps_ = (T)1e-6;
 	};
 
 	/**
@@ -386,7 +386,7 @@ public:
 		void serialize(Archive& archive) {
 			archive(eps_);
 		}
-		T eps_ = 1e-6;
+		T eps_ = (T)1e-6;
 	};
 
 	/**

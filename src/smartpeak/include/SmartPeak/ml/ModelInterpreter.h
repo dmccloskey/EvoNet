@@ -691,7 +691,7 @@ namespace SmartPeak
 			std::string error(error_char);
 			throw std::runtime_error(error_char);
 		}
-		Eigen::Tensor<TensorT, 2> one((int)layer_tensors_[0]->getBatchSize(), (int)layer_tensors_[0]->getMemorySize());	one.setConstant(1);
+		Eigen::Tensor<TensorT, 2> one((int)layer_tensors_[0]->getBatchSize(), (int)layer_tensors_[0]->getMemorySize());	one.setConstant((TensorT)1);
 		for (auto& node_map : model.nodes_) {
 			if (node_map.second->getType() == NodeType::bias) {
 				if (node_map.second->getTensorIndex().first != -1) {
@@ -714,8 +714,8 @@ namespace SmartPeak
 	inline void ModelInterpreter<TensorT, DeviceT>::reInitNodes()
 	{
 		for (auto& layer_tensor: layer_tensors_) {
-			Eigen::Tensor<TensorT, 3> zero((int)layer_tensor->getBatchSize(), (int)layer_tensor->getMemorySize(), (int)layer_tensor->getLayerSize());	zero.setConstant(0);
-      Eigen::Tensor<TensorT, 3> one((int)layer_tensor->getBatchSize(), (int)layer_tensor->getMemorySize(), (int)layer_tensor->getLayerSize()); one.setConstant(1);
+			Eigen::Tensor<TensorT, 3> zero((int)layer_tensor->getBatchSize(), (int)layer_tensor->getMemorySize(), (int)layer_tensor->getLayerSize());	zero.setConstant((TensorT)0);
+      Eigen::Tensor<TensorT, 3> one((int)layer_tensor->getBatchSize(), (int)layer_tensor->getMemorySize(), (int)layer_tensor->getLayerSize()); one.setConstant((TensorT)1);
       if (layer_tensor->getLayerIntegration() == "ProdOp" || layer_tensor->getLayerIntegration() == "ProdSCOp") {
         layer_tensor->setInput(one);
         layer_tensor->setOutput(zero);
@@ -736,7 +736,7 @@ namespace SmartPeak
 	template<typename TensorT, typename DeviceT>
 	inline void ModelInterpreter<TensorT, DeviceT>::reInitModelError()
 	{
-		Eigen::Tensor<TensorT, 2> zero((int)model_error_->getBatchSize(), (int)model_error_->getMemorySize());	zero.setConstant(0);
+		Eigen::Tensor<TensorT, 2> zero((int)model_error_->getBatchSize(), (int)model_error_->getMemorySize());	zero.setConstant((TensorT)0);
 		model_error_->setError(zero);
 	}
 
