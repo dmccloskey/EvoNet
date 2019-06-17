@@ -242,7 +242,9 @@ public:
 			TensorT drop_out_prob = 0.0f, TensorT drop_connection_prob = 0.0f, bool split_filter_layers = true);
 
 		/**
-		@brief Add a normalization layer with activation
+		@brief Add a normalization layer with activation.
+       If a learnable gain/offset or application of an activation is desired,
+       the user can add a singly connected layer after the unit scale layer.
 
 		@param[in, out] Model
 		@param[in] source_node_names Node_names to add the fully connected layer to
@@ -256,11 +258,7 @@ public:
 		@returns vector of output node names
 		*/
 		std::vector<std::string> addNormalization(Model<TensorT>& model, const std::string& name, const std::string& module_name,
-			const std::vector<std::string>& source_node_names,
-			const std::shared_ptr<ActivationOp<TensorT>>& node_activation,
-			const std::shared_ptr<ActivationOp<TensorT>>& node_activation_grad,
-			const std::shared_ptr<WeightInitOp<TensorT>>& weight_init, const std::shared_ptr<SolverOp<TensorT>>& solver,
-			TensorT drop_out_prob = 0.0f, TensorT drop_connection_prob = 0.0f, bool biases = true, bool specify_layers = false);
+			const std::vector<std::string>& source_node_names, bool specify_layers = false);
 
     /**
     @brief Add a unit scale layer.
@@ -623,7 +621,7 @@ public:
 				std::string link_bias_name(link_bias_name_char);
 
 				std::shared_ptr<WeightInitOp<TensorT>>  bias_weight_init;
-				bias_weight_init.reset(new ConstWeightInitOp<TensorT>((TensorT)1));
+				bias_weight_init.reset(new ConstWeightInitOp<TensorT>((TensorT)0));
 				std::shared_ptr<SolverOp<TensorT>>  bias_solver = solver;
 				Weight<TensorT> weight_bias(weight_bias_name, bias_weight_init, bias_solver);
 				weight_bias.setModuleName(module_name);
@@ -745,7 +743,7 @@ public:
 				std::string link_bias_name(link_bias_name_char);
 
 				std::shared_ptr<WeightInitOp<TensorT>>  bias_weight_init;
-				bias_weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));
+				bias_weight_init.reset(new ConstWeightInitOp<TensorT>(0));
 				std::shared_ptr<SolverOp<TensorT>>  bias_solver = solver;
 				Weight<TensorT> weight_bias(weight_bias_name, bias_weight_init, bias_solver);
 				weight_bias.setModuleName(module_name);
@@ -1678,9 +1676,7 @@ public:
 	}
 
 	template<typename TensorT>
-	std::vector<std::string> ModelBuilder<TensorT>::addNormalization(Model<TensorT> & model, const std::string & name, const std::string & module_name, const std::vector<std::string>& source_node_names,
-		const std::shared_ptr<ActivationOp<TensorT>>& node_activation, const std::shared_ptr<ActivationOp<TensorT>>& node_activation_grad,
-		const std::shared_ptr<WeightInitOp<TensorT>> & weight_init, const std::shared_ptr<SolverOp<TensorT>> & solver, TensorT drop_out_prob, TensorT drop_connection_prob, bool biases, bool specify_layers)
+	std::vector<std::string> ModelBuilder<TensorT>::addNormalization(Model<TensorT> & model, const std::string & name, const std::string & module_name, const std::vector<std::string>& source_node_names, bool specify_layers)
 	{
 		std::vector<std::string> node_names;
 		std::string unity_weight_name, negunity_weight_name;
@@ -1720,9 +1716,8 @@ public:
 			char normalized_name_char[512];
 			sprintf(normalized_name_char, "%s-Normalized", node_name.data());
 			std::string normalized_name(normalized_name_char);
-			Node<TensorT> normalized(normalized_name, NodeType::hidden, NodeStatus::initialized, node_activation, node_activation_grad, std::shared_ptr<IntegrationOp<TensorT>>(new ProdOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new ProdErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new ProdWeightGradOp<TensorT>()));
+			Node<TensorT> normalized(normalized_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new ProdOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new ProdErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new ProdWeightGradOp<TensorT>()));
 			normalized.setModuleName(module_name);
-			normalized.setDropProbability(drop_out_prob);
       if (specify_layers) normalized.setLayerName(module_name + "-Normalized");
 			model.addNodes({ normalized });
 			node_names.push_back(normalized_name);
@@ -1764,19 +1759,11 @@ public:
 			model.addLinks({ sMinMToV_link });
 
 			// Make the weights/links from sourceMinMean to normalized
-			char gamma_weight_name_char[512];
-			sprintf(gamma_weight_name_char, "%s-Gamma", node_name.data());
-			std::string gamma_weight_name(gamma_weight_name_char);
-			Weight<TensorT> gamma_weight(gamma_weight_name, weight_init, solver);
-			gamma_weight.setModuleName(module_name);
-			gamma_weight.setDropProbability(drop_connection_prob);
-      if (specify_layers) gamma_weight.setLayerName(module_name);
-			model.addWeights({ gamma_weight });
-
+      unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", sourceMinMean_name, normalized_name, specify_layers);
 			char sMinMToN_link_name_char[512];
 			sprintf(sMinMToN_link_name_char, "%s_to_%s", sourceMinMean_name.data(), normalized_name.data());
 			std::string sMinMToN_link_name(sMinMToN_link_name_char);
-			Link sMinMToN_link(sMinMToN_link_name, sourceMinMean_name, normalized_name, gamma_weight_name);
+			Link sMinMToN_link(sMinMToN_link_name, sourceMinMean_name, normalized_name, unity_weight_name);
 			sMinMToN_link.setModuleName(module_name);
 			model.addLinks({ sMinMToN_link });
 
@@ -1788,35 +1775,6 @@ public:
 			Link vToN_link(vToN_link_name, variance_name, normalized_name, unity_weight_name);
 			vToN_link.setModuleName(module_name);
 			model.addLinks({ vToN_link });
-
-			// add the bias nodes, weights, and links
-			if (biases) {
-				char bias_name_char[512];
-				sprintf(bias_name_char, "%s-Normalized-bias", node_name.data());
-				std::string bias_name(bias_name_char);
-				Node<TensorT> bias(bias_name, NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
-				bias.setModuleName(module_name);
-				model.addNodes({ bias });
-
-				char weight_bias_name_char[512];
-				sprintf(weight_bias_name_char, "%s_to_%s", bias_name.data(), normalized_name.data());
-				std::string weight_bias_name(weight_bias_name_char);
-
-				char link_bias_name_char[512];
-				sprintf(link_bias_name_char, "%s_to_%s", bias_name.data(), normalized_name.data());
-				std::string link_bias_name(link_bias_name_char);
-
-				std::shared_ptr<WeightInitOp<TensorT>>  bias_weight_init;
-				bias_weight_init.reset(new ConstWeightInitOp<TensorT>(0.0));;
-				std::shared_ptr<SolverOp<TensorT>>  bias_solver = solver;
-				Weight<TensorT> weight_bias(weight_bias_name, bias_weight_init, bias_solver);
-				weight_bias.setModuleName(module_name);
-				Link link_bias(link_bias_name, bias_name, normalized_name, weight_bias_name);
-				link_bias.setModuleName(module_name);
-
-				model.addWeights({ weight_bias });
-				model.addLinks({ link_bias });
-			}
 		}
 		return node_names;
 	}
@@ -2269,7 +2227,7 @@ public:
 			std::string link_iGateBias_name(link_iGateBias_name_char);
 
 			std::shared_ptr<WeightInitOp<TensorT>>  iGateBias_weight_init;
-			iGateBias_weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));;
+			iGateBias_weight_init.reset(new ConstWeightInitOp<TensorT>(0));
 			std::shared_ptr<SolverOp<TensorT>>  iGateBias_solver = solver;
 			Weight<TensorT> weight_iGateBias(weight_iGateBias_name, iGateBias_weight_init, iGateBias_solver);
 			weight_iGateBias.setModuleName(module_name);
@@ -2298,7 +2256,7 @@ public:
 				std::string link_fGateBias_name(link_fGateBias_name_char);
 
 				std::shared_ptr<WeightInitOp<TensorT>>  fGateBias_weight_init;
-				fGateBias_weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));;
+				fGateBias_weight_init.reset(new ConstWeightInitOp<TensorT>(0));
 				std::shared_ptr<SolverOp<TensorT>>  fGateBias_solver = solver;
 				Weight<TensorT> weight_fGateBias(weight_fGateBias_name, fGateBias_weight_init, fGateBias_solver);
 				weight_fGateBias.setModuleName(module_name);
@@ -2327,7 +2285,7 @@ public:
 			std::string link_oGateBias_name(link_oGateBias_name_char);
 
 			std::shared_ptr<WeightInitOp<TensorT>>  oGateBias_weight_init;
-			oGateBias_weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));;
+			oGateBias_weight_init.reset(new ConstWeightInitOp<TensorT>(0));
 			std::shared_ptr<SolverOp<TensorT>>  oGateBias_solver = solver;
 			Weight<TensorT> weight_oGateBias(weight_oGateBias_name, oGateBias_weight_init, oGateBias_solver);
 			weight_oGateBias.setModuleName(module_name);
@@ -2629,7 +2587,7 @@ public:
 				std::string link_iBias_name(link_iBias_name_char);
 
 				std::shared_ptr<WeightInitOp<TensorT>>  iBias_weight_init;
-				iBias_weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));;
+				iBias_weight_init.reset(new ConstWeightInitOp<TensorT>(0));
 				std::shared_ptr<SolverOp<TensorT>>  iBias_solver = solver;
 				Weight<TensorT> weight_iBias(weight_iBias_name, iBias_weight_init, iBias_solver);
 				weight_iBias.setModuleName(module_name);
@@ -2729,7 +2687,7 @@ public:
 			std::string link_iGateBias_name(link_iGateBias_name_char);
 
 			std::shared_ptr<WeightInitOp<TensorT>>  iGateBias_weight_init;
-			iGateBias_weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));;
+			iGateBias_weight_init.reset(new ConstWeightInitOp<TensorT>(0));
 			std::shared_ptr<SolverOp<TensorT>>  iGateBias_solver = solver;
 			Weight<TensorT> weight_iGateBias(weight_iGateBias_name, iGateBias_weight_init, iGateBias_solver);
 			weight_iGateBias.setModuleName(module_name);
@@ -2758,7 +2716,7 @@ public:
 				std::string link_fGateBias_name(link_fGateBias_name_char);
 
 				std::shared_ptr<WeightInitOp<TensorT>>  fGateBias_weight_init;
-				fGateBias_weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));;
+				fGateBias_weight_init.reset(new ConstWeightInitOp<TensorT>(0));
 				std::shared_ptr<SolverOp<TensorT>>  fGateBias_solver = solver;
 				Weight<TensorT> weight_fGateBias(weight_fGateBias_name, fGateBias_weight_init, fGateBias_solver);
 				weight_fGateBias.setModuleName(module_name);
@@ -2787,7 +2745,7 @@ public:
 			std::string link_oGateBias_name(link_oGateBias_name_char);
 
 			std::shared_ptr<WeightInitOp<TensorT>>  oGateBias_weight_init;
-			oGateBias_weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));;
+			oGateBias_weight_init.reset(new ConstWeightInitOp<TensorT>(0));
 			std::shared_ptr<SolverOp<TensorT>>  oGateBias_solver = solver;
 			Weight<TensorT> weight_oGateBias(weight_oGateBias_name, oGateBias_weight_init, oGateBias_solver);
 			weight_oGateBias.setModuleName(module_name);
@@ -3069,7 +3027,7 @@ public:
 				std::string link_iBias_name(link_iBias_name_char);
 
 				std::shared_ptr<WeightInitOp<TensorT>>  iBias_weight_init;
-				iBias_weight_init.reset(new ConstWeightInitOp<TensorT>(1.0));;
+				iBias_weight_init.reset(new ConstWeightInitOp<TensorT>(0));
 				std::shared_ptr<SolverOp<TensorT>>  iBias_solver = solver;
 				Weight<TensorT> weight_iBias(weight_iBias_name, iBias_weight_init, iBias_solver);
 				weight_iBias.setModuleName(module_name);
