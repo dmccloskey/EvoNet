@@ -5,6 +5,7 @@
 #include <SmartPeak/ml/ModelReplicator.h>
 #include <SmartPeak/ml/ModelBuilder.h>
 #include <SmartPeak/io/PopulationTrainerFile.h>
+#include <SmartPeak/io/ModelInterpreterFileDefaultDevice.h>
 
 #include "Metabolomics_example.h"
 
@@ -41,23 +42,25 @@ public:
 		// Add the inputs
 		std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input", "Input", n_inputs, true);
 
-		// Add the hidden layers
-    if (log_transform_input) {
-      node_names = model_builder.addSinglyConnected(model, "LogScaleInput", "LogScaleInput", node_names, node_names.size(),
-        std::shared_ptr<ActivationOp<TensorT>>(new LogOp<TensorT>()),
-        std::shared_ptr<ActivationOp<TensorT>>(new LogGradOp<TensorT>()),
-        std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-        std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-        std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-        std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
-        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e3, 0.0)), 0.0, 0.0, true, true);
-    }
-    if (unit_scale_input) {
-      node_names = model_builder.addUnitScale(model, "UnitScaleInput", "UnitScaleInput", node_names, true);
-    }
-    if (standardize_input) {
-      node_names = model_builder.addNormalization(model, "NormInput", "NormInput", node_names, true);
-    }
+		//// Data pre-processing steps
+  //  if (log_transform_input) {
+  //    node_names = model_builder.addSinglyConnected(model, "LogScaleInput", "LogScaleInput", node_names, node_names.size(),
+  //      std::shared_ptr<ActivationOp<TensorT>>(new LogOp<TensorT>()),
+  //      std::shared_ptr<ActivationOp<TensorT>>(new LogGradOp<TensorT>()),
+  //      std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
+  //      std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
+  //      std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
+  //      std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
+  //      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e3, 0.0)), 0.0, 0.0, true, true);
+  //  }
+  //  if (unit_scale_input) { // we want linear scale and not unit scale
+  //    node_names = model_builder.addUnitScale(model, "UnitScaleInput", "UnitScaleInput", node_names, true);
+  //  }
+  //  if (standardize_input) {
+  //    node_names = model_builder.addNormalization(model, "NormInput", "NormInput", node_names, true);
+  //  }
+
+    // Add the hidden layers
 		//node_names = model_builder.addFullyConnected(model, "FC0", "FC0", node_names, n_hidden_0,
     //std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>(1e-6, 0.0, 1.0)),
       //std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
@@ -181,10 +184,31 @@ public:
 
 		for (const std::string& node_name : node_names)
 			model.nodes_.at(node_name)->setType(NodeType::output);
-
-		// Add the final softmax layer
-		//node_names = model_builder.addStableSoftMax(model, "SoftMax", "SoftMax", node_names);
+    model.setInputAndOutputNodes();
 	}
+  void adaptiveTrainerScheduler(
+    const int& n_generations,
+    const int& n_epochs,
+    Model<TensorT>& model,
+    ModelInterpreterDefaultDevice<TensorT>& model_interpreter,
+    const std::vector<float>& model_errors) {
+    if (n_epochs % 1000 == 0 && n_epochs > 5000) {
+      // anneal the learning rate by half on each plateau
+      TensorT lr_new = this->reduceLROnPlateau(model_errors, 0.5, 1000, 100, 0.1);
+      if (lr_new < 1.0) {
+        model_interpreter.updateSolverParams(0, lr_new);
+        std::cout << "The learning rate has been annealed by a factor of " << lr_new << std::endl;
+      }
+    }
+    // Check point the model every 1000 epochs
+    if (n_epochs % 1000 == 0 && n_epochs != 0) {
+      model_interpreter.getModelResults(model, false, true, false);
+      ModelFile<TensorT> data;
+      data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
+      ModelInterpreterFileDefaultDevice<TensorT> interpreter_data;
+      interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
+    }
+  }
 };
 
 /*
@@ -460,7 +484,7 @@ void main_classification(bool make_model = true)
 	biochem_rxns_filename = data_dir + "iJO1366.csv";
 	metabo_data_filename = data_dir + "ALEsKOs01_Metabolomics.csv";
 	meta_data_filename = data_dir + "ALEsKOs01_MetaData.csv";
-	reaction_model.readBiochemicalReactions(biochem_rxns_filename);
+	reaction_model.readBiochemicalReactions(biochem_rxns_filename, true);
 	reaction_model.readMetabolomicsData(metabo_data_filename);
 	reaction_model.readMetaData(meta_data_filename);
 	reaction_model.findComponentGroupNames();
@@ -470,6 +494,9 @@ void main_classification(bool make_model = true)
 	reaction_model.removeRedundantMARs();
 	reaction_model.findLabels();
 	metabolomics_data.model_ = reaction_model;
+  //metabolomics_data.linear_scale_input_ = true;
+  //metabolomics_data.log_transform_input_ = true;
+  //metabolomics_data.standardize_input_ = true;
 
 	// define the model input/output nodes
 	const int n_input_nodes = reaction_model.reaction_ids_.size();
@@ -503,6 +530,9 @@ void main_classification(bool make_model = true)
 	model_trainer.setNEpochsValidation(0);
 	model_trainer.setVerbosityLevel(1);
 	model_trainer.setLogging(true, false, false);
+  model_trainer.setFindCycles(false);
+  model_trainer.setFastInterpreter(true);
+  model_trainer.setPreserveOoO(true);
 	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new CrossEntropyWithLogitsOp<float>()) });
 	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new CrossEntropyWithLogitsGradOp<float>()) });
 	model_trainer.setOutputNodes({ output_nodes });
@@ -512,13 +542,6 @@ void main_classification(bool make_model = true)
 
 	// initialize the model replicator
 	ModelReplicatorExt<float> model_replicator;
-	model_replicator.setNodeActivations({ std::make_pair(std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>())),
-		std::make_pair(std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>())),
-		std::make_pair(std::shared_ptr<ActivationOp<float>>(new ELUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ELUGradOp<float>())),
-		std::make_pair(std::shared_ptr<ActivationOp<float>>(new SigmoidOp<float>()), std::shared_ptr<ActivationOp<float>>(new SigmoidGradOp<float>())),
-		std::make_pair(std::shared_ptr<ActivationOp<float>>(new TanHOp<float>()), std::shared_ptr<ActivationOp<float>>(new TanHGradOp<float>())) });
-	model_replicator.setNodeIntegrations({ std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new ProdOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new ProdErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new ProdWeightGradOp<float>())),
-		std::make_tuple(std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>())) });
 
 	// define the initial population
 	std::cout << "Initializing the population..." << std::endl;

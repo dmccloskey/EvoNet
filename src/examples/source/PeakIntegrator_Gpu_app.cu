@@ -667,14 +667,14 @@ public:
     Model<TensorT>& model,
     ModelInterpreterGpu<TensorT>& model_interpreter,
     const std::vector<float>& model_errors) {
-    if (n_epochs % 1000 == 0 && n_epochs > 5000) {
-      // anneal the learning rate by half on each plateau
-      TensorT lr_new = this->reduceLROnPlateau(model_errors, 0.5, 1000, 100, 0.1);
-      if (lr_new < 1.0) {
-        model_interpreter.updateSolverParams(0, lr_new);
-        std::cout << "The learning rate has been annealed by a factor of " << lr_new << std::endl;
-      }
-    }
+    //if (n_epochs % 1000 == 0 && n_epochs > 5000) {
+    //  // anneal the learning rate by half on each plateau
+    //  TensorT lr_new = this->reduceLROnPlateau(model_errors, 0.5, 1000, 100, 0.1);
+    //  if (lr_new < 1.0) {
+    //    model_interpreter.updateSolverParams(0, lr_new);
+    //    std::cout << "The learning rate has been annealed by a factor of " << lr_new << std::endl;
+    //  }
+    //}
     // Check point the model every 1000 epochs
     if (n_epochs % 1000 == 0 && n_epochs != 0) {
       model_interpreter.getModelResults(model, false, true, false);
@@ -1048,20 +1048,17 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
   }
   else {
     std::cout << "Reading in the model..." << std::endl;
-    const std::string data_dir = "C:/Users/domccl/Desktop/PeakIntegrator/GPU8/";
-    //const std::string model_filename = data_dir + "DenoisingAE_23000_model.binary";
-    //const std::string interpreter_filename = data_dir + "DenoisingAE_23000_interpreter.binary";
-    const std::string model_filename = data_dir + "PeakInt-1_10000_model.binary";
-    const std::string interpreter_filename = data_dir + "PeakInt-1_10000_interpreter.binary";
+    const std::string data_dir = "C:/Users/domccl/Desktop/PeakIntegrator/GPU19c/";
+    const std::string model_filename = data_dir + "DenoisingAE_2000_model.binary";
+    const std::string interpreter_filename = data_dir + "DenoisingAE_2000_interpreter.binary";
 
     // read in and modify the model
     ModelFile<float> model_file;
     model_file.loadModelBinary(model_filename, model);
     model.setId(1);
-    //model.setName("PeakInt-0");
-    model.setName("PeakInt-2");
+    model.setName("PeakInt-0");
     for (auto& weight : model.weights_) {
-      weight.second->getSolverOp()->setLearningRate(1e-9);
+      weight.second->getSolverOp()->setLearningRate(1e-5);
     }
     model.setInputAndOutputNodes();
 
@@ -1097,7 +1094,7 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
 int main(int argc, char** argv)
 {
   // run the application
-  main_DenoisingAE(true, true);
+  main_DenoisingAE(false, true);
 
   return 0;
 }

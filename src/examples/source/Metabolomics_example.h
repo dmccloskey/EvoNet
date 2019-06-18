@@ -96,23 +96,48 @@ public:
         // pick a random sample group name
         std::string sample_group_name = selectRandomElement(this->model_.sample_group_names_);
 
+        // generate the input data
+        Eigen::Tensor<TensorT, 1> conc_data(n_input_nodes);
         for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
-          input_data(batch_iter, memory_iter, nodes_iter) = this->model_.calculateMAR(
+          conc_data(nodes_iter) = this->model_.calculateMAR(
             this->model_.metabolomicsData_.at(sample_group_name),
             this->model_.biochemicalReactions_.at(this->model_.reaction_ids_[nodes_iter]));
           //input_data(batch_iter, memory_iter, nodes_iter) = mars[nodes_iter]; // NOTE: used for testing
         }
 
+        // pre-process the data
+        if (this->log_transform_input_) {
+          conc_data = conc_data.log();
+          //std::cout << "Log transformed: \n" << conc_data << std::endl;
+        }
+        if (this->linear_scale_input_) {
+          Eigen::Tensor<TensorT, 0> min_v = conc_data.minimum();
+          Eigen::Tensor<TensorT, 0> max_v = conc_data.maximum();
+          conc_data = conc_data.unaryExpr(LinearScale<TensorT>(min_v(0), max_v(0), 0, 1));
+          //std::cout << "Linear scaled: \n"<< conc_data << std::endl;
+        }
+        if (this->standardize_input_) {
+          // Calculate the mean
+          Eigen::Tensor<TensorT, 0> mean_v = conc_data.mean();
+          //std::cout << "Mean" << mean_v << std::endl;
+          // Calculate the variance
+          auto residuals = conc_data - conc_data.constant(mean_v(0));
+          auto ssr = residuals.pow(2).sum();
+          Eigen::Tensor<TensorT, 0> var_v = ssr / ssr.constant(n_input_nodes - 1);
+          //std::cout << "Var" << var_v << std::endl;
+          // Standardize
+          conc_data = residuals / conc_data.constant(var_v(0)).pow(0.5);
+          //std::cout << "Standardized: \n" << conc_data << std::endl;
+        }
+
+        // assign the input data
+        for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
+          input_data(batch_iter, memory_iter, nodes_iter) = conc_data(nodes_iter);
+        }
+
         // convert the label to a one hot vector
         Eigen::Tensor<TensorT, 1> one_hot_vec = OneHotEncoder<std::string, TensorT>(this->model_.metaData_.at(sample_group_name).condition, this->model_.labels_);
         Eigen::Tensor<TensorT, 1> one_hot_vec_smoothed = one_hot_vec.unaryExpr(LabelSmoother<TensorT>(0.01, 0.01));
-
-        //// MSE + LogLoss
-        //for (int nodes_iter = 0; nodes_iter < n_output_nodes/2; ++nodes_iter) {
-        //	output_data(batch_iter, memory_iter, nodes_iter) = one_hot_vec(nodes_iter);
-        //	output_data(batch_iter, memory_iter, nodes_iter + n_output_nodes/2, epochs_iter) = one_hot_vec(nodes_iter);
-        //	//output_data(batch_iter, memory_iter, nodes_iter) = one_hot_vec_smoothed(nodes_iter);
-        //}
 
         // MSE or LogLoss only
         for (int nodes_iter = 0; nodes_iter < n_output_nodes; ++nodes_iter) {
@@ -133,6 +158,9 @@ public:
   }
 
 	BiochemicalReactionModel<TensorT> model_;
+  bool log_transform_input_ = false;
+  bool linear_scale_input_ = false;
+  bool standardize_input_ = false;
 };
 
 template<typename TensorT>

@@ -273,6 +273,21 @@ public:
     std::vector<std::string> addUnitScale(Model<TensorT>& model, const std::string& name, const std::string& module_name,
       const std::vector<std::string>& source_node_names, bool specify_layers = false);
 
+    /**
+    @brief Add a unit scale layer.
+       If a learnable gain/offset or application of an activation is desired,
+       the user can add a singly connected layer after the unit scale layer.
+
+    @param[in, out] Model
+    @param[in] source_node_names Node_names to add the fully connected layer to
+    @param[in] range_min The minimum value to project to
+    @param[in] range_max The maximum value to project to
+
+    @returns vector of output node names
+    */
+    std::vector<std::string> addLinearScale(Model<TensorT>& model, const std::string& name, const std::string& module_name,
+      const std::vector<std::string>& source_node_names, const TensorT& range_min, const TensorT& range_max, bool specify_layers = false);
+
 		/**
 		@brief Add a VAE Encoding layer for a gaussian distribution with input node
 
@@ -1865,6 +1880,137 @@ public:
       sprintf(vToN_link_name_char, "%s_to_%s", scalar_name.data(), unitScale_name.data());
       std::string vToN_link_name(vToN_link_name_char);
       Link vToN_link(vToN_link_name, scalar_name, unitScale_name, unity_weight_name);
+      vToN_link.setModuleName(module_name);
+      model.addLinks({ vToN_link });
+    }
+    return node_names;
+  }
+
+
+  template<typename TensorT>
+  std::vector<std::string> ModelBuilder<TensorT>::addLinearScale(Model<TensorT> & model, const std::string & name, const std::string & module_name, const std::vector<std::string>& source_node_names, const TensorT& range_min, const TensorT& range_max, bool specify_layers)
+  {
+    std::vector<std::string> node_names;
+    std::string unity_weight_name, negunity_weight_name;
+
+    // Make the max/linear node
+    char max_name_char[512];
+    sprintf(max_name_char, "%s-Max", name.data());
+    std::string max_name(max_name_char);
+    Node<TensorT> max(max_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new MaxOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new MaxErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new MaxWeightGradOp<TensorT>()));
+    max.setModuleName(module_name);
+    if (specify_layers) max.setLayerName(module_name + "-MinMax");
+    model.addNodes({ max });
+
+    // Make the min/linear node
+    char min_name_char[512];
+    sprintf(min_name_char, "%s-Min", name.data());
+    std::string min_name(min_name_char);
+    Node<TensorT> min(min_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new MinOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new MinErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new MinWeightGradOp<TensorT>()));
+    min.setModuleName(module_name);
+    if (specify_layers) min.setLayerName(module_name + "-DomainMinMax");
+    model.addNodes({ min });
+
+    // Make the sum/inverse sqrt node
+    char scalar_name_char[512];
+    sprintf(scalar_name_char, "%s-Scalar", name.data());
+    std::string scalar_name(scalar_name_char);
+    Node<TensorT> scalar(scalar_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<TensorT>>(new PowOp<TensorT>(-0.5)), std::shared_ptr<ActivationOp<TensorT>>(new PowGradOp<TensorT>(-0.5)), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
+    scalar.setModuleName(module_name);
+    if (specify_layers) max.setLayerName(module_name + "-DomainScalar");
+    model.addNodes({ scalar });
+
+    // Make the link from the max to the scalar node
+    unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", max_name, scalar_name, specify_layers);
+    char maxToScalar_link_name_char[512];
+    sprintf(maxToScalar_link_name_char, "%s_to_%s", max_name.data(), scalar_name.data());
+    std::string maxToScalar_link_name(maxToScalar_link_name_char);
+    Link maxToScalar_link(maxToScalar_link_name, max_name, scalar_name, unity_weight_name);
+    maxToScalar_link.setModuleName(module_name);
+    model.addLinks({ maxToScalar_link });
+
+    // Make the link from the min to the scalar node
+    unity_weight_name = makeUnityWeight(model, -1.0, module_name, "%s_to_%s", min_name, scalar_name, specify_layers);
+    char minToScalar_link_name_char[512];
+    sprintf(minToScalar_link_name_char, "%s_to_%s", min_name.data(), scalar_name.data());
+    std::string minToScalar_link_name(minToScalar_link_name_char);
+    Link minToScalar_link(minToScalar_link_name, min_name, scalar_name, unity_weight_name);
+    minToScalar_link.setModuleName(module_name);
+    model.addLinks({ minToScalar_link });
+
+    // Make the range max minus min bias
+    char rangeMaxMinBias_name_char[512];
+    sprintf(rangeMaxMinBias_name_char, "%s-bias", blockGateInput_name.data());
+    std::string rangeMaxMinBias_name(rangeMaxMinBias_name_char);
+    Node<TensorT> rangeMaxMinBias(rangeMaxMinBias_name, NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
+    rangeMaxMinBias.setModuleName(module_name);
+    model.addNodes({ rangeMaxMinBias });
+
+    // Make the range min bias
+    char rangeMinBias_name_char[512];
+    sprintf(rangeMinBias_name_char, "%s-bias", blockGateInput_name.data());
+    std::string rangeMinBias_name(rangeMinBias_name_char);
+    Node<TensorT> rangeMinBias(rangeMinBias_name, NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()));
+    rangeMinBias.setModuleName(module_name);
+    model.addNodes({ rangeMinBias });
+
+    for (const std::string& node_name : source_node_names) {
+      // Make the dMinScale nodes
+      char dMinScale_name_char[512];
+      sprintf(dMinScale_name_char, "%s-UnitScaled", node_name.data());
+      std::string dMinScale_name(dMinScale_name_char);
+      Node<TensorT> dMinScale(dMinScale_name, NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()), std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()), std::shared_ptr<IntegrationOp<TensorT>>(new ProdOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new ProdErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new ProdWeightGradOp<TensorT>()));
+      dMinScale.setModuleName(module_name);
+      if (specify_layers) dMinScale.setLayerName(module_name + "-domainMinScaled");
+      model.addNodes({ dMinScale });
+      node_names.push_back(dMinScale_name);
+
+      // Make the weights/links from source to max
+      unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", node_name, max_name, specify_layers);
+      char sToM_link_name_char[512];
+      sprintf(sToM_link_name_char, "%s_to_%s", node_name.data(), max_name.data());
+      std::string sToM_link_name(sToM_link_name_char);
+      Link sToM_link(sToM_link_name, node_name, max_name, unity_weight_name);
+      sToM_link.setModuleName(module_name);
+      model.addLinks({ sToM_link });
+
+      // Make the weights/links from source to min
+      unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", node_name, min_name, specify_layers);
+      char sToMin_link_name_char[512];
+      sprintf(sToMin_link_name_char, "%s_to_%s", node_name.data(), min_name.data());
+      std::string sToMin_link_name(sToMin_link_name_char);
+      Link sToMin_link(sToMin_link_name, node_name, min_name, unity_weight_name);
+      sToMin_link.setModuleName(module_name);
+      model.addLinks({ sToMin_link });
+
+      // Make the weights/links from the min to the dMinScale
+
+      // Make the weights/links from the source to the dMinScale
+
+      // Make the domainScale node
+
+      // Make the links/weights from the scalar to the domainScale node
+
+      // Make the links/weights from the dMinScale to the domainScale nodes
+
+      // Make the rangeMaxMinScale node
+
+      // Make the links/weights from the rangeMaxMin to the rangeMaxMinScale node
+
+      // Make the links/weights from the domainScale nodes to the rangeMaxMinScale node
+
+      // Make the LinearScale node
+
+      // Make the links/weights from the rangeMin node to the LinearScale node
+
+      // Make the links/weights from the rangeMaxMinScale node to the LinearScale node
+
+      // Make the links from scalar to dMinScale
+      unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", scalar_name, dMinScale_name);
+      char vToN_link_name_char[512];
+      sprintf(vToN_link_name_char, "%s_to_%s", scalar_name.data(), dMinScale_name.data());
+      std::string vToN_link_name(vToN_link_name_char);
+      Link vToN_link(vToN_link_name, scalar_name, dMinScale_name, unity_weight_name);
       vToN_link.setModuleName(module_name);
       model.addLinks({ vToN_link });
     }
