@@ -1,11 +1,11 @@
 /**TODO:  Add copyright*/
 
-#include <SmartPeak/ml/PopulationTrainerDefaultDevice.h>
-#include <SmartPeak/ml/ModelTrainerDefaultDevice.h>
+#include <SmartPeak/ml/PopulationTrainerGpu.h>
+#include <SmartPeak/ml/ModelTrainerGpu.h>
 #include <SmartPeak/ml/ModelReplicator.h>
 #include <SmartPeak/ml/ModelBuilder.h>
 #include <SmartPeak/io/PopulationTrainerFile.h>
-#include <SmartPeak/io/ModelInterpreterFileDefaultDevice.h>
+#include <SmartPeak/io/ModelInterpreterFileGpu.h>
 
 #include "Metabolomics_example.h"
 
@@ -17,11 +17,11 @@ class ModelReplicatorExt : public ModelReplicator<TensorT>
 {};
 
 template<typename TensorT>
-class PopulationTrainerExt : public PopulationTrainerDefaultDevice<TensorT>
+class PopulationTrainerExt : public PopulationTrainerGpu<TensorT>
 {};
 
 template<typename TensorT>
-class ModelTrainerExt : public ModelTrainerDefaultDevice<TensorT>
+class ModelTrainerExt : public ModelTrainerGpu<TensorT>
 {
 public:
   Model<TensorT> makeModel() { return Model<TensorT>(); }
@@ -98,7 +98,7 @@ public:
   void makeMultiHeadDotProdAttention(Model<TensorT>& model, const int& n_inputs, const int& n_outputs, const bool& linear_scale_input, const bool& log_transform_input, const bool& standardize_input,
     std::vector<int> n_heads = { 8, 8 },
     std::vector<int> key_query_values_lengths = { 48, 24 },
-    std::vector<int> model_lengths = { 96, 48 }, 
+    std::vector<int> model_lengths = { 96, 48 },
     bool add_FC = false, bool add_skip = false, bool add_norm = false) {
     model.setId(0);
     model.setName("DotProdAttent");
@@ -201,7 +201,7 @@ public:
     const int& n_generations,
     const int& n_epochs,
     Model<TensorT>& model,
-    ModelInterpreterDefaultDevice<TensorT>& model_interpreter,
+    ModelInterpreterGpu<TensorT>& model_interpreter,
     const std::vector<float>& model_errors) {
     if (n_epochs % 1000 == 0 && n_epochs > 5000) {
       // anneal the learning rate by half on each plateau
@@ -216,7 +216,7 @@ public:
       model_interpreter.getModelResults(model, false, true, false);
       ModelFile<TensorT> data;
       data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
-      ModelInterpreterFileDefaultDevice<TensorT> interpreter_data;
+      ModelInterpreterFileGpu<TensorT> interpreter_data;
       interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
     }
   }
@@ -525,10 +525,10 @@ void main_classification(bool make_model = true)
   }
 
   // define the model trainers and resources for the trainers
-  std::vector<ModelInterpreterDefaultDevice<float>> model_interpreters;
+  std::vector<ModelInterpreterGpu<float>> model_interpreters;
   for (size_t i = 0; i < n_threads; ++i) {
     ModelResources model_resources = { ModelDevice(0, 1) };
-    ModelInterpreterDefaultDevice<float> model_interpreter(model_resources);
+    ModelInterpreterGpu<float> model_interpreter(model_resources);
     model_interpreters.push_back(model_interpreter);
   }
   ModelTrainerExt<float> model_trainer;

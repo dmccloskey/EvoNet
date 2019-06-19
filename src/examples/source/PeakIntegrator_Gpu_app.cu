@@ -1094,7 +1094,7 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
 int main(int argc, char** argv)
 {
   // run the application
-  main_DenoisingAE(false, true);
+  main_DenoisingAE(true, true);
 
   return 0;
 }

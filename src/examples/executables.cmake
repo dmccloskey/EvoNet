@@ -27,6 +27,7 @@ set(cuda_executables_list
   MNIST_VAE_Gpu_example
   AddProbRec_Gpu_example
   Metabolomics_Gpu_example
+  Metabolomics2_Gpu_example
   PeakIntegrator_Gpu_app
 )
 
