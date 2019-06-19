@@ -80,6 +80,8 @@ public:
     const int n_input_nodes = input_data.dimension(2);
     const int n_output_nodes = output_data.dimension(2);
 
+    assert(n_input_nodes == this->model_.reaction_ids_.size());
+
     // NOTE: used for testing
     //std::string sample_group_name = sample_group_names_[0];
     //std::vector<float> mars;

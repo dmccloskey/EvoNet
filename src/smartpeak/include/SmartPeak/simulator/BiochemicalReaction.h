@@ -559,8 +559,8 @@ namespace SmartPeak
 
     MAR = R1^r1 * R2^r2 / (P1^p1 * P2^p2)
 
-    @param[in, out] metabolomicsData
-    @param[in, out] biochemicalReaction
+    @param[in] metabolomicsData
+    @param[in] biochemicalReaction
     **/
     static float calculateMAR(
       const std::map<std::string, std::vector<MetabolomicsDatum>>& metabolomicsData,
@@ -601,6 +601,20 @@ namespace SmartPeak
 
       return mar;
     };
+
+    /*
+    @brief Get random concentration
+
+    @param[in] metabolomicsData
+    @param[in] met_id
+    **/
+    static float getRandomConcentration(
+      const std::map<std::string, std::vector<MetabolomicsDatum>>& metabolomicsData,
+      const std::string& met_id) {
+      MetabolomicsDatum metabolomics_datum = selectRandomElement(metabolomicsData.at(met_id));
+      met_conc = metabolomics_datum.calculated_concentration;
+      return met_id;
+    }
 
     /*
     @brief Get default metabolites including inorganic ions, metals, and salts
