@@ -1121,6 +1121,141 @@ BOOST_AUTO_TEST_CASE(addUnitScale1)
   }
 }
 
+BOOST_AUTO_TEST_CASE(addLinearScale1)
+{
+  ModelBuilder<float> model_builder;
+  Model<float> model;
+  std::vector<std::string> node_names;
+
+  // make the input
+  node_names = model_builder.addInputNodes(model, "Input", "Input", 2);
+
+  // make the normalization 
+  node_names = model_builder.addLinearScale(model, "Norm", "Mod1", node_names, 3, 10);
+
+  std::vector<std::string> node_names_test = { "Input_000000000000-DomainMinOffset","Input_000000000000-DomainScaled",
+    "Input_000000000000-LinearScale","Input_000000000000-RangeMaxMinScale","Input_000000000001-DomainMinOffset",
+    "Input_000000000001-DomainScaled","Input_000000000001-LinearScale","Input_000000000001-RangeMaxMinScale",
+    "Mod1-RangeMinBias","Mod1-RangeMaxMinBias","Norm-Max","Norm-Min","Norm-Scalar" };
+  std::vector<std::string> link_names_test = {
+    "Input_000000000000-DomainMinOffset_to_Input_000000000000-DomainScaled","Input_000000000000-DomainScaled_to_Input_000000000000-RangeMaxMinScale",
+    "Input_000000000000-RangeMaxMinScale_to_Input_000000000000-LinearScale","Input_000000000000_to_Input_000000000000-DomainMinOffset",
+    "Input_000000000000_to_Norm-Max","Input_000000000000_to_Norm-Min","Input_000000000001-DomainMinOffset_to_Input_000000000001-DomainScaled",
+    "Input_000000000001-DomainScaled_to_Input_000000000001-RangeMaxMinScale","Input_000000000001-RangeMaxMinScale_to_Input_000000000001-LinearScale",
+    "Input_000000000001_to_Input_000000000001-DomainMinOffset","Input_000000000001_to_Norm-Max","Input_000000000001_to_Norm-Min",
+    "Mod1-RangeMinBias_to_Input_000000000000-LinearScale","Mod1-RangeMinBias_to_Input_000000000001-LinearScale","Norm-Max_to_Norm-Scalar",
+    "Norm-Min_to_Input_000000000000-DomainMinOffset","Norm-Min_to_Input_000000000001-DomainMinOffset","Norm-Min_to_Norm-Scalar",
+    "Norm-Scalar_to_Input_000000000000-DomainScaled","Norm-Scalar_to_Input_000000000001-DomainScaled","Mod1-RangeMaxMinBias_to_Input_000000000000-RangeMaxMinScale",
+    "Mod1-RangeMaxMinBias_to_Input_000000000001-RangeMaxMinScale" };
+
+  //for (auto& e : model.nodes_)
+  //	std::cout << "Node: " << e.second->getName() << std::endl;
+  //for (auto& e : model.links_)
+  //	std::cout << "Link: " << e.second->getName() << std::endl;
+  //for (auto& e : model.weights_)
+  //	std::cout << "Weight: " << e.second->getName() << std::endl;
+
+  // check the nodes
+  for (const std::string& node_name : node_names_test)
+  {
+    BOOST_CHECK_EQUAL(model.getNode(node_name).getName(), node_name);
+    BOOST_CHECK_EQUAL(model.getNode(node_name).getModuleName(), "Mod1");
+    if (node_name == "Norm-Max")
+    {
+      BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
+      BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
+      BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "MaxOp");
+      BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "MaxErrorOp");
+      BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "MaxWeightGradOp");
+    }
+    else if (node_name == "Norm-Min")
+    {
+      BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
+      BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
+      BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "MinOp");
+      BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "MinErrorOp");
+      BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "MinWeightGradOp");
+    }
+    else if (node_name == "Norm-Scalar")
+    {
+      BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "InverseOp");
+      BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "InverseGradOp");
+      BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "SumOp");
+      BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "SumErrorOp");
+      BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
+    }
+    else if (node_name == "Mod1-RangeMaxMinBias" || node_name == "Mod1-RangeMinBias")
+    {
+      BOOST_CHECK(model.getNode(node_name).getType() == NodeType::bias);
+      BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
+      BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
+      BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "SumOp");
+      BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "SumErrorOp");
+      BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
+    }
+    else if (node_name == "Input_000000000000-DomainMinOffset" || node_name == "Input_000000000001-DomainMinOffset"
+      || node_name == "Input_000000000000-LinearScale" || node_name == "Input_000000000001-LinearScale")
+    {
+      BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
+      BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
+      BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "SumOp");
+      BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "SumErrorOp");
+      BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
+    }
+    else if (node_name == "Input_000000000000-DomainScaled" || node_name == "Input_000000000001-DomainScaled"
+      || node_name == "Input_000000000000-RangeMaxMinScale" || node_name == "Input_000000000001-RangeMaxMinScale")
+    {
+      BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
+      BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
+      BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "ProdOp");
+      BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "ProdErrorOp");
+      BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "ProdWeightGradOp");
+    }
+  }
+
+  // check the links
+  for (const std::string& name : link_names_test)
+  {
+    BOOST_CHECK_EQUAL(model.getLink(name).getName(), name);
+    std::vector<std::string> test = SplitString(name, "_to_");
+    BOOST_CHECK_EQUAL(model.getLink(name).getSourceNodeName(), test[0]);
+    BOOST_CHECK_EQUAL(model.getLink(name).getSinkNodeName(), test[1]);
+    BOOST_CHECK_EQUAL(model.getLink(name).getModuleName(), "Mod1");
+  }
+
+  // check the weights
+  for (const std::string& name : link_names_test)
+  {
+    BOOST_CHECK_EQUAL(model.getWeight(name).getName(), name);
+    BOOST_CHECK_EQUAL(model.getWeight(name).getModuleName(), "Mod1");
+    if (name == "Mod1-RangeMinBias_to_Input_000000000000-LinearScale" || name == "Mod1-RangeMinBias_to_Input_000000000001-LinearScale") {
+      BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getParamsAsStr(), "n:3.000000");
+      BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
+      BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "DummySolverOp");
+      BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.0f);
+    }
+    else if (name == "Mod1-RangeMaxMinBias_to_Input_000000000000-RangeMaxMinScale" || name == "Mod1-RangeMaxMinBias_to_Input_000000000001-RangeMaxMinScale") {
+      BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getParamsAsStr(), "n:7.000000");
+      BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
+      BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "DummySolverOp");
+      BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.0f);
+    }
+    else if (name == "Norm-Min_to_Input_000000000000-DomainMinOffset" || name == "Norm-Min_to_Input_000000000001-DomainMinOffset"
+      || name == "Norm-Min_to_Norm-Scalar") {
+      BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getParamsAsStr(), "n:-1.000000");
+      BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
+      BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "DummySolverOp");
+      BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.0f);
+    }
+    else {
+      BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getParamsAsStr(), "n:1.000000");
+      BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
+      BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "DummySolverOp");
+      BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.0f);
+    }
+  }
+}
+
 BOOST_AUTO_TEST_CASE(addGaussianEncoding)
 {
 	ModelBuilder<float> model_builder;
@@ -2053,7 +2188,7 @@ BOOST_AUTO_TEST_CASE(addMultiHeadAttention1)
 			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
 			BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "SGDOp");
 			BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.8f);
-			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getParamsAsStr(), "n:1.000000");
+			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getParamsAsStr(), "n:0.000000");
 		}
 		else if (name == "Hidden-000000000000_attention_000000000000_to_Hidden_MultiHead_000000000000" || name == "Hidden-000000000000_attention_000000000001_to_Hidden_MultiHead_000000000000" || name == "Hidden-000000000000_attention_000000000002_to_Hidden_MultiHead_000000000000"
 			|| name == "Hidden-000000000000_attention_000000000000_to_Hidden_MultiHead_000000000001" || name == "Hidden-000000000000_attention_000000000001_to_Hidden_MultiHead_000000000001" || name == "Hidden-000000000000_attention_000000000002_to_Hidden_MultiHead_000000000001"
