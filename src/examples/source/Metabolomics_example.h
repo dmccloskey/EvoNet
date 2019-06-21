@@ -72,7 +72,7 @@ public:
 	void simulateValidationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)	{
 		simulateData(input_data, output_data, time_steps);
 	}
-  void simulateData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps)
+  void simulateDataMARs(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps)
   {
     // infer data dimensions based on the input tensors
     const int batch_size = input_data.dimension(0);
@@ -81,16 +81,6 @@ public:
     const int n_output_nodes = output_data.dimension(2);
 
     assert(n_input_nodes == this->model_.reaction_ids_.size());
-
-    // NOTE: used for testing
-    //std::string sample_group_name = sample_group_names_[0];
-    //std::vector<float> mars;
-    //for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
-    //	float mar = calculateMAR(metabolomicsData_.at(sample_group_name),
-    //		biochemicalReactions_.at(reaction_ids_[nodes_iter]));
-    //	mars.push_back(mar);
-    //	//std::cout << "OutputNode: "<<nodes_iter<< " = " << mar << std::endl;
-    //}
 
     for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
       for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
@@ -138,7 +128,6 @@ public:
           input_data(batch_iter, memory_iter, nodes_iter) = this->model_.calculateMAR(
             this->model_.metabolomicsData_.at(sample_group_name),
             this->model_.biochemicalReactions_.at(this->model_.reaction_ids_[nodes_iter]));
-          //input_data(batch_iter, memory_iter, nodes_iter) = mars[nodes_iter]; // NOTE: used for testing
         }
 
         // convert the label to a one hot vector
@@ -156,17 +145,57 @@ public:
     // update the time_steps
     time_steps.setConstant(1.0f);
   }
+  void simulateDataConcs(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps)
+  {
+    // infer data dimensions based on the input tensors
+    const int batch_size = input_data.dimension(0);
+    const int memory_size = input_data.dimension(1);
+    const int n_input_nodes = input_data.dimension(2);
+    const int n_output_nodes = output_data.dimension(2);
+
+    assert(n_input_nodes == this->model_.component_group_names_.size());
+
+    for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
+      for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
+
+        // pick a random sample group name
+        std::string sample_group_name = selectRandomElement(this->model_.sample_group_names_);
+
+        // assign the input data
+        for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
+          input_data(batch_iter, memory_iter, nodes_iter) = this->model_.getRandomConcentration(
+            this->model_.metabolomicsData_.at(sample_group_name),
+            this->model_.component_group_names_.at(nodes_iter));
+        }
+
+        // convert the label to a one hot vector
+        Eigen::Tensor<TensorT, 1> one_hot_vec = OneHotEncoder<std::string, TensorT>(this->model_.metaData_.at(sample_group_name).condition, this->model_.labels_);
+        Eigen::Tensor<TensorT, 1> one_hot_vec_smoothed = one_hot_vec.unaryExpr(LabelSmoother<TensorT>(0.01, 0.01));
+
+        // MSE or LogLoss only
+        for (int nodes_iter = 0; nodes_iter < n_output_nodes; ++nodes_iter) {
+          output_data(batch_iter, memory_iter, nodes_iter) = one_hot_vec(nodes_iter);
+        }
+      }
+    }
+
+    // update the time_steps
+    time_steps.setConstant(1.0f);
+  }
   void simulateTrainingData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps) {
-    simulateData(input_data, output_data, time_steps);
+    if (simulate_MARs_) simulateDataMARs(input_data, output_data, time_steps);
+    else simulateDataConcs(input_data, output_data, time_steps);
   }
   void simulateValidationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps) {
-    simulateData(input_data, output_data, time_steps);
+    if (simulate_MARs_) simulateDataMARs(input_data, output_data, time_steps);
+    else simulateDataConcs(input_data, output_data, time_steps);
   }
 
 	BiochemicalReactionModel<TensorT> model_;
-  bool log_transform_input_ = false;
-  bool linear_scale_input_ = false;
-  bool standardize_input_ = false;
+  //bool log_transform_input_ = false;
+  //bool linear_scale_input_ = false;
+  //bool standardize_input_ = false;
+  bool simulate_MARs_ = true;
 };
 
 template<typename TensorT>

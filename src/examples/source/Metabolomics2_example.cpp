@@ -98,7 +98,7 @@ public:
   void makeMultiHeadDotProdAttention(Model<TensorT>& model, const int& n_inputs, const int& n_outputs, const bool& linear_scale_input, const bool& log_transform_input, const bool& standardize_input,
     std::vector<int> n_heads = { 8, 8 },
     std::vector<int> key_query_values_lengths = { 48, 24 },
-    std::vector<int> model_lengths = { 96, 48 }, 
+    std::vector<int> model_lengths = { 96, 48 },
     bool add_FC = false, bool add_skip = false, bool add_norm = false) {
     model.setId(0);
     model.setName("DotProdAttent");
@@ -459,7 +459,7 @@ void main_statistics_timecourse(
   }
 }
 
-void main_classification(bool make_model = true)
+void main_classification(bool make_model = true, bool simulate_MARs = true)
 {
 
   // define the population trainer parameters
@@ -485,8 +485,8 @@ void main_classification(bool make_model = true)
   // define the data simulator
   BiochemicalReactionModel<float> reaction_model;
   MetDataSimClassification<float> metabolomics_data;
-  //std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
-  std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
+  std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
+  //std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
   //std::string data_dir = "/home/user/Data/";
   std::string model_name = "0_Metabolomics";
 
@@ -505,9 +505,12 @@ void main_classification(bool make_model = true)
   reaction_model.removeRedundantMARs();
   reaction_model.findLabels();
   metabolomics_data.model_ = reaction_model;
+  metabolomics_data.simulate_MARs_ = simulate_MARs;
 
   // define the model input/output nodes
-  const int n_input_nodes = reaction_model.reaction_ids_.size();
+  int n_input_nodes;
+  if (simulate_MARs) n_input_nodes = reaction_model.reaction_ids_.size();
+  else n_input_nodes = reaction_model.component_group_names_.size();
   const int n_output_nodes = reaction_model.labels_.size();
   std::vector<std::string> input_nodes;
   std::vector<std::string> output_nodes, output_nodes_softmax;
@@ -556,7 +559,7 @@ void main_classification(bool make_model = true)
   //std::vector<Model<float>> population;
   Model<float> model;
   if (make_model) {
-    model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, false, false); // normalization type 0
+    model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, false, false, false); // normalization type 0
     //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, false, false); // normalization type 1
     //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, false, true); // normalization type 2
     //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, true, false); // normalization type 3
@@ -591,6 +594,6 @@ int main(int argc, char** argv)
   //main_statistics_timecourseSummary(
   //	true, true, true, true, true,
   //	true);
-  main_classification(true);
+  main_classification(true, false);
   return 0;
 }

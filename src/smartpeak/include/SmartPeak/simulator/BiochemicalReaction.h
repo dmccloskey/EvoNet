@@ -611,9 +611,13 @@ namespace SmartPeak
     static float getRandomConcentration(
       const std::map<std::string, std::vector<MetabolomicsDatum>>& metabolomicsData,
       const std::string& met_id) {
-      MetabolomicsDatum metabolomics_datum = selectRandomElement(metabolomicsData.at(met_id));
-      met_conc = metabolomics_datum.calculated_concentration;
-      return met_id;
+      if (metabolomicsData.count(met_id) > 0) {
+        MetabolomicsDatum metabolomics_datum = selectRandomElement(metabolomicsData.at(met_id));
+        return metabolomics_datum.calculated_concentration;
+      }
+      else {
+        return 0.0f;
+      }
     }
 
     /*
