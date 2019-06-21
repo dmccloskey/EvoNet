@@ -459,7 +459,7 @@ void main_statistics_timecourse(
   }
 }
 
-void main_classification(bool make_model = true)
+void main_classification(bool make_model = true, bool simulate_MARs = true)
 {
 
   // define the population trainer parameters
@@ -505,9 +505,12 @@ void main_classification(bool make_model = true)
   reaction_model.removeRedundantMARs();
   reaction_model.findLabels();
   metabolomics_data.model_ = reaction_model;
+  metabolomics_data.simulate_MARs_ = simulate_MARs;
 
   // define the model input/output nodes
-  const int n_input_nodes = reaction_model.reaction_ids_.size();
+  int n_input_nodes;
+  if (simulate_MARs) n_input_nodes = reaction_model.reaction_ids_.size();
+  else n_input_nodes = reaction_model.component_group_names_.size();
   const int n_output_nodes = reaction_model.labels_.size();
   std::vector<std::string> input_nodes;
   std::vector<std::string> output_nodes, output_nodes_softmax;
@@ -591,6 +594,6 @@ int main(int argc, char** argv)
   //main_statistics_timecourseSummary(
   //	true, true, true, true, true,
   //	true);
-  main_classification(true);
+  main_classification(true, false);
   return 0;
 }
