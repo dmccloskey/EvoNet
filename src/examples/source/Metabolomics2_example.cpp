@@ -559,13 +559,16 @@ void main_classification(bool make_model = true, bool simulate_MARs = true)
   //std::vector<Model<float>> population;
   Model<float> model;
   if (make_model) {
-    model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, false, false, false); // normalization type 0
+    //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, false, false, false); // normalization type 0
     //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, false, false); // normalization type 1
     //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, false, true); // normalization type 2
     //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, true, false); // normalization type 3
     //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, true, true); // normalization type 4
-    //model_trainer.makeMultiHeadDotProdAttention(model, input_nodes.size(), output_nodes.size(), { 2, 2 }, { 2, 2 }, { 2, 2 }, false, false, false);
-    //model_trainer.makeMultiHeadDotProdAttention(model, input_nodes.size(), output_nodes.size(), { 12, 6 }, { 48, 24 }, { 96, 48 }, false, false, false);
+    //model_trainer.makeMultiHeadDotProdAttention(model, input_nodes.size(), output_nodes.size(), false, false, false, { 12, 8 }, { 48, 24 }, { 96, 48 }, false, false, false);
+    model_trainer.makeMultiHeadDotProdAttention(model, input_nodes.size(), output_nodes.size(), true, false, false, { 12, 8 }, { 48, 24 }, { 96, 48 }, false, false, false);
+    //model_trainer.makeMultiHeadDotProdAttention(model, input_nodes.size(), output_nodes.size(), true, false, true, { 12, 8 }, { 48, 24 }, { 96, 48 }, false, false, false);
+    //model_trainer.makeMultiHeadDotProdAttention(model, input_nodes.size(), output_nodes.size(), true, true, false, { 12, 8 }, { 48, 24 }, { 96, 48 }, false, false, false);
+    //model_trainer.makeMultiHeadDotProdAttention(model, input_nodes.size(), output_nodes.size(), true, true, true, { 12, 8 }, { 48, 24 }, { 96, 48 }, false, false, false);
     //population = { model };
   }
   else {
