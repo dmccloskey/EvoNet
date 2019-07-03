@@ -136,8 +136,8 @@ public:
 
         // MSE or LogLoss only
         for (int nodes_iter = 0; nodes_iter < n_output_nodes; ++nodes_iter) {
-          output_data(batch_iter, memory_iter, nodes_iter) = one_hot_vec(nodes_iter);
-          //output_data(batch_iter, memory_iter, nodes_iter) = one_hot_vec_smoothed(nodes_iter);
+          output_data(batch_iter, memory_iter, nodes_iter) = one_hot_vec_smoothed(nodes_iter);
+          output_data(batch_iter, memory_iter, nodes_iter + n_output_nodes) = one_hot_vec(nodes_iter);
         }
       }
     }
@@ -173,8 +173,9 @@ public:
         Eigen::Tensor<TensorT, 1> one_hot_vec_smoothed = one_hot_vec.unaryExpr(LabelSmoother<TensorT>(0.01, 0.01));
 
         // MSE or LogLoss only
-        for (int nodes_iter = 0; nodes_iter < n_output_nodes; ++nodes_iter) {
-          output_data(batch_iter, memory_iter, nodes_iter) = one_hot_vec(nodes_iter);
+        for (int nodes_iter = 0; nodes_iter < this->model_.labels_.size(); ++nodes_iter) {
+          output_data(batch_iter, memory_iter, nodes_iter) = one_hot_vec_smoothed(nodes_iter);
+          output_data(batch_iter, memory_iter, nodes_iter + (int)this->model_.labels_.size()) = one_hot_vec(nodes_iter);
         }
       }
     }
