@@ -1911,7 +1911,7 @@ public:
     if (specify_layers) min.setLayerName(module_name + "-DomainMinMax");
     model.addNodes({ min });
 
-    // Make the sum/inverse sqrt node
+    // Make the sum/inverse node
     char scalar_name_char[512];
     sprintf(scalar_name_char, "%s-Scalar", name.data());
     std::string scalar_name(scalar_name_char);
@@ -1965,7 +1965,6 @@ public:
       dMinOffset.setModuleName(module_name);
       if (specify_layers) dMinOffset.setLayerName(module_name + "-DomainMinOffset");
       model.addNodes({ dMinOffset });
-      node_names.push_back(dMinOffset_name);
 
       // Make the weights/links from source to max
       unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", node_name, max_name, specify_layers);
@@ -2011,7 +2010,6 @@ public:
       dScale.setModuleName(module_name);
       if (specify_layers) dScale.setLayerName(module_name + "-DomainScaled");
       model.addNodes({ dScale });
-      node_names.push_back(dScale_name);
 
       // Make the links/weights from the scalar to the domainScale node
       unity_weight_name = makeUnityWeight(model, 1.0, module_name, "%s_to_%s", scalar_name, dScale_name, specify_layers);
@@ -2039,7 +2037,6 @@ public:
       rangeMaxMinScale.setModuleName(module_name);
       if (specify_layers) rangeMaxMinScale.setLayerName(module_name + "-RangeMaxMinScale");
       model.addNodes({ rangeMaxMinScale });
-      node_names.push_back(rangeMaxMinScale_name);
 
       // Make the links/weights from the rangeMaxMin to the rangeMaxMinScale node
       char rangeMaxMinToRangeMaxMinScale_weight_name_char[512];

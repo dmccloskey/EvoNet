@@ -32,8 +32,8 @@ public:
     model.setId(0);
     model.setName("Classifier");
 
-    const int n_hidden_0 = 16;
-    const int n_hidden_1 = 0;
+    const int n_hidden_0 = 8;
+    const int n_hidden_1 = 8;
     const int n_hidden_2 = 0;
 
     ModelBuilder<TensorT> model_builder;
@@ -254,6 +254,33 @@ public:
       data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
       ModelInterpreterFileDefaultDevice<TensorT> interpreter_data;
       interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
+    }
+  }
+  void trainingModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger, const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const TensorT & model_error_train, const TensorT & model_error_test)
+  {
+    // Set the defaults
+    model_logger.setLogTimeEpoch(true);
+    model_logger.setLogTrainValMetricEpoch(true);
+    model_logger.setLogExpectedPredictedEpoch(false);
+
+    // initialize all logs
+    if (n_epochs == 0) {
+      model_logger.setLogExpectedPredictedEpoch(true);
+      model_logger.initLogs(model);
+    }
+
+    // Per n epoch logging
+    if (n_epochs % 10 == 0) {
+      model_logger.setLogExpectedPredictedEpoch(true);
+      if (model_logger.getLogExpectedPredictedEpoch())
+        model_interpreter.getModelResults(model, true, false, false);
+      model_logger.writeLogs(model, n_epochs, { "Train_Error" }, { "Test_Error" }, { model_error_train }, { model_error_test }, output_nodes, expected_values);
+    }
+    else if (n_epochs % 10 == 0) {
+      model_logger.setLogExpectedPredictedEpoch(false);
+      if (model_logger.getLogExpectedPredictedEpoch())
+        model_interpreter.getModelResults(model, true, false, false);
+      model_logger.writeLogs(model, n_epochs, { "Train_Error" }, { "Test_Error" }, { model_error_train }, { model_error_test }, output_nodes, expected_values);
     }
   }
 };
@@ -521,8 +548,8 @@ void main_classification(bool make_model = true, bool simulate_MARs = true)
   // define the data simulator
   BiochemicalReactionModel<float> reaction_model;
   MetDataSimClassification<float> metabolomics_data;
-  std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
-  //std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
+  //std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
+  std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
   //std::string data_dir = "/home/user/Data/";
   std::string model_name = "0_Metabolomics";
 
@@ -571,7 +598,7 @@ void main_classification(bool make_model = true, bool simulate_MARs = true)
     model_interpreters.push_back(model_interpreter);
   }
   ModelTrainerExt<float> model_trainer;
-  model_trainer.setBatchSize(64);
+  model_trainer.setBatchSize(1); //64
   model_trainer.setMemorySize(1);
   model_trainer.setNEpochsTraining(100000);
   model_trainer.setNEpochsValidation(0);
@@ -602,9 +629,9 @@ void main_classification(bool make_model = true, bool simulate_MARs = true)
   Model<float> model;
   if (make_model) {
     //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, false, false, false); // normalization type 0
-    //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, false, false); // normalization type 1
+    model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, false, false, false); // normalization type 1
     //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, false, true); // normalization type 2
-    model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, true, false); // normalization type 3
+    //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, true, false, false); // normalization type 3
     //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, true, true); // normalization type 4
     //model_trainer.makeMultiHeadDotProdAttention(model, input_nodes.size(), output_nodes.size(), false, false, false, { 12, 8 }, { 48, 24 }, { 96, 48 }, false, false, false);
     //model_trainer.makeMultiHeadDotProdAttention(model, input_nodes.size(), output_nodes.size(), true, false, false, { 12, 8 }, { 48, 24 }, { 96, 48 }, false, false, false);

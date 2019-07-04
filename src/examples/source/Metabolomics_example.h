@@ -163,6 +163,9 @@ public:
 
         // assign the input data
         for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
+          //std::cout << "sample_group_name: " << sample_group_name << " component_grou_name: " << this->model_.component_group_names_.at(nodes_iter) << " concentration: " << this->model_.getRandomConcentration(
+          //  this->model_.metabolomicsData_.at(sample_group_name),
+          //  this->model_.component_group_names_.at(nodes_iter)) << std::endl;
           input_data(batch_iter, memory_iter, nodes_iter) = this->model_.getRandomConcentration(
             this->model_.metabolomicsData_.at(sample_group_name),
             this->model_.component_group_names_.at(nodes_iter));

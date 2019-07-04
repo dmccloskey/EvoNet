@@ -1133,6 +1133,13 @@ BOOST_AUTO_TEST_CASE(addLinearScale1)
   // make the normalization 
   node_names = model_builder.addLinearScale(model, "Norm", "Mod1", node_names, 3, 10);
 
+  std::vector<std::string> node_names_out = { 
+    "Input_000000000000-LinearScale","Input_000000000001-LinearScale" };
+  BOOST_CHECK_EQUAL(node_names.size(), node_names_out.size());
+  for (int i=0; i<node_names_out.size(); ++i) {
+    BOOST_CHECK_EQUAL(node_names.at(i), node_names_out.at(i));
+  }
+
   std::vector<std::string> node_names_test = { "Input_000000000000-DomainMinOffset","Input_000000000000-DomainScaled",
     "Input_000000000000-LinearScale","Input_000000000000-RangeMaxMinScale","Input_000000000001-DomainMinOffset",
     "Input_000000000001-DomainScaled","Input_000000000001-LinearScale","Input_000000000001-RangeMaxMinScale",
