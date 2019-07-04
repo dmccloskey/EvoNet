@@ -631,7 +631,7 @@ void main_classification(bool make_model = true, bool simulate_MARs = true)
     //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, false, false, false, false); // normalization type 0
     //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, false, false); // normalization type 1
     //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, false, true); // normalization type 2
-    model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, true, false, false); // normalization type 3
+    model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, true, false, true); // normalization type 3
     //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, true, true); // normalization type 4
     //model_trainer.makeMultiHeadDotProdAttention(model, input_nodes.size(), output_nodes.size(), false, false, false, { 12, 8 }, { 48, 24 }, { 96, 48 }, false, false, false);
     //model_trainer.makeMultiHeadDotProdAttention(model, input_nodes.size(), output_nodes.size(), true, false, false, { 12, 8 }, { 48, 24 }, { 96, 48 }, false, false, false);
