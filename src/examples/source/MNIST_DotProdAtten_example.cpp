@@ -53,26 +53,21 @@ public:
       node_names = model_builder.addMultiHeadAttention(model, name_head1, name_head1,
         node_names_input, node_names_input, node_names_input,
         n_heads[i], "DotProd", model_lengths[i], key_query_values_lengths[i], key_query_values_lengths[i],
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
-        std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0.01, 1.0)),
-        //std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names_input.size(), 2)),
-        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.0005, 0.9, 0.999, 1e-8, 100)), 0.0f, 0.0f, false, specify_layers);
-      if (add_skip) {
-        std::string skip_name = "Skip" + std::to_string(i);
-        model_builder.addSinglyConnected(model, skip_name, node_names_input, node_names,
-          std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0.01, 1.0)),
-          //std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names_input.size(), 2)),
-          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.0005, 0.9, 0.999, 1e-8, 100)), 0.0f, specify_layers);
-      }
+        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
+        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
+        std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names_input.size(), 2)),
+        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8, 1e3)), 0.0f, 0.0f, false, specify_layers);
       if (add_norm) {
         std::string norm_name = "Norm" + std::to_string(i);
-        node_names = model_builder.addNormalization(model, norm_name, norm_name, node_names,
-          std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-          std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
-          std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0.01, 1.0)),
-          //std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 2)),
-          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.0005, 0.9, 0.999, 1e-8, 100)), 0.0, 0.0, false, specify_layers);
+        node_names = model_builder.addNormalization(model, norm_name, norm_name, node_names, specify_layers);
+        node_names = model_builder.addSinglyConnected(model, norm_name + "-gain", norm_name + "-gain", node_names, node_names.size(),
+          std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
+          std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
+          std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
+          std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
+          std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
+          std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
+          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8, 1e3, 0.0)), 0.0, 0.0, true, specify_layers);
       }
       node_names_input = node_names;
 
@@ -85,24 +80,26 @@ public:
           std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
           std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
           std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-          std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0.01, 1.0)),
-          //std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names_input.size(), 2)),
-          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.0005, 0.9, 0.999, 1e-8, 100)), 0.0f, 0.0f, false, specify_layers);
+          std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names_input.size(), 2)),
+          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8, 1e3)), 0.0f, 0.0f, false, specify_layers);
       }
       if (add_skip) {
         std::string skip_name = "Skip_FC" + std::to_string(i);
         model_builder.addSinglyConnected(model, skip_name, node_names_input, node_names,
           std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(n_inputs, 2)),
-          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.0005, 0.9, 0.999, 1e-8, 100)), 0.0f);
+          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8, 1e3)), 0.0f);
       }
       if (add_norm) {
         std::string norm_name = "Norm_FC" + std::to_string(i);
-        node_names = model_builder.addNormalization(model, norm_name, norm_name, node_names,
-          std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-          std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
-          std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0.01, 1.0)),
-          //std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 2)),
-          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.0005, 0.9, 0.999, 1e-8, 100)), 0.0, 0.0, false, specify_layers);
+        node_names = model_builder.addNormalization(model, norm_name, norm_name, node_names, specify_layers);
+        node_names = model_builder.addSinglyConnected(model, norm_name + "-gain", norm_name + "-gain", node_names, node_names.size(),
+          std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
+          std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
+          std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
+          std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
+          std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
+          std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
+          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8, 1e3, 0.0)), 0.0, 0.0, true, specify_layers);
       }
       node_names_input = node_names;
     }
@@ -110,40 +107,26 @@ public:
     // Add the FC layer
     node_names = model_builder.addFullyConnected(model, "Output", "Output", node_names, n_outputs,
       std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+      std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
       std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0.01, 1.0)),
-      //std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 2)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.0005, 0.9, 0.999, 1e-8, 100)), 0.0f, 0.0f, false, true);
+      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 2)),
+      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8, 1e3)), 0.0f, 0.0f, false, true);
 
     for (const std::string& node_name : node_names)
       model.nodes_.at(node_name)->setType(NodeType::output);
   }
 
-  Model<TensorT> makeModel() { return Model<TensorT>(); }
   void adaptiveTrainerScheduler(
     const int& n_generations,
     const int& n_epochs,
     Model<TensorT>& model,
     ModelInterpreterDefaultDevice<TensorT>& model_interpreter,
     const std::vector<float>& model_errors) {
-    //if (n_epochs > 0 && model_errors.back() < 0.01) {
-    //	// update the solver parameters
-    //	model_interpreter.updateSolverParams(0, 0.0002);
-    //}
-    //else if (n_epochs > 0 && model_errors.back() < 4.0) {
-    //	// update the solver parameters
-    //	model_interpreter.updateSolverParams(0, 0.0005);
-    //}
-    //else {
-    //	// update the solver parameters
-    //	model_interpreter.updateSolverParams(0, 0.00095);
-    //}
     if (n_epochs % 1000 == 0 && n_epochs != 0) {
       // save the model every 1000 epochs
-      //model_interpreter.getModelResults(model, false, true, false);
+      model_interpreter.getModelResults(model, false, true, false);
       ModelFile<TensorT> data;
       //data.storeModelCsv(model.getName() + "_" + std::to_string(n_epochs) + "_nodes.csv",
       //	model.getName() + "_" + std::to_string(n_epochs) + "_links.csv",
@@ -153,38 +136,29 @@ public:
       interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
     }
   }
-  void trainingModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
-    const Eigen::Tensor<TensorT, 3>& expected_values,
-    const std::vector<std::string>& output_nodes,
-    const TensorT& model_error)
+  void trainingModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger, const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const TensorT & model_error_train, const TensorT & model_error_test)
   {
+    // Set the defaults
     model_logger.setLogTimeEpoch(true);
     model_logger.setLogTrainValMetricEpoch(true);
     model_logger.setLogExpectedPredictedEpoch(false);
+
+    // initialize all logs
     if (n_epochs == 0) {
+      model_logger.setLogExpectedPredictedEpoch(true);
       model_logger.initLogs(model);
     }
-    if (n_epochs % 1 == 0) {
+
+    // Per n epoch logging
+    if (n_epochs % 50 == 0) {
+      model_logger.setLogExpectedPredictedEpoch(true);
       if (model_logger.getLogExpectedPredictedEpoch())
         model_interpreter.getModelResults(model, true, false, false);
-      model_logger.writeLogs(model, n_epochs, { "Error" }, {}, { model_error }, {}, output_nodes, expected_values);
+      model_logger.writeLogs(model, n_epochs, { "Train_Error" }, { "Test_Error" }, { model_error_train }, { model_error_test }, output_nodes, expected_values);
     }
-  }
-  void validationModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
-    const Eigen::Tensor<TensorT, 3>& expected_values,
-    const std::vector<std::string>& output_nodes,
-    const TensorT& model_error)
-  {
-    model_logger.setLogTimeEpoch(false);
-    model_logger.setLogTrainValMetricEpoch(false);
-    model_logger.setLogExpectedPredictedEpoch(true);
-    if (n_epochs == 0) {
-      model_logger.initLogs(model);
-    }
-    if (n_epochs % 1 == 0) {
-      if (model_logger.getLogExpectedPredictedEpoch())
-        model_interpreter.getModelResults(model, true, false, false);
-      model_logger.writeLogs(model, n_epochs, {}, { "Error" }, {}, { model_error }, output_nodes, expected_values);
+    else if (n_epochs % 10 == 0) {
+      model_logger.setLogExpectedPredictedEpoch(false);
+      model_logger.writeLogs(model, n_epochs, { "Train_Error" }, { "Test_Error" }, { model_error_train }, { model_error_test }, output_nodes, expected_values);
     }
   }
 };
@@ -193,65 +167,56 @@ template<typename TensorT>
 class DataSimulatorExt : public MNISTSimulator<TensorT>
 {
 public:
-  void simulateEvaluationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 3>& time_steps) {};
-  void simulateTrainingData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
+  void simulateTrainingData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps)
   {
     // infer data dimensions based on the input tensors
     const int batch_size = input_data.dimension(0);
     const int memory_size = input_data.dimension(1);
     const int n_input_nodes = input_data.dimension(2);
     const int n_output_nodes = output_data.dimension(2);
-    const int n_epochs = input_data.dimension(3);
 
     assert(n_output_nodes == this->validation_labels.dimension(1));
     assert(n_input_nodes == this->validation_data.dimension(1));
 
     // make a vector of sample_indices
-    Eigen::Tensor<int, 1> sample_indices = this->getTrainingIndices(batch_size, n_epochs);
+    Eigen::Tensor<int, 1> sample_indices = this->getTrainingIndices(batch_size, 1);
 
     // Reformat the input data for training
     for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
       for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
-        for (int epochs_iter = 0; epochs_iter < n_epochs; ++epochs_iter) {
-          for (int nodes_iter = 0; nodes_iter < this->training_data.dimension(1); ++nodes_iter) {
-            input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = this->training_data(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
-            //input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = this->training_data(sample_indices[0], nodes_iter);  // test on only 1 sample
-          }
-          for (int nodes_iter = 0; nodes_iter < this->training_labels.dimension(1); ++nodes_iter) {
-            output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = (TensorT)this->training_labels(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
-            //output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = (TensorT)this->training_labels(sample_indices[0], nodes_iter); // test on only 1 sample
-          }
+        for (int nodes_iter = 0; nodes_iter < this->training_data.dimension(1); ++nodes_iter) {
+          input_data(batch_iter, memory_iter, nodes_iter) = this->training_data(sample_indices[batch_iter], nodes_iter);
+        }
+        for (int nodes_iter = 0; nodes_iter < this->training_labels.dimension(1); ++nodes_iter) {
+          output_data(batch_iter, memory_iter, nodes_iter) = (TensorT)this->training_labels(sample_indices[batch_iter], nodes_iter);
         }
       }
     }
 
     time_steps.setConstant(1.0f);
   }
-  void simulateValidationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
+  void simulateValidationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps)
   {
     // infer data dimensions based on the input tensors
     const int batch_size = input_data.dimension(0);
     const int memory_size = input_data.dimension(1);
     const int n_input_nodes = input_data.dimension(2);
     const int n_output_nodes = output_data.dimension(2);
-    const int n_epochs = input_data.dimension(3);
 
     assert(n_output_nodes == this->validation_labels.dimension(1));
     assert(n_input_nodes == this->validation_data.dimension(1));
 
     // make the start and end sample indices
-    Eigen::Tensor<int, 1> sample_indices = this->getValidationIndices(batch_size, n_epochs);
+    Eigen::Tensor<int, 1> sample_indices = this->getValidationIndices(batch_size, 1);
 
     // Reformat the input data for validation
     for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
       for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
-        for (int epochs_iter = 0; epochs_iter < n_epochs; ++epochs_iter) {
-          for (int nodes_iter = 0; nodes_iter < this->validation_data.dimension(1); ++nodes_iter) {
-            input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = this->validation_data(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
-          }
-          for (int nodes_iter = 0; nodes_iter < this->validation_labels.dimension(1); ++nodes_iter) {
-            output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = (TensorT)this->validation_labels(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
-          }
+        for (int nodes_iter = 0; nodes_iter < this->validation_data.dimension(1); ++nodes_iter) {
+          input_data(batch_iter, memory_iter, nodes_iter) = this->validation_data(sample_indices[batch_iter], nodes_iter);
+        }
+        for (int nodes_iter = 0; nodes_iter < this->validation_labels.dimension(1); ++nodes_iter) {
+          output_data(batch_iter, memory_iter, nodes_iter) = (TensorT)this->validation_labels(sample_indices[batch_iter], nodes_iter);
         }
       }
     }
@@ -262,27 +227,11 @@ public:
 
 template<typename TensorT>
 class ModelReplicatorExt : public ModelReplicator<TensorT>
-{
-public:
-  void adaptiveReplicatorScheduler(
-    const int& n_generations,
-    std::vector<Model<TensorT>>& models,
-    std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations)
-  {  // TODO
-  }
-};
+{};
 
 template<typename TensorT>
 class PopulationTrainerExt : public PopulationTrainerDefaultDevice<TensorT>
-{
-public:
-  void adaptivePopulationScheduler(
-    const int& n_generations,
-    std::vector<Model<TensorT>>& models,
-    std::vector<std::vector<std::tuple<int, std::string, TensorT>>>& models_errors_per_generations)
-  { // TODO
-  }
-};
+{};
 
 /**
  @brief Image classification MNIST example whereby all pixels are
@@ -317,19 +266,19 @@ void main_MNIST(const bool& make_model, const bool& train_model) {
   DataSimulatorExt<float> data_simulator;
 
   // read in the training data
-  const std::string training_data_filename = "C:/Users/domccl/GitHub/mnist/train-images.idx3-ubyte";
-  const std::string training_labels_filename = "C:/Users/domccl/GitHub/mnist/train-labels.idx1-ubyte";
-  //const std::string training_data_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/train-images-idx3-ubyte";
-  //const std::string training_labels_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/train-labels-idx1-ubyte";
+  //const std::string training_data_filename = "C:/Users/domccl/GitHub/mnist/train-images.idx3-ubyte";
+  //const std::string training_labels_filename = "C:/Users/domccl/GitHub/mnist/train-labels.idx1-ubyte";
+  const std::string training_data_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/train-images-idx3-ubyte";
+  const std::string training_labels_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/train-labels-idx1-ubyte";
   //const std::string training_data_filename = "/home/user/data/train-images-idx3-ubyte";
   //const std::string training_labels_filename = "/home/user/data/train-labels-idx1-ubyte";
   data_simulator.readData(training_data_filename, training_labels_filename, true, training_data_size, input_size);
 
   // read in the validation data
-  const std::string validation_data_filename = "C:/Users/domccl/GitHub/mnist/t10k-images.idx3-ubyte";
-  const std::string validation_labels_filename = "C:/Users/domccl/GitHub/mnist/t10k-labels.idx1-ubyte";
-  //const std::string validation_data_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/t10k-images-idx3-ubyte";
-  //const std::string validation_labels_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/t10k-labels-idx1-ubyte";
+  //const std::string validation_data_filename = "C:/Users/domccl/GitHub/mnist/t10k-images.idx3-ubyte";
+  //const std::string validation_labels_filename = "C:/Users/domccl/GitHub/mnist/t10k-labels.idx1-ubyte";
+  const std::string validation_data_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/t10k-images-idx3-ubyte";
+  const std::string validation_labels_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/t10k-labels-idx1-ubyte";
   //const std::string validation_data_filename = "/home/user/data/t10k-images-idx3-ubyte";
   //const std::string validation_labels_filename = "/home/user/data/t10k-labels-idx1-ubyte";
   data_simulator.readData(validation_data_filename, validation_labels_filename, false, validation_data_size, input_size);
@@ -363,7 +312,7 @@ void main_MNIST(const bool& make_model, const bool& train_model) {
   ModelTrainerExt<float> model_trainer;
   model_trainer.setBatchSize(64);
   model_trainer.setMemorySize(1);
-  model_trainer.setNEpochsTraining(1001);
+  model_trainer.setNEpochsTraining(200001);
   model_trainer.setNEpochsValidation(1);
   model_trainer.setVerbosityLevel(1);
   model_trainer.setLogging(true, false);
@@ -381,8 +330,9 @@ void main_MNIST(const bool& make_model, const bool& train_model) {
   std::cout << "Initializing the population..." << std::endl;
   Model<float> model;
   if (make_model) {
-    //model_trainer.makeMultiHeadDotProdAttention(model, input_nodes.size(), output_nodes.size(), { 2,2 }, { 24,24 }, { 48, 48 }, false, false, false); // Test model
-    model_trainer.makeMultiHeadDotProdAttention(model, input_nodes.size(), output_nodes.size(), { 12, 8 }, { 48, 24 }, { 512, 128 }, false, false, false); // Solving model
+    model_trainer.makeMultiHeadDotProdAttention(model, input_nodes.size(), output_nodes.size(), { 2,2 }, { 24,24 }, { 48, 48 }, false, false, false, true); // Test model
+    //model_trainer.makeMultiHeadDotProdAttention(model, input_nodes.size(), output_nodes.size(), { 8, 8 }, { 48, 24 }, { 256, 128 }, false, false, false, true); // Solving model
+    //model_trainer.makeMultiHeadDotProdAttention(model, input_nodes.size(), output_nodes.size(), { 12, 8 }, { 48, 24 }, { 512, 128 }, false, false, false); // Solving model
   }
   else {
     // read in the trained model
@@ -400,19 +350,20 @@ void main_MNIST(const bool& make_model, const bool& train_model) {
   std::vector<Model<float>> population = { model };
 
   if (train_model) {
-    // Evolve the population
-    std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
-      population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, population_logger, input_nodes);
+    // Train the model
+    std::pair<std::vector<float>, std::vector<float>> model_errors = model_trainer.trainModel(model, data_simulator,
+      input_nodes, model_logger, model_interpreters.front());
 
     PopulationTrainerFile<float> population_trainer_file;
     population_trainer_file.storeModels(population, "MNIST");
-    population_trainer_file.storeModelValidations("MNISTErrors.csv", models_validation_errors_per_generation);
 
-    ModelFile<float> data;
-    data.storeModelCsv(population.front().getName() + "_nodes.csv",
-      population.front().getName() + "_links.csv",
-      population.front().getName() + "_weights.csv",
-      population.front(), true, true, true);
+    //// Evolve the population
+    //std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
+    //  population, model_trainer, model_interpreters, model_replicator, data_simulator, model_logger, population_logger, input_nodes);
+
+    //PopulationTrainerFile<float> population_trainer_file;
+    //population_trainer_file.storeModels(population, "MNIST");
+    //population_trainer_file.storeModelValidations("MNISTErrors.csv", models_validation_errors_per_generation);
   }
   else {
     // Evaluate the population

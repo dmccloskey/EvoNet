@@ -153,9 +153,14 @@ public:
         Eigen::Tensor<TensorT, 1> one_hot_vec_smoothed = one_hot_vec.unaryExpr(LabelSmoother<TensorT>(0.01, 0.01));
 
         // MSE or LogLoss only
-        for (int nodes_iter = 0; nodes_iter < n_output_nodes; ++nodes_iter) {
+        size_t n_labels;
+        if (train)
+          n_labels = this->model_training_.labels_.size();
+        else
+          n_labels = this->model_validation_.labels_.size();
+        for (int nodes_iter = 0; nodes_iter < n_labels; ++nodes_iter) {
           output_data(batch_iter, memory_iter, nodes_iter) = one_hot_vec(nodes_iter);
-          output_data(batch_iter, memory_iter, nodes_iter + n_output_nodes) = one_hot_vec(nodes_iter);
+          output_data(batch_iter, memory_iter, nodes_iter + (int)n_labels) = one_hot_vec(nodes_iter);
         }
       }
     }
@@ -279,39 +284,139 @@ public:
 	void simulateValidationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)	{
 		simulateData(input_data, output_data, time_steps);
 	}
-  void simulateData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps)
+  void simulateDataMARs(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps, const bool& train)
   {
     // infer data dimensions based on the input tensors
     const int batch_size = input_data.dimension(0);
     const int memory_size = input_data.dimension(1);
     const int n_input_nodes = input_data.dimension(2);
     const int n_output_nodes = output_data.dimension(2);
+    int n_input_pixels;
+    if (train)
+      n_input_pixels = this->model_training_.reaction_ids_.size();
+    else
+      n_input_pixels = this->model_validation_.reaction_ids_.size();
+
+    assert(n_output_nodes == n_input_pixels + 2 * n_encodings_);
+    assert(n_input_nodes == n_input_pixels + n_encodings_);
+
+    std::random_device rd{};
+    std::mt19937 gen{ rd() };
+    std::normal_distribution<> d{ 0.0f, 1.0f };
 
     for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
       for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
 
         // pick a random sample group name
-        //std::string sample_group_name = selectRandomElement(sample_group_names_);
-        std::string sample_group_name = this->model_.sample_group_names_[0];
+        std::string sample_group_name;
+        if (train)
+          sample_group_name = selectRandomElement(this->model_training_.sample_group_names_);
+        else
+          sample_group_name = selectRandomElement(this->model_validation_.sample_group_names_);
 
-        for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
-          const TensorT mar = this->model_.calculateMAR(
-            this->model_.metabolomicsData_.at(sample_group_name),
-            this->model_.biochemicalReactions_.at(this->model_.reaction_ids_.at(nodes_iter)));
-          input_data(batch_iter, memory_iter, nodes_iter) = mar;
-          output_data(batch_iter, memory_iter, nodes_iter) = mar;
+        for (int nodes_iter = 0; nodes_iter < n_input_pixels + 2 * n_encodings; ++nodes_iter) {
+          if (nodes_iter < n_input_nodes) {
+            TensorT value;
+            if (train)
+              value = this->model_training_.calculateMAR(
+                this->model_training_.metabolomicsData_.at(sample_group_name),
+                this->model_training_.biochemicalReactions_.at(this->model_training_.reaction_ids_.at(nodes_iter)));
+            else
+              value = this->model_validation_.calculateMAR(
+                this->model_validation_.metabolomicsData_.at(sample_group_name),
+                this->model_validation_.biochemicalReactions_.at(this->model_validation_.reaction_ids_.at(nodes_iter)));
+            input_data(batch_iter, memory_iter, nodes_iter) = value;
+            output_data(batch_iter, memory_iter, nodes_iter) = value;
+          }
+          else if (nodes_iter >= n_input_pixels && nodes_iter < n_input_pixels + n_encodings) {
+            TensorT random_value;
+            if (train)
+              random_value = d(gen);
+            else
+              random_value = 0;
+            input_data(batch_iter, memory_iter, nodes_iter) = random_value; // sample from a normal distribution
+            output_data(batch_iter, memory_iter, nodes_iter) = 0; // Dummy data for KL divergence mu
+          }
+          else {
+            output_data(batch_iter, memory_iter, nodes_iter) = 0; // Dummy data for KL divergence logvar
+          }
+        }
+      }
+    }
+  }
+  void simulateDataConcs(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps, const bool& train)
+  {
+    // infer data dimensions based on the input tensors
+    const int batch_size = input_data.dimension(0);
+    const int memory_size = input_data.dimension(1);
+    const int n_input_nodes = input_data.dimension(2);
+    const int n_output_nodes = output_data.dimension(2);
+    int n_input_pixels;
+    if (train)
+      n_input_pixels = this->model_training_.component_group_names_.size();
+    else
+      n_input_pixels = this->model_validation_.component_group_names_.size();
+
+    assert(n_output_nodes == n_input_pixels + 2 * n_encodings_);
+    assert(n_input_nodes == n_input_pixels + n_encodings_);
+
+    std::random_device rd{};
+    std::mt19937 gen{ rd() };
+    std::normal_distribution<> d{ 0.0f, 1.0f };
+
+    for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
+      for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
+
+        // pick a random sample group name
+        std::string sample_group_name;
+        if (train)
+          sample_group_name = selectRandomElement(this->model_training_.sample_group_names_);
+        else
+          sample_group_name = selectRandomElement(this->model_validation_.sample_group_names_);
+
+        for (int nodes_iter = 0; nodes_iter < n_input_pixels + 2 * n_encodings; ++nodes_iter) {
+          if (nodes_iter < n_input_nodes) {
+            TensorT value;
+            if (train)
+              value = this->model_training_.getRandomConcentration(
+                this->model_training_.metabolomicsData_.at(sample_group_name),
+                this->model_training_.component_group_names_.at(nodes_iter));
+            else
+              value = this->model_validation_.getRandomConcentration(
+                this->model_validation_.metabolomicsData_.at(sample_group_name),
+                this->model_validation_.component_group_names_.at(nodes_iter));
+            input_data(batch_iter, memory_iter, nodes_iter) = value;
+            output_data(batch_iter, memory_iter, nodes_iter) = value;
+          }
+          else if (nodes_iter >= n_input_pixels && nodes_iter < n_input_pixels + n_encodings) {
+            TensorT random_value;
+            if (train)
+              random_value = d(gen);
+            else
+              random_value = 0;
+            input_data(batch_iter, memory_iter, nodes_iter) = random_value; // sample from a normal distribution
+            output_data(batch_iter, memory_iter, nodes_iter) = 0; // Dummy data for KL divergence mu
+          }
+          else {
+            output_data(batch_iter, memory_iter, nodes_iter) = 0; // Dummy data for KL divergence logvar
+          }
         }
       }
     }
   }
   void simulateTrainingData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps) {
-    simulateData(input_data, output_data, time_steps);
+    if (simulate_MARs_) simulateDataMARs(input_data, output_data, time_steps, true);
+    else simulateDataConcs(input_data, output_data, time_steps, true);
   }
   void simulateValidationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps) {
-    simulateData(input_data, output_data, time_steps);
+    if (simulate_MARs_) simulateDataMARs(input_data, output_data, time_steps, false);
+    else simulateDataConcs(input_data, output_data, time_steps, false);
   }
-	
-	BiochemicalReactionModel<TensorT> model_;
+
+  BiochemicalReactionModel<TensorT> model_training_;
+  BiochemicalReactionModel<TensorT> model_validation_;
+  int n_encodings_;
+  bool simulate_MARs_ = true;
 };
 
 /*

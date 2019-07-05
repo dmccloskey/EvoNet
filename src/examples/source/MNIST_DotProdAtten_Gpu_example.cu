@@ -53,21 +53,21 @@ public:
       node_names = model_builder.addMultiHeadAttention(model, name_head1, name_head1,
         node_names_input, node_names_input, node_names_input,
         n_heads[i], "DotProd", model_lengths[i], key_query_values_lengths[i], key_query_values_lengths[i],
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>(1e-6, 0.0, 1.0)),
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
+        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
         std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names_input.size(), 2)),
-        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e3)), 0.0f, 0.0f, false, specify_layers);
+        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8, 1e3)), 0.0f, 0.0f, false, specify_layers);
       if (add_norm) {
         std::string norm_name = "Norm" + std::to_string(i);
         node_names = model_builder.addNormalization(model, norm_name, norm_name, node_names, specify_layers);
         node_names = model_builder.addSinglyConnected(model, norm_name + "-gain", norm_name + "-gain", node_names, node_names.size(),
-          std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>(1e-6, 0.0, 1.0)),
-          std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+          std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
+          std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
           std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
           std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
           std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
           std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
-          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e3, 0.0)), 0.0, 0.0, true, true);
+          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8, 1e3, 0.0)), 0.0, 0.0, true, specify_layers);
       }
       node_names_input = node_names;
 
@@ -81,25 +81,25 @@ public:
           std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
           std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
           std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names_input.size(), 2)),
-          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e3)), 0.0f, 0.0f, false, specify_layers);
+          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8, 1e3)), 0.0f, 0.0f, false, specify_layers);
       }
       if (add_skip) {
-      	std::string skip_name = "Skip_FC" + std::to_string(i);
-      	model_builder.addSinglyConnected(model, skip_name, node_names_input, node_names,
-      		std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(n_inputs, 2)),
-      		std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e3)), 0.0f);
+        std::string skip_name = "Skip_FC" + std::to_string(i);
+        model_builder.addSinglyConnected(model, skip_name, node_names_input, node_names,
+          std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(n_inputs, 2)),
+          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8, 1e3)), 0.0f);
       }
       if (add_norm) {
         std::string norm_name = "Norm_FC" + std::to_string(i);
         node_names = model_builder.addNormalization(model, norm_name, norm_name, node_names, specify_layers);
         node_names = model_builder.addSinglyConnected(model, norm_name + "-gain", norm_name + "-gain", node_names, node_names.size(),
-          std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>(1e-6, 0.0, 1.0)),
-          std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+          std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
+          std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
           std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
           std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
           std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
           std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
-          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e3, 0.0)), 0.0, 0.0, true, true);
+          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8, 1e3, 0.0)), 0.0, 0.0, true, specify_layers);
       }
       node_names_input = node_names;
     }
@@ -107,12 +107,12 @@ public:
     // Add the FC layer
     node_names = model_builder.addFullyConnected(model, "Output", "Output", node_names, n_outputs,
       std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+      std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
       std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
       std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 2)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e3)), 0.0f, 0.0f, false, true);
+      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8, 1e3)), 0.0f, 0.0f, false, true);
 
     for (const std::string& node_name : node_names)
       model.nodes_.at(node_name)->setType(NodeType::output);
@@ -124,21 +124,9 @@ public:
     Model<TensorT>& model,
     ModelInterpreterGpu<TensorT>& model_interpreter,
     const std::vector<float>& model_errors) {
-    //if (n_epochs > 0 && model_errors.back() < 0.01) {
-    //	// update the solver parameters
-    //	model_interpreter.updateSolverParams(0, 0.0002);
-    //}
-    //else if (n_epochs > 0 && model_errors.back() < 4.0) {
-    //	// update the solver parameters
-    //	model_interpreter.updateSolverParams(0, 0.0005);
-    //}
-    //else {
-    //	// update the solver parameters
-    //	model_interpreter.updateSolverParams(0, 0.00095);
-    //}
     if (n_epochs % 1000 == 0 && n_epochs != 0) {
       // save the model every 1000 epochs
-      //model_interpreter.getModelResults(model, false, true, false);
+      model_interpreter.getModelResults(model, false, true, false);
       ModelFile<TensorT> data;
       //data.storeModelCsv(model.getName() + "_" + std::to_string(n_epochs) + "_nodes.csv",
       //	model.getName() + "_" + std::to_string(n_epochs) + "_links.csv",
@@ -148,38 +136,29 @@ public:
       interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
     }
   }
-  void trainingModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterGpu<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
-    const Eigen::Tensor<TensorT, 3>& expected_values,
-    const std::vector<std::string>& output_nodes,
-    const TensorT& model_error)
+  void trainingModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterGpu<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger, const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const TensorT & model_error_train, const TensorT & model_error_test)
   {
+    // Set the defaults
     model_logger.setLogTimeEpoch(true);
     model_logger.setLogTrainValMetricEpoch(true);
     model_logger.setLogExpectedPredictedEpoch(false);
+
+    // initialize all logs
     if (n_epochs == 0) {
+      model_logger.setLogExpectedPredictedEpoch(true);
       model_logger.initLogs(model);
     }
-    if (n_epochs % 1 == 0) {
+
+    // Per n epoch logging
+    if (n_epochs % 50 == 0) {
+      model_logger.setLogExpectedPredictedEpoch(true);
       if (model_logger.getLogExpectedPredictedEpoch())
         model_interpreter.getModelResults(model, true, false, false);
-      model_logger.writeLogs(model, n_epochs, { "Error" }, {}, { model_error }, {}, output_nodes, expected_values);
+      model_logger.writeLogs(model, n_epochs, { "Train_Error" }, { "Test_Error" }, { model_error_train }, { model_error_test }, output_nodes, expected_values);
     }
-  }
-  void validationModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterGpu<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
-    const Eigen::Tensor<TensorT, 3>& expected_values,
-    const std::vector<std::string>& output_nodes,
-    const TensorT& model_error)
-  {
-    model_logger.setLogTimeEpoch(false);
-    model_logger.setLogTrainValMetricEpoch(false);
-    model_logger.setLogExpectedPredictedEpoch(true);
-    if (n_epochs == 0) {
-      model_logger.initLogs(model);
-    }
-    if (n_epochs % 1 == 0) {
-      if (model_logger.getLogExpectedPredictedEpoch())
-        model_interpreter.getModelResults(model, true, false, false);
-      model_logger.writeLogs(model, n_epochs, {}, { "Error" }, {}, { model_error }, output_nodes, expected_values);
+    else if (n_epochs % 10 == 0) {
+      model_logger.setLogExpectedPredictedEpoch(false);
+      model_logger.writeLogs(model, n_epochs, { "Train_Error" }, { "Test_Error" }, { model_error_train }, { model_error_test }, output_nodes, expected_values);
     }
   }
 };
@@ -351,8 +330,8 @@ void main_MNIST(const bool& make_model, const bool& train_model) {
   std::cout << "Initializing the population..." << std::endl;
   Model<float> model;
   if (make_model) {
-    //model_trainer.makeMultiHeadDotProdAttention(model, input_nodes.size(), output_nodes.size(), { 2,2 }, { 24,24 }, { 48, 48 }, false, false, false); // Test model
-    model_trainer.makeMultiHeadDotProdAttention(model, input_nodes.size(), output_nodes.size(), { 8, 8 }, { 48, 24 }, { 256, 128 }, true, false, true); // Solving model
+    //model_trainer.makeMultiHeadDotProdAttention(model, input_nodes.size(), output_nodes.size(), { 2,2 }, { 24,24 }, { 48, 48 }, false, false, false, true); // Test model
+    model_trainer.makeMultiHeadDotProdAttention(model, input_nodes.size(), output_nodes.size(), { 8, 8 }, { 48, 24 }, { 256, 128 }, false, false, false, true); // Solving model
     //model_trainer.makeMultiHeadDotProdAttention(model, input_nodes.size(), output_nodes.size(), { 12, 8 }, { 48, 24 }, { 512, 128 }, false, false, false); // Solving model
   }
   else {

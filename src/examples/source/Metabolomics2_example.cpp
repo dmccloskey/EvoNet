@@ -33,7 +33,7 @@ public:
     model.setName("Classifier");
 
     const int n_hidden_0 = 32;
-    const int n_hidden_1 = 32;
+    const int n_hidden_1 = 8;
     const int n_hidden_2 = 0;
 
     ModelBuilder<TensorT> model_builder;
@@ -660,9 +660,9 @@ void main_classification(bool make_model = true, bool simulate_MARs = true)
   Model<float> model;
   if (make_model) {
     //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, false, false, false, false); // normalization type 0
-    //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, false, false, false); // normalization type 1
+    model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, false, false, false); // normalization type 1
     //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, false, true, false); // normalization type 2
-    model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, true, false, false); // normalization type 3
+    //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, true, false, false); // normalization type 3
     //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, true, true, false); // normalization type 4
     //model_trainer.makeMultiHeadDotProdAttention(model, input_nodes.size(), output_nodes.size(), false, false, false, { 12, 8 }, { 48, 24 }, { 96, 48 }, false, false, false);
     //model_trainer.makeMultiHeadDotProdAttention(model, input_nodes.size(), output_nodes.size(), true, false, false, { 12, 8 }, { 48, 24 }, { 96, 48 }, false, false, false);
@@ -697,6 +697,6 @@ int main(int argc, char** argv)
   //main_statistics_timecourseSummary(
   //	true, true, true, true, true,
   //	true);
-  main_classification(true, false);
+  main_classification(true, true);
   return 0;
 }
