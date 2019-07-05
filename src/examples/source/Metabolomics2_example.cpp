@@ -32,8 +32,8 @@ public:
     model.setId(0);
     model.setName("Classifier");
 
-    const int n_hidden_0 = 8;
-    const int n_hidden_1 = 8;
+    const int n_hidden_0 = 32;
+    const int n_hidden_1 = 32;
     const int n_hidden_2 = 0;
 
     ModelBuilder<TensorT> model_builder;
@@ -65,9 +65,8 @@ public:
           std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
           std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
           std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
-          //std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8)),
-          std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()),
-          0.0, 0.0, false, true);
+          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8)),
+          0.0, 0.0, true, true);
       }
     }
     if (n_hidden_1 > 0) {
@@ -90,9 +89,8 @@ public:
           std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
           std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
           std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
-          //std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8)),
-          std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()),
-          0.0, 0.0, false, true);
+          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8)),
+          0.0, 0.0, true, true);
       }
     }
     if (n_hidden_2 > 0) {
@@ -115,9 +113,8 @@ public:
           std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
           std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
           std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
-          //std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8)),
-          std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()),
-          0.0, 0.0, false, true);
+          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8)),
+          0.0, 0.0, true, true);
       }
     }
     node_names = model_builder.addFullyConnected(model, "Output", "Output", node_names, n_outputs,
@@ -568,7 +565,7 @@ void main_classification(bool make_model = true, bool simulate_MARs = true)
   // Read in the training and validation data
   std::string biochem_rxns_filename, metabo_data_filename, meta_data_filename;
   biochem_rxns_filename = data_dir + "iJO1366.csv";
-  meta_data_filename = data_dir + "ALEsKOs01_MetaData.csv";
+  meta_data_filename = data_dir + "ALEsKOs01_MetaData_train.csv";
 
   // Training data
   metabo_data_filename = data_dir + "ALEsKOs01_Metabolomics_train.csv";
@@ -586,6 +583,7 @@ void main_classification(bool make_model = true, bool simulate_MARs = true)
   // Validation data
   reaction_model.clear();
   metabo_data_filename = data_dir + "ALEsKOs01_Metabolomics_test.csv";
+  meta_data_filename = data_dir + "ALEsKOs01_MetaData_test.csv";
   reaction_model.readBiochemicalReactions(biochem_rxns_filename, true);
   reaction_model.readMetabolomicsData(metabo_data_filename);
   reaction_model.readMetaData(meta_data_filename);
@@ -631,7 +629,7 @@ void main_classification(bool make_model = true, bool simulate_MARs = true)
     model_interpreters.push_back(model_interpreter);
   }
   ModelTrainerExt<float> model_trainer;
-  model_trainer.setBatchSize(64);
+  model_trainer.setBatchSize(16);
   model_trainer.setMemorySize(1);
   model_trainer.setNEpochsTraining(100000);
   model_trainer.setNEpochsValidation(0);
@@ -641,13 +639,13 @@ void main_classification(bool make_model = true, bool simulate_MARs = true)
   model_trainer.setFastInterpreter(true);
   model_trainer.setPreserveOoO(true);
   model_trainer.setLossFunctions({ 
-    //std::shared_ptr<LossFunctionOp<float>>(new CrossEntropyWithLogitsOp<float>()), 
+    std::shared_ptr<LossFunctionOp<float>>(new CrossEntropyWithLogitsOp<float>()), 
     std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
   model_trainer.setLossFunctionGrads({ 
-    //std::shared_ptr<LossFunctionGradOp<float>>(new CrossEntropyWithLogitsGradOp<float>()), 
+    std::shared_ptr<LossFunctionGradOp<float>>(new CrossEntropyWithLogitsGradOp<float>()), 
     std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
   model_trainer.setOutputNodes({ 
-    //output_nodes, 
+    output_nodes, 
     output_nodes });
 
   // define the model logger

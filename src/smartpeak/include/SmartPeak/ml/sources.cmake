@@ -18,6 +18,7 @@ set(sources_list_h
 	ModelInterpreterDefaultDevice.h
 	ModelInterpreterGpu.h
 	ModelKernal.h
+	ModelKernalGpu.h
 	ModelLogger.h
 	ModelReplicator.h
 	ModelTrainer.h

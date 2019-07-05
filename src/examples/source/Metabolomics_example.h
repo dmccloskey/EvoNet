@@ -72,7 +72,7 @@ public:
 	void simulateValidationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)	{
 		simulateData(input_data, output_data, time_steps);
 	}
-  void simulateDataMARs(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps, bool& train)
+  void simulateDataMARs(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps, const bool& train)
   {
     // infer data dimensions based on the input tensors
     const int batch_size = input_data.dimension(0);
@@ -155,7 +155,7 @@ public:
         // MSE or LogLoss only
         for (int nodes_iter = 0; nodes_iter < n_output_nodes; ++nodes_iter) {
           output_data(batch_iter, memory_iter, nodes_iter) = one_hot_vec(nodes_iter);
-          //output_data(batch_iter, memory_iter, nodes_iter + n_output_nodes) = one_hot_vec(nodes_iter);
+          output_data(batch_iter, memory_iter, nodes_iter + n_output_nodes) = one_hot_vec(nodes_iter);
         }
       }
     }
@@ -163,7 +163,7 @@ public:
     // update the time_steps
     time_steps.setConstant(1.0f);
   }
-  void simulateDataConcs(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps, bool& train)
+  void simulateDataConcs(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps, const bool& train)
   {
     // infer data dimensions based on the input tensors
     const int batch_size = input_data.dimension(0);
@@ -209,9 +209,14 @@ public:
         Eigen::Tensor<TensorT, 1> one_hot_vec_smoothed = one_hot_vec.unaryExpr(LabelSmoother<TensorT>(0.01, 0.01));
 
         // MSE or LogLoss only
-        for (int nodes_iter = 0; nodes_iter < this->model_training_.labels_.size(); ++nodes_iter) {
-          output_data(batch_iter, memory_iter, nodes_iter) = one_hot_vec(nodes_iter);
-          //output_data(batch_iter, memory_iter, nodes_iter + (int)this->model_training_.labels_.size()) = one_hot_vec(nodes_iter);
+        size_t n_labels;
+        if (train)
+          n_labels = this->model_training_.labels_.size();
+        else
+          n_labels = this->model_validation_.labels_.size();
+        for (int nodes_iter = 0; nodes_iter < n_labels; ++nodes_iter) {
+          output_data(batch_iter, memory_iter, nodes_iter) = one_hot_vec_smoothed(nodes_iter);
+          output_data(batch_iter, memory_iter, nodes_iter + (int)n_labels) = one_hot_vec(nodes_iter);
         }
       }
     }
