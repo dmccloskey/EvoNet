@@ -20,7 +20,7 @@
 
 // .cpp
 #include <SmartPeak/ml/ModelErrorData.h>
-#include <SmartPeak/ml/ModelKernal.h>
+#include <SmartPeak/ml/ModelKernalGpu.h>
 
 namespace SmartPeak
 {

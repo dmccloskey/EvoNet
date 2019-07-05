@@ -7,7 +7,7 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 
-#include <SmartPeak/ml/ModelKernal.h>
+#include <SmartPeak/ml/ModelKernalGpu.h>
 
 using namespace SmartPeak;
 using namespace std;

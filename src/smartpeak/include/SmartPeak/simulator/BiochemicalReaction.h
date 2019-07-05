@@ -772,6 +772,19 @@ namespace SmartPeak
       }
     }
 
+    /*
+    @brief Clear all data structures
+    */
+    void clear() {
+      metabolomicsData_.clear();
+      biochemicalReactions_.clear();
+      metaData_.clear();
+      reaction_ids_.clear();
+      sample_group_names_.clear();
+      labels_.clear();
+      component_group_names_.clear();
+    }
+
     MetabolomicsData metabolomicsData_;
     BiochemicalReactions biochemicalReactions_;
     MetaData metaData_;

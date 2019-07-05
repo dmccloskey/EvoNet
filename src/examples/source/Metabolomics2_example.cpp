@@ -47,8 +47,10 @@ public:
     // Add the hidden layers
     if (n_hidden_0 > 0) {
       node_names = model_builder.addFullyConnected(model, "FC0", "FC0", node_names, n_hidden_0,
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
+        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
+        //std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
+        //std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
         std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
         std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
         std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
@@ -57,19 +59,23 @@ public:
       if (add_norm) {
         node_names = model_builder.addNormalization(model, "FC0-Norm", "FC0-Norm", node_names, true);
         node_names = model_builder.addSinglyConnected(model, "FC0-Norm-gain", "FC0-Norm-gain", node_names, node_names.size(),
-          std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>(1e-6, 0.0, 1.0)), // Nonlinearity occures after the normalization
-          std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+          std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()), // Nonlinearity occures after the normalization
+          std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
           std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
           std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
           std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
           std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
-          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8)), 0.0, 0.0, true, true);
+          //std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8)),
+          std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()),
+          0.0, 0.0, false, true);
       }
     }
     if (n_hidden_1 > 0) {
       node_names = model_builder.addFullyConnected(model, "FC1", "FC1", node_names, n_hidden_1,
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
+        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
+        //std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
+        //std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
         std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
         std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
         std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
@@ -78,19 +84,23 @@ public:
       if (add_norm) {
         node_names = model_builder.addNormalization(model, "FC1-Norm", "FC1-Norm", node_names, true);
         node_names = model_builder.addSinglyConnected(model, "FC1-Norm-gain", "FC1-Norm-gain", node_names, node_names.size(),
-          std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>(1e-6, 0.0, 1.0)), // Nonlinearity occures after the normalization
-          std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+          std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()), // Nonlinearity occures after the normalization
+          std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
           std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
           std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
           std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
           std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
-          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8)), 0.0, 0.0, true, true);
+          //std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8)),
+          std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()),
+          0.0, 0.0, false, true);
       }
     }
     if (n_hidden_2 > 0) {
       node_names = model_builder.addFullyConnected(model, "FC2", "FC2", node_names, n_hidden_2,
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
+        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
+        //std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
+        //std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
         std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
         std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
         std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
@@ -99,18 +109,20 @@ public:
       if (add_norm) {
         node_names = model_builder.addNormalization(model, "FC2-Norm", "FC2-Norm", node_names, true);
         node_names = model_builder.addSinglyConnected(model, "FC2-Norm-gain", "FC2-Norm-gain", node_names, node_names.size(),
-          std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>(1e-6, 0.0, 1.0)), // Nonlinearity occures after the normalization
-          std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+          std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()), // Nonlinearity occures after the normalization
+          std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
           std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
           std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
           std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
           std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
-          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8)), 0.0, 0.0, true, true);
+          //std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-3, 0.9, 0.999, 1e-8)),
+          std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()),
+          0.0, 0.0, false, true);
       }
     }
     node_names = model_builder.addFullyConnected(model, "Output", "Output", node_names, n_outputs,
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>(1e-6, 0.0, 1.0)),
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+      std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
+      std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
       std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
@@ -548,16 +560,18 @@ void main_classification(bool make_model = true, bool simulate_MARs = true)
   // define the data simulator
   BiochemicalReactionModel<float> reaction_model;
   MetDataSimClassification<float> metabolomics_data;
-  //std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
-  std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
+  std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
+  //std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
   //std::string data_dir = "/home/user/Data/";
   std::string model_name = "0_Metabolomics";
 
+  // Read in the training and validation data
   std::string biochem_rxns_filename, metabo_data_filename, meta_data_filename;
-  // EColi filenames
   biochem_rxns_filename = data_dir + "iJO1366.csv";
-  metabo_data_filename = data_dir + "ALEsKOs01_Metabolomics.csv";
   meta_data_filename = data_dir + "ALEsKOs01_MetaData.csv";
+
+  // Training data
+  metabo_data_filename = data_dir + "ALEsKOs01_Metabolomics_train.csv";
   reaction_model.readBiochemicalReactions(biochem_rxns_filename, true);
   reaction_model.readMetabolomicsData(metabo_data_filename);
   reaction_model.readMetaData(meta_data_filename);
@@ -567,12 +581,31 @@ void main_classification(bool make_model = true, bool simulate_MARs = true)
   reaction_model.findMARs(false, true);
   reaction_model.removeRedundantMARs();
   reaction_model.findLabels();
-  metabolomics_data.model_ = reaction_model;
+  metabolomics_data.model_training_ = reaction_model;
+
+  // Validation data
+  reaction_model.clear();
+  metabo_data_filename = data_dir + "ALEsKOs01_Metabolomics_test.csv";
+  reaction_model.readBiochemicalReactions(biochem_rxns_filename, true);
+  reaction_model.readMetabolomicsData(metabo_data_filename);
+  reaction_model.readMetaData(meta_data_filename);
+  reaction_model.findComponentGroupNames();
+  reaction_model.findMARs();
+  reaction_model.findMARs(true, false);
+  reaction_model.findMARs(false, true);
+  reaction_model.removeRedundantMARs();
+  reaction_model.findLabels();
+  metabolomics_data.model_validation_ = reaction_model;
   metabolomics_data.simulate_MARs_ = simulate_MARs;
+
+  // Checks for the training and validation data
+  assert(metabolomics_data.model_validation_.reaction_ids_.size() == metabolomics_data.model_training_.reaction_ids_.size());
+  assert(metabolomics_data.model_validation_.labels_.size() == metabolomics_data.model_training_.labels_.size());
+  assert(metabolomics_data.model_validation_.component_group_names_.size() == metabolomics_data.model_training_.component_group_names_.size());
 
   // define the model input/output nodes
   int n_input_nodes;
-  if (simulate_MARs) n_input_nodes = reaction_model.reaction_ids_.size();
+  if (simulate_MARs) n_input_nodes = reaction_model.reaction_ids_.size(); 
   else n_input_nodes = reaction_model.component_group_names_.size();
   const int n_output_nodes = reaction_model.labels_.size();
   std::vector<std::string> input_nodes;
@@ -598,7 +631,7 @@ void main_classification(bool make_model = true, bool simulate_MARs = true)
     model_interpreters.push_back(model_interpreter);
   }
   ModelTrainerExt<float> model_trainer;
-  model_trainer.setBatchSize(1); //64
+  model_trainer.setBatchSize(64);
   model_trainer.setMemorySize(1);
   model_trainer.setNEpochsTraining(100000);
   model_trainer.setNEpochsValidation(0);
@@ -628,11 +661,11 @@ void main_classification(bool make_model = true, bool simulate_MARs = true)
   //std::vector<Model<float>> population;
   Model<float> model;
   if (make_model) {
-    //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, false, false, false); // normalization type 0
-    model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, false, false, false); // normalization type 1
-    //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, false, true); // normalization type 2
-    //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, true, false, false); // normalization type 3
-    //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, true, true); // normalization type 4
+    //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, false, false, false, false); // normalization type 0
+    //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, false, false, false); // normalization type 1
+    //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, false, true, false); // normalization type 2
+    model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, true, false, false); // normalization type 3
+    //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, true, true, false); // normalization type 4
     //model_trainer.makeMultiHeadDotProdAttention(model, input_nodes.size(), output_nodes.size(), false, false, false, { 12, 8 }, { 48, 24 }, { 96, 48 }, false, false, false);
     //model_trainer.makeMultiHeadDotProdAttention(model, input_nodes.size(), output_nodes.size(), true, false, false, { 12, 8 }, { 48, 24 }, { 96, 48 }, false, false, false);
     //model_trainer.makeMultiHeadDotProdAttention(model, input_nodes.size(), output_nodes.size(), true, false, true, { 12, 8 }, { 48, 24 }, { 96, 48 }, false, false, false);
