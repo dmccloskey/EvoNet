@@ -10,408 +10,408 @@ using namespace std;
 
 Model<float> makeModelToy1()
 {
-	/**
-	* Directed Acyclic Graph Toy Network Model
-	*/
-	Node<float> i1, i2, h1, h2, o1, o2, b1, b2;
-	Link l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4;
-	Weight<float> w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4;
-	Model<float> model_FC_Sum;
+  /**
+  * Directed Acyclic Graph Toy Network Model
+  */
+  Node<float> i1, i2, h1, h2, o1, o2, b1, b2;
+  Link l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4;
+  Weight<float> w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4;
+  Model<float> model_FC_Sum;
 
-	// Toy network: 1 hidden layer, fully connected, DAG
-	i1 = Node<float>("0", NodeType::input, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-	i2 = Node<float>("1", NodeType::input, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-	h1 = Node<float>("2", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-	h2 = Node<float>("3", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-	o1 = Node<float>("4", NodeType::output, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-	o2 = Node<float>("5", NodeType::output, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-	b1 = Node<float>("6", NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-	b2 = Node<float>("7", NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
-	// weights  
-	std::shared_ptr<WeightInitOp<float>> weight_init;
-	std::shared_ptr<SolverOp<float>> solver;
-	// weight_init.reset(new RandWeightInitOp(1.0)); // No random init for testing
-	weight_init.reset(new ConstWeightInitOp<float>(1.0));
-	solver.reset(new SGDOp<float>(0.01, 0.9));
-	w1 = Weight<float>("0", weight_init, solver);
-	weight_init.reset(new ConstWeightInitOp<float>(1.0));
-	solver.reset(new SGDOp<float>(0.01, 0.9));
-	w2 = Weight<float>("1", weight_init, solver);
-	weight_init.reset(new ConstWeightInitOp<float>(1.0));
-	solver.reset(new SGDOp<float>(0.01, 0.9));
-	w3 = Weight<float>("2", weight_init, solver);
-	weight_init.reset(new ConstWeightInitOp<float>(1.0));
-	solver.reset(new SGDOp<float>(0.01, 0.9));
-	w4 = Weight<float>("3", weight_init, solver);
-	weight_init.reset(new ConstWeightInitOp<float>(1.0));
-	solver.reset(new SGDOp<float>(0.01, 0.9));
-	wb1 = Weight<float>("4", weight_init, solver);
-	weight_init.reset(new ConstWeightInitOp<float>(1.0));
-	solver.reset(new SGDOp<float>(0.01, 0.9));
-	wb2 = Weight<float>("5", weight_init, solver);
-	// input layer + bias
-	l1 = Link("0", "0", "2", "0");
-	l2 = Link("1", "0", "3", "1");
-	l3 = Link("2", "1", "2", "2");
-	l4 = Link("3", "1", "3", "3");
-	lb1 = Link("4", "6", "2", "4");
-	lb2 = Link("5", "6", "3", "5");
-	// weights
-	weight_init.reset(new ConstWeightInitOp<float>(1.0));
-	solver.reset(new SGDOp<float>(0.01, 0.9));
-	w5 = Weight<float>("6", weight_init, solver);
-	weight_init.reset(new ConstWeightInitOp<float>(1.0));
-	solver.reset(new SGDOp<float>(0.01, 0.9));
-	w6 = Weight<float>("7", weight_init, solver);
-	weight_init.reset(new ConstWeightInitOp<float>(1.0));
-	solver.reset(new SGDOp<float>(0.01, 0.9));
-	w7 = Weight<float>("8", weight_init, solver);
-	weight_init.reset(new ConstWeightInitOp<float>(1.0));
-	solver.reset(new SGDOp<float>(0.01, 0.9));
-	w8 = Weight<float>("9", weight_init, solver);
-	weight_init.reset(new ConstWeightInitOp<float>(1.0));
-	solver.reset(new SGDOp<float>(0.01, 0.9));
-	wb3 = Weight<float>("10", weight_init, solver);
-	weight_init.reset(new ConstWeightInitOp<float>(1.0));
-	solver.reset(new SGDOp<float>(0.01, 0.9));
-	wb4 = Weight<float>("11", weight_init, solver);
-	// hidden layer + bias
-	l5 = Link("6", "2", "4", "6");
-	l6 = Link("7", "2", "5", "7");
-	l7 = Link("8", "3", "4", "8");
-	l8 = Link("9", "3", "5", "9");
-	lb3 = Link("10", "7", "4", "10");
-	lb4 = Link("11", "7", "5", "11");
-	model_FC_Sum.setId(1);
-	model_FC_Sum.addNodes({ i1, i2, h1, h2, o1, o2, b1, b2 });
-	model_FC_Sum.addWeights({ w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4 });
-	model_FC_Sum.addLinks({ l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4 });
-	return model_FC_Sum;
+  // Toy network: 1 hidden layer, fully connected, DAG
+  i1 = Node<float>("0", NodeType::input, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+  i2 = Node<float>("1", NodeType::input, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+  h1 = Node<float>("2", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+  h2 = Node<float>("3", NodeType::hidden, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+  o1 = Node<float>("4", NodeType::output, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+  o2 = Node<float>("5", NodeType::output, NodeStatus::initialized, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+  b1 = Node<float>("6", NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+  b2 = Node<float>("7", NodeType::bias, NodeStatus::activated, std::shared_ptr<ActivationOp<float>>(new LinearOp<float>()), std::shared_ptr<ActivationOp<float>>(new LinearGradOp<float>()), std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()));
+  // weights  
+  std::shared_ptr<WeightInitOp<float>> weight_init;
+  std::shared_ptr<SolverOp<float>> solver;
+  // weight_init.reset(new RandWeightInitOp(1.0)); // No random init for testing
+  weight_init.reset(new ConstWeightInitOp<float>(1.0));
+  solver.reset(new SGDOp<float>(0.01, 0.9));
+  w1 = Weight<float>("0", weight_init, solver);
+  weight_init.reset(new ConstWeightInitOp<float>(1.0));
+  solver.reset(new SGDOp<float>(0.01, 0.9));
+  w2 = Weight<float>("1", weight_init, solver);
+  weight_init.reset(new ConstWeightInitOp<float>(1.0));
+  solver.reset(new SGDOp<float>(0.01, 0.9));
+  w3 = Weight<float>("2", weight_init, solver);
+  weight_init.reset(new ConstWeightInitOp<float>(1.0));
+  solver.reset(new SGDOp<float>(0.01, 0.9));
+  w4 = Weight<float>("3", weight_init, solver);
+  weight_init.reset(new ConstWeightInitOp<float>(1.0));
+  solver.reset(new SGDOp<float>(0.01, 0.9));
+  wb1 = Weight<float>("4", weight_init, solver);
+  weight_init.reset(new ConstWeightInitOp<float>(1.0));
+  solver.reset(new SGDOp<float>(0.01, 0.9));
+  wb2 = Weight<float>("5", weight_init, solver);
+  // input layer + bias
+  l1 = Link("0", "0", "2", "0");
+  l2 = Link("1", "0", "3", "1");
+  l3 = Link("2", "1", "2", "2");
+  l4 = Link("3", "1", "3", "3");
+  lb1 = Link("4", "6", "2", "4");
+  lb2 = Link("5", "6", "3", "5");
+  // weights
+  weight_init.reset(new ConstWeightInitOp<float>(1.0));
+  solver.reset(new SGDOp<float>(0.01, 0.9));
+  w5 = Weight<float>("6", weight_init, solver);
+  weight_init.reset(new ConstWeightInitOp<float>(1.0));
+  solver.reset(new SGDOp<float>(0.01, 0.9));
+  w6 = Weight<float>("7", weight_init, solver);
+  weight_init.reset(new ConstWeightInitOp<float>(1.0));
+  solver.reset(new SGDOp<float>(0.01, 0.9));
+  w7 = Weight<float>("8", weight_init, solver);
+  weight_init.reset(new ConstWeightInitOp<float>(1.0));
+  solver.reset(new SGDOp<float>(0.01, 0.9));
+  w8 = Weight<float>("9", weight_init, solver);
+  weight_init.reset(new ConstWeightInitOp<float>(1.0));
+  solver.reset(new SGDOp<float>(0.01, 0.9));
+  wb3 = Weight<float>("10", weight_init, solver);
+  weight_init.reset(new ConstWeightInitOp<float>(1.0));
+  solver.reset(new SGDOp<float>(0.01, 0.9));
+  wb4 = Weight<float>("11", weight_init, solver);
+  // hidden layer + bias
+  l5 = Link("6", "2", "4", "6");
+  l6 = Link("7", "2", "5", "7");
+  l7 = Link("8", "3", "4", "8");
+  l8 = Link("9", "3", "5", "9");
+  lb3 = Link("10", "7", "4", "10");
+  lb4 = Link("11", "7", "5", "11");
+  model_FC_Sum.setId(1);
+  model_FC_Sum.addNodes({ i1, i2, h1, h2, o1, o2, b1, b2 });
+  model_FC_Sum.addWeights({ w1, w2, w3, w4, wb1, wb2, w5, w6, w7, w8, wb3, wb4 });
+  model_FC_Sum.addLinks({ l1, l2, l3, l4, lb1, lb2, l5, l6, l7, l8, lb3, lb4 });
+  return model_FC_Sum;
 }
 
 BOOST_AUTO_TEST_SUITE(modelInterpreter_DAG)
 
 BOOST_AUTO_TEST_CASE(constructor)
 {
-	ModelInterpreterDefaultDevice<float>* ptr = nullptr;
-	ModelInterpreterDefaultDevice<float>* nullPointer = nullptr;
-	ptr = new ModelInterpreterDefaultDevice<float>();
-	BOOST_CHECK_NE(ptr, nullPointer);
+  ModelInterpreterDefaultDevice<float>* ptr = nullptr;
+  ModelInterpreterDefaultDevice<float>* nullPointer = nullptr;
+  ptr = new ModelInterpreterDefaultDevice<float>();
+  BOOST_CHECK_NE(ptr, nullPointer);
 }
 
 BOOST_AUTO_TEST_CASE(destructor)
 {
-	ModelInterpreterDefaultDevice<float>* ptr = nullptr;
-	ptr = new ModelInterpreterDefaultDevice<float>();
-	delete ptr;
+  ModelInterpreterDefaultDevice<float>* ptr = nullptr;
+  ptr = new ModelInterpreterDefaultDevice<float>();
+  delete ptr;
 }
 
 BOOST_AUTO_TEST_CASE(constructor1)
 {
-	ModelResources model_resources = { ModelDevice(0, 1) };
-	ModelInterpreterDefaultDevice<float> model_interpreter(model_resources);
+  ModelResources model_resources = { ModelDevice(0, 1) };
+  ModelInterpreterDefaultDevice<float> model_interpreter(model_resources);
 
-	BOOST_CHECK_EQUAL(model_interpreter.getModelResources()[0].getID(), model_resources[0].getID());
-	BOOST_CHECK_EQUAL(model_interpreter.getModelResources()[0].getNEngines(), model_resources[0].getNEngines());
+  BOOST_CHECK_EQUAL(model_interpreter.getModelResources()[0].getID(), model_resources[0].getID());
+  BOOST_CHECK_EQUAL(model_interpreter.getModelResources()[0].getNEngines(), model_resources[0].getNEngines());
 }
 
 BOOST_AUTO_TEST_CASE(gettersAndSetters)
 {
-	ModelResources model_resources = { ModelDevice(0, 1) };
-	ModelInterpreterDefaultDevice<float> model_interpreter;
-	model_interpreter.setModelResources(model_resources);
+  ModelResources model_resources = { ModelDevice(0, 1) };
+  ModelInterpreterDefaultDevice<float> model_interpreter;
+  model_interpreter.setModelResources(model_resources);
 
-	BOOST_CHECK_EQUAL(model_interpreter.getModelResources()[0].getID(), model_resources[0].getID());
-	BOOST_CHECK_EQUAL(model_interpreter.getModelResources()[0].getNEngines(), model_resources[0].getNEngines());
+  BOOST_CHECK_EQUAL(model_interpreter.getModelResources()[0].getID(), model_resources[0].getID());
+  BOOST_CHECK_EQUAL(model_interpreter.getModelResources()[0].getNEngines(), model_resources[0].getNEngines());
 }
 
 BOOST_AUTO_TEST_CASE(copy)
 {
-	ModelResources model_resources = { ModelDevice(0, 1) };
-	ModelInterpreterDefaultDevice<float> model_interpreter;
-	model_interpreter.setModelResources(model_resources);
-	std::vector<ModelInterpreterDefaultDevice<float>> model_interpreters;
-	model_interpreters.push_back(model_interpreter);
+  ModelResources model_resources = { ModelDevice(0, 1) };
+  ModelInterpreterDefaultDevice<float> model_interpreter;
+  model_interpreter.setModelResources(model_resources);
+  std::vector<ModelInterpreterDefaultDevice<float>> model_interpreters;
+  model_interpreters.push_back(model_interpreter);
 
-	BOOST_CHECK_EQUAL(model_interpreters[0].getModelResources()[0].getID(), model_resources[0].getID());
-	BOOST_CHECK_EQUAL(model_interpreters[0].getModelResources()[0].getNEngines(), model_resources[0].getNEngines());
+  BOOST_CHECK_EQUAL(model_interpreters[0].getModelResources()[0].getID(), model_resources[0].getID());
+  BOOST_CHECK_EQUAL(model_interpreters[0].getModelResources()[0].getNEngines(), model_resources[0].getNEngines());
 }
 
 BOOST_AUTO_TEST_CASE(comparison1)
 {
-	ModelResources model_resources = { ModelDevice(0, 1) };
-	ModelInterpreterDefaultDevice<float> model_interpreter(model_resources);
-	ModelInterpreterDefaultDevice<float> model_interpreter_test;
-	//BOOST_CHECK(model_interpreter != model_interpreter_test); // Need to fix '==' operator in `ModelInterpreter`
+  ModelResources model_resources = { ModelDevice(0, 1) };
+  ModelInterpreterDefaultDevice<float> model_interpreter(model_resources);
+  ModelInterpreterDefaultDevice<float> model_interpreter_test;
+  //BOOST_CHECK(model_interpreter != model_interpreter_test); // Need to fix '==' operator in `ModelInterpreter`
 
-	model_interpreter_test.setModelResources(model_resources);
-	BOOST_CHECK(model_interpreter == model_interpreter_test);
+  model_interpreter_test.setModelResources(model_resources);
+  BOOST_CHECK(model_interpreter == model_interpreter_test);
 }
 
 /**
  * Part 1 test suit for the Model class
- * 
+ *
  * The following test methods that are
  * required of a standard feed forward neural network
 */
 
 Model<float> model_getNextInactiveLayer = makeModelToy1();
-BOOST_AUTO_TEST_CASE(getNextInactiveLayerWOBiases) 
+BOOST_AUTO_TEST_CASE(getNextInactiveLayerWOBiases)
 {
   // Toy network: 1 hidden layer, fully connected, DAG
   // Model<float> model_FC_Sum = makeModelToy1();
-	ModelInterpreterDefaultDevice<float> model_interpreter;
+  ModelInterpreterDefaultDevice<float> model_interpreter;
 
   // initialize nodes
-	// NOTE: input and biases have been activated when the model was created
+  // NOTE: input and biases have been activated when the model was created
 
-	// get the next hidden layer
-	std::map<std::string, int> FP_operations_map;
-	std::vector<OperationList<float>> FP_operations_list;
-	model_interpreter.getNextInactiveLayerWOBiases(model_getNextInactiveLayer, FP_operations_map, FP_operations_list);
+  // get the next hidden layer
+  std::map<std::string, int> FP_operations_map;
+  std::vector<OperationList<float>> FP_operations_list;
+  model_interpreter.getNextInactiveLayerWOBiases(model_getNextInactiveLayer, FP_operations_map, FP_operations_list);
 
-	BOOST_CHECK_EQUAL(FP_operations_map.size(), 2);
-	BOOST_CHECK_EQUAL(FP_operations_map.at("2"), 0);
-	BOOST_CHECK_EQUAL(FP_operations_map.at("3"), 1);
-	BOOST_CHECK_EQUAL(FP_operations_list.size(), 2);
-	BOOST_CHECK_EQUAL(FP_operations_list[0].result.time_step, 0);
-	BOOST_CHECK_EQUAL(FP_operations_list[0].result.sink_node->getName(), "2");
-	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments.size(), 2);
-	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[0].time_step, 0);
-	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[0].source_node->getName(), "0");
-	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[0].weight->getName(), "0");
-	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[1].time_step, 0);
-	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[1].source_node->getName(), "1");
-	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[1].weight->getName(), "2");
-	BOOST_CHECK_EQUAL(FP_operations_list[1].result.time_step, 0);
-	BOOST_CHECK_EQUAL(FP_operations_list[1].result.sink_node->getName(), "3");
-	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments.size(), 2);
-	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[0].time_step, 0);
-	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[0].source_node->getName(), "0");
-	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[0].weight->getName(), "1");
-	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[1].time_step, 0);
-	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[1].source_node->getName(), "1");
-	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[1].weight->getName(), "3");
+  BOOST_CHECK_EQUAL(FP_operations_map.size(), 2);
+  BOOST_CHECK_EQUAL(FP_operations_map.at("2"), 0);
+  BOOST_CHECK_EQUAL(FP_operations_map.at("3"), 1);
+  BOOST_CHECK_EQUAL(FP_operations_list.size(), 2);
+  BOOST_CHECK_EQUAL(FP_operations_list[0].result.time_step, 0);
+  BOOST_CHECK_EQUAL(FP_operations_list[0].result.sink_node->getName(), "2");
+  BOOST_CHECK_EQUAL(FP_operations_list[0].arguments.size(), 2);
+  BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[0].time_step, 0);
+  BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[0].source_node->getName(), "0");
+  BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[0].weight->getName(), "0");
+  BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[1].time_step, 0);
+  BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[1].source_node->getName(), "1");
+  BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[1].weight->getName(), "2");
+  BOOST_CHECK_EQUAL(FP_operations_list[1].result.time_step, 0);
+  BOOST_CHECK_EQUAL(FP_operations_list[1].result.sink_node->getName(), "3");
+  BOOST_CHECK_EQUAL(FP_operations_list[1].arguments.size(), 2);
+  BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[0].time_step, 0);
+  BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[0].source_node->getName(), "0");
+  BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[0].weight->getName(), "1");
+  BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[1].time_step, 0);
+  BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[1].source_node->getName(), "1");
+  BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[1].weight->getName(), "3");
 }
 
 Model<float> model_getNextInactiveLayerBiases = makeModelToy1();
-BOOST_AUTO_TEST_CASE(getNextInactiveLayerBiases) 
+BOOST_AUTO_TEST_CASE(getNextInactiveLayerBiases)
 {
   // Toy network: 1 hidden layer, fully connected, DAG
   // Model<float> model_FC_Sum = makeModelToy1();
-	ModelInterpreterDefaultDevice<float> model_interpreter;
+  ModelInterpreterDefaultDevice<float> model_interpreter;
 
   // initialize nodes
-	// NOTE: input and biases have been activated when the model was created
+  // NOTE: input and biases have been activated when the model was created
 
-	// get the next hidden layer
-	std::map<std::string, int> FP_operations_map;
-	std::vector<OperationList<float>> FP_operations_list;
-	model_interpreter.getNextInactiveLayerWOBiases(model_getNextInactiveLayerBiases, FP_operations_map, FP_operations_list);
+  // get the next hidden layer
+  std::map<std::string, int> FP_operations_map;
+  std::vector<OperationList<float>> FP_operations_list;
+  model_interpreter.getNextInactiveLayerWOBiases(model_getNextInactiveLayerBiases, FP_operations_map, FP_operations_list);
 
-	std::vector<std::string> sink_nodes_with_biases2;
-	model_interpreter.getNextInactiveLayerBiases(model_getNextInactiveLayerBiases, FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
+  std::vector<std::string> sink_nodes_with_biases2;
+  model_interpreter.getNextInactiveLayerBiases(model_getNextInactiveLayerBiases, FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
 
-	BOOST_CHECK_EQUAL(FP_operations_map.size(), 2);
-	BOOST_CHECK_EQUAL(FP_operations_map.at("2"), 0);
-	BOOST_CHECK_EQUAL(FP_operations_map.at("3"), 1);
-	BOOST_CHECK_EQUAL(FP_operations_list.size(), 2);
-	BOOST_CHECK_EQUAL(FP_operations_list[0].result.time_step, 0);
-	BOOST_CHECK_EQUAL(FP_operations_list[0].result.sink_node->getName(), "2");
-	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments.size(), 3);
-	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[0].time_step, 0);
-	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[0].source_node->getName(), "0");
-	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[0].weight->getName(), "0");
-	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[1].time_step, 0);
-	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[1].source_node->getName(), "1");
-	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[1].weight->getName(), "2");
-	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[2].time_step, 0);
-	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[2].source_node->getName(), "6");
-	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[2].weight->getName(), "4");
-	BOOST_CHECK_EQUAL(FP_operations_list[1].result.time_step, 0);
-	BOOST_CHECK_EQUAL(FP_operations_list[1].result.sink_node->getName(), "3");
-	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments.size(), 3);
-	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[0].time_step, 0);
-	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[0].source_node->getName(), "0");
-	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[0].weight->getName(), "1");
-	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[1].time_step, 0);
-	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[1].source_node->getName(), "1");
-	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[1].weight->getName(), "3");
-	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[2].time_step, 0);
-	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[2].source_node->getName(), "6");
-	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[2].weight->getName(), "5");
-	BOOST_CHECK_EQUAL(sink_nodes_with_biases2.size(), 2);
-	BOOST_CHECK_EQUAL(sink_nodes_with_biases2[0], "2");
-	BOOST_CHECK_EQUAL(sink_nodes_with_biases2[1], "3");
+  BOOST_CHECK_EQUAL(FP_operations_map.size(), 2);
+  BOOST_CHECK_EQUAL(FP_operations_map.at("2"), 0);
+  BOOST_CHECK_EQUAL(FP_operations_map.at("3"), 1);
+  BOOST_CHECK_EQUAL(FP_operations_list.size(), 2);
+  BOOST_CHECK_EQUAL(FP_operations_list[0].result.time_step, 0);
+  BOOST_CHECK_EQUAL(FP_operations_list[0].result.sink_node->getName(), "2");
+  BOOST_CHECK_EQUAL(FP_operations_list[0].arguments.size(), 3);
+  BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[0].time_step, 0);
+  BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[0].source_node->getName(), "0");
+  BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[0].weight->getName(), "0");
+  BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[1].time_step, 0);
+  BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[1].source_node->getName(), "1");
+  BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[1].weight->getName(), "2");
+  BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[2].time_step, 0);
+  BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[2].source_node->getName(), "6");
+  BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[2].weight->getName(), "4");
+  BOOST_CHECK_EQUAL(FP_operations_list[1].result.time_step, 0);
+  BOOST_CHECK_EQUAL(FP_operations_list[1].result.sink_node->getName(), "3");
+  BOOST_CHECK_EQUAL(FP_operations_list[1].arguments.size(), 3);
+  BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[0].time_step, 0);
+  BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[0].source_node->getName(), "0");
+  BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[0].weight->getName(), "1");
+  BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[1].time_step, 0);
+  BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[1].source_node->getName(), "1");
+  BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[1].weight->getName(), "3");
+  BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[2].time_step, 0);
+  BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[2].source_node->getName(), "6");
+  BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[2].weight->getName(), "5");
+  BOOST_CHECK_EQUAL(sink_nodes_with_biases2.size(), 2);
+  BOOST_CHECK_EQUAL(sink_nodes_with_biases2[0], "2");
+  BOOST_CHECK_EQUAL(sink_nodes_with_biases2[1], "3");
 }
 
 Model<float> model_getNextInactiveLayerCycles = makeModelToy1();
 BOOST_AUTO_TEST_CASE(getNextInactiveLayerCycles)
 {
-	// Toy network: 1 hidden layer, fully connected, DAG
-	// Model<float> model_FC_Sum = makeModelToy1();
-	ModelInterpreterDefaultDevice<float> model_interpreter;
+  // Toy network: 1 hidden layer, fully connected, DAG
+  // Model<float> model_FC_Sum = makeModelToy1();
+  ModelInterpreterDefaultDevice<float> model_interpreter;
 
-	// initialize nodes
-	// NOTE: input and biases have been activated when the model was created
+  // initialize nodes
+  // NOTE: input and biases have been activated when the model was created
 
-	// get the next hidden layer
-	std::map<std::string, int> FP_operations_map;
-	std::vector<OperationList<float>> FP_operations_list;
-	model_interpreter.getNextInactiveLayerWOBiases(model_getNextInactiveLayerCycles, FP_operations_map, FP_operations_list);
+  // get the next hidden layer
+  std::map<std::string, int> FP_operations_map;
+  std::vector<OperationList<float>> FP_operations_list;
+  model_interpreter.getNextInactiveLayerWOBiases(model_getNextInactiveLayerCycles, FP_operations_map, FP_operations_list);
 
-	std::vector<std::string> sink_nodes_with_biases2;
-	model_interpreter.getNextInactiveLayerBiases(model_getNextInactiveLayerCycles, FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
+  std::vector<std::string> sink_nodes_with_biases2;
+  model_interpreter.getNextInactiveLayerBiases(model_getNextInactiveLayerCycles, FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
 
-	std::set<std::string> sink_nodes_with_cycles;
-	model_interpreter.getNextInactiveLayerCycles(model_getNextInactiveLayerCycles, FP_operations_map, FP_operations_list, sink_nodes_with_cycles);
+  std::set<std::string> sink_nodes_with_cycles;
+  model_interpreter.getNextInactiveLayerCycles(model_getNextInactiveLayerCycles, FP_operations_map, FP_operations_list, sink_nodes_with_cycles);
 
-	BOOST_CHECK_EQUAL(FP_operations_map.size(), 2);
-	BOOST_CHECK_EQUAL(FP_operations_map.at("2"), 0);
-	BOOST_CHECK_EQUAL(FP_operations_map.at("3"), 1);
-	BOOST_CHECK_EQUAL(FP_operations_list.size(), 2);
-	BOOST_CHECK_EQUAL(FP_operations_list[0].result.time_step, 0);
-	BOOST_CHECK_EQUAL(FP_operations_list[0].result.sink_node->getName(), "2");
-	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments.size(), 3);
-	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[0].time_step, 0);
-	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[0].source_node->getName(), "0");
-	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[0].weight->getName(), "0");
-	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[1].time_step, 0);
-	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[1].source_node->getName(), "1");
-	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[1].weight->getName(), "2");
-	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[2].time_step, 0);
-	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[2].source_node->getName(), "6");
-	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[2].weight->getName(), "4");
-	BOOST_CHECK_EQUAL(FP_operations_list[1].result.time_step, 0);
-	BOOST_CHECK_EQUAL(FP_operations_list[1].result.sink_node->getName(), "3");
-	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments.size(), 3);
-	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[0].time_step, 0);
-	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[0].source_node->getName(), "0");
-	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[0].weight->getName(), "1");
-	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[1].time_step, 0);
-	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[1].source_node->getName(), "1");
-	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[1].weight->getName(), "3");
-	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[2].time_step, 0);
-	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[2].source_node->getName(), "6");
-	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[2].weight->getName(), "5");
-	BOOST_CHECK_EQUAL(sink_nodes_with_cycles.size(), 0);
+  BOOST_CHECK_EQUAL(FP_operations_map.size(), 2);
+  BOOST_CHECK_EQUAL(FP_operations_map.at("2"), 0);
+  BOOST_CHECK_EQUAL(FP_operations_map.at("3"), 1);
+  BOOST_CHECK_EQUAL(FP_operations_list.size(), 2);
+  BOOST_CHECK_EQUAL(FP_operations_list[0].result.time_step, 0);
+  BOOST_CHECK_EQUAL(FP_operations_list[0].result.sink_node->getName(), "2");
+  BOOST_CHECK_EQUAL(FP_operations_list[0].arguments.size(), 3);
+  BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[0].time_step, 0);
+  BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[0].source_node->getName(), "0");
+  BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[0].weight->getName(), "0");
+  BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[1].time_step, 0);
+  BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[1].source_node->getName(), "1");
+  BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[1].weight->getName(), "2");
+  BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[2].time_step, 0);
+  BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[2].source_node->getName(), "6");
+  BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[2].weight->getName(), "4");
+  BOOST_CHECK_EQUAL(FP_operations_list[1].result.time_step, 0);
+  BOOST_CHECK_EQUAL(FP_operations_list[1].result.sink_node->getName(), "3");
+  BOOST_CHECK_EQUAL(FP_operations_list[1].arguments.size(), 3);
+  BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[0].time_step, 0);
+  BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[0].source_node->getName(), "0");
+  BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[0].weight->getName(), "1");
+  BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[1].time_step, 0);
+  BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[1].source_node->getName(), "1");
+  BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[1].weight->getName(), "3");
+  BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[2].time_step, 0);
+  BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[2].source_node->getName(), "6");
+  BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[2].weight->getName(), "5");
+  BOOST_CHECK_EQUAL(sink_nodes_with_cycles.size(), 0);
 }
 
 Model<float> model_pruneInactiveLayerCycles = makeModelToy1();
 BOOST_AUTO_TEST_CASE(pruneInactiveLayerCycles)
 {
-	// Toy network: 1 hidden layer, fully connected, DAG
-	// Model<float> model_FC_Sum = makeModelToy1();
-	ModelInterpreterDefaultDevice<float> model_interpreter;
+  // Toy network: 1 hidden layer, fully connected, DAG
+  // Model<float> model_FC_Sum = makeModelToy1();
+  ModelInterpreterDefaultDevice<float> model_interpreter;
 
-	// initialize nodes
-	// NOTE: input and biases have been activated when the model was created
+  // initialize nodes
+  // NOTE: input and biases have been activated when the model was created
 
-	// get the next hidden layer
-	std::map<std::string, int> FP_operations_map;
-	std::vector<OperationList<float>> FP_operations_list;
-	model_interpreter.getNextInactiveLayerWOBiases(model_pruneInactiveLayerCycles, FP_operations_map, FP_operations_list);
+  // get the next hidden layer
+  std::map<std::string, int> FP_operations_map;
+  std::vector<OperationList<float>> FP_operations_list;
+  model_interpreter.getNextInactiveLayerWOBiases(model_pruneInactiveLayerCycles, FP_operations_map, FP_operations_list);
 
-	std::vector<std::string> sink_nodes_with_biases2;
-	model_interpreter.getNextInactiveLayerBiases(model_pruneInactiveLayerCycles, FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
+  std::vector<std::string> sink_nodes_with_biases2;
+  model_interpreter.getNextInactiveLayerBiases(model_pruneInactiveLayerCycles, FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
 
-	std::set<std::string> sink_nodes_with_cycles;
-	std::map<std::string, int> FP_operations_map_cycles = FP_operations_map;
-	std::vector<OperationList<float>> FP_operations_list_cycles = FP_operations_list;
-	model_interpreter.getNextInactiveLayerCycles(model_pruneInactiveLayerCycles, FP_operations_map_cycles, FP_operations_list_cycles, sink_nodes_with_cycles);
+  std::set<std::string> sink_nodes_with_cycles;
+  std::map<std::string, int> FP_operations_map_cycles = FP_operations_map;
+  std::vector<OperationList<float>> FP_operations_list_cycles = FP_operations_list;
+  model_interpreter.getNextInactiveLayerCycles(model_pruneInactiveLayerCycles, FP_operations_map_cycles, FP_operations_list_cycles, sink_nodes_with_cycles);
 
-	model_interpreter.pruneInactiveLayerCycles(model_pruneInactiveLayerCycles, FP_operations_map, FP_operations_map_cycles, FP_operations_list, FP_operations_list_cycles, sink_nodes_with_cycles);
+  model_interpreter.pruneInactiveLayerCycles(model_pruneInactiveLayerCycles, FP_operations_map, FP_operations_map_cycles, FP_operations_list, FP_operations_list_cycles, sink_nodes_with_cycles);
 
-	BOOST_CHECK_EQUAL(FP_operations_map.size(), 2);
-	BOOST_CHECK_EQUAL(FP_operations_map.at("2"), 0);
-	BOOST_CHECK_EQUAL(FP_operations_map.at("3"), 1);
-	BOOST_CHECK_EQUAL(FP_operations_list.size(), 2);
-	BOOST_CHECK_EQUAL(FP_operations_list[0].result.time_step, 0);
-	BOOST_CHECK_EQUAL(FP_operations_list[0].result.sink_node->getName(), "2");
-	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments.size(), 3);
-	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[0].time_step, 0);
-	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[0].source_node->getName(), "0");
-	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[0].weight->getName(), "0");
-	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[1].time_step, 0);
-	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[1].source_node->getName(), "1");
-	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[1].weight->getName(), "2");
-	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[2].time_step, 0);
-	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[2].source_node->getName(), "6");
-	BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[2].weight->getName(), "4");
-	BOOST_CHECK_EQUAL(FP_operations_list[1].result.time_step, 0);
-	BOOST_CHECK_EQUAL(FP_operations_list[1].result.sink_node->getName(), "3");
-	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments.size(), 3);
-	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[0].time_step, 0);
-	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[0].source_node->getName(), "0");
-	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[0].weight->getName(), "1");
-	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[1].time_step, 0);
-	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[1].source_node->getName(), "1");
-	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[1].weight->getName(), "3");
-	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[2].time_step, 0);
-	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[2].source_node->getName(), "6");
-	BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[2].weight->getName(), "5");
+  BOOST_CHECK_EQUAL(FP_operations_map.size(), 2);
+  BOOST_CHECK_EQUAL(FP_operations_map.at("2"), 0);
+  BOOST_CHECK_EQUAL(FP_operations_map.at("3"), 1);
+  BOOST_CHECK_EQUAL(FP_operations_list.size(), 2);
+  BOOST_CHECK_EQUAL(FP_operations_list[0].result.time_step, 0);
+  BOOST_CHECK_EQUAL(FP_operations_list[0].result.sink_node->getName(), "2");
+  BOOST_CHECK_EQUAL(FP_operations_list[0].arguments.size(), 3);
+  BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[0].time_step, 0);
+  BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[0].source_node->getName(), "0");
+  BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[0].weight->getName(), "0");
+  BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[1].time_step, 0);
+  BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[1].source_node->getName(), "1");
+  BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[1].weight->getName(), "2");
+  BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[2].time_step, 0);
+  BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[2].source_node->getName(), "6");
+  BOOST_CHECK_EQUAL(FP_operations_list[0].arguments[2].weight->getName(), "4");
+  BOOST_CHECK_EQUAL(FP_operations_list[1].result.time_step, 0);
+  BOOST_CHECK_EQUAL(FP_operations_list[1].result.sink_node->getName(), "3");
+  BOOST_CHECK_EQUAL(FP_operations_list[1].arguments.size(), 3);
+  BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[0].time_step, 0);
+  BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[0].source_node->getName(), "0");
+  BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[0].weight->getName(), "1");
+  BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[1].time_step, 0);
+  BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[1].source_node->getName(), "1");
+  BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[1].weight->getName(), "3");
+  BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[2].time_step, 0);
+  BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[2].source_node->getName(), "6");
+  BOOST_CHECK_EQUAL(FP_operations_list[1].arguments[2].weight->getName(), "5");
 }
 
 Model<float> model_expandAllForwardPropogationOperations = makeModelToy1();
 BOOST_AUTO_TEST_CASE(expandAllForwardPropogationOperations)
 {
-	ModelInterpreterDefaultDevice<float> model_interpreter;
+  ModelInterpreterDefaultDevice<float> model_interpreter;
 
-	// initialize nodes
-	// NOTE: input and biases have been activated when the model was created
+  // initialize nodes
+  // NOTE: input and biases have been activated when the model was created
 
-	std::map<std::string, int> FP_operations_map;
-	std::vector<OperationList<float>> FP_operations_list;
-	model_interpreter.getNextInactiveLayerWOBiases(model_expandAllForwardPropogationOperations, FP_operations_map, FP_operations_list);
+  std::map<std::string, int> FP_operations_map;
+  std::vector<OperationList<float>> FP_operations_list;
+  model_interpreter.getNextInactiveLayerWOBiases(model_expandAllForwardPropogationOperations, FP_operations_map, FP_operations_list);
 
-	std::vector<std::string> sink_nodes_with_biases2;
-	model_interpreter.getNextInactiveLayerBiases(model_expandAllForwardPropogationOperations, FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
+  std::vector<std::string> sink_nodes_with_biases2;
+  model_interpreter.getNextInactiveLayerBiases(model_expandAllForwardPropogationOperations, FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
 
-	std::vector<OperationList<float>> FP_operations_expanded;
-	model_interpreter.expandAllForwardPropogationOperations(FP_operations_list, FP_operations_expanded);
+  std::vector<OperationList<float>> FP_operations_expanded;
+  model_interpreter.expandAllForwardPropogationOperations(FP_operations_list, FP_operations_expanded);
 
-	BOOST_CHECK_EQUAL(FP_operations_expanded.size(), 6);
-	BOOST_CHECK_EQUAL(FP_operations_expanded[0].result.time_step, 0);
-	BOOST_CHECK_EQUAL(FP_operations_expanded[0].result.sink_node->getName(), "2");
-	BOOST_CHECK_EQUAL(FP_operations_expanded[0].arguments.size(), 1);
-	BOOST_CHECK_EQUAL(FP_operations_expanded[0].arguments[0].time_step, 0);
-	BOOST_CHECK_EQUAL(FP_operations_expanded[0].arguments[0].source_node->getName(), "0");
-	BOOST_CHECK_EQUAL(FP_operations_expanded[0].arguments[0].weight->getName(), "0");
+  BOOST_CHECK_EQUAL(FP_operations_expanded.size(), 6);
+  BOOST_CHECK_EQUAL(FP_operations_expanded[0].result.time_step, 0);
+  BOOST_CHECK_EQUAL(FP_operations_expanded[0].result.sink_node->getName(), "2");
+  BOOST_CHECK_EQUAL(FP_operations_expanded[0].arguments.size(), 1);
+  BOOST_CHECK_EQUAL(FP_operations_expanded[0].arguments[0].time_step, 0);
+  BOOST_CHECK_EQUAL(FP_operations_expanded[0].arguments[0].source_node->getName(), "0");
+  BOOST_CHECK_EQUAL(FP_operations_expanded[0].arguments[0].weight->getName(), "0");
 
   BOOST_CHECK_EQUAL(FP_operations_expanded[1].result.time_step, 0);
   BOOST_CHECK_EQUAL(FP_operations_expanded[1].result.sink_node->getName(), "2");
   BOOST_CHECK_EQUAL(FP_operations_expanded[1].arguments.size(), 1);
-	BOOST_CHECK_EQUAL(FP_operations_expanded[1].arguments[0].time_step, 0);
-	BOOST_CHECK_EQUAL(FP_operations_expanded[1].arguments[0].source_node->getName(), "1");
-	BOOST_CHECK_EQUAL(FP_operations_expanded[1].arguments[0].weight->getName(), "2");
+  BOOST_CHECK_EQUAL(FP_operations_expanded[1].arguments[0].time_step, 0);
+  BOOST_CHECK_EQUAL(FP_operations_expanded[1].arguments[0].source_node->getName(), "1");
+  BOOST_CHECK_EQUAL(FP_operations_expanded[1].arguments[0].weight->getName(), "2");
 
   BOOST_CHECK_EQUAL(FP_operations_expanded[2].result.time_step, 0);
   BOOST_CHECK_EQUAL(FP_operations_expanded[2].result.sink_node->getName(), "2");
   BOOST_CHECK_EQUAL(FP_operations_expanded[2].arguments.size(), 1);
-	BOOST_CHECK_EQUAL(FP_operations_expanded[2].arguments[0].time_step, 0);
-	BOOST_CHECK_EQUAL(FP_operations_expanded[2].arguments[0].source_node->getName(), "6");
-	BOOST_CHECK_EQUAL(FP_operations_expanded[2].arguments[0].weight->getName(), "4");
+  BOOST_CHECK_EQUAL(FP_operations_expanded[2].arguments[0].time_step, 0);
+  BOOST_CHECK_EQUAL(FP_operations_expanded[2].arguments[0].source_node->getName(), "6");
+  BOOST_CHECK_EQUAL(FP_operations_expanded[2].arguments[0].weight->getName(), "4");
 
-	BOOST_CHECK_EQUAL(FP_operations_expanded[3].result.time_step, 0);
-	BOOST_CHECK_EQUAL(FP_operations_expanded[3].result.sink_node->getName(), "3");
-	BOOST_CHECK_EQUAL(FP_operations_expanded[3].arguments.size(), 1);
-	BOOST_CHECK_EQUAL(FP_operations_expanded[3].arguments[0].time_step, 0);
-	BOOST_CHECK_EQUAL(FP_operations_expanded[3].arguments[0].source_node->getName(), "0");
-	BOOST_CHECK_EQUAL(FP_operations_expanded[3].arguments[0].weight->getName(), "1");
+  BOOST_CHECK_EQUAL(FP_operations_expanded[3].result.time_step, 0);
+  BOOST_CHECK_EQUAL(FP_operations_expanded[3].result.sink_node->getName(), "3");
+  BOOST_CHECK_EQUAL(FP_operations_expanded[3].arguments.size(), 1);
+  BOOST_CHECK_EQUAL(FP_operations_expanded[3].arguments[0].time_step, 0);
+  BOOST_CHECK_EQUAL(FP_operations_expanded[3].arguments[0].source_node->getName(), "0");
+  BOOST_CHECK_EQUAL(FP_operations_expanded[3].arguments[0].weight->getName(), "1");
 
   BOOST_CHECK_EQUAL(FP_operations_expanded[4].result.time_step, 0);
   BOOST_CHECK_EQUAL(FP_operations_expanded[4].result.sink_node->getName(), "3");
   BOOST_CHECK_EQUAL(FP_operations_expanded[4].arguments.size(), 1);
-	BOOST_CHECK_EQUAL(FP_operations_expanded[4].arguments[0].time_step, 0);
-	BOOST_CHECK_EQUAL(FP_operations_expanded[4].arguments[0].source_node->getName(), "1");
-	BOOST_CHECK_EQUAL(FP_operations_expanded[4].arguments[0].weight->getName(), "3");
+  BOOST_CHECK_EQUAL(FP_operations_expanded[4].arguments[0].time_step, 0);
+  BOOST_CHECK_EQUAL(FP_operations_expanded[4].arguments[0].source_node->getName(), "1");
+  BOOST_CHECK_EQUAL(FP_operations_expanded[4].arguments[0].weight->getName(), "3");
 
   BOOST_CHECK_EQUAL(FP_operations_expanded[5].result.time_step, 0);
   BOOST_CHECK_EQUAL(FP_operations_expanded[5].result.sink_node->getName(), "3");
   BOOST_CHECK_EQUAL(FP_operations_expanded[5].arguments.size(), 1);
-	BOOST_CHECK_EQUAL(FP_operations_expanded[5].arguments[0].time_step, 0);
-	BOOST_CHECK_EQUAL(FP_operations_expanded[5].arguments[0].source_node->getName(), "6");
-	BOOST_CHECK_EQUAL(FP_operations_expanded[5].arguments[0].weight->getName(), "5");
+  BOOST_CHECK_EQUAL(FP_operations_expanded[5].arguments[0].time_step, 0);
+  BOOST_CHECK_EQUAL(FP_operations_expanded[5].arguments[0].source_node->getName(), "6");
+  BOOST_CHECK_EQUAL(FP_operations_expanded[5].arguments[0].weight->getName(), "5");
 }
 
 Model<float> model_getFPOpsOoO = makeModelToy1();
@@ -517,29 +517,29 @@ BOOST_AUTO_TEST_CASE(getFPOpsOoO)
 Model<float> model_getTensorOperations = makeModelToy1();
 BOOST_AUTO_TEST_CASE(getTensorOperations)
 {
-	ModelInterpreterDefaultDevice<float> model_interpreter;
+  ModelInterpreterDefaultDevice<float> model_interpreter;
 
-	// initialize nodes
-	// NOTE: input and biases have been activated when the model was created
+  // initialize nodes
+  // NOTE: input and biases have been activated when the model was created
 
-	std::map<std::string, int> FP_operations_map;
-	std::vector<OperationList<float>> FP_operations_list;
-	model_interpreter.getNextInactiveLayerWOBiases(model_getTensorOperations, FP_operations_map, FP_operations_list);
+  std::map<std::string, int> FP_operations_map;
+  std::vector<OperationList<float>> FP_operations_list;
+  model_interpreter.getNextInactiveLayerWOBiases(model_getTensorOperations, FP_operations_map, FP_operations_list);
 
-	std::vector<std::string> sink_nodes_with_biases2;
-	model_interpreter.getNextInactiveLayerBiases(model_getTensorOperations, FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
+  std::vector<std::string> sink_nodes_with_biases2;
+  model_interpreter.getNextInactiveLayerBiases(model_getTensorOperations, FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
 
-	std::vector<OperationList<float>> FP_operations_expanded;
-	model_interpreter.expandAllForwardPropogationOperations(FP_operations_list, FP_operations_expanded);
+  std::vector<OperationList<float>> FP_operations_expanded;
+  model_interpreter.expandAllForwardPropogationOperations(FP_operations_list, FP_operations_expanded);
 
-	std::set<std::string> identified_sink_nodes;
-	std::map<std::string, std::vector<int>> tensor_ops = model_interpreter.getTensorOperations(FP_operations_expanded, identified_sink_nodes, false);
+  std::set<std::string> identified_sink_nodes;
+  std::map<std::string, std::vector<int>> tensor_ops = model_interpreter.getTensorOperations(FP_operations_expanded, identified_sink_nodes, false);
 
-	BOOST_CHECK_EQUAL(identified_sink_nodes.size(), 6);
+  BOOST_CHECK_EQUAL(identified_sink_nodes.size(), 6);
   BOOST_CHECK_EQUAL(identified_sink_nodes.count("2/0"), 1);
-	BOOST_CHECK_EQUAL(identified_sink_nodes.count("2/1"), 1);
+  BOOST_CHECK_EQUAL(identified_sink_nodes.count("2/1"), 1);
   BOOST_CHECK_EQUAL(identified_sink_nodes.count("2/2"), 1);
-	BOOST_CHECK_EQUAL(identified_sink_nodes.count("3/3"), 1);
+  BOOST_CHECK_EQUAL(identified_sink_nodes.count("3/3"), 1);
   BOOST_CHECK_EQUAL(identified_sink_nodes.count("3/4"), 1);
   BOOST_CHECK_EQUAL(identified_sink_nodes.count("3/5"), 1);
   BOOST_CHECK_EQUAL(tensor_ops.size(), 1);
@@ -554,45 +554,45 @@ BOOST_AUTO_TEST_CASE(getTensorOperations)
 Model<float> model_getForwardPropogationLayerTensorDimensions = makeModelToy1();
 BOOST_AUTO_TEST_CASE(getForwardPropogationLayerTensorDimensions)
 {
-	ModelInterpreterDefaultDevice<float> model_interpreter;
+  ModelInterpreterDefaultDevice<float> model_interpreter;
 
-	// initialize nodes
-	// NOTE: input and biases have been activated when the model was created
+  // initialize nodes
+  // NOTE: input and biases have been activated when the model was created
 
-	// change the bias weights to shared
-	model_getForwardPropogationLayerTensorDimensions.links_.at("5")->setWeightName("4");
+  // change the bias weights to shared
+  model_getForwardPropogationLayerTensorDimensions.links_.at("5")->setWeightName("4");
 
   // Check iteration one with no source/sink/weight tensors already allocated
-	std::map<std::string, int> FP_operations_map;
-	std::vector<OperationList<float>> FP_operations_list;
-	model_interpreter.getNextInactiveLayerWOBiases(model_getForwardPropogationLayerTensorDimensions, FP_operations_map, FP_operations_list);
+  std::map<std::string, int> FP_operations_map;
+  std::vector<OperationList<float>> FP_operations_list;
+  model_interpreter.getNextInactiveLayerWOBiases(model_getForwardPropogationLayerTensorDimensions, FP_operations_map, FP_operations_list);
 
-	std::vector<std::string> sink_nodes_with_biases2;
-	model_interpreter.getNextInactiveLayerBiases(model_getForwardPropogationLayerTensorDimensions, FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
+  std::vector<std::string> sink_nodes_with_biases2;
+  model_interpreter.getNextInactiveLayerBiases(model_getForwardPropogationLayerTensorDimensions, FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
 
-	std::vector<OperationList<float>> FP_operations_expanded;
-	model_interpreter.expandAllForwardPropogationOperations(FP_operations_list, FP_operations_expanded);
+  std::vector<OperationList<float>> FP_operations_expanded;
+  model_interpreter.expandAllForwardPropogationOperations(FP_operations_list, FP_operations_expanded);
 
-	std::set<std::string> identified_sink_nodes;
-	std::map<std::string, std::vector<int>> tensor_ops = model_interpreter.getTensorOperations(FP_operations_expanded, identified_sink_nodes, false);
-  
-  std::map<int, int> max_layer_sizes; 
+  std::set<std::string> identified_sink_nodes;
+  std::map<std::string, std::vector<int>> tensor_ops = model_interpreter.getTensorOperations(FP_operations_expanded, identified_sink_nodes, false);
+
+  std::map<int, int> max_layer_sizes;
   std::map<std::string, int> layer_name_pos;
-	std::vector<int> source_layer_sizes, sink_layer_sizes;
-	std::vector<std::vector<std::pair<int, int>>> weight_indices;
-	std::vector<std::map<std::string, std::vector<std::pair<int, int>>>> shared_weight_indices;
-	std::vector<std::vector<float>> weight_values;
-	std::vector<bool> make_source_tensors, make_sink_tensors, make_weight_tensors;
+  std::vector<int> source_layer_sizes, sink_layer_sizes;
+  std::vector<std::vector<std::pair<int, int>>> weight_indices;
+  std::vector<std::map<std::string, std::vector<std::pair<int, int>>>> shared_weight_indices;
+  std::vector<std::vector<float>> weight_values;
+  std::vector<bool> make_source_tensors, make_sink_tensors, make_weight_tensors;
   std::vector<int> source_layer_pos, sink_layer_pos;
   int tensor_layers_cnt = 0;
   int weight_layers_cnt = 0;
-	model_interpreter.getForwardPropogationLayerTensorDimensions(FP_operations_expanded, tensor_ops, source_layer_sizes, sink_layer_sizes, weight_indices, shared_weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors,
+  model_interpreter.getForwardPropogationLayerTensorDimensions(FP_operations_expanded, tensor_ops, source_layer_sizes, sink_layer_sizes, weight_indices, shared_weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors,
     source_layer_pos, sink_layer_pos, max_layer_sizes, layer_name_pos, tensor_layers_cnt, weight_layers_cnt);
 
-	BOOST_CHECK_EQUAL(source_layer_sizes.size(), 1);
-	BOOST_CHECK_EQUAL(source_layer_sizes[0], 3);
-	BOOST_CHECK_EQUAL(sink_layer_sizes.size(), 1);
-	BOOST_CHECK_EQUAL(sink_layer_sizes[0], 2);
+  BOOST_CHECK_EQUAL(source_layer_sizes.size(), 1);
+  BOOST_CHECK_EQUAL(source_layer_sizes[0], 3);
+  BOOST_CHECK_EQUAL(sink_layer_sizes.size(), 1);
+  BOOST_CHECK_EQUAL(sink_layer_sizes[0], 2);
 
   BOOST_CHECK_EQUAL(source_layer_pos.size(), 1);
   BOOST_CHECK_EQUAL(source_layer_pos.at(0), 1);
@@ -605,75 +605,75 @@ BOOST_AUTO_TEST_CASE(getForwardPropogationLayerTensorDimensions)
 
   BOOST_CHECK_EQUAL(layer_name_pos.size(), 0);
 
-	BOOST_CHECK_EQUAL(weight_indices.size(), 1);
-	BOOST_CHECK_EQUAL(weight_indices[0].size(), 6);
-	std::vector<std::pair<int, int>> weight_indices_test = {
-		std::make_pair(0,0),std::make_pair(1,0),std::make_pair(2,0),std::make_pair(0,1),
-		std::make_pair(1,1),std::make_pair(2,1)
-	};
-	for (int i = 0; i < weight_indices_test.size(); ++i) {
-		BOOST_CHECK_EQUAL(weight_indices[0][i].first, weight_indices_test[i].first);
-		BOOST_CHECK_EQUAL(weight_indices[0][i].second, weight_indices_test[i].second);
-	}
+  BOOST_CHECK_EQUAL(weight_indices.size(), 1);
+  BOOST_CHECK_EQUAL(weight_indices[0].size(), 6);
+  std::vector<std::pair<int, int>> weight_indices_test = {
+    std::make_pair(0,0),std::make_pair(1,0),std::make_pair(2,0),std::make_pair(0,1),
+    std::make_pair(1,1),std::make_pair(2,1)
+  };
+  for (int i = 0; i < weight_indices_test.size(); ++i) {
+    BOOST_CHECK_EQUAL(weight_indices[0][i].first, weight_indices_test[i].first);
+    BOOST_CHECK_EQUAL(weight_indices[0][i].second, weight_indices_test[i].second);
+  }
 
-	BOOST_CHECK_EQUAL(shared_weight_indices.size(), 1);
-	BOOST_CHECK_EQUAL(shared_weight_indices[0].size(), 1);
-	std::map<std::string, std::vector<std::pair<int, int>>> shared_weight_indices_test = {
-		{"4", {std::make_pair(2,1), std::make_pair(2,0)}}
-	};
-	for (int i = 0; i < shared_weight_indices_test.at("4").size(); ++i) {
-		BOOST_CHECK_EQUAL(shared_weight_indices[0].at("4")[i].first, shared_weight_indices_test.at("4")[i].first);
-		BOOST_CHECK_EQUAL(shared_weight_indices[0].at("4")[i].second, shared_weight_indices_test.at("4")[i].second);
-	}
+  BOOST_CHECK_EQUAL(shared_weight_indices.size(), 1);
+  BOOST_CHECK_EQUAL(shared_weight_indices[0].size(), 1);
+  std::map<std::string, std::vector<std::pair<int, int>>> shared_weight_indices_test = {
+    {"4", {std::make_pair(2,1), std::make_pair(2,0)}}
+  };
+  for (int i = 0; i < shared_weight_indices_test.at("4").size(); ++i) {
+    BOOST_CHECK_EQUAL(shared_weight_indices[0].at("4")[i].first, shared_weight_indices_test.at("4")[i].first);
+    BOOST_CHECK_EQUAL(shared_weight_indices[0].at("4")[i].second, shared_weight_indices_test.at("4")[i].second);
+  }
 
-	BOOST_CHECK_EQUAL(weight_values.size(), 1);
-	BOOST_CHECK_EQUAL(weight_values[0].size(), 6);
-	std::vector<float> weight_values_test = { 1, 1, 1, 1, 1, 1 };
-	for (int i = 0; i < weight_values_test.size(); ++i) {
-		BOOST_CHECK_EQUAL(weight_values[0][i], weight_values_test[i]);
-	}
+  BOOST_CHECK_EQUAL(weight_values.size(), 1);
+  BOOST_CHECK_EQUAL(weight_values[0].size(), 6);
+  std::vector<float> weight_values_test = { 1, 1, 1, 1, 1, 1 };
+  for (int i = 0; i < weight_values_test.size(); ++i) {
+    BOOST_CHECK_EQUAL(weight_values[0][i], weight_values_test[i]);
+  }
 
-	BOOST_CHECK_EQUAL(make_source_tensors.size(), 1);
-	BOOST_CHECK(make_source_tensors[0]);
-	BOOST_CHECK_EQUAL(make_sink_tensors.size(), 1);
-	BOOST_CHECK(make_sink_tensors[0]);
-	BOOST_CHECK_EQUAL(make_weight_tensors.size(), 1);
-	BOOST_CHECK(make_weight_tensors[0]);
+  BOOST_CHECK_EQUAL(make_source_tensors.size(), 1);
+  BOOST_CHECK(make_source_tensors[0]);
+  BOOST_CHECK_EQUAL(make_sink_tensors.size(), 1);
+  BOOST_CHECK(make_sink_tensors[0]);
+  BOOST_CHECK_EQUAL(make_weight_tensors.size(), 1);
+  BOOST_CHECK(make_weight_tensors[0]);
 
-	// Check iteration two
-	model_getForwardPropogationLayerTensorDimensions.getNodesMap().at("2")->setStatus(NodeStatus::activated);
-	model_getForwardPropogationLayerTensorDimensions.getNodesMap().at("3")->setStatus(NodeStatus::activated);
-	FP_operations_map.clear();
-	FP_operations_list.clear();
-	model_interpreter.getNextInactiveLayerWOBiases(model_getForwardPropogationLayerTensorDimensions, FP_operations_map, FP_operations_list);
+  // Check iteration two
+  model_getForwardPropogationLayerTensorDimensions.getNodesMap().at("2")->setStatus(NodeStatus::activated);
+  model_getForwardPropogationLayerTensorDimensions.getNodesMap().at("3")->setStatus(NodeStatus::activated);
+  FP_operations_map.clear();
+  FP_operations_list.clear();
+  model_interpreter.getNextInactiveLayerWOBiases(model_getForwardPropogationLayerTensorDimensions, FP_operations_map, FP_operations_list);
 
-	sink_nodes_with_biases2.clear();
-	model_interpreter.getNextInactiveLayerBiases(model_getForwardPropogationLayerTensorDimensions, FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
+  sink_nodes_with_biases2.clear();
+  model_interpreter.getNextInactiveLayerBiases(model_getForwardPropogationLayerTensorDimensions, FP_operations_map, FP_operations_list, sink_nodes_with_biases2);
 
-	FP_operations_expanded.clear();
-	model_interpreter.expandAllForwardPropogationOperations(FP_operations_list, FP_operations_expanded);
+  FP_operations_expanded.clear();
+  model_interpreter.expandAllForwardPropogationOperations(FP_operations_list, FP_operations_expanded);
 
-	identified_sink_nodes.clear();
-	tensor_ops = model_interpreter.getTensorOperations(FP_operations_expanded, identified_sink_nodes, false);
+  identified_sink_nodes.clear();
+  tensor_ops = model_interpreter.getTensorOperations(FP_operations_expanded, identified_sink_nodes, false);
 
   max_layer_sizes.clear();
   layer_name_pos.clear();
   source_layer_sizes.clear(); sink_layer_sizes.clear();
-	weight_indices.clear();
-	shared_weight_indices.clear();
-	weight_values.clear();
+  weight_indices.clear();
+  shared_weight_indices.clear();
+  weight_values.clear();
   make_source_tensors.clear(); make_sink_tensors.clear(); make_weight_tensors.clear();
   source_layer_pos.clear(); sink_layer_pos.clear();
   tensor_layers_cnt = 0; weight_layers_cnt = 0;
-	model_interpreter.getForwardPropogationLayerTensorDimensions(FP_operations_expanded, tensor_ops, source_layer_sizes, sink_layer_sizes, weight_indices, shared_weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors,
+  model_interpreter.getForwardPropogationLayerTensorDimensions(FP_operations_expanded, tensor_ops, source_layer_sizes, sink_layer_sizes, weight_indices, shared_weight_indices, weight_values, make_source_tensors, make_sink_tensors, make_weight_tensors,
     source_layer_pos, sink_layer_pos, max_layer_sizes, layer_name_pos, tensor_layers_cnt, weight_layers_cnt);
 
-	BOOST_CHECK_EQUAL(source_layer_sizes.size(), 2);
-	BOOST_CHECK_EQUAL(source_layer_sizes[0], 2);
-	BOOST_CHECK_EQUAL(source_layer_sizes[1], 1);
-	BOOST_CHECK_EQUAL(sink_layer_sizes.size(), 2);
-	BOOST_CHECK_EQUAL(sink_layer_sizes[0], 2);
-	BOOST_CHECK_EQUAL(sink_layer_sizes[1], 2);
+  BOOST_CHECK_EQUAL(source_layer_sizes.size(), 2);
+  BOOST_CHECK_EQUAL(source_layer_sizes[0], 2);
+  BOOST_CHECK_EQUAL(source_layer_sizes[1], 1);
+  BOOST_CHECK_EQUAL(sink_layer_sizes.size(), 2);
+  BOOST_CHECK_EQUAL(sink_layer_sizes[0], 2);
+  BOOST_CHECK_EQUAL(sink_layer_sizes[1], 2);
 
   BOOST_CHECK_EQUAL(source_layer_pos.size(), 2);
   BOOST_CHECK_EQUAL(source_layer_pos.at(0), 0);
@@ -688,43 +688,43 @@ BOOST_AUTO_TEST_CASE(getForwardPropogationLayerTensorDimensions)
 
   BOOST_CHECK_EQUAL(layer_name_pos.size(), 0);
 
-	BOOST_CHECK_EQUAL(weight_indices.size(), 2);
-	BOOST_CHECK_EQUAL(weight_indices[0].size(), 4);
-	BOOST_CHECK_EQUAL(weight_indices[1].size(), 2);
-	std::vector<std::vector<std::pair<int,int>>> weight_indices_test2 = {
+  BOOST_CHECK_EQUAL(weight_indices.size(), 2);
+  BOOST_CHECK_EQUAL(weight_indices[0].size(), 4);
+  BOOST_CHECK_EQUAL(weight_indices[1].size(), 2);
+  std::vector<std::vector<std::pair<int, int>>> weight_indices_test2 = {
     {std::make_pair(0,0),std::make_pair(1,0),	std::make_pair(0,1),std::make_pair(1,1)},
-		{std::make_pair(0,0),std::make_pair(0,1)}
-	};
-	for (int tensor_iter = 0; tensor_iter < weight_indices_test2.size(); ++tensor_iter) {
-		for (int i = 0; i < weight_indices_test2[tensor_iter].size(); ++i) {
-			BOOST_CHECK_EQUAL(weight_indices[tensor_iter][i].first, weight_indices_test2[tensor_iter][i].first);
-			BOOST_CHECK_EQUAL(weight_indices[tensor_iter][i].second, weight_indices_test2[tensor_iter][i].second);
-		}
-	}
+    {std::make_pair(0,0),std::make_pair(0,1)}
+  };
+  for (int tensor_iter = 0; tensor_iter < weight_indices_test2.size(); ++tensor_iter) {
+    for (int i = 0; i < weight_indices_test2[tensor_iter].size(); ++i) {
+      BOOST_CHECK_EQUAL(weight_indices[tensor_iter][i].first, weight_indices_test2[tensor_iter][i].first);
+      BOOST_CHECK_EQUAL(weight_indices[tensor_iter][i].second, weight_indices_test2[tensor_iter][i].second);
+    }
+  }
 
-	BOOST_CHECK_EQUAL(shared_weight_indices.size(), 2);
-	BOOST_CHECK_EQUAL(shared_weight_indices[0].size(), 0);
-	BOOST_CHECK_EQUAL(shared_weight_indices[1].size(), 0);
+  BOOST_CHECK_EQUAL(shared_weight_indices.size(), 2);
+  BOOST_CHECK_EQUAL(shared_weight_indices[0].size(), 0);
+  BOOST_CHECK_EQUAL(shared_weight_indices[1].size(), 0);
 
-	BOOST_CHECK_EQUAL(weight_values.size(), 2);
-	BOOST_CHECK_EQUAL(weight_values[0].size(), 4);
-	BOOST_CHECK_EQUAL(weight_values[1].size(), 2);
-	std::vector<std::vector<float>> weight_values_test2 = { { 1, 1, 1, 1}, {1, 1} };
-	for (int tensor_iter = 0; tensor_iter < weight_values_test2.size(); ++tensor_iter) {
-		for (int i = 0; i < weight_values_test2[tensor_iter].size(); ++i) {
-			BOOST_CHECK_EQUAL(weight_values[tensor_iter][i], weight_values_test2[tensor_iter][i]);
-		}
-	}
+  BOOST_CHECK_EQUAL(weight_values.size(), 2);
+  BOOST_CHECK_EQUAL(weight_values[0].size(), 4);
+  BOOST_CHECK_EQUAL(weight_values[1].size(), 2);
+  std::vector<std::vector<float>> weight_values_test2 = { { 1, 1, 1, 1}, {1, 1} };
+  for (int tensor_iter = 0; tensor_iter < weight_values_test2.size(); ++tensor_iter) {
+    for (int i = 0; i < weight_values_test2[tensor_iter].size(); ++i) {
+      BOOST_CHECK_EQUAL(weight_values[tensor_iter][i], weight_values_test2[tensor_iter][i]);
+    }
+  }
 
-	BOOST_CHECK_EQUAL(make_source_tensors.size(), 2);
-	BOOST_CHECK(!make_source_tensors[0]);
-	BOOST_CHECK(make_source_tensors[1]);
-	BOOST_CHECK_EQUAL(make_sink_tensors.size(), 2);
-	BOOST_CHECK(make_sink_tensors[0]);
-	BOOST_CHECK(!make_sink_tensors[1]);
-	BOOST_CHECK_EQUAL(make_weight_tensors.size(), 2);
-	BOOST_CHECK(make_weight_tensors[0]);
-	BOOST_CHECK(make_weight_tensors[1]);
+  BOOST_CHECK_EQUAL(make_source_tensors.size(), 2);
+  BOOST_CHECK(!make_source_tensors[0]);
+  BOOST_CHECK(make_source_tensors[1]);
+  BOOST_CHECK_EQUAL(make_sink_tensors.size(), 2);
+  BOOST_CHECK(make_sink_tensors[0]);
+  BOOST_CHECK(!make_sink_tensors[1]);
+  BOOST_CHECK_EQUAL(make_weight_tensors.size(), 2);
+  BOOST_CHECK(make_weight_tensors[0]);
+  BOOST_CHECK(make_weight_tensors[1]);
 }
 
 /*
@@ -804,11 +804,15 @@ void makeModelAttention(Model<TensorT>& model, const int& n_inputs, const int& n
       std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, specify_layers);
     if (add_norm) {
       std::string norm_name = "Norm" + std::to_string(i);
-      node_names = model_builder.addNormalization(model, norm_name, norm_name, node_names,
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
-        std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 2)),
-        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.1, 0.9, 0.999, 1e-8)), 0.0, 0.0, false, specify_layers);
+      node_names = model_builder.addNormalization(model, norm_name, norm_name, node_names, specify_layers);
+      node_names = model_builder.addSinglyConnected(model, norm_name + "-gain", norm_name + "-gain", node_names, node_names.size(),
+        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
+        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
+        std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
+        std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
+        std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
+        std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
+        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0, 0.0, true, specify_layers);
     }
     if (add_skip) {
       std::string skip_name = "Skip" + std::to_string(i);
@@ -832,11 +836,15 @@ void makeModelAttention(Model<TensorT>& model, const int& n_inputs, const int& n
     }
     if (add_norm) {
       std::string norm_name = "Norm_FC" + std::to_string(i);
-      node_names = model_builder.addNormalization(model, norm_name, norm_name, node_names,
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
-        std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 2)),
-        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.1, 0.9, 0.999, 1e-8)), 0.0, 0.0, false, specify_layers);
+      node_names = model_builder.addNormalization(model, norm_name, norm_name, node_names, specify_layers);
+      node_names = model_builder.addSinglyConnected(model, norm_name + "-gain", norm_name + "-gain", node_names, node_names.size(),
+        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
+        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
+        std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
+        std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
+        std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
+        std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
+        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0, 0.0, true, specify_layers);
     }
     //if (add_skip) {
     //	std::string skip_name = "Skip_FC" + std::to_string(i);
@@ -978,11 +986,15 @@ void makeCovNet(Model<TensorT>& model, const int& n_inputs, const int& n_outputs
       std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, specify_layers);
     if (add_norm) {
       std::string norm_name = "Norm0-" + std::to_string(d);
-      node_names = model_builder.addNormalization(model, norm_name, "Norm0-" /*norm_name*/, node_names,
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
-        std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 2)),
-        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.1, 0.9, 0.999, 1e-8)), 0.0, 0.0, false, specify_layers);
+      node_names = model_builder.addNormalization(model, norm_name, "Norm0-" /*norm_name*/, node_names, specify_layers);
+      node_names = model_builder.addSinglyConnected(model, norm_name + "-gain", norm_name + "-gain", node_names, node_names.size(),
+        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
+        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
+        std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
+        std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
+        std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
+        std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
+        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0, 0.0, true, specify_layers);
     }
     std::string pool_name = "Pool0-" + std::to_string(d);
     node_names = model_builder.addConvolution(model, pool_name, "Pool0-" /*pool_name*/, node_names,
@@ -1017,11 +1029,15 @@ void makeCovNet(Model<TensorT>& model, const int& n_inputs, const int& n_outputs
         std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, specify_layers);
       if (add_norm) {
         std::string norm_name = "Norm1-" + std::to_string(l_cnt) + "-" + std::to_string(d);
-        node_names = model_builder.addNormalization(model, norm_name, "Norm1-" /*norm_name*/, node_names,
-          std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-          std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
-          std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 2)),
-          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.1, 0.9, 0.999, 1e-8)), 0.0, 0.0, false, specify_layers);
+        node_names = model_builder.addNormalization(model, norm_name, "Norm1-" /*norm_name*/, node_names, specify_layers);
+        node_names = model_builder.addSinglyConnected(model, norm_name + "-gain", norm_name + "-gain", node_names, node_names.size(),
+          std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
+          std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
+          std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
+          std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
+          std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
+          std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
+          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0, 0.0, true, specify_layers);
       }
       std::string pool_name = "Pool1-" + std::to_string(l_cnt) + "-" + std::to_string(d);
       node_names = model_builder.addConvolution(model, pool_name, "Pool1-" /*pool_name*/, node_names,
@@ -1059,11 +1075,16 @@ void makeCovNet(Model<TensorT>& model, const int& n_inputs, const int& n_outputs
     std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(180, 2)),
     std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, specify_layers);
   if (add_norm) {
-    node_names = model_builder.addNormalization(model, "NormFC0", "NormFC0", node_names,
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
-      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 2)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.1, 0.9, 0.999, 1e-8)), 0.0, 0.0, false, specify_layers);
+    std::string norm_name = "NormFC0";
+    node_names = model_builder.addNormalization(model, norm_name, norm_name, node_names, specify_layers);
+    node_names = model_builder.addSinglyConnected(model, norm_name + "-gain", norm_name + "-gain", node_names, node_names.size(),
+      std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
+      std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
+      std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
+      std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
+      std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
+      std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
+      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e3, 0.0)), 0.0, 0.0, true, specify_layers);
   }
   node_names = model_builder.addFullyConnected(model, "FC1", "FC1", node_names, n_outputs,
     std::shared_ptr<ActivationOp<TensorT>>(new ReLUOp<TensorT>()),
