@@ -8,6 +8,7 @@
 #include <SmartPeak/ml/IntegrationFunctionTensor.h>
 #include <SmartPeak/ml/LossFunctionTensor.h>
 #include <SmartPeak/ml/SolverTensor.h>
+#include <SmartPeak/ml/MetricFunctionTensor.h>
 
 namespace SmartPeak
 {
@@ -114,6 +115,20 @@ namespace SmartPeak
 			DeviceT& device,
 			bool copyHostToDevice = false,
 			bool copyDeviceToHost = false) = 0;
+    virtual bool executeModelMetrics(
+      Eigen::Tensor<TensorT, 2>& expected,
+      TensorT* h_node_output,
+      TensorT* d_node_output,
+      TensorT* h_model_metric,
+      TensorT* d_model_metric,
+      MetricFunctionTensorOp<TensorT, DeviceT>* metric_function,
+      const int& batch_size,
+      const int& memory_size,
+      const int& layer_size,
+      const int& time_step,
+      DeviceT& device,
+      bool copyHostToDevice = false,
+      bool copyDeviceToHost = false) = 0;
 		virtual bool executeWeightErrors(
 			TensorT* h_sink_errors,
 			TensorT* d_sink_errors,
