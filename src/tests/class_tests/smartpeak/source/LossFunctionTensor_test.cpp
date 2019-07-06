@@ -83,10 +83,9 @@ BOOST_AUTO_TEST_CASE(operationfunctionEuclideanDistanceGradOp)
 	const int batch_size = 2;
 	const int layer_size = 2;
 	const int time_step = 0;
-	Eigen::Tensor<float, 3> y_true(batch_size, memory_size, layer_size);
+	Eigen::Tensor<float, 2> y_true(batch_size, layer_size);
 	y_true.setValues({
-		{{1, 2}, {0, 0}},
-		{{1, 2}, {0, 0}}
+		{1, 2}, {1, 2}
 		});
 	Eigen::Tensor<float, 3> y_pred(batch_size, memory_size, layer_size);
 	y_pred.setValues({

@@ -26,6 +26,7 @@ namespace SmartPeak
   /**
     @brief ClassificationAccuracy metric function.
        The class returns the average classification accuracy across all batches
+       where an expected true value > 0.9 and an expected false value < 0.9
 
     Where classification accuracy = (TP + TN)/(TP + TN + FP + FN)
   */
@@ -33,9 +34,9 @@ namespace SmartPeak
   class ClassificationAccuracyTensorOp : public MetricFunctionTensorOp<TensorT, DeviceT>
   {
   public:
-    MetricFunctionTensorOp() = default;
-    MetricFunctionTensorOp(const TensorT& classification_threshold_) = default;
-		std::string getName() { return "ClassificationAccuracyTensorOp"; }
+    ClassificationAccuracyTensorOp() = default;
+    ClassificationAccuracyTensorOp(const TensorT& classification_threshold) : classification_threshold_(classification_threshold) {};
+		std::string getName() override { return "ClassificationAccuracyTensorOp"; }
 		void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const
 		{
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
@@ -47,12 +48,27 @@ namespace SmartPeak
       auto exps = (predicted_chip.chip(0, 3) - predicted_chip.maximum(Eigen::array<int, 1>({ 1 })).broadcast(Eigen::array<int, 3>({ 1, layer_size, 1 }))).exp(); // 3 dims
       auto stable_softmax = exps.chip(0, 2) / exps.sum(Eigen::array<int, 1>({ 1 })).broadcast(Eigen::array<int, 2>({ 1, layer_size }));  // 2 dims
 
-      // calculate the true positives and true negatives
-      auto tp = ()
+      // calculate the confusion matrix
+      auto tp = (stable_softmax >= expected_tensor.constant(TensorT(this->classification_threshold_)) && expected_tensor > expected_tensor.constant(TensorT(0.9))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
+      auto tn = (stable_softmax < expected_tensor.constant(TensorT(this->classification_threshold_)) && expected_tensor < expected_tensor.constant(TensorT(0.1))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
+      auto fp = (stable_softmax >= expected_tensor.constant(TensorT(this->classification_threshold_)) && expected_tensor < expected_tensor.constant(TensorT(0.1))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
+      auto fn = (stable_softmax < expected_tensor.constant(TensorT(this->classification_threshold_)) && expected_tensor > expected_tensor.constant(TensorT(0.9))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
 
-      // calculate the true negatives rate
-			error_tensor.chip(time_step, 0).device(device) += (((expected_tensor - predicted_chip).pow((TensorT)2).sqrt()).sum(Eigen::array<int, 1>({ 1 })) * error_tensor.chip(time_step, 1).constant(this->scale_)).clip(TensorT(-1e9),TensorT(1e9));
+      // DEBUG
+      std::cout << "Stable softmax: " << stable_softmax << std::endl;
+      std::cout << "Expected: " << expected_tensor << std::endl;
+      std::cout << "TP: " << tp << std::endl;
+      std::cout << "TN: " << tn << std::endl;
+      std::cout << "FP: " << fp << std::endl;
+      std::cout << "FN: " << fn << std::endl;
+
+      // calculate the accuracy     
+      auto accuracy = (tp.sum() + tn.sum()) / (tp.sum() + tn.sum() + fp.sum() + fn.sum());
+			error_tensor.chip(time_step, 0).device(device) += accuracy / accuracy.constant(TensorT(batch_size));
 		};
+    TensorT getClassificationThreshold() const { return this->classification_threshold_; }
+  protected:
+    TensorT classification_threshold_ = 0.5;
   };
 
   /**
@@ -72,7 +88,6 @@ namespace SmartPeak
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 1>> error_tensor(error, memory_size);
 			auto predicted_chip = predicted_tensor.chip(time_step, 1);
-			error_tensor.chip(time_step, 0).device(device) += (((expected_tensor - (predicted_chip).pow((TensorT)2)) * expected_tensor.constant((TensorT)0.5)).sum(Eigen::array<int, 1>({ 1 })) * error_tensor.chip(time_step, 1).constant(this->scale_)).clip(TensorT(-1e9),TensorT(1e9)); // modified to simplify the derivative
 		};
   };
 
@@ -96,11 +111,6 @@ public:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 1>> error_tensor(error, memory_size);
 			auto predicted_chip = predicted_tensor.chip(time_step, 1);
-			
-			error_tensor.chip(time_step, 0).device(device) += ((-(
-				expected_tensor * (predicted_chip + expected_tensor.constant(this->eps_)).log() + // check if .clip((TensorT)1e-6,(TensorT)1) should be used instead
-				(expected_tensor.constant((TensorT)1) - expected_tensor) * (expected_tensor.constant((TensorT)1) - (predicted_chip - expected_tensor.constant(this->eps_))).log())).sum(Eigen::array<int, 1>({ 1 }))
-				* error_tensor.chip(time_step, 1).constant(this->scale_)).clip(TensorT(-1e9),TensorT(1e9));
 		};
   };
 
@@ -117,7 +127,6 @@ public:
   {
 public:
 		using MetricFunctionTensorOp<TensorT, DeviceT>::MetricFunctionTensorOp;
-		void setN(const TensorT& n) { n_ = n; }
 		std::string getName() { return "AUROCTensorOp"; }
 		void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const
 		{
@@ -125,11 +134,7 @@ public:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 1>> error_tensor(error, memory_size);
 			auto predicted_chip = predicted_tensor.chip(time_step, 1);
-
-			error_tensor.chip(time_step, 0).device(device) += ((-expected_tensor * (predicted_chip.clip((TensorT)1e-6,(TensorT)1).log())) * expected_tensor.constant((TensorT)1 / (TensorT)layer_size)).sum(Eigen::array<int, 1>({ 1 })) * error_tensor.chip(time_step, 1).constant(this->scale_);
 		};
-	private:
-		TensorT n_ = (TensorT)1; ///< the number of total classifiers
   };
 
 	/**
@@ -150,9 +155,6 @@ public:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 1>> error_tensor(error, memory_size);
 			auto predicted_chip = predicted_tensor.chip(time_step, 1);
-			
-			error_tensor.chip(time_step, 0).device(device) += ((-expected_tensor.constant((TensorT)0.5) + expected_tensor.constant((TensorT)0.5)*predicted_chip.pow((TensorT)2)).sum(Eigen::array<int, 1>({ 1 }))
-				*error_tensor.chip(time_step, 1).constant(this->scale_)).clip(TensorT(-1e9),TensorT(1e9));
 		};
 	};
 
@@ -173,8 +175,7 @@ public:
       Eigen::TensorMap<Eigen::Tensor<TensorT, 1>> error_tensor(error, memory_size);
       auto predicted_chip = predicted_tensor.chip(time_step, 1);
 
-      error_tensor.chip(time_step, 0).device(device) += (((expected_tensor - predicted_chip).pow((TensorT)2) * expected_tensor.constant((TensorT)0.5) / expected_tensor.constant((TensorT)layer_size)).sum(Eigen::array<int, 1>({ 1 }))
-        *error_tensor.chip(time_step, 1).constant(this->scale_)).clip(TensorT(-1e9), TensorT(1e9));
+      error_tensor.chip(time_step, 0).device(device) += ((expected_tensor - predicted_chip).pow(TensorT(2)).pow(TensorT(0.5)) / expected_tensor.constant(TensorT(layer_size) * TensorT(batch_size))).sum();
     };
   };
 }

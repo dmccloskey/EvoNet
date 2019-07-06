@@ -54,9 +54,9 @@ public:
 		std::string getName() { return "EuclideanDistanceTensorOp"; }
 		void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const
 		{
-			Eigen::TensorMap < Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
-			Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
-			Eigen::TensorMap < Eigen::Tensor<TensorT, 2>> error_tensor(error, batch_size, memory_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_tensor(error, batch_size, memory_size);
 			auto predicted_chip = predicted_tensor.chip(time_step, 1);	
 			error_tensor.chip(time_step, 1).device(device) += (((expected_tensor - predicted_chip).pow((TensorT)2).sqrt()).sum(Eigen::array<int, 1>({ 1 })) * error_tensor.chip(time_step, 1).constant(this->scale_)).clip(TensorT(-1e9),TensorT(1e9));
 		};
@@ -73,9 +73,9 @@ public:
 		std::string getName() { return "EuclideanDistanceGradTensorOp"; }
 		void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const
 		{
-			Eigen::TensorMap < Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
-			Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
-			Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> error_tensor(error, batch_size, memory_size, layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> error_tensor(error, batch_size, memory_size, layer_size);
 			auto predicted_chip = predicted_tensor.chip(time_step, 1);
 			
 			error_tensor.chip(time_step, 1).device(device) += ((expected_tensor - predicted_chip) / ((expected_tensor - predicted_chip - expected_tensor.constant(this->eps_)).pow((TensorT)2).sqrt()))*error_tensor.chip(time_step, 1).constant(this->scale_);
@@ -93,9 +93,9 @@ public:
 		std::string getName() { return "L2NormTensorOp"; }
 		void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const
 		{
-			Eigen::TensorMap < Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
-			Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
-			Eigen::TensorMap < Eigen::Tensor<TensorT, 2>> error_tensor(error, batch_size, memory_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_tensor(error, batch_size, memory_size);
 			auto predicted_chip = predicted_tensor.chip(time_step, 1);
 			error_tensor.chip(time_step, 1).device(device) += (((expected_tensor - (predicted_chip).pow((TensorT)2)) * expected_tensor.constant((TensorT)0.5)).sum(Eigen::array<int, 1>({ 1 })) * error_tensor.chip(time_step, 1).constant(this->scale_)).clip(TensorT(-1e9),TensorT(1e9)); // modified to simplify the derivative
 		};
@@ -112,9 +112,9 @@ public:
 		std::string getName() { return "L2NormGradTensorOp"; }
 		void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const
 		{
-			Eigen::TensorMap < Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
-			Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
-			Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> error_tensor(error, batch_size, memory_size, layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> error_tensor(error, batch_size, memory_size, layer_size);
 			auto predicted_chip = predicted_tensor.chip(time_step, 1);
 			
 			error_tensor.chip(time_step, 1).device(device) += ((expected_tensor - predicted_chip) * error_tensor.chip(time_step, 1).constant(this->scale_)).clip(TensorT(-1e9),TensorT(1e9)); // modified to exclude the 0.5
@@ -132,9 +132,9 @@ public:
 		std::string getName() { return "BCETensorOp"; }
 		void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const
 		{
-			Eigen::TensorMap < Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
-			Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
-			Eigen::TensorMap < Eigen::Tensor<TensorT, 2>> error_tensor(error, batch_size, memory_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_tensor(error, batch_size, memory_size);
 			auto predicted_chip = predicted_tensor.chip(time_step, 1);
 			
 			error_tensor.chip(time_step, 1).device(device) += ((-(
@@ -159,9 +159,9 @@ public:
 		std::string getName() { return "BCEGradTensorOp"; }
 		void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const
 		{
-			Eigen::TensorMap < Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
-			Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
-			Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> error_tensor(error, batch_size, memory_size, layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> error_tensor(error, batch_size, memory_size, layer_size);
 			auto predicted_chip = predicted_tensor.chip(time_step, 1);
 			
       // NOTE: change `(predicted_chip - expected_tensor)` to `-(predicted_chip - expected_tensor)`
@@ -183,9 +183,9 @@ public:
 		std::string getName() { return "NegativeLogLikelihoodTensorOp"; }
 		void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const
 		{
-			Eigen::TensorMap < Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
-			Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
-			Eigen::TensorMap < Eigen::Tensor<TensorT, 2>> error_tensor(error, batch_size, memory_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_tensor(error, batch_size, memory_size);
 			auto predicted_chip = predicted_tensor.chip(time_step, 1);
 
 			//error_tensor.chip(time_step, 1).device(device) += ((-expected_tensor * (predicted_chip.unaryExpr(ClipTensorOp<TensorT>(1e-6, 0, 1)).log())) * expected_tensor.constant((TensorT)1 / layer_size)).sum(Eigen::array<int, 1>({ 1 }));
@@ -207,9 +207,9 @@ public:
 		std::string getName() { return "NegativeLogLikelihoodGradTensorOp"; }
 		void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const
 		{
-			Eigen::TensorMap < Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
-			Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
-			Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> error_tensor(error, batch_size, memory_size, layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> error_tensor(error, batch_size, memory_size, layer_size);
 			auto predicted_chip = predicted_tensor.chip(time_step, 1);
 			// NOTE: added - so that the gradient is -
 			error_tensor.chip(time_step, 1).device(device) += ((-expected_tensor / (predicted_chip + expected_tensor.constant(this->eps_)) / expected_tensor.constant((TensorT)layer_size))
@@ -229,9 +229,9 @@ public:
 		using LossFunctionTensorOp<TensorT, DeviceT>::LossFunctionTensorOp;
 		std::string getName() { return "MSETensorOp"; }
 		void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const	{
-			Eigen::TensorMap < Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
-			Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
-			Eigen::TensorMap < Eigen::Tensor<TensorT, 2>> error_tensor(error, batch_size, memory_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_tensor(error, batch_size, memory_size);
 			auto predicted_chip = predicted_tensor.chip(time_step, 1);
 			
 			error_tensor.chip(time_step, 1).device(device) += (((expected_tensor - predicted_chip).pow((TensorT)2) * expected_tensor.constant((TensorT)0.5) / expected_tensor.constant((TensorT)layer_size)).sum(Eigen::array<int, 1>({ 1 }))
@@ -250,9 +250,9 @@ public:
 		std::string getName() { return "MSEGradTensorOp"; }
 		void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const
 		{
-			Eigen::TensorMap < Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
-			Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
-			Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> error_tensor(error, batch_size, memory_size, layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> error_tensor(error, batch_size, memory_size, layer_size);
 			auto predicted_chip = predicted_tensor.chip(time_step, 1);
 			
 			error_tensor.chip(time_step, 1).device(device) += (((expected_tensor - predicted_chip) / expected_tensor.constant((TensorT)layer_size))
@@ -276,9 +276,9 @@ public:
 		std::string getName() { return "KLDivergenceMuTensorOp"; }
 		void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const
 		{
-			Eigen::TensorMap < Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
-			Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
-			Eigen::TensorMap < Eigen::Tensor<TensorT, 2>> error_tensor(error, batch_size, memory_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_tensor(error, batch_size, memory_size);
 			auto predicted_chip = predicted_tensor.chip(time_step, 1);
 			
 			error_tensor.chip(time_step, 1).device(device) += ((-expected_tensor.constant((TensorT)0.5) + expected_tensor.constant((TensorT)0.5)*predicted_chip.pow((TensorT)2)).sum(Eigen::array<int, 1>({ 1 }))
@@ -297,9 +297,9 @@ public:
 		std::string getName() { return "KLDivergenceMuGradTensorOp"; }
 		void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const
 		{
-			Eigen::TensorMap < Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
-			Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
-			Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> error_tensor(error, batch_size, memory_size, layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> error_tensor(error, batch_size, memory_size, layer_size);
 			auto predicted_chip = predicted_tensor.chip(time_step, 1);
 			// NOTE: changed to -= to ensure a negative gradient
 			error_tensor.chip(time_step, 1).device(device) -= expected_tensor.constant((TensorT)2) * predicted_chip * error_tensor.chip(time_step, 1).constant(this->scale_);
@@ -322,9 +322,9 @@ public:
 		std::string getName() { return "KLDivergenceLogVarTensorOp"; }
 		void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const
 		{
-			Eigen::TensorMap < Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
-			Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
-			Eigen::TensorMap < Eigen::Tensor<TensorT, 2>> error_tensor(error, batch_size, memory_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_tensor(error, batch_size, memory_size);
 			auto predicted_chip = predicted_tensor.chip(time_step, 1);
 
 			error_tensor.chip(time_step, 1).device(device) += ((-expected_tensor.constant((TensorT)0.5) - expected_tensor.constant((TensorT)0.5)*predicted_chip + (expected_tensor.constant((TensorT)0.5)*predicted_chip).exp()).sum(Eigen::array<int, 1>({ 1 }))
@@ -343,9 +343,9 @@ public:
 		std::string getName() { return "KLDivergenceLogVarGradTensorOp"; }
 		void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const
 		{
-			Eigen::TensorMap < Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
-			Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
-			Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> error_tensor(error, batch_size, memory_size, layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> error_tensor(error, batch_size, memory_size, layer_size);
 			auto predicted_chip = predicted_tensor.chip(time_step, 1);
 			// NOTE: changed to -= to ensure a negative gradient
 			error_tensor.chip(time_step, 1).device(device) -= ((-expected_tensor.constant((TensorT)0.5) + (expected_tensor.constant((TensorT)0.5)*predicted_chip).exp())
@@ -382,9 +382,9 @@ public:
 		std::string getName() { return "BCEWithLogitsTensorOp"; }
 		void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const
 		{
-			Eigen::TensorMap < Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
-			Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
-			Eigen::TensorMap < Eigen::Tensor<TensorT, 2>> error_tensor(error, batch_size, memory_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_tensor(error, batch_size, memory_size);
 			auto predicted_chip = predicted_tensor.chip(time_step, 1);			
 			// Step 1
 			auto max_values = (-predicted_chip).cwiseMax(expected_tensor.constant((TensorT)0));
@@ -411,9 +411,9 @@ public:
 		std::string getName() { return "BCEWithLogitsGradTensorOp"; }
 		void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const
 		{
-			Eigen::TensorMap < Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
-			Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
-			Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> error_tensor(error, batch_size, memory_size, layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> error_tensor(error, batch_size, memory_size, layer_size);
 			auto predicted_chip = predicted_tensor.chip(time_step, 1);
 			//error_tensor.chip(time_step, 1).device(device) += -((expected_tensor - expected_tensor.constant(1))*predicted_chip.exp().unaryExpr(ClipTensorOp<TensorT>(1e-6, 0, 1e9)) + expected_tensor) / (predicted_chip.exp().unaryExpr(ClipTensorOp<TensorT>(1e-6, 0, 1e9)) + expected_tensor.constant(1));
 			// NOTE: removed -(( to (( to ensure negative gradients
@@ -448,9 +448,9 @@ public:
 		std::string getName() { return "CrossEntropyWithLogitsTensorOp"; }
 		void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const
 		{
-			Eigen::TensorMap < Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
-			Eigen::TensorMap < Eigen::Tensor<TensorT, 5>> predicted_tensor(predicted, batch_size, memory_size, layer_size, 1, 1);
-			Eigen::TensorMap < Eigen::Tensor<TensorT, 2>> error_tensor(error, batch_size, memory_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 5>> predicted_tensor(predicted, batch_size, memory_size, layer_size, 1, 1);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_tensor(error, batch_size, memory_size);
 			auto predicted_chip = predicted_tensor.chip(time_step, 1); // 4 dims
 			auto exps = (predicted_chip.chip(0, 3) - predicted_chip.maximum(Eigen::array<int, 1>({ 1 })).broadcast(Eigen::array<int, 3>({1, layer_size, 1}))).exp(); // 3 dims
 			auto stable_softmax = exps.chip(0, 2) / exps.sum(Eigen::array<int, 1>({ 1 })).broadcast(Eigen::array<int, 2>({ 1, layer_size }));  // 2 dims
@@ -471,9 +471,9 @@ public:
 		std::string getName() { return "CrossEntropyWithLogitsGradTensorOp"; }
 		void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const
 		{
-			Eigen::TensorMap < Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
-			Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
-			Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> error_tensor(error, batch_size, memory_size, layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> error_tensor(error, batch_size, memory_size, layer_size);
 			auto predicted_chip = predicted_tensor.chip(time_step, 1);
 			// NOTE: changed from prediced_chip - expected to expected - predicted_chip
 			error_tensor.chip(time_step, 1).device(device) += (((expected_tensor - predicted_chip) / expected_tensor.constant((TensorT)layer_size)) * error_tensor.chip(time_step, 1).constant(this->scale_)).clip(TensorT(-1e9),TensorT(1e9));
@@ -490,9 +490,9 @@ public:
     using LossFunctionTensorOp<TensorT, DeviceT>::LossFunctionTensorOp;
     std::string getName() { return "MSERangeUBTensorOp"; }
     void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
-      Eigen::TensorMap < Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
-      Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
-      Eigen::TensorMap < Eigen::Tensor<TensorT, 2>> error_tensor(error, batch_size, memory_size);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_tensor(error, batch_size, memory_size);
       auto predicted_chip = predicted_tensor.chip(time_step, 1);
       auto mse = ((expected_tensor - predicted_chip).pow((TensorT)2) * expected_tensor.constant((TensorT)0.5) / expected_tensor.constant((TensorT)layer_size));        
       auto in_range = predicted_chip > expected_tensor;
@@ -513,9 +513,9 @@ public:
     std::string getName() { return "MSERangeUBGradTensorOp"; }
     void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const
     {
-      Eigen::TensorMap < Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
-      Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
-      Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> error_tensor(error, batch_size, memory_size, layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> error_tensor(error, batch_size, memory_size, layer_size);
       auto predicted_chip = predicted_tensor.chip(time_step, 1);
       auto mse_grad = (((expected_tensor - predicted_chip) / expected_tensor.constant((TensorT)layer_size))
         *error_tensor.chip(time_step, 1).constant(this->scale_)).clip(TensorT(-1e9),TensorT(1e9));
@@ -536,9 +536,9 @@ public:
     using LossFunctionTensorOp<TensorT, DeviceT>::LossFunctionTensorOp;
     std::string getName() { return "MSERangeLBTensorOp"; }
     void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
-      Eigen::TensorMap < Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
-      Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
-      Eigen::TensorMap < Eigen::Tensor<TensorT, 2>> error_tensor(error, batch_size, memory_size);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_tensor(error, batch_size, memory_size);
       auto predicted_chip = predicted_tensor.chip(time_step, 1);
       auto mse = ((expected_tensor - predicted_chip).pow((TensorT)2) * expected_tensor.constant((TensorT)0.5) / expected_tensor.constant((TensorT)layer_size));
       auto in_range = predicted_chip < expected_tensor;
@@ -560,9 +560,9 @@ public:
     std::string getName() { return "MSERangeLBGradTensorOp"; }
     void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const
     {
-      Eigen::TensorMap < Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
-      Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
-      Eigen::TensorMap < Eigen::Tensor<TensorT, 3>> error_tensor(error, batch_size, memory_size, layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> error_tensor(error, batch_size, memory_size, layer_size);
       auto predicted_chip = predicted_tensor.chip(time_step, 1);
       auto mse_grad = (((expected_tensor - predicted_chip) / expected_tensor.constant((TensorT)layer_size))
         *error_tensor.chip(time_step, 1).constant(this->scale_)).clip(TensorT(-1e9),TensorT(1e9));
