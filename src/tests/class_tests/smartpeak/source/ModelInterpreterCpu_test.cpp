@@ -21,11 +21,13 @@ BOOST_AUTO_TEST_CASE(allocateModelErrorTensor)
 	ModelInterpreterDefaultDevice<float> model_interpreter;
 	const int batch_size = 4;
 	const int memory_size = 2;
+  const int n_metrics = 3;
 
-	model_interpreter.allocateModelErrorTensor(batch_size, memory_size);
+	model_interpreter.allocateModelErrorTensor(batch_size, memory_size, n_metrics);
 
 	BOOST_CHECK_EQUAL(model_interpreter.getModelError()->getBatchSize(), 4);
 	BOOST_CHECK_EQUAL(model_interpreter.getModelError()->getMemorySize(), 2);
+  BOOST_CHECK_EQUAL(model_interpreter.getModelError()->getNMetrics(), 3);
 }
 
 BOOST_AUTO_TEST_CASE(reInitNodes)
@@ -42,14 +44,19 @@ BOOST_AUTO_TEST_CASE(reInitModelError)
 	ModelInterpreterDefaultDevice<float> model_interpreter;
 	const int batch_size = 4;
 	const int memory_size = 2;
+  const int n_metrics = 1;
 
-	model_interpreter.allocateModelErrorTensor(batch_size, memory_size);
+	model_interpreter.allocateModelErrorTensor(batch_size, memory_size, n_metrics);
 	Eigen::Tensor<float, 2> ones(batch_size, memory_size); ones.setConstant(1);
 	model_interpreter.getModelError()->getError() = ones;
+  Eigen::Tensor<float, 2> twos(n_metrics, memory_size); twos.setConstant(2);
+  model_interpreter.getModelError()->getMetric() = twos;
 	BOOST_CHECK_EQUAL(model_interpreter.getModelError()->getError()(0, 0), 1);
+  BOOST_CHECK_EQUAL(model_interpreter.getModelError()->getMetric()(0, 0), 2);
 
 	model_interpreter.reInitModelError();
 	BOOST_CHECK_EQUAL(model_interpreter.getModelError()->getError()(0, 0), 0);
+  BOOST_CHECK_EQUAL(model_interpreter.getModelError()->getMetric()(0, 0), 0);
 }
 
 // BUG in addWeightTensor
@@ -450,6 +457,7 @@ BOOST_AUTO_TEST_CASE(executeModelErrorOperations)
 	ModelInterpreterDefaultDevice<float> model_interpreter;
 	const int batch_size = 4;
 	const int memory_size = 1;
+  const int n_metrics = 1;
 	const bool train = true;
 
 	// compile the graph into a set of operations
@@ -467,7 +475,7 @@ BOOST_AUTO_TEST_CASE(executeModelErrorOperations)
 
 	model_interpreter.initBiases(model_executeModelErrorOperations); // create the bias	
 	model_interpreter.executeForwardPropogationOperations(0); // FP
-	model_interpreter.allocateModelErrorTensor(batch_size, memory_size); // allocate the memory
+	model_interpreter.allocateModelErrorTensor(batch_size, memory_size, n_metrics); // allocate the memory
 
 	// calculate the model error
 	std::vector<std::string> output_nodes = { "4", "5" };
@@ -506,6 +514,7 @@ BOOST_AUTO_TEST_CASE(executeBackwardPropogationOperations)
 	ModelInterpreterDefaultDevice<float> model_interpreter;
 	const int batch_size = 4;
 	const int memory_size = 1;
+  const int n_metrics = 1;
 	const bool train = true;
 
 	// compile the graph into a set of operations
@@ -523,7 +532,7 @@ BOOST_AUTO_TEST_CASE(executeBackwardPropogationOperations)
 
 	model_interpreter.initBiases(model_executeBackwardPropogationOperations); // create the bias	
 	model_interpreter.executeForwardPropogationOperations(0); // FP
-	model_interpreter.allocateModelErrorTensor(batch_size, memory_size); // allocate the memory
+	model_interpreter.allocateModelErrorTensor(batch_size, memory_size, n_metrics); // allocate the memory
 
 	// calculate the model error
 	std::vector<std::string> output_nodes = { "4", "5" };
@@ -559,6 +568,7 @@ BOOST_AUTO_TEST_CASE(executeWeightErrorOperations)
 	ModelInterpreterDefaultDevice<float> model_interpreter;
 	const int batch_size = 4;
 	const int memory_size = 1;
+  const int n_metrics = 1;
 	const bool train = true;
 
 	// compile the graph into a set of operations
@@ -576,7 +586,7 @@ BOOST_AUTO_TEST_CASE(executeWeightErrorOperations)
 
 	model_interpreter.initBiases(model_executeWeightErrorOperations); // create the bias	
 	model_interpreter.executeForwardPropogationOperations(0); // FP
-	model_interpreter.allocateModelErrorTensor(batch_size, memory_size); // allocate the memory
+	model_interpreter.allocateModelErrorTensor(batch_size, memory_size, n_metrics); // allocate the memory
 
 	// calculate the model error
 	std::vector<std::string> output_nodes = { "4", "5" };
@@ -613,6 +623,7 @@ BOOST_AUTO_TEST_CASE(executeWeightUpdateOperations)
 	ModelInterpreterDefaultDevice<float> model_interpreter;
 	const int batch_size = 4;
 	const int memory_size = 1;
+  const int n_metrics = 1;
 	const bool train = true;
 
 	// compile the graph into a set of operations
@@ -630,7 +641,7 @@ BOOST_AUTO_TEST_CASE(executeWeightUpdateOperations)
 
 	model_interpreter.initBiases(model_executeWeightUpdateOperations); // create the bias	
 	model_interpreter.executeForwardPropogationOperations(0); // FP
-	model_interpreter.allocateModelErrorTensor(batch_size, memory_size); // allocate the memory
+	model_interpreter.allocateModelErrorTensor(batch_size, memory_size, n_metrics); // allocate the memory
 
 	// calculate the model error
 	std::vector<std::string> output_nodes = { "4", "5" };
@@ -668,6 +679,7 @@ BOOST_AUTO_TEST_CASE(modelTrainer1)
 	ModelInterpreterDefaultDevice<float> model_interpreter;
 	const int batch_size = 4;
 	const int memory_size = 1;
+  const int n_metrics = 1;
 	const bool train = true;
 
 	// update the model solver
@@ -679,7 +691,7 @@ BOOST_AUTO_TEST_CASE(modelTrainer1)
 
 	// compile the graph into a set of operations and allocate all tensors
 	model_interpreter.getForwardPropogationOperations(model_modelTrainer1, batch_size, memory_size, train, false, true, true);
-	model_interpreter.allocateModelErrorTensor(batch_size, memory_size);
+	model_interpreter.allocateModelErrorTensor(batch_size, memory_size, n_metrics);
 
 	// create the input
 	const std::vector<std::string> node_ids = { "0", "1" };
@@ -783,11 +795,12 @@ BOOST_AUTO_TEST_CASE(FPTT)
 	ModelInterpreterDefaultDevice<float> model_interpreter;
 	const int batch_size = 5;
 	const int memory_size = 8;
+  const int n_metrics = 1;
 	const bool train = true;
 
 	// compile the graph into a set of operations and allocate all tensors
 	model_interpreter.getForwardPropogationOperations(model_FPTT, batch_size, memory_size, train, false, true, true);
-	model_interpreter.allocateModelErrorTensor(batch_size, memory_size);
+	model_interpreter.allocateModelErrorTensor(batch_size, memory_size, n_metrics);
 
 	// create the input
 	const std::vector<std::string> input_ids = { "0", "3", "4" }; // biases are set to zero
@@ -843,11 +856,12 @@ BOOST_AUTO_TEST_CASE(CETT)
 	ModelInterpreterDefaultDevice<float> model_interpreter;
 	const int batch_size = 5;
 	const int memory_size = 8;
+  const int n_metrics = 1;
 	const bool train = true;
 
 	// compile the graph into a set of operations and allocate all tensors
 	model_interpreter.getForwardPropogationOperations(model_CETT, batch_size, memory_size, train, false, true, true);
-	model_interpreter.allocateModelErrorTensor(batch_size, memory_size);
+	model_interpreter.allocateModelErrorTensor(batch_size, memory_size, n_metrics);
 
 	// create the input
 	const std::vector<std::string> input_ids = { "0", "3", "4" };  // biases are set to zero
@@ -918,11 +932,12 @@ BOOST_AUTO_TEST_CASE(TBPTT)
 	ModelInterpreterDefaultDevice<float> model_interpreter;
 	const int batch_size = 5;
 	const int memory_size = 8;
+  const int n_metrics = 1;
 	const bool train = true;
 
 	// compile the graph into a set of operations and allocate all tensors
 	model_interpreter.getForwardPropogationOperations(model_TBPTT, batch_size, memory_size, train, false, true, true);
-	model_interpreter.allocateModelErrorTensor(batch_size, memory_size);
+	model_interpreter.allocateModelErrorTensor(batch_size, memory_size, n_metrics);
 
 	// create the input
 	const std::vector<std::string> input_ids = { "0", "3", "4" };  // biases are set to zero
@@ -995,11 +1010,12 @@ BOOST_AUTO_TEST_CASE(updateWeights)
 	ModelInterpreterDefaultDevice<float> model_interpreter;
 	const int batch_size = 5;
 	const int memory_size = 8;
+  const int n_metrics = 1;
 	const bool train = true;
 
 	// compile the graph into a set of operations and allocate all tensors
 	model_interpreter.getForwardPropogationOperations(model_updateWeights, batch_size, memory_size, train, false, true, true);
-	model_interpreter.allocateModelErrorTensor(batch_size, memory_size);
+	model_interpreter.allocateModelErrorTensor(batch_size, memory_size, n_metrics);
 
 	// create the input
 	const std::vector<std::string> input_ids = { "0", "3", "4" };  // biases are set to zero
@@ -1051,6 +1067,7 @@ BOOST_AUTO_TEST_CASE(modelTrainer2)
 	ModelInterpreterDefaultDevice<float> model_interpreter;
 	const int batch_size = 5;
 	const int memory_size = 8;
+  const int n_metrics = 1;
 	const bool train = true;
 
 	// update the model solver
@@ -1062,7 +1079,7 @@ BOOST_AUTO_TEST_CASE(modelTrainer2)
 
 	// compile the graph into a set of operations and allocate all tensors
 	model_interpreter.getForwardPropogationOperations(model_modelTrainer2, batch_size, memory_size, train, false, true, true);
-	model_interpreter.allocateModelErrorTensor(batch_size, memory_size);
+	model_interpreter.allocateModelErrorTensor(batch_size, memory_size, n_metrics);
 
 	// create the input
 	const std::vector<std::string> input_nodes = { "0", "3", "4" };  // biases are set to zero
@@ -1121,11 +1138,12 @@ BOOST_AUTO_TEST_CASE(getModelResults)
 	ModelInterpreterDefaultDevice<float> model_interpreter;
 	const int batch_size = 5;
 	const int memory_size = 8;
+  const int n_metrics = 1;
 	const bool train = true;
 
 	// compile the graph into a set of operations and allocate all tensors
 	model_interpreter.getForwardPropogationOperations(model_getModelResults, batch_size, memory_size, train, false, true, true);
-	model_interpreter.allocateModelErrorTensor(batch_size, memory_size);
+	model_interpreter.allocateModelErrorTensor(batch_size, memory_size, n_metrics);
 
 	// create the input
 	const std::vector<std::string> input_ids = { "0", "3", "4" };  // biases are set to zero
@@ -1257,6 +1275,7 @@ BOOST_AUTO_TEST_CASE(modelTrainer3)
 	ModelInterpreterDefaultDevice<float> model_interpreter;
 	const int batch_size = 1;
 	const int memory_size = 32;
+  const int n_metrics = 1;
 	const bool train = true;
 
 	// update the model solver
@@ -1268,7 +1287,7 @@ BOOST_AUTO_TEST_CASE(modelTrainer3)
 
 	// compile the graph into a set of operations and allocate all tensors
 	model_interpreter.getForwardPropogationOperations(model_modelTrainer3, batch_size, memory_size, train, false, true, false);
-	model_interpreter.allocateModelErrorTensor(batch_size, memory_size);
+	model_interpreter.allocateModelErrorTensor(batch_size, memory_size, n_metrics);
 
 	// create the input and output (from t=n to t=0)
 	HarmonicOscillatorSimulator<float> WeightSpring;

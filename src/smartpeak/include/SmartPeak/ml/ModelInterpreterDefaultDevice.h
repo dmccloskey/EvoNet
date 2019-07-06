@@ -36,7 +36,7 @@ namespace SmartPeak
 		void executeModelErrorOperations(Eigen::Tensor<TensorT, 2>& expected, const int& layer_id, LossFunctionTensorOp<TensorT, Eigen::DefaultDevice>* loss_function, LossFunctionGradTensorOp<TensorT, Eigen::DefaultDevice>* loss_function_grad, const int& time_step);
 		void executeWeightErrorOperations();
 		void executeWeightUpdateOperations();
-		void allocateModelErrorTensor(const int& batch_size, const int& memory_size);
+		void allocateModelErrorTensor(const int& batch_size, const int& memory_size, const int& n_metrics);
 	  void getModelResults(Model<TensorT>& model, const bool& output_nodes, const bool& weights, const bool& model_error);
 		void checkMemory(const Model<TensorT>& model, const int& batch_size, const int& memory_size);
 		void updateSolverParams(const int& param_index, const TensorT& param_factor);
@@ -360,9 +360,9 @@ namespace SmartPeak
 	}
 
 	template<typename TensorT>
-	inline void ModelInterpreterDefaultDevice<TensorT>::allocateModelErrorTensor(const int& batch_size, const int& memory_size) {
+	inline void ModelInterpreterDefaultDevice<TensorT>::allocateModelErrorTensor(const int& batch_size, const int& memory_size, const int& n_metrics) {
 		std::shared_ptr<ModelErrorData<TensorT, Eigen::DefaultDevice>> model_error_data(new ModelErrorDataCpu<TensorT>());
-		model_error_data->initModelErrorData(batch_size, memory_size);
+		model_error_data->initModelErrorData(batch_size, memory_size, n_metrics);
 		this->model_error_ = model_error_data;
 	}
 

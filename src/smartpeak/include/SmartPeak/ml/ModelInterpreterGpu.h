@@ -40,7 +40,7 @@ namespace SmartPeak
 		void executeBackwardPropogationOperations(const int& time_step);
 		void executeWeightErrorOperations();
 		void executeWeightUpdateOperations();
-		void allocateModelErrorTensor(const int& batch_size, const int& memory_size);
+		void allocateModelErrorTensor(const int& batch_size, const int& memory_size, const int& n_metrics);
 		void getModelResults(Model<TensorT>& model, const bool& output_nodes, const bool& weights, const bool& model_error);
 		void checkMemory(const Model<TensorT>& model, const int& batch_size, const int& memory_size);
 		void updateSolverParams(const int& param_index, const TensorT& param_factor);
@@ -501,9 +501,9 @@ namespace SmartPeak
 	}
 
 	template<typename TensorT>
-	inline void ModelInterpreterGpu<TensorT>::allocateModelErrorTensor(const int& batch_size, const int& memory_size) {
+	inline void ModelInterpreterGpu<TensorT>::allocateModelErrorTensor(const int& batch_size, const int& memory_size, const int& n_metrics) {
 		std::shared_ptr<ModelErrorData<TensorT, Eigen::GpuDevice>> model_error_data(new ModelErrorDataGpu<TensorT>());
-		model_error_data->initModelErrorData(batch_size, memory_size);
+		model_error_data->initModelErrorData(batch_size, memory_size, n_metrics);
 		this->model_error_ = model_error_data;
 	}
 

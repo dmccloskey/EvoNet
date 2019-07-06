@@ -97,8 +97,7 @@ public:
 		size_t getErrorTensorSize() { return batch_size_ * memory_size_ * sizeof(TensorT); }; ///< Get the size of each tensor in bytes
     size_t getMetricTensorSize() { return n_metrics_ * memory_size_ * sizeof(TensorT); }; ///< Get the size of each tensor in bytes
 
-		void initModelErrorData(const int& batch_size, const int& memory_size);
-    void initModelMetricData(const int& n_metrics, const int& memory_size);
+		void initModelErrorData(const int& batch_size, const int& memory_size, const int& n_metrics);
 
 		virtual bool syncHAndDError(DeviceT& device) = 0;
     virtual bool syncHAndDMetric(DeviceT& device) = 0;
@@ -133,20 +132,14 @@ protected:
   };
 
 	template<typename TensorT, typename DeviceT>
-	inline void ModelErrorData<TensorT, DeviceT>::initModelErrorData(const int& batch_size, const int& memory_size)
+	inline void ModelErrorData<TensorT, DeviceT>::initModelErrorData(const int& batch_size, const int& memory_size, const int& n_metrics)
 	{
-		setBatchSize(batch_size);	setMemorySize(memory_size);
+		setBatchSize(batch_size);	setMemorySize(memory_size); setNMetrics(n_metrics);
 		Eigen::Tensor<TensorT, 2> zero(batch_size, memory_size); zero.setZero();
 		setError(zero);
+    Eigen::Tensor<TensorT, 2> zero_metric(n_metrics, memory_size); zero_metric.setZero();
+    setMetric(zero_metric);
 	}
-
-  template<typename TensorT, typename DeviceT>
-  inline void ModelErrorData<TensorT, DeviceT>::initModelMetricData(const int& n_metrics, const int& memory_size)
-  {
-    setNMetrics(n_metrics);	setMemorySize(memory_size);
-    Eigen::Tensor<TensorT, 2> zero(n_metrics, memory_size); zero.setZero();
-    setMetric(zero);
-  }
 
 	template<typename TensorT>
 	class ModelErrorDataCpu : public ModelErrorData<TensorT, Eigen::DefaultDevice> {

@@ -489,7 +489,7 @@ namespace SmartPeak
 		void clearWeightTensors(); ///< clear all weights from the cache
 		std::shared_ptr<WeightTensorData<TensorT, DeviceT>> getWeightTensor(const int& weight_index); ///< get a weight from the cache
 
-		virtual void allocateModelErrorTensor(const int& batch_size, const int& memory_size) = 0; ///< set the model error
+		virtual void allocateModelErrorTensor(const int& batch_size, const int& memory_size, const int& n_metrics) = 0; ///< set the model error
 		std::shared_ptr<ModelErrorData<TensorT, DeviceT>> getModelError(); ///< get the model error
 
 		void addOperationSteps(const std::vector<OperationTensorStep<TensorT, DeviceT>>& operation_steps);
@@ -738,6 +738,8 @@ namespace SmartPeak
 	{
 		Eigen::Tensor<TensorT, 2> zero((int)model_error_->getBatchSize(), (int)model_error_->getMemorySize());	zero.setConstant((TensorT)0);
 		model_error_->setError(zero);
+    Eigen::Tensor<TensorT, 2> zero_metric((int)model_error_->getNMetrics(), (int)model_error_->getMemorySize());	zero_metric.setConstant((TensorT)0);
+    model_error_->setMetric(zero_metric);
 	}
 
 	template<typename TensorT, typename DeviceT>

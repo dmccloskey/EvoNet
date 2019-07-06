@@ -261,11 +261,13 @@ void test_allocateModelErrorTensor()
 	ModelInterpreterGpu<float> model_interpreter(model_resources);
 	const int batch_size = 4;
 	const int memory_size = 2;
+	const int n_metrics = 3;
 
-	model_interpreter.allocateModelErrorTensor(batch_size, memory_size);
+	model_interpreter.allocateModelErrorTensor(batch_size, memory_size, n_metrics);
 
-	assert(model_interpreter.getModelError()->getBatchSize() == 4);
-	assert(model_interpreter.getModelError()->getMemorySize() == 2);
+	BOOST_CHECK_EQUAL(model_interpreter.getModelError()->getBatchSize(), 4);
+	BOOST_CHECK_EQUAL(model_interpreter.getModelError()->getMemorySize(), 2);
+	BOOST_CHECK_EQUAL(model_interpreter.getModelError()->getNMetrics(), 3);
 }
 
 void test_reInitNodes()
@@ -284,14 +286,19 @@ void test_reInitModelError()
 	ModelInterpreterGpu<float> model_interpreter(model_resources);
 	const int batch_size = 4;
 	const int memory_size = 2;
-
-	model_interpreter.allocateModelErrorTensor(batch_size, memory_size);
+	const int n_metrics = 1;
+	
+	model_interpreter.allocateModelErrorTensor(batch_size, memory_size, n_metrics);
 	Eigen::Tensor<float, 2> ones(batch_size, memory_size); ones.setConstant(1);
 	model_interpreter.getModelError()->getError() = ones;
-	assert(model_interpreter.getModelError()->getError()(0, 0) == 1);
+	Eigen::Tensor<float, 2> twos(n_metrics, memory_size); twos.setConstant(2);
+	model_interpreter.getModelError()->getMetric() = twos;
+	BOOST_CHECK_EQUAL(model_interpreter.getModelError()->getError()(0, 0), 1);
+	BOOST_CHECK_EQUAL(model_interpreter.getModelError()->getMetric()(0, 0), 2);
 
 	model_interpreter.reInitModelError();
-	assert(model_interpreter.getModelError()->getError()(0, 0) == 0);
+	BOOST_CHECK_EQUAL(model_interpreter.getModelError()->getError()(0, 0), 0);
+	BOOST_CHECK_EQUAL(model_interpreter.getModelError()->getMetric()(0, 0), 0);
 }
 
 void test_mapValuesToLayers()
@@ -423,6 +430,7 @@ void test_executeModelErrorOperations()
 	ModelInterpreterGpu<float> model_interpreter(model_resources);
 	const int batch_size = 4;
 	const int memory_size = 1;
+	const int n_metrics = 1;
 	const bool train = true;
 
 	// compile the graph into a set of operations
@@ -440,7 +448,7 @@ void test_executeModelErrorOperations()
 
 	model_interpreter.initBiases(model_executeModelErrorOperations); // create the bias	
 	model_interpreter.executeForwardPropogationOperations(0); // FP
-	model_interpreter.allocateModelErrorTensor(batch_size, memory_size); // allocate the memory
+	model_interpreter.allocateModelErrorTensor(batch_size, memory_size, n_metrics); // allocate the memory
 
 	// calculate the model error
 	std::vector<std::string> output_nodes = { "4", "5" };
@@ -497,6 +505,7 @@ void test_executeBackwardPropogationOperations()
 	ModelInterpreterGpu<float> model_interpreter(model_resources);
 	const int batch_size = 4;
 	const int memory_size = 1;
+	const int n_metrics = 1;
 	const bool train = true;
 
 	// compile the graph into a set of operations
@@ -514,7 +523,7 @@ void test_executeBackwardPropogationOperations()
 
 	model_interpreter.initBiases(model_executeBackwardPropogationOperations); // create the bias	
 	model_interpreter.executeForwardPropogationOperations(0); // FP
-	model_interpreter.allocateModelErrorTensor(batch_size, memory_size); // allocate the memory
+	model_interpreter.allocateModelErrorTensor(batch_size, memory_size, n_metrics); // allocate the memory
 
 	// calculate the model error
 	std::vector<std::string> output_nodes = { "4", "5" };
@@ -568,6 +577,7 @@ void test_executeWeightErrorOperations()
 	ModelInterpreterGpu<float> model_interpreter(model_resources);
 	const int batch_size = 4;
 	const int memory_size = 1;
+	const int n_metrics = 1;
 	const bool train = true;
 
 	// compile the graph into a set of operations
@@ -585,7 +595,7 @@ void test_executeWeightErrorOperations()
 
 	model_interpreter.initBiases(model_executeWeightErrorOperations); // create the bias	
 	model_interpreter.executeForwardPropogationOperations(0); // FP
-	model_interpreter.allocateModelErrorTensor(batch_size, memory_size); // allocate the memory
+	model_interpreter.allocateModelErrorTensor(batch_size, memory_size, n_metrics); // allocate the memory
 
 	// calculate the model error
 	std::vector<std::string> output_nodes = { "4", "5" };
@@ -634,6 +644,7 @@ void test_executeWeightUpdateOperations()
 	ModelInterpreterGpu<float> model_interpreter(model_resources);
 	const int batch_size = 4;
 	const int memory_size = 1;
+	const int n_metrics = 1;
 	const bool train = true;
 
 	// compile the graph into a set of operations
@@ -651,7 +662,7 @@ void test_executeWeightUpdateOperations()
 
 	model_interpreter.initBiases(model_executeWeightUpdateOperations); // create the bias	
 	model_interpreter.executeForwardPropogationOperations(0); // FP
-	model_interpreter.allocateModelErrorTensor(batch_size, memory_size); // allocate the memory
+	model_interpreter.allocateModelErrorTensor(batch_size, memory_size, n_metrics); // allocate the memory
 
 	// calculate the model error
 	std::vector<std::string> output_nodes = { "4", "5" };
@@ -701,6 +712,7 @@ void test_modelTrainer1()
 	ModelInterpreterGpu<float> model_interpreter(model_resources);
 	const int batch_size = 4;
 	const int memory_size = 1;
+	const int n_metrics = 1;
 	const bool train = true;
 
 	// update the model solver
@@ -712,7 +724,7 @@ void test_modelTrainer1()
 
 	// compile the graph into a set of operations and allocate all tensors
 	model_interpreter.getForwardPropogationOperations(model_modelTrainer1, batch_size, memory_size, train, false, true, true);
-	model_interpreter.allocateModelErrorTensor(batch_size, memory_size);
+	model_interpreter.allocateModelErrorTensor(batch_size, memory_size, n_metrics);
 
 	// create the input
 	const std::vector<std::string> node_ids = { "0", "1" };
@@ -826,11 +838,12 @@ void test_FPTT()
 	ModelInterpreterGpu<float> model_interpreter(model_resources);
 	const int batch_size = 5;
 	const int memory_size = 8;
+	const int n_metrics = 1;
 	const bool train = true;
 
 	// compile the graph into a set of operations and allocate all tensors
 	model_interpreter.getForwardPropogationOperations(model_FPTT, batch_size, memory_size, train, false, true, true);
-	model_interpreter.allocateModelErrorTensor(batch_size, memory_size);
+	model_interpreter.allocateModelErrorTensor(batch_size, memory_size, n_metrics);
 
 	// create the input
 	const std::vector<std::string> input_ids = { "0", "3", "4" }; // biases are set to zero
@@ -899,11 +912,12 @@ void test_CETT()
 	ModelInterpreterGpu<float> model_interpreter(model_resources);
 	const int batch_size = 5;
 	const int memory_size = 8;
+	const int n_metrics = 1;
 	const bool train = true;
 
 	// compile the graph into a set of operations and allocate all tensors
 	model_interpreter.getForwardPropogationOperations(model_CETT, batch_size, memory_size, train, false, true, true);
-	model_interpreter.allocateModelErrorTensor(batch_size, memory_size);
+	model_interpreter.allocateModelErrorTensor(batch_size, memory_size, n_metrics);
 
 	// create the input
 	const std::vector<std::string> input_ids = { "0", "3", "4" };  // biases are set to zero
@@ -988,11 +1002,12 @@ void test_TBPTT()
 	ModelInterpreterGpu<float> model_interpreter(model_resources);
 	const int batch_size = 5;
 	const int memory_size = 8;
+	const int n_metrics = 1;
 	const bool train = true;
 
 	// compile the graph into a set of operations and allocate all tensors
 	model_interpreter.getForwardPropogationOperations(model_TBPTT, batch_size, memory_size, train, false, true, true);
-	model_interpreter.allocateModelErrorTensor(batch_size, memory_size);
+	model_interpreter.allocateModelErrorTensor(batch_size, memory_size, n_metrics);
 
 	// create the input
 	const std::vector<std::string> input_ids = { "0", "3", "4" };  // biases are set to zero
@@ -1080,11 +1095,12 @@ void test_updateWeights()
 	ModelInterpreterGpu<float> model_interpreter(model_resources);
 	const int batch_size = 5;
 	const int memory_size = 8;
+	const int n_metrics = 1;
 	const bool train = true;
 
 	// compile the graph into a set of operations and allocate all tensors
 	model_interpreter.getForwardPropogationOperations(model_updateWeights, batch_size, memory_size, train, false, true, true);
-	model_interpreter.allocateModelErrorTensor(batch_size, memory_size);
+	model_interpreter.allocateModelErrorTensor(batch_size, memory_size, n_metrics);
 
 	// create the input
 	const std::vector<std::string> input_ids = { "0", "3", "4" };  // biases are set to zero
@@ -1151,6 +1167,7 @@ void test_modelTrainer2()
 	ModelInterpreterGpu<float> model_interpreter(model_resources);
 	const int batch_size = 5;
 	const int memory_size = 8;
+	const int n_metrics = 1;
 	const bool train = true;
 
 	// update the model solver
@@ -1162,7 +1179,7 @@ void test_modelTrainer2()
 
 	// compile the graph into a set of operations and allocate all tensors
 	model_interpreter.getForwardPropogationOperations(model_modelTrainer2, batch_size, memory_size, train, false, true, true);
-	model_interpreter.allocateModelErrorTensor(batch_size, memory_size);
+	model_interpreter.allocateModelErrorTensor(batch_size, memory_size, n_metrics);
 
 	// create the input
 	const std::vector<std::string> input_nodes = { "0", "3", "4" };  // biases are set to zero
@@ -1231,11 +1248,12 @@ void test_getModelResults()
 	ModelInterpreterGpu<float> model_interpreter(model_resources);
 	const int batch_size = 5;
 	const int memory_size = 8;
+	const int n_metrics = 1;
 	const bool train = true;
 
 	// compile the graph into a set of operations and allocate all tensors
 	model_interpreter.getForwardPropogationOperations(model_getModelResults, batch_size, memory_size, train, false, true, true);
-	model_interpreter.allocateModelErrorTensor(batch_size, memory_size);
+	model_interpreter.allocateModelErrorTensor(batch_size, memory_size, n_metrics);
 
 	// create the input
 	const std::vector<std::string> input_ids = { "0", "3", "4" };  // biases are set to zero
