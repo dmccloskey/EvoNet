@@ -31,7 +31,23 @@ namespace SmartPeak
     std::vector<TensorT> getParameters() const { return std::vector<TensorT>({this->classification_threshold_}); }
     TensorT getClassificationThreshold() const { return this->classification_threshold_; }
   protected:
-    TensorT classification_threshold_ = 0.5;
+    TensorT classification_threshold_ = 0.5; ///< greater than or equal to is true, less than is false
+  };
+
+  /**
+    @brief Binary classification accuracy function.
+  */
+  template<typename TensorT>
+  class BCAccuracyOp : public MetricFunctionOp<TensorT>
+  {
+  public:
+    BCAccuracyOp() = default;
+    BCAccuracyOp(const TensorT& classification_threshold) :classification_threshold_(classification_threshold) {}
+    std::string getName() { return "BCAccuracyOp"; };
+    std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->classification_threshold_ }); }
+    TensorT getClassificationThreshold() const { return this->classification_threshold_; }
+  protected:
+    TensorT classification_threshold_ = 0.5; ///< greater than or equal to is true, less than is false
   };
 
   /**
@@ -63,6 +79,22 @@ namespace SmartPeak
   };
 
   /**
+    @brief Binary classification F1 score function.
+  */
+  template<typename TensorT>
+  class BCF1ScoreOp : public MetricFunctionOp<TensorT>
+  {
+  public:
+    BCF1ScoreOp() = default;
+    BCF1ScoreOp(const TensorT& classification_threshold) :classification_threshold_(classification_threshold) {};
+    std::string getName() { return "BCF1ScoreOp"; };
+    std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->classification_threshold_ }); }
+    TensorT getClassificationThreshold() const { return this->classification_threshold_; }
+  protected:
+    TensorT classification_threshold_ = 0.5;
+  };
+
+  /**
     @brief Area under the ROC (AUROC) function.
   */
   template<typename TensorT>
@@ -72,6 +104,22 @@ namespace SmartPeak
     AUROCOp() = default;
     AUROCOp(const TensorT& classification_threshold) :classification_threshold_(classification_threshold) {}
     std::string getName() { return "AUROCOp"; };
+    std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->classification_threshold_ }); }
+    TensorT getClassificationThreshold() const { return this->classification_threshold_; }
+  protected:
+    TensorT classification_threshold_ = 0.5;
+  };
+
+  /**
+    @brief Binary classification Area under the ROC (BCAUROC) function.
+  */
+  template<typename TensorT>
+  class BCAUROCOp : public MetricFunctionOp<TensorT>
+  {
+  public:
+    BCAUROCOp() = default;
+    BCAUROCOp(const TensorT& classification_threshold) :classification_threshold_(classification_threshold) {}
+    std::string getName() { return "BCAUROCOp"; };
     std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->classification_threshold_ }); }
     TensorT getClassificationThreshold() const { return this->classification_threshold_; }
   protected:

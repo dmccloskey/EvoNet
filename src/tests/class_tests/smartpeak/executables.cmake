@@ -31,6 +31,7 @@ set(ml_executables_list
   LossFunction_test
   LossFunctionTensor_test
   MetricFunction_test
+  MetricFunctionTensor_test
   ModelBuilder_test
   ModelBuilderExperimental_test
   ModelInterpreter_DAG_test

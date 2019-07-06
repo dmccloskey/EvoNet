@@ -12,6 +12,7 @@ set(sources_list_h
 	LossFunctionTensor.h
 	Link.h
 	MetricFunction.h
+	MetricFunctionTensor.h
 	Model.h
 	ModelBuilder.h
 	ModelBuilderExperimental.h

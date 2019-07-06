@@ -5,8 +5,6 @@
 
 #include <SmartPeak/core/Preprocessing.h>
 #include <unsupported/Eigen/CXX11/Tensor>
-#include <cmath>
-#include <random>
 #include <iostream>
 
 namespace SmartPeak
@@ -20,7 +18,7 @@ namespace SmartPeak
 	public:
 		LossFunctionTensorOp() = default;
 		LossFunctionTensorOp(const TensorT& eps, const TensorT& scale) : eps_(eps), scale_(scale) {};
-		~LossFunctionTensorOp() = default;
+		virtual ~LossFunctionTensorOp() = default;
 		virtual std::string getName() = 0;
 		virtual void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const = 0;
 	protected:
@@ -458,7 +456,7 @@ public:
 			auto stable_softmax = exps.chip(0, 2) / exps.sum(Eigen::array<int, 1>({ 1 })).broadcast(Eigen::array<int, 2>({ 1, layer_size }));  // 2 dims
 
 			//error_tensor.chip(time_step, 1).device(device) += ((-expected_tensor * (stable_softmax.unaryExpr(ClipTensorOp<TensorT>(1e-6, 0, 1)).log())) * expected_tensor.constant((TensorT)1 / layer_size)).sum(Eigen::array<int, 1>({ 1 }));
-			error_tensor.chip(time_step, 1).device(device) += ((-expected_tensor * (stable_softmax.clip((TensorT)1e-6,(TensorT)1).log())) * expected_tensor.constant((TensorT)1 / (TensorT)layer_size)).sum(Eigen::array<int, 1>({ 1 })) * error_tensor.chip(time_step, 1).constant(this->scale_);
+			error_tensor.chip(time_step, 1).device(device) += ((-expected_tensor * (stable_softmax.clip(TensorT(1e-6),(TensorT)1).log())) * expected_tensor.constant((TensorT)1 / (TensorT)layer_size)).sum(Eigen::array<int, 1>({ 1 })) * error_tensor.chip(time_step, 1).constant(this->scale_);
 		};
 	};
 
