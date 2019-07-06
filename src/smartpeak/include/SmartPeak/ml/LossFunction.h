@@ -14,95 +14,95 @@ namespace SmartPeak
 	/**
 	@brief Base class loss function.
 	*/
-	template<typename T>
+	template<typename TensorT>
 	class LossFunctionOp
 	{
 	public:
 		LossFunctionOp() = default;
-		LossFunctionOp(const T& eps, const T& scale) : eps_(eps), scale_(scale) {};
+		LossFunctionOp(const TensorT& eps, const TensorT& scale) : eps_(eps), scale_(scale) {};
 		~LossFunctionOp() = default;
 		virtual std::string getName() = 0;
-		virtual std::vector<T> getParameters() const = 0;
+		virtual std::vector<TensorT> getParameters() const = 0;
 	protected:
-		T eps_ = (T)1e-6;
-		T scale_ = (T)1.0;
+		TensorT eps_ = TensorT(1e-6);
+		TensorT scale_ = TensorT(1);
 	};
 
 	/**
 	@brief Base class loss function gradient.
 	*/
-	template<typename T>
+	template<typename TensorT>
 	class LossFunctionGradOp
 	{
 	public:
 		LossFunctionGradOp() = default;
-		LossFunctionGradOp(const T& eps, const T& scale) : eps_(eps), scale_(scale) {};
+		LossFunctionGradOp(const TensorT& eps, const TensorT& scale) : eps_(eps), scale_(scale) {};
 		~LossFunctionGradOp() = default;
 		virtual std::string getName() = 0;
-		virtual std::vector<T> getParameters() const = 0;
+		virtual std::vector<TensorT> getParameters() const = 0;
 	protected:
-		T eps_ = (T)1e-6;
-		T scale_ = (T)1.0;
+		TensorT eps_ = (TensorT)1e-6;
+		TensorT scale_ = (TensorT)1.0;
 	};
 
   /**
     @brief EuclideanDistance loss function.
   */
-  template<typename T>
-  class EuclideanDistanceOp : public LossFunctionOp<T>
+  template<typename TensorT>
+  class EuclideanDistanceOp : public LossFunctionOp<TensorT>
   {
 public: 
-		using LossFunctionOp<T>::LossFunctionOp;
+		using LossFunctionOp<TensorT>::LossFunctionOp;
 		std::string getName() {	return "EuclideanDistanceOp"; };
-		std::vector<T> getParameters() const { return std::vector<T>({this->eps_, this->scale_}); }
+		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({this->eps_, this->scale_}); }
   };
 
   /**
     @brief EuclideanDistance loss function gradient.
   */
-  template<typename T>
-  class EuclideanDistanceGradOp : public LossFunctionGradOp<T>
+  template<typename TensorT>
+  class EuclideanDistanceGradOp : public LossFunctionGradOp<TensorT>
   {
 public: 
-		using LossFunctionGradOp<T>::LossFunctionGradOp;
+		using LossFunctionGradOp<TensorT>::LossFunctionGradOp;
 		std::string getName() { return "EuclideanDistanceGradOp"; };
-		std::vector<T> getParameters() const { return std::vector<T>({this->eps_, this->scale_}); }
+		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({this->eps_, this->scale_}); }
   };
 
   /**
     @brief L2Norm loss function.
   */
-  template<typename T>
-  class L2NormOp : public LossFunctionOp<T>
+  template<typename TensorT>
+  class L2NormOp : public LossFunctionOp<TensorT>
   {
 public:
-		using LossFunctionOp<T>::LossFunctionOp;
+		using LossFunctionOp<TensorT>::LossFunctionOp;
 		std::string getName() { return "L2NormOp"; };
-		std::vector<T> getParameters() const { return std::vector<T>({this->eps_, this->scale_}); }
+		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({this->eps_, this->scale_}); }
   };
 
   /**
     @brief L2Norm loss function gradient.
   */
-  template<typename T>
-  class L2NormGradOp : public LossFunctionGradOp<T>
+  template<typename TensorT>
+  class L2NormGradOp : public LossFunctionGradOp<TensorT>
   {
 public:
-		using LossFunctionGradOp<T>::LossFunctionGradOp;
+		using LossFunctionGradOp<TensorT>::LossFunctionGradOp;
 		std::string getName() { return "L2NormGradOp"; };
-		std::vector<T> getParameters() const { return std::vector<T>({this->eps_, this->scale_}); }
+		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({this->eps_, this->scale_}); }
   };
 
   /**
     @brief Binary Cross Entropy loss function.
   */
-  template<typename T>
-  class BCEOp : public LossFunctionOp<T>
+  template<typename TensorT>
+  class BCEOp : public LossFunctionOp<TensorT>
   {
 public:
-		using LossFunctionOp<T>::LossFunctionOp;
+		using LossFunctionOp<TensorT>::LossFunctionOp;
 		std::string getName() { return "BCEOp"; };
-		std::vector<T> getParameters() const { return std::vector<T>({this->eps_, this->scale_}); }
+		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({this->eps_, this->scale_}); }
   };
 
   /**
@@ -112,13 +112,13 @@ public:
 		= (1-z)/(1-x) - z/x
 		= -(x-z)/((x-1)*x)
   */
-  template<typename T>
-  class BCEGradOp : public LossFunctionGradOp<T>
+  template<typename TensorT>
+  class BCEGradOp : public LossFunctionGradOp<TensorT>
   {
 public:
-		using LossFunctionGradOp<T>::LossFunctionGradOp;
+		using LossFunctionGradOp<TensorT>::LossFunctionGradOp;
 		std::string getName() { return "BCEGradOp"; };
-		std::vector<T> getParameters() const { return std::vector<T>({this->eps_, this->scale_}); }
+		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({this->eps_, this->scale_}); }
   };
 
   /**
@@ -131,49 +131,49 @@ public:
 			else:
 				return -log(1 - yHat)
   */
-  template<typename T>
-  class NegativeLogLikelihoodOp : public LossFunctionOp<T>
+  template<typename TensorT>
+  class NegativeLogLikelihoodOp : public LossFunctionOp<TensorT>
   {
 public:
-		using LossFunctionOp<T>::LossFunctionOp;
+		using LossFunctionOp<TensorT>::LossFunctionOp;
 		std::string getName() { return "NegativeLogLikelihoodOp"; };
-		std::vector<T> getParameters() const { return std::vector<T>({this->eps_, this->scale_}); }
+		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({this->eps_, this->scale_}); }
   };
 
   /**
     @brief NegativeLogLikelihood loss function gradient.
   */
-  template<typename T>
-  class NegativeLogLikelihoodGradOp : public LossFunctionGradOp<T>
+  template<typename TensorT>
+  class NegativeLogLikelihoodGradOp : public LossFunctionGradOp<TensorT>
   {
 public:
-		using LossFunctionGradOp<T>::LossFunctionGradOp;
+		using LossFunctionGradOp<TensorT>::LossFunctionGradOp;
 		std::string getName() { return "NegativeLogLikelihoodGradOp"; };
-		std::vector<T> getParameters() const { return std::vector<T>({this->eps_, this->scale_}); }
+		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({this->eps_, this->scale_}); }
   };
 
   /**
     @brief MSE Mean Squared Error loss function.
   */
-  template<typename T>
-  class MSEOp : public LossFunctionOp<T>
+  template<typename TensorT>
+  class MSEOp : public LossFunctionOp<TensorT>
   {
 public:
-		using LossFunctionOp<T>::LossFunctionOp;
+		using LossFunctionOp<TensorT>::LossFunctionOp;
 		std::string getName() { return "MSEOp"; };
-		std::vector<T> getParameters() const { return std::vector<T>({this->eps_, this->scale_}); }
+		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({this->eps_, this->scale_}); }
   };
 
   /**
     @brief MSE Mean Squared Error loss function gradient.
   */
-  template<typename T>
-  class MSEGradOp : public LossFunctionGradOp<T>
+  template<typename TensorT>
+  class MSEGradOp : public LossFunctionGradOp<TensorT>
   {
 public:
-		using LossFunctionGradOp<T>::LossFunctionGradOp;
+		using LossFunctionGradOp<TensorT>::LossFunctionGradOp;
 		std::string getName() { return "MSEGradOp"; };
-		std::vector<T> getParameters() const { return std::vector<T>({this->eps_, this->scale_}); }
+		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({this->eps_, this->scale_}); }
   };
 
 	/**
@@ -184,25 +184,25 @@ public:
 		0.5 * sum(1 + log(sigma^2) - mu^2 - sigma^2)
 		KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
 	*/
-	template<typename T>
-	class KLDivergenceMuOp : public LossFunctionOp<T>
+	template<typename TensorT>
+	class KLDivergenceMuOp : public LossFunctionOp<TensorT>
 	{
 	public:
-		using LossFunctionOp<T>::LossFunctionOp;
+		using LossFunctionOp<TensorT>::LossFunctionOp;
 		std::string getName() { return "KLDivergenceMuOp"; };
-		std::vector<T> getParameters() const { return std::vector<T>({this->eps_, this->scale_}); }
+		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({this->eps_, this->scale_}); }
 	};
 
 	/**
 		@brief KLDivergenceMu  loss function gradient.
 	*/
-	template<typename T>
-	class KLDivergenceMuGradOp : public LossFunctionGradOp<T>
+	template<typename TensorT>
+	class KLDivergenceMuGradOp : public LossFunctionGradOp<TensorT>
 	{
 	public:
-		using LossFunctionGradOp<T>::LossFunctionGradOp;
+		using LossFunctionGradOp<TensorT>::LossFunctionGradOp;
 		std::string getName() { return "KLDivergenceMuGradOp"; };
-		std::vector<T> getParameters() const { return std::vector<T>({this->eps_, this->scale_}); }
+		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({this->eps_, this->scale_}); }
 	};
 
 	/**
@@ -213,25 +213,25 @@ public:
 		0.5 * sum(1 + log(sigma^2) - mu^2 - sigma^2)
 		KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
 	*/
-	template<typename T>
-	class KLDivergenceLogVarOp : public LossFunctionOp<T>
+	template<typename TensorT>
+	class KLDivergenceLogVarOp : public LossFunctionOp<TensorT>
 	{
 	public:
-		using LossFunctionOp<T>::LossFunctionOp;
+		using LossFunctionOp<TensorT>::LossFunctionOp;
 		std::string getName() { return "KLDivergenceLogVarOp"; };
-		std::vector<T> getParameters() const { return std::vector<T>({this->eps_, this->scale_}); }
+		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({this->eps_, this->scale_}); }
 	};
 
 	/**
 		@brief KLDivergenceLogVar  loss function gradient.
 	*/
-	template<typename T>
-	class KLDivergenceLogVarGradOp : public LossFunctionGradOp<T>
+	template<typename TensorT>
+	class KLDivergenceLogVarGradOp : public LossFunctionGradOp<TensorT>
 	{
 	public:
-		using LossFunctionGradOp<T>::LossFunctionGradOp;
+		using LossFunctionGradOp<TensorT>::LossFunctionGradOp;
 		std::string getName() { return "KLDivergenceLogVarGradOp"; };
-		std::vector<T> getParameters() const { return std::vector<T>({this->eps_, this->scale_}); }
+		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({this->eps_, this->scale_}); }
 	};
 
 	/**
@@ -256,13 +256,13 @@ public:
 	TensorFlow implementation:
 	max(x, 0) - x * z + log(1 + exp(-abs(x)))
 	*/
-	template<typename T>
-	class BCEWithLogitsOp : public LossFunctionOp<T>
+	template<typename TensorT>
+	class BCEWithLogitsOp : public LossFunctionOp<TensorT>
 	{
 	public:
-		using LossFunctionOp<T>::LossFunctionOp;
+		using LossFunctionOp<TensorT>::LossFunctionOp;
 		std::string getName() { return "BCEWithLogitsOp"; };
-		std::vector<T> getParameters() const { return std::vector<T>({this->eps_, this->scale_}); }
+		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({this->eps_, this->scale_}); }
 	};
 
 	/**
@@ -275,85 +275,85 @@ public:
 	1 - z + 1/(1 + exp(-x))*(-exp(-x))
 	= -((z - 1)*exp(x) + z)/(exp(x) + 1)
 	*/
-	template<typename T>
-	class BCEWithLogitsGradOp : public LossFunctionGradOp<T>
+	template<typename TensorT>
+	class BCEWithLogitsGradOp : public LossFunctionGradOp<TensorT>
 	{
 	public:
-		using LossFunctionGradOp<T>::LossFunctionGradOp;
+		using LossFunctionGradOp<TensorT>::LossFunctionGradOp;
 		std::string getName() { return "BCEWithLogitsGradOp"; };
-		std::vector<T> getParameters() const { return std::vector<T>({this->eps_, this->scale_}); }
+		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({this->eps_, this->scale_}); }
 	};
 
 	/**
 		@brief CrossEntropyWithLogits loss function.
 	*/
-	template<typename T>
-	class CrossEntropyWithLogitsOp : public LossFunctionOp<T>
+	template<typename TensorT>
+	class CrossEntropyWithLogitsOp : public LossFunctionOp<TensorT>
 	{
 	public:
-		using LossFunctionOp<T>::LossFunctionOp;
+		using LossFunctionOp<TensorT>::LossFunctionOp;
 		std::string getName() { return "CrossEntropyWithLogitsOp"; };
-		std::vector<T> getParameters() const { return std::vector<T>({this->eps_, this->scale_}); }
+		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({this->eps_, this->scale_}); }
 	};
 
 	/**
 		@brief CrossEntropyWithLogits loss function gradient.
 	*/
-	template<typename T>
-	class CrossEntropyWithLogitsGradOp : public LossFunctionGradOp<T>
+	template<typename TensorT>
+	class CrossEntropyWithLogitsGradOp : public LossFunctionGradOp<TensorT>
 	{
 	public:
-		using LossFunctionGradOp<T>::LossFunctionGradOp;
+		using LossFunctionGradOp<TensorT>::LossFunctionGradOp;
 		std::string getName() { return "CrossEntropyWithLogitsGradOp"; };
-		std::vector<T> getParameters() const { return std::vector<T>({this->eps_, this->scale_}); }
+		std::vector<TensorT> getParameters() const { return std::vector<TensorT>({this->eps_, this->scale_}); }
 	};
 
   /**
     @brief MSE Mean Squared Error loss function for when a value is not within a specified range.
   */
-  template<typename T>
-  class MSERangeUBOp : public LossFunctionOp<T>
+  template<typename TensorT>
+  class MSERangeUBOp : public LossFunctionOp<TensorT>
   {
   public:
-    using LossFunctionOp<T>::LossFunctionOp;
+    using LossFunctionOp<TensorT>::LossFunctionOp;
     std::string getName() { return "MSERangeUBOp"; };
-    std::vector<T> getParameters() const { return std::vector<T>({ this->eps_, this->scale_ }); }
+    std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->eps_, this->scale_ }); }
   };
 
   /**
     @brief MSE Mean Squared Error loss function gradient for when a value is not within a specified range.
   */
-  template<typename T>
-  class MSERangeUBGradOp : public LossFunctionGradOp<T>
+  template<typename TensorT>
+  class MSERangeUBGradOp : public LossFunctionGradOp<TensorT>
   {
   public:
-    using LossFunctionGradOp<T>::LossFunctionGradOp;
+    using LossFunctionGradOp<TensorT>::LossFunctionGradOp;
     std::string getName() { return "MSERangeUBGradOp"; };
-    std::vector<T> getParameters() const { return std::vector<T>({ this->eps_, this->scale_ }); }
+    std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->eps_, this->scale_ }); }
   };
 
   /**
     @brief MSE Mean Squared Error loss function for when a value is not within a specified range.
   */
-  template<typename T>
-  class MSERangeLBOp : public LossFunctionOp<T>
+  template<typename TensorT>
+  class MSERangeLBOp : public LossFunctionOp<TensorT>
   {
   public:
-    using LossFunctionOp<T>::LossFunctionOp;
+    using LossFunctionOp<TensorT>::LossFunctionOp;
     std::string getName() { return "MSERangeLBOp"; };
-    std::vector<T> getParameters() const { return std::vector<T>({ this->eps_, this->scale_ }); }
+    std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->eps_, this->scale_ }); }
   };
 
   /**
     @brief MSE Mean Squared Error loss function gradient for when a value is not within a specified range.
   */
-  template<typename T>
-  class MSERangeLBGradOp : public LossFunctionGradOp<T>
+  template<typename TensorT>
+  class MSERangeLBGradOp : public LossFunctionGradOp<TensorT>
   {
   public:
-    using LossFunctionGradOp<T>::LossFunctionGradOp;
+    using LossFunctionGradOp<TensorT>::LossFunctionGradOp;
     std::string getName() { return "MSERangeLBGradOp"; };
-    std::vector<T> getParameters() const { return std::vector<T>({ this->eps_, this->scale_ }); }
+    std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->eps_, this->scale_ }); }
   };
 
 	/**

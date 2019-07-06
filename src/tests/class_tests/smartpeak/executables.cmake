@@ -28,8 +28,9 @@ set(ml_executables_list
   IntegrationFunction_test
   IntegrationFunctionTensor_test
   Link_test
-  Lossfunction_test
-  LossfunctionTensor_test
+  LossFunction_test
+  LossFunctionTensor_test
+  MetricFunction_test
   ModelBuilder_test
   ModelBuilderExperimental_test
   ModelInterpreter_DAG_test

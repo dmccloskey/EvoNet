@@ -366,7 +366,6 @@ public:
 	= (1 - z) * x + log(1 + exp(-x))
 	= x - x * z + log(1 + exp(-x))
 
-
 	References:
 	https://pytorch.org/docs/stable/nn.html#bcewithlogitsloss
 
