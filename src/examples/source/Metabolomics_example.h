@@ -265,12 +265,12 @@ public:
 
 					// pick a random sample group name
 					//std::string sample_group_name = selectRandomElement(sample_group_names_);
-					std::string sample_group_name = this->model_.sample_group_names_[0];
+					std::string sample_group_name = this->model_training_.sample_group_names_[0];
 
 					for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
-						const TensorT mar = this->model_.calculateMAR(
-							this->model_.metabolomicsData_.at(sample_group_name),
-							this->model_.biochemicalReactions_.at(this->model_.reaction_ids_[nodes_iter]));
+						const TensorT mar = this->model_training_.calculateMAR(
+							this->model_training_.metabolomicsData_.at(sample_group_name),
+							this->model_training_.biochemicalReactions_.at(this->model_training_.reaction_ids_[nodes_iter]));
 						input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = mar;
 						output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = mar;
 					}
@@ -314,8 +314,8 @@ public:
         else
           sample_group_name = selectRandomElement(this->model_validation_.sample_group_names_);
 
-        for (int nodes_iter = 0; nodes_iter < n_input_pixels + 2 * n_encodings; ++nodes_iter) {
-          if (nodes_iter < n_input_nodes) {
+        for (int nodes_iter = 0; nodes_iter < n_input_pixels + 2 * n_encodings_; ++nodes_iter) {
+          if (nodes_iter < n_input_pixels) {
             TensorT value;
             if (train)
               value = this->model_training_.calculateMAR(
@@ -328,7 +328,7 @@ public:
             input_data(batch_iter, memory_iter, nodes_iter) = value;
             output_data(batch_iter, memory_iter, nodes_iter) = value;
           }
-          else if (nodes_iter >= n_input_pixels && nodes_iter < n_input_pixels + n_encodings) {
+          else if (nodes_iter >= n_input_pixels && nodes_iter < n_input_pixels + n_encodings_) {
             TensorT random_value;
             if (train)
               random_value = d(gen);
@@ -374,8 +374,8 @@ public:
         else
           sample_group_name = selectRandomElement(this->model_validation_.sample_group_names_);
 
-        for (int nodes_iter = 0; nodes_iter < n_input_pixels + 2 * n_encodings; ++nodes_iter) {
-          if (nodes_iter < n_input_nodes) {
+        for (int nodes_iter = 0; nodes_iter < n_input_pixels + 2 * n_encodings_; ++nodes_iter) {
+          if (nodes_iter < n_input_pixels) {
             TensorT value;
             if (train)
               value = this->model_training_.getRandomConcentration(
@@ -388,7 +388,7 @@ public:
             input_data(batch_iter, memory_iter, nodes_iter) = value;
             output_data(batch_iter, memory_iter, nodes_iter) = value;
           }
-          else if (nodes_iter >= n_input_pixels && nodes_iter < n_input_pixels + n_encodings) {
+          else if (nodes_iter >= n_input_pixels && nodes_iter < n_input_pixels + n_encodings_) {
             TensorT random_value;
             if (train)
               random_value = d(gen);
