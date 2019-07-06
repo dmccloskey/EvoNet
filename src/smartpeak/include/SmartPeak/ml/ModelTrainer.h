@@ -34,7 +34,7 @@ public:
 		void setLogging(bool log_training = false, bool log_validation = false, bool log_evaluation = false); ///< enable_logging setter
 		void setLossFunctions(const std::vector<std::shared_ptr<LossFunctionOp<TensorT>>>& loss_functions); ///< loss_functions setter [TODO: tests]
 		void setLossFunctionGrads(const std::vector<std::shared_ptr<LossFunctionGradOp<TensorT>>>& loss_function_grads); ///< loss_functions setter [TODO: tests]
-		void setOutputNodes(const std::vector<std::vector<std::string>>& output_nodes); ///< output_nodes setter [TODO: tests]
+		void setLossOutputNodes(const std::vector<std::vector<std::string>>& output_nodes); ///< output_nodes setter [TODO: tests]
 		void setNTBPTTSteps(const int& n_TBPTT); ///< n_TBPTT setter
 		void setNTETTSteps(const int& n_TETT); ///< n_TETT setter
 		void setFindCycles(const bool& find_cycles); ///< find_cycles setter [TODO: tests]
@@ -52,7 +52,7 @@ public:
 		bool getLogEvaluation() const;
 		std::vector<std::shared_ptr<LossFunctionOp<TensorT>>> getLossFunctions(); ///< loss_functions getter [TODO: tests]
 		std::vector<std::shared_ptr<LossFunctionGradOp<TensorT>>> getLossFunctionGrads(); ///< loss_functions getter [TODO: tests]
-		std::vector<std::vector<std::string>> getOutputNodes(); ///< output_nodes getter [TODO: tests]
+		std::vector<std::vector<std::string>> getLossOutputNodes(); ///< output_nodes getter [TODO: tests]
 		int getNTBPTTSteps() const; ///< n_TBPTT setter
 		int getNTETTSteps() const; ///< n_TETT setter
 		bool getFindCycles(); ///< find_cycles getter [TODO: tests]
@@ -321,7 +321,7 @@ public:
 protected:
 		std::vector<std::shared_ptr<LossFunctionOp<TensorT>>> loss_functions_;
 		std::vector<std::shared_ptr<LossFunctionGradOp<TensorT>>> loss_function_grads_;
-		std::vector<std::vector<std::string>> output_nodes_;
+		std::vector<std::vector<std::string>> loss_output_nodes_;
 
 private:
     int batch_size_;
@@ -399,9 +399,9 @@ private:
 	}
 
 	template<typename TensorT, typename InterpreterT>
-	void ModelTrainer<TensorT, InterpreterT>::setOutputNodes(const std::vector<std::vector<std::string>>& output_nodes)
+	void ModelTrainer<TensorT, InterpreterT>::setLossOutputNodes(const std::vector<std::vector<std::string>>& output_nodes)
 	{
-		output_nodes_ = output_nodes;
+		loss_output_nodes_ = output_nodes;
 	}
 
 	template<typename TensorT, typename InterpreterT>
@@ -501,9 +501,9 @@ private:
 	}
 
 	template<typename TensorT, typename InterpreterT>
-	std::vector<std::vector<std::string>> ModelTrainer<TensorT, InterpreterT>::getOutputNodes()
+	std::vector<std::vector<std::string>> ModelTrainer<TensorT, InterpreterT>::getLossOutputNodes()
 	{
-		return output_nodes_;
+		return loss_output_nodes_;
 	}
 
 	template<typename TensorT, typename InterpreterT>
@@ -640,7 +640,7 @@ private:
 			return model_error;
 		}
 		std::vector<std::string> output_nodes;
-		for (const std::vector<std::string>& output_nodes_vec : this->output_nodes_)
+		for (const std::vector<std::string>& output_nodes_vec : this->loss_output_nodes_)
 			for (const std::string& output_node : output_nodes_vec)
 				output_nodes.push_back(output_node);
 		if (!this->checkOutputData(this->getNEpochsTraining(), output, this->getBatchSize(), this->getMemorySize(), output_nodes))
@@ -692,18 +692,18 @@ private:
 			if (this->getVerbosityLevel() >= 2)
 				std::cout << "Error Calculation..." << std::endl;
 			int output_node_cnt = 0;
-			for (size_t loss_iter = 0; loss_iter < this->output_nodes_.size(); loss_iter++) {
+			for (size_t loss_iter = 0; loss_iter < this->loss_output_nodes_.size(); loss_iter++) {
 				const Eigen::Tensor<TensorT, 3> expected_tmp = output.chip(iter, 3);
-				Eigen::Tensor<TensorT, 3> expected(this->getBatchSize(), this->getMemorySize(), (int)this->output_nodes_[loss_iter].size());
+				Eigen::Tensor<TensorT, 3> expected(this->getBatchSize(), this->getMemorySize(), (int)this->loss_output_nodes_[loss_iter].size());
 				for (int batch_iter = 0; batch_iter < this->getBatchSize(); ++batch_iter)
 					for (int memory_iter = 0; memory_iter < this->getMemorySize(); ++memory_iter)
-						for (int node_iter = 0; node_iter < this->output_nodes_[loss_iter].size(); ++node_iter)
+						for (int node_iter = 0; node_iter < this->loss_output_nodes_[loss_iter].size(); ++node_iter)
 							expected(batch_iter, memory_iter, node_iter) = expected_tmp(batch_iter, memory_iter, (int)(node_iter + output_node_cnt));
 				if (this->getNTETTSteps() < 0)
-					model_interpreter.CETT(model, expected, this->output_nodes_[loss_iter], this->loss_functions_[loss_iter].get(), this->loss_function_grads_[loss_iter].get(), this->getMemorySize());
+					model_interpreter.CETT(model, expected, this->loss_output_nodes_[loss_iter], this->loss_functions_[loss_iter].get(), this->loss_function_grads_[loss_iter].get(), this->getMemorySize());
 				else
-					model_interpreter.CETT(model, expected, this->output_nodes_[loss_iter], this->loss_functions_[loss_iter].get(), this->loss_function_grads_[loss_iter].get(), this->getNTETTSteps());
-				output_node_cnt += this->output_nodes_[loss_iter].size();
+					model_interpreter.CETT(model, expected, this->loss_output_nodes_[loss_iter], this->loss_functions_[loss_iter].get(), this->loss_function_grads_[loss_iter].get(), this->getNTETTSteps());
+				output_node_cnt += this->loss_output_nodes_[loss_iter].size();
 			}
 
 			// back propogate
@@ -758,7 +758,7 @@ private:
       return std::make_pair(model_error_training, model_error_validation);
     }
     std::vector<std::string> output_nodes;
-    for (const std::vector<std::string>& output_nodes_vec : this->output_nodes_)
+    for (const std::vector<std::string>& output_nodes_vec : this->loss_output_nodes_)
       for (const std::string& output_node : output_nodes_vec)
         output_nodes.push_back(output_node);
     if (!model.checkNodeNames(output_nodes))
@@ -806,17 +806,17 @@ private:
       if (this->getVerbosityLevel() >= 2)
         std::cout << "Validation Error Calculation..." << std::endl;
       int output_node_cnt = 0;
-      for (size_t loss_iter = 0; loss_iter < this->output_nodes_.size(); loss_iter++) {
-        Eigen::Tensor<TensorT, 3> expected(this->getBatchSize(), this->getMemorySize(), (int)this->output_nodes_[loss_iter].size());
+      for (size_t loss_iter = 0; loss_iter < this->loss_output_nodes_.size(); loss_iter++) {
+        Eigen::Tensor<TensorT, 3> expected(this->getBatchSize(), this->getMemorySize(), (int)this->loss_output_nodes_[loss_iter].size());
         for (int batch_iter = 0; batch_iter < this->getBatchSize(); ++batch_iter)
           for (int memory_iter = 0; memory_iter < this->getMemorySize(); ++memory_iter)
-            for (int node_iter = 0; node_iter < this->output_nodes_[loss_iter].size(); ++node_iter)
+            for (int node_iter = 0; node_iter < this->loss_output_nodes_[loss_iter].size(); ++node_iter)
               expected(batch_iter, memory_iter, node_iter) = output_data_validation(batch_iter, memory_iter, (int)(node_iter + output_node_cnt));
         if (this->getNTETTSteps() < 0)
-          model_interpreter.CETT(model, expected, this->output_nodes_[loss_iter], this->loss_functions_[loss_iter].get(), this->loss_function_grads_[loss_iter].get(), this->getMemorySize());
+          model_interpreter.CETT(model, expected, this->loss_output_nodes_[loss_iter], this->loss_functions_[loss_iter].get(), this->loss_function_grads_[loss_iter].get(), this->getMemorySize());
         else
-          model_interpreter.CETT(model, expected, this->output_nodes_[loss_iter], this->loss_functions_[loss_iter].get(), this->loss_function_grads_[loss_iter].get(), this->getNTETTSteps());
-        output_node_cnt += this->output_nodes_[loss_iter].size();
+          model_interpreter.CETT(model, expected, this->loss_output_nodes_[loss_iter], this->loss_functions_[loss_iter].get(), this->loss_function_grads_[loss_iter].get(), this->getNTETTSteps());
+        output_node_cnt += this->loss_output_nodes_[loss_iter].size();
       }
 
       // get the model validation error
@@ -850,17 +850,17 @@ private:
       if (this->getVerbosityLevel() >= 2)
         std::cout << "Training Error Calculation..." << std::endl;
       output_node_cnt = 0;
-      for (size_t loss_iter = 0; loss_iter < this->output_nodes_.size(); loss_iter++) {
-        Eigen::Tensor<TensorT, 3> expected(this->getBatchSize(), this->getMemorySize(), (int)this->output_nodes_[loss_iter].size());
+      for (size_t loss_iter = 0; loss_iter < this->loss_output_nodes_.size(); loss_iter++) {
+        Eigen::Tensor<TensorT, 3> expected(this->getBatchSize(), this->getMemorySize(), (int)this->loss_output_nodes_[loss_iter].size());
         for (int batch_iter = 0; batch_iter < this->getBatchSize(); ++batch_iter)
           for (int memory_iter = 0; memory_iter < this->getMemorySize(); ++memory_iter)
-            for (int node_iter = 0; node_iter < this->output_nodes_[loss_iter].size(); ++node_iter)
+            for (int node_iter = 0; node_iter < this->loss_output_nodes_[loss_iter].size(); ++node_iter)
               expected(batch_iter, memory_iter, node_iter) = output_data_training(batch_iter, memory_iter, (int)(node_iter + output_node_cnt));
         if (this->getNTETTSteps() < 0)
-          model_interpreter.CETT(model, expected, this->output_nodes_[loss_iter], this->loss_functions_[loss_iter].get(), this->loss_function_grads_[loss_iter].get(), this->getMemorySize());
+          model_interpreter.CETT(model, expected, this->loss_output_nodes_[loss_iter], this->loss_functions_[loss_iter].get(), this->loss_function_grads_[loss_iter].get(), this->getMemorySize());
         else
-          model_interpreter.CETT(model, expected, this->output_nodes_[loss_iter], this->loss_functions_[loss_iter].get(), this->loss_function_grads_[loss_iter].get(), this->getNTETTSteps());
-        output_node_cnt += this->output_nodes_[loss_iter].size();
+          model_interpreter.CETT(model, expected, this->loss_output_nodes_[loss_iter], this->loss_functions_[loss_iter].get(), this->loss_function_grads_[loss_iter].get(), this->getNTETTSteps());
+        output_node_cnt += this->loss_output_nodes_[loss_iter].size();
       }
 
       // get the model training error
@@ -918,7 +918,7 @@ private:
 			return model_error;
 		}
 		std::vector<std::string> output_nodes;
-		for (const std::vector<std::string>& output_nodes_vec : this->output_nodes_)
+		for (const std::vector<std::string>& output_nodes_vec : this->loss_output_nodes_)
 			for (const std::string& output_node : output_nodes_vec)
 				output_nodes.push_back(output_node);
 		if (!this->checkOutputData(this->getNEpochsValidation(), output, this->getBatchSize(), this->getMemorySize(), output_nodes))
@@ -969,18 +969,18 @@ private:
 			if (this->getVerbosityLevel() >= 2)
 				std::cout << "Error Calculation..." << std::endl;
 			int output_node_cnt = 0;
-			for (size_t loss_iter = 0; loss_iter < this->output_nodes_.size(); loss_iter++) {
+			for (size_t loss_iter = 0; loss_iter < this->loss_output_nodes_.size(); loss_iter++) {
 				Eigen::Tensor<TensorT, 3> expected_tmp = output.chip(iter, 3);
-				Eigen::Tensor<TensorT, 3> expected(this->getBatchSize(), this->getMemorySize(), (int)this->output_nodes_[loss_iter].size());
+				Eigen::Tensor<TensorT, 3> expected(this->getBatchSize(), this->getMemorySize(), (int)this->loss_output_nodes_[loss_iter].size());
 				for (int batch_iter = 0; batch_iter < this->getBatchSize(); ++batch_iter)
 					for (int memory_iter = 0; memory_iter < this->getMemorySize(); ++memory_iter)
-						for (int node_iter = 0; node_iter < this->output_nodes_[loss_iter].size(); ++node_iter)
+						for (int node_iter = 0; node_iter < this->loss_output_nodes_[loss_iter].size(); ++node_iter)
 							expected(batch_iter, memory_iter, node_iter) = expected_tmp(batch_iter, memory_iter, (int)(node_iter + output_node_cnt));
 				if (this->getNTETTSteps() < 0)
-					model_interpreter.CETT(model, expected, this->output_nodes_[loss_iter], this->loss_functions_[loss_iter].get(), this->loss_function_grads_[loss_iter].get(), this->getMemorySize());
+					model_interpreter.CETT(model, expected, this->loss_output_nodes_[loss_iter], this->loss_functions_[loss_iter].get(), this->loss_function_grads_[loss_iter].get(), this->getMemorySize());
 				else
-					model_interpreter.CETT(model, expected, this->output_nodes_[loss_iter], this->loss_functions_[loss_iter].get(), this->loss_function_grads_[loss_iter].get(), this->getNTETTSteps());
-				output_node_cnt += this->output_nodes_[loss_iter].size();
+					model_interpreter.CETT(model, expected, this->loss_output_nodes_[loss_iter], this->loss_functions_[loss_iter].get(), this->loss_function_grads_[loss_iter].get(), this->getNTETTSteps());
+				output_node_cnt += this->loss_output_nodes_[loss_iter].size();
 			}
 
 			model_interpreter.getModelResults(model, false, false, true);
@@ -1031,7 +1031,7 @@ private:
 			return model_output;
 		}
 		std::vector<std::string> output_nodes;
-		for (const std::vector<std::string>& output_nodes_vec : this->output_nodes_)
+		for (const std::vector<std::string>& output_nodes_vec : this->loss_output_nodes_)
 			for (const std::string& output_node : output_nodes_vec)
 				output_nodes.push_back(output_node);
 		if (!model.checkNodeNames(output_nodes))
@@ -1068,7 +1068,7 @@ private:
 
 			// extract out the model output
 			std::vector<Eigen::Tensor<TensorT, 2>> output;
-			for (const std::vector<std::string>& output_nodes_vec : this->output_nodes_) {
+			for (const std::vector<std::string>& output_nodes_vec : this->loss_output_nodes_) {
 				for (const std::string& output_node : output_nodes_vec) {
 					output.push_back(model.getNode(output_node).getOutput());
 				}
