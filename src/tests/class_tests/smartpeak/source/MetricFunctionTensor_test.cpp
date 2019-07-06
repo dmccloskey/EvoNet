@@ -42,19 +42,17 @@ BOOST_AUTO_TEST_CASE(operationfunctionClassificationAccuracyOp)
     });
   Eigen::Tensor<float, 3> y_pred(batch_size, memory_size, layer_size);
   y_pred.setValues({
-    {{1, 1}, {0, 0}},
-    {{2, 2}, {0, 0}}
+    {{2, 1}, {0, 0}},
+    {{1, 2}, {0, 0}}
     });
 
-  float error_ptr[] = { 0, 0, 0, 0 };
+  float error_ptr[] = { 0, 0 };
   Eigen::DefaultDevice device;
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, time_step, device);
-  Eigen::TensorMap<Eigen::Tensor<float, 2>> error(error_ptr, batch_size, memory_size);
-  BOOST_CHECK_CLOSE(error(0, 0), 1, 1e-6);
-  BOOST_CHECK_CLOSE(error(1, 0), 3, 1e-6);
-  BOOST_CHECK_CLOSE(error(0, 1), 0, 1e-6);
-  BOOST_CHECK_CLOSE(error(1, 1), 0, 1e-6);
+  Eigen::TensorMap<Eigen::Tensor<float, 1>> error(error_ptr, memory_size);
+  BOOST_CHECK_CLOSE(error(0), 0.5, 1e-6);
+  BOOST_CHECK_CLOSE(error(1), 0, 1e-6);
 }
 
 /**
@@ -92,15 +90,13 @@ BOOST_AUTO_TEST_CASE(operationfunctionPredictionBiasOp)
     {{2, 2}, {0, 0}}
     });
 
-  float error_ptr[] = { 0, 0, 0, 0 };
+  float error_ptr[] = { 0, 0 };
   Eigen::DefaultDevice device;
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, time_step, device);
-  Eigen::TensorMap<Eigen::Tensor<float, 2>> error(error_ptr, batch_size, memory_size);
-  BOOST_CHECK_CLOSE(error(0, 0), -0.5, 1e-6); //TODO
-  BOOST_CHECK_CLOSE(error(1, 0), -3.5, 1e-6);
-  BOOST_CHECK_CLOSE(error(0, 1), 0, 1e-6);
-  BOOST_CHECK_CLOSE(error(1, 1), 0, 1e-6);
+  Eigen::TensorMap<Eigen::Tensor<float, 1>> error(error_ptr, memory_size);
+  BOOST_CHECK_CLOSE(error(0), 0.5, 1e-6);
+  BOOST_CHECK_CLOSE(error(1), 0, 1e-6);
 }
 
 /**
@@ -138,15 +134,13 @@ BOOST_AUTO_TEST_CASE(operationfunctionF1ScoreOp)
     {{.9, .1}, {0, 0}}
     });
 
-  float error_ptr[] = { 0, 0, 0, 0 };
+  float error_ptr[] = { 0, 0 };
   Eigen::DefaultDevice device;
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, time_step, device);
-  Eigen::TensorMap<Eigen::Tensor<float, 2>> error(error_ptr, batch_size, memory_size);
-  BOOST_CHECK_CLOSE(error(0, 0), 4.60514975, 1e-6);
-  BOOST_CHECK_CLOSE(error(1, 0), 0.21071884, 1e-6);
-  BOOST_CHECK_CLOSE(error(0, 1), 0, 1e-6);
-  BOOST_CHECK_CLOSE(error(1, 1), 0, 1e-6);
+  Eigen::TensorMap<Eigen::Tensor<float, 1>> error(error_ptr, memory_size);
+  BOOST_CHECK_CLOSE(error(0), 0.5, 1e-6);
+  BOOST_CHECK_CLOSE(error(1), 0, 1e-6);
 }
 
 /**
@@ -184,15 +178,13 @@ BOOST_AUTO_TEST_CASE(operationfunctionAUROCOp)
     {{.9, .1}, {0, 0}}
     });
 
-  float error_ptr[] = { 0, 0, 0, 0 };
+  float error_ptr[] = { 0, 0 };
   Eigen::DefaultDevice device;
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, time_step, device);
-  Eigen::TensorMap<Eigen::Tensor<float, 2>> error(error_ptr, batch_size, memory_size);
-  BOOST_CHECK_CLOSE(error(0, 0), 1.15129256, 1e-6); //TODO
-  BOOST_CHECK_CLOSE(error(1, 0), 0.0526802726, 1e-6);
-  BOOST_CHECK_CLOSE(error(0, 1), 0, 1e-6);
-  BOOST_CHECK_CLOSE(error(1, 1), 0, 1e-6);
+  Eigen::TensorMap<Eigen::Tensor<float, 1>> error(error_ptr, memory_size);
+  BOOST_CHECK_CLOSE(error(0), 0.5, 1e-6);
+  BOOST_CHECK_CLOSE(error(1), 0, 1e-6);
 }
 
 /**
@@ -230,15 +222,13 @@ BOOST_AUTO_TEST_CASE(operationfunctionMCCOp)
     {{2, 2}, {0, 0}}
     });
 
-  float error_ptr[] = { 0, 0, 0, 0 };
+  float error_ptr[] = { 0, 0 };
   Eigen::DefaultDevice device;
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, time_step, device);
-  Eigen::TensorMap<Eigen::Tensor<float, 2>> error(error_ptr, batch_size, memory_size);
-  BOOST_CHECK_CLOSE(error(0, 0), 0, 1e-6);
-  BOOST_CHECK_CLOSE(error(1, 0), 3, 1e-6);
-  BOOST_CHECK_CLOSE(error(0, 1), 0, 1e-6);
-  BOOST_CHECK_CLOSE(error(1, 1), 0, 1e-6);
+  Eigen::TensorMap<Eigen::Tensor<float, 1>> error(error_ptr, memory_size);
+  BOOST_CHECK_CLOSE(error(0), 0.5, 1e-6);
+  BOOST_CHECK_CLOSE(error(1), 0, 1e-6);
 }
 
 /**
@@ -276,15 +266,13 @@ BOOST_AUTO_TEST_CASE(operationfunctionMAEOp)
     {{2, 2}, {0, 0}}
     });
 
-  float error_ptr[] = { 0, 0, 0, 0 };
+  float error_ptr[] = { 0, 0 };
   Eigen::DefaultDevice device;
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, time_step, device);
-  Eigen::TensorMap<Eigen::Tensor<float, 2>> error(error_ptr, batch_size, memory_size);
-  BOOST_CHECK_CLOSE(error(0, 0), 0.25, 1e-6);
-  BOOST_CHECK_CLOSE(error(1, 0), 1.25, 1e-6);
-  BOOST_CHECK_CLOSE(error(0, 1), 0, 1e-6);
-  BOOST_CHECK_CLOSE(error(1, 1), 0, 1e-6);
+  Eigen::TensorMap<Eigen::Tensor<float, 1>> error(error_ptr, memory_size);
+  BOOST_CHECK_CLOSE(error(0), 0.5, 1e-6);
+  BOOST_CHECK_CLOSE(error(1), 0, 1e-6);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

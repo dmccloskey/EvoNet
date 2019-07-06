@@ -54,17 +54,17 @@ namespace SmartPeak
       auto fp = (stable_softmax >= expected_tensor.constant(TensorT(this->classification_threshold_)) && expected_tensor < expected_tensor.constant(TensorT(0.1))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
       auto fn = (stable_softmax < expected_tensor.constant(TensorT(this->classification_threshold_)) && expected_tensor > expected_tensor.constant(TensorT(0.9))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
 
-      // DEBUG
-      std::cout << "Stable softmax: " << stable_softmax << std::endl;
-      std::cout << "Expected: " << expected_tensor << std::endl;
-      std::cout << "TP: " << tp << std::endl;
-      std::cout << "TN: " << tn << std::endl;
-      std::cout << "FP: " << fp << std::endl;
-      std::cout << "FN: " << fn << std::endl;
+      //// DEBUG
+      //std::cout << "Stable softmax: " << stable_softmax << std::endl;
+      //std::cout << "Expected: " << expected_tensor << std::endl;
+      //std::cout << "TP: " << tp << std::endl;
+      //std::cout << "TN: " << tn << std::endl;
+      //std::cout << "FP: " << fp << std::endl;
+      //std::cout << "FN: " << fn << std::endl;
 
       // calculate the accuracy     
       auto accuracy = (tp.sum() + tn.sum()) / (tp.sum() + tn.sum() + fp.sum() + fn.sum());
-			error_tensor.chip(time_step, 0).device(device) += accuracy / accuracy.constant(TensorT(batch_size));
+      error_tensor.chip(time_step, 0).device(device) += accuracy; //Not needed: / accuracy.constant(TensorT(batch_size));
 		};
     TensorT getClassificationThreshold() const { return this->classification_threshold_; }
   protected:
