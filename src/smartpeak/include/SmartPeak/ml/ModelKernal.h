@@ -115,20 +115,22 @@ namespace SmartPeak
 			DeviceT& device,
 			bool copyHostToDevice = false,
 			bool copyDeviceToHost = false) = 0;
-    //virtual bool executeModelMetrics(
-    //  Eigen::Tensor<TensorT, 2>& expected,
-    //  TensorT* h_node_output,
-    //  TensorT* d_node_output,
-    //  TensorT* h_model_metric,
-    //  TensorT* d_model_metric,
-    //  MetricFunctionTensorOp<TensorT, DeviceT>* metric_function,
-    //  const int& batch_size,
-    //  const int& memory_size,
-    //  const int& layer_size,
-    //  const int& time_step,
-    //  DeviceT& device,
-    //  bool copyHostToDevice = false,
-    //  bool copyDeviceToHost = false) = 0;
+    virtual bool executeModelMetric(
+      Eigen::Tensor<TensorT, 2>& expected,
+      TensorT* h_node_output,
+      TensorT* d_node_output,
+      TensorT* h_model_metric,
+      TensorT* d_model_metric,
+      MetricFunctionTensorOp<TensorT, DeviceT>* metric_function,
+      const int& batch_size,
+      const int& memory_size,
+      const int& layer_size,
+      const int& n_metrics,
+      const int& time_step,
+      const int& metric_index,
+      DeviceT& device,
+      bool copyHostToDevice = false,
+      bool copyDeviceToHost = false) = 0;
 		virtual bool executeWeightErrors(
 			TensorT* h_sink_errors,
 			TensorT* d_sink_errors,
@@ -308,17 +310,35 @@ namespace SmartPeak
 			Eigen::DefaultDevice& device,
 			bool copyHostToDevice = false,
 			bool copyDeviceToHost = false) {
-			// Allocate memory for the expected and predicted
-			TensorT* h_expected = expected.data();
-
 			// Calculate the model error
-			loss_function->operator()(h_node_outputs, h_expected, h_model_error, batch_size, memory_size, layer_size, time_step, device);
+			loss_function->operator()(h_node_outputs, expected.data(), h_model_error, batch_size, memory_size, layer_size, time_step, device);
 
 			// Calculate the node errors		
-			loss_grad_function->operator()(h_node_outputs, h_expected, h_node_errors, batch_size, memory_size, layer_size, time_step, device);
+			loss_grad_function->operator()(h_node_outputs, expected.data(), h_node_errors, batch_size, memory_size, layer_size, time_step, device);
 
 			return true;
 		};
+    bool executeModelMetric(
+      Eigen::Tensor<TensorT, 2>& expected,
+      TensorT* h_node_output,
+      TensorT* d_node_output,
+      TensorT* h_model_metric,
+      TensorT* d_model_metric,
+      MetricFunctionTensorOp<TensorT, Eigen::DefaultDevice>* metric_function,
+      const int& batch_size,
+      const int& memory_size,
+      const int& layer_size,
+      const int& n_metrics,
+      const int& time_step,
+      const int& metric_index,
+      DeviceT& device,
+      bool copyHostToDevice = false,
+      bool copyDeviceToHost = false) {
+      // Calculate the model metric
+      metric_function->operator()(h_node_output, expected.data(), h_model_metric, batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
+
+      return true;
+    };
 		bool executeWeightErrors(
 			TensorT* h_sink_errors,
 			TensorT* d_sink_errors,

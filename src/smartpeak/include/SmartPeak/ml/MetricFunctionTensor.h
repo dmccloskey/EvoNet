@@ -20,7 +20,8 @@ namespace SmartPeak
 		MetricFunctionTensorOp() = default;
 		virtual ~MetricFunctionTensorOp() = default;
 		virtual std::string getName() = 0;
-		virtual void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const = 0;
+		virtual void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size,
+      const int& n_metrics, const int& time_step, const int& metric_index, DeviceT& device) const = 0;
 	};
 
   /**
@@ -37,11 +38,12 @@ namespace SmartPeak
     ClassificationAccuracyTensorOp() = default;
     ClassificationAccuracyTensorOp(const TensorT& classification_threshold) : classification_threshold_(classification_threshold) {};
 		std::string getName() override { return "ClassificationAccuracyTensorOp"; }
-		void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const
+		void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size,
+      const int& n_metrics, const int& time_step, const int& metric_index, DeviceT& device) const
 		{
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
       Eigen::TensorMap<Eigen::Tensor<TensorT, 5>> predicted_tensor(predicted, batch_size, memory_size, layer_size, 1, 1);
-			Eigen::TensorMap<Eigen::Tensor<TensorT, 1>> error_tensor(error, memory_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_tensor(error, n_metrics, memory_size);
 
       // Calculate the soft max
       auto predicted_chip = predicted_tensor.chip(time_step, 1); // 4 dims
@@ -64,7 +66,7 @@ namespace SmartPeak
 
       // calculate the accuracy     
       auto accuracy = (tp.sum() + tn.sum()) / (tp.sum() + tn.sum() + fp.sum() + fn.sum());
-      error_tensor.chip(time_step, 0).device(device) += accuracy; //Not needed: / accuracy.constant(TensorT(batch_size));
+      error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += accuracy; //Not needed: / accuracy.constant(TensorT(batch_size));
 		};
     TensorT getClassificationThreshold() const { return this->classification_threshold_; }
   protected:
@@ -82,11 +84,12 @@ namespace SmartPeak
   public:
 		using MetricFunctionTensorOp<TensorT, DeviceT>::MetricFunctionTensorOp;
 		std::string getName() { return "PredictionBiasTensorOp"; }
-		void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const
+		void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size,
+      const int& n_metrics, const int& time_step, const int& metric_index, DeviceT& device) const
 		{
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
-			Eigen::TensorMap<Eigen::Tensor<TensorT, 1>> error_tensor(error, memory_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_tensor(error, n_metrics, memory_size);
 			auto predicted_chip = predicted_tensor.chip(time_step, 1);
 		};
   };
@@ -105,11 +108,12 @@ namespace SmartPeak
 public:
 		using MetricFunctionTensorOp<TensorT, DeviceT>::MetricFunctionTensorOp;
 		std::string getName() { return "F1ScoreTensorOp"; }
-		void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const
+		void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size,
+      const int& n_metrics, const int& time_step, const int& metric_index, DeviceT& device) const
 		{
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
-			Eigen::TensorMap<Eigen::Tensor<TensorT, 1>> error_tensor(error, memory_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_tensor(error, n_metrics, memory_size);
 			auto predicted_chip = predicted_tensor.chip(time_step, 1);
 		};
   };
@@ -128,11 +132,12 @@ public:
 public:
 		using MetricFunctionTensorOp<TensorT, DeviceT>::MetricFunctionTensorOp;
 		std::string getName() { return "AUROCTensorOp"; }
-		void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const
+		void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size,
+      const int& n_metrics, const int& time_step, const int& metric_index, DeviceT& device) const
 		{
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
-			Eigen::TensorMap<Eigen::Tensor<TensorT, 1>> error_tensor(error, memory_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_tensor(error, n_metrics, memory_size);
 			auto predicted_chip = predicted_tensor.chip(time_step, 1);
 		};
   };
@@ -149,11 +154,12 @@ public:
 	public:
 		using MetricFunctionTensorOp<TensorT, DeviceT>::MetricFunctionTensorOp;
 		std::string getName() { return "MCCTensorOp"; }
-		void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const
+		void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size,
+      const int& n_metrics, const int& time_step, const int& metric_index, DeviceT& device) const
 		{
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
-			Eigen::TensorMap<Eigen::Tensor<TensorT, 1>> error_tensor(error, memory_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_tensor(error, n_metrics, memory_size);
 			auto predicted_chip = predicted_tensor.chip(time_step, 1);
 		};
 	};
@@ -169,13 +175,14 @@ public:
   public:
     using MetricFunctionTensorOp<TensorT, DeviceT>::MetricFunctionTensorOp;
     std::string getName() { return "MAETensorOp"; }
-    void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const {
+    void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size,
+      const int& n_metrics, const int& time_step, const int& metric_index, DeviceT& device) const {
       Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
       Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
-      Eigen::TensorMap<Eigen::Tensor<TensorT, 1>> error_tensor(error, memory_size);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_tensor(error, n_metrics, memory_size);
       auto predicted_chip = predicted_tensor.chip(time_step, 1);
 
-      error_tensor.chip(time_step, 0).device(device) += ((expected_tensor - predicted_chip).pow(TensorT(2)).pow(TensorT(0.5)) / expected_tensor.constant(TensorT(layer_size) * TensorT(batch_size))).sum();
+      error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += ((expected_tensor - predicted_chip).pow(TensorT(2)).pow(TensorT(0.5)) / expected_tensor.constant(TensorT(layer_size) * TensorT(batch_size))).sum();
     };
   };
 }
