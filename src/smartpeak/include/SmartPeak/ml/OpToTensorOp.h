@@ -11,6 +11,8 @@
 #include <SmartPeak/ml/SolverTensor.h>
 #include <SmartPeak/ml/LossFunction.h>
 #include <SmartPeak/ml/LossFunctionTensor.h>
+#include <SmartPeak/ml/MetricFunction.h>
+#include <SmartPeak/ml/MetricFunctionTensor.h>
 #include <unsupported/Eigen/CXX11/Tensor>
 
 namespace SmartPeak
@@ -438,5 +440,27 @@ namespace SmartPeak
 		std::vector<TensorT> getTensorParams(IntegrationWeightGradOp<TensorT>* op_class) const { return std::vector<TensorT>(); }
 	};
 
+  template<typename TensorT, typename DeviceT>
+  class MetricFunctionOpToMetricFunctionTensorOp : public OpToTensorOp<TensorT, DeviceT, MetricFunctionOp<TensorT>, MetricFunctionTensorOp<TensorT, DeviceT>>
+  {
+  public:
+    MetricFunctionTensorOp<TensorT, DeviceT>* convertOpToTensorOp(MetricFunctionOp<TensorT>* op_class) const {
+      if (op_class->getName() == "ClassificationAccuracyOp") {
+        MetricFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new ClassificationAccuracyTensorOp<TensorT, DeviceT>(op_class->getParameters().at(0));
+        return op_tensor_class;
+      }
+      // TODO: all other MetricFunction operators
+      else if (op_class->getName() == "MAEOp") {
+        MetricFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new MAETensorOp<TensorT, DeviceT>();
+        return op_tensor_class;
+      }
+      else {
+        std::cout << "No conversion available for " << op_class->getName() << "." << std::endl;
+        MetricFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new MAETensorOp<TensorT, DeviceT>();
+        return op_tensor_class;
+      }
+    }
+    std::vector<TensorT> getTensorParams(MetricFunctionOp<TensorT>* op_class) const { return std::vector<TensorT>(); }
+  };
 }
 #endif //SMARTPEAK_OPTOTENSOROP_H

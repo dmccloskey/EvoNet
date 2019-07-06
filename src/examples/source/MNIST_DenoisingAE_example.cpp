@@ -356,7 +356,7 @@ void main_AE(const bool& make_model, const bool& train_model) {
     std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>(1e-6, 1.0))
     //std::shared_ptr<LossFunctionGradOp<float>>(new BCEWithLogitsGradOp<float>(1e-6, 1e-3))
     });
-  model_trainer.setOutputNodes({ output_nodes });
+  model_trainer.setLossOutputNodes({ output_nodes });
 
   // define the model replicator for growth mode
   ModelReplicatorExt<float> model_replicator;

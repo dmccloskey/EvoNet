@@ -188,25 +188,25 @@ BOOST_AUTO_TEST_CASE(operationfunctionAUROCOp)
 }
 
 /**
-  MCCOp Tests
+  MCCTensorOp Tests
 */
-BOOST_AUTO_TEST_CASE(constructorMCCOp)
+BOOST_AUTO_TEST_CASE(constructorMCCTensorOp)
 {
-  MCCOp<float, Eigen::DefaultDevice>* ptrMCC = nullptr;
-  MCCOp<float, Eigen::DefaultDevice>* nullPointerMCC = nullptr;
+  MCCTensorOp<float, Eigen::DefaultDevice>* ptrMCC = nullptr;
+  MCCTensorOp<float, Eigen::DefaultDevice>* nullPointerMCC = nullptr;
   BOOST_CHECK_EQUAL(ptrMCC, nullPointerMCC);
 }
 
-BOOST_AUTO_TEST_CASE(destructorMCCOp)
+BOOST_AUTO_TEST_CASE(destructorMCCTensorOp)
 {
-  MCCOp<float, Eigen::DefaultDevice>* ptrMCC = nullptr;
-  ptrMCC = new MCCOp<float, Eigen::DefaultDevice>();
+  MCCTensorOp<float, Eigen::DefaultDevice>* ptrMCC = nullptr;
+  ptrMCC = new MCCTensorOp<float, Eigen::DefaultDevice>();
   delete ptrMCC;
 }
 
-BOOST_AUTO_TEST_CASE(operationfunctionMCCOp)
+BOOST_AUTO_TEST_CASE(operationfunctionMCCTensorOp)
 {
-  MCCOp<float, Eigen::DefaultDevice> operation;
+  MCCTensorOp<float, Eigen::DefaultDevice> operation;
 
   const int memory_size = 2;
   const int batch_size = 2;

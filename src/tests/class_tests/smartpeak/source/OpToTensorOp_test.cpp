@@ -908,4 +908,50 @@ BOOST_AUTO_TEST_CASE(getTensorParamsLossFunctionOpToLossFunctionTensorOp)
   BOOST_CHECK_EQUAL(params.size(), 0);
 }
 
+
+BOOST_AUTO_TEST_CASE(constructorMetricFunctionOpToMetricFunctionTensorOp)
+{
+  MetricFunctionOpToMetricFunctionTensorOp<float, Eigen::DefaultDevice>* ptr = nullptr;
+  MetricFunctionOpToMetricFunctionTensorOp<float, Eigen::DefaultDevice>* nullPointer = nullptr;
+  ptr = new MetricFunctionOpToMetricFunctionTensorOp<float, Eigen::DefaultDevice>();
+  BOOST_CHECK_NE(ptr, nullPointer);
+}
+
+BOOST_AUTO_TEST_CASE(destructorMetricFunctionOpToMetricFunctionTensorOp)
+{
+  MetricFunctionOpToMetricFunctionTensorOp<float, Eigen::DefaultDevice>* ptr = nullptr;
+  ptr = new MetricFunctionOpToMetricFunctionTensorOp<float, Eigen::DefaultDevice>();
+  delete ptr;
+}
+
+BOOST_AUTO_TEST_CASE(convertOpToTensorOpMetricFunctionOpToMetricFunctionTensorOp)
+{
+  MetricFunctionOpToMetricFunctionTensorOp<float, Eigen::DefaultDevice> op_to_tensor_op;
+  MetricFunctionOp<float>* op_class;
+  MetricFunctionTensorOp<float, Eigen::DefaultDevice>* op_tensor_class;
+
+  op_class = new ClassificationAccuracyOp<float>();
+  op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+  BOOST_CHECK_EQUAL(op_tensor_class->getName(), "ClassificationAccuracyTensorOp");
+
+  op_class = new MAEOp<float>();
+  op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+  BOOST_CHECK_EQUAL(op_tensor_class->getName(), "MAETensorOp");
+}
+
+BOOST_AUTO_TEST_CASE(getTensorParamsMetricFunctionOpToMetricFunctionTensorOp)
+{
+  MetricFunctionOpToMetricFunctionTensorOp<float, Eigen::DefaultDevice> op_to_tensor_op;
+  MetricFunctionOp<float>* op_class = nullptr;
+  std::vector<float> params;
+
+  op_class = new ClassificationAccuracyOp<float>();
+  params = op_to_tensor_op.getTensorParams(op_class);
+  BOOST_CHECK_EQUAL(params.size(), 0);
+
+  op_class = new MAEOp<float>();
+  params = op_to_tensor_op.getTensorParams(op_class);
+  BOOST_CHECK_EQUAL(params.size(), 0);
+}
+
 BOOST_AUTO_TEST_SUITE_END()

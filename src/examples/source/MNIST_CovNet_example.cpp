@@ -509,7 +509,7 @@ void main_MNIST(const bool& make_model, const bool& train_model) {
   model_trainer.setFastInterpreter(true);
   model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new CrossEntropyWithLogitsOp<float>()) });
   model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new CrossEntropyWithLogitsGradOp<float>()) });
-  model_trainer.setOutputNodes({ output_FC_nodes });
+  model_trainer.setLossOutputNodes({ output_FC_nodes });
 
   // define the model replicator
   ModelReplicatorExt<float> model_replicator;

@@ -144,11 +144,11 @@ public:
     Where MCC = TP*TN-FP*FN/sqrt((TP+FP)(TP+FN)(TN+FP)(TN+FN))
 	*/
 	template<typename TensorT, typename DeviceT>
-	class MCCOp : public MetricFunctionTensorOp<TensorT, DeviceT>
+	class MCCTensorOp : public MetricFunctionTensorOp<TensorT, DeviceT>
 	{
 	public:
 		using MetricFunctionTensorOp<TensorT, DeviceT>::MetricFunctionTensorOp;
-		std::string getName() { return "MCCOp"; }
+		std::string getName() { return "MCCTensorOp"; }
 		void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const
 		{
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);

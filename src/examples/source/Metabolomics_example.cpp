@@ -1310,8 +1310,8 @@ void main_classification(std::string blood_fraction = "PLT", bool make_model = t
 	//});
 	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new CrossEntropyWithLogitsOp<float>()) });
 	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new CrossEntropyWithLogitsGradOp<float>()) });
-	model_trainer.setOutputNodes({ output_nodes });
-	//model_trainer.setOutputNodes({ output_nodes, output_nodes_softmax
+	model_trainer.setLossOutputNodes({ output_nodes });
+	//model_trainer.setLossOutputNodes({ output_nodes, output_nodes_softmax
 	//});
 
 	// define the model logger
@@ -1414,7 +1414,7 @@ void main_reconstruction()
 	model_trainer.setLogging(false, false);
 	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
 	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
-	model_trainer.setOutputNodes({ output_nodes });
+	model_trainer.setLossOutputNodes({ output_nodes });
 
 	// define the model logger
 	ModelLogger<float> model_logger;

@@ -775,7 +775,7 @@ void main_classification(bool make_model = true, bool simulate_MARs = true)
   model_trainer.setLossFunctionGrads({ 
     std::shared_ptr<LossFunctionGradOp<float>>(new CrossEntropyWithLogitsGradOp<float>()), 
     std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
-  model_trainer.setOutputNodes({ 
+  model_trainer.setLossOutputNodes({ 
     output_nodes, 
     output_nodes });
 
@@ -962,7 +962,7 @@ void main_reconstruction(bool make_model = true, bool simulate_MARs = true)
     //std::shared_ptr<LossFunctionGradOp<float>>(new BCEWithLogitsGradOp<float>(1e-6, 1.0)),
     std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceMuGradOp<float>(1e-6, 0.1)),
     std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceLogVarGradOp<float>(1e-6, 0.1)) });
-  model_trainer.setOutputNodes({ output_nodes, encoding_nodes_mu, encoding_nodes_logvar });
+  model_trainer.setLossOutputNodes({ output_nodes, encoding_nodes_mu, encoding_nodes_logvar });
 
   // define the model logger
   ModelLogger<float> model_logger(true, true, false, false, false, false, false, false);

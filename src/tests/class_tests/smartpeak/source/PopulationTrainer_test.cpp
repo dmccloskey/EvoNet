@@ -451,7 +451,7 @@ BOOST_AUTO_TEST_CASE(trainModels)
 	model_trainer.setNEpochsEvaluation(n_epochs_evaluation);
 	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
 	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
-	model_trainer.setOutputNodes({ output_nodes });
+	model_trainer.setLossOutputNodes({ output_nodes });
 
   ModelReplicatorExt<float> model_replicator;
   model_replicator.setNNodeDownAdditions(1);
@@ -581,7 +581,7 @@ BOOST_AUTO_TEST_CASE(evalModels)
 	model_trainer.setNEpochsEvaluation(n_epochs_evaluation);
 	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
 	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
-	model_trainer.setOutputNodes({ output_nodes });
+	model_trainer.setLossOutputNodes({ output_nodes });
 
 	ModelReplicatorExt<float> model_replicator;
 	model_replicator.setNNodeDownAdditions(1);
@@ -716,7 +716,7 @@ BOOST_AUTO_TEST_CASE(exampleUsage)
 	model_trainer.setNEpochsEvaluation(n_epochs_evaluation);
 	model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
 	model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
-	model_trainer.setOutputNodes({ output_nodes });
+	model_trainer.setLossOutputNodes({ output_nodes });
 
   // define the model replicator for growth mode
 	ModelReplicatorExt<float> model_replicator;

@@ -953,7 +953,7 @@ private:
 		std::vector<std::vector<std::tuple<int, std::string, TensorT>>> models_validation_errors_per_generation;
 
 		std::vector<std::string> output_nodes;
-		for (const std::vector<std::string>& output_nodes_vec : model_trainer.getOutputNodes())
+		for (const std::vector<std::string>& output_nodes_vec : model_trainer.getLossOutputNodes())
 			for (const std::string& output_node : output_nodes_vec)
 				output_nodes.push_back(output_node);
 

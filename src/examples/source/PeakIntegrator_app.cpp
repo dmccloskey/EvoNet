@@ -1076,7 +1076,7 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
   model_trainer.setPreserveOoO(true);
   model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MAEOp<float>()) });
   model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MAEGradOp<float>()) });
-  model_trainer.setOutputNodes({
+  model_trainer.setLossOutputNodes({
     //output_nodes_time, 
     output_nodes_intensity });
 
