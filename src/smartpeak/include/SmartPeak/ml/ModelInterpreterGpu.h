@@ -34,16 +34,17 @@ namespace SmartPeak
 			const std::vector<int>& source_layer_sizes, const std::vector<int>& sink_layer_sizes, const std::vector<std::vector<std::pair<int, int>>> weight_indices, 
 			std::vector<std::map<std::string, std::vector<std::pair<int, int>>>>& shared_weight_indices, const std::vector<std::vector<TensorT>>& weight_values,
 			const std::vector<bool>& make_source_tensors, const std::vector<bool>& make_sink_tensors, const std::vector<bool>& make_weight_tensors,
-			const int& batch_size, const int& memory_size, const bool& train);
-		void executeForwardPropogationOperations(const int& time_step);
-		void executeModelErrorOperations(Eigen::Tensor<TensorT, 2>& expected, const int& layer_id, LossFunctionTensorOp<TensorT, Eigen::GpuDevice>* loss_function, LossFunctionGradTensorOp<TensorT, Eigen::GpuDevice>* loss_function_grad, const int& time_step);
-		void executeBackwardPropogationOperations(const int& time_step);
-		void executeWeightErrorOperations();
-		void executeWeightUpdateOperations();
-		void allocateModelErrorTensor(const int& batch_size, const int& memory_size, const int& n_metrics);
-		void getModelResults(Model<TensorT>& model, const bool& output_nodes, const bool& weights, const bool& model_error);
-		void checkMemory(const Model<TensorT>& model, const int& batch_size, const int& memory_size);
-		void updateSolverParams(const int& param_index, const TensorT& param_factor);
+			const int& batch_size, const int& memory_size, const bool& train) override;
+		void executeForwardPropogationOperations(const int& time_step) override;
+		void executeModelErrorOperations(Eigen::Tensor<TensorT, 2>& expected, const int& layer_id, LossFunctionTensorOp<TensorT, Eigen::GpuDevice>* loss_function, LossFunctionGradTensorOp<TensorT, Eigen::GpuDevice>* loss_function_grad, const int& time_step) override;
+    void executeModelMetricOperations(Eigen::Tensor<TensorT, 2>& expected, const int& layer_id, MetricFunctionTensorOp<TensorT, Eigen::GpuDevice>* metric_function, const int& time_step, const int& metric_index) override;
+		void executeBackwardPropogationOperations(const int& time_step) override;
+		void executeWeightErrorOperations() override;
+		void executeWeightUpdateOperations() override;
+		void allocateModelErrorTensor(const int& batch_size, const int& memory_size, const int& n_metrics) override;
+		void getModelResults(Model<TensorT>& model, const bool& output_nodes, const bool& weights, const bool& model_error) override;
+		void checkMemory(const Model<TensorT>& model, const int& batch_size, const int& memory_size) override;
+		void updateSolverParams(const int& param_index, const TensorT& param_factor) override;
 	private:
 		friend class cereal::access;
 		template<class Archive>
@@ -377,6 +378,44 @@ namespace SmartPeak
 		assert(cudaStreamSynchronize(stream) == cudaSuccess);
 		assert(cudaStreamDestroy(stream) == cudaSuccess);
 	}
+
+  template<typename TensorT>
+  inline void ModelInterpreterGpu<TensorT>::executeModelMetricOperations(Eigen::Tensor<TensorT, 2>& expected, const int & layer_id, MetricFunctionTensorOp<TensorT, Eigen::GpuDevice>* metric_function, const int & time_step, const int & metric_index)
+  {
+    // More performant if all model error calculations were passed at the same time
+    ModelKernalGpu<TensorT> model_kernal;
+    cudaStream_t stream; // The stream will be destroyed by GpuStreamDevice once the function goes out of scope!
+    assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess);
+    Eigen::GpuStreamDevice stream_device(&stream, getModelResources()[0].getID());
+    Eigen::GpuDevice device(&stream_device);
+
+    auto layer_tensor_data = this->getLayerTensor(layer_id);
+
+    // Sync the model metric and node output
+    if (!this->model_error_->getMetricStatus().second)
+      this->model_error_->syncHAndDMetric(device);
+    if (!layer_tensor_data->getOutputStatus().second)
+      layer_tensor_data->syncHAndDOutput(device);
+
+    // Calculate the model metric
+    model_kernal.executeModelMetric(
+      expected,
+      layer_tensor_data->getHOutputPointer().get(),
+      layer_tensor_data->getDOutputPointer().get(),
+      this->model_error_->getHMetricPointer().get(),
+      this->model_error_->getDMetricPointer().get(),
+      metric_function,
+      layer_tensor_data->getBatchSize(),
+      layer_tensor_data->getMemorySize(),
+      layer_tensor_data->getLayerSize(),
+      this->model_error_->getNMetrics(),
+      time_step,
+      metric_index,
+      device);
+
+    assert(cudaStreamSynchronize(stream) == cudaSuccess);
+    assert(cudaStreamDestroy(stream) == cudaSuccess);
+  }
 
 	template<typename TensorT>
 	inline void ModelInterpreterGpu<TensorT>::executeWeightErrorOperations()

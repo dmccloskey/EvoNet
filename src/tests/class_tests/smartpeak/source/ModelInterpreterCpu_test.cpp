@@ -448,7 +448,6 @@ BOOST_AUTO_TEST_CASE(executeForwardPropogationOperations)
 			}
 		}
 	}
-
 }
 
 Model<float> model_executeModelErrorOperations = makeModelToy1();
@@ -506,6 +505,49 @@ BOOST_AUTO_TEST_CASE(executeModelErrorOperations)
 			}
 		}
 	}
+}
+
+Model<float> model_executeModelMetricOperations = makeModelToy1();
+BOOST_AUTO_TEST_CASE(executeModelMetricOperations)
+{
+  ModelInterpreterDefaultDevice<float> model_interpreter;
+  const int batch_size = 4;
+  const int memory_size = 1;
+  const int n_metrics = 1;
+  const bool train = true;
+
+  // compile the graph into a set of operations
+  model_interpreter.getForwardPropogationOperations(model_executeModelMetricOperations, batch_size, memory_size, train, false, true, true);
+
+  // create the input
+  const std::vector<std::string> node_ids = { "0", "1" };
+  Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)node_ids.size());
+  input.setValues({
+    {{1, 5}},
+    {{2, 6}},
+    {{3, 7}},
+    {{4, 8}} });
+  model_interpreter.mapValuesToLayers(model_executeModelMetricOperations, input, node_ids, "output");
+
+  model_interpreter.initBiases(model_executeModelMetricOperations); // create the bias	
+  model_interpreter.executeForwardPropogationOperations(0); // FP
+  model_interpreter.allocateModelErrorTensor(batch_size, memory_size, n_metrics); // allocate the memory
+
+  // calculate the model error
+  std::vector<std::string> output_nodes = { "4", "5" };
+  Eigen::Tensor<float, 2> expected(batch_size, (int)output_nodes.size());
+  expected.setValues({ {0, 1}, {0, 1}, {0, 1}, {0, 1} });
+  MetricFunctionTensorOp<float, Eigen::DefaultDevice>* solver = new MAETensorOp<float, Eigen::DefaultDevice>();
+  const int layer_id = model_executeModelMetricOperations.getNode("4").getTensorIndex().first;
+  model_interpreter.executeModelMetricOperations(expected, layer_id, solver, 0, 0);
+
+  Eigen::Tensor<float, 2> metric(n_metrics, memory_size);
+  metric.setValues({ {20.5} });
+  for (int j = 0; j < n_metrics; ++j) {
+    for (int k = 0; k < memory_size; ++k) {
+      BOOST_CHECK_CLOSE(model_interpreter.getModelError()->getMetric()(j, k), metric(j, k), 1e-6);
+    }
+  }
 }
 
 Model<float> model_executeBackwardPropogationOperations = makeModelToy1();
@@ -924,6 +966,63 @@ BOOST_AUTO_TEST_CASE(CETT)
 			}
 		}
 	}
+}
+
+Model<float> model_CMTT = makeModelToy2();
+BOOST_AUTO_TEST_CASE(CMTT)
+{
+  ModelInterpreterDefaultDevice<float> model_interpreter;
+  const int batch_size = 5;
+  const int memory_size = 8;
+  const int n_metrics = 1;
+  const bool train = true;
+
+  // compile the graph into a set of operations and allocate all tensors
+  model_interpreter.getForwardPropogationOperations(model_CMTT, batch_size, memory_size, train, false, true, true);
+  model_interpreter.allocateModelErrorTensor(batch_size, memory_size, n_metrics);
+
+  // create the input
+  const std::vector<std::string> input_ids = { "0", "3", "4" };  // biases are set to zero
+  Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size());
+  input.setValues(
+    { {{8, 0, 0}, {7, 0, 0}, {6, 0, 0}, {5, 0, 0}, {4, 0, 0}, {3, 0, 0}, {2, 0, 0}, {1, 0, 0}},
+    {{9, 0, 0}, {8, 0, 0}, {7, 0, 0}, {6, 0, 0}, {5, 0, 0}, {4, 0, 0}, {3, 0, 0}, {2, 0, 0}},
+    {{10, 0, 0}, {9, 0, 0}, {8, 0, 0}, {7, 0, 0}, {6, 0, 0}, {5, 0, 0}, {4, 0, 0}, {3, 0, 0}},
+    {{11, 0, 0}, {10, 0, 0}, {9, 0, 0}, {8, 0, 0}, {7, 0, 0}, {6, 0, 0}, {5, 0, 0}, {4, 0, 0}},
+    {{12, 0, 0}, {11, 0, 0}, {10, 0, 0}, {9, 0, 0}, {8, 0, 0}, {7, 0, 0}, {6, 0, 0}, {5, 0, 0}} }
+  );
+  model_interpreter.mapValuesToLayers(model_CMTT, input, input_ids, "output");
+
+  model_interpreter.FPTT(4);
+
+  // calculate the metric
+  // expected output (from t=n to t=0)
+  const std::vector<std::string> output_nodes = { "2" };
+  // y = m1*(m2*x + b*yprev) where m1 = 1, m2 = 1 and b = -1
+  Eigen::Tensor<float, 3> expected(batch_size, memory_size, (int)output_nodes.size());
+  expected.setValues(
+    { { { 4 },{ 4 },{ 3 },{ 3 },{ 2 },{ 2 },{ 1 },{ 1 } },
+    { { 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 },{ 2 },{ 1 } },
+    { { 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 },{ 2 } },
+    { { 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 } },
+    { { 6 },{ 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 } } }
+  );
+  MetricFunctionOp<float>* metric_function = new MAEOp<float>();
+  model_interpreter.CMTT(model_CMTT, expected, output_nodes, metric_function, 4, 0);
+
+  // test values of metrics of the output nodes
+  Eigen::Tensor<float, 2> model_metric(n_metrics, memory_size);
+  model_metric.setValues({
+    {28.7999,19.2,10.8,3.2,0,0,0,0}});
+
+  auto nodes_map = model_CMTT.getNodesMap();
+  for (int j = 0; j < n_metrics; ++j) {
+    for (int k = 0; k < memory_size; ++k) {
+      //std::cout << "Metric: " << j << "; Memory: " << k << std::endl;
+      //std::cout << "Calc Model Error: " << model_interpreter.getModelError()->getMetric()(j, k) << ", Expected Error: " << model_metric(j, k) << std::endl;
+      BOOST_CHECK_CLOSE(model_interpreter.getModelError()->getMetric()(j, k), model_metric(j, k), 1e-3);
+    }
+  }
 }
 
 Model<float> model_TBPTT = makeModelToy2();

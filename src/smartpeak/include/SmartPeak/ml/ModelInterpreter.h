@@ -457,7 +457,7 @@ namespace SmartPeak
 
     @param[in] time_step The current time-step to operate on
     */
-    //virtual void executeModelMetricOperations(Eigen::Tensor<TensorT, 3>& expected, const int& layer_id, std::vector<MetricFunctionTensorOp<TensorT, DeviceT>*> metric_functions, const int& time_step) = 0;
+    virtual void executeModelMetricOperations(Eigen::Tensor<TensorT, 2>& expected, const int& layer_id, MetricFunctionTensorOp<TensorT, DeviceT>* metric_function, const int& time_step, const int& metric_index) = 0;
 
 		/**
 		@brief Execute model kernal methods required for backward propogation
@@ -515,6 +515,22 @@ namespace SmartPeak
 		@param[in] node_names Output nodes
 		*/
 		void CETT(Model<TensorT>& model, const Eigen::Tensor<TensorT, 3>& values, const std::vector<std::string>& node_names, LossFunctionOp<TensorT>* loss_function, LossFunctionGradOp<TensorT>* loss_function_grad, const int& time_steps);
+
+
+    /**
+    @brief Calculates the metrics of the model through time (CMTT)
+      with respect to the expected values
+
+    @param[in] values Expected node output values
+      (dim0: batch_size, dim1: memory_size, dim2: output nodes)
+      where t=n to t=0
+    @param[in] node_names Output nodes
+    @param[in] metric_function The metric function to evaluate on the expected and predicted node values
+    @param[in] time_steps The number of time_steps to evaluate in time
+    @param[in] metric_index The index of the metric function to evaluate
+    */
+    void CMTT(Model<TensorT>& model, const Eigen::Tensor<TensorT, 3>& values, const std::vector<std::string>& node_names, MetricFunctionOp<TensorT>* metric_function, 
+      const int& time_steps, const int& metric_index);
 
 		/**
 		@brief Truncated Back Propogation Through Time (TBPTT) of the network model.
@@ -2069,7 +2085,51 @@ namespace SmartPeak
 		}
 	}
 
-	template<typename TensorT, typename DeviceT>
+  template<typename TensorT, typename DeviceT>
+  inline void ModelInterpreter<TensorT, DeviceT>::CMTT(Model<TensorT>& model, const Eigen::Tensor<TensorT, 3>& values, const std::vector<std::string>& node_names, MetricFunctionOp<TensorT>* metric_function, const int & time_steps, const int & metric_index)
+  {
+    // check time_steps vs memory_size
+    int max_steps = time_steps;
+    if (time_steps >= layer_tensors_[0]->getMemorySize())
+    {
+      std::cout << "Time_steps will be scaled back to the memory_size - 1." << std::endl;
+      max_steps = layer_tensors_[0]->getMemorySize() - 1;
+    }
+
+    if (values.dimension(1) - 1 > layer_tensors_[0]->getMemorySize())
+      std::cout << "The sequence for CETT needs to be the memory_size - 1!" << std::endl;
+
+    // extract out the layer id
+    const int layer_id = model.nodes_.at(node_names[0])->getTensorIndex().first;
+    if (layer_id < 0) {
+      char error_char[512];
+      sprintf(error_char, "The output layer does not exist.");
+      std::string error(error_char);
+      throw std::runtime_error(error_char);
+    }
+    if (getLayerTensor(layer_id)->getLayerSize() != node_names.size()) {
+      char error_char[512];
+      sprintf(error_char, "The number of output nodes does not match the output layer tensor size.");
+      std::string error(error_char);
+      throw std::runtime_error(error_char);
+    }
+
+    // convert the metric function
+    MetricFunctionTensorOp<TensorT, DeviceT>* metric_function_tensor = nullptr;
+    MetricFunctionOpToMetricFunctionTensorOp<TensorT, DeviceT> metric_conv;
+    metric_conv(metric_function, metric_function_tensor, std::vector<TensorT>() = {});
+
+    // NOTE: the output are stored [Tmax, Tmax - 1, ..., T=0, T=-1] where T=-1 is added automatically
+    //	     so the expected values should also be stored [Tmax, Tmax - 1, ..., T=0, T=-1]
+    for (int time_step = 0; time_step < max_steps; ++time_step)
+    {
+      // calculate the error for each batch of memory
+      Eigen::Tensor<TensorT, 2> expected = values.chip(time_step, 1);
+      executeModelMetricOperations(expected, layer_id, metric_function_tensor, time_step, metric_index);
+    }
+  }
+
+  template<typename TensorT, typename DeviceT>
 	inline void ModelInterpreter<TensorT, DeviceT>::TBPTT(const int& time_steps)
 	{
 		// check time_steps vs memory_size
