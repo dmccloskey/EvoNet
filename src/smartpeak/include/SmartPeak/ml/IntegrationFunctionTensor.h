@@ -663,7 +663,7 @@ public:
 			Eigen::array<Eigen::IndexPair<int>, 2> double_contraction_product_dims = { Eigen::IndexPair<int>(1,1), Eigen::IndexPair<int>(0,0) };
 			auto tmp = -source_output_tensor.contract(sink_error_tensor, double_contraction_product_dims);
 			// NOTE: Double contraction along the memory and batch (equivalent to a double sum along the products of the batch and memory dimensions)
-			weight_error_tensor.device(device) += tmp * weight_error_tensor.constant((TensorT)1 / (TensorT)batch_size).eval();
+			weight_error_tensor.device(device) += tmp * tmp.constant((TensorT)1 / (TensorT)batch_size).eval();
 			// NOTE: Requires a correction by dividing by the batch size
 		};
 		std::string getName() const { return "SumWeightGradTensorOp"; };

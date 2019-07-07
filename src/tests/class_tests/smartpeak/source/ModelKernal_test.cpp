@@ -301,16 +301,8 @@ BOOST_AUTO_TEST_CASE(forwardPropogationDefaultDevice)
 	// release resources
 	delete[] h_source_outputs;
 	delete[] d_source_outputs;
-	//delete[] h_weights;
-	//delete[] d_weights;
 	delete[] h_sink_input;
 	delete[] d_sink_input;
-	//assert(cudaFreeHost(h_source_outputs) == cudaSuccess);
-	//assert(cudaFree(d_source_outputs) == cudaSuccess);
-	//assert(cudaFreeHost(h_weights) == cudaSuccess);
-	//assert(cudaFree(d_weights) == cudaSuccess);
-	//assert(cudaFreeHost(h_sink_input) == cudaSuccess);
-	//assert(cudaFree(d_sink_input) == cudaSuccess);
 }
 
 BOOST_AUTO_TEST_CASE(backwardPropogationDefaultDevice)
@@ -462,17 +454,6 @@ BOOST_AUTO_TEST_CASE(modelErrorDefaultDevice)
 	float* h_model_error = new float[batch_size * memory_size];
 	float* d_model_error = new float[batch_size * memory_size];
 
-	//assert(cudaSetDevice(device_id) == cudaSuccess); // is this needed?
-
-	//// allocate memory
-	//std::size_t bytes = batch_size * memory_size * layer_size * sizeof(float);
-	//assert(cudaHostAlloc((void**)(&h_predicted), bytes, cudaHostAllocDefault) == cudaSuccess);
-	//assert(cudaMalloc((void**)(&d_predicted), bytes) == cudaSuccess);
-	//assert(cudaHostAlloc((void**)(&h_node_errors), bytes, cudaHostAllocDefault) == cudaSuccess);
-	//assert(cudaMalloc((void**)(&d_node_errors), bytes) == cudaSuccess);
-	//assert(cudaHostAlloc((void**)(&h_model_error), bytes, cudaHostAllocDefault) == cudaSuccess);
-	//assert(cudaMalloc((void**)(&d_model_error), bytes) == cudaSuccess);
-
 	Eigen::TensorMap<Eigen::Tensor<float, 3>> predicted(h_predicted, batch_size, memory_size, layer_size);
 	predicted.setValues({ {{1, 1}, {0, 0}},
 		{{2, 2}, {0, 0}},
@@ -487,10 +468,6 @@ BOOST_AUTO_TEST_CASE(modelErrorDefaultDevice)
 
 	// Set up the device
 	Eigen::DefaultDevice device;
-	//cudaStream_t stream; // The stream will be destroyed by GpuStreamDevice once the function goes out of scope!
-	//assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess);
-	//Eigen::GpuStreamDevice stream_device(&stream, 0);
-	//Eigen::GpuDevice device(&stream_device);
 
 	bool success = kernal.executeModelErrors(
 		expected,
@@ -509,11 +486,6 @@ BOOST_AUTO_TEST_CASE(modelErrorDefaultDevice)
 		device,
 		true,
 		true);
-
-	//// Synchronize the stream
-	//cudaError_t err = cudaStreamQuery(stream);
-	//assert(cudaStreamSynchronize(stream) == cudaSuccess);
-	//assert(cudaStreamDestroy(stream) == cudaSuccess);
 
 	Eigen::Tensor<float, 2> expected_model_error(batch_size, memory_size);
 	expected_model_error.setValues({ {0, 0}, {0.5, 0}, {2.0, 0}, {4.5, 0} });
@@ -535,12 +507,78 @@ BOOST_AUTO_TEST_CASE(modelErrorDefaultDevice)
 		}
 	}
 
-	//assert(cudaFreeHost(h_predicted) == cudaSuccess);
-	//assert(cudaFree(d_predicted) == cudaSuccess);
-	//assert(cudaFreeHost(h_node_errors) == cudaSuccess);
-	//assert(cudaFree(d_node_errors) == cudaSuccess);
-	//assert(cudaFreeHost(h_model_error) == cudaSuccess);
-	//assert(cudaFree(d_model_error) == cudaSuccess);
+  // release resources
+  delete[] h_predicted;
+  delete[] d_predicted;
+  delete[] h_model_error;
+  delete[] d_model_error;
+  delete[] h_node_errors;
+  delete[] d_node_errors;
+}
+
+BOOST_AUTO_TEST_CASE(modelMetricDefaultDevice)
+{
+  const int device_id = 0;
+  ModelKernalDefaultDevice<float> kernal;
+
+  MAETensorOp<float, Eigen::DefaultDevice>* metric_function = new MAETensorOp<float, Eigen::DefaultDevice>;
+  const int batch_size = 4;
+  const int memory_size = 2;
+  const int layer_size = 2;
+  const int n_metrics = 1;
+  const int time_step = 0;
+  const int metric_index = 0;
+
+  float* h_predicted = new float[batch_size * memory_size * layer_size];
+  float* d_predicted = new float[batch_size * memory_size * layer_size];
+  float* h_model_metric = new float[n_metrics * memory_size];
+  float* d_model_metric = new float[n_metrics * memory_size];
+
+  Eigen::TensorMap<Eigen::Tensor<float, 3>> predicted(h_predicted, batch_size, memory_size, layer_size);
+  predicted.setValues({ {{1, 1}, {0, 0}},
+    {{2, 2}, {0, 0}},
+    {{3, 3}, {0, 0}},
+    {{4, 4}, {0, 0}} });
+  Eigen::TensorMap<Eigen::Tensor<float, 2>> model_metric(h_model_metric, n_metrics, memory_size);
+  model_metric.setConstant(0);
+  Eigen::Tensor<float, 2> expected(batch_size, layer_size);
+  expected.setConstant(1);
+
+  // Set up the device
+  Eigen::DefaultDevice device;
+
+  bool success = kernal.executeModelMetric(
+    expected,
+    h_predicted,
+    d_predicted,
+    h_model_metric,
+    d_model_metric,
+    metric_function,
+    batch_size,
+    memory_size,
+    layer_size,
+    n_metrics,
+    time_step,
+    metric_index,
+    device,
+    true,
+    true);
+
+  Eigen::Tensor<float, 2> expected_model_metric(n_metrics, memory_size);
+  expected_model_metric.setValues({ {1.5, 0} });
+
+  for (int metric_iter = 0; metric_iter < n_metrics; ++metric_iter) {
+    for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
+      //std::cout << "[Model Metric] Metric iter: " << metric_iter << ", Memory Iter: " << memory_iter << " = " << model_metric(metric_iter, memory_iter) << std::endl;
+      BOOST_CHECK_CLOSE(model_metric(metric_iter, memory_iter), expected_model_metric(metric_iter, memory_iter), 1e-4);
+    }
+  }
+
+  // release resources
+  delete[] h_predicted;
+  delete[] d_predicted;
+  delete[] h_model_metric;
+  delete[] d_model_metric;
 }
 
 BOOST_AUTO_TEST_CASE(weightErrorDefaultDevice)
@@ -560,27 +598,10 @@ BOOST_AUTO_TEST_CASE(weightErrorDefaultDevice)
 	float* d_source_outputs = new float[batch_size * memory_size * source_layer_size];
 	float* h_source_inputs = new float[batch_size * memory_size * source_layer_size];
 	float* d_source_inputs = new float[batch_size * memory_size * source_layer_size];
-	float* h_weight = new float[source_layer_size, sink_layer_size];
-	float* d_weight = new float[source_layer_size, sink_layer_size];
-	float* h_weight_error = new float[source_layer_size, sink_layer_size];
-	float* d_weight_error = new float[source_layer_size, sink_layer_size];
-
-	//assert(cudaSetDevice(device_id) == cudaSuccess); // is this needed?
-
-	// allocate memory
-	//std::size_t source_bytes = batch_size * memory_size * source_layer_size * sizeof(float);
-	//std::size_t sink_bytes = batch_size * memory_size * sink_layer_size * sizeof(float);
-	//std::size_t weight_bytes = source_layer_size * sink_layer_size * sizeof(float);
-	//assert(cudaHostAlloc((void**)(&h_sink_errors), sink_bytes, cudaHostAllocDefault) == cudaSuccess);
-	//assert(cudaMalloc((void**)(&d_sink_errors), sink_bytes) == cudaSuccess);
-	//assert(cudaHostAlloc((void**)(&h_source_outputs), source_bytes, cudaHostAllocDefault) == cudaSuccess);
-	//assert(cudaMalloc((void**)(&d_source_outputs), source_bytes) == cudaSuccess);
-	//assert(cudaHostAlloc((void**)(&h_source_inputs), source_bytes, cudaHostAllocDefault) == cudaSuccess);
-	//assert(cudaMalloc((void**)(&d_source_inputs), source_bytes) == cudaSuccess);
-	//assert(cudaHostAlloc((void**)(&h_weight), weight_bytes, cudaHostAllocDefault) == cudaSuccess);
-	//assert(cudaMalloc((void**)(&d_weight), weight_bytes) == cudaSuccess);
-	//assert(cudaHostAlloc((void**)(&h_weight_error), weight_bytes, cudaHostAllocDefault) == cudaSuccess);
-	//assert(cudaMalloc((void**)(&d_weight_error), weight_bytes) == cudaSuccess);
+	float* h_weight = new float[source_layer_size * sink_layer_size];
+	float* d_weight = new float[source_layer_size * sink_layer_size];
+	float* h_weight_error = new float[source_layer_size * sink_layer_size];
+	float* d_weight_error = new float[source_layer_size * sink_layer_size];
 
 	Eigen::TensorMap<Eigen::Tensor<float, 3>> sink_error(h_sink_errors, batch_size, memory_size, sink_layer_size);
 	sink_error.setValues({ {{1}, {1}},
@@ -605,10 +626,6 @@ BOOST_AUTO_TEST_CASE(weightErrorDefaultDevice)
 
 	// Set up the device
 	Eigen::DefaultDevice device;
-	//cudaStream_t stream; // The stream will be destroyed by GpuStreamDevice once the function goes out of scope!
-	//assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess);
-	//Eigen::GpuStreamDevice stream_device(&stream, 0);
-	//Eigen::GpuDevice device(&stream_device);
 
 	bool success = kernal.executeWeightErrors(
 		h_sink_errors,
@@ -631,11 +648,6 @@ BOOST_AUTO_TEST_CASE(weightErrorDefaultDevice)
 		true,
 		true);
 
-	//// Synchronize the stream
-	//cudaError_t err = cudaStreamQuery(stream);
-	//assert(cudaStreamSynchronize(stream) == cudaSuccess);
-	//assert(cudaStreamDestroy(stream) == cudaSuccess);
-
 	Eigen::Tensor<float, 2> expected_weight_error(source_layer_size, sink_layer_size);
 	expected_weight_error.setValues({ {-4.75}, {-4.75} });
 
@@ -646,16 +658,17 @@ BOOST_AUTO_TEST_CASE(weightErrorDefaultDevice)
 		}
 	}
 
-	//assert(cudaFreeHost(h_sink_errors) == cudaSuccess);
-	//assert(cudaFree(d_sink_errors) == cudaSuccess);
-	//assert(cudaFreeHost(h_source_outputs) == cudaSuccess);
-	//assert(cudaFree(d_source_outputs) == cudaSuccess);
-	//assert(cudaFreeHost(h_source_inputs) == cudaSuccess);
-	//assert(cudaFree(d_source_inputs) == cudaSuccess);
-	//assert(cudaFreeHost(h_weight) == cudaSuccess);
-	//assert(cudaFree(d_weight) == cudaSuccess);
-	//assert(cudaFreeHost(h_weight_error) == cudaSuccess);
-	//assert(cudaFree(d_weight_error) == cudaSuccess);
+  // release resources
+  delete[] h_sink_errors;
+  delete[] d_sink_errors;
+  delete[] h_source_outputs;
+  delete[] d_source_outputs;
+  delete[] h_source_inputs;
+  delete[] d_source_inputs;
+  delete[] h_weight_error;
+  delete[] d_weight_error;
+  delete[] h_weight;
+  delete[] d_weight;
 }
 
 BOOST_AUTO_TEST_CASE(sharedWeightErrorsDefaultDevice) {
@@ -703,6 +716,11 @@ BOOST_AUTO_TEST_CASE(sharedWeightErrorsDefaultDevice) {
 		}
 	}
 
+  // release resources
+  delete[] h_weight_error;
+  delete[] d_weight_error;
+  delete[] h_shared_weights;
+  delete[] d_shared_weights;
 }
 
 BOOST_AUTO_TEST_CASE(weightUpdateDefaultDevice)
@@ -716,22 +734,10 @@ BOOST_AUTO_TEST_CASE(weightUpdateDefaultDevice)
 
 	float* h_solver_params = new float[source_layer_size * sink_layer_size * 3];
 	float* d_solver_params = new float[source_layer_size * sink_layer_size * 3];
-	float* h_weight = new float[source_layer_size, sink_layer_size];
-	float* d_weight = new float[source_layer_size, sink_layer_size];
-	float* h_weight_error = new float[source_layer_size, sink_layer_size];
-	float* d_weight_error = new float[source_layer_size, sink_layer_size];
-
-	//assert(cudaSetDevice(device_id) == cudaSuccess); // is this needed?
-
-	// allocate memory
-	//std::size_t solver_bytes = source_layer_size * sink_layer_size * 3 * sizeof(float);
-	//std::size_t weight_bytes = source_layer_size * sink_layer_size * sizeof(float);
-	//assert(cudaHostAlloc((void**)(&h_solver_params), solver_bytes, cudaHostAllocDefault) == cudaSuccess);
-	//assert(cudaMalloc((void**)(&d_solver_params), solver_bytes) == cudaSuccess);
-	//assert(cudaHostAlloc((void**)(&h_weight), weight_bytes, cudaHostAllocDefault) == cudaSuccess);
-	//assert(cudaMalloc((void**)(&d_weight), weight_bytes) == cudaSuccess);
-	//assert(cudaHostAlloc((void**)(&h_weight_error), weight_bytes, cudaHostAllocDefault) == cudaSuccess);
-	//assert(cudaMalloc((void**)(&d_weight_error), weight_bytes) == cudaSuccess);
+	float* h_weight = new float[source_layer_size * sink_layer_size];
+	float* d_weight = new float[source_layer_size * sink_layer_size];
+	float* h_weight_error = new float[source_layer_size * sink_layer_size];
+	float* d_weight_error = new float[source_layer_size * sink_layer_size];
 
 	Eigen::TensorMap<Eigen::Tensor<float, 3>> solver_params(h_solver_params, source_layer_size, sink_layer_size, 3);
 	solver_params.setValues({ {{0.01, 0.99, 0.0}},
@@ -743,10 +749,6 @@ BOOST_AUTO_TEST_CASE(weightUpdateDefaultDevice)
 
 	// Set up the device
 	Eigen::DefaultDevice device;
-	//cudaStream_t stream; // The stream will be destroyed by GpuStreamDevice once the function goes out of scope!
-	//assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess);
-	//Eigen::GpuStreamDevice stream_device(&stream, 0);
-	//Eigen::GpuDevice device(&stream_device);
 
 	bool success = kernal.executeWeightUpdate(
 		h_weight,
@@ -761,11 +763,6 @@ BOOST_AUTO_TEST_CASE(weightUpdateDefaultDevice)
 		device,
 		true,
 		true);
-
-	//// Synchronize the stream
-	//cudaError_t err = cudaStreamQuery(stream);
-	//assert(cudaStreamSynchronize(stream) == cudaSuccess);
-	//assert(cudaStreamDestroy(stream) == cudaSuccess);
 
 	Eigen::Tensor<float, 2> expected_weights(source_layer_size, sink_layer_size);
 	expected_weights.setValues({ {1.002}, {1.2} });
@@ -785,30 +782,13 @@ BOOST_AUTO_TEST_CASE(weightUpdateDefaultDevice)
 		}
 	}
 
-	//assert(cudaFreeHost(h_solver_params) == cudaSuccess);
-	//assert(cudaFree(d_solver_params) == cudaSuccess);
-	//assert(cudaFreeHost(h_weight) == cudaSuccess);
-	//assert(cudaFree(d_weight) == cudaSuccess);
-	//assert(cudaFreeHost(h_weight_error) == cudaSuccess);
-	//assert(cudaFree(d_weight_error) == cudaSuccess);
-
+  // release resources
+  delete[] h_solver_params;
+  delete[] d_solver_params;
+  delete[] h_weight;
+  delete[] d_weight;
+  delete[] h_weight_error;
+  delete[] d_weight_error;
 }
-
-#if COMPILE_WITH_CUDA
-BOOST_AUTO_TEST_CASE(constructorGpu)
-{
-	ModelKernalGpu<float>* ptr = nullptr;
-	ModelKernalGpu<float>* nullPointer = nullptr;
-	ptr = new ModelKernalGpu<float>();
-	BOOST_CHECK_NE(ptr, nullPointer);
-}
-
-BOOST_AUTO_TEST_CASE(destructorGpu)
-{
-	ModelKernalGpu<float>* ptr = nullptr;
-	ptr = new ModelKernalGpu<float>();
-	delete ptr;
-}
-#endif
 
 BOOST_AUTO_TEST_SUITE_END()

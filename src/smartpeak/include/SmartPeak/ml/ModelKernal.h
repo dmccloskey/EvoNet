@@ -217,7 +217,7 @@ namespace SmartPeak
 			const int& time_step,
 			Eigen::DefaultDevice& device,
 			bool copyHostToDevice = false,
-			bool copyDeviceToHost = false) {
+			bool copyDeviceToHost = false) override {
 			// Activate the node net input
 			activation_function->operator()(h_node_inputs, h_node_outputs, batch_size, memory_size, layer_size, time_step, device);
 			return true;
@@ -234,7 +234,7 @@ namespace SmartPeak
 			const int& time_step,
 			Eigen::DefaultDevice& device,
 			bool copyHostToDevice = false,
-			bool copyDeviceToHost = false) {
+			bool copyDeviceToHost = false) override {
 			// Calculate the derivative of the sink node activation
 			activation_grad_function->operator()(h_node_outputs, h_node_derivative, batch_size, memory_size, layer_size, time_step, device);
 			return true;
@@ -255,7 +255,7 @@ namespace SmartPeak
 			const int& sink_time_step,
 			Eigen::DefaultDevice& device,
 			bool copyHostToDevice = false,
-			bool copyDeviceToHost = false) {
+			bool copyDeviceToHost = false) override {
 			// Integrate sink node input
 			sink_integration_function->operator()(h_source_outputs, h_weights, h_sink_inputs, batch_size, memory_size, source_layer_size, sink_layer_size, source_time_step, sink_time_step, device);
 			return true;
@@ -283,7 +283,7 @@ namespace SmartPeak
 			const int& sink_time_step,
 			Eigen::DefaultDevice& device,
 			bool copyHostToDevice = false,
-			bool copyDeviceToHost = false) {
+			bool copyDeviceToHost = false) override {
 			// Integrate sink node error
 			source_integration_functions->operator()(
 				h_source_errors, h_source_inputs, h_weights,
@@ -309,7 +309,7 @@ namespace SmartPeak
 			const int& time_step,
 			Eigen::DefaultDevice& device,
 			bool copyHostToDevice = false,
-			bool copyDeviceToHost = false) {
+			bool copyDeviceToHost = false) override {
 			// Calculate the model error
 			loss_function->operator()(h_node_outputs, expected.data(), h_model_error, batch_size, memory_size, layer_size, time_step, device);
 
@@ -331,9 +331,9 @@ namespace SmartPeak
       const int& n_metrics,
       const int& time_step,
       const int& metric_index,
-      DeviceT& device,
+      Eigen::DefaultDevice& device,
       bool copyHostToDevice = false,
-      bool copyDeviceToHost = false) {
+      bool copyDeviceToHost = false) override {
       // Calculate the model metric
       metric_function->operator()(h_node_output, expected.data(), h_model_metric, batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
 
@@ -358,7 +358,7 @@ namespace SmartPeak
 			const int& sink_layer_size,
 			Eigen::DefaultDevice& device,
 			bool copyHostToDevice = false,
-			bool copyDeviceToHost = false) {
+			bool copyDeviceToHost = false) override {
 			// Accumulate the error for all links involving the same weight
 			sink_integration_function->operator()(h_sink_errors, h_source_outputs, h_weight, h_source_inputs, h_weight_error, n_input_nodes,
 				batch_size, memory_size, source_layer_size, sink_layer_size, device);
@@ -375,7 +375,7 @@ namespace SmartPeak
 			const int& n_shared_layers,
 			Eigen::DefaultDevice& device,
 			bool copyHostToDevice = false,
-			bool copyDeviceToHost = false) {
+			bool copyDeviceToHost = false) override {
 			if (n_shared_layers == 0) return true;
 			// Pool the shared weights erros
 			this->combineSharedWeightErrors(h_weight_error, h_shared_weights, source_layer_size, sink_layer_size, n_shared_layers, device);
@@ -393,7 +393,7 @@ namespace SmartPeak
 			const int& sink_layer_size,
 			Eigen::DefaultDevice& device,
 			bool copyHostToDevice = false,
-			bool copyDeviceToHost = false) {
+			bool copyDeviceToHost = false) override {
 			// Update the weights
 			solver_function->operator()(h_weight, h_weight_error, h_solver_params, source_layer_size, sink_layer_size, device);//getDrop()*error);
 

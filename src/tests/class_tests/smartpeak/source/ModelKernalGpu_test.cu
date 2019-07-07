@@ -12,6 +12,21 @@
 using namespace SmartPeak;
 using namespace std;
 
+void test_constructorGpuDevice()
+{
+	ModelKernalGpu<float>* ptr = nullptr;
+	ModelKernalGpu<float>* nullPointer = nullptr;
+	ptr = new ModelKernalGpu<float>();
+	assert(ptr != nullPointer);
+}
+
+void test_destructorGpuDevice()
+{
+	ModelKernalGpu<float>* ptr = nullptr;
+	ptr = new ModelKernalGpu<float>();
+	delete ptr;
+}
+
 void test_nodeActivationGpuDevice()
 {
 	ModelKernalGpu<float> kernal;
@@ -783,6 +798,8 @@ void test_weightUpdateGpuDevice(){
 
 int main(int argc, char** argv)
 {
+	test_constructorGpuDevice();
+	test_destructorGpuDevice();
 	test_nodeActivationGpuDevice();
 	test_nodeDerivativeGpuDevice();
 	test_forwardPropogationGpuDevice();
