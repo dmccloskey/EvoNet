@@ -524,6 +524,88 @@ void test_modelErrorGpuDevice()
 	assert(cudaFree(d_model_error) == cudaSuccess);
 }
 
+void test_modelMetricGpuDevice()
+{
+  const int device_id = 0;
+  ModelKernalGpu<float> kernal;
+
+  MAETensorOp<float, Eigen::GpuDevice>* metric_function = new MSATensorOp<float, Eigen::GpuDevice>;
+  const int batch_size = 4;
+  const int memory_size = 2;
+  const int layer_size = 2;
+  const int n_metrics = 1;
+  const int time_step = 0;
+  const int metric_index = 0;
+
+  float* h_predicted;
+  float* d_predicted;
+  float* h_model_metric;
+  float* d_model_metric;
+
+  assert(cudaSetDevice(device_id) == cudaSuccess); // is this needed?
+
+  // allocate memory
+  std::size_t bytes = batch_size * memory_size * layer_size * sizeof(float);
+  std::size_t model_bytes = n_metrics * memory_size * sizeof(float);
+  assert(cudaHostAlloc((void**)(&h_predicted), bytes, cudaHostAllocDefault) == cudaSuccess);
+  assert(cudaMalloc((void**)(&d_predicted), bytes) == cudaSuccess);
+  assert(cudaHostAlloc((void**)(&h_model_metric), model_bytes, cudaHostAllocDefault) == cudaSuccess);
+  assert(cudaMalloc((void**)(&d_model_metric), model_bytes) == cudaSuccess);
+
+  Eigen::TensorMap<Eigen::Tensor<float, 3>> predicted(h_predicted, batch_size, memory_size, layer_size);
+  predicted.setValues({ {{1, 1}, {0, 0}},
+    {{2, 2}, {0, 0}},
+    {{3, 3}, {0, 0}},
+    {{4, 4}, {0, 0}} });
+  Eigen::TensorMap<Eigen::Tensor<float, 2>> model_metric(h_model_metric, n_metrics, memory_size);
+  model_metric.setConstant(0);
+  Eigen::Tensor<float, 2> expected(batch_size, layer_size);
+  expected.setConstant(1);
+
+  // Set up the device
+  cudaStream_t stream; // The stream will be destroyed by GpuStreamDevice once the function goes out of scope!
+  assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess);
+  Eigen::GpuStreamDevice stream_device(&stream, 0);
+  Eigen::GpuDevice device(&stream_device);
+
+  bool success = kernal.executeModelMetric(
+    expected,
+    h_predicted,
+    d_predicted,
+    h_model_metric,
+    d_model_metric,
+    metric_function,
+    batch_size,
+    memory_size,
+    layer_size,
+    n_metrics,
+    time_step,
+    metric_index,
+    device,
+    true,
+    true);
+
+  // Synchronize the stream
+  cudaError_t err = cudaStreamQuery(stream);
+  assert(cudaStreamSynchronize(stream) == cudaSuccess);
+  assert(cudaStreamDestroy(stream) == cudaSuccess);
+
+  Eigen::Tensor<float, 2> expected_model_metric(batch_size, memory_size);
+  expected_model_metric.setValues({ {1.5, 0} });
+
+  for (int metric_iter = 0; metric_iter < n_metrics; ++metric_iter) {
+    for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
+      //std::cout << "[Model Metric] Metric iter: " << metric_iter << ", Memory Iter: " << memory_iter << " = " << model_metric(metric_iter, memory_iter) << std::endl;
+      assert(model_metric(metric_iter, memory_iter) == expected_model_metric(metric_iter, memory_iter));
+    }
+  }
+
+  assert(cudaFreeHost(h_predicted) == cudaSuccess);
+  assert(cudaFree(d_predicted) == cudaSuccess);
+  assert(cudaFreeHost(h_model_metric) == cudaSuccess);
+  assert(cudaFree(d_model_metric) == cudaSuccess);
+}
+
 void test_weightErrorGpuDevice()
 {
 	const int device_id = 0;
@@ -805,6 +887,7 @@ int main(int argc, char** argv)
 	test_forwardPropogationGpuDevice();
 	test_backwardPropogationGpuDevice();
 	test_modelErrorGpuDevice();
+  test_modelMetricGpuDevice();
 	test_weightErrorGpuDevice();
 	test_sharedWeightErrorGpuDevice();
 	test_weightUpdateGpuDevice();

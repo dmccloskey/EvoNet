@@ -31,7 +31,7 @@ namespace SmartPeak
 			const int& time_step,
 			Eigen::GpuDevice& device,
 			bool copyHostToDevice = false,
-			bool copyDeviceToHost = false) {
+			bool copyDeviceToHost = false) override {
 			// check that source and weights lengths match
 
 			const size_t bytes = batch_size * memory_size * layer_size * sizeof(TensorT);
@@ -64,7 +64,7 @@ namespace SmartPeak
 			const int& time_step,
 			Eigen::GpuDevice& device,
 			bool copyHostToDevice = false,
-			bool copyDeviceToHost = false) {
+			bool copyDeviceToHost = false) override {
 			// check that source and weights lengths match
 
 			const size_t bytes = batch_size * memory_size * layer_size * sizeof(TensorT);
@@ -99,7 +99,7 @@ namespace SmartPeak
 			const int& sink_time_step,
 			Eigen::GpuDevice& device,
 			bool copyHostToDevice = false,
-			bool copyDeviceToHost = false) {
+			bool copyDeviceToHost = false) override {
 			// Copy host to device
 			std::size_t source_bytes = batch_size * memory_size * source_layer_size * sizeof(TensorT);
 			std::size_t sink_bytes = batch_size * memory_size * sink_layer_size * sizeof(TensorT);
@@ -143,7 +143,7 @@ namespace SmartPeak
 			const int& sink_time_step,
 			Eigen::GpuDevice& device,
 			bool copyHostToDevice = false,
-			bool copyDeviceToHost = false) {
+			bool copyDeviceToHost = false) override {
 			// Copy host to device
 			std::size_t source_bytes = batch_size * memory_size * source_layer_size * sizeof(TensorT);
 			std::size_t sink_bytes = batch_size * memory_size * sink_layer_size * sizeof(TensorT);
@@ -188,7 +188,7 @@ namespace SmartPeak
 			const int& time_step,
 			Eigen::GpuDevice& device,
 			bool copyHostToDevice = false,
-			bool copyDeviceToHost = false) {
+			bool copyDeviceToHost = false) override {
 			// Allocate memory for the expected and predicted
 			assert(expected.size() == batch_size * layer_size);
 			const size_t expected_bytes = batch_size * layer_size * sizeof(TensorT);
@@ -227,6 +227,54 @@ namespace SmartPeak
 
 			return true;
 		};
+    bool executeModelMetric(
+      Eigen::Tensor<TensorT, 2>& expected,
+      TensorT* h_node_output,
+      TensorT* d_node_output,
+      TensorT* h_model_metric,
+      TensorT* d_model_metric,
+      MetricFunctionTensorOp<TensorT, Eigen::GpuDevice>* metric_function,
+      const int& batch_size,
+      const int& memory_size,
+      const int& layer_size,
+      const int& n_metrics,
+      const int& time_step,
+      const int& metric_index,
+      Eigen::GpuDevice& device,
+      bool copyHostToDevice = false,
+      bool copyDeviceToHost = false) override {
+      // Allocate memory for the expected and predicted
+      assert(expected.size() == batch_size * layer_size);
+      const size_t expected_bytes = batch_size * layer_size * sizeof(TensorT);
+      //const size_t expected_bytes = expected.size() * sizeof(TensorT);
+      TensorT* h_expected;
+      TensorT* d_expected;
+      assert(cudaHostAlloc((void**)(&h_expected), expected_bytes, cudaHostAllocDefault) == cudaSuccess);
+      assert(cudaMalloc((void**)(&d_expected), expected_bytes) == cudaSuccess);
+      h_expected = expected.data();
+
+      // Copy host to device
+      std::size_t bytes = batch_size * memory_size * layer_size * sizeof(TensorT);
+      std::size_t model_bytes = n_metrics * memory_size * sizeof(TensorT);
+      device.memcpyHostToDevice(d_expected, h_expected, expected_bytes);
+      if (copyHostToDevice) {
+        device.memcpyHostToDevice(d_node_outputs, h_node_outputs, bytes); // only when testing
+        device.memcpyHostToDevice(d_model_metric, h_model_metric, model_bytes); // only once
+      }
+      // Calculate the model metric
+      metric_function->operator()(d_node_output, d_expected, d_model_metric, batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
+
+      // Copy device to host
+      if (copyDeviceToHost) {
+        device.memcpyDeviceToHost(h_model_metric, d_model_metric, model_bytes); // only once
+      }
+
+      // Deallocate the memory
+      //assert(cudaFreeHost(h_expected) == cudaSuccess); // still owned by expected
+      assert(cudaFree(d_expected) == cudaSuccess);
+
+      return true;
+    };
 		bool executeWeightErrors(
 			TensorT* h_sink_errors,
 			TensorT* d_sink_errors,
@@ -246,7 +294,7 @@ namespace SmartPeak
 			const int& sink_layer_size,
 			Eigen::GpuDevice& device,
 			bool copyHostToDevice = false,
-			bool copyDeviceToHost = false) {
+			bool copyDeviceToHost = false) override {
 			// Copy host to device
 			std::size_t source_bytes = batch_size * memory_size * source_layer_size * sizeof(TensorT);
 			std::size_t sink_bytes = batch_size * memory_size * sink_layer_size * sizeof(TensorT);
@@ -280,7 +328,7 @@ namespace SmartPeak
 			const int& n_shared_layers,
 			Eigen::GpuDevice& device,
 			bool copyHostToDevice = false,
-			bool copyDeviceToHost = false) {
+			bool copyDeviceToHost = false) override {
 			if (n_shared_layers == 0) return true;
 
 			// Copy host to device
@@ -312,7 +360,7 @@ namespace SmartPeak
 			const int& sink_layer_size,
 			Eigen::GpuDevice& device,
 			bool copyHostToDevice = false,
-			bool copyDeviceToHost = false) {
+			bool copyDeviceToHost = false) override {
 			// Check for a dummy solver
 			if (solver_function->getName() == "DummySolverTensorOp")
 				return true;
