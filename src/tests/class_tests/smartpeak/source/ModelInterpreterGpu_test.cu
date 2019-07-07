@@ -498,6 +498,66 @@ void test_executeModelErrorOperations()
 	}
 }
 
+void test_executeModelErrorOperations()
+{
+  Model<float> model_executeModelErrorOperations = makeModelToy1();
+  ModelResources model_resources = { ModelDevice(0, 1) };
+  ModelInterpreterGpu<float> model_interpreter(model_resources);
+  const int batch_size = 4;
+  const int memory_size = 1;
+  const int n_metrics = 1;
+  const bool train = true;
+
+  // compile the graph into a set of operations
+  model_interpreter.getForwardPropogationOperations(model_executeModelErrorOperations, batch_size, memory_size, train, false, true, true);
+
+  // create the input
+  const std::vector<std::string> node_ids = { "0", "1" };
+  Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)node_ids.size());
+  input.setValues({
+    {{1, 5}},
+    {{2, 6}},
+    {{3, 7}},
+    {{4, 8}} });
+  model_interpreter.mapValuesToLayers(model_executeModelErrorOperations, input, node_ids, "output");
+
+  model_interpreter.initBiases(model_executeModelErrorOperations); // create the bias	
+  model_interpreter.executeForwardPropogationOperations(0); // FP
+  model_interpreter.allocateModelErrorTensor(batch_size, memory_size, n_metrics); // allocate the memory
+
+  // calculate the model metric
+  std::vector<std::string> output_nodes = { "4", "5" };
+  Eigen::Tensor<float, 2> expected(batch_size, (int)output_nodes.size());
+  expected.setValues({ {0, 1}, {0, 1}, {0, 1}, {0, 1} });
+  MetricFunctionTensorOp<float, Eigen::GpuDevice>* solver = new MAETensorOp<float, Eigen::GpuDevice>();
+  const int layer_id = model_executeModelMetricOperations.getNode("4").getTensorIndex().first;
+  model_interpreter.executeModelMetricOperations(expected, layer_id, solver, 0, 0);
+
+  // Retrieve the model and node errors from the device
+  cudaStream_t stream; // The stream will be destroyed by GpuStreamDevice once the function goes out of scope!
+  assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess);
+  Eigen::GpuStreamDevice stream_device(&stream, 0);
+  Eigen::GpuDevice device(&stream_device);
+  auto nodes_map = model_executeModelErrorOperations.getNodesMap();
+  for (int i = 0; i < (int)output_nodes.size(); ++i) {
+    const std::string node_name = output_nodes[i];
+    model_interpreter.getLayerTensor(nodes_map.at(node_name)->getTensorIndex().first)->syncHAndDError(device);
+  }
+  model_interpreter.getModelError()->syncHAndDError(device);
+  assert(cudaStreamSynchronize(stream) == cudaSuccess);
+  assert(cudaStreamDestroy(stream) == cudaSuccess);
+
+  Eigen::Tensor<float, 2> metric(n_metrics, memory_size);
+  metric.setValues({ {20.5} });
+  for (int j = 0; j < n_metrics; ++j) {
+    for (int k = 0; k < memory_size; ++k) {
+      //std::cout << "Metric: " << j << "; Memory: " << k << std::endl;
+      //std::cout << "Calc Model Metric: " << model_interpreter.getModelError()->getMetric()(j, k) << ", Expected Error: " << metric(j, k) << std::endl;
+      assert(assert_close<float>(model_interpreter.getModelError()->getMetric()(j, k), metric(j, k), 1e-2, 1e-2)); // [TODO: last value fails...]
+    }
+  }
+}
+
 void test_executeBackwardPropogationOperations()
 {
 	Model<float> model_executeBackwardPropogationOperations = makeModelToy1();
@@ -995,6 +1055,77 @@ void test_CETT()
 	}
 }
 
+void test_CMTT()
+{
+  Model<float> model_CMTT = makeModelToy2();
+  ModelResources model_resources = { ModelDevice(0, 1) };
+  ModelInterpreterGpu<float> model_interpreter(model_resources);
+  const int batch_size = 5;
+  const int memory_size = 8;
+  const int n_metrics = 1;
+  const bool train = true;
+
+  // compile the graph into a set of operations and allocate all tensors
+  model_interpreter.getForwardPropogationOperations(model_CMTT, batch_size, memory_size, train, false, true, true);
+  model_interpreter.allocateModelErrorTensor(batch_size, memory_size, n_metrics);
+
+  // create the input
+  const std::vector<std::string> input_ids = { "0", "3", "4" };  // biases are set to zero
+  Eigen::Tensor<float, 3> input(batch_size, memory_size, (int)input_ids.size());
+  input.setValues(
+    { {{8, 0, 0}, {7, 0, 0}, {6, 0, 0}, {5, 0, 0}, {4, 0, 0}, {3, 0, 0}, {2, 0, 0}, {1, 0, 0}},
+    {{9, 0, 0}, {8, 0, 0}, {7, 0, 0}, {6, 0, 0}, {5, 0, 0}, {4, 0, 0}, {3, 0, 0}, {2, 0, 0}},
+    {{10, 0, 0}, {9, 0, 0}, {8, 0, 0}, {7, 0, 0}, {6, 0, 0}, {5, 0, 0}, {4, 0, 0}, {3, 0, 0}},
+    {{11, 0, 0}, {10, 0, 0}, {9, 0, 0}, {8, 0, 0}, {7, 0, 0}, {6, 0, 0}, {5, 0, 0}, {4, 0, 0}},
+    {{12, 0, 0}, {11, 0, 0}, {10, 0, 0}, {9, 0, 0}, {8, 0, 0}, {7, 0, 0}, {6, 0, 0}, {5, 0, 0}} }
+  );
+  model_interpreter.mapValuesToLayers(model_CMTT, input, input_ids, "output");
+
+  model_interpreter.FPTT(4);
+
+  // calculate the metric
+  // expected output (from t=n to t=0)
+  const std::vector<std::string> output_nodes = { "2" };
+  // y = m1*(m2*x + b*yprev) where m1 = 1, m2 = 1 and b = -1
+  Eigen::Tensor<float, 3> expected(batch_size, memory_size, (int)output_nodes.size());
+  expected.setValues(
+    { { { 4 },{ 4 },{ 3 },{ 3 },{ 2 },{ 2 },{ 1 },{ 1 } },
+    { { 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 },{ 2 },{ 1 } },
+    { { 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 },{ 2 } },
+    { { 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 } },
+    { { 6 },{ 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 } } }
+  );
+  MetricFunctionOp<float>* metric_function = new MAEOp<float>();
+  model_interpreter.CMTT(model_CMTT, expected, output_nodes, metric_function, 4, 0);
+
+  // Retrieve the model and node metrics from the device
+  cudaStream_t stream; // The stream will be destroyed by GpuStreamDevice once the function goes out of scope!
+  assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess);
+  Eigen::GpuStreamDevice stream_device(&stream, 0);
+  Eigen::GpuDevice device(&stream_device);
+  auto nodes_map = model_CMTT.getNodesMap();
+  for (int i = 0; i < (int)output_nodes.size(); ++i) {
+    const std::string node_name = output_nodes[i];
+    model_interpreter.getLayerTensor(nodes_map.at(node_name)->getTensorIndex().first)->syncHAndDError(device);
+  }
+  model_interpreter.getModelError()->syncHAndDError(device);
+  assert(cudaStreamSynchronize(stream) == cudaSuccess);
+  assert(cudaStreamDestroy(stream) == cudaSuccess);
+
+  // test values of metrics of the output nodes
+  Eigen::Tensor<float, 2> model_metric(n_metrics, memory_size);
+  model_metric.setValues({
+    {28.7999,19.2,10.8,3.2,0,0,0,0} });
+
+  for (int j = 0; j < n_metrics; ++j) {
+    for (int k = 0; k < memory_size; ++k) {
+      //std::cout << "Metric: " << j << "; Memory: " << k << std::endl;
+      //std::cout << "Calc Model Metric: " << model_interpreter.getModelMetric()->getError()(j, k) << ", Expected Error: " << model_metric(j, k) << std::endl;
+      assert(assert_close(model_interpreter.getModelError()->getMetric()(j, k), model_metric(j, k)));
+    }
+  }
+}
+
 void test_TBPTT()
 {
 	Model<float> model_TBPTT = makeModelToy2();
@@ -1326,6 +1457,18 @@ void test_getModelResults()
 		}
 	}
 
+  // test values of metrics of the output nodes
+  Eigen::Tensor<float, 2> model_metric(n_metrics, memory_size);
+  model_metric.setValues({
+    {28.7999,19.2,10.8,3.2,0,0,0,0} });
+  for (int j = 0; j < n_metrics; ++j) {
+    for (int k = 0; k < memory_size; ++k) {
+      //std::cout << "Metric: " << j << "; Memory: " << k << std::endl;
+      //std::cout << "Calc Model Error: " << model_getModelResults.getMetric()(j, k) << ", Expected Error: " << model_metric(j, k) << std::endl;
+      assert(assert_close(model_getModelResults.getMetric()(j, k), model_metric(j, k)));
+    }
+  }
+
 	// test values of weights
 	std::vector<std::string> weight_ids = { "0", "1", "2", "3", "4" };
 	Eigen::Tensor<float, 1> weights(weight_ids.size());
@@ -1383,12 +1526,14 @@ int main(int argc, char** argv)
 	test_mapValuesToLayers();
 	test_executeForwardPropogationOperations();
 	test_executeModelErrorOperations();
+  test_executeModelMetricOperations();
 	test_executeBackwardPropogationOperations();
 	test_executeWeightErrorOperations();
 	test_executeWeightUpdateOperations();
 	test_modelTrainer1();
 	test_FPTT();
 	test_CETT();
+  test_CMTT();
 	test_TBPTT();
 	test_updateWeights();
 	test_modelTrainer2();

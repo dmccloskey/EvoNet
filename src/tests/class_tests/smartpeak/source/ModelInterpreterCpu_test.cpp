@@ -1325,8 +1325,8 @@ BOOST_AUTO_TEST_CASE(getModelResults)
   for (int j = 0; j < n_metrics; ++j) {
     for (int k = 0; k < memory_size; ++k) {
       //std::cout << "Metric: " << j << "; Memory: " << k << std::endl;
-      //std::cout << "Calc Model Error: " << model_interpreter.getModelError()->getMetric()(j, k) << ", Expected Error: " << model_metric(j, k) << std::endl;
-      BOOST_CHECK_CLOSE(model_interpreter.getModelError()->getMetric()(j, k), model_metric(j, k), 1e-3);
+      //std::cout << "Calc Model Error: " << model_getModelResults.getMetric()(j, k) << ", Expected Error: " << model_metric(j, k) << std::endl;
+      BOOST_CHECK_CLOSE(model_getModelResults.getMetric()(j, k), model_metric(j, k), 1e-3);
     }
   }
 

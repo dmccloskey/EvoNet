@@ -72,13 +72,14 @@ public:
 	void simulateValidationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)	{
 		simulateData(input_data, output_data, time_steps);
 	}
-  void simulateDataMARs(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps, const bool& train)
+  void simulateDataMARs(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps, const bool& train)
   {
     // infer data dimensions based on the input tensors
     const int batch_size = input_data.dimension(0);
     const int memory_size = input_data.dimension(1);
     const int n_input_nodes = input_data.dimension(2);
-    const int n_output_nodes = output_data.dimension(2);
+    const int n_loss_output_nodes = loss_output_data.dimension(2);
+    const int n_metric_output_nodes = metric_output_data.dimension(2);
 
     if (train)
       assert(n_input_nodes == this->model_training_.reaction_ids_.size());
@@ -159,8 +160,9 @@ public:
         else
           n_labels = this->model_validation_.labels_.size();
         for (int nodes_iter = 0; nodes_iter < n_labels; ++nodes_iter) {
-          output_data(batch_iter, memory_iter, nodes_iter) = one_hot_vec(nodes_iter);
-          output_data(batch_iter, memory_iter, nodes_iter + (int)n_labels) = one_hot_vec(nodes_iter);
+          loss_output_data(batch_iter, memory_iter, nodes_iter) = one_hot_vec(nodes_iter);
+          loss_output_data(batch_iter, memory_iter, nodes_iter + (int)n_labels) = one_hot_vec(nodes_iter);
+          metric_output_data(batch_iter, memory_iter, nodes_iter) = one_hot_vec(nodes_iter);
         }
       }
     }
@@ -168,13 +170,14 @@ public:
     // update the time_steps
     time_steps.setConstant(1.0f);
   }
-  void simulateDataConcs(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps, const bool& train)
+  void simulateDataConcs(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps, const bool& train)
   {
     // infer data dimensions based on the input tensors
     const int batch_size = input_data.dimension(0);
     const int memory_size = input_data.dimension(1);
     const int n_input_nodes = input_data.dimension(2);
-    const int n_output_nodes = output_data.dimension(2);
+    const int n_loss_output_nodes = loss_output_data.dimension(2);
+    const int n_metric_output_nodes = metric_output_data.dimension(2);
 
     if (train)
       assert(n_input_nodes == this->model_training_.component_group_names_.size());
@@ -220,8 +223,9 @@ public:
         else
           n_labels = this->model_validation_.labels_.size();
         for (int nodes_iter = 0; nodes_iter < n_labels; ++nodes_iter) {
-          output_data(batch_iter, memory_iter, nodes_iter) = one_hot_vec_smoothed(nodes_iter);
-          output_data(batch_iter, memory_iter, nodes_iter + (int)n_labels) = one_hot_vec(nodes_iter);
+          loss_output_data(batch_iter, memory_iter, nodes_iter) = one_hot_vec_smoothed(nodes_iter);
+          loss_output_data(batch_iter, memory_iter, nodes_iter + (int)n_labels) = one_hot_vec(nodes_iter);
+          metric_output_data(batch_iter, memory_iter, nodes_iter) = one_hot_vec_smoothed(nodes_iter);
         }
       }
     }
@@ -229,13 +233,13 @@ public:
     // update the time_steps
     time_steps.setConstant(1.0f);
   }
-  void simulateTrainingData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps) {
-    if (simulate_MARs_) simulateDataMARs(input_data, output_data, time_steps, true);
-    else simulateDataConcs(input_data, output_data, time_steps, true);
+  void simulateTrainingData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps) {
+    if (simulate_MARs_) simulateDataMARs(input_data, loss_output_data, metric_output_data, time_steps, true);
+    else simulateDataConcs(input_data, loss_output_data, metric_output_data, time_steps, true);
   }
-  void simulateValidationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps) {
-    if (simulate_MARs_) simulateDataMARs(input_data, output_data, time_steps, false);
-    else simulateDataConcs(input_data, output_data, time_steps, false);
+  void simulateValidationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps) {
+    if (simulate_MARs_) simulateDataMARs(input_data, loss_output_data, metric_output_data, time_steps, false);
+    else simulateDataConcs(input_data, loss_output_data, metric_output_data, time_steps, false);
   }
 
 	BiochemicalReactionModel<TensorT> model_training_;
