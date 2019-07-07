@@ -53,10 +53,10 @@ BOOST_AUTO_TEST_CASE(operationfunctionClassificationAccuracyOp)
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
   Eigen::TensorMap<Eigen::Tensor<float, 2>> error(error_ptr, n_metrics, memory_size);
-  BOOST_CHECK_CLOSE(error(0, 0), 0, 1e-6);
-  BOOST_CHECK_CLOSE(error(1, 0), 0.5, 1e-6);
-  BOOST_CHECK_CLOSE(error(0, 1), 0, 1e-6);
-  BOOST_CHECK_CLOSE(error(1, 1), 0, 1e-6);
+  BOOST_CHECK_CLOSE(error(0, 0), 0, 1e-4);
+  BOOST_CHECK_CLOSE(error(1, 0), 0.5, 1e-4);
+  BOOST_CHECK_CLOSE(error(0, 1), 0, 1e-4);
+  BOOST_CHECK_CLOSE(error(1, 1), 0, 1e-4);
 }
 
 /**
@@ -101,10 +101,10 @@ BOOST_AUTO_TEST_CASE(operationfunctionPredictionBiasOp)
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
   Eigen::TensorMap<Eigen::Tensor<float, 2>> error(error_ptr, n_metrics, memory_size);
-  //BOOST_CHECK_CLOSE(error(0, 0), 0, 1e-6);
-  //BOOST_CHECK_CLOSE(error(1, 0), 0.5, 1e-6);
-  //BOOST_CHECK_CLOSE(error(0, 1), 0, 1e-6);
-  //BOOST_CHECK_CLOSE(error(1, 1), 0, 1e-6);
+  //BOOST_CHECK_CLOSE(error(0, 0), 0, 1e-4);
+  //BOOST_CHECK_CLOSE(error(1, 0), 0.5, 1e-4);
+  //BOOST_CHECK_CLOSE(error(0, 1), 0, 1e-4);
+  //BOOST_CHECK_CLOSE(error(1, 1), 0, 1e-4);
 }
 
 /**
@@ -140,8 +140,8 @@ BOOST_AUTO_TEST_CASE(operationfunctionF1ScoreOp)
     });
   Eigen::Tensor<float, 3> y_pred(batch_size, memory_size, layer_size);
   y_pred.setValues({
-    {{.1, .9}, {0, 0}},
-    {{.9, .1}, {0, 0}}
+    {{1, 1}, {0, 0}},
+    {{2, 2}, {0, 0}}
     });
 
   float error_ptr[] = { 0, 0, 0, 0 };
@@ -149,10 +149,10 @@ BOOST_AUTO_TEST_CASE(operationfunctionF1ScoreOp)
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
   Eigen::TensorMap<Eigen::Tensor<float, 2>> error(error_ptr, n_metrics, memory_size);
-  //BOOST_CHECK_CLOSE(error(0, 0), 0, 1e-6);
-  //BOOST_CHECK_CLOSE(error(1, 0), 0.5, 1e-6);
-  //BOOST_CHECK_CLOSE(error(0, 1), 0, 1e-6);
-  //BOOST_CHECK_CLOSE(error(1, 1), 0, 1e-6);
+  BOOST_CHECK_CLOSE(error(0, 0), 0, 1e-4);
+  BOOST_CHECK_CLOSE(error(1, 0), 0.66666667, 1e-4);
+  BOOST_CHECK_CLOSE(error(0, 1), 0, 1e-4);
+  BOOST_CHECK_CLOSE(error(1, 1), 0, 1e-4);
 }
 
 /**
@@ -197,10 +197,10 @@ BOOST_AUTO_TEST_CASE(operationfunctionAUROCOp)
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
   Eigen::TensorMap<Eigen::Tensor<float, 2>> error(error_ptr, n_metrics, memory_size);
-  //BOOST_CHECK_CLOSE(error(0, 0), 0, 1e-6);
-  //BOOST_CHECK_CLOSE(error(1, 0), 0.5, 1e-6);
-  //BOOST_CHECK_CLOSE(error(0, 1), 0, 1e-6);
-  //BOOST_CHECK_CLOSE(error(1, 1), 0, 1e-6);
+  //BOOST_CHECK_CLOSE(error(0, 0), 0, 1e-4);
+  //BOOST_CHECK_CLOSE(error(1, 0), 0.5, 1e-4);
+  //BOOST_CHECK_CLOSE(error(0, 1), 0, 1e-4);
+  //BOOST_CHECK_CLOSE(error(1, 1), 0, 1e-4);
 }
 
 /**
@@ -245,10 +245,10 @@ BOOST_AUTO_TEST_CASE(operationfunctionMCCTensorOp)
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
   Eigen::TensorMap<Eigen::Tensor<float, 2>> error(error_ptr, n_metrics, memory_size);
-  //BOOST_CHECK_CLOSE(error(0, 0), 0, 1e-6);
-  //BOOST_CHECK_CLOSE(error(1, 0), 0.5, 1e-6);
-  //BOOST_CHECK_CLOSE(error(0, 1), 0, 1e-6);
-  //BOOST_CHECK_CLOSE(error(1, 1), 0, 1e-6);
+  //BOOST_CHECK_CLOSE(error(0, 0), 0, 1e-4);
+  //BOOST_CHECK_CLOSE(error(1, 0), 0.5, 1e-4);
+  //BOOST_CHECK_CLOSE(error(0, 1), 0, 1e-4);
+  //BOOST_CHECK_CLOSE(error(1, 1), 0, 1e-4);
 }
 
 /**
@@ -293,10 +293,10 @@ BOOST_AUTO_TEST_CASE(operationfunctionMAEOp)
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
   Eigen::TensorMap<Eigen::Tensor<float, 2>> error(error_ptr, n_metrics, memory_size);
-  BOOST_CHECK_CLOSE(error(0, 0), 0, 1e-6);
-  BOOST_CHECK_CLOSE(error(1, 0), 0.5, 1e-6);
-  BOOST_CHECK_CLOSE(error(0, 1), 0, 1e-6);
-  BOOST_CHECK_CLOSE(error(1, 1), 0, 1e-6);
+  BOOST_CHECK_CLOSE(error(0, 0), 0, 1e-4);
+  BOOST_CHECK_CLOSE(error(1, 0), 0.5, 1e-4);
+  BOOST_CHECK_CLOSE(error(0, 1), 0, 1e-4);
+  BOOST_CHECK_CLOSE(error(1, 1), 0, 1e-4);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
