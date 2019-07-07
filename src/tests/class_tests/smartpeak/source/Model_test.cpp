@@ -50,11 +50,15 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   Model<float> model;
   model.setId(1);
   model.setName("model1");
-  Eigen::Tensor<float, 2> error(3, 1);
-  error.setConstant(0.0f);
+  Eigen::Tensor<float, 2> error(3, 1), metrics(3, 1);
+  error.setConstant(1); metrics.setConstant(2);
+  model.setError(error);
+  model.setMetric(metrics);
 
   BOOST_CHECK_EQUAL(model.getId(), 1);
   BOOST_CHECK_EQUAL(model.getName(), "model1");
+  BOOST_CHECK_EQUAL(model.getError()(2, 0), 1);
+  BOOST_CHECK_EQUAL(model.getMetric()(2, 0), 2);
 }
 
 BOOST_AUTO_TEST_CASE(pruneNodes) 

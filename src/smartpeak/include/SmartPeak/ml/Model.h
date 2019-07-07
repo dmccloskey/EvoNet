@@ -248,6 +248,9 @@ public:
 
 		void setError(const Eigen::Tensor<TensorT, 2> model_error); ///< model_error setter
 		Eigen::Tensor<TensorT, 2> getError() const; ///< model_error getter
+
+    void setMetric(const Eigen::Tensor<TensorT, 2> model_metrics); ///< model_metrics setter
+    Eigen::Tensor<TensorT, 2> getMetric() const; ///< model_metrics getter
  
 		/**
 			@brief Re-initialize all node tensor indices
@@ -277,6 +280,7 @@ public:
     std::vector<std::shared_ptr<Node<TensorT>>> input_nodes_;
     std::vector<std::shared_ptr<Node<TensorT>>> output_nodes_;
     Eigen::Tensor<TensorT, 2> model_error_;
+    Eigen::Tensor<TensorT, 2> model_metric_;
     int batch_size_ = 0;
     int memory_size_ = 0;
 		friend class cereal::access;
@@ -968,6 +972,16 @@ public:
 	inline Eigen::Tensor<TensorT, 2> Model<TensorT>::getError() const {
 		return model_error_;
 	};
+
+  template<typename TensorT>
+  inline void Model<TensorT>::setMetric(const Eigen::Tensor<TensorT, 2> model_metric) {
+    model_metric_ = model_metric;
+  }
+
+  template<typename TensorT>
+  inline Eigen::Tensor<TensorT, 2> Model<TensorT>::getMetric() const {
+    return model_metric_;
+  };
 
 	template<typename TensorT>
 	inline void Model<TensorT>::initNodeTensorIndices() {
