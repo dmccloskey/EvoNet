@@ -1271,7 +1271,9 @@ BOOST_AUTO_TEST_CASE(getModelResults)
 		{ { 6 },{ 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 } } });
 	LossFunctionOp<float>* loss_function = new MSEOp<float>();
 	LossFunctionGradOp<float>* loss_function_grad = new MSEGradOp<float>();
+  MetricFunctionOp<float>* metric_function = new MAEOp<float>();
 	model_interpreter.CETT(model_getModelResults, expected, output_nodes, loss_function, loss_function_grad, 4);
+  model_interpreter.CMTT(model_getModelResults, expected, output_nodes, metric_function, 4, 0);
 
 	model_interpreter.TBPTT(4);
 	model_interpreter.updateWeights();
@@ -1314,6 +1316,19 @@ BOOST_AUTO_TEST_CASE(getModelResults)
 			BOOST_CHECK_CLOSE(model_getModelResults.getError()(j, k), model_error(j, k), 1e-6);
 		}
 	}
+
+  // test values of metrics of the output nodes
+  Eigen::Tensor<float, 2> model_metric(n_metrics, memory_size);
+  model_metric.setValues({
+    {28.7999,19.2,10.8,3.2,0,0,0,0} });
+
+  for (int j = 0; j < n_metrics; ++j) {
+    for (int k = 0; k < memory_size; ++k) {
+      //std::cout << "Metric: " << j << "; Memory: " << k << std::endl;
+      //std::cout << "Calc Model Error: " << model_interpreter.getModelError()->getMetric()(j, k) << ", Expected Error: " << model_metric(j, k) << std::endl;
+      BOOST_CHECK_CLOSE(model_interpreter.getModelError()->getMetric()(j, k), model_metric(j, k), 1e-3);
+    }
+  }
 
 	// test values of weights
 	std::vector<std::string> weight_ids = { "0", "1", "2", "3", "4" };

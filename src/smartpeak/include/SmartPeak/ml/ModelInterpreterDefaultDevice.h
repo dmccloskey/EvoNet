@@ -409,8 +409,10 @@ namespace SmartPeak
 		}
 
 		// copy out the model error
-		if (model_error)
-			model.setError(this->model_error_->getError());
+    if (model_error) {
+      model.setError(this->model_error_->getError());
+      model.setMetric(this->model_error_->getMetric());
+    }
 
 		// copy out the output node values
 		if (output_nodes) {
