@@ -349,6 +349,7 @@ namespace SmartPeak
 
 		auto layer_tensor_data = this->getLayerTensor(layer_id);
 
+    // Sync the model error, node error, and node output
 		if (!this->model_error_->getErrorStatus().second)
 			this->model_error_->syncHAndDError(device);
 		if (!layer_tensor_data->getErrorStatus().second)
@@ -356,6 +357,7 @@ namespace SmartPeak
 		if (!layer_tensor_data->getOutputStatus().second)
 			layer_tensor_data->syncHAndDOutput(device);
 
+    // Calculate the model and node errors
 		model_kernal.executeModelErrors(
 			expected,
 			layer_tensor_data->getHOutputPointer().get(),

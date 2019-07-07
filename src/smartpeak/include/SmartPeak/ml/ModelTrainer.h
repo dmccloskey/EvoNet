@@ -6,6 +6,7 @@
 // .h
 #include <SmartPeak/ml/Model.h>
 #include <SmartPeak/ml/LossFunction.h>
+#include <SmartPeak/ml/MetricFunction.h>
 #include <SmartPeak/ml/ModelLogger.h>
 #include <SmartPeak/simulator/DataSimulator.h>
 #include <vector>
@@ -35,6 +36,9 @@ public:
 		void setLossFunctions(const std::vector<std::shared_ptr<LossFunctionOp<TensorT>>>& loss_functions); ///< loss_functions setter [TODO: tests]
 		void setLossFunctionGrads(const std::vector<std::shared_ptr<LossFunctionGradOp<TensorT>>>& loss_function_grads); ///< loss_functions setter [TODO: tests]
 		void setLossOutputNodes(const std::vector<std::vector<std::string>>& output_nodes); ///< output_nodes setter [TODO: tests]
+    void setMetricFunctions(const std::vector<std::shared_ptr<MetricFunctionOp<TensorT>>>& metric_functions); ///< metric_functions setter [TODO: tests]
+    void setMetricOutputNodes(const std::vector<std::vector<std::string>>& output_nodes); ///< output_nodes setter [TODO: tests]
+    void setMetricNames(const std::vector<std::string>& metric_names); ///< metric_names setter [TODO: tests]
 		void setNTBPTTSteps(const int& n_TBPTT); ///< n_TBPTT setter
 		void setNTETTSteps(const int& n_TETT); ///< n_TETT setter
 		void setFindCycles(const bool& find_cycles); ///< find_cycles setter [TODO: tests]
@@ -53,6 +57,9 @@ public:
 		std::vector<std::shared_ptr<LossFunctionOp<TensorT>>> getLossFunctions(); ///< loss_functions getter [TODO: tests]
 		std::vector<std::shared_ptr<LossFunctionGradOp<TensorT>>> getLossFunctionGrads(); ///< loss_functions getter [TODO: tests]
 		std::vector<std::vector<std::string>> getLossOutputNodes(); ///< output_nodes getter [TODO: tests]
+    std::vector<std::shared_ptr<MetricFunctionOp<TensorT>>> getMetricFunctions(); ///< metric_functions getter [TODO: tests]
+    std::vector<std::vector<std::string>> getMetricOutputNodes(); ///< output_nodes getter [TODO: tests]
+    std::vector<std::string> getMetricNames(); ///< metric_names getter [TODO: tests]
 		int getNTBPTTSteps() const; ///< n_TBPTT setter
 		int getNTETTSteps() const; ///< n_TETT setter
 		bool getFindCycles(); ///< find_cycles getter [TODO: tests]
@@ -106,6 +113,20 @@ public:
       const Eigen::Tensor<TensorT, 3>& time_steps,
       const int& batch_size,
       const int& memory_size);
+
+    /**
+      @brief Check that all loss function members are of the same size
+
+      @returns True on success, False if not
+    */
+    bool checkLossFunctions();
+
+    /**
+      @brief Check that all loss function members are of the same size
+
+      @returns True on success, False if not
+    */
+    bool checkMetricFunctions();
  
     /**
       @brief Entry point for users to code their script
@@ -323,9 +344,13 @@ protected:
 		std::vector<std::shared_ptr<LossFunctionGradOp<TensorT>>> loss_function_grads_;
 		std::vector<std::vector<std::string>> loss_output_nodes_;
 
+    std::vector<std::shared_ptr<MetricFunctionOp<TensorT>>> metric_functions_;
+    std::vector<std::vector<std::string>> metric_output_nodes_;
+    std::vector<std::string> metric_names_;
+
 private:
-    int batch_size_;
-    int memory_size_;
+    int batch_size_ = 0;
+    int memory_size_ = 0;
     int n_epochs_training_ = 0;
 		int n_epochs_validation_ = 0;
 		int n_epochs_evaluation_ = 0;
@@ -403,6 +428,24 @@ private:
 	{
 		loss_output_nodes_ = output_nodes;
 	}
+
+  template<typename TensorT, typename InterpreterT>
+  inline void ModelTrainer<TensorT, InterpreterT>::setMetricFunctions(const std::vector<std::shared_ptr<MetricFunctionOp<TensorT>>>& metric_functions)
+  {
+    metric_functions_ = metric_functions;
+  }
+
+  template<typename TensorT, typename InterpreterT>
+  inline void ModelTrainer<TensorT, InterpreterT>::setMetricOutputNodes(const std::vector<std::vector<std::string>>& output_nodes)
+  {
+    metric_output_nodes_ = output_nodes;
+  }
+
+  template<typename TensorT, typename InterpreterT>
+  inline void ModelTrainer<TensorT, InterpreterT>::setMetricNames(const std::vector<std::string>& metric_names)
+  {
+    metric_names_ = metric_names;
+  }
 
 	template<typename TensorT, typename InterpreterT>
 	void ModelTrainer<TensorT, InterpreterT>::setNTBPTTSteps(const int & n_TBPTT)
@@ -505,6 +548,24 @@ private:
 	{
 		return loss_output_nodes_;
 	}
+
+  template<typename TensorT, typename InterpreterT>
+  inline std::vector<std::shared_ptr<MetricFunctionOp<TensorT>>> ModelTrainer<TensorT, InterpreterT>::getMetricFunctions()
+  {
+    return metric_functions_;
+  }
+
+  template<typename TensorT, typename InterpreterT>
+  inline std::vector<std::vector<std::string>> ModelTrainer<TensorT, InterpreterT>::getMetricOutputNodes()
+  {
+    return metric_output_nodes_;
+  }
+
+  template<typename TensorT, typename InterpreterT>
+  inline std::vector<std::string> ModelTrainer<TensorT, InterpreterT>::getMetricNames()
+  {
+    return metric_names_;
+  }
 
 	template<typename TensorT, typename InterpreterT>
 	int ModelTrainer<TensorT, InterpreterT>::getNTBPTTSteps() const
@@ -626,6 +687,30 @@ private:
 		}
 	}
 
+  template<typename TensorT, typename InterpreterT>
+  inline bool ModelTrainer<TensorT, InterpreterT>::checkLossFunctions()
+  {
+    if (loss_functions_.size() == loss_function_grads_.size() && loss_function_grads_.size() == loss_output_nodes_.size()
+      && loss_functions_.size() == loss_output_nodes_.size())
+      return true;
+    else {
+      std::cout << "The number of loss functions, loss function grads, and loss output nodes are not consistent!." << std::endl;
+      return false;
+    }
+  }
+
+  template<typename TensorT, typename InterpreterT>
+  inline bool ModelTrainer<TensorT, InterpreterT>::checkMetricFunctions()
+  {
+    if (metric_functions_.size() == metric_output_nodes_.size() && metric_output_nodes_.size() == metric_names_.size()
+      && metric_functions_.size() == metric_names_.size())
+      return true;
+    else {
+      std::cout << "The number of metric functions, metric output nodes, and metric names are not consistent!." << std::endl;
+      return false;
+    }
+  }
+
 	template<typename TensorT, typename InterpreterT>
 	inline std::vector<TensorT> ModelTrainer<TensorT, InterpreterT>::trainModel(Model<TensorT>& model, const Eigen::Tensor<TensorT, 4>& input, const Eigen::Tensor<TensorT, 4>& output, const Eigen::Tensor<TensorT, 3>& time_steps,
 		const std::vector<std::string>& input_nodes,
@@ -671,7 +756,7 @@ private:
 			std::cout << "Interpreting the model..." << std::endl;
 		model_interpreter.checkMemory(model, this->getBatchSize(), this->getMemorySize());
 		model_interpreter.getForwardPropogationOperations(model, this->getBatchSize(), this->getMemorySize(), true, this->getFastInterpreter(), this->getFindCycles(), this->getPreserveOoO());
-		model_interpreter.allocateModelErrorTensor(this->getBatchSize(), this->getMemorySize());
+		model_interpreter.allocateModelErrorTensor(this->getBatchSize(), this->getMemorySize(), this->metric_output_nodes_.size());
 
 		for (int iter = 0; iter < this->getNEpochsTraining(); ++iter) // use n_epochs here
 		{
@@ -777,7 +862,7 @@ private:
       std::cout << "Interpreting the model..." << std::endl;
     model_interpreter.checkMemory(model, this->getBatchSize(), this->getMemorySize());
     model_interpreter.getForwardPropogationOperations(model, this->getBatchSize(), this->getMemorySize(), true, this->getFastInterpreter(), this->getFindCycles(), this->getPreserveOoO());
-    model_interpreter.allocateModelErrorTensor(this->getBatchSize(), this->getMemorySize());
+    model_interpreter.allocateModelErrorTensor(this->getBatchSize(), this->getMemorySize(), this->metric_output_nodes_.size());
 
     for (int iter = 0; iter < this->getNEpochsTraining(); ++iter) // use n_epochs here
     {
@@ -944,7 +1029,7 @@ private:
 
 		// compile the graph into a set of operations and allocate all tensors
 		model_interpreter.getForwardPropogationOperations(model, this->getBatchSize(), this->getMemorySize(), false, this->getFastInterpreter(), this->getFindCycles(), this->getPreserveOoO());
-		model_interpreter.allocateModelErrorTensor(this->getBatchSize(), this->getMemorySize());
+		model_interpreter.allocateModelErrorTensor(this->getBatchSize(), this->getMemorySize(), this->metric_output_nodes_.size());
 
 		for (int iter = 0; iter < this->getNEpochsValidation(); ++iter) // use n_epochs here
 		{
@@ -1045,7 +1130,7 @@ private:
 
 		// compile the graph into a set of operations and allocate all tensors
 		model_interpreter.getForwardPropogationOperations(model, this->getBatchSize(), this->getMemorySize(), false, this->getFastInterpreter(), this->getFindCycles(), this->getPreserveOoO());
-		model_interpreter.allocateModelErrorTensor(this->getBatchSize(), this->getMemorySize());
+		model_interpreter.allocateModelErrorTensor(this->getBatchSize(), this->getMemorySize(), this->metric_output_nodes_.size());
 
 		for (int iter = 0; iter < this->getNEpochsEvaluation(); ++iter) // use n_epochs here
 		{

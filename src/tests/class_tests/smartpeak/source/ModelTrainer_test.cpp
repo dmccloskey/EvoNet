@@ -94,6 +94,30 @@ BOOST_AUTO_TEST_CASE(destructor)
 BOOST_AUTO_TEST_CASE(gettersAndSetters) 
 {
   ModelTrainerExt<float> trainer;
+
+  // Test defaults
+  BOOST_CHECK_EQUAL(trainer.getBatchSize(), 0);
+  BOOST_CHECK_EQUAL(trainer.getMemorySize(), 0);
+  BOOST_CHECK_EQUAL(trainer.getNEpochsTraining(), 0);
+  BOOST_CHECK_EQUAL(trainer.getNEpochsValidation(), 0);
+  BOOST_CHECK_EQUAL(trainer.getNEpochsEvaluation(), 0);
+  BOOST_CHECK_EQUAL(trainer.getVerbosityLevel(), 0);
+  BOOST_CHECK_EQUAL(trainer.getNTBPTTSteps(), -1);
+  BOOST_CHECK_EQUAL(trainer.getNTETTSteps(), -1);
+  BOOST_CHECK_EQUAL(trainer.getLogTraining(), false);
+  BOOST_CHECK_EQUAL(trainer.getLogValidation(), false);
+  BOOST_CHECK_EQUAL(trainer.getLogEvaluation(), false);
+  BOOST_CHECK_EQUAL(trainer.getFindCycles(), true);
+  BOOST_CHECK_EQUAL(trainer.getFastInterpreter(), false);
+  BOOST_CHECK_EQUAL(trainer.getPreserveOoO(), true);
+  BOOST_CHECK_EQUAL(trainer.getLossFunctions().size(), 0);
+  BOOST_CHECK_EQUAL(trainer.getLossFunctionGrads().size(), 0);
+  BOOST_CHECK_EQUAL(trainer.getLossOutputNodes().size(), 0);
+  BOOST_CHECK_EQUAL(trainer.getMetricFunctions().size(), 0);
+  BOOST_CHECK_EQUAL(trainer.getMetricOutputNodes().size(), 0);
+  BOOST_CHECK_EQUAL(trainer.getMetricNames().size(), 0);
+
+  // Test setters/getters
   trainer.setBatchSize(4);
   trainer.setMemorySize(1);
   trainer.setNEpochsTraining(100);
@@ -103,6 +127,9 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
 	trainer.setLogging(true, true, true);
 	trainer.setNTBPTTSteps(1);
 	trainer.setNTETTSteps(2);
+  trainer.setFindCycles(false);
+  trainer.setFastInterpreter(true);
+  trainer.setPreserveOoO(false);
 
   BOOST_CHECK_EQUAL(trainer.getBatchSize(), 4);
   BOOST_CHECK_EQUAL(trainer.getMemorySize(), 1);
@@ -112,6 +139,18 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
 	BOOST_CHECK_EQUAL(trainer.getVerbosityLevel(), 1);
 	BOOST_CHECK_EQUAL(trainer.getNTBPTTSteps(), 1);
 	BOOST_CHECK_EQUAL(trainer.getNTETTSteps(), 2);
+  BOOST_CHECK_EQUAL(trainer.getLogTraining(), true);
+  BOOST_CHECK_EQUAL(trainer.getLogValidation(), true);
+  BOOST_CHECK_EQUAL(trainer.getLogEvaluation(), true);
+  BOOST_CHECK_EQUAL(trainer.getFindCycles(), false);
+  BOOST_CHECK_EQUAL(trainer.getFastInterpreter(), true);
+  BOOST_CHECK_EQUAL(trainer.getPreserveOoO(), false);
+  //BOOST_CHECK_EQUAL(trainer.getLossFunctions().size(), 0);
+  //BOOST_CHECK_EQUAL(trainer.getLossFunctionGrads().size(), 0);
+  //BOOST_CHECK_EQUAL(trainer.getLossOutputNodes().size(), 0);
+  //BOOST_CHECK_EQUAL(trainer.getMetricFunctions().size(), 0);
+  //BOOST_CHECK_EQUAL(trainer.getMetricOutputNodes().size(), 0);
+  //BOOST_CHECK_EQUAL(trainer.getMetricNames().size(), 0);
 }
 
 BOOST_AUTO_TEST_CASE(checkInputData) 
@@ -167,6 +206,48 @@ BOOST_AUTO_TEST_CASE(checkOutputData)
 
 	BOOST_CHECK(!trainer.checkOutputData(trainer.getNEpochsTraining(),
 		output_data, trainer.getBatchSize(), 0, output_nodes));
+}
+
+BOOST_AUTO_TEST_CASE(checkLossFunctions)
+{
+  ModelTrainerExt<float> model_trainer;
+  BOOST_CHECK(model_trainer.checkLossFunctions());
+
+  model_trainer.setLossFunctions({
+    std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>(1e-6, 1.0)),
+    std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceMuOp<float>(1e-6, 0.1)),
+    std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceLogVarOp<float>(1e-6, 0.1)) });
+  model_trainer.setLossFunctionGrads({
+    std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>(1e-6, 1.0)),
+    std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceMuGradOp<float>(1e-6, 0.1)),
+    std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceLogVarGradOp<float>(1e-6, 0.1)) });
+  std::vector<std::string> output_nodes, encoding_nodes_mu, encoding_nodes_logvar;
+  model_trainer.setLossOutputNodes({ output_nodes, encoding_nodes_mu, encoding_nodes_logvar });
+  BOOST_CHECK(model_trainer.checkLossFunctions());
+
+  model_trainer.setLossFunctions({
+    std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>(1e-6, 1.0)) });
+  model_trainer.setLossFunctionGrads({
+    std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>(1e-6, 1.0)),
+    std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceMuGradOp<float>(1e-6, 0.1)),
+    std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceLogVarGradOp<float>(1e-6, 0.1)) });
+  model_trainer.setLossOutputNodes({ output_nodes, encoding_nodes_mu });
+  BOOST_CHECK(!model_trainer.checkLossFunctions());
+}
+
+BOOST_AUTO_TEST_CASE(checkMetricFunctions)
+{
+  ModelTrainerExt<float> model_trainer;
+  BOOST_CHECK(model_trainer.checkMetricFunctions());
+
+  model_trainer.setMetricFunctions({ std::shared_ptr<MetricFunctionOp<float>>(new MAEOp<float>()) });
+  std::vector<std::string> output_nodes;
+  model_trainer.setMetricOutputNodes({ output_nodes });
+  model_trainer.setMetricNames({"MAE"});
+  BOOST_CHECK(model_trainer.checkMetricFunctions());
+
+  model_trainer.setMetricNames( std::vector<std::string>());
+  BOOST_CHECK(!model_trainer.checkMetricFunctions());
 }
 
 BOOST_AUTO_TEST_CASE(reduceLROnPlateau)

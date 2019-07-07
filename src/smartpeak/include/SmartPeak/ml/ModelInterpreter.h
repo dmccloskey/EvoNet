@@ -442,8 +442,6 @@ namespace SmartPeak
 		@brief Execute model kernal methods required for forward propogation
 
 		@param[in] time_step The current time-step to operate on
-		@param[in] sync_HToD Short circuit for testing that copies all host data to the device
-		@param[in] sync_DToH Short circuit for testing that copies all device data to the host
 		*/
 		virtual void executeForwardPropogationOperations(const int& time_step) = 0;
 
@@ -451,33 +449,32 @@ namespace SmartPeak
 		@brief Execute model kernal methods required for calculating the model and output node error
 
 		@param[in] time_step The current time-step to operate on
-		@param[in] sync_HToD Short circuit for testing that copies all host data to the device
-		@param[in] sync_DToH Short circuit for testing that copies all device data to the host
 		*/
 		virtual void executeModelErrorOperations(Eigen::Tensor<TensorT, 2>& expected, const int& layer_id, LossFunctionTensorOp<TensorT, DeviceT>* loss_function, LossFunctionGradTensorOp<TensorT, DeviceT>* loss_function_grad, const int& time_step) = 0;
+    
+    /**
+    @brief Execute model kernal methods required for calculating the model metrics (e.g., accuracy)
+
+    @param[in] time_step The current time-step to operate on
+    */
+    //virtual void executeModelMetricOperations(Eigen::Tensor<TensorT, 3>& expected, const int& layer_id, std::vector<MetricFunctionTensorOp<TensorT, DeviceT>*> metric_functions, const int& time_step) = 0;
 
 		/**
 		@brief Execute model kernal methods required for backward propogation
 
 		@param[in] time_step The current time-step to operate on
-		@param[in] sync_HToD Short circuit for testing that copies all host data to the device
-		@param[in] sync_DToH Short circuit for testing that copies all device data to the host
 		*/
 		virtual void executeBackwardPropogationOperations(const int& time_step) = 0;
 
 		/**
 		@brief Execute model kernal methods required for weight error calculations
 
-		@param[in] sync_HToD Short circuit for testing that copies all host data to the device
-		@param[in] sync_DToH Short circuit for testing that copies all device data to the host
 		*/
 		virtual void executeWeightErrorOperations() = 0;
 
 		/**
 		@brief Execute model kernal methods required for weight update calculations
 
-		@param[in] sync_HToD Short circuit for testing that copies all host data to the device
-		@param[in] sync_DToH Short circuit for testing that copies all device data to the host
 		*/
 		virtual void executeWeightUpdateOperations() = 0;
 		

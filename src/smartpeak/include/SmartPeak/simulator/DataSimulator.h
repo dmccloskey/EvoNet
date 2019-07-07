@@ -39,6 +39,18 @@ namespace SmartPeak
     */
     virtual void simulateTrainingData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps) {};
 
+    /**
+      @brief Entry point to define the simulated data for training
+
+      Overload creates the input and output data for a single epoch
+
+      @param[in, out] input_data Input Tensor for the model
+      @param[in, out] loss_output_data Output Tensor for the model used to compute the loss function
+      @param[in, out] metric_output_data Output Tensor for the model used to compute the model metrics
+      @param[in, out] time_steps Time step tensor for the model
+    */
+    virtual void simulateTrainingData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps) {};
+
 		/**
 		@brief Entry point to define the simulated data for testing/validation
 
@@ -60,6 +72,18 @@ namespace SmartPeak
     @param[in, out] time_steps Time step tensor for the model
     */
     virtual void simulateValidationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps) {};
+    
+    /**
+      @brief Entry point to define the simulated data for validation
+
+      Overload creates the input and output data for a single epoch
+
+      @param[in, out] input_data Input Tensor for the model
+      @param[in, out] loss_output_data Output Tensor for the model used to compute the loss function
+      @param[in, out] metric_output_data Output Tensor for the model used to compute the model metrics
+      @param[in, out] time_steps Time step tensor for the model
+    */
+    virtual void simulateValidationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps) {};
 
 		/**
 		@brief Entry point to define the simulation data for evaluation
