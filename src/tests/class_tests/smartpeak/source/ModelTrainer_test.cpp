@@ -16,22 +16,24 @@ class ModelTrainerExt : public ModelTrainerDefaultDevice<TensorT>{};
 template<typename TensorT>
 class DataSimulatorDAGToy : public DataSimulator<TensorT> {
 public:
-  void simulateTrainingData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps) {
+  void simulateTrainingData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps) {
     // Make the input data
     input_data.setValues({ {{1, 5, 1, 1}}, {{2, 6, 1, 1}}, {{3, 7, 1, 1}}, {{4, 8, 1, 1}} });
 
     // Make the output data
-    output_data.setValues({ {{0, 1}}, {{0, 1}}, {{0, 1}}, {{0, 1}} });
+    loss_output_data.setValues({ {{0, 1}}, {{0, 1}}, {{0, 1}}, {{0, 1}} });
+    metric_output_data.setValues({ {{0, 1}}, {{0, 1}}, {{0, 1}}, {{0, 1}} });
 
     // Make the simulation time_steps
     time_steps.setConstant(1);
   };
-  void simulateValidationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps) {
+  void simulateValidationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps) {
     // Make the input data
     input_data.setValues({ {{1, 1, 5, 1}}, {{1, 1, 2, 6}}, {{1, 1, 3, 7}}, {{1, 1, 4, 8 }} });
 
     // Make the output data
-    output_data.setValues({ {{1, 0}}, {{1, 0}}, {{1, 0}}, {{1, 0}} });
+    loss_output_data.setValues({ {{1, 0}}, {{1, 0}}, {{1, 0}}, {{1, 0}} });
+    metric_output_data.setValues({ {{0, 1}}, {{0, 1}}, {{0, 1}}, {{0, 1}} });
 
     // Make the simulation time_steps
     time_steps.setConstant(1);
@@ -41,7 +43,7 @@ public:
 template<typename TensorT>
 class DataSimulatorDCGToy : public DataSimulator<TensorT> {
 public:
-  void simulateTrainingData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps) {
+  void simulateTrainingData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps) {
     // Make the input data
     input_data.setValues(
       { {{8, 0, 0}, {7, 0, 0}, {6, 0, 0}, {5, 0, 0}, {4, 0, 0}, {3, 0, 0}, {2, 0, 0}, {1, 0, 0}},
@@ -52,7 +54,13 @@ public:
     );
 
     // Make the output data
-    output_data.setValues(
+    loss_output_data.setValues(
+      { { { 4 },{ 4 },{ 3 },{ 3 },{ 2 },{ 2 },{ 1 },{ 1 } },
+      { { 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 },{ 2 },{ 1 } },
+      { { 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 },{ 2 } },
+      { { 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 } },
+      { { 6 },{ 6 },{ 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 } } });
+    metric_output_data.setValues(
       { { { 4 },{ 4 },{ 3 },{ 3 },{ 2 },{ 2 },{ 1 },{ 1 } },
       { { 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 },{ 2 },{ 1 } },
       { { 5 },{ 5 },{ 4 },{ 4 },{ 3 },{ 3 },{ 2 },{ 2 } },
@@ -69,8 +77,8 @@ public:
     );
   }
 public:
-  void simulateValidationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps) {
-    simulateTrainingData(input_data, output_data, time_steps);
+  void simulateValidationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps) {
+    simulateTrainingData(input_data, loss_output_data, metric_output_data, time_steps);
   }
 };
 
@@ -211,7 +219,7 @@ BOOST_AUTO_TEST_CASE(checkOutputData)
 BOOST_AUTO_TEST_CASE(checkLossFunctions)
 {
   ModelTrainerExt<float> model_trainer;
-  BOOST_CHECK(model_trainer.checkLossFunctions());
+  BOOST_CHECK(!model_trainer.checkLossFunctions());
 
   model_trainer.setLossFunctions({
     std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>(1e-6, 1.0)),
@@ -238,7 +246,7 @@ BOOST_AUTO_TEST_CASE(checkLossFunctions)
 BOOST_AUTO_TEST_CASE(checkMetricFunctions)
 {
   ModelTrainerExt<float> model_trainer;
-  BOOST_CHECK(model_trainer.checkMetricFunctions());
+  BOOST_CHECK(!model_trainer.checkMetricFunctions());
 
   model_trainer.setMetricFunctions({ std::shared_ptr<MetricFunctionOp<float>>(new MAEOp<float>()) });
   std::vector<std::string> output_nodes;
@@ -446,6 +454,9 @@ BOOST_AUTO_TEST_CASE(DAGToy2)
   trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
   trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
   trainer.setLossOutputNodes({ output_nodes });
+  trainer.setMetricFunctions({ std::shared_ptr<MetricFunctionOp<float>>(new MAEOp<float>()) });
+  trainer.setMetricOutputNodes({ output_nodes });
+  trainer.setMetricNames({"MAE"});
 
   DataSimulatorDAGToy<float> data_simulator;
 
@@ -613,6 +624,9 @@ BOOST_AUTO_TEST_CASE(DCGToy2)
   trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
   trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
   trainer.setLossOutputNodes({ output_nodes });
+  trainer.setMetricFunctions({ std::shared_ptr<MetricFunctionOp<float>>(new MAEOp<float>()) });
+  trainer.setMetricOutputNodes({ output_nodes });
+  trainer.setMetricNames({ "MAE" });
 
   // Make data simulator
   DataSimulatorDCGToy<float> data_simulator;

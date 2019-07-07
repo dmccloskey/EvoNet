@@ -269,15 +269,11 @@ public:
     @param[in] expected_values The expected values
 
     */
-    virtual void trainingModelLogger(
-      const int& n_epochs,
-      Model<TensorT>& model,
-      InterpreterT& model_interpreter,
-      ModelLogger<TensorT>& model_logger,
-      const Eigen::Tensor<TensorT, 3>& expected_values,
-      const std::vector<std::string>& output_nodes,
-      const TensorT& model_error_train,
-      const TensorT& model_error_test);
+    virtual void trainingModelLogger(const int& n_epochs,
+      Model<TensorT>& model, InterpreterT& model_interpreter, ModelLogger<TensorT>& model_logger,
+      const Eigen::Tensor<TensorT, 3>& expected_values,  const std::vector<std::string>& output_nodes,
+      const TensorT& model_error_train, const TensorT& model_error_test,
+      const Eigen::Tensor<TensorT, 1> & model_metrics_train, const Eigen::Tensor<TensorT, 1> & model_metrics_test);
 
 		/**
 		@brief Entry point for users to code their validation logger
@@ -691,10 +687,14 @@ private:
   inline bool ModelTrainer<TensorT, InterpreterT>::checkLossFunctions()
   {
     if (loss_functions_.size() == loss_function_grads_.size() && loss_function_grads_.size() == loss_output_nodes_.size()
-      && loss_functions_.size() == loss_output_nodes_.size())
+      && loss_functions_.size() == loss_output_nodes_.size() && loss_output_nodes_.size() > 0)
       return true;
+    else if (loss_output_nodes_.size() == 0) {
+      std::cout << "No loss function members have been set!" << std::endl;
+      return false;
+    }
     else {
-      std::cout << "The number of loss functions, loss function grads, and loss output nodes are not consistent!." << std::endl;
+      std::cout << "The number of loss functions, loss function grads, and loss output nodes are not consistent!" << std::endl;
       return false;
     }
   }
@@ -703,10 +703,14 @@ private:
   inline bool ModelTrainer<TensorT, InterpreterT>::checkMetricFunctions()
   {
     if (metric_functions_.size() == metric_output_nodes_.size() && metric_output_nodes_.size() == metric_names_.size()
-      && metric_functions_.size() == metric_names_.size())
+      && metric_functions_.size() == metric_names_.size() && metric_names_.size() > 0)
       return true;
+    else if (metric_names_.size() == 0) {
+      std::cout << "No metric function members have been set!" << std::endl;
+      return false;
+    }
     else {
-      std::cout << "The number of metric functions, metric output nodes, and metric names are not consistent!." << std::endl;
+      std::cout << "The number of metric functions, metric output nodes, and metric names are not consistent!" << std::endl;
       return false;
     }
   }
@@ -836,18 +840,37 @@ private:
   {
     std::vector<TensorT> model_error_training;
     std::vector<TensorT> model_error_validation;
+    std::vector<Eigen::Tensor<TensorT, 1>> model_metrics_training; /// metric values
+    std::vector<Eigen::Tensor<TensorT, 1>> model_metrics_validation;
 
-    // Check the model
-    if (!model.checkNodeNames(input_nodes))
-    {
+    // Check the loss and metric functions
+    if (!this->checkLossFunctions()) {
       return std::make_pair(model_error_training, model_error_validation);
     }
-    std::vector<std::string> output_nodes;
+    if (!this->checkMetricFunctions()) {
+      return std::make_pair(model_error_training, model_error_validation);
+    }
+
+    // Check the input node names
+    if (!model.checkNodeNames(input_nodes)) {
+      return std::make_pair(model_error_training, model_error_validation);
+    }
+
+    // Check the loss output node names
+    std::vector<std::string> loss_output_nodes;
     for (const std::vector<std::string>& output_nodes_vec : this->loss_output_nodes_)
       for (const std::string& output_node : output_nodes_vec)
-        output_nodes.push_back(output_node);
-    if (!model.checkNodeNames(output_nodes))
-    {
+        loss_output_nodes.push_back(output_node);
+    if (!model.checkNodeNames(loss_output_nodes)) {
+      return std::make_pair(model_error_training, model_error_validation);
+    }
+
+    // Check the metric output node names
+    std::vector<std::string> metric_output_nodes;
+    for (const std::vector<std::string>& output_nodes_vec : this->metric_output_nodes_)
+      for (const std::string& output_node : output_nodes_vec)
+        metric_output_nodes.push_back(output_node);
+    if (!model.checkNodeNames(metric_output_nodes)) {
       return std::make_pair(model_error_training, model_error_validation);
     }
 
@@ -873,9 +896,10 @@ private:
       if (this->getVerbosityLevel() >= 2)
         std::cout << "Generating the input/output data for validation..." << std::endl;
       Eigen::Tensor<TensorT, 3> input_data_validation(this->getBatchSize(), this->getMemorySize(), (int)input_nodes.size());
-      Eigen::Tensor<TensorT, 3> output_data_validation(this->getBatchSize(), this->getMemorySize(), (int)output_nodes.size());
+      Eigen::Tensor<TensorT, 3> loss_output_data_validation(this->getBatchSize(), this->getMemorySize(), (int)loss_output_nodes.size());
+      Eigen::Tensor<TensorT, 3> metric_output_data_validation(this->getBatchSize(), this->getMemorySize(), (int)metric_output_nodes.size());
       Eigen::Tensor<TensorT, 2> time_steps_validation(this->getBatchSize(), this->getMemorySize());
-      data_simulator.simulateValidationData(input_data_validation, output_data_validation, time_steps_validation);
+      data_simulator.simulateValidationData(input_data_validation, loss_output_data_validation, metric_output_data_validation, time_steps_validation);
 
       // assign the input data
       model_interpreter.initBiases(model); // create the bias	
@@ -896,7 +920,7 @@ private:
         for (int batch_iter = 0; batch_iter < this->getBatchSize(); ++batch_iter)
           for (int memory_iter = 0; memory_iter < this->getMemorySize(); ++memory_iter)
             for (int node_iter = 0; node_iter < this->loss_output_nodes_[loss_iter].size(); ++node_iter)
-              expected(batch_iter, memory_iter, node_iter) = output_data_validation(batch_iter, memory_iter, (int)(node_iter + output_node_cnt));
+              expected(batch_iter, memory_iter, node_iter) = loss_output_data_validation(batch_iter, memory_iter, (int)(node_iter + output_node_cnt));
         if (this->getNTETTSteps() < 0)
           model_interpreter.CETT(model, expected, this->loss_output_nodes_[loss_iter], this->loss_functions_[loss_iter].get(), this->loss_function_grads_[loss_iter].get(), this->getMemorySize());
         else
@@ -904,10 +928,29 @@ private:
         output_node_cnt += this->loss_output_nodes_[loss_iter].size();
       }
 
-      // get the model validation error
+      // calculate the model metrics
+      if (this->getVerbosityLevel() >= 2)
+        std::cout << "Validation Metric Calculation..." << std::endl;
+      output_node_cnt = 0;
+      for (size_t metric_iter = 0; metric_iter < this->metric_output_nodes_.size(); metric_iter++) {
+        Eigen::Tensor<TensorT, 3> expected(this->getBatchSize(), this->getMemorySize(), (int)this->metric_output_nodes_[metric_iter].size());
+        for (int batch_iter = 0; batch_iter < this->getBatchSize(); ++batch_iter)
+          for (int memory_iter = 0; memory_iter < this->getMemorySize(); ++memory_iter)
+            for (int node_iter = 0; node_iter < this->metric_output_nodes_[metric_iter].size(); ++node_iter)
+              expected(batch_iter, memory_iter, node_iter) = metric_output_data_validation(batch_iter, memory_iter, (int)(node_iter + output_node_cnt));
+        if (this->getNTETTSteps() < 0)
+          model_interpreter.CMTT(model, expected, this->metric_output_nodes_[metric_iter], this->metric_functions_[metric_iter].get(), this->getMemorySize(), metric_iter);
+        else
+          model_interpreter.CMTT(model, expected, this->metric_output_nodes_[metric_iter], this->metric_functions_[metric_iter].get(), this->getNTETTSteps(), metric_iter);
+        output_node_cnt += this->metric_output_nodes_[metric_iter].size();
+      }
+
+      // get the model validation error and validation metrics
       model_interpreter.getModelResults(model, false, false, true);
       const Eigen::Tensor<TensorT, 0> total_error_validation = model.getError().sum();
       model_error_validation.push_back(total_error_validation(0));
+      Eigen::Tensor<TensorT, 1> total_metrics_validation = model.getMetric().sum(Eigen::array<Eigen::Index, 1>({ 1 }));
+      model_metrics_validation.push_back(total_metrics_validation);
 
       // re-initialize the model
       model_interpreter.reInitNodes();
@@ -917,9 +960,10 @@ private:
       if (this->getVerbosityLevel() >= 2)
         std::cout << "Generating the input/output data for training..." << std::endl;
       Eigen::Tensor<TensorT, 3> input_data_training(this->getBatchSize(), this->getMemorySize(), (int)input_nodes.size());
-      Eigen::Tensor<TensorT, 3> output_data_training(this->getBatchSize(), this->getMemorySize(), (int)output_nodes.size());
+      Eigen::Tensor<TensorT, 3> loss_output_data_training(this->getBatchSize(), this->getMemorySize(), (int)loss_output_nodes.size());
+      Eigen::Tensor<TensorT, 3> metric_output_data_training(this->getBatchSize(), this->getMemorySize(), (int)metric_output_nodes.size());
       Eigen::Tensor<TensorT, 2> time_steps_training(this->getBatchSize(), this->getMemorySize());
-      data_simulator.simulateTrainingData(input_data_training, output_data_training, time_steps_training);
+      data_simulator.simulateTrainingData(input_data_training, loss_output_data_training, metric_output_data_training, time_steps_training);
 
       // assign the input data
       model_interpreter.initBiases(model); // create the bias	
@@ -940,7 +984,7 @@ private:
         for (int batch_iter = 0; batch_iter < this->getBatchSize(); ++batch_iter)
           for (int memory_iter = 0; memory_iter < this->getMemorySize(); ++memory_iter)
             for (int node_iter = 0; node_iter < this->loss_output_nodes_[loss_iter].size(); ++node_iter)
-              expected(batch_iter, memory_iter, node_iter) = output_data_training(batch_iter, memory_iter, (int)(node_iter + output_node_cnt));
+              expected(batch_iter, memory_iter, node_iter) = loss_output_data_training(batch_iter, memory_iter, (int)(node_iter + output_node_cnt));
         if (this->getNTETTSteps() < 0)
           model_interpreter.CETT(model, expected, this->loss_output_nodes_[loss_iter], this->loss_functions_[loss_iter].get(), this->loss_function_grads_[loss_iter].get(), this->getMemorySize());
         else
@@ -948,10 +992,29 @@ private:
         output_node_cnt += this->loss_output_nodes_[loss_iter].size();
       }
 
+      // calculate the model metrics
+      if (this->getVerbosityLevel() >= 2)
+        std::cout << "Training Metric Calculation..." << std::endl;
+      output_node_cnt = 0;
+      for (size_t metric_iter = 0; metric_iter < this->metric_output_nodes_.size(); metric_iter++) {
+        Eigen::Tensor<TensorT, 3> expected(this->getBatchSize(), this->getMemorySize(), (int)this->metric_output_nodes_[metric_iter].size());
+        for (int batch_iter = 0; batch_iter < this->getBatchSize(); ++batch_iter)
+          for (int memory_iter = 0; memory_iter < this->getMemorySize(); ++memory_iter)
+            for (int node_iter = 0; node_iter < this->metric_output_nodes_[metric_iter].size(); ++node_iter)
+              expected(batch_iter, memory_iter, node_iter) = metric_output_data_training(batch_iter, memory_iter, (int)(node_iter + output_node_cnt));
+        if (this->getNTETTSteps() < 0)
+          model_interpreter.CMTT(model, expected, this->metric_output_nodes_[metric_iter], this->metric_functions_[metric_iter].get(), this->getMemorySize(), metric_iter);
+        else
+          model_interpreter.CMTT(model, expected, this->metric_output_nodes_[metric_iter], this->metric_functions_[metric_iter].get(), this->getNTETTSteps(), metric_iter);
+        output_node_cnt += this->metric_output_nodes_[metric_iter].size();
+      }
+
       // get the model training error
       model_interpreter.getModelResults(model, false, false, true);
       const Eigen::Tensor<TensorT, 0> total_error_training = model.getError().sum();
       model_error_training.push_back(total_error_training(0));
+      const Eigen::Tensor<TensorT, 1> total_metrics_training = model.getMetric().sum(Eigen::array<Eigen::Index, 1>({ 1 }));
+      model_metrics_training.push_back(total_metrics_training);
       if (this->getVerbosityLevel() >= 1)
         std::cout << "Model " << model.getName() << " error: " << total_error_training(0) << std::endl;
 
@@ -972,7 +1035,8 @@ private:
       if (this->getLogTraining()) {
         if (this->getVerbosityLevel() >= 2)
           std::cout << "Logging..." << std::endl;
-        this->trainingModelLogger(iter, model, model_interpreter, model_logger, output_data_training, output_nodes, total_error_training(0), total_error_validation(0));
+        this->trainingModelLogger(iter, model, model_interpreter, model_logger, loss_output_data_training, loss_output_nodes, total_error_training(0), total_error_validation(0),
+          total_metrics_training, total_metrics_validation);
       }
 
       // reinitialize the model
@@ -1204,15 +1268,31 @@ private:
 		}
 	}
   template<typename TensorT, typename InterpreterT>
-  inline void ModelTrainer<TensorT, InterpreterT>::trainingModelLogger(const int & n_epochs, Model<TensorT>& model, InterpreterT & model_interpreter, ModelLogger<TensorT>& model_logger, const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const TensorT & model_error_train, const TensorT & model_error_test)
+  inline void ModelTrainer<TensorT, InterpreterT>::trainingModelLogger(const int & n_epochs, Model<TensorT>& model, InterpreterT & model_interpreter, ModelLogger<TensorT>& model_logger, const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, 
+    const TensorT & model_error_train, const TensorT & model_error_test, const Eigen::Tensor<TensorT, 1> & model_metrics_train, const Eigen::Tensor<TensorT, 1> & model_metrics_test )
   {
     if (n_epochs == 0) {
       model_logger.initLogs(model);
     }
     if (n_epochs % 10 == 0) {
+      // Get the node values if logging the expected and predicted
       if (model_logger.getLogExpectedPredictedEpoch())
         model_interpreter.getModelResults(model, true, false, false);
-      model_logger.writeLogs(model, n_epochs, { "Train_Error" }, { "Test_Error" }, { model_error_train }, { model_error_test }, output_nodes, expected_values);
+
+      // Create the metric headers and data arrays
+      std::vector<std::string> log_train_headers = { "Train_Error" };
+      std::vector<std::string> log_test_headers = { "Test_Error" };
+      std::vector<TensorT> log_train_values = { model_error_train };
+      std::vector<TensorT> log_test_values = { model_error_test };
+      int metric_iter = 0;
+      for (const std::string& metric_name : this->metric_names_) {
+        log_train_headers.push_back(metric_name);
+        log_test_headers.push_back(metric_name);
+        log_train_values.push_back(model_metrics_train(metric_iter));
+        log_test_values.push_back(model_metrics_test(metric_iter));
+        ++metric_iter;
+      }
+      model_logger.writeLogs(model, n_epochs, log_train_headers, log_test_headers, log_train_values, log_test_values, output_nodes, expected_values);
     }
   }
 	template<typename TensorT, typename InterpreterT>
