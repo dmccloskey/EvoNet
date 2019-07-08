@@ -201,7 +201,7 @@ namespace SmartPeak
       auto fp = (predicted_chip.chip(0, 1) >= (max_tensor - max_tensor.constant(TensorT(1e-6))) && expected_tensor < expected_tensor.constant(TensorT(this->threshold_negative_))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
 
       // calculate the precision     
-      auto precision = (tp.sum() + tn.sum()) / (tp.sum() + tn.sum() + fp.sum() + fn.sum());
+      auto precision = tp.sum() / (tp.sum() + fp.sum());
       error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += precision;
     };
   };
@@ -297,7 +297,7 @@ namespace SmartPeak
       auto fn = (predicted_chip.chip(0, 1) < max_tensor && expected_tensor > expected_tensor.constant(TensorT(this->threshold_positive_))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
 
       // calculate the recall     
-      auto recall = (tp.sum() + tn.sum()) / (tp.sum() + tn.sum() + fp.sum() + fn.sum());
+      auto recall = tp.sum() / (tp.sum() + fn.sum());
       error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += recall;
     };
   };
