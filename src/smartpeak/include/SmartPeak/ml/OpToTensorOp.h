@@ -446,7 +446,27 @@ namespace SmartPeak
   public:
     MetricFunctionTensorOp<TensorT, DeviceT>* convertOpToTensorOp(MetricFunctionOp<TensorT>* op_class) const {
       if (op_class->getName() == "AccuracyBCOp") {
-        MetricFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new ClassificationAccuracyTensorOp<TensorT, DeviceT>(op_class->getParameters().at(0));
+        MetricFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new AccuracyBCTensorOp<TensorT, DeviceT>(op_class->getParameters().at(0));
+        return op_tensor_class;
+      }
+      else if (op_class->getName() == "AccuracyMCMicroOp") {
+        MetricFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new AccuracyMCMicroTensorOp<TensorT, DeviceT>();
+        return op_tensor_class;
+      }
+      else if (op_class->getName() == "AccuracyMCMacroOp") {
+        MetricFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new AccuracyMCMacroTensorOp<TensorT, DeviceT>();
+        return op_tensor_class;
+      }
+      else if (op_class->getName() == "F1ScoreBCOp") {
+        MetricFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new F1ScoreBCTensorOp<TensorT, DeviceT>(op_class->getParameters().at(0));
+        return op_tensor_class;
+      }
+      else if (op_class->getName() == "F1ScoreMCMicroOp") {
+        MetricFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new F1ScoreMCMicroTensorOp<TensorT, DeviceT>();
+        return op_tensor_class;
+      }
+      else if (op_class->getName() == "F1ScoreMCMacroOp") {
+        MetricFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new F1ScoreMCMacroTensorOp<TensorT, DeviceT>();
         return op_tensor_class;
       }
       // TODO: all other MetricFunction operators

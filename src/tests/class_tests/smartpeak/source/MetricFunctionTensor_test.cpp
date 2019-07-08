@@ -14,23 +14,71 @@ BOOST_AUTO_TEST_SUITE(MetricFunctionTensor1)
 /**
   AccuracyBCOp Tests
 */
-BOOST_AUTO_TEST_CASE(constructorClassificationAccuracyOp)
+BOOST_AUTO_TEST_CASE(constructorAccuracyBCOp)
 {
-  ClassificationAccuracyTensorOp<float, Eigen::DefaultDevice>* ptrReLU = nullptr;
-  ClassificationAccuracyTensorOp<float, Eigen::DefaultDevice>* nullPointerReLU = nullptr;
+  AccuracyBCTensorOp<float, Eigen::DefaultDevice>* ptrReLU = nullptr;
+  AccuracyBCTensorOp<float, Eigen::DefaultDevice>* nullPointerReLU = nullptr;
   BOOST_CHECK_EQUAL(ptrReLU, nullPointerReLU);
 }
 
-BOOST_AUTO_TEST_CASE(destructorClassificationAccuracyOp)
+BOOST_AUTO_TEST_CASE(destructorAccuracyBCOp)
 {
-  ClassificationAccuracyTensorOp<float, Eigen::DefaultDevice>* ptrReLU = nullptr;
-  ptrReLU = new ClassificationAccuracyTensorOp<float, Eigen::DefaultDevice>();
+  AccuracyBCTensorOp<float, Eigen::DefaultDevice>* ptrReLU = nullptr;
+  ptrReLU = new AccuracyBCTensorOp<float, Eigen::DefaultDevice>();
   delete ptrReLU;
 }
 
-BOOST_AUTO_TEST_CASE(operationfunctionClassificationAccuracyOp)
+BOOST_AUTO_TEST_CASE(operationfunctionAccuracyBCOp)
 {
-  ClassificationAccuracyTensorOp<float, Eigen::DefaultDevice> operation;
+  AccuracyBCTensorOp<float, Eigen::DefaultDevice> operation;
+
+  const int memory_size = 2;
+  const int batch_size = 2;
+  const int layer_size = 2;
+  const int n_metrics = 2;
+  const int time_step = 0;
+  const int metric_index = 1;
+  Eigen::Tensor<float, 2> y_true(batch_size, layer_size);
+  y_true.setValues({
+    {1, 0}, {1, 0}
+    });
+  Eigen::Tensor<float, 3> y_pred(batch_size, memory_size, layer_size);
+  y_pred.setValues({
+    {{2, 1}, {0, 0}},
+    {{1, 2}, {0, 0}}
+    });
+
+  float error_ptr[] = { 0, 0, 0, 0 };
+  Eigen::DefaultDevice device;
+
+  operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
+  Eigen::TensorMap<Eigen::Tensor<float, 2>> error(error_ptr, n_metrics, memory_size);
+  //BOOST_CHECK_CLOSE(error(0, 0), 0, 1e-4);
+  //BOOST_CHECK_CLOSE(error(1, 0), 0.5, 1e-4);
+  //BOOST_CHECK_CLOSE(error(0, 1), 0, 1e-4);
+  //BOOST_CHECK_CLOSE(error(1, 1), 0, 1e-4);
+}
+
+/**
+  AccuracyMCMicroOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorAccuracyMCMicroOp)
+{
+  AccuracyMCMicroTensorOp<float, Eigen::DefaultDevice>* ptrReLU = nullptr;
+  AccuracyMCMicroTensorOp<float, Eigen::DefaultDevice>* nullPointerReLU = nullptr;
+  BOOST_CHECK_EQUAL(ptrReLU, nullPointerReLU);
+}
+
+BOOST_AUTO_TEST_CASE(destructorAccuracyMCMicroOp)
+{
+  AccuracyMCMicroTensorOp<float, Eigen::DefaultDevice>* ptrReLU = nullptr;
+  ptrReLU = new AccuracyMCMicroTensorOp<float, Eigen::DefaultDevice>();
+  delete ptrReLU;
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionAccuracyMCMicroOp)
+{
+  AccuracyMCMicroTensorOp<float, Eigen::DefaultDevice> operation;
 
   const int memory_size = 2;
   const int batch_size = 2;
@@ -57,6 +105,54 @@ BOOST_AUTO_TEST_CASE(operationfunctionClassificationAccuracyOp)
   BOOST_CHECK_CLOSE(error(1, 0), 0.5, 1e-4);
   BOOST_CHECK_CLOSE(error(0, 1), 0, 1e-4);
   BOOST_CHECK_CLOSE(error(1, 1), 0, 1e-4);
+}
+
+/**
+  AccuracyMCMacroOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorAccuracyMCMacroOp)
+{
+  AccuracyMCMacroTensorOp<float, Eigen::DefaultDevice>* ptrReLU = nullptr;
+  AccuracyMCMacroTensorOp<float, Eigen::DefaultDevice>* nullPointerReLU = nullptr;
+  BOOST_CHECK_EQUAL(ptrReLU, nullPointerReLU);
+}
+
+BOOST_AUTO_TEST_CASE(destructorAccuracyMCMacroOp)
+{
+  AccuracyMCMacroTensorOp<float, Eigen::DefaultDevice>* ptrReLU = nullptr;
+  ptrReLU = new AccuracyMCMacroTensorOp<float, Eigen::DefaultDevice>();
+  delete ptrReLU;
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionAccuracyMCMacroOp)
+{
+  AccuracyMCMacroTensorOp<float, Eigen::DefaultDevice> operation;
+
+  const int memory_size = 2;
+  const int batch_size = 2;
+  const int layer_size = 2;
+  const int n_metrics = 2;
+  const int time_step = 0;
+  const int metric_index = 1;
+  Eigen::Tensor<float, 2> y_true(batch_size, layer_size);
+  y_true.setValues({
+    {1, 0}, {1, 0}
+    });
+  Eigen::Tensor<float, 3> y_pred(batch_size, memory_size, layer_size);
+  y_pred.setValues({
+    {{2, 1}, {0, 0}},
+    {{1, 2}, {0, 0}}
+    });
+
+  float error_ptr[] = { 0, 0, 0, 0 };
+  Eigen::DefaultDevice device;
+
+  operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
+  Eigen::TensorMap<Eigen::Tensor<float, 2>> error(error_ptr, n_metrics, memory_size);
+  //BOOST_CHECK_CLOSE(error(0, 0), 0, 1e-4);
+  //BOOST_CHECK_CLOSE(error(1, 0), 0.5, 1e-4);
+  //BOOST_CHECK_CLOSE(error(0, 1), 0, 1e-4);
+  //BOOST_CHECK_CLOSE(error(1, 1), 0, 1e-4);
 }
 
 /**
@@ -110,23 +206,71 @@ BOOST_AUTO_TEST_CASE(operationfunctionPredictionBiasOp)
 /**
   F1ScoreBCOp Tests
 */
-BOOST_AUTO_TEST_CASE(constructorF1ScoreOp)
+BOOST_AUTO_TEST_CASE(constructorF1ScoreBCOp)
 {
-  F1ScoreTensorOp<float, Eigen::DefaultDevice>* ptrF1Score = nullptr;
-  F1ScoreTensorOp<float, Eigen::DefaultDevice>* nullPointerF1Score = nullptr;
+  F1ScoreBCTensorOp<float, Eigen::DefaultDevice>* ptrF1Score = nullptr;
+  F1ScoreBCTensorOp<float, Eigen::DefaultDevice>* nullPointerF1Score = nullptr;
   BOOST_CHECK_EQUAL(ptrF1Score, nullPointerF1Score);
 }
 
-BOOST_AUTO_TEST_CASE(destructorF1ScoreOp)
+BOOST_AUTO_TEST_CASE(destructorF1ScoreBCOp)
 {
-  F1ScoreTensorOp<float, Eigen::DefaultDevice>* ptrF1Score = nullptr;
-  ptrF1Score = new F1ScoreTensorOp<float, Eigen::DefaultDevice>();
+  F1ScoreBCTensorOp<float, Eigen::DefaultDevice>* ptrF1Score = nullptr;
+  ptrF1Score = new F1ScoreBCTensorOp<float, Eigen::DefaultDevice>();
   delete ptrF1Score;
 }
 
-BOOST_AUTO_TEST_CASE(operationfunctionF1ScoreOp)
+BOOST_AUTO_TEST_CASE(operationfunctionF1ScoreBCOp)
 {
-  F1ScoreTensorOp<float, Eigen::DefaultDevice> operation;
+  F1ScoreBCTensorOp<float, Eigen::DefaultDevice> operation;
+
+  const int memory_size = 2;
+  const int batch_size = 2;
+  const int layer_size = 2;
+  const int n_metrics = 2;
+  const int time_step = 0;
+  const int metric_index = 1;
+  Eigen::Tensor<float, 2> y_true(batch_size, layer_size);
+  y_true.setValues({
+    {1, 0}, {1, 0}
+    });
+  Eigen::Tensor<float, 3> y_pred(batch_size, memory_size, layer_size);
+  y_pred.setValues({
+    {{1, 1}, {0, 0}},
+    {{2, 2}, {0, 0}}
+    });
+
+  float error_ptr[] = { 0, 0, 0, 0 };
+  Eigen::DefaultDevice device;
+
+  operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
+  Eigen::TensorMap<Eigen::Tensor<float, 2>> error(error_ptr, n_metrics, memory_size);
+  //BOOST_CHECK_CLOSE(error(0, 0), 0, 1e-4);
+  //BOOST_CHECK_CLOSE(error(1, 0), 0.66666667, 1e-4);
+  //BOOST_CHECK_CLOSE(error(0, 1), 0, 1e-4);
+  //BOOST_CHECK_CLOSE(error(1, 1), 0, 1e-4);
+}
+
+/**
+  F1ScoreMCMicroOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorF1ScoreMCMicroOp)
+{
+  F1ScoreMCMicroTensorOp<float, Eigen::DefaultDevice>* ptrF1Score = nullptr;
+  F1ScoreMCMicroTensorOp<float, Eigen::DefaultDevice>* nullPointerF1Score = nullptr;
+  BOOST_CHECK_EQUAL(ptrF1Score, nullPointerF1Score);
+}
+
+BOOST_AUTO_TEST_CASE(destructorF1ScoreMCMicroOp)
+{
+  F1ScoreMCMicroTensorOp<float, Eigen::DefaultDevice>* ptrF1Score = nullptr;
+  ptrF1Score = new F1ScoreMCMicroTensorOp<float, Eigen::DefaultDevice>();
+  delete ptrF1Score;
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionF1ScoreMCMicroOp)
+{
+  F1ScoreMCMicroTensorOp<float, Eigen::DefaultDevice> operation;
 
   const int memory_size = 2;
   const int batch_size = 2;
@@ -150,9 +294,57 @@ BOOST_AUTO_TEST_CASE(operationfunctionF1ScoreOp)
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
   Eigen::TensorMap<Eigen::Tensor<float, 2>> error(error_ptr, n_metrics, memory_size);
   BOOST_CHECK_CLOSE(error(0, 0), 0, 1e-4);
-  BOOST_CHECK_CLOSE(error(1, 0), 0.66666667, 1e-4);
+  BOOST_CHECK_CLOSE(error(1, 0), 0.5, 1e-4);
   BOOST_CHECK_CLOSE(error(0, 1), 0, 1e-4);
   BOOST_CHECK_CLOSE(error(1, 1), 0, 1e-4);
+}
+
+/**
+  F1ScoreMCMacroOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorF1ScoreMCMacroOp)
+{
+  F1ScoreMCMacroTensorOp<float, Eigen::DefaultDevice>* ptrF1Score = nullptr;
+  F1ScoreMCMacroTensorOp<float, Eigen::DefaultDevice>* nullPointerF1Score = nullptr;
+  BOOST_CHECK_EQUAL(ptrF1Score, nullPointerF1Score);
+}
+
+BOOST_AUTO_TEST_CASE(destructorF1ScoreMCMacroOp)
+{
+  F1ScoreMCMacroTensorOp<float, Eigen::DefaultDevice>* ptrF1Score = nullptr;
+  ptrF1Score = new F1ScoreMCMacroTensorOp<float, Eigen::DefaultDevice>();
+  delete ptrF1Score;
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionF1ScoreMCMacroOp)
+{
+  F1ScoreMCMacroTensorOp<float, Eigen::DefaultDevice> operation;
+
+  const int memory_size = 2;
+  const int batch_size = 2;
+  const int layer_size = 2;
+  const int n_metrics = 2;
+  const int time_step = 0;
+  const int metric_index = 1;
+  Eigen::Tensor<float, 2> y_true(batch_size, layer_size);
+  y_true.setValues({
+    {1, 0}, {1, 0}
+    });
+  Eigen::Tensor<float, 3> y_pred(batch_size, memory_size, layer_size);
+  y_pred.setValues({
+    {{1, 1}, {0, 0}},
+    {{2, 2}, {0, 0}}
+    });
+
+  float error_ptr[] = { 0, 0, 0, 0 };
+  Eigen::DefaultDevice device;
+
+  operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
+  Eigen::TensorMap<Eigen::Tensor<float, 2>> error(error_ptr, n_metrics, memory_size);
+  //BOOST_CHECK_CLOSE(error(0, 0), 0, 1e-4);
+  //BOOST_CHECK_CLOSE(error(1, 0), 0.66666667, 1e-4);
+  //BOOST_CHECK_CLOSE(error(0, 1), 0, 1e-4);
+  //BOOST_CHECK_CLOSE(error(1, 1), 0, 1e-4);
 }
 
 /**
@@ -204,25 +396,73 @@ BOOST_AUTO_TEST_CASE(operationfunctionAUROCOp)
 }
 
 /**
-  MCCTensorOp Tests
+  MCCBCTensorOp Tests
 */
-BOOST_AUTO_TEST_CASE(constructorMCCTensorOp)
+BOOST_AUTO_TEST_CASE(constructorMCCBCTensorOp)
 {
-  MCCTensorOp<float, Eigen::DefaultDevice>* ptrMCC = nullptr;
-  MCCTensorOp<float, Eigen::DefaultDevice>* nullPointerMCC = nullptr;
+  MCCBCTensorOp<float, Eigen::DefaultDevice>* ptrMCC = nullptr;
+  MCCBCTensorOp<float, Eigen::DefaultDevice>* nullPointerMCC = nullptr;
   BOOST_CHECK_EQUAL(ptrMCC, nullPointerMCC);
 }
 
-BOOST_AUTO_TEST_CASE(destructorMCCTensorOp)
+BOOST_AUTO_TEST_CASE(destructorMCCBCTensorOp)
 {
-  MCCTensorOp<float, Eigen::DefaultDevice>* ptrMCC = nullptr;
-  ptrMCC = new MCCTensorOp<float, Eigen::DefaultDevice>();
+  MCCBCTensorOp<float, Eigen::DefaultDevice>* ptrMCC = nullptr;
+  ptrMCC = new MCCBCTensorOp<float, Eigen::DefaultDevice>();
   delete ptrMCC;
 }
 
-BOOST_AUTO_TEST_CASE(operationfunctionMCCTensorOp)
+BOOST_AUTO_TEST_CASE(operationfunctionMCCBCTensorOp)
 {
-  MCCTensorOp<float, Eigen::DefaultDevice> operation;
+  MCCBCTensorOp<float, Eigen::DefaultDevice> operation;
+
+  const int memory_size = 2;
+  const int batch_size = 2;
+  const int layer_size = 2;
+  const int n_metrics = 2;
+  const int time_step = 0;
+  const int metric_index = 1;
+  Eigen::Tensor<float, 2> y_true(batch_size, layer_size);
+  y_true.setValues({
+    {1, 0}, {1, 0}
+    });
+  Eigen::Tensor<float, 3> y_pred(batch_size, memory_size, layer_size);
+  y_pred.setValues({
+    {{1, 1}, {0, 0}},
+    {{2, 2}, {0, 0}}
+    });
+
+  float error_ptr[] = { 0, 0, 0, 0 };
+  Eigen::DefaultDevice device;
+
+  operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
+  Eigen::TensorMap<Eigen::Tensor<float, 2>> error(error_ptr, n_metrics, memory_size);
+  //BOOST_CHECK_CLOSE(error(0, 0), 0, 1e-4);
+  //BOOST_CHECK_CLOSE(error(1, 0), 0.5, 1e-4);
+  //BOOST_CHECK_CLOSE(error(0, 1), 0, 1e-4);
+  //BOOST_CHECK_CLOSE(error(1, 1), 0, 1e-4);
+}
+
+/**
+  MCCMCMicroTensorOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorMCCMCMicroTensorOp)
+{
+  MCCMCMicroTensorOp<float, Eigen::DefaultDevice>* ptrMCC = nullptr;
+  MCCMCMicroTensorOp<float, Eigen::DefaultDevice>* nullPointerMCC = nullptr;
+  BOOST_CHECK_EQUAL(ptrMCC, nullPointerMCC);
+}
+
+BOOST_AUTO_TEST_CASE(destructorMCCMCMicroTensorOp)
+{
+  MCCMCMicroTensorOp<float, Eigen::DefaultDevice>* ptrMCC = nullptr;
+  ptrMCC = new MCCMCMicroTensorOp<float, Eigen::DefaultDevice>();
+  delete ptrMCC;
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionMCCMCMicroTensorOp)
+{
+  MCCMCMicroTensorOp<float, Eigen::DefaultDevice> operation;
 
   const int memory_size = 2;
   const int batch_size = 2;

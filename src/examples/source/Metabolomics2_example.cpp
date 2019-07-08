@@ -698,8 +698,8 @@ void main_classification(bool make_model = true, bool simulate_MARs = true)
   // define the data simulator
   BiochemicalReactionModel<float> reaction_model;
   MetDataSimClassification<float> metabolomics_data;
-  std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
-  //std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
+  //std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
+  std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
   //std::string data_dir = "/home/user/Data/";
   std::string model_name = "0_Metabolomics";
 
@@ -788,7 +788,7 @@ void main_classification(bool make_model = true, bool simulate_MARs = true)
   model_trainer.setLossOutputNodes({ 
     output_nodes, 
     output_nodes });
-  model_trainer.setMetricFunctions({ std::shared_ptr<MetricFunctionOp<float>>(new AccuracyBCOp<float>(0.17)) });
+  model_trainer.setMetricFunctions({ std::shared_ptr<MetricFunctionOp<float>>(new AccuracyMCMicroOp<float>()) });
   model_trainer.setMetricOutputNodes({ output_nodes });
   model_trainer.setMetricNames({ "Accuracy" });
 
@@ -852,8 +852,8 @@ void main_reconstruction(bool make_model = true, bool simulate_MARs = true)
   // define the data simulator
   BiochemicalReactionModel<float> reaction_model;
   MetDataSimReconstruction<float> metabolomics_data;
-  std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
-  //std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
+  //std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
+  std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
   //std::string data_dir = "/home/user/Data/";
   std::string model_name = "0_Metabolomics";
 

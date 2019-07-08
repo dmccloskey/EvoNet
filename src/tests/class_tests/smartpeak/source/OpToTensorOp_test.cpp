@@ -932,7 +932,27 @@ BOOST_AUTO_TEST_CASE(convertOpToTensorOpMetricFunctionOpToMetricFunctionTensorOp
 
   op_class = new AccuracyBCOp<float>();
   op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
-  BOOST_CHECK_EQUAL(op_tensor_class->getName(), "ClassificationAccuracyTensorOp");
+  BOOST_CHECK_EQUAL(op_tensor_class->getName(), "AccuracyBCTensorOp");
+
+  op_class = new AccuracyMCMicroOp<float>();
+  op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+  BOOST_CHECK_EQUAL(op_tensor_class->getName(), "AccuracyMCMicroTensorOp");
+
+  op_class = new AccuracyMCMacroOp<float>();
+  op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+  BOOST_CHECK_EQUAL(op_tensor_class->getName(), "AccuracyMCMacroTensorOp");
+
+  op_class = new F1ScoreBCOp<float>();
+  op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+  BOOST_CHECK_EQUAL(op_tensor_class->getName(), "F1ScoreBCTensorOp");
+
+  op_class = new F1ScoreMCMicroOp<float>();
+  op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+  BOOST_CHECK_EQUAL(op_tensor_class->getName(), "F1ScoreMCMicroTensorOp");
+
+  op_class = new F1ScoreMCMacroOp<float>();
+  op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+  BOOST_CHECK_EQUAL(op_tensor_class->getName(), "F1ScoreMCMacroTensorOp");
 
   op_class = new MAEOp<float>();
   op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
@@ -946,6 +966,26 @@ BOOST_AUTO_TEST_CASE(getTensorParamsMetricFunctionOpToMetricFunctionTensorOp)
   std::vector<float> params;
 
   op_class = new AccuracyBCOp<float>();
+  params = op_to_tensor_op.getTensorParams(op_class);
+  BOOST_CHECK_EQUAL(params.size(), 0);
+
+  op_class = new AccuracyMCMicroOp<float>();
+  params = op_to_tensor_op.getTensorParams(op_class);
+  BOOST_CHECK_EQUAL(params.size(), 0);
+
+  op_class = new AccuracyMCMacroOp<float>();
+  params = op_to_tensor_op.getTensorParams(op_class);
+  BOOST_CHECK_EQUAL(params.size(), 0);
+
+  op_class = new F1ScoreBCOp<float>();
+  params = op_to_tensor_op.getTensorParams(op_class);
+  BOOST_CHECK_EQUAL(params.size(), 0);
+
+  op_class = new F1ScoreMCMicroOp<float>();
+  params = op_to_tensor_op.getTensorParams(op_class);
+  BOOST_CHECK_EQUAL(params.size(), 0);
+
+  op_class = new F1ScoreMCMacroOp<float>();
   params = op_to_tensor_op.getTensorParams(op_class);
   BOOST_CHECK_EQUAL(params.size(), 0);
 
