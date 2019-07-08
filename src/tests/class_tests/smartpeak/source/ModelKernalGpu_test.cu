@@ -529,7 +529,7 @@ void test_modelMetricGpuDevice()
   const int device_id = 0;
   ModelKernalGpu<float> kernal;
 
-  MAETensorOp<float, Eigen::GpuDevice>* metric_function = new MSATensorOp<float, Eigen::GpuDevice>;
+  MAETensorOp<float, Eigen::GpuDevice>* metric_function = new MAETensorOp<float, Eigen::GpuDevice>;
   const int batch_size = 4;
   const int memory_size = 2;
   const int layer_size = 2;

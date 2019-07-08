@@ -265,9 +265,9 @@ void test_allocateModelErrorTensor()
 
 	model_interpreter.allocateModelErrorTensor(batch_size, memory_size, n_metrics);
 
-	BOOST_CHECK_EQUAL(model_interpreter.getModelError()->getBatchSize(), 4);
-	BOOST_CHECK_EQUAL(model_interpreter.getModelError()->getMemorySize(), 2);
-	BOOST_CHECK_EQUAL(model_interpreter.getModelError()->getNMetrics(), 3);
+  assert(model_interpreter.getModelError()->getBatchSize() == 4);
+  assert(model_interpreter.getModelError()->getMemorySize() == 2);
+  assert(model_interpreter.getModelError()->getNMetrics() == 3);
 }
 
 void test_reInitNodes()
@@ -293,12 +293,12 @@ void test_reInitModelError()
 	model_interpreter.getModelError()->getError() = ones;
 	Eigen::Tensor<float, 2> twos(n_metrics, memory_size); twos.setConstant(2);
 	model_interpreter.getModelError()->getMetric() = twos;
-	BOOST_CHECK_EQUAL(model_interpreter.getModelError()->getError()(0, 0), 1);
-	BOOST_CHECK_EQUAL(model_interpreter.getModelError()->getMetric()(0, 0), 2);
+	assert(model_interpreter.getModelError()->getError()(0, 0) == 1);
+  assert(model_interpreter.getModelError()->getMetric()(0, 0) == 2);
 
 	model_interpreter.reInitModelError();
-	BOOST_CHECK_EQUAL(model_interpreter.getModelError()->getError()(0, 0), 0);
-	BOOST_CHECK_EQUAL(model_interpreter.getModelError()->getMetric()(0, 0), 0);
+  assert(model_interpreter.getModelError()->getError()(0, 0) == 0);
+  assert(model_interpreter.getModelError()->getMetric()(0, 0) == 0);
 }
 
 void test_mapValuesToLayers()
@@ -498,9 +498,9 @@ void test_executeModelErrorOperations()
 	}
 }
 
-void test_executeModelErrorOperations()
+void test_executeModelMetricOperations()
 {
-  Model<float> model_executeModelErrorOperations = makeModelToy1();
+  Model<float> model_executeModelMetricOperations = makeModelToy1();
   ModelResources model_resources = { ModelDevice(0, 1) };
   ModelInterpreterGpu<float> model_interpreter(model_resources);
   const int batch_size = 4;
@@ -509,7 +509,7 @@ void test_executeModelErrorOperations()
   const bool train = true;
 
   // compile the graph into a set of operations
-  model_interpreter.getForwardPropogationOperations(model_executeModelErrorOperations, batch_size, memory_size, train, false, true, true);
+  model_interpreter.getForwardPropogationOperations(model_executeModelMetricOperations, batch_size, memory_size, train, false, true, true);
 
   // create the input
   const std::vector<std::string> node_ids = { "0", "1" };
@@ -519,9 +519,9 @@ void test_executeModelErrorOperations()
     {{2, 6}},
     {{3, 7}},
     {{4, 8}} });
-  model_interpreter.mapValuesToLayers(model_executeModelErrorOperations, input, node_ids, "output");
+  model_interpreter.mapValuesToLayers(model_executeModelMetricOperations, input, node_ids, "output");
 
-  model_interpreter.initBiases(model_executeModelErrorOperations); // create the bias	
+  model_interpreter.initBiases(model_executeModelMetricOperations); // create the bias	
   model_interpreter.executeForwardPropogationOperations(0); // FP
   model_interpreter.allocateModelErrorTensor(batch_size, memory_size, n_metrics); // allocate the memory
 
@@ -538,12 +538,8 @@ void test_executeModelErrorOperations()
   assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess);
   Eigen::GpuStreamDevice stream_device(&stream, 0);
   Eigen::GpuDevice device(&stream_device);
-  auto nodes_map = model_executeModelErrorOperations.getNodesMap();
-  for (int i = 0; i < (int)output_nodes.size(); ++i) {
-    const std::string node_name = output_nodes[i];
-    model_interpreter.getLayerTensor(nodes_map.at(node_name)->getTensorIndex().first)->syncHAndDError(device);
-  }
-  model_interpreter.getModelError()->syncHAndDError(device);
+  auto nodes_map = model_executeModelMetricOperations.getNodesMap();
+  model_interpreter.getModelError()->syncHAndDMetric(device);
   assert(cudaStreamSynchronize(stream) == cudaSuccess);
   assert(cudaStreamDestroy(stream) == cudaSuccess);
 
@@ -553,7 +549,7 @@ void test_executeModelErrorOperations()
     for (int k = 0; k < memory_size; ++k) {
       //std::cout << "Metric: " << j << "; Memory: " << k << std::endl;
       //std::cout << "Calc Model Metric: " << model_interpreter.getModelError()->getMetric()(j, k) << ", Expected Error: " << metric(j, k) << std::endl;
-      assert(assert_close<float>(model_interpreter.getModelError()->getMetric()(j, k), metric(j, k), 1e-2, 1e-2)); // [TODO: last value fails...]
+      assert(assert_close<float>(model_interpreter.getModelError()->getMetric()(j, k), metric(j, k), 1e-2, 1e-2)); 
     }
   }
 }
@@ -1103,12 +1099,7 @@ void test_CMTT()
   assert(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking) == cudaSuccess);
   Eigen::GpuStreamDevice stream_device(&stream, 0);
   Eigen::GpuDevice device(&stream_device);
-  auto nodes_map = model_CMTT.getNodesMap();
-  for (int i = 0; i < (int)output_nodes.size(); ++i) {
-    const std::string node_name = output_nodes[i];
-    model_interpreter.getLayerTensor(nodes_map.at(node_name)->getTensorIndex().first)->syncHAndDError(device);
-  }
-  model_interpreter.getModelError()->syncHAndDError(device);
+  model_interpreter.getModelError()->syncHAndDMetric(device);
   assert(cudaStreamSynchronize(stream) == cudaSuccess);
   assert(cudaStreamDestroy(stream) == cudaSuccess);
 
@@ -1120,7 +1111,7 @@ void test_CMTT()
   for (int j = 0; j < n_metrics; ++j) {
     for (int k = 0; k < memory_size; ++k) {
       //std::cout << "Metric: " << j << "; Memory: " << k << std::endl;
-      //std::cout << "Calc Model Metric: " << model_interpreter.getModelMetric()->getError()(j, k) << ", Expected Error: " << model_metric(j, k) << std::endl;
+      //std::cout << "Calc Model Metric: " << model_interpreter.getModelError()->getMetric()(j, k) << ", Expected Error: " << model_metric(j, k) << std::endl;
       assert(assert_close(model_interpreter.getModelError()->getMetric()(j, k), model_metric(j, k)));
     }
   }
@@ -1414,6 +1405,8 @@ void test_getModelResults()
 	LossFunctionOp<float>* loss_function = new MSEOp<float>();
 	LossFunctionGradOp<float>* loss_function_grad = new MSEGradOp<float>();
 	model_interpreter.CETT(model_getModelResults, expected, output_nodes, loss_function, loss_function_grad, 4);
+  MetricFunctionOp<float>* metric_function = new MAEOp<float>();
+  model_interpreter.CMTT(model_getModelResults, expected, output_nodes, metric_function, 4, 0);
 
 	model_interpreter.TBPTT(4);
 	model_interpreter.updateWeights();

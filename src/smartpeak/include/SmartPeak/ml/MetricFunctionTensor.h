@@ -45,20 +45,20 @@ namespace SmartPeak
       Eigen::TensorMap<Eigen::Tensor<TensorT, 5>> predicted_tensor(predicted, batch_size, memory_size, layer_size, 1, 1);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_tensor(error, n_metrics, memory_size);
 
-      // Calculate the soft max
-      auto predicted_chip = predicted_tensor.chip(time_step, 1); // 4 dims
-      auto exps = (predicted_chip.chip(0, 3) - predicted_chip.maximum(Eigen::array<int, 1>({ 1 })).broadcast(Eigen::array<int, 3>({ 1, layer_size, 1 }))).exp(); // 3 dims
-      auto stable_softmax = exps.chip(0, 2) / exps.sum(Eigen::array<int, 1>({ 1 })).broadcast(Eigen::array<int, 2>({ 1, layer_size }));  // 2 dims
+      //// Calculate the soft max
+      //auto predicted_chip = predicted_tensor.chip(time_step, 1); // 4 dims
+      //auto exps = (predicted_chip.chip(0, 3) - predicted_chip.maximum(Eigen::array<int, 1>({ 1 })).broadcast(Eigen::array<int, 3>({ 1, layer_size, 1 }))).exp(); // 3 dims
+      //auto stable_softmax = (exps.chip(0, 2) / exps.sum(Eigen::array<int, 1>({ 1 })).broadcast(Eigen::array<int, 2>({ 1, layer_size }))).eval();  // 2 dims
 
-      // calculate the confusion matrix
-      auto tp = (stable_softmax >= expected_tensor.constant(TensorT(this->classification_threshold_)) && expected_tensor > expected_tensor.constant(TensorT(0.9))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
-      auto tn = (stable_softmax < expected_tensor.constant(TensorT(this->classification_threshold_)) && expected_tensor < expected_tensor.constant(TensorT(0.1))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
-      auto fp = (stable_softmax >= expected_tensor.constant(TensorT(this->classification_threshold_)) && expected_tensor < expected_tensor.constant(TensorT(0.1))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
-      auto fn = (stable_softmax < expected_tensor.constant(TensorT(this->classification_threshold_)) && expected_tensor > expected_tensor.constant(TensorT(0.9))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
+      //// calculate the confusion matrix
+      //auto tp = (stable_softmax >= expected_tensor.constant(TensorT(this->classification_threshold_)) && expected_tensor > expected_tensor.constant(TensorT(0.9))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
+      //auto tn = (stable_softmax < expected_tensor.constant(TensorT(this->classification_threshold_)) && expected_tensor < expected_tensor.constant(TensorT(0.1))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
+      //auto fp = (stable_softmax >= expected_tensor.constant(TensorT(this->classification_threshold_)) && expected_tensor < expected_tensor.constant(TensorT(0.1))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
+      //auto fn = (stable_softmax < expected_tensor.constant(TensorT(this->classification_threshold_)) && expected_tensor > expected_tensor.constant(TensorT(0.9))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
 
-      // calculate the accuracy     
-      auto accuracy = (tp.sum() + tn.sum()) / (tp.sum() + tn.sum() + fp.sum() + fn.sum());
-      error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += accuracy; //Not needed: / accuracy.constant(TensorT(batch_size));
+      //// calculate the accuracy     
+      //auto accuracy = (tp.sum() + tn.sum()) / (tp.sum() + tn.sum() + fp.sum() + fn.sum());
+      //error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += accuracy; //Not needed: / accuracy.constant(TensorT(batch_size));
 
       //// DEBUG
       //std::cout << "Stable softmax: " << stable_softmax << std::endl;
@@ -117,21 +117,21 @@ namespace SmartPeak
       Eigen::TensorMap<Eigen::Tensor<TensorT, 5>> predicted_tensor(predicted, batch_size, memory_size, layer_size, 1, 1);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_tensor(error, n_metrics, memory_size);
 
-      // Calculate the soft max
-      auto predicted_chip = predicted_tensor.chip(time_step, 1); // 4 dims
-      auto exps = (predicted_chip.chip(0, 3) - predicted_chip.maximum(Eigen::array<int, 1>({ 1 })).broadcast(Eigen::array<int, 3>({ 1, layer_size, 1 }))).exp(); // 3 dims
-      auto stable_softmax = exps.chip(0, 2) / exps.sum(Eigen::array<int, 1>({ 1 })).broadcast(Eigen::array<int, 2>({ 1, layer_size }));  // 2 dims
+      //// Calculate the soft max
+      //auto predicted_chip = predicted_tensor.chip(time_step, 1); // 4 dims
+      //auto exps = (predicted_chip.chip(0, 3) - predicted_chip.maximum(Eigen::array<int, 1>({ 1 })).broadcast(Eigen::array<int, 3>({ 1, layer_size, 1 }))).exp(); // 3 dims
+      //auto stable_softmax = (exps.chip(0, 2) / exps.sum(Eigen::array<int, 1>({ 1 })).broadcast(Eigen::array<int, 2>({ 1, layer_size }))).eval();  // 2 dims
 
-      // calculate the confusion matrix
-      auto tp = (stable_softmax >= expected_tensor.constant(TensorT(this->classification_threshold_)) && expected_tensor > expected_tensor.constant(TensorT(0.9))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
-      auto fp = (stable_softmax >= expected_tensor.constant(TensorT(this->classification_threshold_)) && expected_tensor < expected_tensor.constant(TensorT(0.1))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
-      auto fn = (stable_softmax < expected_tensor.constant(TensorT(this->classification_threshold_)) && expected_tensor > expected_tensor.constant(TensorT(0.9))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
+      //// calculate the confusion matrix
+      //auto tp = (stable_softmax >= expected_tensor.constant(TensorT(this->classification_threshold_)) && expected_tensor > expected_tensor.constant(TensorT(0.9))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
+      //auto fp = (stable_softmax >= expected_tensor.constant(TensorT(this->classification_threshold_)) && expected_tensor < expected_tensor.constant(TensorT(0.1))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
+      //auto fn = (stable_softmax < expected_tensor.constant(TensorT(this->classification_threshold_)) && expected_tensor > expected_tensor.constant(TensorT(0.9))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
 
-      // calculate the F1 score
-      auto precision = tp.sum()/(tp.sum() + fp.sum());
-      auto recall = tp.sum() / (tp.sum() + fn.sum());
-      auto f1score = precision.constant(TensorT(2))*precision*recall / (precision + recall);
-      error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += f1score;
+      //// calculate the F1 score
+      //auto precision = tp.sum()/(tp.sum() + fp.sum());
+      //auto recall = tp.sum() / (tp.sum() + fn.sum());
+      //auto f1score = precision.constant(TensorT(2))*precision*recall / (precision + recall);
+      //error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += f1score;
 		};
     TensorT getClassificationThreshold() const { return this->classification_threshold_; }
   protected:

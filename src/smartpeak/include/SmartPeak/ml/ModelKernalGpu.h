@@ -258,7 +258,7 @@ namespace SmartPeak
       std::size_t model_bytes = n_metrics * memory_size * sizeof(TensorT);
       device.memcpyHostToDevice(d_expected, h_expected, expected_bytes);
       if (copyHostToDevice) {
-        device.memcpyHostToDevice(d_node_outputs, h_node_outputs, bytes); // only when testing
+        device.memcpyHostToDevice(d_node_output, h_node_output, bytes); // only when testing
         device.memcpyHostToDevice(d_model_metric, h_model_metric, model_bytes); // only once
       }
       // Calculate the model metric
