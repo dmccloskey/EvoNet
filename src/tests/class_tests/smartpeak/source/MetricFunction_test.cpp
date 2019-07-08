@@ -12,59 +12,77 @@ using namespace std;
 BOOST_AUTO_TEST_SUITE(MetricFunction1)
 
 /**
-  ClassificationAccuracyOp Tests
+  AccuracyBCOp Tests
 */ 
-BOOST_AUTO_TEST_CASE(constructorClassificationAccuracyOp) 
+BOOST_AUTO_TEST_CASE(constructorAccuracyBCOp) 
 {
-  ClassificationAccuracyOp<double>* ptrMetFunc = nullptr;
-  ClassificationAccuracyOp<double>* nullPointerMetFunc = nullptr;
+  AccuracyBCOp<double>* ptrMetFunc = nullptr;
+  AccuracyBCOp<double>* nullPointerMetFunc = nullptr;
   BOOST_CHECK_EQUAL(ptrMetFunc, nullPointerMetFunc);
 }
 
-BOOST_AUTO_TEST_CASE(destructorClassificationAccuracyOp) 
+BOOST_AUTO_TEST_CASE(destructorAccuracyBCOp) 
 {
-  ClassificationAccuracyOp<double>* ptrMetFunc = nullptr;
-	ptrMetFunc = new ClassificationAccuracyOp<double>();
+  AccuracyBCOp<double>* ptrMetFunc = nullptr;
+	ptrMetFunc = new AccuracyBCOp<double>();
   delete ptrMetFunc;
 }
 
-BOOST_AUTO_TEST_CASE(gettersAndSettersClassificationAccuracyOp)
+BOOST_AUTO_TEST_CASE(gettersAndSettersAccuracyBCOp)
 {
-  ClassificationAccuracyOp<float> operation;
-  BOOST_CHECK_EQUAL(operation.getName(), "ClassificationAccuracyOp");
+  AccuracyBCOp<float> operation;
+  BOOST_CHECK_EQUAL(operation.getName(), "AccuracyBCOp");
   BOOST_CHECK_EQUAL(operation.getParameters().at(0), 0.5);
   BOOST_CHECK_CLOSE(operation.getClassificationThreshold(), 0.5, 1e-3);
 
-  ClassificationAccuracyOp<float> operation2(0.1);
+  AccuracyBCOp<float> operation2(0.1);
   BOOST_CHECK_CLOSE(operation2.getClassificationThreshold(), 0.1, 1e-3);
 }
 
 /**
-  BCAccuracyOp Tests
+  AccuracyMCMicroOp Tests
 */
-BOOST_AUTO_TEST_CASE(constructorBCAccuracyOp)
+BOOST_AUTO_TEST_CASE(constructorAccuracyMCMicroOp)
 {
-  BCAccuracyOp<double>* ptrMetFunc = nullptr;
-  BCAccuracyOp<double>* nullPointerMetFunc = nullptr;
+  AccuracyMCMicroOp<double>* ptrMetFunc = nullptr;
+  AccuracyMCMicroOp<double>* nullPointerMetFunc = nullptr;
   BOOST_CHECK_EQUAL(ptrMetFunc, nullPointerMetFunc);
 }
 
-BOOST_AUTO_TEST_CASE(destructorBCAccuracyOp)
+BOOST_AUTO_TEST_CASE(destructorAccuracyMCMicroOp)
 {
-  BCAccuracyOp<double>* ptrMetFunc = nullptr;
-  ptrMetFunc = new BCAccuracyOp<double>();
+  AccuracyMCMicroOp<double>* ptrMetFunc = nullptr;
+  ptrMetFunc = new AccuracyMCMicroOp<double>();
   delete ptrMetFunc;
 }
 
-BOOST_AUTO_TEST_CASE(gettersAndSettersBCAccuracyOp)
+BOOST_AUTO_TEST_CASE(gettersAndSettersAccuracyMCMicroOp)
 {
-  BCAccuracyOp<float> operation;
-  BOOST_CHECK_EQUAL(operation.getName(), "BCAccuracyOp");
-  BOOST_CHECK_EQUAL(operation.getParameters().at(0), 0.5);
-  BOOST_CHECK_CLOSE(operation.getClassificationThreshold(), 0.5, 1e-3);
+  AccuracyMCMicroOp<float> operation;
+  BOOST_CHECK_EQUAL(operation.getName(), "AccuracyMCMicroOp");
+}
 
-  BCAccuracyOp<float> operation2(0.1);
-  BOOST_CHECK_CLOSE(operation2.getClassificationThreshold(), 0.1, 1e-3);
+/**
+  AccuracyMCMacroOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorAccuracyMCMacroOp)
+{
+  AccuracyMCMacroOp<double>* ptrMetFunc = nullptr;
+  AccuracyMCMacroOp<double>* nullPointerMetFunc = nullptr;
+  BOOST_CHECK_EQUAL(ptrMetFunc, nullPointerMetFunc);
+}
+
+BOOST_AUTO_TEST_CASE(destructorAccuracyMCMacroOp)
+{
+  AccuracyMCMacroOp<double>* ptrMetFunc = nullptr;
+  ptrMetFunc = new AccuracyMCMacroOp<double>();
+  delete ptrMetFunc;
+}
+
+BOOST_AUTO_TEST_CASE(gettersAndSettersAccuracyMCMacroOp)
+{
+  AccuracyMCMacroOp<float> operation;
+  BOOST_CHECK_EQUAL(operation.getName(), "AccuracyMCMacroOp");
 }
 
 /**
@@ -92,59 +110,77 @@ BOOST_AUTO_TEST_CASE(gettersAndSettersPredictionBiasOp)
 }
 
 /**
-  F1ScoreOp Tests
+  F1ScoreBCOp Tests
 */ 
-BOOST_AUTO_TEST_CASE(constructorF1ScoreOp) 
+BOOST_AUTO_TEST_CASE(constructorF1ScoreBCOp) 
 {
-  F1ScoreOp<double>* ptrF1Score = nullptr;
-  F1ScoreOp<double>* nullPointerF1Score = nullptr;
+  F1ScoreBCOp<double>* ptrF1Score = nullptr;
+  F1ScoreBCOp<double>* nullPointerF1Score = nullptr;
   BOOST_CHECK_EQUAL(ptrF1Score, nullPointerF1Score);
 }
 
-BOOST_AUTO_TEST_CASE(destructorF1ScoreOp) 
+BOOST_AUTO_TEST_CASE(destructorF1ScoreBCOp) 
 {
-  F1ScoreOp<double>* ptrF1Score = nullptr;
-	ptrF1Score = new F1ScoreOp<double>();
+  F1ScoreBCOp<double>* ptrF1Score = nullptr;
+	ptrF1Score = new F1ScoreBCOp<double>();
   delete ptrF1Score;
 }
 
-BOOST_AUTO_TEST_CASE(gettersAndSettersF1ScoreOp)
+BOOST_AUTO_TEST_CASE(gettersAndSettersF1ScoreBCOp)
 {
-  F1ScoreOp<float> operation;
-  BOOST_CHECK_EQUAL(operation.getName(), "F1ScoreOp");
+  F1ScoreBCOp<float> operation;
+  BOOST_CHECK_EQUAL(operation.getName(), "F1ScoreBCOp");
   BOOST_CHECK_EQUAL(operation.getParameters().at(0), 0.5);
   BOOST_CHECK_CLOSE(operation.getClassificationThreshold(), 0.5, 1e-3);
 
-  F1ScoreOp<float> operation2(0.1);
+  F1ScoreBCOp<float> operation2(0.1);
   BOOST_CHECK_CLOSE(operation2.getClassificationThreshold(), 0.1, 1e-3);
 }
 
 /**
-  BCF1ScoreOp Tests
+  F1ScoreMCMicroOp Tests
 */
-BOOST_AUTO_TEST_CASE(constructorBCF1ScoreOp)
+BOOST_AUTO_TEST_CASE(constructorF1ScoreMCMicroOp)
 {
-  BCF1ScoreOp<double>* ptrBCF1Score = nullptr;
-  BCF1ScoreOp<double>* nullPointerBCF1Score = nullptr;
-  BOOST_CHECK_EQUAL(ptrBCF1Score, nullPointerBCF1Score);
+  F1ScoreMCMicroOp<double>* ptrF1Score = nullptr;
+  F1ScoreMCMicroOp<double>* nullPointerF1Score = nullptr;
+  BOOST_CHECK_EQUAL(ptrF1Score, nullPointerF1Score);
 }
 
-BOOST_AUTO_TEST_CASE(destructorBCF1ScoreOp)
+BOOST_AUTO_TEST_CASE(destructorF1ScoreMCMicroOp)
 {
-  BCF1ScoreOp<double>* ptrBCF1Score = nullptr;
-  ptrBCF1Score = new BCF1ScoreOp<double>();
-  delete ptrBCF1Score;
+  F1ScoreMCMicroOp<double>* ptrF1Score = nullptr;
+  ptrF1Score = new F1ScoreMCMicroOp<double>();
+  delete ptrF1Score;
 }
 
-BOOST_AUTO_TEST_CASE(gettersAndSettersBCF1ScoreOp)
+BOOST_AUTO_TEST_CASE(gettersAndSettersF1ScoreMCMicroOp)
 {
-  BCF1ScoreOp<float> operation;
-  BOOST_CHECK_EQUAL(operation.getName(), "BCF1ScoreOp");
-  BOOST_CHECK_EQUAL(operation.getParameters().at(0), 0.5);
-  BOOST_CHECK_CLOSE(operation.getClassificationThreshold(), 0.5, 1e-3);
+  F1ScoreMCMicroOp<float> operation;
+  BOOST_CHECK_EQUAL(operation.getName(), "F1ScoreMCMicroOp");
+}
 
-  BCF1ScoreOp<float> operation2(0.1);
-  BOOST_CHECK_CLOSE(operation2.getClassificationThreshold(), 0.1, 1e-3);
+/**
+  F1ScoreMCMacroOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorF1ScoreMCMacroOp)
+{
+  F1ScoreMCMacroOp<double>* ptrF1Score = nullptr;
+  F1ScoreMCMacroOp<double>* nullPointerF1Score = nullptr;
+  BOOST_CHECK_EQUAL(ptrF1Score, nullPointerF1Score);
+}
+
+BOOST_AUTO_TEST_CASE(destructorF1ScoreMCMacroOp)
+{
+  F1ScoreMCMacroOp<double>* ptrF1Score = nullptr;
+  ptrF1Score = new F1ScoreMCMacroOp<double>();
+  delete ptrF1Score;
+}
+
+BOOST_AUTO_TEST_CASE(gettersAndSettersF1ScoreMCMacroOp)
+{
+  F1ScoreMCMacroOp<float> operation;
+  BOOST_CHECK_EQUAL(operation.getName(), "F1ScoreMCMacroOp");
 }
 
 /**
@@ -176,59 +212,54 @@ BOOST_AUTO_TEST_CASE(gettersAndSettersAUROCOp)
 }
 
 /**
-  BCAUROCOp Tests
+  MCCBCOp Tests
 */
-BOOST_AUTO_TEST_CASE(constructorBCAUROCOp)
+BOOST_AUTO_TEST_CASE(constructorMCCBCOp)
 {
-  BCAUROCOp<double>* ptrBCAUROC = nullptr;
-  BCAUROCOp<double>* nullPointerBCAUROC = nullptr;
-  BOOST_CHECK_EQUAL(ptrBCAUROC, nullPointerBCAUROC);
+  MCCBCOp<double>* ptrMCC = nullptr;
+  MCCBCOp<double>* nullPointerMCC = nullptr;
+  BOOST_CHECK_EQUAL(ptrMCC, nullPointerMCC);
 }
 
-BOOST_AUTO_TEST_CASE(destructorBCAUROCOp)
+BOOST_AUTO_TEST_CASE(destructorMCCBCOp)
 {
-  BCAUROCOp<double>* ptrBCAUROC = nullptr;
-  ptrBCAUROC = new BCAUROCOp<double>();
-  delete ptrBCAUROC;
+  MCCBCOp<double>* ptrMCC = nullptr;
+  ptrMCC = new MCCBCOp<double>();
+  delete ptrMCC;
 }
 
-BOOST_AUTO_TEST_CASE(gettersAndSettersBCAUROCOp)
+BOOST_AUTO_TEST_CASE(gettersAndSettersMCCBCOp)
 {
-  BCAUROCOp<float> operation;
-  BOOST_CHECK_EQUAL(operation.getName(), "BCAUROCOp");
+  MCCBCOp<float> operation;
+  BOOST_CHECK_EQUAL(operation.getName(), "MCCBCOp");
   BOOST_CHECK_EQUAL(operation.getParameters().at(0), 0.5);
   BOOST_CHECK_CLOSE(operation.getClassificationThreshold(), 0.5, 1e-3);
 
-  BCAUROCOp<float> operation2(0.1);
+  MCCBCOp<float> operation2(0.1);
   BOOST_CHECK_CLOSE(operation2.getClassificationThreshold(), 0.1, 1e-3);
 }
 
 /**
-  MCCOp Tests
+  MCCMCMicroOp Tests
 */
-BOOST_AUTO_TEST_CASE(constructorMCCOp)
+BOOST_AUTO_TEST_CASE(constructorMCCMCMicroOp)
 {
-  MCCOp<double>* ptrMCC = nullptr;
-  MCCOp<double>* nullPointerMCC = nullptr;
+  MCCMCMicroOp<double>* ptrMCC = nullptr;
+  MCCMCMicroOp<double>* nullPointerMCC = nullptr;
   BOOST_CHECK_EQUAL(ptrMCC, nullPointerMCC);
 }
 
-BOOST_AUTO_TEST_CASE(destructorMCCOp)
+BOOST_AUTO_TEST_CASE(destructorMCCMCMicroOp)
 {
-  MCCOp<double>* ptrMCC = nullptr;
-  ptrMCC = new MCCOp<double>();
+  MCCMCMicroOp<double>* ptrMCC = nullptr;
+  ptrMCC = new MCCMCMicroOp<double>();
   delete ptrMCC;
 }
 
-BOOST_AUTO_TEST_CASE(gettersAndSettersMCCOp)
+BOOST_AUTO_TEST_CASE(gettersAndSettersMCCMCMicroOp)
 {
-  MCCOp<float> operation;
-  BOOST_CHECK_EQUAL(operation.getName(), "MCCOp");
-  BOOST_CHECK_EQUAL(operation.getParameters().at(0), 0.5);
-  BOOST_CHECK_CLOSE(operation.getClassificationThreshold(), 0.5, 1e-3);
-
-  MCCOp<float> operation2(0.1);
-  BOOST_CHECK_CLOSE(operation2.getClassificationThreshold(), 0.1, 1e-3);
+  MCCMCMicroOp<float> operation;
+  BOOST_CHECK_EQUAL(operation.getName(), "MCCMCMicroOp");
 }
 
 /**

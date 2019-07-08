@@ -12,7 +12,7 @@ using namespace std;
 BOOST_AUTO_TEST_SUITE(MetricFunctionTensor1)
 
 /**
-  ClassificationAccuracyOp Tests
+  AccuracyBCOp Tests
 */
 BOOST_AUTO_TEST_CASE(constructorClassificationAccuracyOp)
 {
@@ -108,7 +108,7 @@ BOOST_AUTO_TEST_CASE(operationfunctionPredictionBiasOp)
 }
 
 /**
-  F1ScoreOp Tests
+  F1ScoreBCOp Tests
 */
 BOOST_AUTO_TEST_CASE(constructorF1ScoreOp)
 {

@@ -7,6 +7,14 @@ namespace SmartPeak
 {
 	/**
 	@brief Base class for all model metric functions
+
+  Abbreviations used in classes:
+    - BC: binary classification
+    - MC: multiclass classification
+    - ML: multilabel classification
+    - H: hierarchical classification
+    - micro: micro averaging
+    - macro: macro averaging
 	*/
 	template<typename TensorT>
 	class MetricFunctionOp
@@ -19,15 +27,15 @@ namespace SmartPeak
 	};
 
   /**
-    @brief Classification accuracy function.
+    @brief Classification accuracy function for binary classification problems.
   */
   template<typename TensorT>
-  class ClassificationAccuracyOp : public MetricFunctionOp<TensorT>
+  class AccuracyBCOp : public MetricFunctionOp<TensorT>
   {
   public: 
-    ClassificationAccuracyOp() = default;
-    ClassificationAccuracyOp(const TensorT& classification_threshold) :classification_threshold_(classification_threshold) {}
-		std::string getName() {	return "ClassificationAccuracyOp"; };
+    AccuracyBCOp() = default;
+    AccuracyBCOp(const TensorT& classification_threshold) :classification_threshold_(classification_threshold) {}
+		std::string getName() {	return "AccuracyBCOp"; };
     std::vector<TensorT> getParameters() const { return std::vector<TensorT>({this->classification_threshold_}); }
     TensorT getClassificationThreshold() const { return this->classification_threshold_; }
   protected:
@@ -35,19 +43,27 @@ namespace SmartPeak
   };
 
   /**
-    @brief Binary classification accuracy function.
+    @brief Classification accuracy function for multiclass classification problems using micro averaging.
   */
   template<typename TensorT>
-  class BCAccuracyOp : public MetricFunctionOp<TensorT>
+  class AccuracyMCMicroOp : public MetricFunctionOp<TensorT>
   {
   public:
-    BCAccuracyOp() = default;
-    BCAccuracyOp(const TensorT& classification_threshold) :classification_threshold_(classification_threshold) {}
-    std::string getName() { return "BCAccuracyOp"; };
-    std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->classification_threshold_ }); }
-    TensorT getClassificationThreshold() const { return this->classification_threshold_; }
-  protected:
-    TensorT classification_threshold_ = 0.5; ///< greater than or equal to is true, less than is false
+    using MetricFunctionOp<TensorT>::MetricFunctionOp;
+    std::string getName() { return "AccuracyMCMicroOp"; };
+    std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ }); }
+  };
+
+  /**
+    @brief Classification accuracy function for multiclass classification problems using micro averaging.
+  */
+  template<typename TensorT>
+  class AccuracyMCMacroOp : public MetricFunctionOp<TensorT>
+  {
+  public:
+    using MetricFunctionOp<TensorT>::MetricFunctionOp;
+    std::string getName() { return "AccuracyMCMacroOp"; };
+    std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ }); }
   };
 
   /**
@@ -63,15 +79,15 @@ namespace SmartPeak
   };
 
   /**
-    @brief F1 score function.
+    @brief F1 score function for binary classification problems.
   */
   template<typename TensorT>
-  class F1ScoreOp : public MetricFunctionOp<TensorT>
+  class F1ScoreBCOp : public MetricFunctionOp<TensorT>
   {
   public:
-    F1ScoreOp() = default;
-    F1ScoreOp(const TensorT& classification_threshold) :classification_threshold_(classification_threshold) {};
-    std::string getName() { return "F1ScoreOp"; };
+    F1ScoreBCOp() = default;
+    F1ScoreBCOp(const TensorT& classification_threshold) :classification_threshold_(classification_threshold) {};
+    std::string getName() { return "F1ScoreBCOp"; };
     std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->classification_threshold_ }); }
     TensorT getClassificationThreshold() const { return this->classification_threshold_; }
   protected:
@@ -79,19 +95,27 @@ namespace SmartPeak
   };
 
   /**
-    @brief Binary classification F1 score function.
+    @brief F1 score function for multiclass classification problems using micro averaging.
   */
   template<typename TensorT>
-  class BCF1ScoreOp : public MetricFunctionOp<TensorT>
+  class F1ScoreMCMicroOp : public MetricFunctionOp<TensorT>
   {
   public:
-    BCF1ScoreOp() = default;
-    BCF1ScoreOp(const TensorT& classification_threshold) :classification_threshold_(classification_threshold) {};
-    std::string getName() { return "BCF1ScoreOp"; };
-    std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->classification_threshold_ }); }
-    TensorT getClassificationThreshold() const { return this->classification_threshold_; }
-  protected:
-    TensorT classification_threshold_ = 0.5;
+    using MetricFunctionOp<TensorT>::MetricFunctionOp;
+    std::string getName() { return "F1ScoreMCMicroOp"; };
+    std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ }); }
+  };
+
+  /**
+    @brief F1 score function for multiclass classification problems using macro averaging.
+  */
+  template<typename TensorT>
+  class F1ScoreMCMacroOp : public MetricFunctionOp<TensorT>
+  {
+  public:
+    using MetricFunctionOp<TensorT>::MetricFunctionOp;
+    std::string getName() { return "F1ScoreMCMacroOp"; };
+    std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ }); }
   };
 
   /**
@@ -111,15 +135,15 @@ namespace SmartPeak
   };
 
   /**
-    @brief Binary classification Area under the ROC (BCAUROC) function.
+    @brief Mathews correlation coefficient (MCC) function for binary classification.
   */
   template<typename TensorT>
-  class BCAUROCOp : public MetricFunctionOp<TensorT>
+  class MCCBCOp : public MetricFunctionOp<TensorT>
   {
   public:
-    BCAUROCOp() = default;
-    BCAUROCOp(const TensorT& classification_threshold) :classification_threshold_(classification_threshold) {}
-    std::string getName() { return "BCAUROCOp"; };
+    MCCBCOp() = default;
+    MCCBCOp(const TensorT& classification_threshold) :classification_threshold_(classification_threshold) {}
+    std::string getName() { return "MCCBCOp"; };
     std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->classification_threshold_ }); }
     TensorT getClassificationThreshold() const { return this->classification_threshold_; }
   protected:
@@ -127,19 +151,15 @@ namespace SmartPeak
   };
 
   /**
-    @brief Mathews correlation coefficient (MCC) function.
+    @brief Mathews correlation coefficient (MCC) function for multiclass classification problems using micro averaging.
   */
   template<typename TensorT>
-  class MCCOp : public MetricFunctionOp<TensorT>
+  class MCCMCMicroOp : public MetricFunctionOp<TensorT>
   {
   public:
-    MCCOp() = default;
-    MCCOp(const TensorT& classification_threshold) :classification_threshold_(classification_threshold) {}
-    std::string getName() { return "MCCOp"; };
-    std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->classification_threshold_ }); }
-    TensorT getClassificationThreshold() const { return this->classification_threshold_; }
-  protected:
-    TensorT classification_threshold_ = 0.5;
+    using MetricFunctionOp<TensorT>::MetricFunctionOp;
+    std::string getName() { return "MCCMCMicroOp"; };
+    std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ }); }
   };
 
   /**

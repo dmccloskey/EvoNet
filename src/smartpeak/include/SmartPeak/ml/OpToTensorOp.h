@@ -445,7 +445,7 @@ namespace SmartPeak
   {
   public:
     MetricFunctionTensorOp<TensorT, DeviceT>* convertOpToTensorOp(MetricFunctionOp<TensorT>* op_class) const {
-      if (op_class->getName() == "ClassificationAccuracyOp") {
+      if (op_class->getName() == "AccuracyBCOp") {
         MetricFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new ClassificationAccuracyTensorOp<TensorT, DeviceT>(op_class->getParameters().at(0));
         return op_tensor_class;
       }

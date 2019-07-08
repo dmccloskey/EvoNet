@@ -930,7 +930,7 @@ BOOST_AUTO_TEST_CASE(convertOpToTensorOpMetricFunctionOpToMetricFunctionTensorOp
   MetricFunctionOp<float>* op_class;
   MetricFunctionTensorOp<float, Eigen::DefaultDevice>* op_tensor_class;
 
-  op_class = new ClassificationAccuracyOp<float>();
+  op_class = new AccuracyBCOp<float>();
   op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
   BOOST_CHECK_EQUAL(op_tensor_class->getName(), "ClassificationAccuracyTensorOp");
 
@@ -945,7 +945,7 @@ BOOST_AUTO_TEST_CASE(getTensorParamsMetricFunctionOpToMetricFunctionTensorOp)
   MetricFunctionOp<float>* op_class = nullptr;
   std::vector<float> params;
 
-  op_class = new ClassificationAccuracyOp<float>();
+  op_class = new AccuracyBCOp<float>();
   params = op_to_tensor_op.getTensorParams(op_class);
   BOOST_CHECK_EQUAL(params.size(), 0);
 
