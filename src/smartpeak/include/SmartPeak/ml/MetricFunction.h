@@ -67,6 +67,86 @@ namespace SmartPeak
   };
 
   /**
+    @brief Classification precision function for binary classification problems.
+  */
+  template<typename TensorT>
+  class PrecisionBCOp : public MetricFunctionOp<TensorT>
+  {
+  public:
+    PrecisionBCOp() = default;
+    PrecisionBCOp(const TensorT& classification_threshold) :classification_threshold_(classification_threshold) {}
+    std::string getName() { return "PrecisionBCOp"; };
+    std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->classification_threshold_ }); }
+    TensorT getClassificationThreshold() const { return this->classification_threshold_; }
+  protected:
+    TensorT classification_threshold_ = 0.5; ///< greater than or equal to is true, less than is false
+  };
+
+  /**
+    @brief Classification precision function for multiclass classification problems using micro averaging.
+  */
+  template<typename TensorT>
+  class PrecisionMCMicroOp : public MetricFunctionOp<TensorT>
+  {
+  public:
+    using MetricFunctionOp<TensorT>::MetricFunctionOp;
+    std::string getName() { return "PrecisionMCMicroOp"; };
+    std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ }); }
+  };
+
+  /**
+    @brief Classification precision function for multiclass classification problems using micro averaging.
+  */
+  template<typename TensorT>
+  class PrecisionMCMacroOp : public MetricFunctionOp<TensorT>
+  {
+  public:
+    using MetricFunctionOp<TensorT>::MetricFunctionOp;
+    std::string getName() { return "PrecisionMCMacroOp"; };
+    std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ }); }
+  };
+
+  /**
+    @brief Classification recall function for binary classification problems.
+  */
+  template<typename TensorT>
+  class RecallBCOp : public MetricFunctionOp<TensorT>
+  {
+  public:
+    RecallBCOp() = default;
+    RecallBCOp(const TensorT& classification_threshold) :classification_threshold_(classification_threshold) {}
+    std::string getName() { return "RecallBCOp"; };
+    std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->classification_threshold_ }); }
+    TensorT getClassificationThreshold() const { return this->classification_threshold_; }
+  protected:
+    TensorT classification_threshold_ = 0.5; ///< greater than or equal to is true, less than is false
+  };
+
+  /**
+    @brief Classification recall function for multiclass classification problems using micro averaging.
+  */
+  template<typename TensorT>
+  class RecallMCMicroOp : public MetricFunctionOp<TensorT>
+  {
+  public:
+    using MetricFunctionOp<TensorT>::MetricFunctionOp;
+    std::string getName() { return "RecallMCMicroOp"; };
+    std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ }); }
+  };
+
+  /**
+    @brief Classification recall function for multiclass classification problems using micro averaging.
+  */
+  template<typename TensorT>
+  class RecallMCMacroOp : public MetricFunctionOp<TensorT>
+  {
+  public:
+    using MetricFunctionOp<TensorT>::MetricFunctionOp;
+    std::string getName() { return "RecallMCMacroOp"; };
+    std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ }); }
+  };
+
+  /**
     @brief Prediction biass function.
   */
   template<typename TensorT>

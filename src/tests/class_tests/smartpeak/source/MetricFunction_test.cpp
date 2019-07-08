@@ -86,6 +86,154 @@ BOOST_AUTO_TEST_CASE(gettersAndSettersAccuracyMCMacroOp)
 }
 
 /**
+  PrecisionBCOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorPrecisionBCOp)
+{
+  PrecisionBCOp<double>* ptrMetFunc = nullptr;
+  PrecisionBCOp<double>* nullPointerMetFunc = nullptr;
+  BOOST_CHECK_EQUAL(ptrMetFunc, nullPointerMetFunc);
+}
+
+BOOST_AUTO_TEST_CASE(destructorPrecisionBCOp)
+{
+  PrecisionBCOp<double>* ptrMetFunc = nullptr;
+  ptrMetFunc = new PrecisionBCOp<double>();
+  delete ptrMetFunc;
+}
+
+BOOST_AUTO_TEST_CASE(gettersAndSettersPrecisionBCOp)
+{
+  PrecisionBCOp<float> operation;
+  BOOST_CHECK_EQUAL(operation.getName(), "PrecisionBCOp");
+  BOOST_CHECK_EQUAL(operation.getParameters().at(0), 0.5);
+  BOOST_CHECK_CLOSE(operation.getClassificationThreshold(), 0.5, 1e-3);
+
+  PrecisionBCOp<float> operation2(0.1);
+  BOOST_CHECK_CLOSE(operation2.getClassificationThreshold(), 0.1, 1e-3);
+}
+
+/**
+  PrecisionMCMicroOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorPrecisionMCMicroOp)
+{
+  PrecisionMCMicroOp<double>* ptrMetFunc = nullptr;
+  PrecisionMCMicroOp<double>* nullPointerMetFunc = nullptr;
+  BOOST_CHECK_EQUAL(ptrMetFunc, nullPointerMetFunc);
+}
+
+BOOST_AUTO_TEST_CASE(destructorPrecisionMCMicroOp)
+{
+  PrecisionMCMicroOp<double>* ptrMetFunc = nullptr;
+  ptrMetFunc = new PrecisionMCMicroOp<double>();
+  delete ptrMetFunc;
+}
+
+BOOST_AUTO_TEST_CASE(gettersAndSettersPrecisionMCMicroOp)
+{
+  PrecisionMCMicroOp<float> operation;
+  BOOST_CHECK_EQUAL(operation.getName(), "PrecisionMCMicroOp");
+}
+
+/**
+  PrecisionMCMacroOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorPrecisionMCMacroOp)
+{
+  PrecisionMCMacroOp<double>* ptrMetFunc = nullptr;
+  PrecisionMCMacroOp<double>* nullPointerMetFunc = nullptr;
+  BOOST_CHECK_EQUAL(ptrMetFunc, nullPointerMetFunc);
+}
+
+BOOST_AUTO_TEST_CASE(destructorPrecisionMCMacroOp)
+{
+  PrecisionMCMacroOp<double>* ptrMetFunc = nullptr;
+  ptrMetFunc = new PrecisionMCMacroOp<double>();
+  delete ptrMetFunc;
+}
+
+BOOST_AUTO_TEST_CASE(gettersAndSettersPrecisionMCMacroOp)
+{
+  PrecisionMCMacroOp<float> operation;
+  BOOST_CHECK_EQUAL(operation.getName(), "PrecisionMCMacroOp");
+}
+
+/**
+  RecallBCOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorRecallBCOp)
+{
+  RecallBCOp<double>* ptrMetFunc = nullptr;
+  RecallBCOp<double>* nullPointerMetFunc = nullptr;
+  BOOST_CHECK_EQUAL(ptrMetFunc, nullPointerMetFunc);
+}
+
+BOOST_AUTO_TEST_CASE(destructorRecallBCOp)
+{
+  RecallBCOp<double>* ptrMetFunc = nullptr;
+  ptrMetFunc = new RecallBCOp<double>();
+  delete ptrMetFunc;
+}
+
+BOOST_AUTO_TEST_CASE(gettersAndSettersRecallBCOp)
+{
+  RecallBCOp<float> operation;
+  BOOST_CHECK_EQUAL(operation.getName(), "RecallBCOp");
+  BOOST_CHECK_EQUAL(operation.getParameters().at(0), 0.5);
+  BOOST_CHECK_CLOSE(operation.getClassificationThreshold(), 0.5, 1e-3);
+
+  RecallBCOp<float> operation2(0.1);
+  BOOST_CHECK_CLOSE(operation2.getClassificationThreshold(), 0.1, 1e-3);
+}
+
+/**
+  RecallMCMicroOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorRecallMCMicroOp)
+{
+  RecallMCMicroOp<double>* ptrMetFunc = nullptr;
+  RecallMCMicroOp<double>* nullPointerMetFunc = nullptr;
+  BOOST_CHECK_EQUAL(ptrMetFunc, nullPointerMetFunc);
+}
+
+BOOST_AUTO_TEST_CASE(destructorRecallMCMicroOp)
+{
+  RecallMCMicroOp<double>* ptrMetFunc = nullptr;
+  ptrMetFunc = new RecallMCMicroOp<double>();
+  delete ptrMetFunc;
+}
+
+BOOST_AUTO_TEST_CASE(gettersAndSettersRecallMCMicroOp)
+{
+  RecallMCMicroOp<float> operation;
+  BOOST_CHECK_EQUAL(operation.getName(), "RecallMCMicroOp");
+}
+
+/**
+  RecallMCMacroOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorRecallMCMacroOp)
+{
+  RecallMCMacroOp<double>* ptrMetFunc = nullptr;
+  RecallMCMacroOp<double>* nullPointerMetFunc = nullptr;
+  BOOST_CHECK_EQUAL(ptrMetFunc, nullPointerMetFunc);
+}
+
+BOOST_AUTO_TEST_CASE(destructorRecallMCMacroOp)
+{
+  RecallMCMacroOp<double>* ptrMetFunc = nullptr;
+  ptrMetFunc = new RecallMCMacroOp<double>();
+  delete ptrMetFunc;
+}
+
+BOOST_AUTO_TEST_CASE(gettersAndSettersRecallMCMacroOp)
+{
+  RecallMCMacroOp<float> operation;
+  BOOST_CHECK_EQUAL(operation.getName(), "RecallMCMacroOp");
+}
+
+/**
   PredictionBiasOp Tests
 */ 
 BOOST_AUTO_TEST_CASE(constructorPredictionBiasOp) 

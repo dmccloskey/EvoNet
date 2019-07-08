@@ -48,16 +48,16 @@ namespace SmartPeak
       Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_tensor(error, n_metrics, memory_size);
 
-      //// calculate the confusion matrix
-      //auto predicted_chip = predicted_tensor.chip(time_step, 1); 
-      //auto tp = (predicted_chip >= expected_tensor.constant(TensorT(this->classification_threshold_)) && expected_tensor > expected_tensor.constant(TensorT(this->threshold_positive_))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
-      //auto tn = (predicted_chip < expected_tensor.constant(TensorT(this->classification_threshold_)) && expected_tensor < expected_tensor.constant(TensorT(this->threshold_negative_))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
-      //auto fp = (predicted_chip >= expected_tensor.constant(TensorT(this->classification_threshold_)) && expected_tensor < expected_tensor.constant(TensorT(this->threshold_negative_))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
-      //auto fn = (predicted_chip < expected_tensor.constant(TensorT(this->classification_threshold_)) && expected_tensor > expected_tensor.constant(TensorT(this->threshold_positive_))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
+      // calculate the confusion matrix
+      auto predicted_chip = predicted_tensor.chip(time_step, 1); 
+      auto tp = (predicted_chip >= expected_tensor.constant(TensorT(this->classification_threshold_)) && expected_tensor > expected_tensor.constant(TensorT(this->threshold_positive_))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
+      auto tn = (predicted_chip < expected_tensor.constant(TensorT(this->classification_threshold_)) && expected_tensor < expected_tensor.constant(TensorT(this->threshold_negative_))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
+      auto fp = (predicted_chip >= expected_tensor.constant(TensorT(this->classification_threshold_)) && expected_tensor < expected_tensor.constant(TensorT(this->threshold_negative_))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
+      auto fn = (predicted_chip < expected_tensor.constant(TensorT(this->classification_threshold_)) && expected_tensor > expected_tensor.constant(TensorT(this->threshold_positive_))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
 
       //// calculate the accuracy     
-      //auto accuracy = (tp.sum() + tn.sum()) / (tp.sum() + tn.sum() + fp.sum() + fn.sum()); // TODO: update as this is not correct
-      //error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += accuracy; //Not needed: / accuracy.constant(TensorT(batch_size));
+      //auto accuracy = TODO
+      //error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += accuracy;
 		};
     TensorT getClassificationThreshold() const { return this->classification_threshold_; }
   protected:
@@ -132,17 +132,200 @@ namespace SmartPeak
 
       // find the maximum value for each batch
       auto predicted_chip = predicted_tensor.chip(time_step, 1);
-      // TODO...
+      // TODO... 
+      // Sum on the per batch level and then average e.g. / accuracy.constant(TensorT(batch_size));
+    };
+  };
 
-      //// calculate the confusion matrix
-      //auto tp = (predicted_chip >= expected_tensor.constant(TensorT(this->classification_threshold_)) && expected_tensor > expected_tensor.constant(TensorT(this->threshold_positive_))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
-      //auto tn = (predicted_chip < expected_tensor.constant(TensorT(this->classification_threshold_)) && expected_tensor < expected_tensor.constant(TensorT(this->threshold_negative_))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
-      //auto fp = (predicted_chip >= expected_tensor.constant(TensorT(this->classification_threshold_)) && expected_tensor < expected_tensor.constant(TensorT(this->threshold_negative_))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
-      //auto fn = (predicted_chip < expected_tensor.constant(TensorT(this->classification_threshold_)) && expected_tensor > expected_tensor.constant(TensorT(this->threshold_positive_))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
+  /**
+    @brief Precision metric function for binary classification.
+       The class returns the average classification precision across all batches
+       where an expected true value > 0.9 and an expected false value < 0.9
 
-      //// calculate the accuracy     
-      //auto accuracy = (tp.sum() + tn.sum()) / (tp.sum() + tn.sum() + fp.sum() + fn.sum()); // Sum on the per batch level and then average
-      //error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += accuracy; // need to add in / accuracy.constant(TensorT(batch_size));
+    Where classification precision = TP/(TP + FP)
+  */
+  template<typename TensorT, typename DeviceT>
+  class PrecisionBCTensorOp : public MetricFunctionTensorOp<TensorT, DeviceT>
+  {
+  public:
+    PrecisionBCTensorOp() = default;
+    PrecisionBCTensorOp(const TensorT& classification_threshold) : classification_threshold_(classification_threshold) {};
+    std::string getName() override { return "PrecisionBCTensorOp"; }
+    void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size,
+      const int& n_metrics, const int& time_step, const int& metric_index, DeviceT& device) const
+    {
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_tensor(error, n_metrics, memory_size);
+
+      // calculate the confusion matrix
+      auto predicted_chip = predicted_tensor.chip(time_step, 1);
+      auto tp = (predicted_chip >= expected_tensor.constant(TensorT(this->classification_threshold_)) && expected_tensor > expected_tensor.constant(TensorT(this->threshold_positive_))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
+      auto fp = (predicted_chip >= expected_tensor.constant(TensorT(this->classification_threshold_)) && expected_tensor < expected_tensor.constant(TensorT(this->threshold_negative_))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
+
+      //// calculate the precision     
+      //auto precision = TODO
+      //error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += precision;
+    };
+    TensorT getClassificationThreshold() const { return this->classification_threshold_; }
+  protected:
+    TensorT classification_threshold_ = 0.5;
+  };
+
+  /**
+    @brief Precision metric function for multiclass classification.
+       The class returns the micro average classification precision across all batches
+       where an expected true value > 0.9 and an expected false value < 0.9
+
+    Where classification precision = TP/(TP + FP)
+  */
+  template<typename TensorT, typename DeviceT>
+  class PrecisionMCMicroTensorOp : public MetricFunctionTensorOp<TensorT, DeviceT>
+  {
+  public:
+    using MetricFunctionTensorOp<TensorT, DeviceT>::MetricFunctionTensorOp;
+    std::string getName() override { return "PrecisionMCMicroTensorOp"; }
+    void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size,
+      const int& n_metrics, const int& time_step, const int& metric_index, DeviceT& device) const
+    {
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 4>> predicted_tensor(predicted, batch_size, 1, memory_size, layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_tensor(error, n_metrics, memory_size);
+
+      // find the maximum value for each batch
+      auto predicted_chip = predicted_tensor.chip(time_step, 2);
+      auto max_tensor = predicted_chip.maximum(Eigen::array<int, 1>({ 0 })).broadcast(Eigen::array<int, 2>({ batch_size, 1 }));
+
+      // calculate the confusion matrix
+      auto tp = (predicted_chip.chip(0, 1) >= (max_tensor - max_tensor.constant(TensorT(1e-6))) && expected_tensor > expected_tensor.constant(TensorT(this->threshold_positive_))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
+      auto fp = (predicted_chip.chip(0, 1) >= (max_tensor - max_tensor.constant(TensorT(1e-6))) && expected_tensor < expected_tensor.constant(TensorT(this->threshold_negative_))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
+
+      // calculate the precision     
+      auto precision = (tp.sum() + tn.sum()) / (tp.sum() + tn.sum() + fp.sum() + fn.sum());
+      error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += precision;
+    };
+  };
+
+  /**
+    @brief Precision metric function for multiclass classification.
+       The class returns the macro average classification precision across all batches
+       where an expected true value > 0.9 and an expected false value < 0.9
+
+    Where classification precision = TP/(TP + FP)
+  */
+  template<typename TensorT, typename DeviceT>
+  class PrecisionMCMacroTensorOp : public MetricFunctionTensorOp<TensorT, DeviceT>
+  {
+  public:
+    using MetricFunctionTensorOp<TensorT, DeviceT>::MetricFunctionTensorOp;
+    std::string getName() override { return "PrecisionMCMacroTensorOp"; }
+    void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size,
+      const int& n_metrics, const int& time_step, const int& metric_index, DeviceT& device) const
+    {
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_tensor(error, n_metrics, memory_size);
+
+      // find the maximum value for each batch
+      auto predicted_chip = predicted_tensor.chip(time_step, 1);
+      // TODO... 
+      // Sum on the per batch level and then average e.g. / precision.constant(TensorT(batch_size));
+    };
+  };
+
+  /**
+    @brief Recall metric function for binary classification.
+       The class returns the average classification recall across all batches
+       where an expected true value > 0.9 and an expected false value < 0.9
+
+    Where classification recall = TP /(TP + FN)
+  */
+  template<typename TensorT, typename DeviceT>
+  class RecallBCTensorOp : public MetricFunctionTensorOp<TensorT, DeviceT>
+  {
+  public:
+    RecallBCTensorOp() = default;
+    RecallBCTensorOp(const TensorT& classification_threshold) : classification_threshold_(classification_threshold) {};
+    std::string getName() override { return "RecallBCTensorOp"; }
+    void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size,
+      const int& n_metrics, const int& time_step, const int& metric_index, DeviceT& device) const
+    {
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_tensor(error, n_metrics, memory_size);
+
+      // calculate the confusion matrix
+      auto predicted_chip = predicted_tensor.chip(time_step, 1);
+      auto tp = (predicted_chip >= expected_tensor.constant(TensorT(this->classification_threshold_)) && expected_tensor > expected_tensor.constant(TensorT(this->threshold_positive_))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
+      auto fn = (predicted_chip < expected_tensor.constant(TensorT(this->classification_threshold_)) && expected_tensor > expected_tensor.constant(TensorT(this->threshold_positive_))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
+
+      //// calculate the recall     
+      //auto recall = TODO
+      //error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += recall;
+    };
+    TensorT getClassificationThreshold() const { return this->classification_threshold_; }
+  protected:
+    TensorT classification_threshold_ = 0.5;
+  };
+
+  /**
+    @brief Recall metric function for multiclass classification.
+       The class returns the micro average classification recall across all batches
+       where an expected true value > 0.9 and an expected false value < 0.9
+
+    Where classification recall = TP /(TP + FN)
+  */
+  template<typename TensorT, typename DeviceT>
+  class RecallMCMicroTensorOp : public MetricFunctionTensorOp<TensorT, DeviceT>
+  {
+  public:
+    using MetricFunctionTensorOp<TensorT, DeviceT>::MetricFunctionTensorOp;
+    std::string getName() override { return "RecallMCMicroTensorOp"; }
+    void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size,
+      const int& n_metrics, const int& time_step, const int& metric_index, DeviceT& device) const
+    {
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 4>> predicted_tensor(predicted, batch_size, 1, memory_size, layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_tensor(error, n_metrics, memory_size);
+
+      // find the maximum value for each batch
+      auto predicted_chip = predicted_tensor.chip(time_step, 2);
+      auto max_tensor = predicted_chip.maximum(Eigen::array<int, 1>({ 0 })).broadcast(Eigen::array<int, 2>({ batch_size, 1 }));
+
+      // calculate the confusion matrix
+      auto tp = (predicted_chip.chip(0, 1) >= (max_tensor - max_tensor.constant(TensorT(1e-6))) && expected_tensor > expected_tensor.constant(TensorT(this->threshold_positive_))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
+      auto fn = (predicted_chip.chip(0, 1) < max_tensor && expected_tensor > expected_tensor.constant(TensorT(this->threshold_positive_))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
+
+      // calculate the recall     
+      auto recall = (tp.sum() + tn.sum()) / (tp.sum() + tn.sum() + fp.sum() + fn.sum());
+      error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += recall;
+    };
+  };
+
+  /**
+    @brief Recall metric function for multiclass classification.
+       The class returns the macro average classification recall across all batches
+       where an expected true value > 0.9 and an expected false value < 0.9
+
+    Where classification recall = TP /(TP + FN)
+  */
+  template<typename TensorT, typename DeviceT>
+  class RecallMCMacroTensorOp : public MetricFunctionTensorOp<TensorT, DeviceT>
+  {
+  public:
+    using MetricFunctionTensorOp<TensorT, DeviceT>::MetricFunctionTensorOp;
+    std::string getName() override { return "RecallMCMacroTensorOp"; }
+    void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size,
+      const int& n_metrics, const int& time_step, const int& metric_index, DeviceT& device) const
+    {
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_tensor(error, n_metrics, memory_size);
+
+      // find the maximum value for each batch
+      auto predicted_chip = predicted_tensor.chip(time_step, 1);
+      // TODO... 
+      // Sum on the per batch level and then average e.g. / recall.constant(TensorT(batch_size));
     };
   };
 
