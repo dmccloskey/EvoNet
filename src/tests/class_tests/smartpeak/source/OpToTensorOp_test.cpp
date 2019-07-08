@@ -942,6 +942,30 @@ BOOST_AUTO_TEST_CASE(convertOpToTensorOpMetricFunctionOpToMetricFunctionTensorOp
   op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
   BOOST_CHECK_EQUAL(op_tensor_class->getName(), "AccuracyMCMacroTensorOp");
 
+  op_class = new PrecisionBCOp<float>();
+  op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+  BOOST_CHECK_EQUAL(op_tensor_class->getName(), "PrecisionBCTensorOp");
+
+  op_class = new PrecisionMCMicroOp<float>();
+  op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+  BOOST_CHECK_EQUAL(op_tensor_class->getName(), "PrecisionMCMicroTensorOp");
+
+  op_class = new PrecisionMCMacroOp<float>();
+  op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+  BOOST_CHECK_EQUAL(op_tensor_class->getName(), "PrecisionMCMacroTensorOp");
+
+  op_class = new RecallBCOp<float>();
+  op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+  BOOST_CHECK_EQUAL(op_tensor_class->getName(), "RecallBCTensorOp");
+
+  op_class = new RecallMCMicroOp<float>();
+  op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+  BOOST_CHECK_EQUAL(op_tensor_class->getName(), "RecallMCMicroTensorOp");
+
+  op_class = new RecallMCMacroOp<float>();
+  op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
+  BOOST_CHECK_EQUAL(op_tensor_class->getName(), "RecallMCMacroTensorOp");
+
   op_class = new F1ScoreBCOp<float>();
   op_tensor_class = op_to_tensor_op.convertOpToTensorOp(op_class);
   BOOST_CHECK_EQUAL(op_tensor_class->getName(), "F1ScoreBCTensorOp");
@@ -974,6 +998,30 @@ BOOST_AUTO_TEST_CASE(getTensorParamsMetricFunctionOpToMetricFunctionTensorOp)
   BOOST_CHECK_EQUAL(params.size(), 0);
 
   op_class = new AccuracyMCMacroOp<float>();
+  params = op_to_tensor_op.getTensorParams(op_class);
+  BOOST_CHECK_EQUAL(params.size(), 0);
+
+  op_class = new PrecisionBCOp<float>();
+  params = op_to_tensor_op.getTensorParams(op_class);
+  BOOST_CHECK_EQUAL(params.size(), 0);
+
+  op_class = new PrecisionMCMicroOp<float>();
+  params = op_to_tensor_op.getTensorParams(op_class);
+  BOOST_CHECK_EQUAL(params.size(), 0);
+
+  op_class = new PrecisionMCMacroOp<float>();
+  params = op_to_tensor_op.getTensorParams(op_class);
+  BOOST_CHECK_EQUAL(params.size(), 0);
+
+  op_class = new RecallBCOp<float>();
+  params = op_to_tensor_op.getTensorParams(op_class);
+  BOOST_CHECK_EQUAL(params.size(), 0);
+
+  op_class = new RecallMCMicroOp<float>();
+  params = op_to_tensor_op.getTensorParams(op_class);
+  BOOST_CHECK_EQUAL(params.size(), 0);
+
+  op_class = new RecallMCMacroOp<float>();
   params = op_to_tensor_op.getTensorParams(op_class);
   BOOST_CHECK_EQUAL(params.size(), 0);
 

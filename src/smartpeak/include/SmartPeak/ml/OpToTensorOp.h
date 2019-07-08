@@ -457,6 +457,30 @@ namespace SmartPeak
         MetricFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new AccuracyMCMacroTensorOp<TensorT, DeviceT>();
         return op_tensor_class;
       }
+      else if (op_class->getName() == "PrecisionBCOp") {
+        MetricFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new PrecisionBCTensorOp<TensorT, DeviceT>(op_class->getParameters().at(0));
+        return op_tensor_class;
+      }
+      else if (op_class->getName() == "PrecisionMCMicroOp") {
+        MetricFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new PrecisionMCMicroTensorOp<TensorT, DeviceT>();
+        return op_tensor_class;
+      }
+      else if (op_class->getName() == "PrecisionMCMacroOp") {
+        MetricFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new PrecisionMCMacroTensorOp<TensorT, DeviceT>();
+        return op_tensor_class;
+      }
+      else if (op_class->getName() == "RecallBCOp") {
+        MetricFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new RecallBCTensorOp<TensorT, DeviceT>(op_class->getParameters().at(0));
+        return op_tensor_class;
+      }
+      else if (op_class->getName() == "RecallMCMicroOp") {
+        MetricFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new RecallMCMicroTensorOp<TensorT, DeviceT>();
+        return op_tensor_class;
+      }
+      else if (op_class->getName() == "RecallMCMacroOp") {
+        MetricFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new RecallMCMacroTensorOp<TensorT, DeviceT>();
+        return op_tensor_class;
+      }
       else if (op_class->getName() == "F1ScoreBCOp") {
         MetricFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new F1ScoreBCTensorOp<TensorT, DeviceT>(op_class->getParameters().at(0));
         return op_tensor_class;
