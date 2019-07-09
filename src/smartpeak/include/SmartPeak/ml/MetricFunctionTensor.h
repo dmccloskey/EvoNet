@@ -201,13 +201,13 @@ namespace SmartPeak
       auto precision = tp.sum() / (tp.sum() + fp.sum());
       error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += precision;
 
-      // DEBUG
-      std::cout << "predicted_chip.chip(0, 1): " << predicted_chip << std::endl;
-      std::cout << "max_tensor: " << max_tensor << std::endl;
-      std::cout << "expected_tensor: " << expected_tensor << std::endl;
-      std::cout << "TP: " << tp << std::endl;
-      std::cout << "FP: " << fp << std::endl;
-      std::cout << "precision: " << precision << std::endl;
+      //// DEBUG
+      //std::cout << "predicted_chip.chip(0, 1): " << predicted_chip << std::endl;
+      //std::cout << "max_tensor: " << max_tensor << std::endl;
+      //std::cout << "expected_tensor: " << expected_tensor << std::endl;
+      //std::cout << "TP: " << tp << std::endl;
+      //std::cout << "FP: " << fp << std::endl;
+      //std::cout << "precision: " << precision << std::endl;
     };
   };
 

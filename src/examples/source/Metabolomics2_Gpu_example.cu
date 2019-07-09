@@ -788,9 +788,9 @@ void main_classification(bool make_model = true, bool simulate_MARs = true)
   model_trainer.setLossOutputNodes({
     output_nodes,
     output_nodes });
-  model_trainer.setMetricFunctions({ std::shared_ptr<MetricFunctionOp<float>>(new AccuracyMCMicroOp<float>()), std::shared_ptr<MetricFunctionOp<float>>(new F1ScoreMCMicroOp<float>()) });
+  model_trainer.setMetricFunctions({ std::shared_ptr<MetricFunctionOp<float>>(new AccuracyMCMicroOp<float>()), std::shared_ptr<MetricFunctionOp<float>>(new PrecisionMCMicroOp<float>()) });
   model_trainer.setMetricOutputNodes({ output_nodes, output_nodes });
-  model_trainer.setMetricNames({ "AccuracyMCMicro", "F1ScoreMCMicro" });
+  model_trainer.setMetricNames({ "AccuracyMCMicro", "PrecisionMCMicro" });
 
   // define the model logger
   ModelLogger<float> model_logger(true, true, false, false, false, false, false, false);
