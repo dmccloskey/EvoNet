@@ -81,27 +81,24 @@ namespace SmartPeak
       const int& n_metrics, const int& time_step, const int& metric_index, DeviceT& device) const
     {
       Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
-      Eigen::TensorMap<Eigen::Tensor<TensorT, 4>> predicted_tensor(predicted, batch_size, 1, memory_size, layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 4>> predicted_tensor(predicted, batch_size, memory_size, layer_size, 1);
       Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_tensor(error, n_metrics, memory_size);
 
       // find the maximum value for each batch
-      auto predicted_chip = predicted_tensor.chip(time_step, 2);
-      auto max_tensor = predicted_chip.maximum(Eigen::array<int, 1>({0})).broadcast(Eigen::array<int, 2>({ batch_size, 1 }));
+      auto predicted_chip = predicted_tensor.chip(time_step, 1);
+      auto max_tensor = predicted_chip.maximum(Eigen::array<int, 1>({ 1 })).broadcast(Eigen::array<int, 2>({ 1, layer_size }));
 
       // calculate the confusion matrix
-      auto tp = (predicted_chip.chip(0, 1) >= (max_tensor - max_tensor.constant(TensorT(1e-6))) && expected_tensor > expected_tensor.constant(TensorT(this->threshold_positive_))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
-      auto tn = (predicted_chip.chip(0, 1) < max_tensor && expected_tensor < expected_tensor.constant(TensorT(this->threshold_negative_))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
-      auto fp = (predicted_chip.chip(0, 1) >= (max_tensor - max_tensor.constant(TensorT(1e-6))) && expected_tensor < expected_tensor.constant(TensorT(this->threshold_negative_))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
-      auto fn = (predicted_chip.chip(0, 1) < max_tensor && expected_tensor > expected_tensor.constant(TensorT(this->threshold_positive_))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
+      auto tp = (predicted_chip.chip(0, 2) >= (max_tensor - max_tensor.constant(TensorT(1e-6))) && expected_tensor > expected_tensor.constant(TensorT(this->threshold_positive_))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
+      auto tn = (predicted_chip.chip(0, 2) < max_tensor && expected_tensor < expected_tensor.constant(TensorT(this->threshold_negative_))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
+      auto fp = (predicted_chip.chip(0, 2) >= (max_tensor - max_tensor.constant(TensorT(1e-6))) && expected_tensor < expected_tensor.constant(TensorT(this->threshold_negative_))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
+      auto fn = (predicted_chip.chip(0, 2) < max_tensor && expected_tensor > expected_tensor.constant(TensorT(this->threshold_positive_))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
 
       // calculate the accuracy     
       auto accuracy = (tp.sum() + tn.sum()) / (tp.sum() + tn.sum() + fp.sum() + fn.sum());
       error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += accuracy;
 
       //// DEBUG
-      //std::cout << "max_tensor: " << max_tensor << std::endl;
-      //std::cout << "Predicted: " << predicted_chip << std::endl;
-      //std::cout << "Expected: " << expected_tensor << std::endl;
       //std::cout << "TP: " << tp << std::endl;
       //std::cout << "TN: " << tn << std::endl;
       //std::cout << "FP: " << fp << std::endl;
@@ -189,20 +186,28 @@ namespace SmartPeak
       const int& n_metrics, const int& time_step, const int& metric_index, DeviceT& device) const
     {
       Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
-      Eigen::TensorMap<Eigen::Tensor<TensorT, 4>> predicted_tensor(predicted, batch_size, 1, memory_size, layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 4>> predicted_tensor(predicted, batch_size, memory_size, layer_size, 1);
       Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_tensor(error, n_metrics, memory_size);
 
       // find the maximum value for each batch
-      auto predicted_chip = predicted_tensor.chip(time_step, 2);
-      auto max_tensor = predicted_chip.maximum(Eigen::array<int, 1>({ 0 })).broadcast(Eigen::array<int, 2>({ batch_size, 1 }));
+      auto predicted_chip = predicted_tensor.chip(time_step, 1);
+      auto max_tensor = predicted_chip.maximum(Eigen::array<int, 1>({ 1 })).broadcast(Eigen::array<int, 2>({ 1, layer_size }));
 
       // calculate the confusion matrix
-      auto tp = (predicted_chip.chip(0, 1) >= (max_tensor - max_tensor.constant(TensorT(1e-6))) && expected_tensor > expected_tensor.constant(TensorT(this->threshold_positive_))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
-      auto fp = (predicted_chip.chip(0, 1) >= (max_tensor - max_tensor.constant(TensorT(1e-6))) && expected_tensor < expected_tensor.constant(TensorT(this->threshold_negative_))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
+      auto tp = (predicted_chip.chip(0, 2) >= (max_tensor - max_tensor.constant(TensorT(1e-6))) && expected_tensor > expected_tensor.constant(TensorT(this->threshold_positive_))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
+      auto fp = (predicted_chip.chip(0, 2) >= (max_tensor - max_tensor.constant(TensorT(1e-6))) && expected_tensor < expected_tensor.constant(TensorT(this->threshold_negative_))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
 
       // calculate the precision     
       auto precision = tp.sum() / (tp.sum() + fp.sum());
       error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += precision;
+
+      // DEBUG
+      std::cout << "predicted_chip.chip(0, 1): " << predicted_chip << std::endl;
+      std::cout << "max_tensor: " << max_tensor << std::endl;
+      std::cout << "expected_tensor: " << expected_tensor << std::endl;
+      std::cout << "TP: " << tp << std::endl;
+      std::cout << "FP: " << fp << std::endl;
+      std::cout << "precision: " << precision << std::endl;
     };
   };
 
@@ -285,16 +290,16 @@ namespace SmartPeak
       const int& n_metrics, const int& time_step, const int& metric_index, DeviceT& device) const
     {
       Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
-      Eigen::TensorMap<Eigen::Tensor<TensorT, 4>> predicted_tensor(predicted, batch_size, 1, memory_size, layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 4>> predicted_tensor(predicted, batch_size, memory_size, layer_size, 1);
       Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_tensor(error, n_metrics, memory_size);
 
       // find the maximum value for each batch
-      auto predicted_chip = predicted_tensor.chip(time_step, 2);
-      auto max_tensor = predicted_chip.maximum(Eigen::array<int, 1>({ 0 })).broadcast(Eigen::array<int, 2>({ batch_size, 1 }));
+      auto predicted_chip = predicted_tensor.chip(time_step, 1);
+      auto max_tensor = predicted_chip.maximum(Eigen::array<int, 1>({ 1 })).broadcast(Eigen::array<int, 2>({ 1, layer_size }));
 
       // calculate the confusion matrix
-      auto tp = (predicted_chip.chip(0, 1) >= (max_tensor - max_tensor.constant(TensorT(1e-6))) && expected_tensor > expected_tensor.constant(TensorT(this->threshold_positive_))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
-      auto fn = (predicted_chip.chip(0, 1) < max_tensor && expected_tensor > expected_tensor.constant(TensorT(this->threshold_positive_))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
+      auto tp = (predicted_chip.chip(0, 2) >= (max_tensor - max_tensor.constant(TensorT(1e-6))) && expected_tensor > expected_tensor.constant(TensorT(this->threshold_positive_))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
+      auto fn = (predicted_chip.chip(0, 2) < max_tensor && expected_tensor > expected_tensor.constant(TensorT(this->threshold_positive_))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
 
       // calculate the recall     
       auto recall = tp.sum() / (tp.sum() + fn.sum());
@@ -408,17 +413,17 @@ namespace SmartPeak
       const int& n_metrics, const int& time_step, const int& metric_index, DeviceT& device) const
     {
       Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
-      Eigen::TensorMap<Eigen::Tensor<TensorT, 4>> predicted_tensor(predicted, batch_size, 1, memory_size, layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 4>> predicted_tensor(predicted, batch_size, memory_size, layer_size, 1);
       Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_tensor(error, n_metrics, memory_size);
 
       // find the maximum value for each batch
-      auto predicted_chip = predicted_tensor.chip(time_step, 2);
-      auto max_tensor = predicted_chip.maximum(Eigen::array<int, 1>({ 0 })).broadcast(Eigen::array<int, 2>({ batch_size, 1 }));
+      auto predicted_chip = predicted_tensor.chip(time_step, 1);
+      auto max_tensor = predicted_chip.maximum(Eigen::array<int, 1>({ 1 })).broadcast(Eigen::array<int, 2>({ 1, layer_size }));
 
       // calculate the confusion matrix
-      auto tp = (predicted_chip.chip(0, 1) >= (max_tensor - max_tensor.constant(TensorT(1e-6))) && expected_tensor > expected_tensor.constant(TensorT(this->threshold_positive_))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
-      auto fp = (predicted_chip.chip(0, 1) >= (max_tensor - max_tensor.constant(TensorT(1e-6))) && expected_tensor < expected_tensor.constant(TensorT(this->threshold_negative_))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
-      auto fn = (predicted_chip.chip(0, 1) < max_tensor && expected_tensor > expected_tensor.constant(TensorT(this->threshold_positive_))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
+      auto tp = (predicted_chip.chip(0, 2) >= (max_tensor - max_tensor.constant(TensorT(1e-6))) && expected_tensor > expected_tensor.constant(TensorT(this->threshold_positive_))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
+      auto fp = (predicted_chip.chip(0, 2) >= (max_tensor - max_tensor.constant(TensorT(1e-6))) && expected_tensor < expected_tensor.constant(TensorT(this->threshold_negative_))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
+      auto fn = (predicted_chip.chip(0, 2) < max_tensor && expected_tensor > expected_tensor.constant(TensorT(this->threshold_positive_))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
 
       // calculate the F1 score
       auto precision = tp.sum() / (tp.sum() + fp.sum());

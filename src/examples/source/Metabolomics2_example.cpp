@@ -33,7 +33,7 @@ public:
     model.setName("Classifier");
 
     const int n_hidden_0 = 64;
-    const int n_hidden_1 = 32;
+    const int n_hidden_1 = 64;
     const int n_hidden_2 = 0;
 
     ModelBuilder<TensorT> model_builder;
