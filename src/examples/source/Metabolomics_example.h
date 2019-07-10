@@ -289,20 +289,22 @@ public:
 	void simulateValidationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)	{
 		simulateData(input_data, output_data, time_steps);
 	}
-  void simulateDataMARs(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps, const bool& train)
+  void simulateDataMARs(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps, const bool& train)
   {
     // infer data dimensions based on the input tensors
     const int batch_size = input_data.dimension(0);
     const int memory_size = input_data.dimension(1);
     const int n_input_nodes = input_data.dimension(2);
-    const int n_output_nodes = output_data.dimension(2);
+    const int n_loss_output_nodes = loss_output_data.dimension(2);
+    const int n_metric_output_nodes = metric_output_data.dimension(2);
     int n_input_pixels;
     if (train)
       n_input_pixels = this->model_training_.reaction_ids_.size();
     else
       n_input_pixels = this->model_validation_.reaction_ids_.size();
 
-    assert(n_output_nodes == n_input_pixels + 2 * n_encodings_);
+    assert(n_loss_output_nodes == n_input_pixels + 2 * n_encodings_);
+    assert(n_metric_output_nodes % n_input_pixels == 0);
     assert(n_input_nodes == n_input_pixels + n_encodings_);
 
     std::random_device rd{};
@@ -331,7 +333,8 @@ public:
                 this->model_validation_.metabolomicsData_.at(sample_group_name),
                 this->model_validation_.biochemicalReactions_.at(this->model_validation_.reaction_ids_.at(nodes_iter)));
             input_data(batch_iter, memory_iter, nodes_iter) = value;
-            output_data(batch_iter, memory_iter, nodes_iter) = value;
+            loss_output_data(batch_iter, memory_iter, nodes_iter) = 0;
+            metric_output_data(batch_iter, memory_iter, nodes_iter) = 0;
           }
           else if (nodes_iter >= n_input_pixels && nodes_iter < n_input_pixels + n_encodings_) {
             TensorT random_value;
@@ -340,29 +343,31 @@ public:
             else
               random_value = 0;
             input_data(batch_iter, memory_iter, nodes_iter) = random_value; // sample from a normal distribution
-            output_data(batch_iter, memory_iter, nodes_iter) = 0; // Dummy data for KL divergence mu
+            loss_output_data(batch_iter, memory_iter, nodes_iter) = 0; // Dummy data for KL divergence mu
           }
           else {
-            output_data(batch_iter, memory_iter, nodes_iter) = 0; // Dummy data for KL divergence logvar
+            loss_output_data(batch_iter, memory_iter, nodes_iter) = 0; // Dummy data for KL divergence logvar
           }
         }
       }
     }
   }
-  void simulateDataConcs(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps, const bool& train)
+  void simulateDataConcs(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps, const bool& train)
   {
     // infer data dimensions based on the input tensors
     const int batch_size = input_data.dimension(0);
     const int memory_size = input_data.dimension(1);
     const int n_input_nodes = input_data.dimension(2);
-    const int n_output_nodes = output_data.dimension(2);
+    const int n_loss_output_nodes = loss_output_data.dimension(2);
+    const int n_metric_output_nodes = metric_output_data.dimension(2);
     int n_input_pixels;
     if (train)
       n_input_pixels = this->model_training_.component_group_names_.size();
     else
       n_input_pixels = this->model_validation_.component_group_names_.size();
 
-    assert(n_output_nodes == n_input_pixels + 2 * n_encodings_);
+    assert(n_loss_output_nodes == n_input_pixels + 2 * n_encodings_);
+    assert(n_metric_output_nodes % n_input_pixels == 0);
     assert(n_input_nodes == n_input_pixels + n_encodings_);
 
     std::random_device rd{};
@@ -391,7 +396,8 @@ public:
                 this->model_validation_.metabolomicsData_.at(sample_group_name),
                 this->model_validation_.component_group_names_.at(nodes_iter));
             input_data(batch_iter, memory_iter, nodes_iter) = value;
-            output_data(batch_iter, memory_iter, nodes_iter) = value;
+            loss_output_data(batch_iter, memory_iter, nodes_iter) = 0;
+            metric_output_data(batch_iter, memory_iter, nodes_iter) = 0;
           }
           else if (nodes_iter >= n_input_pixels && nodes_iter < n_input_pixels + n_encodings_) {
             TensorT random_value;
@@ -400,22 +406,22 @@ public:
             else
               random_value = 0;
             input_data(batch_iter, memory_iter, nodes_iter) = random_value; // sample from a normal distribution
-            output_data(batch_iter, memory_iter, nodes_iter) = 0; // Dummy data for KL divergence mu
+            loss_output_data(batch_iter, memory_iter, nodes_iter) = 0; // Dummy data for KL divergence mu
           }
           else {
-            output_data(batch_iter, memory_iter, nodes_iter) = 0; // Dummy data for KL divergence logvar
+            loss_output_data(batch_iter, memory_iter, nodes_iter) = 0; // Dummy data for KL divergence logvar
           }
         }
       }
     }
   }
-  void simulateTrainingData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps) {
-    if (simulate_MARs_) simulateDataMARs(input_data, output_data, time_steps, true);
-    else simulateDataConcs(input_data, output_data, time_steps, true);
+  void simulateTrainingData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps) {
+    if (simulate_MARs_) simulateDataMARs(input_data, loss_output_data, metric_output_data, time_steps, true);
+    else simulateDataConcs(input_data, loss_output_data, metric_output_data, time_steps, true);
   }
-  void simulateValidationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps) {
-    if (simulate_MARs_) simulateDataMARs(input_data, output_data, time_steps, false);
-    else simulateDataConcs(input_data, output_data, time_steps, false);
+  void simulateValidationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps) {
+    if (simulate_MARs_) simulateDataMARs(input_data, loss_output_data, metric_output_data, time_steps, false);
+    else simulateDataConcs(input_data, loss_output_data, metric_output_data, time_steps, false);
   }
 
   BiochemicalReactionModel<TensorT> model_training_;
