@@ -630,17 +630,12 @@ public:
 */
 
 // Scripts to run
-void main_statistics_timecourseSummary(
+void main_statistics_timecourseSummary(const std::string& data_dir,
   bool run_timeCourse_Ref = false, bool run_timeCourse_Gnd = false, bool run_timeCourse_SdhCB = false, bool run_timeCourse_Pgi = false, bool run_timeCourse_PtsHIcrr = false,
   bool run_timeCourse_TpiA = false)
 {
   // define the data simulator
   BiochemicalReactionModel<float> metabolomics_data;
-
-  // data dirs
-  //std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
-  //std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
-  std::string data_dir = "/home/user/Data/";
 
   std::string
     timeCourse_Ref_filename, timeCourse_Gnd_filename, timeCourse_SdhCB_filename, timeCourse_Pgi_filename, timeCourse_PtsHIcrr_filename,
@@ -766,17 +761,12 @@ void main_statistics_timecourseSummary(
     WritePWFeatureSummaries(timeCourseFeatureSummary_TpiA_filename, pw_feature_summaries);
   }
 }
-void main_statistics_timecourse(
+void main_statistics_timecourse(const std::string& data_dir,
   bool run_timeCourse_Ref = false, bool run_timeCourse_Gnd = false, bool run_timeCourse_SdhCB = false, bool run_timeCourse_Pgi = false, bool run_timeCourse_PtsHIcrr = false,
   bool run_timeCourse_TpiA = false)
 {
   // define the data simulator
   BiochemicalReactionModel<float> metabolomics_data;
-
-  // data dirs
-  //std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
-  //std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
-  std::string data_dir = "/home/user/Data/";
 
   std::string biochem_rxns_filename, metabo_data_filename, meta_data_filename,
     timeCourse_Ref_filename, timeCourse_Gnd_filename, timeCourse_SdhCB_filename, timeCourse_Pgi_filename, timeCourse_PtsHIcrr_filename,
@@ -860,7 +850,7 @@ void main_statistics_timecourse(
   }
 }
 
-void main_classification(bool make_model = true, bool simulate_MARs = true)
+void main_classification(const std::string& data_dir, bool make_model = true, bool simulate_MARs = true, bool sample_concs = true)
 {
   // define the population trainer parameters
   PopulationTrainerExt<float> population_trainer;
@@ -885,9 +875,6 @@ void main_classification(bool make_model = true, bool simulate_MARs = true)
   // define the data simulator
   BiochemicalReactionModel<float> reaction_model;
   MetDataSimClassification<float> metabolomics_data;
-  //std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
-  std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
-  //std::string data_dir = "/home/user/Data/";
   std::string model_name = "0_Metabolomics";
 
   // Read in the training and validation data
@@ -923,6 +910,7 @@ void main_classification(bool make_model = true, bool simulate_MARs = true)
   reaction_model.findLabels();
   metabolomics_data.model_validation_ = reaction_model;
   metabolomics_data.simulate_MARs_ = simulate_MARs;
+  metabolomics_data.sample_concs_ = sample_concs;
 
   // Checks for the training and validation data
   assert(metabolomics_data.model_validation_.reaction_ids_.size() == metabolomics_data.model_training_.reaction_ids_.size());
@@ -993,10 +981,10 @@ void main_classification(bool make_model = true, bool simulate_MARs = true)
     //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, false, false, false, false); // normalization type 0
     //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, false, false, false); // normalization type 1
     //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, false, true, false); // normalization type 2
-    //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, true, false, true); // normalization type 3
+    model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, true, false, true); // normalization type 3
     //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, true, true, false); // normalization type 4
 
-    model_trainer.makeModelCovNetClass(model, n_input_nodes, n_output_nodes, true, true, false, 64, 16, 0, 32, false, true); // normalization type 3
+    //model_trainer.makeModelCovNetClass(model, n_input_nodes, n_output_nodes, true, true, false, 64, 16, 0, 32, false, true); // normalization type 3
 
     //population = { model };
   }
@@ -1017,7 +1005,7 @@ void main_classification(bool make_model = true, bool simulate_MARs = true)
   //population_trainer_file.storeModelValidations("MetabolomicsValidationErrors.csv", models_validation_errors_per_generation);
 }
 
-void main_reconstruction(bool make_model = true, bool simulate_MARs = true)
+void main_reconstruction(const std::string& data_dir, bool make_model = true, bool simulate_MARs = true, bool sample_concs = true)
 {
   // define the population trainer parameters
   PopulationTrainerExt<float> population_trainer;
@@ -1042,9 +1030,6 @@ void main_reconstruction(bool make_model = true, bool simulate_MARs = true)
   // define the data simulator
   BiochemicalReactionModel<float> reaction_model;
   MetDataSimReconstruction<float> metabolomics_data;
-  //std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
-  std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
-  //std::string data_dir = "/home/user/Data/";
   std::string model_name = "0_Metabolomics";
 
   // Read in the training and validation data
@@ -1080,6 +1065,7 @@ void main_reconstruction(bool make_model = true, bool simulate_MARs = true)
   reaction_model.findLabels();
   metabolomics_data.model_validation_ = reaction_model;
   metabolomics_data.simulate_MARs_ = simulate_MARs;
+  metabolomics_data.sample_concs_ = sample_concs;
 
   // Checks for the training and validation data
   assert(metabolomics_data.model_validation_.reaction_ids_.size() == metabolomics_data.model_training_.reaction_ids_.size());
@@ -1091,7 +1077,7 @@ void main_reconstruction(bool make_model = true, bool simulate_MARs = true)
   if (simulate_MARs) n_input_nodes = reaction_model.reaction_ids_.size();
   else n_input_nodes = reaction_model.component_group_names_.size();
   const int n_output_nodes = n_input_nodes;
-  const int encoding_size = 8;
+  const int encoding_size = 2;
   metabolomics_data.n_encodings_ = encoding_size;
   std::vector<std::string> input_nodes;
   std::vector<std::string> output_nodes;
@@ -1204,13 +1190,19 @@ void main_reconstruction(bool make_model = true, bool simulate_MARs = true)
 // Main
 int main(int argc, char** argv)
 {
-  //main_statistics_timecourse(
+  // Set the data directories
+  //std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
+  std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
+  //std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
+  //std::string data_dir = "/home/user/Data/";
+
+  //main_statistics_timecourse(data_dir, 
   //	true, true, true, true, true,
   //	true);
-  //main_statistics_timecourseSummary(
+  //main_statistics_timecourseSummary(data_dir, 
   //	true, true, true, true, true,
   //	true);
-  //main_classification(true, false);
-  main_reconstruction(true, false);
+  main_classification(data_dir, true, false, false);
+  //main_reconstruction(data_dir, true, false);
   return 0;
 }

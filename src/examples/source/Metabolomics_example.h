@@ -170,7 +170,7 @@ public:
     // update the time_steps
     time_steps.setConstant(1.0f);
   }
-  void simulateDataConcs(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps, const bool& train)
+  void simulateDataSampleConcs(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps, const bool& train)
   {
     // infer data dimensions based on the input tensors
     const int batch_size = input_data.dimension(0);
@@ -234,12 +234,86 @@ public:
     // update the time_steps
     time_steps.setConstant(1.0f);
   }
+  void simulateDataConcs(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps, const bool& train)
+  {
+    // infer data dimensions based on the input tensors
+    const int batch_size = input_data.dimension(0);
+    const int memory_size = input_data.dimension(1);
+    const int n_input_nodes = input_data.dimension(2);
+    const int n_loss_output_nodes = loss_output_data.dimension(2);
+    const int n_metric_output_nodes = metric_output_data.dimension(2);
+
+    if (train)
+      assert(n_input_nodes == this->model_training_.component_group_names_.size());
+    else
+      assert(n_input_nodes == this->model_validation_.component_group_names_.size());
+
+    for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
+      for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
+
+        // pick a random sample group name
+        std::string sample_group_name;
+        int max_replicates = 0;
+        if (train) {
+          sample_group_name = selectRandomElement(this->model_training_.sample_group_names_);
+          max_replicates = this->model_training_.metabolomicsData_.at(sample_group_name).at(this->model_training_.component_group_names_.at(0)).size();
+        }
+        else {
+          sample_group_name = selectRandomElement(this->model_validation_.sample_group_names_);
+          max_replicates = this->model_validation_.metabolomicsData_.at(sample_group_name).at(this->model_validation_.component_group_names_.at(0)).size();
+        }
+
+        // pick a random replicate
+        std::vector<int> replicates;
+        for (int i = 0; i < max_replicates; ++i) {
+          replicates.push_back(i);
+        }
+        const int replicate = selectRandomElement(replicates);
+
+        // assign the input data
+        for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
+          TensorT value;
+          if (train)
+            value = this->model_training_.metabolomicsData_.at(sample_group_name).at(this->model_training_.component_group_names_.at(nodes_iter)).at(replicate).calculated_concentration;
+          else
+            value = this->model_validation_.metabolomicsData_.at(sample_group_name).at(this->model_validation_.component_group_names_.at(nodes_iter)).at(replicate).calculated_concentration;
+          input_data(batch_iter, memory_iter, nodes_iter) = value;
+        }
+
+        // convert the label to a one hot vector      
+        Eigen::Tensor<TensorT, 1> one_hot_vec((int)this->model_training_.labels_.size());
+        if (train)
+          one_hot_vec = OneHotEncoder<std::string, TensorT>(this->model_training_.metaData_.at(sample_group_name).condition, this->model_training_.labels_);
+        else
+          one_hot_vec = OneHotEncoder<std::string, TensorT>(this->model_validation_.metaData_.at(sample_group_name).condition, this->model_validation_.labels_);
+        Eigen::Tensor<TensorT, 1> one_hot_vec_smoothed = one_hot_vec.unaryExpr(LabelSmoother<TensorT>(0.01, 0.01));
+
+        // MSE or LogLoss only
+        size_t n_labels;
+        if (train)
+          n_labels = this->model_training_.labels_.size();
+        else
+          n_labels = this->model_validation_.labels_.size();
+        for (int nodes_iter = 0; nodes_iter < n_labels; ++nodes_iter) {
+          loss_output_data(batch_iter, memory_iter, nodes_iter) = one_hot_vec_smoothed(nodes_iter);
+          loss_output_data(batch_iter, memory_iter, nodes_iter + (int)n_labels) = one_hot_vec(nodes_iter);
+          metric_output_data(batch_iter, memory_iter, nodes_iter) = one_hot_vec_smoothed(nodes_iter);
+          metric_output_data(batch_iter, memory_iter, nodes_iter + (int)n_labels) = one_hot_vec_smoothed(nodes_iter);
+        }
+      }
+    }
+
+    // update the time_steps
+    time_steps.setConstant(1.0f);
+  }
   void simulateTrainingData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps) {
     if (simulate_MARs_) simulateDataMARs(input_data, loss_output_data, metric_output_data, time_steps, true);
+    else if (sample_concs_) simulateDataSampleConcs(input_data, loss_output_data, metric_output_data, time_steps, true);
     else simulateDataConcs(input_data, loss_output_data, metric_output_data, time_steps, true);
   }
   void simulateValidationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps) {
     if (simulate_MARs_) simulateDataMARs(input_data, loss_output_data, metric_output_data, time_steps, false);
+    else if (sample_concs_) simulateDataSampleConcs(input_data, loss_output_data, metric_output_data, time_steps, false);
     else simulateDataConcs(input_data, loss_output_data, metric_output_data, time_steps, false);
   }
 
@@ -248,6 +322,7 @@ public:
   //bool log_transform_input_ = false;
   //bool linear_scale_input_ = false;
   //bool standardize_input_ = false;
+  bool sample_concs_ = false;
   bool simulate_MARs_ = true;
 };
 
@@ -427,6 +502,7 @@ public:
   BiochemicalReactionModel<TensorT> model_training_;
   BiochemicalReactionModel<TensorT> model_validation_;
   int n_encodings_;
+  bool sample_concs_ = false;
   bool simulate_MARs_ = true;
 };
 

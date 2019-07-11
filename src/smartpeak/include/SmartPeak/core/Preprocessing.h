@@ -20,7 +20,7 @@ namespace SmartPeak
 	*/
 
 	template<typename T>
-	T selectRandomElement(std::vector<T> elements)
+	T selectRandomElement(const std::vector<T>& elements)
 	{
 		try
 		{
@@ -29,7 +29,7 @@ namespace SmartPeak
 			std::random_device seed;
 			std::mt19937 engine(seed());
 			std::uniform_int_distribution<int> choose(0, elements.size() - 1);
-			return elements[choose(engine)];
+			return elements.at(choose(engine));
 		}
 		catch (std::exception& e)
 		{
