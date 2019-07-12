@@ -1580,7 +1580,9 @@ void main_multiTask(const std::string& data_dir, bool make_model = true, bool si
     std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
   model_trainer.setLossOutputNodes({ output_nodes_recon, encoding_nodes_mu, encoding_nodes_logvar,
     output_nodes_class, output_nodes_class});
-  model_trainer.setMetricFunctions({ std::shared_ptr<MetricFunctionOp<float>>(new MAEOp<float>()), std::shared_ptr<MetricFunctionOp<float>>(new AccuracyMCMicroOp<float>()), std::shared_ptr<MetricFunctionOp<float>>(new PrecisionMCMicroOp<float>()) });
+  model_trainer.setMetricFunctions({ std::shared_ptr<MetricFunctionOp<float>>(new MAEOp<float>()), 
+    std::shared_ptr<MetricFunctionOp<float>>(new AccuracyMCMicroOp<float>()), 
+    std::shared_ptr<MetricFunctionOp<float>>(new PrecisionMCMicroOp<float>()) });
   model_trainer.setMetricOutputNodes({ output_nodes_recon, output_nodes_class, output_nodes_class });
   model_trainer.setMetricNames({ "MAE", "AccuracyMCMicro", "PrecisionMCMicro" });
 
