@@ -72,7 +72,7 @@ public:
 	void simulateValidationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)	{
 		simulateData(input_data, output_data, time_steps);
 	}
-  void simulateDataMARs(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps, const bool& train)
+  void simulateDataClassMARs(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps, const bool& train)
   {
     // infer data dimensions based on the input tensors
     const int batch_size = input_data.dimension(0);
@@ -163,6 +163,7 @@ public:
           loss_output_data(batch_iter, memory_iter, nodes_iter) = one_hot_vec(nodes_iter);
           loss_output_data(batch_iter, memory_iter, nodes_iter + (int)n_labels) = one_hot_vec(nodes_iter);
           metric_output_data(batch_iter, memory_iter, nodes_iter) = one_hot_vec(nodes_iter);
+          metric_output_data(batch_iter, memory_iter, nodes_iter + (int)n_labels) = one_hot_vec(nodes_iter);
         }
       }
     }
@@ -170,7 +171,7 @@ public:
     // update the time_steps
     time_steps.setConstant(1.0f);
   }
-  void simulateDataSampleConcs(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps, const bool& train)
+  void simulateDataClassSampleConcs(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps, const bool& train)
   {
     // infer data dimensions based on the input tensors
     const int batch_size = input_data.dimension(0);
@@ -234,7 +235,7 @@ public:
     // update the time_steps
     time_steps.setConstant(1.0f);
   }
-  void simulateDataConcs(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps, const bool& train)
+  void simulateDataClassConcs(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps, const bool& train)
   {
     // infer data dimensions based on the input tensors
     const int batch_size = input_data.dimension(0);
@@ -307,14 +308,14 @@ public:
     time_steps.setConstant(1.0f);
   }
   void simulateTrainingData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps) {
-    if (simulate_MARs_) simulateDataMARs(input_data, loss_output_data, metric_output_data, time_steps, true);
-    else if (sample_concs_) simulateDataSampleConcs(input_data, loss_output_data, metric_output_data, time_steps, true);
-    else simulateDataConcs(input_data, loss_output_data, metric_output_data, time_steps, true);
+    if (simulate_MARs_) simulateDataClassMARs(input_data, loss_output_data, metric_output_data, time_steps, true);
+    else if (sample_concs_) simulateDataClassSampleConcs(input_data, loss_output_data, metric_output_data, time_steps, true);
+    else simulateDataClassConcs(input_data, loss_output_data, metric_output_data, time_steps, true);
   }
   void simulateValidationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps) {
-    if (simulate_MARs_) simulateDataMARs(input_data, loss_output_data, metric_output_data, time_steps, false);
-    else if (sample_concs_) simulateDataSampleConcs(input_data, loss_output_data, metric_output_data, time_steps, false);
-    else simulateDataConcs(input_data, loss_output_data, metric_output_data, time_steps, false);
+    if (simulate_MARs_) simulateDataClassMARs(input_data, loss_output_data, metric_output_data, time_steps, false);
+    else if (sample_concs_) simulateDataClassSampleConcs(input_data, loss_output_data, metric_output_data, time_steps, false);
+    else simulateDataClassConcs(input_data, loss_output_data, metric_output_data, time_steps, false);
   }
 
 	BiochemicalReactionModel<TensorT> model_training_;
@@ -364,7 +365,7 @@ public:
 	void simulateValidationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)	{
 		simulateData(input_data, output_data, time_steps);
 	}
-  void simulateDataMARs(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps, const bool& train)
+  void simulateDataReconMARs(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps, const bool& train)
   {
     // infer data dimensions based on the input tensors
     const int batch_size = input_data.dimension(0);
@@ -427,7 +428,7 @@ public:
       }
     }
   }
-  void simulateDataConcs(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps, const bool& train)
+  void simulateDataReconSampleConcs(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps, const bool& train)
   {
     // infer data dimensions based on the input tensors
     const int batch_size = input_data.dimension(0);
@@ -491,12 +492,190 @@ public:
     }
   }
   void simulateTrainingData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps) {
+    if (simulate_MARs_) simulateDataReconMARs(input_data, loss_output_data, metric_output_data, time_steps, true);
+    else simulateDataReconSampleConcs(input_data, loss_output_data, metric_output_data, time_steps, true);
+  }
+  void simulateValidationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps) {
+    if (simulate_MARs_) simulateDataReconMARs(input_data, loss_output_data, metric_output_data, time_steps, false);
+    else simulateDataReconSampleConcs(input_data, loss_output_data, metric_output_data, time_steps, false);
+  }
+
+  BiochemicalReactionModel<TensorT> model_training_;
+  BiochemicalReactionModel<TensorT> model_validation_;
+  int n_encodings_;
+  bool sample_concs_ = false;
+  bool simulate_MARs_ = true;
+};
+
+template<typename TensorT>
+class MetDataSimMultiTask : public MetDataSimClassification<TensorT>
+{
+public:
+  void simulateDataMARs(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps, const bool& train)
+  {
+    // infer data dimensions based on the input tensors
+    const int batch_size = input_data.dimension(0);
+    const int memory_size = input_data.dimension(1);
+    const int n_input_nodes = input_data.dimension(2);
+    const int n_loss_output_nodes = loss_output_data.dimension(2);
+    const int n_metric_output_nodes = metric_output_data.dimension(2);
+    int n_input_pixels;
+    int n_classes;
+    if (train) {
+      n_input_pixels = this->model_training_.reaction_ids_.size();
+      n_classes = this->model_training_.labels_.size();
+    }
+    else {
+      n_input_pixels = this->model_validation_.reaction_ids_.size();
+      n_classes = this->model_validation_.labels_.size();
+    }
+
+    // Assuming MSE + XEntropy classification loass, MSE reconstruction loss, and KL divergence Mu and Var losses
+    assert(n_loss_output_nodes == 2*n_classes + n_input_pixels + 2 * n_encodings_);
+    assert(n_metric_output_nodes % (n_input_pixels + 2*n_classes) == 0);
+    assert(n_input_nodes == n_input_pixels + n_encodings_);
+
+    std::random_device rd{};
+    std::mt19937 gen{ rd() };
+    std::normal_distribution<> d{ 0.0f, 1.0f };
+
+    for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
+      for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
+
+        // pick a random sample group name
+        std::string sample_group_name;
+        if (train)
+          sample_group_name = selectRandomElement(this->model_training_.sample_group_names_);
+        else
+          sample_group_name = selectRandomElement(this->model_validation_.sample_group_names_);
+
+        // convert the label to a one hot vector        
+        Eigen::Tensor<TensorT, 1> one_hot_vec((int)this->model_training_.labels_.size());
+        if (train)
+          one_hot_vec = OneHotEncoder<std::string, TensorT>(this->model_training_.metaData_.at(sample_group_name).condition, this->model_training_.labels_);
+        else
+          one_hot_vec = OneHotEncoder<std::string, TensorT>(this->model_validation_.metaData_.at(sample_group_name).condition, this->model_validation_.labels_);
+        Eigen::Tensor<TensorT, 1> one_hot_vec_smoothed = one_hot_vec.unaryExpr(LabelSmoother<TensorT>(0.01, 0.01));
+
+        // assign the input, loss_output, and metric_output node values
+        int classes_iter = 0;
+        for (int nodes_iter = 0; nodes_iter < n_input_pixels + n_encodings_ + n_classes; ++nodes_iter) {
+          if (nodes_iter < n_input_pixels) {
+            TensorT value;
+            if (train) value = this->model_training_.calculateMAR(
+                this->model_training_.metabolomicsData_.at(sample_group_name),
+                this->model_training_.biochemicalReactions_.at(this->model_training_.reaction_ids_.at(nodes_iter)));
+            else value = this->model_validation_.calculateMAR(
+                this->model_validation_.metabolomicsData_.at(sample_group_name),
+                this->model_validation_.biochemicalReactions_.at(this->model_validation_.reaction_ids_.at(nodes_iter)));
+            input_data(batch_iter, memory_iter, nodes_iter) = value; // input concentration data
+            loss_output_data(batch_iter, memory_iter, nodes_iter) = 0; // reconstruction output loss
+            metric_output_data(batch_iter, memory_iter, nodes_iter) = 0; // reconstruction output metric
+          }
+          else if (nodes_iter >= n_input_pixels && nodes_iter < n_input_pixels + n_encodings_) {
+            TensorT random_value;
+            if (train) random_value = d(gen);
+            else random_value = 0;
+            input_data(batch_iter, memory_iter, nodes_iter) = random_value; // sample from a normal distribution
+            loss_output_data(batch_iter, memory_iter, nodes_iter) = 0; // Dummy data for KL divergence mu
+            loss_output_data(batch_iter, memory_iter, nodes_iter + n_encodings_) = 0; // Dummy data for KL divergence logvar
+          }
+          else {
+            loss_output_data(batch_iter, memory_iter, nodes_iter + n_encodings_) = one_hot_vec_smoothed(classes_iter); // classification output loss (XEntropy)
+            metric_output_data(batch_iter, memory_iter, nodes_iter - n_encodings_) = one_hot_vec(classes_iter); // classification metric loss (Accuracy)
+            loss_output_data(batch_iter, memory_iter, nodes_iter + n_encodings_ + n_classes) = one_hot_vec(classes_iter); // classification output loss (MSE)
+            metric_output_data(batch_iter, memory_iter, nodes_iter - n_encodings_ + n_classes) = one_hot_vec(classes_iter); // classification metric loss (Precision)
+            ++classes_iter;
+          }
+        }
+      }
+    }
+  }
+  void simulateDataSampleConcs(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps, const bool& train)
+  {
+    // infer data dimensions based on the input tensors
+    const int batch_size = input_data.dimension(0);
+    const int memory_size = input_data.dimension(1);
+    const int n_input_nodes = input_data.dimension(2);
+    const int n_loss_output_nodes = loss_output_data.dimension(2);
+    const int n_metric_output_nodes = metric_output_data.dimension(2);
+    int n_input_pixels;
+    int n_classes;
+    if (train) {
+      n_input_pixels = this->model_training_.component_group_names_.size();
+      n_classes = this->model_training_.labels_.size();
+    }
+    else {
+      n_input_pixels = this->model_validation_.component_group_names_.size();
+      n_classes = this->model_validation_.labels_.size();
+    }
+
+    // Assuming MSE + XEntropy classification loass, MSE reconstruction loss, and KL divergence Mu and Var losses
+    assert(n_loss_output_nodes == 2 * n_classes + n_input_pixels + 2 * n_encodings_);
+    assert(n_metric_output_nodes % (n_input_pixels + 2*n_classes) == 0);
+    assert(n_input_nodes == n_input_pixels + n_encodings_);
+
+    std::random_device rd{};
+    std::mt19937 gen{ rd() };
+    std::normal_distribution<> d{ 0.0f, 1.0f };
+
+    for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
+      for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
+
+        // pick a random sample group name
+        std::string sample_group_name;
+        if (train)
+          sample_group_name = selectRandomElement(this->model_training_.sample_group_names_);
+        else
+          sample_group_name = selectRandomElement(this->model_validation_.sample_group_names_);
+
+        // convert the label to a one hot vector        
+        Eigen::Tensor<TensorT, 1> one_hot_vec((int)this->model_training_.labels_.size());
+        if (train)
+          one_hot_vec = OneHotEncoder<std::string, TensorT>(this->model_training_.metaData_.at(sample_group_name).condition, this->model_training_.labels_);
+        else
+          one_hot_vec = OneHotEncoder<std::string, TensorT>(this->model_validation_.metaData_.at(sample_group_name).condition, this->model_validation_.labels_);
+        Eigen::Tensor<TensorT, 1> one_hot_vec_smoothed = one_hot_vec.unaryExpr(LabelSmoother<TensorT>(0.01, 0.01));
+
+        // assign the input, loss_output, and metric_output node values
+        for (int nodes_iter = 0; nodes_iter < n_input_pixels; ++nodes_iter) {
+          if (nodes_iter < n_input_pixels) {
+            TensorT value;
+            if (train) value = this->model_training_.getRandomConcentration(
+                this->model_training_.metabolomicsData_.at(sample_group_name),
+                this->model_training_.component_group_names_.at(nodes_iter));
+            else value = this->model_validation_.getRandomConcentration(
+                this->model_validation_.metabolomicsData_.at(sample_group_name),
+                this->model_validation_.component_group_names_.at(nodes_iter));
+            input_data(batch_iter, memory_iter, nodes_iter) = value; // input concentration data
+            loss_output_data(batch_iter, memory_iter, nodes_iter) = 0; // reconstruction output loss
+            metric_output_data(batch_iter, memory_iter, nodes_iter) = 0; // reconstruction output metric
+          }
+          if (nodes_iter < n_encodings_) {
+            TensorT random_value;
+            if (train) random_value = d(gen);
+            else random_value = 0;
+            input_data(batch_iter, memory_iter, nodes_iter + n_input_pixels) = random_value; // sample from a normal distribution
+            loss_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels) = 0; // Dummy data for KL divergence mu
+            loss_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels + n_encodings_) = 0; // Dummy data for KL divergence logvar
+          }
+          if (nodes_iter < n_classes) {
+            loss_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels + 2*n_encodings_) = one_hot_vec_smoothed(nodes_iter); // classification output loss (XEntropy)
+            metric_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels) = one_hot_vec(nodes_iter); // classification metric loss (Accuracy)
+            loss_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels + 2*n_encodings_ + n_classes) = one_hot_vec(nodes_iter); // classification output loss (MSE)
+            metric_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels + n_classes) = one_hot_vec(nodes_iter); // classification metric loss (Precision)
+          }
+        }
+      }
+    }
+  }
+  void simulateTrainingData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps) {
     if (simulate_MARs_) simulateDataMARs(input_data, loss_output_data, metric_output_data, time_steps, true);
-    else simulateDataConcs(input_data, loss_output_data, metric_output_data, time_steps, true);
+    else simulateDataSampleConcs(input_data, loss_output_data, metric_output_data, time_steps, true);
   }
   void simulateValidationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps) {
     if (simulate_MARs_) simulateDataMARs(input_data, loss_output_data, metric_output_data, time_steps, false);
-    else simulateDataConcs(input_data, loss_output_data, metric_output_data, time_steps, false);
+    else simulateDataSampleConcs(input_data, loss_output_data, metric_output_data, time_steps, false);
   }
 
   BiochemicalReactionModel<TensorT> model_training_;
