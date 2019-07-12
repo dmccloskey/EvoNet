@@ -445,20 +445,43 @@ namespace SmartPeak
       Eigen::TensorMap<Eigen::Tensor<TensorT, 4>> predicted_tensor(predicted, batch_size, memory_size, layer_size, 1);
       Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_tensor(error, n_metrics, memory_size);
 
-      //// find the maximum value for each batch
-      //auto predicted_chip = predicted_tensor.chip(time_step, 1);
-      //auto max_tensor = predicted_chip.maximum(Eigen::array<int, 1>({ 1 })).broadcast(Eigen::array<int, 2>({ 1, layer_size }));
-
-      //// calculate the confusion matrix
-      //auto tp = (predicted_chip.chip(0, 2) >= (max_tensor - max_tensor.constant(TensorT(1e-6))) && expected_tensor > expected_tensor.constant(TensorT(this->threshold_positive_))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
-      //auto fp = (predicted_chip.chip(0, 2) >= (max_tensor - max_tensor.constant(TensorT(1e-6))) && expected_tensor < expected_tensor.constant(TensorT(this->threshold_negative_))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
-      //auto fn = (predicted_chip.chip(0, 2) < max_tensor && expected_tensor > expected_tensor.constant(TensorT(this->threshold_positive_))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
-
-      //// calculate the F1 score
-      //auto precision = tp.sum() / (tp.sum() + fp.sum());
-      //auto recall = tp.sum() / (tp.sum() + fn.sum());
-      //auto f1score = precision.constant(TensorT(2))*precision*recall / (precision + recall);
-      //error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += f1score;
+//      // allocate temporary memory
+//      TensorT* tmp_data;
+//      if (typeid(device).name() == typeid(Eigen::DefaultDevice).name()) {
+//        tmp_data = new TensorT[batch_size*layer_size];
+//      }
+//#if COMPILE_WITH_CUDA
+//      else if (typeid(device).name() == typeid(Eigen::GpuDevice).name()) {
+//        size_t bytes = batch_size * layer_size * sizeof(TensorT);
+//        assert(cudaMalloc((void**)(&tmp_data), bytes) == cudaSuccess);
+//      }
+//#endif
+//      // find the maximum value for each batch
+//      auto predicted_chip = predicted_tensor.chip(time_step, 1);
+//      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> max_tensor(tmp_data, batch_size, layer_size);
+//      max_tensor = predicted_chip.maximum(Eigen::array<int, 1>({ 1 })).broadcast(Eigen::array<int, 2>({ 1, layer_size }));
+//
+//
+//      // calculate the confusion matrix
+//      auto tp = (predicted_chip.chip(0, 2) >= (max_tensor - max_tensor.constant(TensorT(1e-6))) && expected_tensor > expected_tensor.constant(TensorT(this->threshold_positive_))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
+//      auto fp = (predicted_chip.chip(0, 2) >= (max_tensor - max_tensor.constant(TensorT(1e-6))) && expected_tensor < expected_tensor.constant(TensorT(this->threshold_negative_))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
+//      auto fn = (predicted_chip.chip(0, 2) < max_tensor && expected_tensor > expected_tensor.constant(TensorT(this->threshold_positive_))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));
+//
+//      // calculate the F1 score
+//      auto precision = tp.sum() / (tp.sum() + fp.sum());
+//      auto recall = tp.sum() / (tp.sum() + fn.sum());
+//      auto f1score = precision.constant(TensorT(2))*precision*recall / (precision + recall);
+//      error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += f1score;
+//
+//      // deallocate temporary memory
+//      if (typeid(device).name() == typeid(Eigen::DefaultDevice).name()) {
+//        delete[] tmp_data;
+//      }
+//#if COMPILE_WITH_CUDA
+//      else if (typeid(device).name() == typeid(Eigen::GpuDevice).name()) {
+//        assert(cudaFree(tmp_data) == cudaSuccess);
+//      }
+//#endif
 
       //// DEBUG
       //std::cout << "precision: " << precision << std::endl;
