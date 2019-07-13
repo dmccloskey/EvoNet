@@ -549,7 +549,6 @@ public:
     const int n_de_hidden_0 = 64;
     const int n_de_hidden_1 = 64;
     const int n_de_hidden_2 = 0;
-    const int n_class_hidden_0 = 8;
     ModelBuilder<TensorT> model_builder;
 
     // Add the inputs
@@ -752,40 +751,14 @@ public:
     for (const std::string& node_name : node_names)
       model.getNodesMap().at(node_name)->setType(NodeType::output);
 
-    // Add the classification decoding layers
-    if (n_class_hidden_0 > 0) {
-      node_names = model_builder.addFullyConnected(model, "CDE0", "CDE0", node_names_encoding, n_class_hidden_0,
-        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
-        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
-        //std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-        //std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
-        std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-        std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-        std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-        std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_encoding.size() + n_class_hidden_0) / 2, 1)),
-        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
-      if (add_norm) {
-        node_names = model_builder.addNormalization(model, "CDE0-Norm", "CDE0-Norm", node_names, true);
-        node_names = model_builder.addSinglyConnected(model, "CDE0-Norm-gain", "CDE0-Norm-gain", node_names, node_names.size(),
-          std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()), // Nonlinearity occures after the normalization
-          std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
-          std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-          std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-          std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-          std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
-          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)),
-          0.0, 0.0, true, true);
-      }
-    }
-
     // Add the classification output layer
-    node_names = model_builder.addFullyConnected(model, "Output-Class", "Output-Class", node_names, n_outputs_class,
+    node_names = model_builder.addFullyConnected(model, "Output-Class", "Output-Class", node_names_mu, n_outputs_class,
       std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
       std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
       std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_encoding.size() + n_outputs_class) / 2, 1)),
+      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_mu.size() + n_outputs_class) / 2, 1)),
       std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
 
     // Specify the classificaiton output node types manually

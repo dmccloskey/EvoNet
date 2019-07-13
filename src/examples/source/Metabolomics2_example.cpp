@@ -752,7 +752,7 @@ public:
       model.getNodesMap().at(node_name)->setType(NodeType::output);
 
     // Add the classification output layer
-    node_names = model_builder.addFullyConnected(model, "Output-Class", "Output-Class", node_names_encoding, n_outputs_class,
+    node_names = model_builder.addFullyConnected(model, "Output-Class", "Output-Class", node_names_mu, n_outputs_class,
       std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
       std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
       std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),

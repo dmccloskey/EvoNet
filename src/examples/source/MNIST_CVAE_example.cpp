@@ -286,7 +286,7 @@ public:
     const int n_input_pixels = this->validation_data.dimension(1);
 
     assert(n_output_nodes == n_input_pixels + 2 * n_encodings_ + n_categorical_); // mu, logvar, logalpha
-    assert(n_output_nodes == n_categorical_ + n_metric_output_nodes);
+    assert(n_metric_output_nodes == n_categorical_ + n_input_pixels);
     assert(n_input_nodes == n_input_pixels + n_encodings_ + 2 * n_categorical_); // Guassian sampler, Gumbel sampler, inverse tau
 
     // make the start and end sample indices
@@ -334,7 +334,7 @@ public:
     const int n_input_pixels = this->validation_data.dimension(1);
 
     assert(n_output_nodes == n_input_pixels + 2 * n_encodings_ + n_categorical_); // mu, logvar, logalpha
-    assert(n_output_nodes == n_categorical_ + n_metric_output_nodes);
+    assert(n_metric_output_nodes == n_categorical_ + n_input_pixels);
     assert(n_input_nodes == n_input_pixels + n_encodings_ + 2 * n_categorical_); // Guassian sampler, Gumbel sampler, inverse tau
 
     // make the start and end sample indices
@@ -505,7 +505,7 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
 	ModelTrainerExt<float> model_trainer;
 	//model_trainer.setBatchSize(1); // evaluation only
 	model_trainer.setBatchSize(64);
-	model_trainer.setNEpochsTraining(1001);
+	model_trainer.setNEpochsTraining(100001);
 	model_trainer.setNEpochsValidation(25);
 	model_trainer.setNEpochsEvaluation(0);
 	model_trainer.setMemorySize(1);
@@ -518,13 +518,13 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
 		std::shared_ptr<LossFunctionOp<float>>(new BCEWithLogitsOp<float>(1e-6, 1.0)),
 		std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceMuOp<float>(1e-6, 0.5)),
 		std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceLogVarOp<float>(1e-6, 0.5)),
-		std::shared_ptr<LossFunctionOp<float>>(new CrossEntropyWithLogitsOp<float>(1e-6, 1.0)) });
+		std::shared_ptr<LossFunctionOp<float>>(new CrossEntropyWithLogitsOp<float>(1e-6, 0.1)) });
 	model_trainer.setLossFunctionGrads({
 		//std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>(1e-6, 1.0)),
 		std::shared_ptr<LossFunctionGradOp<float>>(new BCEWithLogitsGradOp<float>(1e-6, 1.0)),
 		std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceMuGradOp<float>(1e-6, 0.5)),
 		std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceLogVarGradOp<float>(1e-6, 0.5)),
-		std::shared_ptr<LossFunctionGradOp<float>>(new CrossEntropyWithLogitsGradOp<float>(1e-6, 1.0)) });
+		std::shared_ptr<LossFunctionGradOp<float>>(new CrossEntropyWithLogitsGradOp<float>(1e-6, 0.1)) });
 	model_trainer.setLossOutputNodes({ output_nodes, encoding_nodes_mu, encoding_nodes_logvar, encoding_nodes_logalpha });
   model_trainer.setMetricFunctions({ std::shared_ptr<MetricFunctionOp<float>>(new MAEOp<float>()), std::shared_ptr<MetricFunctionOp<float>>(new PrecisionMCMicroOp<float>()) });
   model_trainer.setMetricOutputNodes({ output_nodes, encoding_nodes_logalpha });
