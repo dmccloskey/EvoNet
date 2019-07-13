@@ -165,10 +165,10 @@ public:
     assert(n_input_nodes == 1);
     assert(memory_size == 784);
 
-    // make the start and end sample indices [BUG FREE]
+    // make the start and end sample indices
     Eigen::Tensor<int, 1> sample_indices = this->getTrainingIndices(batch_size, 1);
 
-    // Reformat the input data for training [BUG FREE]
+    // Reformat the input data for training
     for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
       for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
         for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
