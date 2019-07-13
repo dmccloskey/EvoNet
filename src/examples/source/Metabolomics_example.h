@@ -558,34 +558,32 @@ public:
         Eigen::Tensor<TensorT, 1> one_hot_vec_smoothed = one_hot_vec.unaryExpr(LabelSmoother<TensorT>(0.01, 0.01));
 
         // assign the input, loss_output, and metric_output node values
-        int classes_iter = 0;
-        for (int nodes_iter = 0; nodes_iter < n_input_pixels + n_encodings_ + n_classes; ++nodes_iter) {
+        for (int nodes_iter = 0; nodes_iter < n_input_pixels; ++nodes_iter) {
           if (nodes_iter < n_input_pixels) {
             TensorT value;
             if (train) value = this->model_training_.calculateMAR(
-                this->model_training_.metabolomicsData_.at(sample_group_name),
-                this->model_training_.biochemicalReactions_.at(this->model_training_.reaction_ids_.at(nodes_iter)));
+              this->model_training_.metabolomicsData_.at(sample_group_name),
+              this->model_training_.biochemicalReactions_.at(this->model_training_.reaction_ids_.at(nodes_iter)));
             else value = this->model_validation_.calculateMAR(
-                this->model_validation_.metabolomicsData_.at(sample_group_name),
-                this->model_validation_.biochemicalReactions_.at(this->model_validation_.reaction_ids_.at(nodes_iter)));
+              this->model_validation_.metabolomicsData_.at(sample_group_name),
+              this->model_validation_.biochemicalReactions_.at(this->model_validation_.reaction_ids_.at(nodes_iter)));
             input_data(batch_iter, memory_iter, nodes_iter) = value; // input concentration data
             loss_output_data(batch_iter, memory_iter, nodes_iter) = 0; // reconstruction output loss
             metric_output_data(batch_iter, memory_iter, nodes_iter) = 0; // reconstruction output metric
           }
-          else if (nodes_iter >= n_input_pixels && nodes_iter < n_input_pixels + n_encodings_) {
+          if (nodes_iter < n_encodings_) {
             TensorT random_value;
             if (train) random_value = d(gen);
             else random_value = 0;
-            input_data(batch_iter, memory_iter, nodes_iter) = random_value; // sample from a normal distribution
-            loss_output_data(batch_iter, memory_iter, nodes_iter) = 0; // Dummy data for KL divergence mu
-            loss_output_data(batch_iter, memory_iter, nodes_iter + n_encodings_) = 0; // Dummy data for KL divergence logvar
+            input_data(batch_iter, memory_iter, nodes_iter + n_input_pixels) = random_value; // sample from a normal distribution
+            loss_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels) = 0; // Dummy data for KL divergence mu
+            loss_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels + n_encodings_) = 0; // Dummy data for KL divergence logvar
           }
-          else {
-            loss_output_data(batch_iter, memory_iter, nodes_iter + n_encodings_) = one_hot_vec_smoothed(classes_iter); // classification output loss (XEntropy)
-            metric_output_data(batch_iter, memory_iter, nodes_iter - n_encodings_) = one_hot_vec(classes_iter); // classification metric loss (Accuracy)
-            loss_output_data(batch_iter, memory_iter, nodes_iter + n_encodings_ + n_classes) = one_hot_vec(classes_iter); // classification output loss (MSE)
-            metric_output_data(batch_iter, memory_iter, nodes_iter - n_encodings_ + n_classes) = one_hot_vec(classes_iter); // classification metric loss (Precision)
-            ++classes_iter;
+          if (nodes_iter < n_classes) {
+            loss_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels + 2 * n_encodings_) = one_hot_vec_smoothed(nodes_iter); // classification output loss (XEntropy)
+            metric_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels) = one_hot_vec(nodes_iter); // classification metric loss (Accuracy)
+            loss_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels + 2 * n_encodings_ + n_classes) = one_hot_vec(nodes_iter); // classification output loss (MSE)
+            metric_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels + n_classes) = one_hot_vec(nodes_iter); // classification metric loss (Precision)
           }
         }
       }

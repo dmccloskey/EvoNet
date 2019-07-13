@@ -180,13 +180,6 @@ public:
         }
       }
     }
-
-    // reformat the output data for training [BUG FREE]
-    for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter)
-      for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter)
-        for (int nodes_iter = 0; nodes_iter < this->training_labels.dimension(1); ++nodes_iter)
-
-          time_steps.setConstant(1.0f);
   }
   void simulateValidationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps)
   {
@@ -217,8 +210,6 @@ public:
         }
       }
     }
-
-    time_steps.setConstant(1.0f);
   }
 };
 

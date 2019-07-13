@@ -71,7 +71,7 @@ public:
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
       std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((TensorT)(node_names.size() + node_names.size()) / 2, 1)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-3)), 0.0f, 0.0f, false, specify_layer);
+      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, specify_layer);
     if (add_norm) {
       node_names = model_builder.addNormalization(model, "EN1-Norm", "EN1-Norm", node_names, true);
       node_names = model_builder.addSinglyConnected(model, "EN1-Norm-gain", "EN1-Norm-gain", node_names, node_names.size(),
@@ -171,14 +171,14 @@ public:
     Model<TensorT>& model,
     ModelInterpreterDefaultDevice<TensorT>& model_interpreter,
     const std::vector<float>& model_errors) {
-    if (n_epochs % 1000 == 0 && n_epochs > 5000) {
-      // anneal the learning rate by half on each plateau
-      TensorT lr_new = this->reduceLROnPlateau(model_errors, 0.5, 100, 10, 0.05);
-      if (lr_new < 1.0) {
-        model_interpreter.updateSolverParams(0, lr_new);
-        std::cout << "The learning rate has been annealed by a factor of " << lr_new << std::endl;
-      }
-    }
+    //if (n_epochs % 1000 == 0 && n_epochs > 5000) {
+    //  // anneal the learning rate by half on each plateau
+    //  TensorT lr_new = this->reduceLROnPlateau(model_errors, 0.5, 100, 10, 0.05);
+    //  if (lr_new < 1.0) {
+    //    model_interpreter.updateSolverParams(0, lr_new);
+    //    std::cout << "The learning rate has been annealed by a factor of " << lr_new << std::endl;
+    //  }
+    //}
     if (n_epochs % 1000 == 0 && n_epochs != 0) {
       // save the model every 1000 epochs
       model_interpreter.getModelResults(model, false, true, false);
@@ -188,7 +188,9 @@ public:
       interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
     }
   }
-  void trainingModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger, const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const TensorT & model_error_train, const TensorT & model_error_test)
+  void trainingModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
+    const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const TensorT & model_error_train, const TensorT & model_error_test,
+    const Eigen::Tensor<TensorT, 1> & model_metrics_train, const Eigen::Tensor<TensorT, 1> & model_metrics_test)
   {
     // Set the defaults
     model_logger.setLogTimeEpoch(true);
@@ -197,23 +199,30 @@ public:
 
     // initialize all logs
     if (n_epochs == 0) {
-      model_logger.setLogExpectedPredictedEpoch(true);
+      //model_logger.setLogExpectedPredictedEpoch(true);
       model_logger.initLogs(model);
     }
 
-    // Per n epoch logging
-    if (n_epochs % 1000 == 0) {
-      model_logger.setLogExpectedPredictedEpoch(true);
-      if (model_logger.getLogExpectedPredictedEpoch())
-        model_interpreter.getModelResults(model, true, false, false);
-      model_logger.writeLogs(model, n_epochs, { "Train_Error" }, { "Test_Error" }, { model_error_train }, { model_error_test }, output_nodes, expected_values);
+    //// Per n epoch logging
+    //if (n_epochs % 10 == 0) {
+    //  model_logger.setLogExpectedPredictedEpoch(true);
+    //  model_interpreter.getModelResults(model, true, false, false);
+    //}
+
+    // Create the metric headers and data arrays
+    std::vector<std::string> log_train_headers = { "Train_Error" };
+    std::vector<std::string> log_test_headers = { "Test_Error" };
+    std::vector<TensorT> log_train_values = { model_error_train };
+    std::vector<TensorT> log_test_values = { model_error_test };
+    int metric_iter = 0;
+    for (const std::string& metric_name : this->metric_names_) {
+      log_train_headers.push_back(metric_name);
+      log_test_headers.push_back(metric_name);
+      log_train_values.push_back(model_metrics_train(metric_iter));
+      log_test_values.push_back(model_metrics_test(metric_iter));
+      ++metric_iter;
     }
-    else if (n_epochs % 10 == 0) {
-      model_logger.setLogExpectedPredictedEpoch(false);
-      if (model_logger.getLogExpectedPredictedEpoch())
-        model_interpreter.getModelResults(model, true, false, false);
-      model_logger.writeLogs(model, n_epochs, { "Train_Error" }, { "Test_Error" }, { model_error_train }, { model_error_test }, output_nodes, expected_values);
-    }
+    model_logger.writeLogs(model, n_epochs, log_train_headers, log_test_headers, log_train_values, log_test_values, output_nodes, expected_values);
   }
 };
 
@@ -221,81 +230,76 @@ template<typename TensorT>
 class DataSimulatorExt : public MNISTSimulator<TensorT>
 {
 public:
-  void simulateTrainingData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps)
+  int n_encodings_;
+  void simulateTrainingData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps)
   {
     // infer data dimensions based on the input tensors
     const int batch_size = input_data.dimension(0);
     const int memory_size = input_data.dimension(1);
     const int n_input_nodes = input_data.dimension(2);
-    const int n_output_nodes = output_data.dimension(2);
+    const int n_output_nodes = loss_output_data.dimension(2);
+    const int n_metric_output_nodes = metric_output_data.dimension(2);
     const int n_input_pixels = this->validation_data.dimension(1);
-    const int n_encodings = 16; // not ideal to have this hard coded...
 
-    assert(n_output_nodes == n_input_pixels + 2 * n_encodings);
-    assert(n_input_nodes == n_input_pixels + n_encodings);
+    assert(n_output_nodes == n_input_pixels + 2 * n_encodings_);
+    assert(n_metric_output_nodes == n_metric_output_nodes);
+    assert(n_input_nodes == n_input_pixels + n_encodings_);
 
-    // make a vector of sample_indices
+    // make the start and end sample indices
     Eigen::Tensor<int, 1> sample_indices = this->getTrainingIndices(batch_size, 1);
 
     std::random_device rd{};
     std::mt19937 gen{ rd() };
     std::normal_distribution<> d{ 1.0f, 1.0f };
-    // Reformat the MNIST image data for training
+
+    // Reformat the input data for training
     for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
       for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
-        for (int nodes_iter = 0; nodes_iter < n_input_pixels + 2 * n_encodings; ++nodes_iter) {
-          if (nodes_iter < n_input_pixels) {
-            input_data(batch_iter, memory_iter, nodes_iter) = this->training_data(sample_indices[batch_iter], nodes_iter);
-            output_data(batch_iter, memory_iter, nodes_iter) = this->training_data(sample_indices[batch_iter], nodes_iter);
-          }
-          else if (nodes_iter >= n_input_pixels && nodes_iter < n_input_pixels + n_encodings) {
-            input_data(batch_iter, memory_iter, nodes_iter) = d(gen); // sample from a normal distribution
-            output_data(batch_iter, memory_iter, nodes_iter) = 0; // Dummy data for KL divergence mu
-          }
-          else {
-            output_data(batch_iter, memory_iter, nodes_iter) = 0; // Dummy data for KL divergence logvar
+        for (int nodes_iter = 0; nodes_iter < n_input_pixels; ++nodes_iter) {
+          input_data(batch_iter, memory_iter, nodes_iter) = this->training_data(sample_indices[batch_iter], nodes_iter);
+          loss_output_data(batch_iter, memory_iter, nodes_iter) = this->training_data(sample_indices[batch_iter], nodes_iter);
+          metric_output_data(batch_iter, memory_iter, nodes_iter) = this->training_data(sample_indices[batch_iter], nodes_iter);
+          if (nodes_iter < n_encodings_) {
+            input_data(batch_iter, memory_iter, nodes_iter + n_input_pixels) = d(gen); // sample from a normal distribution
+            loss_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels) = 0; // Dummy data for KL divergence mu
+            loss_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels + n_encodings_) = 0; // Dummy data for KL divergence logvar
           }
         }
       }
     }
-
-    time_steps.setConstant(1.0f);
   }
-  void simulateValidationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps)
+  void simulateValidationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps)
   {
     // infer data dimensions based on the input tensors
     const int batch_size = input_data.dimension(0);
     const int memory_size = input_data.dimension(1);
     const int n_input_nodes = input_data.dimension(2);
-    const int n_output_nodes = output_data.dimension(2);
+    const int n_output_nodes = loss_output_data.dimension(2);
+    const int n_metric_output_nodes = metric_output_data.dimension(2);
     const int n_input_pixels = this->validation_data.dimension(1);
-    const int n_encodings = 16; // not ideal to have this hard coded...
 
-    assert(n_output_nodes == n_input_pixels + 2 * n_encodings);
-    assert(n_input_nodes == n_input_pixels + n_encodings);
+    assert(n_output_nodes == n_input_pixels + 2 * n_encodings_);
+    assert(n_metric_output_nodes == n_metric_output_nodes);
+    assert(n_input_nodes == n_input_pixels + n_encodings_);
 
-    // make a vector of sample_indices [BUG FREE]
+    // make the start and end sample indices
     Eigen::Tensor<int, 1> sample_indices = this->getValidationIndices(batch_size, 1);
 
-    // Reformat the MNIST image data for training
+    // Reformat the input data for validation
     for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
       for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
-        for (int nodes_iter = 0; nodes_iter < n_input_pixels + 2 * n_encodings; ++nodes_iter) {
-          if (nodes_iter < n_input_pixels) {
-            input_data(batch_iter, memory_iter, nodes_iter) = this->validation_data(sample_indices[batch_iter], nodes_iter);
-            output_data(batch_iter, memory_iter, nodes_iter) = this->validation_data(sample_indices[batch_iter], nodes_iter);
-          }
-          else if (nodes_iter >= n_input_pixels && nodes_iter < n_input_pixels + n_encodings) {
-            input_data(batch_iter, memory_iter, nodes_iter) = 0; // sample from a normal distribution
-            output_data(batch_iter, memory_iter, nodes_iter) = 0; // Dummy data for KL divergence mu
-          }
-          else {
-            output_data(batch_iter, memory_iter, nodes_iter) = 0; // Dummy data for KL divergence logvar
+        for (int nodes_iter = 0; nodes_iter < n_input_pixels; ++nodes_iter) {
+          input_data(batch_iter, memory_iter, nodes_iter) = this->validation_data(sample_indices[batch_iter], nodes_iter);
+          loss_output_data(batch_iter, memory_iter, nodes_iter) = this->validation_data(sample_indices[batch_iter], nodes_iter);
+          metric_output_data(batch_iter, memory_iter, nodes_iter) = this->validation_data(sample_indices[batch_iter], nodes_iter);
+          if (nodes_iter < n_encodings_) {
+            input_data(batch_iter, memory_iter, nodes_iter + n_input_pixels) = 0; // sample from a normal distribution
+            loss_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels) = 0; // Dummy data for KL divergence mu
+            loss_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels + n_encodings_) = 0; // Dummy data for KL divergence logvar
           }
         }
       }
     }
-    time_steps.setConstant(1.0f);
   }
 };
 
@@ -315,7 +319,7 @@ class PopulationTrainerExt : public PopulationTrainerDefaultDevice<TensorT>
   Data processing:
   - whole image pixels (linearized) 28x28 normalized to 0 to 1
  */
-void main_MNIST(const bool& make_model, const bool& train_model) {
+void main_MNIST(const std::string& data_dir, const bool& make_model, const bool& train_model) {
 
   const int n_hard_threads = std::thread::hardware_concurrency();
   const int n_threads = 1;
@@ -340,25 +344,16 @@ void main_MNIST(const bool& make_model, const bool& train_model) {
   DataSimulatorExt<float> data_simulator;
 
   // read in the training data
-  std::string training_data_filename, training_labels_filename;
-  //training_data_filename = "/home/user/data/train-images-idx3-ubyte";
-  //training_labels_filename = "/home/user/data/train-labels-idx1-ubyte";
-  training_data_filename = "C:/Users/domccl/GitHub/mnist/train-images.idx3-ubyte";
-  training_labels_filename = "C:/Users/domccl/GitHub/mnist/train-labels.idx1-ubyte";
-  //training_data_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/train-images-idx3-ubyte";
-  //training_labels_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/train-labels-idx1-ubyte";
+  std::string training_data_filename = data_dir + "train-images.idx3-ubyte";
+  std::string training_labels_filename = data_dir + "train-labels.idx1-ubyte";
   data_simulator.readData(training_data_filename, training_labels_filename, true, training_data_size, input_size);
 
   // read in the validation data
-  std::string validation_data_filename, validation_labels_filename;
-  //validation_data_filename = "/home/user/data/t10k-images-idx3-ubyte";
-  //validation_labels_filename = "/home/user/data/t10k-labels-idx1-ubyte";
-  validation_data_filename = "C:/Users/domccl/GitHub/mnist/t10k-images.idx3-ubyte";
-  validation_labels_filename = "C:/Users/domccl/GitHub/mnist/t10k-labels.idx1-ubyte";
-  //validation_data_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/t10k-images-idx3-ubyte";
-  //validation_labels_filename = "C:/Users/dmccloskey/Documents/GitHub/mnist/t10k-labels-idx1-ubyte";
+  std::string validation_data_filename = data_dir + "t10k-images.idx3-ubyte";
+  std::string validation_labels_filename = data_dir + "t10k-labels.idx1-ubyte";
   data_simulator.readData(validation_data_filename, validation_labels_filename, false, validation_data_size, input_size);
   data_simulator.unitScaleData();
+  data_simulator.n_encodings_ = encoding_size;
 
   // Make the input nodes
   std::vector<std::string> input_nodes;
@@ -433,6 +428,9 @@ void main_MNIST(const bool& make_model, const bool& train_model) {
     std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceMuGradOp<float>(1e-6, 0.1)),
     std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceLogVarGradOp<float>(1e-6, 0.1)) });
   model_trainer.setLossOutputNodes({ output_nodes, encoding_nodes_mu, encoding_nodes_logvar });
+  model_trainer.setMetricFunctions({ std::shared_ptr<MetricFunctionOp<float>>(new MAEOp<float>()) });
+  model_trainer.setMetricOutputNodes({ output_nodes });
+  model_trainer.setMetricNames({ "MAE" });
 
   // define the model replicator
   ModelReplicatorExt<float> model_replicator;
@@ -446,7 +444,6 @@ void main_MNIST(const bool& make_model, const bool& train_model) {
   else {
     // read in the trained model
     std::cout << "Reading in the model..." << std::endl;
-    const std::string data_dir = "C:/Users/domccl/Desktop/EvoNetExp/MNIST_VAE_GPU/GPU5/";
     const std::string model_filename = data_dir + "VAE_1000_model.binary";
     const std::string interpreter_filename = data_dir + "VAE_1000_interpreter.binary";
     ModelFile<float> model_file;
