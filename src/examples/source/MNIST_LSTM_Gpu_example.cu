@@ -170,13 +170,17 @@ public:
 
     // Reformat the input data for training
     for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
+
+      // Assign the final output data (only once)
+      for (int nodes_iter = 0; nodes_iter < this->training_labels.dimension(1); ++nodes_iter) {
+        loss_output_data(batch_iter, 0, nodes_iter) = (TensorT)this->training_labels(sample_indices[batch_iter], nodes_iter);
+        metric_output_data(batch_iter, 0, nodes_iter) = (TensorT)this->training_labels(sample_indices[batch_iter], nodes_iter);
+      }
+
+      // Assign the input data
       for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
         for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
           input_data(batch_iter, memory_iter, nodes_iter) = this->training_data(sample_indices[batch_iter], memory_iter);
-        }
-        for (int nodes_iter = 0; nodes_iter < this->training_labels.dimension(1); ++nodes_iter) {
-          loss_output_data(batch_iter, memory_iter, nodes_iter) = (TensorT)this->training_labels(sample_indices[batch_iter], nodes_iter);
-          metric_output_data(batch_iter, memory_iter, nodes_iter) = (TensorT)this->training_labels(sample_indices[batch_iter], nodes_iter);
         }
       }
     }
@@ -200,13 +204,15 @@ public:
 
     // Reformat the input data for validation
     for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
+      // Assign the output data
+      for (int nodes_iter = 0; nodes_iter < this->validation_labels.dimension(1); ++nodes_iter) {
+        loss_output_data(batch_iter, 0, nodes_iter) = (TensorT)this->validation_labels(sample_indices[batch_iter], nodes_iter);
+        metric_output_data(batch_iter, 0, nodes_iter) = (TensorT)this->validation_labels(sample_indices[batch_iter], nodes_iter);
+      }
+      // Assign the input data
       for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
         for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
           input_data(batch_iter, memory_iter, nodes_iter) = this->validation_data(sample_indices[batch_iter], memory_iter);
-        }
-        for (int nodes_iter = 0; nodes_iter < this->validation_labels.dimension(1); ++nodes_iter) {
-          loss_output_data(batch_iter, memory_iter, nodes_iter) = (TensorT)this->validation_labels(sample_indices[batch_iter], nodes_iter);
-          metric_output_data(batch_iter, memory_iter, nodes_iter) = (TensorT)this->validation_labels(sample_indices[batch_iter], nodes_iter);
         }
       }
     }
