@@ -1632,8 +1632,8 @@ int main(int argc, char** argv)
   //main_statistics_timecourseSummary(data_dir, 
   //	true, true, true, true, true,
   //	true);
-  //main_classification(data_dir, true, false, true);
+  main_classification(data_dir, true, true, true);
   //main_reconstruction(data_dir, true, false, true);
-  main_multiTask(data_dir, true, false, true);
+  //main_multiTask(data_dir, true, false, true);
   return 0;
 }

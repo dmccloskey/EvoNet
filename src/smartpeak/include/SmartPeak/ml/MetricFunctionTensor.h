@@ -105,7 +105,7 @@ namespace SmartPeak
       // find the maximum value for each batch
       auto predicted_chip = predicted_tensor.chip(time_step, 1);
       Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> max_tensor(tmp_data, batch_size, layer_size);
-      max_tensor = predicted_chip.maximum(Eigen::array<int, 1>({ 1 })).broadcast(Eigen::array<int, 2>({ 1, layer_size }));
+      max_tensor.device(device) = predicted_chip.maximum(Eigen::array<int, 1>({ 1 })).broadcast(Eigen::array<int, 2>({ 1, layer_size }));
 
       // calculate the confusion matrix
       auto tp = (predicted_chip.chip(0, 2) >= (max_tensor - max_tensor.constant(TensorT(1e-6))) && expected_tensor > expected_tensor.constant(TensorT(this->threshold_positive_))).select(expected_tensor.constant(TensorT(1)), expected_tensor.constant(TensorT(0)));

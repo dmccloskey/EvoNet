@@ -46,7 +46,8 @@ public:
       std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)node_names_input.size()/2, 1)),
+      //std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(0.4)),
+      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((TensorT)(node_names_input.size() + n_blocks) / 2, 1)),
       std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-3, 10.0)),
       0.0f, 0.0f, false, true, 1, specify_layers);
     node_names = model_builder.addLSTM(model, "LSTM-02", "LSTM-02", node_names, n_blocks, n_cells,
@@ -55,12 +56,13 @@ public:
       std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)node_names.size() / 2, 1)),
+      //std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(0.4)),
+      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_blocks) / 2, 1)),
       std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-3, 10.0)),
       0.0f, 0.0f, false, true, 1, specify_layers);
 
    // Add a fully connected layer
-   node_names = model_builder.addFullyConnected(model, "FC-01", "FC-01", node_names, n_outputs,
+   node_names = model_builder.addFullyConnected(model, "FC-01", "FC-01", node_names, n_hidden,
      std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
      std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
      std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
@@ -76,8 +78,8 @@ public:
       std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(1/(TensorT)node_names.size(), 10/(TensorT)node_names.size())),
-      //std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 2)),
+      //std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(1/(TensorT)node_names.size(), 10/(TensorT)node_names.size())),
+      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 2)),
       std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-3, 10.0)), 0.0f, 0.0f, false, true);
 
     for (const std::string& node_name : node_names)
@@ -149,59 +151,70 @@ template<typename TensorT>
 class DataSimulatorExt : public MNISTSimulator<TensorT>
 {
 public:
-  void simulateTrainingData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps)
+  void simulateTrainingData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps)
   {
     // infer data dimensions based on the input tensors
     const int batch_size = input_data.dimension(0);
     const int memory_size = input_data.dimension(1);
     const int n_input_nodes = input_data.dimension(2);
-    const int n_output_nodes = output_data.dimension(2);
+    const int n_output_nodes = loss_output_data.dimension(2);
+    const int n_metric_output_nodes = metric_output_data.dimension(2);
 
-    assert(n_output_nodes == this->validation_labels.dimension(1));
+    assert(n_output_nodes == this->training_labels.dimension(1));
+    assert(n_metric_output_nodes == this->training_labels.dimension(1));
     assert(n_input_nodes == 1);
 
     // make the start and end sample indices [BUG FREE]
     Eigen::Tensor<int, 1> sample_indices = this->getTrainingIndices(batch_size, 1);
 
     // Reformat the input data for training [BUG FREE]
-    for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter)
-      for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter)
-        for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter)
+    for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
+      for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
+        for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
           input_data(batch_iter, memory_iter, nodes_iter) = this->training_data(sample_indices[batch_iter], nodes_iter);
+        }
+        for (int nodes_iter = 0; nodes_iter < this->training_labels.dimension(1); ++nodes_iter) {
+          loss_output_data(batch_iter, memory_iter, nodes_iter) = (TensorT)this->training_labels(sample_indices[batch_iter], nodes_iter);
+          metric_output_data(batch_iter, memory_iter, nodes_iter) = (TensorT)this->training_labels(sample_indices[batch_iter], nodes_iter);
+        }
+      }
+    }
 
     // reformat the output data for training [BUG FREE]
     for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter)
       for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter)
         for (int nodes_iter = 0; nodes_iter < this->training_labels.dimension(1); ++nodes_iter)
-          output_data(batch_iter, memory_iter, nodes_iter) = (TensorT)this->training_labels(sample_indices[batch_iter], nodes_iter);
 
     time_steps.setConstant(1.0f);
   }
-  void simulateValidationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps)
+  void simulateValidationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps)
   {
     // infer data dimensions based on the input tensors
     const int batch_size = input_data.dimension(0);
     const int memory_size = input_data.dimension(1);
     const int n_input_nodes = input_data.dimension(2);
-    const int n_output_nodes = output_data.dimension(2);
+    const int n_output_nodes = loss_output_data.dimension(2);
+    const int n_metric_output_nodes = metric_output_data.dimension(2);
 
     assert(n_output_nodes == this->validation_labels.dimension(1));
+    assert(n_metric_output_nodes == this->validation_labels.dimension(1));
     assert(n_input_nodes == 1);
 
     // make the start and end sample indices [BUG FREE]
     Eigen::Tensor<int, 1> sample_indices = this->getValidationIndices(batch_size, 1);
 
     // Reformat the input data for validation [BUG FREE]
-    for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter)
-      for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter)
-        for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter)
+    for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
+      for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
+        for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
           input_data(batch_iter, memory_iter, nodes_iter) = this->validation_data(sample_indices[batch_iter], nodes_iter);
-
-    // reformat the output data for validation [BUG FREE]
-    for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter)
-      for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter)
-        for (int nodes_iter = 0; nodes_iter < this->validation_labels.dimension(1); ++nodes_iter)
-          output_data(batch_iter, memory_iter, nodes_iter) = (TensorT)this->validation_labels(sample_indices[batch_iter], nodes_iter);
+        }
+        for (int nodes_iter = 0; nodes_iter < this->validation_labels.dimension(1); ++nodes_iter) {
+          loss_output_data(batch_iter, memory_iter, nodes_iter) = (TensorT)this->validation_labels(sample_indices[batch_iter], nodes_iter);
+          metric_output_data(batch_iter, memory_iter, nodes_iter) = (TensorT)this->validation_labels(sample_indices[batch_iter], nodes_iter);
+        }
+      }
+    }
 
     time_steps.setConstant(1.0f);
   }
