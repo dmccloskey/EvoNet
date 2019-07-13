@@ -120,15 +120,15 @@ public:
 
     // initialize all logs
     if (n_epochs == 0) {
-      model_logger.setLogExpectedPredictedEpoch(true);
+      //model_logger.setLogExpectedPredictedEpoch(true);
       model_logger.initLogs(model);
     }
 
-    // Per n epoch logging
-    if (n_epochs % 10 == 0) {
-      model_logger.setLogExpectedPredictedEpoch(true);
-      model_interpreter.getModelResults(model, true, false, false);
-    }
+    //// Per n epoch logging
+    //if (n_epochs % 10 == 0) {
+    //  model_logger.setLogExpectedPredictedEpoch(true);
+    //  model_interpreter.getModelResults(model, true, false, false);
+    //}
 
     // Create the metric headers and data arrays
     std::vector<std::string> log_train_headers = { "Train_Error" };
@@ -163,6 +163,7 @@ public:
     assert(n_output_nodes == this->training_labels.dimension(1));
     assert(n_metric_output_nodes == this->training_labels.dimension(1));
     assert(n_input_nodes == 1);
+    assert(memory_size == 784);
 
     // make the start and end sample indices [BUG FREE]
     Eigen::Tensor<int, 1> sample_indices = this->getTrainingIndices(batch_size, 1);
@@ -171,7 +172,7 @@ public:
     for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
       for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
         for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
-          input_data(batch_iter, memory_iter, nodes_iter) = this->training_data(sample_indices[batch_iter], nodes_iter);
+          input_data(batch_iter, memory_iter, nodes_iter) = this->training_data(sample_indices[batch_iter], memory_iter);
         }
         for (int nodes_iter = 0; nodes_iter < this->training_labels.dimension(1); ++nodes_iter) {
           loss_output_data(batch_iter, memory_iter, nodes_iter) = (TensorT)this->training_labels(sample_indices[batch_iter], nodes_iter);
@@ -179,13 +180,6 @@ public:
         }
       }
     }
-
-    // reformat the output data for training [BUG FREE]
-    for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter)
-      for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter)
-        for (int nodes_iter = 0; nodes_iter < this->training_labels.dimension(1); ++nodes_iter)
-
-    time_steps.setConstant(1.0f);
   }
   void simulateValidationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps)
   {
@@ -199,15 +193,16 @@ public:
     assert(n_output_nodes == this->validation_labels.dimension(1));
     assert(n_metric_output_nodes == this->validation_labels.dimension(1));
     assert(n_input_nodes == 1);
+    assert(memory_size == 784);
 
-    // make the start and end sample indices [BUG FREE]
+    // make the start and end sample indices
     Eigen::Tensor<int, 1> sample_indices = this->getValidationIndices(batch_size, 1);
 
-    // Reformat the input data for validation [BUG FREE]
+    // Reformat the input data for validation
     for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
       for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
         for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
-          input_data(batch_iter, memory_iter, nodes_iter) = this->validation_data(sample_indices[batch_iter], nodes_iter);
+          input_data(batch_iter, memory_iter, nodes_iter) = this->validation_data(sample_indices[batch_iter], memory_iter);
         }
         for (int nodes_iter = 0; nodes_iter < this->validation_labels.dimension(1); ++nodes_iter) {
           loss_output_data(batch_iter, memory_iter, nodes_iter) = (TensorT)this->validation_labels(sample_indices[batch_iter], nodes_iter);
@@ -215,8 +210,6 @@ public:
         }
       }
     }
-
-    time_steps.setConstant(1.0f);
   }
 };
 
