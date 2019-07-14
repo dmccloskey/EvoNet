@@ -33,7 +33,7 @@ public:
     model.setName("Classifier");
 
     const int n_hidden_0 = 64;
-    const int n_hidden_1 = 64;
+    const int n_hidden_1 = 0;// 64;
     const int n_hidden_2 = 0;
 
     ModelBuilder<TensorT> model_builder;
@@ -544,10 +544,10 @@ public:
     model.setId(0);
     model.setName("MultiTask");
     const int n_en_hidden_0 = 64;
-    const int n_en_hidden_1 = 64;
+    const int n_en_hidden_1 = 0;// 64;
     const int n_en_hidden_2 = 0;
     const int n_de_hidden_0 = 64;
-    const int n_de_hidden_1 = 64;
+    const int n_de_hidden_1 = 0;// 64;
     const int n_de_hidden_2 = 0;
     ModelBuilder<TensorT> model_builder;
 
@@ -1208,10 +1208,10 @@ void main_classification(const std::string& data_dir, bool make_model = true, bo
   Model<float> model;
   if (make_model) {
     //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, false, false, false, false); // normalization type 0
-    //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, false, false, false); // normalization type 1
+    model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, false, false, false); // normalization type 1
     //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, false, true, false); // normalization type 2
     //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, true, false, true); // normalization type 3
-    model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, true, true, false); // normalization type 4
+    //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, true, true, false); // normalization type 4
 
     //model_trainer.makeModelCovNetClass(model, n_input_nodes, n_output_nodes, true, true, false, 64, 16, 0, 32, false, true); // normalization type 3
 
@@ -1491,7 +1491,7 @@ void main_multiTask(const std::string& data_dir, bool make_model = true, bool si
   else n_input_nodes = reaction_model.component_group_names_.size();
   const int n_output_nodes_recon = n_input_nodes;
   const int n_output_nodes_class = reaction_model.labels_.size();
-  const int encoding_size = 2;
+  const int encoding_size = 8;
   metabolomics_data.n_encodings_ = encoding_size;
 
   // Make the input nodes
@@ -1632,8 +1632,8 @@ int main(int argc, char** argv)
   //main_statistics_timecourseSummary(data_dir, 
   //	true, true, true, true, true,
   //	true);
-  //main_classification(data_dir, true, true, true);
+  main_classification(data_dir, true, false, true);
   //main_reconstruction(data_dir, true, false, true);
-  main_multiTask(data_dir, true, false, true);
+  //main_multiTask(data_dir, true, false, true);
   return 0;
 }
