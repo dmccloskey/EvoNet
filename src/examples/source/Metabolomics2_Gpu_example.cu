@@ -33,7 +33,7 @@ public:
     model.setName("Classifier");
 
     const int n_hidden_0 = 64;
-    const int n_hidden_1 = 0;// 64;
+    const int n_hidden_1 = 64;
     const int n_hidden_2 = 0;
 
     ModelBuilder<TensorT> model_builder;
@@ -544,10 +544,10 @@ public:
     model.setId(0);
     model.setName("MultiTask");
     const int n_en_hidden_0 = 64;
-    const int n_en_hidden_1 = 0;// 64;
+    const int n_en_hidden_1 = 64;
     const int n_en_hidden_2 = 0;
     const int n_de_hidden_0 = 64;
-    const int n_de_hidden_1 = 0;// 64;
+    const int n_de_hidden_1 = 64;
     const int n_de_hidden_2 = 0;
     ModelBuilder<TensorT> model_builder;
 
@@ -803,13 +803,13 @@ public:
     ModelInterpreterGpu<TensorT>& model_interpreter,
     const std::vector<float>& model_errors) {
     // Check point the model every 1000 epochs
-    if (n_epochs % 1000 == 0 && n_epochs != 0) {
-      model_interpreter.getModelResults(model, false, true, false);
-      ModelFile<TensorT> data;
-      data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
-      ModelInterpreterFileGpu<TensorT> interpreter_data;
-      interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
-    }
+    //if (n_epochs % 1000 == 0 && n_epochs != 0) {
+    //  model_interpreter.getModelResults(model, false, true, false);
+    //  ModelFile<TensorT> data;
+    //  data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
+    //  ModelInterpreterFileGpu<TensorT> interpreter_data;
+    //  interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
+    //}
   }
   void trainingModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterGpu<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
     const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const TensorT & model_error_train, const TensorT & model_error_test,
@@ -1174,9 +1174,8 @@ void main_classification(const std::string& data_dir, bool make_model = true, bo
     model_interpreters.push_back(model_interpreter);
   }
   ModelTrainerExt<float> model_trainer;
-  model_trainer.setBatchSize(16);
-  model_trainer.setMemorySize(1);
-  model_trainer.setNEpochsTraining(100000);
+  model_trainer.setBatchSize(64);
+  model_trainer.setNEpochsTraining(10000);
   model_trainer.setNEpochsValidation(0);
   model_trainer.setVerbosityLevel(1);
   model_trainer.setLogging(true, false, false);
@@ -1208,8 +1207,8 @@ void main_classification(const std::string& data_dir, bool make_model = true, bo
   Model<float> model;
   if (make_model) {
     //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, false, false, false, false); // normalization type 0
-    model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, false, false, false); // normalization type 1
-    //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, false, true, false); // normalization type 2
+    //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, false, false, false); // normalization type 1
+    model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, false, true, false); // normalization type 2
     //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, true, false, true); // normalization type 3
     //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, true, true, false); // normalization type 4
 
@@ -1491,7 +1490,7 @@ void main_multiTask(const std::string& data_dir, bool make_model = true, bool si
   else n_input_nodes = reaction_model.component_group_names_.size();
   const int n_output_nodes_recon = n_input_nodes;
   const int n_output_nodes_class = reaction_model.labels_.size();
-  const int encoding_size = 8;
+  const int encoding_size = 3;
   metabolomics_data.n_encodings_ = encoding_size;
 
   // Make the input nodes
@@ -1632,7 +1631,7 @@ int main(int argc, char** argv)
   //main_statistics_timecourseSummary(data_dir, 
   //	true, true, true, true, true,
   //	true);
-  main_classification(data_dir, true, false, true);
+  main_classification(data_dir, true, true, true);
   //main_reconstruction(data_dir, true, false, true);
   //main_multiTask(data_dir, true, false, true);
   return 0;
