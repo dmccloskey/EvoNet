@@ -373,7 +373,7 @@ public:
     const int n_output_nodes = loss_output_data.dimension(2);
     const int n_metric_output_nodes = metric_output_data.dimension(2);
 
-    assert(n_output_nodes == this->training_labels.dimension(1));
+    assert(n_output_nodes == 2*this->training_labels.dimension(1));
     assert(n_metric_output_nodes == this->training_labels.dimension(1));
     assert(n_input_nodes == 784);
     assert(memory_size == 1);
@@ -389,6 +389,7 @@ public:
         }
         for (int nodes_iter = 0; nodes_iter < this->training_labels.dimension(1); ++nodes_iter) {
           loss_output_data(batch_iter, memory_iter, nodes_iter) = (TensorT)this->training_labels(sample_indices[batch_iter], nodes_iter);
+          loss_output_data(batch_iter, memory_iter, nodes_iter + this->training_labels.dimension(1)) = (TensorT)this->training_labels(sample_indices[batch_iter], nodes_iter);
           metric_output_data(batch_iter, memory_iter, nodes_iter) = (TensorT)this->training_labels(sample_indices[batch_iter], nodes_iter);
         }
       }
@@ -403,7 +404,7 @@ public:
     const int n_output_nodes = loss_output_data.dimension(2);
     const int n_metric_output_nodes = metric_output_data.dimension(2);
 
-    assert(n_output_nodes == this->validation_labels.dimension(1));
+    assert(n_output_nodes == 2*this->validation_labels.dimension(1));
     assert(n_metric_output_nodes == this->validation_labels.dimension(1));
     assert(n_input_nodes == 784);
     assert(memory_size == 1);
@@ -419,6 +420,7 @@ public:
         }
         for (int nodes_iter = 0; nodes_iter < this->validation_labels.dimension(1); ++nodes_iter) {
           loss_output_data(batch_iter, memory_iter, nodes_iter) = (TensorT)this->validation_labels(sample_indices[batch_iter], nodes_iter);
+          loss_output_data(batch_iter, memory_iter, nodes_iter + this->validation_labels.dimension(1)) = (TensorT)this->validation_labels(sample_indices[batch_iter], nodes_iter);
           metric_output_data(batch_iter, memory_iter, nodes_iter) = (TensorT)this->validation_labels(sample_indices[batch_iter], nodes_iter);
         }
       }
@@ -509,9 +511,15 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
   model_trainer.setLogging(true);
   model_trainer.setFindCycles(false);
   model_trainer.setFastInterpreter(true);
-  model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new CrossEntropyWithLogitsOp<float>()) });
-  model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new CrossEntropyWithLogitsGradOp<float>()) });
-  model_trainer.setLossOutputNodes({ output_nodes });
+  model_trainer.setLossFunctions({
+    std::shared_ptr<LossFunctionOp<float>>(new CrossEntropyWithLogitsOp<float>()),
+    std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
+  model_trainer.setLossFunctionGrads({
+    std::shared_ptr<LossFunctionGradOp<float>>(new CrossEntropyWithLogitsGradOp<float>()),
+    std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
+  model_trainer.setLossOutputNodes({
+    output_nodes,
+    output_nodes });
   model_trainer.setMetricFunctions({ std::shared_ptr<MetricFunctionOp<float>>(new PrecisionMCMicroOp<float>()) });
   model_trainer.setMetricOutputNodes({ output_nodes });
   model_trainer.setMetricNames({ "PrecisionMCMicro" });
