@@ -345,8 +345,8 @@ protected:
     std::vector<std::string> metric_names_;
 
 private:
-    int batch_size_ = 0;
-    int memory_size_ = 0;
+    int batch_size_ = 1;
+    int memory_size_ = 1;
     int n_epochs_training_ = 0;
 		int n_epochs_validation_ = 0;
 		int n_epochs_evaluation_ = 0;

@@ -104,8 +104,8 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   ModelTrainerExt<float> trainer;
 
   // Test defaults
-  BOOST_CHECK_EQUAL(trainer.getBatchSize(), 0);
-  BOOST_CHECK_EQUAL(trainer.getMemorySize(), 0);
+  BOOST_CHECK_EQUAL(trainer.getBatchSize(), 1);
+  BOOST_CHECK_EQUAL(trainer.getMemorySize(), 1);
   BOOST_CHECK_EQUAL(trainer.getNEpochsTraining(), 0);
   BOOST_CHECK_EQUAL(trainer.getNEpochsValidation(), 0);
   BOOST_CHECK_EQUAL(trainer.getNEpochsEvaluation(), 0);

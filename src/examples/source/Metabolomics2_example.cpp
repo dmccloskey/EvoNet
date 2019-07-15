@@ -131,11 +131,11 @@ public:
       model.getNodesMap().at(node_name)->setType(NodeType::output);
     model.setInputAndOutputNodes();
   }
-  
+
   /*
   @brief CovNet classifier
   */
-  void makeModelCovNetClass(Model<TensorT>& model, const int& n_inputs, const int& n_outputs, const bool& linear_scale_input, const bool& log_transform_input, const bool& standardize_input, 
+  void makeModelCovNetClass(Model<TensorT>& model, const int& n_inputs, const int& n_outputs, const bool& linear_scale_input, const bool& log_transform_input, const bool& standardize_input,
     int n_hidden_0 = 64, int n_depth_1 = 32, int n_depth_2 = 2, int n_fc = 16, bool add_norm = false, bool specify_layers = false) {
     model.setId(0);
     model.setName("CovNet");
@@ -758,7 +758,7 @@ public:
       std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_encoding.size() + n_outputs_class) / 2, 1)),
+      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_mu.size() + n_outputs_class) / 2, 1)),
       std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
 
     // Specify the classificaiton output node types manually
@@ -803,15 +803,15 @@ public:
     ModelInterpreterDefaultDevice<TensorT>& model_interpreter,
     const std::vector<float>& model_errors) {
     // Check point the model every 1000 epochs
-    if (n_epochs % 1000 == 0 && n_epochs != 0) {
-      model_interpreter.getModelResults(model, false, true, false);
-      ModelFile<TensorT> data;
-      data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
-      ModelInterpreterFileDefaultDevice<TensorT> interpreter_data;
-      interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
-    }
+    //if (n_epochs % 1000 == 0 && n_epochs != 0) {
+    //  model_interpreter.getModelResults(model, false, true, false);
+    //  ModelFile<TensorT> data;
+    //  data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
+    //  ModelInterpreterFileDefaultDevice<TensorT> interpreter_data;
+    //  interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
+    //}
   }
-  void trainingModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger, 
+  void trainingModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
     const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const TensorT & model_error_train, const TensorT & model_error_test,
     const Eigen::Tensor<TensorT, 1> & model_metrics_train, const Eigen::Tensor<TensorT, 1> & model_metrics_test)
   {
@@ -1148,7 +1148,7 @@ void main_classification(const std::string& data_dir, bool make_model = true, bo
 
   // define the model input/output nodes
   int n_input_nodes;
-  if (simulate_MARs) n_input_nodes = reaction_model.reaction_ids_.size(); 
+  if (simulate_MARs) n_input_nodes = reaction_model.reaction_ids_.size();
   else n_input_nodes = reaction_model.component_group_names_.size();
   const int n_output_nodes = reaction_model.labels_.size();
   std::vector<std::string> input_nodes;
@@ -1174,23 +1174,23 @@ void main_classification(const std::string& data_dir, bool make_model = true, bo
     model_interpreters.push_back(model_interpreter);
   }
   ModelTrainerExt<float> model_trainer;
-  model_trainer.setBatchSize(16);
+  model_trainer.setBatchSize(128);
   model_trainer.setMemorySize(1);
-  model_trainer.setNEpochsTraining(100000);
+  model_trainer.setNEpochsTraining(1000);
   model_trainer.setNEpochsValidation(0);
   model_trainer.setVerbosityLevel(1);
   model_trainer.setLogging(true, false, false);
   model_trainer.setFindCycles(false);
   model_trainer.setFastInterpreter(true);
   model_trainer.setPreserveOoO(true);
-  model_trainer.setLossFunctions({ 
-    std::shared_ptr<LossFunctionOp<float>>(new CrossEntropyWithLogitsOp<float>()), 
+  model_trainer.setLossFunctions({
+    std::shared_ptr<LossFunctionOp<float>>(new CrossEntropyWithLogitsOp<float>()),
     std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
-  model_trainer.setLossFunctionGrads({ 
-    std::shared_ptr<LossFunctionGradOp<float>>(new CrossEntropyWithLogitsGradOp<float>()), 
+  model_trainer.setLossFunctionGrads({
+    std::shared_ptr<LossFunctionGradOp<float>>(new CrossEntropyWithLogitsGradOp<float>()),
     std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
-  model_trainer.setLossOutputNodes({ 
-    output_nodes, 
+  model_trainer.setLossOutputNodes({
+    output_nodes,
     output_nodes });
   model_trainer.setMetricFunctions({ std::shared_ptr<MetricFunctionOp<float>>(new AccuracyMCMicroOp<float>()), std::shared_ptr<MetricFunctionOp<float>>(new PrecisionMCMicroOp<float>()) });
   model_trainer.setMetricOutputNodes({ output_nodes, output_nodes });
@@ -1208,9 +1208,9 @@ void main_classification(const std::string& data_dir, bool make_model = true, bo
   Model<float> model;
   if (make_model) {
     //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, false, false, false, false); // normalization type 0
-    //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, false, false, false); // normalization type 1
-    model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, false, true, false); // normalization type 2
-    //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, true, false, true); // normalization type 3
+    model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, false, false, false); // normalization type 1
+    //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, false, true, false); // normalization type 2
+    //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, true, false, false); // normalization type 3
     //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, true, true, false); // normalization type 4
 
     //model_trainer.makeModelCovNetClass(model, n_input_nodes, n_output_nodes, true, true, false, 64, 16, 0, 32, false, true); // normalization type 3
@@ -1491,7 +1491,7 @@ void main_multiTask(const std::string& data_dir, bool make_model = true, bool si
   else n_input_nodes = reaction_model.component_group_names_.size();
   const int n_output_nodes_recon = n_input_nodes;
   const int n_output_nodes_class = reaction_model.labels_.size();
-  const int encoding_size = 2;
+  const int encoding_size = 3;
   metabolomics_data.n_encodings_ = encoding_size;
 
   // Make the input nodes
@@ -1579,9 +1579,9 @@ void main_multiTask(const std::string& data_dir, bool make_model = true, bool si
     std::shared_ptr<LossFunctionGradOp<float>>(new CrossEntropyWithLogitsGradOp<float>()),
     std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
   model_trainer.setLossOutputNodes({ output_nodes_recon, encoding_nodes_mu, encoding_nodes_logvar,
-    output_nodes_class, output_nodes_class});
-  model_trainer.setMetricFunctions({ std::shared_ptr<MetricFunctionOp<float>>(new MAEOp<float>()), 
-    std::shared_ptr<MetricFunctionOp<float>>(new AccuracyMCMicroOp<float>()), 
+    output_nodes_class, output_nodes_class });
+  model_trainer.setMetricFunctions({ std::shared_ptr<MetricFunctionOp<float>>(new MAEOp<float>()),
+    std::shared_ptr<MetricFunctionOp<float>>(new AccuracyMCMicroOp<float>()),
     std::shared_ptr<MetricFunctionOp<float>>(new PrecisionMCMicroOp<float>()) });
   model_trainer.setMetricOutputNodes({ output_nodes_recon, output_nodes_class, output_nodes_class });
   model_trainer.setMetricNames({ "MAE", "AccuracyMCMicro", "PrecisionMCMicro" });
@@ -1632,7 +1632,7 @@ int main(int argc, char** argv)
   //main_statistics_timecourseSummary(data_dir, 
   //	true, true, true, true, true,
   //	true);
-  main_classification(data_dir, true, true, true);
+  main_classification(data_dir, true, false, true);
   //main_reconstruction(data_dir, true, false, true);
   //main_multiTask(data_dir, true, false, true);
   return 0;

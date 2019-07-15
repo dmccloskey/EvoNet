@@ -1175,7 +1175,8 @@ void main_classification(const std::string& data_dir, bool make_model = true, bo
   }
   ModelTrainerExt<float> model_trainer;
   model_trainer.setBatchSize(64);
-  model_trainer.setNEpochsTraining(10000);
+  model_trainer.setMemorySize(1);
+  model_trainer.setNEpochsTraining(1000);
   model_trainer.setNEpochsValidation(0);
   model_trainer.setVerbosityLevel(1);
   model_trainer.setLogging(true, false, false);
@@ -1208,8 +1209,8 @@ void main_classification(const std::string& data_dir, bool make_model = true, bo
   if (make_model) {
     //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, false, false, false, false); // normalization type 0
     //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, false, false, false); // normalization type 1
-    model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, false, true, false); // normalization type 2
-    //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, true, false, true); // normalization type 3
+    //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, false, true, false); // normalization type 2
+    model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, true, false, false); // normalization type 3
     //model_trainer.makeModelFCClass(model, n_input_nodes, n_output_nodes, true, true, true, false); // normalization type 4
 
     //model_trainer.makeModelCovNetClass(model, n_input_nodes, n_output_nodes, true, true, false, 64, 16, 0, 32, false, true); // normalization type 3
@@ -1631,7 +1632,7 @@ int main(int argc, char** argv)
   //main_statistics_timecourseSummary(data_dir, 
   //	true, true, true, true, true,
   //	true);
-  main_classification(data_dir, true, true, true);
+  main_classification(data_dir, true, false, true);
   //main_reconstruction(data_dir, true, false, true);
   //main_multiTask(data_dir, true, false, true);
   return 0;
