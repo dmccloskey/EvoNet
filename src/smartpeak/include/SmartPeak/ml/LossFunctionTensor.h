@@ -212,8 +212,8 @@ public:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> error_tensor(error, batch_size, memory_size, layer_size);
 			auto predicted_chip = predicted_tensor.chip(time_step, 1);
 			// NOTE: added - so that the gradient is -
-			error_tensor.chip(time_step, 1).device(device) += ((-expected_tensor / (predicted_chip + expected_tensor.constant(this->eps_)) / expected_tensor.constant((TensorT)layer_size))
-				*error_tensor.chip(time_step, 1).constant(this->scale_)).clip(TensorT(-1e9),TensorT(1e9));
+			error_tensor.chip(time_step, 1).device(device) += ((-expected_tensor / (predicted_chip + expected_tensor.constant(TensorT(this->eps_))) / expected_tensor.constant((TensorT)layer_size))
+				*error_tensor.chip(time_step, 1).constant(TensorT(this->scale_))).clip(TensorT(-1e9),TensorT(1e9));
 		};
 	private:
 		TensorT n_ = (TensorT)1.0; ///< the number of total classifiers
@@ -570,6 +570,51 @@ public:
       auto result = in_range.select(mse_grad, predicted_chip.constant((TensorT)0));
 
       error_tensor.chip(time_step, 1).device(device) += result;
+    };
+  };
+
+  /**
+    @brief KLDivergenceCat loss function.
+
+    See implementation: https://github.com/Schlumberger/joint-vae/blob/master/jointvae/training.py#L311
+  */
+  template<typename TensorT, typename DeviceT>
+  class KLDivergenceCatTensorOp : public LossFunctionTensorOp<TensorT, DeviceT>
+  {
+  public:
+    using LossFunctionTensorOp<TensorT, DeviceT>::LossFunctionTensorOp;
+    std::string getName() { return "KLDivergenceCatTensorOp"; }
+    void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const
+    {
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_tensor(error, batch_size, memory_size);
+      auto predicted_chip = predicted_tensor.chip(time_step, 1);
+
+      auto neg_entropy = (predicted_chip * predicted_chip.log()).sum(Eigen::array<int, 1>({ 1 }));
+      auto log_cat = error_tensor.chip(time_step, 1).constant(layer_size).log();
+
+      error_tensor.chip(time_step, 1).device(device) += (neg_entropy + log_cat).clip(TensorT(-1e9), TensorT(1e9));
+    };
+  };
+
+  /**
+    @brief KLDivergenceCat  loss function gradient.
+  */
+  template<typename TensorT, typename DeviceT>
+  class KLDivergenceCatGradTensorOp : public LossFunctionGradTensorOp<TensorT, DeviceT>
+  {
+  public:
+    using LossFunctionGradTensorOp<TensorT, DeviceT>::LossFunctionGradTensorOp;
+    std::string getName() { return "KLDivergenceCatGradTensorOp"; }
+    void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const
+    {
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> error_tensor(error, batch_size, memory_size, layer_size);
+      auto predicted_chip = predicted_tensor.chip(time_step, 1);
+      // NOTE: changed to -= to ensure a negative gradient
+      error_tensor.chip(time_step, 1).device(device) -= (expected_tensor.constant(TensorT(1)) / (predicted_chip + expected_tensor.constant(TensorT(this->eps_)))).clip(TensorT(-1e9), TensorT(1e9));
     };
   };
 

@@ -411,4 +411,38 @@ BOOST_AUTO_TEST_CASE(gettersAndSettersMSERangeLBGradOp)
   BOOST_CHECK_EQUAL(operation.getName(), "MSERangeLBGradOp");
 }
 
+/**
+  KLDivergenceCatOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorKLDivergenceCatOp)
+{
+  KLDivergenceCatOp<double>* ptrKLDivergenceCat = nullptr;
+  KLDivergenceCatOp<double>* nullPointerKLDivergenceCat = nullptr;
+  BOOST_CHECK_EQUAL(ptrKLDivergenceCat, nullPointerKLDivergenceCat);
+}
+
+BOOST_AUTO_TEST_CASE(destructorKLDivergenceCatOp)
+{
+  KLDivergenceCatOp<double>* ptrKLDivergenceCat = nullptr;
+  ptrKLDivergenceCat = new KLDivergenceCatOp<double>();
+  delete ptrKLDivergenceCat;
+}
+
+/**
+  KLDivergenceCatGradOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorKLDivergenceCatGradOp)
+{
+  KLDivergenceCatGradOp<double>* ptrKLDivergenceCat = nullptr;
+  KLDivergenceCatGradOp<double>* nullPointerKLDivergenceCat = nullptr;
+  BOOST_CHECK_EQUAL(ptrKLDivergenceCat, nullPointerKLDivergenceCat);
+}
+
+BOOST_AUTO_TEST_CASE(destructorKLDivergenceCatGradOp)
+{
+  KLDivergenceCatGradOp<double>* ptrKLDivergenceCat = nullptr;
+  ptrKLDivergenceCat = new KLDivergenceCatGradOp<double>();
+  delete ptrKLDivergenceCat;
+}
+
 BOOST_AUTO_TEST_SUITE_END()

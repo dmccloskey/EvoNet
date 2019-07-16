@@ -356,6 +356,37 @@ public:
     std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->eps_, this->scale_ }); }
   };
 
+  /**
+    @brief KLDivergenceCat loss function.
+
+  References
+    Maddison 2017 The concrete distribution
+    Jang 2017 Categorical reparameterization with Gumbel-softmax
+    Dupont 2018 Learning disentangled joint continuous and discrete representations
+
+    KLD = -alpha * log(alpha) + log(n) where n is the number of categories
+  */
+  template<typename TensorT>
+  class KLDivergenceCatOp : public LossFunctionOp<TensorT>
+  {
+  public:
+    using LossFunctionOp<TensorT>::LossFunctionOp;
+    std::string getName() { return "KLDivergenceCatOp"; };
+    std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->eps_, this->scale_ }); }
+  };
+
+  /**
+    @brief KLDivergenceCat  loss function gradient.
+  */
+  template<typename TensorT>
+  class KLDivergenceCatGradOp : public LossFunctionGradOp<TensorT>
+  {
+  public:
+    using LossFunctionGradOp<TensorT>::LossFunctionGradOp;
+    std::string getName() { return "KLDivergenceCatGradOp"; };
+    std::vector<TensorT> getParameters() const { return std::vector<TensorT>({ this->eps_, this->scale_ }); }
+  };
+
 	/**
 		@brief Hinge loss function.  
 

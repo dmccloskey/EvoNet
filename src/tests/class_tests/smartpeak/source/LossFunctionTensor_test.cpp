@@ -1067,4 +1067,100 @@ BOOST_AUTO_TEST_CASE(operationfunctionMSERangeLBGradOp)
   BOOST_CHECK_CLOSE(error(1, 1, 1), 0.0, 1e-6);
 }
 
+/**
+  KLDivergenceCatOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorKLDivergenceCatOp)
+{
+  KLDivergenceCatTensorOp<float, Eigen::DefaultDevice>* ptrKLDivergenceCat = nullptr;
+  KLDivergenceCatTensorOp<float, Eigen::DefaultDevice>* nullPointerKLDivergenceCat = nullptr;
+  BOOST_CHECK_EQUAL(ptrKLDivergenceCat, nullPointerKLDivergenceCat);
+}
+
+BOOST_AUTO_TEST_CASE(destructorKLDivergenceCatOp)
+{
+  KLDivergenceCatTensorOp<float, Eigen::DefaultDevice>* ptrKLDivergenceCat = nullptr;
+  ptrKLDivergenceCat = new KLDivergenceCatTensorOp<float, Eigen::DefaultDevice>();
+  delete ptrKLDivergenceCat;
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionKLDivergenceCatOp)
+{
+  KLDivergenceCatTensorOp<float, Eigen::DefaultDevice> operation;
+
+  const int memory_size = 2;
+  const int batch_size = 2;
+  const int layer_size = 2;
+  const int time_step = 0;
+  Eigen::Tensor<float, 2> y_true(batch_size, layer_size);
+  y_true.setValues({
+    {1, 2}, {1, 2}
+    });
+  Eigen::Tensor<float, 3> y_pred(batch_size, memory_size, layer_size);
+  y_pred.setValues({
+    {{1, 1}, {0, 0}},
+    {{2, 2}, {0, 0}}
+    });
+
+  float error_ptr[] = { 0, 0, 0, 0 };
+  Eigen::DefaultDevice device;
+
+  operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, time_step, device);
+  Eigen::TensorMap<Eigen::Tensor<float, 2>> error(error_ptr, batch_size, memory_size);
+  BOOST_CHECK_CLOSE(error(0, 0), 0.693147182, 1e-6);
+  BOOST_CHECK_CLOSE(error(1, 0), 3.46573591, 1e-6);
+  BOOST_CHECK_CLOSE(error(0, 1), 0, 1e-6);
+  BOOST_CHECK_CLOSE(error(1, 1), 0, 1e-6);
+}
+
+/**
+  KLDivergenceCatGradOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorKLDivergenceCatGradOp)
+{
+  KLDivergenceCatGradTensorOp<float, Eigen::DefaultDevice>* ptrKLDivergenceCat = nullptr;
+  KLDivergenceCatGradTensorOp<float, Eigen::DefaultDevice>* nullPointerKLDivergenceCat = nullptr;
+  BOOST_CHECK_EQUAL(ptrKLDivergenceCat, nullPointerKLDivergenceCat);
+}
+
+BOOST_AUTO_TEST_CASE(destructorKLDivergenceCatGradOp)
+{
+  KLDivergenceCatGradTensorOp<float, Eigen::DefaultDevice>* ptrKLDivergenceCat = nullptr;
+  ptrKLDivergenceCat = new KLDivergenceCatGradTensorOp<float, Eigen::DefaultDevice>();
+  delete ptrKLDivergenceCat;
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionKLDivergenceCatGradOp)
+{
+  KLDivergenceCatGradTensorOp<float, Eigen::DefaultDevice> operation;
+
+  const int memory_size = 2;
+  const int batch_size = 2;
+  const int layer_size = 2;
+  const int time_step = 0;
+  Eigen::Tensor<float, 2> y_true(batch_size, layer_size);
+  y_true.setValues({
+    {1, 2}, {1, 2}
+    });
+  Eigen::Tensor<float, 3> y_pred(batch_size, memory_size, layer_size);
+  y_pred.setValues({
+    {{1, 1}, {0, 0}},
+    {{2, 2}, {0, 0}}
+    });
+
+  float error_ptr[] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+  Eigen::DefaultDevice device;
+
+  operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, time_step, device);
+  Eigen::TensorMap<Eigen::Tensor<float, 3>> error(error_ptr, batch_size, memory_size, layer_size);
+  BOOST_CHECK_CLOSE(error(0, 0, 0), -0.999999046, 1e-6);
+  BOOST_CHECK_CLOSE(error(0, 1, 0), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(error(1, 0, 0), -0.499999762, 1e-6);
+  BOOST_CHECK_CLOSE(error(1, 1, 0), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(error(0, 0, 1), -0.999999046, 1e-6);
+  BOOST_CHECK_CLOSE(error(0, 1, 1), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(error(1, 0, 1), -0.499999762, 1e-6);
+  BOOST_CHECK_CLOSE(error(1, 1, 1), 0.0, 1e-6);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
