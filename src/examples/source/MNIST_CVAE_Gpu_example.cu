@@ -184,97 +184,6 @@ class DataSimulatorExt : public MNISTSimulator<TensorT>
 public:
   int n_encodings_;
   int n_categorical_;
-  void simulateTrainingData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
-  {
-    // infer data dimensions based on the input tensors
-    const int batch_size = input_data.dimension(0);
-    const int memory_size = input_data.dimension(1);
-    const int n_input_nodes = input_data.dimension(2);
-    const int n_output_nodes = output_data.dimension(2);
-    const int n_epochs = input_data.dimension(3);
-    const int n_input_pixels = this->validation_data.dimension(1);
-
-    assert(n_output_nodes == n_input_pixels + 2 * n_encodings_ + n_categorical_); // mu, logvar, logalpha
-    assert(n_input_nodes == n_input_pixels + n_encodings_ + 2 * n_categorical_); // Guassian sampler, Gumbel sampler, inverse tau
-
-    // make a vector of sample_indices [BUG FREE]
-    Eigen::Tensor<int, 1> sample_indices = this->getTrainingIndices(batch_size, n_epochs);
-
-    // Reformat the MNIST image data for training
-    for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
-      for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
-        for (int epochs_iter = 0; epochs_iter < n_epochs; ++epochs_iter) {
-          // Input and Output: Pixels
-          for (int nodes_iter = 0; nodes_iter < n_input_pixels; ++nodes_iter) {
-            input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = this->training_data(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
-            output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = this->training_data(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
-            //output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = this->training_data(sample_indices[0], nodes_iter); // test on only 1 sample
-            //input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = this->training_data(sample_indices[0], nodes_iter);  // test on only 1 sample
-          }
-
-          // Gaussian Sampler
-          Eigen::Tensor<TensorT, 2> gaussian_samples = GaussianSampler<TensorT>(1, n_encodings_);
-
-          // Input and Output: encodings
-          for (int nodes_iter = 0; nodes_iter < n_encodings_; ++nodes_iter) {
-            input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = gaussian_samples(0, nodes_iter); // sample from a normal distribution
-            output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 0; // Dummy data for KL divergence mu
-            output_data(batch_iter, memory_iter, n_encodings_ + nodes_iter, epochs_iter) = 0; // Dummy data for KL divergence logvar
-          }
-
-          // Concrete Sampler
-          Eigen::Tensor<TensorT, 2> categorical_samples = GumbelSampler<TensorT>(1, n_categorical_);
-          TensorT inverse_tau = 1.0 / 0.5; // Madison 2017 recommended 2/3 for tau
-
-          // Input and Output: categorical
-          for (int nodes_iter = 0; nodes_iter < n_categorical_; ++nodes_iter) {
-            input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = categorical_samples(0, nodes_iter); // sample from gumbel distribution
-            input_data(batch_iter, memory_iter, n_categorical_ + nodes_iter, epochs_iter) = inverse_tau; // inverse tau
-            output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = (TensorT)this->training_labels(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter); // Expected label
-          }
-        }
-      }
-    }
-  }
-  void simulateValidationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
-  {
-    // infer data dimensions based on the input tensors
-    const int batch_size = input_data.dimension(0);
-    const int memory_size = input_data.dimension(1);
-    const int n_input_nodes = input_data.dimension(2);
-    const int n_output_nodes = output_data.dimension(2);
-    const int n_epochs = input_data.dimension(3);
-    const int n_input_pixels = this->validation_data.dimension(1);
-
-    assert(n_output_nodes == n_input_pixels + 2 * n_encodings_ + n_categorical_); // mu, logvar, logalpha
-    assert(n_input_nodes == n_input_pixels + n_encodings_ + 2 * n_categorical_); // Guassian sampler, Gumbel sampler, inverse tau
-
-    // make a vector of sample_indices [BUG FREE]
-    Eigen::Tensor<int, 1> sample_indices = this->getValidationIndices(batch_size, n_epochs);
-
-    // Reformat the MNIST image data for training
-    for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
-      for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
-        for (int nodes_iter = 0; nodes_iter < n_input_pixels + 2 * n_encodings_; ++nodes_iter) {
-          for (int epochs_iter = 0; epochs_iter < n_epochs; ++epochs_iter) {
-            if (nodes_iter < n_input_pixels) {
-              input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = this->validation_data(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
-              output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = this->validation_data(sample_indices[epochs_iter*batch_size + batch_iter], nodes_iter);
-              //output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = this->validation_data(sample_indices[0], nodes_iter); // test on only 1 sample
-              //input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = this->validation_data(sample_indices[0], nodes_iter);  // test on only 1 sample
-            }
-            else if (nodes_iter >= n_input_pixels && nodes_iter < n_encodings_) {
-              input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 0; // sample from a normal distribution
-              output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 0; // Dummy data for KL divergence mu
-            }
-            else {
-              output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = 0; // Dummy data for KL divergence logvar
-            }
-          }
-        }
-      }
-    }
-  }
   void simulateTrainingData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps)
   {
     // infer data dimensions based on the input tensors
@@ -285,7 +194,7 @@ public:
     const int n_metric_output_nodes = metric_output_data.dimension(2);
     const int n_input_pixels = this->validation_data.dimension(1);
 
-    assert(n_output_nodes == n_input_pixels + 2 * n_encodings_ + n_categorical_); // mu, logvar, logalpha
+    assert(n_output_nodes == n_input_pixels + 2 * n_encodings_ + 2 * n_categorical_); // mu, logvar, logalpha, XEntropy
     assert(n_metric_output_nodes == n_categorical_ + n_input_pixels);
     assert(n_input_nodes == n_input_pixels + n_encodings_ + 2 * n_categorical_); // Guassian sampler, Gumbel sampler, inverse tau
 
@@ -316,7 +225,8 @@ public:
           if (nodes_iter < n_categorical_) {
             input_data(batch_iter, memory_iter, nodes_iter + n_input_pixels + n_encodings_) = categorical_samples(0, nodes_iter); // sample from gumbel distribution
             input_data(batch_iter, memory_iter, nodes_iter + n_input_pixels + n_encodings_ + n_categorical_) = inverse_tau; // inverse tau
-            loss_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels + 2 * n_encodings_) = (TensorT)this->training_labels(sample_indices[batch_iter], nodes_iter); // Expected label
+            loss_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels + 2 * n_encodings_) = 0; // Dummy data for the KL divergence cat
+            loss_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels + 2 * n_encodings_ + n_categorical_) = (TensorT)this->training_labels(sample_indices[batch_iter], nodes_iter); // Expected label
             metric_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels) = (TensorT)this->training_labels(sample_indices[batch_iter], nodes_iter); // Expected label
           }
         }
@@ -333,7 +243,7 @@ public:
     const int n_metric_output_nodes = metric_output_data.dimension(2);
     const int n_input_pixels = this->validation_data.dimension(1);
 
-    assert(n_output_nodes == n_input_pixels + 2 * n_encodings_ + n_categorical_); // mu, logvar, logalpha
+    assert(n_output_nodes == n_input_pixels + 2 * n_encodings_ + 2 * n_categorical_); // mu, logvar, logalpha, XEntropy
     assert(n_metric_output_nodes == n_categorical_ + n_input_pixels);
     assert(n_input_nodes == n_input_pixels + n_encodings_ + 2 * n_categorical_); // Guassian sampler, Gumbel sampler, inverse tau
 
@@ -364,7 +274,8 @@ public:
           if (nodes_iter < n_categorical_) {
             input_data(batch_iter, memory_iter, nodes_iter + n_input_pixels + n_encodings_) = categorical_samples(0, nodes_iter); // sample from gumbel distribution
             input_data(batch_iter, memory_iter, nodes_iter + n_input_pixels + n_encodings_ + n_categorical_) = inverse_tau; // inverse tau
-            loss_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels + 2 * n_encodings_) = (TensorT)this->validation_labels(sample_indices[batch_iter], nodes_iter); // Expected label
+            loss_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels + 2 * n_encodings_) = 0; // Dummy data for KL divergence cat
+            loss_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels + 2 * n_encodings_ + n_categorical_) = (TensorT)this->validation_labels(sample_indices[batch_iter], nodes_iter); // Expected label
             metric_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels) = (TensorT)this->validation_labels(sample_indices[batch_iter], nodes_iter); // Expected label
           }
         }
@@ -477,7 +388,7 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
     encoding_nodes_mu.push_back(name);
   }
 
-  // Make the encoding nodes
+  // Make the var nodes
   std::vector<std::string> encoding_nodes_logvar;
   for (int i = 0; i < encoding_size; ++i) {
     char name_char[512];
@@ -486,13 +397,22 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
     encoding_nodes_logvar.push_back(name);
   }
 
-  // Make the encoding nodes
+  // Make the alpha nodes
   std::vector<std::string> encoding_nodes_logalpha;
   for (int i = 0; i < categorical_size; ++i) {
     char name_char[512];
-    sprintf(name_char, "Categorical_encoding-SoftMax-Out_%012d", i); // LogAlpha_%012d
+    sprintf(name_char, "LogAlpha_%012d", i);
     std::string name(name_char);
     encoding_nodes_logalpha.push_back(name);
+  }
+
+  // Make the categorical output nodes
+  std::vector<std::string> categorical_nodes_output;
+  for (int i = 0; i < categorical_size; ++i) {
+    char name_char[512];
+    sprintf(name_char, "Categorical_encoding-SoftMax-Out_%012d", i);
+    std::string name(name_char);
+    categorical_nodes_output.push_back(name);
   }
 
   // define the model trainers and resources for the trainers
@@ -518,16 +438,18 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
     std::shared_ptr<LossFunctionOp<float>>(new BCEWithLogitsOp<float>(1e-6, 1.0)),
     std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceMuOp<float>(1e-6, 0.5)),
     std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceLogVarOp<float>(1e-6, 0.5)),
+    std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceCatOp<float>(1e-6, 0.1)),
     std::shared_ptr<LossFunctionOp<float>>(new CrossEntropyWithLogitsOp<float>(1e-6, 0.1)) });
   model_trainer.setLossFunctionGrads({
     //std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>(1e-6, 1.0)),
     std::shared_ptr<LossFunctionGradOp<float>>(new BCEWithLogitsGradOp<float>(1e-6, 1.0)),
     std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceMuGradOp<float>(1e-6, 0.5)),
     std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceLogVarGradOp<float>(1e-6, 0.5)),
+    std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceCatGradOp<float>(1e-6, 0.1)),
     std::shared_ptr<LossFunctionGradOp<float>>(new CrossEntropyWithLogitsGradOp<float>(1e-6, 0.1)) });
-  model_trainer.setLossOutputNodes({ output_nodes, encoding_nodes_mu, encoding_nodes_logvar, encoding_nodes_logalpha });
+  model_trainer.setLossOutputNodes({ output_nodes, encoding_nodes_mu, encoding_nodes_logvar, encoding_nodes_logalpha, categorical_nodes_output });
   model_trainer.setMetricFunctions({ std::shared_ptr<MetricFunctionOp<float>>(new MAEOp<float>()), std::shared_ptr<MetricFunctionOp<float>>(new PrecisionMCMicroOp<float>()) });
-  model_trainer.setMetricOutputNodes({ output_nodes, encoding_nodes_logalpha });
+  model_trainer.setMetricOutputNodes({ output_nodes, categorical_nodes_output });
   model_trainer.setMetricNames({ "MAE", "PrecisionMCMicro" });
 
   // define the model replicator for growth mode

@@ -577,6 +577,10 @@ public:
     @brief KLDivergenceCat loss function.
 
     See implementation: https://github.com/Schlumberger/joint-vae/blob/master/jointvae/training.py#L311
+      KLD = alpha * log(alpha) + log(n) where n is the number of categories
+      for predicted = log(alpha) as is the case here
+      KLD = exp(predicted) * predicted + log(n)
+
   */
   template<typename TensorT, typename DeviceT>
   class KLDivergenceCatTensorOp : public LossFunctionTensorOp<TensorT, DeviceT>
@@ -591,7 +595,8 @@ public:
       Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_tensor(error, batch_size, memory_size);
       auto predicted_chip = predicted_tensor.chip(time_step, 1);
 
-      auto neg_entropy = (predicted_chip * predicted_chip.log()).sum(Eigen::array<int, 1>({ 1 }));
+      //auto neg_entropy = (predicted_chip * predicted_chip.log()).sum(Eigen::array<int, 1>({ 1 }));
+      auto neg_entropy = (predicted_chip.exp() * predicted_chip).sum(Eigen::array<int, 1>({ 1 }));
       auto log_cat = error_tensor.chip(time_step, 1).constant(layer_size).log();
 
       error_tensor.chip(time_step, 1).device(device) += (neg_entropy + log_cat).clip(TensorT(-1e9), TensorT(1e9));
@@ -614,7 +619,9 @@ public:
       Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> error_tensor(error, batch_size, memory_size, layer_size);
       auto predicted_chip = predicted_tensor.chip(time_step, 1);
       // NOTE: changed to -= to ensure a negative gradient
-      error_tensor.chip(time_step, 1).device(device) -= (expected_tensor.constant(TensorT(1)) / (predicted_chip + expected_tensor.constant(TensorT(this->eps_)))).clip(TensorT(-1e9), TensorT(1e9));
+      //auto error_grad = (expected_tensor.constant(TensorT(1)) / (predicted_chip + expected_tensor.constant(TensorT(this->eps_)))).clip(TensorT(-1e9), TensorT(1e9));
+      auto error_grad = expected_tensor.exp().clip(TensorT(-1e9), TensorT(1e9));
+      error_tensor.chip(time_step, 1).device(device) -= error_grad;
     };
   };
 
