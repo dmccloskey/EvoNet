@@ -364,7 +364,7 @@ public:
     Jang 2017 Categorical reparameterization with Gumbel-softmax
     Dupont 2018 Learning disentangled joint continuous and discrete representations
 
-    KLD = -alpha * log(alpha) + log(n) where n is the number of categories
+    KLD = alpha * log(alpha) + log(n) where n is the number of categories
   */
   template<typename TensorT>
   class KLDivergenceCatOp : public LossFunctionOp<TensorT>

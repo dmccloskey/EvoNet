@@ -54,7 +54,7 @@ public:
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
       std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((TensorT)(node_names_input.size() + node_names.size()) / 2, 1)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, specify_layer);
+      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, specify_layer);
     node_names = model_builder.addFullyConnected(model, "EN1", "EN1", node_names, n_hidden_0,
       std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>(1.0)),
       std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>(1.0)),
@@ -62,7 +62,7 @@ public:
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
       std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((TensorT)(node_names.size() + node_names.size()) / 2, 1)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, specify_layer);
+      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, specify_layer);
     node_names_mu = model_builder.addFullyConnected(model, "Mu", "Mu", node_names, n_encodings,
       std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>(1.0)),
       std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>(1.0)),
@@ -70,7 +70,7 @@ public:
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
       std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_encodings) / 2, 1)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, specify_layer);
+      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, specify_layer);
     node_names_logvar = model_builder.addFullyConnected(model, "LogVar", "LogVar", node_names, n_encodings,
       std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>(1.0)),
       std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>(1.0)),
@@ -78,7 +78,7 @@ public:
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
       std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_encodings) / 2, 1)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, specify_layer);
+      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, specify_layer);
     node_names_logalpha = model_builder.addFullyConnected(model, "LogAlpha", "LogAlpha", node_names, n_categorical,
       std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>(1.0)),
       std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>(1.0)),
@@ -86,7 +86,7 @@ public:
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
       std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_categorical) / 2, 1)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, specify_layer);
+      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, specify_layer);
 
     // Add the Encoding layers
     std::vector<std::string> node_names_Gencoder = model_builder.addGaussianEncoding(model, "Gaussian_encoding", "Gaussian_encoding", node_names_mu, node_names_logvar, true);
@@ -100,10 +100,10 @@ public:
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
       std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((TensorT)(node_names_Gencoder.size() + n_hidden_0) / 2, 1)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, specify_layer);
+      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, specify_layer);
     model_builder.addFullyConnected(model, "DE0", node_names_Cencoder, node_names,
       std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((TensorT)(node_names_Cencoder.size() + n_hidden_0) / 2, 1)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, specify_layer);
+      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)), 0.0f, specify_layer);
     node_names = model_builder.addFullyConnected(model, "DE1", "DE1", node_names, n_hidden_0,
       std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>(1.0)),
       std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>(1.0)),
@@ -111,7 +111,7 @@ public:
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
       std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_hidden_0) / 2, 1)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, specify_layer);
+      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, specify_layer);
     node_names = model_builder.addFullyConnected(model, "Output", "Output", node_names, n_inputs,
       std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>(1.0)),
       std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>(1.0)),
@@ -119,7 +119,7 @@ public:
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
       std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 1)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
+      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
 
     // Specify the output node types manually
     for (const std::string& node_name : node_names)
@@ -210,13 +210,13 @@ public:
 
         // Concrete Sampler
         Eigen::Tensor<TensorT, 2> categorical_samples = GumbelSampler<TensorT>(1, n_categorical_);
-        TensorT inverse_tau = 1.0 / 0.5; // Madison 2017 recommended 2/3 for tau
+        TensorT inverse_tau = 3.0 / 2.0; //1.0 / 0.5; // Madison 2017 recommended 2/3 for tau
 
         // Assign the input/output values
         for (int nodes_iter = 0; nodes_iter < n_input_pixels; ++nodes_iter) {
-          input_data(batch_iter, memory_iter, nodes_iter) = this->training_data(sample_indices[batch_iter], nodes_iter);
-          loss_output_data(batch_iter, memory_iter, nodes_iter) = this->training_data(sample_indices[batch_iter], nodes_iter);
-          metric_output_data(batch_iter, memory_iter, nodes_iter) = this->training_data(sample_indices[batch_iter], nodes_iter);
+          input_data(batch_iter, memory_iter, nodes_iter) = this->training_data(sample_indices(batch_iter), nodes_iter);
+          loss_output_data(batch_iter, memory_iter, nodes_iter) = this->training_data(sample_indices(batch_iter), nodes_iter);
+          metric_output_data(batch_iter, memory_iter, nodes_iter) = this->training_data(sample_indices(batch_iter), nodes_iter);
           if (nodes_iter < n_encodings_) {
             input_data(batch_iter, memory_iter, nodes_iter + n_input_pixels) = gaussian_samples(0, nodes_iter); // sample from a normal distribution
             loss_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels) = 0; // Dummy data for KL divergence mu
@@ -226,8 +226,8 @@ public:
             input_data(batch_iter, memory_iter, nodes_iter + n_input_pixels + n_encodings_) = categorical_samples(0, nodes_iter); // sample from gumbel distribution
             input_data(batch_iter, memory_iter, nodes_iter + n_input_pixels + n_encodings_ + n_categorical_) = inverse_tau; // inverse tau
             loss_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels + 2 * n_encodings_) = 0; // Dummy data for the KL divergence cat
-            loss_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels + 2 * n_encodings_ + n_categorical_) = (TensorT)this->training_labels(sample_indices[batch_iter], nodes_iter); // Expected label
-            metric_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels) = (TensorT)this->training_labels(sample_indices[batch_iter], nodes_iter); // Expected label
+            loss_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels + 2 * n_encodings_ + n_categorical_) = (TensorT)this->training_labels(sample_indices(batch_iter), nodes_iter); // Expected label
+            metric_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels) = (TensorT)this->training_labels(sample_indices(batch_iter), nodes_iter); // Expected label
           }
         }
       }
@@ -259,13 +259,13 @@ public:
 
         // Concrete Sampler
         Eigen::Tensor<TensorT, 2> categorical_samples = GumbelSampler<TensorT>(1, n_categorical_);
-        TensorT inverse_tau = 1.0 / 0.5; // Madison 2017 recommended 2/3 for tau
+        TensorT inverse_tau = 3.0 / 2.0; //1.0 / 0.5; // Madison 2017 recommended 2/3 for tau
 
         // Assign the input/output values
         for (int nodes_iter = 0; nodes_iter < n_input_pixels; ++nodes_iter) {
-          input_data(batch_iter, memory_iter, nodes_iter) = this->validation_data(sample_indices[batch_iter], nodes_iter);
-          loss_output_data(batch_iter, memory_iter, nodes_iter) = this->validation_data(sample_indices[batch_iter], nodes_iter);
-          metric_output_data(batch_iter, memory_iter, nodes_iter) = this->validation_data(sample_indices[batch_iter], nodes_iter);
+          input_data(batch_iter, memory_iter, nodes_iter) = this->validation_data(sample_indices(batch_iter), nodes_iter);
+          loss_output_data(batch_iter, memory_iter, nodes_iter) = this->validation_data(sample_indices(batch_iter), nodes_iter);
+          metric_output_data(batch_iter, memory_iter, nodes_iter) = this->validation_data(sample_indices(batch_iter), nodes_iter);
           if (nodes_iter < n_encodings_) {
             input_data(batch_iter, memory_iter, nodes_iter + n_input_pixels) = gaussian_samples(0, nodes_iter); // sample from a normal distribution
             loss_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels) = 0; // Dummy data for KL divergence mu
@@ -275,8 +275,8 @@ public:
             input_data(batch_iter, memory_iter, nodes_iter + n_input_pixels + n_encodings_) = categorical_samples(0, nodes_iter); // sample from gumbel distribution
             input_data(batch_iter, memory_iter, nodes_iter + n_input_pixels + n_encodings_ + n_categorical_) = inverse_tau; // inverse tau
             loss_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels + 2 * n_encodings_) = 0; // Dummy data for KL divergence cat
-            loss_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels + 2 * n_encodings_ + n_categorical_) = (TensorT)this->validation_labels(sample_indices[batch_iter], nodes_iter); // Expected label
-            metric_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels) = (TensorT)this->validation_labels(sample_indices[batch_iter], nodes_iter); // Expected label
+            loss_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels + 2 * n_encodings_ + n_categorical_) = (TensorT)this->validation_labels(sample_indices(batch_iter), nodes_iter); // Expected label
+            metric_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels) = (TensorT)this->validation_labels(sample_indices(batch_iter), nodes_iter); // Expected label
           }
         }
       }
@@ -438,15 +438,15 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
     std::shared_ptr<LossFunctionOp<float>>(new BCEWithLogitsOp<float>(1e-6, 1.0)),
     std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceMuOp<float>(1e-6, 0.5)),
     std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceLogVarOp<float>(1e-6, 0.5)),
-    std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceCatOp<float>(1e-6, 0.1)),
-    std::shared_ptr<LossFunctionOp<float>>(new CrossEntropyWithLogitsOp<float>(1e-6, 0.1)) });
+    std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceCatOp<float>(1e-6, 0.0)),
+    std::shared_ptr<LossFunctionOp<float>>(new CrossEntropyWithLogitsOp<float>(1e-6, 0.0)) });
   model_trainer.setLossFunctionGrads({
     //std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>(1e-6, 1.0)),
     std::shared_ptr<LossFunctionGradOp<float>>(new BCEWithLogitsGradOp<float>(1e-6, 1.0)),
     std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceMuGradOp<float>(1e-6, 0.5)),
     std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceLogVarGradOp<float>(1e-6, 0.5)),
-    std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceCatGradOp<float>(1e-6, 0.1)),
-    std::shared_ptr<LossFunctionGradOp<float>>(new CrossEntropyWithLogitsGradOp<float>(1e-6, 0.1)) });
+    std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceCatGradOp<float>(1e-6, 0.0)),
+    std::shared_ptr<LossFunctionGradOp<float>>(new CrossEntropyWithLogitsGradOp<float>(1e-6, 0.0)) });
   model_trainer.setLossOutputNodes({ output_nodes, encoding_nodes_mu, encoding_nodes_logvar, encoding_nodes_logalpha, categorical_nodes_output });
   model_trainer.setMetricFunctions({ std::shared_ptr<MetricFunctionOp<float>>(new MAEOp<float>()), std::shared_ptr<MetricFunctionOp<float>>(new PrecisionMCMicroOp<float>()) });
   model_trainer.setMetricOutputNodes({ output_nodes, categorical_nodes_output });
