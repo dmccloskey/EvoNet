@@ -248,7 +248,7 @@ public:
     assert(n_input_nodes == n_input_pixels + n_encodings_ + 2 * n_categorical_); // Guassian sampler, Gumbel sampler, inverse tau
 
     // make the start and end sample indices
-    Eigen::Tensor<int, 1> sample_indices = this->getTrainingIndices(batch_size, 1);
+    Eigen::Tensor<int, 1> sample_indices = this->getValidationIndices(batch_size, 1);
 
     // Reformat the input data for validation
     for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {

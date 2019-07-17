@@ -33,6 +33,7 @@ set(ml_executables_list
   MetricFunction_test
   MetricFunctionTensor_test
   ModelBuilder_test
+  ModelBuilderCpu_test
   ModelBuilderExperimental_test
   ModelErrorTensorData_test
   ModelInterpreter_DAG_test
