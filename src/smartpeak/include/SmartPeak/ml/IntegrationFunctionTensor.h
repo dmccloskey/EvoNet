@@ -107,7 +107,7 @@ public:
       }
 #endif
       Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> source_weight_exp(tmp_data, batch_size, source_layer_size, sink_layer_size);
-      source_weight_exp = source_bcast * weight_tensor_exp;
+      source_weight_exp.device(device) = source_bcast * weight_tensor_exp;
 
       // Step 2: determine where the 0s in the original input are propogated to in the source_weight_exp tensor
       auto source_1 = (source_output_tensor.chip(source_time_step, 1) > source_output_tensor.chip(source_time_step, 1).constant(TensorT(-1e-24)) &&
@@ -479,7 +479,7 @@ public:
       }
 #endif
       Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> tmp(tmp_data, batch_size, sink_layer_size);
-			tmp = (source_exp_input_tensor * source_error_tensor.chip(source_time_step, 1).broadcast(Eigen::array<int, 3>({ 1, sink_layer_size, 1 }))
+			tmp.device(device) = (source_exp_input_tensor * source_error_tensor.chip(source_time_step, 1).broadcast(Eigen::array<int, 3>({ 1, sink_layer_size, 1 }))
         * comp_tensor / (comp_tensor * comp_tensor + comp_tensor.constant((TensorT)1e-6))).sum(Eigen::array<int, 1>({ 2 }));
 
 			// NOTE this should be *=, but the sink error tensor is initialized to 0...
@@ -489,15 +489,15 @@ public:
       auto sink_error_1 = (sink_error_tensor.chip(sink_time_step, 1) > sink_error_tensor.chip(sink_time_step, 1).constant(TensorT(-1e-24)) &&
         sink_error_tensor.chip(sink_time_step, 1) < sink_error_tensor.chip(sink_time_step, 1).constant(TensorT(1e-24))).select(
           sink_error_tensor.chip(sink_time_step, 1).constant(TensorT(1)), sink_error_tensor.chip(sink_time_step, 1));
-			auto sink_error_new = sink_error_1 * tmp.clip(TensorT(-1e9),TensorT(1e9)) * sink_derivative_tensor.chip(sink_time_step, 1);
+      tmp.device(device) = sink_error_1 * tmp.clip(TensorT(-1e9),TensorT(1e9)) * sink_derivative_tensor.chip(sink_time_step, 1);
 
       // step 4: swap back the original 0s
       auto sink_error_corrected = (
-        (sink_error_tensor.chip(sink_time_step, 1) > sink_error_tensor.chip(sink_time_step, 1).constant(TensorT(-1e-24)) &&
-          sink_error_tensor.chip(sink_time_step, 1) < sink_error_tensor.chip(sink_time_step, 1).constant(TensorT(1e-24))) &&
-        (sink_error_new > sink_error_tensor.chip(sink_time_step, 1).constant(TensorT(1-1e-24)) &&
-          sink_error_new < sink_error_tensor.chip(sink_time_step, 1).constant(TensorT(1+1e-24)))).select(
-          sink_error_new.constant(TensorT(0)), sink_error_new);
+        (sink_error_tensor.chip(sink_time_step, 1) > tmp.constant(TensorT(-1e-24)) &&
+          sink_error_tensor.chip(sink_time_step, 1) < tmp.constant(TensorT(1e-24))) &&
+        (tmp > tmp.constant(TensorT(1-1e-24)) &&
+          tmp < tmp.constant(TensorT(1+1e-24)))).select(
+            tmp.constant(TensorT(0)), tmp);
       sink_error_tensor.chip(sink_time_step, 1).device(device) = sink_error_corrected;
 
       // Deallocate temporary memory
