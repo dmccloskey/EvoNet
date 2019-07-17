@@ -428,32 +428,54 @@ BOOST_AUTO_TEST_CASE(addConvolution3)
 BOOST_AUTO_TEST_CASE(addNormalization1)
 {
 	ModelBuilder<float> model_builder;
-	Model<float> model;
-	std::vector<std::string> node_names;
+	Model<float> model;  
+  const int batch_size = 1;
+  const int memory_size = 1;
+  const int input_size = 5;
+  const int output_size = 5;
 
 	// make the input
-	node_names = model_builder.addInputNodes(model, "Input", "Input", 2);
+  std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", "Input", input_size);
 
 	// make the normalization 
-	node_names = model_builder.addNormalization(model, "Norm", "Mod1", node_names);
+  std::vector<std::string> node_names_output = model_builder.addNormalization(model, "Norm", "Mod1", node_names_input);
 
-	std::vector<std::string> node_names_test = { "Norm-Mean", "Norm-Variance", "Input_000000000000-Normalized",
-		"Input_000000000001-Normalized", "Input_000000000000-SourceMinMean", "Input_000000000001-SourceMinMean" };
-	std::vector<std::string> link_names_test = {
-		"Input_000000000000-SourceMinMean_to_Input_000000000000-Normalized",
-		"Input_000000000000-SourceMinMean_to_Norm-Variance","Input_000000000000_to_Input_000000000000-SourceMinMean","Input_000000000000_to_Norm-Mean",
-		"Input_000000000001-SourceMinMean_to_Input_000000000001-Normalized",
-		"Input_000000000001-SourceMinMean_to_Norm-Variance","Input_000000000001_to_Input_000000000001-SourceMinMean","Input_000000000001_to_Norm-Mean",
-		"Norm-Mean_to_Input_000000000000-SourceMinMean","Norm-Mean_to_Input_000000000001-SourceMinMean",
-		"Norm-Variance_to_Input_000000000000-Normalized","Norm-Variance_to_Input_000000000001-Normalized" };
-	std::vector<std::string> weight_names_test = {
+  // Specify the output node types manually
+  for (const std::string& node_name : node_names_output)
+    model.getNodesMap().at(node_name)->setType(NodeType::output);
+  model.setInputAndOutputNodes();
+
+  // interpret and train the model
+  Eigen::Tensor<float, 3> input_values(batch_size, memory_size, input_size);
+  input_values.setValues({ {{1, 2, 3, 4, 5}} });
+  Eigen::Tensor<float, 2> output_values(batch_size, output_size);
+  output_values.setValues({ {-1.414213562,-0.707106781,0,0.707106781,1.414213562} });
+  trainModel(model, node_names_input, node_names_output, input_values, output_values, batch_size, memory_size);
+
+  // test for the expected model error
+  std::cout << "Model error: " << model.getError()(0, 0) << std::endl;
+  BOOST_CHECK_CLOSE(model.getError()(0, 0), 3.72271658e-15, 1e-4);
+
+  // test for the expected node outputs
+  std::vector<float> output_values_test = { -1.414213562,-0.707106781,0,0.707106781,1.414213562 };
+  for (int i = 0; i < node_names_output.size(); ++i) {
+    std::cout << node_names_output.at(i) << " Output: " << model.getNodesMap().at(node_names_output.at(i))->getOutput()(0, 0) << std::endl;
+    BOOST_CHECK_CLOSE(model.getNodesMap().at(node_names_output.at(i))->getOutput()(0, 0), output_values_test.at(i), 1e-4);
+  }
+
+  // test for the expected weights
+  std::vector<std::string> weight_names = {
     "Norm-Mean_to_Input_000000000000-SourceMinMean","Norm-Mean_to_Input_000000000001-SourceMinMean",
-		"Input_000000000000-SourceMinMean_to_Input_000000000000-Normalized",
-		"Input_000000000000-SourceMinMean_to_Norm-Variance","Input_000000000000_to_Input_000000000000-SourceMinMean","Input_000000000000_to_Norm-Mean",
-		"Input_000000000001-SourceMinMean_to_Input_000000000001-Normalized",
-		"Input_000000000001-SourceMinMean_to_Norm-Variance","Input_000000000001_to_Input_000000000001-SourceMinMean","Input_000000000001_to_Norm-Mean",
-		"Norm-Variance_to_Input_000000000000-Normalized","Norm-Variance_to_Input_000000000001-Normalized"
-	};
+    "Input_000000000000-SourceMinMean_to_Input_000000000000-Normalized",
+    "Input_000000000000-SourceMinMean_to_Norm-Variance","Input_000000000000_to_Input_000000000000-SourceMinMean","Input_000000000000_to_Norm-Mean",
+    "Input_000000000001-SourceMinMean_to_Input_000000000001-Normalized",
+    "Input_000000000001-SourceMinMean_to_Norm-Variance","Input_000000000001_to_Input_000000000001-SourceMinMean","Input_000000000001_to_Norm-Mean",
+    "Norm-Variance_to_Input_000000000000-Normalized","Norm-Variance_to_Input_000000000001-Normalized" };
+  std::vector<float> weight_values_test = { -1, -1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
+  for (int i = 0; i < weight_names.size(); ++i) {
+    std::cout << weight_names.at(i) << " Weight: " << model.getWeightsMap().at(weight_names.at(i))->getWeight() << std::endl;
+    BOOST_CHECK_CLOSE(model.getWeightsMap().at(weight_names.at(i))->getWeight(), weight_values_test.at(i), 1e-4);
+  }
 
 }
 
