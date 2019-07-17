@@ -95,7 +95,19 @@ public:
       // Step 1: expand source across the sink layer dim and weight tensor across the batch dim and multiply
       auto weight_tensor_exp = weight_tensor.broadcast(Eigen::array<int, 3>({ batch_size, 1, 1 }));
       auto source_bcast = source_output_tensor.chip(source_time_step, 1).broadcast(Eigen::array<int, 3>({ 1, 1, sink_layer_size }));
-      auto source_weight_exp = source_bcast * weight_tensor_exp;
+
+      TensorT* tmp_data;
+      if (typeid(device).name() == typeid(Eigen::DefaultDevice).name()) {
+        tmp_data = new TensorT[batch_size*source_layer_size*sink_layer_size];
+      }
+#if COMPILE_WITH_CUDA
+      else if (typeid(device).name() == typeid(Eigen::GpuDevice).name()) {
+        size_t bytes = batch_size * source_layer_size*sink_layer_size * sizeof(TensorT);
+        assert(cudaMalloc((void**)(&tmp_data), bytes) == cudaSuccess);
+      }
+#endif
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> source_weight_exp(tmp_data, batch_size, source_layer_size, sink_layer_size);
+      source_weight_exp = source_bcast * weight_tensor_exp;
 
       // Step 2: determine where the 0s in the original input are propogated to in the source_weight_exp tensor
       auto source_1 = (source_output_tensor.chip(source_time_step, 1) > source_output_tensor.chip(source_time_step, 1).constant(TensorT(-1e-24)) &&
@@ -112,6 +124,16 @@ public:
       // Step 4: multiply along the source dim
 			sink_input_tensor.chip(sink_time_step, 1).device(device) = sink_input_tensor.chip(sink_time_step, 1) * (source_weight_1
 				).prod(Eigen::array<int, 1>({ 1 })).eval();
+
+      // Deallocate temporary memory
+      if (typeid(device).name() == typeid(Eigen::DefaultDevice).name()) {
+        delete[] tmp_data;
+      }
+#if COMPILE_WITH_CUDA
+      else if (typeid(device).name() == typeid(Eigen::GpuDevice).name()) {
+        assert(cudaFree(tmp_data) == cudaSuccess);
+      }
+#endif
 
       //// DEBUG (only on CPU)
       //std::cout << "[ProdTensorOp]Source: " << source_output_tensor.chip(source_time_step, 1) << std::endl;
@@ -446,7 +468,18 @@ public:
       // NOTE for numerical stability, we multiply by the comp_tensor in order to zero out non contributing elements,
       //      which otherwise would result in an very large error even though their contribution was 0,
       //      and then divide by the square of the comp_tensor plus a small constant to avoid division by 0
-			auto tmp = (source_exp_input_tensor * source_error_tensor.chip(source_time_step, 1).broadcast(Eigen::array<int, 3>({ 1, sink_layer_size, 1 }))
+      TensorT* tmp_data;
+      if (typeid(device).name() == typeid(Eigen::DefaultDevice).name()) {
+        tmp_data = new TensorT[batch_size*sink_layer_size];
+      }
+#if COMPILE_WITH_CUDA
+      else if (typeid(device).name() == typeid(Eigen::GpuDevice).name()) {
+        size_t bytes = batch_size * sink_layer_size * sizeof(TensorT);
+        assert(cudaMalloc((void**)(&tmp_data), bytes) == cudaSuccess);
+      }
+#endif
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> tmp(tmp_data, batch_size, sink_layer_size);
+			tmp = (source_exp_input_tensor * source_error_tensor.chip(source_time_step, 1).broadcast(Eigen::array<int, 3>({ 1, sink_layer_size, 1 }))
         * comp_tensor / (comp_tensor * comp_tensor + comp_tensor.constant((TensorT)1e-6))).sum(Eigen::array<int, 1>({ 2 }));
 
 			// NOTE this should be *=, but the sink error tensor is initialized to 0...
@@ -466,6 +499,16 @@ public:
           sink_error_new < sink_error_tensor.chip(sink_time_step, 1).constant(TensorT(1+1e-24)))).select(
           sink_error_new.constant(TensorT(0)), sink_error_new);
       sink_error_tensor.chip(sink_time_step, 1).device(device) = sink_error_corrected;
+
+      // Deallocate temporary memory
+      if (typeid(device).name() == typeid(Eigen::DefaultDevice).name()) {
+        delete[] tmp_data;
+      }
+#if COMPILE_WITH_CUDA
+      else if (typeid(device).name() == typeid(Eigen::GpuDevice).name()) {
+        assert(cudaFree(tmp_data) == cudaSuccess);
+      }
+#endif
 
       //// DEBUG (only on CPU)
       //std::cout << "[ProdErrorTensorOp]comp_tensor: " << comp_tensor << std::endl;

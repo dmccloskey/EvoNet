@@ -51,13 +51,13 @@ BOOST_AUTO_TEST_CASE(addFullyConnected1)
   const int output_size = 2;
 
 	// make the input
-	std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", "Input", input_size);
+	std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", "Input", input_size, true);
 
 	// make the fully connected 
   std::vector<std::string>node_names_output = model_builder.addFullyConnected(model, "Output", "Output", node_names_input,
 		output_size, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
 		std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-		std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new SGDOp<float>(0.1, 0.9)), 0.0f, 0.0f);
+		std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new SGDOp<float>(0.1, 0.9)), 0.0f, 0.0f, true, true);
 
   // Specify the output node types manually
   for (const std::string& node_name : node_names_output)
@@ -207,10 +207,10 @@ BOOST_AUTO_TEST_CASE(addSoftMax)
   const int output_size = 2;
 
   // make the input
-  std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", "Input", input_size);
+  std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", "Input", input_size, true);
 
   // make the fully connected 
-  std::vector<std::string> node_names_output = model_builder.addSoftMax(model, "SoftMax", "Mod1", node_names_input);
+  std::vector<std::string> node_names_output = model_builder.addSoftMax(model, "SoftMax", "Mod1", node_names_input, true);
 
   // Specify the output node types manually
   for (const std::string& node_name : node_names_output)
@@ -257,10 +257,10 @@ BOOST_AUTO_TEST_CASE(addStableSoftMax)
   const int output_size = 2;
 
 	// make the input
-	std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", "Input", input_size);
+	std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", "Input", input_size, true);
 
 	// make the fully connected 
-  std::vector<std::string> node_names_output = model_builder.addStableSoftMax(model, "SoftMax", "Mod1", node_names_input);
+  std::vector<std::string> node_names_output = model_builder.addStableSoftMax(model, "SoftMax", "Mod1", node_names_input, true);
 
   // Specify the output node types manually
   for (const std::string& node_name : node_names_output)
@@ -435,10 +435,10 @@ BOOST_AUTO_TEST_CASE(addNormalization1)
   const int output_size = 5;
 
 	// make the input
-  std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", "Input", input_size);
+  std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", "Input", input_size, true);
 
 	// make the normalization 
-  std::vector<std::string> node_names_output = model_builder.addNormalization(model, "Norm", "Mod1", node_names_input);
+  std::vector<std::string> node_names_output = model_builder.addNormalization(model, "Norm", "Mod1", node_names_input, true);
 
   // Specify the output node types manually
   for (const std::string& node_name : node_names_output)
@@ -509,10 +509,10 @@ BOOST_AUTO_TEST_CASE(addLinearScale1)
   const int output_size = 2;
 
   // make the input
-  std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", "Input", 2);
+  std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", "Input", input_size, true);
 
   // make the normalization 
-  std::vector<std::string> node_names_output = model_builder.addLinearScale(model, "Norm", "Mod1", node_names_input, 0, 1);
+  std::vector<std::string> node_names_output = model_builder.addLinearScale(model, "Norm", "Mod1", node_names_input, 0, 1, true);
 
   // Specify the output node types manually
   for (const std::string& node_name : node_names_output)
@@ -527,13 +527,13 @@ BOOST_AUTO_TEST_CASE(addLinearScale1)
   trainModel(model, node_names_input, node_names_output, input_values, output_values, batch_size, memory_size);
 
   // test for the expected model error
-  std::cout << "Model error: " << model.getError()(0, 0) << std::endl;
-  BOOST_CHECK_CLOSE(model.getError()(0, 0), 3.72271658e-15, 1e-4);
+  //std::cout << "Model error: " << model.getError()(0, 0) << std::endl;
+  BOOST_CHECK_CLOSE(model.getError()(0, 0),0, 1e-4);
 
   // test for the expected node outputs
-  std::vector<float> output_values_test = { 0.0474259, 0.952574 };
+  std::vector<float> output_values_test = { 0, 1 };
   for (int i = 0; i < node_names_output.size(); ++i) {
-    std::cout << node_names_output.at(i) << " Output: " << model.getNodesMap().at(node_names_output.at(i))->getOutput()(0, 0) << std::endl;
+    //std::cout << node_names_output.at(i) << " Output: " << model.getNodesMap().at(node_names_output.at(i))->getOutput()(0, 0) << std::endl;
     BOOST_CHECK_CLOSE(model.getNodesMap().at(node_names_output.at(i))->getOutput()(0, 0), output_values_test.at(i), 1e-4);
   }
 
@@ -548,87 +548,147 @@ BOOST_AUTO_TEST_CASE(addLinearScale1)
     "Norm-Min_to_Input_000000000000-DomainMinOffset","Norm-Min_to_Input_000000000001-DomainMinOffset","Norm-Min_to_Norm-Scalar",
     "Norm-Scalar_to_Input_000000000000-DomainScaled","Norm-Scalar_to_Input_000000000001-DomainScaled","Mod1-RangeMaxMinBias_to_Input_000000000000-RangeMaxMinScale",
     "Mod1-RangeMaxMinBias_to_Input_000000000001-RangeMaxMinScale" };
-  std::vector<float> weight_values_test = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
+  std::vector<float> weight_values_test = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
+    1, 1, 0, 0, 1, -1, -1, -1, 1, 1, 1, 1 };
   for (int i = 0; i < weight_names.size(); ++i) {
-    std::cout << weight_names.at(i) << " Weight: " << model.getWeightsMap().at(weight_names.at(i))->getWeight() << std::endl;
+    //std::cout << weight_names.at(i) << " Weight: " << model.getWeightsMap().at(weight_names.at(i))->getWeight() << std::endl;
     BOOST_CHECK_CLOSE(model.getWeightsMap().at(weight_names.at(i))->getWeight(), weight_values_test.at(i), 1e-4);
   }
-
 }
 
 BOOST_AUTO_TEST_CASE(addGaussianEncoding)
 {
 	ModelBuilder<float> model_builder;
 	Model<float> model;
-	std::vector<std::string> node_names;
+  const int batch_size = 1;
+  const int memory_size = 1;
+  const int input_size = 2;
+  const int output_size = 2;
 
 	// make the input
-	std::vector<std::string> mu_node_names = model_builder.addInputNodes(model, "Mu", "Mu", 2);
-	std::vector<std::string> logvar_node_names = model_builder.addInputNodes(model, "LogVar", "LogVar", 2);
+	std::vector<std::string> mu_node_names = model_builder.addInputNodes(model, "Mu", "Mu", input_size, true);
+	std::vector<std::string> logvar_node_names = model_builder.addInputNodes(model, "LogVar", "LogVar", input_size, true);
 
-	// make the normalization 
-	node_names = model_builder.addGaussianEncoding(model, "Encoding", "Mod1", mu_node_names, logvar_node_names);
+	// make the Gaussian encoding 
+  std::vector<std::string> node_names_output = model_builder.addGaussianEncoding(model, "Encoding", "Mod1", mu_node_names, logvar_node_names, true);
 
-	std::vector<std::string> node_names_test = {
-		"LogVar_000000000000-Scalar", "LogVar_000000000001-Scalar", "LogVar_000000000000-StdDev", "LogVar_000000000001-StdDev",
-		"Encoding_000000000000", "Encoding_000000000001", "Encoding_000000000000-Sampler", "Encoding_000000000001-Sampler" };
-	std::vector<std::string> link_names_test = {
-		"LogVar_000000000000_to_LogVar_000000000000-Scalar","Encoding_000000000000-Sampler_to_LogVar_000000000000-StdDev",
-		"LogVar_000000000001_to_LogVar_000000000001-Scalar","Encoding_000000000001-Sampler_to_LogVar_000000000001-StdDev",
-		"LogVar_000000000000-StdDev_to_Encoding_000000000000","Mu_000000000000_to_Encoding_000000000000",
-		"LogVar_000000000001-StdDev_to_Encoding_000000000001","Mu_000000000001_to_Encoding_000000000001" };
-	std::vector<std::string> weight_names_test = {
-		"LogVar_000000000000_to_LogVar_000000000000-Scalar","Encoding_000000000000-Sampler_to_LogVar_000000000000-StdDev",
-		"LogVar_000000000001_to_LogVar_000000000001-Scalar","Encoding_000000000001-Sampler_to_LogVar_000000000001-StdDev",
-		"LogVar_000000000000-StdDev_to_Encoding_000000000000","Mu_000000000000_to_Encoding_000000000000",
-		"LogVar_000000000001-StdDev_to_Encoding_000000000001","Mu_000000000001_to_Encoding_000000000001" };
+  // define the input nodes
+  std::vector<std::string> node_names_input;
+  for (int i = 0; i < input_size; ++i) node_names_input.push_back(mu_node_names.at(i));
+  for (int i = 0; i < input_size; ++i) node_names_input.push_back(logvar_node_names.at(i));
+  for (int i = 0; i < input_size; ++i) {
+    char name_char[512];
+    sprintf(name_char, "Encoding_%012d-Sampler", i);
+    std::string name(name_char);
+    node_names_input.push_back(name);
+  }
+
+  // Specify the output node types manually
+  for (const std::string& node_name : node_names_output)
+    model.getNodesMap().at(node_name)->setType(NodeType::output);
+  model.setInputAndOutputNodes();
+
+  // interpret and train the model
+  Eigen::Tensor<float, 3> input_values(batch_size, memory_size, 3*input_size);
+  input_values.setValues({ {{1, 2, 0.1, 0.2, -0.1, 0.1}} });
+  Eigen::Tensor<float, 2> output_values(batch_size, output_size);
+  output_values.setValues({ {0, 0} });
+  trainModel(model, node_names_input, node_names_output, input_values, output_values, batch_size, memory_size);
+
+  // test for the expected model error
+  //std::cout << "Model error: " << model.getError()(0, 0) << std::endl;
+  BOOST_CHECK_CLOSE(model.getError()(0, 0), 1.31376994, 1e-4);
+
+  // test for the expected node outputs
+  std::vector<float> output_values_test = { 0.894872904, 2.11051702 };
+  for (int i = 0; i < node_names_output.size(); ++i) {
+    //std::cout << node_names_output.at(i) << " Output: " << model.getNodesMap().at(node_names_output.at(i))->getOutput()(0, 0) << std::endl;
+    BOOST_CHECK_CLOSE(model.getNodesMap().at(node_names_output.at(i))->getOutput()(0, 0), output_values_test.at(i), 1e-4);
+  }
+
+  // test for the expected weights
+  std::vector<std::string> weight_names = {
+    "LogVar_000000000000_to_LogVar_000000000000-Scalar","Encoding_000000000000-Sampler_to_LogVar_000000000000-StdDev",
+    "LogVar_000000000001_to_LogVar_000000000001-Scalar","Encoding_000000000001-Sampler_to_LogVar_000000000001-StdDev",
+    "LogVar_000000000000-StdDev_to_Encoding_000000000000","Mu_000000000000_to_Encoding_000000000000",
+    "LogVar_000000000001-StdDev_to_Encoding_000000000001","Mu_000000000001_to_Encoding_000000000001" };
+  std::vector<float> weight_values_test = { 0.5, 1, 0.5, 1, 1, 1, 1, 1 };
+  for (int i = 0; i < weight_names.size(); ++i) {
+    //std::cout << weight_names.at(i) << " Weight: " << model.getWeightsMap().at(weight_names.at(i))->getWeight() << std::endl;
+    BOOST_CHECK_CLOSE(model.getWeightsMap().at(weight_names.at(i))->getWeight(), weight_values_test.at(i), 1e-4);
+  }
 
 }
 
 BOOST_AUTO_TEST_CASE(addCategoricalEncoding)
 {
-	ModelBuilder<float> model_builder;
-	Model<float> model;
-	std::vector<std::string> node_names;
+  ModelBuilder<float> model_builder;
+  Model<float> model;
+  const int batch_size = 1;
+  const int memory_size = 1;
+  const int input_size = 2;
+  const int output_size = 2;
 
-	// make the input
-	std::vector<std::string> alpha_node_names = model_builder.addInputNodes(model, "Alpha", "Alpha", 2);
+  // make the input
+  std::vector<std::string> alpha_node_names = model_builder.addInputNodes(model, "Alpha", "Alpha", input_size, true);
 
-	// make the normalization 
-	node_names = model_builder.addCategoricalEncoding(model, "Encoding", "Mod1", alpha_node_names);
+  // make the normalization 
+  std::vector<std::string> node_names_output = model_builder.addCategoricalEncoding(model, "Encoding", "Mod1", alpha_node_names, true);
 
-	std::vector<std::string> node_names_test = {
-		//"Alpha_000000000000-Scalar", "Alpha_000000000001-Scalar", 
-		"Encoding-SoftMax-In_000000000000", "Encoding-SoftMax-In_000000000001", "Encoding-SoftMax-Out_000000000000", "Encoding-SoftMax-Out_000000000001", "Encoding-SoftMax-Sum", 
-		"Encoding_000000000000-GumbelSampler", "Encoding_000000000000-InverseTau", "Encoding_000000000000-LogAlphaSampler", "Encoding_000000000000-SoftmaxArgs", 
-		"Encoding_000000000001-GumbelSampler", "Encoding_000000000001-InverseTau", "Encoding_000000000001-LogAlphaSampler", "Encoding_000000000001-SoftmaxArgs" };
-	std::vector<std::string> link_names_test = {
-		//"Alpha_000000000000-Scalar_to_Encoding_000000000000-LogAlphaSampler", "Alpha_000000000000_to_Alpha_000000000000-Scalar", 
-		//"Alpha_000000000001-Scalar_to_Encoding_000000000001-LogAlphaSampler", "Alpha_000000000001_to_Alpha_000000000001-Scalar", 
-		"Alpha_000000000000_to_Encoding_000000000000-LogAlphaSampler", "Alpha_000000000001_to_Encoding_000000000001-LogAlphaSampler",
-		"Encoding-SoftMax-In_000000000000_to_Encoding-SoftMax-Out_000000000000", "Encoding-SoftMax-In_000000000000_to_Encoding-SoftMax-Sum", 
-		"Encoding-SoftMax-In_000000000001_to_Encoding-SoftMax-Out_000000000001", "Encoding-SoftMax-In_000000000001_to_Encoding-SoftMax-Sum", 
-		"Encoding-SoftMax-Sum_to_Encoding-SoftMax-Out_000000000000", "Encoding-SoftMax-Sum_to_Encoding-SoftMax-Out_000000000001", 
-		"Encoding_000000000000-GumbelSampler_to_Encoding_000000000000-LogAlphaSampler", "Encoding_000000000000-InverseTau_to_Encoding_000000000000-SoftmaxArgs", "Encoding_000000000000-LogAlphaSampler_to_Encoding_000000000000-SoftmaxArgs", "Encoding_000000000000-SoftmaxArgs_to_Encoding-SoftMax-In_000000000000", 
-		"Encoding_000000000001-GumbelSampler_to_Encoding_000000000001-LogAlphaSampler", "Encoding_000000000001-InverseTau_to_Encoding_000000000001-SoftmaxArgs", "Encoding_000000000001-LogAlphaSampler_to_Encoding_000000000001-SoftmaxArgs", "Encoding_000000000001-SoftmaxArgs_to_Encoding-SoftMax-In_000000000001" };
-	std::vector<std::string> weight_names_check = {
-		//"Alpha_000000000000-Scalar_to_Encoding_000000000000-LogAlphaSampler", "Alpha_000000000000_to_Alpha_000000000000-Scalar",
-		//"Alpha_000000000001-Scalar_to_Encoding_000000000001-LogAlphaSampler", "Alpha_000000000001_to_Alpha_000000000001-Scalar",
-		"Alpha_000000000000_to_Encoding_000000000000-LogAlphaSampler", "Alpha_000000000001_to_Encoding_000000000001-LogAlphaSampler",
-		"Encoding-SoftMax-In_000000000000_to_Encoding-SoftMax-Out_000000000000", "Encoding-SoftMax-In_000000000000_to_Encoding-SoftMax-Sum",
-		"Encoding-SoftMax-In_000000000001_to_Encoding-SoftMax-Out_000000000001", "Encoding-SoftMax-In_000000000001_to_Encoding-SoftMax-Sum",
-		"Encoding-SoftMax-Sum_to_Encoding-SoftMax-Out_000000000000", "Encoding-SoftMax-Sum_to_Encoding-SoftMax-Out_000000000001",
-		"Encoding_000000000000-GumbelSampler_to_Encoding_000000000000-LogAlphaSampler", "Encoding_000000000000-InverseTau_to_Encoding_000000000000-SoftmaxArgs", "Encoding_000000000000-LogAlphaSampler_to_Encoding_000000000000-SoftmaxArgs", 
-		"Encoding_000000000000-SoftmaxArgs_to_Encoding-SoftMax-In_000000000000","Encoding_000000000001-SoftmaxArgs_to_Encoding-SoftMax-In_000000000001", 
-		"Encoding_000000000001-GumbelSampler_to_Encoding_000000000001-LogAlphaSampler", "Encoding_000000000001-InverseTau_to_Encoding_000000000001-SoftmaxArgs", "Encoding_000000000001-LogAlphaSampler_to_Encoding_000000000001-SoftmaxArgs"};	
-	std::vector<std::string> weight_names_test = {
-		//"Alpha_000000000000-Scalar_to_Encoding_000000000000-LogAlphaSampler", "Alpha_000000000000_to_Alpha_000000000000-Scalar",
-		//"Alpha_000000000001-Scalar_to_Encoding_000000000001-LogAlphaSampler", "Alpha_000000000001_to_Alpha_000000000001-Scalar",
-		"Alpha_000000000000_to_Encoding_000000000000-LogAlphaSampler", "Alpha_000000000001_to_Encoding_000000000001-LogAlphaSampler",
-		"Encoding_000000000000-GumbelSampler_to_Encoding_000000000000-LogAlphaSampler", "Encoding_000000000000-InverseTau_to_Encoding_000000000000-SoftmaxArgs", "Encoding_000000000000-LogAlphaSampler_to_Encoding_000000000000-SoftmaxArgs",
-		"Encoding_000000000001-GumbelSampler_to_Encoding_000000000001-LogAlphaSampler", "Encoding_000000000001-InverseTau_to_Encoding_000000000001-SoftmaxArgs", "Encoding_000000000001-LogAlphaSampler_to_Encoding_000000000001-SoftmaxArgs",
-	};
+  // define the input nodes
+  std::vector<std::string> node_names_input;
+  for (int i = 0; i < input_size; ++i) node_names_input.push_back(alpha_node_names.at(i));
+  for (int i = 0; i < input_size; ++i) {
+    char name_char[512];
+    sprintf(name_char, "Encoding_%012d-GumbelSampler", i);
+    std::string name(name_char);
+    node_names_input.push_back(name);
+  }
+  for (int i = 0; i < input_size; ++i) {
+    char name_char[512];
+    sprintf(name_char, "Encoding_%012d-InverseTau", i);
+    std::string name(name_char);
+    node_names_input.push_back(name);
+  }
 
+  // Specify the output node types manually
+  for (const std::string& node_name : node_names_output)
+    model.getNodesMap().at(node_name)->setType(NodeType::output);
+  model.setInputAndOutputNodes();
+
+  // interpret and train the model
+  Eigen::Tensor<float, 3> input_values(batch_size, memory_size, 3*input_size);
+  input_values.setValues({ {{1, 2, -0.1, 0.1, 1.5, 1.5}} });
+  Eigen::Tensor<float, 2> output_values(batch_size, output_size);
+  output_values.setValues({ {0, 0} });
+  trainModel(model, node_names_input, node_names_output, input_values, output_values, batch_size, memory_size);
+
+  // test for the expected model error
+  //std::cout << "Model error: " << model.getError()(0, 0) << std::endl;
+  BOOST_CHECK_CLOSE(model.getError()(0, 0), 0.189135298, 1e-4);
+
+  // test for the expected node outputs
+  std::vector<float> output_values_test = { 0.141851, 0.858149 };
+  for (int i = 0; i < node_names_output.size(); ++i) {
+    //std::cout << node_names_output.at(i) << " Output: " << model.getNodesMap().at(node_names_output.at(i))->getOutput()(0, 0) << std::endl;
+    BOOST_CHECK_CLOSE(model.getNodesMap().at(node_names_output.at(i))->getOutput()(0, 0), output_values_test.at(i), 1e-4);
+  }
+
+  // test for the expected weights
+  std::vector<std::string> weight_names = {
+    "Alpha_000000000000_to_Encoding_000000000000-LogAlphaSampler", "Alpha_000000000001_to_Encoding_000000000001-LogAlphaSampler",
+    "Encoding-SoftMax-In_000000000000_to_Encoding-SoftMax-Out_000000000000", "Encoding-SoftMax-In_000000000000_to_Encoding-SoftMax-Sum",
+    "Encoding-SoftMax-In_000000000001_to_Encoding-SoftMax-Out_000000000001", "Encoding-SoftMax-In_000000000001_to_Encoding-SoftMax-Sum",
+    "Encoding-SoftMax-Sum_to_Encoding-SoftMax-Out_000000000000", "Encoding-SoftMax-Sum_to_Encoding-SoftMax-Out_000000000001",
+    "Encoding_000000000000-GumbelSampler_to_Encoding_000000000000-LogAlphaSampler", "Encoding_000000000000-InverseTau_to_Encoding_000000000000-SoftmaxArgs", "Encoding_000000000000-LogAlphaSampler_to_Encoding_000000000000-SoftmaxArgs",
+    "Encoding_000000000000-SoftmaxArgs_to_Encoding-SoftMax-In_000000000000","Encoding_000000000001-SoftmaxArgs_to_Encoding-SoftMax-In_000000000001",
+    "Encoding_000000000001-GumbelSampler_to_Encoding_000000000001-LogAlphaSampler", "Encoding_000000000001-InverseTau_to_Encoding_000000000001-SoftmaxArgs", "Encoding_000000000001-LogAlphaSampler_to_Encoding_000000000001-SoftmaxArgs" };
+  std::vector<float> weight_values_test = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
+    1, 1, 1, 1, 1, 1 };
+  for (int i = 0; i < weight_names.size(); ++i) {
+    //std::cout << weight_names.at(i) << " Weight: " << model.getWeightsMap().at(weight_names.at(i))->getWeight() << std::endl;
+    BOOST_CHECK_CLOSE(model.getWeightsMap().at(weight_names.at(i))->getWeight(), weight_values_test.at(i), 1e-4);
+  }
 }
 
 BOOST_AUTO_TEST_CASE(addDiscriminator)
