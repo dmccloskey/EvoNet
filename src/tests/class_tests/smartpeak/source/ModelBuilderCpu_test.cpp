@@ -453,13 +453,13 @@ BOOST_AUTO_TEST_CASE(addNormalization1)
   trainModel(model, node_names_input, node_names_output, input_values, output_values, batch_size, memory_size);
 
   // test for the expected model error
-  std::cout << "Model error: " << model.getError()(0, 0) << std::endl;
-  BOOST_CHECK_CLOSE(model.getError()(0, 0), 3.72271658e-15, 1e-4);
+  //std::cout << "Model error: " << model.getError()(0, 0) << std::endl;
+  BOOST_CHECK_CLOSE(model.getError()(0, 0), 0, 1e-4);
 
   // test for the expected node outputs
   std::vector<float> output_values_test = { -1.414213562,-0.707106781,0,0.707106781,1.414213562 };
   for (int i = 0; i < node_names_output.size(); ++i) {
-    std::cout << node_names_output.at(i) << " Output: " << model.getNodesMap().at(node_names_output.at(i))->getOutput()(0, 0) << std::endl;
+    //std::cout << node_names_output.at(i) << " Output: " << model.getNodesMap().at(node_names_output.at(i))->getOutput()(0, 0) << std::endl;
     BOOST_CHECK_CLOSE(model.getNodesMap().at(node_names_output.at(i))->getOutput()(0, 0), output_values_test.at(i), 1e-4);
   }
 
@@ -473,7 +473,7 @@ BOOST_AUTO_TEST_CASE(addNormalization1)
     "Norm-Variance_to_Input_000000000000-Normalized","Norm-Variance_to_Input_000000000001-Normalized" };
   std::vector<float> weight_values_test = { -1, -1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
   for (int i = 0; i < weight_names.size(); ++i) {
-    std::cout << weight_names.at(i) << " Weight: " << model.getWeightsMap().at(weight_names.at(i))->getWeight() << std::endl;
+    //std::cout << weight_names.at(i) << " Weight: " << model.getWeightsMap().at(weight_names.at(i))->getWeight() << std::endl;
     BOOST_CHECK_CLOSE(model.getWeightsMap().at(weight_names.at(i))->getWeight(), weight_values_test.at(i), 1e-4);
   }
 
@@ -503,26 +503,42 @@ BOOST_AUTO_TEST_CASE(addLinearScale1)
 {
   ModelBuilder<float> model_builder;
   Model<float> model;
-  std::vector<std::string> node_names;
+  const int batch_size = 1;
+  const int memory_size = 1;
+  const int input_size = 2;
+  const int output_size = 2;
 
   // make the input
-  node_names = model_builder.addInputNodes(model, "Input", "Input", 2);
+  std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", "Input", 2);
 
   // make the normalization 
-  node_names = model_builder.addLinearScale(model, "Norm", "Mod1", node_names, 3, 10);
+  std::vector<std::string> node_names_output = model_builder.addLinearScale(model, "Norm", "Mod1", node_names_input, 0, 1);
 
-  std::vector<std::string> node_names_out = { 
-    "Input_000000000000-LinearScale","Input_000000000001-LinearScale" };
-  BOOST_CHECK_EQUAL(node_names.size(), node_names_out.size());
-  for (int i=0; i<node_names_out.size(); ++i) {
-    BOOST_CHECK_EQUAL(node_names.at(i), node_names_out.at(i));
+  // Specify the output node types manually
+  for (const std::string& node_name : node_names_output)
+    model.getNodesMap().at(node_name)->setType(NodeType::output);
+  model.setInputAndOutputNodes();
+
+  // interpret and train the model
+  Eigen::Tensor<float, 3> input_values(batch_size, memory_size, input_size);
+  input_values.setValues({ {{1, 4}} });
+  Eigen::Tensor<float, 2> output_values(batch_size, output_size);
+  output_values.setValues({ {0, 1} });
+  trainModel(model, node_names_input, node_names_output, input_values, output_values, batch_size, memory_size);
+
+  // test for the expected model error
+  std::cout << "Model error: " << model.getError()(0, 0) << std::endl;
+  BOOST_CHECK_CLOSE(model.getError()(0, 0), 3.72271658e-15, 1e-4);
+
+  // test for the expected node outputs
+  std::vector<float> output_values_test = { 0.0474259, 0.952574 };
+  for (int i = 0; i < node_names_output.size(); ++i) {
+    std::cout << node_names_output.at(i) << " Output: " << model.getNodesMap().at(node_names_output.at(i))->getOutput()(0, 0) << std::endl;
+    BOOST_CHECK_CLOSE(model.getNodesMap().at(node_names_output.at(i))->getOutput()(0, 0), output_values_test.at(i), 1e-4);
   }
 
-  std::vector<std::string> node_names_test = { "Input_000000000000-DomainMinOffset","Input_000000000000-DomainScaled",
-    "Input_000000000000-LinearScale","Input_000000000000-RangeMaxMinScale","Input_000000000001-DomainMinOffset",
-    "Input_000000000001-DomainScaled","Input_000000000001-LinearScale","Input_000000000001-RangeMaxMinScale",
-    "Mod1-RangeMinBias","Mod1-RangeMaxMinBias","Norm-Max","Norm-Min","Norm-Scalar" };
-  std::vector<std::string> link_names_test = {
+  // test for the expected weights
+  std::vector<std::string> weight_names = {
     "Input_000000000000-DomainMinOffset_to_Input_000000000000-DomainScaled","Input_000000000000-DomainScaled_to_Input_000000000000-RangeMaxMinScale",
     "Input_000000000000-RangeMaxMinScale_to_Input_000000000000-LinearScale","Input_000000000000_to_Input_000000000000-DomainMinOffset",
     "Input_000000000000_to_Norm-Max","Input_000000000000_to_Norm-Min","Input_000000000001-DomainMinOffset_to_Input_000000000001-DomainScaled",
@@ -532,6 +548,11 @@ BOOST_AUTO_TEST_CASE(addLinearScale1)
     "Norm-Min_to_Input_000000000000-DomainMinOffset","Norm-Min_to_Input_000000000001-DomainMinOffset","Norm-Min_to_Norm-Scalar",
     "Norm-Scalar_to_Input_000000000000-DomainScaled","Norm-Scalar_to_Input_000000000001-DomainScaled","Mod1-RangeMaxMinBias_to_Input_000000000000-RangeMaxMinScale",
     "Mod1-RangeMaxMinBias_to_Input_000000000001-RangeMaxMinScale" };
+  std::vector<float> weight_values_test = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
+  for (int i = 0; i < weight_names.size(); ++i) {
+    std::cout << weight_names.at(i) << " Weight: " << model.getWeightsMap().at(weight_names.at(i))->getWeight() << std::endl;
+    BOOST_CHECK_CLOSE(model.getWeightsMap().at(weight_names.at(i))->getWeight(), weight_values_test.at(i), 1e-4);
+  }
 
 }
 

@@ -114,11 +114,11 @@ public:
 				).prod(Eigen::array<int, 1>({ 1 })).eval();
 
       //// DEBUG (only on CPU)
-      std::cout << "[ProdTensorOp]Source: " << source_output_tensor.chip(source_time_step, 1) << std::endl;
-      std::cout << "[ProdTensorOp]Weight: " << weight_tensor << std::endl;
-      std::cout << "[ProdTensorOp]source_weight_exp: " << source_weight_exp << std::endl;
-      std::cout << "[ProdTensorOp]source_weight_1: " << source_weight_1 << std::endl;
-      std::cout << "[ProdTensorOp]Sink (End): " << sink_input_tensor.chip(sink_time_step, 1) << std::endl;
+      //std::cout << "[ProdTensorOp]Source: " << source_output_tensor.chip(source_time_step, 1) << std::endl;
+      //std::cout << "[ProdTensorOp]Weight: " << weight_tensor << std::endl;
+      //std::cout << "[ProdTensorOp]source_weight_exp: " << source_weight_exp << std::endl;
+      //std::cout << "[ProdTensorOp]source_weight_1: " << source_weight_1 << std::endl;
+      //std::cout << "[ProdTensorOp]Sink (End): " << sink_input_tensor.chip(sink_time_step, 1) << std::endl;
 		}
 		std::string getName() const { return "ProdTensorOp"; };
 	//private:
