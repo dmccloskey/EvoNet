@@ -71,21 +71,25 @@ BOOST_AUTO_TEST_CASE(addFullyConnected1)
   output_values.setConstant(0);
   trainModel(model, node_names_input, node_names_output, input_values, output_values, batch_size, memory_size);
 
+  // test for the expected model error
+  //std::cout << "Model error: " << model.getError()(0, 0)<<std::endl;
+  BOOST_CHECK_CLOSE(model.getError()(0, 0), 2, 1e-4);
+
   // test for the expected node outputs
-  for (const std::string& name : node_names_output) {
-    std::cout << name << " Output: " << model.getNodesMap().at(name)->getOutput()(0, 0) << std::endl;
-    BOOST_CHECK_CLOSE(model.getNodesMap().at(name)->getOutput()(0, 0), 2, 1e-4);
+  std::vector<float> output_values_test = { 2, 2 };
+  for (int i = 0; i < node_names_output.size(); ++i) {
+    //std::cout << node_names_output.at(i) << " Output: " << model.getNodesMap().at(node_names_output.at(i))->getOutput()(0, 0) << std::endl;
+    BOOST_CHECK_CLOSE(model.getNodesMap().at(node_names_output.at(i))->getOutput()(0, 0), output_values_test.at(i), 1e-4);
   }
 
   // test for the expected weights
   std::vector<std::string> weight_names = { "Output-bias_000000000000_to_Output_000000000000", "Output-bias_000000000001_to_Output_000000000001",
     "Input_000000000000_to_Output_000000000000", "Input_000000000000_to_Output_000000000001", "Input_000000000000_to_Output_000000000000", "Input_000000000000_to_Output_000000000001" };
-  std::vector<float> weight_values = { 0, 0, 0.8999, 0.8999, 0.8999, 0.8999 };
-  for (const std::string& name : weight_names) {
-    std::cout << name << " Weight: " << model.getWeightsMap().at(name)->getWeight() << std::endl;
-    BOOST_CHECK_CLOSE(model.getWeightsMap().at(name)->getWeight(), 0, 1e-4);
+  std::vector<float> weight_values_test = { 0, 0, 0.9, 0.9, 0.9, 0.9 };
+  for (int i = 0; i < weight_names.size();++i) {
+    //std::cout << weight_names.at(i) << " Weight: " << model.getWeightsMap().at(weight_names.at(i))->getWeight() << std::endl;
+    BOOST_CHECK_CLOSE(model.getWeightsMap().at(weight_names.at(i))->getWeight(), weight_values_test.at(i), 1e-4);
   }
-
 }
 
 BOOST_AUTO_TEST_CASE(addFullyConnected2)
@@ -197,43 +201,100 @@ BOOST_AUTO_TEST_CASE(addSoftMax)
 {
 	ModelBuilder<float> model_builder;
 	Model<float> model;
-	std::vector<std::string> node_names;
+  const int batch_size = 1;
+  const int memory_size = 1;
+  const int input_size = 2;
+  const int output_size = 2;
 
-	// make the input
-	node_names = model_builder.addInputNodes(model, "Input", "Input", 2);
+  // make the input
+  std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", "Input", input_size);
 
-	// make the fully connected 
-	node_names = model_builder.addSoftMax(model, "SoftMax", "Mod1", node_names);
+  // make the fully connected 
+  std::vector<std::string> node_names_output = model_builder.addSoftMax(model, "SoftMax", "Mod1", node_names_input);
 
-	std::vector<std::string> node_names_test = { "SoftMax-Sum", "SoftMax-In_000000000000", "SoftMax-Out_000000000000", "SoftMax-In_000000000001", "SoftMax-Out_000000000001" };
-	std::vector<std::string> link_names_test = {
-		"Input_000000000000_to_SoftMax-In_000000000000", "SoftMax-In_000000000000_to_SoftMax-Sum", "SoftMax-In_000000000000_to_SoftMax-Out_000000000000", "SoftMax-Sum_to_SoftMax-Out_000000000000",
-		"Input_000000000001_to_SoftMax-In_000000000001", "SoftMax-In_000000000001_to_SoftMax-Sum", "SoftMax-In_000000000001_to_SoftMax-Out_000000000001", "SoftMax-Sum_to_SoftMax-Out_000000000001" };
-	std::vector<std::string> weight_names_test = {
-		"Input_000000000000_to_SoftMax-In_000000000000", "SoftMax-In_000000000000_to_SoftMax-Sum", "SoftMax-In_000000000000_to_SoftMax-Out_000000000000", "SoftMax-Sum_to_SoftMax-Out_000000000000",
-		"Input_000000000001_to_SoftMax-In_000000000001", "SoftMax-In_000000000001_to_SoftMax-Sum", "SoftMax-In_000000000001_to_SoftMax-Out_000000000001", "SoftMax-Sum_to_SoftMax-Out_000000000001" };
+  // Specify the output node types manually
+  for (const std::string& node_name : node_names_output)
+    model.getNodesMap().at(node_name)->setType(NodeType::output);
+  model.setInputAndOutputNodes();
 
+  // interpret and train the model
+  Eigen::Tensor<float, 3> input_values(batch_size, memory_size, input_size);
+  input_values.setValues({ {{1, 4}} });
+  Eigen::Tensor<float, 2> output_values(batch_size, output_size);
+  output_values.setValues({ {0.0474259, 0.952574} });
+  trainModel(model, node_names_input, node_names_output, input_values, output_values, batch_size, memory_size);
+
+  // test for the expected model error
+  //std::cout << "Model error: " << model.getError()(0, 0) << std::endl;
+  BOOST_CHECK_CLOSE(model.getError()(0, 0), 3.72271658e-15, 1e-4);
+
+  // test for the expected node outputs
+  std::vector<float> output_values_test = { 0.0474259, 0.952574 };
+  for (int i = 0; i < node_names_output.size(); ++i) {
+    //std::cout << node_names_output.at(i) << " Output: " << model.getNodesMap().at(node_names_output.at(i))->getOutput()(0, 0) << std::endl;
+    BOOST_CHECK_CLOSE(model.getNodesMap().at(node_names_output.at(i))->getOutput()(0, 0), output_values_test.at(i), 1e-4);
+  }
+
+  // test for the expected weights
+  std::vector<std::string> weight_names = {
+    "Input_000000000000_to_SoftMax-In_000000000000", "SoftMax-In_000000000000_to_SoftMax-Sum", "SoftMax-In_000000000000_to_SoftMax-Out_000000000000", "SoftMax-Sum_to_SoftMax-Out_000000000000",
+    "Input_000000000001_to_SoftMax-In_000000000001", "SoftMax-In_000000000001_to_SoftMax-Sum", "SoftMax-In_000000000001_to_SoftMax-Out_000000000001", "SoftMax-Sum_to_SoftMax-Out_000000000001" };
+
+  std::vector<float> weight_values_test = { 1, 1, 1, 1, 1, 1, 1, 1 };
+  for (int i = 0; i < weight_names.size(); ++i) {
+    //std::cout << weight_names.at(i) << " Weight: " << model.getWeightsMap().at(weight_names.at(i))->getWeight() << std::endl;
+    BOOST_CHECK_CLOSE(model.getWeightsMap().at(weight_names.at(i))->getWeight(), weight_values_test.at(i), 1e-4);
+  }
 }
 
 BOOST_AUTO_TEST_CASE(addStableSoftMax)
 {
 	ModelBuilder<float> model_builder;
 	Model<float> model;
-	std::vector<std::string> node_names;
+  const int batch_size = 1;
+  const int memory_size = 1;
+  const int input_size = 2;
+  const int output_size = 2;
 
 	// make the input
-	node_names = model_builder.addInputNodes(model, "Input", "Input", 2);
+	std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", "Input", input_size);
 
 	// make the fully connected 
-	node_names = model_builder.addStableSoftMax(model, "SoftMax", "Mod1", node_names);
+  std::vector<std::string> node_names_output = model_builder.addStableSoftMax(model, "SoftMax", "Mod1", node_names_input);
 
-	std::vector<std::string> node_names_test = { "SoftMax-Max", "SoftMax-Sum", "SoftMax-In_000000000000", "SoftMax-Out_000000000000", "SoftMax-In_000000000001", "SoftMax-Out_000000000001" };
-	std::vector<std::string> link_names_test = {
-		"Input_000000000000_to_SoftMax-In_000000000000", "SoftMax-In_000000000000_to_SoftMax-Sum", "SoftMax-In_000000000000_to_SoftMax-Out_000000000000", "SoftMax-Sum_to_SoftMax-Out_000000000000", "Input_000000000000_to_SoftMax-Max", "SoftMax-Max_to_SoftMax-In_000000000000",
-		"Input_000000000001_to_SoftMax-In_000000000001", "SoftMax-In_000000000001_to_SoftMax-Sum", "SoftMax-In_000000000001_to_SoftMax-Out_000000000001", "SoftMax-Sum_to_SoftMax-Out_000000000001", "Input_000000000001_to_SoftMax-Max", "SoftMax-Max_to_SoftMax-In_000000000001"};
-	std::vector<std::string> weight_names_test = {
-		"Input_000000000000_to_SoftMax-In_000000000000", "SoftMax-In_000000000000_to_SoftMax-Sum", "SoftMax-In_000000000000_to_SoftMax-Out_000000000000", "SoftMax-Sum_to_SoftMax-Out_000000000000", "Input_000000000000_to_SoftMax-Max", "SoftMax-Max_to_SoftMax-In_000000000000",
-		"Input_000000000001_to_SoftMax-In_000000000001", "SoftMax-In_000000000001_to_SoftMax-Sum", "SoftMax-In_000000000001_to_SoftMax-Out_000000000001", "SoftMax-Sum_to_SoftMax-Out_000000000001", "Input_000000000001_to_SoftMax-Max", "SoftMax-Max_to_SoftMax-In_000000000001" };
+  // Specify the output node types manually
+  for (const std::string& node_name : node_names_output)
+    model.getNodesMap().at(node_name)->setType(NodeType::output);
+  model.setInputAndOutputNodes();
+
+  // interpret and train the model
+  Eigen::Tensor<float, 3> input_values(batch_size, memory_size, input_size);
+  input_values.setValues({ {{1, 4}} });
+  Eigen::Tensor<float, 2> output_values(batch_size, output_size);
+  output_values.setValues({ {0.0474259, 0.952574} });
+  trainModel(model, node_names_input, node_names_output, input_values, output_values, batch_size, memory_size);
+
+  // test for the expected model error
+  //std::cout << "Model error: " << model.getError()(0, 0)<<std::endl;
+  BOOST_CHECK_CLOSE(model.getError()(0, 0), 3.72271658e-15, 1e-4);
+
+  // test for the expected node outputs
+  std::vector<float> output_values_test = { 0.0474259, 0.952574 };
+  for (int i = 0; i < node_names_output.size(); ++i) {
+    //std::cout << node_names_output.at(i) << " Output: " << model.getNodesMap().at(node_names_output.at(i))->getOutput()(0, 0) << std::endl;
+    BOOST_CHECK_CLOSE(model.getNodesMap().at(node_names_output.at(i))->getOutput()(0, 0), output_values_test.at(i), 1e-4);
+  }
+
+  // test for the expected weights
+  std::vector<std::string> weight_names = {
+    "Input_000000000000_to_SoftMax-In_000000000000", "SoftMax-In_000000000000_to_SoftMax-Sum", "SoftMax-In_000000000000_to_SoftMax-Out_000000000000", "SoftMax-Sum_to_SoftMax-Out_000000000000", "Input_000000000000_to_SoftMax-Max", "SoftMax-Max_to_SoftMax-In_000000000000",
+    "Input_000000000001_to_SoftMax-In_000000000001", "SoftMax-In_000000000001_to_SoftMax-Sum", "SoftMax-In_000000000001_to_SoftMax-Out_000000000001", "SoftMax-Sum_to_SoftMax-Out_000000000001", "Input_000000000001_to_SoftMax-Max", "SoftMax-Max_to_SoftMax-In_000000000001" };
+
+  std::vector<float> weight_values_test = { 1, 1, 1, 1, 1, -1, 1, 1, 1, 1, 1, -1 };
+  for (int i = 0; i < weight_names.size(); ++i) {
+    //std::cout << weight_names.at(i) << " Weight: " << model.getWeightsMap().at(weight_names.at(i))->getWeight() << std::endl;
+    BOOST_CHECK_CLOSE(model.getWeightsMap().at(weight_names.at(i))->getWeight(), weight_values_test.at(i), 1e-4);
+  }
 }
 
 BOOST_AUTO_TEST_CASE(addConvolution1)
