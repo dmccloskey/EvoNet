@@ -1714,7 +1714,6 @@ public:
 		variance.setModuleName(module_name);
     if (specify_layers) mean.setLayerName(module_name + "-Variance");
 		model.addNodes({ variance });
-		//node_names.push_back(variance_name);
 
 		for (const std::string& node_name : source_node_names) {
 			// Make the source-mean nodes
@@ -1725,7 +1724,6 @@ public:
 			sourceMinMean.setModuleName(module_name);
       if (specify_layers) sourceMinMean.setLayerName(module_name + "-SourceMinMean");
 			model.addNodes({ sourceMinMean });
-			//node_names.push_back(sourceMinMean_name);
 
 			// Make the normalized nodes
 			char normalized_name_char[512];

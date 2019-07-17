@@ -94,19 +94,31 @@ public:
 
       // Step 1: expand source across the sink layer dim and weight tensor across the batch dim and multiply
       auto weight_tensor_exp = weight_tensor.broadcast(Eigen::array<int, 3>({ batch_size, 1, 1 }));
-      auto source_weight_exp = source_output_tensor.chip(source_time_step, 1).broadcast(Eigen::array<int, 3>({ 1, 1, sink_layer_size })) *  weight_tensor_exp;
-      // Step 2: Substitute 1 for all 0 entries (assuming 0s are non entries)
-      auto source_weight_1 = (source_weight_exp > source_weight_exp.constant(TensorT(-1e-24)) && source_weight_exp < source_weight_exp.constant(TensorT(1e-24))).select(source_weight_exp.constant((TensorT)1), source_weight_exp);
-      // Step 3: multiply along the source dim
-			sink_input_tensor.chip(sink_time_step, 1).device(device) = sink_input_tensor.chip(sink_time_step, 1) * (source_weight_1				
+      auto source_bcast = source_output_tensor.chip(source_time_step, 1).broadcast(Eigen::array<int, 3>({ 1, 1, sink_layer_size }));
+      auto source_weight_exp = source_bcast * weight_tensor_exp;
+
+      // Step 2: determine where the 0s in the original input are propogated to in the source_weight_exp tensor
+      auto source_1 = (source_output_tensor.chip(source_time_step, 1) > source_output_tensor.chip(source_time_step, 1).constant(TensorT(-1e-24)) &&
+        source_output_tensor.chip(source_time_step, 1) < source_output_tensor.chip(source_time_step, 1).constant(TensorT(1e-24))).select(
+          source_output_tensor.chip(source_time_step, 1).constant(TensorT(1)), source_output_tensor.chip(source_time_step, 1).constant(TensorT(0)));
+      auto source_weight_exp_1 = source_1.broadcast(Eigen::array<int, 3>({ 1, 1, sink_layer_size }))*weight_tensor_exp;
+
+      // Step 3: Substitute 1 for all 0 entries (assuming 0s are non entries) except for the 0s that were propogated from the source output
+      auto source_weight_1 = (
+        (source_weight_exp > source_weight_exp.constant(TensorT(-1e-24)) && source_weight_exp < source_weight_exp.constant(TensorT(1e-24))) &&
+        (source_weight_exp_1 < source_weight_exp.constant(TensorT(1-1e-24)) || source_weight_exp_1 > source_weight_exp.constant(TensorT(1+1e-24)))
+        ).select(source_weight_exp.constant(TensorT(1)), source_weight_exp);
+
+      // Step 4: multiply along the source dim
+			sink_input_tensor.chip(sink_time_step, 1).device(device) = sink_input_tensor.chip(sink_time_step, 1) * (source_weight_1
 				).prod(Eigen::array<int, 1>({ 1 })).eval();
 
       //// DEBUG (only on CPU)
-      //std::cout << "[ProdTensorOp]Source: " << source_output_tensor.chip(source_time_step, 1) << std::endl;
-      //std::cout << "[ProdTensorOp]Weight: " << weight_tensor << std::endl;
-      //std::cout << "[ProdTensorOp]source_weight_exp: " << source_weight_exp << std::endl;
-      //std::cout << "[ProdTensorOp]source_weight_1: " << source_weight_1 << std::endl;
-      //std::cout << "[ProdTensorOp]Sink (End): " << sink_input_tensor.chip(sink_time_step, 1) << std::endl;
+      std::cout << "[ProdTensorOp]Source: " << source_output_tensor.chip(source_time_step, 1) << std::endl;
+      std::cout << "[ProdTensorOp]Weight: " << weight_tensor << std::endl;
+      std::cout << "[ProdTensorOp]source_weight_exp: " << source_weight_exp << std::endl;
+      std::cout << "[ProdTensorOp]source_weight_1: " << source_weight_1 << std::endl;
+      std::cout << "[ProdTensorOp]Sink (End): " << sink_input_tensor.chip(sink_time_step, 1) << std::endl;
 		}
 		std::string getName() const { return "ProdTensorOp"; };
 	//private:
@@ -436,8 +448,24 @@ public:
       //      and then divide by the square of the comp_tensor plus a small constant to avoid division by 0
 			auto tmp = (source_exp_input_tensor * source_error_tensor.chip(source_time_step, 1).broadcast(Eigen::array<int, 3>({ 1, sink_layer_size, 1 }))
         * comp_tensor / (comp_tensor * comp_tensor + comp_tensor.constant((TensorT)1e-6))).sum(Eigen::array<int, 1>({ 2 }));
+
 			// NOTE this should be *=, but the sink error tensor is initialized to 0...
-			sink_error_tensor.chip(sink_time_step, 1).device(device) += tmp.clip(TensorT(-1e9),TensorT(1e9)) * sink_derivative_tensor.chip(sink_time_step, 1);
+      //sink_error_tensor.chip(sink_time_step, 1).device(device) += tmp.clip(TensorT(-1e9), TensorT(1e9)) * sink_derivative_tensor.chip(sink_time_step, 1);
+
+      // step 3: substitute 0s for 1s
+      auto sink_error_1 = (sink_error_tensor.chip(sink_time_step, 1) > sink_error_tensor.chip(sink_time_step, 1).constant(TensorT(-1e-24)) &&
+        sink_error_tensor.chip(sink_time_step, 1) < sink_error_tensor.chip(sink_time_step, 1).constant(TensorT(1e-24))).select(
+          sink_error_tensor.chip(sink_time_step, 1).constant(TensorT(1)), sink_error_tensor.chip(sink_time_step, 1));
+			auto sink_error_new = sink_error_1 * tmp.clip(TensorT(-1e9),TensorT(1e9)) * sink_derivative_tensor.chip(sink_time_step, 1);
+
+      // step 4: swap back the original 0s
+      auto sink_error_corrected = (
+        (sink_error_tensor.chip(sink_time_step, 1) > sink_error_tensor.chip(sink_time_step, 1).constant(TensorT(-1e-24)) &&
+          sink_error_tensor.chip(sink_time_step, 1) < sink_error_tensor.chip(sink_time_step, 1).constant(TensorT(1e-24))) &&
+        (sink_error_new > sink_error_tensor.chip(sink_time_step, 1).constant(TensorT(1-1e-24)) &&
+          sink_error_new < sink_error_tensor.chip(sink_time_step, 1).constant(TensorT(1+1e-24)))).select(
+          sink_error_new.constant(TensorT(0)), sink_error_new);
+      sink_error_tensor.chip(sink_time_step, 1).device(device) = sink_error_corrected;
 
       //// DEBUG (only on CPU)
       //std::cout << "[ProdErrorTensorOp]comp_tensor: " << comp_tensor << std::endl;
