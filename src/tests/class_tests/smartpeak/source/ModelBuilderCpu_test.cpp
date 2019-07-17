@@ -718,135 +718,129 @@ BOOST_AUTO_TEST_CASE(addLSTMBlock1)
 {
 	ModelBuilder<float> model_builder;
 	Model<float> model;
-	std::vector<std::string> node_names;
+  const int batch_size = 1;
+  const int memory_size = 1;
+  const int input_size = 2;
+  const int output_size = 2;
 
 	// make the input
-	node_names = model_builder.addInputNodes(model, "Input", "Input", 2);
+  std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", "Input", input_size, true);
 
-	// make the normalization 
-	node_names = model_builder.addLSTMBlock1(model, "LSTM", "Mod1", node_names, 2,
+	// make the LSTM block1 
+  std::vector<std::string> node_names_output = model_builder.addLSTMBlock1(model, "LSTM", "Mod1", node_names_input, input_size,
 		std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
 		std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-		std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new SGDOp<float>(0.1, 0.9)), 0.2f, 0.8f, true);
+		std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new SGDOp<float>(0.1, 0.9)), 0.0f, 0.0f, true, true, true);
 
-	std::vector<std::string> node_names_test = {
-		"LSTM-BlockGateForget","LSTM-BlockGateForget-bias","LSTM-BlockGateInput","LSTM-BlockGateInput-bias","LSTM-BlockGateOutput","LSTM-BlockGateOutput-bias",
-		"LSTM-BlockInput-000000000000","LSTM-BlockInput-000000000000-bias-000000000000","LSTM-BlockInput-000000000001","LSTM-BlockInput-000000000001-bias-000000000001",
-		"LSTM-BlockMemoryCell-000000000000","LSTM-BlockMemoryCell-000000000001","LSTM-BlockMultForget-000000000000","LSTM-BlockMultForget-000000000001",
-    "LSTM-BlockMultInput-000000000000","LSTM-BlockMultInput-000000000001","LSTM-BlockMultOutput-000000000000","LSTM-BlockMultOutput-000000000001" };
-	std::vector<std::string> link_names_test = {
-		"Input_000000000000_to_LSTM-BlockGateForget","Input_000000000000_to_LSTM-BlockGateInput","Input_000000000000_to_LSTM-BlockGateOutput","Input_000000000000_to_LSTM-BlockInput-000000000000","Input_000000000000_to_LSTM-BlockInput-000000000001",
-		"Input_000000000001_to_LSTM-BlockGateForget","Input_000000000001_to_LSTM-BlockGateInput","Input_000000000001_to_LSTM-BlockGateOutput","Input_000000000001_to_LSTM-BlockInput-000000000000","Input_000000000001_to_LSTM-BlockInput-000000000001",
-		"LSTM-BlockInput-000000000000_to_LSTM-BlockMultInput-000000000000", "LSTM-BlockInput-000000000001_to_LSTM-BlockMultInput-000000000001",
-		"LSTM-BlockGateForget-bias_to_LSTM-BlockGateForget","LSTM-BlockGateForget_to_LSTM-BlockMultForget-000000000000","LSTM-BlockGateForget_to_LSTM-BlockMultForget-000000000001",
-		"LSTM-BlockGateInput-bias_to_LSTM-BlockGateInput","LSTM-BlockGateInput_to_LSTM-BlockMultInput-000000000000","LSTM-BlockGateInput_to_LSTM-BlockMultInput-000000000001",
-		"LSTM-BlockGateOutput-bias_to_LSTM-BlockGateOutput","LSTM-BlockGateOutput_to_LSTM-BlockMultOutput-000000000000","LSTM-BlockGateOutput_to_LSTM-BlockMultOutput-000000000001",
-		"LSTM-BlockInput-000000000000-bias-000000000000_to_LSTM-BlockInput-000000000000","LSTM-BlockInput-000000000001-bias-000000000001_to_LSTM-BlockInput-000000000001",
-		"LSTM-BlockMemoryCell-000000000000_to_LSTM-BlockMultForget-000000000000","LSTM-BlockMemoryCell-000000000000_to_LSTM-BlockMultOutput-000000000000",
-		"LSTM-BlockMemoryCell-000000000001_to_LSTM-BlockMultForget-000000000001","LSTM-BlockMemoryCell-000000000001_to_LSTM-BlockMultOutput-000000000001",
-		"LSTM-BlockMultForget-000000000000_to_LSTM-BlockMemoryCell-000000000000","LSTM-BlockMultForget-000000000001_to_LSTM-BlockMemoryCell-000000000001",
-		"LSTM-BlockMultInput-000000000000_to_LSTM-BlockMemoryCell-000000000000","LSTM-BlockMultInput-000000000001_to_LSTM-BlockMemoryCell-000000000001",
-		"LSTM-BlockMultOutput-000000000000_to_LSTM-BlockGateForget","LSTM-BlockMultOutput-000000000000_to_LSTM-BlockGateInput","LSTM-BlockMultOutput-000000000000_to_LSTM-BlockGateOutput","LSTM-BlockMultOutput-000000000000_to_LSTM-BlockInput-000000000000",
-		"LSTM-BlockMultOutput-000000000001_to_LSTM-BlockGateForget","LSTM-BlockMultOutput-000000000001_to_LSTM-BlockGateInput","LSTM-BlockMultOutput-000000000001_to_LSTM-BlockGateOutput","LSTM-BlockMultOutput-000000000001_to_LSTM-BlockInput-000000000001" };
-	std::vector<std::string> weight_names_test = {
-		"Input_000000000000_to_LSTM-BlockGateForget","Input_000000000000_to_LSTM-BlockGateInput","Input_000000000000_to_LSTM-BlockGateOutput","Input_000000000000_to_LSTM-BlockInput-000000000000","Input_000000000000_to_LSTM-BlockInput-000000000001",
-		"Input_000000000001_to_LSTM-BlockGateForget","Input_000000000001_to_LSTM-BlockGateInput","Input_000000000001_to_LSTM-BlockGateOutput","Input_000000000001_to_LSTM-BlockInput-000000000000","Input_000000000001_to_LSTM-BlockInput-000000000001",
-		"LSTM-BlockMultOutput-000000000000_to_LSTM-BlockGateForget","LSTM-BlockMultOutput-000000000000_to_LSTM-BlockGateInput","LSTM-BlockMultOutput-000000000000_to_LSTM-BlockGateOutput","LSTM-BlockMultOutput-000000000000_to_LSTM-BlockInput-000000000000",
-		"LSTM-BlockMultOutput-000000000001_to_LSTM-BlockGateForget","LSTM-BlockMultOutput-000000000001_to_LSTM-BlockGateInput","LSTM-BlockMultOutput-000000000001_to_LSTM-BlockGateOutput","LSTM-BlockMultOutput-000000000001_to_LSTM-BlockInput-000000000001",
-		"LSTM-BlockGateForget-bias_to_LSTM-BlockGateForget","LSTM-BlockGateInput-bias_to_LSTM-BlockGateInput","LSTM-BlockGateOutput-bias_to_LSTM-BlockGateOutput",
-		"LSTM-BlockInput-000000000000-bias-000000000000_to_LSTM-BlockInput-000000000000","LSTM-BlockInput-000000000001-bias-000000000001_to_LSTM-BlockInput-000000000001"};
-	std::vector<std::string> weight_names_unity_test = {
-		"LSTM-BlockInput-000000000000_to_LSTM-BlockMultInput-000000000000", "LSTM-BlockInput-000000000001_to_LSTM-BlockMultInput-000000000001",
-		"LSTM-BlockGateForget_to_LSTM-BlockMultForget-000000000000","LSTM-BlockGateForget_to_LSTM-BlockMultForget-000000000001",
-		"LSTM-BlockGateInput_to_LSTM-BlockMultInput-000000000000","LSTM-BlockGateInput_to_LSTM-BlockMultInput-000000000001",
-		"LSTM-BlockGateOutput_to_LSTM-BlockMultOutput-000000000000","LSTM-BlockGateOutput_to_LSTM-BlockMultOutput-000000000001",		
-		"LSTM-BlockMemoryCell-000000000000_to_LSTM-BlockMultForget-000000000000","LSTM-BlockMemoryCell-000000000000_to_LSTM-BlockMultOutput-000000000000",
-		"LSTM-BlockMemoryCell-000000000001_to_LSTM-BlockMultForget-000000000001","LSTM-BlockMemoryCell-000000000001_to_LSTM-BlockMultOutput-000000000001",
-		"LSTM-BlockMultForget-000000000000_to_LSTM-BlockMemoryCell-000000000000","LSTM-BlockMultForget-000000000001_to_LSTM-BlockMemoryCell-000000000001",
-		"LSTM-BlockMultInput-000000000000_to_LSTM-BlockMemoryCell-000000000000","LSTM-BlockMultInput-000000000001_to_LSTM-BlockMemoryCell-000000000001", };
+  // Specify the output node types manually
+  for (const std::string& node_name : node_names_output)
+    model.getNodesMap().at(node_name)->setType(NodeType::output);
+  model.setInputAndOutputNodes();
+  model.findCycles();
 
+  // interpret and train the model
+  Eigen::Tensor<float, 3> input_values(batch_size, memory_size, input_size);
+  input_values.setValues({ {{1, 2}} });
+  Eigen::Tensor<float, 2> output_values(batch_size, output_size);
+  output_values.setValues({ {0, 0} });
+  trainModel(model, node_names_input, node_names_output, input_values, output_values, batch_size, memory_size);
+
+  // test for the expected model error
+  std::cout << "Model error: " << model.getError()(0, 0) << std::endl;
+  BOOST_CHECK_CLOSE(model.getError()(0, 0), 3.70516539, 1e-4);
+
+  // test for the expected node outputs
+  std::vector<float> output_values_test = { 2.72219, 2.72219 };
+  for (int i = 0; i < node_names_output.size(); ++i) {
+    std::cout << node_names_output.at(i) << " Output: " << model.getNodesMap().at(node_names_output.at(i))->getOutput()(0, 0) << std::endl;
+    BOOST_CHECK_CLOSE(model.getNodesMap().at(node_names_output.at(i))->getOutput()(0, 0), output_values_test.at(i), 1e-4);
+  }
+
+  // test for the expected weights
+  std::vector<std::string> weight_names = {
+    "Input_000000000000_to_LSTM-BlockGateForget","Input_000000000000_to_LSTM-BlockGateInput","Input_000000000000_to_LSTM-BlockGateOutput","Input_000000000000_to_LSTM-BlockInput-000000000000","Input_000000000000_to_LSTM-BlockInput-000000000001",
+    "Input_000000000001_to_LSTM-BlockGateForget","Input_000000000001_to_LSTM-BlockGateInput","Input_000000000001_to_LSTM-BlockGateOutput","Input_000000000001_to_LSTM-BlockInput-000000000000","Input_000000000001_to_LSTM-BlockInput-000000000001",
+    "LSTM-BlockMultOutput-000000000000_to_LSTM-BlockGateForget","LSTM-BlockMultOutput-000000000000_to_LSTM-BlockGateInput","LSTM-BlockMultOutput-000000000000_to_LSTM-BlockGateOutput","LSTM-BlockMultOutput-000000000000_to_LSTM-BlockInput-000000000000",
+    "LSTM-BlockMultOutput-000000000001_to_LSTM-BlockGateForget","LSTM-BlockMultOutput-000000000001_to_LSTM-BlockGateInput","LSTM-BlockMultOutput-000000000001_to_LSTM-BlockGateOutput","LSTM-BlockMultOutput-000000000001_to_LSTM-BlockInput-000000000001",
+    "LSTM-BlockGateForget-bias_to_LSTM-BlockGateForget","LSTM-BlockGateInput-bias_to_LSTM-BlockGateInput","LSTM-BlockGateOutput-bias_to_LSTM-BlockGateOutput",
+    "LSTM-BlockInput-000000000000-bias-000000000000_to_LSTM-BlockInput-000000000000","LSTM-BlockInput-000000000001-bias-000000000001_to_LSTM-BlockInput-000000000001" };
+  std::vector<float> weight_values_test = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1 };
+  for (int i = 0; i < weight_names.size(); ++i) {
+    std::cout << weight_names.at(i) << " Weight: " << model.getWeightsMap().at(weight_names.at(i))->getWeight() << std::endl;
+    BOOST_CHECK_CLOSE(model.getWeightsMap().at(weight_names.at(i))->getWeight(), weight_values_test.at(i), 1e-4);
+  }
 }
 	
 BOOST_AUTO_TEST_CASE(addLSTM)
 {
-	ModelBuilder<float> model_builder;
-	Model<float> model;
-	std::vector<std::string> node_names;
-
-	// make the input
-	node_names = model_builder.addInputNodes(model, "Input", "Input", 2);
-
-	// make the normalization 
-	node_names = model_builder.addLSTM(model, "LSTM", "Mod1", node_names, 2, 2,
-		std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
-		std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-		std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new SGDOp<float>(0.1, 0.9)), 0.2f, 0.8f, true, true, 1);
-
-	std::vector<std::string> node_names_test = { 
-		"LSTM-000000000000-BlockMultOutput-000000000000","LSTM-000000000000-BlockMultOutput-000000000001",
-		"LSTM-000000000001-BlockMultOutput-000000000000","LSTM-000000000001-BlockMultOutput-000000000001" };
-
+   // NO Test
 }
 
 BOOST_AUTO_TEST_CASE(addDotProdAttention1)
-{ // [TODO: update mod names]
+{
 	ModelBuilder<float> model_builder;
 	Model<float> model;
-	std::vector<std::string> node_names;
+  const int batch_size = 1;
+  const int memory_size = 1;
+  const int input_size = 2;
+  const int output_size = 3;
 
 	// make the input
-	node_names = model_builder.addInputNodes(model, "Input", "Input", 2);
+  std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", "Input", input_size, true);
 
 	// make the fully connected 
-	node_names = model_builder.addDotProdAttention(model, "Hidden", "Mod1", node_names, node_names, node_names,
-		3, 3, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
+  std::vector<std::string> node_names_output = model_builder.addDotProdAttention(model, "Hidden", "Mod1", node_names_input, node_names_input, node_names_input,
+    output_size, output_size, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
 		std::shared_ptr<WeightInitOp<float>>(new RandWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new SGDOp<float>(0.1, 0.9)),
-		0.2f, 0.8f);
+		0.0f, 0.0f, true, true);
 
-	std::vector<std::string> node_names_softmax = { "Hidden_softMax-In_000000000000", "Hidden_softMax-In_000000000001",	"Hidden_softMax-In_000000000002",
-		"Hidden_softMax-Max",	"Hidden_softMax-Out_000000000000",	"Hidden_softMax-Out_000000000001",	"Hidden_softMax-Out_000000000002",	"Hidden_softMax-Sum"};
-	std::vector<std::string> node_names_test = { "Hidden-scalar","Hidden_scores_000000000000","Hidden_scores_000000000001","Hidden_scores_000000000002",
-		"Hidden_attention_000000000000","Hidden_attention_000000000001","Hidden_attention_000000000002",
-		"Hidden_keys_000000000000","Hidden_keys_000000000001","Hidden_keys_000000000002","Hidden_query_000000000000","Hidden_query_000000000001","Hidden_query_000000000002",
-		"Hidden_values_000000000000","Hidden_values_000000000001","Hidden_values_000000000002" };
-	std::vector<std::string> link_names_test = { "Hidden-scalar_to_Hidden_scores_000000000000","Hidden-scalar_to_Hidden_scores_000000000001",
-		"Hidden-scalar_to_Hidden_scores_000000000002","Hidden_keys_000000000000_to_Hidden_scores_000000000000","Hidden_keys_000000000001_to_Hidden_scores_000000000001",
-		"Hidden_keys_000000000002_to_Hidden_scores_000000000002","Hidden_query_000000000000_to_Hidden_scores_000000000000","Hidden_query_000000000001_to_Hidden_scores_000000000001",
-		"Hidden_query_000000000002_to_Hidden_scores_000000000002","Hidden_scores_000000000000_to_Hidden_softMax-In_000000000000","Hidden_scores_000000000000_to_Hidden_softMax-Max",
-		"Hidden_scores_000000000001_to_Hidden_softMax-In_000000000001","Hidden_scores_000000000001_to_Hidden_softMax-Max","Hidden_scores_000000000002_to_Hidden_softMax-In_000000000002",
-		"Hidden_scores_000000000002_to_Hidden_softMax-Max","Hidden_softMax-In_000000000000_to_Hidden_softMax-Out_000000000000","Hidden_softMax-In_000000000000_to_Hidden_softMax-Sum",
-		"Hidden_softMax-In_000000000001_to_Hidden_softMax-Out_000000000001","Hidden_softMax-In_000000000001_to_Hidden_softMax-Sum",
-		"Hidden_softMax-In_000000000002_to_Hidden_softMax-Out_000000000002","Hidden_softMax-In_000000000002_to_Hidden_softMax-Sum",
-		"Hidden_softMax-Max_to_Hidden_softMax-In_000000000000","Hidden_softMax-Max_to_Hidden_softMax-In_000000000001","Hidden_softMax-Max_to_Hidden_softMax-In_000000000002",
-		"Hidden_softMax-Sum_to_Hidden_softMax-Out_000000000000","Hidden_softMax-Sum_to_Hidden_softMax-Out_000000000001","Hidden_softMax-Sum_to_Hidden_softMax-Out_000000000002",
-		"Hidden_values_000000000000_to_Hidden_attention_000000000000","Hidden_values_000000000001_to_Hidden_attention_000000000001","Hidden_values_000000000002_to_Hidden_attention_000000000002",
-		"Input_000000000000_to_Hidden_keys_000000000000","Input_000000000000_to_Hidden_keys_000000000001","Input_000000000000_to_Hidden_keys_000000000002",
-		"Input_000000000000_to_Hidden_query_000000000000","Input_000000000000_to_Hidden_query_000000000001","Input_000000000000_to_Hidden_query_000000000002",
-		"Input_000000000000_to_Hidden_values_000000000000","Input_000000000000_to_Hidden_values_000000000001","Input_000000000000_to_Hidden_values_000000000002",
-		"Input_000000000001_to_Hidden_keys_000000000000","Input_000000000001_to_Hidden_keys_000000000001","Input_000000000001_to_Hidden_keys_000000000002",
-		"Input_000000000001_to_Hidden_query_000000000000","Input_000000000001_to_Hidden_query_000000000001","Input_000000000001_to_Hidden_query_000000000002",
-		"Input_000000000001_to_Hidden_values_000000000000","Input_000000000001_to_Hidden_values_000000000001","Input_000000000001_to_Hidden_values_000000000002",
-		"Hidden_softMax-Out_000000000000_to_Hidden_attention_000000000000", "Hidden_softMax-Out_000000000001_to_Hidden_attention_000000000001", "Hidden_softMax-Out_000000000002_to_Hidden_attention_000000000002" };
-	std::vector<std::string> weight_names_softmax = { "Hidden_scores_000000000000_to_Hidden_softMax-In_000000000000","Hidden_scores_000000000000_to_Hidden_softMax-Max",
-		"Hidden_scores_000000000001_to_Hidden_softMax-In_000000000001","Hidden_scores_000000000001_to_Hidden_softMax-Max","Hidden_scores_000000000002_to_Hidden_softMax-In_000000000002",
-		"Hidden_scores_000000000002_to_Hidden_softMax-Max","Hidden_softMax-In_000000000000_to_Hidden_softMax-Out_000000000000","Hidden_softMax-In_000000000000_to_Hidden_softMax-Sum",
-		"Hidden_softMax-In_000000000001_to_Hidden_softMax-Out_000000000001","Hidden_softMax-In_000000000001_to_Hidden_softMax-Sum",
-		"Hidden_softMax-In_000000000002_to_Hidden_softMax-Out_000000000002","Hidden_softMax-In_000000000002_to_Hidden_softMax-Sum",
-		"Hidden_softMax-Max_to_Hidden_softMax-In_000000000000","Hidden_softMax-Max_to_Hidden_softMax-In_000000000001","Hidden_softMax-Max_to_Hidden_softMax-In_000000000002",
-		"Hidden_softMax-Sum_to_Hidden_softMax-Out_000000000000","Hidden_softMax-Sum_to_Hidden_softMax-Out_000000000001","Hidden_softMax-Sum_to_Hidden_softMax-Out_000000000002"};
-	std::vector<std::string> weight_names_test = { "Hidden-scalar_to_Hidden_scores_000000000000","Hidden-scalar_to_Hidden_scores_000000000001",
-		"Hidden-scalar_to_Hidden_scores_000000000002","Hidden_keys_000000000000_to_Hidden_scores_000000000000","Hidden_keys_000000000001_to_Hidden_scores_000000000001",
-		"Hidden_keys_000000000002_to_Hidden_scores_000000000002","Hidden_query_000000000000_to_Hidden_scores_000000000000","Hidden_query_000000000001_to_Hidden_scores_000000000001",
-		"Hidden_query_000000000002_to_Hidden_scores_000000000002",
-		"Hidden_values_000000000000_to_Hidden_attention_000000000000","Hidden_values_000000000001_to_Hidden_attention_000000000001","Hidden_values_000000000002_to_Hidden_attention_000000000002",
-		"Input_000000000000_to_Hidden_keys_000000000000","Input_000000000000_to_Hidden_keys_000000000001","Input_000000000000_to_Hidden_keys_000000000002",
-		"Input_000000000000_to_Hidden_query_000000000000","Input_000000000000_to_Hidden_query_000000000001","Input_000000000000_to_Hidden_query_000000000002",
-		"Input_000000000000_to_Hidden_values_000000000000","Input_000000000000_to_Hidden_values_000000000001","Input_000000000000_to_Hidden_values_000000000002",
-		"Input_000000000001_to_Hidden_keys_000000000000","Input_000000000001_to_Hidden_keys_000000000001","Input_000000000001_to_Hidden_keys_000000000002",
-		"Input_000000000001_to_Hidden_query_000000000000","Input_000000000001_to_Hidden_query_000000000001","Input_000000000001_to_Hidden_query_000000000002",
-		"Input_000000000001_to_Hidden_values_000000000000","Input_000000000001_to_Hidden_values_000000000001","Input_000000000001_to_Hidden_values_000000000002",
-		"Hidden_softMax-Out_000000000000_to_Hidden_attention_000000000000", "Hidden_softMax-Out_000000000001_to_Hidden_attention_000000000001", "Hidden_softMax-Out_000000000002_to_Hidden_attention_000000000002" };
+  // Specify the output node types manually
+  for (const std::string& node_name : node_names_output)
+    model.getNodesMap().at(node_name)->setType(NodeType::output);
+  model.setInputAndOutputNodes();
 
+  // interpret and train the model
+  Eigen::Tensor<float, 3> input_values(batch_size, memory_size, input_size);
+  input_values.setValues({ {{1, 4}} });
+  Eigen::Tensor<float, 2> output_values(batch_size, output_size);
+  output_values.setValues({ {0, 0, 0} });
+  trainModel(model, node_names_input, node_names_output, input_values, output_values, batch_size, memory_size);
+
+  // test for the expected model error
+  std::cout << "Model error: " << model.getError()(0, 0) << std::endl;
+  BOOST_CHECK_CLOSE(model.getError()(0, 0), 0, 1e-4);
+
+  // test for the expected node outputs
+  std::vector<float> output_values_test = { 0, 0, 0 };
+  for (int i = 0; i < node_names_output.size(); ++i) {
+    std::cout << node_names_output.at(i) << " Output: " << model.getNodesMap().at(node_names_output.at(i))->getOutput()(0, 0) << std::endl;
+    BOOST_CHECK_CLOSE(model.getNodesMap().at(node_names_output.at(i))->getOutput()(0, 0), output_values_test.at(i), 1e-4);
+  }
+
+  // test for the expected weights
+  std::vector<std::string> weight_names = { "Hidden-scalar_to_Hidden_scores_000000000000","Hidden-scalar_to_Hidden_scores_000000000001",
+    "Hidden-scalar_to_Hidden_scores_000000000002","Hidden_keys_000000000000_to_Hidden_scores_000000000000","Hidden_keys_000000000001_to_Hidden_scores_000000000001",
+    "Hidden_keys_000000000002_to_Hidden_scores_000000000002","Hidden_query_000000000000_to_Hidden_scores_000000000000","Hidden_query_000000000001_to_Hidden_scores_000000000001",
+    "Hidden_query_000000000002_to_Hidden_scores_000000000002",
+    "Hidden_values_000000000000_to_Hidden_attention_000000000000","Hidden_values_000000000001_to_Hidden_attention_000000000001","Hidden_values_000000000002_to_Hidden_attention_000000000002",
+    "Input_000000000000_to_Hidden_keys_000000000000","Input_000000000000_to_Hidden_keys_000000000001","Input_000000000000_to_Hidden_keys_000000000002",
+    "Input_000000000000_to_Hidden_query_000000000000","Input_000000000000_to_Hidden_query_000000000001","Input_000000000000_to_Hidden_query_000000000002",
+    "Input_000000000000_to_Hidden_values_000000000000","Input_000000000000_to_Hidden_values_000000000001","Input_000000000000_to_Hidden_values_000000000002",
+    "Input_000000000001_to_Hidden_keys_000000000000","Input_000000000001_to_Hidden_keys_000000000001","Input_000000000001_to_Hidden_keys_000000000002",
+    "Input_000000000001_to_Hidden_query_000000000000","Input_000000000001_to_Hidden_query_000000000001","Input_000000000001_to_Hidden_query_000000000002",
+    "Input_000000000001_to_Hidden_values_000000000000","Input_000000000001_to_Hidden_values_000000000001","Input_000000000001_to_Hidden_values_000000000002",
+    "Hidden_softMax-Out_000000000000_to_Hidden_attention_000000000000", "Hidden_softMax-Out_000000000001_to_Hidden_attention_000000000001", "Hidden_softMax-Out_000000000002_to_Hidden_attention_000000000002" };
+
+  std::vector<float> weight_values_test = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1 };
+  for (int i = 0; i < weight_names.size(); ++i) {
+    std::cout << weight_names.at(i) << " Weight: " << model.getWeightsMap().at(weight_names.at(i))->getWeight() << std::endl;
+    BOOST_CHECK_CLOSE(model.getWeightsMap().at(weight_names.at(i))->getWeight(), weight_values_test.at(i), 1e-4);
+  }
 }
 
 BOOST_AUTO_TEST_CASE(addMultiHeadAttention1)
