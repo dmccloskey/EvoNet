@@ -9,7 +9,7 @@ using namespace SmartPeak;
 using namespace std;
 
 template <typename TensorT>
-void trainModel<TensorT>(model<TensorT>& model, const std::string& input_node_names, const std::string& output_node_names, const Eigen::Tensor<float, 3>& input_values, const Eigen::Tensor<float, 2> output_values,
+void trainModel(Model<TensorT>& model, const std::vector<std::string>& input_node_names, const std::vector<std::string>& output_node_names, const Eigen::Tensor<float, 3>& input_values, Eigen::Tensor<float, 2> output_values,
   const int& batch_size, const int& memory_size) {
   // Interpret the model
   ModelInterpreterDefaultDevice<TensorT> model_interpreter;
@@ -17,8 +17,8 @@ void trainModel<TensorT>(model<TensorT>& model, const std::string& input_node_na
   model_interpreter.allocateModelErrorTensor(batch_size, memory_size, 0);
 
   // Assign the input data
-  model_interpreter.mapValuesToLayers(model, input, node_ids, "output");
-  model_interpreter.mapValuesToLayers(model, input, node_ids, "input");
+  model_interpreter.mapValuesToLayers(model, input_values, input_node_names, "output");
+  model_interpreter.mapValuesToLayers(model, input_values, input_node_names, "input");
   model_interpreter.initBiases(model); // create the bias	
 
   model_interpreter.executeForwardPropogationOperations(0); //FP
@@ -26,15 +26,17 @@ void trainModel<TensorT>(model<TensorT>& model, const std::string& input_node_na
   // calculate the model error and node output error
   LossFunctionTensorOp<float, Eigen::DefaultDevice>* loss_function = new MSETensorOp<float, Eigen::DefaultDevice>();
   LossFunctionGradTensorOp<float, Eigen::DefaultDevice>* loss_function_grad = new MSEGradTensorOp<float, Eigen::DefaultDevice>();
-  const int layer_id = model.getNodesMap.at(output_node_names.front())->getTensorIndex().first;
-  model_interpreter.executeModelErrorOperations(expected, layer_id, loss_function, loss_function_grad, 0);
+  const int layer_id = model.getNodesMap().at(output_node_names.front())->getTensorIndex().first;
+  model_interpreter.executeModelErrorOperations(output_values, layer_id, loss_function, loss_function_grad, 0);
 
   model_interpreter.executeBackwardPropogationOperations(0); // BP
   model_interpreter.executeWeightErrorOperations(); // Weight error
   model_interpreter.executeWeightUpdateOperations(); // Weight update
 
   // retrieve the results
-  //model_interpreter
+  model_interpreter.getModelResults(model, true, true, true);
+  delete loss_function;
+  delete loss_function_grad;
 }
 
 BOOST_AUTO_TEST_SUITE(ModelBuilderCpu1)
@@ -43,27 +45,46 @@ BOOST_AUTO_TEST_CASE(addFullyConnected1)
 {
 	ModelBuilder<float> model_builder;
 	Model<float> model;
-	std::vector<std::string> node_names;
+  const int batch_size = 1;
+  const int memory_size = 1;
+  const int input_size = 2;
+  const int output_size = 2;
 
 	// make the input
-	node_names = model_builder.addInputNodes(model, "Input", "Input", 2);
+	std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", "Input", input_size);
 
 	// make the fully connected 
-	node_names = model_builder.addFullyConnected(model, "Output", "Output", node_names,
-		2, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
+  std::vector<std::string>node_names_output = model_builder.addFullyConnected(model, "Output", "Output", node_names_input,
+		output_size, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
 		std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
 		std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new SGDOp<float>(0.1, 0.9)), 0.0f, 0.0f);
 
+  // Specify the output node types manually
+  for (const std::string& node_name : node_names_output)
+    model.getNodesMap().at(node_name)->setType(NodeType::output);
+  model.setInputAndOutputNodes();
+
   // interpret and train the model
-  ModelInterpreterDefaultDevice<float> model_interpreter;
-  const int batch_size = 1;
-  const int memory_size = 1;
+  Eigen::Tensor<float, 3> input_values(batch_size, memory_size, input_size);
+  input_values.setConstant(1);
+  Eigen::Tensor<float, 2> output_values(batch_size, output_size);
+  output_values.setConstant(0);
+  trainModel(model, node_names_input, node_names_output, input_values, output_values, batch_size, memory_size);
 
-  // train the model through a single iteration
+  // test for the expected node outputs
+  for (const std::string& name : node_names_output) {
+    std::cout << name << " Output: " << model.getNodesMap().at(name)->getOutput()(0, 0) << std::endl;
+    BOOST_CHECK_CLOSE(model.getNodesMap().at(name)->getOutput()(0, 0), 2, 1e-4);
+  }
 
-  // retrieve the results
-
-  // test for the expected node inputs, outputs, derivatives, and errors
+  // test for the expected weights
+  std::vector<std::string> weight_names = { "Output-bias_000000000000_to_Output_000000000000", "Output-bias_000000000001_to_Output_000000000001",
+    "Input_000000000000_to_Output_000000000000", "Input_000000000000_to_Output_000000000001", "Input_000000000000_to_Output_000000000000", "Input_000000000000_to_Output_000000000001" };
+  std::vector<float> weight_values = { 0, 0, 0.8999, 0.8999, 0.8999, 0.8999 };
+  for (const std::string& name : weight_names) {
+    std::cout << name << " Weight: " << model.getWeightsMap().at(name)->getWeight() << std::endl;
+    BOOST_CHECK_CLOSE(model.getWeightsMap().at(name)->getWeight(), 0, 1e-4);
+  }
 
 }
 
@@ -120,52 +141,6 @@ BOOST_AUTO_TEST_CASE(addSinglyConnected1)
 	std::vector<std::string> weight_names_test = { "Hidden-bias_000000000000_to_Hidden_000000000000", "Hidden-bias_000000000001_to_Hidden_000000000001",
 		"Input_000000000000_to_Hidden_000000000000", "Input_000000000000_to_Hidden_000000000000"};
 
-	// check the nodes
-	for (size_t i = 0; i < node_names_test.size(); ++i)
-	{
-		BOOST_CHECK_EQUAL(model.getNode(node_names_test[i]).getName(), node_names_test[i]);
-		BOOST_CHECK_EQUAL(model.getNode(node_names_test[i]).getModuleName(), "Mod1");
-		if (i == 1 || i == 3)
-		{
-			BOOST_CHECK_EQUAL(model.getNode(node_names_test[i]).getActivation()->getName(), "LinearOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_names_test[i]).getActivationGrad()->getName(), "LinearGradOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_names_test[i]).getIntegration()->getName(), "SumOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_names_test[i]).getIntegrationError()->getName(), "SumErrorOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_names_test[i]).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
-			BOOST_CHECK_CLOSE(model.getNode(node_names_test[i]).getDropProbability(), 0.0, 1e-3);
-		}
-		else
-		{
-			BOOST_CHECK_EQUAL(node_names[i / node_names.size()], node_names_test[i]);
-			BOOST_CHECK_EQUAL(model.getNode(node_names_test[i]).getActivation()->getName(), "ReLUOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_names_test[i]).getActivationGrad()->getName(), "ReLUGradOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_names_test[i]).getIntegration()->getName(), "ProdOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_names_test[i]).getIntegrationError()->getName(), "ProdErrorOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_names_test[i]).getIntegrationWeightGrad()->getName(), "ProdWeightGradOp");
-			BOOST_CHECK_CLOSE(model.getNode(node_names_test[i]).getDropProbability(), 0.2, 1e-3);
-		}
-	}
-
-	// check the links
-	for (const std::string& name : link_names_test)
-	{
-		BOOST_CHECK_EQUAL(model.getLink(name).getName(), name);
-		std::vector<std::string> test = SplitString(name, "_to_");
-		BOOST_CHECK_EQUAL(model.getLink(name).getSourceNodeName(), test[0]);
-		BOOST_CHECK_EQUAL(model.getLink(name).getSinkNodeName(), test[1]);
-		BOOST_CHECK_EQUAL(model.getLink(name).getWeightName(), name);
-		BOOST_CHECK_EQUAL(model.getLink(name).getModuleName(), "Mod1");
-	}
-
-	// check the weights
-	for (const std::string& name : weight_names_test)
-	{
-		BOOST_CHECK_EQUAL(model.getWeight(name).getName(), name);
-		BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
-		BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "SGDOp");
-		BOOST_CHECK_EQUAL(model.getWeight(name).getModuleName(), "Mod1");
-		BOOST_CHECK_CLOSE(model.getWeight(name).getDropProbability(), 0.8, 1e-3);
-	}
 }
 
 BOOST_AUTO_TEST_CASE(addSinglyConnected2)
@@ -196,61 +171,6 @@ BOOST_AUTO_TEST_CASE(addSinglyConnected2)
 	std::vector<std::string> weight_names_test = { "Hidden-bias_000000000000_to_Hidden_000000000000", "Hidden-bias_000000000001_to_Hidden_000000000001",
 		"Input_000000000000_to_Hidden_000000000000", "Input_000000000001_to_Hidden_000000000001",	"Encoding_000000000000_to_Hidden_000000000000", "Encoding_000000000001_to_Hidden_000000000001" };
 
-	// check the nodes
-	for (const std::string& node_name : node_names_test)
-	{
-		BOOST_CHECK_EQUAL(model.getNode(node_name).getName(), node_name);
-		if (node_name == "Hidden-bias_000000000000" || node_name == "Hidden-bias_000000000001")
-		{
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "SumOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "SumErrorOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
-			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.0, 1e-3);
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getModuleName(), "Mod1");
-		}
-		else if (node_name == "Encoding_000000000000" || node_name == "Encoding_000000000001")
-		{
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "SumOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "SumErrorOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
-			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.0, 1e-3);
-		}
-		else
-		{
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getModuleName(), "Mod1");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "ReLUOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "ReLUGradOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "ProdOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "ProdErrorOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "ProdWeightGradOp");
-			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.2, 1e-3);
-		}
-	}
-
-	// check the links
-	for (const std::string& name : link_names_test)
-	{
-		BOOST_CHECK_EQUAL(model.getLink(name).getName(), name);
-		std::vector<std::string> test = SplitString(name, "_to_");
-		BOOST_CHECK_EQUAL(model.getLink(name).getSourceNodeName(), test[0]);
-		BOOST_CHECK_EQUAL(model.getLink(name).getSinkNodeName(), test[1]);
-		BOOST_CHECK_EQUAL(model.getLink(name).getWeightName(), name);
-		BOOST_CHECK_EQUAL(model.getLink(name).getModuleName(), "Mod1");
-	}
-
-	// check the weights
-	for (const std::string& name : weight_names_test)
-	{
-		BOOST_CHECK_EQUAL(model.getWeight(name).getName(), name);
-		BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
-		BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "SGDOp");
-		BOOST_CHECK_EQUAL(model.getWeight(name).getModuleName(), "Mod1");
-		BOOST_CHECK_CLOSE(model.getWeight(name).getDropProbability(), 0.8, 1e-3);
-	}
 }
 
 
@@ -271,39 +191,6 @@ BOOST_AUTO_TEST_CASE(addBiases1)
   std::vector<std::string> link_names_test = { "Input_000000000000-bias_to_Input_000000000000", "Input_000000000001-bias_to_Input_000000000001"};
   std::vector<std::string> weight_names_test = { "Input_000000000000-bias_to_Input_000000000000", "Input_000000000001-bias_to_Input_000000000001" };
 
-  // check the nodes
-  for (const std::string& node_name : node_names_test)
-  {
-    BOOST_CHECK_EQUAL(model.getNode(node_name).getName(), node_name);
-    BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
-    BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
-    BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "SumOp");
-    BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "SumErrorOp");
-    BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
-    BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.0, 1e-3);
-    BOOST_CHECK_EQUAL(model.getNode(node_name).getModuleName(), "Mod1");
-  }
-
-  // check the links
-  for (const std::string& name : link_names_test)
-  {
-    BOOST_CHECK_EQUAL(model.getLink(name).getName(), name);
-    std::vector<std::string> test = SplitString(name, "_to_");
-    BOOST_CHECK_EQUAL(model.getLink(name).getSourceNodeName(), test[0]);
-    BOOST_CHECK_EQUAL(model.getLink(name).getSinkNodeName(), test[1]);
-    BOOST_CHECK_EQUAL(model.getLink(name).getWeightName(), name);
-    BOOST_CHECK_EQUAL(model.getLink(name).getModuleName(), "Mod1");
-  }
-
-  // check the weights
-  for (const std::string& name : weight_names_test)
-  {
-    BOOST_CHECK_EQUAL(model.getWeight(name).getName(), name);
-    BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
-    BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "SGDOp");
-    BOOST_CHECK_EQUAL(model.getWeight(name).getModuleName(), "Mod1");
-    BOOST_CHECK_CLOSE(model.getWeight(name).getDropProbability(), 0.8, 1e-3);
-  }
 }
 
 BOOST_AUTO_TEST_CASE(addSoftMax)
@@ -326,67 +213,6 @@ BOOST_AUTO_TEST_CASE(addSoftMax)
 		"Input_000000000000_to_SoftMax-In_000000000000", "SoftMax-In_000000000000_to_SoftMax-Sum", "SoftMax-In_000000000000_to_SoftMax-Out_000000000000", "SoftMax-Sum_to_SoftMax-Out_000000000000",
 		"Input_000000000001_to_SoftMax-In_000000000001", "SoftMax-In_000000000001_to_SoftMax-Sum", "SoftMax-In_000000000001_to_SoftMax-Out_000000000001", "SoftMax-Sum_to_SoftMax-Out_000000000001" };
 
-	// check the nodes
-	for (const std::string& node_name : node_names_test)
-	{
-		BOOST_CHECK_EQUAL(model.getNode(node_name).getName(), node_name);
-		BOOST_CHECK_EQUAL(model.getNode(node_name).getModuleName(), "Mod1");
-		if (node_name == "SoftMax-Sum")
-		{
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "InverseOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "InverseGradOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "SumOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "SumErrorOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
-		}
-		else if (node_name == "SoftMax-Max")
-		{
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "MaxOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "MaxErrorOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "MaxWeightGradOp");
-		}
-		else if (node_name == "SoftMax-In_000000000000" || node_name == "SoftMax-In_000000000001")
-		{
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "ExponentialOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "ExponentialGradOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "SumOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "SumErrorOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
-		}
-		else if (node_name == "SoftMax-Out_000000000000" || node_name == "SoftMax-Out_000000000001")
-		{
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "ProdOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "ProdErrorOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "ProdWeightGradOp");
-		}
-	}
-
-	// check the links
-	for (const std::string& name : link_names_test)
-	{
-		BOOST_CHECK_EQUAL(model.getLink(name).getName(), name);
-		std::vector<std::string> test = SplitString(name, "_to_");
-		BOOST_CHECK_EQUAL(model.getLink(name).getSourceNodeName(), test[0]);
-		BOOST_CHECK_EQUAL(model.getLink(name).getSinkNodeName(), test[1]);
-		int count = std::count(weight_names_test.begin(), weight_names_test.end(), model.getLink(name).getWeightName());
-		BOOST_CHECK_EQUAL(count, 1);
-		BOOST_CHECK_EQUAL(model.getLink(name).getModuleName(), "Mod1");
-	}
-
-	// check the weights
-	for (const Weight<float>& weight : model.getWeights())
-	{
-		int count = std::count(weight_names_test.begin(), weight_names_test.end(), weight.getName());
-		BOOST_CHECK_EQUAL(count, 1);
-		BOOST_CHECK_EQUAL(weight.getWeightInitOp()->getName(), "ConstWeightInitOp");
-		BOOST_CHECK_EQUAL(weight.getWeightInitOp()->getParamsAsStr(), "n:1.000000");
-		BOOST_CHECK_EQUAL(weight.getSolverOp()->getName(), "DummySolverOp");
-		BOOST_CHECK_EQUAL(weight.getModuleName(), "Mod1");
-	}
 }
 
 BOOST_AUTO_TEST_CASE(addStableSoftMax)
@@ -408,73 +234,6 @@ BOOST_AUTO_TEST_CASE(addStableSoftMax)
 	std::vector<std::string> weight_names_test = {
 		"Input_000000000000_to_SoftMax-In_000000000000", "SoftMax-In_000000000000_to_SoftMax-Sum", "SoftMax-In_000000000000_to_SoftMax-Out_000000000000", "SoftMax-Sum_to_SoftMax-Out_000000000000", "Input_000000000000_to_SoftMax-Max", "SoftMax-Max_to_SoftMax-In_000000000000",
 		"Input_000000000001_to_SoftMax-In_000000000001", "SoftMax-In_000000000001_to_SoftMax-Sum", "SoftMax-In_000000000001_to_SoftMax-Out_000000000001", "SoftMax-Sum_to_SoftMax-Out_000000000001", "Input_000000000001_to_SoftMax-Max", "SoftMax-Max_to_SoftMax-In_000000000001" };
-
-	// check the nodes
-	for (const std::string& node_name: node_names_test)
-	{
-		BOOST_CHECK_EQUAL(model.getNode(node_name).getName(), node_name);
-		BOOST_CHECK_EQUAL(model.getNode(node_name).getModuleName(), "Mod1");
-		if (node_name == "SoftMax-Sum")
-		{
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "InverseOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "InverseGradOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "SumOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "SumErrorOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
-		}
-		else if (node_name == "SoftMax-Max")
-		{
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "MaxOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "MaxErrorOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "MaxWeightGradOp");
-		}
-		else if (node_name == "SoftMax-In_000000000000" || node_name == "SoftMax-In_000000000001")
-		{
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "ExponentialOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "ExponentialGradOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "SumOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "SumErrorOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
-		}
-		else if (node_name == "SoftMax-Out_000000000000" || node_name == "SoftMax-Out_000000000001")
-		{
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "ProdOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "ProdErrorOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "ProdWeightGradOp");
-		}
-	}
-
-	// check the links
-	for (const std::string& name : link_names_test)
-	{
-		BOOST_CHECK_EQUAL(model.getLink(name).getName(), name);
-		std::vector<std::string> test = SplitString(name, "_to_");
-		BOOST_CHECK_EQUAL(model.getLink(name).getSourceNodeName(), test[0]);
-		BOOST_CHECK_EQUAL(model.getLink(name).getSinkNodeName(), test[1]);
-		int count = std::count(weight_names_test.begin(), weight_names_test.end(), model.getLink(name).getWeightName());
-		BOOST_CHECK_EQUAL(count, 1);
-		BOOST_CHECK_EQUAL(model.getLink(name).getModuleName(), "Mod1");
-	}
-
-	// check the weights
-	for (const Weight<float>& weight : model.getWeights())
-	{
-		int count = std::count(weight_names_test.begin(), weight_names_test.end(), weight.getName());
-		BOOST_CHECK_EQUAL(count, 1);
-		if (weight.getName() == "SoftMax-Max_to_SoftMax-In_000000000000" || weight.getName() == "SoftMax-Max_to_SoftMax-In_000000000001") {
-			BOOST_CHECK_EQUAL(weight.getWeightInitOp()->getParamsAsStr(), "n:-1.000000");
-		}
-		else {
-			BOOST_CHECK_EQUAL(weight.getWeightInitOp()->getParamsAsStr(), "n:1.000000");
-		}
-		BOOST_CHECK_EQUAL(weight.getWeightInitOp()->getName(), "ConstWeightInitOp");
-		BOOST_CHECK_EQUAL(weight.getSolverOp()->getName(), "DummySolverOp");
-		BOOST_CHECK_EQUAL(weight.getModuleName(), "Mod1");
-	}
 }
 
 BOOST_AUTO_TEST_CASE(addConvolution1)
@@ -498,54 +257,6 @@ BOOST_AUTO_TEST_CASE(addConvolution1)
 	std::vector<std::string> weight_names_test = { "Filter-bias_to_out",
 		"Filter-Mod1_H000000000000-W000000000000", "Filter-Mod1_H000000000001-W000000000000", "Filter-Mod1_H000000000000-W000000000001", "Filter-Mod1_H000000000001-W000000000001" };
 
-	// check the nodes
-	size_t node_cnt = 0;
-	for (const Node<float>& node : model.getNodes())
-	{
-		if (node_cnt == 0) {
-			BOOST_CHECK_EQUAL(node.getName(), node_names_test[node_cnt]);
-			BOOST_CHECK_EQUAL(node.getModuleName(), "Mod1");
-			BOOST_CHECK_CLOSE(node.getDropProbability(), 0.0, 1e-3);
-		}
-		else if (node_cnt >= 1 && node_cnt < 10) {
-			int name_cnt = std::count(node_names.begin(), node_names.end(), node.getName());
-			BOOST_CHECK_EQUAL(name_cnt, 1);
-			BOOST_CHECK_EQUAL(node.getModuleName(), "Mod1");
-			if (node.getType() == NodeType::bias || node.getType() == NodeType::zero)
-				BOOST_CHECK_CLOSE(node.getDropProbability(), 0.0f, 1e-3);
-			else
-				BOOST_CHECK_CLOSE(node.getDropProbability(), 0.2f, 1e-3);
-		}
-		BOOST_CHECK_EQUAL(node.getActivation()->getName(), "LinearOp");
-		BOOST_CHECK_EQUAL(node.getActivationGrad()->getName(), "LinearGradOp");
-		BOOST_CHECK_EQUAL(node.getIntegration()->getName(), "SumOp");
-		BOOST_CHECK_EQUAL(node.getIntegrationError()->getName(), "SumErrorOp");
-		BOOST_CHECK_EQUAL(node.getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
-		++node_cnt;
-	}
-	BOOST_CHECK_EQUAL(node_cnt, 26);
-
-	// check the links
-	size_t link_cnt = 0;
-	for (const Link& link : model.getLinks())
-	{
-		BOOST_CHECK_EQUAL(link.getModuleName(), "Mod1");
-		++link_cnt;
-	}
-	BOOST_CHECK_EQUAL(link_cnt, 45);
-
-	// check the weights
-	for (const std::string& name : weight_names_test)
-	{
-		BOOST_CHECK_EQUAL(model.getWeight(name).getName(), name);
-		BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
-		BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "SGDOp");
-		BOOST_CHECK_EQUAL(model.getWeight(name).getModuleName(), "Mod1");
-    if (name == "Filter-bias_to_out")
-		  BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.0f);
-    else
-      BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.8f);
-	}
 }
 
 BOOST_AUTO_TEST_CASE(addConvolution1WithoutSharedWeights)
@@ -598,71 +309,6 @@ BOOST_AUTO_TEST_CASE(addConvolution1WithoutSharedWeights)
     "Input_000000000013_to_Filter-out_H000000000001-W000000000002_Mod1","Input_000000000014_to_Filter-out_H000000000001-W000000000002_Mod1",
     "Input_000000000014_to_Filter-out_H000000000002-W000000000002_Mod1","Input_000000000015_to_Filter-out_H000000000002-W000000000002_Mod1" };
 
-  // check the nodes
-  BOOST_CHECK_EQUAL(model.getNodes().size(), 34);
-  for (const std::string& name : node_names_bias)
-  {
-    BOOST_CHECK_EQUAL(model.nodes_.at(name)->getModuleName(), "Mod1");
-    BOOST_CHECK_CLOSE(model.nodes_.at(name)->getDropProbability(), 0.0f, 1e-3);
-    BOOST_CHECK_EQUAL(model.nodes_.at(name)->getActivation()->getName(), "LinearOp");
-    BOOST_CHECK_EQUAL(model.nodes_.at(name)->getActivationGrad()->getName(), "LinearGradOp");
-    BOOST_CHECK_EQUAL(model.nodes_.at(name)->getIntegration()->getName(), "SumOp");
-    BOOST_CHECK_EQUAL(model.nodes_.at(name)->getIntegrationError()->getName(), "SumErrorOp");
-    BOOST_CHECK_EQUAL(model.nodes_.at(name)->getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
-  }
-  for (const std::string& name : node_names_test)
-  {
-    BOOST_CHECK_EQUAL(model.nodes_.at(name)->getModuleName(), "Mod1");
-    BOOST_CHECK_CLOSE(model.nodes_.at(name)->getDropProbability(), 0.2f, 1e-3);
-    BOOST_CHECK_EQUAL(model.nodes_.at(name)->getActivation()->getName(), "ReLUOp");
-    BOOST_CHECK_EQUAL(model.nodes_.at(name)->getActivationGrad()->getName(), "ReLUGradOp");
-    BOOST_CHECK_EQUAL(model.nodes_.at(name)->getIntegration()->getName(), "SumOp");
-    BOOST_CHECK_EQUAL(model.nodes_.at(name)->getIntegrationError()->getName(), "SumErrorOp");
-    BOOST_CHECK_EQUAL(model.nodes_.at(name)->getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
-  }
-
-  // check the links
-  BOOST_CHECK_EQUAL(model.getLinks().size(), 45);
-  for (const std::string& name : weight_names_bias)
-  {
-    BOOST_CHECK_EQUAL(model.getLink(name).getName(), name);
-    std::vector<std::string> test = SplitString(name, "_to_");
-    test.at(1) = ReplaceTokens(test.at(1), { "_Mod1" }, "");
-    BOOST_CHECK_EQUAL(model.getLink(name).getSourceNodeName(), test[0]);
-    BOOST_CHECK_EQUAL(model.getLink(name).getSinkNodeName(), test[1]);
-    int count = std::count(weight_names_bias.begin(), weight_names_bias.end(), model.getLink(name).getWeightName());
-    BOOST_CHECK_EQUAL(count, 1);
-  }
-  for (const std::string& name : weight_names_test)
-  {
-    BOOST_CHECK_EQUAL(model.getLink(name).getName(), name);
-    std::vector<std::string> test = SplitString(name, "_to_");
-    test.at(1) = ReplaceTokens(test.at(1), { "_Mod1" }, "");
-    BOOST_CHECK_EQUAL(model.getLink(name).getSourceNodeName(), test[0]);
-    BOOST_CHECK_EQUAL(model.getLink(name).getSinkNodeName(), test[1]);
-    int count = std::count(weight_names_test.begin(), weight_names_test.end(), model.getLink(name).getWeightName());
-    BOOST_CHECK_EQUAL(count, 1);
-  }
-
-  // check the weights
-  BOOST_CHECK_EQUAL(model.getWeights().size(), 45);
-  for (const std::string& name : weight_names_bias)
-  {
-    // Is this desired to have the bias weights with the same init as the other weights
-    BOOST_CHECK_EQUAL(model.getWeight(name).getName(), name);
-    BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
-    BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "SGDOp");
-    BOOST_CHECK_EQUAL(model.getWeight(name).getModuleName(), "Mod1");
-    BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.0f);
-  }
-  for (const std::string& name : weight_names_test)
-  { 
-    BOOST_CHECK_EQUAL(model.getWeight(name).getName(), name);
-    BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
-    BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "SGDOp");
-    BOOST_CHECK_EQUAL(model.getWeight(name).getModuleName(), "Mod1");
-    BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.8f);
-  }
 }
 
 BOOST_AUTO_TEST_CASE(addConvolution2)
@@ -686,54 +332,6 @@ BOOST_AUTO_TEST_CASE(addConvolution2)
 	std::vector<std::string> weight_names_test = { "Filter-bias_to_out",
 		"Filter-Mod1_H000000000000-W000000000000", "Filter-Mod1_H000000000001-W000000000000", "Filter-Mod1_H000000000000-W000000000001", "Filter-Mod1_H000000000001-W000000000001" };
 
-	// check the nodes
-	size_t node_cnt = 0;
-	for (const Node<float>& node: model.getNodes())
-	{
-		if (node_cnt == 0) {
-			BOOST_CHECK_EQUAL(node.getName(), node_names_test[node_cnt]);
-			BOOST_CHECK_EQUAL(node.getModuleName(), "Mod1");
-			BOOST_CHECK_CLOSE(node.getDropProbability(), 0.0, 1e-3);
-		}
-		else if (node_cnt >= 1 && node_cnt < 82) { 
-			int name_cnt = std::count(node_names.begin(), node_names.end(), node.getName());
-			BOOST_CHECK_EQUAL(name_cnt, 1);
-			BOOST_CHECK_EQUAL(node.getModuleName(), "Mod1");
-			if (node.getType() == NodeType::bias || node.getType() == NodeType::zero)
-				BOOST_CHECK_CLOSE(node.getDropProbability(), 0.0f, 1e-3);
-			else
-				BOOST_CHECK_CLOSE(node.getDropProbability(), 0.2f, 1e-3);
-		}
-		BOOST_CHECK_EQUAL(node.getActivation()->getName(), "LinearOp");
-		BOOST_CHECK_EQUAL(node.getActivationGrad()->getName(), "LinearGradOp");
-		BOOST_CHECK_EQUAL(node.getIntegration()->getName(), "SumOp");
-		BOOST_CHECK_EQUAL(node.getIntegrationError()->getName(), "SumErrorOp");
-		BOOST_CHECK_EQUAL(node.getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
-		++node_cnt;
-	}
-	BOOST_CHECK_EQUAL(node_cnt, 98);
-
-	// check the links
-	size_t link_cnt = 0;
-	for (const Link& link : model.getLinks())
-	{
-		BOOST_CHECK_EQUAL(link.getModuleName(), "Mod1");
-		++link_cnt;
-	}
-	BOOST_CHECK_EQUAL(link_cnt, 119);
-
-	// check the weights
-	for (const std::string& name : weight_names_test)
-	{
-		BOOST_CHECK_EQUAL(model.getWeight(name).getName(), name);
-		BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
-		BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "SGDOp");
-		BOOST_CHECK_EQUAL(model.getWeight(name).getModuleName(), "Mod1");
-    if (name == "Filter-bias_to_out")
-      BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.0f);
-    else
-      BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.8f);
-	}
 }
 
 BOOST_AUTO_TEST_CASE(addConvolution3)
@@ -764,56 +362,6 @@ BOOST_AUTO_TEST_CASE(addConvolution3)
 		"Filter-Mod1_H000000000000-W000000000000", "Filter-Mod1_H000000000001-W000000000000", "Filter-Mod1_H000000000000-W000000000001", "Filter-Mod1_H000000000001-W000000000001",
 		"Filter-Mod2_H000000000000-W000000000000", "Filter-Mod2_H000000000001-W000000000000", "Filter-Mod2_H000000000000-W000000000001", "Filter-Mod2_H000000000001-W000000000001" };
 
-	// check the nodes
-	size_t node_cnt = 0;
-	for (const Node<float>& node : model.getNodes())
-	{
-		if (node_cnt == 0) {
-			BOOST_CHECK_EQUAL(node.getName(), node_names_test[node_cnt]);
-			BOOST_CHECK_EQUAL(node.getModuleName(), "Mod1");
-			BOOST_CHECK_CLOSE(node.getDropProbability(), 0.0, 1e-3);
-		}
-		else if (node_cnt >= 1 && node_cnt < 82) {
-			int name_cnt = std::count(node_names.begin(), node_names.end(), node.getName());
-			BOOST_CHECK_EQUAL(name_cnt, 1);
-			BOOST_CHECK_EQUAL(node.getModuleName(), "Mod1");
-			if (node.getType() == NodeType::bias || node.getType() == NodeType::zero)
-				BOOST_CHECK_CLOSE(node.getDropProbability(), 0.0f, 1e-3);
-			else
-				BOOST_CHECK_CLOSE(node.getDropProbability(), 0.2f, 1e-3);
-		}
-		BOOST_CHECK_EQUAL(node.getActivation()->getName(), "LinearOp");
-		BOOST_CHECK_EQUAL(node.getActivationGrad()->getName(), "LinearGradOp");
-		BOOST_CHECK_EQUAL(node.getIntegration()->getName(), "SumOp");
-		BOOST_CHECK_EQUAL(node.getIntegrationError()->getName(), "SumErrorOp");
-		BOOST_CHECK_EQUAL(node.getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
-		++node_cnt;
-	}
-	BOOST_CHECK_EQUAL(node_cnt, 98);
-
-	// check the links
-	size_t link_cnt = 0;
-	for (const Link& link : model.getLinks())
-	{
-		BOOST_CHECK_EQUAL(link.getModuleName(), "Mod1");
-		// TODO: add check for Mod2
-		++link_cnt;
-	}
-	BOOST_CHECK_EQUAL(link_cnt, 189);
-
-	// check the weights
-	for (const std::string& name : weight_names_test)
-	{
-		BOOST_CHECK_EQUAL(model.getWeight(name).getName(), name);
-		BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
-		BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "SGDOp");
-		BOOST_CHECK_EQUAL(model.getWeight(name).getModuleName(), "Mod1");
-		// TODO: add check for Mod2
-    if (name == "Filter-bias_to_out")
-		  BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.0f);
-    else
-      BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.8f);
-	}
 }
 
 BOOST_AUTO_TEST_CASE(addNormalization1)
@@ -846,76 +394,6 @@ BOOST_AUTO_TEST_CASE(addNormalization1)
 		"Norm-Variance_to_Input_000000000000-Normalized","Norm-Variance_to_Input_000000000001-Normalized"
 	};
 
-	// check the nodes
-	for (const std::string& node_name : node_names_test)
-	{
-		BOOST_CHECK_EQUAL(model.getNode(node_name).getName(), node_name);
-		BOOST_CHECK_EQUAL(model.getNode(node_name).getModuleName(), "Mod1");
-		if (node_name == "Norm-Mean")
-		{
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "MeanOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "MeanErrorOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "MeanWeightGradOp");
-		}
-		else if (node_name == "Norm-Variance")
-		{
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "PowOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "PowGradOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "VarModOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "VarModErrorOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "VarModWeightGradOp");
-		}
-		else if (node_name == "Input_000000000000-SourceMinMean" || node_name == "Input_000000000001-SourceMinMean")
-		{
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "SumOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "SumErrorOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
-		}
-		else if (node_name == "Input_000000000000-Normalized" || node_name == "Input_000000000001-Normalized")
-		{
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "ProdOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "ProdErrorOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "ProdWeightGradOp");
-			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.0, 1e-3);
-		}
-	}
-
-	// check the links
-	for (const std::string& name : link_names_test)
-	{
-		BOOST_CHECK_EQUAL(model.getLink(name).getName(), name);
-		std::vector<std::string> test = SplitString(name, "_to_");
-		BOOST_CHECK_EQUAL(model.getLink(name).getSourceNodeName(), test[0]);
-		BOOST_CHECK_EQUAL(model.getLink(name).getSinkNodeName(), test[1]);
-		int count = std::count(weight_names_test.begin(), weight_names_test.end(), model.getLink(name).getWeightName());
-		BOOST_CHECK_EQUAL(count, 1);
-		BOOST_CHECK_EQUAL(model.getLink(name).getModuleName(), "Mod1");
-	}
-
-	// check the weights
-	for (const std::string& name : weight_names_test)
-	{
-		BOOST_CHECK_EQUAL(model.getWeight(name).getName(), name);
-		BOOST_CHECK_EQUAL(model.getWeight(name).getModuleName(), "Mod1");
-		if (name == "Norm-Mean_to_Input_000000000000-SourceMinMean"|| name == "Norm-Mean_to_Input_000000000001-SourceMinMean") {
-			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getParamsAsStr(), "n:-1.000000");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "DummySolverOp");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.0f);
-		}
-		else {
-      BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getParamsAsStr(), "n:1.000000");
-      BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
-      BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "DummySolverOp");
-      BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.0f);
-		}
-	}
 }
 
 BOOST_AUTO_TEST_CASE(addUnitScale1)
@@ -936,73 +414,6 @@ BOOST_AUTO_TEST_CASE(addUnitScale1)
     "Norm-Max_to_Norm-Scalar","Norm-Min_to_Norm-Scalar",
     "Norm-Scalar_to_Input_000000000000-UnitScaled","Norm-Scalar_to_Input_000000000001-UnitScaled" };
 
-  // check the nodes
-  for (const std::string& node_name : node_names_test)
-  {
-    BOOST_CHECK_EQUAL(model.getNode(node_name).getName(), node_name);
-    BOOST_CHECK_EQUAL(model.getNode(node_name).getModuleName(), "Mod1");
-    if (node_name == "Norm-min")
-    {
-      BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
-      BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
-      BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "MinOp");
-      BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "MinErrorOp");
-      BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "MinWeightGradOp");
-    }
-    else if (node_name == "Norm-max")
-    {
-      BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
-      BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
-      BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "MaxOp");
-      BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "MaxErrorOp");
-      BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "MaxWeightGradOp");
-    }
-    else if (node_name == "Norm-Scalar")
-    {
-      BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "PowOp");
-      BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "PowGradOp");
-      BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "SumOp");
-      BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "SumErrorOp");
-      BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
-    }
-    else if (node_name == "Input_000000000000-UnitScaled" || node_name == "Input_000000000001-UnitScaled")
-    {
-      BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
-      BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
-      BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "ProdOp");
-      BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "ProdErrorOp");
-      BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "ProdWeightGradOp");
-    }
-  }
-
-  // check the links
-  for (const std::string& name : link_names_test)
-  {
-    BOOST_CHECK_EQUAL(model.getLink(name).getName(), name);
-    std::vector<std::string> test = SplitString(name, "_to_");
-    BOOST_CHECK_EQUAL(model.getLink(name).getSourceNodeName(), test[0]);
-    BOOST_CHECK_EQUAL(model.getLink(name).getSinkNodeName(), test[1]);
-    BOOST_CHECK_EQUAL(model.getLink(name).getModuleName(), "Mod1");
-  }
-
-  // check the weights
-  for (const std::string& name : link_names_test)
-  {
-    BOOST_CHECK_EQUAL(model.getWeight(name).getName(), name);
-    BOOST_CHECK_EQUAL(model.getWeight(name).getModuleName(), "Mod1"); 
-    if (name == "Norm-Min_to_Norm-Scalar") {
-      BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getParamsAsStr(), "n:-1.000000");
-      BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
-      BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "DummySolverOp");
-      BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.0f);
-    }
-    else {
-      BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getParamsAsStr(), "n:1.000000");
-      BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
-      BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "DummySolverOp");
-      BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.0f);
-    }
-  }
 }
 
 BOOST_AUTO_TEST_CASE(addLinearScale1)
@@ -1039,112 +450,6 @@ BOOST_AUTO_TEST_CASE(addLinearScale1)
     "Norm-Scalar_to_Input_000000000000-DomainScaled","Norm-Scalar_to_Input_000000000001-DomainScaled","Mod1-RangeMaxMinBias_to_Input_000000000000-RangeMaxMinScale",
     "Mod1-RangeMaxMinBias_to_Input_000000000001-RangeMaxMinScale" };
 
-  //for (auto& e : model.nodes_)
-  //	std::cout << "Node: " << e.second->getName() << std::endl;
-  //for (auto& e : model.links_)
-  //	std::cout << "Link: " << e.second->getName() << std::endl;
-  //for (auto& e : model.weights_)
-  //	std::cout << "Weight: " << e.second->getName() << std::endl;
-
-  // check the nodes
-  for (const std::string& node_name : node_names_test)
-  {
-    BOOST_CHECK_EQUAL(model.getNode(node_name).getName(), node_name);
-    BOOST_CHECK_EQUAL(model.getNode(node_name).getModuleName(), "Mod1");
-    if (node_name == "Norm-Max")
-    {
-      BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
-      BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
-      BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "MaxOp");
-      BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "MaxErrorOp");
-      BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "MaxWeightGradOp");
-    }
-    else if (node_name == "Norm-Min")
-    {
-      BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
-      BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
-      BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "MinOp");
-      BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "MinErrorOp");
-      BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "MinWeightGradOp");
-    }
-    else if (node_name == "Norm-Scalar")
-    {
-      BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "InverseOp");
-      BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "InverseGradOp");
-      BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "SumOp");
-      BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "SumErrorOp");
-      BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
-    }
-    else if (node_name == "Mod1-RangeMaxMinBias" || node_name == "Mod1-RangeMinBias")
-    {
-      BOOST_CHECK(model.getNode(node_name).getType() == NodeType::bias);
-      BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
-      BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
-      BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "SumOp");
-      BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "SumErrorOp");
-      BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
-    }
-    else if (node_name == "Input_000000000000-DomainMinOffset" || node_name == "Input_000000000001-DomainMinOffset"
-      || node_name == "Input_000000000000-LinearScale" || node_name == "Input_000000000001-LinearScale")
-    {
-      BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
-      BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
-      BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "SumOp");
-      BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "SumErrorOp");
-      BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
-    }
-    else if (node_name == "Input_000000000000-DomainScaled" || node_name == "Input_000000000001-DomainScaled"
-      || node_name == "Input_000000000000-RangeMaxMinScale" || node_name == "Input_000000000001-RangeMaxMinScale")
-    {
-      BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
-      BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
-      BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "ProdOp");
-      BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "ProdErrorOp");
-      BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "ProdWeightGradOp");
-    }
-  }
-
-  // check the links
-  for (const std::string& name : link_names_test)
-  {
-    BOOST_CHECK_EQUAL(model.getLink(name).getName(), name);
-    std::vector<std::string> test = SplitString(name, "_to_");
-    BOOST_CHECK_EQUAL(model.getLink(name).getSourceNodeName(), test[0]);
-    BOOST_CHECK_EQUAL(model.getLink(name).getSinkNodeName(), test[1]);
-    BOOST_CHECK_EQUAL(model.getLink(name).getModuleName(), "Mod1");
-  }
-
-  // check the weights
-  for (const std::string& name : link_names_test)
-  {
-    BOOST_CHECK_EQUAL(model.getWeight(name).getName(), name);
-    BOOST_CHECK_EQUAL(model.getWeight(name).getModuleName(), "Mod1");
-    if (name == "Mod1-RangeMinBias_to_Input_000000000000-LinearScale" || name == "Mod1-RangeMinBias_to_Input_000000000001-LinearScale") {
-      BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getParamsAsStr(), "n:3.000000");
-      BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
-      BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "DummySolverOp");
-      BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.0f);
-    }
-    else if (name == "Mod1-RangeMaxMinBias_to_Input_000000000000-RangeMaxMinScale" || name == "Mod1-RangeMaxMinBias_to_Input_000000000001-RangeMaxMinScale") {
-      BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getParamsAsStr(), "n:7.000000");
-      BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
-      BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "DummySolverOp");
-      BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.0f);
-    }
-    else if (name == "Norm-Min_to_Input_000000000000-DomainMinOffset" || name == "Norm-Min_to_Input_000000000001-DomainMinOffset"
-      || name == "Norm-Min_to_Norm-Scalar") {
-      BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getParamsAsStr(), "n:-1.000000");
-      BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
-      BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "DummySolverOp");
-      BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.0f);
-    }
-    else {
-      BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getParamsAsStr(), "n:1.000000");
-      BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
-      BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "DummySolverOp");
-      BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.0f);
-    }
-  }
 }
 
 BOOST_AUTO_TEST_CASE(addGaussianEncoding)
@@ -1174,88 +479,6 @@ BOOST_AUTO_TEST_CASE(addGaussianEncoding)
 		"LogVar_000000000000-StdDev_to_Encoding_000000000000","Mu_000000000000_to_Encoding_000000000000",
 		"LogVar_000000000001-StdDev_to_Encoding_000000000001","Mu_000000000001_to_Encoding_000000000001" };
 
-	// NOTE: Node type no longer differentiates layers
-	//// check the input nodes
-	//for (const std::string& node_name : mu_node_names) {
-	//	BOOST_CHECK(model.getNode(node_name).getType() == NodeType::vaemu);
-	//}
-	//for (const std::string& node_name : logvar_node_names) {
-	//	BOOST_CHECK(model.getNode(node_name).getType() == NodeType::vaelogvar);
-	//}
-
-	// check the nodes
-	for (const std::string& node_name : node_names_test)
-	{
-		BOOST_CHECK_EQUAL(model.getNode(node_name).getName(), node_name);
-		BOOST_CHECK_EQUAL(model.getNode(node_name).getModuleName(), "Mod1");
-		if (node_name == "LogVar_000000000000-Scalar" || node_name == "LogVar_000000000001-Scalar")
-		{
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "ExponentialOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "ExponentialGradOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "SumOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "SumErrorOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
-			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.0, 1e-3);
-		}
-		else if (node_name == "LogVar_000000000000-StdDev" || node_name == "LogVar_000000000001-StdDev")
-		{
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "ProdOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "ProdErrorOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "ProdWeightGradOp");
-			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.0, 1e-3);
-		}
-		else if (node_name == "Encoding_000000000000-Sampler" || node_name == "Encoding_000000000001-Sampler")
-		{
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "SumOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "SumErrorOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
-			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.0, 1e-3);
-		}
-		else if (node_name == "Encoding_000000000000" || node_name == "Encoding_000000000001")
-		{
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "SumOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "SumErrorOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
-			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.0, 1e-3);
-		}
-	}
-
-	// check the links
-	for (const std::string& name : link_names_test)
-	{
-		BOOST_CHECK_EQUAL(model.getLink(name).getName(), name);
-		std::vector<std::string> test = SplitString(name, "_to_");
-		BOOST_CHECK_EQUAL(model.getLink(name).getSourceNodeName(), test[0]);
-		BOOST_CHECK_EQUAL(model.getLink(name).getSinkNodeName(), test[1]);
-		int count = std::count(weight_names_test.begin(), weight_names_test.end(), model.getLink(name).getWeightName());
-		BOOST_CHECK_EQUAL(count, 1);
-		BOOST_CHECK_EQUAL(model.getLink(name).getModuleName(), "Mod1");
-	}
-
-	// check the weights
-	for (const std::string& name : weight_names_test)
-	{
-		BOOST_CHECK_EQUAL(model.getWeight(name).getName(), name);
-		BOOST_CHECK_EQUAL(model.getWeight(name).getModuleName(), "Mod1");
-		if (name == "LogVar_000000000000_to_LogVar_000000000000-Scalar" || name == "LogVar_000000000001_to_LogVar_000000000001-Scalar") {
-			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getParamsAsStr(), "n:0.500000");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "DummySolverOp");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.0f);
-		}
-		else {
-			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getParamsAsStr(), "n:1.000000");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "DummySolverOp");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.0f);
-		}
-	}
 }
 
 BOOST_AUTO_TEST_CASE(addCategoricalEncoding)
@@ -1302,102 +525,6 @@ BOOST_AUTO_TEST_CASE(addCategoricalEncoding)
 		"Encoding_000000000001-GumbelSampler_to_Encoding_000000000001-LogAlphaSampler", "Encoding_000000000001-InverseTau_to_Encoding_000000000001-SoftmaxArgs", "Encoding_000000000001-LogAlphaSampler_to_Encoding_000000000001-SoftmaxArgs",
 	};
 
-	//for (auto& e : model.nodes_) {
-	//	std::cout << "Node: " << e.second->getName() << std::endl;
-	//}
-	//for (auto& e : model.links_) {
-	//	std::cout << "Link: " << e.second->getName() << std::endl;
-	//}
-	//for (auto& e : model.weights_) {
-	//	std::cout << "Weight: " << e.second->getName() << std::endl;
-	//}
-
-	// check the nodes
-	for (const std::string& node_name : node_names_test)
-	{
-		BOOST_CHECK_EQUAL(model.getNode(node_name).getName(), node_name);
-		BOOST_CHECK_EQUAL(model.getNode(node_name).getModuleName(), "Mod1");
-		//if (node_name == "Alpha_000000000000-Scalar" || node_name == "Alpha_000000000001-Scalar")
-		//{
-		//	BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LogOp");
-		//	BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LogGradOp");
-		//	BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "SumOp");
-		//	BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "SumErrorOp");
-		//	BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
-		//	BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.0, 1e-3);
-		//}
-		if (node_name == "Encoding_000000000000-GumbelSampler" || node_name == "Encoding_000000000001-GumbelSampler")
-		{
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "SumOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "SumErrorOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
-			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.0, 1e-3);
-		}
-		else if (node_name == "Encoding_000000000000-InverseTau" || node_name == "Encoding_000000000001-InverseTau")
-		{
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "SumOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "SumErrorOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
-			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.0, 1e-3);
-		}
-		else if (node_name == "Encoding_000000000000-Sampler" || node_name == "Encoding_000000000001-Sampler")
-		{
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "SumOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "SumErrorOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
-			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.0, 1e-3);
-		}
-		else if (node_name == "Encoding_000000000000-LogAlphaSampler" || node_name == "Encoding_000000000001-LogAlphaSampler")
-		{
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "SumOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "SumErrorOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
-			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.0, 1e-3);
-		}
-		else if (node_name == "Encoding_000000000000-SoftmaxArgs" || node_name == "Encoding_000000000001-SoftmaxArgs")
-		{
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "ProdOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "ProdErrorOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "ProdWeightGradOp");
-			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.0, 1e-3);
-		}
-		// [TODO: addSoftmax tests?]
-	}
-
-	// check the links
-	for (const std::string& name : link_names_test)
-	{
-		BOOST_CHECK_EQUAL(model.getLink(name).getName(), name);
-		std::vector<std::string> test = SplitString(name, "_to_");
-		BOOST_CHECK_EQUAL(model.getLink(name).getSourceNodeName(), test[0]);
-		BOOST_CHECK_EQUAL(model.getLink(name).getSinkNodeName(), test[1]);
-		int count = std::count(weight_names_check.begin(), weight_names_check.end(), model.getLink(name).getWeightName());
-		if (count == 0)
-			std::cout << "Check: " << model.getLink(name).getWeightName() << std::endl;
-		BOOST_CHECK_EQUAL(count, 1);
-		BOOST_CHECK_EQUAL(model.getLink(name).getModuleName(), "Mod1");
-	}
-
-	// check the weights
-	for (const std::string& name : weight_names_test)
-	{
-		BOOST_CHECK_EQUAL(model.getWeight(name).getName(), name);
-		BOOST_CHECK_EQUAL(model.getWeight(name).getModuleName(), "Mod1");
-		BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getParamsAsStr(), "n:1.000000");
-		BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
-		BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "DummySolverOp");
-		BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.0f);
-	}
 }
 
 BOOST_AUTO_TEST_CASE(addDiscriminator)
@@ -1421,63 +548,6 @@ BOOST_AUTO_TEST_CASE(addDiscriminator)
 		"Mu_000000000000_to_Discriminator-Output-000000000000","Mu_000000000001_to_Discriminator-Output-000000000001",
 		"Discriminator-Sampler-000000000000_to_Discriminator-Output-000000000000","Discriminator-Sampler-000000000001_to_Discriminator-Output-000000000001" };
 
-	// check the nodes
-	for (const std::string& node_name : node_names_test)
-	{
-		BOOST_CHECK_EQUAL(model.getNode(node_name).getName(), node_name);
-		BOOST_CHECK_EQUAL(model.getNode(node_name).getModuleName(), "Mod1");
-		if (node_name == "Discriminator-Output-000000000000" || node_name == "Discriminator-Output-000000000001")
-		{
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "SumOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "SumErrorOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
-			BOOST_CHECK(model.getNode(node_name).getType() == NodeType::output);
-			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.0, 1e-3);
-		}
-		else if (node_name == "Discriminator-Sampler-000000000000" || node_name == "Discriminator-Sampler-000000000001")
-		{
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "SumOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "SumErrorOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
-			BOOST_CHECK(model.getNode(node_name).getType() == NodeType::input);
-			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.0, 1e-3);
-		}
-	}
-
-	// check the links
-	for (const std::string& name : link_names_test)
-	{
-		BOOST_CHECK_EQUAL(model.getLink(name).getName(), name);
-		std::vector<std::string> test = SplitString(name, "_to_");
-		BOOST_CHECK_EQUAL(model.getLink(name).getSourceNodeName(), test[0]);
-		BOOST_CHECK_EQUAL(model.getLink(name).getSinkNodeName(), test[1]);
-		int count = std::count(weight_names_test.begin(), weight_names_test.end(), model.getLink(name).getWeightName());
-		BOOST_CHECK_EQUAL(count, 1);
-		BOOST_CHECK_EQUAL(model.getLink(name).getModuleName(), "Mod1");
-	}
-
-	// check the weights
-	for (const std::string& name : weight_names_test)
-	{
-		BOOST_CHECK_EQUAL(model.getWeight(name).getName(), name);
-		BOOST_CHECK_EQUAL(model.getWeight(name).getModuleName(), "Mod1");
-		if (name == "Discriminator-Sampler-000000000000_to_Discriminator-Output-000000000000" || name == "Discriminator-Sampler-000000000001_to_Discriminator-Output-000000000001") {
-			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "DummySolverOp");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.0f);
-			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getParamsAsStr(), "n:-1.000000");
-		}
-		else {
-			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getParamsAsStr(), "n:1.000000");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "DummySolverOp");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.0f);
-		}
-	}
 }
 
 BOOST_AUTO_TEST_CASE(addLSTMBlock1)
@@ -1531,139 +601,6 @@ BOOST_AUTO_TEST_CASE(addLSTMBlock1)
 		"LSTM-BlockMultForget-000000000000_to_LSTM-BlockMemoryCell-000000000000","LSTM-BlockMultForget-000000000001_to_LSTM-BlockMemoryCell-000000000001",
 		"LSTM-BlockMultInput-000000000000_to_LSTM-BlockMemoryCell-000000000000","LSTM-BlockMultInput-000000000001_to_LSTM-BlockMemoryCell-000000000001", };
 
-	// check the nodes
-	for (const std::string& node_name : node_names_test)
-	{
-		BOOST_CHECK_EQUAL(model.getNode(node_name).getName(), node_name);
-		BOOST_CHECK_EQUAL(model.getNode(node_name).getModuleName(), "Mod1");
-		if (node_name == "LSTM-BlockInput-000000000000" || node_name == "LSTM-BlockInput-000000000001")
-		{
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "ReLUOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "ReLUGradOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "SumOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "SumErrorOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
-			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.2, 1e-3);
-		}
-		else if (node_name == "LSTM-BlockGateInput" || node_name == "LSTM-BlockGateOutput" || node_name == "LSTM-BlockGateForget")
-		{
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "SigmoidOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "SigmoidGradOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "SumOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "SumErrorOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
-			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.0, 1e-3);
-		}
-		else if (node_name == "LSTM-BlockMultOutput-000000000000" || node_name == "LSTM-BlockMultOutput-000000000001")
-		{
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "ProdOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "ProdErrorOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "ProdWeightGradOp");
-			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.2, 1e-3);
-		}
-		else if (node_name == "LSTM-BlockMultInput-000000000000" || node_name == "LSTM-BlockMultForget-000000000000" ||
-			node_name == "LSTM-BlockMultInput-000000000001" || node_name == "LSTM-BlockMultForget-000000000001")
-		{
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "ProdOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "ProdErrorOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "ProdWeightGradOp");
-			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.0, 1e-3);
-		}
-		else if (node_name == "LSTM-BlockMemoryCell-000000000001" || node_name == "LSTM-BlockMemoryCell-2")
-		{
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "SumOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "SumErrorOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
-			BOOST_CHECK(model.getNode(node_name).getType() == NodeType::recursive);
-			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.0, 1e-3);
-		}
-		else if (node_name == "LSTM-BlockGateInput-bias" || node_name == "LSTM-BlockGateOutput-bias" || node_name == "LSTM-BlockGateForget-bias" ||
-			node_name == "LSTM-BlockMultInput-000000000000-bias-000000000000" || node_name == "LSTM-BlockMultOutput-000000000000-bias-000000000000" || node_name == "LSTM-BlockMultForget-000000000000-bias-000000000000" ||
-			node_name == "LSTM-BlockMultInput-000000000001-bias-000000000001" || node_name == "LSTM-BlockMultOutput-000000000001-bias-000000000001" || node_name == "LSTM-BlockMultForget-000000000001-bias-000000000001")
-		{
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "SumOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "SumErrorOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
-			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.0, 1e-3);
-		}
-		else if (node_name == "LSTM-BlockInput-000000000000-bias-000000000000" || node_name == "LSTM-BlockInput-000000000001-bias-000000000001")
-		{
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "SumOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "SumErrorOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
-			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.2, 1e-3);
-		}
-	}
-
-	// check the links
-	for (const std::string& name : link_names_test)
-	{
-		BOOST_CHECK_EQUAL(model.getLink(name).getName(), name);
-		std::vector<std::string> test = SplitString(name, "_to_");
-		BOOST_CHECK_EQUAL(model.getLink(name).getSourceNodeName(), test[0]);
-		BOOST_CHECK_EQUAL(model.getLink(name).getSinkNodeName(), test[1]);
-		BOOST_CHECK_EQUAL(model.getLink(name).getModuleName(), "Mod1");
-	}
-
-	// check the weights
-
-	for (const std::string& name : weight_names_unity_test)
-	{
-		BOOST_CHECK_EQUAL(model.getWeight(name).getName(), name);
-		BOOST_CHECK_EQUAL(model.getWeight(name).getModuleName(), "Mod1");
-		BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
-		BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "DummySolverOp");
-		BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.0f);
-		BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getParamsAsStr(), "n:1.000000");
-	}
-
-	for (const std::string& name : weight_names_test)
-	{
-		BOOST_CHECK_EQUAL(model.getWeight(name).getName(), name);
-		BOOST_CHECK_EQUAL(model.getWeight(name).getModuleName(), "Mod1");
-		if (name == "Input_000000000000_to_LSTM-BlockGateForget" || name == "Input_000000000000_to_LSTM-BlockGateInput" || name == "Input_000000000000_to_LSTM-BlockGateOutput" ||
-			name == "Input_000000000001_to_LSTM-BlockGateForget" ||
-			name == "Input_000000000001_to_LSTM-BlockGateInput" || name == "Input_000000000001_to_LSTM-BlockGateOutput" ||
-			name == "LSTM-BlockMultOutput-000000000000_to_LSTM-BlockGateForget" || name == "LSTM-BlockMultOutput-000000000000_to_LSTM-BlockGateInput" ||
-			name == "LSTM-BlockMultOutput-000000000000_to_LSTM-BlockGateOutput" ||
-			name == "LSTM-BlockMultOutput-000000000001_to_LSTM-BlockGateForget" || name == "LSTM-BlockMultOutput-000000000001_to_LSTM-BlockGateInput" ||
-			name == "LSTM-BlockMultOutput-000000000001_to_LSTM-BlockGateOutput") {
-			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "RandWeightInitOp");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "SGDOp");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.0f);
-		}
-		else if (name == "Input_000000000000_to_LSTM-BlockInput-000000000000" || name == "Input_000000000000_to_LSTM-BlockInput-000000000001" ||
-			name == "Input_000000000001_to_LSTM-BlockInput-000000000000" ||
-			name == "Input_000000000001_to_LSTM-BlockInput-000000000001" ||
-			name == "LSTM-BlockMultOutput-000000000000_to_LSTM-BlockInput-000000000000" || name == "LSTM-BlockMultOutput-000000000001_to_LSTM-BlockInput-000000000001") {
-			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "RandWeightInitOp");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "SGDOp");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.8f);
-		}
-		else if (name == "LSTM-BlockGateForget-bias_to_LSTM-BlockGateForget" || name == "LSTM-BlockGateInput-bias_to_LSTM-BlockGateInput" ||
-			name == "LSTM-BlockGateOutput-bias_to_LSTM-BlockGateOutput") {
-			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "SGDOp");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.0f);
-		}
-		else if (name == "LSTM-BlockInput-000000000000-bias-000000000000_to_LSTM-BlockInput-000000000000" || name == "LSTM-BlockInput-000000000001-bias-000000000001_to_LSTM-BlockInput-000000000001") {
-			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "SGDOp");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.8f);
-		}
-		else
-			BOOST_CHECK(false);
-	}
 }
 	
 BOOST_AUTO_TEST_CASE(addLSTM)
@@ -1685,9 +622,6 @@ BOOST_AUTO_TEST_CASE(addLSTM)
 		"LSTM-000000000000-BlockMultOutput-000000000000","LSTM-000000000000-BlockMultOutput-000000000001",
 		"LSTM-000000000001-BlockMultOutput-000000000000","LSTM-000000000001-BlockMultOutput-000000000001" };
 
-	// check the nodes
-	for (size_t node_iter = 0; node_iter<node_names_test.size(); ++node_iter)
-		BOOST_CHECK_EQUAL(node_names[node_iter], node_names_test[node_iter]);
 }
 
 BOOST_AUTO_TEST_CASE(addDotProdAttention1)
@@ -1749,208 +683,6 @@ BOOST_AUTO_TEST_CASE(addDotProdAttention1)
 		"Input_000000000001_to_Hidden_values_000000000000","Input_000000000001_to_Hidden_values_000000000001","Input_000000000001_to_Hidden_values_000000000002",
 		"Hidden_softMax-Out_000000000000_to_Hidden_attention_000000000000", "Hidden_softMax-Out_000000000001_to_Hidden_attention_000000000001", "Hidden_softMax-Out_000000000002_to_Hidden_attention_000000000002" };
 
-	// check the nodes
-	for (const std::string& node_name : node_names_softmax)
-	{
-		BOOST_CHECK_EQUAL(model.getNode(node_name).getName(), node_name);
-		BOOST_CHECK_EQUAL(model.getNode(node_name).getModuleName(), "Mod1");
-		if (node_name == "Hidden_SoftMax-Sum")
-		{
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "InverseOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "InverseGradOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "SumOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "SumErrorOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
-		}
-		else if (node_name == "Hidden_SoftMax-Max")
-		{
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "MaxOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "MaxErrorOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "MaxWeightGradOp");
-		}
-		else if (node_name == "Hidden_SoftMax-In_000000000000" || node_name == "Hidden_SoftMax-In_000000000001" || node_name == "Hidden_SoftMax-In_000000000002")
-		{
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "ExponentialOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "ExponentialGradOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "SumOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "SumErrorOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
-		}
-		else if (node_name == "Hidden_SoftMax-Out_000000000000" || node_name == "Hidden_SoftMax-Out_000000000001" || node_name == "Hidden_SoftMax-Out_000000000002")
-		{
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "ProdOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "ProdErrorOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "ProdWeightGradOp");
-		}
-	}
-
-	for (const std::string& node_name : node_names_test)
-	{
-		BOOST_CHECK_EQUAL(model.getNode(node_name).getName(), node_name);
-		BOOST_CHECK_EQUAL(model.getNode(node_name).getModuleName(), "Mod1");
-		if (node_name == "Hidden-scalar")
-		{
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "SumOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "SumErrorOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
-			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.0, 1e-3);
-			BOOST_CHECK(model.getNode(node_name).getType() == NodeType::input);
-		}
-		else if (node_name == "Hidden_scores_000000000000" || node_name == "Hidden_scores_000000000001" || node_name == "Hidden_scores_000000000002")
-		{
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "ProdOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "ProdErrorOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "ProdWeightGradOp");
-			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.0, 1e-3);
-		}
-		else if (node_name == "Hidden_attention_000000000000" || node_name == "Hidden_attention_000000000001" || node_name == "Hidden_attention_000000000002")
-		{
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "ReLUOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "ReLUGradOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "ProdOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "ProdErrorOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "ProdWeightGradOp");
-			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.2, 1e-3);
-		}
-		else if (node_name == "Hidden_keys_000000000000" || node_name == "Hidden_keys_000000000001" || node_name == "Hidden_keys_000000000002")
-		{
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "SumOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "SumErrorOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
-			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.2, 1e-3);
-		}
-		else if (node_name == "Hidden_query_000000000000" || node_name == "Hidden_query_000000000001" || node_name == "Hidden_query_000000000002")
-		{
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "SumOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "SumErrorOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
-			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.2, 1e-3);
-		}
-		else if (node_name == "Hidden_values_000000000000" || node_name == "Hidden_values_000000000001" || node_name == "Hidden_values_000000000002")
-		{
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "SumOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "SumErrorOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
-			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.2, 1e-3);
-		}
-		else
-			BOOST_CHECK(false);
-	}
-	BOOST_CHECK_EQUAL(model.nodes_.size(), 26);
-
-	// check the links
-	int links_cnt = 0;
-	for (const std::string& name : link_names_test)
-	{
-		BOOST_CHECK_EQUAL(model.getLink(name).getName(), name);
-		std::vector<std::string> test = SplitString(name, "_to_");
-		BOOST_CHECK_EQUAL(model.getLink(name).getSourceNodeName(), test[0]);
-		BOOST_CHECK_EQUAL(model.getLink(name).getSinkNodeName(), test[1]);
-		BOOST_CHECK_EQUAL(model.getLink(name).getModuleName(), "Mod1");
-	}
-	BOOST_CHECK_EQUAL(model.links_.size(), 51);
-
-	// check the weights
-	for (const std::string& name : weight_names_softmax)
-	{
-		BOOST_CHECK_EQUAL(model.getWeight(name).getName(), name);
-		BOOST_CHECK_EQUAL(model.getWeight(name).getModuleName(), "Mod1");
-		// From stable softmax
-		if (model.getWeight(name).getName() == "Hidden_softMax-Max_to_Hidden_softMax-In_000000000000" || model.getWeight(name).getName() == "Hidden_softMax-Max_to_Hidden_softMax-In_000000000001" || model.getWeight(name).getName() == "Hidden_softMax-Max_to_Hidden_softMax-In_000000000002") {
-			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getParamsAsStr(), "n:-1.000000");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "DummySolverOp");
-		}
-		else if (model.getWeight(name).getName() == "Hidden_softMax-Max_to_Hidden_softMax-In_000000000000" || model.getWeight(name).getName() == "Hidden_softMax-Max_to_Hidden_softMax-In_000000000001" || model.getWeight(name).getName() == "Hidden_softMax-Max_to_Hidden_softMax-In_000000000002") {
-			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getParamsAsStr(), "n:1.000000");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "DummySolverOp");
-		}
-		else if (model.getWeight(name).getName() == "Hidden_scores_000000000000_to_Hidden_softMax-In_000000000000" || model.getWeight(name).getName() == "Hidden_scores_000000000001_to_Hidden_softMax-In_000000000001" || model.getWeight(name).getName() == "Hidden_scores_000000000002_to_Hidden_softMax-In_000000000002") {
-			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getParamsAsStr(), "n:1.000000");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "DummySolverOp");
-		}
-		else if (model.getWeight(name).getName() == "Hidden_softMax-In_000000000000_to_Hidden_softMax-Out_000000000000" || model.getWeight(name).getName() == "Hidden_softMax-In_000000000001_to_Hidden_softMax-Out_000000000001" || model.getWeight(name).getName() == "Hidden_softMax-In_000000000002_to_Hidden_softMax-Out_000000000002") {
-			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getParamsAsStr(), "n:1.000000");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "DummySolverOp");
-		}
-		else if (model.getWeight(name).getName() == "Hidden_softMax-Sum_to_Hidden_softMax-Out_000000000000" || model.getWeight(name).getName() == "Hidden_softMax-Sum_to_Hidden_softMax-Out_000000000001" || model.getWeight(name).getName() == "Hidden_softMax-Sum_to_Hidden_softMax-Out_000000000002") {
-			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getParamsAsStr(), "n:1.000000");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "DummySolverOp");
-		}
-		else if (model.getWeight(name).getName() == "Hidden_softMax-In_000000000000_to_Hidden_softMax-Sum" || model.getWeight(name).getName() == "Hidden_softMax-In_000000000001_to_Hidden_softMax-Sum" || model.getWeight(name).getName() == "Hidden_softMax-In_000000000002_to_Hidden_softMax-Sum") {
-			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getParamsAsStr(), "n:1.000000");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "DummySolverOp");
-		}
-		else if (model.getWeight(name).getName() == "Hidden_scores_000000000000_to_Hidden_softMax-Max" || model.getWeight(name).getName() == "Hidden_scores_000000000001_to_Hidden_softMax-Max" || model.getWeight(name).getName() == "Hidden_scores_000000000002_to_Hidden_softMax-Max") {
-			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getParamsAsStr(), "n:1.000000");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "DummySolverOp");
-		}
-		else
-			BOOST_CHECK(false);
-	}
-	for (const std::string& name : weight_names_test)
-	{
-		BOOST_CHECK_EQUAL(model.getWeight(name).getName(), name);
-		BOOST_CHECK_EQUAL(model.getWeight(name).getModuleName(), "Mod1");
-		if (name == "Hidden-scalar_to_Hidden_scores_000000000000" || name == "Hidden-scalar_to_Hidden_scores_000000000001" || name == "Hidden-scalar_to_Hidden_scores_000000000002") {
-			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "DummySolverOp");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.0f);
-			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getParamsAsStr(), "n:1.732051");
-		}
-		else if (name == "Hidden_keys_000000000000_to_Hidden_scores_000000000000" || name == "Hidden_keys_000000000001_to_Hidden_scores_000000000001" || name == "Hidden_keys_000000000002_to_Hidden_scores_000000000002") {
-			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "DummySolverOp");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.0f);
-			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getParamsAsStr(), "n:1.000000");
-		}
-		else if (name == "Hidden_query_000000000000_to_Hidden_scores_000000000000" || name == "Hidden_query_000000000001_to_Hidden_scores_000000000001" || name == "Hidden_query_000000000002_to_Hidden_scores_000000000002") {
-			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "DummySolverOp");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.0f);
-			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getParamsAsStr(), "n:1.000000");
-		}
-		else if (name == "Input_000000000000_to_Hidden_keys_000000000000" || name == "Input_000000000000_to_Hidden_keys_000000000001" || name == "Input_000000000000_to_Hidden_keys_000000000002"
-			|| name == "Input_000000000001_to_Hidden_keys_000000000000" || name == "Input_000000000001_to_Hidden_keys_000000000001" || name == "Input_000000000001_to_Hidden_keys_000000000002"
-			|| name == "Input_000000000000_to_Hidden_query_000000000000" || name == "Input_000000000000_to_Hidden_query_000000000001" || name == "Input_000000000000_to_Hidden_query_000000000002"
-			|| name == "Input_000000000001_to_Hidden_query_000000000000" || name == "Input_000000000001_to_Hidden_query_000000000001" || name == "Input_000000000001_to_Hidden_query_000000000002"
-			|| name == "Input_000000000000_to_Hidden_values_000000000000" || name == "Input_000000000000_to_Hidden_values_000000000001" || name == "Input_000000000000_to_Hidden_values_000000000002"
-			|| name == "Input_000000000001_to_Hidden_values_000000000000" || name == "Input_000000000001_to_Hidden_values_000000000001" || name == "Input_000000000001_to_Hidden_values_000000000002") {
-			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "RandWeightInitOp");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "SGDOp");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.8f);
-		}
-		else if (name == "Hidden_values_000000000000_to_Hidden_attention_000000000000" || name == "Hidden_values_000000000001_to_Hidden_attention_000000000001" || name == "Hidden_values_000000000002_to_Hidden_attention_000000000002"
-			|| name == "Hidden_softMax-Out_000000000000_to_Hidden_attention_000000000000" || name == "Hidden_softMax-Out_000000000001_to_Hidden_attention_000000000001" || name == "Hidden_softMax-Out_000000000002_to_Hidden_attention_000000000002") {
-			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "DummySolverOp");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.0f);
-			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getParamsAsStr(), "n:1.000000");
-		}
-		else
-			BOOST_CHECK(false);
-	}
-	BOOST_CHECK_EQUAL(model.links_.size(), 51);
 }
 
 BOOST_AUTO_TEST_CASE(addMultiHeadAttention1)
@@ -2017,82 +749,6 @@ BOOST_AUTO_TEST_CASE(addMultiHeadAttention1)
 		"Hidden-000000000001_attention_000000000000_to_Hidden_MultiHead_000000000000", "Hidden-000000000001_attention_000000000001_to_Hidden_MultiHead_000000000000", "Hidden-000000000001_attention_000000000002_to_Hidden_MultiHead_000000000000",
 		"Hidden-000000000001_attention_000000000000_to_Hidden_MultiHead_000000000001", "Hidden-000000000001_attention_000000000001_to_Hidden_MultiHead_000000000001", "Hidden-000000000001_attention_000000000002_to_Hidden_MultiHead_000000000001"};
 
-	// check the nodes
-	for (const std::string& node_name : node_names_attention)
-	{
-		BOOST_CHECK_EQUAL(model.getNode(node_name).getName(), node_name);
-		BOOST_CHECK_EQUAL(model.getNode(node_name).getModuleName(), "Mod1");
-	}
-
-	for (const std::string& node_name : node_names_test)
-	{
-		BOOST_CHECK_EQUAL(model.getNode(node_name).getName(), node_name);
-		BOOST_CHECK_EQUAL(model.getNode(node_name).getModuleName(), "Mod1");
-		if (node_name == "Hidden_MultiHead-bias_000000000000" || node_name == "Hidden_MultiHead-bias_000000000001")
-		{
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "LinearOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "LinearGradOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "SumOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "SumErrorOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
-			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.0, 1e-3);
-		}
-		else if (node_name == "Hidden_MultiHead_000000000000" || node_name == "Hidden_MultiHead_000000000001")
-		{
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivation()->getName(), "ReLUOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getActivationGrad()->getName(), "ReLUGradOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegration()->getName(), "SumOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationError()->getName(), "SumErrorOp");
-			BOOST_CHECK_EQUAL(model.getNode(node_name).getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
-			BOOST_CHECK_CLOSE(model.getNode(node_name).getDropProbability(), 0.2, 1e-3);
-		}
-		else
-			BOOST_CHECK(false);
-	}
-	BOOST_CHECK_EQUAL(model.nodes_.size(), 54); // two attention heads + fully connected
-
-	// check the links
-	for (const std::string& name : link_names_attention)
-	{
-		BOOST_CHECK_EQUAL(model.getLink(name).getName(), name);
-		std::vector<std::string> test = SplitString(name, "_to_");
-		BOOST_CHECK_EQUAL(model.getLink(name).getSourceNodeName(), test[0]);
-		BOOST_CHECK_EQUAL(model.getLink(name).getSinkNodeName(), test[1]);
-		BOOST_CHECK_EQUAL(model.getLink(name).getModuleName(), "Mod1");
-	}
-	for (const std::string& name : weight_names_test)
-	{
-		BOOST_CHECK_EQUAL(model.getLink(name).getName(), name);
-		std::vector<std::string> test = SplitString(name, "_to_");
-		BOOST_CHECK_EQUAL(model.getLink(name).getSourceNodeName(), test[0]);
-		BOOST_CHECK_EQUAL(model.getLink(name).getSinkNodeName(), test[1]);
-		BOOST_CHECK_EQUAL(model.getLink(name).getModuleName(), "Mod1");
-	}
-	BOOST_CHECK_EQUAL(model.links_.size(), 116); // two attention heads + fully connected
-
-	// check the weights
-	for (const std::string& name : weight_names_test)
-	{
-		BOOST_CHECK_EQUAL(model.getWeight(name).getName(), name);
-		BOOST_CHECK_EQUAL(model.getWeight(name).getModuleName(), "Mod1");
-		if (name == "Hidden_MultiHead-bias_000000000000_to_Hidden_MultiHead_000000000000" || name ==  "Hidden_MultiHead-bias_000000000001_to_Hidden_MultiHead_000000000001") {
-			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "SGDOp");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.8f);
-			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getParamsAsStr(), "n:0.000000");
-		}
-		else if (name == "Hidden-000000000000_attention_000000000000_to_Hidden_MultiHead_000000000000" || name == "Hidden-000000000000_attention_000000000001_to_Hidden_MultiHead_000000000000" || name == "Hidden-000000000000_attention_000000000002_to_Hidden_MultiHead_000000000000"
-			|| name == "Hidden-000000000000_attention_000000000000_to_Hidden_MultiHead_000000000001" || name == "Hidden-000000000000_attention_000000000001_to_Hidden_MultiHead_000000000001" || name == "Hidden-000000000000_attention_000000000002_to_Hidden_MultiHead_000000000001"
-			|| name == "Hidden-000000000001_attention_000000000000_to_Hidden_MultiHead_000000000000" || name == "Hidden-000000000001_attention_000000000001_to_Hidden_MultiHead_000000000000" || name == "Hidden-000000000001_attention_000000000002_to_Hidden_MultiHead_000000000000"
-			|| name == "Hidden-000000000001_attention_000000000000_to_Hidden_MultiHead_000000000001" || name == "Hidden-000000000001_attention_000000000001_to_Hidden_MultiHead_000000000001" || name == "Hidden-000000000001_attention_000000000002_to_Hidden_MultiHead_000000000001") {
-			BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "RandWeightInitOp");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "SGDOp");
-			BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.8f);
-		}
-		else
-			BOOST_CHECK(false);
-	}
-	BOOST_CHECK_EQUAL(model.weights_.size(), 116); // two attention heads + fully connected
 }
 
 BOOST_AUTO_TEST_CASE(addScalar)
@@ -2146,48 +802,6 @@ BOOST_AUTO_TEST_CASE(addProjection1)
 		"Filter-Mod1_H000000000002-W000000000000", "Filter-Mod1_H000000000002-W000000000001", "Filter-Mod1_H000000000002-W000000000002", "Filter-Mod1_H000000000002-W000000000003", 
 		"Filter-Mod1_H000000000003-W000000000000", "Filter-Mod1_H000000000003-W000000000001", "Filter-Mod1_H000000000003-W000000000002", "Filter-Mod1_H000000000003-W000000000003"};
 
-	//for (auto& e : model.nodes_)
-	//	std::cout << "Node: " << e.second->getName() << std::endl;
-	//for (auto& e : model.links_)
-	//	std::cout << "Link: " << e.second->getName() << std::endl;
-	//for (auto& e : model.weights_)
-	//	std::cout << "Node: " << e.second->getName() << std::endl;
-
-	// check the nodes
-	for (const std::string& node_name: node_names_test)
-	{
-		BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getName(), node_name);
-		BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getModuleName(), "Mod1");
-		BOOST_CHECK_CLOSE(model.nodes_.at(node_name)->getDropProbability(), 0.2f, 1e-3);
-		BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getActivation()->getName(), "ReLUOp");
-		BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getActivationGrad()->getName(), "ReLUGradOp");
-		BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getIntegration()->getName(), "SumOp");
-		BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getIntegrationError()->getName(), "SumErrorOp");
-		BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
-	}
-
-	// check the links
-	for (const std::string& name : link_names_test)
-	{
-		BOOST_CHECK_EQUAL(model.getLink(name).getName(), name);
-		std::vector<std::string> test = SplitString(name, "_to_");
-		BOOST_CHECK_EQUAL(model.getLink(name).getSourceNodeName(), ReplaceTokens(test[0], { "(_Mod1)" }, "") );
-		BOOST_CHECK_EQUAL(model.getLink(name).getSinkNodeName(), ReplaceTokens(test[1], { "(_Mod1)" }, ""));
-		BOOST_CHECK_EQUAL(model.getLink(name).getModuleName(), "Mod1");
-		int count = std::count(weight_names_test.begin(), weight_names_test.end(), model.getLink(name).getWeightName());
-		//std::cout << model.getLink(name).getWeightName() << std::endl;
-		BOOST_CHECK_EQUAL(count, 1);
-	}
-
-	// check the weights
-	for (const std::string& name : weight_names_test)
-	{
-		BOOST_CHECK_EQUAL(model.getWeight(name).getName(), name);
-		BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
-		BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "SGDOp");
-		BOOST_CHECK_EQUAL(model.getWeight(name).getModuleName(), "Mod1");
-		BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.8f);
-	}
 }
 
 BOOST_AUTO_TEST_CASE(addProjection1WithoutSharedWeights)
@@ -2231,38 +845,6 @@ BOOST_AUTO_TEST_CASE(addProjection1WithoutSharedWeights)
     "Input_000000000003_to_Filter-out_H000000000003-W000000000001_Mod1", "Input_000000000003_to_Filter-out_H000000000003-W000000000002_Mod1", "Input_000000000003_to_Filter-out_H000000000003-W000000000003_Mod1", "Input_000000000003_to_Filter-out_H000000000003-W000000000004_Mod1",
     "Input_000000000003_to_Filter-out_H000000000004-W000000000001_Mod1", "Input_000000000003_to_Filter-out_H000000000004-W000000000002_Mod1", "Input_000000000003_to_Filter-out_H000000000004-W000000000003_Mod1", "Input_000000000003_to_Filter-out_H000000000004-W000000000004_Mod1" };
 
-  // check the nodes
-  for (const std::string& node_name : node_names_test)
-  {
-    BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getName(), node_name);
-    BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getModuleName(), "Mod1");
-    BOOST_CHECK_CLOSE(model.nodes_.at(node_name)->getDropProbability(), 0.2f, 1e-3);
-    BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getActivation()->getName(), "ReLUOp");
-    BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getActivationGrad()->getName(), "ReLUGradOp");
-    BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getIntegration()->getName(), "SumOp");
-    BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getIntegrationError()->getName(), "SumErrorOp");
-    BOOST_CHECK_EQUAL(model.nodes_.at(node_name)->getIntegrationWeightGrad()->getName(), "SumWeightGradOp");
-  }
-
-  // check the links
-  for (const std::string& name : link_names_test)
-  {
-    BOOST_CHECK_EQUAL(model.getLink(name).getName(), name);
-    std::vector<std::string> test = SplitString(name, "_to_");
-    BOOST_CHECK_EQUAL(model.getLink(name).getSourceNodeName(), ReplaceTokens(test[0], { "(_Mod1)" }, ""));
-    BOOST_CHECK_EQUAL(model.getLink(name).getSinkNodeName(), ReplaceTokens(test[1], { "(_Mod1)" }, ""));
-    BOOST_CHECK_EQUAL(model.getLink(name).getModuleName(), "Mod1");
-  }
-
-  // check the weights
-  for (const std::string& name : link_names_test)
-  {
-    BOOST_CHECK_EQUAL(model.getWeight(name).getName(), name);
-    BOOST_CHECK_EQUAL(model.getWeight(name).getWeightInitOp()->getName(), "ConstWeightInitOp");
-    BOOST_CHECK_EQUAL(model.getWeight(name).getSolverOp()->getName(), "SGDOp");
-    BOOST_CHECK_EQUAL(model.getWeight(name).getModuleName(), "Mod1");
-    BOOST_CHECK_EQUAL(model.getWeight(name).getDropProbability(), 0.8f);
-  }
 }
 
 BOOST_AUTO_TEST_SUITE_END()

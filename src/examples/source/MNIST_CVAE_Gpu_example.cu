@@ -88,6 +88,8 @@ public:
       std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((TensorT)(node_names.size() + n_categorical) / 2, 1)),
       std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, specify_layer);
 
+    // TODO: specify the output nodes for the encodings
+
     // Add the Encoding layers
     std::vector<std::string> node_names_Gencoder = model_builder.addGaussianEncoding(model, "Gaussian_encoding", "Gaussian_encoding", node_names_mu, node_names_logvar, true);
     std::vector<std::string> node_names_Cencoder = model_builder.addCategoricalEncoding(model, "Categorical_encoding", "Categorical_encoding", node_names_logalpha, true);
@@ -124,6 +126,7 @@ public:
     // Specify the output node types manually
     for (const std::string& node_name : node_names)
       model.getNodesMap().at(node_name)->setType(NodeType::output);
+    model.setInputAndOutputNodes();
   }
   Model<TensorT> makeModel() { return Model<TensorT>(); }
   void adaptiveTrainerScheduler(
