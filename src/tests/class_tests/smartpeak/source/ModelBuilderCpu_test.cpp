@@ -1064,7 +1064,8 @@ BOOST_AUTO_TEST_CASE(checkFullyConnectedWithXEntropyWLogits)
   // test for the expected weights
   std::vector<std::string> weight_names = { "Output-bias_000000000000_to_Output_000000000000", "Output-bias_000000000001_to_Output_000000000001",
     "Input_000000000000_to_Output_000000000000", "Input_000000000000_to_Output_000000000001", "Input_000000000000_to_Output_000000000000", "Input_000000000000_to_Output_000000000001" };
-  std::vector<float> weight_values_test = { 0, 0, 0.899999976, 0.949999988, 0.899999976, 0.949999988 };
+  //std::vector<float> weight_values_test = { 0, 0, 0.899999976, 0.949999988, 0.899999976, 0.949999988 }; // option 1 
+  std::vector<float> weight_values_test = { 0, 0, 1, 0.900000215, 1, 0.900000215 }; // option 2
   for (int i = 0; i < weight_names.size(); ++i) {
     //std::cout << weight_names.at(i) << " Weight: " << model.getWeightsMap().at(weight_names.at(i))->getWeight() << std::endl;
     BOOST_CHECK_CLOSE(model.getWeightsMap().at(weight_names.at(i))->getWeight(), weight_values_test.at(i), 1e-4);
