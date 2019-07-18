@@ -474,24 +474,24 @@ public:
 		std::string getName() { return "CrossEntropyWithLogitsGradTensorOp"; }
 		void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size, const int& time_step, DeviceT& device) const
 		{
-      //// Option 1: from derivation
-			//Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> expected_tensor(expected, batch_size, layer_size, 1);
-			//Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
-			//Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> error_tensor(error, batch_size, memory_size, layer_size);
-			//auto predicted_chip = predicted_tensor.chip(time_step, 1);
-      //auto expected_sum = expected_tensor.sum(Eigen::array<Eigen::Index, 1>({ 1 })).broadcast(Eigen::array<Eigen::Index, 2>({ 1, layer_size }));
-			//error_tensor.chip(time_step, 1).device(device) -= (((predicted_chip*expected_sum - expected_tensor.chip(0, 2)) / error_tensor.chip(time_step, 1).constant(TensorT(layer_size))) * error_tensor.chip(time_step, 1).constant(this->scale_)).clip(TensorT(-1e9),TensorT(1e9));
+      // Option 1: from derivation
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> expected_tensor(expected, batch_size, layer_size, 1);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
+			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> error_tensor(error, batch_size, memory_size, layer_size);
+			auto predicted_chip = predicted_tensor.chip(time_step, 1);
+      auto expected_sum = expected_tensor.sum(Eigen::array<Eigen::Index, 1>({ 1 })).broadcast(Eigen::array<Eigen::Index, 2>({ 1, layer_size }));
+			error_tensor.chip(time_step, 1).device(device) -= (((predicted_chip*expected_sum - expected_tensor.chip(0, 2)) / error_tensor.chip(time_step, 1).constant(TensorT(layer_size))) * error_tensor.chip(time_step, 1).constant(this->scale_)).clip(TensorT(-1e9),TensorT(1e9));
 
-      // Option 2
-      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
-      Eigen::TensorMap<Eigen::Tensor<TensorT, 5>> predicted_tensor(predicted, batch_size, memory_size, layer_size, 1, 1);
-      Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> error_tensor(error, batch_size, memory_size, layer_size);
-      auto predicted_chip = predicted_tensor.chip(time_step, 1); // 4 dims
-      auto exps = (predicted_chip.chip(0, 3) - predicted_chip.maximum(Eigen::array<int, 1>({ 1 })).broadcast(Eigen::array<int, 3>({ 1, layer_size, 1 }))).exp(); // 3 dims
-      auto stable_softmax = exps.chip(0, 2) / exps.sum(Eigen::array<int, 1>({ 1 })).broadcast(Eigen::array<int, 2>({ 1, layer_size }));  // 2 dims
-      // NOTE: added - so that the gradient is -
-      error_tensor.chip(time_step, 1).device(device) -= ((expected_tensor / (stable_softmax + expected_tensor.constant(TensorT(this->eps_))) / expected_tensor.constant(TensorT(layer_size)))
-        *error_tensor.chip(time_step, 1).constant(TensorT(this->scale_))).clip(TensorT(-1e9), TensorT(1e9));
+      //// Option 2: simple but does not work
+      //Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
+      //Eigen::TensorMap<Eigen::Tensor<TensorT, 5>> predicted_tensor(predicted, batch_size, memory_size, layer_size, 1, 1);
+      //Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> error_tensor(error, batch_size, memory_size, layer_size);
+      //auto predicted_chip = predicted_tensor.chip(time_step, 1); // 4 dims
+      //auto exps = (predicted_chip.chip(0, 3) - predicted_chip.maximum(Eigen::array<int, 1>({ 1 })).broadcast(Eigen::array<int, 3>({ 1, layer_size, 1 }))).exp(); // 3 dims
+      //auto stable_softmax = exps.chip(0, 2) / exps.sum(Eigen::array<int, 1>({ 1 })).broadcast(Eigen::array<int, 2>({ 1, layer_size }));  // 2 dims
+      //// NOTE: added - so that the gradient is -
+      //error_tensor.chip(time_step, 1).device(device) -= ((expected_tensor / (stable_softmax + expected_tensor.constant(TensorT(this->eps_))) / expected_tensor.constant(TensorT(layer_size)))
+      //  *error_tensor.chip(time_step, 1).constant(TensorT(this->scale_))).clip(TensorT(-1e9), TensorT(1e9));
 		};
 	};
 

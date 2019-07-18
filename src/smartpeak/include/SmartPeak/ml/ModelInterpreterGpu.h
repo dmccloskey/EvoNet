@@ -318,7 +318,7 @@ namespace SmartPeak
 					this->layer_tensors_.at(operation.source_layer.tensor_index)->getHDerivativePointer().get(),
 					this->layer_tensors_.at(operation.source_layer.tensor_index)->getDDerivativePointer().get(),
 					this->layer_tensors_.at(operation.source_layer.tensor_index)->getLayerSize(), // [TODO: replace with N]
-					operation.source_layer.integration_error.get(),
+					operation.sink_layer.integration_error.get(), // changed from source_layer
 					this->layer_tensors_.at(operation.sink_layer.tensor_index)->getBatchSize(),
 					this->layer_tensors_.at(operation.sink_layer.tensor_index)->getMemorySize(),
 					this->layer_tensors_.at(operation.sink_layer.tensor_index)->getLayerSize(),

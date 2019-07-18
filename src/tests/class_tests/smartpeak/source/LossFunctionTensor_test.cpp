@@ -883,24 +883,24 @@ BOOST_AUTO_TEST_CASE(operationfunctionCrossEntropyWithLogitsGradOp1)
   //BOOST_CHECK_CLOSE(error(0, 1, 1), 0.0, 1e-6);
   //BOOST_CHECK_CLOSE(error(1, 0, 1), -0.5, 1e-6);
   //BOOST_CHECK_CLOSE(error(1, 1, 1), 0.0, 1e-6);
-  //// Option 1
-  //BOOST_CHECK_CLOSE(error(0, 0, 0), 0.5, 1e-6); // NegLogLiklihoodGrad = -4.99994993
-  //BOOST_CHECK_CLOSE(error(0, 1, 0), 0.0, 1e-6);
-  //BOOST_CHECK_CLOSE(error(1, 0, 0), -0.598610044, 1e-6); // NegLogLiklihoodGrad = -0.555554926
-  //BOOST_CHECK_CLOSE(error(1, 1, 0), 0.0, 1e-6);
-  //BOOST_CHECK_CLOSE(error(0, 0, 1), -1.09861004, 1e-6);
-  //BOOST_CHECK_CLOSE(error(0, 1, 1), 0.0, 1e-6);
-  //BOOST_CHECK_CLOSE(error(1, 0, 1), 0, 1e-6);
-  //BOOST_CHECK_CLOSE(error(1, 1, 1), 0.0, 1e-6);
-  // Option 2
-  BOOST_CHECK_CLOSE(error(0, 0, 0), -4.9999299, 1e-6);
+  // Option 1
+  BOOST_CHECK_CLOSE(error(0, 0, 0), 0.5, 1e-6); // NegLogLiklihoodGrad = -4.99994993
   BOOST_CHECK_CLOSE(error(0, 1, 0), 0.0, 1e-6);
-  BOOST_CHECK_CLOSE(error(1, 0, 0), -0.555555224, 1e-6);
+  BOOST_CHECK_CLOSE(error(1, 0, 0), -0.598610044, 1e-6); // NegLogLiklihoodGrad = -0.555554926
   BOOST_CHECK_CLOSE(error(1, 1, 0), 0.0, 1e-6);
-  BOOST_CHECK_CLOSE(error(0, 0, 1), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(error(0, 0, 1), -1.09861004, 1e-6);
   BOOST_CHECK_CLOSE(error(0, 1, 1), 0.0, 1e-6);
-  BOOST_CHECK_CLOSE(error(1, 0, 1), 0.0, 1e-6);
+  BOOST_CHECK_CLOSE(error(1, 0, 1), 0, 1e-6);
   BOOST_CHECK_CLOSE(error(1, 1, 1), 0.0, 1e-6);
+  //// Option 2
+  //BOOST_CHECK_CLOSE(error(0, 0, 0), -4.9999299, 1e-6);
+  //BOOST_CHECK_CLOSE(error(0, 1, 0), 0.0, 1e-6);
+  //BOOST_CHECK_CLOSE(error(1, 0, 0), -0.555555224, 1e-6);
+  //BOOST_CHECK_CLOSE(error(1, 1, 0), 0.0, 1e-6);
+  //BOOST_CHECK_CLOSE(error(0, 0, 1), 0.0, 1e-6);
+  //BOOST_CHECK_CLOSE(error(0, 1, 1), 0.0, 1e-6);
+  //BOOST_CHECK_CLOSE(error(1, 0, 1), 0.0, 1e-6);
+  //BOOST_CHECK_CLOSE(error(1, 1, 1), 0.0, 1e-6);
 }
 
 /**
