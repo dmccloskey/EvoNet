@@ -10,7 +10,9 @@ using namespace std;
 
 template <typename TensorT>
 void trainModel(Model<TensorT>& model, const std::vector<std::string>& input_node_names, const std::vector<std::string>& output_node_names, const Eigen::Tensor<float, 3>& input_values, Eigen::Tensor<float, 2> output_values,
-  const int& batch_size, const int& memory_size) {
+  const int& batch_size, const int& memory_size, 
+  std::shared_ptr<LossFunctionTensorOp<TensorT, Eigen::DefaultDevice>>& loss_function,
+  std::shared_ptr<LossFunctionGradTensorOp<TensorT, Eigen::DefaultDevice>>& loss_function_grad) {
   // Interpret the model
   ModelInterpreterDefaultDevice<TensorT> model_interpreter;
   model_interpreter.getForwardPropogationOperations(model, batch_size, memory_size, true, true, true, true);
@@ -24,10 +26,8 @@ void trainModel(Model<TensorT>& model, const std::vector<std::string>& input_nod
   model_interpreter.executeForwardPropogationOperations(0); //FP
 
   // calculate the model error and node output error
-  LossFunctionTensorOp<float, Eigen::DefaultDevice>* loss_function = new MSETensorOp<float, Eigen::DefaultDevice>();
-  LossFunctionGradTensorOp<float, Eigen::DefaultDevice>* loss_function_grad = new MSEGradTensorOp<float, Eigen::DefaultDevice>();
   const int layer_id = model.getNodesMap().at(output_node_names.front())->getTensorIndex().first;
-  model_interpreter.executeModelErrorOperations(output_values, layer_id, loss_function, loss_function_grad, 0);
+  model_interpreter.executeModelErrorOperations(output_values, layer_id, loss_function.get(), loss_function_grad.get(), 0);
 
   model_interpreter.executeBackwardPropogationOperations(0); // BP
   model_interpreter.executeWeightErrorOperations(); // Weight error
@@ -35,8 +35,6 @@ void trainModel(Model<TensorT>& model, const std::vector<std::string>& input_nod
 
   // retrieve the results
   model_interpreter.getModelResults(model, true, true, true);
-  delete loss_function;
-  delete loss_function_grad;
 }
 
 BOOST_AUTO_TEST_SUITE(ModelBuilderCpu1)
@@ -69,7 +67,9 @@ BOOST_AUTO_TEST_CASE(addFullyConnected1)
   input_values.setConstant(1);
   Eigen::Tensor<float, 2> output_values(batch_size, output_size);
   output_values.setConstant(0);
-  trainModel(model, node_names_input, node_names_output, input_values, output_values, batch_size, memory_size);
+  std::shared_ptr<LossFunctionTensorOp<float, Eigen::DefaultDevice>> loss_function = std::make_shared<MSETensorOp<float, Eigen::DefaultDevice>>(MSETensorOp<float, Eigen::DefaultDevice>());
+  std::shared_ptr<LossFunctionGradTensorOp<float, Eigen::DefaultDevice>> loss_function_grad = std::make_shared<MSEGradTensorOp<float, Eigen::DefaultDevice>>(MSEGradTensorOp<float, Eigen::DefaultDevice>());
+  trainModel(model, node_names_input, node_names_output, input_values, output_values, batch_size, memory_size, loss_function, loss_function_grad);
 
   // test for the expected model error
   //std::cout << "Model error: " << model.getError()(0, 0)<<std::endl;
@@ -90,38 +90,6 @@ BOOST_AUTO_TEST_CASE(addFullyConnected1)
     //std::cout << weight_names.at(i) << " Weight: " << model.getWeightsMap().at(weight_names.at(i))->getWeight() << std::endl;
     BOOST_CHECK_CLOSE(model.getWeightsMap().at(weight_names.at(i))->getWeight(), weight_values_test.at(i), 1e-4);
   }
-}
-
-BOOST_AUTO_TEST_CASE(addFullyConnected2)
-{
-	ModelBuilder<float> model_builder;
-	Model<float> model;
-	std::vector<std::string> node_names;
-
-	// make the input
-	node_names = model_builder.addInputNodes(model, "Input", "Input", 2);
-
-	// make the fully connected 
-  node_names = model_builder.addFullyConnected(model, "Output", "Output", node_names,
-    2, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
-    std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
-    std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new SGDOp<float>(0.1, 0.9)), 0.0f, 0.0f);
-
-	// make the input
-	std::vector<std::string> node_names_encoding = model_builder.addInputNodes(model, "Encoding", "Encoding", 2);
-
-	// make the fully connected 
-	model_builder.addFullyConnected(model, "Output", node_names_encoding, node_names,
-		std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new SGDOp<float>(0.1, 0.9)), 0.0f);
-
-  // interpret the model
-
-  // train the model through a single iteration
-
-  // retrieve the results
-
-  // test for the expected node inputs, outputs, derivatives, and errors
-
 }
 
 BOOST_AUTO_TEST_CASE(addSinglyConnected1)
@@ -145,56 +113,7 @@ BOOST_AUTO_TEST_CASE(addSinglyConnected1)
 	std::vector<std::string> weight_names_test = { "Hidden-bias_000000000000_to_Hidden_000000000000", "Hidden-bias_000000000001_to_Hidden_000000000001",
 		"Input_000000000000_to_Hidden_000000000000", "Input_000000000000_to_Hidden_000000000000"};
 
-}
-
-BOOST_AUTO_TEST_CASE(addSinglyConnected2)
-{
-	ModelBuilder<float> model_builder;
-	Model<float> model;
-	std::vector<std::string> node_names;
-
-	// make the input
-	node_names = model_builder.addInputNodes(model, "Input", "Input", 2);
-
-	// make the fully connected 
-	node_names = model_builder.addSinglyConnected(model, "Hidden", "Mod1", node_names,
-		2, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
-		std::shared_ptr<IntegrationOp<float>>(new ProdOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new ProdErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new ProdWeightGradOp<float>()),
-		std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new SGDOp<float>(0.1, 0.9)), 0.2f, 0.8f);
-
-	// make the input
-	std::vector<std::string> node_names_encoding = model_builder.addInputNodes(model, "Encoding", "Encoding", 2);
-
-	// make the fully connected 
-	model_builder.addSinglyConnected(model, "Mod1", node_names_encoding, node_names,
-		std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new SGDOp<float>(0.1, 0.9)), 0.8f);
-
-	std::vector<std::string> node_names_test = { "Hidden_000000000000", "Hidden-bias_000000000000", "Hidden_000000000001", "Hidden-bias_000000000001", "Encoding_000000000000", "Encoding_000000000001" };
-	std::vector<std::string> link_names_test = { "Hidden-bias_000000000000_to_Hidden_000000000000", "Hidden-bias_000000000001_to_Hidden_000000000001",
-		"Input_000000000000_to_Hidden_000000000000", "Input_000000000001_to_Hidden_000000000001",	"Encoding_000000000000_to_Hidden_000000000000", "Encoding_000000000001_to_Hidden_000000000001" };
-	std::vector<std::string> weight_names_test = { "Hidden-bias_000000000000_to_Hidden_000000000000", "Hidden-bias_000000000001_to_Hidden_000000000001",
-		"Input_000000000000_to_Hidden_000000000000", "Input_000000000001_to_Hidden_000000000001",	"Encoding_000000000000_to_Hidden_000000000000", "Encoding_000000000001_to_Hidden_000000000001" };
-
-}
-
-
-BOOST_AUTO_TEST_CASE(addBiases1)
-{
-  ModelBuilder<float> model_builder;
-  Model<float> model;
-  std::vector<std::string> node_names;
-
-  // make the input
-  node_names = model_builder.addInputNodes(model, "Input", "Input", 2);
-
-  // make the biases for the input nodes 
-  node_names = model_builder.addBiases(model, "Mod1", node_names,
-    std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new SGDOp<float>(0.1, 0.9)), 0.8f);
-
-  std::vector<std::string> node_names_test = { "Input_000000000000-bias", "Input_000000000001-bias" };
-  std::vector<std::string> link_names_test = { "Input_000000000000-bias_to_Input_000000000000", "Input_000000000001-bias_to_Input_000000000001"};
-  std::vector<std::string> weight_names_test = { "Input_000000000000-bias_to_Input_000000000000", "Input_000000000001-bias_to_Input_000000000001" };
-
+  // TODO...
 }
 
 BOOST_AUTO_TEST_CASE(addSoftMax)
@@ -222,7 +141,9 @@ BOOST_AUTO_TEST_CASE(addSoftMax)
   input_values.setValues({ {{1, 4}} });
   Eigen::Tensor<float, 2> output_values(batch_size, output_size);
   output_values.setValues({ {0.0474259, 0.952574} });
-  trainModel(model, node_names_input, node_names_output, input_values, output_values, batch_size, memory_size);
+  std::shared_ptr<LossFunctionTensorOp<float, Eigen::DefaultDevice>> loss_function = std::make_shared<MSETensorOp<float, Eigen::DefaultDevice>>(MSETensorOp<float, Eigen::DefaultDevice>());
+  std::shared_ptr<LossFunctionGradTensorOp<float, Eigen::DefaultDevice>> loss_function_grad = std::make_shared<MSEGradTensorOp<float, Eigen::DefaultDevice>>(MSEGradTensorOp<float, Eigen::DefaultDevice>());
+  trainModel(model, node_names_input, node_names_output, input_values, output_values, batch_size, memory_size, loss_function, loss_function_grad);
 
   // test for the expected model error
   //std::cout << "Model error: " << model.getError()(0, 0) << std::endl;
@@ -259,7 +180,7 @@ BOOST_AUTO_TEST_CASE(addStableSoftMax)
 	// make the input
 	std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", "Input", input_size, true);
 
-	// make the fully connected 
+	// make the softmax 
   std::vector<std::string> node_names_output = model_builder.addStableSoftMax(model, "SoftMax", "Mod1", node_names_input, true);
 
   // Specify the output node types manually
@@ -272,7 +193,9 @@ BOOST_AUTO_TEST_CASE(addStableSoftMax)
   input_values.setValues({ {{1, 4}} });
   Eigen::Tensor<float, 2> output_values(batch_size, output_size);
   output_values.setValues({ {0.0474259, 0.952574} });
-  trainModel(model, node_names_input, node_names_output, input_values, output_values, batch_size, memory_size);
+  std::shared_ptr<LossFunctionTensorOp<float, Eigen::DefaultDevice>> loss_function = std::make_shared<MSETensorOp<float, Eigen::DefaultDevice>>(MSETensorOp<float, Eigen::DefaultDevice>());
+  std::shared_ptr<LossFunctionGradTensorOp<float, Eigen::DefaultDevice>> loss_function_grad = std::make_shared<MSEGradTensorOp<float, Eigen::DefaultDevice>>(MSEGradTensorOp<float, Eigen::DefaultDevice>());
+  trainModel(model, node_names_input, node_names_output, input_values, output_values, batch_size, memory_size, loss_function, loss_function_grad);
 
   // test for the expected model error
   //std::cout << "Model error: " << model.getError()(0, 0)<<std::endl;
@@ -327,7 +250,9 @@ BOOST_AUTO_TEST_CASE(addConvolution1)
   input_values.setValues({ {{1, 2, 1, 2, 0, 0, 1, 2, 1, 2, 0, 0, 1, 2, 1, 2}} });
   Eigen::Tensor<float, 2> output_values(batch_size, output_size);
   output_values.setValues({ {0, 0, 0, 0, 0, 0, 0, 0, 0} });
-  trainModel(model, node_names_input, node_names_output, input_values, output_values, batch_size, memory_size);
+  std::shared_ptr<LossFunctionTensorOp<float, Eigen::DefaultDevice>> loss_function = std::make_shared<MSETensorOp<float, Eigen::DefaultDevice>>(MSETensorOp<float, Eigen::DefaultDevice>());
+  std::shared_ptr<LossFunctionGradTensorOp<float, Eigen::DefaultDevice>> loss_function_grad = std::make_shared<MSEGradTensorOp<float, Eigen::DefaultDevice>>(MSEGradTensorOp<float, Eigen::DefaultDevice>());
+  trainModel(model, node_names_input, node_names_output, input_values, output_values, batch_size, memory_size, loss_function, loss_function_grad);
 
   // test for the expected model error
   //std::cout << "Model error: " << model.getError()(0, 0) << std::endl;
@@ -425,7 +350,9 @@ BOOST_AUTO_TEST_CASE(addConvolution2)
   input_values.setValues({ {{1, 2, 1, 2, 0, 0, 1, 2, 1, 2, 0, 0, 1, 2, 1, 2}} });
   Eigen::Tensor<float, 2> output_values(batch_size, output_size);
   output_values.setValues({ {0, 0, 0, 0, 0, 0, 0, 0, 0} });
-  trainModel(model, node_names_input, node_names_output, input_values, output_values, batch_size, memory_size);
+  std::shared_ptr<LossFunctionTensorOp<float, Eigen::DefaultDevice>> loss_function = std::make_shared<MSETensorOp<float, Eigen::DefaultDevice>>(MSETensorOp<float, Eigen::DefaultDevice>());
+  std::shared_ptr<LossFunctionGradTensorOp<float, Eigen::DefaultDevice>> loss_function_grad = std::make_shared<MSEGradTensorOp<float, Eigen::DefaultDevice>>(MSEGradTensorOp<float, Eigen::DefaultDevice>());
+  trainModel(model, node_names_input, node_names_output, input_values, output_values, batch_size, memory_size, loss_function, loss_function_grad);
 
   // test for the expected model error
   //std::cout << "Model error: " << model.getError()(0, 0) << std::endl;
@@ -504,7 +431,9 @@ BOOST_AUTO_TEST_CASE(addNormalization1)
   input_values.setValues({ {{1, 2, 3, 4, 5}} });
   Eigen::Tensor<float, 2> output_values(batch_size, output_size);
   output_values.setValues({ {-1.414213562,-0.707106781,0,0.707106781,1.414213562} });
-  trainModel(model, node_names_input, node_names_output, input_values, output_values, batch_size, memory_size);
+  std::shared_ptr<LossFunctionTensorOp<float, Eigen::DefaultDevice>> loss_function = std::make_shared<MSETensorOp<float, Eigen::DefaultDevice>>(MSETensorOp<float, Eigen::DefaultDevice>());
+  std::shared_ptr<LossFunctionGradTensorOp<float, Eigen::DefaultDevice>> loss_function_grad = std::make_shared<MSEGradTensorOp<float, Eigen::DefaultDevice>>(MSEGradTensorOp<float, Eigen::DefaultDevice>());
+  trainModel(model, node_names_input, node_names_output, input_values, output_values, batch_size, memory_size, loss_function, loss_function_grad);
 
   // test for the expected model error
   //std::cout << "Model error: " << model.getError()(0, 0) << std::endl;
@@ -551,6 +480,7 @@ BOOST_AUTO_TEST_CASE(addUnitScale1)
     "Norm-Max_to_Norm-Scalar","Norm-Min_to_Norm-Scalar",
     "Norm-Scalar_to_Input_000000000000-UnitScaled","Norm-Scalar_to_Input_000000000001-UnitScaled" };
 
+  // TODO
 }
 
 BOOST_AUTO_TEST_CASE(addLinearScale1)
@@ -578,7 +508,9 @@ BOOST_AUTO_TEST_CASE(addLinearScale1)
   input_values.setValues({ {{1, 4}} });
   Eigen::Tensor<float, 2> output_values(batch_size, output_size);
   output_values.setValues({ {0, 1} });
-  trainModel(model, node_names_input, node_names_output, input_values, output_values, batch_size, memory_size);
+  std::shared_ptr<LossFunctionTensorOp<float, Eigen::DefaultDevice>> loss_function = std::make_shared<MSETensorOp<float, Eigen::DefaultDevice>>(MSETensorOp<float, Eigen::DefaultDevice>());
+  std::shared_ptr<LossFunctionGradTensorOp<float, Eigen::DefaultDevice>> loss_function_grad = std::make_shared<MSEGradTensorOp<float, Eigen::DefaultDevice>>(MSEGradTensorOp<float, Eigen::DefaultDevice>());
+  trainModel(model, node_names_input, node_names_output, input_values, output_values, batch_size, memory_size, loss_function, loss_function_grad);
 
   // test for the expected model error
   //std::cout << "Model error: " << model.getError()(0, 0) << std::endl;
@@ -647,7 +579,9 @@ BOOST_AUTO_TEST_CASE(addGaussianEncoding)
   input_values.setValues({ {{1, 2, 0.1, 0.2, -0.1, 0.1}} });
   Eigen::Tensor<float, 2> output_values(batch_size, output_size);
   output_values.setValues({ {0, 0} });
-  trainModel(model, node_names_input, node_names_output, input_values, output_values, batch_size, memory_size);
+  std::shared_ptr<LossFunctionTensorOp<float, Eigen::DefaultDevice>> loss_function = std::make_shared<MSETensorOp<float, Eigen::DefaultDevice>>(MSETensorOp<float, Eigen::DefaultDevice>());
+  std::shared_ptr<LossFunctionGradTensorOp<float, Eigen::DefaultDevice>> loss_function_grad = std::make_shared<MSEGradTensorOp<float, Eigen::DefaultDevice>>(MSEGradTensorOp<float, Eigen::DefaultDevice>());
+  trainModel(model, node_names_input, node_names_output, input_values, output_values, batch_size, memory_size, loss_function, loss_function_grad);
 
   // test for the expected model error
   //std::cout << "Model error: " << model.getError()(0, 0) << std::endl;
@@ -715,7 +649,9 @@ BOOST_AUTO_TEST_CASE(addCategoricalEncoding)
   input_values.setValues({ {{1, 2, -0.1, 0.1, 1.5, 1.5}} });
   Eigen::Tensor<float, 2> output_values(batch_size, output_size);
   output_values.setValues({ {0, 0} });
-  trainModel(model, node_names_input, node_names_output, input_values, output_values, batch_size, memory_size);
+  std::shared_ptr<LossFunctionTensorOp<float, Eigen::DefaultDevice>> loss_function = std::make_shared<MSETensorOp<float, Eigen::DefaultDevice>>(MSETensorOp<float, Eigen::DefaultDevice>());
+  std::shared_ptr<LossFunctionGradTensorOp<float, Eigen::DefaultDevice>> loss_function_grad = std::make_shared<MSEGradTensorOp<float, Eigen::DefaultDevice>>(MSEGradTensorOp<float, Eigen::DefaultDevice>());
+  trainModel(model, node_names_input, node_names_output, input_values, output_values, batch_size, memory_size, loss_function, loss_function_grad);
 
   // test for the expected model error
   //std::cout << "Model error: " << model.getError()(0, 0) << std::endl;
@@ -766,6 +702,7 @@ BOOST_AUTO_TEST_CASE(addDiscriminator)
 		"Mu_000000000000_to_Discriminator-Output-000000000000","Mu_000000000001_to_Discriminator-Output-000000000001",
 		"Discriminator-Sampler-000000000000_to_Discriminator-Output-000000000000","Discriminator-Sampler-000000000001_to_Discriminator-Output-000000000001" };
 
+  // TODO
 }
 
 BOOST_AUTO_TEST_CASE(addLSTMBlock1)
@@ -797,7 +734,9 @@ BOOST_AUTO_TEST_CASE(addLSTMBlock1)
   input_values.setValues({ {{1, 2}} });
   Eigen::Tensor<float, 2> output_values(batch_size, output_size);
   output_values.setValues({ {0, 0} });
-  trainModel(model, node_names_input, node_names_output, input_values, output_values, batch_size, memory_size);
+  std::shared_ptr<LossFunctionTensorOp<float, Eigen::DefaultDevice>> loss_function = std::make_shared<MSETensorOp<float, Eigen::DefaultDevice>>(MSETensorOp<float, Eigen::DefaultDevice>());
+  std::shared_ptr<LossFunctionGradTensorOp<float, Eigen::DefaultDevice>> loss_function_grad = std::make_shared<MSEGradTensorOp<float, Eigen::DefaultDevice>>(MSEGradTensorOp<float, Eigen::DefaultDevice>());
+  trainModel(model, node_names_input, node_names_output, input_values, output_values, batch_size, memory_size, loss_function, loss_function_grad);
 
   // test for the expected model error
   //std::cout << "Model error: " << model.getError()(0, 0) << std::endl;
@@ -861,7 +800,9 @@ BOOST_AUTO_TEST_CASE(addDotProdAttention1)
   input_values.setValues({ {{1, 4}} });
   Eigen::Tensor<float, 2> output_values(batch_size, output_size);
   output_values.setValues({ {0, 0, 0} });
-  trainModel(model, node_names_input, node_names_output, input_values, output_values, batch_size, memory_size);
+  std::shared_ptr<LossFunctionTensorOp<float, Eigen::DefaultDevice>> loss_function = std::make_shared<MSETensorOp<float, Eigen::DefaultDevice>>(MSETensorOp<float, Eigen::DefaultDevice>());
+  std::shared_ptr<LossFunctionGradTensorOp<float, Eigen::DefaultDevice>> loss_function_grad = std::make_shared<MSEGradTensorOp<float, Eigen::DefaultDevice>>(MSEGradTensorOp<float, Eigen::DefaultDevice>());
+  trainModel(model, node_names_input, node_names_output, input_values, output_values, batch_size, memory_size, loss_function, loss_function_grad);
 
   // test for the expected model error
   //std::cout << "Model error: " << model.getError()(0, 0) << std::endl;
@@ -921,11 +862,7 @@ BOOST_AUTO_TEST_CASE(addMultiHeadAttention1)
 		"Hidden-000000000001_attention_000000000000_to_Hidden_MultiHead_000000000000", "Hidden-000000000001_attention_000000000001_to_Hidden_MultiHead_000000000000", "Hidden-000000000001_attention_000000000002_to_Hidden_MultiHead_000000000000",
 		"Hidden-000000000001_attention_000000000000_to_Hidden_MultiHead_000000000001", "Hidden-000000000001_attention_000000000001_to_Hidden_MultiHead_000000000001", "Hidden-000000000001_attention_000000000002_to_Hidden_MultiHead_000000000001"};
 
-}
-
-BOOST_AUTO_TEST_CASE(addScalar)
-{
-	//TODO
+  // TODO
 }
 
 BOOST_AUTO_TEST_CASE(addProjection1)
@@ -973,7 +910,8 @@ BOOST_AUTO_TEST_CASE(addProjection1)
 		"Filter-Mod1_H000000000001-W000000000000", "Filter-Mod1_H000000000001-W000000000001", "Filter-Mod1_H000000000001-W000000000002", "Filter-Mod1_H000000000001-W000000000003", 
 		"Filter-Mod1_H000000000002-W000000000000", "Filter-Mod1_H000000000002-W000000000001", "Filter-Mod1_H000000000002-W000000000002", "Filter-Mod1_H000000000002-W000000000003", 
 		"Filter-Mod1_H000000000003-W000000000000", "Filter-Mod1_H000000000003-W000000000001", "Filter-Mod1_H000000000003-W000000000002", "Filter-Mod1_H000000000003-W000000000003"};
-
+  
+  // TODO
 }
 
 BOOST_AUTO_TEST_CASE(addProjection1WithoutSharedWeights)
@@ -1017,6 +955,120 @@ BOOST_AUTO_TEST_CASE(addProjection1WithoutSharedWeights)
     "Input_000000000003_to_Filter-out_H000000000003-W000000000001_Mod1", "Input_000000000003_to_Filter-out_H000000000003-W000000000002_Mod1", "Input_000000000003_to_Filter-out_H000000000003-W000000000003_Mod1", "Input_000000000003_to_Filter-out_H000000000003-W000000000004_Mod1",
     "Input_000000000003_to_Filter-out_H000000000004-W000000000001_Mod1", "Input_000000000003_to_Filter-out_H000000000004-W000000000002_Mod1", "Input_000000000003_to_Filter-out_H000000000004-W000000000003_Mod1", "Input_000000000003_to_Filter-out_H000000000004-W000000000004_Mod1" };
 
+  // TODO
+}
+
+/*
+Comprehensive model builder tests to check for the correct error propogation
+*/
+
+BOOST_AUTO_TEST_CASE(checkStableSoftMaxXEntropy)
+{
+  ModelBuilder<float> model_builder;
+  Model<float> model;
+  const int batch_size = 1;
+  const int memory_size = 1;
+  const int input_size = 2;
+  const int output_size = 2;
+
+  // make the input
+  std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", "Input", input_size, true);
+
+  // make the fully connected 
+  std::vector<std::string> node_names = model_builder.addFullyConnected(model, "Output", "Output", node_names_input,
+    output_size, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
+    std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
+    std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new SGDOp<float>(0.1, 0.9)), 0.0f, 0.0f, true, true);
+
+  // make the softmax 
+  std::vector<std::string> node_names_output = model_builder.addStableSoftMax(model, "SoftMax", "Mod1", node_names, true);
+
+  // Specify the output node types manually
+  for (const std::string& node_name : node_names_output)
+    model.getNodesMap().at(node_name)->setType(NodeType::output);
+  model.setInputAndOutputNodes();
+
+  // interpret and train the model
+  Eigen::Tensor<float, 3> input_values(batch_size, memory_size, input_size);
+  input_values.setValues({ {{1, 1}} });
+  Eigen::Tensor<float, 2> output_values(batch_size, output_size);
+  output_values.setValues({ {0, 1} });
+  std::shared_ptr<LossFunctionTensorOp<float, Eigen::DefaultDevice>> loss_function = std::make_shared<NegativeLogLikelihoodTensorOp<float, Eigen::DefaultDevice>>(NegativeLogLikelihoodTensorOp<float, Eigen::DefaultDevice>());
+  std::shared_ptr<LossFunctionGradTensorOp<float, Eigen::DefaultDevice>> loss_function_grad = std::make_shared<NegativeLogLikelihoodGradTensorOp<float, Eigen::DefaultDevice>>(NegativeLogLikelihoodGradTensorOp<float, Eigen::DefaultDevice>());
+  trainModel(model, node_names_input, node_names_output, input_values, output_values, batch_size, memory_size, loss_function, loss_function_grad);
+
+  // test for the expected model error
+  //std::cout << "Model error: " << model.getError()(0, 0) << std::endl;
+  BOOST_CHECK_CLOSE(model.getError()(0, 0), 0.346573591, 1e-4);
+
+  // test for the expected node outputs
+  std::vector<float> output_values_test = { 0.5, 0.5 };
+  for (int i = 0; i < node_names_output.size(); ++i) {
+    //std::cout << node_names_output.at(i) << " Output: " << model.getNodesMap().at(node_names_output.at(i))->getOutput()(0, 0) << std::endl;
+    BOOST_CHECK_CLOSE(model.getNodesMap().at(node_names_output.at(i))->getOutput()(0, 0), output_values_test.at(i), 1e-4);
+  }
+
+  // test for the expected weights
+  std::vector<std::string> weight_names = { "Output-bias_000000000000_to_Output_000000000000", "Output-bias_000000000001_to_Output_000000000001",
+    "Input_000000000000_to_Output_000000000000", "Input_000000000000_to_Output_000000000001", "Input_000000000000_to_Output_000000000000", "Input_000000000000_to_Output_000000000001" };
+  std::vector<float> weight_values_test = { 0, 0, 2.08731, 1.81548285, 2.08731, 1.81548285 };
+  for (int i = 0; i < weight_names.size(); ++i) {
+    //std::cout << weight_names.at(i) << " Weight: " << model.getWeightsMap().at(weight_names.at(i))->getWeight() << std::endl;
+    BOOST_CHECK_CLOSE(model.getWeightsMap().at(weight_names.at(i))->getWeight(), weight_values_test.at(i), 1e-4);
+  }
+}
+
+BOOST_AUTO_TEST_CASE(checkFullyConnectedWithXEntropyWLogits)
+{
+  ModelBuilder<float> model_builder;
+  Model<float> model;
+  const int batch_size = 1;
+  const int memory_size = 1;
+  const int input_size = 2;
+  const int output_size = 2;
+
+  // make the input
+  std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Input", "Input", input_size, true);
+
+  // make the fully connected 
+  std::vector<std::string> node_names_output = model_builder.addFullyConnected(model, "Output", "Output", node_names_input,
+    output_size, std::shared_ptr<ActivationOp<float>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<float>>(new ReLUGradOp<float>()),
+    std::shared_ptr<IntegrationOp<float>>(new SumOp<float>()), std::shared_ptr<IntegrationErrorOp<float>>(new SumErrorOp<float>()), std::shared_ptr<IntegrationWeightGradOp<float>>(new SumWeightGradOp<float>()),
+    std::shared_ptr<WeightInitOp<float>>(new ConstWeightInitOp<float>(1.0)), std::shared_ptr<SolverOp<float>>(new SGDOp<float>(0.1, 0.9)), 0.0f, 0.0f, true, true);
+
+  // Specify the output node types manually
+  for (const std::string& node_name : node_names_output)
+    model.getNodesMap().at(node_name)->setType(NodeType::output);
+  model.setInputAndOutputNodes();
+
+  // interpret and train the model
+  Eigen::Tensor<float, 3> input_values(batch_size, memory_size, input_size);
+  input_values.setValues({ {{1, 1}} });
+  Eigen::Tensor<float, 2> output_values(batch_size, output_size);
+  output_values.setValues({ {0, 1} });
+  std::shared_ptr<LossFunctionTensorOp<float, Eigen::DefaultDevice>> loss_function = std::make_shared<CrossEntropyWithLogitsTensorOp<float, Eigen::DefaultDevice>>(CrossEntropyWithLogitsTensorOp<float, Eigen::DefaultDevice>());
+  std::shared_ptr<LossFunctionGradTensorOp<float, Eigen::DefaultDevice>> loss_function_grad = std::make_shared<CrossEntropyWithLogitsGradTensorOp<float, Eigen::DefaultDevice>>(CrossEntropyWithLogitsGradTensorOp<float, Eigen::DefaultDevice>());
+  trainModel(model, node_names_input, node_names_output, input_values, output_values, batch_size, memory_size, loss_function, loss_function_grad);
+
+  // test for the expected model error
+  //std::cout << "Model error: " << model.getError()(0, 0) << std::endl;
+  BOOST_CHECK_CLOSE(model.getError()(0, 0), 0.346573591, 1e-4);
+
+  // test for the expected node outputs
+  std::vector<float> output_values_test = { 2, 2 };
+  for (int i = 0; i < node_names_output.size(); ++i) {
+    //std::cout << node_names_output.at(i) << " Output: " << model.getNodesMap().at(node_names_output.at(i))->getOutput()(0, 0) << std::endl;
+    BOOST_CHECK_CLOSE(model.getNodesMap().at(node_names_output.at(i))->getOutput()(0, 0), output_values_test.at(i), 1e-4);
+  }
+
+  // test for the expected weights
+  std::vector<std::string> weight_names = { "Output-bias_000000000000_to_Output_000000000000", "Output-bias_000000000001_to_Output_000000000001",
+    "Input_000000000000_to_Output_000000000000", "Input_000000000000_to_Output_000000000001", "Input_000000000000_to_Output_000000000000", "Input_000000000000_to_Output_000000000001" };
+  std::vector<float> weight_values_test = { 0, 0, 0.899999976, 0.949999988, 0.899999976, 0.949999988 };
+  for (int i = 0; i < weight_names.size(); ++i) {
+    //std::cout << weight_names.at(i) << " Weight: " << model.getWeightsMap().at(weight_names.at(i))->getWeight() << std::endl;
+    BOOST_CHECK_CLOSE(model.getWeightsMap().at(weight_names.at(i))->getWeight(), weight_values_test.at(i), 1e-4);
+  }
 }
 
 BOOST_AUTO_TEST_SUITE_END()
