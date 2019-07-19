@@ -138,9 +138,18 @@ public:
 
     // Linearize the node names
     std::vector<std::string> node_names;
-    for (const std::vector<std::string> &node_names_l : node_names_l1) {
-      for (const std::string &node_name : node_names_l) {
-        node_names.push_back(node_name);
+    if (node_names_l1.size()) {
+      for (const std::vector<std::string> &node_names_l : node_names_l1) {
+        for (const std::string &node_name : node_names_l) {
+          node_names.push_back(node_name);
+        }
+      }
+    }
+    else {
+      for (const std::vector<std::string> &node_names_l : node_names_l0) {
+        for (const std::string &node_name : node_names_l) {
+          node_names.push_back(node_name);
+        }
       }
     }
 
