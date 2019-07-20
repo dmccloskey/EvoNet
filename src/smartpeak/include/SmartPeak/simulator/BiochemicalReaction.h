@@ -525,6 +525,9 @@ namespace SmartPeak
         if (label == "condition")
           if (std::count(labels_.begin(), labels_.end(), imap.second.condition) == 0)
             labels_.push_back(imap.second.condition);
+        else if (label == "subject")
+          if (std::count(labels_.begin(), labels_.end(), imap.second.subject) == 0)
+            labels_.push_back(imap.second.subject);
       }
     }
 

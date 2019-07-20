@@ -1273,11 +1273,13 @@ void main_reconstruction(const std::string& data_dir, bool make_model = true, bo
   reaction_model.readMetabolomicsData(metabo_data_filename);
   reaction_model.readMetaData(meta_data_filename);
   reaction_model.findComponentGroupNames();
-  reaction_model.findMARs();
-  reaction_model.findMARs(true, false);
-  reaction_model.findMARs(false, true);
-  reaction_model.removeRedundantMARs();
-  reaction_model.findLabels();
+  if (simulate_MARs) {
+    reaction_model.findMARs();
+    reaction_model.findMARs(true, false);
+    reaction_model.findMARs(false, true);
+    reaction_model.removeRedundantMARs();
+  }
+  reaction_model.findLabels("subject");
   metabolomics_data.model_training_ = reaction_model;
 
   // Validation data
@@ -1288,11 +1290,13 @@ void main_reconstruction(const std::string& data_dir, bool make_model = true, bo
   reaction_model.readMetabolomicsData(metabo_data_filename);
   reaction_model.readMetaData(meta_data_filename);
   reaction_model.findComponentGroupNames();
-  reaction_model.findMARs();
-  reaction_model.findMARs(true, false);
-  reaction_model.findMARs(false, true);
-  reaction_model.removeRedundantMARs();
-  reaction_model.findLabels();
+  if (simulate_MARs) {
+    reaction_model.findMARs();
+    reaction_model.findMARs(true, false);
+    reaction_model.findMARs(false, true);
+    reaction_model.removeRedundantMARs();
+  }
+  reaction_model.findLabels("subject");
   metabolomics_data.model_validation_ = reaction_model;
   metabolomics_data.simulate_MARs_ = simulate_MARs;
   metabolomics_data.sample_concs_ = sample_concs;
@@ -1362,7 +1366,7 @@ void main_reconstruction(const std::string& data_dir, bool make_model = true, bo
     model_interpreters.push_back(model_interpreter);
   }
   ModelTrainerExt<float> model_trainer;
-  model_trainer.setBatchSize(16);
+  model_trainer.setBatchSize(64);
   model_trainer.setMemorySize(1);
   model_trainer.setNEpochsTraining(100000);
   model_trainer.setNEpochsValidation(0);
@@ -1374,13 +1378,13 @@ void main_reconstruction(const std::string& data_dir, bool make_model = true, bo
   model_trainer.setLossFunctions({
     std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>(1e-6, 1.0)),
     //std::shared_ptr<LossFunctionOp<float>>(new BCEWithLogitsOp<float>(1e-6, 1.0)),
-    std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceMuOp<float>(1e-6, 0.1)),
-    std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceLogVarOp<float>(1e-6, 0.1)) });
+    std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceMuOp<float>(1e-6, 1.0)),
+    std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceLogVarOp<float>(1e-6, 1.0)) });
   model_trainer.setLossFunctionGrads({
     std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>(1e-6, 1.0)),
     //std::shared_ptr<LossFunctionGradOp<float>>(new BCEWithLogitsGradOp<float>(1e-6, 1.0)),
-    std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceMuGradOp<float>(1e-6, 0.1)),
-    std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceLogVarGradOp<float>(1e-6, 0.1)) });
+    std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceMuGradOp<float>(1e-6, 1.0)),
+    std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceLogVarGradOp<float>(1e-6, 1.0)) });
   model_trainer.setLossOutputNodes({ output_nodes, encoding_nodes_mu, encoding_nodes_logvar });
   model_trainer.setMetricFunctions({ std::shared_ptr<MetricFunctionOp<float>>(new MAEOp<float>()) });
   model_trainer.setMetricOutputNodes({ output_nodes });
@@ -1397,7 +1401,7 @@ void main_reconstruction(const std::string& data_dir, bool make_model = true, bo
   //std::vector<Model<float>> population;
   Model<float> model;
   if (make_model) {
-    model_trainer.makeModelFCVAE(model, n_input_nodes, n_output_nodes, encoding_size, true, true, false, false); // normalization type 3
+    model_trainer.makeModelFCVAE(model, n_input_nodes, n_output_nodes, encoding_size, true, false, false, false); // normalization type 1
     //population = { model };
   }
   else {
@@ -1632,8 +1636,8 @@ int main(int argc, char** argv)
   //main_statistics_timecourseSummary(data_dir, 
   //	true, true, true, true, true,
   //	true);
-  main_classification(data_dir, true, false, true);
-  //main_reconstruction(data_dir, true, false, true);
+  //main_classification(data_dir, true, false, true);
+  main_reconstruction(data_dir, true, false, true);
   //main_multiTask(data_dir, true, false, true);
   return 0;
 }

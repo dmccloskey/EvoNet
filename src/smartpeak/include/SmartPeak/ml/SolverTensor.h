@@ -97,9 +97,12 @@ public:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> errors_tensor(errors, source_layer_size, sink_layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> solver_params_tensor(solver_params, source_layer_size, sink_layer_size, 3);
 
+      // Remove Nans
+      auto errors_no_nans = (errors_tensor == errors_tensor).select(errors_tensor, errors_tensor.constant(TensorT(0)));
+
       // Gradient clipping
-      auto clip = errors_tensor.abs() > errors_tensor.constant(this->getGradientThreshold());
-      auto errors_clipped = clip.select(errors_tensor * errors_tensor.constant(this->getGradientThreshold()) / errors_tensor.abs(), errors_tensor);
+      auto clip = errors_no_nans.abs() > errors_no_nans.constant(this->getGradientThreshold());
+      auto errors_clipped = clip.select(errors_no_nans * errors_no_nans.constant(this->getGradientThreshold()) / errors_no_nans.abs(), errors_no_nans);
 
       // Gradient noise
       auto noise = weights_tensor.random()*weights_tensor.constant(this->getGradientNoiseSigma());
@@ -144,9 +147,12 @@ public:
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> errors_tensor(errors, source_layer_size, sink_layer_size);
 			Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> solver_params_tensor(solver_params, source_layer_size, sink_layer_size, 6);
 
+      // Remove Nans
+      auto errors_no_nans = (errors_tensor == errors_tensor).select(errors_tensor, errors_tensor.constant(TensorT(0)));
+
       // Gradient clipping
-      auto clip = errors_tensor.abs() > errors_tensor.constant(this->getGradientThreshold());
-      auto errors_clipped = clip.select(errors_tensor * errors_tensor.constant(this->getGradientThreshold()) / errors_tensor.abs(), errors_tensor);
+      auto clip = errors_no_nans.abs() > errors_no_nans.constant(this->getGradientThreshold());
+      auto errors_clipped = clip.select(errors_no_nans * errors_no_nans.constant(this->getGradientThreshold()) / errors_no_nans.abs(), errors_no_nans);
 
       // Gradient noise
       auto noise = weights_tensor.random()*weights_tensor.constant(this->getGradientNoiseSigma());

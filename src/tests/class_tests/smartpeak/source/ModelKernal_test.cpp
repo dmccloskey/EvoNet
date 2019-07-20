@@ -674,9 +674,9 @@ BOOST_AUTO_TEST_CASE(weightErrorDefaultDevice)
 BOOST_AUTO_TEST_CASE(sharedWeightErrorsDefaultDevice) {
 	ModelKernalDefaultDevice<float> kernal;
 
-	const int source_layer_size = 2;
+	const int source_layer_size = 3;
 	const int sink_layer_size = 2;
-	const int n_shared_weights = 1;
+	const int n_shared_weights = 2;
 
 	float* h_shared_weights = new float[source_layer_size * sink_layer_size * n_shared_weights];
 	float* d_shared_weights = new float[source_layer_size * sink_layer_size * n_shared_weights];
@@ -685,11 +685,12 @@ BOOST_AUTO_TEST_CASE(sharedWeightErrorsDefaultDevice) {
 
 	Eigen::TensorMap<Eigen::Tensor<float, 3>> shared_weights(h_shared_weights, source_layer_size, sink_layer_size, n_shared_weights);
 	shared_weights.setValues({
-		{{1}, {1}},
-		{{0}, {0}}
+		{{1, 0}, {1, 0}},
+		{{0, 1}, {0, 1}},
+    {{0, 0}, {0, 0}}
 		});
 	Eigen::TensorMap<Eigen::Tensor<float, 2>> weight_error(h_weight_error, source_layer_size, sink_layer_size);
-	weight_error.setValues({ {1, 2}, {3, 4} });
+	weight_error.setValues({ {1, 2}, {5, 6}, {3, 4} });
 
 	// Set up the device
 	Eigen::DefaultDevice device;
@@ -707,7 +708,7 @@ BOOST_AUTO_TEST_CASE(sharedWeightErrorsDefaultDevice) {
 		true);
 
 	Eigen::Tensor<float, 2> expected_weight_error(source_layer_size, sink_layer_size);
-	expected_weight_error.setValues({ {3, 3}, {3, 4} });
+	expected_weight_error.setValues({ {3, 3}, {11, 11}, {3, 4} });
 
 	for (int source_iter = 0; source_iter < source_layer_size; ++source_iter) {
 		for (int sink_iter = 0; sink_iter < sink_layer_size; ++sink_iter) {
