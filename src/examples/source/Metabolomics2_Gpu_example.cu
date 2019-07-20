@@ -803,13 +803,13 @@ public:
     ModelInterpreterGpu<TensorT>& model_interpreter,
     const std::vector<float>& model_errors) {
     // Check point the model every 1000 epochs
-    //if (n_epochs % 1000 == 0 && n_epochs != 0) {
-    //  model_interpreter.getModelResults(model, false, true, false);
-    //  ModelFile<TensorT> data;
-    //  data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
-    //  ModelInterpreterFileGpu<TensorT> interpreter_data;
-    //  interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
-    //}
+    if (n_epochs % 1000 == 0 && n_epochs != 0) {
+      model_interpreter.getModelResults(model, false, true, false);
+      ModelFile<TensorT> data;
+      data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
+      ModelInterpreterFileGpu<TensorT> interpreter_data;
+      interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
+    }
   }
   void trainingModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterGpu<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
     const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const TensorT & model_error_train, const TensorT & model_error_test,
@@ -827,7 +827,7 @@ public:
     }
 
     // Per n epoch logging
-    if (n_epochs % 10 == 0) {
+    if (n_epochs % 1000 == 0) {
       model_logger.setLogExpectedPredictedEpoch(true);
       model_interpreter.getModelResults(model, true, false, false);
     }
@@ -1311,7 +1311,7 @@ void main_reconstruction(const std::string& data_dir, bool make_model = true, bo
   if (simulate_MARs) n_input_nodes = reaction_model.reaction_ids_.size();
   else n_input_nodes = reaction_model.component_group_names_.size();
   const int n_output_nodes = n_input_nodes;
-  const int encoding_size = 2;
+  const int encoding_size = 8;
   metabolomics_data.n_encodings_ = encoding_size;
   std::vector<std::string> input_nodes;
   std::vector<std::string> output_nodes;
