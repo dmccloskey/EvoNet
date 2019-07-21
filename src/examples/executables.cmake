@@ -1,7 +1,7 @@
 set(ml_executables_list
   MNIST_CovNet_example
   MNIST_CVAE_example
-  MNIST_DenoisingAE_example
+  #MNIST_DenoisingAE_example
   MNIST_DotProdAtten_example
   MNIST_EvoNet_example
   MNIST_LSTM_example
@@ -11,8 +11,11 @@ set(ml_executables_list
   HarmonicOscillator_example
   KineticModel_example
   KineticModel2_example
-  Metabolomics_example
-  Metabolomics2_example
+  Metabolomics_Classification
+  Metabolomics_VAE
+  Metabolomics_MultiTask
+  #Metabolomics_Stats_RBC
+  #Metabolomics_Stats_KALE
   PeakIntegrator_app
 )
 
@@ -21,13 +24,14 @@ set(cuda_executables_list
   KineticModel2_Gpu_example
   MNIST_CovNet_Gpu_example
   MNIST_CVAE_Gpu_example
-  MNIST_DenoisingAE_Gpu_example
+  #MNIST_DenoisingAE_Gpu_example
   MNIST_DotProdAtten_Gpu_example
   MNIST_LSTM_Gpu_example
   MNIST_VAE_Gpu_example
   AddProbRec_Gpu_example
-  Metabolomics_Gpu_example
-  Metabolomics2_Gpu_example
+  Metabolomics_Classification_Gpu
+  Metabolomics_VAE_Gpu
+  Metabolomics_MultiTask_Gpu
   PeakIntegrator_Gpu_app
 )
 
