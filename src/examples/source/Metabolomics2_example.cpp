@@ -803,13 +803,13 @@ public:
     ModelInterpreterDefaultDevice<TensorT>& model_interpreter,
     const std::vector<float>& model_errors) {
     // Check point the model every 1000 epochs
-    //if (n_epochs % 1000 == 0 && n_epochs != 0) {
-    //  model_interpreter.getModelResults(model, false, true, false);
-    //  ModelFile<TensorT> data;
-    //  data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
-    //  ModelInterpreterFileDefaultDevice<TensorT> interpreter_data;
-    //  interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
-    //}
+    if (n_epochs % 1000 == 0 && n_epochs != 0) {
+      model_interpreter.getModelResults(model, false, true, false);
+      ModelFile<TensorT> data;
+      data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
+      ModelInterpreterFileDefaultDevice<TensorT> interpreter_data;
+      interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
+    }
   }
   void trainingModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
     const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const TensorT & model_error_train, const TensorT & model_error_test,
@@ -827,7 +827,7 @@ public:
     }
 
     // Per n epoch logging
-    if (n_epochs % 10 == 0) {
+    if (n_epochs % 1000 == 0) {
       model_logger.setLogExpectedPredictedEpoch(true);
       model_interpreter.getModelResults(model, true, false, false);
     }
@@ -1079,7 +1079,10 @@ void main_statistics_timecourse(const std::string& data_dir,
 }
 
 /// Script to run the classification network
-void main_classification(const std::string& data_dir, bool make_model = true, bool simulate_MARs = true, bool sample_concs = true)
+void main_classification(const std::string& biochem_rxns_filename,
+  const std::string& metabo_data_filename_train, const std::string& meta_data_filename_train,
+  const std::string& metabo_data_filename_test, const std::string& meta_data_filename_test,
+  bool make_model = true, bool simulate_MARs = true, bool sample_concs = true)
 {
   // define the population trainer parameters
   PopulationTrainerExt<float> population_trainer;
@@ -1107,35 +1110,33 @@ void main_classification(const std::string& data_dir, bool make_model = true, bo
   std::string model_name = "0_Metabolomics";
 
   // Read in the training and validation data
-  std::string biochem_rxns_filename, metabo_data_filename, meta_data_filename;
-  biochem_rxns_filename = data_dir + "iJO1366.csv";
-  meta_data_filename = data_dir + "ALEsKOs01_MetaData_train.csv";
 
   // Training data
-  metabo_data_filename = data_dir + "ALEsKOs01_Metabolomics_train.csv";
   reaction_model.readBiochemicalReactions(biochem_rxns_filename, true);
-  reaction_model.readMetabolomicsData(metabo_data_filename);
-  reaction_model.readMetaData(meta_data_filename);
+  reaction_model.readMetabolomicsData(metabo_data_filename_train);
+  reaction_model.readMetaData(meta_data_filename_train);
   reaction_model.findComponentGroupNames();
-  reaction_model.findMARs();
-  reaction_model.findMARs(true, false);
-  reaction_model.findMARs(false, true);
-  reaction_model.removeRedundantMARs();
+  if (simulate_MARs) {
+    reaction_model.findMARs();
+    reaction_model.findMARs(true, false);
+    reaction_model.findMARs(false, true);
+    reaction_model.removeRedundantMARs();
+  }
   reaction_model.findLabels();
   metabolomics_data.model_training_ = reaction_model;
 
   // Validation data
   reaction_model.clear();
-  metabo_data_filename = data_dir + "ALEsKOs01_Metabolomics_test.csv";
-  meta_data_filename = data_dir + "ALEsKOs01_MetaData_test.csv";
   reaction_model.readBiochemicalReactions(biochem_rxns_filename, true);
-  reaction_model.readMetabolomicsData(metabo_data_filename);
-  reaction_model.readMetaData(meta_data_filename);
+  reaction_model.readMetabolomicsData(metabo_data_filename_test);
+  reaction_model.readMetaData(meta_data_filename_test);
   reaction_model.findComponentGroupNames();
-  reaction_model.findMARs();
-  reaction_model.findMARs(true, false);
-  reaction_model.findMARs(false, true);
-  reaction_model.removeRedundantMARs();
+  if (simulate_MARs) {
+    reaction_model.findMARs();
+    reaction_model.findMARs(true, false);
+    reaction_model.findMARs(false, true);
+    reaction_model.removeRedundantMARs();
+  }
   reaction_model.findLabels();
   metabolomics_data.model_validation_ = reaction_model;
   metabolomics_data.simulate_MARs_ = simulate_MARs;
@@ -1174,9 +1175,9 @@ void main_classification(const std::string& data_dir, bool make_model = true, bo
     model_interpreters.push_back(model_interpreter);
   }
   ModelTrainerExt<float> model_trainer;
-  model_trainer.setBatchSize(128);
+  model_trainer.setBatchSize(64);
   model_trainer.setMemorySize(1);
-  model_trainer.setNEpochsTraining(1000);
+  model_trainer.setNEpochsTraining(10000);
   model_trainer.setNEpochsValidation(0);
   model_trainer.setVerbosityLevel(1);
   model_trainer.setLogging(true, false, false);
@@ -1235,7 +1236,10 @@ void main_classification(const std::string& data_dir, bool make_model = true, bo
 }
 
 /// Script to run the reconstruction network
-void main_reconstruction(const std::string& data_dir, bool make_model = true, bool simulate_MARs = true, bool sample_concs = true)
+void main_reconstruction(const std::string& biochem_rxns_filename,
+  const std::string& metabo_data_filename_train, const std::string& meta_data_filename_train,
+  const std::string& metabo_data_filename_test, const std::string& meta_data_filename_test,
+  bool make_model = true, bool simulate_MARs = true, bool sample_concs = true)
 {
   // define the population trainer parameters
   PopulationTrainerExt<float> population_trainer;
@@ -1263,36 +1267,34 @@ void main_reconstruction(const std::string& data_dir, bool make_model = true, bo
   std::string model_name = "0_Metabolomics";
 
   // Read in the training and validation data
-  std::string biochem_rxns_filename, metabo_data_filename, meta_data_filename;
-  biochem_rxns_filename = data_dir + "iJO1366.csv";
-  meta_data_filename = data_dir + "ALEsKOs01_MetaData_train.csv";
 
   // Training data
-  metabo_data_filename = data_dir + "ALEsKOs01_Metabolomics_train.csv";
   reaction_model.readBiochemicalReactions(biochem_rxns_filename, true);
-  reaction_model.readMetabolomicsData(metabo_data_filename);
-  reaction_model.readMetaData(meta_data_filename);
+  reaction_model.readMetabolomicsData(metabo_data_filename_train);
+  reaction_model.readMetaData(meta_data_filename_train);
   reaction_model.findComponentGroupNames();
-  reaction_model.findMARs();
-  reaction_model.findMARs(true, false);
-  reaction_model.findMARs(false, true);
-  reaction_model.removeRedundantMARs();
-  reaction_model.findLabels();
+  if (simulate_MARs) {
+    reaction_model.findMARs();
+    reaction_model.findMARs(true, false);
+    reaction_model.findMARs(false, true);
+    reaction_model.removeRedundantMARs();
+  }
+  reaction_model.findLabels("subject");
   metabolomics_data.model_training_ = reaction_model;
 
   // Validation data
   reaction_model.clear();
-  metabo_data_filename = data_dir + "ALEsKOs01_Metabolomics_test.csv";
-  meta_data_filename = data_dir + "ALEsKOs01_MetaData_test.csv";
   reaction_model.readBiochemicalReactions(biochem_rxns_filename, true);
-  reaction_model.readMetabolomicsData(metabo_data_filename);
-  reaction_model.readMetaData(meta_data_filename);
+  reaction_model.readMetabolomicsData(metabo_data_filename_test);
+  reaction_model.readMetaData(meta_data_filename_test);
   reaction_model.findComponentGroupNames();
-  reaction_model.findMARs();
-  reaction_model.findMARs(true, false);
-  reaction_model.findMARs(false, true);
-  reaction_model.removeRedundantMARs();
-  reaction_model.findLabels();
+  if (simulate_MARs) {
+    reaction_model.findMARs();
+    reaction_model.findMARs(true, false);
+    reaction_model.findMARs(false, true);
+    reaction_model.removeRedundantMARs();
+  }
+  reaction_model.findLabels("subject");
   metabolomics_data.model_validation_ = reaction_model;
   metabolomics_data.simulate_MARs_ = simulate_MARs;
   metabolomics_data.sample_concs_ = sample_concs;
@@ -1307,7 +1309,7 @@ void main_reconstruction(const std::string& data_dir, bool make_model = true, bo
   if (simulate_MARs) n_input_nodes = reaction_model.reaction_ids_.size();
   else n_input_nodes = reaction_model.component_group_names_.size();
   const int n_output_nodes = n_input_nodes;
-  const int encoding_size = 2;
+  const int encoding_size = 8;
   metabolomics_data.n_encodings_ = encoding_size;
   std::vector<std::string> input_nodes;
   std::vector<std::string> output_nodes;
@@ -1362,7 +1364,7 @@ void main_reconstruction(const std::string& data_dir, bool make_model = true, bo
     model_interpreters.push_back(model_interpreter);
   }
   ModelTrainerExt<float> model_trainer;
-  model_trainer.setBatchSize(16);
+  model_trainer.setBatchSize(64);
   model_trainer.setMemorySize(1);
   model_trainer.setNEpochsTraining(100000);
   model_trainer.setNEpochsValidation(0);
@@ -1374,13 +1376,13 @@ void main_reconstruction(const std::string& data_dir, bool make_model = true, bo
   model_trainer.setLossFunctions({
     std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>(1e-6, 1.0)),
     //std::shared_ptr<LossFunctionOp<float>>(new BCEWithLogitsOp<float>(1e-6, 1.0)),
-    std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceMuOp<float>(1e-6, 0.1)),
-    std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceLogVarOp<float>(1e-6, 0.1)) });
+    std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceMuOp<float>(1e-6, 1.0)),
+    std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceLogVarOp<float>(1e-6, 1.0)) });
   model_trainer.setLossFunctionGrads({
     std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>(1e-6, 1.0)),
     //std::shared_ptr<LossFunctionGradOp<float>>(new BCEWithLogitsGradOp<float>(1e-6, 1.0)),
-    std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceMuGradOp<float>(1e-6, 0.1)),
-    std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceLogVarGradOp<float>(1e-6, 0.1)) });
+    std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceMuGradOp<float>(1e-6, 1.0)),
+    std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceLogVarGradOp<float>(1e-6, 1.0)) });
   model_trainer.setLossOutputNodes({ output_nodes, encoding_nodes_mu, encoding_nodes_logvar });
   model_trainer.setMetricFunctions({ std::shared_ptr<MetricFunctionOp<float>>(new MAEOp<float>()) });
   model_trainer.setMetricOutputNodes({ output_nodes });
@@ -1397,7 +1399,7 @@ void main_reconstruction(const std::string& data_dir, bool make_model = true, bo
   //std::vector<Model<float>> population;
   Model<float> model;
   if (make_model) {
-    model_trainer.makeModelFCVAE(model, n_input_nodes, n_output_nodes, encoding_size, true, true, false, false); // normalization type 3
+    model_trainer.makeModelFCVAE(model, n_input_nodes, n_output_nodes, encoding_size, true, false, false, false); // normalization type 1
     //population = { model };
   }
   else {
@@ -1418,7 +1420,10 @@ void main_reconstruction(const std::string& data_dir, bool make_model = true, bo
 }
 
 /// Script to run the reconstruction network
-void main_multiTask(const std::string& data_dir, bool make_model = true, bool simulate_MARs = true, bool sample_concs = true)
+void main_multiTask(const std::string& biochem_rxns_filename,
+  const std::string& metabo_data_filename_train, const std::string& meta_data_filename_train,
+  const std::string& metabo_data_filename_test, const std::string& meta_data_filename_test,
+  bool make_model = true, bool simulate_MARs = true, bool sample_concs = true)
 {
   // define the population trainer parameters
   PopulationTrainerExt<float> population_trainer;
@@ -1446,15 +1451,11 @@ void main_multiTask(const std::string& data_dir, bool make_model = true, bool si
   std::string model_name = "0_Metabolomics";
 
   // Read in the training and validation data
-  std::string biochem_rxns_filename, metabo_data_filename, meta_data_filename;
-  biochem_rxns_filename = data_dir + "iJO1366.csv";
-  meta_data_filename = data_dir + "ALEsKOs01_MetaData_train.csv";
 
   // Training data
-  metabo_data_filename = data_dir + "ALEsKOs01_Metabolomics_train.csv";
   reaction_model.readBiochemicalReactions(biochem_rxns_filename, true);
-  reaction_model.readMetabolomicsData(metabo_data_filename);
-  reaction_model.readMetaData(meta_data_filename);
+  reaction_model.readMetabolomicsData(metabo_data_filename_train);
+  reaction_model.readMetaData(meta_data_filename_train);
   reaction_model.findComponentGroupNames();
   reaction_model.findMARs();
   reaction_model.findMARs(true, false);
@@ -1465,11 +1466,9 @@ void main_multiTask(const std::string& data_dir, bool make_model = true, bool si
 
   // Validation data
   reaction_model.clear();
-  metabo_data_filename = data_dir + "ALEsKOs01_Metabolomics_test.csv";
-  meta_data_filename = data_dir + "ALEsKOs01_MetaData_test.csv";
   reaction_model.readBiochemicalReactions(biochem_rxns_filename, true);
-  reaction_model.readMetabolomicsData(metabo_data_filename);
-  reaction_model.readMetaData(meta_data_filename);
+  reaction_model.readMetabolomicsData(metabo_data_filename_test);
+  reaction_model.readMetaData(meta_data_filename_test);
   reaction_model.findComponentGroupNames();
   reaction_model.findMARs();
   reaction_model.findMARs(true, false);
@@ -1621,10 +1620,24 @@ void main_multiTask(const std::string& data_dir, bool make_model = true, bool si
 int main(int argc, char** argv)
 {
   // Set the data directories
-  //std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
-  std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
-  //std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
-  //std::string data_dir = "/home/user/Data/";
+  //const std::string data_dir = "C:/Users/dmccloskey/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
+  const std::string data_dir = "C:/Users/domccl/Dropbox (UCSD SBRG)/Metabolomics_KALE/";
+  //const std::string data_dir = "/home/user/Data/";
+
+  // Make the filenames
+  const std::string biochem_rxns_filename = data_dir + "iJO1366.csv";
+
+  // ALEsKOs01
+  //const std::string metabo_data_filename_train = data_dir + "ALEsKOs01_Metabolomics_train.csv";
+  //const std::string meta_data_filename_train = data_dir + "ALEsKOs01_MetaData_train.csv";
+  //const std::string metabo_data_filename_test = data_dir + "ALEsKOs01_Metabolomics_test.csv";
+  //const std::string meta_data_filename_test = data_dir + "ALEsKOs01_MetaData_test.csv";
+
+  // IndustrialStrains0103
+  const std::string metabo_data_filename_train = data_dir + "IndustrialStrains0103_Metabolomics_train.csv";
+  const std::string meta_data_filename_train = data_dir + "IndustrialStrains0103_MetaData_train.csv";
+  const std::string metabo_data_filename_test = data_dir + "IndustrialStrains0103_Metabolomics_test.csv";
+  const std::string meta_data_filename_test = data_dir + "IndustrialStrains0103_MetaData_test.csv";
 
   //main_statistics_timecourse(data_dir, 
   //	true, true, true, true, true,
@@ -1632,8 +1645,11 @@ int main(int argc, char** argv)
   //main_statistics_timecourseSummary(data_dir, 
   //	true, true, true, true, true,
   //	true);
-  main_classification(data_dir, true, false, true);
-  //main_reconstruction(data_dir, true, false, true);
-  //main_multiTask(data_dir, true, false, true);
+  main_classification(biochem_rxns_filename, metabo_data_filename_train, meta_data_filename_train,
+    metabo_data_filename_test, meta_data_filename_test, true, false, true);
+  //main_reconstruction(biochem_rxns_filename, metabo_data_filename_train, meta_data_filename_train,
+  //  metabo_data_filename_test, meta_data_filename_test, true, false, true);
+  //main_multiTask(biochem_rxns_filename, metabo_data_filename_train, meta_data_filename_train,
+  //  metabo_data_filename_test, meta_data_filename_test, true, false, true);
   return 0;
 }
