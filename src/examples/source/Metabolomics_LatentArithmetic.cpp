@@ -8,6 +8,7 @@
 #include <SmartPeak/io/ModelInterpreterFileDefaultDevice.h>
 #include <SmartPeak/simulator/BiochemicalReaction.h>
 #include <unsupported/Eigen/CXX11/Tensor>
+#include <SmartPeak/io/ModelFile.h>
 
 using namespace SmartPeak;
 
@@ -21,176 +22,79 @@ class PopulationTrainerExt : public PopulationTrainerDefaultDevice<TensorT>
 {};
 
 template<typename TensorT>
-class MetDataSimReconstruction : public DataSimulator<TensorT>
+class MetDataSimLatentArithmetic : public DataSimulator<TensorT>
 {
 public:
-  void simulateData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
+  void simulateDataMARs(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 3>& time_steps, const bool& train)
   {
     // infer data dimensions based on the input tensors
     const int batch_size = input_data.dimension(0);
     const int memory_size = input_data.dimension(1);
     const int n_input_nodes = input_data.dimension(2);
-    const int n_output_nodes = output_data.dimension(2);
     const int n_epochs = input_data.dimension(3);
-
-    for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
-      for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
-        for (int epochs_iter = 0; epochs_iter < n_epochs; ++epochs_iter) {
-
-          // pick a random sample group name
-          //std::string sample_group_name = selectRandomElement(sample_group_names_);
-          std::string sample_group_name = this->model_training_.sample_group_names_[0];
-
-          for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
-            const TensorT mar = this->model_training_.calculateMAR(
-              this->model_training_.metabolomicsData_.at(sample_group_name),
-              this->model_training_.biochemicalReactions_.at(this->model_training_.reaction_ids_[nodes_iter]));
-            input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = mar;
-            output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = mar;
-          }
-        }
-      }
-    }
-  }
-  void simulateTrainingData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps) {
-    simulateData(input_data, output_data, time_steps);
-  }
-  void simulateValidationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps) {
-    simulateData(input_data, output_data, time_steps);
-  }
-  void simulateDataReconMARs(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps, const bool& train)
-  {
-    // infer data dimensions based on the input tensors
-    const int batch_size = input_data.dimension(0);
-    const int memory_size = input_data.dimension(1);
-    const int n_input_nodes = input_data.dimension(2);
-    const int n_loss_output_nodes = loss_output_data.dimension(2);
-    const int n_metric_output_nodes = metric_output_data.dimension(2);
     int n_input_pixels;
     if (train)
       n_input_pixels = this->model_training_.reaction_ids_.size();
     else
       n_input_pixels = this->model_validation_.reaction_ids_.size();
-
-    assert(n_loss_output_nodes == n_input_pixels + 2 * n_encodings_);
-    assert(n_metric_output_nodes % n_input_pixels == 0);
     assert(n_input_nodes == n_input_pixels + n_encodings_);
 
-    std::random_device rd{};
-    std::mt19937 gen{ rd() };
-    std::normal_distribution<> d{ 0.0f, 1.0f };
-
-    for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
-      for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
-
-        // pick a random sample group name
-        std::string sample_group_name;
-        if (train)
-          sample_group_name = selectRandomElement(this->model_training_.sample_group_names_);
-        else
-          sample_group_name = selectRandomElement(this->model_validation_.sample_group_names_);
-
-        for (int nodes_iter = 0; nodes_iter < n_input_pixels + 2 * n_encodings_; ++nodes_iter) {
-          if (nodes_iter < n_input_pixels) {
+    for (int epoch_iter = 0; epoch_iter < n_epochs; ++epoch_iter) {
+      for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
+        for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
+          for (int nodes_iter = 0; nodes_iter < n_input_pixels; ++nodes_iter) {
             TensorT value;
             if (train)
               value = this->model_training_.calculateMAR(
-                this->model_training_.metabolomicsData_.at(sample_group_name),
+                this->model_training_.metabolomicsData_.at(sample_group_name_),
                 this->model_training_.biochemicalReactions_.at(this->model_training_.reaction_ids_.at(nodes_iter)));
             else
               value = this->model_validation_.calculateMAR(
-                this->model_validation_.metabolomicsData_.at(sample_group_name),
+                this->model_validation_.metabolomicsData_.at(sample_group_name_),
                 this->model_validation_.biochemicalReactions_.at(this->model_validation_.reaction_ids_.at(nodes_iter)));
-            input_data(batch_iter, memory_iter, nodes_iter) = value;
-            loss_output_data(batch_iter, memory_iter, nodes_iter) = 0;
-            metric_output_data(batch_iter, memory_iter, nodes_iter) = 0;
-          }
-          else if (nodes_iter >= n_input_pixels && nodes_iter < n_input_pixels + n_encodings_) {
-            TensorT random_value;
-            if (train)
-              random_value = d(gen);
-            else
-              random_value = 0;
-            input_data(batch_iter, memory_iter, nodes_iter) = random_value; // sample from a normal distribution
-            loss_output_data(batch_iter, memory_iter, nodes_iter) = 0; // Dummy data for KL divergence mu
-          }
-          else {
-            loss_output_data(batch_iter, memory_iter, nodes_iter) = 0; // Dummy data for KL divergence logvar
+            input_data(epoch_iter, batch_iter, memory_iter, nodes_iter) = value;
           }
         }
       }
     }
   }
-  void simulateDataReconSampleConcs(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps, const bool& train)
+  void simulateDataSampleConcs(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 3>& time_steps, const bool& train)
   {
     // infer data dimensions based on the input tensors
     const int batch_size = input_data.dimension(0);
     const int memory_size = input_data.dimension(1);
     const int n_input_nodes = input_data.dimension(2);
-    const int n_loss_output_nodes = loss_output_data.dimension(2);
-    const int n_metric_output_nodes = metric_output_data.dimension(2);
+    const int n_epochs = input_data.dimension(3);
     int n_input_pixels;
     if (train)
       n_input_pixels = this->model_training_.component_group_names_.size();
     else
       n_input_pixels = this->model_validation_.component_group_names_.size();
 
-    assert(n_loss_output_nodes == n_input_pixels + 2 * n_encodings_);
-    assert(n_metric_output_nodes % n_input_pixels == 0);
     assert(n_input_nodes == n_input_pixels + n_encodings_);
 
-    std::random_device rd{};
-    std::mt19937 gen{ rd() };
-    std::normal_distribution<> d{ 0.0f, 1.0f };
-
-    for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
-      for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
-
-        // pick a random sample group name
-        std::string sample_group_name;
-        if (train)
-          sample_group_name = selectRandomElement(this->model_training_.sample_group_names_);
-        else
-          sample_group_name = selectRandomElement(this->model_validation_.sample_group_names_);
-
-        for (int nodes_iter = 0; nodes_iter < n_input_pixels + 2 * n_encodings_; ++nodes_iter) {
-          if (nodes_iter < n_input_pixels) {
+    for (int epoch_iter = 0; epoch_iter < n_epochs; ++epoch_iter) {
+      for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
+        for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
+          for (int nodes_iter = 0; nodes_iter < n_input_pixels; ++nodes_iter) {
             TensorT value;
             if (train)
               value = this->model_training_.getRandomConcentration(
-                this->model_training_.metabolomicsData_.at(sample_group_name),
+                this->model_training_.metabolomicsData_.at(sample_group_name_),
                 this->model_training_.component_group_names_.at(nodes_iter));
             else
               value = this->model_validation_.getRandomConcentration(
-                this->model_validation_.metabolomicsData_.at(sample_group_name),
+                this->model_validation_.metabolomicsData_.at(sample_group_name_),
                 this->model_validation_.component_group_names_.at(nodes_iter));
             input_data(batch_iter, memory_iter, nodes_iter) = value;
-            loss_output_data(batch_iter, memory_iter, nodes_iter) = 0;
-            metric_output_data(batch_iter, memory_iter, nodes_iter) = 0;
-          }
-          else if (nodes_iter >= n_input_pixels && nodes_iter < n_input_pixels + n_encodings_) {
-            TensorT random_value;
-            if (train)
-              random_value = d(gen);
-            else
-              random_value = 0;
-            input_data(batch_iter, memory_iter, nodes_iter) = random_value; // sample from a normal distribution
-            loss_output_data(batch_iter, memory_iter, nodes_iter) = 0; // Dummy data for KL divergence mu
-          }
-          else {
-            loss_output_data(batch_iter, memory_iter, nodes_iter) = 0; // Dummy data for KL divergence logvar
           }
         }
       }
     }
   }
-  void simulateTrainingData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps) {
-    if (simulate_MARs_) simulateDataReconMARs(input_data, loss_output_data, metric_output_data, time_steps, true);
-    else simulateDataReconSampleConcs(input_data, loss_output_data, metric_output_data, time_steps, true);
-  }
-  void simulateValidationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps) {
-    if (simulate_MARs_) simulateDataReconMARs(input_data, loss_output_data, metric_output_data, time_steps, false);
-    else simulateDataReconSampleConcs(input_data, loss_output_data, metric_output_data, time_steps, false);
+  void simulateEvaluationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 3>& time_steps) {
+    if (simulate_MARs_) simulateDataMARs(input_data, time_steps, use_train_);
+    else simulateDataSampleConcs(input_data, time_steps, use_train_);
   }
 
   BiochemicalReactionModel<TensorT> model_training_;
@@ -198,6 +102,8 @@ public:
   int n_encodings_;
   bool sample_concs_ = false;
   bool simulate_MARs_ = true;
+  bool use_train_ = true;
+  std::string sample_group_name_;
 };
 
 template<typename TensorT>
@@ -207,18 +113,12 @@ public:
   /*
   @brief Fully connected variational reconstruction model
   */
-  void makeModelFCVAE(Model<TensorT>& model, const int& n_inputs, const int& n_outputs, const int& n_encodings, const bool& linear_scale_input, const bool& log_transform_input, const bool& standardize_input, bool add_norm = true) {
+  void makeModelFCVAE_Encoder(Model<TensorT>& model, const int& n_inputs, const int& n_encodings, const bool& linear_scale_input, const bool& log_transform_input, const bool& standardize_input, bool add_norm = true) {
     model.setId(0);
-    model.setName("VAE");
-
+    model.setName("VAE-Encoder");
     const int n_en_hidden_0 = 64;
     const int n_en_hidden_1 = 64;
     const int n_en_hidden_2 = 0;
-    const int n_de_hidden_0 = 64;
-    const int n_de_hidden_1 = 64;
-    const int n_de_hidden_2 = 0;
-
-
     ModelBuilder<TensorT> model_builder;
 
     // Add the inputs
@@ -311,23 +211,26 @@ public:
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
       std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_encodings) / 2, 1)),
       std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
-    std::vector<std::string> node_names_logvar = model_builder.addFullyConnected(model, "LogVar", "LogVar", node_names, n_encodings,
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
-      std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-      std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-      std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_encodings) / 2, 1)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
 
     // Specify the output node types manually
     for (const std::string& node_name : node_names_mu)
       model.nodes_.at(node_name)->setType(NodeType::output);
-    for (const std::string& node_name : node_names_logvar)
-      model.nodes_.at(node_name)->setType(NodeType::output);
+    model.setInputAndOutputNodes();
+  }
 
-    // Add the Variational Encoding layer
-    node_names = model_builder.addGaussianEncoding(model, "Encoding", "Encoding", node_names_mu, node_names_logvar, true);
+  /*
+  @brief Fully connected variational reconstruction model
+  */
+  void makeModelFCVAE_Decoder(Model<TensorT>& model, const int& n_outputs, const int& n_encodings, bool add_norm = true) {
+    model.setId(0);
+    model.setName("VAE-Decoder");
+    const int n_de_hidden_0 = 64;
+    const int n_de_hidden_1 = 64;
+    const int n_de_hidden_2 = 0;
+    ModelBuilder<TensorT> model_builder;
+
+    // Add the inputs
+    std::vector<std::string> node_names = model_builder.addInputNodes(model, "Mu", "Mu", n_encodings, true);
 
     // Add the decoding layers
     if (n_de_hidden_0 > 0) {
@@ -412,10 +315,6 @@ public:
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
       std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_outputs) / 2, 1)),
       std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
-    // Subtract out the pre-processed input data to test against all 0's
-    model_builder.addSinglyConnected(model, "Output", node_names_input, node_names,
-      std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(-1)),
-      std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0f, true);
 
     // Specify the output node types manually
     for (const std::string& node_name : node_names)
@@ -446,76 +345,17 @@ public:
       node_names = model_builder.addNormalization(model, "StandardizeInput", "StandardizeInput", node_names, true);
     }
   }
-  void adaptiveTrainerScheduler(
-    const int& n_generations,
-    const int& n_epochs,
-    Model<TensorT>& model,
-    ModelInterpreterDefaultDevice<TensorT>& model_interpreter,
-    const std::vector<float>& model_errors) {
-    // Check point the model every 1000 epochs
-    if (n_epochs % 1000 == 0 && n_epochs != 0) {
-      model_interpreter.getModelResults(model, false, true, false);
-      ModelFile<TensorT> data;
-      data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
-      ModelInterpreterFileDefaultDevice<TensorT> interpreter_data;
-      interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
-    }
-  }
-  void trainingModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
-    const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const TensorT & model_error_train, const TensorT & model_error_test,
-    const Eigen::Tensor<TensorT, 1> & model_metrics_train, const Eigen::Tensor<TensorT, 1> & model_metrics_test)
-  {
-    // Set the defaults
-    model_logger.setLogTimeEpoch(true);
-    model_logger.setLogTrainValMetricEpoch(true);
-    model_logger.setLogExpectedPredictedEpoch(false);
-
-    // initialize all logs
-    if (n_epochs == 0) {
-      model_logger.setLogExpectedPredictedEpoch(true);
-      model_logger.initLogs(model);
-    }
-
-    // Per n epoch logging
-    if (n_epochs % 1000 == 0) {
-      model_logger.setLogExpectedPredictedEpoch(true);
-      model_interpreter.getModelResults(model, true, false, false);
-    }
-
-    // Create the metric headers and data arrays
-    std::vector<std::string> log_train_headers = { "Train_Error" };
-    std::vector<std::string> log_test_headers = { "Test_Error" };
-    std::vector<TensorT> log_train_values = { model_error_train };
-    std::vector<TensorT> log_test_values = { model_error_test };
-    int metric_iter = 0;
-    for (const std::string& metric_name : this->metric_names_) {
-      log_train_headers.push_back(metric_name);
-      log_test_headers.push_back(metric_name);
-      log_train_values.push_back(model_metrics_train(metric_iter));
-      log_test_values.push_back(model_metrics_test(metric_iter));
-      ++metric_iter;
-    }
-    model_logger.writeLogs(model, n_epochs, log_train_headers, log_test_headers, log_train_values, log_test_values, output_nodes, expected_values);
-  }
 };
 
 /// Script to run the reconstruction network
-void main_reconstruction(const std::string& biochem_rxns_filename,
+void main_latentArithmetic(const std::string& biochem_rxns_filename,
   const std::string& metabo_data_filename_train, const std::string& meta_data_filename_train,
   const std::string& metabo_data_filename_test, const std::string& meta_data_filename_test,
+  const std::string& model_encoder_weights_filename, const std::string& model_decoder_weights_filename, const std::string& model_classifier_weights_filename, 
+  const std::string& sample_group_name_1, const std::string& sample_group_name_2,
+  const bool& embeddings_subtraction,
   bool make_model = true, bool simulate_MARs = true, bool sample_concs = true)
 {
-  // define the population trainer parameters
-  PopulationTrainerExt<float> population_trainer;
-  population_trainer.setNGenerations(1);
-  population_trainer.setNTop(3);
-  population_trainer.setNRandom(3);
-  population_trainer.setNReplicatesPerModel(3);
-  population_trainer.setLogging(true);
-
-  // define the population logger
-  PopulationLogger<float> population_logger(true, true);
-
   // define the multithreading parameters
   const int n_hard_threads = std::thread::hardware_concurrency();
   //const int n_threads = n_hard_threads / 2; // the number of threads
@@ -527,7 +367,7 @@ void main_reconstruction(const std::string& biochem_rxns_filename,
 
   // define the data simulator
   BiochemicalReactionModel<float> reaction_model;
-  MetDataSimReconstruction<float> metabolomics_data;
+  MetDataSimLatentArithmetic<float> metabolomics_data;
   std::string model_name = "0_Metabolomics";
 
   // Read in the training and validation data
@@ -562,6 +402,7 @@ void main_reconstruction(const std::string& biochem_rxns_filename,
   metabolomics_data.model_validation_ = reaction_model;
   metabolomics_data.simulate_MARs_ = simulate_MARs;
   metabolomics_data.sample_concs_ = sample_concs;
+  metabolomics_data.use_train_ = true;
 
   // Checks for the training and validation data
   assert(metabolomics_data.model_validation_.reaction_ids_.size() == metabolomics_data.model_training_.reaction_ids_.size());
@@ -586,13 +427,13 @@ void main_reconstruction(const std::string& biochem_rxns_filename,
     input_nodes.push_back(name);
   }
 
-  // Make the encoding nodes and add them to the input
-  for (int i = 0; i < encoding_size; ++i) {
-    char name_char[512];
-    sprintf(name_char, "Encoding_%012d-Sampler", i);
-    std::string name(name_char);
-    input_nodes.push_back(name);
-  }
+  //// Make the encoding nodes and add them to the input
+  //for (int i = 0; i < encoding_size; ++i) {
+  //  char name_char[512];
+  //  sprintf(name_char, "Encoding_%012d-Sampler", i);
+  //  std::string name(name_char);
+  //  input_nodes.push_back(name);
+  //}
 
   // Make the reconstruction nodes
   for (int i = 0; i < n_output_nodes; ++i) {
@@ -621,67 +462,74 @@ void main_reconstruction(const std::string& biochem_rxns_filename,
   }
 
   // define the model trainers and resources for the trainers
-  std::vector<ModelInterpreterDefaultDevice<float>> model_interpreters;
-  for (size_t i = 0; i < n_threads; ++i) {
-    ModelResources model_resources = { ModelDevice(0, 1) };
-    ModelInterpreterDefaultDevice<float> model_interpreter(model_resources);
-    model_interpreters.push_back(model_interpreter);
-  }
+  ModelResources model_resources = { ModelDevice(0, 1) };
+  ModelInterpreterDefaultDevice<float> model_interpreter(model_resources);
   ModelTrainerExt<float> model_trainer;
-  model_trainer.setBatchSize(64);
+  model_trainer.setBatchSize(128);
   model_trainer.setMemorySize(1);
-  model_trainer.setNEpochsTraining(100000);
-  model_trainer.setNEpochsValidation(0);
+  model_trainer.setNEpochsEvaluation(1);
   model_trainer.setVerbosityLevel(1);
-  model_trainer.setLogging(true, false, false);
+  model_trainer.setLogging(false, false, false);
   model_trainer.setFindCycles(false);
   model_trainer.setFastInterpreter(true);
   model_trainer.setPreserveOoO(true);
-  model_trainer.setLossFunctions({
-    std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>(1e-6, 1.0)),
-    //std::shared_ptr<LossFunctionOp<float>>(new BCEWithLogitsOp<float>(1e-6, 1.0)),
-    std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceMuOp<float>(1e-6, 1.0)),
-    std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceLogVarOp<float>(1e-6, 1.0)) });
-  model_trainer.setLossFunctionGrads({
-    std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>(1e-6, 1.0)),
-    //std::shared_ptr<LossFunctionGradOp<float>>(new BCEWithLogitsGradOp<float>(1e-6, 1.0)),
-    std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceMuGradOp<float>(1e-6, 1.0)),
-    std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceLogVarGradOp<float>(1e-6, 1.0)) });
-  model_trainer.setLossOutputNodes({ output_nodes, encoding_nodes_mu, encoding_nodes_logvar });
-  model_trainer.setMetricFunctions({ std::shared_ptr<MetricFunctionOp<float>>(new MAEOp<float>()) });
-  model_trainer.setMetricOutputNodes({ output_nodes });
-  model_trainer.setMetricNames({ "MAE" });
 
   // define the model logger
   ModelLogger<float> model_logger(true, true, false, false, false, false, false, false);
 
-  // initialize the model replicator
-  ModelReplicatorExt<float> model_replicator;
+  // define the encoder and decoders
+  std::cout << "Initializing the models..." << std::endl;
+  Model<float> model_decoder, model_encoder, model_classifier;
+  model_trainer.makeModelFCVAE_Encoder(model_encoder, n_input_nodes, encoding_size, true, false, false, false); // normalization type 1
+  model_trainer.makeModelFCVAE_Decoder(model_decoder, n_output_nodes, encoding_size, false); // normalization type 1
 
-  // define the initial population
-  std::cout << "Initializing the population..." << std::endl;
-  //std::vector<Model<float>> population;
-  Model<float> model;
-  if (make_model) {
-    model_trainer.makeModelFCVAE(model, n_input_nodes, n_output_nodes, encoding_size, true, false, false, false); // normalization type 1
-    //population = { model };
+  // read in the encoder and decoder weights
+  ModelFile<float> data;
+  data.loadModelCsv("", "", model_encoder_weights_filename, model_encoder, false, false, true);
+  data.loadModelCsv("", "", model_decoder_weights_filename, model_decoder, false, false, true);
+  data.loadModelCsv("", "", model_classifier_weights_filename, model_classifier, false, false, true);
+  // CHECK that the weights will not be re-initialized by the model interpreter...
+   
+  // generate the input for condition_1 and condition_2
+  Eigen::Tensor<float, 4> condition_1_input(model_trainer.getBatchSize(), model_trainer.getMemorySize(), n_input_nodes, model_trainer.getNEpochsEvaluation());
+  metabolomics_data.sample_group_name_ = sample_group_name_1;
+  metabolomics_data.simulateEvaluationData(condition_1_input, Eigen::Tensor<float, 3>());
+  Eigen::Tensor<float, 4> condition_2_input(model_trainer.getBatchSize(), model_trainer.getMemorySize(), n_input_nodes, model_trainer.getNEpochsEvaluation());
+  metabolomics_data.sample_group_name_ = sample_group_name_2;
+  metabolomics_data.simulateEvaluationData(condition_2_input, Eigen::Tensor<float, 3>());
+
+  // evaluate the encoder for condition_1 and condition_2
+  Eigen::Tensor<float, 4> condition_1_output = model_trainer.evaluateModel(
+    model_encoder, condition_1_input, Eigen::Tensor<float, 3>(), input_nodes, ModelLogger<float>(), model_interpreter);
+  Eigen::Tensor<float, 4> condition_2_output = model_trainer.evaluateModel(
+    model_encoder, condition_2_input, Eigen::Tensor<float, 3>(), input_nodes, ModelLogger<float>(), model_interpreter);
+
+  // perform an embeddings subtraction or addition using condition_1 and condition_2
+  Eigen::Tensor<float, 4> embeddings_calculated(model_trainer.getBatchSize(), model_trainer.getMemorySize(), encoding_size, model_trainer.getNEpochsEvaluation());
+  for (int epoch_iter = 0; epoch_iter < model_trainer.getNEpochsEvaluation(); ++epoch_iter) {
+    for (int node_iter = 0; node_iter < encoding_size; ++node_iter) {
+      // Could be improved by using the `.slice` operator
+      for (int batch_iter = 0; batch_iter < model_trainer.getBatchSize(); ++batch_iter) {
+        for (int memory_iter = 0; memory_iter < model_trainer.getMemorySize(); ++memory_iter)
+        if (embeddings_subtraction) {
+          embeddings_calculated(batch_iter, memory_iter, node_iter, epoch_iter) = condition_1_output(batch_iter, memory_iter, node_iter, epoch_iter) - condition_2_output(batch_iter, memory_iter, node_iter, epoch_iter);
+        }
+        else {
+          embeddings_calculated(batch_iter, memory_iter, node_iter, epoch_iter) = condition_1_output(batch_iter, memory_iter, node_iter, epoch_iter) + condition_2_output(batch_iter, memory_iter, node_iter, epoch_iter);
+        }
+      }
+    }
   }
-  else {
-    // TODO: load in the trained model
-  }
 
-  // Train the model
-  std::pair<std::vector<float>, std::vector<float>> model_errors = model_trainer.trainModel(model, metabolomics_data,
-    input_nodes, model_logger, model_interpreters.front());
+  // evaluate the decoder
+  Eigen::Tensor<float, 4> reconstructed_output = model_trainer.evaluateModel(
+    model_decoder, embeddings_calculated, Eigen::Tensor<float, 3>(), encoding_nodes_mu, ModelLogger<float>(), model_interpreter);
 
-  //// Evolve the population
-  //std::vector<std::vector<std::tuple<int, std::string, float>>> models_validation_errors_per_generation = population_trainer.evolveModels(
-  //	population, model_trainer, model_interpreters, model_replicator, metabolomics_data, model_logger, population_logger, input_nodes);
-
-  //PopulationTrainerFile<float> population_trainer_file;
-  //population_trainer_file.storeModels(population, "Metabolomics");
-  //population_trainer_file.storeModelValidations("MetabolomicsValidationErrors.csv", models_validation_errors_per_generation);
+  // score the decoded data using the classification model
+  Eigen::Tensor<float, 4> classification_output = model_trainer.evaluateModel(
+    model_classifier, reconstructed_output, Eigen::Tensor<float, 3>(), input_nodes, ModelLogger<float>(), model_interpreter);
 }
+
 // Main
 int main(int argc, char** argv)
 {
@@ -692,6 +540,9 @@ int main(int argc, char** argv)
 
   // Make the filenames
   const std::string biochem_rxns_filename = data_dir + "iJO1366.csv";
+  const std::string model_encoder_weights_filename = data_dir + "Metabolomics_VAE.csv";
+  const std::string model_decoder_weights_filename = data_dir + "Metabolomics_VAE.csv";
+  const std::string model_classifier_weights_filename = data_dir + "Metabolomics_Classification.csv";
 
   // ALEsKOs01
   const std::string metabo_data_filename_train = data_dir + "ALEsKOs01_Metabolomics_train.csv";
@@ -705,7 +556,34 @@ int main(int argc, char** argv)
   //const std::string metabo_data_filename_test = data_dir + "IndustrialStrains0103_Metabolomics_test.csv";
   //const std::string meta_data_filename_test = data_dir + "IndustrialStrains0103_MetaData_test.csv";
 
-  main_reconstruction(biochem_rxns_filename, metabo_data_filename_train, meta_data_filename_train,
-    metabo_data_filename_test, meta_data_filename_test, true, false, true);
+  // 1. EPi - KO -> Ref
+  main_latentArithmetic(biochem_rxns_filename, metabo_data_filename_train, meta_data_filename_train,
+    metabo_data_filename_test, meta_data_filename_test, 
+    model_encoder_weights_filename, model_decoder_weights_filename, model_classifier_weights_filename,
+    "Evo04gndEvo01EP", "Evo04gnd", true, false, true);
+  main_latentArithmetic(biochem_rxns_filename, metabo_data_filename_train, meta_data_filename_train,
+    metabo_data_filename_test, meta_data_filename_test,
+    model_encoder_weights_filename, model_decoder_weights_filename, model_classifier_weights_filename,
+    "Evo04gndEvo02EP", "Evo04gnd", true, false, true);
+  //...
+
+  // 2. EPi - Ref -> KO
+  main_latentArithmetic(biochem_rxns_filename, metabo_data_filename_train, meta_data_filename_train,
+    metabo_data_filename_test, meta_data_filename_test,
+    model_encoder_weights_filename, model_decoder_weights_filename, model_classifier_weights_filename,
+    "Evo04gndEvo01EP", "Evo04", true, false, true);
+  main_latentArithmetic(biochem_rxns_filename, metabo_data_filename_train, meta_data_filename_train,
+    metabo_data_filename_test, meta_data_filename_test,
+    model_encoder_weights_filename, model_decoder_weights_filename, model_classifier_weights_filename,
+    "Evo04gndEvo02EP", "Evo04", true, false, true);
+  //...
+
+  // 3. KOi + Ref -> EPi
+  main_latentArithmetic(biochem_rxns_filename, metabo_data_filename_train, meta_data_filename_train,
+    metabo_data_filename_test, meta_data_filename_test,
+    model_encoder_weights_filename, model_decoder_weights_filename, model_classifier_weights_filename,
+    "Evo04gnd", "Evo04", false, false, true);
+  //...
+
   return 0;
 }

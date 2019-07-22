@@ -12,6 +12,7 @@ set(ml_executables_list
   KineticModel_example
   KineticModel2_example
   Metabolomics_Classification
+  Metabolomics_LatentArithmetic
   Metabolomics_VAE
   Metabolomics_MultiTask
   #Metabolomics_Stats_RBC

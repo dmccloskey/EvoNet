@@ -199,9 +199,9 @@ public:
 			@param[in] time_steps Time steps of the forward passes of dimensions: batch_size, memory_size, n_epochs
 			@param[in] input_nodes Input node names
 
-			@returns vector of vectors corresponding to output nodes
+			@returns Tensor of dims batch_size, memory_size, output_nodes, n_epochs (similar to input)
 		*/
-		virtual std::vector<std::vector<Eigen::Tensor<TensorT, 2>>> evaluateModel(Model<TensorT>& model,
+		virtual Eigen::Tensor<TensorT, 4> evaluateModel(Model<TensorT>& model,
 			const Eigen::Tensor<TensorT, 4>& input,
 			const Eigen::Tensor<TensorT, 3>& time_steps,
 			const std::vector<std::string>& input_nodes,
@@ -1160,11 +1160,11 @@ private:
 	}
 
 	template<typename TensorT, typename InterpreterT>
-	inline std::vector<std::vector<Eigen::Tensor<TensorT, 2>>> ModelTrainer<TensorT, InterpreterT>::evaluateModel(Model<TensorT>& model, const Eigen::Tensor<TensorT, 4>& input, const Eigen::Tensor<TensorT, 3>& time_steps, const std::vector<std::string>& input_nodes,
+	inline Eigen::Tensor<TensorT, 4> ModelTrainer<TensorT, InterpreterT>::evaluateModel(Model<TensorT>& model, const Eigen::Tensor<TensorT, 4>& input, const Eigen::Tensor<TensorT, 3>& time_steps, const std::vector<std::string>& input_nodes,
 		ModelLogger<TensorT>& model_logger,
 		InterpreterT& model_interpreter)
 	{
-		std::vector<std::vector<Eigen::Tensor<TensorT, 2>>> model_output;
+    Eigen::Tensor<TensorT, 4> model_output; // for each epoch, for each output node, batch_size x memory_size
 
 		// Check input data
 		if (!this->checkInputData(this->getNEpochsEvaluation(), input, this->getBatchSize(), this->getMemorySize(), input_nodes))
@@ -1194,7 +1194,6 @@ private:
 
 		// compile the graph into a set of operations and allocate all tensors
 		model_interpreter.getForwardPropogationOperations(model, this->getBatchSize(), this->getMemorySize(), false, this->getFastInterpreter(), this->getFindCycles(), this->getPreserveOoO());
-		model_interpreter.allocateModelErrorTensor(this->getBatchSize(), this->getMemorySize(), this->metric_output_nodes_.size());
 
 		for (int iter = 0; iter < this->getNEpochsEvaluation(); ++iter) // use n_epochs here
 		{
@@ -1202,13 +1201,6 @@ private:
 			model_interpreter.initBiases(model); // create the bias	
       model_interpreter.mapValuesToLayers(model, input.chip(iter, 3), input_nodes, "output"); // Needed for OoO/IG with DAG and DCG
       model_interpreter.mapValuesToLayers(model, input.chip(iter, 3), input_nodes, "input"); // Needed for IG with DAG and DCG
-      //if (this->getPreserveOoO()) {
-      //  model_interpreter.mapValuesToLayers(model, input.chip(iter, 3), input_nodes, "output"); // Needed for OoO/IG with DAG and DCG
-      //}
-      //else {
-      //  model_interpreter.mapValuesToLayers(model, input.chip(iter, 3), input_nodes, "output"); // Needed for OoO/IG with DAG and DCG
-      //  model_interpreter.mapValuesToLayers(model, input.chip(iter, 3), input_nodes, "input"); // Needed for IG with DAG and DCG
-      //}
 
 			// forward propogate
 			if (this->getVerbosityLevel() >= 2)
@@ -1217,9 +1209,15 @@ private:
 
 			// extract out the model output
 			std::vector<Eigen::Tensor<TensorT, 2>> output;
+      int node_iter = 0;
 			for (const std::vector<std::string>& output_nodes_vec : this->loss_output_nodes_) {
 				for (const std::string& output_node : output_nodes_vec) {
-					output.push_back(model.getNode(output_node).getOutput());
+          for (int batch_iter = 0; batch_iter < this->getBatchSize(); ++batch_iter) {
+            for (int memory_iter = 0; memory_iter < this->getMemorySize(); ++memory_iter) {
+              model_output(batch_iter, memory_iter, node_iter, iter) = model.getNode(output_node).getOutput()(batch_iter, memory_iter);
+            }
+          }
+          ++node_iter;
 				}
 			}
 
