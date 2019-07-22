@@ -353,7 +353,7 @@ public:
     model.setId(0);
     model.setName("Classifier");
 
-    const int n_hidden_0 = 16;
+    const int n_hidden_0 = 32;
     const int n_hidden_1 = 0;
     const int n_hidden_2 = 0;
 
@@ -900,6 +900,6 @@ int main(int argc, char** argv)
   const std::string meta_data_filename_test = data_dir + "IndustrialStrains0103_MetaData_test.csv";
 
   main_classification(biochem_rxns_filename, metabo_data_filename_train, meta_data_filename_train,
-    metabo_data_filename_test, meta_data_filename_test, true, false, true);
+    metabo_data_filename_test, meta_data_filename_test, true, true, true);
   return 0;
 }
