@@ -230,7 +230,7 @@ public:
     ModelBuilder<TensorT> model_builder;
 
     // Add the inputs
-    std::vector<std::string> node_names = model_builder.addInputNodes(model, "Mu", "Mu", n_encodings, true);
+    std::vector<std::string> node_names = model_builder.addInputNodes(model, "Encoding", "Encoding", n_encodings, true);
 
     // Add the decoding layers
     if (n_de_hidden_0 > 0) {
@@ -565,6 +565,15 @@ void main_latentArithmetic(const std::string& biochem_rxns_filename,
     encoding_nodes_logvar.push_back(name);
   }
 
+  // Make the encoding nodes
+  std::vector<std::string> encoding_nodes;
+  for (int i = 0; i < encoding_size; ++i) {
+    char name_char[512];
+    sprintf(name_char, "Encoding_%012d", i);
+    std::string name(name_char);
+    encoding_nodes.push_back(name);
+  }
+
   // define the model trainers and resources for the trainers
   ModelResources model_resources = { ModelDevice(0, 1) };
   ModelInterpreterDefaultDevice<float> model_interpreter(model_resources);
@@ -627,7 +636,7 @@ void main_latentArithmetic(const std::string& biochem_rxns_filename,
 
   // evaluate the decoder
   Eigen::Tensor<float, 4> reconstructed_output = model_trainer.evaluateModel(
-    model_decoder, embeddings_calculated, Eigen::Tensor<float, 3>(), encoding_nodes_mu, ModelLogger<float>(), model_interpreter);
+    model_decoder, embeddings_calculated, Eigen::Tensor<float, 3>(), encoding_nodes, ModelLogger<float>(), model_interpreter);
 
   // score the decoded data using the classification model
   Eigen::Tensor<float, 4> classification_output = model_trainer.evaluateModel(
@@ -646,7 +655,8 @@ int main(int argc, char** argv)
   const std::string biochem_rxns_filename = data_dir + "iJO1366.csv";
   const std::string model_encoder_weights_filename = data_dir + "Metabolomics_VAE.csv";
   const std::string model_decoder_weights_filename = data_dir + "Metabolomics_VAE.csv";
-  const std::string model_classifier_weights_filename = data_dir + "Metabolomics_Classification.csv";
+  // NOTE: be sure to re-name the Input_000000000000-LinearScale_to_... weights to Input_000000000000_to_...
+  const std::string model_classifier_weights_filename = data_dir + "Metabolomics_Classifier.csv";
 
   // ALEsKOs01
   const std::string metabo_data_filename_train = data_dir + "ALEsKOs01_Metabolomics_train.csv";

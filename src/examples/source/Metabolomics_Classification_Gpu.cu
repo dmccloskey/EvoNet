@@ -900,6 +900,6 @@ int main(int argc, char** argv)
   const std::string meta_data_filename_test = data_dir + "IndustrialStrains0103_MetaData_test.csv";
 
   main_classification(biochem_rxns_filename, metabo_data_filename_train, meta_data_filename_train,
-    metabo_data_filename_test, meta_data_filename_test, true, true, true);
+    metabo_data_filename_test, meta_data_filename_test, true, false, false);
   return 0;
 }
