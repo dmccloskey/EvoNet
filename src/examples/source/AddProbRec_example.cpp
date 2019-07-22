@@ -347,9 +347,9 @@ public:
 		std::vector<std::string> node_names = model_builder.addLSTM(model, "LSTM", "LSTM", node_names_input, n_blocks, n_cells,
 			std::shared_ptr<ActivationOp<TensorT>>(new ReLUOp<float>()), std::shared_ptr<ActivationOp<TensorT>>(new ReLUGradOp<float>()),
 			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()), std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()), std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-			//std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(0.4)), 
-      std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0.2, 0.6)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)),
+			std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(0.4)), 
+      //std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0.2, 0.6)),
+      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)),
 			0.0f, 0.0f, true, true, 1, specify_layers);
 
 		// Add a final output layer (Specify the layer name to ensure the output is always on its own tensor!!!)
@@ -359,9 +359,9 @@ public:
 			std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
 			std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
 			std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-			//std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 2)),
-      std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0.9, 1.1)),
-			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.001, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, true, true);
+			std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 2)),
+      //std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0.9, 1.1)),
+			std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, true, true);
 
 		for (const std::string& node_name : node_names)
 			model.getNodesMap().at(node_name)->setType(NodeType::output);
@@ -387,14 +387,14 @@ public:
     Model<TensorT>& model,
     ModelInterpreterDefaultDevice<TensorT>& model_interpreter,
     const std::vector<float>& model_errors) {
-    if (n_epochs % 100 == 0 && n_epochs > 100) {
-      // anneal the learning rate by half on each plateau
-      TensorT lr_new = this->reduceLROnPlateau(model_errors, 0.5, 100, 10, 0.1);
-      if (lr_new < 1.0) {
-        model_interpreter.updateSolverParams(0, lr_new);
-        std::cout << "The learning rate has been annealed by a factor of " << lr_new << std::endl;
-      }
-    }
+    //if (n_epochs % 100 == 0 && n_epochs > 100) {
+    //  // anneal the learning rate by half on each plateau
+    //  TensorT lr_new = this->reduceLROnPlateau(model_errors, 0.5, 100, 10, 0.1);
+    //  if (lr_new < 1.0) {
+    //    model_interpreter.updateSolverParams(0, lr_new);
+    //    std::cout << "The learning rate has been annealed by a factor of " << lr_new << std::endl;
+    //  }
+    //}
     if (n_epochs % 1000 == 0 && n_epochs != 0) {
       // save the model every 1000 epochs
       model_interpreter.getModelResults(model, false, true, false);
@@ -559,6 +559,7 @@ public:
 	{
     // Adjust the population size
     //this->setPopulationSizeFixed(n_generations, models, models_errors_per_generations);
+    // [TODO: single model training requires the line below to be commented]
     this->setPopulationSizeDoubling(n_generations, models, models_errors_per_generations);
 	}
 
@@ -687,8 +688,8 @@ public:
 void main_AddProbRec(const std::string& mode) {
   // define the population trainer parameters
   PopulationTrainerExt<float> population_trainer;
-  population_trainer.setNGenerations(50); // population training
-  //population_trainer.setNGenerations(1); // single model training
+  //population_trainer.setNGenerations(50); // population training
+  population_trainer.setNGenerations(1); // single model training
   population_trainer.setLogging(true);
 
   // define the population logger
@@ -759,9 +760,9 @@ void main_AddProbRec(const std::string& mode) {
 
     // make the model name
     Model<float> model;
-    model_trainer.makeModelMinimal(model);
+    //model_trainer.makeModelMinimal(model);
     //model_trainer.makeModelSolution(model, false);
-    //model_trainer.makeModelLSTM(model, input_nodes.size(), 1, 1);
+    model_trainer.makeModelLSTM(model, input_nodes.size(), 1, 1, true);
     char model_name_char[512];
     sprintf(model_name_char, "%s_%d", model.getName().data(), 0);
     std::string model_name(model_name_char);
