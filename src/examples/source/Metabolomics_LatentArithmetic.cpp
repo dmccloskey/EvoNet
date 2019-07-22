@@ -37,7 +37,7 @@ public:
       n_input_pixels = this->model_training_.reaction_ids_.size();
     else
       n_input_pixels = this->model_validation_.reaction_ids_.size();
-    assert(n_input_nodes == n_input_pixels + n_encodings_);
+    assert(n_input_nodes == n_input_pixels);
 
     for (int epoch_iter = 0; epoch_iter < n_epochs; ++epoch_iter) {
       for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
@@ -71,7 +71,7 @@ public:
     else
       n_input_pixels = this->model_validation_.component_group_names_.size();
 
-    assert(n_input_nodes == n_input_pixels + n_encodings_);
+    assert(n_input_nodes == n_input_pixels);
 
     for (int epoch_iter = 0; epoch_iter < n_epochs; ++epoch_iter) {
       for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
@@ -86,7 +86,7 @@ public:
               value = this->model_validation_.getRandomConcentration(
                 this->model_validation_.metabolomicsData_.at(sample_group_name_),
                 this->model_validation_.component_group_names_.at(nodes_iter));
-            input_data(batch_iter, memory_iter, nodes_iter) = value;
+            input_data(epoch_iter, batch_iter, memory_iter, nodes_iter) = value;
           }
         }
       }
@@ -484,10 +484,10 @@ void main_latentArithmetic(const std::string& biochem_rxns_filename,
   model_trainer.makeModelFCVAE_Decoder(model_decoder, n_output_nodes, encoding_size, false); // normalization type 1
 
   // read in the encoder and decoder weights
-  ModelFile<float> data;
-  data.loadModelCsv("", "", model_encoder_weights_filename, model_encoder, false, false, true);
-  data.loadModelCsv("", "", model_decoder_weights_filename, model_decoder, false, false, true);
-  data.loadModelCsv("", "", model_classifier_weights_filename, model_classifier, false, false, true);
+  WeightFile<float> data;
+  data.loadWeightValuesCsv(model_encoder_weights_filename, model_encoder.weights_);
+  data.loadWeightValuesCsv(model_decoder_weights_filename, model_decoder.weights_);
+  data.loadWeightValuesCsv(model_classifier_weights_filename, model_classifier.weights_);
   // CHECK that the weights will not be re-initialized by the model interpreter...
    
   // generate the input for condition_1 and condition_2

@@ -455,6 +455,9 @@ public:
     // Check point the model every 1000 epochs
     if (n_epochs % 1000 == 0 && n_epochs != 0) {
       model_interpreter.getModelResults(model, false, true, false);
+      // save the model weights
+      WeightFile<float> weight_data;
+      weight_data.storeWeightValuesCsv(model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model.weights_);
       ModelFile<TensorT> data;
       data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
       ModelInterpreterFileGpu<TensorT> interpreter_data;
@@ -667,7 +670,7 @@ void main_reconstruction(const std::string& biochem_rxns_filename,
     //population = { model };
   }
   else {
-    // TODO
+    // TODO: load in the trained model
   }
 
   // Train the model
@@ -681,6 +684,17 @@ void main_reconstruction(const std::string& biochem_rxns_filename,
   //PopulationTrainerFile<float> population_trainer_file;
   //population_trainer_file.storeModels(population, "Metabolomics");
   //population_trainer_file.storeModelValidations("MetabolomicsValidationErrors.csv", models_validation_errors_per_generation);
+}
+
+void main_loadBinaryModelAndStoreWeightsCsv(const std::string& model_filename) {
+  // load the binarized model
+  Model<float> model;
+  ModelFile<float> model_file;
+  model_file.loadModelBinary(model_filename, model);
+
+  // save the model weights
+  WeightFile<float> data;
+  data.storeWeightValuesCsv(model.getName() + "_weights.csv", model.weights_);
 }
 
 // Main
@@ -708,5 +722,6 @@ int main(int argc, char** argv)
 
   main_reconstruction(biochem_rxns_filename, metabo_data_filename_train, meta_data_filename_train,
     metabo_data_filename_test, meta_data_filename_test, true, false, true);
+
   return 0;
 }
