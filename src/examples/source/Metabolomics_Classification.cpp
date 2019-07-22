@@ -883,17 +883,17 @@ int main(int argc, char** argv)
   // Make the filenames
   const std::string biochem_rxns_filename = data_dir + "iJO1366.csv";
 
-  // ALEsKOs01
-  const std::string metabo_data_filename_train = data_dir + "ALEsKOs01_Metabolomics_train.csv";
-  const std::string meta_data_filename_train = data_dir + "ALEsKOs01_MetaData_train.csv";
-  const std::string metabo_data_filename_test = data_dir + "ALEsKOs01_Metabolomics_test.csv";
-  const std::string meta_data_filename_test = data_dir + "ALEsKOs01_MetaData_test.csv";
+  //// ALEsKOs01
+  //const std::string metabo_data_filename_train = data_dir + "ALEsKOs01_Metabolomics_train.csv";
+  //const std::string meta_data_filename_train = data_dir + "ALEsKOs01_MetaData_train.csv";
+  //const std::string metabo_data_filename_test = data_dir + "ALEsKOs01_Metabolomics_test.csv";
+  //const std::string meta_data_filename_test = data_dir + "ALEsKOs01_MetaData_test.csv";
 
-  //// IndustrialStrains0103
-  //const std::string metabo_data_filename_train = data_dir + "IndustrialStrains0103_Metabolomics_train.csv";
-  //const std::string meta_data_filename_train = data_dir + "IndustrialStrains0103_MetaData_train.csv";
-  //const std::string metabo_data_filename_test = data_dir + "IndustrialStrains0103_Metabolomics_test.csv";
-  //const std::string meta_data_filename_test = data_dir + "IndustrialStrains0103_MetaData_test.csv";
+  // IndustrialStrains0103
+  const std::string metabo_data_filename_train = data_dir + "IndustrialStrains0103_Metabolomics_train.csv";
+  const std::string meta_data_filename_train = data_dir + "IndustrialStrains0103_MetaData_train.csv";
+  const std::string metabo_data_filename_test = data_dir + "IndustrialStrains0103_Metabolomics_test.csv";
+  const std::string meta_data_filename_test = data_dir + "IndustrialStrains0103_MetaData_test.csv";
 
   main_classification(biochem_rxns_filename, metabo_data_filename_train, meta_data_filename_train,
     metabo_data_filename_test, meta_data_filename_test, true, false, true);
