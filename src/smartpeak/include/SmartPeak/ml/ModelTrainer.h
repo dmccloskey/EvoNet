@@ -1164,7 +1164,11 @@ private:
 		ModelLogger<TensorT>& model_logger,
 		InterpreterT& model_interpreter)
 	{
-    Eigen::Tensor<TensorT, 4> model_output; // for each epoch, for each output node, batch_size x memory_size
+    std::vector<std::string> output_nodes;
+    for (const std::vector<std::string>& output_nodes_vec : this->loss_output_nodes_)
+      for (const std::string& output_node : output_nodes_vec)
+        output_nodes.push_back(output_node);
+    Eigen::Tensor<TensorT, 4> model_output(this->getBatchSize(), this->getMemorySize(), (int)output_nodes.size(), this->getNEpochsEvaluation()); // for each epoch, for each output node, batch_size x memory_size
 
 		// Check input data
 		if (!this->checkInputData(this->getNEpochsEvaluation(), input, this->getBatchSize(), this->getMemorySize(), input_nodes))
@@ -1179,10 +1183,6 @@ private:
 		{
 			return model_output;
 		}
-		std::vector<std::string> output_nodes;
-		for (const std::vector<std::string>& output_nodes_vec : this->loss_output_nodes_)
-			for (const std::string& output_node : output_nodes_vec)
-				output_nodes.push_back(output_node);
 		if (!model.checkNodeNames(output_nodes))
 		{
 			return model_output;
@@ -1208,13 +1208,14 @@ private:
 			model_interpreter.FPTT(this->getMemorySize());
 
 			// extract out the model output
+      model_interpreter.getModelResults(model, true, false, false);
 			std::vector<Eigen::Tensor<TensorT, 2>> output;
       int node_iter = 0;
 			for (const std::vector<std::string>& output_nodes_vec : this->loss_output_nodes_) {
 				for (const std::string& output_node : output_nodes_vec) {
           for (int batch_iter = 0; batch_iter < this->getBatchSize(); ++batch_iter) {
             for (int memory_iter = 0; memory_iter < this->getMemorySize(); ++memory_iter) {
-              model_output(batch_iter, memory_iter, node_iter, iter) = model.getNode(output_node).getOutput()(batch_iter, memory_iter);
+              model_output(batch_iter, memory_iter, node_iter, iter) = model.getNodesMap().at(output_node)->getOutput()(batch_iter, memory_iter);
             }
           }
           ++node_iter;
@@ -1234,7 +1235,7 @@ private:
 			}
 		}
 		// copy out results
-		model_interpreter.getModelResults(model, true, true, true);
+		model_interpreter.getModelResults(model, true, true, false);
 		model_interpreter.clear_cache();
 		model.initNodeTensorIndices();
 		model.initWeightTensorIndices();

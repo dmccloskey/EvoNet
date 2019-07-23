@@ -52,7 +52,7 @@ public:
               value = this->model_validation_.calculateMAR(
                 this->model_validation_.metabolomicsData_.at(sample_group_name_),
                 this->model_validation_.biochemicalReactions_.at(this->model_validation_.reaction_ids_.at(nodes_iter)));
-            input_data(epoch_iter, batch_iter, memory_iter, nodes_iter) = value;
+            input_data(batch_iter, memory_iter, nodes_iter, epoch_iter) = value;
           }
         }
       }
@@ -86,7 +86,7 @@ public:
               value = this->model_validation_.getRandomConcentration(
                 this->model_validation_.metabolomicsData_.at(sample_group_name_),
                 this->model_validation_.component_group_names_.at(nodes_iter));
-            input_data(epoch_iter, batch_iter, memory_iter, nodes_iter) = value;
+            input_data(batch_iter, memory_iter, nodes_iter, epoch_iter) = value;
           }
         }
       }
@@ -520,10 +520,9 @@ void main_latentArithmetic(const std::string& biochem_rxns_filename,
   const int n_output_nodes = reaction_model.labels_.size();
   const int encoding_size = 3;
   metabolomics_data.n_encodings_ = encoding_size;
-  std::vector<std::string> input_nodes;
-  std::vector<std::string> output_nodes;
 
   // Make the input nodes
+  std::vector<std::string> input_nodes;
   for (int i = 0; i < n_input_nodes; ++i) {
     char name_char[512];
     sprintf(name_char, "Input_%012d", i);
@@ -539,12 +538,22 @@ void main_latentArithmetic(const std::string& biochem_rxns_filename,
   //  input_nodes.push_back(name);
   //}
 
-  // Make the reconstruction nodes
+  // Make the classification nodes
+  std::vector<std::string> output_nodes_classification;
   for (int i = 0; i < n_output_nodes; ++i) {
     char name_char[512];
     sprintf(name_char, "Output_%012d", i);
     std::string name(name_char);
-    output_nodes.push_back(name);
+    output_nodes_classification.push_back(name);
+  }
+
+  // Make the reconstruction nodes
+  std::vector<std::string> output_nodes_reconstruction;
+  for (int i = 0; i < n_input_nodes; ++i) {
+    char name_char[512];
+    sprintf(name_char, "Output_%012d", i);
+    std::string name(name_char);
+    output_nodes_reconstruction.push_back(name);
   }
 
   // Make the mu nodes
@@ -594,28 +603,48 @@ void main_latentArithmetic(const std::string& biochem_rxns_filename,
   std::cout << "Initializing the models..." << std::endl;
   Model<float> model_decoder, model_encoder, model_classifier;
   model_trainer.makeModelFCVAE_Encoder(model_encoder, n_input_nodes, encoding_size, true, false, false, false); // normalization type 1
-  model_trainer.makeModelFCVAE_Decoder(model_decoder, n_output_nodes, encoding_size, false);
-  model_trainer.makeModelFCClass(model_classifier, n_input_nodes, encoding_size, false);
+  model_trainer.makeModelFCVAE_Decoder(model_decoder, n_input_nodes, encoding_size, false);
+  model_trainer.makeModelFCClass(model_classifier, n_input_nodes, n_output_nodes, false);
 
   // read in the encoder and decoder weights
   WeightFile<float> data;
-  data.loadWeightValuesCsv(model_encoder_weights_filename, model_encoder.weights_);
-  data.loadWeightValuesCsv(model_decoder_weights_filename, model_decoder.weights_);
-  data.loadWeightValuesCsv(model_classifier_weights_filename, model_classifier.weights_);
+  data.loadWeightValuesCsv(model_encoder_weights_filename, model_encoder.getWeightsMap());
+  data.loadWeightValuesCsv(model_decoder_weights_filename, model_decoder.getWeightsMap());
+  data.loadWeightValuesCsv(model_classifier_weights_filename, model_classifier.getWeightsMap());
+
+  // check that all weights were read in correctly
+  for (auto& weight_map : model_encoder.getWeightsMap()) {
+    if (weight_map.second->getInitWeight()) {
+      std::cout << "Model " << model_encoder.getName() << " Weight " << weight_map.first << " has not be initialized." << std::endl;;
+    }
+  }
+  for (auto& weight_map : model_decoder.getWeightsMap()) {
+    if (weight_map.second->getInitWeight()) {
+      std::cout << "Model " << model_decoder.getName() << " Weight " << weight_map.first << " has not be initialized." << std::endl;;
+    }
+  }
+  for (auto& weight_map : model_classifier.getWeightsMap()) {
+    if (weight_map.second->getInitWeight()) {
+      std::cout << "Model " << model_classifier.getName() << " Weight " << weight_map.first << " has not be initialized." << std::endl;;
+    }
+  }
    
   // generate the input for condition_1 and condition_2
   Eigen::Tensor<float, 4> condition_1_input(model_trainer.getBatchSize(), model_trainer.getMemorySize(), n_input_nodes, model_trainer.getNEpochsEvaluation());
+  Eigen::Tensor<float, 3> time_steps_1_input(model_trainer.getBatchSize(), model_trainer.getMemorySize(), model_trainer.getNEpochsEvaluation());
   metabolomics_data.sample_group_name_ = sample_group_name_1;
-  metabolomics_data.simulateEvaluationData(condition_1_input, Eigen::Tensor<float, 3>());
+  metabolomics_data.simulateEvaluationData(condition_1_input, time_steps_1_input);
   Eigen::Tensor<float, 4> condition_2_input(model_trainer.getBatchSize(), model_trainer.getMemorySize(), n_input_nodes, model_trainer.getNEpochsEvaluation());
+  Eigen::Tensor<float, 3> time_steps_2_input(model_trainer.getBatchSize(), model_trainer.getMemorySize(), model_trainer.getNEpochsEvaluation());
   metabolomics_data.sample_group_name_ = sample_group_name_2;
-  metabolomics_data.simulateEvaluationData(condition_2_input, Eigen::Tensor<float, 3>());
+  metabolomics_data.simulateEvaluationData(condition_2_input, time_steps_2_input);
 
   // evaluate the encoder for condition_1 and condition_2
+  model_trainer.setLossOutputNodes({ encoding_nodes_mu });
   Eigen::Tensor<float, 4> condition_1_output = model_trainer.evaluateModel(
-    model_encoder, condition_1_input, Eigen::Tensor<float, 3>(), input_nodes, ModelLogger<float>(), model_interpreter);
+    model_encoder, condition_1_input, time_steps_1_input, input_nodes, ModelLogger<float>(), model_interpreter);
   Eigen::Tensor<float, 4> condition_2_output = model_trainer.evaluateModel(
-    model_encoder, condition_2_input, Eigen::Tensor<float, 3>(), input_nodes, ModelLogger<float>(), model_interpreter);
+    model_encoder, condition_2_input, time_steps_2_input, input_nodes, ModelLogger<float>(), model_interpreter);
 
   // perform an embeddings subtraction or addition using condition_1 and condition_2
   Eigen::Tensor<float, 4> embeddings_calculated(model_trainer.getBatchSize(), model_trainer.getMemorySize(), encoding_size, model_trainer.getNEpochsEvaluation());
@@ -623,24 +652,40 @@ void main_latentArithmetic(const std::string& biochem_rxns_filename,
     for (int node_iter = 0; node_iter < encoding_size; ++node_iter) {
       // Could be improved by using the `.slice` operator
       for (int batch_iter = 0; batch_iter < model_trainer.getBatchSize(); ++batch_iter) {
-        for (int memory_iter = 0; memory_iter < model_trainer.getMemorySize(); ++memory_iter)
-        if (embeddings_subtraction) {
-          embeddings_calculated(batch_iter, memory_iter, node_iter, epoch_iter) = condition_1_output(batch_iter, memory_iter, node_iter, epoch_iter) - condition_2_output(batch_iter, memory_iter, node_iter, epoch_iter);
-        }
-        else {
-          embeddings_calculated(batch_iter, memory_iter, node_iter, epoch_iter) = condition_1_output(batch_iter, memory_iter, node_iter, epoch_iter) + condition_2_output(batch_iter, memory_iter, node_iter, epoch_iter);
+        for (int memory_iter = 0; memory_iter < model_trainer.getMemorySize(); ++memory_iter) {
+          embeddings_calculated(batch_iter, memory_iter, node_iter, epoch_iter) = condition_1_output(batch_iter, memory_iter, node_iter, epoch_iter);
+          //if (embeddings_subtraction) {
+          //  embeddings_calculated(batch_iter, memory_iter, node_iter, epoch_iter) = condition_1_output(batch_iter, memory_iter, node_iter, epoch_iter) - condition_2_output(batch_iter, memory_iter, node_iter, epoch_iter);
+          //}
+          //else {
+          //  embeddings_calculated(batch_iter, memory_iter, node_iter, epoch_iter) = condition_1_output(batch_iter, memory_iter, node_iter, epoch_iter) + condition_2_output(batch_iter, memory_iter, node_iter, epoch_iter);
+          //}
         }
       }
     }
   }
 
   // evaluate the decoder
+  model_trainer.setLossOutputNodes({ output_nodes_reconstruction });
   Eigen::Tensor<float, 4> reconstructed_output = model_trainer.evaluateModel(
-    model_decoder, embeddings_calculated, Eigen::Tensor<float, 3>(), encoding_nodes, ModelLogger<float>(), model_interpreter);
+    model_decoder, embeddings_calculated, time_steps_1_input, encoding_nodes, ModelLogger<float>(), model_interpreter);
 
   // score the decoded data using the classification model
+  model_trainer.setLossOutputNodes({ output_nodes_classification });
   Eigen::Tensor<float, 4> classification_output = model_trainer.evaluateModel(
-    model_classifier, reconstructed_output, Eigen::Tensor<float, 3>(), input_nodes, ModelLogger<float>(), model_interpreter);
+    model_classifier, condition_1_input /*reconstructed_output*/, time_steps_1_input, input_nodes, ModelLogger<float>(), model_interpreter);
+  for (const std::string& label : reaction_model.labels_) {
+    std::cout << label << "[tab]";
+  }
+  std::cout << std::endl;
+  Eigen::Tensor<float, 2> classification_results = classification_output.chip(0, 3).chip(0, 1);
+  for (int batch_iter = 0; batch_iter < model_trainer.getBatchSize(); ++batch_iter) {
+    for (int node_iter = 0; node_iter < n_output_nodes; ++node_iter) {
+      std::cout << classification_results(batch_iter, node_iter) << "[tab]";
+    }
+    std::cout << std::endl;
+  }
+  std::cout << std::endl;
 }
 
 // Main
@@ -653,10 +698,11 @@ int main(int argc, char** argv)
 
   // Make the filenames
   const std::string biochem_rxns_filename = data_dir + "iJO1366.csv";
-  const std::string model_encoder_weights_filename = data_dir + "Metabolomics_VAE.csv";
-  const std::string model_decoder_weights_filename = data_dir + "Metabolomics_VAE.csv";
+  const std::string model_encoder_weights_filename = data_dir + "TrainTestData/SampledArithmeticMath/VAE_4000_weights.csv";
+  const std::string model_decoder_weights_filename = data_dir + "TrainTestData/SampledArithmeticMath/VAE_4000_weights.csv";
   // NOTE: be sure to re-name the Input_000000000000-LinearScale_to_... weights to Input_000000000000_to_...
-  const std::string model_classifier_weights_filename = data_dir + "Metabolomics_Classifier.csv";
+  //       using regex "-LinearScale_to_FC0" with "_to_FC0"
+  const std::string model_classifier_weights_filename = data_dir + "TrainTestData/SampledArithmeticMath/Classifier_1000_weights.csv";
 
   // ALEsKOs01
   const std::string metabo_data_filename_train = data_dir + "ALEsKOs01_Metabolomics_train.csv";
@@ -674,29 +720,29 @@ int main(int argc, char** argv)
   main_latentArithmetic(biochem_rxns_filename, metabo_data_filename_train, meta_data_filename_train,
     metabo_data_filename_test, meta_data_filename_test, 
     model_encoder_weights_filename, model_decoder_weights_filename, model_classifier_weights_filename,
-    "Evo04gndEvo01EP", "Evo04gnd", true, false, true);
+    "Evo04gndEvo01EP", "Evo04gnd", true, true, false, true);
   main_latentArithmetic(biochem_rxns_filename, metabo_data_filename_train, meta_data_filename_train,
     metabo_data_filename_test, meta_data_filename_test,
     model_encoder_weights_filename, model_decoder_weights_filename, model_classifier_weights_filename,
-    "Evo04gndEvo02EP", "Evo04gnd", true, false, true);
+    "Evo04gndEvo02EP", "Evo04gnd", true, false, false, true);
   //...
 
   // 2. EPi - Ref -> KO
   main_latentArithmetic(biochem_rxns_filename, metabo_data_filename_train, meta_data_filename_train,
     metabo_data_filename_test, meta_data_filename_test,
     model_encoder_weights_filename, model_decoder_weights_filename, model_classifier_weights_filename,
-    "Evo04gndEvo01EP", "Evo04", true, false, true);
+    "Evo04gndEvo01EP", "Evo04", true, false, false, true);
   main_latentArithmetic(biochem_rxns_filename, metabo_data_filename_train, meta_data_filename_train,
     metabo_data_filename_test, meta_data_filename_test,
     model_encoder_weights_filename, model_decoder_weights_filename, model_classifier_weights_filename,
-    "Evo04gndEvo02EP", "Evo04", true, false, true);
+    "Evo04gndEvo02EP", "Evo04", true, false, false, true);
   //...
 
   // 3. KOi + Ref -> EPi
   main_latentArithmetic(biochem_rxns_filename, metabo_data_filename_train, meta_data_filename_train,
     metabo_data_filename_test, meta_data_filename_test,
     model_encoder_weights_filename, model_decoder_weights_filename, model_classifier_weights_filename,
-    "Evo04gnd", "Evo04", false, false, true);
+    "Evo04gnd", "Evo04", false, false, false, true);
   //...
 
   return 0;

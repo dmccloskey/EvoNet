@@ -249,8 +249,13 @@ public:
 				printf("Exception: %s", e.what());
 			}
 
-			weights.at(weight_name)->setWeight(weight_value);
-			weights.at(weight_name)->setInitWeight(false);
+      if (weights.count(weight_name)) {
+        weights.at(weight_name)->setWeight(weight_value);
+        weights.at(weight_name)->setInitWeight(false);
+      }
+      else {
+        //std::cout << "Weight " << weight_name << " was not found in the model and will be skipped." << std::endl;
+      }
 		}
 		return true;
 	}
