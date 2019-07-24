@@ -47,156 +47,9 @@ public:
   @brief Denoising Auto Encoder that takes a segment of a raw chromatogram
     and returns a smoothed and denoised version of the same chromatogram
   */
-  void makeDenoisingAE_v01(Model<TensorT>& model, int n_inputs = 512, int n_encodings = 32, int n_hidden_0 = 128) {
-    model.setId(0);
-    model.setName("DenoisingAE");
-
-    ModelBuilder<TensorT> model_builder;
-
-    // Add the inputs
-    std::vector<std::string> node_names_intensity = model_builder.addInputNodes(model, "Intensity", n_inputs);
-    std::vector<std::string> node_names_time = model_builder.addInputNodes(model, "Time", n_inputs);
-
-    // Add the Encoder FC layers for Time and intensity
-    node_names_time = model_builder.addFullyConnected(model, "EN_Time_0", "EN_Time_0", node_names_time, n_hidden_0,
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>(1.0)),
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>(1.0)),
-      std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-      std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-      std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_time.size() + n_hidden_0) / 2, 1)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.0002, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
-    node_names_intensity = model_builder.addFullyConnected(model, "EN_Intensity_0", "EN_Intensity_0", node_names_intensity, n_hidden_0,
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>(1.0)),
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>(1.0)),
-      std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-      std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-      std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_intensity.size() + n_hidden_0) / 2, 1)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.0002, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
-    model_builder.addSinglyConnected(model, "EN_Time_Intensity_0", node_names_time, node_names_intensity,
-      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_intensity.size() + (int)(node_names_time.size()) / 2, 1))),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.0002, 0.9, 0.999, 1e-8)), 0.0f);
-
-    node_names_time = model_builder.addFullyConnected(model, "EN_Time_1", "EN_Time_1", node_names_time, n_hidden_0,
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>(1.0)),
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>(1.0)),
-      std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-      std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-      std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_time.size() + n_hidden_0) / 2, 1)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.0002, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
-    model_builder.addSinglyConnected(model, "EN_Intensity_0_Time_1", node_names_intensity, node_names_time,
-      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_intensity.size() + (int)(node_names_time.size()) / 2, 1))),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.0002, 0.9, 0.999, 1e-8)), 0.0f);
-    node_names_intensity = model_builder.addFullyConnected(model, "EN_Intensity_1", "EN_Intensity_1", node_names_intensity, n_hidden_0,
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>(1.0)),
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>(1.0)),
-      std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-      std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-      std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_intensity.size() + n_hidden_0) / 2, 1)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.0002, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
-    model_builder.addSinglyConnected(model, "EN_Time_Intensity_1", node_names_time, node_names_intensity,
-      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_intensity.size() + (int)(node_names_time.size()) / 2, 1))),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.0002, 0.9, 0.999, 1e-8)), 0.0f);
-
-    // Add the encoding layers for Time and Intensity
-    node_names_time = model_builder.addFullyConnected(model, "Encoding_Time", "Encoding_Time", node_names_time, n_encodings,
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>(1.0)),
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>(1.0)),
-      std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-      std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-      std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_time.size() + n_encodings) / 2, 1)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.0002, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
-    node_names_intensity = model_builder.addFullyConnected(model, "Encoding_Intensity", "Encoding_Intensity", node_names_intensity, n_encodings,
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>(1.0)),
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>(1.0)),
-      std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-      std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-      std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_intensity.size() + n_encodings) / 2, 1)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.0002, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
-    model_builder.addSinglyConnected(model, "Encoding_Time_Intensity", node_names_time, node_names_intensity,
-      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_intensity.size() + (int)(node_names_time.size()) / 2, 1))),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.0002, 0.9, 0.999, 1e-8)), 0.0f);
-
-    // Add the Decoder FC layers
-    node_names_time = model_builder.addFullyConnected(model, "DE_Time_0", "DE_Time_0", node_names_time, n_hidden_0,
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>(1.0)),
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>(1.0)),
-      std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-      std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-      std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_time.size() + n_hidden_0) / 2, 1)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.0002, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
-    node_names_intensity = model_builder.addFullyConnected(model, "DE_Intensity_0", "DE_Intensity_0", node_names_intensity, n_hidden_0,
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>(1.0)),
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>(1.0)),
-      std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-      std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-      std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_intensity.size() + n_hidden_0) / 2, 1)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.0002, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
-    model_builder.addSinglyConnected(model, "DE_Time_Intensity_0", node_names_time, node_names_intensity,
-      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_intensity.size() + (int)(node_names_time.size()) / 2, 1))),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.0002, 0.9, 0.999, 1e-8)), 0.0f);
-
-    node_names_time = model_builder.addFullyConnected(model, "DE_Time_1", "DE_Time_1", node_names_time, n_hidden_0,
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>(1.0)),
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>(1.0)),
-      std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-      std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-      std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_time.size() + n_hidden_0) / 2, 1)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.0002, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
-    model_builder.addSinglyConnected(model, "DE_Intensity_0_Time_1", node_names_intensity, node_names_time,
-      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_intensity.size() + (int)(node_names_time.size()) / 2, 1))),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.0002, 0.9, 0.999, 1e-8)), 0.0f);
-    node_names_intensity = model_builder.addFullyConnected(model, "DE_Intensity_1", "DE_Intensity_1", node_names_intensity, n_hidden_0,
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>(1.0)),
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>(1.0)),
-      std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-      std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-      std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_intensity.size() + n_hidden_0) / 2, 1)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.0002, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
-    model_builder.addSinglyConnected(model, "DE_Time_Intensity_1", node_names_time, node_names_intensity,
-      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_intensity.size() + (int)(node_names_time.size()) / 2, 1))),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.0002, 0.9, 0.999, 1e-8)), 0.0f);
-
-    // Add the output nodes
-    node_names_time = model_builder.addFullyConnected(model, "Time_Out", "Time_Out", node_names_time, n_inputs,
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>(1.0)),
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>(1.0)),
-      std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-      std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-      std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names_time.size(), 1)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.0002, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
-    node_names_intensity = model_builder.addFullyConnected(model, "Intensity_Out", "Intensity_Out", node_names_intensity, n_inputs,
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>(1.0)),
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>(1.0)),
-      std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-      std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-      std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names_intensity.size(), 1)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.0002, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
-
-    // Specify the output node types manually
-    for (const std::string& node_name : node_names_time)
-      model.nodes_.at(node_name)->setType(NodeType::output);
-    for (const std::string& node_name : node_names_intensity)
-      model.nodes_.at(node_name)->setType(NodeType::output);
-
-    if (!model.checkCompleteInputToOutput())
-      std::cout << "Model input and output are not fully connected!" << std::endl;
-  }
   void makeDenoisingAE(Model<TensorT>& model, int n_inputs = 512, int n_encodings = 32, int n_hidden_0 = 128, bool add_norm = true) {
     model.setId(0);
     model.setName("DenoisingAE");
-
     ModelBuilder<TensorT> model_builder;
 
     // Add the inputs
@@ -204,19 +57,18 @@ public:
 
     // Add the Encoder FC layers for Time and intensity
     node_names = model_builder.addFullyConnected(model, "EN_Intensity_0", "EN_Intensity_0", node_names, n_hidden_0,
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+      std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
+      std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
       std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      //std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0.1 / (TensorT)(node_names.size() + n_hidden_0), 10 / (TensorT)(node_names.size() + n_hidden_0))),
       std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_hidden_0) / 2, 1)),
       std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e3, 0.0)), 0.0f, 0.0f, false, true);
     if (add_norm) {
       node_names = model_builder.addNormalization(model, "EN_Intensity_0-Norm", "EN_Intensity_0-Norm", node_names, true);
       node_names = model_builder.addSinglyConnected(model, "EN_Intensity_0-Norm-gain", "EN_Intensity_0-Norm-gain", node_names, node_names.size(),
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>(1e-6, 0.0, 1.0)), // Nonlinearity occures after the normalization
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
+        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
         std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
         std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
         std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
@@ -224,19 +76,18 @@ public:
         std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e3, 0.0)), 0.0, 0.0, true, true);
     }
     node_names = model_builder.addFullyConnected(model, "EN_Intensity_1", "EN_Intensity_1", node_names, n_hidden_0,
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+      std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
+      std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
       std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      //std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0.1 / (TensorT)(node_names.size() + n_hidden_0), 10 / (TensorT)(node_names.size() + n_hidden_0))),
       std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_hidden_0) / 2, 1)),
       std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e3, 0.0)), 0.0f, 0.0f, false, true);
     if (add_norm) {
       node_names = model_builder.addNormalization(model, "EN_Intensity_1-Norm", "EN_Intensity_1-Norm", node_names, true);
       node_names = model_builder.addSinglyConnected(model, "EN_Intensity_1-Norm-gain", "EN_Intensity_1-Norm-gain", node_names, node_names.size(),
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>(1e-6, 0.0, 1.0)),
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
+        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
         std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
         std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
         std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
@@ -245,20 +96,19 @@ public:
     }
 
     // Add the encoding layers for Time and Intensity
-    node_names = model_builder.addFullyConnected(model, "Encoding_Intensity", "Encoding_Intensity", node_names, n_encodings,
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+    std::vector<std::string> node_names_encoding = model_builder.addFullyConnected(model, "Encoding_Intensity", "Encoding_Intensity", node_names, n_encodings,
+      std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
+      std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
       std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      //std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0.1 / (TensorT)(node_names.size() + n_encodings), 10 / (TensorT)(node_names.size() + n_encodings))),
       std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_encodings) / 2, 1)),
       std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e3, 0.0)), 0.0f, 0.0f, false, true);
     if (add_norm) {
       node_names = model_builder.addNormalization(model, "Encoding-Norm", "Encoding-Norm", node_names, true);
       node_names = model_builder.addSinglyConnected(model, "Encoding-Norm-gain", "Encoding-Norm-gain", node_names, node_names.size(),
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>(1e-6, 0.0, 1.0)), // Nonlinearity occures after the normalization
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
+        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
         std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
         std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
         std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
@@ -267,20 +117,19 @@ public:
     }
 
     // Add the Decoder FC layers
-    node_names = model_builder.addFullyConnected(model, "DE_Intensity_0", "DE_Intensity_0", node_names, n_hidden_0,
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+    node_names = model_builder.addFullyConnected(model, "DE_Intensity_0", "DE_Intensity_0", node_names_encoding, n_hidden_0,
+      std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
+      std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
       std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      //std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0.1 / (TensorT)(node_names.size() + n_hidden_0), 10 / (TensorT)(node_names.size() + n_hidden_0))),
-      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_hidden_0) / 2, 1)),
+      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_encoding.size() + n_hidden_0) / 2, 1)),
       std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e3, 0.0)), 0.0f, 0.0f, false, true);
     if (add_norm) {
       node_names = model_builder.addNormalization(model, "DE_Intensity_0-Norm", "DE_Intensity_0-Norm", node_names, true);
       node_names = model_builder.addSinglyConnected(model, "DE_Intensity_0-Norm-gain", "DE_Intensity_0-Norm-gain", node_names, node_names.size(),
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>(1e-6, 0.0, 1.0)), // Nonlinearity occures after the normalization
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
+        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
         std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
         std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
         std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
@@ -288,19 +137,18 @@ public:
         std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e3, 0.0)), 0.0, 0.0, true, true);
     }
     node_names = model_builder.addFullyConnected(model, "DE_Intensity_1", "DE_Intensity_1", node_names, n_hidden_0,
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+      std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
+      std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
       std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      //std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0.1 / (TensorT)(node_names.size() + n_hidden_0), 10 / (TensorT)(node_names.size() + n_hidden_0))),
       std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_hidden_0) / 2, 1)),
       std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e3, 0.0)), 0.0f, 0.0f, false, true);
     if (add_norm) {
       node_names = model_builder.addNormalization(model, "DE_Intensity_1-Norm", "DE_Intensity_1-Norm", node_names, true);
       node_names = model_builder.addSinglyConnected(model, "DE_Intensity_1-Norm-gain", "DE_Intensity_1-Norm-gain", node_names, node_names.size(),
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>(1e-6, 0.0, 1.0)), // Nonlinearity occures after the normalization
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
+        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
         std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
         std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
         std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
@@ -310,12 +158,11 @@ public:
 
     // Add the output nodes
     node_names = model_builder.addFullyConnected(model, "Intensity_Out", "Intensity_Out", node_names, n_inputs,
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>(1e-6, 0.0, 1.0)),
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+      std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
+      std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
       std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      //std::shared_ptr<WeightInitOp<TensorT>>(new RangeWeightInitOp<TensorT>(0.1 / (TensorT)node_names.size(), 10 / (TensorT)node_names.size())),
       std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 1)),
       std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e3, 0.0)), 0.0f, 0.0f, false, true);
 
@@ -323,390 +170,85 @@ public:
     for (const std::string& node_name : node_names) {
       model.nodes_.at(node_name)->setType(NodeType::output);
     }
+
+    // Add the peak apex probability nodes
+    node_names = model_builder.addFullyConnected(model, "DE_IsPeakApex_0", "DE_IsPeakApex_0", node_names_encoding, n_hidden_0,
+      std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
+      std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
+      std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
+      std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
+      std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
+      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_encoding.size() + n_hidden_0) / 2, 1)),
+      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e3, 0.0)), 0.0f, 0.0f, false, true);
+    if (add_norm) {
+      node_names = model_builder.addNormalization(model, "DE_IsPeakApex_0-Norm", "DE_IsPeakApex_0-Norm", node_names, true);
+      node_names = model_builder.addSinglyConnected(model, "DE_IsPeakApex_0-Norm-gain", "DE_IsPeakApex_0-Norm-gain", node_names, node_names.size(),
+        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
+        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
+        std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
+        std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
+        std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
+        std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
+        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e3, 0.0)), 0.0, 0.0, true, true);
+    }
+
+    // Add the output nodes
+    node_names = model_builder.addFullyConnected(model, "IsPeakApex_Out", "IsPeakApex_Out", node_names, n_inputs,
+      std::shared_ptr<ActivationOp<TensorT>>(new SigmoidOp<TensorT>()),
+      std::shared_ptr<ActivationOp<TensorT>>(new SigmoidGradOp<TensorT>()),
+      std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
+      std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
+      std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
+      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 1)),
+      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e3, 0.0)), 0.0f, 0.0f, false, true);
+
+    // Specify the output node types manually
+    for (const std::string& node_name : node_names) {
+      model.nodes_.at(node_name)->setType(NodeType::output);
+    }
+
+    // Add the peak probability nodes
+    node_names = model_builder.addFullyConnected(model, "DE_IsPeak_0", "DE_IsPeak_0", node_names_encoding, n_hidden_0,
+      std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
+      std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
+      std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
+      std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
+      std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
+      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names_encoding.size() + n_hidden_0) / 2, 1)),
+      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e3, 0.0)), 0.0f, 0.0f, false, true);
+    if (add_norm) {
+      node_names = model_builder.addNormalization(model, "DE_IsPeak_0-Norm", "DE_IsPeak_0-Norm", node_names, true);
+      node_names = model_builder.addSinglyConnected(model, "DE_IsPeak_0-Norm-gain", "DE_IsPeak_0-Norm-gain", node_names, node_names.size(),
+        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUOp<TensorT>()),
+        std::shared_ptr<ActivationOp<TensorT>>(new LeakyReLUGradOp<TensorT>()),
+        std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
+        std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
+        std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
+        std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
+        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e3, 0.0)), 0.0, 0.0, true, true);
+    }
+
+    // Add the output nodes
+    node_names = model_builder.addFullyConnected(model, "IsPeak_Out", "IsPeak_Out", node_names, n_inputs,
+      std::shared_ptr<ActivationOp<TensorT>>(new SigmoidOp<TensorT>()),
+      std::shared_ptr<ActivationOp<TensorT>>(new SigmoidGradOp<TensorT>()),
+      std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
+      std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
+      std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
+      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 1)),
+      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1e3, 0.0)), 0.0f, 0.0f, false, true);
+
+    // Specify the output node types manually
+    for (const std::string& node_name : node_names) {
+      model.nodes_.at(node_name)->setType(NodeType::output);
+    }
+
     model.setInputAndOutputNodes();
 
     //if (!model.checkCompleteInputToOutput())
     //  std::cout << "Model input and output are not fully connected!" << std::endl;
   }
-  void makeMultiHeadDotProdAttention(Model<TensorT>& model, const int& n_inputs, const int& n_outputs,
-    std::vector<int> n_heads = { 8, 8 },
-    std::vector<int> key_query_values_lengths = { 48, 24 },
-    std::vector<int> model_lengths = { 48, 24 },
-    bool add_FC = true, bool add_skip = true, bool add_norm = false) {
-    model.setId(0);
-    model.setName("DotProdAttentPeakInt");
 
-    ModelBuilder<TensorT> model_builder;
-
-    // Add the inputs
-    std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Intensity", "Intensity", n_inputs);
-
-    // Multi-head attention
-    std::vector<std::string> node_names;
-    for (size_t i = 0; i < n_heads.size(); ++i) {
-      // Add the attention
-      std::string name_head1 = "Attention" + std::to_string(i);
-      node_names = model_builder.addMultiHeadAttention(model, name_head1, name_head1,
-        node_names_input, node_names_input, node_names_input,
-        n_heads[i], "DotProd", model_lengths[i], key_query_values_lengths[i], key_query_values_lengths[i],
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
-        std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names_input.size(), 2)),
-        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.0005, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
-      if (add_norm) {
-        std::string norm_name = "Norm" + std::to_string(i);
-        node_names = model_builder.addNormalization(model, norm_name, norm_name, node_names,
-          std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-          std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
-          std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 2)),
-          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.1, 0.9, 0.999, 1e-8)), 0.0, 0.0);
-      }
-      if (add_skip) {
-        std::string skip_name = "Skip" + std::to_string(i);
-        model_builder.addSinglyConnected(model, skip_name, node_names_input, node_names,
-          //std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names_input.size(), 2)),
-          std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1.0)),
-          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.0005, 0.9, 0.999, 1e-8)), 0.0f);
-      }
-      node_names_input = node_names;
-
-      //// Add the feedforward net
-      //if (add_FC) {
-      //	std::string norm_name = "FC" + std::to_string(i);
-      //	node_names = model_builder.addFullyConnected(model, norm_name, norm_name, node_names_input, n_inputs,
-      //		std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-      //		std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
-      //		std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-      //		std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-      //		std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      //		std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names_input.size(), 2)),
-      //		std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.0005, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
-      //}
-      //if (add_norm) {
-      //	std::string norm_name = "Norm_FC" + std::to_string(i);
-      //	node_names = model_builder.addNormalization(model, norm_name, norm_name, node_names,
-      //		std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-      //		std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
-      //		std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 2)),
-      //		std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.1, 0.9, 0.999, 1e-8)), 0.0, 0.0);
-      //}
-      //if (add_skip) {
-      //	std::string skip_name = "Skip_FC" + std::to_string(i);
-      //	model_builder.addSinglyConnected(model, skip_name, node_names_input, node_names,
-      //		std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(n_inputs, 2)),
-      //		std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(0.0005, 0.9, 0.999, 1e-8)), 0.0f);
-      //}
-      //node_names_input = node_names;
-    }
-
-    for (const std::string& node_name : node_names)
-      model.nodes_.at(node_name)->setType(NodeType::output);
-  }
-  void makeCovNet(Model<TensorT>& model, const int& n_inputs, const int& n_outputs, int n_depth_1 = 32, int n_depth_2 = 2, int n_fc = 128, int n_encoding = 16, bool add_norm = false, bool specify_layers = false) {
-    model.setId(0);
-    model.setName("CovNet");
-
-    ModelBuilder<TensorT> model_builder;
-
-    // Add the inputs
-    std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Intensity", "Input", n_inputs, specify_layers);
-
-    // Add the first convolution -> max pool -> Linear layers
-    std::vector<std::vector<std::string>> node_names_l0;
-    for (size_t d = 0; d < n_depth_1; ++d) {
-      std::vector<std::string> node_names;
-      std::string conv_name = "Conv0-" + std::to_string(d);
-      node_names = model_builder.addConvolution(model, conv_name, conv_name, node_names_input,
-        node_names_input.size(), 1, 0, 0,
-        4, 1, 2, 0, 0,
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
-        std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-        std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-        std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-        std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(4, 1)),
-        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1000.0)), 0.0f, 0.0f, false, specify_layers, false);
-      if (add_norm) {
-        std::string norm_name = "Norm0-" + std::to_string(d);
-        node_names = model_builder.addNormalization(model, norm_name, norm_name, node_names, specify_layers);
-      }
-      node_names_l0.push_back(node_names);
-    }
-
-    // Add the second convolution -> max pool -> Linear layers
-    std::vector<std::vector<std::string>> node_names_l1;
-    int l_cnt = 0;
-    for (const std::vector<std::string> &node_names_l : node_names_l0) {
-      for (size_t d = 0; d < n_depth_2; ++d) {
-        std::vector<std::string> node_names;
-        std::string conv_name = "Conv1-" + std::to_string(l_cnt) + "-" + std::to_string(d);
-        node_names = model_builder.addConvolution(model, conv_name, conv_name, node_names_l,
-          node_names_l.size(), 1, 0, 0,
-          4, 1, 2, 0, 0,
-          std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-          std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
-          std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-          std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-          std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-          std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(8, 1)),
-          std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1000.0)), 0.0f, 0.0f, false, specify_layers, false);
-        if (add_norm) {
-          std::string norm_name = "Norm1-" + std::to_string(l_cnt) + "-" + std::to_string(d);
-          node_names = model_builder.addNormalization(model, norm_name, norm_name, node_names, specify_layers);
-        }
-        node_names_l1.push_back(node_names);
-      }
-      ++l_cnt;
-    }
-
-    // Linearize the node names
-    std::vector<std::string> node_names;
-    for (const std::vector<std::string> &node_names_l : node_names_l1) {
-      for (const std::string &node_name : node_names_l) {
-        node_names.push_back(node_name);
-      }
-    }
-
-    // Add the FC layers
-    node_names = model_builder.addFullyConnected(model, "EN0", "EN0", node_names, n_fc,
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
-      std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-      std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-      std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size() + n_fc, 2)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1000.0)), 0.0f, 0.0f, false, specify_layers);
-    if (add_norm) {
-      node_names = model_builder.addNormalization(model, "NormEN0", "NormEN0", node_names, specify_layers);
-    }
-
-    // Add the encoding
-    node_names = model_builder.addFullyConnected(model, "Encoding", "Encoding", node_names, n_encoding,
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
-      std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-      std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-      std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size() + n_encoding, 2)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1000.0)), 0.0f, 0.0f, false, specify_layers);
-
-    // Add the FC layers
-    node_names = model_builder.addFullyConnected(model, "DE0", "DE0", node_names, n_fc,
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
-      std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-      std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-      std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size() + n_fc, 2)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1000.0)), 0.0f, 0.0f, false, specify_layers);
-    if (add_norm) {
-      node_names = model_builder.addNormalization(model, "NormDE0", "NormDE0", node_names, specify_layers);
-    }
-
-    // Add the projection
-    node_names_input = node_names;
-    std::vector<std::vector<std::string>> node_names_p0;
-    for (size_t d = 0; d < n_depth_1; ++d) {
-      std::vector<std::string> node_names;
-      std::string conv_name = "Proj0-" + std::to_string(d);
-      node_names = model_builder.addProjection(model, conv_name, conv_name, node_names_input,
-        node_names_input.size(), 1, 0, 0,
-        8, 1, 1, 0, 0,
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
-        std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-        std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-        std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-        std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(8, 1)),
-        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1000.0)), 0.0f, 0.0f, false, specify_layers, false);
-      if (add_norm) {
-        std::string norm_name = "Norm0-Proj0-" + std::to_string(d);
-        node_names = model_builder.addNormalization(model, norm_name, norm_name, node_names, specify_layers);
-      }
-      node_names_p0.push_back(node_names);
-    }
-
-    // Linearize the node names
-    node_names.clear();;
-    for (const std::vector<std::string> &node_names_l : node_names_p0) {
-      for (const std::string &node_name : node_names_l) {
-        node_names.push_back(node_name);
-      }
-    }
-
-    // Add the final output layer
-    node_names = model_builder.addFullyConnected(model, "Intensity_Out", "Intensity_Out", node_names, n_outputs,
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
-      std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-      std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-      std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 2)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8, 1000.0)), 0.0f, 0.0f, false, true);
-
-    for (const std::string& node_name : node_names)
-      model.getNodesMap().at(node_name)->setType(NodeType::output);
-    model.setInputAndOutputNodes();
-  }
-  void makeCompactCovNetAE(Model<TensorT>& model, const int& n_inputs, const int& n_outputs, int n_encodings = 32,
-    int n_depth_1 = 32, int n_depth_2 = 32, bool add_scalar = true) {
-    model.setId(0);
-    model.setName("CovNetPeakInt");
-
-    ModelBuilder<TensorT> model_builder;
-
-    // Add the inputs
-    std::vector<std::string> node_names_input = model_builder.addInputNodes(model, "Intensity", n_inputs);
-
-    // Add the first convolution
-    std::vector<std::string> node_names_conv0;
-    std::string conv_name = "EncConv0-" + std::to_string(0);
-    node_names_conv0 = model_builder.addConvolution(model, "EncConv0", conv_name, node_names_input,
-      node_names_input.size(), 1, 0, 0,
-      9, 1, 1, 0, 0,
-      std::shared_ptr<ActivationOp<TensorT>>(new ReLUOp<TensorT>(0.01)),
-      std::shared_ptr<ActivationOp<TensorT>>(new ReLUGradOp<TensorT>(0.01)),
-      std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-      std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-      std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(n_inputs, 2)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
-    for (size_t d = 1; d < n_depth_1; ++d) {
-      std::string conv_name = "EncConv0-" + std::to_string(d);
-      model_builder.addConvolution(model, "EncConv0", conv_name, node_names_input, node_names_conv0,
-        node_names_input.size(), 1, 0, 0,
-        9, 1, 1, 0, 0,
-        std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(n_inputs, 2)),
-        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, true);
-    }
-    if (add_scalar) {
-      node_names_conv0 = model_builder.addScalar(model, "EncScalar0", "EncScalar0", node_names_conv0, node_names_conv0.size(),
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
-        true);
-    }
-
-    // Add the second convolution
-    std::vector<std::string> node_names_conv1;
-    conv_name = "EncConv1-" + std::to_string(0);
-    node_names_conv1 = model_builder.addConvolution(model, "EncConv1", conv_name, node_names_conv0,
-      node_names_conv0.size(), 1, 0, 0,
-      9, 1, 1, 0, 0,
-      std::shared_ptr<ActivationOp<TensorT>>(new ReLUOp<TensorT>(0.01)),
-      std::shared_ptr<ActivationOp<TensorT>>(new ReLUGradOp<TensorT>(0.01)),
-      std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-      std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-      std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names_conv0.size(), 2)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
-    for (size_t d = 1; d < n_depth_2; ++d) {
-      std::string conv_name = "EncConv1-" + std::to_string(d);
-      model_builder.addConvolution(model, "EncConv1", conv_name, node_names_conv0, node_names_conv1,
-        node_names_conv0.size(), 1, 0, 0,
-        9, 1, 1, 0, 0,
-        std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names_conv0.size(), 2)),
-        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, true);
-    }
-    if (add_scalar) {
-      node_names_conv1 = model_builder.addScalar(model, "EncScalar1", "EncScalar1", node_names_conv1, node_names_conv1.size(),
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
-        true);
-    }
-
-    // Add the encoding layer
-    std::vector<std::string> node_names;
-    node_names = model_builder.addFullyConnected(model, "Encoding", "Encoding", node_names_conv1, n_encodings,
-      std::shared_ptr<ActivationOp<TensorT>>(new ReLUOp<TensorT>(0.01)),
-      std::shared_ptr<ActivationOp<TensorT>>(new ReLUGradOp<TensorT>(0.01)),
-      std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-      std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-      std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names_conv1.size(), 2)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
-    node_names = model_builder.addFullyConnected(model, "FC0", "FC0", node_names, node_names_conv1.size(),
-      std::shared_ptr<ActivationOp<TensorT>>(new ReLUOp<TensorT>(0.01)),
-      std::shared_ptr<ActivationOp<TensorT>>(new ReLUGradOp<TensorT>(0.01)),
-      std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-      std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-      std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(n_encodings, 2)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f);
-
-    // Add the first projection
-    std::vector<std::string> node_names_proj0;
-    std::string proj_name = "DecProj0-" + std::to_string(0);
-    node_names_proj0 = model_builder.addProjection(model, "DecProj0", proj_name, node_names,
-      node_names.size(), 1, 0, 0,
-      9, 1, 1, 0, 0,
-      std::shared_ptr<ActivationOp<TensorT>>(new ReLUOp<TensorT>(0.01)),
-      std::shared_ptr<ActivationOp<TensorT>>(new ReLUGradOp<TensorT>(0.01)),
-      std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-      std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-      std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 2)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
-    for (size_t d = 1; d < n_depth_2; ++d) {
-      std::string proj_name = "DecProj0-" + std::to_string(d);
-      model_builder.addProjection(model, "DecProj0", proj_name, node_names, node_names_proj0,
-        node_names.size(), 1, 0, 0,
-        9, 1, 1, 0, 0,
-        std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names.size(), 2)),
-        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, true);
-    }
-    if (add_scalar) {
-      node_names_proj0 = model_builder.addScalar(model, "DecScalar0", "DecScalar0", node_names_proj0, node_names_proj0.size(),
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
-        true);
-    }
-
-    // Add the second projection
-    std::vector<std::string> node_names_proj1;
-    proj_name = "DecProj1-" + std::to_string(0);
-    node_names_proj1 = model_builder.addProjection(model, "DecProj1", proj_name, node_names_proj0,
-      node_names_proj0.size(), 1, 0, 0,
-      9, 1, 1, 0, 0,
-      std::shared_ptr<ActivationOp<TensorT>>(new ReLUOp<TensorT>(0.01)),
-      std::shared_ptr<ActivationOp<TensorT>>(new ReLUGradOp<TensorT>(0.01)),
-      std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-      std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-      std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names_proj0.size(), 2)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
-    for (size_t d = 1; d < n_depth_1; ++d) {
-      std::string proj_name = "DecProj1-" + std::to_string(d);
-      model_builder.addProjection(model, "DecProj1", proj_name, node_names_proj0, node_names_proj1,
-        node_names_proj0.size(), 1, 0, 0,
-        9, 1, 1, 0, 0,
-        std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>(node_names_proj0.size(), 2)),
-        std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(1e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, true);
-    }
-    if (add_scalar) {
-      node_names_proj1 = model_builder.addScalar(model, "DecScalar1", "DecScalar1", node_names_proj1, node_names_proj1.size(),
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-        std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
-        true);
-    }
-    node_names = model_builder.addSinglyConnected(model, "Intensity_Out", "Intensity_Out", node_names_proj1, node_names_proj1.size(),
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
-      std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
-      std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
-      std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
-      std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
-      std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
-      std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0f, 0.0f);
-
-    for (const std::string& node_name : node_names)
-      model.getNodesMap().at(node_name)->setType(NodeType::output);
-
-    if (!model.checkCompleteInputToOutput())
-      std::cout << "Model is not fully connected!" << std::endl;
-
-    std::vector<std::string> node_names_NA, weight_names_NA;
-    if (!model.checkLinksNodeAndWeightNames(node_names_NA, weight_names_NA))
-      std::cout << "Model links are not pointing to the correct nodes and weights!" << std::endl;
-  }
   void adaptiveTrainerScheduler(
     const int& n_generations,
     const int& n_epochs,
@@ -764,7 +306,9 @@ public:
       model_logger.writeLogs(model, n_epochs, {}, { "Error" }, {}, { model_error }, output_nodes, expected_values);
     }
   }
-  void trainingModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger, const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const TensorT & model_error_train, const TensorT & model_error_test)
+  void trainingModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterDefaultDevice<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
+    const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes, const TensorT & model_error_train, const TensorT & model_error_test,
+    const Eigen::Tensor<TensorT, 1> & model_metrics_train, const Eigen::Tensor<TensorT, 1> & model_metrics_test)
   {
     // Set the defaults
     model_logger.setLogTimeEpoch(true);
@@ -778,18 +322,25 @@ public:
     }
 
     // Per n epoch logging
-    if (n_epochs % 5000 == 0) {
+    if (n_epochs % 1000 == 0) {
       model_logger.setLogExpectedPredictedEpoch(true);
-      if (model_logger.getLogExpectedPredictedEpoch())
-        model_interpreter.getModelResults(model, true, false, false);
-      model_logger.writeLogs(model, n_epochs, { "Train_Error" }, { "Test_Error" }, { model_error_train }, { model_error_test }, output_nodes, expected_values);
+      model_interpreter.getModelResults(model, true, false, false);
     }
-    else if (n_epochs % 10 == 0) {
-      model_logger.setLogExpectedPredictedEpoch(false);
-      if (model_logger.getLogExpectedPredictedEpoch())
-        model_interpreter.getModelResults(model, true, false, false);
-      model_logger.writeLogs(model, n_epochs, { "Train_Error" }, { "Test_Error" }, { model_error_train }, { model_error_test }, output_nodes, expected_values);
+
+    // Create the metric headers and data arrays
+    std::vector<std::string> log_train_headers = { "Train_Error" };
+    std::vector<std::string> log_test_headers = { "Test_Error" };
+    std::vector<TensorT> log_train_values = { model_error_train };
+    std::vector<TensorT> log_test_values = { model_error_test };
+    int metric_iter = 0;
+    for (const std::string& metric_name : this->metric_names_) {
+      log_train_headers.push_back(metric_name);
+      log_test_headers.push_back(metric_name);
+      log_train_values.push_back(model_metrics_train(metric_iter));
+      log_test_values.push_back(model_metrics_test(metric_iter));
+      ++metric_iter;
     }
+    model_logger.writeLogs(model, n_epochs, log_train_headers, log_test_headers, log_train_values, log_test_values, output_nodes, expected_values);
   }
 };
 
@@ -798,13 +349,13 @@ class DataSimulatorExt : public ChromatogramSimulator<TensorT>
 {
 public:
   void simulateEvaluationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 3>& time_steps) {};
-  void simulateTrainingData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
+  void simulateTrainingData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& loss_output_data, Eigen::Tensor<TensorT, 3>& time_steps)
   {
     // infer data dimensions based on the input tensors
     const int batch_size = input_data.dimension(0);
     const int memory_size = input_data.dimension(1);
     const int n_input_nodes = input_data.dimension(2);
-    const int n_output_nodes = output_data.dimension(2);
+    const int n_output_nodes = loss_output_data.dimension(2);
     const int n_epochs = input_data.dimension(3);
 
     //assert(n_output_nodes == n_input_pixels + 2 * n_encodings);
@@ -819,16 +370,17 @@ public:
 
           std::vector<TensorT> chrom_time, chrom_intensity, chrom_time_test, chrom_intensity_test;
           std::vector<std::pair<TensorT, TensorT>> best_lr;
+          std::vector<TensorT> peak_apices;
 
           // make the chrom and noisy chrom
-          this->simulateChromatogram(chrom_time_test, chrom_intensity_test, chrom_time, chrom_intensity, best_lr,
+          this->simulateChromatogram(chrom_time_test, chrom_intensity_test, chrom_time, chrom_intensity, best_lr, peak_apices,
             step_size_mu_, step_size_sigma_, chrom_window_size_,
             noise_mu_, noise_sigma_, baseline_height_,
             n_peaks_, emg_h_, emg_tau_, emg_mu_offset_, emg_sigma_);
 
           for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
             input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = chrom_intensity[nodes_iter];  //intensity
-            output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = chrom_intensity_test[nodes_iter];  //intensity
+            loss_output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = chrom_intensity_test[nodes_iter];  //intensity
             assert(chrom_intensity[nodes_iter] == chrom_intensity_test[nodes_iter]);
           }
         }
@@ -837,13 +389,13 @@ public:
 
     time_steps.setConstant(1.0f);
   }
-  void simulateValidationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& output_data, Eigen::Tensor<TensorT, 3>& time_steps)
+  void simulateValidationData(Eigen::Tensor<TensorT, 4>& input_data, Eigen::Tensor<TensorT, 4>& loss_output_data, Eigen::Tensor<TensorT, 3>& time_steps)
   {
     // infer data dimensions based on the input tensors
     const int batch_size = input_data.dimension(0);
     const int memory_size = input_data.dimension(1);
     const int n_input_nodes = input_data.dimension(2);
-    const int n_output_nodes = output_data.dimension(2);
+    const int n_output_nodes = loss_output_data.dimension(2);
     const int n_epochs = input_data.dimension(3);
 
     //assert(n_output_nodes == n_input_pixels + 2 * n_encodings);
@@ -858,31 +410,34 @@ public:
 
           std::vector<TensorT> chrom_time, chrom_intensity, chrom_time_test, chrom_intensity_test;
           std::vector<std::pair<TensorT, TensorT>> best_lr;
+          std::vector<TensorT> peak_apices;
 
           // make the chrom and noisy chrom
-          this->simulateChromatogram(chrom_time_test, chrom_intensity_test, chrom_time, chrom_intensity, best_lr,
+          this->simulateChromatogram(chrom_time_test, chrom_intensity_test, chrom_time, chrom_intensity, best_lr, peak_apices,
             step_size_mu_, step_size_sigma_, chrom_window_size_,
             noise_mu_, noise_sigma_, baseline_height_,
             n_peaks_, emg_h_, emg_tau_, emg_mu_offset_, emg_sigma_);
 
           for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
             input_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = chrom_intensity[nodes_iter];  //intensity
-            output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = chrom_intensity_test[nodes_iter];  //intensity
+            loss_output_data(batch_iter, memory_iter, nodes_iter, epochs_iter) = chrom_intensity_test[nodes_iter];  //intensity
           }
         }
       }
     }
     time_steps.setConstant(1.0f);
   }
-  void simulateTrainingData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps)
+  void simulateTrainingData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps)
   {
     // infer data dimensions based on the input tensors
     const int batch_size = input_data.dimension(0);
     const int memory_size = input_data.dimension(1);
     const int n_input_nodes = input_data.dimension(2);
-    const int n_output_nodes = output_data.dimension(2);
+    const int n_output_nodes = loss_output_data.dimension(2);
+    const int n_metric_nodes = metric_output_data.dimension(2);
 
-    assert(n_output_nodes == n_input_nodes);
+    assert(n_output_nodes == 3 * n_input_nodes);
+    assert(n_metric_nodes == 3 * n_input_nodes);
 
     // Reformat the Chromatogram for training
     for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
@@ -890,53 +445,44 @@ public:
 
         std::vector<TensorT> chrom_time, chrom_intensity, chrom_time_test, chrom_intensity_test;
         std::vector<std::pair<TensorT, TensorT>> best_lr;
+        std::vector<TensorT> peak_apices;
 
         // make the chrom and noisy chrom
-        this->simulateChromatogram(chrom_time_test, chrom_intensity_test, chrom_time, chrom_intensity, best_lr,
+        this->simulateChromatogram(chrom_time_test, chrom_intensity_test, chrom_time, chrom_intensity, best_lr, peak_apices,
           step_size_mu_, step_size_sigma_, chrom_window_size_,
           noise_mu_, noise_sigma_, baseline_height_,
           n_peaks_, emg_h_, emg_tau_, emg_mu_offset_, emg_sigma_);
 
         for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
-          input_data(batch_iter, memory_iter, nodes_iter) = chrom_intensity[nodes_iter];  //intensity
-          output_data(batch_iter, memory_iter, nodes_iter) = chrom_intensity_test[nodes_iter];  //intensity
-          assert(chrom_intensity[nodes_iter] == chrom_intensity_test[nodes_iter]);
+          input_data(batch_iter, memory_iter, nodes_iter) = chrom_intensity.at(nodes_iter);  //intensity
+          loss_output_data(batch_iter, memory_iter, nodes_iter) = chrom_intensity_test.at(nodes_iter);  //intensity
+          metric_output_data(batch_iter, memory_iter, nodes_iter) = chrom_intensity_test.at(nodes_iter);  //intensity
+          TensorT isPeakApex = 0.0;
+          for (const TensorT& peak_apex : peak_apices) {
+            if (abs(chrom_intensity_test.at(nodes_iter) - peak_apex) < 1e-6) {
+              isPeakApex = 1.0;
+            }
+          }
+          loss_output_data(batch_iter, memory_iter, nodes_iter + n_input_nodes) = isPeakApex;  //IsPeakApex
+          metric_output_data(batch_iter, memory_iter, nodes_iter + n_input_nodes) = isPeakApex;  //IsPeakApex
+          TensorT isPeak = 0.0;
+          for (const std::pair<TensorT, TensorT>& lr : best_lr) {
+            if (chrom_intensity_test.at(nodes_iter) >= lr.first && chrom_intensity_test.at(nodes_iter) <= lr.second) {
+              isPeak = 1.0;
+            }
+          }
+          loss_output_data(batch_iter, memory_iter, nodes_iter + 2 * n_input_nodes) = isPeak;  //IsPeak
+          metric_output_data(batch_iter, memory_iter, nodes_iter + 2 * n_input_nodes) = isPeak;  //IsPeak
+          //assert(chrom_intensity.at(nodes_iter) == chrom_intensity_test.at(nodes_iter));
         }
       }
     }
 
     time_steps.setConstant(1.0f);
   }
-  void simulateValidationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& output_data, Eigen::Tensor<TensorT, 2>& time_steps)
+  void simulateValidationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps)
   {
-    // infer data dimensions based on the input tensors
-    const int batch_size = input_data.dimension(0);
-    const int memory_size = input_data.dimension(1);
-    const int n_input_nodes = input_data.dimension(2);
-    const int n_output_nodes = output_data.dimension(2);
-
-    assert(n_output_nodes == n_input_nodes);
-
-    // Reformat the Chromatogram for training
-    for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
-      for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
-
-        std::vector<TensorT> chrom_time, chrom_intensity, chrom_time_test, chrom_intensity_test;
-        std::vector<std::pair<TensorT, TensorT>> best_lr;
-
-        // make the chrom and noisy chrom
-        this->simulateChromatogram(chrom_time_test, chrom_intensity_test, chrom_time, chrom_intensity, best_lr,
-          step_size_mu_, step_size_sigma_, chrom_window_size_,
-          noise_mu_, noise_sigma_, baseline_height_,
-          n_peaks_, emg_h_, emg_tau_, emg_mu_offset_, emg_sigma_);
-
-        for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
-          input_data(batch_iter, memory_iter, nodes_iter) = chrom_intensity[nodes_iter];  //intensity
-          output_data(batch_iter, memory_iter, nodes_iter) = chrom_intensity_test[nodes_iter];  //intensity
-        }
-      }
-    }
-    time_steps.setConstant(1.0f);
+    simulateTrainingData(input_data, loss_output_data, metric_output_data, time_steps);
   }
 
   /// public members that are passed to simulate methods
@@ -1028,8 +574,6 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
 
   // Make the input nodes
   std::vector<std::string> input_nodes;
-  //for (int i = 0; i < input_size; ++i)
-  //	input_nodes.push_back("Time_" + std::to_string(i));
   for (int i = 0; i < input_size; ++i) {
     char name_char[512];
     sprintf(name_char, "Intensity_%012d", i);
@@ -1049,9 +593,22 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
   for (int i = 0; i < input_size; ++i) {
     char name_char[512];
     sprintf(name_char, "Intensity_Out_%012d", i);
-    //sprintf(name_char, "Attention1_MultiHead_%012d", i);
     std::string name(name_char);
     output_nodes_intensity.push_back(name);
+  }
+  std::vector<std::string> output_nodes_isPeakApex;
+  for (int i = 0; i < input_size; ++i) {
+    char name_char[512];
+    sprintf(name_char, "IsPeakApex_Out_%012d", i);
+    std::string name(name_char);
+    output_nodes_isPeakApex.push_back(name);
+  }
+  std::vector<std::string> output_nodes_isPeak;
+  for (int i = 0; i < input_size; ++i) {
+    char name_char[512];
+    sprintf(name_char, "IsPeak_Out_%012d", i);
+    std::string name(name_char);
+    output_nodes_isPeak.push_back(name);
   }
 
   // define the model trainers and resources for the trainers
@@ -1062,8 +619,6 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
     model_interpreters.push_back(model_interpreter);
   }
   ModelTrainerExt<float> model_trainer;
-  //model_trainer.setBatchSize(1); // evaluation only
-  //model_trainer.setNEpochsTraining(0); // evaluation only
   model_trainer.setBatchSize(16);
   model_trainer.setNEpochsTraining(100001);
   model_trainer.setNEpochsValidation(25);
@@ -1074,11 +629,18 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
   model_trainer.setFindCycles(false);
   model_trainer.setFastInterpreter(true);
   model_trainer.setPreserveOoO(true);
-  model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MAEOp<float>()) });
-  model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MAEGradOp<float>()) });
-  model_trainer.setLossOutputNodes({
-    //output_nodes_time, 
-    output_nodes_intensity });
+  model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()),
+    std::shared_ptr<LossFunctionOp<float>>(new BCEOp<float>()),
+    std::shared_ptr<LossFunctionOp<float>>(new BCEOp<float>()) });
+  model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()),
+    std::shared_ptr<LossFunctionGradOp<float>>(new BCEGradOp<float>()),
+    std::shared_ptr<LossFunctionGradOp<float>>(new BCEGradOp<float>()) });
+  model_trainer.setLossOutputNodes({ output_nodes_intensity, output_nodes_isPeakApex, output_nodes_isPeak });
+  model_trainer.setMetricFunctions({ std::shared_ptr<MetricFunctionOp<float>>(new MAEOp<float>()),
+    std::shared_ptr<MetricFunctionOp<float>>(new MAEOp<float>()),
+    std::shared_ptr<MetricFunctionOp<float>>(new MAEOp<float>()) });
+  model_trainer.setMetricOutputNodes({ output_nodes_intensity, output_nodes_isPeakApex, output_nodes_isPeak });
+  model_trainer.setMetricNames({ "MAE" });
 
   // define the model replicator for growth mode
   ModelReplicatorExt<float> model_replicator;
@@ -1087,10 +649,7 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
   std::cout << "Initializing the population..." << std::endl;
   Model<float> model;
   if (make_model) {
-    //model_trainer.makeDenoisingAE(model, input_size, encoding_size, n_hidden, true);
-    //model_trainer.makeMultiHeadDotProdAttention(model, input_size, input_size, { 16, 16 }, { 48, 48 }, { (int)input_size, (int)input_size }, false, false, false);
-    //model_trainer.makeCompactCovNetAE(model, input_size, input_size, encoding_size, 1, 1, false);
-    model_trainer.makeCovNet(model, input_nodes.size(), output_nodes_intensity.size(), 2, 2, n_hidden, encoding_size, false, true);  // Minimal solving model
+    model_trainer.makeDenoisingAE(model, input_size, encoding_size, n_hidden, false);
   }
   else {
     std::cout << "Reading in the model..." << std::endl;
