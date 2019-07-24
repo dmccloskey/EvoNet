@@ -599,9 +599,20 @@ public:
           n_peaks_, emg_h_, emg_tau_, emg_mu_offset_, emg_sigma_);
 
         for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
-          input_data(batch_iter, memory_iter, nodes_iter) = chrom_intensity[nodes_iter];  //intensity
-          loss_output_data(batch_iter, memory_iter, nodes_iter) = chrom_intensity_test[nodes_iter];  //intensity
-          assert(chrom_intensity[nodes_iter] == chrom_intensity_test[nodes_iter]);
+          input_data(batch_iter, memory_iter, nodes_iter) = chrom_intensity(nodes_iter);  //intensity
+          loss_output_data(batch_iter, memory_iter, nodes_iter) = chrom_intensity_test(nodes_iter);  //intensity
+          metric_output_data(batch_iter, memory_iter, nodes_iter) = chrom_intensity_test(nodes_iter);  //intensity
+          loss_output_data(batch_iter, memory_iter, nodes_iter + n_input_nodes) = chrom_intensity_test(nodes_iter);  //IsPeakApex
+          metric_output_data(batch_iter, memory_iter, nodes_iter + n_input_nodes) = chrom_intensity_test(nodes_iter);  //IsPeakApex
+          TensorT isPeak = 0.0;
+          for (const std::pair<TensorT, TensorT>& lr : best_lr) {
+            if (chrom_intensity_test(nodes_iter) >= lr.first && chrom_intensity_test(nodes_iter) <= lr.second) {
+              isPeak = 1.0;
+            }
+          }
+          loss_output_data(batch_iter, memory_iter, nodes_iter + 2 * n_input_nodes) = isPeak;  //IsPeak
+          metric_output_data(batch_iter, memory_iter, nodes_iter + 2 * n_input_nodes) = isPeak;  //IsPeak
+          assert(chrom_intensity(nodes_iter) == chrom_intensity_test(nodes_iter));
         }
       }
     }

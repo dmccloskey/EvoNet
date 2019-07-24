@@ -34,6 +34,7 @@ namespace SmartPeak
 			@param[out] x_IO A vector of x values representing time or m/z
 			@param[out] y_IO A vector of y values representing the intensity at time t or m/z m
 			@param[out] peaks_LR A vector of best left and best right pairs
+			@param[out] peaks_apices A vector of peak apices
 			@param[in] step_size_mu
 			@param[in] step_size_sigma
 			@param[in] chrom_window_size The lower and upper bounds for the maximum size of the chromatogram
@@ -48,7 +49,7 @@ namespace SmartPeak
 		*/
 		void simulateChromatogram(std::vector<TensorT>& x_O, std::vector<TensorT>& y_O,
 			std::vector<TensorT>& x_noise_O, std::vector<TensorT>& y_noise_O,
-			std::vector<std::pair<TensorT, TensorT>>& peaks_LR,
+			std::vector<std::pair<TensorT, TensorT>>& peaks_LR, std::vector<TensorT>& peak_apices,
 			const std::pair<TensorT, TensorT>& step_size_mu,
 			const std::pair<TensorT, TensorT>& step_size_sigma,
 			const std::pair<TensorT, TensorT>& chrom_window_size,
@@ -85,10 +86,12 @@ namespace SmartPeak
 
 			@param[out] x_IO A vector of x values representing time or m/z
 			@param[out] y_IO A vector of y values representing the intensity at time t or m/z m
+      @param[out] peaks_LR Vector of best left/right pairs
+      @param[out] peak_apices Vector of peak apices
 			@param[in] peaks list of PeakSimulator classes that will compose the chromatogram
 			@param[in] emgs list of corresponding EMGModel classes that define each peak
 		*/
-		void makeChromatogram(std::vector<TensorT>& x_O, std::vector<TensorT>& y_O, std::vector<std::pair<TensorT, TensorT>>& peaks_LR,
+		void makeChromatogram(std::vector<TensorT>& x_O, std::vector<TensorT>& y_O, std::vector<std::pair<TensorT, TensorT>>& peaks_LR, std::vector<TensorT>& peak_apices,
 			const std::vector<PeakSimulator<TensorT>>& peaks, const std::vector<EMGModel<TensorT>>& emgs) const;
 
 		/**
@@ -222,7 +225,7 @@ namespace SmartPeak
 
 	template<typename TensorT>
 	inline void ChromatogramSimulator<TensorT>::simulateChromatogram(std::vector<TensorT>& x_O, std::vector<TensorT>& y_O, 
-		std::vector<TensorT>& x_noise_O, std::vector<TensorT>& y_noise_O, std::vector<std::pair<TensorT, TensorT>>& peaks_LR,
+		std::vector<TensorT>& x_noise_O, std::vector<TensorT>& y_noise_O, std::vector<std::pair<TensorT, TensorT>>& peaks_LR, std::vector<TensorT>& peak_apices,
 		const std::pair<TensorT, TensorT>& step_size_mu, const std::pair<TensorT, TensorT>& step_size_sigma,
 		const std::pair<TensorT, TensorT>& chrom_window_size, const std::pair<TensorT, TensorT>& noise_mu, const std::pair<TensorT, TensorT>& noise_sigma,
 		const std::pair<TensorT, TensorT>& baseline_height, const std::pair<TensorT, TensorT>& n_peaks,
@@ -271,12 +274,12 @@ namespace SmartPeak
 		}
 
 		// make the chromatogram
-		makeChromatogram(x_O, y_O, peaks_LR, peaks, emgs);
-		makeChromatogram(x_noise_O, y_noise_O, std::vector<std::pair<TensorT, TensorT>>() = {}, peaks_noise, emgs);
+		makeChromatogram(x_O, y_O, peaks_LR, peak_apices, peaks, emgs);
+    makeChromatogram(x_noise_O, y_noise_O, std::vector<std::pair<TensorT, TensorT>>() = {}, std::vector<TensorT>() = {}, peaks_noise, emgs);
 	}
 
 	template <typename TensorT>
-	void ChromatogramSimulator<TensorT>::makeChromatogram(std::vector<TensorT>& x_O, std::vector<TensorT>& y_O, std::vector<std::pair<TensorT, TensorT>>& peaks_LR,
+	void ChromatogramSimulator<TensorT>::makeChromatogram(std::vector<TensorT>& x_O, std::vector<TensorT>& y_O, std::vector<std::pair<TensorT, TensorT>>& peaks_LR, std::vector<TensorT>& peak_apices,
 		const std::vector<PeakSimulator<TensorT>>& peaks, const std::vector<EMGModel<TensorT>>& emgs) const
 	{
 		// check vector lengths
@@ -291,6 +294,7 @@ namespace SmartPeak
 		x_O.clear();
 		y_O.clear();
 		peaks_LR.clear();
+    peak_apices.clear();
 
 		// Order the list of peaks from lowest to highest emg_mu
 		std::vector<std::pair<PeakSimulator<TensorT>, EMGModel<TensorT>>> peak_emg_pairs;
@@ -322,6 +326,9 @@ namespace SmartPeak
 			// make the first peak
 			std::vector<TensorT> x, y;
 			peak_emg_pairs[i].first.simulatePeak(x, y, peak_emg_pairs[i].second);
+
+      // extract out the peak apex
+      peak_apices.push_back(peak_emg_pairs[i].second.getMu());
 
 			// Determine the best left/right
 			std::pair<TensorT, TensorT> best_lr = peak_emg_pairs[i].first.getBestLeftAndRight(x, y, peak_emg_pairs[i].second.getMu());
