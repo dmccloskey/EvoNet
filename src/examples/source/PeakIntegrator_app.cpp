@@ -640,7 +640,7 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
     std::shared_ptr<MetricFunctionOp<float>>(new MAEOp<float>()),
     std::shared_ptr<MetricFunctionOp<float>>(new MAEOp<float>()) });
   model_trainer.setMetricOutputNodes({ output_nodes_intensity, output_nodes_isPeakApex, output_nodes_isPeak });
-  model_trainer.setMetricNames({ "MAE" });
+  model_trainer.setMetricNames({ "Reconstruction-MAE", "IsPeakApex-MAE", "IsPeak-MAE" });
 
   // define the model replicator for growth mode
   ModelReplicatorExt<float> model_replicator;

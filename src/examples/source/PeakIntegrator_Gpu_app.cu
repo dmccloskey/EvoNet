@@ -370,9 +370,10 @@ public:
 
           std::vector<TensorT> chrom_time, chrom_intensity, chrom_time_test, chrom_intensity_test;
           std::vector<std::pair<TensorT, TensorT>> best_lr;
+          std::vector<TensorT> peak_apices;
 
           // make the chrom and noisy chrom
-          this->simulateChromatogram(chrom_time_test, chrom_intensity_test, chrom_time, chrom_intensity, best_lr,
+          this->simulateChromatogram(chrom_time_test, chrom_intensity_test, chrom_time, chrom_intensity, best_lr, peak_apices,
             step_size_mu_, step_size_sigma_, chrom_window_size_,
             noise_mu_, noise_sigma_, baseline_height_,
             n_peaks_, emg_h_, emg_tau_, emg_mu_offset_, emg_sigma_);
@@ -409,9 +410,10 @@ public:
 
           std::vector<TensorT> chrom_time, chrom_intensity, chrom_time_test, chrom_intensity_test;
           std::vector<std::pair<TensorT, TensorT>> best_lr;
+          std::vector<TensorT> peak_apices;
 
           // make the chrom and noisy chrom
-          this->simulateChromatogram(chrom_time_test, chrom_intensity_test, chrom_time, chrom_intensity, best_lr,
+          this->simulateChromatogram(chrom_time_test, chrom_intensity_test, chrom_time, chrom_intensity, best_lr, peak_apices,
             step_size_mu_, step_size_sigma_, chrom_window_size_,
             noise_mu_, noise_sigma_, baseline_height_,
             n_peaks_, emg_h_, emg_tau_, emg_mu_offset_, emg_sigma_);
@@ -452,12 +454,12 @@ public:
           n_peaks_, emg_h_, emg_tau_, emg_mu_offset_, emg_sigma_);
 
         for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
-          input_data(batch_iter, memory_iter, nodes_iter) = chrom_intensity(nodes_iter);  //intensity
-          loss_output_data(batch_iter, memory_iter, nodes_iter) = chrom_intensity_test(nodes_iter);  //intensity
-          metric_output_data(batch_iter, memory_iter, nodes_iter) = chrom_intensity_test(nodes_iter);  //intensity
+          input_data(batch_iter, memory_iter, nodes_iter) = chrom_intensity.at(nodes_iter);  //intensity
+          loss_output_data(batch_iter, memory_iter, nodes_iter) = chrom_intensity_test.at(nodes_iter);  //intensity
+          metric_output_data(batch_iter, memory_iter, nodes_iter) = chrom_intensity_test.at(nodes_iter);  //intensity
           TensorT isPeakApex = 0.0;
           for (const TensorT& peak_apex : peak_apices) {
-            if (abs(chrom_intensity_test(nodes_iter) - peak_apex) < 1e-6) {
+            if (abs(chrom_intensity_test.at(nodes_iter) - peak_apex) < 1e-6) {
               isPeakApex = 1.0;
             }
           }
@@ -465,13 +467,13 @@ public:
           metric_output_data(batch_iter, memory_iter, nodes_iter + n_input_nodes) = isPeakApex;  //IsPeakApex
           TensorT isPeak = 0.0;
           for (const std::pair<TensorT, TensorT>& lr : best_lr) {
-            if (chrom_intensity_test(nodes_iter) >= lr.first && chrom_intensity_test(nodes_iter) <= lr.second) {
+            if (chrom_intensity_test.at(nodes_iter) >= lr.first && chrom_intensity_test.at(nodes_iter) <= lr.second) {
               isPeak = 1.0;
             }
           }
           loss_output_data(batch_iter, memory_iter, nodes_iter + 2 * n_input_nodes) = isPeak;  //IsPeak
           metric_output_data(batch_iter, memory_iter, nodes_iter + 2 * n_input_nodes) = isPeak;  //IsPeak
-          assert(chrom_intensity(nodes_iter) == chrom_intensity_test(nodes_iter));
+          //assert(chrom_intensity.at(nodes_iter) == chrom_intensity_test.at(nodes_iter));
         }
       }
     }
@@ -480,34 +482,7 @@ public:
   }
   void simulateValidationData(Eigen::Tensor<TensorT, 3>& input_data, Eigen::Tensor<TensorT, 3>& loss_output_data, Eigen::Tensor<TensorT, 3>& metric_output_data, Eigen::Tensor<TensorT, 2>& time_steps)
   {
-    // infer data dimensions based on the input tensors
-    const int batch_size = input_data.dimension(0);
-    const int memory_size = input_data.dimension(1);
-    const int n_input_nodes = input_data.dimension(2);
-    const int n_output_nodes = loss_output_data.dimension(2);
-
-    assert(n_output_nodes == n_input_nodes);
-
-    // Reformat the Chromatogram for training
-    for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
-      for (int memory_iter = 0; memory_iter < memory_size; ++memory_iter) {
-
-        std::vector<TensorT> chrom_time, chrom_intensity, chrom_time_test, chrom_intensity_test;
-        std::vector<std::pair<TensorT, TensorT>> best_lr;
-
-        // make the chrom and noisy chrom
-        this->simulateChromatogram(chrom_time_test, chrom_intensity_test, chrom_time, chrom_intensity, best_lr,
-          step_size_mu_, step_size_sigma_, chrom_window_size_,
-          noise_mu_, noise_sigma_, baseline_height_,
-          n_peaks_, emg_h_, emg_tau_, emg_mu_offset_, emg_sigma_);
-
-        for (int nodes_iter = 0; nodes_iter < n_input_nodes; ++nodes_iter) {
-          input_data(batch_iter, memory_iter, nodes_iter) = chrom_intensity[nodes_iter];  //intensity
-          loss_output_data(batch_iter, memory_iter, nodes_iter) = chrom_intensity_test[nodes_iter];  //intensity
-        }
-      }
-    }
-    time_steps.setConstant(1.0f);
+    simulateTrainingData(input_data, loss_output_data, metric_output_data, time_steps);
   }
 
   /// public members that are passed to simulate methods
@@ -654,10 +629,10 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
   model_trainer.setFindCycles(false);
   model_trainer.setFastInterpreter(true);
   model_trainer.setPreserveOoO(true);
-  model_trainer.setLossFunctions({std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()),
-    std::shared_ptr<LossFunctionOp<float>>(new BCEOp<float>()), 
-    std::shared_ptr<LossFunctionOp<float>>(new BCEOp<float>())});
-  model_trainer.setLossFunctionGrads({std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()),
+  model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()),
+    std::shared_ptr<LossFunctionOp<float>>(new BCEOp<float>()),
+    std::shared_ptr<LossFunctionOp<float>>(new BCEOp<float>()) });
+  model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()),
     std::shared_ptr<LossFunctionGradOp<float>>(new BCEGradOp<float>()),
     std::shared_ptr<LossFunctionGradOp<float>>(new BCEGradOp<float>()) });
   model_trainer.setLossOutputNodes({ output_nodes_intensity, output_nodes_isPeakApex, output_nodes_isPeak });
@@ -665,7 +640,7 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
     std::shared_ptr<MetricFunctionOp<float>>(new MAEOp<float>()),
     std::shared_ptr<MetricFunctionOp<float>>(new MAEOp<float>()) });
   model_trainer.setMetricOutputNodes({ output_nodes_intensity, output_nodes_isPeakApex, output_nodes_isPeak });
-  model_trainer.setMetricNames({ "MAE" });
+  model_trainer.setMetricNames({ "Reconstruction-MAE", "IsPeakApex-MAE", "IsPeak-MAE" });
 
   // define the model replicator for growth mode
   ModelReplicatorExt<float> model_replicator;
