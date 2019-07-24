@@ -572,16 +572,16 @@ public:
   @param[in] model_decoder_weights_filename
   @param[in] model_classifier_weights_filename
   */
-  void setModels(const std::string& model_encoder_weights_filename, const std::string& model_decoder_weights_filename, const std::string& model_classifier_weights_filename) {
+  void setModels(ModelTrainerExt<TensorT>& model_trainer, const std::string& model_encoder_weights_filename, const std::string& model_decoder_weights_filename, const std::string& model_classifier_weights_filename) {
     // initialize the models
     model_encoder.clear();
     model_decoder.clear();
     model_classifier.clear();
 
     // define the encoder and decoders
-    ModelTrainerExt<TensorT>::makeModelFCVAE_Encoder(model_encoder, n_input_nodes, encoding_size, true, false, false, false); // normalization type 1
-    ModelTrainerExt<TensorT>::makeModelFCVAE_Decoder(model_decoder, n_input_nodes, encoding_size, false);
-    ModelTrainerExt<TensorT>::makeModelFCClass(model_classifier, n_input_nodes, n_output_nodes, false);
+    model_trainer.makeModelFCVAE_Encoder(model_encoder, n_input_nodes, encoding_size, true, false, false, false); // normalization type 1
+    model_trainer.makeModelFCVAE_Decoder(model_decoder, n_input_nodes, encoding_size, false);
+    model_trainer.makeModelFCClass(model_classifier, n_input_nodes, n_output_nodes, false);
 
     // read in the encoder and decoder weights
     WeightFile<TensorT> data;
@@ -703,7 +703,7 @@ public:
     Eigen::Tensor<TensorT, 4> condition_2_input(model_trainer.getBatchSize(), model_trainer.getMemorySize(), n_input_nodes, model_trainer.getNEpochsEvaluation());
     Eigen::Tensor<TensorT, 3> time_steps_2_input(model_trainer.getBatchSize(), model_trainer.getMemorySize(), model_trainer.getNEpochsEvaluation());
     metabolomics_data.sample_group_name_ = sample_group_name_2;
-    if (latent_arithmetic != "None" || latent_arithmetic != "Test")
+    if (latent_arithmetic != "None" && latent_arithmetic != "Test")
       metabolomics_data.simulateEvaluationData(condition_2_input, time_steps_2_input);
 
     // evaluate the encoder for condition_1 and condition_2
@@ -712,7 +712,7 @@ public:
     Eigen::Tensor<TensorT, 4> condition_2_output(model_trainer.getBatchSize(), model_trainer.getMemorySize(), encoding_size, model_trainer.getNEpochsEvaluation());
     condition_1_output = model_trainer.evaluateModel(
       model_encoder, condition_1_input, time_steps_1_input, input_nodes, ModelLogger<TensorT>(), model_interpreter);
-    if (latent_arithmetic != "None" || latent_arithmetic != "Test")
+    if (latent_arithmetic != "None" && latent_arithmetic != "Test")
       condition_2_output = model_trainer.evaluateModel(
         model_encoder, condition_2_input, time_steps_2_input, input_nodes, ModelLogger<TensorT>(), model_interpreter);
 
@@ -739,7 +739,7 @@ public:
     // evaluate the decoder
     Eigen::Tensor<TensorT, 4> reconstructed_output(model_trainer.getBatchSize(), model_trainer.getMemorySize(), encoding_size, model_trainer.getNEpochsEvaluation());
     model_trainer.setLossOutputNodes({ output_nodes_reconstruction });
-    if (latent_arithmetic != "Test")
+    if (latent_arithmetic == "Test")
       reconstructed_output = condition_1_input;
     else
       reconstructed_output = model_trainer.evaluateModel(
@@ -785,10 +785,12 @@ int main(int argc, char** argv)
 
   // Make the filenames
   const std::string biochem_rxns_filename = data_dir + "iJO1366.csv";
-  //const std::string model_encoder_weights_filename = data_dir + "TrainTestData/SampledArithmeticMath/VAE_4000_weights_3DEncoding.csv"; // encoding size of 3
-  //const std::string model_decoder_weights_filename = data_dir + "TrainTestData/SampledArithmeticMath/VAE_4000_weights_3DEncoding.csv"; // encoding size of 3
-  const std::string model_encoder_weights_filename = data_dir + "TrainTestData/SampledArithmeticMath/VAE_4000_weights_8DEncoding.csv"; // encoding size of 8
-  const std::string model_decoder_weights_filename = data_dir + "TrainTestData/SampledArithmeticMath/VAE_4000_weights_8DEncoding.csv"; // encoding size of 8
+  const std::string model_encoder_weights_filename = data_dir + "TrainTestData/SampledArithmeticMath/VAE_4000_weights_3DEncoding.csv"; // encoding size of 3
+  const std::string model_decoder_weights_filename = data_dir + "TrainTestData/SampledArithmeticMath/VAE_4000_weights_3DEncoding.csv"; // encoding size of 3
+  //const std::string model_encoder_weights_filename = data_dir + "TrainTestData/SampledArithmeticMath/VAE_4000_weights_8DEncoding.csv"; // encoding size of 8
+  //const std::string model_decoder_weights_filename = data_dir + "TrainTestData/SampledArithmeticMath/VAE_4000_weights_8DEncoding.csv"; // encoding size of 8
+  //const std::string model_encoder_weights_filename = data_dir + "TrainTestData/SampledArithmeticMath/VAE_5000_weights_8DEncoding10KL.csv"; // encoding size of 8
+  //const std::string model_decoder_weights_filename = data_dir + "TrainTestData/SampledArithmeticMath/VAE_5000_weights_8DEncoding10KL.csv"; // encoding size of 8
   // NOTE: be sure to re-name the Input_000000000000-LinearScale_to_... weights to Input_000000000000_to_...
   //       using regex "-LinearScale_to_FC0" with "_to_FC0"
   const std::string model_classifier_weights_filename = data_dir + "TrainTestData/SampledArithmeticMath/Classifier_1000_weights.csv";
@@ -806,60 +808,78 @@ int main(int argc, char** argv)
   //const std::string meta_data_filename_test = data_dir + "IndustrialStrains0103_MetaData_test.csv";
 
   // read in the metabolomics data and models
-  LatentArithmetic<float> latentArithmetic(8, false, true);
+  LatentArithmetic<float> latentArithmetic(3, false, true);
   latentArithmetic.setMetabolomicsData(biochem_rxns_filename, metabo_data_filename_train, meta_data_filename_train,
     metabo_data_filename_test, meta_data_filename_test);
-  latentArithmetic.setModels(model_encoder_weights_filename, model_decoder_weights_filename, model_classifier_weights_filename);
+  latentArithmetic.setModels(ModelTrainerExt<float>(), model_encoder_weights_filename, model_decoder_weights_filename, model_classifier_weights_filename);
 
   // 0. Control (Test)
   std::cout << "Running Control (Test)" << std::endl;
   latentArithmetic.calculateLatentArithmetic("Evo04", "Evo04", 0, "Test");
-  latentArithmetic.calculateLatentArithmetic("Evo04gnd", "Evo04", 1, "Test");
-  latentArithmetic.calculateLatentArithmetic("Evo04gndEvo01EP", "Evo04", 2, "Test");
-  latentArithmetic.calculateLatentArithmetic("Evo04gndEvo02EP", "Evo04", 2, "Test");
-  latentArithmetic.calculateLatentArithmetic("Evo04pgi", "Evo04", 3, "Test");
-  latentArithmetic.calculateLatentArithmetic("Evo04pgiEvo01EP", "Evo04", 4, "Test");
-  latentArithmetic.calculateLatentArithmetic("Evo04pgiEvo02EP", "Evo04", 4, "Test");
-  latentArithmetic.calculateLatentArithmetic("Evo04ptsHIcrr", "Evo04", 5, "Test");
-  latentArithmetic.calculateLatentArithmetic("Evo04ptsHIcrrEvo01EP", "Evo04", 6, "Test");
-  latentArithmetic.calculateLatentArithmetic("Evo04ptsHIcrrEvo02EP", "Evo04", 6, "Test");
-  latentArithmetic.calculateLatentArithmetic("Evo04sdhCB", "Evo04", 7, "Test");
-  latentArithmetic.calculateLatentArithmetic("Evo04sdhCBEvo01EP", "Evo04", 8, "Test");
-  latentArithmetic.calculateLatentArithmetic("Evo04sdhCBEvo02EP", "Evo04", 8, "Test");
-  latentArithmetic.calculateLatentArithmetic("Evo04tpiA", "Evo04", 9, "Test");
-  latentArithmetic.calculateLatentArithmetic("Evo04tpiAEvo01EP", "Evo04", 10, "Test");
-  latentArithmetic.calculateLatentArithmetic("Evo04tpiAEvo02EP", "Evo04", 10, "Test");
+  latentArithmetic.calculateLatentArithmetic("Evo04Evo01EP", "Evo04", 1, "Test");
+  latentArithmetic.calculateLatentArithmetic("Evo04Evo02EP", "Evo04", 1, "Test");
+  latentArithmetic.calculateLatentArithmetic("Evo04gnd", "Evo04", 2, "Test");
+  latentArithmetic.calculateLatentArithmetic("Evo04gndEvo01EP", "Evo04", 3, "Test");
+  latentArithmetic.calculateLatentArithmetic("Evo04gndEvo02EP", "Evo04", 3, "Test");
+  latentArithmetic.calculateLatentArithmetic("Evo04pgi", "Evo04", 4, "Test");
+  latentArithmetic.calculateLatentArithmetic("Evo04pgiEvo01EP", "Evo04", 5, "Test");
+  latentArithmetic.calculateLatentArithmetic("Evo04pgiEvo02EP", "Evo04", 5, "Test");
+  latentArithmetic.calculateLatentArithmetic("Evo04ptsHIcrr", "Evo04", 6, "Test");
+  latentArithmetic.calculateLatentArithmetic("Evo04ptsHIcrrEvo01EP", "Evo04", 7, "Test");
+  latentArithmetic.calculateLatentArithmetic("Evo04ptsHIcrrEvo02EP", "Evo04", 7, "Test");
+  latentArithmetic.calculateLatentArithmetic("Evo04sdhCB", "Evo04", 8, "Test");
+  latentArithmetic.calculateLatentArithmetic("Evo04sdhCBEvo01EP", "Evo04", 9, "Test");
+  latentArithmetic.calculateLatentArithmetic("Evo04sdhCBEvo02EP", "Evo04", 9, "Test");
+  latentArithmetic.calculateLatentArithmetic("Evo04tpiA", "Evo04", 10, "Test");
+  latentArithmetic.calculateLatentArithmetic("Evo04tpiAEvo01EP", "Evo04", 11, "Test");
+  latentArithmetic.calculateLatentArithmetic("Evo04tpiAEvo02EP", "Evo04", 11, "Test");
 
   // 0. Control (None)
   std::cout << "Running Control (None)" << std::endl;
   latentArithmetic.calculateLatentArithmetic("Evo04", "Evo04", 0, "None");
-  latentArithmetic.calculateLatentArithmetic("Evo04gnd", "Evo04", 1, "None");
-  latentArithmetic.calculateLatentArithmetic("Evo04gndEvo01EP", "Evo04", 2, "None");
-  latentArithmetic.calculateLatentArithmetic("Evo04gndEvo02EP", "Evo04", 2, "None");
-  latentArithmetic.calculateLatentArithmetic("Evo04pgi", "Evo04", 3, "None");
-  latentArithmetic.calculateLatentArithmetic("Evo04pgiEvo01EP", "Evo04", 4, "None");
-  latentArithmetic.calculateLatentArithmetic("Evo04pgiEvo02EP", "Evo04", 4, "None");
-  latentArithmetic.calculateLatentArithmetic("Evo04ptsHIcrr", "Evo04", 5, "None");
-  latentArithmetic.calculateLatentArithmetic("Evo04ptsHIcrrEvo01EP", "Evo04", 6, "None");
-  latentArithmetic.calculateLatentArithmetic("Evo04ptsHIcrrEvo02EP", "Evo04", 6, "None");
-  latentArithmetic.calculateLatentArithmetic("Evo04sdhCB", "Evo04", 7, "None");
-  latentArithmetic.calculateLatentArithmetic("Evo04sdhCBEvo01EP", "Evo04", 8, "None");
-  latentArithmetic.calculateLatentArithmetic("Evo04sdhCBEvo02EP", "Evo04", 8, "None");
-  latentArithmetic.calculateLatentArithmetic("Evo04tpiA", "Evo04", 9, "None");
-  latentArithmetic.calculateLatentArithmetic("Evo04tpiAEvo01EP", "Evo04", 10, "None");
-  latentArithmetic.calculateLatentArithmetic("Evo04tpiAEvo02EP", "Evo04", 10, "None");
+  latentArithmetic.calculateLatentArithmetic("Evo04Evo01EP", "Evo04", 1, "None");
+  latentArithmetic.calculateLatentArithmetic("Evo04Evo02EP", "Evo04", 1, "None");
+  latentArithmetic.calculateLatentArithmetic("Evo04gnd", "Evo04", 2, "None");
+  latentArithmetic.calculateLatentArithmetic("Evo04gndEvo01EP", "Evo04", 3, "None");
+  latentArithmetic.calculateLatentArithmetic("Evo04gndEvo02EP", "Evo04", 3, "None");
+  latentArithmetic.calculateLatentArithmetic("Evo04pgi", "Evo04", 4, "None");
+  latentArithmetic.calculateLatentArithmetic("Evo04pgiEvo01EP", "Evo04", 5, "None");
+  latentArithmetic.calculateLatentArithmetic("Evo04pgiEvo02EP", "Evo04", 5, "None");
+  latentArithmetic.calculateLatentArithmetic("Evo04ptsHIcrr", "Evo04", 6, "None");
+  latentArithmetic.calculateLatentArithmetic("Evo04ptsHIcrrEvo01EP", "Evo04", 7, "None");
+  latentArithmetic.calculateLatentArithmetic("Evo04ptsHIcrrEvo02EP", "Evo04", 7, "None");
+  latentArithmetic.calculateLatentArithmetic("Evo04sdhCB", "Evo04", 8, "None");
+  latentArithmetic.calculateLatentArithmetic("Evo04sdhCBEvo01EP", "Evo04", 9, "None");
+  latentArithmetic.calculateLatentArithmetic("Evo04sdhCBEvo02EP", "Evo04", 9, "None");
+  latentArithmetic.calculateLatentArithmetic("Evo04tpiA", "Evo04", 10, "None");
+  latentArithmetic.calculateLatentArithmetic("Evo04tpiAEvo01EP", "Evo04", 11, "None");
+  latentArithmetic.calculateLatentArithmetic("Evo04tpiAEvo02EP", "Evo04", 11, "None");
 
   // 1. EPi - KO -> Ref
   std::cout << "Running EPi - KO -> Ref" << std::endl;
   latentArithmetic.calculateLatentArithmetic("Evo04gndEvo01EP", "Evo04gnd", 0, "-");
   latentArithmetic.calculateLatentArithmetic("Evo04gndEvo02EP", "Evo04gnd", 0, "-");
-  //...
+  latentArithmetic.calculateLatentArithmetic("Evo04pgiEvo01EP", "Evo04pgi", 0, "-");
+  latentArithmetic.calculateLatentArithmetic("Evo04pgiEvo02EP", "Evo04pgi", 0, "-");
+  latentArithmetic.calculateLatentArithmetic("Evo04ptsHIcrrEvo01EP", "Evo04ptsHIcrr", 0, "-");
+  latentArithmetic.calculateLatentArithmetic("Evo04ptsHIcrrEvo02EP", "Evo04ptsHIcrr", 0, "-");
+  latentArithmetic.calculateLatentArithmetic("Evo04sdhCBEvo01EP", "Evo04sdhCB", 0, "-");
+  latentArithmetic.calculateLatentArithmetic("Evo04sdhCBEvo02EP", "Evo04sdhCB", 0, "-");
+  latentArithmetic.calculateLatentArithmetic("Evo04tpiAEvo01EP", "Evo04tpiA", 0, "-");
+  latentArithmetic.calculateLatentArithmetic("Evo04tpiAEvo02EP", "Evo04tpiA", 0, "-");
 
   // 2. EPi - Ref -> KO
   std::cout << "Running EPi - Ref -> KO" << std::endl;
   latentArithmetic.calculateLatentArithmetic("Evo04gndEvo01EP", "Evo04", 1, "-");
   latentArithmetic.calculateLatentArithmetic("Evo04gndEvo02EP", "Evo04", 1, "-");
-  //...
+  latentArithmetic.calculateLatentArithmetic("Evo04pgiEvo01EP", "Evo04", 3, "-");
+  latentArithmetic.calculateLatentArithmetic("Evo04pgiEvo02EP", "Evo04", 3, "-");
+  latentArithmetic.calculateLatentArithmetic("Evo04ptsHIcrrEvo01EP", "Evo04", 5, "-");
+  latentArithmetic.calculateLatentArithmetic("Evo04ptsHIcrrEvo02EP", "Evo04", 5, "-");
+  latentArithmetic.calculateLatentArithmetic("Evo04sdhCBEvo01EP", "Evo04", 7, "-");
+  latentArithmetic.calculateLatentArithmetic("Evo04sdhCBEvo02EP", "Evo04", 7, "-");
+  latentArithmetic.calculateLatentArithmetic("Evo04tpiAEvo01EP", "Evo04", 9, "-");
+  latentArithmetic.calculateLatentArithmetic("Evo04tpiAEvo02EP", "Evo04", 9, "-");
 
   // 3. KOi + Ref -> EPi
   std::cout << "Running KOi + Ref -> EPi" << std::endl;
