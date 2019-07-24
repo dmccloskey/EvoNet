@@ -269,13 +269,15 @@ public:
 		void setBatchAndMemorySizes(const int& batch_size, const int& memory_size);   ///< batch and memory sizes setter
 		std::pair<int, int> getBatchAndMemorySizes() const; ///< batch and memory sizes getter (non-padded sizes)
 
+    void clear(); ///< clear all member data
+
 		std::map<std::string, std::shared_ptr<Link>> links_; ///< Model links
 		std::map<std::string, std::shared_ptr<Node<TensorT>>> nodes_; ///< Model nodes
 		std::map<std::string, std::shared_ptr<Weight<TensorT>>> weights_; ///< Model nodes
 
   private:
-    int id_; ///< Model ID
-    std::string name_; ///< Model Name
+    int id_ = -1; ///< Model ID
+    std::string name_ = ""; ///< Model Name
     std::set<std::pair<std::string, std::string>> cyclic_pairs_;
     std::vector<std::shared_ptr<Node<TensorT>>> input_nodes_;
     std::vector<std::shared_ptr<Node<TensorT>>> output_nodes_;
@@ -1009,5 +1011,19 @@ public:
 	{
 		return std::pair<int, int>(batch_size_,memory_size_);
 	}
+  template<typename TensorT>
+  inline void Model<TensorT>::clear()
+  {
+    id_ = -1;
+    name_ = "";
+    cyclic_pairs_.clear();
+    input_nodes_.clear();
+    output_nodes_.clear();
+    batch_size_ = 0;
+    memory_size_ = 0;
+    weights_.clear();
+    nodes_.clear();
+    links_.clear();
+  }
 }
 #endif //SMARTPEAK_MODEL_H

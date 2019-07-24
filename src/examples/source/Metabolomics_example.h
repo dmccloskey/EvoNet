@@ -374,3 +374,35 @@ bool WritePWFeatureSummaries(const std::string& filename, const PWFeatureSummari
 	}
 	return true;
 }
+template <typename TensorT>
+bool WriteLatentArithmeticClassifications(const std::string& filename, const std::vector<std::string>& classification_labels, const std::vector<Eigen::Tensor<TensorT, 2>>& classification_results, const std::vector<std::string>& cases, const std::vector<int>& class_expected_index) {
+  // Determine the dimensions and # of input
+  const int batch_size = classification_results.front().dimension(0);
+  const int labels_size = classification_results.front().dimension(1);
+  const int n_cases = classification_results.size();
+  assert(labels_size == classification_labels.size());
+  assert(n_cases == cases.size());
+
+  // Calculate the class index predicted
+  std::vector<TensorT> perc_true_per_case;
+  for (int case_iter = 0; case_iter < n_cases; ++case_iter) {
+    Eigen::Tensor<TensorT, 1> max_tensor = classification_results.at(case_iter).maximum(Eigen::array<Eigen::Index, 1>({ 1 }));
+    Eigen::Tensor<TensorT, 2> max_bcast = max_tensor.broadcast(Eigen::array<Eigen::Index, 2>({ 1, labels_size }));
+    auto selected = (max_bcast == classification_results.at(case_iter)).select(max_bcast.constant(1), max_bcast.constant(0));
+    Eigen::Tensor<TensorT, 0> predicted_true = selected.chip(class_expected_index.at(case_iter), 1).sum();
+    TensorT perc_true = predicted_true(0) / batch_size;
+    perc_true_per_case.push_back(perc_true);
+  }
+
+  // Export the results to file
+  CSVWriter csvwriter(filename);
+  std::vector<std::string> headers = { "Feature", "Sig_features" };
+  csvwriter.writeDataInRow(headers.begin(), headers.end());
+  for (const auto& pw_feature_summary : pw_feature_summaries) {
+    std::vector<std::string> line;
+    line.push_back(pw_feature_summary.feature_name);
+    line.push_back(std::to_string(pw_feature_summary.n_significant));
+    csvwriter.writeDataInRow(line.begin(), line.end());
+  }
+  return true;
+}
