@@ -758,8 +758,8 @@ BOOST_AUTO_TEST_CASE(addLSTMBlock1)
     "LSTM-BlockGateForget-bias_to_LSTM-BlockGateForget","LSTM-BlockGateInput-bias_to_LSTM-BlockGateInput","LSTM-BlockGateOutput-bias_to_LSTM-BlockGateOutput",
     "LSTM-BlockInput-000000000000-bias-000000000000_to_LSTM-BlockInput-000000000000","LSTM-BlockInput-000000000001-bias-000000000001_to_LSTM-BlockInput-000000000001" };
   std::vector<float> weight_values_test = {
-    1, 0.945317, 0.945317, 0.86389, 0.86389, 1, 0.890634, 0.890634, 0.727781, 0.727781,
-    1, 0.851142, 0.851142, 0.629483, 1, 0.851142, 0.851142, 0.629483, 0, 0,
+    1, 0.843730986, 0.843730986, 0.876494527, 0.876494527, 1, 0.687461972, 0.687461972, 0.752988994, 0.752988994,
+    1, 0.574605703, 0.574605703, 0.663794279, 1, 0.574605703, 0.574605703, 0.663794279, 0, 0,
     0, 0, 0};
   for (int i = 0; i < weight_names.size(); ++i) {
     //std::cout << weight_names.at(i) << " Weight: " << model.getWeightsMap().at(weight_names.at(i))->getWeight() << std::endl;
@@ -831,8 +831,8 @@ BOOST_AUTO_TEST_CASE(addDotProdAttention1)
 
   std::vector<float> weight_values_test = { 
     0.57735, 0.57735, 0.57735, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 0.944444, 0.944444,
-    0.944444, 1, 1, 1, 1, 1, 1, 0.777778, 0.777778, 0.777778,
+    1, 1, -200.35054, -200.35054, -200.35054, -200.35054, -200.35054, -200.35054, 0.981481493, 0.981481493,
+    0.981481493, -804.402161, -804.402161, -804.402161, -804.402161, -804.402161, -804.402161, 0.92592591, 0.92592591, 0.92592591,
     1, 1, 1 };
   for (int i = 0; i < weight_names.size(); ++i) {
     //std::cout << weight_names.at(i) << " Weight: " << model.getWeightsMap().at(weight_names.at(i))->getWeight() << std::endl;
@@ -1011,7 +1011,7 @@ BOOST_AUTO_TEST_CASE(checkStableSoftMaxXEntropy)
   // test for the expected weights
   std::vector<std::string> weight_names = { "Output-bias_000000000000_to_Output_000000000000", "Output-bias_000000000001_to_Output_000000000001",
     "Input_000000000000_to_Output_000000000000", "Input_000000000000_to_Output_000000000001", "Input_000000000000_to_Output_000000000000", "Input_000000000000_to_Output_000000000001" };
-  std::vector<float> weight_values_test = { 0, 0, 2.08731, 1.81548285, 2.08731, 1.81548285 };
+  std::vector<float> weight_values_test = { 0, 0, 0.0486075282, -0.0873061419, 0.0486075282, -0.0873061419 };
   for (int i = 0; i < weight_names.size(); ++i) {
     //std::cout << weight_names.at(i) << " Weight: " << model.getWeightsMap().at(weight_names.at(i))->getWeight() << std::endl;
     BOOST_CHECK_CLOSE(model.getWeightsMap().at(weight_names.at(i))->getWeight(), weight_values_test.at(i), 1e-4);

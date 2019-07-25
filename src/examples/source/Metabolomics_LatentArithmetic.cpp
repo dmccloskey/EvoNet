@@ -814,6 +814,7 @@ public:
 
     // evaluate the decoder
     Eigen::Tensor<TensorT, 3> time_steps_1_input(model_trainer.getBatchSize(), model_trainer.getMemorySize(), model_trainer.getNEpochsEvaluation());
+    model_trainer.setLossOutputNodes({ output_nodes_reconstruction });
     Eigen::Tensor<TensorT, 4> reconstructed_output = model_trainer.evaluateModel(
         model_decoder, encoding_output, time_steps_1_input, encoding_nodes, model_logger, model_interpreter);
 
@@ -960,7 +961,7 @@ int main(int argc, char** argv)
   ModelLogger<float> model_logger(true, true, false, false, false, false, false, false);
 
   // read in the metabolomics data and models
-  LatentArithmetic<float> latentArithmetic(8, false, true);
+  LatentArithmetic<float> latentArithmetic(16, false, true);
   latentArithmetic.setMetabolomicsData(biochem_rxns_filename, metabo_data_filename_train, meta_data_filename_train,
     metabo_data_filename_test, meta_data_filename_test);
   latentArithmetic.setEncDecModels(model_trainer, model_encoder_weights_filename, model_decoder_weights_filename);
@@ -988,6 +989,7 @@ int main(int argc, char** argv)
 
   std::cout << "Running Control (None)" << std::endl;
   for (int case_iter = 0; case_iter < condition_1_test_none.size(); ++case_iter) {
+    std::cout << condition_1_test_none.at(case_iter) << " None:" << std::endl;
     auto encoding_output = latentArithmetic.generateEncoding(condition_1_test_none.at(case_iter), model_trainer, model_logger, model_interpreter);
     reconstruction_output = latentArithmetic.generateReconstruction(encoding_output, model_trainer, model_logger, model_interpreter);
     latentArithmetic.scoreReconstructionSimilarity(expected_test_none.at(case_iter), reconstruction_output, PearsonRTensorOp<float, Eigen::DefaultDevice>(), model_trainer);
