@@ -211,10 +211,10 @@ public:
     model.setId(0);
     model.setName("VAE");
     const int n_en_hidden_0 = 64;
-    const int n_en_hidden_1 = 0;
+    const int n_en_hidden_1 = 64;
     const int n_en_hidden_2 = 0;
     const int n_de_hidden_0 = 64;
-    const int n_de_hidden_1 = 0;
+    const int n_de_hidden_1 = 64;
     const int n_de_hidden_2 = 0;
     ModelBuilder<TensorT> model_builder;
 
@@ -572,7 +572,7 @@ void main_reconstruction(const std::string& biochem_rxns_filename,
   if (simulate_MARs) n_input_nodes = reaction_model.reaction_ids_.size();
   else n_input_nodes = reaction_model.component_group_names_.size();
   const int n_output_nodes = n_input_nodes;
-  const int encoding_size = 6;
+  const int encoding_size = 16;
   metabolomics_data.n_encodings_ = encoding_size;
   std::vector<std::string> input_nodes;
   std::vector<std::string> output_nodes;
@@ -639,8 +639,8 @@ void main_reconstruction(const std::string& biochem_rxns_filename,
   model_trainer.setLossFunctions({
     std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>(1e-6, 1.0)),
     //std::shared_ptr<LossFunctionOp<float>>(new BCEWithLogitsOp<float>(1e-6, 1.0)),
-    std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceMuOp<float>(1e-6, 30.0)),
-    std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceLogVarOp<float>(1e-6, 30.0)) });
+    std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceMuOp<float>(1e-6, 10.0)),
+    std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceLogVarOp<float>(1e-6, 10.0)) });
   model_trainer.setLossFunctionGrads({
     std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>(1e-6, 1.0)),
     //std::shared_ptr<LossFunctionGradOp<float>>(new BCEWithLogitsGradOp<float>(1e-6, 1.0)),
