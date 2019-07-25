@@ -44,8 +44,8 @@ BOOST_AUTO_TEST_CASE(operationfunctionAccuracyBCOp)
     });
   Eigen::Tensor<float, 3> y_pred(batch_size, memory_size, layer_size);
   y_pred.setValues({
-    {{3, 2, 1, 0}, {0, 0, 0, 0}},
-    {{0, 1, 2, 3}, {0, 0, 0, 0}}
+    {{1, 0, 1, 0}, {0, 0, 0, 0}},
+    {{0, 1, 0, 1}, {0, 0, 0, 0}}
     });
 
   float error_ptr[] = { 0, 0, 0, 0 };
@@ -53,10 +53,10 @@ BOOST_AUTO_TEST_CASE(operationfunctionAccuracyBCOp)
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
   Eigen::TensorMap<Eigen::Tensor<float, 2>> error(error_ptr, n_metrics, memory_size);
-  //BOOST_CHECK_CLOSE(error(0, 0), 0, 1e-4);
-  //BOOST_CHECK_CLOSE(error(1, 0), 0.5, 1e-4);
-  //BOOST_CHECK_CLOSE(error(0, 1), 0, 1e-4);
-  //BOOST_CHECK_CLOSE(error(1, 1), 0, 1e-4);
+  BOOST_CHECK_CLOSE(error(0, 0), 0, 1e-4);
+  BOOST_CHECK_CLOSE(error(1, 0), 0.5, 1e-4);
+  BOOST_CHECK_CLOSE(error(0, 1), 0, 1e-4);
+  BOOST_CHECK_CLOSE(error(1, 1), 0, 1e-4);
 }
 
 /**
@@ -188,8 +188,8 @@ BOOST_AUTO_TEST_CASE(operationfunctionPrecisionBCOp)
     });
   Eigen::Tensor<float, 3> y_pred(batch_size, memory_size, layer_size);
   y_pred.setValues({
-    {{3, 2, 1, 0}, {0, 0, 0, 0}},
-    {{0, 1, 2, 3}, {0, 0, 0, 0}}
+    {{1, 0, 1, 0}, {0, 0, 0, 0}},
+    {{0, 1, 0, 1}, {0, 0, 0, 0}}
     });
 
   float error_ptr[] = { 0, 0, 0, 0 };
@@ -197,10 +197,10 @@ BOOST_AUTO_TEST_CASE(operationfunctionPrecisionBCOp)
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
   Eigen::TensorMap<Eigen::Tensor<float, 2>> error(error_ptr, n_metrics, memory_size);
-  //BOOST_CHECK_CLOSE(error(0, 0), 0, 1e-4);
-  //BOOST_CHECK_CLOSE(error(1, 0), 0.5, 1e-4);
-  //BOOST_CHECK_CLOSE(error(0, 1), 0, 1e-4);
-  //BOOST_CHECK_CLOSE(error(1, 1), 0, 1e-4);
+  BOOST_CHECK_CLOSE(error(0, 0), 0, 1e-4);
+  BOOST_CHECK_CLOSE(error(1, 0), 0.25, 1e-4);
+  BOOST_CHECK_CLOSE(error(0, 1), 0, 1e-4);
+  BOOST_CHECK_CLOSE(error(1, 1), 0, 1e-4);
 }
 
 /**
@@ -332,8 +332,8 @@ BOOST_AUTO_TEST_CASE(operationfunctionRecallBCOp)
     });
   Eigen::Tensor<float, 3> y_pred(batch_size, memory_size, layer_size);
   y_pred.setValues({
-    {{3, 2, 1, 0}, {0, 0, 0, 0}},
-    {{0, 1, 2, 3}, {0, 0, 0, 0}}
+    {{1, 0, 1, 0}, {0, 0, 0, 0}},
+    {{0, 1, 0, 1}, {0, 0, 0, 0}}
     });
 
   float error_ptr[] = { 0, 0, 0, 0 };
@@ -341,10 +341,10 @@ BOOST_AUTO_TEST_CASE(operationfunctionRecallBCOp)
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
   Eigen::TensorMap<Eigen::Tensor<float, 2>> error(error_ptr, n_metrics, memory_size);
-  //BOOST_CHECK_CLOSE(error(0, 0), 0, 1e-4);
-  //BOOST_CHECK_CLOSE(error(1, 0), 0.5, 1e-4);
-  //BOOST_CHECK_CLOSE(error(0, 1), 0, 1e-4);
-  //BOOST_CHECK_CLOSE(error(1, 1), 0, 1e-4);
+  BOOST_CHECK_CLOSE(error(0, 0), 0, 1e-4);
+  BOOST_CHECK_CLOSE(error(1, 0), 0.5, 1e-4);
+  BOOST_CHECK_CLOSE(error(0, 1), 0, 1e-4);
+  BOOST_CHECK_CLOSE(error(1, 1), 0, 1e-4);
 }
 
 /**
@@ -524,8 +524,8 @@ BOOST_AUTO_TEST_CASE(operationfunctionF1ScoreBCOp)
     });
   Eigen::Tensor<float, 3> y_pred(batch_size, memory_size, layer_size);
   y_pred.setValues({
-    {{3, 2, 1, 0}, {0, 0, 0, 0}},
-    {{0, 1, 2, 3}, {0, 0, 0, 0}}
+    {{1, 0, 1, 0}, {0, 0, 0, 0}},
+    {{0, 1, 0, 1}, {0, 0, 0, 0}}
     });
 
   float error_ptr[] = { 0, 0, 0, 0 };
@@ -533,10 +533,10 @@ BOOST_AUTO_TEST_CASE(operationfunctionF1ScoreBCOp)
 
   operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
   Eigen::TensorMap<Eigen::Tensor<float, 2>> error(error_ptr, n_metrics, memory_size);
-  //BOOST_CHECK_CLOSE(error(0, 0), 0, 1e-4);
-  //BOOST_CHECK_CLOSE(error(1, 0), 0.66666667, 1e-4);
-  //BOOST_CHECK_CLOSE(error(0, 1), 0, 1e-4);
-  //BOOST_CHECK_CLOSE(error(1, 1), 0, 1e-4);
+  BOOST_CHECK_CLOSE(error(0, 0), 0, 1e-4);
+  BOOST_CHECK_CLOSE(error(1, 0), 0.333333343, 1e-4);
+  BOOST_CHECK_CLOSE(error(0, 1), 0, 1e-4);
+  BOOST_CHECK_CLOSE(error(1, 1), 0, 1e-4);
 }
 
 /**
