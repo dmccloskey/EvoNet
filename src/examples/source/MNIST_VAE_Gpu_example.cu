@@ -199,15 +199,15 @@ public:
 
     // initialize all logs
     if (n_epochs == 0) {
-      //model_logger.setLogExpectedPredictedEpoch(true);
+      model_logger.setLogExpectedPredictedEpoch(true);
       model_logger.initLogs(model);
     }
 
-    //// Per n epoch logging
-    //if (n_epochs % 10 == 0) {
-    //  model_logger.setLogExpectedPredictedEpoch(true);
-    //  model_interpreter.getModelResults(model, true, false, false);
-    //}
+    // Per n epoch logging
+    if (n_epochs % 10 == 0) {
+      model_logger.setLogExpectedPredictedEpoch(true);
+      model_interpreter.getModelResults(model, true, false, false);
+    }
 
     // Create the metric headers and data arrays
     std::vector<std::string> log_train_headers = { "Train_Error" };

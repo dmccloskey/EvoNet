@@ -926,8 +926,8 @@ int main(int argc, char** argv)
 
   // Make the filenames
   const std::string biochem_rxns_filename = data_dir + "iJO1366.csv";
-  const std::string model_encoder_weights_filename = data_dir + "TrainTestData/SampledArithmeticMath/VAE_4000_weights.csv"; // encoding size of 3
-  const std::string model_decoder_weights_filename = data_dir + "TrainTestData/SampledArithmeticMath/VAE_4000_weights.csv"; // encoding size of 6
+  const std::string model_encoder_weights_filename = data_dir + "TrainTestData/SampledArithmeticMath/VAE_5000_weights.csv"; 
+  const std::string model_decoder_weights_filename = data_dir + "TrainTestData/SampledArithmeticMath/VAE_5000_weights.csv"; 
   // NOTE: be sure to re-name the Input_000000000000-LinearScale_to_... weights to Input_000000000000_to_...
   //       using regex "-LinearScale_to_FC0" with "_to_FC0"
   const std::string model_classifier_weights_filename = data_dir + "TrainTestData/SampledArithmeticMath/Classifier_5000_weights.csv";
