@@ -827,4 +827,100 @@ BOOST_AUTO_TEST_CASE(operationfunctionMAEOp)
   BOOST_CHECK_CLOSE(error(1, 1), 0, 1e-4);
 }
 
+/**
+  CosineSimilarityOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorCosineSimilarityOp)
+{
+  CosineSimilarityTensorOp<float, Eigen::DefaultDevice>* ptrCosineSimilarity = nullptr;
+  CosineSimilarityTensorOp<float, Eigen::DefaultDevice>* nullPointerCosineSimilarity = nullptr;
+  BOOST_CHECK_EQUAL(ptrCosineSimilarity, nullPointerCosineSimilarity);
+}
+
+BOOST_AUTO_TEST_CASE(destructorCosineSimilarityOp)
+{
+  CosineSimilarityTensorOp<float, Eigen::DefaultDevice>* ptrCosineSimilarity = nullptr;
+  ptrCosineSimilarity = new CosineSimilarityTensorOp<float, Eigen::DefaultDevice>();
+  delete ptrCosineSimilarity;
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionCosineSimilarityOp)
+{
+  CosineSimilarityTensorOp<float, Eigen::DefaultDevice> operation;
+
+  const int memory_size = 2;
+  const int batch_size = 2;
+  const int layer_size = 4;
+  const int n_metrics = 2;
+  const int time_step = 0;
+  const int metric_index = 1;
+  Eigen::Tensor<float, 2> y_true(batch_size, layer_size);
+  y_true.setValues({
+    {1, 0, 0, 0}, {1, 0, 0, 0}
+    });
+  Eigen::Tensor<float, 3> y_pred(batch_size, memory_size, layer_size);
+  y_pred.setValues({
+    {{3, 2, 1, 0}, {0, 0, 0, 0}},
+    {{0, 1, 2, 3}, {0, 0, 0, 0}}
+    });
+
+  float error_ptr[] = { 0, 0, 0, 0 };
+  Eigen::DefaultDevice device;
+
+  operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
+  Eigen::TensorMap<Eigen::Tensor<float, 2>> error(error_ptr, n_metrics, memory_size);
+  BOOST_CHECK_CLOSE(error(0, 0), 0, 1e-4);
+  BOOST_CHECK_CLOSE(error(1, 0), 0.801783681, 1e-4);
+  BOOST_CHECK_CLOSE(error(0, 1), 0, 1e-4);
+  BOOST_CHECK_CLOSE(error(1, 1), 0, 1e-4);
+}
+
+/**
+  PearsonROp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorPearsonROp)
+{
+  PearsonRTensorOp<float, Eigen::DefaultDevice>* ptrPearsonR = nullptr;
+  PearsonRTensorOp<float, Eigen::DefaultDevice>* nullPointerPearsonR = nullptr;
+  BOOST_CHECK_EQUAL(ptrPearsonR, nullPointerPearsonR);
+}
+
+BOOST_AUTO_TEST_CASE(destructorPearsonROp)
+{
+  PearsonRTensorOp<float, Eigen::DefaultDevice>* ptrPearsonR = nullptr;
+  ptrPearsonR = new PearsonRTensorOp<float, Eigen::DefaultDevice>();
+  delete ptrPearsonR;
+}
+
+BOOST_AUTO_TEST_CASE(operationfunctionPearsonROp)
+{
+  PearsonRTensorOp<float, Eigen::DefaultDevice> operation;
+
+  const int memory_size = 2;
+  const int batch_size = 2;
+  const int layer_size = 4;
+  const int n_metrics = 2;
+  const int time_step = 0;
+  const int metric_index = 1;
+  Eigen::Tensor<float, 2> y_true(batch_size, layer_size);
+  y_true.setValues({
+    {1, 0, 0, 0}, {1, 0, 0, 0}
+    });
+  Eigen::Tensor<float, 3> y_pred(batch_size, memory_size, layer_size);
+  y_pred.setValues({
+    {{3, 2, 1, 0}, {0, 0, 0, 0}},
+    {{2, 3, 2, 3}, {0, 0, 0, 0}}
+    });
+
+  float error_ptr[] = { 0, 0, 0, 0 };
+  Eigen::DefaultDevice device;
+
+  operation(y_pred.data(), y_true.data(), error_ptr, batch_size, memory_size, layer_size, n_metrics, time_step, metric_index, device);
+  Eigen::TensorMap<Eigen::Tensor<float, 2>> error(error_ptr, n_metrics, memory_size);
+  BOOST_CHECK_CLOSE(error(0, 0), 0, 1e-4);
+  BOOST_CHECK_CLOSE(error(1, 0), 0.197246432, 1e-4);
+  BOOST_CHECK_CLOSE(error(0, 1), 0, 1e-4);
+  BOOST_CHECK_CLOSE(error(1, 1), 0, 1e-4);
+}
+
 BOOST_AUTO_TEST_SUITE_END()

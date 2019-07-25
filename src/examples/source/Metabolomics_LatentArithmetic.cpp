@@ -117,7 +117,7 @@ public:
     model.setId(0);
     model.setName("VAE-Encoder");
     const int n_en_hidden_0 = 64;
-    const int n_en_hidden_1 = 64;
+    const int n_en_hidden_1 = 0;
     const int n_en_hidden_2 = 0;
     ModelBuilder<TensorT> model_builder;
 
@@ -225,7 +225,7 @@ public:
     model.setId(0);
     model.setName("VAE-Decoder");
     const int n_de_hidden_0 = 64;
-    const int n_de_hidden_1 = 64;
+    const int n_de_hidden_1 = 0;
     const int n_de_hidden_2 = 0;
     ModelBuilder<TensorT> model_builder;
 
@@ -330,7 +330,7 @@ public:
     model.setName("Classifier");
 
     const int n_hidden_0 = 64;
-    const int n_hidden_1 = 64;
+    const int n_hidden_1 = 0;
     const int n_hidden_2 = 0;
 
     ModelBuilder<TensorT> model_builder;
@@ -785,15 +785,11 @@ int main(int argc, char** argv)
 
   // Make the filenames
   const std::string biochem_rxns_filename = data_dir + "iJO1366.csv";
-  const std::string model_encoder_weights_filename = data_dir + "TrainTestData/SampledArithmeticMath/VAE_4000_weights_3DEncoding.csv"; // encoding size of 3
-  const std::string model_decoder_weights_filename = data_dir + "TrainTestData/SampledArithmeticMath/VAE_4000_weights_3DEncoding.csv"; // encoding size of 3
-  //const std::string model_encoder_weights_filename = data_dir + "TrainTestData/SampledArithmeticMath/VAE_4000_weights_8DEncoding.csv"; // encoding size of 8
-  //const std::string model_decoder_weights_filename = data_dir + "TrainTestData/SampledArithmeticMath/VAE_4000_weights_8DEncoding.csv"; // encoding size of 8
-  //const std::string model_encoder_weights_filename = data_dir + "TrainTestData/SampledArithmeticMath/VAE_5000_weights_8DEncoding10KL.csv"; // encoding size of 8
-  //const std::string model_decoder_weights_filename = data_dir + "TrainTestData/SampledArithmeticMath/VAE_5000_weights_8DEncoding10KL.csv"; // encoding size of 8
+  const std::string model_encoder_weights_filename = data_dir + "TrainTestData/SampledArithmeticMath/VAE_7000_weights.csv"; // encoding size of 3
+  const std::string model_decoder_weights_filename = data_dir + "TrainTestData/SampledArithmeticMath/VAE_7000_weights.csv"; // encoding size of 6
   // NOTE: be sure to re-name the Input_000000000000-LinearScale_to_... weights to Input_000000000000_to_...
   //       using regex "-LinearScale_to_FC0" with "_to_FC0"
-  const std::string model_classifier_weights_filename = data_dir + "TrainTestData/SampledArithmeticMath/Classifier_1000_weights.csv";
+  const std::string model_classifier_weights_filename = data_dir + "TrainTestData/SampledArithmeticMath/Classifier_5000_weights.csv";
 
   // ALEsKOs01
   const std::string metabo_data_filename_train = data_dir + "ALEsKOs01_Metabolomics_train.csv";
@@ -808,7 +804,7 @@ int main(int argc, char** argv)
   //const std::string meta_data_filename_test = data_dir + "IndustrialStrains0103_MetaData_test.csv";
 
   // read in the metabolomics data and models
-  LatentArithmetic<float> latentArithmetic(3, false, true);
+  LatentArithmetic<float> latentArithmetic(6, false, true);
   latentArithmetic.setMetabolomicsData(biochem_rxns_filename, metabo_data_filename_train, meta_data_filename_train,
     metabo_data_filename_test, meta_data_filename_test);
   latentArithmetic.setModels(ModelTrainerExt<float>(), model_encoder_weights_filename, model_decoder_weights_filename, model_classifier_weights_filename);

@@ -616,5 +616,65 @@ public:
       error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += ((expected_tensor - predicted_chip).pow(TensorT(2)).pow(TensorT(0.5)) / expected_tensor.constant(TensorT(layer_size) * TensorT(batch_size))).sum();
     };
   };
+
+  /**
+    @brief CosineSimilarity metric function.
+
+    Where CosineSimilarity = A*B/(||A||*||B||)
+
+    Note: need to divide by the batch size if the average value over all batches is needed
+  */
+  template<typename TensorT, typename DeviceT>
+  class CosineSimilarityTensorOp : public MetricFunctionTensorOp<TensorT, DeviceT>
+  {
+  public:
+    using MetricFunctionTensorOp<TensorT, DeviceT>::MetricFunctionTensorOp;
+    std::string getName() { return "CosineSimilarityTensorOp"; }
+    void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size,
+      const int& n_metrics, const int& time_step, const int& metric_index, DeviceT& device) const {
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> expected_tensor(expected, batch_size, layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> predicted_tensor(predicted, batch_size, memory_size, layer_size);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_tensor(error, n_metrics, memory_size);
+      auto predicted_chip = predicted_tensor.chip(time_step, 1);
+      auto dot_prod = (predicted_chip * expected_tensor).sum(Eigen::array<Eigen::Index, 1>({1})); // dim 1 batch_size
+      auto predicted_unit = (predicted_chip.pow(TensorT(2)).sum(Eigen::array<Eigen::Index, 1>({ 1 }))).pow(TensorT(0.5)); // dim 1 batch_size
+      auto expected_unit = (expected_tensor.pow(TensorT(2)).sum(Eigen::array<Eigen::Index, 1>({ 1 }))).pow(TensorT(0.5)); // dim 1 batch_size
+      auto cosine_similarity = dot_prod / (predicted_unit * expected_unit);
+
+      error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += cosine_similarity.sum();
+    };
+  };
+
+  /**
+    @brief PearsonR metric function.
+
+    Where PearsonR = Rxy = Sum(i=1 to n)[(xi-xhat)(yi-yhat)]/(sqrt(Sum(i=1 to n)[(xi-xhat)^2]) * sqrt(Sum(i=1 to n)[(yi-yhat)^2]))
+
+    Note: need to divide by the batch size if the average value over all batches is needed
+  */
+  template<typename TensorT, typename DeviceT>
+  class PearsonRTensorOp : public MetricFunctionTensorOp<TensorT, DeviceT>
+  {
+  public:
+    using MetricFunctionTensorOp<TensorT, DeviceT>::MetricFunctionTensorOp;
+    std::string getName() { return "PearsonRTensorOp"; }
+    void operator()(TensorT* predicted, TensorT* expected, TensorT* error, const int& batch_size, const int& memory_size, const int& layer_size,
+      const int& n_metrics, const int& time_step, const int& metric_index, DeviceT& device) const {
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 3>> expected_tensor(expected, batch_size, layer_size, 1);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 4>> predicted_tensor(predicted, batch_size, memory_size, layer_size, 1);
+      Eigen::TensorMap<Eigen::Tensor<TensorT, 2>> error_tensor(error, n_metrics, memory_size);
+      auto predicted_chip = predicted_tensor.chip(time_step, 1);
+      auto cov = ((predicted_chip.chip(0, 2) - predicted_chip.mean(Eigen::array<Eigen::Index, 1>({ 1 })).broadcast(Eigen::array<Eigen::Index, 2>({ 1, layer_size }))) *
+        (expected_tensor.chip(0, 2) - expected_tensor.mean(Eigen::array<Eigen::Index, 1>({ 1 })).broadcast(Eigen::array<Eigen::Index, 2>({ 1, layer_size })))
+        ).sum(Eigen::array<Eigen::Index, 1>({ 1 })); // Dim 1 batch_size
+      auto predicted_stdev = ((predicted_chip.chip(0, 2) - predicted_chip.mean(Eigen::array<Eigen::Index, 1>({ 1 })).broadcast(Eigen::array<Eigen::Index, 2>({ 1, layer_size }))
+        ).pow(TensorT(2)).sum(Eigen::array<Eigen::Index, 1>({ 1 })).pow(TensorT(0.5))); // Dim 1 batch_size
+      auto expected_stdev = ((expected_tensor.chip(0, 2) - expected_tensor.mean(Eigen::array<Eigen::Index, 1>({ 1 })).broadcast(Eigen::array<Eigen::Index, 2>({ 1, layer_size }))
+        ).pow(TensorT(2)).sum(Eigen::array<Eigen::Index, 1>({ 1 })).pow(TensorT(0.5))); // Dim 1 batch_size
+      auto PearsonR = cov / (predicted_stdev * expected_stdev);
+
+      error_tensor.chip(metric_index, 0).chip(time_step, 0).device(device) += PearsonR.sum();
+    };
+  };
 }
 #endif //SMARTPEAK_METRICFUNCTIONTENSOR_H

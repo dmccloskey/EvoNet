@@ -266,10 +266,14 @@ public:
     // Check point the model every 1000 epochs
     if (n_epochs % 1000 == 0 && n_epochs != 0) {
       model_interpreter.getModelResults(model, false, true, false);
-      ModelFile<TensorT> data;
-      data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
-      ModelInterpreterFileGpu<TensorT> interpreter_data;
-      interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
+      // save the model weights
+      WeightFile<float> weight_data;
+      weight_data.storeWeightValuesCsv(model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model.weights_);
+      // save the model and interpreter in binary format
+      //ModelFile<TensorT> data;
+      //data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
+      //ModelInterpreterFileGpu<TensorT> interpreter_data;
+      //interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
     }
   }
   void trainingModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterGpu<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
@@ -630,11 +634,11 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
   model_trainer.setFastInterpreter(true);
   model_trainer.setPreserveOoO(true);
   model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()),
-    std::shared_ptr<LossFunctionOp<float>>(new BCEOp<float>()),
-    std::shared_ptr<LossFunctionOp<float>>(new BCEOp<float>()) });
+    std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()),
+    std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
   model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()),
-    std::shared_ptr<LossFunctionGradOp<float>>(new BCEGradOp<float>()),
-    std::shared_ptr<LossFunctionGradOp<float>>(new BCEGradOp<float>()) });
+    std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()),
+    std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
   model_trainer.setLossOutputNodes({ output_nodes_intensity, output_nodes_isPeakApex, output_nodes_isPeak });
   model_trainer.setMetricFunctions({ std::shared_ptr<MetricFunctionOp<float>>(new MAEOp<float>()),
     std::shared_ptr<MetricFunctionOp<float>>(new MAEOp<float>()),
