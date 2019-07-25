@@ -501,9 +501,16 @@ namespace SmartPeak
         MetricFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new F1ScoreMCMacroTensorOp<TensorT, DeviceT>();
         return op_tensor_class;
       }
-      // TODO: all other MetricFunction operators
       else if (op_class->getName() == "MAEOp") {
         MetricFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new MAETensorOp<TensorT, DeviceT>();
+        return op_tensor_class;
+      }
+      else if (op_class->getName() == "CosineSimilarityOp") {
+        MetricFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new CosineSimilarityTensorOp<TensorT, DeviceT>();
+        return op_tensor_class;
+      }
+      else if (op_class->getName() == "PearsonROp") {
+        MetricFunctionTensorOp<TensorT, DeviceT>* op_tensor_class = new PearsonRTensorOp<TensorT, DeviceT>();
         return op_tensor_class;
       }
       else {

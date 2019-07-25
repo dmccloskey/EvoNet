@@ -433,4 +433,50 @@ BOOST_AUTO_TEST_CASE(gettersAndSettersMAEOp)
   BOOST_CHECK_EQUAL(operation.getName(), "MAEOp");
 }
 
+/**
+  CosineSimilarityOp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorCosineSimilarityOp)
+{
+  CosineSimilarityOp<double>* ptrCosineSimilarity = nullptr;
+  CosineSimilarityOp<double>* nullPointerCosineSimilarity = nullptr;
+  BOOST_CHECK_EQUAL(ptrCosineSimilarity, nullPointerCosineSimilarity);
+}
+
+BOOST_AUTO_TEST_CASE(destructorCosineSimilarityOp)
+{
+  CosineSimilarityOp<double>* ptrCosineSimilarity = nullptr;
+  ptrCosineSimilarity = new CosineSimilarityOp<double>();
+  delete ptrCosineSimilarity;
+}
+
+BOOST_AUTO_TEST_CASE(gettersAndSettersCosineSimilarityOp)
+{
+  CosineSimilarityOp<float> operation;
+  BOOST_CHECK_EQUAL(operation.getName(), "CosineSimilarityOp");
+}
+
+/**
+  PearsonROp Tests
+*/
+BOOST_AUTO_TEST_CASE(constructorPearsonROp)
+{
+  PearsonROp<double>* ptrPearsonR = nullptr;
+  PearsonROp<double>* nullPointerPearsonR = nullptr;
+  BOOST_CHECK_EQUAL(ptrPearsonR, nullPointerPearsonR);
+}
+
+BOOST_AUTO_TEST_CASE(destructorPearsonROp)
+{
+  PearsonROp<double>* ptrPearsonR = nullptr;
+  ptrPearsonR = new PearsonROp<double>();
+  delete ptrPearsonR;
+}
+
+BOOST_AUTO_TEST_CASE(gettersAndSettersPearsonROp)
+{
+  PearsonROp<float> operation;
+  BOOST_CHECK_EQUAL(operation.getName(), "PearsonROp");
+}
+
 BOOST_AUTO_TEST_SUITE_END()

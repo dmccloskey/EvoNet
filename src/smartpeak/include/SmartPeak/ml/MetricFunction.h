@@ -253,5 +253,29 @@ namespace SmartPeak
 		std::string getName() { return "MAEOp"; };
 		std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
   };
+
+  /**
+    @brief CosineSimilarity function.
+  */
+  template<typename TensorT>
+  class CosineSimilarityOp : public MetricFunctionOp<TensorT>
+  {
+  public:
+    using MetricFunctionOp<TensorT>::MetricFunctionOp;
+    std::string getName() { return "CosineSimilarityOp"; };
+    std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+  };
+
+  /**
+    @brief PearsonR function.
+  */
+  template<typename TensorT>
+  class PearsonROp : public MetricFunctionOp<TensorT>
+  {
+  public:
+    using MetricFunctionOp<TensorT>::MetricFunctionOp;
+    std::string getName() { return "PearsonROp"; };
+    std::vector<TensorT> getParameters() const { return std::vector<TensorT>(); }
+  };
 }
 #endif //SMARTPEAK_METRICFUNCTION_H
