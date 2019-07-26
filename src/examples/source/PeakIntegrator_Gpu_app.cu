@@ -634,11 +634,11 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
   model_trainer.setFastInterpreter(true);
   model_trainer.setPreserveOoO(true);
   model_trainer.setLossFunctions({ std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()),
-    std::shared_ptr<LossFunctionOp<float>>(new BCEOp<float>()),
-    std::shared_ptr<LossFunctionOp<float>>(new BCEOp<float>()) });
+    std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()),
+    std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>()) });
   model_trainer.setLossFunctionGrads({ std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()),
-    std::shared_ptr<LossFunctionGradOp<float>>(new BCEGradOp<float>()),
-    std::shared_ptr<LossFunctionGradOp<float>>(new BCEGradOp<float>()) });
+    std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()),
+    std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>()) });
   model_trainer.setLossOutputNodes({ output_nodes_intensity, output_nodes_isPeakApex, output_nodes_isPeak });
   model_trainer.setMetricFunctions({ std::shared_ptr<MetricFunctionOp<float>>(new MAEOp<float>()),
     std::shared_ptr<MetricFunctionOp<float>>(new PrecisionBCOp<float>()),

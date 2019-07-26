@@ -210,15 +210,12 @@ public:
   void makeModelFCVAE(Model<TensorT>& model, const int& n_inputs, const int& n_outputs, const int& n_encodings, const bool& linear_scale_input, const bool& log_transform_input, const bool& standardize_input, bool add_norm = true) {
     model.setId(0);
     model.setName("VAE");
-
     const int n_en_hidden_0 = 64;
     const int n_en_hidden_1 = 64;
     const int n_en_hidden_2 = 0;
     const int n_de_hidden_0 = 64;
     const int n_de_hidden_1 = 64;
     const int n_de_hidden_2 = 0;
-
-
     ModelBuilder<TensorT> model_builder;
 
     // Add the inputs
@@ -458,6 +455,7 @@ public:
       // save the model weights
       WeightFile<float> weight_data;
       weight_data.storeWeightValuesCsv(model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model.weights_);
+      // save the model and tensors to binary
       ModelFile<TensorT> data;
       data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
       ModelInterpreterFileDefaultDevice<TensorT> interpreter_data;
@@ -531,7 +529,6 @@ void main_reconstruction(const std::string& biochem_rxns_filename,
   // define the data simulator
   BiochemicalReactionModel<float> reaction_model;
   MetDataSimReconstruction<float> metabolomics_data;
-  std::string model_name = "0_Metabolomics";
 
   // Read in the training and validation data
 
@@ -571,12 +568,28 @@ void main_reconstruction(const std::string& biochem_rxns_filename,
   assert(metabolomics_data.model_validation_.labels_.size() == metabolomics_data.model_training_.labels_.size());
   assert(metabolomics_data.model_validation_.component_group_names_.size() == metabolomics_data.model_training_.component_group_names_.size());
 
+  // Balance the sample group names
+  metabolomics_data.model_training_.sample_group_names_ = {
+  "Evo04", "Evo04", "Evo04", "Evo04", "Evo04", "Evo04", "Evo04", "Evo04",
+  "Evo04Evo01EP", "Evo04Evo01EP", "Evo04Evo01EP", "Evo04Evo01EP", "Evo04Evo02EP", "Evo04Evo02EP", "Evo04Evo02EP", "Evo04Evo02EP",
+  "Evo04gnd", "Evo04gnd", "Evo04gnd", "Evo04gnd", "Evo04gnd", "Evo04gnd", "Evo04gnd", "Evo04gnd",
+  "Evo04gndEvo01EP", "Evo04gndEvo01EP", "Evo04gndEvo01EP", "Evo04gndEvo02EP", "Evo04gndEvo02EP", "Evo04gndEvo02EP", "Evo04gndEvo03EP", "Evo04gndEvo03EP",
+  "Evo04sdhCB", "Evo04sdhCB", "Evo04sdhCB", "Evo04sdhCB", "Evo04sdhCB", "Evo04sdhCB", "Evo04sdhCB", "Evo04sdhCB",
+  "Evo04sdhCBEvo01EP", "Evo04sdhCBEvo01EP", "Evo04sdhCBEvo01EP", "Evo04sdhCBEvo02EP", "Evo04sdhCBEvo02EP", "Evo04sdhCBEvo02EP", "Evo04sdhCBEvo03EP", "Evo04sdhCBEvo03EP",
+  "Evo04pgi", "Evo04pgi", "Evo04pgi", "Evo04pgi", "Evo04pgi", "Evo04pgi", "Evo04pgi", "Evo04pgi",
+  "Evo04pgiEvo01EP", "Evo04pgiEvo02EP", "Evo04pgiEvo03EP", "Evo04pgiEvo04EP", "Evo04pgiEvo05EP", "Evo04pgiEvo06EP", "Evo04pgiEvo07EP", "Evo04pgiEvo08EP",
+  "Evo04ptsHIcrr", "Evo04ptsHIcrr", "Evo04ptsHIcrr", "Evo04ptsHIcrr", "Evo04ptsHIcrr", "Evo04ptsHIcrr", "Evo04ptsHIcrr", "Evo04ptsHIcrr",
+  "Evo04ptsHIcrrEvo01EP", "Evo04ptsHIcrrEvo02EP", "Evo04ptsHIcrrEvo03EP", "Evo04ptsHIcrrEvo04EP", "Evo04ptsHIcrrEvo01EP", "Evo04ptsHIcrrEvo02EP", "Evo04ptsHIcrrEvo03EP", "Evo04ptsHIcrrEvo04EP",
+  "Evo04tpiA", "Evo04tpiA", "Evo04tpiA", "Evo04tpiA", "Evo04tpiA", "Evo04tpiA", "Evo04tpiA", "Evo04tpiA",
+  "Evo04tpiAEvo01EP", "Evo04tpiAEvo02EP", "Evo04tpiAEvo03EP", "Evo04tpiAEvo04EP", "Evo04tpiAEvo01EP", "Evo04tpiAEvo02EP", "Evo04tpiAEvo03EP", "Evo04tpiAEvo04EP"
+  };
+
   // Define the model input/output nodes
   int n_input_nodes;
   if (simulate_MARs) n_input_nodes = reaction_model.reaction_ids_.size();
   else n_input_nodes = reaction_model.component_group_names_.size();
   const int n_output_nodes = n_input_nodes;
-  const int encoding_size = 8;
+  const int encoding_size = 16;
   metabolomics_data.n_encodings_ = encoding_size;
   std::vector<std::string> input_nodes;
   std::vector<std::string> output_nodes;
@@ -648,8 +661,8 @@ void main_reconstruction(const std::string& biochem_rxns_filename,
   model_trainer.setLossFunctionGrads({
     std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>(1e-6, 1.0)),
     //std::shared_ptr<LossFunctionGradOp<float>>(new BCEWithLogitsGradOp<float>(1e-6, 1.0)),
-    std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceMuGradOp<float>(1e-6, 1.0)),
-    std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceLogVarGradOp<float>(1e-6, 1.0)) });
+    std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceMuGradOp<float>(1e-6, 10.0)),
+    std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceLogVarGradOp<float>(1e-6, 10.0)) });
   model_trainer.setLossOutputNodes({ output_nodes, encoding_nodes_mu, encoding_nodes_logvar });
   model_trainer.setMetricFunctions({ std::shared_ptr<MetricFunctionOp<float>>(new MAEOp<float>()) });
   model_trainer.setMetricOutputNodes({ output_nodes });

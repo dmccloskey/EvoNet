@@ -182,6 +182,10 @@ public:
     if (n_epochs % 1000 == 0 && n_epochs != 0) {
       // save the model every 1000 epochs
       model_interpreter.getModelResults(model, false, true, false);
+      // save the model weights
+      WeightFile<float> weight_data;
+      weight_data.storeWeightValuesCsv(model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model.weights_);
+      // save the model and tensors to binary
       ModelFile<TensorT> data;
       data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
       ModelInterpreterFileGpu<TensorT> interpreter_data;
@@ -204,7 +208,7 @@ public:
     }
 
     // Per n epoch logging
-    if (n_epochs % 10 == 0) {
+    if (n_epochs % 1000 == 0) {
       model_logger.setLogExpectedPredictedEpoch(true);
       model_interpreter.getModelResults(model, true, false, false);
     }
