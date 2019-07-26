@@ -211,10 +211,10 @@ public:
     model.setId(0);
     model.setName("VAE");
     const int n_en_hidden_0 = 64;
-    const int n_en_hidden_1 = 64;
+    const int n_en_hidden_1 = 0;
     const int n_en_hidden_2 = 0;
     const int n_de_hidden_0 = 64;
-    const int n_de_hidden_1 = 64;
+    const int n_de_hidden_1 = 0;
     const int n_de_hidden_2 = 0;
     ModelBuilder<TensorT> model_builder;
 

@@ -353,7 +353,7 @@ public:
     model.setId(0);
     model.setName("Classifier");
 
-    const int n_hidden_0 = 64;
+    const int n_hidden_0 = 32;
     const int n_hidden_1 = 0;
     const int n_hidden_2 = 0;
 
@@ -674,11 +674,11 @@ public:
       // save the model weights
       WeightFile<float> weight_data;
       weight_data.storeWeightValuesCsv(model.getName() + "_" + std::to_string(n_epochs) + "_weights.csv", model.weights_);
-      // save the model and interpreter in binary format
-      ModelFile<TensorT> data;
-      data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
-      ModelInterpreterFileGpu<TensorT> interpreter_data;
-      interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
+      //// save the model and interpreter in binary format
+      //ModelFile<TensorT> data;
+      //data.storeModelBinary(model.getName() + "_" + std::to_string(n_epochs) + "_model.binary", model);
+      //ModelInterpreterFileGpu<TensorT> interpreter_data;
+      //interpreter_data.storeModelInterpreterBinary(model.getName() + "_" + std::to_string(n_epochs) + "_interpreter.binary", model_interpreter);
     }
   }
   void trainingModelLogger(const int & n_epochs, Model<TensorT>& model, ModelInterpreterGpu<TensorT>& model_interpreter, ModelLogger<TensorT>& model_logger,
@@ -887,19 +887,19 @@ int main(int argc, char** argv)
   // Make the filenames
   const std::string biochem_rxns_filename = data_dir + "iJO1366.csv";
 
-  // ALEsKOs01
-  const std::string metabo_data_filename_train = data_dir + "ALEsKOs01_Metabolomics_train.csv";
-  const std::string meta_data_filename_train = data_dir + "ALEsKOs01_MetaData_train.csv";
-  const std::string metabo_data_filename_test = data_dir + "ALEsKOs01_Metabolomics_test.csv";
-  const std::string meta_data_filename_test = data_dir + "ALEsKOs01_MetaData_test.csv";
+  //// ALEsKOs01
+  //const std::string metabo_data_filename_train = data_dir + "ALEsKOs01_Metabolomics_train.csv";
+  //const std::string meta_data_filename_train = data_dir + "ALEsKOs01_MetaData_train.csv";
+  //const std::string metabo_data_filename_test = data_dir + "ALEsKOs01_Metabolomics_test.csv";
+  //const std::string meta_data_filename_test = data_dir + "ALEsKOs01_MetaData_test.csv";
 
-  //// IndustrialStrains0103
-  //const std::string metabo_data_filename_train = data_dir + "IndustrialStrains0103_Metabolomics_train.csv";
-  //const std::string meta_data_filename_train = data_dir + "IndustrialStrains0103_MetaData_train.csv";
-  //const std::string metabo_data_filename_test = data_dir + "IndustrialStrains0103_Metabolomics_test.csv";
-  //const std::string meta_data_filename_test = data_dir + "IndustrialStrains0103_MetaData_test.csv";
+  // IndustrialStrains0103
+  const std::string metabo_data_filename_train = data_dir + "IndustrialStrains0103_Metabolomics_train.csv";
+  const std::string meta_data_filename_train = data_dir + "IndustrialStrains0103_MetaData_train.csv";
+  const std::string metabo_data_filename_test = data_dir + "IndustrialStrains0103_Metabolomics_test.csv";
+  const std::string meta_data_filename_test = data_dir + "IndustrialStrains0103_MetaData_test.csv";
 
   main_classification(biochem_rxns_filename, metabo_data_filename_train, meta_data_filename_train,
-    metabo_data_filename_test, meta_data_filename_test, true, false, true);
+    metabo_data_filename_test, meta_data_filename_test, true, true, true);
   return 0;
 }
