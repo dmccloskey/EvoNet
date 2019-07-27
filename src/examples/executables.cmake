@@ -11,6 +11,7 @@ set(ml_executables_list
   HarmonicOscillator_example
   KineticModel_example
   KineticModel2_example
+  Metabolomics_BatchCorrection
   Metabolomics_Classification
   Metabolomics_LatentArithmetic
   Metabolomics_VAE
@@ -30,6 +31,7 @@ set(cuda_executables_list
   MNIST_LSTM_Gpu_example
   MNIST_VAE_Gpu_example
   AddProbRec_Gpu_example
+  Metabolomics_BatchCorrection_Gpu
   Metabolomics_Classification_Gpu
   Metabolomics_VAE_Gpu
   Metabolomics_MultiTask_Gpu

@@ -151,6 +151,8 @@ BOOST_AUTO_TEST_CASE(storeAndLoadBinary)
 		weight->setLayerName("Layer_" + std::to_string(i));
 		weight->addTensorIndex(std::make_tuple(i, i + 1, i + 2));
 		weight->addTensorIndex(std::make_tuple(i, i + 3, i + 4));
+    weight->setWeight(float(i));
+    weight->setInitWeight(false);
 		weights.emplace("Weight_" + std::to_string(i), weight);
 	}
 	data.storeWeightsBinary(filename, weights);
@@ -164,6 +166,8 @@ BOOST_AUTO_TEST_CASE(storeAndLoadBinary)
 		BOOST_CHECK_EQUAL(weight_map.second->getName(), "Weight_" + std::to_string(i));
 		BOOST_CHECK_EQUAL(weight_map.second->getModuleName(), "Mod_" + std::to_string(i));
 		BOOST_CHECK_EQUAL(weight_map.second->getLayerName(), "Layer_" + std::to_string(i));
+    BOOST_CHECK_EQUAL(weight_map.second->getWeight(), float(i));
+    BOOST_CHECK(!weight_map.second->getInitWeight());
 		BOOST_CHECK_EQUAL(weight_map.second->getWeightInitOp()->operator()(), 1.0);
 		BOOST_CHECK_CLOSE(weight_map.second->getSolverOp()->operator()(1.0, 2.0), 0.98, 1e-3);
 		BOOST_CHECK_EQUAL(std::get<0>(weight_map.second->getTensorIndex()[0]), i);

@@ -129,6 +129,7 @@ BOOST_AUTO_TEST_CASE(loadModelCsv)
 	std::string filename_weights = "ModelWeightFileTest.csv";
 
   Model<float> model1 = makeModel1();
+  model1.setInputAndOutputNodes();
 	data.storeModelCsv(filename_nodes, filename_links, filename_weights, model1);
 
 	data.loadModelCsv(filename_nodes, filename_links, filename_weights, model_test);
@@ -150,6 +151,7 @@ BOOST_AUTO_TEST_CASE(loadModelBinary)
 	std::string filename = "ModelFileTest.binary";
 
   Model<float> model1 = makeModel1();
+  model1.setInputAndOutputNodes();
 	data.storeModelBinary(filename, model1);
 
 	data.loadModelBinary(filename, model_test);

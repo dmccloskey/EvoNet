@@ -199,15 +199,15 @@ public:
 
     // initialize all logs
     if (n_epochs == 0) {
-      //model_logger.setLogExpectedPredictedEpoch(true);
+      model_logger.setLogExpectedPredictedEpoch(true);
       model_logger.initLogs(model);
     }
 
-    //// Per n epoch logging
-    //if (n_epochs % 10 == 0) {
-    //  model_logger.setLogExpectedPredictedEpoch(true);
-    //  model_interpreter.getModelResults(model, true, false, false);
-    //}
+    // Per n epoch logging
+    if (n_epochs % 1 == 0) {
+      model_logger.setLogExpectedPredictedEpoch(true);
+      model_interpreter.getModelResults(model, true, false, false);
+    }
 
     // Create the metric headers and data arrays
     std::vector<std::string> log_train_headers = { "Train_Error" };
@@ -408,8 +408,8 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
   }
   ModelTrainerExt<float> model_trainer;
   //model_trainer.setBatchSize(1); // evaluation only
-  model_trainer.setBatchSize(64);
-  model_trainer.setNEpochsTraining(200001);
+  model_trainer.setBatchSize(1);
+  model_trainer.setNEpochsTraining(25);
   model_trainer.setNEpochsValidation(25);
   model_trainer.setNEpochsEvaluation(100);
   model_trainer.setMemorySize(1);
@@ -418,15 +418,15 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
   model_trainer.setFindCycles(false);
   model_trainer.setFastInterpreter(true);
   model_trainer.setLossFunctions({
-    std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>(1e-6, 1.0)),
+    std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>(1e-6, 0.0)),
     //std::shared_ptr<LossFunctionOp<float>>(new BCEWithLogitsOp<float>(1e-6, 1.0)),
-    std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceMuOp<float>(1e-6, 0.1)),
-    std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceLogVarOp<float>(1e-6, 0.1)) });
+    std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceMuOp<float>(1e-6, 0.0)),
+    std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceLogVarOp<float>(1e-6, 0.0)) });
   model_trainer.setLossFunctionGrads({
-    std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>(1e-6, 1.0)),
+    std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>(1e-6, 0.0)),
     //std::shared_ptr<LossFunctionGradOp<float>>(new BCEWithLogitsGradOp<float>(1e-6, 1.0)),
-    std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceMuGradOp<float>(1e-6, 0.1)),
-    std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceLogVarGradOp<float>(1e-6, 0.1)) });
+    std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceMuGradOp<float>(1e-6, 0.0)),
+    std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceLogVarGradOp<float>(1e-6, 0.0)) });
   model_trainer.setLossOutputNodes({ output_nodes, encoding_nodes_mu, encoding_nodes_logvar });
   model_trainer.setMetricFunctions({ std::shared_ptr<MetricFunctionOp<float>>(new MAEOp<float>()) });
   model_trainer.setMetricOutputNodes({ output_nodes });
@@ -444,12 +444,11 @@ void main_MNIST(const std::string& data_dir, const bool& make_model, const bool&
   else {
     // read in the trained model
     std::cout << "Reading in the model..." << std::endl;
-    const std::string model_filename = data_dir + "VAE_1000_model.binary";
-    const std::string interpreter_filename = data_dir + "VAE_1000_interpreter.binary";
+    const std::string model_filename = "C:/Users/domccl/Desktop/EvoNetExp/MNIST_VAE_GPU/GPU5a/VAE_9000_model.binary";
     ModelFile<float> model_file;
     model_file.loadModelBinary(model_filename, model);
-    model.setId(1);
-    model.setName("VAE1");
+
+    const std::string interpreter_filename = "C:/Users/domccl/Desktop/EvoNetExp/MNIST_VAE_GPU/GPU5a/VAE_9000_interpreter.binary";
     ModelInterpreterFileDefaultDevice<float> model_interpreter_file;
     model_interpreter_file.loadModelInterpreterBinary(interpreter_filename, model_interpreters[0]); // FIX ME!
   }
@@ -483,7 +482,7 @@ int main(int argc, char** argv)
   //std::string data_dir = "C:/Users/dmccloskey/Documents/GitHub/mnist/";
 
   // run the application
-  main_MNIST(data_dir, true, true);
+  main_MNIST(data_dir, false, true);
 
   return 0;
 }

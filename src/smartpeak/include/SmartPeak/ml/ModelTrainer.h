@@ -801,11 +801,13 @@ private:
 			model.findCycles();
 
 		// compile the graph into a set of operations and allocate all tensors
-		if (this->getVerbosityLevel() >= 2)
-			std::cout << "Interpreting the model..." << std::endl;
-		model_interpreter.checkMemory(model, this->getBatchSize(), this->getMemorySize());
-		model_interpreter.getForwardPropogationOperations(model, this->getBatchSize(), this->getMemorySize(), true, this->getFastInterpreter(), this->getFindCycles(), this->getPreserveOoO());
-		model_interpreter.allocateModelErrorTensor(this->getBatchSize(), this->getMemorySize(), this->metric_output_nodes_.size());
+    if (this->getInterpretModel()) {
+      if (this->getVerbosityLevel() >= 2)
+        std::cout << "Interpreting the model..." << std::endl;
+      model_interpreter.checkMemory(model, this->getBatchSize(), this->getMemorySize());
+      model_interpreter.getForwardPropogationOperations(model, this->getBatchSize(), this->getMemorySize(), true, this->getFastInterpreter(), this->getFindCycles(), this->getPreserveOoO());
+      model_interpreter.allocateModelErrorTensor(this->getBatchSize(), this->getMemorySize(), this->metric_output_nodes_.size());
+    }
 
 		for (int iter = 0; iter < this->getNEpochsTraining(); ++iter) // use n_epochs here
 		{
@@ -874,9 +876,17 @@ private:
 		}
 		// copy out results
 		model_interpreter.getModelResults(model, true, true, true);
-		model_interpreter.clear_cache();
-		model.initNodeTensorIndices();
-		model.initWeightTensorIndices();
+    if (this->getResetInterpreter()) {
+      model_interpreter.clear_cache();
+    }
+    else {
+      model_interpreter.reInitNodes();
+      model_interpreter.reInitModelError();
+    }
+    if (this->getResetModel()) {
+      model.initNodeTensorIndices();
+      model.initWeightTensorIndices();
+    }
 		return model_error;
 	}
 
@@ -926,11 +936,13 @@ private:
       model.findCycles();
 
     // compile the graph into a set of operations and allocate all tensors
-    if (this->getVerbosityLevel() >= 2)
-      std::cout << "Interpreting the model..." << std::endl;
-    model_interpreter.checkMemory(model, this->getBatchSize(), this->getMemorySize());
-    model_interpreter.getForwardPropogationOperations(model, this->getBatchSize(), this->getMemorySize(), true, this->getFastInterpreter(), this->getFindCycles(), this->getPreserveOoO());
-    model_interpreter.allocateModelErrorTensor(this->getBatchSize(), this->getMemorySize(), this->metric_output_nodes_.size());
+    if (this->getInterpretModel()) {
+      if (this->getVerbosityLevel() >= 2)
+        std::cout << "Interpreting the model..." << std::endl;
+      model_interpreter.checkMemory(model, this->getBatchSize(), this->getMemorySize());
+      model_interpreter.getForwardPropogationOperations(model, this->getBatchSize(), this->getMemorySize(), true, this->getFastInterpreter(), this->getFindCycles(), this->getPreserveOoO());
+      model_interpreter.allocateModelErrorTensor(this->getBatchSize(), this->getMemorySize(), this->metric_output_nodes_.size());
+    }
 
     for (int iter = 0; iter < this->getNEpochsTraining(); ++iter) // use n_epochs here
     {
@@ -1092,9 +1104,19 @@ private:
     }
     // copy out results
     model_interpreter.getModelResults(model, true, true, true);
-    model_interpreter.clear_cache();
-    model.initNodeTensorIndices();
-    model.initWeightTensorIndices();
+
+    // initialize the caches and reset the model (if desired)
+    if (this->getResetInterpreter()) {
+      model_interpreter.clear_cache();
+    }
+    else {
+      model_interpreter.reInitNodes();
+      model_interpreter.reInitModelError();
+    }
+    if (this->getResetModel()) {
+      model.initNodeTensorIndices();
+      model.initWeightTensorIndices();
+    }
     return std::make_pair(model_error_training, model_error_validation);
   }
 
@@ -1136,9 +1158,14 @@ private:
 		if (this->getFindCycles())
 			model.findCycles();
 
-		// compile the graph into a set of operations and allocate all tensors
-		model_interpreter.getForwardPropogationOperations(model, this->getBatchSize(), this->getMemorySize(), false, this->getFastInterpreter(), this->getFindCycles(), this->getPreserveOoO());
-		model_interpreter.allocateModelErrorTensor(this->getBatchSize(), this->getMemorySize(), this->metric_output_nodes_.size());
+    // compile the graph into a set of operations and allocate all tensors
+    if (this->getInterpretModel()) {
+      if (this->getVerbosityLevel() >= 2)
+        std::cout << "Interpreting the model..." << std::endl;
+      model_interpreter.checkMemory(model, this->getBatchSize(), this->getMemorySize());
+      model_interpreter.getForwardPropogationOperations(model, this->getBatchSize(), this->getMemorySize(), true, this->getFastInterpreter(), this->getFindCycles(), this->getPreserveOoO());
+      model_interpreter.allocateModelErrorTensor(this->getBatchSize(), this->getMemorySize(), this->metric_output_nodes_.size());
+    }
 
 		for (int iter = 0; iter < this->getNEpochsValidation(); ++iter) // use n_epochs here
 		{
@@ -1146,13 +1173,6 @@ private:
 			model_interpreter.initBiases(model); // create the bias	
       model_interpreter.mapValuesToLayers(model, input.chip(iter, 3), input_nodes, "output"); // Needed for OoO/IG with DAG and DCG
       model_interpreter.mapValuesToLayers(model, input.chip(iter, 3), input_nodes, "input"); // Needed for IG with DAG and DCG
-      //if (this->getPreserveOoO()) {
-      //  model_interpreter.mapValuesToLayers(model, input.chip(iter, 3), input_nodes, "output"); // Needed for OoO/IG with DAG and DCG
-      //}
-      //else {
-      //  model_interpreter.mapValuesToLayers(model, input.chip(iter, 3), input_nodes, "output"); // Needed for OoO/IG with DAG and DCG
-      //  model_interpreter.mapValuesToLayers(model, input.chip(iter, 3), input_nodes, "input"); // Needed for IG with DAG and DCG
-      //}
 
 			// forward propogate
 			if (this->getVerbosityLevel() >= 2)
@@ -1198,9 +1218,19 @@ private:
 		}
 		// copy out results
 		model_interpreter.getModelResults(model, true, true, true);
-		model_interpreter.clear_cache();
-		model.initNodeTensorIndices();
-		model.initWeightTensorIndices();
+
+    // initialize the caches and reset the model (if desired)
+    if (this->getResetInterpreter()) {
+      model_interpreter.clear_cache();
+    }
+    else {
+      model_interpreter.reInitNodes();
+      model_interpreter.reInitModelError();
+    }
+    if (this->getResetModel()) {
+      model.initNodeTensorIndices();
+      model.initWeightTensorIndices();
+    }
 		return model_error;
 	}
 
@@ -1237,8 +1267,13 @@ private:
 		if (this->getFindCycles())
 			model.findCycles();
 
-		// compile the graph into a set of operations and allocate all tensors
-		model_interpreter.getForwardPropogationOperations(model, this->getBatchSize(), this->getMemorySize(), false, this->getFastInterpreter(), this->getFindCycles(), this->getPreserveOoO());
+    // compile the graph into a set of operations and allocate all tensors
+    if (this->getInterpretModel()) {
+      if (this->getVerbosityLevel() >= 2)
+        std::cout << "Interpreting the model..." << std::endl;
+      model_interpreter.checkMemory(model, this->getBatchSize(), this->getMemorySize());
+      model_interpreter.getForwardPropogationOperations(model, this->getBatchSize(), this->getMemorySize(), true, this->getFastInterpreter(), this->getFindCycles(), this->getPreserveOoO());
+    }
 
 		for (int iter = 0; iter < this->getNEpochsEvaluation(); ++iter) // use n_epochs here
 		{
@@ -1281,9 +1316,16 @@ private:
 		}
 		// copy out results
 		model_interpreter.getModelResults(model, true, true, false);
-		model_interpreter.clear_cache();
-		model.initNodeTensorIndices();
-		model.initWeightTensorIndices();
+    if (this->getResetInterpreter()) {
+      model_interpreter.clear_cache();
+    }
+    else {
+      model_interpreter.reInitNodes();
+    }
+    if (this->getResetModel()) {
+      model.initNodeTensorIndices();
+      model.initWeightTensorIndices();
+    }
 		return model_output;
 	}
 	template<typename TensorT, typename InterpreterT>

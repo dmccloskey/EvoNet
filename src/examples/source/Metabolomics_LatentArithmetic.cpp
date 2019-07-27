@@ -30,14 +30,14 @@ public:
     // infer data dimensions based on the input tensors
     const int batch_size = input_data.dimension(0);
     const int memory_size = input_data.dimension(1);
-    const int n_input_nodes = input_data.dimension(2);
+    const int n_input_nodes_ = input_data.dimension(2);
     const int n_epochs = input_data.dimension(3);
     int n_input_pixels;
     if (train)
       n_input_pixels = this->model_training_.reaction_ids_.size();
     else
       n_input_pixels = this->model_validation_.reaction_ids_.size();
-    assert(n_input_nodes == n_input_pixels);
+    assert(n_input_nodes_ == n_input_pixels);
 
     for (int epoch_iter = 0; epoch_iter < n_epochs; ++epoch_iter) {
       for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
@@ -63,7 +63,7 @@ public:
     // infer data dimensions based on the input tensors
     const int batch_size = input_data.dimension(0);
     const int memory_size = input_data.dimension(1);
-    const int n_input_nodes = input_data.dimension(2);
+    const int n_input_nodes_ = input_data.dimension(2);
     const int n_epochs = input_data.dimension(3);
     int n_input_pixels;
     if (train)
@@ -71,7 +71,7 @@ public:
     else
       n_input_pixels = this->model_validation_.component_group_names_.size();
 
-    assert(n_input_nodes == n_input_pixels);
+    assert(n_input_nodes_ == n_input_pixels);
 
     for (int epoch_iter = 0; epoch_iter < n_epochs; ++epoch_iter) {
       for (int batch_iter = 0; batch_iter < batch_size; ++batch_iter) {
@@ -455,7 +455,7 @@ template<typename TensorT>
 class LatentArithmetic {
 public:
   LatentArithmetic(const int& encoding_size, const bool& simulate_MARs, const bool& sample_concs) :
-    encoding_size(encoding_size), simulate_MARs(simulate_MARs), sample_concs(sample_concs) {};
+    encoding_size_(encoding_size), simulate_MARs_(simulate_MARs), sample_concs_(sample_concs) {};
   ~LatentArithmetic() = default;
   /*
   @brief Write the raw classification results to the console for debugging
@@ -521,81 +521,92 @@ public:
     const std::string& metabo_data_filename_train, const std::string& meta_data_filename_train,
     const std::string& metabo_data_filename_test, const std::string& meta_data_filename_test) {
     // Training data
-    reaction_model.clear();
-    reaction_model.readBiochemicalReactions(biochem_rxns_filename, true);
-    reaction_model.readMetabolomicsData(metabo_data_filename_train);
-    reaction_model.readMetaData(meta_data_filename_train);
-    reaction_model.findComponentGroupNames();
-    if (simulate_MARs) {
-      reaction_model.findMARs();
-      reaction_model.findMARs(true, false);
-      reaction_model.findMARs(false, true);
-      reaction_model.removeRedundantMARs();
+    reaction_model_.clear();
+    reaction_model_.readBiochemicalReactions(biochem_rxns_filename, true);
+    reaction_model_.readMetabolomicsData(metabo_data_filename_train);
+    reaction_model_.readMetaData(meta_data_filename_train);
+    reaction_model_.findComponentGroupNames();
+    if (simulate_MARs_) {
+      reaction_model_.findMARs();
+      reaction_model_.findMARs(true, false);
+      reaction_model_.findMARs(false, true);
+      reaction_model_.removeRedundantMARs();
     }
-    reaction_model.findLabels();
-    metabolomics_data.model_training_ = reaction_model;
+    reaction_model_.findLabels();
+    metabolomics_data_.model_training_ = reaction_model_;
 
     // Validation data
-    reaction_model.clear();
-    reaction_model.readBiochemicalReactions(biochem_rxns_filename, true);
-    reaction_model.readMetabolomicsData(metabo_data_filename_test);
-    reaction_model.readMetaData(meta_data_filename_test);
-    reaction_model.findComponentGroupNames();
-    if (simulate_MARs) {
-      reaction_model.findMARs();
-      reaction_model.findMARs(true, false);
-      reaction_model.findMARs(false, true);
-      reaction_model.removeRedundantMARs();
+    reaction_model_.clear();
+    reaction_model_.readBiochemicalReactions(biochem_rxns_filename, true);
+    reaction_model_.readMetabolomicsData(metabo_data_filename_test);
+    reaction_model_.readMetaData(meta_data_filename_test);
+    reaction_model_.findComponentGroupNames();
+    if (simulate_MARs_) {
+      reaction_model_.findMARs();
+      reaction_model_.findMARs(true, false);
+      reaction_model_.findMARs(false, true);
+      reaction_model_.removeRedundantMARs();
     }
-    reaction_model.findLabels();
-    metabolomics_data.model_validation_ = reaction_model;
-    metabolomics_data.simulate_MARs_ = simulate_MARs;
-    metabolomics_data.sample_concs_ = sample_concs;
-    metabolomics_data.use_train_ = true;
+    reaction_model_.findLabels();
+    metabolomics_data_.model_validation_ = reaction_model_;
+    metabolomics_data_.simulate_MARs_ = simulate_MARs_;
+    metabolomics_data_.sample_concs_ = sample_concs_;
+    metabolomics_data_.use_train_ = true;
 
     // Checks for the training and validation data
-    assert(metabolomics_data.model_validation_.reaction_ids_.size() == metabolomics_data.model_training_.reaction_ids_.size());
-    assert(metabolomics_data.model_validation_.labels_.size() == metabolomics_data.model_training_.labels_.size());
-    assert(metabolomics_data.model_validation_.component_group_names_.size() == metabolomics_data.model_training_.component_group_names_.size());
+    assert(metabolomics_data_.model_validation_.reaction_ids_.size() == metabolomics_data_.model_training_.reaction_ids_.size());
+    assert(metabolomics_data_.model_validation_.labels_.size() == metabolomics_data_.model_training_.labels_.size());
+    assert(metabolomics_data_.model_validation_.component_group_names_.size() == metabolomics_data_.model_training_.component_group_names_.size());
 
     // Set the encoding size and define the input/output sizes
-    metabolomics_data.n_encodings_ = encoding_size;
-    if (simulate_MARs) n_input_nodes = reaction_model.reaction_ids_.size();
-    else n_input_nodes = reaction_model.component_group_names_.size();
-    n_output_nodes = reaction_model.labels_.size();
+    metabolomics_data_.n_encodings_ = encoding_size_;
+    if (simulate_MARs_) n_input_nodes_ = reaction_model_.reaction_ids_.size();
+    else n_input_nodes_ = reaction_model_.component_group_names_.size();
+    n_output_nodes_ = reaction_model_.labels_.size();
   };
 
   /*
-  @brief Make the models
+  @brief Make the encoder/decoder models
 
   @param[in] model_encoder_weights_filename
   @param[in] model_decoder_weights_filename
   */
   void setEncDecModels(ModelTrainerExt<TensorT>& model_trainer, const std::string& model_encoder_weights_filename, const std::string& model_decoder_weights_filename) {
     // initialize the models
-    model_encoder.clear();
-    model_decoder.clear();
+    model_encoder_.clear();
+    model_decoder_.clear();
 
     // define the encoder and decoders
-    model_trainer.makeModelFCVAE_Encoder(model_encoder, n_input_nodes, encoding_size, true, false, false, false); // normalization type 1
-    model_trainer.makeModelFCVAE_Decoder(model_decoder, n_input_nodes, encoding_size, false);
+    model_trainer.makeModelFCVAE_Encoder(model_encoder_, n_input_nodes_, encoding_size_, true, false, false, false); // normalization type 1
+    model_trainer.makeModelFCVAE_Decoder(model_decoder_, n_input_nodes_, encoding_size_, false);
 
     // read in the encoder and decoder weights
     WeightFile<TensorT> data;
-    data.loadWeightValuesCsv(model_encoder_weights_filename, model_encoder.getWeightsMap());
-    data.loadWeightValuesCsv(model_decoder_weights_filename, model_decoder.getWeightsMap());
+    data.loadWeightValuesCsv(model_encoder_weights_filename, model_encoder_.getWeightsMap());
+    data.loadWeightValuesCsv(model_decoder_weights_filename, model_decoder_.getWeightsMap());
 
     // check that all weights were read in correctly
-    for (auto& weight_map : model_encoder.getWeightsMap()) {
+    for (auto& weight_map : model_encoder_.getWeightsMap()) {
       if (weight_map.second->getInitWeight()) {
-        std::cout << "Model " << model_encoder.getName() << " Weight " << weight_map.first << " has not be initialized." << std::endl;;
+        std::cout << "Model " << model_encoder_.getName() << " Weight " << weight_map.first << " has not be initialized." << std::endl;;
       }
     }
-    for (auto& weight_map : model_decoder.getWeightsMap()) {
+    for (auto& weight_map : model_decoder_.getWeightsMap()) {
       if (weight_map.second->getInitWeight()) {
-        std::cout << "Model " << model_decoder.getName() << " Weight " << weight_map.first << " has not be initialized." << std::endl;;
+        std::cout << "Model " << model_decoder_.getName() << " Weight " << weight_map.first << " has not be initialized." << std::endl;;
       }
     }
+  };
+
+  /*
+  @brief Set the encoder and decoder model interpreters
+
+  @param[in] model_interpreter_encoder_
+  @param[in] model_interpreter_decoder_
+  */
+  void setEncDecModelInterpreters(const ModelInterpreterDefaultDevice<TensorT>& model_interpreter_encoder, const ModelInterpreterDefaultDevice<TensorT>& model_interpreter_decoder) {
+    model_interpreter_encoder_ = model_interpreter_encoder;
+    model_interpreter_decoder_ = model_interpreter_decoder;
   };
 
   /*
@@ -605,140 +616,31 @@ public:
   */
   void setClassifierModel(ModelTrainerExt<TensorT>& model_trainer, const std::string& model_classifier_weights_filename) {
     // initialize the models
-    model_classifier.clear();
+    model_classifier_.clear();
 
     // define the encoder and decoders
-    model_trainer.makeModelFCClass(model_classifier, n_input_nodes, n_output_nodes, false);
+    model_trainer.makeModelFCClass(model_classifier_, n_input_nodes_, n_output_nodes_, false);
 
     // read in the encoder and decoder weights
     WeightFile<TensorT> data;
-    data.loadWeightValuesCsv(model_classifier_weights_filename, model_classifier.getWeightsMap());
+    data.loadWeightValuesCsv(model_classifier_weights_filename, model_classifier_.getWeightsMap());
 
     // check that all weights were read in correctly
-    for (auto& weight_map : model_classifier.getWeightsMap()) {
+    for (auto& weight_map : model_classifier_.getWeightsMap()) {
       if (weight_map.second->getInitWeight()) {
-        std::cout << "Model " << model_classifier.getName() << " Weight " << weight_map.first << " has not be initialized." << std::endl;;
+        std::cout << "Model " << model_classifier_.getName() << " Weight " << weight_map.first << " has not be initialized." << std::endl;;
       }
     }
   };
 
   /*
-  @brief Generate a reconstruction based on the arithmetic between two latent spaces
+  @brief Set the classifier model interpreter
 
-  @param[in] sample_group_name_1
-  @param[in] sample_group_name_2
-  @param[in] class_expected_index
-  @param[in] latent_arithmetic Options are the following
-    "None": no latent arithmetic is performed and only sample_group_1 is ran through the encoder, decoder, and classification
-    "Test": no latent arithmetic is performed and only the input for sample_group_1 is ran the the classifier
-    "-": subtraction is performed
-    "+": addition is performed
-
-  TODO: break up into generateEncoding and generateReconstruction
+  @param[in] model_interpreter_classifier
   */
-  Eigen::Tensor<TensorT, 4> calculateLatentArithmetic(
-    const std::string& sample_group_name_1, const std::string& sample_group_name_2, const std::string& latent_arithmetic, 
-    ModelTrainerDefaultDevice<TensorT>& model_trainer, ModelLogger<TensorT>& model_logger, ModelInterpreterDefaultDevice<TensorT>& model_interpreter)
-  {
-    std::cout << sample_group_name_1 << " " << latent_arithmetic << " " << sample_group_name_2 << " =" << std::endl;
-    
-    // Make the input nodes
-    std::vector<std::string> input_nodes;
-    for (int i = 0; i < n_input_nodes; ++i) {
-      char name_char[512];
-      sprintf(name_char, "Input_%012d", i);
-      std::string name(name_char);
-      input_nodes.push_back(name);
-    }
-
-    // Make the reconstruction nodes
-    std::vector<std::string> output_nodes_reconstruction;
-    for (int i = 0; i < n_input_nodes; ++i) {
-      char name_char[512];
-      sprintf(name_char, "Output_%012d", i);
-      std::string name(name_char);
-      output_nodes_reconstruction.push_back(name);
-    }
-
-    // Make the mu nodes
-    std::vector<std::string> encoding_nodes_mu;
-    for (int i = 0; i < encoding_size; ++i) {
-      char name_char[512];
-      sprintf(name_char, "Mu_%012d", i);
-      std::string name(name_char);
-      encoding_nodes_mu.push_back(name);
-    }
-
-    // Make the encoding nodes
-    std::vector<std::string> encoding_nodes_logvar;
-    for (int i = 0; i < encoding_size; ++i) {
-      char name_char[512];
-      sprintf(name_char, "LogVar_%012d", i);
-      std::string name(name_char);
-      encoding_nodes_logvar.push_back(name);
-    }
-
-    // Make the encoding nodes
-    std::vector<std::string> encoding_nodes;
-    for (int i = 0; i < encoding_size; ++i) {
-      char name_char[512];
-      sprintf(name_char, "Encoding_%012d", i);
-      std::string name(name_char);
-      encoding_nodes.push_back(name);
-    }
-
-    // generate the input for condition_1 and condition_2
-    Eigen::Tensor<TensorT, 4> condition_1_input(model_trainer.getBatchSize(), model_trainer.getMemorySize(), n_input_nodes, model_trainer.getNEpochsEvaluation());
-    Eigen::Tensor<TensorT, 3> time_steps_1_input(model_trainer.getBatchSize(), model_trainer.getMemorySize(), model_trainer.getNEpochsEvaluation());
-    metabolomics_data.sample_group_name_ = sample_group_name_1;
-    metabolomics_data.simulateEvaluationData(condition_1_input, time_steps_1_input);
-    Eigen::Tensor<TensorT, 4> condition_2_input(model_trainer.getBatchSize(), model_trainer.getMemorySize(), n_input_nodes, model_trainer.getNEpochsEvaluation());
-    Eigen::Tensor<TensorT, 3> time_steps_2_input(model_trainer.getBatchSize(), model_trainer.getMemorySize(), model_trainer.getNEpochsEvaluation());
-    metabolomics_data.sample_group_name_ = sample_group_name_2;
-    if (latent_arithmetic != "None" && latent_arithmetic != "Test")
-      metabolomics_data.simulateEvaluationData(condition_2_input, time_steps_2_input);
-
-    // evaluate the encoder for condition_1 and condition_2
-    model_trainer.setLossOutputNodes({ encoding_nodes_mu });
-    Eigen::Tensor<TensorT, 4> condition_1_output(model_trainer.getBatchSize(), model_trainer.getMemorySize(), encoding_size, model_trainer.getNEpochsEvaluation());
-    Eigen::Tensor<TensorT, 4> condition_2_output(model_trainer.getBatchSize(), model_trainer.getMemorySize(), encoding_size, model_trainer.getNEpochsEvaluation());
-    condition_1_output = model_trainer.evaluateModel(
-      model_encoder, condition_1_input, time_steps_1_input, input_nodes, model_logger, model_interpreter);
-    if (latent_arithmetic != "None" && latent_arithmetic != "Test")
-      condition_2_output = model_trainer.evaluateModel(
-        model_encoder, condition_2_input, time_steps_2_input, input_nodes, model_logger, model_interpreter);
-
-    // perform an embeddings subtraction or addition using condition_1 and condition_2
-    Eigen::Tensor<TensorT, 4> embeddings_calculated(model_trainer.getBatchSize(), model_trainer.getMemorySize(), encoding_size, model_trainer.getNEpochsEvaluation());
-    for (int epoch_iter = 0; epoch_iter < model_trainer.getNEpochsEvaluation(); ++epoch_iter) {
-      for (int node_iter = 0; node_iter < encoding_size; ++node_iter) {
-        // Could be improved by using the `.slice` operator
-        for (int batch_iter = 0; batch_iter < model_trainer.getBatchSize(); ++batch_iter) {
-          for (int memory_iter = 0; memory_iter < model_trainer.getMemorySize(); ++memory_iter) {
-            if (latent_arithmetic == "None" || latent_arithmetic == "Test")
-              embeddings_calculated(batch_iter, memory_iter, node_iter, epoch_iter) = condition_1_output(batch_iter, memory_iter, node_iter, epoch_iter);
-            else if (latent_arithmetic == "-")
-              embeddings_calculated(batch_iter, memory_iter, node_iter, epoch_iter) = condition_1_output(batch_iter, memory_iter, node_iter, epoch_iter) - condition_2_output(batch_iter, memory_iter, node_iter, epoch_iter);
-            else if (latent_arithmetic == "+")
-              embeddings_calculated(batch_iter, memory_iter, node_iter, epoch_iter) = condition_1_output(batch_iter, memory_iter, node_iter, epoch_iter) + condition_2_output(batch_iter, memory_iter, node_iter, epoch_iter);
-            else
-              std::cout << "Latent arithmetic " << latent_arithmetic << " is not supported." << std::endl;
-          }
-        }
-      }
-    }
-
-    // evaluate the decoder
-    Eigen::Tensor<TensorT, 4> reconstructed_output(model_trainer.getBatchSize(), model_trainer.getMemorySize(), n_input_nodes, model_trainer.getNEpochsEvaluation());
-    model_trainer.setLossOutputNodes({ output_nodes_reconstruction });
-    if (latent_arithmetic == "Test")
-      reconstructed_output = condition_1_input;
-    else
-      reconstructed_output = model_trainer.evaluateModel(
-        model_decoder, embeddings_calculated, time_steps_1_input, encoding_nodes, model_logger, model_interpreter);
-
-    return reconstructed_output;
-  }
+  void setClassifierModelInterpreter(const ModelInterpreterDefaultDevice<TensorT>& model_interpreter_classifier) {
+    model_interpreter_classifier_ = model_interpreter_classifier;
+  };
 
   /*
   @brief Generate an encoded latent space
@@ -749,11 +651,11 @@ public:
   */
   Eigen::Tensor<TensorT, 4> generateEncoding(
     const std::string& sample_group_name, 
-    ModelTrainerDefaultDevice<TensorT>& model_trainer, ModelLogger<TensorT>& model_logger, ModelInterpreterDefaultDevice<TensorT>& model_interpreter)
+    ModelTrainerDefaultDevice<TensorT>& model_trainer, ModelLogger<TensorT>& model_logger)
   {
     // Make the input nodes
     std::vector<std::string> input_nodes;
-    for (int i = 0; i < n_input_nodes; ++i) {
+    for (int i = 0; i < this->n_input_nodes_; ++i) {
       char name_char[512];
       sprintf(name_char, "Input_%012d", i);
       std::string name(name_char);
@@ -762,7 +664,7 @@ public:
 
     // Make the mu nodes
     std::vector<std::string> encoding_nodes_mu;
-    for (int i = 0; i < encoding_size; ++i) {
+    for (int i = 0; i < this->encoding_size_; ++i) {
       char name_char[512];
       sprintf(name_char, "Mu_%012d", i);
       std::string name(name_char);
@@ -770,15 +672,15 @@ public:
     }
 
     // generate the input for condition_1 and condition_2
-    Eigen::Tensor<TensorT, 4> condition_1_input(model_trainer.getBatchSize(), model_trainer.getMemorySize(), n_input_nodes, model_trainer.getNEpochsEvaluation());
+    Eigen::Tensor<TensorT, 4> condition_1_input(model_trainer.getBatchSize(), model_trainer.getMemorySize(), this->n_input_nodes_, model_trainer.getNEpochsEvaluation());
     Eigen::Tensor<TensorT, 3> time_steps_1_input(model_trainer.getBatchSize(), model_trainer.getMemorySize(), model_trainer.getNEpochsEvaluation());
-    metabolomics_data.sample_group_name_ = sample_group_name;
-    metabolomics_data.simulateEvaluationData(condition_1_input, time_steps_1_input);;
+    this->metabolomics_data_.sample_group_name_ = sample_group_name;
+    this->metabolomics_data_.simulateEvaluationData(condition_1_input, time_steps_1_input);;
 
     // evaluate the encoder for condition_1 and condition_2
     model_trainer.setLossOutputNodes({ encoding_nodes_mu });
     Eigen::Tensor<TensorT, 4> condition_1_output = model_trainer.evaluateModel(
-      model_encoder, condition_1_input, time_steps_1_input, input_nodes, model_logger, model_interpreter);
+      this->model_encoder_, condition_1_input, time_steps_1_input, input_nodes, model_logger, this->model_interpreter_encoder_);
 
     return condition_1_output;
   }
@@ -792,11 +694,11 @@ public:
   */
   Eigen::Tensor<TensorT, 4> generateReconstruction(
     Eigen::Tensor<TensorT, 4>& encoding_output,
-    ModelTrainerDefaultDevice<TensorT>& model_trainer, ModelLogger<TensorT>& model_logger, ModelInterpreterDefaultDevice<TensorT>& model_interpreter)
+    ModelTrainerDefaultDevice<TensorT>& model_trainer, ModelLogger<TensorT>& model_logger)
   {
     // Make the reconstruction nodes
     std::vector<std::string> output_nodes_reconstruction;
-    for (int i = 0; i < n_input_nodes; ++i) {
+    for (int i = 0; i < this->n_input_nodes_; ++i) {
       char name_char[512];
       sprintf(name_char, "Output_%012d", i);
       std::string name(name_char);
@@ -805,7 +707,7 @@ public:
 
     // Make the encoding nodes
     std::vector<std::string> encoding_nodes;
-    for (int i = 0; i < encoding_size; ++i) {
+    for (int i = 0; i < this->encoding_size_; ++i) {
       char name_char[512];
       sprintf(name_char, "Encoding_%012d", i);
       std::string name(name_char);
@@ -816,7 +718,7 @@ public:
     Eigen::Tensor<TensorT, 3> time_steps_1_input(model_trainer.getBatchSize(), model_trainer.getMemorySize(), model_trainer.getNEpochsEvaluation());
     model_trainer.setLossOutputNodes({ output_nodes_reconstruction });
     Eigen::Tensor<TensorT, 4> reconstructed_output = model_trainer.evaluateModel(
-        model_decoder, encoding_output, time_steps_1_input, encoding_nodes, model_logger, model_interpreter);
+      this->model_decoder_, encoding_output, time_steps_1_input, encoding_nodes, model_logger, this->model_interpreter_decoder_);
 
     return reconstructed_output;
   }
@@ -827,11 +729,11 @@ public:
   @param[in] sample_group_name_expected
   */
   void classifyReconstruction(const std::string& sample_group_name_expected, const Eigen::Tensor<TensorT, 4>& reconstructed_output,
-    ModelTrainerDefaultDevice<TensorT>& model_trainer, ModelLogger<TensorT>& model_logger, ModelInterpreterDefaultDevice<TensorT>& model_interpreter) {
+    ModelTrainerDefaultDevice<TensorT>& model_trainer, ModelLogger<TensorT>& model_logger) {
 
     // Make the input nodes
     std::vector<std::string> input_nodes;
-    for (int i = 0; i < n_input_nodes; ++i) {
+    for (int i = 0; i < this->n_input_nodes_; ++i) {
       char name_char[512];
       sprintf(name_char, "Input_%012d", i);
       std::string name(name_char);
@@ -840,7 +742,7 @@ public:
 
     // Make the classification nodes
     std::vector<std::string> output_nodes_classification;
-    for (int i = 0; i < n_output_nodes; ++i) {
+    for (int i = 0; i < this->n_output_nodes_; ++i) {
       char name_char[512];
       sprintf(name_char, "Output_%012d", i);
       std::string name(name_char);
@@ -851,18 +753,18 @@ public:
     // score the decoded data using the classification model
     model_trainer.setLossOutputNodes({ output_nodes_classification });
     Eigen::Tensor<TensorT, 4> classification_output = model_trainer.evaluateModel(
-      model_classifier, reconstructed_output, time_steps_1_input, input_nodes, model_logger, model_interpreter);
+      this->model_classifier_, reconstructed_output, time_steps_1_input, input_nodes, model_logger, this->model_interpreter_classifier_);
 
     const Eigen::Tensor<TensorT, 2> classification_results = classification_output.chip(0, 3).chip(0, 1);
     // write out the results to the console
-    writeClassificationResults(reaction_model.labels_, classification_results);
+    writeClassificationResults(this->reaction_model_.labels_, classification_results);
 
     // calculate the percent true
-    auto labels_iterator = std::find(reaction_model.labels_.begin(), reaction_model.labels_.end(), sample_group_name_expected);
-    if (labels_iterator != reaction_model.labels_.end()) {
+    auto labels_iterator = std::find(this->reaction_model_.labels_.begin(), this->reaction_model_.labels_.end(), sample_group_name_expected);
+    if (labels_iterator != this->reaction_model_.labels_.end()) {
       int class_expected_index = -1;
-      class_expected_index = std::distance(reaction_model.labels_.begin(), labels_iterator);
-      TensorT perc_true = calculatePercTrue(reaction_model.labels_, classification_results, class_expected_index);
+      class_expected_index = std::distance(this->reaction_model_.labels_.begin(), labels_iterator);
+      TensorT perc_true = calculatePercTrue(this->reaction_model_.labels_, classification_results, class_expected_index);
       std::cout << "Percent true: " << perc_true << std::endl;
     }
     else {
@@ -879,41 +781,44 @@ public:
     MetricFunctionTensorOp<TensorT, Eigen::DefaultDevice>& metric_function, ModelTrainerDefaultDevice<TensorT>& model_trainer) {
 
     // generate the input for the expected
-    Eigen::Tensor<TensorT, 4> condition_1_input(model_trainer.getBatchSize(), model_trainer.getMemorySize(), n_input_nodes, model_trainer.getNEpochsEvaluation());
+    Eigen::Tensor<TensorT, 4> condition_1_input(model_trainer.getBatchSize(), model_trainer.getMemorySize(), this->n_input_nodes_, model_trainer.getNEpochsEvaluation());
     Eigen::Tensor<TensorT, 3> time_steps_1_input(model_trainer.getBatchSize(), model_trainer.getMemorySize(), model_trainer.getNEpochsEvaluation());
-    metabolomics_data.sample_group_name_ = sample_group_name_expected;
-    metabolomics_data.simulateEvaluationData(condition_1_input, time_steps_1_input);
+    this->metabolomics_data_.sample_group_name_ = sample_group_name_expected;
+    this->metabolomics_data_.simulateEvaluationData(condition_1_input, time_steps_1_input);
 
     // score the decoded data using the classification model
     Eigen::Tensor<TensorT, 3> expected = condition_1_input.chip(0, 1);
     Eigen::Tensor<TensorT, 2> predicted = reconstructed_output.chip(0, 3).chip(0, 1);
     Eigen::Tensor<TensorT, 2> score(1, 1); score.setZero();
     Eigen::DefaultDevice device;
-    metric_function(predicted.data(), expected.data(), score.data(), model_trainer.getBatchSize(), model_trainer.getMemorySize(), n_input_nodes, 1, 0, 0, device);
+    metric_function(predicted.data(), expected.data(), score.data(), model_trainer.getBatchSize(), model_trainer.getMemorySize(), this->n_input_nodes_, 1, 0, 0, device);
     return score(0, 0) / TensorT(model_trainer.getBatchSize());
 
   };
 
-  int getNInputNodes() const { return n_input_nodes; }
-  int getNOutputNodes() const { return n_output_nodes; }
+  int getNInputNodes() const { return n_input_nodes_; }
+  int getNOutputNodes() const { return n_output_nodes_; }
 
-  int encoding_size = 16;
-  bool simulate_MARs = false;
-  bool sample_concs = true;
+  int encoding_size_ = 16;
+  bool simulate_MARs_ = false;
+  bool sample_concs_ = true;
 
 protected:
   /// Defined in setMetabolomicsData
-  MetDataSimLatentArithmetic<TensorT> metabolomics_data;
-  BiochemicalReactionModel<TensorT> reaction_model;
-  int n_input_nodes = -1;
-  int n_output_nodes = -1; 
+  MetDataSimLatentArithmetic<TensorT> metabolomics_data_;
+  BiochemicalReactionModel<TensorT> reaction_model_;
+  int n_input_nodes_ = -1;
+  int n_output_nodes_ = -1; 
 
   /// Defined in setEncDecModels
-  Model<TensorT> model_decoder;
-  Model<TensorT> model_encoder;
+  Model<TensorT> model_decoder_;
+  Model<TensorT> model_encoder_;
+  ModelInterpreterDefaultDevice<TensorT> model_interpreter_decoder_;
+  ModelInterpreterDefaultDevice<TensorT> model_interpreter_encoder_;
 
   /// Defined in setClassifierModels
-  Model<TensorT> model_classifier;
+  Model<TensorT> model_classifier_;
+  ModelInterpreterDefaultDevice<TensorT> model_interpreter_classifier_;
 };
 
 // Main
@@ -961,11 +866,13 @@ int main(int argc, char** argv)
   ModelLogger<float> model_logger(true, true, false, false, false, false, false, false);
 
   // read in the metabolomics data and models
-  LatentArithmetic<float> latentArithmetic(16, false, true);
+  LatentArithmetic<float> latentArithmetic(64, false, true);
   latentArithmetic.setMetabolomicsData(biochem_rxns_filename, metabo_data_filename_train, meta_data_filename_train,
     metabo_data_filename_test, meta_data_filename_test);
   latentArithmetic.setEncDecModels(model_trainer, model_encoder_weights_filename, model_decoder_weights_filename);
+  latentArithmetic.setEncDecModelInterpreters(model_interpreter, model_interpreter);
   latentArithmetic.setClassifierModel(model_trainer, model_classifier_weights_filename);
+  latentArithmetic.setClassifierModelInterpreter(model_interpreter);
 
   // define the reconstruction output
   Eigen::Tensor<float, 4> reconstruction_output(model_trainer.getBatchSize(), model_trainer.getMemorySize(), latentArithmetic.getNInputNodes(), model_trainer.getNEpochsEvaluation());
@@ -983,14 +890,25 @@ int main(int argc, char** argv)
 
   //std::cout << "Running Control (Test)" << std::endl;
   //for (int case_iter = 0; case_iter < condition_1_test_none.size(); ++case_iter) {
-  //  reconstruction_output = latentArithmetic.calculateLatentArithmetic(condition_1_test_none.at(case_iter), condition_2_test_none.at(case_iter), "Test", model_trainer, model_logger, model_interpreter);
-  //  float score = latentArithmetic.classifyReconstruction(expected_test_none.at(case_iter), reconstruction_output, model_trainer, model_logger, model_interpreter);
+  //  reconstruction_output = latentArithmetic.calculateLatentArithmetic(condition_1_test_none.at(case_iter), condition_2_test_none.at(case_iter), "Test", model_trainer, model_logger);
+  //  float score = latentArithmetic.classifyReconstruction(expected_test_none.at(case_iter), reconstruction_output, model_trainer, model_logger);
   //}
 
   std::cout << "Running Control (None)" << std::endl;
   for (int case_iter = 0; case_iter < condition_1_test_none.size(); ++case_iter) {
-    auto encoding_output = latentArithmetic.generateEncoding(condition_1_test_none.at(case_iter), model_trainer, model_logger, model_interpreter);
-    reconstruction_output = latentArithmetic.generateReconstruction(encoding_output, model_trainer, model_logger, model_interpreter);
+    // Determine when to initialize the model interpreter
+    if (case_iter == 0) {
+      model_trainer.setInterpretModel(true);
+    }
+    else {
+      model_trainer.setInterpretModel(false);
+    }
+    model_trainer.setResetModel(false);
+    model_trainer.setResetInterpreter(false);
+
+    // Generate the encoding and decoding and score the result
+    auto encoding_output = latentArithmetic.generateEncoding(condition_1_test_none.at(case_iter), model_trainer, model_logger);
+    reconstruction_output = latentArithmetic.generateReconstruction(encoding_output, model_trainer, model_logger);
     float score = latentArithmetic.scoreReconstructionSimilarity(expected_test_none.at(case_iter), reconstruction_output, PearsonRTensorOp<float, Eigen::DefaultDevice>(), model_trainer);
     std::cout << condition_1_test_none.at(case_iter) << " -> " << expected_test_none.at(case_iter)<< ": " << score << std::endl;
   }
@@ -1008,10 +926,10 @@ int main(int argc, char** argv)
 
   std::cout << "Running EPi - KO -> Ref" << std::endl;
   for (int case_iter = 0; case_iter < condition_1_arithmetic_1.size(); ++case_iter) {
-    auto encoding_output_1 = latentArithmetic.generateEncoding(condition_1_arithmetic_1.at(case_iter), model_trainer, model_logger, model_interpreter);
-    auto encoding_output_2 = latentArithmetic.generateEncoding(condition_2_arithmetic_1.at(case_iter), model_trainer, model_logger, model_interpreter);
+    auto encoding_output_1 = latentArithmetic.generateEncoding(condition_1_arithmetic_1.at(case_iter), model_trainer, model_logger);
+    auto encoding_output_2 = latentArithmetic.generateEncoding(condition_2_arithmetic_1.at(case_iter), model_trainer, model_logger);
     Eigen::Tensor<float, 4> encoding_output = encoding_output_1 - encoding_output_2;
-    reconstruction_output = latentArithmetic.generateReconstruction(encoding_output, model_trainer, model_logger, model_interpreter);
+    reconstruction_output = latentArithmetic.generateReconstruction(encoding_output, model_trainer, model_logger);
     float score = latentArithmetic.scoreReconstructionSimilarity(expected_arithmetic_1.at(case_iter), reconstruction_output, PearsonRTensorOp<float, Eigen::DefaultDevice>(), model_trainer);
     std::cout << condition_1_arithmetic_1.at(case_iter) << " - " << condition_2_arithmetic_1.at(case_iter)<< " -> " << expected_arithmetic_1.at(case_iter) << ": " << score << std::endl;
   }
@@ -1029,10 +947,10 @@ int main(int argc, char** argv)
 
   std::cout << "Running EPi - Ref -> KO" << std::endl;
   for (int case_iter = 0; case_iter < condition_1_arithmetic_2.size(); ++case_iter) {
-    auto encoding_output_1 = latentArithmetic.generateEncoding(condition_1_arithmetic_2.at(case_iter), model_trainer, model_logger, model_interpreter);
-    auto encoding_output_2 = latentArithmetic.generateEncoding(condition_2_arithmetic_2.at(case_iter), model_trainer, model_logger, model_interpreter);
+    auto encoding_output_1 = latentArithmetic.generateEncoding(condition_1_arithmetic_2.at(case_iter), model_trainer, model_logger);
+    auto encoding_output_2 = latentArithmetic.generateEncoding(condition_2_arithmetic_2.at(case_iter), model_trainer, model_logger);
     Eigen::Tensor<float, 4> encoding_output = encoding_output_1 - encoding_output_2;
-    reconstruction_output = latentArithmetic.generateReconstruction(encoding_output, model_trainer, model_logger, model_interpreter);
+    reconstruction_output = latentArithmetic.generateReconstruction(encoding_output, model_trainer, model_logger);
     float score = latentArithmetic.scoreReconstructionSimilarity(expected_arithmetic_2.at(case_iter), reconstruction_output, PearsonRTensorOp<float, Eigen::DefaultDevice>(), model_trainer);
     std::cout << condition_1_arithmetic_2.at(case_iter) << " - " << condition_2_arithmetic_2.at(case_iter) << " -> " << expected_arithmetic_2.at(case_iter) << ": " << score << std::endl;
   }
