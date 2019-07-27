@@ -875,7 +875,7 @@ public:
 
   @param[in] sample_group_name_expected
   */
-  void scoreReconstructionSimilarity(const std::string& sample_group_name_expected, const Eigen::Tensor<TensorT, 4>& reconstructed_output,
+  TensorT scoreReconstructionSimilarity(const std::string& sample_group_name_expected, const Eigen::Tensor<TensorT, 4>& reconstructed_output,
     MetricFunctionTensorOp<TensorT, Eigen::DefaultDevice>& metric_function, ModelTrainerDefaultDevice<TensorT>& model_trainer) {
 
     // generate the input for the expected
@@ -890,7 +890,7 @@ public:
     Eigen::Tensor<TensorT, 2> score(1, 1); score.setZero();
     Eigen::DefaultDevice device;
     metric_function(predicted.data(), expected.data(), score.data(), model_trainer.getBatchSize(), model_trainer.getMemorySize(), n_input_nodes, 1, 0, 0, device);
-    std::cout << "Score: " << score(0,0)/TensorT(model_trainer.getBatchSize()) << std::endl;
+    return score(0, 0) / TensorT(model_trainer.getBatchSize());
 
   };
 
@@ -926,8 +926,8 @@ int main(int argc, char** argv)
 
   // Make the filenames
   const std::string biochem_rxns_filename = data_dir + "iJO1366.csv";
-  const std::string model_encoder_weights_filename = data_dir + "TrainTestData/SampledArithmeticMath/VAE_4000_weights.csv"; 
-  const std::string model_decoder_weights_filename = data_dir + "TrainTestData/SampledArithmeticMath/VAE_4000_weights.csv"; 
+  const std::string model_encoder_weights_filename = data_dir + "TrainTestData/SampledArithmeticMath/VAE_weights.csv"; 
+  const std::string model_decoder_weights_filename = data_dir + "TrainTestData/SampledArithmeticMath/VAE_weights.csv"; 
   // NOTE: be sure to re-name the Input_000000000000-LinearScale_to_... weights to Input_000000000000_to_...
   //       using regex "-LinearScale_to_FC0" with "_to_FC0"
   const std::string model_classifier_weights_filename = data_dir + "TrainTestData/SampledArithmeticMath/Classifier_5000_weights.csv";
@@ -984,15 +984,15 @@ int main(int argc, char** argv)
   //std::cout << "Running Control (Test)" << std::endl;
   //for (int case_iter = 0; case_iter < condition_1_test_none.size(); ++case_iter) {
   //  reconstruction_output = latentArithmetic.calculateLatentArithmetic(condition_1_test_none.at(case_iter), condition_2_test_none.at(case_iter), "Test", model_trainer, model_logger, model_interpreter);
-  //  latentArithmetic.classifyReconstruction(expected_test_none.at(case_iter), reconstruction_output, model_trainer, model_logger, model_interpreter);
+  //  float score = latentArithmetic.classifyReconstruction(expected_test_none.at(case_iter), reconstruction_output, model_trainer, model_logger, model_interpreter);
   //}
 
   std::cout << "Running Control (None)" << std::endl;
   for (int case_iter = 0; case_iter < condition_1_test_none.size(); ++case_iter) {
-    std::cout << condition_1_test_none.at(case_iter) << " None:" << std::endl;
     auto encoding_output = latentArithmetic.generateEncoding(condition_1_test_none.at(case_iter), model_trainer, model_logger, model_interpreter);
     reconstruction_output = latentArithmetic.generateReconstruction(encoding_output, model_trainer, model_logger, model_interpreter);
-    latentArithmetic.scoreReconstructionSimilarity(expected_test_none.at(case_iter), reconstruction_output, PearsonRTensorOp<float, Eigen::DefaultDevice>(), model_trainer);
+    float score = latentArithmetic.scoreReconstructionSimilarity(expected_test_none.at(case_iter), reconstruction_output, PearsonRTensorOp<float, Eigen::DefaultDevice>(), model_trainer);
+    std::cout << condition_1_test_none.at(case_iter) << " -> " << expected_test_none.at(case_iter)<< ": " << score << std::endl;
   }
 
   // 1. EPi - KO -> Ref
@@ -1012,7 +1012,8 @@ int main(int argc, char** argv)
     auto encoding_output_2 = latentArithmetic.generateEncoding(condition_2_arithmetic_1.at(case_iter), model_trainer, model_logger, model_interpreter);
     Eigen::Tensor<float, 4> encoding_output = encoding_output_1 - encoding_output_2;
     reconstruction_output = latentArithmetic.generateReconstruction(encoding_output, model_trainer, model_logger, model_interpreter);
-    latentArithmetic.scoreReconstructionSimilarity(expected_arithmetic_1.at(case_iter), reconstruction_output, PearsonRTensorOp<float, Eigen::DefaultDevice>(), model_trainer);
+    float score = latentArithmetic.scoreReconstructionSimilarity(expected_arithmetic_1.at(case_iter), reconstruction_output, PearsonRTensorOp<float, Eigen::DefaultDevice>(), model_trainer);
+    std::cout << condition_1_arithmetic_1.at(case_iter) << " - " << condition_2_arithmetic_1.at(case_iter)<< " -> " << expected_arithmetic_1.at(case_iter) << ": " << score << std::endl;
   }
 
   // 2. EPi - Ref -> KO
@@ -1032,7 +1033,8 @@ int main(int argc, char** argv)
     auto encoding_output_2 = latentArithmetic.generateEncoding(condition_2_arithmetic_2.at(case_iter), model_trainer, model_logger, model_interpreter);
     Eigen::Tensor<float, 4> encoding_output = encoding_output_1 - encoding_output_2;
     reconstruction_output = latentArithmetic.generateReconstruction(encoding_output, model_trainer, model_logger, model_interpreter);
-    latentArithmetic.scoreReconstructionSimilarity(expected_arithmetic_2.at(case_iter), reconstruction_output, PearsonRTensorOp<float, Eigen::DefaultDevice>(), model_trainer);
+    float score = latentArithmetic.scoreReconstructionSimilarity(expected_arithmetic_2.at(case_iter), reconstruction_output, PearsonRTensorOp<float, Eigen::DefaultDevice>(), model_trainer);
+    std::cout << condition_1_arithmetic_2.at(case_iter) << " - " << condition_2_arithmetic_2.at(case_iter) << " -> " << expected_arithmetic_2.at(case_iter) << ": " << score << std::endl;
   }
 
   //// 3. KOi + Ref -> EPi

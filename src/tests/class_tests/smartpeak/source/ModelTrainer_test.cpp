@@ -124,6 +124,9 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   BOOST_CHECK_EQUAL(trainer.getMetricFunctions().size(), 0);
   BOOST_CHECK_EQUAL(trainer.getMetricOutputNodes().size(), 0);
   BOOST_CHECK_EQUAL(trainer.getMetricNames().size(), 0);
+  BOOST_CHECK_EQUAL(trainer.getInterpretModel(), true);
+  BOOST_CHECK_EQUAL(trainer.getResetModel(), true);
+  BOOST_CHECK_EQUAL(trainer.getResetInterpreter(), true);
 
   // Test setters/getters
   trainer.setBatchSize(4);
@@ -138,6 +141,9 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   trainer.setFindCycles(false);
   trainer.setFastInterpreter(true);
   trainer.setPreserveOoO(false);
+  trainer.setInterpretModel(false);
+  trainer.setResetModel(false);
+  trainer.setResetInterpreter(false);
 
   BOOST_CHECK_EQUAL(trainer.getBatchSize(), 4);
   BOOST_CHECK_EQUAL(trainer.getMemorySize(), 1);
@@ -159,6 +165,9 @@ BOOST_AUTO_TEST_CASE(gettersAndSetters)
   //BOOST_CHECK_EQUAL(trainer.getMetricFunctions().size(), 0);
   //BOOST_CHECK_EQUAL(trainer.getMetricOutputNodes().size(), 0);
   //BOOST_CHECK_EQUAL(trainer.getMetricNames().size(), 0);
+  BOOST_CHECK_EQUAL(trainer.getInterpretModel(), false);
+  BOOST_CHECK_EQUAL(trainer.getResetModel(), false);
+  BOOST_CHECK_EQUAL(trainer.getResetInterpreter(), false);
 }
 
 BOOST_AUTO_TEST_CASE(checkInputData) 

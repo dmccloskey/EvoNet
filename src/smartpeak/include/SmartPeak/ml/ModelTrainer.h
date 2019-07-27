@@ -44,6 +44,9 @@ public:
 		void setFindCycles(const bool& find_cycles); ///< find_cycles setter [TODO: tests]
 		void setFastInterpreter(const bool& fast_interpreter); ///< fast_interpreter setter [TODO: tests]
 		void setPreserveOoO(const bool& preserve_OoO); ///< preserve_OoO setter [TODO: test]
+    void setInterpretModel(const bool& interpret_model); ///< interpret_model setter [TODO: test]
+    void setResetModel(const bool& reset_model); ///< reset_model setter [TODO: test]
+    void setResetInterpreter(const bool& reset_interpreter); ///< reset_interpreter setter [TODO: test]
 
     int getBatchSize() const; ///< batch_size setter
     int getMemorySize() const; ///< memory_size setter
@@ -65,6 +68,9 @@ public:
 		bool getFindCycles(); ///< find_cycles getter [TODO: tests]
 		bool getFastInterpreter(); ///< fast_interpreter getter [TODO: tests]
 		bool getPreserveOoO(); ///< preserve_OoO getter [TODO: tests]
+    bool getInterpretModel(); ///< find_cycles getter [TODO: tests]
+    bool getResetModel(); ///< fast_interpreter getter [TODO: tests]
+    bool getResetInterpreter(); ///< preserve_OoO getter [TODO: tests]
  
     /**
       @brief Check input dimensions.
@@ -358,6 +364,9 @@ private:
 		bool log_training_ = false; ///< whether to log training epochs or not
 		bool log_validation_ = false; ///< whether to log validation epochs or not
 		bool log_evaluation_ = false; ///< whether to log evaluation epochs or not
+    bool interpret_model_ = true; ///< whether to interpret the model and allocate associated Tensor memory for the model interpreter
+    bool reset_model_ = true; ///< whether to reset the model at the end of training
+    bool reset_interpreter_ = true; ///< whether to reset the model interpreter at the end of training
 
 		bool find_cycles_ = true; ///< whether to find cycles prior to interpreting the model (see `ModelInterpreter`)
 		bool fast_interpreter_ = false; ///< whether to skip certain checks when interpreting the model (see `ModelInterpreter`)
@@ -466,6 +475,24 @@ private:
 	{
 		preserve_OoO_ = preserve_OoO;
 	}
+
+  template<typename TensorT, typename InterpreterT>
+  inline void ModelTrainer<TensorT, InterpreterT>::setInterpretModel(const bool & interpret_model)
+  {
+    interpret_model_ = interpret_model;
+  }
+
+  template<typename TensorT, typename InterpreterT>
+  inline void ModelTrainer<TensorT, InterpreterT>::setResetModel(const bool & reset_model)
+  {
+    reset_model_ = reset_model;
+  }
+
+  template<typename TensorT, typename InterpreterT>
+  inline void ModelTrainer<TensorT, InterpreterT>::setResetInterpreter(const bool & reset_interpreter)
+  {
+    reset_interpreter_ = reset_interpreter;
+  }
 
 	template<typename TensorT, typename InterpreterT>
 	inline void ModelTrainer<TensorT, InterpreterT>::setFastInterpreter(const bool & fast_interpreter)
@@ -592,6 +619,24 @@ private:
 	{
 		return preserve_OoO_;
 	}
+
+  template<typename TensorT, typename InterpreterT>
+  inline bool ModelTrainer<TensorT, InterpreterT>::getInterpretModel()
+  {
+    return interpret_model_;
+  }
+
+  template<typename TensorT, typename InterpreterT>
+  inline bool ModelTrainer<TensorT, InterpreterT>::getResetModel()
+  {
+    return reset_model_;
+  }
+
+  template<typename TensorT, typename InterpreterT>
+  inline bool ModelTrainer<TensorT, InterpreterT>::getResetInterpreter()
+  {
+    return reset_interpreter_;
+  }
 
 	template<typename TensorT, typename InterpreterT>
 	bool ModelTrainer<TensorT, InterpreterT>::checkInputData(const int& n_epochs,
