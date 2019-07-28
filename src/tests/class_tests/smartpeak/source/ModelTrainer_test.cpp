@@ -478,6 +478,14 @@ BOOST_AUTO_TEST_CASE(DAGToy2)
   BOOST_CHECK(errors.first.back() <= 757.0);
   BOOST_CHECK(errors.second.back() <= 486.0);
 
+  std::pair<std::vector<float>, std::vector<float>> validation_errors = trainer.validateModel(model1, data_simulator,
+    input_nodes, ModelLogger<float>(), ModelInterpreterDefaultDevice<float>(model_resources));
+
+  const Eigen::Tensor<float, 0> total_error_validation = model1.getError().sum();
+  BOOST_CHECK(total_error_validation(0) <= 749.843);
+  BOOST_CHECK(validation_errors.first.back() <= 749.843);
+  BOOST_CHECK(validation_errors.second.back() <= 455.844);
+
   // TODO evaluateModel
 }
 
