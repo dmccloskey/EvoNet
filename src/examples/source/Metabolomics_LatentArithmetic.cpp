@@ -113,12 +113,10 @@ public:
   /*
   @brief Fully connected variational reconstruction model
   */
-  void makeModelFCVAE_Encoder(Model<TensorT>& model, const int& n_inputs, const int& n_encodings, const bool& linear_scale_input, const bool& log_transform_input, const bool& standardize_input, bool add_norm = true) {
+  void makeModelFCVAE_Encoder(Model<TensorT>& model, const int& n_inputs, const int& n_encodings, const bool& linear_scale_input, const bool& log_transform_input, const bool& standardize_input, const bool& add_norm = false,
+    const int& n_en_hidden_0 = 64, const int& n_en_hidden_1 = 64, const int& n_en_hidden_2 = 0) {
     model.setId(0);
     model.setName("VAE-Encoder");
-    const int n_en_hidden_0 = 64;
-    const int n_en_hidden_1 = 64;
-    const int n_en_hidden_2 = 0;
     ModelBuilder<TensorT> model_builder;
 
     // Add the inputs
@@ -221,12 +219,10 @@ public:
   /*
   @brief Fully connected variational reconstruction model
   */
-  void makeModelFCVAE_Decoder(Model<TensorT>& model, const int& n_outputs, const int& n_encodings, bool add_norm = true) {
+  void makeModelFCVAE_Decoder(Model<TensorT>& model, const int& n_outputs, const int& n_encodings, const bool& add_norm = false,
+    const int& n_de_hidden_0 = 64, const int& n_de_hidden_1 = 64, const int& n_de_hidden_2 = 0) {
     model.setId(0);
     model.setName("VAE-Decoder");
-    const int n_de_hidden_0 = 64;
-    const int n_de_hidden_1 = 64;
-    const int n_de_hidden_2 = 0;
     ModelBuilder<TensorT> model_builder;
 
     // Add the inputs
@@ -325,14 +321,10 @@ public:
   /*
   @brief Fully connected classifier
   */
-  void makeModelFCClass(Model<TensorT>& model, const int& n_inputs, const int& n_outputs, bool add_norm = true) {
+  void makeModelFCClass(Model<TensorT>& model, const int& n_inputs, const int& n_outputs, const bool& add_norm = true,
+    const int& n_hidden_0 = 64, const int& n_hidden_1 = 0, const int& n_hidden_2 = 0) {
     model.setId(0);
     model.setName("Classifier");
-
-    const int n_hidden_0 = 64;
-    const int n_hidden_1 = 0;
-    const int n_hidden_2 = 0;
-
     ModelBuilder<TensorT> model_builder;
 
     // Add the inputs
@@ -419,6 +411,36 @@ public:
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
       std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_outputs) / 2, 1)),
       std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(5e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, true, true);
+
+    // Specify the output node types manually
+    for (const std::string& node_name : node_names)
+      model.getNodesMap().at(node_name)->setType(NodeType::output);
+    model.setInputAndOutputNodes();
+  }
+
+  /*
+  @brief Input normalization network
+  */
+  void makeModelNormalization(Model<TensorT>& model, const int& n_inputs, const bool& linear_scale_input, const bool& log_transform_input, const bool& standardize_input) {
+    model.setId(0);
+    model.setName("Normalization");
+    ModelBuilder<TensorT> model_builder;
+
+    // Add the inputs
+    std::vector<std::string> node_names = model_builder.addInputNodes(model, "Input", "Input", n_inputs, true);
+
+    // Data pre-processing steps
+    this->addDataPreproccessingSteps(model, node_names, linear_scale_input, log_transform_input, standardize_input);
+
+    // Add the final output layer
+    node_names = model_builder.addSinglyConnected(model, "Output", "Output", node_names, n_inputs,
+      std::shared_ptr<ActivationOp<TensorT>>(new LinearOp<TensorT>()),
+      std::shared_ptr<ActivationOp<TensorT>>(new LinearGradOp<TensorT>()),
+      std::shared_ptr<IntegrationOp<TensorT>>(new SumOp<TensorT>()),
+      std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
+      std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
+      std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
+      std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0f, 0.0f, false, true);
 
     // Specify the output node types manually
     for (const std::string& node_name : node_names)
@@ -643,6 +665,26 @@ public:
   };
 
   /*
+  @brief Make the Normalization model
+  */
+  void setNormalizationModel(ModelTrainerExt<TensorT>& model_trainer) {
+    // initialize the models
+    model_normalization_.clear();
+
+    // define the model
+    model_trainer.makeModelNormalization(model_normalization_, n_input_nodes_, true, false, false); // Normalization type 1
+  };
+
+  /*
+  @brief Set the normalization model interpreter
+
+  @param[in] model_interpreter_normalization
+  */
+  void setNormalizationModelInterpreter(const ModelInterpreterDefaultDevice<TensorT>& model_interpreter_normalization) {
+    model_interpreter_normalization_ = model_interpreter_normalization;
+  };
+
+  /*
   @brief Generate an encoded latent space
 
   @param[in] sample_group_name
@@ -778,7 +820,24 @@ public:
   @param[in] sample_group_name_expected
   */
   TensorT scoreReconstructionSimilarity(const std::string& sample_group_name_expected, const Eigen::Tensor<TensorT, 4>& reconstructed_output,
-    MetricFunctionTensorOp<TensorT, Eigen::DefaultDevice>& metric_function, ModelTrainerDefaultDevice<TensorT>& model_trainer) {
+    MetricFunctionTensorOp<TensorT, Eigen::DefaultDevice>& metric_function, ModelTrainerDefaultDevice<TensorT>& model_trainer, ModelLogger<TensorT>& model_logger) {
+    // Make the input nodes
+    std::vector<std::string> input_nodes;
+    for (int i = 0; i < this->n_input_nodes_; ++i) {
+      char name_char[512];
+      sprintf(name_char, "Input_%012d", i);
+      std::string name(name_char);
+      input_nodes.push_back(name);
+    }
+
+    // Make the classification nodes
+    std::vector<std::string> output_nodes_normalization;
+    for (int i = 0; i < this->n_input_nodes_; ++i) {
+      char name_char[512];
+      sprintf(name_char, "Output_%012d", i);
+      std::string name(name_char);
+      output_nodes_normalization.push_back(name);
+    }
 
     // generate the input for the expected
     Eigen::Tensor<TensorT, 4> condition_1_input(model_trainer.getBatchSize(), model_trainer.getMemorySize(), this->n_input_nodes_, model_trainer.getNEpochsEvaluation());
@@ -786,8 +845,13 @@ public:
     this->metabolomics_data_.sample_group_name_ = sample_group_name_expected;
     this->metabolomics_data_.simulateEvaluationData(condition_1_input, time_steps_1_input);
 
+    // normalize the input
+    model_trainer.setLossOutputNodes({ output_nodes_normalization });
+    Eigen::Tensor<TensorT, 4> normalization_output = model_trainer.evaluateModel(
+      this->model_normalization_, condition_1_input, time_steps_1_input, input_nodes, model_logger, this->model_interpreter_normalization_);
+
     // score the decoded data using the classification model
-    Eigen::Tensor<TensorT, 3> expected = condition_1_input.chip(0, 1);
+    Eigen::Tensor<TensorT, 3> expected = normalization_output.chip(0, 1);
     Eigen::Tensor<TensorT, 2> predicted = reconstructed_output.chip(0, 3).chip(0, 1);
     Eigen::Tensor<TensorT, 2> score(1, 1); score.setZero();
     Eigen::DefaultDevice device;
@@ -816,9 +880,13 @@ protected:
   ModelInterpreterDefaultDevice<TensorT> model_interpreter_decoder_;
   ModelInterpreterDefaultDevice<TensorT> model_interpreter_encoder_;
 
-  /// Defined in setClassifierModels
+  /// Defined in setClassifierModel
   Model<TensorT> model_classifier_;
   ModelInterpreterDefaultDevice<TensorT> model_interpreter_classifier_;
+
+  /// Defined in setNormalizationModel
+  Model<TensorT> model_normalization_;
+  ModelInterpreterDefaultDevice<TensorT> model_interpreter_normalization_;
 };
 
 // Main
@@ -866,13 +934,15 @@ int main(int argc, char** argv)
   ModelLogger<float> model_logger(true, true, false, false, false, false, false, false);
 
   // read in the metabolomics data and models
-  LatentArithmetic<float> latentArithmetic(64, false, true);
+  LatentArithmetic<float> latentArithmetic(16, false, true);
   latentArithmetic.setMetabolomicsData(biochem_rxns_filename, metabo_data_filename_train, meta_data_filename_train,
     metabo_data_filename_test, meta_data_filename_test);
   latentArithmetic.setEncDecModels(model_trainer, model_encoder_weights_filename, model_decoder_weights_filename);
   latentArithmetic.setEncDecModelInterpreters(model_interpreter, model_interpreter);
   latentArithmetic.setClassifierModel(model_trainer, model_classifier_weights_filename);
   latentArithmetic.setClassifierModelInterpreter(model_interpreter);
+  latentArithmetic.setNormalizationModel(model_trainer);
+  latentArithmetic.setNormalizationModelInterpreter(model_interpreter);
 
   // define the reconstruction output
   Eigen::Tensor<float, 4> reconstruction_output(model_trainer.getBatchSize(), model_trainer.getMemorySize(), latentArithmetic.getNInputNodes(), model_trainer.getNEpochsEvaluation());
@@ -909,7 +979,7 @@ int main(int argc, char** argv)
     // Generate the encoding and decoding and score the result
     auto encoding_output = latentArithmetic.generateEncoding(condition_1_test_none.at(case_iter), model_trainer, model_logger);
     reconstruction_output = latentArithmetic.generateReconstruction(encoding_output, model_trainer, model_logger);
-    float score = latentArithmetic.scoreReconstructionSimilarity(expected_test_none.at(case_iter), reconstruction_output, PearsonRTensorOp<float, Eigen::DefaultDevice>(), model_trainer);
+    float score = latentArithmetic.scoreReconstructionSimilarity(expected_test_none.at(case_iter), reconstruction_output, PearsonRTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger);
     std::cout << condition_1_test_none.at(case_iter) << " -> " << expected_test_none.at(case_iter)<< ": " << score << std::endl;
   }
 
@@ -930,7 +1000,7 @@ int main(int argc, char** argv)
     auto encoding_output_2 = latentArithmetic.generateEncoding(condition_2_arithmetic_1.at(case_iter), model_trainer, model_logger);
     Eigen::Tensor<float, 4> encoding_output = encoding_output_1 - encoding_output_2;
     reconstruction_output = latentArithmetic.generateReconstruction(encoding_output, model_trainer, model_logger);
-    float score = latentArithmetic.scoreReconstructionSimilarity(expected_arithmetic_1.at(case_iter), reconstruction_output, PearsonRTensorOp<float, Eigen::DefaultDevice>(), model_trainer);
+    float score = latentArithmetic.scoreReconstructionSimilarity(expected_arithmetic_1.at(case_iter), reconstruction_output, PearsonRTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger);
     std::cout << condition_1_arithmetic_1.at(case_iter) << " - " << condition_2_arithmetic_1.at(case_iter)<< " -> " << expected_arithmetic_1.at(case_iter) << ": " << score << std::endl;
   }
 
@@ -951,7 +1021,7 @@ int main(int argc, char** argv)
     auto encoding_output_2 = latentArithmetic.generateEncoding(condition_2_arithmetic_2.at(case_iter), model_trainer, model_logger);
     Eigen::Tensor<float, 4> encoding_output = encoding_output_1 - encoding_output_2;
     reconstruction_output = latentArithmetic.generateReconstruction(encoding_output, model_trainer, model_logger);
-    float score = latentArithmetic.scoreReconstructionSimilarity(expected_arithmetic_2.at(case_iter), reconstruction_output, PearsonRTensorOp<float, Eigen::DefaultDevice>(), model_trainer);
+    float score = latentArithmetic.scoreReconstructionSimilarity(expected_arithmetic_2.at(case_iter), reconstruction_output, PearsonRTensorOp<float, Eigen::DefaultDevice>(), model_trainer, model_logger);
     std::cout << condition_1_arithmetic_2.at(case_iter) << " - " << condition_2_arithmetic_2.at(case_iter) << " -> " << expected_arithmetic_2.at(case_iter) << ": " << score << std::endl;
   }
 
