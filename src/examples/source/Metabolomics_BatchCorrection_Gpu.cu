@@ -154,11 +154,11 @@ class ModelTrainerExt : public ModelTrainerGpu<TensorT>
 {
 public:
   /*
-  @brief Fully connected variational reconstruction model
+  @brief Fully connected auto-encoder model
   */
   void makeModelFCVAE(Model<TensorT>& model, const int& n_inputs, const int& n_outputs, const int& n_encodings, const bool& linear_scale_input, const bool& log_transform_input, const bool& standardize_input, bool add_norm = true) {
     model.setId(0);
-    model.setName("VAE");
+    model.setName("AE");
     const int n_en_hidden_0 = 64;
     const int n_en_hidden_1 = 0;
     const int n_en_hidden_2 = 0;

@@ -530,7 +530,7 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
   // define the data simulator
   const std::size_t input_size = 512;
   const std::size_t encoding_size = 16;
-  const std::size_t n_hidden = 64;
+  const std::size_t n_hidden = 128;
   DataSimulatorExt<float> data_simulator;
 
   // Hard
@@ -546,32 +546,32 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
   //data_simulator.emg_mu_offset_ = std::make_pair(-10, 10);
   //data_simulator.emg_sigma_ = std::make_pair(10, 30);
 
-  //// Easy
-  //data_simulator.step_size_mu_ = std::make_pair(1, 1);
-  //data_simulator.step_size_sigma_ = std::make_pair(0, 0);
-  //data_simulator.chrom_window_size_ = std::make_pair(input_size, input_size);
-  //data_simulator.noise_mu_ = std::make_pair(0, 0);
-  //data_simulator.noise_sigma_ = std::make_pair(0, 0.2);
-  //data_simulator.baseline_height_ = std::make_pair(0, 0);
-  //data_simulator.n_peaks_ = std::make_pair(1, 5);
-  //data_simulator.emg_h_ = std::make_pair(0.1, 1.0);
-  //data_simulator.emg_tau_ = std::make_pair(0, 0);
-  //data_simulator.emg_mu_offset_ = std::make_pair(0, 0);
-  //data_simulator.emg_sigma_ = std::make_pair(10, 30);
-
-  // Test
+  // Easy
   data_simulator.step_size_mu_ = std::make_pair(1, 1);
   data_simulator.step_size_sigma_ = std::make_pair(0, 0);
   data_simulator.chrom_window_size_ = std::make_pair(input_size, input_size);
   data_simulator.noise_mu_ = std::make_pair(0, 0);
-  //data_simulator.noise_sigma_ = std::make_pair(0, 0.2);
-  data_simulator.noise_sigma_ = std::make_pair(0, 0);
+  data_simulator.noise_sigma_ = std::make_pair(0, 0.2);
   data_simulator.baseline_height_ = std::make_pair(0, 0);
-  data_simulator.n_peaks_ = std::make_pair(1, 2);
-  data_simulator.emg_h_ = std::make_pair(1, 1);
+  data_simulator.n_peaks_ = std::make_pair(1, 5);
+  data_simulator.emg_h_ = std::make_pair(0.1, 1.0);
   data_simulator.emg_tau_ = std::make_pair(0, 0);
   data_simulator.emg_mu_offset_ = std::make_pair(0, 0);
-  data_simulator.emg_sigma_ = std::make_pair(10, 10);
+  data_simulator.emg_sigma_ = std::make_pair(10, 30);
+
+  //// Test
+  //data_simulator.step_size_mu_ = std::make_pair(1, 1);
+  //data_simulator.step_size_sigma_ = std::make_pair(0, 0);
+  //data_simulator.chrom_window_size_ = std::make_pair(input_size, input_size);
+  //data_simulator.noise_mu_ = std::make_pair(0, 0);
+  ////data_simulator.noise_sigma_ = std::make_pair(0, 0.2);
+  //data_simulator.noise_sigma_ = std::make_pair(0, 0);
+  //data_simulator.baseline_height_ = std::make_pair(0, 0);
+  //data_simulator.n_peaks_ = std::make_pair(1, 2);
+  //data_simulator.emg_h_ = std::make_pair(1, 1);
+  //data_simulator.emg_tau_ = std::make_pair(0, 0);
+  //data_simulator.emg_mu_offset_ = std::make_pair(0, 0);
+  //data_simulator.emg_sigma_ = std::make_pair(10, 10);
 
   // Make the input nodes
   std::vector<std::string> input_nodes;
@@ -620,7 +620,7 @@ void main_DenoisingAE(const bool& make_model, const bool& train_model) {
     model_interpreters.push_back(model_interpreter);
   }
   ModelTrainerExt<float> model_trainer;
-  model_trainer.setBatchSize(16);
+  model_trainer.setBatchSize(64);
   model_trainer.setNEpochsTraining(100001);
   model_trainer.setNEpochsValidation(25);
   model_trainer.setNEpochsEvaluation(25);
