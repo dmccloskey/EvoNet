@@ -160,10 +160,10 @@ public:
     model.setId(0);
     model.setName("VAE");
     const int n_en_hidden_0 = 64;
-    const int n_en_hidden_1 = 64;
+    const int n_en_hidden_1 = 0;
     const int n_en_hidden_2 = 0;
     const int n_de_hidden_0 = 64;
-    const int n_de_hidden_1 = 64;
+    const int n_de_hidden_1 = 0;
     const int n_de_hidden_2 = 0;
     ModelBuilder<TensorT> model_builder;
 
@@ -402,7 +402,7 @@ public:
     ModelInterpreterGpu<TensorT>& model_interpreter,
     const std::vector<float>& model_errors) {
     // Check point the model every 1000 epochs
-    if (n_epochs % 1000 == 0 && n_epochs != 0) {
+    if (n_epochs % 500 == 0 && n_epochs != 0) {
       model_interpreter.getModelResults(model, false, true, false);
       // save the model weights
       WeightFile<float> weight_data;

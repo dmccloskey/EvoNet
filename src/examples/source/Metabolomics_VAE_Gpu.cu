@@ -90,7 +90,7 @@ public:
         else
           sample_group_name = selectRandomElement(this->model_validation_.sample_group_names_);
 
-        for (int nodes_iter = 0; nodes_iter < n_input_pixels + 2 * n_encodings_; ++nodes_iter) {
+        for (int nodes_iter = 0; nodes_iter < n_input_pixels; ++nodes_iter) {
           if (nodes_iter < n_input_pixels) {
             TensorT value;
             if (train)
@@ -105,16 +105,14 @@ public:
             loss_output_data(batch_iter, memory_iter, nodes_iter) = 0;
             metric_output_data(batch_iter, memory_iter, nodes_iter) = 0;
           }
-          else if (nodes_iter >= n_input_pixels && nodes_iter < n_input_pixels + n_encodings_) {
+          else if (nodes_iter < n_encodings_) {
             TensorT random_value = 0;
             if (train) {
               random_value = d(gen);
             }
-            input_data(batch_iter, memory_iter, nodes_iter) = random_value; // sample from a normal distribution
-            loss_output_data(batch_iter, memory_iter, nodes_iter) = 0; // Dummy data for KL divergence mu
-          }
-          else {
-            loss_output_data(batch_iter, memory_iter, nodes_iter) = 0; // Dummy data for KL divergence logvar
+            input_data(batch_iter, memory_iter, nodes_iter + n_input_pixels) = random_value; // sample from a normal distribution
+            loss_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels) = 0; // Dummy data for KL divergence mu
+            loss_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels + n_encodings_) = 0; // Dummy data for KL divergence logvar
           }
         }
       }
@@ -134,7 +132,7 @@ public:
     else
       n_input_pixels = this->model_validation_.component_group_names_.size();
 
-    assert(n_loss_output_nodes == n_input_pixels + 2 * n_encodings_);
+    assert(n_loss_output_nodes == 2 * n_input_pixels + 2 * n_encodings_);
     assert(n_metric_output_nodes % n_input_pixels == 0);
     assert(n_input_nodes == n_input_pixels + n_encodings_);
 
@@ -152,7 +150,7 @@ public:
         else
           sample_group_name = selectRandomElement(this->model_validation_.sample_group_names_);
 
-        for (int nodes_iter = 0; nodes_iter < n_input_pixels + 2 * n_encodings_; ++nodes_iter) {
+        for (int nodes_iter = 0; nodes_iter < n_input_pixels; ++nodes_iter) {
           if (nodes_iter < n_input_pixels) {
             TensorT value;
             if (train)
@@ -165,18 +163,17 @@ public:
                 this->model_validation_.component_group_names_.at(nodes_iter));
             input_data(batch_iter, memory_iter, nodes_iter) = value;
             loss_output_data(batch_iter, memory_iter, nodes_iter) = 0;
+            loss_output_data(batch_iter, memory_iter, nodes_iter + n_input_pixels) = 0;
             metric_output_data(batch_iter, memory_iter, nodes_iter) = 0;
           }
-          else if (nodes_iter >= n_input_pixels && nodes_iter < n_input_pixels + n_encodings_) {
+          else if (nodes_iter < n_encodings_) {
             TensorT random_value = 0;
             if (train) {
               random_value = d(gen);
             }
-            input_data(batch_iter, memory_iter, nodes_iter) = random_value; // sample from a normal distribution
-            loss_output_data(batch_iter, memory_iter, nodes_iter) = 0; // Dummy data for KL divergence mu
-          }
-          else {
-            loss_output_data(batch_iter, memory_iter, nodes_iter) = 0; // Dummy data for KL divergence logvar
+            input_data(batch_iter, memory_iter, nodes_iter + n_input_pixels) = random_value; // sample from a normal distribution
+            loss_output_data(batch_iter, memory_iter, nodes_iter + 2* n_input_pixels) = 0; // Dummy data for KL divergence mu
+            loss_output_data(batch_iter, memory_iter, nodes_iter + 2* n_input_pixels + n_encodings_) = 0; // Dummy data for KL divergence logvar
           }
         }
       }
@@ -587,7 +584,7 @@ void main_reconstruction(const std::string& biochem_rxns_filename,
   if (simulate_MARs) n_input_nodes = reaction_model.reaction_ids_.size();
   else n_input_nodes = reaction_model.component_group_names_.size();
   const int n_output_nodes = n_input_nodes;
-  const int encoding_size = 64;
+  const int encoding_size = 16;
   metabolomics_data.n_encodings_ = encoding_size;
   std::vector<std::string> input_nodes;
   std::vector<std::string> output_nodes;
@@ -652,16 +649,15 @@ void main_reconstruction(const std::string& biochem_rxns_filename,
   model_trainer.setFastInterpreter(true);
   model_trainer.setPreserveOoO(true);
   model_trainer.setLossFunctions({
-    std::shared_ptr<LossFunctionOp<float>>(new MSEOp<float>(1e-6, 1.0)),
-    //std::shared_ptr<LossFunctionOp<float>>(new BCEWithLogitsOp<float>(1e-6, 1.0)),
+    std::shared_ptr<LossFunctionOp<float>>(new BCEWithLogitsOp<float>(1e-6, 1.0)),
     std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceMuOp<float>(1e-6, 1.0)),
     std::shared_ptr<LossFunctionOp<float>>(new KLDivergenceLogVarOp<float>(1e-6, 1.0)) });
   model_trainer.setLossFunctionGrads({
     std::shared_ptr<LossFunctionGradOp<float>>(new MSEGradOp<float>(1e-6, 1.0)),
-    //std::shared_ptr<LossFunctionGradOp<float>>(new BCEWithLogitsGradOp<float>(1e-6, 1.0)),
+    std::shared_ptr<LossFunctionGradOp<float>>(new BCEWithLogitsGradOp<float>(1e-6, 1.0)),
     std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceMuGradOp<float>(1e-6, 1.0)),
     std::shared_ptr<LossFunctionGradOp<float>>(new KLDivergenceLogVarGradOp<float>(1e-6, 1.0)) });
-  model_trainer.setLossOutputNodes({ output_nodes, encoding_nodes_mu, encoding_nodes_logvar });
+  model_trainer.setLossOutputNodes({ output_nodes, output_nodes, encoding_nodes_mu, encoding_nodes_logvar });
   model_trainer.setMetricFunctions({ std::shared_ptr<MetricFunctionOp<float>>(new MAEOp<float>()) });
   model_trainer.setMetricOutputNodes({ output_nodes });
   model_trainer.setMetricNames({ "MAE" });
