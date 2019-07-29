@@ -334,6 +334,25 @@ public:
 			const std::vector<std::string>& output_nodes,
 			const TensorT& model_error);
 
+    /**
+    @brief Entry point for users to code their validation logger
+
+    [TODO: add tests]
+
+    @param[in] n_generations The number of evolution generations
+    @param[in] n_epochs The number of training/validation epochs
+    @param[in, out] model The model
+    @param[in, out] model_interpreter The model interpreter
+    @param[in, out] model_logger The model logger
+    @param[in] expected_values The expected values
+
+    */
+    virtual void validationModelLogger(const int& n_epochs,
+      Model<TensorT>& model, InterpreterT& model_interpreter, ModelLogger<TensorT>& model_logger,
+      const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes,
+      const TensorT& model_error_train, const TensorT& model_error_test,
+      const Eigen::Tensor<TensorT, 1> & model_metrics_train, const Eigen::Tensor<TensorT, 1> & model_metrics_test);
+
 		/**
 		@brief Entry point for users to code their evaluation logger
 
@@ -1319,7 +1338,7 @@ private:
       model_interpreter.allocateModelErrorTensor(this->getBatchSize(), this->getMemorySize(), this->metric_output_nodes_.size());
     }
 
-    for (int iter = 0; iter < this->getNEpochsTraining(); ++iter) // use n_epochs here
+    for (int iter = 0; iter < this->getNEpochsValidation(); ++iter) // use n_epochs here
     {
       // Generate the input and output data for validation
       if (this->getVerbosityLevel() >= 2)
@@ -1448,15 +1467,15 @@ private:
         std::cout << "Model " << model.getName() << " error: " << total_error_training(0) << std::endl;
 
       // log epoch
-      if (this->getLogTraining()) {
+      if (this->getLogValidation()) {
         if (this->getVerbosityLevel() >= 2)
           std::cout << "Logging..." << std::endl;
-        this->trainingModelLogger(iter, model, model_interpreter, model_logger, loss_output_data_training, loss_output_nodes, total_error_training(0), total_error_validation(0),
+        this->validationModelLogger(iter, model, model_interpreter, model_logger, loss_output_data_training, loss_output_nodes, total_error_training(0), total_error_validation(0),
           total_metrics_training, total_metrics_validation);
       }
 
       // reinitialize the model
-      if (iter != this->getNEpochsTraining() - 1) {
+      if (iter != this->getNEpochsValidation() - 1) {
         model_interpreter.reInitNodes();
         model_interpreter.reInitModelError();
       }
@@ -1642,6 +1661,34 @@ private:
 			model_logger.writeLogs(model, n_epochs, {}, { "Error" }, {}, { model_error }, output_nodes, expected_values);
 		}
 	}
+  template<typename TensorT, typename InterpreterT>
+  inline void ModelTrainer<TensorT, InterpreterT>::validationModelLogger(const int & n_epochs, Model<TensorT>& model, InterpreterT & model_interpreter, ModelLogger<TensorT>& model_logger, const Eigen::Tensor<TensorT, 3>& expected_values, const std::vector<std::string>& output_nodes,
+    const TensorT & model_error_train, const TensorT & model_error_test, const Eigen::Tensor<TensorT, 1> & model_metrics_train, const Eigen::Tensor<TensorT, 1> & model_metrics_test)
+  {
+    if (n_epochs == 0) {
+      model_logger.initLogs(model);
+    }
+    if (n_epochs % 10 == 0) {
+      // Get the node values if logging the expected and predicted
+      if (model_logger.getLogExpectedPredictedEpoch())
+        model_interpreter.getModelResults(model, true, false, false);
+
+      // Create the metric headers and data arrays
+      std::vector<std::string> log_train_headers = { "Train_Error" };
+      std::vector<std::string> log_test_headers = { "Test_Error" };
+      std::vector<TensorT> log_train_values = { model_error_train };
+      std::vector<TensorT> log_test_values = { model_error_test };
+      int metric_iter = 0;
+      for (const std::string& metric_name : this->metric_names_) {
+        log_train_headers.push_back(metric_name);
+        log_test_headers.push_back(metric_name);
+        log_train_values.push_back(model_metrics_train(metric_iter));
+        log_test_values.push_back(model_metrics_test(metric_iter));
+        ++metric_iter;
+      }
+      model_logger.writeLogs(model, n_epochs, log_train_headers, log_test_headers, log_train_values, log_test_values, output_nodes, expected_values);
+    }
+  }
 	template<typename TensorT, typename InterpreterT>
 	inline void ModelTrainer<TensorT, InterpreterT>::evaluationModelLogger(const int & n_epochs, Model<TensorT>& model, InterpreterT & model_interpreter, ModelLogger<TensorT>& model_logger,
 		const std::vector<std::string>& output_nodes)

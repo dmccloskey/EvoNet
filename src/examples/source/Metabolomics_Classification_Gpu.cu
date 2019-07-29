@@ -345,18 +345,13 @@ template<typename TensorT>
 class ModelTrainerExt : public ModelTrainerGpu<TensorT>
 {
 public:
-  Model<TensorT> makeModel() { return Model<TensorT>(); }
   /*
   @brief Fully connected classifier
   */
-  void makeModelFCClass(Model<TensorT>& model, const int& n_inputs, const int& n_outputs, const bool& linear_scale_input, const bool& log_transform_input, const bool& standardize_input, bool add_norm = true) {
+  void makeModelFCClass(Model<TensorT>& model, const int& n_inputs, const int& n_outputs, const bool& linear_scale_input, const bool& log_transform_input, const bool& standardize_input, const bool& add_norm = true,
+    const int& n_hidden_0 = 32, const int& n_hidden_1 = 0, const int& n_hidden_2 = 0) {
     model.setId(0);
     model.setName("Classifier");
-
-    const int n_hidden_0 = 32;
-    const int n_hidden_1 = 0;
-    const int n_hidden_2 = 0;
-
     ModelBuilder<TensorT> model_builder;
 
     // Add the inputs
@@ -793,14 +788,18 @@ void main_classification(const std::string& biochem_rxns_filename,
   if (simulate_MARs) n_input_nodes = reaction_model.reaction_ids_.size();
   else n_input_nodes = reaction_model.component_group_names_.size();
   const int n_output_nodes = reaction_model.labels_.size();
+
+  // define the input nodes
   std::vector<std::string> input_nodes;
-  std::vector<std::string> output_nodes;
   for (int i = 0; i < n_input_nodes; ++i) {
     char name_char[512];
     sprintf(name_char, "Input_%012d", i);
     std::string name(name_char);
     input_nodes.push_back(name);
   }
+
+  // define the output nodes
+  std::vector<std::string> output_nodes;
   for (int i = 0; i < n_output_nodes; ++i) {
     char name_char[512];
     sprintf(name_char, "Output_%012d", i);
