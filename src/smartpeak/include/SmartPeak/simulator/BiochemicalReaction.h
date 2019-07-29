@@ -156,7 +156,7 @@ namespace SmartPeak
         row.calculated_concentration_units = calculated_concentration_units_str;
         row.time_point = std::stof(time_point_str);
         row.used = (used__str == "t" || used__str == "TRUE") ? true : false;
-        if (calculated_concentration_str != "")
+        if (calculated_concentration_str != "" && calculated_concentration_str != "NULL")
           row.calculated_concentration = std::stof(calculated_concentration_str);
         else
           row.calculated_concentration = 0.0f;
