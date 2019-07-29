@@ -381,10 +381,10 @@ public:
   void makeModelBatchCorrectionAE(Model<TensorT>& model, const int& n_inputs, const int& n_encodings, const bool& linear_scale_input, const bool& log_transform_input, const bool& standardize_input, bool add_norm = true) {
     model.setId(0);
     model.setName("AE");
-    const int n_en_hidden_0 = 64;
+    const int n_en_hidden_0 = 88;
     const int n_en_hidden_1 = 0;
     const int n_en_hidden_2 = 0;
-    const int n_de_hidden_0 = 64;
+    const int n_de_hidden_0 = 0;
     const int n_de_hidden_1 = 0;
     const int n_de_hidden_2 = 0;
     ModelBuilder<TensorT> model_builder;
@@ -866,7 +866,7 @@ public:
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
       std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_outputs) / 2, 1)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(5e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, true, true);
+      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(5e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
 
     // Specify the output node types manually
     for (const std::string& node_name : node_names)
@@ -968,7 +968,7 @@ public:
       std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
       std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
       std::shared_ptr<WeightInitOp<TensorT>>(new RandWeightInitOp<TensorT>((int)(node_names.size() + n_outputs) / 2, 1)),
-      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(5e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, true, true);
+      std::shared_ptr<SolverOp<TensorT>>(new AdamOp<TensorT>(5e-4, 0.9, 0.999, 1e-8)), 0.0f, 0.0f, false, true);
 
     // Specify the output node types manually
     for (const std::string& node_name : node_names)
@@ -990,7 +990,7 @@ public:
         std::shared_ptr<IntegrationErrorOp<TensorT>>(new SumErrorOp<TensorT>()),
         std::shared_ptr<IntegrationWeightGradOp<TensorT>>(new SumWeightGradOp<TensorT>()),
         std::shared_ptr<WeightInitOp<TensorT>>(new ConstWeightInitOp<TensorT>(1)),
-        std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0, 0.0, true, true);
+        std::shared_ptr<SolverOp<TensorT>>(new DummySolverOp<TensorT>()), 0.0, 0.0, false, true);
     }
     if (linear_scale_input) {
       std::string name = "LinearScale" + module_name;
@@ -1182,7 +1182,7 @@ void main_batchCorrectionAE(const std::string& biochem_rxns_filename,
   if (simulate_MARs) n_input_nodes = reaction_model.reaction_ids_.size();
   else n_input_nodes = reaction_model.component_group_names_.size();
   const int n_output_nodes = n_input_nodes;
-  const int encoding_size = 32;
+  const int encoding_size = 88;
 
   // Make the input nodes
   std::vector<std::string> input_nodes;
@@ -1310,7 +1310,7 @@ void main_batchCorrectionClassification(const std::string& biochem_rxns_filename
   if (simulate_MARs) n_input_nodes = reaction_model.reaction_ids_.size();
   else n_input_nodes = reaction_model.component_group_names_.size();
   const int n_output_nodes = reaction_model.labels_.size();
-  const int encoding_size = 64;
+  const int encoding_size = 88;
 
   // Make the input nodes
   std::vector<std::string> input_nodes;

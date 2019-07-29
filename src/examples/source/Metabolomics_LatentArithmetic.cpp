@@ -114,7 +114,7 @@ public:
   @brief Fully connected variational reconstruction model
   */
   void makeModelFCVAE_Encoder(Model<TensorT>& model, const int& n_inputs, const int& n_encodings, const bool& linear_scale_input, const bool& log_transform_input, const bool& standardize_input, const bool& add_norm = false,
-    const int& n_en_hidden_0 = 64, const int& n_en_hidden_1 = 64, const int& n_en_hidden_2 = 0) {
+    const int& n_en_hidden_0 = 64, const int& n_en_hidden_1 = 64, const int& n_en_hidden_2 = 64) {
     model.setId(0);
     model.setName("VAE-Encoder");
     ModelBuilder<TensorT> model_builder;
@@ -220,7 +220,7 @@ public:
   @brief Fully connected variational reconstruction model
   */
   void makeModelFCVAE_Decoder(Model<TensorT>& model, const int& n_outputs, const int& n_encodings, const bool& add_norm = false,
-    const int& n_de_hidden_0 = 64, const int& n_de_hidden_1 = 64, const int& n_de_hidden_2 = 0) {
+    const int& n_de_hidden_0 = 64, const int& n_de_hidden_1 = 64, const int& n_de_hidden_2 = 64) {
     model.setId(0);
     model.setName("VAE-Decoder");
     ModelBuilder<TensorT> model_builder;
@@ -934,7 +934,7 @@ int main(int argc, char** argv)
   ModelLogger<float> model_logger(true, true, false, false, false, false, false, false);
 
   // read in the metabolomics data and models
-  LatentArithmetic<float> latentArithmetic(2, false, true);
+  LatentArithmetic<float> latentArithmetic(16, false, true);
   latentArithmetic.setMetabolomicsData(biochem_rxns_filename, metabo_data_filename_train, meta_data_filename_train,
     metabo_data_filename_test, meta_data_filename_test);
   latentArithmetic.setEncDecModels(model_trainer, model_encoder_weights_filename, model_decoder_weights_filename);
