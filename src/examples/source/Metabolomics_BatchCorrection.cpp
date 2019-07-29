@@ -1310,7 +1310,7 @@ void main_batchCorrectionClassification(const std::string& biochem_rxns_filename
   if (simulate_MARs) n_input_nodes = reaction_model.reaction_ids_.size();
   else n_input_nodes = reaction_model.component_group_names_.size();
   const int n_output_nodes = reaction_model.labels_.size();
-  const int encoding_size = 64;
+  const int encoding_size = 32;
 
   // Make the input nodes
   std::vector<std::string> input_nodes;
